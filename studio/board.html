@@ -11544,7 +11544,7 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
         if(_k==="v"){ if(tokClipPaste()){e.preventDefault();} return; }
         if(_k==="x"){ if(tokClipCopy()){ e.preventDefault(); deleteSelected(); toast("잘라냄"); } return; }
         if(_k==="d"){ if(sel||(typeof multiSel!=="undefined"&&multiSel.length)){ e.preventDefault(); duplicateSelected(); } return; }
-        if(_k==="a"){ var all=[].concat(state.players||[],state.equipment||[],state.drawings||[]); if(all.length){ e.preventDefault(); sel=null; multiSel=all; renderTokens(); renderDrawings(); updateDelUI(); updateAlignBar(); renderMultiGuides(); toast("전체 선택 "+all.length); } return; }
+        if(_k==="a"){ var all=[].concat(state.players||[],state.equipment||[],state.drawings||[]); if(state.ball)all.push(state.ball);   /* 2.687 — ⌘A 에 공도(사용자) */ if(all.length){ e.preventDefault(); sel=null; multiSel=all; renderTokens(); renderDrawings(); updateDelUI(); updateAlignBar(); renderMultiGuides(); toast("전체 선택 "+all.length); } return; }
         if(e.key==="]"||e.key==="["){ /* 2.030 — 앞으로/뒤로 보내기(겹침 순서): 배열 끝=앞 */
           var its=(typeof multiSel!=="undefined"&&multiSel.length)?multiSel.slice():((sel&&sel.ref&&sel.type!=="ball"&&sel.type!=="spball")?[sel.ref]:[]); if(!its.length)return;
           e.preventDefault(); pushUndo(); var front=e.key==="]";
