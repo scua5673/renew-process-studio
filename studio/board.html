@@ -716,7 +716,10 @@
   #lsPop{position:fixed;z-index:420;box-sizing:border-box;background:color-mix(in srgb,var(--panel,#fff) 96%,transparent);border:1px solid color-mix(in srgb,var(--line,#E3E6EA) 88%,transparent);border-radius:14px;box-shadow:0 16px 42px rgba(12,20,32,.20),0 2px 8px rgba(12,20,32,.08);padding:10px 12px 12px;width:252px;font-family:inherit;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
   #lsPop::after{content:"";position:absolute;left:var(--ls-arrow,50%);bottom:-6px;width:11px;height:11px;transform:translateX(-50%) rotate(45deg);background:var(--panel,#fff);border-right:1px solid var(--line,#E3E6EA);border-bottom:1px solid var(--line,#E3E6EA);}
   #lsPop .ls-head{font-size:var(--fs-sub);font-weight:var(--fw-head);line-height:18px;color:var(--txt,#14161A);margin:0 0 7px 2px;letter-spacing:-.01em;}
-  #lsPop .ls-row{display:grid;grid-template-columns:42px minmax(0,1fr) 34px;align-items:center;gap:8px;margin-bottom:9px;min-width:0;}
+  #lsPop .ls-seg{display:flex;gap:4px;min-width:0;}
+.ls-seg button{flex:1 1 0;height:26px;padding:0 4px;border:1px solid var(--line,#E3E6EA);border-radius:7px;background:var(--panel2,#F1F2F4);color:var(--txt,#14161A);font-family:inherit;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer;}
+.ls-seg button.on{background:var(--txt,#14161A);color:#fff;border-color:transparent;}
+.ls-row{display:grid;grid-template-columns:42px minmax(0,1fr) 34px;align-items:center;gap:8px;margin-bottom:9px;min-width:0;}
   #lsPop .ls-row:last-of-type{margin-bottom:0;}
   #lsPop .ls-lb{flex:0 0 42px;font-size:var(--fs-sub);font-weight:var(--fw-body);color:var(--txt-dim,#646A73);}
   #lsPop input[type=range]{display:block;width:100%;min-width:0;margin:0;accent-color:var(--blue,#3a6df0);}
@@ -5428,6 +5431,24 @@ function visTeamCol(p){try{return (state.teamColors&&state.teamColors[p.team])||
 function _tokDiscCol(p){try{var col=visTeamCol(p);if(!p.coach&&(((""+p.num)==="1")||p.pos==="GK")&&typeof gkColFor==="function"){col=gkColFor(p.team);}return col;}catch(_){return visTeamCol(p);}}
 function _visSector(cx,cy,deg,half,r){var a1=(deg-half)*Math.PI/180,a2=(deg+half)*Math.PI/180;var p1x=cx+r*Math.cos(a1),p1y=cy+r*Math.sin(a1),p2x=cx+r*Math.cos(a2),p2y=cy+r*Math.sin(a2);var large=(half*2>180)?1:0;return "M"+cx.toFixed(1)+","+cy.toFixed(1)+" L"+p1x.toFixed(1)+","+p1y.toFixed(1)+" A"+r.toFixed(1)+","+r.toFixed(1)+" 0 "+large+" 1 "+p2x.toFixed(1)+","+p2y.toFixed(1)+" Z";}
 function _visIsLight(){try{var c=(getCss("--pitchbg")||"").trim();var r,gg,b;if(c.charAt(0)==="#"){var v=c.slice(1);if(v.length===3)v=v.split("").map(function(x){return x+x;}).join("");var n=parseInt(v,16);if(isNaN(n))return false;r=(n>>16)&255;gg=(n>>8)&255;b=n&255;}else{var m=c.match(/(\d+)[,\s]+(\d+)[,\s]+(\d+)/);if(!m)return false;r=+m[1];gg=+m[2];b=+m[3];}return (0.2126*r+0.7152*gg+0.0722*b)/255>0.62;}catch(_){return false;}}
+/* 2.681 — 구역·다각형 채움 패턴(점·빗금). 색마다 <pattern> 하나를 defs 에 만들어 둔다(사용자가 보낸 도구 소개의 «점선 채우기·흑백 패턴 채우기»). */
+function _fillPattern(kind,color){
+  try{
+    var hex=String(color||"#3a6df0").replace(/[^0-9a-zA-Z]/g,"").toLowerCase(),id="psFill_"+kind+"_"+hex;
+    if(!svg.querySelector("#"+id)){
+      var defs=svg.querySelector("defs"); if(!defs){defs=el("defs");svg.insertBefore(defs,svg.firstChild);}
+      var pat;
+      if(kind==="hatch"){ pat=el("pattern",{id:id,width:10,height:10,patternUnits:"userSpaceOnUse",patternTransform:"rotate(45)"});
+        pat.appendChild(el("rect",{width:10,height:10,fill:color,"fill-opacity":"0.08"}));
+        pat.appendChild(el("line",{x1:0,y1:0,x2:0,y2:10,stroke:color,"stroke-width":3,"stroke-opacity":"0.6"})); }
+      else { pat=el("pattern",{id:id,width:12,height:12,patternUnits:"userSpaceOnUse"});
+        pat.appendChild(el("rect",{width:12,height:12,fill:color,"fill-opacity":"0.06"}));
+        pat.appendChild(el("circle",{cx:6,cy:6,r:2,fill:color,"fill-opacity":"0.7"})); }
+      defs.appendChild(pat);
+    }
+    return "url(#"+id+")";
+  }catch(_){ return hexA(color,.24); }
+}
 function _visBlindPattern(light){try{ var ex=svg.querySelector("#psBlindHatch"); if(ex)ex.parentNode.removeChild(ex); var defs=svg.querySelector("defs"); if(!defs){defs=el("defs");svg.insertBefore(defs,svg.firstChild);} var rectF=light?"rgba(70,78,90,.10)":"rgba(120,128,138,.13)"; var lineS=light?"rgba(55,62,74,.55)":"rgba(195,203,213,.5)"; var pat=el("pattern",{id:"psBlindHatch",width:8,height:8,patternUnits:"userSpaceOnUse",patternTransform:"rotate(45)"}); pat.appendChild(el("rect",{width:8,height:8,fill:rectF})); pat.appendChild(el("line",{x1:0,y1:0,x2:0,y2:8,stroke:lineS,"stroke-width":1.2})); defs.appendChild(pat);}catch(_){}}
 function _tokScaleOf(p){var _ed=document.body.classList.contains("editing")?0.68:1;var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor();}
 /* 2.233 — 작은 규격에서는 토큰도 줄인다(완전 비례는 너무 작아 (길이/105)^0.6: 초등 0.75 · 풋살 0.56) */
@@ -5749,9 +5770,10 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     if(pts.length>=2){
       const dd="M "+pts.map(p=>p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" L ")+(d.closed?" Z":"");
       if(isSel)g.appendChild(el("path",{d:dd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linejoin":"round","stroke-linecap":"round"}));
-      if(d.closed){const darkPitch=document.documentElement.dataset.pitch!=="white";g.appendChild(el("path",{d:dd,fill:hexA(C,darkPitch?.22:.16),stroke:"none","pointer-events":"none"}));}
+      if(d.closed){const darkPitch=document.documentElement.dataset.pitch!=="white";g.appendChild(el("path",{d:dd,fill:(d.fillStyle==="dots"||d.fillStyle==="hatch")?_fillPattern(d.fillStyle,C):hexA(C,darkPitch?.22:.16),stroke:"none","pointer-events":"none"}));}
       const at={d:dd,fill:"none",stroke:C,"stroke-width":4*LW,"stroke-linejoin":"round","stroke-linecap":"round"};
-      if(d.dash)at["stroke-dasharray"]=(11*LW)+" "+(8*LW);
+      if(d.dot)at["stroke-dasharray"]="0.1 "+(12*LW).toFixed(1);
+      else if(d.dash)at["stroke-dasharray"]=(11*LW)+" "+(8*LW);
       g.appendChild(el("path",at));
       pts.forEach(p=>g.appendChild(el("circle",{cx:p.x,cy:p.y,r:5*LW,fill:C,"pointer-events":"none"})));
       if(!d._tmp){
@@ -5771,7 +5793,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
     if(d.type==="rect"){
       const darkPitch=document.documentElement.dataset.pitch!=="white";
-      g.appendChild(el("rect",{x,y,width:w,height:h,rx:4,fill:hexA(C,darkPitch?.34:.24),stroke:"none","pointer-events":"none"}));
+      g.appendChild(el("rect",{x,y,width:w,height:h,rx:4,fill:(d.fillStyle==="dots"||d.fillStyle==="hatch")?_fillPattern(d.fillStyle,C):hexA(C,darkPitch?.34:.24),stroke:"none","pointer-events":"none"}));   /* 2.681 — 점·빗금 채움 */
     }else{
       const dash=d.type==="rectdash"?"11 8":null;
       const os={x,y,width:w,height:h,rx:4,fill:"none",stroke:C,"stroke-width":4.5*LW,"pointer-events":"none"};if(dash)os["stroke-dasharray"]=dash;g.appendChild(el("rect",os));
@@ -5852,6 +5874,9 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     }else{const at={d:_pd,fill:"none",stroke:C,"stroke-width":4.5*LW,"stroke-linecap":"round","stroke-linejoin":"round"};
       if(type==="run"){at["stroke-dasharray"]=(9*LW)+" "+(7*LW);at["stroke-linecap"]="butt";}
       else if(type==="dashline")at["stroke-dasharray"]=(11*LW)+" "+(8*LW);
+      /* 2.681 — 선 모양: 둥근 점선(dot)은 어느 선에도, 점선(dash)은 실선 계열에 */
+      if(d.dot){at["stroke-dasharray"]="0.1 "+(12*LW).toFixed(1);at["stroke-linecap"]="round";}
+      else if(d.dash&&type!=="dashline"&&type!=="run"){at["stroke-dasharray"]=(11*LW)+" "+(8*LW);}
       g.appendChild(el("path",at));}
     /* 화살촉 크기·각도를 선 굵기와 분리한다. 굵기를 바꾸거나 길게 그려도 같은 모양을 유지한다. */
     if(type!=="line"&&type!=="dashline"){const ang=Math.atan2(b.y-_tan.y,b.x-_tan.x),s=15,hw=6.6;
@@ -6122,13 +6147,15 @@ function linkFinish(closed){
   try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;
   if(ids.length<2){if(ids.length)toast("선수를 2명 이상 눌러야 선이 돼요");return;}
   pushUndo();
-  state.drawings.push({type:"link",ids:ids,closed:!!closed,color:L.color,lw:L.lw,op:L.op,pts:[]});
+  state.drawings.push({type:"link",ids:ids,closed:!!closed,color:L.color,lw:L.lw,op:L.op,pts:[],
+    dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined});
   renderDrawings();try{autoSaveAnimFrame();}catch(_){}
   toast(closed?"다각형 완성 — 선수가 움직이면 같이 움직여요":"연결선 완성 — 선수가 움직이면 같이 움직여요");
 }
 function linkCancel(){_link=null;try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;}
 function beginDraw(u){
-  _draw={type:state.tool,color:state.color,lw:(state.drawLw||1),op:(state.drawOp==null?1:state.drawOp),pts:state.tool==="free"?[u]:[u,{x:u.x,y:u.y}]};
+  _draw={type:state.tool,color:state.color,lw:(state.drawLw||1),op:(state.drawOp==null?1:state.drawOp),pts:state.tool==="free"?[u]:[u,{x:u.x,y:u.y}],
+    dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined};   /* 2.681 */
   _drawTmp=drawingEl(_draw);drawLayer.appendChild(_drawTmp);}
 function moveDraw(u){if(!_draw)return;
   if(_draw.type==="rect"||_draw.type==="rectline"||_draw.type==="rectdash"){const o=_draw.pts[0];
@@ -11060,6 +11087,8 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
       pop.innerHTML='<div class="ls-head">선 스타일</div><div class="ls-prev" id="lsPrev">'+preview(lw,op,state.color)+'</div>'
         +'<div class="ls-row"><span class="ls-lb">굵기</span><input type="range" id="lsW" min="0.5" max="3" step="0.1" value="'+lw+'"><span class="ls-val" id="lsWv">'+lw.toFixed(1)+'</span></div>'
         +'<div class="ls-row"><span class="ls-lb">투명도</span><input type="range" id="lsO" min="0.2" max="1" step="0.05" value="'+op+'"><span class="ls-val" id="lsOv">'+Math.round(op*100)+'</span></div>'
+        +'<div class="ls-row"><span class="ls-lb">모양</span><div class="ls-seg" id="lsShape"><button type="button" data-v="solid">실선</button><button type="button" data-v="dash">점선</button><button type="button" data-v="dot">둥근 점선</button></div><span></span></div>'   /* 2.681 */
+        +'<div class="ls-row"><span class="ls-lb">채움</span><div class="ls-seg" id="lsFill"><button type="button" data-v="solid">반투명</button><button type="button" data-v="dots">점</button><button type="button" data-v="hatch">빗금</button></div><span></span></div>'
         +'<button class="ls-apply" id="lsAll">그린 선 전체에 적용</button>';
       document.body.appendChild(pop);
       var r=lsBtn.getBoundingClientRect(), pw=pop.offsetWidth||252, ph=pop.offsetHeight||150;
@@ -11073,6 +11102,21 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
         state.drawLw=w; state.drawOp=o;
         var sd=selDraws(); if(sd.length){ sd.forEach(function(d){ d.lw=w; d.op=o; }); renderDrawings(); try{boardSaveLive();}catch(_){} } }
       wR.addEventListener("input",refresh); oR.addEventListener("input",refresh);
+      /* 2.681 — 선 모양(실선·점선·둥근 점선)과 채움(반투명·점·빗금). 선택한 그림에 바로 적용하고, 새로 그릴 때의 기본값으로도 남긴다. */
+      (function(){
+        var shapeSeg=pop.querySelector("#lsShape"),fillSeg=pop.querySelector("#lsFill"); if(!shapeSeg||!fillSeg)return;
+        function mark(){ var ls=state.drawLineStyle||"solid",fs=state.drawFillStyle||"solid"; var sd=selDraws();
+          if(sd.length){ ls=sd[0].dot?"dot":(sd[0].dash?"dash":"solid"); fs=sd[0].fillStyle||"solid"; }
+          shapeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===ls);});
+          fillSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===fs);}); }
+        shapeSeg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; state.drawLineStyle=v; var sd=selDraws();
+          if(sd.length){ pushUndo(); sd.forEach(function(d){ if(v==="dot"){d.dot=true;delete d.dash;} else if(v==="dash"){d.dash=true;delete d.dot;} else {delete d.dot;delete d.dash;} }); renderDrawings(); try{boardSaveLive();}catch(_){} }
+          mark(); }; });
+        fillSeg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; state.drawFillStyle=v; var sd=selDraws();
+          if(sd.length){ pushUndo(); sd.forEach(function(d){ if(v==="solid")delete d.fillStyle; else d.fillStyle=v; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
+          mark(); }; });
+        mark();
+      })();
       pop.querySelector("#lsAll").onclick=function(e){ e.stopPropagation(); var w=+wR.value,o=+oR.value;
         pushUndo(); (state.drawings||[]).forEach(function(d){ if(d.type!=="text"){ d.lw=w; d.op=o; } }); renderDrawings(); try{boardSaveLive();}catch(_){} try{toast("모든 선에 적용됨");}catch(_){} };
       pop.addEventListener("click",function(e){e.stopPropagation();});
