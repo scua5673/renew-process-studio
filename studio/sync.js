@@ -1,7 +1,8 @@
 /* PROCESS STUDIO — 계정·클라우드 동기화
    Supabase(GoTrue/PostgREST) REST 직결 — 외부 SDK 없음(오프라인 PWA 원칙 유지).
    PS_SYNC 설정이 비어 있으면 완전 비활성: UI도, 네트워크 요청도 전혀 없음.
-   구조: 로컬(localStorage)이 항상 원본. 로그인 시 화이트리스트 키를 서버 ps_kv 테이블과 양방향 동기화(키 단위 LWW). */
+   구조: 로컬(localStorage)이 항상 원본. 로그인 시 화이트리스트 키를 서버 ps_kv 테이블과 양방향 동기화(키 단위 LWW).
+   2.674 부터: 팀 자료의 기기 사본은 캐시 — 서버 값이 오면 덮고, 구조선·충돌 사본은 만들지 않는다(COPIES_OFF). */
 (function(){
 "use strict";
 var CFG=null;
@@ -63,8 +64,16 @@ function skippedList(){ try{ return JSON.parse(localStorage.getItem(SKIPKEY)||'[
    그동안 그 사본을 읽는 코드가 없어서, 다른 코치의 작업이 조용히 사라졌다.
    이제 무엇이 밀렸는지 기록하고 사용자가 되돌릴 수 있게 한다. */
 var CONFKEY='ps_sync_conflicts_v1';
+/* 2.674 — «기기는 캐시일 뿐»(사용자 "기기 것을 최대한 저장 안 하기" 1단계). 서버 값을 받으면 그냥 덮고, 구조선(ps_rescue_*)·충돌 사본(ps_sync_conflict_*)을
+   더는 만들지 않는다. 실측: 사용자 맥북에 충돌 사본 44개·구조선 39개(약 1MB)가 쌓였고, 정상 갱신(45→53명)까지 «확인할 것»으로 묻고 있었다.
+   남기는 것: 지금 값 한 벌 + 못 올린 편집 + 급감 24h 되돌리기(undoStash, 2.626) + 일정·선수단 3-way 병합의 기준본(syncBase). 켜고 끄기는 이 스위치 하나. */
+var COPIES_OFF=true;
+function purgeCopies(){ var n=0; try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(!k)continue;
+  if(k.indexOf('ps_rescue_')===0||k.indexOf('ps_sync_conflict_')===0||k===CONFKEY||k==='ps_sync_conf_seen'){ localStorage.removeItem(k); n++; } } }catch(_){}
+  return n; }
 function conflictList(){ if(!dataUnlocked())return [];try{ return JSON.parse(localStorage.getItem(CONFKEY)||'[]')||[]; }catch(_){ return []; } }
 function conflictNote(k){
+  if(COPIES_OFF)return;
   try{
     var a=conflictList().filter(function(x){ return x.k!==k; });
     a.push({k:k,at:Date.now()});
@@ -2100,6 +2109,7 @@ function rescueCount(str){
   return null;
 }
 function rescueStash(k,oldVal,newVal){
+  if(COPIES_OFF)return;
   try{
     if(oldVal==null||oldVal===newVal)return;
     if(String(oldVal).length>RESCUE_MAXLEN)return;      /* 너무 큰 값은 저장 공간을 잡아먹는다 */
@@ -2120,6 +2130,7 @@ function rescueStash(k,oldVal,newVal){
    내보내지 않는다. 그 상태에서 서버본을 적용하면 "되돌리기 가능"이라는 약속과 달리
    이 기기 원문을 잃는다. 원문과 목록 둘 다 되읽힌 때만 덮어쓰기를 허용한다. */
 function rescuePrepared(k,oldVal,newVal){
+  if(COPIES_OFF)return true;   /* 2.674 — 사본 없이 서버본을 그대로 받는다 */
   if(oldVal==null||oldVal===newVal)return true;
   try{
     rescueStash(k,oldVal,newVal);
@@ -2769,13 +2780,13 @@ function dataReviewList(){
   try{ holdList().forEach(function(x){
     out.push({src:'hold',k:x.k,at:x.at,mine:x.after,theirs:x.before,
       why:'이 기기에서 크게 줄어 아직 안 올렸습니다'}); }); }catch(_){}
-  try{ rescueList().forEach(function(x){
+  try{ if(!COPIES_OFF)rescueList().forEach(function(x){
     /* 값이 남아 있을 때만 되돌릴 수 있다 */
     var has=false; try{ has=localStorage.getItem('ps_rescue_'+x.k)!=null; }catch(_){}
     if(!has)return;
     out.push({src:'rescue',k:x.k,at:x.at,mine:x.before,theirs:x.after,
       why:'팀에서 받은 값이 이 기기 것을 덮었습니다'}); }); }catch(_){}
-  try{ conflictList().forEach(function(x){
+  try{ if(!COPIES_OFF)conflictList().forEach(function(x){
     out.push({src:'conflict',k:x.k,at:x.at,mine:null,theirs:null,
       why:'양쪽이 같이 바뀌어 지금은 이 기기 것이 쓰이고 있습니다'}); }); }catch(_){}
   /* 같은 키가 두 갈래에 걸리면 더 급한 쪽(보류 > 덮임 > 충돌) 하나만 */
@@ -3992,7 +4003,7 @@ function syncNowCore(reason){
              단, 서버본이 내 것과 글자 하나까지 같으면 실제로 밀린 게 없다 → 알리지 않는다(1.526).
              이 헛알림 때문에 스무 개가 한꺼번에 뜨는 일이 있었다. */
           if(row.v===loc){ m.h[k]=lh; m.c[k]=row.cupd; nSet(m,k,loc); return; }
-          try{ localStorage.setItem('ps_sync_conflict_'+k,row.v); }catch(_){}
+          try{ (COPIES_OFF||localStorage.setItem('ps_sync_conflict_'+k,row.v)); }catch(_){}
           conflictNote(k);
           /* 1.573 — 충돌에서 로컬이 이기더라도 크게 줄어든 값이면 멈춘다.
              여기선 서버 값(row.v)이 손에 있으므로 기억한 숫자가 아니라 실제 서버 것과 견준다. */
@@ -4055,7 +4066,7 @@ function syncNowCore(reason){
             if(dirty&&!srvChanged){ if(pushHold(k,loc,null,m.n[k]))return;
               pushRows.push({workspace_id:wid,k:k,v:pushVal(loc),cupd:now}); m.h[k]=lh; m.c[k]=now; nSet(m,k,loc); return; }
             if(!dirty&&srvChanged){ var mv=keepMyImg(row.v,loc); if(kvWrite(k,mv,writes)){ applied++; m.h[k]=hash(mv); m.c[k]=row.cupd; nSet(m,k,mv); } return; }
-            if(dirty&&srvChanged){ try{ localStorage.setItem('ps_sync_conflict_'+k,row.v); }catch(_){}
+            if(dirty&&srvChanged){ try{ (COPIES_OFF||localStorage.setItem('ps_sync_conflict_'+k,row.v)); }catch(_){}
             conflictNote(k);
               if(pushHold(k,loc,null,m.n[k]))return;
               pushRows.push({workspace_id:wid,k:k,v:pushVal(loc),cupd:now}); m.h[k]=lh; m.c[k]=now; nSet(m,k,loc); }
@@ -4108,7 +4119,7 @@ function syncNowCore(reason){
           if(dirty&&!srvChanged){pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now});m.h[k]=lh;m.c[k]=now;return;}
           if(!dirty&&srvChanged){if(kvWrite(k,row.v,writes)){applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;}return;}
           if(dirty&&srvChanged){
-            try{localStorage.setItem('ps_sync_conflict_'+k,row.v);}catch(_){}
+            try{(COPIES_OFF||localStorage.setItem('ps_sync_conflict_'+k,row.v));}catch(_){}
             conflictNote(k);
             pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now});m.h[k]=lh;m.c[k]=now;
           }
@@ -4148,7 +4159,7 @@ function syncNowCore(reason){
                서버본은 남겨 두되 알림은 띄우지 않는다: 선수 44명이 한꺼번에 걸리면
                알림이 44개가 된다(1.526 에서 스무 개로 이미 겪었다). 조용히 사본만 남긴다. */
             if(row.v===loc){ m.h[k]=lh; m.c[k]=row.cupd; return; }
-            try{ localStorage.setItem('ps_sync_conflict_'+k,row.v); }catch(_){}
+            try{ (COPIES_OFF||localStorage.setItem('ps_sync_conflict_'+k,row.v)); }catch(_){}
             pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now}); m.h[k]=lh; m.c[k]=now;
           }
         });
@@ -5850,6 +5861,7 @@ function renderUI(){
 /* ── 부팅 ── */
 function boot(){
   consumeHash();
+  try{ if(COPIES_OFF){ var _pc=purgeCopies(); if(_pc)syncDiagnostic('copies-purged',new Error('기기 사본 '+_pc+'개 정리')); } }catch(_){}   /* 2.674 — 쌓여 있던 구조선·충돌 사본 한 번에 정리 */
   setDataReady(false);
   renderUI();
   var s=getSess();
