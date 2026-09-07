@@ -68,6 +68,71 @@ var CONFKEY='ps_sync_conflicts_v1';
    더는 만들지 않는다. 실측: 사용자 맥북에 충돌 사본 44개·구조선 39개(약 1MB)가 쌓였고, 정상 갱신(45→53명)까지 «확인할 것»으로 묻고 있었다.
    남기는 것: 지금 값 한 벌 + 못 올린 편집 + 급감 24h 되돌리기(undoStash, 2.626) + 일정·선수단 3-way 병합의 기준본(syncBase). 켜고 끄기는 이 스위치 하나. */
 var COPIES_OFF=true;
+/* 2.675 — 2단계 «열 때 서버부터, 닫으면 지우기»(사용자 "2단계도 이어서 가자").
+   닫을 때(pagehide, bfcache 진입은 제외): 팀 자료 키 중 서버와 같은 것(dirty 아님)만 기기에서 지운다. 못 올린 편집이 하나라도 있으면(outbox) 통째로 건너뛴다.
+   보드·보관함 키(BOARD_KEEP)와 개인 키(PERSONAL)는 건드리지 않는다. 지웠으면 표시(ps_cache_wiped_v1)를 남기고,
+   다음 부팅에서 그 표시가 있으면 «팀에서 받는 중…» 덮개를 띄워 첫 회차가 끝날 때까지 기기 사본 대신 서버를 기다린다(최대 12초, 오프라인이면 안내+다시 시도).
+   받고 나면 한 번 새로고침한다 — 셸(app.html)은 같은 창이라 storage 이벤트를 못 받기 때문. */
+var CACHE_WIPE=true, CACHE_WAIT_MS=12000, CACHE_FLAG='ps_cache_wiped_v1', cacheWaitTimer=null;
+var BOARD_KEEP={'cs_vault_folders_v1':1,'cs_vault_folder_tags_v1':1,'cs_vault_folder_meta_v1':1,'cs_themes_v1':1};
+function teamCacheKeys(){
+  var out=KEYS.filter(function(k){ return !PERSONAL[k]&&!BOARD_KEEP[k]; });
+  try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&(k.indexOf('cs_idp_v1_')===0||k.indexOf('cs_idp_pub_v1_')===0)&&k!=='cs_idp_v1_local')out.push(k); } }catch(_){}
+  return out;
+}
+function wipeTeamCacheSoft(){
+  if(!CACHE_WIPE||!dataUnlocked()||!getSess())return 0;
+  var wid=activeWs(); if(!wid)return 0;
+  try{ if(pendingInfo(wid).count>0)return 0; }catch(_){ return 0; }
+  var m=meta(), n=0;
+  teamCacheKeys().forEach(function(k){
+    var loc=null; try{ loc=localStorage.getItem(k); }catch(_){}
+    if(loc==null)return;
+    if(hash(loc)!==(m.h[k]||''))return;                       /* 아직 안 올린 편집 — 남긴다 */
+    try{ localStorage.removeItem(k); n++; }catch(_){ return; }
+    try{ if(idbBacked(k)&&window.storage&&window.storage.del)window.storage.del(k); }catch(_){}
+    try{ syncBaseSet(k,null); }catch(_){}
+  });
+  if(n){ try{ localStorage.setItem(CACHE_FLAG,String(Date.now())); }catch(_){} }
+  return n;
+}
+function cacheWipedFlag(){ try{ return !!localStorage.getItem(CACHE_FLAG); }catch(_){ return false; } }
+function renderCacheWait(mode){
+  try{
+    var host=document.querySelector('.frames'), ov=document.getElementById('psCacheWait');
+    if(!mode){ if(ov)ov.remove(); return; }
+    if(!host)return;
+    if(!ov){ ov=document.createElement('div'); ov.id='psCacheWait'; ov.setAttribute('aria-live','polite');
+      ov.style.cssText='position:absolute;inset:0;z-index:99996;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg,#f5f6f8);color:var(--txt,#16181c);font-family:inherit';
+      host.appendChild(ov); }
+    var box='width:min(360px,100%);text-align:center;background:var(--bar,#fff);border:1px solid var(--line,#e2e4e8);border-radius:16px;padding:24px 20px;font-size:14px;line-height:1.6';
+    if(mode==='offline'){
+      ov.innerHTML='<div style="'+box+'"><b>오프라인이에요</b><br><span style="color:var(--gray,#646a73)">팀 자료는 인터넷이 연결되면 나타나요</span><br><button data-ps-cw-retry style="margin-top:12px;padding:8px 16px;border-radius:999px;border:1px solid var(--line,#e2e4e8);background:var(--bar,#fff);color:inherit;font:inherit">다시 시도</button></div>';
+      var rb=ov.querySelector('[data-ps-cw-retry]'); if(rb)rb.onclick=function(){ rb.disabled=true; rb.textContent='받는 중…'; renderCacheWait('wait'); syncNow('cache-retry').then(function(r){ if(r&&(r.offline||r.error||r.noauth))cacheWaitEnd(false); }).catch(function(){ cacheWaitEnd(false); }); };
+    } else {
+      ov.innerHTML='<div style="'+box+'"><b>팀에서 받는 중…</b><br><span style="color:var(--gray,#646a73)">이 기기에는 팀 자료를 남기지 않아요</span></div>';
+    }
+  }catch(e){ syncDiagnostic('cache-wait-ui',e); }
+}
+function cacheWaitStart(){
+  if(!CACHE_WIPE||!cacheWipedFlag()||!getSess())return;
+  renderCacheWait(navigator.onLine===false?'offline':'wait');
+  try{ setStatus('팀에서 받는 중…'); }catch(_){}
+  clearTimeout(cacheWaitTimer);
+  cacheWaitTimer=setTimeout(function(){ cacheWaitEnd(false); },CACHE_WAIT_MS);
+}
+function cacheWaitEnd(ok){
+  if(!cacheWipedFlag())return;
+  clearTimeout(cacheWaitTimer);
+  if(ok){
+    var showing=!!document.getElementById('psCacheWait');
+    try{ localStorage.removeItem(CACHE_FLAG); }catch(_){}
+    renderCacheWait(null);
+    if(showing){ try{ location.reload(); }catch(_){} }   /* 덮개가 아직 떠 있을 때만 — 이미 쓰고 있는 화면을 새로고침으로 끊지 않는다 */
+    return;
+  }
+  renderCacheWait(navigator.onLine===false?'offline':null);
+}
 function purgeCopies(){ var n=0; try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(!k)continue;
   if(k.indexOf('ps_rescue_')===0||k.indexOf('ps_sync_conflict_')===0||k===CONFKEY||k==='ps_sync_conf_seen'){ localStorage.removeItem(k); n++; } } }catch(_){}
   return n; }
@@ -4339,6 +4404,7 @@ function syncNowCore(reason){
         var msg=remain.count?('올리는 중 · '+remain.count):'팀과 같아요 · '+new Date(m.last).toLocaleTimeString();   /* 2.625 말 바꾸기 */
         if(skippedBig)msg+=' (용량 초과 '+skippedBig+'개 제외)';
         setStatus(msg);
+        try{ cacheWaitEnd(true); }catch(_){}   /* 2.675 — 지운 뒤 첫 회차가 끝났다 */
         if(curKeys.length && curKeys.join(',')!==prev){
           chip('⚠ '+curKeys.map(keyLabel).join('·')+' — 용량이 커서 동기화되지 않았어요 (이 기기에만 있음)');
         }
@@ -5862,6 +5928,9 @@ function renderUI(){
 function boot(){
   consumeHash();
   try{ if(COPIES_OFF){ var _pc=purgeCopies(); if(_pc)syncDiagnostic('copies-purged',new Error('기기 사본 '+_pc+'개 정리')); } }catch(_){}   /* 2.674 — 쌓여 있던 구조선·충돌 사본 한 번에 정리 */
+  /* 2.675 — 닫을 때 팀 자료 지우기 · 지운 뒤 첫 부팅은 서버를 기다린다 */
+  try{ window.addEventListener('pagehide',function(e){ if(e&&e.persisted)return; try{ var _n=wipeTeamCacheSoft(); if(_n)syncDiagnostic('cache-wiped',new Error('닫으며 팀 자료 '+_n+'키 지움')); }catch(_){} }); }catch(_){}
+  try{ cacheWaitStart(); }catch(_){}
   setDataReady(false);
   renderUI();
   var s=getSess();
@@ -5871,7 +5940,7 @@ function boot(){
              /* 소유자가 확인된 뒤에만 IndexedDB 대기함을 읽는다. */
              return outboxTxn(function(q){return q;}).catch(function(e){syncDiagnostic('outbox-boot-read',e);});
            }).then(function(){ return syncNow('boot'); })
-           .catch(function(e){ syncErr=true; setStatus('워크스페이스 불러오기 실패 — 네트워크 확인'); try{renderUI();}catch(_){} try{console.warn('[PSSync]',e);}catch(_){}
+           .catch(function(e){ syncErr=true; setStatus('워크스페이스 불러오기 실패 — 네트워크 확인'); try{renderUI();}catch(_){} try{console.warn('[PSSync]',e);}catch(_){} try{ cacheWaitEnd(false); }catch(_){}
              /* 2.254 — 실패가 침묵하면 '카카오 로그인이 안 돼요'로 보인다: 원인 기록 → 잠금 오버레이가 보여 줌 + 1회 자동 재시도 */
              try{ if(!(e&&e.psDataLocked&&dataUnlocked()))localStorage.setItem('ps_last_unlock_err',String(e&&e.message||e).slice(0,200)); }catch(_){}
              try{ var _o=document.getElementById('psDataLock'); if(_o)_o.remove(); renderDataLock(dataUnlocked()); }catch(_){}
@@ -6051,6 +6120,7 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
      모르면 빈 문자열을 준다 — 화면은 빈 줄이면 아예 안 그리면 된다(모르면서 아는 척하지 않는다). */
   editLine:editLine,editInfo:editInfo,editStamp:editStamp,shareNote:shareNote,ago:agoText,
   rescue:{list:rescueList,open:rescueOpen,restore:rescueRestore},
+  cache:{keys:teamCacheKeys,wipe:wipeTeamCacheSoft,wait:renderCacheWait,flag:cacheWipedFlag},   /* 2.675 — 진단·검증용 */
   beginImport:syncImportBegin,endImport:syncImportEnd,
   approveImport:importApproveExact,verifyImport:importVerifyExact,clearImport:function(k){importApprovalClear(k);try{localStorage.removeItem('ps_push_ok_'+k);}catch(_){}return true;},
   hold:{list:holdList,open:holdOpen,approve:holdApprove,approveExact:holdApproveExact,takeServer:holdTakeServer,count:psCount},
