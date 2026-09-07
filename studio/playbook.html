@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko" class="ps-page-playbook">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>플레이북 · PROCESS STUDIO</title>
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.580"><link rel="stylesheet" href="/vendor/tokens.css?v=2.580">
+<script src="storage.js"></script>
+<script src="perms.js"></script>
+<style>
+/* ══ 2.576 · 플레이북 — 팀 운영 줄에서 «훈련 분석» 자리에(사용자 "훈련 분석은 일단 지워주고 플레이북을 그 자리에 만들고 싶어") ══
+   무엇인가: 게임모델(국면 › 세부 국면 › 원칙 · 장면)을 **읽는 화면**. 여기에 «이번 주 이 국면에 몇 분 썼나»(일정)와
+   «이 국면에 붙은 드릴»(보관함)을 나란히 붙인다 — 설계도(게임모델)가 훈련량(일정)과 자료(보관함)로 검증되는 자리.
+   원본은 redesign-mock/process-timeline.html 의 «플레이북». 이 판은 **읽기 전용** — 쓰는 곳은 그대로(게임모델·일정·보관함)이고
+   여기서는 그리로 가는 문만 연다. 새 저장 키 없음.
+   데이터: cs_gamemodel_v1(팀) · process_coach_v1(PSSchedule.readFor(조)) · cs_drill_lib_v1(IDB, window.storage.get) · cs_terms_v1(공용어).
+   ══ 2.577 · 여기서 바로 고친다(사용자 "공용어 신호도 연결해주고 바로 편집이 가능하게 · 다른곳으로 이동안해도 여기서 바로 편집") ══
+   쓰는 것: 원칙(추가·고침·삭제) · 세부 국면 이름 · 팀 정체성 → cs_gamemodel_v1(게임모델 save() 와 같은 길: psSaveShared 있으면 그것, 없으면 localStorage).
+           신호어(새로 만들기 · 기존 용어 연결 · 떼기) → cs_terms_v1. 연결은 용어 쪽 `it.ph=[세부 국면 id…]` 한 칸 — 새 키 없음.
+   권한: PSPerms.canEdit('gamemodel') / ('terms'). 없으면 보기만.
+   ⚠ 게임모델·공용어 iframe 은 늘 떠 있어 낡은 사본으로 덮어쓸 수 있다 — 2.577 에서 둘 다 storage 이벤트로 다시 읽는다.
+   ══ 2.580 · 드릴도 여기서 바로(사용자 "여기서 바로 추가할 수 있게 해줘") ══
+   «보관함에서 붙이기»(있는 드릴에 이 세부 국면을 묶는다) · «떼기» · «＋ 새 드릴 그리기»(작전판 편집기를 국면 프리셀렉트로 열고, 저장·취소 뒤 플레이북으로 돌아온다).
+   쓰는 곳: cs_drill_lib_v1(IDB, 작전판 store.set 과 같은 모양 = JSON 문자열) 의 항목 gmPhases / gmPhaseNames(«국면 › 세부») — 새 키 없음.
+   저장 뒤 cs_lib_rev 를 찍어 작전판이 보관함 목록을 다시 읽게 한다(작전판 2.580 storage 훅).
+   권한: PSPerms.canEdit('board') + 부모 셸의 PSSync.dataUnlocked() (작전판 보관함 잠금과 같은 조건). */
+:root{--bg:#F1F2F4;--panel:#fff;--panel2:#F6F7F9;--line:#E3E6EA;--line2:#D3D7DD;--ink:#14161A;--ink2:#646A73;--ink3:#8A9099;
+  --teamc:var(--team-c,#15305a);--teams:color-mix(in srgb,var(--team-c,#15305a) 10%,#fff);
+  --c-ao:#1F8A4C;--c-do:#D4403A;--c-dt:#C77D00;--c-at:#C77D00;--c-set:#7C5CC4;--c-ic:#3A6DF0;
+  --font:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,sans-serif}
+body.fmdark{--bg:#121417;--panel:#161C25;--panel2:#1B2230;--line:#26313D;--line2:#33404E;--ink:#F2F3F5;--ink2:#A7B1BE;--ink3:#7C8696;--teams:rgba(90,130,220,.16)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--t-5,14px);line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible{outline:2px solid var(--c-act,#3A6DF0);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:14px 18px 40px}
+/* 머리 */
+.hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.hd h1{margin:0;font-size:var(--t-6,16px);font-weight:800;letter-spacing:-.01em}
+.hd .idn{color:var(--ink2);font-size:var(--t-4,13px);min-width:0;flex:1 1 240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hd .idn.empty{color:var(--ink3)}
+.hd .acts{display:flex;gap:6px;margin-left:auto}
+.lnk{font-size:var(--t-3,12px);font-weight:600;color:var(--teamc);padding:5px 10px;border:1px solid var(--line);border-radius:var(--r-pill,999px);background:var(--panel);white-space:nowrap}
+.lnk:hover{border-color:var(--line2)}
+/* 두 기둥 */
+.cols{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(0,1.1fr);gap:12px;align-items:start}
+.pn{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-2,10px);box-shadow:var(--sh-1);min-width:0}
+.pn .ph{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:var(--t-4,13px);font-weight:800}
+.pn .ph small{font-weight:500;color:var(--ink3)}
+.pn .bd{padding:12px 14px}
+/* 국면 목록 */
+.mo{margin-bottom:8px}
+.mo-h{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--panel2);font-weight:600;font-size:var(--t-4,13px)}
+.mo-h .sw{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+.mo-h .m{margin-left:auto;font-size:var(--t-3,12px);color:var(--ink2);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mo-main{font-size:var(--t-3,12px);color:var(--ink2);padding:6px 10px 2px;line-height:1.5}
+.pr{display:grid;grid-template-columns:minmax(0,1fr) 84px 40px;gap:8px;align-items:center;width:100%;padding:8px 10px;border-radius:8px;text-align:left}
+.pr:hover{background:var(--panel2)}
+.pr[aria-pressed="true"]{background:var(--teams)}
+.pr .t{font-weight:600;font-size:var(--t-4,13px);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pr .t small{display:block;font-size:var(--t-2,11px);color:var(--ink3);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr .bar{height:7px;border-radius:99px;background:var(--panel2);overflow:hidden;border:1px solid var(--line)}
+.pr .bar u{display:block;height:100%;border-radius:99px}
+.pr .v{font-size:var(--t-3,12px);font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.pr .v.z{color:var(--ink3);font-weight:600}
+.empty{padding:22px 12px;text-align:center;color:var(--ink3);font-size:var(--t-4,13px);line-height:1.6}
+.empty b{display:block;color:var(--ink2);margin-bottom:4px}
+/* 상세 */
+.dt .eyebrow{font-size:var(--t-1,10px);letter-spacing:.08em;text-transform:uppercase;font-weight:800}
+.dt h2{margin:2px 0 10px;font-size:var(--t-7,20px);font-weight:800;letter-spacing:-.02em;line-height:1.25}
+.sec{margin-top:16px}
+.sec-h{display:flex;align-items:baseline;gap:8px;font-size:var(--t-2,11px);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:800;margin-bottom:8px}
+.sec-h small{letter-spacing:0;text-transform:none;font-weight:600;font-variant-numeric:tabular-nums}
+.sec-h .r{margin-left:auto;font-size:var(--t-3,12px);letter-spacing:0;text-transform:none;font-weight:600;color:var(--teamc)}
+.prin{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.prin li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:start;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:var(--t-5,14px);line-height:1.55}
+.prin li i{font-style:normal;font-size:var(--t-2,11px);font-weight:800;color:var(--ink3);padding-top:3px;font-variant-numeric:tabular-nums}
+.prin li .d{font-size:var(--t-3,12px);color:var(--ink2);margin-top:3px}
+.snap{border-radius:8px;overflow:hidden;background:#1b8044;border:1px solid var(--line);max-width:520px}
+.snap svg{display:block;width:100%;height:auto}
+.dr{display:flex;flex-direction:column;gap:6px}
+.dr button{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--line);border-radius:6px;text-align:left;background:var(--panel)}
+.dr button:hover{border-color:var(--line2);background:var(--panel2)}
+.dr .n{font-weight:600;font-size:var(--t-4,13px);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dr .m{font-size:var(--t-3,12px);color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dr .go{font-size:var(--t-3,12px);color:var(--ink3)}
+.uses{display:flex;flex-direction:column;gap:5px;font-size:var(--t-4,13px)}
+.uses div{display:grid;grid-template-columns:56px minmax(0,1fr) 44px;gap:8px;align-items:baseline}
+.uses .d{font-size:var(--t-3,12px);color:var(--ink3);font-variant-numeric:tabular-nums}
+.uses .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.uses .m{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;font-size:var(--t-3,12px)}
+.note{font-size:var(--t-3,12px);color:var(--ink3);line-height:1.5}
+.back{display:none;font-size:var(--t-4,13px);font-weight:600;color:var(--teamc);padding:6px 0;margin-bottom:6px}
+/* 편집 */
+.ed{cursor:text}
+.ed:hover{background:var(--panel2)}
+.prin li.ed-on{border-color:var(--c-act,#3A6DF0);box-shadow:0 0 0 2px rgba(58,109,240,.12)}
+.prin li textarea{width:100%;min-height:44px;border:0;background:transparent;font:inherit;color:inherit;line-height:1.55;resize:vertical;padding:0;outline:none}
+.prin li .x{font-size:var(--t-2,11px);color:var(--ink3);padding:2px 4px;margin-top:3px;white-space:nowrap}
+.prin li .x:hover{color:var(--c-do)}
+.add{display:inline-flex;align-items:center;gap:4px;font-size:var(--t-3,12px);font-weight:600;color:var(--ink2);padding:7px 10px;border:1px dashed var(--line2);border-radius:6px;background:transparent;margin-top:8px}
+.add:hover{color:var(--ink);border-color:var(--ink3)}
+.dt h2.ed[contenteditable]{outline:none;border-radius:6px;padding:0 4px;margin-left:-4px}
+.dt h2.ed:focus{background:var(--panel2);box-shadow:0 0 0 2px rgba(58,109,240,.18)}
+.hd .idn.ed{cursor:text;border-radius:6px;padding:0 4px;margin-left:-4px}
+.hd .idn.ed:focus{background:var(--panel);box-shadow:0 0 0 2px rgba(58,109,240,.18);outline:none;white-space:normal}
+.sig{display:flex;flex-wrap:wrap;gap:6px}
+.sig .tm{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-size:var(--t-4,13px)}
+.sig .tm b{font-weight:800;color:var(--teamc)}
+.sig .tm i{font-style:normal;color:var(--ink2)}
+.sig .tm .x{font-size:var(--t-2,11px);color:var(--ink3);padding:0 2px;margin-left:2px}
+.sig .tm .x:hover{color:var(--c-do)}
+.sigform{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:6px;margin-top:8px;align-items:center}
+.sigform input{border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:inherit;background:var(--panel);color:var(--ink);min-width:0;width:100%}
+.sigform input:focus{outline:none;border-color:var(--c-act,#3A6DF0);box-shadow:0 0 0 2px rgba(58,109,240,.15)}
+.sigform .ok{font-size:var(--t-3,12px);font-weight:800;color:#fff;background:var(--c-act,#3A6DF0);border-radius:8px;padding:8px 12px;white-space:nowrap}
+.pick{margin-top:6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);max-height:200px;overflow:auto}
+.pick button{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;width:100%;text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);font-size:var(--t-3,12px)}
+.pick button:last-child{border-bottom:0}
+.pick button:hover{background:var(--panel2)}
+.pick button b{font-weight:800;color:var(--teamc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick button span{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick .none{padding:8px 10px;font-size:var(--t-3,12px);color:var(--ink3)}
+/* 2.580 · 드릴 줄 = 열기 + 떼기 · 보관함 고르기 */
+.dri{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+.dri .x{font-size:var(--t-2,11px);color:var(--ink3);padding:6px 6px;white-space:nowrap}
+.dri .x:hover{color:var(--c-do)}
+.dr-acts{display:flex;gap:6px;flex-wrap:wrap}
+.pick.lp button{grid-template-columns:minmax(0,1fr) auto}
+.pick.lp button b{color:var(--ink)}
+.pick.lp button span{text-align:right}
+.ro-note{font-size:var(--t-2,11px);color:var(--ink3);margin-left:6px;font-weight:500;text-transform:none;letter-spacing:0}
+@media (max-width:700px){ .sigform{grid-template-columns:1fr 1fr} .sigform .ok{grid-column:1/-1} }
+/* 폰: 목록 → 상세 두 장 */
+@media (max-width:700px){
+  .wrap{padding:10px 10px 32px}
+  .cols{grid-template-columns:1fr}
+  body.detail .pn.list{display:none}
+  body:not(.detail) .pn.dt{display:none}
+  .back{display:inline-flex;align-items:center;gap:4px}
+  .hd .acts{width:100%;margin-left:0}
+  .pr{grid-template-columns:minmax(0,1fr) 70px 40px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd"><h1>플레이북</h1><span class="idn" id="idn"></span>
+    <span class="acts"><button class="lnk" data-go="settings">게임모델 편집 →</button><button class="lnk" data-go="training">일정 →</button></span></div>
+  <div class="cols">
+    <div class="pn list"><div class="ph">국면 · 세부 국면<small id="wkLabel"></small></div><div class="bd" id="list"></div></div>
+    <div class="pn dt"><div class="bd" id="detail"></div></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+  var pTxt=function(p){ return (typeof p==='string')?p:((p&&(p.t||p.text||p.title))||''); };
+  var pDetail=function(p){ if(!p||typeof p!=='object')return ''; var ks=['why','how','trig','trigger','cue','when','detail','note']; for(var i=0;i<ks.length;i++){ var v=p[ks[i]]; if(v&&String(v).trim())return String(v).trim(); } return ''; };
+  var COL={ao:'var(--c-ao)',do:'var(--c-do)',dt:'var(--c-dt)',at:'var(--c-at)',set:'var(--c-set)',ic:'var(--c-ic)'};
+  var colOf=function(m){ var k=m.key||''; if(COL[k])return COL[k]; var n=m.name||''; return /공격/.test(n)?COL.ao:/수비/.test(n)?COL.do:/전환/.test(n)?COL.dt:/세트/.test(n)?COL.set:COL.ic; };
+  var readJSON=function(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(_){ return null; } };
+  var minsOf=function(bl){ return (bl||[]).reduce(function(a,x){ var m=parseInt(x&&(x.minutes||x.min||x.duration||x.dur),10); return a+(isNaN(m)?0:m); },0); };
+
+  var model=null, week=null, lib=[], sel=null;   /* sel = phase id */
+  var terms=null;   /* cs_terms_v1 {v,items:[{id,l,g,ko,en,d,ph?}]} */
+  /* ── 권한 · 저장 ── */
+  function canGm(){ try{ return !window.PSPerms||PSPerms.canEdit('gamemodel'); }catch(_){ return true; } }
+  function canTm(){ try{ return !window.PSPerms||PSPerms.canEdit('terms'); }catch(_){ return true; } }
+  function writeKey(k,obj){ try{ var raw=JSON.stringify(obj); if(window.psSaveShared)window.psSaveShared(k,raw); else localStorage.setItem(k,raw); }catch(e){ try{ localStorage.setItem(k,JSON.stringify(obj)); }catch(_){} } }
+  function saveModel(){ if(!model)return; writeKey('cs_gamemodel_v1',model); }
+  function saveTerms(){ if(!terms)return; writeKey('cs_terms_v1',terms); }
+  function readTerms(){ var o=readJSON('cs_terms_v1'); return (o&&Array.isArray(o.items))?o:{v:1,items:[]}; }
+  function tuid(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+  function termsOf(id){ return (terms&&terms.items||[]).filter(function(it){ return it&&Array.isArray(it.ph)&&it.ph.indexOf(id)>=0; }); }
+  function groupOf(m){ var n=(m&&m.name)||'', k=(m&&m.key)||''; if(k==='ao'||/공격/.test(n))return '공격'; if(k==='do'||/수비/.test(n))return '수비'; if(k==='dt'||k==='at'||/전환/.test(n))return '전환'; return '상황'; }
+  function toast(msg){ var t=document.getElementById('pbToast'); if(!t){ t=document.createElement('div'); t.id='pbToast'; t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:12px;font-weight:600;z-index:50;opacity:0;transition:opacity .15s;pointer-events:none'; document.body.appendChild(t); } t.textContent=msg; t.style.opacity='1'; clearTimeout(t.__h); t.__h=setTimeout(function(){ t.style.opacity='0'; },1500); }
+
+  /* ── 이번 주(월~일) 세션 → 국면·세부 국면별 분 · 배정 목록 ── */
+  function readWeek(){
+    var out={mo:{},ph:{},uses:{},total:0,label:''};
+    try{
+      var PS=window.PSSchedule; if(!PS||!PS.readFor)return out;
+      var grp=''; try{ grp=localStorage.getItem('ps_sched_grp')||''; }catch(_){}
+      var data=PS.readFor(grp)||PS.read()||{}, weeks=data.weeks||{};
+      var today=new Date(); today.setHours(0,0,0,0);
+      var mon=new Date(today); mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
+      var DOW=['일','월','화','수','목','금','토'];
+      var f=function(d){ return (d.getMonth()+1)+'/'+d.getDate(); };
+      var sun=new Date(mon); sun.setDate(sun.getDate()+6); out.label=f(mon)+' – '+f(sun);
+      for(var o=0;o<7;o++){
+        var d=new Date(mon); d.setDate(d.getDate()+o);
+        var c=PS.cellOf(d)||{wk:0,di:0}, day=(weeks[c.wk]||[])[c.di]||{}, b=day.board||{};
+        if(PS.hasMatch(day)||day.off||b.sched==='OFF')continue;
+        var trs=(day.trainings&&day.trainings.length)?day.trainings:[];
+        trs.forEach(function(tr){
+          if(!tr)return; var mins=minsOf(tr.blocks); if(!mins)return;
+          var keys=[]; (Array.isArray(tr.topics)?tr.topics:[]).forEach(function(v){ v=String(v); if(v.indexOf('m:')===0&&keys.indexOf(v.slice(2))<0)keys.push(v.slice(2)); });
+          if(!keys.length&&tr.gmMoment)keys.push(tr.gmMoment);
+          var phs=[]; (Array.isArray(tr.gmPhases)?tr.gmPhases:[]).forEach(function(id){ if(phs.indexOf(id)<0)phs.push(id); });
+          (Array.isArray(b.trainData)?b.trainData:[]).forEach(function(td){ (td&&Array.isArray(td.gmPhases)?td.gmPhases:[]).forEach(function(id){ if(phs.indexOf(id)<0)phs.push(id); }); });
+          out.total+=mins;
+          keys.forEach(function(k){ out.mo[k]=(out.mo[k]||0)+mins/keys.length; });
+          var lab=DOW[d.getDay()]+' '+f(d), nm=tr.aims||tr.title||'훈련';
+          phs.forEach(function(id){ out.ph[id]=(out.ph[id]||0)+mins/phs.length; (out.uses[id]=out.uses[id]||[]).push({d:lab,n:nm,m:Math.round(mins/phs.length)}); });
+          if(!phs.length)keys.forEach(function(k){ (out.uses['m:'+k]=out.uses['m:'+k]||[]).push({d:lab,n:nm,m:Math.round(mins/keys.length)}); });
+        });
+      }
+    }catch(_){}
+    return out;
+  }
+  /* ── 보관함 드릴(IDB) — gmPhases 로 국면에 매인다 ── */
+  var libRaw=null;   /* 2.580 · 보관함 원본 배열(쓸 때 그대로 되쓴다) */
+  function readLib(cb){
+    try{
+      if(!window.storage||!window.storage.get){ cb([]); return; }
+      window.storage.get('cs_drill_lib_v1').then(function(r){
+        var v=r&&r.value; if(typeof v==='string'){ try{ v=JSON.parse(v); }catch(_){ v=null; } }
+        var arr=Array.isArray(v)?v:(v&&Array.isArray(v.items)?v.items:[]);
+        libRaw=Array.isArray(v)?arr:null;   /* {items:[…]} 꼴은 되쓰지 않는다(모양을 모른다) */
+        cb(arr.map(function(it){ var d=it&&(it.drill||it); return {id:it.libId||it.id||'',name:(d&&(d.name||d.title))||it.name||'훈련',minutes:(d&&d.minutes)||it.minutes||'',sets:(d&&d.sets)||it.sets||1,ph:(d&&Array.isArray(d.gmPhases))?d.gmPhases:(Array.isArray(it.gmPhases)?it.gmPhases:[])}; }));
+      },function(){ cb([]); });
+    }catch(_){ cb([]); }
+  }
+  function drillsOf(id){ return lib.filter(function(x){ return x.ph.indexOf(id)>=0; }); }
+  /* ── 2.580 · 보관함 드릴을 이 세부 국면에 묶고 푼다 ── */
+  function canLib(){
+    try{ if(window.PSPerms&&!PSPerms.canEdit('board'))return false; }catch(_){}
+    try{ var P=window.parent&&window.parent!==window&&window.parent.PSSync; if(P&&P.dataUnlocked)return P.dataUnlocked()===true; }catch(_){}
+    return true;   /* 셸 밖(단독 페이지)은 권한만 본다 */
+  }
+  function libWrite(){
+    if(!libRaw||!window.storage||!window.storage.set)return Promise.reject(new Error('no lib'));
+    var raw=JSON.stringify(libRaw);
+    return window.storage.set('cs_drill_lib_v1',raw).then(function(){ try{ localStorage.setItem('cs_lib_rev',String(Date.now())); }catch(_){} });
+  }
+  function libItem(libId){ for(var i=0;i<(libRaw||[]).length;i++){ var it=libRaw[i]; if(it&&(it.libId||it.id)===libId)return it; } return null; }
+  function afterLib(msg){ readLib(function(l){ lib=l; render(); }); if(msg)toast(msg); }
+  function attachLib(libId){
+    var hit=curPh(); if(!hit||!canLib())return; var it=libItem(libId); if(!it){ toast('보관함에서 못 찾았어요'); return; }
+    var d=it.drill||it; d.gmPhases=Array.isArray(d.gmPhases)?d.gmPhases:[]; d.gmPhaseNames=Array.isArray(d.gmPhaseNames)?d.gmPhaseNames:[];
+    if(d.gmPhases.indexOf(hit.p.id)<0){ d.gmPhases.push(hit.p.id); d.gmPhaseNames.push((hit.m.name||hit.m.key||'')+' › '+(hit.p.name||'')); }
+    libWrite().then(function(){ afterLib('붙였다 — 보관함 드릴에도 국면이 적힌다'); },function(){ toast('저장 실패'); });
+  }
+  function detachLib(libId){
+    var hit=curPh(); if(!hit||!canLib())return; var it=libItem(libId); if(!it)return;
+    var d=it.drill||it; var gp=Array.isArray(d.gmPhases)?d.gmPhases:[], gn=Array.isArray(d.gmPhaseNames)?d.gmPhaseNames:[];
+    var i=gp.indexOf(hit.p.id); if(i<0)return; gp.splice(i,1); if(gn.length>i)gn.splice(i,1);
+    if(gp.length){ d.gmPhases=gp; d.gmPhaseNames=gn; } else { delete d.gmPhases; delete d.gmPhaseNames; }   /* 작전판과 같은 규칙: 비면 키를 지운다 */
+    libWrite().then(function(){ afterLib('떼었다 — 보관함에는 남는다'); },function(){ toast('저장 실패'); });
+  }
+  function openLibPick(){ var hit=curPh(); var box=$('lpick'); if(!box||!hit)return; if(box.style.display!=='none'){ box.style.display='none'; return; }
+    var list=lib.filter(function(x){ return x.id&&x.ph.indexOf(hit.p.id)<0; });
+    box.innerHTML='<input id="lpickQ" placeholder="검색 — 드릴 이름" style="width:100%;border:0;border-bottom:1px solid var(--line);padding:8px 10px;font:inherit;background:transparent;color:var(--ink);outline:none"><div id="lpickL"></div>';
+    var nameOfPh=function(id){ var h=findPh(id); return h?(h.p.name||''):''; };
+    var draw=function(q){ q=String(q||'').toLowerCase(); var rows=list.filter(function(x){ return !q||String(x.name||'').toLowerCase().indexOf(q)>=0; }).slice(0,80);
+      $('lpickL').innerHTML=rows.length?rows.map(function(x){ var phn=x.ph.map(nameOfPh).filter(Boolean).join(' · '); return '<button data-llink="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span>'+(x.minutes?esc(x.minutes)+'분':'')+(phn?' · '+esc(phn):'')+'</span></button>'; }).join(''):'<div class="none">'+(lib.length?(list.length?'맞는 드릴이 없어요':'보관함 드릴이 모두 이 국면에 붙어 있어요'):'보관함이 비어 있어요 — «＋ 새 드릴 그리기»로 시작한다')+'</div>'; };
+    draw(''); box.style.display=''; var q=$('lpickQ'); q.oninput=function(){ draw(q.value); }; q.focus(); }
+  function newDrill(){ var hit=curPh(); if(!hit||!canLib())return; try{ parent.postMessage({source:'playbook',type:'openDrillEditor',edit:false,gmPhases:[hit.p.id]},'*'); }catch(_){} }
+
+  function render(){
+    model=readJSON('cs_gamemodel_v1'); week=readWeek(); terms=readTerms();
+    var ms=(model&&Array.isArray(model.moments))?model.moments:[];
+    var idn=$('idn'); var idt=(model&&String(model.identity||'').trim())||'';
+    idn.textContent=idt||(canGm()&&model?'팀 정체성 한 줄 — 눌러서 적는다':'팀 정체성 한 줄 — 게임모델에서 적는다'); idn.className='idn'+(idt?'':' empty')+(canGm()&&model?' ed':'');
+    if(canGm()&&model){ idn.setAttribute('contenteditable','plaintext-only'); idn.setAttribute('title','눌러서 고치기 · Enter 저장'); } else { idn.removeAttribute('contenteditable'); }
+    $('wkLabel').textContent=week.label?('이번 주 '+week.label+' · '+Math.round(week.total)+'분'):'';
+    var list=$('list');
+    if(!ms.length){ list.innerHTML='<div class="empty"><b>게임모델이 아직 없어요</b>기준 › 게임모델에서 국면을 세우면 여기에 플레이북이 생깁니다.<br><button class="lnk" data-go="settings" style="margin-top:10px">게임모델 열기 →</button></div>'; $('detail').innerHTML=''; return; }
+    var maxPh=1; Object.keys(week.ph).forEach(function(k){ if(week.ph[k]>maxPh)maxPh=week.ph[k]; });
+    var h='';
+    ms.forEach(function(m){
+      var col=colOf(m), phs=(m.phases||[]).filter(function(p){return p&&p.id;});
+      var mm=Math.round(week.mo[m.key||m.name]||0);
+      h+='<div class="mo"><div class="mo-h"><span class="sw" style="background:'+col+'"></span>'+esc(m.name||m.key)+'<span class="m">'+(mm?mm+'분':'<span style="color:var(--ink3)">0분</span>')+' · 이번 주</span></div>';
+      if(m.main&&String(m.main).trim())h+='<div class="mo-main">'+esc(String(m.main).trim())+'</div>';
+      if(!phs.length)h+='<div class="note" style="padding:6px 10px">세부 국면이 없어요 — 게임모델에서 ＋</div>';
+      phs.forEach(function(p){
+        var pm=Math.round(week.ph[p.id]||0), nP=(p.principles||[]).filter(function(x){return String(pTxt(x)||'').trim();}).length, nD=drillsOf(p.id).length;
+        if(!sel)sel=p.id;
+        h+='<button class="pr" data-ph="'+esc(p.id)+'" aria-pressed="'+(sel===p.id)+'"><span class="t">'+esc(p.name||'')+'<small>원칙 '+nP+' · 드릴 '+nD+(p.snap&&p.snap.thumb?' · 장면':'')+'</small></span><span class="bar"><u style="width:'+Math.round(pm/maxPh*100)+'%;background:'+col+'"></u></span><span class="v'+(pm?'':' z')+'">'+pm+'분</span></button>';
+      });
+      h+='</div>';
+    });
+    list.innerHTML=h;
+    renderDetail();
+  }
+  function findPh(id){ var ms=(model&&model.moments)||[]; for(var i=0;i<ms.length;i++){ var phs=ms[i].phases||[]; for(var j=0;j<phs.length;j++){ if(phs[j]&&phs[j].id===id)return {m:ms[i],p:phs[j]}; } } return null; }
+  function renderDetail(){
+    var box=$('detail'); var hit=sel?findPh(sel):null;
+    if(!hit){ box.innerHTML='<div class="empty"><b>세부 국면을 고르세요</b>왼쪽에서 하나를 누르면 원칙·장면·드릴·이번 주 배정이 여기 옵니다.</div>'; return; }
+    var m=hit.m, p=hit.p, col=colOf(m);
+    var prs=(p.principles||[]).filter(function(x){return String(pTxt(x)||'').trim();});
+    var drs=drillsOf(p.id), uses=(week.uses[p.id]||[]).concat(week.uses['m:'+(m.key||m.name)]&&!week.ph[p.id]?[]:[]);
+    var pm=Math.round(week.ph[p.id]||0);
+    var eg=canGm(), et=canTm();
+    var h='<button class="back" data-back="1">‹ 국면 목록</button>';
+    h+='<div class="dt"><div class="eyebrow" style="color:'+col+'">'+esc(m.name||m.key)+'</div><h2 class="'+(eg?'ed':'')+'" '+(eg?'contenteditable="plaintext-only" data-phname="'+esc(p.id)+'" title="눌러서 이름 고치기 · Enter 저장"':'')+'>'+esc(p.name||'')+'</h2>';
+    /* 원칙 — 줄마다 눌러서 고친다. 인덱스는 **원본 배열** 기준(빈 줄은 안 그리되 자리는 지킨다) */
+    var pAll=(p.principles||[]);
+    h+='<div class="sec" style="margin-top:0"><div class="sec-h">원칙<small>'+prs.length+'</small>'+(eg?'<span class="ro-note">줄을 누르면 고쳐진다 · Enter 저장</span>':'')+'<button class="r" data-go="settings">게임모델 →</button></div>';
+    var rows=[]; pAll.forEach(function(x,idx){ if(!String(pTxt(x)||'').trim())return; var d=pDetail(x); rows.push('<li'+(eg?' class="ed" data-pi="'+idx+'"':'')+'><i>'+(rows.length+1)+'</i><span class="ptx">'+esc(pTxt(x))+(d?'<div class="d">'+esc(d)+'</div>':'')+'</span>'+(eg?'<button class="x" data-pdel="'+idx+'" title="이 원칙 삭제">삭제</button>':'')+'</li>'); });
+    h+=rows.length?'<ol class="prin">'+rows.join('')+'</ol>':'<div class="note">원칙이 아직 없어요 — 선수가 읽을 문장 하나로 시작한다.</div>';
+    if(eg)h+='<button class="add" data-padd="1">＋ 원칙</button>';
+    h+='</div>';
+    /* 신호어 — 공용어에서 이 세부 국면에 붙인 것 */
+    var tms=termsOf(p.id);
+    h+='<div class="sec"><div class="sec-h">신호어<small>'+tms.length+'</small>'+(et?'<span class="ro-note">외침 «영어» · 뜻</span>':'')+'<button class="r" data-go="terms">공용어 →</button></div>';
+    h+=tms.length?'<div class="sig">'+tms.map(function(it){ return '<span class="tm"><b>«'+esc(it.en||it.ko)+'»</b><i>'+esc(it.en?it.ko:(it.d||''))+'</i>'+(et?'<button class="x" data-tdel="'+esc(it.id)+'" title="이 국면에서 떼기">떼기</button>':'')+'</span>'; }).join('')+'</div>':'<div class="note">이 국면에 붙인 신호어가 없어요.'+(et?' 아래에서 새로 만들거나 공용어에서 골라 붙인다.':'')+'</div>';
+    if(et){ h+='<div class="sigform"><input id="sigEn" placeholder="외침 (예: GO)" maxlength="24"><input id="sigKo" placeholder="뜻 (예: 전방 압박 시작)" maxlength="60"><button class="ok" data-tadd="1">＋ 신호어</button></div>';
+      h+='<button class="add" data-tpick="1">기존 공용어에서 붙이기</button><div id="pick" class="pick" style="display:none"></div>'; }
+    h+='</div>';
+    if(p.snap&&p.snap.thumb){ h+='<div class="sec"><div class="sec-h">장면</div><div class="snap">'+p.snap.thumb+'</div></div>'; }
+    /* 2.580 · 드릴 — 여기서 붙이고 떼고 새로 그린다 */
+    var el=canLib();
+    h+='<div class="sec"><div class="sec-h">드릴<small>'+drs.length+'</small>'+(el?'<span class="ro-note">보관함 드릴을 이 국면에 묶는다</span>':'')+'<button class="r" data-go="design">보관함 →</button></div>';
+    h+=drs.length?'<div class="dr">'+drs.map(function(d){ return '<div class="dri"><button data-lib="'+esc(d.id)+'"><span class="n">'+esc(d.name)+'</span><span class="m">'+(d.minutes?esc(d.minutes)+'분'+(d.sets>1?'×'+d.sets:''):'')+'</span><span class="go">열기 →</span></button>'+(el?'<button class="x" data-ldel="'+esc(d.id)+'" title="이 국면에서 떼기 (보관함에는 남는다)">떼기</button>':'')+'</div>'; }).join('')+'</div>':'<div class="note">이 국면에 붙은 드릴이 없어요'+(el?' — 아래에서 새로 그리거나 보관함에서 골라 붙인다.':' — 훈련 편집기의 «경기 국면»에서 이 세부 국면을 고르면 여기 모입니다.')+'</div>';
+    if(el)h+='<div class="dr-acts"><button class="add" data-lnew="1">＋ 새 드릴 그리기</button><button class="add" data-lpick="1">보관함에서 붙이기</button></div><div id="lpick" class="pick lp" style="display:none"></div>';
+    h+='</div>';
+    h+='<div class="sec"><div class="sec-h">이번 주 배정<small>'+pm+'분</small><button class="r" data-go="training">일정 →</button></div>';
+    h+=uses.length?'<div class="uses">'+uses.map(function(u){ return '<div><span class="d">'+esc(u.d)+'</span><span class="n">'+esc(u.n)+'</span><span class="m">'+u.m+'분</span></div>'; }).join('')+'</div>':'<div class="note">이번 주 세션 중 이 세부 국면을 고른 것이 없어요. 일정에서 주제 › 세부 국면을 체크하면 분이 여기로 옵니다.</div>';
+    h+='</div></div>';
+    box.innerHTML=h;
+  }
+  /* ── 셸로 보내는 문 ── */
+  function go(key){ try{ parent.postMessage({source:'playbook',type:'openTeamKey',key:key},'*'); }catch(_){} }
+  /* ── 편집 동작 ── */
+  function curPh(){ return sel?findPh(sel):null; }
+  function editPrinciple(li){
+    var hit=curPh(); if(!hit||!canGm())return; var idx=+li.getAttribute('data-pi'); var p=hit.p; var cur=pTxt(p.principles[idx]);
+    if(li.classList.contains('ed-on'))return;
+    li.classList.add('ed-on'); var span=li.querySelector('.ptx'); var ta=document.createElement('textarea'); ta.value=cur; span.innerHTML=''; span.appendChild(ta); ta.focus(); ta.setSelectionRange(cur.length,cur.length);
+    var done=false;
+    var commit=function(){ if(done)return; done=true; var v=String(ta.value||'').trim();
+      if(v===cur){ render(); return; }
+      var old=p.principles[idx];
+      if(!v){ p.principles.splice(idx,1); if(!p.principles.length)p.principles=['']; }
+      else if(old&&typeof old==='object')old.t=v; else p.principles[idx]=v;
+      saveModel(); render(); toast(v?'저장됨':'삭제됨'); };
+    ta.addEventListener('keydown',function(ev){ if(ev.key==='Enter'&&!ev.shiftKey){ ev.preventDefault(); commit(); } if(ev.key==='Escape'){ done=true; render(); } });
+    ta.addEventListener('blur',commit);
+  }
+  function addPrinciple(){ var hit=curPh(); if(!hit||!canGm())return; var p=hit.p; p.principles=Array.isArray(p.principles)?p.principles:[];
+    var i=p.principles.length; if(i===1&&!String(pTxt(p.principles[0])||'').trim())i=0; p.principles[i]=''; render();
+    /* 방금 만든 빈 줄은 목록에 안 그려지므로 임시 줄을 붙여 편집기를 연다 */
+    var ol=document.querySelector('#detail .prin'); if(!ol){ var sec=document.querySelector('#detail .sec'); ol=document.createElement('ol'); ol.className='prin'; sec.insertBefore(ol,sec.querySelector('.add')); var nt=sec.querySelector('.note'); if(nt)nt.remove(); }
+    var li=document.createElement('li'); li.className='ed'; li.setAttribute('data-pi',String(i)); li.innerHTML='<i>'+(ol.children.length+1)+'</i><span class="ptx"></span>'; ol.appendChild(li); editPrinciple(li); }
+  function delPrinciple(idx){ var hit=curPh(); if(!hit||!canGm())return; var p=hit.p; p.principles.splice(idx,1); if(!p.principles.length)p.principles=['']; saveModel(); render(); toast('원칙 삭제'); }
+  function renamePhase(el){ var hit=curPh(); if(!hit||!canGm())return; var v=String(el.textContent||'').trim(); if(!v){ render(); return; } if(v!==hit.p.name){ hit.p.name=v; saveModel(); toast('이름 저장'); } render(); }
+  function saveIdentity(el){ if(!model||!canGm())return; var v=String(el.textContent||'').trim(); if(v===String(model.identity||'').trim()){ render(); return; } model.identity=v; saveModel(); render(); toast('정체성 저장'); }
+  function addTerm(){ var hit=curPh(); if(!hit||!canTm())return; var en=String(($('sigEn')||{}).value||'').trim(), ko=String(($('sigKo')||{}).value||'').trim(); if(!en&&!ko){ toast('외침이나 뜻을 적어요'); return; }
+    terms.items=terms.items||[]; terms.items.push({id:tuid(),l:'signal',g:groupOf(hit.m),ko:ko||en,en:en,d:'',ph:[hit.p.id]}); saveTerms(); render(); toast('신호어 추가 — 공용어에도 들어갔다'); }
+  function unlinkTerm(id){ var hit=curPh(); if(!hit||!canTm())return; (terms.items||[]).forEach(function(it){ if(it&&it.id===id&&Array.isArray(it.ph)){ it.ph=it.ph.filter(function(x){return x!==hit.p.id;}); } }); saveTerms(); render(); toast('떼었다 — 공용어에는 남는다'); }
+  function linkTerm(id){ var hit=curPh(); if(!hit||!canTm())return; (terms.items||[]).forEach(function(it){ if(it&&it.id===id){ it.ph=Array.isArray(it.ph)?it.ph:[]; if(it.ph.indexOf(hit.p.id)<0)it.ph.push(hit.p.id); } }); saveTerms(); render(); toast('붙였다'); }
+  function openPick(){ var hit=curPh(); var box=$('pick'); if(!box||!hit)return; if(box.style.display!=='none'){ box.style.display='none'; return; }
+    var have={}; termsOf(hit.p.id).forEach(function(it){ have[it.id]=1; });
+    var list=(terms.items||[]).filter(function(it){ return it&&!have[it.id]; });
+    box.innerHTML='<input id="pickQ" placeholder="검색 — 외침·뜻" style="width:100%;border:0;border-bottom:1px solid var(--line);padding:8px 10px;font:inherit;background:transparent;color:var(--ink);outline:none"><div id="pickL"></div>';
+    var draw=function(q){ q=String(q||'').toLowerCase(); var rows=list.filter(function(it){ return !q||((it.ko||'')+' '+(it.en||'')+' '+(it.d||'')).toLowerCase().indexOf(q)>=0; }).slice(0,60);
+      $('pickL').innerHTML=rows.length?rows.map(function(it){ return '<button data-tlink="'+esc(it.id)+'"><b>«'+esc(it.en||it.ko)+'»</b><span>'+esc(it.en?it.ko:(it.d||''))+(it.l&&it.l!=='signal'?' · '+esc({action:'행동',concept:'구조'}[it.l]||it.l):'')+'</span></button>'; }).join(''):'<div class="none">'+(list.length?'맞는 용어가 없어요':'공용어가 비어 있어요 — «공용어 →» 에서 세트를 불러오거나 위에서 새로 만든다')+'</div>'; };
+    draw(''); box.style.display=''; var q=$('pickQ'); q.oninput=function(){ draw(q.value); }; q.focus(); }
+  document.addEventListener('keydown',function(e){ var t=e.target; if(!t)return;
+    if(t.id==='sigEn'||t.id==='sigKo'){ if(e.key==='Enter'){ e.preventDefault(); addTerm(); } return; }
+    if(t.hasAttribute&&t.hasAttribute('data-phname')){ if(e.key==='Enter'){ e.preventDefault(); t.blur(); } if(e.key==='Escape'){ render(); } return; }
+    if(t.id==='idn'){ if(e.key==='Enter'){ e.preventDefault(); t.blur(); } if(e.key==='Escape'){ render(); } return; } });
+  document.addEventListener('focusout',function(e){ var t=e.target; if(!t)return; if(t.hasAttribute&&t.hasAttribute('data-phname'))renamePhase(t); else if(t.id==='idn')saveIdentity(t); });
+  document.addEventListener('click',function(e){
+    var li=e.target.closest('li.ed'); if(li&&!e.target.closest('.x')&&!e.target.closest('textarea')){ editPrinciple(li); return; }
+    var pd=e.target.closest('[data-pdel]'); if(pd){ delPrinciple(+pd.getAttribute('data-pdel')); return; }
+    if(e.target.closest('[data-padd]')){ addPrinciple(); return; }
+    if(e.target.closest('[data-tadd]')){ addTerm(); return; }
+    var td=e.target.closest('[data-tdel]'); if(td){ unlinkTerm(td.getAttribute('data-tdel')); return; }
+    var tl=e.target.closest('[data-tlink]'); if(tl){ linkTerm(tl.getAttribute('data-tlink')); return; }
+    if(e.target.closest('[data-tpick]')){ openPick(); return; }
+    var ld=e.target.closest('[data-ldel]'); if(ld){ detachLib(ld.getAttribute('data-ldel')); return; }
+    var ll=e.target.closest('[data-llink]'); if(ll){ attachLib(ll.getAttribute('data-llink')); return; }
+    if(e.target.closest('[data-lpick]')){ openLibPick(); return; }
+    if(e.target.closest('[data-lnew]')){ newDrill(); return; }
+    var b=e.target.closest('[data-ph]'); if(b){ sel=b.getAttribute('data-ph'); document.body.classList.add('detail'); render(); return; }
+    var bk=e.target.closest('[data-back]'); if(bk){ document.body.classList.remove('detail'); return; }
+    var g=e.target.closest('[data-go]'); if(g){ var k=g.getAttribute('data-go'); if(k==='design'){ try{ parent.postMessage({source:'playbook',type:'openApp',app:'design'},'*'); }catch(_){} } else go(k); return; }
+    var dl=e.target.closest('[data-lib]'); if(dl){ try{ parent.postMessage({source:'playbook',type:'openDrillEditor',edit:true,libId:dl.getAttribute('data-lib')},'*'); }catch(_){} return; }
+  });
+  /* 게임모델·일정이 바뀌면(다른 프레임에서) 다시 그린다 */
+  window.addEventListener('storage',function(e){ if(!e||!e.key||/cs_gamemodel_v1|cs_terms_v1|process_coach_v1|ps_sched_grp|cs_lib_rev/.test(e.key)){ if(document.activeElement&&(document.activeElement.tagName==='TEXTAREA'||document.activeElement.isContentEditable))return; readLib(function(l){ lib=l; render(); }); } });
+  window.addEventListener('message',function(e){ var d=e&&e.data||{}; if(d.type==='refresh'||d.type==='setView'){ readLib(function(l){ lib=l; render(); }); }
+    /* 2.580 · 작전판 편집기에서 돌아옴(저장·취소) — IDB 쓰기가 끝난 뒤 읽도록 한 박자 늦춘다(cs_lib_rev storage 이벤트도 따로 온다) */
+    if(d.type==='boardResult'||d.type==='boardCancel'){ setTimeout(function(){ readLib(function(l){ lib=l; render(); }); },350); } });
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden){ readLib(function(l){ lib=l; render(); }); } });
+  render(); readLib(function(l){ lib=l; render(); });
+})();
+</script>
+<style id="ps-2595-empty">/* 2.595 — 디자인 5단계 · 빈 상태는 문 하나(플레이북): 오른쪽 빈 판은 모델이 없을 때도 «세부 국면을 고르세요» 한 줄(아이콘 · 제목 · 설명). 머리줄의 «게임모델 편집 →» 은 바로 옆 서브탭 «게임모델» 과 같은 문이라 숨김(목록 안의 «게임모델 열기 →» 는 그대로). */
+.hd .acts [data-go="settings"]{display:none!important}
+@media (max-width:700px){ .hd .acts{width:auto!important;margin-left:auto!important} }
+#detail .empty,#list .empty{padding:28px 12px}
+#detail .empty::before,#list .empty::before{content:"";display:block;width:32px;height:32px;margin:0 auto 10px;border-radius:10px;background:var(--panel2,#F4F5F7);border:1px solid var(--line)}
+#detail .empty b,#list .empty b{font-size:var(--t-6,16px);font-weight:800;color:var(--ink,#14161A);margin-bottom:6px}
+</style>
+<script>
+/* 2.595 — 모델이 없을 때 오른쪽 판이 비는 것을 채운다(렌더 함수는 손대지 않고, 비워지면 문장을 넣는다) */
+(function(){
+  var box=document.getElementById('detail'); if(!box)return;
+  var H='<div class="empty ps-empty-nomodel"><b>세부 국면을 고르세요</b>게임모델에서 국면을 세우면 왼쪽 목록에 뜨고, 하나를 누르면 원칙·장면·드릴·이번 주 배정이 여기 옵니다.</div>';
+  function fill(){ if(!box.innerHTML.trim())box.innerHTML=H; }
+  new MutationObserver(function(){ clearTimeout(box.__t); box.__t=setTimeout(fill,0); }).observe(box,{childList:true});
+  fill();
+})();
+</script>
+</body>
+</html>

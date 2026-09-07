@@ -1,0 +1,52 @@
+/* ══ 2.323 · 학습 목차(서가) — 학습 앱과 IDP 가 같이 읽는 한 장의 스타일 ══════════════
+   두 화면의 토큰 이름이 다르다(학습 앱 --acc/--line/--ink · IDP --accent/--line/--text).
+   그래서 **자기 토큰을 먼저 보고 없으면 상대 토큰, 그것도 없으면 값**으로 떨어진다.
+   ⚠ 여기서 `.card` 같은 공용 이름을 쓰지 않는다 — 두 화면 모두 그 이름을 이미 쓰고 있어
+      전역 규칙(ui-grammar '카드 한 얼굴')에 잡힌다. 전부 `toc-` 접두사. */
+.toc-wrap{--toc-acc:var(--acc,var(--accent,#7C4DFF));
+  --toc-line:var(--line,#e3e6ea);
+  --toc-ink:var(--ink,var(--text,#14161a));
+  --toc-dim:var(--gray,var(--text-3,#646a73));
+  --toc-panel:var(--panel,var(--surface,#fff));
+  --toc-soft:var(--acc-soft,var(--accent-soft,#f0eaff));
+}
+.toc-top{margin:2px 2px 14px}
+.toc-top h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--toc-ink)}
+.toc-top p{margin:5px 0 0;font-size:13px;color:var(--toc-dim)}
+
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+
+.toc-card{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:100%;
+  padding:14px 15px 12px;border:1px solid var(--toc-line);border-radius:14px;
+  background:var(--toc-panel);color:var(--toc-ink);font:inherit;text-align:left;cursor:pointer;
+  transition:border-color .12s,box-shadow .12s,transform .12s}
+.toc-card:hover{border-color:var(--toc-acc);box-shadow:0 2px 10px -6px rgba(16,24,40,.28)}
+.toc-card:active{transform:translateY(1px)}
+
+.toc-h{display:flex;align-items:center;gap:9px}
+.toc-ic{width:22px;height:22px;flex:0 0 auto;color:var(--toc-acc)}
+.toc-nm{display:flex;flex-direction:column;min-width:0;gap:1px}
+.toc-nm b{font-size:16px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.toc-nm i{font-style:normal;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--toc-dim)}
+.toc-ok{margin-left:auto;flex:0 0 auto;font-style:normal;font-size:10px;font-weight:800;
+  padding:2px 7px;border-radius:999px;background:var(--toc-soft);color:var(--toc-acc)}
+
+.toc-desc{font-size:13px;line-height:1.5;color:var(--toc-dim)}
+.toc-chap{font-size:11px;line-height:1.45;color:var(--toc-dim);opacity:.8}
+
+.toc-bar{display:block;height:4px;border-radius:999px;background:var(--toc-line);overflow:hidden}
+.toc-bar>i{display:block;height:100%;border-radius:999px;background:var(--toc-acc);transition:width .2s}
+
+.toc-n{display:flex;align-items:baseline;gap:4px;font-size:12px;font-weight:600;color:var(--toc-dim)}
+.toc-n b{font-size:14px;font-weight:800;color:var(--toc-ink);font-variant-numeric:tabular-nums}
+.toc-go{margin-left:auto;font-size:14px;color:var(--toc-dim)}
+.toc-card:hover .toc-go{color:var(--toc-acc)}
+
+/* 폰 — 한 열, 여백을 줄인다 */
+@media (max-width:640px){
+  .toc-grid{grid-template-columns:minmax(0,1fr);gap:9px}
+  .toc-top h2{font-size:20px}
+  .toc-card{padding:13px 14px 11px;border-radius:13px}
+  .toc-nm b{font-size:14px}
+  .toc-chap{display:none}   /* 폰에서는 한 줄 설명이면 충분 — 장 이름까지는 들어가서 본다 */
+}

@@ -1,0 +1,17 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="psbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#22262d"/>
+      <stop offset="0.55" stop-color="#111318"/>
+      <stop offset="1" stop-color="#08090b"/>
+    </linearGradient>
+    <linearGradient id="psedge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.14"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="40" y="40" width="944" height="944" rx="224" ry="224" fill="url(#psbg)"/>
+  <rect x="41.5" y="41.5" width="941" height="941" rx="222.5" ry="222.5" fill="none" stroke="url(#psedge)" stroke-width="3"/>
+  <text x="512" y="527" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif" font-weight="800" font-size="344" letter-spacing="-10" fill="#f6f6f4">PRO</text>
+</svg>

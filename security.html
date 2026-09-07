@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>데이터 보안 — PROCESS STUDIO</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<style>
+  :root{--ink:#16181C;--dim:#5C6068;--faint:#9CA1A9;--line:#E3E5E9;--bg:#FFFFFF;--soft:#F6F7F9}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    font-size:15px;line-height:1.75;-webkit-text-size-adjust:100%}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 22px 90px}
+  .brand{font-size:14px;letter-spacing:.02em;color:var(--faint);font-weight:300;margin-bottom:6px}
+  .brand b{font-weight:800;color:var(--ink)}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.5px;margin:0 0 6px}
+  .meta{font-size:12px;color:var(--faint);font-weight:600;margin-bottom:34px}
+  h2{font-size:17px;font-weight:800;letter-spacing:-.2px;margin:38px 0 10px;padding-top:22px;border-top:1px solid var(--line)}
+  p{margin:0 0 12px;color:var(--dim)}
+  p b,li b{color:var(--ink);font-weight:800}
+  ul{margin:0 0 12px;padding-left:20px;color:var(--dim)}
+  li{margin-bottom:6px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:0 0 14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;color:var(--dim)}
+  th{background:var(--soft);color:var(--ink);font-weight:700;white-space:nowrap}
+  .note{background:var(--soft);border-radius:12px;padding:14px 17px;font-size:13px;color:var(--dim);margin:0 0 14px}
+  .note b{color:var(--ink)}
+  a{color:var(--ink);font-weight:600;text-underline-offset:2px}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--faint);line-height:1.9}
+  footer a{color:var(--dim)}
+  @media (prefers-color-scheme: dark){
+    :root{--ink:#E7EBF1;--dim:#9AA4B3;--faint:#7C8696;--line:#2C3744;--bg:#0F141B;--soft:#1A212B}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><b>PRO</b>CESS STUDIO</div>
+  <h1>데이터 보안</h1>
+  <div class="meta">시행 2026. 7. 19. · 팀의 전술 데이터를 어떻게 지키는지에 대한 약속</div>
+
+  <p>전술 자료·선수 평가·게임플랜은 팀의 경쟁력입니다. 이 문서는 <b>내 데이터가 어디에 저장되고,
+  누가 볼 수 있고, 팀을 나가면 어떻게 되는지</b>를 있는 그대로 설명합니다.</p>
+
+  <h2>1. 어디에 저장되나</h2>
+  <ul>
+    <li><b>기본은 내 기기</b> — 로그인 없이 쓰면 모든 데이터는 사용자의 기기 안에만 있습니다. 서버로 아무것도 가지 않습니다.</li>
+    <li><b>로그인·팀 사용 시</b> — 데이터베이스(Supabase, PostgreSQL)에 저장됩니다. 저장 데이터는 디스크 수준에서 암호화(at-rest encryption)되고, 모든 전송은 TLS(HTTPS)로 암호화됩니다.</li>
+    <li>브라우저(앱)에는 관리자 권한 키를 두지 않습니다 — 클라이언트는 공개 키(publishable key)만 사용하고, 모든 접근은 행 단위 보안 규칙(RLS)이 서버에서 판정합니다.</li>
+  </ul>
+
+  <h2>2. 누가 볼 수 있나 — 역할 기반 접근</h2>
+  <p>팀 안에서의 접근은 화면(UI)이 아니라 <b>서버가 강제</b>합니다. 역할은 관리자·코칭스태프·선수 세 가지입니다.</p>
+  <p><b>서비스 안정성 데이터</b>는 기능 이름, 성공·실패 상태, 기기 종류, 오류 코드와 발생 시각만 기록합니다. 작전판 내용, 훈련 메모, 선수 평가 문장과 같은 실제 콘텐츠는 분석 로그에 복사하지 않습니다. 같은 오류가 반복되면 5분에 한 번만 기록하며, 원본 이벤트는 90일 보관 후 정리하는 것을 권장합니다.</p>
+  <table>
+    <tr><th>데이터</th><th>관리자·코칭스태프</th><th>선수</th></tr>
+    <tr><td>스카우트 평가 · 선수단 레벨 · 게임플랜(상황) · 경기 기록</td><td>읽기·쓰기</td><td><b>서버에서 차단</b> (관리자가 해당 구역 권한을 준 경우만 예외)</td></tr>
+    <tr><td>일정 · 게임모델 · 공용어 등 팀 학습 자료</td><td>읽기·쓰기</td><td>읽기 (쓰기는 부여된 구역만)</td></tr>
+    <tr><td>선수 IDP(개인 성장 기록)</td><td>열람 (코치 역할만)</td><td><b>본인 것만</b> — 선수끼리는 서로 볼 수 없음</td></tr>
+    <tr><td>선수의 이미지노트(심리 기록)</td><td><b>볼 수 없음</b> — 서버 팀 공간에 올라가지 않음</td><td>본인만</td></tr>
+    <tr><td>코치 개인 노트·이미지노트</td><td>본인만 (팀 동기화 제외)</td><td>볼 수 없음</td></tr>
+    <tr><td>권한표(역할·구역 설정)</td><td>수정은 관리자만 (서버 강제)</td><td>읽기만</td></tr>
+  </table>
+  <div class="note"><b>코치 평가 공개 방식</b> — 코치가 매기는 선수 평가는 기본 비공개이며, 코치가 명시적으로
+  "선수에게 공개"를 누른 시점의 스냅샷만 해당 선수에게 보입니다. 작업 중인 점수가 실시간으로 노출되지 않습니다.</div>
+
+  <h2>3. 변경 기록(감사 로그)</h2>
+  <p>팀 데이터의 모든 생성·수정·삭제는 <b>누가 · 어떤 항목을 · 언제</b> 바꿨는지 서버에 기록됩니다.
+  내용 자체는 기록하지 않고(메타데이터만), 기록은 90일 보관되며 <b>팀 소유자만</b> 열람할 수 있습니다.
+  (설정 → 팀 → 변경 기록)</p>
+
+  <h2>4. 팀 합류와 이탈</h2>
+  <ul>
+    <li><b>합류</b> — 초대 코드로만 가능합니다. 코드는 30일 후 자동 만료되고, 관리자가 언제든 재발급해 기존 코드를 즉시 무효화할 수 있습니다.</li>
+    <li><b>이탈·제거</b> — 팀에서 빠지는 즉시 서버 접근이 끊깁니다(RLS). 그 기기의 앱이 다음에 접속하면 기기에 남아 있던 팀 데이터도 자동으로 정리됩니다.</li>
+    <li><b>개인 데이터는 본인을 따라갑니다</b> — 개인 노트·IDP는 팀 이탈과 무관하게 본인 계정에 남습니다.</li>
+  </ul>
+
+  <h2>5. 우리가 하지 않는 것</h2>
+  <ul>
+    <li>팀 데이터를 광고·제3자 판매·모델 학습에 쓰지 않습니다.</li>
+    <li>운영 관리자는 서비스 문제 해결 목적 외에 팀 콘텐츠를 열람하지 않으며, 통계는 개수 집계 수준의 메타데이터만 봅니다.</li>
+    <li>추적용 제3자 광고 스크립트를 심지 않습니다.</li>
+  </ul>
+
+  <h2>6. 한계와 로드맵</h2>
+  <p>정직하게 말씀드리는 부분입니다.</p>
+  <ul>
+    <li>오프라인 우선 앱 특성상, 접근 권한이 있는 데이터는 <b>이용 중인 기기 안에도</b> 저장됩니다. 기기 자체의 잠금(암호·Face ID)을 꼭 사용하세요.</li>
+    <li>공유 링크로 내보낸 자료는 링크를 아는 사람이 볼 수 있습니다 — 민감한 자료는 링크 공유 대신 팀 내 공유를 쓰세요.</li>
+    <li>종단간 암호화(운영자도 내용을 볼 수 없는 방식)는 로드맵에 있습니다.</li>
+  </ul>
+
+  <h2>7. 문의</h2>
+  <p>보안 관련 질문·취약점 제보: <a href="mailto:scua5673@gmail.com">scua5673@gmail.com</a></p>
+
+  <footer>
+    PROCESS STUDIO · <a href="/privacy.html">개인정보처리방침</a> · <a href="/terms.html">이용약관</a>
+  </footer>
+</div>
+</body>
+</html>

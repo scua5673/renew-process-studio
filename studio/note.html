@@ -1,0 +1,2528 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script src="storage.js"></script>
+
+<title>개인 노트</title>
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<style>
+  b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
+:focus-visible{outline:2px solid #3a6df0 !important;outline-offset:2px;border-radius:6px;}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea{-webkit-user-select:text;user-select:text}
+  /* UI 규칙: 레포 UI-가이드.md — 색은 의미로만(보라=목표·초록=완료·빨강=경고·파랑=코치), 이모지 금지(라인 SVG), 무게 600/800 */
+/* --bar2 는 노트 자체는 안 쓰지만 storage.js 의 저장 위험 배너가 바탕색으로 쓴다.
+   여기 없으면 폴백(#F1F2F4)으로 굳어서 다크모드에서 배너만 밝은 회색으로 남는다(팀·IDP엔 원래 있다). */
+:root{--bg:#ECEDF0;--bar:#fff;--bar2:#F1F2F4;--line:#E3E6EA;--txt:#14161A;--dim:#646A73;--blue:#3a6df0;--blue-soft:#edf2fe}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg);font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:var(--txt);line-height:1.5}
+body{display:flex;flex-direction:column}
+/* 독립 개인 도구 헤더 — 필기·메모는 팀 보관함과 공유 범위가 다르다. */
+.nhead{flex:0 0 auto;display:flex;align-items:center;gap:9px;height:52px;box-sizing:border-box;padding:0 20px;background:var(--bar);border-bottom:1px solid var(--line)}
+.nhead .nh-t{font-size:var(--fs-h2);font-weight:var(--fw-head);letter-spacing:-.3px;color:var(--txt)}
+.nhead .nh-s{font-size:var(--fs-sub);font-weight:var(--fw-body);color:var(--faint)}
+.nhead .nh-seg{margin-left:10px;display:inline-flex;align-items:center;padding:2px;gap:2px;border:1px solid var(--line);border-radius:11px;background:var(--panel2,#F1F2F4);overflow-x:auto;scrollbar-width:none;max-width:min(100%,430px)}/* 2.247 — 자료 탭 세그와 같은 테두리 */
+.nhead .nh-seg::-webkit-scrollbar{display:none}
+.nhead .nh-seg button{height:32px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--txt-dim,#646A73);font-family:inherit;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer}
+.nhead .nh-seg button.on{background:var(--panel,#fff);color:var(--txt);box-shadow:0 1px 2px var(--sh10,rgba(16,24,40,.10))}
+@media (max-width:640px){.nhead .nh-s{display:none}}
+.vault-personal-scope{margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:var(--dim);font-size:var(--fs-caption);font-weight:var(--fw-body);white-space:nowrap}
+.vault-personal-scope svg{width:13px;height:13px;flex:0 0 auto}
+.vault-personal-scope .scope-short{display:none}
+body.fmdark .nhead{background:#1B1E23}
+body.fmdark .nhead .nh-s{color:#78818D}
+.bar{position:relative;flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:8px 20px;background:var(--bar);border-bottom:1px solid var(--line);flex-wrap:wrap;overflow:visible}
+.bar input[type=text]{border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:var(--fs-body);font-weight:var(--fw-body);font-family:inherit;flex:1 1 130px;min-width:110px;background:var(--bar2)}
+.bar select{border:1px solid var(--line);border-radius:10px;padding:6px 8px;font-size:var(--fs-body);font-family:inherit;background:var(--surface)}
+.seg{display:flex;background:var(--bar2);border:1px solid var(--line);border-radius:10px;padding:2px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--dim);font-weight:var(--fw-body);font-size:var(--fs-body);padding:6px 11px;border-radius:10px;cursor:pointer;font-family:inherit}
+.seg button.on{background:var(--surface);color:var(--txt);box-shadow:0 1px 2px var(--sh1,rgba(16,24,40,.1))}
+.cols{display:flex;gap:5px;align-items:center}
+.cols button{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.cols button.on{border-color:var(--txt);box-shadow:0 0 0 2px #fff inset}
+.cols input.custcol{width:24px;height:24px;border-radius:50%;border:2px dashed #c2c8d2;padding:0;cursor:pointer;background:var(--surface);-webkit-appearance:none;appearance:none;overflow:hidden}
+.cols input.custcol::-webkit-color-swatch-wrapper{padding:2px}
+.cols input.custcol::-webkit-color-swatch{border:none;border-radius:50%}
+.cols input.custcol.on{border:2px solid var(--txt)}
+.icb{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:var(--fs-body);font-weight:var(--fw-body);color:var(--txt);display:inline-flex;align-items:center;justify-content:center;font-family:inherit}
+.icb:disabled{opacity:.45}
+.icb.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 11px;cursor:pointer;font-size:var(--fs-body);font-weight:var(--fw-body);color:var(--txt);font-family:inherit;white-space:nowrap}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.filewrap{position:relative;display:inline-flex}
+.filemenu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:120;flex-direction:column;gap:4px;padding:6px;background:var(--bar);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px var(--sh16,rgba(16,24,40,.16))}
+.filewrap.open .filemenu{display:flex}
+.filemenu .btn{border:0;text-align:left;padding:8px 12px;white-space:nowrap}
+.filemenu .btn:hover{background:rgba(58,109,240,.10)}
+body.fmdark .filemenu{box-shadow:0 12px 30px rgba(0,0,0,.5)}
+body.fmdark .filemenu .btn:hover{background:rgba(111,148,245,.16)!important}
+.sp{flex:1 1 auto}
+.szwrap{display:flex;align-items:center;gap:5px}
+.szwrap input{width:74px}
+.pg{display:flex;align-items:center;gap:4px;font-size:var(--fs-sub);font-weight:var(--fw-body);color:var(--dim)}
+.note-core,.note-ink,.note-advanced{display:flex;align-items:center;gap:7px;min-width:0}
+.note-core{flex:0 1 auto}.note-ink{flex:0 1 auto}.note-advanced{flex:1 1 auto;justify-content:flex-end;flex-wrap:wrap}
+/* 1.707 — 배경 양식: 버튼 하나 + 팝오버 그리드. */
+.nTplWrap{position:relative;flex:0 0 auto}
+.nTplBtn{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;max-width:190px}
+.nTplBtn #nTplBtnCur{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nTplCaret{color:var(--dim);font-size:11px;flex:0 0 auto}
+.tplp{position:absolute;top:calc(100% + 6px);right:0;z-index:60;background:var(--bar);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px var(--sh20,rgba(16,24,40,.20));padding:8px;width:min(324px,88vw)}
+.tplp[hidden]{display:none}
+.tplp-note{font-size:11px;line-height:1.4;color:var(--dim);background:var(--bar2);border-radius:8px;padding:7px 9px;margin:0 0 8px}
+.tplp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tplp-cell{display:flex;flex-direction:column;align-items:center;gap:4px;border:1px solid var(--line);border-radius:9px;background:var(--bar2);padding:6px 4px;cursor:pointer;font:inherit}
+.tplp-cell:hover{border-color:#c3c9d2}
+.tplp-cell.on{border-color:var(--blue,#3a6df0);box-shadow:0 0 0 2px color-mix(in srgb,var(--blue,#3a6df0) 20%,transparent)}
+.tplp-ic{width:100%;aspect-ratio:4/3;border-radius:5px;overflow:hidden;background:var(--surface);display:block}
+.tplp-ic svg{width:100%;height:100%;display:block}
+.tplp-lb{font-size:11px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.tplp-acts{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.tplp-act{border:1px solid var(--line);background:var(--bar2);border-radius:8px;padding:5px 9px;font-size:11px;font-weight:600;color:var(--dim);cursor:pointer;font-family:inherit}
+.tplp-act:hover{color:var(--txt)}
+body.fmdark .tplp{background:#141A22;border-color:#2E333A}
+body.fmdark .tplp-cell,body.fmdark .tplp-act{background:#1B1E23;border-color:#2E333A}
+body.fmdark .tplp-lb{color:#F2F3F5}
+#noteToolsToggle{display:none}
+#stage{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px;touch-action:none;position:relative;overflow:hidden}
+#ecur{display:none;position:fixed;border:1.5px solid rgba(60,64,72,.75);background:rgba(255,255,255,.25);border-radius:50%;pointer-events:none;z-index:50;transform:translate(-50%,-50%)}
+#cv{background:var(--surface);border-radius:10px;box-shadow:0 4px 18px var(--sh12,rgba(16,24,40,.12));touch-action:none;max-width:100%;max-height:100%;cursor:crosshair}
+#zoomR{display:none;position:absolute;right:14px;bottom:14px;z-index:40;box-shadow:0 4px 14px var(--sh18,rgba(16,24,40,.18))}
+.ovl{display:none;position:fixed;inset:0;z-index:100;background:rgba(16,24,40,.45);align-items:center;justify-content:center;padding:16px}
+.ovl.on{display:flex}
+.ovl .card{background:var(--surface);border-radius:16px;max-width:480px;width:100%;max-height:80vh;overflow:auto;padding:18px}
+.ovl h3{font-size:var(--fs-title);font-weight:var(--fw-head);letter-spacing:-.3px;margin-bottom:10px}
+/* 양식 피커 */
+.ovl .card.fmcard{max-width:640px}
+.fmsub{font-size:var(--fs-sub);font-weight:var(--fw-body);color:var(--dim);margin:-6px 0 12px}
+.fmgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(182px,1fr));gap:8px}
+.fmcat{grid-column:1/-1;font-size:var(--fs-caption);font-weight:var(--fw-head);letter-spacing:.02em;margin:8px 0 1px}
+.fmcat:first-child{margin-top:0}
+.fmit{display:flex;align-items:flex-start;gap:9px;text-align:left;border:1px solid var(--line);background:var(--bar);border-radius:12px;padding:10px 11px;cursor:pointer;font-family:inherit;transition:.12s}
+.fmit:hover{border-color:var(--blue)}
+.fmit:active{transform:scale(.98)}
+.fmit .fi{flex:0 0 auto;color:var(--blue);display:inline-flex;margin-top:1px}
+.fmit .fi svg{width:18px;height:18px}
+.fmit .ft{min-width:0}
+.fmit b{display:block;font-size:var(--fs-body);font-weight:var(--fw-head);color:var(--txt);letter-spacing:-.2px}
+.fmit .ft span{display:block;font-size:var(--fs-caption);font-weight:var(--fw-body);color:var(--dim);margin-top:2px;line-height:1.4}
+body.fmdark .fmit{background:#23272D;border-color:#2E333A}
+/* ===== 양식 빌더 — 데스크톱·아이패드 전용(폰에선 만들기 대신 안내) ===== */
+#bldOvl{display:none;position:fixed;inset:0;z-index:120;background:rgba(16,24,40,.5);padding:20px}
+#bldOvl.on{display:flex;align-items:center;justify-content:center}
+.bld{background:var(--bar);border-radius:16px;width:100%;max-width:1180px;height:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.bld-hd{flex:0 0 auto;display:flex;align-items:center;gap:9px;height:52px;padding:0 16px;border-bottom:1px solid var(--line)}
+.bld-hd .t{font-size:var(--fs-title);font-weight:var(--fw-head);color:var(--txt)}
+.bld-hd .sp{flex:1}
+.bld-hd input.nm{border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--txt);font-family:inherit;font-size:var(--fs-body);font-weight:var(--fw-body);padding:7px 10px;width:190px;outline:none}
+.bld-hd input.nm:focus{border-color:var(--blue)}
+.bld-bd{flex:1 1 auto;min-height:0;display:flex}
+.bld-l{flex:0 0 400px;display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+.bld-r{flex:1 1 auto;min-width:0;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:14px;overflow:auto}
+.bld-pv{background:var(--surface);box-shadow:0 4px 20px var(--sh14,rgba(16,24,40,.14));border-radius:4px}
+.bld-pv iframe{border:0;display:block;transform-origin:top left}
+.pal{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:6px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.pal button{border:1px solid var(--line);background:var(--bg);color:var(--txt);border-radius:10px;font-family:inherit;font-size:var(--fs-sub);font-weight:var(--fw-body);padding:7px 10px;cursor:pointer}
+.pal button:hover{border-color:var(--blue);color:var(--blue)}
+.blist{flex:1 1 auto;min-height:0;overflow-y:auto;padding:10px 14px 14px}
+.bitem{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:7px 8px;margin-bottom:6px}
+.bitem.drag{opacity:.4}
+.bitem.over{border-color:var(--blue);border-style:dashed}
+.bitem .gr{cursor:grab;color:var(--dim);font-size:var(--fs-body);flex:0 0 auto;padding:0 2px;user-select:none}
+.bitem .bn{font-size:var(--fs-sub);font-weight:var(--fw-head);color:var(--txt);flex:0 0 52px}
+.bitem input.lb{flex:1 1 auto;min-width:0;border:1px solid var(--line);border-radius:6px;background:var(--bar);color:var(--txt);font-family:inherit;font-size:var(--fs-sub);font-weight:var(--fw-body);padding:5px 7px;outline:none}
+.bitem input.lb:focus{border-color:var(--blue)}
+.bitem select{border:1px solid var(--line);border-radius:6px;background:var(--bar);color:var(--txt);font-family:inherit;font-size:var(--fs-caption);font-weight:var(--fw-body);padding:5px 3px;outline:none;cursor:pointer;flex:0 0 auto}
+.bitem .x{border:0;background:none;color:var(--dim);font-size:var(--fs-title);font-weight:var(--fw-body);cursor:pointer;flex:0 0 auto;padding:2px 5px;border-radius:6px;font-family:inherit}
+.bitem .x:hover{color:#C24A46}
+.bempty{color:var(--dim);font-size:var(--fs-sub);font-weight:var(--fw-body);text-align:center;padding:34px 10px;line-height:1.7}
+.bfull{margin-top:8px;font-size:var(--fs-caption);font-weight:var(--fw-body);color:var(--dim)}
+.bfull.over{color:#C24A46}
+body.fmdark .bitem,body.fmdark .pal button{background:#23272D}
+#bldPhone{display:none;padding:30px 22px;text-align:center;color:var(--dim);font-size:var(--fs-body);font-weight:var(--fw-body);line-height:1.8}
+@media (max-width:760px){                    /* 폰: 만들기는 막고 안내만 — 만들어 둔 양식 쓰기는 폰에서도 됨 */
+  .bld-bd{display:none}
+  #bldPhone{display:block}
+  .bld{max-height:auto;height:auto}
+  .bld-hd input.nm,.bld-hd #bldSave{display:none}
+}
+.nrow{display:flex;align-items:center;gap:10px;padding:10px 4px;border-top:1px solid var(--line)}
+.nrow .nm{flex:1;min-width:0}
+.nrow .nm b{font-size:var(--fs-body);display:block}
+.nrow .nm span{font-size:var(--fs-caption);color:var(--dim)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(22,24,28,.92);color:#fff;font-size:var(--fs-sub);font-weight:var(--fw-body);padding:9px 16px;border-radius:999px;opacity:0;transition:.25s;pointer-events:none;z-index:200}
+.toast.on{opacity:1}
+@media(max-width:640px){
+  .bar{padding:6px 8px;gap:5px}
+  .bar input[type=text]{flex-basis:100%}
+  .szwrap input{width:56px}
+}
+
+
+
+
+
+/*FMDARK*/
+body.fmdark{--bg:#121417!important;--bar:#1B1E23!important;--bar2:#23272D!important;--line:#2E333A!important;--txt:#F2F3F5!important;--dim:#A9AFB8!important;--blue:#6F94F5!important;--blue-soft:rgba(111,148,245,.16)!important;background:#121417!important;color:#F2F3F5!important}
+body.fmdark .btn,body.fmdark .icb{background:#1B1E23!important;border-color:#2E333A!important;color:#F2F3F5!important}
+body.fmdark .icb.on{background:var(--blue)!important;border-color:var(--blue)!important;color:#fff!important}
+body.fmdark .bar input[type=text]{background:#141A22!important;color:#F2F3F5!important;border-color:#2E333A!important}
+body.fmdark .bar select{background:#1B1E23!important;color:#F2F3F5!important;border-color:#2E333A!important}
+body.fmdark .seg{background:#141A22!important}
+body.fmdark .seg button.on{background:#2E333A!important;color:#fff!important}
+body.fmdark .cols button.on{box-shadow:0 0 0 2px #2E333A inset!important}
+body.fmdark .btn:disabled,body.fmdark .icb:disabled{opacity:.5!important;color:#7C838D!important}
+/*ENDFMDARK*/
+
+#memoPane{display:none;flex:1 1 auto;min-height:0}
+body.memo-mode #stage{display:none}
+body.memo-mode #memoPane{display:flex}
+body.memo-mode #nTitle,body.memo-mode #nTpl,body.memo-mode #tools,body.memo-mode #penOnly,body.memo-mode #cols,body.memo-mode .szwrap,body.memo-mode #undoB,body.memo-mode #redoB,body.memo-mode .pg,body.memo-mode #pdfB,body.memo-mode #orientB,body.memo-mode #pngB,body.memo-mode #printB,body.memo-mode #newB,body.memo-mode #libB,body.memo-mode #noteToolsToggle,body.memo-mode #nTplWrap{display:none !important}
+/* 2.355 — 폴더 열 */
+.memo-folders{width:172px;flex:0 0 172px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--bar2,var(--bar));padding:8px 6px}
+.mf-list{flex:1 1 auto;overflow:auto;min-height:0}
+.mf-it{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:9px;cursor:pointer;font-size:var(--fs-body);color:var(--txt);position:relative}
+.mf-it:hover{background:rgba(0,0,0,.05)}
+.mf-it.on{background:var(--blue-soft);font-weight:var(--fw-head)}
+body.fmdark .mf-it:hover{background:rgba(255,255,255,.07)}
+body.fmdark .mf-it.on{background:#23272D}
+.mf-it .n{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mf-it .c{font-size:var(--fs-caption);color:var(--dim);font-variant-numeric:tabular-nums}
+.mf-it .fx{border:0;background:transparent;color:var(--dim);cursor:pointer;font-size:var(--fs-caption);opacity:0;padding:0 2px}
+.mf-it:hover .fx,.mf-it.on .fx{opacity:.55}
+.mf-it .fx:hover{opacity:1}
+.mf-sep{height:1px;background:var(--line);margin:7px 4px}
+.mf-new{margin-top:6px;padding:8px;border:1px dashed var(--line);border-radius:9px;background:transparent;color:var(--blue);font-weight:var(--fw-head);cursor:pointer;font-family:inherit;font-size:var(--fs-caption)}
+/* 목록 머리 — 폴더 선택(폰) · 검색 · 정렬 */
+.memo-top{display:flex;flex-direction:column;gap:6px;padding:2px 4px 8px}
+.memo-top input,.memo-top select{width:100%;height:32px;border:1px solid var(--line);border-radius:6px;background:var(--panel,#fff);color:var(--txt);font:inherit;font-size:var(--fs-caption);padding:0 9px}
+.memo-fsel{display:none}
+.memo-sort{color:var(--dim)}
+.mi-pin{color:var(--blue);font-size:var(--fs-caption);margin-right:3px}
+/* 편집기 머리 */
+.memo-bar{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.memo-bar button{border:1px solid var(--line);background:var(--panel,#fff);color:var(--txt);border-radius:6px;height:28px;padding:0 10px;font:inherit;font-size:var(--fs-caption);font-weight:var(--fw-head);cursor:pointer}
+.memo-bar button.on{background:var(--blue-soft);border-color:var(--blue);color:var(--blue)}
+.memo-move{height:30px;border:1px solid var(--line);border-radius:8px;background:var(--panel,#fff);color:var(--txt);font:inherit;font-size:var(--fs-caption);padding:0 8px;max-width:150px}
+.memo-when{margin-left:auto;font-size:var(--fs-caption);color:var(--dim);font-variant-numeric:tabular-nums}
+@media (max-width:760px){
+  .memo-folders{display:none}
+  .memo-fsel{display:block}
+}
+.memo-list{width:250px;flex:0 0 250px;border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:auto;background:var(--bar);padding:6px}
+#memoNew{margin:4px 4px 8px;padding:9px;border:1px dashed var(--line);border-radius:10px;background:transparent;color:var(--blue);font-weight:var(--fw-head);cursor:pointer;font-family:inherit;font-size:var(--fs-body)}
+/* 밑줄 리스트(옛 표 느낌) → 여백 기반 둥근 항목. 선택은 은은한 채움 하나로만 강조 */
+.memo-item{padding:9px 11px;border-radius:10px;cursor:pointer;position:relative;margin-bottom:1px}
+.memo-item:hover{background:var(--bar2)}
+.memo-item.on{background:var(--blue-soft)}
+body.fmdark .memo-item:hover{background:#1E2531}
+body.fmdark .memo-item.on{background:#23272D}
+.mi-t{font-weight:var(--fw-body);font-size:var(--fs-body);color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:20px}
+.mi-p{font-size:var(--fs-caption);color:var(--dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ✕는 평소 숨고 hover·선택일 때만 — 목록이 조용해진다 */
+.mi-x{position:absolute;right:6px;top:7px;width:20px;height:20px;border:0;border-radius:6px;background:transparent;color:var(--dim);cursor:pointer;font-size:var(--fs-caption);line-height:1;opacity:0;display:flex;align-items:center;justify-content:center;transition:opacity .12s}
+.memo-item:hover .mi-x,.memo-item.on .mi-x{opacity:.5}
+.mi-x:hover{opacity:1;background:rgba(0,0,0,.06)}
+body.fmdark .mi-x:hover{background:rgba(255,255,255,.08)}
+.memo-empty{padding:26px 12px;text-align:center;color:var(--dim);font-size:var(--fs-body)}
+.memo-edit{flex:1 1 auto;display:flex;flex-direction:column;min-width:0;background:var(--bar)}   /* 2.355 — 머리 바 + 본문 */
+#memoText{white-space:pre-wrap;word-break:break-word;overflow-y:auto;flex:1 1 auto;width:100%;border:0;outline:0;resize:none;background:transparent;color:var(--txt);font-family:inherit;font-size:var(--fs-input);line-height:1.7;padding:22px 26px;box-sizing:border-box}
+/* 2.396 글씨 색 — 색은 **인라인이 아니라 class 로** 담는다. 인라인 색이면 어두운 화면에서 안 보인다. */
+/* ⚠ 색값을 #memoText 에만 두면 **색칩(메모 바)까지 내려가지 않는다** — 칩이 빈 동그라미로 보였다. 위에서 준다. */
+:root{--mc-n:#1A1D21;--mc-r:#D93A3F;--mc-o:#C2690A;--mc-g:#12854E;--mc-b:#2158CC;--mc-p:#6D33D6}
+body.fmdark{--mc-n:#F2F3F5;--mc-r:#FF8A8E;--mc-o:#F5B04A;--mc-g:#5BD69B;--mc-b:#7FB2FF;--mc-p:#C0A2FF}
+#memoText .mc-n{color:var(--mc-n)}#memoText .mc-r{color:var(--mc-r)}#memoText .mc-o{color:var(--mc-o)}
+#memoText .mc-g{color:var(--mc-g)}#memoText .mc-b{color:var(--mc-b)}#memoText .mc-p{color:var(--mc-p)}
+/* 안내글은 흐름에서 빼서 띄운다 — 흐름에 두면 커서가 첫 글자를 덮어 가린다. */
+#memoText{position:relative}
+#memoText.is-empty:before{content:attr(data-ph);position:absolute;left:26px;top:22px;color:var(--dim,#9AA0A6);pointer-events:none}
+.memo-colors{display:inline-flex;align-items:center;gap:5px;margin-left:auto}
+/* ⚠ ui-grammar.css 의 `button:not(…)×6{min-height:32px}` 는 (0,6,1) 이라 클래스만으로는 못 이긴다 — id 로 이긴다. */
+#memoBar .memo-colors button{width:24px;height:24px;min-width:24px;min-height:24px;padding:0;border-radius:999px;border:1px solid rgba(0,0,0,.16);box-shadow:inset 0 0 0 2px var(--panel,#fff);background:var(--sw);font-size:0;cursor:pointer}
+body.fmdark #memoBar .memo-colors button{border-color:rgba(255,255,255,.22);box-shadow:inset 0 0 0 2px var(--bar,#1B1E23)}
+#memoBar .memo-colors button:disabled{opacity:.35}
+</style>
+<link rel="stylesheet" href="mobile-polish.css">
+<link rel="stylesheet" href="premium-ui.css">
+<script>document.documentElement.classList.add('ps-page-note')</script>
+<link rel="stylesheet" href="design-v2.css">
+<style id="ps-dv2-align">/* 재설계 정합: 공통 의미 토큰 alias — 이 블록만 지우면 원복 */
+:root{--blue:var(--ps-color-action,#3a6df0);--blue-soft:var(--ps-color-action-soft,#edf2fe);--accent-blue:var(--ps-color-action,#3a6df0);}
+@media (min-width:768px){ .btn.primary{box-shadow:var(--dv2-sh-btn-accent);} }
+</style>
+<style id="note-document-library-css">
+/* 1.775 — GoodNotes형 개인 문서 보관함. 다른 .ovl 카드에는 영향을 주지 않는다. */
+#libOvl{z-index:180;padding:20px;background:rgba(16,24,40,.48);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#libOvl .doclib-card{display:flex;flex-direction:column;width:min(1120px,100%);max-width:none;height:min(82dvh,780px);max-height:none;overflow:hidden;padding:0;border:1px solid rgba(227,229,233,.9);border-radius:18px;box-shadow:0 24px 70px var(--sh28,rgba(16,24,40,.28))}
+.doclib-head{display:flex;align-items:center;gap:12px;min-height:66px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bar)}
+.doclib-title{min-width:190px}.doclib-title h3{margin:0;font-size:20px;line-height:1.25}.doclib-title p{margin:3px 0 0;color:var(--dim);font-size:11px;font-weight:var(--fw-body)}
+.doclib-actions{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.doclib-actions .btn{height:32px;padding:0 11px;display:inline-flex;align-items:center;gap:6px}
+.doclib-actions .btn svg{width:15px;height:15px}
+.doclib-close{width:36px!important;padding:0!important;justify-content:center;font-size:16px!important}
+.doclib-nav{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bar);border-bottom:1px solid var(--line)}
+.doclib-tabs{display:flex;align-items:center;gap:3px;padding:3px;border:1px solid var(--line);border-radius:10px;background:var(--bar2)}
+.doclib-tabs button{height:32px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--dim);font-family:inherit;font-size:12px;font-weight:var(--fw-body);line-height:1;cursor:pointer;white-space:nowrap}
+.doclib-tabs button.on{background:var(--bar);color:var(--txt);box-shadow:0 1px 3px var(--sh10,rgba(16,24,40,.10))}
+.doclib-search{margin-left:auto;position:relative;flex:0 1 300px;min-width:180px}
+.doclib-search svg{position:absolute;left:11px;top:50%;width:15px;height:15px;transform:translateY(-50%);color:var(--dim);pointer-events:none}
+.doclib-search input{width:100%;height:32px;padding:0 12px 0 34px;border:1px solid var(--line);border-radius:10px;background:var(--bar2);color:var(--txt);font-family:inherit;font-size:12px;font-weight:var(--fw-body);line-height:1;outline:none}
+.doclib-search input:focus{border-color:var(--blue);box-shadow:0 0 0 2px color-mix(in srgb,var(--blue) 14%,transparent)}
+.doclib-body{flex:1 1 auto;min-height:0;position:relative;background:var(--bg);overflow:hidden}
+.doclib-pane{height:100%;min-height:0;overflow-y:auto;padding:16px 17px 26px;overscroll-behavior:contain}
+.doclib-pane[hidden]{display:none}
+.doclib-status{display:flex;align-items:center;gap:8px;min-height:28px;margin-bottom:8px;color:var(--dim);font-size:12px;font-weight:var(--fw-body)}
+.doclib-status .spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:docspin .7s linear infinite}@keyframes docspin{to{transform:rotate(360deg)}}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;align-items:start}
+.doc-card{position:relative;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--bar);overflow:hidden;box-shadow:0 1px 2px var(--sh04,rgba(16,24,40,.04));transition:transform .12s,border-color .12s,box-shadow .12s}
+.doc-card:hover{transform:translateY(-2px);border-color:#c6ccd6;box-shadow:0 9px 24px var(--sh10,rgba(16,24,40,.10))}
+.doc-cover{position:relative;display:grid;place-items:center;width:100%;aspect-ratio:1.34/1;border:0;border-bottom:1px solid var(--line);background:linear-gradient(145deg,#f8f9fb,#eef1f5);overflow:hidden;cursor:pointer;padding:0}
+.doc-cover img,.doc-cover svg{display:block;width:100%;height:100%;object-fit:cover}
+.doc-cover .doc-paper{display:grid;place-items:center;width:58%;height:76%;border:1px solid #d9dde5;border-radius:5px;background:#fff;box-shadow:0 5px 15px var(--sh10,rgba(16,24,40,.10));color:#9ba3af}
+.doc-cover .doc-paper svg{width:31px;height:31px;object-fit:contain}
+.doc-pages{position:absolute;right:8px;bottom:8px;padding:3px 7px;border-radius:999px;background:rgba(22,24,28,.78);color:#fff;font-size:10px;font-weight:800;line-height:1.35}
+.doc-source{position:absolute;left:8px;top:8px;max-width:calc(100% - 16px);padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.92);border:1px solid rgba(227,229,233,.9);color:#4d5562;font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-source.vault{background:#edf2fe;border-color:#c9d7fb;color:#2c54c4}.doc-source.pdf{background:#eef8f4;border-color:#cce7dc;color:#176b4e}
+.doc-info{padding:11px 11px 8px}.doc-name{font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.doc-sub{margin-top:3px;color:var(--dim);font-size:10px;font-weight:var(--fw-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-actions{display:flex;gap:6px;padding:0 10px 10px}.doc-actions .btn{flex:1;min-width:0;height:32px;padding:0 8px;font-size:11px}.doc-actions .doc-del{flex:0 0 34px;padding:0;color:#9b4b48}
+.doc-empty{grid-column:1/-1;display:grid;place-items:center;min-height:280px;padding:30px;text-align:center;color:var(--dim);font-size:12px;line-height:1.65}
+.doc-empty svg{width:38px;height:38px;margin-bottom:10px;color:#9ba3af}.doc-empty b{display:block;color:var(--txt);font-size:14px;margin-bottom:4px}
+.vault-doc-card .doc-cover{background:#f4f6f8}.vault-doc-card .doc-actions .btn{flex:1}
+body.fmdark #libOvl .doclib-card{border-color:#2E333A}body.fmdark .doclib-head,body.fmdark .doclib-nav,body.fmdark .doc-card{background:var(--bar)}body.fmdark .doc-cover{background:linear-gradient(145deg,#23272D,#161c25)}body.fmdark .doc-cover .doc-paper{background:#202834;border-color:#3a4655}body.fmdark .doc-source{background:rgba(26,33,43,.94);border-color:#364250;color:#c6ccd5}
+/* 페이지 썸네일 레일 — PDF 배경은 원본 이미지를 쓰므로 현재 필기 좌표를 건드리지 않는다. */
+#pageRail{display:none;position:absolute;left:10px;top:10px;bottom:10px;width:78px;z-index:12;flex-direction:column;gap:7px;padding:8px 7px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--bar) 94%,transparent);box-shadow:0 5px 18px var(--sh10,rgba(16,24,40,.10));overflow-y:auto;overscroll-behavior:contain}
+#pageRail button{position:relative;flex:0 0 auto;width:62px;min-height:70px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:hidden;cursor:pointer}
+#pageRail button.on{border:2px solid var(--blue);padding:2px;box-shadow:0 0 0 2px color-mix(in srgb,var(--blue) 12%,transparent)}
+#pageRail img{width:100%;height:58px;display:block;object-fit:cover;border-radius:4px;background:var(--surface)}
+#pageRail .pr-blank{height:58px;display:grid;place-items:center;border-radius:4px;background:repeating-linear-gradient(0deg,#fff 0 8px,#edf0f4 9px);color:#7d8591;font-size:14px;font-weight:800}
+#pageRail small{position:absolute;right:4px;bottom:3px;min-width:17px;height:17px;display:grid;place-items:center;border-radius:999px;background:rgba(22,24,28,.78);color:#fff;font-size:10px;font-weight:800}
+@media(min-width:1100px){#pageRail{display:flex}#stage{padding-left:100px}}
+@media(max-width:720px){
+  #libOvl{padding:0;align-items:stretch}.ovl.on#libOvl{display:flex}
+  #libOvl .doclib-card{width:100%;height:100dvh;max-height:none;border:0;border-radius:0}
+  .doclib-head{align-items:flex-start;min-height:0;padding:12px;gap:8px;flex-wrap:wrap}.doclib-title{min-width:0;flex:1 1 auto}.doclib-title p{display:none}
+  .doclib-actions{order:3;width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.doclib-actions .btn{justify-content:center;min-width:0;padding:0 7px}.doclib-actions .doclib-close{position:absolute;right:10px;top:10px;width:36px!important}.doclib-title{padding-right:42px}
+  /* 1.928 — 폰 문서 보관함 머리: 제목 18→17px, 버튼은 아이콘+짧은 글자 38px 한 줄(잘리던 것), × 는 제목 줄 오른쪽 */
+  .doclib-head{position:relative;overflow:visible;padding:10px 12px 8px}.doclib-title h3{font-size:16px}
+  .doclib-actions .btn{height:40px!important;min-height:40px!important;font-size:13px!important;gap:5px;border-radius:10px}.doclib-actions .btn svg{width:15px;height:15px;flex:0 0 auto}.doclib-actions .btn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .doclib-actions .doclib-close{height:36px!important;min-height:36px!important;border-radius:10px;font-size:16px;line-height:1;padding:0!important}
+  .doclib-nav{padding:8px 12px}.doclib-tabs button{min-height:40px;font-size:13px}
+  .doclib-nav{display:block;padding:9px 12px}.doclib-tabs{width:100%;display:grid;grid-template-columns:1fr 1fr}.doclib-tabs button{width:100%}.doclib-search{margin:8px 0 0;min-width:0;width:100%}
+  .doclib-pane{padding:12px 12px calc(24px + env(safe-area-inset-bottom))}.doc-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.doc-card{border-radius:12px}.doc-info{padding:9px 9px 7px}.doc-actions{padding:0 8px 8px}.doc-actions .btn{height:32px}.doc-cover{aspect-ratio:1.22/1}
+}
+@media(max-width:370px){.doclib-actions .btn span{display:none}.doclib-actions .btn svg{width:17px;height:17px}.doc-grid{gap:7px}.doc-name{font-size:12px}}
+</style>
+<style id="ps-2201-nhead">/* 2.201 — design-v2 689(1.836)가 #nModeSeg 를 헤더 줄 left:210px 로 띄워 보관함 세그(1.976, 같은 자리)를 덮었다. 모드 세그는 도구줄에 그대로 둔다 */
+@media (min-width:900px){ html.ps-page-note .bar>#nModeSeg{position:static!important;top:auto!important;left:auto!important;z-index:auto!important;margin:0 8px 0 0!important} }
+</style>
+</head>
+<body>
+<script>
+/* ==== PWA 안전 다이얼로그: 네이티브 confirm()/prompt() 대체 (설치형 PWA에서 차단됨) ==== */
+(function(){
+  if(window.psConfirm) return;
+  function build(msg, withInput, def, onOk, onCancel){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(10,14,20,.45);z-index:2147483000;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)';
+    var dark=false; try{dark=document.body.classList.contains('fmdark');}catch(_){}
+    var bx=document.createElement('div');
+    bx.style.cssText='background:'+(dark?'#1C232E':'#fff')+';color:'+(dark?'#E7EBF1':'#14161A')+';border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.35);padding:18px 18px 14px;width:min(320px,86vw);font:inherit';
+    var tx=document.createElement('div');tx.style.cssText='font-size:14px;line-height:1.5;white-space:pre-wrap;margin-bottom:12px;word-break:break-word';tx.textContent=msg;bx.appendChild(tx);
+    var inp=null;
+    if(withInput){
+      inp=document.createElement('input');inp.type='text';inp.value=(def==null?'':String(def));
+      inp.style.cssText='width:100%;box-sizing:border-box;font-size:14px;padding:9px 10px;border:1.5px solid rgba(128,140,160,.45);border-radius:10px;margin-bottom:12px;background:transparent;color:inherit;outline:none';
+      bx.appendChild(inp);
+    }
+    var row=document.createElement('div');row.style.cssText='display:flex;gap:8px;justify-content:flex-end';
+    var bc=document.createElement('button');bc.type='button';bc.textContent='취소';
+    bc.style.cssText='font:inherit;font-size:13px;padding:8px 14px;border-radius:10px;border:1px solid rgba(128,140,160,.35);background:transparent;color:inherit;cursor:pointer';
+    var bo=document.createElement('button');bo.type='button';bo.textContent='확인';
+    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:#3A6DF0;color:#fff;cursor:pointer';
+    row.appendChild(bc);row.appendChild(bo);bx.appendChild(row);ov.appendChild(bx);
+    var done=false;
+    function close(){ if(done)return; done=true; document.removeEventListener('keydown',onKey,true); try{ov.remove();}catch(_){} }
+    function ok(){ var v=inp?inp.value:true; close(); onOk&&onOk(v); }
+    function cancel(){ close(); onCancel&&onCancel(); }
+    function onKey(e){ if(e.key==='Escape'){e.stopPropagation();cancel();} else if(e.key==='Enter'){e.stopPropagation();ok();} }
+    bo.onclick=ok; bc.onclick=cancel;
+    ov.addEventListener('pointerdown',function(e){ if(e.target===ov) cancel(); });
+    document.addEventListener('keydown',onKey,true);
+    document.body.appendChild(ov);
+    try{ov.animate&&ov.animate([{opacity:0},{opacity:1}],{duration:140,easing:'ease-out'});}catch(_){}
+    if(inp){ try{inp.focus();inp.select();}catch(_){} }
+  }
+  window.psConfirm=function(msg,onOk,onCancel){ build(String(msg),false,null,function(){onOk&&onOk();},onCancel); };
+  window.psPrompt=function(msg,def,onOk,onCancel){ build(String(msg),true,def,function(v){onOk&&onOk(v);},onCancel); };
+})();
+</script>
+<header class="nhead">
+  <span class="nh-t">보관함</span>
+  <span class="nh-s">저장한 작전판·훈련</span><!-- 2.247 — 자료 탭(df-head)과 같은 부제: 보관함 안에서 영역을 오가도 헤더가 안 바뀐다(사용자) -->
+  <!-- 1.976 — 개인 노트 = 보관함의 한 영역. 보관함(board.html #sessionView) 머리의 세그와 같은 문법·같은 셸 메시지(vaultSection) -->
+  <nav class="vault-section-seg nh-seg" role="tablist" aria-label="보관함 보기">
+    <button type="button" role="tab" aria-selected="false" data-vs="files" title="자료 열기">자료</button>
+    <button type="button" role="tab" aria-selected="false" data-vs="analysis" title="경기 분석 열기">분석</button>
+    <button type="button" role="tab" aria-selected="false" data-vs="gamemodel" title="게임모델 열기">게임모델</button>
+    <button type="button" role="tab" aria-selected="true" class="on">개인 노트</button>
+  </nav>
+  <span class="vault-personal-scope" title="이 노트는 개인 저장이며 팀에 공유되지 않습니다">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+    <span class="scope-long">개인 저장 · 팀에 공유되지 않음</span><span class="scope-short">개인 · 비공유</span>
+  </span>
+</header>
+<div class="bar">
+  <div class="seg" id="nModeSeg"><button data-m="draw" class="on">노트</button><button data-m="memo">메모</button><button data-m="library" id="docSegB">문서 보관함</button></div>
+  <button class="btn" id="noteToolsToggle" type="button" aria-expanded="false" aria-controls="noteAdvanced">도구</button>
+  <input type="text" id="nTitle" placeholder="노트 제목 (예: 화요일 훈련 메모)">
+  <div class="note-core">
+    <div class="seg" id="tools">
+      <button data-t="pen" class="on" title="볼펜 (B)">볼펜</button>
+      <button data-t="pencil" title="연필 (N)">연필</button>
+      <button data-t="hl" title="형광펜 (H)">형광펜</button>
+      <button data-t="text" title="텍스트 (T)">T 텍스트</button>
+      <button data-t="eraser" title="지우개 (E)">지우개</button>
+    </div>
+  </div>
+  <div class="note-ink">
+    <button class="icb" id="penOnly" title="펜 전용 — 손가락 입력 무시"><svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px'><path d='M4 20l1-4L16 5l3 3L8 19z'/><path d='M14 7l3 3'/></svg></button>
+    <div class="cols" id="cols"></div>
+    <div class="szwrap"><input type="range" id="size" min="1" max="14" step="0.5" value="3" title="굵기"></div>
+    <button class="icb" id="undoB" title="실행취소 (⌘Z · 두 손가락 탭)">↩</button>
+    <button class="icb" id="redoB" title="다시 실행 (⌘⇧Z · 세 손가락 탭)">↪</button>
+  </div>
+  <!-- 1.707 — 배경 양식: 버튼 하나 + 팝오버 그리드(사용자: 칩이 자리 너무 차지). 드롭다운(#nTpl)은 데이터 소스로 유지. -->
+  <div class="nTplWrap" id="nTplWrap">
+    <button type="button" class="btn nTplBtn" id="nTplBtn" title="배경 양식 선택" aria-haspopup="true" aria-expanded="false"><span id="nTplBtnCur">양식</span><span class="nTplCaret">▾</span></button>
+    <div class="tplp" id="nTplPop" role="menu" hidden></div>
+  </div>
+  <div class="note-advanced" id="noteAdvanced">
+    <select id="nTpl" title="배경 양식">
+      <option value="training3vertical_land_v1">훈련 구성 3면 (세로 축구장 3개 + 개별 줄노트)</option>
+      <option value="training6grid_land_v1">훈련 구성 6면 (왼쪽 2/3 축구장 모눈 6개 + 오른쪽 메모)</option>
+      <option value="training1horizontal_land_v1">훈련 구성 1면 (가로 축구장 1개 + 줄노트)</option>
+      <option value="training3land_v1" hidden>이전 훈련 구성</option>
+      <option value="blank">백지</option>
+      <option value="lines">줄노트</option>
+      <option value="grid">모눈</option>
+      <option value="pitchgrid">축구장 모눈</option>
+      <option value="pitch">축구장</option>
+      <option value="meet">미팅 (피치+메모)</option>
+    </select>
+    <div class="pg">
+      <button class="icb" id="pgPrev" title="이전 페이지">◀</button>
+      <span id="pgLbl">1 / 1</span>
+      <button class="icb" id="pgNext" title="다음 페이지">▶</button>
+      <button class="icb" id="pgAdd" title="페이지 추가">＋</button>
+      <button class="icb" id="pgDel" title="페이지 삭제" aria-label="페이지 삭제">−</button>
+    </div>
+    <button class="icb" id="orientB" title="가로/세로 전환">⤢</button>
+    <div class="filewrap" id="fileWrap">
+      <button class="btn" id="fileBtn" aria-haspopup="true" aria-expanded="false">파일 ▾</button>
+      <div class="filemenu" id="fileMenu" role="menu">
+        <button class="btn" id="pdfB" role="menuitem">PDF 가져오기</button>
+        <button class="btn" id="vaultPdfB" role="menuitem">보관함 훈련 가져오기</button>
+        <button class="btn" id="pngB" role="menuitem">이미지 저장</button>
+        <button class="btn" id="printB" role="menuitem">A4 인쇄</button>
+      </div>
+    </div>
+    <button class="btn" id="newB">새 노트</button>
+    <button class="btn" id="libB">문서 보관함</button>
+  </div>
+  <input type="file" id="pdfFile" accept=".pdf,application/pdf" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none">
+</div>
+<div id="stage"><aside id="pageRail" aria-label="페이지 목록"></aside><canvas id="cv"></canvas><div id="ecur"></div><button class="btn" id="zoomR" title="확대 원래대로"></button></div>
+<div id="memoPane">
+  <!-- 2.355 — 맥 '메모'처럼 세 열: 폴더 · 목록 · 편집(사용자). 폰에서는 폴더 열이 접히고 목록 위 드롭다운이 대신한다 -->
+  <div class="memo-folders" id="memoFolders">
+    <div class="mf-list" id="mfList"></div>
+    <button id="mfNew" class="mf-new">＋ 새 폴더</button>
+  </div>
+  <div class="memo-list">
+    <div class="memo-top">
+      <select id="memoFolderSel" class="memo-fsel" aria-label="폴더 고르기"></select>
+      <input id="memoQ" type="search" placeholder="메모 검색" aria-label="메모 검색">
+      <select id="memoSort" class="memo-sort" aria-label="정렬">
+        <option value="upd">수정한 순</option>
+        <option value="new">만든 순</option>
+        <option value="title">제목 순</option>
+      </select>
+    </div>
+    <button id="memoNew">＋ 새 메모</button>
+    <div id="memoItems"></div>
+  </div>
+  <div class="memo-edit">
+    <div class="memo-bar" id="memoBar">
+      <button type="button" id="memoPin" title="고정">☆ 고정</button>
+      <button type="button" id="memoCheck" title="체크리스트 줄">☑ 체크</button>
+      <select id="memoMove" class="memo-move" aria-label="폴더로 옮기기"></select>
+      <span class="memo-when" id="memoWhen"></span>
+      <span class="memo-colors" id="memoColors" role="group" aria-label="글씨 색"></span>
+    </div>
+    <div id="memoText" contenteditable="true" role="textbox" aria-multiline="true" aria-label="메모" class="is-empty" data-ph="여기에 메모를 입력하세요…"></div>
+  </div>
+</div>
+
+<div class="ovl" id="libOvl">
+  <div class="card doclib-card" role="dialog" aria-modal="true" aria-labelledby="docLibTitle">
+    <div class="doclib-head">
+      <div class="doclib-title"><h3 id="docLibTitle">문서 보관함</h3><p>훈련 PDF와 직접 작성한 노트를 한곳에서 관리합니다</p></div>
+      <div class="doclib-actions">
+        <button type="button" class="btn" id="libNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>새 노트</span></button>
+        <button type="button" class="btn" id="libPdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/></svg><span>PDF 가져오기</span></button>
+        <button type="button" class="btn pri" id="libVault"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h6l2 2h8v10H4z"/><path d="M4 7V5h6l2 2"/></svg><span>보관함 훈련</span></button>
+        <button type="button" class="btn doclib-close" id="libClose" aria-label="문서 보관함 닫기">×</button>
+      </div>
+    </div>
+    <div class="doclib-nav">
+      <div class="doclib-tabs" role="tablist" aria-label="문서 종류"><button type="button" id="docMineTab" class="on" role="tab" aria-selected="true">내 문서</button><button type="button" id="docVaultTab" role="tab" aria-selected="false">보관함 훈련</button></div>
+      <label class="doclib-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" id="docSearch" placeholder="문서 이름 검색" autocomplete="off"></label>
+    </div>
+    <div class="doclib-body">
+      <section class="doclib-pane" id="docMinePane" role="tabpanel" aria-labelledby="docMineTab"><div id="libRisk"></div><div class="doclib-status" id="docMineStatus"></div><div class="doc-grid" id="libList"></div></section>
+      <section class="doclib-pane" id="docVaultPane" role="tabpanel" aria-labelledby="docVaultTab" hidden><div class="doclib-status" id="docVaultStatus"></div><div class="doc-grid" id="vaultDocList"></div></section>
+    </div>
+  </div>
+</div>
+<div class="ovl" id="fmOvl">
+  <div class="card fmcard">
+    <h3>양식에서 가져오기</h3>
+    <div class="fmsub">펜으로 기입하는 1장 폼을 노트 배경으로 씁니다 — 인쇄 없이 바로 쓰세요</div>
+    <div class="fmgrid" id="fmGrid"></div>
+    <div style="text-align:right;margin-top:12px"><button class="btn" id="fmX">닫기</button></div>
+  </div>
+</div>
+<div id="bldOvl">
+  <div class="bld">
+    <div class="bld-hd">
+      <span class="t">양식 만들기</span>
+      <input class="nm" id="bldName" placeholder="양식 이름" maxlength="24">
+      <select id="bldOrient" style="border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--txt);font-family:inherit;font-size:12px;font-weight:600;padding:7px 8px;outline:none;cursor:pointer">
+        <option value="p">세로 (A4)</option>
+        <option value="l">가로 (A4)</option>
+      </select>
+      <span class="sp"></span>
+      <button class="btn" id="bldX">닫기</button>
+      <button class="btn" id="bldSave" style="border-color:var(--blue);color:var(--blue)">저장</button>
+    </div>
+    <div id="bldPhone">양식 만들기는 화면이 넓은<br><b>데스크톱·아이패드</b>에서 하실 수 있어요.<br><br>여기서 만든 양식은 폰에서도<br>배경으로 골라 쓸 수 있습니다.</div>
+    <div class="bld-bd">
+      <div class="bld-l">
+        <div class="pal" id="bldPal"></div>
+        <div class="blist" id="bldList"></div>
+      </div>
+      <div class="bld-r"><div class="bld-pv" id="bldPv"><iframe id="bldIfr" title="미리보기"></iframe></div></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let LW=1000, LH=1414;
+function applyOrient(){const l=note&&note.orient==='l';LW=l?1414:1000;LH=l?1000:1414;}
+const KEY='cs_notes_v1';
+const NOTE_SYNC_SAFE=1450000;
+const COLORS=['#14161A','#3a6df0','#D6453D','#1D9E75'];
+const HL_COLORS={'#14161A':'#FFE066','#3a6df0':'#9FD0FF','#D6453D':'#FFB3AC','#1D9E75':'#A9EBC9'};
+let cv=$('cv');
+let ctx=cv.getContext('2d',{desynchronized:true})||cv.getContext('2d');
+let base=document.createElement('canvas'), bctx=base.getContext('2d');
+let note=null, pi=0, tool='pen', color=COLORS[0], size=3;
+const SIZES={pen:3,pencil:3,hl:3,eraser:18,text:18};
+const SIZE_RANGE={pen:[1,14,0.5],pencil:[1,14,0.5],hl:[1,14,0.5],eraser:[8,72,2],text:[12,44,2]};
+let live=null, redoStack=[], saveTimer=null;
+let penOnly=false, penSeen=false;
+
+function uid(){return 'n'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+/* 1.504 — 노트를 IndexedDB로 이사.
+   필기·PDF는 계속 쌓이는데 localStorage는 앱 전체가 5MB를 나눠 쓰는 곳이라, 노트 하나가 1MB를 넘어가며
+   "저장 공간 부족"이 눈앞이었다(보관함이 v309에 겪은 것과 같은 문제).
+   화면 코드는 store()/persist()를 동기로 부르므로, 메모리 사본을 정본처럼 두고 저장만 비동기로 넘긴다.
+   부팅 때 IndexedDB를 다 읽기 전에는 화면을 시작하지 않는다(먼저 그리면 빈 노트를 저장해 덮어쓴다). */
+var _noteMem=null,_noteWrite=Promise.resolve();
+function store(){
+  if(_noteMem)return _noteMem;
+  try{ _noteMem=JSON.parse(localStorage.getItem(KEY))||{notes:{},cur:null}; }catch(_){ _noteMem={notes:{},cur:null}; }
+  return _noteMem;
+}
+function persist(s){
+  _noteMem=s;
+  var str;try{ str=JSON.stringify(s); }catch(_){ return false; }
+  if(str.length>NOTE_SYNC_SAFE){var wn=Date.now();if(!persist._syncWarn||wn-persist._syncWarn>30000){persist._syncWarn=wn;toast('이 기기에는 저장되지만 동기화 용량이 찼어요 — 오래된 PDF 문서를 정리해 주세요');}}
+  if(window.storage){
+    /* 큰 PDF 사본 저장과 400ms 필기 저장이 역순으로 끝나지 않도록 직렬화한다. */
+    _noteWrite=_noteWrite.catch(function(){}).then(function(){return window.storage.set(KEY,str);});
+    _noteWrite.then(function(){
+      try{window.PSSaveState.ok('note');}catch(__){}
+      /* IndexedDB 저장이 확인된 뒤에만 옛 사본을 지운다 — 순서가 바뀌면 한 번의 실패로 노트가 사라진다 */
+      if(!persist._moved){persist._moved=1;try{localStorage.removeItem(KEY);}catch(__){}}
+    }).catch(function(e){
+      var n=Date.now();if(!persist._t||n-persist._t>15000){persist._t=n;toast('⚠︎ 저장에 실패했어요 — 필기가 저장되지 않고 있어요');}
+      try{window.PSSaveState.fail('note',e);}catch(__){}
+    });
+    return true;
+  }
+  try{localStorage.setItem(KEY,str);try{window.PSSaveState.ok('note');}catch(__){}return true;}catch(e){
+  // 1회 경고 후 무음이면 필기가 계속 증발하는 걸 사용자가 모름 → 15초 간격 반복 경고 + 사라지지 않는 상태 표시
+  const n=Date.now();if(!persist._t||n-persist._t>15000){persist._t=n;toast('⚠︎ 저장 공간 부족 — 지금 필기가 저장되지 않고 있어요! 오래된 노트·PDF를 삭제해주세요');}
+  try{window.PSSaveState.fail('note',e);}catch(__){}return false;}}
+async function persistImportedState(s){
+  _noteMem=s;var str=JSON.stringify(s);
+  if(window.storage){
+    _noteWrite=_noteWrite.catch(function(){}).then(function(){return window.storage.set(KEY,str);});
+    await _noteWrite;
+    try{window.PSSaveState.ok('note');}catch(__){}
+    if(!persist._moved){persist._moved=1;try{localStorage.removeItem(KEY);}catch(__){}}
+    return true;
+  }
+  localStorage.setItem(KEY,str);try{window.PSSaveState.ok('note');}catch(__){}return true;
+}
+/* 새 노트만 세로 피치 3면 훈련 종이로 시작한다. 기존에 필기한 노트의 tpl/orient는 절대 마이그레이션하지 않는다. */
+function blankNote(){return {id:uid(),title:'',tpl:'training3vertical_land_v1',orient:'l',pages:[{strokes:[]}],created:Date.now(),updated:Date.now()};}
+function save(){if(!note)return;note.updated=Date.now();note.title=$('nTitle').value;
+  const s=store();s.notes[note.id]=note;s.cur=note.id;persist(s);}
+function saveSoon(){clearTimeout(saveTimer);saveTimer=setTimeout(save,400);}
+/* 2.395 — 새로고침 전에 셸이 부른다. 400ms 지연 저장이 남아 있으면 지금 쓴다(자동 업데이트로 잃지 않게).
+   ⚠ 메모(memoText)는 별도 타이머를 쓰므로 그것도 함께 민다. */
+window.psFlushPending=function(){
+  try{ if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; save(); } }catch(_){}
+  try{ if(window.__memoFlush)window.__memoFlush(); }catch(_){}
+  return false;
+};
+window.psHasPending=function(){ try{ return !!(saveTimer||(window.__memoPending&&window.__memoPending())); }catch(_){ return false; } };
+/* ⚠ 2.398 — 여기도 **화면을 떠나는 길**이 막혀 있었다. 셸의 자동 업데이트만 막으면
+   홈으로 나가거나 앱을 바꿀 때 잃는다. iOS 는 visibilitychange 가 더 확실히 온다 — 둘 다 건다. */
+window.addEventListener('pagehide',function(){ try{ window.psFlushPending(); }catch(_){} });
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden'){ try{ window.psFlushPending(); }catch(_){} } });
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1600);}
+
+/* ============ 크기 ============ */
+function fit(){
+  if(window.__nvReset)window.__nvReset();       /* 크기·방향이 바뀌면 확대 상태는 무의미 — 원래대로 */
+  const st=$('stage'),pad=20;
+  const sw=st.clientWidth-pad, sh=st.clientHeight-pad;
+  const sc=Math.min(sw/LW, sh/LH);
+  const w=Math.max(200,LW*sc), h=LH*sc;
+  const dpr=Math.min(3,window.devicePixelRatio||1);
+  cv.style.width=w+'px';cv.style.height=h+'px';
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  base.width=cv.width;base.height=cv.height;
+  ctx.setTransform(cv.width/LW,0,0,cv.height/LH,0,0);
+  bctx.setTransform(base.width/LW,0,0,base.height/LH,0,0);
+  rebuildBase();present();
+}
+window.addEventListener('resize',fit);
+
+/* ============ 배경 ============ */
+const bgCache={};
+function drawTpl(c){
+  c.save();c.fillStyle='#fff';c.fillRect(0,0,LW,LH);
+  const pg=note?note.pages[pi]:null;
+  if(pg&&pg.bg){
+    let img=bgCache[pg.bg];
+    if(!img){img=new Image();img.onload=()=>{rebuildBase();present();};img.src=pg.bg;bgCache[pg.bg]=img;}
+    if(img.complete&&img.naturalWidth){
+      const sc=Math.min(LW/img.naturalWidth,LH/img.naturalHeight);
+      const w=img.naturalWidth*sc,h=img.naturalHeight*sc;
+      c.drawImage(img,(LW-w)/2,(LH-h)/2,w,h);
+    }
+    c.restore();return;
+  }
+  const t=note?note.tpl:'blank';
+  if(t&&(t.indexOf('form:')===0||t.indexOf('my:')===0)){
+    const e=tplEntry(t);
+    if(e.img&&e.img.complete&&e.img.naturalWidth){
+      const img=e.img;
+      const sc=Math.min(LW/img.naturalWidth,LH/img.naturalHeight);   /* 양식은 A4 — 잘리지 않게 contain */
+      const w=img.naturalWidth*sc,h=img.naturalHeight*sc;
+      c.drawImage(img,(LW-w)/2,(LH-h)/2,w,h);
+    }
+    c.restore();return;
+  }
+  if(t&&t.indexOf('paper:')===0){
+    const pp=papers().find(x=>'paper:'+x.id===t);
+    if(pp){let img=bgCache[t];
+      if(!img){img=new Image();img.onload=()=>{rebuildBase();present();};img.src=pp.img;bgCache[t]=img;}
+      if(img.complete&&img.naturalWidth){
+        const sc=Math.max(LW/img.naturalWidth,LH/img.naturalHeight);
+        const w=img.naturalWidth*sc,h=img.naturalHeight*sc;
+        c.drawImage(img,(LW-w)/2,(LH-h)/2,w,h);}}
+    c.restore();return;}
+  c.strokeStyle='#E7EAF0';c.lineWidth=1.2;
+  if(t==='lines'){for(let y=80;y<LH;y+=46){c.beginPath();c.moveTo(50,y);c.lineTo(LW-50,y);c.stroke();}}
+  else if(t==='grid'){for(let x=0;x<=LW;x+=40){c.beginPath();c.moveTo(x,0);c.lineTo(x,LH);c.stroke();}
+    for(let y=0;y<=LH;y+=40){c.beginPath();c.moveTo(0,y);c.lineTo(LW,y);c.stroke();}}
+  else if(t==='pitch'){
+    drawPitchRect(c,70,70,LW-140,LH-140);
+  }
+  else if(t==='pitchgrid'){
+    /* 축구장 모눈 — 은은한 모눈 위에 실측 비율 축구장 + 써드 가이드(점선). 전술 메모의 기본 종이 */
+    c.strokeStyle='#EDF0F5';c.lineWidth=1;
+    for(let x=0;x<=LW;x+=40){c.beginPath();c.moveTo(x,0);c.lineTo(x,LH);c.stroke();}
+    for(let y=0;y<=LH;y+=40){c.beginPath();c.moveTo(0,y);c.lineTo(LW,y);c.stroke();}
+    c.strokeStyle='#E7EAF0';c.lineWidth=1.2;
+    const pr={x:70,y:70,w:LW-140,h:LW>LH?LH-140:(LW-140)*68/105};
+    if(LW<=LH)pr.y=Math.max(70,(LH-pr.h)/2-LH*0.12);   /* 세로 노트: 축구장을 위쪽 1/3에, 아래는 모눈 메모 공간 */
+    drawPitchSquares(c,pr.x,pr.y,pr.w,pr.h,34);   /* 1.940 — 피치 안은 정사각 모눈(종이 모눈과 겹치지 않게) */
+    drawPitchRect(c,pr.x,pr.y,pr.w,pr.h);
+    /* 써드 가이드 점선 — 축구장 폭 기준 3등분 */
+    (function(){
+      const horiz=pr.w>pr.h,asp=105/68;
+      let fw,fh;if(horiz){fw=Math.min(pr.w,pr.h*asp);fh=fw/asp;}else{fh=Math.min(pr.h,pr.w*asp);fw=fh/asp;}
+      const fx=pr.x+(pr.w-fw)/2,fy=pr.y+(pr.h-fh)/2;
+      c.save();c.strokeStyle='#D7DCE5';c.setLineDash([7,7]);c.lineWidth=1.2;
+      if(fw>=fh){for(let i=1;i<3;i++){const gx=fx+fw*i/3;c.beginPath();c.moveTo(gx,fy);c.lineTo(gx,fy+fh);c.stroke();}}
+      else{for(let i=1;i<3;i++){const gy=fy+fh*i/3;c.beginPath();c.moveTo(fx,gy);c.lineTo(fx+fw,gy);c.stroke();}}
+      c.restore();
+    })();
+  }
+  else if(t==='training3land_v1'){
+    /* A4 가로 훈련 구성 노트 — 약 5mm 모눈, 실측 비율 피치 3개, 아래 줄노트.
+       모눈과 피치 선은 필기보다 충분히 옅게 그려 인쇄·iPad 모두에서 방해하지 않는다. */
+    const margin=60,gap=32,grid=24;
+    c.save();
+    c.strokeStyle='#F3F5F8';c.lineWidth=.8;
+    for(let x=0;x<=LW;x+=grid){c.beginPath();c.moveTo(x,0);c.lineTo(x,LH);c.stroke();}
+    for(let y=0;y<=LH;y+=grid){c.beginPath();c.moveTo(0,y);c.lineTo(LW,y);c.stroke();}
+    const pw=(LW-margin*2-gap*2)/3,ph=pw*68/105,py=64;
+    c.globalAlpha=.42;
+    for(let i=0;i<3;i++)drawPitchRect(c,margin+i*(pw+gap),py,pw,ph);
+    c.globalAlpha=1;
+    c.strokeStyle='#E4E8EE';c.lineWidth=1.1;
+    const lineStart=Math.max(py+ph+62,392);
+    for(let y=lineStart;y<LH-48;y+=46){c.beginPath();c.moveTo(margin,y);c.lineTo(LW-margin,y);c.stroke();}
+    c.restore();
+  }
+  else if(t==='training3vertical_land_v1'){
+    /* A4 가로 · 실제 68×105m 세로 피치 3면. 운동장마다 같은 폭의 줄노트를 둔다. */
+    c.save();drawTrainingGrid(c);
+    const designW=1414,designH=1000,sc=Math.min(LW/designW,LH/designH);
+    c.translate((LW-designW*sc)/2,(LH-designH*sc)/2);c.scale(sc,sc);
+    const gap=24,pitchW=(designW-72-gap*2)/3,pitchH=pitchW*105/68,py=24,startX=36;
+    for(let i=0;i<3;i++){ drawPitchSquares(c,startX+i*(pitchW+gap),py,pitchW,pitchH,34); drawPitchRect(c,startX+i*(pitchW+gap),py,pitchW,pitchH,{realistic:true}); }   /* 1.940 — 정사각 모눈 */
+    c.strokeStyle='rgba(96,112,135,.16)';c.lineWidth=1;
+    for(let i=0;i<3;i++){
+      const x=startX+i*(pitchW+gap);
+      for(let y=744;y<=960;y+=36){c.beginPath();c.moveTo(x,y);c.lineTo(x+pitchW,y);c.stroke();}
+    }
+    c.restore();
+  }
+  else if(t==='training6grid_land_v1'){
+    /* 1.838 — A4 가로. 왼쪽 2/3 = 세로 피치(68×105) 6면(3열×2행), 각 면 안에 은은한 모눈. 오른쪽 1/3 = 줄노트(메모장). 사용자 지시. */
+    c.save();drawTrainingGrid(c);
+    const designW=1414,designH=1000,sc=Math.min(LW/designW,LH/designH);
+    c.translate((LW-designW*sc)/2,(LH-designH*sc)/2);c.scale(sc,sc);
+    const leftW=Math.round(designW*2/3), pad=24, gap=18, cols=3, rows=2;
+    const cellW=(leftW-pad*2-gap*(cols-1))/cols, cellH=(designH-pad*2-gap*(rows-1))/rows;
+    /* 피치를 셀 안에 contain(세로 피치) */
+    let pw=cellW, ph=pw*105/68; if(ph>cellH){ph=cellH;pw=ph*68/105;}
+    for(let r=0;r<rows;r++)for(let k=0;k<cols;k++){
+      const cx=pad+k*(cellW+gap)+(cellW-pw)/2, cy=pad+r*(cellH+gap)+(cellH-ph)/2;
+      drawPitchSquares(c,cx,cy,pw,ph,34);   /* 1.940 — 정사각 모눈 */
+      drawPitchRect(c,cx,cy,pw,ph,{realistic:true});
+    }
+    /* 오른쪽 메모장 */
+    c.strokeStyle='rgba(96,112,135,.16)';c.lineWidth=1;
+    const mx0=leftW+pad, mx1=designW-pad;
+    for(let y=pad+36;y<=designH-pad;y+=36){c.beginPath();c.moveTo(mx0,y);c.lineTo(mx1,y);c.stroke();}
+    c.restore();
+  }
+  else if(t==='training1horizontal_land_v1'){
+    /* A4 가로 · 실제 105×68m 가로 피치 1면과 하단 전체 폭 줄노트. */
+    c.save();drawTrainingGrid(c);
+    const designW=1414,designH=1000,sc=Math.min(LW/designW,LH/designH);
+    c.translate((LW-designW*sc)/2,(LH-designH*sc)/2);c.scale(sc,sc);
+    const pitchW=1152,pitchH=pitchW*68/105,px=131,py=24;
+    drawPitchSquares(c,px,py,pitchW,pitchH,34);   /* 1.940 — 정사각 모눈 */
+    drawPitchRect(c,px,py,pitchW,pitchH,{realistic:true});
+    c.strokeStyle='rgba(96,112,135,.16)';c.lineWidth=1;
+    for(let y=800;y<=960;y+=40){c.beginPath();c.moveTo(48,y);c.lineTo(1366,y);c.stroke();}
+    c.restore();
+  }
+  else if(t==='meet'){
+    if(LW>LH){                                   /* 가로: 왼쪽 피치 + 오른쪽 메모줄 */
+      drawPitchRect(c,60,60,LW*0.44,LH-120);
+      c.strokeStyle='#E7EAF0';c.lineWidth=1.2;
+      const x0=60+LW*0.44+50;
+      for(let y=120;y<LH-50;y+=46){c.beginPath();c.moveTo(x0,y);c.lineTo(LW-60,y);c.stroke();}
+    }else{                                       /* 세로: 위 피치 + 아래 메모줄 */
+      drawPitchRect(c,60,60,LW-120,LH*0.40);
+      c.strokeStyle='#E7EAF0';c.lineWidth=1.2;
+      const y0=60+LH*0.40+70;
+      for(let y=y0;y<LH-50;y+=46){c.beginPath();c.moveTo(60,y);c.lineTo(LW-60,y);c.stroke();}
+    }
+  }
+  c.restore();
+}
+
+/* 신규 훈련 종이는 진한 기준선 없이 같은 농도의 약 5mm 모눈만 쓴다. */
+function drawTrainingGrid(c){
+  const grid=24;
+  c.strokeStyle='rgba(96,112,135,.065)';c.lineWidth=.8;
+  for(let x=0;x<=LW;x+=grid){c.beginPath();c.moveTo(x,0);c.lineTo(x,LH);c.stroke();}
+  for(let y=0;y<=LH;y+=grid){c.beginPath();c.moveTo(0,y);c.lineTo(LW,y);c.stroke();}
+}
+/* 1.940 — 축구장 안 정사각 모눈(사용자: 라인을 일관되게 그릴 수 있게).
+   피치 실측 68m 짧은 변을 n(기본 8, ≈8.5m)으로 나눈 정사각형을 피치 안에만 그리고, 그 아래 종이 모눈은 지워(흰 바탕) 겹선을 없앤다.
+   drawPitchRect 와 같은 contain 규칙으로 실제 피치 사각형을 구한 뒤 그 안을 채운다. */
+function drawPitchSquares(c,rx,ry,rw,rh,n){
+  const horiz=rw>rh, asp=105/68; let fw,fh;
+  if(horiz){fw=Math.min(rw,rh*asp);fh=fw/asp;} else {fh=Math.min(rh,rw*asp);fw=fh/asp;}
+  /* 1.942 — 작전판 '훈련' 피치의 모눈 문법(2m 격자, 아주 연하게)을 그대로: 짧은 변 68m ÷ 34 = 2m 정사각 */
+  const x0=rx+(rw-fw)/2, y0=ry+(rh-fh)/2, short=horiz?fh:fw, g=short/(n||34);
+  c.save();
+  c.fillStyle='#fff';c.fillRect(x0,y0,fw,fh);
+  c.beginPath();c.rect(x0,y0,fw,fh);c.clip();
+  c.strokeStyle='rgba(96,112,135,.075)';c.lineWidth=.6;
+  for(let x=x0+g;x<x0+fw-0.5;x+=g){c.beginPath();c.moveTo(x,y0);c.lineTo(x,y0+fh);c.stroke();}
+  for(let y=y0+g;y<y0+fh-0.5;y+=g){c.beginPath();c.moveTo(x0,y);c.lineTo(x0+fw,y);c.stroke();}
+  c.restore();
+}
+
+/* 실측 비율(68×105m) 축구장을 rect 안에 contain — 넓은 rect면 골대 좌우(눕힘), 좁으면 위아래.
+   realistic 옵션은 공식 1m 코너아크와 7.32m 골대까지 그리며 기존 양식의 외형은 바꾸지 않는다. */
+function drawPitchRect(c,rx,ry,rw,rh,opt){
+  const horiz=rw>rh, asp=105/68;
+  let fw,fh;
+  if(horiz){fw=Math.min(rw,rh*asp);fh=fw/asp;}
+  else{fh=Math.min(rh,rw*asp);fw=fh/asp;}
+  c.save();
+  c.translate(rx+(rw-fw)/2, ry+(rh-fh)/2);
+  if(horiz){c.translate(0,fh);c.rotate(-Math.PI/2);}   /* 세로 좌표계로 그리고 통째로 눕힌다 */
+  const k=(horiz?fh:fw)/68, W=68*k, H=105*k;
+  const realistic=!!(opt&&opt.realistic),sr=realistic?Math.max(1.5,0.11*k):Math.max(2,0.35*k);
+  c.strokeStyle=realistic?'rgba(96,112,135,.26)':'#AEB4BE';c.fillStyle=c.strokeStyle;
+  c.lineWidth=Math.max(1.1,k*(realistic?0.12:0.16));
+  c.strokeRect(0,0,W,H);
+  c.beginPath();c.moveTo(0,H/2);c.lineTo(W,H/2);c.stroke();
+  c.beginPath();c.arc(W/2,H/2,9.15*k,0,Math.PI*2);c.stroke();
+  c.beginPath();c.arc(W/2,H/2,sr,0,Math.PI*2);c.fill();
+  c.strokeRect(13.84*k,0,40.32*k,16.5*k);c.strokeRect(13.84*k,H-16.5*k,40.32*k,16.5*k);
+  c.strokeRect(24.84*k,0,18.32*k,5.5*k);c.strokeRect(24.84*k,H-5.5*k,18.32*k,5.5*k);
+  c.beginPath();c.arc(W/2,11*k,sr,0,Math.PI*2);c.fill();
+  c.beginPath();c.arc(W/2,H-11*k,sr,0,Math.PI*2);c.fill();
+  const a=Math.asin(5.5/9.15);                         /* 페널티 아크 — 박스 밖 부분만 */
+  c.beginPath();c.arc(W/2,11*k,9.15*k,a,Math.PI-a);c.stroke();
+  c.beginPath();c.arc(W/2,H-11*k,9.15*k,Math.PI+a,2*Math.PI-a);c.stroke();
+  const ca=(realistic?1:1.5)*k;
+  c.beginPath();c.arc(0,0,ca,0,0.5*Math.PI);c.stroke();
+  c.beginPath();c.arc(W,0,ca,0.5*Math.PI,Math.PI);c.stroke();
+  c.beginPath();c.arc(W,H,ca,Math.PI,1.5*Math.PI);c.stroke();
+  c.beginPath();c.arc(0,H,ca,1.5*Math.PI,2*Math.PI);c.stroke();
+  if(realistic){                                      /* 평면도 골망: 폭 7.32m · 깊이 2m */
+    const gw=7.32*k,gd=2*k,gx=(W-gw)/2;
+    c.strokeRect(gx,-gd,gw,gd);c.strokeRect(gx,H,gw,gd);
+  }
+  c.restore();
+}
+
+/* ============ 획 렌더 — 리본 (저장본·완성본용) ============ */
+function ribbon(c,s){
+  const pts=s.pts,n=pts.length;
+  if(n===0)return;
+  c.fillStyle=s.color;
+  if(n===1){c.beginPath();c.arc(pts[0].x,pts[0].y,(pts[0].w||s.size)/2,0,Math.PI*2);c.fill();return;}
+  const L=[],R=[];
+  for(let i=0;i<n;i++){
+    const a=pts[Math.max(0,i-1)],b=pts[Math.min(n-1,i+1)];
+    let dx=b.x-a.x,dy=b.y-a.y;const len=Math.hypot(dx,dy)||1;
+    const w=(pts[i].w||s.size)/2;
+    L.push({x:pts[i].x-dy/len*w,y:pts[i].y+dx/len*w});
+    R.push({x:pts[i].x+dy/len*w,y:pts[i].y-dx/len*w});
+  }
+  c.beginPath();
+  c.moveTo(L[0].x,L[0].y);
+  for(let i=1;i<n-1;i++){const mx=(L[i].x+L[i+1].x)/2,my=(L[i].y+L[i+1].y)/2;c.quadraticCurveTo(L[i].x,L[i].y,mx,my);}
+  c.lineTo(L[n-1].x,L[n-1].y);
+  c.arc(pts[n-1].x,pts[n-1].y,(pts[n-1].w||s.size)/2,
+    Math.atan2(L[n-1].y-pts[n-1].y,L[n-1].x-pts[n-1].x),
+    Math.atan2(R[n-1].y-pts[n-1].y,R[n-1].x-pts[n-1].x));
+  for(let i=n-2;i>0;i--){const mx=(R[i].x+R[i-1].x)/2,my=(R[i].y+R[i-1].y)/2;c.quadraticCurveTo(R[i].x,R[i].y,mx,my);}
+  c.lineTo(R[0].x,R[0].y);
+  c.arc(pts[0].x,pts[0].y,(pts[0].w||s.size)/2,
+    Math.atan2(R[0].y-pts[0].y,R[0].x-pts[0].x),
+    Math.atan2(L[0].y-pts[0].y,L[0].x-pts[0].x));
+  c.closePath();c.fill();
+}
+let tmp=document.createElement('canvas'),tctx=tmp.getContext('2d');
+/* 텍스트 줄바꿈 — s.wrap(논리 px)이 있으면 그 폭에서 자동 줄바꿈, 없으면 기존처럼 \n만 */
+let mcv=document.createElement('canvas'),mctx=mcv.getContext('2d');
+function textFont(s){return '600 '+(s.size*1.7)+"px -apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";}
+function textLines(s){
+  const raw=String(s.text||'').split('\n');
+  if(!s.wrap)return raw;
+  mctx.font=textFont(s);
+  const out=[];
+  raw.forEach(ln=>{
+    if(!ln||mctx.measureText(ln).width<=s.wrap){out.push(ln);return;}
+    let cur='';
+    for(const ch of ln){
+      if(cur&&mctx.measureText(cur+ch).width>s.wrap){
+        const sp=cur.lastIndexOf(' ');
+        if(sp>0&&ch!==' '){out.push(cur.slice(0,sp));cur=cur.slice(sp+1)+ch;}
+        else{out.push(cur);cur=ch===' '?'':ch;}
+      }else cur+=ch;
+    }
+    out.push(cur);
+  });
+  return out;
+}
+function renderStroke(c,s,cw,chh){
+  if(s.tool==='hl'){
+    const W=cw||cv.width,H=chh||cv.height;
+    if(tmp.width!==W||tmp.height!==H){tmp.width=W;tmp.height=H;}
+    tctx.setTransform(W/LW,0,0,H/LH,0,0);
+    tctx.clearRect(0,0,LW,LH);ribbon(tctx,s);
+    c.save();c.globalAlpha=0.38;c.setTransform(1,0,0,1,0,0);c.drawImage(tmp,0,0,W,H);c.restore();
+    c.setTransform(W/LW,0,0,H/LH,0,0);
+  }else if(s.tool==='eraser'){
+    c.save();c.globalCompositeOperation='destination-out';ribbon(c,s);c.restore();
+  }else if(s.tool==='pencil'){
+    c.save();c.globalAlpha=0.66;ribbon(c,s);c.restore();
+  }else if(s.tool==='text'){
+    c.save();c.fillStyle=s.color;
+    c.font=textFont(s);
+    c.textBaseline='top';
+    textLines(s).forEach((ln,i)=>c.fillText(ln,s.x,s.y+i*s.size*1.7*1.34));
+    c.restore();
+  }else ribbon(c,s);
+}
+
+/* 잉크는 별도 캔버스에 합성 — 지우개(destination-out)가 배경/PDF를 뚫지 않도록 */
+let ink=document.createElement('canvas'),ictx=ink.getContext('2d');
+function renderInk(c,W,H,strokes,extra){
+  if(ink.width!==W||ink.height!==H){ink.width=W;ink.height=H;}
+  ictx.setTransform(1,0,0,1,0,0);ictx.clearRect(0,0,W,H);
+  ictx.setTransform(W/LW,0,0,H/LH,0,0);
+  (strokes||[]).forEach(s=>renderStroke(ictx,s,W,H));
+  if(extra)renderStroke(ictx,extra,W,H);
+  c.save();c.setTransform(1,0,0,1,0,0);c.drawImage(ink,0,0);c.restore();
+  c.setTransform(W/LW,0,0,H/LH,0,0);
+}
+function rebuildBase(){
+  drawTpl(bctx);
+  if(note)renderInk(bctx,base.width,base.height,note.pages[pi].strokes,(live&&live.tool==='eraser')?live:null);
+}
+function present(){
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.drawImage(base,0,0);ctx.restore();
+  ctx.setTransform(cv.width/LW,0,0,cv.height/LH,0,0);
+}
+
+/* ============ 입력 v3 — 무보정·증분 렌더·속도 기반 굵기 ============ */
+let rect=null, lastT=0, emaW=0, drawnIdx=0;
+function widthFor(s,p,speed){
+  const baseW=s.tool==='eraser'?s.size:(s.size*(s.tool==='hl'?3.2:s.tool==='pencil'?0.92:1));
+  if(s.tool==='hl'||s.tool==='eraser')return baseW;
+  const pr=(p==null||p===0)?0.5:p;
+  const spd=Math.min(1, speed/2.2);            // 속도 0~2.2u/ms 정규화
+  let w=baseW*(0.42+Math.pow(pr,1.35)*1.05)*(1.1-0.46*spd);   // 빠르면 가늘게 (잉크 느낌)
+  emaW=emaW===0?w:emaW*0.55+w*0.45;            // 굵기만 부드럽게 (좌표는 무보정)
+  return Math.max(0.7,emaW);
+}
+function toL(e){
+  return {x:(e.clientX-rect.left)/rect.width*LW, y:(e.clientY-rect.top)/rect.height*LH, p:e.pressure||0, t:e.timeStamp};
+}
+function addPoint(e){
+  const q=toL(e);
+  const pts=live.pts;
+  const prev=pts[pts.length-1];
+  if(prev){
+    const d=Math.hypot(q.x-prev.x,q.y-prev.y);
+    if(d<0.9)return;
+    const dt=Math.max(1,(q.t||0)-(prev.t||0));
+    const sp=d/dt;
+    const a=sp<0.22?0.42:sp<0.7?0.18:0;        // 천천히 쓸 때만 미세 보정 (빠를 땐 무보정)
+    if(a>0){q.x=prev.x*a+q.x*(1-a);q.y=prev.y*a+q.y*(1-a);}
+    q.w=widthFor(live,q.p,sp);
+  }else q.w=widthFor(live,q.p,0.3);
+  pts.push(q);
+}
+/* 증분: 마지막 3점만 리본으로 이어 그림 — 긴 획도 비용 일정 */
+function drawTail(){
+  const pts=live.pts,n=pts.length;
+  if(n<2)return;
+  const from=Math.max(0,drawnIdx-1);
+  const seg={tool:live.tool,color:live.color,size:live.size,pts:pts.slice(from)};
+  if(live.tool==='hl'){
+    ctx.save();ctx.globalAlpha=0.38;ctx.strokeStyle=live.color;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.lineWidth=live.size*3.2;
+    ctx.beginPath();ctx.moveTo(pts[from].x,pts[from].y);
+    for(let i=from+1;i<n;i++)ctx.lineTo(pts[i].x,pts[i].y);
+    ctx.stroke();ctx.restore();
+  }else if(live.tool==='eraser'){
+    rebuildBase();present();                                  // 잉크 캔버스 경유 — 배경 보존
+  }else if(live.tool==='pencil'){
+    ctx.save();ctx.globalAlpha=0.66;ribbon(ctx,seg);ctx.restore();
+  }else ribbon(ctx,seg);
+  drawnIdx=n-1;
+}
+/* 예측 테일 — Apple Pencil 체감 지연 축소. 오버레이에만 그리고 다음 이벤트에서 실제 점으로 대체 */
+let pcv=null,pctx=null;
+function predSync(){
+  if(!pcv){pcv=document.createElement('canvas');pcv.style.cssText='position:absolute;pointer-events:none;';$('stage').appendChild(pcv);pctx=pcv.getContext('2d');}
+  const sr=$('stage').getBoundingClientRect();
+  pcv.style.left=(rect.left-sr.left)+'px';pcv.style.top=(rect.top-sr.top)+'px';
+  pcv.style.width=rect.width+'px';pcv.style.height=rect.height+'px';
+  if(pcv.width!==cv.width||pcv.height!==cv.height){pcv.width=cv.width;pcv.height=cv.height;}
+}
+function predClear(){if(pctx){pctx.setTransform(1,0,0,1,0,0);pctx.clearRect(0,0,pcv.width,pcv.height);}}
+function predDraw(e){
+  if(!live||live.tool==='eraser'||live.tool==='hl'||!e.getPredictedEvents)return;
+  let pr;try{pr=e.getPredictedEvents();}catch(_){return;}
+  predClear();if(!pr||!pr.length)return;
+  const last=live.pts[live.pts.length-1];if(!last)return;
+  pctx.setTransform(pcv.width/LW,0,0,pcv.height/LH,0,0);
+  pctx.save();pctx.globalAlpha=live.tool==='pencil'?0.5:0.85;pctx.strokeStyle=live.color;
+  pctx.lineCap='round';pctx.lineJoin='round';pctx.lineWidth=Math.max(0.7,last.w||live.size);
+  pctx.beginPath();pctx.moveTo(last.x,last.y);
+  for(const pe of pr){const q=toL(pe);pctx.lineTo(q.x,q.y);}
+  pctx.stroke();pctx.restore();
+}
+function cancelLive(){live=null;try{predClear();}catch(_){}rebuildBase();present();}
+/* 텍스트 입력 — 탭한 자리에서 바로 타이핑 */
+let txtEd=null, txtTarget=null;
+function lOf(e){const r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*LW,y:(e.clientY-r.top)/r.height*LH,r};}
+function findText(l){let best=null,bd=1e9;
+  (note.pages[pi].strokes||[]).forEach(st2=>{if(st2.tool!=='text')return;
+    const lns=textLines(st2);
+    const w=(st2.wrap?st2.wrap:Math.max(...lns.map(t=>t.length),1)*st2.size*0.95)+40;
+    const h=lns.length*st2.size*1.7*1.34+30;
+    if(l.x>=st2.x-20&&l.x<=st2.x+w&&l.y>=st2.y-20&&l.y<=st2.y+h){const d=Math.hypot(l.x-st2.x,l.y-st2.y);if(d<bd){bd=d;best=st2;}}});
+  return best;}
+function openTextEditor(l,existing){
+  closeTextEditor(true);
+  txtTarget=existing||null;
+  const fs=(existing?existing.size:size)*1.7*(l.r.width/LW);
+  const ed=document.createElement('textarea');ed.id='txted';
+  ed.value=existing?existing.text:'';
+  ed._size=existing?existing.size:size;
+  ed.style.cssText='position:fixed;z-index:60;background:rgba(255,255,255,.96);border:1.5px dashed #3a6df0;border-radius:6px;'
+    +'padding:2px 6px;margin:0;outline:none;resize:both;overflow:auto;min-width:80px;min-height:40px;color:'+(existing?existing.color:color)
+    +";font:600 "+fs+"px -apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.34;";
+  const px=l.r.left+(existing?existing.x:l.x)/LW*l.r.width, py=l.r.top+(existing?existing.y:l.y)/LH*l.r.height;
+  ed.style.left=(px-8)+'px';ed.style.top=(py-4)+'px';
+  ed._l={x:existing?existing.x:l.x,y:existing?existing.y:l.y};
+  // 기존 항목에 줄바꿈 폭이 있으면 그 폭으로 시작 (수동 크기 모드)
+  if(existing&&existing.wrap){ed._man=true;ed.style.width=(existing.wrap*l.r.width/LW+15)+'px';}
+  const posH=()=>{if(!ed._h)return;const r2=ed.getBoundingClientRect();ed._h.style.left=(r2.right-14)+'px';ed._h.style.top=(r2.bottom-14)+'px';};
+  const clampEd=()=>{const cr=cv.getBoundingClientRect();
+    let L2=parseFloat(ed.style.left),T2=parseFloat(ed.style.top);
+    L2=Math.min(Math.max(L2,cr.left),Math.max(cr.left,cr.right-ed.offsetWidth));
+    T2=Math.min(Math.max(T2,cr.top),Math.max(cr.top,cr.bottom-ed.offsetHeight));
+    ed.style.left=L2+'px';ed.style.top=T2+'px';
+    if(!existing)ed._l={x:(L2+8-cr.left)/cr.width*LW,y:(T2+4-cr.top)/cr.height*LH};
+    posH();};
+  const auto=()=>{
+    if(ed._man){ed.style.height='auto';ed.style.height=Math.max(ed._mh||40,ed.scrollHeight+2)+'px';}
+    else{ed.style.height='auto';ed.style.height=(ed.scrollHeight+2)+'px';
+      ed.style.width='auto';ed.style.width=Math.max(80,ed.scrollWidth+8)+'px';}
+    clampEd();ed._pw=ed.offsetWidth;ed._ph=ed.offsetHeight;};
+  ed.addEventListener('input',auto);
+  // ↘ 모서리 핸들 — 터치(펜·손가락)에서도 크기 조절
+  const hd=document.createElement('div');hd.id='txtedHd';hd.textContent='↘';
+  hd.style.cssText='position:fixed;z-index:62;width:28px;height:28px;border-radius:50%;background:#3a6df0;color:#fff;'
+    +'display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;cursor:nwse-resize;'
+    +'touch-action:none;box-shadow:0 2px 6px var(--sh3,rgba(16,24,40,.3));-webkit-user-select:none;user-select:none;';
+  hd.addEventListener('pointerdown',ev=>{
+    ev.preventDefault();ev.stopPropagation();
+    try{hd.setPointerCapture(ev.pointerId);}catch(_){}
+    const r0=ed.getBoundingClientRect(),cr=cv.getBoundingClientRect();
+    const sx=ev.clientX,sy=ev.clientY,w0=r0.width,h0=r0.height;
+    const mv=e2=>{
+      ed._man=true;
+      let w=Math.max(80,w0+e2.clientX-sx),hh=Math.max(40,h0+e2.clientY-sy);
+      w=Math.min(w,Math.max(80,cr.right-r0.left));
+      hh=Math.min(hh,Math.max(40,cr.bottom-r0.top));
+      ed.style.width=w+'px';ed.style.height=hh+'px';
+      ed._mh=ed.offsetHeight;ed._pw=ed.offsetWidth;ed._ph=ed.offsetHeight;
+      posH();};
+    const up=()=>{hd.removeEventListener('pointermove',mv);hd.removeEventListener('pointerup',up);hd.removeEventListener('pointercancel',up);auto();ed.focus();};
+    hd.addEventListener('pointermove',mv);
+    hd.addEventListener('pointerup',up);hd.addEventListener('pointercancel',up);});
+  document.body.appendChild(hd);ed._h=hd;
+  ed.addEventListener('keydown',ev=>{
+    if(ev.key==='Escape'){closeTextEditor(false);}
+    if(ev.key==='Enter'&&(ev.metaKey||ev.ctrlKey)){closeTextEditor(true);}
+    ev.stopPropagation();});
+  ed.addEventListener('blur',()=>closeTextEditor(true));
+  // ± 크기 조절 바
+  const bar=document.createElement('div');bar.id='txtedBar';
+  bar.style.cssText='position:fixed;z-index:61;display:flex;gap:4px;';
+  bar.style.left=ed.style.left;bar.style.top=(parseFloat(ed.style.top)-38)+'px';
+  const mkB=(t,fn)=>{const b2=document.createElement('button');b2.textContent=t;
+    b2.style.cssText='width:34px;height:30px;border-radius:8px;border:1px solid #d6dae2;background:#fff;font-weight:800;cursor:pointer;box-shadow:0 2px 6px var(--sh12,rgba(16,24,40,.12));font-size:14px;';
+    b2.addEventListener('pointerdown',ev=>{ev.preventDefault();ev.stopPropagation();});
+    b2.addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();fn();ed.focus();});
+    bar.appendChild(b2);return b2;};
+  const applyFs=()=>{const fs2=ed._size*1.7*(l.r.width/LW);ed.style.fontSize=fs2+'px';auto();};
+  mkB('−',()=>{ed._size=Math.max(8,ed._size-2);applyFs();});
+  mkB('＋',()=>{ed._size=Math.min(72,ed._size+2);applyFs();});
+  mkB('✓',()=>{ed.blur();});
+  if(txtTarget){var __db=mkB('✕',()=>{ed.value='';ed.blur();});__db.style.color='#C24A46';__db.title='텍스트 삭제';}
+  document.body.appendChild(bar);ed._bar=bar;
+  document.body.appendChild(ed);txtEd=ed;
+  requestAnimationFrame(()=>{auto();ed.focus();const n2=ed.value.length;ed.setSelectionRange(n2,n2);
+    if(window.ResizeObserver){ // 마우스 CSS resize 감지 → 수동 크기 모드
+      ed._ro=new ResizeObserver(()=>{if(txtEd!==ed)return;
+        if(Math.abs(ed.offsetWidth-(ed._pw||0))>1||Math.abs(ed.offsetHeight-(ed._ph||0))>1){
+          ed._man=true;ed._mh=ed.offsetHeight;ed._pw=ed.offsetWidth;ed._ph=ed.offsetHeight;clampEd();}
+        else posH();});
+      ed._ro.observe(ed);}});}
+function closeTextEditor(commit){
+  if(!txtEd)return;const ed=txtEd;txtEd=null;
+  const val=ed.value.replace(/\s+$/,'');
+  const crw=cv.getBoundingClientRect().width;
+  const wrapL=(ed._man&&crw>0)?Math.max(40,ed.clientWidth-12)*LW/crw:0; // 박스 폭 → 논리 줄바꿈 폭
+  const tgt=txtTarget;txtTarget=null;if(ed._bar)ed._bar.remove();if(ed._h)ed._h.remove();if(ed._ro)ed._ro.disconnect();ed.remove();
+  if(commit){
+    if(tgt){ // 기존 텍스트 수정/삭제
+      const st2=note.pages[pi].strokes;
+      if(!val){const i=st2.indexOf(tgt);if(i>=0)st2.splice(i,1);}
+      else {tgt.text=val;if(ed._size)tgt.size=ed._size;if(wrapL)tgt.wrap=wrapL;}
+      rebuildBase();present();saveSoon();updateUI();return;}
+    if(val){
+      const item={tool:'text',x:ed._l.x,y:ed._l.y,text:val,size:(ed._size||size),color};
+      if(wrapL)item.wrap=wrapL;
+      note.pages[pi].strokes.push(item);redoStack=[];
+      renderStroke(bctx,item,base.width,base.height);present();saveSoon();updateUI();}}
+}
+cv.addEventListener('pointerdown',e=>{
+  if(tool==='text'){
+    e.preventDefault();
+    if(txtEd){return;}
+    const l=lOf(e);
+    const __hit=findText(l);
+    if(__hit){ window.__txtDrag={t:__hit,sx:l.x,sy:l.y,ox:__hit.x,oy:__hit.y,moved:false,pid:e.pointerId,l:l}; try{cv.setPointerCapture(e.pointerId);}catch(_){} return; }
+    openTextEditor(l,null);
+    return;}
+  const isPen=e.pointerType==='pen';
+  if(isPen&&!penSeen){penSeen=true;if(!penOnly)setPenOnly(true,true);}
+  if(isPen&&live&&live._touch){cancelLive();}                 // 손바닥 먼저 닿은 획 취소
+  if(e.pointerType==='touch'){
+    if(window.__nvMulti&&window.__nvMulti())return;           // 두 손가락 제스처(줌·팬·탭) 중 — 새 획 금지
+    if(penOnly)return;
+    const r=Math.max(e.width||0,e.height||0);
+    if(r>34)return;                                           // 넓은 접촉 = 손바닥
+  }
+  if(live)return;
+  e.preventDefault();
+  try{cv.setPointerCapture(e.pointerId);}catch(_){}
+  rect=cv.getBoundingClientRect();
+  try{predSync();}catch(_){}
+  emaW=0;drawnIdx=0;
+  live={tool,color:tool==='hl'?(HL_COLORS[color]||color):color,size,pts:[],_touch:e.pointerType==='touch',_pid:e.pointerId};
+  addPoint(e);
+  redoStack=[];
+});
+cv.addEventListener('pointermove',e=>{
+  if(!live||e.pointerId!==live._pid)return;
+  e.preventDefault();
+  const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+  for(const ev of evs)addPoint(ev);
+  drawTail();                                                 // 즉시 그리기 (rAF 대기 없음)
+  try{predDraw(e);}catch(_){}                                  // 예측 테일(펜슬 지연 체감 축소)
+});
+function endStroke(e){
+  if(!live||(e&&e.pointerId!==live._pid))return;
+  try{predClear();}catch(_){}
+  if(live.pts.length>0){
+    delete live._touch;delete live._pid;
+    if(live.tool==='pen'||live.tool==='pencil'||live.tool===undefined){
+      const P=live.pts,m=P.length;
+      if(m>3){P[m-1].w*=0.5;P[m-2].w*=0.75;}
+      if(m>2){P[0].w*=0.62;P[1].w*=0.85;}
+    }
+    note.pages[pi].strokes.push(live);
+    if(live.tool==='eraser')rebuildBase();                    // 지우개는 잉크 캔버스 경유
+    else renderStroke(bctx,live,base.width,base.height);      // 베이스에 고품질 합성
+    saveSoon();
+  }
+  live=null;present();updateUI();
+}
+cv.addEventListener('pointerup',endStroke);
+cv.addEventListener('pointermove',e=>{var D=window.__txtDrag;if(!D||e.pointerId!==D.pid)return;e.preventDefault();var l=lOf(e);var dx=l.x-D.sx,dy=l.y-D.sy;if(Math.abs(dx)>3||Math.abs(dy)>3)D.moved=true;D.t.x=D.ox+dx;D.t.y=D.oy+dy;rebuildBase();present();});
+cv.addEventListener('pointerup',e=>{var D=window.__txtDrag;if(!D||e.pointerId!==D.pid)return;window.__txtDrag=null;if(D.moved){rebuildBase();present();saveSoon();try{updateUI();}catch(_){}}else{openTextEditor(D.l,D.t);}});
+cv.addEventListener('pointercancel',()=>{cancelLive();});
+const ecur=$('ecur');
+function moveEcur(e){
+  if(tool!=='eraser'){ecur.style.display='none';return;}
+  const r=cv.getBoundingClientRect();
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom){ecur.style.display='none';return;}
+  const px=size*(r.width/LW);
+  ecur.style.width=px+'px';ecur.style.height=px+'px';
+  ecur.style.left=e.clientX+'px';ecur.style.top=e.clientY+'px';
+  ecur.style.display='block';
+}
+cv.addEventListener('pointermove',moveEcur);
+cv.addEventListener('pointerdown',moveEcur);
+cv.addEventListener('pointerleave',()=>ecur.style.display='none');
+cv.addEventListener('pointerup',e=>{if(tool!=='eraser')ecur.style.display='none';});
+
+document.addEventListener('touchmove',e=>{if(live)e.preventDefault();},{passive:false});
+document.addEventListener('selectstart',e=>{if(live)e.preventDefault();});
+window.addEventListener('blur',()=>{if(live)endStroke();});
+
+
+/* ============ 펜 전용 모드 ============ */
+function setPenOnly(v,auto){
+  penOnly=v;$('penOnly').classList.toggle('on',v);
+  if(v&&auto)toast('✍︎ 펜 전용 모드 — 손바닥 안심하고 대세요');
+}
+$('penOnly').onclick=()=>setPenOnly(!penOnly);
+
+/* ============ 도구 UI ============ */
+$('tools').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(txtEd)closeTextEditor(true);
+  SIZES[tool]=size;
+  tool=b.dataset.t;
+  const rg=SIZE_RANGE[tool]||[1,14,0.5];
+  const sl=$('size');sl.min=rg[0];sl.max=rg[1];sl.step=rg[2];
+  size=SIZES[tool]!=null?SIZES[tool]:+sl.value;sl.value=size;
+  [...$('tools').children].forEach(x=>x.classList.toggle('on',x===b));
+});
+COLORS.forEach((c,i)=>{
+  const b=document.createElement('button');b.style.background=c;if(i===0)b.classList.add('on');
+  b.onclick=()=>{color=c;[...$('cols').children].forEach(x=>x.classList.toggle('on',x===b));};
+  $('cols').appendChild(b);
+});
+(function(){ // 직접 색 고르기
+  const cust=document.createElement('input');cust.type='color';cust.className='custcol';cust.title='직접 색 고르기';
+  try{cust.value=localStorage.getItem('cs_note_custcol')||'#ff8a00';}catch(_){cust.value='#ff8a00';}
+  const act=()=>{color=cust.value;[...$('cols').children].forEach(x=>x.classList.toggle('on',x===cust));};
+  cust.addEventListener('input',()=>{try{localStorage.setItem('cs_note_custcol',cust.value);}catch(_){}act();});
+  cust.addEventListener('click',act);
+  $('cols').appendChild(cust);
+})();
+$('size').oninput=e=>size=+e.target.value;
+$('undoB').onclick=()=>{const st=note.pages[pi].strokes;if(!st.length)return;
+  redoStack.push(st.pop());rebuildBase();present();saveSoon();updateUI();};
+$('redoB').onclick=()=>{if(!redoStack.length)return;
+  const s=redoStack.pop();note.pages[pi].strokes.push(s);
+  if(s.tool==='eraser')rebuildBase();else renderStroke(bctx,s,base.width,base.height);
+  present();saveSoon();updateUI();};
+function updateUI(){
+  $('undoB').disabled=!note||!note.pages[pi].strokes.length;
+  $('redoB').disabled=!redoStack.length;
+  $('pgLbl').textContent=(pi+1)+' / '+note.pages.length;
+  $('pgPrev').disabled=pi===0;$('pgNext').disabled=pi>=note.pages.length-1;
+  renderPageRail();
+}
+
+/* PDF 배경은 저장된 이미지를 그대로 썸네일로 사용한다. 직접 작성 노트는 전역 pi를
+   바꾸지 않는 종이 미리보기만 보여 줘, 필기 중 페이지가 튀는 일을 막는다. */
+function renderPageRail(){
+  var rail=$('pageRail');if(!rail||!note)return;
+  /* 빈 종이에 첫 획을 그은 순간에도 미리보기 상태가 바로 바뀐다. 획 개수 전체를
+     서명에 넣지는 않아 필기 중 매번 레일을 다시 만들지 않는다. */
+  var sig=note.id+':'+note.pages.map(function(pg){return (pg&&pg.bg?'b':'p')+((pg&&pg.strokes&&pg.strokes.length)?'i':'0');}).join(',');
+  if(rail.dataset.sig!==sig){
+    rail.dataset.sig=sig;rail.innerHTML='';
+    note.pages.forEach(function(pg,i){
+      var b=document.createElement('button');b.type='button';b.setAttribute('aria-label',(i+1)+'페이지 열기');
+      if(pg&&pg.bg){var im=document.createElement('img');im.src=pg.bg;im.alt='';b.appendChild(im);}
+      else{var paper=document.createElement('span');paper.className='pr-blank';paper.textContent=(pg&&pg.strokes&&pg.strokes.length)?'✎':' ';b.appendChild(paper);}
+      var no=document.createElement('small');no.textContent=i+1;b.appendChild(no);
+      b.onclick=function(){if(pi===i)return;pi=i;redoStack=[];rebuildBase();present();updateUI();};
+      rail.appendChild(b);
+    });
+  }
+  [].forEach.call(rail.children,function(b,i){var on=i===pi;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  var cur=rail.children[pi];if(cur&&cur.scrollIntoView)try{cur.scrollIntoView({block:'nearest'});}catch(_){}
+}
+
+/* ============ 페이지 ============ */
+$('orientB').onclick=()=>{if(!note)return;
+  const hasInk=note.pages.some(p=>p.strokes&&p.strokes.length);
+  const go=()=>{
+    const oW=LW,oH=LH;
+    note.orient=(note.orient==='l')?'p':'l';
+    applyOrient();
+    if(hasInk){ /* 필기를 새 종이에 맞게 축소·중앙 배치 — 안 하면 긴 쪽 필기가 종이 밖으로 잘린다 */
+      const k=Math.min(LW/oW,LH/oH), ox=(LW-oW*k)/2, oy=(LH-oH*k)/2;
+      note.pages.forEach(p=>(p.strokes||[]).forEach(s=>{
+        if(s.tool==='text'){s.x=s.x*k+ox;s.y=s.y*k+oy;s.size=s.size*k;if(s.wrap)s.wrap=s.wrap*k;return;}
+        (s.pts||[]).forEach(q=>{q.x=q.x*k+ox;q.y=q.y*k+oy;if(q.w)q.w=q.w*k;});
+        if(s.size)s.size=s.size*k;
+      }));
+      redoStack=[];
+    }
+    fit();saveSoon();updateUI();
+    toast(note.orient==='l'?'가로 모드 (A4 가로)':'세로 모드 (A4 세로)');
+  };
+  if(hasInk)psConfirm('방향을 바꾸면 지금 필기를 새 종이에 맞게 축소해 배치합니다. 계속할까요?',go);
+  else go();};
+$('pgPrev').onclick=()=>{if(pi>0){pi--;redoStack=[];rebuildBase();present();updateUI();}};
+$('pgNext').onclick=()=>{if(pi<note.pages.length-1){pi++;redoStack=[];rebuildBase();present();updateUI();}};
+/* 1.829 — 페이지 스와이프(사용자: 페이지 레일 지우고 슬라이드로). 그리기와 충돌하지 않게
+   ① 종이 밖(#stage 여백)에서 시작한 가로 스와이프 ② 펜 전용 모드에서 손가락 가로 스와이프(손가락은 어차피 그리지 않음)
+   ③ 트랙패드 가로 휠 — 세 경우만 이전/다음 페이지. 종이 위 그리기 포인터는 건드리지 않는다. */
+(function(){
+  var st=$('stage'); if(!st) return;
+  var sw=null;
+  function turn(dir){ if(!note) return; var b=$(dir>0?'pgNext':'pgPrev'); if(b&&b.onclick) b.onclick(); }
+  st.addEventListener('pointerdown',function(e){
+    if(e.pointerType==='pen') return;
+    var onPaper=(e.target===cv);
+    if(onPaper && !(e.pointerType==='touch' && penOnly)) return;      /* 종이 위 손가락/마우스는 그리기 */
+    if(onPaper && window.__nvMulti && window.__nvMulti()) return;      /* 두 손가락 제스처 중 */
+    sw={x:e.clientX,y:e.clientY,id:e.pointerId,t:Date.now()};
+  },true);
+  st.addEventListener('pointerup',function(e){
+    if(!sw||e.pointerId!==sw.id){sw=null;return;}
+    var dx=e.clientX-sw.x, dy=e.clientY-sw.y, dt=Date.now()-sw.t; sw=null;
+    if(dt>900||Math.abs(dx)<60||Math.abs(dy)>Math.abs(dx)*0.6) return;
+    turn(dx<0?1:-1);
+  },true);
+  st.addEventListener('pointercancel',function(){sw=null;},true);
+  var wAcc=0,wT=0;
+  st.addEventListener('wheel',function(e){
+    if(Math.abs(e.deltaX)<=Math.abs(e.deltaY)) return;
+    var now=Date.now(); if(now-wT>400) wAcc=0; wT=now; wAcc+=e.deltaX;
+    if(Math.abs(wAcc)>=120){ turn(wAcc>0?1:-1); wAcc=0; }
+  },{passive:true});
+})();
+$('pgAdd').onclick=()=>{note.pages.splice(pi+1,0,{strokes:[]});pi++;redoStack=[];rebuildBase();present();saveSoon();updateUI();toast('페이지 추가됨');};
+/* 1.924 — 페이지 삭제(사용자). 마지막 한 장은 지우지 않고 내용만 비운다 */
+$('pgDel').onclick=()=>{ if(!note)return; var n=note.pages.length, pg=note.pages[pi]||{}, has=!!((pg.strokes&&pg.strokes.length)||pg.bg);
+  if(n<=1){ if(!has){toast('빈 페이지예요');return;} psConfirm('마지막 페이지라 지울 수 없어요 — 이 페이지의 내용만 비울까요?',function(){ note.pages[pi]={strokes:[]}; redoStack=[]; rebuildBase(); present(); saveSoon(); updateUI(); toast('페이지를 비웠어요'); }); return; }
+  var go=function(){ note.pages.splice(pi,1); if(pi>=note.pages.length)pi=note.pages.length-1; redoStack=[]; rebuildBase(); present(); saveSoon(); updateUI(); toast((n-1)+'페이지 남음 — 삭제됨'); };
+  if(has)psConfirm((pi+1)+'페이지를 삭제할까요? 그린 내용도 함께 지워져요.',go); else go(); };
+const PKEY='cs_note_papers_v1';
+var _papMem=null;
+function papers(){
+  if(_papMem)return _papMem;
+  try{ _papMem=JSON.parse(localStorage.getItem(PKEY))||[]; }catch(_){ _papMem=[]; }
+  return _papMem;
+}
+function savePapers(arr){
+  _papMem=arr;
+  var str;try{ str=JSON.stringify(arr); }catch(_){ return false; }
+  if(window.storage){ window.storage.set(PKEY,str).then(function(){
+      if(!savePapers._moved){savePapers._moved=1;try{localStorage.removeItem(PKEY);}catch(__){}}
+    }).catch(function(){toast('양식을 저장하지 못했어요');}); return true; }
+  try{ localStorage.setItem(PKEY,str); return true; }catch(_){ toast('저장 공간이 부족해요'); return false; }
+}
+
+/* ===== 양식 배경 — 보관함 '양식' 26종을 그대로 노트 배경으로 =====
+   이미지를 저장하지 않고 키(form:<k>)만 남긴다 → localStorage 0 + '월간 양식'이 늘 이번 달.
+   그릴 때 셸에서 양식 HTML을 받아 foreignObject 로 래스터화하고 메모리에만 캐시. */
+const FKEY='cs_note_forms_v1';
+function usedForms(){try{return JSON.parse(localStorage.getItem(FKEY))||[];}catch(_){return [];}}
+function formsApi(){try{return window.parent!==window?window.parent.__psForms:null;}catch(_){return null;}}
+/* 관대한 HTML 파서로 읽고 XMLSerializer 로 다시 뱉는다 → 항상 well-formed XHTML.
+   foreignObject 는 XHTML만 받는데 '매치데이 양식'은 태그가 안 닫혀 있어 원문 그대로는 거부당한다.
+   덤으로 <svg> 에 네임스페이스가 자동으로 붙어 운동장 블록도 그려진다. */
+function docToXhtml(doc){
+  const d=new DOMParser().parseFromString(doc,'text/html');
+  const css=[...d.querySelectorAll('style')].map(s=>s.textContent).join('\n');
+  const wrap=d.createElement('div');
+  wrap.setAttribute('xmlns','http://www.w3.org/1999/xhtml');
+  const st=d.createElement('style');st.textContent=css;wrap.appendChild(st);
+  while(d.body.firstChild) wrap.appendChild(d.body.firstChild);
+  return new XMLSerializer().serializeToString(wrap);
+}
+const formCache={};   /* 캐시키 → {img,err} */
+function rasterEntry(ck,getDoc,land){
+  let e=formCache[ck]; if(e) return e;
+  e=formCache[ck]={img:null,err:false};
+  Promise.resolve().then(getDoc).then(doc=>{
+    const xh=docToXhtml(doc);
+    const NW=land?1100:760, NH=land?780:1080;
+    /* viewBox 로 2배 확대 — 내용이 벡터라 노트 해상도(1000×1414)에서 선명하게 래스터된다 */
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(NW*2)+'" height="'+(NH*2)+'" viewBox="0 0 '+NW+' '+NH+'">'
+             +'<foreignObject width="'+NW+'" height="'+NH+'">'+xh+'</foreignObject></svg>';
+    const img=new Image();
+    img.onload=()=>{e.img=img;rebuildBase();present();};
+    img.onerror=()=>{e.err=true;toast('이 양식은 배경으로 못 써요 — 인쇄로 써주세요');};
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  }).catch(()=>{e.err=true;toast('양식을 불러오지 못했어요');});
+  return e;
+}
+function formEntry(k){
+  const api=formsApi(); if(!api){const e={img:null,err:true};return e;}
+  return rasterEntry('form:'+k,()=>api.doc(k),api.isLand(k));
+}
+function myEntry(id){
+  const f=myForm(id); if(!f){return {img:null,err:true};}
+  return rasterEntry('my:'+id+':'+(f.v||0),()=>myDoc(f),f.orient==='l');   /* v 를 캐시키에 넣어 편집하면 다시 그린다 */
+}
+function tplEntry(t){
+  if(t.indexOf('form:')===0) return formEntry(t.slice(5));
+  if(t.indexOf('my:')===0)   return myEntry(t.slice(3));
+  return {img:null,err:true};
+}
+function formReady(t){   /* 내보내기 전 대기용 */
+  const e=tplEntry(t);
+  if(e.img||e.err) return Promise.resolve();
+  return new Promise(res=>{const t0=Date.now();(function w(){ if(e.img||e.err||Date.now()-t0>8000) return res(); setTimeout(w,120);})();});
+}
+function refreshTplSel(){
+  const sel=$('nTpl');const cur=sel.value;
+  [...sel.querySelectorAll('option[data-cp],option[data-fm]')].forEach(o=>o.remove());
+  let addOpt=sel.querySelector('option[value="__add"]');
+  if(!addOpt){addOpt=document.createElement('option');addOpt.value='__add';addOpt.textContent='＋ 양식 추가 (이미지)';sel.appendChild(addOpt);}
+  let bldOpt=sel.querySelector('option[value="__build"]');
+  if(!bldOpt){bldOpt=document.createElement('option');bldOpt.value='__build';bldOpt.textContent='＋ 양식 직접 만들기';sel.insertBefore(bldOpt,addOpt);}
+  let pickOpt=sel.querySelector('option[value="__forms"]');
+  if(!pickOpt&&formsApi()){pickOpt=document.createElement('option');pickOpt.value='__forms';pickOpt.textContent='＋ 양식에서 가져오기';sel.insertBefore(pickOpt,bldOpt);}
+  let edOpt=sel.querySelector('option[value="__edit"]');   /* 내가 만든 양식을 보는 중일 때만 '고치기' */
+  if(edOpt)edOpt.remove();
+  if(note&&note.tpl&&note.tpl.indexOf('my:')===0){
+    edOpt=document.createElement('option');edOpt.value='__edit';edOpt.textContent='✎ 이 양식 고치기';sel.insertBefore(edOpt,pickOpt||bldOpt);
+  }
+  const anchor=sel.querySelector('option[value="__edit"]')||pickOpt||bldOpt;   /* 양식들은 '＋' 항목들 위에 쌓인다 */
+  myForms().forEach(mf=>{const o=document.createElement('option');o.value='my:'+mf.id;o.textContent=mf.name;o.setAttribute('data-fm','1');sel.insertBefore(o,anchor);});
+  const fms=usedForms();
+  // 이 기기에서 고른 적 없는 양식(백업 복원·다른 기기 노트)이면 목록에 없어 드롭다운이 빈칸이 된다 — 이름을 찾아 채운다
+  const ck=(note&&note.tpl&&note.tpl.indexOf('form:')===0)?note.tpl.slice(5):null;
+  if(ck&&!fms.some(x=>x.k===ck)){
+    let nm=ck; try{const f=(formsApi().list()||[]).find(x=>x.k===ck); if(f)nm=f.name;}catch(_){}
+    fms.unshift({k:ck,name:nm});
+  }
+  fms.forEach(fm=>{const o=document.createElement('option');o.value='form:'+fm.k;o.textContent=fm.name;o.setAttribute('data-fm','1');sel.insertBefore(o,anchor);});
+  papers().forEach(pp=>{const o=document.createElement('option');o.value='paper:'+pp.id;o.textContent=''+pp.name;o.setAttribute('data-cp','1');sel.insertBefore(o,anchor);});
+  sel.value=cur&&sel.querySelector('option[value="'+cur+'"]')?cur:(note?note.tpl||'blank':'blank');try{syncTplChips();}catch(_){}}
+const pFile=document.createElement('input');pFile.type='file';pFile.accept='image/*';pFile.style.display='none';document.body.appendChild(pFile);
+pFile.addEventListener('change',function(){
+  const f=this.files&&this.files[0];this.value='';if(!f){refreshTplSel();return;}
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const mx=1600,sc=Math.min(1,mx/Math.max(img.width,img.height));
+      const c2=document.createElement('canvas');c2.width=Math.round(img.width*sc);c2.height=Math.round(img.height*sc);
+      c2.getContext('2d').drawImage(img,0,0,c2.width,c2.height);
+      psPrompt('양식 이름','내 양식 '+(papers().length+1),function(v){
+        const name=(v||'내 양식').slice(0,20);
+        const arr=papers();const id='pp'+Date.now().toString(36);
+        arr.push({id,name,img:c2.toDataURL('image/jpeg',0.82)});
+        if(!savePapers(arr))return;
+        refreshTplSel();$('nTpl').value='paper:'+id;note.tpl='paper:'+id;rebuildBase();present();saveSoon();toast('양식 추가됨 ✓');
+      },function(){refreshTplSel();});};
+    img.src=rd.result;};
+  rd.readAsDataURL(f);});
+$('nTpl').onchange=e=>{
+  if(e.target.value==='__add'){pFile.click();return;}
+  if(e.target.value==='__forms'){openFormPicker();return;}
+  if(e.target.value==='__build'){refreshTplSel();openBuilder(null);return;}
+  if(e.target.value==='__edit'){const id=note.tpl.slice(3);refreshTplSel();openBuilder(id);return;}
+  note.tpl=e.target.value;
+  /* 1.925 — 가져온 PDF·보관함 이미지 페이지(bg)는 양식이 그 아래 깔려 보이지 않는다("눌러도 안 바뀐다"). 양식을 고르면 바로 뒤에 새 페이지를 만들어 거기에 적용 */
+  var _pg=note.pages[pi]; if(_pg&&_pg.bg){ note.pages.splice(pi+1,0,{strokes:[]}); pi++; redoStack=[]; rebuildBase(); present(); syncTplChips(); saveSoon(); updateUI(); toast('가져온 페이지에는 양식이 깔리지 않아요 — 새 페이지('+(pi+1)+')에 적용했어요'); return; }
+  rebuildBase();present();syncTplChips();saveSoon();};   /* 1.909 — 라벨 갱신을 저장 예약보다 먼저(체감) */
+/* 1.707 — 배경 양식: 버튼 하나 + 팝오버 그리드(썸네일). #nTpl(select)을 데이터 소스로 그대로 쓰고, 고르면 change 발생. */
+(function(){
+  var SHORT={blank:'백지',lines:'줄노트',grid:'모눈',pitchgrid:'축구장 모눈',pitch:'축구장',meet:'미팅',training1horizontal_land_v1:'훈련 1면',training3vertical_land_v1:'훈련 3면',training6grid_land_v1:'훈련 6면'};
+  function svg(inner){return '<svg viewBox="0 0 40 30" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="38" height="28" rx="2.5" fill="#fff" stroke="#d5d9e0"/>'+inner+'</svg>';}
+  var gridI='<g stroke="#e7eaef" stroke-width="0.6">'+[8,16,24,32].map(function(x){return '<line x1="'+x+'" y1="2" x2="'+x+'" y2="28"/>';}).join('')+[9,16,23].map(function(y){return '<line x1="2" y1="'+y+'" x2="38" y2="'+y+'"/>';}).join('')+'</g>';
+  var linesI='<g stroke="#cbd0d8" stroke-width="0.8">'+[9,15,21,27].map(function(y){return '<line x1="5" y1="'+y+'" x2="35" y2="'+y+'"/>';}).join('')+'</g>';
+  var pitchI='<g fill="none" stroke="#c2c8d0" stroke-width="0.9"><rect x="4" y="4" width="32" height="22"/><line x1="20" y1="4" x2="20" y2="26"/><circle cx="20" cy="15" r="4.5"/><rect x="4" y="9.5" width="3.5" height="11"/><rect x="32.5" y="9.5" width="3.5" height="11"/></g>';
+  var ICON={
+    blank:svg(''), lines:svg(linesI), grid:svg(gridI), pitchgrid:svg(gridI+pitchI), pitch:svg(pitchI),
+    meet:svg('<g fill="none" stroke="#c2c8d0" stroke-width="0.9"><rect x="4" y="4" width="15" height="22"/><line x1="11.5" y1="4" x2="11.5" y2="26"/></g><g stroke="#cbd0d8" stroke-width="0.8"><line x1="22" y1="10" x2="35" y2="10"/><line x1="22" y1="16" x2="35" y2="16"/><line x1="22" y1="22" x2="35" y2="22"/></g>'),
+    training1horizontal_land_v1:svg('<g fill="none" stroke="#c2c8d0" stroke-width="0.8"><rect x="4" y="4" width="32" height="13"/><line x1="20" y1="4" x2="20" y2="17"/><circle cx="20" cy="10.5" r="3"/></g><g stroke="#cbd0d8" stroke-width="0.7"><line x1="5" y1="21" x2="35" y2="21"/><line x1="5" y1="25" x2="35" y2="25"/></g>'),
+    training3vertical_land_v1:svg('<g fill="none" stroke="#c2c8d0" stroke-width="0.8">'+[5,15,25].map(function(x){return '<rect x="'+x+'" y="5" width="9" height="20"/><line x1="'+x+'" y1="15" x2="'+(x+9)+'" y2="15"/>';}).join('')+'</g>'),
+    training6grid_land_v1:svg('<g fill="none" stroke="#c2c8d0" stroke-width="0.7">'+[[4,4],[12,4],[20,4],[4,16],[12,16],[20,16]].map(function(p){return '<rect x="'+p[0]+'" y="'+p[1]+'" width="6.5" height="10"/><line x1="'+p[0]+'" y1="'+(p[1]+5)+'" x2="'+(p[0]+6.5)+'" y2="'+(p[1]+5)+'"/>';}).join('')+'</g><g stroke="#cbd0d8" stroke-width="0.7"><line x1="29" y1="8" x2="36" y2="8"/><line x1="29" y1="13" x2="36" y2="13"/><line x1="29" y1="18" x2="36" y2="18"/><line x1="29" y1="23" x2="36" y2="23"/></g>'),
+    _generic:svg('<rect x="6" y="8" width="28" height="14" rx="2" fill="#eef1f5"/>')
+  };
+  var opened=false;
+  function build(){
+    var pop=document.getElementById('nTplPop'), sel=document.getElementById('nTpl'); if(!pop||!sel)return;
+    var cells='',acts='';
+    [].forEach.call(sel.options,function(o){
+      if(o.hidden)return; var v=o.value;
+      if(v==='__add'||v==='__forms'||v==='__build'||v==='__edit'){ acts+='<button type="button" class="tplp-act" data-v="'+v+'">'+o.textContent+'</button>'; return; }
+      var lb=(SHORT[v]||o.textContent).replace(/</g,'&lt;'); var ic=ICON[v]||ICON._generic;
+      var tt=(o.textContent||'').replace(/"/g,'&quot;');
+      cells+='<button type="button" class="tplp-cell'+((typeof note!=='undefined'&&note&&note.tpl===v)?' on':'')+'" role="menuitem" data-v="'+v+'" title="'+tt+'"><span class="tplp-ic">'+ic+'</span><span class="tplp-lb">'+lb+'</span></button>';
+    });
+    /* 1.909 — 파일 메뉴(PDF 가져오기·보관함 훈련·이미지 저장·A4 인쇄)와 새 노트를 이 팝오버로(사용자: 노트 선택에 중복 없이). 도구줄의 파일▾·새 노트 버튼은 숨긴다(design-v2) — 같은 버튼을 대신 눌러 준다 */
+    var acts2='';[['newB','새 노트'],['pdfB','PDF 가져오기'],['vaultPdfB','보관함 훈련 가져오기'],['pngB','이미지 저장'],['printB','A4 인쇄']].forEach(function(a){ if(document.getElementById(a[0]))acts2+='<button type="button" class="tplp-act" data-click="'+a[0]+'">'+a[1]+'</button>'; });
+    var _bgNote=(typeof note!=='undefined'&&note&&note.pages&&note.pages[pi]&&note.pages[pi].bg)?'<div class="tplp-note">이 페이지는 가져온 이미지(PDF·보관함) 배경이에요 — 양식을 고르면 다음에 새 페이지를 만들어 적용해요</div>':'';
+    pop.innerHTML=_bgNote+'<div class="tplp-grid">'+cells+'</div>'+(acts?'<div class="tplp-acts">'+acts+'</div>':'')+(acts2?'<div class="tplp-acts tplp-acts2">'+acts2+'</div>':'');
+    /* 1.909 — 양식(form:/my:) 배경은 첫 선택 때 SVG→이미지 래스터라 0.5~2초 걸렸다. 팝오버가 열린 동안 한가한 틈에 미리 그려 둔다(최대 6개, 순차) */
+    try{ var todo=[].filter.call(sel.options,function(o){return !o.hidden&&/^(form:|my:)/.test(o.value)&&!(formCache[o.value]||formCache[o.value+':0']);}).slice(0,6).map(function(o){return o.value;});
+      (function warm(){ if(!todo.length)return; var v=todo.shift(); try{tplEntry(v);}catch(_){} var ric=window.requestIdleCallback||function(f){setTimeout(f,120);}; ric(warm); })(); }catch(_){}
+  }
+  function open(){ build(); var pop=document.getElementById('nTplPop'); if(!pop)return; pop.hidden=false; opened=true; var b=document.getElementById('nTplBtn'); if(b)b.setAttribute('aria-expanded','true'); setTimeout(function(){document.addEventListener('click',outside,true);},0); }
+  function close(){ var pop=document.getElementById('nTplPop'); if(pop)pop.hidden=true; opened=false; var b=document.getElementById('nTplBtn'); if(b)b.setAttribute('aria-expanded','false'); document.removeEventListener('click',outside,true); }
+  function outside(e){ if(!e.target.closest('#nTplWrap'))close(); }
+  var btn=document.getElementById('nTplBtn');
+  if(btn)btn.addEventListener('click',function(e){ e.stopPropagation(); opened?close():open(); });
+  var popEl=document.getElementById('nTplPop');
+  if(popEl)popEl.addEventListener('click',function(e){ var c=e.target.closest('[data-click]'); if(c){ close(); var t=document.getElementById(c.dataset.click); if(t)t.click(); return; }
+    var b=e.target.closest('[data-v]'); if(!b)return; var sel=document.getElementById('nTpl'); if(!sel)return; sel.value=b.dataset.v; close(); sel.dispatchEvent(new Event('change')); });
+  /* 옛 호출부(refreshTplSel·onchange의 syncTplChips())를 그대로 살려 버튼 라벨·활성 갱신 */
+  window.syncTplChips=function(){
+    var cur=(typeof note!=='undefined'&&note&&note.tpl)||'blank';
+    var lab=document.getElementById('nTplBtnCur'); if(lab){ var s=SHORT[cur]; if(!s){ var sel=document.getElementById('nTpl'); var o=sel&&[].filter.call(sel.options,function(x){return x.value===cur;})[0]; s=(o&&o.textContent)||'양식'; } lab.textContent=s; }
+    if(opened)build();
+  };
+})();
+/* 양식 피커 — 보관함 '양식' 화면의 이름·설명·아이콘을 그대로 가져와 보여준다 */
+function openFormPicker(){
+  refreshTplSel();                                  /* select 를 원래 값으로 되돌림 */
+  const api=formsApi();
+  if(!api){toast('양식은 앱 안에서만 쓸 수 있어요');return;}
+  const g=$('fmGrid');g.innerHTML='';
+  let list=[];try{list=api.list();}catch(_){}
+  if(!list.length){toast('양식을 불러오지 못했어요');return;}
+  let cat=null;
+  list.forEach(f=>{
+    if(f.cat&&f.cat!==cat){                          /* 양식 화면과 같은 분류·색으로 묶는다 */
+      cat=f.cat;
+      const h=document.createElement('div');h.className='fmcat';
+      h.style.color=f.color||'';h.textContent=cat;g.appendChild(h);
+    }
+    const b=document.createElement('button');b.className='fmit';b.type='button';
+    b.innerHTML='<span class="fi"></span><span class="ft"><b></b><span></span></span>';
+    const fi=b.querySelector('.fi');fi.innerHTML=f.icon;if(f.color)fi.style.color=f.color;
+    b.querySelector('b').textContent=f.name;
+    b.querySelector('.ft span').textContent=f.desc+((f.land&&f.desc.indexOf('가로')<0)?' · 가로':'');
+    b.onclick=()=>pickForm(f);
+    g.appendChild(b);
+  });
+  $('fmOvl').classList.add('on');
+}
+function pickForm(f){
+  $('fmOvl').classList.remove('on');
+  if(!note)return;
+  const arr=usedForms().filter(x=>x.k!==f.k);arr.unshift({k:f.k,name:f.name});
+  try{localStorage.setItem(FKEY,JSON.stringify(arr.slice(0,12)));}catch(_){}
+  note.orient=f.land?'l':'p';                       /* 양식 방향에 맞춤 — 안 그러면 위아래 흰 띠가 남는다 */
+  applyOrient();
+  note.tpl='form:'+f.k;
+  refreshTplSel();$('nTpl').value=note.tpl;
+  rebuildBase();present();fit();saveSoon();
+  toast(f.name+' 적용 ✓');
+}
+$('fmX').onclick=()=>$('fmOvl').classList.remove('on');
+$('fmOvl').onclick=e=>{if(e.target===$('fmOvl'))$('fmOvl').classList.remove('on');};
+
+/* ===== 내가 만든 양식 — 블록을 쌓아 A4 한 장을 조립한다 =====
+   블록 정의(JSON)만 저장하고 그릴 때 HTML을 만들어 위 rasterEntry 로 넘긴다 → 용량 0 + 언제든 재편집. */
+const MKEY='cs_note_myforms_v1';
+function myForms(){try{return JSON.parse(localStorage.getItem(MKEY))||[];}catch(_){return [];}}
+function myForm(id){return myForms().find(x=>x.id===id)||null;}
+function saveMyForms(a){try{localStorage.setItem(MKEY,JSON.stringify(a));return true;}catch(_){toast('저장 공간이 부족해요');return false;}}
+function esc(s){return window.PSSafe&&window.PSSafe.html?window.PSSafe.html(s):String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+/* 블록 종류 — 기존 미팅 양식(제목·메타칸·줄상자·표)을 분해해서 나온 것 + 운동장 */
+const BLK={
+  title:{n:'제목',   mk:()=>({t:'title',text:'미팅 제목',sub:'',w:'full'})},
+  meta: {n:'메타칸', mk:()=>({t:'meta',label:'상대, 일자, 장소',w:'full'})},
+  pitch:{n:'운동장', mk:()=>({t:'pitch',kind:'full',w:'half',h:'m'})},
+  text: {n:'글상자', mk:()=>({t:'text',label:'게임플랜',lines:'1',w:'half',h:'m'})},
+  table:{n:'표',     mk:()=>({t:'table',label:'역할 · 지시',cols:'선수, 역할',w:'full',h:'m'})},
+  check:{n:'체크',   mk:()=>({t:'check',label:'점검',items:'항목1, 항목2, 항목3',w:'full',h:'s'})}
+};
+const BH={s:70,m:130,l:210};   /* 블록 높이(px, 문서 기준 760 폭) */
+
+/* 축구장 SVG — 실측 비율(68×105m). 세로 좌표계로 그린 뒤 가로는 회전시킨다.
+   XMLSerializer 가 <svg> 에 네임스페이스를 붙여주므로 foreignObject 안에서도 그려진다. */
+const PITCH_ASP={full:105/68, land:68/105, half:52.5/68};   /* 높이 = 폭 × 이 값 — 비율 고정 물건이라 S/M/L 로 높이를 강제하면 찌그러진다 */
+function pitchSVG(kind){
+  const K='#A6ADB8', S='fill="none" stroke="'+K+'" stroke-width="0.45"';
+  const half=kind==='half', land=kind==='land';
+  const H=half?52.5:105;
+  let s='<rect x="0" y="0" width="68" height="'+H+'" fill="#fff" stroke="'+K+'" stroke-width="0.45"/>';
+  s+='<rect x="13.84" y="0" width="40.32" height="16.5" '+S+'/>';       /* 페널티 박스 */
+  s+='<rect x="24.84" y="0" width="18.32" height="5.5" '+S+'/>';        /* 골 에어리어 */
+  s+='<circle cx="34" cy="11" r="0.5" fill="'+K+'"/>';                  /* 페널티 스팟 */
+  s+='<path d="M 26.69 16.5 A 9.15 9.15 0 0 0 41.31 16.5" '+S+'/>';     /* 아크 — 박스 바깥으로 나온 부분만 */
+  s+='<line x1="0" y1="52.5" x2="68" y2="52.5" stroke="'+K+'" stroke-width="0.45"/>';
+  if(half){
+    s+='<path d="M 24.85 52.5 A 9.15 9.15 0 0 1 43.15 52.5" '+S+'/>';   /* 하프코트: 센터서클 절반 */
+  }else{
+    s+='<circle cx="34" cy="52.5" r="9.15" '+S+'/><circle cx="34" cy="52.5" r="0.5" fill="'+K+'"/>';
+    s+='<rect x="13.84" y="88.5" width="40.32" height="16.5" '+S+'/>';
+    s+='<rect x="24.84" y="99.5" width="18.32" height="5.5" '+S+'/>';
+    s+='<circle cx="34" cy="94" r="0.5" fill="'+K+'"/>';
+    s+='<path d="M 26.69 88.5 A 9.15 9.15 0 0 1 41.31 88.5" '+S+'/>';
+  }
+  /* 가로: translate 먼저, rotate 나중(오른쪽→왼쪽 적용). (x,y)→(105-y, x) 로 105×68 안에 정확히 들어간다 */
+  const vb=land?'0 0 105 68':('0 0 68 '+H);
+  const g=land?'<g transform="translate(105 0) rotate(90)">'+s+'</g>':s;
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+vb+'" preserveAspectRatio="xMidYMid meet" class="pt">'+g+'</svg>';
+}
+/* 블록 높이 — 운동장만 폭에서 자동(비율 고정), 나머지는 S/M/L */
+function contentW(land){return (land?1100:760)-32;}
+function blockH(b,land){
+  if(b.t==='title') return 26;
+  if(b.t==='meta')  return 20;
+  if(b.t==='pitch'){
+    const CW=contentW(land), w=(b.w==='half')?(CW-9)/2:CW;
+    return Math.round(w*(PITCH_ASP[b.kind||'full']));
+  }
+  return BH[b.h||'m'];
+}
+
+/* 블록 → A4 한 장 HTML. 기존 양식들과 같은 톤(11px 본문, 얇은 회색 선) */
+function myDoc(f){
+  const land=f.orient==='l';
+  let body='';
+  (f.blocks||[]).forEach(b=>{
+    const cls='bk '+(b.w==='half'?'half':'full');
+    const h=blockH(b,land);
+    if(b.t==='title'){
+      body+='<div class="'+cls+' ttl"><h1>'+esc(b.text)+'</h1>'+(b.sub?'<div class="sb">'+esc(b.sub)+'</div>':'')+'</div>';
+    }else if(b.t==='meta'){
+      const fs=String(b.label||'').split(',').map(x=>x.trim()).filter(Boolean);
+      body+='<div class="'+cls+' mt">'+fs.map(x=>'<span class="mi"><i>'+esc(x)+'</i><u></u></span>').join('')+'</div>';
+    }else if(b.t==='pitch'){
+      body+='<div class="'+cls+'" style="height:'+h+'px">'+pitchSVG(b.kind||'full')+'</div>';
+    }else if(b.t==='text'){
+      const rows=Math.max(1,Math.floor((h-(b.label?15:2))/19));
+      const ln=b.lines==='1'?new Array(rows).fill('<div class="rl"></div>').join(''):'';
+      body+='<div class="'+cls+' bx" style="height:'+h+'px">'+(b.label?'<i>'+esc(b.label)+'</i>':'')+'<div class="ib">'+ln+'</div></div>';
+    }else if(b.t==='table'){
+      const cols=String(b.cols||'').split(',').map(x=>x.trim()).filter(Boolean);
+      const rows=Math.max(1,Math.floor((h-(b.label?15:0)-16)/17));
+      let tb='<table><tr>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr>';
+      for(let i=0;i<rows;i++) tb+='<tr>'+cols.map(()=>'<td></td>').join('')+'</tr>';
+      tb+='</table>';
+      body+='<div class="'+cls+' bx" style="height:'+h+'px">'+(b.label?'<i>'+esc(b.label)+'</i>':'')+tb+'</div>';
+    }else if(b.t==='check'){
+      const its=String(b.items||'').split(',').map(x=>x.trim()).filter(Boolean);
+      body+='<div class="'+cls+' bx" style="height:'+h+'px">'+(b.label?'<i>'+esc(b.label)+'</i>':'')
+           +'<div class="ck">'+its.map(x=>'<span><b></b>'+esc(x)+'</span>').join('')+'</div></div>';
+    }
+  });
+  const CSS='*{box-sizing:border-box}body{margin:0;padding:16px;font-family:\'Pretendard\',-apple-system,system-ui,sans-serif;color:#1f2430;font-size:11px;line-height:1.45}'
+   +'.pg{display:flex;flex-wrap:wrap;gap:9px;align-items:flex-start}'
+   +'.bk{flex:0 0 auto}.bk.full{width:100%}.bk.half{width:calc(50% - 4.5px)}'
+   +'.ttl h1{font-size:16px;font-weight:800;margin:0;letter-spacing:-.3px}'
+   +'.ttl .sb{font-size:10px;color:#8A9099;margin-top:2px;letter-spacing:.06em;text-transform:uppercase}'
+   +'.mt{display:flex;gap:8px}.mi{flex:1;display:flex;align-items:baseline;gap:5px}'
+   +'.mi i{font-style:normal;font-size:10px;font-weight:800;color:#8A9099;flex:0 0 auto}'
+   +'.mi u{flex:1;text-decoration:none;border-bottom:1px solid #C9CFD8;height:15px}'
+   +'.bx{border:1px solid #D5DAE2;border-radius:3px;padding:5px 7px;display:flex;flex-direction:column;overflow:hidden}'
+   +'.bx>i{font-style:normal;font-size:10px;font-weight:800;color:#8A9099;flex:0 0 auto;margin-bottom:3px}'
+   +'.ib{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-start}'
+   +'.rl{height:19px;border-bottom:1px solid #E7EAF0;flex:0 0 auto}'
+   +'table{width:100%;border-collapse:collapse;table-layout:fixed}'
+   +'th{font-size:10px;font-weight:800;color:#8A9099;text-align:left;border-bottom:1px solid #C9CFD8;padding:2px 4px}'
+   +'td{height:17px;border-bottom:1px solid #E7EAF0;padding:2px 4px}'
+   +'.ck{display:flex;flex-direction:column;gap:4px}'
+   +'.ck span{display:flex;align-items:center;gap:6px;font-size:10px}'
+   +'.ck b{width:9px;height:9px;border:1px solid #C9CFD8;border-radius:2px;flex:0 0 auto}'
+   +'svg.pt{width:100%;height:100%;display:block}';
+  return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>@page{size:A4 '+(land?'landscape':'portrait')+';margin:0}'+CSS+'</style></head><body><div class="pg">'+body+'</div></body></html>';
+}
+
+/* ===== 빌더 UI (데스크톱·아이패드) ===== */
+let bldCur=null, _bDrag=-1;
+function openBuilder(id){
+  bldCur = id ? JSON.parse(JSON.stringify(myForm(id)||{})) : {id:'mf'+Date.now().toString(36),name:'',orient:'p',v:0,blocks:[]};
+  if(!bldCur.blocks) bldCur.blocks=[];
+  $('bldName').value=bldCur.name||'';
+  $('bldOrient').value=bldCur.orient||'p';
+  const pal=$('bldPal');pal.innerHTML='';
+  Object.keys(BLK).forEach(k=>{
+    const b=document.createElement('button');b.type='button';b.textContent='＋ '+BLK[k].n;
+    b.onclick=()=>{bldCur.blocks.push(BLK[k].mk());bldRender();};
+    pal.appendChild(b);
+  });
+  bldRender();
+  $('bldOvl').classList.add('on');
+}
+function bldRender(){
+  const L=$('bldList');L.innerHTML='';
+  if(!bldCur.blocks.length){
+    L.innerHTML='<div class="bempty">위에서 블록을 눌러 쌓아보세요.<br>운동장을 <b>절반</b>으로 두면 옆에 글상자가 나란히 놓입니다.</div>';
+  }
+  bldCur.blocks.forEach((b,i)=>{
+    const row=document.createElement('div');row.className='bitem';row.draggable=true;
+    row.innerHTML='<span class="gr">⠿</span><span class="bn"></span>';
+    row.querySelector('.bn').textContent=BLK[b.t]?BLK[b.t].n:b.t;
+    // 블록별 입력칸
+    const mk=(v,ph,key)=>{const i2=document.createElement('input');i2.className='lb';i2.value=v||'';i2.placeholder=ph;
+      i2.oninput=()=>{b[key]=i2.value;bldPreview();};return i2;};
+    if(b.t==='title'){ row.appendChild(mk(b.text,'제목','text')); row.appendChild(mk(b.sub,'부제(선택)','sub')); }
+    else if(b.t==='meta'){ row.appendChild(mk(b.label,'상대, 일자, 장소','label')); }
+    else if(b.t==='table'){ row.appendChild(mk(b.label,'라벨','label')); row.appendChild(mk(b.cols,'열 이름들','cols')); }
+    else if(b.t==='check'){ row.appendChild(mk(b.label,'라벨','label')); row.appendChild(mk(b.items,'항목들','items')); }
+    else if(b.t==='text'){ row.appendChild(mk(b.label,'라벨','label')); }
+    else if(b.t==='pitch'){ row.appendChild(sel(b,'kind',[['full','풀피치 세로'],['land','풀피치 가로'],['half','하프코트']])); }
+    if(b.t==='text') row.appendChild(sel(b,'lines',[['1','줄 있음'],['0','빈칸']]));
+    if(b.t!=='title'&&b.t!=='meta') row.appendChild(sel(b,'w',[['full','전체'],['half','절반']]));
+    /* 운동장은 폭에서 높이가 자동으로 나온다(비율 고정) — S/M/L 을 주면 찌그러진다 */
+    if(b.t!=='title'&&b.t!=='meta'&&b.t!=='pitch') row.appendChild(sel(b,'h',[['s','S'],['m','M'],['l','L']]));
+    const x=document.createElement('button');x.className='x';x.textContent='×';x.title='삭제';
+    x.onclick=()=>{bldCur.blocks.splice(i,1);bldRender();};
+    row.appendChild(x);
+    row.addEventListener('dragstart',()=>{_bDrag=i;row.classList.add('drag');});
+    row.addEventListener('dragend',()=>{_bDrag=-1;row.classList.remove('drag');[...L.children].forEach(c=>c.classList.remove('over'));});
+    row.addEventListener('dragover',e=>{e.preventDefault();if(_bDrag>=0&&_bDrag!==i)row.classList.add('over');});
+    row.addEventListener('dragleave',()=>row.classList.remove('over'));
+    row.addEventListener('drop',e=>{e.preventDefault();if(_bDrag<0||_bDrag===i)return;
+      const m=bldCur.blocks.splice(_bDrag,1)[0];bldCur.blocks.splice(i,0,m);_bDrag=-1;bldRender();});
+    L.appendChild(row);
+  });
+  bldPreview();
+  function sel(b,key,opts){
+    const s=document.createElement('select');
+    opts.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;s.appendChild(o);});
+    s.value=b[key]!=null?String(b[key]):opts[0][0];
+    s.onchange=()=>{b[key]=s.value;bldPreview();};
+    return s;
+  }
+}
+function bldPreview(){
+  bldCur.orient=$('bldOrient').value;
+  const land=bldCur.orient==='l', W=land?1100:760, H=land?780:1080;
+  const box=$('bldPv'), ifr=$('bldIfr'), pane=box.parentElement;
+  const av=Math.max(120,pane.clientHeight-28), avw=Math.max(120,pane.clientWidth-28);
+  const sc=Math.min(av/H, avw/W);
+  ifr.style.width=W+'px'; ifr.style.height=H+'px'; ifr.style.transform='scale('+sc+')';
+  box.style.width=Math.round(W*sc)+'px'; box.style.height=Math.round(H*sc)+'px';
+  ifr.srcdoc=myDoc(bldCur);
+  // 블록이 A4 한 장을 넘겼는지 알려준다 (넘치면 잘려서 인쇄된다). 생성기와 같은 blockH 를 써야 숫자가 맞는다
+  let used=0; (bldCur.blocks||[]).forEach(b=>{ used += (b.w==='half'?blockH(b,land)/2:blockH(b,land))+9; });
+  let el=$('bldList').querySelector('.bfull');
+  if(!el){el=document.createElement('div');el.className='bfull';$('bldList').appendChild(el);}
+  const cap=H-32, pct=Math.round(used/cap*100);
+  el.textContent='A4 한 장 사용량 약 '+pct+'%';
+  el.classList.toggle('over',pct>100);
+  if(pct>100) el.textContent='A4 한 장을 넘겼어요 (약 '+pct+'%) — 블록을 줄이거나 크기를 S로 낮춰주세요';
+}
+$('bldOrient').onchange=bldPreview;
+$('bldX').onclick=()=>$('bldOvl').classList.remove('on');
+$('bldSave').onclick=()=>{
+  if(!bldCur)return;
+  if(!bldCur.blocks.length){toast('블록을 하나 이상 넣어주세요');return;}
+  bldCur.name=($('bldName').value||'').trim()||'내 양식';
+  bldCur.orient=$('bldOrient').value;
+  bldCur.v=(bldCur.v||0)+1;                       /* 캐시키가 바뀌어 편집분이 즉시 반영된다 */
+  const arr=myForms().filter(x=>x.id!==bldCur.id); arr.unshift(bldCur);
+  if(!saveMyForms(arr))return;
+  $('bldOvl').classList.remove('on');
+  if(note){
+    note.orient=bldCur.orient; applyOrient();
+    note.tpl='my:'+bldCur.id;
+    refreshTplSel(); $('nTpl').value=note.tpl;
+    rebuildBase();present();fit();saveSoon();
+  }
+  toast(bldCur.name+' 저장 ✓');
+};
+$('nTitle').addEventListener('input',saveSoon);
+
+/* ============ 내보내기 ============ */
+function loadBgs(){ // 모든 페이지 배경 이미지를 bgCache에 미리 로드 (내보내기용)
+  if(!note)return Promise.resolve();
+  // 양식 배경은 비동기 래스터라 아직 안 그려졌을 수 있다 — 기다리지 않으면 빈 종이가 나간다
+  const fw=(note.tpl&&(note.tpl.indexOf('form:')===0||note.tpl.indexOf('my:')===0))?formReady(note.tpl):Promise.resolve();
+  return Promise.all([fw].concat(note.pages.filter(p=>p.bg).map(p=>new Promise(res=>{
+    let img=bgCache[p.bg];
+    if(!img){img=new Image();img.onload=()=>{rebuildBase();present();};img.src=p.bg;bgCache[p.bg]=img;}
+    if(img.complete)return res();
+    img.addEventListener('load',res,{once:true});
+    img.addEventListener('error',res,{once:true});
+  }))));
+}
+$('pngB').onclick=async()=>{
+  await loadBgs();
+  const off=document.createElement('canvas');off.width=LW*2;off.height=LH*2;
+  const oc=off.getContext('2d');oc.setTransform(2,0,0,2,0,0);
+  drawTpl(oc);
+  renderInk(oc,off.width,off.height,note.pages[pi].strokes);
+  off.toBlob(b=>{
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);
+    a.download=(note.title||'훈련노트')+'-p'+(pi+1)+'.png';a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+    toast('이미지 저장됨 ✓');
+  },'image/png');
+};
+
+function pageCanvas(idx){
+  const off=document.createElement('canvas');off.width=LW*2;off.height=LH*2;
+  const oc=off.getContext('2d');oc.setTransform(2,0,0,2,0,0);
+  const keep=pi;pi=idx;drawTpl(oc);pi=keep;
+  renderInk(oc,off.width,off.height,note.pages[idx].strokes);
+  return off;}
+$('printB').onclick=async()=>{
+  if(!note)return;
+  await loadBgs();
+  let el=document.getElementById('printDoc');
+  if(!el){el=document.createElement('div');el.id='printDoc';document.body.appendChild(el);}
+  el.innerHTML=note.pages.map((_,i)=>'<img class="pp" src="'+pageCanvas(i).toDataURL('image/png')+'">').join('');
+  let stl=document.getElementById('printStyle');
+  if(!stl){stl=document.createElement('style');stl.id='printStyle';document.head.appendChild(stl);}
+  const land=note.orient==='l';
+  stl.textContent='#printDoc{display:none;}@media print{@page{size:A4 '+(land?'landscape':'portrait')+';margin:0;}'
+    +'body>*{display:none!important;}#printDoc{display:block!important;}'
+    +'#printDoc .pp{width:100%;height:auto;page-break-after:always;display:block;}'
+    +'#printDoc .pp:last-child{page-break-after:auto;}}';
+  const _t=document.title;document.title=(note.title||'훈련노트');
+  window.addEventListener('afterprint',()=>{document.title=_t;},{once:true});setTimeout(()=>{document.title=_t;},30000);
+  window.print();};
+
+/* ============ 노트 관리 ============ */
+function load(id){
+  const s=store();
+  note=s.notes[id]||blankNote();
+  pi=0;redoStack=[];
+  $('nTitle').value=note.title||'';
+  refreshTplSel();$('nTpl').value=note.tpl||'blank';
+  if($('nTpl').value!==(note.tpl||'blank'))$('nTpl').value='blank';   /* 옵션에 없는 커스텀 양식이 지워진 경우 표시 정리 */
+  applyOrient();
+  s.cur=note.id;persist(s);
+  fit();updateUI();
+}
+function newNoteNow(){save();note=blankNote();pi=0;redoStack=[];$('nTitle').value='';refreshTplSel();$('nTpl').value=note.tpl;applyOrient();save();fit();updateUI();toast('새 노트');}
+$('newB').onclick=newNoteNow;
+
+/* ============ 문서 보관함 ============ */
+var _docLibTab='mine',_docQuery='',_vaultDocs=[],_vaultListReq='',_vaultImportReq='',_expiredImportReqs={};
+function noteTargetOrigin(){return location.origin&&location.origin!=='null'?location.origin:'*';}
+function notePost(d){try{if(parent===window)return false;parent.postMessage(d,noteTargetOrigin());return true;}catch(_){return false;}}
+function fmtDocDate(ts){try{var d=new Date(ts||Date.now());return (d.getMonth()+1)+'월 '+d.getDate()+'일 · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(_){return '';}}
+function noteSource(n){
+  var s=n&&n.source||{};
+  if(s.kind==='vault'||s.kind==='vault-pdf')return {label:'보관함 훈련 · 개인 사본',cls:'vault'};
+  if(s.kind==='training-pdf')return {label:'훈련 PDF · 개인 사본',cls:'vault'};
+  if(s.kind==='upload'||s.kind==='pdf')return {label:'가져온 PDF',cls:'pdf'};
+  return {label:'직접 작성',cls:''};
+}
+function docPaper(){var p=document.createElement('span');p.className='doc-paper';p.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></svg>';return p;}
+function makeDocCover(n,openFn){
+  var cover=document.createElement('button');cover.type='button';cover.className='doc-cover';cover.onclick=openFn;
+  var pg=n&&n.pages&&n.pages[0];
+  if(pg&&pg.bg){var img=document.createElement('img');img.src=pg.bg;img.alt='';cover.appendChild(img);}else cover.appendChild(docPaper());
+  var src=noteSource(n),chip=document.createElement('span');chip.className='doc-source '+src.cls;chip.textContent=src.label;cover.appendChild(chip);
+  var pc=document.createElement('span');pc.className='doc-pages';pc.textContent=((n.pages&&n.pages.length)||1)+'쪽';cover.appendChild(pc);return cover;
+}
+function openDocLibrary(tab){
+  try{save();}catch(_){}
+  _docQuery='';if($('docSearch'))$('docSearch').value='';
+  $('libOvl').classList.add('on');setDocLibTab(tab||'mine');
+  try{[].forEach.call($('nModeSeg').querySelectorAll('button'),function(b){b.classList.toggle('on',b.dataset.m==='library');});}catch(_){}
+  setTimeout(function(){try{$('docSearch').focus();}catch(_){}},40);
+}
+function closeDocLibrary(){$('libOvl').classList.remove('on');try{var want=document.body.classList.contains('memo-mode')?'memo':'draw';[].forEach.call($('nModeSeg').querySelectorAll('button'),function(b){b.classList.toggle('on',b.dataset.m===want);});}catch(_){}}
+function setDocLibTab(tab){
+  _docLibTab=tab==='vault'?'vault':'mine';
+  var mine=_docLibTab==='mine';$('docMinePane').hidden=!mine;$('docVaultPane').hidden=mine;
+  $('docMineTab').classList.toggle('on',mine);$('docVaultTab').classList.toggle('on',!mine);
+  $('docMineTab').setAttribute('aria-selected',mine?'true':'false');$('docVaultTab').setAttribute('aria-selected',mine?'false':'true');
+  $('docSearch').placeholder=mine?'문서 이름 검색':'보관함 훈련 검색';
+  if(mine)renderLib();else requestVaultDocs();
+}
+$('libB').onclick=function(){openDocLibrary('mine');};
+$('libClose').onclick=closeDocLibrary;
+$('libOvl').addEventListener('click',function(e){if(e.target.id==='libOvl')closeDocLibrary();});
+$('docMineTab').onclick=function(){setDocLibTab('mine');};$('docVaultTab').onclick=function(){setDocLibTab('vault');};
+$('docSearch').addEventListener('input',function(){_docQuery=this.value.trim().toLowerCase();if(_docLibTab==='mine')renderLib();else renderVaultDocs();});
+$('libNew').onclick=function(){closeDocLibrary();newNoteNow();};
+$('libPdf').onclick=function(){$('pdfFile').click();};
+$('libVault').onclick=function(){setDocLibTab('vault');};
+$('vaultPdfB').onclick=function(){openDocLibrary('vault');};
+
+function renderLib(){
+  const s=store(),box=$('libList');box.innerHTML='';
+  var arr=Object.values(s.notes).sort((a,b)=>(b.updated||0)-(a.updated||0));
+  if(_docQuery)arr=arr.filter(function(n){var so=n.source||{};return ((n.title||'')+' '+(so.fileName||'')+' '+(so.name||'')).toLowerCase().indexOf(_docQuery)>=0;});
+  try{PSStorage.mountRisk($('libRisk'),arr.length>0);}catch(_){}
+  $('docMineStatus').textContent=arr.length+'개 문서 · 개인 저장';
+  if(!arr.length){var emp=document.createElement('div');emp.className='doc-empty';emp.innerHTML='<div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 12h6M9 16h6"/></svg><b>'+(_docQuery?'검색 결과가 없어요':'아직 문서가 없어요')+'</b><span>'+(_docQuery?'다른 이름으로 검색해 보세요.':'새 노트를 만들거나 보관함 훈련 PDF를 가져오세요.')+'</span></div>';box.appendChild(emp);return;}
+  arr.forEach(function(n){
+    var card=document.createElement('article');card.className='doc-card';
+    var openFn=function(){save();load(n.id);closeDocLibrary();};card.appendChild(makeDocCover(n,openFn));
+    var info=document.createElement('div');info.className='doc-info';var nm=document.createElement('div');nm.className='doc-name';nm.textContent=n.title||'제목 없음';var sub=document.createElement('div');sub.className='doc-sub';sub.textContent=fmtDocDate(n.updated||n.created);info.append(nm,sub);card.appendChild(info);
+    var acts=document.createElement('div');acts.className='doc-actions';var op=document.createElement('button');op.className='btn pri';op.textContent='열기';op.onclick=openFn;
+    var del=document.createElement('button');del.className='btn doc-del';del.title='문서 삭제';del.setAttribute('aria-label','문서 삭제');del.textContent='×';del.onclick=function(){psConfirm('"'+(n.title||'제목 없음')+'" 문서를 삭제할까요?',function(){var s2=store();delete s2.notes[n.id];if(note&&note.id===n.id){note=blankNote();pi=0;redoStack=[];$('nTitle').value='';refreshTplSel();$('nTpl').value=note.tpl;applyOrient();s2.notes[note.id]=note;s2.cur=note.id;fit();updateUI();}persist(s2);renderLib();});};
+    acts.append(op,del);card.appendChild(acts);box.appendChild(card);
+  });
+}
+function requestVaultDocs(){
+  var st=$('docVaultStatus');st.innerHTML='<span class="spin"></span>보관함 훈련을 불러오는 중…';$('vaultDocList').innerHTML='';
+  _vaultListReq='vl'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  if(!notePost({source:'note',type:'noteVaultListRequest',requestId:_vaultListReq})){
+    st.textContent='앱 안에서 개인 노트를 열어 주세요.';
+  }
+}
+function renderVaultDocs(){
+  var box=$('vaultDocList'),st=$('docVaultStatus');box.innerHTML='';
+  var arr=(_vaultDocs||[]).slice().sort(function(a,b){return (b.savedAt||0)-(a.savedAt||0);});
+  if(_docQuery)arr=arr.filter(function(d){return ((d.name||'')+' '+(d.folder||'')+' '+(d.focusLabel||'')).toLowerCase().indexOf(_docQuery)>=0;});
+  st.textContent=arr.length+'개 훈련 · 가져오면 개인 사본으로 저장됩니다';
+  if(!arr.length){var em=document.createElement('div');em.className='doc-empty';em.innerHTML='<div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h6l2 2h8v10H4z"/><path d="M4 7V5h6l2 2"/></svg><b>'+(_docQuery?'검색 결과가 없어요':'가져올 훈련이 없어요')+'</b><span>보관함에서 훈련을 만든 뒤 다시 열어 주세요.</span></div>';box.appendChild(em);return;}
+  arr.forEach(function(d){
+    var card=document.createElement('article');card.className='doc-card vault-doc-card';var cover=document.createElement('button');cover.type='button';cover.className='doc-cover';
+    if(d.thumb&&String(d.thumb).indexOf('<svg')>=0){var im=document.createElement('img');im.alt='';im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(d.thumb);cover.appendChild(im);}else cover.appendChild(docPaper());
+    var chip=document.createElement('span');chip.className='doc-source vault';chip.textContent=d.type==='setpiece'?'세트피스':'보관함 훈련';cover.appendChild(chip);var pc=document.createElement('span');pc.className='doc-pages';pc.textContent=(d.count||1)+'개 훈련';cover.appendChild(pc);
+    var importFn=function(){requestVaultImport(d);};cover.onclick=importFn;card.appendChild(cover);
+    var info=document.createElement('div');info.className='doc-info';var nm=document.createElement('div');nm.className='doc-name';nm.textContent=d.name||'훈련';var sub=document.createElement('div');sub.className='doc-sub';sub.textContent=[d.folder||'',d.focusLabel||'',d.minutes?d.minutes+'분':'',fmtDocDate(d.savedAt)].filter(Boolean).join(' · ');info.append(nm,sub);card.appendChild(info);
+    var acts=document.createElement('div');acts.className='doc-actions';var ib=document.createElement('button');ib.className='btn pri';ib.textContent='PDF로 가져오기';ib.onclick=importFn;acts.appendChild(ib);card.appendChild(acts);box.appendChild(card);
+  });
+}
+var _vaultImportTimer=0;
+function setVaultImportStatus(name){
+  var st=$('docVaultStatus');st.textContent='';var sp=document.createElement('span');sp.className='spin';st.appendChild(sp);
+  st.appendChild(document.createTextNode('「'+String(name||'훈련')+'」 PDF 만드는 중…'));
+}
+function requestVaultImport(d){
+  if(_vaultImportReq){toast('이미 PDF를 만드는 중이에요');return;}
+  _vaultImportReq='vi'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  setVaultImportStatus(d.name);
+  clearTimeout(_vaultImportTimer);_vaultImportTimer=setTimeout(function(){if(!_vaultImportReq)return;_expiredImportReqs[_vaultImportReq]=1;_vaultImportReq='';$('docVaultStatus').textContent='PDF 생성 시간이 길어지고 있어요. 다시 시도해 주세요.';},60000);
+  notePost({source:'note',type:'noteVaultImportRequest',requestId:_vaultImportReq,libId:d.libId});
+}
+
+/* 1.670 — 1.669에서 자동 생성된 완전히 빈 현재 노트만 새 기본 종이로 승격한다.
+   제목·필기·PDF 배경이 하나라도 있으면 사용자의 기존 배치와 좌표를 그대로 보존한다. */
+function isPristineTrainingV1(n){
+  const p=n&&Array.isArray(n.pages)&&n.pages.length===1?n.pages[0]:null;
+  return !!(n&&n.tpl==='training3land_v1'&&n.orient==='l'&&!String(n.title||'').trim()&&p&&!p.bg&&(!Array.isArray(p.strokes)||p.strokes.length===0));
+}
+
+/* ============ 시작 ============ */
+(function(){
+  function begin(){
+    const s=store();
+    const cur=s.cur&&s.notes[s.cur];
+    if(isPristineTrainingV1(cur)){
+      cur.tpl='training3vertical_land_v1';cur.orient='l';cur.updated=Date.now();persist(s);
+    }
+    if(s.cur&&s.notes[s.cur])load(s.cur);
+    else{note=blankNote();refreshTplSel();applyOrient();save();fit();updateUI();}
+    try{noteBridgeReady();}catch(_){}
+  }
+  /* 저장본(IndexedDB)을 먼저 손에 쥔 다음 화면을 연다 — 읽기 전에 그리면 빈 노트를 저장해 덮어쓴다 */
+  if(window.storage){
+    var done=false, go=function(){ if(done)return; done=true; begin(); };
+    Promise.all([
+      window.storage.get(KEY).then(function(r){ if(r&&r.value!=null){ try{ _noteMem=JSON.parse(r.value); }catch(_){ }
+        /* 1.516 — 저장본이 IndexedDB에 확실히 있으면 옛 localStorage 사본을 그때 정리한다.
+           예전엔 '노트를 편집할 때'만 지워서, 안 열어본 사람은 5MB 한도를 계속 잠식당했다(실측 509KB). */
+        try{ if(localStorage.getItem(KEY)!=null){ localStorage.removeItem(KEY); persist._moved=1; } }catch(_){}
+      } }).catch(function(){}),
+      window.storage.get(PKEY).then(function(r){ if(r&&r.value!=null){ try{ _papMem=JSON.parse(r.value); }catch(_){ }
+        try{ if(localStorage.getItem(PKEY)!=null){ localStorage.removeItem(PKEY); savePapers._moved=1; } }catch(_){}
+      } }).catch(function(){})
+    ]).then(go).catch(go);
+    /* 느린 저장소를 빈 노트로 덮지 않는다. 4초 뒤에는 진행 안내만 표시하고,
+       IndexedDB 읽기가 확정된 뒤에만 begin()/저장/브리지 준비를 시작한다. */
+    setTimeout(function(){if(!done)toast('저장된 문서를 불러오는 중이에요…');},4000);
+  } else begin();
+})();
+
+function ensurePdfjs(){
+  /* 로컬 번들 우선(완전 오프라인) → 실패 시에만 CDN 폴백. 로컬 워커는 동일 출처라 blob 우회 불필요 */
+  return new Promise((res,rej)=>{
+    if(window.pdfjsLib)return res(window.pdfjsLib);
+    function load(src,worker,isLocal,next){
+      const sc=document.createElement('script');
+      sc.src=src;
+      sc.onload=async()=>{try{
+        const lib=window.pdfjsLib;
+        if(isLocal){ lib.GlobalWorkerOptions.workerSrc=worker; }
+        else{
+          try{ // 사파리/아이패드: 교차출처 워커 차단 → blob 워커로 우회
+            const r=await fetch(worker);if(!r.ok)throw 0;
+            const code=await r.text();
+            lib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));
+          }catch(_){lib.GlobalWorkerOptions.workerSrc=worker;}
+        }
+        res(lib);}catch(e){rej(e);}};
+      sc.onerror=()=>{ if(next)next(); else rej(new Error('offline')); };
+      document.head.appendChild(sc);
+    }
+    load('/vendor/pdfjs/pdf.min.js','/vendor/pdfjs/pdf.worker.min.js',true,function(){
+      load('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',false,null);
+    });
+  });
+}
+/* 파일 메뉴 — PDF 열기·이미지 저장·A4 인쇄 묶음(툴바 줄 수 축소) */
+(function(){
+  var wrap=$('fileWrap'),btn=$('fileBtn'),menu=$('fileMenu');
+  if(!wrap||!btn||!menu)return;
+  function close(){wrap.classList.remove('open');btn.setAttribute('aria-expanded','false');}
+  function toggle(e){e.stopPropagation();var on=!wrap.classList.contains('open');wrap.classList.toggle('open',on);btn.setAttribute('aria-expanded',on?'true':'false');}
+  btn.addEventListener('click',toggle);
+  menu.addEventListener('click',function(){setTimeout(close,0);});   /* 항목 실행 후 닫기 */
+  document.addEventListener('click',function(e){if(wrap.classList.contains('open')&&!wrap.contains(e.target))close();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+})();
+$('pdfB').onclick=()=>$('pdfFile').click();
+async function importPdfBuffer(buf,name,meta){
+  meta=meta||{};name=String(name||'PDF').replace(/\.pdf$/i,'')||'PDF';
+  toast('PDF 불러오는 중…');
+  let lib;
+  try{lib=await ensurePdfjs();}catch(e){window.__pdferr=(e&&e.message)||'스크립트 로드 실패';toast('PDF는 인터넷 연결 상태에서 열 수 있어요'+(window.__pdferr?' · '+window.__pdferr:''));return;}
+  try{
+    const doc=await lib.getDocument({data:buf}).promise;
+    const total=doc.numPages, MAX=20, cnt=Math.min(total,MAX);
+    const pages=[];let bytes=0,firstLand=false;
+    /* 첫 페이지 방향을 먼저 알아야 현재 열려 있던 노트 방향과 무관하게 선명도를 계산할 수 있다. */
+    const first=await doc.getPage(1),firstVp=first.getViewport({scale:1});firstLand=firstVp.width>firstVp.height;
+    const targetW=firstLand?1414:1000,targetH=firstLand?1000:1414;
+    for(let i=1;i<=cnt;i++){
+      const page=i===1?first:await doc.getPage(i);
+      let vp=page.getViewport({scale:1});
+      const sc=Math.min(targetW/vp.width,targetH/vp.height)*1.6;   // 선명도 1.6배
+      vp=page.getViewport({scale:sc});
+      const c2=document.createElement('canvas');c2.width=Math.round(vp.width);c2.height=Math.round(vp.height);
+      await page.render({canvasContext:c2.getContext('2d'),viewport:vp}).promise;
+      const url=c2.toDataURL('image/jpeg',0.8);
+      bytes+=url.length;
+      if(bytes>2000000){toast('용량 한도 — '+(i-1)+'쪽까지 불러왔어요');break;}   // 3.5M자는 사파리 쿼터(~5MB) 단독 초과 → 노트 전체 저장 실패 유발
+      pages.push({strokes:[],bg:url});
+    }
+    if(!pages.length){toast('불러올 수 있는 쪽이 없어요');return;}
+    save();
+    var imported=blankNote();
+    imported.title=name;imported.pages=pages;imported.orient=firstLand?'l':'p';imported.tpl='blank';
+    imported.source={kind:meta.kind||'upload',libId:meta.libId||'',sourceSavedAt:meta.sourceSavedAt||0,fileName:meta.fileName||(name+'.pdf'),name:meta.sourceName||name,originalPages:total,importedAt:Date.now()};
+    var s=store(),prev=s.cur;s.notes[imported.id]=imported;s.cur=imported.id;
+    /* cs_notes_v1은 개인 동기화의 단일 키다. 서버 안전 한도(1.5M) 직전에서
+       명시적으로 멈춰, 로컬에는 보이지만 다른 기기에는 사라지는 문서를 만들지 않는다. */
+    var syncChars=0;try{syncChars=JSON.stringify(s).length;}catch(_){syncChars=1500001;}
+    if(syncChars>NOTE_SYNC_SAFE){delete s.notes[imported.id];s.cur=prev;_noteMem=s;toast('문서 보관함 용량이 찼어요 — 오래된 PDF 문서를 정리한 뒤 다시 가져와 주세요');return false;}
+    try{await persistImportedState(s);}catch(err){delete s.notes[imported.id];s.cur=prev;_noteMem=s;try{window.PSSaveState.fail('note',err);}catch(_){}toast('PDF 문서를 저장하지 못했어요 — 저장 공간을 확인해 주세요');return false;}
+    note=imported;pi=0;redoStack=[];$('nTitle').value=note.title;refreshTplSel();$('nTpl').value='blank';
+    applyOrient();save();fit();updateUI();
+    closeDocLibrary();try{window.__noteSetMode&&window.__noteSetMode('draw');}catch(_){}
+    toast('PDF '+pages.length+'쪽 불러옴 ✓ 위에 바로 필기하세요');
+    if(total>MAX)toast('PDF '+pages.length+'쪽 불러옴 (최대 '+MAX+'쪽)');
+    return true;
+  }catch(e){toast('PDF를 읽을 수 없어요'+((e&&e.message)?' · '+String(e.message).slice(0,60):''));return false;}
+}
+var _noteImportQueue=Promise.resolve();
+function enqueuePdfImport(buf,name,meta){
+  _noteImportQueue=_noteImportQueue.catch(function(){}).then(function(){return importPdfBuffer(buf,name,meta);});
+  return _noteImportQueue;
+}
+window.__noteImportPdfBuffer=enqueuePdfImport;
+$('pdfFile').addEventListener('change',async function(){
+  const f=this.files&&this.files[0];this.value='';if(!f)return;
+  await enqueuePdfImport(await f.arrayBuffer(),f.name,{kind:'upload',fileName:f.name});
+});
+
+/* 보관함 목록과 PDF 사본은 부모 셸이 정확한 board iframe을 통해서만 전달한다. */
+var _noteBridgeReady=false,_handledImports={};
+function noteBridgeReady(){if(_noteBridgeReady)return;_noteBridgeReady=true;notePost({source:'note',type:'noteReady'});}
+window.addEventListener('message',function(e){
+  if(e.source!==parent)return;if(location.protocol!=='file:'&&e.origin!==location.origin)return;
+  var d=e.data||{};if(d.source!=='app')return;
+  if(d.type==='noteVaultListResult'){
+    if(d.requestId!==_vaultListReq)return;_vaultListReq='';
+    if(d.error){_vaultDocs=[];renderVaultDocs();$('docVaultStatus').textContent=d.error;return;}
+    _vaultDocs=Array.isArray(d.items)?d.items:[];renderVaultDocs();return;
+  }
+  if(d.type==='notePdfImport'){
+    var rid=String(d.requestId||'');if(rid&&_handledImports[rid])return;_handledImports[rid]=1;
+    if(rid&&_expiredImportReqs[rid]){notePost({source:'note',type:'notePdfImportAck',requestId:rid,ok:false});return;}
+    if(rid.indexOf('vi')===0&&_vaultImportReq&&rid!==_vaultImportReq)return;
+    if(!_vaultImportReq||rid===_vaultImportReq){_vaultImportReq='';clearTimeout(_vaultImportTimer);}
+    enqueuePdfImport(d.buffer,d.name||'훈련',{kind:(d.meta&&d.meta.kind)||'vault',libId:(d.meta&&d.meta.libId)||'',sourceSavedAt:(d.meta&&d.meta.sourceSavedAt)||0,sourceName:(d.meta&&d.meta.sourceName)||d.name,fileName:(d.name||'훈련')+'.pdf'}).then(function(ok){
+      notePost({source:'note',type:'notePdfImportAck',requestId:rid,ok:!!ok});
+      if(!ok&&$('docVaultStatus'))$('docVaultStatus').textContent='PDF를 가져오지 못했어요. 다시 시도해 주세요.';
+    });return;
+  }
+  if(d.type==='noteVaultError'){
+    if(!d.requestId||d.requestId!==_vaultImportReq)return;
+    _vaultImportReq='';clearTimeout(_vaultImportTimer);$('docVaultStatus').textContent=d.error||'보관함 문서를 가져오지 못했어요.';
+  }
+});
+
+/* ============ 데스크톱·아이패드 제작 최적화 ============ */
+/* 줌·팬 — CSS transform 만 쓴다. 필기 좌표는 getBoundingClientRect 기준이라 확대 중에도 그대로 맞는다 */
+const view={s:1,tx:0,ty:0};
+function viewGeom(){const r=cv.getBoundingClientRect();return {Bx:r.left-view.tx,By:r.top-view.ty,cw:r.width/view.s,ch:r.height/view.s};}
+function viewApply(){
+  cv.style.transformOrigin='0 0';
+  cv.style.transform=(view.s===1&&!view.tx&&!view.ty)?'':'translate('+view.tx+'px,'+view.ty+'px) scale('+view.s+')';
+  const zb=$('zoomR');
+  zb.style.display=view.s>1.01?'inline-flex':'none';
+  zb.textContent=Math.round(view.s*100)+'% · 원래대로';
+}
+function viewReset(){view.s=1;view.tx=0;view.ty=0;viewApply();}
+window.__nvReset=viewReset;
+$('zoomR').onclick=viewReset;
+function clampPan(g){
+  const st=$('stage').getBoundingClientRect();
+  const w=g.cw*view.s,h=g.ch*view.s,M=46;   /* 종이가 최소 46px 은 화면에 걸치게 */
+  view.tx=Math.min(view.tx, st.right-M-g.Bx);
+  view.tx=Math.max(view.tx, st.left+M-g.Bx-w);
+  view.ty=Math.min(view.ty, st.bottom-M-g.By);
+  view.ty=Math.max(view.ty, st.top+M-g.By-h);
+}
+function zoomAt(cx,cy,s2){
+  const g=viewGeom();
+  s2=Math.min(4,Math.max(1,s2));
+  const ux=(cx-g.Bx-view.tx)/view.s, uy=(cy-g.By-view.ty)/view.s;
+  view.s=s2;
+  view.tx=cx-g.Bx-ux*s2; view.ty=cy-g.By-uy*s2;
+  if(view.s<1.03){view.s=1;view.tx=0;view.ty=0;}
+  else clampPan(g);
+  viewApply();
+}
+/* 아이패드 터치 제스처 — 핀치 줌·두 손가락 팬, 두 손가락 탭=실행취소, 세 손가락 탭=다시 실행.
+   펜 전용 모드에선 한 손가락으로 팬(확대 중일 때). 손바닥(넓은 접촉)은 제스처로 안 센다 */
+(function(){
+  const stg=$('stage'), tps=new Map();
+  let gest=null, panOne=null;
+  window.__nvMulti=()=>tps.size>=2;
+  stg.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='touch')return;
+    if(Math.max(e.width||0,e.height||0)>40)return;            /* 손바닥 — 추적 제외 */
+    tps.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(tps.size===2&&!(live&&!live._touch)){                  /* 펜으로 긋는 중엔 제스처 시작 안 함 */
+      if(live&&live._touch)cancelLive();
+      panOne=null;
+      const p=[...tps.values()], g=viewGeom();
+      gest={t0:Date.now(),taps:2,moved:0,g,
+        d0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1,
+        mx0:(p[0].x+p[1].x)/2,my0:(p[0].y+p[1].y)/2,s0:view.s};
+      gest.ux=(gest.mx0-g.Bx-view.tx)/view.s;
+      gest.uy=(gest.my0-g.By-view.ty)/view.s;
+    }else if(tps.size===3&&gest)gest.taps=3;
+    else if(tps.size===1&&penOnly&&view.s>1.01)panOne={x:e.clientX,y:e.clientY,g:viewGeom()};
+  },true);
+  stg.addEventListener('pointermove',e=>{
+    if(e.pointerType!=='touch'||!tps.has(e.pointerId))return;
+    tps.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(gest&&tps.size===2){
+      const p=[...tps.values()];
+      const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1;
+      const mx=(p[0].x+p[1].x)/2,my=(p[0].y+p[1].y)/2;
+      gest.moved=Math.max(gest.moved,Math.abs(d-gest.d0),Math.hypot(mx-gest.mx0,my-gest.my0));
+      if(gest.moved>12){
+        view.s=Math.min(4,Math.max(1,gest.s0*d/gest.d0));
+        view.tx=mx-gest.g.Bx-gest.ux*view.s;
+        view.ty=my-gest.g.By-gest.uy*view.s;
+        clampPan(gest.g);viewApply();
+      }
+    }else if(panOne&&tps.size===1){
+      view.tx+=e.clientX-panOne.x;view.ty+=e.clientY-panOne.y;
+      panOne.x=e.clientX;panOne.y=e.clientY;
+      clampPan(panOne.g);viewApply();
+    }
+  },true);
+  function tEnd(e){
+    if(e.pointerType!=='touch')return;
+    tps.delete(e.pointerId);
+    if(gest&&tps.size<2){
+      if(gest.moved<12&&Date.now()-gest.t0<350&&e.type==='pointerup'){
+        const b=gest.taps===2?$('undoB'):$('redoB');
+        if(!b.disabled){b.click();toast(gest.taps===2?'실행취소':'다시 실행');}
+      }
+      if(view.s<1.03)viewReset();
+      gest=null;
+    }
+    if(!tps.size)panOne=null;
+  }
+  stg.addEventListener('pointerup',tEnd,true);
+  stg.addEventListener('pointercancel',tEnd,true);
+  /* 데스크톱 — 트랙패드 핀치(Ctrl+휠로 들어옴)·Ctrl/⌘+휠 줌, 확대 중 휠 팬 */
+  stg.addEventListener('wheel',e=>{
+    if(e.ctrlKey||e.metaKey){e.preventDefault();zoomAt(e.clientX,e.clientY,view.s*Math.exp(-e.deltaY*0.01));}
+    else if(view.s>1.01){e.preventDefault();const g=viewGeom();view.tx-=e.deltaX;view.ty-=e.deltaY;clampPan(g);viewApply();}
+  },{passive:false});
+  /* 사파리(맥) 트랙패드 핀치는 gesture 이벤트로 온다 — 터치 핀치가 이미 처리 중이면 무시 */
+  let gs=null;
+  stg.addEventListener('gesturestart',e=>{if(tps.size)return;e.preventDefault();gs={s0:view.s};});
+  stg.addEventListener('gesturechange',e=>{if(!gs)return;e.preventDefault();zoomAt(e.clientX,e.clientY,gs.s0*e.scale);});
+  stg.addEventListener('gestureend',()=>{gs=null;});
+})();
+/* 키보드 단축키(데스크톱) — B/P 볼펜 · N 연필 · H 형광펜 · T 텍스트 · E 지우개 · 1~5 · [ ] 굵기 · ⌘Z/⌘⇧Z · ←→ 페이지 */
+document.addEventListener('keydown',e=>{
+  if(document.body.classList.contains('memo-mode'))return;
+  const tg=e.target;
+  if(tg&&(tg.tagName==='INPUT'||tg.tagName==='TEXTAREA'||tg.tagName==='SELECT'||tg.isContentEditable))return;
+  const mod=e.metaKey||e.ctrlKey, k=(e.key||'').toLowerCase();
+  if(mod&&k==='z'){e.preventDefault();(e.shiftKey?$('redoB'):$('undoB')).click();return;}
+  if(mod&&k==='y'){e.preventDefault();$('redoB').click();return;}
+  if(mod||e.altKey)return;
+  const tm={b:'pen',p:'pen',n:'pencil',h:'hl',t:'text',e:'eraser','1':'pen','2':'pencil','3':'hl','4':'text','5':'eraser'};
+  if(tm[k]){const b=$('tools').querySelector('[data-t="'+tm[k]+'"]');if(b)b.click();return;}
+  if(k==='['||k===']'){
+    const sl=$('size'),st=(+sl.step||0.5)*2;
+    size=Math.min(+sl.max,Math.max(+sl.min,size+(k===']'?st:-st)));sl.value=size;return;}
+  if(e.key==='ArrowLeft'){$('pgPrev').click();return;}
+  if(e.key==='ArrowRight'){$('pgNext').click();return;}
+});
+</script>
+<script>
+(function(){
+  /* ══ 2.355 · 메모 = 폴더가 있는 메모장 ═══════════════════════════════════════════
+     사용자: "맥의 기본앱인 메모처럼 폴더도 만들고 여러기능". 지금까지는 한 줄 목록 + 글상자 하나였다.
+     이번 판: **폴더 · 검색 · 정렬 · 고정 · 체크리스트 줄**.
+     ⚠ 저장 자리는 **그대로 `cs_notes_memo_v1` 배열**이다. 메모에 `folder`·`pinned`·`createdAt` 이 없으면
+        읽을 때 채운다 — 옛 메모를 고쳐 쓰지 않고 **읽는 쪽에서** 맞춘다(2.334·2.336 과 같은 방식).
+     ⚠ 폴더는 새 키 `cs_notes_folders_v1` 하나(이름만). 메모는 `folder` 에 폴더 id 를 든다.
+        폴더를 지워도 **메모는 안 지운다** — '모든 메모'로 돌아온다(지우는 도구가 아니다).
+     ⚠ 이 두 키는 **이 기기에만** 있다(동기화 목록에 없다 — 예전부터 그랬다). */
+  var MK='cs_notes_memo_v1', FK='cs_notes_folders_v1';
+  function load(){try{var a=JSON.parse(localStorage.getItem(MK)||'[]')||[];
+    return a.map(function(m){ m.folder=m.folder||''; m.pinned=!!m.pinned; m.createdAt=m.createdAt||m.updatedAt||Date.now(); return m; });
+  }catch(_){return [];}}
+  function loadF(){try{return JSON.parse(localStorage.getItem(FK)||'[]')||[];}catch(_){return [];}}
+  function persist(){try{localStorage.setItem(MK,JSON.stringify(memos));localStorage.setItem(FK,JSON.stringify(folders));try{window.PSSaveState.ok('memo');}catch(__){}return true;}catch(e){try{const n=Date.now();if(!window.__psQwT2||n-window.__psQwT2>15000){window.__psQwT2=n;toast('⚠︎ 저장 공간 부족 — 메모가 저장되지 않았어요');}}catch(__){}try{window.PSSaveState.fail('memo',e);}catch(__){}return false;}}
+  function mesc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});}
+  var memos=load(), folders=loadF(), cur=null, curFolder='__all', q='', sortBy='upd';
+  /* ⚠ `Date.now()` 만으로 id 를 만들면 **같은 밀리초에 두 번 만들 때 겹친다**(실측: 폴더 둘을 잇달아
+     만들었더니 같은 id 라 개수가 양쪽 다 1). 순번을 붙여 겹치지 않게 한다. */
+  var __uidN=0;
+  function mkId(p){ return p+Date.now().toString(36)+(++__uidN).toString(36); }
+  var items=document.getElementById('memoItems');
+  var ta=document.getElementById('memoText');
+  /* ── 2.396 글씨 색 ──
+     ⚠ 글상자(textarea)는 **글자마다 색을 가질 수 없다.** 그래서 편집기를 contenteditable 로 바꿨다.
+     ⚠ 색은 인라인(style="color:…")이 아니라 **class(mc-*)로** 담는다 — 인라인 색은 어두운 화면에서 안 보인다.
+     ⚠ 저장은 두 벌을 **늘 같이** 쓴다: `m.html`(꾸민 것) + `m.text`(순수 글). 제목·미리보기·검색은 여전히 m.text 를 본다.
+        한 벌만 쓰면 색은 남고 검색이 죽거나, 검색은 살고 색이 사라진다. */
+  var MC_KEYS=['n','r','o','g','b','p'];
+  var MC_NAME={n:'기본',r:'빨강',o:'주황',g:'초록',b:'파랑',p:'보라'};
+  /* 붓으로 쓸 색값. n(기본)은 되돌리기용 표식이라 눈에 띄지 않는 값을 쓴다. */
+  var MC_HEX={n:'#010203',r:'#e5484d',o:'#d97706',g:'#159a5b',b:'#2563eb',p:'#7c3aed'};
+  var MC_BYC={};
+  (function(){ for(var i=0;i<MC_KEYS.length;i++){ var k=MC_KEYS[i],h=MC_HEX[k],n=parseInt(h.slice(1),16);
+    MC_BYC[h]=k; MC_BYC['rgb('+((n>>16)&255)+', '+((n>>8)&255)+', '+(n&255)+')']=k; } })();
+  /* 저장본을 innerHTML 로 되돌리기 전에 **아는 것만 남긴다** — 붙여넣기로 들어온 것이 실행되지 않게. */
+  function mcClean(root){
+    var all=root.querySelectorAll('*');
+    for(var i=all.length-1;i>=0;i--){ var el=all[i], t=el.tagName;
+      if(t==='SCRIPT'||t==='STYLE'||t==='IFRAME'||t==='OBJECT'||t==='EMBED'){ el.parentNode.removeChild(el); continue; }
+      if(t!=='SPAN'&&t!=='DIV'&&t!=='BR'&&t!=='B'&&t!=='I'&&t!=='U'&&t!=='P'){
+        while(el.firstChild)el.parentNode.insertBefore(el.firstChild,el);
+        el.parentNode.removeChild(el); continue; }
+      var cls=(el.getAttribute('class')||'').split(/\s+/).filter(function(c){return /^mc-[nrogbp]$/.test(c);}).join(' ');
+      if(t==='SPAN'&&!cls){ /* 아무것도 안 남은 마디는 벗겨 낸다 — 빈 껍데기가 쌓이지 않게 */
+        while(el.firstChild)el.parentNode.insertBefore(el.firstChild,el);
+        el.parentNode.removeChild(el); continue; }
+      while(el.attributes.length)el.removeAttribute(el.attributes[0].name);
+      if(cls)el.setAttribute('class',cls); }
+    return root; }
+  /* 브라우저가 남긴 인라인 색·<font> 를 우리 class 로 바꾼다.
+     ⚠ 색칩을 누른 뒤 **이어서 친 글자**는 이 손질이 끝난 뒤에 생긴다(실측: `style="color: rgb(124,58,237)"` 로 남았다).
+        그래서 저장할 때마다 **사본을 떠서** 한 번 더 손질한다 — 살아 있는 화면을 건드리면 커서가 튄다. */
+  function mcNorm(root){
+    var els=(root||ta).querySelectorAll('[style],font');
+    for(var i=0;i<els.length;i++){ var el=els[i];
+      var c=(el.style&&el.style.color)||el.getAttribute('color')||'';
+      var k=MC_BYC[c]||MC_BYC[String(c).toLowerCase()];
+      if(!k)continue;
+      /* ⚠ <font> 는 mcClean 이 통째로 벗겨 내는 태그다 — 여기서 class 만 달아 두면 색이 같이 날아간다.
+         실측: 저장된 <font color="#e5484d">빨강</font> 이 그냥 '빨강' 이 됐다. 마디로 갈아 끼운다. */
+      if(el.tagName==='FONT'){ var sp=document.createElement('span');
+        while(el.firstChild)sp.appendChild(el.firstChild);
+        el.parentNode.insertBefore(sp,el); el.parentNode.removeChild(el); el=sp; }
+      try{ el.style.removeProperty('color'); }catch(_){}
+      var cls=(el.getAttribute('class')||'').replace(/\bmc-[nrogbp]\b/g,'').replace(/\s+/g,' ').trim();
+      el.setAttribute('class',(cls+' mc-'+k).trim());
+      if(!el.getAttribute('style'))el.removeAttribute('style'); } }
+  /* 한 글자씩 따로 싸인 같은 색 마디를 하나로 합친다(사본에서만 — 살아 있는 화면에서 하면 커서를 잃는다). */
+  function mcMerge(root){
+    var sp=root.querySelectorAll('span[class^="mc-"]');
+    for(var i=0;i<sp.length;i++){ var a=sp[i];
+      while(a.nextSibling&&a.nextSibling.nodeType===1&&a.nextSibling.tagName==='SPAN'
+            &&a.nextSibling.getAttribute('class')===a.getAttribute('class')){
+        var b=a.nextSibling; while(b.firstChild)a.appendChild(b.firstChild); b.parentNode.removeChild(b); } } }
+  /* 저장할 모습 — 사본을 떠서 손질한 뒤 내놓는다. */
+  function mcSnapshot(){
+    var d=document.createElement('div'); d.innerHTML=ta.innerHTML;
+    mcNorm(d); mcMerge(d); return d.innerHTML; }
+  function mcFromText(s){
+    var ls=String(s==null?'':s).split('\n');
+    if(ls.length===1&&!ls[0])return '';
+    return ls.map(function(l){ return '<div>'+(l?mesc(l):'<br>')+'</div>'; }).join(''); }
+  function taText(){ try{ return String(ta.innerText||'').replace(/\u00a0/g,' ').replace(/\n$/,''); }catch(_){ return ta.textContent||''; } }
+  function taEmpty(){ ta.classList.toggle('is-empty',!taText().trim()); }
+  /* ⚠ 순서가 곧 뜻이다. mcClean 은 **아는 것만 남기므로** 인라인 색도 지운다 —
+     먼저 mcNorm 으로 색을 class 로 옮겨 놓고 지워야 한다. 반대로 했더니 예전에 저장된 색이 통째로 날아갔다. */
+  function taSet(m){ ta.innerHTML=m?((m.html!=null&&m.html!=='')?m.html:mcFromText(m.text)):'';
+    mcNorm(ta); mcClean(ta); mcMerge(ta); taEmpty(); }
+  function titleOf(m){var t=((m.text||'').trim().split('\n')[0]||'새 메모');return t.replace(/^-\s*\[[ x]\]\s*/,'').slice(0,40)||'새 메모';}
+  function preview(m){var ls=(m.text||'').trim().split('\n');var p=ls.slice(1).join(' ').trim();return p?p.slice(0,52):'';}
+  function fmt(ts){try{var d=new Date(ts);return (d.getMonth()+1)+'월 '+d.getDate()+'일';}catch(_){return '';}}
+  function fmtFull(ts){try{var d=new Date(ts);return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}catch(_){return '';}}
+  function fname(id){var f=folders.filter(function(x){return x.id===id;})[0];return f?f.name:'';}
+  /* 지금 목록에 보일 메모 — 폴더 + 검색 + 정렬. 고정은 늘 위로 */
+  function visible(){
+    var qq=q.trim().toLowerCase();
+    var list=memos.filter(function(m){
+      if(curFolder==='__pin'){ if(!m.pinned)return false; }
+      else if(curFolder!=='__all'&&String(m.folder||'')!==curFolder)return false;
+      if(qq&&String(m.text||'').toLowerCase().indexOf(qq)<0)return false;
+      return true;
+    });
+    list.sort(function(a,b){
+      if(!!b.pinned!==!!a.pinned)return (b.pinned?1:0)-(a.pinned?1:0);
+      if(sortBy==='title')return titleOf(a).localeCompare(titleOf(b),'ko');
+      if(sortBy==='new')return (b.createdAt||0)-(a.createdAt||0);
+      return (b.updatedAt||0)-(a.updatedAt||0);
+    });
+    return list;
+  }
+  function renderFolders(){
+    var box=document.getElementById('mfList'); if(!box)return;
+    var cnt=function(fid){ return memos.filter(function(m){ return fid==='__all'?true:(fid==='__pin'?m.pinned:String(m.folder||'')===fid); }).length; };
+    var h='';
+    h+='<div class="mf-it'+(curFolder==='__all'?' on':'')+'" data-f="__all"><span class="n">모든 메모</span><span class="c">'+cnt('__all')+'</span></div>';
+    h+='<div class="mf-it'+(curFolder==='__pin'?' on':'')+'" data-f="__pin"><span class="n">고정됨</span><span class="c">'+cnt('__pin')+'</span></div>';
+    if(folders.length)h+='<div class="mf-sep"></div>';
+    folders.forEach(function(f){
+      h+='<div class="mf-it'+(curFolder===f.id?' on':'')+'" data-f="'+mesc(f.id)+'"><span class="n">'+mesc(f.name)+'</span>'
+        +'<span class="c">'+cnt(f.id)+'</span>'
+        +'<button class="fx" data-fren="'+mesc(f.id)+'" title="이름 바꾸기">✎</button>'
+        +'<button class="fx" data-fdel="'+mesc(f.id)+'" title="폴더 지우기">✕</button></div>';
+    });
+    box.innerHTML=h;
+    /* 폰용 드롭다운 + 편집기의 '옮기기' 도 같은 목록을 쓴다 */
+    var opts='<option value="__all">모든 메모</option><option value="__pin">고정됨</option>'
+      +folders.map(function(f){return '<option value="'+mesc(f.id)+'">'+mesc(f.name)+'</option>';}).join('');
+    var sel=document.getElementById('memoFolderSel'); if(sel){ sel.innerHTML=opts; sel.value=curFolder; }
+    var mv=document.getElementById('memoMove');
+    if(mv){ mv.innerHTML='<option value="">폴더 없음</option>'+folders.map(function(f){return '<option value="'+mesc(f.id)+'">'+mesc(f.name)+'</option>';}).join('');
+      var m=memos.filter(function(x){return x.id===cur;})[0]; mv.value=m?(m.folder||''):''; }
+  }
+  function renderList(){
+    renderFolders();
+    var list=visible();
+    items.innerHTML='';
+    if(!list.length){ items.innerHTML='<div class="memo-empty">'+(q.trim()?'찾는 메모가 없어요':'메모가 없어요 — ＋ 새 메모')+'</div>'; renderBar(); return; }
+    list.forEach(function(m){
+      var d=document.createElement('div');d.className='memo-item'+(m.id===cur?' on':'');
+      var pv=preview(m), fn=(curFolder==='__all'||curFolder==='__pin')?fname(m.folder):'';
+      d.innerHTML='<div class="mi-t">'+(m.pinned?'<span class="mi-pin">★</span>':'')+mesc(titleOf(m))+'</div>'
+        +'<div class="mi-p">'+mesc(fmt(m.updatedAt))+(fn?' · '+mesc(fn):'')+(pv?' · '+mesc(pv):'')+'</div>'
+        +'<button class="mi-x" title="삭제">✕</button>';
+      d.addEventListener('click',function(e){if(e.target.closest('.mi-x')){e.stopPropagation();delMemo(m.id);return;}select(m.id);});
+      items.appendChild(d);
+    });
+    renderBar();
+  }
+  function renderBar(){
+    var m=memos.filter(function(x){return x.id===cur;})[0];
+    var pin=document.getElementById('memoPin'), when=document.getElementById('memoWhen'), mv=document.getElementById('memoMove');
+    if(pin){ pin.classList.toggle('on',!!(m&&m.pinned)); pin.textContent=(m&&m.pinned)?'★ 고정됨':'☆ 고정'; pin.disabled=!m; }
+    if(when)when.textContent=m?('수정 '+fmtFull(m.updatedAt)):'';
+    if(mv){ mv.disabled=!m; mv.value=m?(m.folder||''):''; }
+    var ck=document.getElementById('memoCheck'); if(ck)ck.disabled=!m;
+    var cw=document.getElementById('memoColors'); if(cw)[].forEach.call(cw.querySelectorAll('button'),function(b){b.disabled=!m;});
+  }
+  function select(id){cur=id;var m=memos.filter(function(x){return x.id===id;})[0];taSet(m);renderList();try{ta.focus();}catch(_){}}
+  function delMemo(id){psConfirm('이 메모를 삭제할까요?',function(){memos=memos.filter(function(x){return x.id!==id;});persist();if(cur===id){var v=visible();cur=v[0]?v[0].id:null;var m=memos.filter(function(x){return x.id===cur;})[0];taSet(m);}renderList();});}
+  function newMemo(){
+    /* 지금 보고 있는 폴더에서 만든다 — '모든 메모'·'고정됨'에서는 폴더 없음 */
+    var f=(curFolder==='__all'||curFolder==='__pin')?'':curFolder;
+    var m={id:mkId('M'),text:'',html:'',folder:f,pinned:false,createdAt:Date.now(),updatedAt:Date.now()};
+    memos.unshift(m);persist();select(m.id);}
+  var _t=null;
+  /* 고른 메모에 지금 화면의 내용을 담는다. 색(html)과 순수 글(text)을 늘 같이 쓴다. */
+  function memoTouch(){
+    var m=memos.filter(function(x){return x.id===cur;})[0];
+    if(!m){
+      /* ⚠ 여기서 그냥 newMemo() 를 부르면 **방금 친 글자가 지워진다** — newMemo→select 가 편집기를 비운다.
+         먼저 챙겨 두고, 새 메모를 만든 뒤 돌려놓는다. */
+      var kh=ta.innerHTML, kt=taText();
+      newMemo(); m=memos.filter(function(x){return x.id===cur;})[0]; if(!m)return null;
+      ta.innerHTML=kh; try{ var r=document.createRange(); r.selectNodeContents(ta); r.collapse(false);
+        var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r); }catch(_){}
+      m.html=mcSnapshot(); m.text=kt;
+    } else { m.html=mcSnapshot(); m.text=taText(); }
+    m.updatedAt=Date.now(); taEmpty();
+    clearTimeout(_t); _t=setTimeout(function(){persist();renderList();},400);
+    return m; }
+  ta.addEventListener('input',memoTouch);
+  /* 붙여넣기는 **순수 글로만** 받는다 — 웹에서 온 서식·글꼴이 메모를 어지럽히지 않게. */
+  /* 편집기를 떠날 때 살아 있는 화면도 한 번 정리한다 — 커서가 없으니 안전하다.
+     ⚠ 여기서 memoTouch 를 부르면 안 된다: 아무것도 안 고치고 눌렀다 나가기만 해도 **빈 메모가 생기고**
+        '수정한 순' 목록이 흔들린다. 저장본은 어차피 mcSnapshot 이 손질하므로 화면만 맞추면 된다. */
+  ta.addEventListener('blur',function(){ try{ if(!cur)return; mcNorm(ta); mcMerge(ta); }catch(_){} });
+  ta.addEventListener('paste',function(e){
+    try{ var t=((e.clipboardData||window.clipboardData).getData('text/plain')||'');
+      e.preventDefault(); document.execCommand('insertText',false,t); memoTouch(); }catch(_){} });
+  /* 2.395 — 메모도 400ms 지연 저장이라 새로고침에 잃을 수 있다. 셸이 부를 창구를 여기(같은 스코프)에 둔다. */
+  window.__memoFlush=function(){ try{ if(_t){ clearTimeout(_t); _t=null; persist(); renderList(); } }catch(_){} };
+  window.__memoPending=function(){ try{ return !!_t; }catch(_){ return false; } };
+  var nb=document.getElementById('memoNew');if(nb)nb.addEventListener('click',newMemo);
+  /* ── 폴더 ── */
+  (function(){
+    var box=document.getElementById('mfList');
+    if(box)box.addEventListener('click',function(e){
+      var rn=e.target.closest('[data-fren]');
+      if(rn){ e.stopPropagation(); var id=rn.dataset.fren, f=folders.filter(function(x){return x.id===id;})[0]; if(!f)return;
+        var ask=window.psPrompt||function(msg,def,ok){var v=prompt(msg,def); if(v!=null)ok(v);};
+        ask('폴더 이름',f.name,function(v){ v=String(v||'').trim(); if(!v)return; f.name=v.slice(0,24); persist(); renderList(); });
+        return; }
+      var dl=e.target.closest('[data-fdel]');
+      if(dl){ e.stopPropagation(); var id2=dl.dataset.fdel;
+        var n=memos.filter(function(m){return String(m.folder||'')===id2;}).length;
+        psConfirm('이 폴더를 지울까요?'+(n?('\n\n안에 있는 메모 '+n+'개는 지우지 않고 ‘모든 메모’로 옮깁니다.'):''),function(){
+          memos.forEach(function(m){ if(String(m.folder||'')===id2)m.folder=''; });
+          folders=folders.filter(function(x){return x.id!==id2;});
+          if(curFolder===id2)curFolder='__all';
+          persist(); renderList(); });
+        return; }
+      var it=e.target.closest('.mf-it'); if(!it)return;
+      curFolder=it.dataset.f; var v=visible(); cur=v[0]?v[0].id:null;
+      var m2=memos.filter(function(x){return x.id===cur;})[0]; ta.value=m2?(m2.text||''):'';
+      renderList();
+    });
+    var nf=document.getElementById('mfNew');
+    if(nf)nf.addEventListener('click',function(){
+      var ask=window.psPrompt||function(msg,def,ok){var v=prompt(msg,def); if(v!=null)ok(v);};
+      ask('새 폴더 이름','',function(v){ v=String(v||'').trim(); if(!v)return;
+        folders.push({id:mkId('F'),name:v.slice(0,24)}); persist(); renderList(); });
+    });
+    var sel=document.getElementById('memoFolderSel');
+    if(sel)sel.addEventListener('change',function(){ curFolder=sel.value; var v=visible(); cur=v[0]?v[0].id:null;
+      var m=memos.filter(function(x){return x.id===cur;})[0]; taSet(m); renderList(); });
+  })();
+  /* ── 검색 · 정렬 ── */
+  (function(){
+    var qi=document.getElementById('memoQ'); if(qi)qi.addEventListener('input',function(){ q=qi.value||''; renderList(); });
+    var so=document.getElementById('memoSort'); if(so)so.addEventListener('change',function(){ sortBy=so.value; renderList(); });
+  })();
+  /* ── 고정 · 폴더 옮기기 · 체크리스트 줄 ── */
+  (function(){
+    var pin=document.getElementById('memoPin');
+    if(pin)pin.addEventListener('click',function(){ var m=memos.filter(function(x){return x.id===cur;})[0]; if(!m)return;
+      m.pinned=!m.pinned; m.updatedAt=Date.now(); persist(); renderList(); });
+    var mv=document.getElementById('memoMove');
+    if(mv)mv.addEventListener('change',function(){ var m=memos.filter(function(x){return x.id===cur;})[0]; if(!m)return;
+      m.folder=mv.value||''; m.updatedAt=Date.now(); persist(); renderList(); });
+    var ck=document.getElementById('memoCheck');
+    /* 글상자라 진짜 체크박스를 그릴 수는 없다 — 줄 앞의 `- [ ]`/`- [x]` 를 **토글**한다.
+       맥 메모의 체크리스트와 같은 쓸모(할 일 표시)를 글자만으로 얻는다. */
+    /* ⚠ 이제 글상자가 아니라서 `selectionStart` 로 줄을 자를 수 없다.
+       ⚠ 그렇다고 **'ta 의 직속 자식 = 한 줄'도 아니다**(실측: 첫 줄은 덩이로 안 싸여 색 마디 여럿이 나란히 있고,
+          거기에 앞머리를 넣었더니 `- [ ]` 가 줄 **가운데**에 박혔다).
+       줄은 `<br>`·덩이(div)로 끊긴 **마디들의 묶음**이다. 그 묶음의 맨 앞에만 손댄다 — 줄 안의 색은 건드리지 않는다. */
+    function mcIsBlock(n){ return !!(n&&n.nodeType===1&&/^(DIV|P)$/.test(n.tagName)); }
+    function mcIsBr(n){ return !!(n&&n.nodeType===1&&n.tagName==='BR'); }
+    function mcLineNodes(){
+      var sel=window.getSelection(); if(!sel||!sel.rangeCount)return null;
+      var r=sel.getRangeAt(0), n=r.startContainer, top=null;
+      if(n===ta){ top=ta.childNodes[Math.min(r.startOffset,Math.max(0,ta.childNodes.length-1))]||null; }
+      else { top=n; while(top&&top.parentNode&&top.parentNode!==ta)top=top.parentNode;
+             if(!top||top.parentNode!==ta)top=null; }
+      if(!top)return null;
+      if(mcIsBlock(top))return [top];
+      var a=top; while(a.previousSibling&&!mcIsBr(a.previousSibling)&&!mcIsBlock(a.previousSibling))a=a.previousSibling;
+      var out=[], k=a;
+      while(k&&!mcIsBr(k)&&!mcIsBlock(k)){ out.push(k); k=k.nextSibling; }
+      return out.length?out:[top]; }
+    function mcSetPrefix(nodes,cut,ins){
+      var first=nodes[0], tn=null;
+      if(first.nodeType===3)tn=first;
+      else if(!mcIsBr(first)){ try{ tn=document.createTreeWalker(first,NodeFilter.SHOW_TEXT,null,false).nextNode(); }catch(_){} }
+      if(!tn){ if(!ins)return; var t=document.createTextNode(ins);
+        if(first.nodeType===1&&!mcIsBr(first))first.insertBefore(t,first.firstChild);
+        else first.parentNode.insertBefore(t,first);
+        return; }
+      if(tn.data.length<cut){
+        /* 앞머리가 여러 마디에 걸친 드문 경우엔 그 줄만 순수 글로 되돌린다(색은 그 줄만 잃는다). */
+        var all=nodes.map(function(x){return x.textContent||'';}).join('');
+        var host=first.parentNode, rep=document.createTextNode(ins+all.slice(cut));
+        host.insertBefore(rep,first);
+        nodes.forEach(function(x){ if(x.parentNode)x.parentNode.removeChild(x); });
+        return; }
+      tn.data=ins+tn.data.slice(cut);
+      try{ var rr=document.createRange(); rr.setStart(tn,Math.min(ins.length,tn.data.length)); rr.collapse(true);
+        var s2=window.getSelection(); s2.removeAllRanges(); s2.addRange(rr); }catch(_){} }
+    if(ck)ck.addEventListener('click',function(){
+      var m=memos.filter(function(x){return x.id===cur;})[0]; if(!m)return;
+      try{ta.focus();}catch(_){}
+      var nodes=mcLineNodes(); if(!nodes||!nodes.length)return;
+      var txt=nodes.map(function(x){return x.textContent||'';}).join(''), mt;
+      if((mt=txt.match(/^-\s*\[\s\]\s?/)))      mcSetPrefix(nodes,mt[0].length,'- [x] ');
+      else if((mt=txt.match(/^-\s*\[x\]\s?/i))) mcSetPrefix(nodes,mt[0].length,'');
+      else                                          mcSetPrefix(nodes,0,'- [ ] ');
+      memoTouch();
+    });
+    /* ── 글씨 색 ── */
+    (function(){
+      var wrap=document.getElementById('memoColors'); if(!wrap)return;
+      MC_KEYS.forEach(function(k){
+        var b=document.createElement('button'); b.type='button'; b.dataset.mc=k;
+        b.title=MC_NAME[k]; b.setAttribute('aria-label',MC_NAME[k]+' 글씨'); b.disabled=true;
+        b.style.setProperty('--sw','var(--mc-'+k+')'); wrap.appendChild(b); });
+      /* 색칩은 **누르는 순간 커서를 뺏으면 안 된다** — 뺏기면 무엇을 칠할지 잃어버린다. */
+      wrap.addEventListener('mousedown',function(e){ if(e.target.closest('button'))e.preventDefault(); });
+      wrap.addEventListener('click',function(e){
+        var b=e.target.closest('button[data-mc]'); if(!b||b.disabled)return;
+        try{ta.focus();}catch(_){}
+        try{ document.execCommand('styleWithCSS',false,true); }catch(_){}
+        try{ document.execCommand('foreColor',false,MC_HEX[b.dataset.mc]); }catch(_){ return; }
+        mcNorm(ta); memoTouch(); });
+    })();
+  })();
+  window.__noteSetMode=function(mode){var on=(mode==='memo');document.body.classList.toggle('memo-mode',on);
+    if(on){document.body.classList.remove('note-tools-open');var nt=document.getElementById('noteToolsToggle');if(nt){nt.setAttribute('aria-expanded','false');nt.textContent='도구';}}
+    try{var sg=document.getElementById('nModeSeg'),want=on?'memo':'draw';if(sg)[].forEach.call(sg.querySelectorAll('button'),function(b){b.classList.toggle('on',b.dataset.m===want);});}catch(_){}
+    if(on){if(!memos.length){newMemo();}else{select(cur||memos[0].id);}renderList();}};
+  /* 노트|메모 세그(탭 통합) */
+  try{var _sg=document.getElementById('nModeSeg');if(_sg)_sg.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.m==='library'){openDocLibrary('mine');return;}window.__noteSetMode(b.dataset.m);});}catch(_){}
+  try{var _nt=document.getElementById('noteToolsToggle');if(_nt)_nt.addEventListener('click',function(){var on=!document.body.classList.contains('note-tools-open');document.body.classList.toggle('note-tools-open',on);this.setAttribute('aria-expanded',on?'true':'false');this.textContent=on?'닫기':'도구';});}catch(_){}
+  window.addEventListener('message',function(e){var d=e.data||{};if(e.source!==parent||(location.protocol!=='file:'&&e.origin!==location.origin)||d.source!=='app'||d.type!=='closeTransientUI')return;try{document.body.classList.remove('note-tools-open');var nt=document.getElementById('noteToolsToggle');if(nt){nt.setAttribute('aria-expanded','false');nt.textContent='도구';}var fw=document.getElementById('fileWrap');if(fw)fw.classList.remove('open');if(typeof closeDocLibrary==='function')closeDocLibrary();}catch(_){}});
+})();
+/* 1.926 — 폰: 그리기 도구(펜 종류·색·굵기·되돌리기)를 보드와 같은 '떠 있는 하단 도크' 카드로 옮긴다(사용자: 개인 노트 모바일 UI 일관성).
+   위 바에는 모드·노트 선택·도구·제목만 남아 캔버스가 커진다. 767px 넘어가면 원래 자리로 되돌린다 */
+(function(){
+  if(!window.matchMedia)return;
+  /* 2.597 — 디자인 6단계: 펜 묶음 도크를 데스크톱에도(작전판 도크와 같은 자리). 폭 조건을 없앤다 */
+  var mq=window.matchMedia('(min-width:1px)'), dock=null;
+  function apply(){
+    var core=document.querySelector('.note-core'), ink=document.querySelector('.note-ink'); if(!core||!ink)return;
+    if(mq.matches){
+      if(!dock){ dock=document.createElement('div'); dock.id='nDock'; dock.setAttribute('role','toolbar'); dock.setAttribute('aria-label','그리기 도구'); document.body.appendChild(dock); }
+      if(core.parentNode!==dock){ dock.appendChild(core); dock.appendChild(ink); }
+      document.body.classList.add('note-dock');
+    }else{
+      if(dock&&core.parentNode===dock){ var bar=document.querySelector('.bar'), anchor=document.getElementById('nTplWrap'); if(bar){ bar.insertBefore(core,anchor||null); bar.insertBefore(ink,anchor||null); } }
+      document.body.classList.remove('note-dock');
+    }
+    try{ if(typeof fit==='function')fit(); }catch(_){}
+  }
+  apply();
+  if(mq.addEventListener)mq.addEventListener('change',apply); else if(mq.addListener)mq.addListener(apply);
+})();
+</script>
+<script src="perms.js"></script>
+<!-- 1.547 — 노트 잠금 제거. 노트는 팀에 올라가지 않는 개인 데이터(sync.js PERSONAL)라
+     팀 권한으로 잠글 대상이 아니었다. 권한 관리에서도 '노트' 항목을 뺐으므로,
+     이 게이트를 남겨 두면 그 권한을 받을 길이 없어져 노트가 영구히 보기 전용이 된다. -->
+<script>/* 1.976 — 보관함 세그: 셸(app.html)의 vaultSection 으로 프레임 전환(노트 상태 유지) */
+try{[].forEach.call(document.querySelectorAll(".nh-seg [data-vs]"),function(b){b.addEventListener("click",function(){try{parent.postMessage({source:"note",type:"vaultSection",section:b.getAttribute("data-vs")},location.origin);}catch(_){}});});}catch(_){}</script>
+<style id="ps-2247-nhead">/* 2.247 — 자료 탭(df-head)과 픽셀 일치: 높이 52(어긋나면 전환 때 튄다) · 세그 테두리 */
+html.ps-page-note .nhead{height:52px!important;min-height:52px!important}
+html.ps-page-note .nhead .nh-seg{border:1px solid var(--line,#E3E6EA)!important}
+</style>
+<link rel="stylesheet" href="ui-grammar.css?v=2.642"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<style id="ps-2597-notedock">/* 2.597 — 디자인 6단계 · 개인 노트 도구줄 두 묶음: 위 줄은 «문서»(모드·노트 선택·제목·쪽 이동), «펜»(볼펜·연필·형광펜·글·지우개·색·굵기·되돌리기)은 판 위 아래쪽 떠 있는 도크 — 작전판 도크와 같은 자리·같은 문법. 폰은 1.926 도크(mobile-polish) 그대로에 높이만 40/28. */
+@media (min-width:768px){
+html body.note-dock #nDock:not(#_):not(#__){position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:70;display:flex;flex-direction:row;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:6px 10px;background:var(--surface,#fff);border:1px solid var(--line,#E3E6EA);border-radius:12px;box-shadow:0 8px 24px var(--sh12,rgba(16,24,40,.12)),0 1px 2px var(--sh06,rgba(16,24,40,.06));box-sizing:border-box}
+html body.note-dock #nDock .note-core:not(#_),html body.note-dock #nDock .note-ink:not(#_){display:flex;align-items:center;gap:6px;flex:0 0 auto;min-width:0}
+html body.note-dock #nDock .note-ink:not(#_){padding-left:10px;border-left:1px solid var(--line,#E3E6EA)}
+html body.note-dock #nDock #tools:not(#_):not(#__){display:flex;gap:2px;padding:2px;border-radius:10px;background:var(--panel2,#F4F5F7);border:0}
+html body.note-dock #nDock #tools button:not(#_):not(#__){height:32px;min-height:32px;padding:0 10px;border:0;border-radius:6px;background:transparent;font-size:12px;font-weight:600;color:var(--text-2,#646A73);box-sizing:border-box}
+html body.note-dock #nDock #tools button.on:not(#_):not(#__){background:var(--surface,#fff);color:var(--text,#14161A);font-weight:800;box-shadow:0 1px 2px var(--sh06,rgba(16,24,40,.06))}
+html body.note-dock #nDock #penOnly:not(#_):not(#__),html body.note-dock #nDock #undoB:not(#_):not(#__),html body.note-dock #nDock #redoB:not(#_):not(#__){width:32px;min-width:32px;height:32px;min-height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line,#E3E6EA);border-radius:6px;background:var(--surface,#fff);box-sizing:border-box}
+html body.note-dock #nDock #cols:not(#_):not(#__){display:flex;gap:5px;align-items:center}
+html body.note-dock #nDock #cols button:not(#_):not(#__),html body.note-dock #nDock #cols .custcol:not(#_):not(#__){width:28px;height:28px;min-width:28px;min-height:28px;border-radius:999px;padding:0}
+html body.note-dock #nDock .szwrap:not(#_){display:flex;align-items:center;gap:5px}
+html body.note-dock #nDock .szwrap input:not(#_){width:74px}
+html body.note-dock #stage:not(#_):not(#__){margin-bottom:64px!important}
+html body.note-dock.memo-mode #nDock:not(#_):not(#__){display:none!important}
+}
+@media (max-width:767px){
+html body.note-dock #nDock #tools button:not(#_):not(#__){min-height:40px!important;height:40px!important;border-radius:6px!important}
+html body.note-dock #nDock #penOnly:not(#_):not(#__),html body.note-dock #nDock #undoB:not(#_):not(#__),html body.note-dock #nDock #redoB:not(#_):not(#__){width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;border-radius:6px!important}
+html body.note-dock #nDock #cols button:not(#_):not(#__),html body.note-dock #nDock #cols .custcol:not(#_):not(#__){width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important}
+html body.note-dock #nDock:not(#_):not(#__){border-radius:12px!important}
+}
+</style>
+</body>
+</html>

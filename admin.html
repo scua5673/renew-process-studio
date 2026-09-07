@@ -1,0 +1,1875 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>PROCESS STUDIO · 관리자</title>
+<style>
+  :root{
+    --bg:#0F141B; --panel:#1A212B; --panel2:#232C38; --line:#2C3744; --line2:#39434F;
+    --txt:#E7EBF1; --dim:#9AA4B3; --dim2:#7C8696; --blue:#3a6df0; --blue2:#5b86ff;
+    --green:#2fae66; --amber:#e0a53a; --red:#e05666; --chip:#232C38;
+  }
+  *{box-sizing:border-box;}
+  :focus-visible{outline:2px solid #3a6df0;outline-offset:2px}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;font-size:14px;}
+  a{color:var(--blue2);text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  .hide{display:none!important;}
+  /* ── 관리자 앱 셸: 목업과 같은 좌측 내비게이션 + 넓은 작업영역 ── */
+  #app{min-height:100vh;padding-left:220px;}
+  .admin-side{position:fixed;inset:0 auto 0 0;z-index:45;width:220px;padding:20px 14px;border-right:1px solid var(--line);background:#111720;}
+  .admin-brand{display:flex;align-items:center;gap:9px;padding:0 8px 24px;font-size:13px;font-weight:800;letter-spacing:.02em;}
+  .admin-brand i{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;background:var(--txt);color:var(--bg);font-size:10px;font-style:normal;letter-spacing:.05em;}
+  .admin-nav{display:grid;gap:4px;}
+  .admin-nav button{display:flex;align-items:center;gap:10px;width:100%;height:40px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--dim);font-size:12px;font-weight:800;text-align:left;transition:.14s;}
+  .admin-nav button:hover{background:rgba(255,255,255,.045);color:var(--txt);}
+  .admin-nav button.on{background:var(--panel2);color:var(--txt);}
+  .admin-nav svg{width:16px;height:16px;flex:0 0 auto;}
+  .admin-side-foot{position:absolute;left:14px;right:14px;bottom:18px;padding:11px 12px;border-top:1px solid var(--line);color:var(--dim2);font-size:10px;line-height:1.5;}
+  #app>header,#app>.stats,#app>.tabs,#app>.wrap{margin-left:0;}
+  #app>header{padding-left:26px;}
+  #app>header .logo{display:none;}
+  .admin-top-title{font-size:14px;font-weight:800;letter-spacing:-.01em;}
+  #app>.tabs{display:none;}
+  #app>.stats{padding:16px 26px 6px;}
+  #app>.wrap{padding:14px 26px 42px;max-width:1460px;margin-right:auto;}
+  @media(max-width:900px){
+    #app{padding-left:72px;}
+    .admin-side{width:72px;padding:18px 10px;}
+    .admin-brand{justify-content:center;padding:0 0 22px;font-size:0;}
+    .admin-nav button{justify-content:center;padding:0;font-size:0;}
+    .admin-nav button svg{width:18px;height:18px;}
+    .admin-side-foot{display:none;}
+  }
+  @media(max-width:680px){
+    #app{padding:0 0 70px;}
+    .admin-side{position:fixed;inset:auto 0 0 0;width:auto;height:64px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));border:0;border-top:1px solid var(--line);background:rgba(17,23,32,.96);backdrop-filter:blur(18px);}
+    .admin-brand,.admin-side-foot{display:none;}
+    .admin-nav{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;}
+    .admin-nav button{height:48px;flex-direction:column;justify-content:center;gap:3px;padding:0;font-size:10px;border-radius:10px;}
+    .admin-nav button svg{width:16px;height:16px;}
+    #app>header{padding:10px 12px;}
+    #app>header .logo{display:none;}
+    .admin-top-title{font-size:13px;}
+    #app>header .hchip{display:none;}
+    #app>.stats{padding:12px 12px 4px;gap:7px;}
+    #app>.wrap{padding:10px 12px 28px;}
+  }
+
+  /* ── 로그인 / 권한없음 ── */
+  .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .gate-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    padding:30px 26px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.5);}
+  .gate-card .badge{display:inline-flex;align-items:center;gap:7px;font-weight:800;letter-spacing:.04em;
+    font-size:12px;color:var(--dim);border:1px solid var(--line2);padding:5px 11px;border-radius:999px;margin-bottom:18px;}
+  .gate-card h1{font-size:18px;margin:0 0 8px;font-weight:800;}
+  .gate-card p{color:var(--dim);font-size:13px;line-height:1.6;margin:0 0 20px;}
+  .btn-oauth{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:12px;border:0;
+    font-weight:800;font-size:14px;margin-top:10px;}
+  .btn-kakao{background:#FEE500;color:#181600;}
+  .btn-google{background:#fff;color:#1f232b;}
+  .uidbox{margin-top:16px;font:600 12px/1.5 ui-monospace,Menlo,monospace;color:var(--dim);
+    background:var(--panel2);border:1px dashed var(--line2);border-radius:10px;padding:11px;word-break:break-all;user-select:all;}
+
+  /* ── 헤더 ── */
+  header{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;
+    padding:12px 18px;background:rgba(15,20,27,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
+  header .logo{font-weight:800;letter-spacing:.02em;font-size:16px;display:flex;align-items:center;gap:9px;}
+  header .logo .pro{background:var(--txt);color:var(--bg);font-size:10px;font-weight:800;padding:2px 6px;border-radius:6px;letter-spacing:.06em;}
+  header .sp{flex:1;}
+  .hchip{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--dim);border-radius:10px;font-weight:700;font-size:12px;}
+  .hbtn{height:34px;padding:0 13px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);
+    border-radius:10px;font-weight:700;font-size:12px;transition:.14s;}
+  .hbtn:hover{background:var(--panel);border-color:var(--line2);}
+  .hbtn.danger{color:var(--red);}
+
+  /* ── 통계 스트립 ── */
+  .stats{display:flex;gap:10px;flex-wrap:wrap;padding:16px 18px 6px;}
+  .stat{flex:1 1 140px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;}
+  .stat .n{font-size:24px;font-weight:800;letter-spacing:-.01em;}
+  .stat .l{font-size:12px;color:var(--dim);margin-top:2px;font-weight:600;}
+
+  /* ── 탭 ── */
+  .tabs{display:flex;gap:6px;padding:8px 18px 0;}
+  .tab{height:38px;padding:0 16px;border:0;background:transparent;color:var(--dim);border-radius:10px 10px 0 0;
+    font-weight:800;font-size:13px;border-bottom:2px solid transparent;}
+  .tab.on{color:var(--txt);border-bottom-color:var(--blue);}
+
+  /* ── 레이아웃 ── */
+  .wrap{display:grid;grid-template-columns:360px 1fr;gap:16px;padding:14px 18px 40px;align-items:start;}
+  @media(max-width:900px){ .wrap{grid-template-columns:1fr;} }
+  .col{min-width:0;}
+  /* ── 2.569 두 기둥 각각 흐름: 화면 높이 안에 가두고 목록만 스크롤(오른쪽 요약은 제자리) ──
+     .ps-scroll = 목록을 품은 패널(기둥 높이에 맞춤) · .ps-flow = 그 안에서 흐르는 목록 · .ps-cap = 짧은 목록 캡
+     폰(≤900)은 종전대로 페이지 스크롤. 마법 숫자 없음 — 높이는 flex 가 나눈다. */
+  @media(min-width:901px){
+    #app{height:100vh;display:flex;flex-direction:column;}
+    #app>header,#app>.stats,#app>.tabs{flex:0 0 auto;}
+    #app>.wrap{flex:1 1 auto;min-height:0;align-items:stretch;grid-auto-rows:minmax(0,1fr);padding-bottom:18px;}
+    .col{display:flex;flex-direction:column;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+    .col>.panel.ps-scroll{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin-bottom:0;}
+    .ps-scroll>.ps-flow{flex:1 1 auto;min-height:0;overflow-y:auto;}
+    .ps-cap{max-height:260px;overflow-y:auto;}
+    .wslist{flex:1 1 auto;min-height:0;max-height:none;}
+    th{background:var(--panel);z-index:1;}
+  }
+  .searchrow{display:flex;gap:8px;margin-bottom:10px;}
+  .searchrow input,.searchrow select{height:38px;border:1px solid var(--line);background:var(--panel);color:var(--txt);
+    border-radius:10px;padding:0 12px;font-family:inherit;font-size:13px;outline:none;}
+  .searchrow input{flex:1;}
+  .searchrow input:focus{border-color:var(--blue);}
+
+  /* ── 워크스페이스 리스트 ── */
+  .wslist{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 250px);overflow-y:auto;padding-right:2px;}
+  .wscard{text-align:left;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:12px 13px;transition:.14s;color:inherit;}
+  .wscard:hover{border-color:var(--line2);background:var(--panel2);}
+  .wscard.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset;}
+  .wscard .top{display:flex;align-items:center;gap:8px;}
+  .wscard .nm{font-weight:800;font-size:14px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .wscard .em{font-size:12px;color:var(--dim);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .wscard .meta{display:flex;gap:10px;margin-top:8px;font-size:11px;color:var(--dim2);}
+  .kbadge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;letter-spacing:.03em;flex:0 0 auto;}
+  .kbadge.personal{background:#233042;color:#9cc4ff;}
+  .kbadge.team{background:#2a2440;color:#c8abff;}
+
+  /* ── 상세 패널 ── */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;}
+  .panel h2{margin:0 0 3px;font-size:16px;font-weight:800;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .panel .sub{color:var(--dim);font-size:12px;margin-bottom:14px;}
+  .sec-t{font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--dim2);text-transform:uppercase;margin:4px 0 9px;}
+  .ws-hero{display:flex;align-items:flex-start;gap:13px;padding:2px 1px 16px;}
+  .ws-mark{display:grid;place-items:center;width:46px;height:46px;flex:0 0 auto;border-radius:14px;background:linear-gradient(145deg,#315bd4,#763ee0);color:#fff;font-size:13px;font-weight:800;}
+  .ws-hero h2{margin:1px 0 4px;font-size:18px;letter-spacing:-.3px;}
+  .ws-state{display:inline-flex;align-items:center;gap:5px;margin-left:7px;padding:3px 7px;border-radius:999px;background:rgba(47,174,102,.12);color:#74d49c;font-size:10px;vertical-align:3px;}
+  .ws-state:before{content:"";width:5px;height:5px;border-radius:50%;background:var(--green);}
+  .ws-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:13px;}
+  .ws-kpi{padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;}
+  .ws-kpi b{display:block;font-size:18px;letter-spacing:-.3px}.ws-kpi span{display:block;margin-top:3px;color:var(--dim);font-size:10px;}
+  .ws-tabs{display:flex;gap:3px;margin:0 0 14px;border-bottom:1px solid var(--line);overflow-x:auto;}
+  .ws-tabs button{height:38px;flex:0 0 auto;padding:0 11px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--dim);font-size:11px;font-weight:800;}
+  .ws-tabs button.on{border-color:var(--blue);color:var(--txt);}
+  .ws-pane{display:none}.ws-pane.on{display:block;}
+  .ws-alert{padding:12px 13px;border:1px solid rgba(224,165,58,.3);border-radius:10px;background:rgba(224,165,58,.07);color:var(--dim);font-size:11px;line-height:1.6;}
+  .ws-alert b{color:#e7bd6d;}
+  .action-list{display:grid;gap:8px}
+  .action-item{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+  .action-item .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--amber)}
+  .action-item.danger .dot{background:var(--red)}
+  .action-item.ok .dot{background:var(--green)}
+  .action-item .body{min-width:0;flex:1}.action-item b{display:block;font-size:12px}.action-item span{display:block;margin-top:2px;color:var(--dim);font-size:10px}
+  .health-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+  .health-card{display:block;width:100%;padding:11px;border:1px solid transparent;border-radius:10px;background:var(--panel2);color:var(--txt);text-align:left}
+  button.health-card{transition:.14s}
+  button.health-card:hover{border-color:var(--line2);transform:translateY(-1px)}
+  button.health-card[aria-expanded="true"]{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}
+  .health-card b{display:block;font-size:18px}.health-card span{font-size:10px}
+  .health-card .open-hint{float:right;margin-top:4px;color:var(--blue2);font-size:10px;font-weight:800}
+  .health-detail{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#141b24}
+  .health-detail-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px}
+  .health-detail-head div{min-width:0;flex:1}.health-detail-head b{display:block;font-size:12px}.health-detail-head span{display:block;margin-top:2px;color:var(--dim);font-size:10px;line-height:1.5}
+  .health-detail table{min-width:610px}.health-detail th,.health-detail td{padding:8px 6px;font-size:10px}
+  .health-detail code{font:650 10px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ef9eaa;word-break:break-word}
+  @media(max-width:460px){.health-grid{grid-template-columns:1fr}.health-card{min-height:58px}.health-card b{display:inline;margin-right:8px}}
+  .eval-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 13px}
+  .eval-kpi{padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+  .eval-kpi b{display:block;font-size:18px}.eval-kpi span{display:block;margin-top:3px;color:var(--dim);font-size:10px}
+  .ws-danger{padding:13px;border:1px solid rgba(224,86,102,.3);border-radius:12px;background:rgba(224,86,102,.05);}
+  .ws-danger b{display:block;color:#ef8c98;font-size:11px}.ws-danger p{margin:5px 0 10px;color:var(--dim);font-size:10px;line-height:1.5;}
+  .rolebadge{font-size:10px;font-weight:800;padding:3px 7px;border-radius:8px;background:var(--chip);color:var(--dim);white-space:nowrap;}
+  .rolebadge.executive,.rolebadge.owner,.rolebadge.admin{background:rgba(58,109,240,.15);color:#8ba8ff;}
+  .rolebadge.staff{background:rgba(47,174,102,.13);color:#74d49c;}
+  .rolebadge.player{background:rgba(224,165,58,.13);color:#e7bd6d;}
+  @media(max-width:620px){.ws-kpis{grid-template-columns:repeat(2,1fr)}.ws-hero{flex-wrap:wrap;}}
+
+  table{width:100%;border-collapse:collapse;}
+  th,td{text-align:left;padding:9px 8px;font-size:12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  th{color:var(--dim2);font-weight:700;font-size:11px;letter-spacing:.03em;position:sticky;top:0;}
+  td.nm{font-weight:700;}
+  tr.del td{opacity:.5;}
+  .tablewrap{overflow-x:auto;}
+  .tybadge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;background:var(--chip);color:var(--dim);white-space:nowrap;}
+  .pin{color:var(--amber);}
+  .rowbtn{height:28px;padding:0 9px;border:1px solid var(--line2);background:transparent;color:var(--dim);
+    border-radius:8px;font-size:11px;font-weight:700;margin-left:5px;}
+  .rowbtn:hover{color:var(--txt);border-color:var(--dim);}
+  .rowbtn.danger:hover{color:var(--red);border-color:var(--red);}
+  .empty{color:var(--dim2);font-size:13px;text-align:center;padding:26px 0;}
+  .muted{color:var(--dim2);}
+
+  /* ── 모달 ── */
+  .ov{position:fixed;inset:0;z-index:100;background:rgba(4,7,12,.66);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal{width:100%;max-width:520px;max-height:86vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line2);
+    border-radius:18px;padding:20px;box-shadow:0 30px 80px rgba(0,0,0,.6);}
+  .modal h3{margin:0 0 4px;font-size:16px;font-weight:800;}
+  .modal .x{float:right;border:0;background:transparent;color:var(--dim);font-size:20px;line-height:1;}
+  .thumb{width:100%;aspect-ratio:3/2;background:#0f1520;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:12px 0;display:flex;align-items:center;justify-content:center;}
+  .thumb img{width:100%;height:100%;object-fit:contain;}
+  .content-preview{margin:12px 0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);}
+  .content-preview .cp-title{margin-bottom:9px;color:var(--txt);font-size:12px;font-weight:800;}
+  .content-preview .cp-row{display:grid;grid-template-columns:72px 1fr;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:12px;line-height:1.55;}
+  .content-preview .cp-row:first-of-type{border-top:0;padding-top:0;}
+  .content-preview .cp-k{color:var(--dim2);font-weight:700;}
+  .content-preview .cp-v{color:var(--txt);white-space:pre-wrap;}
+  .content-preview .cp-empty{color:var(--dim2);font-size:12px;line-height:1.55;}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:12px;margin:8px 0;}
+  .kv .k{color:var(--dim2);font-weight:700;}
+  pre.json{background:#0f1520;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:11px;
+    max-height:240px;overflow:auto;color:var(--dim);white-space:pre-wrap;word-break:break-word;}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(20,26,34,.96);color:#fff;
+    font-size:13px;font-weight:600;padding:11px 18px;border-radius:12px;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.45);
+    opacity:0;transition:opacity .2s;pointer-events:none;}
+  .toast.on{opacity:1;}
+  .loading{padding:40px;text-align:center;color:var(--dim);}
+</style>
+</head>
+<body>
+
+<!-- 게이트: 로그인 필요 -->
+<div id="gateLogin" class="gate hide">
+  <div class="gate-card">
+    <span class="badge"><span style="color:var(--blue2)">●</span> ADMIN</span>
+    <h1>관리자 로그인</h1>
+    <p>PROCESS STUDIO 관리자 계정으로 로그인하세요.<br>일반 사용자는 접근할 수 없습니다.</p>
+    <button class="btn-oauth btn-kakao" onclick="signIn('kakao')">카카오로 로그인</button>
+    <button class="btn-oauth btn-google" onclick="signIn('google')">Google로 로그인</button>
+  </div>
+</div>
+
+<!-- 게이트: 권한 없음 -->
+<div id="gateDenied" class="gate hide">
+  <div class="gate-card">
+    <span class="badge">접근 제한</span>
+    <h1>관리자 권한이 없습니다</h1>
+    <p>이 계정에는 관리자 권한이 없습니다.<br>서비스 책임자에게 관리자 등록을 요청하세요.</p>
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
+      <button class="hbtn" onclick="location.reload()">다시 확인</button>
+      <button class="hbtn danger" onclick="signOut()">다른 계정으로</button>
+    </div>
+    <div class="uidbox" id="myUid" style="margin-top:12px;font-size:11px;opacity:.7">—</div>
+  </div>
+</div>
+
+<!-- 관리자 대시보드 -->
+<div id="app" class="hide">
+  <aside class="admin-side" aria-label="관리자 메뉴">
+    <div class="admin-brand"><i>PRO</i><span>STUDIO 관리자</span></div>
+    <nav class="admin-nav">
+      <button data-admin-tab="home" onclick="setTab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8v10H3z"/><path d="M9 21v-7h6v7"/></svg>운영 홈</button>
+      <button data-admin-tab="use" onclick="setTab('use')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>사용 방식</button>
+      <button data-admin-tab="act" onclick="setTab('act')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/></svg>활동 분석</button>
+      <button data-admin-tab="all" onclick="setTab('all')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>콘텐츠</button>
+      <button data-admin-tab="ws" onclick="setTab('ws')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V6l8-3 8 3v14"/><path d="M9 20v-5h6v5M8 9h1M15 9h1"/></svg>팀 관리</button>
+      <button data-admin-tab="users" onclick="setTab('users')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0112 0M15 19a5 5 0 016 0"/></svg>사용자</button>
+      <button data-admin-tab="idp" onclick="setTab('idp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>IDP</button>
+<button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>백엔드</button>
+    </nav>
+    <div class="admin-side-foot">PROCESS STUDIO<br>운영 관리자 전용</div>
+  </aside>
+  <header>
+    <div class="logo"><span class="pro">PRO</span> STUDIO 관리자</div>
+    <div class="admin-top-title" id="adminTopTitle">운영 홈</div>
+    <div class="sp"></div>
+    <span class="hchip" id="meChip">—</span>
+    <button class="hbtn" onclick="reloadAll()" title="새로고침">↻ 새로고침</button>
+    <button class="hbtn danger" onclick="signOut()">로그아웃</button>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs">
+    <button class="tab" id="tabHome" onclick="setTab('home')">홈</button>
+    <button class="tab" id="tabUse" onclick="setTab('use')">사용 방식</button>
+    <button class="tab on" id="tabAct" onclick="setTab('act')">활동</button>
+    <button class="tab" id="tabAll" onclick="setTab('all')">훈련 전체</button>
+    <button class="tab" id="tabWs" onclick="setTab('ws')">워크스페이스</button>
+    <button class="tab" id="tabUsers" onclick="setTab('users')">유저</button>
+    <button class="tab" id="tabIdp" onclick="setTab('idp')">IDP</button>
+    <button class="tab" id="tabBack" onclick="setTab('back')">백엔드</button>
+  </div>
+
+  <!-- 2.630 — 백엔드 건강 한 장(ps_admin_health): 코치가 제보하기 전에 본다 -->
+  <div class="wrap hide" id="viewBack">
+    <div class="col">
+      <div class="panel">
+        <div class="sec-t">백엔드 건강 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 크기 · 실패 · 막힌 기기 · 판 분포 · 큰 문서 · 야간 작업</span> <button type="button" onclick="loadBack()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
+        <div id="backBody"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 홈 — 모든 데이터 한눈에: 7일 지표 · IDP 퍼널 · 팀 활성/침묵 · 기능 사용 · 최근 가입 -->
+  <div class="wrap hide" id="viewHome">
+    <div class="col">
+      <div class="panel">
+        <div class="sec-t">사용 현황 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 실가입자 = 코치 + 선수 · 팀 (누적)</span></div>
+        <div id="hmReach"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">최근 7일 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 서비스 맥박</span></div>
+        <div id="hmKpi"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">일일 활성 유저 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 30일 · 로그인 기록 + 방문 핑</span></div>
+        <div id="hmUsage"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">IDP 온보딩 퍼널 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 가입→기록 습관</span></div>
+        <div id="hmFunnel"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">기능 방문 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 14일 · 앱 접속은 로그인 기록 보완 · 탭은 방문 핑</span></div>
+        <div id="hmFeat"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <!-- 2.022 — 핵심 행동: 방문이 아니라 '했다'(경기 준비 저장·배치·리뷰·셀프평가·코치 피드백·학습 레슨·일정 편집·훈련 만들기·과제 배정). ps_usage 의 a_* 핑 -->
+        <div class="sec-t">핵심 행동 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 14일 · 그 행동을 한 유저 수(하루 1회 집계) · 앞 14일 대비</span></div>
+        <div id="hmActs"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">기능별 저장 활동 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 14일 · 데이터 갱신 기준</span></div>
+        <div id="hmKeys"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <div class="sec-t">안정성 · 확인 필요 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 최근 7일</span></div>
+        <div id="hmHealth"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">운영 조치 목록 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 먼저 확인할 일</span></div>
+        <div id="hmActions"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <!-- 1.636 — "누가 뭘 만들었나". ps_audit(90일)가 이미 쌓고 있던 것을 처음으로 읽는다.
+           운영 조치 목록 바로 아래 — 조치할 일 다음으로 궁금한 게 이거다. -->
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">최근 활동 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 누가 · 무엇을 · 언제</span>
+          <span id="hmActFilter" style="float:right;font-weight:600;font-size:11px"></span></div>
+        <div id="hmActivity"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">가장 활발한 팀</div>
+        <div id="hmTeams"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">조용해진 팀 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 7일+ 무활동</span></div>
+        <div id="hmQuiet"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">최근 가입</div>
+        <div id="hmNew"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 2.516 · 사용 방식 — "무엇을" 다음의 "어떻게" ═══════════════════════════
+       사용자 지시: "사용자가 뭘 사용하는지 **어떻게 사용하고 있는지**".
+       홈의 '핵심 행동'은 ps_usage(날짜·유저·기능 하루 한 줄)를 읽어 **몇 명이 했나**까지만 말한다.
+       여기는 ps_events 를 읽어 **몇 번·언제·무엇으로**를 말한다. 콘텐츠는 여전히 안 본다. -->
+  <div class="wrap hide" id="viewUse">
+    <div class="col">
+      <div class="panel">
+        <div class="sec-t">얼마나 자주 하나
+          <span style="font-weight:600;color:var(--dim2);font-size:11px">· 행동 1건 = 실제 1회(20초 안 연타는 1회로 묶음)</span>
+          <span style="float:right">
+            <select id="useDays" onchange="loadUse(true)" style="height:28px;font-size:11px">
+              <option value="7">7일</option><option value="14" selected>14일</option><option value="30">30일</option>
+            </select></span></div>
+        <div id="useActs"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">언제 쓰나 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 요일 × 시간 · 관리자 브라우저 시간대 기준</span></div>
+        <div id="useWhen"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">들어와서 무엇을 하나 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 탭을 연 횟수 대비 실제로 저장한 횟수</span></div>
+        <div id="useFlow"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <div class="sec-t">무엇으로 쓰나 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 기기 · 앱 버전</span></div>
+        <div id="useDevice"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">사람별 사용 결 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 많이 쓴 순 · 상위 40명</span></div>
+        <div id="usePeople"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 활동 뷰 — "존재"가 아니라 "쓰임": 누가 언제, 어느 팀이, 어떤 기능이 -->
+  <div class="wrap" id="viewAct">
+    <div class="col">
+      <div class="panel ps-scroll">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div class="sec-t" style="margin:0">워크스페이스 활동 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 최근 갱신순</span></div>
+          <select id="actWsKind" onchange="renderActivity()" style="margin-left:auto;height:34px">
+            <option value="team">실제 팀만</option><option value="all">전체 공간</option><option value="personal">개인 공간만</option>
+          </select>
+        </div>
+        <div id="actWs" class="ps-flow"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel" style="margin-top:12px">
+        <div class="sec-t">기능별 최근 사용 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 14일</span></div>
+        <div id="actKeys" class="ps-cap"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel ps-scroll">
+        <div class="sec-t">유저 활동 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 접속·기록 최근순</span></div>
+        <div id="actUsers" class="ps-flow"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 훈련 전체 뷰 -->
+  <div class="wrap hide" id="viewAll" style="grid-template-columns:1fr">
+    <div class="col">
+      <div class="searchrow">
+        <input id="alSearch" placeholder="훈련·워크스페이스·이메일 검색" oninput="renderAllLib()">
+        <select id="alType" onchange="renderAllLib()">
+          <option value="">유형 전체</option>
+          <option value="train">훈련</option>
+          <option value="setpiece">세트피스</option>
+          <option value="board">작전판</option>
+          <option value="match">경기</option>
+          <option value="meeting">미팅</option>
+        </select>
+        <select id="alSort" onchange="renderAllLib()">
+          <option value="upd">최근 수정</option>
+          <option value="name">이름</option>
+          <option value="ws">워크스페이스</option>
+        </select>
+      </div>
+      <div class="panel ps-scroll">
+        <div style="display:flex;align-items:center;margin-bottom:11px">
+          <div class="sec-t" id="alCount" style="margin:0">—</div>
+          <label style="margin-left:auto;font-size:12px;font-weight:600;color:var(--dim);display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="alShowDel" onchange="renderAllLib()"> 삭제됨 포함</label>
+        </div>
+        <div class="ws-alert" style="margin-bottom:10px"><b>삭제는 휴지통 처리됩니다.</b><br>목록에서 `삭제됨 포함`을 켜면 다시 복구할 수 있습니다. 팀 전체 삭제는 팀 관리의 별도 위험 작업에서만 가능합니다.</div>
+        <div id="alBody" class="ps-flow"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 워크스페이스 뷰 -->
+  <div class="wrap hide" id="viewWs">
+    <div class="col">
+      <div class="searchrow">
+        <input id="wsSearch" placeholder="이름·이메일 검색" oninput="renderWsList()">
+        <select id="wsKind" onchange="renderWsList()">
+          <option value="team">실제 팀만</option><option value="all">전체 공간</option><option value="personal">개인 공간만</option>
+        </select>
+        <select id="wsSort" onchange="renderWsList()">
+          <option value="active">최근활동</option>
+          <option value="lib">훈련 많은순</option>
+          <option value="new">가입순</option>
+        </select>
+      </div>
+      <div class="wslist" id="wsList"><div class="loading">불러오는 중…</div></div>
+    </div>
+    <div class="col" id="wsDetail"><div class="panel"><div class="empty">왼쪽에서 워크스페이스를 선택하세요.</div></div></div>
+  </div>
+
+  <!-- 유저 뷰 -->
+  <div class="wrap hide" id="viewUsers" style="grid-template-columns:1fr">
+    <div class="col">
+      <div class="searchrow"><input id="uSearch" placeholder="이름 · 이메일 · 소속 팀 · UID 검색" oninput="renderUsers()"></div>
+      <div class="panel ps-scroll">
+        <div class="tablewrap ps-flow"><table id="usersTable"><tbody><tr><td class="loading">불러오는 중…</td></tr></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IDP 뷰 — 선수 개인 기록 열람(읽기 전용) -->
+  <div class="wrap hide" id="viewIdp">
+    <div class="col">
+      <div class="panel ps-scroll">
+        <div class="sec-t">IDP 기록 있는 유저 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 최근 기록순</span></div>
+        <div id="idpOverview" class="eval-kpis"><div class="loading">불러오는 중…</div></div>
+        <div class="searchrow" style="margin:8px 0 6px"><input id="idpSearch" placeholder="이메일 검색" oninput="renderIdpList()"></div>
+        <div id="idpList" class="ps-flow"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="panel">
+        <div class="sec-t">IDP 요약 <span id="idpWho" style="font-weight:600;color:var(--dim2);font-size:11px"></span></div>
+        <div id="idpBody"><div class="empty">왼쪽에서 유저를 선택하세요.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 설정 (publishable/anon 키만 — secret 키는 절대 두지 않음) ===== */
+var CFG={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publishable_-Es-apybpr1zPTLzLE2sUw_kV-5ap-k"};
+var BASE=CFG.url.replace(/\/+$/,''), SKEY='ps_sync_session';
+
+/* ===== 인증(앱 sync.js와 동일한 세션 재사용) ===== */
+function getSess(){ try{ var s=JSON.parse(localStorage.getItem(SKEY)||'null'); return (s&&s.at&&s.rt)?s:null; }catch(_){ return null; } }
+function setSess(s){ try{ if(s)localStorage.setItem(SKEY,JSON.stringify(s)); else localStorage.removeItem(SKEY);}catch(_){} }
+function hj(at){ var h={'apikey':CFG.anonKey,'Content-Type':'application/json'}; if(at)h['Authorization']='Bearer '+at; return h; }
+function ensureToken(){
+  var s=getSess(); if(!s) return Promise.resolve(null);
+  if(Date.now()<s.exp-60000) return Promise.resolve(s.at);
+  return fetch(BASE+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:hj(),body:JSON.stringify({refresh_token:s.rt})})
+    .then(function(r){ if(!r.ok)throw 0; return r.json(); })
+    .then(function(j){ var ns={at:j.access_token,rt:j.refresh_token||s.rt,exp:Date.now()+((+j.expires_in||3600)*1000),email:s.email,uid:s.uid};
+      if(j.user&&j.user.id){ns.uid=j.user.id;ns.email=j.user.email||ns.email;} setSess(ns); return ns.at; })
+    .catch(function(){ setSess(null); return null; });
+}
+function rpc(name,body){
+  return ensureToken().then(function(at){ if(!at) throw new Error('no token');
+    return fetch(BASE+'/rest/v1/rpc/'+name,{method:'POST',headers:hj(at),body:JSON.stringify(body||{})})
+      .then(function(r){ return r.text().then(function(t){ if(!r.ok)throw new Error(name+' '+r.status+' '+t); return t?JSON.parse(t):null; }); }); });
+}
+function loadErrorDetails24h(){
+  return ensureToken().then(function(at){ if(!at) throw new Error('no token');
+    var since=new Date(Date.now()-86400000).toISOString();
+    var q='?select=event_name,feature,device,app_version,error_code,created_at,user_id'
+      +'&status=eq.error&created_at=gte.'+encodeURIComponent(since)+'&order=created_at.desc&limit=1000';
+    return fetch(BASE+'/rest/v1/ps_events'+q,{headers:hj(at)}).then(function(r){
+      return r.text().then(function(t){if(!r.ok)throw new Error('error details '+r.status+' '+t);return t?JSON.parse(t):[];});
+    });
+  }).then(function(rows){
+    var groups={};
+    (rows||[]).filter(function(e){
+      /* 오프라인 전환과 동기화 재시도는 운영 신호이며 실제 앱 오류 상세에서 분리한다.
+         구버전이 status=error로 남긴 연결 이벤트도 여기서 제외한다. */
+      return e.event_name!=='network_offline'&&e.event_name!=='network_restored'&&e.event_name!=='sync_failed';
+    }).forEach(function(e){
+      var key=[e.error_code||e.event_name||'unknown',e.feature||'app',e.device||'—',e.app_version||'—'].join('|');
+      if(!groups[key]) groups[key]={error_code:e.error_code||e.event_name||'오류 코드 없음',event_name:e.event_name||'—',
+        feature:e.feature||'app',device:e.device||'—',app_version:e.app_version||'—',events:0,users:{},last_seen:e.created_at};
+      var g=groups[key]; g.events++; if(e.user_id)g.users[e.user_id]=1;
+      if(e.created_at && (!g.last_seen||new Date(e.created_at)>new Date(g.last_seen)))g.last_seen=e.created_at;
+    });
+    return Object.keys(groups).map(function(k){var g=groups[k];g.affected_users=Object.keys(g.users).length;delete g.users;return g;})
+      .sort(function(a,b){return b.events-a.events||new Date(b.last_seen)-new Date(a.last_seen);});
+  });
+}
+function loadSyncDetails24h(){
+  return ensureToken().then(function(at){ if(!at) throw new Error('no token');
+    var since=new Date(Date.now()-86400000).toISOString();
+    var q='?select=event_name,feature,device,app_version,error_code,created_at,user_id'
+      +'&event_name=eq.sync_failed&created_at=gte.'+encodeURIComponent(since)+'&order=created_at.desc&limit=1000';
+    return fetch(BASE+'/rest/v1/ps_events'+q,{headers:hj(at)}).then(function(r){
+      return r.text().then(function(t){if(!r.ok)throw new Error('sync details '+r.status+' '+t);return t?JSON.parse(t):[];});
+    });
+  }).then(function(rows){
+    var groups={};
+    (rows||[]).forEach(function(e){
+      var key=[e.error_code||'sync_failed',e.feature||'sync',e.device||'—',e.app_version||'—'].join('|');
+      if(!groups[key])groups[key]={error_code:e.error_code||'원인 코드 없음',feature:e.feature||'sync',device:e.device||'—',app_version:e.app_version||'—',events:0,users:{},last_seen:e.created_at};
+      var g=groups[key];g.events++;if(e.user_id)g.users[e.user_id]=1;
+      if(e.created_at&&(!g.last_seen||new Date(e.created_at)>new Date(g.last_seen)))g.last_seen=e.created_at;
+    });
+    return Object.keys(groups).map(function(k){var g=groups[k];g.affected_users=Object.keys(g.users).length;delete g.users;return g;})
+      .sort(function(a,b){return b.events-a.events||new Date(b.last_seen)-new Date(a.last_seen);});
+  });
+}
+function signIn(p){ location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(p)+'&redirect_to='+encodeURIComponent(location.origin+location.pathname); }
+function signOut(){ var s=getSess(); if(s){try{fetch(BASE+'/auth/v1/logout',{method:'POST',headers:hj(s.at)});}catch(_){}} setSess(null); location.reload(); }
+function consumeHash(){
+  try{ if(location.hash.indexOf('access_token=')<0)return false;
+    var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){var i=kv.indexOf('=');if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1));});
+    if(!p.access_token||!p.refresh_token)return false;
+    setSess({at:p.access_token,rt:p.refresh_token,exp:Date.now()+((+p.expires_in||3600)*1000),email:'',uid:''});
+    try{history.replaceState(null,'',location.pathname+location.search);}catch(_){}
+    return true;
+  }catch(_){ return false; }
+}
+
+/* ===== 유틸 ===== */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function $(id){ return document.getElementById(id); }
+function show(id){ $(id).classList.remove('hide'); }
+function hideEl(id){ $(id).classList.add('hide'); }
+var _tt;
+function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(_tt); _tt=setTimeout(function(){t.classList.remove('on');},2200); }
+function fmtDate(v){ if(!v)return '—'; var d=new Date(v); if(isNaN(d))return '—';
+  var y=d.getFullYear(),m=('0'+(d.getMonth()+1)).slice(-2),dd=('0'+d.getDate()).slice(-2); return y+'.'+m+'.'+dd; }
+function fmtDateT(v){ if(!v)return '—'; var d=new Date(v); if(isNaN(d))return '—';
+  return fmtDate(v)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+function fromEpoch(ms){ return ms? new Date(+ms).toISOString() : null; }
+var TYPES={train:'훈련',setpiece:'세트피스',board:'작전판',match:'경기',meeting:'미팅',note:'노트'};
+function typeName(t){ return TYPES[t]||t||'항목'; }
+
+/* ===== 상태 ===== */
+var WS=[], USERS=[], ALL_LIB=[], curWid=null, curTab='all';
+function normalizeLibRows(rows){
+  return (rows||[]).map(function(l){
+    if(!l.ws_name)l.ws_name=l.workspace_name||'';
+    if(!l.workspace_name)l.workspace_name=l.ws_name||'';
+    /* 1.636 — 화면이 보여 주던 updated_at 은 **DB 행이 마지막으로 닿은 시각**(=동기화 시각)이라
+       한 팀 자료 558개가 전부 같은 시각으로 찍혔다(실측: 2026.08.07 11:51 전부 동일).
+       코치가 실제로 저장한 시각은 saved_at(epoch ms)이다. 그걸 정본으로 쓰고,
+       없는 옛 행만 updated_at 으로 떨어진다. */
+    l.made_at = l.saved_at ? new Date(+l.saved_at).toISOString() : (l.updated_at||null);
+    return l;
+  });
+}
+
+/* ===== 부팅 ===== */
+consumeHash();
+(function boot(){
+  ensureToken().then(function(at){
+    if(!at){ show('gateLogin'); return; }
+    return rpc('ps_whoami').then(function(rows){
+      var me=(rows&&rows[0])||{};
+      if(!me.is_admin){ showDenied(me.uid); return; }
+      var s=getSess(); if(s){ s.uid=me.uid; s.email=me.email||s.email; setSess(s); }
+      $('meChip').textContent=me.email||me.uid||'관리자';
+      show('app'); reloadAll();
+    });
+  }).catch(function(e){ show('gateLogin'); });
+})();
+function showDenied(uid){
+  uid=uid||'(알 수 없음)';
+  $('myUid').textContent='내 UID: '+uid;
+  show('gateDenied');
+}
+
+/* ===== 데이터 로드 ===== */
+function reloadAll(){
+  $('wsList').innerHTML='<div class="loading">불러오는 중…</div>';
+  $('alBody').innerHTML='<div class="loading">불러오는 중…</div>';
+  var safe=function(p){return p.then(function(v){return {ok:true,v:v||[]};}).catch(function(e){return {ok:false,v:[],e:e};});};
+  Promise.all([
+    safe(rpc('ps_admin_workspaces')),
+    /* 1.636 — 이름·소속 팀·본인이 만든 수까지 주는 v2 를 먼저 쓰고, 아직 SQL 을 안 깐
+       프로젝트에서는 예전 함수로 돌아간다(화면은 두 모양을 다 그린다 — renderUsers 의 hasV2). */
+    safe(rpc('ps_admin_users_v2').catch(function(){ return rpc('ps_admin_users'); })),
+    safe(rpc('ps_admin_library',{p_wid:null,p_include_deleted:true}))
+  ]).then(function(res){
+    WS=res[0].v; USERS=res[1].v; ALL_LIB=normalizeLibRows(res[2].v);
+    renderStats();
+    if(res[0].ok) renderWsList();
+    else $('wsList').innerHTML='<div class="empty">팀 정보를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>';
+    if(res[1].ok) renderUsers();
+    else $('userBody').innerHTML='<tr><td colspan="6"><div class="empty">사용자 집계 오류 — 최신 supabase-admin.sql을 다시 실행하세요.</div></td></tr>';
+    if(res[2].ok) renderAllLib();
+    else $('alBody').innerHTML='<div class="empty">콘텐츠 정보를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>';
+    if(curWid && res[0].ok && WS.some(function(w){return w.id===curWid;})) selectWs(curWid);
+    if(res.some(function(x){return !x.ok;})) toast('일부 관리자 지표를 불러오지 못했습니다.');
+  });
+  loadActivity();
+  loadWhoLog();                /* 1.636 — 홈의 '최근 활동'(누가 뭘 만들었나) */
+  HOME=null; setTab('home');   /* 첫 화면 = 홈 대시보드 */
+}
+function reloadAllLib(){ return rpc('ps_admin_library',{p_wid:null,p_include_deleted:true}).then(function(r){ ALL_LIB=normalizeLibRows(r); renderAllLib(); }).catch(function(){}); }
+function renderStats(){
+  var libTotal=WS.reduce(function(a,w){return a+(w.lib_count||0);},0);
+  var teams=WS.filter(function(w){return w.kind==='team';}).length;
+  var act7=ACT_WS?ACT_WS.filter(function(w){ var last=(new Date(w.last_kv||0)>new Date(w.last_lib||0))?w.last_kv:w.last_lib; return isFresh(last); }).length:null;
+  $('stats').innerHTML=
+     stat(USERS.length,'유저')
+    +stat(WS.length,'워크스페이스')
+    +stat(teams,'팀')
+    +stat(libTotal,'훈련·항목')
+    +(act7!=null?stat(act7,'7일 활성 WS'):'');
+}
+function stat(n,l){ return '<div class="stat"><div class="n">'+n+'</div><div class="l">'+esc(l)+'</div></div>'; }
+
+/* ===== 탭 ===== */
+function setTab(t){ curTab=t;
+  if($('tabBack'))$('tabBack').classList.toggle('on',t==='back'); if($('viewBack'))$('viewBack').classList.toggle('hide',t!=='back'); if(t==='back')loadBack();   /* 2.630 */
+  if($('tabUse'))$('tabUse').classList.toggle('on',t==='use');
+  if($('viewUse'))$('viewUse').classList.toggle('hide',t!=='use');
+  $('tabHome').classList.toggle('on',t==='home'); $('tabAct').classList.toggle('on',t==='act'); $('tabAll').classList.toggle('on',t==='all'); $('tabWs').classList.toggle('on',t==='ws'); $('tabUsers').classList.toggle('on',t==='users'); $('tabIdp').classList.toggle('on',t==='idp');
+  [].forEach.call(document.querySelectorAll('[data-admin-tab]'),function(b){b.classList.toggle('on',b.dataset.adminTab===t);});
+  var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({back:'백엔드 건강',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
+  $('viewHome').classList.toggle('hide',t!=='home'); $('viewAct').classList.toggle('hide',t!=='act'); $('viewAll').classList.toggle('hide',t!=='all'); $('viewWs').classList.toggle('hide',t!=='ws'); $('viewUsers').classList.toggle('hide',t!=='users'); $('viewIdp').classList.toggle('hide',t!=='idp');
+  if(t==='idp') loadIdpList();
+  if(t==='home') loadHome();
+  if(t==='use') loadUse();
+}
+
+/* ===== 2.630 · 백엔드 건강 ===== */
+function loadBack(){
+  var el=$('backBody'); if(!el)return; el.innerHTML='<div class="loading">불러오는 중…</div>';
+  rpc('ps_admin_health').then(function(h){
+    if(!h){ el.innerHTML='<div class="loading">자료 없음</div>'; return; }
+    function mb(b){ b=+b||0; return b>=1e9?(b/1e9).toFixed(2)+' GB':b>=1e6?(b/1e6).toFixed(1)+' MB':b>=1e3?(b/1e3).toFixed(0)+' KB':b+' B'; }
+    function n(x){ return (+x||0).toLocaleString(); }
+    function ko(t){ try{ var d=new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }catch(_){ return String(t||''); } }
+    function tbl(head,rows){ if(!rows||!rows.length)return '<div style="font-size:11px;color:var(--dim2);padding:6px 0">없음</div>'; return '<div style="overflow:auto"><table><thead><tr>'+head.map(function(x){return '<th>'+x+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>'; }
+    var T=h.tables||{}, kpi=[
+      ['DB 전체',mb(h.db_bytes)],['ps_kv',mb(T.ps_kv&&T.ps_kv.bytes)+' · '+n(T.ps_kv&&T.ps_kv.rows)+'행'],['history',mb(T.ps_kv_history&&T.ps_kv_history.bytes)+' · '+n(T.ps_kv_history&&T.ps_kv_history.rows)+'행'],
+      ['events',mb(T.ps_events&&T.ps_events.bytes)+' · '+n(T.ps_events&&T.ps_events.rows)+'행'],['그림(blob)',n(h.blob&&h.blob.rows)+'장 · '+mb(h.blob&&h.blob.bytes)],['24h 실시간 신호',n(h.ping24)],['24h 저장 이벤트',n(h.saved24)+' / 전체 '+n(h.events24)],['야간 작업 실패 3일',n(h.cron_fail3d)]
+    ];
+    var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:4px 0 14px">'+kpi.map(function(k){return '<div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px"><div style="font-size:10px;color:var(--dim2);font-weight:700">'+k[0]+'</div><div style="font-size:14px;font-weight:800;margin-top:2px">'+k[1]+'</div></div>';}).join('')+'</div>';
+    html+='<div class="sec-t" style="margin-top:6px">24시간 동기화 실패</div>'+tbl(['원인','건','사람'],(h.fails24||[]).map(function(f){return [f.code||'?',n(f.n),n(f.users)];}));
+    html+='<div class="sec-t" style="margin-top:14px">막힌 기기 후보 (48시간 실패 뒤 쓰기 없음)</div>'+tbl(['이름','실패','마지막 원인','판','마지막 실패','마지막 쓰기'],(h.stuck||[]).map(function(x){return [x.name||('…'+String(x.user_id||'').slice(0,8)),n(x.fails),x.last_code||'',x.app_version||'',ko(x.last_fail),x.last_write?ko(x.last_write):'없음'];}));
+    html+='<div class="sec-t" style="margin-top:14px">7일 판 분포</div>'+tbl(['판','사람','이벤트','마지막'],(h.versions||[]).map(function(v){return [v.ver,n(v.users),n(v.events),ko(v.last_at)];}));
+    html+='<div class="sec-t" style="margin-top:14px">큰 문서 8</div>'+tbl(['팀','키','길이','고침'],(h.bigdocs||[]).map(function(b){return [b.ws,b.k,mb(b.len),ko(b.upd)];}));
+    html+='<div class="sec-t" style="margin-top:14px">7일 서버 거부</div>'+tbl(['사유','키','건'],(h.denied7||[]).map(function(d){return [d.reason,d.k,n(d.n)];}));
+    html+='<div class="sec-t" style="margin-top:14px">야간 작업</div>'+tbl(['작업','일정(UTC)','켜짐'],(h.cron||[]).map(function(c){return [c.job,c.schedule,c.active?'예':'아니오'];}));
+    var p=h.policy||{}; html+='<div style="font-size:11px;color:var(--dim2);margin-top:12px">앱 판 정책: 최소 '+(p.min_build||'—')+' · 판 없는 앱 차단 '+(p.block_unversioned?'켜짐':'꺼짐')+' · 잰 시각 '+ko(h.at)+'</div>';
+    el.innerHTML=html;
+  }).catch(function(e){ el.innerHTML='<div class="loading">불러오지 못했어요 — '+String(e&&e.message||e).replace(/[<>&]/g,'')+'</div>'; });
+}
+/* ===== 홈 — 모든 데이터 한눈에 ===== */
+var HOME=null;
+function loadHealthSummary(){
+  return rpc('ps_admin_event_summary_v2').catch(function(){
+    return rpc('ps_admin_event_summary').then(function(rows){
+      (rows||[]).forEach(function(h){h.legacy_summary=true;});
+      return rows;
+    });
+  }).catch(function(){return null;});
+}
+function loadHome(){
+  if(HOME){ renderHome(); return; }
+  Promise.all([
+    rpc('ps_admin_idp_funnel').catch(function(){return null;}),
+    rpc('ps_admin_activity_ws').catch(function(){return [];}),
+    rpc('ps_admin_activity_keys',{p_days:14}).catch(function(){return [];}),
+    rpc('ps_admin_activity_users').catch(function(){return null;}),
+    rpc('ps_admin_usage_daily',{p_days:30}).catch(function(){return null;}),
+    rpc('ps_admin_usage_summary').catch(function(){return null;}),
+    rpc('ps_admin_usage_features',{p_days:14}).catch(function(){return null;}),
+    loadHealthSummary(),
+    rpc('ps_admin_event_breakdown',{p_days:7}).catch(function(){return null;}),
+    loadErrorDetails24h().catch(function(){return null;}),
+    loadSyncDetails24h().catch(function(){return null;}),
+    rpc('ps_admin_reach').catch(function(){return null;})
+  ]).then(function(r){
+    HOME={funnel:(r[0]&&r[0][0])||null, ws:r[1]||[], keys:r[2]||[], users:r[3]||[], usersOk:Array.isArray(r[3]),
+          daily:r[4]||null, usum:(r[5]&&r[5][0])||null, feat:r[6]||null,
+          health:(r[7]&&r[7][0])||null, events:r[8]||null, errorDetails:r[9],syncDetails:r[10],
+          reach:(r[11]&&r[11][0])||null};
+    renderHome();
+  });
+}
+function featureLabel(v){
+  /* 2.516 — 핵심 행동 이벤트는 셸 탭 이름(process·scout…)을 달고 온다.
+     여기 없으면 영문 키가 그대로 화면에 샜다 → 탭 이름표(PING_LB)를 뒤에 잇는다. */
+  return ({app:'앱 공통',team:'팀',idp:'IDP',board:'작전판',note:'노트',community:'커뮤니티',auth:'로그인',sync:'동기화'}[v]
+    ||(typeof PING_LB!=='undefined'?PING_LB[v]:null)||v||'앱 공통');
+}
+function toggleHealthDetails(){
+  var box=$('hmErrorDetails'),btn=$('hmErrorBtn'); if(!box||!btn)return;
+  var opening=box.classList.contains('hide'); box.classList.toggle('hide',!opening);
+  btn.setAttribute('aria-expanded',opening?'true':'false');
+  if(opening) setTimeout(function(){try{box.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(_){}},30);
+}
+function toggleSyncDetails(){
+  var box=$('hmSyncDetails'),btn=$('hmSyncBtn');if(!box||!btn)return;
+  var opening=box.classList.contains('hide');box.classList.toggle('hide',!opening);
+  btn.setAttribute('aria-expanded',opening?'true':'false');
+}
+function renderSyncDetails(){
+  var rows=HOME&&HOME.syncDetails,open='<div id="hmSyncDetails" class="health-detail hide">';
+  if(rows===null)return open+'<div class="empty">동기화 상세를 불러오지 못했습니다.</div></div>';
+  if(!rows||!rows.length)return open+'<div class="empty">최근 24시간 동기화 실패가 없습니다.</div></div>';
+  return open+'<div class="health-detail-head"><div><b>최근 24시간 동기화 실패</b><span>원인 코드·기능·기기·앱 버전별 묶음입니다. 사용자 ID와 콘텐츠는 표시하지 않습니다.</span></div><button class="rowbtn" onclick="toggleSyncDetails()">닫기</button></div>'
+    +'<div class="tablewrap"><table><thead><tr><th>원인 코드</th><th>기능·버전</th><th>기기</th><th>횟수</th><th>영향</th><th>마지막</th></tr></thead><tbody>'
+    +rows.map(function(e){return '<tr><td><code>'+esc(e.error_code)+'</code></td><td>'+esc(featureLabel(e.feature))+'<div class="muted">'+esc(e.app_version||'버전 없음')+'</div></td><td>'+esc(e.device)+'</td><td><b>'+e.events+'</b>건</td><td>'+e.affected_users+'명</td><td>'+fmtDateT(e.last_seen)+'</td></tr>';}).join('')
+    +'</tbody></table></div></div>';
+}
+function renderErrorDetails(){
+  var rows=HOME&&HOME.errorDetails, H=HOME&&HOME.health;
+  var detailId='hmErrorDetails', open='<div id="'+detailId+'" class="health-detail hide">';
+  if(rows===null) return open+'<div class="empty">오류 상세를 불러오지 못했습니다. 관리자 권한과 ps_events 읽기 정책을 확인하세요.</div></div>';
+  if(!rows||!rows.length) return open+'<div class="empty">최근 24시간 상세 오류가 없습니다.</div></div>';
+  return open
+    +'<div class="health-detail-head"><div><b>최근 24시간 실제 앱 오류</b><span>연결 끊김과 동기화 재시도는 제외하고, 같은 오류 코드·기능·기기·앱 버전을 묶었습니다. 사용자 ID와 콘텐츠 본문은 표시하지 않습니다.'
+    +((+(H.app_errors_24h!=null?H.app_errors_24h:H.errors_24h)||0)>1000?' · 최근 1,000건까지만 표시합니다.':'')+'</span></div>'
+    +'<button class="rowbtn" type="button" onclick="toggleHealthDetails()">닫기</button></div>'
+    +'<div class="tablewrap"><table><thead><tr><th>오류 종류</th><th>발생 기능</th><th>기기</th><th>횟수</th><th>영향 사용자</th><th>마지막 발생</th></tr></thead><tbody>'
+    +rows.map(function(e){return '<tr><td><code>'+esc(e.error_code)+'</code><div class="muted" style="margin-top:2px">'+esc(e.event_name)+'</div></td>'
+      +'<td>'+esc(featureLabel(e.feature))+'<div class="muted">'+esc(e.app_version||'버전 없음')+'</div></td><td>'+esc(e.device)+'</td>'
+      +'<td><b>'+e.events+'</b>건</td><td>'+e.affected_users+'명</td><td>'+fmtDateT(e.last_seen)+'</td></tr>';}).join('')
+    +'</tbody></table></div></div>';
+}
+function _hmDaysAgo(ts,days){ return ts && (Date.now()-new Date(ts).getTime()) < days*86400*1000; }
+function renderHome(){
+  if(!HOME) return;
+  var F=HOME.funnel, ws=HOME.ws, keys=HOME.keys, users=HOME.users, usersOk=HOME.usersOk!==false;
+  var teams=ws.filter(function(w){return w.kind==='team';});
+  /* 사용 현황 — 협회·파트너에게 보여줄 핵심 트랙션. 가입자(실가입)를 코치+선수로 분류.
+     가입자=삭제·익명 제외 실계정, 코치=IDP 자기기록 없는 계정, 선수=IDP 연동 계정, 선수단=팀 로스터의 이름 있는 선수.
+     reach RPC(ps_admin_reach) 재실행 전엔 가입자·팀만 폴백. */
+  (function(){
+    var R=HOME.reach||{};
+    var signupsC=(R.signups!=null)?R.signups:((F&&F.total_users!=null)?F.total_users:(usersOk?users.length:'—'));
+    var coachesC=(R.coaches!=null)?R.coaches:'—';
+    var playerAccC=(R.player_accounts!=null)?R.player_accounts:'—';
+    var teamsC=(R.teams!=null)?R.teams:teams.length;
+    var stat=function(n,lb,sub){ return '<div style="flex:1;min-width:112px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:15px 18px">'
+      +'<div style="font-size:31px;font-weight:800;letter-spacing:-.6px;line-height:1;font-variant-numeric:tabular-nums">'+n+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:var(--dim);margin-top:6px">'+lb+'</div>'
+      +(sub?'<div class="muted" style="font-size:10px;margin-top:1px">'+sub+'</div>':'')+'</div>'; };
+    var hint=(R.coaches==null)?'<div class="muted" style="font-size:10.5px;margin-top:8px">코치·선수 분류를 켜려면 supabase-admin.sql을 SQL Editor에서 다시 실행하세요.</div>':'';
+    var el=document.getElementById('hmReach');
+    if(el)el.innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap">'
+      +stat(signupsC,'가입자','실가입 계정')
+      +stat(coachesC,'코치','가입자 중')
+      +stat(playerAccC,'선수','가입자 중')
+      +stat(teamsC,'팀')
+      +'</div>'+hint;
+  })();
+  /* ── 7일 KPI ── */
+  var newU7=usersOk?users.filter(function(u){return _hmDaysAgo(u.created_at,7);}).length:'—';
+  var act7=F?F.active_7d:(usersOk?users.filter(function(u){return _hmDaysAgo(u.last_sign_in_at,7);}).length:'—');
+  var idpLog7=F?F.log_7d:(usersOk?users.filter(function(u){return _hmDaysAgo(u.idp_last,7);}).length:'—');
+  var team7=teams.filter(function(w){return _hmDaysAgo(w.last_kv,7)||_hmDaysAgo(w.last_lib,7);}).length;
+  var kpi=function(n,lb,sub,go){ return '<div onclick="'+(go||'')+'" style="flex:1;min-width:118px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;'+(go?'cursor:pointer':'')+'">'
+    +'<div style="font-size:22px;font-weight:800;letter-spacing:-.4px">'+n+'</div>'
+    +'<div style="font-size:11px;font-weight:700;color:var(--dim);margin-top:2px">'+lb+'</div>'
+    +(sub?'<div class="muted" style="font-size:10.5px;margin-top:1px">'+sub+'</div>':'')+'</div>'; };
+  $('hmKpi').innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +kpi(newU7,'신규 가입',usersOk?'총 '+users.length+'명':'사용자 집계 오류',"setTab('users')")
+    +kpi(act7,'접속 유저','7일 내',"setTab('users')")
+    +kpi(idpLog7,'IDP 기록 유저','7일 내 일지',"setTab('idp')")
+    +kpi(team7,'활성 팀','총 '+teams.length+'팀',"setTab('ws')")
+    +'</div>';
+  /* ── 안정성: 실제 앱 오류·동기화 실패·연결 전환을 분리한다. 콘텐츠 본문은 수집하지 않는다 ── */
+  var H=HOME.health;
+  if(H){
+    var hV2=H.app_errors_24h!=null;
+    var appErr24=+(hV2?H.app_errors_24h:H.errors_24h)||0;
+    var appErr7=+(hV2?H.app_errors_7d:H.errors_7d)||0;
+    var appUsers=+(hV2?H.app_affected_users_7d:H.affected_users_7d)||0;
+    var sync24=+(hV2?H.sync_failures_24h:0)||0;
+    var sync7=+(hV2?H.sync_failures_7d:0)||0;
+    var syncUsers=+(hV2?H.sync_affected_users_7d:0)||0;
+    var severity=appErr24>0?'var(--red)':(appErr7>0?'var(--amber)':'var(--green)');
+    $('hmHealth').innerHTML=
+      '<div class="health-grid">'
+      +'<button id="hmErrorBtn" type="button" class="health-card" onclick="toggleHealthDetails()" aria-expanded="false" aria-controls="hmErrorDetails"><b style="color:'+severity+'">'+appErr24+'</b><span class="muted">'+(hV2?'24시간 실제 앱 오류':'24시간 분류 전 오류')+'</span><span class="open-hint">상세 보기 ›</span></button>'
+      +'<button id="hmSyncBtn" type="button" class="health-card" onclick="toggleSyncDetails()" aria-expanded="false" aria-controls="hmSyncDetails"><b style="color:'+(sync24?'var(--amber)':'var(--green)')+'">'+(hV2?sync24:'—')+'</b><span class="muted">24시간 동기화 실패</span><span class="open-hint">원인 보기 ›</span></button>'
+      +'<div class="health-card"><b>'+(+H.offline_7d||0)+'</b><span class="muted">7일 연결 끊김</span></div></div>'
+      +'<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-top:1px solid var(--line)">'
+      +'<span style="width:8px;height:8px;border-radius:50%;background:'+severity+'"></span>'
+      +'<span style="flex:1;font-size:11px;color:var(--dim)">'+(hV2
+        ?('실제 오류 '+appErr7+'건 / '+appUsers+'명 · 동기화 실패 '+sync7+'건 / '+syncUsers+'명 · 전체 이벤트 '+(+H.events_7d||0)+'건')
+        :('기존 집계 사용 중 · 동기화 안전화 SQL을 실행하면 오류가 분리됩니다.'))+'</span>'
+      +'<b style="font-size:10px">'+esc((hV2?H.top_app_error:H.top_error)||'정상')+'</b></div>'
+      +renderErrorDetails()+renderSyncDetails();
+  }else{
+    $('hmHealth').innerHTML='<div class="empty">안정성 수집 준비 — supabase-events.sql을 SQL Editor에서 실행하세요.</div>';
+  }
+  /* ── 운영자가 바로 처리할 수 있는 조치 목록 ── */
+  var actionRows=[];
+  if(!F) actionRows.push(['danger','관리자 IDP RPC 설치 필요','supabase-admin.sql을 실행하면 참여·평가표 상태를 확인할 수 있습니다.']);
+  if(!H) actionRows.push(['danger','안정성 이벤트 RPC 설치 필요','supabase-events.sql을 실행하세요.']);
+  else{
+    var a24=+(H.app_errors_24h!=null?H.app_errors_24h:H.errors_24h)||0;
+    var aUsers=+(H.app_affected_users_7d!=null?H.app_affected_users_7d:H.affected_users_7d)||0;
+    var s24=+(H.sync_failures_24h||0);
+    if(a24>0) actionRows.push(['danger','최근 24시간 실제 앱 오류 '+a24+'건','영향 사용자 '+aUsers+'명 · '+esc(H.top_app_error||H.top_error||'오류 코드 없음')]);
+    if(s24>0) actionRows.push(['','최근 24시간 동기화 재시도 '+s24+'건','기기에는 먼저 저장되며 연결되면 자동 재시도합니다. 원인 코드를 확인하세요.']);
+  }
+  var quietForAction=teams.filter(function(w){return !(_hmDaysAgo(w.last_kv,7)||_hmDaysAgo(w.last_lib,7));}).length;
+  if(quietForAction) actionRows.push(['','7일 이상 조용한 팀 '+quietForAction+'곳','팀 관리에서 최근 활동과 멤버 접속을 확인하세요.']);
+  var noIdp=usersOk?users.filter(function(u){return !u.idp_last;}).length:0;
+  if(noIdp) actionRows.push(['','IDP 기록이 없는 사용자 '+noIdp+'명','계정–선수 연결과 IDP 시작 여부를 확인하세요.']);
+  if(!actionRows.length) actionRows.push(['ok','긴급 조치 없음','현재 수집된 운영 지표에서 즉시 확인할 문제를 찾지 못했습니다.']);
+  $('hmActions').innerHTML='<div class="action-list">'+actionRows.slice(0,6).map(function(a){
+    return '<div class="action-item '+a[0]+'"><i class="dot"></i><div class="body"><b>'+a[1]+'</b><span>'+a[2]+'</span></div></div>';
+  }).join('')+'</div>';
+  /* ── 일일 활성(DAU) 30일 미니 차트 ── */
+  if(HOME.daily){
+    var days=[], byDay={};
+    (HOME.daily||[]).forEach(function(row){ byDay[row.day]=row.users; });
+    for(var i=29;i>=0;i--){ var dt=new Date(Date.now()-i*86400e3);
+      var k=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+      days.push({k:k, n:byDay[k]||0, d:dt.getDate()}); }
+    var mxd=Math.max.apply(null,days.map(function(x){return x.n;}).concat([1]));
+    var US=HOME.usum||{};
+    var bars=days.map(function(x){
+      var hpx=Math.round(x.n/mxd*56);
+      return '<div title="'+x.k+' · '+x.n+'명" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0">'
+        +'<div style="width:70%;max-width:14px;height:'+Math.max(hpx,2)+'px;background:var(--blue);opacity:'+(x.n?'.85':'.22')+';border-radius:3px 3px 0 0"></div>'
+        +((x.d===1||x.d%5===0)?'<span class="muted" style="font-size:9px">'+x.d+'</span>':'<span style="font-size:9px">&nbsp;</span>')+'</div>';
+    }).join('');
+    $('hmUsage').innerHTML=
+      '<div style="display:flex;gap:14px;margin-bottom:10px">'
+      +'<span style="font-size:12px"><b style="font-size:16px">'+(US.dau!=null?US.dau:'—')+'</b> <span class="muted">오늘</span></span>'
+      +'<span style="font-size:12px"><b style="font-size:16px">'+(US.wau!=null?US.wau:'—')+'</b> <span class="muted">7일</span></span>'
+      +'<span style="font-size:12px"><b style="font-size:16px">'+(US.mau!=null?US.mau:'—')+'</b> <span class="muted">30일</span></span></div>'
+      +'<div style="display:flex;align-items:flex-end;gap:1px;height:72px">'+bars+'</div>';
+  } else {
+    $('hmUsage').innerHTML='<div class="empty">수집 시작 전 — supabase-usage.sql 설치 + 새 버전 배포 후, 유저가 접속하는 날부터 쌓입니다.</div>';
+  }
+  /* ── IDP 퍼널 ── */
+  if(F){
+    var steps=[['가입',F.total_users],['최근 7일 접속',F.active_7d],['IDP 시작',F.idp_users],['프로필 작성',F.has_profile],['평가 완료',F.has_eval],['목표 생성',F.has_goal],['최근 7일 기록',F.log_7d]];
+    var mx=Math.max(F.total_users,1);
+    $('hmFunnel').innerHTML=steps.map(function(s){
+      var pct=Math.round(s[1]/mx*100);
+      return '<div style="display:flex;align-items:center;gap:9px;margin:7px 0">'
+        +'<span style="flex:0 0 96px;font-size:11px;font-weight:700;color:var(--dim);text-align:right">'+s[0]+'</span>'
+        +'<div style="flex:1;height:16px;background:var(--panel2);border-radius:6px;overflow:hidden"><div style="width:'+Math.max(pct,2)+'%;height:100%;background:var(--blue);opacity:.85"></div></div>'
+        +'<span style="flex:0 0 74px;font-size:11.5px;font-weight:800">'+s[1]+'<span class="muted" style="font-weight:600"> · '+pct+'%</span></span></div>';
+    }).join('');
+  } else {
+    $('hmFunnel').innerHTML='<div class="empty">관리자 퍼널 RPC를 확인할 수 없습니다. 최신 <code>supabase-admin.sql</code>을 다시 실행하세요.</div>';
+  }
+  /* ── 2.022 핵심 행동(a_* 핑) — 깔때기 순으로, 없는 행동도 0으로 보여 빈 곳이 보이게 ── */
+  (function(){
+    var host=$('hmActs'); if(!host)return;
+    if(HOME.feat===null){ host.innerHTML='<div class="empty">RPC가 없어요 — supabase-usage.sql의 ps_admin_usage_features를 실행하세요.</div>'; return; }
+    var by={}; (HOME.feat||[]).forEach(function(x){ if(/^a_/.test(x.feature))by[x.feature]=x; });
+    var rows=ACT_LB.map(function(a){ var x=by[a[0]]||{users:0,pings:0,prev_users:0}; return {k:a[0],lb:a[1],users:x.users,pings:x.pings,prev:x.prev_users||0}; });
+    var amx=Math.max.apply(null,rows.map(function(r){return r.users;}).concat([1]));
+    var any=rows.some(function(r){return r.users>0;});
+    host.innerHTML=rows.map(function(r){
+      var d=r.users-r.prev, dTxt=d>0?'<span style="color:var(--green)">▲'+d+'</span>':d<0?'<span style="color:var(--red)">▼'+(-d)+'</span>':'<span class="muted">—</span>';
+      return '<div style="display:flex;align-items:center;gap:9px;margin:7px 0'+(r.users?'':';opacity:.6')+'">'
+        +'<span style="flex:0 0 118px;font-size:11px;font-weight:700;color:var(--dim);text-align:right">'+esc(r.lb)+'</span>'
+        +'<div style="flex:1;height:16px;background:var(--panel2);border-radius:6px;overflow:hidden"><div style="width:'+Math.max(Math.round(r.users/amx*100),2)+'%;height:100%;background:var(--green,#2E7D63);opacity:.85"></div></div>'
+        +'<span style="flex:0 0 118px;font-size:11.5px;font-weight:800">'+r.users+'명 '+dTxt+'<span class="muted" style="font-weight:600"> · '+r.pings+'일·명</span></span></div>';
+    }).join('')+(any?'':'<div class="empty" style="margin-top:6px">아직 없음 — 2.022 배포 뒤 유저가 그 행동을 하는 날부터 쌓입니다.</div>');
+  })();
+  /* ── 기능 방문(핑) — 어떤 탭에 실제로 들어오는가. kv 저장과 달리 열람만 해도 잡힌다 ── */
+  if(HOME.feat&&HOME.feat.length){
+    HOME.feat=HOME.feat.filter(function(x){return !/^a_/.test(x.feature);});   /* 2.022 — 행동 핑은 위 '핵심 행동'에서 */
+    var fmx=Math.max.apply(null,HOME.feat.map(function(x){return x.users;}).concat([1]));
+    $('hmFeat').innerHTML=HOME.feat.map(function(x){
+      var d=x.users-(x.prev_users||0);
+      var dTxt=d>0?'<span style="color:var(--green)">▲'+d+'</span>':d<0?'<span style="color:var(--red)">▼'+(-d)+'</span>':'<span class="muted">—</span>';
+      return '<div style="display:flex;align-items:center;gap:9px;margin:7px 0">'
+        +'<span style="flex:0 0 96px;font-size:11px;font-weight:700;color:var(--dim);text-align:right">'+esc(PING_LB[x.feature]||x.feature)+'</span>'
+        +'<div style="flex:1;height:16px;background:var(--panel2);border-radius:6px;overflow:hidden"><div style="width:'+Math.max(Math.round(x.users/fmx*100),2)+'%;height:100%;background:var(--blue);opacity:.85"></div></div>'
+        +'<span style="flex:0 0 118px;font-size:11.5px;font-weight:800">'+x.users+'명 '+dTxt
+        +'<span class="muted" style="font-weight:600"> · '+x.pings+'핑</span></span></div>';
+    }).join('');
+  } else {
+    $('hmFeat').innerHTML='<div class="empty">'+(HOME.feat===null
+      ?'RPC가 없어요 — supabase-usage.sql의 ps_admin_usage_features를 SQL Editor에서 실행하세요.'
+      :'수집 시작 전 — 새 버전 배포 후, 유저가 탭에 들어오는 날부터 쌓입니다.')+'</div>';
+  }
+  /* ── 기능별 저장 활동(kv) ── */
+  $('hmKeys').innerHTML=!keys.length?'<div class="empty">14일 내 사용 기록이 없습니다.</div>'
+    :keys.slice(0,8).map(function(k){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)">'
+        +'<span class="nm" style="flex:1;font-size:12px">'+esc(FEATURE_LB[k.feature]||k.feature)+'</span>'
+        +'<span class="muted" style="font-size:11px">'+(k.ws_count||0)+'곳</span>'
+        +'<span class="muted" style="font-size:11px;flex:0 0 64px;text-align:right">'+fmtAgo(k.last_at)+'</span></div>';
+    }).join('');
+  /* ── 최근 활동 (1.636) ── */
+  renderWhoLog();
+  /* ── 가장 활발한 팀 ──
+     1.636 — 훈련 0 · 멤버 1 짜리(만들고 안 쓴 팀·테스트)가 상단을 차지하고 있었다.
+     '활발함'의 최소 조건을 둔다: 멤버 2명 이상 **또는** 최근 7일에 뭔가 바뀐 팀.
+     조건에 맞는 팀이 하나도 없으면 예전처럼 전부 보여 준다(빈 화면보다 낫다). */
+  var live=teams.slice().sort(function(a,b){return new Date(b.last_kv||0)-new Date(a.last_kv||0);});
+  var liveReal=live.filter(function(w){ return (w.member_count||0)>=2 || (w.keys_7d||0)>0; });
+  if(liveReal.length) live=liveReal;
+  $('hmTeams').innerHTML=!live.length?'<div class="empty">팀이 없습니다.</div>'
+    :live.slice(0,6).map(function(w){
+      return '<div onclick="setTab(\'ws\');selectWs(\''+w.id+'\')" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer">'
+        +'<span style="color:var(--green)">●</span><span class="nm" style="flex:1;font-size:12px">'+esc(w.name||'(이름 없음)')+'</span>'
+        +'<span class="muted" style="font-size:11px">'+(w.member_count||0)+'명 · 7일 키 '+(w.keys_7d||0)+'</span>'
+        +'<span class="muted" style="font-size:11px;flex:0 0 64px;text-align:right">'+fmtAgo(w.last_kv)+'</span></div>';
+    }).join('');
+  /* ── 조용해진 팀 ── */
+  var quiet=teams.filter(function(w){return !(_hmDaysAgo(w.last_kv,7)||_hmDaysAgo(w.last_lib,7));})
+    .sort(function(a,b){return new Date(b.last_kv||0)-new Date(a.last_kv||0);});
+  $('hmQuiet').innerHTML=!quiet.length?'<div class="empty">모든 팀이 7일 내 활동했습니다.</div>'
+    :('<div class="muted" style="font-size:11px;margin-bottom:4px">'+quiet.length+'팀</div>'
+      +quiet.slice(0,8).map(function(w){
+        return '<div onclick="setTab(\'ws\');selectWs(\''+w.id+'\')" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);cursor:pointer">'
+          +'<span style="color:var(--dim2)">●</span><span class="nm" style="flex:1;font-size:12px">'+esc(w.name||'(이름 없음)')+'</span>'
+          +'<span class="muted" style="font-size:11px;flex:0 0 74px;text-align:right">'+fmtAgo(w.last_kv||w.last_lib)+'</span></div>';
+      }).join(''));
+  /* ── 최근 가입 ── */
+  var recent=users.slice().sort(function(a,b){return new Date(b.created_at||0)-new Date(a.created_at||0);});
+  $('hmNew').innerHTML=!usersOk?'<div class="empty">사용자 집계를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>':recent.slice(0,6).map(function(u){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)">'
+      +'<span class="nm" style="flex:1;font-size:12px">'+esc(u.email||'(이메일 없음)')+'</span>'
+      +(u.idp_last?'<span style="font-size:10px;font-weight:800;color:#9D7BFF">IDP</span>':'')
+      +'<span class="muted" style="font-size:11px;flex:0 0 64px;text-align:right">'+fmtAgo(u.created_at)+'</span></div>';
+  }).join('');
+}
+
+/* ══ 2.516 · 사용 방식 ══════════════════════════════════════════════════════
+   ps_events 를 그대로 읽어 관리자 브라우저에서 집계한다(새 RPC 없음 — 오류 상세가 쓰는 길과 같다).
+   ⚠ 핵심 행동 이벤트는 2.516 배포 시점부터 쌓인다. 그 전 기간은 비어 보이는 게 맞다. */
+var USE=null, USE_BUSY=false, USE_LIMIT=8000;
+var USE_ACTMAP=null;
+function useActLabel(n){
+  if(!USE_ACTMAP){ USE_ACTMAP={}; ACT_LB.forEach(function(a){ USE_ACTMAP[a[0]]=a[1]; }); }
+  return USE_ACTMAP[n]||n;
+}
+function useDaysVal(){ var e=$('useDays'); return Math.max(1,Math.min(90,+((e&&e.value)||14)||14)); }
+function loadUse(force){
+  if(USE_BUSY)return;
+  if(USE&&!force&&USE.days===useDaysVal()){ renderUse(); return; }
+  USE_BUSY=true;
+  ['useActs','useWhen','useFlow','useDevice','usePeople'].forEach(function(id){
+    if($(id))$(id).innerHTML='<div class="loading">불러오는 중…</div>'; });
+  var days=useDaysVal();
+  ensureToken().then(function(at){ if(!at)throw new Error('no token');
+    var since=new Date(Date.now()-days*86400000).toISOString();
+    var q='?select=event_name,feature,device,app_version,created_at,user_id,status'
+      +'&created_at=gte.'+encodeURIComponent(since)+'&order=created_at.desc&limit='+USE_LIMIT;
+    return fetch(BASE+'/rest/v1/ps_events'+q,{headers:hj(at)}).then(function(r){
+      return r.text().then(function(t){ if(!r.ok)throw new Error('use '+r.status+' '+t); return t?JSON.parse(t):[]; });
+    });
+  }).then(function(rows){
+    USE={days:days,rows:rows||[],capped:(rows||[]).length>=USE_LIMIT,err:null}; USE_BUSY=false; renderUse();
+  }).catch(function(e){
+    USE={days:days,rows:[],capped:false,err:String(e&&e.message||e)}; USE_BUSY=false; renderUse();
+  });
+}
+function useBar(label,n,mx,right,dim){
+  return '<div style="display:flex;align-items:center;gap:9px;margin:7px 0'+(dim?';opacity:.55':'')+'">'
+    +'<span style="flex:0 0 118px;font-size:11px;font-weight:700;color:var(--dim);text-align:right">'+esc(label)+'</span>'
+    +'<div style="flex:1;height:16px;background:var(--panel2);border-radius:6px;overflow:hidden">'
+    +'<div style="width:'+Math.max(Math.round(n/(mx||1)*100),2)+'%;height:100%;background:var(--blue);opacity:.85"></div></div>'
+    +'<span style="flex:0 0 132px;font-size:11.5px;font-weight:800">'+right+'</span></div>';
+}
+function renderUse(){
+  if(!USE)return;
+  if(USE.err){
+    var msg='<div class="empty">이벤트를 불러오지 못했습니다 — 관리자 권한과 <code>ps_events</code> 읽기 정책을 확인하세요.<div class="muted" style="margin-top:4px">'+esc(USE.err)+'</div></div>';
+    ['useActs','useWhen','useFlow','useDevice','usePeople'].forEach(function(id){ if($(id))$(id).innerHTML=msg; });
+    return;
+  }
+  var rows=USE.rows, D=USE.days;
+  var capNote=USE.capped?'<div class="muted" style="font-size:11px;margin-bottom:6px">⚠ 최근 '+USE_LIMIT.toLocaleString()+'건까지만 읽었습니다 — 기간을 줄이면 전체가 보입니다.</div>':'';
+
+  /* ① 얼마나 자주 하나 — 핵심 행동(a_*) */
+  (function(){
+    var host=$('useActs'); if(!host)return;
+    var by={};
+    rows.forEach(function(e){
+      var n=e.event_name||''; if(!/^a_/.test(n))return;
+      var g=by[n]||(by[n]={n:0,users:{},last:null});
+      g.n++; if(e.user_id)g.users[e.user_id]=1;
+      if(!g.last||new Date(e.created_at)>new Date(g.last))g.last=e.created_at;
+    });
+    var list=ACT_LB.map(function(a){ var g=by[a[0]]; return {k:a[0],lb:a[1],n:g?g.n:0,u:g?Object.keys(g.users).length:0,last:g?g.last:null}; })
+      .sort(function(x,y){ return y.n-x.n||y.u-x.u; });
+    var mx=Math.max.apply(null,list.map(function(x){return x.n;}).concat([1]));
+    var tot=list.reduce(function(a,b){return a+b.n;},0);
+    var ppl={}; rows.forEach(function(e){ if(/^a_/.test(e.event_name||'')&&e.user_id)ppl[e.user_id]=1; });
+    var head='<div style="display:flex;gap:14px;margin-bottom:10px">'
+      +'<span style="font-size:12px"><b style="font-size:16px">'+tot.toLocaleString()+'</b> <span class="muted">회 · '+D+'일</span></span>'
+      +'<span style="font-size:12px"><b style="font-size:16px">'+Object.keys(ppl).length+'</b> <span class="muted">명</span></span>'
+      +'<span style="font-size:12px"><b style="font-size:16px">'+(Object.keys(ppl).length?(tot/Object.keys(ppl).length).toFixed(1):'—')+'</b> <span class="muted">1인당</span></span></div>';
+    host.innerHTML=capNote+head+list.map(function(x){
+      var right=x.n?('<b>'+x.n+'</b>회 <span class="muted" style="font-weight:600">· '+x.u+'명 · '+(x.n/(x.u||1)).toFixed(1)+'/인</span>')
+                   :'<span class="muted" style="font-weight:600">아직 없음</span>';
+      return useBar(x.lb,x.n,mx,right,!x.n);
+    }).join('')
+      +(tot?'':'<div class="empty" style="margin-top:6px">2.516 배포 뒤 유저가 그 행동을 하는 순간부터 쌓입니다.</div>');
+  })();
+
+  /* ② 언제 쓰나 — 요일 × 시간 */
+  (function(){
+    var host=$('useWhen'); if(!host)return;
+    if(!rows.length){ host.innerHTML='<div class="empty">아직 이벤트가 없습니다.</div>'; return; }
+    var DOW=['일','월','화','수','목','금','토'], grid=[], i, j;
+    for(i=0;i<7;i++){ grid[i]=[]; for(j=0;j<24;j++)grid[i][j]=0; }
+    rows.forEach(function(e){ var d=new Date(e.created_at); if(isNaN(d))return; grid[d.getDay()][d.getHours()]++; });
+    var mx=1; grid.forEach(function(r){ r.forEach(function(v){ if(v>mx)mx=v; }); });
+    var hourTot=[]; for(j=0;j<24;j++){ hourTot[j]=0; for(i=0;i<7;i++)hourTot[j]+=grid[i][j]; }
+    var peak=hourTot.indexOf(Math.max.apply(null,hourTot));
+    var html='<div style="font-size:11.5px;margin-bottom:8px">가장 붐비는 시간 <b>'+peak+'–'+((peak+1)%24)+'시</b>'
+      +'<span class="muted"> · 밝을수록 많이 씁니다</span></div>'
+      +'<div style="display:grid;grid-template-columns:22px repeat(24,1fr);gap:2px;align-items:center">';
+    html+='<span></span>';
+    for(j=0;j<24;j++) html+='<span class="muted" style="font-size:8px;text-align:center">'+((j%6===0)?j:'')+'</span>';
+    for(i=0;i<7;i++){
+      html+='<span class="muted" style="font-size:9px;text-align:right;padding-right:2px">'+DOW[i]+'</span>';
+      for(j=0;j<24;j++){
+        var v=grid[i][j], op=v?(0.18+0.82*(v/mx)):0.06;
+        html+='<div title="'+DOW[i]+'요일 '+j+'시 · '+v+'건" style="height:14px;border-radius:3px;background:var(--blue);opacity:'+op.toFixed(2)+'"></div>';
+      }
+    }
+    host.innerHTML=html+'</div>';
+  })();
+
+  /* ③ 들어와서 무엇을 하나 — 연 횟수 대비 저장 */
+  (function(){
+    var host=$('useFlow'); if(!host)return;
+    var open={}, save={}, act={};
+    rows.forEach(function(e){
+      var n=e.event_name||'', f=e.feature||'app';
+      if(n==='feature_opened') open[f]=(open[f]||0)+1;
+      else if(/_saved$/.test(n)) save[f]=(save[f]||0)+1;
+      else if(/^a_/.test(n)) act[f]=(act[f]||0)+1;
+    });
+    var keys={}; [open,save,act].forEach(function(o){ Object.keys(o).forEach(function(k){ keys[k]=1; }); });
+    var list=Object.keys(keys).map(function(k){ return {k:k,o:open[k]||0,s:save[k]||0,a:act[k]||0}; })
+      .filter(function(x){ return x.o||x.s||x.a; })
+      .sort(function(x,y){ return (y.o+y.s+y.a)-(x.o+x.s+x.a); });
+    if(!list.length){ host.innerHTML='<div class="empty">아직 이벤트가 없습니다.</div>'; return; }
+    host.innerHTML='<div class="tablewrap"><table><thead><tr><th>기능</th><th>열었다</th><th>저장했다</th><th>핵심 행동</th><th>한 번 열 때</th></tr></thead><tbody>'
+      +list.map(function(x){
+        var per=x.o?((x.s+x.a)/x.o):null;
+        return '<tr><td><b>'+esc(featureLabel(x.k))+'</b></td><td>'+x.o+'회</td><td>'+x.s+'회</td><td>'+x.a+'회</td>'
+          +'<td>'+(per==null?'<span class="muted">—</span>'
+              :('<b>'+per.toFixed(1)+'</b>번'+(per<1?' <span class="muted" style="font-weight:600">· 열고 그냥 나가는 편</span>':'')))+'</td></tr>';
+      }).join('')+'</tbody></table></div>'
+      +'<div class="muted" style="font-size:11px;margin-top:6px">여는 것과 하는 것의 거리 — 한 번 열어서 저장·행동을 몇 번 했는지입니다. 1 보다 작으면 열어만 보고 나갑니다.</div>';
+  })();
+
+  /* ④ 무엇으로 쓰나 — 기기 · 버전 */
+  (function(){
+    var host=$('useDevice'); if(!host)return;
+    if(!rows.length){ host.innerHTML='<div class="empty">아직 이벤트가 없습니다.</div>'; return; }
+    var dev={}, ver={};
+    rows.forEach(function(e){
+      var d=e.device||'—'; dev[d]=dev[d]||{n:0,u:{}}; dev[d].n++; if(e.user_id)dev[d].u[e.user_id]=1;
+      var v=e.app_version||'모름'; ver[v]=ver[v]||{n:0,u:{}}; ver[v].n++; if(e.user_id)ver[v].u[e.user_id]=1;
+    });
+    var mk=function(o){ return Object.keys(o).map(function(k){ return {k:k,n:o[k].n,u:Object.keys(o[k].u).length}; })
+      .sort(function(a,b){ return b.u-a.u||b.n-a.n; }); };
+    var dl=mk(dev), vl=mk(ver);
+    /* 막대는 **건수**로 잰다 — 사람 수로 재면 모두가 세 기기를 다 쓰는 팀에서 전부 같은 길이가 된다 */
+    var dmx=Math.max.apply(null,dl.map(function(x){return x.n;}).concat([1]));
+    var vmx=Math.max.apply(null,vl.map(function(x){return x.n;}).concat([1]));
+    host.innerHTML=dl.map(function(x){ return useBar(x.k,x.n,dmx,'<b>'+x.n+'</b>건 <span class="muted" style="font-weight:600">· '+x.u+'명</span>'); }).join('')
+      +'<div class="sec-t" style="margin:12px 0 4px;font-size:11px">앱 버전 <span style="font-weight:600;color:var(--dim2)">· 옛 판에 갇힌 사람 찾기</span></div>'
+      +vl.slice(0,8).map(function(x){ return useBar(x.k,x.n,vmx,'<b>'+x.n+'</b>건 <span class="muted" style="font-weight:600">· '+x.u+'명</span>'); }).join('')
+      +(vl.length>8?'<div class="muted" style="font-size:11px">그 밖 '+(vl.length-8)+'개 버전은 줄였습니다.</div>':'');
+  })();
+
+  /* ⑤ 사람별 사용 결 */
+  (function(){
+    var host=$('usePeople'); if(!host)return;
+    var mail={}; (USERS||[]).forEach(function(u){ if(u.user_id)mail[u.user_id]={email:u.email||'',name:u.name||'',team:u.team_names||''}; });
+    var by={};
+    rows.forEach(function(e){
+      if(!e.user_id)return;
+      var g=by[e.user_id]||(by[e.user_id]={n:0,acts:0,kinds:{},dev:{},last:null,hours:{}});
+      g.n++; if(/^a_/.test(e.event_name||'')){ g.acts++; g.kinds[e.event_name]=1; }
+      if(e.device)g.dev[e.device]=(g.dev[e.device]||0)+1;
+      var d=new Date(e.created_at); if(!isNaN(d))g.hours[d.getHours()]=(g.hours[d.getHours()]||0)+1;
+      if(!g.last||new Date(e.created_at)>new Date(g.last))g.last=e.created_at;
+    });
+    var list=Object.keys(by).map(function(uid){
+      var g=by[uid], who=mail[uid]||{};
+      var topDev=Object.keys(g.dev).sort(function(a,b){return g.dev[b]-g.dev[a];})[0]||'—';
+      var topHour=Object.keys(g.hours).sort(function(a,b){return g.hours[b]-g.hours[a];})[0];
+      return {uid:uid,who:who,n:g.n,acts:g.acts,kinds:Object.keys(g.kinds).length,dev:topDev,
+              hour:(topHour==null?null:+topHour),last:g.last};
+    }).sort(function(a,b){ return b.acts-a.acts||b.n-a.n; });
+    if(!list.length){ host.innerHTML='<div class="empty">아직 이벤트가 없습니다.</div>'; return; }
+    host.innerHTML='<div class="tablewrap"><table><thead><tr><th>사람</th><th>행동</th><th>종류</th><th>주로</th><th>기기</th><th>마지막</th></tr></thead><tbody>'
+      +list.slice(0,40).map(function(x){
+        var nm=x.who.email||x.who.name||(x.uid.slice(0,8)+'…');
+        return '<tr><td><b>'+esc(nm)+'</b>'+(x.who.team?'<div class="muted">'+esc(x.who.team)+'</div>':'')+'</td>'
+          +'<td><b>'+x.acts+'</b>회<div class="muted">전체 '+x.n+'</div></td>'
+          +'<td>'+x.kinds+'가지</td>'
+          +'<td>'+(x.hour==null?'—':(x.hour+'시대'))+'</td>'
+          +'<td>'+esc(x.dev)+'</td><td>'+fmtDateT(x.last)+'</td></tr>';
+      }).join('')+'</tbody></table></div>'
+      +(list.length>40?'<div class="muted" style="font-size:11px;margin-top:6px">상위 40명만 표시 · 전체 '+list.length+'명</div>':'');
+  })();
+}
+
+/* ===== 활동 — 서버에 이미 쌓인 흔적(ps_kv.updated_at 등)만 집계. 콘텐츠는 안 본다 =====
+   ps_kv는 upsert라 "마지막 갱신 시각" 기준이다(과거 히스토리 아님 — 시계열은 2단계 ps_usage에서) */
+var ACT_WS=null, ACT_KEYS=null, ACT_USERS=null;
+/* ps_usage.feature(셸 탭 이름) → 표시명 — app.html의 pingApp이 보내는 값과 짝 */
+var PING_LB={app:'앱 접속',board:'작전판',design:'세션 디자인',community:'커뮤니티',process:'시즌 주기화',
+  gamemodel:'게임모델',scout:'스카우트',terms:'공용어',idp:'IDP',note:'노트',memo:'메모',print:'양식 출력',learning:'학습',scouting:'스카우팅',analysis:'경기 분석'};
+/* 2.022 — 핵심 행동 라벨(a_*) — 표시 순서는 깔때기 순: 일정 → 훈련 → 경기 준비 → 배치 → 리뷰 → 셀프평가 → 코치 피드백 → 학습 → 과제 */
+var ACT_LB=[['a_week','일정 편집(주간 보드)'],['a_train','훈련 만들기'],['a_match','경기 준비 저장'],['a_lineup','선발·배치'],['a_review','경기 리뷰 저장'],['a_selfeval','선수 셀프평가'],['a_feedback','코치 피드백'],['a_lesson','학습 레슨 완료'],['a_task','학습 과제 배정'],['a_review_idp','성장 리뷰(6주)'],['a_diary','훈련일지(오늘 한 장)'],['a_focus','이번 주 초점 정함'],['a_weekly','주간 회고(일요일 2분)'],['a_routine','루틴 저장(시간표)'],['a_qgoal','분기 목표(12주)'],['a_reply','선수 리뷰 답'],['a_react','코치 ❤·한 줄'],['a_weapon','내 무기(강점) 정함'],['a_arch','선수가 자기 유형 고름'],['a_propose','키우고 싶은 것 제안'],['a_measure','키·몸무게 기록']];
+var FEATURE_LB={'cs_idp_v1_*':'IDP — 선수 개인 기록','training_sessions_v1':'훈련 세션(일정)','cs_squad_v1':'팀 선수단',
+  'scout_tool_v1':'팀 평가·속성','cs_gamemodel_v1':'게임모델','process_coach_v1':'시즌 주기화','cs_terms_v1':'공용어 사전',
+  'cs_perms_v1':'권한','cs_vault_folders_v1':'보관함 폴더','cs_vault_folder_tags_v1':'보관함 태그','cs_vault_folder_meta_v1':'보관함 메타',
+  'cs_themes_v1':'테마 설정','cs_team_v1':'팀 설정','cs_psched_v1':'팀 일정','cs_pmeet_v1':'미팅','cs_pwarm_v1':'웜업',
+  'cs_ptrain_v1':'훈련 계획','cs_match_v1':'경기','cs_match_roster_v1':'경기 로스터','cs_meet_sit_v1':'미팅 자리',
+  'cs_notes_v1':'노트','cs_note_papers_v1':'노트 용지','cs_lib_rev':'보관함 갱신 신호'};
+/* ══ 1.636 · 최근 활동 — "누가 뭘 만들었나" ═════════════════════════════════
+   사용자 지시: "누가 가입했는지 누가 뭘 만들었지가 제일 중요해".
+   ps_audit 이 90일치 «누가·어느 팀·무슨 키·만듦/고침/지움·언제» 를 쌓고 있었는데
+   관리자 RPC 22개 중 아무도 읽지 않고 있었다. 여기서 처음 읽는다.
+
+   ⚠ ps_audit 은 **내용을 저장하지 않는다**(security-v2 의 의도적 설계 — 개인정보).
+     그래서 "무슨 자료를" 까지만 말하고 "어떤 훈련을" 은 말하지 않는다.
+     이름까지 필요한 것은 콘텐츠 탭(ps_library)이 답한다. 화면에서 거짓말하지 않도록
+     문구도 «훈련 세션 을 만들었습니다» 처럼 자료 종류로만 쓴다. */
+/* ⚠ 이름을 loadActivity/renderActivity 로 지으면 **아래 '활동 분석' 탭의 같은 이름 함수와
+     충돌한다**(뒤 선언이 이겨서 이 코드가 통째로 죽는다 — 실제로 한 번 그렇게 썼다가 잡았다).
+     이 파일은 단일 스코프라 새 함수는 반드시 고유 이름으로 짓는다. */
+var WHOLOG=null, WHOLOG_DAYS=7;
+var WHOLOG_VERB={insert:'만들었습니다', update:'고쳤습니다', delete:'지웠습니다'};
+function actorName(r){
+  var nm=(r.name||'').trim();
+  if(nm) return nm;
+  if(r.email) return r.email;
+  return '(이름 없음 · '+String(r.user_id||'').slice(0,8)+')';
+}
+function loadWhoLog(){
+  return rpc('ps_admin_recent_activity',{p_days:WHOLOG_DAYS,p_limit:120})
+    .then(function(rows){ WHOLOG=rows||[]; renderWhoLog(); })
+    /* SQL 미설치(supabase-admin-who.sql) 또는 ps_audit 없음 — 화면은 안 깨진다 */
+    .catch(function(){ WHOLOG='ERR'; renderWhoLog(); });
+}
+function renderWhoLog(){
+  var el=$('hmActivity'); if(!el) return;
+  var f=$('hmActFilter'); if(f) f.innerHTML='최근 '+WHOLOG_DAYS+'일';
+  if(WHOLOG===null){ el.innerHTML='<div class="loading">불러오는 중…</div>'; return; }
+  if(WHOLOG==='ERR'){
+    el.innerHTML='<div class="empty">활동 기록을 읽지 못했습니다.'
+      +'<br><span class="muted">supabase-설치/supabase-admin-who.sql 을 실행하세요. '
+      +'기록 자체는 supabase-security-v2.sql 을 깐 시점부터 쌓입니다.</span></div>';
+    return;
+  }
+  if(!WHOLOG.length){
+    el.innerHTML='<div class="empty">최근 '+WHOLOG_DAYS+'일 사이 기록이 없습니다.'
+      +'<br><span class="muted">누군가 자료를 만들거나 고치면 여기에 쌓입니다.</span></div>';
+    return;
+  }
+  el.innerHTML=WHOLOG.slice(0,40).map(function(r){
+    var what=FEATURE_LB[r.k]||(String(r.k||'').indexOf('cs_idp_v1_')===0?'IDP — 선수 개인 기록':r.k);
+    var verb=WHOLOG_VERB[r.action]||r.action||'바꿨습니다';
+    var del=(r.action==='delete');
+    return '<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)">'
+      +'<span class="muted" style="flex:0 0 58px;font-size:11px">'+fmtAgo(r.at)+'</span>'
+      +'<span class="nm" style="flex:0 0 auto;font-size:12px">'+esc(actorName(r))+'</span>'
+      +'<span class="muted" style="flex:0 0 auto;font-size:11px">'+esc(r.ws_name||'—')+'</span>'
+      +'<span style="flex:1;min-width:0;font-size:12px;text-align:right">'
+        +'<b style="font-weight:700">'+esc(what)+'</b> '
+        +'<span style="color:'+(del?'var(--red,#c24a46)':'var(--dim)')+'">'+esc(verb)+'</span></span>'
+      +'</div>';
+  }).join('');
+}
+function fmtAgo(ts){ if(!ts)return '—';
+  var s=(Date.now()-new Date(ts).getTime())/1000;
+  if(s<60)return '방금'; if(s<3600)return Math.floor(s/60)+'분 전'; if(s<86400)return Math.floor(s/3600)+'시간 전';
+  if(s<86400*30)return Math.floor(s/86400)+'일 전'; return fmtDate?fmtDate(ts):new Date(ts).toLocaleDateString(); }
+function isFresh(ts){ return ts && (Date.now()-new Date(ts).getTime()) < 7*86400*1000; }
+function loadActivity(){
+  Promise.all([ rpc('ps_admin_activity_ws'), rpc('ps_admin_activity_keys',{p_days:14}), rpc('ps_admin_activity_users') ])
+    .then(function(res){ ACT_WS=res[0]||[]; ACT_KEYS=res[1]||[]; ACT_USERS=res[2]||[];
+      renderActivity(); renderStats(); })
+    .catch(function(e){ var m='<div class="empty">관리자 활동 RPC를 확인할 수 없습니다. 최신 <code>supabase-admin.sql</code>을 다시 실행하세요.<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
+      $('actWs').innerHTML=m; $('actKeys').innerHTML=''; $('actUsers').innerHTML=''; });
+}
+function renderActivity(){
+  /* 워크스페이스 — 최근 갱신순, 7일 내 활동엔 초록 점 */
+  var kind=($('actWsKind')&&$('actWsKind').value)||'team';
+  var actList=ACT_WS.filter(function(w){return kind==='all'||w.kind===kind;});
+  $('actWs').innerHTML = !actList.length ? '<div class="empty">해당 워크스페이스가 없습니다.</div>'
+    : actList.map(function(w){ var last=(new Date(w.last_kv||0)>new Date(w.last_lib||0))?w.last_kv:w.last_lib;
+        return '<div style="display:flex;align-items:center;gap:9px;padding:9px 2px;border-bottom:1px solid var(--line)">'
+          +'<span style="width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:'+(isFresh(last)?'var(--green)':'var(--line2)')+'"></span>'
+          +'<div style="flex:1;min-width:0"><div class="nm" style="font-size:13px">'+esc(w.name||'(이름없음)')
+          +' <span class="kbadge '+(w.kind==='personal'?'personal':'team')+'">'+(w.kind==='personal'?'개인':'팀')+'</span></div>'
+          +'<div class="muted" style="font-size:11px">멤버 '+(w.member_count||0)+' · 7일 갱신 키 '+(w.keys_7d||0)+(w.idp_keys?(' · IDP '+w.idp_keys):'')+'</div></div>'
+          +'<span class="muted" style="font-size:11px;flex:0 0 auto">'+fmtAgo(last)+'</span></div>'; }).join('');
+  /* 기능별 */
+  $('actKeys').innerHTML = !ACT_KEYS.length ? '<div class="empty">최근 14일 내 갱신이 없습니다.</div>'
+    : ACT_KEYS.map(function(k){
+        return '<div style="display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--line)">'
+          +'<div style="flex:1;min-width:0"><div class="nm" style="font-size:12px">'+esc(FEATURE_LB[k.feature]||k.feature)+'</div>'
+          +'<div class="muted" style="font-size:11px">'+esc(k.feature)+' · 워크스페이스 '+(k.ws_count||0)+'곳'+(k.row_count>k.ws_count?(' · '+k.row_count+'행'):'')+'</div></div>'
+          +'<span class="muted" style="font-size:11px;flex:0 0 auto">'+fmtAgo(k.last_at)+'</span></div>'; }).join('');
+  /* 유저 */
+  $('actUsers').innerHTML = !ACT_USERS.length ? '<div class="empty">유저가 없습니다.</div>'
+    : '<div class="tablewrap"><table><thead><tr><th>이메일</th><th>마지막 접속</th><th>IDP 기록</th><th>팀 데이터</th><th>WS</th></tr></thead><tbody>'
+      +ACT_USERS.map(function(u){
+        return '<tr><td class="nm" style="font-size:12px">'+(isFresh(u.last_sign_in_at)?'<span style="color:var(--green)">●</span> ':'')+esc(u.email||'(이메일 없음)')+'</td>'
+          +'<td class="muted">'+fmtAgo(u.last_sign_in_at)+'</td>'
+          +'<td class="muted">'+fmtAgo(u.idp_last)+'</td>'
+          +'<td class="muted">'+fmtAgo(u.ws_last)+'</td>'
+          +'<td class="muted">'+(u.ws_count||0)+'</td></tr>'; }).join('')
+      +'</tbody></table></div>';
+}
+
+/* ===== 훈련 전체 ===== */
+function wsInfo(wid){ return WS.filter(function(w){return w.id===wid;})[0]||{}; }
+function renderAllLib(){
+  var q=($('alSearch').value||'').trim().toLowerCase();
+  var ty=$('alType').value, sort=$('alSort').value, showDel=$('alShowDel').checked;
+  var list=ALL_LIB.slice();
+  if(!showDel) list=list.filter(function(l){return !l.deleted_at;});
+  if(ty) list=list.filter(function(l){return (l.type||'train')===ty;});
+  if(q) list=list.filter(function(l){ var w=wsInfo(l.workspace_id);
+    return (l.name||'').toLowerCase().indexOf(q)>=0 || (l.ws_name||l.workspace_name||'').toLowerCase().indexOf(q)>=0
+        || (l.owner_email||w.owner_email||'').toLowerCase().indexOf(q)>=0 || (l.folder||'').toLowerCase().indexOf(q)>=0; });
+  if(sort==='name') list.sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
+  else if(sort==='ws') list.sort(function(a,b){return (a.ws_name||'').localeCompare(b.ws_name||'')||(new Date(b.made_at)-new Date(a.made_at));});
+  else list.sort(function(a,b){return new Date(b.made_at)-new Date(a.made_at);});   /* 1.636 — 실제 저장 시각 */
+  var live=ALL_LIB.filter(function(l){return !l.deleted_at;}).length;
+  $('alCount').textContent='전체 '+live+'개'+(list.length!==live?(' · 표시 '+list.length+'개'):'');
+  if(!list.length){ $('alBody').innerHTML='<div class="empty">항목이 없습니다.</div>'; return; }
+  var rows=list.map(function(l){
+    var w=wsInfo(l.workspace_id), deleted=!!l.deleted_at, le=encodeURIComponent(l.lib_id);
+    var act='<button class="rowbtn" onclick="preview(\''+l.workspace_id+'\',\''+le+'\')">미리보기</button>'
+      +(deleted?'<button class="rowbtn" onclick="restoreLib(\''+l.workspace_id+'\',\''+le+'\')">복구</button>'
+              :'<button class="rowbtn danger" onclick="softDelLib(\''+l.workspace_id+'\',\''+le+'\')">삭제</button>');
+    return '<tr class="'+(deleted?'del':'')+'"><td class="nm">'+(l.pin?'<span class="pin">★</span> ':'')+esc(l.name||'(제목없음)')
+      +(deleted?' <span class="muted">· 삭제됨</span>':'')+'</td>'
+      +'<td><span class="tybadge">'+esc(typeName(l.type))+'</span></td>'
+      +'<td><div class="nm" style="font-size:12px">'+esc(l.ws_name||l.workspace_name||w.name||'(이름없음)')
+      +' <span class="kbadge '+(w.kind==='personal'?'personal':'team')+'" style="vertical-align:1px">'+(w.kind==='personal'?'개인':'팀')+'</span></div>'
+      +'<div class="muted" style="font-size:11px">'+esc(l.owner_email||w.owner_email||'—')+'</div></td>'
+      +'<td class="muted">'+esc(l.folder||'—')+'</td>'
+      +'<td class="muted">'+fmtDateT(l.made_at)+'</td>'
+      +'<td style="text-align:right;white-space:nowrap">'+act+'</td></tr>';
+  }).join('');
+  $('alBody').innerHTML='<div class="tablewrap"><table><thead><tr><th>이름</th><th>유형</th><th>워크스페이스 · 소유자</th><th>폴더</th><th>수정</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+/* ===== 워크스페이스 리스트 ===== */
+function renderWsList(){
+  var q=($('wsSearch').value||'').trim().toLowerCase();
+  var sort=$('wsSort').value,kind=($('wsKind')&&$('wsKind').value)||'team';
+  var list=WS.slice();
+  if(kind!=='all')list=list.filter(function(w){return w.kind===kind;});
+  if(q) list=list.filter(function(w){ return (w.name||'').toLowerCase().indexOf(q)>=0 || (w.owner_email||'').toLowerCase().indexOf(q)>=0; });
+  if(sort==='lib') list.sort(function(a,b){return (b.lib_count||0)-(a.lib_count||0);});
+  else if(sort==='new') list.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
+  else list.sort(function(a,b){return new Date(b.last_activity||0)-new Date(a.last_activity||0);});
+  var box=$('wsList');
+  if(!list.length){ box.innerHTML='<div class="empty">워크스페이스가 없습니다.</div>'; return; }
+  box.innerHTML='';
+  list.forEach(function(w){
+    var b=document.createElement('button');
+    b.className='wscard'+(w.id===curWid?' on':'');
+    b.onclick=function(){ selectWs(w.id); };
+    b.innerHTML='<div class="top"><span class="nm">'+esc(w.name||'(이름없음)')+'</span>'
+      +'<span class="kbadge '+(w.kind==='personal'?'personal':'team')+'">'+(w.kind==='personal'?'개인':'팀')+'</span></div>'
+      +'<div class="em">'+esc(w.owner_email||'(이메일 없음)')+'</div>'
+      +'<div class="meta"><span>훈련 '+(w.lib_count||0)+'</span><span>멤버 '+(w.member_count||0)+'</span>'
+      +'<span>활동 '+fmtDate(w.last_activity)+'</span></div>';
+    box.appendChild(b);
+  });
+}
+
+/* ===== 워크스페이스 상세 ===== */
+function selectWs(wid){
+  curWid=wid; renderWsList();
+  var w=WS.filter(function(x){return x.id===wid;})[0]; if(!w)return;
+  var d=$('wsDetail');
+  d.innerHTML='<div class="panel"><div class="loading">불러오는 중…</div></div>';
+  function adminPart(promise,label){
+    return promise.then(function(data){return {ok:true,data:data};})
+      .catch(function(error){return {ok:false,label:label,error:error};});
+  }
+  Promise.all([
+    adminPart(rpc('ps_admin_members',{p_wid:wid}),'멤버'),
+    adminPart(rpc('ps_admin_library',{p_wid:wid,p_include_deleted:true}),'콘텐츠'),
+    adminPart(rpc('ps_admin_team_idp',{p_wid:wid}),'평가·IDP')
+  ])
+  .then(function(res){
+    var failed=res.filter(function(x){return !x.ok;});
+    renderWsDetail(w,res[0].ok?(res[0].data||[]):[],res[1].ok?(res[1].data||[]):[],res[2].ok?res[2].data:null);
+    if(failed.length){
+      var msg=failed.map(function(x){return x.label;}).join('·')+' 정보만 불러오지 못했습니다.';
+      var panel=d.querySelector('.panel');
+      if(panel)panel.insertAdjacentHTML('afterbegin','<div class="ws-alert"><b>'+esc(msg)+'</b><br>'
+        +'기존 평가·IDP 데이터는 안전하며 멤버·콘텐츠 등 다른 정보는 정상적으로 확인할 수 있습니다. '
+        +'<code>supabase-admin-team-idp-v281.sql</code>을 적용한 뒤 '
+        +'<button class="rowbtn" style="margin-left:6px;padding:5px 9px" onclick="selectWs(curWid)">다시 불러오기</button></div>');
+      toast(msg);
+    }
+  })
+  .catch(function(e){ d.innerHTML='<div class="panel"><div class="empty">불러오기 실패</div></div>'; toast(e.message); });
+}
+var _libCache=[], _memberCache=[], _wsCache=null, _showDeleted=false, _wsDetailTab='members';
+function renderWsDetail(w,members,lib,idpRows){
+  _libCache=lib;_memberCache=members;_wsCache=w;
+  var d=$('wsDetail');
+  var live=lib.filter(function(l){return !l.deleted_at;}),active7=members.filter(function(m){return m.last_sign_in_at&&(Date.now()-new Date(m.last_sign_in_at).getTime())<7*86400e3;}).length;
+  var initials=String(w.name||'PS').replace(/\s/g,'').slice(0,2).toUpperCase();
+  var head='<div class="panel">'
+    +'<div class="ws-hero"><div class="ws-mark">'+esc(initials)+'</div><div><h2>'+esc(w.name||'(이름없음)')
+    +' <span class="ws-state">운영 중</span></h2><div class="sub" style="margin:0">소유자 '+esc(w.owner_email||'—')+' · 생성 '+fmtDate(w.created_at)+' · 최근 활동 '+fmtDateT(w.last_activity)+'</div></div></div>'
+    +'<div class="ws-kpis"><div class="ws-kpi"><b>'+members.length+'</b><span>전체 멤버</span></div>'
+    +'<div class="ws-kpi"><b>'+active7+'</b><span>7일 활성 멤버</span></div>'
+    +'<div class="ws-kpi"><b>'+live.length+'</b><span>훈련·항목</span></div>'
+    +'<div class="ws-kpi"><b>'+lib.filter(function(x){return !!x.deleted_at;}).length+'</b><span>삭제 항목</span></div></div>'
+    +'<div class="ws-tabs">'
+    +'<button data-wstab="members">멤버·역할</button><button data-wstab="activity">운영 현황</button><button data-wstab="idp">평가·IDP</button><button data-wstab="content">콘텐츠</button><button data-wstab="settings">팀 설정</button></div>'
+    +'<div class="ws-pane" data-wspane="members"><div class="sec-t">멤버 '+members.length+'명</div>'+membersTable(w,members)+'</div>'
+    +'<div class="ws-pane" data-wspane="activity">'+wsActivityPane(w,members,live)+'</div>'
+    +'<div class="ws-pane" data-wspane="idp">'+wsIdpPane(idpRows)+'</div>'
+    +'<div class="ws-pane" data-wspane="content"><div style="display:flex;align-items:center;margin-bottom:11px"><div class="sec-t" style="margin:0">훈련·항목 '+live.length+'개</div>'
+    +'<label style="margin-left:auto;font-size:11px;font-weight:600;color:var(--dim);display:inline-flex;align-items:center;gap:6px"><input type="checkbox" id="showDel" '+(_showDeleted?'checked':'')+' onchange="toggleDeleted()"> 삭제됨 포함</label></div><div id="libBody">'+libTable(lib)+'</div></div>'
+    +'<div class="ws-pane" data-wspane="settings">'+wsSettingsPane(w)+'</div></div>';
+  d.innerHTML=head;bindWsDetailTabs(_wsDetailTab);
+}
+function bindWsDetailTabs(active){
+  _wsDetailTab=active||'members';
+  [].forEach.call(document.querySelectorAll('[data-wstab]'),function(b){b.classList.toggle('on',b.dataset.wstab===_wsDetailTab);b.onclick=function(){bindWsDetailTabs(b.dataset.wstab);};});
+  [].forEach.call(document.querySelectorAll('[data-wspane]'),function(p){p.classList.toggle('on',p.dataset.wspane===_wsDetailTab);});
+}
+function wsActivityPane(w,members,live){
+  var lastLib=live.slice().sort(function(a,b){return new Date(b.updated_at||0)-new Date(a.updated_at||0);})[0];
+  var old=members.filter(function(m){return !m.last_sign_in_at||(Date.now()-new Date(m.last_sign_in_at).getTime())>=7*86400e3;}).length;
+  return '<div class="sec-t">현재 확인 가능한 운영 정보</div>'
+    +'<div class="kv"><span class="k">최근 팀 활동</span><span>'+fmtDateT(w.last_activity)+'</span>'
+    +'<span class="k">최근 콘텐츠 수정</span><span>'+(lastLib?esc(lastLib.name||'(제목없음)')+' · '+fmtDateT(lastLib.updated_at):'—')+'</span>'
+    +'<span class="k">7일 미접속</span><span>'+old+'명</span>'
+    +'<span class="k">콘텐츠 합계</span><span>'+live.length+'개</span></div>';
+}
+function wsIdpPane(rows){
+  if(rows===null)return '<div class="ws-alert"><b>평가·IDP 통계 준비가 필요합니다</b><br>기존 데이터는 안전합니다. <code>supabase-admin-team-idp-v281.sql</code>을 적용하면 평가표와 IDP 연결 상태가 표시됩니다.</div>';
+  rows=rows||[];
+  var first=rows[0]||{}, mode=first.active_mode||'—', attrs=+first.active_attr_count||0;
+  var players=rows.filter(function(r){return (r.role||'')==='player';});
+  var linked=players.filter(function(r){return !!r.player_id;}).length;
+  var started=players.filter(function(r){return !!r.idp_updated_at;}).length;
+  var reval=players.filter(function(r){return !!r.needs_reval;}).length;
+  var h='<div class="sec-t">현재 평가표</div><div class="kv"><span class="k">활성표</span><span>'+(mode==='fifa'?'PROCESS 기본 평가표':mode==='team'?'팀 평가표':'설정 없음')+'</span>'
+    +'<span class="k">항목</span><span>'+attrs+'개</span><span class="k">세트 ID</span><span style="font:600 10px ui-monospace,Menlo,monospace;word-break:break-all">'+esc(first.active_set_id||'—')+'</span></div>'
+    +'<div class="eval-kpis"><div class="eval-kpi"><b>'+linked+'/'+players.length+'</b><span>계정–선수 연결</span></div>'
+    +'<div class="eval-kpi"><b>'+started+'/'+players.length+'</b><span>IDP 시작</span></div>'
+    +'<div class="eval-kpi"><b>'+reval+'</b><span>새 표 재평가 필요</span></div></div>';
+  if(!players.length)return h+'<div class="empty">선수 역할 멤버가 없습니다.</div>';
+  h+='<div class="tablewrap"><table><thead><tr><th>선수 계정</th><th>연결</th><th>IDP</th><th>평가표</th><th>상태</th></tr></thead><tbody>';
+  h+=players.map(function(r){
+    var evalState=!r.idp_updated_at?'미시작':r.needs_reval?'재평가 필요':(+r.eval_level_count||0)+'개 완료';
+    return '<tr><td class="nm">'+esc(r.email||String(r.user_id||'').slice(0,8))+'</td>'
+      +'<td>'+(r.player_id?'<span class="rolebadge staff">연결됨</span>':'<span class="rolebadge">미연결</span>')+'</td>'
+      +'<td class="muted">'+(r.idp_updated_at?fmtAgo(r.idp_updated_at):'없음')+'</td>'
+      +'<td class="muted">'+esc(r.eval_set_id||'—')+'</td>'
+      +'<td><span class="rolebadge '+(r.needs_reval?'player':r.idp_updated_at?'staff':'')+'">'+evalState+'</span></td></tr>';
+  }).join('')+'</tbody></table></div>';
+  return h;
+}
+function wsSettingsPane(w){
+  var base='<div class="kv"><span class="k">워크스페이스 ID</span><span style="font:600 11px ui-monospace,Menlo,monospace">'+esc(w.id||'—')+'</span>'
+    +'<span class="k">종류</span><span>'+(w.kind==='personal'?'개인':'팀')+'</span><span class="k">소유자</span><span>'+esc(w.owner_email||'—')+'</span><span class="k">생성일</span><span>'+fmtDate(w.created_at)+'</span></div>';
+  if(w.kind!=='team')return base;
+  return base+'<div class="ws-danger"><b>위험 작업</b><p>워크스페이스 삭제는 소속 훈련·멤버·데이터에 영향을 줍니다. 일반 운영 정보와 분리해 두었습니다.</p><button class="rowbtn danger" onclick="delWorkspace(\''+w.id+'\')">워크스페이스 삭제</button></div>';
+}
+function membersTable(w,members){
+  if(!members.length) return '<div class="empty">멤버 없음</div>';
+  var rows=members.map(function(m){
+    var canRemove=(w.kind==='team' && m.role!=='owner');
+    var role=m.role||'member',label={owner:'임원',admin:'임원',executive:'임원',staff:'코칭스태프',player:'선수',member:'멤버'}[role]||role;
+    return '<tr><td class="nm">'+esc(m.auth_email||m.email||m.user_id.slice(0,8))+'</td>'
+      +'<td><span class="rolebadge '+esc(role)+'">'+esc(label)+'</span></td>'
+      +'<td class="muted">'+fmtDate(m.joined_at)+'</td>'
+      +'<td class="muted">'+fmtDateT(m.last_sign_in_at)+'</td>'
+      +'<td style="text-align:right">'+(canRemove?'<button class="rowbtn danger" onclick="removeMember(\''+w.id+'\',\''+m.user_id+'\')">내보내기</button>':'')+'</td></tr>';
+  }).join('');
+  return '<div class="tablewrap"><table><thead><tr><th>이메일</th><th>역할</th><th>합류</th><th>최근접속</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function libTable(lib){
+  var list=_showDeleted?lib:lib.filter(function(l){return !l.deleted_at;});
+  if(!list.length) return '<div class="empty">항목이 없습니다.</div>';
+  var rows=list.map(function(l){
+    var deleted=!!l.deleted_at;
+    var act='<button class="rowbtn" onclick="preview(\''+l.workspace_id+'\',\''+encodeURIComponent(l.lib_id)+'\')">미리보기</button>'
+      +(deleted?'<button class="rowbtn" onclick="restoreLib(\''+l.workspace_id+'\',\''+encodeURIComponent(l.lib_id)+'\')">복구</button>'
+              :'<button class="rowbtn danger" onclick="softDelLib(\''+l.workspace_id+'\',\''+encodeURIComponent(l.lib_id)+'\')">삭제</button>');
+    return '<tr class="'+(deleted?'del':'')+'"><td class="nm">'+(l.pin?'<span class="pin">★</span> ':'')+esc(l.name||'(제목없음)')
+      +(deleted?' <span class="muted">· 삭제됨</span>':'')+'</td>'
+      +'<td><span class="tybadge">'+esc(typeName(l.type))+'</span></td>'
+      +'<td class="muted">'+esc(l.folder||'—')+'</td>'
+      +'<td class="muted">'+fmtDateT(l.made_at)+'</td>'
+      +'<td style="text-align:right;white-space:nowrap">'+act+'</td></tr>';
+  }).join('');
+  return '<div class="tablewrap"><table><thead><tr><th>이름</th><th>유형</th><th>폴더</th><th>수정</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function toggleDeleted(){ _showDeleted=$('showDel').checked; $('libBody').innerHTML=libTable(_libCache); }
+
+/* ===== 유저 ===== */
+/* ── 1.636 · "누가 가입했는지" ─────────────────────────────────────────────────
+   그전에는 이메일과 UID 8자리뿐이었다. 그런데 카카오 가입자는 이메일이 없어서
+   **목록의 1/3이 "(이메일 없음)" 으로만 보이고 검색조차 안 됐다**(실측).
+   이제 이름(ps_members.name)과 소속 팀을 함께 보여 주고, 셋 다로 검색한다.
+   '만든 수' 는 **본인이 만든** 보관함 항목이다 — 예전 lib_count 는 «내가 속한 팀의 자료 수» 라
+   같은 팀원 30명에게 전부 같은 숫자(30)가 붙어 "누가 만들었나" 와 정반대로 읽혔다. */
+function userLabel(u){
+  var nm=(u.name||'').trim();
+  if(nm) return nm;
+  if(u.email) return u.email;
+  return '(이름·이메일 없음)';
+}
+function renderUsers(){
+  var q=($('uSearch')?$('uSearch').value:'').trim().toLowerCase();
+  var list=USERS.slice();
+  if(q) list=list.filter(function(u){
+    return (u.email||'').toLowerCase().indexOf(q)>=0
+        || (u.name||'').toLowerCase().indexOf(q)>=0
+        || (u.team_names||'').toLowerCase().indexOf(q)>=0
+        || (u.user_id||'').toLowerCase().indexOf(q)>=0;
+  });
+  var tb=$('usersTable').querySelector('tbody');
+  if(!list.length){ tb.innerHTML='<tr><td class="empty">유저가 없습니다.</td></tr>'; return; }
+  var hasV2=list.some(function(u){ return u.team_names!==undefined; });
+  var head='<tr><th>사람</th><th>소속 팀</th><th>가입</th><th>최근접속</th>'
+    +(hasV2?'<th>만든 수</th>':'<th>워크스페이스</th><th>훈련</th>')+'</tr>';
+  var rows=list.map(function(u){
+    var nm=(u.name||'').trim();
+    var sub=nm?(u.email||('UID '+(u.user_id||'').slice(0,8))):('UID '+(u.user_id||'').slice(0,8));
+    return '<tr><td class="nm">'+esc(userLabel(u))
+      +'<div class="muted" style="font:600 11px ui-monospace,Menlo,monospace">'+esc(sub)+'</div></td>'
+      +'<td class="muted">'+esc(u.team_names||'—')+'</td>'
+      +'<td class="muted">'+fmtDate(u.created_at)+'</td>'
+      +'<td class="muted">'+fmtDateT(u.last_sign_in_at)+'</td>'
+      +(hasV2
+        ? '<td>'+(u.made_count||0)+'</td>'
+        : '<td>'+(u.ws_count||0)+'</td><td>'+(u.lib_count||0)+'</td>')
+      +'</tr>';
+  }).join('');
+  $('usersTable').querySelector('tbody').innerHTML='';
+  $('usersTable').innerHTML='<thead>'+head+'</thead><tbody>'+rows+'</tbody>';
+}
+
+/* ===== IDP 열람 — 읽기 전용. RPC: ps_admin_idp_get (supabase-admin.sql 통합) ===== */
+var IDP_USERS=null, IDP_CACHE={}, curIdpUid=null;
+/* 기본 속성 라벨(idp.html DEFAULT_SET과 동일) — 팀 세트 id는 원문 그대로 표기 */
+var IDP_LB={d_pos:'위치 선정',d_scan:'스캐닝·인지',d_dec:'판단(결정)',d_run:'공간 침투',d_defw:'수비 가담',
+  d_touch:'퍼스트 터치',d_pass:'패스',d_drib:'드리블',d_shot:'슈팅',d_head:'헤딩',
+  d_spd:'스피드',d_sta:'지구력',d_str:'몸싸움',d_agi:'민첩성',
+  d_conf:'자신감',d_foc:'집중력',d_brave:'대담함',d_att:'훈련 태도',d_team:'팀워크',d_open:'코칭 수용'};
+var IDP_LOGT={team:'팀훈련',match:'경기',rest:'휴식'};
+var IDP_PLB={foot:'주발',birth:'생년월일',dob:'생년월일',height:'키',weight:'몸무게',club:'소속팀',team:'소속팀',agent:'에이전트',phone:'연락처',email:'이메일',blood:'혈액형',mbti:'MBTI',video:'하이라이트',hl:'하이라이트',goal:'시즌 목표',startYear:'축구 시작',elem:'초등',mid:'중등',high:'고등',univ:'대학',memo:'메모'};
+function loadIdpList(){
+  if(IDP_USERS){ renderIdpList(); return; }
+  /* 팀 이름 포함 목록(신규 RPC) — 없으면 활동 RPC로 폴백(평면 목록) */
+  rpc('ps_admin_idp_users').then(function(r){
+    IDP_USERS=(r||[]); renderIdpList();
+  }).catch(function(){
+    rpc('ps_admin_activity_users').then(function(r){
+      IDP_USERS=(r||[]).filter(function(u){ return u.idp_last; });
+      renderIdpList();
+    }).catch(function(e){
+      $('idpList').innerHTML='<div class="empty">유저 목록 RPC 오류 — 최신 <code>supabase-admin.sql</code>을 다시 실행하세요.<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
+    });
+  });
+}
+function _idpRowHtml(u){
+  var on=(u.user_id===curIdpUid);
+  return '<tr onclick="openIdp(\''+u.user_id+'\',\''+esc(u.email||'')+'\')" style="cursor:pointer'+(on?';background:var(--chip)':'')+'">'
+    +'<td class="nm" style="font-size:12px">'+(isFresh(u.idp_last)?'<span style="color:var(--green)">●</span> ':'')+esc(u.email||'(이메일 없음)')+'</td>'
+    +'<td class="muted">'+fmtAgo(u.idp_last)+'</td></tr>';
+}
+function renderIdpList(){
+  if(!IDP_USERS) return;
+  var now=Date.now(),within=function(ts,d){return ts&&(now-new Date(ts).getTime())<d*86400e3;};
+  var c7=IDP_USERS.filter(function(u){return within(u.idp_last,7);}).length;
+  var c30=IDP_USERS.filter(function(u){return within(u.idp_last,30);}).length;
+  var stale=IDP_USERS.filter(function(u){return !within(u.idp_last,30);}).length;
+  $('idpOverview').innerHTML='<div class="eval-kpi"><b>'+IDP_USERS.length+'</b><span>IDP 시작</span></div>'
+    +'<div class="eval-kpi"><b style="color:var(--green)">'+c7+'</b><span>7일 내 기록</span></div>'
+    +'<div class="eval-kpi"><b>'+c30+'</b><span>30일 내 기록</span></div>'
+    +'<div class="eval-kpi"><b style="color:var(--amber)">'+stale+'</b><span>30일+ 중단</span></div>';
+  var q=($('idpSearch')?$('idpSearch').value:'').trim().toLowerCase();
+  var list=IDP_USERS.slice();
+  if(q) list=list.filter(function(u){ return ((u.email||'')+' '+(u.teams||'')).toLowerCase().indexOf(q)>=0; });
+  if(!list.length){ $('idpList').innerHTML='<div class="empty">'+(q?'검색 결과가 없습니다.':'IDP 기록이 있는 유저가 아직 없습니다.')+'</div>'; return; }
+  /* 팀별 그룹(여러 팀 소속이면 각 팀 아래에 표시) + 개인(팀 무소속) */
+  var hasTeams=list.some(function(u){ return 'teams' in u; });
+  if(!hasTeams){
+    $('idpList').innerHTML='<div class="tablewrap"><table><thead><tr><th>이메일</th><th>마지막 IDP 기록</th></tr></thead><tbody>'
+      +list.map(_idpRowHtml).join('')+'</tbody></table></div>';
+    return;
+  }
+  var groups={}, solo=[];
+  list.forEach(function(u){
+    var ts=(u.teams||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    if(!ts.length){ solo.push(u); return; }
+    ts.forEach(function(t){ (groups[t]=groups[t]||[]).push(u); });
+  });
+  var names=Object.keys(groups).sort(function(a,b){
+    var la=Math.max.apply(null,groups[a].map(function(u){return new Date(u.idp_last||0).getTime();}));
+    var lb=Math.max.apply(null,groups[b].map(function(u){return new Date(u.idp_last||0).getTime();}));
+    return lb-la;
+  });
+  var h='';
+  var section=function(title,arr,color){
+    h+='<div class="sec-t" style="margin:14px 0 4px;display:flex;align-items:center;gap:7px">'
+      +'<span style="color:'+color+'">●</span>'+esc(title)
+      +' <span style="font-weight:600;color:var(--dim2);font-size:11px">'+arr.length+'명</span></div>'
+      +'<div class="tablewrap"><table><tbody>'+arr.map(_idpRowHtml).join('')+'</tbody></table></div>';
+  };
+  names.forEach(function(t){ section(t, groups[t], 'var(--blue2)'); });
+  if(solo.length) section('개인 (팀 무소속)', solo, 'var(--dim2)');
+  $('idpList').innerHTML=h;
+}
+function openIdp(uid,email){
+  curIdpUid=uid; renderIdpList();
+  $('idpWho').textContent='· '+(email||uid.slice(0,8));
+  $('idpBody').innerHTML='<div class="loading">불러오는 중…</div>';
+  (IDP_CACHE[uid]?Promise.resolve(IDP_CACHE[uid])
+    :rpc('ps_admin_idp_get',{p_uid:uid}).then(function(rows){ var row=(rows&&rows[0])||null; IDP_CACHE[uid]=row; return row; }))
+  .then(function(row){ if(curIdpUid!==uid)return; renderIdpDoc(row); })
+  .catch(function(e){ if(curIdpUid!==uid)return;
+    $('idpBody').innerHTML='<div class="empty">불러오기 실패 — 최신 <code>supabase-admin.sql</code>을 SQL Editor에서 다시 실행했는지 확인하세요.<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>'; });
+}
+function _idpRow(l,v){ return '<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)"><span class="muted" style="flex:0 0 92px;font-size:11px;padding-top:1px">'+esc(l)+'</span><span style="flex:1;font-size:12px;min-width:0">'+v+'</span></div>'; }
+function _idpSec(t){ return '<div class="sec-t" style="margin:16px 0 4px">'+esc(t)+'</div>'; }
+function idpSnapshotLabels(se){
+  var out={};
+  (se&&se.setSnapshot||[]).forEach(function(g){(g.items||[]).forEach(function(it){out[it[0]]=it[1];});});
+  return out;
+}
+function renderIdpDoc(row){
+  if(!row||!row.v){ $('idpBody').innerHTML='<div class="empty">서버에 동기화된 IDP가 없습니다. (선수가 로그인 후 기록해야 올라옵니다)</div>'; return; }
+  var d; try{ d=JSON.parse(row.v); }catch(_){ $('idpBody').innerHTML='<div class="empty">IDP 데이터를 해석할 수 없습니다.</div>'; return; }
+  var h='';
+  h+='<div class="muted" style="font-size:11px;margin-bottom:2px">마지막 동기화 '+fmtAgo(row.updated_at)+' · 읽기 전용</div>';
+  /* 프로필 */
+  var p=d.profile||{};
+  h+=_idpSec('프로필');
+  h+=_idpRow('이름', esc(p.name||'—'));
+  h+=_idpRow('포지션', esc(p.pos||'—')+(p.subs&&p.subs.length?' <span class="muted">· 서브 '+esc(p.subs.join(', '))+'</span>':''));
+  Object.keys(p).forEach(function(k){
+    if(k==='name'||k==='pos'||k==='subs'||k==='photo')return;
+    if(['phone','email','agent','blood','mbti'].indexOf(k)>=0)return; /* 운영 요약에는 민감 프로필을 최소화 */
+    var v=p[k]; if(v==null||v===''||typeof v==='object')return;
+    h+=_idpRow(IDP_PLB[k]||k, esc(String(v)));
+  });
+  if(p.photo) h+=_idpRow('사진','있음');
+  /* 셀프 평가 */
+  var se=d.selfEval||{}, lv=se.levels||{}, ks=Object.keys(lv), snapLb=idpSnapshotLabels(se);
+  h+=_idpSec('셀프 평가');
+  if(ks.length){
+    var sum=0; ks.forEach(function(k){ sum+=(+lv[k]||0); });
+    h+=_idpRow('평가표',esc(se.setId||'기존 평가표')+(se.setSnapshot&&se.setSnapshot.length?' · 평가 당시 항목 보존':''));
+    h+=_idpRow('입력', ks.length+'개 항목 · 평균 '+(sum/ks.length).toFixed(1)+' / 5');
+    var top=ks.slice().sort(function(a,b){return lv[b]-lv[a];});
+    /* 새 평가는 평가 당시 스냅샷 라벨을 우선 사용하고, 구 평가는 기존 기본 라벨로 폴백한다. */
+    var known=top.filter(function(k){return snapLb[k]||IDP_LB[k];});
+    if(known.length){
+      h+=_idpRow('강점(상위)', known.slice(0,3).map(function(k){return esc(snapLb[k]||IDP_LB[k])+' '+lv[k];}).join(' · '));
+      if(known.length>3) h+=_idpRow('보완(하위)', known.slice(-3).reverse().map(function(k){return esc(snapLb[k]||IDP_LB[k])+' '+lv[k];}).join(' · '));
+    } else {
+      var dist=[5,4,3,2,1].map(function(n){var c=ks.filter(function(k){return +lv[k]===n;}).length;return c?(n+'점 '+c+'개'):null;}).filter(Boolean).join(' · ');
+      h+=_idpRow('분포', dist+' <span class="muted">(팀 평가 세트 — 항목명은 팀 탭 기준)</span>');
+    }
+  } else h+=_idpRow('입력','아직 없음');
+  if(se.strengths) h+=_idpRow('스스로 강점', esc(se.strengths));
+  if(se.improve)   h+=_idpRow('보완할 점', esc(se.improve));
+  if(se.seasonGoal)h+=_idpRow('시즌 목표', esc(se.seasonGoal));
+  /* 이번 달 목표 */
+  var g=(d.goal&&d.goal.cur)||null;
+  h+=_idpSec('이번 달 목표');
+  if(g){
+    h+=_idpRow('시작', esc(g.start||'—')+' · '+(g.weeks||4)+'주 · 주 '+(g.per||'?')+'회');
+    if(g.focus&&g.focus.length) h+=_idpRow('초점', g.focus.map(function(k){return esc(IDP_LB[k]||k);}).join(' · '));
+    if(g.note) h+=_idpRow('메모', esc(g.note));
+  } else h+=_idpRow('현재','진행 중인 목표 없음');
+  if(d.goal&&d.goal.hist&&d.goal.hist.length) h+=_idpRow('지난 목표', d.goal.hist.length+'개 완료');
+  /* 개인 훈련 */
+  var tr=d.trainings||[];
+  h+=_idpSec('개인 훈련 ('+tr.length+')');
+  tr.slice(0,6).forEach(function(t){
+    var name=t.name||t.title||t.t||'(이름 없음)';
+    var days=(t.days&&t.days.length)?' <span class="muted">· '+t.days.join('·')+'</span>':'';
+    h+=_idpRow('훈련', esc(name)+days);
+  });
+  if(tr.length>6) h+=_idpRow('','… 외 '+(tr.length-6)+'개');
+  /* 일지 */
+  var log=d.log||{}, dates=Object.keys(log).sort();
+  h+=_idpSec('일지 기록 ('+dates.length+'일)');
+  if(dates.length){
+    h+=_idpRow('최근 기록일', esc(dates[dates.length-1]));
+    dates.slice(-7).reverse().forEach(function(dt){
+      var e=log[dt]||{}; var parts=[];
+      if(e.t)parts.push(IDP_LOGT[e.t]||e.t); if(e.solo)parts.push('개인운동');
+      if(e.rpe!=null&&e.rpe!=='')parts.push('강도 '+e.rpe); if(e.wt)parts.push(e.wt+'kg');
+      if(e.memo)parts.push('“'+esc(String(e.memo).slice(0,40))+'”');
+      h+=_idpRow(dt.slice(5), parts.join(' · ')||'—');
+    });
+  } else h+=_idpRow('기록','아직 없음');
+  /* 이미지노트 */
+  var im=d.imgNotes||[];
+  h+=_idpSec('이미지노트 ('+im.length+')');
+  im.slice(0,4).forEach(function(n){ h+=_idpRow(esc(n.date||n.d||''), esc(n.opp||n.vs||n.title||'노트')); });
+  h+='<div class="ws-alert" style="margin-top:14px"><b>개인정보 최소 표시</b><br>연락처·개인 이메일·에이전트·혈액형·MBTI·원본 JSON은 운영 요약에서 표시하지 않습니다.</div>';
+  $('idpBody').innerHTML=h;
+}
+
+/* ===== 액션 ===== */
+function afterLibChange(wid){ reloadCounts(); reloadAllLib(); if(curWid) selectWs(curWid); }
+function softDelLib(wid,lidEnc){ var lid=decodeURIComponent(lidEnc);
+  if(!confirm('이 항목을 삭제(휴지통) 처리할까요?\n사용자 기기에서도 동기화되어 사라집니다.'))return;
+  rpc('ps_admin_soft_delete_lib',{p_wid:wid,p_lib_id:lid}).then(function(){ toast('삭제됨'); afterLibChange(wid); })
+    .catch(function(e){ toast('실패: '+e.message); }); }
+function restoreLib(wid,lidEnc){ var lid=decodeURIComponent(lidEnc);
+  rpc('ps_admin_restore_lib',{p_wid:wid,p_lib_id:lid}).then(function(){ toast('복구됨'); afterLibChange(wid); })
+    .catch(function(e){ toast('실패: '+e.message); }); }
+function removeMember(wid,uid){
+  if(!confirm('이 멤버를 팀에서 내보낼까요?'))return;
+  rpc('ps_admin_remove_member',{p_wid:wid,p_uid:uid}).then(function(){ toast('내보냈습니다'); selectWs(wid); reloadCounts(); })
+    .catch(function(e){ toast('실패: '+e.message); }); }
+function delWorkspace(wid){
+  var w=WS.filter(function(x){return x.id===wid;})[0]||{};
+  var nm=w.name||'';
+  var typed=prompt('워크스페이스를 완전히 삭제합니다. 멤버 '+(w.member_count||0)+'명과 콘텐츠 '+(w.lib_count||0)+'개에 영향을 줍니다.\\n계속하려면 팀 이름을 정확히 입력하세요.\\n\\n'+nm,'');
+  if(typed===null)return;
+  if(typed!==nm){toast('팀 이름이 일치하지 않아 삭제하지 않았습니다.');return;}
+  rpc('ps_admin_delete_workspace',{p_wid:wid}).then(function(){ toast('삭제됨'); curWid=null;
+    $('wsDetail').innerHTML='<div class="panel"><div class="empty">삭제되었습니다.</div></div>'; reloadAll(); })
+    .catch(function(e){ toast('실패: '+e.message); }); }
+function reloadCounts(){ rpc('ps_admin_workspaces').then(function(r){ WS=r||[]; renderStats(); renderWsList(); }).catch(function(){}); }
+
+/* ===== 미리보기 모달 ===== */
+/* 예전에 저장된 썸네일 복구 — 2026-07-16 이전 보드는 outerHTML 로 만들어져 xlink: 를 쓰면서 xmlns:xlink 선언이 빠져 있다.
+   <img src="data:image/svg+xml,…"> 는 엄격한 XML 파서라 선언이 없으면 SVG 전체가 깨진다('실제 잔디' 텍스처를 쓴 보드만 해당).
+   저장된 데이터는 못 고치니 그릴 때 선언을 끼워 넣는다. 새로 저장되는 건 board.html 이 XMLSerializer 로 만들어 문제없음. */
+function fixSvgNs(s){
+  if(typeof s!=='string'||!s) return s;
+  if(s.indexOf('xlink:')<0 || s.indexOf('xmlns:xlink')>=0) return s;
+  return s.replace(/<svg\b/i,'<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+}
+function adminItemPayload(raw){
+  var row=Array.isArray(raw)?(raw[0]||{}):(raw||{});
+  /* 설치된 관리자 SQL 버전에 따라 RPC 응답은
+     ① ps_library 전체 행 ② item JSON 자체 ③ 함수명 키로 감싼 JSON이 될 수 있다. */
+  if(row&&row.ps_admin_library_item!=null)row=row.ps_admin_library_item;
+  if(typeof row==='string'){try{row=JSON.parse(row);}catch(_){}}
+  var body=(row&&row.item!=null)?row.item:row;
+  if(typeof body==='string'){try{body=JSON.parse(body);}catch(_){}}
+  /* 일부 PostgREST 조합은 반환값을 value/result/data로 한 번 더 감싼다. */
+  var guard=0;
+  while(body&&typeof body==='object'&&!Array.isArray(body)&&guard++<3){
+    var keys=Object.keys(body),wrap=null;
+    if(keys.length===1&&['value','result','data','json','ps_admin_library_item'].indexOf(keys[0])>=0)wrap=body[keys[0]];
+    if(wrap==null)break;
+    body=wrap;
+    if(typeof body==='string'){try{body=JSON.parse(body);}catch(_){break;}}
+  }
+  return {row:row,body:body||{}};
+}
+function findThumb(o,depth){
+  if(o==null||depth>7) return null;
+  if(typeof o==='string') return /^\s*<svg\b/i.test(o)?fixSvgNs(o.trim()):null;
+  if(Array.isArray(o)){ for(var i=0;i<o.length && i<40;i++){ var r=findThumb(o[i],depth+1); if(r)return r; } return null; }
+  if(typeof o==='object'){ if(typeof o.thumb==='string'&&/^\s*<svg\b/i.test(o.thumb))return fixSvgNs(o.thumb.trim());
+    for(var k in o){ var r=findThumb(o[k],depth+1); if(r)return r; } }
+  return null;
+}
+function findSnap(o,depth){
+  if(o==null||depth>7)return null;
+  if(Array.isArray(o)){for(var i=0;i<o.length&&i<40;i++){var a=findSnap(o[i],depth+1);if(a)return a;}return null;}
+  if(typeof o!=='object')return null;
+  if(Array.isArray(o.players)||Array.isArray(o.equipment)||o.ball)return o;
+  if(o.snap&&typeof o.snap==='object'){var direct=findSnap(o.snap,depth+1);if(direct)return direct;}
+  for(var k in o){var r=findSnap(o[k],depth+1);if(r)return r;}
+  return null;
+}
+/* 과거 항목은 snap만 있고 thumb가 없는 경우가 있다. 관리자에서 최소한 실제 배치를
+   확인할 수 있도록 저장 좌표로 안전한 축약 필드 SVG를 만든다. */
+function snapPreview(snap){
+  if(!snap||typeof snap!=='object')return null;
+  var ps=Array.isArray(snap.players)?snap.players:[], ball=snap.ball;
+  if(!ps.length&&!ball)return null;
+  /* 작전판의 좌표계를 그대로 쓴다(1m=10단위, 라인 밖 여유 30).
+     예전에는 저장된 좌표의 최대값으로 정규화하고 가장자리에 붙여 잘랐다.
+     그래서 운동장 밖 여백에 둔 토큰이 전부 위·아래 라인에 일렬로 붙어,
+     3-4-3 라인업이 골라인에 늘어선 것처럼 보였다. */
+  var MPP=10, M=30, FL=105, FW=68;
+  var W=FL*MPP+M*2, H=FW*MPP+M*2;             // 1110 x 740
+  var mx=0,my=0;
+  ps.forEach(function(p){mx=Math.max(mx,Math.abs(+p.x||0));my=Math.max(my,Math.abs(+p.y||0));});
+  if(ball){mx=Math.max(mx,Math.abs(+ball.x||0));my=Math.max(my,Math.abs(+ball.y||0));}
+  /* 아주 오래된 항목은 0~100 백분율로 저장돼 있다 — 그때만 환산한다 */
+  var pct=(mx<=110&&my<=110), sx=pct?W/100:1, sy=pct?H/100:1;
+  var L=M, T=M, R=W-M, B=H-M, CX=W/2, CY=H/2;
+  var PA=16.5*MPP, PAH=40.32*MPP/2, GA=5.5*MPP, GAH=18.32*MPP/2, R9=9.15*MPP;
+  var lines='<g fill="none" stroke="rgba(255,255,255,.72)" stroke-width="2.5">'
+    +'<rect x="'+L+'" y="'+T+'" width="'+(R-L)+'" height="'+(B-T)+'"/>'
+    +'<path d="M'+CX+' '+T+'V'+B+'"/>'
+    +'<circle cx="'+CX+'" cy="'+CY+'" r="'+R9+'"/>'
+    +'<rect x="'+L+'" y="'+(CY-PAH)+'" width="'+PA+'" height="'+(PAH*2)+'"/>'
+    +'<rect x="'+(R-PA)+'" y="'+(CY-PAH)+'" width="'+PA+'" height="'+(PAH*2)+'"/>'
+    +'<rect x="'+L+'" y="'+(CY-GAH)+'" width="'+GA+'" height="'+(GAH*2)+'"/>'
+    +'<rect x="'+(R-GA)+'" y="'+(CY-GAH)+'" width="'+GA+'" height="'+(GAH*2)+'"/>'
+    +'</g>';
+  /* 저장된 좌표가 여백 밖까지 나가면 그만큼 화면을 넓힌다 — 자르지 않는다 */
+  var x0=0,y0=0,x1=W,y1=H,PAD=20;
+  function grow(vx,vy){ vx=(+vx||0)*sx; vy=(+vy||0)*sy;
+    if(vx-PAD<x0)x0=vx-PAD; if(vy-PAD<y0)y0=vy-PAD;
+    if(vx+PAD>x1)x1=vx+PAD; if(vy+PAD>y1)y1=vy+PAD; }
+  ps.forEach(function(p){grow(p.x,p.y);});
+  if(ball)grow(ball.x,ball.y);
+  var out='<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+x0.toFixed(0)+' '+y0.toFixed(0)+' '+(x1-x0).toFixed(0)+' '+(y1-y0).toFixed(0)+'">'
+    +'<rect x="'+x0.toFixed(0)+'" y="'+y0.toFixed(0)+'" width="'+(x1-x0).toFixed(0)+'" height="'+(y1-y0).toFixed(0)+'" fill="#0f1720"/>'
+    +'<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#167a43"/>'+lines;
+  var cols=(snap.teamColors&&typeof snap.teamColors==='object')?snap.teamColors:{};
+  function dark(hex){var m=/^#?([0-9a-f]{6})$/i.exec(String(hex||''));if(!m)return false;
+    var n=parseInt(m[1],16);return (0.299*(n>>16)+0.587*((n>>8)&255)+0.114*(n&255))<140;}
+  function txt(v){return String(v==null?'':v).replace(/[<>&"']/g,'');}
+  ps.slice(0,60).forEach(function(p){
+    var x=(+p.x||0)*sx, y=(+p.y||0)*sy, team=String(p.team||'').toLowerCase();
+    var fill=cols[team]||cols[p.team]||((team==='red'||team==='home')?'#d81b42':(team==='blue'||team==='away')?'#f4f7fb':'#f2c94c');
+    out+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="14" fill="'+fill+'" stroke="#fff" stroke-width="2"/>';
+    var nm=txt(p.num).trim();
+    if(nm)out+='<text x="'+x.toFixed(1)+'" y="'+(y+4.5).toFixed(1)+'" text-anchor="middle" font-family="sans-serif" font-size="12.5" font-weight="800" fill="'+(dark(fill)?'#fff':'#16213a')+'">'+nm+'</text>';
+    var pn=txt(p.name).trim();
+    if(pn)out+='<text x="'+x.toFixed(1)+'" y="'+(y+31).toFixed(1)+'" text-anchor="middle" font-family="sans-serif" font-size="11.5" font-weight="700" fill="#fff" stroke="rgba(10,16,28,.75)" stroke-width="3" paint-order="stroke">'+pn+'</text>';
+  });
+  if(ball)out+='<circle cx="'+((+ball.x||0)*sx).toFixed(1)+'" cy="'+((+ball.y||0)*sy).toFixed(1)+'" r="7" fill="#fff" stroke="#111" stroke-width="2"/>';
+  return out+'</svg>';
+}
+function contentPreview(it){
+  if(!it||typeof it!=='object')return '<div class="content-preview"><div class="cp-empty">미리보기할 내용이 없습니다.</div></div>';
+  var defs=[
+    ['목적',it.overview||it.func||it.description||it.desc],
+    ['구성',it.setup],
+    ['코칭',it.coaching||it.coachingPoint],
+    ['진행',it.prog||it.progression],
+    ['메모',it.note||it.memo]
+  ],rows=[];
+  defs.forEach(function(x){if(x[1]!=null&&String(x[1]).trim())rows.push('<div class="cp-row"><span class="cp-k">'+esc(x[0])+'</span><span class="cp-v">'+esc(x[1])+'</span></div>');});
+  var chips=[];
+  if(it.minutes)chips.push(it.minutes+'분');
+  if(it.sets)chips.push(it.sets+'세트');
+  if(it.rpe)chips.push('RPE '+it.rpe);
+  if(chips.length)rows.unshift('<div class="cp-row"><span class="cp-k">훈련량</span><span class="cp-v">'+esc(chips.join(' · '))+'</span></div>');
+  return '<div class="content-preview"><div class="cp-title">저장된 훈련 내용</div>'
+    +(rows.length?rows.join(''):'<div class="cp-empty">이 항목에는 그림이나 설명이 저장되어 있지 않습니다.</div>')+'</div>';
+}
+function sceneInfo(it){ var t=0,s=0;
+  if(it&&Array.isArray(it.trainings)){ t=it.trainings.length; it.trainings.forEach(function(tr){if(tr&&(tr.snap||tr.thumb))s++;s+=(tr&&tr.scenes&&tr.scenes.length)||0;}); }
+  else if(it&&Array.isArray(it.frames)) s=it.frames.length;
+  else if(it&&Array.isArray(it.slides)) s=it.slides.length;
+  else if(it){t=1;if(it.snap||it.thumb)s=1;s+=(it.scenes&&it.scenes.length)||0;}
+  return {t:t,s:s};
+}
+function preview(wid,lidEnc){ var lid=decodeURIComponent(lidEnc);
+  var meta=(_libCache||[]).concat(ALL_LIB||[]).filter(function(l){return l.lib_id===lid && l.workspace_id===wid;})[0]||{};
+  openModal('<div class="loading">불러오는 중…</div>');
+  rpc('ps_admin_library_item',{p_wid:wid,p_lib_id:lid}).then(function(raw){
+    var parsed=adminItemPayload(raw),row=parsed.row,item=parsed.body;
+    var th=findThumb(item,0), snap=findSnap(item,0), sc=sceneInfo(item);
+    if(!th&&snap)th=snapPreview(snap);
+    if(!meta.folder&&row.folder)meta.folder=row.folder;
+    if(!meta.type&&row.type)meta.type=row.type;
+    if(!meta.name&&row.name)meta.name=row.name;
+    if(!meta.updated_at&&row.updated_at)meta.updated_at=row.updated_at;
+    var thumbHtml=th?'<div class="thumb"><img alt=""></div>':contentPreview(item);
+    var html='<button class="x" onclick="closeModal()">×</button>'
+      +'<h3>'+esc(meta.name||item.name||'(제목없음)')+'</h3>'
+      +'<div class="muted" style="font-size:12px">'+esc(typeName(meta.type||item.type))+(meta.folder?(' · '+esc(meta.folder)):'')+'</div>'
+      +thumbHtml
+      +'<div class="kv">'
+      +'<span class="k">유형</span><span>'+esc(typeName(meta.type||item.type))+'</span>'
+      +'<span class="k">훈련 수</span><span>'+(sc.t||0)+'</span>'
+      +'<span class="k">장면 수</span><span>'+(sc.s||0)+'</span>'
+      +'<span class="k">폴더</span><span>'+esc(meta.folder||'—')+'</span>'
+      +'<span class="k">수정</span><span>'+fmtDateT(meta.updated_at)+'</span>'
+      +'<span class="k">lib_id</span><span style="font:600 11px ui-monospace,Menlo,monospace">'+esc(lid)+'</span>'
+      +'</div>'
+      +'<details><summary class="muted" style="cursor:pointer;font-size:12px;margin-top:6px">원본 데이터(JSON)</summary>'
+      +'<pre class="json">'+esc(shorten(item))+'</pre></details>';
+    openModal(html);
+    if(th){ var im=document.querySelector('#modalRoot .thumb img'); if(im) im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(th); }
+  }).catch(function(e){ openModal('<button class="x" onclick="closeModal()">×</button><div class="empty">불러오기 실패<br>'+esc(e.message)+'</div>'); });
+}
+function shorten(o){ try{ var s=JSON.stringify(o,function(k,v){ if(typeof v==='string'&&v.length>400)return v.slice(0,120)+'…('+v.length+'자)'; return v; },2); return s.length>6000?s.slice(0,6000)+'\n…':s; }catch(_){ return '(직렬화 불가)'; } }
+function openModal(html){ $('modalRoot').innerHTML='<div class="ov" onclick="if(event.target===this)closeModal()"><div class="modal">'+html+'</div></div>'; }
+function closeModal(){ $('modalRoot').innerHTML=''; }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape')closeModal(); });
+</script>
+</body>
+</html>

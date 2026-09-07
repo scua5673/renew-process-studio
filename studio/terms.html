@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- PROCESS — 공용어 (팀 공용 신호·용어 사전 · 편집형) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script src="storage.js"></script>
+<script src="football-language.js"></script>
+
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<style>
+  b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
+:focus-visible{outline:2px solid #3a6df0 !important;outline-offset:2px;border-radius:6px;}
+  /* UI 규칙: 레포 UI-가이드.md — 색은 의미로만(보라=목표·초록=완료·빨강=경고·파랑=코치), 이모지 금지(라인 SVG), 무게 600/800 */
+  :root{
+    --bg:#ECEDF0; --frame:#FFFFFF; --surface:#FFFFFF; --surface-2:#F1F2F4;
+    --line:#E3E6EA; --line-soft:#ECEDF0;
+    --text:#14161A; --text-2:#646A73; --text-3:#646A73;
+    --accent:#3a6df0; --accent-soft:#edf2fe;
+    --c-att:#3a6df0; --c-att-soft:#edf2fe;
+    --c-def:#C24A46; --c-def-soft:#FBEBEA;
+    --c-tra:#B5762B; --c-tra-soft:#FBF1E0;
+    --c-com:#2E7D63; --c-com-soft:#E8F3EE;
+    --r:12px;
+    --f:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--bg);font-family:var(--f);color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;line-height:1.5}
+  body{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+
+  /* ===== UNIFIED APP HEADER — scout/gamemodel과 동일 패턴 ===== */
+  /* IDP(.top/.top-h/.layers)와 같은 결 — 제목 행 위, 밑줄 탭 아래 2단 */
+  .apphd{flex:0 0 auto;display:flex;flex-direction:column;align-items:stretch;gap:0;
+    padding:0;
+    background:var(--surface);border-bottom:1px solid var(--line);
+    box-shadow:0 1px 2px var(--sh06,rgba(16,24,40,.06));position:sticky;top:0;z-index:40}
+  .apphd-name{display:flex;align-items:center;line-height:1;white-space:nowrap;color:var(--text);
+    font-weight:var(--fw-head);font-size:var(--fs-h2);letter-spacing:-.2px;flex:0 0 auto;height:52px;box-sizing:border-box;padding:0 20px;border-bottom:1px solid var(--line);margin-bottom:0;}
+  .apphd-name{display:none!important}
+  .apphd-name .sub{font-size:var(--fs-sub);font-weight:var(--fw-body);color:#8A9099;margin-left:9px;letter-spacing:-.2px}
+  .apphd-seg{display:flex;gap:4px;margin-left:0;padding:6px 20px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;flex:0 1 auto;align-self:stretch;align-items:center;scroll-padding-inline:20px}
+  .apphd-seg::-webkit-scrollbar{display:none}
+  .apphd-seg button{min-height:40px;border:0;background:transparent;color:var(--text-2);font-weight:var(--fw-strong);font-size:var(--fs-body);
+    letter-spacing:-.2px;padding:0 14px;cursor:pointer;transition:.15s;position:relative;border-radius:10px;
+    white-space:nowrap;font-family:inherit;flex:0 0 auto}
+  .apphd-seg button.on{color:var(--accent,#3a6df0);font-weight:var(--fw-head);background:rgba(58,109,240,.09)}
+  .apphd-seg button.on::after{display:none}
+  .apphd-seg button:not(.on):hover{color:var(--text);background:var(--surface-2)}
+  .apphd-more{position:relative;display:flex;align-self:stretch}
+  .apphd-more>#teamMoreBtn{min-width:64px}
+  .apphd-more-menu{display:none;position:fixed;z-index:180;width:172px;padding:7px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 42px var(--sh18,rgba(16,24,40,.18))}
+  .apphd-more.open .apphd-more-menu{display:grid}
+  .apphd-more-menu button{width:100%;height:40px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;padding:0 12px!important;border-radius:10px!important}
+  .apphd-more-menu button::before{content:"";width:16px;flex:0 0 16px;font-size:var(--fs-sub)}
+  .apphd-more-menu button.on{background:rgba(58,109,240,.1)!important;color:var(--accent,#3a6df0)!important}
+  .apphd-more-menu button.on::before{content:"✓"}
+  @media(max-width:520px){.apphd-name .sub{display:none}.apphd-seg{padding:6px 10px;gap:3px;scroll-padding-inline:10px;flex:1 1 100%}.apphd-seg>button,.apphd-more{flex:0 0 auto}.apphd-seg button{min-height:32px;padding:0 12px;text-align:center;font-size:var(--fs-sub)}.apphd-more>#teamMoreBtn{min-width:60px;width:auto}}
+
+  /* ---------- sub top (검색 + 계층) ---------- */
+  .top{flex:0 0 auto;background:var(--frame);border-bottom:1px solid var(--line);padding:12px 20px 0}
+  .search{position:relative;margin-bottom:11px}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-3);pointer-events:none}
+  .search input{width:100%;height:40px;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;
+    padding:0 34px;font-family:var(--f);font-size:var(--fs-title);color:var(--text);outline:none}
+  .search input:focus{border-color:var(--accent);background:var(--surface)}
+  .search .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:0;
+    background:var(--line);color:var(--text-2);border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:var(--fs-body)}
+  .search .clr.on{display:flex}
+  .layers{display:flex;gap:4px}
+  .tm-back{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 10px 0 6px;margin:0 0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface,#fff);color:var(--text-2,#4b5563);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  .tm-back:hover{background:var(--surface-2,#f4f5f7);color:var(--text)}
+  .layers button{flex:1;border:0;background:transparent;color:var(--text-3);font-family:var(--f);
+    font-weight:var(--fw-body);font-size:var(--fs-body);padding:9px 4px 11px;cursor:pointer;position:relative;letter-spacing:-.2px}
+  .layers button b{display:block;font-size:var(--fs-body);font-weight:var(--fw-head)}
+  .layers button span{display:block;font-size:var(--fs-micro);font-weight:var(--fw-body);color:var(--text-3);margin-top:1px}
+  .layers button.on{color:var(--text)}
+  .layers button.on::after{content:"";position:absolute;left:14%;right:14%;bottom:0;height:2.5px;border-radius:2px;background:var(--accent)}
+  /* 2.592 — 탭 밑줄은 층마다 색을 달리하지 않는다(초록은 «가능» 의 색). 전부 accent(위 규칙) */
+  
+  
+
+  /* ---------- body ---------- */
+  .stage{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:14px 16px 72px}
+  .stage::-webkit-scrollbar{width:0}
+
+  .note{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--accent);
+    border-radius:10px;padding:11px 13px;font-size:var(--fs-sub);line-height:1.65;color:var(--text-2);margin-bottom:12px}
+  .note b{color:var(--text);font-weight:var(--fw-body)}
+  .ro{background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--text-3);
+    border-radius:10px;padding:10px 13px;font-size:var(--fs-sub);line-height:1.6;color:var(--text-2);margin-bottom:12px}
+  .ro b{color:var(--text);font-weight:var(--fw-body)}
+
+  .toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .btn{border:1px solid var(--line);background:var(--surface);color:var(--text);font-family:var(--f);
+    font-weight:var(--fw-body);font-size:var(--fs-body);padding:9px 14px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.ghost{background:transparent;color:var(--text-2)}
+  .btn.warn{background:transparent;color:var(--c-def);border-color:var(--line)}
+  .toolbar .spacer{flex:1}
+
+  .gfilter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .gfilter button{border:1px solid var(--line);background:var(--surface);color:var(--text-2);font-family:var(--f);
+    font-weight:var(--fw-body);font-size:var(--fs-sub);padding:6px 12px;border-radius:20px;cursor:pointer}
+  .gfilter button .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:1px}
+  .gfilter button.on{color:#fff;border-color:transparent;background:var(--text)}
+  .gfilter button.on.att{background:var(--c-att)} .gfilter button.on.def{background:var(--c-def)}
+  .gfilter button.on.tra{background:var(--c-tra)} .gfilter button.on.com{background:var(--c-com)}
+
+  .grp{display:flex;align-items:center;gap:8px;margin:20px 2px 10px;font-size:var(--fs-sub);font-weight:var(--fw-head);color:var(--text-2);letter-spacing:.02em}
+  .grp:first-of-type{margin-top:2px}
+  .grp .bar{width:3px;height:14px;border-radius:2px;background:var(--text-3)}
+  .grp .cnt{font-weight:var(--fw-body);color:var(--text-3);font-size:var(--fs-caption)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:9px}
+  .card{position:relative;background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;padding:12px 34px 12px 13px;
+    border-left:3px solid var(--text-3);cursor:pointer;transition:transform .08s,box-shadow .12s}
+  .card:hover{box-shadow:0 3px 12px var(--sh08,rgba(16,24,40,.08))}
+  .card:active{transform:scale(.985)}
+  .card .hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+  .card .en{font-size:var(--fs-h2);font-weight:var(--fw-head);letter-spacing:-.3px;color:var(--text)}
+  .card .ko{font-size:var(--fs-sub);font-weight:var(--fw-body);color:var(--text-2)}
+  .card .desc{font-size:var(--fs-sub);line-height:1.6;color:var(--text-2);margin-top:2px}
+  .card.q .en{font-size:var(--fs-title);color:var(--text-2);order:2}
+  .card.q .ko{font-size:var(--fs-input);font-weight:var(--fw-head);color:var(--text);order:1}
+  .card .pen{position:absolute;top:9px;right:9px;width:20px;height:20px;color:var(--text-3);opacity:.5}
+  .card:hover .pen{opacity:.9;color:var(--accent)}
+  .card.att{border-left-color:var(--c-att)} .card.def{border-left-color:var(--c-def)}
+  .card.tra{border-left-color:var(--c-tra)} .card.com{border-left-color:var(--c-com)}
+
+  /* 빈 상태 */
+  .empty{text-align:center;padding:40px 20px}
+  .empty .ico{font-size:var(--fs-num-lg);margin-bottom:10px}
+  .empty .h{font-size:var(--fs-input);font-weight:var(--fw-head);color:var(--text);margin-bottom:5px}
+  .empty .s{font-size:var(--fs-body);color:var(--text-3);line-height:1.7;margin-bottom:18px}
+  .empty .btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+  .principles{margin-top:26px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px}
+  .principles h3{font-size:var(--fs-sub);font-weight:var(--fw-head);letter-spacing:.06em;color:var(--text-3);text-transform:uppercase;margin-bottom:9px}
+  .principles ol{margin:0;padding-left:18px}
+  .principles li{font-size:var(--fs-sub);line-height:1.75;color:var(--text-2)}
+  .principles li b{color:var(--text);font-weight:var(--fw-body)}
+
+  mark{background:var(--accent-soft);color:inherit;border-radius:4px;padding:0 1px;font-weight:var(--fw-head)}
+
+  /* ===== 편집 모달 ===== */
+  .mask{position:fixed;inset:0;background:rgba(16,20,28,.45);backdrop-filter:blur(2px);z-index:100;
+    display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;pointer-events:none;transition:opacity .16s}
+  .mask.on{opacity:1;pointer-events:auto}
+  .modal{width:100%;max-width:440px;max-height:88dvh;overflow-y:auto;background:var(--frame);border:1px solid var(--line);
+    border-radius:16px;box-shadow:0 24px 70px var(--sh4,rgba(16,24,40,.4));padding:18px 18px 16px;transform:translateY(8px);transition:transform .16s}
+  .mask.on .modal{transform:none}
+  .modal h2{font-size:var(--fs-input);font-weight:var(--fw-head);margin-bottom:14px}
+  .fld{margin-bottom:12px}
+  .fld label{display:block;font-size:var(--fs-caption);font-weight:var(--fw-head);letter-spacing:.02em;color:var(--text-3);text-transform:uppercase;margin-bottom:6px}
+  .fld input,.fld textarea{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;
+    padding:9px 11px;font-family:var(--f);font-size:var(--fs-title);color:var(--text);outline:none;resize:none}
+  .fld input:focus,.fld textarea:focus{border-color:var(--accent);background:var(--surface)}
+  .fld textarea{min-height:62px;line-height:1.55}
+  .seg2{display:flex;gap:5px}
+  .seg2 button{flex:1;border:1px solid var(--line);background:var(--surface-2);color:var(--text-2);font-family:var(--f);
+    font-weight:var(--fw-body);font-size:var(--fs-sub);padding:8px 4px;border-radius:10px;cursor:pointer}
+  .seg2 button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .gchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+  .gchips button{border:1px solid var(--line);background:var(--surface);color:var(--text-2);font-family:var(--f);
+    font-weight:var(--fw-body);font-size:var(--fs-caption);padding:5px 10px;border-radius:10px;cursor:pointer}
+  .gchips button.on{background:var(--text);border-color:var(--text);color:#fff}
+  .mrow{display:flex;gap:8px;margin-top:16px;align-items:center}
+  .mrow .del{margin-right:auto;border:0;background:transparent;color:var(--c-def);font-family:var(--f);font-weight:var(--fw-body);font-size:var(--fs-body);cursor:pointer;padding:8px 4px}
+  .mrow .del.hide{display:none}
+  /* 프리셋 선택 카드 */
+  .preset{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface-2);
+    border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-family:var(--f);transition:.12s}
+  .preset:hover{border-color:var(--accent);background:var(--surface)}
+  .preset:active{transform:scale(.99)}
+  .preset .pn{display:block;font-size:var(--fs-title);font-weight:var(--fw-head);color:var(--text)}
+  .preset .pn b{color:var(--accent);font-weight:var(--fw-head);margin-left:4px}
+  .preset .pt{display:block;font-size:var(--fs-sub);color:var(--text-3);margin-top:3px;line-height:1.5}
+
+  /* ---------- dark ---------- */
+  body.fmdark{--bg:#121417;--frame:#1B1E23;--surface:#1B1E23;--surface-2:#23272D;--line:#2E333A;--line-soft:#23272D;
+    --text:#F2F3F5;--text-2:#A9AFB8;--text-3:#7C838D;--accent:#6F94F5;--accent-soft:rgba(111,148,245,.16);
+    --c-att-soft:rgba(111,148,245,.14);--c-def-soft:rgba(224,110,105,.14);--c-tra-soft:rgba(224,180,90,.14);--c-com-soft:rgba(90,200,160,.14);
+    background:#121417;color:#F2F3F5}
+  body.fmdark .apphd-name{border-bottom-color:#2E333A!important}
+body.fmdark .apphd{background:#1B1E23;border-color:#2E333A}
+  body.fmdark .apphd-seg{background:transparent;border-color:transparent}
+  body.fmdark .apphd-seg button{color:#A9AFB8}
+  body.fmdark .apphd-seg button.on{background:transparent;color:#F2F3F5;box-shadow:none}
+</style>
+<link rel="stylesheet" href="mobile-polish.css">
+<link rel="stylesheet" href="premium-ui.css">
+<script>document.documentElement.classList.add('ps-page-terms')</script>
+<link rel="stylesheet" href="design-v2.css">
+<style id="ps-dv2-align">/* 재설계 정합: 공통 의미 토큰 alias — 이 블록만 지우면 원복 */
+:root{--blue:var(--ps-color-action,#3a6df0);--blue-soft:var(--ps-color-action-soft,#edf2fe);--accent-blue:var(--ps-color-action,#3a6df0);}
+@media (min-width:768px){ .btn.primary{box-shadow:var(--dv2-sh-btn-accent);} }
+</style>
+</head>
+<body>
+<script>
+/* ==== PWA 안전 다이얼로그 (confirm 대체) ==== */
+(function(){
+  if(window.psConfirm) return;
+  function build(msg,onOk,onCancel){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(16,20,28,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px';
+    var bx=document.createElement('div');
+    bx.style.cssText='width:100%;max-width:340px;background:var(--frame,#fff);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);padding:18px 18px 14px;font-family:var(--f)';
+    bx.innerHTML='<div style="font-size:14px;line-height:1.6;color:var(--text,#14161A);white-space:pre-wrap;margin-bottom:16px">'+msg+'</div>';
+    var row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;justify-content:flex-end';
+    var c=document.createElement('button'); c.textContent='취소'; c.style.cssText='border:1px solid var(--line,#E3E6EA);background:var(--surface-2,#F1F2F4);color:var(--text-2,#646A73);font-family:inherit;font-weight:600;font-size:13px;padding:9px 15px;border-radius:10px;cursor:pointer';
+    var o=document.createElement('button'); o.textContent='확인'; o.style.cssText='border:0;background:#C24A46;color:#fff;font-family:inherit;font-weight:800;font-size:13px;padding:9px 15px;border-radius:10px;cursor:pointer';
+    c.onclick=function(){ov.remove();onCancel&&onCancel();}; o.onclick=function(){ov.remove();onOk&&onOk();};
+    row.appendChild(c);row.appendChild(o);bx.appendChild(row);ov.appendChild(bx);document.body.appendChild(ov);
+  }
+  window.psConfirm=function(msg,onOk,onCancel){ build(String(msg),onOk,onCancel); };
+})();
+</script>
+
+  <div class="apphd">
+    <div class="apphd-name">팀<span class="sub">선수단 · 일정 · 팀 기준</span></div>
+    <div class="apphd-seg" id="teamNav">
+      <button data-v="home">오늘</button>
+      <button data-v="match">경기</button>
+      <button data-v="schedule">훈련</button>
+      <button data-v="team">선수</button>
+      <div class="apphd-more" id="teamMore">
+          <button type="button" id="teamMoreBtn" class="on" aria-expanded="false">팀 설정</button>
+          <div class="apphd-more-menu">
+            <button data-v="growth">선수 성장</button>
+            <button data-v="report">스카우트</button>
+            <button data-v="positions">팀 기준</button>
+            <button data-v="players">선수 상세</button>
+            <button data-v="attrs">평가 항목</button>
+          <button data-v="imgnote">이미지노트</button>
+          <button data-v="gamemodel">게임모델</button>
+          <button data-v="terms" class="on">공용어</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="top">
+    <!-- 1.915 — 게임모델·팀 홈 등에서 들어왔을 때 되돌아가는 문(사용자). 셸이 어디서 왔는지 기억해 그 화면으로 보낸다 -->
+    <button type="button" class="tm-back" id="tmBack" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M15 18l-6-6 6-6"/></svg><span id="tmBackLbl">뒤로</span></button>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" type="text" placeholder="한글·영어·행동 기준으로 검색" autocomplete="off" spellcheck="false">
+      <button class="clr" id="qClr" aria-label="지우기">✕</button>
+    </div>
+    <div class="layers" id="layers">
+      <button data-l="signal" class="on"><b>신호어</b><span>경기 중 외침</span></button>
+      <button data-l="action"><b>행동 용어</b><span>훈련 동작</span></button>
+      <button data-l="concept"><b>구조 개념</b><span>분석·토의</span></button>
+    </div>
+  </div>
+  <div class="stage" id="stage"></div>
+
+  <!-- 편집 모달 -->
+  <div class="mask" id="mask">
+    <div class="modal" id="modal">
+      <h2 id="mTitle">용어 추가</h2>
+      <div class="fld"><label>계층</label>
+        <div class="seg2" id="mLayer">
+          <button data-l="signal">신호어</button>
+          <button data-l="action">행동 용어</button>
+          <button data-l="concept">구조 개념</button>
+        </div>
+      </div>
+      <div class="fld"><label id="mGrpLabel">분류 (국면)</label>
+        <input id="mGrp" type="text" placeholder="예: 공격" autocomplete="off">
+        <div class="gchips" id="mGrpChips"></div>
+      </div>
+      <div class="fld"><label>한글</label><input id="mKo" type="text" placeholder="예: 중앙" autocomplete="off"></div>
+      <div class="fld"><label>영어 (외침)</label><input id="mEn" type="text" placeholder="예: Center" autocomplete="off"></div>
+      <div class="fld"><label id="mDescLabel">행동 기준</label><textarea id="mDesc" placeholder="이 말을 들으면 무엇을 하는가"></textarea></div>
+      <div class="mrow">
+        <button class="del hide" id="mDel">삭제</button>
+        <button class="btn ghost" id="mCancel">취소</button>
+        <button class="btn primary" id="mSave">저장</button>
+      </div>
+    </div>
+  </div>
+
+<script src="perms.js"></script>
+<script>
+(function(){
+  var LS='cs_terms_v1';
+  /* 1.915 — 뒤로: 셸에 맡긴다(어디서 왔는지는 셸이 안다). 셸이 없으면(직접 열기) history.back */
+  try{ var _bk=document.getElementById('tmBack'); if(_bk)_bk.addEventListener('click',function(){ var sent=false; try{ if(window.parent&&window.parent!==window){ parent.postMessage({source:'terms',type:'back'},'*'); sent=true; } }catch(_){} if(!sent){ try{history.back();}catch(_){} } });
+    window.addEventListener('message',function(e){ var d=e.data||{}; if(d&&d.source==='app'&&d.type==='termsBackLabel'){ var l=document.getElementById('tmBackLbl'); if(l)l.textContent=d.label||'뒤로'; } }); }catch(_){}
+  var store=load();
+  /* 2.577 — 플레이북이 신호어를 국면에 붙이며 같은 키(cs_terms_v1)에 쓴다. 이 화면은 부팅 때 한 번 읽고 통째로 저장하므로,
+     안 받아 오면 다음 저장이 플레이북의 새 용어·연결(it.ph)을 지운다. 다른 문서가 쓴 것만 storage 로 온다 — 그때 다시 읽는다. */
+  try{ window.addEventListener('storage',function(e){ if(!e||e.key!==LS)return; try{ store=load(); render(); }catch(_){} }); }catch(_){}
+  // 편집 권한 — 공용어(terms) 구역. 권한 없으면 보기 전용
+  function canEdit(){ try{ return !window.PSPerms || window.PSPerms.canEdit('terms'); }catch(_){ return true; } }
+
+  function load(){ try{var r=localStorage.getItem(LS); if(!r)return {v:1,items:[]}; var o=JSON.parse(r); return (o&&Array.isArray(o.items))?o:{v:1,items:[]};}catch(_){return {v:1,items:[]};} }
+  function save(){ try{localStorage.setItem(LS,JSON.stringify(store));}catch(_){} }
+  function uid(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+  // 계층별 알려진 그룹 순서 + 색
+  var GORDER={signal:['공격','수비','전환','상황'],action:['받기','받기·받을 때','패스·연결','운반·침투','수비 액션','박스 안'],concept:['공격 원칙','수비 원칙','4국면','영역','수비 구조','수비 블록']};
+  var GCLS={'공격':'att','수비':'def','전환':'tra','상황':'com','공격 원칙':'att','수비 원칙':'def'};
+  var LAYER_NOTE={
+    signal:'경기 중 <b>1~2초 안에 외치고 즉시 움직이게</b> 하는 말. 설명이 아니라 행동 지시어입니다. <b>영어를 실제 외침</b>으로, 한글은 뜻풀이로.',
+    action:'훈련과 경기에서 <b>인식·실행</b>하며, 영상 분석에서도 같은 이름으로 부르는 동작 단위.',
+    concept:'UEFA·FIFA 지도자 교육에서 공통으로 쓰는 <b>경기의 원칙·4국면·구역</b> — 코치 토의와 영상 분석의 기준 언어.'
+  };
+  var LAYER_LB={signal:'신호어',action:'행동 용어',concept:'구조 개념'};
+
+  // ===== 프리셋 세트 ① 국제 표준 (UEFA/FIFA 지도자 교육) =====
+  function UEFA_ROWS(){return [
+    // ── 신호어 · 공격 (경기 중 외침) ──
+    ['signal','공격','맨온','Man On','등지고 받는 동료에게 상대가 붙었다 — 원터치·보호'],
+    ['signal','공격','타임','Time','여유 있다 — 돌아서 전진 가능'],
+    ['signal','공격','턴','Turn','뒤 공간 열렸다 — 돌아서 전진'],
+    ['signal','공격','스위치','Switch','반대편이 비었다 — 방향 전환'],
+    ['signal','공격','크로스','Cross','측면 돌파 순간 박스로 올려라'],
+    ['signal','공격','와이드','Wide','폭을 넓혀 상대 수비를 벌려라'],
+    // ── 신호어 · 수비 ──
+    ['signal','수비','프레스','Press','볼 가진 상대에게 압박 나가라'],
+    ['signal','수비','딜레이','Delay','달려들지 말고 지연시켜 시간 벌어라'],
+    ['signal','수비','드롭','Drop','뒤로 내려와 라인 정리·공간 차단'],
+    ['signal','수비','스퀴즈','Squeeze','라인 끌어올려 간격을 좁혀라'],
+    ['signal','수비','커버','Cover','1차 압박 뒤를 받쳐라'],
+    ['signal','수비','어웨이','Away','위험지역이다 — 안전하게 걷어내라'],
+    // ── 신호어 · 전환 ──
+    ['signal','전환','카운터','Counter','탈취 즉시 전진 — 빠르게 역습'],
+    ['signal','전환','리커버','Recover','볼 잃었다 — 수비 위치로 복귀'],
+    ['signal','전환','밸런스','Balance','뒤·반대편 균형을 맞춰라'],
+    // ── 신호어 · 상황 알림 ──
+    ['signal','상황','키퍼','Keeper','GK가 처리한다 — 비켜라'],
+    ['signal','상황','러너','Runner','뒤·측면으로 침투하는 상대 경고'],
+    ['signal','상황','리브','Leave','건드리지 말고 흘려라 — 동료가 받는다'],
+    // ── 행동 용어 · 받기 ──
+    ['action','받기','스캐닝','Scanning','받기 전 고개 들어 주변 정보 인식'],
+    ['action','받기','퍼스트 터치','First Touch','다음 플레이 방향으로 첫 터치'],
+    ['action','받기','하프턴','Half-Turn','몸을 반쯤 열어 전진 방향을 보며 받기'],
+    // ── 행동 용어 · 패스·연결 ──
+    ['action','패스·연결','원투','One-Two','벽패스(give-and-go)로 상대 뒤 전진'],
+    ['action','패스·연결','써드맨 런','Third-Man Run','두 번째 패스를 받는 제3의 선수 침투'],
+    ['action','패스·연결','라인 브레이킹 패스','Line-Breaking Pass','상대 라인 사이를 관통하는 전진 패스'],
+    ['action','패스·연결','스루패스','Through Ball','최종 수비 뒷공간으로 찔러주는 패스'],
+    ['action','패스·연결','스위치 오브 플레이','Switch of Play','반대편으로 전환해 압박에서 벗어나기'],
+    ['action','패스·연결','컷백','Cut-Back','엔드라인 부근에서 뒤쪽으로 낮게 내주는 패스'],
+    // ── 행동 용어 · 운반·침투 ──
+    ['action','운반·침투','드라이빙 런','Driving Run','공을 몰고 전진하며 상대를 끌어내기'],
+    ['action','운반·침투','컷인','Cut Inside','측면에서 안쪽으로 파고들기'],
+    ['action','운반·침투','오버랩','Overlap','측면 바깥으로 겹쳐 올라 2v1 형성'],
+    ['action','운반·침투','언더랩','Underlap','하프스페이스 안쪽으로 겹쳐 올라가기'],
+    ['action','운반·침투','인비하인드 런','Run In Behind','최종 수비 뒤로 침투하는 움직임'],
+    // ── 행동 용어 · 수비 액션 ──
+    ['action','수비 액션','조키','Jockey','달려들지 않고 방향을 몰며 지연'],
+    ['action','수비 액션','프레싱','Pressing','볼·패스 길을 압박해 실수 유도'],
+    ['action','수비 액션','인터셉트','Interception','상대 패스를 미리 읽어 가로채기'],
+    ['action','수비 액션','커버 섀도','Cover Shadow','몸으로 패스 길을 가린 채 압박'],
+    ['action','수비 액션','리커버리 런','Recovery Run','수비 조직으로 되돌아가는 전력 주행'],
+    // ── 구조 개념 · 공격 원칙 (Principles of Play) ──
+    ['concept','공격 원칙','침투','Penetration','상대 라인 뒤·사이로 전진해 위협'],
+    ['concept','공격 원칙','지원','Support','볼 소유자에게 앞·뒤·옆 지원 각 제공'],
+    ['concept','공격 원칙','기동성','Mobility','위치 교환·움직임으로 상대 조직 교란'],
+    ['concept','공격 원칙','폭','Width','좌우로 넓혀 상대 수비를 벌리기'],
+    ['concept','공격 원칙','창의성','Creativity','예측 불가한 개인 판단으로 균형 깨기'],
+    // ── 구조 개념 · 수비 원칙 ──
+    ['concept','수비 원칙','지연','Delay','압박으로 공격 속도를 늦춰 시간 확보'],
+    ['concept','수비 원칙','뒤받침','Depth','1차 수비 뒤를 커버해 돌파 대비 (cover)'],
+    ['concept','수비 원칙','균형','Balance','볼 반대편·후방 공간의 균형 유지'],
+    ['concept','수비 원칙','밀집','Compactness','팀 간격을 좁혀 중앙·위험지역 보호'],
+    ['concept','수비 원칙','절제','Control','무리한 태클을 자제하고 인내 (restraint)'],
+    // ── 구조 개념 · 4국면 (Four Moments) ──
+    ['concept','4국면','볼 소유','In Possession','우리가 공을 가진 공격 조직 국면'],
+    ['concept','4국면','볼 비소유','Out of Possession','상대가 공을 가진 수비 조직 국면'],
+    ['concept','4국면','공격 전환','Attacking Transition','볼 탈취 직후 (수비→공격)'],
+    ['concept','4국면','수비 전환','Defensive Transition','볼 상실 직후 (공격→수비)'],
+    // ── 구조 개념 · 영역 (Zones) ──
+    ['concept','영역','수비 지역','Defensive Third','우리 진영 쪽 1/3'],
+    ['concept','영역','중원','Middle Third','경기장 가운데 1/3'],
+    ['concept','영역','파이널 서드','Final Third','상대 진영 쪽 1/3 (공격 지역)'],
+    ['concept','영역','하프스페이스','Half-Space','중앙과 측면 사이의 채널'],
+    ['concept','영역','존 14','Zone 14','페널티 아크 앞 핵심 창조 구역'],
+    // ── 구조 개념 · 수비 블록 (Blocks) ──
+    ['concept','수비 블록','하이 블록','High Block','상대 진영 높은 위치의 압박 구조'],
+    ['concept','수비 블록','미드 블록','Mid Block','중원 중심의 압박 구조'],
+    ['concept','수비 블록','로우 블록','Low Block','자기 진영 낮은 수비 구조']
+  ];}
+
+  // ===== 프리셋 세트 ② 포지션 플레이 (크루이프 · 원안 마스터) =====
+  function CRUYFF_ROWS(){return [
+    ['signal','공격','중앙','Center','볼을 잡으면 먼저 6번·하프스페이스 확인'],
+    ['signal','공격','리셋','Reset','전진 각 없으면 GK 또는 CB로 되돌려 구조 유지'],
+    ['signal','공격','스위치','Switch','상대가 한쪽으로 몰리면 반대 전환'],
+    ['signal','공격','써드맨','Third Man','직선 패스 막히면 벽 → 3번째 전진'],
+    ['signal','공격','침투','Penetrate','패스가 나가기 전 라인 사이 움직임 시작'],
+    ['signal','공격','박스','Box','크로스 순간 니어·PK·파 최소 3명 진입'],
+    ['signal','공격','열어','Open','받기 전 몸 방향 열고 전진 옵션 확보'],
+    ['signal','공격','템포','Tempo','원터치·투터치로 속도 올려 상대 정렬 방해'],
+    ['signal','공격','고정','Fix','공 몰고 상대에게 다가가 끌어낸다 → 상대가 비운 자리의 동료에게 패스'],
+    ['signal','공격','오버랩','Overlap','측면 겹침(오버·언더랩)으로 2v1 만들기'],
+    ['signal','공격','벌려','Wide','폭을 넓혀 상대 수비를 늘린다'],
+    ['signal','수비','채널','Channel','상대 중앙 전진 패스 차단, 몸 방향 안쪽 차단, 터치라인으로 유도'],
+    ['signal','수비','트리거','Trigger','뒤로 패스·등짐·터치 길어짐 시 즉시 압박 시작'],
+    ['signal','수비','업','Up','압박 시작 시 수비라인 3~5m 전진'],
+    ['signal','수비','블록','Block','압박 실패 시 4-4-2 간격 10~12m 유지'],
+    ['signal','수비','레스트','Rest Defence','공격 중 최소 3명 후방 유지, 중앙 보호'],
+    ['signal','수비','바디 포지션','Body position','크로스 상황, 볼과 상대 동시 인식 자세'],
+    ['signal','수비','커버','Cover','압박 나간 선수 뒤를 받쳐 2차 저지'],
+    ['signal','전환','세컨','Second','공중볼·리바운드 등 50:50 볼에 즉시 반응'],
+    ['signal','전환','카운터','Counter','우리가 탈취한 순간, 전진 패스 우선'],
+    ['signal','전환','포앤포','4&4','4패스 안 탈취 또는 4패스 안 탈출'],
+    ['signal','전환','정렬','Reset Shape','전환 직후 공 쫓지 말고 먼저 구조 정렬'],
+    ['signal','전환','덮쳐','Counter Press','볼 잃은 즉시 가장 가까운 선수가 가속해 회수, 나머지는 후퇴·위치 유지'],
+    ['signal','전환','끊어','Tactical Foul','위험한 역습은 전술 파울로 끊는다 (위험지역·경고 주의)'],
+    ['signal','상황','맨','Man on','받는 선수에게 상대 붙음 — 원터치·보호'],
+    ['signal','상황','시간','Time','여유 있다, 돌아서 전진 가능'],
+    ['signal','상황','혼자','Free','압박 없다, 몰고 전진'],
+    ['action','받기·받을 때','스캐닝','Scanning','받기 전 주변 정보 인식'],
+    ['action','받기·받을 때','액션','Action','받기 전 반대 움직임으로 수비 속이기'],
+    ['action','받기·받을 때','컨트롤','Control','소유 안정 후 전진'],
+    ['action','받기·받을 때','턴','Turn','뒤에 수비수가 없을 때 돌아서서 전진 방향으로 받는 동작'],
+    ['action','패스·연결','원투','One Two','벽패스로 전진'],
+    ['action','패스·연결','바운스','Bounce','짧은 패스로 상대 끌어내기'],
+    ['action','패스·연결','스킵','Skip','한 칸 건너 빠른 전진'],
+    ['action','패스·연결','드래그','Drag','내려와 받으며 상대 끌어내 공간 창출'],
+    ['action','운반·침투','스페이스 런','Space Run','뒷공간으로 침투하는 움직임'],
+    ['action','운반·침투','스페이스 드리블','Space Dribble','압박 없는 방향으로 운반'],
+    ['action','운반·침투','컷인','Cut In','측면에서 안쪽으로 진입'],
+    ['action','운반·침투','하프','Half','하프스페이스 통한 전진'],
+    ['action','박스 안','포인트','Point','GK-수비 사이 니어 침투'],
+    ['action','박스 안','오버','Over','GK 위 파포스트로 향하는 크로스'],
+    ['concept','영역','디펜시브 서드','Defensive Third','수비 지역'],
+    ['concept','영역','미드 서드','Mid Third','중원'],
+    ['concept','영역','파이널 서드','Final Third','공격 지역'],
+    ['concept','영역','하프 스페이스','Half Space','중앙-측면 사이 채널'],
+    ['concept','영역','PTA','Prime Target Area','박스 안 주요 득점 구역'],
+    ['concept','영역','스페이스','Space','공간 (인식·창출 대상)'],
+    ['concept','수비 구조','하이 블록','High Block','전방 압박 구조'],
+    ['concept','수비 구조','미드 블록','Mid Block','중원 압박 구조'],
+    ['concept','수비 구조','로우 블록','Low Block','낮은 수비 구조']
+  ];}
+
+  // ===== 프리셋 세트 ③ 핵심 스타터 (처음 시작용 최소 세트) =====
+  function STARTER_ROWS(){return [
+    ['signal','공격','맨온','Man On','등지고 받는 동료에게 상대가 붙었다 — 원터치·보호'],
+    ['signal','공격','타임','Time','여유 있다 — 돌아서 전진 가능'],
+    ['signal','공격','턴','Turn','뒤 공간 열렸다 — 돌아서 전진'],
+    ['signal','공격','스위치','Switch','반대편이 비었다 — 방향 전환'],
+    ['signal','수비','프레스','Press','볼 가진 상대에게 압박 나가라'],
+    ['signal','수비','딜레이','Delay','달려들지 말고 지연시켜 시간 벌어라'],
+    ['signal','수비','커버','Cover','1차 압박 뒤를 받쳐라'],
+    ['signal','전환','카운터','Counter','탈취 즉시 전진 — 빠르게 역습'],
+    ['signal','전환','리커버','Recover','볼 잃었다 — 수비 위치로 복귀'],
+    ['concept','공격 원칙','침투','Penetration','상대 라인 뒤·사이로 전진해 위협'],
+    ['concept','공격 원칙','폭','Width','좌우로 넓혀 상대 수비를 벌리기'],
+    ['concept','수비 원칙','지연','Delay','압박으로 공격 속도를 늦춰 시간 확보'],
+    ['concept','수비 원칙','밀집','Compactness','팀 간격을 좁혀 중앙·위험지역 보호'],
+    ['concept','4국면','볼 소유','In Possession','우리가 공을 가진 공격 조직 국면'],
+    ['concept','4국면','볼 비소유','Out of Possession','상대가 공을 가진 수비 조직 국면']
+  ];}
+
+  // ===== 프리셋 세트 ④ PROCESS + 국제표준 (통합 · 팀 우선 + 표준 보강) =====
+  // 팀 용어 50개는 그대로, 겹치는 표준은 제외, 팀에 없는 개념(원칙·4국면·수비 액션 등)만 보강
+  function INTEGRATED_ROWS(){return [
+    // ── 신호어 · 공격 (팀 11 + 크로스) ──
+    ['signal','공격','중앙','Center','볼을 잡으면 먼저 6번·하프스페이스 확인'],
+    ['signal','공격','리셋','Reset','전진 각 없으면 GK 또는 CB로 되돌려 구조 유지'],
+    ['signal','공격','스위치','Switch','상대가 한쪽으로 몰리면 반대 전환'],
+    ['signal','공격','써드맨','Third Man','직선 패스 막히면 벽 → 3번째 전진'],
+    ['signal','공격','침투','Penetrate','패스가 나가기 전 라인 사이 움직임 시작'],
+    ['signal','공격','박스','Box','크로스 순간 니어·PK·파 최소 3명 진입'],
+    ['signal','공격','열어','Open','받기 전 몸 방향 열고 전진 옵션 확보'],
+    ['signal','공격','템포','Tempo','원터치·투터치로 속도 올려 상대 정렬 방해'],
+    ['signal','공격','고정','Fix','공 몰고 상대에게 다가가 끌어낸다 → 상대가 비운 자리의 동료에게 패스'],
+    ['signal','공격','오버랩','Overlap','측면 겹침(오버·언더랩)으로 2v1 만들기'],
+    ['signal','공격','벌려','Wide','폭을 넓혀 상대 수비를 늘린다'],
+    ['signal','공격','크로스','Cross','측면 돌파 순간 박스로 올려라 [표준]'],
+    // ── 신호어 · 수비 (팀 7 + 프레스·딜레이·드롭·어웨이) ──
+    ['signal','수비','채널','Channel','상대 중앙 전진 패스 차단, 몸 방향 안쪽 차단, 터치라인으로 유도'],
+    ['signal','수비','트리거','Trigger','뒤로 패스·등짐·터치 길어짐 시 즉시 압박 시작'],
+    ['signal','수비','업','Up','압박 시작 시 수비라인 3~5m 전진'],
+    ['signal','수비','블록','Block','압박 실패 시 4-4-2 간격 10~12m 유지'],
+    ['signal','수비','레스트','Rest Defence','공격 중 최소 3명 후방 유지, 중앙 보호'],
+    ['signal','수비','바디 포지션','Body Position','크로스 상황, 볼과 상대 동시 인식 자세'],
+    ['signal','수비','커버','Cover','압박 나간 선수 뒤를 받쳐 2차 저지'],
+    ['signal','수비','프레스','Press','볼 가진 상대에게 압박 나가라 [표준]'],
+    ['signal','수비','딜레이','Delay','달려들지 말고 지연시켜 시간 벌어라 [표준]'],
+    ['signal','수비','드롭','Drop','뒤로 내려와 라인 정리·공간 차단 [표준]'],
+    ['signal','수비','어웨이','Away','위험지역이다 — 안전하게 걷어내라 [표준]'],
+    // ── 신호어 · 전환 (팀 6 + 리커버) ──
+    ['signal','전환','세컨','Second','공중볼·리바운드 등 50:50 볼에 즉시 반응'],
+    ['signal','전환','카운터','Counter','우리가 탈취한 순간, 전진 패스 우선'],
+    ['signal','전환','포앤포','4&4','4패스 안 탈취 또는 4패스 안 탈출'],
+    ['signal','전환','정렬','Reset Shape','전환 직후 공 쫓지 말고 먼저 구조 정렬'],
+    ['signal','전환','덮쳐','Counter Press','볼 잃은 즉시 가장 가까운 선수가 가속해 회수, 나머지는 후퇴·위치 유지'],
+    ['signal','전환','끊어','Tactical Foul','위험한 역습은 전술 파울로 끊는다 (위험지역·경고 주의)'],
+    ['signal','전환','리커버','Recover','볼 잃었다 — 수비 위치로 복귀 [표준]'],
+    // ── 신호어 · 상황 (팀 3 + 키퍼·러너·리브) ──
+    ['signal','상황','맨','Man on','받는 선수에게 상대 붙음 — 원터치·보호'],
+    ['signal','상황','시간','Time','여유 있다, 돌아서 전진 가능'],
+    ['signal','상황','혼자','Free','압박 없다, 몰고 전진'],
+    ['signal','상황','키퍼','Keeper','GK가 처리한다 — 비켜라 [표준]'],
+    ['signal','상황','러너','Runner','뒤·측면으로 침투하는 상대 경고 [표준]'],
+    ['signal','상황','리브','Leave','건드리지 말고 흘려라 — 동료가 받는다 [표준]'],
+    // ── 행동 용어 · 받기 (팀 4 + 퍼스트 터치·하프턴) ──
+    ['action','받기','스캐닝','Scanning','받기 전 주변 정보 인식'],
+    ['action','받기','액션','Action','받기 전 반대 움직임으로 수비 속이기'],
+    ['action','받기','컨트롤','Control','소유 안정 후 전진'],
+    ['action','받기','턴','Turn','뒤에 수비수가 없을 때 돌아서서 전진 방향으로 받는 동작'],
+    ['action','받기','퍼스트 터치','First Touch','다음 플레이 방향으로 첫 터치 [표준]'],
+    ['action','받기','하프턴','Half-Turn','몸을 반쯤 열어 전진 방향을 보며 받기 [표준]'],
+    // ── 행동 용어 · 패스·연결 (팀 4 + 표준 4) ──
+    ['action','패스·연결','원투','One Two','벽패스로 전진'],
+    ['action','패스·연결','바운스','Bounce','짧은 패스로 상대 끌어내기'],
+    ['action','패스·연결','스킵','Skip','한 칸 건너 빠른 전진'],
+    ['action','패스·연결','드래그','Drag','내려와 받으며 상대 끌어내 공간 창출'],
+    ['action','패스·연결','써드맨 런','Third-Man Run','두 번째 패스를 받는 제3의 선수 침투 [표준]'],
+    ['action','패스·연결','라인 브레이킹 패스','Line-Breaking Pass','상대 라인 사이를 관통하는 전진 패스 [표준]'],
+    ['action','패스·연결','스루패스','Through Ball','최종 수비 뒷공간으로 찔러주는 패스 [표준]'],
+    ['action','패스·연결','컷백','Cut-Back','엔드라인 부근에서 뒤쪽으로 낮게 내주는 패스 [표준]'],
+    // ── 행동 용어 · 운반·침투 (팀 4 + 언더랩) ──
+    ['action','운반·침투','스페이스 런','Space Run','뒷공간으로 침투하는 움직임'],
+    ['action','운반·침투','스페이스 드리블','Space Dribble','압박 없는 방향으로 운반'],
+    ['action','운반·침투','컷인','Cut In','측면에서 안쪽으로 진입'],
+    ['action','운반·침투','하프','Half','하프스페이스 통한 전진'],
+    ['action','운반·침투','언더랩','Underlap','하프스페이스 안쪽으로 겹쳐 올라가기 [표준]'],
+    // ── 행동 용어 · 수비 액션 (표준 5 · 팀에 없던 층) ──
+    ['action','수비 액션','조키','Jockey','달려들지 않고 방향을 몰며 지연 [표준]'],
+    ['action','수비 액션','프레싱','Pressing','볼·패스 길을 압박해 실수 유도 [표준]'],
+    ['action','수비 액션','인터셉트','Interception','상대 패스를 미리 읽어 가로채기 [표준]'],
+    ['action','수비 액션','커버 섀도','Cover Shadow','몸으로 패스 길을 가린 채 압박 [표준]'],
+    ['action','수비 액션','리커버리 런','Recovery Run','수비 조직으로 되돌아가는 전력 주행 [표준]'],
+    // ── 행동 용어 · 박스 안 (팀 2) ──
+    ['action','박스 안','포인트','Point','GK-수비 사이 니어 침투'],
+    ['action','박스 안','오버','Over','GK 위 파포스트로 향하는 크로스'],
+    // ── 구조 개념 · 공격 원칙 (표준 5 · 팀에 없던 층) ──
+    ['concept','공격 원칙','침투','Penetration','상대 라인 뒤·사이로 전진해 위협 [표준]'],
+    ['concept','공격 원칙','지원','Support','볼 소유자에게 앞·뒤·옆 지원 각 제공 [표준]'],
+    ['concept','공격 원칙','기동성','Mobility','위치 교환·움직임으로 상대 조직 교란 [표준]'],
+    ['concept','공격 원칙','폭','Width','좌우로 넓혀 상대 수비를 벌리기 [표준]'],
+    ['concept','공격 원칙','창의성','Creativity','예측 불가한 개인 판단으로 균형 깨기 [표준]'],
+    // ── 구조 개념 · 수비 원칙 (표준 5) ──
+    ['concept','수비 원칙','지연','Delay','압박으로 공격 속도를 늦춰 시간 확보 [표준]'],
+    ['concept','수비 원칙','뒤받침','Depth','1차 수비 뒤를 커버해 돌파 대비 [표준]'],
+    ['concept','수비 원칙','균형','Balance','볼 반대편·후방 공간의 균형 유지 [표준]'],
+    ['concept','수비 원칙','밀집','Compactness','팀 간격을 좁혀 중앙·위험지역 보호 [표준]'],
+    ['concept','수비 원칙','절제','Control','무리한 태클을 자제하고 인내 [표준]'],
+    // ── 구조 개념 · 4국면 (표준 4) ──
+    ['concept','4국면','볼 소유','In Possession','우리가 공을 가진 공격 조직 국면 [표준]'],
+    ['concept','4국면','볼 비소유','Out of Possession','상대가 공을 가진 수비 조직 국면 [표준]'],
+    ['concept','4국면','공격 전환','Attacking Transition','볼 탈취 직후 (수비→공격) [표준]'],
+    ['concept','4국면','수비 전환','Defensive Transition','볼 상실 직후 (공격→수비) [표준]'],
+    // ── 구조 개념 · 영역 (팀 6 + 존 14) ──
+    ['concept','영역','디펜시브 서드','Defensive Third','수비 지역'],
+    ['concept','영역','미드 서드','Mid Third','중원'],
+    ['concept','영역','파이널 서드','Final Third','공격 지역'],
+    ['concept','영역','하프 스페이스','Half Space','중앙-측면 사이 채널'],
+    ['concept','영역','PTA','Prime Target Area','박스 안 주요 득점 구역'],
+    ['concept','영역','스페이스','Space','공간 (인식·창출 대상)'],
+    ['concept','영역','존 14','Zone 14','페널티 아크 앞 핵심 창조 구역 [표준]'],
+    // ── 구조 개념 · 수비 블록 (팀·표준 공통 3) ──
+    ['concept','수비 블록','하이 블록','High Block','전방 압박 구조'],
+    ['concept','수비 블록','미드 블록','Mid Block','중원 압박 구조'],
+    ['concept','수비 블록','로우 블록','Low Block','낮은 수비 구조']
+  ];}
+
+  var PRESETS=[
+    {id:'starter',   name:'핵심 스타터',             tag:'처음 시작용 최소 세트 — 가장 자주 쓰는 말',    rows:STARTER_ROWS},
+    {id:'uefa',      name:'국제 표준 (UEFA·FIFA)',   tag:'지도자 교육 공통 — 경기의 원칙·4국면·구역',   rows:UEFA_ROWS},
+    {id:'integrated',name:'PROCESS + 국제표준 (통합)', tag:'추천 — 팀 용어 유지 + 표준으로 빈 곳 보강',  rows:INTEGRATED_ROWS},
+    {id:'footballa', name:'PROCESS 용어',    tag:'PROCESS 콜사인 원안 그대로',                  rows:CRUYFF_ROWS},
+    /* 1.914 — 글로벌 표준(FIFA Football Language·EFI·UEFA) 전체. football-language.js 한 곳에서 관리 — 게임모델 '팀의 공통 언어' 표준 탭과 같은 사전 */
+    {id:'fifa',      name:'글로벌 표준 (FIFA Football Language)', tag:'경기 상태·소유·비소유·전환·공간·행동·분석 지표 — 전체 사전', rows:function(){ try{ var FL=window.PS_FOOTBALL_LANGUAGE; if(!FL)return []; return FL.list.map(function(t){ return [FL.layerOf(t),FL.cats[t.cat]||'',t.ko,t.en,t.def]; }); }catch(_){ return []; } }}
+  ];
+
+  // 프리셋(또는 임의 rows)을 현재 목록에 병합 — 중복(한글|영어)은 건너뜀
+  function mergeRows(rows){
+    var have={}; store.items.forEach(function(it){have[(it.ko+'|'+it.en).toLowerCase()]=1;});
+    var added=0;
+    rows.forEach(function(r){ var k=(r[2]+'|'+r[3]).toLowerCase(); if(!have[k]){store.items.push({id:uid(),l:r[0],g:r[1],ko:r[2],en:r[3],d:r[4]});have[k]=1;added++;} });
+    save(); render();
+    return added;
+  }
+
+  // 세트 선택 팝업
+  function openPicker(){
+    var ov=document.createElement('div'); ov.className='mask on';
+    var box=document.createElement('div'); box.className='modal';
+    var h='<h2>세트 불러오기</h2><div style="font-size:12px;color:var(--text-3);margin:-6px 0 14px;line-height:1.6">고르면 현재 목록에 추가돼요 (이미 있는 용어는 건너뜀).</div>';
+    PRESETS.forEach(function(p){
+      h+='<button class="preset" data-id="'+p.id+'"><span class="pn">'+esc(p.name)+'<b>'+p.rows().length+'</b></span><span class="pt">'+esc(p.tag)+'</span></button>';
+    });
+    h+='<div class="mrow"><button class="btn ghost" id="pkCancel" style="margin-left:auto">닫기</button></div>';
+    box.innerHTML=h; ov.appendChild(box); document.body.appendChild(ov);
+    ov.addEventListener('click',function(e){
+      if(e.target===ov || e.target.id==='pkCancel'){ ov.remove(); return; }
+      var b=e.target.closest('.preset'); if(!b)return;
+      var p=PRESETS.filter(function(x){return x.id===b.dataset.id;})[0];
+      ov.remove();
+      if(p){ var n=mergeRows(p.rows()); toast(n>0? (p.name+' · '+n+'개 추가') : '이미 모두 있어요'); }
+    });
+  }
+
+  // 가벼운 토스트
+  function toast(msg){
+    var t=document.createElement('div');
+    t.textContent=msg;
+    t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:300;background:var(--text);color:var(--bg);font-family:var(--f);font-weight:600;font-size:13px;padding:10px 16px;border-radius:20px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:opacity .2s';
+    document.body.appendChild(t); requestAnimationFrame(function(){t.style.opacity='1';});
+    setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.remove();},250);},1600);
+  }
+
+  var stage=document.getElementById('stage'),
+      qEl=document.getElementById('q'), qClr=document.getElementById('qClr'),
+      layersEl=document.getElementById('layers');
+  var curLayer='signal', curGroup='all', curQ='';
+
+  function esc(s){return window.PSSafe&&window.PSSafe.html?window.PSSafe.html(s):String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function hi(s){ if(!curQ)return esc(s); try{var re=new RegExp('('+curQ.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');return esc(s).replace(re,'<mark>$1</mark>');}catch(_){return esc(s);} }
+
+  function groupsIn(layer){
+    var set={},arr=[];
+    store.items.forEach(function(it){ if(it.l===layer && !set[it.g]){set[it.g]=1;arr.push(it.g);} });
+    var known=GORDER[layer]||[], ordered=[];
+    known.forEach(function(g){ if(set[g]){ordered.push(g);set[g]=0;} });
+    arr.forEach(function(g){ if(set[g]){ordered.push(g);} });
+    return ordered;
+  }
+
+  var PEN='<svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16 5a1.8 1.8 0 012.6 0l.4.4a1.8 1.8 0 010 2.6L8 19l-4 1z"/></svg>';
+
+  function card(it){
+    var q=it.l!=='signal'?' q':'';
+    var col=GCLS[it.g]?(' '+GCLS[it.g]):'';
+    return '<div class="card'+q+col+'" data-id="'+it.id+'">'
+      +'<div class="hd"><span class="en">'+hi(it.en)+'</span><span class="ko">'+hi(it.ko)+'</span></div>'
+      +(it.d?'<div class="desc">'+hi(it.d)+'</div>':'')
+      +(canEdit()?PEN:'')+'</div>';
+  }
+
+  function chip(g,label,cls,active){
+    var dot=cls?'<span class="dot" style="background:var(--c-'+cls+')"></span>':'';
+    return '<button data-g="'+esc(g)+'" class="'+(active?'on ':'')+(cls||'')+'">'+dot+esc(label)+'</button>';
+  }
+
+  function render(){
+    var q=curQ.toLowerCase(), searching=!!q;
+    var rows=store.items.filter(function(it){
+      if(searching) return (it.ko+' '+it.en+' '+it.d).toLowerCase().indexOf(q)>=0;
+      if(it.l!==curLayer) return false;
+      if(curGroup!=='all' && it.g!==curGroup) return false;
+      return true;
+    });
+
+    var html='';
+    if(searching){
+      html+='<div class="grp" style="margin-top:2px"><span class="bar"></span>검색 결과<span class="cnt">'+rows.length+'개</span></div>';
+      html+= rows.length? '<div class="grid">'+rows.map(card).join('')+'</div>'
+        : '<div class="empty"><div class="s">검색 결과가 없어요.<br>다른 말로 찾아보세요.</div></div>';
+      stage.innerHTML=html; bindCards(); stage.scrollTop=0; return;
+    }
+
+    var layerCount=store.items.filter(function(it){return it.l===curLayer;}).length;
+    var ro=!canEdit();
+    html+='<div class="note">'+LAYER_NOTE[curLayer]+'</div>';
+    if(ro) html+='<div class="ro"><svg style="width:14px;height:14px;vertical-align:-2px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1"/></svg> <b>보기 전용</b> — 편집하려면 관리자에게 <b>공용어</b> 편집 권한을 요청하세요.</div>';
+
+    if(layerCount===0){
+      if(ro){
+        html+='<div class="empty"><div class="ico"><svg style="width:30px;height:30px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1"/></svg></div><div class="h">'+LAYER_LB[curLayer]+'가 아직 비어 있어요</div>'
+          +'<div class="s">보기 전용입니다.<br>관리자가 용어를 추가하면 여기에 표시돼요.</div></div>';
+        stage.innerHTML=html; return;
+      }
+      html+='<div class="empty"><div class="ico"><svg style="width:30px;height:30px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20a8 8 0 1 0-8-8c0 1.85.63 3.55 1.69 4.9L4 21l4.29-1.35A7.94 7.94 0 0 0 12 20z"/></svg></div>'
+        +'<div class="h">'+LAYER_LB[curLayer]+'가 아직 비어 있어요</div>'
+        +'<div class="s">우리 팀이 쓰는 말을 직접 채우거나,<br>준비된 세트를 골라 시작할 수 있어요.</div>'
+        +'<div class="btns"><button class="btn primary" id="emAdd">＋ 용어 추가</button>'
+        +'<button class="btn" id="emDef">세트 불러오기</button></div></div>';
+      stage.innerHTML=html;
+      var ea=document.getElementById('emAdd'); if(ea)ea.onclick=function(){openEditor(null,curLayer);};
+      var ed=document.getElementById('emDef'); if(ed)ed.onclick=function(){openPicker();};
+      return;
+    }
+
+    // 툴바 + 그룹 필터 (편집 권한 있을 때만 툴바)
+    if(!ro) html+='<div class="toolbar"><button class="btn primary" id="tbAdd">＋ 용어 추가</button>'
+      +'<button class="btn ghost" id="tbDef">세트 불러오기</button>'
+      +'<span class="spacer"></span>'
+      +'<button class="btn warn" id="tbReset">초기화</button></div>';
+    var groups=groupsIn(curLayer);
+    html+='<div class="gfilter" id="gfilter">'+chip('all','전체','',curGroup==='all');
+    groups.forEach(function(g){ html+=chip(g,g,GCLS[g]||'',curGroup===g); });
+    html+='</div>';
+
+    var view=rows;
+    var order=[],seen={};
+    view.forEach(function(it){ if(!seen[it.g]){seen[it.g]=[];order.push(it.g);} seen[it.g].push(it); });
+    // 그룹 표시 순서 정렬
+    var known=GORDER[curLayer]||[];
+    order.sort(function(a,b){ var ia=known.indexOf(a),ib=known.indexOf(b); ia=ia<0?99:ia; ib=ib<0?99:ib; return ia-ib; });
+    order.forEach(function(gname){
+      html+='<div class="grp"><span class="bar" style="background:'+(GCLS[gname]?'var(--c-'+GCLS[gname]+')':'var(--text-3)')+'"></span>'+esc(gname)+'<span class="cnt">'+seen[gname].length+'</span></div>';
+      html+='<div class="grid">'+seen[gname].map(card).join('')+'</div>';
+    });
+
+    if(curLayer==='concept'){
+      html+='<div class="principles"><h3>운영 원칙</h3><ol>'
+        +'<li>코치 전원이 <b>동일 정의</b>를 유지합니다.</li>'
+        +'<li>영상 분석에서도 <b>같은 언어</b>를 씁니다.</li>'
+        +'<li>훈련에서 쓰는 언어를 <b>경기에서도 그대로</b> 씁니다.</li>'
+        +'<li>같은 단어가 여러 뜻으로 쓰이지 않도록 이 정의를 기준으로 삼습니다.</li>'
+        +'</ol></div>';
+    }
+
+    stage.innerHTML=html; bindCards();
+    var tb=document.getElementById('tbAdd'); if(tb)tb.onclick=function(){openEditor(null,curLayer);};
+    var tbd=document.getElementById('tbDef'); if(tbd)tbd.onclick=function(){ openPicker(); };
+    var tbr=document.getElementById('tbReset'); if(tbr)tbr.onclick=function(){
+      psConfirm('모든 용어를 삭제하고 빈 상태로 되돌릴까요?\n되돌릴 수 없어요.',function(){ store.items=[]; save(); curGroup='all'; curQ=''; qEl.value=''; qClr.classList.remove('on'); render(); });
+    };
+    var gf=document.getElementById('gfilter');
+    if(gf)gf.onclick=function(e){var b=e.target.closest('button');if(!b)return;curGroup=b.dataset.g;render();};
+    stage.scrollTop=0;
+  }
+
+  function bindCards(){
+    if(!canEdit()) return;
+    [].forEach.call(stage.querySelectorAll('.card'),function(c){
+      c.onclick=function(){ var it=store.items.filter(function(x){return x.id===c.dataset.id;})[0]; if(it)openEditor(it,it.l); };
+    });
+  }
+
+  // ===== 편집 모달 =====
+  var mask=document.getElementById('mask'), modal=document.getElementById('modal');
+  var mTitle=document.getElementById('mTitle'), mLayerSeg=document.getElementById('mLayer'),
+      mGrp=document.getElementById('mGrp'), mGrpChips=document.getElementById('mGrpChips'), mGrpLabel=document.getElementById('mGrpLabel'),
+      mKo=document.getElementById('mKo'), mEn=document.getElementById('mEn'), mDesc=document.getElementById('mDesc'), mDescLabel=document.getElementById('mDescLabel'),
+      mDel=document.getElementById('mDel'), mSave=document.getElementById('mSave'), mCancel=document.getElementById('mCancel');
+  var editing=null, mLayer='signal';
+
+  function setMLayer(l){
+    mLayer=l;
+    [].forEach.call(mLayerSeg.children,function(b){b.classList.toggle('on',b.dataset.l===l);});
+    mGrpLabel.textContent = l==='signal'?'분류 (국면)':'분류';
+    mDescLabel.textContent = l==='signal'?'행동 기준':(l==='action'?'동작':'의미');
+    mDesc.placeholder = l==='signal'?'이 말을 들으면 무엇을 하는가':(l==='action'?'어떤 동작인가':'무엇을 가리키는가');
+    // 그룹 추천 칩
+    var known=GORDER[l]||[];
+    var extra=[]; store.items.forEach(function(it){ if(it.l===l && known.indexOf(it.g)<0 && extra.indexOf(it.g)<0) extra.push(it.g); });
+    var all=known.concat(extra);
+    mGrpChips.innerHTML=all.map(function(g){return '<button type="button" data-g="'+esc(g)+'"'+(mGrp.value===g?' class="on"':'')+'>'+esc(g)+'</button>';}).join('');
+  }
+  mLayerSeg.onclick=function(e){var b=e.target.closest('button');if(!b)return;setMLayer(b.dataset.l);};
+  mGrpChips.onclick=function(e){var b=e.target.closest('button');if(!b)return;mGrp.value=b.dataset.g;[].forEach.call(mGrpChips.children,function(x){x.classList.toggle('on',x===b);});};
+  mGrp.oninput=function(){[].forEach.call(mGrpChips.children,function(x){x.classList.toggle('on',x.dataset.g===mGrp.value);});};
+
+  function openEditor(it,presetLayer){
+    if(!canEdit()) return;
+    editing=it||null;
+    mTitle.textContent = it?'용어 수정':'용어 추가';
+    mDel.classList.toggle('hide',!it);
+    mKo.value=it?it.ko:''; mEn.value=it?it.en:''; mDesc.value=it?it.d:''; mGrp.value=it?it.g:'';
+    setMLayer(it?it.l:(presetLayer||curLayer));
+    mask.classList.add('on');
+    setTimeout(function(){ (it?mKo:mKo).focus(); },60);
+  }
+  function closeEditor(){ mask.classList.remove('on'); editing=null; }
+
+  mCancel.onclick=closeEditor;
+  mask.onclick=function(e){ if(e.target===mask)closeEditor(); };
+  mSave.onclick=function(){
+    var ko=mKo.value.trim(), en=mEn.value.trim(), d=mDesc.value.trim(), g=mGrp.value.trim();
+    if(!ko && !en){ mKo.focus(); mKo.style.borderColor='var(--c-def)'; setTimeout(function(){mKo.style.borderColor='';},900); return; }
+    if(editing){ editing.l=mLayer; editing.g=g; editing.ko=ko; editing.en=en; editing.d=d; }
+    else { store.items.push({id:uid(),l:mLayer,g:g,ko:ko,en:en,d:d}); }
+    save();
+    curLayer=mLayer; curGroup='all';
+    [].forEach.call(layersEl.children,function(x){x.classList.toggle('on',x.dataset.l===mLayer);});
+    closeEditor(); render();
+  };
+  mDel.onclick=function(){
+    if(!editing)return;
+    psConfirm('"'+(editing.ko||editing.en)+'" 용어를 삭제할까요?',function(){
+      store.items=store.items.filter(function(x){return x.id!==editing.id;});
+      save(); closeEditor(); render();
+    });
+  };
+
+  // 계층 탭
+  layersEl.onclick=function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    curLayer=b.dataset.l; curGroup='all';
+    [].forEach.call(layersEl.children,function(x){x.classList.toggle('on',x===b);});
+    render();
+  };
+  qEl.oninput=function(){ curQ=qEl.value.trim(); qClr.classList.toggle('on',!!curQ); render(); };
+  qClr.onclick=function(){ qEl.value=''; curQ=''; qClr.classList.remove('on'); qEl.focus(); render(); };
+
+  // 팀 네비 (scout/gamemodel과 동일 계약)
+  var teamNav=document.getElementById('teamNav');
+  var teamMore=document.getElementById('teamMore'),teamMoreBtn=document.getElementById('teamMoreBtn');
+  function teamMoreClose(){if(teamMore)teamMore.classList.remove('open');if(teamMoreBtn)teamMoreBtn.setAttribute('aria-expanded','false');}
+  window.addEventListener('message',function(e){var d=e.data||{};if(d.source==='app'&&d.type==='closeTransientUI')teamMoreClose();});
+  if(teamMoreBtn)teamMoreBtn.onclick=function(e){
+    e.stopPropagation();var open=!teamMore.classList.contains('open'),menu=teamMore.querySelector('.apphd-more-menu');
+    if(open&&menu){var r=this.getBoundingClientRect(),mw=172,left=Math.max(10,Math.min(window.innerWidth-mw-10,r.right-mw));menu.style.left=Math.round(left)+'px';menu.style.top=Math.round(r.bottom+6)+'px';}
+    teamMore.classList.toggle('open',open);this.setAttribute('aria-expanded',open?'true':'false');
+  };
+  document.addEventListener('click',function(e){if(teamMore&&!teamMore.contains(e.target))teamMoreClose();});
+  teamNav.onclick=function(e){
+    var b=e.target.closest('button[data-v]'); if(!b)return; var v=b.dataset.v;teamMoreClose();
+    if(v==='terms')return;
+    try{
+      if(v==='schedule') parent.postMessage({source:'terms',type:'openSchedule'},'*');
+      else if(v==='gamemodel') parent.postMessage({source:'terms',type:'openGameModel'},'*');
+      else parent.postMessage({source:'terms',type:'openTeamView',view:v},'*');
+    }catch(_){}
+  };
+
+  render();
+})();
+</script>
+<link rel="stylesheet" href="ui-grammar.css?v=2.642"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<style id="ps-2593-size">/* 2.593 — 조작 높이 28/32/40 마무리 · :not(#_):not(#__) 는 premium/mobile-polish 의 !important 규칙(특이도 0,3,2)을 이기기 위한 id 부스트(패딩으로 높이가 정해지던 것들). 데스크톱 32 · 칩 28 · 폰(≤600) 은 32짜리를 40 으로 */
+html body .apphd-seg button:not(#_):not(#__),html body .apphd-more button:not(#_):not(#__),html body .seg2 button:not(#_):not(#__){height:32px!important;min-height:32px!important;padding-top:0!important;padding-bottom:0!important;line-height:1!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+html body .btns .btn:not(#_):not(#__),html body .mrow .btn:not(#_):not(#__){height:40px!important;min-height:40px!important;padding-top:0!important;padding-bottom:0!important;line-height:1!important;box-sizing:border-box!important}
+html body .fld input:not(#_):not(#__){height:40px!important;min-height:40px!important;padding-top:0!important;padding-bottom:0!important;line-height:1!important;box-sizing:border-box!important}
+@media (max-width:600px){
+html body .apphd-seg button:not(#_):not(#__),html body .apphd-more button:not(#_):not(#__),html body .seg2 button:not(#_):not(#__){height:40px!important;min-height:40px!important;box-sizing:border-box!important}
+}
+</style>
+<script>try{ if(window.parent&&window.parent!==window)document.documentElement.classList.add("ps-in-shell"); }catch(_){}</script>
+<style id="ps-2598-terms">/* 2.598 — 공용어: «‹ 뒤로» 는 팀 내비가 있는 셸 안에서는 숨김(단독 열기에서만), 검색 40 → 32(데스크톱)/40(폰). ps-in-shell 은 board.html 15591 과 같은 한 줄. */
+html.ps-in-shell:not(#_):not(#__) .tm-back:not(#_){display:none!important}
+@media (min-width:601px){ html body .search input:not(#_):not(#__){height:32px;min-height:32px;padding:0 32px;font-size:13px;border-radius:6px} }
+@media (max-width:600px){ html body .search input:not(#_):not(#__){height:40px;min-height:40px} }
+</style>
+</body>
+</html>

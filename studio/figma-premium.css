@@ -1,0 +1,3257 @@
+@charset "UTF-8";
+/* PROCESS STUDIO 1.787 · Premium UX Concept
+   Figma frames 8:2, 10:10, 12:18, 14:18 mapped onto the existing app views.
+   This layer is intentionally page-scoped and leaves the established mobile shell intact. */
+
+:root{
+  --fig-shell:#101725;
+  --fig-shell-2:#182235;
+  --fig-canvas:#f6f7f9;
+  --fig-card:#fff;
+  --fig-ink:#111827;
+  --fig-muted:#707887;
+  --fig-line:#e7e9ee;
+  --fig-blue:#3a6df0;
+  --fig-blue-soft:#eef3ff;
+  --fig-violet:#7c4dff;
+  --fig-green:#37b478;
+  --fig-radius:16px;
+  --fig-shadow:0 12px 34px rgba(16,23,37,.08);
+}
+
+/* ───────────────────────────────────────────────────────────────
+  App shell · compact light navigation
+   ─────────────────────────────────────────────────────────────── */
+@media (min-width:768px){
+  html.ps-page-app body{
+    --ps-side-w:clamp(96px,7.4vw,104px)!important;
+    background:var(--fig-canvas)!important;
+  }
+  html.ps-page-app .appbar{
+    width:var(--ps-side-w)!important;
+    padding:12px 8px 10px!important;
+    gap:2px!important;
+    border:0!important;
+    border-right:1px solid #e6e8ee!important;
+    background:#fff!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-app .brand{
+    min-height:46px!important;
+    padding:2px 6px 10px!important;
+    color:var(--fig-ink)!important;
+  }
+  html.ps-page-app .brand .wm{
+    color:var(--fig-ink)!important;
+    font-family:Jost,Pretendard,sans-serif!important;
+    font-size:11px!important;
+    font-weight:800!important;
+    letter-spacing:.06em!important;
+    line-height:1.05!important;
+  }
+  html.ps-page-app .brand::after{
+    content:none!important;
+  }
+  html.ps-page-app #appSeg#appSeg{
+    gap:3px!important;
+  }
+  html.ps-page-app #appSeg#appSeg button{
+    min-height:32px!important;
+    padding:7px 6px!important;
+    gap:6px!important;
+    border-radius:6px!important;
+    color:#596273!important;
+    font-weight:650!important;
+  }
+  html.ps-page-app #appSeg#appSeg button span{
+    min-width:0!important;
+    font-size:11px!important;
+    line-height:1.2!important;
+  }
+  html.ps-page-app #appSeg#appSeg button svg{
+    width:14px!important;
+    height:14px!important;
+    stroke-width:1.8!important;
+  }
+  html.ps-page-app #appSeg#appSeg button:hover{
+    color:#111827!important;
+    background:#f7f8fa!important;
+  }
+  html.ps-page-app #appSeg#appSeg button.on{
+    color:#2c54c4!important;
+    background:#edf2fe!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-app #appSeg#appSeg button[data-app="idp"].on,
+  html.ps-page-app #appSeg#appSeg button[data-app="learning"].on{
+    color:#5b3df0!important;
+    background:#f5f2ff!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-app .appbar>#psAcctWrap .acct-btn{
+    min-height:38px!important;
+    padding:6px!important;
+    gap:6px!important;
+    border:1px solid #E3E6EA!important;
+    border-radius:9px!important;
+    color:#374151!important;
+    background:#f7f8fa!important;
+    font-size:10px!important;
+  }
+  html.ps-page-app .appbar>#psAcctWrap .acct-btn .ava{
+    width:18px!important;
+    height:18px!important;
+    font-size:10px!important;
+  }
+  html.ps-page-app .appbar>#psAcctWrap .acct-btn .lbl{
+    min-width:0!important;
+    max-width:none!important;
+  }
+  html.ps-page-app .appbar>#psAcctWrap .acct-btn:hover{
+    background:#f2f4f7!important;
+  }
+  /* 하단 그룹 한 축 정렬 — 계정 칩(보더1+패딩6, 아바타18)과 같은 그리드:
+     아이콘 슬롯 7~25px(중심 16px), 라벨 시작 31px */
+  html.ps-page-app #psInstallBtn,
+  html.ps-page-app .appbar .gearbtn,
+  html.ps-page-app .appbar>#psBoardMoreBtn{
+    min-height:32px!important;
+    padding:6px 6px 6px 7px!important;
+    gap:6px!important;
+    border-radius:8px!important;
+    font-size:10px!important;
+    color:#596273!important;
+    background:transparent!important;
+  }
+  html.ps-page-app .appbar>#psUpdBtn{
+    min-height:32px!important;
+    padding:6px 6px 6px 7px!important;
+    gap:6px!important;
+    border-radius:8px!important;
+    font-size:10px!important;
+  }
+  html.ps-page-app #psInstallBtn svg,
+  html.ps-page-app .appbar .gearbtn svg,
+  html.ps-page-app .appbar>#psBoardMoreBtn svg,
+  html.ps-page-app .appbar>#psUpdBtn svg{
+    width:14px!important;
+    height:14px!important;
+    margin:0 2px!important;
+  }
+  html.ps-page-app #psInstallBtn:hover,
+  html.ps-page-app .appbar .gearbtn:hover,
+  html.ps-page-app .appbar>#psBoardMoreBtn:hover{
+    color:#111827!important;
+    background:#f7f8fa!important;
+  }
+  /* 설정 3종 일관화(1.806) — 정본: 작전판 설정 문법. 앱 설정을 같은 세그·버튼·섹션 규격으로 */
+  html.ps-page-app #gearPop{
+    border-radius:14px!important;border:1px solid #e6e8ee!important;box-shadow:0 24px 70px rgba(15,23,42,.22)!important;
+  }
+  html.ps-page-app #gearPop .gp-section-title{
+    color:#8a94a4!important;font-size:10px!important;font-weight:800!important;letter-spacing:.07em!important;
+  }
+  html.ps-page-app #gearPop .gp-lb{color:#646A73!important;font-size:11px!important;font-weight:800!important;}
+  html.ps-page-app #gearPop :is(.langsw,.laysw,.themesw){
+    background:#f5f6f8!important;border:0!important;border-radius:6px!important;padding:2px!important;gap:3px!important;
+  }
+  html.ps-page-app #gearPop :is(.langsw,.laysw,.themesw) button{
+    min-height:28px!important;height:auto!important;border:1px solid transparent!important;border-radius:6px!important;
+    color:#646A73!important;font-size:11px!important;font-weight:600!important;box-shadow:none!important;background:transparent!important;
+  }
+  html.ps-page-app #gearPop :is(.langsw,.laysw,.themesw) button.on{
+    background:#edf2ff!important;border-color:#b9c9f6!important;color:#2c54c4!important;
+  }
+  html.ps-page-app #gearPop .btn{
+    background:#fff!important;border:1px solid #e1e5eb!important;border-radius:6px!important;
+    color:#344054!important;font-size:11px!important;font-weight:600!important;box-shadow:none!important;
+  }
+  html.ps-page-app #gearPop .btn:hover{background:#f5f6f8!important;}
+  html.ps-page-app body.fmdark #gearPop{border-color:#394351!important;}
+  html.ps-page-app body.fmdark #gearPop :is(.langsw,.laysw,.themesw){background:#171d26!important;}
+  html.ps-page-app body.fmdark #gearPop :is(.langsw,.laysw,.themesw) button{color:#aab3c2!important;}
+  html.ps-page-app body.fmdark #gearPop :is(.langsw,.laysw,.themesw) button.on{background:#34415b!important;border-color:#7089c9!important;color:#f4f7ff!important;}
+  html.ps-page-app body.fmdark #gearPop .btn{background:#262f3b!important;border-color:#3b4655!important;color:#e1e6ed!important;}
+  html.ps-page-app body.fmdark .appbar{
+    border-right-color:#2E333A!important;background:var(--fig-shell)!important;
+  }
+  html.ps-page-app body.fmdark .brand,
+  html.ps-page-app body.fmdark .brand .wm{color:#fff!important;}
+  html.ps-page-app body.fmdark #appSeg#appSeg button{color:#aab3c2!important;}
+  html.ps-page-app body.fmdark #appSeg#appSeg button:hover{color:#fff!important;background:rgba(255,255,255,.07)!important;}
+  html.ps-page-app body.fmdark #appSeg#appSeg button.on{color:#fff!important;background:var(--fig-blue)!important;}
+  html.ps-page-app body.fmdark #appSeg#appSeg button[data-app="idp"].on,
+  html.ps-page-app body.fmdark #appSeg#appSeg button[data-app="learning"].on{color:#fff!important;background:var(--fig-violet)!important;}
+  html.ps-page-app body.fmdark .appbar>#psAcctWrap .acct-btn{border-color:rgba(255,255,255,.08)!important;color:#e7ebf2!important;background:var(--fig-shell-2)!important;}
+  html.ps-page-app body.fmdark #psInstallBtn,
+  html.ps-page-app body.fmdark .appbar .gearbtn,
+  html.ps-page-app body.fmdark .appbar>#psBoardMoreBtn{color:#aab3c2!important;}
+  html.ps-page-app .frames,
+  html.ps-page-app #expBanner,
+  html.ps-page-app #bkBanner{
+    margin-left:var(--ps-side-w)!important;
+  }
+  html.ps-page-app body.focus .frames,
+  html.ps-page-app body.vfull .frames{
+    margin-left:0!important;
+  }
+
+  /* Team header and sub-navigation occupy one 112 px shell block. */
+  html.ps-page-app body.ps-team-open #teamNav{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:64px 48px;
+    width:auto!important;
+    height:112px!important;
+    min-height:112px!important;
+    flex:0 0 112px!important;
+    margin-left:var(--ps-side-w)!important;
+    padding:0 20px!important;
+    gap:0 16px!important;
+    border:0!important;
+    border-bottom:1px solid var(--fig-line)!important;
+    background:#fff!important;
+    box-sizing:border-box!important;
+  }
+  html.ps-page-app #teamNav .teamname{
+    grid-column:1;
+    grid-row:1;
+    align-self:center;
+    display:flex!important;
+    flex-direction:column;
+    gap:3px;
+    min-width:0;
+    color:var(--fig-ink)!important;
+  }
+  html.ps-page-app #teamNav .teamname b{
+    font-size:20px;
+    line-height:1.1;
+    letter-spacing:-.03em;
+  }
+  html.ps-page-app #teamNav .teamname small{
+    color:#8a919d;
+    font-size:11px;
+    font-weight:600;
+  }
+  /* 1.891 — 팀 엠블럼이 있으면 [엠블럼 | 팀 운영/부제] 2열 */
+  /* 1.895 — 헤더 팀 이름 칸은 엠블럼만, 행·열 중앙 */
+  html.ps-page-app #teamNav .teamname.only-emblem{display:grid!important;place-items:center!important;grid-template-columns:none!important;justify-self:center;}
+  html.ps-page-app #teamNav .teamname .tn-emblem{width:52px!important;height:52px!important;border-radius:9px!important;margin:0!important;}
+  html.ps-page-app #teamNav .teamhead-actions{
+    grid-column:2;
+    grid-row:1;
+    align-self:center;
+    display:flex;
+    align-items:center;
+    gap:9px;
+  }
+  html.ps-page-app #teamNav .team-sync{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    color:#687180;
+    font-size:11px;
+    font-weight:600;
+  }
+  html.ps-page-app #teamNav .team-sync i{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--fig-green);
+    box-shadow:0 0 0 3px rgba(55,180,120,.12);
+  }
+  html.ps-page-app #teamNav #teamHeaderSettings{
+    min-height:34px;
+    padding:7px 12px;
+    border:1px solid #dfe3e9;
+    border-radius:9px;
+    color:#3e4653;
+    background:#fff;
+    font:700 11px Pretendard,sans-serif;
+    cursor:pointer;
+  }
+  html.ps-page-app #teamNav .tn-seg{
+    grid-column:1 / -1;
+    grid-row:2;
+    align-self:stretch;
+    justify-self:stretch;
+    display:flex;
+    align-items:center;
+    gap:18px!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  html.ps-page-app #teamNav .tn-seg::-webkit-scrollbar{display:none}
+  html.ps-page-app #teamNav .tn-seg button{
+    position:relative;
+    min-height:32px!important;
+    padding:7px 3px!important;
+    border:0!important;
+    border-radius:0!important;
+    color:#7c8492!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    white-space:nowrap;
+  }
+  html.ps-page-app #teamNav .tn-seg button.on{
+    color:var(--fig-blue)!important;
+    font-weight:800!important;
+  }
+  html.ps-page-app #teamNav .tn-seg button.on::after{
+    content:""!important;
+    display:block!important;
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:2px;
+    border-radius:2px;
+    background:var(--fig-blue);
+  }
+}
+
+@media (min-width:768px) and (max-width:1099px){
+  html.ps-page-app #teamNav .teamhead-actions{display:none}
+  html.ps-page-app body.ps-team-open #teamNav{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Command Board · canvas + two-level command dock
+   ─────────────────────────────────────────────────────────────── */
+@media (min-width:900px){
+  html.ps-page-board body.board-view,
+  html.ps-page-board body:has(#boardView.active){
+    background:var(--fig-canvas)!important;
+  }
+  html.ps-page-board #boardView{
+    background:var(--fig-canvas)!important;
+  }
+  /* 1.818 — 페이지 스트립 컴팩트(사용자: 헤더가 너무 커, 폰트도 줄여) 64→40px */
+  html.ps-page-board #boardPageStrip{
+    height:40px!important;
+    min-height:40px!important;
+    padding:0 12px!important;
+    gap:5px!important;
+    border:0!important;
+    border-bottom:1px solid var(--fig-line)!important;
+    background:#fff!important;
+  }
+  html.ps-page-board #boardPageStrip .bp-head{
+    margin-right:8px!important;gap:6px!important;
+  }
+  html.ps-page-board #boardPageStrip .bp-head .bp-t{
+    color:var(--fig-ink)!important;
+    font-size:13px!important;
+    font-weight:800!important;
+    letter-spacing:-.02em!important;
+  }
+  html.ps-page-board #boardPageStrip .bp-head .bp-s{
+    color:#8A9099!important;
+    font-size:10px!important;
+  }
+  html.ps-page-board #boardPageStrip .bp-tab{
+    min-height:28px!important;
+    padding:3px 8px!important;
+    font-size:11px!important;
+    gap:4px!important;
+    border:1px solid #e2e6ec!important;
+    border-radius:6px!important;
+    background:#fff!important;
+  }
+  html.ps-page-board #boardPageStrip .bp-tab .bpx svg{width:10px!important;height:10px!important;}
+  html.ps-page-board #boardPageStrip .bp-tab.on{
+    color:var(--fig-blue)!important;
+    border-color:#ccd9fb!important;
+    background:var(--fig-blue-soft)!important;
+  }
+  html.ps-page-board #boardPageStrip .bp-add{
+    min-height:26px!important;
+    padding:3px 8px!important;
+    font-size:11px!important;
+    border:1px dashed #bdc6d5!important;
+    color:#646A73!important;
+    background:#fff!important;
+  }
+  html.ps-page-board #boardPageStrip .bp-export{
+    flex:0 0 auto;
+    min-height:34px;
+    margin-left:auto;
+    padding:7px 15px;
+    border:0;
+    border-radius:9px;
+    color:#fff;
+    background:var(--fig-blue);
+    box-shadow:0 4px 12px rgba(58,109,240,.22);
+    font:800 12px Pretendard,sans-serif;
+    cursor:pointer;
+  }
+  html.ps-page-board #boardStage{
+    position:relative!important;
+    height:calc(100dvh - 64px)!important;
+    min-height:0!important;
+    padding:18px 20px 122px!important;
+    box-sizing:border-box!important;
+    background:var(--fig-canvas)!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board #boardStage>svg#board{
+    width:100%!important;
+    height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:20px!important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.13)!important;
+  }
+  /* 1.962 — 보드 왼쪽 위 "페이지 1 · 드래그로 배치 · 더블클릭으로 선택" 안내 알약 제거(사용자: 이거 지워줘) */
+  /* Command dock v4: compact scene row plus player and equipment/edit rows. The real editor
+     nodes are re-parented by board.html; this stylesheet only owns geometry. */
+  html.ps-page-board #ps-command-dock{
+    position:fixed!important;
+    left:12px!important;
+    right:12px!important;
+    bottom:12px!important;
+    width:auto!important;
+    height:104px!important;
+    display:grid!important;
+    grid-template-rows:38px 64px!important;
+    overflow:visible!important;
+    border:1px solid #E3E6EA!important;
+    border-radius:12px!important;
+    background:#fff!important;
+    box-shadow:0 6px 18px rgba(15,23,42,.12)!important;
+    z-index:190!important;
+  }
+  html.ps-page-board #ps-command-dock>#animBar,
+  html.ps-page-board #ps-command-dock>#floatBar{
+    position:static!important;
+    inset:auto!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    transform:none!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    overflow:visible!important;
+  }
+  html.ps-page-board #ps-command-dock>#animBar{
+    border-bottom:1px solid #eceef2!important;
+    border-radius:12px 12px 0 0!important;
+  }
+  html.ps-page-board #ps-command-dock>#floatBar{
+    display:grid!important;
+    grid-template-rows:32px 32px!important;
+    justify-content:stretch!important;
+    border-radius:0 0 12px 12px!important;
+  }
+  html.ps-page-board #ps-command-dock #floatBar>#drawPanel{
+    position:static!important;
+    inset:auto!important;
+    width:100%!important;
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+    transform:none!important;
+    border:0!important;
+    border-bottom:1px solid #eceef2!important;
+    border-radius:0!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board #ps-dock{
+    left:20px!important;
+    right:20px!important;
+    bottom:20px!important;
+    border:1px solid #e3e6eb!important;
+    border-radius:18px!important;
+    overflow:hidden!important;
+    background:#fff!important;
+    box-shadow:0 12px 30px rgba(16,23,37,.12)!important;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Team Today · hero, live metrics, decision layout
+   ─────────────────────────────────────────────────────────────── */
+html.ps-page-scout .team-premium-metrics{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+html.ps-page-scout .team-premium-metrics>article{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+  border:1px solid var(--fig-line);
+  border-radius:var(--fig-radius);
+  background:#fff;
+}
+html.ps-page-scout .team-premium-metrics .tpm-icon{
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  border-radius:12px;
+  background:var(--fig-blue-soft);
+}
+html.ps-page-scout .team-premium-metrics .tpm-icon::before{
+  color:var(--fig-blue);
+  font-size:16px;
+  font-weight:800;
+}
+html.ps-page-scout .team-premium-metrics .calendar::before{content:"◫"}
+html.ps-page-scout .team-premium-metrics .ready::before{content:"✓"}
+html.ps-page-scout .team-premium-metrics .session::before{content:"▶"}
+html.ps-page-scout .team-premium-metrics .pulse::before{content:"↗"}
+html.ps-page-scout .team-premium-metrics article>div{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+html.ps-page-scout .team-premium-metrics small{
+  color:#7d8490;
+  font-size:10px;
+  font-weight:600;
+}
+html.ps-page-scout .team-premium-metrics strong{
+  overflow:hidden;
+  color:var(--fig-ink);
+  font-size:21px;
+  line-height:1.25;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+html.ps-page-scout .team-premium-metrics em{
+  overflow:hidden;
+  color:#8e95a1;
+  font-size:10px;
+  font-style:normal;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+@media (min-width:900px){
+  html.ps-page-scout body{
+    background:var(--fig-canvas)!important;
+  }
+  html.ps-page-scout .apphd-name{
+    height:64px!important;
+    padding:0 20px!important;
+    border-bottom:1px solid var(--fig-line)!important;
+    background:#fff!important;
+    font-size:20px!important;
+  }
+  html.ps-page-scout .wrap{
+    width:100%!important;
+    max-width:none!important;
+    padding:0!important;
+  }
+  html.ps-page-scout #homeView.on{
+    padding:0!important;
+    background:var(--fig-canvas)!important;
+  }
+  html.ps-page-scout #homeView .team-home{
+    display:grid!important;
+    grid-template-columns:minmax(0,1.8fr) minmax(310px,1fr)!important;
+    gap:16px!important;
+    width:auto!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:20px!important;
+    box-sizing:border-box!important;
+  }
+  html.ps-page-scout #homeView .team-topbar{
+    grid-column:1 / -1;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    height:142px!important;
+    min-height:142px!important;
+    margin:0!important;
+    padding:24px 28px!important;
+    border:0!important;
+    border-radius:20px!important;
+    color:#fff!important;
+    background:linear-gradient(118deg,#17243a 0%,#101725 70%,#1b3157 100%)!important;
+    box-shadow:none!important;
+    overflow:visible!important;   /* 1.891 — 엠블럼 팝오버가 카드 밖으로 */
+  }
+  /* 1.891 — 팀 색이 있으면 히어로 배경을 그 색 계열로 */
+  html.ps-page-scout #homeView .team-topbar.has-color{
+    background:linear-gradient(118deg,color-mix(in srgb,var(--team-c) 55%,#0b1020) 0%,color-mix(in srgb,var(--team-c) 35%,#0b1020) 70%,var(--team-c) 100%)!important;
+  }
+  html.ps-page-scout .team-hero-copy{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    min-width:0;
+  }
+  html.ps-page-scout .team-hero-eyebrow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:4px;
+  }
+  html.ps-page-scout .team-hero-eyebrow .ttb-date{
+    color:#8ca2c7!important;
+    font-size:10px!important;
+    font-weight:800!important;
+    letter-spacing:.11em!important;
+    text-transform:uppercase;
+  }
+  html.ps-page-scout .team-hero-eyebrow .ttb-wx{
+    padding:3px 7px!important;
+    border:1px solid rgba(255,255,255,.12)!important;
+    border-radius:999px!important;
+    color:#b5c2d8!important;
+    background:rgba(255,255,255,.07)!important;
+    font-size:10px!important;
+  }
+  html.ps-page-scout .team-hero-copy h1{
+    margin:0!important;
+    color:#fff!important;
+    font-size:27px!important;
+    line-height:1.2!important;
+    letter-spacing:-.045em!important;
+  }
+  html.ps-page-scout .team-hero-copy h1 span{color:#78a4ff}
+  html.ps-page-scout .team-hero-copy p{
+    margin:5px 0 0!important;
+    color:#aeb9cb!important;
+    font-size:11px!important;
+  }
+  html.ps-page-scout .team-topbar .ttb-match{
+    display:grid!important;
+    grid-template-columns:minmax(170px,1fr) auto!important;
+    grid-template-rows:auto auto!important;
+    gap:2px 16px!important;
+    align-items:center!important;
+    min-width:320px!important;
+    padding:15px 18px!important;
+    border:1px solid rgba(255,255,255,.12)!important;
+    border-radius:14px!important;
+    background:rgba(255,255,255,.07)!important;
+  }
+  html.ps-page-scout .team-topbar .ttb-lbl{
+    grid-column:1;
+    color:#89a0c3!important;
+    font-size:10px!important;
+    font-weight:800!important;
+    letter-spacing:.1em!important;
+  }
+  html.ps-page-scout .team-topbar .ttb-match>b{
+    grid-column:1;
+    overflow:hidden;
+    color:#fff!important;
+    font-size:14px!important;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  html.ps-page-scout .team-topbar .ttb-md{
+    grid-column:2;
+    grid-row:1 / span 2;
+    display:grid!important;
+    place-items:center;
+    min-width:62px;
+    height:46px;
+    border-radius:12px;
+    color:#fff!important;
+    background:var(--fig-blue)!important;
+  }
+  html.ps-page-scout .team-topbar .ttb-md strong{font-size:14px!important}
+  html.ps-page-scout #homeView .team-premium-metrics{
+    grid-column:1 / -1;
+    height:116px;
+    margin:4px 0 0!important;
+  }
+  html.ps-page-scout #homeView .team-premium-metrics>article{
+    height:116px;
+    padding:18px;
+    box-sizing:border-box;
+  }
+  html.ps-page-scout #homeView .team-premium-metrics .tpm-icon{
+    width:42px;
+    height:42px;
+  }
+  /* 1.820 — 팀 홈 2행 정렬(사용자): 1행 일정 스트립(전체 폭) → 2행 훈련 인원(전체 폭) → 3행 세션. 지표 4카드는 제거됨 */
+  html.ps-page-scout #homeView .team-weekstrip{
+    grid-column:1 / -1;
+    grid-row:2;
+    min-width:0!important;
+    min-height:92px!important;
+    margin:0!important;
+    padding:12px!important;
+    border:1px solid var(--fig-line)!important;
+    border-radius:var(--fig-radius)!important;
+    background:#fff!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-scout #homeView .team-home-duo{
+    display:contents!important;
+  }
+  html.ps-page-scout #homeView .team-avail-card{
+    grid-column:1 / -1;
+    grid-row:3;
+    min-height:0!important;
+    margin:0!important;
+    border:1px solid var(--fig-line)!important;
+    border-radius:var(--fig-radius)!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-scout #homeView .team-home-left{
+    grid-column:1 / -1;
+    grid-row:4;
+    display:block!important;
+    min-width:0!important;
+  }
+  html.ps-page-scout #homeView .team-session{
+    min-height:0!important;
+    margin:0!important;
+    border:1px solid var(--fig-line)!important;
+    border-radius:var(--fig-radius)!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-scout #homeView #teamStaffReadyCard{display:none!important}
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Personal IDP · violet growth hero and journey
+   ─────────────────────────────────────────────────────────────── */
+html.ps-page-idp .idp-premium-hero{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  color:#fff;
+  background:linear-gradient(122deg,#6844df 0%,#7c4dff 55%,#936eff 100%);
+}
+html.ps-page-idp .iph-copy{min-width:0}
+html.ps-page-idp .iph-copy>small{
+  display:block;
+  color:#d6caff;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.12em;
+}
+html.ps-page-idp .iph-copy>h2{
+  max-width:680px;
+  margin:7px 0 4px;
+  color:#fff;
+  line-height:1.22;
+  letter-spacing:-.04em;
+}
+html.ps-page-idp .iph-copy>p{
+  margin:0;
+  color:#ddd5ff;
+  font-size:11px;
+}
+html.ps-page-idp .iph-profile{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:14px;
+}
+html.ps-page-idp .iph-profile>span{
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  color:#5c38ca;
+  background:#fff;
+  font-size:11px;
+  font-weight:800;
+}
+html.ps-page-idp .iph-profile b{font-size:11px}
+html.ps-page-idp .iph-profile em{
+  padding-left:8px;
+  border-left:1px solid rgba(255,255,255,.28);
+  color:#d7ceff;
+  font-size:10px;
+  font-style:normal;
+}
+html.ps-page-idp .iph-score{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  flex:0 0 auto;
+  gap:5px;
+}
+html.ps-page-idp .iph-score>div{
+  position:relative;
+  display:grid;
+  place-items:center;
+  width:92px;
+  height:92px;
+  border-radius:50%;
+  background:conic-gradient(#fff calc(var(--idp-score) * 1%),rgba(255,255,255,.22) 0);
+}
+html.ps-page-idp .iph-score>div::before{
+  content:"";
+  position:absolute;
+  inset:7px;
+  border-radius:50%;
+  background:#7650ed;
+}
+html.ps-page-idp .iph-score strong,
+html.ps-page-idp .iph-score small{position:relative;z-index:1}
+html.ps-page-idp .iph-score strong{
+  align-self:end;
+  color:#fff;
+  font-size:28px;
+  line-height:1;
+}
+html.ps-page-idp .iph-score small{
+  align-self:start;
+  margin-top:3px;
+  color:#dcd4ff;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+html.ps-page-idp .iph-score>p{
+  margin:0;
+  color:#e0d9ff;
+  font-size:10px;
+  font-weight:800;
+}
+html.ps-page-idp .idp-premium-journey{
+  border:1px solid var(--fig-line);
+  background:#fff;
+}
+html.ps-page-idp .ipj-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+html.ps-page-idp .ipj-head b{color:var(--fig-ink)}
+html.ps-page-idp .ipj-head span{
+  color:var(--fig-violet);
+  font-size:10px;
+  font-weight:800;
+}
+html.ps-page-idp .ipj-steps{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+html.ps-page-idp .ipj-step{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  border:0;
+  color:#8a919d;
+  background:transparent;
+  text-align:left;
+  font-family:inherit;
+  cursor:pointer;
+}
+html.ps-page-idp .ipj-step:not(:last-child)::after{
+  content:"";
+  position:absolute;
+  right:8px;
+  top:50%;
+  width:28px;
+  height:1px;
+  background:#e2e4ea;
+}
+html.ps-page-idp .ipj-step>i{
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  width:25px;
+  height:25px;
+  border:1px solid #dfe2e8;
+  border-radius:50%;
+  color:#9ba1ac;
+  background:#fff;
+  font-size:10px;
+  font-style:normal;
+  font-weight:800;
+}
+html.ps-page-idp .ipj-step.done>i{
+  border-color:var(--fig-violet);
+  color:#fff;
+  background:var(--fig-violet);
+}
+html.ps-page-idp .ipj-step span{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+html.ps-page-idp .ipj-step b{color:#343b47;font-size:10px}
+html.ps-page-idp .ipj-step small{
+  overflow:hidden;
+  color:#9aa0aa;
+  font-size:10px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+@media (min-width:900px){
+  html.ps-page-idp body{background:var(--fig-canvas)!important}
+  html.ps-page-idp .top-h{
+    height:64px!important;
+    min-height:64px!important;
+    padding:0 20px!important;
+    border-bottom:1px solid var(--fig-line)!important;
+    background:#fff!important;
+  }
+  html.ps-page-idp .idp-title .ps-pagetitle{
+    color:var(--fig-ink)!important;
+    font-size:20px!important;
+    letter-spacing:-.04em!important;
+  }
+  html.ps-page-idp #layers{
+    min-height:48px!important;
+    padding:0 20px!important;
+    border-bottom:1px solid var(--fig-line)!important;
+    background:#fff!important;
+  }
+  html.ps-page-idp #layers button.on{color:var(--fig-violet)!important}
+  html.ps-page-idp #layers button.on::after{background:var(--fig-violet)!important}
+  html.ps-page-idp .idp-actions{right:20px!important;bottom:7px!important}
+  html.ps-page-idp #repBtn{
+    color:#fff!important;
+    border-color:var(--fig-violet)!important;
+    background:var(--fig-violet)!important;
+  }
+  html.ps-page-idp .stage{
+    padding:14px 20px 32px!important;
+    background:var(--fig-canvas)!important;
+  }
+
+  html.ps-page-idp .idp-premium-hero{
+    grid-column:1 / -1;
+    height:136px;
+    padding:19px 28px;
+    border-radius:20px;
+    box-sizing:border-box;
+    box-shadow:0 12px 28px rgba(103,68,223,.17);
+  }
+  html.ps-page-idp .iph-copy>h2{font-size:22px}
+  html.ps-page-idp .idp-premium-journey{
+    grid-column:1 / -1;
+    height:90px;
+    padding:12px 18px;
+    border-radius:var(--fig-radius);
+    box-sizing:border-box;
+  }
+  html.ps-page-idp .ipj-head{height:20px;margin-bottom:5px}
+  html.ps-page-idp .ipj-step{height:40px;padding:4px 34px 4px 0}
+  /* 1.820 — 데스크톱 홈: 좌 시간표(2열 스팬, 주인공) / 우 사이드 1열(목표 · 오늘 기록 · 경기·훈련 카드 세로).
+     폰에서 잡은 위계(시간표가 첫 화면)를 데스크톱에서도 유지 — 이전엔 시간표가 3열 중 한 칸에 갇혀 좁았다 */
+  /* 1.824 — :not(.idp-squad): 코치용 선수단 IDP(body=idp-squad idp-home)까지 2단을 타서 섹션 제목은 왼쪽 열,
+     카드는 오른쪽 340px 열로 갈라졌다(1.813에서 잡은 증상 재발). 홈 시간표 화면에만 건다. */
+
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Vault Workspace · full-height three-pane finder
+   ─────────────────────────────────────────────────────────────── */
+@media (min-width:900px){
+  html.ps-page-board body.vault-full{
+    background:var(--fig-canvas)!important;
+  }
+  html.ps-page-board body.vault-full #sessionView,
+  html.ps-page-board body.vault-full #sessionView>.sess-wrap{
+    width:100%!important;
+    height:100dvh!important;
+    min-height:0!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+    background:var(--fig-canvas)!important;
+  }
+  html.ps-page-board body.vault-full #sessionView>.sess-wrap{
+    padding:0 20px!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board body.vault-full .df-head{
+    height:64px!important;
+    min-height:64px!important;
+    margin:0 -20px!important;
+    padding:0 20px!important;
+    gap:10px!important;
+    border:0!important;
+    border-bottom:1px solid var(--fig-line)!important;
+    background:#fff!important;
+    box-sizing:border-box!important;
+  }
+  html.ps-page-board body.vault-full .df-head .df-ttl{
+    color:var(--fig-ink)!important;
+    font-size:20px!important;
+    font-weight:800!important;
+    letter-spacing:-.04em!important;
+  }
+  html.ps-page-board body.vault-full .df-head .df-cnt{
+    padding:3px 7px!important;
+    border-radius:999px!important;
+    color:var(--fig-blue)!important;
+    background:var(--fig-blue-soft)!important;
+    font-size:10px!important;
+    font-weight:800!important;
+  }
+  html.ps-page-board body.vault-full .df-head #dfNew{
+    min-height:34px!important;
+    padding:7px 14px!important;
+    border-radius:9px!important;
+    color:#fff!important;
+    background:var(--fig-blue)!important;
+  }
+  html.ps-page-board body.vault-full #vaultBar{
+    height:64px!important;
+    min-height:64px!important;
+    margin:0 -20px!important;
+    padding:9px 20px!important;
+    gap:8px!important;
+    border:0!important;
+    border-bottom:1px solid var(--fig-line)!important;
+    background:#fff!important;
+    box-sizing:border-box!important;
+  }
+  html.ps-page-board body.vault-full #vaultBar #dfSearch{
+    order:5;
+    width:320px!important;
+    max-width:320px!important;
+    min-height:36px!important;
+    border-color:#dfe3e9!important;
+    border-radius:9px!important;
+    background:#f8f9fb!important;
+  }
+  html.ps-page-board body.vault-full #vaultBar .vchip,
+  html.ps-page-board body.vault-full #vaultBar .vsort{
+    min-height:34px!important;
+    border-color:#dfe3e9!important;
+    border-radius:9px!important;
+    background:#fff!important;
+  }
+  html.ps-page-board body.vault-full #drillFiles.vault-shell{
+    height:calc(100dvh - 128px)!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board body.vault-full #drillFiles .vault-explorer{
+    display:grid!important;
+    grid-template-columns:230px minmax(0,1fr) 344px!important;
+    width:100%!important;
+    height:calc(100dvh - 128px)!important;
+    min-height:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board body.vault-full .vault-explorer>.vx-tree{
+    min-width:0!important;
+    padding:14px 10px!important;
+    border:0!important;
+    border-right:1px solid var(--fig-line)!important;
+    background:#f8f9fb!important;
+    overflow:auto!important;
+  }
+  html.ps-page-board body.vault-full .vault-explorer>.vx-main{
+    min-width:0!important;
+    border:0!important;
+    border-right:1px solid var(--fig-line)!important;
+    background:#fff!important;
+    overflow:auto!important;
+  }
+  html.ps-page-board body.vault-full .vault-explorer>.vx-preview{
+    min-width:0!important;
+    padding:18px!important;
+    border:0!important;
+    background:#fbfbfc!important;
+    overflow:auto!important;
+  }
+  html.ps-page-board body.vault-full .vx-tree .vx-title{
+    padding:9px 10px 6px!important;
+    color:#959ca8!important;
+    font-size:10px!important;
+    font-weight:800!important;
+    letter-spacing:.08em!important;
+    text-transform:uppercase;
+  }
+  html.ps-page-board body.vault-full .vx-nav button,
+  html.ps-page-board body.vault-full .vx-folder,
+  html.ps-page-board body.vault-full .vx-cat{
+    min-height:34px!important;
+    border-radius:8px!important;
+  }
+  html.ps-page-board body.vault-full .vx-nav button.on,
+  html.ps-page-board body.vault-full .vx-folder.on,
+  html.ps-page-board body.vault-full .vx-cat.on{
+    color:var(--fig-blue)!important;
+    background:var(--fig-blue-soft)!important;
+  }
+  html.ps-page-board body.vault-full .vx-main-head{
+    height:50px!important;
+    min-height:50px!important;
+    padding:0 16px!important;
+    border-bottom:1px solid var(--fig-line)!important;
+    box-sizing:border-box!important;
+  }
+  html.ps-page-board body.vault-full .vx-list-head,
+  html.ps-page-board body.vault-full .vx-list .df-file{
+    min-height:52px!important;
+    border-bottom:1px solid #eef0f3!important;
+  }
+  html.ps-page-board body.vault-full .vx-list .df-file.selected{
+    background:var(--fig-blue-soft)!important;
+    box-shadow:inset 3px 0 0 var(--fig-blue)!important;
+  }
+}
+
+/* Compact fallbacks for the new additive blocks on phones. */
+@media (max-width:767px){
+  html.ps-page-scout .team-topbar{display:block!important}
+  html.ps-page-scout .team-hero-copy h1{margin:6px 0 2px;font-size:21px}
+  html.ps-page-scout .team-hero-copy p{margin:0 0 12px;color:var(--text-3);font-size:11px}
+  html.ps-page-scout .team-hero-eyebrow{display:flex;align-items:center;gap:8px}
+  html.ps-page-scout .team-premium-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    margin:10px 0;
+  }
+  html.ps-page-scout .team-premium-metrics>article{min-height:82px;padding:11px}
+  html.ps-page-scout .team-premium-metrics .tpm-icon{width:34px;height:34px}
+  html.ps-page-scout .team-premium-metrics strong{font-size:16px}
+  html.ps-page-idp .idp-premium-hero{
+    align-items:flex-start;
+    padding:18px;
+    border-radius:16px;
+  }
+  html.ps-page-idp .iph-copy>h2{font-size:20px}
+  html.ps-page-idp .iph-score>div{width:72px;height:72px}
+  html.ps-page-idp .iph-score strong{font-size:22px}
+  html.ps-page-idp .idp-premium-journey{margin-top:10px;padding:12px;border-radius:14px}
+  html.ps-page-idp .ipj-steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  html.ps-page-idp .ipj-step{padding:5px 0}
+  html.ps-page-idp .ipj-step::after{display:none!important}
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Command Dock v4 · Photoshop-density, three aligned rows
+   The board keeps the original controls and drag listeners; this block only
+   normalises geometry, icon rhythm and the independently scrolling data rails.
+   ─────────────────────────────────────────────────────────────── */
+@media (min-width:768px){
+  html.ps-page-board body.rail-full #ps-command-dock{
+    --cmd-control:28px;
+    --cmd-token:26px;
+    --cmd-icon:15px;
+    left:12px!important;
+    right:12px!important;
+    bottom:12px!important;
+    height:104px!important;
+    grid-template-rows:38px 64px!important;
+    border-color:#dde1e7!important;
+    border-radius:12px!important;
+    background:#fff!important;
+    box-shadow:0 6px 18px rgba(15,23,42,.12)!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock>#animBar{
+    height:38px!important;
+    min-height:38px!important;
+    gap:4px!important;
+    padding:4px 8px!important;
+    border-radius:12px 12px 0 0!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock>#floatBar{
+    height:64px!important;
+    min-height:64px!important;
+    grid-template-rows:32px 32px!important;
+    border-radius:0 0 12px 12px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row{
+    height:32px!important;
+    min-height:32px!important;
+    gap:3px!important;
+    padding:2px 8px!important;
+    border-radius:0 0 12px 12px!important;
+    background:#fff!important;
+    overflow:visible!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .cmd-row-label{
+    color:#646A73!important;
+    font-size:9px!important;
+    font-weight:800!important;
+    line-height:1!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .cmd-separator{
+    width:1px!important;
+    height:20px!important;
+    margin:0 1px!important;
+    background:#e6e9ee!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock button:focus-visible,
+  html.ps-page-board body.rail-full #ps-command-dock select:focus-visible{
+    outline:0!important;
+    border-color:#3a6df0!important;
+    box-shadow:inset 0 0 0 2px #3a6df0!important;
+    border-radius:7px!important;
+  }
+
+  /* Scene strip: fixed controls stay pinned; only film thumbnails scroll. */
+  html.ps-page-board body.rail-full #cmd-scene-meta{
+    flex:0 0 50px!important;
+    width:50px!important;
+    height:28px!important;
+    gap:3px!important;
+  }
+  html.ps-page-board body.rail-full #cmd-scene-label{
+    min-width:0!important;
+    font-size:10px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-scene-meta #cmd-scene-status{
+    min-width:0!important;
+    height:16px!important;
+    padding:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    color:#646A73!important;
+    font-size:9px!important;
+    font-variant-numeric:tabular-nums;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animFrames{
+    flex:1 1 260px!important;
+    min-width:120px!important;
+    max-width:420px!important;
+    height:28px!important;
+    gap:4px!important;
+    padding:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scroll-snap-type:x proximity;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animFrames:empty::before{
+    height:28px!important;
+    padding:0 8px!important;
+    border-radius:7px!important;
+    font-size:9px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame{
+    flex:0 0 62px!important;
+    width:62px!important;
+    height:28px!important;
+    border-radius:7px!important;
+    scroll-snap-align:start;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame:focus-visible{
+    outline:0!important;
+    border-color:#3a6df0!important;
+    box-shadow:inset 0 0 0 2px #3a6df0!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame .aft{
+    left:3px!important;
+    top:4px!important;
+    width:36px!important;
+    height:20px!important;
+    border-radius:4px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame.on .aft{
+    left:2px!important;
+    top:3px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame .afi{
+    left:46px!important;
+    top:8px!important;
+    font-size:9px!important;
+    font-variant-numeric:tabular-nums;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame.on .afi{
+    left:45px!important;
+    top:7px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame .afm{
+    width:20px!important;
+    height:20px!important;
+    top:4px!important;
+    right:3px!important;
+    border-radius:6px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame .afc{
+    left:32px!important;
+    bottom:3px!important;
+    width:6px!important;
+    height:6px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animAdd,
+  html.ps-page-board body.rail-full #ps-command-dock #animOnionBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #animExport{
+    flex:0 0 var(--cmd-control)!important;
+    width:var(--cmd-control)!important;
+    min-width:var(--cmd-control)!important;
+    height:var(--cmd-control)!important;
+    min-height:var(--cmd-control)!important;
+    padding:0!important;
+    gap:0!important;
+    border-radius:7px!important;
+    font-size:0!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .cmd-button-label{
+    display:none!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animPlay,
+  html.ps-page-board body.rail-full #ps-command-dock #animLoopBtn{
+    flex:0 0 30px!important;
+    width:30px!important;
+    min-width:30px!important;
+    height:28px!important;
+    min-height:28px!important;
+    border-radius:7px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animLoopBtn{
+    flex-basis:28px!important;
+    width:28px!important;
+    min-width:28px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animAdd svg,
+  html.ps-page-board body.rail-full #ps-command-dock #animOnionBtn svg,
+  html.ps-page-board body.rail-full #ps-command-dock #animPlay svg,
+  html.ps-page-board body.rail-full #ps-command-dock #animLoopBtn svg,
+  html.ps-page-board body.rail-full #ps-command-dock #animExport svg{
+    width:var(--cmd-icon)!important;
+    height:var(--cmd-icon)!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animSpeedSel,
+  html.ps-page-board body.rail-full #ps-command-dock #animHoldSel{
+    width:50px!important;
+    min-width:50px!important;
+    height:24px!important;
+    min-height:24px!important;
+    padding:0 16px 0 7px!important;
+    border-radius:7px!important;
+    font-size:10px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animHoldSel{
+    width:58px!important;
+    min-width:58px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-scene-actions{
+    height:28px!important;
+    grid-template-columns:repeat(4,28px)!important;
+    gap:3px!important;
+    padding-left:4px;
+    margin-left:auto;
+    border-left:1px solid #e6e9ee;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-scene-actions>button{
+    flex:0 0 28px!important;
+    width:28px!important;
+    min-width:28px!important;
+    height:28px!important;
+    min-height:28px!important;
+    border-radius:7px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-scene-actions>button svg{
+    width:15px!important;
+    height:15px!important;
+    max-width:18px!important;
+  }
+
+  /* Player row: every team/player token uses the same 26px footprint. */
+  html.ps-page-board body.rail-full #ps-command-dock #floatBar>#drawPanel{
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+    padding:2px 8px!important;
+  }
+  html.ps-page-board body.rail-full #drawPanel #railLanes,
+  html.ps-page-board body.rail-full #drawPanel #railL2{
+    height:26px!important;
+  }
+  html.ps-page-board body.rail-full #drawPanel #railL2{
+    gap:3px!important;
+  }
+  html.ps-page-board body.rail-full #drawPanel .rail-sec{
+    min-width:24px!important;
+    font-size:10px!important;
+  }
+  html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat{
+    height:26px!important;
+    gap:3px!important;
+  }
+  html.ps-page-board body.rail-full #drawPanel #railL2 #benchItems{
+    height:26px!important;
+    gap:3px!important;
+  }
+  html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat .catpill.tpill,
+  html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat .team-style-btn,
+  html.ps-page-board body.rail-full #drawPanel #railL2 #benchItems .chip{
+    flex:0 0 var(--cmd-token)!important;
+    width:var(--cmd-token)!important;
+    min-width:var(--cmd-token)!important;
+    height:var(--cmd-token)!important;
+    min-height:var(--cmd-token)!important;
+    border-radius:7px!important;
+    font-size:10px!important;
+  }
+  html.ps-page-board body.rail-full #drawPanel #railL2 #benchItems .chip{
+    border-radius:50%!important;
+  }
+
+  /* Edit row: compact icon grid with an independently scrolling equipment rail. */
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#undoBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#redoBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#lineStyleBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#cmd-tool-more{
+    width:28px!important;
+    min-width:28px!important;
+    height:28px!important;
+    min-height:28px!important;
+    border-radius:7px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #toolSeg{
+    gap:3px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #toolSeg>button{
+    width:30px!important;
+    min-width:30px!important;
+    height:28px!important;
+    min-height:28px!important;
+    border-radius:7px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #toolSeg>button svg,
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#undoBtn svg,
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#redoBtn svg{
+    width:auto!important;
+    height:14px!important;
+    max-width:22px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #colorWrap{
+    width:28px!important;
+    height:28px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #colorBtn{
+    width:20px!important;
+    min-width:20px!important;
+    height:20px!important;
+    min-height:20px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #viewBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #moreBtn{
+    width:28px!important;
+    min-width:28px!important;
+    height:28px!important;
+    min-height:28px!important;
+    padding:0!important;
+    gap:0!important;
+    border-radius:7px!important;
+    font-size:0!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #viewBtn svg,
+  html.ps-page-board body.rail-full #ps-command-dock #moreBtn svg{
+    width:15px!important;
+    height:15px!important;
+  }
+  html.ps-page-board body.rail-full #cmd-equipment-group{
+    flex:1 1 150px!important;
+    min-width:80px!important;
+    height:28px!important;
+    gap:3px!important;
+    padding-left:6px!important;
+  }
+  html.ps-page-board body.rail-full #cmd-equipment-group>.rail-sec{
+    min-width:24px!important;
+    font-size:10px!important;
+  }
+  html.ps-page-board body.rail-full #cmd-equipment-group #railEquip{
+    height:26px!important;
+    gap:3px!important;
+  }
+  html.ps-page-board body.rail-full #cmd-equipment-group #railEquip .chip{
+    flex:0 0 var(--cmd-token)!important;
+    width:var(--cmd-token)!important;
+    min-width:var(--cmd-token)!important;
+    height:var(--cmd-token)!important;
+    min-height:var(--cmd-token)!important;
+  }
+  html.ps-page-board body.rail-full #cmd-equipment-group #railEquip .chip svg,
+  html.ps-page-board body.rail-full #cmd-equipment-group #railEquip .chip img{
+    width:16px!important;
+    height:16px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #vaultSave{
+    flex:0 0 86px!important;
+    width:86px!important;
+    min-width:86px!important;
+    height:28px!important;
+    min-height:28px!important;
+    margin-left:3px!important;
+    padding:0 7px!important;
+    border-radius:7px!important;
+    font-size:10px!important;
+  }
+
+  html.ps-page-board body.rail-full:not(.vault-full):not(.focus-board) #boardStage,
+  html.ps-page-board body.rail-full:has(#animBar.on):not(.vault-full):not(.focus-board) #boardStage{
+    padding-bottom:122px!important;
+  }
+  html.ps-page-board body.focus-board #boardStage,
+  html.ps-page-board body.vault-full #boardStage{
+    padding:0!important;
+  }
+  html.ps-page-board body.comm-viewing #ps-command-dock{
+    display:none!important;
+  }
+}
+
+@media (min-width:768px) and (max-width:860px){
+  html.ps-page-board body.rail-full #ps-command-dock>#animBar{
+    gap:3px!important;
+    padding-inline:6px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animFrames{
+    flex-basis:110px!important;
+    min-width:88px!important;
+    max-width:200px!important;
+  }
+  html.ps-page-board body.rail-full #cmd-edit-label,
+  html.ps-page-board body.rail-full #cmd-tools-label,
+  html.ps-page-board body.rail-full #cmd-style-label,
+  html.ps-page-board body.rail-full #cmd-tool-row>.cmd-separator{
+    display:none!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #vaultSave{
+    flex-basis:68px!important;
+    width:68px!important;
+    min-width:68px!important;
+    font-size:9px!important;
+  }
+}
+
+/* Compact touch fallback: keep the same three-row hierarchy while restoring
+   30–32px hit targets on iPad and other coarse-pointer desktop layouts. */
+@media (min-width:768px) and (any-pointer:coarse){
+  html.ps-page-board{
+    --ps-dock-h:114px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock{
+    height:114px!important;
+    grid-template-rows:40px 72px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock>#animBar{
+    height:40px!important;
+    min-height:40px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock>#floatBar{
+    height:72px!important;
+    min-height:72px!important;
+    grid-template-rows:36px 36px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #floatBar>#drawPanel,
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row{
+    height:36px!important;
+    min-height:36px!important;
+    max-height:36px!important;
+    padding-block:2px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animFrames{
+    height:32px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame{
+    flex-basis:68px!important;
+    width:68px!important;
+    height:32px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame .aft{
+    width:38px!important;
+    height:22px!important;
+    top:4px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame.on .aft{
+    top:3px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame .afi{
+    left:51px!important;
+    top:10px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame.on .afi{
+    left:50px!important;
+    top:9px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock .anim-frame .afm{
+    width:24px!important;
+    height:24px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animAdd,
+  html.ps-page-board body.rail-full #ps-command-dock #animOnionBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #animExport,
+  html.ps-page-board body.rail-full #ps-command-dock #animLoopBtn{
+    flex-basis:32px!important;
+    width:32px!important;
+    min-width:32px!important;
+    height:32px!important;
+    min-height:32px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animPlay{
+    flex-basis:34px!important;
+    width:34px!important;
+    min-width:34px!important;
+    height:32px!important;
+    min-height:32px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #animSpeedSel,
+  html.ps-page-board body.rail-full #ps-command-dock #animHoldSel{
+    height:32px!important;
+    min-height:32px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-scene-actions{
+    height:32px!important;
+    grid-template-columns:repeat(4,32px)!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-scene-actions>button{
+    flex-basis:32px!important;
+    width:32px!important;
+    min-width:32px!important;
+    height:32px!important;
+    min-height:32px!important;
+  }
+  html.ps-page-board body.rail-full #drawPanel #railLanes,
+  html.ps-page-board body.rail-full #drawPanel #railL2,
+  html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat,
+  html.ps-page-board body.rail-full #drawPanel #railL2 #benchItems,
+  html.ps-page-board body.rail-full #cmd-equipment-group #railEquip{
+    height:30px!important;
+  }
+  html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat .catpill.tpill,
+  html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat .team-style-btn,
+  html.ps-page-board body.rail-full #drawPanel #railL2 #benchItems .chip,
+  html.ps-page-board body.rail-full #cmd-equipment-group #railEquip .chip{
+    flex-basis:30px!important;
+    width:30px!important;
+    min-width:30px!important;
+    height:28px!important;
+    min-height:28px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#undoBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#redoBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#lineStyleBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #cmd-tool-row>#cmd-tool-more,
+  html.ps-page-board body.rail-full #ps-command-dock #colorWrap,
+  html.ps-page-board body.rail-full #ps-command-dock #viewBtn,
+  html.ps-page-board body.rail-full #ps-command-dock #moreBtn{
+    width:32px!important;
+    min-width:32px!important;
+    height:32px!important;
+    min-height:32px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #toolSeg>button{
+    width:34px!important;
+    min-width:34px!important;
+    height:32px!important;
+    min-height:32px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #colorBtn{
+    width:28px!important;
+    min-width:28px!important;
+    height:28px!important;
+    min-height:28px!important;
+  }
+  html.ps-page-board body.rail-full #cmd-equipment-group{
+    height:32px!important;
+  }
+  html.ps-page-board body.rail-full #ps-command-dock #vaultSave{
+    height:32px!important;
+    min-height:32px!important;
+  }
+  html.ps-page-board body.rail-full:not(.vault-full):not(.focus-board) #boardStage,
+  html.ps-page-board body.rail-full:has(#animBar.on):not(.vault-full):not(.focus-board) #boardStage{
+    padding-bottom:132px!important;
+  }
+}
+
+/* 1.787 · App settings and board settings have separate, explicit scopes.
+   The desktop board reuses every native view/more control inside one tabbed panel. */
+html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
+@media (min-width:768px){
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop{
+    position:fixed!important;
+    z-index:260!important;
+    display:none!important;
+    flex-direction:column!important;
+    box-sizing:border-box!important;
+    width:min(420px,calc(100vw - 24px))!important;
+    max-width:calc(100vw - 24px)!important;
+    max-height:min(560px,calc(100vh - 170px))!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    border:1px solid var(--cmd-line,#dfe3ea)!important;
+    border-radius:16px!important;
+    background:#fff!important;
+    color:var(--cmd-text,#1f2937)!important;
+    box-shadow:0 20px 50px rgba(15,23,42,.22)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop.on{display:flex!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-head{
+    flex:0 0 auto!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    min-height:50px!important;
+    padding:9px 12px 8px 16px!important;
+    border-bottom:1px solid var(--cmd-line,#e4e7ec)!important;
+    background:#fff!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-titlebox{
+    display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-title{
+    color:#172033!important;font:800 15px/1.2 Pretendard,sans-serif!important;letter-spacing:-.02em!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-scope{
+    display:inline-flex!important;align-items:center!important;min-height:22px!important;padding:0 8px!important;
+    border:1px solid #c9d7fb!important;border-radius:999px!important;background:#eef4ff!important;color:#2c54c4!important;
+    font:800 10px/1 Pretendard,sans-serif!important;white-space:nowrap!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-close{
+    flex:0 0 32px!important;display:grid!important;place-items:center!important;width:32px!important;height:32px!important;
+    margin:0!important;padding:0!important;border:0!important;border-radius:8px!important;background:transparent!important;
+    color:#646A73!important;font:500 22px/1 Pretendard,sans-serif!important;cursor:pointer!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-close:hover{background:#f2f4f7!important;color:#172033!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs{
+    flex:0 0 auto!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:4px!important;
+    margin:10px 14px 0!important;padding:3px!important;border:1px solid #e4e7ec!important;border-radius:10px!important;background:#f6f7f9!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button{
+    min-width:0!important;height:32px!important;margin:0!important;padding:0 10px!important;border:0!important;border-radius:7px!important;
+    background:transparent!important;color:#646A73!important;box-shadow:none!important;font:800 12px/1 Pretendard,sans-serif!important;cursor:pointer!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button.on{
+    background:#fff!important;color:#2c54c4!important;box-shadow:0 1px 3px rgba(15,23,42,.12)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-content{
+    flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;
+    padding:10px 14px 14px!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-pane[hidden]{display:none!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop :is(#viewMenu,#moreMenu).cmd-board-settings-source{
+    position:static!important;inset:auto!important;transform:none!important;z-index:auto!important;
+    display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;
+    width:100%!important;min-width:0!important;max-width:none!important;max-height:none!important;overflow:visible!important;
+    margin:0!important;padding:0!important;gap:5px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-settings-state-source[hidden]{display:none!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .menusec{
+    width:100%!important;margin:10px 0 2px!important;padding:0!important;border:0!important;background:transparent!important;
+    color:#8a94a4!important;font:800 10px/1.2 Pretendard,sans-serif!important;letter-spacing:.07em!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .menusec:first-child{margin-top:2px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .menudiv{width:100%!important;height:1px!important;margin:8px 0!important;border:0!important;background:#eef0f3!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .menurow{
+    display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:8px!important;width:100%!important;min-height:34px!important;margin:0!important;padding:0!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .menulbl{
+    flex:0 0 64px!important;width:64px!important;min-width:64px!important;max-width:64px!important;
+    color:#646A73!important;font:800 11px/1.2 Pretendard,sans-serif!important;text-align:left!important;white-space:nowrap!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .seg{
+    flex:1 1 auto!important;display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:3px!important;min-width:0!important;padding:2px!important;border-radius:8px!important;background:#f5f6f8!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop :is(.seg>button,.btn,select.btn){
+    min-height:28px!important;margin:0!important;border:1px solid #e1e5eb!important;border-radius:7px!important;background:#fff!important;color:#344054!important;box-shadow:none!important;font:700 11px/1 Pretendard,sans-serif!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .seg>button{padding:0 8px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .seg>button.on{border-color:#b9c9f6!important;background:#edf2ff!important;color:#2c54c4!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop select.btn{flex:1 1 auto!important;min-width:0!important;padding:0 24px 0 8px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .menurow>.btn{flex:1 1 auto!important;justify-content:center!important;padding:0 10px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .teamcol-sw{flex:0 0 24px!important;width:24px!important;height:24px!important;margin:0!important;border-radius:50%!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger{
+    margin-top:12px!important;border:1px solid #f1d7d5!important;border-radius:10px!important;background:#fffafa!important;overflow:hidden!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger>summary{
+    position:relative!important;display:flex!important;align-items:center!important;min-height:38px!important;padding:0 34px 0 12px!important;
+    color:#a84440!important;font:800 11px/1 Pretendard,sans-serif!important;cursor:pointer!important;list-style:none!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger>summary::-webkit-details-marker{display:none!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger>summary::after{content:"＋";position:absolute;right:12px;font-size:15px;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger[open]>summary::after{content:"−";}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger-body{display:flex!important;flex-direction:column!important;gap:6px!important;padding:0 10px 10px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger .btn{border-color:#ecc9c6!important;background:#fff!important;color:#a84440!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop,
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-head{background:#1f2631!important;color:#F2F3F5!important;border-color:#394351!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-title{color:#f4f6f8!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs{background:#171d26!important;border-color:#394351!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button,
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .menulbl{color:#b9c2cf!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button.on{background:#303a48!important;color:#dce6ff!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .seg{background:#171d26!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop :is(.seg>button,.btn,select.btn){background:#262f3b!important;border-color:#3b4655!important;color:#e1e6ed!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger{border-color:#6a4144!important;background:#2b2228!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger>summary{color:#f2aaa6!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger .btn{border-color:#70484a!important;background:#31272c!important;color:#f2aaa6!important;}
+}
+
+@media (min-width:768px) and (any-pointer:coarse){
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop{max-height:calc(100vh - 154px)!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-close{width:44px!important;height:44px!important;flex-basis:44px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button{height:44px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .menurow{min-height:44px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop :is(.seg>button,.btn,select.btn){min-height:44px!important;}
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Command Dock v5 · Studio Light Grid
+   확정안: 설명 라벨 없이 40/36/36px 정렬, 모든 기능 원본 직접 노출.
+   ─────────────────────────────────────────────────────────────── */
+@media (min-width:768px){
+  html.ps-page-board body.command-dock-v5{
+    --cmd-gutter:12px;
+    --cmd-control:28px;
+    --cmd-token:26px;
+    --cmd-icon:16px;
+    --cmd-line:#e2e7ee;
+    --cmd-well:#f4f6f8;
+    --cmd-hover:#fff;
+    --cmd-text:#344054;
+    --cmd-muted:#646A73;
+    --cmd-blue:#3a6df0;
+    --cmd-soft:#edf2fe;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock{
+    left:var(--cmd-gutter)!important;
+    right:var(--cmd-gutter)!important;
+    bottom:12px!important;
+    height:112px!important;
+    grid-template-rows:40px 72px!important;
+    border:0!important;
+    border-radius:14px!important;
+    background:#fff!important;
+    box-shadow:inset 0 0 0 1px var(--cmd-line),0 8px 24px rgba(15,23,42,.12)!important;
+    overflow:visible!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock>#animBar{
+    position:static!important;
+    inset:auto!important;
+    width:100%!important;
+    max-width:none!important;
+    transform:none!important;
+    z-index:auto!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    height:40px!important;
+    min-height:40px!important;
+    gap:6px!important;
+    padding:4px 8px!important;
+    border-bottom:1px solid var(--cmd-line)!important;
+    border-radius:14px 14px 0 0!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock>#floatBar{
+    display:grid!important;
+    grid-template-rows:36px 36px!important;
+    height:72px!important;
+    min-height:72px!important;
+    border-radius:0 0 14px 14px!important;
+    background:#fff!important;
+    overflow:visible!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #floatBar>#drawPanel,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-tool-row{
+    position:static!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    box-sizing:border-box!important;
+    width:100%!important;
+    height:36px!important;
+    min-height:36px!important;
+    max-height:36px!important;
+    margin:0!important;
+    padding:2px 8px!important;
+    gap:6px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-tool-row{
+    border-top:1px solid var(--cmd-line)!important;
+    border-radius:0 0 14px 14px!important;
+  }
+  html.ps-page-board body.command-dock-v5 .cmd-cluster{
+    display:flex!important;
+    align-items:center!important;
+    box-sizing:border-box!important;
+    height:32px!important;
+    min-width:0!important;
+    gap:2px!important;
+    padding:2px!important;
+    border:0!important;
+    border-radius:8px!important;
+    background:var(--cmd-well)!important;
+  }
+  html.ps-page-board body.command-dock-v5 .cmd-cluster>*{order:0!important;}
+  html.ps-page-board body.command-dock-v5 .cmd-visually-hidden,
+  html.ps-page-board body.command-dock-v5 .cmd-row-label,
+  html.ps-page-board body.command-dock-v5 #railPlayerLabel,
+  html.ps-page-board body.command-dock-v5 #railEquipLabel{
+    position:absolute!important;
+    width:1px!important;height:1px!important;
+    padding:0!important;margin:-1px!important;
+    overflow:hidden!important;clip:rect(0,0,0,0)!important;
+    white-space:nowrap!important;border:0!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-placement-hidden,
+  html.ps-page-board body.command-dock-v5 #railLanes,
+  html.ps-page-board body.command-dock-v5 #cmd-tool-more,
+  html.ps-page-board body.command-dock-v5 #cmd-tool-extras{display:none!important;}
+
+  /* Row 1 · scene library, edit, transport, timing and export. */
+  html.ps-page-board body.command-dock-v5 #cmd-scene-strip{
+    flex:0 1 clamp(160px,32vw,400px)!important;
+    min-width:120px!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-scene-meta{
+    flex:0 0 auto!important;
+    width:auto!important;
+    height:24px!important;
+    min-width:30px!important;
+    padding:0 4px!important;
+    display:flex!important;
+    align-items:center!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-scene-status{
+    flex:0 0 auto!important;
+    min-width:0!important;
+    height:auto!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:var(--cmd-muted)!important;
+    font:700 10px/1 Pretendard,sans-serif!important;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap!important;
+  }
+  html.ps-page-board body.command-dock-v5 #animFrames{
+    flex:1 1 auto!important;
+    min-width:64px!important;
+    max-width:none!important;
+    height:28px!important;
+    gap:4px!important;
+    padding:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    scrollbar-width:none;
+  }
+  html.ps-page-board body.command-dock-v5 #animFrames::-webkit-scrollbar,
+  html.ps-page-board body.command-dock-v5 #railEquip::-webkit-scrollbar{display:none;}
+  html.ps-page-board body.command-dock-v5 #animFrames:empty::before{
+    height:28px!important;padding:0 8px!important;border-radius:7px!important;font-size:9px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame{
+    flex:0 0 64px!important;width:64px!important;height:28px!important;border-radius:7px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame .aft{
+    left:3px!important;top:4px!important;width:37px!important;height:20px!important;border-radius:4px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame.on .aft{left:2px!important;top:3px!important;}
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame .afi{left:48px!important;top:8px!important;font-size:9px!important;}
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame.on .afi{left:47px!important;top:7px!important;}
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame .afm{width:20px!important;height:20px!important;top:4px!important;right:3px!important;border-radius:6px!important;}
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame:focus-visible{
+    outline:0!important;box-shadow:inset 0 0 0 2px var(--cmd-blue)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-scene-edit,
+  html.ps-page-board body.command-dock-v5 #cmd-scene-transport,
+  html.ps-page-board body.command-dock-v5 #cmd-scene-time,
+  html.ps-page-board body.command-dock-v5 #cmd-scene-export{flex:0 0 auto!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animAdd,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animUpdate,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animExport,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animGif,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #pngBtn{
+    flex:0 0 var(--cmd-control)!important;
+    display:grid!important;place-items:center!important;
+    width:var(--cmd-control)!important;min-width:var(--cmd-control)!important;
+    height:var(--cmd-control)!important;min-height:var(--cmd-control)!important;
+    padding:0!important;border:0!important;border-radius:7px!important;
+    background:transparent!important;color:var(--cmd-text)!important;font-size:0!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay{
+    background:var(--cmd-blue)!important;color:#fff!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn.on,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn.on,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn.on{
+    background:var(--cmd-soft)!important;color:#2c54c4!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animAdd svg,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animUpdate svg,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn svg,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn svg,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay svg,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn svg,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animExport svg,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animGif svg,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #pngBtn svg{
+    width:var(--cmd-icon)!important;height:var(--cmd-icon)!important;max-width:20px!important;margin:0!important;
+  }
+  html.ps-page-board body.command-dock-v5 #animSpeedSel,
+  html.ps-page-board body.command-dock-v5 #animHoldSel{
+    flex:0 0 auto!important;width:50px!important;min-width:50px!important;height:28px!important;min-height:28px!important;
+    padding:0 15px 0 6px!important;border:0!important;border-radius:7px!important;background:#fff!important;
+    color:var(--cmd-text)!important;font-size:10px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #animHoldSel{width:58px!important;min-width:58px!important;}
+
+  /* Row 2 · team, one repeat-placement token, C/N/T/S and equipment. */
+  html.ps-page-board body.command-dock-v5 #drawPanel #railL2{
+    display:flex!important;align-items:center!important;flex:1 1 auto!important;width:100%!important;height:32px!important;
+    min-width:0!important;gap:6px!important;padding:0!important;margin:0!important;overflow:visible!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-team-group,
+  html.ps-page-board body.command-dock-v5 #cmd-stamp-group{flex:0 0 auto!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-team-group #benchCat{
+    display:flex!important;align-items:center!important;height:28px!important;gap:2px!important;margin:0!important;padding:0!important;
+    overflow:visible!important;background:transparent!important;border:0!important;
+  }
+  html.ps-page-board body.command-dock-v5 #benchCat .catpill[data-cat="equip"],
+  html.ps-page-board body.command-dock-v5 #benchCat .eqcol,
+  html.ps-page-board body.command-dock-v5 #benchCat .sep{display:none!important;}
+  html.ps-page-board body.command-dock-v5 #benchCat .catpill.tpill,
+  html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn,
+  html.ps-page-board body.command-dock-v5 #benchCat #teamReset,
+  html.ps-page-board body.command-dock-v5 .cmd-stamp-token,
+  html.ps-page-board body.command-dock-v5 #cmd-equip-color{
+    flex:0 0 var(--cmd-token)!important;display:grid!important;place-items:center!important;
+    width:var(--cmd-token)!important;min-width:var(--cmd-token)!important;height:var(--cmd-token)!important;min-height:var(--cmd-token)!important;
+    margin:0!important;padding:0!important;border:1px solid rgba(15,23,42,.16)!important;border-radius:7px!important;
+    font:800 9px/1 Pretendard,sans-serif!important;cursor:pointer!important;
+  }
+  html.ps-page-board body.command-dock-v5 #benchCat #teamReset{display:grid!important;background:#fff!important;color:var(--cmd-muted)!important;}
+  html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn svg,
+  html.ps-page-board body.command-dock-v5 #benchCat #teamReset svg,
+  html.ps-page-board body.command-dock-v5 #cmd-equip-color svg{width:16px!important;height:16px!important;}
+  /* 1.997 — '유니폼 설정'은 글자 알약(도구 색상 선택 알약과 같은 결): 위 토큰 규칙(정사각 26px)에서 빼낸다 */
+  html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn{width:auto!important;min-width:0!important;flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;gap:5px!important;padding:0 10px 0 8px!important;border-radius:999px!important;font:700 11px/1 Pretendard,sans-serif!important;white-space:nowrap!important;background:#fff!important;color:var(--cmd-muted,#646A73)!important;}
+  html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn:hover,html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn.on{color:var(--blue,#3a6df0)!important;border-color:rgba(58,109,240,.5)!important;background:var(--blue-soft,#EEF2FF)!important;}
+  html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn svg{width:14px!important;height:14px!important;}
+  /* rail-full 토큰 규칙(1454·1693)보다 특이도 높게 — 유니폼 설정 알약 폭 자유 */
+  html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat #teamStyleBtn.team-style-btn,
+  html.ps-page-board body.command-dock-v5 #benchCat #teamStyleBtn.team-style-btn{width:auto!important;min-width:0!important;flex:0 0 auto!important;flex-basis:auto!important;padding:0 10px 0 8px!important;display:inline-flex!important;align-items:center!important;gap:5px!important;border-radius:999px!important;font:700 11px/1 Pretendard,sans-serif!important;}
+  html.ps-page-board body.command-dock-v5 .cmd-stamp-token{border-radius:50%!important;}
+  /* 2.472 — 사용자 "원형을 바꿔줘 보드와 같이": 팀 칩(1~4)·기본색 리셋도 보드 위 선수 토큰처럼 원.
+     (장비 색·유니폼 설정 알약은 토큰이 아니라 제외 — 유니폼 설정은 아래 999px 알약 규칙이 따로 이긴다) */
+  html.ps-page-board body.command-dock-v5 #benchCat .catpill.tpill,
+  html.ps-page-board body.command-dock-v5 #benchCat #teamReset{border-radius:50%!important;}
+  html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat .catpill.tpill{border-radius:50%!important;}   /* 2.472 — 아이패드 레일의 팀 칩도 원 */
+  html.ps-page-board body.command-dock-v5 .cmd-stamp-token.on{
+    box-shadow:0 0 0 2px #fff,0 0 0 4px var(--cmd-blue)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-equipment-group{
+    flex:1 1 220px!important;min-width:80px!important;height:32px!important;gap:3px!important;padding:2px!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-equipment-group #railEquip{
+    display:flex!important;align-items:center!important;flex:1 1 auto!important;min-width:0!important;height:26px!important;
+    gap:3px!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-equipment-group #railEquip .chip{
+    flex:0 0 var(--cmd-token)!important;width:var(--cmd-token)!important;min-width:var(--cmd-token)!important;
+    height:var(--cmd-token)!important;min-height:var(--cmd-token)!important;margin:0!important;padding:0!important;border-radius:50%!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-equipment-group #railEquip .chip svg,
+  html.ps-page-board body.command-dock-v5 #cmd-equipment-group #railEquip .chip img{width:16px!important;height:16px!important;object-fit:contain!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-equip-colors-pop{
+    min-width:240px!important;padding:10px!important;border:1px solid var(--cmd-line)!important;border-radius:12px!important;
+    background:#fff!important;box-shadow:0 14px 36px rgba(15,23,42,.18)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-equip-colors-pop #eqColCtl{
+    display:flex!important;align-items:center!important;flex-direction:row!important;width:auto!important;height:auto!important;gap:6px!important;margin:0!important;
+  }
+
+  /* Row 3 · history, all twelve drawing tools, style and left-aligned end actions. */
+  html.ps-page-board body.command-dock-v5 #cmd-history,
+  html.ps-page-board body.command-dock-v5 #cmd-style,
+  html.ps-page-board body.command-dock-v5 #cmd-tool-end{flex:0 0 auto!important;height:32px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-tools{flex:0 0 auto!important;height:32px!important;overflow:visible!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-tool-end{margin-left:0!important;}
+  html.ps-page-board body.command-dock-v5 #toolSeg{
+    display:flex!important;align-items:center!important;width:auto!important;height:28px!important;gap:2px!important;padding:0!important;overflow:visible!important;
+  }
+  html.ps-page-board body.command-dock-v5 #toolSeg>button,
+  html.ps-page-board body.command-dock-v5 #cmd-history>#undoBtn,
+  html.ps-page-board body.command-dock-v5 #cmd-history>#redoBtn,
+  html.ps-page-board body.command-dock-v5 #cmd-style>#lineStyleBtn,
+  html.ps-page-board body.command-dock-v5 #cmd-style>#colorWrap,
+  html.ps-page-board body.command-dock-v5 #cmd-tool-end #viewBtn,
+  html.ps-page-board body.command-dock-v5 #cmd-tool-end #moreBtn{
+    flex:0 0 var(--cmd-control)!important;display:grid!important;place-items:center!important;
+    width:var(--cmd-control)!important;min-width:var(--cmd-control)!important;height:var(--cmd-control)!important;min-height:var(--cmd-control)!important;
+    margin:0!important;padding:0!important;border:0!important;border-radius:7px!important;background:transparent!important;color:var(--cmd-text)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #toolSeg>button.cmd-tool-extra{display:grid!important;}
+  html.ps-page-board body.command-dock-v5 #toolSeg>button:hover,
+  html.ps-page-board body.command-dock-v5 #cmd-history>button:hover,
+  html.ps-page-board body.command-dock-v5 #cmd-style>button:hover,
+  html.ps-page-board body.command-dock-v5 #cmd-tool-end button:hover,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar button:hover{
+    background:var(--cmd-hover)!important;box-shadow:0 1px 3px rgba(15,23,42,.12)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #toolSeg>button.on{
+    background:var(--cmd-blue)!important;color:#fff!important;box-shadow:none!important;
+  }
+  html.ps-page-board body.command-dock-v5 #toolSeg>button svg,
+  html.ps-page-board body.command-dock-v5 #cmd-history>button svg,
+  html.ps-page-board body.command-dock-v5 #cmd-style>button svg,
+  html.ps-page-board body.command-dock-v5 #cmd-tool-end button svg{
+    width:var(--cmd-icon)!important;height:var(--cmd-icon)!important;max-width:22px!important;max-height:16px!important;margin:0!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-style #colorBtn{
+    width:20px!important;min-width:20px!important;height:20px!important;min-height:20px!important;border-radius:50%!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-tool-end #viewBtn,
+  html.ps-page-board body.command-dock-v5 #cmd-tool-end #moreBtn{font-size:0!important;gap:0!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave{
+    position:static!important;inset:auto!important;transform:none!important;z-index:auto!important;
+    flex:0 0 86px!important;width:86px!important;min-width:86px!important;height:28px!important;min-height:28px!important;
+    margin:0!important;padding:0 7px!important;border:0!important;border-radius:7px!important;background:var(--cmd-blue)!important;color:#fff!important;
+    font:800 10px/1 Pretendard,sans-serif!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock button:focus-visible,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock select:focus-visible{
+    outline:2px solid var(--cmd-blue)!important;outline-offset:1px!important;box-shadow:none!important;
+  }
+  html.ps-page-board body.command-dock-v5.token-stamp #drawCatch{pointer-events:all!important;cursor:copy!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.vault-full):not(.focus-board) #boardStage,
+  html.ps-page-board body.command-dock-v5.rail-full:has(#animBar.on):not(.vault-full):not(.focus-board) #boardStage{
+    padding-left:var(--cmd-gutter)!important;padding-right:var(--cmd-gutter)!important;padding-bottom:130px!important;
+  }
+  html.ps-page-board body.command-dock-v5.focus-board #boardStage,
+  html.ps-page-board body.command-dock-v5.vault-full #boardStage{padding:0!important;}
+  html.ps-page-board body.command-dock-v5.comm-viewing #ps-command-dock{display:none!important;}
+}
+
+@media (min-width:768px) and (any-pointer:coarse){
+  html.ps-page-board body.command-dock-v5{--ps-dock-h:120px!important;--cmd-control:30px;--cmd-token:30px;--cmd-icon:16px;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock{height:120px!important;grid-template-rows:42px 78px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock>#animBar{height:42px!important;min-height:42px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock>#floatBar{height:78px!important;min-height:78px!important;grid-template-rows:39px 39px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #floatBar>#drawPanel,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-tool-row{height:39px!important;min-height:39px!important;max-height:39px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-team-group,
+  html.ps-page-board body.command-dock-v5 #cmd-stamp-group,
+  html.ps-page-board body.command-dock-v5 #cmd-equipment-group,
+  html.ps-page-board body.command-dock-v5 #cmd-history,
+  html.ps-page-board body.command-dock-v5 #cmd-tools,
+  html.ps-page-board body.command-dock-v5 #cmd-style,
+  html.ps-page-board body.command-dock-v5 #cmd-tool-end{height:32px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.vault-full):not(.focus-board) #boardStage{padding-bottom:138px!important;}
+}
+
+/* Board header export is a real product action at every iframe width, not a
+   browser-default button below the old 900px desktop breakpoint. */
+html.ps-page-board #boardPageStrip .bp-export{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  flex:0 0 auto!important;
+  height:34px!important;
+  min-height:34px!important;
+  margin-inline-start:auto!important;
+  padding:0 12px!important;
+  border:1px solid #3a6df0!important;
+  border-radius:9px!important;
+  color:#fff!important;
+  background:#3a6df0!important;
+  box-shadow:0 3px 10px rgba(58,109,240,.20)!important;
+  font:800 12px/1 Pretendard,sans-serif!important;
+  white-space:nowrap!important;
+  cursor:pointer;
+  transition:background-color .12s ease,border-color .12s ease,box-shadow .12s ease,transform .12s ease;
+}
+html.ps-page-board #boardPageStrip .bp-export svg{
+  width:15px!important;
+  height:15px!important;
+  flex:0 0 15px!important;
+}
+html.ps-page-board #boardPageStrip .bp-export:hover{
+  border-color:#2c54c4!important;
+  background:#2c54c4!important;
+  box-shadow:0 5px 14px rgba(58,109,240,.25)!important;
+}
+html.ps-page-board #boardPageStrip .bp-export:active{
+  border-color:#2449ad!important;
+  background:#2449ad!important;
+  box-shadow:0 2px 6px rgba(58,109,240,.18)!important;
+  transform:translateY(1px);
+}
+html.ps-page-board #boardPageStrip .bp-export:focus-visible{
+  outline:2px solid #3a6df0!important;
+  outline-offset:2px!important;
+  box-shadow:0 0 0 3px rgba(58,109,240,.16)!important;
+}
+@media (max-width:767.98px){
+  html.ps-page-board #boardPageStrip .bp-export{
+    flex-basis:40px!important;
+    width:40px!important;
+    min-width:40px!important;
+    height:40px!important;
+    min-height:40px!important;
+    padding:0!important;
+  }
+  html.ps-page-board #boardPageStrip .bp-export-label{display:none!important;}
+}
+
+/* Formation onboarding stays fully above every fixed dock.
+   The card belongs to #boardStage, so anchoring its bottom is more reliable than
+   centering it in the full stage (which includes the dock-reserved area). */
+html.ps-page-board body.eh-open[class*="command-dock-v"] #emptyHint,
+html.ps-page-board body.ps-dock.eh-open #emptyHint{
+  /* 1.910 — 도크 위 빈 영역의 정중앙에(사용자: 폰·아이패드·컴퓨터 모두 중앙, 겹치지 않게). 바닥 붙임 대신 (스테이지 − 도크)의 세로 중앙 */
+  bottom:auto!important;
+  top:calc((100% - var(--ps-dock-h,100px) - var(--cmd-gutter,20px) - env(safe-area-inset-bottom,0px)) / 2)!important;
+  transform:translate(-50%,-50%)!important;
+  max-height:calc(100% - var(--ps-dock-h,100px) - var(--cmd-gutter,20px) - 24px - env(safe-area-inset-bottom,0px))!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Command Dock v5.1 · premium hierarchy and responsive integrity
+   - real left alignment (the legacy lane must not reserve half the row)
+   - flat groups with dividers instead of repeated grey capsules
+   - one primary action, explicit selected/toggle/token states
+   - three visual rows on desktop/tablet; only the equipment list scrolls when needed
+   ─────────────────────────────────────────────────────────────── */
+@media (min-width:768px){
+  html.ps-page-board body.command-dock-v5{
+    --cmd-hover:#f5f7fb;
+  }
+
+  /* The legacy rail had a two-column !important rule with higher specificity.
+     Keep the node for the old runtime, but remove its footprint in v5. */
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #floatBar>#drawPanel>#railLanes{
+    display:none!important;
+    flex:0 0 0!important;
+    width:0!important;
+    min-width:0!important;
+    height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #floatBar>#drawPanel>#railL2{
+    display:flex!important;
+    flex:1 1 100%!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    justify-content:flex-start!important;
+  }
+
+  /* Figma/Adobe-like grouping: one surface, small rhythm and separators. */
+  html.ps-page-board body.command-dock-v5 #ps-command-dock .cmd-cluster{
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    padding:0!important;
+    gap:2px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar>.cmd-cluster+.cmd-cluster,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #drawPanel>#railL2>.cmd-cluster+.cmd-cluster,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>.cmd-cluster+.cmd-cluster{
+    border-left:1px solid var(--cmd-line)!important;
+    padding-left:6px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock button:hover{
+    background:var(--cmd-hover)!important;
+    box-shadow:none!important;
+  }
+
+  /* Only playback is primary. Tools, toggles, tokens and save each get a
+     different state language so blue never competes with itself. */
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay{
+    background:var(--cmd-blue)!important;
+    color:#fff!important;
+    box-shadow:0 2px 6px rgba(58,109,240,.22)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #toolSeg>button.on{
+    background:var(--cmd-soft)!important;
+    color:#2c54c4!important;
+    box-shadow:inset 0 0 0 1px #c9d7fb!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-equip-color[aria-expanded="true"]{
+    background:var(--cmd-soft)!important;
+    color:#2c54c4!important;
+    box-shadow:inset 0 0 0 1px #c9d7fb!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn.on,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn.on,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn.on,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock [aria-pressed="true"]:not(#animPlay):not(.cmd-stamp-token):not([data-tool]):not(.catpill.tpill){   /* 1.860 — 팀 알약(aria-pressed)은 제외: 유니폼 인라인 배경을 덮어 선택 시 연파랑으로 보이던 원인 */
+    background:var(--cmd-soft)!important;
+    color:#2c54c4!important;
+    box-shadow:inset 0 0 0 1px #c9d7fb!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave{
+    border:1px solid #c8d6fa!important;
+    background:#fff!important;
+    color:#2c54c4!important;
+    box-shadow:none!important;
+    gap:4px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave:hover{
+    border-color:#9fb7f5!important;
+    background:#f5f8ff!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #vaultSave svg{
+    width:14px!important;
+    height:14px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock button:disabled{
+    opacity:.38!important;
+    cursor:default!important;
+    transform:none!important;
+  }
+
+  /* Normalise the stroked icon family without distorting filled arrows. */
+  html.ps-page-board body.command-dock-v5 #ps-command-dock button>svg[fill="none"]{
+    stroke-width:1.8!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    pointer-events:none!important;
+  }
+
+  /* Colour picker is a portal, not an always-present invisible flow item. */
+  html.ps-page-board body.command-dock-v5 .cmd-popover{
+    position:fixed!important;
+    z-index:260!important;
+    display:none!important;
+  }
+  html.ps-page-board body.command-dock-v5 .cmd-popover.on{display:block!important;}
+
+  /* Reserve only the actual overlap between the stage and fixed dock. */
+  html.ps-page-board body.command-dock-v5.rail-full:not(.vault-full):not(.focus-board) #boardStage,
+  html.ps-page-board body.command-dock-v5.rail-full:has(#animBar.on):not(.vault-full):not(.focus-board) #boardStage{
+    padding-bottom:var(--cmd-stage-reserve,96px)!important;
+  }
+}
+
+/* Compact desktop/tablet: team, role and equipment controls stay on one line.
+   Only the equipment list scrolls when the remaining width becomes narrow. */
+@media (min-width:768px) and (max-width:1199.98px){
+  html.ps-page-board body.command-dock-v5{--ps-dock-h:112px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock{
+    height:112px!important;
+    grid-template-rows:40px 72px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock>#floatBar{
+    height:72px!important;
+    min-height:72px!important;
+    grid-template-rows:36px 36px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #floatBar>#drawPanel{
+    height:36px!important;
+    min-height:36px!important;
+    max-height:36px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #drawPanel>#railL2{
+    height:32px!important;
+    min-height:32px!important;
+    flex-wrap:nowrap!important;
+    align-content:normal!important;
+    row-gap:0!important;
+    column-gap:6px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #drawPanel>#railL2>#cmd-equipment-group{
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:80px!important;
+    height:32px!important;
+    border-left:1px solid var(--cmd-line)!important;
+    padding-left:6px!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-tool-row{
+    height:36px!important;
+    min-height:36px!important;
+    max-height:36px!important;
+  }
+}
+
+/* Touch-sized desktop/iPad controls. The full set remains visible; only
+   user-added overflow equipment may scroll in its dedicated rail. */
+@media (min-width:768px) and (any-pointer:coarse){
+  html.ps-page-board body.command-dock-v5{
+    --ps-dock-h:132px!important;
+    --cmd-control:36px!important;
+    --cmd-token:36px!important;
+    --cmd-icon:17px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock{
+    height:132px!important;
+    grid-template-rows:44px 88px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock>#animBar{
+    height:44px!important;
+    min-height:44px!important;
+    padding:2px 8px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock>#floatBar{
+    height:88px!important;
+    min-height:88px!important;
+    grid-template-rows:44px 44px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #floatBar>#drawPanel,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-tool-row{
+    height:44px!important;
+    min-height:44px!important;
+    max-height:44px!important;
+    padding:2px 8px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock .cmd-cluster{
+    height:40px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #drawPanel>#railL2{
+    height:40px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #benchCat,
+  html.ps-page-board body.command-dock-v5 #toolSeg,
+  html.ps-page-board body.command-dock-v5 #railEquip{
+    height:36px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #animSpeedSel,
+  html.ps-page-board body.command-dock-v5 #animHoldSel{
+    height:36px!important;
+    min-height:36px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #cmd-style #colorBtn{
+    width:36px!important;
+    min-width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave{
+    height:36px!important;
+    min-height:36px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #animFrames,
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame{
+    height:36px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame{flex-basis:72px!important;width:72px!important;}
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame .aft{top:5px!important;height:26px!important;}
+  html.ps-page-board body.command-dock-v5 #animFrames .anim-frame .afi{top:12px!important;}
+}
+
+@media (min-width:768px) and (max-width:1199.98px) and (any-pointer:coarse){
+  html.ps-page-board body.command-dock-v5{--ps-dock-h:132px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock{
+    height:132px!important;
+    grid-template-rows:44px 88px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock>#floatBar{
+    height:88px!important;
+    min-height:88px!important;
+    grid-template-rows:44px 44px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #floatBar>#drawPanel{
+    height:44px!important;
+    min-height:44px!important;
+    max-height:44px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #drawPanel>#railL2{
+    height:40px!important;
+    min-height:40px!important;
+    flex-wrap:nowrap!important;
+    align-content:normal!important;
+    row-gap:0!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #drawPanel>#railL2>#cmd-equipment-group{
+    flex:1 1 0!important;
+    width:auto!important;
+    min-width:80px!important;
+    height:40px!important;
+    border-left:1px solid var(--cmd-line)!important;
+    padding-left:6px!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row{
+    gap:2px!important;
+    padding-left:3px!important;
+    padding-right:3px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>.cmd-cluster+.cmd-cluster{
+    padding-left:4px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave{
+    flex-basis:36px!important;
+    width:36px!important;
+    min-width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+    padding:0!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave .cmd-save-label{
+    position:absolute!important;
+    width:1px!important;
+    height:1px!important;
+    overflow:hidden!important;
+    clip:rect(0,0,0,0)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave svg{
+    width:17px!important;
+    height:17px!important;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  html.ps-page-app *,html.ps-page-board *,html.ps-page-scout *,html.ps-page-idp *{
+    scroll-behavior:auto!important;
+  }
+}
+
+/* 1.784 · Export formats are text glyphs, not ambiguous pictograms.
+   GIF, MP4 and PNG share one compact visual grammar at every breakpoint. */
+html.ps-page-board .export-format-icon{
+  display:inline-grid!important;
+  place-items:center!important;
+  box-sizing:border-box!important;
+  min-width:26px!important;
+  height:18px!important;
+  padding:0 3px!important;
+  border:1px solid currentColor!important;
+  border-radius:4px!important;
+  color:inherit!important;
+  font-family:Jost,Pretendard,"Pretendard Variable",-apple-system,BlinkMacSystemFont,sans-serif!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  font-style:normal!important;
+  line-height:1!important;
+  letter-spacing:.035em!important;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap!important;
+  text-rendering:geometricPrecision;
+}
+html.ps-page-board #animBar .export-format-btn{
+  font-size:0!important;
+  line-height:0!important;
+}
+html.ps-page-board #animBar .export-format-btn:focus-visible{
+  outline:2px solid var(--cmd-blue,var(--blue,#3a6df0))!important;
+  outline-offset:2px!important;
+}
+
+@media (min-width:768px){
+  html.ps-page-board body.command-dock-v5 #cmd-scene-export{
+    gap:2px!important;
+    padding:2px 3px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-scene-export>.export-format-btn{
+    border:0!important;
+    background:transparent!important;
+    color:var(--cmd-muted)!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-scene-export>.export-format-btn:hover{
+    background:var(--cmd-hover,#f5f7fb)!important;
+    color:var(--cmd-blue,#3a6df0)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-scene-export>.export-format-btn:active{
+    background:var(--cmd-soft,#edf2fe)!important;
+    color:#2c54c4!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-scene-export .export-format-icon{
+    min-width:24px!important;
+    height:16px!important;
+    padding-inline:2px!important;
+    border-width:1px!important;
+    border-radius:3px!important;
+    font-size:8px!important;
+  }
+}
+
+@media (max-width:767.98px){
+  html.ps-page-board body #animBar .export-format-btn .export-format-icon{
+    min-width:27px!important;
+    height:18px!important;
+    font-size:9px!important;
+  }
+}
+
+/* 1.786 · One-line placement rail, explicit equipment colour action and
+   typography-sized animation timing controls. */
+@media (min-width:768px){
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-equipment-group>#cmd-equip-color{
+    position:relative!important;
+    flex:0 0 78px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    width:50px!important;
+    min-width:50px!important;
+    height:var(--cmd-token)!important;
+    min-height:var(--cmd-token)!important;
+    padding:0 6px!important;
+    border:1px solid #c9d7fb!important;
+    border-radius:7px!important;
+    background:#f7f9ff!important;
+    color:#2c54c4!important;
+    box-shadow:0 1px 2px rgba(58,109,240,.10)!important;
+  }
+  html.ps-page-board #cmd-equip-color .cmd-equip-color-swatch{
+    flex:0 0 16px;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:conic-gradient(#e23b3b,#ff7a1a,#d4a017,#34a56f,#2f6df0,#8b5cf6,#e23b3b);
+    box-shadow:inset 0 0 0 2px #fff,0 0 0 1px rgba(15,23,42,.22);
+    pointer-events:none;
+  }
+  html.ps-page-board #cmd-equip-color .cmd-equip-color-text{
+    color:inherit;
+    font:800 9px/1 Pretendard,sans-serif;
+    white-space:nowrap;
+    pointer-events:none;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-equipment-group>#cmd-equip-color:hover{
+    border-color:#9fb7f5!important;
+    background:#eef4ff!important;
+    box-shadow:0 2px 5px rgba(58,109,240,.16)!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-equipment-group>#cmd-equip-color[aria-expanded="true"]{
+    border-color:#9fb7f5!important;
+    background:var(--cmd-soft)!important;
+    color:#2c54c4!important;
+    box-shadow:inset 0 0 0 1px #c9d7fb!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time{
+    gap:2px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time>#animSpeedSel,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time>#animHoldSel{
+    flex:0 0 46px!important;
+    width:46px!important;
+    min-width:46px!important;
+    max-width:46px!important;
+    height:22px!important;
+    min-height:22px!important;
+    padding:0 13px 0 5px!important;
+    border-radius:6px!important;
+    font-size:10px!important;
+    line-height:1!important;
+  }
+}
+
+@media (min-width:768px) and (any-pointer:coarse){
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-equipment-group>#cmd-equip-color{
+    flex-basis:78px!important;
+    width:78px!important;
+    min-width:78px!important;
+    margin-left:2px!important;
+  }   /* 1.934 — '색상 선택' 라벨 폭 */
+  html.ps-page-board #cmd-equip-color .cmd-equip-color-swatch{
+    flex-basis:18px;
+    width:18px;
+    height:18px;
+  }
+  html.ps-page-board #cmd-equip-color .cmd-equip-color-text{font-size:10px;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time>#animSpeedSel,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time>#animHoldSel{
+    flex-basis:48px!important;
+    width:48px!important;
+    min-width:48px!important;
+    max-width:48px!important;
+    height:36px!important;
+    min-height:36px!important;
+    padding-right:14px!important;
+  }
+}
+
+html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal .ps-set-titlebox{
+  align-items:center!important;
+  gap:7px!important;
+}
+html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal .ps-set-scope{
+  display:inline-flex!important;
+  align-items:center!important;
+  min-height:20px!important;
+  padding:0 7px!important;
+  border:1px solid #c9d7fb!important;
+  border-radius:999px!important;
+  background:#eef4ff!important;
+  color:#2c54c4!important;
+  font:800 9px/1 Pretendard,sans-serif!important;
+  white-space:nowrap!important;
+}
+html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-source]{display:none!important;}
+
+/* iPad/coarse pointer: settings actions keep a full touch target even where the
+   compact desktop shell uses 32px rows. */
+@media (min-width:768px) and (any-pointer:coarse){
+  html.ps-page-app body .appbar .gearbtn,
+  html.ps-page-app body .appbar>#psBoardMoreBtn{min-height:44px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger>summary{min-height:44px!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .teamcol-sw,
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .ps-pcol{flex-basis:44px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;}
+}
+
+@media (min-width:768px){
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .seg>button.on{
+    border-color:#7089c9!important;background:#34415b!important;color:#f4f7ff!important;
+  }
+}
+
+/* ══ 1.936 · 데스크톱 커맨드 도크 정렬(사용자 B안): 3줄 유지, 시작점·간격 통일 · 색상 선택은 장비 바로 옆 · 보관함 저장은 도구 줄 끝 · GIF/MP4/PNG → 내보내기 메뉴 */
+@media (min-width:768px){
+  html.ps-page-board body.command-dock-v5 #cmd-equipment-group #railEquip{flex:0 1 auto!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-equipment-group>#cmd-equip-color{margin-left:6px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-tool-row>#cmd-tool-end{margin-left:auto!important;margin-right:0!important;order:99!important;justify-content:flex-end!important;}   /* 보관함 저장(+보드 설정)이 든 끝 클러스터를 오른쪽 끝으로 */
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock .cmd-cluster+.cmd-cluster{margin-left:0!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-tool-row,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #railL2,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #animBar{column-gap:12px!important;padding-left:10px!important;padding-right:10px!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn{display:inline-flex!important;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--cmd-blue,#3a6df0)!important;border-radius:8px;background:var(--cmd-blue,#3a6df0)!important;color:#fff!important;font:700 12px/1 Pretendard,sans-serif;cursor:pointer;white-space:nowrap;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn:hover,html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn.on{background:var(--cmd-blue-hover,#2c54c4)!important;border-color:var(--cmd-blue-hover,#2c54c4)!important;color:#fff!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn .cmd-export-caret{font-size:10px;opacity:.7;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave{display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;text-align:left!important;background:var(--cmd-blue,#3a6df0)!important;border-color:var(--cmd-blue,#3a6df0)!important;color:#fff!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave:hover{background:var(--cmd-blue-hover,#2c54c4)!important;border-color:var(--cmd-blue-hover,#2c54c4)!important;color:#fff!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-export-pop{min-width:168px;padding:6px;border:1px solid var(--cmd-divider,#dfe3ea);border-radius:12px;background:#fff;box-shadow:0 12px 30px rgba(15,23,42,.14);}
+  html.ps-page-board body.command-dock-v5 #cmd-export-pop .cmd-export-item{display:flex!important;align-items:center;gap:8px;width:100%;height:34px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#14161A;font:600 13px/1 Pretendard,sans-serif;text-align:left;cursor:pointer;}
+  html.ps-page-board body.command-dock-v5 #cmd-export-pop .cmd-export-item:hover{background:#f2f4f7;}
+  html.ps-page-board body.command-dock-v5 #cmd-export-pop .cmd-export-item .export-format-icon{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:20px;padding:0 5px;border:1px solid var(--cmd-divider,#dfe3ea);border-radius:5px;font-size:10px;font-weight:800;letter-spacing:.02em;}
+  html.ps-page-board body.command-dock-v5 #cmd-export-pop .cmd-export-item .cmd-button-label{display:none!important;}
+}
+
+/* 2.051 · 보관함 저장은 도크 오른쪽 끝에 두고, 데스크톱 버튼 안의 아이콘·문구는 왼쪽 정렬한다.
+   아이패드 좁은 도크는 기존처럼 라벨을 숨긴 36px 아이콘 버튼이므로 가운데 정렬을 유지한다. */
+@media (min-width:768px) and (max-width:1199px) and (any-pointer:coarse){
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave{justify-content:center!important;gap:0!important;flex-basis:36px!important;width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave .cmd-save-label{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave svg{width:17px!important;height:17px!important;}
+}
+
+/* 2.055 · 보관함 저장은 보드 헤더의 오른쪽 끝. 원본 버튼을 옮겨 저장·권한 게이트는 그대로 유지한다. */
+@media (min-width:640px){
+  html.ps-page-board body #boardPageStrip.on>#vaultSave{
+    position:sticky!important;left:auto!important;right:0!important;top:auto!important;bottom:auto!important;z-index:4!important;
+    flex:0 0 auto!important;width:auto!important;min-width:96px!important;height:32px!important;min-height:32px!important;
+    margin:0 0 0 auto!important;padding:0 12px!important;align-items:center!important;justify-content:center!important;gap:6px!important;
+    border:1px solid var(--cmd-blue,#3a6df0)!important;border-radius:8px!important;background:var(--cmd-blue,#3a6df0)!important;
+    color:#fff!important;box-shadow:0 4px 10px rgba(58,109,240,.18)!important;font:800 11px/1 Pretendard,sans-serif!important;white-space:nowrap!important;cursor:pointer!important;
+  }
+  html.ps-page-board body #boardPageStrip.on>#vaultSave:hover{background:var(--cmd-blue-hover,#2c54c4)!important;border-color:var(--cmd-blue-hover,#2c54c4)!important;color:#fff!important;}
+  html.ps-page-board body #boardPageStrip.on>#vaultSave svg{width:16px!important;height:16px!important;flex:0 0 auto!important;}
+}
+@media (min-width:768px){
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap{display:inline-flex!important;position:relative!important;flex:0 0 auto!important;margin:0!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{
+    display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;
+    flex:0 0 82px!important;width:82px!important;min-width:82px!important;height:28px!important;min-height:28px!important;
+    margin:0!important;padding:0 7px!important;border:1px solid var(--cmd-divider,#dfe3ea)!important;border-radius:7px!important;
+    background:#fff!important;color:var(--cmd-text,#1f2937)!important;font:800 10px/1 Pretendard,sans-serif!important;white-space:nowrap!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn:hover{background:var(--cmd-hover,#f2f4f7)!important;border-color:#cfd5df!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn.on{background:var(--cmd-soft,#eef4ff)!important;border-color:#bfd0fb!important;color:#2c54c4!important;}
+}
+@media (min-width:768px) and (max-width:1199px) and (any-pointer:coarse){
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{justify-content:center!important;gap:0!important;flex-basis:36px!important;width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn span{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;}
+}
+
+/* 2.053 · 하단 도크에서 보이는 글자는 10px 한 규격. 아이콘 전용 버튼의 font-size:0은 그대로 둔다. */
+@media (min-width:768px){
+  html.ps-page-board body.command-dock-v5 #ps-command-dock{--cmd-font-size:10px;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-scene-status,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animFrames:empty::before,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animFrames .anim-frame .afi,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animSpeedSel,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animHoldSel,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock .rail-sec,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #benchCat .catpill.tpill,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #benchCat .team-style-btn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #benchCat #teamStyleBtn.team-style-btn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock .cmd-stamp-token,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-equip-color .cmd-equip-color-text,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-export-btn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{font-size:var(--cmd-font-size)!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave{
+    background:var(--cmd-blue,#3a6df0)!important;border-color:var(--cmd-blue,#3a6df0)!important;color:#fff!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave:hover{
+    background:var(--cmd-blue-hover,#2c54c4)!important;border-color:var(--cmd-blue-hover,#2c54c4)!important;color:#fff!important;
+  }
+}
+
+/* 2.058 · iPad 하단 오른쪽의 보드 설정은 아이콘만 남기지 않고 문구까지 표시한다.
+   86×36px 고정 버튼으로 두어 도크 끝에서 줄어들거나 잘리지 않게 한다. */
+@media (min-width:768px) and (max-width:1199px) and (any-pointer:coarse){
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{
+    justify-content:flex-start!important;gap:5px!important;flex:0 0 86px!important;width:86px!important;min-width:86px!important;
+    height:36px!important;min-height:36px!important;padding:0 9px!important;white-space:nowrap!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn span{
+    position:static!important;display:inline!important;width:auto!important;height:auto!important;overflow:visible!important;clip:auto!important;
+    white-space:nowrap!important;
+  }
+}
+
+/* 2.065 · 하단 도크 시각 문법 통일
+   기능은 숨기지 않고 세 줄과 기존 순서를 그대로 둔다. 행·그룹·버튼의 크기와 간격,
+   선택/토글/주요 동작의 색상 위계만 같은 규칙으로 맞춘다. */
+@media (min-width:768px){
+  html.ps-page-board body.command-dock-v5{
+    --cmd-control:30px;
+    --cmd-token:28px;
+    --cmd-icon:16px;
+    --cmd-line:#e3e8ef;
+    --cmd-hover:#f3f6fa;
+    --cmd-text:#2b384c;
+    --cmd-muted:#646A73;
+    --cmd-soft:#eef4ff;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock{
+    border-radius:15px!important;
+    background:rgba(255,255,255,.98)!important;
+    box-shadow:inset 0 0 0 1px var(--cmd-line),0 12px 32px rgba(15,23,42,.13)!important;
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock>#animBar,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #floatBar>#drawPanel,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-tool-row{
+    column-gap:10px!important;
+    padding-left:10px!important;
+    padding-right:10px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock .cmd-cluster{
+    gap:3px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar>.cmd-cluster+.cmd-cluster,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #drawPanel>#railL2>.cmd-cluster+.cmd-cluster,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>.cmd-cluster+.cmd-cluster{
+    border-left:1px solid var(--cmd-line)!important;
+    padding-left:8px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock button,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock select{
+    font-family:Pretendard,"Pretendard Variable",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animAdd,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animUpdate,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #toolSeg>button,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-history>button,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-style>#lineStyleBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{
+    border-radius:8px!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animAdd,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animUpdate,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #toolSeg>button,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-history>button,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-style>#lineStyleBtn{
+    flex-basis:30px!important;
+    width:30px!important;
+    min-width:30px!important;
+    height:30px!important;
+    min-height:30px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time>#animSpeedSel,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time>#animHoldSel{
+    height:30px!important;
+    min-height:30px!important;
+    border:1px solid var(--cmd-line)!important;
+    border-radius:8px!important;
+    background:#f7f8fa!important;
+    font-size:10px!important;
+    font-weight:700!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn{
+    border-color:var(--cmd-blue)!important;
+    background:var(--cmd-blue)!important;
+    color:#fff!important;
+    box-shadow:0 3px 8px rgba(58,109,240,.20)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #toolSeg>button.on{
+    border-color:var(--cmd-blue)!important;
+    background:var(--cmd-blue)!important;
+    color:#fff!important;
+    box-shadow:0 3px 8px rgba(58,109,240,.18)!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn.on,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn.on,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn.on,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock [aria-pressed="true"]:not(#animPlay):not(.cmd-stamp-token):not([data-tool]):not(.catpill.tpill){
+    border-color:#bfd0fb!important;
+    background:var(--cmd-soft)!important;
+    color:#2c54c4!important;
+    box-shadow:inset 0 0 0 1px #d2defc!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-equip-color,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #benchCat .team-style-btn{
+    border-color:#d7dee9!important;
+    background:#fff!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{
+    height:30px!important;
+    min-height:30px!important;
+    border-color:var(--cmd-line)!important;
+    background:#fff!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock button:hover{
+    background:var(--cmd-hover)!important;
+    box-shadow:none!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay:hover,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn:hover,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #toolSeg>button.on:hover{
+    border-color:#2c54c4!important;
+    background:#2c54c4!important;
+    color:#fff!important;
+  }
+}
+
+@media (min-width:768px) and (any-pointer:coarse){
+  html.ps-page-board body.command-dock-v5{
+    --cmd-control:36px;
+    --cmd-token:36px;
+    --cmd-icon:17px;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time>#animSpeedSel,
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time>#animHoldSel,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{
+    height:36px!important;
+    min-height:36px!important;
+  }
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #toolSeg>button,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animAdd,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animUpdate,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-history>button,
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-style>#lineStyleBtn{
+    flex-basis:36px!important;
+    width:36px!important;
+    min-width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+    border-radius:9px!important;
+  }
+}
+
+/* ══ 1.938 · 데스크톱 사이드바 — 아이콘 위·라벨 아래 가운데 정렬(사용자) · IDP 아이콘 = 올라가는 세 줄 */
+@media (min-width:768px){
+  html.ps-page-app #appSeg#appSeg button{flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;padding:8px 4px 7px!important;min-height:54px!important;text-align:center!important;}
+  html.ps-page-app #appSeg#appSeg button svg{width:20px!important;height:20px!important;stroke-width:1.7!important;flex:0 0 auto!important;}
+  html.ps-page-app #appSeg#appSeg button span{font-size:11px!important;line-height:1.15!important;white-space:nowrap!important;letter-spacing:-.01em!important;}
+  html.ps-page-app #appSeg#appSeg button[data-team-hub],html.ps-page-app #appSeg#appSeg button[data-app="idp"],html.ps-page-app #appSeg#appSeg button[data-app="community"]{margin-top:8px!important;}
+}
+
+/* ══ 1.939 · 사이드바 하단(계정·보드 설정·앱 설정)도 위 항목처럼 아이콘 위·라벨 아래 가운데(사용자) */
+@media (min-width:768px){
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn,
+  html.ps-page-app body header.appbar .gearbtn,
+  html.ps-page-app body header.appbar>#psBoardMoreBtn,
+  html.ps-page-app body header.appbar>#psInstallBtn{flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;padding:8px 4px 7px!important;min-height:54px!important;text-align:center!important;font-size:11px!important;line-height:1.15!important;}
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn .ava{width:22px!important;height:22px!important;flex:0 0 22px!important;font-size:10px!important;}
+  html.ps-page-app body header.appbar .gearbtn svg{width:20px!important;height:20px!important;margin:0!important;stroke-width:1.7!important;}
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn:not(.in) svg{display:block!important;width:20px!important;height:20px!important;margin:0!important;}   /* 로그아웃 상태: 로그인 아이콘을 위에 */
+  html.ps-page-app body header.appbar>#psBoardMoreBtn svg,html.ps-page-app body header.appbar>#psInstallBtn svg{display:block!important;width:20px!important;height:20px!important;margin:0!important;}
+  html.ps-page-app body header.appbar>#psBoardMoreBtn,html.ps-page-app body header.appbar>#psInstallBtn{gap:5px!important;padding:8px 4px 7px!important;}
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn .lbl,
+  html.ps-page-app body header.appbar .gearbtn .gear-label,
+  html.ps-page-app body header.appbar>#psBoardMoreBtn span,
+  html.ps-page-app body header.appbar>#psInstallBtn span{font-size:11px!important;max-width:100%!important;}
+}
+
+/* ══ 1.959 · 사이드바 '업데이트' 버튼도 하단 타일 규격(아이콘 위·라벨 아래, 54px, 같은 폭)으로 — 파랑은 채움 대신 연한 틴트(사용자: 왼쪽 하단 설정들과 정렬) */
+@media (min-width:768px){
+  html.ps-page-app body header.appbar>#psUpdBtn{width:100%!important;height:auto!important;min-height:54px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;padding:8px 4px 7px!important;border:0!important;border-radius:10px!important;background:#eef4ff!important;color:#2c54c4!important;box-shadow:none!important;font-size:11px!important;font-weight:600!important;line-height:1.15!important;letter-spacing:-.01em!important;text-align:center!important;white-space:nowrap!important;}
+  html.ps-page-app body header.appbar>#psUpdBtn:hover{background:#e2ebff!important;}
+  /* 하단 그룹 앵커: 업데이트가 있으면 업데이트가 margin-top:auto, 계정은 0 — design-v2 646행의 auto!important 가 둘 다 auto 로 만들어 업데이트가 중간에 떠 있었다(1.759 와 같은 병) */
+  html.ps-page-app body header.appbar>#psUpdBtn{margin-top:auto!important;}
+  html.ps-page-app body header.appbar:has(>#psUpdBtn)>#psAcctWrap{margin-top:0!important;}
+  html.ps-page-app body header.appbar>#psUpdBtn svg{width:20px!important;height:20px!important;margin:0!important;stroke-width:2!important;flex:0 0 auto!important;display:block!important;}
+  html.ps-page-app body header.appbar>#psUpdBtn span{font-size:11px!important;max-width:100%!important;}
+  html.ps-page-app body.fmdark header.appbar>#psUpdBtn{background:#233252!important;color:#b9caff!important;}
+}
+
+/* ══ 1.969 · 사이드바 라벨 글자 더 작게(사용자) — 위 항목·하단 타일·업데이트 모두 10.5px, 아이콘 19px */
+@media (min-width:768px){
+  html.ps-page-app #appSeg#appSeg button span,
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn .lbl,
+  html.ps-page-app body header.appbar .gearbtn .gear-label,
+  html.ps-page-app body header.appbar>#psBoardMoreBtn span,
+  html.ps-page-app body header.appbar>#psInstallBtn span,
+  html.ps-page-app body header.appbar>#psUpdBtn span{font-size:10px!important;letter-spacing:-.02em!important;}
+  html.ps-page-app #appSeg#appSeg button svg,html.ps-page-app body header.appbar .gearbtn svg,html.ps-page-app body header.appbar>#psUpdBtn svg{width:19px!important;height:19px!important;}
+  html.ps-page-app #appSeg#appSeg button,html.ps-page-app body header.appbar>#psAcctWrap .acct-btn,html.ps-page-app body header.appbar .gearbtn,html.ps-page-app body header.appbar>#psUpdBtn{min-height:50px!important;gap:4px!important;}
+}
+
+/* ══ 1.941 · 사이드바 로고(PROCESS STUDIO) 가운데 정렬(사용자) */
+@media (min-width:768px){
+  html.ps-page-app .appbar .brand{display:flex!important;justify-content:center!important;align-items:center!important;text-align:center!important;padding:4px 4px 10px!important;}
+  html.ps-page-app .appbar .brand .wm{text-align:center!important;display:block!important;}
+}
+
+/* ══ 2.018 · 팀 홈 히어로(142px 남색) → 머리 카드 한 줄(문서 목업 원칙 1) — 날짜·D-n·날씨는 남기고 인사말·설명은 뺀다. 팀 색은 왼쪽 띠 4px ══ */
+@media (min-width:900px){
+  html.ps-page-scout #homeView .team-topbar{
+    height:auto!important;min-height:52px!important;
+    padding:9px 16px!important;
+    border:1px solid var(--fig-line,#e6e8ee)!important;border-left:4px solid var(--team-c,#1b3157)!important;
+    border-radius:12px!important;
+    background:#fff!important;color:var(--fig-ink,#0f1420)!important;
+    gap:14px!important;
+  }
+  html.ps-page-scout #homeView .team-topbar.has-color{background:#fff!important;}
+  html.ps-page-scout #homeView .team-topbar .team-emblem{width:32px!important;height:32px!important;min-width:32px!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy{flex-direction:row!important;align-items:center!important;gap:12px!important;flex:1 1 auto!important;min-width:0!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1{font-size:14px!important;letter-spacing:-.02em!important;color:var(--fig-ink,#0f1420)!important;order:-1;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1 .hero-greet{display:none!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1 .hero-title{font-weight:800}
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy p{display:none!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow{margin:0!important;gap:8px!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-date{color:var(--fig-muted,#6f7580)!important;font-size:12px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-wx{color:var(--fig-muted,#6f7580)!important;background:var(--fig-sunken,#f2f4f7)!important;border:0!important;font-size:11px!important;padding:4px 9px!important;}
+  html.ps-page-scout #homeView .team-topbar .ttb-match{min-width:0!important;padding:0!important;border:0!important;background:transparent!important;grid-template-columns:auto auto!important;gap:2px 10px!important;}
+  html.ps-page-scout #homeView .team-topbar .ttb-lbl{color:var(--fig-muted,#6f7580)!important;font-size:10px!important;}
+  html.ps-page-scout #homeView .team-topbar .ttb-match>b{color:var(--fig-ink,#0f1420)!important;font-size:13px!important;}
+  html.ps-page-scout #homeView .team-topbar .ttb-md{height:32px!important;min-width:48px!important;border-radius:9px!important;}
+  html.ps-page-scout #homeView .team-topbar .ttb-md strong{font-size:12px!important;}
+  html.ps-page-scout #homeView .ttb-colorbtn{top:50%!important;transform:translateY(-50%);right:12px!important;border-color:var(--fig-line,#e6e8ee)!important;background:#fff!important;}
+}
+
+/* 2.018 — 폰 히어로: 제목 '오늘'은 숨기고 인사말만 */
+@media (max-width:899px){ html.ps-page-scout #homeView .team-topbar .team-hero-copy h1 .hero-title{display:none!important} }
+
+/* ══ 2.023 · 팀 홈 머리 카드 다듬기(사용자 "기능은 빼지 말고 디자인 잘"): 엠블럼 원형·제목 묶음·날씨 칩·NEXT MATCH 블록·색 버튼을 한 줄에, 겹침 없이 ══ */
+@media (min-width:900px){
+  html.ps-page-scout #homeView .team-topbar{min-height:60px!important;padding:10px 14px 10px 16px!important;gap:12px!important;align-items:center!important;}
+  /* 엠블럼: 원형 34, 옅은 선, 팀 색 링 */
+  html.ps-page-scout #homeView .team-topbar .team-emblem{width:34px!important;height:34px!important;min-width:34px!important;border-radius:50%!important;border:1px solid var(--fig-line,#e6e8ee)!important;background:var(--fig-sunken,#f2f4f7)!important;color:var(--fig-muted,#6f7580)!important;box-shadow:0 0 0 2px #fff,0 0 0 3px color-mix(in srgb,var(--team-c,#1b3157) 35%,#fff)!important;margin-right:2px;}
+  html.ps-page-scout #homeView .team-topbar .team-emblem .te-ph{font-size:11px!important;opacity:1!important;}
+  /* 제목 묶음: 오늘 · 날짜 · D-n · 날씨 칩 — 기준선 정렬 */
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy{gap:10px!important;align-items:baseline!important;flex-wrap:wrap!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1 .hero-title{font-size:16px!important;letter-spacing:-.02em!important;color:var(--fig-ink,#0f1420)!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow{align-items:baseline!important;gap:10px!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-date{font-size:13px!important;font-weight:600!important;color:var(--fig-muted,#6f7580)!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-date .ttb-yleft{margin-left:8px!important;font-weight:800!important;color:var(--fig-ink,#0f1420)!important;opacity:1!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-wx{align-self:center;height:24px!important;padding:0 10px!important;border-radius:999px!important;background:var(--fig-sunken,#f2f4f7)!important;color:var(--fig-ink,#0f1420)!important;font-size:11px!important;font-weight:800!important;gap:6px!important;}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-wx .wx-ic{width:14px!important;height:14px!important;color:var(--fig-muted,#6f7580)!important;}
+  /* NEXT MATCH 블록: 라벨 위·상대 아래, 오른쪽에 MD 알약(글자 길이에 맞게) */
+  html.ps-page-scout #homeView .team-topbar .ttb-match{margin-left:auto!important;display:grid!important;grid-template-columns:auto auto!important;grid-template-rows:auto auto!important;column-gap:10px!important;row-gap:1px!important;align-items:center!important;text-align:right;padding:0 4px 0 12px!important;border-left:1px solid var(--fig-line,#e6e8ee)!important;background:transparent!important;border-radius:0!important;}
+  html.ps-page-scout #homeView .team-topbar .ttb-lbl{grid-column:1;grid-row:1;font-size:10px!important;letter-spacing:.12em!important;color:var(--fig-muted,#6f7580)!important;text-align:right;}
+  html.ps-page-scout #homeView .team-topbar .ttb-match>b{grid-column:1;grid-row:2;font-size:13px!important;color:var(--fig-ink,#0f1420)!important;max-width:220px;text-align:right;}
+  html.ps-page-scout #homeView .team-topbar .ttb-meta{grid-column:1;grid-row:3;font-size:11px!important;text-align:right;}
+  html.ps-page-scout #homeView .team-topbar .ttb-md{grid-column:2;grid-row:1 / span 3;height:30px!important;min-width:0!important;padding:0 11px!important;border-radius:9px!important;background:var(--fig-blue,#3a6df0)!important;color:#fff!important;white-space:nowrap;display:inline-flex!important;align-items:center;gap:4px;font-size:12px!important;font-weight:800!important;}
+  html.ps-page-scout #homeView .team-topbar .ttb-md strong{font-size:12px!important;}
+  html.ps-page-scout #homeView .team-topbar .ttb-md em{margin-left:2px!important;}
+  /* 색 버튼: 겹치지 않게 흐름 안 마지막 자리(작은 점) */
+  html.ps-page-scout #homeView .ttb-colorbtn{position:static!important;transform:none!important;order:99;width:20px!important;height:20px!important;margin-left:6px;border:1px solid var(--fig-line,#e6e8ee)!important;background:#fff!important;opacity:1!important;flex:0 0 auto;}
+  html.ps-page-scout #homeView .ttb-colorbtn span{width:8px!important;height:8px!important;box-shadow:none!important;}
+  html.ps-page-scout #homeView .team-topbar .team-emblem-pop{z-index:60;}
+}
+
+/* ══ 2.086 · 팀 › 오늘 머리 카드 — 폰 글자 위계 ═════════════════════════════════════════
+   사용자: "팀에 들어갔을 때 나오는 카드 위계 설정 잘해줘 글씨가 다 너무 커".
+   375px 실측 결과 문제는 크기가 아니라 **위계가 거꾸로**였다 —
+     인사말 21px/700  ← 가장 큰데 정보가 아니다
+     날씨 15/800 · 경기 제목 15/800 · 일정 15/800  ← 셋이 완전히 같아 무엇이 중요한지 안 보인다
+   코치가 이 카드를 여는 이유는 **다음 경기**다. 제일 큰 글씨를 거기로 옮기고 나머지는 물러나게 한다.
+   경계 520px — 아이패드(앱 안 scout iframe 실폭 672)는 건드리지 않는다. */
+@media (max-width:520px){
+  html.ps-page-scout #homeView .team-topbar{padding:12px 14px!important}
+  /* ① 주인공 — 다음 경기. 라벨 → 제목 → 일정 을 세로로 쌓고 실선으로 끊는다 */
+  html.ps-page-scout #homeView .team-topbar .ttb-match{
+    margin-left:0!important;width:100%!important;flex-direction:column!important;
+    align-items:flex-start!important;justify-content:flex-start!important;text-align:left!important;
+    gap:1px!important;margin-top:9px!important;padding-top:9px!important;
+    border-top:1px solid var(--ps-hairline,#E3E6EA)!important}
+  html.ps-page-scout #homeView .team-topbar .ttb-lbl{
+    font-size:10px!important;font-weight:800!important;letter-spacing:.1em!important;
+    text-transform:uppercase!important;color:var(--fig-muted,#6f7580)!important}
+  html.ps-page-scout #homeView .team-topbar #teamHomeMatchTitle{
+    font-size:16px!important;font-weight:800!important;letter-spacing:-.02em!important;line-height:1.25!important}
+  html.ps-page-scout #homeView .team-topbar .ttb-md{font-size:13px!important;font-weight:800!important}
+  /* ② 오늘 날짜 */
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-date{font-size:12px!important;font-weight:600!important}
+  /* ③ 날씨 — 보조로 물러난다(굵기 800 → 700, 15 → 11.5) */
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-wx{
+    font-size:11px!important;font-weight:800!important;height:22px!important;padding:0 9px!important}
+  /* ④ 인사말 — 정보가 아니다. 한 줄로 작게 */
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1,
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1 .hero-greet{
+    font-size:14px!important;font-weight:800!important;line-height:1.4!important;letter-spacing:-.01em!important}
+  /* ⑤ 설명 문장 — 폰에서는 자리만 먹고 알려 주는 게 없다 */
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy p{display:none!important}
+
+  /* ══ 아래 카드들도 같은 역전이 있었다 ══════════════════════════════════════════════
+     375px 실측: 훈련 인원 숫자 26px/800 · 세션 제목 19px/800 · 경기 제목 17px/900.
+     **가장 큰 글씨가 값이 0 인 빈 상태**였다. 카드마다 주인공은 하나이고,
+     빈 상태 문구는 주인공이 되면 안 된다. 한 스케일로 내린다. */
+  /* 오늘 훈련 인원 — 큰 숫자를 한 급 낮춘다(26 → 20). 여전히 카드 안에서는 제일 크다 */
+  html.ps-page-scout #homeView #teamHomeReady,
+  html.ps-page-scout #homeView #teamAvailGk,
+  html.ps-page-scout #homeView #teamAvailFld{font-size:20px!important;font-weight:800!important;letter-spacing:-.02em!important}
+  /* 오늘 세션 — 경기(17)보다 한 급 아래. 오늘 카드의 주인공은 경기다 */
+  html.ps-page-scout #homeView #teamSessionTitle{font-size:16px!important;font-weight:800!important;letter-spacing:-.015em!important;line-height:1.3!important}
+
+  /* ══ 2.095 · 오늘 카드 위계 다시 세우기 (승인된 목업 "경기가 주인공") ════════════════
+     2.092 의 2열은 엠블럼 아래 120px 을 비웠고, 무엇보다 **진하고 굵은 덩이가 셋**이었다 —
+     날짜 13.5/800 · 인사말 15/800 · 경기 20/900. 셋 다 크면 셋 다 안 크다.
+     큰 것을 하나로 줄인다: 남은 날수 29px 하나. 나머지는 전부 12~12.5px 로 내린다.
+
+       [30px 엠블럼] 날짜 · 날씨          ← 3층(조건). 한 줄로 접는다
+       다음 경기                          ← 라벨 10/900
+       vs 상대            41 / 일 남음    ← 1층. 카드에서 유일하게 큰 것
+       10월 1일 (목) 16:00 · 홈           ← 2층(언제·어디)
+       ────────────────────────────
+       편안한 밤이에요, 코치님  올해 D-132 ← 3층. 사람에게 하는 말은 닫으며 읽는다
+
+     구현 메모 ⓐ `.team-hero-copy` 를 `display:contents` 로 풀어 그 자식(눈썹·h1)이 곧 격자 칸이 된다 —
+       마크업을 안 건드리고 인사말만 맨 아래로 보내는 방법이다.
+     ⓑ 팀 색은 떠 있던 오른쪽 위 점 대신 **카드 왼쪽 4px 띠**. 세 방법 중 배경 그라디언트를 골랐다 —
+       `::before` 는 모서리를 넘어가려면 overflow:hidden 이 필요한데 그러면 절대 위치인 엠블럼 팝오버가 잘린다.
+       `inset box-shadow` 는 둥근 모서리에서 곡선을 따라 번져 **모서리가 잘린 것처럼** 보였다(실측에서 확인).
+       배경 그라디언트는 정확히 4px 이고 radius 가 저절로 깎아 준다.
+     ⓒ 위 2.086 블록이 같은 요소들을 이미 잡고 있다 — 여기 선택자는 **같거나 더 센 특이도**로 뒤에 온다. */
+  html.ps-page-scout #homeView .team-topbar{
+    display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;
+    grid-template-areas:"emb eyebrow" "match match" "greet greet"!important;
+    column-gap:10px!important;row-gap:0!important;align-items:center!important;
+    padding:13px 16px 12px 17px!important;position:relative!important}
+  html.ps-page-scout #homeView .team-topbar.has-color{
+    background-image:linear-gradient(90deg,var(--team-c,#16213A) 0,var(--team-c,#16213A) 4px,transparent 4px)!important;
+    background-repeat:no-repeat!important}
+  html.ps-page-scout #homeView .team-topbar>#teamColorBtn{display:none!important}
+  html.ps-page-scout #homeView .team-topbar>#teamEmblemPop{grid-area:eyebrow!important}
+  html.ps-page-scout #homeView .team-topbar>#teamEmblemBtn{
+    grid-area:emb!important;width:30px!important;height:28px!important;margin:0!important;align-self:center!important}
+  html.ps-page-scout #homeView .team-topbar>#teamEmblemBtn img{width:100%!important;height:100%!important;object-fit:contain!important}
+  html.ps-page-scout #homeView .team-topbar>.team-hero-copy{display:contents!important}
+
+  /* 3층 · 오늘의 조건 — 날짜와 날씨를 한 줄로 묶어 같은 무게로 흐리게 */
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow{
+    grid-area:eyebrow!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
+    gap:0 8px!important;padding:0!important;min-width:0!important;overflow:hidden!important}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-date{
+    font-size:12px!important;font-weight:800!important;color:var(--fig-muted,#6f7580)!important;
+    letter-spacing:-.01em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-wx{
+    flex:0 0 auto!important;font-size:11px!important;font-weight:600!important;color:#9aa1ac!important;
+    height:auto!important;padding:0!important;white-space:nowrap!important}
+  html.ps-page-scout #homeView .team-topbar .team-hero-eyebrow .ttb-wx .wx-ic{width:13px!important;height:13px!important}
+
+  /* 1·2층 · 다음 경기 */
+  html.ps-page-scout #homeView .team-topbar .ttb-match{
+    grid-area:match!important;display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:"lbl dn" "title dn" "when when"!important;
+    column-gap:12px!important;row-gap:0!important;align-items:end!important;
+    width:auto!important;margin:15px 0 0!important;padding:0!important;border-top:0!important;text-align:left!important}
+  html.ps-page-scout #homeView .team-topbar .ttb-lbl{
+    grid-area:lbl!important;font-size:10px!important;font-weight:800!important;letter-spacing:.1em!important;
+    text-transform:uppercase!important;color:#9aa1ac!important;margin:0 0 5px!important;align-self:start!important}
+  html.ps-page-scout #homeView .team-topbar #teamHomeMatchTitle{
+    grid-area:title!important;font-size:22px!important;font-weight:800!important;letter-spacing:-.035em!important;
+    line-height:1.12!important;color:var(--fig-ink,#14161A)!important;min-width:0!important;align-self:end!important}
+  html.ps-page-scout #homeView .team-topbar .ttb-md{
+    grid-area:dn!important;margin:0!important;padding:0!important;text-align:right!important;line-height:1!important;align-self:end!important}
+  html.ps-page-scout #homeView .team-topbar .ttb-md strong{display:block!important;font-weight:800!important;color:inherit!important}
+  html.ps-page-scout #homeView .team-topbar .ttb-md b{
+    display:block!important;font-size:29px!important;font-weight:800!important;letter-spacing:-.045em!important;
+    line-height:1!important;font-variant-numeric:tabular-nums!important;color:var(--fig-ink,#14161A)!important}
+  html.ps-page-scout #homeView .team-topbar .ttb-md small{
+    display:block!important;font-size:10px!important;font-weight:800!important;letter-spacing:.06em!important;
+    color:#9aa1ac!important;margin:4px 0 0!important;white-space:nowrap!important}
+  html.ps-page-scout #homeView .team-topbar .ttb-when{
+    grid-area:when!important;font-size:13px!important;font-weight:600!important;
+    color:var(--fig-muted,#6f7580)!important;margin-top:9px!important;min-width:0!important}
+  html.ps-page-scout #homeView .team-topbar .ttb-when:empty{display:none!important}
+
+  /* 3층 · 인사말 — 맨 아래, 실선으로 끊고 가장 작게. 오른쪽 끝에 올해 D-n */
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1{
+    grid-area:greet!important;display:flex!important;align-items:baseline!important;gap:8px!important;
+    margin:14px 0 0!important;padding:11px 0 0!important;border-top:1px solid var(--ps-hairline,#E3E6EA)!important;
+    font-size:12px!important;font-weight:600!important;line-height:1.35!important;letter-spacing:0!important;min-width:0!important}
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1 .hero-title{display:none!important}
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1 .hero-greet{
+    font-size:12px!important;font-weight:600!important;line-height:1.35!important;letter-spacing:0!important;
+    color:#9aa1ac!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  /* 사용자: "인사말 옆에 작게 올해 D-132 넣어줘 잘 안보이게 오른쪽끝으로" */
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy h1 .ttb-yleft{
+    margin-left:auto!important;flex:0 0 auto!important;font-size:10px!important;font-weight:800!important;
+    letter-spacing:0!important;color:#c2c8d0!important;white-space:nowrap!important}
+  html.ps-page-scout #homeView .team-topbar .team-hero-copy p{display:none!important}
+
+  /* ══ 2.093 · 오늘 세션을 훈련 인원 위로 ══════════════════════════════════════════════
+     사용자: "이 카드가 오늘 훈련인원 위로 보이게 해줘".
+     둘은 같은 `section.team-avail-card` 안에 있다 — 순서만 뒤집는다(마크업·동작 그대로).
+     읽는 순서가 **오늘 뭐 하나 → 누가 되나** 가 되어 코치가 카드를 여는 이유와 맞는다. */
+  html.ps-page-scout #homeView .team-avail-card{display:flex!important;flex-direction:column!important}
+  html.ps-page-scout #homeView .team-avail-card>.team-session-main{order:-1!important;
+    margin-top:0!important;padding-top:0!important;border-top:0!important}
+  html.ps-page-scout #homeView .team-avail-card>.team-home-card-head{order:0!important;
+    margin-top:12px!important;padding-top:12px!important;border-top:1px solid var(--ps-hairline,#e6e8ee)!important}
+  html.ps-page-scout #homeView .team-avail-card>#teamHomeAvailNames{order:1!important}
+}
+
+/* ══ 2.095 · 넓은 폭(태블릿·데스크톱)에도 새 조각 두 개가 나타난다 ══════════════════════
+   폰 위계를 세우며 ⓐ '올해 D-n' 을 날짜 옆에서 **인사말 h1 안으로** 옮기고
+   ⓑ '언제·어디'(`.ttb-when`)를 새로 넣었다. 둘 다 폰 전용 마크업이 아니라 넓은 폭에서도 그려진다 —
+   실측(768px): h1 이 32px 이라 **'올해 D-132' 가 제목만 한 크기**로 나왔다. 여기서 크기를 정해 준다.
+   ⚠ 특이도를 폰 규칙보다 **낮게**(id 1 + class 2) 잡아, 파일 뒤에 있어도 폰에서는 위 @media 블록이 이긴다. */
+#homeView .team-topbar .ttb-yleft{font-size:12px;font-weight:800;letter-spacing:0;color:#a8aeb8;margin-left:10px;vertical-align:middle}
+#homeView .team-topbar .ttb-when{font-size:13px;font-weight:600;color:var(--fig-muted,#6f7580)}
+#homeView .team-topbar .ttb-when:empty{display:none}
+#homeView .team-topbar .ttb-md b{font-weight:800}
+#homeView .team-topbar .ttb-md small{font-size:12px;font-weight:600;color:var(--fig-muted,#6f7580);margin-left:4px}
+
+/* 2.641 — 다크: 작전판 도구줄(#floatBar) 이 위에서 background:#fff!important 라 다크에서도 흰 띠(실측). id 부스트로 이긴다 */
+html.ps-page-board body.fmdark #ps-command-dock>#floatBar:not(#_){background:var(--panel,#1B1E23)!important}
+
+/* 2.653 — «보관함 저장»은 보드(피치) 오른쪽 아래 구석에 작게(사용자). 페이지 줄 오른쪽 위의 큰 파란 버튼이 2.652 동기화 메모와 겹치기도 했다.
+   dock 위 16px, 오른쪽 26px — 피치 svg 가 dock 바로 위까지 오므로 피치 안 구석에 앉는다. 편집·미팅 모드 숨김 규칙(board.html)은 그대로 */
+html.ps-page-board body #boardPageStrip.on>#vaultSave:not(#_):not(#__){position:fixed!important;top:auto!important;right:26px!important;bottom:calc(var(--ps-dock-h,120px) + 28px)!important;left:auto!important;margin:0!important;z-index:40!important;height:28px!important;min-height:0!important;padding:0 10px 0 8px!important;gap:5px!important;border-radius:999px!important;font-size:11px!important;font-weight:800!important;box-shadow:0 2px 8px rgba(0,0,0,.18)!important;opacity:.92}
+html.ps-page-board body #boardPageStrip.on>#vaultSave:not(#_):not(#__):hover{opacity:1}
+html.ps-page-board body #boardPageStrip.on>#vaultSave:not(#_):not(#__) svg{width:14px!important;height:14px!important}

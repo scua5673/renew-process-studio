@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>IDP 시작 가이드 — 설치부터 로그인까지 | PROCESS STUDIO</title>
+<meta name="description" content="선수용 3분 가이드 — 홈 화면에 추가하고, 카카오로 로그인하고, IDP 3단계를 시작하세요.">
+<meta name="theme-color" content="#ECEDF0">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<style>
+/* 선수 폰 우선 — 큰 글씨, 한 단계 한 화면. UI-가이드 토큰 준수 */
+:root{
+  --bg:#ECEDF0; --surface:#FFFFFF; --line:#E3E5E9; --text:#16181C; --text-2:#5C6068; --text-3:#8A9099;
+  --blue:#3a6df0; --purple:#7C4DFF; --red:#C24A46; --kakao:#FEE500;
+  --f:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0F141B; --surface:#1A212B; --line:#2C3744; --text:#E7EBF1; --text-2:#9AA4B3; --text-3:#7C8696; --purple:#9D7BFF; --blue:#4D7DFF; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased;word-break:keep-all}
+b,strong{font-weight:800}
+.wrap{max-width:520px;margin:0 auto;padding:0 20px 80px}
+header{padding:36px 0 6px;text-align:center}
+header .k{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--purple)}
+header h1{font-size:26px;font-weight:800;letter-spacing:-.4px;line-height:1.25;margin:10px 0 8px}
+header p{font-size:15px;color:var(--text-2);margin:0}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 18px;margin-top:16px}
+.step .no{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:var(--purple);color:#fff;font-size:14px;font-weight:800}
+.step h2{display:inline;font-size:19px;font-weight:800;letter-spacing:-.3px;margin:0 0 0 8px;vertical-align:middle}
+.step p{font-size:15px;color:var(--text-2);margin:10px 0 0}
+.step p b{color:var(--text)}
+.step img{width:100%;height:auto;border:1px solid var(--line);border-radius:12px;margin-top:14px;display:block;background:#fff}
+.cap{font-size:12.5px;font-weight:600;color:var(--text-3);text-align:center;margin-top:7px}
+.bigbtn{display:block;text-align:center;background:var(--purple);color:#fff;font-size:17px;font-weight:800;border-radius:13px;padding:16px;margin-top:14px;text-decoration:none}
+.chips{display:flex;gap:8px;margin-top:12px}
+.chips button{flex:1;font-family:var(--f);font-size:14px;font-weight:800;padding:10px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text-2);cursor:pointer}
+.chips button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.os{display:none}
+.os.on{display:block}
+/* 설치 그림(모형) — 2px 라인 */
+.mock{border:1px solid var(--line);border-radius:12px;margin-top:14px;padding:16px;background:var(--bg)}
+.mock svg{display:block;width:100%;height:auto}
+.qa{margin-top:26px;font-size:14px;color:var(--text-2)}
+.qa b{color:var(--text)}
+.qa div{padding:9px 0;border-top:1px solid var(--line)}
+footer{margin-top:36px;text-align:center;font-size:13px;color:var(--text-3)}
+footer a{color:var(--text-2);font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="k">FOR PLAYERS · 3분</div>
+  <h1>IDP 시작 가이드</h1>
+  <p>순서대로 4단계 — 사진 그대로 따라 하면 끝나요.</p>
+</header>
+
+<!-- STEP 1 -->
+<div class="step">
+  <span class="no">1</span><h2>열기</h2>
+  <p>아래 버튼을 누르면 <b>내 IDP 화면</b>이 바로 열립니다.</p>
+  <a class="bigbtn" href="https://processstudio.netlify.app/studio/?mode=player">내 IDP 열기 →</a>
+</div>
+
+<!-- STEP 2 -->
+<div class="step">
+  <span class="no">2</span><h2>홈 화면에 추가</h2>
+  <p>앱처럼 쓰기 위해 <b>홈 화면에 추가</b>합니다. 내 폰을 고르세요.</p>
+  <div class="chips">
+    <button class="on" onclick="setOS('ios',this)">아이폰</button>
+    <button onclick="setOS('and',this)">안드로이드</button>
+  </div>
+
+  <div class="os on" id="os-ios">
+    <div class="mock"><svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#8A9099">
+        <rect x="12" y="12" width="120" height="126" rx="12"/>
+        <rect x="52" y="104" width="40" height="22" rx="6" stroke="#3a6df0"/>
+        <path d="M72 121v-9M68 115l4-4 4 4" stroke="#3a6df0"/>
+        <text x="72" y="60" text-anchor="middle" font-family="inherit" font-size="12" fill="#8A9099" stroke="none">Safari 화면</text>
+        <text x="72" y="97" text-anchor="middle" font-size="10" fill="#3a6df0" stroke="none" font-weight="700">① 공유 버튼</text>
+        <path d="M148 75h24M166 69l6 6-6 6"/>
+        <rect x="188" y="12" width="120" height="126" rx="12"/>
+        <text x="248" y="40" text-anchor="middle" font-size="11" fill="#8A9099" stroke="none">공유 메뉴에서</text>
+        <rect x="200" y="56" width="96" height="30" rx="8" stroke="#3a6df0"/>
+        <text x="248" y="75" text-anchor="middle" font-size="11" fill="#3a6df0" stroke="none" font-weight="800">② 홈 화면에 추가 ⊕</text>
+        <text x="248" y="112" text-anchor="middle" font-size="11" fill="#8A9099" stroke="none">③ 오른쪽 위 [추가]</text>
+      </g>
+    </svg></div>
+    <p><b>Safari</b>로 연 상태에서 → 아래 <b>공유 버튼(⬆︎)</b> → <b>홈 화면에 추가</b> → <b>추가</b>. 홈에 PROCESS 아이콘이 생깁니다.</p>
+  </div>
+
+  <div class="os" id="os-and">
+    <div class="mock"><svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#8A9099">
+        <rect x="12" y="12" width="120" height="126" rx="12"/>
+        <circle cx="118" cy="26" r="1.6" fill="#3a6df0" stroke="none"/><circle cx="118" cy="32" r="1.6" fill="#3a6df0" stroke="none"/><circle cx="118" cy="38" r="1.6" fill="#3a6df0" stroke="none"/>
+        <text x="72" y="60" text-anchor="middle" font-size="12" fill="#8A9099" stroke="none">Chrome 화면</text>
+        <text x="72" y="97" text-anchor="middle" font-size="10" fill="#3a6df0" stroke="none" font-weight="700">① 오른쪽 위 ⋮ 메뉴</text>
+        <path d="M148 75h24M166 69l6 6-6 6"/>
+        <rect x="188" y="12" width="120" height="126" rx="12"/>
+        <text x="248" y="40" text-anchor="middle" font-size="11" fill="#8A9099" stroke="none">메뉴에서</text>
+        <rect x="200" y="56" width="96" height="30" rx="8" stroke="#3a6df0"/>
+        <text x="248" y="75" text-anchor="middle" font-size="11" fill="#3a6df0" stroke="none" font-weight="800">② 앱 설치</text>
+        <text x="248" y="112" text-anchor="middle" font-size="11" fill="#8A9099" stroke="none">③ [설치] 확인</text>
+      </g>
+    </svg></div>
+    <p><b>Chrome</b>으로 연 상태에서 → 오른쪽 위 <b>⋮ 메뉴</b> → <b>앱 설치</b>(또는 홈 화면에 추가) → <b>설치</b>.</p>
+  </div>
+</div>
+
+<!-- STEP 3 -->
+<div class="step">
+  <span class="no">3</span><h2>로그인 — 꼭!</h2>
+  <p>홈 화면 아이콘으로 다시 열고, <b>오른쪽 위 [로그인]</b> 버튼을 누르세요.</p>
+  <img src="idp-1-loginbtn.jpg" alt="오른쪽 위 로그인 버튼" loading="lazy">
+  <div class="cap">빨간 동그라미 — 오른쪽 위 [로그인]</div>
+  <p><b>카카오로 계속</b>을 누르면 끝. 로그인해야 폰을 바꾸거나 지워도 기록이 안 사라집니다.</p>
+  <img src="idp-2-kakao.jpg" alt="카카오로 계속 버튼" loading="lazy">
+  <div class="cap">노란 버튼 [카카오로 계속]</div>
+</div>
+
+<!-- STEP 4 -->
+<div class="step">
+  <span class="no">4</span><h2>3단계 따라가기</h2>
+  <p>첫 화면이 순서대로 안내합니다 — <b>① 프로필 만들기 → ② 나를 평가하기 → ③ 이번 달 목표</b>. 여기까지 하면 나만의 성장 대시보드 완성!</p>
+  <img src="idp-3-onboarding.jpg" alt="IDP 시작 3단계" loading="lazy">
+  <div class="cap">IDP 첫 화면 — 3단계를 순서대로 탭</div>
+  <p>그다음부터는 <b>하루 10초</b> — 일정 탭에서 오늘 날짜를 누르고 훈련/경기/휴식 + 강도만 체크하세요.</p>
+</div>
+
+<div class="qa">
+  <div><b>공유 버튼이 안 보여요 (아이폰)</b> — 카카오톡 안에서 열면 안 보일 수 있어요. 오른쪽 아래 ⋯ → <b>Safari로 열기</b> 후 다시 하세요.</div>
+  <div><b>앱 설치가 안 보여요 (안드로이드)</b> — 새로고침하고 잠깐 사용한 뒤 ⋮ 메뉴를 다시 열어 보세요.</div>
+  <div><b>로그인 버튼이 없어요</b> — 이미 로그인된 상태예요. 오른쪽 위에 내 계정 아이콘이 보이면 완료.</div>
+</div>
+
+<footer>
+  더 자세한 건 <a href="/guide/">사용 설명서</a> · PROCESS STUDIO
+</footer>
+
+</div>
+<script>
+function setOS(os,btn){
+  document.getElementById('os-ios').classList.toggle('on',os==='ios');
+  document.getElementById('os-and').classList.toggle('on',os==='and');
+  document.querySelectorAll('.chips button').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+}
+/* 안드로이드 기기면 탭 자동 전환 */
+try{ if(/android/i.test(navigator.userAgent)) setOS('and',document.querySelectorAll('.chips button')[1]); }catch(e){}
+</script>
+</body>
+</html>

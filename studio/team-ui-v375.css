@@ -1,0 +1,575 @@
+/* PROCESS STUDIO · team workspace UI v375 */
+
+/* 1.574 — 타이포 스케일 두 벌을 한 벌로 합쳤다.
+   여기 있던 .ps-page-scout/.ps-page-process 용 스케일(본문 14px·굵기 400, 제목 24px)은
+   premium-ui.css 의 v286 정본(본문 13px·굵기 600, 제목 20px)과 **같은 이름에 다른 값**이었다.
+   그래서 --fs-body 가 페이지마다 14px 이기도 하고 13px 이기도 했다.
+   게다가 이 덮어쓰기를 실제로 받는 건 team-ui-v375.css 를 부르는 process.html(일정) 하나뿐이었다 —
+   scout.html 은 .ps-page-scout 를 달고도 이 파일을 안 부른다. 즉 '일정 탭만 다른 스케일'이
+   설계가 아니라 사고였다. 7개 탭 중 6개가 이미 쓰는 정본으로 통일한다.
+   (크기를 키우고 싶으면 premium-ui.css 의 :root 한 곳만 고치면 전 화면이 함께 움직인다.) */
+
+.ps-page-app .teamnav {
+  min-height: 50px;
+  padding-inline: 16px;
+  gap: 4px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+.ps-page-app .teamnav::-webkit-scrollbar { display: none; }
+.ps-page-app .teamnav .teamname {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex: 0 0 auto;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: inherit;
+  font-size: 13px;
+  font-weight:600;
+}
+.ps-page-app .teamnav button {
+  flex: 0 0 auto;
+  min-height:40px;
+  padding-inline: 13px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.ps-page-app .teamnav button.on { font-weight:600; }
+
+.ps-page-scout body,
+.ps-page-process body {
+  font-weight: 500;
+  line-height: 1.5;
+}
+.ps-page-scout .wrap { padding: 18px 20px 72px; }
+.ps-page-scout .card,
+.ps-page-scout .match-card,
+.ps-page-scout .team-home-card { border-radius: 14px; }
+.ps-page-scout .match-shell {
+  max-width: 1240px;
+  margin-inline: auto;
+}
+.ps-page-scout .match-tabs { display: none !important; }
+.ps-page-scout .match-picker {
+  display: grid;
+  grid-template-columns: minmax(260px, 420px) minmax(0, 1fr);
+  align-items: center;
+}
+.ps-page-scout .match-picker > label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+}
+.ps-page-scout .match-picker select {
+  min-width: 0;
+  width: 100%;
+}
+.ps-page-scout .match-workflow b { font-size: 14px; }
+.ps-page-scout .match-auto-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ok, #209765) 28%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ok, #209765) 8%, var(--bar));
+  color: var(--ok, #1d805b);
+  font-size: 12px;
+  font-weight:600;
+  white-space: nowrap;
+}
+.ps-page-scout .match-workflow small,
+.ps-page-scout .match-card-head small,
+.ps-page-scout .match-fields label,
+.ps-page-scout .match-player-list label,
+.ps-page-scout .match-modecopy span,
+.ps-page-scout .match-roster-hint,
+.ps-page-scout .match-individual-foot small { font-size: 12px; }
+
+/* 1.428 재설계 후 tm-split 안에는 명단(.tm-roster)만 남았다(작전판은 별도 .tb-board).
+   2트랙(300px|1fr) 그리드는 옛 작전판용 잔재 — 명단이 300px 트랙에 갇혀 찌그러진다. 1열로 편다. */
+.ps-page-scout #teamView .tm-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  max-width: 1180px;
+  margin-inline: auto;
+}
+/* 한 모드 한 표현 — 포메이션 모드에선 보드+미배치 트레이가 화면의 주인.
+   같은 32명을 다시 보여주는 하단 명단 편집기는 숨긴다(편집은 '선수 명단' 모드에서). */
+.ps-page-scout #teamView.tm-mode-formation .tm-split { display: none; }
+
+.ps-page-scout .scout-visual {
+  display: grid;
+  grid-template-columns: minmax(360px, .82fr) minmax(480px, 1.18fr);
+  gap: 16px;
+  margin: 0 0 20px;
+}
+.ps-page-scout .scout-flow {
+  color: var(--dim);
+  font-size: 11px;
+  font-weight:600;
+}
+.ps-page-scout .scout-meeting-btn { margin-left: 8px; }
+.ps-page-scout #playersView.scout-meeting .pl-cols { display: none; }
+.ps-page-scout #playersView.scout-meeting .scout-visual {
+  grid-template-columns: minmax(430px,.85fr) minmax(600px,1.15fr);
+  margin-bottom: 0;
+}
+.ps-page-scout #playersView.scout-meeting .scout-depth-pitch { min-height: 430px; }
+.ps-page-scout #playersView.scout-meeting .scout-compare-card { min-height: 478px; }
+.ps-page-scout .scout-need-card,
+.ps-page-scout .scout-compare-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bar);
+  padding: 14px;
+}
+.ps-page-scout .scout-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.ps-page-scout .scout-section-head b,
+.ps-page-scout .scout-compare-head b {
+  display: block;
+  color: var(--txt);
+  font-size:14px;
+  font-weight:800;
+}
+.ps-page-scout .scout-section-head span,
+.ps-page-scout .scout-compare-head span {
+  display: block;
+  margin-top: 2px;
+  color: var(--dim);
+  font-size: 12px;
+}
+.ps-page-scout .scout-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.ps-page-scout .scout-legend b { color: var(--ink); font-weight:600; }
+.ps-page-scout .scout-depth-pitch {
+  position: relative;
+  min-height: 304px;
+  padding: 15px 18px;
+  border: 1px solid color-mix(in srgb, #fff 52%, #168348);
+  border-radius: 13px;
+  background:
+    linear-gradient(90deg, transparent 49.7%, rgba(255,255,255,.52) 49.8% 50.2%, transparent 50.3%),
+    repeating-linear-gradient(90deg, #218d50 0 14.28%, #1d8349 14.28% 28.56%);
+  box-shadow: inset 0 0 0 5px rgba(255,255,255,.08);
+}
+.ps-page-scout .scout-pos {
+  position: absolute;
+  width: 92px;
+  min-height: 42px;
+  padding: 5px 7px 6px;
+  border: 2px solid rgba(255,255,255,.92);
+  border-radius: 10px;
+  background: #fff;
+  color: #19212b;
+  box-shadow: 0 3px 10px rgba(5,35,19,.22);
+  cursor: pointer;
+  transform: translate(-50%,-50%);
+  text-align: left;
+}
+.ps-page-scout .scout-slot-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+.ps-page-scout .scout-pos strong {
+  font-size: 12px;
+  font-weight: 800;
+}
+.ps-page-scout .scout-slot-top i {
+  color: #7a828d;
+  font-size:10px;
+  font-style: normal;
+  font-weight:600;
+}
+.ps-page-scout .scout-player-name,
+.ps-page-scout .scout-player-name {
+  font-size: 11px;
+  font-weight: 800;
+}
+.ps-page-scout .scout-candidate-name {
+  display: block;
+  overflow: hidden;
+  margin-top: 2px;
+  color: #a86c18;
+  font-size:10px;
+  font-weight:600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ps-page-scout .scout-pos.urgent { box-shadow: 0 0 0 3px #16213a, 0 4px 12px rgba(0,0,0,.28); }
+.ps-page-scout .scout-pos.need { box-shadow: 0 0 0 2px #7b8494, 0 4px 12px rgba(0,0,0,.2); }
+.ps-page-scout .scout-pos.covered { box-shadow: 0 0 0 1px rgba(255,255,255,.9), 0 3px 10px rgba(5,35,19,.22); }
+.ps-page-scout .scout-pos.on {
+  transform: translate(-50%,-54%);
+  outline: 3px solid #3a6df0;
+  outline-offset: 2px;
+}
+.ps-page-scout .scout-compare-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--line);
+}
+.ps-page-scout .scout-need-badge {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight:600;
+}
+.ps-page-scout .scout-need-badge.urgent { background: #16213a; color: #fff; }
+.ps-page-scout .scout-need-badge.need { background: var(--bar2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.ps-page-scout .scout-need-badge.covered { background: transparent; color: var(--dim); box-shadow: inset 0 0 0 1px var(--line); }
+.ps-page-scout .scout-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.ps-page-scout .scout-person {
+  display: block;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--bar2);
+  color: var(--txt);
+  text-align: left;
+}
+.ps-page-scout button.scout-person { cursor: pointer; }
+.ps-page-scout .scout-person.best {
+  border-color: var(--accent, var(--blue, #3a6df0));
+  box-shadow: inset 0 3px 0 var(--accent, var(--blue, #3a6df0));
+}
+.ps-page-scout .scout-person.empty { opacity: .62; }
+.ps-page-scout .scout-person-tag {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--dim);
+  font-size: 10px;
+  font-weight:600;
+}
+.ps-page-scout .scout-person > strong {
+  display: block;
+  overflow: hidden;
+  margin-bottom: 8px;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ps-page-scout .scout-metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 4px 0;
+  border-top: 1px solid var(--line);
+  font-size: 10px;
+}
+.ps-page-scout .scout-metric span { color: var(--dim); }
+.ps-page-scout .scout-metric b {
+  overflow: hidden;
+  max-width: 65%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ps-page-scout .scout-person-action {
+  display: block;
+  margin-top: 7px;
+  color: var(--accent, var(--blue, #3a6df0));
+  font-size: 10px;
+  font-weight: 800;
+  text-align: right;
+}
+.ps-page-scout .scout-shortlist { margin-top: 12px; }
+.ps-page-scout .scout-shortlist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px 6px;
+}
+.ps-page-scout .scout-shortlist-head b { font-size: 12px; }
+.ps-page-scout .scout-shortlist-head span {
+  color: var(--dim);
+  font-size: 10px;
+}
+.ps-page-scout .scout-short-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 6px;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--txt);
+  text-align: left;
+}
+.ps-page-scout .scout-short-main {
+  display: grid;
+  grid-template-columns: 24px minmax(0,1fr);
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--txt);
+  text-align: left;
+  cursor: pointer;
+}
+.ps-page-scout .scout-rank-num {
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 8px;
+  background: var(--accent-soft, var(--blue-soft, #edf2fe));
+  color: var(--accent, var(--blue, #3a6df0));
+  font-size: 10px;
+  font-weight: 800;
+}
+.ps-page-scout .scout-short-row b,
+.ps-page-scout .scout-short-row small { display: block; }
+.ps-page-scout .scout-short-row b { font-size: 11px; }
+.ps-page-scout .scout-short-row small {
+  overflow: hidden;
+  margin-top: 1px;
+  color: var(--dim);
+  font-size:10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ps-page-scout .scout-short-row em {
+  color: var(--accent, var(--blue, #3a6df0));
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+.ps-page-scout .scout-rank-actions {
+  display: inline-flex;
+  gap: 3px;
+}
+.ps-page-scout .scout-rank-actions button {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height:28px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius:6px;
+  background: var(--bar2);
+  color: var(--txt);
+  cursor: pointer;
+}
+.ps-page-scout .scout-rank-actions button:disabled {
+  cursor: default;
+  opacity: .28;
+}
+.ps-page-scout .scout-short-empty {
+  padding: 34px 10px;
+  border-top: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+}
+.ps-page-scout .scout-candidate-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.ps-page-scout .scout-candidate {
+  display: grid;
+  grid-template-columns: 28px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--bar2);
+  color: var(--txt);
+  text-align: left;
+  cursor: pointer;
+}
+.ps-page-scout .scout-candidate .rank {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--accent-soft, var(--blue-soft, #edf2fe));
+  color: var(--accent, var(--blue, #3a6df0));
+  font-size: 12px;
+  font-weight: 800;
+}
+.ps-page-scout .scout-candidate b {
+  display: block;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight:600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ps-page-scout .scout-candidate small {
+  display: block;
+  margin-top: 2px;
+  color: var(--dim);
+  font-size: 11px;
+}
+.ps-page-scout .scout-candidate .fit {
+  color: var(--accent, var(--blue, #3a6df0));
+  font-size: 12px;
+  font-weight: 800;
+}
+.ps-page-scout .scout-empty {
+  display: grid;
+  place-items: center;
+  min-height: 214px;
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
+}
+.ps-page-scout #teamView .tm-split #teamPitch {
+  width: 100%;
+  max-width: 420px;
+}
+.ps-page-scout #teamView .tm-roster { max-width: none; }
+.ps-page-scout .tm-row { min-height: 48px; }
+.ps-page-scout .tm-row .tm-depth,
+.ps-page-scout .tm-row .t-num,
+.ps-page-scout .tm-row .t-name,
+.ps-page-scout .tm-row .t-injury { font-size: 14px; }
+.ps-page-scout .tm-poshd-n,
+.ps-page-scout .tm-view-switch button,
+.ps-page-scout .tm-summary span { font-size: 12px; }
+.ps-page-scout #positionsView > .lead,
+.ps-page-scout #formsView > .lead {
+  max-width: 760px;
+  margin: 0 auto 14px;
+}
+.ps-page-scout .settings-intro {
+  max-width: 1180px;
+  margin: 4px auto 10px;
+}
+.ps-page-scout .settings-intro > span {
+  display: block;
+  color: var(--txt);
+  font-size: 24px;
+  font-weight:600;
+  letter-spacing: -.035em;
+}
+.ps-page-scout .settings-intro > p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.ps-page-scout #formsView .card,
+.ps-page-scout #positionsView .card {
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.ps-page-process .wkbd-scroll {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding-bottom: 10px;
+}
+.ps-page-process .wkbd-scroll > .wkbd { min-width: 980px; }
+.ps-page-process .wkbd-scroll > .wkbd.wkbd-sheet { min-width: 0; }   /* 1.959 — 시트는 한 화면에 맞춘다(열 최소폭은 process.html 미디어쿼리가 정함) */
+.ps-page-process .wkbd-lab,
+.ps-page-process .wkbd-h,
+.ps-page-process .wkbd-cell,
+.ps-page-process .wkbd-match,
+.ps-page-process .wkbd-off,
+.ps-page-process .wkbd-mlabel,
+.ps-page-process .wkbd-min { font-size: 12px; }
+.ps-page-process .wkbd-match b,
+.ps-page-process .wkbd-off b { font-size: 14px; }
+.ps-page-process .wkbd-match span,
+.ps-page-process .wkbd-off span { font-size: 12px; }
+
+@media (max-width: 900px) {
+  .ps-page-app .teamnav { padding-inline: 10px; }
+  .ps-page-app .teamnav .teamname { max-width: 112px; }
+  .ps-page-scout .wrap { padding: 14px 14px 64px; }
+  .ps-page-scout #teamView .tm-split { grid-template-columns: 1fr; }
+  .ps-page-scout .scout-visual { grid-template-columns: 1fr; }
+  .ps-page-scout #playersView.scout-meeting .scout-visual { grid-template-columns: 1fr; }
+  .ps-page-scout #teamView .tm-split #teamPitch {
+    position: static;
+    max-width: 460px;
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .ps-page-app .teamnav .teamname { display: none; }
+  .ps-page-app .teamnav button {
+    padding-inline: 11px;
+    font-size: 13px;
+  }
+  .ps-page-scout .match-picker { grid-template-columns: 1fr; }
+  .ps-page-scout .scout-need-card,
+  .ps-page-scout .scout-compare-card { padding: 11px; }
+  .ps-page-scout .scout-depth-pitch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    min-height: 0;
+    padding: 10px;
+    background: var(--bar2);
+    box-shadow: none;
+  }
+  .ps-page-scout .scout-depth-row { gap: 5px; }
+  .ps-page-scout .scout-pos {
+    position: static !important;
+    width: auto;
+    min-width: 0;
+    transform: none !important;
+    padding: 8px;
+  }
+  .ps-page-scout .scout-compare-grid { grid-template-columns: 1fr; }
+  .ps-page-scout .scout-flow { display: none; }
+  .ps-page-scout .match-workflow {
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+  .ps-page-scout .match-workflow button {
+    width: 100%;
+    flex: none;
+  }
+  .ps-page-scout .tm-summary { grid-template-columns: 1fr 1fr; }
+}
+
+.fmdark.ps-page-app .teamnav .teamname { background: #0f141b; }
+.ps-page-scout body.fmdark .team-availability button {
+  background: var(--bar2);
+  border-color: var(--line);
+}
+.ps-page-scout body.fmdark .team-availability span { color: var(--dim); }

@@ -1,0 +1,927 @@
+@charset "UTF-8";
+/* ============================================================
+   design-v2.css — 에디터형 리디자인 공용 토큰 + 컴포넌트 어휘
+   출처: 클로드 디자인 '작전판 리디자인' 핸드오프 README (2026-08-13)
+   원칙: 기능 JS 무변경. 화면들은 이 토큰을 참조해 크롬만 이행한다.
+   적용 순서: 1) 이 파일 2) 작전판 3) 팀 → 보관함 → 커뮤니티 → IDP → 노트
+   ============================================================ */
+
+:root {
+  /* 1.764 canonical semantic tokens — 모든 화면은 이 한 벌을 정본으로 본다.
+     기존 --dv2-* / --ps-premium-* 이름은 하위 호환 alias로 유지한다. */
+  --ps-color-app-bg: #ecedf0;
+  --ps-color-page-bg: #f7f8fa;
+  --ps-color-surface: #ffffff;
+  --ps-color-surface-soft: #f1f2f4;
+  --ps-color-border: #E3E6EA;
+  --ps-color-divider: #eceef2;
+  --ps-color-text: #14161A;
+  --ps-color-text-2: #646A73;
+  --ps-color-muted: #646A73;
+  --ps-color-action: #3a6df0;
+  --ps-color-action-fill: #3a6df0;
+  --ps-color-action-fill-hover: #2c54c4;
+  --ps-color-action-hover: #2c54c4;
+  --ps-color-action-soft: #edf2fe;
+  --ps-color-violet: #7c4dff;
+  --ps-color-violet-fill: #6d42e8;
+  --ps-color-violet-fill-hover: #5b3df0;
+  --ps-color-violet-text: #5b3df0;
+  --ps-color-violet-soft: #f0ebff;
+  --ps-radius-control: 10px;
+  --ps-radius-card: 16px;
+  --ps-radius-pill: 999px;
+  --ps-motion-fast: 120ms;
+  --ps-shadow-float: 0 12px 32px rgba(16,24,40,.14);
+
+  /* Color */
+  --dv2-ink: var(--ps-color-text);          /* 제목·주 텍스트 */
+  --dv2-text: var(--ps-color-text-2);       /* 본문 */
+  --dv2-text-2: var(--ps-color-text-2);     /* 보조 본문·아이콘 */
+  --dv2-muted: var(--ps-color-muted);       /* 비활성 탭 */
+  --dv2-faint: #646A73;        /* 라벨·메타 — 작은 글자도 본문 대비 확보 */
+  --dv2-ghost: #b3bac6;        /* 카운트·플레이스홀더 */
+  --dv2-border: var(--ps-color-border);     /* 카드·패널 보더 */
+  --dv2-border-2: var(--ps-color-divider);  /* 내부 구분선 */
+  --dv2-surface: var(--ps-color-surface);   /* 패널·카드 */
+  --dv2-bg: var(--ps-color-page-bg);        /* 페이지 배경 */
+  --dv2-canvas: #eceef2;       /* 에디터 캔버스 배경 */
+  --dv2-chip-bg: var(--ps-color-surface-soft); /* 세그먼트·태그 배경 */
+  --dv2-accent: var(--ps-color-action);        /* 주 액션(블루) */
+  --dv2-accent-soft: var(--ps-color-action-soft); /* 선택 배경 */
+  --dv2-accent-text: var(--ps-color-action-hover); /* 선택 텍스트 */
+  --dv2-navy: #1e2a4a;         /* 우리 팀 선수 토큰 */
+  --dv2-sky: #37b3e8;          /* GK 토큰(작전판) */
+  --dv2-red: #c92a3d;          /* 상대팀·부상 */
+  --dv2-green: #0e7a5f;        /* 정상·GK(팀) */
+  --dv2-amber: #d97706;        /* 재활 */
+  --dv2-violet: var(--ps-color-violet);       /* IDP 액센트 */
+  --dv2-violet-text: var(--ps-color-violet-text);
+  --dv2-violet-soft: var(--ps-color-violet-soft);
+  --dv2-pitch: linear-gradient(180deg,#567c40,#4c7136); /* 필드 */
+
+  /* Shape — control 10 / card·modal 16 / pill 999 */
+  --dv2-r-sm: var(--ps-radius-control); --dv2-r-md: var(--ps-radius-control); --dv2-r-lg: var(--ps-radius-control); --dv2-r-xl: var(--ps-radius-card); --dv2-r-pill: var(--ps-radius-pill);
+
+  /* Motion — 짧고 조용한 한 박자 */
+  --dv2-motion: var(--ps-motion-fast);
+
+  /* Shadow */
+  --dv2-sh-float: var(--ps-shadow-float);               /* 팝오버·플로팅 */
+  --dv2-sh-btn-accent: 0 3px 10px rgba(37,99,235,.3);  /* 파란 버튼 */
+  --dv2-sh-seg: 0 1px 3px rgba(15,23,42,.14);          /* 세그먼트 선택 */
+}
+
+/* 다크 테마 — 기존 앱의 다크 클래스(body.fmdark)에 얹는 값. README §구현순서 4:
+   "다크 값은 별도 정의". 라이트가 정본이고, 다크는 크롬만 뒤집는다. */
+body.fmdark {
+  --ps-color-app-bg: #0f141b;
+  --ps-color-page-bg: #0f141b;
+  --ps-color-surface: #1a212b;
+  --ps-color-surface-soft: #232c38;
+  --ps-color-border: #2c3744;
+  --ps-color-divider: #26313d;
+  --ps-color-text: #e7ebf1;
+  --ps-color-text-2: #b6bfcc;
+  --ps-color-muted: #9aa4b3;
+  --ps-color-action: #5e88ee;
+  --ps-color-action-fill: #3a6df0;
+  --ps-color-action-fill-hover: #2c54c4;
+  --ps-color-action-hover: #7da4f5;
+  --ps-color-action-soft: #182743;
+  --ps-color-violet: #9d7bff;
+  --ps-color-violet-fill: #6d42e8;
+  --ps-color-violet-fill-hover: #5b3df0;
+  --ps-color-violet-text: #b59cff;
+  --ps-color-violet-soft: #241d3f;
+  --ps-shadow-float: 0 16px 40px rgba(0,0,0,.38);
+  --dv2-ink: var(--ps-color-text);
+  --dv2-text: var(--ps-color-text-2);
+  --dv2-text-2: var(--ps-color-text-2);
+  --dv2-muted: var(--ps-color-muted);
+  --dv2-faint: #AEB6C2;
+  --dv2-ghost: #565E6A;
+  --dv2-border: var(--ps-color-border);
+  --dv2-border-2: var(--ps-color-divider);
+  --dv2-surface: var(--ps-color-surface);
+  --dv2-bg: var(--ps-color-page-bg);
+  --dv2-canvas: #101216;
+  --dv2-chip-bg: var(--ps-color-surface-soft);
+  --dv2-accent: var(--ps-color-action);
+  --dv2-accent-soft: var(--ps-color-action-soft);
+  --dv2-accent-text: var(--ps-color-action-hover);
+  --dv2-violet: var(--ps-color-violet);
+  --dv2-violet-text: var(--ps-color-violet-text);
+  --dv2-violet-soft: var(--ps-color-violet-soft);
+  --dv2-sh-seg: 0 1px 3px rgba(0,0,0,.5);
+}
+
+/* ── 공유 컴포넌트 어휘 (README §공유 컴포넌트) ──────────────
+   새 마크업이 아직 없는 화면도 있으므로 클래스는 dv2- 접두사로 격리.
+   기존 요소에 클래스만 얹거나(마크업 이행), 화면별 블록에서 var()만 참조해도 된다. */
+
+/* 1. 상단 바 — 높이 52px */
+.dv2-topbar{display:flex;align-items:center;gap:10px;height:52px;padding:0 20px;
+  background:var(--dv2-surface);border-bottom:1px solid var(--dv2-border);}
+.dv2-logo{width:30px;height:30px;border-radius:var(--dv2-r-md);background:var(--dv2-ink);
+  color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;letter-spacing:.02em;}
+.dv2-file{font-size:13px;font-weight:800;color:var(--dv2-ink);}
+.dv2-file-meta{font-size:11px;font-weight:600;color:var(--dv2-faint);}
+
+/* 세그먼트 내비(브라우징 화면) — 활성 = 흰 알약 + 그림자 */
+.dv2-seg{display:flex;gap:2px;background:var(--dv2-chip-bg);border-radius:var(--dv2-r-lg);padding:3px;}
+.dv2-seg>button{border:0;background:transparent;padding:6px 14px;border-radius:var(--dv2-r-md);
+  font-size:12px;font-weight:600;color:var(--dv2-muted);cursor:pointer;
+  transition:background var(--dv2-motion) ease,color var(--dv2-motion) ease,transform var(--dv2-motion) ease;}
+.dv2-seg>button:hover{color:var(--dv2-ink);}
+.dv2-seg>button.on{background:var(--dv2-surface);color:var(--dv2-ink);font-weight:800;box-shadow:var(--dv2-sh-seg);}
+
+/* 에디터 도구 클러스터 — 34×34, 활성 = 파란 사각 */
+.dv2-tool{width:34px;height:34px;border-radius:var(--dv2-r-md);border:0;background:transparent;
+  color:var(--dv2-text-2);display:grid;place-items:center;cursor:pointer;
+  transition:background var(--dv2-motion) ease,transform var(--dv2-motion) ease;}
+.dv2-tool:hover{background:var(--dv2-chip-bg);}
+.dv2-tool.on{background:var(--ps-color-action-fill,#3a6df0);color:#fff;box-shadow:var(--dv2-sh-btn-accent);}
+
+/* 버튼 */
+.dv2-btn{border:1px solid var(--dv2-border);background:var(--dv2-surface);border-radius:var(--dv2-r-md);
+  padding:7px 12px;font-size:13px;font-weight:600;color:var(--dv2-text);cursor:pointer;
+  transition:background var(--dv2-motion) ease,color var(--dv2-motion) ease,transform var(--dv2-motion) ease;}
+.dv2-btn:hover{background:var(--dv2-chip-bg);}
+.dv2-btn--primary{border:0;background:var(--ps-color-action-fill,#3a6df0);color:#fff;font-weight:800;box-shadow:var(--dv2-sh-btn-accent);}
+.dv2-btn--primary:hover{background:var(--ps-color-action-fill-hover,#2c54c4);}
+
+/* 2. 좌측 패널 — 내비 200px / 에디터 240px */
+.dv2-panel-left{width:200px;background:var(--dv2-surface);border-right:1px solid var(--dv2-border);}
+.dv2-panel-left--editor{width:240px;}
+.dv2-nav-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--dv2-r-md);
+  font-size:13px;font-weight:600;color:var(--dv2-text);cursor:pointer;
+  transition:background var(--dv2-motion) ease,transform var(--dv2-motion) ease;}
+.dv2-nav-item:hover{background:var(--dv2-chip-bg);}
+.dv2-nav-item.on{background:var(--dv2-accent-soft);color:var(--dv2-accent-text);font-weight:800;}
+.dv2-nav-item .dv2-count{margin-left:auto;font-size:11px;color:var(--dv2-ghost);}
+/* IDP 화면은 액센트만 보라로 — 컨테이너에 .dv2-violet-scope */
+.dv2-violet-scope .dv2-nav-item.on{background:var(--dv2-violet-soft);color:var(--dv2-violet-text);}
+
+/* 패널 섹션 라벨 */
+.dv2-sec{font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--dv2-faint);text-transform:uppercase;}
+
+/* 3. 우측 속성 패널(에디터) — 264px */
+.dv2-panel-right{width:264px;background:var(--dv2-surface);border-left:1px solid var(--dv2-border);}
+.dv2-panel-right .dv2-tab{padding:9px 0;font-size:12px;font-weight:600;color:var(--dv2-muted);
+  border-bottom:2px solid transparent;cursor:pointer;}
+.dv2-panel-right .dv2-tab.on{color:var(--dv2-ink);border-bottom-color:var(--dv2-accent);font-weight:800;}
+.dv2-panel-right .dv2-hr{border:0;border-top:1px solid var(--dv2-border-2);margin:12px 0;}
+
+/* 4. 카드 */
+.dv2-card{background:var(--dv2-surface);border:1px solid var(--dv2-border);border-radius:var(--dv2-r-xl);
+  transition:border-color var(--dv2-motion) ease,background var(--dv2-motion) ease;}
+.dv2-card:hover{border-color:var(--dv2-border);}
+
+/* 5. 칩(필터) — 활성 = 잉크 배경 흰 글자 */
+.dv2-chip{border-radius:var(--dv2-r-pill);padding:5px 12px;font-size:11px;font-weight:600;
+  background:var(--dv2-surface);border:1px solid var(--dv2-border);color:var(--dv2-text-2);cursor:pointer;
+  transition:background var(--dv2-motion) ease,color var(--dv2-motion) ease,transform var(--dv2-motion) ease;}
+.dv2-chip.on{background:var(--dv2-ink);border-color:var(--dv2-ink);color:var(--dv2-surface);font-weight:800;}
+
+/* 6. 토글 — 34×20 */
+.dv2-toggle{position:relative;width:34px;height:20px;border-radius:var(--dv2-r-pill);background:#d5dbe4;
+  border:0;cursor:pointer;transition:background var(--dv2-motion) ease,transform var(--dv2-motion) ease;}
+.dv2-toggle::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:left var(--dv2-motion) ease;box-shadow:0 1px 2px rgba(15,23,42,.2);}
+.dv2-toggle.on{background:var(--dv2-accent);}
+.dv2-toggle.on::after{left:16px;}
+
+/* 7. 줌 필 — 캔버스 우하단 */
+.dv2-zoom{position:fixed;right:14px;bottom:14px;display:flex;align-items:center;gap:2px;
+  background:var(--dv2-surface);border:1px solid var(--dv2-border);border-radius:var(--dv2-r-lg);
+  box-shadow:var(--dv2-sh-float);padding:2px;}
+.dv2-zoom>button{border:0;background:transparent;width:28px;height:28px;border-radius:var(--dv2-r-md);
+  color:var(--dv2-text-2);cursor:pointer;}
+.dv2-zoom>button:hover{background:var(--dv2-chip-bg);}
+.dv2-zoom .dv2-zoom-val{font-size:12px;font-weight:800;color:var(--dv2-ink);padding:0 6px;}
+
+/* 8. 선수 토큰 — 32px(작전판)/30px(팀) */
+.dv2-token{width:32px;height:32px;border-radius:50%;border:2.5px solid #fff;
+  display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;
+  background:var(--dv2-navy);box-shadow:0 3px 8px rgba(0,0,0,.35);}
+.dv2-token--gk{background:var(--dv2-sky);}
+.dv2-token--opp{background:var(--dv2-red);}
+.dv2-token--sm{width:30px;height:30px;}
+
+/* 헬퍼 토스트 — 중앙 하단 */
+.dv2-toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);
+  background:rgba(15,20,32,.85);color:#fff;font-size:11px;font-weight:600;
+  border-radius:var(--dv2-r-pill);padding:7px 14px;pointer-events:none;}
+
+/* 스탯 카드 숫자(팀 화면 등) */
+.dv2-stat-label{font-size:11px;font-weight:600;color:var(--dv2-faint);}
+.dv2-stat-value{font-size:22px;font-weight:800;color:var(--dv2-ink);}
+.dv2-stat-value--ok{color:var(--dv2-green);}
+.dv2-stat-value--bad{color:var(--dv2-red);}
+
+/* 1.764 · 키보드 초점/다크 대비 보강. 위치·크기·DOM은 건드리지 않는다. */
+html.ps-page-analysis :is(button,a[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus-visible,
+html.ps-page-learning :is(button,a[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus-visible{
+  outline:2px solid var(--ps-color-action,#3a6df0);outline-offset:2px;
+}
+html.ps-page-analysis body.fmdark{
+  --blue:var(--ps-color-action-fill,#3a6df0);
+  --blue2:var(--ps-color-action-soft,#182743);
+}
+html.ps-page-analysis body.fmdark :is(.example-title,.example-match,.detail-btn,.profile-summary,.tag,
+  .event .kind,.notice,.field-guide b,.desk-player b,.tv-roster-player b,.tv-rf.no,.tv-add-player,
+  .article-guide,.meeting-player b,.meeting-actions b,.library-badge,.formation-summary){
+  color:var(--ps-color-action-hover,#7da4f5);
+}
+html.ps-page-analysis body.fmdark :is(.goal-how .gh-label,.lens-player,.pl-head b,.scene-card .btn.on-pl,
+  .ta-lb,.ta-types span,.sc-type,.md-guide li i,.rv-goal b,.rv-scene .rv-sctype,.rv-ev b,.sv-type,
+  .cal-st.s-pub,.cal-chip.s-pub){color:var(--ps-color-action-hover,#7da4f5);}
+
+/* ── 화면 헤더 공통 문법(1.752) — 어느 화면이든 같은 결:
+   제목 17/800 잉크 · 부제 12 페인트 · 세그=알약(활성 흰+그림자) · 카운트 페인트.
+   대상: 작전판 bp-head · 보관함 df-head · 매치데스크 .head · IDP .layers · 게임모델 .set-seg ── */
+@media (min-width:768px){
+  html.ps-page-analysis .head h1,
+  html.ps-page-board .df-ttl,html.ps-page-board .bp-head .bp-t,
+  html.ps-page-idp .ps-pagetitle,html.ps-page-scout .ps-pagetitle{font-size:20px!important;font-weight:800!important;
+    letter-spacing:-.02em!important;color:var(--dv2-ink,#0f1420)!important;}
+  .df-sub, .bp-head .bp-s{font-size:12px!important;font-weight:600!important;color:var(--dv2-faint,#8A9099)!important;}
+  .df-cnt{font-size:11px!important;color:var(--dv2-faint,#8A9099)!important;font-weight:600!important;}
+  /* 알약 세그 공통 */
+  .vault-section-seg, .set-seg{display:inline-flex;background:var(--dv2-chip-bg,#f2f4f7);border:0!important;
+    border-radius:10px;padding:3px;gap:2px;}
+  .vault-section-seg button, .set-seg button{border:0!important;background:transparent;border-radius:10px!important;
+    padding:6px 12px!important;font-size:12px!important;font-weight:600!important;color:var(--dv2-muted,#646A73)!important;}
+  .vault-section-seg button.on, .set-seg button.on{background:var(--dv2-surface,#fff)!important;
+    color:var(--dv2-ink,#0f1420)!important;font-weight:800!important;box-shadow:var(--dv2-sh-seg,0 1px 3px rgba(15,23,42,.14))!important;}
+  /* IDP 상단 탭 — 행 규격 + 활성 연파랑(IDP는 보라 스코프) */
+  html.ps-page-idp .layers{gap:2px;}
+  html.ps-page-idp .layers button{border-radius:10px;}
+  html.ps-page-idp .layers button b{font-size:12px;}
+  html.ps-page-idp .layers button.on{background:var(--dv2-violet-soft,#f5f2ff);color:var(--dv2-violet-text,#5b3df0);}
+  html.ps-page-idp .layers button.on::after{display:none;}
+}
+
+.dv2-seg>button:active,.dv2-tool:active,.dv2-btn:active,.dv2-nav-item:active,
+.dv2-chip:active,.dv2-toggle:active,.dv2-zoom>button:active{transform:scale(.97);}
+
+@media (prefers-reduced-motion:reduce){
+  .dv2-seg>button,.dv2-tool,.dv2-btn,.dv2-nav-item,.dv2-card,.dv2-chip,.dv2-toggle,
+  .dv2-toggle::after,.dv2-zoom>button{transition:none!important;animation:none!important;}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT-1824:start — 레이아웃만 정리하는 패스(1.824). 기능·마크업·저장 불변, CSS만.
+   각 규칙은 html.ps-page-* 로 화면을 한정한다. 되돌리기 = 이 블록 삭제.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* [셸] 다크 테마 — 앱 설정 팝업 제목이 다크 배경에 검정 글자로 안 보이던 것 */
+html.ps-page-app body.fmdark #gearPop .gp-head,
+html.ps-page-app body.fmdark #gearPop .gp-titlebox>span:first-child{color:#E7EBF1!important;}
+
+/* [팀 › 일정 › 일간] 행 순서를 주간과 같게(일정·강도·주제·미팅·웜업·훈련). 렌더 순서는 그대로 두고 flex order 로만.
+   #dayView 자식 = (경기 카드?) + .dayrow 6개(일정·주제·미팅·강도·웜업·훈련) — 강도는 항상 뒤에서 3번째, 일정은 6번째. */
+html.ps-page-process #dayView{display:flex!important;flex-direction:column!important;}
+html.ps-page-process #dayView>.matchcell{order:-3;}
+html.ps-page-process #dayView>.dayrow:nth-last-child(6){order:-2;}   /* 일정 */
+html.ps-page-process #dayView>.dayrow:nth-last-child(3){order:-1;}   /* 강도 */
+/* 일간 뷰는 전폭 1,100px '+' 막대라 데스크톱에서 읽기 폭이 없었다 — 읽기 폭으로 모은다 */
+@media (min-width:1024px){
+  html.ps-page-process #dayViewWrap{width:100%!important;max-width:860px;margin-left:auto!important;margin-right:auto!important;}   /* 부모 .screen 이 flex 라 width 없으면 내용 폭으로 줄어든다 */
+}
+
+/* [팀 › 경기 › 준비] 운동장이 aspect 105/68·100% 폭이라 데스크톱에서 1100×700 한 화면을 통째로 차지 — 폭 상한 */
+@media (min-width:1024px){
+  html.ps-page-scout #mb2Pitch,html.ps-page-scout #obPitch{max-width:840px!important;margin-left:auto!important;margin-right:auto!important;}
+}
+
+/* [IDP › 학습, 폰] IDP 프레임 안에서 학습을 열면 IDP 모바일 헤더(IDP/학습/설명) 위에 학습 자체 헤더가 또 와서 제목 3층 —
+   학습에는 자기 헤더가 있으니 IDP 쪽 헤더만 접는다 */
+html.ps-page-idp body.idp-top-learning .mob-screenhead{display:none!important;}
+
+/* [커뮤니티, 폰] 필터 3구획이 각 라벨 줄+칩 줄로 첫 화면 절반을 먹음 — 라벨을 칩 줄 앞에 인라인, 구획 간격 축소 */
+@media (max-width:767px){
+  html.ps-page-community .comm-nav .nav-sec{display:flex!important;align-items:center!important;gap:8px!important;margin-bottom:6px!important;}
+  html.ps-page-community .comm-nav .nav-lb{flex:0 0 auto!important;margin:0!important;min-width:54px!important;}
+  html.ps-page-community .comm-nav .nav-items{flex:1 1 auto!important;min-width:0!important;display:flex!important;flex-wrap:nowrap!important;
+    overflow-x:auto!important;gap:6px!important;scrollbar-width:none;}
+  html.ps-page-community .comm-nav .nav-items::-webkit-scrollbar{display:none;}
+  html.ps-page-community .comm-nav .nav-items>button{flex:0 0 auto!important;white-space:nowrap!important;}
+  html.ps-page-community .filters{width:100%!important;}
+  html.ps-page-community .filters>select.filt{flex:1 1 0!important;min-width:0!important;}
+}
+
+/* [IDP › 홈, 데스크톱 ≥900] 1.820 2단은 모든 카드를 오른쪽 340px 열에 세로로 쌓아, 시간표가 비면 왼쪽 2/3이 통째로 빈다.
+   시간표는 4행만 스팬하고, 세 번째 이후 카드(하루 루틴·돌아보기 등 긴 카드)는 왼쪽 열 시간표 아래로 흘려 두 열을 맞춘다.
+   .hm-goal/.hm-today/처음 두 카드는 그대로 오른쪽. 오른쪽 열은 340→360. */
+@media (min-width:900px){
+
+  /* 시간표 카드가 오른쪽 4행(목표·오늘 기록·훈련 전·오늘 몸)의 바닥선까지 늘어나 두 열의 아랫단이 맞는다 */
+  
+}
+
+/* [IDP › 내 프로필] '연령 그룹(생년월일로 자동)' 셀렉트 칸 숨김(사용자 지시 1.825). 값 자체는 생년월일에서 자동 판정되므로
+   로직·저장 불변 — 화면에서만 뺀다. 되살리려면 이 규칙 삭제. */
+html.ps-page-idp .pf-grid .fld:has(> select[data-f="band"]){display:none!important;}
+
+/* ── [팀 › 선수단] 스카우팅(팀 › 스카우팅)과 같은 레이아웃으로(사용자 지시 1.825) ──────────────────────
+   데스크톱: 머리 = 제목 줄 + 도구 한 줄(조 칩 · 포메이션 · ＋자리 · 유니폼)로 압축, 현황 숫자는 한 줄 인라인.
+   폰: 스카우팅 폰 문법 — 액션 한 줄(＋선수 추가 · 명단 붙여넣기 · ⋯), 도구 2행(1행 조 칩 / 2행 포메이션·＋자리),
+       명단은 표 대신 카드(1행 번호·이름(크게)·상태·조 / 2행 IDP·프로필·순서). 마크업·JS 불변. */
+html.ps-page-scout #teamView .tm-head{gap:8px!important;}
+/* 1.976 — 선수단 헤더의 '포메이션' 셀렉트 제거(사용자 "이건 지워죠"). 값은 유지되고 ＋자리는 남는다. 되돌리려면 이 줄만 지우면 됨 */
+html.ps-page-scout #teamView .tm-workbar .tm-head-set > label.tm-set-it:has(#tmForm){display:none!important;}
+html.ps-page-scout #teamView .tm-hero{gap:14px!important;padding:2px 2px 8px!important;}
+html.ps-page-scout #teamView .tm-workbar{display:flex!important;align-items:center!important;gap:10px 14px!important;flex-wrap:wrap!important;}
+html.ps-page-scout #teamView .tm-workbar .tm-head-set{margin-left:auto!important;border-top:0!important;padding:0!important;gap:12px!important;}
+@media (max-width:760px){
+  /* 액션 한 줄: ＋선수 추가(늘어남) · 명단 붙여넣기 · ⋯ */
+  html.ps-page-scout #teamView .tm-head-top{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;row-gap:8px!important;align-items:center!important;}
+  html.ps-page-scout #teamView .tm-titlebox{grid-column:1 / -1!important;}
+  html.ps-page-scout #teamView .tm-subtitle{display:none!important;}
+  html.ps-page-scout #teamView .tm-head-actions{grid-column:1 / -1!important;margin-left:0!important;display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto auto!important;gap:6px!important;width:100%!important;}
+  html.ps-page-scout #teamView .tm-head-actions #tmAdd{width:100%!important;padding:0 12px!important;font-size:13px!important;height:32px!important;}
+  html.ps-page-scout #teamView .tm-head-actions #tmAdd::before{content:none!important;}
+  html.ps-page-scout #teamView .tm-head-actions #tmAddBulk,html.ps-page-scout #teamView .tm-head-actions #tmEtcBtn{height:32px!important;white-space:nowrap!important;}
+  /* 현황 숫자 한 줄 */
+  html.ps-page-scout #teamView .tm-hero{gap:6px 12px!important;}
+  html.ps-page-scout #teamView .tm-hero .tm-hero-big b{font-size:22px!important;}
+  html.ps-page-scout #teamView #tmShareLine{padding:4px 0 6px!important;font-size:11px!important;}
+  /* 도구 2행: 1행 조 칩(가로 스크롤) / 2행 포메이션 · ＋자리 · 유니폼 */
+  html.ps-page-scout #teamView .tm-workbar{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;}
+  html.ps-page-scout #teamView #grpChips{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:6px!important;scrollbar-width:none;padding-bottom:2px;}
+  html.ps-page-scout #teamView #grpChips::-webkit-scrollbar{display:none;}
+  html.ps-page-scout #teamView #grpChips>button{flex:0 0 auto!important;}
+  html.ps-page-scout #teamView .tm-workbar .tm-head-set{margin-left:0!important;display:flex!important;flex-wrap:nowrap!important;gap:8px!important;overflow-x:auto!important;scrollbar-width:none;}
+  html.ps-page-scout #teamView .tm-workbar .tm-head-set::-webkit-scrollbar{display:none;}
+  html.ps-page-scout #teamView .tm-workbar .tm-head-set>*{flex:0 0 auto!important;white-space:nowrap!important;}
+  html.ps-page-scout #teamView .tb-only-wide{margin:2px 0 6px!important;font-size:11px!important;line-height:1.5!important;}
+  /* 명단 = 카드(스카우팅 #scList .sc-row 폰 문법) */
+  html.ps-page-scout #teamList.tm-4col .tm-lhead{display:none!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row{display:grid!important;grid-template-columns:34px minmax(0,1fr) auto 20px 20px 22px auto!important;
+    grid-template-rows:auto!important;column-gap:6px!important;row-gap:0!important;padding:7px 10px!important;margin-bottom:5px!important;
+    /* 2.088 — 2행 4열이던 것을 **1행 7열**로. 사용자: "카드 세로 크기가 너무 커 · 목록처럼 행으로".
+       375px 실측 78px → 46px. 45명이면 3,500px 이 2,100px 이 된다.
+       정보는 안 버리고 모양만 줄였다 — IDP 는 점, 프로필은 화살표(둘 다 title 은 그대로). */
+    border:1px solid var(--line,#e2e4e8)!important;border-radius:10px!important;background:var(--panel,#fff)!important;align-items:center!important;box-shadow:none!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-num{grid-column:1!important;grid-row:1!important;width:100%!important;height:24px!important;min-height:0!important;
+    padding:0!important;border:0!important;background:transparent!important;text-align:right!important;font-size:12px!important;font-weight:600!important;color:var(--dim,#6f7580)!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-name{grid-column:2!important;grid-row:1!important;width:100%!important;min-width:0!important;height:24px!important;min-height:0!important;
+    padding:0!important;border:0!important;background:transparent!important;font-size:16px!important;font-weight:800!important;color:var(--txt,#14161A)!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-injury{grid-column:3!important;grid-row:1!important;justify-self:end!important;order:0!important;height:20px!important;padding:0 8px!important;font-size:10px!important;display:inline-flex!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-grp{grid-column:4!important;grid-row:1!important;justify-self:center!important;order:0!important;height:20px!important;min-width:20px!important;padding:0 6px!important;font-size:10px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-idp{grid-column:5!important;grid-row:1!important;justify-self:center!important;order:0!important;height:20px!important;width:20px!important;padding:0!important;font-size:0!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-profq{grid-column:6!important;grid-row:1!important;justify-self:center!important;order:0!important;height:20px!important;width:22px!important;padding:0!important;font-size:0!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-idp::after{content:'\25CF';font-size:10px;line-height:1;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-profq::after{content:'\203A';font-size:16px;font-weight:800;line-height:1;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .tm-acts{grid-column:7!important;grid-row:1!important;justify-self:end!important;order:0!important;display:flex!important;gap:2px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-fit,html.ps-page-scout #teamList.tm-4col .tm-row .t-foot,html.ps-page-scout #teamList.tm-4col .tm-row .t-pos{display:none!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-col-h{margin:12px 2px 6px!important;padding:0!important;border:0!important;}
+
+  /* 1.970 — 선수단 폰 다듬기(사용자 확정 3건).
+     ① 조 칩(전체·A팀·B팀·C팀) = 알약 세그(팀 운영 .tn-seg 문법: 회색 트랙 + 흰 알약). 인라인 height/padding 이 있어 !important.
+     ② '골키퍼 1' 그룹 머리와 'GK 1명' 포지션 머리가 겹쳐 보여(사용자 "그룹 헤더 중복") 폰에선 그룹 머리를 숨기고
+        포지션 머리 하나만 섹션 머리로 세운다(13px/800 · 아래 2px 잉크선 · 위 여백 18).
+     ③ × 삭제 — 카드마다 빨간 상자가 튀어 회색 고스트(테두리·배경 없음)로, 누르는 동안만 붉게. */
+  html.ps-page-scout #teamView #grpChips{display:inline-flex!important;max-width:100%!important;flex-wrap:nowrap!important;gap:2px!important;padding:3px!important;
+    border-radius:10px!important;background:var(--dv2-chip-bg,#f2f4f7)!important;overflow-x:auto!important;scrollbar-width:none;}
+  html.ps-page-scout #teamView #grpChips>button{flex:0 0 auto!important;height:28px!important;min-height:0!important;padding:0 12px!important;border:0!important;border-radius:6px!important;
+    background:transparent!important;color:var(--dv2-muted,#646A73)!important;font-size:12px!important;font-weight:600!important;box-shadow:none!important;white-space:nowrap!important;}
+  html.ps-page-scout #teamView #grpChips>button.primary{background:#fff!important;color:var(--dv2-ink,#0f1420)!important;font-weight:800!important;box-shadow:0 1px 3px rgba(15,23,42,.14)!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-col-h{display:none!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-poshd{display:flex!important;align-items:center!important;gap:7px!important;padding:18px 2px 7px!important;margin:0 0 6px!important;
+    border:0!important;border-bottom:2px solid var(--txt,#14161A)!important;background:transparent!important;font-size:13px!important;font-weight:800!important;letter-spacing:.04em!important;color:var(--txt,#14161A)!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-col{margin-top:0!important;padding-top:0!important;}   /* 그룹 사이 22px 여백 + 머리 18px 이 겹쳐 40px 이 벌어졌음 */
+  html.ps-page-scout #teamList.tm-4col .tm-col:first-of-type .tm-poshd{padding-top:6px!important;}
+  html.ps-page-scout #teamView #grpChips>button{flex:1 1 auto!important;justify-content:center!important;text-align:center!important;}
+  /* 스카우팅 보드 세그(스카우팅·우리팀·전체)도 같은 알약 문법 — 선수단 조 세그와 한 화면 문법(사용자 "팀 세그 알약화") */
+  html.ps-page-scout .sb-tabs .sb-tools .sb-show{display:inline-flex!important;align-items:center!important;gap:2px!important;padding:3px!important;height:32px!important;box-sizing:border-box!important;
+    border:0!important;border-radius:10px!important;background:var(--dv2-chip-bg,#f2f4f7)!important;overflow:hidden!important;}
+  html.ps-page-scout .sb-tabs .sb-tools .sb-show button{flex:1 1 0!important;height:28px!important;padding:0 8px!important;border:0!important;border-radius:6px!important;
+    background:transparent!important;color:var(--dv2-muted,#646A73)!important;font-size:12px!important;font-weight:600!important;white-space:nowrap!important;}
+  html.ps-page-scout .sb-tabs .sb-tools .sb-show button[aria-pressed="true"]{background:#fff!important;color:var(--dv2-ink,#0f1420)!important;font-weight:800!important;box-shadow:0 1px 3px rgba(15,23,42,.14)!important;}
+  html.ps-page-scout .sb-tabs .sb-tools .sb-formsel{height:32px!important;}
+  html.ps-page-scout #scSortSeg.seg{border:0!important;border-radius:10px!important;background:var(--dv2-chip-bg,#f2f4f7)!important;padding:3px!important;gap:2px!important;}
+  html.ps-page-scout #scSortSeg.seg button{height:28px!important;padding:0 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:600!important;color:var(--dv2-muted,#646A73)!important;}
+  html.ps-page-scout #scSortSeg.seg button.on{background:#fff!important;color:var(--dv2-ink,#0f1420)!important;font-weight:800!important;box-shadow:0 1px 3px rgba(15,23,42,.14)!important;}
+  /* 후보 그룹 머리(CB 2명) = 선수단 포지션 머리와 같은 섹션 머리 */
+  html.ps-page-scout #scList .sc-grp{display:flex!important;align-items:center!important;gap:7px!important;padding:18px 2px 7px!important;margin:0 0 6px!important;
+    border:0!important;border-bottom:2px solid var(--txt,#14161A)!important;}
+  html.ps-page-scout #scList .sc-grp:first-child{padding-top:6px!important;}
+  html.ps-page-scout #scList .sc-grp b{font-size:13px!important;font-weight:800!important;letter-spacing:.04em!important;}
+  html.ps-page-scout #scList .sc-grp span{font-size:12px!important;font-weight:600!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-poshd .tm-poshd-cnt{color:var(--dim,#6f7580)!important;font-size:12px!important;font-weight:600!important;margin-right:auto!important;letter-spacing:0!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-poshd .tm-poshd-add{height:24px!important;padding:0 8px!important;font-size:11px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-x{width:28px!important;height:28px!important;flex-basis:28px!important;border:0!important;background:transparent!important;
+    color:var(--dim,#6f7580)!important;border-radius:6px!important;opacity:.7;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-x:active{background:rgba(194,74,70,.12)!important;color:#C24A46!important;opacity:1;}
+}
+
+/* ── [팀 › 선수단 명단 = 팀 › 스카우팅 후보 명단, 데스크톱] (사용자 지시 1.827 "둘이 똑같이") ─────────
+   후보 명단(.sc-row) 시각 문법을 선수단 행(.tm-row)에 그대로: 상태 = 색 틴트 알약(.sc-st), 조 = 사각 배지(.sc-gr),
+   번호 굵게, 이름 15px/800, 평가 5영역은 회색 상자(.sc-cats), 포지션 소제목(GK 2명)은 2px 밑줄(.sc-grp), 행 사이 1px. */
+@media (min-width:761px){
+  html.ps-page-scout #teamList.tm-4col .tm-row{padding:8px 6px!important;gap:0 8px!important;border-radius:10px!important;min-height:40px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row+.tm-row{box-shadow:0 -1px 0 var(--line,#e2e4e8)!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row:hover{background:var(--bar2,#f5f6f8)!important;}
+  /* 상태 알약 — 후보 '확정' 알약과 같은 형태, 색은 상태 의미색 */
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-injury{--c:#209765;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    width:100%!important;height:24px!important;padding:0 8px!important;box-sizing:border-box!important;border-radius:6px!important;
+    border:1px solid color-mix(in srgb,var(--c) 38%,transparent)!important;background:color-mix(in srgb,var(--c) 12%,transparent)!important;
+    color:var(--c)!important;font-size:11px!important;font-weight:800!important;line-height:1!important;letter-spacing:-.02em!important;white-space:nowrap!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row[data-status="injury"] .t-injury,html.ps-page-scout #teamList.tm-4col .tm-row[data-status="injured"] .t-injury{--c:#C24A46;}
+  html.ps-page-scout #teamList.tm-4col .tm-row[data-status="rehab"] .t-injury{--c:#E8A013;}
+  html.ps-page-scout #teamList.tm-4col .tm-row[data-status="out"] .t-injury{--c:#646A73;}   /* 2.094 불참 — 다친 게 아니라 안 온 것 */
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-injury::before{display:none!important;}
+  html.ps-page-scout #teamView.tm-mode-formation #teamList.tm-4col .tm-row:not(.is-active)[data-status="ok"] .t-injury{display:inline-flex!important;}
+  /* 조 배지 — 후보 평가 배지(.sc-gr)와 같은 34×26 사각 */
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-grp{width:34px!important;height:28px!important;border:0!important;border-radius:6px!important;padding:0!important;
+    font-size:12px!important;font-weight:800!important;background:rgba(128,128,138,.16)!important;color:var(--dim,#6f7580)!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-grp:not(.none){background:#16213A!important;color:#fff!important;}
+  /* 2.094 — 등번호(사용자: "등번호가 어색하고"). 세 가지가 겹쳐 있었다:
+     ⓐ 30px 칸에 34px 입력 → 4px 삐져나와 이름에 붙었다(칸을 34px 로)
+     ⓑ 이 줄이 위 .t-num 규칙의 text-align:right 를 center 로 덮고 있었다 — 2.088 과 똑같은 사고
+        (같은 속성이 뒤에 또 있는지 봐야 한다). 가운데 정렬이라 한 자리·두 자리가 제각각 서 있었다
+     ⓒ 이름과 같은 800 굵기라 번호가 이름과 경쟁했다 — 번호는 식별자지 주인공이 아니다
+     오른쪽 정렬 + tabular-nums 로 일의 자리를 맞추고, 이름보다 한 급 물러서게 한다. */
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-num{font-weight:600!important;font-size:13px!important;text-align:right!important;
+    font-variant-numeric:tabular-nums!important;letter-spacing:-.01em!important;color:var(--dim,#6f7580)!important;
+    border:0!important;background:transparent!important;padding:0!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-name{font-size:14px!important;font-weight:800!important;border:0!important;background:transparent!important;padding:0 2px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-fit{background:var(--ps-catbg,#f2f4f7)!important;border-radius:6px!important;padding:5px 8px!important;box-shadow:inset 0 0 0 1px var(--ps-hairline,rgba(0,0,0,.06))!important;gap:0 8px!important;width:max-content!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-fit .cat-avg{margin-right:0!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-profq{font-size:12px!important;font-weight:600!important;}
+  /* 포지션 소제목(GK 2명 · ＋추가) = 후보 그룹 제목(.sc-grp): 12px/800 + 2px 밑줄. 큰 그룹(골키퍼 2)은 그 위 작은 라벨로 */
+  html.ps-page-scout #teamList.tm-4col .tm-poshd{display:flex!important;align-items:center!important;gap:7px!important;padding:14px 2px 7px!important;margin:2px 0 4px!important;
+    border:0!important;border-bottom:2px solid var(--txt,#14161A)!important;background:transparent!important;font-size:12px!important;font-weight:800!important;letter-spacing:.05em!important;color:var(--txt,#14161A)!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-poshd .tm-poshd-cnt{color:var(--dim,#6f7580)!important;font-size:12px!important;font-weight:800!important;margin-right:auto!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-poshd .tm-poshd-add{height:24px!important;padding:0 8px!important;font-size:11px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-col-h{font-size:11px!important;font-weight:800!important;letter-spacing:.06em!important;color:var(--dim,#6f7580)!important;text-transform:uppercase!important;
+    padding:18px 2px 0!important;margin:0!important;border:0!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-col-h u{color:var(--dim,#6f7580)!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-lhead{padding:4px 6px 8px!important;border-bottom:0!important;font-size:11px!important;letter-spacing:.05em!important;color:var(--dim,#6f7580)!important;}
+}
+
+/* ── 페이지 헤더 규격 통일 (사용자 지시 1.827) ─────────────────────────────────────────────
+   한 띠 56px · 흰 배경 · 아래 1px · 좌우 20 · 제목 18/800 + 부제 12 muted 같은 줄 · 탭 = 알약 세그 · 액션 오른쪽.
+   데스크톱(≥900)만. 폰은 각 화면 모바일 헤더 유지. */
+@media (min-width:900px){
+  /* 작전판 #boardPageStrip */
+  html.ps-page-board body:not(.vault-full) #boardPageStrip{height:56px!important;padding:0 20px!important;gap:8px!important;}
+  html.ps-page-board #boardPageStrip .bp-head .bp-t{font-size:20px!important;font-weight:800!important;letter-spacing:-.02em!important;}
+  html.ps-page-board #boardPageStrip .bp-head .bp-s{font-size:12px!important;}
+  /* 보관함 .df-head */
+  html.ps-page-board body.vault-full .df-head{height:56px!important;min-height:56px!important;}
+  html.ps-page-board body.vault-full .df-head .df-ttl{font-size:20px!important;letter-spacing:-.02em!important;}
+  html.ps-page-board body.vault-full .df-head .df-sub{font-size:12px!important;}
+  /* 팀 운영 #teamNav — 2단(제목 64 + 밑줄 탭 48)을 한 띠로: 제목·부제 한 줄 + 알약 세그 */
+  html.ps-page-app body.ps-team-open nav#teamNav{display:flex!important;flex-direction:row!important;align-items:center!important;height:56px!important;min-height:56px!important;flex:0 0 56px!important;
+    grid-template-rows:none!important;padding:0 20px!important;gap:16px!important;}
+  html.ps-page-app body.ps-team-open nav#teamNav .teamname{flex-direction:row!important;align-items:baseline!important;gap:8px!important;flex:0 0 auto!important;
+    min-width:max-content!important;max-width:none!important;overflow:visible!important;white-space:nowrap!important;}
+  html.ps-page-app body.ps-team-open nav#teamNav .teamname b,html.ps-page-app body.ps-team-open nav#teamNav .teamname small{overflow:visible!important;text-overflow:clip!important;white-space:nowrap!important;max-width:none!important;}
+  html.ps-page-app body.ps-team-open nav#teamNav .teamname b{font-size:16px!important;letter-spacing:-.02em!important;}
+  html.ps-page-app body.ps-team-open nav#teamNav .teamname small{font-size:12px!important;font-weight:600!important;}
+  html.ps-page-app body.ps-team-open nav#teamNav .tn-seg{flex:0 1 auto!important;align-self:center!important;display:inline-flex!important;gap:2px!important;padding:3px!important;
+    border-radius:10px!important;background:var(--dv2-chip-bg,#f2f4f7)!important;overflow-x:auto!important;}
+  html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button{min-height:30px!important;padding:6px 13px!important;border-radius:8px!important;font-size:12px!important;font-weight:600!important;color:var(--dv2-muted,#646A73)!important;}
+  html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button.on{background:#fff!important;color:var(--dv2-ink,#0f1420)!important;font-weight:800!important;box-shadow:0 1px 3px rgba(15,23,42,.14)!important;}
+  html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button.on::after{display:none!important;content:none!important;}
+  html.ps-page-app body.ps-team-open nav#teamNav .teamhead-actions{margin-left:auto!important;}
+  /* 스카우팅(사이드바) scouting.html — 위 줄 규격 + 남색 띠는 연회색 두 번째 띠로 */
+  html.ps-page-scouting .sc-top{height:56px!important;padding:0 20px!important;}
+  html.ps-page-scouting .sc-title{font-size:20px!important;letter-spacing:-.02em!important;}
+  html.ps-page-scouting .sc-count{font-size:12px!important;}
+  html.ps-page-scouting .sc-band{background:var(--dv2-bg,#f7f8fa)!important;color:var(--txt,#14161A)!important;height:48px!important;padding:0 20px!important;border-bottom:1px solid var(--line,#e6e8ee)!important;}
+  html.ps-page-scouting .sc-band .name,html.ps-page-scouting .sc-band b,html.ps-page-scouting .sc-band span,html.ps-page-scouting .sc-band button,html.ps-page-scouting .sc-band label{color:var(--txt,#14161A)!important;}
+  /* IDP .top — 숨긴 제목(.top-h)을 왼쪽에 살리고 탭·액션과 한 줄 */
+  html.ps-page-idp body:not(.idp-top-learning) .top{display:flex!important;align-items:center!important;height:56px!important;min-height:56px!important;padding:0 20px!important;gap:16px!important;
+    background:#fff!important;border-bottom:1px solid var(--fig-line,#e6e8ee)!important;box-sizing:border-box!important;}
+  html.ps-page-idp body:not(.ps-player-role) .top .top-h,html.ps-page-idp:root[data-shell="1"] body:not(.ps-player-role) .top .top-h{display:flex!important;height:auto!important;min-height:0!important;padding:0!important;border:0!important;flex:0 0 auto!important;}
+  /* premium-ui 1.635 가 셸에서 .ps-pagetitle/.ps-pagedesc 를 시각적으로 숨긴다(1px 클립) — 헤더 규격상 IDP 만 되살린다 */
+  html.ps-page-idp:root[data-shell="1"] .top .top-h .ps-pagetitle,html.ps-page-idp:root[data-shell="1"] .top .top-h .ps-pagedesc{
+    position:static!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;overflow:visible!important;clip:auto!important;clip-path:none!important;white-space:nowrap!important;}
+  html.ps-page-idp .top .top-h .idp-title .ps-pagetitle,html.ps-page-idp .top .top-h h1{font-size:20px!important;letter-spacing:-.02em!important;}
+  html.ps-page-idp .top .top-h .idp-title small{font-size:12px!important;}
+  html.ps-page-idp .top #layers{flex:0 1 auto!important;min-height:0!important;padding:3px!important;border:0!important;border-radius:10px!important;background:var(--dv2-chip-bg,#f2f4f7)!important;gap:2px!important;}
+  html.ps-page-idp .top #layers button{min-height:28px!important;padding:6px 12px!important;border-radius:6px!important;}
+  html.ps-page-idp .top #layers button.on{background:#fff!important;box-shadow:0 1px 3px rgba(15,23,42,.14)!important;}
+  html.ps-page-idp .top .idp-actions{position:static!important;margin:0 0 0 auto!important;}
+  /* 커뮤니티 .top */
+  html.ps-page-community #wrap>.top{height:56px!important;min-height:56px!important;padding:0 20px!important;box-sizing:border-box!important;background:#fff!important;border-bottom:1px solid var(--line,#e6e8ee)!important;}
+  html.ps-page-community #wrap>.top h1{font-size:20px!important;letter-spacing:-.02em!important;}
+  html.ps-page-community #wrap>.top .sub{font-size:12px!important;}
+  /* 학습 .lr-head — 회색 바탕 히어로 → 흰 띠(제목 + 영문 부제 한 줄, 설명은 아래 작게), 관점 세그 오른쪽 */
+  html.ps-page-idp .lr-head,html.ps-page-learning .lr-head{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:4px 16px!important;min-height:56px!important;
+    margin:0 0 16px!important;padding:10px 20px!important;background:#fff!important;border:1px solid var(--line,#e6e8ee)!important;border-radius:12px!important;box-sizing:border-box!important;}
+  html.ps-page-idp .lr-head .lr-headcopy,html.ps-page-learning .lr-head .lr-headcopy{display:flex!important;flex-wrap:wrap!important;align-items:baseline!important;gap:2px 10px!important;flex:1 1 auto!important;min-width:0!important;}
+  html.ps-page-idp .lr-head .lr-kicker,html.ps-page-learning .lr-head .lr-kicker{display:none!important;}
+  html.ps-page-idp .lr-head .lr-title,html.ps-page-learning .lr-head .lr-title{font-size:20px!important;letter-spacing:-.02em!important;margin:0!important;line-height:1.2!important;}
+  html.ps-page-idp .lr-head .lr-title .lr-en,html.ps-page-learning .lr-head .lr-title .lr-en{margin-left:10px!important;font-size:12px!important;font-weight:600!important;color:var(--dim,#6f7580)!important;}
+  html.ps-page-idp .lr-head .lr-desc,html.ps-page-learning .lr-head .lr-desc{flex:1 1 100%!important;margin:0!important;font-size:12px!important;line-height:1.5!important;color:var(--dim,#6f7580)!important;}
+  html.ps-page-idp .lr-head .lr-role,html.ps-page-learning .lr-head .lr-role{margin-left:auto!important;flex:0 0 auto!important;}
+  /* 개인 노트 .nhead */
+  html.ps-page-note .nhead{height:56px!important;padding:0 20px!important;}
+  html.ps-page-note .nhead .nh-t{font-size:20px!important;letter-spacing:-.02em!important;}
+  html.ps-page-note .nhead .nh-s{font-size:12px!important;}
+}
+
+/* [팀 › 선수단 명단, 데스크톱] 왼쪽 정렬 + 평가 상자 상시(사용자 지시 1.828) — 후보 명단처럼 열을 왼쪽에 붙이고(남는 폭은 맨 끝),
+   1200px 아래에서 숨기던 평가 5영역·주발 열을 항상 보이게. 열 머리글도 같은 열로. */
+@media (min-width:801px){
+  /* 1.888 — 가로 여백 없이(사용자): 남는 폭을 끝 열이 아니라 평가 열이 받는다(1.828 의 '남는 폭 맨 끝' 철회) */
+  /* 2.017 — 열 순서가 1.926(주발을 이름 다음으로)과 어긋나 주발이 넓은 열, 평가가 36px 열에 들어가 세로로 쪼개졌다. 열 = 상태 64 · 팀 34 · 번호 40 · 이름 · 주발 40 · 평가(1fr) · IDP 60 · 프로필 72 · 삭제 36 */
+  /* 2.165 — 평가 트랙(minmax(220px,1fr)) 제거(사용자: 명단은 신원·상태만). 이름이 1fr 을 받는다 */
+  html.ps-page-scout #teamList.tm-4col .tm-row{grid-template-columns:64px 34px 40px minmax(120px,1fr) 40px 60px 72px 36px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-lhead{grid-template-columns:64px 34px 40px minmax(120px,1fr) 40px 60px 72px 36px!important;display:grid!important;gap:0 8px!important;padding:6px 6px 8px!important;border-bottom:1px solid var(--line,#e6e8ee)!important;text-transform:uppercase;font-weight:800!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-lhead i{font-style:normal;white-space:nowrap;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-foot{justify-self:center!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-num{color:var(--dim,#6f7580)!important;font-variant-numeric:tabular-nums;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-injury{justify-self:start!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-grp{justify-self:start!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .tm-acts{justify-self:end!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-fit{padding:4px 6px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-fit .cat-avg{display:inline-flex!important;align-items:baseline!important;gap:3px!important;grid-template-columns:none!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-fit .cat-avg i{font-size:10px!important;color:var(--dim,#6f7580)!important;font-style:normal;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-fit .cat-avg b{font-size:12px!important;font-weight:800!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-poshd{border-bottom:2px solid #16213A!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-col-h{display:block!important;margin:16px 2px 4px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-col:first-of-type .tm-col-h{margin-top:8px!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-fit{width:100%!important;justify-content:space-between!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-fit .cat-avg{flex:1 1 0!important;justify-content:center!important;margin-right:0!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-foot{display:flex!important;}   /* 2.165 — t-fit 은 행에서 제거됨 */
+  html.ps-page-scout #teamList.tm-4col .tm-lhead i:nth-child(5){display:block!important;}   /* 2.165 — 평가 헤더는 제거됨 */
+  html.ps-page-scout #teamList.tm-4col .tm-row .t-name{width:100%!important;min-width:0!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-row .tm-acts{justify-content:flex-start!important;}
+  html.ps-page-scout #teamList.tm-4col .tm-lhead i{padding-left:0!important;}
+}
+
+/* [개인 노트] 도구줄 — 세그 글자가 세로로 꺾이던 것("노/트", "볼/펜"): 글자 12px·줄바꿈 금지·세그 축소 금지, 제목칸이 남는 폭을 받는다.
+   페이지 레일(#pageRail)은 숨김 — 페이지는 스와이프/◀▶로(1.829). */
+html.ps-page-note .bar{gap:6px 8px!important;}
+html.ps-page-note .bar .seg{flex:0 0 auto!important;min-width:0!important;}
+html.ps-page-note .bar .seg button{white-space:nowrap!important;font-size:12px!important;padding:5px 9px!important;flex:0 0 auto!important;line-height:1.2!important;writing-mode:horizontal-tb!important;}
+html.ps-page-note .bar #nTitle{flex:1 1 140px!important;min-width:120px!important;font-size:12px!important;}
+html.ps-page-note .bar .btn{white-space:nowrap!important;font-size:12px!important;}
+@media (min-width:768px){ html.ps-page-note .bar .note-core,html.ps-page-note .bar .note-ink{flex:0 0 auto!important;width:auto!important;max-width:none!important;overflow:visible!important;} }   /* 1.896 — 데스크톱 한정. 폰에서는 이 overflow:visible 이 mobile-polish 의 note-ink 처리를 덮어 되돌리기·다시실행이 화면 밖으로 밀렸다 */
+html.ps-page-note #pageRail{display:none!important;}
+html.ps-page-note #stage{padding-left:10px!important;}
+
+/* [셸 사이드바 하단] 풋볼A(계정) · 앱 설정 — 1.830 은 아이콘을 뺐지만 1.891 에서 되살린다(사용자: 아이콘 넣어 둘 다 일관성).
+   위 내비 항목(아이콘 16 + 라벨)과 같은 행 문법: 아이콘 슬롯 20px · 라벨 12px · 투명 배경 · hover 옅은 회색. 계정 아바타(20px 원)가 그 아이콘 자리. */
+@media (min-width:768px){
+  html.ps-page-app body header.appbar>#psBoardMoreBtn svg,
+  html.ps-page-app body header.appbar>#psInstallBtn svg{display:none!important;}
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn .ava{display:grid!important;place-items:center!important;width:20px!important;height:20px!important;flex:0 0 20px!important;border-radius:50%!important;font-size:10px!important;font-weight:800!important;margin:0!important;}
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn svg{display:none!important;}
+  html.ps-page-app body header.appbar .gearbtn svg{display:block!important;width:16px!important;height:16px!important;margin:0 2px!important;flex:0 0 auto!important;}
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn,
+  html.ps-page-app body header.appbar .gearbtn{display:flex!important;align-items:center!important;gap:6px!important;padding:8px 6px!important;white-space:nowrap!important;min-height:36px!important;height:auto!important;font-size:12px!important;font-weight:600!important;   /* 1.901 — 96px 레일에서 gap 9+padding 11 이 라벨을 28px 로 눌러 '앱 …'·'풋…'으로 잘렸다(아이패드). 위 내비 항목(7px 6px)과 같은 여백으로 */
+    border:0!important;border-radius:10px!important;background:transparent!important;color:var(--dv2-text-2,#3f4550)!important;box-shadow:none!important;width:100%!important;justify-content:flex-start!important;}
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn:hover,
+  html.ps-page-app body header.appbar .gearbtn:hover{background:var(--dv2-chip-bg,#f2f4f7)!important;color:var(--dv2-text,#14161A)!important;}
+  html.ps-page-app body header.appbar>#psBoardMoreBtn,
+  html.ps-page-app body header.appbar>#psInstallBtn{gap:0!important;padding:8px 10px!important;white-space:nowrap!important;min-height:34px!important;height:auto!important;font-size:12px!important;}
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn .lbl,
+  html.ps-page-app body header.appbar .gearbtn .gear-label,
+  html.ps-page-app body header.appbar>#psBoardMoreBtn span,
+  html.ps-page-app body header.appbar>#psInstallBtn span{display:inline!important;visibility:visible!important;opacity:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;min-width:0!important;}
+}
+
+/* [셸 사이드바] 그룹 헤더 + 재배열(1.831, 감사 2-1) — 개인(작전판·보관함·개인 노트) / 팀(팀·스카우팅) / 성장(IDP·학습) / 커뮤니티.
+   버튼 DOM·핸들러 불변, flex order 와 ::before 라벨만. */
+@media (min-width:768px){
+  html.ps-page-app #appSeg#appSeg{display:flex!important;flex-direction:column!important;}
+  html.ps-page-app #appSeg#appSeg button[data-app="board"]{order:1!important;}
+  html.ps-page-app #appSeg#appSeg button[data-train]{order:1!important;}   /* 1.929 — 훈련(설계) 바로가기, 보드 바로 아래 */
+  html.ps-page-app #appSeg#appSeg button[data-app="design"]{order:2!important;}
+  html.ps-page-app #appSeg#appSeg button[data-app="note"]{order:3!important;}
+  html.ps-page-app #appSeg#appSeg button[data-team-hub]{order:11!important;}
+  html.ps-page-app #appSeg#appSeg button[data-app="scouting"]{order:12!important;}
+  html.ps-page-app #appSeg#appSeg button[data-app="idp"]{order:21!important;}
+  html.ps-page-app #appSeg#appSeg button[data-app="learning"]{order:22!important;}
+  html.ps-page-app #appSeg#appSeg button[data-app="community"]{order:31!important;}
+  /* 1.833 — 그룹 라벨(개인/팀/성장/공유) 제거(사용자 지시). 그룹 사이 간격만 남긴다 */
+  html.ps-page-app #appSeg#appSeg button[data-team-hub],
+  html.ps-page-app #appSeg#appSeg button[data-app="idp"],
+  html.ps-page-app #appSeg#appSeg button[data-app="community"]{margin-top:10px!important;}
+}
+
+/* [작전판 설정 › 배치·관리] '보기' 탭과 같은 행 문법으로(사용자 지시 1.832) — 라벨 왼쪽·컨트롤 오른쪽 36px 행, 34px 버튼/셀렉트,
+   구획 제목은 작은 대문자 라벨, 구분선 간격 축소. 큰 전폭 버튼·넓은 여백 제거. 마크업 불변. */
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .popmenu{padding:2px 0!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menusec{font-size:11px!important;font-weight:800!important;letter-spacing:.06em!important;color:var(--dv2-muted,#8a919d)!important;
+  padding:8px 2px 2px!important;margin:0!important;line-height:1.3!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout hr.menudiv{margin:6px 0!important;border:0!important;border-top:1px solid var(--dv2-border-2,#eef0f4)!important;height:0!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow{display:flex!important;align-items:center!important;gap:8px!important;min-height:36px!important;padding:2px 0!important;margin:0!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow .menulbl{flex:0 0 64px!important;font-size:13px!important;font-weight:600!important;color:var(--dv2-text,#374151)!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow .btn,
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow select.btn{height:32px!important;min-height:32px!important;padding:0 12px!important;font-size:13px!important;font-weight:600!important;
+  border-radius:10px!important;line-height:1!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow select.btn{flex:1 1 auto!important;text-align:left!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow .btn svg{width:14px!important;height:14px!important;margin-right:6px!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow .teamcol-sw{width:26px!important;height:26px!important;flex:0 0 26px!important;margin-right:0!important;border-radius:50%!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow .seg{margin-left:auto!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow .seg button{height:28px!important;min-height:28px!important;padding:0 14px!important;font-size:13px!important;}
+
+/* [개인 노트 도구줄] 배경 양식 버튼 → 라벨 "노트 선택", 모드 세그(노트/메모/문서 보관함) 바로 옆으로(사용자 지시 1.834). CSS order·라벨만, 동작 불변. */
+html.ps-page-note .bar>#nModeSeg{order:1!important;}
+html.ps-page-note .bar>#nTplWrap{order:2!important;}
+html.ps-page-note .bar>#noteToolsToggle{order:3!important;}
+html.ps-page-note .bar>#nTitle{order:4!important;}
+html.ps-page-note .bar>.note-core{order:5!important;}
+html.ps-page-note .bar>.note-ink{order:6!important;}
+html.ps-page-note .bar>#noteAdvanced{order:9!important;}
+html.ps-page-note #nTplBtn #nTplBtnCur{display:none!important;}
+html.ps-page-note #nTplBtn::before{content:"노트 선택";}
+/* 1.878 — 데스크톱: '도구' 팝오버를 없애고 페이지·회전·파일·새 노트를 노트 선택 바로 옆에 인라인(사용자). 중복 제거: 양식 select(#nTpl, 노트 선택과 중복)·문서 보관함(#libB, 세그와 중복) */
+@media (min-width:768px){
+  html.ps-page-note .bar>#noteToolsToggle{display:none!important;}
+  html.ps-page-note .bar>#noteAdvanced{order:3!important;display:flex!important;position:static!important;width:auto!important;flex:0 0 auto!important;justify-content:flex-start!important;flex-wrap:nowrap!important;gap:6px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;}
+  html.ps-page-note .bar>#noteAdvanced #nTpl,html.ps-page-note .bar>#noteAdvanced #libB{display:none!important;}
+  html.ps-page-note .bar>#noteAdvanced #fileWrap,html.ps-page-note .bar>#noteAdvanced #newB{display:none!important;}   /* 1.909 — 파일▾·새 노트는 노트 선택 팝오버 안으로 */
+  html.ps-page-note .bar>#noteAdvanced .pg{display:inline-flex;align-items:center;gap:2px;}
+  html.ps-page-note .bar>#noteAdvanced .icb{min-width:30px;height:32px;}
+  html.ps-page-note .bar>#noteAdvanced #pgLbl{font-size:12px;min-width:34px;text-align:center;}
+}
+
+/* [IDP 헤더] '코치와 공유' → '공유하기', 탭과 같은 헤더 줄 오른쪽 끝에(사용자 지시 1.835). 데스크톱 전 폭에서 한 줄 유지. */
+@media (min-width:768px){
+  html.ps-page-idp body:not(.idp-top-learning) .top{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;min-height:56px!important;padding:0 20px!important;gap:12px!important;box-sizing:border-box!important;}
+  html.ps-page-idp .top #layers{flex:0 1 auto!important;width:auto!important;min-width:0!important;overflow-x:auto!important;scrollbar-width:none;}   /* 1.836 — 내용 폭만(전폭으로 늘어나던 것 수리) */
+  html.ps-page-idp .top .idp-actions{position:static!important;margin:0 0 0 auto!important;flex:0 0 auto!important;display:flex!important;align-items:center!important;gap:8px!important;}
+}
+html.ps-page-idp #repBtn{font-size:0!important;line-height:1!important;padding:7px 12px!important;white-space:nowrap!important;}
+html.ps-page-idp #repBtn::before{content:"PDF 내보내기";font-size:12px;font-weight:600;line-height:1.2;}   /* 2.467 — 라벨 정직화(1판): DOM 텍스트는 font-size:0으로 지워지고 이 ::before가 화면 라벨이다 — 여기를 안 고치면 «공유하기»가 남는다(특이도 함정 7번째) */
+
+
+/* [IDP › 코치 선수단 목록] 카드만 1열로 쭉(사용자 지시 1.836) — 어떤 폭에서도 #wrap 을 다열 그리드로 만들지 않는다.
+   (1.820 홈 2단·프리미엄 3열 규칙이 idp-squad 에도 걸려 머리 카드·대기 칩·섹션이 좌우로 흩어졌다) */
+html.ps-page-idp body.idp-squad #wrap{display:flex!important;flex-direction:column!important;grid-template-columns:none!important;gap:10px!important;align-items:stretch!important;}
+html.ps-page-idp body.idp-squad #wrap>*{width:100%!important;max-width:none!important;grid-column:auto!important;grid-row:auto!important;}
+html.ps-page-idp body.idp-squad #wrap .sq-list,html.ps-page-idp body.idp-squad #wrap .sq-grid{display:grid!important;grid-template-columns:1fr!important;gap:8px!important;}
+/* 1.899 — 선수 행 한 줄에 2명(사용자). 900px 이상에서 .sq-list 2열; 반폭 카드라 행 내부는 좁은 폭 문법(이름 줄 + 평가 5칸을 아래 줄 전폭, 목표 칸 숨김) */
+/* 2.019 — 1.899 의 2열 카드는 접는다(사용자 승인 목업 ③: 한 줄에 한 명, 표 문법 — 열 머리글과 같은 템플릿). 되돌리려면 이 블록을 다시 살린다.
+@media (min-width:900px){
+  html.ps-page-idp body.idp-squad #wrap .sq-list{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px 10px!important;}
+  html.ps-page-idp body.idp-squad #wrap .sq-list .sq-row{grid-template-columns:34px minmax(0,1fr) 74px!important;align-content:start!important;}
+  html.ps-page-idp body.idp-squad #wrap .sq-list .sq-row .sq-rgoal{display:none!important;}
+  html.ps-page-idp body.idp-squad #wrap .sq-list .sq-row .sq-rcats{grid-column:1/-1!important;}
+} */
+html.ps-page-idp body.idp-squad #wrap .sq-list{gap:6px!important;}
+html.ps-page-idp body.idp-squad #wrap .sq-card{width:100%!important;}
+
+/* [개인 노트] 모드 세그(노트/메모/문서 보관함)를 헤더 줄로 올리고, 도구줄 나머지는 왼쪽 정렬(사용자 지시 1.836).
+   .bar 가 position:relative 라 세그를 헤더 높이만큼 위로 띄운다(마크업 불변). */
+@media (min-width:900px){
+  html.ps-page-note .nhead{height:56px!important;}
+  html.ps-page-note .bar{position:relative!important;justify-content:flex-start!important;padding-left:20px!important;}
+  html.ps-page-note .bar>#nModeSeg{position:absolute!important;top:-46px!important;left:210px!important;z-index:5;margin:0!important;}
+  html.ps-page-note .bar>#nTitle{flex:0 1 240px!important;min-width:140px!important;}
+  html.ps-page-note .bar>#nTplWrap{order:2!important;margin-left:0!important;}
+}
+
+/* [팀 홈] 오늘 세션 카드를 주간 스트립 바로 아래로(사용자 지시 1.836) — 오늘 훈련 인원 카드는 그 다음. order 만. */
+html.ps-page-scout #homeView .team-home>.team-topbar{order:0!important;}
+html.ps-page-scout #homeView .team-home>.team-weekstrip{order:1!important;}
+html.ps-page-scout #homeView .team-home>.team-home-duo{order:2!important;}   /* 1.860 — 폰(duo 가 contents 가 아닐 때) 스트립이 세션 카드 뒤로 밀리던 것: duo 자체에 order (사용자 "팀훈련 위에") */
+html.ps-page-scout #homeView .team-home>.team-home-duo>.team-home-left{order:3!important;grid-row:auto!important;}   /* 1.928 — 오늘 훈련 인원 카드를 팀 훈련(세션) 카드 위로(사용자) */
+html.ps-page-scout #homeView .team-home>.team-home-duo>.team-avail-card{order:2!important;grid-row:auto!important;}
+html.ps-page-scout #homeView .team-home>*{grid-row:auto!important;}
+
+/* [개인 노트] 노트 선택 팝오버 — 버튼이 왼쪽으로 옮겨진 뒤 왼쪽이 사이드바에 잘리던 것: 버튼 왼쪽 끝에 맞춰 오른쪽으로 펼친다(1.837) */
+html.ps-page-note #nTplWrap{position:relative!important;}
+html.ps-page-note #nTplPop{left:0!important;right:auto!important;transform:none!important;max-width:calc(100vw - 140px)!important;}
+
+/* [개인 노트 도구줄] 왼쪽 정렬 정돈(1.838) — 항목 사이 벌어진 자동 여백 제거, 8px 간격으로 왼쪽부터 붙인다 */
+@media (min-width:900px){
+  html.ps-page-note .bar{gap:8px!important;justify-content:flex-start!important;}
+  html.ps-page-note .bar>*{margin-left:0!important;margin-right:0!important;}
+  html.ps-page-note .bar>#nTitle{flex:0 1 260px!important;}
+  html.ps-page-note .bar>.note-ink{gap:6px!important;}
+}
+
+/* [셸 사이드바 하단] 위계 정리(1.838, 제안 승인): [내비] ─ 구분선 ─ [풋볼A 칩(이니셜 원 복원)] [앱 설정(내비 행 문법)].
+   '작전판 설정' 버튼은 사이드바에서 빼서 작전판 헤더 오른쪽 끝에 고정(DOM 그대로, position:fixed). */
+@media (min-width:768px){
+  html.ps-page-app body header.appbar>#psAcctWrap{border-top:1px solid var(--dv2-border-2,#eef0f4)!important;padding-top:10px!important;margin-top:auto!important;}
+  /* (1.891) 계정 버튼은 위 블록의 행 문법을 따른다 — 칩 배경·테두리 없음 */
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn .ava{display:grid!important;place-items:center!important;width:20px!important;height:20px!important;border-radius:50%!important;
+    font-size:10px!important;font-weight:800!important;flex:0 0 20px!important;}
+  html.ps-page-app body header.appbar>#psAcctWrap .acct-btn svg{display:none!important;}
+  html.ps-page-app body header.appbar>.gear{margin-top:2px!important;}
+  html.ps-page-app body header.appbar .gearbtn{border:0!important;background:transparent!important;padding:8px 6px!important;min-height:36px!important;font-size:12px!important;font-weight:600!important;}   /* 1.901 — 11→6, 위 514행과 같이 */
+  /* 1.914 — '보드 설정'을 헤더 오른쪽 고정에서 사이드바 하단(앱 설정 바로 위)으로(사용자). 계정·앱 설정과 같은 행 문법 */
+  html.ps-page-app body header.appbar>#psBoardMoreBtn:not([hidden]){position:static!important;order:11!important;/* 2.458 — 앱 설정(10) 밑, 항상(사용자). app.html 802 와 같은 값 — 두 곳이 다르면 여기(!important·특이도 높음)가 이겨 버린다 */display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;
+    width:100%!important;height:auto!important;min-height:36px!important;padding:8px 5px!important;margin:0!important;border:0!important;border-radius:10px!important;background:transparent!important;
+    color:var(--dv2-text-2,#3f4550)!important;font-size:12px!important;font-weight:600!important;white-space:nowrap!important;text-align:left!important;box-shadow:none!important;z-index:auto!important;}
+  html.ps-page-app body header.appbar>#psBoardMoreBtn svg{display:block!important;width:16px!important;height:16px!important;margin:0 1px 0 3px!important;flex:0 0 auto!important;}   /* 96px 레일: '보드 설정' 네 글자가 잘리지 않게 여백 최소 */
+  html.ps-page-app body header.appbar>#psBoardMoreBtn span{display:inline!important;overflow:hidden!important;text-overflow:ellipsis!important;min-width:0!important;}
+  html.ps-page-app body header.appbar>#psBoardMoreBtn:hover,html.ps-page-app body header.appbar>#psBoardMoreBtn.on{background:var(--dv2-chip-bg,#f2f4f7)!important;color:var(--dv2-ink,#0f1420)!important;}
+}
+
+/* [IDP 탭] 일정을 맨 앞으로(사용자 지시 1.839). order 만 */
+html.ps-page-idp #layers button[data-l="cal"]{order:-1!important;}
+   /* 1.918 — 홈이 맨 앞, 그 다음 일정 */
+
+/* [팀 홈] 1.842 — 폭을 늘려도 2열로 가지 않는다(사용자 지시). 히어로 → 주간 스트립 → 오늘 세션 → 오늘 훈련 인원 한 열 */
+html.ps-page-scout #homeView .team-home{display:flex!important;flex-direction:column!important;gap:16px!important;}
+html.ps-page-scout #homeView .team-home>.team-home-duo>.team-home-left,html.ps-page-scout #homeView .team-home>.team-home-duo>.team-avail-card{width:100%!important;max-width:none!important;margin:0!important;}
+html.ps-page-scout #homeView .team-home>.team-home-duo>.team-home-left>section+section{margin-top:16px!important;}
+
+/* [보관함] 위계·밀도 패스(1.839, 제안 승인 — CSS 범위): 필터 줄 40px로 압축, 행 44px·액션은 hover/선택 시만(⋯은 상시), 레일 그룹 라벨 규격 */
+@media (min-width:900px){
+  html.ps-page-board body.vault-full #vaultBar{padding:6px 0 8px!important;gap:8px!important;min-height:40px!important;}
+  html.ps-page-board body.vault-full #vaultBar .inp,html.ps-page-board body.vault-full #vaultBar .vsort,html.ps-page-board body.vault-full #vaultBar .vchip,
+  html.ps-page-board body.vault-full #vaultBar button{height:32px!important;min-height:32px!important;font-size:12px!important;}
+  html.ps-page-board body.vault-full .vx-title{font-size:11px!important;font-weight:800!important;letter-spacing:.06em!important;color:var(--dv2-muted,#8a919d)!important;padding:12px 8px 4px!important;}
+  html.ps-page-board body.vault-full .vx-nav button,html.ps-page-board body.vault-full .vx-nav .vx-cat,html.ps-page-board body.vault-full .vx-nav .vx-folder{min-height:32px!important;font-size:13px!important;}
+  html.ps-page-board body.vault-full .vcard{min-height:44px!important;padding:6px 10px!important;align-items:center!important;}
+  html.ps-page-board body.vault-full .vcard .vc-th{font-size:13px!important;font-weight:800!important;}
+  html.ps-page-board body.vault-full .vcard .vc-prev,html.ps-page-board body.vault-full .vcard .df-meta{font-size:11px!important;}
+  html.ps-page-board body.vault-full .vcard .vc-acts{gap:4px!important;}
+  html.ps-page-board body.vault-full .vcard .vc-acts .vc-act{display:none!important;height:28px!important;min-height:28px!important;padding:0 9px!important;font-size:11px!important;}
+  html.ps-page-board body.vault-full .vcard:hover .vc-acts .vc-act,html.ps-page-board body.vault-full .vcard.on .vc-acts .vc-act,
+  html.ps-page-board body.vault-full .vcard:focus-within .vc-acts .vc-act{display:inline-flex!important;}
+  html.ps-page-board body.vault-full .vcard .vc-acts .vc-more{display:inline-flex!important;height:28px!important;min-height:28px!important;}
+  html.ps-page-board body.vault-full .vcard .vc-badge{height:20px!important;line-height:20px!important;padding:0 8px!important;font-size:10px!important;min-width:0!important;}
+}
+
+/* [IDP › 일정] 훈련강도·몸무게 차트 카드 — 가운데 떠 있던 작은 그래프를 왼쪽 정렬·카드 폭으로, 두 카드는 나란히(≥900) (사용자 지시 1.839) */
+html.ps-page-idp #wrap>.card:has(>svg.idp-chart) .ch-lg{justify-content:flex-start!important;margin:2px 0 6px!important;}
+html.ps-page-idp #wrap>.card:has(>svg.idp-chart) svg.idp-chart{display:block!important;width:100%!important;max-width:none!important;height:auto!important;margin:0!important;}
+/* 1.917 — 능력 레이더·성장선(정사각 뷰박스) 카드는 전폭이면 너무 크다(사용자). 1.908 이 2열 규칙을 걷어 이 카드까지 전폭이 됐다 → 360px 로 제한, 가운데 */
+html.ps-page-idp #wrap>.card:has(>svg.idp-chart):not(.ch-card) svg.idp-chart{max-width:360px!important;margin:0 auto!important;}
+html.ps-page-idp #wrap>.card:has(>svg.idp-chart) h3{text-align:left!important;margin:0 0 4px!important;}
+/* 1.908 — 나란히(2열) 규칙 철회(사용자: 행에 하나씩 1열). 카드는 #wrap 흐름대로 전폭 */
+
+/* [팀 › 일정] 요약 카드 3장(1.840) — 1.848 제거(사용자) */
+
+/* [작전판 설정] 두 탭 같은 크기(1.840): 팝업 폭 340 고정, 배치·관리 구획 제목 숨김·행 32px, 내용이 넘치면 안에서 스크롤(팝업 높이 = 보기 탭 기준 상한) */
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop{width:340px!important;max-width:calc(100vw - 20px)!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .popmenu{max-height:none!important;overflow:visible!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menusec{display:none!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout hr.menudiv{margin:4px 0!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow{min-height:32px!important;padding:1px 0!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow .btn,html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow select.btn{height:28px!important;min-height:28px!important;font-size:12px!important;}
+
+/* [IDP › 일정] 요약 카드 3장(1.841) — 팀 일정 카드와 같은 문법, 액센트는 IDP 보라 계열 */
+/* IDP 일정 요약 카드 3장(1.841) — 1.849 제거(사용자) */
+
+/* [작전판 설정 › 배치·관리] '선수단(등록·수정)'·'명단(이름·번호)' 줄 숨김(사용자 지시 1.841) — 선수단은 팀›선수단에서. 버튼 DOM은 유지 */
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow:has(>#squadBtn),html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout .menurow:has(>#rosterBtn){display:none!important;}
+
+/* [작전판 설정] 탭 제거 — 배치·관리 내용을 '보기' 아래로 합쳐 한 패널로(사용자 지시 1.841). 탭 줄 숨김·두 pane 상시 표시, 같은 행 문법, 전체는 한 스크롤 */
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop .cmd-board-settings-tabs{display:none!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop .cmd-board-settings-pane[hidden]{display:block!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop .cmd-board-settings-content{max-height:min(72vh,560px)!important;overflow-y:auto!important;scrollbar-width:thin;padding-right:2px;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-layout{margin-top:6px!important;padding-top:6px!important;border-top:1px solid var(--dv2-border-2,#eef0f4)!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-view .menurow{min-height:32px!important;padding:1px 0!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-view .menurow .menulbl{flex:0 0 64px!important;font-size:13px!important;font-weight:600!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-view .menurow .seg{margin-left:auto!important;}
+html.ps-page-board body section#cmd-board-settings-pop.cmd-popover.cmd-board-settings-pop #cmd-board-settings-view .menurow .seg button{height:28px!important;min-height:28px!important;padding:0 12px!important;font-size:13px!important;}
+
+/* [팀 홈] 오늘 세션 빈 상태(1.843) — 회색 덩어리 → 점선 카드, 가운데 정렬, 작은 안내 */
+html.ps-page-scout #homeView .team-session .team-home-empty{display:flex!important;align-items:center!important;justify-content:center!important;min-height:64px!important;padding:14px!important;
+  border:1.5px dashed var(--line,#dfe3ea)!important;border-radius:12px!important;background:transparent!important;color:var(--dim,#6f7580)!important;font-size:13px!important;font-weight:600!important;text-align:center!important;}
+
+/* LAYOUT-1824:end */
+/* 1.909 — 폰 '도구' 팝오버에서도 파일▾·새 노트는 숨김(노트 선택 팝오버에 있음) */
+@media (max-width:767px){ html.ps-page-note #noteAdvanced #fileWrap,html.ps-page-note #noteAdvanced #newB{display:none!important;} }
+
+/* 1.929 — 사이드바 '훈련' 바로가기는 데스크톱·아이패드에서만(사용자: 모바일 숨김) */
+@media (max-width:767px){ html.ps-page-app #appSeg#appSeg button[data-train]{display:none!important;} }
+
+/* ══ 1.945 · 커뮤니티(데스크톱) — 미리보기 열 삭제, 탐색·콘텐츠 유형·훈련 주제를 라벨+칩 행으로(보관함과 같은 결). 카드를 누르면 바로 큰 화면 */
+@media (min-width:768px){
+  html.ps-page-community .comm-shell{display:block!important;}
+  html.ps-page-community .comm-preview{display:none!important;}
+  html.ps-page-community .comm-nav{position:static!important;max-height:none!important;overflow:visible!important;border-right:0!important;border-bottom:1px solid var(--line,#E3E6EA)!important;border-radius:16px 16px 0 0!important;padding:12px 16px 8px!important;display:flex!important;flex-direction:column!important;gap:6px!important;}
+  html.ps-page-community .comm-nav .nav-sec{display:flex!important;align-items:center!important;gap:10px!important;margin:0!important;}
+  html.ps-page-community .comm-nav .nav-lb{flex:0 0 76px!important;margin:0!important;font-size:12px!important;font-weight:800!important;color:var(--text-3,#8a9099)!important;}
+  html.ps-page-community .comm-nav .nav-items{flex:1 1 auto!important;min-width:0!important;display:flex!important;flex-wrap:wrap!important;gap:4px!important;overflow:visible!important;}
+  html.ps-page-community .comm-nav .nav-items>button,html.ps-page-community .comm-nav #catChips .chip{flex:0 0 auto!important;width:auto!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;white-space:nowrap!important;min-height:28px!important;height:28px!important;padding:0 11px!important;margin:0!important;border:1px solid var(--line,#E3E6EA)!important;border-radius:999px!important;background:var(--surface,#fff)!important;font-size:13px!important;}
+  html.ps-page-community .comm-nav .nav-items>button.on,html.ps-page-community .comm-nav #catChips .chip.on{background:#EEF2FF!important;border-color:#c9d7fb!important;color:var(--accent,#3a6df0)!important;}
+  html.ps-page-community .comm-list{border-right:0!important;border-radius:0 0 16px 16px!important;}
+}
+/* ══ 1.945 · 보관함을 가로 칩 줄로 눌렀던 층 — 2.518 에서 **되돌림** ═══════════════
+   1.945 는 데스크톱·아이패드에서 미리보기 열을 지우고 왼쪽 트리를 라벨+칩 가로 줄로 폈다.
+   2.518(사용자 "맥 파인더처럼 만들고 싶어" + 목업 승인)에서 보관함은 다시 **세 칸**이다 —
+   사이드바(즐겨찾기·위치 트리·태그) · 목록 · 미리보기, 그리고 아래 경로 표시줄.
+   아이패드에서는 칸을 줄이는 대신 **글자를 줄여** 세 칸을 지킨다(사용자 판단, board.html 의 #vaultFinderCss).
+   ⚠ 이 블록을 되살리면 파인더 배치가 통째로 무너진다. 지우지 말고 이 주석을 남겨 둔다. */
+@media (min-width:701px){
+  html.ps-page-board #drillFiles .vault-explorer{
+    display:grid!important;
+    grid-template-columns:196px minmax(0,1fr) 340px!important;   /* 2.521 — 가운데 열을 좁히고 미리보기를 넓혔다(사용자 "두번째 열은 더 좁아도 될꺼같아") */
+    align-items:stretch!important;
+  }
+  html.ps-page-board #drillFiles .vx-preview{display:flex!important;flex-direction:column!important;}
+  html.ps-page-board #drillFiles .vx-tree{
+    display:flex!important;flex-direction:column!important;gap:2px!important;
+    grid-template-columns:none!important;align-items:stretch!important;
+    border-right:1px solid var(--line,#E3E6EA)!important;border-bottom:0!important;
+    border-radius:16px 0 0 16px!important;padding:10px 8px!important;
+    max-height:none!important;overflow:auto!important;width:auto!important;
+  }
+  html.ps-page-board #drillFiles .vx-tree .vx-nav,
+  html.ps-page-board #drillFiles .vx-tree .vx-folder-list,
+  html.ps-page-board #drillFiles .vx-tree .vx-chiprow .vx-cats{
+    display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;gap:1px!important;margin:0!important;
+  }
+  html.ps-page-board #drillFiles .vx-tree .vx-chiprow{display:block!important;}
+  html.ps-page-board #drillFiles .vx-tree .vx-nav button,
+  html.ps-page-board #drillFiles .vx-tree .vx-folder,
+  html.ps-page-board #drillFiles .vx-tree .vx-cat{
+    width:100%!important;flex:0 0 auto!important;justify-content:flex-start!important;
+    border:0!important;background:transparent!important;min-height:28px!important;padding:5px 8px!important;
+  }
+  html.ps-page-board #drillFiles .vx-tree .vx-nav button.on,
+  html.ps-page-board #drillFiles .vx-tree .vx-folder.on,
+  html.ps-page-board #drillFiles .vx-tree .vx-cat.on{
+    background:var(--blue-soft,#EEF2FF)!important;color:var(--blue,#3a6df0)!important;
+  }
+  html.ps-page-board #drillFiles .vx-tree .vx-title{
+    display:flex!important;justify-content:space-between!important;margin:10px 0 3px!important;padding:0 7px!important;
+    font-size:10px!important;font-weight:800!important;letter-spacing:.05em!important;color:var(--txt-dim,#8a9099)!important;
+  }
+  html.ps-page-board #drillFiles .vx-tree>.vx-title:first-child{margin-top:0!important;}
+  html.ps-page-board #drillFiles .vx-main{border-left:0!important;}
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   2.018 · 팀 화면 공통 문법 ① — 문서: processstudio-문서/UI-팀메뉴-목업-2.017.html
+   파랑 하나(--ps-blue) · 페이지 머리 34px(.ps-ph) · 세그 한 모양(.ps-seg) · 버튼 2종(.ps-btn / .ps-btn.pri) · 카드 12px
+   ══════════════════════════════════════════════════════════════════════ */
+:root{--ps-blue:var(--ps-color-action,#3a6df0);--ps-blue-soft:var(--ps-color-action-soft,#edf2fe);--ps-ink:#14213D;--ps-sunken:#EEF0F4;--ps-line:#E4E7EC;--ps-muted:#646A73;}
+.ps-ph{display:flex;align-items:center;gap:12px;min-height:34px;margin:0 0 12px}
+.ps-ph>b,.ps-ph>h2{font-size:14px;font-weight:800;letter-spacing:-.02em;margin:0;line-height:1.2;color:var(--ps-ink)}
+.ps-ph>small,.ps-ph>p{font-size:12px;color:var(--ps-muted);margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ps-ph .ps-sp{flex:1 1 auto}
+.ps-seg{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:10px;background:var(--ps-sunken);flex:0 0 auto}
+.ps-seg>button,.ps-seg>span{height:28px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--ps-muted);font:700 13px/1 inherit;font-family:inherit;white-space:nowrap;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.ps-seg>button.on,.ps-seg>button[aria-selected="true"],.ps-seg>button[aria-pressed="true"],.ps-seg>span.on{background:#fff;color:var(--ps-ink);box-shadow:0 1px 3px rgba(15,23,42,.14)}
+.ps-btn{display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 11px;border-radius:6px;border:1px solid var(--ps-line);background:#fff;color:var(--ps-ink);font:700 12px/1 inherit;font-family:inherit;white-space:nowrap;cursor:pointer}
+.ps-btn:hover{background:var(--ps-sunken)}
+.ps-btn.pri{background:var(--ps-blue);border-color:var(--ps-blue);color:#fff}
+.ps-btn.pri:hover{filter:brightness(.95)}
+/* 스카우팅 탭(밑줄형) → 세그. scout.html 이 role=tab 버튼을 .ps-seg 로 감싼다(2.018) */
+html.ps-page-scout .sb-tabs{border-bottom:0!important;gap:10px!important;margin:0 0 12px!important;min-height:32px;align-items:center!important}
+html.ps-page-scout .sb-tabs .sb-title{font-size:14px!important;letter-spacing:-.02em}
+html.ps-page-scout .sb-tabs .ps-seg>button[role="tab"]{margin:0!important;border-bottom:0!important;padding:0 12px!important;height:28px!important;color:var(--ps-muted)!important;font-size:13px!important}
+html.ps-page-scout .sb-tabs .ps-seg>button[role="tab"][aria-selected="true"]{background:#fff!important;color:var(--ps-ink)!important;box-shadow:0 1px 3px rgba(15,23,42,.14)!important;border-bottom:0!important}
+/* 경기 화면 — 요약 띠: 남색 그라디언트 → 흰 카드 한 줄, 오른쪽에 상태 세그(준비 중 · 경기 · 리뷰 완료) */
+html.ps-page-scout #matchView .match-summary{background:#fff!important;color:var(--ps-ink)!important;box-shadow:none!important;border:1px solid var(--ps-line)!important;border-radius:12px!important;padding:12px 16px!important;gap:14px!important;margin-bottom:12px!important}
+html.ps-page-scout #matchView .match-summary .match-kicker{color:var(--ps-muted)!important}
+html.ps-page-scout #matchView .match-summary-main strong{font-size:16px!important;letter-spacing:-.02em!important;color:var(--ps-ink)!important}
+html.ps-page-scout #matchView .match-summary-main>span:last-child{color:var(--ps-muted)!important}
+html.ps-page-scout #matchView .match-summary .match-summary-side{color:var(--ps-ink)}
+html.ps-page-scout #matchView .match-summary .ms-loc,html.ps-page-scout #matchView .match-summary .ms-wx small,html.ps-page-scout #matchView .match-summary .ms-err{color:var(--ps-muted)!important}
+html.ps-page-scout #matchView .match-summary .ms-geo,html.ps-page-scout #matchView .match-summary .ms-re{color:var(--ps-blue)!important;border-color:var(--ps-line)!important;background:#fff!important}
+html.ps-page-scout #matchView .match-summary .match-status{margin-left:0!important;display:inline-flex!important;align-items:center!important;gap:2px!important;padding:3px!important;border-radius:10px!important;background:var(--ps-sunken)!important;flex:0 0 auto!important}
+html.ps-page-scout #matchView .match-summary .match-status span{height:26px;padding:0 10px;border-radius:8px;color:var(--ps-muted);font-size:11px!important;font-weight:600!important;gap:6px!important}
+html.ps-page-scout #matchView .match-summary .match-status span:not(:last-child):after{display:none!important}
+html.ps-page-scout #matchView .match-summary .match-status span.on{background:#fff;color:var(--ps-ink);box-shadow:0 1px 3px rgba(15,23,42,.14)}
+html.ps-page-scout #matchView .match-summary .match-status span.done{color:#2E7D63}
+html.ps-page-scout #matchView .match-summary .match-status i{width:7px!important;height:7px!important;box-shadow:none!important}
+@media (max-width:760px){ html.ps-page-scout #matchView .match-summary .match-status{width:100%;justify-content:stretch} html.ps-page-scout #matchView .match-summary .match-status span{flex:1;justify-content:center} }
+
+/* ══ 2.020 · 선수단 머리 → 한 줄(문서 목업 ④, 데스크톱 ≥900): 제목 · 인원 알약(출전 가능/부상·재활/미연결/평가 미완료) · 조 세그 · 포메이션·자리·유니폼 · ＋선수 ⋯ ══
+   2.141 — **경기(#matchView) 도 같은 문법을 탄다**(사용자: "다른 탭과 일관성있게").
+   경기 머리는 제목·카운트 · 검색 · [일정에서 불러오기][＋ 경기 추가] 로 같은 순서·같은 규격이 된다.
+   ⚠ 아래에서 `#teamView` 만 남은 줄들(tm-hero·grpChips·tm-head-set·tmApprovals)은 **선수단에만 있는 것**이라 그대로 둔다. ══ */
+@media (min-width:900px){
+  html.ps-page-scout #teamView .tm-head,html.ps-page-scout #matchView .tm-head{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;gap:8px 12px!important;min-height:32px;margin-bottom:12px!important;}
+  html.ps-page-scout #teamView .tm-head-top,html.ps-page-scout #matchView .tm-head-top{display:contents!important;}
+  html.ps-page-scout #teamView .tm-titlebox,html.ps-page-scout #matchView .tm-titlebox{order:1;flex:0 0 auto!important;}
+  html.ps-page-scout #teamView .tm-titlebox .t,html.ps-page-scout #matchView .tm-titlebox .t{font-size:14px!important;letter-spacing:-.02em!important;}
+  html.ps-page-scout #teamView .tm-subtitle,html.ps-page-scout #matchView .tm-subtitle{display:none!important;}
+  html.ps-page-scout #teamView .tm-titleline #teamCount,html.ps-page-scout #matchView .tm-titleline #matchListCnt{height:22px!important;font-size:11px!important;}
+  /* 경기: 검색 → 버튼 (선수단의 조 세그·포메이션 자리에 검색이 온다) */
+  html.ps-page-scout #matchView .tm-workbar{order:2;flex:1 1 auto!important;min-width:0;}
+  html.ps-page-scout #matchView .tm-head-actions{order:3;margin-left:auto!important;flex:0 0 auto!important;gap:6px!important;}
+  html.ps-page-scout #matchView .tm-head-actions .btn,html.ps-page-scout #matchView .tm-head-actions .match-auto-link{height:32px!important;min-height:32px!important;font-size:12px!important;padding:0 11px!important;}
+  /* 2.144 — 전적 띠는 머리의 **제 줄**(제목 줄 아래). 순서를 안 주면 order 0 이라
+     제목보다 앞으로 튀어나온다(실측에서 그랬다). 전적 → 공유 줄 순서. */
+  html.ps-page-scout #matchView .tm-head>.mrec{order:4;flex:1 1 100%!important;}
+  html.ps-page-scout #matchView .tm-head>#mtShareLine{order:5;flex:1 1 100%!important;}
+  html.ps-page-scout #teamView .tm-hero{order:2;flex:0 1 auto!important;border-bottom:0!important;padding:0!important;gap:6px!important;flex-wrap:wrap!important;}
+  html.ps-page-scout #teamView .tm-hero>*{display:inline-flex!important;align-items:center!important;gap:4px!important;height:24px;padding:0 9px!important;border-radius:999px;background:var(--dv2-surface-2,#f2f4f7);color:var(--dv2-muted,#646A73);font-size:11px!important;font-weight:800!important;border:0!important;line-height:1!important;}
+  html.ps-page-scout #teamView .tm-hero .tm-hero-big b{font-size:13px!important;color:var(--dv2-ink,#0f1420)!important;}
+  html.ps-page-scout #teamView .tm-hero .tm-hero-big span{font-size:11px!important;}
+  html.ps-page-scout #teamView .tm-hero .tm-hero-big small{margin-left:2px;font-size:11px;font-weight:800;}
+  html.ps-page-scout #teamView .tm-hero .tm-hero-sub i{width:7px;height:7px;border-radius:50%;}
+  html.ps-page-scout #teamView .tm-hero .tm-hero-todo{background:#FBECEC!important;color:#C24A46!important;cursor:pointer;}
+  html.ps-page-scout #teamView .tm-hero .tm-hero-todo u{text-decoration:none;margin-left:2px;}
+  html.ps-page-scout #teamView .tm-workbar{order:3;flex:1 1 auto!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:nowrap!important;min-width:0;}
+  html.ps-page-scout #teamView .tm-workbar #grpChips{display:inline-flex!important;padding:3px;border-radius:10px;background:var(--dv2-surface-2,#f2f4f7);gap:2px!important;flex-wrap:nowrap!important;}
+  html.ps-page-scout #teamView .tm-workbar #grpChips>button{height:28px!important;min-height:0!important;padding:0 10px!important;border:0!important;border-radius:6px!important;background:transparent!important;color:var(--dv2-muted,#646A73)!important;font-size:12px!important;font-weight:600!important;box-shadow:none!important;white-space:nowrap!important;}
+  html.ps-page-scout #teamView .tm-workbar #grpChips>button.primary{background:#fff!important;color:var(--dv2-ink,#0f1420)!important;font-weight:800!important;box-shadow:0 1px 3px rgba(15,23,42,.14)!important;}
+  html.ps-page-scout #teamView .tm-workbar .tm-head-set{margin-left:0!important;gap:6px!important;flex-wrap:nowrap!important;}
+  html.ps-page-scout #teamView .tm-workbar .tm-head-set .btn,html.ps-page-scout #teamView .tm-workbar .tm-head-set select,html.ps-page-scout #teamView .tm-workbar .tm-head-set .inp{height:32px!important;min-height:32px!important;font-size:12px!important;}
+  html.ps-page-scout #teamView .tm-head-actions{order:4;margin-left:0!important;flex:0 0 auto!important;gap:6px!important;}
+  html.ps-page-scout #teamView .tm-head-actions .btn{height:32px!important;min-height:32px!important;font-size:12px!important;padding:0 11px!important;}
+  html.ps-page-scout #teamView .tm-head #tmApprovals,html.ps-page-scout #teamView .tm-head #tmShareLine{order:5;flex:1 1 100%!important;}
+}

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PROCESS STUDIO — 팀 시작 가이드</title>
+<meta name="description" content="선수의 성장 노트 IDP — 프로필·평가·개인 훈련·일정 기록. 우리 팀 PROCESS STUDIO 시작 가이드, 설치부터 팀 합류까지 5분.">
+<meta name="theme-color" content="#0b0c0e">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:title" content="PROCESS STUDIO — 팀 시작 가이드">
+<meta property="og:description" content="선수의 성장 노트 IDP — 프로필·평가·개인 훈련·일정. 설치부터 팀 합류까지 5분, 선수용·코치용 한 페이지.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://processstudio.netlify.app/icon-512.png">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --ink:#0d0e10; --dim:#63666c; --faint:#9a9da3;
+    --line:#eceef0; --bg:#ffffff; --paper:#f7f8f9;
+    --dark:#0b0c0e; --purple:#7C4DFF; --purple-soft:#F0EBFF;
+    --green:#2E7D63;
+  }
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.72;-webkit-font-smoothing:antialiased;word-break:keep-all;letter-spacing:-.005em}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px}
+
+  /* topbar */
+  .topbar{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.9);backdrop-filter:saturate(1.3) blur(14px);border-bottom:1px solid var(--line)}
+  .topbar .inner{max-width:760px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;align-items:center;gap:9px;font-size:14.5px}
+  .brand img{width:26px;height:26px;border-radius:6px;display:block}
+  .brand b{font-weight:800}.brand span{font-weight:300;opacity:.6}
+  .topbar .go{background:var(--ink);color:#fff;padding:8px 15px;border-radius:8px;font-weight:700;font-size:13px;flex:0 0 auto}
+  .topbar .go:active{opacity:.85}
+
+  /* hero */
+  .hero{background:radial-gradient(130% 130% at 50% -30%, #1c1e23 0%, #101114 52%, #060708 100%);color:#fff;text-align:center;padding:46px 0 44px}
+  .hero .kicker{font-size:11.5px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.45);margin-bottom:14px}
+  .hero h1{font-size:clamp(26px,6vw,38px);font-weight:800;line-height:1.18;letter-spacing:-.03em}
+  .hero h1 .idp-word{font-style:normal;color:#B79CFF;font-size:clamp(46px,11vw,72px);line-height:1.05;letter-spacing:.02em;display:inline-block;margin-bottom:6px}
+  .hero p{margin:14px auto 0;max-width:460px;font-size:14.5px;color:rgba(255,255,255,.66)}
+  .jump{display:flex;gap:10px;justify-content:center;margin-top:26px;padding:0 20px}
+  .jump a{flex:0 1 190px;border-radius:14px;padding:16px 12px;font-weight:800;font-size:15px;line-height:1.35;text-align:center;transition:.15s}
+  .jump a small{display:block;font-weight:500;font-size:11.5px;opacity:.75;margin-top:3px}
+  .jump .pl{background:var(--purple);color:#fff}
+  .jump .co{background:#fff;color:var(--ink)}
+  .jump a:active{transform:scale(.97)}
+  /* IDP 쇼케이스 — 히어로의 어두운 배경을 이어받는 밴드 */
+  .idp-band{background:#0a0b0d;color:#fff;padding:8px 0 46px}
+  .idp-band .lead{text-align:center;max-width:520px;margin:0 auto 24px;padding:0 20px}
+  .idp-band .lead h2{font-size:clamp(19px,4.5vw,24px);font-weight:800;letter-spacing:-.02em}
+  .idp-band .lead h2 em{font-style:normal;color:#B79CFF}
+  .idp-band .lead p{font-size:13.5px;color:rgba(255,255,255,.6);margin-top:8px}
+  .pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;max-width:720px;margin:0 auto;padding:0 20px}
+  .pillar{background:rgba(255,255,255,.05);border:1px solid rgba(124,77,255,.32);border-radius:14px;padding:16px 14px;text-align:left}
+  .pillar .em{font-size:20px}
+  .pillar h3{font-size:14.5px;font-weight:800;margin-top:8px;color:#DED2FF}
+  .pillar p{font-size:12px;color:rgba(255,255,255,.62);margin-top:4px;line-height:1.6}
+  .idp-band .coachline{text-align:center;font-size:12.5px;color:rgba(255,255,255,.5);margin-top:18px;padding:0 20px}
+  .idp-band .coachline b{color:rgba(255,255,255,.85)}
+
+  /* sections */
+  section{padding:40px 0 8px;scroll-margin-top:52px}   /* 앵커 점프 시 sticky 상단바에 제목이 안 가리게 */
+  .sec-hd{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .sec-hd .em{font-size:22px}
+  .sec-hd h2{font-size:21px;font-weight:800;letter-spacing:-.02em}
+  .sec-hd .tag{font-size:11px;font-weight:800;letter-spacing:.08em;padding:4px 9px;border-radius:20px}
+  .sec-sub{font-size:13.5px;color:var(--dim);margin-bottom:20px}
+  .pl-theme .tag{background:var(--purple-soft);color:var(--purple)}
+  .co-theme .tag{background:var(--ink);color:#fff}
+
+  /* steps */
+  .step{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .step:last-of-type{border-bottom:0}
+  .step .no{flex:0 0 30px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13.5px;margin-top:2px}
+  .pl-theme .step .no{background:var(--purple-soft);color:var(--purple)}
+  .co-theme .step .no{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+  .step h3{font-size:15.5px;font-weight:800;letter-spacing:-.015em}
+  .step p{font-size:13.5px;color:var(--dim);margin-top:3px}
+  .step p b{color:var(--ink);font-weight:700}
+  .chip{display:inline-block;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap}
+
+  /* callout */
+  .callout{border-radius:12px;padding:14px 16px;font-size:13px;line-height:1.65;margin:18px 0 6px}
+  .callout b{font-weight:800}
+  .callout.warn{background:#FDF6EC;border:1px solid #F0DFC2;color:#7A5A1E}
+  .callout.tip{background:var(--purple-soft);border:1px solid #E0D5FF;color:#4A2FA8}
+  .callout.co{background:var(--paper);border:1px solid var(--line);color:var(--ink)}
+
+  /* install cards */
+  .plat{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:16px}
+  .plat .card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 15px}
+  .plat .card h4{font-size:13.5px;font-weight:800;margin-bottom:4px}
+  .plat .card p{font-size:12.5px;color:var(--dim);line-height:1.6}
+
+  /* faq */
+  .faq details{border-bottom:1px solid var(--line);padding:13px 0}
+  .faq summary{font-size:14.5px;font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .faq summary::after{content:'＋';font-weight:400;color:var(--faint);flex:0 0 auto}
+  .faq details[open] summary::after{content:'－'}
+  .faq details p{font-size:13.5px;color:var(--dim);margin-top:8px}
+  .faq details p b{color:var(--ink)}
+
+  /* footer cta */
+  .foot{background:var(--dark);color:#fff;text-align:center;padding:44px 20px;margin-top:44px}
+  .foot h2{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .foot p{font-size:13.5px;color:rgba(255,255,255,.6);margin-top:8px}
+  .foot a{display:inline-block;background:#fff;color:var(--ink);font-weight:800;font-size:15px;border-radius:10px;padding:13px 28px;margin-top:20px}
+  .foot .url{margin-top:14px;font-size:12.5px;color:rgba(255,255,255,.4);letter-spacing:.02em}
+  .divider{height:1px;background:var(--line);margin:36px 0 0}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="inner">
+  <a class="brand" href="https://processstudio.netlify.app/studio/"><img src="/icon-192.png" alt=""><span><b>PRO</b>CESS <b>STUDIO</b></span></a>
+  <a class="go" href="https://processstudio.netlify.app/studio/">앱 열기</a>
+</div></div>
+
+<div class="hero">
+  <div class="kicker">TEAM START GUIDE</div>
+  <h1><em class="idp-word">IDP</em><br>개인 성장 계획</h1>
+  <p>훈련은 팀이 시키지만, <b>성장은 내가 기록해요.</b><br>선수의 성장 노트 — 설치부터 시작까지 5분.</p>
+  <div class="jump">
+    <a class="pl" href="#player">⚽ 선수용<small>내 IDP 시작하기</small></a>
+    <a class="co" href="#coach">📋 코치용<small>팀 만들기 · 선수 IDP 보기</small></a>
+  </div>
+</div>
+
+<!-- IDP 쇼케이스 -->
+<div class="idp-band">
+  <div class="lead">
+    <h2>IDP에는 <em>네 가지</em>가 쌓여요</h2>
+    <p>로그인도 팀도 필요 없어요 — 앱을 열면 바로 내 것이 됩니다.</p>
+  </div>
+  <div class="pillars">
+    <div class="pillar"><span class="em">🪪</span><h3>프로필</h3><p>포지션·주발·시즌 목표 — 나를 소개하는 한 장</p></div>
+    <div class="pillar"><span class="em">📊</span><h3>평가</h3><p>전술·기술·피지컬·심리·태도 셀프 체크, 코치 평가와 나란히</p></div>
+    <div class="pillar"><span class="em">🎯</span><h3>훈련</h3><p>내가 설계하는 개인 훈련 — 그림 그리고 요일을 정하면 루틴이 돼요</p></div>
+    <div class="pillar"><span class="em">📅</span><h3>일정</h3><p>팀훈련·경기·휴식·개인운동 태그, 완료 체크와 🔥 스트릭, 한 달 집계</p></div>
+  </div>
+  <div class="coachline">코치는 선수마다 쌓인 IDP를 열람하며 <b>누가 어떻게 크고 있는지</b> 한눈에 봅니다.</div>
+</div>
+
+<!-- 공통: 설치 -->
+<section id="install">
+  <div class="wrap">
+    <div class="sec-hd"><span class="em">📲</span><h2>먼저, 설치 (선수·코치 공통)</h2></div>
+    <div class="sec-sub">앱스토어가 아니라 <b>홈 화면에 추가</b>하는 방식이에요. 30초면 끝나요.</div>
+    <div class="plat">
+      <div class="card"><h4>아이폰 · 아이패드</h4><p><b>Safari</b>로 <span class="chip">processstudio.netlify.app</span> 접속 → 공유 버튼 <span class="chip">↑</span> → <b>홈 화면에 추가</b></p></div>
+      <div class="card"><h4>안드로이드</h4><p><b>Chrome</b>으로 접속 → 메뉴 <span class="chip">⋮</span> → <b>홈 화면에 추가</b>(또는 앱 설치)</p></div>
+      <div class="card"><h4>맥 · PC</h4><p>브라우저에서 바로 사용. Chrome·Safari 주소창의 <b>설치 아이콘</b>을 누르면 앱처럼 열려요.</p></div>
+    </div>
+    <div class="callout tip">설치하면 <b>인터넷 없이도</b> 동작해요 — 훈련장·버스 안에서도 기록할 수 있어요.</div>
+    <div class="divider"></div>
+  </div>
+</section>
+
+<!-- 선수용 -->
+<section id="player" class="pl-theme">
+  <div class="wrap">
+    <div class="sec-hd"><span class="em">⚽</span><h2>선수용</h2><span class="tag">PLAYER</span></div>
+    <div class="sec-sub">내 프로필, 내 훈련, 내 성장 기록 — 전부 내 손으로.</div>
+
+    <div class="step"><div class="no">1</div><div>
+      <h3>IDP 탭에서 시작</h3>
+      <p>앱을 열면 작전판이 먼저 보여요. 상단 <span class="chip">IDP</span> 탭을 누르세요. 설정 <span class="chip">⚙</span>에서 시작 화면을 <b>선수</b>로 바꾸면 다음부터 IDP가 먼저 떠요.</p>
+    </div></div>
+
+    <div class="step"><div class="no">2</div><div>
+      <h3>프로필 만들기</h3>
+      <p><span class="chip">프로필</span>에서 사진·포지션·주발·시즌 목표를 채워요. 나를 소개하는 한 장이에요.</p>
+    </div></div>
+
+    <div class="step"><div class="no">3</div><div>
+      <h3>셀프 평가</h3>
+      <p><span class="chip">평가</span>에서 전술·기술·피지컬·심리·태도를 스스로 매겨봐요. 팀에 합류하면 <b>코치 평가와 나란히 비교</b>돼요.</p>
+    </div></div>
+
+    <div class="step"><div class="no">4</div><div>
+      <h3>내 훈련 만들기</h3>
+      <p><span class="chip">훈련</span>에서 목표를 정하고 운동을 쌓아요. <b>요일을 정하면 달력에 자동으로</b> 나타나고, 훈련 편집기로 그림도 그릴 수 있어요.</p>
+    </div></div>
+
+    <div class="step"><div class="no">5</div><div>
+      <h3>매일 일정에 기록</h3>
+      <p><span class="chip">일정</span>에서 날짜를 누르고 <b>팀훈련 / 경기 / 휴식 / 개인운동</b>을 골라요. 훈련을 마치면 완료 체크 — 연속 기록(🔥 스트릭)과 한 달 집계가 쌓여요.</p>
+    </div></div>
+
+    <div class="callout warn">⚠️ <b>로그인 없이 쓰면 기록이 이 기기에만 저장돼요.</b> 폰을 바꾸면 사라지니, 기록이 쌓이기 시작하면 <b>카카오 로그인</b>을 해두세요. 로그인하면 모든 기기에서 이어서 쓸 수 있어요.</div>
+    <div class="callout tip">코치님이 <b>8자리 초대 코드</b>를 주면 로그인 → 팀 합류. 그때부터 코치님이 내 성장 기록을 보고 도와줄 수 있어요.</div>
+    <div class="divider"></div>
+  </div>
+</section>
+
+<!-- 코치용 -->
+<section id="coach" class="co-theme">
+  <div class="wrap">
+    <div class="sec-hd"><span class="em">📋</span><h2>코치용</h2><span class="tag">COACH</span></div>
+    <div class="sec-sub">팀을 만들고, 선수를 부르고, 성장을 지켜보는 순서.</div>
+
+    <div class="step"><div class="no">1</div><div>
+      <h3>열면 바로 작전판, 로그인부터</h3>
+      <p>앱을 열면 바로 <b>작전판</b>이에요. <b>카카오 로그인</b>을 하면 팀(워크스페이스)을 만들 수 있어요.</p>
+    </div></div>
+
+    <div class="step"><div class="no">2</div><div>
+      <h3>팀 워크스페이스 만들고 초대</h3>
+      <p>워크스페이스 메뉴에서 팀을 만들고 <span class="chip">초대 코드 만들기</span> → <b>8자리 코드</b>를 단체방에 공유하세요. 선수들은 로그인 후 코드로 합류해요.</p>
+    </div></div>
+
+    <div class="step"><div class="no">3</div><div>
+      <h3>권한 정하기</h3>
+      <p><span class="chip">권한 관리</span>에서 멤버마다 <b>관리자 / 코칭스태프 / 선수</b> 역할과 편집 가능한 구역을 정해요. 선수가 실수로 팀 자료를 고치는 일을 막아줘요.</p>
+    </div></div>
+
+    <div class="step"><div class="no">4</div><div>
+      <h3>계정과 선수 명단 연결</h3>
+      <p>권한 관리의 멤버 카드에서 <span class="chip">선수 연결</span>로 계정을 팀 탭 선수 명단과 이어주세요. 연결해야 <b>선수 셀프평가 옆에 코치 평가</b>가 나란히 붙어요.</p>
+    </div></div>
+
+    <div class="step"><div class="no">5</div><div>
+      <h3>선수 성장 지켜보기</h3>
+      <p><span class="chip">IDP</span> 탭 상단에서 선수를 골라 프로필·평가·훈련·일정 기록을 열람해요(읽기 전용). 누가 꾸준히 기록하는지 한눈에 보여요.</p>
+    </div></div>
+
+    <div class="callout co">💡 <b>롤아웃 팁</b> — 첫 훈련 전 단체방에 이 페이지 링크와 초대 코드를 함께 올리고, 훈련 후 10분간 다 같이 설치·합류까지 끝내는 걸 추천해요. 선수 연결은 그날 코치가 몰아서 하면 됩니다.</div>
+    <div class="divider"></div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-hd"><span class="em">💬</span><h2>자주 묻는 질문</h2></div>
+    <div class="faq">
+      <details><summary>인터넷 없이도 되나요?</summary><p>네. 설치해 두면 <b>오프라인에서 전부 동작</b>해요. 다시 연결되면 자동으로 동기화됩니다.</p></details>
+      <details><summary>로그인 안 하면 못 쓰나요?</summary><p>아니요, <b>로그인 없이 모든 기능</b>을 쓸 수 있어요. 다만 기록이 그 기기에만 저장돼요. 로그인하면 기기 간 동기화 + 팀 공유가 열립니다.</p></details>
+      <details><summary>내 기록을 팀원들이 다 보나요?</summary><p>개인 기록(IDP)은 <b>본인만 편집</b>할 수 있어요. 팀에 합류하면 코치·팀원이 열람할 수 있고, 노트 같은 개인 메모는 팀과 공유되지 않아요.</p></details>
+      <details><summary>비용이 있나요?</summary><p>없어요. 팀을 위해 만든 앱이라 <b>무료</b>로 사용합니다.</p></details>
+    </div>
+  </div>
+</section>
+
+<div class="foot">
+  <h2>오늘부터 내 IDP</h2>
+  <p>설치하고, 선수로 시작하고, 첫 기록을 남기세요.<br>성장은 쌓인 기록이 증명해요.</p>
+  <a href="https://processstudio.netlify.app/studio/">PROCESS STUDIO 열기</a>
+  <div class="url">processstudio.netlify.app</div>
+</div>
+
+</body>
+</html>
