@@ -11395,6 +11395,14 @@ function matchMergeSchedule(state){
           var xo=String(scheduleText(x.opponent)||"").trim();
           return opp0?xo===opp0:!xo;
         });
+        /* 2.677 — 상대 이름이 달라도 **같은 날에 기록(점수·리뷰)이 있는 옛 연결 경기**는 이어 붙인다.
+           실측 9/7 풋볼A: 낡은 일정을 든 기기가 mid 를 새로 받자 47경기가 상대 이름 불일치로 못 이어 붙고
+           빈 경기 48개로 바뀌어 점수 전부가 서버에 올라갔다(서버 판본 100937 로 복구). */
+        if(!m){
+          m=state.matches.find(function(x){
+            return String(x.date||"")===ymd&&!(x.sourceId&&aliveAll[x.sourceId])&&matchContentScore(x)>0;
+          });
+        }
         if(m){ if(m.sourceId!==sourceId){m.sourceId=sourceId;changed=true;} }
         else{ m=matchBlank();m.sourceId=sourceId;m.competition="팀 일정";state.matches.push(m);changed=true; }
       }
@@ -11429,7 +11437,9 @@ function matchMergeSchedule(state){
     var _pruned=0,_trash=[];
     state.matches=(state.matches||[]).filter(function(m){
       if(!m.sourceId||aliveAll[m.sourceId])return true;
-      if(matchContentScore(m)>0)_trash.push(m);
+      /* 2.677 — 기록(점수·리뷰·명단)이 있는 경기는 일정에서 끊겨도 **지우지 않는다**(휴지통 10개로는 47경기를 못 담았다).
+         연결만 끊어 수동 경기처럼 남긴다 — 일정이 다시 오면 위 이어 붙이기가 같은 날 기록으로 되찾는다. */
+      if(matchContentScore(m)>0){ m.sourceId=""; changed=true; return true; }
       _pruned++;changed=true;return false;
     });
     if(_trash.length){try{
