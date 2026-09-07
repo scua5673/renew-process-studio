@@ -3474,6 +3474,8 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <button id="photoDelBtn" class="gk-btn" title="토큰 사진 제거" style="display:none">사진 ✕</button>
         <input type="file" id="tokImgInput" accept="image/png,image/jpeg,image/webp" style="display:none">
         <button id="visBtn" class="gk-btn" title="선수 시야 표시·끄기" style="display:none">시야</button>
+        <button id="trailBtn" class="gk-btn" title="잔상 — 재생할 때 지나온 길을 남깁니다 (누를 때마다 1→5단계→끔 · 단축키 J)" style="display:none">잔상</button>
+        <button id="lookBtn" class="gk-btn" title="시선 — 다음에 누르는 선수나 공을 계속 바라봅니다 (단축키 O · 다시 누르면 끔)" style="display:none">시선</button>
         <span class="sizebox" id="visCtl" style="display:none"><button id="visNarrow" title="시야 좁게"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="szlbl">시야폭</span><button id="visWide" title="시야 넓게"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></span>
         <button id="visBlindBtn" class="gk-btn" title="등 뒤 사각지대 표시·끄기" style="display:none">사각</button>
         <button id="shaperBtn" class="gk-btn" title="쉐이퍼(몸 방향) 토큰 디자인" style="display:none">쉐이퍼</button>
@@ -4434,6 +4436,7 @@ buildGrid();
 
   buildLines();
   drawLayer=el("g",{id:"drawLayer"});world.appendChild(drawLayer);
+  window.__trailLayer=el("g",{id:"trailLayer"});window.__trailLayer.style.pointerEvents="none";world.appendChild(window.__trailLayer);   /* 2.680 — 잔상 */
   drawCatch=el("rect",{id:"drawCatch",x:-1500,y:-1500,width:W+3000,height:H+3000,fill:"transparent"});world.appendChild(drawCatch);
   tokenLayer=el("g",{id:"tokenLayer"});world.appendChild(tokenLayer);
   world.appendChild(el("g",{id:"snapGuideLayer","pointer-events":"none"}));   /* 2.469 — 끌기 자석 안내선(2.377이 강등한 이유가 '안내선이 없다'였다) */
@@ -4790,6 +4793,7 @@ function enableDrag(g,p,removable,kind){
 	  g.addEventListener("pointerdown",e=>{
 	    if(state.tool==="eraser"){e.stopPropagation();eraseToken(p);return;}
 	    if(state.tool==="link"){e.stopPropagation();linkTap(p);return;}   /* 2.679 — 연결선: 선수를 차례로 누른다 */
+	    if(_lookPick){e.stopPropagation();lookPickTarget(p);return;}   /* 2.680 — 시선 대상 고르기 */
 	    e.stopPropagation();
 	    if(state.boardLocked&&state.tool==="move"){selectItem(kind,p);toast("배치가 고정되어 있습니다");return;}
     moved=false;mvUndo=false;sx=e.clientX;sy=e.clientY;
@@ -5172,6 +5176,13 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   if(pdb)pdb.style.display=_players.some(function(p){return !!p.img;})?"inline-flex":"none";
   const vb=document.getElementById("visBtn");
   if(vb){vb.style.display=_fieldPlayers.length?"inline-flex":"none";vb.classList.toggle("on",!!(_fieldPlayers.length&&_fieldPlayers.every(function(p){return !!p.vis;})));}
+  /* 2.680 — 잔상·시선 단추(선수 또는 공 선택 때) */
+  try{
+    const _tb=document.getElementById("trailBtn"),_lb=document.getElementById("lookBtn");
+    const _trailTs=_fieldPlayers.length?_fieldPlayers:((sel&&sel.type==="ball"&&state.ball)?[state.ball]:[]);
+    if(_tb){_tb.style.display=_trailTs.length?"inline-flex":"none";const _tn=_trailTs.length?(+(_trailTs[0].trail||0)):0;_tb.textContent=_tn?("잔상 "+_tn):"잔상";_tb.classList.toggle("on",_tn>0);}
+    if(_lb){_lb.style.display=_fieldPlayers.length?"inline-flex":"none";_lb.classList.toggle("on",!!(_fieldPlayers.length&&_fieldPlayers.every(function(p){return !!p.lookAt;})));}
+  }catch(_){}
   const _visPlayers=_fieldPlayers.filter(function(p){return !!p.vis;});
   const vc=document.getElementById("visCtl");if(vc)vc.style.display=_visPlayers.length?"inline-flex":"none";
   const vbl=document.getElementById("visBlindBtn");
@@ -5207,6 +5218,35 @@ function rotateSel(deg){
     return;}
   if(sel.type==="player"&&(sel.ref.vis||sel.ref.shaper)){const p=sel.ref;p.dir=((((p.dir||0)+deg)%360)+360)%360;renderTokens();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}return;}}
 function _ensureDir(p){ if(typeof p.dir!=="number")p.dir=isRightTeam(p.team)?180:0; }
+/* ══ 2.680 · 잔상(trail)·시선(lookAt) — 사용자가 보낸 애니메이션 도구 소개(트레일 1~5단계 · 오리엔테이션 타겟 추적)를 이 판에 맞춰 넣었다.
+   잔상: p.trail = 1~5 = 재생 때 남기는 «지난 장면 수». renderInterp 마다 자리를 기록하고 trailLayer 에 옅은 선으로 그린다. 재생이 끝나면 지운다.
+   시선: p.lookAt = 토큰 id('ball' 포함). renderTokens 때마다 대상 쪽으로 p.dir 을 다시 계산하므로 재생 중 대상이 움직여도 따라본다(시야 콘이 방향을 보여 준다). ══ */
+function trailTargets(){ var ps=selectedPlayers(false)||[]; ps=ps.filter(function(p){return !p.coach;}); if(!ps.length&&sel&&sel.type==="ball"&&state.ball)ps=[state.ball]; return ps; }
+function cycleTrail(){ var ps=trailTargets(); if(!ps.length)return; var cur=+(ps[0].trail||0),next=cur>=5?0:cur+1; pushUndo();
+  ps.forEach(function(p){ if(next)p.trail=next; else delete p.trail; }); updateDelUI(); try{boardSaveLive();}catch(_){}
+  try{toast(next?("잔상 "+next+"단계 — 재생하면 지난 "+next+"장면의 길이 남아요"):"잔상 끔");}catch(_){} }
+var _lookPick=null;
+function toggleLookAt(){ var ps=(selectedPlayers(false)||[]).filter(function(p){return !p.coach;}); if(!ps.length)return;
+  if(ps.every(function(p){return !!p.lookAt;})){ pushUndo(); ps.forEach(function(p){delete p.lookAt;}); renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 끔");}catch(_){} return; }
+  _lookPick=ps.slice(); try{toast("바라볼 선수나 공을 누르세요 (Esc 취소)");}catch(_){} }
+function lookPickTarget(t){ if(!_lookPick)return false; var ps=_lookPick; _lookPick=null; var id=t&&t.id; if(id==null)return true; pushUndo();
+  ps.forEach(function(p){ if(p.id===id)return; p.lookAt=id; p.vis=true; _ensureDir(p); if(!p.visW)p.visW=52; if(!p.visR)p.visR=M2U(18); });
+  renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 고정 — 대상이 움직여도 계속 바라봐요");}catch(_){} return true; }
+function applyLookAt(){ (state.players||[]).forEach(function(p){ if(!p||!p.lookAt)return; var t=_linkPt(p.lookAt); if(!t)return;
+  p.dir=Math.round(((Math.atan2(t.y-p.y,t.x-p.x)*180/Math.PI)%360+360)%360); }); }
+var _trail={};
+function trailReset(){ _trail={}; try{ if(window.__trailLayer)window.__trailLayer.innerHTML=""; }catch(_){} }
+function trailTick(){ var L=window.__trailLayer; if(!L)return;
+  if(!animPlaying){ if(L.childNodes.length)L.innerHTML=""; return; }
+  var seg=window.__animSeg||0; var items=(state.players||[]).filter(function(p){return p&&p.trail>0;}); if(state.ball&&state.ball.trail>0)items.push(state.ball);
+  L.innerHTML="";
+  items.forEach(function(p){ var id=p.id; var h=_trail[id]||(_trail[id]=[]); var last=h[h.length-1];
+    if(!last||last.seg!==seg||Math.hypot(last.x-p.x,last.y-p.y)>1.5)h.push({x:p.x,y:p.y,seg:seg});
+    var keep=h.filter(function(q){return q.seg>seg-(+p.trail||1);}); _trail[id]=keep; if(keep.length<2)return;
+    var col="#ffffff"; try{ if(p.team!=="ball"&&p!==state.ball)col=_tokDiscCol(p)||col; }catch(_){}
+    var d="M "+keep.map(function(q){return q.x.toFixed(1)+" "+q.y.toFixed(1);}).join(" L ");
+    L.appendChild(el("path",{d:d,fill:"none",stroke:col,"stroke-width":7,"stroke-linecap":"round","stroke-linejoin":"round",opacity:".18"}));
+    L.appendChild(el("path",{d:d,fill:"none",stroke:col,"stroke-width":3,"stroke-linecap":"round","stroke-linejoin":"round",opacity:".6"})); }); }
 function toggleVision(){ var ps=selectedPlayers(false);if(!ps.length)return;var on=!ps.every(function(p){return !!p.vis;});pushUndo();ps.forEach(function(p){p.vis=on;if(on){_ensureDir(p);if(!p.visW)p.visW=52;if(!p.visR)p.visR=M2U(18);}});
   renderTokens();updateDelUI();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}
   try{toast(ps.length>1?(ps.length+"명 시야 "+(on?"표시":"끔")):(on?"시야 표시 — ↺↻ 방향, ◂▸ 넓이, 사각 토글":"시야 끔"));}catch(_){} }
@@ -5509,7 +5549,7 @@ function _setSelRings(){ try{
 }catch(_){}}
 var _rvRAF=0;
 function renderVisionRAF(){ if(_rvRAF)return; try{_rvRAF=(window.requestAnimationFrame||function(f){return setTimeout(f,16);})(function(){_rvRAF=0;try{renderVision();}catch(_){}});}catch(_){_rvRAF=0;try{renderVision();}catch(__){}} }
-function renderTokens(){tokenLayer.innerHTML="";
+function renderTokens(){try{applyLookAt();}catch(_){} tokenLayer.innerHTML="";
   try{ensureTeamPatterns();}catch(_){}
   try{renderVision();}catch(_){}
   tokenItems().sort((a,b)=>{const az=Number.isFinite(+a.o.z)?+a.o.z:1e9,bz=Number.isFinite(+b.o.z)?+b.o.z:1e9;return az-bz;}).forEach(it=>tokenLayer.appendChild(makeToken(it.o,it.kind)));
@@ -7058,7 +7098,7 @@ function renderInterp(a,b,u,curves){
   else{state.ball=null;}
   state.drawings=dc(a.drawings||[]);
   state.orientation=a.orientation||"h";state.area=a.area||"full";state.pitchView=normPitchView(a.pitchView||((state.area||"full")==="half"?"half":"full"));state.tokenScale=a.tokenScale||1;
-  sel=null;applyView();renderTokens();renderDrawings();
+  sel=null;applyView();renderTokens();renderDrawings();try{trailTick();}catch(_){}
   try{if(typeof window.__syncUniformDock==="function")window.__syncUniformDock();}catch(_){}
 }
 /* ===== 곡선 경로 편집 오버레이 (택티컬 패드) — 선택 장면→다음 장면 사이 각 토큰의 이동 경로를 보여주고, 가운데 점을 끌어 곡선으로 만든다 ===== */
@@ -7184,7 +7224,7 @@ function highlightFrame(i){var box=document.getElementById("animFrames");if(!box
 function playAnim(){
   if(animPlaying){stopAnim();return;}
   if(anim.frames.length<2){toast("장면을 2개 이상 만들어주세요");return;}
-  animRestore=captureSnap();animPlaying=true;updatePlayUI();clearOnion();_mpClear();
+  animRestore=captureSnap();animPlaying=true;updatePlayUI();clearOnion();_mpClear();try{trailReset();window.__animSeg=0;}catch(_){}
   /* 아이콘 이동 속도와 장면 유지 시간을 분리한다.
      moveSpeed는 출발 장면별, animHold는 전체 공통이라 재생 리듬이 일정하다. */
   let s=0,t0=performance.now(),lastHi=-1,phase="hold";
@@ -7216,11 +7256,11 @@ function playAnim(){
     const a=anim.frames[s].snap,b=anim.frames[s+1].snap;
     const dur=Math.max(.3,(anim.frames[s].dur||1))*1000/animMoveSpeed(anim.frames[s]);
     let u=(now-t0)/dur;if(u>1)u=1;
-    renderInterp(a,b,easeInOut(u),anim.frames[s].curves);try{_applyBlink(anim.frames[s+1]&&anim.frames[s+1].blink,now-t0);}catch(_){}try{_applyHl(anim.frames[s+1]&&anim.frames[s+1].hl);}catch(_){}var __hi=Math.min(anim.frames.length-1,Math.round(s+u));if(__hi!==lastHi){lastHi=__hi;highlightFrame(__hi);}
+    window.__animSeg=s;renderInterp(a,b,easeInOut(u),anim.frames[s].curves);try{_applyBlink(anim.frames[s+1]&&anim.frames[s+1].blink,now-t0);}catch(_){}try{_applyHl(anim.frames[s+1]&&anim.frames[s+1].hl);}catch(_){}var __hi=Math.min(anim.frames.length-1,Math.round(s+u));if(__hi!==lastHi){lastHi=__hi;highlightFrame(__hi);}
     if(u>=1){s++;t0=now;phase="hold";}
     animRaf=requestAnimationFrame(step);};
   animRaf=requestAnimationFrame(step);}
-function stopAnim(){animPlaying=false;if(animRaf)cancelAnimationFrame(animRaf);animRaf=null;
+function stopAnim(){animPlaying=false;if(animRaf)cancelAnimationFrame(animRaf);animRaf=null;try{trailReset();}catch(_){}
   try{_animCapShow(null);}catch(_){}
   if(animRestore){loadSnap(animRestore);animRestore=null;}updatePlayUI();renderOnion();try{renderAnimFrames();}catch(e){}}
 /* ===== 장면 깜박임(강조) — 프레임별 blink:[토큰 id]. 재생·영상·GIF에서 선택 토큰이 펄스로 깜박인다 ===== */
@@ -11435,6 +11475,13 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
          normToolKey 는 한 글자가 아닌 키(Escape·Enter·Tab·F1…)를 전부 "" 로 돌려준다 →
          Esc 를 누르면 deselect 가 아니라 엉뚱한 도구(예: 점선 사각형)로 바뀌었다(실측).
          키가 없으면 매칭하지 않는다. */
+      /* 2.680 — J 잔상 · O 시선(선택된 선수가 있을 때만) · Esc 시선 지정 취소 */
+      if(!toolKeyOpen&&!e.repeat&&!e.isComposing&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+        var _kk=String(e.key||"").toLowerCase(),_hasSel=!!(sel||(typeof multiSel!=="undefined"&&multiSel&&multiSel.length));
+        if(_kk==="j"&&_hasSel){e.preventDefault();cycleTrail();return;}
+        if(_kk==="o"&&_hasSel){e.preventDefault();toggleLookAt();return;}
+        if(e.key==="Escape"&&_lookPick){_lookPick=null;try{toast("시선 지정 취소");}catch(_){}return;}
+      }
       if(!toolKeyOpen&&!e.repeat&&!e.isComposing){var k=normToolKey(e);
         if(k){var m=loadToolKeys(),hit=TOOLS.find(function(x){return m[x]===k;});if(hit){e.preventDefault();setTool(hit);return;}}}
       if(e.key===" "){if(document.body.classList.contains("match-mode")){e.preventDefault();mcToggle();}return;}
@@ -11535,6 +11582,8 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
   const _tbc=document.getElementById("textBgClear");if(_tbc)_tbc.onclick=()=>{const d=_selectedTextRef();if(d&&d.bg)_applySelectedText(function(x){delete x.bg;},"배경 없음");};
   $("rotRight").onclick=()=>rotateSel(15);$("rotLeft").onclick=()=>rotateSel(-15);
   if($("visBtn"))$("visBtn").onclick=()=>toggleVision();
+  if($("trailBtn"))$("trailBtn").onclick=()=>cycleTrail();   /* 2.680 */
+  if($("lookBtn"))$("lookBtn").onclick=()=>toggleLookAt();
   if($("visWide"))$("visWide").onclick=()=>visWidth(12);
   if($("visNarrow"))$("visNarrow").onclick=()=>visWidth(-12);
   if($("visBlindBtn"))$("visBlindBtn").onclick=()=>toggleBlind();
