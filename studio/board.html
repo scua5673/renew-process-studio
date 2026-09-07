@@ -11472,17 +11472,22 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
     /* 2.495 — 「단축키」 탭 인라인 도구 편집기(즉시 저장) */
     window.__mountToolKeyEditor=function(host){
       if(!host)return; host.innerHTML="";
-      var rows=document.createElement("div"); rows.style.cssText="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px";
+      /* 2.685 — 라벨 잘림(사용자 "텍스트가 전부 표현이 안 되는데"): 폭 300px 탭을 두 열로 나누고 아이콘 17 + 키 64 를 고정하니 라벨 자리가 55px 뿐이었다.
+         한 열 목록(560px 넘는 곳만 두 열) · 아이콘은 라벨 앞, 없으면 자리도 없음 · 키 52px · «도구 / 애니메이션» 묶음 제목. 목업 aa2b4998. */
+      var rows=document.createElement("div"); rows.style.cssText="display:grid;grid-template-columns:minmax(0,1fr);gap:6px";
+      try{ var _w=(host.getBoundingClientRect().width||host.offsetWidth||0); if(_w>=560)rows.style.gridTemplateColumns="repeat(2,minmax(0,1fr))"; }catch(_){}
       function persist(){ var m={}; [].forEach.call(rows.querySelectorAll("button[data-tool]"),function(b){ m[b.dataset.tool]=b.dataset.key||""; }); saveToolKeys(m); }
+      function head(txt){ var h=document.createElement("div"); h.textContent=txt; h.style.cssText="grid-column:1/-1;font-size:11px;font-weight:700;color:var(--txt-dim,#646A73);margin:6px 2px 0"; rows.appendChild(h); }
       function build(data){
         rows.innerHTML="";
+        head("도구");
         KEY_IDS.forEach(function(t){
-          var r=document.createElement("div"); r.style.cssText="display:grid;grid-template-columns:17px minmax(0,1fr) 64px;gap:7px;align-items:center;padding:6px 8px;border:1px solid var(--line,#dfe3e8);border-radius:10px;background:var(--panel2,#f5f6f8)";
-          /* 2.496 — 아이콘(사용자 "이모티콘도 넣어줘야지"): 도크의 그 도구 버튼 SVG 를 그대로 복제 — 같은 그림이 같은 뜻 */
-          var ic=document.createElement("span"); ic.style.cssText="display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;color:var(--txt,#1c1c1e)";
-          try{ var src=document.querySelector('#toolSeg [data-tool="'+t+'"] svg'); if(src){ var cs=src.cloneNode(true); cs.setAttribute("width","15"); cs.setAttribute("height","15"); ic.appendChild(cs); } }catch(_){}
-          r.appendChild(ic);
-          var n=document.createElement("span"); n.textContent=TOOL_NAMES[t]; n.style.cssText="font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
+          if(t===ANIM_IDS[0])head("애니메이션");
+          var r=document.createElement("div"); r.style.cssText="display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:7px;align-items:center;padding:6px 8px;border:1px solid var(--line,#dfe3e8);border-radius:10px;background:var(--panel2,#f5f6f8)";
+          var n=document.createElement("span"); n.style.cssText="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;white-space:normal;line-height:1.3;min-width:0";
+          /* 2.496 — 아이콘: 도크의 그 도구 버튼 SVG 를 그대로 복제 — 같은 그림이 같은 뜻. 2.685 — 라벨 앞에 붙이고, 없으면 자리를 만들지 않는다 */
+          try{ var src=document.querySelector('#toolSeg [data-tool="'+t+'"] svg'); if(src){ var ic=document.createElement("span"); ic.style.cssText="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 14px;color:var(--txt-dim,#646A73)"; var cs=src.cloneNode(true); cs.setAttribute("width","14"); cs.setAttribute("height","14"); ic.appendChild(cs); n.appendChild(ic); } }catch(_){}
+          var nt=document.createElement("span"); nt.textContent=TOOL_NAMES[t]; n.appendChild(nt);
           var kb=document.createElement("button"); kb.type="button"; kb.className="btn"; kb.dataset.tool=t; kb.dataset.key=data[t]||""; kb.textContent=toolKeyName(kb.dataset.key); kb.title="눌러서 키 지정";
           kb.onclick=function(e){ e.stopPropagation(); kb.textContent="키 입력…"; kb.focus(); };
           kb.addEventListener("keydown",function(e){ e.preventDefault(); e.stopImmediatePropagation();
