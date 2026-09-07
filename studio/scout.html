@@ -12846,7 +12846,7 @@ function renderAvail(){
     }
   }catch(_){}
   try{ h+=avRetroPanel(); }catch(e){ console.warn("회고 그리기 실패",e); }
-  h+='<div class="av-note">훈련·경기일에 상태가 <b>정상</b>이면 참여, 재활·부상·불참·조절이면 쉼으로 셉니다. 팀이 OFF거나 일정이 없는 날은 전원 휴식이라 세지 않습니다. 상태는 선수단 탭에서 바꾼 것이 그날부터 이어집니다(앱을 안 연 날도 마지막 상태가 이어짐).</div>';
+  h+='<div class="av-note">훈련·경기일에 상태가 <b>정상</b>이면 참여, 재활·부상·불참·조절이면 쉼으로 셉니다. 팀이 OFF거나 일정이 없는 날은 전원 휴식이라 세지 않습니다. 상태는 선수단 탭에서 바꾼 것이 그 날부터 이어집니다(앱을 안 연 날도 마지막 상태가 이어짐).</div>';
   root.innerHTML=h;
   root.querySelectorAll("[data-av-range]").forEach(function(b){ b.onclick=function(){ availRange=+b.dataset.avRange||14; renderAvail(); }; });
   try{ var _fx=root.querySelector("[data-av-fix]"); if(_fx)_fx.onclick=function(){ setView("team"); }; }catch(_){}
@@ -13941,7 +13941,7 @@ function matchSideRender(m){
         +(wx.tmin==null?"–":Math.round(wx.tmin))+'° / '+(wx.tmax==null?"–":Math.round(wx.tmax))+'°</b>'
         +'<small>'+wet+' · '+esc(wx.label||"")+'</small></span>';
     }
-    else h+='<span class="ms-wx"><span>'+ic[0]+' '+ic[1]+'</span><b>'+Math.round(wx.temp)+'°</b><small>지금 · 바람 '+Math.round(wx.wind)+'km/h'+(wx.noRec?' · 그날 기록이 아직 없어요':(m.date?' · 경기일 예보 범위 밖':''))+'</small></span>';
+    else h+='<span class="ms-wx"><span>'+ic[0]+' '+ic[1]+'</span><b>'+Math.round(wx.temp)+'°</b><small>지금 · 바람 '+Math.round(wx.wind)+'km/h'+(wx.noRec?' · 이 날 기록이 아직 없어요':(m.date?' · 경기일 예보 범위 밖':''))+'</small></span>';
   }
   h+='<button type="button" class="ms-re" id="msRelocate">위치 다시 잡기</button>';
   box.innerHTML=h;
@@ -13995,7 +13995,7 @@ function matchSideWeather(m){
         tmin:dd.temperature_2m_min?dd.temperature_2m_min[0]:null,
         pop:(dd.precipitation_probability_max?dd.precipitation_probability_max[0]:null),
         mm:(dd.precipitation_sum?dd.precipitation_sum[0]:null),
-        label:past?"그날 기록":((diff===0?"오늘":diff===1?"내일":"D-"+diff)+" 예보")};
+        label:past?"이 날 기록":((diff===0?"오늘":diff===1?"내일":"D-"+diff)+" 예보")};
     }
     else if(j.current){ _msWx[key]={kind:"now",code:j.current.weather_code,temp:j.current.temperature_2m,wind:j.current.wind_speed_10m,noRec:!!past}; }
     else _msWx[key]=null;
