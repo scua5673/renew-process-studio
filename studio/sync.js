@@ -73,7 +73,18 @@ var COPIES_OFF=true;
    보드·보관함 키(BOARD_KEEP)와 개인 키(PERSONAL)는 건드리지 않는다. 지웠으면 표시(ps_cache_wiped_v1)를 남기고,
    다음 부팅에서 그 표시가 있으면 «팀에서 받는 중…» 덮개를 띄워 첫 회차가 끝날 때까지 기기 사본 대신 서버를 기다린다(최대 12초, 오프라인이면 안내+다시 시도).
    받고 나면 한 번 새로고침한다 — 셸(app.html)은 같은 창이라 storage 이벤트를 못 받기 때문. */
-var CACHE_WIPE=true, CACHE_WAIT_MS=12000, CACHE_FLAG='ps_cache_wiped_v1', cacheWaitTimer=null;
+/* 2.676 — 실측(9/7 14:23~14:29, 코치 아이패드 2.675): 팀 전환 → 리로드 → 부팅 리로드(1.981) → 그때마다 pagehide 지우기 → «받는 중» 덮개 → 성공 시 또 리로드.
+   리로드가 겹치며 진행 중 fetch 가 끊겨 sync_network(kv_meta) 2건, 스플래시가 몇 분 이어졌다(«자기 팀으로 이동이 안 된다»).
+   고침: ① 우리가 스스로 하는 리로드(ps_self_reload 표시)·부팅 중(ps-booting)·연 지 15초 안에는 지우지 않는다 ② 받은 뒤 리로드하지 않는다(화면은 storage 이벤트로 갱신)
+   ③ 기본은 꺼 둔다 — 실기기 로그인 검증 뒤 켠다(`localStorage.ps_cache_wipe='1'` 로 기기별 켜기). */
+var CACHE_WIPE=(function(){ try{ return localStorage.getItem('ps_cache_wipe')==='1'; }catch(_){ return false; } })();
+var CACHE_WAIT_MS=12000, CACHE_FLAG='ps_cache_wiped_v1', SELF_RELOAD='ps_self_reload', BOOT_AT=Date.now(), cacheWaitTimer=null;
+function markSelfReload(){ try{ sessionStorage.setItem(SELF_RELOAD,'1'); }catch(_){} }
+function wipeAllowedNow(){
+  try{ if(sessionStorage.getItem(SELF_RELOAD))return false; }catch(_){}
+  try{ if(document.body&&document.body.classList.contains('ps-booting'))return false; }catch(_){}
+  return (Date.now()-BOOT_AT)>15000;
+}
 var BOARD_KEEP={'cs_vault_folders_v1':1,'cs_vault_folder_tags_v1':1,'cs_vault_folder_meta_v1':1,'cs_themes_v1':1};
 function teamCacheKeys(){
   var out=KEYS.filter(function(k){ return !PERSONAL[k]&&!BOARD_KEEP[k]; });
@@ -81,7 +92,7 @@ function teamCacheKeys(){
   return out;
 }
 function wipeTeamCacheSoft(){
-  if(!CACHE_WIPE||!dataUnlocked()||!getSess())return 0;
+  if(!CACHE_WIPE||!dataUnlocked()||!getSess()||!wipeAllowedNow())return 0;
   var wid=activeWs(); if(!wid)return 0;
   try{ if(pendingInfo(wid).count>0)return 0; }catch(_){ return 0; }
   var m=meta(), n=0;
@@ -125,10 +136,9 @@ function cacheWaitEnd(ok){
   if(!cacheWipedFlag())return;
   clearTimeout(cacheWaitTimer);
   if(ok){
-    var showing=!!document.getElementById('psCacheWait');
     try{ localStorage.removeItem(CACHE_FLAG); }catch(_){}
-    renderCacheWait(null);
-    if(showing){ try{ location.reload(); }catch(_){} }   /* 덮개가 아직 떠 있을 때만 — 이미 쓰고 있는 화면을 새로고침으로 끊지 않는다 */
+    renderCacheWait(null);   /* 2.676 — 리로드하지 않는다. 화면(iframe)은 storage 이벤트로 이미 갱신된다 */
+    try{ renderUI(); }catch(_){}
     return;
   }
   renderCacheWait(navigator.onLine===false?'offline':null);
@@ -4481,7 +4491,7 @@ function onApplied(reason,n){
        화면이 이미 보인 뒤라면 새로고침하지 않는다 — 1.513 메모대로 각 화면은 storage 이벤트로 갱신된다 */
     var _stillSplash=false; try{ _stillSplash=!!(document.body&&document.body.classList.contains('ps-booting')); }catch(_){}
     try{
-      if(_stillSplash&&!sessionStorage.getItem(RLKEY)){ sessionStorage.setItem(RLKEY,'1'); location.reload(); return; }
+      if(_stillSplash&&!sessionStorage.getItem(RLKEY)){ sessionStorage.setItem(RLKEY,'1'); markSelfReload(); location.reload(); return; }
     }catch(_){}
   }
   try{ sessionStorage.removeItem(RLKEY); }catch(_){}
@@ -4937,6 +4947,7 @@ function switchWorkspace(wid, skipSave){
       var _fr=(wsList().filter(function(w){return w.id===from;})[0]||{}).name||'';
       localStorage.setItem('ps_ws_switched_v1',JSON.stringify({from:_fr,to:_to,at:Date.now()}));
     }catch(_){}
+    markSelfReload();
     location.reload();   /* 오버레이는 reload로 사라짐 */
   });
   }).catch(function(e){
@@ -5931,6 +5942,7 @@ function boot(){
   /* 2.675 — 닫을 때 팀 자료 지우기 · 지운 뒤 첫 부팅은 서버를 기다린다 */
   try{ window.addEventListener('pagehide',function(e){ if(e&&e.persisted)return; try{ var _n=wipeTeamCacheSoft(); if(_n)syncDiagnostic('cache-wiped',new Error('닫으며 팀 자료 '+_n+'키 지움')); }catch(_){} }); }catch(_){}
   try{ cacheWaitStart(); }catch(_){}
+  try{ sessionStorage.removeItem(SELF_RELOAD); }catch(_){}   /* 2.676 — 우리 리로드 표시는 새 부팅에서 지운다 */
   setDataReady(false);
   renderUI();
   var s=getSess();
