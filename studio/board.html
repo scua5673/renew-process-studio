@@ -3157,6 +3157,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <button data-tool="dribble" title="드리블 (물결 화살표)"><svg width="28" height="13" viewBox="0 0 28 13" style="vertical-align:middle"><path d="M2 6.5 Q4.5 2.5 7 6.5 T12 6.5 T17 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M16 2 L26 6.5 L16 11 Z" fill="currentColor"/></svg></button>
         <button data-tool="line" title="직선"><svg width="26" height="13" viewBox="0 0 26 13" style="vertical-align:middle"><line x1="2" y1="6.5" x2="24" y2="6.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
         <button data-tool="dashline" title="점선"><svg width="26" height="13" viewBox="0 0 26 13" style="vertical-align:middle"><line x1="2" y1="6.5" x2="24" y2="6.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="5 4"/></svg></button>
+        <button data-tool="link" title="연결선 (선수를 차례로 눌러 잇기 · 선수를 따라감)"><svg width="20" height="17" viewBox="0 0 26 20" style="vertical-align:middle" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 15 L9 4 L18 6 L22 15 Z"/><circle cx="4" cy="15" r="2.4" fill="currentColor" stroke="none"/><circle cx="9" cy="4" r="2.4" fill="currentColor" stroke="none"/><circle cx="18" cy="6" r="2.4" fill="currentColor" stroke="none"/><circle cx="22" cy="15" r="2.4" fill="currentColor" stroke="none"/></svg></button>
         <button data-tool="free" title="자유선"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l3.6-1L19 8.6 15.4 5 3 17.4z"/><path d="M14 6.4l3.6 3.6"/></svg></button>
         <button data-tool="rect" title="구역"><svg width="17" height="17" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2" fill="currentColor" fill-opacity="0.28" stroke="currentColor" stroke-width="1.8"/></svg></button>
         <button data-tool="rectline" title="사각형(실선)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="6" width="16" height="12" rx="1.5"/></svg></button>
@@ -4069,7 +4070,7 @@ try{
 }catch(_){}
 const MDS=["MD-5","MD-4","MD-3","MD-2","MD-1","MD","MD+1"];
 
-const DRAW_TOOLS=["run","pass","dribble","line","dashline","free","rect","rectline","rectdash"];
+const DRAW_TOOLS=["run","pass","dribble","line","dashline","link","free","rect","rectline","rectdash"];   /* 2.679 — link: 선수를 차례로 눌러 잇는 연결선·다각형(선수를 따라감) */
 const isDraw=()=>DRAW_TOOLS.includes(state.tool);
 /* 2.365 — 새 보드의 기본은 **실사 잔디 + 15존**(사용자 "처음화면 기본설정은 실사 그리드로 15존").
    실사는 내부적으로 `data-pitch="grass"` + `pitchImg:"@real"` 두 짝이다(10305 의 p==="real" 갈래와 같은 뜻).
@@ -4788,6 +4789,7 @@ function enableDrag(g,p,removable,kind){
   let _mvAlt=false,_mvP0=null,_mvAxis=null,grpStart=null,_mvGrab=null;   /* 2.030 */
 	  g.addEventListener("pointerdown",e=>{
 	    if(state.tool==="eraser"){e.stopPropagation();eraseToken(p);return;}
+	    if(state.tool==="link"){e.stopPropagation();linkTap(p);return;}   /* 2.679 — 연결선: 선수를 차례로 누른다 */
 	    e.stopPropagation();
 	    if(state.boardLocked&&state.tool==="move"){selectItem(kind,p);toast("배치가 고정되어 있습니다");return;}
     moved=false;mvUndo=false;sx=e.clientX;sy=e.clientY;
@@ -5701,6 +5703,30 @@ function needCase(c){var lc=(""+c).toLowerCase(); // 밝은 잉크는 흰 피치
   return (lc==="#ffffff"||lc==="#fff"||lc==="#f2f4f7")&&document.documentElement.dataset.pitch==="white";}
 function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof multiSel!=="undefined"&&!!multiSel&&multiSel.indexOf(d)>=0);const C=inkColor(d.color);const cap=needCase(d.color);const LW=(d&&d.lw)||1;   /* 선 굵기 배수 — 선택 후 크기 ±로 조절 */
   const CASE=document.documentElement.dataset.pitch!=="white"?"rgba(255,255,255,.92)":"#20242c";  // 배경 대비 외곽선(어느 운동장에서도 잘 보이게)
+  if(d.type==="link"){   /* 2.679 — 토큰 id 로 그리는 연결선·다각형(좌표는 매번 토큰에서 읽는다) */
+    const pts=(d.ids||[]).map(_linkPt).filter(Boolean);
+    if(pts.length===1){g.appendChild(el("circle",{cx:pts[0].x,cy:pts[0].y,r:16,fill:"none",stroke:C,"stroke-width":3,"stroke-dasharray":"4 4","pointer-events":"none"}));return g;}
+    if(pts.length>=2){
+      const dd="M "+pts.map(p=>p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" L ")+(d.closed?" Z":"");
+      if(isSel)g.appendChild(el("path",{d:dd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linejoin":"round","stroke-linecap":"round"}));
+      if(d.closed){const darkPitch=document.documentElement.dataset.pitch!=="white";g.appendChild(el("path",{d:dd,fill:hexA(C,darkPitch?.22:.16),stroke:"none","pointer-events":"none"}));}
+      const at={d:dd,fill:"none",stroke:C,"stroke-width":4*LW,"stroke-linejoin":"round","stroke-linecap":"round"};
+      if(d.dash)at["stroke-dasharray"]=(11*LW)+" "+(8*LW);
+      g.appendChild(el("path",at));
+      pts.forEach(p=>g.appendChild(el("circle",{cx:p.x,cy:p.y,r:5*LW,fill:C,"pointer-events":"none"})));
+      if(!d._tmp){
+        const hit=el("path",{d:dd,fill:"none",stroke:"#000","stroke-width":22,opacity:"0","pointer-events":"stroke"});hit.style.cursor="pointer";
+        hit.addEventListener("pointerdown",e=>{
+          if(state.tool==="eraser"){e.stopPropagation();removeDrawing(d);return;}
+          if(state.tool!=="move")return;
+          e.stopPropagation();selectItem("drawing",d);
+        });
+        g.appendChild(hit);
+      }
+    }
+    try{ if(!isSel && d.op!=null && d.op<1) g.setAttribute("opacity", d.op); }catch(_){}
+    return g;
+  }
   if(d.type==="rect"||d.type==="rectline"||d.type==="rectdash"){const a=d.pts[0],b=d.pts[1]||d.pts[0];
     const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
     if(d.type==="rect"){
@@ -6024,6 +6050,43 @@ function showMeas(d,pt){if(!world||!pt)return;
   const t=el("text",{x:x,y:y,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":fs,"font-weight":"800","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Segoe UI',Roboto,sans-serif"});
   t.textContent=text;_measEl.appendChild(t);}
 function hideMeas(){if(_measEl)_measEl.style.display="none";}
+/* ══ 2.679 · 연결선(link) — 선수·장비·공을 차례로 눌러 잇는 선·다각형. 좌표를 저장하지 않고 **토큰 id** 를 저장해
+   그릴 때마다 토큰의 지금 자리를 읽는다 → 장면 재생(renderInterp)에서 선수가 움직이면 선도 같이 움직인다(사용자 "토큰 4개를 찍고
+   토큰 4개가 이어지는 라인… 애니메이션으로 추가할 때도 따라갈 수 있게 다각형으로"). 처음 선수를 다시 누르면 닫힌 다각형(채움),
+   마지막 선수를 다시 누르거나 빈 곳을 누르면 열린 선. 색·굵기·투명도는 다른 그림과 같은 팔레트. ══ */
+let _link=null,_linkTmp=null;
+function _linkPt(id){
+  if(id==="ball")return state.ball?{x:state.ball.x,y:state.ball.y}:null;
+  const o=(state.players||[]).find(p=>p.id===id)||(state.equipment||[]).find(p=>p.id===id);
+  return o?{x:o.x,y:o.y}:null;
+}
+function linkPreview(){
+  try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;
+  if(!_link||!_link.ids.length)return;
+  _linkTmp=drawingEl({type:"link",ids:_link.ids.slice(),closed:false,color:_link.color,lw:_link.lw,op:1,_tmp:1});
+  _linkTmp.style.pointerEvents="none";drawLayer.appendChild(_linkTmp);
+}
+function linkTap(p){
+  if(!p||p.id==null)return;
+  if(!_link)_link={ids:[],color:state.color,lw:(state.drawLw||1),op:(state.drawOp==null?1:state.drawOp)};
+  const ids=_link.ids,id=p.id;
+  if(ids.length>=3&&id===ids[0]){linkFinish(true);return;}
+  if(ids.length&&id===ids[ids.length-1]){linkFinish(false);return;}
+  if(ids.indexOf(id)>=0){toast("이미 이은 선수예요");return;}
+  ids.push(id);linkPreview();
+  toast(ids.length===1?"다음 선수를 누르세요 · 빈 곳을 누르면 완료":(ids.length+"개 연결 · 처음 것을 다시 누르면 다각형"));
+}
+function linkFinish(closed){
+  if(!_link)return;
+  const L=_link,ids=L.ids;_link=null;
+  try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;
+  if(ids.length<2){if(ids.length)toast("선수를 2명 이상 눌러야 선이 돼요");return;}
+  pushUndo();
+  state.drawings.push({type:"link",ids:ids,closed:!!closed,color:L.color,lw:L.lw,op:L.op,pts:[]});
+  renderDrawings();try{autoSaveAnimFrame();}catch(_){}
+  toast(closed?"다각형 완성 — 선수가 움직이면 같이 움직여요":"연결선 완성 — 선수가 움직이면 같이 움직여요");
+}
+function linkCancel(){_link=null;try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;}
 function beginDraw(u){
   _draw={type:state.tool,color:state.color,lw:(state.drawLw||1),op:(state.drawOp==null?1:state.drawOp),pts:state.tool==="free"?[u]:[u,{x:u.x,y:u.y}]};
   _drawTmp=drawingEl(_draw);drawLayer.appendChild(_drawTmp);}
@@ -6072,6 +6135,7 @@ function attachDraw(){
       if(window.__psPlaceEquipStampAt(toUnit(e)))return;
     }
     if(state.tool==="text"){e.stopPropagation();const _u=toUnit(e);addText(_u,findTextAt(_u));return;}
+    if(state.tool==="link"){e.stopPropagation();linkFinish(false);return;}   /* 2.679 — 빈 곳을 누르면 연결선 완료 */
     if(!isDraw())return;
     if(sel)deselect();
     try{drawCatch.setPointerCapture(e.pointerId)}catch(_){};beginDraw(toUnit(e));});
@@ -7827,6 +7891,7 @@ let toastT;
 function hintText(){const t=state.tool;
   return t==="move"?"끌어서 이동 · 텍스트는 선택 후 ‘내용 수정’ 또는 더블탭"
   :t==="eraser"?"탭하면 지워집니다"
+  :t==="link"?"선수를 차례로 누르세요 · 처음 선수를 다시 누르면 다각형 · 빈 곳을 누르면 완료"
   :t==="text"?""
   :t==="run"?"끌어서 런(점선) · 알 더블클릭→선택 후 끌어 이동"
   :t==="pass"?"끌어서 패스(직선) · 알 더블클릭→선택 후 끌어 이동"
@@ -11246,14 +11311,15 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
     })();
     function setTool(t){try{if(window.__psCancelTokenStamp)window.__psCancelTokenStamp("tool");}catch(_){}try{if(window.__psCancelEquipStamp)window.__psCancelEquipStamp();}catch(_){}const sg=$("toolSeg");if(!sg)return;const btn=sg.querySelector('[data-tool="'+t+'"]');if(!btn)return;
       [...sg.children].forEach(x=>x.classList.remove("on"));btn.classList.add("on");
+      try{if(state.tool==="link"&&t!=="link")linkFinish(false);}catch(_){}   /* 2.679 — 도구를 바꾸면 만들던 연결선을 마무리 */
       state.tool=t;document.body.dataset.tool=t;document.body.classList.toggle("drawmode",DRAW_TOOLS.includes(t)||t==="text");
       try{window.__syncColorModeTitle(t);}catch(_){}
       if(t!=="move")deselect();if(t!=="text"&&typeof hintText==="function")toast(hintText());}
-    const TOOLS=["move","run","pass","dribble","line","dashline","free","rect","rectline","rectdash","text","eraser"];
-    const TOOL_NAMES={move:"이동·선택",run:"선수 이동",pass:"패스",dribble:"드리블",line:"직선",dashline:"점선",free:"자유선",rect:"구역",rectline:"사각형(실선)",rectdash:"사각형(점선)",text:"텍스트 라벨",eraser:"지우개"};
+    const TOOLS=["move","run","pass","dribble","line","dashline","link","free","rect","rectline","rectdash","text","eraser"];
+    const TOOL_NAMES={move:"이동·선택",run:"선수 이동",pass:"패스",dribble:"드리블",line:"직선",dashline:"점선",link:"연결선",free:"자유선",rect:"구역",rectline:"사각형(실선)",rectdash:"사각형(점선)",text:"텍스트 라벨",eraser:"지우개"};
     const TOOL_KEY="cs_tool_shortcuts_v1";
     let toolKeyOpen=false;
-    function toolKeyDefaults(){return {move:"1",run:"2",pass:"3",dribble:"4",line:"5",dashline:"6",free:"7",rect:"8",rectline:"9",rectdash:"",text:"",eraser:"0"};}
+    function toolKeyDefaults(){return {move:"1",run:"2",pass:"3",dribble:"4",line:"5",dashline:"6",link:"",free:"7",rect:"8",rectline:"9",rectdash:"",text:"",eraser:"0"};}
     function loadToolKeys(){var d=toolKeyDefaults(),v=null;try{v=JSON.parse(localStorage.getItem(TOOL_KEY)||"null");}catch(_){}if(v&&typeof v==="object")TOOLS.forEach(function(t){if(typeof v[t]==="string")d[t]=v[t];});return d;}
     function saveToolKeys(v){try{localStorage.setItem(TOOL_KEY,JSON.stringify(v));}catch(_){}}
     function normToolKey(e){if(e.metaKey||e.ctrlKey||e.altKey)return "";var k=e.key||"";if(k.length!==1||k===" ")return "";return k.toLocaleLowerCase();}
@@ -11781,6 +11847,11 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
     else if(inside.length===1){selectItem(typeOfItem(inside[0])||"equip",inside[0]);}
   };
   svg.addEventListener("pointerup",mqEnd);svg.addEventListener("pointercancel",mqEnd);
+  window.addEventListener("keydown",e=>{   /* 2.679 — 연결선: Enter 완료 · Esc 취소 */
+    if(state.tool!=="link"||!_link)return;
+    if(e.key==="Enter"){e.preventDefault();linkFinish(false);}
+    else if(e.key==="Escape"){e.preventDefault();linkCancel();toast("연결선 취소");}
+  });
   window.addEventListener("keydown",e=>{
     if(e.key!=="Backspace"&&e.key!=="Delete")return;
     const t=e.target;if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return;
