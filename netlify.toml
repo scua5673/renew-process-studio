@@ -1,0 +1,4 @@
+# 정적 PWA — 빌드 없음, 저장소 루트를 그대로 배포
+[build]
+  publish = "."
+  command = ""
