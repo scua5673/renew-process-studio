@@ -4066,6 +4066,13 @@ function syncNowCore(reason){
           /* 주간 일정은 날짜 단위, 선수단·경기는 항목 단위 병합 —
              둘이 서로 다른 곳을 고치면 둘 다 살린다 */
           if(MERGE_KEYS[k]){
+            /* 2.678 — 기준본이 없으면 병합하지 않는다. 기준본 없는 3-way 는 양쪽을 «추가»로 보고 합쳐 버린다
+               (실측 9/7 21:36 풋볼A: 2.675 지우기가 기준본을 비운 기기가 선수단 44→92·스카우트 44→104 중복을 올림).
+               팀 것(서버)을 받고, 이 기기 편집은 다음 편집 때 다시 올라간다. */
+            if(COPIES_OFF&&!syncBaseGet(k)){
+              if(kvWrite(k,row.v,writes,loc,k===SCHEDULE_KEY?scheduleGuard:null)){ applied++;if(k===SCHEDULE_KEY)scheduleAppliedPlanned++; m.h[k]=hash(row.v); m.c[k]=row.cupd; nSet(m,k,row.v); syncBaseSet(k,row.v); }
+              return;
+            }
             var mg=MERGE_LIST[k]
               ? mergeByIdDoc(syncBaseGet(k),loc,row.v,MERGE_LIST[k].list,MERGE_LIST[k].id)
               : mergeCoachWeeks(syncBaseGet(k),loc,row.v);
@@ -4078,6 +4085,13 @@ function syncNowCore(reason){
              단, 서버본이 내 것과 글자 하나까지 같으면 실제로 밀린 게 없다 → 알리지 않는다(1.526).
              이 헛알림 때문에 스무 개가 한꺼번에 뜨는 일이 있었다. */
           if(row.v===loc){ m.h[k]=lh; m.c[k]=row.cupd; nSet(m,k,loc); return; }
+          /* 2.678 — 사본 없는 모드에선 «팀 것이 정본»: 양쪽이 같이 바뀌면 서버를 받는다(사용자 "데이터베이스 기반").
+             로컬 승은 낡은 기기·중복 목록이 팀 자료를 덮는 길이었다(9/7 경기 점수 47개·선수단 중복). 급감 보류(2.626)는 이 앞의
+             dirty&&!srvChanged 길에서 그대로 산다. */
+          if(COPIES_OFF){
+            if(kvWrite(k,row.v,writes,loc,k===SCHEDULE_KEY?scheduleGuard:null)){ applied++;if(k===SCHEDULE_KEY)scheduleAppliedPlanned++; m.h[k]=hash(row.v); m.c[k]=row.cupd; nSet(m,k,row.v); syncBaseSet(k,row.v); }
+            return;
+          }
           try{ (COPIES_OFF||localStorage.setItem('ps_sync_conflict_'+k,row.v)); }catch(_){}
           conflictNote(k);
           /* 1.573 — 충돌에서 로컬이 이기더라도 크게 줄어든 값이면 멈춘다.
