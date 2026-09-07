@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>스카우팅 · 후보 선수 DB</title>
+<script>document.documentElement.classList.add('ps-page-scouting')</script>
+<script src="storage.js"></script>
+<script src="/vendor/qrcode.js"></script><!-- 2.617 -->
+<script src="profile-sheet.js"></script><!-- 2.617 — 프로필 한 장(A4) · scout.html 과 공용 -->
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<style>
+/* 스카우팅 v1 — 후보 선수 DB. 토큰은 에디터형 리디자인 정본(피그마 핸드오프 §3) 값 그대로, 새 색 없음 */
+:root{
+  --ink:#0f1420;--text:#374151;--text2:#4b5563;--muted:#646A73;--faint:#8A9099;--ghost:#b3bac6;
+  --border:#e6e8ee;--border2:#eef0f4;--surface:#fff;--bg:#f7f8fa;--canvas:#eceef2;--chip:#f2f4f7;
+  --accent:#3a6df0;--accent-soft:#edf2fe;--accent-text:#2c54c4;   /* 2.018 — 앱 파랑 하나로(3a6df0) */--red:#c92a3d;--green:#0e7a5f;--amber:#d97706;
+}
+body.fmdark{
+  --ink:#ECEFF4;--text:#C6CDD6;--text2:#AEB6C2;--muted:#8B93A0;--faint:#8A9099;--ghost:#565E6A;
+  --border:#23262C;--border2:#1C2027;--surface:#15181D;--bg:#0C0E11;--canvas:#101216;--chip:#1C2027;
+  --accent-soft:#16233F;--accent-text:#7DA4F5;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;margin:0;}
+body{background:var(--bg);color:var(--text);font-family:'Pretendard Variable','Pretendard',-apple-system,system-ui,'Apple SD Gothic Neo',sans-serif;font-size:14px;line-height:1.5;overflow:hidden;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;color:var(--text);}
+/* ── 상단바 50px ── */
+.sc-top{display:flex;align-items:center;gap:12px;height:50px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border);}
+.sc-title{font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;}
+.sc-count{font-size:11px;color:var(--faint);white-space:nowrap;}
+.sc-search{flex:1 1 auto;display:flex;align-items:center;gap:7px;max-width:520px;height:34px;padding:0 11px;border:1px solid var(--border);border-radius:8px;background:var(--bg);}
+.sc-search svg{flex:0 0 auto;color:var(--muted);}
+.sc-search input{flex:1;border:0;background:transparent;outline:0;font-size:13px;min-width:0;}
+.sc-search input::placeholder{color:var(--ghost);}
+.sc-top .spacer{flex:1 0 8px;}
+.sc-tbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:13px;font-weight:600;white-space:nowrap;}
+.sc-tbtn:hover{background:var(--chip);}
+/* ── 팀 아이덴티티 밴드 ── */
+.sc-band{display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;background:var(--surface,#fff);border-bottom:3px solid var(--band,#2563eb);}   /* 2.592 — 파란 통판 → 흰 줄, 팀 색은 밑선 3px 로만(색 고르기·엠블럼 기능 그대로). 앱에서 유일한 «채운 띠» 였다 */
+.sc-emblem{flex:0 0 30px;width:30px;height:30px;padding:0;border:1px dashed rgba(255,255,255,.55);border-radius:50%;background:rgba(255,255,255,.14);color:var(--bandtxt,#fff);font-size:13px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.sc-emblem img{width:100%;height:100%;object-fit:cover;}
+.sc-emblem.has{border-style:solid;border-color:rgba(255,255,255,.4);background:var(--surface);}
+.sc-bandname{flex:1 1 auto;min-width:0;max-width:340px;height:32px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--text,#14161A);font-size:13px;font-weight:800;outline:0;}
+.sc-bandname::placeholder{color:var(--faint);opacity:1;}
+.sc-bandname:focus{background:var(--surface-2);}
+.sc-bandcolor{margin-left:auto;display:inline-flex;align-items:center;gap:6px;color:var(--dim);font-size:11px;font-weight:600;cursor:pointer;}
+.sc-bandcolor input{width:22px;height:22px;padding:0;border:1px solid #D3D7DD;border-radius:50%;background:transparent;cursor:pointer;-webkit-appearance:none;appearance:none;}
+.sc-bandcolor input::-webkit-color-swatch-wrapper{padding:1px;}
+.sc-bandcolor input::-webkit-color-swatch{border:0;border-radius:50%;}
+/* ── 본문 3패널 ── */
+.sc-main{display:flex;height:calc(100% - 94px);}
+/* 레일 폭 = 내용물에 딱 맞춤(가장 긴 라벨 기준) — 긴 커스텀 태그만 140px에서 말줄임 */
+.sc-rail{flex:0 0 auto;width:max-content;max-width:140px;overflow-y:auto;padding:8px 6px;background:var(--surface);border-right:1px solid var(--border);}
+.sc-sec{margin:0 0 2px;padding-left:8px;font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--faint);}
+.sc-sec:not(:first-child){margin-top:7px;}
+.sc-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.sc-chip{padding:4px 10px;border:1px solid var(--border);border-radius:99px;background:var(--surface);color:var(--text2);font-size:11px;font-weight:600;}
+.sc-chip.on{background:var(--ink);border-color:var(--ink);color:var(--surface);}
+.sc-chip.add{border-style:dashed;color:var(--muted);}
+/* 필터 초기화 — 다른 행과 같은 왼쪽 정렬 리스트 행(타이트) */
+.sc-reset{margin-top:7px;width:100%;padding:2px 8px;border:0;border-radius:6px;background:transparent;color:var(--muted);font-size:11px;font-weight:600;text-align:left;line-height:1.5;white-space:nowrap;}
+.sc-reset:hover{background:var(--chip);}
+/* 좌측 레일 필터 — 1열 리스트, 여백 최소(컴팩트). 활성은 내비 아이템 문법(accent-soft). 상세 패널 칩은 그대로 */
+.sc-rail .sc-chips{flex-direction:column;gap:0;}
+.sc-rail .sc-chip{width:100%;text-align:left;padding:2px 8px;border:0;border-radius:6px;background:transparent;color:var(--text2);font-size:11px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-rail .sc-chip:hover{background:var(--chip);}
+.sc-rail .sc-chip.on{background:var(--accent-soft);color:var(--accent-text);font-weight:600;}
+.sc-rail .sc-chip.add{border:0;color:var(--muted);font-size:11px;text-align:left;}
+.sc-empty-phone{display:none;}
+/* ── 중앙 ── */
+.sc-center{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;background:var(--canvas);}
+.sc-quick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border2);}
+.sc-quick .ql{font-size:11px;font-weight:600;color:var(--faint);letter-spacing:.04em;}
+.sc-quick input{height:32px;padding:0 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:13px;outline:0;}
+.sc-quick input:focus{border-color:var(--accent);}
+.sc-quick .qname{width:140px;}.sc-quick .qclub{width:130px;}
+.sc-qpos{display:flex;flex-wrap:wrap;gap:3px;}
+.sc-qpos button{padding:3px 7px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--muted);font-size:10px;font-weight:600;}
+.sc-qpos button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+/* 폰 연속 기록 — ＋ 플로팅 버튼과 기록 시트 (폰에서만 표시) */
+.sc-fab{display:none;position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:54px;height:54px;border:0;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:26px;font-weight:600;box-shadow:0 6px 18px rgba(15,23,42,.25);z-index:55;}
+.sc-qsheet{display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--surface);border-top:1px solid var(--border);
+  border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(15,23,42,.25);padding:14px 16px calc(14px + env(safe-area-inset-bottom));}
+.sc-qsheet.on{display:block;}
+.sc-qsheet .qs-hd{display:flex;align-items:center;margin-bottom:10px;}
+.sc-qsheet .qs-hd b{flex:1;font-size:13px;color:var(--ink);}
+.sc-qsheet input{width:100%;height:40px;margin-bottom:8px;padding:0 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);font-size:14px;outline:0;}
+.sc-qsheet input:focus{border-color:var(--accent);}
+.sc-qsheet .qs-pos{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.sc-qsheet .qs-pos button{min-width:42px;padding:7px 0;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:600;}
+.sc-qsheet .qs-pos button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+.sc-qsheet .qs-actions{display:flex;gap:8px;}
+.sc-qsheet .qs-next{flex:1;height:42px;border:0;border-radius:9px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;}
+.sc-qsheet .qs-done{flex:0 0 84px;height:42px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text2);font-size:13px;font-weight:600;}
+.sc-qadd{height:32px;padding:0 15px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;box-shadow:0 3px 10px rgba(37,99,235,.3);}
+.sc-grid-wrap{flex:1 1 auto;overflow-y:auto;padding:14px;}
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.sc-card{display:flex;gap:10px;align-items:center;padding:11px;border:1px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer;transition:box-shadow .12s ease,transform .12s ease;}
+.sc-card:hover{box-shadow:0 8px 24px rgba(15,23,42,.12);transform:translateY(-1px);}
+.sc-card.sel{border-color:var(--accent);background:var(--accent-soft);}
+.sc-ava{flex:0 0 44px;width:44px;height:44px;border-radius:10px;background:var(--chip);color:var(--muted);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.sc-ava img{width:100%;height:100%;object-fit:cover;}
+.sc-cbody{min-width:0;flex:1;}
+.sc-cname{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-grade{flex:0 0 auto;min-width:18px;padding:1px 5px;border-radius:6px;background:var(--ink);color:var(--surface);font-size:10px;font-weight:800;text-align:center;}
+.sc-cmeta{margin-top:2px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-cpos{margin-top:4px;display:flex;flex-wrap:wrap;gap:3px;}
+.sc-cpos span{padding:1px 6px;border-radius:5px;background:var(--chip);color:var(--text2);font-size:10px;font-weight:600;}
+.sc-empty{padding:60px 20px;text-align:center;color:var(--muted);}
+.sc-attach{margin-top:6px;height:24px;padding:0 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text2);font-size:10px;font-weight:600;}
+.sc-attach.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+.sc-attach:hover{background:var(--chip);}
+.sc-empty b{display:block;margin-bottom:6px;color:var(--ink);font-size:14px;}
+/* ── 우측 상세 ── */
+.sc-detail{flex:0 0 300px;overflow-y:auto;background:var(--surface);border-left:1px solid var(--border);display:none;}
+.sc-detail.on{display:block;}
+.sc-dhead{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border2);position:sticky;top:0;background:var(--surface);z-index:2;}
+.sc-dhead .t{flex:1;font-size:13px;font-weight:800;color:var(--ink);}
+.sc-x{width:26px;height:26px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:14px;}
+.sc-x:hover{background:var(--chip);}
+.sc-dbody{padding:14px;}
+.sc-photo{position:relative;width:96px;height:96px;margin:0 auto 6px;border-radius:14px;background:var(--chip);color:var(--muted);font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.sc-photo img{width:100%;height:100%;object-fit:cover;}
+.sc-photorow{display:flex;justify-content:center;gap:6px;margin-bottom:12px;}
+.sc-mini{height:24px;padding:0 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--muted);font-size:10px;font-weight:600;}
+.sc-frow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.sc-frow>label{flex:0 0 52px;font-size:11px;font-weight:600;color:var(--faint);}
+.sc-frow>input,.sc-frow>select{flex:1;min-width:0;height:28px;padding:0 9px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:13px;outline:0;}
+.sc-frow>input:focus{border-color:var(--accent);}
+.sc-frow>.fx{flex:0 0 16px;border:0;background:none;color:var(--ghost);font-size:12px;padding:0;cursor:pointer;}
+.sc-frow .half{flex:1 1 0;}
+.sc-dpos{display:flex;flex-wrap:wrap;gap:3px;flex:1;}
+.sc-dpos button{padding:3px 7px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--muted);font-size:10px;font-weight:600;}
+.sc-dpos button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+.sc-dtags{display:flex;flex-wrap:wrap;gap:4px;flex:1;}
+.sc-dsec{margin:16px 0 8px;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--faint);}
+.sc-frow>textarea.sc-ta{flex:1;min-width:0;min-height:58px;padding:6px 9px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font:inherit;font-size:13px;line-height:1.4;color:inherit;resize:vertical;outline:0;}.sc-frow>textarea.sc-ta:focus{border-color:var(--accent);}
+.sc-frow>label.top{align-self:flex-start;padding-top:7px;}
+.sc-contact{display:flex;gap:5px;margin-bottom:6px;}
+.sc-contact select{flex:0 0 82px;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:11px;}
+.sc-contact input{flex:1;min-width:0;height:28px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:12px;outline:0;}
+.sc-contact .del{flex:0 0 26px;border:0;border-radius:6px;background:transparent;color:var(--ghost);}
+.sc-rate{flex:1;display:flex;align-items:center;gap:3px;}
+.sc-rate button{flex:1;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--ghost);font-size:11px;font-weight:600;}
+.sc-rate button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+.sc-rate .rd{flex:0 0 16px;height:auto;border:0;background:none;color:var(--ghost);font-size:11px;padding:0;}
+.sc-grade.avg{background:var(--chip);color:var(--text2);}
+.sc-gr{display:flex;gap:4px;}
+.sc-gr button{flex:1;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:800;}
+.sc-gr button.on{background:var(--ink);border-color:var(--ink);color:var(--surface);}
+textarea.sc-memo{width:100%;min-height:64px;padding:8px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:13px;resize:vertical;outline:0;}
+textarea.sc-memo:focus{border-color:var(--accent);}
+.sc-obs-add{display:flex;gap:6px;margin-bottom:8px;}
+.sc-obs-add input{flex:1;height:28px;padding:0 9px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:12px;outline:0;}
+.sc-obs-add button{height:28px;padding:0 11px;border:1px solid var(--border);border-radius:6px;background:var(--surface);font-size:11px;font-weight:600;color:var(--text2);}
+.sc-obs{list-style:none;margin:0;padding:0;}
+.sc-vids{list-style:none;margin:0;padding:0;}
+.sc-vids li{padding:6px 9px;margin-bottom:5px;border:1px solid var(--border2);border-radius:8px;background:var(--bg);font-size:11px;}
+.sc-vids li .d{font-size:10px;color:var(--faint);font-weight:600;margin-bottom:1px;display:flex;justify-content:space-between;}
+.sc-vids li .rm{border:0;background:none;color:var(--ghost);font-size:10px;cursor:pointer;}
+.sc-vids li a{display:block;color:var(--accent-text);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-vids li a:hover{text-decoration:underline;}
+.sc-obs li{padding:7px 9px;margin-bottom:5px;border:1px solid var(--border2);border-radius:8px;background:var(--bg);font-size:12px;}
+.sc-obs li .d{font-size:10px;color:var(--faint);font-weight:600;margin-bottom:1px;display:flex;justify-content:space-between;}
+.sc-obs li .rm{border:0;background:none;color:var(--ghost);font-size:10px;cursor:pointer;}
+.sc-danger{margin-top:20px;width:100%;height:32px;border:1px solid #ecc9c6;border-radius:8px;background:transparent;color:var(--red);font-size:12px;font-weight:600;}
+.sc-privacy{margin-top:10px;font-size:10px;color:var(--faint);line-height:1.5;}
+/* ── 포인트 설정·평가지 ── */
+.sc-ptset,.sc-pteval{display:none;position:fixed;inset:0;z-index:80;background:var(--bg);flex-direction:column;}
+.sc-ptset.on,.sc-pteval.on{display:flex;}
+.sc-ptset-body,.sc-pteval-body{flex:1;min-height:0;overflow-y:auto;padding:14px;max-width:860px;width:100%;margin:0 auto;}
+.pt-group{margin-bottom:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);overflow:hidden;}
+.pt-group-h{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--border2);}
+.pt-group-h input.gname{flex:0 0 220px;height:28px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:13px;font-weight:600;outline:0;}
+.pt-group-h .gpos{flex:1;display:flex;flex-wrap:wrap;gap:3px;}
+.pt-group-h .gpos button{padding:2px 6px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--muted);font-size:10px;font-weight:600;}
+.pt-group-h .gpos button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);}
+.pt-group-h .gdel{border:0;background:none;color:var(--ghost);font-size:13px;cursor:pointer;}
+.pt-group textarea{display:block;width:100%;min-height:120px;padding:10px 12px;border:0;background:transparent;font-size:12px;line-height:1.7;resize:vertical;outline:0;color:var(--text);}
+.pt-sec{margin:14px 0 6px;font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--faint);}
+.pt-q{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border2);}
+.pt-q .qt{flex:1;font-size:13px;color:var(--text);}
+.pt-q .sc-rate{flex:0 0 170px;}
+.pt-empty{padding:40px;text-align:center;color:var(--muted);}
+
+/* 1.926 — 포지션 그룹 카드 격자 */
+.pt-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:2px 0 8px;}
+/* 1.976 — 접이식 카드(사용자): 한 열 목록, 머리(이름·포지션·질문 수·화살표) 누르면 그 자리에서 펼침. 데스크톱은 카드 폭 넓게 */
+.pt-cards.pt-acc{grid-template-columns:minmax(0,1fr);gap:8px;max-width:920px;}
+.pt-acc .pt-card{display:block;min-height:0;padding:0;overflow:hidden;cursor:default;}
+.pt-acc .pt-card:hover{box-shadow:none;border-color:var(--border);}
+.pt-acc .pt-card.open{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+.pt-acc .pc-head{display:grid;grid-template-columns:minmax(0,1fr) auto 18px;align-items:center;gap:10px;width:100%;min-height:56px;padding:12px 14px 12px 16px;border:0;background:transparent;text-align:left;font-family:inherit;cursor:pointer;}
+.pt-acc .pc-head:hover{background:var(--bg);}
+.pt-acc .pc-main{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-width:0;}
+.pt-acc .pc-name{font-size:14px;}
+.pt-acc .pc-meta{white-space:nowrap;}
+.pt-acc .pc-chev{width:18px;height:18px;position:relative;}
+.pt-acc .pc-chev::before{content:"";position:absolute;left:5px;top:4px;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s;}
+.pt-acc .pt-card.open .pc-chev::before{transform:rotate(-135deg);top:8px;}
+.pt-acc .pt-card>.pt-group{margin:0;border:0;border-top:1px solid var(--border);border-radius:0;padding:12px 14px 14px;}
+@media (max-width:640px){.pt-acc .pc-head{grid-template-columns:minmax(0,1fr) 18px;padding:12px 12px 12px 14px;} .pt-acc .pc-meta{grid-column:1;grid-row:2;font-size:11px;} .pt-acc .pc-chev{grid-row:1/3;} .pt-acc .pt-card>.pt-group{padding:10px 10px 12px;}}
+.pt-card{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:118px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--surface);text-align:left;font-family:inherit;cursor:pointer;
+  box-shadow:0 1px 2px var(--sh04,rgba(16,24,40,.04));transition:border-color .12s,box-shadow .12s,transform .12s;}
+.pt-card:hover{border-color:var(--accent);box-shadow:0 6px 18px -10px var(--sh35,rgba(16,24,40,.35));}
+.pt-card:active{transform:scale(.99);}
+.pt-card .pc-name{font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.01em;line-height:1.3;}
+.pt-card .pc-pos{display:flex;flex-wrap:wrap;gap:4px;}
+.pt-card .pc-pos i{font-style:normal;padding:2px 7px;border-radius:6px;background:var(--accent-soft);color:var(--accent-text);font-size:10px;font-weight:800;}
+.pt-card .pc-pos i.none{background:var(--bg);color:var(--muted);}
+.pt-card .pc-meta{font-size:12px;color:var(--muted);font-weight:600;}
+.pt-card .pc-go{margin-top:auto;font-size:12px;font-weight:800;color:var(--accent);}
+.pt-back{display:inline-flex;align-items:center;min-height:36px;margin:0 0 10px;padding:0 10px 0 4px;border:0;border-radius:8px;background:transparent;color:var(--accent);font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;}
+.pt-back:hover{background:var(--accent-soft);}
+/* 1.866 — 스카우팅 포인트 시트 */
+.pt-sheetbar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border2);background:var(--bg);}
+.pt-sheetbar .sc-mini:last-child{margin-left:auto;}
+.pt-sheet{width:100%;font-size:13px;background:var(--surface);}
+.pt-sh,.pt-sr{display:grid;grid-template-columns:34px 160px minmax(0,1fr) 84px;align-items:stretch;}
+.pt-sh{background:var(--chip,#f1f2f4);color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.03em;border-bottom:1px solid var(--border);}
+.pt-sh span,.pt-sr .n{padding:7px 8px;border-right:1px solid var(--border2);}
+.pt-sh span:last-child{border-right:0;}
+.pt-sr{border-bottom:1px solid var(--border2);}
+.pt-sr.first .sec{font-weight:800;color:var(--text);}
+.pt-sr:not(.first) .sec{color:var(--ghost);}
+.pt-sr .n{display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;color:var(--muted);background:var(--bg);}
+.pt-sr .c{width:100%;height:34px;padding:0 9px;border:0;border-right:1px solid var(--border2);background:transparent;font:inherit;font-size:13px;color:var(--text);outline:0;min-width:0;}
+.pt-sr .c:focus{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent);position:relative;z-index:1;}
+.pt-sr .ops{display:flex;align-items:center;justify-content:center;gap:2px;}
+.pt-sr .ops button{width:24px;height:24px;border:0;border-radius:6px;background:transparent;color:var(--ghost);font-size:12px;cursor:pointer;}
+.pt-sr .ops button:hover{background:var(--chip);color:var(--text);}
+.pt-sr.empty{display:block;padding:14px;color:var(--muted);text-align:center;}
+@media (max-width:640px){.pt-sh,.pt-sr{grid-template-columns:28px 96px minmax(0,1fr) 72px;} .pt-sr .c{font-size:12px;height:32px;padding:0 6px;}}
+/* 포인트 전용 임베드 — 본문·밴드·FAB 숨기고 편집기를 페이지 전체로 */
+/* ══ 2.012 · 스카우팅 포인트 페이지 재설계(사용자) — 포지션 그룹 카드: 역할군 색 배지 · 이름 · 포지션 칩 · 섹션 칩 미리보기 · 문항/섹션 수. 평가표: 요약 띠 + 섹션 헤더(평균·응답) + 번호 질문 + 말 붙은 1~5 ══ */
+.pt-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 12px;}
+.pt-intro p{margin:0;font-size:13px;color:var(--muted);line-height:1.5;}
+.pt-stats{display:flex;gap:6px;flex-wrap:wrap;}
+.pt-stats span{display:inline-flex;align-items:baseline;gap:4px;padding:5px 10px;border:1px solid var(--border);border-radius:999px;background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);}
+.pt-stats span b{font-size:13px;color:var(--ink);font-weight:800;}
+.pt-acc .pc-head{grid-template-columns:40px minmax(0,1fr) auto 18px;gap:12px;padding:12px 14px 12px 12px;}
+.pc-badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:11px;font-weight:800;letter-spacing:.02em;color:#fff;background:var(--muted);flex:0 0 auto;}
+.pc-badge.gk{background:#3A86C8;} .pc-badge.def{background:#2E7D63;} .pc-badge.mid{background:#B5762B;} .pc-badge.fw{background:#C24A46;} .pc-badge.etc{background:#6b727a;}
+.pt-acc .pc-main{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;}
+.pt-acc .pc-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;min-width:0;}
+.pt-acc .pc-name{font-size:16px;letter-spacing:-.015em;}
+.pt-acc .pc-secs{display:flex;flex-wrap:wrap;gap:4px;}
+.pt-acc .pc-secs i{font-style:normal;font-size:10px;font-weight:600;color:var(--muted);background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:1px 6px;}
+.pt-acc .pc-secs i.more{border-style:dashed;}
+.pt-acc .pc-meta{display:flex;gap:10px;align-items:baseline;font-size:11px;color:var(--muted);font-weight:600;}
+.pt-acc .pc-meta b{font-size:16px;color:var(--ink);font-weight:800;letter-spacing:-.02em;}
+.pt-acc .pt-card.open .pc-head{background:var(--accent-soft);}
+.pt-acc .pt-card>.pt-group{border-top:2px solid var(--accent-soft);}
+@media (max-width:640px){
+  .pt-acc .pc-head{grid-template-columns:34px minmax(0,1fr) 18px;gap:10px;padding:11px 12px 11px 11px;}
+  .pc-badge{width:34px;height:34px;border-radius:10px;font-size:10px;}
+  .pt-acc .pc-name{font-size:14px;}
+  .pt-acc .pc-head .pc-badge{grid-column:1;grid-row:1/3;} .pt-acc .pc-head .pc-main{grid-column:2;grid-row:1;} .pt-acc .pc-head .pc-chev{grid-column:3;grid-row:1/3;}
+  .pt-acc .pc-meta{grid-column:2;grid-row:2;} .pt-acc .pc-meta b{font-size:14px;}
+  .pt-acc .pc-secs{display:none;}
+}
+/* 평가표 */
+.sc-pteval-body{max-width:920px;padding:0 14px 40px;}
+.pe-sum{position:sticky;top:0;z-index:2;background:var(--bg);padding:12px 0 10px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+.pe-sum-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.pe-avg{display:flex;align-items:baseline;gap:6px;}
+.pe-avg b{font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--ink);line-height:1;}
+.pe-avg small{font-size:12px;color:var(--muted);font-weight:600;}
+.pe-prog{flex:1 1 200px;min-width:160px;}
+.pe-prog .bar{height:6px;border-radius:6px;background:var(--chip);overflow:hidden;}
+.pe-prog .bar i{display:block;height:100%;background:var(--accent);border-radius:6px;}
+.pe-prog small{display:block;margin-top:4px;font-size:11px;color:var(--muted);font-weight:600;}
+.pe-legend{display:flex;gap:4px;flex-wrap:wrap;}
+.pe-legend span{font-size:10px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px 7px;}
+.pe-legend span b{color:var(--ink);margin-right:2px;}
+.pe-only{margin-left:auto;font-size:11px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
+.pe-secs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.pe-secs button{border:1px solid var(--border);background:var(--surface);border-radius:6px;padding:5px 9px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;display:inline-flex;gap:6px;align-items:baseline;font-family:inherit;}
+.pe-secs button b{color:var(--ink);}
+.pe-secs button.done{border-color:#BFE3D2;background:#F4FBF7;}
+.pe-sech{display:flex;align-items:baseline;gap:10px;margin:18px 0 6px;padding-bottom:6px;border-bottom:2px solid var(--border);}
+.pe-sech b{font-size:13px;font-weight:800;color:var(--ink);}
+.pe-sech small{font-size:11px;color:var(--muted);font-weight:600;}
+.pe-sech .avg{margin-left:auto;font-size:12px;font-weight:800;color:var(--accent-text);}
+.pe-q{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2);}
+.pe-q.done{background:linear-gradient(to right,transparent,transparent);}
+.pe-q .n{width:26px;height:26px;border-radius:50%;background:var(--chip);color:var(--muted);font-size:11px;font-weight:800;display:grid;place-items:center;}
+.pe-q.done .n{background:var(--accent);color:#fff;}
+.pe-q .qt{font-size:13px;color:var(--text);line-height:1.5;}
+.pe-rate{display:flex;gap:4px;}
+.pe-rate button{width:44px;height:32px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--muted);font-family:inherit;display:grid;place-items:center;line-height:1;cursor:pointer;padding:0;}
+.pe-rate button b{font-size:13px;font-weight:800;color:var(--text);}
+.pe-rate button small{font-size:10px;font-weight:600;color:var(--faint);margin-top:2px;white-space:nowrap;}
+.pe-rate button.on{background:var(--accent);border-color:var(--accent);}
+.pe-rate button.on b,.pe-rate button.on small{color:#fff;}
+.pe-rate button.lt{background:var(--accent-soft);border-color:var(--accent-soft);}
+.pe-rate button.lt b{color:var(--accent-text);}
+@media (max-width:640px){
+  .pe-q{grid-template-columns:22px minmax(0,1fr);row-gap:6px;}
+  .pe-q .n{width:22px;height:22px;font-size:10px;}
+  .pe-rate{grid-column:2;}
+  .pe-rate button{flex:1;width:auto;height:32px;} .pe-rate button small{display:none;}
+  .pe-avg b{font-size:24px;}
+  #ptEvalSum{display:none;}
+  .pe-secs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;} .pe-secs button{white-space:nowrap;flex:0 0 auto;}
+  .pe-sum{padding:10px 0 8px;}
+}
+body.sc-points-only .sc-top,body.sc-points-only .sc-band,body.sc-points-only .sc-main,body.sc-points-only .sc-fab{display:none!important;}
+body.sc-points-only .sc-ptset{position:static;height:100%;}
+body.sc-points-only .sc-ptset .sc-meet-top b{font-size:14px;}
+/* 1.873 — 임베드(팀>스카우팅>스카우팅 포인트): 가운데 860 고정폭·좌우 여백 없이 전폭(사용자) — 다른 탭 카드와 같은 폭 */
+body.sc-points-only{background:transparent;}   /* 부모(팀 탭) 배경 위에 그룹 카드만 */
+body.sc-points-only .sc-ptset{background:transparent;}
+body.sc-points-only .sc-ptset-body{max-width:none;padding:0 0 24px;}
+body.sc-points-only .sc-ptset .sc-meet-top{padding:10px 0 12px;}
+body.sc-points-only .pt-group{margin-bottom:14px;}
+body.sc-points-only .pt-empty{padding:28px 0;}
+.sc-ptsel{height:30px;padding:0 8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);font-size:12px;max-width:240px;}
+/* ── 회의모드 ── */
+.sc-meet{display:none;position:fixed;inset:0;z-index:70;background:var(--canvas);flex-direction:column;}
+.sc-meet.on{display:flex;}
+.sc-meet-top{display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border);}
+.sc-meet-top b{font-size:13px;color:var(--ink);}
+.sc-meet-top .mm-note{flex:1;font-size:10px;color:var(--faint);}
+.sc-meet-filters{display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:7px 14px;background:var(--surface);border-bottom:1px solid var(--border);}
+.mf-sec{margin:0 2px 0 8px;font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--faint);}
+.mf-sec:first-child{margin-left:0;}
+.mf-chip{padding:3px 10px;border:1px solid var(--border);border-radius:99px;background:var(--surface);color:var(--text2);font-size:11px;font-weight:600;}
+.mf-chip.on{background:var(--ink);border-color:var(--ink);color:var(--surface);}
+.mf-chip.reset{margin-left:auto;color:var(--muted);}
+.sc-meet-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;}
+.sc-meet-pitch{position:relative;width:min(100%,1100px);aspect-ratio:1000/640;}
+.sc-meet-pitch>svg{position:absolute;inset:0;width:100%;height:100%;}
+.mm-slot{position:absolute;transform:translate(-50%,-50%);min-width:86px;max-width:130px;padding:5px 7px;border-radius:10px;
+  background:rgba(255,255,255,.94);box-shadow:0 6px 18px rgba(15,23,42,.18);}
+.mm-slot.empty{background:rgba(255,255,255,.42);box-shadow:none;}
+.mm-slot .t{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:800;color:#0f1420;letter-spacing:.03em;}
+.mm-slot .t .n{color:var(--dim);font-weight:600;}
+.mm-slot.empty .t{color:rgba(15,20,32,.55);}
+.mm-slot ul{list-style:none;margin:3px 0 0;padding:0;max-height:96px;overflow-y:auto;}
+.mm-slot li{display:flex;align-items:center;gap:4px;padding:2px 3px;border-radius:6px;font-size:11px;font-weight:600;color:#1f2937;cursor:pointer;white-space:nowrap;}
+.mm-slot li:hover{background:#eef4ff;}
+.mm-slot li .g{margin-left:auto;padding:0 4px;border-radius:5px;background:#0f1420;color:#fff;font-size:10px;font-weight:800;}
+body.fmdark .mm-slot{background:rgba(21,24,29,.94);}
+body.fmdark .mm-slot .t{color:#ECEFF4;}
+body.fmdark .mm-slot li{color:#C6CDD6;}
+body.fmdark .mm-slot li:hover{background:#16233F;}
+body.fmdark .mm-slot.empty{background:rgba(21,24,29,.45);}
+body.fmdark .mm-slot.empty .t{color:rgba(236,239,244,.5);}
+.sc-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);padding:8px 16px;border-radius:99px;background:rgba(15,20,32,.85);color:#fff;font-size:11px;opacity:0;pointer-events:none;transition:opacity .15s ease;z-index:99;}
+.sc-toast.on{opacity:1;}
+/* 모바일 — 현장 기록: 레일은 가로 칩, 상세는 시트 */
+@media (max-width:767px){
+  /* 1.976 — 폰 머리: 검색 한 줄 + 도구 4개 한 줄로 줄바꿈(전엔 한 줄에 다 넣어 페이지 폭이 478px 로 늘어나 화면이 가로로 잘렸다) */
+  .sc-top{gap:6px 6px;padding:8px 10px;height:auto;flex-wrap:wrap;}
+  .sc-top .sc-search{flex:1 1 100%;order:-1;}
+  .sc-top .spacer{display:none;}
+  .sc-top .sc-tbtn{flex:1 1 0;min-width:0;justify-content:center;height:32px;}
+  .sc-title{display:none;}
+  .sc-count{display:none;}
+  .sc-tbtn{padding:0 8px;font-size:11px;}
+  .sc-main{flex-direction:column;}
+  .sc-rail{flex:0 0 auto;display:flex;width:100%;max-width:none;gap:14px;overflow-x:auto;overflow-y:hidden;padding:8px 10px;border-right:0;border-bottom:1px solid var(--border);white-space:nowrap;}   /* 1.896 — 데스크톱 max-width:140px 이 폰 가로 레일까지 잘라 흰 조각으로 보였다 */
+  .sc-rail{scrollbar-width:none;}.sc-rail::-webkit-scrollbar{display:none;}
+  .sc-rail .sc-sec{display:none;}
+  /* 폰 가로 스크롤 레일에서는 다시 알약 가로 나열 */
+  .sc-rail .sc-chips{flex-direction:row;flex-wrap:nowrap;gap:5px;}
+  .sc-rail .sc-chip{width:auto;border:1px solid var(--border);border-radius:99px;padding:4px 10px;background:var(--surface);color:var(--text2);font-size:11px;}
+  .sc-rail .sc-chip.on{background:var(--ink);border-color:var(--ink);color:var(--surface);font-weight:600;}
+  .sc-reset{display:none;}
+  .sc-grid{grid-template-columns:1fr;}
+  .sc-quick{display:none;}   /* 폰은 ＋버튼 → 연속 기록 시트 */
+  .sc-empty-desk{display:none;}   /* 1.896 — 빈 화면 안내도 폰 문법(＋)으로 */
+  .sc-fab{display:flex;align-items:center;justify-content:center;}
+  .sc-detail{position:fixed;inset:auto 0 0 0;top:16%;flex:none;border-left:0;border-top:1px solid var(--border);border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(15,23,42,.25);z-index:50;}
+}
+</style>
+<style id="ps-2205-points">/* ══ 2.205 · 스카우팅 포인트(?view=points 임베드) — 다른 화면과 같은 카드 문법(사용자) ══ */
+body.sc-points-only{background:var(--surface-2)!important}
+body.sc-points-only .sc-ptset{padding:12px 16px 24px!important;box-sizing:border-box}
+body.sc-points-only .sc-ptset>.sc-meet-top{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px 10px!important;padding:16px 18px!important;margin:0 0 12px!important;background:var(--surface)!important;border:1px solid var(--border,#E3E6EA)!important;border-radius:12px!important;box-shadow:none!important;position:static!important;height:auto!important}
+body.sc-points-only .sc-ptset>.sc-meet-top>b{font-size:16px!important;font-weight:600!important;letter-spacing:-.01em;margin-right:auto}
+body.sc-points-only .sc-ptset>.sc-meet-top>b::after{content:"포지션 그룹별 체크 질문 — 후보 평가표가 이 질문을 씁니다";display:block;margin-top:2px;font-size:13px;font-weight:500;color:var(--muted,#646a73)}
+body.sc-points-only .sc-ptset>.sc-meet-top .mm-note{display:none!important}
+body.sc-points-only .sc-ptset>.sc-meet-top .sc-tbtn{height:32px!important;padding:0 12px!important;border:1px solid var(--border,#E3E6EA)!important;border-radius:10px!important;background:var(--surface)!important;font-size:13px!important;font-weight:600!important;color:var(--text,#14161a)!important;white-space:nowrap}
+body.sc-points-only .sc-ptset>.sc-meet-top #ptTemplate{background:var(--accent,#3a6df0)!important;border-color:var(--accent,#3a6df0)!important;color:#fff!important}
+body.sc-points-only .sc-ptset>.sc-meet-top .sc-x{display:none!important}
+body.sc-points-only .sc-ptset-body{padding:0!important;max-width:none!important}
+body.sc-points-only .pt-cards.pt-acc{max-width:none!important;gap:10px!important}
+body.sc-points-only .pt-card{border:1px solid var(--border,#E3E6EA)!important;border-radius:12px!important;background:var(--surface)!important}
+body.sc-points-only .pt-acc .pc-head{min-height:52px!important;padding:12px 16px!important}
+body.sc-points-only .pt-acc .pc-name{font-size:14px!important;font-weight:600!important}
+body.sc-points-only .pt-acc .pc-meta{font-size:13px!important;color:var(--muted,#646a73)!important}
+body.sc-points-only .pt-group-h{padding:10px 12px!important;gap:8px!important;flex-wrap:wrap}
+body.sc-points-only .pt-group-h input.gname{height:32px!important;flex:1 1 180px!important;font-size:13px!important;border-radius:6px!important}
+body.sc-points-only .pt-group-h .gpos{flex:1 0 100%!important;display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin-top:4px}
+body.sc-points-only .pt-group-h .gdel{margin-left:auto}
+body.sc-points-only .pt-group-h .gpos button{height:28px!important;padding:0 9px!important;font-size:12px!important;border-radius:999px!important}
+body.sc-points-only .pt-group textarea{font-size:14px!important;line-height:1.7!important;padding:12px 14px!important}
+body.sc-points-only .pt-empty{padding:28px 16px!important;border:1px dashed var(--border,#d3d7dd);border-radius:12px;background:var(--surface);font-size:14px;line-height:1.6}
+@media (max-width:600px){
+  body.sc-points-only .sc-ptset{padding:10px 12px 24px!important}
+  body.sc-points-only .sc-ptset>.sc-meet-top{padding:14px!important}
+  body.sc-points-only .sc-ptset>.sc-meet-top>b{flex:1 0 100%!important;margin-right:0}
+  body.sc-points-only .sc-ptset>.sc-meet-top .sc-tbtn{flex:1 1 auto!important;text-align:center}
+}
+</style>
+</head>
+<body>
+<script>try{var _t=localStorage.getItem('cs_theme');if(_t==='dark'||(_t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.body.classList.add('fmdark');}catch(_){}</script>
+
+<header class="sc-top">
+  <span class="sc-title">스카우팅</span>
+  <span class="sc-count" id="cnt"></span>
+  <div class="sc-search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input id="q" type="search" placeholder="이름 · 소속(출신) · 포지션으로 바로 찾기" autocomplete="off">
+  </div>
+  <span class="spacer"></span>
+  <button class="sc-tbtn" id="ptSetBtn" type="button">포인트 설정</button>
+  <button class="sc-tbtn" id="meetBtn" type="button">회의모드</button>
+  <button class="sc-tbtn" id="importBtn" type="button">가져오기</button>
+  <button class="sc-tbtn" id="exportBtn" type="button">내보내기</button>
+</header>
+<!-- 팀 아이덴티티 밴드 — 엠블럼·팀 이름·색상을 팀이 직접 설정(범용 — 어떤 구단 색이든) -->
+<div class="sc-band" id="band">
+  <button class="sc-emblem" id="bandEmblem" type="button" title="엠블럼 올리기 (클릭)"></button>
+  <input class="sc-bandname" id="bandName" placeholder="팀 · 스카우팅 보드 이름" autocomplete="off">
+  <label class="sc-bandcolor" title="팀 색상">
+    <input type="color" id="bandColor" value="#2563eb">
+    <span>색상</span>
+  </label>
+</div>
+<input type="file" id="emblemFile" accept="image/*" hidden>
+
+<div class="sc-main">
+  <aside class="sc-rail">
+    <div class="sc-sec">포지션</div>
+    <div class="sc-chips" id="posFilter"></div>
+    <div class="sc-sec">구분</div>
+    <div class="sc-chips" id="tagFilter"></div>
+    <div class="sc-sec">평가</div>
+    <div class="sc-chips" id="gradeFilter"></div>
+    <button class="sc-reset" id="resetBtn" type="button">필터 초기화</button>
+  </aside>
+
+  <section class="sc-center">
+    <!-- 빠른 기록 — 스카우터 필수 3요소: 이름·소속팀·포지션. 데스크톱은 한 줄 바, 폰은 ＋버튼 → 연속 기록 시트 -->
+    <div class="sc-quick">
+      <span class="ql">빠른 기록</span>
+      <input class="qname" id="qkName" placeholder="이름 (Enter로 등록)" autocomplete="off">
+      <input class="qclub" id="qkClub" placeholder="소속팀" autocomplete="off" list="clubList">
+      <div class="sc-qpos" id="qkPos"></div>
+      <button class="sc-qadd" id="qkAdd" type="button">등록</button>
+    </div>
+    <datalist id="clubList"></datalist>
+    <div class="sc-grid-wrap"><div class="sc-grid" id="grid"></div></div>
+  </section>
+
+  <aside class="sc-detail" id="detail"></aside>
+</div>
+
+<!-- 회의모드 — 운동장 카드 위에 포지션별 후보 배치(현재 필터 반영). 빈 포지션은 흐리게 = 영입 공백이 보이게 -->
+<div class="sc-meet" id="meetMode" role="dialog" aria-label="회의모드 — 포지션 보드">
+  <div class="sc-meet-top">
+    <b id="meetTitle">포지션 보드</b>
+    <span class="mm-note">이름을 누르면 프로필로</span>
+    <button class="sc-x" id="meetClose" type="button" aria-label="회의모드 닫기">×</button>
+  </div>
+  <div class="sc-meet-filters" id="meetFilters"></div>
+  <div class="sc-meet-stage"><div class="sc-meet-pitch" id="meetPitch">
+    <svg viewBox="0 0 1000 640" preserveAspectRatio="none" aria-hidden="true">
+      <rect x="0" y="0" width="1000" height="640" rx="14" fill="#2f7d4f"/>
+      <g fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2.5">
+        <rect x="14" y="14" width="972" height="612" rx="6"/>
+        <line x1="500" y1="14" x2="500" y2="626"/>
+        <circle cx="500" cy="320" r="64"/>
+        <rect x="14" y="176" width="118" height="288"/><rect x="14" y="248" width="46" height="144"/>
+        <rect x="868" y="176" width="118" height="288"/><rect x="940" y="248" width="46" height="144"/>
+      </g>
+      <circle cx="500" cy="320" r="4" fill="rgba(255,255,255,.85)"/>
+    </svg>
+  </div></div>
+</div>
+<!-- 스카우팅 포인트 설정 — 포지션 그룹별 체크 질문 세트. 한 줄 = 질문, '## '줄 = 섹션. 팀마다 붙여넣어 커스텀 -->
+<div class="sc-ptset" id="ptSet" role="dialog" aria-label="스카우팅 포인트 설정">
+  <div class="sc-meet-top">
+    <b>스카우팅 포인트 설정</b>
+    <span class="mm-note"></span><!-- 1.976 — 안내 문구 제거(사용자 "지워죠"); 자리만 남겨 오른쪽 버튼 정렬 유지 -->
+    <button class="sc-tbtn" id="ptTemplate" type="button">프로세스 기본세트 불러오기</button>
+    <button class="sc-tbtn" id="ptGroupAdd" type="button">＋ 그룹</button>
+    <button class="sc-x" id="ptSetClose" type="button" aria-label="닫기">×</button>
+  </div>
+  <div class="sc-ptset-body" id="ptSetBody"></div>
+</div>
+<!-- 포인트 평가지 — 선수 포지션 그룹의 질문마다 1~5 -->
+<div class="sc-pteval" id="ptEval" role="dialog" aria-label="포인트 평가">
+  <div class="sc-meet-top">
+    <b id="ptEvalTitle">포인트 평가</b>
+    <select id="ptEvalSet" class="sc-ptsel" aria-label="포지션 그룹"></select>
+    <span class="mm-note" id="ptEvalSum"></span>
+    <button class="sc-x" id="ptEvalClose" type="button" aria-label="닫기">×</button>
+  </div>
+  <div class="sc-pteval-body" id="ptEvalBody"></div>
+</div>
+<button class="sc-fab" id="qaFab" type="button" aria-label="후보 빠른 기록">＋</button>
+<div class="sc-qsheet" id="qaSheet" role="dialog" aria-label="후보 빠른 기록">
+  <div class="qs-hd"><b>후보 빠른 기록</b><button class="sc-x" id="qsClose" type="button" aria-label="닫기">×</button></div>
+  <input id="qsName" placeholder="이름" autocomplete="off">
+  <input id="qsClub" placeholder="소속팀 (연속 기록 시 유지)" autocomplete="off" list="clubList">
+  <div class="qs-pos" id="qsPos"></div>
+  <div class="qs-actions">
+    <button class="qs-next" id="qsNext" type="button">등록하고 다음</button>
+    <button class="qs-done" id="qsDone" type="button">완료</button>
+  </div>
+</div>
+<input type="file" id="photoFile" accept="image/*" hidden>
+<input type="file" id="importFile" accept=".json,.csv,application/json,text/csv" hidden>
+<div class="sc-toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var esc=(window.PSSafe&&PSSafe.html)||function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+var $=function(id){return document.getElementById(id);};
+var POS=["GK","CB","LB","RB","WB","DM","CM","AM","LM","RM","LW","RW","FW","ST"];
+var GRADES=["S","A","B","C","D"];
+var KEY="cs_scoutdb_v1";
+var DEFAULT_TAGS=["프로","대학","고교","클럽","해외","자유계약"];
+
+/* ── 데이터 ── */
+var db={players:[],meta:{tagOptions:DEFAULT_TAGS.slice()}};
+var DEFAULT_EVAL=["전술","기술","체력","심리","사회성"];
+/* 프로세스 기본세트 — 포지션 그룹별 스카우팅 포인트(체크 질문). '## '로 시작하는 줄 = 섹션, 나머지 줄 = 질문 */
+var PS_POINT_TEMPLATE=[
+{name:"공격수(FW)",positions:["FW","ST"],text:"## 오프 더 볼 · 움직임\n최전방 수비수 역할을 수행하는가?\n동료들이 정렬되었을 때 가장 먼저 움직이는가?\n상대 수비수를 한쪽 측면으로 몰아내는가?\n동료 미드필더와 적극 소통하는가?\n## 오프 더 볼 · 프레싱\n상대 수비의 빌드업을 측면으로 몰고 백패스를 유도하는가?\n상대 수비가 GK에게 백패스할 때 적절히 프레싱하는가?\n빠르게 볼 소유 상대에게 접근하는가?\n드리블하는 상대 수비에게 압박을 가하고 볼을 뺏는가?\n부정확한 상대 패스를 예측하고 빼앗는가?\n볼을 향해 공격적인 태도와 적극성을 보이는가?\n## 온 더 볼 · 움직임\n필드 공간의 너비와 깊이를 잘 활용하는가?\n오프사이드 라인을 활용해 상대 사각지대를 돌파하는가?\n롱볼을 머리로 받거나 연결하는 데 능숙한가?\n공중볼 경합에서 적극적이고 동료에게 세컨볼을 전달하는가?\n## 온 더 볼 · 빌드업\n상대 수비수와 맞서서 공을 지키는 데 능숙한가?\n팀 동료 지원을 위해 볼을 지키는 데 능숙한가?\n동료 플레이메이커와의 콤비 플레이가 좋은가?\n상대 수비를 따돌리고 2대1 패스의 기점 역할을 하는가?\n## 온 더 볼 · 기회 창출\n상대의 사각지대를 파고들어 득점 기회를 창출하는가?\n수직적 움직임으로 팀원에게 공간을 만들어주는가?\n페널티킥이나 프리킥을 얻기 위해 박스 안에서 과감하게 움직이는가?"},
+{name:"윙포워드·측면 미드필더(WF/SMF)",positions:["LW","RW","LM","RM"],text:"## 오프 더 볼 · 움직임\n공과 상대 선수를 동시에 시야에 두고 있는가?\n상대 선수가 마크가 붙은 선수에게 패스하도록 유도하는가?\n주변 동료 선수들과 적극적으로 소통하는가?\n상대에게 뚫렸을 때 뒤로 물러나 동료를 지원하는가?\n## 오프 더 볼 · 프레싱\n상대의 수직 패스를 차단하여 측면 패스를 유도하는가?\n상대 수비를 바깥쪽으로 밀어내고 플레이를 방해하는가?\n상대의 부정확한 패스를 예측하고 빼앗는가?\n볼 탈취에 대한 결단력과 집중력을 보여주는가?\n## 온 더 볼 · 움직임\nSB, CB, DMF를 위한 패스 스테이션 역할을 하는가?\n하프/센터 스페이스에서 패싱 스테이션 역할을 하는가?\n항상 달릴 준비가 되어 있고 패스를 요청하는가?\n반대 측면 플레이 시 파 포스트에서 득점 시도를 하는가?\n## 온 더 볼 · 기회 창출\n오프사이드 라인을 활용해 대각선으로 안쪽 돌파를 하는가?\n하프 스페이스에서 원투패스로 득점 기회를 만드는가?\n박스 안으로 과감하게 드리블을 하는가?\n상대 수비 라인 뒤로 날카로운 크로스를 시도하는가?"},
+{name:"공격형·중앙 미드필더(AMF/CMF)",positions:["AM","CM"],text:"## 오프 더 볼 · 움직임\n항상 공격적으로 상대 공을 처리할 준비가 되어있는가?\n동료 공격수와 계속 짝을 이뤄 움직이는가?\n동료를 돕거나 도움을 받을 수 있는 상황을 만드는가?\n뒤에 있는 동료 MF와 의사소통을 하는가?\n## 오프 더 볼 · 프레싱\n상대 DMF가 패스를 받을 때 공격적으로 압박하는가?\n상대 선수 뒤에서 볼을 탈취하기 위해 노력하는가?\n상대 실수를 예측하고 효과적으로 공을 탈취하는가?\n압박 상황에서 볼 회수를 위한 적극성을 보여주는가?\n## 온 더 볼 · 움직임\n세컨드 볼을 획득한 후 공을 지켜내는가?\n공 획득 후 즉시 필드 중앙을 점유하는가?\n2대1 패스가 필요할 때 FW/WF를 능숙하게 활용하는가?\n측면 패스를 원활하게 제공하는가?\n## 온 더 볼 · 빌드업\n상대를 향해 빠르게 드리블 후 정확한 패스를 연결하는가?\n볼 획득 즉시 공격 전환을 위한 준비가 되어 있는가?\n측면 선수들과 원투 패스로 박스 침투를 시도하는가?\n## 온 더 볼 · 기회 창출\n상황에 따라 세컨드 스트라이커 역할을 수행하는가?\n박스 안으로 돌파하여 마무리를 시도하는가?\n2대1 패스로 상대 파이널 써드로 쇄도하는가?\n중거리 슈팅을 시도하는가?\n항상 득점할 의지를 보여주는가?"},
+{name:"수비형 미드필더(DMF)",positions:["DM"],text:"## 오프 더 볼 · 움직임\n스위퍼 역할을 효과적으로 수행하는가?\n불필요하게 중앙에서 벗어나지 않고 플레이하는가?\n상대가 측면 라인을 돌파할 때 적절히 대응하는가?\n필요시 CB 역할을 맡아 숫자 균형을 맞추는가?\n수비와 공격 사이의 간격을 잘 조정하는가?\n## 오프 더 볼 · 프레싱\n압박과 협력 수비를 리드하고 패스 경로를 차단하는가?\n공중볼 경합에서 용감하게 경쟁하고 공간을 창출하는가?\n상대의 패스를 예측하고 패스 경로를 차단하는가?\n## 온 더 볼 · 움직임\n볼 터치를 최소화하며 전진하고 빠른 공격 전환을 하는가?\n경기장의 폭과 깊이를 효과적으로 활용하는가?\n수비 라인 앞에서 볼을 따라가되 역습에 대비하는가?\n## 온 더 볼 · 빌드업\n빠르고 짧은 패스로 MF와 연결하고 함께 전진하는가?\n삼각 플레이를 위한 패스 조합의 출발점이 되는가?\n상대 미드필더가 촘촘할 때 대각선 전환을 시도하는가?\n동료 수비수를 위한 공간을 만들어주는가?\n## 온 더 볼 · 기회 창출\n팀이 상대 골라인으로 쇄도할 때 득점을 시도하는가?"},
+{name:"사이드백(SB)",positions:["LB","RB","WB"],text:"## 오프 더 볼 · 움직임\n상대 패스 경로를 차단하고 안쪽을 봉쇄하는가?\n상대를 외곽으로 밀어내고 크로스를 방어하는가?\n대각선 패스와 돌파를 예측하고 대응하는가?\n볼이 뒤에 있을 때 신속히 복귀하고 압박하는가?\n## 오프 더 볼 · 프레싱\n안쪽에서 바깥쪽으로 효과적으로 프레싱하는가?\n상대 윙어를 선제적으로 압박하고 돌파를 차단하는가?\n반대편 공격 시 중앙으로 이동하여 CB를 지원하는가?\n상대 크로스 상황에서 적절히 대응하는가?\n## 온 더 볼 · 움직임\n대각선 패스가 가능한 위치에서 움직이는가?\n자기편 골대 근처에서 위험한 드리블을 하지 않는가?\n하프 스페이스에서 페널티 박스 안으로 쇄도하는가?\nWF가 안쪽으로 커팅할 때 윙 포지션을 점유하는가?\n반대편 공격 시 역습에 대비하는가?\n## 온 더 볼 · 빌드업\n패스 스테이션 역할을 위해 넓게 포지셔닝하는가?\n전방을 주시하며 수직적인 패스를 정확히 전달하는가?\nWF가 하프 스페이스에 있을 때 원투패스 기점이 되는가?\n정확하고 날카로운 패스를 안쪽으로 공급하는가?\n## 온 더 볼 · 기회 창출\nWF를 오버래핑하여 플랫 크로스를 시도하는가?\n달리는 상대를 향해 플랫 크로스를 정확히 시도하는가?\n상대 수비가 정렬되기 전에 빠르게 크로스를 시도하는가?"},
+{name:"중앙 수비수(CB)",positions:["CB"],text:"## 오프 더 볼 · 움직임\n팀을 조직화하고 안정화하는 리더십이 있는가?\n동료 CB와 서로 깊이를 바꾸며 상호 지원하는가?\n동료 CB의 공중볼 경합 시 빈 공간을 메우는가?\n공간 커버 시 공격적이고 피지컬한 대응을 하는가?\n적극적으로 수비 라인 앞에 상대를 막아서는가?\n수비 라인을 밀어올려 팀을 콤팩트하게 유지하는가?\n## 오프 더 볼 · 프레싱\n적극적인 공중볼 경합을 펼치는가?\n상대 접근 시 포위하여 골대 방향 회전을 막는가?\n상대 패스를 예측하고 오프사이드 트랩을 활용하는가?\n상대의 롱볼과 백패스를 유도하는가?\n크로스 상황에서 맨투맨 수비로 대응하는가?\n페널티 박스 안에서 밀착 마크를 하는가?\n위험 상황에서 과감하게 볼을 클리어하는가?\n## 온 더 볼 · 움직임\n필드의 너비와 깊이를 보는 시야가 있는가?\n상대 FW가 혼자일 때 미드필드로 과감히 드리블하는가?\n적절한 타이밍에 패스를 정확히 전달하는가?\n세트피스에서 페널티 박스 내 기회를 만드는가?\n## 온 더 볼 · 빌드업\nDMF와 연계하여 빌드업의 시작점이 되는가?\n전진하는 측면 공격수에게 빠른 패스를 정확히 전달하는가?\n깊고 플랫한 패스로 측면/하프 스페이스 공격을 지원하는가?\n상황에 맞게 롱 킥과 대각선 롱패스를 정확히 시도하는가?"},
+{name:"골키퍼(GK)",positions:["GK"],text:"## 오프 더 볼 · 움직임\n팀과 함께 움직이며 상대 볼을 클리어하는가?\n명확하고 침착하게 팀원들과 소통하고 지시하는가?\n상대 슛 시 균형을 잘 유지하는가?\n볼 방향에 맞춰 적절한 발을 먼저 움직이는가?\n## 오프 더 볼 · 대응\n프리킥 시 수비 라인과 벽 위치를 잘 조정하는가?\n슈팅 위험 시 효율적인 벽을 구축하는가?\n중거리 슛에 적절한 타이밍에 대응하는가?\n1대1 상황에서 신속하고 적절한 판단을 하는가?\n페널티 파울 없이 균형과 침착함을 유지하는가?\n복잡한 상황에서 볼 처리(캐칭/펀칭)를 적절히 결정하는가?\n## 온 더 볼 · 움직임\n팀 동료에게 높고 넓은 패스를 정확히 전달하는가?\n백패스 처리와 측면 전환을 안전하게 수행하는가?\n코너킥 후 빠르게 볼을 패스하여 위험을 벗어나는가?\n볼 지키기와 패스 플레이 완성도가 높은가?\n## 온 더 볼 · 빌드업\n짧고 간결하게 양발로 안정적인 플레이를 하는가?\n압박받는 팀원에게 위험한 패스를 하지 않는가?\n공중볼에 강한 공격수에게 적절한 롱패스를 전달하는가?\n## 온 더 볼 · 기회 창출\n빠르고 정확한 스로우로 역습을 효과적으로 유도하는가?"}];
+function load(){try{var raw=localStorage.getItem(KEY);if(raw){var d=JSON.parse(raw);if(d&&Array.isArray(d.players)){db=d;db.meta=db.meta||{};if(!Array.isArray(db.meta.tagOptions))db.meta.tagOptions=DEFAULT_TAGS.slice();}}}catch(_){}
+  if(!Array.isArray(db.meta.evalDomains)||!db.meta.evalDomains.length)db.meta.evalDomains=DEFAULT_EVAL.slice();
+  if(!Array.isArray(db.meta.customFields))db.meta.customFields=[];
+  if(!Array.isArray(db.meta.pointSets))db.meta.pointSets=[];}
+/* 포인트 세트 파싱: '## '줄 = 섹션, 그 외 비지 않은 줄 = 질문 */
+function parsePoints(text){var out=[],cur={name:"",qs:[]};
+  String(text||"").split(/\r?\n/).forEach(function(l){l=l.trim();if(!l)return;
+    if(l.indexOf("##")===0){if(cur.qs.length)out.push(cur);cur={name:l.replace(/^#+\s*/,""),qs:[]};}
+    else cur.qs.push(l.replace(/^[-*·]\s*/,""));});
+  if(cur.qs.length)out.push(cur);return out;}
+function pointKey(setName,q){return setName+"|"+q;}
+function pointSummary(p){var s=0,n=0;
+  (db.meta.pointSets||[]).forEach(function(set){parsePoints(set.text).forEach(function(sec){sec.qs.forEach(function(q){
+    var v=(p.points||{})[pointKey(set.name,q)];if(v>0){s+=v;n++;}});});});
+  return n?{avg:Math.round(s/n*10)/10,n:n}:null;}
+var saveT=null;
+function save(){if(saveT)clearTimeout(saveT);saveT=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){toast("저장 공간 부족 — 사진을 줄이거나 내보내기로 백업하세요");}},250);}
+function uid(){return "sc"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function blank(name,pos,club){var now=new Date().toISOString();
+  return {id:uid(),nameKr:name||"",nameEn:"",num:"",year:"",pos:pos?pos.slice():[],tags:[],nat:"",height:"",weight:"",foot:"",
+    club:club||"",formerClub:"",league:"",contract:"",custom:{},contacts:[],videos:[],photo:"",bio:"",grade:"",oneliner:"",ratings:{},points:{},obs:[],status:"관찰",createdAt:now,updatedAt:now};}
+function ratingAvg(p){var ds=db.meta.evalDomains||[],s=0,n=0;ds.forEach(function(k){var v=(p.ratings||{})[k];if(v>0){s+=v;n++;}});return n?Math.round(s/n*10)/10:0;}
+function touch(p){p.updatedAt=new Date().toISOString();save();}
+
+/* ── 상태 ── */
+var filter={q:"",pos:[],tags:[],grades:[]};
+var selId=null;
+
+/* ── 토스트 ── */
+var toastT=null;
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");if(toastT)clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("on");},1800);}
+
+/* ── 검색·필터 ── */
+function age(p){var y=parseInt(p.year,10);if(!y)return "";var a=new Date().getFullYear()-y+1;return y+"년생("+a+"세)";}
+function match(p){
+  if(filter.pos.length&&!filter.pos.some(function(x){return (p.pos||[]).indexOf(x)>=0}))return false;
+  if(filter.tags.length&&!filter.tags.some(function(x){return (p.tags||[]).indexOf(x)>=0}))return false;
+  if(filter.grades.length&&filter.grades.indexOf(p.grade||"")<0)return false;
+  var q=filter.q.trim().toLowerCase();
+  if(!q)return true;
+  var hay=[p.nameKr,p.nameEn,p.club,p.formerClub,p.league,p.nat,(p.pos||[]).join(" ")].join(" ").toLowerCase();
+  return q.split(/\s+/).every(function(w){return hay.indexOf(w)>=0;});
+}
+function list(){return db.players.filter(match);}
+
+/* ── 렌더: 필터 레일 ── */
+function chipRow(host,values,activeArr,onToggle,extra){
+  host.innerHTML="";
+  values.forEach(function(v){
+    var b=document.createElement("button");b.type="button";b.className="sc-chip"+(activeArr.indexOf(v)>=0?" on":"");b.textContent=v;
+    b.addEventListener("click",function(){var i=activeArr.indexOf(v);if(i>=0)activeArr.splice(i,1);else activeArr.push(v);renderAll();});
+    host.appendChild(b);
+  });
+  if(extra)host.appendChild(extra);
+}
+function renderRail(){
+  chipRow($("posFilter"),POS,filter.pos);
+  var add=document.createElement("button");add.type="button";add.className="sc-chip add";add.textContent="＋ 태그 추가";add.title="구분 태그 추가";
+  add.addEventListener("click",function(){var t=prompt("추가할 구분 태그 이름");t=t&&t.trim();if(!t)return;if(db.meta.tagOptions.indexOf(t)<0){db.meta.tagOptions.push(t);save();renderAll();}});
+  chipRow($("tagFilter"),db.meta.tagOptions,filter.tags,null,add);
+  chipRow($("gradeFilter"),GRADES,filter.grades);
+}
+
+/* ── 렌더: 카드 그리드 ── */
+function ava(p,cls){
+  if(p.photo)return '<span class="'+cls+'"><img src="'+esc(p.photo)+'" alt=""></span>';
+  return '<span class="'+cls+'">'+esc((p.nameKr||"?").charAt(0))+'</span>';
+}
+function renderGrid(){
+  var rows=list(),g=$("grid");
+  $("cnt").textContent="후보 "+db.players.length+"명"+(rows.length!==db.players.length?" · 표시 "+rows.length:"");
+  if(!rows.length){
+    g.innerHTML='<div class="sc-empty" style="grid-column:1/-1"><b>'+(db.players.length?"조건에 맞는 후보가 없어요":"후보를 등록하세요")+'</b>'
+      +(db.players.length?"검색어나 필터를 조정해 보세요":'<span class="sc-empty-desk">위 빠른 기록에 이름만 적고 Enter</span><span class="sc-empty-phone">오른쪽 아래 ＋ 로 이름만 적어 두세요</span> — 나중에 채워도 됩니다')+'</div>';
+    return;
+  }
+  g.innerHTML=rows.map(function(p){
+    var meta=[age(p),p.club||p.formerClub].filter(Boolean).join(" · ");
+    return '<div class="sc-card'+(p.id===selId?" sel":"")+'" data-id="'+esc(p.id)+'">'
+      +ava(p,"sc-ava")
+      +'<div class="sc-cbody"><div class="sc-cname"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+esc(p.nameKr||"(이름 없음)")+'</span>'
+      +(p.grade?'<span class="sc-grade">'+esc(p.grade)+'</span>':'')
+      +(ratingAvg(p)?'<span class="sc-grade avg">'+ratingAvg(p)+'</span>':'')+'</div>'
+      +'<div class="sc-cmeta">'+esc(meta||"—")+'</div>'
+      +((p.pos&&p.pos.length)?'<div class="sc-cpos">'+p.pos.map(function(x){return '<span>'+esc(x)+'</span>';}).join("")+'</div>':'')
+      +'</div></div>';
+  }).join("");
+}
+$("grid").addEventListener("click",function(e){
+  var c=e.target.closest(".sc-card");if(!c)return;
+  selId=c.getAttribute("data-id");renderGrid();renderDetail();
+});
+
+/* 2.617 — 후보 프로필 한 장(A4). 문서는 profile-sheet.js(공용) — 부제 SCOUTING REPORT, 자동 통계 없음 */
+function printCandSheet(p){
+  if(!window.PSProfileSheet){toast("프로필 문서 모듈을 불러오지 못했어요 — 새로고침 뒤 다시");return;}
+  var coach="";try{var api=parent&&parent.PSSync;if(api&&typeof api.displayName==="function")coach=api.displayName()||"";}catch(_){}
+  var career=[];if(p.formerClub)career.push(p.formerClub);if(p.club)career.push(p.club);
+  PSProfileSheet.preview(PSProfileSheet.docHTML({
+    kind:"scout", nameKr:p.nameKr, nameEn:p.nameEn, dob:p.year, nat:p.nat, height:p.height, weight:p.weight, foot:p.foot,
+    pos:(p.pos||[])[0]||"", num:p.num, club:p.club, team:(db.meta&&db.meta.teamName)||"", photo:p.photo||"",
+    career:career, school:p.school||"", strengths:p.strengths||"", develop:p.develop||"",
+    videos:(p.videos||[]).map(function(v){return v&&v.url||"";}), coach:coach
+  }));
+}
+/* ── 렌더: 상세 ── */
+function cur(){return db.players.find(function(p){return p.id===selId;})||null;}
+function bindInput(el,p,field){el.addEventListener("input",function(){p[field]=el.value;touch(p);renderGridSoon();});}
+var gridT=null;function renderGridSoon(){if(gridT)clearTimeout(gridT);gridT=setTimeout(renderGrid,350);}
+function renderDetail(){
+  var d=$("detail"),p=cur();
+  if(!p){d.classList.remove("on");d.innerHTML="";return;}
+  d.classList.add("on");
+  d.innerHTML='<div class="sc-dhead"><span class="t">선수 프로필</span><button class="sc-x" id="dClose" type="button" aria-label="닫기">×</button></div>'
+    +'<div class="sc-dbody">'
+    +'<div class="sc-photo" id="dPhoto">'+(p.photo?'<img src="'+esc(p.photo)+'" alt="">':esc((p.nameKr||"?").charAt(0)))+'</div>'
+    +'<div class="sc-photorow"><button class="sc-mini" id="dPhotoUp" type="button">사진 올리기</button>'+(p.photo?'<button class="sc-mini" id="dPhotoRm" type="button">제거</button>':'')+'</div>'
+    +'<div class="sc-frow"><label>이름</label><input id="fNameKr" value="'+esc(p.nameKr)+'"></div>'
+    +'<div class="sc-frow"><label>영문</label><input id="fNameEn" value="'+esc(p.nameEn)+'"></div>'
+    +'<div class="sc-frow"><label>출생년</label><input id="fYear" inputmode="numeric" placeholder="예: 2008" value="'+esc(p.year)+'"><label style="flex-basis:30px">등번</label><input class="half" id="fNum" inputmode="numeric" value="'+esc(p.num)+'"></div>'
+    +'<div class="sc-frow"><label>포지션</label><div class="sc-dpos" id="fPos"></div></div>'
+    +'<div class="sc-frow"><label>구분</label><div class="sc-dtags sc-chips" id="fTags"></div></div>'
+    +'<div class="sc-frow"><label>현소속</label><input id="fClub" list="clubList" value="'+esc(p.club)+'"></div>'
+    +'<div class="sc-frow"><label>전소속</label><input id="fFormer" list="clubList" value="'+esc(p.formerClub)+'"></div>'
+    +'<div class="sc-frow"><label>리그·대회</label><input id="fLeague" value="'+esc(p.league)+'"></div>'
+    +'<div class="sc-frow"><label>국적</label><input id="fNat" value="'+esc(p.nat)+'"></div>'
+    +'<div class="sc-frow"><label>신체</label><input class="half" id="fHeight" inputmode="numeric" placeholder="키 cm" value="'+esc(p.height)+'"><input class="half" id="fWeight" inputmode="numeric" placeholder="몸무게 kg" value="'+esc(p.weight)+'"></div>'
+    +'<div class="sc-frow"><label>주발</label><select id="fFoot"><option value="">선택 안 함</option><option'+(p.foot==="오른발"?" selected":"")+'>오른발</option><option'+(p.foot==="왼발"?" selected":"")+'>왼발</option><option'+(p.foot==="양발"?" selected":"")+'>양발</option></select></div>'
+    +'<div class="sc-frow"><label>계약기간</label><input id="fContract" placeholder="예: 2024.01 ~ 2026.12" value="'+esc(p.contract||"")+'"></div>'
+    /* 2.617 — 프로필 한 장(A4 PDF) 칸. 경력은 전소속→현소속, 영상은 아래 링크 2개까지 자동으로 들어간다 */
+    +'<div class="sc-dsec">프로필 한 장 (A4 PDF)</div>'
+    +'<div class="sc-frow"><label class="top">학교</label><textarea class="sc-ta" id="fSchool" placeholder="한 줄에 하나 · 최대 4 · 영문은 괄호">'+esc(p.school||"")+'</textarea></div>'
+    +'<div class="sc-frow"><label class="top">장점</label><textarea class="sc-ta" id="fStr" placeholder="한 줄에 하나 · 최대 3 · 영문은 괄호">'+esc(p.strengths||"")+'</textarea></div>'
+    +'<div class="sc-frow"><label class="top">보완할 점</label><textarea class="sc-ta" id="fDev" placeholder="한 줄에 하나 · 최대 2">'+esc(p.develop||"")+'</textarea></div>'
+    +'<button class="sc-mini" id="fSheet" type="button">프로필 한 장 PDF</button>'
+    +'<div id="fCustom"></div><button class="sc-mini" id="fFieldAdd" type="button">＋ 프로필 항목</button>'
+    +'<div class="sc-dsec">연락처 · 에이전트</div><div id="fContacts"></div><button class="sc-mini" id="fContactAdd" type="button">＋ 연락처</button>'
+    +'<div class="sc-dsec">영상 링크</div>'
+    +'<div class="sc-obs-add"><input id="fVidUrl" placeholder="유튜브 등 영상 주소 붙여넣기" inputmode="url"><button id="fVidAdd" type="button">추가</button></div>'
+    +'<ul class="sc-vids" id="fVidList"></ul>'
+    +'<div class="sc-dsec">평가</div>'
+    +'<div class="sc-frow"><label>등급</label><div class="sc-gr" id="fGrade"></div></div>'
+    +'<div class="sc-frow"><label>한줄평</label><input id="fOne" placeholder="예: 전환 순간 판단이 빠르다" value="'+esc(p.oneliner)+'"></div>'
+    +'<div id="fRatings"></div><button class="sc-mini" id="fRateAdd" type="button">＋ 평가 항목</button>'
+    +'<div class="sc-frow" style="margin-top:8px"><label>포인트</label><button class="sc-mini" id="fPtOpen" type="button" style="height:28px">포인트 평가 열기</button><span id="fPtSum" style="font-size:10px;color:var(--faint)"></span></div>'
+    +'<div class="sc-dsec">관찰 기록</div>'
+    +'<div class="sc-obs-add"><input id="fObsText" placeholder="오늘 본 내용 한 줄"><button id="fObsAdd" type="button">기록</button></div>'
+    +'<ul class="sc-obs" id="fObsList"></ul>'
+    +'<div class="sc-dsec">메모</div>'
+    +'<textarea class="sc-memo" id="fBio">'+esc(p.bio)+'</textarea>'
+    +'<button class="sc-danger" id="dDelete" type="button">이 후보 삭제</button>'
+    +'<p class="sc-privacy">타인의 개인정보(연락처 등)를 다루는 화면입니다 — 스카우팅 목적 외 사용·공유에 주의하세요.</p>'
+    +'</div>';
+  $("dClose").addEventListener("click",function(){selId=null;renderGrid();renderDetail();});
+  bindInput($("fNameKr"),p,"nameKr");bindInput($("fNameEn"),p,"nameEn");bindInput($("fYear"),p,"year");bindInput($("fNum"),p,"num");
+  bindInput($("fClub"),p,"club");bindInput($("fFormer"),p,"formerClub");bindInput($("fLeague"),p,"league");bindInput($("fNat"),p,"nat");
+  bindInput($("fHeight"),p,"height");bindInput($("fWeight"),p,"weight");bindInput($("fOne"),p,"oneliner");bindInput($("fBio"),p,"bio");
+  $("fFoot").addEventListener("change",function(){p.foot=this.value;touch(p);});
+  bindInput($("fContract"),p,"contract");
+  bindInput($("fSchool"),p,"school");bindInput($("fStr"),p,"strengths");bindInput($("fDev"),p,"develop");
+  $("fSheet").addEventListener("click",function(){printCandSheet(p);});
+  /* 커스텀 프로필 항목 — 팀이 원하는 필드를 직접 추가(전체 적용). 값은 선수별 자유 텍스트 */
+  function renderCustomFields(){var host=$("fCustom");host.innerHTML="";
+    (db.meta.customFields||[]).forEach(function(name){
+      var row=document.createElement("div");row.className="sc-frow";
+      var lb=document.createElement("label");lb.textContent=name;lb.title=name;row.appendChild(lb);
+      var inp=document.createElement("input");inp.value=(p.custom||{})[name]||"";
+      inp.addEventListener("input",function(){p.custom=p.custom||{};p.custom[name]=inp.value;touch(p);});
+      row.appendChild(inp);
+      var del=document.createElement("button");del.type="button";del.className="fx";del.textContent="×";del.title="이 프로필 항목 삭제(전체 적용)";
+      del.addEventListener("click",function(){if(!confirm("'"+name+"' 항목을 프로필에서 뺄까요? (모든 후보에 적용)"))return;
+        db.meta.customFields=db.meta.customFields.filter(function(x){return x!==name;});save();renderCustomFields();});
+      row.appendChild(del);host.appendChild(row);
+    });}
+  renderCustomFields();
+  $("fFieldAdd").addEventListener("click",function(){var t=prompt("추가할 프로필 항목 이름 (예: 병역, 연봉, SNS)");t=t&&t.trim();if(!t)return;
+    if(db.meta.customFields.indexOf(t)<0){db.meta.customFields.push(t);save();renderCustomFields();}});
+  /* 포지션·구분 칩 */
+  var fp=$("fPos");POS.forEach(function(x){var b=document.createElement("button");b.type="button";b.textContent=x;b.className=(p.pos||[]).indexOf(x)>=0?"on":"";
+    b.addEventListener("click",function(){var i=p.pos.indexOf(x);if(i>=0)p.pos.splice(i,1);else p.pos.push(x);touch(p);b.classList.toggle("on");renderGridSoon();});fp.appendChild(b);});
+  var ft=$("fTags");db.meta.tagOptions.forEach(function(x){var b=document.createElement("button");b.type="button";b.className="sc-chip"+((p.tags||[]).indexOf(x)>=0?" on":"");b.textContent=x;
+    b.addEventListener("click",function(){var i=p.tags.indexOf(x);if(i>=0)p.tags.splice(i,1);else p.tags.push(x);touch(p);b.classList.toggle("on");});ft.appendChild(b);});
+  /* 연락처 — 비어 있으면 에이전트 행을 기본으로 노출. 고스트 행은 입력하는 순간 실제 연락처로 저장 */
+  function renderContacts(){var host=$("fContacts");host.innerHTML="";
+    var ghost=null;
+    var rows=(p.contacts||[]).slice();
+    if(!rows.length){ghost={rel:"에이전트",name:"",phone:""};rows=[ghost];}
+    rows.forEach(function(c,i){
+      var commit=function(){if(c===ghost&&(p.contacts||[]).indexOf(c)<0){p.contacts=p.contacts||[];p.contacts.push(c);}};
+      var row=document.createElement("div");row.className="sc-contact";
+      row.innerHTML='<select><option'+(c.rel==="에이전트"?" selected":"")+'>에이전트</option><option'+(c.rel==="보호자"?" selected":"")+'>보호자</option><option'+(c.rel==="본인"?" selected":"")+'>본인</option><option'+(c.rel==="소속팀 코치"?" selected":"")+'>소속팀 코치</option><option'+(c.rel==="기타"?" selected":"")+'>기타</option></select>'
+        +'<input placeholder="이름" value="'+esc(c.name||"")+'"><input placeholder="연락처" value="'+esc(c.phone||"")+'"><button class="del" type="button">×</button>';
+      var sel=row.children[0],nm=row.children[1],ph=row.children[2],del=row.children[3];
+      sel.addEventListener("change",function(){c.rel=sel.value;commit();touch(p);});
+      nm.addEventListener("input",function(){c.name=nm.value;commit();touch(p);});
+      ph.addEventListener("input",function(){c.phone=ph.value;commit();touch(p);});
+      del.addEventListener("click",function(){var ix=(p.contacts||[]).indexOf(c);if(ix>=0){p.contacts.splice(ix,1);touch(p);}renderContacts();});
+      host.appendChild(row);
+    });}
+  renderContacts();
+  $("fContactAdd").addEventListener("click",function(){p.contacts=p.contacts||[];p.contacts.push({rel:"에이전트",name:"",phone:""});touch(p);renderContacts();});
+  /* 항목별 평가 1~5 — 항목은 팀이 커스터마이징(기본: 전술·기술·체력·심리·사회성). 같은 점수를 다시 누르면 지움 */
+  function renderRatings(){var host=$("fRatings");host.innerHTML="";
+    (db.meta.evalDomains||[]).forEach(function(name){
+      var row=document.createElement("div");row.className="sc-frow";
+      var lb=document.createElement("label");lb.textContent=name;row.appendChild(lb);
+      var seg=document.createElement("div");seg.className="sc-rate";
+      var val=(p.ratings||{})[name]||0;
+      for(var k=1;k<=5;k++)(function(k){
+        var b=document.createElement("button");b.type="button";b.textContent=k;b.className=k<=val?"on":"";
+        b.addEventListener("click",function(){p.ratings=p.ratings||{};p.ratings[name]=(p.ratings[name]===k)?0:k;touch(p);renderRatings();renderGridSoon();});
+        seg.appendChild(b);
+      })(k);
+      var del=document.createElement("button");del.type="button";del.className="rd";del.textContent="×";del.title="이 평가 항목 삭제(전체 적용)";
+      del.addEventListener("click",function(){if(!confirm("'"+name+"' 항목을 평가에서 뺄까요? (모든 후보에 적용)"))return;
+        db.meta.evalDomains=db.meta.evalDomains.filter(function(x){return x!==name;});save();renderRatings();renderGridSoon();});
+      seg.appendChild(del);row.appendChild(seg);host.appendChild(row);
+    });}
+  renderRatings();
+  $("fRateAdd").addEventListener("click",function(){var t=prompt("추가할 평가 항목 이름 (예: 스피드)");t=t&&t.trim();if(!t)return;
+    if(db.meta.evalDomains.indexOf(t)<0){db.meta.evalDomains.push(t);save();renderRatings();}});
+  /* 포인트 평가 진입 + 요약 */
+  function syncPtSum(){var s=pointSummary(p);$("fPtSum").textContent=s?("평균 "+s.avg+" · "+s.n+"문항"):"아직 없음";}
+  syncPtSum();p.__syncPtSum=syncPtSum;
+  $("fPtOpen").addEventListener("click",function(){
+    if(!(db.meta.pointSets||[]).length){
+      if(confirm("스카우팅 포인트 세트가 아직 없습니다. 프로세스 기본세트를 불러올까요?")){db.meta.pointSets=JSON.parse(JSON.stringify(PS_POINT_TEMPLATE));save();}
+      else return;
+    }
+    openPtEval(p);
+  });
+  /* 영상 링크 — http(s)만 허용, 새 탭으로 열기 */
+  function renderVids(){var ul=$("fVidList");ul.innerHTML=(p.videos||[]).map(function(v,i){
+      var host="";try{host=new URL(v.url).hostname.replace(/^www\./,"");}catch(_){}
+      return '<li><div class="d"><span>'+esc(host||"링크")+'</span><button class="rm" data-i="'+i+'" type="button">삭제</button></div>'
+        +'<a href="'+esc(v.url)+'" target="_blank" rel="noopener noreferrer">'+esc(v.url)+'</a></li>';}).join("");
+    [].forEach.call(ul.querySelectorAll(".rm"),function(b){b.addEventListener("click",function(){p.videos.splice(+b.getAttribute("data-i"),1);touch(p);renderVids();});});}
+  renderVids();
+  function addVid(){var u=$("fVidUrl").value.trim();if(!u)return;
+    if(!/^https?:\/\//i.test(u))u="https://"+u;
+    try{var _u=new URL(u);if(_u.protocol!=="http:"&&_u.protocol!=="https:")throw 0;}catch(_){toast("주소 형식을 확인하세요");return;}
+    p.videos=p.videos||[];p.videos.push({url:u});touch(p);$("fVidUrl").value="";renderVids();}
+  $("fVidAdd").addEventListener("click",addVid);
+  $("fVidUrl").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();addVid();}});
+  /* 등급 */
+  var fg=$("fGrade");GRADES.forEach(function(x){var b=document.createElement("button");b.type="button";b.textContent=x;b.className=p.grade===x?"on":"";
+    b.addEventListener("click",function(){p.grade=p.grade===x?"":x;touch(p);renderDetail();renderGridSoon();});fg.appendChild(b);});
+  /* 관찰 기록 */
+  function renderObs(){var ul=$("fObsList");ul.innerHTML=(p.obs||[]).map(function(o,i){
+      return '<li><div class="d"><span>'+esc(o.d)+'</span><button class="rm" data-i="'+i+'" type="button">삭제</button></div>'+esc(o.t)+'</li>';}).join("");
+    [].forEach.call(ul.querySelectorAll(".rm"),function(b){b.addEventListener("click",function(){p.obs.splice(+b.getAttribute("data-i"),1);touch(p);renderObs();});});}
+  renderObs();
+  function addObs(){var t=$("fObsText").value.trim();if(!t)return;p.obs=p.obs||[];
+    var d=new Date(),ds=d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0");
+    p.obs.unshift({d:ds,t:t});touch(p);$("fObsText").value="";renderObs();}
+  $("fObsAdd").addEventListener("click",addObs);
+  $("fObsText").addEventListener("keydown",function(e){if(e.key==="Enter")addObs();});
+  /* 사진 */
+  $("dPhotoUp").addEventListener("click",function(){$("photoFile").click();});
+  var rm=$("dPhotoRm");if(rm)rm.addEventListener("click",function(){p.photo="";touch(p);renderDetail();renderGrid();});
+  /* 삭제 */
+  $("dDelete").addEventListener("click",function(){
+    if(!confirm((p.nameKr||"이 후보")+" 를 삭제할까요? 되돌릴 수 없습니다."))return;
+    db.players=db.players.filter(function(x){return x.id!==p.id;});selId=null;save();renderAll();toast("삭제했습니다");});
+}
+$("photoFile").addEventListener("change",function(){
+  var f=this.files&&this.files[0];this.value="";var p=cur();if(!f||!p)return;
+  var img=new Image(),url=URL.createObjectURL(f);
+  img.onload=function(){
+    var M=512,w=img.width,h=img.height,s=Math.min(1,M/Math.max(w,h));
+    var c=document.createElement("canvas");c.width=Math.round(w*s);c.height=Math.round(h*s);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    p.photo=c.toDataURL("image/jpeg",0.8);URL.revokeObjectURL(url);touch(p);renderDetail();renderGrid();};
+  img.onerror=function(){URL.revokeObjectURL(url);toast("이미지를 읽지 못했어요");};
+  img.src=url;
+});
+
+/* ── 빠른 기록 — 스카우터 필수 3요소(이름·소속팀·포지션) ── */
+function renderClubList(){var seen={},dl=$("clubList");dl.innerHTML="";
+  db.players.forEach(function(p){[p.club,p.formerClub].forEach(function(c){if(c&&!seen[c]){seen[c]=1;var o=document.createElement("option");o.value=c;dl.appendChild(o);}});});}
+function addCandidate(name,club,posArr,openDetail){
+  var p=blank(name,posArr,club);
+  db.players.unshift(p);save();
+  if(openDetail)selId=p.id;
+  renderAll();
+  return p;
+}
+function posChips(host,activeArr){host.innerHTML="";POS.forEach(function(x){
+  var b=document.createElement("button");b.type="button";b.textContent=x;b.className=activeArr.indexOf(x)>=0?"on":"";
+  b.addEventListener("click",function(){var i=activeArr.indexOf(x);if(i>=0)activeArr.splice(i,1);else activeArr.push(x);b.classList.toggle("on");});
+  host.appendChild(b);});}
+/* 데스크톱 한 줄 바 */
+var quickPos=[];
+function renderQuickPos(){posChips($("qkPos"),quickPos);}
+function quickAdd(){
+  var name=$("qkName").value.trim();
+  if(!name){toast("이름을 입력하세요");$("qkName").focus();return;}
+  addCandidate(name,$("qkClub").value.trim(),quickPos,true);
+  $("qkName").value="";quickPos=[];renderQuickPos();
+  toast(name+" 등록 — 프로필에서 이어서 채우세요");
+  $("qkName").focus();
+}
+$("qkAdd").addEventListener("click",quickAdd);
+$("qkName").addEventListener("keydown",function(e){if(e.key==="Enter")quickAdd();});
+$("qkClub").addEventListener("keydown",function(e){if(e.key==="Enter")quickAdd();});
+/* 폰 연속 기록 시트 — 등록하고 다음: 이름·포지션만 비우고 소속팀 유지(같은 팀 선수를 연달아 기록) */
+var sheetPos=[];
+function openSheet(){sheetPos=[];posChips($("qsPos"),sheetPos);$("qsName").value="";$("qaSheet").classList.add("on");setTimeout(function(){$("qsName").focus();},60);}
+function closeSheet(){$("qaSheet").classList.remove("on");}
+function sheetAdd(){
+  var name=$("qsName").value.trim();
+  if(!name){toast("이름을 입력하세요");$("qsName").focus();return;}
+  addCandidate(name,$("qsClub").value.trim(),sheetPos,false);
+  toast(name+" 등록됨 — 계속 기록하세요");
+  $("qsName").value="";sheetPos=[];posChips($("qsPos"),sheetPos);
+  $("qsName").focus();
+}
+$("qaFab").addEventListener("click",openSheet);
+$("qsClose").addEventListener("click",closeSheet);
+$("qsDone").addEventListener("click",closeSheet);
+$("qsNext").addEventListener("click",sheetAdd);
+$("qsName").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("qsClub").value.trim()?sheetAdd():$("qsClub").focus();}});
+$("qsClub").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();sheetAdd();}});
+
+/* ── 검색 ── */
+var qT=null;
+$("q").addEventListener("input",function(){var v=this.value;if(qT)clearTimeout(qT);qT=setTimeout(function(){filter.q=v;renderGrid();},120);});
+$("resetBtn").addEventListener("click",function(){filter={q:"",pos:[],tags:[],grades:[]};$("q").value="";renderAll();});
+/* 단축키: / 또는 ⌘F → 검색으로 */
+document.addEventListener("keydown",function(e){
+  var tag=(e.target.tagName||"").toLowerCase();
+  if((e.key==="/"&&tag!=="input"&&tag!=="textarea")||((e.metaKey||e.ctrlKey)&&e.key==="f")){e.preventDefault();$("q").focus();$("q").select();}
+});
+
+/* ── 가져오기/내보내기 ── */
+$("exportBtn").addEventListener("click",function(){
+  var out={app:"process-studio-scouting",version:1,exportedAt:new Date().toISOString(),meta:db.meta,players:db.players};
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,1)],{type:"application/json"}));
+  var d=new Date(),ds=d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  a.download="스카우팅_"+ds+".json";a.click();URL.revokeObjectURL(a.href);toast("JSON으로 내보냈습니다");
+});
+$("importBtn").addEventListener("click",function(){$("importFile").click();});
+$("importFile").addEventListener("change",function(){
+  var f=this.files&&this.files[0];this.value="";if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(){try{
+    var text=String(rd.result||""),added=0;
+    if(/^\s*[\[{]/.test(text)){
+      var d=JSON.parse(text);
+      var arr=Array.isArray(d)?d:(d.players||[]);
+      arr.forEach(function(src){
+        var p=blank(src.nameKr||src.name||"",[],src.club||"");
+        p.nameEn=src.nameEn||"";p.num=String(src.num||"");p.year=String(src.year||"");
+        p.pos=Array.isArray(src.pos)?src.pos.slice():(src.pos?[String(src.pos)]:[]);
+        p.tags=Array.isArray(src.tags)?src.tags.slice():(src.cat?[String(src.cat)]:[]);   /* FC안양: cat → tags */
+        p.nat=src.nat||"";p.height=String(src.height||"");p.weight=String(src.weight||"");p.foot=src.foot||"";
+        p.club=src.club||"";p.formerClub=src.formerClub||"";p.league=src.league||"";
+        p.contacts=Array.isArray(src.contacts)?src.contacts:(src.agent||src.agentContact?[{rel:"에이전트",name:src.agent||"",phone:src.agentContact||""}]:[]);   /* FC안양: agent → contacts */
+        p.photo=src.photo||"";p.bio=src.bio||"";p.grade=src.grade||"";p.oneliner=src.oneliner||"";p.obs=Array.isArray(src.obs)?src.obs:[];
+        p.videos=Array.isArray(src.videos)?src.videos.filter(function(v){return v&&/^https?:\/\//i.test(v.url||"");}):[];
+        p.ratings=(src.ratings&&typeof src.ratings==="object")?src.ratings:{};
+        p.contract=src.contract||"";p.custom=(src.custom&&typeof src.custom==="object")?src.custom:{};
+        p.points=(src.points&&typeof src.points==="object")?src.points:{};
+        if(p.nameKr){db.players.push(p);added++;}
+        p.tags.forEach(function(t){if(db.meta.tagOptions.indexOf(t)<0)db.meta.tagOptions.push(t);});
+      });
+    }else{
+      /* CSV — 첫 줄 헤더: 이름,포지션,소속,출생년,국적 등 인식 (엑셀·구글시트 내보내기) */
+      var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});
+      var sep=lines[0].indexOf("\t")>=0?"\t":",";
+      var head=lines[0].split(sep).map(function(h){return h.trim();});
+      var col=function(names){for(var i=0;i<head.length;i++)if(names.indexOf(head[i])>=0)return i;return -1;};
+      var ci={name:col(["이름","성명","name","nameKr"]),pos:col(["포지션","pos","position"]),club:col(["소속","현소속","출신","club"]),
+        former:col(["전소속","formerClub"]),year:col(["출생년","출생년도","생년","year"]),nat:col(["국적","nat"]),num:col(["등번호","번호","num"])};
+      if(ci.name<0)throw new Error("이름 열을 찾지 못했습니다");
+      lines.slice(1).forEach(function(l){var c=l.split(sep).map(function(x){return x.trim();});
+        var nm=c[ci.name];if(!nm)return;
+        var p=blank(nm,[],ci.club>=0?c[ci.club]:"");
+        if(ci.pos>=0&&c[ci.pos])p.pos=c[ci.pos].split(/[\/·,\s]+/).map(function(x){return x.toUpperCase();}).filter(function(x){return POS.indexOf(x)>=0;});
+        if(ci.former>=0)p.formerClub=c[ci.former]||"";
+        if(ci.year>=0)p.year=(c[ci.year]||"").replace(/[^0-9]/g,"");
+        if(ci.nat>=0)p.nat=c[ci.nat]||"";
+        if(ci.num>=0)p.num=c[ci.num]||"";
+        db.players.push(p);added++;});
+    }
+    save();renderAll();toast(added+"명 가져왔습니다");
+  }catch(e){toast("가져오기 실패 — 파일 형식을 확인하세요");}};
+  rd.readAsText(f);
+});
+
+/* ── 팀 아이덴티티 밴드 — 엠블럼·이름·색상 (db.meta에 저장) ── */
+function lum(hex){var v=(hex||"").replace("#","");if(v.length===3)v=v.split("").map(function(x){return x+x;}).join("");var n=parseInt(v,16)||0;return (0.2126*((n>>16)&255)+0.7152*((n>>8)&255)+0.0722*(n&255))/255;}
+function renderBand(){
+  var m=db.meta,color=m.color||"#2563eb",dark=lum(color)>0.62;
+  document.documentElement.style.setProperty("--band",color);
+  document.documentElement.style.setProperty("--bandtxt",dark?"#111827":"#ffffff");
+  var em=$("bandEmblem");
+  em.classList.toggle("has",!!m.emblem);
+  em.innerHTML=m.emblem?'<img src="'+esc(m.emblem)+'" alt="엠블럼">':"＋";
+  if($("bandName").value!==(m.teamName||""))$("bandName").value=m.teamName||"";
+  $("bandColor").value=color;
+}
+$("bandEmblem").addEventListener("click",function(){$("emblemFile").click();});
+$("emblemFile").addEventListener("change",function(){
+  var f=this.files&&this.files[0];this.value="";if(!f)return;
+  var img=new Image(),url=URL.createObjectURL(f);
+  img.onload=function(){var M=128,s=Math.min(1,M/Math.max(img.width,img.height));
+    var c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    db.meta.emblem=c.toDataURL("image/png");URL.revokeObjectURL(url);save();renderBand();toast("엠블럼을 넣었습니다 — 다시 누르면 교체");};
+  img.onerror=function(){URL.revokeObjectURL(url);toast("이미지를 읽지 못했어요");};
+  img.src=url;
+});
+$("bandName").addEventListener("input",function(){db.meta.teamName=this.value;save();});
+$("bandColor").addEventListener("input",function(){db.meta.color=this.value;save();renderBand();});
+/* ── 스카우팅 포인트: 설정 편집기 ── */
+var ptOpen=null;   /* 1.926 — 열려 있는 포지션 그룹(카드) 인덱스. null = 카드 목록 */
+function ptStats(set){ var sec=0,q=0; String(set.text||"").split(/\r?\n/).forEach(function(l){var t=l.trim();if(!t)return;if(t.indexOf("##")===0)sec++;else q++;}); return {sec:sec,q:q}; }
+function renderPtSet(){
+  var host=$("ptSetBody");host.innerHTML="";
+  var sets=db.meta.pointSets||[];
+  if(!sets.length){host.innerHTML='<div class="pt-empty">아직 세트가 없습니다 — <b>프로세스 기본세트 불러오기</b>로 시작하거나 ＋ 그룹으로 직접 만드세요.</div>';return;}
+  if(ptOpen!=null&&!sets[ptOpen])ptOpen=null;
+  /* 2.012 — 머리: 설명 + 통계(그룹·문항·평가한 후보) */
+  (function(){ var tq=0; sets.forEach(function(x){tq+=ptStats(x).q;}); var evN=(db.players||[]).filter(function(p){return p&&p.points&&Object.keys(p.points).some(function(k){return p.points[k]>0;});}).length;
+    var intro=document.createElement("div");intro.className="pt-intro";
+    intro.innerHTML='<p>포지션 그룹별 <b>체크 질문</b> — 후보 평가표가 이 질문으로 1~5를 매깁니다. 카드를 누르면 그 자리에서 편집.</p><div class="pt-stats"><span><b>'+sets.length+'</b>그룹</span><span><b>'+tq+'</b>문항</span><span><b>'+evN+'</b>명 평가됨</span></div>';
+    host.appendChild(intro); })();
+  /* 1.926 — 포지션 그룹마다 카드. 1.976 — 접이식(사용자): 그룹 전부가 한 목록에 접힌 카드로 있고, 머리를 누르면 그 자리에서 펼쳐져 표 편집기가 나온다(뒤로가기 없음) */
+  {
+    var grid=document.createElement("div");grid.className="pt-cards pt-acc";
+    /* 카드는 다른 화면의 포지션 그룹 순서(GK → 수비 → 미드필더 → 공격)로 보여준다. 저장 순서(idx)는 그대로 */
+    var RANK={GK:0,CB:1,LB:2,RB:2,WB:2,DM:3,CM:4,AM:5,LM:6,RM:6,LW:6,RW:6,FW:7,ST:7};
+    var order=sets.map(function(set,idx){var ps=set.positions||[];var r=ps.length?Math.min.apply(null,ps.map(function(x){return RANK[x]!=null?RANK[x]:8;})):9;return {idx:idx,r:r};});
+    order.sort(function(a,b){return a.r-b.r||a.idx-b.idx;});
+    order.forEach(function(o){ var idx=o.idx, set=sets[idx];
+      var st=ptStats(set);
+      var open=(idx===ptOpen);
+      var card=document.createElement("div");card.className="pt-card"+(open?" open":"");
+      var c=document.createElement("button");c.type="button";c.className="pc-head";c.setAttribute("aria-expanded",open?"true":"false");
+      /* 2.012 — 역할군 배지 · 이름 · 포지션 칩 · 섹션 칩 미리보기 · 문항/섹션 수 */
+      var grpCls=o.r===0?"gk":(o.r<=2?"def":(o.r<=6?"mid":(o.r===7?"fw":"etc")));
+      var badge=(set.positions||[])[0]||"–"; if(grpCls==="def"&&(set.positions||[]).length>1)badge="SB"; if(grpCls==="mid"&&(set.positions||[]).indexOf("AM")>=0)badge="AM"; if(grpCls==="mid"&&(set.positions||[]).indexOf("LW")>=0)badge="WF"; if(grpCls==="fw")badge="FW";
+      c.innerHTML='<span class="pc-badge '+grpCls+'"></span><span class="pc-main"><span class="pc-line"><b class="pc-name"></b><span class="pc-pos"></span></span><span class="pc-secs"></span></span><span class="pc-meta"></span><span class="pc-chev" aria-hidden="true"></span>';
+      c.querySelector(".pc-badge").textContent=badge;
+      c.querySelector(".pc-name").textContent=set.name||"이름 없는 그룹";
+      var pp=c.querySelector(".pc-pos");(set.positions||[]).forEach(function(x){var i=document.createElement("i");i.textContent=x;pp.appendChild(i);});
+      if(!(set.positions||[]).length){var i0=document.createElement("i");i0.className="none";i0.textContent="포지션 미지정";pp.appendChild(i0);}
+      var secNames=parsePoints(set.text).map(function(x){return x.name;}).filter(Boolean), pcs=c.querySelector(".pc-secs");
+      secNames.slice(0,4).forEach(function(nm){var i=document.createElement("i");i.textContent=nm;pcs.appendChild(i);});
+      if(secNames.length>4){var im=document.createElement("i");im.className="more";im.textContent="+"+(secNames.length-4);pcs.appendChild(im);}
+      c.querySelector(".pc-meta").innerHTML='<span><b>'+st.q+'</b> 문항</span><span><b>'+st.sec+'</b> 섹션</span>';
+      c.addEventListener("click",function(){ptOpen=(ptOpen===idx)?null:idx;renderPtSet();
+        if(ptOpen===idx){ setTimeout(function(){ try{ var el=host.querySelector(".pt-card.open"); if(el)el.scrollIntoView({behavior:"smooth",block:"nearest"}); }catch(_){} },30); } });
+      card.appendChild(c);
+      if(open){ try{ card.appendChild(buildPtEditor(idx)); }catch(_){} }
+      grid.appendChild(card);
+    });
+    host.appendChild(grid);return;
+  }
+  function buildPtEditor(idx){
+    var set=sets[idx];
+    var g=document.createElement("div");g.className="pt-group";
+    var h=document.createElement("div");h.className="pt-group-h";
+    var nm=document.createElement("input");nm.className="gname";nm.value=set.name;nm.placeholder="그룹 이름";
+    nm.addEventListener("input",function(){set.name=nm.value;save();});
+    h.appendChild(nm);
+    var gp=document.createElement("div");gp.className="gpos";
+    POS.forEach(function(x){var b=document.createElement("button");b.type="button";b.textContent=x;b.className=(set.positions||[]).indexOf(x)>=0?"on":"";
+      b.addEventListener("click",function(){set.positions=set.positions||[];var i=set.positions.indexOf(x);if(i>=0)set.positions.splice(i,1);else set.positions.push(x);b.classList.toggle("on");save();});
+      gp.appendChild(b);});
+    h.appendChild(gp);
+    var del=document.createElement("button");del.type="button";del.className="gdel";del.textContent="×";del.title="이 그룹 삭제";
+    del.addEventListener("click",function(){if(!confirm("'"+set.name+"' 그룹을 삭제할까요?"))return;sets.splice(idx,1);ptOpen=null;save();renderPtSet();});
+    h.appendChild(del);g.appendChild(h);
+    /* 1.866 — 엑셀 시트 느낌(사용자): 섹션 | 질문 표. 셀 직접 편집, 행 추가/삭제/이동. 저장 형식은 그대로 텍스트("## 섹션" + 질문 줄) */
+    var mode=set._mode||"sheet";
+    var bar=document.createElement("div");bar.className="pt-sheetbar";
+    var tgl=document.createElement("button");tgl.type="button";tgl.className="sc-mini";tgl.textContent=(mode==="sheet")?"텍스트로 편집":"표로 편집";
+    tgl.addEventListener("click",function(){set._mode=(mode==="sheet")?"text":"sheet";renderPtSet();});
+    var addQ=document.createElement("button");addQ.type="button";addQ.className="sc-mini";addQ.textContent="＋ 질문";
+    var addS=document.createElement("button");addS.type="button";addS.className="sc-mini";addS.textContent="＋ 섹션";
+    bar.appendChild(addQ);bar.appendChild(addS);bar.appendChild(tgl);g.appendChild(bar);
+    if(mode==="text"){
+      var ta=document.createElement("textarea");ta.value=set.text||"";ta.placeholder="## 오프 더 볼 · 움직임\n체크 질문을 한 줄에 하나씩…";
+      ta.addEventListener("input",function(){set.text=ta.value;save();});
+      g.appendChild(ta);
+      addQ.onclick=function(){set.text=(set.text||"").replace(/\s*$/,"")+"\n새 질문";save();renderPtSet();};
+      addS.onclick=function(){set.text=(set.text||"").replace(/\s*$/,"")+"\n## 새 섹션\n";save();renderPtSet();};
+      return g;
+    }
+    /* rows ← text */
+    var rows=[];(function(){var cur="";String(set.text||"").split(/\r?\n/).forEach(function(l){var t=l.trim();if(!t)return;if(t.indexOf("##")===0){cur=t.replace(/^#+\s*/,"");rows.push({sec:cur,q:"",hdr:true});}else rows.push({sec:cur,q:t.replace(/^[-*·]\s*/,"")});});})();
+    function toText(){var out=[],cur=null;rows.forEach(function(r){var sec=String(r.sec||"").trim();if(sec!==cur){cur=sec;if(sec)out.push("## "+sec);}if(r.hdr)return;var q=String(r.q||"").trim();if(q)out.push(q);});return out.join("\n");}
+    function commit(){set.text=toText();save();}
+    var tbl=document.createElement("div");tbl.className="pt-sheet";
+    tbl.innerHTML='<div class="pt-sh"><span>#</span><span>섹션</span><span>체크 질문</span><span></span></div>';
+    var qi=0, lastSec=null;
+    rows.forEach(function(r,ri){ if(r.hdr)return; qi++;
+      var row=document.createElement("div");row.className="pt-sr"+(r.sec!==lastSec?" first":"");
+      var n=document.createElement("span");n.className="n";n.textContent=qi;
+      var sc=document.createElement("input");sc.className="c sec";sc.value=r.sec||"";sc.placeholder="섹션";sc.title="같은 이름이 이어지면 한 섹션으로 묶입니다";
+      sc.addEventListener("change",function(){r.sec=sc.value;commit();renderPtSet();});
+      var q=document.createElement("input");q.className="c q";q.value=r.q||"";q.placeholder="체크 질문 — 예: 압박 신호를 읽고 첫 두 걸음이 빠른가";
+      q.addEventListener("input",function(){r.q=q.value;commit();});
+      q.addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.isComposing){e.preventDefault();rows.splice(ri+1,0,{sec:r.sec,q:""});commit();renderPtSet();setTimeout(function(){var qs=g.querySelectorAll(".pt-sr .q");if(qs[qi])qs[qi].focus();},0);} });
+      var ops=document.createElement("span");ops.className="ops";
+      var up=document.createElement("button");up.type="button";up.textContent="↑";up.title="위로";up.onclick=function(){var pi=ri-1;while(pi>=0&&rows[pi].hdr)pi--;if(pi<0)return;var t=rows[ri];rows[ri]=rows[pi];rows[pi]=t;commit();renderPtSet();};
+      var dn=document.createElement("button");dn.type="button";dn.textContent="↓";dn.title="아래로";dn.onclick=function(){var ni=ri+1;while(ni<rows.length&&rows[ni].hdr)ni++;if(ni>=rows.length)return;var t=rows[ri];rows[ri]=rows[ni];rows[ni]=t;commit();renderPtSet();};
+      var x=document.createElement("button");x.type="button";x.textContent="×";x.title="이 질문 삭제";x.onclick=function(){rows.splice(ri,1);commit();renderPtSet();};
+      ops.appendChild(up);ops.appendChild(dn);ops.appendChild(x);
+      row.appendChild(n);row.appendChild(sc);row.appendChild(q);row.appendChild(ops);tbl.appendChild(row);
+      lastSec=r.sec;
+    });
+    if(!qi){var em=document.createElement("div");em.className="pt-sr empty";em.textContent="질문이 없어요 — ＋ 질문으로 첫 행을 추가하세요.";tbl.appendChild(em);}
+    g.appendChild(tbl);
+    addQ.onclick=function(){var lastRow=rows.slice().reverse().find(function(r){return !r.hdr;});rows.push({sec:(lastRow?lastRow.sec:(rows.length?rows[rows.length-1].sec:"")),q:""});commit();renderPtSet();setTimeout(function(){var qs=g.querySelectorAll(".pt-sr .q");if(qs.length)qs[qs.length-1].focus();},0);};
+    addS.onclick=function(){var nm=prompt("새 섹션 이름 (예: 오프 더 볼 · 움직임)");nm=nm&&nm.trim();if(!nm)return;rows.push({sec:nm,q:"",hdr:true});rows.push({sec:nm,q:""});commit();renderPtSet();};
+    return g;
+  }
+}
+$("ptSetBtn").addEventListener("click",function(){ptOpen=null;renderPtSet();$("ptSet").classList.add("on");});
+$("ptSetClose").addEventListener("click",function(){$("ptSet").classList.remove("on");renderDetail();});
+$("ptTemplate").addEventListener("click",function(){
+  if((db.meta.pointSets||[]).length&&!confirm("기존 세트를 프로세스 기본세트로 교체할까요? (매긴 점수는 질문이 같으면 유지)"))return;
+  db.meta.pointSets=JSON.parse(JSON.stringify(PS_POINT_TEMPLATE));save();renderPtSet();toast("프로세스 기본세트를 불러왔습니다");
+});
+$("ptGroupAdd").addEventListener("click",function(){var t=prompt("그룹 이름 (예: 공격수)");t=t&&t.trim();if(!t)return;
+  db.meta.pointSets=db.meta.pointSets||[];db.meta.pointSets.push({name:t,positions:[],text:""});ptOpen=db.meta.pointSets.length-1;save();renderPtSet();});
+/* ── 스카우팅 포인트: 평가지 ── */
+var ptEvalPlayer=null;
+function ptPickSet(p){var sets=db.meta.pointSets||[];
+  for(var i=0;i<sets.length;i++){if((sets[i].positions||[]).some(function(x){return (p.pos||[]).indexOf(x)>=0;}))return i;}
+  return 0;}
+function renderPtEval(){
+  var p=ptEvalPlayer;if(!p)return;
+  var sets=db.meta.pointSets||[],si=+($("ptEvalSet").value||0)||0;if(si>=sets.length)si=0;
+  var set=sets[si];var host=$("ptEvalBody");host.innerHTML="";
+  if(!set){host.innerHTML='<div class="pt-empty">세트가 없습니다 — 포인트 설정에서 만들어주세요.</div>';return;}
+  var secs=parsePoints(set.text);
+  if(!secs.length){host.innerHTML='<div class="pt-empty">이 그룹에 질문이 없습니다 — 포인트 설정에서 붙여넣어 주세요.</div>';return;}
+  /* 2.012 — 평가표 재설계: 요약 띠(이 그룹 평균·응답 진행·척도 말·안 매긴 것만) → 섹션 헤더(평균·응답) → 번호 질문 + 말 붙은 1~5 */
+  var SCALE=[[1,"거의 없음"],[2,"가끔"],[3,"보통"],[4,"자주"],[5,"항상"]];
+  var tot=0,ans=0,sum=0, secStat=[];
+  secs.forEach(function(sec){ var n=0,a=0,ss=0; sec.qs.forEach(function(q){ n++; var v=(p.points||{})[pointKey(set.name,q)]||0; if(v>0){a++;ss+=v;} }); secStat.push({n:n,a:a,avg:a?Math.round(ss/a*10)/10:null}); tot+=n; ans+=a; sum+=ss; });
+  var gAvg=ans?Math.round(sum/ans*10)/10:null;
+  var only=!!window.__peOnlyOpen;
+  var sumEl=document.createElement("div");sumEl.className="pe-sum";
+  sumEl.innerHTML='<div class="pe-sum-row"><span class="pe-avg"><b>'+(gAvg==null?"–":gAvg.toFixed(1))+'</b><small>/ 5 · '+esc(set.name)+'</small></span>'
+    +'<span class="pe-prog"><span class="bar"><i style="width:'+(tot?Math.round(ans/tot*100):0)+'%"></i></span><small>'+ans+' / '+tot+' 문항 매김'+(ans===tot&&tot?' · 완료':'')+'</small></span>'
+    +'<span class="pe-legend">'+SCALE.map(function(x){return '<span><b>'+x[0]+'</b>'+x[1]+'</span>';}).join('')+'</span>'
+    +'<label class="pe-only"><input type="checkbox" id="peOnly"'+(only?' checked':'')+'> 안 매긴 것만</label></div>'
+    +'<div class="pe-secs">'+secs.map(function(sec,i){var st=secStat[i];return '<button type="button" data-pesec="'+i+'" class="'+(st.a===st.n&&st.n?'done':'')+'"><b>'+esc(sec.name||("섹션 "+(i+1)))+'</b>'+st.a+'/'+st.n+(st.avg!=null?' · '+st.avg:'')+'</button>';}).join('')+'</div>';
+  host.appendChild(sumEl);
+  sumEl.querySelector("#peOnly").addEventListener("change",function(){window.__peOnlyOpen=this.checked;renderPtEval();});
+  Array.prototype.forEach.call(sumEl.querySelectorAll("[data-pesec]"),function(b){b.addEventListener("click",function(){var el=host.querySelector('[data-pesech="'+b.dataset.pesec+'"]');if(el)el.scrollIntoView({behavior:"smooth",block:"start"});});});
+  var qn=0;
+  secs.forEach(function(sec,si){
+    var st=secStat[si];
+    var sh=document.createElement("div");sh.className="pe-sech";sh.setAttribute("data-pesech",si);
+    sh.innerHTML='<b>'+esc(sec.name||("섹션 "+(si+1)))+'</b><small>'+st.a+' / '+st.n+'</small>'+(st.avg!=null?'<span class="avg">평균 '+st.avg+'</span>':'');
+    host.appendChild(sh);
+    sec.qs.forEach(function(q){
+      qn++;
+      var key=pointKey(set.name,q),val=(p.points||{})[key]||0;
+      if(only&&val>0)return;
+      var row=document.createElement("div");row.className="pe-q"+(val>0?" done":"");
+      var n=document.createElement("span");n.className="n";n.textContent=qn;row.appendChild(n);
+      var qt=document.createElement("div");qt.className="qt";qt.textContent=q;row.appendChild(qt);
+      var seg=document.createElement("div");seg.className="pe-rate";
+      SCALE.forEach(function(sc){ var k=sc[0];
+        var b=document.createElement("button");b.type="button";b.className=k===val?"on":(k<val?"lt":"");b.title=sc[1];
+        b.innerHTML='<b>'+k+'</b><small>'+sc[1]+'</small>';
+        b.addEventListener("click",function(){p.points=p.points||{};p.points[key]=(p.points[key]===k)?0:k;touch(p);renderPtEval();});
+        seg.appendChild(b);
+      });
+      row.appendChild(seg);host.appendChild(row);
+    });
+  });
+  if(only&&ans===tot&&tot){var dn=document.createElement("div");dn.className="pt-empty";dn.textContent="이 그룹은 모두 매겼어요.";host.appendChild(dn);}
+  var s=pointSummary(p);
+  $("ptEvalSum").textContent=s?("전체 평균 "+s.avg+" · "+s.n+"문항"):"아직 매긴 점수 없음";
+}
+function openPtEval(p){
+  ptEvalPlayer=p;
+  var sets=db.meta.pointSets||[],sel=$("ptEvalSet");sel.innerHTML="";
+  sets.forEach(function(s,i){var o=document.createElement("option");o.value=i;o.textContent=s.name;sel.appendChild(o);});
+  sel.value=String(ptPickSet(p));
+  $("ptEvalTitle").textContent=(p.nameKr||"선수")+" · 포인트 평가";
+  renderPtEval();$("ptEval").classList.add("on");
+}
+$("ptEvalSet").addEventListener("change",renderPtEval);
+$("ptEvalClose").addEventListener("click",function(){$("ptEval").classList.remove("on");ptEvalPlayer=null;renderDetail();});
+document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;
+  if($("ptEval").classList.contains("on")){$("ptEval").classList.remove("on");ptEvalPlayer=null;renderDetail();}
+  else if($("ptSet").classList.contains("on")){$("ptSet").classList.remove("on");renderDetail();}});
+/* ── 회의모드 — 운동장 카드 + 포지션별 후보(현재 필터 반영, 평점·등급 순) ── */
+var MEET_XY={GK:[7,50],RB:[21,16],CB:[21,50],LB:[21,84],WB:[33,32],DM:[42,58],CM:[54,42],AM:[66,60],
+  RM:[54,13],LM:[54,87],RW:[76,13],LW:[76,87],FW:[81,40],ST:[89,60]};
+function meetSort(a,b){var ga="SABCD".indexOf(a.grade||"E"),gb="SABCD".indexOf(b.grade||"E");
+  if(ga<0)ga=5;if(gb<0)gb=5;if(ga!==gb)return ga-gb;return ratingAvg(b)-ratingAvg(a);}
+function renderMeet(){
+  var pitch=$("meetPitch");
+  [].forEach.call(pitch.querySelectorAll(".mm-slot"),function(e){e.remove();});
+  var rows=list();
+  $("meetTitle").textContent=(db.meta.teamName||"스카우팅")+" · 포지션 보드";
+  POS.forEach(function(pos){
+    var xy=MEET_XY[pos]||[50,50];
+    var players=rows.filter(function(p){return (p.pos||[]).indexOf(pos)>=0;}).sort(meetSort);
+    var slot=document.createElement("div");slot.className="mm-slot"+(players.length?"":" empty");
+    slot.style.left=xy[0]+"%";slot.style.top=xy[1]+"%";
+    slot.innerHTML='<div class="t"><span>'+pos+'</span><span class="n">'+(players.length||"")+'</span></div>'
+      +(players.length?'<ul>'+players.map(function(p){
+        var badge=p.grade||(ratingAvg(p)?String(ratingAvg(p)):"");
+        return '<li data-id="'+esc(p.id)+'"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis">'+esc(p.nameKr||"?")+'</span>'+(badge?'<span class="g">'+esc(badge)+'</span>':'')+'</li>';
+      }).join("")+'</ul>':'');
+    pitch.appendChild(slot);
+  });
+}
+/* 회의모드 안 필터 — 메인 화면과 같은 filter 상태를 공유(회의에서 좁힌 조건이 목록에도 유지) */
+function renderMeetFilters(){
+  var host=$("meetFilters");host.innerHTML="";
+  function sec(t){var s=document.createElement("span");s.className="mf-sec";s.textContent=t;host.appendChild(s);}
+  function chip(label,on,fn){var b=document.createElement("button");b.type="button";b.className="mf-chip"+(on?" on":"");b.textContent=label;
+    b.addEventListener("click",function(){fn();renderRail();renderGrid();renderMeetFilters();renderMeet();});host.appendChild(b);}
+  sec("구분");
+  (db.meta.tagOptions||[]).forEach(function(t){chip(t,filter.tags.indexOf(t)>=0,function(){var i=filter.tags.indexOf(t);if(i>=0)filter.tags.splice(i,1);else filter.tags.push(t);});});
+  sec("평가");
+  GRADES.forEach(function(g){chip(g,filter.grades.indexOf(g)>=0,function(){var i=filter.grades.indexOf(g);if(i>=0)filter.grades.splice(i,1);else filter.grades.push(g);});});
+  var rs=document.createElement("button");rs.type="button";rs.className="mf-chip reset";rs.textContent="필터 초기화";
+  rs.addEventListener("click",function(){filter={q:"",pos:[],tags:[],grades:[]};$("q").value="";renderRail();renderGrid();renderMeetFilters();renderMeet();});
+  host.appendChild(rs);
+}
+function openMeet(){renderMeetFilters();renderMeet();$("meetMode").classList.add("on");}
+function closeMeet(){$("meetMode").classList.remove("on");}
+$("meetBtn").addEventListener("click",openMeet);
+$("meetClose").addEventListener("click",closeMeet);
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&$("meetMode").classList.contains("on"))closeMeet();});
+$("meetPitch").addEventListener("click",function(e){
+  var li=e.target.closest("li[data-id]");if(!li)return;
+  selId=li.getAttribute("data-id");closeMeet();renderGrid();renderDetail();
+});
+/* ── 전체 렌더 ── */
+function renderAll(){renderBand();renderRail();renderQuickPos();renderClubList();renderGrid();renderDetail();}
+load();renderAll();
+/* 1.810 — 팀>스카우팅 '후보 DB' 탭 임베드일 때: 카드에 '자리에 붙이기' 액션(부모 scout.html이 자리 시트를 연다) */
+var IN_TEAM=false;try{IN_TEAM=(window.parent!==window)&&/scout\.html/.test(document.referrer||"");}catch(_){}
+if(!IN_TEAM){try{IN_TEAM=(window.parent!==window)&&!!(window.frameElement&&window.frameElement.id==="sbDbFrame");}catch(_){}}
+var attachMap={};
+function askAttachState(){ if(!IN_TEAM)return; try{ window.parent.postMessage({source:"scoutdb",type:"attachStateQuery"},"*"); }catch(_){} }
+window.addEventListener("message",function(e){var d=e.data||{};if(!d||d.source!=="scout")return;
+  if(d.type==="attachState"){attachMap=d.map||{};renderGrid();}
+  if(d.type==="attachDone"){askAttachState();}});
+if(IN_TEAM){
+  document.body.classList.add("sc-in-team");
+  var _og=renderGrid; renderGrid=function(){ _og(); if(!IN_TEAM)return;
+    [].forEach.call(document.querySelectorAll("#grid .sc-card"),function(c){
+      var id=c.getAttribute("data-id"),p=db.players.find(function(x){return x.id===id;});if(!p)return;
+      var pos=attachMap[id];
+      var b=document.createElement("button");b.type="button";b.className="sc-attach"+(pos?" on":"");b.textContent=pos?("보드 · "+pos):"자리에 붙이기";
+      b.title=pos?("현재 "+pos+" 자리 후보 — 눌러서 옮기기"):"우리 포메이션 자리의 후보로 붙이기";
+      b.addEventListener("click",function(e){e.stopPropagation();try{window.parent.postMessage({source:"scoutdb",type:"attachRequest",player:{id:p.id,nameKr:p.nameKr,num:p.num,foot:p.foot,pos:p.pos,club:p.club,formerClub:p.formerClub,grade:p.grade}},"*");}catch(_){}});
+      c.querySelector(".sc-cbody").appendChild(b);
+    }); };
+  setTimeout(askAttachState,300);renderGrid();
+}
+/* ?view=points — 팀>스카우팅 '스카우팅 포인트' 탭 임베드용: 포인트 설정 편집기만 페이지로 고정(닫기 없음). 같은 데이터(pointSets) */
+try{ if(/[?&]view=points\b/.test(location.search)){
+  document.body.classList.add("sc-points-only");
+  renderPtSet();$("ptSet").classList.add("on");
+  var _pc=$("ptSetClose");if(_pc)_pc.style.display="none";
+} }catch(_){}
+/* 다른 창(사이드바 스카우팅 ↔ 팀 탭)에서 세트가 바뀌면 편집기 재렌더 */
+window.addEventListener("storage",function(e){ if(e&&e.key===KEY){ try{load();}catch(_){} if($("ptSet").classList.contains("on"))renderPtSet(); else renderAll(); } });
+/* 셸에서 탭 전환 시 임시 UI 닫기 신호 — 상세 패널은 유지(작업 흐름 보존), 특별 동작 없음 */
+window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="closeTransientUI"){}});
+})();
+</script>
+<link rel="stylesheet" href="ui-grammar.css?v=2.642"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<style id="ps-2598-rail">/* 2.598 — 스카우팅 남은 것: 왼쪽 레일 글자 11 → 12 · 항목 높이 ≈20 → 28(데스크톱만; 폰은 알약 그대로), 흰 머리띠에 남아 있던 파랑 시절 엠블럼(흰 점선·흰 ＋)을 잉크로, «등록» 그림자를 accent 로. 파랑 채움은 «등록»(과 폰 ＋·«등록하고 다음»)에만. */
+@media (min-width:768px){
+html body .sc-rail .sc-chip:not(#_):not(#__),html body .sc-rail .sc-chip.add:not(#_):not(#__){display:flex;align-items:center;height:28px;min-height:28px;padding:0 8px;font-size:12px;line-height:1;box-sizing:border-box}
+html body .sc-rail .sc-reset:not(#_):not(#__){height:28px;display:flex;align-items:center;padding:0 8px;font-size:12px;line-height:1;box-sizing:border-box}
+html body .sc-sec:not(#_):not(#__){font-size:11px;margin:6px 0 2px}
+html body .sc-rail:not(#_):not(#__){max-width:156px}
+}
+html body .sc-emblem:not(#_):not(#__){border:1px dashed var(--line,#E3E6EA);background:var(--panel2,#F1F3F5);color:var(--text-3,#8A9099)}
+html body .sc-qadd:not(#_):not(#__){box-shadow:0 3px 10px rgba(58,109,240,.28)}
+</style>
+</body>
+</html>

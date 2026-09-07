@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PROCESS STUDIO Instagram Carousel</title>
+  <style>
+    :root{--ink:#11151b;--paper:#f4f6f8;--line:#dfe4e9;--blue:#3a6df0;--green:#3c754d;--lime:#c9f266;--muted:#68717d}
+    *{box-sizing:border-box}html,body{margin:0;width:1080px;height:1350px;overflow:hidden;background:#111;font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.035em}
+    .slide{display:none;position:relative;width:1080px;height:1350px;overflow:hidden;padding:86px 82px;background:var(--paper);color:var(--ink)}
+    .slide.on{display:block}.slide.dark{color:#fff;background:radial-gradient(circle at 85% 12%,rgba(58,109,240,.24),transparent 29%),linear-gradient(145deg,#0d1117,#111a22 58%,#102018)}
+    .slide.green{color:#fff;background:radial-gradient(circle at 85% 12%,rgba(201,242,102,.18),transparent 26%),linear-gradient(145deg,#122117,#183522)}
+    .brand{position:absolute;left:82px;top:58px;font-size:25px;font-weight:400;letter-spacing:.035em}.brand b{font-weight:900;letter-spacing:-.03em}
+    .page{position:absolute;right:82px;top:61px;color:#818a95;font-size:20px;font-weight:800;letter-spacing:.08em}.dark .page,.green .page{color:#74808e}
+    .eyebrow{display:flex;align-items:center;gap:14px;margin-top:48px;color:var(--blue);font-size:18px;font-weight:900;letter-spacing:.15em}.eyebrow:before{content:"";width:42px;height:3px;background:currentColor}.dark .eyebrow{color:#82a2ff}.green .eyebrow{color:var(--lime)}
+    h1,h2,p{margin:0}h1{margin-top:36px;font-size:91px;line-height:1.08;letter-spacing:-.07em}h1 em{color:#7d9eff;font-style:normal}.green h1 em{color:var(--lime)}
+    h2{margin-top:29px;max-width:870px;font-size:66px;line-height:1.12;letter-spacing:-.065em;word-break:keep-all}
+    .lead{margin-top:30px;max-width:820px;color:var(--muted);font-size:28px;font-weight:600;line-height:1.58;word-break:keep-all}.dark .lead,.green .lead{color:#aab4c0}
+    .screen{position:absolute;left:82px;right:82px;bottom:80px;height:660px;border:1px solid #d8dee4;border-radius:28px;overflow:hidden;background:white;box-shadow:0 32px 80px rgba(19,29,43,.18)}
+    .screen:before{content:"";display:block;height:44px;background:#edf0f3;border-bottom:1px solid #dfe4e9}
+    .screen:after{content:"";position:absolute;top:17px;left:19px;width:10px;height:10px;border-radius:50%;background:#c7cdd4;box-shadow:18px 0 #c7cdd4,36px 0 #c7cdd4}
+    .screen img{width:100%;height:calc(100% - 44px);object-fit:cover;object-position:top center}
+    .caption-card{position:absolute;z-index:2;right:53px;bottom:50px;width:400px;padding:28px 30px;border-radius:20px;color:white;background:rgba(17,21,27,.93);box-shadow:0 20px 54px rgba(0,0,0,.24)}
+    .caption-card b{display:block;font-size:24px}.caption-card span{display:block;margin-top:10px;color:#abb4bf;font-size:17px;line-height:1.45}
+    .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:27px}.chips span{padding:11px 16px;border:1px solid #d8dee4;border-radius:999px;color:#4b535e;background:white;font-size:17px;font-weight:800}.dark .chips span,.green .chips span{color:#dce2e9;border-color:#32404d;background:#1c2630}
+    .cover-copy{position:relative;z-index:3;margin-top:146px}.cover-copy .topline{color:#83a3ff;font-size:21px;font-weight:900;letter-spacing:.13em}.cover-copy p{margin-top:32px;max-width:680px;color:#aeb8c4;font-size:28px;font-weight:600;line-height:1.55}
+    .cover-device{position:absolute;right:-138px;bottom:-25px;width:760px;transform:rotate(-5deg);border:1px solid rgba(255,255,255,.23);border-radius:28px;overflow:hidden;background:white;box-shadow:0 46px 110px rgba(0,0,0,.55)}
+    .cover-device img{width:100%}.cover-line{position:absolute;left:-190px;bottom:-170px;width:900px;height:900px;border:1px solid rgba(105,145,255,.2);border-radius:50%}
+    .number-badge{position:absolute;z-index:4;right:76px;bottom:67px;width:86px;height:86px;display:grid;place-items:center;border-radius:50%;color:white;background:var(--blue);font-size:28px;font-weight:900;box-shadow:0 14px 34px rgba(58,109,240,.35)}
+    .flow{margin-top:88px;display:grid;gap:18px}
+    .flow-row{display:grid;grid-template-columns:118px 1fr auto;align-items:center;min-height:130px;padding:22px 28px;border:1px solid #31404c;border-radius:22px;background:#1b2630}
+    .flow-row i{width:72px;height:72px;display:grid;place-items:center;border-radius:20px;color:#9ab2ff;background:rgba(58,109,240,.17);font-style:normal;font-size:21px;font-weight:900}
+    .flow-row b{font-size:30px}.flow-row span{color:#8996a4;font-size:20px;font-weight:700}.flow-row strong{color:#8090a1;font-size:27px}
+    .role-pill{position:absolute;right:82px;bottom:90px;display:flex;align-items:center;gap:18px;padding:20px 24px;border:1px solid rgba(255,255,255,.15);border-radius:18px;background:rgba(255,255,255,.07)}
+    .role-pill span{font-size:19px;font-weight:800}.role-pill i{width:8px;height:8px;border-radius:50%;background:var(--lime)}
+    .cta{position:relative;z-index:2;margin-top:112px}.cta .url{display:inline-flex;margin-top:48px;padding:20px 27px;border-radius:15px;color:#101b14;background:var(--lime);font-size:21px;font-weight:900;letter-spacing:.01em}
+    .cta-grid{position:absolute;right:-40px;bottom:-100px;width:610px;height:610px;background:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:58px 58px;transform:perspective(520px) rotateX(56deg) rotateZ(-8deg)}
+    .cta-circle{position:absolute;right:62px;bottom:52px;width:440px;height:440px;border:2px solid rgba(201,242,102,.22);border-radius:50%}
+    .footer-note{position:absolute;left:82px;bottom:62px;color:#75818e;font-size:16px;font-weight:700;letter-spacing:.05em}.green .footer-note{color:#819487}
+  </style>
+</head>
+<body>
+  <section class="slide dark" data-slide="1">
+    <div class="brand"><b>PROCESS</b> STUDIO</div><div class="page">01 / 08</div>
+    <div class="cover-line"></div>
+    <div class="cover-copy">
+      <div class="topline">FOOTBALL WORKFLOW OS</div>
+      <h1>전술에서 성장까지,<br><em>하나의 흐름으로.</em></h1>
+      <p>코치의 생각을 작전판으로 만들고, 훈련·경기·선수 성장까지 연결합니다.</p>
+    </div>
+    <div class="cover-device"><img src="assets/01-board.png" alt=""></div>
+    <div class="footer-note">SWIPE TO EXPLORE →</div>
+  </section>
+
+  <section class="slide" data-slide="2">
+    <div class="brand"><b>PROCESS</b> STUDIO</div><div class="page">02 / 08</div>
+    <div class="eyebrow">TACTICS BOARD</div>
+    <h2>말보다 빠르게,<br>작전판으로 보여주세요.</h2>
+    <p class="lead">선수·볼·장비를 배치하고 동선을 그려 여러 장면의 움직임을 애니메이션으로 전달합니다.</p>
+    <div class="chips"><span>곡선 움직임</span><span>장면 애니메이션</span><span>미팅 세트</span></div>
+    <div class="screen"><img src="assets/01-board.png" alt=""></div><div class="number-badge">01</div>
+  </section>
+
+  <section class="slide" data-slide="3">
+    <div class="brand"><b>PROCESS</b> STUDIO</div><div class="page">03 / 08</div>
+    <div class="eyebrow">TRAINING LIBRARY</div>
+    <h2>한 번 만든 훈련을<br>팀의 자산으로.</h2>
+    <p class="lead">작전판과 훈련을 보관함에 저장하고 카테고리·연령·인원·태그로 빠르게 다시 찾습니다.</p>
+    <div class="chips"><span>자동 저장</span><span>카테고리 검색</span><span>훈련 다시 편집</span></div>
+    <div class="screen"><img src="assets/04-vault.png" alt=""></div><div class="number-badge">02</div>
+  </section>
+
+  <section class="slide" data-slide="4">
+    <div class="brand"><b>PROCESS</b> STUDIO</div><div class="page">04 / 08</div>
+    <div class="eyebrow">COACH COMMUNITY</div>
+    <h2>코치들의 경험을<br>함께 쌓습니다.</h2>
+    <p class="lead">움직이는 훈련 자료를 공유하고, 다른 코치의 아이디어를 내 보관함에 담아 팀에 맞게 발전시킵니다.</p>
+    <div class="chips"><span>훈련 영상</span><span>연령·인원 필터</span><span>내 보관함에 담기</span></div>
+    <div class="screen"><img src="assets/05-community.png" alt=""></div><div class="number-badge">03</div>
+  </section>
+
+  <section class="slide" data-slide="5">
+    <div class="brand"><b>PROCESS</b> STUDIO</div><div class="page">05 / 08</div>
+    <div class="eyebrow">TEAM WORKSPACE</div>
+    <h2>명단·부상·경기를<br>한 화면에서.</h2>
+    <p class="lead">포메이션과 뎁스차트, 선수 상태, 경기 준비와 리뷰를 연결해 팀 운영의 흐름을 놓치지 않습니다.</p>
+    <div class="chips"><span>뎁스차트</span><span>부상·재활 상태</span><span>FIFA 경기 리뷰</span></div>
+    <div class="screen"><img src="assets/02-team.png" alt=""></div><div class="number-badge">04</div>
+  </section>
+
+  <section class="slide" data-slide="6">
+    <div class="brand"><b>PROCESS</b> STUDIO</div><div class="page">06 / 08</div>
+    <div class="eyebrow">PLAYER DEVELOPMENT</div>
+    <h2>선수의 성장을<br>평가에서 대화로.</h2>
+    <p class="lead">선수의 자기평가를 코치가 확인하고, 경기 근거와 다음 행동을 담은 피드백을 해당 선수에게 전달합니다.</p>
+    <div class="chips"><span>선수 자기평가</span><span>코치 피드백</span><span>목표·개인훈련·학습</span></div>
+    <div class="screen"><img src="assets/03-idp.png" alt=""></div><div class="number-badge">05</div>
+  </section>
+
+  <section class="slide dark" data-slide="7">
+    <div class="brand"><b>PROCESS</b> STUDIO</div><div class="page">07 / 08</div>
+    <div class="eyebrow">ONE CONNECTED PROCESS</div>
+    <h2>자료를 만드는 데서<br>끝나지 않습니다.</h2>
+    <p class="lead">현장에서 반복되는 코칭 업무가 다음 단계로 자연스럽게 이어집니다.</p>
+    <div class="flow">
+      <div class="flow-row"><i>01</i><b>설계</b><span>작전판·훈련</span><strong>→</strong></div>
+      <div class="flow-row"><i>02</i><b>저장·공유</b><span>보관함·커뮤니티</span><strong>→</strong></div>
+      <div class="flow-row"><i>03</i><b>경기</b><span>준비·실행·리뷰</span><strong>→</strong></div>
+      <div class="flow-row"><i>04</i><b>성장</b><span>피드백·IDP·다음 훈련</span><strong>✓</strong></div>
+    </div>
+    <div class="role-pill"><i></i><span>COACH</span><i></i><span>PLAYER</span><i></i><span>TEAM</span></div>
+  </section>
+
+  <section class="slide green" data-slide="8">
+    <div class="brand"><b>PROCESS</b> STUDIO</div><div class="page">08 / 08</div>
+    <div class="cta">
+      <div class="eyebrow">BUILT WITH COACHES</div>
+      <h1>축구를 더 잘<br>이해하도록.</h1>
+      <p class="lead">현장의 피드백으로 더 쉽고, 더 구체적인 코칭 환경을 만들어갑니다.</p>
+      <div class="url">processstudio.netlify.app ↗</div>
+    </div>
+    <div class="cta-grid"></div><div class="cta-circle"></div>
+    <div class="footer-note">DESIGN THE SESSION · READ THE GAME · DEVELOP THE PLAYER</div>
+  </section>
+  <script>
+    const n=Math.min(8,Math.max(1,Number(new URLSearchParams(location.search).get("slide"))||1));
+    document.querySelector(`[data-slide="${n}"]`).classList.add("on");
+  </script>
+</body>
+</html>

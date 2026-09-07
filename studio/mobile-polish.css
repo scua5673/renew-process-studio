@@ -1,0 +1,1544 @@
+@charset "UTF-8";
+/* PROCESS STUDIO · mobile UI baseline
+   화면 구조와 기능은 유지하고 모바일의 글자 위계, 여백, 터치 영역만 통일한다. */
+@media (max-width: 767px) {
+  :root {
+    --ps-m-gutter: 16px;
+    --ps-m-space: 24px;
+    --ps-m-card: 16px;
+    --ps-m-touch: 44px;
+    --ps-m-radius: 14px;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* iOS 입력 시 자동 확대 방지 */
+  }
+
+  button,
+  [role="button"],
+  .btn {
+    touch-action: manipulation;
+  }
+
+  h1, .page-title, .screen-title {
+    font-size: 22px;
+    line-height: 1.3;
+    letter-spacing: -.025em;
+  }
+
+  h2, .section-title, .card-title {
+    font-size:20px;
+    line-height: 1.4;
+    letter-spacing: -.018em;
+  }
+
+  h3, .sub-title {
+    font-size:14px;
+    line-height: 1.45;
+  }
+
+  small, .muted, .sub, .meta, .hint {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  /* 앱 셸 */
+  .ps-page-app .appbar {
+    padding-left: var(--ps-m-gutter);
+    padding-right: var(--ps-m-gutter);
+  }
+
+  .ps-page-app .brand .wm,
+  .ps-page-app .brand {
+    font-size:14px;
+    letter-spacing: -.015em;
+  }
+
+  .ps-page-app .gearbtn,
+  .ps-page-app .sharebtn,
+  .ps-page-app .acct {
+    min-width: var(--ps-m-touch);
+    min-height: var(--ps-m-touch);
+  }
+
+  .ps-page-app .seg {
+    min-height: calc(56px + env(safe-area-inset-bottom));
+    padding: 5px 8px max(5px, env(safe-area-inset-bottom));
+    align-items: stretch;
+  }
+
+  .ps-page-app .seg > button,
+  .ps-page-app .seg > a,
+  .ps-page-app .seg .tab {
+    min-height:40px;
+    font-size: 11px !important;
+    line-height: 1.2;
+    gap: 3px;
+  }
+
+  /* 앱 셸이 이미 margin-bottom으로 하단 탭 높이를 예약한다.
+     여기서 bottom을 또 주면 iframe 전체가 위로 이동해 도크 아래에 큰 빈 공간이 생긴다. */
+  .ps-page-app .frames {
+    bottom: auto !important;
+  }
+
+  .ps-page-app .sharepop {
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: none;
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  /* 2.099 — 설정(⚙︎)은 **버튼 바로 아래**로 연다(사용자: "폰에서 설정 누르면 바로 밑으로 뜨게해줘").
+     전에는 `.sharepop` 과 한 묶음으로 `left/right:12px !important` 를 받아 화면 폭을 꽉 채웠고,
+     app.html 의 폰 규칙이 그것을 하단 바텀시트로 띄웠다. 두 가지가 문제였다 —
+     ① 화면 아래에서 올라오니 **어느 버튼이 연 것인지 보이지 않는다**
+     ② 높이가 `100dvh-138px` 라 설정 몇 줄에 화면을 거의 다 덮었다.
+     `#gearWrap`(.gear)이 `position:relative` 이므로 `top:100%` 로 버튼에 매단다 — 헤더 높이가 바뀌어도 따라간다.
+     ⚠ 이 규칙이 **폰 기하의 주인**이다. app.html 쪽 `@media(max-width:600px)` 보다 특이도가 높고
+        `!important` 라 그쪽을 고쳐도 안 먹는다(2.099 에서 한 번 헛짚었다). */
+  .ps-page-app .gearpop {
+    position: absolute !important;
+    left: auto !important;
+    right: 0 !important;
+    top: calc(100% + 8px) !important;
+    bottom: auto !important;
+    width: min(330px, calc(100vw - 20px)) !important;
+    min-width: 0;
+    max-width: none;
+    max-height: calc(100dvh - 120px);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 16px 40px rgba(16, 24, 40, .22);
+  }
+
+  /* 공통 상단 헤더 */
+  .ps-page-board .apphd,
+  .ps-page-process .apphd,
+  .ps-page-gamemodel .apphd,
+  .ps-page-scout .apphd,
+  .ps-page-terms .apphd,
+  .ps-page-idp .apphd,
+  .ps-page-note .apphd,
+  .ps-page-community .apphd {
+    padding-left: var(--ps-m-gutter);
+    padding-right: var(--ps-m-gutter);
+  }
+
+  .apphd-name,
+  .apphd-title,
+  .brand-name {
+    font-size: 16px !important;
+    line-height: 1.3;
+    letter-spacing: -.02em;
+  }
+
+  /* 일반 콘텐츠 페이지 */
+  .ps-page-process .stage,
+  .ps-page-gamemodel .stage,
+  .ps-page-scout .stage,
+  .ps-page-terms .stage,
+  .ps-page-idp .stage,
+  .ps-page-community .stage,
+  .ps-page-community .wrap,
+  .ps-page-scout .wrap,
+  .ps-page-terms .wrap {
+    padding-left: var(--ps-m-gutter) !important;
+    padding-right: var(--ps-m-gutter) !important;
+  }
+
+  .ps-page-process .card,
+  .ps-page-gamemodel .card,
+  .ps-page-scout .card,
+  .ps-page-terms .card,
+  .ps-page-idp .card,
+  .ps-page-community .card {
+    padding: var(--ps-m-card);
+    border-radius: var(--ps-m-radius);
+  }
+
+  .ps-page-process .btn,
+  .ps-page-gamemodel .btn,
+  .ps-page-scout .btn,
+  .ps-page-terms .btn,
+  .ps-page-idp .btn,
+  .ps-page-community .btn,
+  .ps-page-note .btn {
+    min-height: var(--ps-m-touch);
+    padding: 9px 14px;
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  /* 커뮤니티: 카드 정보가 썸네일보다 먼저 읽히게 */
+  .ps-page-community .grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  .ps-page-community .card .title,
+  .ps-page-community .item-title {
+    font-size:14px !important;
+    line-height: 1.4;
+  }
+
+  .ps-page-community .card .meta,
+  .ps-page-community .item-meta {
+    font-size: 12px !important;
+    line-height: 1.5;
+  }
+
+  /* 팀·스카우트·IDP: 폼과 평가를 손가락으로 조작 가능하게 */
+  .ps-page-scout input,
+  .ps-page-scout select,
+  .ps-page-scout textarea,
+  .ps-page-idp input,
+  .ps-page-idp select,
+  .ps-page-idp textarea,
+  .ps-page-process input,
+  .ps-page-process select,
+  .ps-page-process textarea {
+    min-height: var(--ps-m-touch);
+    padding: 10px 12px;
+  }
+
+  .ps-page-idp .stage,
+  .ps-page-idp .player-mobile,
+  .ps-page-idp .idp-mobile {
+    gap: 16px;
+  }
+
+  /* 팀: 제목·주요 행동·탭이 서로 겹치지 않는 단일 정렬선 */
+  .ps-page-scout #nav,
+  .ps-page-gamemodel #gmNav,
+  .ps-page-terms #teamNav {
+    display: flex !important;
+    gap: 18px !important;
+    padding: 0 var(--ps-m-gutter) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap;
+    scrollbar-width: none;
+    scroll-padding-inline: var(--ps-m-gutter);
+  }
+
+  .ps-page-scout #nav::-webkit-scrollbar,
+  .ps-page-gamemodel #gmNav::-webkit-scrollbar,
+  .ps-page-terms #teamNav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ps-page-scout #nav button,
+  .ps-page-gamemodel #gmNav button,
+  .ps-page-terms #teamNav button {
+    flex: 0 0 auto !important;
+    min-width: max-content !important;
+    min-height: var(--ps-m-touch) !important;
+    padding: 0 12px !important;
+  }
+
+  .ps-page-scout #teamView .tm-head-top {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .ps-page-scout #teamView .tm-titlebox,
+  .ps-page-scout #teamView .tm-head-actions {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .ps-page-scout #teamView .tm-titleline {
+    flex-wrap: nowrap !important;
+  }
+
+  .ps-page-scout #teamView .tm-titleline .t {
+    white-space: nowrap !important;
+  }
+
+  .ps-page-scout #teamView #teamCount {
+    width: auto !important;
+    min-width: max-content !important;
+    flex: 0 0 auto !important;
+  }
+
+  .ps-page-scout #teamView .tm-head-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    margin: 0 !important;
+  }
+
+  .ps-page-scout #teamView .tm-head-actions #tmAdd {
+    width: 100% !important;
+    min-height: var(--ps-m-touch) !important;
+  }
+
+  .ps-page-scout #teamView .tm-head-actions #rosterBtn {
+    width: auto !important;
+    min-width: 84px !important;
+    min-height: var(--ps-m-touch) !important;
+    padding: 0 12px !important;
+  }
+
+  .ps-page-scout #teamView .tm-summary {
+    gap: 8px !important;
+  }
+
+  .ps-page-scout #teamView .tm-summary > div {
+    min-height: 76px !important;
+    padding: 12px !important;
+  }
+
+  /* 선수 프로필 편집은 하단 앱 내비게이션에 가리지 않는 한 열 흐름으로 */
+  .ps-page-scout .pl-modal {
+    align-items: flex-start !important;
+    padding: 8px 8px calc(84px + env(safe-area-inset-bottom)) !important;
+    overscroll-behavior: contain;
+  }
+
+  .ps-page-scout .pl-modal > #plEditCard {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    border-radius: 16px !important;
+  }
+
+  .ps-page-scout #plEditCard > .card-h {
+    position: sticky;
+    top: -14px;
+    z-index: 4;
+    margin: -14px -14px 12px !important;
+    padding: 12px 14px !important;
+    background: var(--bar, #fff);
+    border-bottom: 1px solid var(--line, #E3E6EA);
+  }
+
+  .ps-page-scout #plEditCard > .row,
+  .ps-page-scout #plEditCard .rz-edit > .row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .ps-page-scout #plEditCard .field {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  .ps-page-scout #plEditCard .rz-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* IDP: 제목 행과 탭을 분리하고 현재 탭이 완전히 보이도록 한다. */
+  .ps-page-idp .top-h {
+    min-height: 64px !important;
+    padding: 10px var(--ps-m-gutter) !important;
+    gap: 8px !important;
+  }
+
+  .ps-page-idp .top-h h1 {
+    font-size: 20px !important;
+  }
+
+  .ps-page-idp #repBtn,
+  .ps-page-idp #parentRepBtn {
+    min-height: 40px !important;
+    padding: 0 12px !important;
+  }
+
+  /* 1.595 — **선수 하단바에는 적용하면 안 된다.**
+     이 블록은 코치용 가로 스크롤 내비(왼쪽 정렬·스냅)인데, ID 선택자 + !important 라
+     선수용 하단 고정 격자(body.ps-player-role .layers{display:grid})를 통째로 눌러 버렸다.
+     그래서 선수 폰에서 탭이 화면 아래에 **왼쪽으로 몰려** 붙어 있었다(사용자 화면).
+     body:not(.ps-player-role) 로 코치일 때만 걸리게 한다. */
+  .ps-page-idp body:not(.ps-player-role) #layers {
+    display: flex !important;
+    gap: 20px !important;
+    justify-content: flex-start !important;
+    padding: 0 var(--ps-m-gutter) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap;
+    scrollbar-width: none;
+    scroll-padding-inline: var(--ps-m-gutter);
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+  }
+
+  .ps-page-idp body:not(.ps-player-role) #layers::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 2.101 — ⚠ 위 규칙의 `display:flex !important` 가 **인라인 스타일까지 이긴다.**
+     idp.html 의 render() 는 1.9xx 부터 선수단 목록에서 `layers.style.display='none'` 으로 이 줄을 감춰 왔는데,
+     `!important` 앞에서는 인라인도 지므로 **폰에서만 그 코드가 통째로 죽어 있었다** —
+     팀에서 IDP 로 들어가면 개인 IDP 탭(홈·일정·목표·프로필…)이 선수단 목록 위에 그대로 남았다(사용자 화면).
+     같은 파일 뒤에서 `.idp-squad` 한 겹을 더해 특이도로 되찾는다. 데스크톱은 인라인만으로 이미 되고 있었다. */
+  .ps-page-idp body.idp-squad:not(.ps-player-role) #layers {
+    display: none !important;
+  }
+
+  .ps-page-idp body:not(.ps-player-role) #layers > button {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: max-content !important;
+    min-height: 52px !important;
+    padding: 0 2px !important;
+    scroll-snap-align: center;
+  }
+
+  .ps-page-idp #layers .learn-tab span {
+    display: none !important;
+  }
+
+  .ps-page-idp #layers .tab-full {
+    display: none !important;
+  }
+
+  .ps-page-idp #layers .tab-short {
+    display: inline !important;
+    margin: 0 !important;
+    color: inherit !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    font-weight: inherit !important;
+  }
+
+  /* 노트 */
+  .ps-page-note .bar,
+  .ps-page-note .toolbar,
+  .ps-page-note .palette {
+    padding-left: var(--ps-m-gutter);
+    padding-right: var(--ps-m-gutter);
+    gap: 8px;
+  }
+
+  .ps-page-note .bar button,
+  .ps-page-note .toolbar button,
+  .ps-page-note .palette button {
+    min-width: var(--ps-m-touch);
+    min-height: var(--ps-m-touch);
+  }
+
+  .ps-page-note .bar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    align-items: center !important;
+  }
+
+  .ps-page-note #nModeSeg,
+  .ps-page-note #nTitle,
+  .ps-page-note #nTpl,
+  .ps-page-note #tools,
+  .ps-page-note #cols {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  .ps-page-note #tools,
+  .ps-page-note #cols {
+    display: flex !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none;
+  }
+
+  .ps-page-note #tools::-webkit-scrollbar,
+  .ps-page-note #cols::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ps-page-note #tools button {
+    flex: 1 0 auto !important;
+    min-width: 72px !important;
+    padding: 0 12px !important;
+  }
+
+  .ps-page-note .szwrap {
+    min-width: 120px !important;
+  }
+
+  .ps-page-note #newB,
+  .ps-page-note #libB {
+    width: 100% !important;
+  }
+
+  /* 커뮤니티: 필터 3개는 같은 폭, 분류는 독립 가로 스크롤 */
+  .ps-page-community .bar {
+    padding: 12px var(--ps-m-gutter) !important;
+    gap: 10px !important;
+  }
+
+  .ps-page-community #catChips {
+    display: flex !important;
+    gap: 8px !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+
+  .ps-page-community #catChips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ps-page-community #catChips > * {
+    flex: 0 0 auto !important;
+  }
+
+  .ps-page-community .filters {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .ps-page-community .filters select {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: var(--ps-m-touch) !important;
+    padding: 0 28px 0 10px !important;
+    text-overflow: ellipsis;
+  }
+
+  /* 작전판: 경기장은 유지하고 조작부만 정돈 */
+  .ps-page-board .toolbar,
+  .ps-page-board #ps-dock {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .ps-page-board .toolbar button,
+  .ps-page-board #ps-drow-tool button,
+  .ps-page-board #ps-drow-tool [role="button"] {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  /* 모바일 작전판 도크
+     토큰까지 40px 터치 규칙을 강제로 적용하면 팔레트가 화면 밖으로 밀리므로
+     도구는 40px, 색상·선수 토큰은 기존 크기를 유지한다. */
+  html.ps-page-board body.ps-dock #ps-dock {
+    overflow: visible !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-tool {
+    min-height: 48px !important;
+    padding: 4px 8px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team {
+    min-height: 52px !important;
+    padding: 5px 10px !important;
+    overflow: hidden !important;
+    justify-content: stretch !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team #bench {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    column-gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team #benchCat {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    padding-right: 10px !important;
+    border-right: 1px solid var(--line, #E3E6EA);
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team #benchItems,
+  html.ps-page-board body.ps-dock #ps-drow-team .bench-items {
+    display: flex !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    padding: 4px 2px !important;
+    border-left: 0 !important;
+    overflow-x: auto !important;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team .catdot {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team .chip {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    font-size: 13px !important;
+    scroll-snap-align: start;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team #ps-uni button {
+    min-width: 24px !important;
+    min-height: 24px !important;
+  }
+
+  html.ps-page-board body.ps-dock:not(.command-dock-v5) #vaultSave {
+    right: 12px !important;
+    bottom: calc(var(--ps-dock-h, 100px) + 12px) !important;
+    max-width: calc(100vw - 24px);
+    min-height: 42px !important;
+    padding: 9px 14px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+  }
+
+  html.ps-page-board body.ps-dock #boardStage {
+    padding-bottom: calc(var(--ps-dock-h, 100px) + 8px) !important;
+  }
+
+  /* 2026-07-24 모바일 도크 컴팩트 모드
+     425px 이하에서도 좌·중앙·우 영역과 팀 토큰이 한눈에 읽히도록
+     터치 가능한 최소 크기는 유지하면서 높이와 불필요한 여백을 줄인다. */
+  html.ps-page-board body.ps-dock #ps-drow-tool {
+    grid-template-columns: 76px minmax(0, 1fr) 76px !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    gap: 4px !important;
+    padding: 3px 8px !important;
+    border-top: 1px solid var(--line, #E3E6EA) !important;
+    background: color-mix(in srgb, var(--panel, #fff) 96%, transparent) !important;
+    box-shadow: 0 -8px 24px rgba(16, 24, 40, .08) !important;
+    backdrop-filter: blur(18px) saturate(1.08);
+    -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock-left,
+  html.ps-page-board body.ps-dock #ps-dock-right {
+    width: 76px !important;
+    gap: 4px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock-left .btn,
+  html.ps-page-board body.ps-dock #ps-dock-right .btn,
+  html.ps-page-board body.ps-dock #ps-drow-tool button,
+  html.ps-page-board body.ps-dock #ps-drow-tool [role="button"] {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 7px !important;
+    border-radius: 10px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock-scroll {
+    gap: 4px !important;
+    padding: 0 3px !important;
+    scroll-padding-inline: 8px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 14px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 14px), transparent 100%);
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 첫 도구 앞 구분선은 좁은 화면에서 실제 조작 공간만 차지하므로 숨긴다. */
+  html.ps-page-board body.ps-dock #ps-dock-scroll > .ps-sep {
+    display: none !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team {
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 3px 8px !important;
+    border-top: 1px solid var(--line, #E3E6EA) !important;
+    background: var(--panel, #fff) !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team #bench {
+    column-gap: 7px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team #benchCat {
+    gap: 4px !important;
+    padding-right: 7px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team #benchItems,
+  html.ps-page-board body.ps-dock #ps-drow-team .bench-items {
+    gap: 5px !important;
+    padding: 2px 1px !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 12px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 12px), transparent 100%);
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team #benchItems::-webkit-scrollbar,
+  html.ps-page-board body.ps-dock #ps-drow-team .bench-items::-webkit-scrollbar {
+    display: none;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team .catdot {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-drow-team .chip {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    font-size: 12px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock #ps-group-set > .popmenu.ps-settings-modal.popmenu {
+    bottom: 96px !important;
+    max-height: calc(100vh - 112px) !important;
+    padding: 8px 10px 10px !important;
+    border-radius: 14px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock #ps-group-set > .popmenu .ps-set-hd {
+    min-height: 40px !important;
+    padding: 1px 2px 7px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock #ps-group-set > .popmenu .ps-set-tabs {
+    padding: 4px 0 !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock #ps-group-set > .popmenu .ps-set-tabs button {
+    height: 28px !important;
+    min-height: 28px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock #ps-group-set > .popmenu > .menurow {
+    min-height: 32px !important;
+    padding: 2px !important;
+    gap: 8px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock #ps-group-set > .popmenu .menulbl {
+    flex-basis: 66px !important;
+    width: 66px !important;
+    min-width: 66px !important;
+    max-width: 66px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock #ps-group-set > .popmenu .btn,
+  html.ps-page-board body.ps-dock #ps-dock #ps-group-set > .popmenu .seg > button {
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 0 8px !important;
+  }
+
+  html.ps-page-board body.ps-dock #ps-dock-grip {
+    right: 10px !important;
+  }
+
+  /* 선택 항목: 운동장을 가리지 않도록 도크 바로 위의 낮은 바텀시트로 정리 */
+  html.ps-page-board body.ps-dock .sel-ctl {
+    position: fixed !important;
+    inset: auto 10px calc(var(--ps-dock-h, 100px) + 8px) 10px !important;
+    width: min(420px, calc(100vw - 20px)) !important;
+    max-width: 420px !important;
+    max-height: min(208px, 28dvh) !important;
+    margin-inline: auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    align-content: start !important;
+    gap: 6px !important;
+    padding: 8px !important;
+    border: 1px solid rgba(255,255,255,.16) !important;
+    border-radius: 16px !important;
+    background: rgba(18, 22, 30, .94) !important;
+    box-shadow: 0 16px 42px rgba(7, 10, 16, .32) !important;
+    backdrop-filter: blur(18px) saturate(1.15) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.15) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    z-index: 170 !important;
+  }
+
+  /* 선택이 없을 때 JS가 넣는 인라인 display:none을 모바일 강제 grid가
+     덮어쓰지 않게 한다. 빈 선택 바가 운동장과 저장 버튼을 가리던 원인. */
+  html.ps-page-board body.ps-dock .sel-ctl[style*="display: none"] {
+    display: none !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl::before {
+    content: "선택 항목";
+    grid-column: 1 / -1 !important;
+    padding: 0 3px 6px !important;
+    margin: 0 !important;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    color: rgba(255,255,255,.72);
+    font-size: 11px !important;
+    font-weight: 800;
+    line-height: 16px !important;
+    letter-spacing: -.1px;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl[data-kind="text"] {
+    max-height: min(300px, 42dvh) !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl[data-kind="text"]::before {
+    content: "텍스트 편집";
+  }
+  /* 1.846 — 데스크톱 선택 카드와 같은 머리글(선수·장비·공·그림) */
+  html.ps-page-board body.ps-dock .sel-ctl[data-kind="player"]::before { content: "선수"; }
+  html.ps-page-board body.ps-dock .sel-ctl[data-kind="equip"]::before { content: "장비"; }
+  html.ps-page-board body.ps-dock .sel-ctl[data-kind="ball"]::before,
+  html.ps-page-board body.ps-dock .sel-ctl[data-kind="spball"]::before { content: "공"; }
+  html.ps-page-board body.ps-dock .sel-ctl[data-kind="drawing"]::before { content: "그림"; }
+
+  html.ps-page-board body.ps-dock .sel-ctl > .numbox,
+  html.ps-page-board body.ps-dock .sel-ctl > .namebox,
+  html.ps-page-board body.ps-dock .sel-ctl > #sizeCtl,
+  html.ps-page-board body.ps-dock .sel-ctl > #colorCtl,
+  html.ps-page-board body.ps-dock .sel-ctl > #textSizeCtl,
+  html.ps-page-board body.ps-dock .sel-ctl > .text-color-field {
+    grid-column: span 2 !important;
+  }
+
+  /* 선수 선택 메뉴의 마지막 행을 정확히 4칸으로 맞춘다.
+     쉐이퍼 1 + 복제 1 + 삭제 2 — 삭제가 다음 줄로 밀리며
+     불필요한 내부 스크롤이 생기던 문제를 제거한다. */
+  html.ps-page-board body.ps-dock .sel-ctl > #shaperBtn,
+  html.ps-page-board body.ps-dock .sel-ctl > .dup-sel {
+    grid-column: span 1 !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl > .del-sel {
+    grid-column: span 2 !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl > button,
+  html.ps-page-board body.ps-dock .sel-ctl > .numbox,
+  html.ps-page-board body.ps-dock .sel-ctl > .namebox,
+  html.ps-page-board body.ps-dock .sel-ctl > .sizebox,
+  html.ps-page-board body.ps-dock .sel-ctl > #colorCtl,
+  html.ps-page-board body.ps-dock .sel-ctl > .text-color-field {
+    width: auto !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin: 0 !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl > .numbox,
+  html.ps-page-board body.ps-dock .sel-ctl > .namebox {
+    justify-content: flex-start !important;
+    padding-inline: 10px !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl > button {
+    grid-column: span 1 !important;
+    padding: 0 7px !important;
+    font-size: 12px !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl > #textEditBtn {
+    grid-column: 1 / -1 !important;
+    min-height: 44px !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl > #textSizeCtl,
+  html.ps-page-board body.ps-dock .sel-ctl > #textColorCtl,
+  html.ps-page-board body.ps-dock .sel-ctl > #textBgCtl {
+    grid-column: span 2 !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl > #textColorCtl,
+  html.ps-page-board body.ps-dock .sel-ctl > #textBgCtl {
+    padding-inline: 10px 6px !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl .numbox input,
+  html.ps-page-board body.ps-dock .sel-ctl .namebox input {
+    font-size: 16px !important;
+    text-align: left !important;
+  }
+
+  html.ps-page-board body.ps-dock .sel-ctl #colorCtl.open {
+    grid-column: 1 / -1 !important;
+    height: auto !important;
+  }
+
+  /* 다중 선택: 데스크톱 가로 막대를 도크 위 6×2 고정 메뉴로 전환 */
+  html.ps-page-board body.ps-dock #alignBar {
+    position: fixed !important;
+    inset: auto 10px calc(var(--ps-dock-h, 100px) + 8px) 10px !important;
+    width: min(500px, calc(100vw - 20px)) !important;
+    max-width: 500px !important;
+    min-height: 104px !important;
+    margin-inline: auto !important;
+    padding: 8px !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    grid-auto-rows: 41px !important;
+    align-items: center !important;
+    gap: 6px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 16px 42px rgba(7, 10, 16, .24) !important;
+    transform: none !important;
+    overflow: visible !important;
+    z-index: 165 !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar:not(.on) {
+    display: none !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar.on {
+    display: grid !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .align-div {
+    display: none !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .align-count,
+  html.ps-page-board body.ps-dock #alignBar .align-btn,
+  html.ps-page-board body.ps-dock #alignBar .multi-color-wrap {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 41px !important;
+    min-height: 41px !important;
+    margin: 0 !important;
+    border-radius: 10px !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .align-count {
+    flex-direction: column !important;
+    gap: 1px !important;
+    font-size: 13px !important;
+    background: #182f5d !important;
+    border-color: #182f5d !important;
+    color: #fff !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .align-btn {
+    flex-direction: column !important;
+    gap: 2px !important;
+    border: 1px solid var(--line, #E3E6EA) !important;
+    background: var(--panel2, #f1f2f4) !important;
+    color: var(--txt, #14161A) !important;
+  }
+
+  /* 2.470 — 미터 간격 스테퍼: 폰 시트(밝은 카드)에선 어두운 바 전용 색·인라인 폭을 뒤집는다 */
+  html.ps-page-board body.ps-dock #alignBar .align-msp{
+    display:flex !important; align-items:center !important; justify-content:center !important;
+    gap:4px !important; grid-column:span 2; height:41px !important; margin:0 !important;
+    border:1px solid var(--line,#E3E6EA) !important; background:var(--panel2,#f1f2f4) !important; border-radius:10px !important;
+  }
+  html.ps-page-board body.ps-dock #alignBar .align-msp .msp-st{
+    width:34px !important; height:33px !important; min-height:0 !important;
+    border:0 !important; background:transparent !important; font-size:16px !important;
+  }
+  html.ps-page-board body.ps-dock #alignBar #mspVal{
+    color:var(--txt,#14161A) !important; font-size:14px !important; font-weight:800 !important;
+    min-width:26px !important; text-align:center !important; font-variant-numeric:tabular-nums;
+  }
+  html.ps-page-board body.ps-dock #alignBar .align-msp u{
+    color:var(--txt-dim,#6f7680) !important; text-decoration:none !important; font-size:10px !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .align-count::after,
+  html.ps-page-board body.ps-dock #alignBar .align-btn::after {
+    font-size: 10px !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+    color: var(--txt-dim, #6f7680) !important;
+    white-space: nowrap;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .align-count::after {
+    color: rgba(255,255,255,.72) !important;
+  }
+
+  /* 1행은 선택·정렬·색상, 2행은 변형·복제·삭제로 고정한다.
+     DOM 순서에 맡기면 '작게'와 '색상'이 서로 다른 기능군 사이에
+     끼어 휴대폰에서 작업 흐름이 끊겼다. */
+  html.ps-page-board body.ps-dock #alignCount { grid-column: 1 !important; grid-row: 1 !important; }
+  html.ps-page-board body.ps-dock #alignBar [data-al="rowY"] { grid-column: 2 !important; grid-row: 1 !important; }
+  html.ps-page-board body.ps-dock #alignBar [data-al="colX"] { grid-column: 3 !important; grid-row: 1 !important; }
+  html.ps-page-board body.ps-dock #alignBar [data-al="distX"] { grid-column: 4 !important; grid-row: 1 !important; }
+  html.ps-page-board body.ps-dock #alignBar [data-al="distY"] { grid-column: 5 !important; grid-row: 1 !important; }
+  html.ps-page-board body.ps-dock #multiColorWrap { grid-column: 6 !important; grid-row: 1 !important; }
+  html.ps-page-board body.ps-dock #mSizeDn { grid-column: 1 !important; grid-row: 2 !important; }
+  html.ps-page-board body.ps-dock #mSizeUp { grid-column: 2 !important; grid-row: 2 !important; }
+  html.ps-page-board body.ps-dock #mMirH2 { grid-column: 3 !important; grid-row: 2 !important; }
+  html.ps-page-board body.ps-dock #mMirV2 { grid-column: 4 !important; grid-row: 2 !important; }
+  html.ps-page-board body.ps-dock #mDupBtn { grid-column: 5 !important; grid-row: 2 !important; }
+  html.ps-page-board body.ps-dock #mDelBtn { grid-column: 6 !important; grid-row: 2 !important; }
+
+  html.ps-page-board body.ps-dock #alignBar #multiColorBtn,
+  html.ps-page-board body.ps-dock #alignBar #mDupBtn {
+    background: rgba(58,109,240,.1) !important;
+    border-color: rgba(58,109,240,.22) !important;
+    color: #2f63df !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar #mDelBtn {
+    background: rgba(194,74,70,.1) !important;
+    border-color: rgba(194,74,70,.24) !important;
+    color: #b8423e !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar #mDupBtn::after {
+    color: #2f63df !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar #mDelBtn::after {
+    color: #b8423e !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .align-count::after { content: "선택"; }
+  html.ps-page-board body.ps-dock #alignBar [data-al="rowY"]::after { content: "가로"; }
+  html.ps-page-board body.ps-dock #alignBar [data-al="colX"]::after { content: "세로"; }
+  html.ps-page-board body.ps-dock #alignBar [data-al="distX"]::after { content: "간격↔"; }
+  html.ps-page-board body.ps-dock #alignBar [data-al="distY"]::after { content: "간격↕"; }
+  html.ps-page-board body.ps-dock #mSizeDn::after { content: "작게"; }
+  html.ps-page-board body.ps-dock #mSizeUp::after { content: "크게"; }
+  html.ps-page-board body.ps-dock #multiColorBtn::after { content: "색상"; }
+  html.ps-page-board body.ps-dock #mMirH2::after { content: "좌우"; }
+  html.ps-page-board body.ps-dock #mMirV2::after { content: "상하"; }
+  html.ps-page-board body.ps-dock #mDupBtn::after { content: "복제"; }
+  html.ps-page-board body.ps-dock #mDelBtn::after { content: "삭제"; }
+
+  html.ps-page-board body.ps-dock #alignBar .multi-color-wrap.has-color {
+    display: flex !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .multi-color-wrap:not(.has-color) {
+    display: none !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .multi-color-wrap > .align-btn {
+    flex: 1 1 auto !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .multi-color-pop {
+    position: fixed !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(var(--ps-dock-h, 100px) + 128px) !important;
+    width: auto !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .multi-color-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  }
+
+  html.ps-page-board body.ps-dock #alignBar .multi-color-dot {
+    justify-self: center;
+  }
+
+  /* 설정은 도크 안에서 펼쳐지지 않고 도크 위의 독립 패널로 표시 */
+  html.ps-page-board body.ps-dock #ps-dock #ps-group-set > .popmenu.ps-settings-modal {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: calc(var(--ps-dock-h, 100px) + 10px) !important;
+    width: auto !important;
+    max-height: calc(100dvh - 148px) !important;
+    padding: 14px !important;
+    border-radius: 16px !important;
+    overflow-y: auto !important;
+  }
+
+  /* 노트: 1차 도구는 두 줄, 파일·페이지 관리는 필요할 때만 펼친다. */
+  .ps-page-note .bar {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-content: start !important;
+    padding: 8px var(--ps-m-gutter) 9px !important;
+  }
+
+  .ps-page-note #nModeSeg {
+    grid-column: 1 !important;
+    width: max-content !important;
+  }
+
+  .ps-page-note #noteToolsToggle {
+    display: inline-flex !important;
+    grid-column: 2 !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px !important;
+    min-height:40px !important;
+    padding: 0 12px !important;
+  }
+
+  .ps-page-note #nTitle,
+  .ps-page-note .note-core,
+  .ps-page-note .note-ink,
+  .ps-page-note .note-advanced {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .ps-page-note #nTitle {
+    min-height: 40px !important;
+  }
+
+  .ps-page-note .note-core,
+  .ps-page-note .note-ink {
+    display: flex !important;
+    gap: 7px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none;
+  }
+
+  .ps-page-note .note-core::-webkit-scrollbar,
+  .ps-page-note .note-ink::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ps-page-note #tools {
+    grid-column: auto !important;
+    flex: 1 0 max-content !important;
+  }
+
+  .ps-page-note #tools button {
+    min-width: 64px !important;
+    min-height:40px !important;
+  }
+
+  .ps-page-note .note-ink {
+    align-items: center !important;
+    /* 1.896 — 펜·색 5개·굵기·되돌리기·다시실행(≈470px)이 343px 에 안 들어간다. 가로 스크롤 대신 줄바꿈: 1줄 펜+색, 2줄 굵기(남는 폭)+되돌리기·다시실행 */
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+    row-gap: 6px !important;
+  }
+
+  .ps-page-note #penOnly,
+  .ps-page-note #undoB,
+  .ps-page-note #redoB {
+    flex: 0 0 38px !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+
+  .ps-page-note #cols {
+    grid-column: auto !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    overflow: visible !important;
+  }
+
+  .ps-page-note .szwrap {
+    flex: 1 1 120px !important;
+    min-width: 88px !important;
+  }
+
+  .ps-page-note .szwrap input {
+    width: 100% !important;
+  }
+
+  .ps-page-note .note-advanced {
+    display: none !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px !important;
+    padding-top: 8px;
+    border-top: 1px solid var(--line, #E3E6EA);
+  }
+
+  .ps-page-note body.note-tools-open .note-advanced,
+  html.ps-page-note body.note-tools-open .note-advanced {
+    display: grid !important;
+  }
+
+  .ps-page-note .note-advanced #nTpl {
+    grid-column: 1 !important;
+    width: 100% !important;
+    min-height: 40px !important;
+  }
+
+  .ps-page-note .note-advanced .pg {
+    grid-column: 2 !important;
+  }
+
+  .ps-page-note .note-advanced #orientB,
+  .ps-page-note .note-advanced #fileWrap,
+  .ps-page-note .note-advanced #newB,
+  .ps-page-note .note-advanced #libB {
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  .ps-page-note .note-advanced #fileWrap {
+    grid-column: 1 !important;
+  }
+
+  .ps-page-note .note-advanced #newB,
+  .ps-page-note .note-advanced #libB {
+    grid-column: span 1 !important;
+  }
+
+  .ps-page-note #stage {
+    padding: 8px !important;
+  }
+
+  /* 팀: 숨겨진 기능이 있다는 사실과 현재 위치를 보이고, 요약은 2×2로 읽는다. */
+  .ps-page-scout #nav,
+  .ps-page-gamemodel #gmNav,
+  .ps-page-terms #teamNav {
+    padding-right: 0 !important;
+  }
+
+  .ps-page-scout #nav .apphd-more,
+  .ps-page-gamemodel #gmNav .apphd-more,
+  .ps-page-terms #teamNav .apphd-more {
+    position: sticky !important;
+    right: 0 !important;
+    z-index: 3 !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    padding: 0 var(--ps-m-gutter) 0 18px !important;
+    background: linear-gradient(90deg, rgba(255,255,255,0), #fff 18px, #fff 100%) !important;
+  }
+
+  .ps-page-scout #nav .apphd-more > #teamMoreBtn,
+  .ps-page-gamemodel #gmNav .apphd-more > #teamMoreBtn,
+  .ps-page-terms #teamNav .apphd-more > #teamMoreBtn {
+    color: var(--ps-m-blue) !important;
+    background: #eef3ff !important;
+  }
+
+  .ps-page-scout #teamView .tm-head-actions #tmAdd {
+    font-size: 13px !important;
+    padding: 0 13px !important;
+  }
+
+  .ps-page-scout #teamView .tm-head-actions #tmAdd::before {
+    display: none !important;
+  }
+
+  .ps-page-scout #teamView .tm-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .ps-page-scout #teamView .tm-summary > div {
+    min-height: 62px !important;
+    padding: 9px 10px !important;
+  }
+
+  .ps-page-scout #teamView .tm-summary > div:nth-child(2) {
+    border-right: 0 !important;
+  }
+
+  .ps-page-scout #teamView .tm-summary > div:nth-child(-n+2) {
+    border-bottom: 1px solid var(--line, #E3E6EA);
+  }
+
+  /* IDP: 행동 버튼을 과장하지 않고 탭은 선택 시 중앙으로 이동한다. */
+  .ps-page-idp .idp-actions {
+    width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .ps-page-idp #repBtn,
+  .ps-page-idp #parentRepBtn {
+    width: auto !important;
+    font-size: 12px !important;
+  }
+
+  /* 커뮤니티: 잘린 드롭다운 대신 각각의 실제 너비를 유지하는 가로 필터. */
+  .ps-page-community .filters {
+    display: flex !important;
+    gap: 8px !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none;
+  }
+
+  .ps-page-community .filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ps-page-community .filters select {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 112px !important;
+    max-width: none !important;
+    text-overflow: clip;
+  }
+
+  .ps-page-community .fab {
+    width: 48px !important;
+    height: 48px !important;
+    right: 14px !important;
+    bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    font-size: 0 !important;
+    box-shadow: 0 8px 22px rgba(16,24,40,.22) !important;
+  }
+
+  .ps-page-community .fab svg {
+    width: 21px !important;
+    height: 21px !important;
+  }
+
+  .ps-page-board .popover,
+  .ps-page-board .popup,
+  .ps-page-board .modal {
+    max-width: calc(100vw - 24px);
+  }
+  /* 1.970 — 훈련 편집기(#editorModal)는 폰에서 전체화면(inset:0)이라 위 팝업 폭 제한을 받으면 오른쪽 24px 이 비고 밑 작전판이 비친다 */
+  .ps-page-board #editorModal.modal {
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  /* iPhone 홈 인디케이터와 하단 UI 충돌 방지 */
+  .ps-page-board,
+  .ps-page-note,
+  .ps-page-community,
+  .ps-page-idp {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ══ 1.862 · 폰 도크 = 데스크톱 커맨드 도크(v5)와 같은 문법(사용자)
+   — 떠 있는 흰 카드(라운드 12·#dde1e7 테두리·얕은 그림자), 행 구분선 없음
+   — 버튼: 테두리 없는 투명 28~34px·라운드 7, 활성은 연파랑(#EEF2FF)+파랑 글자, hover/active 는 옅은 회색
+   — 팀 알약 28px 둥근 사각(라운드 7·안쪽 1px 선), 선택은 파란 외곽선 / 토큰 칩 30px */
+@media (max-width:767px){
+  html.ps-page-board body.ps-dock #ps-dock{
+    left:8px!important;right:8px!important;bottom:calc(8px + env(safe-area-inset-bottom))!important;
+    border:1px solid #dde1e7!important;border-top:1px solid #dde1e7!important;border-radius:12px!important;
+    background:#fff!important;box-shadow:0 6px 18px rgba(15,23,42,.12)!important;overflow:hidden!important;
+  }
+  html.ps-page-board body.ps-dock #ps-dock .ps-drow{border-top:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+  html.ps-page-board body.ps-dock #ps-dock .ps-drow+.ps-drow{border-top:1px solid #eef0f3!important;}
+  html.ps-page-board body.ps-dock #ps-drow-tool{min-height:42px!important;height:42px!important;padding:3px 6px!important;}
+  html.ps-page-board body.ps-dock #ps-drow-team{min-height:42px!important;height:42px!important;padding:3px 6px!important;}
+  /* 도구 버튼 — 데스크톱과 같은 무테·투명·라운드 7 */
+  html.ps-page-board body.ps-dock #ps-dock-left .btn,
+  html.ps-page-board body.ps-dock #ps-dock-right .btn,
+  html.ps-page-board body.ps-dock #ps-drow-tool button,
+  html.ps-page-board body.ps-dock #ps-drow-tool [role="button"]{
+    width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;
+    border:0!important;border-radius:7px!important;background:transparent!important;box-shadow:none!important;color:#1f2937!important;
+  }
+  html.ps-page-board body.ps-dock #ps-drow-tool button:active{background:#eef0f3!important;}
+  html.ps-page-board body.ps-dock #ps-drow-tool button.on,
+  html.ps-page-board body.ps-dock #ps-drow-tool [aria-pressed="true"]{background:#EEF2FF!important;color:#2c54c4!important;box-shadow:inset 0 0 0 1px #c9d7fb!important;}
+  html.ps-page-board body.ps-dock #ps-drow-tool .seg,
+  html.ps-page-board body.ps-dock #ps-drow-tool #toolSeg{background:transparent!important;border:0!important;padding:0!important;gap:2px!important;box-shadow:none!important;}
+  html.ps-page-board body.ps-dock #ps-drow-tool svg{width:16px!important;height:16px!important;}
+  html.ps-page-board body.ps-dock #ps-drow-tool #toolSeg svg[width="26"]{width:22px!important;height:12px!important;}
+  html.ps-page-board body.ps-dock #ps-dock-scroll{gap:2px!important;}
+  /* 팀 알약·유니폼·토큰 */
+  html.ps-page-board body.ps-dock #ps-drow-team #benchCat{gap:4px!important;padding-right:6px!important;border-right:1px solid #eef0f3!important;}
+  html.ps-page-board body.ps-dock #ps-drow-team #benchCat .team-style-btn{width:auto!important;min-width:0!important;height:28px!important;padding:0 9px 0 7px!important;border:0!important;border-radius:999px!important;box-shadow:inset 0 0 0 1px rgba(15,23,42,.14)!important;display:inline-flex!important;align-items:center!important;gap:5px!important;font-size:11px!important;font-weight:700!important;white-space:nowrap!important;}   /* 1.997 — 폰 도크도 '유니폼 설정' 글자 알약 */
+  html.ps-page-board body.ps-dock #ps-drow-team .catdot{
+    width:28px!important;min-width:28px!important;height:28px!important;min-height:28px!important;padding:0!important;
+    border:0!important;border-radius:7px!important;box-shadow:inset 0 0 0 1px rgba(15,23,42,.14)!important;
+    place-items:center!important;
+  }
+  /* 폰은 앱 유니폼 도크의 팀 칩(.ps-uni-chip)이 팀 선택 — 데스크톱 팀 알약과 같은 28px 둥근 사각, 선택은 파란 외곽선·비선택은 옅게 */
+  html.ps-page-board body.ps-dock #ps-drow-team .ps-uni-chip,
+  html.ps-page-board body.ps-dock #ps-drow-team .catdot{
+    width:28px!important;min-width:28px!important;height:28px!important;min-height:28px!important;
+    border:0!important;border-radius:7px!important;box-shadow:inset 0 0 0 1px rgba(15,23,42,.14)!important;
+  }
+  html.ps-page-board body.ps-dock #ps-drow-team .ps-uni-chips{gap:4px!important;}
+  html.ps-page-board body.ps-dock #ps-drow-team .ps-uni-chip.on,
+  html.ps-page-board body.ps-dock #ps-drow-team .catdot.on{outline:2px solid #2563eb!important;outline-offset:1px!important;}
+  html.ps-page-board body.ps-dock #ps-drow-team .ps-uni-chip:not(.on),
+  html.ps-page-board body.ps-dock #ps-drow-team .catdot:not(.on){opacity:.58!important;}
+  /* 보관함 저장 FAB — 글자 세로 줄바꿈 방지 */
+  html.ps-page-board body.ps-dock:not(.command-dock-v5) #vaultSave{white-space:nowrap!important;width:auto!important;min-width:0!important;}
+  html.ps-page-board body.ps-dock #ps-drow-team #benchCat .team-style-btn{background:#fff!important;color:#646A73!important;}
+  html.ps-page-board body.ps-dock #ps-drow-team #benchCat .team-style-btn svg{width:15px!important;height:15px!important;}
+  html.ps-page-board body.ps-dock #ps-drow-team .chip{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;font-size:12px!important;}
+  html.ps-page-board body.ps-dock #ps-drow-team #benchItems{gap:4px!important;padding:2px 1px!important;}
+  html.ps-page-board body.ps-dock #boardStage{padding-bottom:calc(var(--ps-dock-h,100px) + 16px)!important;}
+  html.ps-page-board body.ps-dock:not(.command-dock-v5) #vaultSave{bottom:calc(var(--ps-dock-h,100px) + 20px)!important;}
+}
+
+/* ══ 1.920 · 폰 도크 디자인 정돈(사용자: 디자인 신경써줘)
+   — 좌(되돌리기 2개)·우(설정 1개) 칸을 내용 폭만큼만 → 가운데 도구 스크롤 폭 157→약 220px, 첫 화면에 그리기 도구 6개가 보인다
+   — 스크롤 순서: 그리기 도구(선택·이동·패스·드리블·선·점선…) 먼저, 애니메이션·장비는 뒤로
+   — 카드 라운드 14·테두리 #e5e7eb·그림자 한 단계 부드럽게, 행 간 여백 균일, 양쪽 페이드 */
+@media (max-width:767px){
+  html.ps-page-board body.ps-dock #ps-dock{border-radius:14px!important;border-color:#e5e7eb!important;box-shadow:0 8px 24px rgba(15,23,42,.10),0 1px 2px rgba(15,23,42,.06)!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-tool{grid-template-columns:auto minmax(0,1fr) auto!important;column-gap:6px!important;padding:4px 8px!important;height:44px!important;min-height:44px!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-dock-left,html.ps-page-board body.ps-dock #ps-dock #ps-dock-right{width:auto!important;min-width:0!important;gap:2px!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-dock-scroll{display:flex!important;align-items:center!important;gap:2px!important;padding:0 6px!important;
+    -webkit-mask-image:linear-gradient(to right,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%)!important;mask-image:linear-gradient(to right,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%)!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-dock-scroll>#drawPanel{order:0!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-dock-scroll>#animToggle{order:2!important;margin-left:6px!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-dock-scroll>#ps-eq-btn{order:3!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-dock-scroll>#animToggle::before{content:'';display:block;width:1px;height:18px;background:#e5e7eb;margin-right:6px;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-tool button.on,
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-tool [aria-pressed="true"]{background:#EEF2FF!important;color:#2c54c4!important;box-shadow:inset 0 0 0 1px #c9d7fb!important;border-radius:9px!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-team{height:46px!important;min-height:46px!important;padding:4px 8px!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .chip{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;font-size:13px!important;box-shadow:0 1px 2px rgba(15,23,42,.18)!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-team #benchItems{gap:6px!important;padding:2px 2px!important;
+    -webkit-mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 16px),transparent 100%)!important;mask-image:linear-gradient(to right,#000 0,#000 calc(100% - 16px),transparent 100%)!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .ps-uni-chip,html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .catdot{border-radius:8px!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .ps-uni-chip.on,html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .catdot.on{outline:2px solid #2563eb!important;outline-offset:2px!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .ps-uni-chip:not(.on),html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .catdot:not(.on){opacity:.7!important;}
+  html.ps-page-board body.ps-dock:not(.command-dock-v5) #vaultSave{min-height:40px!important;padding:8px 14px!important;border-radius:999px!important;font-size:13px!important;box-shadow:0 6px 16px rgba(58,109,240,.35)!important;}
+  /* 1.926 — 아이폰: 앱 셸 안(iframe)에서는 하단 탭바(.seg)가 이미 안전영역을 먹고 있어 도크가 safe-area만큼 또 떠 있었다(도크 아래 초록 띠 + '보관함 저장'이 도크 뒤로 숨음). 셸 안에서는 8px만 */
+  html.ps-page-board body.ps-dock.ps-embedded #ps-dock{bottom:8px!important;}
+  html.ps-page-board body.ps-dock.ps-embedded:not(.command-dock-v5) #vaultSave{bottom:calc(var(--ps-dock-h,100px) + 8px + 10px)!important;right:12px!important;}
+  html.ps-page-board body.ps-dock.ps-embedded #boardStage{padding-bottom:calc(var(--ps-dock-h,100px) + 8px + 8px)!important;}
+}
+
+/* ══ 1.926 · 폰 개인 노트 = 보드 폰 도크와 같은 문법(사용자: 모바일 UI/UX 일관성)
+   — 상단 바: [노트|메모|문서 보관함] · [노트 선택 ▾] [도구] 한 줄 + 제목 한 줄
+   — 하단: 떠 있는 흰 카드 도크(라운드 14·#e5e7eb·그림자) 2행 — 1행 펜 종류, 2행 펜전용·색·굵기·되돌리기·다시실행
+   — 캔버스(#stage)는 도크 높이만큼 위에서 끝난다 */
+@media (max-width:767px){
+  html.ps-page-note body.note-dock .bar{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px!important;padding:8px 12px!important;}
+  html.ps-page-note body.note-dock .bar>#nModeSeg{order:1!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;}
+  html.ps-page-note body.note-dock .bar>#nTplWrap{order:2!important;flex:0 0 auto!important;margin:0!important;}
+  html.ps-page-note body.note-dock .bar>#noteToolsToggle{order:3!important;flex:0 0 auto!important;min-width:0!important;min-height:38px!important;padding:0 12px!important;}
+  html.ps-page-note body.note-dock .bar>#nTitle{order:4!important;flex:1 1 100%!important;width:100%!important;min-height:38px!important;}
+  html.ps-page-note body.note-dock .bar>.note-advanced{order:5!important;flex:1 1 100%!important;}
+  html.ps-page-note body.note-dock #nDock{position:fixed;left:8px;right:8px;bottom:8px;z-index:70;display:flex;flex-direction:column;
+    background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 8px 24px rgba(15,23,42,.10),0 1px 2px rgba(15,23,42,.06);overflow:hidden;}
+  html.ps-page-note body.note-dock #nDock .note-core,html.ps-page-note body.note-dock #nDock .note-ink{display:flex!important;align-items:center!important;gap:5px!important;width:auto!important;padding:5px 8px!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;}
+  html.ps-page-note body.note-dock #nDock .note-core::-webkit-scrollbar,html.ps-page-note body.note-dock #nDock .note-ink::-webkit-scrollbar{display:none;}
+  html.ps-page-note body.note-dock #nDock .note-core{min-height:46px!important;border-bottom:1px solid #eef0f3;}
+  html.ps-page-note body.note-dock #nDock .note-ink{min-height:48px!important;}
+  html.ps-page-note body.note-dock #nDock #tools{flex:1 1 auto!important;display:flex!important;width:100%!important;background:transparent!important;border:0!important;padding:0!important;gap:2px!important;}
+  html.ps-page-note body.note-dock #nDock #tools button{flex:1 1 0!important;min-width:0!important;min-height:36px!important;padding:0 6px!important;border-radius:9px!important;font-size:13px!important;font-weight:700!important;background:transparent!important;color:#646A73!important;box-shadow:none!important;}
+  html.ps-page-note body.note-dock #nDock #tools button.on{background:#EEF2FF!important;color:#2c54c4!important;box-shadow:inset 0 0 0 1px #c9d7fb!important;}
+  html.ps-page-note body.note-dock #nDock #penOnly,html.ps-page-note body.note-dock #nDock #undoB,html.ps-page-note body.note-dock #nDock #redoB{flex:0 0 32px!important;width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;border-radius:9px!important;}
+  html.ps-page-note body.note-dock #nDock #undoB{margin-left:auto!important;}
+  html.ps-page-note body.note-dock #nDock #cols{flex:0 0 auto!important;display:flex!important;gap:5px!important;width:auto!important;overflow:visible!important;}
+  html.ps-page-note body.note-dock #nDock #cols button,html.ps-page-note body.note-dock #nDock #cols .custcol{width:26px!important;height:26px!important;min-width:26px!important;min-height:26px!important;}
+  html.ps-page-note body.note-dock #nDock .szwrap{flex:1 1 50px!important;min-width:44px!important;}
+  html.ps-page-note body.note-dock #nDock .szwrap input{width:100%!important;}
+  html.ps-page-note body.note-dock #stage{padding:8px!important;margin-bottom:112px!important;}
+  html.ps-page-note body.note-dock.memo-mode #nDock{display:none!important;}
+  /* 1.927 — 폰 보드: 운동장 SVG 밖(도크 뒤·아래 여백)에 스테이지의 민무늬 초록이 드러나 잔디와 '분리'돼 보였다(사용자).
+     SVG 세계는 피치 밖 1600단위까지 잔디를 그리므로 overflow만 풀면 스테이지 전체가 같은 잔디로 이어진다 */
+  html.ps-page-board body.ps-dock #boardStage>svg#board{overflow:visible!important;border-radius:0!important;box-shadow:none!important;}
+  /* 1.927 — 보관함 훈련·작전판 '보기'(읽기 전용 편집기) 폰 정돈(사용자: 일관성)
+     — 머리줄 한 줄: [훈련 보기] [이름] … [닫기] (단계 표시·구분선 숨김)
+     — 운동장은 폭에 맞는 3:2 카드로 (아래 회색 빈 띠 제거), 메모·강도는 그 아래 스크롤
+     — 읽기 전용에서는 그리기 도크·보관함 저장 버튼을 숨긴다 */
+  /* 머리줄 — 1줄: [훈련 편집][이름 입력……][취소] / 2줄(편집일 때): [임시 저장됨 · 시각 ……][복사본 저장][변경 저장]. 읽기 전용은 1줄로 끝 */
+  html.ps-page-board #editorModal .modal-head{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px 8px!important;padding:8px 10px!important;}
+  html.ps-page-board #editorModal .modal-head #modalTitle{order:1;white-space:nowrap!important;font-size:14px!important;flex:0 0 auto!important;}
+  html.ps-page-board #editorModal .modal-head #epNameTop{order:2;flex:1 1 160px!important;min-width:0!important;max-width:none!important;height:36px!important;}
+  html.ps-page-board #editorModal .modal-head #editorCancel{order:3;flex:0 0 auto!important;}
+  html.ps-page-board #editorModal .modal-head #editorSaveState{order:4;flex:1 1 120px!important;min-width:0!important;overflow:hidden;text-overflow:ellipsis;}
+  html.ps-page-board #editorModal .modal-head #editorCopy{order:5;flex:0 0 auto!important;}
+  html.ps-page-board #editorModal .modal-head #editorDone{order:6;flex:0 0 auto!important;margin-left:auto!important;}   /* 1.970 — 저장 상태 글이 없을 때 홀로 왼쪽에 붙던 것 → 오른쪽 끝 고정 */
+  html.ps-page-board #editorModal .modal-head #editorFlow,html.ps-page-board #editorModal .modal-head .sep,html.ps-page-board #editorModal .modal-head #twRosterTop{display:none!important;}
+  html.ps-page-board #editorModal .modal-head .btn{padding:7px 11px!important;white-space:nowrap!important;min-height:36px!important;}
+  html.ps-page-board #editorModal.ep-ro #editorBoardWrap{min-height:0!important;height:auto!important;max-height:none!important;flex:0 0 auto!important;overflow:visible!important;}
+  html.ps-page-board #editorModal.ep-ro #editorBoardWrap #boardStage{height:auto!important;min-height:0!important;aspect-ratio:3/2!important;max-height:56dvh!important;padding:0!important;}
+  html.ps-page-board #editorModal.ep-ro #editorPanel{flex:1 1 auto!important;max-height:none!important;}
+  html.ps-page-board body:has(#editorModal.ep-ro.on) #ps-dock,html.ps-page-board body:has(#editorModal.ep-ro.on) #vaultSave{display:none!important;}
+}
+
+/* ══ 1.928 · 폰 커뮤니티 — 글자 한 단계 작게(사용자): 탐색 칩 13px, 검색 14px, 필터 셀렉트 13px */
+@media (max-width:767px){
+  html.ps-page-community .comm-nav .nav-lb{font-size:11px!important;}
+  html.ps-page-community .comm-nav .nav-items button,html.ps-page-community #catChips .chip{font-size:13px!important;padding:7px 12px!important;min-height:32px!important;}
+  html.ps-page-community .comm-search{font-size:14px!important;min-height:42px!important;padding:8px 12px!important;}
+  html.ps-page-community .filters select{font-size:13px!important;min-height:40px!important;padding:6px 30px 6px 10px!important;}
+  html.ps-page-community .comm-count{font-size:12px!important;}
+  html.ps-page-community .card .title,html.ps-page-community .item-title{font-size:14px!important;}
+}
+
+/* ══ 2.086 · 폰에서는 작전판 도구 도크를 띄우지 않는다 ═══════════════════════════════════
+   사용자 판단: "선수나 코치나 모바일로는 작전판을 쓸 일이 없을 것 같다".
+   실제로 폰에서 이 도크는 3줄(도구·색·선수 토큰)로 812px 중 약 180px 을 먹고,
+   그 아래 앱 하단 탭과 겹쳐 보였다.
+   ⚠ 보드를 못 쓰게 만드는 게 아니다 — 운동장과 저장본은 그대로 보이고, **편집 도구만** 접는다.
+   ⚠ 아이패드(앱 안 iframe 실폭 672)는 접지 않는다. 폭으로는 폰과 못 가르므로
+      app.html 의 syncBoardMode 가 붙이는 body.ps-phone-work 로만 건다. */
+html.ps-page-board body.ps-phone-work #ps-dock{display:none!important}
+html.ps-page-board body.ps-phone-work{--ps-dock-h:0px!important}
+/* 도크가 차지하던 자리만큼 아래를 비워 두던 것도 함께 거둔다 */
+html.ps-page-board body.ps-phone-work #boardStage{padding-bottom:0!important}
+html.ps-page-board body.ps-phone-work #ps-pop-backdrop{display:none!important}
+
+/* ══ 2.446 · 눕힌 폰에는 데스크톱 도크가 서던 것 ═════════════════════════════════════
+   사용자: "모바일로 진입 시 초록색 보드에 구 하단 도크에 구 보드 설정이 나온다".
+   ⚠ 2.086 은 **폰 도크(#ps-dock)** 만 접었다. 그런데 작전판은 눕혀 쓰는 화면이라,
+     가로로 돌린 폰(844×390)은 iframe 실폭이 768 을 넘어 **데스크톱 도크(#ps-command-dock)** 가 선다
+     — board.html 의 mount() 가 window.innerWidth>=768 만 보기 때문이다.
+     2.365 가 보드 설정 고정 패널에서 겪은 그 함정("폭만 보면 눕힌 폰이 데스크톱으로 판정된다")과 같은 것.
+     실측(844×390): 390 중 112px 을 도크가 먹고, 맨 왼쪽 자리(2.285)에 '보드 설정' 이 선다.
+   폰이면 방향과 상관없이 접는다 — 2.086 의 결정("폰에서는 작전판 편집 도구를 안 준다")에 위아래가 없다.
+   ⚠ CSS 로 접는 이유: mount() 를 막으면 도크가 품고 있던 옛 도구막대(#floatBar·#toolSeg·#animBar)가
+     제자리에 그대로 드러난다(2.063 이 겪은 그 화면). 도크는 그것들의 그릇이라 그릇째 접는 편이 안전하다.
+   ⚠⚠ `:not(#_)` 는 장식이 아니다 — figma-premium.css 가 뒤에 실리며 `body.command-dock-v5.rail-full`
+      (0,3,2 ~ 1,5,2) + !important 로 같은 값을 덮는다. 부스트 없이 쓴 첫 판은 도크만 사라지고
+      `--ps-dock-h:112px` 와 `#boardStage{padding-bottom:130px}` 가 살아남아 **빈 회색 띠**가 남았다. */
+html.ps-page-board body.ps-phone-work:not(#_):not(#_) #ps-command-dock:not(#_){display:none!important}
+/* 팝오버는 도크가 아니라 body 직속(board.html 14559)이라 따로 접는다. `.on` 이 붙으면 figma-premium 이
+   display:flex!important 로 켠다(1741·1761) — 부스트가 없으면 도크만 사라지고 설정판만 뜬다 */
+html.ps-page-board body.ps-phone-work:not(#_):not(#_) #cmd-board-settings-pop:not(#_){display:none!important}
+/* 도크가 먹던 자리도 함께 거둔다 — 위 2.086 두 줄과 같은 뜻이지만, command-dock-v5 가 붙은 이 상황에서만
+   figma-premium 에게 지고 있었다(2.086 때는 도크가 아예 안 섰으니 겨룰 일이 없었다) */
+html.ps-page-board body.ps-phone-work:not(#_):not(#_){--ps-dock-h:0px!important;--cmd-stage-reserve:0px!important}
+html.ps-page-board body.ps-phone-work:not(#_):not(#_) #boardStage:not(#_){padding-bottom:0!important}

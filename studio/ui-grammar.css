@@ -1,0 +1,66 @@
+/* ══ PROCESS STUDIO · ui-grammar.css (2.206) — 모든 페이지의 마지막 스타일시트 ══
+   왜: 8개 페이지를 실측하니 검정 3종·회색 7종·카드 모서리 5종(10/12/14/16/22)·카드 패딩 9종·
+       본문 13px/600·제목 800 이 섞여 있었다(사용자: "카드·회색·행·열·폰트 전부 일관성 있게").
+   방법: 페이지·프레임워크(premium-ui/design-v2/figma-premium/mobile-polish)마다 이름이 다른 토큰을 **한 값**으로 묶고,
+       글자 토큰을 14/500·제목 16/700 으로 올린다. 선택자는 :is(#ps-grammar,…) 로 id 특이도를 빌려 페이지 규칙을 이긴다.
+   규칙: 레이아웃은 건드리지 않는다. 다크(body.fmdark)는 각 페이지 !important 가 이긴다. 고치면 링크 ?v 를 올린다. */
+:is(#ps-grammar,html),:is(#ps-grammar,html) body{
+  /* 글자 — premium-ui.css 덮음 */
+  --fs-micro:11px;--fs-caption:12px;--fs-sub:13px;--fs-body:14px;--fs-title:16px;--fs-h2:18px;
+  --fw-body:500;--fw-strong:600;--fw-head:700;
+  /* 검정 1 · 회색 3 */
+  --ink:#14161A;--txt:#14161A;--text:#14161A;--text-2:#646A73;--fig-ink:#14161A;--ps-color-text:#14161A;
+  --dim:#646A73;--muted:#646A73;--gray:#646A73;--text-3:#8A9099;--fig-muted:#646A73;--ps-color-muted:#646A73;
+  --faint:#8A9099;--ghost:#8A9099;
+  /* 선 2 */
+  --line:#E3E6EA;--line-soft:#E3E6EA;--border:#E3E6EA;--fig-line:#E3E6EA;--border2:#EEF0F3;--line2:#D3D7DD;
+  /* 면 3 — 바탕 / 카드 / 칸 */
+  --bg:#F4F5F7;--frame:#F4F5F7;--fig-canvas:#F4F5F7;--ps-color-page-bg:#F4F5F7;--ps-color-app-bg:#F4F5F7;--ps-premium-bg:#F4F5F7;
+  --bar:#FFFFFF;--surface:#FFFFFF;--panel:#FFFFFF;--fig-surface:#FFFFFF;
+  --bar2:#F1F3F5;--surface-2:#F1F3F5;--fill:#F1F3F5;--panel2:#F1F3F5;
+  /* 모서리 */
+  --ps-radius-card:12px;--ps-m-radius:12px;--dv2-r-xl:12px;--ps-radius-control:10px;
+  /* 치수 */
+  --g-pad:18px;--g-pad-s:14px;--g-radius:12px;--g-gap:12px;--g-row:44px;--g-seg:32px;--g-chip:28px;
+}
+@media (max-width:600px){ :is(#ps-grammar,html),:is(#ps-grammar,html) body{--g-pad:14px;--g-pad-s:12px;--g-gap:10px} }
+:is(#ps-grammar,html) body{background:var(--bg)!important}
+/* ══ 2.637 · 다크 토큰 한 블록(목업 mockup-coach/dark-mode.html 승인) ═══════════════════════════════════════
+   다크는 검정이 아니라 조명을 낮춘 같은 방: 바탕 #121417 → 면 #1B1E23 → 칸 #23272D. 회색은 남색 쪽으로 3%. 의미색은 채도 낮추고 명도만 올린다.
+   이름은 라이트와 1:1 — 페이지가 어떤 별칭을 쓰든 여기서 한 번에 바뀐다. 페이지의 body.fmdark 덧칠은 이 값과 겹치면 같은 값이 된다.
+   잔디·작전판·엠블럼·사진은 내용이라 손대지 않는다. 인쇄(#printDoc)는 종이라 라이트 그대로. */
+:is(#ps-grammar,html) body.fmdark{
+  /* 2.642 — 다크 그림자: 라이트용 남색 반투명(rgba(16,24,40,a)) 226곳이 다크에서 안 보이거나 얼룩 → 검정, 알파 .22+1.2a(최대 .85). 라이트는 var 폴백 그대로 */
+  --sh04:rgba(0,0,0,.27);--sh05:rgba(0,0,0,.28);--sh06:rgba(0,0,0,.29);--sh07:rgba(0,0,0,.3);--sh08:rgba(0,0,0,.32);--sh09:rgba(0,0,0,.33);--sh1:rgba(0,0,0,.34);--sh10:rgba(0,0,0,.34);--sh12:rgba(0,0,0,.36);--sh14:rgba(0,0,0,.39);--sh16:rgba(0,0,0,.41);--sh18:rgba(0,0,0,.44);--sh20:rgba(0,0,0,.46);--sh22:rgba(0,0,0,.48);--sh24:rgba(0,0,0,.51);--sh25:rgba(0,0,0,.52);--sh28:rgba(0,0,0,.56);--sh3:rgba(0,0,0,.58);--sh35:rgba(0,0,0,.64);--sh4:rgba(0,0,0,.7);--sh45:rgba(0,0,0,.76);
+
+  color-scheme:dark;
+  --ink:#F2F3F5;--txt:#F2F3F5;--text:#F2F3F5;--text-1:#F2F3F5;--navy:#F2F3F5;--fig-ink:#F2F3F5;--ps-color-text:#F2F3F5;--dv2-ink:#F2F3F5;   /* 2.639 — --text-1(공지 글 등) 폴백 #16213A 가 다크에서 검정이었다 */
+  --text-2:#A9AFB8;--dim:#A9AFB8;--muted:#A9AFB8;--gray:#A9AFB8;--fig-muted:#A9AFB8;--ps-color-muted:#A9AFB8;--txt-dim:#A9AFB8;
+  --text-3:#7C838D;--faint:#7C838D;--ghost:#7C838D;
+  --line:#2E333A;--line-soft:#2E333A;--border:#2E333A;--fig-line:#2E333A;--dv2-border:#2E333A;--ps-hairline:#2E333A;--border2:#262B31;--line2:#3A4048;
+  --bg:#121417;--frame:#121417;--fig-canvas:#121417;--ps-color-page-bg:#121417;--ps-color-app-bg:#121417;--ps-premium-bg:#121417;
+  --bar:#1B1E23;--surface:#1B1E23;--panel:#1B1E23;--fig-surface:#1B1E23;--dv2-surface:#1B1E23;
+  --bar2:#23272D;--surface-2:#23272D;--fill:#23272D;--panel2:#23272D;--dv2-chip-bg:#23272D;
+  --accent:#6F94F5;--blue:#6F94F5;--act:#6F94F5;--cmd-blue:#6F94F5;--accent-dim:#8FA9F7;--accent-soft:#1E2A47;--blue-soft:#1E2A47;
+  --green:#4CC27A;--ok:#4CC27A;--red:#E07470;--bad:#E07470;--match:#E07470;--match-soft:#3D2222;--match-line:#5A2E2C;--warm:#D9A15A;--re:#D9A15A;
+  --idp:#B9A6F2;--team-c-dark:#9FB3D6;
+}
+body.fmdark{color:var(--ink)}
+/* 다크에서 흰 면 하드코딩이 남은 곳(2.637에서 282곳을 토큰으로 바꿨지만 인라인 style 은 남는다)을 위한 마지막 그물 */
+body.fmdark :is(.card,.pn,.panel,.gp-row,.acct-pop,.gearpop){color:var(--ink)}
+/* 2.638 — 컨테이너가 제 토큰을 다시 정하는 곳(콕핏 .ck)과 팀 머리줄: 실계정 다크 실측에서 «다음 할 일»·주간 칸 글자가 검정, 팀 머리줄이 흰색이었다 */
+body.fmdark .ck{--ink:#F2F3F5;--gray:#A9AFB8;--faint:#7C838D;--line:#2E333A;--line2:#3A4048;--teams:#1E2A3D;--teamc:#9FB3D6;--oks:#173224;--res:#3A2D18;--injs:#3D2222;--outs:#23272D}
+body.fmdark nav.teamnav,body.fmdark nav.teamnav.tn-colored{background:var(--surface)!important;color:var(--ink)}
+body.fmdark .teamnav .teamname{color:var(--ink)!important}
+body.fmdark .teamnav button.on{background:var(--surface-2)!important;color:var(--ink)!important}
+/* 카드 한 얼굴 — 흰 면 · 헤어라인 · 12px. 패딩은 페이지 문법이 정한다
+   2.317 — 예외 `.wc-card`(IDP 첫 진입 환영): 이 규칙의 `background:var(--surface)!important` 가
+   파란 그라디언트를 흰색으로 덮어, **흰 배경에 흰 글씨**가 되어 인사말이 안 보였다.
+   (`class="card wc-card"` 는 `[class$="-card"]` 에 걸린다.) 특이도 싸움(2,4,1) 대신
+   **이 목록이 원래 그 용도**라 여기에 넣는다 — .ycard·.team-card-mini·.card-h 와 같은 자리. */
+:is(#ps-grammar,html) body :is(#ps-grammar,.card,.pn,.idcard,[class$="-card"],[class*="-card "]):not(.ycard):not(.team-card-mini):not(.card-h):not(.wc-card):not(.g-clock){
+  border-radius:var(--g-radius)!important;border:1px solid var(--line)!important;background:var(--surface)!important;box-shadow:none!important}
+/* 제목 무게 700 — 800/900 은 숫자에만 */
+h1,h2,h3,h4,.card-h .t,.hd-h h3,.ck .hd,.lab,.gvh-title,.avh-title,.nh-t{font-weight:600}
+/* 터치 타깃 하한 */
+@media (pointer:coarse){ button:not(.cdot):not(.ms-o):not(.arc-star):not(.t-idp):not(.t-grp):not(.chk){min-height:32px} }

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PROCESS STUDIO — 팀이 함께 쓰는 전술 스튜디오</title>
+<meta name="description" content="코칭 스태프가 하나의 워크스페이스에서 작전판·훈련·일정을 공유합니다. 아이패드·데스크탑에 최적화, 로그인하면 모든 기기가 동기화되고 초대 코드로 팀원을 부릅니다.">
+<meta name="theme-color" content="#0b0c0e">
+<link rel="icon" type="image/svg+xml" href="icon-any.svg">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="PROCESS STUDIO — 팀이 함께 쓰는 전술 스튜디오">
+<meta property="og:description" content="코칭 스태프가 한 워크스페이스에서 작전판·훈련·일정을 공유. 아이패드·데스크탑 최적화, 모든 기기 동기화, 초대 코드로 합류.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://processstudio-web.netlify.app/">
+<meta property="og:image" content="https://processstudio-web.netlify.app/process-logo-1024.png">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :focus-visible{outline:2px solid #3a6df0;outline-offset:2px}
+  :root{
+    --ink:#0d0e10; --dim:#63666c; --faint:#9a9da3;
+    --line:#eceef0; --bg:#ffffff; --paper:#f7f8f9;
+    --dark:#0b0c0e; --dark2:#131519;
+  }
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.72;-webkit-font-smoothing:antialiased;word-break:keep-all;letter-spacing:-.005em}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px;border-radius:10px;padding:13px 22px;cursor:pointer;border:1px solid transparent;transition:.16s ease;font-family:inherit;letter-spacing:-.01em}
+  .btn.primary{background:#fff;color:#0b0c0e}
+  .btn.primary:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(0,0,0,.32)}
+  .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.28)}
+  .btn.ghost:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.5)}
+  .btn.dark{background:var(--ink);color:#fff}
+  .btn.dark:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(0,0,0,.22)}
+  .kicker{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+
+  /* ===== TOPBAR ===== */
+  .topbar{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.86);backdrop-filter:saturate(1.3) blur(14px);border-bottom:1px solid var(--line)}
+  .topbar .inner{max-width:1080px;margin:0 auto;padding:11px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .brand{display:flex;align-items:center;gap:11px;font-size:15px;letter-spacing:.01em;color:var(--ink)}
+  .brand img{width:30px;height:30px;border-radius:7px;flex:0 0 auto;display:block}
+  .brand b{font-weight:800}.brand span{font-weight:300;opacity:.62}
+  .topbar .links{display:flex;gap:26px;align-items:center;font-size:14px;font-weight:600;color:var(--dim)}
+  .topbar .links a:hover{color:var(--ink)}
+  .topbar .links .go{background:var(--ink);color:#fff;padding:8px 16px;border-radius:8px;font-weight:700}
+  .topbar .links .go:hover{color:#fff;opacity:.86}
+  @media (max-width:640px){.topbar .links a:not(.go){display:none}}
+
+  /* ===== HERO ===== */
+  .hero{position:relative;overflow:hidden;background:radial-gradient(130% 120% at 50% -20%, #1c1e23 0%, #101114 48%, #060708 100%);color:#fff}
+  .hero-in{position:relative;z-index:2;padding:74px 0 66px;text-align:center}
+  .hero .kicker{color:rgba(255,255,255,.5);margin-bottom:22px}
+  .hero h1{font-size:clamp(34px,5.6vw,60px);font-weight:800;line-height:1.08;letter-spacing:-.035em}
+  .hero .lead{margin:22px auto 0;max-width:600px;font-size:clamp(15px,1.85vw,18px);color:rgba(255,255,255,.72);font-weight:400;letter-spacing:-.01em}
+  .cta{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+  .microcta{margin-top:15px;font-size:13px;color:rgba(255,255,255,.42)}
+  .microcta b{color:rgba(255,255,255,.8);font-weight:600}
+
+  /* ===== APP WINDOW ===== */
+  .shot{margin:52px auto 0;max-width:920px}
+  .appwin{border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 30px 70px rgba(0,0,0,.42),0 0 0 1px rgba(255,255,255,.07)}
+  .appwin .bar{display:flex;align-items:center;gap:20px;padding:12px 18px;background:#fff;border-bottom:1px solid #eef0f1}
+  .appwin .bar .wm{font-size:13px;color:#0d0e10;letter-spacing:.01em;white-space:nowrap}
+  .appwin .bar .wm b{font-weight:800}.appwin .bar .wm span{font-weight:300;opacity:.5}
+  .appwin .bar .tabs{display:flex;gap:17px;font-size:12px;color:#a6a8ac;font-weight:600;overflow:hidden}
+  .appwin .bar .tabs .on{color:#0d0e10;position:relative}
+  .appwin .bar .tabs .on::after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:2px;background:#0d0e10;border-radius:2px}
+  .appwin .bar .dots{margin-left:auto;display:flex;gap:7px;flex:0 0 auto}
+  .appwin .bar .dots i{width:9px;height:9px;border-radius:50%;background:#e4e6e8;display:block}
+  .appwin .bar .wspill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:#0d0e10;color:#fff;border-radius:8px;padding:5px 10px 5px 6px;font-size:11px;font-weight:700;white-space:nowrap;flex:0 0 auto}
+  .appwin .bar .wspill .a{width:16px;height:16px;border-radius:5px;background:#3a6df0;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
+  @media (max-width:560px){.appwin .bar .wspill b,.appwin .bar .wspill{font-size:10px}.appwin .bar .wspill{padding:5px 8px 5px 5px}}
+  .appwin .board{display:block;width:100%;height:auto;background:#1e8c4c}
+  .shot .cap{margin-top:16px;text-align:center;font-size:12px;color:rgba(255,255,255,.38);letter-spacing:0}
+  @media (max-width:720px){.appwin .bar .tabs{gap:12px;font-size:11px}.appwin .bar .wm{font-size:12px}}
+  @media (max-width:520px){.appwin .bar .tabs span:nth-child(n+4){display:none}}
+
+  /* ===== SECTION ===== */
+  section{padding:88px 0}
+  .sec-head{text-align:center;max-width:640px;margin:0 auto 48px}
+  .sec-head.left{text-align:left;max-width:720px;margin:0 0 44px}   /* 본문 섹션은 좌측 정렬 — hero·final(가운데)와 대비되는 편집형 리듬 */
+  .sec-head .kicker{color:var(--faint)}
+  .sec-head h2{font-size:clamp(25px,3.4vw,36px);font-weight:800;margin-top:12px;letter-spacing:-.03em;line-height:1.15}
+  .sec-head p{color:var(--dim);font-size:16px;margin-top:14px;letter-spacing:-.01em}
+
+  /* ===== IMPACT BAND — 밝은 구간(features↔why) 사이의 다크 매니페스토 비트 ===== */
+  .impact{background:#0b0c0e;color:#fff;padding:108px 0;text-align:center;position:relative;overflow:hidden}
+  .impact::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 140% at 50% -30%,rgba(255,255,255,.06),transparent 60%);pointer-events:none}
+  .impact .wrap{position:relative;z-index:1}
+  .impact .q{font-size:clamp(26px,4.1vw,44px);font-weight:800;line-height:1.3;letter-spacing:-.035em;max-width:760px;margin:0 auto}
+  .impact .q .g{color:rgba(255,255,255,.42)}
+  .impact .sub{margin-top:22px;color:rgba(255,255,255,.56);font-size:clamp(14px,1.7vw,17px);font-weight:500;letter-spacing:-.01em}
+
+  /* ===== TEAM WORKSPACE (flagship) ===== */
+  .team{background:radial-gradient(120% 120% at 80% -10%, #1a1c21 0%, #101114 46%, #08090b 100%);color:#fff}
+  .team .sec-head .kicker{color:rgba(255,255,255,.45)}
+  .team .sec-head h2{color:#fff}
+  .team .sec-head p{color:rgba(255,255,255,.62)}
+  .team-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center;max-width:940px;margin:0 auto}
+  .team-points{display:flex;flex-direction:column;gap:24px}
+  .tp{display:flex;gap:15px;align-items:flex-start}
+  .tp .ic{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .tp .ic svg{width:21px;height:21px;stroke:#fff;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .tp h3{font-size:16px;font-weight:700;margin-bottom:5px;letter-spacing:-.01em}
+  .tp p{color:rgba(255,255,255,.6);font-size:14px;line-height:1.62}
+  /* visual mockup */
+  .team-visual{display:flex;flex-direction:column;gap:18px;align-items:center}
+  .sync-strip{display:flex;align-items:center;gap:0;justify-content:center;margin-bottom:2px}
+  .sync-strip .dev,.sync-strip .cloud{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);flex:0 0 auto}
+  .sync-strip .cloud{background:#3a6df0;border-color:#3a6df0}
+  .sync-strip svg{width:23px;height:23px;stroke:#fff;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .sync-strip .phone svg{width:20px}
+  .sync-strip .wire{width:34px;height:2px;background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(58,109,240,.7));position:relative}
+  .sync-strip .wire::after{content:"";position:absolute;top:-2px;left:0;width:6px;height:6px;border-radius:50%;background:#5b83f5;box-shadow:0 0 8px #3a6df0;animation:flow 2.4s linear infinite}
+  .sync-strip .wire:last-of-type::after{animation-delay:1.2s}
+  @keyframes flow{0%{left:0;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:28px;opacity:0}}
+  .ws-mock{width:100%;max-width:320px;position:relative}
+  .ws-btn{display:inline-flex;align-items:center;gap:8px;background:#0d0e10;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:11px;padding:9px 12px;font-size:13px;font-weight:700;width:100%;box-sizing:border-box}
+  .ws-btn .ava{width:21px;height:21px;border-radius:6px;background:#3a6df0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex:0 0 auto}
+  .ws-btn b{flex:1;text-align:left;font-weight:700}
+  .ws-btn svg{width:15px;height:15px;stroke:rgba(255,255,255,.55);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .ws-pop{margin-top:8px;background:#fff;color:#16181c;border-radius:14px;padding:11px;box-shadow:0 24px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:2px}
+  .ws-pop .ws-hd{font-size:11px;font-weight:800;color:#8a8f98;letter-spacing:.04em;padding:4px 6px 6px}
+  .ws-row{display:flex;align-items:center;gap:9px;padding:9px 8px;border-radius:9px;font-size:13px}
+  .ws-row.on{background:#eef1f6;font-weight:700}
+  .ws-row .wi{width:24px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex:0 0 auto}
+  .ws-row .wi.p{background:#6a7078}
+  .ws-row .wn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ws-row .wc{font-size:11px;color:#8a8f98;flex:0 0 auto}
+  .ws-row .wck{color:#3a6df0;font-weight:800;flex:0 0 auto}
+  .ws-mini{display:flex;gap:7px;margin-top:6px}
+  .ws-mini span{flex:1;text-align:center;font-size:12px;font-weight:700;color:#16181c;background:#f1f3f5;border-radius:8px;padding:9px 0}
+  .invite-card{width:100%;max-width:320px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.22);border-radius:14px;padding:16px 18px;text-align:center;box-sizing:border-box}
+  .invite-card .ic-hd{font-size:11px;font-weight:800;letter-spacing:.06em;color:rgba(255,255,255,.5)}
+  .invite-card .ic-code{font:800 26px/1 ui-monospace,Menlo,monospace;letter-spacing:.16em;margin:9px 0;color:#fff}
+  .invite-card .ic-sub{font-size:12px;color:rgba(255,255,255,.55)}
+  .invite-card .ic-sub b{color:#fff;font-weight:700}
+  @media (max-width:820px){.team-grid{grid-template-columns:1fr;gap:36px}.team-visual{order:-1}}
+
+  /* ===== BOARD DEEP-DIVE ===== */
+  .board-sec{background:var(--dark);color:#fff}
+  .board-sec .sec-head .kicker{color:rgba(255,255,255,.45)}
+  .board-sec .sec-head h2{color:#fff}
+  .board-sec .sec-head p{color:rgba(255,255,255,.6)}
+  .bgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;max-width:860px;margin:0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden}
+  .bcard{background:var(--dark);padding:30px 30px;display:flex;gap:16px;align-items:flex-start}
+  .bcard .ic{width:38px;height:38px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .bcard .ic svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.92}
+  .bcard h3{font-size:16px;font-weight:700;margin-bottom:6px;letter-spacing:-.01em}
+  .bcard p{color:rgba(255,255,255,.6);font-size:14px;line-height:1.62}
+
+  /* ===== FEATURES ===== */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .feat{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:28px 26px;transition:.18s ease}
+  .feat:hover{border-color:#d8dade;box-shadow:0 14px 34px rgba(13,14,16,.06)}
+  .feat .ic{width:40px;height:40px;border-radius:11px;background:var(--ink);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .feat .ic svg{width:21px;height:21px;stroke:#fff}
+  .feat h3{font-size:17px;font-weight:800;margin-bottom:8px;letter-spacing:-.015em}
+  .feat p{color:var(--dim);font-size:14px;line-height:1.66}
+  .feat .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .feat .chips b{font-size:11px;font-weight:600;color:var(--dim);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 9px}
+
+  /* ===== WHY ===== */
+  .why{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .why .grid{grid-template-columns:repeat(2,1fr)}
+  .why .card{text-align:center;padding:14px 20px}
+  .why .card .ic{width:44px;height:44px;border-radius:12px;background:var(--ink);display:flex;align-items:center;justify-content:center;margin:0 auto}
+  .why .card .ic svg{width:22px;height:22px;stroke:#fff}
+  .why .card h3{font-size:16px;font-weight:800;margin:16px 0 7px;letter-spacing:-.01em}
+  .why .card p{color:var(--dim);font-size:14px}
+
+  /* ===== INSTALL ===== */
+  .install{background:var(--dark);color:#fff}
+  .install .sec-head .kicker{color:rgba(255,255,255,.45)}
+  .install .sec-head h2{color:#fff}
+  .install .sec-head p{color:rgba(255,255,255,.62)}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px}
+  .step{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.11);border-radius:16px;padding:26px 24px}
+  .step .top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .step .os{width:38px;height:38px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .step .os svg{width:21px;height:21px;stroke:#0b0c0e}
+  .step h3{font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .step .osname{font-size:12px;color:rgba(255,255,255,.5);font-weight:600}
+  .step ol{list-style:none;counter-reset:s}
+  .step li{counter-increment:s;position:relative;padding:9px 0 9px 34px;font-size:14px;color:rgba(255,255,255,.86);border-bottom:1px solid rgba(255,255,255,.07)}
+  .step li:last-child{border-bottom:0}
+  .step li::before{content:counter(s);position:absolute;left:0;top:9px;width:22px;height:22px;border-radius:7px;background:rgba(255,255,255,.1);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .step li b{font-weight:700;color:#fff}
+  .step li a{text-decoration:underline;text-decoration-color:rgba(255,255,255,.35)}
+  .step li kbd{background:rgba(255,255,255,.14);border-radius:5px;padding:1px 6px;font-family:inherit;font-weight:700;font-size:12px}
+  .note{margin-top:24px;text-align:center;font-size:13px;color:rgba(255,255,255,.6)}
+  .note b{color:#fff}
+
+  /* ===== FINAL / FOOTER ===== */
+  .final{text-align:center;background:var(--bg)}
+  .final .box{background:radial-gradient(130% 150% at 50% 0%, #1c1e23, #0b0c0e);border-radius:24px;padding:64px 28px;color:#fff}
+  .final h2{font-size:clamp(25px,3.4vw,36px);font-weight:800;letter-spacing:-.03em}
+  .final p{color:rgba(255,255,255,.7);margin:14px auto 0;max-width:460px;font-size:16px}
+  footer{text-align:center;color:var(--faint);font-size:13px;padding:40px 24px 52px;line-height:1.9}
+  footer .brand{justify-content:center;color:var(--ink);opacity:.85;margin-bottom:12px;font-size:14px}
+  footer a{color:var(--dim);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+
+  @media (max-width:820px){
+    .grid,.why .grid,.steps{grid-template-columns:1fr}
+    .bgrid{grid-template-columns:1fr}
+    section{padding:60px 0}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TOPBAR ===== -->
+<div class="topbar">
+  <div class="inner">
+    <a class="brand" href="#top"><span><b>PRO</b>CESS <b>STUDIO</b></span></a>
+    <nav class="links">
+      <a href="#team">팀 워크스페이스</a>
+      <a href="#board">작전판</a>
+      <a href="#features">기능</a>
+      <a href="/guide/">사용법</a>
+      <a class="go" href="https://processstudio.netlify.app/">앱 열기</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ===== HERO ===== -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-in">
+      <div class="kicker">팀 워크스페이스 · 클라우드 동기화</div>
+      <h1>팀이 함께 쓰는<br>전술 스튜디오.</h1>
+      <p class="lead">코칭 스태프가 하나의 워크스페이스에서 작전판·훈련·일정을 공유합니다. 로그인 한 번이면 데스크톱과 폰이 이어지고, 초대 코드로 팀원을 부르세요.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://processstudio.netlify.app/">웹에서 열기 →</a>
+        <a class="btn ghost" href="#team">팀 워크스페이스 보기</a>
+      </div>
+      <div class="microcta">아이패드 · 데스크탑 최적화 · 카카오·구글 로그인 · <b>설치 없이 링크만 열면 시작</b></div>
+
+      <div class="shot">
+        <div class="appwin">
+          <div class="bar">
+            <div class="wm"><b>PRO</b>CESS <b>STUDIO</b></div>
+            <div class="tabs"><span class="on">작전판</span><span>보관함</span><span>일정</span><span>팀</span><span>노트</span><span>양식</span></div>
+            <div class="wspill"><span class="a">F</span>FC 프로세스 U12</div>
+          </div>
+          <img class="board" src="board-real.webp" alt="PROCESS STUDIO 작전판 — 실사 잔디 피치에 4-4-2 대 4-3-3 배치" width="1110" height="740" loading="eager">
+        </div>
+        <div class="cap">실제 작전판 화면 · 우측 상단에서 워크스페이스를 전환</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== TEAM WORKSPACE (flagship) ===== -->
+<section class="team" id="team">
+  <div class="wrap">
+    <div class="sec-head left">
+      <div class="kicker">TEAM WORKSPACE</div>
+      <h2>팀이 하나의 공간에서</h2>
+      <p>혼자 쓰던 작전판을 이제 코칭 스태프가 함께. 감독·코치·피지컬이 같은 워크스페이스에서 편집하고, 어느 기기에서 열어도 최신입니다.</p>
+    </div>
+
+    <div class="team-grid">
+      <div class="team-points">
+        <div class="tp">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="14" height="10" rx="1.5"/><path d="M6 18h6M9 14v4"/><rect x="17.5" y="9" width="5" height="11" rx="1.2"/></svg></div>
+          <div><h3>데스크톱 ↔ 모바일 동기화</h3><p>맥에서 짠 작전판이 폰에서 그대로. 로그인만 하면 훈련·일정·보관함이 모든 기기에서 이어집니다.</p></div>
+        </div>
+        <div class="tp">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 19a5 5 0 0 1 6 0"/></svg></div>
+          <div><h3>팀 워크스페이스</h3><p>팀마다 전용 공간. 작전판·훈련 구성·일정·팀 명단을 스태프 전원이 공유하고 함께 편집합니다.</p></div>
+        </div>
+        <div class="tp">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h5M7 14h8"/><path d="M16 7l2 2 3-3"/></svg></div>
+          <div><h3>초대 코드로 30초 합류</h3><p>이메일도 승인도 필요 없습니다. 코드를 카톡으로 보내면 팀원이 로그인 후 입력만 하면 바로 멤버가 됩니다.</p></div>
+        </div>
+        <div class="tp">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5 12 11l2.5 2.5"/></svg></div>
+          <div><h3>개인 공간은 따로</h3><p>내 개인 워크스페이스와 팀 공간을 상단에서 전환. 개인 작업은 나만, 팀 데이터는 함께 — 섞이지 않습니다.</p></div>
+        </div>
+      </div>
+
+      <div class="team-visual">
+        <div class="sync-strip">
+          <span class="dev"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 20h8M12 17v3"/></svg></span>
+          <span class="wire"></span>
+          <span class="cloud"><svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1 .5-8 5.5 5.5 0 0 1 10.6 1.5A3.5 3.5 0 0 1 17.5 18z"/></svg></span>
+          <span class="wire"></span>
+          <span class="dev phone"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg></span>
+        </div>
+
+        <div class="ws-mock">
+          <div class="ws-btn"><span class="ava">F</span><b>FC 프로세스 U12</b><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="ws-pop">
+            <div class="ws-hd">워크스페이스</div>
+            <div class="ws-row"><span class="wi p">내</span><span class="wn">내 워크스페이스</span></div>
+            <div class="ws-row on"><span class="wi" style="background:#3a6df0">F</span><span class="wn">FC 프로세스 U12</span><span class="wc">3명</span><span class="wck">✓</span></div>
+            <div class="ws-row"><span class="wi" style="background:#e0569f">중</span><span class="wn">중등 대표팀</span><span class="wc">5명</span></div>
+            <div class="ws-mini"><span>＋ 팀 만들기</span><span>코드로 합류</span></div>
+          </div>
+        </div>
+
+        <div class="invite-card">
+          <div class="ic-hd">초대 코드</div>
+          <div class="ic-code">D09B0086</div>
+          <div class="ic-sub">코치에게 코드를 보내면 <b>바로 합류</b> · 30일 유효</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BOARD DEEP-DIVE ===== -->
+<section class="board-sec" id="board">
+  <div class="wrap">
+    <div class="sec-head left">
+      <div class="kicker">작전판</div>
+      <h2>움직임까지 담는 전술판</h2>
+      <p>선수·공·장비를 올리고, 움직임을 그리고, 그대로 재생합니다. 정지된 화이트보드가 아닙니다.</p>
+    </div>
+    <div class="bgrid">
+      <div class="bcard">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 12h13"/><path d="M13 7l5 5-5 5"/><path d="M4 18c4-6 8-6 12-6"/></svg></div>
+        <div><h3>세 가지 화살표</h3><p>패스는 실선, 이동은 점선, 드리블은 물결. 선 굵기와 색까지 상황에 맞게.</p></div>
+      </div>
+      <div class="bcard">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+        <div><h3>장면 애니메이션</h3><p>장면을 이어 붙이면 선수 움직임이 그대로 재생됩니다. 빌드업과 전환을 눈으로 설명하세요.</p></div>
+      </div>
+      <div class="bcard">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div><h3>선수 시야</h3><p>선수가 보는 방향과 각도를 시야로 표시. 압박·간격·마킹을 짚기에 좋습니다.</p></div>
+      </div>
+      <div class="bcard">
+        <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 12h18"/><path d="M12 4v16"/></svg></div>
+        <div><h3>피치와 멀티 운동장</h3><p>잔디·딥그린·화이트·훈련 모눈 중 선택하고 색도 직접. 한 화면에 여러 운동장을 놓고 국면별로 비교합니다.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head left">
+      <div class="kicker">올인원</div>
+      <h2>작전판은 시작입니다</h2>
+      <p>전술에서 훈련·일정·팀·기록까지. 따로 노는 앱 여러 개 대신, 하나의 흐름으로 이어집니다.</p>
+    </div>
+    <div class="grid">
+
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7"/></svg></div>
+        <h3>양식</h3>
+        <p>매치데이·경기 분석·경기 후 리뷰·세트피스 시트·시즌 플랜·MD 주간 트레이닝까지, 펜으로 쓰는 인쇄용 A4 양식. 미리보기 후 바로 인쇄하거나 PDF로 배포합니다.</p>
+        <div class="chips"><b>매치데이</b><b>세트피스 시트</b><b>MD 주간</b><b>A4 · PDF</b></div>
+      </div>
+
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg></div>
+        <h3>일정</h3>
+        <p>월간·주간·일간 캘린더에 훈련을 얹고 강도를 기록합니다. 매치데이 기준으로 이번 주 부하를 한눈에.</p>
+        <div class="chips"><b>월·주·일</b><b>훈련 배분</b><b>강도 관리</b></div>
+      </div>
+
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.4"/><path d="M4 20c0-3.3 2.7-6 6-6 1.2 0 2.3.3 3.2 1"/><circle cx="17" cy="16" r="3.2"/><path d="M19.4 18.4 22 21"/></svg></div>
+        <h3>팀</h3>
+        <p>포지션별로 선발·백업을 정리하고 포메이션·유니폼 색을 지정합니다. 게임모델·스카우트까지, 선발 11명을 작전판으로 바로.</p>
+        <div class="chips"><b>뎁스차트</b><b>포메이션</b><b>게임모델</b></div>
+      </div>
+
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <h3>보관함</h3>
+        <p>작전판·훈련·경기·미팅을 폴더와 태그로 정리합니다. 검색해서 바로 꺼내 쓰고, 자주 쓰는 건 첫 화면에 고정.</p>
+        <div class="chips"><b>폴더·태그</b><b>검색</b><b>즐겨찾기</b></div>
+      </div>
+
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.2-4L16.4 4.8a2 2 0 0 1 2.8 0a2 2 0 0 1 0 2.8L8 18.8 4 20z"/><path d="M14 6.5l3.5 3.5"/></svg></div>
+        <h3>노트 · 메모</h3>
+        <p>자유롭게 그리는 화이트보드와 빠른 텍스트 메모. 볼펜·형광펜으로 쓰고 A4로 인쇄, 미팅 자료로도.</p>
+        <div class="chips"><b>화이트보드</b><b>메모</b><b>A4 인쇄</b></div>
+      </div>
+
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v12M8 7l4-4 4 4"/></svg></div>
+        <h3>공유 · 내보내기</h3>
+        <p>작전판을 이미지로 저장하고 공유 링크로 전달합니다. 양식·노트는 PDF로 뽑아 그대로 배포.</p>
+        <div class="chips"><b>이미지 저장</b><b>공유 링크</b><b>PDF</b></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== IMPACT BAND ===== -->
+<section class="impact">
+  <div class="wrap">
+    <p class="q">가장 좋은 전술은,<br><span class="g">같은 그림을 함께 볼 때</span> 나옵니다.</p>
+    <p class="sub">코칭 스태프 전원이 하나의 워크스페이스에서 — 아이패드에서도, 데스크탑에서도.</p>
+  </div>
+</section>
+
+<!-- ===== WHY ===== -->
+<section class="why" id="why">
+  <div class="wrap">
+    <div class="sec-head left">
+      <div class="kicker">왜 PROCESS STUDIO</div>
+      <h2>가볍게, 현장에 맞게</h2>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="14" height="10" rx="1.5"/><path d="M6 18h6M9 14v4"/><rect x="17.5" y="9" width="5" height="11" rx="1.2"/></svg></div>
+        <h3>아이패드 · 데스크탑 최적화</h3><p>큰 화면 기준으로 설계했습니다. 아이패드에선 애플펜슬로 그리며 미팅하고, 데스크탑에선 넓게 펼쳐 준비합니다. 폰은 확인·공유용으로 가볍게.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M9 6h6M11 18h2"/></svg></div>
+        <h3>설치형 웹앱</h3><p>홈 화면·바탕화면에 설치하면 전체화면 앱처럼 실행됩니다. 스토어 등록 없이, 항상 최신.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1 .5-8 5.5 5.5 0 0 1 10.6 1.5A3.5 3.5 0 0 1 17.5 18z"/><path d="M12 21v-6M9.5 17.5 12 15l2.5 2.5"/></svg></div>
+        <h3>로컬 먼저, 로그인하면 팀과</h3><p>기본은 내 기기에 저장돼 오프라인에서도 열립니다. 로그인하면 그 위에 클라우드 동기화와 팀 공유가 얹힙니다.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.2-4L16.4 4.8a2 2 0 0 1 2.8 0a2 2 0 0 1 0 2.8L8 18.8 4 20z"/><path d="M14 6.5l3.5 3.5"/></svg></div>
+        <h3>현장·종이 친화</h3><p>한 화면에서 끝나는 단순한 흐름과 인쇄 양식. 라커룸·경기장에서 바로 쓰도록 설계했습니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== INSTALL ===== -->
+<section class="install" id="install">
+  <div class="wrap">
+    <div class="sec-head left">
+      <div class="kicker">설치 가이드</div>
+      <h2>앱처럼 설치하기</h2>
+      <p>설치는 선택입니다. 브라우저로 그냥 써도 되고, 설치하면 아이콘 실행·전체화면·오프라인이 편해집니다. 아이패드·데스크탑에 최적화되어 있어 큰 화면에 설치하면 가장 좋습니다.</p>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="top"><span class="os"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 20h8M12 17v3"/></svg></span><div><h3>맥 · 데스크탑</h3><div class="osname">Chrome · Edge · Safari</div></div></div>
+        <ol>
+          <li><a href="https://processstudio.netlify.app/">사이트</a>에 접속합니다.</li>
+          <li>주소창 오른쪽 끝의 <b>설치 아이콘</b>을 클릭.</li>
+          <li>없으면 <kbd>⋮</kbd> 메뉴 → <b>앱 설치</b> (Safari는 <b>공유 → Dock에 추가</b>).</li>
+          <li><b>설치</b>하면 독·런치패드에 아이콘이 생깁니다.</li>
+        </ol>
+      </div>
+
+      <div class="step">
+        <div class="top"><span class="os"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></span><div><h3>아이폰 · 아이패드</h3><div class="osname">Safari</div></div></div>
+        <ol>
+          <li><b>Safari</b>로 <a href="https://processstudio.netlify.app/">사이트</a>를 엽니다.</li>
+          <li>아래(또는 위) <b>공유</b> 버튼 <kbd>􀈂</kbd> 을 탭.</li>
+          <li>목록에서 <b>홈 화면에 추가</b>를 선택.</li>
+          <li><b>추가</b>하면 홈 화면에 앱 아이콘이 완성됩니다.</li>
+        </ol>
+      </div>
+
+      <div class="step">
+        <div class="top"><span class="os"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4"/></svg></span><div><h3>안드로이드</h3><div class="osname">Chrome</div></div></div>
+        <ol>
+          <li><b>Chrome</b>으로 <a href="https://processstudio.netlify.app/">사이트</a>를 엽니다.</li>
+          <li>우측 상단 <kbd>⋮</kbd> 메뉴를 탭.</li>
+          <li><b>앱 설치</b> 또는 <b>홈 화면에 추가</b> 선택.</li>
+          <li>안내에 따라 <b>설치</b>하면 홈 화면에 추가됩니다.</li>
+        </ol>
+      </div>
+
+    </div>
+    <p class="note">설치가 안 보이면 페이지를 <b>새로고침</b>하거나 잠깐 사용한 뒤 다시 시도하세요.</p>
+  </div>
+</section>
+
+<!-- ===== FINAL ===== -->
+<section class="final">
+  <div class="wrap">
+    <div class="box">
+      <h2>팀을 초대하고, 오늘부터 함께</h2>
+      <p>링크만 열면 바로 작전판. 로그인하고 팀을 만들면, 초대 코드 하나로 코칭 스태프가 같은 공간에 모입니다.</p>
+      <div class="cta" style="margin-top:28px">
+        <a class="btn primary" href="https://processstudio.netlify.app/">PROCESS STUDIO 열기 →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="brand" style="display:flex;align-items:center;justify-content:center;gap:10px"><img src="icon-any.svg" alt="PROCESS STUDIO" style="width:24px;height:24px;border-radius:6px"><span><b>PRO</b>CESS <b>STUDIO</b></span></div>
+  팀이 함께 쓰는 전술 스튜디오 — 작전판 · 훈련 · 일정 · 팀 · 노트 · 양식 · 클라우드 동기화<br>
+  <a href="https://processstudio.netlify.app/">processstudio.netlify.app</a><br>
+  <span style="font-size:12px"><a href="/guide/">사용 설명서</a> · <a href="/privacy.html">개인정보처리방침</a> · <a href="/terms.html">이용약관</a></span>
+</footer>
+
+</body>
+</html>
