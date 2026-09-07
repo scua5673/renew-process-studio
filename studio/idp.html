@@ -7677,7 +7677,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var wkM=ymd(mondayOf(new Date())), pvM=ymd(addDays(new Date(wkM+'T00:00:00'),-7));
       var wkD=ymd(mondayOf(dayD));   /* 그 날이 속한 주의 월요일 — 초점·띠는 이 주 기준 */
       /* 2.618 — «이번 주» 표(주 마무리): 토 12시~일요일은 스스로, 세그먼트로 고르면 그대로. 이번 주 기준으로 강제 */
-      var _nw=new Date(), _wkMode=(sqWkMode===null)?((_nw.getDay()===6&&_nw.getHours()>=12)||_nw.getDay()===0):!!sqWkMode;
+      var _nw=new Date(), _wkMode=(sqWkMode===null)?(_nw.getDay()===0):!!sqWkMode;   /* 2.684 — 일요일에만 스스로 «이번 주» */
       if(_wkMode){ day=tk; isToday=true; dayD=t0; wkD=wkM; }
       var nextM=ymd(addDays(new Date(wkM+'T00:00:00'),7));
       var BC={1:'#E24B4A',2:'#EF9F27',3:'#ECC94B',4:'#97C459',5:'#2BAF5E'};
@@ -7734,7 +7734,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +(isToday?'':'<button type="button" class="sqd-now" data-sqd-now>오늘로</button>')
         +_seg
         +'<span class="sqd-cnt">'+wroteN+'명 적음 <u>· 연결 '+linked.length+' / 전체 '+rows.length+'</u></span></div>';
-      o+='<div class="sqg-scroll"><table class="sqg-t sqg-ol"><thead><tr><th class="l">선수</th>'+(can?'<th>출석</th>':'')+'<th class="l">이번 주 초점</th><th>'+(isToday?'오늘':'그날')+'</th><th>이번 주</th><th>몸</th><th class="l">한 마디</th>'+(can?'<th class="l c-in" colspan="2">내 답 <i class="sqg-rule">❤ 또는 제안·격려 한 줄</i></th>':'')+'<th></th></tr></thead><tbody>';
+      o+='<div class="sqg-scroll"><table class="sqg-t sqg-ol"><thead><tr><th class="l">선수</th>'+(can?'<th>출석</th>':'')+'<th class="l">이번 주 초점</th><th class="l">한 마디</th>'+(can?'<th class="l c-in" colspan="2">내 답 <i class="sqg-rule">❤ 또는 제안·격려 한 줄</i></th>':'')+'<th></th></tr></thead><tbody>';
       linked.forEach(function(r){
         /* 2.492 — 표의 옷(사용자 "디자인도 전부 신경써줘야지"): 원형 번호 배지(.no)·단계칩(em.sN)·
            알약(sqg-pill) — 전부 이 화면(sqtd·sqd)이 이미 쓰는 문법. 빈 값은 대시 대신 조용한 비움 */
@@ -7768,9 +7768,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           /* 2.635 — 출석을 같은 표에(워크플로우 둘째 판: «같은 선수 목록을 두 화면에서 두 번 만지지 않는다»). 선수단 «몸 상태» 표의 코치 확인(cs_idp_daily_v1)과 같은 칩·같은 핸들러(bindSquad 의 .phys-state) */
           +(can?(function(){ var ps=''; try{ ps=(dailyRec(day,uid)||{}).status||''; }catch(_){ } return '<td><button type="button" class="phys-state sqg-phys'+(ps?' '+ps:'')+'" data-phys-d="'+esc(day)+'" data-phys-u="'+esc(uid)+'" title="누를 때마다 훈련→휴식→회복→재활→부상→열외→불참→코칭">'+(ps?PHYS_LB[ps]:'＋')+'</button></td>'; })():'')
           +'<td class="l"><span class="sqg-focus"'+(r.fcT?' title="'+esc(r.fcT)+'"':'')+'>'+(r.fcT?esc(r.fcT):'<span class="sqg-nulla">초점 없음</span>')+'</span></td>'
-          +'<td>'+tryCell+'</td>'
-          +'<td>'+wkCell+'</td>'
-          +'<td class="sqg-td">'+dot+moreMark+'</td>'
+          /* 2.684 — 그날·이번 주·몸 세 칸은 뺐다(사용자 "제거 항목: 그날·몸·이번주") */
           +'<td class="l sqg-memo"'+(r.memoT?' title="'+esc(r.memoT)+'"':'')+'>'+memoCell+'</td>'
           +(can?('<td><button type="button" class="sqd-h'+(r.rc&&r.rc.h?' on':'')+'" data-sqd-h="'+esc(uid)+'" title="봤어요">'+(r.rc&&r.rc.h?'❤':'♡')+'</button></td>'
             +'<td class="l c-in"><input class="sqd-in" data-sqd-in="'+esc(uid)+'" maxlength="300" placeholder="❤ 또는 제안·격려 한 줄" value="'+esc((r.rc&&r.rc.t)||'')+'"></td>'):'')
@@ -7780,7 +7778,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       o+='</tbody></table></div>';
       /* 2.616 — 요약은 사실만(개수). 재촉 문구 없음 */
       (function(){ var cK=0,cY=0,cN=0,cX=0,bad=0,mm=0; linked.forEach(function(r){ if(r.tryV===2)cK++; else if(r.tryV===1)cY++; else if(r.tryV===0)cN++; else cX++; if(r.bodyBad)bad++; if(r.memoT)mm++; });
-        o+='<div class="sqg-sum"><span>칩 · 계속 <b>'+cK+'</b> · 1~2번 <b>'+cY+'</b> · 아직 <b>'+cN+'</b> · 안 적음 <b>'+cX+'</b></span><span>몸 나쁨 <b>'+bad+'</b></span><span>한 마디 <b>'+mm+'</b></span>'+(sqTdAuto?'<span class="sqg-auto">오늘은 아직 아무도 안 적어 '+esc(dayTag||day)+' 것을 보여요</span>':'')+'</div>'; })();
+        o+='<div class="sqg-sum"><span>칩 · 계속 <b>'+cK+'</b> · 1~2번 <b>'+cY+'</b> · 아직 <b>'+cN+'</b> · 안 적음 <b>'+cX+'</b></span><span>한 마디 <b>'+mm+'</b></span>'+(sqTdAuto?'<span class="sqg-auto">오늘은 아직 아무도 안 적어 '+esc(dayTag||day)+' 것을 보여요</span>':'')+'</div>'; })();
       var _unN=rws.length-linked.length;
       if(_unN)o+='<div class="sqg-un">계정 연결 안 됨 '+_unN+'명 — 연결은 계정 › 권한 관리</div>';
       return o+'</div>';
@@ -12461,8 +12459,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      이번 주 마지막 훈련 뒤(토 18시~일요일, 월요일 12시 전 미선택)에 오늘 카드 맨 위. 세 장 중 하나를 고르면 끝 — 한 문장은 선택.
      후보 = 코치 제안 1 · 제안 2 · 계속(이번 주 그대로) + 회색 «직접 쓰기»(규칙 넷: 내가 · 하는 동작 · 이번 주 · 할 수 있는 것). */
   function olWrapTarget(){ var now=new Date(), dow=now.getDay(), hr=now.getHours(), t=new Date(now); t.setHours(0,0,0,0);
-    if((dow===6&&hr>=18)||dow===0){ var wk=ymd(mondayOf(t)); return {wk:wk,next:ymd(addDays(new Date(wk+'T00:00:00'),7)),late:false}; }
-    if(dow===1&&hr<12){ var wk1=ymd(mondayOf(t)); if(!focusOf(wk1))return {wk:ymd(addDays(new Date(wk1+'T00:00:00'),-7)),next:wk1,late:true}; }
+    /* 2.684 — 회고(주 마무리)는 **일요일에만**. 토요일 저녁·월요일 오전의 «늦은 회고»는 뺐다 — 월요일부터는 자유 기록(사용자). */
+    if(dow===0){ var wk=ymd(mondayOf(t)); return {wk:wk,next:ymd(addDays(new Date(wk+'T00:00:00'),7)),late:false}; }
     return null; }
   function rWeekWrapCard(ww){
     var wk=ww.wk, nx=ww.next, fc=focusOf(wk), fcT=(fc&&fc.text)||'', mon=new Date(wk+'T00:00:00'), sun=addDays(mon,6), today=new Date(); today.setHours(0,0,0,0);
