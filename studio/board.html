@@ -6758,9 +6758,13 @@ window.__psVaultTest=function(){ return new Promise(function(resolve){
 try{ if(localStorage.getItem("cs_devmode")==="1"||localStorage.getItem("cs_devmode")==="on"){ setTimeout(function(){try{window.__psSelfTest();if(window.__psVaultTest)window.__psVaultTest().then(function(r){try{console[r.ok?"log":"error"]("[PS vaultTest]",r.ok?"통과 ✓":("실패 — "+r.why));}catch(_){}});}catch(_){}},1600); } }catch(_){}
 
 let undoStack=[],redoStack=[];
-function pushUndo(){try{undoStack.push(captureSnap());if(undoStack.length>50)undoStack.shift();redoStack.length=0;}catch(_){}}
-function undoLast(){if(!undoStack.length){toast("되돌릴 작업이 없어요");return;}try{redoStack.push(captureSnap());if(redoStack.length>50)redoStack.shift();loadSnap(undoStack.pop());}catch(_){}toast("되돌렸습니다 ↩");}
-function redoLast(){if(!redoStack.length){toast("다시 실행할 작업이 없어요");return;}try{undoStack.push(captureSnap());if(undoStack.length>50)undoStack.shift();loadSnap(redoStack.pop());}catch(_){}toast("다시 실행 ↪");}
+/* 2.682 — 되돌리기에 장면 목록(anim.frames·animActive)도 담는다(사용자 "애니메이션 추가했을 때도 ⌘Z·⌘⇧Z"). 장면 객체는 얕게 복사(snap·thumb 문자열은 공유). */
+function _animSnapForUndo(){ try{ return {frames:(anim.frames||[]).map(function(f){ var c=Object.assign({},f); if(f.hl)c.hl=f.hl.slice(); if(f.blink)c.blink=JSON.parse(JSON.stringify(f.blink)); if(f.curves)c.curves=JSON.parse(JSON.stringify(f.curves)); return c; }),active:animActive}; }catch(_){ return null; } }
+function _animApplyUndo(a){ if(!a||!Array.isArray(a.frames))return; anim.frames=a.frames; animActive=Math.max(-1,Math.min(+a.active,anim.frames.length-1)); try{renderAnimFrames();}catch(_){} try{renderOnion();}catch(_){} try{_animFitPad();}catch(_){} }
+function _undoEntry(e){ if(e&&e.board){ loadSnap(e.board); _animApplyUndo(e.anim); } else loadSnap(e); }
+function pushUndo(){try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();redoStack.length=0;}catch(_){}}
+function undoLast(){if(!undoStack.length){toast("되돌릴 작업이 없어요");return;}try{redoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(redoStack.length>50)redoStack.shift();_undoEntry(undoStack.pop());}catch(_){}toast("되돌렸습니다 ↩");}
+function redoLast(){if(!redoStack.length){toast("다시 실행할 작업이 없어요");return;}try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();_undoEntry(redoStack.pop());}catch(_){}toast("다시 실행 ↪");}
 function clearBoardHistory(){undoStack.length=0;redoStack.length=0;}
 try{window.__clearBoardHistory=clearBoardHistory;}catch(_){}
 
@@ -6920,7 +6924,10 @@ async function restoreLiveBoard(){try{
   try{if(live&&live.snap&&live._savedAt){if(live.view==="match")sm=live.snap;else if(live.view==="board")sb=live.snap;}}catch(_){}
   window.__viewSnaps=window.__viewSnaps||{};if(sm&&(sm.players||[]).length)window.__viewSnaps.match=sm;if(sb)window.__viewSnaps.board=sb;try{if(Array.isArray(live.meetSlides))anim.slides=live.meetSlides;}catch(_){}matchActive=!!live.matchActive;
   /* 장면은 여기서 되살리되 화면은 건드리지 않는다 — 아래에서 마지막 작업 스냅샷을 따로 복원하기 때문이다 */
-  try{ if(Array.isArray(live.animFrames)&&live.animFrames.length>1&&window.__animRestore)window.__animRestore(live.animFrames,live.animActive); }catch(_){}
+  try{ if(Array.isArray(live.animFrames)&&live.animFrames.length>1&&window.__animRestore){ var _ai=live.animActive;
+    /* 2.682 — 화면(마지막 작업 판)과 글자까지 같은 장면이 있으면 그 장면을 활성으로 — 다른 장면(예: 1번)이 마지막 화면으로 덮이지 않게(사용자 5번) */
+    try{ var _bsnap=(live.view==="board"&&live.snap)?live.snap:sb; var _key=function(x){return JSON.stringify([x&&x.players,x&&x.equipment,x&&x.drawings,x&&x.ball]);}; var _bk=_key(_bsnap); var _m=live.animFrames.findIndex(function(f){return f&&f.snap&&_key(f.snap)===_bk;}); if(_m>=0)_ai=_m; }catch(_){}
+    window.__animRestore(live.animFrames,_ai); } }catch(_){}
   /* 자동 유지(작업을 안 잃게): 마지막 작업(경기·작전판)을 새로고침·재진입 시 그대로 복원. 저장된 페이지는 __psPages가 이어받아 복원 */
   try{ if(live.boardPages) window.__pendingBoardPages=live.boardPages; }catch(_){}
   try{ var _ed=await store.get(EDRAFT_KEY); if(_ed&&_ed.trainings&&_ed.trainings.length) window.__editorDraft=_ed; }catch(_){}   /* 저장 안 한 훈련 초안 — '새 훈련' 열 때 이어서 복원 */
@@ -7254,10 +7261,10 @@ function playAnim(){
   animRestore=captureSnap();animPlaying=true;updatePlayUI();clearOnion();_mpClear();try{trailReset();window.__animSeg=0;}catch(_){}
   /* 아이콘 이동 속도와 장면 유지 시간을 분리한다.
      moveSpeed는 출발 장면별, animHold는 전체 공통이라 재생 리듬이 일정하다. */
-  let s=0,t0=performance.now(),lastHi=-1,phase="hold";
+  let s=(animActive>=0&&animActive<anim.frames.length-1)?animActive:0,t0=performance.now(),lastHi=-1,phase="hold";   /* 2.682 — 선택한 장면부터 재생(사용자) */
   const holdMs=()=>Math.max(.2,animHold||.6)*1000;
-  renderInterp(anim.frames[0].snap,anim.frames[0].snap,0);
-  _animCapShow(anim.frames[0]&&anim.frames[0].cap,0);highlightFrame(0);lastHi=0;
+  renderInterp(anim.frames[s].snap,anim.frames[s].snap,0);
+  _animCapShow(anim.frames[s]&&anim.frames[s].cap,s);highlightFrame(s);lastHi=s;
   const step=now=>{if(!animPlaying)return;
     if(phase==="hold"){
       if(now-t0>=holdMs()){
@@ -7355,8 +7362,19 @@ function syncHlBtn(){ try{ var b=document.getElementById("animHlBtn"); if(!b)ret
   var fr=(animActive>=0)?anim.frames[animActive]:null; var n=(fr&&fr.hl&&fr.hl.length)||0;
   var label=n>0?("계속 강조 "+n+"개 설정됨"):"선택한 토큰 계속 강조";
   b.classList.toggle("on",n>0);b.setAttribute("aria-pressed",n>0?"true":"false");b.setAttribute("aria-label",label);b.title=label; }catch(_){}}
+/* 2.682 — 애니메이션 단축키(사용자). 도구 단축키 표와 같은 저장소(cs_tool_shortcuts_v1)에 id 로 들어간다. */
+function runAnimAct(id){ try{
+  var bar=document.getElementById("animBar"),on=!!(bar&&bar.classList.contains("on"));
+  if(id==="animPlay"){ if(!on){ var t=$("animToggle"); if(t)t.click(); } playAnim(); return; }
+  if(!on){ toast("애니메이션 바를 먼저 여세요"); return; }
+  if(id==="animAdd"){ var a=$("animAdd"); if(a)a.click(); return; }
+  if(id==="animUpdate"){ var u=$("animUpdate"); if(u)u.click(); return; }
+  if(id==="animPrev"||id==="animNext"){ if(animPlaying)stopAnim(); var n=anim.frames.length; if(!n)return; var to=Math.max(0,Math.min(n-1,animActive+(id==="animNext"?1:-1))); if(to!==animActive)selectAnimFrame(to); return; }
+  if(id==="animDel"){ if(animActive>=0&&anim.frames[animActive])deleteAnimFrame(animActive); return; }
+}catch(e){ try{console.warn("animAct",e);}catch(_){} } }
 function toggleHl(){
   if(animActive<0||!anim.frames[animActive]){toast("장면을 먼저 선택하세요");return;}
+  pushUndo();
   var fr=anim.frames[animActive]; fr.hl=fr.hl||[];
   var ids=_selTokenIds();
   if(!ids.length){
@@ -7418,6 +7436,7 @@ window.__animRestore=function(frames,activeIdx){ try{
   try{_animFitPad();}catch(_){}setTimeout(function(){try{_animFitPad();}catch(_){}},120);
   return true;
 }catch(_){return false;} };
+window.__animGet=function(){ try{ return {frames:JSON.parse(JSON.stringify(anim.frames||[])),active:animActive,hold:animHold,title:anim.title||"",titleColor:anim.titleColor||"#e23b3b"}; }catch(_){ return null; } };   /* 2.682 — 페이지별 장면 저장용 */
 window.__animLoad=function(frames){ try{
   if(!Array.isArray(frames)||frames.length<2)return false;
   anim.frames=JSON.parse(JSON.stringify(frames)); animActive=0;
@@ -7446,7 +7465,8 @@ function syncAnimCap(){ try{ var el=document.getElementById("animCap"); if(!el)r
 function closeAnimFrameMenu(){const m=document.getElementById("animFrameMenu");if(!m)return null;const a=m.__anchor;if(a)a.setAttribute("aria-expanded","false");m.remove();return a;}
 function focusAnimFrame(i){try{const box=$("animFrames"),d=box&&box.children[i];if(!d)return;try{d.focus({preventScroll:true});}catch(_){d.focus();}try{d.scrollIntoView({inline:"center",block:"nearest"});}catch(_){}}catch(_){}}
 function selectAnimFrame(i,focus){if(i<0||i>=anim.frames.length)return false;stopAnim();animActive=i;loadSnap(anim.frames[i].snap);renderAnimFrames();renderOnion();if(focus)focusAnimFrame(i);return true;}
-function reorderAnimFrame(from,to,focus){
+function reorderAnimFrame(from,to,focus){pushUndo();   /* 2.682 */
+  
   if(from<0||to<0||from>=anim.frames.length||to>=anim.frames.length||from===to)return false;
   try{stopAnim();}catch(_){}
   var f=anim.frames.splice(from,1)[0];anim.frames.splice(to,0,f);
@@ -7455,7 +7475,8 @@ function reorderAnimFrame(from,to,focus){
   else if(from>animActive&&to<=animActive)animActive++;
   renderAnimFrames();try{renderOnion();}catch(_){}try{boardSaveLive();}catch(_){}if(focus)focusAnimFrame(to);return true;
 }
-function duplicateAnimFrame(i,focus){
+function duplicateAnimFrame(i,focus){pushUndo();   /* 2.682 */
+  
   if(i<0||i>=anim.frames.length)return false;try{stopAnim();}catch(_){}
   /* 자동저장 지연 안에서 곧바로 복제해도 방금 편집한 배치·피치가 빠지거나 화면이
      이전 snap으로 돌아가지 않도록 활성 장면을 먼저 현재 보드로 확정한다. */
@@ -7468,7 +7489,8 @@ function duplicateAnimFrame(i,focus){
   try{loadSnap(copy.snap);}catch(_){}renderAnimFrames();try{renderOnion();}catch(_){}try{boardSaveLive();}catch(_){}
   if(focus)focusAnimFrame(at);toast("장면 "+(at+1)+"으로 복제됨");return true;
 }
-function deleteAnimFrame(i){
+function deleteAnimFrame(i){pushUndo();   /* 2.682 */
+  
   if(i<0||i>=anim.frames.length)return;if(animPlaying)stopAnim();anim.frames.splice(i,1);
   if(!anim.frames.length)animActive=-1;
   else if(i<animActive)animActive--;
@@ -7926,7 +7948,7 @@ async function exportGif(){
     le16(W);le16(H);b(0xF7);b(0);b(0);   /* 전역 팔레트 256색 */
     __gifPalette().forEach(v=>b(v));
     [0x21,0xFF,0x0B].forEach(b);"NETSCAPE2.0".split("").forEach(c=>b(c.charCodeAt(0)));[3,1,0,0,0].forEach(b);   /* 무한 루프 */
-    const fps=12,frameCs=Math.round(100/fps);
+    const fps=25,frameCs=4;   /* 2.682 — 12fps 는 끊겨 보였다(사용자) → 25fps(GIF 지연 4cs) */
     async function addFrame(delayCs,cap,idx){
       await drawBoardToCanvas(ctx,canvas,uvb);
       try{_gifBakeOverlay(ctx,W,H,cap,idx,anim.frames.length,anim.title,anim.titleColor);}catch(_){}
@@ -11400,11 +11422,14 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
       try{window.__syncColorModeTitle(t);}catch(_){}
       if(t!=="move")deselect();if(t!=="text"&&typeof hintText==="function")toast(hintText());}
     const TOOLS=["move","run","pass","dribble","line","dashline","link","free","rect","rectline","rectdash","text","eraser"];
+    const ANIM_ACTS={animPlay:"애니 재생·정지",animAdd:"장면 추가",animUpdate:"장면 갱신",animPrev:"이전 장면",animNext:"다음 장면",animDel:"장면 삭제"};   /* 2.682 */
+    const ANIM_IDS=Object.keys(ANIM_ACTS);
     const TOOL_NAMES={move:"이동·선택",run:"선수 이동",pass:"패스",dribble:"드리블",line:"직선",dashline:"점선",link:"연결선",free:"자유선",rect:"구역",rectline:"사각형(실선)",rectdash:"사각형(점선)",text:"텍스트 라벨",eraser:"지우개"};
+    Object.assign(TOOL_NAMES,ANIM_ACTS); const KEY_IDS=TOOLS.concat(ANIM_IDS);
     const TOOL_KEY="cs_tool_shortcuts_v1";
     let toolKeyOpen=false;
-    function toolKeyDefaults(){return {move:"1",run:"2",pass:"3",dribble:"4",line:"5",dashline:"6",link:"",free:"7",rect:"8",rectline:"9",rectdash:"",text:"",eraser:"0"};}
-    function loadToolKeys(){var d=toolKeyDefaults(),v=null;try{v=JSON.parse(localStorage.getItem(TOOL_KEY)||"null");}catch(_){}if(v&&typeof v==="object")TOOLS.forEach(function(t){if(typeof v[t]==="string")d[t]=v[t];});return d;}
+    function toolKeyDefaults(){return {move:"1",run:"2",pass:"3",dribble:"4",line:"5",dashline:"6",link:"",free:"7",rect:"8",rectline:"9",rectdash:"",text:"",eraser:"0",animPlay:"p",animAdd:"n",animUpdate:"u",animPrev:",",animNext:".",animDel:""};}
+    function loadToolKeys(){var d=toolKeyDefaults(),v=null;try{v=JSON.parse(localStorage.getItem(TOOL_KEY)||"null");}catch(_){}if(v&&typeof v==="object")KEY_IDS.forEach(function(t){if(typeof v[t]==="string")d[t]=v[t];});return d;}
     function saveToolKeys(v){try{localStorage.setItem(TOOL_KEY,JSON.stringify(v));}catch(_){}}
     function normToolKey(e){if(e.metaKey||e.ctrlKey||e.altKey)return "";var k=e.key||"";if(k.length!==1||k===" ")return "";return k.toLocaleLowerCase();}
     function toolKeyName(k){return k?(k.length===1?k.toUpperCase():k):"키 선택";}
@@ -11413,7 +11438,7 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
       var box=document.createElement("div");box.style.cssText="width:min(500px,96vw);max-height:88vh;overflow:auto;background:var(--panel,#fff);color:var(--txt,#1c1c1e);border:1px solid var(--line,#dfe3e8);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.42);padding:18px";
       box.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px"><b style="font-size:17px;flex:1">도구 단축키</b><button type="button" id="dkClose" class="btn" aria-label="닫기">닫기</button></div><div style="font-size:12px;line-height:1.55;color:var(--txt-dim);margin-bottom:14px">도크의 도구를 원하는 문자·숫자키로 실행합니다. 토큰 단축키와 같은 키는 사용할 수 없습니다.</div><div id="dkRows" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px"></div><div style="display:flex;gap:7px;margin-top:15px"><button type="button" id="dkReset" class="btn">기본값</button><button type="button" id="dkClear" class="btn">모두 지우기</button><span style="flex:1"></span><button type="button" id="dkCancel" class="btn">취소</button><button type="button" id="dkSave" class="btn primary">저장</button></div>';ov.appendChild(box);document.body.appendChild(ov);
       var rows=box.querySelector("#dkRows");
-      TOOLS.forEach(function(t){var r=document.createElement("div");r.style.cssText="display:grid;grid-template-columns:minmax(0,1fr) 82px;gap:7px;align-items:center;padding:7px 8px;border:1px solid var(--line,#dfe3e8);border-radius:10px;background:var(--panel2,#f5f6f8)";var n=document.createElement("span");n.textContent=TOOL_NAMES[t];n.style.cssText="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";var kb=document.createElement("button");kb.type="button";kb.className="btn";kb.dataset.tool=t;kb.dataset.key=data[t]||"";kb.textContent=toolKeyName(kb.dataset.key);kb.title="눌러서 키 지정";kb.onclick=function(){kb.textContent="키 입력…";kb.focus();};kb.addEventListener("keydown",function(e){e.preventDefault();e.stopImmediatePropagation();if(e.key==="Escape"||e.key==="Backspace"||e.key==="Delete"){kb.dataset.key="";kb.textContent="키 선택";return;}var k=normToolKey(e);if(!k){toast("문자 또는 숫자키를 눌러주세요");return;}[].forEach.call(rows.querySelectorAll("button[data-key]"),function(o){if(o!==kb&&o.dataset.key===k){o.dataset.key="";o.textContent="키 선택";}});kb.dataset.key=k;kb.textContent=toolKeyName(k);});r.appendChild(n);r.appendChild(kb);rows.appendChild(r);});
+      KEY_IDS.forEach(function(t){var r=document.createElement("div");r.style.cssText="display:grid;grid-template-columns:minmax(0,1fr) 82px;gap:7px;align-items:center;padding:7px 8px;border:1px solid var(--line,#dfe3e8);border-radius:10px;background:var(--panel2,#f5f6f8)";var n=document.createElement("span");n.textContent=TOOL_NAMES[t];n.style.cssText="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis";var kb=document.createElement("button");kb.type="button";kb.className="btn";kb.dataset.tool=t;kb.dataset.key=data[t]||"";kb.textContent=toolKeyName(kb.dataset.key);kb.title="눌러서 키 지정";kb.onclick=function(){kb.textContent="키 입력…";kb.focus();};kb.addEventListener("keydown",function(e){e.preventDefault();e.stopImmediatePropagation();if(e.key==="Escape"||e.key==="Backspace"||e.key==="Delete"){kb.dataset.key="";kb.textContent="키 선택";return;}var k=normToolKey(e);if(!k){toast("문자 또는 숫자키를 눌러주세요");return;}[].forEach.call(rows.querySelectorAll("button[data-key]"),function(o){if(o!==kb&&o.dataset.key===k){o.dataset.key="";o.textContent="키 선택";}});kb.dataset.key=k;kb.textContent=toolKeyName(k);});r.appendChild(n);r.appendChild(kb);rows.appendChild(r);});
       function applyMap(m){[].forEach.call(rows.querySelectorAll("button[data-tool]"),function(b){b.dataset.key=m[b.dataset.tool]||"";b.textContent=toolKeyName(b.dataset.key);});}
       function close(){toolKeyOpen=false;try{ov.remove();}catch(_){}}box.querySelector("#dkClose").onclick=close;box.querySelector("#dkCancel").onclick=close;ov.onclick=function(e){if(e.target===ov)close();};
       box.querySelector("#dkReset").onclick=function(){applyMap(toolKeyDefaults());};box.querySelector("#dkClear").onclick=function(){applyMap({});};
@@ -11427,7 +11452,7 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
       function persist(){ var m={}; [].forEach.call(rows.querySelectorAll("button[data-tool]"),function(b){ m[b.dataset.tool]=b.dataset.key||""; }); saveToolKeys(m); }
       function build(data){
         rows.innerHTML="";
-        TOOLS.forEach(function(t){
+        KEY_IDS.forEach(function(t){
           var r=document.createElement("div"); r.style.cssText="display:grid;grid-template-columns:17px minmax(0,1fr) 64px;gap:7px;align-items:center;padding:6px 8px;border:1px solid var(--line,#dfe3e8);border-radius:10px;background:var(--panel2,#f5f6f8)";
           /* 2.496 — 아이콘(사용자 "이모티콘도 넣어줘야지"): 도크의 그 도구 버튼 SVG 를 그대로 복제 — 같은 그림이 같은 뜻 */
           var ic=document.createElement("span"); ic.style.cssText="display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;color:var(--txt,#1c1c1e)";
@@ -11527,7 +11552,7 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
         if(e.key==="Escape"&&_lookPick){_lookPick=null;try{toast("시선 지정 취소");}catch(_){}return;}
       }
       if(!toolKeyOpen&&!e.repeat&&!e.isComposing){var k=normToolKey(e);
-        if(k){var m=loadToolKeys(),hit=TOOLS.find(function(x){return m[x]===k;});if(hit){e.preventDefault();setTool(hit);return;}}}
+        if(k){var m=loadToolKeys(),hit=KEY_IDS.find(function(x){return m[x]===k;});if(hit){e.preventDefault();if(ANIM_ACTS[hit])runAnimAct(hit);else setTool(hit);return;}}}
       if(e.key===" "){if(document.body.classList.contains("match-mode")){e.preventDefault();mcToggle();}return;}
       if(e.key==="Escape"){
         /* ══ 2.520 · 도장 중 Esc = 이동하기로 나오기(사용자 "토큰이나 장비 세우다가 esc 누르면 이동하기로") ══
@@ -11974,9 +11999,13 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
     setTimeout(function(){try{_animFitPad();}catch(_){}},90);setTimeout(function(){try{_animFitPad();}catch(_){}},260);
     if(on)toast("장면을 추가해 선수·볼을 옮긴 뒤, 동선 가운데 점을 끌어 곡선을 만드세요");};
   $("animAdd").onclick=()=>{if(animPlaying)stopAnim();ensureAnimMode(true);const at=(animActive>=0&&animActive<anim.frames.length)?animActive+1:anim.frames.length;
-    anim.frames.splice(at,0,{snap:captureSnap(),thumb:boardThumbSVG(),dur:1});animActive=at;
+    pushUndo();   /* 2.682 — 장면 추가도 ⌘Z */
+    var _prevF=anim.frames[at-1],_nf={snap:captureSnap(),thumb:boardThumbSVG(),dur:1};
+    /* 2.682 — 강조(hl)·깜빡임은 다음 장면에 이어받는다(사용자 "강조를 켜면 다음 장면에 유지되다가 끄면 꺼지게") */
+    if(_prevF){ try{ if(_prevF.hl&&_prevF.hl.length)_nf.hl=_prevF.hl.slice(); if(_prevF.blink)_nf.blink=JSON.parse(JSON.stringify(_prevF.blink)); }catch(_){} }
+    anim.frames.splice(at,0,_nf);animActive=at;
     renderAnimFrames();renderOnion();try{_animFitPad();}catch(_){}try{boardSaveLive();}catch(_){}toast("장면 "+(animActive+1)+" 추가됨");};
-  $("animUpdate").onclick=()=>{if(animPlaying)stopAnim();if(animActive<0||!anim.frames[animActive])return;
+  $("animUpdate").onclick=()=>{if(animPlaying)stopAnim();if(animActive<0||!anim.frames[animActive])return;pushUndo();
     anim.frames[animActive].snap=captureSnap();anim.frames[animActive].thumb=boardThumbSVG();
     renderAnimFrames();renderOnion();try{boardSaveLive();}catch(_){}toast("장면 "+(animActive+1)+" 갱신됨");};
   $("animPlay").onclick=()=>playAnim();
@@ -15032,7 +15061,7 @@ try{ var _nb=document.getElementById('dfNew');
    보관함 저장 시 item.pages 로 함께 저장, 열 때 복원. ===== */
 (function(){
   if(window.__psPagesInit) return; window.__psPagesInit=1;
-  var MAXP=12;
+  var MAXP=99;   /* 2.682 — 사실상 무한(사용자) */
   var pages=null, idx=0;   /* pages: [{snap,thumb,name}] | null(단일 페이지 = 기존 동작) */
   var _livePages=null, _inVault=false;   /* 보관함 열람 중엔 라이브 보드의 페이지를 보관했다가 닫을 때 복원 */
   var _drag=-1;   /* 드래그 순서 변경 중인 페이지 인덱스 */
@@ -15043,8 +15072,9 @@ try{ var _nb=document.getElementById('dfNew');
   function _toast(m){ try{ window.toast && window.toast(m); }catch(_){} }
   function isBoardView(){ try{ return (window.__csView||"board")==="board" && !document.body.classList.contains("meet-mode") && !document.body.classList.contains("comm-viewing"); }catch(_){ return false; } }
 
-  function capture(){ if(pages && pages[idx]){ pages[idx].snap=_snap(); pages[idx].thumb=_thumb(); } }
-  function ensure(){ if(!pages){ pages=[{snap:_snap(),thumb:_thumb(),name:""}]; idx=0; } }
+  function _animNow(){ try{ return window.__animGet?window.__animGet():null; }catch(_){ return null; } }
+  function capture(){ if(pages && pages[idx]){ pages[idx].snap=_snap(); pages[idx].thumb=_thumb(); pages[idx].anim=_animNow(); } }   /* 2.682 — 페이지마다 장면 목록 */
+  function ensure(){ if(!pages){ pages=[{snap:_snap(),thumb:_thumb(),name:"",anim:_animNow()}]; idx=0; } }
   function blankSnap(){
     /* 현재 페이지의 피치/방향/개수 설정은 유지하고 선수·장비·그림만 비운 새 페이지 */
     var s=_snap()||{};
@@ -15053,7 +15083,9 @@ try{ var _nb=document.getElementById('dfNew');
       teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,customImages:s.customImages,
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};
   }
-  function loadIdx(i){ try{ window.loadSnap(pages[i].snap||{}); window.renderTokens&&window.renderTokens(); window.renderDrawings&&window.renderDrawings(); window.updateDelUI&&window.updateDelUI(); }catch(_){} }
+  function loadIdx(i){ try{ window.loadSnap(pages[i].snap||{}); window.renderTokens&&window.renderTokens(); window.renderDrawings&&window.renderDrawings(); window.updateDelUI&&window.updateDelUI(); }catch(_){}
+    /* 2.682 — 이 페이지의 장면 목록으로 바꾼다(없으면 비움). 바의 열림 여부는 그대로. */
+    try{ var _a=pages[i].anim; if(_a&&Array.isArray(_a.frames)&&_a.frames.length>1&&window.__animRestore)window.__animRestore(_a.frames,_a.active); else if(window.__animReset)window.__animReset(); }catch(_){} }
 
   function clearHistory(){try{window.__clearBoardHistory&&window.__clearBoardHistory();}catch(_){}}
   function add(){ ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
