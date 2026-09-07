@@ -12008,7 +12008,15 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
     state.players.forEach(o=>{if(o.x>=x1&&o.x<=x2&&o.y>=y1&&o.y<=y2)inside.push(o);});
     state.equipment.forEach(o=>{if(o.x>=x1&&o.x<=x2&&o.y>=y1&&o.y<=y2)inside.push(o);});
     try{ if(state.ball&&state.ball.x>=x1&&state.ball.x<=x2&&state.ball.y>=y1&&state.ball.y<=y2)inside.push(state.ball); }catch(_){}   /* 2.683 — 공도 함께(사용자) */
-    state.drawings.forEach(o=>{if(!o.pts||!o.pts.length)return;let cx=0,cy=0;o.pts.forEach(q=>{cx+=q.x;cy+=q.y;});cx/=o.pts.length;cy/=o.pts.length;if(cx>=x1&&cx<=x2&&cy>=y1&&cy<=y2)inside.push(o);});
+    state.drawings.forEach(o=>{if(!o.pts||!o.pts.length)return;
+      /* 2.688 — 구역·사각형·원형 구역은 선택 상자가 **통째로 감쌀 때만** 고른다(사용자: 구역 안의 선수·장비만 끌어 고르고 싶은데 구역이 같이 잡혔다).
+         선·화살표·글은 전처럼 가운데 점으로. */
+      if(o.type==="rect"||o.type==="rectline"||o.type==="rectdash"||o.type==="ellipse"){
+        const xs=o.pts.map(q=>q.x),ys=o.pts.map(q=>q.y);
+        if(Math.min(...xs)>=x1&&Math.max(...xs)<=x2&&Math.min(...ys)>=y1&&Math.max(...ys)<=y2)inside.push(o);
+        return;
+      }
+      let cx=0,cy=0;o.pts.forEach(q=>{cx+=q.x;cy+=q.y;});cx/=o.pts.length;cy/=o.pts.length;if(cx>=x1&&cx<=x2&&cy>=y1&&cy<=y2)inside.push(o);});
     if(inside.length>=2){sel=null;multiSel=inside;renderTokens();renderDrawings();updateDelUI();updateAlignBar();renderMultiGuides();}
     else if(inside.length===1){selectItem(typeOfItem(inside[0])||"equip",inside[0]);}
   };
