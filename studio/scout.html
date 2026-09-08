@@ -1760,11 +1760,13 @@ html.ps-page-scout #availView .av-restbox .av-pl .no{background:transparent;bord
   html.ps-page-scout #availView .av-dnav .av-vseg{flex:1 1 100%;margin:6px 0 0;display:flex}
   html.ps-page-scout #availView .av-vseg button{flex:1;white-space:nowrap}
 }
-/* 2.696 — 출석 맨 아래 훈련 세션 만들기 */
-html.ps-page-scout #availView .av-foot{display:flex;margin-top:14px}
-html.ps-page-scout #availView .av-cta{height:42px;padding:0 18px;border:0;border-radius:11px;background:var(--ink,#14161A);color:#fff;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+/* 2.698 — 그 날 카드 안 훈련 세션 만들기(쉼 상자 아래 한 줄): 왼쪽 «이 날 참여 n명으로», 오른쪽 «일정 →»·«＋ 훈련 세션 만들기» */
+html.ps-page-scout #availView .av-dfoot{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+html.ps-page-scout #availView .av-dfoot .lb{flex:1;font-size:13px;color:var(--gray,#646A73)} html.ps-page-scout #availView .av-dfoot .lb b{color:var(--ink,#14161A)}
+html.ps-page-scout #availView .av-lnk{height:34px;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+html.ps-page-scout #availView .av-cta{height:36px;padding:0 14px;border:0;border-radius:9px;background:var(--ink,#14161A);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}
 html.ps-page-scout #availView .av-cta:hover{opacity:.9}
-@media (max-width:560px){ html.ps-page-scout #availView .av-cta{flex:1} }
+@media (max-width:560px){ html.ps-page-scout #availView .av-dfoot{flex-wrap:wrap} html.ps-page-scout #availView .av-dfoot .lb{flex:1 1 100%} html.ps-page-scout #availView .av-cta{flex:1} }
 html.ps-page-scout #availView .av-vseg{display:inline-flex;gap:0;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-left:6px}
 html.ps-page-scout #availView .av-vseg button{height:28px;padding:0 10px;border:0;background:var(--panel2,#F1F3F5);color:var(--gray,#646A73);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 html.ps-page-scout #availView .av-vseg button.on{background:var(--ink,#14161A);color:#fff}
@@ -12778,7 +12780,15 @@ function renderAvailDaily(ours){
   });
   var kindLb=(k0==="match")?"경기":(k0==="train"?"훈련":(k0==="off"?"팀 OFF":"일정 없음"));
   h+='<div class="av-dsched"><b>'+kindLb+'</b>'+(anyTrain?'<span class="sum">참여 <b>'+tot.ok+'</b> · 쉼 <b>'+(tot.rec-tot.ok)+'</b></span>':'<span class="sum">쉬는 날은 세지 않아요</span>')+'</div>';
-  h+=body+'</div>';
+  /* 2.698 — 그 날 카드 안 «훈련 세션 만들기»(사용자 목업 제안 1): 방금 본 그 날의 참여 인원(GK/필드/재활/부상·불참)과 날짜를 세션 마법사에 넘긴다.
+     일정이 있는 날은 «일정 →»도 같이(그 날 주간으로). 2.696 의 맨 아래 버튼은 여기로 옮겼다. */
+  var rc={gk:0,field:0,rehab:0,out:0};
+  ours.forEach(function(p){ var st=stStatusAt(p.id,day)||""; if(st==="rehab")rc.rehab++; else if(st&&st!=="ok")rc.out++; else { var ab=String(posOf(p)||"").toUpperCase(); if(/GK|GOALKEEPER|골키퍼|키퍼/.test(ab))rc.gk++; else rc.field++; } });
+  h+=body;
+  h+='<div class="av-dfoot"><span class="lb">이 날 참여 <b>'+(rc.gk+rc.field)+'</b>명으로</span>'
+    +(anyTrain?'<button type="button" class="av-lnk" data-av-sched="'+esc(day)+'">일정 →</button>':'')
+    +'<button type="button" class="av-cta" data-av-new="'+esc(day)+'" data-av-roster="'+esc(JSON.stringify(rc))+'">＋ 훈련 세션 만들기</button></div>';
+  h+='</div>';
   return h;
 }
 /* 2.215 — 코치가 일정 탭에서 고른 조(ps_sched_grp). 콕핏은 이 조의 일정을 따른다 */
@@ -12955,11 +12965,11 @@ function renderAvail(){
   }catch(_){}
   /* 2.695 — «선수가 쓴 회고» 카드 제거(사용자 "회고도 빼주고"). avRetroPanel 은 남겨 두되 그리지 않는다 */
   h+='<div class="av-note">훈련·경기일에 상태가 <b>정상</b>이면 참여, 재활·부상·불참·조절이면 쉼으로 셉니다. 팀이 OFF거나 일정이 없는 날은 전원 휴식이라 세지 않습니다. 상태는 선수단 탭에서 바꾼 것이 그 날부터 이어집니다(앱을 안 연 날도 마지막 상태가 이어짐).</div>';
-  /* 2.696 — 출석 맨 아래 «훈련 세션 만들기» 바로가기(사용자). 일정의 «＋ 훈련 만들기»와 같은 길(app.html openDrillEditor → board __openScheduleDrill) */
-  h+='<div class="av-foot"><button type="button" class="av-cta" data-av-new="1">＋ 훈련 세션 만들기</button></div>';
   root.innerHTML=h;
   root.querySelectorAll("[data-av-range]").forEach(function(b){ b.onclick=function(){ availRange=+b.dataset.avRange||14; renderAvail(); }; });
-  root.querySelectorAll("[data-av-new]").forEach(function(b){ b.onclick=function(){ try{ parent.postMessage({source:"scout",type:"openDrillEditor"},"*"); }catch(_){} }; });   /* 2.696 */
+  root.querySelectorAll("[data-av-new]").forEach(function(b){ b.onclick=function(){ var rc=null; try{ rc=JSON.parse(b.dataset.avRoster||"null"); }catch(_){}
+    try{ parent.postMessage({source:"scout",type:"openDrillEditor",wizard:true,date:b.dataset.avNew||"",roster:rc},"*"); }catch(_){} }; });   /* 2.698 — 그 날 날짜·인원을 세션 마법사로 */
+  root.querySelectorAll("[data-av-sched]").forEach(function(b){ b.onclick=function(){ try{ parent.postMessage({source:"scout",type:"openSchedule",date:b.dataset.avSched||""},"*"); }catch(_){} }; });
   /* 2.691 — 날짜 넘김 · 칩 고르기 */
   root.querySelectorAll("[data-av-view]").forEach(function(b){ b.onclick=function(){ availView=b.dataset.avView||"grp"; try{ localStorage.setItem("cs_av_view_v1",availView); }catch(_){} renderAvail(); }; });   /* 2.692 */
   root.querySelectorAll("[data-av-day]").forEach(function(b){ b.onclick=function(){ var n=+b.dataset.avDay; var cur=availDay||stYmd(); availDay=(n===0)?null:stAddDays(cur,n); if(availDay&&availDay>=stYmd())availDay=null; renderAvail(); }; });
