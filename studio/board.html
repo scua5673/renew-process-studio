@@ -9171,11 +9171,11 @@ function buildSessionPrintDoc(opts){opts=opts||{};
   const cardHtml=(d,i)=>{const f=focusOf(d.focus);const ov=(d.overview||d.note||"");
     const secs=sectionsOf(d).map(([k,label])=>{const v=(k==="overview"?ov:(d[k]||"")).trim();if(!v)return "";
       return `<div class="p-sec"><h3>${label}</h3><p>${esc(v).replace(/\n/g,"<br>")}</p></div>`;}).join("");
-    const _scn=(opts.allScenes!==false)?drillScenesAll(d):[{thumb:d.thumb}];
+    const _scn=(opts.allScenes!==false)?drillScenesAll(d):[{thumb:d.thumb,snap:d.snap}];   /* 2.710 */
     const _dia=_scn.length>1
       ?'<div class="p-diagram p-multi" style="grid-template-'+(_scn.length>2?'columns:1fr 1fr':'rows:1fr 1fr')+'">'
-        +_scn.map((s,k)=>'<div class="p-scene"><i>장면 '+(k+1)+'</i>'+_ink((s.thumb||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>').join("")+'</div>'
-      :'<div class="p-diagram">'+_ink((d.thumb||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>';
+        +_scn.map((s,k)=>'<div class="p-scene"><i>장면 '+(k+1)+'</i>'+_ink((printThumb(s)||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>').join("")+'</div>'
+      :'<div class="p-diagram">'+_ink((printThumb({snap:d.snap,thumb:d.thumb})||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>';
     return `<div class="p-card">
       ${_dia}
       <div class="p-right">
@@ -9198,6 +9198,9 @@ function esc(s){
     ?window.PSSafe.html(s)
     :String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
 }
+/* 2.710 — PDF 그림은 저장된 썸네일이 아니라 **스냅에서 지금 토큰 크기로 다시** 그린다(사용자 "PDF 내보내기 했을 때 토큰 크게 한 거 적용되게").
+   저장 때 굳은 썸네일은 그 뒤 키운 토큰을 모른다. 스냅이 없거나 그리기에 실패하면 썸네일로 폴백. */
+function printThumb(s){ try{ if(s&&s.snap&&window.__snapToThumb){ var t=window.__snapToThumb(s.snap,{tokenScale:(state.tokenScale||0)}); if(t)return t; } }catch(_){} return (s&&s.thumb)||""; }
 function buildDrillPage(d,opts){opts=opts||{};
   const _ink=s=>opts.ink?inkifySVG(s||""):(s||"");
   const f=focusOf(d.focus);const ov=(d.overview||d.note||"");
@@ -9207,17 +9210,17 @@ function buildDrillPage(d,opts){opts=opts||{};
   const header=`<h1>${esc(d.name||"드릴")}</h1>
     <div class="meta"><b>${f.label}</b> · ${minTxt} · RPE ${d.rpe||5}${(d.scenes&&d.scenes.length)?(" · 장면 "+(d.scenes.length+1)+"개"):""}</div>`;
   /* 장면(훈련 페이지)이 여러 개면 한 페이지에 3개씩 카드로 — 장면 1엔 설명, 이후 장면은 그림 중심 */
-  const scn=(opts.allScenes===false)?[{thumb:d.thumb}]:[{thumb:d.thumb}].concat(d.scenes||[]);
+  const scn=(opts.allScenes===false)?[{thumb:d.thumb,snap:d.snap}]:[{thumb:d.thumb,snap:d.snap}].concat(d.scenes||[]);   /* 2.710 — 스냅도 함께 */
   if(scn.length<=1){
     /* 장면 1개 — 운동장을 가로 폭 최대로, 설명은 아래 2단 작은 글씨 */
     return `<div class="page pd-one">${header}
       <div class="cards"><div class="p-card">
-        <div class="p-diagram">${_ink((d.thumb||"").replace("xMidYMid slice","xMidYMid meet"))}</div>
+        <div class="p-diagram">${_ink((printThumb({snap:d.snap,thumb:d.thumb})||"").replace("xMidYMid slice","xMidYMid meet"))}</div>
         <div class="p-secs">${secs||'<div class="p-sec"><p style="color:#999">설명 미입력</p></div>'}</div>
       </div></div></div>`;
   }
   const card=(s,j)=>`<div class="p-card">
-      <div class="p-diagram" style="flex:0 0 66%">${_ink((s.thumb||"").replace("xMidYMid slice","xMidYMid meet"))}</div>
+      <div class="p-diagram" style="flex:0 0 66%">${_ink((printThumb(s)||"").replace("xMidYMid slice","xMidYMid meet"))}</div>
       <div class="p-right">
         <div class="p-head"><h2>장면 ${j+1}${j===0?" — "+esc(d.name||"드릴"):""}</h2>${j===0?('<span class="p-theme" style="background:'+f.c+'">'+f.label+'</span><span class="p-min">'+minTxt+'</span>'):""}</div>
         <div class="p-secs">${j===0?(secs||'<div class="p-sec"><p style="color:#999">설명 미입력</p></div>'):'<div class="p-sec"><p style="color:#999">장면 '+(j+1)+' / '+scn.length+'</p></div>'}</div>
@@ -9296,7 +9299,7 @@ function buildSheetHtml(arr){
     return '<div style="flex:1 1 0;min-height:0;display:flex;flex-direction:column;border:0.4mm solid #cfd3d9;border-radius:2mm;overflow:hidden">'
       +'<div style="flex:0 0 auto;padding:1.6mm 3mm;border-bottom:0.3mm solid #e8eaee;font-size:12pt;font-weight:800">'+esc(d.name||"드릴")+' <span style="font-size:8.5pt;font-weight:600;color:#666">'+f.label+' · '+((+d.minutes||0)+"분")+(((+d.sets)>1)?("×"+(+d.sets)):"")+' · RPE '+(d.rpe||5)+'</span></div>'
       +'<div style="flex:1 1 0;min-height:0;display:flex;gap:3mm;padding:2mm 3mm">'
-        +'<div class="p-diagram" style="flex:0 0 46%;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden">'+(d.thumb||"").replace("xMidYMid slice","xMidYMid meet")+'</div>'
+        +'<div class="p-diagram" style="flex:0 0 46%;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden">'+(printThumb({snap:d.snap,thumb:d.thumb})||"").replace("xMidYMid slice","xMidYMid meet")+'</div>'
         +'<div style="flex:1 1 0;min-height:0;overflow:hidden;font-size:9pt;line-height:1.4">'+(secs||'<span style="color:#999">설명 미입력</span>')+'</div>'
       +'</div></div>';
   }).join("");
@@ -9394,8 +9397,8 @@ function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
     const _scn=(opts.allScenes!==false&&d.scenes&&d.scenes.length)?drillScenesAll(d).slice(0,4):null;
     const dia=(_scn&&_scn.length>1)
       ?'<div class="fsx-dia multi" style="grid-template-columns:1fr 1fr'+(_scn.length>2?';grid-template-rows:1fr 1fr':'')+'">'
-        +_scn.map((s,k)=>'<div class="fsx-scn"><i>'+(k+1)+'</i>'+_ink((s.thumb||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>').join("")+'</div>'
-      :'<div class="fsx-dia">'+_ink((d.thumb||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>';
+        +_scn.map((s,k)=>'<div class="fsx-scn"><i>'+(k+1)+'</i>'+_ink((printThumb(s)||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>').join("")+'</div>'
+      :'<div class="fsx-dia">'+_ink((printThumb({snap:d.snap,thumb:d.thumb})||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>';
     const minTxt=(+d.minutes||0)+"분"+((+d.sets>1)?("×"+(+d.sets)):"");
     return `<div class="fsx-card">
       <div class="fsx-ct"><div class="fsx-no">${i+1}</div><span class="fsx-dot" style="background:${f.c}"></span><div class="fsx-nm">${esc(d.name||("훈련 "+(i+1)))}</div><span class="fsx-tag">${f.label}</span><div class="fsx-min">${minTxt}</div><!-- 1.731 — 희미한 누적 경과(+N′) 제거(사용자 요청) --></div>
@@ -12479,10 +12482,12 @@ window.__importSessionDrills=function(drills){
 };
 /* 썸네일을 다시 그리려면 판에 잠깐 그 배치를 올렸다 되돌린다.
    중간에 실패하면 사용자의 작업판이 남의 배치인 채로 남는다 → 되돌리기는 반드시 finally 에서(1.526). */
-window.__snapToThumb=function(snap){
+window.__snapToThumb=function(snap,opts){
   if(!world)return "";
   var cur=null;
   try{ cur=captureSnap(); }catch(_){ return ""; }
+  /* 2.710 — opts.tokenScale: 저장된 스냅의 토큰 크기 대신 지금 크기로 그린다(PDF 가 «지금 보는 크기»를 따르게) */
+  try{ if(opts&&opts.tokenScale>0){ snap=Object.assign({},snap||{},{tokenScale:opts.tokenScale}); } }catch(_){}
   try{ loadSnap(snap||{}); return boardThumbSVG(); }
   catch(e){ return ""; }
   finally{ try{ loadSnap(cur); }catch(_){} }
