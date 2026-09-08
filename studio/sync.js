@@ -2361,6 +2361,16 @@ function psDeepOf(str){
   try{ var v=JSON.parse(str); for(var i=0;i<3;i++){ if(typeof v==='string')v=JSON.parse(v); else if(v&&typeof v==='object'&&'value' in v)v=v.value; else break; }
     return (v&&typeof v==='object')?psCountDeep(v,0):0; }catch(_){ return 0; }
 }
+/* 2.715 — 선수단·스카우트는 «선수 수»로만 비움을 판정한다. psDeepOf 는 attrs(24)·positions(12+) 배열까지 세어
+   선수 0명짜리 첫 실행 문서(2,653바이트)를 «비움 아님»으로 보고 올렸다(9/8 14:07 풋볼A — 그 다음 저장이
+   0→89 라 서버 모양 가드(2.681, 1.6배 규칙)까지 지나갔다). */
+function psDeepOfKey(k,str){
+  if(k==='cs_squad_v1'||k==='scout_tool_v1'){
+    try{ var v=JSON.parse(str); for(var i=0;i<3;i++){ if(typeof v==='string')v=JSON.parse(v); else if(v&&typeof v==='object'&&'value' in v)v=v.value; else break; }
+      return (v&&Array.isArray(v.players))?v.players.length:0; }catch(_){ return 0; }
+  }
+  return psDeepOf(str);
+}
 function psCount(str){
   var n=rescueCount(str); if(n!=null)return n;
   try{
@@ -2398,7 +2408,7 @@ function pushHold(k,loc,srvVal,memN){
        다음 자동 재시도가 다시 사람에게 같은 질문을 하지 않게 한다. */
     if(ok&&ok===h){ holdUnlist(k); return false; }      /* 사용자가 이 값을 승인했다 */
     /* 2.626 — 0 으로 비는 게 아니면 막지 않는다: 직전 팀 판본을 남기고 올린다(되돌리기는 위 undoRestore) */
-    if(psDeepOf(loc)>0){   /* 배열 항목이 하나도 없으면(빈 목록·빈 일정) «비움» — psCount 의 칸 수 폴백(1~5)에 속지 않는다 */
+    if(psDeepOfKey(k,loc)>0){   /* 배열 항목이 하나도 없으면(빈 목록·빈 일정) «비움» — psCount 의 칸 수 폴백(1~5)에 속지 않는다. 2.715: 선수단·스카우트는 선수 수 */
       var prevRaw=(srvVal!=null)?srvVal:syncBaseGet(k);
       if(prevRaw!=null&&prevRaw!==loc){ undoStash(k,prevRaw,loc,before,after); holdUnlist(k); return false; }
     }
@@ -3800,7 +3810,10 @@ function rejectedMatchRetry(e,wid){
      신호(cupd)를 못 받아 같은 base 로 또 올리고 또 거부된다 — ps_kv_denied 실측 2026-08-08~09-03: 45건·43명, 최근 7일 6기기.
      경기와 똑같이 그 키의 c 를 0 으로 내려 다음 회차가 서버 원문을 **반드시** 받아 병합(MERGE_KEYS, h 는 남겨 병합 가드 통과)한 뒤
      새 base 위에서 다시 올리게 한다. forceSync(preswitch) 는 두 번까지 재시도하므로 전환도 이 길로 풀린다. */
-  var RETRY={cs_team_matches_v1:1,process_coach_v1:1};
+  /* 2.715 — 선수단·스카우트도 같은 길. 서버 모양 가드(2.681)가 거부하면 기기는 «못 올렸어요 · 팀 것이 더 새로워요»만 띄운 채
+     같은 값을 영원히 다시 올렸다(9/8 풋볼A 18:44·18:45·18:50 세 번 거부, 기기 화면은 계속 90명). c 를 0 으로 내리면 다음 회차가
+     서버 원문을 받아 COPIES_OFF «팀 것이 정본»(2.678)으로 이 기기를 맞춘다. */
+  var RETRY={cs_team_matches_v1:1,process_coach_v1:1,cs_squad_v1:1,scout_tool_v1:1};
   if(!keys.length||keys.some(function(k){return !RETRY[k];}))return null;
   var latest=meta();latest.c=latest.c||{};keys.forEach(function(k){latest.c[k]=0;});setMeta(latest);
   return {serverRejected:keys,pending:pendingInfo(wid).count};
@@ -4482,7 +4495,7 @@ function syncNowCore(reason){
     var rejectedRetry=rejectedMatchRetry(e,wid);
     if(rejectedRetry){
       syncErr=false;
-      setStatus('경기 자료를 서버 일정과 다시 확인 중…');
+      setStatus('팀 것이 더 새로워요 · 다시 맞추는 중');   /* 2.715 — 경기 전용 문구였다 */
       try{renderUI();}catch(_){}
       return rejectedRetry;
     }
