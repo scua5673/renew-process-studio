@@ -12929,7 +12929,7 @@ function renderAvail(){
         +'<button type="button" data-av-fix>선수단에서 상태 고치기</button></div>';
     }
   }catch(_){}
-  try{ h+=avRetroPanel(); }catch(e){ console.warn("회고 그리기 실패",e); }
+  /* 2.695 — «선수가 쓴 회고» 카드 제거(사용자 "회고도 빼주고"). avRetroPanel 은 남겨 두되 그리지 않는다 */
   h+='<div class="av-note">훈련·경기일에 상태가 <b>정상</b>이면 참여, 재활·부상·불참·조절이면 쉼으로 셉니다. 팀이 OFF거나 일정이 없는 날은 전원 휴식이라 세지 않습니다. 상태는 선수단 탭에서 바꾼 것이 그 날부터 이어집니다(앱을 안 연 날도 마지막 상태가 이어짐).</div>';
   root.innerHTML=h;
   root.querySelectorAll("[data-av-range]").forEach(function(b){ b.onclick=function(){ availRange=+b.dataset.avRange||14; renderAvail(); }; });
