@@ -4581,7 +4581,7 @@ function clientToUnit(cx,cy){
   return {x:W/2,y:H/2};}
 function toUnit(evt){return clientToUnit(evt.clientX,evt.clientY);}
 
-function tokenTransform(p){const _ed=document.body.classList.contains("editing")?0.68:1;const _eq=(equipKey(p.team)&&p.team!=="ball")?1.8:(p.team==="img"?0.82:1);const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor();
+function tokenTransform(p){const _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;const _eq=(equipKey(p.team)&&p.team!=="ball")?1.8:(p.team==="img"?0.82:1);const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor();
   /* 세로 피치의 부모 world 회전과 반대 방향으로 토큰을 보정해 숫자·유니폼을 항상 정방향 유지.
      spFlip=true(골대 위)는 부모가 +90°이므로 -90°, 골대 아래는 부모가 -90°이므로 +90°. */
   const _upright=(state.orientation==="v")?(state.spFlip?-90:90):0;
@@ -5470,7 +5470,7 @@ function _fillPattern(kind,color){
   }catch(_){ return hexA(color,.24); }
 }
 function _visBlindPattern(light){try{ var ex=svg.querySelector("#psBlindHatch"); if(ex)ex.parentNode.removeChild(ex); var defs=svg.querySelector("defs"); if(!defs){defs=el("defs");svg.insertBefore(defs,svg.firstChild);} var rectF=light?"rgba(70,78,90,.10)":"rgba(120,128,138,.13)"; var lineS=light?"rgba(55,62,74,.55)":"rgba(195,203,213,.5)"; var pat=el("pattern",{id:"psBlindHatch",width:8,height:8,patternUnits:"userSpaceOnUse",patternTransform:"rotate(45)"}); pat.appendChild(el("rect",{width:8,height:8,fill:rectF})); pat.appendChild(el("line",{x1:0,y1:0,x2:0,y2:8,stroke:lineS,"stroke-width":1.2})); defs.appendChild(pat);}catch(_){}}
-function _tokScaleOf(p){var _ed=document.body.classList.contains("editing")?0.68:1;var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor();}
+function _tokScaleOf(p){var _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor();}
 /* 2.233 — 작은 규격에서는 토큰도 줄인다(완전 비례는 너무 작아 (길이/105)^0.6: 초등 0.75 · 풋살 0.56) */
 function specTokFactor(){try{var sp=pitchSpec();return sp===PITCH_SPECS.fifa?1:Math.pow(sp.len/105,0.6);}catch(_){return 1;}}
 function _shaperBody(g,cx,cy,deg,s,col){
@@ -6470,7 +6470,13 @@ function thumbView(d){
   var fv=thumbFitVB(d.snap,vb); if(!fv)return t;
   return t.replace(m[0],'viewBox="'+fv.join(' ')+'"');
 }
-function boardThumbSVG(){var _s=sel,_ms=(typeof multiSel!=="undefined")?multiSel:null,_had=_s||(_ms&&_ms.length);
+/* 2.705 — 편집기(훈련 만들기) 안에서 토큰은 화면용으로 0.68 배 작게 그린다(오른쪽 설명판 때문). 그 축소가 썸네일에 그대로 박혀
+   보관함 카드·일정 칩·PDF 의 토큰이 보드에서 만든 것보다 32% 작았다(사용자 "토큰 크기를 크게 했는데 PDF 에 적용이 안 돼" — 0.85 로 키워도 PDF 는 0.58).
+   썸네일을 뜰 때만 그 배수를 빼고 다시 그린 뒤, 끝나면 원래대로. 실측: 편집기 thumb 0.37 → 0.55(= state.tokenScale). */
+function boardThumbSVG(){ if(!document.body.classList.contains("editing")||window.__psThumbNoEd)return _boardThumbSVGRaw();
+  window.__psThumbNoEd=true; try{ renderTokens(); }catch(_){}
+  try{ return _boardThumbSVGRaw(); } finally{ window.__psThumbNoEd=false; try{ renderTokens(); }catch(_){} } }
+function _boardThumbSVGRaw(){var _s=sel,_ms=(typeof multiSel!=="undefined")?multiSel:null,_had=_s||(_ms&&_ms.length);
   /* 2.582 — 색 팔레트 열림도 지킨다(사용자 "색상 눌렀을 때 뜨는 것이 선택하기도 전에 바로 사라져"). 실측: 편집기 자동 저장(saveEditorDraft ≈250ms) → 썸네일 → 여기서 선택을 잠깐 풀 때
      updateDelUI 가 «선택 없음» 으로 보고 #colorCtl.open 을 지웠다. 선택은 아래에서 되살리면서 열림은 안 되살려 팔레트가 0.25초 만에 닫혔다. */
   var _cc=document.getElementById("colorCtl"),_ccOpen=!!(_cc&&_cc.classList.contains("open"));
@@ -7001,7 +7007,11 @@ function __exportVB(){
     if(grew)vb=[x0,y0,x1-x0,y1-y0];
   }catch(_){}
   return vb;}
-function boardImageXML(vbFix){
+/* 2.705 — 내보내기(PNG·GIF·MP4)도 썸네일과 같이 편집기 화면용 0.68 배수를 뺀다 */
+function boardImageXML(vbFix){ if(!document.body.classList.contains("editing")||window.__psThumbNoEd)return _boardImageXMLRaw(vbFix);
+  window.__psThumbNoEd=true; try{ renderTokens(); }catch(_){}
+  try{ return _boardImageXMLRaw(vbFix); } finally{ window.__psThumbNoEd=false; try{ renderTokens(); }catch(_){} } }
+function _boardImageXMLRaw(vbFix){
   const clone=svg.cloneNode(true);
   /* 내보내기에는 결과물만 포함 — 애니메이션 편집용 점선 경로·어니언스킨·선택/정렬 핸들은 제외 */
   ["#drawCatch","#pathLayer","#onionLayer","#guideLayer","#snapGuideLayer","#rotHandle","#multiGuideLayer","#lassoRect"].forEach(function(q){
