@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.705';</script>
+<script>window.PS_BUILD='2.706';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -4852,7 +4852,11 @@ window.__buildScoutForm=function(k){
          순수 리사이즈(라이브 viewBox만 변함)에는 재배치하지 않는다(같은 기준 프레임 → 같은 배치). */
       try{ var _sgt='off'; try{ if(doc.defaultView.__getGridType){_sgt=doc.defaultView.__getGridType()||'off';} else {var _sgb=doc.querySelector('#gridSeg button.on'); if(_sgb)_sgt=_sgb.getAttribute('data-g')||'off';} }catch(_g){}
         var _sig=n+'|'+(_bvb?_bvb.join(' '):(board.getAttribute('viewBox')||''))+'|'+_sgt+'|'+(doc.documentElement.dataset.pitch||'');
-        if(n>1 && world.querySelector('#ps-multipitch') && world.__psMpSig===_sig) return;
+        if(n>1 && world.querySelector('#ps-multipitch') && world.__psMpSig===_sig){
+          /* 2.706 — 같은 조건이라 카드는 다시 안 그리더라도 **전체 피치 선·그리드는 반드시 숨긴 채** 둔다(사용자 "보드가 삐뚤어졌어": 운동장 4개 + 전체 피치 선이 함께 보여
+             viewBox 가 둘을 다 담느라 판이 밀려 있었다). buildLines 가 state.pitchN 이 바뀌기 전에 새 #lineLayer 를 만들면 보이는 채로 남을 수 있다. */
+          try{ ['#lineLayer','#gridLayer'].forEach(function(sel){ var el=world.querySelector(sel); if(el&&el.style.display!=='none'){ el.setAttribute('data-ps-hidden','1'); el.style.display='none'; } }); }catch(_h){}
+          return; }
         world.__psMpSig=_sig; }catch(_e){}
       var NS='http://www.w3.org/2000/svg', W=1110, H=740;
       /* 옛 운동장은 새 것이 완성될 때까지 제거하지 않음(끝에서 replaceChild로 원자 교체) — 느린 기기에서 빈 프레임이 생길 여지 차단 */
