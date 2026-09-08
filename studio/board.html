@@ -1664,6 +1664,9 @@
     body #editorPanel .ep-squad-row .ep-sq-lb{white-space:nowrap;padding-right:6px;}
     body #editorPanel .ep-roster-control .inp.epn{width:52px !important;min-width:52px !important;max-width:52px !important;height:34px !important;min-height:34px !important;padding:3px 6px !important;}
     body #editorPanel .ep-sq-btn{height:34px !important;}
+    /* 2.697 — 인원 숫자 칸: 폭 48px 에 안쪽 여백 20px 이라 «35» 가 잘렸다(아이패드 실측). 폭 58·여백 6·가운데·굵게, 스피너 숨김 */
+    body #editorPanel .ep-roster-control .inp.epn:not(#_){width:58px!important;min-width:58px!important;max-width:58px!important;padding:0 6px!important;text-align:center!important;font-weight:700!important;font-size:14px!important;font-variant-numeric:tabular-nums;-moz-appearance:textfield;}
+    body #editorPanel .ep-roster-control .inp.epn::-webkit-outer-spin-button,body #editorPanel .ep-roster-control .inp.epn::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
     body #editorPanel .ep-memo-head{display:none !important;}   /* 데스크톱과 같이(사용자 "이건 지워죠") — 폰 좁은 창에서 두 줄 절약 */
     /* 라이브러리 오버레이도 자체 스크롤 보장 */
     #drillLib,#sessLib{overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -1808,6 +1811,9 @@
     body #editorPanel .ep-roster-row{background:transparent;}
     body #editorPanel .ep-roster-row:first-child{background:var(--panel2,#f6f7f9);}
     body #editorPanel .ep-roster-control .inp.epn{background:var(--fill,#f1f2f4)!important;border-color:transparent!important;}
+    /* 2.697 — 인원 숫자 칸: 폭 48px 에 안쪽 여백 20px 이라 «35» 가 잘렸다(아이패드 실측). 폭 58·여백 6·가운데·굵게, 스피너 숨김 */
+    body #editorPanel .ep-roster-control .inp.epn:not(#_){width:58px!important;min-width:58px!important;max-width:58px!important;padding:0 6px!important;text-align:center!important;font-weight:700!important;font-size:14px!important;font-variant-numeric:tabular-nums;-moz-appearance:textfield;}
+    body #editorPanel .ep-roster-control .inp.epn::-webkit-outer-spin-button,body #editorPanel .ep-roster-control .inp.epn::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
     body #editorPanel .ep-sq-btn{background:var(--fill,#f1f2f4);border-color:transparent;color:var(--txt,#14161A);}
     /* 1.943 — 선수단 버튼 색 통일(사용자): 전체 선수도 같은 회색 칩(글자만 굵게), 비활성은 같은 칩에 옅게 */
     body #editorPanel .ep-sq-btn.ep-sq-all{background:var(--fill,#f1f2f4);border-color:transparent;color:var(--txt,#14161A);font-weight:800;}
