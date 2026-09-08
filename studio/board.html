@@ -16831,5 +16831,56 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   var tries=0; (function tick(){ ensure(); if(tries++<60)setTimeout(tick,300); })();   /* 도크는 셸이 늦게 조립한다(폰 도크 포함) — 18초 동안 지켜본다 */
 })();
 </script>
+
+<!-- 2.711 — 폰(≤700·ps-dock)에서 토큰 선택 패널을 «도크 위 한 줄 시트»로(사용자 목업 제안 1). 첫 줄 번호·이름·⋯, 둘째 줄 크기·색·C·글자 숨김·복제·삭제.
+     사진·시야·잔상·시선·쉐이퍼·GK·대칭·회전은 ⋯ 을 누르면 셋째 줄에. 늘 같은 자리(도크 바로 위)라 손이 기억한다. 데스크톱·아이패드 가로는 2.683 토큰 옆 그대로. -->
+<style id="ps-2711-selsheet">
+@media (max-width:700px){
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not([style*="display:none"]):not([style*="display: none"]){position:fixed!important;left:8px!important;right:8px!important;top:auto!important;bottom:calc(var(--ps-dock-h,100px) + 8px)!important;
+    width:auto!important;min-width:0!important;max-width:none!important;max-height:none!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;align-content:flex-start!important;
+    gap:6px!important;padding:8px 10px!important;border-radius:12px!important;overflow:visible!important;z-index:160!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__)::before{display:none!important}
+  /* 인라인 display:none 으로 숨긴 것(글자 도구·사진 입력 등)은 건드리지 않는다 */
+  html body.ps-dock .sel-ctl:not(#_):not(#__) > *:not([style*="display:none"]):not([style*="display: none"]){flex:0 0 auto!important;width:auto!important;max-width:none!important;margin:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .numbox input,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .namebox input{height:30px!important;min-height:30px!important;font-size:13px!important;padding:0 8px!important;width:100%!important;box-sizing:border-box!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .numbox,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .namebox{height:30px!important;min-height:30px!important;padding:0!important;display:inline-flex!important;align-items:center!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .numbox{order:1!important;flex:0 0 84px!important;width:84px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .namebox{order:2!important;flex:1 1 90px!important;min-width:0!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #selMoreBtn{order:3!important;flex:0 0 34px!important;width:34px!important;min-height:30px!important;height:30px!important;padding:0!important;font-weight:800;border-radius:9px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #selRowBreak{order:4!important;flex:0 0 100%!important;width:100%!important;height:0!important;min-height:0!important;max-height:0!important;line-height:0!important;font-size:0!important;margin:-6px 0 0!important;padding:0!important;border:0!important;display:block!important;overflow:hidden!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #sizeCtl{order:5!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl{order:6!important;position:relative!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #coachBtn{order:7!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #labelVisBtn{order:8!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #dupSelBtn{order:9!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #delSelBtn{order:10!important;margin-left:auto!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textEditBtn,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textSizeCtl,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textColorCtl,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textBgCtl{order:12!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#rotCtl,#ballStyleBtn){order:20!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(.sel-more) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#rotCtl,#ballStyleBtn){display:none!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___).sel-more > #selMoreBtn{background:var(--accent,#3A6DF0)!important;color:#fff!important;border-color:var(--accent,#3A6DF0)!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #alignBar{order:30!important;flex:0 0 100%!important;width:100%!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > button,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .sizebox{min-height:30px!important;height:30px!important;font-size:11px!important;padding:0 9px!important;border-radius:9px!important}
+  /* 색 팔레트는 시트 안에 펼쳐 두지 않고(폰 예전 판은 늘 펼침) «색상» 을 눌렀을 때만 시트 위로 띄운다 */
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl #colorPop{display:none!important;position:absolute!important;left:0!important;bottom:calc(100% + 8px)!important;top:auto!important;z-index:5!important;background:var(--panel,#1b1f27)!important;border:1px solid var(--line,#2e333a)!important;border-radius:10px!important;padding:8px!important;box-shadow:0 8px 24px rgba(0,0,0,.35)!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl.open #colorPop{display:grid!important}
+}
+</style>
+<script>
+(function(){ /* 2.711 — ⋯ 버튼과 줄바꿈 자리는 시트 모드에서만 보인다(위 CSS). 데스크톱은 display:none */
+  var sc=document.querySelector(".sel-ctl"); if(!sc)return;
+  if(!document.getElementById("selRowBreak")){ var br=document.createElement("span"); br.id="selRowBreak"; br.style.display="none"; sc.appendChild(br); }
+  if(!document.getElementById("selMoreBtn")){ var b=document.createElement("button"); b.type="button"; b.id="selMoreBtn"; b.textContent="⋯"; b.title="더 보기 — 사진·시야·잔상·시선·쉐이퍼·GK·대칭·회전"; b.setAttribute("aria-label","선택 항목 더 보기"); b.style.display="none";
+    b.addEventListener("click",function(e){ e.stopPropagation(); sc.classList.toggle("sel-more"); }); sc.appendChild(b); }
+  /* 시트 모드에서 «색상» 트리거는 팔레트를 여닫는다(데스크톱은 제 핸들러 그대로) */
+  try{ var ct=document.getElementById("colorTrig"), cc=document.getElementById("colorCtl"); if(ct&&cc){ ct.addEventListener("click",function(e){ if(!sheet())return; e.stopPropagation(); cc.classList.toggle("open"); },true); document.addEventListener("click",function(e){ if(!sheet())return; if(cc.classList.contains("open")&&!cc.contains(e.target))cc.classList.remove("open"); },true); } }catch(_){}
+  function sheet(){ try{ return document.body.classList.contains("ps-dock")&&window.innerWidth<=700; }catch(_){ return false; } }
+  function place(){ try{ if(!sheet()){ sc.style.removeProperty("bottom"); return; } var dk=document.getElementById("ps-dock"); var top=dk?dk.getBoundingClientRect().top:innerHeight; if(!(top>0))top=innerHeight; sc.style.setProperty("bottom",Math.round(innerHeight-top+8)+"px","important"); }catch(_){} }   /* --ps-dock-h 가 늦게 갱신돼도 실제 도크 위치를 따른다 */
+  function apply(){ var on=sheet(); var b=document.getElementById("selMoreBtn"), br=document.getElementById("selRowBreak"); if(b)b.style.display=on?"":"none"; if(br)br.style.display=on?"":"none"; if(!on)sc.classList.remove("sel-more"); place(); }
+  try{ var _dkObs=function(){ var dk=document.getElementById("ps-dock"); if(dk&&!dk.__sheetObs&&window.ResizeObserver){ dk.__sheetObs=1; new ResizeObserver(place).observe(dk); } }; _dkObs(); new MutationObserver(_dkObs).observe(document.body,{childList:true}); }catch(_){}
+  apply(); window.addEventListener("resize",apply); try{ new MutationObserver(apply).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){}
+  /* 선택이 바뀌면 ⋯ 은 접는다(다음 토큰은 기본 두 줄부터) */
+  try{ new MutationObserver(function(){ if(sc.style.display==="none")sc.classList.remove("sel-more"); }).observe(sc,{attributes:true,attributeFilter:["style","data-kind"]}); }catch(_){}
+})();
+</script>
 </body>
 </html>
