@@ -9676,7 +9676,7 @@ function paintRpe5(){
 }
 function buildEditorFields(){
   var box=$("epFields");if(!box)return;
-  box.innerHTML="";
+  box.innerHTML=""; box.style.display="";   /* 2.690 — 커뮤니티 보기 전용(2.575)이 남긴 display:none 을 되돌린다(사용자 "훈련 설명·코칭 포인트 칸이 사라졌다") */
   var head=document.createElement("div");head.className="ep-memo-head";head.innerHTML='<div><div class="ep-memo-title">훈련 메모</div><div class="ep-memo-sub">훈련 방법과 코칭 포인트를 적어두세요 — 항목은 아래에서 추가할 수 있어요.</div></div>';
   box.appendChild(head);
   /* 1.768 — 탭은 제거하되 저장된 모든 메모 항목은 한 흐름에서 계속 편집할 수 있게 한다. */
@@ -10176,7 +10176,7 @@ window.__commView=function(post, editMode){
           row.appendChild(l); row.appendChild(t); ph.parentNode.insertBefore(row,ph); }
         ph.style.display="none"; }
     }catch(_){} }
-    if(editMode){ try{ var _ph0=$("epPhases"); if(_ph0)_ph0.style.display=""; [].forEach.call(panel?panel.querySelectorAll(".ep-ro-phrow"):[],function(x){x.remove();}); }catch(_){}   /* 2.579 — 편집으로 돌아오면 칩 상자 복귀 */
+    if(editMode){ try{ var _ph0=$("epPhases"); if(_ph0)_ph0.style.display=""; [].forEach.call(panel?panel.querySelectorAll(".ep-ro-phrow, .ep-ro-doc"):[],function(x){x.remove();}); var _ef0=$("epFields"); if(_ef0)_ef0.style.display=""; }catch(_){}   /* 2.579 — 편집으로 돌아오면 칩 상자 복귀 · 2.690 — 훈련 메모(방법·코칭 포인트) 칸도 복귀 */
       /* 편집 모드 — 내 글, 자유 편집 후 [완료]로 커뮤니티에 반영 */
       if(panel){ var ob=document.getElementById("epRoBanner"); if(ob)ob.remove();
         var eb=document.createElement("div"); eb.id="epRoBanner";
