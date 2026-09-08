@@ -9577,6 +9577,43 @@ function trainingWizardRenderReview(){
   (editorTrainings||[]).forEach(function(tr,i){var d=tr&&tr.draft||{},row=document.createElement("div");row.className="tw-review-row";
     [String(i+1),d.name||("훈련 "+(i+1)),focusOf(d.focus||"bp").label||"훈련",((+d.minutes||0)*Math.max(1,+d.sets||1))+"분"].forEach(function(v,j){var s=document.createElement(j===1?"b":"span");s.textContent=v;if(j===2)s.className="tw-phase";row.appendChild(s);});box.appendChild(row);});
 }
+/* 2.701 — 보드 위 «보드 가져오기»: 보관함의 작전판(type==="board")만 목록으로. 고르면 pushUndo 뒤 첫 페이지 스냅과 애니메이션을 지금 페이지에 올린다(원본은 그대로). */
+async function openBoardImport(){
+  var lib=[]; try{ lib=await libGet(); }catch(_){ lib=[]; }
+  var items=(lib||[]).filter(function(d){ return d&&d.type==="board"&&d.snap; }).sort(function(a,b){ return (b.savedAt||0)-(a.savedAt||0); });
+  var old=document.getElementById("bdImportOverlay"); if(old)old.remove();
+  var ov=document.createElement("div"); ov.id="bdImportOverlay";
+  ov.style.cssText="position:fixed;inset:0;z-index:10030;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;padding:18px";
+  var sh=document.createElement("div"); sh.style.cssText="width:min(560px,100%);max-height:min(680px,86vh);overflow:auto;background:var(--panel,#fff);color:var(--txt,#172033);border:1px solid var(--line,#dfe4ec);border-radius:18px;box-shadow:0 24px 60px rgba(15,23,42,.28);padding:18px";
+  var hd=document.createElement("div"); hd.style.cssText="display:flex;align-items:center;gap:12px;margin-bottom:14px";
+  hd.innerHTML='<div style="min-width:0;flex:1"><b style="font-size:17px">보드 가져오기</b><div style="font-size:12px;color:var(--txt-dim,#718096);margin-top:4px">보관함의 작전판만 보입니다 · 지금 페이지에 올리고, 원본은 바뀌지 않아요 · ⌘Z 로 되돌리기</div></div>';
+  var close=document.createElement("button"); close.type="button"; close.className="btn"; close.textContent="닫기"; close.onclick=function(){ov.remove();}; hd.appendChild(close); sh.appendChild(hd);
+  var list=document.createElement("div"); list.style.cssText="display:grid;gap:8px";
+  if(!items.length){ var empty=document.createElement("div"); empty.style.cssText="padding:28px 12px;text-align:center;color:var(--txt-dim,#718096)"; empty.textContent="보관함에 저장한 작전판이 없어요 — 보드에서 «보관함 저장»으로 만들 수 있어요."; list.appendChild(empty); }
+  items.forEach(function(d){
+    var b=document.createElement("button"); b.type="button"; b.className="btn"; b.style.cssText="width:100%;height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;text-align:left";
+    var left=document.createElement("span"); left.style.cssText="min-width:0;display:flex;align-items:center;gap:10px";
+    if(d.thumb){ var im=document.createElement("span"); im.style.cssText="flex:0 0 auto;width:56px;height:38px;border-radius:6px;overflow:hidden;background:var(--panel2,#f1f3f5);display:inline-flex"; im.innerHTML=(String(d.thumb).indexOf("<svg")===0)?d.thumb:('<img src="'+d.thumb+'" style="width:100%;height:100%;object-fit:cover" alt="">'); left.appendChild(im); }
+    var tx=document.createElement("span"); tx.style.cssText="min-width:0;display:grid;gap:3px"; var nm=document.createElement("b"); nm.textContent=d.name||"작전판"; var meta=document.createElement("small"); meta.style.color="var(--txt-dim,#718096)";
+    var np=(Array.isArray(d.pages)&&d.pages.length>1)?d.pages.length:1, nf=(Array.isArray(d.frames)&&d.frames.length)?d.frames.length:0;
+    meta.textContent=(d.savedAt?new Date(d.savedAt).toLocaleDateString():"")+(np>1?(" · 페이지 "+np):"")+(nf?(" · 장면 "+nf):"")+(d.folder?(" · "+d.folder):"");
+    tx.appendChild(nm); tx.appendChild(meta); left.appendChild(tx);
+    var go=document.createElement("span"); go.textContent="가져오기"; go.style.cssText="color:var(--blue,#356df3);font-weight:800;white-space:nowrap";
+    b.appendChild(left); b.appendChild(go);
+    b.onclick=function(){
+      try{ pushUndo(); }catch(_){}
+      var snap=(Array.isArray(d.pages)&&d.pages.length&&d.pages[0].snap)?d.pages[0].snap:d.snap;
+      try{ loadSnap(snap); }catch(_){}
+      try{ if(nf&&window.__animLoad){ __animLoad(d.frames); } else if(window.__animReset){ __animReset(); } }catch(_){}
+      try{ renderTokens(); renderDrawings(); updateDelUI(); }catch(_){}
+      try{ if(window.__psPages&&window.__psPages.refresh)window.__psPages.refresh(); }catch(_){}
+      ov.remove();
+      try{ toast("«"+(d.name||"작전판")+"» 가져옴"+(np>1?(" · 첫 페이지(전체 "+np+"페이지)"):"")+" · ⌘Z 되돌리기"); }catch(_){}
+    };
+    list.appendChild(b);
+  });
+  sh.appendChild(list); ov.appendChild(sh); ov.onclick=function(e){ if(e.target===ov)ov.remove(); }; document.body.appendChild(ov);
+}
 async function openTrainingWizardImport(){
   var lib=await libGet(),items=lib.filter(function(d){return d&&(d.type==="train"||(!d.type&&d.snap));});
   var old=document.getElementById("twImportOverlay");if(old)old.remove();
@@ -15285,6 +15322,12 @@ try{ var _nb=document.getElementById('dfNew');
       var add2=document.createElement("button"); add2.type="button"; add2.className="bp-add";
       add2.textContent="미팅 세트"; add2.title="Match Scenario 페이지 "+MEET_SET.length+"개를 한 번에 — 지금 배치(선수·이름)를 복사해 만들고, 그림만 그리면 미팅 자료 완성";
       add2.onclick=addMeetingSet; box.appendChild(add2);
+    }
+    /* 2.701 — «보드 가져오기»(사용자 "보드위에 보드 가져오기 해서 누르면 보드만 가져올 수 있게"): 보관함의 작전판(type board)만 골라 지금 페이지에 올린다 */
+    if(!pages || true){
+      var add3=document.createElement("button"); add3.type="button"; add3.className="bp-add"; add3.id="bpImportBoard";
+      add3.textContent="보드 가져오기"; add3.title="보관함에 저장한 작전판을 골라 지금 페이지에 올립니다 (⌘Z 로 되돌리기)";
+      add3.onclick=function(e){ e.stopPropagation(); try{ openBoardImport(); }catch(_){ } }; box.appendChild(add3);
     }
     if(vaultSave&&(window.innerWidth||0)>=640)box.appendChild(vaultSave);
     /* 1.814 — 상단 '내보내기' 버튼 제거(사용자 지시). PNG·GIF·MP4 내보내기는 하단 도크에 있다 */
