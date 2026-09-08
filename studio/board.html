@@ -4853,7 +4853,7 @@ function enableDrag(g,p,removable,kind){
     if(mode==="draw"){moveDraw(toUnit(e));}
     else if(grp){if(!grpUndo){pushUndo();grpUndo=true;}const u=toUnit(e);let dx=u.x-gu0.x,dy=u.y-gu0.y;
       if(e.shiftKey){ if(!_mvAxis&&(Math.abs(dx)>6||Math.abs(dy)>6))_mvAxis=Math.abs(dx)>=Math.abs(dy)?"x":"y"; if(_mvAxis==="x")dy=0; else if(_mvAxis==="y")dx=0; } else _mvAxis=null;
-      grp.forEach(it=>{if(it.draw){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else{it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(tokShape==="shaper"||grp.some(function(it){return it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
+      grp.forEach(it=>{if(it.draw){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else{it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(tokShape==="shaper"||grp.some(function(it){return it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
     else{if(!mvUndo){pushUndo();mvUndo=true;}
       var _u0=toUnit(e);
       /* 2.375 — 잡은 지점 보정. 스냅(snapDrag)은 보정한 뒤에 걸어야 한다 — 보정 전에 걸면 스냅이
@@ -4882,7 +4882,7 @@ function enableDrag(g,p,removable,kind){
           else if(t==="drawing"){ var st2=orig?orig[i]:null; if(st2&&st2.pts0){ var c2=Object.assign({},o,{pts:st2.pts0.map(function(q){return {x:q.x,y:q.y};})}); if(c2.id!=null)c2.id=uid++; state.drawings.push(c2); } } });
         renderTokens(); renderDrawings(); toast("복제됨"); }catch(_){} }
     _mvAlt=false;
-    if(m==="move"){g.style.cursor="grab";const c=g.querySelector("circle,path,rect");if(c)c.setAttribute("opacity","1");if(moved&&sel&&sel.ref===p)positionSelCtl();if(moved){try{boardSaveLive();}catch(_){}}if(wasGrp&&moved){try{renderDrawings();}catch(_){}try{save();}catch(_){}}}
+    if(m==="move"){g.style.cursor="grab";const c=g.querySelector("circle,path,rect");if(c)c.setAttribute("opacity","1");if(moved&&sel&&sel.ref===p)positionSelCtl();if(moved){try{boardSaveLive();}catch(_){}}if(wasGrp&&moved){try{renderDrawings();}catch(_){}try{save();}catch(_){}}else if(moved&&_hasAnchored(p.id)){try{renderDrawings();}catch(_){}}}   /* 2.719 — 묶인 선이 따라오게 */
     else{endDraw();}
     if(!moved){const now=Date.now();
       if(g._t&&now-g._t<360){g._t=0;
@@ -5707,7 +5707,7 @@ function enableDrawingDrag(g,d){
   g.addEventListener("pointermove",e=>{if(!dragging)return;const p=toUnit(e);
     let dx=p.x-p0.x,dy=p.y-p0.y;if(Math.hypot(dx,dy)>3)moved=true;
     if(grp){if(!grpUndo){pushUndo();grpUndo=true;}
-      grp.forEach(it=>{if(it.draw){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else{it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});
+      grp.forEach(it=>{if(it.draw){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else{it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});
       renderMultiGuides();return;}
     const _cs=d.pts.reduce((a,q)=>({x:a.x+q.x,y:a.y+q.y}),{x:0,y:0}),_n=d.pts.length||1,c0x=_cs.x/_n,c0y=_cs.y/_n,_CTH=13;
     if(Math.abs((c0x+dx)-CX)<=_CTH){dx=CX-c0x;}
@@ -5725,7 +5725,7 @@ function enableDrawingDrag(g,d){
     if(Math.abs((c0x+dx)-CX)<=_CTH)dx=CX-c0x;
     if(Math.abs((c0y+dy)-CY)<=_CTH)dy=CY-c0y;
     const _gl=ensureGuideLayer();if(_gl)_gl.innerHTML="";
-    if(moved){pushUndo();d.pts=d.pts.map(pt=>({x:pt.x+dx,y:pt.y+dy}));renderDrawings();}
+    if(moved){pushUndo();d.pts=d.pts.map(pt=>({x:pt.x+dx,y:pt.y+dy}));delete d.tk;renderDrawings();}   /* 2.719 — 선을 통째로 옮기면 묶음을 푼다 */
     else{const now=Date.now();
       if(_lastDrawingTap===d&&now-_lastDrawingTapAt<360){_lastDrawingTap=null;_lastDrawingTapAt=0;
         if(d.type==="text"){addText(d.pts[0],d);return;}
@@ -5740,7 +5740,7 @@ function enableEndpointDrag(hg,d,idx){
     let gRef=hg.parentNode;
     const move=ev=>{const u=toUnit(ev); d.pts[idx]={x:u.x,y:u.y}; const f2=redrawOne(d,gRef);if(f2)gRef=f2; showMeas(d,d.pts[idx]);};
     const up=()=>{window.removeEventListener("pointermove",move);hideMeas();
-      window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);renderDrawings();};
+      window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);try{_anchorOne(d,idx);}catch(_){}renderDrawings();};   /* 2.719 — 놓은 자리가 토큰이면 묶고, 빈 곳이면 푼다 */
     window.addEventListener("pointermove",move);
     window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);});
 }
@@ -5807,7 +5807,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
         g.appendChild(hit);
       }
     }
-    try{ if(!isSel && d.op!=null && d.op<1) g.setAttribute("opacity", d.op); }catch(_){}
+    try{ var _fo2=(d.op!=null?d.op:1)*(d._fade==null?1:d._fade); if(!isSel && _fo2<1) g.setAttribute("opacity", Math.max(0,Math.min(1,_fo2))); }catch(_){}   /* 2.719 */
     return g;
   }
   if(d.type==="rect"||d.type==="rectline"||d.type==="rectdash"||d.type==="ellipse"){const a=d.pts[0],b=d.pts[1]||d.pts[0];
@@ -5883,7 +5883,8 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       rh.appendChild(el("circle",{cx:x0+B.boxW,cy:p.y,r:22,fill:"transparent","pointer-events":"all"}));
       rh.appendChild(el("circle",{cx:x0+B.boxW,cy:p.y,r:9,fill:"#fff",stroke:"#ffd60a","stroke-width":3}));
       enableTextResize(rh,d);g.appendChild(rh);}
-  }else{const a=d.pts[0],b=d.pts[1]||d.pts[0],type=d.type;
+  }else{_anchorPt(d,0);_anchorPt(d,1);   /* 2.719 — 토큰에 묶인 끝점은 토큰의 지금 자리 */
+    const a=d.pts[0],b=d.pts[1]||d.pts[0],type=d.type;
     const canCurve=(type==="pass"||type==="run"||type==="line"||type==="dashline");
     const cpt=canCurve?d.pts[2]:null;                                  // 커브 제어점(있으면 곡선)
     const _pd=cpt?`M ${a.x} ${a.y} Q ${cpt.x} ${cpt.y} ${b.x} ${b.y}`:`M ${a.x} ${a.y} L ${b.x} ${b.y}`;
@@ -5910,7 +5911,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       [a,b].forEach((pt,idx)=>{
         const hg=el("g");
         hg.appendChild(el("circle",{cx:pt.x,cy:pt.y,r:24,fill:"transparent","pointer-events":"all"}));
-        hg.appendChild(el("circle",{cx:pt.x,cy:pt.y,r:10,fill:"#fff",stroke:"#ffd60a","stroke-width":3}));
+        hg.appendChild(el("circle",{cx:pt.x,cy:pt.y,r:10,fill:(d.tk&&d.tk[idx]!=null)?"#3a6df0":"#fff",stroke:"#ffd60a","stroke-width":3}));   /* 2.719 — 파란 점 = 토큰에 묶임 */
         enableEndpointDrag(hg,d,idx); g.appendChild(hg);
       });
       if(canCurve){                              // 중간 핸들 — 끌어서 커브(곡선) 만들기
@@ -5924,8 +5925,8 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     }
   }
   enableDrawingDrag(g,d);
-  /* 투명도 — 선택/편집 중엔 또렷하게(1), 배치 완료·재생·영상에서만 반영 */
-  try{ if(!isSel && d.op!=null && d.op<1) g.setAttribute("opacity", d.op); }catch(_){}
+  /* 투명도 — 선택/편집 중엔 또렷하게(1), 배치 완료·재생·영상에서만 반영. 2.719: 장면 사이 서서히 켜짐/꺼짐(_fade) 곱함 */
+  try{ var _fo=(d.op!=null?d.op:1)*(d._fade==null?1:d._fade); if(!isSel && _fo<1) g.setAttribute("opacity", Math.max(0,Math.min(1,_fo))); }catch(_){}
   return g;}
 function renderDrawings(){[...drawLayer.children].forEach(c=>c.remove());
   state.drawings.forEach(d=>drawLayer.appendChild(drawingEl(d)));
@@ -6148,6 +6149,23 @@ function _linkPt(id){
   const o=(state.players||[]).find(p=>p.id===id)||(state.equipment||[]).find(p=>p.id===id);
   return o?{x:o.x,y:o.y}:null;
 }
+/* ══ 2.719 · 직선·점선·패스·런·드리블·슛의 끝점을 토큰에 묶는다(코치 피드백 "직선과 점선도 토큰에 연결 … 토큰이 이동할 때 선이 함께").
+   d.tk=[idA,idB] — null 이면 자유 끝점. 그릴 때 끝점이 토큰 위(반지름 30 단위 = 3m × 토큰 배율)면 자동으로 묶이고,
+   끝점 핸들을 빈 곳에 놓으면 풀리고 토큰 위에 놓으면 다시 묶인다. 선 전체를 끌면 풀린다(같이 끈 토큰에 묶인 것만 유지).
+   좌표는 그릴 때마다 토큰에서 읽어 d.pts 에 되쓴다 → 장면 재생(renderInterp)·영상·GIF 에서 토큰이 움직이면 선이 따라간다. ══ */
+const ANCHOR_TYPES={line:1,dashline:1,pass:1,run:1,dribble:1,shot:1};
+function _tokenNear(u,rad){ if(!u)return null; var best=null,bd=(rad||30)*(state.tokenScale||1);
+  var scan=function(o,id){ if(!o||id==null)return; var dd=Math.hypot(o.x-u.x,o.y-u.y); if(dd<bd){bd=dd;best=id;} };
+  (state.players||[]).forEach(function(p){scan(p,p.id);}); (state.equipment||[]).forEach(function(p){scan(p,p.id);}); if(state.ball)scan(state.ball,"ball");
+  return best; }
+function _anchorPt(d,i){ var id=d&&d.tk&&d.tk[i]; if(id==null)return null; var q=_linkPt(id); if(q&&d.pts&&d.pts[i]){ d.pts[i].x=q.x; d.pts[i].y=q.y; } return q; }
+function _anchorEnds(d){ if(!d||!ANCHOR_TYPES[d.type]||!d.pts||d.pts.length<2)return false;
+  var tk=[_tokenNear(d.pts[0]),_tokenNear(d.pts[1])]; if(tk[0]!=null&&tk[0]===tk[1])tk[1]=null;
+  if(tk[0]!=null||tk[1]!=null){ d.tk=tk; return true; } delete d.tk; return false; }
+function _anchorOne(d,i){ if(!d||!ANCHOR_TYPES[d.type])return; var id=_tokenNear(d.pts&&d.pts[i]); d.tk=d.tk||[null,null]; d.tk[i]=id;
+  if(d.tk[0]!=null&&d.tk[0]===d.tk[1])d.tk[i]=null; if(d.tk[0]==null&&d.tk[1]==null)delete d.tk; }
+function _hasAnchored(id){ return id!=null&&(state.drawings||[]).some(function(d){ return d&&d.tk&&(d.tk[0]===id||d.tk[1]===id); }); }
+function _anchorHint(){ try{ var K="cs_hint_anchor_v1"; if(localStorage.getItem(K))return; localStorage.setItem(K,"1"); toast("선 끝이 선수에 묶였어요 — 장면에서 선수가 움직이면 선도 따라가요"); }catch(_){} }
 function linkPreview(){
   try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;
   if(!_link||!_link.ids.length)return;
@@ -6195,7 +6213,7 @@ function endDraw(){hideMeas();if(!_draw)return;const t=_draw.type;let keep;
   if(t==="free")keep=_draw.pts.length>1;
   else{const a=_draw.pts[0],b=_draw.pts[1];
     keep=(t==="rect"||t==="rectline"||t==="rectdash")?(Math.abs(b.x-a.x)>8&&Math.abs(b.y-a.y)>8):(Math.hypot(b.x-a.x,b.y-a.y)>8);}
-  if(keep){pushUndo();state.drawings.push(_draw);}
+  if(keep){pushUndo();if(_anchorEnds(_draw))_anchorHint();state.drawings.push(_draw);}   /* 2.719 — 끝점이 토큰 위면 묶는다 */
   const _new=keep?_draw:null;
   _draw=null;_drawTmp=null;renderDrawings();
   /* 구역을 그린 직후엔 이동 도구로 바꾸고 방금 그린 구역을 선택 → 모서리 핸들이 바로 보인다.
@@ -7144,6 +7162,19 @@ function _curvePt(p0x,p0y,p1x,p1y,off,u){
   var t=1-u, w0=t*t, w1=2*t*u, w2=u*u;
   return {x:w0*p0x+w1*cx+w2*p1x, y:w0*p0y+w1*cy+w2*p1y};
 }
+/* ══ 2.719 · 그림(선·구역·글)은 장면 사이에서 서서히 나타나고 사라진다(코치 피드백 "도형이 만들어질 때 그라데이션 식으로 서서히 … 뚝뚝 끊기는 느낌").
+   같은 그림(내용 동일 — 토큰에 묶인 끝점은 좌표 대신 토큰 id 로 비교)은 그대로. 다음 장면에만 있는 그림은 u 0.25→1 에서 0→1 로 켜지고,
+   이 장면에만 있는 그림은 u 0→0.5 에서 1→0 으로 꺼진다. _fade 는 열거되지 않는 임시 속성이라 저장·스냅·복제(dc)에 남지 않는다. ══ */
+function _drawKey(d){ try{ var c=Object.assign({},d); delete c._tmp; if(c.tk&&c.pts){ c.pts=c.pts.map(function(p,i){ return (c.tk[i]!=null)?{tk:c.tk[i]}:p; }); } return JSON.stringify(c); }catch(_){ return "?"+Math.random(); } }
+function _setFade(d,f){ try{ Object.defineProperty(d,"_fade",{value:f,enumerable:false,configurable:true,writable:true}); }catch(_){} return d; }
+function _interpDrawings(A,B,u){
+  var out=dc(A||[]); if(!(u>0)||A===B)return out;
+  var bk={}; (B||[]).forEach(function(d){ var k=_drawKey(d); bk[k]=(bk[k]||0)+1; });
+  var ak={};
+  out.forEach(function(d){ var k=_drawKey(d); ak[k]=(ak[k]||0)+1; if(bk[k]&&ak[k]<=bk[k])return; _setFade(d,Math.max(0,1-u/0.5)); });
+  var seen={}; (B||[]).forEach(function(d){ var k=_drawKey(d); seen[k]=(seen[k]||0)+1; if(ak[k]&&seen[k]<=ak[k])return; out.push(_setFade(dc(d),Math.max(0,Math.min(1,(u-0.25)/0.75)))); });
+  return out;
+}
 function renderInterp(a,b,u,curves){
   curves=curves||null;
   __ballAirS={};   /* 2.272 — 공중볼 배율은 매 프레임 다시 계산 */
@@ -7165,7 +7196,7 @@ function renderInterp(a,b,u,curves){
   (b.equipment||[]).forEach(q=>{if(!(a.equipment||[]).some(p=>p.id===q.id))state.equipment.push(Object.assign({},q));});
   if(a.ball||b.ball){const ba=a.ball||b.ball,bb=b.ball||a.ball;const cbl=curves&&curves.ball;const bpt=_curvePt(ba.x,ba.y,bb.x,bb.y,cbl,u);try{ballRollTrack("ball",bpt.x,bpt.y);}catch(_){}if(cbl&&cbl.air&&u<1)__ballAirS["ball"]=_airS;state.ball={x:bpt.x,y:bpt.y};}
   else{state.ball=null;}
-  state.drawings=dc(a.drawings||[]);
+  state.drawings=_interpDrawings(a.drawings||[],b.drawings||[],u);   /* 2.719 — 장면 사이 그림 서서히 */
   state.orientation=a.orientation||"h";state.area=a.area||"full";state.pitchView=normPitchView(a.pitchView||((state.area||"full")==="half"?"half":"full"));state.tokenScale=a.tokenScale||1;
   sel=null;applyView();renderTokens();renderDrawings();try{trailTick();}catch(_){}
   try{if(typeof window.__syncUniformDock==="function")window.__syncUniformDock();}catch(_){}
@@ -7798,9 +7829,13 @@ async function exportVideo(opts){
     const Wr=opts.height||1080; canvas.width=Wr; canvas.height=Math.round(Wr*16/9);
     const topH=Math.round(canvas.height*0.135), botH=Math.round(canvas.height*0.12);
     const availH=canvas.height-topH-botH;
-    let bw2=Wr, bh2=Math.round(Wr*(h/w));
-    if(bh2>availH){ bh2=availH; bw2=Math.round(availH*(w/h)); }
-    dest={x:Math.round((canvas.width-bw2)/2), y:topH+Math.round((availH-bh2)/2), w:bw2, h:bh2, bg:"#0b1016", topH:topH};
+    /* 2.719 — 좌우(위아래) 검정 여백 대신 잔디로 채운다(코치 피드백 "영상 좌우 여백 없이 잔디로"): 보드를 검정 위에 얹지 않고
+       viewBox 를 캔버스 9:16 비율로 대칭 확장해 SVG 잔디면(운동장 밖 1600 단위까지 이어진다)이 화면 전체를 채운다.
+       운동장 크기는 예전 폭 맞춤과 같거나(가로 운동장) 더 크다(세로 하프 — 예전엔 가용 높이에 눌려 작아졌다). 제목띠·자막은 잔디 위에 그려진다. */
+    if(uvb){ const ar=canvas.width/canvas.height; let vx=uvb[0],vy=uvb[1],vw=uvb[2],vh=uvb[3];
+      if(vw/vh<ar){ const nw=vh*ar; vx-=(nw-vw)/2; vw=nw; } else { const nh=vw/ar; vy-=(nh-vh)/2; vh=nh; }
+      uvb=[vx,vy,vw,vh]; }
+    dest={x:0, y:0, w:canvas.width, h:canvas.height, bg:getCss("--grass-b")||"#1d8a47", topH:topH, availH:availH, botH:botH};
   } else {
     const S=opts.height?Math.max(0.4,opts.height/h):2;   /* 목표 세로 픽셀에 맞춰 배율(720p·1080p) */
     canvas.width=Math.round(w*S);canvas.height=Math.round(h*S);
@@ -7835,7 +7870,7 @@ async function exportVideo(opts){
     var tw=ctx.measureText(t).width;
     var padX=fs*0.9,gap=fs*0.55,bh=fs*2.1;
     /* 릴스면 하단 여백 중앙, 아니면 캔버스 하단 */
-    var y=(dest&&opts.reel)?((dest.y+dest.h)+(H-(dest.y+dest.h))/2-bh/2):(H-bh-Math.round(H*0.035));
+    var y=(dest&&opts.reel)?((H-dest.botH)+dest.botH/2-bh/2):(H-bh-Math.round(H*0.035));   /* 2.719 — 자막은 아래 띠 자리(잔디 위) */
     var bwid=tw+bw+gap+padX*2, x=(W-bwid)/2, r=bh/2.4;
     ctx.fillStyle='rgba(10,14,22,.82)';
     ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+bwid,y,x+bwid,y+bh,r);ctx.arcTo(x+bwid,y+bh,x,y+bh,r);ctx.arcTo(x,y+bh,x,y,r);ctx.arcTo(x,y,x+bwid,y,r);ctx.closePath();ctx.fill();
