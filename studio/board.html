@@ -4402,6 +4402,7 @@ function buildLines(){
   pa({d:`M ${R} ${B-cr} A ${cr} ${cr} 0 0 1 ${R-cr} ${B}`});
   if(__oldL){var __ns=__oldL.nextSibling;__oldL.remove();world.insertBefore(P,__ns);}else{var __dl=world.querySelector("#drawLayer");if(__dl)world.insertBefore(P,__dl);else world.appendChild(P);}
   if((state.pitchN||1)>1){P.style.display="none";P.setAttribute("data-ps-hidden","1");}   /* 운동장 여러 개면 전체피치용 단일 라인은 숨김 — 각 카드(멀티피치)만 보이게 */
+  else{ try{ if(world.querySelector("#ps-multipitch")){P.style.display="none";P.setAttribute("data-ps-hidden","1");} }catch(_){} }   /* 2.706 — state.pitchN 이 아직 1 이어도 멀티피치 카드가 살아 있으면 숨긴다(loadSnap 은 pitchN 을 넣기 전에 buildLines 를 먼저 부른다) */
   try{if(typeof renderPitchImg==="function")renderPitchImg();}catch(_){}   /* 가로↔세로 전환 시 실사 잔디결 방향 갱신 */
 }
 function buildPitch(){
