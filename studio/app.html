@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.703';</script>
+<script>window.PS_BUILD='2.704';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -814,6 +814,15 @@ function psShowUpdBand(){
    데스크톱 ≥768 전용, 모바일은 기존 상단바 그대로. 이 블록만 지우면 원복(짝: SHELL-SIDENAV-JS) */
 @media (min-width:768px){
   body{--ps-side-w:clamp(148px,18vw,192px);}
+  /* 2.704 — 사이드바 접기(사용자): 앱 바 오른쪽 위 ‹ 한 번 = 사라지고 왼쪽 가장자리 가운데 › 탭만. 기억 ps_side_folded_v1. ⌘\ (보드 안에서 눌러도 셸로 넘어온다). 폰(<768)은 앱 바가 없어 해당 없음 */
+  #psSideFold{display:none;position:absolute;top:8px;right:-1px;width:16px;height:22px;border:1px solid var(--line,#E3E6EA);border-right:0;border-radius:6px 0 0 6px;background:var(--panel,#fff);color:var(--dim,#6b7078);font:800 11px/1 inherit;cursor:pointer;z-index:2;padding:0;align-items:center;justify-content:center}
+  #psSideTab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);width:16px;height:44px;border:1px solid var(--line,#E3E6EA);border-left:0;border-radius:0 8px 8px 0;background:var(--panel,#fff);color:var(--dim,#6b7078);font:800 12px/1 inherit;z-index:321;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  @media (min-width:768px){
+    #psSideFold{display:flex}
+    html body.ps-side-folded:not(#_){--ps-side-w:0px!important}   /* 실측: 다른 규칙이 clamp(96px,7.4vw,104px) 로 다시 정해 body 한 줄로는 안 이겼다 */
+    body.ps-side-folded .appbar{display:none!important}
+    body.ps-side-folded #psSideTab{display:flex}
+  }
   .appbar{position:fixed;left:0;top:0;bottom:0;width:var(--ps-side-w);z-index:320;
     flex-direction:column;align-items:stretch;gap:2px;padding:16px 12px 12px;
     border-bottom:0;border-right:1px solid var(--dv2-border,#e6e8ee);background:var(--dv2-surface,#fff);
@@ -2227,6 +2236,7 @@ function psShowUpdBand(){
         if(d.type==='openTeamKey'){ var _pb=teamKeyBtn(String(d.key||'')); if(_pb)openTeamButton(_pb); return; }
         if(d.type==='openApp'){ currentTeamKey=''; showApp(d.app||'design'); return; }
       }
+      if(d.source==='board' && d.type==='toggleSide'){ try{ window.__psSideFold&&window.__psSideFold('toggle'); }catch(_){} return; }   /* 2.704 — 보드 안에서 ⌘\ */
       if(d.source==='board' && d.type==='boardSettingsState'){ if(d.open){ try{ if(window.__psCloseAppSettings)window.__psCloseAppSettings(); }catch(_){} } return; }   /* 2.700 — 보드 설정이 열리면 앱 설정은 닫는다(둘 중 하나만) */
       if(d.source==='board' && d.type==='editorState'){ document.body.classList.toggle('ps-editor-open',!!d.open); return; }   /* 2.698 — 편집기(훈련 세션 만들기 등)가 열리면 오른쪽 위 동기화 글씨를 숨긴다(사용자 "저장하기와 겹친다") */
       if((d.source==='process'||d.source==='scout'||d.source==='playbook') && d.type==='openDrillEditor'){   /* 2.312 — 콕핏에서도 보관함 훈련을 바로 연다 · 2.580 플레이북에서 열면 저장·취소 뒤 플레이북으로 돌아온다 */ captureReq=(d.source==='playbook')?'playbook':'process'; showApp('design'); var _ed=d; setTimeout(function(){try{ if(_ed.readonly){ if(fBoard.contentWindow.__openScheduleDrillView)fBoard.contentWindow.__openScheduleDrillView({libId:_ed.libId,name:_ed.name,snap:_ed.snap}); else fBoard.contentWindow.__openScheduleDrillEdit&&fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); }   /* 2.669 — 지난 날은 보기 전용 */ else if(_ed.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); } else if(_ed.wizard){ fBoard.contentWindow.__openSessionWizard && fBoard.contentWindow.__openSessionWizard({date:_ed.date||'',roster:_ed.roster||null}); }   /* 2.698 — 출석 그 날 카드에서 온 «훈련 세션 만들기»: 날짜·인원 프리셋 */ else { try{ fBoard.contentWindow.__psPreselectPhases=(Array.isArray(_ed.gmPhases)&&_ed.gmPhases.length)?_ed.gmPhases.slice():null; }catch(_){}   /* 1.958 — 보강 추천에서 온 국면 프리셀렉트 */ fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); } }catch(_){}},80); return; }
@@ -3920,6 +3930,19 @@ function psShowUpdBand(){
 </script>
 
 
+<script>
+(function(){ /* 2.704 — 사이드바 접기 */
+  var KEY='ps_side_folded_v1', bar=document.querySelector('.appbar'); if(!bar)return;
+  var f=document.createElement('button'); f.type='button'; f.id='psSideFold'; f.textContent='‹'; f.title='사이드바 접기 (⌘\\)'; f.setAttribute('aria-label','사이드바 접기'); bar.appendChild(f);
+  var tab=document.createElement('button'); tab.type='button'; tab.id='psSideTab'; tab.textContent='›'; tab.title='사이드바 펼치기 (⌘\\)'; tab.setAttribute('aria-label','사이드바 펼치기'); document.body.appendChild(tab);
+  function apply(on,save){ document.body.classList.toggle('ps-side-folded',!!on); if(save){ try{ localStorage.setItem(KEY,on?'1':'0'); }catch(_){} } try{ window.dispatchEvent(new Event('resize')); }catch(_){} }
+  window.__psSideFold=function(a){ var on=document.body.classList.contains('ps-side-folded'); apply(a==='open'?false:(a==='close'?true:!on),true); };
+  f.addEventListener('click',function(e){ e.stopPropagation(); apply(true,true); });
+  tab.addEventListener('click',function(e){ e.stopPropagation(); apply(false,true); });
+  document.addEventListener('keydown',function(e){ var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable))return; if((e.metaKey||e.ctrlKey)&&e.key==='\\'){ e.preventDefault(); window.__psSideFold('toggle'); } },true);
+  var saved='0'; try{ saved=localStorage.getItem(KEY)||'0'; }catch(_){} if(saved==='1')apply(true,false);
+})();
+</script>
 <script>
 (function(){
   var b=document.getElementById('gearBtn'),p=document.getElementById('gearPop');
