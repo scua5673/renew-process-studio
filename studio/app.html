@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.699';</script>
+<script>window.PS_BUILD='2.700';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1158,13 +1158,13 @@ function psShowUpdBand(){
         if(box){var mk=document.createComment('gp-data');box.insertBefore(mk,first);order.forEach(function(el){if(el.parentNode===box||!el.parentNode)box.insertBefore(el,mk);});box.removeChild(mk);}
       }catch(_){}
       var tabs=document.createElement('div');tabs.className='gp-tabs';tabs.setAttribute('role','tablist');
-      var names={general:'일반',data:'데이터',device:'기기'},btns={};
+      var names={device:'기기',general:'일반',data:'데이터'},btns={};   /* 2.700 — 기기 탭이 맨 앞(사용자 "앱설정 누르면 기기가 항상 가장 먼저") */
       Object.keys(names).forEach(function(t){var b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.setAttribute('data-gp-go',t);b.textContent=names[t];btns[t]=b;tabs.appendChild(b);});
       var head=p.querySelector('.gp-head');if(head)head.after(tabs);else p.prepend(tabs);
       function select(t){if(!names[t])t='general';p.setAttribute('data-gp-on',t);Object.keys(btns).forEach(function(k){btns[k].classList.toggle('on',k===t);btns[k].setAttribute('aria-selected',k===t?'true':'false');});try{localStorage.setItem('ps_app_settings_tab_v1',t);}catch(_){}try{requestAnimationFrame(lockH);}catch(_){}}
       tabs.addEventListener('click',function(e){var b=e.target.closest('[data-gp-go]');if(b){e.stopPropagation();select(b.getAttribute('data-gp-go'));}});
-      var saved='general';try{saved=localStorage.getItem('ps_app_settings_tab_v1')||'general';}catch(_){}
-      p.classList.add('gp-tabbed');select(saved);
+      /* 2.700 — 열 때마다 «기기»부터(사용자). 마지막 탭 기억(ps_app_settings_tab_v1)은 더 이상 열 때 쓰지 않는다 */
+      p.classList.add('gp-tabbed');select('device');
       /* 2.347 — 탭마다 행 수가 달라 팝오버 높이가 널뛰었다(사용자 "탭 들어갈 때마다 크기가 달라져").
          열릴 때 세 탭을 한 프레임 안에 몰래 갈아 끼우며 재서 **가장 큰 높이로 고정**한다 —
          언어·상태 문구에 따라 높이가 변하므로 상수 대신 매번 실측. 닫혀 있으면(레이아웃 0) 재지 않는다. */
@@ -1178,7 +1178,7 @@ function psShowUpdBand(){
         if(max>0)p.style.minHeight=max+'px';
       }catch(_){}}
       try{var gb=document.getElementById('gearBtn');
-        if(gb)gb.addEventListener('click',function(){requestAnimationFrame(lockH);});}catch(_){}
+        if(gb)gb.addEventListener('click',function(){try{select('device');}catch(_){} requestAnimationFrame(lockH);});}catch(_){}   /* 2.700 — 열 때마다 기기 탭 */
       /* 데이터 탭 점: 동기화 버튼이 '지금 동기화'가 아니면(막힘·확인 필요) */
       var dot=function(){try{var b=document.getElementById('psPushNow');btns.data.setAttribute('data-dot',(b&&b.textContent.trim()&&b.textContent.trim()!=='지금 동기화')?'1':'0');}catch(_){}};
       dot();try{var pn=document.getElementById('psPushNow');if(pn)new MutationObserver(dot).observe(pn,{childList:true,characterData:true,subtree:true});}catch(_){}
@@ -1568,6 +1568,7 @@ function psShowUpdBand(){
       }catch(_){}
     }
     window.__psCloseBoardSettings=function(){sendBoardPopover('close');};
+    window.__psForceCloseBoardSettings=function(){sendBoardPopover('force-close');};   /* 2.700 — 앱 설정을 열 때는 고정(핀) 모드의 보드 설정도 닫는다(사용자 "둘 중 하나만") */
     /* 2.561 — 셸에서 다른 데를 눌러도 닫는다. 설정 패널은 **iframe 안**이라
        board.html 의 바깥클릭 핸들러가 셸 클릭(사이드바·머리줄·로고)을 못 듣는다.
        ⚠ 트리거는 반드시 빼야 한다 — 그 단추의 click 은 stopPropagation 을 안 하므로,
@@ -2225,6 +2226,7 @@ function psShowUpdBand(){
         if(d.type==='openTeamKey'){ var _pb=teamKeyBtn(String(d.key||'')); if(_pb)openTeamButton(_pb); return; }
         if(d.type==='openApp'){ currentTeamKey=''; showApp(d.app||'design'); return; }
       }
+      if(d.source==='board' && d.type==='boardSettingsState'){ if(d.open){ try{ if(window.__psCloseAppSettings)window.__psCloseAppSettings(); }catch(_){} } return; }   /* 2.700 — 보드 설정이 열리면 앱 설정은 닫는다(둘 중 하나만) */
       if(d.source==='board' && d.type==='editorState'){ document.body.classList.toggle('ps-editor-open',!!d.open); return; }   /* 2.698 — 편집기(훈련 세션 만들기 등)가 열리면 오른쪽 위 동기화 글씨를 숨긴다(사용자 "저장하기와 겹친다") */
       if((d.source==='process'||d.source==='scout'||d.source==='playbook') && d.type==='openDrillEditor'){   /* 2.312 — 콕핏에서도 보관함 훈련을 바로 연다 · 2.580 플레이북에서 열면 저장·취소 뒤 플레이북으로 돌아온다 */ captureReq=(d.source==='playbook')?'playbook':'process'; showApp('design'); var _ed=d; setTimeout(function(){try{ if(_ed.readonly){ if(fBoard.contentWindow.__openScheduleDrillView)fBoard.contentWindow.__openScheduleDrillView({libId:_ed.libId,name:_ed.name,snap:_ed.snap}); else fBoard.contentWindow.__openScheduleDrillEdit&&fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); }   /* 2.669 — 지난 날은 보기 전용 */ else if(_ed.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); } else if(_ed.wizard){ fBoard.contentWindow.__openSessionWizard && fBoard.contentWindow.__openSessionWizard({date:_ed.date||'',roster:_ed.roster||null}); }   /* 2.698 — 출석 그 날 카드에서 온 «훈련 세션 만들기»: 날짜·인원 프리셋 */ else { try{ fBoard.contentWindow.__psPreselectPhases=(Array.isArray(_ed.gmPhases)&&_ed.gmPhases.length)?_ed.gmPhases.slice():null; }catch(_){}   /* 1.958 — 보강 추천에서 온 국면 프리셀렉트 */ fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); } }catch(_){}},80); return; }
       if(d.source==='process' && d.type==='openBoard'){
@@ -3927,7 +3929,7 @@ function psShowUpdBand(){
   function setOpen(on){p.classList.toggle('on',!!on);b.classList.toggle('on',!!on);b.setAttribute('aria-expanded',on?'true':'false');}
   window.__psCloseAppSettings=function(){setOpen(false);};
   if(window.MutationObserver)new MutationObserver(function(){var on=p.classList.contains('on');b.classList.toggle('on',on);b.setAttribute('aria-expanded',on?'true':'false');}).observe(p,{attributes:true,attributeFilter:['class']});
-  b.addEventListener('click',function(e){e.stopPropagation();var opening=!p.classList.contains('on');if(opening){try{if(window.__psCloseBoardSettings)window.__psCloseBoardSettings();}catch(_){}try{if(window.__psCloseAcctPop)window.__psCloseAcctPop();}catch(_){}}setOpen(opening);});   /* 1.850 — 앱 설정 열면 계정 팝업도 닫기 */
+  b.addEventListener('click',function(e){e.stopPropagation();var opening=!p.classList.contains('on');if(opening){try{if(window.__psForceCloseBoardSettings)window.__psForceCloseBoardSettings();else if(window.__psCloseBoardSettings)window.__psCloseBoardSettings();}catch(_){}try{if(window.__psCloseAcctPop)window.__psCloseAcctPop();}catch(_){}}setOpen(opening);});   /* 1.850 — 앱 설정 열면 계정 팝업도 닫기 */
   var x=document.getElementById('gearClose');if(x)x.addEventListener('click',function(e){e.stopPropagation();setOpen(false);b.focus();});
   document.addEventListener('click',function(e){if(!p.contains(e.target)&&e.target!==b)setOpen(false);});   /* 2.500 — 2.499 원복 */
   document.addEventListener('keydown',function(e){if(e.key==='Escape')setOpen(false);});
