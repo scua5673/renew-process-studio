@@ -788,6 +788,10 @@
   .anim-bar #animCap::placeholder,.anim-bar #animTitle::placeholder{color:rgba(255,255,255,.4);font-weight:var(--fw-body);}
   .anim-bar #animCap:focus,.anim-bar #animTitle:focus{border-color:#2fa8ff;}
   .anim-bar #animTitleColor{border:1px solid rgba(255,255,255,.25);height:26px;border-radius:8px;cursor:pointer;}
+  /* 2.721 — 보드 화면 워터마크(사용자 "워터마크 보드에 안보이는데"): 우측하단, 로고처럼 PRO 굵게 + CESS 가늘게. 화면 전용(HTML) — 내보내기는 _wmDraw 가 캔버스에 따로 그린다 */
+  #psWm{position:absolute;left:0;top:0;z-index:6;pointer-events:none;user-select:none;font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:clamp(10px,1.35vw,15px);line-height:1;letter-spacing:.06em;color:#fff;opacity:.55;text-shadow:0 1px 2px rgba(0,0,0,.45);white-space:nowrap;}
+  #psWm b{font-weight:800;}#psWm span{font-weight:300;}
+  html[data-pitch="white"] #psWm,html[data-pitch="train"] #psWm{color:#20242c;text-shadow:none;opacity:.42;}
   #animTitleBand{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:7;display:none;padding:7px 18px;border-radius:10px;font-weight:var(--fw-head);font-size:var(--fs-h2);color:#fff;max-width:76%;text-align:center;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 4px 14px rgba(0,0,0,.35);letter-spacing:-.01em;}
   /* 장면 깜박임(강조) — 편집 중 미리보기 펄스 + 버튼 on 상태 */
   .token.tok-blink{animation:psTokBlink .9s ease-in-out infinite;}
@@ -3337,6 +3341,19 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
       <div class="team-style-foot"><span class="team-style-help" id="teamStyleHelp">선택한 팀의 모든 일반 선수 토큰에 적용됩니다.</span><button class="team-style-reset" id="teamStyleResetAll" type="button">기본으로</button></div>
     </div>
     <div class="stage" id="boardStage">
+      <div id="psWm" aria-hidden="true"><b>PRO</b><span>CESS</span></div>
+      <script>/* 2.721 — 워터마크를 스테이지가 아니라 운동장 카드(#board svg)의 우측하단에 붙인다(스테이지 아래엔 도구 도크가 있다) */
+      (function(){ var el=document.getElementById("psWm"); if(!el)return;
+        function place(){ try{ var sv=document.getElementById("board"), st=el.parentElement; if(!sv||!st)return;
+          var b=sv.getBoundingClientRect(), s=st.getBoundingClientRect(); if(!b.width||!b.height){ el.style.display="none"; return; } el.style.display="";
+          var m=Math.max(8,Math.round(b.height*0.018));
+          el.style.left=Math.round(b.right-s.left-m-el.offsetWidth)+"px"; el.style.top=Math.round(b.bottom-s.top-m-el.offsetHeight)+"px"; }catch(_){} }
+        window.__psWmPlace=place;
+        try{ new ResizeObserver(place).observe(document.getElementById("board")); }catch(_){}
+        try{ new ResizeObserver(place).observe(el.parentElement); }catch(_){}
+        window.addEventListener("resize",place); window.addEventListener("orientationchange",place);
+        if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",place); setTimeout(place,0); setTimeout(place,400); setTimeout(place,1500);
+      })();</script>
       <svg class="board" id="board" xmlns="http://www.w3.org/2000/svg"></svg>
       <button id="mrToggle">명단</button>
       <div id="mrScrim"></div>
@@ -7063,9 +7080,11 @@ function _wmDraw(ctx,W,H,reel){ try{
   var fs=Math.max(9,Math.round(H*0.023)), m=Math.round(H*0.022);
   ctx.save(); ctx.globalAlpha=0.58; ctx.fillStyle="#ffffff"; ctx.shadowColor="rgba(0,0,0,.45)"; ctx.shadowBlur=Math.max(1,fs*0.18); ctx.shadowOffsetY=Math.max(1,Math.round(fs*0.06));
   ctx.font="800 "+fs+"px Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
-  var txt="P R O C E S S";   /* 자간 대신 띄어쓰기 — 캔버스 letterSpacing 미지원 브라우저 대비 */
-  if(reel){ ctx.textAlign="left"; ctx.textBaseline="top"; ctx.fillText(txt,m,Math.round(H*0.125)); }
-  else { ctx.textAlign="right"; ctx.textBaseline="bottom"; ctx.fillText(txt,W-m,H-m); }
+  /* 2.721 — 로고처럼 PRO 굵게 + CESS 가늘게 */
+  var FF="Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif", f1="800 "+fs+"px "+FF, f2="300 "+fs+"px "+FF;
+  ctx.font=f1; var w1=ctx.measureText("PRO").width; ctx.font=f2; var w2=ctx.measureText("CESS").width; var tw=w1+w2;
+  var x,y; if(reel){ ctx.textBaseline="top"; x=m; y=Math.round(H*0.125); } else { ctx.textBaseline="bottom"; x=W-m-tw; y=H-m; }
+  ctx.textAlign="left"; ctx.font=f1; ctx.fillText("PRO",x,y); ctx.font=f2; ctx.fillText("CESS",x+w1,y);
   ctx.restore(); }catch(_){} }
 function exportPNG(){if(!psVaultRequireLogin())return;if(sel){sel=null;renderTokens();renderDrawings();updateDelUI();}
   const {xml,w,h,gb}=boardImageXML();
