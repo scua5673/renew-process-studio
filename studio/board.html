@@ -9342,10 +9342,13 @@ body{padding:9mm 11mm;}
 .fsx-scn{position:relative;min-width:0;min-height:0;border-radius:1.4mm;overflow:hidden;background:#1b8044;}
 .fsx-scn svg{width:100%;height:100%;display:block;}
 .fsx-scn i{position:absolute;left:3px;top:2px;font-style:normal;font-size:8px;font-weight:800;color:#111;background:rgba(255,255,255,.85);border-radius:5px;padding:0 4px;line-height:1.55;}
-.fsx-memo{flex:0 0 auto;margin-top:1.8mm;display:flex;flex-direction:column;gap:1mm;}
-.fsx-ml{font-size:9px;line-height:1.3;color:#2a2e35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:3.4mm;}
-.fsx-ml b{font-weight:800;color:#666;font-size:8px;margin-right:1mm;letter-spacing:.02em;}
-.fsx-ml.coach b{color:#c0463f;}
+.fsx-memo{flex:0 0 auto;margin-top:1.6mm;display:flex;flex-direction:column;gap:1mm;}
+/* 2.714 — 방법·코칭 두 줄: 9.5px 진한 글자, 각 2줄까지 이어 쓰고 넘치면 …(예전 9px 회색 1줄). 라벨은 작은 알약, 코칭은 굵게 */
+.fsx-ml{display:flex;align-items:flex-start;gap:1.6mm;font-size:9.5px;line-height:1.35;color:#16181c;min-height:0;}
+.fsx-ml b{flex:0 0 auto;font-weight:800;color:#666;font-size:7.5px;letter-spacing:.03em;padding:.2mm 1.4mm;border:.3mm solid #e1e3e7;border-radius:3mm;margin-top:.3mm;white-space:nowrap;}
+.fsx-ml span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0;word-break:break-word;}
+.fsx-ml.coach b{color:#c0463f;border-color:#f0c9c6;}
+.fsx-ml.coach span{font-weight:600;}
 .fsx-card.empty{border-style:dashed;}
 .fsx-card.empty .fsx-no{background:none;border:1.2px solid #d9dde3;color:#8A9099;}
 .fsx-card.empty .fsx-nm{color:#8A9099;font-weight:700;}
@@ -9353,19 +9356,7 @@ body{padding:9mm 11mm;}
 .fsx-ml.rule{border-bottom:.35mm solid #E3E6EA;height:4mm;min-height:4mm;}
 .fsx-card.empty .fsx-dia{background:#fff;border:.4px solid #E3E6EA;}   /* 빈 칸은 모눈종이(흰 바탕) */
 body.ink .fsx-dia,body.ink .fsx-scn{background:#fff;}
-/* 2.713 — 한 장 4개는 그대로, 카드 안을 그림(56%) + 글 칸(44%)으로(사용자 "지금 것에서 컴팩트하게 방법과 코칭 포인트 잘 나오게").
-   글이 하나도 없는 훈련은 글 칸을 빼고 그림이 폭을 다 쓴다. 긴 글은 칸 안에서 …으로 접어 4장 배치를 지킨다. */
-.fsx-body{display:flex;gap:2.2mm;flex:1 1 auto;min-height:0;}
-.fsx-body .fsx-dia{flex:0 0 56%;width:56%;}
-.fsx-body.solo .fsx-dia{flex:1 1 auto;width:auto;}
-.fsx-txt{flex:1 1 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:1.6mm;}
-.fsx-blk{flex:1 1 0;min-height:0;overflow:hidden;border:.35mm solid #e1e3e7;border-radius:1.6mm;padding:1.4mm 1.8mm;display:flex;flex-direction:column;}
-.fsx-blk h5{margin:0 0 .8mm;font-size:7.5px;font-weight:800;letter-spacing:.05em;color:#666;text-transform:uppercase;flex:0 0 auto;}
-.fsx-blk.coach h5{color:#c0463f;}
-.fsx-blk p{margin:0;font-size:9.5px;line-height:1.42;color:#16181c;white-space:pre-wrap;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:8;}
-.fsx-blk.coach p{font-weight:600;}
-.fsx-blk.coach p .cp{display:block;}
-.fsx-blk.coach p .cp::before{content:"· ";color:#c0463f;font-weight:800;}
+/* 2.714 — 2.713 의 오른쪽 글 칸(.fsx-body/.fsx-txt/.fsx-blk)은 걷었다: 세로 운동장이 56% 칸에서 1/4 크기로 줄어 배치를 못 봤다(사용자) */
 `;
 /* 빈 칸용 — 잔디 대신 '모눈종이 + 옅은 운동장 라인'(사용자: 연필로 그려볼 수 있게).
    흰 바탕에 얇은 모눈, 그 위에 회색 필드 라인. 연필 자국이 잘 보이게 라인은 옅게. */
@@ -9417,11 +9408,12 @@ function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
     const minTxt=(+d.minutes||0)+"분"+((+d.sets>1)?("×"+(+d.sets)):"");
     return `<div class="fsx-card">
       <div class="fsx-ct"><div class="fsx-no">${i+1}</div><span class="fsx-dot" style="background:${f.c}"></span><div class="fsx-nm">${esc(d.name||("훈련 "+(i+1)))}</div><span class="fsx-tag">${f.label}</span><div class="fsx-min">${minTxt}</div><!-- 1.731 — 희미한 누적 경과(+N′) 제거(사용자 요청) --></div>
-      <div class="fsx-body${(l1||co)?"":" solo"}">${dia}${(l1||co)?('<div class="fsx-txt">'
-        +(l1?('<div class="fsx-blk"><h5>훈련 방법</h5><p>'+esc(l1)+'</p></div>'):'')
-        +(co?('<div class="fsx-blk coach"><h5>☞ 코칭 포인트</h5><p>'+co.split(/\n+/).map(function(x){return x.trim();}).filter(Boolean).map(function(x){return '<span class="cp">'+esc(x.replace(/^[-·•]\s*/,""))+'</span>';}).join("")+'</p></div>'):'')
-        +'</div>'):''}</div>
-    </div>`;};   /* 2.713 — 글 칸: 훈련 방법 / 코칭 포인트(줄마다 항목) */
+      ${dia}
+      ${(l1||co)?('<div class="fsx-memo">'
+        +(l1?('<div class="fsx-ml"><b>방법</b><span>'+esc(l1.replace(/\s*\n+\s*/g," · "))+'</span></div>'):'')
+        +(co?('<div class="fsx-ml coach"><b>☞ 코칭</b><span>'+esc(co.split(/\n+/).map(function(x){return x.trim().replace(/^[-·•]\s*/,"");}).filter(Boolean).join(" · "))+'</span></div>'):'')
+        +'</div>'):''}
+    </div>`;};   /* 2.714 — 운동장은 전폭(2.713 오른쪽 글 칸 되돌림), 밑에 방법·코칭 두 줄(각 2줄까지). 둘 다 없으면 줄 자체가 없다 */
   const blank=(i)=>`<div class="fsx-card empty">
     <div class="fsx-ct"><div class="fsx-no">${i+1}</div><div class="fsx-nm">훈련 ${i+1}</div><div class="fsx-min">비어 있음</div></div>
     <div class="fsx-dia">${BLANK_PITCH}</div>
