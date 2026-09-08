@@ -4277,7 +4277,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       .av-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:14px}
       .av-kpi>div{padding:2px 16px;border-left:1px solid var(--line)} .av-kpi>div:first-child{border-left:0;padding-left:2px}
       .av-kpi dt{font-size:12px;font-weight:600;color:var(--dim);margin-bottom:2px} .av-kpi dd{margin:0;font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums} .av-kpi dd span{font-size:13px;font-weight:500;color:var(--dim);margin-left:2px}
-      .av-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+      .av-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}  /* 2.694 — 날마다 한 칸 */
       .av-pn{background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0}
       .av-pn .hd{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px;font-weight:800} .av-pn .hd small{font-weight:500;color:var(--dim)}
       .av-row{display:grid;grid-template-columns:64px 44px minmax(0,1fr) 92px;gap:10px;align-items:center;padding:8px 14px;border-top:1px solid var(--line);font-size:13px}
@@ -12899,24 +12899,8 @@ function renderAvail(){
       +'<span class="av-bar" title="가능 '+c.ok+' · 조절 '+c.rest+' · 재활 '+c.rehab+' · 부상 '+c.injury+' · 불참 '+c.out+'">'+(c.rec?'<i class="ok" style="width:'+pct(c.ok,c.rec)+'%"></i><i class="re" style="width:'+pct(c.rehab+c.rest,c.rec)+'%"></i><i class="inj" style="width:'+pct(c.injury,c.rec)+'%"></i><i class="out" style="width:'+pct(c.out,c.rec)+'%"></i>':'')+'</span>'
       +'<span class="v">'+(c.rec?'<b>'+c.ok+'</b>/'+c.rec+'<small>쉼 '+rest+'</small>':'<small>기록 없음</small>')+'</span></div>'; });
   h+='<div class="av-lg"><span><i style="background:#1f8a4c"></i>가능</span><span><i style="background:#c77d00"></i>재활·조절</span><span><i style="background:#d4403a"></i>부상</span><span><i style="background:#8A9099"></i>불참</span></div></div>';
-  /* 선수별 */
-  var plist=ours.map(function(p){ var pp=perP[p.id], rest=pp.rest+pp.rehab+pp.injury+pp.out; return {p:p,pp:pp,rest:rest,rate:pct(pp.ok,pp.rec)}; })
-    .sort(function(a,b){ return (b.pp.rec?b.rate:-1)-(a.pp.rec?a.rate:-1)||(b.pp.ok-a.pp.ok); });
-  /* 2.538 — 선수 일지가 하나도 없으면 이 기능은 **화면에 없다**(거울: 없는 걸 말하지 않는다) */
-  var _lN=0,_dN=0,_dP=0;
-  plist.forEach(function(x){ if(x.pp.lrec){_lN++;} if(x.pp.dif){_dN+=x.pp.dif;_dP++;} });
-  h+='<div class="av-pn"><div class="hd">선수마다<small>훈련·경기일 기준 · 참여 / 쉼</small>'
-    +(_lN?'<em class="av-lsum">선수 일지 '+_lN+'명'+(_dN?' · 코치 기록과 어긋난 날 '+_dN:'')+'</em>':'')
-    +'</div>';
-  if(!plist.length)h+='<div class="av-empty">선수가 없어요.</div>';
-  plist.forEach(function(x){ var pp=x.pp, ps=(data.positions||[]).find(function(q){return q.id===x.p.posId;});
-    h+='<div class="av-row av-prow"><span class="nm">'+esc(x.p.name||"이름 없음")+'<small>'+esc(ps?(posAbbr(ps.name)||ps.name):"")+(x.p.grp?' · '+esc(x.p.grp):'')+'</small></span>'
-      +'<span class="av-bar" title="참여 '+pp.ok+' · 조절 '+pp.rest+' · 재활 '+pp.rehab+' · 부상 '+pp.injury+' · 불참 '+pp.out+'">'+(pp.rec?'<i class="ok" style="width:'+pct(pp.ok,pp.rec)+'%"></i><i class="re" style="width:'+pct(pp.rehab+pp.rest,pp.rec)+'%"></i><i class="inj" style="width:'+pct(pp.injury,pp.rec)+'%"></i><i class="out" style="width:'+pct(pp.out,pp.rec)+'%"></i>':'')+'</span>'
-      +'<span class="v">'+(pp.rec?'<b>'+pp.ok+'</b>/'+pp.rec+'일<small>쉼 '+x.rest+'</small>':'<small>기록 없음</small>')+'</span>'
-      /* 2.538 — 선수가 적은 것. 안 적은 사람에겐 아무것도 안 붙인다(빈 칸이 곧 «없음»이다) */
-      +(pp.lrec?'<span class="av-pl'+(pp.dif?' dif':'')+'" title="선수가 일지에 적은 것 — 참여 '+pp.lok+' / 적은 날 '+pp.lrec+(pp.dif?(' · 코치 기록과 어긋난 날 '+pp.dif):'')+'">선수 <b>'+pp.lok+'</b>/'+pp.lrec+(pp.dif?'<i>어긋남 '+pp.dif+'</i>':'')+'</span>':'')
-      +'</div>'; });
-  h+='</div></div>';
+  /* 2.694 — «선수마다» 카드 제거(사용자). 선수별 참여 수는 날마다 명단에서 보면 된다 */
+  h+='</div>';
   /* 2.530 — 되돌리지 않은 상태가 출석을 갉아먹는다. 오래 이어진 것을 한 줄로 모아 말한다. */
   try{
     var _long=[]; ours.forEach(function(p){
