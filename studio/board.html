@@ -7056,11 +7056,22 @@ function _boardImageXMLRaw(vbFix){
   xml=`<svg xmlns="${NS}" width="${w}" height="${h}" viewBox="${vb.join(" ")}">`+
       xml.replace(/^<svg[^>]*>/,"").replace(/<\/svg>$/,"")+`</svg>`;
   return {xml,w,h,gb,vb};}
+/* ══ 2.720 · 워터마크 — 내보내기(PNG·GIF·MP4) 결과물에만 «PROCESS» 글자 하나, 아주 작게(세로의 2.3%), 흰색 58%, 상자 없음(사용자 결정).
+   자리: 가로·PNG·GIF 는 우측하단(자막이 가운데라 비어 있고 어떤 플레이어도 안 덮는다) · 릴스 9:16 은 좌측상단(인스타 버튼 기둥이 우측하단을 덮는다;
+   제목띠 바로 아래 왼쪽, 인스타 상단 UI 아래). 편집 화면·썸네일에는 안 그린다(캔버스 단계에만). ══ */
+function _wmDraw(ctx,W,H,reel){ try{
+  var fs=Math.max(9,Math.round(H*0.023)), m=Math.round(H*0.022);
+  ctx.save(); ctx.globalAlpha=0.58; ctx.fillStyle="#ffffff"; ctx.shadowColor="rgba(0,0,0,.45)"; ctx.shadowBlur=Math.max(1,fs*0.18); ctx.shadowOffsetY=Math.max(1,Math.round(fs*0.06));
+  ctx.font="800 "+fs+"px Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+  var txt="P R O C E S S";   /* 자간 대신 띄어쓰기 — 캔버스 letterSpacing 미지원 브라우저 대비 */
+  if(reel){ ctx.textAlign="left"; ctx.textBaseline="top"; ctx.fillText(txt,m,Math.round(H*0.125)); }
+  else { ctx.textAlign="right"; ctx.textBaseline="bottom"; ctx.fillText(txt,W-m,H-m); }
+  ctx.restore(); }catch(_){} }
 function exportPNG(){if(!psVaultRequireLogin())return;if(sel){sel=null;renderTokens();renderDrawings();updateDelUI();}
   const {xml,w,h,gb}=boardImageXML();
   const img=new Image();img.onload=()=>{const s=2,c=document.createElement("canvas");
     c.width=w*s;c.height=h*s;const ctx=c.getContext("2d");ctx.fillStyle=gb;ctx.fillRect(0,0,c.width,c.height);
-    ctx.scale(s,s);ctx.drawImage(img,0,0,w,h);
+    ctx.scale(s,s);ctx.drawImage(img,0,0,w,h);ctx.setTransform(1,0,0,1,0,0);_wmDraw(ctx,c.width,c.height,false);   /* 2.720 */
     c.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="작전판.png";a.click();setTimeout(function(){try{URL.revokeObjectURL(a.href);}catch(_){}},5000);},"image/png");};
   img.onerror=()=>toast("이미지 생성 실패");img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(xml);}
 
@@ -7915,7 +7926,7 @@ async function exportVideo(opts){
   function paint(img,meta){
     if(dest){ ctx.fillStyle=dest.bg||"#0b1016"; ctx.fillRect(0,0,canvas.width,canvas.height); if(img)ctx.drawImage(img,dest.x,dest.y,dest.w,dest.h); }
     else { ctx.fillStyle=getCss("--grass-b")||"#1d8a47"; ctx.fillRect(0,0,canvas.width,canvas.height); if(img)ctx.drawImage(img,0,0,canvas.width,canvas.height); }
-    titleBar(); capBar(meta.cap,meta.idx); _pushFrame(); }
+    titleBar(); capBar(meta.cap,meta.idx); _wmDraw(ctx,canvas.width,canvas.height,!!(dest&&opts.reel)); _pushFrame(); }   /* 2.720 — 워터마크 */
   const T=1000/fps; let nextP=produce(0); const t0=performance.now()+T;
   for(let k=0;k<plan.length;k++){
     const img=await nextP;
@@ -8056,6 +8067,7 @@ async function exportGif(){
     async function addFrame(delayCs,cap,idx){
       await drawBoardToCanvas(ctx,canvas,uvb);
       try{_gifBakeOverlay(ctx,W,H,cap,idx,anim.frames.length,anim.title,anim.titleColor);}catch(_){}
+      _wmDraw(ctx,W,H,false);   /* 2.720 — 워터마크 */
       const px=__gifQuant(ctx.getImageData(0,0,W,H),W,H);
       [0x21,0xF9,4,4].forEach(b);le16(delayCs);b(0);b(0);   /* GCE */
       b(0x2C);le16(0);le16(0);le16(W);le16(H);b(0);          /* 이미지 디스크립터 */
