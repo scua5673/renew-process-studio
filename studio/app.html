@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.700';</script>
+<script>window.PS_BUILD='2.701';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1341,6 +1341,8 @@ function psShowUpdBand(){
     #psSyncStrip.ok{background:rgba(31,138,76,.10);color:#1F8A4C}#psSyncStrip.ok i{background:#1F8A4C}
     /* 2.651 — «괜찮은» 상태(ok·busy)는 한 줄을 다 쓰지 않는다(사용자 "오른쪽 상단에 아주 작게"). 띠 없이 오른쪽 위 구석에 점 + 짧은 글씨만.
        확인이 필요한 상태(ask·bad)는 그대로 띠 — 눈에 띄어야 하니까. 폰(≤600)은 머리줄이 좁아 지금처럼 */
+    /* 2.701 — 편집기(훈련 세션 만들기 등)가 열려 있는 동안 오른쪽 위 동기화 글씨(ok·busy 모두)를 숨긴다 — «저장하기»와 겹침. 2.698 에 넣은 규칙이 폰(≤600) 블록 안에 들어가 데스크톱·아이패드에서 안 먹었다(실측: busy 글씨 right 1153 = 저장하기 right 1153) */
+    body.ps-editor-open[data-ps-app="design"] #psSyncStrip,body.ps-editor-open[data-ps-app="board"] #psSyncStrip{display:none!important}
     @media (min-width:601px){
       /* 2.652 — 제 줄을 갖지 않고 **헤더 줄 안** 오른쪽 위 구석에 얹는다(사용자 "여기 헤더에 같이"). 흐름에서 빼(fixed) 본문이 맨 위부터 시작하고,
          프레임 머리줄(보드·보관함·IDP 상단 바)의 위 여백 자리(y 3~17)에 10px 글씨로만. 눌리는 것도 아니라 pointer-events 없음 */
@@ -1361,7 +1363,6 @@ function psShowUpdBand(){
       #psSyncStrip.ok,#psSyncStrip.busy{height:18px;justify-content:flex-end;gap:5px;padding:0 12px;background:transparent;border-bottom:0;font-size:10px;font-weight:600;color:var(--dim)}
       #psSyncStrip.ok{color:#1F8A4C}
       #psSyncStrip.ok i,#psSyncStrip.busy i{width:6px;height:6px}
-      body.ps-editor-open[data-ps-app="design"] #psSyncStrip,body.ps-editor-open[data-ps-app="board"] #psSyncStrip{display:none!important}   /* 2.698 — 편집기 머리줄 «저장하기» 자리와 겹치던 것 */
       #psSyncStrip.ok #psSyncStripTx,#psSyncStrip.busy #psSyncStripTx{flex:0 0 auto}
       #psSyncStrip.ok #psSyncStripAgo,#psSyncStrip.busy #psSyncStripAgo{margin-left:0;opacity:.7}
       #psSyncStrip.ok #psSyncStripAgo::before,#psSyncStrip.busy #psSyncStripAgo::before{content:'· '}
