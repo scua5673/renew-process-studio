@@ -460,6 +460,7 @@ body.fmdark .tb-pill.s1{border-color:#C9CFD8}   /* 2.641 — 남색 테두리가
 .tb-tray-h u{text-decoration:none;margin-left:auto;color:var(--dim);font-weight:800;font-size:11px}
 .tb-tray{display:flex;flex-wrap:wrap;gap:6px;min-height:26px}
 .tb-none{color:var(--dim);font-size:11px}
+.tb-tray-pos{display:inline-block;margin:0 8px 0 -4px;font-size:10px;font-weight:700;color:var(--dim,#6f7580);vertical-align:middle}   /* 2.699 — 미배치 줄의 포지션 표 */
 /* 열 수는 뷰포트가 아니라 실제 컨테이너 폭으로 정한다 — 좁은 영역에서 이름칸이 0px로 찌그러지는 것 방지 */
 #teamList.tm-4col{display:grid;grid-template-columns:minmax(0,1fr);gap:0 20px;align-items:start}   /* 2.249 — 1열(사용자): 조 구획이 위아래로. 전체 보기=모든 조, 조 칩=그 조만(tmGrpFlt) */
 .tm-grpbar{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 0 6px}   /* 2.250 — 명단 위 조 필터 줄 */
@@ -8896,14 +8897,14 @@ function printReport(){
 }
 /* ===== 팀 구성 (보드 선수단과 동일 데이터: cs_squad_v1) ===== */
 const TM_KEY="cs_squad_v1";
-const TM_POS=["GK","CB","LCB","RCB","LB","RB","DM","CM","AM","CF","LW","RW"];
-const TM_ALIAS={ST:"CF",LM:"LW",RM:"RW"};
+const TM_POS=["GK","CB","LCB","RCB","LB","RB","DM","CM","AM","CF","LW","RW","LM","RM"];
+const TM_ALIAS={ST:"CF"};   /* 2.699 — LM·RM 을 LW·RW 로 접던 것을 풀었다(사용자 "LM LW 정확 분리"). ST=CF 만 남김 */
 /* 포메이션별 기본 표시 라벨 — 매칭 키(LW/RW)는 유지하고 화면 표시만 바꾼다.
    예: 4-2-3-1은 측면을 윙어(LW/RW)가 아닌 측면 미드(LM/RM)로 부른다. */
-const FORM_LABEL={"4231":{LW:"LM",RW:"RM"}};
+const FORM_LABEL={};   /* 2.699 — 표시 라벨 바꿔치기 없음: 자리 키가 곧 이름(4-4-2 는 LM/RM, 4-3-3·4-2-3-1 은 LW/RW) */
 function formLabel(form,k){ return (FORM_LABEL[form]&&FORM_LABEL[form][k])||k; }
-const TM_NUM={GK:"1",LCB:"4",RCB:"5",CB:"5",LB:"3",RB:"2",DM:"6",CM:"8",AM:"10",RW:"11",LW:"7",CF:"9"};
-const TM_DEF={GK:[50,84],CB:[50,73],LCB:[33,78],RCB:[67,78],LB:[14,72],RB:[86,72],DM:[50,58],CM:[50,46],AM:[50,33],CF:[50,11],LW:[15,21],RW:[85,21]};
+const TM_NUM={GK:"1",LCB:"4",RCB:"5",CB:"5",LB:"3",RB:"2",DM:"6",CM:"8",AM:"10",RW:"11",LW:"7",CF:"9",LM:"11",RM:"7"};
+const TM_DEF={GK:[50,84],CB:[50,73],LCB:[33,78],RCB:[67,78],LB:[14,72],RB:[86,72],DM:[50,58],CM:[50,46],AM:[50,33],CF:[50,11],LW:[15,21],RW:[85,21],LM:[14,46],RM:[86,46]};
 /* ══ 2.098 · 명단 출력·매치데이 폼이 눌러도 아무 반응이 없던 이유 ════════════════════════
    `MDAY_FORM_LABEL` 이 **정의된 적이 없다.** 쓰는 곳은 둘(`mdayDocHTML`·`rosterDocHTML`)인데
    선언이 어디에도 없어 그 줄에서 ReferenceError 가 났고, onclick 안에서 던져진 예외라
@@ -8968,7 +8969,7 @@ const TM_FORMS={
         ["DM",50,54],["CM",32,43],["AM",68,43],
         ["LW",15,21],["RW",85,21],["CF",50,11]],
  "442":[["GK",50,84],["LB",14,72],["LCB",33,78],["RCB",67,78],["RB",86,72],
-        ["LW",14,46],["CM",38,48],["DM",62,48],["RW",86,46],
+        ["LM",14,46],["CM",38,48],["DM",62,48],["RM",86,46],   /* 2.699 — 4-4-2 측면은 LM/RM */
         ["CF",38,13],["CF",62,13]],
  "4231":[["GK",50,84],["LB",14,72],["LCB",33,78],["RCB",67,78],["RB",86,72],
         ["DM",38,57],["CM",62,57],
@@ -9516,12 +9517,13 @@ function tbGroups(){
        예전에 끌어 둔 그 자리로 그대로 돌아온다.
        (참고: LWB·RWB 는 어떤 포메이션 맵에도 없다 — 3-5-2 도 윙백을 LB/RB 로 잡는다.
         그래서 이 자리들은 '선수가 있을 때만' 나타난다.) */
-    var _has=!!(by[ps.id]&&by[ps.id].length);
-    if(_has||def[ab])list.push({id:ps.id,abbr:posAbbr(ps.name)||ps.name,ab:ab,players:by[ps.id]||[]});
+    /* 2.699 — 자리는 **지금 포메이션의 자리만**(사용자 "포지션이 딱 11자리만 나오게"). 포메이션에 없는 포지션(예: 4-3-3 의 LM)의 선수는
+       카드가 아니라 아래 «미배치» 줄에 포지션 이름을 달고 선다 — 억지로 다른 자리에 넣지 않는다. */
+    if(def[ab])list.push({id:ps.id,abbr:posAbbr(ps.name)||ps.name,ab:ab,players:by[ps.id]||[]});
   });
-  Object.keys(by).forEach(function(id){if(!list.some(function(g){return g.id===id;}))list.push({id:id,abbr:"?",ab:"?",players:by[id]});});
   return list;
 }
+function tbShownPosIds(){ var m={}; try{ tbGroups().forEach(function(g){ m[g.id]=1; }); }catch(_){} return m; }
 function tbPillHTML(p,first){
   /* 1.511 — 재활은 훈련에 들어오기 어려운 상태다(사용자 확정) → 부상과 같은 취급으로 보여준다.
      구분이 필요한 곳(기록·집계)은 status 값을 그대로 쓰므로 데이터는 잃지 않는다. */
@@ -9578,12 +9580,13 @@ function tbRender(){
   try{tbUnclutter(pitch);}catch(_){}   /* 1.672 — 겹침 해소(표시 전용) */
   var tray=$("tbTray");
   if(tray){
-    var _all=tbOurs();
-    var un=_all.filter(function(p){return !p.posId;});
+    var _all=tbOurs(), _shown=tbShownPosIds();
+    var un=_all.filter(function(p){return !p.posId||!_shown[p.posId];});   /* 2.699 — 포메이션에 없는 자리의 선수도 여기 */
     if($("tbTrayN"))$("tbTrayN").textContent=un.length+"명";
     /* 1.574 — 선수가 하나도 없을 때도 "모든 선수가 배치됐습니다"라고 말하던 것.
        0명인데 '다 배치했다'는 참이 아니고, 무엇을 해야 하는지도 안 알려 준다. 두 경우를 갈라 말한다. */
-    tray.innerHTML=un.length?un.map(function(p){return tbPillHTML(p,false);}).join("")
+    tray.innerHTML=un.length?un.map(function(p){ var _po=p.posId?(data.positions||[]).find(function(x){return x.id===p.posId;}):null; var _ab=_po?(posAbbr(_po.name)||_po.name):"";
+        return tbPillHTML(p,false)+(_ab?'<span class="tb-tray-pos" title="이 포메이션에 없는 자리">'+esc(_ab)+'</span>':''); }).join("")
       :'<span class="tb-none">'+(_all.length?'모든 선수가 배치됐습니다':'아직 등록된 선수가 없습니다')+'</span>';
   }
   tbWire();
