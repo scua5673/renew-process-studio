@@ -181,6 +181,8 @@
   .err-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:rgba(224,86,102,.12);color:#ef9eaa;font:750 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
   .err-msg{max-width:460px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim);font-size:10px}
   .err-meta{font:600 10px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim2);word-break:break-word}
+  .err-title{font-weight:800;font-size:12px;color:var(--txt);line-height:1.35}
+  .err-cause{margin-top:4px;color:var(--dim);font-size:10px;line-height:1.45;max-width:520px}
   @media(max-width:620px){.err-kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:460px){.health-grid{grid-template-columns:1fr}.health-card{min-height:58px}.health-card b{display:inline;margin-right:8px}}
   .eval-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 13px}
@@ -324,6 +326,12 @@
           </select>
           <select id="errKind" onchange="renderErrors()" style="height:30px;font-size:11px">
             <option value="all">전체 오류</option><option value="app">앱 오류만</option><option value="sync">동기화만</option>
+          </select>
+          <select id="errGroupSort" onchange="renderErrors()" style="height:30px;font-size:11px">
+            <option value="count">묶음: 많은 순</option><option value="users">묶음: 사용자 많은 순</option><option value="last">묶음: 최근 순</option><option value="code">묶음: 오류명 순</option><option value="device">묶음: 기기 순</option><option value="version">묶음: 버전 순</option>
+          </select>
+          <select id="errRecentSort" onchange="renderErrors()" style="height:30px;font-size:11px">
+            <option value="last">목록: 최근 순</option><option value="code">목록: 오류명 순</option><option value="device">목록: 기기 순</option><option value="user">목록: 사용자 순</option><option value="feature">목록: 기능 순</option>
           </select>
           <input id="errSearch" placeholder="오류·기기·버전·사용자 검색" oninput="renderErrors()" style="height:30px;min-width:210px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);border-radius:8px;padding:0 10px;font-size:11px">
           <button type="button" class="rowbtn" onclick="loadErrors(true)">새로고침</button>
@@ -775,6 +783,40 @@ function errMeta(e,k){
 }
 function errCode(e){ return e.error_code||e.event_name||'unknown'; }
 function errKindOf(e){ return e.event_name==='sync_failed'||e.feature==='sync'?'sync':'app'; }
+function errHuman(code,event,stage,msg){
+  code=String(code||'unknown'); event=String(event||''); stage=String(stage||''); msg=String(msg||'');
+  var map={
+    promise_rejection:['처리되지 않은 작업 실패','앱의 비동기 작업이 실패했지만 해당 화면에서 따로 처리하지 못했습니다. 아래 메시지와 stage를 보고 어느 저장/이동/불러오기 작업인지 확인하세요.'],
+    js_error:['스크립트 오류','화면 실행 중 JavaScript 예외가 발생했습니다. 같은 기기와 버전에서 반복되면 해당 화면 코드 결함일 가능성이 큽니다.'],
+    sync_network:['동기화 연결 실패','서버 요청이 중간에 끊겼습니다. 네트워크 불안정, 앱 새로고침, 팀 전환 중 요청 중단, 브라우저의 fetch 실패가 흔한 원인입니다.'],
+    sync_timeout:['동기화 시간 초과','서버 응답이나 큰 문서 전송이 제한 시간 안에 끝나지 않았습니다. 큰 팀 문서, 느린 회선, 서버 지연을 확인하세요.'],
+    sync_offline:['오프라인 동기화 보류','기기가 오프라인이라 서버에 올리지 못했습니다. 자료는 기기에 남고 온라인 복구 뒤 재시도됩니다.'],
+    sync_auth:['로그인 세션 만료','토큰 갱신이나 인증 확인에 실패했습니다. 사용자는 다시 로그인해야 할 수 있습니다.'],
+    sync_permission:['권한 거부','현재 계정이 해당 팀 자료를 수정할 권한이 없습니다. 팀 권한표와 역할을 확인하세요.'],
+    sync_rate_limit:['요청 과다','짧은 시간에 요청이 많아 서버가 제한했습니다. 자동 재시도 후에도 반복되면 동기화 호출 빈도를 봐야 합니다.'],
+    sync_server:['서버 오류','Supabase/PostgREST가 5xx 계열 오류를 반환했습니다. 같은 시간대 서버 상태와 백엔드 로그를 확인하세요.'],
+    sync_storage:['기기 저장소 오류','localStorage 또는 IndexedDB 읽기/쓰기 실패입니다. 저장공간 부족, 브라우저 저장소 제한, 깨진 IndexedDB 가능성이 있습니다.'],
+    sync_unexpected:['예상 밖 동기화 오류','분류되지 않은 동기화 실패입니다. 메시지와 stage를 기준으로 추가 분류가 필요합니다.']
+  };
+  var r=map[code]||null;
+  if(!r&&/^sync_http_/.test(code))r=['동기화 HTTP 오류','서버가 HTTP '+code.replace('sync_http_','')+' 응답을 반환했습니다. 권한, 요청 형식, 서버 정책을 확인하세요.'];
+  if(!r)r=[event==='sync_failed'?'동기화 실패':'앱 오류','아직 사람이 읽는 설명이 없는 오류입니다. stage와 메시지를 보고 분류를 추가하세요.'];
+  var cause=r[1];
+  if(stage)cause+=' stage: '+stage+'.';
+  if(/load failed|failed to fetch|network/i.test(msg)&&code!=='sync_network')cause+=' 메시지는 네트워크 계열 실패처럼 보입니다.';
+  if(/quota|indexeddb|storage/i.test(msg)&&code!=='sync_storage')cause+=' 메시지는 기기 저장소 문제처럼 보입니다.';
+  return {name:r[0],cause:cause};
+}
+function errSortRows(rows,mode){
+  rows=rows.slice(); mode=mode||'last';
+  return rows.sort(function(a,b){
+    if(mode==='code')return String(errCode(a)).localeCompare(String(errCode(b)))||new Date(b.created_at)-new Date(a.created_at);
+    if(mode==='device')return String(a.device||'').localeCompare(String(b.device||''))||new Date(b.created_at)-new Date(a.created_at);
+    if(mode==='user')return String(errUserName(a.user_id)).localeCompare(String(errUserName(b.user_id)))||new Date(b.created_at)-new Date(a.created_at);
+    if(mode==='feature')return String(a.feature||'').localeCompare(String(b.feature||''))||new Date(b.created_at)-new Date(a.created_at);
+    return new Date(b.created_at)-new Date(a.created_at);
+  });
+}
 function loadErrors(force){
   if(ERR_BUSY)return;
   var days=errDaysVal();
@@ -803,10 +845,12 @@ function renderErrors(){
     return;
   }
   var kind=(($('errKind')||{}).value)||'all', term=String((($('errSearch')||{}).value)||'').toLowerCase().trim();
+  var groupSort=(($('errGroupSort')||{}).value)||'count', recentSort=(($('errRecentSort')||{}).value)||'last';
   var rows=ERR.rows.filter(function(e){
     if(kind!=='all'&&errKindOf(e)!==kind)return false;
     if(!term)return true;
-    var hay=[errCode(e),e.event_name,e.feature,e.device,e.app_version,errUserName(e.user_id),errMeta(e,'stage'),errMeta(e,'msg')].join(' ').toLowerCase();
+    var hm=errHuman(errCode(e),e.event_name,errMeta(e,'stage'),errMeta(e,'msg'));
+    var hay=[errCode(e),hm.name,hm.cause,e.event_name,e.feature,e.device,e.app_version,errUserName(e.user_id),errMeta(e,'stage'),errMeta(e,'msg')].join(' ').toLowerCase();
     return hay.indexOf(term)>=0;
   });
   var users={}, devices={}, versions={}, codes={};
@@ -828,21 +872,29 @@ function renderErrors(){
     var ms=errMeta(e,'msg'); if(ms)g.msg[ms]=(g.msg[ms]||0)+1;
   });
   var top=function(o){ var a=Object.keys(o||{}).sort(function(x,y){return o[y]-o[x];}); return a[0]||''; };
-  var list=Object.keys(groups).map(function(k){ var g=groups[k]; g.u=Object.keys(g.users).length; g.topStage=top(g.stage); g.topMsg=top(g.msg); return g; })
-    .sort(function(a,b){return b.n-a.n||b.u-a.u||new Date(b.last)-new Date(a.last);});
-  $('errGroups').innerHTML=list.length?'<div class="tablewrap"><table><thead><tr><th>오류</th><th>기능</th><th>기기</th><th>앱 버전</th><th>횟수</th><th>사용자</th><th>stage / 메시지</th><th>마지막</th></tr></thead><tbody>'
-    +list.map(function(g){return '<tr><td><span class="err-pill">'+esc(g.code)+'</span><div class="muted" style="font-size:10px;margin-top:4px">'+esc(g.event)+'</div></td>'
+  var list=Object.keys(groups).map(function(k){ var g=groups[k]; g.u=Object.keys(g.users).length; g.topStage=top(g.stage); g.topMsg=top(g.msg); return g; });
+  list.sort(function(a,b){
+    if(groupSort==='users')return b.u-a.u||b.n-a.n||new Date(b.last)-new Date(a.last);
+    if(groupSort==='last')return new Date(b.last)-new Date(a.last)||b.n-a.n;
+    if(groupSort==='code')return String(a.code).localeCompare(String(b.code))||b.n-a.n;
+    if(groupSort==='device')return String(a.device).localeCompare(String(b.device))||b.n-a.n;
+    if(groupSort==='version')return String(a.version).localeCompare(String(b.version))||b.n-a.n;
+    return b.n-a.n||b.u-a.u||new Date(b.last)-new Date(a.last);
+  });
+  $('errGroups').innerHTML=list.length?'<div class="tablewrap"><table><thead><tr><th>오류명</th><th>기능</th><th>기기</th><th>앱 버전</th><th>횟수</th><th>사용자</th><th>원인 추정</th><th>마지막</th></tr></thead><tbody>'
+    +list.map(function(g){var hm=errHuman(g.code,g.event,g.topStage,g.topMsg);return '<tr><td><div class="err-title">'+esc(hm.name)+'</div><span class="err-pill">'+esc(g.code)+'</span><div class="muted" style="font-size:10px;margin-top:4px">'+esc(g.event)+'</div></td>'
       +'<td>'+esc(featureLabel(g.feature))+'</td><td><b>'+esc(g.device)+'</b></td><td>'+esc(g.version)+'</td><td><b>'+g.n+'</b>건</td><td>'+g.u+'명</td>'
-      +'<td><div class="err-meta">'+esc(g.topStage||'stage 없음')+'</div><div class="err-msg" title="'+esc(g.topMsg)+'">'+esc(g.topMsg||'메시지 없음')+'</div></td><td>'+fmtDateT(g.last)+'</td></tr>';}).join('')
+      +'<td><div class="err-cause">'+esc(hm.cause)+'</div><div class="err-msg" title="'+esc(g.topMsg)+'">'+esc(g.topMsg||'메시지 없음')+'</div></td><td>'+fmtDateT(g.last)+'</td></tr>';}).join('')
     +'</tbody></table></div>':'<div class="empty">조건에 맞는 오류가 없습니다.</div>';
 
-  $('errRecent').innerHTML=rows.length?'<div class="tablewrap"><table><thead><tr><th>발생</th><th>사용자</th><th>오류</th><th>기기</th><th>기능·버전</th><th>stage</th><th>메시지</th></tr></thead><tbody>'
-    +rows.slice(0,120).map(function(e){ var msg=errMeta(e,'msg'), stage=errMeta(e,'stage');
-      return '<tr><td>'+fmtDateT(e.created_at)+'</td><td>'+esc(errUserName(e.user_id))+'</td><td><span class="err-pill">'+esc(errCode(e))+'</span><div class="muted" style="font-size:10px;margin-top:4px">'+esc(e.event_name||'')+'</div></td>'
+  var recent=errSortRows(rows,recentSort);
+  $('errRecent').innerHTML=recent.length?'<div class="tablewrap"><table><thead><tr><th>발생</th><th>사용자</th><th>오류명</th><th>기기</th><th>기능·버전</th><th>stage</th><th>원인 / 메시지</th></tr></thead><tbody>'
+    +recent.slice(0,120).map(function(e){ var msg=errMeta(e,'msg'), stage=errMeta(e,'stage'), hm=errHuman(errCode(e),e.event_name,stage,msg);
+      return '<tr><td>'+fmtDateT(e.created_at)+'</td><td>'+esc(errUserName(e.user_id))+'</td><td><div class="err-title">'+esc(hm.name)+'</div><span class="err-pill">'+esc(errCode(e))+'</span><div class="muted" style="font-size:10px;margin-top:4px">'+esc(e.event_name||'')+'</div></td>'
         +'<td><b>'+esc(e.device||'—')+'</b></td><td>'+esc(featureLabel(e.feature))+'<div class="muted" style="font-size:10px">'+esc(e.app_version||'버전 없음')+'</div></td>'
-        +'<td><div class="err-meta">'+esc(stage||'—')+'</div></td><td><div class="err-msg" title="'+esc(msg)+'">'+esc(msg||'—')+'</div></td></tr>';
+        +'<td><div class="err-meta">'+esc(stage||'—')+'</div></td><td><div class="err-cause">'+esc(hm.cause)+'</div><div class="err-msg" title="'+esc(msg)+'">'+esc(msg||'—')+'</div></td></tr>';
     }).join('')+'</tbody></table></div>'
-    +(rows.length>120?'<div class="muted" style="font-size:11px;margin-top:8px">최근 120건만 표시합니다. 묶음 표는 현재 조건의 전체 '+rows.length.toLocaleString()+'건 기준입니다.</div>':'')
+    +(recent.length>120?'<div class="muted" style="font-size:11px;margin-top:8px">목록은 120건만 표시합니다. 묶음 표는 현재 조건의 전체 '+recent.length.toLocaleString()+'건 기준입니다.</div>':'')
     :'<div class="empty">조건에 맞는 오류가 없습니다.</div>';
 }
 /* ===== 홈 — 모든 데이터 한눈에 ===== */
