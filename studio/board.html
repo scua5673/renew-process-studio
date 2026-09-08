@@ -8763,13 +8763,25 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
     var slots=(FORM[formKey]||FORM["433"]||[]).slice(0,11),pool=sq.filter(function(p){return p&&String(p.name||"").trim();}),picked=[];
     function normPos(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");}
     function groupPos(v){v=normPos(v);if(v==="GK")return"GK";if(/CB|LB|RB|WB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";}
-    slots.forEach(function(sl){
-      var want=normPos(sl[3]),idx=pool.findIndex(function(p){return normPos(p.pos)===want;});
-      if(idx<0)idx=pool.findIndex(function(p){return groupPos(p.pos)===groupPos(want);});
-      if(idx<0&&pool.length)idx=0;
-      picked.push(idx>=0?pool.splice(idx,1)[0]:null);
-    });
-    sq=picked.filter(Boolean).concat(opts.startersOnly?[]:pool);opts.formationSlots=slots;   /* 2.683 — 남는 선수는 뒤에 붙여 대기줄로 */
+    /* 2.699 — 조·전체 불러오기는 **정확히 자기 포지션**으로만(사용자 "빈자리를 억지로 채우지 말고 정확히 자기 포지션으로").
+       LCB·RCB·CB 는 한 포지션(CB), LCM·RCM·CM 도 하나(CM), ST·CF 도 하나(ST)로 본다. 맞는 자리가 없으면 그 자리는 비워 두고,
+       포메이션에 없는 포지션(예: 433 의 LM)은 그 포지션의 기본 자리에 선다. 포지션이 없는 선수만 오른쪽 대기줄. 선발(startersOnly)만 예전처럼 채운다. */
+    function basePos(v){ v=normPos(v); if(/^(L|R)?CB$/.test(v))return"CB"; if(/^(L|R)?CM$/.test(v))return"CM"; if(v==="CF")return"ST"; if(v==="LWB")return"LB"; if(v==="RWB")return"RB"; return v; }
+    var extra=[];
+    if(opts.startersOnly){
+      slots.forEach(function(sl){
+        var want=normPos(sl[3]),idx=pool.findIndex(function(p){return normPos(p.pos)===want;});
+        if(idx<0)idx=pool.findIndex(function(p){return groupPos(p.pos)===groupPos(want);});
+        if(idx<0&&pool.length)idx=0;
+        picked.push(idx>=0?pool.splice(idx,1)[0]:null);
+      });
+    } else {
+      picked=slots.map(function(){return null;});
+      pool.forEach(function(p){ var b=basePos(p.pos); var i=-1; if(b){ i=slots.findIndex(function(sl,j){return !picked[j]&&basePos(sl[3])===b;}); }
+        if(i>=0)picked[i]=p; else extra.push(p); });
+      pool=[];
+    }
+    sq=picked.filter(Boolean).concat(opts.startersOnly?[]:pool.concat(extra));opts.formationSlots=slots;opts.formationPicked=picked;opts.formationExtra=opts.startersOnly?[]:extra;
     if(!sq.length){toast("이 포메이션에 배치할 실제 선수가 없어요 — 팀 메뉴에서 이름과 포지션을 등록하세요");return;}
   }
   pushUndo();
@@ -8826,15 +8838,17 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
      자기 골문 쪽으로 한 칸씩(0.068), 자리가 없으면(GK·끝줄) 앞쪽으로 이어 선다. 같은 포지션 자리가 여럿(LCB·RCB)이면 덜 찬 자리부터. */
   function _queueBySlot(extra,place){ var slots=opts.formationSlots||[], cnt=slots.map(function(){return 0;}), step=0.068;   /* 세로 보기(폰·아이패드)에서 토큰 지름이 0.05 쯤이라 0.052 는 붙는다(실측) */
     function np(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");}
-    function gp(v){v=np(v);if(v==="GK")return"GK";if(/CB|LB|RB|WB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";}
-    extra.forEach(function(pl){ var want=np(pl.pos), cand=[];
-      slots.forEach(function(sl,i){ if(np(sl[3])===want)cand.push(i); });
-      if(!cand.length)slots.forEach(function(sl,i){ if(gp(sl[3])===gp(want))cand.push(i); });
-      if(!cand.length)cand=slots.map(function(_,i){return i;});
-      if(!cand.length){ place(pl,0.5,0.5); return; }
-      var si=cand.reduce(function(a2,b2){return cnt[b2]<cnt[a2]?b2:a2;}); var k=++cnt[si], sl=slots[si];
-      var fit=Math.max(0,Math.floor((sl[0]-0.03)/step)); var x=(k<=fit)?(sl[0]-step*k):(sl[0]+step*(k-fit));
-      place(pl,x,sl[1]); }); }
+    function bp(v){ v=np(v); if(/^(L|R)?CB$/.test(v))return"CB"; if(/^(L|R)?CM$/.test(v))return"CM"; if(v==="CF")return"ST"; if(v==="LWB")return"LB"; if(v==="RWB")return"RB"; return v; }
+    /* 2.699 — 포메이션에 그 포지션 자리가 없을 때 서는 기본 자리(가로 기준 정규 좌표) */
+    var DEF={GK:[.045,.5],LB:[.15,.15],CB:[.15,.5],RB:[.15,.85],DM:[.24,.5],LM:[.30,.16],CM:[.30,.5],RM:[.30,.84],AM:[.37,.5],LW:[.44,.18],ST:[.44,.5],RW:[.44,.82]};
+    var dcnt={}, rest2=[];
+    function queueAt(pl,x0,y0,k){ var fit=Math.max(0,Math.floor((x0-0.03)/step)); var x=(k<=fit)?(x0-step*k):(x0+step*(k-fit)); place(pl,x,y0); }
+    extra.forEach(function(pl){ var want=bp(pl.pos), cand=[];
+      if(want)slots.forEach(function(sl,i){ if(bp(sl[3])===want)cand.push(i); });   /* 정확히 같은 포지션 자리만 */
+      if(cand.length){ var si=cand.reduce(function(a2,b2){return cnt[b2]<cnt[a2]?b2:a2;}); var k=++cnt[si], sl=slots[si]; queueAt(pl,sl[0],sl[1],k); return; }
+      if(want&&DEF[want]){ var k2=(dcnt[want]=(dcnt[want]||0)+1)-1; queueAt(pl,DEF[want][0],DEF[want][1],k2); return; }   /* 포메이션에 없는 포지션 — 기본 자리 */
+      rest2.push(pl); });
+    if(rest2.length)_placeWaiting(rest2); }
   if(_rects && !opts.formationSlots){
     /* 돌아가며 나눈다 — 앞에서부터 잘라 담으면 GK 가 전부 한 운동장에 몰린다.
        ⚠ 순서는 GK→DF→MF→FW→미지정. 그 순서로 돌리면 자리 구성이 고르게 섞인다. */
@@ -8846,12 +8860,12 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
     window.__psSquadSpread={n:_rects.length, per:_groups.map(function(g){return g.length;})};
   }else if(_rects && opts.formationSlots){
     /* 포메이션은 **한 팀의 모양**이라 나누지 않는다 — 첫 운동장에 그 운동장 크기로 얹는다 */
-    sq.slice(0,11).forEach(function(pl,i){ var sl=opts.formationSlots[i]; putIn(pl,_rects[0],sl[0],sl[1],gi++); });
-    if(sq.length>11)_queueBySlot(sq.slice(11),function(pl,x,y){ putIn(pl,_rects[0],x,y,gi++); });
+    (opts.formationPicked||sq.slice(0,11)).forEach(function(pl,i){ if(!pl)return; var sl=opts.formationSlots[i]; putIn(pl,_rects[0],sl[0],sl[1],gi++); });   /* 2.699 — 빈 자리는 비워 둔다 */
+    var _ex1=opts.formationExtra||sq.slice(11); if(_ex1.length)_queueBySlot(_ex1,function(pl,x,y){ putIn(pl,_rects[0],x,y,gi++); });
     window.__psSquadSpread={n:1, per:[Math.min(11,sq.length)], formation:true};
   }else if(opts.formationSlots){
-    sq.slice(0,11).forEach(function(pl,i){var sl=opts.formationSlots[i];put(pl,sl[0],sl[1],gi++);});
-    if(sq.length>11)_queueBySlot(sq.slice(11),function(pl,x,y){ put(pl,x,y,gi++); });
+    (opts.formationPicked||sq.slice(0,11)).forEach(function(pl,i){ if(!pl)return; var sl=opts.formationSlots[i]; put(pl,sl[0],sl[1],gi++); });   /* 2.699 — 빈 자리는 비워 둔다 */
+    var _ex2=opts.formationExtra||sq.slice(11); if(_ex2.length)_queueBySlot(_ex2,function(pl,x,y){ put(pl,x,y,gi++); });
     window.__psSquadSpread=null;
   }else{
     ["GK","DF","MF","FW"].forEach(g=>{const arr=bucket[g].sort((a,b)=>numv(a)-numv(b));

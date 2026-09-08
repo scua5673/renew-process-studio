@@ -331,7 +331,7 @@ html.ps-page-idp .pf-grid .fld:has(> select[data-f="band"]){display:none!importa
        명단은 표 대신 카드(1행 번호·이름(크게)·상태·조 / 2행 IDP·프로필·순서). 마크업·JS 불변. */
 html.ps-page-scout #teamView .tm-head{gap:8px!important;}
 /* 1.976 — 선수단 헤더의 '포메이션' 셀렉트 제거(사용자 "이건 지워죠"). 값은 유지되고 ＋자리는 남는다. 되돌리려면 이 줄만 지우면 됨 */
-html.ps-page-scout #teamView .tm-workbar .tm-head-set > label.tm-set-it:has(#tmForm){display:none!important;}
+/* 2.699 — 포메이션 셀렉트 다시 보이기(사용자 "여기에 포메이션도 추가해줘"). 1.976 의 숨김 규칙을 걷었다 */
 html.ps-page-scout #teamView .tm-hero{gap:14px!important;padding:2px 2px 8px!important;}
 html.ps-page-scout #teamView .tm-workbar{display:flex!important;align-items:center!important;gap:10px 14px!important;flex-wrap:wrap!important;}
 html.ps-page-scout #teamView .tm-workbar .tm-head-set{margin-left:auto!important;border-top:0!important;padding:0!important;gap:12px!important;}
