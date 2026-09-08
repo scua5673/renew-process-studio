@@ -8822,6 +8822,19 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
     list.forEach(pl=>{const k=(pl.pos||"").toUpperCase();const g=Object.keys(GRP).find(gk=>GRP[gk].indexOf(k)>=0);if(g)b[g].push(pl);else r.push(pl);});
     ["GK","DF","MF","FW"].forEach(g=>{b[g].sort((a,c)=>numv(a)-numv(c)).forEach((pl,j)=>{put(pl,0.955-j*0.055,ROW_Y[g],gi++);});});
     r.forEach((pl,j)=>{put(pl,0.955-j*0.055,0.965,gi++);}); }
+  /* 2.698 — 조·전체 불러오기: 11명 뒤의 선수는 오른쪽 대기줄이 아니라 **같은 포지션 자리 뒤로 줄줄이**(사용자 "11명만이 아니고 선수들이 줄줄이 포지션별로 따라오게").
+     자기 골문 쪽으로 한 칸씩(0.068), 자리가 없으면(GK·끝줄) 앞쪽으로 이어 선다. 같은 포지션 자리가 여럿(LCB·RCB)이면 덜 찬 자리부터. */
+  function _queueBySlot(extra,place){ var slots=opts.formationSlots||[], cnt=slots.map(function(){return 0;}), step=0.068;   /* 세로 보기(폰·아이패드)에서 토큰 지름이 0.05 쯤이라 0.052 는 붙는다(실측) */
+    function np(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");}
+    function gp(v){v=np(v);if(v==="GK")return"GK";if(/CB|LB|RB|WB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";}
+    extra.forEach(function(pl){ var want=np(pl.pos), cand=[];
+      slots.forEach(function(sl,i){ if(np(sl[3])===want)cand.push(i); });
+      if(!cand.length)slots.forEach(function(sl,i){ if(gp(sl[3])===gp(want))cand.push(i); });
+      if(!cand.length)cand=slots.map(function(_,i){return i;});
+      if(!cand.length){ place(pl,0.5,0.5); return; }
+      var si=cand.reduce(function(a2,b2){return cnt[b2]<cnt[a2]?b2:a2;}); var k=++cnt[si], sl=slots[si];
+      var fit=Math.max(0,Math.floor((sl[0]-0.03)/step)); var x=(k<=fit)?(sl[0]-step*k):(sl[0]+step*(k-fit));
+      place(pl,x,sl[1]); }); }
   if(_rects && !opts.formationSlots){
     /* 돌아가며 나눈다 — 앞에서부터 잘라 담으면 GK 가 전부 한 운동장에 몰린다.
        ⚠ 순서는 GK→DF→MF→FW→미지정. 그 순서로 돌리면 자리 구성이 고르게 섞인다. */
@@ -8834,11 +8847,11 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   }else if(_rects && opts.formationSlots){
     /* 포메이션은 **한 팀의 모양**이라 나누지 않는다 — 첫 운동장에 그 운동장 크기로 얹는다 */
     sq.slice(0,11).forEach(function(pl,i){ var sl=opts.formationSlots[i]; putIn(pl,_rects[0],sl[0],sl[1],gi++); });
-    if(sq.length>11)_placeWaiting(sq.slice(11));
+    if(sq.length>11)_queueBySlot(sq.slice(11),function(pl,x,y){ putIn(pl,_rects[0],x,y,gi++); });
     window.__psSquadSpread={n:1, per:[Math.min(11,sq.length)], formation:true};
   }else if(opts.formationSlots){
     sq.slice(0,11).forEach(function(pl,i){var sl=opts.formationSlots[i];put(pl,sl[0],sl[1],gi++);});
-    if(sq.length>11)_placeWaiting(sq.slice(11));
+    if(sq.length>11)_queueBySlot(sq.slice(11),function(pl,x,y){ put(pl,x,y,gi++); });
     window.__psSquadSpread=null;
   }else{
     ["GK","DF","MF","FW"].forEach(g=>{const arr=bucket[g].sort((a,b)=>numv(a)-numv(b));
@@ -9612,7 +9625,9 @@ window.updateTwRosterTop=updateTwRosterTop;
 function startTrainingWizard(){
   var now=new Date(),today=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
   var defaultName=(now.getMonth()+1)+"월 "+now.getDate()+"일 훈련";
-  __trainingWizardActive=true;__trainingWizardStep=3;window.__trainingSessionMeta={name:editorFileName||defaultName,date:session.date||today,time:session.time||"",players:session.players||"",team:"",goal:""};
+  /* 2.698 — 출석에서 온 날짜 프리셋: 그 날이 오늘이 아니어도 그 날짜·그 날 이름으로 */
+  var _pre=window.__schedPreset||null; if(_pre&&_pre.date&&/^\d{4}-\d{2}-\d{2}$/.test(_pre.date)){ today=_pre.date; var _pd=new Date(_pre.date+"T00:00:00"); if(!isNaN(_pd.getTime()))defaultName=(_pd.getMonth()+1)+"월 "+_pd.getDate()+"일 훈련"; }
+  __trainingWizardActive=true;__trainingWizardStep=3;window.__trainingSessionMeta={name:editorFileName||defaultName,date:(_pre&&_pre.date)||session.date||today,time:session.time||"",players:session.players||"",team:"",goal:""};
   editorFileName=window.__trainingSessionMeta.name;
   try{$("modalTitle").textContent="훈련 세션 만들기";}catch(_){}
   /* 1.616 — **'훈련 구성'에서 시작한다**(사용자 지시: "이런 단계 필요없고 바로 이 화면 나오게,
@@ -10016,6 +10031,8 @@ function renderEpSquadLoad(){
 function epAutoRoster(){
   try{
     var empty=function(v){return v==null||String(v).trim()==="";};
+    /* 2.698 — 출석 그 날 카드에서 온 인원 프리셋이 있으면 선수단 대신 그것으로(한 번 소비) */
+    var _pr=window.__schedPreset&&window.__schedPreset.roster; if(_pr){ window.__rosterFromAtt=true; syncEpRosterUI({counts:_pr,syncInputs:true}); return true; }
     if(!(empty(session.pGk)&&empty(session.pField)&&empty(session.pRehab)&&empty(session.pOut)))return false;
     var info=epSquadInfo(); if(!info.players.length)return false;
     function isGK(p){return /GK|GOALKEEPER|골키퍼|키퍼/.test(String(p.pos||"").toUpperCase());}
@@ -10070,7 +10087,7 @@ async function openLibDrawEditor(libId, readOnly){
     editorSaveStatus("임시본 복구됨",true);
   }else{loadEditorTrainings(d);_activateTraining(0);editorSaveStatus(editorReadOnly?"":"변경하면 자동 임시저장",false);}
   fillEditorPanel();renderSceneStrip();renderTrainingTabs();
-  moveBoardTo($("editorBoardWrap"));$("editorModal").classList.add("on");document.body.classList.add("editing");try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{applyView();}catch(_){}try{renderBench();}catch(_){}renderTokens();
+  moveBoardTo($("editorBoardWrap"));$("editorModal").classList.add("on");document.body.classList.add("editing");try{parent.postMessage({source:"board",type:"editorState",open:true},"*");}catch(_){}try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{applyView();}catch(_){}try{renderBench();}catch(_){}renderTokens();
   try{renderAnimFrames();_animFitPad();}catch(_){}   /* 2.613 — 애니메이션은 _activateTraining 이 훈련별로 올렸다. 편집기 판 크기에 바를 다시 맞춘다 */
   applyEditorReadOnly(d);
   const _ep=$("editorPanel");if(_ep)_ep.scrollTop=0;
@@ -10153,7 +10170,7 @@ window.__commView=function(post, editMode){
     loadEditorTrainings(d); _activateTraining(0);
     _commOrient();   /* 2.575 — 스냅이 실린 뒤, 그리기 전에 */
     fillEditorPanel(); renderSceneStrip(); renderTrainingTabs();
-    moveBoardTo($("editorBoardWrap")); $("editorModal").classList.add("on"); document.body.classList.add("editing"); try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}
+    moveBoardTo($("editorBoardWrap")); $("editorModal").classList.add("on"); document.body.classList.add("editing");try{parent.postMessage({source:"board",type:"editorState",open:true},"*");}catch(_){} try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}
     try{applyView();}catch(_){} try{renderBench();}catch(_){} renderTokens();
     applyEditorReadOnly(null);
     var panel=$("editorPanel");
@@ -10334,8 +10351,8 @@ function openEditor(id,type){
       if(_ids.length){ editorDraft.gmPhases=_ids; editorDraft.gmPhaseNames=_names; if(_fk)editorDraft.focus=_fk; }
     } }catch(_){}
   fillEditorPanel();renderSceneStrip();renderTrainingTabs();
-  try{ if(type!=="setpiece"&&epAutoRoster()){ setTimeout(function(){try{toast("훈련 인원을 선수단에서 채웠어요 — 필요하면 고치세요");}catch(_){}},400); } }catch(_){}   /* 1.968 · 2.182 — 비어 있으면 기존 훈련에서도 자동 계산(사용자) */
-  moveBoardTo($("editorBoardWrap"));$("editorModal").classList.add("on");document.body.classList.add("editing");try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{applyView();}catch(_){}try{renderBench();}catch(_){}renderTokens();
+  try{ if(type!=="setpiece"&&epAutoRoster()){ setTimeout(function(){try{toast(window.__rosterFromAtt?"출석의 그 날 인원으로 채웠어요 — 필요하면 고치세요":"훈련 인원을 선수단에서 채웠어요 — 필요하면 고치세요");window.__rosterFromAtt=false;}catch(_){}},400); } }catch(_){}   /* 1.968 · 2.182 — 비어 있으면 기존 훈련에서도 자동 계산(사용자) */
+  moveBoardTo($("editorBoardWrap"));$("editorModal").classList.add("on");document.body.classList.add("editing");try{parent.postMessage({source:"board",type:"editorState",open:true},"*");}catch(_){}try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{applyView();}catch(_){}try{renderBench();}catch(_){}renderTokens();
   try{renderAnimFrames();_animFitPad();}catch(_){}   /* 2.613 — 훈련별 애니메이션은 _activateTraining 이 올렸다 */
   const _ep=$("editorPanel");if(_ep)_ep.scrollTop=0;
   /* 일반 '새 훈련'만 새 4단계 흐름을 사용한다.
@@ -10404,7 +10421,7 @@ function closeEditor(save){
   if(save){try{clearEditorDraft();}catch(_){}}   /* 저장 완료 → 자동 유지 초안 삭제 */
   if(!save&&editorLibId!=null){try{clearEditorWork(editorLibId);}catch(_){}}
   stopTrainingWizard();window.__trainingSessionMeta=null;
-  moveBoardTo($("boardView"));$("editorModal").classList.remove("on");document.body.classList.remove("editing");try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{renderBench();}catch(_){}
+  moveBoardTo($("boardView"));$("editorModal").classList.remove("on");document.body.classList.remove("editing");try{parent.postMessage({source:"board",type:"editorState",open:false},"*");}catch(_){}try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{renderBench();}catch(_){}
   /* 2.464 — QA #24: 드릴의 장면을 지우고 내 라이브 장면을 되살린다. __animLoad 는 프레임0
      스냅을 화면에 그리므로 boardStash 복원(아랫줄)보다 먼저 불러 화면은 편집 전 모습으로 끝난다. */
   try{ if(editorAnimStashed){
@@ -10433,6 +10450,8 @@ function closeEditor(save){
     else{try{parent.postMessage({source:'board',type:'captureCancel'},'*');}catch(_){}}
   }
 }
+/* 2.698 — 출석 그 날 카드의 «훈련 세션 만들기»: 일정 연결 없이 세션 마법사(훈련 세션 만들기)를 연다. 날짜·인원은 __schedPreset 으로 한 번 소비 */
+window.__openSessionWizard=function(p){ window.__schedPreset=p||null; try{editorLibId=null;editorLibFromOvl=false;}catch(_){} try{setView('session');}catch(_){} try{openEditor(null,'train');}catch(_){} window.__schedPreset=null; };   /* openEditor 는 동기 — 끝나면 프리셋을 비운다(다음 편집기에 새지 않게) */
 window.__openScheduleDrill=function(){window.__editorSchedLink='new';try{editorLibId=null;editorLibFromOvl=false;}catch(_){}try{setView('session');}catch(_){}try{openEditor(null,'train');}catch(_){}};
 /* 2.669 — 일정의 지난 날 칩: 보관함 원본을 **보기 전용**으로(openLibDrawEditor 의 view=true). 편집은 보관함에서 */
 window.__openScheduleDrillView=function(p){p=p||{};window.__editorSchedLink='view';

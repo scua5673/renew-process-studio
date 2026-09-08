@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.697';</script>
+<script>window.PS_BUILD='2.698';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1196,18 +1196,15 @@ function psShowUpdBand(){
       <!-- 2.581 — 줄 순서를 시간 → 사람 → 책으로(사용자 "순서가 이게 맞을까?"): 오늘·일정·경기 / 선수단·출석·IDP·평가표·스카우팅 / 플레이북.
            «기준» 묶음은 없앴다(사용자 "플레이북과 기준을 합치자"): 게임모델·공용어는 플레이북 아래 서브탭(#teamSub)으로, 평가표는 선수 쪽(선수단 줄)으로.
            data-team-key 는 그대로(settings·terms·attrs·playbook) — 다른 코드가 이 키로 탭을 찾는다(teamKeyBtn 이 서브바까지 뒤진다). -->
+      <!-- 2.698 — 줄 순서(사용자 "오늘, 일정, 출석, IDP, 선수단, 스카우팅, 평가표, 플레이북"): 경기는 말씀에 없었지만 시간 묶음이라 일정 옆에 그대로 뒀다. 2.581 의 시간→사람→책 틀은 유지. -->
       <button data-team-key="today" data-app="scout" data-team-view="home">오늘</button>
       <button data-team-key="training" data-app="process" data-process-mode="week">일정</button>
       <button data-team-key="match" data-app="scout" data-team-view="match">경기</button>
-      <!-- 2.576 — «훈련 분석» 탭은 일단 뺐다(사용자 "훈련 분석은 일단 지워주고 플레이북을 그 자리에"). process.html #review 와 셸의 review 처리는 그대로 — 일정 안의 세그로는 여전히 닿는다.
-           되살리려면 아래 한 줄: <button data-team-key="review" data-app="process" data-process-mode="review">훈련 분석</button> -->
-      <button data-team-key="players" data-app="scout" data-team-view="team">선수단</button>
-      <button data-team-key="avail" data-app="scout" data-team-view="avail">출석</button><!-- 2.194 — 출석(가용) 탭 -->
+      <button data-team-key="avail" data-app="scout" data-team-view="avail">출석</button>
       <button data-team-key="idp" data-app="idp" data-idp-squad="1">IDP</button>
-      <!-- 1.890 — 팀 평가표(평가 항목 커스터마이징). 선수 셀프 평가·코치 평가는 이 평가표를 그대로 씀(scout_tool_v1.attrs). 2.581 — 기준 묶음에서 선수 줄로 -->
-      <button data-team-key="attrs" data-app="scout" data-team-view="attrs">평가표</button>
+      <button data-team-key="players" data-app="scout" data-team-view="team">선수단</button>
       <button data-team-key="scouting" data-app="scout" data-team-view="players">스카우팅</button>
-      <!-- 2.581 — 플레이북이 묶음 머리(data-tn-std): 누르면 플레이북, 아래 서브탭 «플레이북 · 게임모델 · 공용어» -->
+      <button data-team-key="attrs" data-app="scout" data-team-view="attrs">평가표</button>
       <button data-team-key="playbook" data-app="playbook" data-tn-std="1">플레이북</button>
     </span>
   </nav>
@@ -1364,6 +1361,7 @@ function psShowUpdBand(){
       #psSyncStrip.ok,#psSyncStrip.busy{height:18px;justify-content:flex-end;gap:5px;padding:0 12px;background:transparent;border-bottom:0;font-size:10px;font-weight:600;color:var(--dim)}
       #psSyncStrip.ok{color:#1F8A4C}
       #psSyncStrip.ok i,#psSyncStrip.busy i{width:6px;height:6px}
+      body.ps-editor-open[data-ps-app="design"] #psSyncStrip,body.ps-editor-open[data-ps-app="board"] #psSyncStrip{display:none!important}   /* 2.698 — 편집기 머리줄 «저장하기» 자리와 겹치던 것 */
       #psSyncStrip.ok #psSyncStripTx,#psSyncStrip.busy #psSyncStripTx{flex:0 0 auto}
       #psSyncStrip.ok #psSyncStripAgo,#psSyncStrip.busy #psSyncStripAgo{margin-left:0;opacity:.7}
       #psSyncStrip.ok #psSyncStripAgo::before,#psSyncStrip.busy #psSyncStripAgo::before{content:'· '}
@@ -2227,7 +2225,8 @@ function psShowUpdBand(){
         if(d.type==='openTeamKey'){ var _pb=teamKeyBtn(String(d.key||'')); if(_pb)openTeamButton(_pb); return; }
         if(d.type==='openApp'){ currentTeamKey=''; showApp(d.app||'design'); return; }
       }
-      if((d.source==='process'||d.source==='scout'||d.source==='playbook') && d.type==='openDrillEditor'){   /* 2.312 — 콕핏에서도 보관함 훈련을 바로 연다 · 2.580 플레이북에서 열면 저장·취소 뒤 플레이북으로 돌아온다 */ captureReq=(d.source==='playbook')?'playbook':'process'; showApp('design'); var _ed=d; setTimeout(function(){try{ if(_ed.readonly){ if(fBoard.contentWindow.__openScheduleDrillView)fBoard.contentWindow.__openScheduleDrillView({libId:_ed.libId,name:_ed.name,snap:_ed.snap}); else fBoard.contentWindow.__openScheduleDrillEdit&&fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); }   /* 2.669 — 지난 날은 보기 전용 */ else if(_ed.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); } else { try{ fBoard.contentWindow.__psPreselectPhases=(Array.isArray(_ed.gmPhases)&&_ed.gmPhases.length)?_ed.gmPhases.slice():null; }catch(_){}   /* 1.958 — 보강 추천에서 온 국면 프리셀렉트 */ fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); } }catch(_){}},80); return; }
+      if(d.source==='board' && d.type==='editorState'){ document.body.classList.toggle('ps-editor-open',!!d.open); return; }   /* 2.698 — 편집기(훈련 세션 만들기 등)가 열리면 오른쪽 위 동기화 글씨를 숨긴다(사용자 "저장하기와 겹친다") */
+      if((d.source==='process'||d.source==='scout'||d.source==='playbook') && d.type==='openDrillEditor'){   /* 2.312 — 콕핏에서도 보관함 훈련을 바로 연다 · 2.580 플레이북에서 열면 저장·취소 뒤 플레이북으로 돌아온다 */ captureReq=(d.source==='playbook')?'playbook':'process'; showApp('design'); var _ed=d; setTimeout(function(){try{ if(_ed.readonly){ if(fBoard.contentWindow.__openScheduleDrillView)fBoard.contentWindow.__openScheduleDrillView({libId:_ed.libId,name:_ed.name,snap:_ed.snap}); else fBoard.contentWindow.__openScheduleDrillEdit&&fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); }   /* 2.669 — 지난 날은 보기 전용 */ else if(_ed.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); } else if(_ed.wizard){ fBoard.contentWindow.__openSessionWizard && fBoard.contentWindow.__openSessionWizard({date:_ed.date||'',roster:_ed.roster||null}); }   /* 2.698 — 출석 그 날 카드에서 온 «훈련 세션 만들기»: 날짜·인원 프리셋 */ else { try{ fBoard.contentWindow.__psPreselectPhases=(Array.isArray(_ed.gmPhases)&&_ed.gmPhases.length)?_ed.gmPhases.slice():null; }catch(_){}   /* 1.958 — 보강 추천에서 온 국면 프리셀렉트 */ fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); } }catch(_){}},80); return; }
       if(d.source==='process' && d.type==='openBoard'){
         captureReq='process';
         showApp('board');
