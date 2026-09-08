@@ -16449,6 +16449,10 @@ html body.ps-dock .sel-ctl:not(#_):not(#__){border-radius:10px!important}
 html body.ps-dock .sel-ctl>button:not(#_):not(#__),html body.ps-dock .sel-ctl :is(#_x,.numbox,.namebox,.sizebox,.gk-btn,.dup-sel,.del-sel,.text-edit-btn,.text-color-field):not(#_):not(#__),html body.ps-dock .sel-ctl #colorCtl:not(#_):not(#__){height:40px!important;min-height:40px!important;border-radius:10px!important;font-size:12px!important;box-sizing:border-box!important}
 html body.ps-dock .sel-ctl .sizebox button:not(#_):not(#__){width:36px!important;height:36px!important;min-height:36px!important;border-radius:6px!important}
 html.ps-page-board body:not(.ps-dock) #ps-command-dock .colorbtn:not(#_):not(#__){width:30px!important;height:30px!important;min-width:30px!important}
+/* 2.702 — 도크의 둥근 알약(팀 1~4 · 기본색 · 2/GK/C/N/T/S 도장)과 펜 색 원이 너무 크다(사용자) → 30 → 24px, 글자 11 → 10px, 펜 아이콘 13 → 11px. 폰 도크(.ps-dock)는 그대로 */
+html.ps-page-board body:not(.ps-dock) #ps-command-dock :is(.catpill.tpill,.cpreset,.cmd-stamp-token):not(#_):not(#__):not(#___){width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;max-width:24px!important;flex:0 0 24px!important;padding:0!important;font-size:10px!important;line-height:1!important}   /* flex-basis 30 이 width 를 이겨 폭이 30 으로 남았다(실측) */
+html.ps-page-board body:not(.ps-dock) #ps-command-dock .colorbtn:not(#_):not(#__):not(#___){width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important}
+html.ps-page-board body:not(.ps-dock) #ps-command-dock #colorBtn .cpen:not(#_){width:11px!important;height:11px!important}
 html body #hint:not(#_):not(#__){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(92%,560px);box-sizing:border-box;pointer-events:auto;cursor:pointer}
 html body #hint.ps-full:not(#_):not(#__){white-space:normal}
 </style>
