@@ -6481,7 +6481,9 @@ function _boardThumbSVGRaw(){var _s=sel,_ms=(typeof multiSel!=="undefined")?mult
   /* 2.582 — 색 팔레트 열림도 지킨다(사용자 "색상 눌렀을 때 뜨는 것이 선택하기도 전에 바로 사라져"). 실측: 편집기 자동 저장(saveEditorDraft ≈250ms) → 썸네일 → 여기서 선택을 잠깐 풀 때
      updateDelUI 가 «선택 없음» 으로 보고 #colorCtl.open 을 지웠다. 선택은 아래에서 되살리면서 열림은 안 되살려 팔레트가 0.25초 만에 닫혔다. */
   var _cc=document.getElementById("colorCtl"),_ccOpen=!!(_cc&&_cc.classList.contains("open"));
-  if(_had){sel=null;if(_ms)multiSel=[];renderTokens();renderDrawings();updateDelUI();}   /* 썸네일용으로 잠시 선택 해제(핸들 안 나오게) */
+  /* 2.712 — 선택은 잠시 풀되 **패널(.sel-ctl)은 숨기지 않는다**(updateDelUI 생략). 숨기면 그 안의 <input type=color>(글자색·배경색)가 사라져
+     열린 기본 색 고르개가 즉시 닫혔다(사용자 "배경색 누르면 바로 사라져" — 편집기 자동 저장 250ms 마다 여기를 지난다). 핸들·선택 링은 renderTokens/renderDrawings 가 sel=null 로 그려 빠진다. */
+  if(_had){sel=null;if(_ms)multiSel=[];renderTokens();renderDrawings();}
   const c=svg.cloneNode(true);
   /* 2.559 — "#ps-pitchimg" 도 뺀다: 올린 운동장 **사진**이 원본 크기 data URI 째로 루트 svg 밑에 있어(renderPitchImg)
      클론마다 통째로 실렸다. 감사 실측: 사진 있는 판의 썸네일이 장면·카드·PDF 페이지(×3)마다 사진 한 장씩 —
