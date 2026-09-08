@@ -4867,6 +4867,13 @@ function switchWorkspace(wid, skipSave){
       try{var failDiag=new Error('preswitch result');failDiag.psCode=String((r&&r.code)||((r&&r.skip)?'skip':'preswitch_failed'));syncDiagnostic('workspace-preswitch-result',failDiag);}catch(_){}
       return stopPreswitch(failMsg,'preswitch failed');
     }
+    /* 2.718 — 실제 제보(9/8 심재휘 감독 영상): «전환 취소 — 보관함 저장 확인이 끝나지 않았습니다 — 아직 시도 전».
+       보관함 대기(@library)의 확인값은 cs_lib_rev(작전판이 저장마다 찍는 시각)라, 회차의 보관함 단계가 시작된 **뒤**에
+       작전판이 한 번 더 찍으면(복구 항목 반영 8333·작성자 채우기 8432·공유 표시 등) 확인이 어긋나 대기가 남는다.
+       올릴 게 없어도, 서버에 닿았어도 «아직 시도 전»이다. 보관함(IDB)은 전환 전 백업(stash, localStorage 만)에 담기지 않아
+       «그래도 전환» 출구를 열 수 없다 → 그 경우엔 한 회차를 더 돌려 다시 센다(한 번만). 그래도 남으면 예전처럼 멈춘다. */
+    var _libRetried=false;
+    function pendingGate(){
     return (skipSave?Promise.resolve([]):withTimeout(workspaceBlockingPendingKeys(from),8000)).then(function(blockingKeys){
       staleStop();
       if(blockingKeys&&blockingKeys.__timeout)return stopPreswitch('전환 취소 — 저장 확인을 읽지 못했습니다','preswitch outbox read timeout');
@@ -4904,6 +4911,13 @@ function switchWorkspace(wid, skipSave){
           if(mine.length&&mine.every(outboxUnreachableOnly)){
             var c0=mine[0]; return stopPreswitchUnreachable(pendingLabels,String(c0.lastError||c0.roundError||''));
           }
+          /* 2.718 — 보관함만, 시도조차 안 된 채 남았으면 한 회차 더(위 주석) */
+          var libOnlyFresh=mine.length&&mine.every(function(it){ return it.key==='@library'&&!(+it.attempts)&&!it.roundError; });
+          if(libOnlyFresh&&!_libRetried&&!skipSave){
+            _libRetried=true; setStatus('보관함을 한 번 더 확인하는 중…');
+            try{var lrd=new Error('library recheck');lrd.psCode='@library';syncDiagnostic('workspace-preswitch-library-retry',lrd);}catch(_){}
+            return withTimeout(forceSync('preswitch-library'),15000).then(function(){ return pendingGate(); });
+          }
           return stopPreswitch('전환 취소 — '+pendingLabels.join('·')+' 저장 확인이 끝나지 않았습니다'+(extra?' — '+extra:''),'preswitch pending');
         });
       }
@@ -4915,6 +4929,8 @@ function switchWorkspace(wid, skipSave){
         return r;
       });
     });
+    }
+    return pendingGate();
   }).then(function(){
     staleStop();
     if(!window.storage){switchItemKeys=[];return;}
