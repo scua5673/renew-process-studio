@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.712';</script>
+<script>window.PS_BUILD='2.713';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -825,11 +825,16 @@ function psShowUpdBand(){
   #psSideHint{display:none;position:fixed;left:22px;top:50%;transform:translateY(-50%);z-index:400;background:#14161A;color:#fff;font:700 12px/1.3 inherit;padding:8px 11px;border-radius:9px;white-space:nowrap;box-shadow:0 6px 18px rgba(15,23,42,.25);pointer-events:none}
   #psSideHint::before{content:"";position:absolute;left:-5px;top:50%;margin-top:-5px;border:5px solid transparent;border-right-color:#14161A;border-left:0}
   body.ps-side-folded #psSideHint.on{display:block}
+  /* 2.713 — 폰(<768)에서 ‹ › 가 body 흐름에 block 으로 놓여 하단 탭 위에 32px 띠 둘(빈 여백 + ‹ 줄)을 만들었다(사용자 화면 실측: 둘 다 display:block·static 375×32).
+     폰 셸의 body>button 규칙이 id 선택자를 이겨서다 → 폰에선 !important 로 아예 없애고, 데스크톱에서도 흐름에 못 들어가게 fixed 를 !important 로 */
+  #psSideFold,#psSideTab,#psSideHint{display:none!important;position:fixed!important}
   @media (min-width:768px){
-    #psSideFold{display:flex}
+    #psSideFold{display:flex!important}
+    body.ps-side-folded #psSideFold{display:none!important}
+    body.ps-side-folded #psSideTab{display:flex!important}
+    body.ps-side-folded #psSideHint.on{display:block!important}
     html body.ps-side-folded:not(#_){--ps-side-w:0px!important}   /* 실측: 다른 규칙이 clamp(96px,7.4vw,104px) 로 다시 정해 body 한 줄로는 안 이겼다 */
     body.ps-side-folded .appbar{display:none!important}
-    body.ps-side-folded #psSideTab{display:flex}
   }
   .appbar{position:fixed;left:0;top:0;bottom:0;width:var(--ps-side-w);z-index:320;
     flex-direction:column;align-items:stretch;gap:2px;padding:16px 12px 12px;
@@ -3941,6 +3946,9 @@ function psShowUpdBand(){
 <script>
 (function(){ /* 2.704 — 사이드바 접기 */
   var KEY='ps_side_folded_v1', bar=document.querySelector('.appbar'); if(!bar)return;
+  /* 2.713 — 이 규칙은 **미디어 블록 밖**에 있어야 한다. 위 <style> 의 #psSideFold 규칙들은 전부 @media (min-width:768px) 안에 들어가 있어(실측: 매칭 규칙 3개 모두 min-width 768)
+     폰(375)에선 아무 규칙도 안 붙고 폰 셸의 body>button 규칙이 block 으로 놓아 하단 탭 위에 32px 띠 둘이 생겼다. JS 로 최상위 <style> 을 만들어 확실히 건다 */
+  try{ var st=document.createElement('style'); st.id='ps-2713-side'; st.textContent='#psSideFold,#psSideTab,#psSideHint{display:none!important;position:fixed!important}@media (min-width:768px){#psSideFold{display:flex!important}body.ps-side-folded #psSideFold{display:none!important}body.ps-side-folded #psSideTab{display:flex!important}body.ps-side-folded #psSideHint.on{display:block!important}}'; document.head.appendChild(st); }catch(_){}
   var f=document.createElement('button'); f.type='button'; f.id='psSideFold'; f.textContent='‹'; f.title='사이드바 접기 (⌘\\)'; f.setAttribute('aria-label','사이드바 접기'); document.body.appendChild(f);   /* 2.708 — 앱 바 밖(body) */
   var tab=document.createElement('button'); tab.type='button'; tab.id='psSideTab'; tab.textContent='›'; tab.title='사이드바 펼치기 (⌘\\)'; tab.setAttribute('aria-label','사이드바 펼치기'); document.body.appendChild(tab);
   var hint=document.createElement('div'); hint.id='psSideHint'; hint.textContent='여기를 누르면 사이드바가 다시 펼쳐져요 (⌘\\)'; document.body.appendChild(hint); var hintT=null;   /* 2.707 */
