@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.708';</script>
+<script>window.PS_BUILD='2.709';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -816,13 +816,13 @@ function psShowUpdBand(){
   body{--ps-side-w:clamp(148px,18vw,192px);}
   /* 2.704 — 사이드바 접기(사용자): 앱 바 오른쪽 위 ‹ 한 번 = 사라지고 왼쪽 가장자리 가운데 › 탭만. 기억 ps_side_folded_v1. ⌘\ (보드 안에서 눌러도 셸로 넘어온다). 폰(<768)은 앱 바가 없어 해당 없음 */
   /* 2.708 — 접기 ‹ 도 펼치기 › 와 같은 자리(세로 가운데)·같은 모양(사용자 "위치를 접을 때 펼 때 똑같이 가운데로"). 앱 바 오른쪽 가장자리에 걸친다 */
-  #psSideFold{display:none;position:fixed;top:50%;left:calc(var(--ps-side-w) - 11px);transform:translateY(-50%);width:22px;height:64px;border:0;border-radius:10px;background:var(--accent,#3A6DF0);color:#fff;font:800 15px/1 inherit;cursor:pointer;z-index:400;padding:0;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(15,23,42,.28)}   /* 앱 바(overflow:hidden) 안에 두면 바깥 반이 잘려 body 에 고정으로 */
+  /* 2.709 — 너무 크고 튄다(사용자) → 14×40, 흰 바탕·가는 테두리·흐린 화살표. 둘(‹ ›) 같은 문법 */
+  #psSideFold{display:none;position:fixed;top:50%;left:calc(var(--ps-side-w) - 7px);transform:translateY(-50%);width:14px;height:40px;border:1px solid var(--line,#E3E6EA);border-radius:7px;background:var(--panel,#fff);color:var(--dim,#8A9099);font:700 12px/1 inherit;cursor:pointer;z-index:400;padding:0;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(15,23,42,.10)}   /* 앱 바(overflow:hidden) 안에 두면 바깥 반이 잘려 body 에 고정으로 */
   body.ps-side-folded #psSideFold{display:none!important}
-  #psSideFold:hover{filter:brightness(1.08)}
+  #psSideFold:hover,#psSideTab:hover{color:var(--accent,#3A6DF0);border-color:var(--accent,#3A6DF0)}
   /* 2.707 — 접힌 뒤 다시 펼치는 › 탭이 너무 작고 흐려 «펼칠 수 없다»고 읽혔다(사용자). 강조색·22×64·z 400 + 접을 때 2.5초 안내 말풍선 */
-  #psSideTab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);width:22px;height:64px;border:0;border-radius:0 10px 10px 0;background:var(--accent,#3A6DF0);color:#fff;font:800 15px/1 inherit;z-index:400;align-items:center;justify-content:center;cursor:pointer;padding:0;box-shadow:0 4px 14px rgba(15,23,42,.28)}
-  #psSideTab:hover{filter:brightness(1.08)}
-  #psSideHint{display:none;position:fixed;left:30px;top:50%;transform:translateY(-50%);z-index:400;background:#14161A;color:#fff;font:700 12px/1.3 inherit;padding:8px 11px;border-radius:9px;white-space:nowrap;box-shadow:0 6px 18px rgba(15,23,42,.25);pointer-events:none}
+  #psSideTab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);width:14px;height:40px;border:1px solid var(--line,#E3E6EA);border-left:0;border-radius:0 7px 7px 0;background:var(--panel,#fff);color:var(--dim,#8A9099);font:700 12px/1 inherit;z-index:400;align-items:center;justify-content:center;cursor:pointer;padding:0;box-shadow:0 2px 6px rgba(15,23,42,.10)}
+  #psSideHint{display:none;position:fixed;left:22px;top:50%;transform:translateY(-50%);z-index:400;background:#14161A;color:#fff;font:700 12px/1.3 inherit;padding:8px 11px;border-radius:9px;white-space:nowrap;box-shadow:0 6px 18px rgba(15,23,42,.25);pointer-events:none}
   #psSideHint::before{content:"";position:absolute;left:-5px;top:50%;margin-top:-5px;border:5px solid transparent;border-right-color:#14161A;border-left:0}
   body.ps-side-folded #psSideHint.on{display:block}
   @media (min-width:768px){
