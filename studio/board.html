@@ -9313,7 +9313,7 @@ const FIELD_SHEET_CSS=`
 @page{size:A4 landscape;margin:0;}
 body{padding:9mm 11mm;}
 @media print{body{padding:9mm 11mm;}}
-.fsx-head{display:flex;align-items:baseline;gap:3mm;border-bottom:1.4px solid #111;padding-bottom:2mm;margin-bottom:3mm;white-space:nowrap;overflow:hidden;}
+.fsx-head{display:flex;align-items:baseline;gap:3mm;border-bottom:1.4px solid #111;padding-bottom:1.6mm;margin-bottom:2.2mm;white-space:nowrap;overflow:hidden;}   /* 2.713 — 컴팩트 */
 .fsx-t{font-size:13px;font-weight:800;letter-spacing:-.2px;flex:0 0 auto;}
 .fsx-m{font-size:10px;font-weight:600;color:#555;flex:0 0 auto;font-variant-numeric:tabular-nums;}
 .fsx-r{display:flex;align-items:baseline;gap:3mm;flex:0 0 auto;font-variant-numeric:tabular-nums;}   /* 1.731 — 요약을 왼쪽으로(사용자 요청): margin-left:auto 제거해 제목 옆 좌측 정렬 */
@@ -9323,13 +9323,13 @@ body{padding:9mm 11mm;}
 .fsx-brk .o{color:#c0463f;}
 .fsx-sm{font-size:10px;font-weight:700;color:#666;padding-left:3mm;border-left:1px solid #d9dde3;}
 .fsx-sm b{color:#111;font-weight:800;}
-.fsx-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;grid-auto-flow:column;gap:3.5mm;flex:1 1 auto;min-height:0;height:auto;}   /* 1.731 — 순서 1 3 / 2 4 (열 우선, 사용자 요청) · 2.588 — 높이는 장(.fsx-page)이 정한다 */
+.fsx-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;grid-auto-flow:column;gap:3mm;flex:1 1 auto;min-height:0;height:auto;}   /* 1.731 — 순서 1 3 / 2 4 (열 우선, 사용자 요청) · 2.588 — 높이는 장(.fsx-page)이 정한다 */
 /* 2.588 — **한 장은 정확히 한 장**(사용자 "인쇄가 지금 2장에 나왔어"). 예전엔 격자 182mm + 머리글 ≈ 192mm 를 넘겨 A4 가로(210−9−9=192mm)에서 1~2mm 가 다음 장으로 흘러
    빈 두 번째 장이 찍혔다. 장을 191mm 고정 플렉스 기둥으로 만들고 격자가 남는 높이를 채운다. 래스터(PDF 내려받기)는 _ppbRasterPage 가 100% 로 덮는다. */
 .page.fsx-page{display:flex;flex-direction:column;height:191mm;overflow:hidden;box-sizing:border-box;page-break-inside:avoid;break-inside:avoid;}
 .fsx-head{flex:0 0 auto;}
-.fsx-card{display:flex;flex-direction:column;min-width:0;min-height:0;border:1.1px solid #c4c9d0;border-radius:2.4mm;padding:2.3mm 2.8mm;overflow:hidden;page-break-inside:avoid;break-inside:avoid;}
-.fsx-ct{display:flex;align-items:center;gap:2mm;flex:0 0 auto;margin-bottom:1.8mm;min-width:0;}
+.fsx-card{display:flex;flex-direction:column;min-width:0;min-height:0;border:1.1px solid #c4c9d0;border-radius:2.4mm;padding:1.8mm 2.2mm;overflow:hidden;page-break-inside:avoid;break-inside:avoid;}
+.fsx-ct{display:flex;align-items:center;gap:2mm;flex:0 0 auto;margin-bottom:1.3mm;min-width:0;}
 .fsx-no{flex:0 0 auto;width:5.6mm;height:5.6mm;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:10px;}
 .fsx-dot{flex:0 0 auto;width:2.4mm;height:2.4mm;border-radius:50%;}
 .fsx-nm{flex:1 1 auto;min-width:0;font-size:12px;font-weight:800;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -9353,6 +9353,19 @@ body{padding:9mm 11mm;}
 .fsx-ml.rule{border-bottom:.35mm solid #E3E6EA;height:4mm;min-height:4mm;}
 .fsx-card.empty .fsx-dia{background:#fff;border:.4px solid #E3E6EA;}   /* 빈 칸은 모눈종이(흰 바탕) */
 body.ink .fsx-dia,body.ink .fsx-scn{background:#fff;}
+/* 2.713 — 한 장 4개는 그대로, 카드 안을 그림(56%) + 글 칸(44%)으로(사용자 "지금 것에서 컴팩트하게 방법과 코칭 포인트 잘 나오게").
+   글이 하나도 없는 훈련은 글 칸을 빼고 그림이 폭을 다 쓴다. 긴 글은 칸 안에서 …으로 접어 4장 배치를 지킨다. */
+.fsx-body{display:flex;gap:2.2mm;flex:1 1 auto;min-height:0;}
+.fsx-body .fsx-dia{flex:0 0 56%;width:56%;}
+.fsx-body.solo .fsx-dia{flex:1 1 auto;width:auto;}
+.fsx-txt{flex:1 1 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:1.6mm;}
+.fsx-blk{flex:1 1 0;min-height:0;overflow:hidden;border:.35mm solid #e1e3e7;border-radius:1.6mm;padding:1.4mm 1.8mm;display:flex;flex-direction:column;}
+.fsx-blk h5{margin:0 0 .8mm;font-size:7.5px;font-weight:800;letter-spacing:.05em;color:#666;text-transform:uppercase;flex:0 0 auto;}
+.fsx-blk.coach h5{color:#c0463f;}
+.fsx-blk p{margin:0;font-size:9.5px;line-height:1.42;color:#16181c;white-space:pre-wrap;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:8;}
+.fsx-blk.coach p{font-weight:600;}
+.fsx-blk.coach p .cp{display:block;}
+.fsx-blk.coach p .cp::before{content:"· ";color:#c0463f;font-weight:800;}
 `;
 /* 빈 칸용 — 잔디 대신 '모눈종이 + 옅은 운동장 라인'(사용자: 연필로 그려볼 수 있게).
    흰 바탕에 얇은 모눈, 그 위에 회색 필드 라인. 연필 자국이 잘 보이게 라인은 옅게. */
@@ -9404,9 +9417,11 @@ function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
     const minTxt=(+d.minutes||0)+"분"+((+d.sets>1)?("×"+(+d.sets)):"");
     return `<div class="fsx-card">
       <div class="fsx-ct"><div class="fsx-no">${i+1}</div><span class="fsx-dot" style="background:${f.c}"></span><div class="fsx-nm">${esc(d.name||("훈련 "+(i+1)))}</div><span class="fsx-tag">${f.label}</span><div class="fsx-min">${minTxt}</div><!-- 1.731 — 희미한 누적 경과(+N′) 제거(사용자 요청) --></div>
-      ${dia}
-      <div class="fsx-memo"><div class="fsx-ml">${l1?('<b>방법</b>'+esc(l1).replace(/\n/g," ")):""}</div><div class="fsx-ml coach">${co?('<b>☞</b>'+esc(co).replace(/\n/g," ")):""}</div></div>
-    </div>`;};
+      <div class="fsx-body${(l1||co)?"":" solo"}">${dia}${(l1||co)?('<div class="fsx-txt">'
+        +(l1?('<div class="fsx-blk"><h5>훈련 방법</h5><p>'+esc(l1)+'</p></div>'):'')
+        +(co?('<div class="fsx-blk coach"><h5>☞ 코칭 포인트</h5><p>'+co.split(/\n+/).map(function(x){return x.trim();}).filter(Boolean).map(function(x){return '<span class="cp">'+esc(x.replace(/^[-·•]\s*/,""))+'</span>';}).join("")+'</p></div>'):'')
+        +'</div>'):''}</div>
+    </div>`;};   /* 2.713 — 글 칸: 훈련 방법 / 코칭 포인트(줄마다 항목) */
   const blank=(i)=>`<div class="fsx-card empty">
     <div class="fsx-ct"><div class="fsx-no">${i+1}</div><div class="fsx-nm">훈련 ${i+1}</div><div class="fsx-min">비어 있음</div></div>
     <div class="fsx-dia">${BLANK_PITCH}</div>
