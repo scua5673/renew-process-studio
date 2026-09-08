@@ -7791,7 +7791,13 @@ async function exportVideo(opts){
     const S=opts.height?Math.max(0.4,opts.height/h):2;   /* 목표 세로 픽셀에 맞춰 배율(720p·1080p) */
     canvas.width=Math.round(w*S);canvas.height=Math.round(h*S);
   }
-  const ctx=canvas.getContext("2d");const stream=canvas.captureStream(FPS);
+  const ctx=canvas.getContext("2d");
+  /* 2.703 — 프레임을 우리가 직접 밀어 넣는다(captureStream(0) + requestFrame). 자동 캡처(FPS)는 «캔버스가 바뀐 순간»을 잡는데
+     그 순간이 SVG 디코드 시간만큼 들쭉날쭉해 영상이 끊겨 보였다(사용자 "끊기는 느낌"). 지원 안 되는 브라우저는 예전 방식 */
+  const _canReq=(typeof CanvasCaptureMediaStreamTrack!=="undefined"&&CanvasCaptureMediaStreamTrack.prototype&&typeof CanvasCaptureMediaStreamTrack.prototype.requestFrame==="function");
+  const stream=_canReq?canvas.captureStream(0):canvas.captureStream(FPS);
+  const _vtrack=stream.getVideoTracks()[0];
+  const _pushFrame=function(){ try{ if(_canReq&&_vtrack&&_vtrack.requestFrame)_vtrack.requestFrame(); }catch(_){} };
   const mime=pickVideoMime(),ext=mime.indexOf("mp4")>=0?"mp4":"webm";
   const _br=canvas.height>=1000?10000000:(canvas.height>=760?7000000:5000000);
   const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:_br});
@@ -7841,19 +7847,34 @@ async function exportVideo(opts){
     ctx.fillText(t,W/2,y+bh/2+1); ctx.textAlign='left';
     ctx.restore();
   }
-  async function holdScene(i,sec){
-    const f=anim.frames[i];
-    renderInterp(f.snap,f.snap,0);
-    const n=Math.max(1,Math.round(sec*fps));
-    for(let k=0;k<n;k++){ try{_applyBlink(f.blink,k*1000/fps);}catch(_){}try{_applyHl(f.hl);}catch(_){} await drawBoardToCanvas(ctx,canvas,uvb,dest); titleBar(); capBar(f.cap,i); await sleep(1000/fps); }
-  }
-  await holdScene(0, animHold||.6);
+  /* 2.703 — 부드러운 영상: ① 프레임 목록을 먼저 만들고 ② 다음 프레임의 SVG 디코드를 지금 프레임의 대기 시간과 겹쳐 돌리며(파이프라인)
+     ③ 각 프레임을 «시작 시각 + k/fps» 정확한 슬롯에 그린다. 예전엔 디코드(20~60ms) 뒤에 또 1/fps 를 쉬어 실제 30fps 가 아니라 12~15fps 였다. */
+  const plan=[];   /* {set:fn, cap, idx} */
+  function planHold(i,sec){ const f=anim.frames[i]; const n=Math.max(1,Math.round(sec*fps));
+    for(let k=0;k<n;k++){ plan.push({set:(function(k2){ return function(){ renderInterp(f.snap,f.snap,0); try{_applyBlink(f.blink,k2*1000/fps);}catch(_){} try{_applyHl(f.hl);}catch(_){} }; })(k), cap:f.cap, idx:i}); } }
+  planHold(0, animHold||.6);
   for(let s=0;s<N-1;s++){
-    const a=anim.frames[s].snap,b=anim.frames[s+1].snap,cv=anim.frames[s].curves;
+    const a=anim.frames[s].snap,b=anim.frames[s+1].snap,cv=anim.frames[s].curves,nf=anim.frames[s+1];
     const dur=Math.max(.3,(anim.frames[s].dur||1)/animMoveSpeed(anim.frames[s])),steps=Math.max(2,Math.round(dur*fps));
-    for(let i=0;i<=steps;i++){renderInterp(a,b,easeInOut(i/steps),cv);try{_applyBlink(anim.frames[s+1]&&anim.frames[s+1].blink,i*1000/fps);}catch(_){}try{_applyHl(anim.frames[s+1]&&anim.frames[s+1].hl);}catch(_){}await drawBoardToCanvas(ctx,canvas,uvb,dest);titleBar();capBar(anim.frames[s+1].cap,s+1);await sleep(1000/fps);}
-    await holdScene(s+1, animHold||.6);
+    for(let i=0;i<=steps;i++){ plan.push({set:(function(i2){ return function(){ renderInterp(a,b,easeInOut(i2/steps),cv); try{_applyBlink(nf&&nf.blink,i2*1000/fps);}catch(_){} try{_applyHl(nf&&nf.hl);}catch(_){} }; })(i), cap:nf.cap, idx:s+1}); }
+    planHold(s+1, animHold||.6);
   }
+  function produce(k){ try{ plan[k].set(); }catch(_){} const o=boardImageXML(uvb); const img=new Image();
+    const pr=new Promise(function(res){ img.onload=function(){ res(img); }; img.onerror=function(){ res(null); }; });
+    img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(o.xml);
+    return pr.then(function(im){ if(im&&im.decode){ return im.decode().then(function(){return im;},function(){return im;}); } return im; }); }
+  function paint(img,meta){
+    if(dest){ ctx.fillStyle=dest.bg||"#0b1016"; ctx.fillRect(0,0,canvas.width,canvas.height); if(img)ctx.drawImage(img,dest.x,dest.y,dest.w,dest.h); }
+    else { ctx.fillStyle=getCss("--grass-b")||"#1d8a47"; ctx.fillRect(0,0,canvas.width,canvas.height); if(img)ctx.drawImage(img,0,0,canvas.width,canvas.height); }
+    titleBar(); capBar(meta.cap,meta.idx); _pushFrame(); }
+  const T=1000/fps; let nextP=produce(0); const t0=performance.now()+T;
+  for(let k=0;k<plan.length;k++){
+    const img=await nextP;
+    if(k+1<plan.length)nextP=produce(k+1);           /* 다음 프레임 디코드를 지금 프레임 대기와 겹친다 */
+    const due=t0+k*T, now=performance.now(); if(due>now)await sleep(due-now);
+    paint(img,plan[k]);
+  }
+  await sleep(T*2);
   rec.stop();await stopped;loadSnap(restore);
   try{renderOnion();updateMotionPaths();}catch(_){}   /* 편집 화면의 보조 표시는 영상 생성 후에만 복원 */
   const blob=new Blob(chunks,{type:mime});
@@ -16453,6 +16474,10 @@ html.ps-page-board body:not(.ps-dock) #ps-command-dock .colorbtn:not(#_):not(#__
 html.ps-page-board body:not(.ps-dock) #ps-command-dock :is(.catpill.tpill,.cpreset,.cmd-stamp-token):not(#_):not(#__):not(#___){width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;max-width:24px!important;flex:0 0 24px!important;padding:0!important;font-size:10px!important;line-height:1!important}   /* flex-basis 30 이 width 를 이겨 폭이 30 으로 남았다(실측) */
 html.ps-page-board body:not(.ps-dock) #ps-command-dock .colorbtn:not(#_):not(#__):not(#___){width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important}
 html.ps-page-board body:not(.ps-dock) #ps-command-dock #colorBtn .cpen:not(#_){width:11px!important;height:11px!important}
+/* 2.703 — 내보내기 팝오버: 항목 왼쪽 정렬(사용자). 형식 뱃지(GIF/MP4/PNG)는 같은 폭으로 세워 라벨 시작선을 맞춘다 */
+#cmd-export-pop:not(#_):not(#__) .cmd-export-item{display:flex!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important;width:100%!important;gap:10px!important}
+#cmd-export-pop:not(#_):not(#__) .cmd-export-item .export-format-icon{flex:0 0 44px!important;width:44px!important;text-align:center!important;justify-content:center!important}
+#cmd-export-pop:not(#_):not(#__) .cmd-export-item .cmd-export-item-label{flex:1 1 auto!important;text-align:left!important}
 html body #hint:not(#_):not(#__){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(92%,560px);box-sizing:border-box;pointer-events:auto;cursor:pointer}
 html body #hint.ps-full:not(#_):not(#__){white-space:normal}
 </style>
