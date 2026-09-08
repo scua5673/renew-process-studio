@@ -49,7 +49,7 @@
     #app{padding:0 0 70px;}
     .admin-side{position:fixed;inset:auto 0 0 0;width:auto;height:64px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));border:0;border-top:1px solid var(--line);background:rgba(17,23,32,.96);backdrop-filter:blur(18px);}
     .admin-brand,.admin-side-foot{display:none;}
-    .admin-nav{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;}
+    .admin-nav{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;}
     .admin-nav button{height:48px;flex-direction:column;justify-content:center;gap:3px;padding:0;font-size:10px;border-radius:10px;}
     .admin-nav button svg{width:16px;height:16px;}
     #app>header{padding:10px 12px;}
@@ -175,6 +175,13 @@
   .health-detail-head div{min-width:0;flex:1}.health-detail-head b{display:block;font-size:12px}.health-detail-head span{display:block;margin-top:2px;color:var(--dim);font-size:10px;line-height:1.5}
   .health-detail table{min-width:610px}.health-detail th,.health-detail td{padding:8px 6px;font-size:10px}
   .health-detail code{font:650 10px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ef9eaa;word-break:break-word}
+  .err-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+  .err-kpi{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+  .err-kpi b{display:block;font-size:20px}.err-kpi span{display:block;margin-top:3px;color:var(--dim);font-size:10px}
+  .err-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:rgba(224,86,102,.12);color:#ef9eaa;font:750 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .err-msg{max-width:460px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim);font-size:10px}
+  .err-meta{font:600 10px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim2);word-break:break-word}
+  @media(max-width:620px){.err-kpis{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:460px){.health-grid{grid-template-columns:1fr}.health-card{min-height:58px}.health-card b{display:inline;margin-right:8px}}
   .eval-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 13px}
   .eval-kpi{padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
@@ -267,7 +274,8 @@
       <button data-admin-tab="ws" onclick="setTab('ws')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V6l8-3 8 3v14"/><path d="M9 20v-5h6v5M8 9h1M15 9h1"/></svg>팀 관리</button>
       <button data-admin-tab="users" onclick="setTab('users')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0112 0M15 19a5 5 0 016 0"/></svg>사용자</button>
       <button data-admin-tab="idp" onclick="setTab('idp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>IDP</button>
-<button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>백엔드</button>
+      <button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>백엔드</button>
+      <button data-admin-tab="errors" onclick="setTab('errors')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 9v4M12 17h.01"/></svg>오류</button>
     </nav>
     <div class="admin-side-foot">PROCESS STUDIO<br>운영 관리자 전용</div>
   </aside>
@@ -291,6 +299,7 @@
     <button class="tab" id="tabUsers" onclick="setTab('users')">유저</button>
     <button class="tab" id="tabIdp" onclick="setTab('idp')">IDP</button>
     <button class="tab" id="tabBack" onclick="setTab('back')">백엔드</button>
+    <button class="tab" id="tabErrors" onclick="setTab('errors')">오류</button>
   </div>
 
   <!-- 2.630 — 백엔드 건강 한 장(ps_admin_health): 코치가 제보하기 전에 본다 -->
@@ -299,6 +308,35 @@
       <div class="panel">
         <div class="sec-t">백엔드 건강 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 크기 · 실패 · 막힌 기기 · 판 분포 · 큰 문서 · 야간 작업</span> <button type="button" onclick="loadBack()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
         <div id="backBody"><div class="loading">불러오는 중…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 오류 분석 — ps_events 원본을 관리자 브라우저에서 묶어 본다 -->
+  <div class="wrap hide" id="viewErrors" style="grid-template-columns:1fr">
+    <div class="col">
+      <div class="panel">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <div class="sec-t" style="margin:0">오류 분석 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 어떤 오류가 · 어떤 기기에서 · 누구에게 났는지</span></div>
+          <span style="flex:1"></span>
+          <select id="errDays" onchange="loadErrors(true)" style="height:30px;font-size:11px">
+            <option value="1">24시간</option><option value="7" selected>7일</option><option value="30">30일</option>
+          </select>
+          <select id="errKind" onchange="renderErrors()" style="height:30px;font-size:11px">
+            <option value="all">전체 오류</option><option value="app">앱 오류만</option><option value="sync">동기화만</option>
+          </select>
+          <input id="errSearch" placeholder="오류·기기·버전·사용자 검색" oninput="renderErrors()" style="height:30px;min-width:210px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);border-radius:8px;padding:0 10px;font-size:11px">
+          <button type="button" class="rowbtn" onclick="loadErrors(true)">새로고침</button>
+        </div>
+        <div id="errSummary"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel">
+        <div class="sec-t">오류 묶음 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 오류 코드 + 기기 + 앱 버전 기준</span></div>
+        <div id="errGroups"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <div class="panel">
+        <div class="sec-t">최근 발생 순 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 메시지와 stage 확인</span></div>
+        <div id="errRecent"><div class="loading">불러오는 중…</div></div>
       </div>
     </div>
   </div>
@@ -685,14 +723,17 @@ function stat(n,l){ return '<div class="stat"><div class="n">'+n+'</div><div cla
 function setTab(t){ curTab=t;
   if($('tabBack'))$('tabBack').classList.toggle('on',t==='back'); if($('viewBack'))$('viewBack').classList.toggle('hide',t!=='back'); if(t==='back')loadBack();   /* 2.630 */
   if($('tabUse'))$('tabUse').classList.toggle('on',t==='use');
+  if($('tabErrors'))$('tabErrors').classList.toggle('on',t==='errors');
   if($('viewUse'))$('viewUse').classList.toggle('hide',t!=='use');
+  if($('viewErrors'))$('viewErrors').classList.toggle('hide',t!=='errors');
   $('tabHome').classList.toggle('on',t==='home'); $('tabAct').classList.toggle('on',t==='act'); $('tabAll').classList.toggle('on',t==='all'); $('tabWs').classList.toggle('on',t==='ws'); $('tabUsers').classList.toggle('on',t==='users'); $('tabIdp').classList.toggle('on',t==='idp');
   [].forEach.call(document.querySelectorAll('[data-admin-tab]'),function(b){b.classList.toggle('on',b.dataset.adminTab===t);});
-  var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({back:'백엔드 건강',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
+  var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({back:'백엔드 건강',errors:'오류 분석',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
   $('viewHome').classList.toggle('hide',t!=='home'); $('viewAct').classList.toggle('hide',t!=='act'); $('viewAll').classList.toggle('hide',t!=='all'); $('viewWs').classList.toggle('hide',t!=='ws'); $('viewUsers').classList.toggle('hide',t!=='users'); $('viewIdp').classList.toggle('hide',t!=='idp');
   if(t==='idp') loadIdpList();
   if(t==='home') loadHome();
   if(t==='use') loadUse();
+  if(t==='errors') loadErrors();
 }
 
 /* ===== 2.630 · 백엔드 건강 ===== */
@@ -718,6 +759,91 @@ function loadBack(){
     var p=h.policy||{}; html+='<div style="font-size:11px;color:var(--dim2);margin-top:12px">앱 판 정책: 최소 '+(p.min_build||'—')+' · 판 없는 앱 차단 '+(p.block_unversioned?'켜짐':'꺼짐')+' · 잰 시각 '+ko(h.at)+'</div>';
     el.innerHTML=html;
   }).catch(function(e){ el.innerHTML='<div class="loading">불러오지 못했어요 — '+String(e&&e.message||e).replace(/[<>&]/g,'')+'</div>'; });
+}
+/* ===== 오류 분석 ===== */
+var ERR=null, ERR_BUSY=false, ERR_LIMIT=5000;
+function errDaysVal(){ var e=$('errDays'); return Math.max(1,Math.min(90,+((e&&e.value)||7)||7)); }
+function errUserName(uid){
+  if(!uid)return '—';
+  var u=(USERS||[]).filter(function(x){return x.uid===uid||x.id===uid||x.user_id===uid;})[0];
+  return (u&&(u.email||u.name||u.display_name))||('…'+String(uid).slice(0,8));
+}
+function errMeta(e,k){
+  var m=e&&e.meta; if(!m)return '';
+  if(typeof m==='string'){ try{m=JSON.parse(m);}catch(_){return '';} }
+  return m&&m[k]!=null?String(m[k]):'';
+}
+function errCode(e){ return e.error_code||e.event_name||'unknown'; }
+function errKindOf(e){ return e.event_name==='sync_failed'||e.feature==='sync'?'sync':'app'; }
+function loadErrors(force){
+  if(ERR_BUSY)return;
+  var days=errDaysVal();
+  if(ERR&&!force&&ERR.days===days){ renderErrors(); return; }
+  ERR_BUSY=true;
+  ['errSummary','errGroups','errRecent'].forEach(function(id){ if($(id))$(id).innerHTML='<div class="loading">불러오는 중…</div>'; });
+  ensureToken().then(function(at){ if(!at)throw new Error('no token');
+    var since=new Date(Date.now()-days*86400000).toISOString();
+    var q='?select=event_name,status,feature,device,app_version,error_code,created_at,user_id,meta'
+      +'&status=eq.error&created_at=gte.'+encodeURIComponent(since)+'&order=created_at.desc&limit='+ERR_LIMIT;
+    return fetch(BASE+'/rest/v1/ps_events'+q,{headers:hj(at)}).then(function(r){
+      return r.text().then(function(t){ if(!r.ok)throw new Error('errors '+r.status+' '+t); return t?JSON.parse(t):[]; });
+    });
+  }).then(function(rows){
+    ERR={days:days,rows:(rows||[]).filter(function(e){return e.event_name!=='network_offline'&&e.event_name!=='network_restored';}),capped:(rows||[]).length>=ERR_LIMIT,err:null};
+    ERR_BUSY=false; renderErrors();
+  }).catch(function(e){
+    ERR={days:days,rows:[],capped:false,err:String(e&&e.message||e)}; ERR_BUSY=false; renderErrors();
+  });
+}
+function renderErrors(){
+  if(!ERR)return;
+  if(ERR.err){
+    var msg='<div class="empty">오류 이벤트를 불러오지 못했습니다 — 관리자 권한과 <code>ps_events</code> 읽기 정책을 확인하세요.<div class="muted" style="margin-top:4px">'+esc(ERR.err)+'</div></div>';
+    ['errSummary','errGroups','errRecent'].forEach(function(id){ if($(id))$(id).innerHTML=msg; });
+    return;
+  }
+  var kind=(($('errKind')||{}).value)||'all', term=String((($('errSearch')||{}).value)||'').toLowerCase().trim();
+  var rows=ERR.rows.filter(function(e){
+    if(kind!=='all'&&errKindOf(e)!==kind)return false;
+    if(!term)return true;
+    var hay=[errCode(e),e.event_name,e.feature,e.device,e.app_version,errUserName(e.user_id),errMeta(e,'stage'),errMeta(e,'msg')].join(' ').toLowerCase();
+    return hay.indexOf(term)>=0;
+  });
+  var users={}, devices={}, versions={}, codes={};
+  rows.forEach(function(e){ if(e.user_id)users[e.user_id]=1; if(e.device)devices[e.device]=1; if(e.app_version)versions[e.app_version]=1; codes[errCode(e)]=1; });
+  var cap=ERR.capped?'<div class="muted" style="font-size:11px;margin-bottom:8px">최근 '+ERR_LIMIT.toLocaleString()+'건까지만 읽었습니다. 기간이나 검색어를 줄이면 더 정확합니다.</div>':'';
+  $('errSummary').innerHTML=cap+'<div class="err-kpis">'
+    +'<div class="err-kpi"><b>'+rows.length.toLocaleString()+'</b><span>'+ERR.days+'일 오류 이벤트</span></div>'
+    +'<div class="err-kpi"><b>'+Object.keys(users).length.toLocaleString()+'</b><span>영향 사용자</span></div>'
+    +'<div class="err-kpi"><b>'+Object.keys(devices).length.toLocaleString()+'</b><span>기기 종류</span></div>'
+    +'<div class="err-kpi"><b>'+Object.keys(codes).length.toLocaleString()+'</b><span>오류 코드</span></div></div>';
+
+  var groups={};
+  rows.forEach(function(e){
+    var k=[errCode(e),e.event_name||'',e.feature||'',e.device||'—',e.app_version||'—'].join('|');
+    var g=groups[k]||(groups[k]={code:errCode(e),event:e.event_name||'—',feature:e.feature||'app',device:e.device||'—',version:e.app_version||'—',n:0,users:{},last:e.created_at,stage:{},msg:{}});
+    g.n++; if(e.user_id)g.users[e.user_id]=1;
+    if(e.created_at&&new Date(e.created_at)>new Date(g.last||0))g.last=e.created_at;
+    var st=errMeta(e,'stage'); if(st)g.stage[st]=(g.stage[st]||0)+1;
+    var ms=errMeta(e,'msg'); if(ms)g.msg[ms]=(g.msg[ms]||0)+1;
+  });
+  var top=function(o){ var a=Object.keys(o||{}).sort(function(x,y){return o[y]-o[x];}); return a[0]||''; };
+  var list=Object.keys(groups).map(function(k){ var g=groups[k]; g.u=Object.keys(g.users).length; g.topStage=top(g.stage); g.topMsg=top(g.msg); return g; })
+    .sort(function(a,b){return b.n-a.n||b.u-a.u||new Date(b.last)-new Date(a.last);});
+  $('errGroups').innerHTML=list.length?'<div class="tablewrap"><table><thead><tr><th>오류</th><th>기능</th><th>기기</th><th>앱 버전</th><th>횟수</th><th>사용자</th><th>stage / 메시지</th><th>마지막</th></tr></thead><tbody>'
+    +list.map(function(g){return '<tr><td><span class="err-pill">'+esc(g.code)+'</span><div class="muted" style="font-size:10px;margin-top:4px">'+esc(g.event)+'</div></td>'
+      +'<td>'+esc(featureLabel(g.feature))+'</td><td><b>'+esc(g.device)+'</b></td><td>'+esc(g.version)+'</td><td><b>'+g.n+'</b>건</td><td>'+g.u+'명</td>'
+      +'<td><div class="err-meta">'+esc(g.topStage||'stage 없음')+'</div><div class="err-msg" title="'+esc(g.topMsg)+'">'+esc(g.topMsg||'메시지 없음')+'</div></td><td>'+fmtDateT(g.last)+'</td></tr>';}).join('')
+    +'</tbody></table></div>':'<div class="empty">조건에 맞는 오류가 없습니다.</div>';
+
+  $('errRecent').innerHTML=rows.length?'<div class="tablewrap"><table><thead><tr><th>발생</th><th>사용자</th><th>오류</th><th>기기</th><th>기능·버전</th><th>stage</th><th>메시지</th></tr></thead><tbody>'
+    +rows.slice(0,120).map(function(e){ var msg=errMeta(e,'msg'), stage=errMeta(e,'stage');
+      return '<tr><td>'+fmtDateT(e.created_at)+'</td><td>'+esc(errUserName(e.user_id))+'</td><td><span class="err-pill">'+esc(errCode(e))+'</span><div class="muted" style="font-size:10px;margin-top:4px">'+esc(e.event_name||'')+'</div></td>'
+        +'<td><b>'+esc(e.device||'—')+'</b></td><td>'+esc(featureLabel(e.feature))+'<div class="muted" style="font-size:10px">'+esc(e.app_version||'버전 없음')+'</div></td>'
+        +'<td><div class="err-meta">'+esc(stage||'—')+'</div></td><td><div class="err-msg" title="'+esc(msg)+'">'+esc(msg||'—')+'</div></td></tr>';
+    }).join('')+'</tbody></table></div>'
+    +(rows.length>120?'<div class="muted" style="font-size:11px;margin-top:8px">최근 120건만 표시합니다. 묶음 표는 현재 조건의 전체 '+rows.length.toLocaleString()+'건 기준입니다.</div>':'')
+    :'<div class="empty">조건에 맞는 오류가 없습니다.</div>';
 }
 /* ===== 홈 — 모든 데이터 한눈에 ===== */
 var HOME=null;
