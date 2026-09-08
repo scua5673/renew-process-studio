@@ -1742,6 +1742,9 @@ html.ps-page-scout #availView .av-grp .gh .n{font-weight:600;color:var(--gray,#6
 html.ps-page-scout #availView .av-grp .rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0 14px}   /* 2.692 — 열을 늘려 한눈에 */
 html.ps-page-scout #availView .av-pl{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 4px;border-top:1px solid var(--line);font-size:13px;min-width:0}
 html.ps-page-scout #availView .av-pl .nm{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+html.ps-page-scout #availView .av-sep{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:8px 0 2px;font-size:11px;font-weight:700;color:var(--gray,#646A73)}
+html.ps-page-scout #availView .av-sep::before,html.ps-page-scout #availView .av-sep::after{content:"";flex:1;height:1px;background:var(--line)}
+html.ps-page-scout #availView .av-sep~.av-pl{opacity:.92}
 html.ps-page-scout #availView .av-vseg{display:inline-flex;gap:0;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-left:6px}
 html.ps-page-scout #availView .av-vseg button{height:28px;padding:0 10px;border:0;background:var(--panel2,#F1F3F5);color:var(--gray,#646A73);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 html.ps-page-scout #availView .av-vseg button.on{background:var(--ink,#14161A);color:#fff}
@@ -12689,7 +12692,7 @@ function teamHomeDateLabel(d){
 /* ══ 2.194 · 출석(가용) 탭 ═══════════════════════════════════════════════════════ */
 var availRange=14;
 var availDay=null;   /* 2.691 — 날짜별 명단에서 보고 있는 날(ymd). null=오늘 */
-var availView="grp"; try{ availView=localStorage.getItem("cs_av_view_v1")||"grp"; }catch(_){}   /* 2.692 — grp 조별 · pos 포지션별 · name 이름순 */
+var availView="grp"; try{ availView=localStorage.getItem("cs_av_view_v1")||"grp"; }catch(_){}   /* 2.692 — grp 조별 · pos 포지션별 · name 이름순. 2.693 기본은 조별 — 조 안은 훈련 가능자(포지션 순·이름순) → 쉼(재활·부상·불참)(사용자 확정) */
 var AV_ST_LB={ok:"훈련",rest:"휴식",rehab:"재활",injury:"부상",out:"불참"}, AV_ST_ORDER=["ok","rest","rehab","injury","out"];
 /* 2.691 — 특정 날짜의 상태를 고쳐 쓴다. 오늘이면 stSet(선수단 상태도 같이). 지난 날이면 그 날 하루만 런을 쪼개 덮는다(stRunStamp 는 과거를 안 쓴다). */
 function stSetAt(pid,st,ymd){
@@ -12732,15 +12735,20 @@ function renderAvailDaily(ours){
   }
   var body='';
   glist.forEach(function(g){
-    /* 2.692 — 조별·포지션별에서는 쉬는 선수(휴식·재활·부상·불참)가 자동으로 조의 아래로(사용자). 이름순은 이름 그대로. */
-    var stRank={ok:0,"":1,rest:2,rehab:3,injury:4,out:5};
+    /* 2.692 — 조별·포지션별에서는 쉬는 선수(휴식·재활·부상·불참)가 자동으로 조의 아래로(사용자). 이름순은 이름 그대로.
+       2.693 — 조 안 순서는 «가능 먼저 → 포지션 순 → 이름 가나다»(사용자 "조별로 포지션별 이름순"). 쉬는 묶음 앞에 가는 구분선. */
+    var stRank={ok:0,"":0,rest:1,rehab:1,injury:1,out:1};
+    var pidx2={}; (data.positions||[]).forEach(function(q,i){ pidx2[q.id]=i; });
     var list=(availView==="name")?rowsBy[g]:rowsBy[g].slice().sort(function(a,b){ var ra=stRank[stStatusAt(a.id,day)||""],rb=stRank[stStatusAt(b.id,day)||""]; if(ra==null)ra=9; if(rb==null)rb=9; if(ra!==rb)return ra-rb;
-      var na=parseInt(a.num,10),nb=parseInt(b.num,10); if(isNaN(na))na=999; if(isNaN(nb))nb=999; return na-nb; });
+      var pa=(pidx2[a.posId]==null?999:pidx2[a.posId]),pb=(pidx2[b.posId]==null?999:pidx2[b.posId]); if(pa!==pb)return pa-pb;
+      return String(a.name||"").localeCompare(String(b.name||""),"ko"); });
     var kg=(availView==="grp")?kindOf(g==="미지정"?"":g):(anyTrain?"train":k0); var isTr=(kg==="train"||kg==="match");
     var c={ok:0,rest:0,rehab:0,injury:0,out:0,rec:0};
+    var sepDone=false;
     var rows=list.map(function(p){ var st=stStatusAt(p.id,day)||""; if(st){ c.rec++; c[st]=(c[st]||0)+1; if(isTr){ tot.rec++; tot[st]=(tot[st]||0)+1; } }
       var ps=(data.positions||[]).find(function(q){return q.id===p.posId;});
-      return '<div class="av-pl"><span class="no">'+esc(p.num||"–")+'</span><span class="nm"><b>'+esc(p.name||"이름 없음")+'</b><small>'+esc(ps?(posAbbr(ps.name)||ps.name):"")+'</small></span>'
+      var sep=''; if(!sepDone&&availView!=="name"&&st&&st!=="ok"){ sepDone=true; sep='<div class="av-sep"><span>쉼</span></div>'; }   /* 2.693 — 쉬는 묶음 구분 */
+      return sep+'<div class="av-pl"><span class="no">'+esc(p.num||"–")+'</span><span class="nm"><b>'+esc(p.name||"이름 없음")+'</b><small>'+esc(ps?(posAbbr(ps.name)||ps.name):"")+'</small></span>'
         +'<button type="button" class="av-chip '+(st||"")+'" data-av-st="'+esc(p.id)+'" title="누르면 고를 수 있어요">'+(st?AV_ST_LB[st]:"미정")+'</button></div>'; }).join("");
     body+='<div class="av-grp"><div class="gh">'+esc(g)+' <span class="n">'+(isTr?('참여 '+c.ok+' / '+list.length):(kg==="off"?'OFF':'일정 없음'))+(c.rec-c.ok>0?' · 쉼 '+(c.rec-c.ok):'')+'</span></div><div class="rows">'+rows+'</div></div>';
   });
