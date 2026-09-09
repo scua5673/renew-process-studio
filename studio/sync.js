@@ -395,7 +395,7 @@ function safeEventMeta(meta){
   Object.keys(meta).slice(0,12).forEach(function(k){
     var v=meta[k];
     if(typeof v==='number'||typeof v==='boolean')out[String(k).slice(0,32)]=v;
-    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage)$/i.test(k))out[String(k).slice(0,32)]=v.slice(0,80);
+    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage|name|msg)$/i.test(k))out[String(k).slice(0,32)]=v.slice(k==='msg'?120:80);   /* 2.727 — 2.631 이 넣은 name·msg 를 여기서 버려 서버에 stage·code 만 남았다(9/9 실측 1,275건). 내용·토큰 없음(4508 에서 지움) */
   });
   return out;
 }
@@ -1864,6 +1864,56 @@ function schedHydrate(at,wid,raw){
   }).then(function(){
     return String(raw).replace(BLOB_RE_REF,function(all,key,ws,h){ return map[h]!=null?('"'+key+'":'+ws+'"'+map[h]+'"'):all; });
   });
+}
+/* ══ 2.727 · 보관함 사진 분리(사용자 «갑시다», 백엔드 점검 2026-09-09) ═══════════════════════════════════════
+   실측: ps_library 1,284행 317MB 중 data:image 든 행 687개가 349MB(보드 카드 평균 454KB) — DB 의 절반이고, 기기마다 library_body 로 통째로 받는다.
+   일정 그림(2.622)과 같은 방식: 올리기 직전 항목 JSON 안의 «값 전체가 data:image…base64» 인 문자열(512자 이상, 1.9MB 이하)을 ps_blob(내용 주소)로
+   떼어 내고 자리에 "psblob:<해시>" 를 남긴다. 받을 때 캐시(IDB ps_blob:<h>) → 서버 순으로 되돌린다. 기기 안 보관함 모양은 그대로다.
+   정규식은 JSON 값 시작(:·[·, 뒤)만 잡는다 — 썸네일 SVG 문자열 «안»의 href=\"data:image…\" 는 앞이 \ 라 안 잡힌다(잡으면 SVG 를 삼킨다).
+   ⚠ 옛 앱판은 psblob: 문자열을 받아 그 사진만 안 보인다(썸네일과 같은 손실 없는 퇴행, 새 판으로 열면 돌아온다). ps_blob 이 없거나 막히면(blobOff) 통째 전송. */
+var LIB_BLOB_RE_STRIP=/([:\[,]\s*)"(data:image\/[\w.+-]+;base64,[A-Za-z0-9+\/=]{512,})"/g;
+var LIB_BLOB_RE_REF=/"psblob:([0-9a-f]{16,64})"/g;
+var LIB_BLOB_MAX=1900000;   /* ps_blob v 상한 2,000,000 — 그보다 큰 사진은 그냥 둔다 */
+function libBlobStrip(raw){
+  var segs={}; String(raw).replace(LIB_BLOB_RE_STRIP,function(all,pre,seg){ if(seg.length<=LIB_BLOB_MAX)segs[seg]=1; return all; });
+  var keys=Object.keys(segs); if(!keys.length)return Promise.resolve({v:raw,blobs:[]});
+  return Promise.all(keys.map(blobHash)).then(function(hs){
+    var map={}; keys.forEach(function(s,i){map[s]=hs[i];});
+    var v=String(raw).replace(LIB_BLOB_RE_STRIP,function(all,pre,seg){ return map[seg]?(pre+'"psblob:'+map[seg]+'"'):all; });
+    return {v:v,blobs:keys.map(function(s){return {h:map[s],v:s};})};
+  });
+}
+function libBlobRefs(raw){ var m={},x; LIB_BLOB_RE_REF.lastIndex=0; while((x=LIB_BLOB_RE_REF.exec(String(raw))))m[x[1]]=1; LIB_BLOB_RE_REF.lastIndex=0; return Object.keys(m); }
+/* 참조 → 그림 맵. 캐시에 없는 것만 서버에서 묶어 받아 캐시에 넣는다(schedHydrate 와 같은 순서) */
+function blobFetchMap(at,wid,refs){
+  var map={};
+  return Promise.all(refs.map(function(h){ return blobCacheGet(h).then(function(v){ if(v!=null)map[h]=v; }); })).then(function(){
+    var miss=refs.filter(function(h){return map[h]==null;}); if(!miss.length||!at||blobOff)return;
+    var chunks=[]; for(var i=0;i<miss.length;i+=BLOB_IN)chunks.push(miss.slice(i,i+BLOB_IN));
+    return chunks.reduce(function(p,ch){ return p.then(function(){
+      return syncFetch('blob_pull',BASE+'/rest/v1/ps_blob?workspace_id=eq.'+encodeURIComponent(wid)+'&'+blobInFilter(ch)+'&select=h,v',{headers:hj(at)})
+        .then(function(r){ if(r.status===404){blobDisable('blob_pull',404);return [];} if(!r.ok)throw syncHttpError('blob_pull',r.status); return r.json(); })
+        .then(function(rows){ return Promise.all((rows||[]).map(function(x){ if(x&&typeof x.v==='string'){ map[x.h]=x.v; return blobCacheSet(x.h,x.v); } })); });
+    }); },Promise.resolve());
+  }).then(function(){ return map; });
+}
+function libBlobHydrate(at,wid,raw){
+  var refs=libBlobRefs(raw); if(!refs.length)return Promise.resolve(raw);
+  return blobFetchMap(at,wid,refs).then(function(map){ return String(raw).replace(LIB_BLOB_RE_REF,function(all,h){ return map[h]!=null?('"'+map[h]+'"'):all; }); });
+}
+/* 올리기 직전: 행의 item 안 사진을 떼어 ps_blob 에 올리고 행에는 참조만. 실패·미설치면 원래대로 통째. 로컬 항목(it)은 건드리지 않는다(사본을 만든다). */
+function libBlobPrepRows(at,wid,rows){
+  var todo=(rows||[]).filter(function(r){return r&&r.item&&typeof r.item==='object'&&!blobOff;});
+  return todo.reduce(function(p,r){ return p.then(function(){
+    var raw; try{ raw=JSON.stringify(r.item); }catch(_){ return; }
+    if(raw.indexOf('"data:image/')<0)return;
+    return libBlobStrip(raw).then(function(res){
+      if(!res.blobs.length)return;
+      return Promise.all(res.blobs.map(function(b){return blobCacheSet(b.h,b.v);})).then(function(){
+        return blobEnsure(at,wid,res.blobs).then(function(ok){ if(ok){ try{ r.item=JSON.parse(res.v); }catch(_){} } });
+      });
+    });
+  }); },Promise.resolve());
 }
 /* ══ 2.628 · 즉시 밀어주기(Realtime) ══════════════════════════════════════════════
    사용자 "노션처럼 바로바로 적용되게" → 세 걸음 중 1번. 45초 폴링은 그대로 두고(안전망), 서버의 작은 핑 표(ps_kv_ping: workspace_id·k·cupd)를
@@ -3581,7 +3631,7 @@ function _syncLibrary(at,m,now,wid,lib){
       var updates=push.filter(function(r0){return !insertOnly[r0.lib_id];});
       var inserts=push.filter(function(r0){return !!insertOnly[r0.lib_id];});
       var rev=null;try{rev=localStorage.getItem('cs_lib_rev');}catch(_){}
-      return outboxMark(wid,'@library',hash(rev),'library').then(function(){
+      return libBlobPrepRows(at,wid,push).then(function(){ return outboxMark(wid,'@library',hash(rev),'library'); }).then(function(){   /* 2.727 — 사진은 ps_blob 으로 먼저 */
         var updateRun=chunksOf(updates).reduce(function(p,ch){ return p.then(function(){
           return syncFetch('library_push',BASE+'/rest/v1/ps_library',{method:'POST',headers:(function(){var h2=hj(at);h2['Prefer']='resolution=merge-duplicates';return h2;})(),body:JSON.stringify(ch)})
             .then(function(r){ if(!r.ok)throw syncHttpError('library_push',r.status); pushedOk+=ch.length; });
@@ -3615,6 +3665,9 @@ function _syncLibrary(at,m,now,wid,lib){
         var q='lib_id=in.('+encodeURIComponent('"'+ch.join('","')+'"')+')';
         return syncFetch('library_body',BASE+'/rest/v1/ps_library?workspace_id=eq.'+wid+'&select='+libSelCols('lib_id,item,saved_at')+'&'+q,{headers:hj(at)})
           .then(function(r){ if(!r.ok)throw syncHttpError('library_body',r.status); return r.json(); })
+          .then(function(rows2){   /* 2.727 — psblob: 참조를 사진으로 되돌린 뒤 적용 */
+            return Promise.all((rows2||[]).map(function(r0){ if(!r0||!r0.item)return; var raw; try{ raw=JSON.stringify(r0.item); }catch(_){ return; } if(raw.indexOf('"psblob:')<0)return; return libBlobHydrate(at,wid,raw).then(function(v){ try{ r0.item=JSON.parse(v); }catch(_){} }); })).then(function(){ return rows2; });
+          })
           .then(function(rows2){ (rows2||[]).forEach(function(r0){
             if(!r0||!r0.item)return;
             var it=r0.item; it.libId=r0.lib_id;delete it._teamSharePending;
