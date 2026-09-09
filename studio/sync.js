@@ -2208,7 +2208,11 @@ function kvPushRowsInner(at,rows,onOk,label){
     var h=hj(at);h['Prefer']=prefBuild((missing?'resolution=ignore-duplicates,':'')+'return=representation');
     return syncFetch(label+'_cas',url,{method:method,headers:h,body:JSON.stringify(body)}).then(function(r){
       if(!r.ok)throw syncHttpError(label+'_cas',r.status);
-      return r.text().then(function(t){var got=null;try{got=t?JSON.parse(t):null;}catch(_){};if(!Array.isArray(got)||!got.length){throw syncIssue('sync_conflict',label+'_cas','server changed during import');}return confirmed([req],got);});
+      return r.text().then(function(t){var got=null;try{got=t?JSON.parse(t):null;}catch(_){};
+        /* 2.731 — 선수 행(_casSoft): 판본이 어긋나면 회차를 깨지 않고 «충돌 목록»에 적는다. itemsResolveConflicts 가 서버 행을 받아 화면에 적용한다(서버가 판정). */
+        if(!Array.isArray(got)||!got.length){ if(req._casSoft){ _itemConflicts.push(req); return null; } throw syncIssue('sync_conflict',label+'_cas','server changed during import'); }
+        if(req._casSoft){ return Promise.resolve().then(function(){ return confirmed([req],got); }).catch(function(){ _itemConflicts.push(req); return null; }); }
+        return confirmed([req],got);});
     });
   });},run);
 }
@@ -3399,6 +3403,34 @@ function itemsReadAll(){
     return {players:players,tombs:tombs,n:n,rows:rows};
   }).catch(function(e){ syncDiagnostic('items-read',e); return null; });
 }
+/* 2.731 — 서버 판정 뒷정리. _itemConflicts(판본 어긋난 행) 의 서버 행을 받아 IDB·메타에 적용하고, 내 값은 ps_items_lost_v1 에 남긴 뒤 한 번 알린다. */
+var _itemConflicts=[], _itemsLostNames=[];
+function itemsLost(k,mine,theirs){
+  try{ var L=JSON.parse(localStorage.getItem('ps_items_lost_v1')||'[]')||[]; L.push({k:k,at:Date.now(),mine:mine,theirs:theirs}); localStorage.setItem('ps_items_lost_v1',JSON.stringify(L.slice(-20))); }catch(_){}
+  try{ var o=JSON.parse(theirs||mine||'{}'); _itemsLostNames.push(String((o&&o.name)||k.slice(ITEMP.length))); }catch(_){ _itemsLostNames.push(k); }
+}
+function itemsLostFlush(){
+  var names=_itemsLostNames.slice(); _itemsLostNames=[]; if(!names.length)return;
+  var msg='팀 것이 더 새로워요 — '+names[0]+(names.length>1?(' 외 '+(names.length-1)+'명'):'')+' (내 수정은 되돌리기에 남겨 뒀어요)';
+  try{ chip(msg); }catch(_){}
+  try{ syncDiagnostic('items-conflict',new Error(names.length+' rows')); }catch(_){}
+}
+function itemsResolveConflicts(at,wid){
+  var reqs=_itemConflicts.splice(0); if(!reqs.length||!at||!wid)return Promise.resolve();
+  var ks=reqs.map(function(r){return r.k;});
+  return syncFetch('items_conflict',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(wid)+'&'+kvInFilter(ks)+'&select=k,v,cupd',{headers:hj(at)})
+    .then(function(r){ if(!r.ok)throw syncHttpError('items_conflict',r.status); return r.json(); })
+    .then(function(rows){
+      var sv={}; (rows||[]).forEach(function(x){ if(x&&x.k)sv[x.k]=x; });
+      var m=meta(), n=0;
+      return Promise.all(reqs.map(function(req){
+        var x=sv[req.k]; if(!x||typeof x.v!=='string')return;          /* 서버에 없으면(지워짐) 다음 회차가 다시 판정한다 */
+        if(x.v===req.v){ m.h[req.k]=hash(x.v); m.c[req.k]=x.cupd; return; }
+        itemsLost(req.k,req.v,x.v); n++;
+        return window.storage.set(req.k,x.v).then(function(){ m.h[req.k]=hash(x.v); m.c[req.k]=x.cupd; }).catch(function(e){ syncDiagnostic('items-conflict-write',e); });
+      })).then(function(){ setMeta(m); if(n){ try{ localStorage.setItem('ps_items_rev',String(Date.now())); }catch(_){} } itemsLostFlush(); });
+    }).catch(function(e){ syncDiagnostic('items-conflict',e); itemsLostFlush(); });
+}
 function itemsActive(){ try{ return ITEMS_ACTIVE&&localStorage.getItem('ps_items_write')!=='0'; }catch(_){ return ITEMS_ACTIVE; } }
 try{ window.PSItems={audit:itemsAudit,write:itemsWrite,prefix:ITEMP,
   ready:itemsPushAllowed,check:itemsServerCheck,holdOpen:itemsHoldOpen,readAll:itemsReadAll,active:itemsActive}; }catch(_){}
@@ -4325,16 +4357,17 @@ function syncNowCore(reason){
           if(!pushable){ /* 올릴 수는 없어도 받는 것은 막지 않는다 */
             if(!dirty&&srvChanged&&row){ if(kvWrite(k,row.v,writes)){ applied++; m.h[k]=hash(row.v); m.c[k]=row.cupd; } }
             return; }
-          if(loc!=null&&!row){ pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now}); m.h[k]=lh; m.c[k]=now; return; }
-          if(dirty&&!srvChanged){ pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now}); m.h[k]=lh; m.c[k]=now; return; }
+          /* 2.731 — 2단계 «서버 판정»: 올릴 때 내가 본 판본(cupd)을 붙인다(_casCupd → PATCH cupd=eq). 서버가 그새 바뀌었으면 0행 → 충돌 목록 →
+             itemsResolveConflicts 가 서버 행을 받아 적용하고 «팀 것이 더 새로워요»를 알린다. 새 행은 _casMissing(ignore-duplicates). */
+          if(loc!=null&&!row){ pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now,_casMissing:true,_casSoft:true}); m.h[k]=lh; m.c[k]=now; return; }
+          if(dirty&&!srvChanged){ pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now,_casCupd:row.cupd,_casSoft:true}); m.h[k]=lh; m.c[k]=now; return; }
           if(!dirty&&srvChanged){ if(kvWrite(k,row.v,writes)){ applied++; m.h[k]=hash(row.v); m.c[k]=row.cupd; } return; }
           if(dirty&&srvChanged){
-            /* 같은 선수를 두 기기에서 고쳤다 — 손에 든 기기가 이긴다(통짜와 같은 규칙).
-               서버본은 남겨 두되 알림은 띄우지 않는다: 선수 44명이 한꺼번에 걸리면
-               알림이 44개가 된다(1.526 에서 스무 개로 이미 겪었다). 조용히 사본만 남긴다. */
+            /* 2.731 — 같은 선수를 두 기기에서 고쳤고 서버가 이미 더 새롭다 → **서버가 이긴다**(1단계까지는 손에 든 기기가 이겨 한 편집이 조용히 사라졌다).
+               내 값은 ps_items_lost_v1 에 남기고 화면은 서버 값으로, 회차 끝에 «팀 것이 더 새로워요 — 이름» 한 번. */
             if(row.v===loc){ m.h[k]=lh; m.c[k]=row.cupd; return; }
-            try{ (COPIES_OFF||localStorage.setItem('ps_sync_conflict_'+k,row.v)); }catch(_){}
-            pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now}); m.h[k]=lh; m.c[k]=now;
+            itemsLost(k,loc,row.v);
+            if(kvWrite(k,row.v,writes)){ applied++; m.h[k]=hash(row.v); m.c[k]=row.cupd; }
           }
         });
         itemsApplied+=(applied-_ia0);
@@ -4471,7 +4504,7 @@ function syncNowCore(reason){
       }
       /* 로컬 IDB 쓰기와 CAS 검사를 서버 push보다 먼저 끝낸다. 사용자가 회차 중
          다시 저장했다면 일정 행만 이 회차에서 빼고 다음 회차에 최신본을 읽는다. */
-      return Promise.all(writes).then(function(){ if(itemsApplied>0){ try{ localStorage.setItem('ps_items_rev',String(Date.now())); }catch(_){} } return syncBaseReady(); }).then(function(){   /* 2.730 — IDB 쓰기가 끝난 뒤에 «행이 왔다» 신호 */
+      return Promise.all(writes).then(function(){ if(itemsApplied>0){ try{ localStorage.setItem('ps_items_rev',String(Date.now())); }catch(_){} } try{ itemsLostFlush(); }catch(_){} return syncBaseReady(); }).then(function(){   /* 2.730 — IDB 쓰기가 끝난 뒤에 «행이 왔다» 신호 */
         if(scheduleGuard.stale)restoreScheduleMeta();
         if(!schedulePushCurrent()){
           var hadMatch=pushRows.some(function(r){return r.k==='cs_team_matches_v1';});
@@ -4486,7 +4519,7 @@ function syncNowCore(reason){
             if(hadMatch)deferScheduleMatch();
             restoreScheduleMeta();
           }
-          return kvPushRows(at,pushRows,function(ch){ pushLog(wid,ch); });
+          return kvPushRows(at,pushRows,function(ch){ pushLog(wid,ch); }).then(function(res){ return itemsResolveConflicts(at,wid).then(function(){ return res; }); });   /* 2.731 */
         });
       }).then(function(){ return syncLibrary(at,m,now,wid); }).then(function(lr){
         applied+=(lr&&lr.applied)||0;
