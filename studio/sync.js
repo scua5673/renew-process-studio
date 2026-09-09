@@ -3258,7 +3258,11 @@ var ITEMS_IDX='ps_items_idx_v1', ITEMS_SRV='ps_items_srv_v1', ITEMS_HOLD='ps_ite
 /* 1.644 — sq:*는 아직 화면에서 읽지 않는 이행용 그림자다. 워크스페이스별 색인·전환을
    원자적으로 만들기 전에는 팀 사이에 섞일 수 있으므로 쓰기·전송을 잠시 닫는다.
    정본 scout_tool_v1/cs_squad_v1은 그대로 저장·동기화된다. */
-var ITEMS_ACTIVE=false;
+/* 2.730 — 켠다(백엔드 계획 1단계 «선수단을 항목으로», 사용자 "갑시다" 2026-09-09). 서버 이행 SQL(supabase-2730-items-migrate.sql)이 각 팀의
+   scout_tool_v1.players 를 sq:<id> 행으로 만들어 두고, scout.html 은 행이 하나라도 있으면 행을 모아 명단을 만든다(itemsApply). 되돌리기: localStorage ps_items_write='0'.
+   1.644 의 «팀 사이에 섞임» 은 색인을 워크스페이스별로 두어(itemsIdxKey) 풀었다 — IDB 의 sq: 키 자체는 전환 때 지워지고 다시 받는다(idbSwitchKeys). */
+var ITEMS_ACTIVE=true;
+function itemsIdxKey(){ var w=''; try{ w=activeWs()||''; }catch(_){} return ITEMS_IDX+':'+w; }
 var ITEMS_SRV_TTL=864e5;                    /* 하루에 한 번만 물어본다 */
 function itemsSrvState(){ try{ return JSON.parse(localStorage.getItem(ITEMS_SRV)||'null')||null; }catch(_){ return null; } }
 /* 동기(sync)로 읽는 판정 — 푸시 직전에 불린다 */
@@ -3281,7 +3285,7 @@ function itemsServerCheck(){
     syncDiagnostic('items-server-check',e); return false;
   });
 }
-function itemsIdx(){ try{ return JSON.parse(localStorage.getItem(ITEMS_IDX)||'{}')||{}; }catch(_){ return {}; } }
+function itemsIdx(){ try{ return JSON.parse(localStorage.getItem(itemsIdxKey())||'{}')||{}; }catch(_){ return {}; } }
 function itemsHoldList(){ try{ return JSON.parse(localStorage.getItem(ITEMS_HOLD)||'[]')||[]; }catch(_){ return []; } }
 /* 선수 한 명이 지금 어떤 모습인지 — 이 값이 그대로 서버 행이 된다 */
 function itemVal(p){ try{ return JSON.stringify(p); }catch(_){ return null; } }
@@ -3338,7 +3342,7 @@ function itemsWriteNow(players){
       });
     }
     return Promise.all(jobs).then(function(){
-      try{ localStorage.setItem(ITEMS_IDX,JSON.stringify(next)); }catch(_){}
+      try{ localStorage.setItem(itemsIdxKey(),JSON.stringify(next)); }catch(_){}
       return {wrote:wrote,gone:gone.length,held:held,n:Object.keys(seen).length};
     });
   }).catch(function(e){ syncDiagnostic('items-write',e); return null; });
@@ -3352,7 +3356,7 @@ function itemsApproveDel(){
     delete idx[id];
     return window.storage.set(ITEMP+id,JSON.stringify({_del:now})).catch(function(){});
   })).then(function(){
-    try{ localStorage.setItem(ITEMS_IDX,JSON.stringify(idx)); }catch(_){}
+    try{ localStorage.setItem(itemsIdxKey(),JSON.stringify(idx)); }catch(_){}
     try{ localStorage.removeItem(ITEMS_HOLD); }catch(_){}
     try{ syncNow('items-del'); }catch(_){}
     return ids.length;
@@ -3382,8 +3386,22 @@ function itemsHoldOpen(){
       +'<b>자료 확인 › 지난 판본으로 되돌리기</b>에서 선수단을 되돌리세요.',hideCancel:true,ok:'확인'}); }catch(_){}
   });
 }
+/* 2.730 — 이 기기 IDB 의 선수 행을 모두 읽는다 → {players, tombs, n, rows}. rows=0 이면 «아직 행이 없다»(이행 전·첫 회차 전) → 화면은 통짜를 쓴다. */
+function itemsReadAll(){
+  if(!ITEMS_ACTIVE||!window.storage||!window.storage.keys||!window.storage.get)return Promise.resolve(null);
+  return Promise.resolve(window.storage.keys()).then(function(ks){
+    var keys=(ks||[]).filter(isItemKey);
+    return Promise.all(keys.map(function(k){ return window.storage.get(k).then(function(r){ return [k,(r&&typeof r.value==='string')?r.value:null]; }).catch(function(){ return [k,null]; }); }));
+  }).then(function(pairs){
+    var players=[], tombs={}, n=0, rows=0;
+    pairs.forEach(function(pr){ var k=pr[0], v=pr[1]; if(v==null)return; rows++; var o; try{ o=JSON.parse(v); }catch(_){ return; }
+      if(!o||typeof o!=='object')return; var id=k.slice(ITEMP.length); if(o._del){ tombs[id]=+o._del||1; return; } if(!o.id)o.id=id; players.push(o); n++; });
+    return {players:players,tombs:tombs,n:n,rows:rows};
+  }).catch(function(e){ syncDiagnostic('items-read',e); return null; });
+}
+function itemsActive(){ try{ return ITEMS_ACTIVE&&localStorage.getItem('ps_items_write')!=='0'; }catch(_){ return ITEMS_ACTIVE; } }
 try{ window.PSItems={audit:itemsAudit,write:itemsWrite,prefix:ITEMP,
-  ready:itemsPushAllowed,check:itemsServerCheck,holdOpen:itemsHoldOpen}; }catch(_){}
+  ready:itemsPushAllowed,check:itemsServerCheck,holdOpen:itemsHoldOpen,readAll:itemsReadAll,active:itemsActive}; }catch(_){}
 
 function kvWrite(k,v,writes,expectedLoc,writeGuard){
   /* 덮기 전에 지금 값을 읽어 남긴다. IDB 키(스카우팅 후보·보관함 등)가 오히려 중요하다 —
@@ -3926,7 +3944,7 @@ function syncNowCore(reason){
         /* 2.603 — 화면이 안 쓰는 키(KEYS·IDP 접두사 밖)는 값을 받지 않는다. 실측: 풋볼A 의 ps_kv 에 «팀 자료 통째로 올리기»(bulkPush)가 남긴
            cs_drill_lib_v1 한 줄(8,036KB, 9/1·9/2·9/4 세 번)을 그 팀의 다른 기기 전부가 회차(45초)마다 통째로 받고 있었다 —
            적용 루프(KEYS.forEach)는 무시하니 m.c[k] 가 영영 안 올라가 매번 «바뀐 키»로 보였다. 이그레스 250GB 의 가장 큰 후보. */
-        if(KEYS.indexOf(k)<0&&k.indexOf('cs_idp_v1_')!==0&&k.indexOf('cs_idp_pub_v1_')!==0)return;
+        if(KEYS.indexOf(k)<0&&k.indexOf('cs_idp_v1_')!==0&&k.indexOf('cs_idp_pub_v1_')!==0&&!(ITEMS_ACTIVE&&isItemKey(k)))return;   /* 2.730 — 선수 행도 받는다 */
         if(k===SCHEDULE_KEY){
           /* 1.644 — 일정은 화면이 localStorage 거울을, 동기화가 IDB를 함께 쓴다.
              iPad에서 둘이 다르거나 로컬 hash가 확정 hash와 다르면 cupd가 같아도
@@ -3967,7 +3985,7 @@ function syncNowCore(reason){
     }).then(function(pair){
       var rows=pair[0], idbVals=pair[1];
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
-      var m=meta(), pushRows=[], applied=0, skippedBig=0, skippedKeys=[], heldKeys=[], dependencyDeferredKeys=[], now=Date.now(), writes=[];
+      var m=meta(), pushRows=[], applied=0, skippedBig=0, skippedKeys=[], heldKeys=[], dependencyDeferredKeys=[], now=Date.now(), writes=[], itemsApplied=0;
       var scheduleGuard={stale:false},schedulePushExpected=null,scheduleMetaBefore=null,scheduleAppliedPlanned=0,scheduleDeferred=false,scheduleMetaRestored=false,schedulePushHeld=false,scheduleDependencyBlocked=false,scheduleDependencyRetry=false;
       function deferScheduleMatch(){
         if(dependencyDeferredKeys.indexOf('cs_team_matches_v1')<0)dependencyDeferredKeys.push('cs_team_matches_v1');
@@ -4290,6 +4308,7 @@ function syncNowCore(reason){
             '사라진 항목 수' 검사다 — 1.568 에서 배운 것과 같다(감지는 쓰기 지점에 붙인다). */
       (function(){
         if(!ITEMS_ACTIVE)return;
+        var _ia0=applied;   /* 2.730 — 이 블록이 받은 행 수 → 회차 끝에 ps_items_rev 로 화면에 알린다 */
         var set={};
         Object.keys(idbVals||{}).forEach(function(k){ if(isItemKey(k)&&idbVals[k]!=null)set[k]=1; });
         Object.keys(srv).forEach(function(k){ if(isItemKey(k))set[k]=1; });
@@ -4318,6 +4337,7 @@ function syncNowCore(reason){
             pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now}); m.h[k]=lh; m.c[k]=now;
           }
         });
+        itemsApplied+=(applied-_ia0);
       })();
       /* ── 보안 v2 (서버 RLS와 동일 규칙, 2026-07-19) ──
          ① push 사전 필터: 내 권한 밖 키는 서버가 거부(403)하고, 한 행 거부가 배치 전체를 실패시키므로 미리 걸러낸다.
@@ -4451,7 +4471,7 @@ function syncNowCore(reason){
       }
       /* 로컬 IDB 쓰기와 CAS 검사를 서버 push보다 먼저 끝낸다. 사용자가 회차 중
          다시 저장했다면 일정 행만 이 회차에서 빼고 다음 회차에 최신본을 읽는다. */
-      return Promise.all(writes).then(function(){return syncBaseReady();}).then(function(){
+      return Promise.all(writes).then(function(){ if(itemsApplied>0){ try{ localStorage.setItem('ps_items_rev',String(Date.now())); }catch(_){} } return syncBaseReady(); }).then(function(){   /* 2.730 — IDB 쓰기가 끝난 뒤에 «행이 왔다» 신호 */
         if(scheduleGuard.stale)restoreScheduleMeta();
         if(!schedulePushCurrent()){
           var hadMatch=pushRows.some(function(r){return r.k==='cs_team_matches_v1';});

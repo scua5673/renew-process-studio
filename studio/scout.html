@@ -5471,6 +5471,38 @@ function canSeeTargets(){
 function loadTargets(){ try{ var t=store.get(TKEY); return (t&&Array.isArray(t.players))?t.players:[]; }catch(_){ return []; } }
 
 let data={attrs:[],positions:[],players:[],meta:{}};
+/* ══ 2.730 · 선수 행(sq:<id>) 읽기 — 백엔드 계획 1단계 ═══════════════════════════════════════════
+   서버가 각 팀의 scout_tool_v1.players 를 sq: 행으로 옮겨 두면, 동기화가 그 행들을 이 기기 IDB 에 내려준다(sync.js 항목 블록).
+   여기서는 행이 하나라도 있으면 행을 명단의 정본으로 삼는다: 통짜에만 있는 선수는 «옛 판 기기가 넣은 것»일 때만(도장 _items.build < 2.73, 5명 이하) 흡수하고,
+   묘비(_del)가 있는 선수는 뺀다. 행이 없으면(이행 전·새 기기 첫 회차 전) 통짜 그대로. 바뀌면 save() 로 통짜·거울을 행에서 다시 만든다(다른 화면들이 통짜를 읽는다).
+   되돌리기: localStorage ps_items_write='0' → PSItems.active() 가 false → 이 함수는 아무것도 안 한다. */
+function itemsPI(){ try{ return (window.parent&&window.parent.PSItems)||window.PSItems||null; }catch(_){ return null; } }
+function itemsApply(reason){
+  var PI=itemsPI(); if(!PI||!PI.readAll||!(PI.active&&PI.active()))return Promise.resolve(false);
+  return PI.readAll().then(function(r){
+    if(!r||!r.rows)return false;
+    var doc=(data.players||[]), byId={}; r.players.forEach(function(p){ if(p&&p.id)byId[p.id]=p; });
+    var seen={}, out=[], absorb=[];
+    var stamp=parseFloat((data._items&&data._items.build)||"0")||0, oldDoc=!(stamp>=2.73);
+    doc.forEach(function(p){
+      if(!p||!p.id||isTargetPl(p)){ out.push(p); return; }
+      if(byId[p.id]){ out.push(byId[p.id]); seen[p.id]=1; return; }
+      if(r.tombs[p.id]) return;                          /* 다른 기기가 지운 선수(묘비) */
+      absorb.push(p);                                     /* 통짜에만 있는 선수 — 아래에서 판정 */
+    });
+    r.players.forEach(function(p){ if(p&&p.id&&!seen[p.id]){ out.push(p); seen[p.id]=1; } });
+    /* 통짜에만 있고 묘비도 없는 선수: 새 판이 쓴 통짜(도장 ≥2.73)면 «행이 아직 안 써진 방금 추가한 선수»라 그대로 둔다(잃지 않는다 — 다음 save 가 행을 만든다).
+       옛 판이 쓴 통짜면 5명까지만 흡수한다(옛 tmMigrate 가 거울에서 수십 명을 새 id 로 만든 경우를 걸러 «2배»를 막는다). */
+    if(absorb.length&&(!oldDoc||absorb.length<=5)) absorb.forEach(function(p){ out.push(p); });
+    var before=JSON.stringify(doc), after=JSON.stringify(out);
+    if(before===after)return false;
+    data.players=out;
+    try{ save(); }catch(_){}
+    try{ psAct&&psAct("a_items_apply"); }catch(_){}
+    return true;
+  }).catch(function(){ return false; });
+}
+function itemsRerender(){ try{ const av=document.querySelector(".view.on"); if(av&&av.id==="teamView")renderTeam(); else if(av&&av.id==="homeView")renderTeamHome(); }catch(_){} }
 function load(){
   const d=store.get(KEY);
   if(d&&Array.isArray(d.attrs)&&Array.isArray(d.positions)){
@@ -9287,6 +9319,7 @@ function tmOurs(){return data.players.filter(p2=>p2.type!=="target");}
 function tmAbbrOf(pl){const po=data.positions.find(x=>x.id===pl.posId);return po?tmNorm(posAbbr(po.name)):"";}
 function tmMigrate(){ // 구 팀구성(cs_squad_v1) → 선수 DB로 1회 이전
   try{
+    try{ var _pi=itemsPI(); if(_pi&&_pi.active&&_pi.active())return; }catch(_){}   /* 2.730 — 선수는 행(sq:)이 정본이다. 거울에서 원본을 되살리지 않는다 */
     if(tmOurs().length)return;
     const v=localStorage.getItem("cs_squad_v1");if(!v)return;
     const o=JSON.parse(v);if(!o||!Array.isArray(o.players)||!o.players.length)return;
@@ -10804,12 +10837,10 @@ window.addEventListener("storage",e=>{
   /* 1.486 다중 기기: 선수단 본체(scout_tool_v1)가 다른 기기에서 바뀌어 동기화로 도착하면
      메모리 data를 재로드한다 — 전에는 리스너가 없어 옛 메모리가 다음 save()에서 새 데이터를 통째로 덮었다.
      2.612 — 삭제 묘비(cs_player_del_v1)가 도착해도 같은 길로(다른 기기가 지운 선수를 바로 감춘다). */
-  if(e.key===KEY||e.key===PDKEY){
+  if(e.key===KEY||e.key===PDKEY||e.key==="ps_items_rev"){   /* 2.730 — 선수 행이 도착해도 같은 길 */
     const a=document.activeElement,typing=a&&(/INPUT|TEXTAREA|SELECT/.test(a.tagName)||a.isContentEditable);
     if(typing){window.__teamStale=1;}
-    else{try{load();const av=document.querySelector(".view.on");
-      if(av&&av.id==="teamView")renderTeam();
-      else if(av&&av.id==="homeView")renderTeamHome();}catch(_){}}
+    else{try{if(e.key!=="ps_items_rev")load();itemsRerender();itemsApply("sync").then(function(ch){ if(ch)itemsRerender(); });}catch(_){}}
   }
   if(e.key===TM_KEY){const tv=document.getElementById("teamView");
     /* 1.732 — 입력 중(이름·번호 등) 재렌더는 포커스를 날려 '몇 글자 뒤 안 써짐'을 만든다.
@@ -16847,6 +16878,7 @@ function init(){
   load();
   try{ if(migrateAttrWording()){ /* 옛 문구 → 선수 말 (1.520). 팀이 고친 항목은 그대로 둔다 */ } }catch(_){}
   save(); /* 평가표 모드·공개 미러를 초기 진입 시에도 확정 */
+  try{ itemsApply("boot").then(function(ch){ if(ch)itemsRerender(); }); }catch(_){}   /* 2.730 — 선수 행이 있으면 명단을 행에서 */
   matchWire();
   if($("teamIdpOpen")){
     var canIdp=true;try{var ss=JSON.parse(localStorage.getItem("ps_sync_session")||"null"),wid=localStorage.getItem("ps_active_ws")||"",wl=JSON.parse(localStorage.getItem("ps_ws_list")||"[]"),wo=(wl||[]).filter(function(w){return w.id===wid;})[0],pm=JSON.parse(localStorage.getItem("cs_perms_v1")||"null");if(wo&&wo.kind==="team"&&wo.role!=="owner"&&ss&&pm){var me=pm.members&&pm.members[ss.uid];canIdp=((me&&me.role)||pm.defaultRole||"player")!=="player";}}catch(_){}
