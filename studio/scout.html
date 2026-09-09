@@ -11522,9 +11522,19 @@ function matchMergeSchedule(state){
   if(changed)state.matches.sort(function(a,b){return String(a.date||"").localeCompare(String(b.date||""));});
   return changed;
 }
+/* 2.725 — 서버의 경기 문서를 아직 한 번도 못 받은 상태(워크스페이스 전환·새 기기 첫 부팅)에서는 일정으로 경기를 만들지도 저장하지도 않는다.
+   실측 2026-09-09(«2026서울시u14대표» 코치): 풋볼A 로 갔다 15:18 KST 에 돌아오자 로컬 문서가 빈 채 일정(process_coach_v1)이 먼저 도착 → matchLoad 가
+   일정에서 경기를 **새 id·준비 글 빈칸**으로 만들어 올리며 서버 문서(9/8 에 쓴 공격·수비·전환 4칸)를 덮었다. 경기 문서가 도착하면(__matchRefresh) 그때 병합한다.
+   판정: 로그인돼 있고, 동기화 메타의 last(마지막 성공 회차, 전환 때 0 으로 초기화)가 아직 0. 로그인 안 한 로컬 전용은 예전 그대로. */
+function matchDocPending(){ try{
+  var s=JSON.parse(localStorage.getItem("ps_sync_session")||"null"); if(!(s&&s.uid))return false;
+  var m=JSON.parse(localStorage.getItem("ps_sync_meta")||"null"); if(!m)return true;
+  return !(+m.last>0);
+}catch(_){ return false; } }
 function matchLoad(){
   if(matchState)return matchState;
   var o=store.get(MATCH_KEY);
+  if(!o&&matchDocPending())return {version:1,matches:[]};   /* 2.725 — 캐시하지 않고 빈 문서만 돌려준다(저장 안 됨: matchSaveNow 는 matchState 없으면 건너뜀) */
   if(!o||!Array.isArray(o.matches))o={version:1,matches:[]};
   if(matchMergeSchedule(o))store.set(MATCH_KEY,o);
   /* 정리 과정에서 접힌 기록을 보고 있었다면 선택을 놓아준다(빈 화면 대신 첫 경기로 돌아간다). */
