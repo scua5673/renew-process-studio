@@ -9768,7 +9768,9 @@ function setTrainingWizardStep(step){
   if(__trainingWizardStep===3){try{fillEditorPanel();renderTrainingTabs();renderSceneStrip();applyView();}catch(_){}}
   if(__trainingWizardStep===4){trainingWizardRenderReview();if($("twReview"))$("twReview").classList.add("on");}
   var labels={1:["나가기","상세 설계"],2:["이전","상세 설계"],3:["나가기","저장하기"],4:["수정하기","저장 정보 확인"]};   /* 1.937 — 3단계: 저장하기 = 바로 저장하고 보관함으로, 나가기 = 저장 없이 보관함으로(사용자) */   /* 1.704 — step 2 제거: 1↔3 직결. 1.932 — 3단계 왼쪽 버튼은 '세션 설정'(1단계로) 대신 '나가기'(보관함으로)(사용자). 세션 설정은 상단 인원 표시를 눌러 연다 */
-  try{$("editorCancel").textContent=labels[__trainingWizardStep][0];$("editorDone").textContent=labels[__trainingWizardStep][1];if($("editorFlow"))$("editorFlow").style.display="none";if($("epNameTop"))$("epNameTop").style.display="none";}catch(_){}
+  try{$("editorCancel").textContent=labels[__trainingWizardStep][0];$("editorDone").textContent=labels[__trainingWizardStep][1];if($("editorFlow"))$("editorFlow").style.display="none";
+    /* 2.722 — 만들기(마법사)에서도 제목 칸을 보인다(사용자 "편집할 때는 나오는데 만들기에는 제목 쓰는곳이 없어"). 작전판(3단계)에서만 — 1단계는 자기 «세션 이름» 칸이 있다 */
+    if($("epNameTop")){$("epNameTop").style.display=(__trainingWizardStep===3?"":"none");if(__trainingWizardStep===3)$("epNameTop").value=editorFileName||"";}}catch(_){}
   try{updateTwRosterTop();}catch(_){}
 }
 /* 1.704 — 마법사 상단바 오른쪽 훈련 인원. 훈련 가능=GK+필드(총인원 칸), 없으면 예상 인원 폴백. */
@@ -12008,7 +12010,7 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
     window.__meetBoardStash=null;
     try{store.set("cs_board_stash_v1",null);}catch(_){} try{localStorage.removeItem("cs_board_stash_v1");}catch(_){} };   // 좀비 스냅 자동 청소
   if($("epName"))$("epName").oninput=function(){if(editorDraft){editorDraft.name=$("epName").value;try{renderTrainingTabs();}catch(_){}}};   /* 훈련 제목 → 탭 라벨 갱신 */
-  if($("epNameTop"))$("epNameTop").oninput=function(){editorFileName=$("epNameTop").value;};   /* 파일 제목 */
+  if($("epNameTop"))$("epNameTop").oninput=function(){editorFileName=$("epNameTop").value;try{if(__trainingWizardActive){var _m=trainingWizardMeta();_m.name=editorFileName;if($("twName"))$("twName").value=editorFileName;}}catch(_){}};   /* 파일 제목. 2.722 — 마법사 meta·1단계 «세션 이름»과 같이 간다 */
   if($("epMin"))$("epMin").oninput=function(){if(editorDraft)editorDraft.minutes=+$("epMin").value||0;};
   if($("epSets"))$("epSets").oninput=function(){if(editorDraft)editorDraft.sets=Math.max(1,+$("epSets").value||1);};
   if($("epFocus"))$("epFocus").onchange=function(){if(editorDraft)editorDraft.focus=$("epFocus").value;};
