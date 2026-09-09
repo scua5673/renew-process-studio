@@ -10269,6 +10269,10 @@ async function openLibDrawEditor(libId, readOnly){
     editorSaveStatus("임시본 복구됨",true);
   }else{loadEditorTrainings(d);_activateTraining(0);editorSaveStatus(editorReadOnly?"":"변경하면 자동 임시저장",false);}
   fillEditorPanel();renderSceneStrip();renderTrainingTabs();
+  /* 2.724 — 보관함에서 연 카드의 훈련 인원 복원(사용자 "복제했을 때 훈련인원 등 전부 복제되게"). 카드에는 2.182 부터 roster 가 저장되고
+     복제(dc)에도 그대로 실리는데, 이 문(openLibDrawEditor)만 복원을 안 해 세션에 남은 직전 값(다른 카드 것이거나 0명)을 보여 줬다 —
+     openEditor(id) 의 2.182 복원과 같은 한 줄. 카드에 roster 가 없으면(2.182 이전 카드) 다른 카드 숫자를 물려받지 않게 0 으로. */
+  try{ syncEpRosterUI({counts:(d.roster&&typeof d.roster==="object")?d.roster:{},syncInputs:true}); }catch(_){}
   moveBoardTo($("editorBoardWrap"));$("editorModal").classList.add("on");document.body.classList.add("editing");try{parent.postMessage({source:"board",type:"editorState",open:true},"*");}catch(_){}try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{applyView();}catch(_){}try{renderBench();}catch(_){}renderTokens();
   try{renderAnimFrames();_animFitPad();}catch(_){}   /* 2.613 — 애니메이션은 _activateTraining 이 훈련별로 올렸다. 편집기 판 크기에 바를 다시 맞춘다 */
   applyEditorReadOnly(d);
