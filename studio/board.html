@@ -6509,9 +6509,25 @@ function thumbView(d){
 /* 2.705 — 편집기(훈련 만들기) 안에서 토큰은 화면용으로 0.68 배 작게 그린다(오른쪽 설명판 때문). 그 축소가 썸네일에 그대로 박혀
    보관함 카드·일정 칩·PDF 의 토큰이 보드에서 만든 것보다 32% 작았다(사용자 "토큰 크기를 크게 했는데 PDF 에 적용이 안 돼" — 0.85 로 키워도 PDF 는 0.58).
    썸네일을 뜰 때만 그 배수를 빼고 다시 그린 뒤, 끝나면 원래대로. 실측: 편집기 thumb 0.37 → 0.55(= state.tokenScale). */
-function boardThumbSVG(){ if(!document.body.classList.contains("editing")||window.__psThumbNoEd)return _boardThumbSVGRaw();
-  window.__psThumbNoEd=true; try{ renderTokens(); }catch(_){}
-  try{ return _boardThumbSVGRaw(); } finally{ window.__psThumbNoEd=false; try{ renderTokens(); }catch(_){} } }
+/* 2.723 — 끌고 있는 동안은 썸네일을 뜨지 않는다(사용자 "훈련만들기에서 토큰·장비 드래그가 너무 잘 안돼").
+   실측(localhost, 편집기 3초): 자동 저장(saveEditorDraft ≈0.6초) → editorCaptureScene → 여기서 renderTokens() 두 번(2.705) + 선택이 있으면
+   _boardThumbSVGRaw 에서 두 번 더 = 3초에 토큰 DOM 재구성 110회. renderTokens 는 tokenLayer.innerHTML="" 로 토큰을 새로 만들므로
+   끌던 <g> 가 문서에서 떨어져 setPointerCapture 가 풀리고 pointermove 가 더는 오지 않는다 → 끌다 멈춤·잡히지 않음. 보드 화면(편집기 밖)은
+   자동 저장이 썸네일을 뜨지 않아 멀쩡했다. 누르고 있는 동안(psDragging)은 마지막 썸네일을 돌려주고, 초안 저장은 놓은 뒤로 미룬다. */
+window.__psPtrDown=0;
+function psDragging(){ var t=window.__psPtrDown; return !!t&&(Date.now()-t<15000); }   /* 15초 상한 — pointerup 을 못 받은 채 남는 일이 없게 */
+(function(){ function bind(){ var sv=document.getElementById("board"); if(!sv||sv.__psPtrBound)return; sv.__psPtrBound=1;
+    sv.addEventListener("pointerdown",function(e){ if(e.isPrimary!==false)window.__psPtrDown=Date.now(); },true);
+    function up(){ window.__psPtrDown=0; }
+    window.addEventListener("pointerup",up,true); window.addEventListener("pointercancel",up,true); window.addEventListener("blur",up);
+    document.addEventListener("visibilitychange",function(){ if(document.hidden)up(); }); }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind); else bind(); })();
+function boardThumbSVG(){ if(psDragging()&&window.__psLastThumb!=null)return window.__psLastThumb;
+  var r;
+  if(!document.body.classList.contains("editing")||window.__psThumbNoEd) r=_boardThumbSVGRaw();
+  else { window.__psThumbNoEd=true; try{ renderTokens(); }catch(_){}
+    try{ r=_boardThumbSVGRaw(); } finally{ window.__psThumbNoEd=false; try{ renderTokens(); }catch(_){} } }
+  window.__psLastThumb=r; return r; }
 function _boardThumbSVGRaw(){var _s=sel,_ms=(typeof multiSel!=="undefined")?multiSel:null,_had=_s||(_ms&&_ms.length);
   /* 2.582 — 색 팔레트 열림도 지킨다(사용자 "색상 눌렀을 때 뜨는 것이 선택하기도 전에 바로 사라져"). 실측: 편집기 자동 저장(saveEditorDraft ≈250ms) → 썸네일 → 여기서 선택을 잠깐 풀 때
      updateDelUI 가 «선택 없음» 으로 보고 #colorCtl.open 을 지웠다. 선택은 아래에서 되살리면서 열림은 안 되살려 팔레트가 0.25초 만에 닫혔다. */
@@ -9531,6 +9547,7 @@ let editorTrainings=null, editorTrainIdx=0, editorFileName="";   // 한 파일(�
 const SCENE_MAX=4, TRAIN_MAX=12;
 function drillScenesAll(d){return [{snap:d.snap,thumb:d.thumb||""}].concat(Array.isArray(d.scenes)?d.scenes:[]);}
 function editorCaptureScene(){if(!editorScenes||!editorScenes[editorSceneIdx])return;
+  if(typeof psDragging==="function"&&psDragging()){editorScenes[editorSceneIdx]={snap:captureSnap(),thumb:editorScenes[editorSceneIdx].thumb||""};return;}   /* 2.723 — 끌던 중이면 썸네일은 이전 것 */
   editorScenes[editorSceneIdx]={snap:captureSnap(),thumb:boardThumbSVG()};}
 /* ===== 훈련(한 파일 안의 여러 훈련) — 각 훈련 = 작전판+메모+장면 ===== */
 function _trainDraftFrom(d){var draft={type:d.type||"train",name:d.name||"",minutes:d.minutes,sets:(+d.sets>0)?+d.sets:1,rpe:d.rpe||5,focus:d.focus,gmPhases:(Array.isArray(d.gmPhases)?d.gmPhases.slice():[]),gmPhaseNames:(Array.isArray(d.gmPhaseNames)?d.gmPhaseNames.slice():[]),/* 2.182 — 초안을 새로 만들며 국면을 떨어뜨리던 것이 "저장해도 적용 안 됨"의 원인(사용자) */memoQuick:d.memoQuick||d.memo||"",overview:d.overview||d.note||"",setup:d.setup||"",func:d.func||"",coaching:d.coaching||"",prog:d.prog||"",tags:(d.tags||[]).slice()};draft.sp=(d.sp&&typeof d.sp==="object")?Object.assign({},d.sp):null;draft.spCall=d.spCall||"";sectionsOf(draft).forEach(function(s){if(draft[s[0]]==null)draft[s[0]]=(d[s[0]]!=null?d[s[0]]:"");});return draft;}
@@ -9587,6 +9604,7 @@ function saveEditorDraft(){ try{
   if(!editorTrainings||editorReadOnly||__commEdit)return;
   /* 반복 재생을 끊지는 않되 보간 중간 좌표는 임시본에 저장하지 않는다. 재생이 끝날 때까지 대기. */
   if(typeof animPlaying!=="undefined"&&animPlaying){_schedEditorDraft();return;}
+  if(typeof psDragging==="function"&&psDragging()){_schedEditorDraft();return;}   /* 2.723 — 끌고 있는 동안은 미룬다(썸네일이 토큰 DOM 을 다시 만들어 드래그를 끊었다) */
   /* 2.464 — QA #25: 이 초안 저장이 장면 캡처(boardThumbSVG)로 선택 패널을 잠시 숨겨,
      열려 있던 네이티브 색상판을 브라우저가 닫아버렸다(배경색·글자색 동일). 색 고르는 중엔
      재생 유예와 같은 패턴으로 미루되 6초 상한 — WebKit 은 픽커를 닫아도 색 input 에
