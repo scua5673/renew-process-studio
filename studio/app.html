@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.732';</script>
+<script>window.PS_BUILD='2.733';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -543,17 +543,47 @@ function psFlushAllPending(){
   }catch(_){}
   return any;
 }
+/* 2.733 — 워크스페이스 전환은 "저장 호출"이 아니라 모든 iframe의 실제 IDB 착지까지 기다린다.
+   하나라도 실패하거나 타이머가 남으면 Promise를 거부해 stash·wipe가 시작되지 않게 한다. */
+function psFlushAllPendingReady(){
+  var jobs=[];
+  try{
+    var fr=document.querySelectorAll('iframe');
+    for(var i=0;i<fr.length;i++)(function(frame){
+      var w=frame.contentWindow;if(!w)return;
+      jobs.push(Promise.resolve().then(function(){
+        if(typeof w.psFlushPendingReady==='function')return w.psFlushPendingReady();
+        if(typeof w.psFlushPending==='function')w.psFlushPending();
+        return w.PSStorage&&w.PSStorage.sharedReady?w.PSStorage.sharedReady():true;
+      }).then(function(){
+        if(w.psHasPending&&w.psHasPending())throw new Error('화면의 지연 저장이 남아 있습니다');
+        return true;
+      }));
+    })(fr[i]);
+  }catch(e){return Promise.reject(e);}
+  return Promise.all(jobs).then(function(){
+    return window.PSStorage&&PSStorage.sharedReady?PSStorage.sharedReady():true;
+  });
+}
+window.psFlushAllPendingReady=psFlushAllPendingReady;
 function psAutoReloadWhenSafe(){
   if(window.__psReloading)return;
   var go=function(){ if(window.__psReloading)return; window.__psReloading=1;
-    var had=psFlushAllPending();
-    /* 밀어낸 것이 있으면 저장이 실제로 끝나도록 한 박자 쉰다(IDB 쓰기는 비동기다) */
-    setTimeout(function(){ try{location.reload();}catch(_){} }, had?600:120);
+    /* 2.733 — 시간(600ms)을 저장 완료로 추측하지 않는다. 전환과 같은 장벽으로
+       모든 iframe의 지연 저장과 실제 IDB 쓰기가 끝난 뒤에만 새 판을 연다. */
+    Promise.resolve(psFlushAllPendingReady()).then(function(){
+      try{location.reload();}catch(_){window.__psReloading=0;}
+    }).catch(function(){
+      window.__psReloading=0;
+      try{psShowUpdBand();}catch(_){}
+    });
   };
+  /* 첫 자동 시도가 저장 실패로 멈춘 경우에도 띠의 버튼은 같은 안전 장벽을
+     다시 탄다. 이 참조가 없으면 fallback location.reload()가 바로 실행된다. */
+  window.__psForceReload=go;
   if(document.hidden){ go(); return; }          /* 안 보일 때가 가장 좋다 */
   if(psSafeToReload()){ go(); return; }
   if(window.__psWaitReload)return; window.__psWaitReload=1;
-  window.__psForceReload=go;   /* 2.627 — 띠의 «다시 열기» 가 부른다(하던 입력을 밀어낸 뒤 새로고침) */
   setTimeout(psShowUpdBand,60000);   /* 2.627 — 1분 넘게 «안전한 때» 가 안 오면 띠로 알린다(목업 «새 판 띠») */
   document.addEventListener('visibilitychange',function(){ if(document.hidden)go(); });
   setInterval(function(){ if(document.hidden||psSafeToReload())go(); },15000);
@@ -2952,19 +2982,22 @@ function psShowUpdBand(){
       var w=document.createElement('div'); w.id='psHistSheet';
       w.innerHTML='<div class="pd-scrim"></div><div class="pd-card" role="dialog" aria-modal="true" aria-label="팀 기록">'
         +'<button type="button" class="pd-x" aria-label="닫기">×</button>'
-        +'<h3>팀 기록</h3><div class="pd-meta">누가 언제 무엇을 고쳤는지 · 서버 보관 최근 90일</div>'
+        +'<h3>팀 기록</h3><div class="pd-meta">누가 언제 무엇을 고쳤는지 · 복구 가능한 서버 판본</div>'
         +'<div class="ph-body"><div class="pd-note">불러오는 중…</div></div></div>';
       document.body.appendChild(w);
       function close(){ try{w.remove();}catch(_){} }
       w.querySelector('.pd-scrim').addEventListener('click',close);
       w.querySelector('.pd-x').addEventListener('click',close);
       var body=w.querySelector('.ph-body');
+      var historyWid=String(PSSync.activeWs&&PSSync.activeWs()||'');
       function openOne(r,who){
         body.innerHTML='<div class="pd-note">판을 받는 중…</div>';
-        PSSync.historyGet(r.id).then(function(row2){
+        PSSync.historyGet(r.id,historyWid).then(function(row2){
           if(!row2){ body.innerHTML='<div class="pd-note">그 판을 받지 못했어요.</div>'; return; }
+          if(row2.v==null){ body.innerHTML='<div class="pd-note">이 기록의 목록은 남아 있지만 복구할 본문은 서버 보관 기간이 지나 사용할 수 없어요.</div><div class="pd-acts"><button type="button" class="pd-clean ph-back">목록으로</button></div>';var nb=body.querySelector('.ph-back');if(nb)nb.addEventListener('click',function(){b.click();});return; }
           var n=null; try{ n=PSSync.histCount(row2.v); }catch(_){}
           var lbl=PSSync.histLabel(row2.k);
+          var isMatch=row2.k==='cs_team_matches_v1';
           var html='<div class="pd-k">'+esc(lbl)+' · '+esc(fmtT(new Date(row2.changed_at).getTime()))+'</div>'
             +'<div class="pd-meta"><b>'+esc(who)+'</b> 님이 고치기 <b>직전</b>의 판입니다'+(n!=null?(' · 담긴 항목 <b>'+n+'개</b>'):'')+'</div>';
           if(row2.k==='process_coach_v1'){
@@ -2972,28 +3005,31 @@ function psShowUpdBand(){
           }else if(!restorable(row2.k)){
             html+='<div class="pd-note">이 자료는 여기서 되돌리지 않아요.</div>';
           }else{
-            html+='<div class="pd-acts"><button type="button" class="pd-sync ph-restore">이 판으로 되돌리기</button></div>';
+            html+='<div class="pd-acts"><button type="button" class="pd-sync ph-restore">'+(isMatch?'빈·누락 경기 기록 복구':'이 판으로 되돌리기')+'</button></div>';
           }
           html+='<div class="pd-acts"><button type="button" class="pd-clean ph-back">목록으로</button></div>';
           body.innerHTML=html;
           var bk=body.querySelector('.ph-back'); if(bk)bk.addEventListener('click',function(){ b.click(); });
           var rs=body.querySelector('.ph-restore');
           if(rs)rs.addEventListener('click',function(){
-            var msg=lbl+'을(를) '+fmtT(new Date(row2.changed_at).getTime())+' 직전 판으로 되돌립니다.\n지금 판도 서버 기록에 남아 다시 되돌릴 수 있어요.';
+            var msg=isMatch
+              ?lbl+'의 '+fmtT(new Date(row2.changed_at).getTime())+' 직전 판에서 빈·누락 기록을 복구합니다.\n현재 작성된 값은 덮어쓰지 않으며, 삭제 기록이 남은 경기는 되살리지 않습니다.'
+              :lbl+'을(를) '+fmtT(new Date(row2.changed_at).getTime())+' 직전 판으로 되돌립니다.\n지금 판도 서버 기록에 남아 다시 되돌릴 수 있어요.';
             var go=function(){
               rs.disabled=true; rs.textContent='되돌리는 중…';
-              PSSync.historyApply(row2.k,row2.v).then(function(ok){
+              PSSync.historyApply(row2.k,row2.v,{expectedWid:historyWid}).then(function(ok){
                 if(ok){
-                  body.innerHTML='<div class="pd-ok">되돌렸습니다 — 곧 팀에도 그대로 올라갑니다.</div><div class="pd-acts"><button type="button" class="pd-clean ph-back">목록으로</button></div>';
+                  body.innerHTML='<div class="pd-ok">'+(isMatch?'현재 기록을 유지하며 복구본을 합쳤고 팀 저장까지 확인했습니다':'되돌렸습니다 — 곧 팀에도 올라갑니다')+'.</div><div class="pd-acts"><button type="button" class="pd-clean ph-back">목록으로</button></div>';
                   var bk2=body.querySelector('.ph-back'); if(bk2)bk2.addEventListener('click',function(){ b.click(); });
-                }else{ rs.disabled=false; rs.textContent='이 판으로 되돌리기'; alert('되돌리지 못했어요 — 자료는 그대로 두었습니다.'); }
-              }).catch(function(){ rs.disabled=false; rs.textContent='이 판으로 되돌리기'; alert('되돌리지 못했어요 — 자료는 그대로 두었습니다.'); });
+                }else{ rs.disabled=false; rs.textContent=isMatch?'빈·누락 경기 기록 복구':'이 판으로 되돌리기'; alert(isMatch?'경기 복구의 팀 저장 완료를 확인하지 못했어요. 현재 팀 기록을 다시 열어 확인해 주세요.':'되돌리기 완료를 확인하지 못했어요. 현재 자료를 확인한 뒤 다시 시도해 주세요.'); }
+              }).catch(function(){ rs.disabled=false; rs.textContent=isMatch?'빈·누락 경기 기록 복구':'이 판으로 되돌리기'; alert(isMatch?'경기 복구의 팀 저장 완료를 확인하지 못했어요. 현재 팀 기록을 다시 열어 확인해 주세요.':'되돌리기 완료를 확인하지 못했어요. 현재 자료를 확인한 뒤 다시 시도해 주세요.'); });
             };
             if(window.psConfirm)psConfirm(msg,go); else if(confirm(msg))go();
           });
         }).catch(function(e){ body.innerHTML='<div class="pd-note">판을 받지 못했어요: '+esc(String(e&&e.message||e))+'</div>'; });
       }
       PSSync.history(null,60).then(function(h){
+        if(h&&h.wid)historyWid=String(h.wid);
         if(!h||h.installed===false){
           var why=h&&h.reason;
           body.innerHTML='<div class="pd-note">'+(why==='team-only'?'팀 워크스페이스에서만 볼 수 있어요.'
@@ -3277,24 +3313,89 @@ function psShowUpdBand(){
     el.textContent=days===0?'오늘 백업됨':('마지막 '+days+'일 전');
     el.style.color=days>=7?'#D6453D':'#9AA4B3';}catch(_){}}
   updBkAge();
+  /* 2.733 — 전체 localStorage를 파일에 담으면 인증 토큰·동기화 메타·다른 팀
+     전환 백업까지 함께 나간다. 복구할 사용자 자료만 명시적으로 고른다. */
+  var BACKUP_TEAM_KEYS={
+    cs_drill_lib_v1:1,cs_vault_folders_v1:1,cs_vault_folder_tags_v1:1,cs_vault_folder_meta_v1:1,
+    process_coach_v1:1,cs_themes_v1:1,cs_team_v1:1,cs_squad_v1:1,scout_tool_v1:1,cs_gamemodel_v1:1,
+    training_sessions_v1:1,cs_psched_v1:1,cs_pmeet_v1:1,cs_pwarm_v1:1,cs_ptrain_v1:1,
+    cs_match_v1:1,cs_match_roster_v1:1,cs_meet_sit_v1:1,cs_team_matches_v1:1,cs_match_del_v1:1,cs_player_del_v1:1,
+    cs_assign_v1:1,cs_terms_v1:1,cs_team_attrs_v1:1,cs_idp_daily_v1:1,cs_team_notice_v1:1,cs_scout_targets_v1:1
+  };
+  var BACKUP_OWNER_KEYS={
+    cs_notes_v1:1,cs_note_papers_v1:1,cs_coach_img_v1:1,cs_team_match_private_v1:1,
+    cs_analysis_workspaces_v1:1,cs_analysis_team_library_v1:1,cs_analysis_role_v1:1,cs_analysis_depth_v1:1,
+    training_session_cur_v1:1,cs_board_live_v1:1,cs_snap_board_v1:1,cs_snap_match_v1:1,cs_snap_match_v2:1,
+    cs_board_recovery_v1:1,cs_board_stash_v1:1,cs_editor_work_v1:1,cs_editor_draft_v1:1,
+    /* User-authored device-local content: private unless the backup owner is exact. */
+    cs_gamemodel_personal_v1:1,cs_scoutdb_v1:1,cs_matchnotes:1,
+    cs_note_forms_v1:1,cs_note_myforms_v1:1,cs_notes_memo_v1:1,cs_notes_folders_v1:1,
+    cs_drill_form_v1:1,cs_train_forms_v1:1,cs_custom_equipment_v1:1,
+    cs_idp_trend_v1:1,cs_vault_edit_recovery_v1:1,cs_opp_team:1,cs_role_token_colors_v1:1,cs_tool_shortcuts_v1:1,
+    cs_pitch_img:1,cs_emblem:1,cs_emblem_pos:1,cs_pitch_custom:1,cs_pitch_set:1,cs_board_defaults_v1:1
+  };
+  function backupHas(map,key){return Object.prototype.hasOwnProperty.call(map,key);}
+  function backupContext(){
+    var s=null,wid='';try{s=PSSync&&PSSync.session&&PSSync.session();wid=String(PSSync.activeWs&&PSSync.activeWs()||'');}catch(_){}
+    var seal='';try{seal=String(localStorage.getItem('ps_cache_owner_v1')||'');}catch(_){}
+    return {uid:String(s&&s.uid||''),wid:wid,seal:seal};
+  }
+  function backupKeyAllowed(k,uid){
+    k=String(k||'');
+    if(backupHas(BACKUP_TEAM_KEYS,k)||backupHas(BACKUP_OWNER_KEYS,k)||k.indexOf('sq:')===0||k.indexOf('cs_idp_pub_v1_')===0)return true;
+    return !!uid&&(k==='cs_idp_v1_'+uid||k==='cs_learn_v1_'+uid);
+  }
+  function collectBackupImages(data){
+    var refs=Object.create(null),m,text=JSON.stringify(data),re=/psimg:(psimg_[A-Za-z0-9_-]+)/g;
+    while((m=re.exec(text)))refs[m[1]]=1;
+    if(!Object.keys(refs).length)return Promise.resolve();
+    if(!window.storage||!window.storage.get)return Promise.reject(new Error('Image storage is unavailable'));
+    return Promise.all(Object.keys(refs).map(function(k){
+      return window.storage.get(k).then(function(r){
+        if(!r||typeof r.value!=='string'||r.value.indexOf('data:image/')!==0)throw new Error('Referenced image is missing: '+k);
+        data[k]=r.value;
+      });
+    }));
+  }
   d.addEventListener('click',function(){
     if(!fileDataUnlocked(true))return;
     if(window.PSTeamFiles&&PSTeamFiles.active&&PSTeamFiles.active()){
       PSTeamFiles.exportCurrent().catch(function(e){alert('파일을 저장하지 못했습니다.\n\n'+String(e&&e.message||e||'저장 실패'));});
       return;
     }
-    var data={};
-    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);data[k]=localStorage.getItem(k);}}catch(e){}
-    /* 큰 본문과 팀 일정은 IndexedDB가 정본이다 — localStorage만 훑으면 복구 파일에서 빠진다. */
-    var IDB_KEYS=['cs_drill_lib_v1','cs_analysis_workspaces_v1','process_coach_v1','cs_team_matches_v1'];
-    var pre = (window.storage
-      ? Promise.all(IDB_KEYS.map(function(k){ return window.storage.get(k).then(function(r){ if(r&&r.value) data[k]=r.value; }).catch(function(){}); }))
-      : Promise.resolve());
-    pre.then(function(){ _makeBackup(data); });
+    var ctx=backupContext(),data=Object.create(null),localData=Object.create(null);
+    if(!ctx.uid||!ctx.wid){alert('백업 소유 계정과 팀을 확인하지 못했습니다. 다시 로그인한 뒤 시도해 주세요.');return;}
+    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(backupKeyAllowed(k,ctx.uid)){var raw=localStorage.getItem(k);data[k]=raw;localData[k]=raw;}}}
+    catch(e){alert('백업할 화면 자료를 읽지 못했습니다. 기존 자료는 그대로입니다. 다시 시도해 주세요.');return;}
+    /* 노트·보관함·분석·일정 등은 IndexedDB가 정본이고 localStorage 거울을 지운다.
+       손으로 적은 네 키만 읽으면 다음 IDB 전용 키가 또 백업에서 빠진다. 실제 키를 훑되
+       위 콘텐츠 allowlist를 그대로 적용해 인증/동기화 메타는 파일에 넣지 않는다. */
+    var flush=typeof window.psFlushAllPendingReady==='function'?Promise.resolve().then(function(){return window.psFlushAllPendingReady();}):Promise.resolve(true);
+    var pre=flush.then(function(){return (window.PSStorage&&PSStorage.sharedReady)?PSStorage.sharedReady():true;}).then(function(){
+      var now=backupContext();if(now.uid!==ctx.uid||now.wid!==ctx.wid||now.seal!==ctx.seal)throw new Error('Backup identity changed');
+      data=Object.create(null);localData=Object.create(null);
+      for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(backupKeyAllowed(k,ctx.uid)){var raw=localStorage.getItem(k);data[k]=raw;localData[k]=raw;}}
+      if(!window.storage||!window.storage.keys||!window.storage.get)throw new Error('안전 저장소 목록을 읽을 수 없습니다');
+      return window.storage.keys().then(function(keys){
+        if(!Array.isArray(keys))throw new Error('안전 저장소 목록 형식이 올바르지 않습니다');
+        keys=keys.filter(function(k){return backupKeyAllowed(k,ctx.uid);});
+        return Promise.all(keys.map(function(k){return window.storage.get(k).then(function(r){
+          if(!r||r.value==null)return;
+          if(backupHas(localData,k)&&localData[k]!==r.value)throw new Error('Backup storage mirror conflict: '+k);
+          data[k]=r.value;
+        });}));
+      });
+    });
+    pre.then(function(){return collectBackupImages(data);}).then(function(){_makeBackup(data,ctx);}).catch(function(){
+      alert('백업할 안전 저장소를 확인하지 못해 파일을 만들지 않았습니다. 자료는 그대로입니다. 다시 시도해 주세요.');
+    });
   });
-  function _makeBackup(data){
+  function _makeBackup(data,ctx){
     if(!fileDataUnlocked(true))return;
-    var payload={type:'process-studio-backup',version:1,date:new Date().toISOString(),data:data};
+    var now=backupContext();
+    if(ctx&&now.seal!==ctx.seal){alert('Backup stopped because the account or team changed.');return;}
+    if(!ctx||!ctx.uid||!ctx.wid||now.uid!==ctx.uid||now.wid!==ctx.wid){alert('백업 중 계정이나 팀이 바뀌어 파일 생성을 중단했습니다.');return;}
+    var payload={type:'process-studio-backup',version:2,date:new Date().toISOString(),ownerUid:ctx.uid,workspaceId:ctx.wid,data:data};
     var json=JSON.stringify(payload);
     var dt=new Date(),p=function(n){return (n<10?'0':'')+n;};
     var fname='process-studio-backup-'+dt.getFullYear()+p(dt.getMonth()+1)+p(dt.getDate())+'.json';
@@ -3550,75 +3651,458 @@ function psShowUpdBand(){
   }
   /* 불러오기 병합 — 덮어쓰지 않고 기존 데이터 위에 추가.
      보관함(항목)·폴더·폴더태그·훈련세션은 합집합, 그 외 키는 로컬이 비어 있을 때만 채움(기존 설정·작업 보존) */
-  function psMergeRestore(bk){
+  function psMergeRestore(bk,expectedWid,ownerHint){
     if(!fileDataUnlocked(true))return Promise.reject(new Error('로그인과 팀 데이터 준비가 필요합니다'));
-    function pj(s,dflt){ try{ var v=JSON.parse(s); return (v==null)?dflt:v; }catch(_){ return dflt; } }
-    /* 1) 보관함 항목 — libId 합집합(같은 id는 최신 savedAt 유지, 기존 항목 삭제 없음)
-          본문은 IndexedDB에 있으므로 비동기. 이 약속이 끝나야 새로고침해도 안전하다. */
-    function _libRead(){
-      if(window.storage) return window.storage.get('cs_drill_lib_v1')
-        .then(function(r){ return r&&r.value?pj(r.value,[]):[]; }).catch(function(){ return []; });
-      return Promise.resolve(pj(localStorage.getItem('cs_drill_lib_v1'),[]));
+    expectedWid=String(expectedWid||bk&&bk.ps_active_ws||'');
+    var restoreSession=null;try{restoreSession=PSSync&&PSSync.session&&PSSync.session();}catch(_){}
+    var restoreUid=String(restoreSession&&restoreSession.uid||''),ownerIds=[],ownerConflict=false;
+    function ownerAdd(v){v=String(v||'');if(!v)return;if(ownerIds.indexOf(v)<0)ownerIds.push(v);}
+    ownerAdd(ownerHint);
+    /* v1 백업은 envelope 소유자 표식이 없어서 cache-owner와 session을 읽기만 한다.
+       둘이 다르거나 cache-owner가 다른 팀을 가리키면 신뢰하지 않고 개인 자료를 제외한다.
+       이 값들은 절대 현재 localStorage로 복원하지 않는다. */
+    try{
+      var oldOwner=JSON.parse(bk&&bk.ps_cache_owner_v1||'null');
+      if(oldOwner&&oldOwner.uid){if(String(oldOwner.wid||'')!==expectedWid)ownerConflict=true;ownerAdd(oldOwner.uid);}
+    }catch(_){ownerConflict=true;}
+    try{var oldSession=JSON.parse(bk&&bk.ps_sync_session||'null');if(oldSession&&oldSession.uid)ownerAdd(oldSession.uid);}catch(_){ownerConflict=true;}
+    if(ownerIds.length>1)ownerConflict=true;
+    var backupOwnerUid=!ownerConflict&&ownerIds.length===1?ownerIds[0]:'',restoreOwnerData=!!restoreUid&&backupOwnerUid===restoreUid;
+    function restoreKeyAllowed(k){
+      k=String(k||'');
+      if(k==='cs_drill_lib_v1'&&!restoreOwnerData)return false;
+      if(backupHas(BACKUP_TEAM_KEYS,k)||k.indexOf('sq:')===0||k.indexOf('cs_idp_pub_v1_')===0)return true;
+      return restoreOwnerData&&(backupHas(BACKUP_OWNER_KEYS,k)||k==='cs_idp_v1_'+restoreUid||k==='cs_learn_v1_'+restoreUid);
     }
-    var libP=_libRead().then(function(loc){
-      if(!Array.isArray(loc))loc=[];
-      var inc=pj(bk['cs_drill_lib_v1'],[]); if(!Array.isArray(inc))inc=[];
-      var byId={},order=[],anon=[];
-      function addItem(it){ if(!it)return; if(!it.libId){anon.push(it);return;}
-        var id=it.libId; if(!(id in byId)){byId[id]=it;order.push(id);}
-        else{ var a=+(it.savedAt||it.at||0), b=+(byId[id].savedAt||byId[id].at||0); if(a>b)byId[id]=it; } }
-      loc.forEach(addItem); inc.forEach(addItem);
-      var merged=order.map(function(id){return byId[id];}).concat(anon);
-      if(window.storage) return window.storage.set('cs_drill_lib_v1',JSON.stringify(merged))
-        .then(function(){ try{ localStorage.setItem('cs_lib_rev',String(Date.now())); }catch(_){} });
-      try{ localStorage.setItem('cs_drill_lib_v1', JSON.stringify(merged)); }catch(_){}
-    }).catch(function(){});
-    /* 2) 폴더 목록 — 문자열 합집합 */
-    try{
-      var lf=pj(localStorage.getItem('cs_vault_folders_v1'),[]); if(!Array.isArray(lf))lf=[];
-      var bf=pj(bk['cs_vault_folders_v1'],[]); if(!Array.isArray(bf))bf=[];
-      var seen={},uni=[]; lf.concat(bf).forEach(function(x){ if(x!=null&&!seen[x]){seen[x]=1;uni.push(x);} });
-      localStorage.setItem('cs_vault_folders_v1', JSON.stringify(uni));
-    }catch(_){}
-    /* 3) 폴더 태그·메타·훈련세션 — 객체 키 합집합(기존 값 우선) */
-    ['cs_vault_folder_tags_v1','cs_vault_folder_meta_v1','training_sessions_v1'].forEach(function(key){
-      try{ var lo=pj(localStorage.getItem(key),{}), bo=pj(bk[key],{});
-        if(typeof lo!=='object'||lo===null||Array.isArray(lo))lo={};
-        if(bo&&typeof bo==='object'&&!Array.isArray(bo)) Object.keys(bo).forEach(function(k){ if(!(k in lo))lo[k]=bo[k]; });
-        localStorage.setItem(key, JSON.stringify(lo));
-      }catch(_){}
+    /* Images are opaque IDB blobs shared by every workspace on this device. Only
+       accept blobs actually referenced by an allowed document in this backup. */
+    var restoreImageRefs=Object.create(null);
+    Object.keys(bk||{}).forEach(function(k){
+      if(!restoreKeyAllowed(k)||typeof bk[k]!=='string')return;
+      var m,re=/psimg:(psimg_[A-Za-z0-9_-]+)/g;while((m=re.exec(bk[k])))restoreImageRefs[m[1]]=1;
     });
-    /* 4) 분석 경기 — 경기 id 기준 합집합. 기존 경기는 유지하고 백업에만 있는 경기를 추가한다. */
-    var anaP=Promise.resolve();
+    var restoreApi=window.PSTeamFiles,restoreImporting=restoreApi&&restoreApi.importing,restoreGuard=null,restoreGuardHeld=false,restoreSyncLocked=false;
+    function restoreWorkspaceError(msg){
+      var e=new Error(msg||'복구하는 동안 선택한 팀이 바뀌었습니다');e.psWorkspaceChanged=true;return e;
+    }
+    function assertRestoreWorkspace(){
+      var now='',nowSession=null;try{now=String(PSSync.activeWs()||'');nowSession=PSSync.session&&PSSync.session();}catch(_){}
+      if(!expectedWid||now!==expectedWid||!restoreUid||String(nowSession&&nowSession.uid||'')!==restoreUid){
+        throw restoreWorkspaceError(!expectedWid?'백업을 만든 팀 정보를 확인할 수 없습니다'
+          :(now!==expectedWid?'복구하는 동안 선택한 팀이 바뀌었습니다':'복구하는 동안 로그인 계정이 바뀌었습니다'));
+      }
+      /* switchWorkspace가 시작할 때 확인하는 같은 가드를 복구 전체 구간에 잡는다.
+         가드 객체나 함수가 바뀌었다면 다른 체인이 개입한 것이므로 더 쓰지 않는다. */
+      if(restoreGuardHeld&&(window.PSTeamFiles!==restoreApi||restoreApi.importing!==restoreGuard))
+        throw restoreWorkspaceError('복구 안전 잠금이 바뀌어 작업을 중단했습니다');
+      if(!fileDataUnlocked(false))throw new Error('팀 데이터 준비 상태가 바뀌었습니다');
+      return true;
+    }
+    function releaseRestoreGuard(){
+      if(!restoreGuardHeld)return;
+      restoreGuardHeld=false;
+      try{if(window.PSTeamFiles===restoreApi&&restoreApi.importing===restoreGuard)restoreApi.importing=restoreImporting;}catch(_){}
+    }
     try{
-      var ba=pj(bk['cs_analysis_workspaces_v1'],{matches:[]});
-      if(ba&&Array.isArray(ba.matches)&&ba.matches.length){
-        var mergeAna=function(la){
-          if(!la||!Array.isArray(la.matches))la={matches:[]};
-          var mids={};la.matches.forEach(function(m){if(m&&m.id)mids[m.id]=1;});
-          ba.matches.forEach(function(m){if(m&&m.id&&!mids[m.id]){la.matches.push(m);mids[m.id]=1;}});
-          la.savedAt=Date.now();
-          return la;
+      assertRestoreWorkspace();
+      var switchOv=document.getElementById('psSwitchOv');
+      if(switchOv&&switchOv.style.display!=='none')throw restoreWorkspaceError('이미 팀 전환을 진행 중입니다');
+      if(!restoreApi||typeof restoreImporting!=='function')throw new Error('복구 안전 잠금을 열 수 없습니다');
+      if(restoreImporting.call(restoreApi))throw new Error('다른 파일 가져오기가 진행 중입니다');
+      restoreGuard=function(){return true;};
+      restoreApi.importing=restoreGuard;
+      if(restoreApi.importing!==restoreGuard)throw new Error('복구 안전 잠금을 확인하지 못했습니다');
+      restoreGuardHeld=true;assertRestoreWorkspace();
+    }catch(e){releaseRestoreGuard();return Promise.reject(e);}
+    /* 비동기 저장의 앞·뒤에서 같은 팀인지 다시 본다. 실패 경로도 확인해
+       원래 저장소 오류보다 워크스페이스 변경을 먼저 보고한다. */
+    function restoreAwait(run){
+      assertRestoreWorkspace();var p;
+      try{p=run();}catch(e){assertRestoreWorkspace();return Promise.reject(e);}
+      return Promise.resolve(p).then(function(v){assertRestoreWorkspace();return v;},function(e){assertRestoreWorkspace();throw e;});
+    }
+    function sharedRead(key){
+      if(!window.storage||!window.storage.get)return Promise.resolve(null);
+      var ready=(window.PSStorage&&PSStorage.sharedReady)?restoreAwait(function(){return PSStorage.sharedReady(key);}):Promise.resolve(true);
+      return ready.then(function(){return restoreAwait(function(){return window.storage.get(key);});});
+    }
+    /* 보관함은 DEVICE_LOCAL/IDB 본문이다. psSaveSharedAsync를 쓰면 5MB 제한의
+       localStorage 거울을 새로 만들므로, import lock 안에서 IDB 쓰기를 직접 끝까지 기다린다.
+       앞·뒤 sharedReady는 화면의 기존 쓰기 대기열과 겹치지 않게 하고, IDB 되읽기가 exact 착지를 확인한다. */
+    function idbWrite(key,raw){
+      if(!restoreSyncLocked)return Promise.reject(new Error('복구 동기화 잠금 없이 팀 저장을 시작할 수 없습니다'));
+      if(!window.storage||!window.storage.set||!window.storage.get)return Promise.reject(new Error('팀 안전 저장소를 열 수 없습니다'));
+      var before=(window.PSStorage&&PSStorage.sharedReady)?restoreAwait(function(){return PSStorage.sharedReady(key);}):Promise.resolve(true);
+      return before.then(function(){return restoreAwait(function(){return window.storage.set(key,raw);});})
+        .then(function(){return (window.PSStorage&&PSStorage.sharedReady)?restoreAwait(function(){return PSStorage.sharedReady(key);}):true;})
+        .then(function(){return restoreAwait(function(){return window.storage.get(key);});})
+        .then(function(saved){if(!saved||saved.value!==raw)throw new Error('복구 저장 확인에 실패했습니다: '+key);return true;});
+    }
+    function mirroredWrite(key,raw){
+      if(!restoreSyncLocked)return Promise.reject(new Error('Restore lock is not held'));
+      if(!window.storage||!window.storage.get)return Promise.reject(new Error('Shared storage is unavailable'));
+      var write=function(){
+        if(window.psSaveSharedAsync)return window.psSaveSharedAsync(key,raw);
+        restoreLocalSet(key,raw);return window.storage.set(key,raw);
+      };
+      var before=(window.PSStorage&&PSStorage.sharedReady)?restoreAwait(function(){return PSStorage.sharedReady(key);}):Promise.resolve(true);
+      return before.then(function(){return restoreAwait(write);})
+        .then(function(){return (window.PSStorage&&PSStorage.sharedReady)?restoreAwait(function(){return PSStorage.sharedReady(key);}):true;})
+        .then(function(){return restoreAwait(function(){return window.storage.get(key);});})
+        .then(function(saved){
+          if(!saved||saved.value!==raw||restoreLocalGet(key)!==raw)throw new Error('Restore mirror verification failed: '+key);
+          return true;
+        });
+    }
+    var RESTORE_ARRAY_KEYS={
+      cs_drill_lib_v1:1,cs_vault_folders_v1:1,cs_note_papers_v1:1,cs_analysis_team_library_v1:1,
+      cs_psched_v1:1,cs_pmeet_v1:1,cs_pwarm_v1:1,cs_ptrain_v1:1,cs_match_roster_v1:1,cs_meet_sit_v1:1,
+      cs_match_del_v1:1,cs_coach_img_v1:1,cs_note_forms_v1:1,cs_note_myforms_v1:1,cs_notes_memo_v1:1,
+      cs_notes_folders_v1:1,cs_drill_form_v1:1,cs_custom_equipment_v1:1
+    };
+    var RESTORE_OBJECT_KEYS={
+      cs_vault_folder_tags_v1:1,cs_vault_folder_meta_v1:1,process_coach_v1:1,cs_team_v1:1,cs_squad_v1:1,
+      scout_tool_v1:1,cs_gamemodel_v1:1,training_sessions_v1:1,cs_match_v1:1,cs_team_matches_v1:1,
+      cs_player_del_v1:1,cs_assign_v1:1,cs_terms_v1:1,cs_team_attrs_v1:1,cs_idp_daily_v1:1,
+      cs_team_notice_v1:1,cs_scout_targets_v1:1,cs_notes_v1:1,cs_team_match_private_v1:1,
+      cs_analysis_workspaces_v1:1,cs_gamemodel_personal_v1:1,cs_scoutdb_v1:1,cs_matchnotes:1,
+      cs_train_forms_v1:1,cs_idp_trend_v1:1,cs_vault_edit_recovery_v1:1,cs_role_token_colors_v1:1,
+      cs_tool_shortcuts_v1:1
+    };
+    var RESTORE_JSON_KEYS={
+      cs_themes_v1:1,training_session_cur_v1:1,cs_board_live_v1:1,cs_snap_board_v1:1,cs_snap_match_v1:1,
+      cs_snap_match_v2:1,cs_board_recovery_v1:1,cs_board_stash_v1:1,cs_editor_work_v1:1,cs_editor_draft_v1:1
+    };
+    function restoreStructuredKind(k){
+      if(backupHas(RESTORE_ARRAY_KEYS,k))return 'array';
+      if(backupHas(RESTORE_OBJECT_KEYS,k)||k==='cs_idp_v1_'+restoreUid||k==='cs_learn_v1_'+restoreUid||
+         k.indexOf('cs_idp_pub_v1_')===0||k.indexOf('sq:')===0)return 'object';
+      if(backupHas(RESTORE_JSON_KEYS,k)||backupHas(BACKUP_TEAM_KEYS,k))return 'json';
+      return '';
+    }
+    function strictRestoreJson(raw,key,kind,allowEmpty){
+      if(raw==null||(allowEmpty&&raw===''))return null;
+      if(typeof raw!=='string')throw new Error('Invalid structured value type: '+key);
+      var value;try{value=JSON.parse(raw);}catch(_){throw new Error('Damaged structured JSON: '+key);}
+      if(kind==='array'&&!Array.isArray(value))throw new Error('Expected an array document: '+key);
+      if(kind==='object'&&(!value||typeof value!=='object'||Array.isArray(value)))throw new Error('Expected an object document: '+key);
+      if(key==='cs_analysis_workspaces_v1'&&
+         ((value.matches!=null&&!Array.isArray(value.matches))||(value.teamDocs!=null&&!Array.isArray(value.teamDocs))))
+        throw new Error('Damaged analysis collections: '+key);
+      if((key==='cs_squad_v1'||key==='cs_scout_targets_v1')&&value.players!=null&&!Array.isArray(value.players))
+        throw new Error('Damaged player collection: '+key);
+      if(key==='cs_notes_v1'&&value.notes!=null&&(!value.notes||typeof value.notes!=='object'||Array.isArray(value.notes)))
+        throw new Error('Damaged note collection: '+key);
+      if(key==='cs_team_matches_v1'&&!Array.isArray(value.matches))throw new Error('Damaged match collection: '+key);
+      return value;
+    }
+    function validateRestoreInput(){
+      assertRestoreWorkspace();
+      var reads=[];
+      Object.keys(bk||{}).forEach(function(k){
+        if(!restoreKeyAllowed(k))return;
+        if(typeof bk[k]!=='string')throw new Error('Invalid backup value: '+k);
+        var kind=restoreStructuredKind(k);
+        if(!kind)return;
+        strictRestoreJson(bk[k],k,kind,false);
+        strictRestoreJson(restoreLocalGet(k),k,kind,true);
+        if(window.storage&&window.storage.get)reads.push(sharedRead(k).then(function(r){
+          strictRestoreJson(r&&r.value,k,kind,true);
+        }));
+      });
+      var ids=Object.keys(restoreImageRefs);
+      if(ids.length&&(!window.storage||!window.storage.get))return Promise.reject(new Error('Image storage is unavailable'));
+      ids.forEach(function(k){
+        var incoming=bk[k];
+        if(incoming!=null&&(typeof incoming!=='string'||incoming.indexOf('data:image/')!==0))throw new Error('Invalid backup image: '+k);
+        reads.push(sharedRead(k).then(function(r){
+          var current=r&&r.value;
+          if(incoming==null&&(!current||typeof current!=='string'||current.indexOf('data:image/')!==0))throw new Error('Referenced backup image is missing: '+k);
+          if(incoming!=null&&current&&current!==incoming)throw new Error('Backup image id collision: '+k);
+        }));
+      });
+      return Promise.all(reads).then(function(){assertRestoreWorkspace();});
+    }
+    function restoreImagesFirst(){
+      var chain=Promise.resolve();
+      Object.keys(restoreImageRefs).forEach(function(k){chain=chain.then(function(){
+        var incoming=bk[k];
+        return sharedRead(k).then(function(r){
+          var current=r&&r.value;
+          if(current&&incoming!=null&&current!==incoming)throw new Error('Backup image id collision: '+k);
+          if(current||incoming==null)return;
+          return restoreAwait(function(){return window.storage.set(k,incoming);})
+            .then(function(){return restoreAwait(function(){return window.storage.get(k);});})
+            .then(function(saved){if(!saved||saved.value!==incoming)throw new Error('Backup image verification failed: '+k);});
+        });
+      });});
+      return chain.then(function(){assertRestoreWorkspace();});
+    }
+    function restoreLocalGet(key){
+      assertRestoreWorkspace();var value=localStorage.getItem(key);assertRestoreWorkspace();return value;
+    }
+    function restoreLocalSet(key,value){
+      assertRestoreWorkspace();var raw=String(value);localStorage.setItem(key,raw);
+      if(localStorage.getItem(key)!==raw)throw new Error('복구 화면 저장 확인에 실패했습니다: '+key);
+      assertRestoreWorkspace();return raw;
+    }
+    function beginRestoreSync(){
+      assertRestoreWorkspace();
+      if(!window.PSSync||typeof PSSync.beginImport!=='function'||typeof PSSync.endImport!=='function')
+        return Promise.reject(new Error('복구 동기화 잠금을 열 수 없습니다'));
+      var lockP;try{lockP=PSSync.beginImport(expectedWid);}catch(e){assertRestoreWorkspace();return Promise.reject(e);}
+      return Promise.resolve(lockP).then(function(ok){
+        /* beginImport가 true를 준 순간부터 소유한다. 뒤의 wid 확인이 실패해도
+           오류 경로가 endImport를 반드시 부를 수 있게 플래그를 먼저 세운다. */
+        if(ok===true)restoreSyncLocked=true;
+        assertRestoreWorkspace();
+        if(ok!==true)throw new Error('다른 저장이 진행 중이어서 복구를 시작하지 못했습니다');
+        return true;
+      },function(e){assertRestoreWorkspace();throw e;});
+    }
+    function endRestoreSync(){
+      if(!restoreSyncLocked)return null;
+      var guardError=null;try{assertRestoreWorkspace();}catch(e){guardError=e;}
+      restoreSyncLocked=false;var unlockError=null;
+      try{
+        var ok=PSSync.endImport(expectedWid);
+        if(ok!==true)unlockError=new Error('복구 동기화 잠금을 해제하지 못했습니다');
+      }catch(e){unlockError=e;}
+      try{assertRestoreWorkspace();}catch(e){if(!guardError)guardError=e;}
+      return guardError||unlockError;
+    }
+    function readStructuredPair(key,kind){
+      var localRaw=restoreLocalGet(key),localDoc=strictRestoreJson(localRaw,key,kind,true);
+      if(!window.storage)return Promise.resolve({idbRaw:null,idbDoc:null,localRaw:localRaw,localDoc:localDoc});
+      return sharedRead(key).then(function(r){
+        var idbRaw=r&&r.value!=null?r.value:null;
+        return {idbRaw:idbRaw,idbDoc:strictRestoreJson(idbRaw,key,kind,true),localRaw:localRaw,localDoc:localDoc};
+      });
+    }
+    function writeStructuredPair(key,raw,state){
+      if(!window.storage)return Promise.resolve(restoreLocalSet(key,raw));
+      if(restoreLocalGet(key)!==state.localRaw)throw new Error('Restore mirror changed before import: '+key);
+      return idbWrite(key,raw).then(function(){
+        if(restoreLocalGet(key)!==state.localRaw)throw new Error('Restore mirror changed during import: '+key);
+        if(state.localRaw!=null){
+          localStorage.removeItem(key);
+          if(restoreLocalGet(key)!=null)throw new Error('Stale restore mirror could not be removed: '+key);
+        }
+        return true;
+      });
+    }
+    function restoreSafeKey(k){return k!=='__proto__'&&k!=='prototype'&&k!=='constructor';}
+    function mergeObjectCurrentFirst(docs){
+      var out={};docs.forEach(function(doc){
+        if(!doc)return;
+        Object.keys(doc).forEach(function(k){if(restoreSafeKey(k)&&!backupHas(out,k))out[k]=doc[k];});
+      });return out;
+    }
+    /* 각 단계를 순차로 끝낸다. 한 작업이 실패해도 다른 IDB 쓰기가 뒤에 남은 채
+       가드가 먼저 풀리는 Promise.all 조기 reject를 만들지 않는다. */
+    function _libRead(){
+      return readStructuredPair('cs_drill_lib_v1','array').then(function(state){
+        var idb=state.idbDoc||[],local=state.localDoc||[];
+        state.items=state.idbRaw!=null&&state.idbRaw===state.localRaw?idb:idb.concat(local);
+        return state;
+      });
+    }
+    function restoreLibrary(){
+      /* 한 팀의 보관함에도 작성자별 비공개 항목이 함께 있다. 백업 소유자가
+         현재 계정과 exact로 같을 때만 백업 본문을 섞는다. */
+      if(!restoreOwnerData||bk['cs_drill_lib_v1']==null)return Promise.resolve();
+      return _libRead().then(function(state){
+      assertRestoreWorkspace();
+      var loc=state.items,inc=strictRestoreJson(bk['cs_drill_lib_v1'],'cs_drill_lib_v1','array',false);
+      var byId=Object.create(null),order=[],anon=[];
+      function addItem(it,incoming){ if(!it)return; if(!it.libId){anon.push(it);return;}
+        var id=it.libId; if(!backupHas(byId,id)){byId[id]=it;order.push(id);}
+        else if(!incoming){ var a=+(it.savedAt||it.at||0), b=+(byId[id].savedAt||byId[id].at||0); if(a>b)byId[id]=it; } }
+      loc.forEach(function(it){addItem(it,false);});inc.forEach(function(it){addItem(it,true);});
+      var merged=order.map(function(id){return byId[id];}).concat(anon);
+      if(window.storage) return writeStructuredPair('cs_drill_lib_v1',JSON.stringify(merged),state).then(function(){
+        restoreLocalSet('cs_lib_rev',Date.now());
+      });
+      restoreLocalSet('cs_drill_lib_v1',JSON.stringify(merged));
+      });
+    }
+    function restoreSmallLocal(){
+      /* These two documents are IDB-canonical; a localStorage-only restore is
+         discarded by their next boot. Keep every read/write on the canonical side. */
+      function mergeObjects(key,idb){
+        if(bk[key]==null)return Promise.resolve();
+        var incoming=strictRestoreJson(bk[key],key,'object',false);
+        if(idb&&window.storage)return readStructuredPair(key,'object').then(function(state){
+          assertRestoreWorkspace();
+          return writeStructuredPair(key,JSON.stringify(mergeObjectCurrentFirst([state.idbDoc,state.localDoc,incoming])),state);
+        });
+        var localRaw=restoreLocalGet(key),localDoc=strictRestoreJson(localRaw,key,'object',true);
+        restoreLocalSet(key,JSON.stringify(mergeObjectCurrentFirst([localDoc,incoming])));return Promise.resolve();
+      }
+      assertRestoreWorkspace();
+      /* 2) 폴더 목록 — 문자열 합집합 */
+      var folders=bk['cs_vault_folders_v1']==null?Promise.resolve():readStructuredPair('cs_vault_folders_v1','array').then(function(state){
+      var idb=state.idbDoc||[],local=state.localDoc||[],incoming=strictRestoreJson(bk['cs_vault_folders_v1'],'cs_vault_folders_v1','array',false);
+      var seen=Object.create(null),uni=[]; idb.concat(local).concat(incoming).forEach(function(x){ if(x!=null&&!backupHas(seen,x)){seen[x]=1;uni.push(x);} });
+      return writeStructuredPair('cs_vault_folders_v1',JSON.stringify(uni),state);
+      });
+      return folders.then(function(){
+      /* 3) 폴더 태그·메타·훈련세션 — 객체 키 합집합(기존 값 우선) */
+      return mergeObjects('cs_vault_folder_tags_v1',false);
+      }).then(function(){return mergeObjects('cs_vault_folder_meta_v1',false);})
+        .then(function(){return mergeObjects('training_sessions_v1',true);})
+        .then(function(){assertRestoreWorkspace();});
+    }
+    /* 4) 분석 경기 — 경기 id 기준 합집합. 기존 경기는 유지하고 백업에만 있는 경기를 추가한다. */
+    function restoreAnalysis(){
+      if(!restoreOwnerData||bk['cs_analysis_workspaces_v1']==null)return Promise.resolve();
+      var ba=strictRestoreJson(bk['cs_analysis_workspaces_v1'],'cs_analysis_workspaces_v1','object',false);
+      if(ba&&typeof ba==='object'&&!Array.isArray(ba)&&((Array.isArray(ba.matches)&&ba.matches.length)||(Array.isArray(ba.teamDocs)&&ba.teamDocs.length))){
+        var mergeAna=function(la,legacy){
+          var plain=function(v){return !!v&&typeof v==='object'&&!Array.isArray(v);};
+          var out=plain(la)?la:{},matches=Array.isArray(out.matches)?out.matches.slice():[],teamDocs=Array.isArray(out.teamDocs)?out.teamDocs.slice():[];
+          var mids=Object.create(null),tids=Object.create(null);
+          matches.forEach(function(m){if(m&&m.id)mids[m.id]=1;});teamDocs.forEach(function(d){if(d&&d.id)tids[d.id]=1;});
+          function add(src){
+            if(!plain(src))return;
+            Object.keys(src).forEach(function(k){if(restoreSafeKey(k)&&k!=='matches'&&k!=='teamDocs'&&k!=='savedAt'&&!backupHas(out,k))out[k]=src[k];});
+            (Array.isArray(src.matches)?src.matches:[]).forEach(function(m){if(m&&m.id&&!backupHas(mids,m.id)){matches.push(m);mids[m.id]=1;}});
+            (Array.isArray(src.teamDocs)?src.teamDocs:[]).forEach(function(d){if(d&&d.id&&!backupHas(tids,d.id)){teamDocs.push(d);tids[d.id]=1;}});
+          }
+          add(legacy);add(ba);out.matches=matches;out.teamDocs=teamDocs;out.savedAt=Date.now();return out;
         };
         if(window.storage){
           /* 분석 경기 본문은 IDB가 본 저장소 — IDB 값(없으면 localStorage 잔여분)에 백업을 합쳐 IDB로 */
-          anaP=window.storage.get('cs_analysis_workspaces_v1').then(function(r){
-            var la=pj(r&&r.value,{matches:[]});
-            if(!la||!Array.isArray(la.matches)||!la.matches.length)la=pj(localStorage.getItem('cs_analysis_workspaces_v1'),{matches:[]});
-            return window.storage.set('cs_analysis_workspaces_v1',JSON.stringify(mergeAna(la)));
-          }).catch(function(){});
+          return readStructuredPair('cs_analysis_workspaces_v1','object').then(function(state){
+            assertRestoreWorkspace();
+            var mergedRaw=JSON.stringify(mergeAna(state.idbDoc,state.localDoc));
+            return writeStructuredPair('cs_analysis_workspaces_v1',mergedRaw,state);
+          });
         }else{
-          var la0=pj(localStorage.getItem('cs_analysis_workspaces_v1'),{matches:[]});
-          localStorage.setItem('cs_analysis_workspaces_v1',JSON.stringify(mergeAna(la0)));
+          var la0=strictRestoreJson(restoreLocalGet('cs_analysis_workspaces_v1'),'cs_analysis_workspaces_v1','object',true)||{matches:[]};
+          restoreLocalSet('cs_analysis_workspaces_v1',JSON.stringify(mergeAna(la0,null)));
         }
       }
-    }catch(_){}
-    /* 5) 그 외 키 — 로컬에 값이 없을 때만 채움(기존 설정·작업 보존, 덮어쓰지 않음) */
-    var MERGED={cs_drill_lib_v1:1,cs_vault_folders_v1:1,cs_vault_folder_tags_v1:1,cs_vault_folder_meta_v1:1,training_sessions_v1:1,cs_analysis_workspaces_v1:1};
-    Object.keys(bk).forEach(function(k){ if(MERGED[k])return;
-      try{ var ex=localStorage.getItem(k); if(ex==null||ex==='')localStorage.setItem(k,bk[k]); }catch(_){}
+      return Promise.resolve();
+    }
+    /* 5) 경기 준비·리뷰 — 현재 문서를 과거 판으로 통째로 덮지 않는다.
+       exact id/유일 sourceId로 같은 경기를 찾아 빈 필드를 채우고, 백업에만 있는 내용 있는 경기는 추가한다. */
+    function restoreMatches(){
+      if(bk['cs_team_matches_v1']==null)return Promise.resolve();
+      if(!window.PSSync||typeof PSSync.historyApply!=='function')return Promise.reject(new Error('경기 복구 모듈을 열 수 없습니다'));
+      return restoreAwait(function(){return PSSync.historyApply('cs_team_matches_v1',bk['cs_team_matches_v1'],{deferSync:true,expectedWid:expectedWid});}).then(function(ok){
+        if(!ok)throw new Error('경기 복구의 팀 저장 완료를 확인하지 못했습니다');
+      });
+    }
+    /* 6) 그 외 키 — 인증/동기화 메타를 포함한 임의 키는 절대 복원하지 않는다.
+       팀 키는 같은 팀 가드로, 개인 키는 같은 소유자 가드까지 통과한 때만 채운다. */
+    function restoreRemaining(){
+      assertRestoreWorkspace();
+      var MERGED={cs_drill_lib_v1:1,cs_vault_folders_v1:1,cs_vault_folder_tags_v1:1,cs_vault_folder_meta_v1:1,training_sessions_v1:1,cs_analysis_workspaces_v1:1,cs_team_matches_v1:1};
+      var KNOWN_IDB={
+        training_sessions_v1:1,training_session_cur_v1:1,cs_squad_v1:1,cs_vault_folders_v1:1,cs_meet_sit_v1:1,
+        cs_analysis_workspaces_v1:1,cs_analysis_team_library_v1:1,cs_notes_v1:1,cs_note_papers_v1:1,cs_match_v1:1,
+        cs_board_stash_v1:1,cs_snap_match_v1:1,cs_snap_match_v2:1,cs_board_live_v1:1,cs_snap_board_v1:1,
+        cs_editor_work_v1:1,cs_editor_draft_v1:1,process_coach_v1:1,cs_team_matches_v1:1,cs_scout_targets_v1:1
+      };
+      var MIRRORED_IDB={process_coach_v1:1,cs_team_matches_v1:1,cs_squad_v1:1,cs_scout_targets_v1:1,cs_analysis_team_library_v1:1};
+      function emptyRaw(raw){
+        if(raw==null||raw==='')return true;
+        try{var v=JSON.parse(raw);return v==null||(Array.isArray(v)&&v.length===0)||(typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length===0);}catch(_){return false;}
+      }
+      function structuredKey(k){var kind=restoreStructuredKind(k);return kind==='array'||kind==='object';}
+      function mergeCandidate(k,currentRaw,backupRaw){
+        if(!structuredKey(k))return emptyRaw(currentRaw)?backupRaw:null;
+        var cur,inc;try{inc=JSON.parse(backupRaw);}catch(_){throw new Error('Invalid structured backup value: '+k);}
+        if(inc==null||typeof inc!=='object')throw new Error('Invalid structured backup root: '+k);
+        if(emptyRaw(currentRaw))return backupRaw;
+        try{cur=JSON.parse(currentRaw);}catch(_){throw new Error('Current structured value is damaged: '+k);}
+        if(cur==null||typeof cur!=='object')throw new Error('Current structured root is damaged: '+k);
+        if(Array.isArray(cur)!==Array.isArray(inc))throw new Error('Structured backup root mismatch: '+k);
+        function safeKey(x){return x!=='__proto__'&&x!=='prototype'&&x!=='constructor';}
+        function fill(a,b){
+          if(a==null||a==='')return b;
+          if(Array.isArray(a)&&Array.isArray(b)){
+            if(!a.length)return b.slice();
+            var keyed=a.every(function(x){return x&&typeof x==='object'&&x.id!=null;})&&b.every(function(x){return x&&typeof x==='object'&&x.id!=null;});
+            if(!keyed)return a;
+            var ids=Object.create(null);a.forEach(function(x){ids[String(x.id)]=1;});
+            b.forEach(function(x){var id=String(x.id);if(!backupHas(ids,id)){a.push(x);ids[id]=1;}});return a;
+          }
+          if(a&&b&&typeof a==='object'&&typeof b==='object'&&!Array.isArray(a)&&!Array.isArray(b)){
+            Object.keys(b).forEach(function(x){if(safeKey(x))a[x]=backupHas(a,x)?fill(a[x],b[x]):b[x];});return a;
+          }
+          return a;
+        }
+        var before=JSON.stringify(cur),merged=fill(cur,inc),after=JSON.stringify(merged);
+        return after!==before?after:null;
+      }
+      var live=Object.create(null);
+      var scan=window.storage&&window.storage.keys?restoreAwait(function(){return window.storage.keys();}).then(function(keys){
+        if(!Array.isArray(keys))throw new Error('Invalid restore storage key list');
+        keys.forEach(function(k){live[k]=1;});
+      }):Promise.resolve();
+      return scan.then(function(){
+        var chain=Promise.resolve();
+        var restoreKeys=Object.keys(bk).sort(function(a,b){return (backupHas(restoreImageRefs,a)?0:1)-(backupHas(restoreImageRefs,b)?0:1);});
+        restoreKeys.forEach(function(k){if(backupHas(MERGED,k)||(!restoreKeyAllowed(k)&&!backupHas(restoreImageRefs,k)))return;
+          chain=chain.then(function(){
+            if(typeof bk[k]!=='string')throw new Error('Invalid backup value: '+k);
+            var useIdb=!!(window.storage&&(backupHas(KNOWN_IDB,k)||backupHas(live,k)||k.indexOf('sq:')===0||backupHas(restoreImageRefs,k)));
+            if(useIdb)return sharedRead(k).then(function(r){
+              var current=r&&r.value,local=restoreLocalGet(k);
+              if(backupHas(restoreImageRefs,k)&&current&&current!==bk[k])throw new Error('Backup image id collision: '+k);
+              var mirrored=!!(backupHas(MIRRORED_IDB,k)||(backupHas(live,k)&&!backupHas(KNOWN_IDB,k)&&k.indexOf('sq:')!==0&&!backupHas(restoreImageRefs,k)));
+              if(mirrored){
+                var mirrorBase;
+                if(!emptyRaw(current)&&!emptyRaw(local)&&current!==local){
+                  if(!structuredKey(k))throw new Error('Current storage mirror conflict: '+k);
+                  mirrorBase=mergeCandidate(k,local,current)||local;
+                }else mirrorBase=!emptyRaw(current)?current:(!emptyRaw(local)?local:null);
+                var mirrorNext=mergeCandidate(k,mirrorBase,bk[k]);
+                if(mirrorNext!=null)return mirroredWrite(k,mirrorNext);
+                if(mirrorBase!=null)return local===mirrorBase&&current===mirrorBase?undefined:mirroredWrite(k,mirrorBase);
+                return mirroredWrite(k,bk[k]);
+              }
+              var base;
+              if(!emptyRaw(current)&&!emptyRaw(local)&&current!==local){
+                if(!structuredKey(k))throw new Error('Current local/IDB conflict: '+k);
+                base=mergeCandidate(k,current,local)||current;
+              }else base=!emptyRaw(current)?current:(!emptyRaw(local)?local:null);
+              var next=mergeCandidate(k,base,bk[k]);
+              var landing=next!=null?next:base,write=landing!=null&&landing!==current?idbWrite(k,landing):Promise.resolve();
+              return write.then(function(){
+                var after=restoreLocalGet(k);
+                if(after!==local)throw new Error('Restore mirror changed during import: '+k);
+                if(after!=null){try{localStorage.removeItem(k);}catch(_){}
+                  if(restoreLocalGet(k)!=null)throw new Error('Stale restore mirror could not be removed: '+k);}
+              });
+            });
+            var ex=restoreLocalGet(k),localNext=mergeCandidate(k,ex,bk[k]);if(localNext!=null)restoreLocalSet(k,localNext);
+          });
+        });
+        return chain;
+      }).then(function(){assertRestoreWorkspace();});
+    }
+    /* Referenced blobs land under their own import lock before any document can
+       point at them. MATCH recovery owns a separate lock inside historyApply;
+       the remaining documents then use one final lock. */
+    var work=Promise.resolve().then(function(){assertRestoreWorkspace();return validateRestoreInput();})
+      .then(function(){return beginRestoreSync();})
+      .then(function(){return restoreImagesFirst();})
+      .then(function(){var e=endRestoreSync();if(e)throw e;return true;})
+      .then(function(){return restoreMatches();})
+      .then(function(){return beginRestoreSync();})
+      .then(function(){return restoreLibrary();})
+      .then(function(){return restoreSmallLocal();})
+      .then(function(){return restoreAnalysis();})
+      .then(function(){return restoreRemaining();})
+      .then(function(){assertRestoreWorkspace();return {ok:true,ownerMatched:restoreOwnerData,skippedOwnerData:!restoreOwnerData};});
+    return work.then(function(v){
+      var unlockError=endRestoreSync();releaseRestoreGuard();if(unlockError)throw unlockError;return v;
+    },function(e){
+      var unlockError=endRestoreSync();releaseRestoreGuard();if(!e&&unlockError)e=unlockError;throw e;
     });
-    return Promise.all([libP,anaP]);   /* 보관함·분석 저장(IDB)이 끝나야 새로고침해도 안전 */
   }
   f.addEventListener('change',function(){
     if(!fileDataUnlocked(true)){f.value='';return;}
@@ -3662,10 +4146,17 @@ function psShowUpdBand(){
           return;
         }
         if(!p||p.type!=='process-studio-backup'||!p.data)throw new Error('bad');
-        psConfirm('불러오면 기존 데이터에 합쳐집니다. 같은 항목은 최신본으로 갱신되고, 기존 항목은 삭제되지 않아요. 계속할까요?', function(){
-          Promise.resolve(psMergeRestore(p.data)).then(function(){
-            alert('불러오기 완료 — 기존 항목에 합쳐졌습니다. 화면을 새로고침합니다');
+        psConfirm('백업을 만든 같은 팀에만 합칩니다. 현재 기록은 유지하고 비어 있거나 백업에만 있는 기록을 복구하며, 삭제 기록이 남은 경기는 되살리지 않아요. 계속할까요?', function(){
+          u.disabled=true;u.textContent='복구 중…';
+          Promise.resolve(psMergeRestore(p.data,p.workspaceId||p.data.ps_active_ws,p.ownerUid)).then(function(out){
+            alert(out&&out.skippedOwnerData
+              ?'불러오기 완료 — 팀 자료만 합쳤습니다. 소유 계정을 확인할 수 없는 개인 자료와 비공개 보관함은 제외했습니다. 화면을 새로고침합니다'
+              :'불러오기 완료 — 기존 항목에 합쳐졌습니다. 화면을 새로고침합니다');
             location.reload();
+          }).catch(function(e){
+            if(e&&e.psWorkspaceChanged)alert('백업을 만든 팀과 지금 선택한 팀이 달라 복구를 중단했습니다.\n\n백업을 만든 팀으로 전환한 뒤 다시 시도해 주세요. 현재 팀에는 더 쓰지 않았습니다.');
+            else alert('백업을 복구하지 못했습니다. 확인되지 않은 항목은 적용 완료로 처리하지 않았습니다.\n\n'+String(e&&e.message||e||'복구 실패'));
+            u.disabled=false;u.textContent='파일 가져오기';
           });
         });
       }catch(e){alert('백업 파일을 읽을 수 없어요');}
@@ -3725,6 +4216,7 @@ function psShowUpdBand(){
      "IDP 연결(팀 합류) 후 보관함이 비어 보인다"는 사례의 즉시 복구 경로. 삭제 없이 합집합만. */
   (function(){
     var btn=document.getElementById('bkStash');if(!btn)return;
+    var STASH_PREFIX='ps_ws_stash_';
     function stashDataUnlocked(showGuide){
       var api=window.PSSync,s=null,ok=false;try{s=api&&api.session&&api.session();ok=!!(s&&s.uid&&api.dataUnlocked&&api.dataUnlocked()===true);}catch(_){ok=false;}
       if(ok)return true;
@@ -3734,13 +4226,19 @@ function psShowUpdBand(){
     function stashes(){
       if(!stashDataUnlocked(false))return Promise.resolve([]);
       var out=[];
+      function keepNewest(k,v){
+        if(!v||!v.data)return;
+        var row={key:k,wid:k.slice(STASH_PREFIX.length),uid:String(v.ownerUid||v.uid||''),at:+v.at||0,data:v.data,keys:Object.keys(v.data).length};
+        var ix=-1;for(var j=0;j<out.length;j++)if(out[j].key===k){ix=j;break;}
+        if(ix<0)out.push(row);else if(row.at>out[ix].at)out[ix]=row;
+      }
       try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
-        if(k&&k.indexOf('ps_ws_stash_')===0){
-          try{var v=JSON.parse(localStorage.getItem(k));if(v&&v.data)out.push({key:k,wid:k.slice(13),at:+v.at||0,data:v.data,keys:Object.keys(v.data).length});}catch(_){}
+        if(k&&k.indexOf(STASH_PREFIX)===0){
+          try{keepNewest(k,JSON.parse(localStorage.getItem(k)));}catch(_){}
         }}}catch(_){}
-      var idb=(window.storage&&window.storage.keys)?window.storage.keys('ps_ws_stash_').then(function(keys){
+      var idb=(window.storage&&window.storage.keys)?window.storage.keys(STASH_PREFIX).then(function(keys){
         return Promise.all(keys.map(function(k){return window.storage.get(k).then(function(r){
-          try{var v=JSON.parse(r&&r.value||'null');if(v&&v.data&&!out.some(function(x){return x.key===k;}))out.push({key:k,wid:k.slice(13),at:+v.at||0,data:v.data,keys:Object.keys(v.data).length});}catch(_){}
+          try{keepNewest(k,JSON.parse(r&&r.value||'null'));}catch(_){}
         });}));
       }):Promise.resolve();
       return idb.then(function(){out.sort(function(a,b){return b.at-a.at});return out;});
@@ -3766,13 +4264,17 @@ function psShowUpdBand(){
       var _cfm=window.psConfirm||function(m,ok,no){if(confirm(m))ok();else no&&no();};
       function back(){btn.disabled=false;btn.textContent='전환 백업 복구 ('+l.length+')';}
       function go(s){
-        /* 2.445 — 다른 공간의 백업이면 먼저 말한다. 합쳐지면 되돌리기 어렵다. */
-        var warn=wsIsCurrent(s.wid)?''
-          :('\n\n⚠ 이 백업은 «'+wsName(s.wid)+'» 의 것이고, 지금 열려 있는 공간은 «'+wsName((function(){try{return PSSync.activeWs()}catch(_){return ''}})())+'» 입니다.\n다른 공간의 자료가 섞입니다 — 정말 여기에 복구할까요?');
-        _cfm('«'+wsName(s.wid)+'» · '+fmt(s.at)+'에 저장된 백업을 지금 데이터 위에 병합 복구할까요?\n(기존 항목은 지워지지 않고, 백업에만 있는 항목이 추가됩니다)'+warn,function(){
+        /* 2.733 — 다른 팀 백업을 현재 팀에 섞는 선택지는 열지 않는다. 팀을 먼저 맞춘 뒤에만 복구한다. */
+        if(!wsIsCurrent(s.wid)){
+          alert('이 백업은 «'+wsName(s.wid)+'» 의 자료입니다.\n먼저 그 팀으로 전환한 뒤 다시 복구해 주세요.\n\n현재 팀에는 아무것도 변경하지 않았습니다.');
+          back();return;
+        }
+        _cfm('«'+wsName(s.wid)+'» · '+fmt(s.at)+'에 저장된 백업을 지금 데이터 위에 병합 복구할까요?\n(현재 기록은 유지하고, 비어 있거나 백업에만 있는 기록을 복구합니다. 삭제 기록이 남은 경기는 되살리지 않습니다)',function(){
           btn.disabled=true;btn.textContent='복구 중…';
-          Promise.resolve(psMergeRestore(s.data)).then(function(){
-            alert('복구했어요 — 화면을 새로 고칩니다');location.reload();
+          Promise.resolve(psMergeRestore(s.data,s.wid,s.uid)).then(function(out){
+            alert(out&&out.skippedOwnerData
+              ?'팀 자료를 복구했습니다. 소유 계정을 확인할 수 없는 개인 자료와 비공개 보관함은 제외했어요 — 화면을 새로 고칩니다'
+              :'복구했어요 — 화면을 새로 고칩니다');location.reload();
           }).catch(function(){btn.disabled=false;btn.textContent='전환 백업 복구';alert('복구하지 못했어요 — 다시 시도해 주세요');});
         },back);
       }

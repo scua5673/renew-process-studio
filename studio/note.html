@@ -584,15 +584,32 @@ async function persistImportedState(s){
 }
 /* 새 노트만 세로 피치 3면 훈련 종이로 시작한다. 기존에 필기한 노트의 tpl/orient는 절대 마이그레이션하지 않는다. */
 function blankNote(){return {id:uid(),title:'',tpl:'training3vertical_land_v1',orient:'l',pages:[{strokes:[]}],created:Date.now(),updated:Date.now()};}
-function save(){if(!note)return;note.updated=Date.now();note.title=$('nTitle').value;
-  const s=store();s.notes[note.id]=note;s.cur=note.id;persist(s);}
+function save(){if(!note)return true;note.updated=Date.now();note.title=$('nTitle').value;
+  const s=store();s.notes[note.id]=note;s.cur=note.id;return persist(s);}
 function saveSoon(){clearTimeout(saveTimer);saveTimer=setTimeout(save,400);}
 /* 2.395 — 새로고침 전에 셸이 부른다. 400ms 지연 저장이 남아 있으면 지금 쓴다(자동 업데이트로 잃지 않게).
    ⚠ 메모(memoText)는 별도 타이머를 쓰므로 그것도 함께 민다. */
+var _noteLastFlushOk=true;
 window.psFlushPending=function(){
-  try{ if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; save(); } }catch(_){}
-  try{ if(window.__memoFlush)window.__memoFlush(); }catch(_){}
+  _noteLastFlushOk=true;
+  try{ if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; if(save()===false)_noteLastFlushOk=false; } }catch(_){_noteLastFlushOk=false;}
+  try{ if(window.__memoFlush&&window.__memoFlush()===false)_noteLastFlushOk=false; }catch(_){_noteLastFlushOk=false;}
   return false;
+};
+/* 2.733 — 타이머를 밀어낸 것과 IndexedDB 쓰기가 끝난 것은 다르다.
+   쉘의 자동 업데이트·워크스페이스 전환은 노트 전용 직렬 큐(_noteWrite)까지
+   확정된 뒤에만 프레임을 내린다. 메모는 localStorage 동기 쓰기라 flush 완료가 곧 확정이다. */
+window.psFlushPendingReady=function(){
+  window.psFlushPending();
+  if(!_noteLastFlushOk)return Promise.reject(new Error('노트 입력을 저장하지 못했습니다'));
+  function waitTail(){
+    var tail=_noteWrite;
+    return Promise.resolve(tail).then(function(){return tail===_noteWrite?true:waitTail();});
+  }
+  return waitTail().then(function(){
+    if(window.psHasPending())throw new Error('노트 지연 저장이 남아 있습니다');
+    return true;
+  });
 };
 window.psHasPending=function(){ try{ return !!(saveTimer||(window.__memoPending&&window.__memoPending())); }catch(_){ return false; } };
 /* ⚠ 2.398 — 여기도 **화면을 떠나는 길**이 막혀 있었다. 셸의 자동 업데이트만 막으면
@@ -2344,7 +2361,7 @@ document.addEventListener('keydown',e=>{
     try{ var t=((e.clipboardData||window.clipboardData).getData('text/plain')||'');
       e.preventDefault(); document.execCommand('insertText',false,t); memoTouch(); }catch(_){} });
   /* 2.395 — 메모도 400ms 지연 저장이라 새로고침에 잃을 수 있다. 셸이 부를 창구를 여기(같은 스코프)에 둔다. */
-  window.__memoFlush=function(){ try{ if(_t){ clearTimeout(_t); _t=null; persist(); renderList(); } }catch(_){} };
+  window.__memoFlush=function(){ try{ if(_t){ clearTimeout(_t); _t=null; var ok=persist(); renderList(); return ok!==false; } return true; }catch(_){return false;} };
   window.__memoPending=function(){ try{ return !!_t; }catch(_){ return false; } };
   var nb=document.getElementById('memoNew');if(nb)nb.addEventListener('click',newMemo);
   /* ── 폴더 ── */
