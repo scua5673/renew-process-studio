@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.731';</script>
+<script>window.PS_BUILD='2.732';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1021,8 +1021,7 @@ function psShowUpdBand(){
              2.437 이 여기 둔 이유는 **발견**이었다(iOS 에서 아예 안 보였다). 그 문제는 남지만,
              자리를 둘로 두면 같은 일을 두 곳이 말한다 — 앱 설정 › 기기 › 앱·오프라인 한 곳으로 모은다.
              ⚠ 대신 그 줄이 **무엇인지·왜 하는지**를 스스로 말하게 했다(아래 guide). -->
-    <!-- 2.216 — 보드 설정을 도크에서 사이드바(앱 설정 위)로(사용자). 보드 화면일 때만 보인다 -->
-    <button id="psBoardMoreBtn" type="button" hidden title="보드 설정 · 페이지·배경·선수단" aria-label="보드 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 8h8M7 12h10M9 16h6"/></svg><span>보드 설정</span></button>
+    <!-- 2.732 — 보드 설정은 작전판·훈련 편집기의 도크가 맡는다. 다른 앱에서 작전판으로 이동시키던 사이드바 문은 제거. -->
     <div class="gear" id="gearWrap">
       <button class="gearbtn" id="gearBtn" title="설정" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
       <div class="gearpop" id="gearPop">
@@ -1046,10 +1045,8 @@ function psShowUpdBand(){
       <button data-lang="pt">PT</button>
     </div>
         </div>
-        <div class="gp-row"><span class="gp-lb">화면</span>
-          <!-- 2.114 — 판은 둘뿐이다: 모바일 / 데스크톱.
-               '아이패드'를 뺀 이유 — 아이패드는 **데스크톱 판을 그대로 본다**(뷰포트 width=1100).
-               손가락 크기 보정(ps-ipad-work)은 판 선택이 아니라 **기기 감지**가 정한다 — 사람이 고를 일이 아니다. -->
+        <div class="gp-row" hidden style="display:none!important"><span class="gp-lb">화면</span>
+          <!-- 2.732 — 판은 기기가 정한다. 개발용 폰 미리보기는 ?layout=mobile 로 열며 저장하지 않는다. -->
           <div class="laysw" id="laySw">
             <button data-l="mobile">모바일</button>
             <button data-l="desktop" class="on">데스크톱</button>
@@ -1159,7 +1156,7 @@ function psShowUpdBand(){
     (function(){
       var p=document.getElementById('gearPop');if(!p||p.classList.contains('gp-tabbed'))return;
       var rowOf=function(id){var e=document.getElementById(id);return e?(e.closest('.gp-row')||e):null;};
-      var map={general:['langSw','laySw','themeSw','guideOpen'],data:['psPushNow','psBulkPull','psSnapOpen','bkup'],device:['psPwaStatus','psStorageOptimize','psHardReload','psBuildTag']};   /* 2.273 — 앱·오프라인 행 */
+      var map={general:['langSw','themeSw','guideOpen'],data:['psPushNow','psBulkPull','psSnapOpen','bkup'],device:['psPwaStatus','psStorageOptimize','psHardReload','psBuildTag']};   /* 2.732 — 화면 판은 기기가 정하므로 laySw 행은 사용자 설정 탭에서 제외 */
       Object.keys(map).forEach(function(t){map[t].forEach(function(id){var r=rowOf(id);if(r)r.setAttribute('data-gp-tab',t);});});
       /* 순서: 데이터 탭은 동기화 → 자동 백업 → 파일 (파일은 가끔 쓰는 것) */
       try{var fileRow=rowOf('bkup'),snapRow=rowOf('psSnapOpen');if(fileRow&&snapRow&&snapRow.parentNode===fileRow.parentNode)snapRow.after(fileRow);}catch(_){}
@@ -1575,12 +1572,13 @@ function psShowUpdBand(){
         if(document.body.getAttribute('data-ps-app')!=='board'){
           try{ showApp('board'); }catch(_){ try{ var tb=document.querySelector('#appSeg button[data-app="board"]'); if(tb)tb.click(); }catch(__){} }
           setTimeout(function(){ sendBoardPopover('open'); },350); return; }
-        sendBoardPopover('toggle'); });
-      /* 2.217 — 부팅 경로는 showApp 의 토글을 안 지나 버튼이 hidden 으로 남았다(사용자 "보드 설정이 없어졌어"). body[data-ps-app] 을 지켜보며 board 일 때만 보인다 */
-      var _bmSync=function(){ try{ var isB=(document.body.getAttribute('data-ps-app')==='board'); _bmb.hidden=false;   /* 2.458 — 항상 보인다(사용자, 2.223 번복). 폰 상단바(<768)에는 CSS 가 원래 안 그린다(레일 블록의 :not([hidden]) 만 display:flex) */
+        sendBoardPopover('toggle'); }); }
+      /* 2.732 — 사이드바 버튼이 없어도 보드 복귀 때 핀 패널을 동기화해야 한다.
+         2.220의 복원 경로를 버튼 존재 조건 밖에 둔다. */
+      var _bmSync=function(){ try{ var isB=(document.body.getAttribute('data-ps-app')==='board'); if(_bmb)_bmb.hidden=false;
         try{ if(document.body.getAttribute('data-ps-app')!=='design' && fBoard.contentWindow.__psCloseCreateChooser) fBoard.contentWindow.__psCloseCreateChooser(); }catch(_){}   /* 2.241 — 훈련(보관함)을 떠나면 '무엇을 만들까요?' 카드 닫기 */ if(isB)setTimeout(function(){sendBoardPopover('sync');},80); }catch(_){} };   /* 2.220 — 보드로 올 때마다 고정 패널 동기화 */
       _bmSync(); try{ new MutationObserver(_bmSync).observe(document.body,{attributes:true,attributeFilter:['data-ps-app']}); }catch(_){} setTimeout(_bmSync,1500); setTimeout(_bmSync,4000);
-    } }catch(_){}   /* 2.216 */
+    }catch(_){}   /* 2.732 */
     function sendBoardPopover(action){
       action=action||'toggle';
       try{
@@ -1619,9 +1617,10 @@ function psShowUpdBand(){
         loading.classList.add('ps-boot-done');
         setTimeout(function(){loading.style.display='none';},160);
       }catch(_){}
-      /* 2.220 — 보드 설정 고정(사용자): 지난번에 열어 두었으면(ps_board_settings_pinned_v1) 부팅 뒤 다시 연다. 레일 있는 화면(≥768)만 */
+      /* 2.732 — 지난 핀은 보드의 sync 판정으로 복원한다. 폰 도크·낮은 가로 폰·?layout=mobile 에서
+         데스크톱 핀 기억이 팝오버를 저절로 열지 않게 bsPinnedMode()를 우회하지 않는다. */
       try{ if(localStorage.getItem('ps_board_settings_pinned_v1')==='1'&&(window.innerWidth||0)>=768){
-        var __pinTry=0,__pinOpen=function(){ try{ if(document.body.getAttribute('data-ps-app')!=='board')return; var bw=fBoard.contentWindow; if(bw&&typeof bw.__psToggleBoardSettings==='function'){bw.__psToggleBoardSettings('open');} else if(++__pinTry<10)setTimeout(__pinOpen,400); }catch(_){} };
+        var __pinTry=0,__pinOpen=function(){ try{ if(document.body.getAttribute('data-ps-app')!=='board')return; var bw=fBoard.contentWindow; if(bw&&typeof bw.__psToggleBoardSettings==='function'){bw.__psToggleBoardSettings('sync');} else if(++__pinTry<10)setTimeout(__pinOpen,400); }catch(_){} };
         setTimeout(__pinOpen,350);
       } }catch(_){}
     }
@@ -4737,6 +4736,8 @@ window.__buildScoutForm=function(k){
 (function(){
   var sw=document.getElementById('laySw');if(!sw)return;
   var vp=document.querySelector('meta[name="viewport"]');
+  /* 2.732 — 모바일 판 개발 문은 일회성 쿼리다. 사용자 저장값으로 굳지 않게 한다. */
+  var previewMobile=false;try{previewMobile=new URLSearchParams(location.search).get('layout')==='mobile';}catch(_){}
   /* 2.349 — 하단 바 높이를 재서 `--ps-seg-h` 로. iframe 앱(IDP·학습)이 제 바를 이 위에 올린다 */
   (function(){
     var seg=document.getElementById('appSeg'); if(!seg)return;
@@ -4789,7 +4790,7 @@ window.__buildScoutForm=function(k){
     [].forEach.call(sw.children,function(b){b.classList.toggle('on',b.dataset.l===m);});
     syncBoardMode(m==='mobile'?'mobile':(dev.pad?'ipad':'desktop'));
     setTimeout(function(){syncBoardMode(m==='mobile'?'mobile':(dev.pad?'ipad':'desktop'));},350);
-    try{localStorage.setItem('cs_layout',m);}catch(e){}
+    try{if(!previewMobile)localStorage.setItem('cs_layout',m);}catch(e){}
     saved=m;
     try{syncDeskScale();}catch(_){}
   }
@@ -4826,10 +4827,12 @@ window.__buildScoutForm=function(k){
     }catch(_){}
   }
   sw.addEventListener('click',function(e){var b=e.target.closest('button');if(b){saved=b.dataset.l;apply(saved);}});
-  /* 2.114 — 옛 값 이관: auto → 기기대로 · ipad → desktop(아이패드는 데스크톱 판을 본다) */
+  /* 2.732 — 판은 기기가 정한다. 옛 수동 선택은 현재 기기 판으로 이관하고,
+     ?layout=mobile 만 저장 없이 데스크톱에서 폰 판을 미리 본다. */
   var saved='';try{saved=localStorage.getItem('cs_layout')||'';}catch(e){}
-  if(saved==='ipad')saved='desktop';
-  if(saved!=='mobile'&&saved!=='desktop')saved=devNow().phone?'mobile':'desktop';
+  var savedDevice=devNow();
+  if(previewMobile)saved='mobile';
+  else if((savedDevice.phone&&saved!=='mobile')||(!savedDevice.phone&&saved!=='desktop'))saved=savedDevice.phone?'mobile':'desktop';
   var bf=document.getElementById('fBoard');if(bf)bf.addEventListener('load',function(){apply(saved,true);});
   apply(saved,true);
   /* 2.084 — 부팅 폴백이 공개 직전에 기기 레이아웃을 다시 씌울 수 있게 밖으로 연다 */
@@ -5997,7 +6000,8 @@ window.__buildScoutForm=function(k){
               __spm.__open=true;__sb2.setAttribute('aria-expanded','true');notifySettingsState(true,false);
               __psShowBd(function(){ closeBoardSettings(false); });
             });
-            win.__psToggleBoardSettings=function(action){action=action||'toggle';if(action==='close'){if(__spm.__open)closeBoardSettings(false);return;}if(action==='open'&&__spm.__open)return;__sb2.click();};
+            /* 2.732 — 폰 도크에는 핀 복원이 없다. sync는 열지 않고, force-close도 닫힌 설정을 거꾸로 열지 않는다. */
+            win.__psToggleBoardSettings=function(action){action=action||'toggle';if(action==='sync')return;if(action==='close'||action==='force-close'){if(__spm.__open)closeBoardSettings(false);return;}if(action==='open'&&__spm.__open)return;__sb2.click();};
             doc.addEventListener('keydown',function(e){if(e.key==='Escape'&&__spm.__open){e.preventDefault();e.stopPropagation();closeBoardSettings(true);}},true);
             doc.addEventListener('click',function(e){ if(__spm.__open && !__spm.contains(e.target) && !__sb2.contains(e.target))closeBoardSettings(false); });
           } }
