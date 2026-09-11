@@ -498,8 +498,44 @@
     return Promise.all(legacy.map(function(k){
       var v=null;try{v=localStorage.getItem(k);}catch(_){}
       if(v==null)return null;
-      return idbSet(k,v).then(function(){return idbGet(k);}).then(function(saved){
-        if(saved===v)try{localStorage.removeItem(k);}catch(_){}
+      function stamp(raw){
+        try{var o=JSON.parse(raw);return o&&o.data&&isFinite(+o.at)?+o.at:null;}catch(_){return null;}
+      }
+      function dropLegacy(){
+        /* 다른 탭이 그 사이 값을 바꿨다면 새 값을 지우지 않는다. */
+        var now=null;try{now=localStorage.getItem(k);}catch(_){return false;}
+        if(now!==v)return false;
+        localStorage.removeItem(k);
+        if(localStorage.getItem(k)!=null)throw new Error('legacy stash removal verification failed');
+        return true;
+      }
+      return idbGet(k).then(function(iv){
+        if(iv==null){
+          return idbSet(k,v).then(function(){return idbGet(k);}).then(function(saved){
+            if(saved!==v)throw new Error('stash migration verification failed');
+            dropLegacy();
+          });
+        }
+        if(iv===v){
+          return idbGet(k).then(function(saved){if(saved===v)dropLegacy();});
+        }
+        var la=stamp(v),ia=stamp(iv);
+        /* 형식이 확인된 최신 legacy만 IDB를 교체한다. 확인할 수 없는 충돌은
+           어느 쪽도 지우지 않아 사용자가 원문을 잃지 않게 한다. */
+        if(la!=null&&ia!=null&&la>ia){
+          return idbSet(k,v).then(function(){return idbGet(k);}).then(function(saved){
+            if(saved!==v)throw new Error('stash migration verification failed');
+            dropLegacy();
+          });
+        }
+        if(ia!=null&&la!=null&&ia>=la){
+          /* 동률은 이미 큰 저장소에 있는 판을 유지한다. 재확인 중 더 오래된 값으로
+             바뀌었다면 legacy를 남기고 다음 부팅에 다시 판단한다. */
+          return idbGet(k).then(function(saved){var sa=stamp(saved);if(sa!=null&&sa>=la)dropLegacy();});
+        }
+        var conflict=new Error('legacy and IndexedDB stash versions differ');conflict.name='StorageConflictError';
+        diagnostic('stash-migration-conflict:'+k,conflict);
+        return false;
       }).catch(function(e){diagnostic('stash-migration',e);});
     }));
   }).catch(function(e){diagnostic('stash-migration-all',e);});
