@@ -4583,7 +4583,7 @@ html.ps-page-idp body.ps-player-role #layers button.on::after{
 .mt-next{margin-top:10px;font-size:13px;display:grid;gap:4px}.mt-next span{display:inline-block;min-width:64px;font-weight:800;color:var(--text-3);font-size:11px}
 .mt-lb{font-size:11px;font-weight:800;color:var(--text-3);margin:12px 0 6px}
 .mt-ph{display:grid;grid-template-columns:92px minmax(0,1fr) 28px;align-items:center;gap:8px;font-size:13px;padding:3px 0}
-.mt-ph-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mt-ph-bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}.mt-ph-bar i{display:block;height:100%;background:var(--accent,#7C4DFF)}.mt-ph b{text-align:right;font-variant-numeric:tabular-nums}.mt-ph small{grid-column:2/-1;color:var(--text-3)}
+.mt-ph-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mt-ph-bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}.mt-ph-bar i{display:block;height:100%;background:var(--accent,#7C4DFF)}.mt-ph b{text-align:right;font-variant-numeric:tabular-nums}.mt-ph small{grid-column:2/-1;color:var(--text-3);white-space:pre-wrap}
 .mt-me{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}.mt-me .mt-lb{margin-top:0}.mt-me .mt-rv-i{margin-top:8px}
 .mt-more{display:block;width:100%;margin:4px 0 16px}
 @media (max-width:639px){.mt-rv{grid-template-columns:minmax(0,1fr)}.mt-ph{grid-template-columns:72px minmax(0,1fr) 24px}}
@@ -12692,8 +12692,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       h+=(g||im)?'<div class="mt-rv" style="margin-top:4px">'+(g?mtRvItem('good','잘된 점',g):'')+(im?mtRvItem('imp','개선할 점',im):'')+'</div>':'<p class="mt-sum" style="margin-top:0;color:var(--text-3)">아직 적힌 내용이 없어요.</p>';
       if(ta||ia)h+='<div class="mt-next">'+(ta?'<div><span>다음 훈련</span>'+esc(ta)+'</div>':'')+(ia?'<div><span>IDP</span>'+esc(ia)+'</div>':'')+'</div>';
       var pr=m.phaseReview&&typeof m.phaseReview==='object'?m.phaseReview:null, moms=mtMoments();
-      if(pr&&moms.length){ var rows=''; moms.forEach(function(mo){ var v=pr[mo.key]||{}, sv=(+v.s>0)?Math.min(10,+v.s):0, nt=String(v.note||'').trim(); if(!sv&&!nt)return;
-          rows+='<div class="mt-ph"><span class="mt-ph-n">'+esc(mo.label||mo.name||mo.key)+'</span><span class="mt-ph-bar"><i style="width:'+(sv*10)+'%"></i></span><b>'+(sv||'–')+'</b>'+(nt?'<small>'+esc(nt)+'</small>':'')+'</div>'; });
+      if(pr&&moms.length){ var rows=''; moms.forEach(function(mo){ var v=pr[mo.key]||{}, sv=(+v.s>0)?Math.min(10,+v.s):0, nt=String(v.note||'').trim(), gd=String(v.good||'').trim(), iv=String(v.improve||'').trim(); if(!sv&&!nt&&!gd&&!iv)return;
+          var txt=[gd&&'잘된 점 · '+gd,iv&&'개선할 점 · '+iv,nt&&'이전 메모 · '+nt].filter(Boolean).join('\n');
+          rows+='<div class="mt-ph"><span class="mt-ph-n">'+esc(mo.label||mo.name||mo.key)+'</span><span class="mt-ph-bar"><i style="width:'+(sv*10)+'%"></i></span><b>'+(sv||'–')+'</b>'+(txt?'<small>'+esc(txt)+'</small>':'')+'</div>'; });
         if(rows)h+='<div class="mt-phs"><div class="mt-lb">국면 평가</div>'+rows+'</div>'; }
       h+='</section>';
     }else if(!future){
@@ -12702,7 +12703,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* 코치 → 나 개인 리뷰(공개된 것만) */
     var my=mm[m.id]&&mm[m.id].review;
     if(my&&typeof my==='object'){ var mg=String(my.good||'').trim(), mi=String(my.improve||'').trim(), ma=String(my.action||'').trim(), ms=(+my.score>0)?Math.min(10,Math.round(+my.score)):0;
-      if(mg||mi||ma)h+='<section class="card mt-card"><div class="mt-lb" style="margin-top:0">코치가 '+(ro()?'이 선수':'나')+'에게'+(ms?' · 평점 '+ms:'')+'</div>'+(mg?mtRvItem('good','잘된 점',mg):'')+(mi?mtRvItem('imp','개선할 점',mi):'')+(ma?mtRvItem('memo','메모',ma):'')+'</section>'; }
+      if(mg||mi||ma)h+='<section class="card mt-card"><div class="mt-lb" style="margin-top:0">코치가 '+(ro()?'이 선수':'나')+'에게'+(ms?' · 평점 '+ms:'')+'</div>'+(mg?mtRvItem('good','잘된 점',mg):'')+(mi?mtRvItem('imp','다음 행동',mi):'')+(ma?mtRvItem('memo','메모',ma):'')+'</section>'; }
     /* ══ 2.333 · 경기 한 장 — 경기 전(임무) → 출전 → 경기 후(리뷰) ═══════════════════════
        사용자: "경기 골라서 들어가면 몇 분 뛰었는지 · 역할과 임무를 공격/수비로 나눠서".
        ⚠ **역할·임무는 이미 있었다** — 이미지노트가 `포지션 · 수비 시(roleDef) · 공격 시(roleAtk)` 를 갖고 있었다.
