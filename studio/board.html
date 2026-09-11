@@ -4373,6 +4373,11 @@ function buildLines(){
   const LN={fill:"none",stroke:PLN,"stroke-width":3.2*LSF,opacity:".95","stroke-linecap":"round"};
   const P=el("g",{id:"lineLayer"});
   try{if(pitchViewKey()!=="full")P.setAttribute("clip-path","url(#psHalfClip)");}catch(_){}
+  /* 2.738 — 위에서 본 실제 골망: ±45° 선을 겹친 마름모 패턴을 SVG 안에 둔다.
+     외부 CSS가 아니라 순수 SVG여야 썸네일·PNG·영상·PDF 직렬화에도 그대로 남는다. */
+  const goalNetId="psGoalNet",goalMesh=6.4*LSF,goalDefs=el("defs"),goalPattern=el("pattern",{id:goalNetId,patternUnits:"userSpaceOnUse",width:goalMesh,height:goalMesh});
+  goalPattern.appendChild(el("path",{d:`M 0 0 L ${goalMesh} ${goalMesh} M ${goalMesh} 0 L 0 ${goalMesh}`,fill:"none",stroke:PLN,"stroke-width":0.52*LSF,opacity:".58","stroke-linecap":"round"}));
+  goalDefs.appendChild(goalPattern);P.appendChild(goalDefs);
   const ln=a=>P.appendChild(el("line",Object.assign({},LN,a)));
   const rc=a=>P.appendChild(el("rect",Object.assign({},LN,a)));
   const ci=a=>P.appendChild(el("circle",Object.assign({},LN,a)));
@@ -4398,14 +4403,17 @@ function buildLines(){
     rc({x:side<0?L:R-paW,y:CY-paH/2,width:paW,height:paH});
     rc({x:side<0?L:R-gaW,y:CY-gaH/2,width:gaW,height:gaH});}
     dot({cx:base+dir*spotX,cy:CY,r:3.5*LSF});
-    /* 2.274 — 골대 제대로(사용자): 그물 더 촘촘·또렷 + 뒷 프레임 강조 + 골포스트 2점 */
-    const gx=side<0?L-goalD:R, gy=CY-goalH/2, gm=3.4*LSF;
-    for(let nx=gx+gm; nx<gx+goalD-0.4; nx+=gm) P.appendChild(el("line",{x1:nx,y1:gy,x2:nx,y2:gy+goalH,stroke:PLN,"stroke-width":0.6*LSF,opacity:".26"}));
-    for(let ny=gy+gm; ny<gy+goalH-0.4; ny+=gm) P.appendChild(el("line",{x1:gx,y1:ny,x2:gx+goalD,y2:ny,stroke:PLN,"stroke-width":0.6*LSF,opacity:".26"}));
-    P.appendChild(el("rect",Object.assign({},LN,{x:gx,y:gy,width:goalD,height:goalH,"stroke-width":2.2*LSF,opacity:".9"})));
-    P.appendChild(el("line",{x1:side<0?gx:gx+goalD,y1:gy,x2:side<0?gx:gx+goalD,y2:gy+goalH,stroke:PLN,"stroke-width":3.4*LSF,opacity:".95","stroke-linecap":"round"}));
-    P.appendChild(el("circle",{cx:side<0?L:R,cy:gy,r:2.6*LSF,fill:PLN}));
-    P.appendChild(el("circle",{cx:side<0?L:R,cy:gy+goalH,r:2.6*LSF,fill:PLN}));
+    /* 2.738 — TacticalPad 참고처럼 골라인 밖으로 깊이가 보이는 사다리꼴 골대.
+       입구보다 뒤 프레임을 살짝 넓히고 촘촘한 마름모 망을 채워 작은 화면에서도 '골대'로 읽히게 한다. */
+    const gy=CY-goalH/2,out=side<0?-1:1,depth=Math.min(M-4*LSF,goalD*1.25),flare=Math.max(1.6*LSF,goalH*.052),backX=base+out*depth,backTop=gy-flare,backBottom=gy+goalH+flare;
+    const goalPath=`M ${base} ${gy} L ${backX} ${backTop} L ${backX} ${backBottom} L ${base} ${gy+goalH} Z`;
+    const goalGroup=el("g",{class:"pitch-goal","data-side":side<0?"left":"right","data-goal-depth":depth});
+    goalGroup.appendChild(el("path",{class:"pitch-goal-bed",d:goalPath,fill:PLN,opacity:".055",stroke:"none"}));
+    goalGroup.appendChild(el("path",{class:"pitch-goal-net",d:goalPath,fill:`url(#${goalNetId})`,stroke:"none"}));
+    goalGroup.appendChild(el("path",{class:"pitch-goal-frame",d:`M ${base} ${gy} L ${backX} ${backTop} L ${backX} ${backBottom} L ${base} ${gy+goalH}`,fill:"none",stroke:PLN,"stroke-width":1.7*LSF,opacity:".9","stroke-linecap":"round","stroke-linejoin":"round"}));
+    goalGroup.appendChild(el("line",{class:"pitch-goal-back",x1:backX,y1:backTop,x2:backX,y2:backBottom,stroke:PLN,"stroke-width":2.8*LSF,opacity:".98","stroke-linecap":"round"}));
+    goalGroup.appendChild(el("line",{class:"pitch-goal-mouth",x1:base,y1:gy,x2:base,y2:gy+goalH,stroke:PLN,"stroke-width":3.6*LSF,opacity:"1","stroke-linecap":"round"}));
+    P.appendChild(goalGroup);
     if(!SP.futsal){const sx=base+dir*spotX,boxFront=side<0?L+paW:R-paW,cosT=Math.abs(boxFront-sx)/arcR;
     if(cosT<1){const dy=arcR*Math.sqrt(1-cosT*cosT),sweep=side<0?1:0;
       pa({d:`M ${boxFront} ${CY-dy} A ${arcR} ${arcR} 0 0 ${sweep} ${boxFront} ${CY+dy}`});}}}

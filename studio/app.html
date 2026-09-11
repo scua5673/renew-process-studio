@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.737';</script>
+<script>window.PS_BUILD='2.738';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -5424,10 +5424,26 @@ window.__buildScoutForm=function(k){
       }
       [].slice.call(world.children).forEach(function(c){ if(c.tagName.toLowerCase()==='g' && !c.id && c.querySelector('circle,path,line')){ c.setAttribute('data-ps-hidden','1'); c.style.display='none'; } }); ['#lineLayer','#gridLayer'].forEach(function(sel){ var el=world.querySelector(sel); if(el){ el.setAttribute('data-ps-hidden','1'); el.style.display='none'; } });
       function E(t,a){ var e=doc.createElementNS(NS,t); for(var k in a) e.setAttribute(k,a[k]); return e; }
-      function _psLum(c){c=(c||'').trim();var r,g,bl;if(c.charAt(0)==='#'){var v=c.slice(1);if(v.length===3)v=v.split('').map(function(x){return x+x;}).join('');var n=parseInt(v,16)||0;r=(n>>16)&255;g=(n>>8)&255;bl=n&255;}else{var m=c.match(/(\d+)[,\s]+(\d+)[,\s]+(\d+)/);if(!m)return 0.5;r=+m[1];g=+m[2];bl=+m[3];}return (0.2126*r+0.7152*g+0.0722*bl)/255;}var _pbg='';try{_pbg=(doc.defaultView.getComputedStyle(doc.documentElement).getPropertyValue('--pitchbg')||'').trim();}catch(_e){}var _light=_psLum(_pbg)>0.6;var _lc=_light?'#5f6a78':'#ffffff'; var _lf=_light?'rgba(95,106,120,0.16)':'rgba(255,255,255,0.16)'; var ST={stroke:_lc,'stroke-width':'1.3',fill:'none','stroke-opacity':'0.92'};
-      function pitch(x0,y0,w,h){
-        var g=E('g',{});
+      function _psLum(c){c=(c||'').trim();var r,g,bl;if(c.charAt(0)==='#'){var v=c.slice(1);if(v.length===3)v=v.split('').map(function(x){return x+x;}).join('');var n=parseInt(v,16)||0;r=(n>>16)&255;g=(n>>8)&255;bl=n&255;}else{var m=c.match(/(\d+)[,\s]+(\d+)[,\s]+(\d+)/);if(!m)return 0.5;r=+m[1];g=+m[2];bl=+m[3];}return (0.2126*r+0.7152*g+0.0722*bl)/255;}var _pbg='';try{_pbg=(doc.defaultView.getComputedStyle(doc.documentElement).getPropertyValue('--pitchbg')||'').trim();}catch(_e){}var _light=_psLum(_pbg)>0.6;var _lc=_light?'#5f6a78':'#ffffff'; var ST={stroke:_lc,'stroke-width':'1.3',fill:'none','stroke-opacity':'0.92'};
+      var _goalNetSeq=0;
+      function pitch(x0,y0,w,h,goalDepthCap){
+        var g=E('g',{}), _goalNetId='ps-mp-goal-net-'+(++_goalNetSeq), _goalMesh=Math.max(3.8,Math.min(6.4,w*.025));
+        var _goalDefs=E('defs',{}),_goalPattern=E('pattern',{id:_goalNetId,patternUnits:'userSpaceOnUse',width:_goalMesh,height:_goalMesh});
+        _goalPattern.appendChild(E('path',{d:'M 0 0 L '+_goalMesh+' '+_goalMesh+' M '+_goalMesh+' 0 L 0 '+_goalMesh,fill:'none',stroke:_lc,'stroke-width':'0.52','stroke-opacity':'0.58','stroke-linecap':'round'}));
+        _goalDefs.appendChild(_goalPattern);g.appendChild(_goalDefs);
         function add(t,a){ for(var k in ST) if(!(k in a)) a[k]=ST[k]; g.appendChild(E(t,a)); }
+        /* 2.738 — 멀티피치도 단일 보드와 같은 사다리꼴 프레임·마름모 망으로 통일한다. */
+        function goalShape(yLine,dir,goW,rawDepth){
+          var center=x0+w/2,frontL=center-goW/2,frontR=center+goW/2,depth=Math.max(5,Math.min(rawDepth*1.25,goalDepthCap||Infinity)),backY=yLine+dir*depth,flare=Math.max(1,goW*.052),backL=frontL-flare,backR=frontR+flare;
+          var d='M '+frontL+' '+yLine+' L '+backL+' '+backY+' L '+backR+' '+backY+' L '+frontR+' '+yLine+' Z';
+          var gg=E('g',{class:'ps-pitch-goal','data-side':dir<0?'top':'bottom','data-goal-depth':depth});
+          gg.appendChild(E('path',{class:'ps-pitch-goal-bed',d:d,fill:_lc,'fill-opacity':'0.055',stroke:'none'}));
+          gg.appendChild(E('path',{class:'ps-pitch-goal-net',d:d,fill:'url(#'+_goalNetId+')',stroke:'none'}));
+          gg.appendChild(E('path',{class:'ps-pitch-goal-frame',d:'M '+frontL+' '+yLine+' L '+backL+' '+backY+' L '+backR+' '+backY+' L '+frontR+' '+yLine,fill:'none',stroke:_lc,'stroke-width':'1.7','stroke-opacity':'0.9','stroke-linecap':'round','stroke-linejoin':'round'}));
+          gg.appendChild(E('line',{class:'ps-pitch-goal-back',x1:backL,y1:backY,x2:backR,y2:backY,stroke:_lc,'stroke-width':'2.6','stroke-opacity':'0.98','stroke-linecap':'round'}));
+          gg.appendChild(E('line',{class:'ps-pitch-goal-mouth',x1:frontL,y1:yLine,x2:frontR,y2:yLine,stroke:_lc,'stroke-width':'3.1','stroke-opacity':'1','stroke-linecap':'round'}));
+          g.appendChild(gg);
+        }
         /* 2.658 — 규격이 풋살이면 카드도 풋살장(사용자 "풋살 규격으로 했을 때 운동장 개수 표현되는거 똑같이 풋살장으로").
            전엔 규격과 상관없이 축구장(페널티 박스·골 에어리어·아크)만 그렸다. FIFA 풋살 규칙 1조: 40×20m · 골 3×2m(깊이 1m) ·
            페널티 에어리어 = 골포스트 기준 r6m 사분원 둘 + 직선 · PK 6m · 제2 PK 10m · 센터서클 r3m. 카드는 세로(골이 위·아래) — m→px 는 가로 w/20, 세로 h/40 */
@@ -5445,11 +5461,7 @@ window.__buildScoutForm=function(k){
           /* PK 6m · 제2 PK 10m */
           [pk1,pk2].forEach(function(m){ add('circle',{cx:cxF,cy:y0+m*sy,r:2.2,fill:_lc,'stroke-width':'0'}); add('circle',{cx:cxF,cy:y0+h-m*sy,r:2.2,fill:_lc,'stroke-width':'0'}); });
           var goWf=gHalf*2, goDf=Math.min(15,Math.max(4,(SPX.goalD||1)*sy));
-          function goalF(yLine,dir){ var gx=cxF-goWf/2, by=dir<0?yLine-goDf:yLine+goDf;
-            g.appendChild(E('rect',{x:gx,y:dir<0?yLine-goDf:yLine,width:goWf,height:goDf,fill:_lf,stroke:_lc,'stroke-width':'1.4','stroke-opacity':'0.85'}));
-            g.appendChild(E('line',{x1:gx,y1:yLine,x2:gx,y2:by,stroke:_lc,'stroke-width':'1.9'}));
-            g.appendChild(E('line',{x1:gx+goWf,y1:yLine,x2:gx+goWf,y2:by,stroke:_lc,'stroke-width':'1.9'}));
-            g.appendChild(E('line',{x1:gx,y1:by,x2:gx+goWf,y2:by,stroke:_lc,'stroke-width':'1.5'})); }
+          function goalF(yLine,dir){ goalShape(yLine,dir,goWf,goDf); }
           goalF(y0,-1); goalF(y0+h,1);
           return g;
         }
@@ -5473,14 +5485,8 @@ window.__buildScoutForm=function(k){
         add('path',{d:'M '+(x0+w-cr)+' '+y0+' A '+cr+' '+cr+' 0 0 0 '+(x0+w)+' '+(y0+cr)});
         add('path',{d:'M '+(x0+w)+' '+(y0+h-cr)+' A '+cr+' '+cr+' 0 0 0 '+(x0+w-cr)+' '+(y0+h)});
         add('path',{d:'M '+(x0+cr)+' '+(y0+h)+' A '+cr+' '+cr+' 0 0 0 '+x0+' '+(y0+h-cr)});
-        var goW=w*0.115, goD=Math.min(15,h*0.026), cx=x0+w/2;
-        function goal(yLine,dir){ var gx=cx-goW/2, by=dir<0?yLine-goD:yLine+goD;
-          g.appendChild(E('rect',{x:gx,y:dir<0?yLine-goD:yLine,width:goW,height:goD,fill:_lf,stroke:_lc,'stroke-width':'1.4','stroke-opacity':'0.85'}));
-          g.appendChild(E('line',{x1:gx,y1:yLine,x2:gx,y2:by,stroke:_lc,'stroke-width':'1.9'}));
-          g.appendChild(E('line',{x1:gx+goW,y1:yLine,x2:gx+goW,y2:by,stroke:_lc,'stroke-width':'1.9'}));
-          g.appendChild(E('line',{x1:gx,y1:by,x2:gx+goW,y2:by,stroke:_lc,'stroke-width':'1.5'}));
-          for(var k=1;k<3;k++){ var nx=gx+goW*k/3; g.appendChild(E('line',{x1:nx,y1:yLine,x2:nx,y2:by,stroke:_lc,'stroke-width':'0.7','stroke-opacity':'0.5'})); }
-        }
+        var goW=w*0.115, goD=Math.min(15,h*0.026);
+        function goal(yLine,dir){ goalShape(yLine,dir,goW,goD); }
         goal(y0,-1); goal(y0+h,1);
         return g;
       }
@@ -5522,7 +5528,8 @@ window.__buildScoutForm=function(k){
         var sw=(WRz-_cg5)/2, sh=(H2-_rg5)/2;
         var LX=_vb[0]+_sm, TY=_vb[1]+_vm;
         var pgB=pitch(LX,TY,WL,H2); pitchGrid(pgB,LX,TY,WL,H2); grp.appendChild(pgB);
-        for(var q=0;q<4;q++){ var qc=q%2, qr=Math.floor(q/2); var qx=LX+WL+_cg5+qc*(sw+_cg5), qy=TY+qr*(sh+_rg5); var pgS=pitch(qx,qy,sw,sh); pitchGrid(pgS,qx,qy,sw,sh); grp.appendChild(pgS); }
+        var _goalCap5=Math.max(5,(_rg5-5)/2);   // 마주 보는 뒤 프레임(2.6u) 사이에 최소 2.4u 틈
+        for(var q=0;q<4;q++){ var qc=q%2, qr=Math.floor(q/2); var qx=LX+WL+_cg5+qc*(sw+_cg5), qy=TY+qr*(sh+_rg5); var pgS=pitch(qx,qy,sw,sh,_goalCap5); pitchGrid(pgS,qx,qy,sw,sh); grp.appendChild(pgS); }
       } else {
         /* ══ 2.543 · 운동장 사각형을 보드 문서에 내준다 ═══════════════════════════
          선수 배치(board.html `applySquadToBoard`)가 운동장이 어디 있는지 몰라서, 운동장을
@@ -5531,8 +5538,8 @@ window.__buildScoutForm=function(k){
          ⚠ 같은 계산을 board.html 에 **복사하지 않는다** — 카드를 그리는 곳과 선수를 놓는 곳이
             제각기 세면 언젠가 어긋나고, 그때 화면은 «여기 있다»고 거짓말을 한다.
             그리는 이 자리에서 결과를 그대로 넘긴다. */
-      var _rects=[];
-      for(var i=0;i<n;i++){ var _r=Math.floor(i/cols), _c=i%cols; var _px=_x0+_c*(cw+_cg), _pyr=_py+_r*(ph+_rg); var _pg=pitch(_px, _pyr, cw, ph); pitchGrid(_pg,_px,_pyr,cw,ph); grp.appendChild(_pg);
+      var _rects=[],_goalCap=rows>1?Math.max(5,(_rg-5)/2):Infinity;   // 2행의 위·아래 골망/프레임이 맞닿지 않게 간격 기반 제한
+      for(var i=0;i<n;i++){ var _r=Math.floor(i/cols), _c=i%cols; var _px=_x0+_c*(cw+_cg), _pyr=_py+_r*(ph+_rg); var _pg=pitch(_px, _pyr, cw, ph,_goalCap); pitchGrid(_pg,_px,_pyr,cw,ph); grp.appendChild(_pg);
         _rects.push({x:_px,y:_pyr,w:cw,h:ph}); }
       }
       try{ doc.defaultView.__psPitchRects=_rects; }catch(_pr){}
