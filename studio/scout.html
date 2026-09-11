@@ -4599,6 +4599,74 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       html.ps-page-scout .match-person-strip .mp-seg button.on{background:var(--surface)!important;color:var(--txt)!important;box-shadow:0 1px 2px var(--sh08,rgba(16,24,40,.08))!important}
       html.ps-page-scout .match-person-strip .mp-seg button.on b{color:var(--team-c,#15305a)}
     </style>
+    <style id="ps-2734-match-squad-groups">/* 2.734 — 경기 준비 명단: 선발·리저브 아래의 미배정 선수를 선수단 조별 한 행으로.
+      조를 바꾸는 화면은 선수단뿐이다. 이 행은 경기 명단 상태만 보여 주고, 조 자체는 건드리지 않는다. */
+      @media (min-width:768px){
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-grp{width:78px!important;flex-basis:78px!important}
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-tchips{
+          flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain
+        }
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-tray .mb2-chip b{
+          overflow:visible!important;text-overflow:clip!important;max-width:none!important;white-space:nowrap!important
+        }
+        /* 가로 한 행에서는 끼울 자리를 위·아래가 아니라 왼쪽·오른쪽으로 말한다. */
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-chip.reord-before{box-shadow:-2px 0 0 0 var(--blue,#3a6df0)}
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-chip.reord-after{box-shadow:2px 0 0 0 var(--blue,#3a6df0)}
+      }
+      /* iPad: 조·이름은 생략하지 않는다. 각 조는 한 줄로 빠르게 훑고, 긴 선발·리저브만
+         그 행 안에서 가로 스와이프한다. 조가 아주 많을 때만 명단 전체를 세로 스와이프한다. */
+      @media (min-width:768px) and (pointer:coarse){
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-tray-row{
+          max-height:clamp(200px,30vh,248px)!important;overflow-x:hidden!important;overflow-y:auto!important;
+          overscroll-behavior:contain;scrollbar-width:thin;scrollbar-gutter:stable;scroll-padding-top:30px;padding-right:4px!important
+        }
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-tray-row .mb2-lbl{
+          position:sticky;top:0;z-index:4;padding:5px 0;background:var(--surface,var(--panel,#fff))
+        }
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-tray-row .mb2-lbl::after{
+          content:"이름으로 스크롤 · 등번호를 잡아 이동";margin-left:8px;color:var(--dim);font-size:10px;font-weight:600;letter-spacing:0
+        }
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-trow{
+          display:grid!important;grid-template-columns:82px minmax(0,1fr)!important;align-items:center!important;gap:8px!important
+        }
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-grp{
+          width:auto!important;min-width:0!important;flex:none!important;align-self:stretch;align-items:center;padding-top:0!important;
+          background:var(--surface,var(--panel,#fff))
+        }
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-tchips{
+          min-height:48px;padding-top:2px;padding-bottom:2px;flex-wrap:nowrap!important;
+          overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain
+        }
+        /* 이름 위 스와이프는 명단 이동, 원형 등번호를 잡을 때만 선수 이동. */
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-tray .mb2-chip{
+          height:44px!important;padding-right:12px!important;touch-action:pan-x pan-y!important;cursor:default
+        }
+        html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-tray .mb2-chip i{
+          width:32px;height:32px;line-height:32px;touch-action:none;cursor:grab
+        }
+      }
+      html.ps-page-scout #mb2Card .mb2-dropdock{display:none}
+      /* 터치 화면은 긴 명단의 시작·끝을 동시에 볼 수 없다. 등번호를 잡은 동안만 세 목적지를
+         화면 위에 고정해, 어느 조에서든 스크롤 없이 선발·리저브·명단 외로 놓게 한다. */
+      @media (pointer:coarse){
+        html.ps-page-scout body.mb2-dragging:not(.mb2-meet) #mb2Card .mb2-dropdock{
+          position:fixed;top:54px;left:50%;z-index:520;transform:translateX(-50%);
+          display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;
+          width:min(430px,calc(100vw - 24px));padding:6px;border:1px solid var(--line,#e6e8ee);
+          border-radius:14px;background:color-mix(in srgb,var(--surface,#fff) 94%,transparent);
+          box-shadow:0 12px 32px var(--sh18,rgba(16,24,40,.18));backdrop-filter:blur(12px)
+        }
+        html.ps-page-scout #mb2Card .mb2-dropdock [data-squad-drop]{
+          display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:9px;
+          background:var(--bar2,#f3f4f6);color:var(--txt,#172033);font-size:12px;font-weight:800
+        }
+        html.ps-page-scout #mb2Card .mb2-dropdock [data-row="start"]{color:#16213a}
+        html.ps-page-scout #mb2Card .mb2-dropdock [data-row="res"]{color:#9a601f}
+        html.ps-page-scout #mb2Card .mb2-dropdock [data-squad-drop].drop-hot{
+          color:#fff;background:var(--blue,#3a6df0);outline:2px solid #fff;outline-offset:-4px
+        }
+      }
+    </style>
     <style id="ps-2177-match">/* 2.188 — 경기를 열면 목록을 숨긴다(사용자). 2.177 의 목록|상세 나란히 규칙은 제거, 촘촘한 목록(2.184)은 유지 *//* ══ 2.177 · 경기 = 목록 | 상세 (콕핏 제안 §02) ══
         경기를 누르면 화면이 바뀌는 게 아니라 오른쪽이 바뀐다(≥1100px). 행엔 버튼이 없다(데스크톱은 올렸을 때만, 폰은 상세에서).
         왼쪽 색 띠·배지 면색을 걷고 결과는 글자색. 전적은 머리 옆 작은 숫자. 옛 규칙은 .match-shell 안에서만 덮는다. */
@@ -14468,22 +14536,46 @@ function mb2RenderTray(m){
   /* 2.014 — 선발·리저브는 포지션 순(GK→수비→미드필더→공격)으로(사용자). 같은 그룹 안에서는 명단 순서 유지 */
   (function(){ var RK={GK:0,DEF:1,MID:2,ATT:3,ETC:4}; function rk(p){ var ps=(data.positions||[]).filter(function(x){return x.id===p.posId;})[0]; return RK[posGroupOf(ps?ps.name:"")]!=null?RK[posGroupOf(ps?ps.name:"")]:4; }
     ["START","RES"].forEach(function(k){ G[k]=G[k].map(function(p,i){return {p:p,i:i,r:rk(p)};}).sort(function(a,b){return a.r-b.r||a.i-b.i;}).map(function(x){return x.p;}); }); })();
-  /* 2.189 — 작전판 위 가로 3행(사용자): 선발 / 리저브 / 미지정. 포지션별 묶음은 합쳐서 '미지정' 한 행(안에서는 GK→수비→미드→공격 순) */
-  (function(){ var rest=[].concat(G.GK,G.DEF,G.MID,G.ATT,G.ETC); G.GK=[];G.DEF=[];G.MID=[];G.ATT=[]; G.ETC=rest; })();
+  /* 2.734 — 선발·리저브가 아닌 선수는 선수단의 조별 한 행으로 보인다.
+     포지션 순(GK→수비→미드→공격)은 각 조 안에서 그대로 유지한다. */
+  var rest=[].concat(G.GK,G.DEF,G.MID,G.ATT,G.ETC);
   var L={START:"선발",RES:"리저브",GK:"GK",DEF:"수비",MID:"미드필더",ATT:"공격",ETC:"미지정"};
   var chipSq=function(p){ return chip(p).replace('class="mb2-chip',inSt[p.id]?'class="mb2-chip st':(inRs[p.id]?'class="mb2-chip rs':'class="mb2-chip')); };
   var sqm=$("mb2SqMode"); if(sqm){ sqm.style.display=matchCanEdit()?"":"none"; sqm.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",mb2SqModeV===b.dataset.sq);}); if(!sqm.__w){sqm.__w=1; sqm.addEventListener("click",function(e){var b=e.target.closest("button[data-sq]");if(!b)return; mb2SqModeV=(mb2SqModeV===b.dataset.sq)?null:b.dataset.sq; var m2=matchGet(); if(m2)mb2RenderTray(m2); if(mb2SqModeV)toast(mb2SqModeV==="start"?"선수를 눌러 선발로 표시":"선수를 눌러 리저브로 표시"); });} }
   tray.classList.toggle("sqmode",!!mb2SqModeV);
-  /* 2.190 — 세 행을 늘 그린다(빈 행은 '여기로 끌어오기'). 칩을 다른 행에 놓으면 선발/리저브/미지정으로 옮긴다(아래 up()) */
-  tray.innerHTML=["START","RES","ETC"].map(function(k){
-    var rowk=(k==="START")?"start":(k==="RES"?"res":"none");
-    if(k==="ETC")G[k]=G[k].filter(function(p){return !isHurt(p);}).concat(G[k].filter(isHurt));
-    return '<div class="mb2-trow'+(k==="START"?" st":(k==="RES"?" rs":""))+'" data-row="'+rowk+'"><span class="mb2-grp">'+L[k]+'<b>'+G[k].length+'</b></span><div class="mb2-tchips">'+(G[k].length?G[k].map(chipSq).join(""):'<i class="mb2-drop">'+(k==="ETC"?"모두 배정됨":"여기로 끌어오기")+'</i>')+'</div></div>';
+  /* 선발·리저브는 빈 행도 놓을 자리로 남긴다. 아래 행은 실제 선수단 조만 만들며,
+     조가 하나도 없는 팀은 종전처럼 '미지정' 한 행을 쓴다. */
+  var rows=[
+    {kind:"start",label:L.START,list:G.START,cls:" st",lockGrp:false},
+    {kind:"res",label:L.RES,list:G.RES,cls:" rs",lockGrp:false}
+  ];
+  var actualGroups=[],seenGroups=Object.create(null);
+  ours.forEach(function(p){var g=plGrpOf(p);if(g&&!seenGroups[g]){seenGroups[g]=1;actualGroups.push(g);}});
+  if(actualGroups.length){
+    var pref=[];try{pref=tmGrpBase()||[];}catch(_){}
+    var ordered=[],added=Object.create(null);
+    pref.forEach(function(g){g=String(g||"").trim();if(g&&seenGroups[g]&&!added[g]){added[g]=1;ordered.push(g);}});
+    actualGroups.filter(function(g){return !added[g];}).sort(function(a,b){return a.localeCompare(b,"ko");}).forEach(function(g){added[g]=1;ordered.push(g);});
+    var restBy=Object.create(null);rest.forEach(function(p){var g=plGrpOf(p);(restBy[g]=restBy[g]||[]).push(p);});
+    ordered.forEach(function(g){rows.push({kind:"none",grp:g,label:tmGroupLabel(g),list:restBy[g]||[],cls:" grp",lockGrp:true});});
+    if(ours.some(function(p){return !plGrpOf(p);})){rows.push({kind:"none",grp:"",label:tmGroupLabel("\u0000"),list:restBy[""]||[],cls:" grp",lockGrp:true});}
+  }else{
+    rows.push({kind:"none",grp:"",label:L.ETC,list:rest,cls:"",lockGrp:false});
+  }
+  function availableFirst(list){return list.filter(function(p){return !isHurt(p);}).concat(list.filter(isHurt));}
+  var dropDock='<div class="mb2-dropdock" aria-hidden="true"><span data-squad-drop data-row="start">선발로</span><span data-squad-drop data-row="res">리저브로</span><span data-squad-drop data-row="none">명단 외</span></div>';
+  tray.innerHTML=dropDock+rows.map(function(r){
+    var list=r.kind==="none"?availableFirst(r.list):r.list;
+    var grpAttr=r.lockGrp?' data-grp="'+esc(r.grp)+'"':'';
+    var empty=r.kind==="none"?"모두 배정됨":"여기로 끌어오기";
+    return '<div class="mb2-trow'+r.cls+'" data-row="'+r.kind+'"'+grpAttr+' role="group" aria-label="'+esc(r.label+' '+list.length+'명')+'"><span class="mb2-grp">'+esc(r.label)+'<b>'+list.length+'</b></span><div class="mb2-tchips">'+(list.length?list.map(chipSq).join(""):'<i class="mb2-drop">'+empty+'</i>')+'</div></div>';
   }).join("");
   tray.querySelectorAll(".mb2-chip").forEach(function(c){
     c.addEventListener("pointerdown",function(e){
       if(!matchCanEdit())return;
       if(mb2SqModeV){ e.preventDefault(); mb2SquadToggle(m,c.dataset.pid,mb2SqModeV); return; }   /* 2.013 — 표시 모드: 탭 = 선발/리저브 토글 */
+      /* 2.734 — 터치에서는 이름을 밀어 명단을 스크롤하고, 원형 등번호를 잡을 때만 드래그한다. */
+      if(e.pointerType==="touch"&&!(e.target.closest&&e.target.closest(".mb2-chip i")))return;
       var isUsed=c.classList.contains("used");   /* 2.000 — 배치된 선수: 순서만 바꿀 수 있음 */
       e.preventDefault();
       var pl=ours.find(function(p){return p.id===c.dataset.pid;}); if(!pl)return;
@@ -14515,13 +14607,14 @@ function mb2RenderTray(m){
         if(isUsed)pp={inside:false};   /* 배치된 선수는 운동장에 다시 못 놓음 */
         if(pit)pit.classList.toggle("hot",!!pp.inside);
         if(fly)fly.classList.toggle("over",!!pp.inside);
-        /* 2.000 — 같은 그룹 칩 위면 끼울 자리 표시(위/아래 절반) */
+        /* 2.734 — 가로 행은 좌우 절반, 전체 보기의 세로 명단은 위아래 절반으로 끼울 자리를 잡는다. */
         if(!pp.inside&&groupEl){ var hit=null; try{ var els=document.elementsFromPoint(ev.clientX,ev.clientY); for(var i=0;i<els.length;i++){ var ce=els[i].closest?els[i].closest(".mb2-chip"):null; if(ce&&ce!==c&&ce.parentNode===groupEl){hit=ce;break;} } }catch(_){}
-          if(hit){ var r=hit.getBoundingClientRect(), before=ev.clientY<r.top+r.height/2; if(!reord||reord.el!==hit||reord.before!==before){ clearReord(); reord={el:hit,before:before,pid:hit.dataset.pid}; hit.classList.add(before?"reord-before":"reord-after"); } }
+          if(hit){ var r=hit.getBoundingClientRect(), horizontal=false; try{horizontal=!document.body.classList.contains("mb2-meet")&&matchMedia("(min-width:768px)").matches;}catch(_){} var before=horizontal?(ev.clientX<r.left+r.width/2):(ev.clientY<r.top+r.height/2); if(!reord||reord.el!==hit||reord.before!==before){ clearReord(); reord={el:hit,before:before,pid:hit.dataset.pid}; hit.classList.add(before?"reord-before":"reord-after"); } }
           else clearReord(); }
         else clearReord();
-        /* 2.190 — 다른 행 위면 그 행을 놓을 자리로 표시 */
-        var rowHit=null; try{ var els2=document.elementsFromPoint(ev.clientX,ev.clientY); for(var q2=0;q2<els2.length;q2++){ var rr=els2[q2].closest?els2[q2].closest(".mb2-trow"):null; if(rr){rowHit=rr;break;} } }catch(_){}
+        /* 다른 행 위면 그 행을 놓을 자리로 표시한다. 조 행은 그 선수의 원래 조만 받는다 —
+           여기서 조를 바꾸면 출석·일정까지 바뀌므로 조 변경은 선수단에서만 한다. */
+        var rowHit=null; try{ var els2=document.elementsFromPoint(ev.clientX,ev.clientY); for(var q2=0;q2<els2.length;q2++){ var rr=els2[q2].closest?els2[q2].closest(".mb2-trow,[data-squad-drop]"):null; if(!rr)continue; if(rr.dataset.row==="none"&&rr.hasAttribute("data-grp")&&String(rr.dataset.grp||"")!==plGrpOf(pl))continue; rowHit=rr;break; } }catch(_){}
         if(rowHit&&rowHit!==c.closest(".mb2-trow")&&!pp.inside){ if(dropRow!==rowHit){ if(dropRow)dropRow.classList.remove("drop-hot"); dropRow=rowHit; dropRow.classList.add("drop-hot"); } }
         else if(dropRow){ dropRow.classList.remove("drop-hot"); dropRow=null; }
         if(pp.inside){
