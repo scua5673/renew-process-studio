@@ -1340,10 +1340,10 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .rx-in:focus{outline:0;border-color:var(--accent)}
   .rx-save{width:32px;height:32px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-weight:800;cursor:pointer}
   .rx-t{flex:1;min-width:0;font-weight:600;color:var(--text);cursor:text;padding:6px 10px;border-radius:10px;background:var(--surface-2);white-space:pre-wrap;word-break:break-word;line-height:1.5}   /* 2.513 — 길게 적어도 다 보이게(한 줄 고정 해제) */
-  .rx-row.me{padding:7px 10px;border-radius:10px;background:rgba(46,125,99,.07);border:1px solid rgba(46,125,99,.15)}
-  .rx-row.me i{font-style:normal;color:#E0526B}
-  .rx-row.me b{font-size:11px;font-weight:800;color:var(--green)}
-  .rx-row.me span{color:var(--text)}
+  .rx-row.me{align-items:flex-start;padding:7px 10px;border-radius:10px;background:rgba(46,125,99,.07);border:1px solid rgba(46,125,99,.15)}
+  .rx-row.me i{flex:none;font-style:normal;color:#E0526B}
+  .rx-row.me b{flex:none;font-size:11px;font-weight:800;color:var(--green)}
+  .rx-row.me span{min-width:0;flex:1;color:var(--text);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
   .rx-row.me .rx-seen{color:var(--text-3);font-weight:600}
   /* 2.041 목표 3층 · 리뷰 링크·가이드 */
   .qg-layers{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:4px}
@@ -2133,11 +2133,43 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sqst-chip.lo b{color:#C2690A}
   .sqst-more:not(#_){margin-top:7px;min-height:36px;border:0;background:transparent;color:var(--accent);
     font:800 13px var(--f);cursor:pointer;padding:4px 0}
+  /* 2.739 · 선수 이야기에서 바로 이어지는 좋아요·답글
+     원문은 선수 문서, 답은 선수별 공개 문서에 둔다. 한 카드 안에서 읽고 답하는 흐름만 더한다. */
+  .sqst-tools{display:flex;align-items:flex-start;gap:10px;justify-content:space-between}
+  .sqst-tools .sqst-filt{min-width:0;flex:1 1 auto}
+  .sqst-talksum{display:inline-flex;align-items:center;gap:7px;min-height:32px;flex:0 0 auto;padding:0 11px;
+    border-radius:999px;background:rgba(46,125,99,.08);color:var(--green);font-size:11px;font-weight:700;white-space:nowrap}
+  .sqst-talksum b{font-size:12px;font-weight:800;color:var(--text)}
+  .sqrx{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line-soft)}
+  .sqrx-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .sqrx-btn:not(#_){min-height:36px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 11px;
+    border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text-2);font:800 12px var(--f);cursor:pointer}
+  .sqrx-btn.like.on{border-color:rgba(224,82,107,.38);background:rgba(224,82,107,.09);color:#D94360}
+  .sqrx-btn.reply.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .sqrx-help{font-size:10px;font-weight:600;color:var(--text-3)}
+  .sqrx-note{margin-top:8px;padding:9px 11px;border-radius:11px;background:rgba(46,125,99,.07);border:1px solid rgba(46,125,99,.14)}
+  .sqrx-note-h{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:3px}
+  .sqrx-note-h b{font-size:11px;font-weight:800;color:var(--green)}
+  .sqrx-note-h span{font-size:10px;font-weight:600;color:var(--text-3)}
+  .sqrx-note p{margin:0;color:var(--text);font-size:13px;font-weight:600;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+  .sqrx-compose{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:stretch;margin-top:8px}
+  .sqrx-compose textarea{width:100%;min-width:0;min-height:44px;resize:vertical;border:1px solid var(--accent);border-radius:10px;
+    padding:10px 11px;background:var(--surface);color:var(--text);font:600 13px/1.45 var(--f)}
+  .sqrx-compose textarea:focus{outline:2px solid var(--accent-soft);outline-offset:1px}
+  .sqrx-save:not(#_){min-width:58px;border:1px solid var(--accent);border-radius:10px;background:var(--accent);color:#fff;font:800 12px var(--f);cursor:pointer}
+  .rx-mark{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:3px 7px;background:rgba(46,125,99,.08);
+    color:var(--green);font-size:10px;font-weight:800;line-height:1.2;white-space:nowrap}
+  /* 월간 7열 한 칸에서는 답글 우선 아이콘 하나만 쓴다. 메모 아이콘 자리를 이어 받아 태그와도 겹치지 않는다. */
+  .mon-cell .rx-mark{position:absolute;right:4px;top:4px;max-width:20px;padding:2px 4px;font-size:10px;overflow:hidden}
+  .mon-cell.has-rx .memoDot{display:none}
+  .wk-hd .rx-mark{margin-left:auto}
   .sqst-none{padding:44px 20px;text-align:center}
   .sqst-none b{display:block;font-size:16px;font-weight:800;margin-bottom:6px}
   .sqst-none span{display:block;max-width:400px;margin:0 auto;font-size:13px;color:var(--text-3);line-height:1.7}
   @media (max-width:560px){ .sqst-e{grid-template-columns:1fr;gap:4px} .sqst-d{display:flex;gap:7px;align-items:baseline}
-    .sqst-d span{margin-top:0} }
+    .sqst-d span{margin-top:0} .sqst-tools{display:block}.sqst-talksum{margin:-4px 0 10px}.sqrx-help{flex-basis:100%}
+    .sqrx-compose{grid-template-columns:1fr}.sqrx-save:not(#_){min-height:44px}.wk-hd{flex-wrap:wrap}.wk-hd .rx-mark{margin-left:0} }
+  @media (pointer:coarse){.sqrx-btn:not(#_){min-height:44px}.sqrx-save:not(#_){min-height:44px}}
 /* ══ 2.432 · 면담 = 함께 보기(왼쪽) + 기록(오른쪽) ═══════════════════════════════
    아이패드 가로가 기준. 좁으면(≤980) 위아래로 접힌다 — 함께 보는 자리는 대개 가로다. */
   .sqmt{display:flex;gap:20px;align-items:flex-start}
@@ -8115,7 +8147,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         접고 '전문 ›' 을 단다.
      ⚠ 안 쓰는 선수에게는 '계정 연결이 필요해요' 대신 **'아직 앱을 쓰지 않아요'** — 연결해도
         적은 게 없으면 여전히 빈 화면이다. 원인을 바르게 말한다. */
-  var sqStFilt='all', sqStOpen={};
+  var sqStFilt='all', sqStOpen={}, sqRxEdit='';
   function sqStDay(ts){
     /* ⚠ 2.432 — 시각이 없는 항목(옛 저장본·`at` 안 찍힌 장점단점)이 **1월 1일(1970)** 로 떴다.
        모르는 날짜는 모른다고 말한다 — '—'. */
@@ -8140,7 +8172,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var meta=[att, (lg.body?('컨디션 '+sqTdLabel(TD_BODY,lg.body)):''),
                 (lg.sleepq?('수면 '+sqTdLabel(TD_SLEEP,lg.sleepq)):''),
                 (lg.rpe?('느낀 강도 '+lg.rpe):'')].filter(Boolean).join(' · ');
-      out.push({k:'log',kn:'일지',ts:sqStTs(y),said:memo,quote:!!memo,meta:meta,
+      out.push({k:'log',kn:'일지',id:'log:'+y,day:y,reactKey:'day:'+y,ts:sqStTs(y),said:memo,quote:!!memo,meta:meta,
                 none:memo?'':'한 줄은 안 적었어요'});
     }); }catch(_){}
     /* ② 공통질문 답 — 질문은 팀 것, 답은 선수 것(2.408) */
@@ -8261,7 +8293,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!d)
       return h+'<div class="sqst-none"><b>아직 앱을 쓰지 않아요</b>'
         +'<span>이 선수가 IDP에 적은 것이 없습니다. 계정을 연결하면 일지·셀프평가·목표·답변이 적히는 대로 여기에 쌓입니다.</span></div></div>';
-    var ents=sqStEntries(d);
+    var ents=sqStEntries(d), storyReacts={};
+    try{ if(ln&&ln.uid)storyReacts=((rvRec(PREFIX+ln.uid)||{}).reacts)||{}; }catch(_){ storyReacts={}; }
     if(!ents.length)
       return h+'<div class="sqst-none"><b>아직 적은 것이 없어요</b>'
         +'<span>계정은 연결됐지만 선수가 아직 아무것도 적지 않았습니다. 적으면 이 자리에 그대로 흐릅니다.</span></div></div>';
@@ -8269,11 +8302,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var KIND=[['all','전체'],['log','일지'],['qa','답변'],['sw','장점·단점'],['ev','셀프평가'],['goal','목표']];
     var cnt={}; ents.forEach(function(e){ cnt[e.k]=(cnt[e.k]||0)+1; });
     if(!cnt[sqStFilt]&&sqStFilt!=='all')sqStFilt='all';
-    h+='<div class="sqst-filt">'+KIND.map(function(k){
+    var likeN=0,replyN=0;
+    ents.forEach(function(e){ var r=e.reactKey&&storyReacts[e.reactKey]; if(r&&r.h)likeN++; if(r&&String(r.t||'').trim())replyN++; });
+    h+='<div class="sqst-tools"><div class="sqst-filt">'+KIND.map(function(k){
       var n=(k[0]==='all')?ents.length:(cnt[k[0]]||0);
       if(!n)return '';
       return '<button type="button" class="'+(sqStFilt===k[0]?'on':'')+'" data-sqst-f="'+k[0]+'">'+esc(k[1])+'<span class="n">'+n+'</span></button>';
-    }).join('')+'</div>';
+    }).join('')+'</div>'+(likeN||replyN?'<div class="sqst-talksum" aria-label="이 선수와 나눈 소통: 좋아요 '+likeN+'개, 답글 '+replyN+'개"><span>소통</span><b>좋아요 '+likeN+' · 답글 '+replyN+'</b></div>':'')+'</div>';
     h+='<div class="sqst">';
     ents.filter(function(e){ return sqStFilt==='all'||e.k===sqStFilt; }).forEach(function(e,i){
       var dd=sqStDay(e.ts);
@@ -8292,9 +8327,26 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(e.meta)h+='<div class="sqst-m">'+e.meta+'</div>';
       if(e.full&&e.full.length>150)
         h+='<button type="button" class="sqst-more" data-sqst-more="'+esc(e.id)+'">'+(sqStOpen[e.id]?'접기':'전문 ›')+'</button>';
+      if(e.reactKey&&ln&&ln.uid)h+=rSqStoryReact(ln.uid,e.reactKey,storyReacts[e.reactKey]||null);
       h+='</div></div>';
     });
     return h+'</div></div>';
+  }
+
+  /* 선수단 이야기에서는 `viewing` 이 코치 자신이다. 그래서 전역 rReact/reactSet 을 재사용하지 않고
+     대상 uid를 DOM과 저장 함수에 끝까지 명시한다 — 다른 선수나 코치 자신의 공개 문서를 건드리지 않게. */
+  function sqRxToken(uid2,key){ return String(uid2||'')+'|'+String(key||''); }
+  function rSqStoryReact(uid2,key,rc){
+    if(!uid2||!/^day:\d{4}-\d{2}-\d{2}$/.test(String(key||'')))return '';
+    rc=rc||null; var token=sqRxToken(uid2,key), editing=(sqRxEdit===token), has=!!(rc&&String(rc.t||'').trim());
+    var meta=''; if(rc){ meta=[rc.tBy||rc.by||'코치',cfDate(rc.tAt||rc.at)].filter(Boolean).join(' · '); }
+    var h='<div class="sqrx" data-sqrx-uid="'+esc(uid2)+'" data-sqrx-key="'+esc(key)+'">'
+      +'<div class="sqrx-actions"><button type="button" class="sqrx-btn like'+(rc&&rc.h?' on':'')+'" data-sqrx-like aria-pressed="'+(rc&&rc.h?'true':'false')+'">'+(rc&&rc.h?'♥':'♡')+' 좋아요</button>'
+      +'<button type="button" class="sqrx-btn reply'+(editing?' on':'')+'" data-sqrx-open aria-expanded="'+(editing?'true':'false')+'">'+(has?'답글 수정':'답글 달기')+'</button>'
+      +'<span class="sqrx-help">선수 화면에 바로 보여요</span></div>';
+    if(has&&!editing)h+='<div class="sqrx-note"><div class="sqrx-note-h"><b>코치 답글</b>'+(meta?'<span>'+esc(meta)+'</span>':'')+'</div><p>'+esc(rc.t)+'</p></div>';
+    if(editing)h+='<div class="sqrx-compose"><textarea data-sqrx-in maxlength="300" rows="2" aria-label="선수에게 전할 답글" placeholder="선수에게 전할 한 줄">'+esc((rc&&rc.t)||'')+'</textarea><button type="button" class="sqrx-save" data-sqrx-save>'+(has?'수정':'등록')+'</button></div>';
+    return h+'</div>';
   }
 
   /* ══ 2.489 · 선수단 리포트 탭 수리 — 2.423(선수 카드 재설계)에서 rSqReport 가 부르는 네 함수
@@ -8711,6 +8763,38 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     [].forEach.call(wrap.querySelectorAll('[data-sqst-f]'),function(b){ b.onclick=function(){ sqStFilt=b.dataset.sqstF; render(); }; });
     [].forEach.call(wrap.querySelectorAll('[data-sqst-more]'),function(b){ b.onclick=function(){
       var k=b.dataset.sqstMore; sqStOpen[k]=!sqStOpen[k]; render(); }; });
+    /* 2.739 — 이야기 일지의 좋아요·답글. 쓰기 직전에도 현재 선택 선수와 uid를 다시 맞춘다. */
+    var _sqRxBox=function(el){ return el&&el.closest?el.closest('.sqrx'):null; };
+    var _sqRxTarget=function(box){ if(!box||!isCoach()||!squadView)return null;
+      var uid2=box.dataset.sqrxUid||'', key=box.dataset.sqrxKey||'';
+      var linked=false; try{ var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), mem=pm&&pm.members&&pm.members[uid2]; linked=!!(mem&&String(mem.playerId)===String(sqEvalSel)); }catch(_){}
+      if(!linked||!/^day:\d{4}-\d{2}-\d{2}$/.test(key))return null;
+      return {uid:uid2,key:key,kk:coachFeedbackKey(PREFIX+uid2)}; };
+    var _sqRxFind=function(to,sel){ var found=null; if(!to)return null; try{ [].some.call(wrap.querySelectorAll('.sqrx'),function(x){
+      if(x.dataset.sqrxUid===to.uid&&x.dataset.sqrxKey===to.key){ found=x.querySelector(sel); return true; } return false; }); }catch(_){} return found; };
+    var _sqRxFocus=function(to,sel){ try{ var el=_sqRxFind(to,sel); if(el)el.focus(); }catch(_){} };
+    var _sqRxSave=function(box){ var to=_sqRxTarget(box), i=box&&box.querySelector('[data-sqrx-in]'); if(!to||!i)return;
+      var v=String(i.value||'').trim().slice(0,300), old=''; try{ old=String(((((rvRec(PREFIX+to.uid)||{}).reacts)||{})[to.key]||{}).t||''); }catch(_){}
+      var changed=(v!==old); if(changed&&!reactSetAt(to.kk,to.key,{t:v}))return;
+      if(sqRxEdit===sqRxToken(to.uid,to.key))sqRxEdit=''; if(changed)gToast(v?'답글을 선수에게 보냈어요':'답글을 비웠어요'); render(); _sqRxFocus(to,'[data-sqrx-open]'); };
+    [].forEach.call(wrap.querySelectorAll('[data-sqrx-like]'),function(b){ b.onclick=function(){ var box=_sqRxBox(b),to=_sqRxTarget(box); if(!to)return;
+      var rc=null; try{ rc=(((rvRec(PREFIX+to.uid)||{}).reacts)||{})[to.key]||null; }catch(_){}
+      if(reactSetAt(to.kk,to.key,{h:(rc&&rc.h)?0:1})){ if(!(rc&&rc.h))gToast('좋아요가 선수에게 보여요'); render(); _sqRxFocus(to,'[data-sqrx-like]'); } }; });
+    [].forEach.call(wrap.querySelectorAll('[data-sqrx-open]'),function(b){ b.onclick=function(){ var box=_sqRxBox(b),to=_sqRxTarget(box); if(!to)return;
+      var token=sqRxToken(to.uid,to.key); sqRxEdit=(sqRxEdit===token)?'':token; render();
+      if(sqRxEdit)try{ var i2=_sqRxFind(to,'[data-sqrx-in]'); if(i2){i2.focus();i2.setSelectionRange(i2.value.length,i2.value.length);} }catch(_){}
+      else _sqRxFocus(to,'[data-sqrx-open]'); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-sqrx-save]'),function(b){ b.onclick=function(){ _sqRxSave(_sqRxBox(b)); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-sqrx-in]'),function(i){ i.onkeydown=function(e){
+      if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); _sqRxSave(_sqRxBox(i)); } };
+      i.onblur=function(e){ var box=_sqRxBox(i),to=_sqRxTarget(box); if(!to)return;
+        var v=String(i.value||'').trim().slice(0,300),old=''; try{ old=String(((((rvRec(PREFIX+to.uid)||{}).reacts)||{})[to.key]||{}).t||''); }catch(_){}
+        var changed=(v!==old); if(changed&&!reactSetAt(to.kk,to.key,{t:v}))return;
+        /* Tab으로 같은 답글의 등록 버튼에 가는 중이면 DOM을 갈아 끼우지 않는다. 클릭/키보드 저장이 이어서 닫는다. */
+        if(e&&e.relatedTarget&&box.contains(e.relatedTarget))return;
+        var token=sqRxToken(to.uid,to.key); setTimeout(function(){ if(sqRxEdit!==token)return; sqRxEdit='';
+          if(!squadView||String(sqEvalSel)!==String((function(){ try{ var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'); return pm&&pm.members&&pm.members[to.uid]&&pm.members[to.uid].playerId||''; }catch(_){return '';} })()))return;
+          if(changed)gToast(v?'답글을 선수에게 보냈어요':'답글을 비웠어요'); render(); },0); }; });
     try{ var _pdf=wrap.querySelector('[data-sq-pdf]'); if(_pdf)_pdf.onclick=function(){ var rb=document.getElementById('repBtn'); if(rb)rb.click(); }; }catch(_){}   /* 2.478 — 병합 헤더의 PDF 프록시 */
     [].forEach.call(wrap.querySelectorAll('[data-sqe-mode]'),function(b){ b.onclick=function(){
       var nx=b.dataset.sqeMode||'eval', isScope=(nx==='req'||nx==='today'||nx==='qa');   /* 2.467 — 공통질문도 범위 세그(주석 2.409와 코드가 어긋나 평가→공통질문→선수가 이야기로 튕겼다, 1판) */   /* 2.163 */
@@ -10078,17 +10162,37 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rvRec(key){ try{ return JSON.parse(localStorage.getItem(coachFeedbackKey(key||viewing))||'null')||{}; }catch(_){ return {}; } }
   function rvList(key){ var r=rvRec(key); return Array.isArray(r.reviews)?r.reviews:[]; }
   /* 2.042 — 코치 리액션(iDEP·제프 지바 "❤ 하나가 '보고 있다' 신호"): 선수의 하루 한 줄·주간 회고에 ❤ 또는 한 줄. 코치가 원할 때만, 강제 없음.
-     저장: cs_idp_pub_v1_<uid>.reacts[key]={h:0|1,t:'',by,at} · key='day:YYYY-MM-DD' | 'wk:월요일ymd' */
+     저장: cs_idp_pub_v1_<uid>.reacts[key]={h:0|1,t:'',by,at,hBy?,hAt?,tBy?,tAt?} · key='day:YYYY-MM-DD' | 'wk:월요일ymd'
+     2.739부터 좋아요와 답글 작성자를 따로 기억한다. by/at은 옛 클라이언트가 읽을 수 있게 계속 둔다. */
   function reactsAll(){ try{ return rvRec(viewing).reacts||{}; }catch(_){ return {}; } }
   function reactOf(k){ return reactsAll()[k]||null; }
+  function rReactMark(k,compact){ var rc=reactOf(k), hasT=!!(rc&&String(rc.t||'').trim()); if(!rc||(!rc.h&&!hasT))return '';
+    var tx=compact?(hasT?'↩':'♥'):((rc.h?'♥':'')+(rc.h&&hasT?' · ':'')+(hasT?'답글':''));
+    var by=hasT?(rc.tBy||rc.by||'코치'):(rc.hBy||rc.by||'코치'), label=(rc.h&&hasT?'좋아요와 답글 있음':(hasT?'답글 있음':'좋아요'));
+    return '<span class="rx-mark" title="'+esc(by+' · '+label)+'" aria-label="'+esc(label)+'">'+tx+'</span>'; }
+  function reactMerge(old,patch){
+    var o=Object.assign({},old||{}), own=function(k){ return Object.prototype.hasOwnProperty.call(patch||{},k); };
+    /* 옛 한 벌짜리 작성자 정보는 처음 수정할 때 각 반응 정보로 안전하게 나눈다. */
+    if(String(o.t||'').trim()){ if(!o.tBy)o.tBy=o.by||''; if(!o.tAt)o.tAt=+o.at||0; }
+    if(o.h){ if(!o.hBy)o.hBy=o.by||''; if(!o.hAt)o.hAt=+o.at||0; }
+    Object.assign(o,patch||{});
+    var by=lrCoachName(), at=Date.now();
+    if(own('h')){ if(o.h){o.hBy=by;o.hAt=at;} else {delete o.hBy;delete o.hAt;} }
+    if(own('t')){ o.t=String(o.t||'').trim().slice(0,300); if(o.t){o.tBy=by;o.tAt=at;} else {delete o.tBy;delete o.tAt;} }
+    /* 옛 화면에는 답글 작성자를 우선 보여 주고, 답글이 없으면 좋아요 작성자를 보여 준다. */
+    if(String(o.t||'').trim()){ o.by=o.tBy||o.by||by; o.at=+o.tAt||+o.at||at; }
+    else if(o.h){ o.by=o.hBy||o.by||by; o.at=+o.hAt||+o.at||at; }
+    else { delete o.by; delete o.at; }
+    return o;
+  }
   /* 2.397 — ⚠ 원래 reactSet 은 **지금 보고 있는 선수**(viewing)에게만 쓸 수 있었다.
      선수단 '오늘 한 장' 은 한 화면에서 여러 선수에게 답하므로 **문서를 받는 창구**가 따로 필요하다.
      저장 모양은 그대로다: cs_idp_pub_v1_<uid>.reacts['day:YYYY-MM-DD']={h,t,by,at} */
   function reactSetAt(kk,k,patch){ if(!kk)return false;
     var r=null; try{ r=JSON.parse(localStorage.getItem(kk)||'null')||{}; }catch(_){ r={}; }
     r.reacts=r.reacts||{};
-    var o=Object.assign({},r.reacts[k]||{},patch,{by:lrCoachName(),at:Date.now()});
-    if(!o.h&&!o.t)delete r.reacts[k]; else r.reacts[k]=o;
+    var o=reactMerge(r.reacts[k]||{},patch);
+    if(!o.h&&!String(o.t||'').trim())delete r.reacts[k]; else r.reacts[k]=o;
     try{ localStorage.setItem(kk,JSON.stringify(r)); }catch(_){ return false; }
     try{ var api=parent&&parent.PSSync; if(api&&api.syncNow)api.syncNow('idp-react'); }catch(_){}
     psAct('a_react'); return true; }
@@ -10142,12 +10246,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return true; }
   function qmSeason(st){ var m=+String(st||'').slice(5,7)||0, y=String(st||'').slice(0,4); return y+' '+((m>=3&&m<=5)?'봄':(m>=6&&m<=8)?'여름':(m>=9&&m<=11)?'가을':'겨울'); }
   var MID_LB={keep:'계속',step:'한 걸음 더',change:'바꾸기'};
-  function reactSet(k,patch){ var kk=coachFeedbackKey(viewing); if(!kk)return false; var r=rvRec(); r.reacts=r.reacts||{}; var o=Object.assign({},r.reacts[k]||{},patch,{by:lrCoachName(),at:Date.now()}); if(!o.h&&!o.t)delete r.reacts[k]; else r.reacts[k]=o; try{ localStorage.setItem(kk,JSON.stringify(r)); }catch(_){ return false; } try{ var api=parent&&parent.PSSync; if(api&&api.syncNow)api.syncNow('idp-react'); }catch(_){} psAct('a_react'); return true; }
+  function reactSet(k,patch){ return reactSetAt(coachFeedbackKey(viewing),k,patch); }
   function rReact(k,label){ var coachMode=ro()&&isCoach(), me=!ro(), rc=reactOf(k);
     if(coachMode){ return '<div class="rx-row coach"><button type="button" class="rx-h'+(rc&&rc.h?' on':'')+'" data-rx-h="'+esc(k)+'" title="좋아요">'+(rc&&rc.h?'❤':'♡')+'</button>'
       +(rc&&rc.t&&window.__rxEdit!==k?'<span class="rx-t" data-rx-edit="'+esc(k)+'">'+esc(rc.t)+'</span>':'<input class="rx-in" data-rx-in="'+esc(k)+'" maxlength="300" value="'+esc((rc&&rc.t)||'')+'" placeholder="한 줄 (선택)"><button type="button" class="rx-save" data-rx-save="'+esc(k)+'">✓</button>')+'</div>'; }
-    if(!rc||(!rc.h&&!rc.t))return '';
-    return '<div class="rx-row me"><i>'+(rc.h?'❤':'')+'</i><b>'+esc(rc.by||'코치')+'</b>'+(rc.t?'<span>'+esc(rc.t)+'</span>':'<span class="rx-seen">'+(label||'봤어요')+'</span>')+'</div>'; }
+    var hasT=!!(rc&&String(rc.t||'').trim()); if(!rc||(!rc.h&&!hasT))return '';
+    var by=hasT?(rc.tBy||rc.by||'코치'):(rc.hBy||rc.by||'코치');
+    return '<div class="rx-row me"><i>'+(rc.h?'❤':'')+'</i><b>'+esc(by)+'</b>'+(hasT?'<span>'+esc(rc.t)+'</span>':'<span class="rx-seen">'+(label||'봤어요')+'</span>')+'</div>'; }
   function bindReacts(){ if(!(ro()&&isCoach()))return;
     [].forEach.call(wrap.querySelectorAll('[data-rx-h]'),function(b){ b.onclick=function(){ var k=b.dataset.rxH, rc=reactOf(k); reactSet(k,{h:rc&&rc.h?0:1}); if(!(rc&&rc.h))gToast('선수 화면에 ❤ 로 보여요'); render(); }; });
     var sv=function(k){ var i=wrap.querySelector('[data-rx-in="'+k+'"]'); if(!i)return; reactSet(k,{t:i.value.trim().slice(0,300)});   /* 2.513 — 80자에서 멈추던 것(사용자 "써지다가 안써지는데 많이 써지게") */ window.__rxEdit=null; render(); };
@@ -11290,12 +11395,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         if(lgm.solo) tags+='<span class="mon-tag solo">개인운동</span>';
         var csm=coachStatus(dt,viewedUid());
         if(csm) tags+='<span class="coach-mark">코치 '+esc(PHYS_LB[csm]||csm)+'</span>';
-        h+='<button type="button" class="mon-cell'+(out?' out':'')+(sameDay(dt,today)?' today':'')+'" data-d="'+ymd(dt)+'" aria-label="'+(dt.getMonth()+1)+'월 '+dt.getDate()+'일 기록 열기">'
+        var rxm=''; try{ rxm=rReactMark('day:'+ymd(dt),true); }catch(_){}
+        h+='<button type="button" class="mon-cell'+(out?' out':'')+(sameDay(dt,today)?' today':'')+(rxm?' has-rx':'')+'" data-d="'+ymd(dt)+'" aria-label="'+(dt.getMonth()+1)+'월 '+dt.getDate()+'일 기록 열기'+(rxm?' · 코치 반응 있음':'')+'">'
           +(lgm.t?'<span class="typbar '+lgm.t+'"></span>':'')
           +(lgm.memo?'<span class="memoDot">'+ic('note')+'</span>':'')
           +'<span class="dn">'+dt.getDate()+'</span>'
           +(tags?'<span class="mon-tags">'+tags+'</span>':'')
-          +(dots?'<span class="mon-dots">'+dots+'</span>':'')+'</button>';
+          +(dots?'<span class="mon-dots">'+dots+'</span>':'')+rxm+'</button>';
       }
       h+='</div>';
       h+='<div style="margin-top:10px;font-size:11px;color:var(--text-3);line-height:1.7">날짜를 누르면 <b>이 날 일간</b>으로 — 적는 곳은 일간 하나입니다</div>';
@@ -11308,6 +11414,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       for(var i2=0;i2<7;i2++){ var dt2=addDays(s,i2), pl2=plannedOn(dt2), isT=sameDay(dt2,today);
         var lg2=dlog(dt2)||{};
         var cs2=coachStatus(dt2,viewedUid());
+        var rxw=''; try{ rxw=rReactMark('day:'+ymd(dt2)); }catch(_){}
         h+='<div class="wk-day'+(isT?' today':'')+'" data-wkgo="'+ymd(dt2)+'" role="button" tabindex="0"><div class="wk-hd"><b>'+DAYS[i2]+' '+(dt2.getMonth()+1)+'/'+dt2.getDate()+'</b>'
           +(isT?'<span class="tdy">오늘</span>':'')
           /* ══ 2.335 · 한 줄이 세 가지를 말한다(사용자) ═══════════════════════════════════
@@ -11323,7 +11430,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
               var parts=[];
               if(lg2.t)parts.push(DT_LB[lg2.t]); if(lg2.solo)parts.push('개인운동');
               if(lg2.rpe)parts.push('강도 '+lg2.rpe);
-              return '<span class="wk-done'+(lg2.t?' '+lg2.t:'')+'"><i>✓</i>'+esc(parts.join(' · ')||'기록함')+'</span>'; })()
+              return '<span class="wk-done'+(lg2.t?' '+lg2.t:'')+'"><i>✓</i>'+esc(parts.join(' · ')||'기록함')+'</span>'; })()+rxw
           +'</div>';
         if(cs2)h+='<div class="coach-mark">코치 확인 · '+esc(PHYS_LB[cs2]||cs2)+'</div>';
         /* 2.331 — 체크는 **일간·루틴**에서 한다. 주간에서는 된 것/안 된 것을 **보여만** 준다(위 ⚠) */
@@ -11387,7 +11494,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
          '오늘 뭘 적었더라'가 한 줄 뒤로 숨는다. 늘 펼친 채로 둔다.
          ⚠ 접힘 코드(`l1-done`·`data-l1-fold`)는 지우지 않는다 — 다른 날짜·읽기 전용에서 여전히 쓴다. */
       var _l1done=_todaySimple ? false : (!!attNow && (attNow==='off' || rpeNow>0) && !_msPend);
-      var _l1open=!_l1done || !!window.__tdOpen;
+      var _dayReact=false; try{ var _dr=reactOf('day:'+ymd(calAnchor)); _dayReact=!!(_dr&&(_dr.h||String(_dr.t||'').trim())); }catch(_){}
+      /* 달력의 소통 표시를 눌러 들어온 선수에게 답글이 다시 접혀 숨지 않게 한다. */
+      var _l1open=!_l1done || !!window.__tdOpen || _dayReact;
       if(!_isTodayDay || ro()){
       /* 2.035 — 홈 '오늘 한 장'에서 쓴 값(몸·잠·초점 시도·칩)을 같은 날 화면에 보여준다 */
       (function(){ var parts=[]; try{
@@ -11445,8 +11554,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         /* 한 줄 — 한 칸만 둔다(옛 자유기록 textarea 와 홈 tdMemo 가 같은 log.memo 를 두 번 묻던 것을 하나로) */
         /* 2.325 — 한 줄도 **카드로**(사용자). 참여·몸은 카드인데 이것만 맨몸이라 줄이 하나 붕 떠 보였다.
            제목은 '몸은 어때'와 **같은 계단**(`td-q`)을 쓴다 — 일관성은 새 모양이 아니라 같은 모양에서 온다. */
-        if(!_todaySimple) h+='<div class="dc-sec"><div class="td-q">한 줄 <small>선택 · 잘 된 장면 / 다음엔 이렇게</small></div>'
-          +'<textarea id="dayMemo" rows="3" placeholder="예: 압박 오는데 몸을 미리 열어서 앞을 봤다"'+(ro()?' disabled':'')+'>'+esc(lg.memo||'')+'</textarea></div>';   /* 2.615 — 오늘(선수)은 첫 층의 한 마디가 같은 log.memo */
+        if(!_todaySimple){ var _pastRx=''; try{ _pastRx=rReact('day:'+ymd(calAnchor),'이 날 일지를 봤어요'); }catch(_){}
+          h+='<div class="dc-sec"><div class="td-q">한 줄 <small>선택 · 잘 된 장면 / 다음엔 이렇게</small></div>'
+          +'<textarea id="dayMemo" rows="3" placeholder="예: 압박 오는데 몸을 미리 열어서 앞을 봤다"'+(ro()?' disabled':'')+'>'+esc(lg.memo||'')+'</textarea>'+_pastRx+'</div>'; }   /* 2.615 — 오늘(선수)은 첫 층의 한 마디가 같은 log.memo */
         h+='</section>';   /* 2.362 — daycard 닫기. 아래 측정 카드는 별개의 일이라 밖에 둔다 */
         /* 2.489 — 일요일엔 주간 회고가 이 자리에(doc.weekly — 읽는 곳(9539 내 말 아카이브)만 있고
            쓰는 문이 어느 판에선가 사라져 고아였던 필드를 되살린다) */
@@ -12417,10 +12527,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      ③ 칩 셋(log.try 0/1/2) — 쉰 날은 묻지 않는다(2.489 규칙 그대로).
      ④ 한 마디 = 같은 #dayMemo(log.memo). 비어 있을 때만 질문 칩 둘(누르면 문장 앞에 들어가고 이어 쓴다).
      ⑤ 이번 주 띠: 월~일 칩 색만(계속=진파랑 · 1~2번=연파랑 · 아직=회색), 숫자 없음, 오늘은 테두리. */
-  function olRecentReact(){ try{
+  function olRecentReact(kind){ try{
     var all=reactsAll(), now=Date.now(), best=null;
-    Object.keys(all).forEach(function(k){ var r=all[k]; if(!r||(!r.h&&!r.t))return; if(!/^(day|wk|mid):/.test(k))return;   /* 2.619 — 6주 점검 한 줄도 같은 자리 */
-      var at=+r.at||0; if(!at||now-at>7*864e5)return; if(!best||at>best.at)best=Object.assign({k:k},r,{at:at}); });
+    Object.keys(all).forEach(function(k){ var r=all[k], hasT=!!(r&&String(r.t||'').trim()); if(!r||!/^(day|wk|mid):/.test(k))return;   /* 2.619 — 6주 점검 한 줄도 같은 자리 */
+      var at=0,cand=null;
+      if(kind==='text'){ if(!hasT)return; at=+r.tAt||+r.at||0; cand=Object.assign({k:k},r,{at:at}); }
+      else { if(!r.h)return; at=+r.hAt||+r.at||0; cand=Object.assign({k:k},r,{t:'',at:at}); }   /* 오래된 답글+새 좋아요면 좋아요 소식만 */
+      if(!at||now-at>7*864e5)return; if(!best||at>best.at)best=cand; });
     return best; }catch(_){ return null; } }
   function rOneLine(lg){
     var today=new Date(); today.setHours(0,0,0,0);
@@ -12431,12 +12544,15 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var g1=null; try{ g1=(doc.qgoal&&(doc.qgoal.goals||[]).filter(function(g){return g&&String(g.t||'').trim();})[0])||null; }catch(_){}
     var sen=(fc&&fc.text)||(g1&&g1.t)||'';
     var h='';
-    var rc=olRecentReact();
+    var _todayRxKey='day:'+ymd(today), _todayRx=reactOf(_todayRxKey), _todayHas=!!(_todayRx&&(_todayRx.h||String(_todayRx.t||'').trim()));
+    /* 오늘 답글 > 최근 답글 > 오늘 좋아요 > 최근 좋아요. 빈 legacy 객체는 소식으로 세지 않는다. */
+    var rc=(_todayRx&&String(_todayRx.t||'').trim())?Object.assign({k:_todayRxKey},_todayRx):(olRecentReact('text')||(_todayHas?Object.assign({k:_todayRxKey},_todayRx):olRecentReact('heart')));
     if(rc){ var isDay=rc.k.indexOf('day:')===0, isMid=rc.k.indexOf('mid:')===0, dk=rc.k.slice((isDay||isMid)?4:3), dlab='';
       try{ var dd=new Date(dk+'T00:00:00'); dlab=isMid?('6주째 점검'+(rc.c&&MID_LB[rc.c]?' · '+MID_LB[rc.c]+(rc.c==='change'?' — 면담에서':''):'')):(isDay?(sameDay(dd,today)?'오늘':(Math.round((today-dd)/864e5)===1?'어제':((dd.getMonth()+1)+'/'+dd.getDate()))):(dk===ymd(mondayOf(today))?'이번 주':'지난 주')); }catch(_){}   /* 2.618 — 주말에 쓴 «이번 주 한 줄»은 이번 주 */
       var mine=''; try{ if(isDay){ var l0=(doc.log||{})[dk]; if(l0&&l0.memo)mine=String(l0.memo); } }catch(_){}
-      h+='<div class="ol-coach"><i class="ol-av">'+esc(String(rc.by||'코치').charAt(0))+'</i><div class="ol-ct"><b>'+esc(rc.by||'코치')+'</b>'+(rc.h?' <em class="ol-h">❤</em>':'')
-        +(rc.t?'<span class="ol-say">'+esc(rc.t)+'</span>':(mine?'<span class="ol-q">«'+esc(mine.slice(0,70))+'» 봤어요</span>':'<span class="ol-q">봤어요</span>'))
+      var rxHasT=!!String(rc.t||'').trim(), rxBy=rxHasT?(rc.tBy||rc.by||'코치'):(rc.hBy||rc.by||'코치');
+      h+='<div class="ol-coach"><i class="ol-av">'+esc(String(rxBy).charAt(0))+'</i><div class="ol-ct"><b>'+esc(rxBy)+'</b>'+(rc.h?' <em class="ol-h">❤</em>':'')
+        +(rxHasT?'<span class="ol-say">'+esc(rc.t)+'</span>':(mine?'<span class="ol-q">«'+esc(mine.slice(0,70))+'» 봤어요</span>':'<span class="ol-q">봤어요</span>'))
         +'<small>'+esc(dlab)+(isDay?' 한 마디에':'')+'</small></div></div>';
     }
     /* 2.689 — 초점·목표 문장이 없어도 «한 마디»는 매일 쓴다(사용자 "한줄은 매일 쓸 수 있게"). 초점 줄·칩만 건너뛴다. */
@@ -12501,9 +12617,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
        ⚠ 이미 찍힌 `log.pain` 은 지우지 않는다(지난 날 '한 장' 요약이 그대로 읽는다). **더 묻지 않을 뿐**이다. */
     h+='<div class="td-sec"><div class="td-q">몸은 어때 <small>컨디션</small></div><div class="td-emo">'+TD_BODY.map(function(o){return '<button type="button" class="td-chip'+(lg.body===o[0]?' on':'')+'" data-td-body="'+o[0]+'"'+(can?'':' disabled')+'><small>'+o[2]+'</small></button>';}).join('')+'</div>'
       +'<div class="td-q" style="margin-top:10px">수면시간 <small>어젯밤</small></div><div class="td-emo">'+TD_SLEEP.map(function(o){return '<button type="button" class="td-chip'+(lg.sleepq===o[0]?' on':'')+'" data-td-sleep="'+o[0]+'"'+(can?'':' disabled')+'><small>'+o[2]+'</small></button>';}).join('')+'</div></div>';
-    /* 2.322 — 장면 태그 칩은 걷었고(같은 말 두 번), 이미 찍힌 log.tags 는 지난 날 '한 장' 요약이 읽는다. '봤어요'만 남는다 */
-    var _rc=''; try{ _rc=rReact('day:'+k,'오늘 한 장 봤어요'); }catch(_){}
-    if(_rc)h+='<div class="td-sec">'+_rc+'</div>';
+    /* 2.739 — 오늘 코치 반응은 rOneLine 첫 층 한 곳에서만 보여 중복을 막는다. */
     h+='</div>';   /* td-body 닫기 */
     h+='</div>';
     if(h.indexOf('<div class="td-body"></div>')>=0) return '';   /* 조각이 비면 빈 카드를 만들지 않는다 */
@@ -12826,6 +12940,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }catch(_){}
     try{ if(curL==='profile'||curL==='eval'){ bindReviews(); bindThread(); bindReacts(); bindMyArch(); bindWelcome();
       bindMeasureCard(); } }catch(_){}   /* 2.320 — 몸·잠·태그와 이번 주 측정이 이 탭으로 왔다 */   /* 2.079 — 내 유형 */   /* 2.027 · 2.040 · 2.042 */   /* 2.255 — 환영 세 걸음 */
+    try{ if(curL==='cal')bindReacts(); }catch(_){}   /* 2.739 — 과거 일간을 보는 코치의 답글 입력 */
     try{ bindGoalFamSeg(); }catch(_){}   /* 2.321 — 목표 · 루틴 · 이미지노트 세그 */
     try{ bindQgLadder(); }catch(_){}    /* 2.403 — 사다리 층을 누르면 그 편집기로 내려간다 */
     try{ bindGoalTwo(); }catch(_){}     /* 2.412 — 장점·단점 자유 서술 */
