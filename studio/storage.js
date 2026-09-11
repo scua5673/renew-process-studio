@@ -116,6 +116,34 @@
     });
   }
   function idbDel(k){ return tx('readwrite',function(s){ s.delete(k); return null; }); }
+  /* sync 회차의 팀/계정이 IDB write 도중 바뀐 경우에만 쓰는 exact 정리.
+     get→del을 두 transaction으로 나누면 그 사이 새 팀 저장까지 지울 수 있으므로,
+     같은 readwrite transaction 안에서 방금 쓴 원문과 정확히 같을 때만 지운다. */
+  function idbDelIfValue(k,expected){
+    return open().then(function(db){return new Promise(function(res,rej){
+      var removed=false,t=db.transaction(STORE,'readwrite'),s=t.objectStore(STORE),r=s.get(k);
+      r.onsuccess=function(){if(r.result===expected){s.delete(k);removed=true;}};
+      t.oncomplete=function(){res(removed);};t.onerror=function(){rej(t.error);};t.onabort=function(){rej(t.error);};
+    });});
+  }
+  /* 늦게 끝난 이전 워크스페이스 쓰기를 되돌릴 때 쓰는 exact 교체.
+     get→put을 나누면 그 사이 새 팀 값까지 덮을 수 있으므로 한 transaction에서
+     아직 expected가 그대로일 때만 replacement로 바꾼다. */
+  function idbReplaceIfValue(k,expected,replacement){
+    return open().then(function(db){return new Promise(function(res,rej){
+      var changed=false,t=db.transaction(STORE,'readwrite'),s=t.objectStore(STORE),r=s.get(k);
+      r.onsuccess=function(){
+        /* IDB get은 없는 키를 undefined로 돌리지만 동기화 계층은 부재를 null로
+           정규화한다. null expected도 한 transaction 안에서 "아직 없음"과
+           비교할 수 있어야 새 행 pull과 선수 항목 CAS가 원자적으로 동작한다. */
+        var same=r.result===expected||(expected===null&&(r.result===undefined||r.result===null));
+        if(!same)return;
+        if(replacement===undefined||replacement===null)s.delete(k);else s.put(replacement,k);
+        changed=true;
+      };
+      t.oncomplete=function(){res(changed);};t.onerror=function(){rej(t.error);};t.onabort=function(){rej(t.error);};
+    });});
+  }
   function idbKeys(prefix){
     prefix=String(prefix||'');
     return tx('readonly',function(s){ return s.getAllKeys(); }).then(function(keys){
@@ -377,6 +405,8 @@
     },
     set:function(k,v){ return afterMigrate(function(){ return idbSet(k,v); }); },
     del:function(k){ return afterMigrate(function(){ return idbDel(k); }); },
+    delIfValue:function(k,v){ return afterMigrate(function(){ return idbDelIfValue(k,v); }); },
+    replaceIfValue:function(k,expected,replacement){ return afterMigrate(function(){ return idbReplaceIfValue(k,expected,replacement); }); },
     keys:function(prefix){ return afterMigrate(function(){ return idbKeys(prefix); }); }
   };
 
@@ -487,6 +517,9 @@
     catch(e){ return Promise.reject(e); }
     return sharedSet(k,raw);
   };
+  /* storage 이벤트 미러는 iframe이 이미 쓴 localStorage를 다시 쓰지 않는다.
+     다시 쓰면 오래된 이벤트가 새 워크스페이스의 거울까지 되돌릴 수 있다. */
+  window.psMirrorSharedAsync=function(k,raw){ return sharedSet(k,raw); };
 
   /* v369 — 팀 전환 전체 백업은 localStorage의 작은 한도를 가장 빨리 소진한다.
      기존 백업을 IDB로 옮겨 다시 읽어 확인한 뒤에만 로컬 사본을 제거한다. */

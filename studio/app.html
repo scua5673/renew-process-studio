@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.741';</script>
+<script>window.PS_BUILD='2.742';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1689,13 +1689,51 @@ function psShowUpdBand(){
                note:'아이패드 펜슬로 자유롭게 — 줄노트·모눈·피치 배경, 이미지 내보내기',
                memo:'키보드로 자유롭게 — 맥 메모처럼 텍스트 메모를 쓰고 모아두세요',
                print:'펜으로 기입하는 빈 양식 — 미리보기 후 인쇄/PDF 저장'};
-    try{
+    /* 2.742 — 다른 탭이 팀을 바꾸는 중 열린 새 창은 sync.js가 로드되기
+       전에 board iframe부터 실행했다. 작전판의 느린 복원·자동 저장이 이 짧은 창에서
+       예전 팀 원문을 다시 쓸 수 있으므로, 셀에서 가장 처음 iframe src를 주기 전에
+       유효한 origin 전환 guard를 동기적으로 확인한다. */
+    var shellSwitchBlocked=false;
+    function shellSwitchGuardValid(raw){
+      try{var g=raw?JSON.parse(raw):null;return !!(g&&g.token&&g.from&&Date.now()-(+g.at||0)<=90000);}catch(_){return false;}
+    }
+    var shellSwitchExpiryTimer=null;
+    function shellFreezeForSwitch(raw){
+      shellSwitchBlocked=true;
+      try{clearTimeout(window.__psBootGuard);}catch(_){}
+      try{fBoard.src='about:blank';}catch(_){}
+      try{loading.textContent='팀 전환을 마무리하는 중…';}catch(_){}
+      try{
+        clearTimeout(shellSwitchExpiryTimer);
+        var g=JSON.parse(raw||'null'),left=Math.max(50,90050-(Date.now()-(+g.at||0)));
+        shellSwitchExpiryTimer=setTimeout(function(){
+          var live='';try{live=localStorage.getItem('ps_ws_switch_guard_v1')||'';}catch(_){}
+          /* 소유 탭이 종료돼 clear 이벤트가 오지 않아도, 같은 guard가 만료되면
+             값은 지우지 않고 잠긴 새 부팅으로 서버 workspace를 다시 확인한다. */
+          if(live===raw&&!shellSwitchGuardValid(live)){try{sessionStorage.setItem('ps_self_reload','1');}catch(_){}location.reload();}
+        },left);
+      }catch(_){}
+    }
+    /* guard 유무와 무관하게 src 할당 전에 리스너부터 등록한다. 초기 조회
+       직후 다른 탭이 전환을 시작해도 board를 즉시 내리고 후속 iframe을 막는다. */
+    window.addEventListener('storage',function __psShellSwitchWait(e){
+      if(!e||e.key!=='ps_ws_switch_guard_v1')return;
+      if(e.newValue&&shellSwitchGuardValid(String(e.newValue))){shellFreezeForSwitch(String(e.newValue));return;}
+      if(!e.newValue&&shellSwitchBlocked){
+        window.removeEventListener('storage',__psShellSwitchWait);
+        try{sessionStorage.setItem('ps_self_reload','1');}catch(_){}
+        location.reload();
+      }
+    });
+    try{var __shellGuardRaw=localStorage.getItem('ps_ws_switch_guard_v1');if(shellSwitchGuardValid(__shellGuardRaw))shellFreezeForSwitch(__shellGuardRaw);}catch(_){}
+    if(!shellSwitchBlocked)try{
       fBoard.src='board.html?v='+PS_BUILD;
     }catch(e){ loading.textContent='로드 실패: '+e.message; }
     /* 첫 화면에서는 작전판만 로드한다.
        예전에는 0.6초 뒤 모든 iframe(약 1MB+)을 동시에 읽어 작전판 렌더링과 경쟁했다.
        나머지는 사용자가 해당 탭을 처음 열 때 한 번만 로드한다. */
     function ensureAppFrame(app){
+      if(shellSwitchBlocked)return null;
       var item={
         /* 1.574 — mode=week 를 주소로 넘긴다. 지금까지는 sendTeamView 가 iframe load 뒤 60ms 에
            주간 세그를 '눌러' 주는 방식이라, 그 전까지는 마크업에 박힌 '월간'이 켜진 채로 칠해졌다.
@@ -3198,8 +3236,9 @@ function psShowUpdBand(){
               try{ if(window.toast)toast('팀 자료를 가져왔어요 ✓'); }catch(_){}
               setTimeout(function(){ _cfm('가져온 자료를 화면에 반영하려면 다시 열어야 합니다.\n지금 새로고침할까요?',function(){ location.reload(); }); },400);
             } else {
-              say('올렸습니다 · '+r.n+'개');
-              try{ if(window.toast)toast('팀에 올렸어요 ✓'); }catch(_){}
+              var denied=Math.max(0,(+r.total||0)-(+r.n||0));
+              say('올렸습니다 · '+r.n+'개'+(denied?(' (권한으로 제외 '+denied+'개)'):''),!!denied);
+              try{ if(window.toast)toast(denied?('팀에 '+r.n+'개 올리고 '+denied+'개는 권한으로 제외했어요'):'팀에 올렸어요 ✓'); }catch(_){}
             }
           }).catch(function(e){ say('실패 — '+String(e&&e.message||e).slice(0,80),true); })
             .then(function(){ busy(false); setTimeout(function(){ try{__psRefreshPushState();}catch(_){} },300); });
