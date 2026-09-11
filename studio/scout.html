@@ -4668,6 +4668,48 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
         }
       }
     </style>
+    <style id="ps-2736-match-kits">/* 2.736 — 경기 준비·상대 분석 유니폼: 작전판과 같은 팀/필드·GK/4색/10무늬 편집기 */
+      html.ps-page-scout .match-kit-open{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:var(--bar);color:var(--txt);font-family:inherit;font-size:12px;font-weight:800;line-height:1;cursor:pointer;white-space:nowrap}
+      html.ps-page-scout .match-kit-open:before{content:"";width:16px;height:16px;border-radius:5px;background:linear-gradient(90deg,#16213a 0 50%,#fff 50%);border:1px solid #8d95a3;box-sizing:border-box}
+      html.ps-page-scout .match-kit-open:hover{border-color:var(--blue);color:var(--blue)}
+      html.ps-page-scout .match-shell.readonly .match-kit-open{display:none}
+      html.ps-page-scout #mb2KitOpenMobile{display:none!important}
+      html.ps-page-scout .match-kit-modal{z-index:980}
+      html.ps-page-scout .match-kit-card{width:min(520px,94vw);box-sizing:border-box;background:var(--surface,var(--bar,#fff))}
+      html.ps-page-scout .match-kit-card .ts-hd{align-items:center;margin-bottom:14px}
+      html.ps-page-scout .match-kit-card .ts-hd h3{font-size:19px}
+      html.ps-page-scout .match-kit-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--bar2,#f1f2f4);margin-bottom:10px}
+      html.ps-page-scout .match-kit-tabs button{min-height:44px;border:0;border-radius:9px;background:transparent;color:var(--dim);font-family:inherit;font-size:13px;font-weight:800;line-height:1;cursor:pointer}
+      html.ps-page-scout body #matchKitModal.match-kit-modal .match-kit-tabs>button{height:44px!important;min-height:44px!important;max-height:none!important}
+      html.ps-page-scout .match-kit-tabs button.on{background:var(--surface,#fff);color:var(--txt);box-shadow:0 1px 3px var(--sh12,rgba(16,24,40,.12))}
+      html.ps-page-scout .match-kit-role{margin-bottom:14px}
+      html.ps-page-scout .match-kit-colors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px}
+      html.ps-page-scout .match-kit-color{display:flex;min-width:0;min-height:62px;box-sizing:border-box;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:1px solid var(--line);border-radius:11px;background:var(--bar2,#f5f6f8);color:var(--dim);font-size:11px;font-weight:700;cursor:pointer}
+      html.ps-page-scout .match-kit-color input{display:block;width:44px;height:44px;min-width:44px;min-height:44px;margin:-3px 0 -5px;padding:5px;border:0;background:transparent;cursor:pointer;-webkit-appearance:none;appearance:none}
+      html.ps-page-scout .match-kit-color input::-webkit-color-swatch-wrapper{padding:2px}
+      html.ps-page-scout .match-kit-color input::-webkit-color-swatch{border:1px solid rgba(20,27,40,.14);border-radius:8px}
+      html.ps-page-scout .match-kit-patterns{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+      html.ps-page-scout .match-kit-patterns button{display:grid;place-items:center;min-width:44px;min-height:48px;padding:5px;border:1px solid var(--line);border-radius:10px;background:var(--bar);cursor:pointer}
+      html.ps-page-scout body #matchKitModal.match-kit-modal .match-kit-patterns>button{height:48px!important;min-height:48px!important;max-height:none!important}
+      html.ps-page-scout .match-kit-patterns button.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+      html.ps-page-scout .match-kit-swatch{display:block;width:34px;height:30px;border:1px solid rgba(20,27,40,.18);border-radius:8px;background:var(--kit-bg,#16213a)}
+      html.ps-page-scout .match-kit-foot{display:flex;align-items:center;gap:12px;padding-top:12px;border-top:1px solid var(--line)}
+      html.ps-page-scout .match-kit-help{min-width:0;color:var(--dim);font-size:11px;line-height:1.45}
+      html.ps-page-scout #matchKitReset{flex:0 0 auto;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:9px;background:var(--bar);color:var(--txt);font-family:inherit;font-size:12px;font-weight:800;line-height:1;cursor:pointer}
+      html.ps-page-scout #matchKitClose{display:grid;place-items:center;width:44px;height:44px;margin-left:auto;padding:0;border:0;border-radius:10px;background:transparent;color:var(--dim);font-family:inherit;font-size:24px;font-weight:500;line-height:1;cursor:pointer}
+      @media (pointer:coarse){html.ps-page-scout .match-kit-open{min-height:44px}html.ps-page-scout .mb2-opp-color{min-height:44px}html.ps-page-scout .mb2-opp-color input{width:44px;height:44px}}
+      @media (max-width:760px){
+        html.ps-page-scout #mb2Card .mb2-tray-row{position:relative}
+        html.ps-page-scout #mb2Card .mb2-lbl{display:flex;align-items:center;min-height:44px;padding-right:132px;box-sizing:border-box}
+        html.ps-page-scout #mb2KitOpenMobile{display:inline-flex!important;position:absolute;top:0;right:0;z-index:3;min-height:44px}
+        html.ps-page-scout .match-shell.readonly #mb2KitOpenMobile{display:none!important}
+        html.ps-page-scout .match-kit-modal{place-items:end center;padding:0}
+        html.ps-page-scout .match-kit-card{width:100%;max-height:88dvh;margin:0;border-radius:18px 18px 0 0;padding:16px 16px max(16px,env(safe-area-inset-bottom))}
+        html.ps-page-scout .match-kit-colors{gap:6px}
+        html.ps-page-scout .match-kit-patterns{gap:6px}
+        html.ps-page-scout .match-kit-help{font-size:10px}
+      }
+    </style>
     <style id="ps-2735-review">/* 2.735 — 경기 리뷰를 결과 → 팀·국면 → 선수 순서의 빠른 문서 흐름으로 */
       #matchView .match-result-card,#matchView #matchPhaseReviewCard,#matchView #matchReviewIndividualCard{grid-column:1/-1}
       #matchView .match-result-top{display:grid;grid-template-columns:auto minmax(260px,1fr);align-items:end;gap:18px;margin-bottom:12px}
@@ -4893,6 +4935,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                   <span class="mb2-cnt">배치 <b id="obCntUs">0</b>/11 · 상대 <b id="obCntOp">0</b></span>
                   <button class="btn sm" type="button" id="obFillUs" title="선발(없으면 출전 가능)로 우리 11 배치">우리 11</button>
                   <span class="mb2-opp-tools">
+                    <button class="match-kit-open" type="button" id="obKitOpen" title="우리 팀과 상대 팀의 필드·GK 유니폼 설정">유니폼 설정</button>
                     <select class="inp mb2-sel" id="obFormOp" title="상대 포메이션"><option value="gk4">GK + 수비 4</option><option value="442" selected>4-4-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option><option value="343">3-4-3</option><option value="352">3-5-2</option></select>
                     <button class="btn sm mb2-red" type="button" id="obFillOp" title="선택한 포메이션으로 상대 토큰 배치">상대 배치</button>
                     <button class="mb2-clear-lite" type="button" id="obClearOp" title="상대 토큰만 지우기">상대 비우기</button>
@@ -4976,7 +5019,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 </div>
               </details>
               <section class="match-card match-card-wide" id="mb2Card">
-                <div class="mb2-tray-row"><span class="mb2-lbl">우리 팀 <u id="mb2TrayN">0</u></span><!-- 2.013 — 선발·리저브 표시 모드(사용자): 누르고 선수를 탭하면 표시/해제. 선발이 맨 위, 리저브가 그 다음 --><span class="mb2-sqmode" id="mb2SqMode"><button type="button" data-sq="start">선발</button><button type="button" data-sq="res">리저브</button></span><div class="mb2-tray" id="mb2Tray"></div>
+                <div class="mb2-tray-row"><span class="mb2-lbl">우리 팀 <u id="mb2TrayN">0</u></span><button class="match-kit-open" type="button" id="mb2KitOpenMobile" title="우리 팀과 상대 팀의 필드·GK 유니폼 설정">유니폼 설정</button><!-- 2.013 — 선발·리저브 표시 모드(사용자): 누르고 선수를 탭하면 표시/해제. 선발이 맨 위, 리저브가 그 다음 --><span class="mb2-sqmode" id="mb2SqMode"><button type="button" data-sq="start">선발</button><button type="button" data-sq="res">리저브</button></span><div class="mb2-tray" id="mb2Tray"></div>
                   <!-- 1.676 — 연습경기 때 오는 테스트 선수를 명단에 바로 추가(사용자 요청). guest 표시로 구분 -->
                   <button type="button" class="mb2-guest-add" id="mb2GuestAdd">＋ 테스트 선수 (연습경기 게스트)</button></div>
                 <!-- 2.004 — 국면 탭 줄 오른쪽 끝에 전체 보기(사용자: 운동장 카드 오른쪽 상단) -->
@@ -4987,6 +5030,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                   <button class="mb2-clear-lite" type="button" id="mb2Clear" title="우리·상대 토큰 모두 지우기">전체 비우기</button>
                   <span class="mb2-cnt">배치 <b id="mb2CntUs">0</b>/11 · 상대 <b id="mb2CntOp">0</b></span>
                   <span class="mb2-opp-tools">
+                    <button class="match-kit-open" type="button" id="mb2KitOpen" title="우리 팀과 상대 팀의 필드·GK 유니폼 설정">유니폼 설정</button>
                     <select class="inp mb2-sel" id="mb2FormOp" title="상대 포메이션"><option value="gk4">GK + 수비 4</option><option value="442" selected>4-4-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option><option value="343">3-4-3</option><option value="352">3-5-2</option></select>
                     <button class="btn sm mb2-red" type="button" id="mb2FillOp" title="선택한 포메이션으로 상대 토큰 1~11 배치">상대 배치</button>
                     <button class="mb2-clear-lite" type="button" id="mb2ClearOp" title="상대 토큰만 지우기">상대 비우기</button>
@@ -14829,6 +14873,114 @@ function matchSideWeather(m){
     var m2=matchGet()||m; if(m2&&(m2.date||"now")===key)matchSideRender(m2);
   }).catch(function(){ _msWx[key]=null; var m2=matchGet()||m; if(m2)matchSideRender(m2); });
 }
+/* ══ 2.736 · 경기 보드 유니폼 ════════════════════════════════════════════════
+   작전판과 같은 10개 무늬를 쓰되 데이터는 경기 안에만 둔다.
+   읽기/렌더에서는 boardKitsV1 을 만들지 않는다 — 사용자가 실제로 고친 역할 leaf 만 저장한다. */
+var MATCH_KIT_PATS=["solid","v","thinv","h","half","quarters","band","hoop","sash","diag"];
+var MATCH_KIT_PAT_NAMES={solid:"단색",v:"세로 줄무늬",thinv:"가는 세로 줄무늬",h:"가로 줄무늬",half:"반반",quarters:"쿼터",band:"세로 띠",hoop:"가로 띠",sash:"사선 띠",diag:"사선 줄무늬"};
+function matchKitCSSBG(m,a,p){
+  if(p==="v")return "linear-gradient(90deg,"+m+" 0 20%,"+a+" 20% 40%,"+m+" 40% 60%,"+a+" 60% 80%,"+m+" 80%)";
+  if(p==="thinv")return "linear-gradient(90deg,"+m+" 0 12%,"+a+" 12% 22%,"+m+" 22% 45%,"+a+" 45% 55%,"+m+" 55% 78%,"+a+" 78% 88%,"+m+" 88%)";
+  if(p==="h")return "linear-gradient(180deg,"+m+" 0 20%,"+a+" 20% 40%,"+m+" 40% 60%,"+a+" 60% 80%,"+m+" 80%)";
+  if(p==="half")return "linear-gradient(90deg,"+m+" 0 50%,"+a+" 50%)";
+  if(p==="quarters")return "conic-gradient("+a+" 0 25%,"+m+" 25% 50%,"+a+" 50% 75%,"+m+" 75%)";
+  if(p==="band")return "linear-gradient(90deg,"+m+" 0 36%,"+a+" 36% 64%,"+m+" 64%)";
+  if(p==="hoop")return "linear-gradient(180deg,"+m+" 0 36%,"+a+" 36% 64%,"+m+" 64%)";
+  if(p==="sash")return "linear-gradient(135deg,"+m+" 0 36%,"+a+" 36% 64%,"+m+" 64%)";
+  if(p==="diag")return "linear-gradient(135deg,"+m+" 0 20%,"+a+" 20% 40%,"+m+" 40% 60%,"+a+" 60% 80%,"+m+" 80%)";
+  return m;
+}
+function matchKitHex(v){return /^#[0-9a-f]{6}$/i.test(String(v||""));}
+function matchKitLum(h){h=String(h||"").replace("#","");if(h.length===3)h=h.split("").map(function(c){return c+c;}).join("");var n=parseInt(h,16);if(isNaN(n))return 0;var a=[(n>>16)&255,(n>>8)&255,n&255].map(function(v){v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);});return .2126*a[0]+.7152*a[1]+.0722*a[2];}
+function matchKitAutoTxt(h){return matchKitLum(h)>.55?"#14161a":"#ffffff";}
+function matchKitAutoStroke(h){return matchKitLum(h)>.62?"#2a3140":"#ffffff";}
+function matchKitOwn(o,k){return !!(o&&Object.prototype.hasOwnProperty.call(o,k));}
+function matchKitLeaf(m,mode,side,role){var r=m&&m.boardKitsV1;return r&&r[mode]&&r[mode][side]&&r[mode][side][role]||null;}
+function matchKitLegacy(m,mode){return mode==="analysis"?(m&&m.oppPB||{}):(m&&m.phaseBoards||{});}
+function matchKitStyle(m,mode,side,role){
+  mode=mode==="analysis"?"analysis":"prep";side=side==="opp"?"opp":"us";role=role==="gk"?"gk":"field";
+  var leaf=matchKitLeaf(m,mode,side,role),st;
+  if(side==="opp"&&role==="gk"){
+    var fs=matchKitStyle(m,mode,"opp","field");st={main:fs.main,accent:fs.accent,pat:fs.pat,stroke:fs.stroke,txt:fs.txt};
+  }else if(side==="us"&&role==="gk")st={main:"#5aa6d8",accent:"#ffffff",pat:"solid",stroke:"#ffffff",txt:"#0d2b40"};
+  else if(side==="opp")st={main:"#c2403c",accent:"#ffffff",pat:"solid",stroke:"#ffffff",txt:"#ffffff"};
+  else st={main:"#16213a",accent:"#ffffff",pat:"solid",stroke:"#ffffff",txt:"#ffffff"};
+  if(side==="opp"&&role==="field"){
+    var legacy=matchKitLegacy(m,mode);
+    if(matchKitHex(legacy.oppColor))st.main=legacy.oppColor;
+    if(matchKitHex(legacy.oppNumColor))st.txt=legacy.oppNumColor;
+  }
+  if(leaf){
+    if(matchKitHex(leaf.main)){st.main=leaf.main;if(!matchKitOwn(leaf,"stroke"))st.stroke=matchKitAutoStroke(st.main);if(!matchKitOwn(leaf,"txt"))st.txt=matchKitAutoTxt(st.main);}
+    if(matchKitHex(leaf.accent))st.accent=leaf.accent;
+    if(MATCH_KIT_PATS.indexOf(leaf.pat)>=0)st.pat=leaf.pat;
+    if(matchKitHex(leaf.stroke))st.stroke=leaf.stroke;else if(leaf.stroke==="auto")st.stroke=matchKitAutoStroke(st.main);
+    if(matchKitHex(leaf.txt))st.txt=leaf.txt;else if(leaf.txt==="auto")st.txt=matchKitAutoTxt(st.main);
+  }
+  return st;
+}
+function matchKitIsGK(t){return !!(t&&(t.gk===true||String(t.pos||"").toUpperCase()==="GK"||String(t.num||"").trim()==="1"));}
+function matchKitPaint(m,mode,el,t,opp){if(!el)return;var st=matchKitStyle(m,mode,opp?"opp":"us",matchKitIsGK(t)?"gk":"field");el.style.background=matchKitCSSBG(st.main,st.accent,st.pat);el.style.borderColor=st.stroke;el.style.color=st.txt;el.style.textShadow=st.pat==="solid"?"":(matchKitLum(st.txt)>.5?"0 1px 1px rgba(0,0,0,.55)":"0 1px 1px rgba(255,255,255,.65)");if(!(el.parentElement&&el.parentElement.classList.contains("mlb-tok"))){el.style.outline="2px solid "+st.stroke;el.style.outlineOffset="-2px";}}
+function matchKitEnsureLeaf(m,mode,side,role){m.boardKitsV1=m.boardKitsV1||{};m.boardKitsV1[mode]=m.boardKitsV1[mode]||{};m.boardKitsV1[mode][side]=m.boardKitsV1[mode][side]||{};m.boardKitsV1[mode][side][role]=m.boardKitsV1[mode][side][role]||{};return m.boardKitsV1[mode][side][role];}
+function matchKitSet(m,mode,side,role,key,value){
+  var leaf=matchKitEnsureLeaf(m,mode,side,role);leaf[key]=value;
+  /* 옛 상대 빠른 색 입력과 새 편집기는 같은 값을 가리킨다. 예전 필드는 지우지 않는다. */
+  if(side==="opp"&&role==="field"&&(key==="main"||key==="txt")){
+    var legacy=mode==="analysis"?obEnsure(m):mb2Ensure(m);legacy[key==="main"?"oppColor":"oppNumColor"]=value;
+  }
+}
+function matchKitPrune(m,mode,side,role){
+  var root=m&&m.boardKitsV1;if(!root||!root[mode]||!root[mode][side])return;
+  delete root[mode][side][role];
+  if(!Object.keys(root[mode][side]).length)delete root[mode][side];
+  if(!Object.keys(root[mode]).length)delete root[mode];
+  if(!Object.keys(root).length)delete m.boardKitsV1;
+}
+function matchKitReset(m,mode,side,role){
+  matchKitPrune(m,mode,side,role);
+  if(side==="opp"&&role==="field"){
+    var legacy=mode==="analysis"?obEnsure(m):mb2Ensure(m);legacy.oppColor="#c2403c";legacy.oppNumColor="#ffffff";
+  }
+}
+function matchKitRedraw(mode,m){if(mode==="analysis")obDraw(m);else{mb2RenderTray(m);mb2Draw(m);}}
+function matchKitWorkspace(){try{return String(localStorage.getItem("ps_active_ws")||"");}catch(_){return "";}}
+function matchKitOpen(mode,opener){
+  mode=mode==="analysis"?"analysis":"prep";
+  var m=matchGet();if(!m||!matchCanEditOne(m.id)){try{toast("이 경기를 수정할 권한이 없어요");}catch(_){}return;}
+  var old=$("matchKitModal");if(old){if(typeof old.__close==="function")old.__close(false);else old.remove();}
+  var returnTo=opener||document.activeElement;
+  var ctx={id:String(m.id||""),wid:matchKitWorkspace(),mode:mode,side:"us",role:"field"};
+  var ov=document.createElement("div");ov.id="matchKitModal";ov.className="ts-ov match-kit-modal";ov.dataset.mode=mode;ov.dataset.matchId=ctx.id;ov.dataset.workspace=ctx.wid;
+  ov.innerHTML='<div class="ts-card match-kit-card" role="dialog" aria-modal="true" aria-labelledby="matchKitTitle">'
+    +'<div class="ts-hd"><div><small>'+(mode==="analysis"?'경기 분석':'경기 준비')+'</small><h3 id="matchKitTitle">유니폼 설정</h3></div><button type="button" id="matchKitClose" aria-label="유니폼 설정 닫기">×</button></div>'
+    +'<div class="match-kit-tabs match-kit-side" role="tablist" aria-label="팀 선택"><button type="button" data-kit-side="us" role="tab">우리 팀</button><button type="button" data-kit-side="opp" role="tab">상대 팀</button></div>'
+    +'<div class="match-kit-tabs match-kit-role" role="tablist" aria-label="유니폼 대상"><button type="button" data-kit-role="field" role="tab">필드</button><button type="button" data-kit-role="gk" role="tab">GK</button></div>'
+    +'<div class="match-kit-colors"><label class="match-kit-color"><input id="matchKitMain" type="color" aria-label="유니폼 주색"><span>주색</span></label><label class="match-kit-color"><input id="matchKitAccent" type="color" aria-label="유니폼 보조색"><span>보조색</span></label><label class="match-kit-color"><input id="matchKitStroke" type="color" aria-label="유니폼 테두리색"><span>테두리</span></label><label class="match-kit-color"><input id="matchKitTxt" type="color" aria-label="등번호 글자색"><span>글자</span></label></div>'
+    +'<div class="match-kit-patterns" aria-label="유니폼 무늬">'+MATCH_KIT_PATS.map(function(p){return '<button type="button" data-kit-pattern="'+p+'" title="'+MATCH_KIT_PAT_NAMES[p]+'" aria-label="'+MATCH_KIT_PAT_NAMES[p]+'"><span class="match-kit-swatch"></span></button>';}).join("")+'</div>'
+    +'<div class="match-kit-foot"><span class="match-kit-help" id="matchKitHelp"></span><button type="button" id="matchKitReset">기본으로</button></div></div>';
+  document.body.appendChild(ov);var guard=0;
+  function close(restore){document.removeEventListener("keydown",onKey);if(guard)clearInterval(guard);guard=0;ov.__close=null;if(ov.parentNode)ov.remove();if(restore!==false&&returnTo&&returnTo.isConnected&&typeof returnTo.focus==="function"){try{returnTo.focus();}catch(_){}}}
+  ov.__close=close;
+  function current(){var now=matchGet();if(!now||String(matchCurrent||"")!==ctx.id||String(now.id||"")!==ctx.id||matchKitWorkspace()!==ctx.wid||!matchCanEditOne(ctx.id)){close();try{toast("경기 또는 팀이 바뀌어 유니폼 설정을 닫았어요");}catch(_){}return null;}return now;}
+  function sync(){var now=current();if(!now)return;var st=matchKitStyle(now,ctx.mode,ctx.side,ctx.role);
+    ov.querySelectorAll("[data-kit-side]").forEach(function(b){var on=b.dataset.kitSide===ctx.side;b.classList.toggle("on",on);b.setAttribute("aria-selected",on?"true":"false");});
+    ov.querySelectorAll("[data-kit-role]").forEach(function(b){var on=b.dataset.kitRole===ctx.role;b.classList.toggle("on",on);b.setAttribute("aria-selected",on?"true":"false");});
+    $("matchKitMain").value=st.main;$("matchKitAccent").value=st.accent;$("matchKitStroke").value=st.stroke;$("matchKitTxt").value=st.txt;
+    ov.querySelectorAll("[data-kit-pattern]").forEach(function(b){var on=b.dataset.kitPattern===st.pat;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on?"true":"false");b.querySelector(".match-kit-swatch").style.background=matchKitCSSBG(st.main,st.accent,b.dataset.kitPattern);});
+    $("matchKitHelp").textContent=(ctx.side==="us"?"우리 팀":"상대 팀")+" "+(ctx.role==="gk"?"골키퍼(1번·GK)":"일반 선수")+" 토큰에 적용됩니다.";
+  }
+  function mutate(key,value){var now=current();if(!now)return;matchKitSet(now,ctx.mode,ctx.side,ctx.role,key,value);matchKitRedraw(ctx.mode,now);try{matchQueueSave();}catch(_){}sync();}
+  ov.querySelector(".match-kit-side").onclick=function(e){var b=e.target.closest("[data-kit-side]");if(!b||!current())return;ctx.side=b.dataset.kitSide;sync();};
+  ov.querySelector(".match-kit-role").onclick=function(e){var b=e.target.closest("[data-kit-role]");if(!b||!current())return;ctx.role=b.dataset.kitRole;sync();};
+  [["matchKitMain","main"],["matchKitAccent","accent"],["matchKitStroke","stroke"],["matchKitTxt","txt"]].forEach(function(a){$(a[0]).addEventListener("input",function(){mutate(a[1],this.value);});});
+  ov.querySelector(".match-kit-patterns").onclick=function(e){var b=e.target.closest("[data-kit-pattern]");if(!b)return;mutate("pat",b.dataset.kitPattern);};
+  $("matchKitReset").onclick=function(){var now=current();if(!now)return;matchKitReset(now,ctx.mode,ctx.side,ctx.role);matchKitRedraw(ctx.mode,now);try{matchQueueSave();toast("기본 유니폼으로 되돌렸어요");}catch(_){}sync();};
+  $("matchKitClose").onclick=function(){close();};ov.addEventListener("click",function(e){if(e.target===ov)close();});
+  function onKey(e){if(e.key==="Escape"){e.preventDefault();close();return;}if(e.key!=="Tab")return;var f=ov.querySelectorAll('button:not([disabled]),input:not([disabled])');if(!f.length)return;var first=f[0],last=f[f.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+  document.addEventListener("keydown",onKey);
+  sync();if(ov.parentNode){guard=setInterval(function(){if(ov.parentNode)current();else close(false);},350);requestAnimationFrame(function(){var first=ov.querySelector('[data-kit-side="us"]');if(first&&ov.parentNode)first.focus();});}
+}
+try{window.__matchKitStyle=matchKitStyle;window.__matchKitCSSBG=matchKitCSSBG;window.__matchKitOpen=matchKitOpen;}catch(_){}
 function mb2Cur(m){var pb=mb2Ensure(m);return pb.boards[pb.cur];}
 /* 2.013 — 선발·리저브 (경기별) */
 var mb2SqModeV=null;
@@ -14858,11 +15010,11 @@ function mb2Pct(e){
 function mb2AddTok(m,t,opp){
   var pit=$("mb2Pitch");
   var d=document.createElement("div");
-  d.className="mlb-tok"+(t.gk?" gk":"")+(opp?" opp":"");
+  d.className="mlb-tok"+(matchKitIsGK(t)?" gk":"")+(opp?" opp":"");
   var _n=String(t.num||"").trim();if(_n==="·")_n="";
   d.innerHTML='<i>'+esc(_n)+'</i>'+(t.name?'<em>'+esc(t.name)+'</em>':'');
   if(opp)mb2TokLabel(m,d,t,true);   /* 2.008 — 번호/포지션 표시 모드 */
-  if(opp){ var oc=(m.phaseBoards&&m.phaseBoards.oppColor)||"", onc=(m.phaseBoards&&m.phaseBoards.oppNumColor)||""; var ii=d.querySelector("i"); if(oc)ii.style.background=oc; if(onc)ii.style.color=onc; }   /* 2.004 유니폼 색 · 2.006 번호 색 */
+  matchKitPaint(m,"prep",d.querySelector("i"),t,opp);   /* 2.736 — 우리/상대 · 필드/GK 유니폼 */
   d.style.left=t.x+"%"; d.style.top=t.y+"%";
   pit.appendChild(d);
   d.addEventListener("pointerdown",function(e){
@@ -14905,12 +15057,12 @@ function mb2OpenEdit(m,d,t,opp){
     var sel=document.createElement("select"); sel.className="pos"; sel.title="포지션";
     sel.innerHTML='<option value="">포지션</option>'+MB2_POS_LIST.map(function(p){return '<option value="'+p+'"'+(t.pos===p?' selected':'')+'>'+p+'</option>';}).join("");
     ed.insertBefore(sel,inp.nextSibling);
-    sel.addEventListener("change",function(){t.pos=sel.value;mb2TokLabel(m,d,t,true);mb2Save();});
+    sel.addEventListener("change",function(){t.pos=sel.value;d.classList.toggle("gk",matchKitIsGK(t));mb2TokLabel(m,d,t,true);matchKitPaint(m,"prep",d.querySelector("i"),t,true);mb2Save();});
     sel.addEventListener("keydown",function(e){e.stopPropagation();});
-    inp.addEventListener("input",function(){t.num=(inp.value||"").trim();mb2TokLabel(m,d,t,true);mb2Save();});
+    inp.addEventListener("input",function(){t.num=(inp.value||"").trim();d.classList.toggle("gk",matchKitIsGK(t));mb2TokLabel(m,d,t,true);matchKitPaint(m,"prep",d.querySelector("i"),t,true);mb2Save();});
   }
   inp.addEventListener("keydown",function(e){e.stopPropagation();
-    if(e.key==="Enter"){t.num=(inp.value||"").trim()||t.num;mb2TokLabel(m,d,t,opp);mb2Save();mb2Deselect();}
+    if(e.key==="Enter"){t.num=(inp.value||"").trim()||t.num;d.classList.toggle("gk",matchKitIsGK(t));mb2TokLabel(m,d,t,opp);matchKitPaint(m,"prep",d.querySelector("i"),t,opp);mb2Save();mb2Deselect();}
     if(e.key==="Escape")mb2Deselect();});
   ed.querySelector(".del").addEventListener("pointerdown",function(e){e.stopPropagation();e.preventDefault();mb2RemoveSel();});
   ed.addEventListener("pointerdown",function(e){e.stopPropagation();});
@@ -14942,9 +15094,10 @@ function mb2Draw(m){
   var b=mb2Cur(m);
   b.us.forEach(function(t){mb2AddTok(m,t,false);});
   b.opp.forEach(function(t){mb2AddTok(m,t,true);});
-  if($("mb2OppColor")){var _oc=(m.phaseBoards&&m.phaseBoards.oppColor)||"#c2403c"; if($("mb2OppColor").value!==_oc)$("mb2OppColor").value=_oc;}
+  var _oppKit=matchKitStyle(m,"prep","opp","field");
+  if($("mb2OppColor")){var _oc=_oppKit.main; if($("mb2OppColor").value!==_oc)$("mb2OppColor").value=_oc;}
   if($("mb2OppLabel")){var _lm=mb2OppLabelMode(m); $("mb2OppLabel").querySelectorAll("button").forEach(function(bt){bt.classList.toggle("on",bt.dataset.v===_lm);});}
-  if($("mb2OppNumColor")){var _onc=(m.phaseBoards&&m.phaseBoards.oppNumColor)||"#ffffff"; if($("mb2OppNumColor").value!==_onc)$("mb2OppNumColor").value=_onc;}
+  if($("mb2OppNumColor")){var _onc=_oppKit.txt; if($("mb2OppNumColor").value!==_onc)$("mb2OppNumColor").value=_onc;}
   mb2Counts(m);mb2SyncTray(m);
 }
 function mb2RenderTray(m){
@@ -15014,6 +15167,8 @@ function mb2RenderTray(m){
     return '<div class="mb2-trow'+r.cls+'" data-row="'+r.kind+'"'+grpAttr+' role="group" aria-label="'+esc(r.label+' '+list.length+'명')+'"><span class="mb2-grp">'+esc(r.label)+'<b>'+list.length+'</b></span><div class="mb2-tchips">'+(list.length?list.map(chipSq).join(""):'<i class="mb2-drop">'+empty+'</i>')+'</div></div>';
   }).join("");
   tray.querySelectorAll(".mb2-chip").forEach(function(c){
+    var kitPl=ours.find(function(p){return p.id===c.dataset.pid;});
+    if(kitPl){var kitPos=(data.positions||[]).find(function(x){return x.id===kitPl.posId;});matchKitPaint(m,"prep",c.querySelector("i"),{num:kitPl.num,pos:posGroupOf(kitPos?kitPos.name:"")==="GK"?"GK":""},false);}
     c.addEventListener("pointerdown",function(e){
       if(!matchCanEdit())return;
       if(mb2SqModeV){ e.preventDefault(); mb2SquadToggle(m,c.dataset.pid,mb2SqModeV); return; }   /* 2.013 — 표시 모드: 탭 = 선발/리저브 토글 */
@@ -15032,6 +15187,8 @@ function mb2RenderTray(m){
         if(fly)return;
         fly=document.createElement("div"); fly.className="mb2-ghost";
         fly.innerHTML='<i>'+esc(String(pl.num||""))+'</i><b>'+esc(pl.name||"이름 없음")+'</b>';
+        var flyPos=(data.positions||[]).find(function(x){return x.id===pl.posId;});
+        matchKitPaint(m,"prep",fly.querySelector("i"),{num:pl.num,pos:posGroupOf(flyPos?flyPos.name:"")==="GK"?"GK":""},false);
         document.body.appendChild(fly);
         document.body.classList.add("mb2-dragging");     /* ③ 운동장이 놓을 자리로 바뀐다 */
       }
@@ -15124,13 +15281,13 @@ function mb2FillOp(m){
   var form=$("mb2FormOp").value,slots=form==="gk4"?MB2_FORMS["442"].slice(0,5):(MB2_FORMS[form]||MB2_FORMS["442"]);
   var meta=MB2_SLOTS[form]||MB2_SLOTS["442"];
   var b=mb2Cur(m);
-  b.opp=slots.map(function(a,i){var mt=meta[i]||["",i+1];return {num:String(mt[1]),pos:mt[0],x:Math.max(6,Math.min(97,100-a[0])),y:a[1]};});   /* 2.008 — 포지션별 관례 번호 */
+  b.opp=slots.map(function(a,i){var mt=meta[i]||["",i+1];return {num:String(mt[1]),pos:mt[0],x:Math.max(6,Math.min(97,100-a[0])),y:a[1],gk:i===0||mt[0]==="GK"||String(mt[1])==="1"};});   /* 2.736 — 자동 상대 GK도 역할을 명시 */
   mb2Draw(m);mb2Save();
 }
 /* 2.001 — 상대 수비만(GK + 백4)(사용자): 4-4-2 슬롯의 앞 5개 */
 function mb2FillOpDef(m){
   var slots=MB2_FORMS["442"].slice(0,5), b=mb2Cur(m);
-  b.opp=slots.map(function(a,i){var mt=MB2_SLOTS["gk4"][i]||["",i+1];return {num:String(mt[1]),pos:mt[0],x:Math.max(6,Math.min(97,100-a[0])),y:a[1]};});
+  b.opp=slots.map(function(a,i){var mt=MB2_SLOTS["gk4"][i]||["",i+1];return {num:String(mt[1]),pos:mt[0],x:Math.max(6,Math.min(97,100-a[0])),y:a[1],gk:i===0||mt[0]==="GK"||String(mt[1])==="1"};});
   mb2Draw(m);mb2Save();
 }
 function renderMB2(){
@@ -15183,8 +15340,10 @@ function renderMB2(){
     });
     $("mb2FillUs").onclick=function(){var m2=matchGet();if(m2&&matchCanEdit())mb2FillUs(m2);};
     $("mb2FillOp").onclick=function(){var m2=matchGet();if(m2&&matchCanEdit())mb2FillOp(m2);};
-    if($("mb2OppColor"))$("mb2OppColor").oninput=function(){ var m2=matchGet(); if(!m2||!matchCanEdit())return; mb2Ensure(m2).oppColor=this.value; mb2Draw(m2); mb2Save(); };   /* 2.004 */
-    if($("mb2OppNumColor"))$("mb2OppNumColor").oninput=function(){ var m2=matchGet(); if(!m2||!matchCanEdit())return; mb2Ensure(m2).oppNumColor=this.value; mb2Draw(m2); mb2Save(); };   /* 2.006 */
+    if($("mb2KitOpen"))$("mb2KitOpen").onclick=function(){matchKitOpen("prep",this);};
+    if($("mb2KitOpenMobile"))$("mb2KitOpenMobile").onclick=function(){matchKitOpen("prep",this);};
+    if($("mb2OppColor"))$("mb2OppColor").oninput=function(){ var m2=matchGet(); if(!m2||!matchCanEditOne(m2.id))return; matchKitSet(m2,"prep","opp","field","main",this.value); mb2Draw(m2); mb2Save(); };   /* 2.736 — 옛 빠른 색도 새 필드 유니폼과 맞춘다 */
+    if($("mb2OppNumColor"))$("mb2OppNumColor").oninput=function(){ var m2=matchGet(); if(!m2||!matchCanEditOne(m2.id))return; matchKitSet(m2,"prep","opp","field","txt",this.value); mb2Draw(m2); mb2Save(); };   /* 2.736 */
     if($("mb2OppLabel"))$("mb2OppLabel").onclick=function(e){ var bt=e.target.closest("button[data-v]"); if(!bt)return; var m2=matchGet(); if(!m2)return; mb2Ensure(m2).oppLabel=bt.dataset.v; mb2Draw(m2); if(matchCanEdit())mb2Save(); };   /* 2.008 */
     if($("mb2ClearOp"))$("mb2ClearOp").onclick=function(){ var m2=matchGet(); if(!m2||!matchCanEdit())return; mb2Cur(m2).opp=[]; mb2Draw(m2); mb2Save(); };   /* 2.006 — 상대만 비우기 */
     $("mb2AddOp").onclick=function(){var m2=matchGet();if(!m2||!matchCanEdit())return;
@@ -15216,18 +15375,15 @@ function obSave(){try{matchQueueSave();}catch(_){}}
 function obTok(m,t,opp){
   var pit=$("obPitch");
   var d=document.createElement("div");
-  d.className="mlb-tok"+(t.gk?" gk":"")+(opp?" opp":"");
+  d.className="mlb-tok"+(matchKitIsGK(t)?" gk":"")+(opp?" opp":"");
   d.innerHTML='<i>'+esc(String(t.num||""))+'</i>'+(t.name?'<em>'+esc(t.name)+'</em>':'');
   /* 2.400 — 상대 유니폼·번호 색과 번호/포지션 전환을 **경기 준비와 같은 규칙**으로 */
   if(opp){
     var pb=obEnsure(m);
     var ii=d.querySelector("i");
-    if(ii){
-      if(pb.oppColor)ii.style.background=pb.oppColor;
-      if(pb.oppNumColor)ii.style.color=pb.oppNumColor;
-      if(pb.oppLabel==="pos"&&t.pos)ii.textContent=t.pos;
-    }
+    if(ii&&pb.oppLabel==="pos"&&t.pos)ii.textContent=t.pos;
   }
+  matchKitPaint(m,"analysis",d.querySelector("i"),t,opp);   /* 2.736 — 전 프레임·재생이 같은 유니폼 */
   d.style.left=t.x+"%";d.style.top=t.y+"%";
   pit.appendChild(d);
   d.addEventListener("pointerdown",function(e){
@@ -15256,8 +15412,9 @@ function obCounts(m){
 }
 function obToolsSync(m){
   var pb=obEnsure(m);
-  if($("obOppColor")){var _c=pb.oppColor||"#c2403c"; if($("obOppColor").value!==_c)$("obOppColor").value=_c;}
-  if($("obOppNumColor")){var _n=pb.oppNumColor||"#ffffff"; if($("obOppNumColor").value!==_n)$("obOppNumColor").value=_n;}
+  var kit=matchKitStyle(m,"analysis","opp","field");
+  if($("obOppColor")){var _c=kit.main; if($("obOppColor").value!==_c)$("obOppColor").value=_c;}
+  if($("obOppNumColor")){var _n=kit.txt; if($("obOppNumColor").value!==_n)$("obOppNumColor").value=_n;}
   if($("obOppLabel")){var _m=(pb.oppLabel==="pos")?"pos":"num";
     $("obOppLabel").querySelectorAll("button").forEach(function(bt){bt.classList.toggle("on",bt.dataset.v===_m);});}
 }
@@ -15296,7 +15453,7 @@ function obPlayToggle(m){
     if(i>=b.frames.length){setTimeout(end,900);return;}
     var f=b.frames[i],toks=pit.querySelectorAll(".mlb-tok"),flat=[].concat(f.us,f.opp);
     if(toks.length!==flat.length){b.cur=i;obDraw(m);pit.classList.add("ob-anim");}
-    else [].forEach.call(toks,function(el,k){el.style.left=flat[k].x+"%";el.style.top=flat[k].y+"%";});
+    else [].forEach.call(toks,function(el,k){var tk=flat[k],isOpp=k>=f.us.length;el.style.left=tk.x+"%";el.style.top=tk.y+"%";el.classList.toggle("gk",matchKitIsGK(tk));el.classList.toggle("opp",isOpp);matchKitPaint(m,"analysis",el.querySelector("i"),tk,isOpp);});
     setTimeout(step,950);
   })();
 }
@@ -15323,14 +15480,15 @@ function renderOB(){
     var slots=form==="gk4"?MB2_FORMS["442"].slice(0,5):(MB2_FORMS[form]||MB2_FORMS["442"]);
     var meta=MB2_SLOTS[form]||MB2_SLOTS["442"];
     obFrame(m2).opp=slots.map(function(a,i){var mt=meta[i]||["",i+1];
-      return {num:String(mt[1]),pos:mt[0],x:Math.max(6,Math.min(97,100-a[0])),y:a[1]};});
+      return {num:String(mt[1]),pos:mt[0],x:Math.max(6,Math.min(97,100-a[0])),y:a[1],gk:i===0||mt[0]==="GK"||String(mt[1])==="1"};});
     obDraw(m2);obSave();};
   $("obClearOp").onclick=function(){if(!matchCanEdit())return;var m2=matchGet();
     psConfirm("상대 토큰만 지울까요?",function(){obFrame(m2).opp=[];obDraw(m2);obSave();});};
-  if($("obOppColor"))$("obOppColor").oninput=function(){var m2=matchGet(); if(!m2||!matchCanEdit())return;
-    obEnsure(m2).oppColor=this.value; obDraw(m2); obSave();};
-  if($("obOppNumColor"))$("obOppNumColor").oninput=function(){var m2=matchGet(); if(!m2||!matchCanEdit())return;
-    obEnsure(m2).oppNumColor=this.value; obDraw(m2); obSave();};
+  if($("obKitOpen"))$("obKitOpen").onclick=function(){matchKitOpen("analysis",this);};
+  if($("obOppColor"))$("obOppColor").oninput=function(){var m2=matchGet(); if(!m2||!matchCanEditOne(m2.id))return;
+    matchKitSet(m2,"analysis","opp","field","main",this.value); obDraw(m2); obSave();};
+  if($("obOppNumColor"))$("obOppNumColor").oninput=function(){var m2=matchGet(); if(!m2||!matchCanEditOne(m2.id))return;
+    matchKitSet(m2,"analysis","opp","field","txt",this.value); obDraw(m2); obSave();};
   if($("obOppLabel"))$("obOppLabel").addEventListener("click",function(e){
     var bt=e.target.closest("button[data-v]"); if(!bt||!matchCanEdit())return;
     var m2=matchGet(); obEnsure(m2).oppLabel=bt.dataset.v; obDraw(m2); obSave();});
