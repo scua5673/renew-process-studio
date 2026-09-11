@@ -3157,7 +3157,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
   };
 })();
 </script>
-<script>(function(){if(window.__psErrInit)return;window.__psErrInit=1;function show(m){try{var b=document.getElementById('ps-errbar');if(!b){b=document.createElement('div');b.id='ps-errbar';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99999;max-width:84vw;background:#3a1414;color:#ffd7d7;border:1px solid #a33;border-radius:10px;padding:8px 12px;font:600 12px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;';b.title='탭하면 닫기';b.addEventListener('click',function(){b.style.display='none';});(document.body||document.documentElement).appendChild(b);}b.style.display='block';b.textContent='⚠︎ 오류: '+m;clearTimeout(b.__t);b.__t=setTimeout(function(){b.style.display='none';},6000);}catch(_){}}window.addEventListener('error',function(e){try{console.error('[PS]',(e&&(e.error||e.message)),e&&e.filename,e&&e.lineno);}catch(_){}show((e&&e.message)||'스크립트 오류');});window.addEventListener('unhandledrejection',function(e){try{console.error('[PS promise]',e&&e.reason);}catch(_){}show('처리되지 않은 작업 오류');});})();</script>
+<script>(function(){if(window.__psErrInit)return;window.__psErrInit=1;function show(m){try{var b=document.getElementById('ps-errbar');if(!b){b=document.createElement('div');b.id='ps-errbar';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99999;max-width:84vw;background:#3a1414;color:#ffd7d7;border:1px solid #a33;border-radius:10px;padding:8px 12px;font:600 12px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;';b.title='탭하면 닫기';b.addEventListener('click',function(){b.style.display='none';});(document.body||document.documentElement).appendChild(b);}b.style.display='block';b.textContent='⚠︎ 오류: '+m;clearTimeout(b.__t);b.__t=setTimeout(function(){b.style.display='none';},6000);}catch(_){}}window.addEventListener('error',function(e){var _m=(e&&e.message)||'';if(/ResizeObserver loop/i.test(_m))return;/* 2.737 — 셸과 같이 무해한 브라우저 배치 진단은 사용자 오류로 표시하지 않는다. */try{console.error('[PS]',(e&&(e.error||e.message)),e&&e.filename,e&&e.lineno);}catch(_){}show(_m||'스크립트 오류');});window.addEventListener('unhandledrejection',function(e){try{console.error('[PS promise]',e&&e.reason);}catch(_){}show('처리되지 않은 작업 오류');});})();</script>
   <section id="boardView" class="view active">
     <div class="toolbar" id="boardToolbar">
       <button class="btn ghost" id="benchTog" title="선수·장비 팔레트 열기/접기">선수 ▾</button>
@@ -14954,11 +14954,15 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   saveBtn.onclick=function(e){e.stopPropagation();vaultSaveCurrent();};
   function mountSave(){
     var strip=$id("boardPageStrip"),end=$id("cmd-tool-end"),stg=$id("boardStage"),cur=$id("vaultSave");
+    /* 2.737 — 태블릿·데스크톱은 «보드 가져오기» 바로 뒤, 상단 띠가 앱 헤더 뒤로
+       들어가는 작은 폰은 기존 하단 도크에 둔다. 같은 원본 노드라 저장·권한 상태는 보존된다. */
     var host=((window.innerWidth||0)>=640&&strip&&strip.classList.contains("on"))?strip:(end||stg);
     if(!cur){if(host)host.appendChild(saveBtn);}
     else if(host&&cur.parentNode!==host)host.appendChild(cur);
   }
   function toggleSave(){mountSave();var v=window.__csView||"board";var hide=(v==="session")||!!window.__vaultEdit;saveBtn.style.display=hide?"none":"inline-flex";}   /* 보관함 목록·항목 보기/편집 중엔 숨김(vCreateBar 저장이 대신함) */
+  var _saveResizeT=null;
+  window.addEventListener("resize",function(){clearTimeout(_saveResizeT);_saveResizeT=setTimeout(function(){try{toggleSave();}catch(_){}},80);});
   var _osetView=setView;
   setView=function(v){var _pv=window.__csView;
   /* 2.359 — 폴더는 **원래 setView 앞**에서 맞춘다. 뒤에 두면 탐색기를 옛 폴더로 그린 다음
@@ -14988,6 +14992,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     else if(d&&d.folder==null&&window.__newFolder)d.folder=window.__newFolder;
   }catch(_){}return _osave.apply(this,arguments);};}
 
+  /* 게스트·오프라인 부팅에서도 저장 버튼 노드를 먼저 세운다. 클릭 시 기존 로그인 안내가 맡는다.
+     보관함이 풀린 경우에만 아래에서 폴더를 읽고 한 번 더 상태를 맞춘다. */
+  try{toggleSave();}catch(_){}
   // 폴더 로드 후 렌더
   try{if(psVaultUnlocked())store.get(VFOLD_KEY).then(function(a){if(!psVaultUnlocked())return;vaultFolders=Array.isArray(a)?a:[];try{renderDrillFiles();}catch(_){}try{toggleSave();}catch(_){}});}catch(_){}
 })();
@@ -15418,7 +15425,7 @@ try{ var _nb=document.getElementById('dfNew');
     if(!show){ return; }
     /* 1.541 — 손가락으로도 페이지 순서를 바꾼다(아이패드는 HTML5 드래그가 안 먹는다) */
     try{ PSTouchSort(box,".bp-tab",function(a,b){ reorder(a,b); },{dragClass:"bp-dragging",overClass:"bp-over",ctl:".bpx"}); }catch(_){}
-    /* 2.055 — 데스크톱·아이패드는 보관함 저장을 하단 도크가 아니라 보드 헤더 오른쪽 끝에 둔다.
+    /* 2.737 — 태블릿·데스크톱의 보관함 저장을 «보드 가져오기» 바로 옆에 둔다.
        innerHTML 초기화 전에 원본 버튼 참조를 잡아 이벤트·권한 게이트를 보존한다. */
     var vaultSave=document.getElementById("vaultSave");
     box.innerHTML="";
