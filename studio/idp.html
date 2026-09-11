@@ -5472,6 +5472,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      재생하지 않는다(피드백: 선수단 한눈에가 주기적으로 깜빡임). 스크롤도 화면 전환에만 올린다. */
   var _lastViewSig='';
   function render(){
+    /* 2.740 — 선수 상세 안에서 이야기·평가·면담을 오가거나 내용을 다시 그려도 왼쪽 목록의
+       독립 스크롤을 유지한다. 검색·오늘·공통질문·기준은 새 목록이므로 위치를 넘기지 않는다. */
+    var _sqeListTop=null;
+    try{ var _sqeOldList=wrap.querySelector('.sqe-list'), _sqePlayerPanel=sqPanel!=='today'&&sqPanel!=='qa'&&sqPanel!=='req';
+      if(squadView&&!sqEvalListReset&&_sqePlayerPanel&&_sqeOldList&&_sqeOldList.querySelector('[data-sqe-p]'))_sqeListTop=_sqeOldList.scrollTop;
+    }catch(_){}
+    sqEvalListReset=false;
     if(curL==='role'){ curL='goal'; window.__idpScrollRole=true; try{ [].forEach.call(document.getElementById('layers').children,function(x){ x.classList.toggle('on',x.dataset.l==='goal'); }); }catch(_){} }   /* 1.976 — 역할 탭 → 목표 탭 역할 카드 */
     if(ro()&&curL==='img')curL='goal';
     if(curL==='home'&&!squadView){ curL='cal'; calView='day'; calAnchor=new Date(); calAnchor.setHours(0,0,0,0); }   /* 2.198 — '오늘' 탭은 일정 일간(오늘)에 합쳤다(사용자). 딥링크·옛 상태는 여기서 돌린다 */
@@ -5527,7 +5534,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(window.innerWidth<640&&sqPanel!=='today'&&sqPanel!=='story'&&sqPanel!=='eval'&&sqPanel!=='pqa'&&sqPanel!=='qa'&&sqPanel!=='req')sqPanel='today';   /* 2.475 — 도달 불가 값 now·gap 삭제 + 'qa' 누락 수리(2.467 곁 발견: 폰 코치가 공통질문을 누르면 '오늘'로 튕겼다) */   /* 2.163 — 폰도 오늘·이야기·지금·평가 · 2.201 — 기준·팀 갭도 폰에서 연다(사용자: 눌러도 안 들어가짐) */
       _sqWasPhone=sqPhone();   /* 2.120 — 지금 그린 판을 기억한다. resize 는 이 값과 달라질 때만 다시 그린다 */
       var _sqE=sqEval&&(window.innerWidth>=640||sqPanel==='today'||sqPanel==='story'||sqPanel==='eval'||sqPanel==='pqa'||sqPanel==='qa'||sqPanel==='req');   /* 2.201 */   /* 2.163 — 폰의 '오늘'도 선수단 화면이다 */   /* 2.073 — 640 = 아이패드 iframe 실폭(672) 아래 */
-      if(_sqE){ if(sqEvalState==='idle')sqEvalLoad(); wrap.innerHTML=rSquadEval(); bindSquadEval(); }
+      if(_sqE){ if(sqEvalState==='idle')sqEvalLoad(); wrap.innerHTML=rSquadEval(); bindSquadEval();
+        if(_sqeListTop!=null)try{ var _sqeNewList=wrap.querySelector('.sqe-list'); if(_sqeNewList)_sqeNewList.scrollTop=_sqeListTop; }catch(_){} }
       else { wrap.innerHTML=rSquad(); bindSquad(); }
       if(_viewChanged){
         document.querySelector('.stage').scrollTop=0;
@@ -6555,6 +6563,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   var sqQmOpen=false, sqQmDraft={};   /* 2.619 — 분기 면담(5단계) 펼침·초안 */   /* 2.618 — «이번 주» 표: null=자동(토 12시~일요일) · 0/1 코치가 고름 · _sqwAuto[uid]=자동 제안(승인 버튼이 읽는다) */   /* 2.616 — sqTdAuto: 오늘 아무도 안 적었으면 최근 적은 날(≤3일 전)로 스스로 물러난 상태 */
   var sqReqWantOpen=false;   /* 2.492 — 이상형 카드는 접힌 한 줄이 기본(사용자 "기준 페이지도 너무 복잡해") */   /* 2.397 — '오늘 한 장' 판이 보고 있는 날(''=오늘). 코치가 ‹ › 로 옮긴다 */
   var sqPanel='today', sqMeetOpen='',   /* 2.163 — 코치의 문 = 오늘 할 일. 선수를 고르면 이야기(2.157) */ sqArchOpen=null, sqOthers=0, sqEval=true, sqEvalSel='', sqEvalData=null, sqEvalState='idle', sqEvalErr='', sqEvalQ='', sqEvalBusy={};
+  var sqEvalListReset=false;   /* 2.740 — 검색 결과는 언제나 첫 줄부터 */
+  var sqEvalPhoneListTop=0;   /* 2.740 — 폰은 목록 자체가 아니라 .stage가 스크롤하므로 돌아올 자리 별도 보관 */
   var _teSeq=0, _tePend={};
   window.addEventListener('message',function(e){
     var r=e.data||{}; if(!r||r.source!=='app'||!r.requestId)return;
@@ -8692,12 +8702,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function bindSquadEval(){
     var rt=wrap.querySelector('[data-sqe-retry]'); if(rt)rt.onclick=function(){ sqEvalLoad(true); };
     var q=wrap.querySelector('#sqeQ');
-    if(q){ q.oninput=function(){ sqEvalQ=q.value; var at=q.selectionStart; render();
-        try{ var q2=wrap.querySelector('#sqeQ'); if(q2){ q2.focus(); q2.setSelectionRange(at,at); } }catch(_){} }; }
+    if(q){ q.oninput=function(){ sqEvalQ=q.value; sqEvalListReset=true; sqEvalPhoneListTop=0; var at=q.selectionStart; render();
+        try{ var q2=wrap.querySelector('#sqeQ'); if(q2){ q2.focus(); q2.setSelectionRange(at,at); } var stq=wrap.closest('.stage')||document.querySelector('.stage'); if(sqPhone()&&stq)stq.scrollTop=0; }catch(_){} }; }
     /* ══ 2.119 · 목록에서 이름을 누르면 '지금'이 열린다 ════════════════════════════
        ⚠ **'다음 선수 ›' 는 지금 모드를 유지한다** — 둘은 다른 뜻이다.
           이름을 고르는 것 = "이 사람 좀 보자", 다음 선수 = "이어서 매기자"(2.069 가 만든 연속 평가 흐름). */
     [].forEach.call(wrap.querySelectorAll('[data-sqe-p]'),function(b){ b.onclick=function(){
+      if(sqPhone()&&b.closest('.sqe-list'))try{ var sl=wrap.closest('.stage')||document.querySelector('.stage'); if(sl)sqEvalPhoneListTop=sl.scrollTop; }catch(_){}
       sqEvalSel=b.dataset.sqeP; sqPanel='story'; sqArchOpen=null; sqNowGapAll=false; sqNowInfo=false; render();   /* 2.157 — 이름을 누르면 이야기가 열린다 */
       try{ var st=wrap.closest('.stage')||document.querySelector('.stage'); if(st)st.scrollTop=0; }catch(_){}
     }; });
@@ -8873,7 +8884,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var k=b.dataset.nowFold; sqNowFold[k]=sqNowFold[k]?0:1; render(); }; });
     var _bk=wrap.querySelector('[data-sqe-back]');
     if(_bk)_bk.onclick=function(){ sqEvalSel=''; sqNowFold={arch:0,attr:0,hist:0}; sqNowInfo=false; sqNowGapAll=false; render();
-      try{ var st=wrap.closest('.stage')||document.querySelector('.stage'); if(st)st.scrollTop=0; }catch(_){} };
+      try{ var st=wrap.closest('.stage')||document.querySelector('.stage'); if(st)st.scrollTop=sqPhone()?sqEvalPhoneListTop:0; }catch(_){} };
     [].forEach.call(wrap.querySelectorAll('[data-now-gapall]'),function(b){ b.onclick=function(){ sqNowGapAll=(b.dataset.nowGapall==='1'); render(); }; });
     [].forEach.call(wrap.querySelectorAll('[data-now-info]'),function(b){ b.onclick=function(){ sqNowInfo=(b.dataset.nowInfo==='1'); render(); }; });
     /* 2.118 — 평가 두 벌(기본 · 포지션). 벌을 바꾸면 그 벌의 첫 영역으로 간다(전체 보기는 유지) */
