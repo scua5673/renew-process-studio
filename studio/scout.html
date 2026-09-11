@@ -11328,16 +11328,27 @@ function renderGrowth(){
       var value=function(name){var el=row.querySelector('[data-cf="'+name+'"]');return el?String(el.value||"").trim():"";};
       var next={praise:value("praise"),focus:value("focus"),question:value("question"),nextAction:value("nextAction"),reviewDate:value("reviewDate")};
       if(!next.praise&&!next.focus&&!next.question&&!next.nextAction){toast("선수에게 전달할 피드백을 하나 이상 입력해 주세요.");return;}
-      var old=idpFeedbackFor(link.key),history=old&&Array.isArray(old.history)?old.history.slice():[];
-      if(old){
+      var feedbackKey=idpFeedbackKey(link.key),rawFeedback=null,old=null;
+      try{ migrateLegacyIdpFeedback(); rawFeedback=localStorage.getItem(feedbackKey); }catch(_){ toast("기존 피드백 자료를 확인하지 못해 저장하지 않았어요.");return; }
+      if(rawFeedback===null)old={};
+      else try{ old=JSON.parse(rawFeedback); }catch(_){ old=null; }
+      if(!old||typeof old!=="object"||Array.isArray(old)){ toast("기존 피드백 자료가 손상되지 않도록 저장을 멈췄어요.");return; }
+      var history=Array.isArray(old.history)?old.history.slice():[];
+      if(old&&old.id){
         var prev={id:old.id,playerId:old.playerId,playerName:old.playerName,updatedAt:old.updatedAt,updatedBy:old.updatedBy,
           praise:old.praise||"",focus:old.focus||"",question:old.question||"",nextAction:old.nextAction||"",reviewDate:old.reviewDate||""};
         history.push(prev);if(history.length>20)history=history.slice(-20);
       }
-      var record={id:"cf"+Date.now().toString(36),playerId:String(pl.id||""),playerName:pl.name||link.name||"",
+      /* 2.741 — 개인별 공개 문서는 피드백만의 상자가 아니다. IDP 좋아요·답글·주간 제안·리뷰·
+         경기 메시지도 같은 root에 산다. 새 record로 갈아 끼우면 모르는 필드가 전부 지워지므로
+         기존 root를 복사한 뒤 이 피드백 갈래만 갱신한다. */
+      var record=Object.assign({},old||{},{id:"cf"+Date.now().toString(36),playerId:String(pl.id||""),playerName:pl.name||link.name||"",
         updatedAt:Date.now(),updatedBy:growthCoachName(),praise:next.praise,focus:next.focus,question:next.question,
-        nextAction:next.nextAction,reviewDate:next.reviewDate,history:history,matchMessages:old&&old.matchMessages||{}};
-      try{localStorage.setItem(idpFeedbackKey(link.key),JSON.stringify(record));}catch(_){toast("피드백을 저장하지 못했어요.");return;}
+        nextAction:next.nextAction,reviewDate:next.reviewDate,history:history});
+      try{var recordRaw=JSON.stringify(record);if(!recordRaw||recordRaw.length>1500000)throw new Error("feedback-too-large");
+        if(localStorage.getItem(feedbackKey)!==rawFeedback)throw new Error("feedback-conflict");
+        localStorage.setItem(feedbackKey,recordRaw);if(localStorage.getItem(feedbackKey)!==recordRaw)throw new Error("feedback-readback");
+      }catch(_){toast("피드백을 저장하지 못했어요. 기존 자료는 그대로 두었습니다.");return;}
       psAct('a_feedback');
       growthOpenPid=String(pl.id||"");renderGrowth();growthSyncSoon("idp-feedback");toast("선수의 IDP에 피드백을 보냈어요.");
     };

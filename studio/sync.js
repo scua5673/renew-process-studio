@@ -4775,7 +4775,7 @@ function syncNowCore(reason){
              board 권한만 있는 구성원의 클라이언트가 통과시키고 서버 RLS 가 403 — 회차마다 반복(실측 14일 sync_permission kv_push 1,962건·39명,
              최다 971건 사용자의 scopes = board·schedule·team·gamemodel·terms, scout 없음). */
           if(k==='cs_scout_targets_v1')return 'scout';
-          if(k==='cs_idp_pub_v1')return 'team';
+          if(isIdpPubKey(k))return 'team';   /* 2.741 — 실제 키는 cs_idp_pub_v1_<uid>. exact legacy 키만 보면 board로 잘못 분류된다 */
           return 'board';
         }
         function canW(k){
