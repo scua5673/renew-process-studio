@@ -411,6 +411,17 @@ h3{font-size:var(--fs-title);font-weight:var(--fw-head);letter-spacing:-.3px;mar
    ② 렌더 때 실측 충돌을 세로 오프셋(--oy, 표시 전용)으로 푼다(tbUnclutter)
    ③ 그래도 겹치면 만진 카드가 위로 올라온다. */
 .tb-slot{width:146px}   /* 2.269 — 156→146(촘촘 v3) */
+/* 2.759 — 카드 머리 포지션 고르기 · 운동장 밖 줄 · 모양 표시 */
+.tb-t select.tb-pos{border:1px solid transparent;border-radius:6px;background:transparent;color:var(--txt);font:800 11px/1.3 inherit;font-family:inherit;letter-spacing:.03em;padding:1px 2px;max-width:88px;cursor:pointer}
+.tb-t select.tb-pos:hover,.tb-t select.tb-pos:focus{border-color:var(--blue,#3a6df0);background:var(--bar2)}
+.tb-off{margin:10px 0 0}
+.tb-off-h{display:flex;align-items:baseline;gap:8px;margin:0 0 6px;font-size:12px}.tb-off-h b{font-weight:800}.tb-off-h small{color:var(--dim)}
+.tb-off-row{display:flex;flex-wrap:wrap;gap:8px}
+.tb-slot.off{position:static;transform:none;box-shadow:none;border:1px dashed var(--line)}
+.tb-slot.off .tb-t{cursor:default}.tb-slot.off .tb-t span{font-weight:800}
+.tm-shape{font-size:12px;font-weight:700;color:var(--dim);padding:0 8px;white-space:nowrap}
+.tm-shape:empty{display:none}
+@media(min-width:761px){ #teamView .tm-form-lab{display:none} }   /* 운동장이 보이는 폭에선 포메이션을 고르지 않는다(폰은 명단 그룹용으로 남김) */
 @media(max-width:1000px){.tb-slot{width:132px;padding:6px}}
 .tb-slot:hover,.tb-slot:focus-within,.tb-slot:active{z-index:30}
 .tb-t{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.03em;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
@@ -4567,12 +4578,13 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
             <span class="tm-viewseg" id="tmViewSeg"><button type="button" data-tmv="pitch" class="on">작전판</button><button type="button" data-tmv="table">표</button></span>
             <!-- 1.558 — 조 칩을 도구 줄과 같은 행으로(사용자 지시). 줄 하나가 통째로 줄어든다. -->
             <div id="grpChips" style="display:none;gap:6px;flex-wrap:wrap"></div>
-            <div class="tm-head-set"><button type="button" class="btn sm" id="tbMeetBtn" title="운동장과 선수 카드만 전체화면으로">회의 모드</button><label class="tm-set-it">포메이션<select class="inp" id="tmForm" style="width:auto;min-width:104px;height:34px;font-weight:600;font-size:13px"><optgroup label="백4"><option value="442">4-4-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option><option value="4312">4-3-1-2</option><option value="4321">4-3-2-1</option></optgroup><optgroup label="백3"><option value="3142">3-1-4-2</option><option value="3412">3-4-1-2</option><option value="3421">3-4-2-1</option></optgroup></select></label><!-- 2.098 — ＋ 자리 제거(사용자 지시). 핸들러(init 의 tbAddPos)는 id 가드가 있어 조용히 건너뛴다 --><label class="tm-set-it tm-set-kit">유니폼<span class="kit-sw"><input type="color" id="kitMain" title="유니폼 색"></span></label><label class="tm-set-it tm-set-kit">GK<span class="kit-sw"><input type="color" id="kitGk" title="GK 색"></span></label></div>
+            <div class="tm-head-set"><button type="button" class="btn sm" id="tbMeetBtn" title="운동장과 선수 카드만 전체화면으로">회의 모드</button><span class="tm-shape" id="tbShape"></span><label class="tm-set-it tm-form-lab">포메이션<select class="inp" id="tmForm" style="width:auto;min-width:104px;height:34px;font-weight:600;font-size:13px"><optgroup label="백4"><option value="442">4-4-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option><option value="4312">4-3-1-2</option><option value="4321">4-3-2-1</option></optgroup><optgroup label="백3"><option value="3142">3-1-4-2</option><option value="3412">3-4-1-2</option><option value="3421">3-4-2-1</option></optgroup></select></label><!-- 2.098 — ＋ 자리 제거(사용자 지시). 핸들러(init 의 tbAddPos)는 id 가드가 있어 조용히 건너뛴다 --><label class="tm-set-it tm-set-kit">유니폼<span class="kit-sw"><input type="color" id="kitMain" title="유니폼 색"></span></label><label class="tm-set-it tm-set-kit">GK<span class="kit-sw"><input type="color" id="kitGk" title="GK 색"></span></label></div>
           </div>
         </div>
         <datalist id="grpList"></datalist>
         <div class="tb-board">
           <div class="tb-pitch" id="tbPitch"></div>
+          <div class="tb-off" id="tbOff" hidden></div>
           <div class="tb-tray-card"><div class="tb-tray-h"><b>미배치 · 우리 선수</b><u id="tbTrayN">0명</u></div><div class="tb-tray" id="tbTray"></div></div>
         </div>
         <!-- 1.601 — 폰에서 작전판 자리를 대신하는 한 줄. 사라진 게 아니라 큰 화면의 일임을 말해 준다. -->
@@ -9878,26 +9890,46 @@ function tbDefaultMap(){
   return map;
 }
 function tbOurs(){return tmOurs().filter(tmGrpFlt).filter(function(p){return p.manual===true||String(p.name||"").trim();});}
-function tbGroups(){
-  var by={};
-  tbOurs().forEach(function(p){if(p.posId)(by[p.posId]=by[p.posId]||[]).push(p);});
-  var def=tbDefaultMap(),xy=tbXYStore(),list=[];
-  (data.positions||[]).forEach(function(ps){
-    var ab=String(posAbbr(ps.name)||ps.name||"").toUpperCase();
-    /* 1.548 — 선수가 한 명도 없고 **지금 포메이션에도 없는** 자리는 보드에 남기지 않는다.
-       예전 배치에서 끌어 둔 좌표(xy)만 조건에 걸려, 선수를 다 지운 뒤에도
-       'LWB 0' 같은 빈 자리가 계속 떠 있었다(노션 QA).
-       좌표(tbXY)는 지우지 않고 표시 조건에서만 뺀다 → 그 포지션에 선수를 다시 넣으면
-       예전에 끌어 둔 그 자리로 그대로 돌아온다.
-       (참고: LWB·RWB 는 어떤 포메이션 맵에도 없다 — 3-5-2 도 윙백을 LB/RB 로 잡는다.
-        그래서 이 자리들은 '선수가 있을 때만' 나타난다.) */
-    /* 2.699 — 자리는 **지금 포메이션의 자리만**(사용자 "포지션이 딱 11자리만 나오게"). 포메이션에 없는 포지션(예: 4-3-3 의 LM)의 선수는
-       카드가 아니라 아래 «미배치» 줄에 포지션 이름을 달고 선다 — 억지로 다른 자리에 넣지 않는다. */
-    if(def[ab])list.push({id:ps.id,abbr:posAbbr(ps.name)||ps.name,ab:ab,players:by[ps.id]||[]});
-  });
-  return list;
+/* ══ 2.759 · 포지션 카드 열한 장(사용자 «카드를 항상 11개 띄우고 포지션을 고르게 하면 포메이션을 없애도 된다») ══
+   운동장의 카드는 늘 11장(data.meta.tbCards = posId 11개). 카드 머리의 포지션은 고르는 것이고 자리는 끌어서 정한다(좌표 tbXY 그대로).
+   포메이션은 고르는 것이 아니라 카드에서 읽힌다(tbShape). 11장 밖의 포지션에 선수가 있으면 «운동장 밖» 줄에 카드로 선다(모양엔 안 셈).
+   처음 한 번은 지금 포메이션의 자리로 11장을 만든다 — 그래서 화면이 갑자기 바뀌지 않는다. */
+function tbCards(){
+  data.meta=data.meta||{}; var P=data.positions||[], has=function(id){return P.some(function(x){return x.id===id;});};
+  var ids=Array.isArray(data.meta.tbCards)?data.meta.tbCards.slice():null;
+  if(!ids){ ids=[]; var def=tbDefaultMap(), byAb={};
+    P.forEach(function(ps){ var ab=String(posAbbr(ps.name)||ps.name||"").toUpperCase(); if(ab&&!byAb[ab])byAb[ab]=ps.id; });
+    Object.keys(def).forEach(function(ab){ if(byAb[ab]&&ids.indexOf(byAb[ab])<0)ids.push(byAb[ab]); }); }
+  ids=ids.filter(function(id,k){return has(id)&&ids.indexOf(id)===k;});
+  P.forEach(function(ps){ if(ids.length<11&&ids.indexOf(ps.id)<0)ids.push(ps.id); });
+  ids=ids.slice(0,11);
+  var old=data.meta.tbCards; if(!(Array.isArray(old)&&old.length===ids.length&&old.every(function(x,k){return x===ids[k];})))data.meta.tbCards=ids;
+  return ids;
 }
-function tbShownPosIds(){ var m={}; try{ tbGroups().forEach(function(g){ m[g.id]=1; }); }catch(_){} return m; }
+function tbGroupOf(ps,players){ return {id:ps.id,abbr:posAbbr(ps.name)||ps.name,ab:String(posAbbr(ps.name)||ps.name||"").toUpperCase(),players:players||[]}; }
+function tbGroups(){
+  var by={}; tbOurs().forEach(function(p){if(p.posId)(by[p.posId]=by[p.posId]||[]).push(p);});
+  var P=data.positions||[];
+  return tbCards().map(function(id){ var ps=P.find(function(x){return x.id===id;}); return tbGroupOf(ps,by[ps.id]); });
+}
+function tbOffGroups(){
+  var on={}; tbCards().forEach(function(id){on[id]=1;}); var by={};
+  tbOurs().forEach(function(p){ if(p.posId&&!on[p.posId])(by[p.posId]=by[p.posId]||[]).push(p); });
+  return (data.positions||[]).filter(function(ps){return by[ps.id];}).map(function(ps){return tbGroupOf(ps,by[ps.id]);});
+}
+/* 모양 = 카드 11장의 라인 수(수비 – 수비형 미드 – 나머지 미드 – 공격). 읽기 표시일 뿐 어디에도 저장하지 않는다 */
+function tbShape(){ try{
+  var L={DF:0,DM:0,MF:0,FW:0}; tbGroups().forEach(function(g){ var ab=g.ab; if(ab==="GK")return;
+    if(/^(L|R)?DM$/.test(ab))L.DM++; else if(/CB|LB|RB|FB/.test(ab)&&!/WB/.test(ab))L.DF++; else if(/WB|CM|AM|LM|RM|MF|MID/.test(ab))L.MF++; else L.FW++; });
+  return [L.DF,L.DM,L.MF,L.FW].filter(function(n){return n>0;}).join("-");
+}catch(_){ return ""; } }
+function tbPosSelectHTML(gr){
+  var P=data.positions||[];
+  return '<select class="tb-pos" data-posid="'+esc(gr.id)+'" title="이 카드의 포지션 — 바꾸면 자리는 그대로, 포지션만 바뀝니다" aria-label="포지션 고르기">'
+    +P.map(function(ps){ var ab=posAbbr(ps.name)||ps.name; return '<option value="'+esc(ps.id)+'"'+(ps.id===gr.id?' selected':'')+'>'+esc(ab)+'</option>'; }).join("")+'</select>';
+}
+function tbShapePaint(){ try{ var el=$("tbShape"); if(!el)return; var sh=tbShape(); el.textContent=sh?("모양 "+sh):""; el.title="카드 11장에서 읽은 모양 — 포메이션을 고르지 않습니다"; }catch(_){} }
+function tbShownPosIds(){ var m={}; try{ tbGroups().concat(tbOffGroups()).forEach(function(g){ m[g.id]=1; }); }catch(_){} return m; }   /* 2.759 — 운동장 밖 카드 포함 */
 function tbPillHTML(p,first){
   /* 1.511 — 재활은 훈련에 들어오기 어려운 상태다(사용자 확정) → 부상과 같은 취급으로 보여준다.
      구분이 필요한 곳(기록·집계)은 status 값을 그대로 쓰므로 데이터는 잃지 않는다. */
@@ -9944,7 +9976,7 @@ function tbRender(){
     var pos=xy[gr.id]||(!seen[gr.ab]&&def[gr.ab])||{x:14+(fb++)*15,y:90};
     seen[gr.ab]=1;
     return '<div class="tb-slot" data-posid="'+esc(gr.id)+'" style="left:'+pos.x+'%;top:'+pos.y+'%">'
-      +'<div class="tb-t"><span class="tb-h" title="끌어서 자리 이동" aria-label="자리 이동"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12" style="display:block;pointer-events:none" aria-hidden="true"><path d="M8 6h8M8 12h8M8 18h8"/></svg></span>'+esc(gr.abbr)+'<button type="button" class="tb-x" data-tbdel="'+esc(gr.id)+'" title="이 자리를 지웁니다 — 지금 '+gr.players.length+'명" aria-label="'+esc(gr.abbr)+' 자리 삭제">×</button></div>'
+      +'<div class="tb-t"><span class="tb-h" title="끌어서 자리 이동" aria-label="자리 이동"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12" style="display:block;pointer-events:none" aria-hidden="true"><path d="M8 6h8M8 12h8M8 18h8"/></svg></span>'+tbPosSelectHTML(gr)+'<u title="지금 '+gr.players.length+'명">'+gr.players.length+'</u></div>'
       +gr.players.map(function(p,i){return tbPillHTML(p,i===0);}).join("")
       +'<button type="button" class="tb-add" data-posid="'+esc(gr.id)+'">＋ 선수</button></div>';
   }).join("");
@@ -9952,6 +9984,12 @@ function tbRender(){
     if(_img){pitch.style.background="#1e7d46";pitch.style.backgroundImage='url("'+_img+'")';pitch.style.backgroundSize="9.52% auto";}
   }catch(_){}
   try{tbUnclutter(pitch);}catch(_){}   /* 1.672 — 겹침 해소(표시 전용) */
+  /* 2.759 — 운동장 밖: 11장에 없는 포지션의 선수 카드(모양엔 안 셈). 카드 머리 × 는 포지션 삭제(예전 그대로) */
+  try{ var off=$("tbOff"); if(off){ var og=tbOffGroups(); off.hidden=!og.length;
+    off.innerHTML=og.length?('<div class="tb-off-h"><b>운동장 밖</b><small>11장에 없는 포지션 — 카드의 포지션 고르기로 올릴 수 있어요</small></div><div class="tb-off-row">'+og.map(function(gr){
+      return '<div class="tb-slot off" data-posid="'+esc(gr.id)+'"><div class="tb-t"><span>'+esc(gr.abbr)+'</span><button type="button" class="tb-x" data-tbdel="'+esc(gr.id)+'" title="이 포지션을 지웁니다 — 지금 '+gr.players.length+'명" aria-label="'+esc(gr.abbr)+' 포지션 삭제">×</button></div>'
+        +gr.players.map(function(p,i){return tbPillHTML(p,i===0);}).join("")+'<button type="button" class="tb-add" data-posid="'+esc(gr.id)+'">＋ 선수</button></div>'; }).join("")+'</div>'):""; } }catch(_){}
+  try{tbShapePaint();}catch(_){}
   var tray=$("tbTray");
   if(tray){
     var _all=tbOurs(), _shown=tbShownPosIds();
@@ -9960,7 +9998,7 @@ function tbRender(){
     /* 1.574 — 선수가 하나도 없을 때도 "모든 선수가 배치됐습니다"라고 말하던 것.
        0명인데 '다 배치했다'는 참이 아니고, 무엇을 해야 하는지도 안 알려 준다. 두 경우를 갈라 말한다. */
     tray.innerHTML=un.length?un.map(function(p){ var _po=p.posId?(data.positions||[]).find(function(x){return x.id===p.posId;}):null; var _ab=_po?(posAbbr(_po.name)||_po.name):"";
-        return tbPillHTML(p,false)+(_ab?'<span class="tb-tray-pos" title="이 포메이션에 없는 자리">'+esc(_ab)+'</span>':''); }).join("")
+        return tbPillHTML(p,false)+(_ab?'<span class="tb-tray-pos" title="카드 11장에 없는 자리">'+esc(_ab)+'</span>':''); }).join("")
       :'<span class="tb-none">'+(_all.length?'모든 선수가 배치됐습니다':'아직 등록된 선수가 없습니다')+'</span>';
   }
   tbWire();
@@ -10042,7 +10080,20 @@ function tbWire(){
         스카우팅·명단·평가가 다 같이 쓴다. 그래서 설정의 포지션 편집기와 **같은 경고문**을 쓴다.
         (그 자리 주석: "2026-08-07 에 후보 34명이 그렇게 없어졌다" — 몇 명이 걸리는지 반드시 센다.)
      ⚠ 머리줄이 끌기 손잡이라 pointerdown 을 막아야 × 가 자리를 끌지 않는다. */
-  document.querySelectorAll("#tbPitch [data-tbdel]").forEach(function(btn){
+  /* 2.759 — 카드 머리의 포지션 고르기. 이 카드 자리(좌표)는 그대로 두고 포지션만 바꾼다. 고른 포지션이 이미 다른 카드에 있으면 둘이 맞바꾼다 */
+  document.querySelectorAll("#tbPitch select.tb-pos").forEach(function(sel){
+    sel.addEventListener("pointerdown",function(e){ e.stopPropagation(); });
+    sel.addEventListener("change",function(e){ e.stopPropagation();
+      if(document.body.classList.contains("ps-roster-locked")||!canEdit){ try{toast("선수단 편집 권한이 없어요");}catch(_){} tbRender(); return; }
+      var cards=tbCards(), from=sel.dataset.posid, to=sel.value, i=cards.indexOf(from), j=cards.indexOf(to);
+      if(i<0||!to||to===from){ tbRender(); return; }
+      var xy=tbXYStore(), card=sel.closest(".tb-slot"), here={x:parseFloat(card.style.left),y:parseFloat(card.style.top)};
+      if(j>=0){ var other=document.querySelector('#tbPitch .tb-slot[data-posid="'+to+'"]'); var there=other?{x:parseFloat(other.style.left),y:parseFloat(other.style.top)}:null; cards[j]=from; if(there)xy[from]=there; }
+      cards[i]=to; if(isFinite(here.x)&&isFinite(here.y))xy[to]=here;
+      data.meta.tbCards=cards; save(); tbRender();
+    });
+  });
+  document.querySelectorAll("#tbPitch [data-tbdel],#tbOff [data-tbdel]").forEach(function(btn){
     btn.addEventListener("pointerdown",function(e){ e.stopPropagation(); });
     btn.addEventListener("click",function(e){
       e.stopPropagation(); e.preventDefault();
@@ -10082,7 +10133,7 @@ function tbWire(){
       });
     });
   });
-  document.querySelectorAll("#tbPitch .tb-st,#tbTray .tb-st").forEach(function(btn){
+  document.querySelectorAll("#tbPitch .tb-st,#tbOff .tb-st,#tbTray .tb-st").forEach(function(btn){
     btn.addEventListener("pointerdown",function(e){ e.stopPropagation(); });
     btn.addEventListener("click",function(e){
       e.stopPropagation(); e.preventDefault();
@@ -10093,7 +10144,7 @@ function tbWire(){
       stPickOpen(btn,cur0?cur0.to:plStatusOf(pl),function(to){ tmStatusApply(pl,to); });
     });
   });
-  document.querySelectorAll("#tbPitch .tb-pill,#tbTray .tb-pill").forEach(function(pill){
+  document.querySelectorAll("#tbPitch .tb-pill,#tbOff .tb-pill,#tbTray .tb-pill").forEach(function(pill){
     pill.addEventListener("pointerdown",function(e){
       e.preventDefault();
       var pid=pill.dataset.pid,sx=e.clientX,sy=e.clientY,gh=null;
