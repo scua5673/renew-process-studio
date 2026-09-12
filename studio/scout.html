@@ -9526,12 +9526,13 @@ function teamPitchSVG(sq,ink){
   const dark=!ink&&typeof document!=="undefined"&&document.body.classList.contains("fmdark");   // 알약 라벨 테마 분기
   const iw=W-2*PAD, ih=H-2*PAD;
   const px=x=>PAD+x/100*iw, py=y=>PAD+y/100*ih;
-  const adj=tmFormSlotsAdj(sq.form);const baseSlots=tmFormSlots(sq.form);const FORMN=adj.length;
+  const cardSlots=(typeof tbCardSlotsTm==="function")?tbCardSlotsTm():null;   /* 2.761 — 팀 구성 카드 11장이 있으면 포메이션 표 대신 */
+  const adj=cardSlots||tmFormSlotsAdj(sq.form);const baseSlots=cardSlots||tmFormSlots(sq.form);const FORMN=adj.length;
   const slots=adj.slice();
   const byPos={};const bench=[];
   const inForm={};slots.forEach(s2=>{inForm[s2[0]]=1;});
   (sq.players||[]).forEach(pl=>{const k=tmFormKey(pl.pos,inForm);   /* 2.752 — LCM 은 CM 자리로 */
-    if(TM_DEF[k]&&inForm[k]){(byPos[k]=byPos[k]||[]).push(pl);}else bench.push(pl);});
+    if(inForm[k]&&(cardSlots||TM_DEF[k])){(byPos[k]=byPos[k]||[]).push(pl);}else bench.push(pl);});
   /* 포메이션 슬롯(11자리)만 표시 — 포메이션에 없는 포지션 선수는 벤치 목록으로(3백에서 11명 초과 문제 수정) */
   let marks="",zones="";
   const LH=16.5, MAXN=5;   // 알약 라벨(높이 15) 기준 줄 간격
@@ -9937,6 +9938,10 @@ function tbSlotsCompute(){ try{
     var pos=xy[id]||(!seen[ab]&&def[ab])||{x:14+(fb++)*15,y:90}; seen[ab]=1;
     return {ab:ab,x:Math.round(+pos.x*10)/10,y:Math.round(+pos.y*10)/10}; });
 }catch(_){ return null; } }
+/* 2.761 — 카드 11장을 팀 구성 SVG·명단 출력의 자리([k,x,y,label], 세로 좌표계 x'=tb.y, y'=100-tb.x)로 */
+function tbCardSlotsTm(){ try{ var cs=data.meta&&data.meta.tbSlots; if(!Array.isArray(cs)||cs.length!==11)return null;
+  return cs.map(function(c){ var ab=String(c.ab||"").toUpperCase(); return [ab,Math.max(3,Math.min(97,Math.round((+c.y||50)*10)/10)),Math.max(3,Math.min(97,Math.round((100-(+c.x||14))*10)/10)),ab]; }); }catch(_){ return null; } }
+function tbShapeLabel(){ try{ var sh=tbShape(); return sh?("팀 구성 카드 "+sh):""; }catch(_){ return ""; } }
 function tbShapePaint(){ try{ var el=$("tbShape"); if(!el)return; var sh=tbShape(); el.textContent=sh?("모양 "+sh):""; el.title="카드 11장에서 읽은 모양 — 포메이션을 고르지 않습니다"; }catch(_){} }
 function tbShownPosIds(){ var m={}; try{ tbGroups().concat(tbOffGroups()).forEach(function(g){ m[g.id]=1; }); }catch(_){} return m; }   /* 2.759 — 운동장 밖 카드 포함 */
 function tbPillHTML(p,first){
@@ -11040,7 +11045,7 @@ function rosterDocHTML(ink){
     colR='<div class="colR">'
       +'<table class="ro"><colgroup><col style="width:11mm"><col style="width:17%"><col style="width:14mm"><col style="width:14mm"><col></colgroup>'
       +'<thead><tr><th>번호</th><th>이름</th><th>포지션</th><th>주발</th><th>메모</th></tr></thead><tbody>'+trs+'</tbody></table>'
-      +'<div class="legend"><span class="dot"></span>선발 (포메이션 배치 기준)</div>'
+      +'<div class="legend"><span class="dot"></span>선발 ('+((typeof tbCardSlotsTm==="function"&&tbCardSlotsTm())?"팀 구성 카드 자리":"포메이션 배치")+' 기준)</div>'
       +'</div>';
   }
   const sqPitch={form:(data.meta&&data.meta.form)||"433",
@@ -12492,7 +12497,7 @@ function matchFormLabel(v){var m={442:"4-4-2",4231:"4-2-3-1",433:"4-3-3",343:"3-
 function matchBlank(){
   var d=new Date(),ymd=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   return {id:uid("mt"),competition:"",opponent:"새 경기",date:ymd,time:"",venue:"",homeAway:"",
-    formation:matchFormLabel(($("tmForm")&&$("tmForm").value)||(data.meta&&data.meta.form)),captainId:"",squadIds:[],startingIds:[],
+    formation:(function(){ try{ var sh=(typeof tbShape==="function"&&data.meta&&Array.isArray(data.meta.tbSlots)&&data.meta.tbSlots.length===11)?tbShape():""; if(sh)return sh; }catch(_){} return matchFormLabel(($("tmForm")&&$("tmForm").value)||(data.meta&&data.meta.form)); })(),captainId:"",squadIds:[],startingIds:[],   /* 2.761 — 카드가 있으면 카드에서 읽은 모양 */
     attack:"",defense:"",attackTransition:"",defenseTransition:"",briefing:"",prepPublished:false,fifaMode:"simple",fifaPlans:[],
     kind:"official",   /* 2.144 — 정식/친선. 기본은 정식(가장 흔한 경우) — 친선만 바꾸면 된다 */
     scoreUs:"",scoreThem:"",resultSummary:"",execution:0,reviewGood:"",reviewImprove:"",
@@ -15955,6 +15960,7 @@ function mlbRender(m,pitchEl,benchEl,benchNEl){
   var formLabel=m.formation||matchFormLabel((data.meta&&data.meta.form)||"4231");
   var formKey=String(formLabel).replace(/[^0-9]/g,"")||"4231";
   var slots=(typeof tmFormSlotsAdj==="function"?tmFormSlotsAdj(formKey):null)||tmFormSlots(formKey)||[];
+  try{ var _cs=tbCardSlotsTm(); if(_cs){ slots=_cs; formLabel=tbShapeLabel()||formLabel; } }catch(_){}   /* 2.761 — 카드 11장이 자리 */
   var starters=(m.startingIds||[]).map(function(id){return data.players.find(function(p){return p.id===id;});}).filter(Boolean);
   function normPos(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");}
   function groupPos(v){v=normPos(v);if(v==="GK")return"GK";if(/CB|LB|RB|WB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";}
