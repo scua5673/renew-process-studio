@@ -4045,13 +4045,15 @@ function wksChips(di,arr,slots,slot,tapFn,data,askMin,kind,themes){
     var _dl=psDurLab(_d);   /* 2.486 — 초 단위까지 그대로 표기 */
     var lab=_dl||'분 ＋';
     var ttl=_dl?('시간 정하기 — 총 '+psDurFmt(psSecTot(_d))):'시간 정하기';
+    var _minCall=(kind==='train')?("wksFillEdit("+di+",'"+wkbdEsc(slot||'')+"',"+i+",'time')"):("wkbdMinOnly("+di+","+i+",&quot;"+(kind||'')+"&quot;)");   /* 2.764 */
     var tail=(_dl||askMin)
-      ? '<i class="'+(_dl?'':'ask')+'" title="'+ttl+'" onclick="event.stopPropagation();wkbdMinOnly('+di+','+i+',&quot;'+(kind||'')+'&quot;)">'+lab+'</i>'
+      ? '<i class="'+(_dl?'':'ask')+'" title="'+ttl+'" onclick="event.stopPropagation();'+_minCall+'">'+lab+'</i>'
       : '';
     /* 2.485 — 카드 우측상단 ×(사용자 "카드 삭제 가능하게"): 시트의 삭제 버튼과 같은 함수를 그대로 —
        확인 없이 바로 지우는 것도 시트와 같은 결이다. 이름 탭(시트)·분 탭(시간)과 겹치지 않게 stopPropagation */
     var col=''; try{ var th=(themes&&themes[i])||''; if(th)col=themeColor(th); }catch(_){}
-    h+='<div class="wks-li" onclick="event.stopPropagation();'+tapFn+'('+di+','+i+')" title="'+wkbdEsc(v)+'"><span class="wks-bar"'+(col?' style="background:'+col+'"':'')+'></span><b>'+wkbdEsc(v)+'</b>'+tail+'</div>';
+    var _tapCall=(kind==='train')?("wksFillEdit("+di+",'"+wkbdEsc(slot||'')+"',"+i+",'name')"):(tapFn+'('+di+','+i+')');   /* 2.764 — 훈련은 채우기 시트에서 바로 고친다 */
+    h+='<div class="wks-li" onclick="event.stopPropagation();'+_tapCall+'" title="'+wkbdEsc(v)+'"><span class="wks-bar"'+(col?' style="background:'+col+'"':'')+'></span><b>'+wkbdEsc(v)+'</b>'+tail+'</div>';
   });
   return h;
 }
@@ -4118,6 +4120,15 @@ function _fillSave(){
   try{syncViews();}catch(_){}
   wksFillRender(true);
 }
+/* 2.764 — 주간 카드의 훈련 행을 누르면 작은 시트(그림 없음·작전판에서 그리기·이름 교체) 대신
+   **세션 채우기 시트의 훈련 칸**이 그 행의 편집 상태로 열린다(사용자 «눌렀을 때 바로 수정 · 작전판 추가는 아니야 · 훈련 추가 화면이 나오게»).
+   그림은 아래 «보관함» 줄이 맡는다. 이름 탭 = 이름 입력, 분 탭 = 시간 입력. */
+window.wksFillEdit=function(di,slot,ti,what){
+  wksFill(di,slot,'train'); if(schedEditBlocked())return;
+  if(what==='time')__fillTimeOpen=ti; else __fillNameOpen=ti;
+  wksFillRender(true,'train');
+  try{ setTimeout(function(){ var el=document.getElementById(what==='time'?'wftMin':'wftNm'); if(el){ el.focus(); if(el.select)el.select(); try{el.scrollIntoView({block:'center'});}catch(_){} } },60); }catch(_){}
+};
 window.wksFill=function(di,slot,focus){
   if(schedEditBlocked()){schedBlockNotice();return;}
   psAct('a_week');
