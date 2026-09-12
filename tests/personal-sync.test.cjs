@@ -41,12 +41,12 @@ function harness(options = {}) {
   const keys = options.keys || [K];
   let session = {uid:'coach-a'}, active = team ? 'team-a' : 'personal-a', switchSeal = '', switchEpoch='';
   let unlocked = true, queue = [], queueTail = Promise.resolve();
-  const local = new Map(), idb = new Map(), server = new Map(), requests = [], failures = [], modals = [], hooks = {};
+  const local = new Map(), idb = new Map(), server = options.sharedServer || new Map(), requests = [], failures = [], modals = [], hooks = {};
   local.set('ps_cache_owner_v1', 'owner-a');
   for (const k of keys) {
     const raw = options.local === undefined ? 'PHONE_EDIT' : options.local;
     if (raw !== null) (k === LOCAL_ONLY ? local : idb).set(k, raw);
-    if (options.server !== null) server.set(k, {workspace_id:'personal-a',k,v:options.server === undefined?'BASE':options.server,cupd:options.cupd === undefined?1:options.cupd});
+    if (!options.sharedServer && options.server !== null) server.set(k, {workspace_id:'personal-a',k,v:options.server === undefined?'BASE':options.server,cupd:options.cupd === undefined?1:options.cupd});
   }
   const ctx = vm.createContext({
     Promise, console, setTimeout, clearTimeout, isFinite,
@@ -325,4 +325,38 @@ test('main synchronization excludes personal payloads and delegates both workspa
   assert.match(main,/if\(PERSONAL\[k\]\) return;/);
   assert.match(main,/syncPersonal\(at,roundWorkspaceCurrent\)/);
   assert.match(main,/ackSkipped=.*KEYS\.filter\(function\(k\)\{return PERSONAL\[k\];\}\)/);
+});
+
+// Two independent client storage/metadata/outboxes share one simulated server.
+// This exercises the shipped sync code, not a physical phone or production RLS.
+function sharedClients(){
+  const sharedServer=new Map([[K,{workspace_id:'personal-a',k:K,v:'BASE',cupd:1}]]);
+  return {server:sharedServer,pc:harness({local:'BASE',sharedServer}),phone:harness({local:'BASE',sharedServer})};
+}
+test('two isolated clients: a PC save reaches the unchanged phone after reconnect',async()=>{
+  const {pc,phone,server}=sharedClients();pc.writeLocal(K,'PC_FIRST');pc.addPending(K,'PC_FIRST');
+  await pc.run();assert.equal(server.get(K).v,'PC_FIRST');assert.equal(phone.idb.get(K),'BASE');
+  await phone.run();assert.equal(phone.idb.get(K),'PC_FIRST');assert.equal(pc.queue.length,0);assert.equal(phone.queue.length,0);
+});
+test('two isolated clients: offline edits on both sides preserve both until an explicit choice',async()=>{
+  const {pc,phone,server}=sharedClients();pc.writeLocal(K,'PC_OFFLINE');phone.writeLocal(K,'PHONE_OFFLINE');
+  pc.addPending(K,'PC_OFFLINE');phone.addPending(K,'PHONE_OFFLINE');await pc.run();await phone.run();
+  assert.equal(server.get(K).v,'PC_OFFLINE');assert.equal(phone.idb.get(K),'PHONE_OFFLINE');assert.equal(phone.reviews().length,1);
+  assert.equal(phone.requests.filter(r=>r.method!=='GET').length,0);assert.equal(phone.queue.length,1);
+  const pair=phone.reviews()[0];await phone.c.dataReviewApply('personal',K,false,pair);await phone.run();
+  assert.equal(phone.idb.get(K),'PC_OFFLINE');assert.equal(phone.queue.length,0);assert.equal(server.get(K).v,'PC_OFFLINE');
+});
+test('two isolated clients: lost response after accepted upload retries without replacing a newer edit',async()=>{
+  const {pc,phone,server}=sharedClients();phone.writeLocal(K,'PHONE_SENT');phone.addPending(K,'PHONE_SENT');
+  phone.hooks.afterServerWrite=()=>{throw Error('simulated connection lost after server committed');};
+  await assert.rejects(phone.run());assert.equal(server.get(K).v,'PHONE_SENT');assert.equal(phone.queue.length,1);
+  await pc.run();pc.writeLocal(K,'PC_AFTER_PHONE');pc.addPending(K,'PC_AFTER_PHONE');await pc.run();
+  delete phone.hooks.afterServerWrite;await phone.run();
+  assert.equal(server.get(K).v,'PC_AFTER_PHONE');assert.equal(phone.idb.get(K),'PHONE_SENT');assert.equal(phone.reviews().length,1);
+});
+test('two isolated clients: stale recovery selection is rejected after a later PC revision',async()=>{
+  const {pc,phone,server}=sharedClients();pc.writeLocal(K,'PC_ONE');await pc.run();phone.writeLocal(K,'PHONE_MINE');await phone.run();const shown=phone.reviews()[0];
+  pc.writeLocal(K,'PC_TWO');await pc.run();await phone.c.dataReviewApply('personal',K,true,shown);await phone.run();
+  assert.equal(server.get(K).v,'PC_TWO');assert.equal(phone.idb.get(K),'PHONE_MINE');assert.equal(phone.reviews().length,1);
+  assert.equal(phone.requests.filter(r=>r.method!=='GET').length,0);
 });

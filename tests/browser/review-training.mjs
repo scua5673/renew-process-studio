@@ -6,7 +6,10 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const { chromium } = require(process.env.PS_PLAYWRIGHT_MODULE || 'playwright');
+const playwright = require(process.env.PS_PLAYWRIGHT_MODULE || 'playwright');
+const engine = process.env.PS_BROWSER_ENGINE || 'chromium';
+assert.ok(['chromium','webkit'].includes(engine), 'supported test engine');
+const browserType = playwright[engine];
 const root = process.env.PS_TEST_REPO || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const out = process.env.PS_TEST_OUTPUT || path.join(root, 'test-results/review-training');
 const build = fs.readFileSync(path.join(root, 'studio/app.html'), 'utf8').match(/window\.PS_BUILD='([^']+)'/)[1];
@@ -35,6 +38,22 @@ await new Promise((resolve, reject) => { server.once('error', reject); server.li
 const base = `http://127.0.0.1:${server.address().port}`;
 const KEY = 'process_coach_v1', MATCH_KEY = 'cs_team_matches_v1';
 const MID = 'fixture-review-match', WID = 'fixture-review-team', UID = 'fixture-review-account';
+const syncSource = fs.readFileSync(path.join(root, 'studio/sync.js'), 'utf8');
+const syncFunction = name => {
+  const start = syncSource.indexOf('function ' + name + '(');
+  const end = syncSource.indexOf('\nfunction ', start + 1);
+  assert.ok(start >= 0 && end > start, 'actual readiness function ' + name);
+  return syncSource.slice(start, end);
+};
+// Real readiness reader, synthetic authentication and confirmed-store marker.
+// schedule-readiness.test.cjs separately exercises actual sync generation of it.
+const readinessSource = `var MATCH_KEY='cs_team_matches_v1',SCHEDULE_KEY='process_coach_v1',MKEY='ps_sync_meta',OWNERKEY='ps_cache_owner_v1';
+var matchReadyPending=false,scheduleReadyPending=false;
+function getSess(){return JSON.parse(localStorage.getItem('ps_sync_session')||'null');}
+function activeWs(){return localStorage.getItem('ps_active_ws');}
+function dataUnlocked(){return true;}
+${['meta','keyReady','scheduleReadyRaw'].map(syncFunction).join('\n')}
+return keyReady;`;
 const PRIVATE = '가상 비공개 개선점 · 개인 이름과 내부 판단은 일정에 남기지 않음';
 const LEGACY_PRIVATE = 'AUDIT_PRIVATE_LEGACY_TRAINING_ACTION';
 const ACTION = '측면으로 공이 이동하면 가까운 수비수가 커버 위치를 먼저 잡는다.';
@@ -63,19 +82,20 @@ async function contextFor(browser, spec, role = 'admin') {
     isMobile: !!spec.mobile, serviceWorkers: 'block', timezoneId: 'Asia/Seoul' });
   // Every scenario gets a new temporary profile. No production host, account, or browser storage is accessed.
   await context.route('**/*', route => new URL(route.request().url()).origin === base ? route.continue() : route.abort('blockedbyclient'));
-  await context.addInitScript(({ uid, wid, role }) => {
+  await context.addInitScript(({ uid, wid, role, readinessSource }) => {
     if (!localStorage.getItem('fixture-review-seeded')) {
       localStorage.setItem('fixture-review-seeded', '1');
       localStorage.setItem('ps_sync_session', JSON.stringify({ uid, at: 'fixture-not-a-real-token' }));
       localStorage.setItem('ps_active_ws', wid);
+      localStorage.setItem('ps_cache_owner_v1', JSON.stringify({v:1,uid,wid,nonce:'fixture'}));
       localStorage.setItem('ps_ws_list', JSON.stringify([{ id: wid, kind: 'team', name: '가상 QA 팀', role: role === 'admin' ? 'owner' : 'member' }]));
       localStorage.setItem('cs_perms_v1', JSON.stringify({ v: 1, defaultRole: 'player', members: { [uid]: { role: role === 'admin' ? 'executive' : 'player' } } }));
       localStorage.setItem('cs_lang', 'ko');
       localStorage.setItem('cs_wkmode', 'ses');
     }
     window.PSSync = { session: () => JSON.parse(localStorage.getItem('ps_sync_session') || 'null'), dataUnlocked: () => true,
-      keyReady: (key, wid) => wid === localStorage.getItem('ps_active_ws') };
-  }, { uid: UID, wid: WID, role });
+      keyReady: new Function(readinessSource)() };
+  }, { uid: UID, wid: WID, role, readinessSource });
   return context;
 }
 
@@ -92,6 +112,12 @@ async function prepare(page, doc = scheduleFixture()) {
     await psSaveSharedAsync('cs_team_matches_v1', JSON.stringify(matches));
     const raw = JSON.stringify(schedule);
     await psSaveSharedAsync('process_coach_v1', raw);
+    await PSStorage.sharedVerified('process_coach_v1', raw);
+    const session = JSON.parse(localStorage.getItem('ps_sync_session'));
+    const wid = localStorage.getItem('ps_active_ws');
+    const marker = {w:wid,u:session.uid,o:localStorage.getItem('ps_cache_owner_v1'),present:true};
+    localStorage.setItem('ps_sync_meta',JSON.stringify({h:{},c:{},r:{process_coach_v1:marker,cs_team_matches_v1:marker}}));
+    if(!PSSync.keyReady('process_coach_v1',wid))throw new Error('actual schedule readiness reader rejected fixture');
     loadState({ raw }); schedGrpAfterLoad(schedule);
     wk = w; dayIdx = di; week = weeksMap[w];
     go('schedule'); setWkMode('ses'); focusScheduleDate(w, di); syncViews(false);
@@ -162,6 +188,13 @@ async function adminScenario(page, spec, result) {
 
   await openCreate(page); await fillCreate(page);
   result.createLayout = await sheetLayout(page, spec, 'create');
+  if(spec.mobile){
+    const shifted=await page.evaluate(()=>{const app=document.getElementById('scrim').parentElement;const before={x:scrollX,y:scrollY,left:app.scrollLeft};app.scrollLeft=34;window.scrollTo(0,78);return {before,left:app.scrollLeft,y:scrollY};});
+    assert.ok(shifted.left>0&&shifted.y>0,'fixture reproduces focus-driven ancestor scrolling');
+    result.scrolledLayout=await sheetLayout(page,spec,'scrolled-ancestors');
+    await page.evaluate(before=>{document.getElementById('scrim').parentElement.scrollLeft=before.left;window.scrollTo(before.x,before.y);},shifted.before);
+    result.cases.push('sheet-stays-visible-with-scrolled-ancestors');
+  }
   await page.locator('[data-rt-close]').click();
   await page.locator('#scrim.show').waitFor({ state: 'hidden' });
   assert.equal((await stored(page)).rows.length, 0, 'cancelled draft creates no task');
@@ -281,6 +314,11 @@ async function scoutScenario(page, spec, schedule, result) {
     await PSStorage.sharedReady();
     if (!store.set('cs_team_matches_v1', matches) || !store.set('process_coach_v1', schedule)) throw new Error('fixture admission failed');
     await store.ready();
+    await PSStorage.sharedVerified('process_coach_v1',JSON.stringify(schedule));
+    const session=JSON.parse(localStorage.getItem('ps_sync_session')),wid=localStorage.getItem('ps_active_ws');
+    const marker={w:wid,u:session.uid,o:localStorage.getItem('ps_cache_owner_v1'),present:true};
+    localStorage.setItem('ps_sync_meta',JSON.stringify({h:{},c:{},r:{process_coach_v1:marker,cs_team_matches_v1:marker}}));
+    if(!parent.PSSync.keyReady('process_coach_v1',wid))throw new Error('actual scout readiness reader rejected fixture');
     matchState = null; matchLoad(); setView('match'); matchOpen(mid);
   }, { matches: { ...matchFixture, matches: [...matchFixture.matches, { ...matchFixture.matches[0], id: 'fixture-other-match', opponent: '다른 가상 상대' }] }, schedule, mid: MID });
   await frame.locator('[data-match-step="review"]').click();
@@ -335,7 +373,7 @@ async function scoutScenario(page, spec, schedule, result) {
 let browser;
 const results = [], failures = [];
 try {
-  browser = await chromium.launch({ headless: true, ...(process.env.PS_CHROME_PATH ? { executablePath: process.env.PS_CHROME_PATH } : {}) });
+  browser = await browserType.launch({ headless: true, ...(engine === 'chromium' && process.env.PS_CHROME_PATH ? { executablePath: process.env.PS_CHROME_PATH } : {}) });
   for (const spec of [
     { name: '375-phone', width: 375, height: 812, touch: true, mobile: true },
     { name: '768-tablet', width: 768, height: 820, touch: true },
@@ -369,7 +407,7 @@ try {
       }
     } finally { if (context) await context.close(); }
   }
-  const report = { ok: failures.length === 0, build, method: 'Isolated local Chrome; synthetic admin/player accounts; every non-local request blocked; actual UI and IndexedDB', targetDate, matchDate, results };
+  const report = { ok: failures.length === 0, build, engine, method: 'Isolated local browser; synthetic admin/player accounts; every non-local request blocked; actual UI and IndexedDB', targetDate, matchDate, results };
   fs.writeFileSync(path.join(out, 'review-training-results.json'), JSON.stringify(report, null, 2));
   console.log(JSON.stringify({ ok: report.ok, output: out, results: results.map(({ viewport, ok, cases, error }) => ({ viewport, ok, cases, error })) }, null, 2));
   if (failures.length) process.exitCode = 1;

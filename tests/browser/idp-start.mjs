@@ -6,7 +6,10 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const require=createRequire(import.meta.url);
-const {chromium}=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
+const playwright = require(process.env.PS_PLAYWRIGHT_MODULE || 'playwright');
+const engine = process.env.PS_BROWSER_ENGINE || 'chromium';
+assert.ok(['chromium','webkit'].includes(engine), 'supported test engine');
+const browserType = playwright[engine];
 const root=process.env.PS_TEST_REPO||path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/idp-start');
 const build=fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_BUILD='([^']+)'/)[1];
@@ -95,6 +98,7 @@ async function startAndWrite(page,spec,result){
   result.emptyLayout=await capture(page,spec,'empty-goal','.vs-card');
   const initial=await read(page);
   await page.locator('[data-vs-edit]').click();
+  await page.waitForFunction(()=>document.activeElement?.id==='vsStatement');
   await page.locator('#vsStatement').fill(STATEMENT);
   await page.locator('[data-vs-beh="0"]').fill(ACTION);
   assert.equal(await page.locator('[data-vs-beh="1"]').isVisible(),false);
@@ -106,6 +110,7 @@ async function startAndWrite(page,spec,result){
   result.cases.push('single-action-start-and-cancel');
 
   await page.locator('[data-vs-edit]').click();
+  await page.waitForFunction(()=>document.activeElement?.id==='vsStatement');
   await page.locator('#vsStatement').fill(STATEMENT);
   await page.locator('[data-vs-beh="0"]').fill(ACTION);
   await page.evaluate(key=>{
@@ -150,6 +155,7 @@ async function startAndWrite(page,spec,result){
 }
 async function historyAndWeek(page,spec,result,first){
   await tab(page,'goal');await page.locator('[data-vs-edit]').click();
+  await page.waitForFunction(()=>document.activeElement?.id==='vsStatement');
   await page.locator('[data-vs-beh="0"]').fill(NEXT_ACTION);
   await page.locator('[data-vs-save]').click();
   await page.locator('#dayMemo').waitFor({state:'visible'});
@@ -194,7 +200,7 @@ async function historyAndWeek(page,spec,result,first){
 
 const results=[];let browser;
 try{
-  browser=await chromium.launch({headless:true,...(process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
+  browser=await browserType.launch({headless:true,...(engine==='chromium'&&process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
   for(const spec of [
     {name:'375-phone',width:375,height:812,touch:true,mobile:true},
     {name:'393-phone',width:393,height:852,touch:true,mobile:true},
@@ -214,7 +220,7 @@ try{
       await page.screenshot({path:path.join(out,`${spec.name}-failure.png`),animations:'disabled'}).catch(()=>{});
     }finally{await context.close();}
   }
-  const report={ok:results.every(result=>result.ok),build,method:'Fresh local Chrome contexts; synthetic player; all remote requests blocked; real IDP DOM and local persistence',results};
+  const report={ok:results.every(result=>result.ok),build,engine,method:'Fresh local browser contexts; synthetic player; all remote requests blocked; real IDP DOM and local persistence',results};
   fs.writeFileSync(path.join(out,'idp-start-results.json'),JSON.stringify(report,null,2));
   console.log(JSON.stringify({ok:report.ok,output:out,results:results.map(({viewport,ok,cases,error})=>({viewport,ok,cases,error}))},null,2));
   if(!report.ok)process.exitCode=1;

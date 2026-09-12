@@ -41,7 +41,7 @@ function cardFrom(html){
     const m=/^\[([^=\]]+)(?:="([^"]*)")?\](\.on)?$/.exec(selector);
     return !!(m&&Object.hasOwn(node.attrs,m[1])&&(m[2]===undefined||node.attrs[m[1]]===m[2])&&(!m[3]||node.classList.contains('on')));
   }
-  return {html,querySelector:selector=>nodes.find(node=>matches(node,selector))||null,
+  return {html,addEventListener(){},querySelector:selector=>nodes.find(node=>matches(node,selector))||null,
     querySelectorAll:selector=>nodes.filter(node=>matches(node,selector))};
 }
 function harness(initial=blank()){
@@ -50,9 +50,10 @@ function harness(initial=blank()){
   const fixedNow=new Date(2026,8,12,15,45).getTime();
   class FixedDate extends Date{constructor(...args){super(...(args.length?args:[fixedNow]));}static now(){return fixedNow;}}
   const c=vm.createContext({Date:FixedDate,console,doc:clone(initial),viewing:KEY,visionEdit:false,visionEditBase:null,visionEditHadKey:false,
-    _saveT:null,_docSeenRaw:local.get(KEY),_docSourceValid:true,_privateWriteConflict:false,
+    PREFIX:'cs_idp_v1_',_saveT:null,_docSeenRaw:local.get(KEY),_docSourceValid:true,_privateWriteConflict:false,
+    _idpEditBase:clone(initial),_idpDocumentOwner:null,_idpRecovery:null,_idpRecoveryAuthLocked:false,_idpVisionBaseDoc:null,
     curL:'goal',calView:'month',calAnchor:new FixedDate(2020,0,1),
-    myKey:()=>KEY,ro:()=>c.viewing!==KEY,load:key=>JSON.parse(local.get(key)),uid:()=>`tfixture${++nextId}`,
+    blank,sess:()=>({uid:'fixture-player'}),myKey:()=>KEY,ro:()=>c.viewing!==KEY,load:key=>JSON.parse(local.get(key)),uid:()=>`tfixture${++nextId}`,
     esc:value=>String(value??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x])),
     localStorage:{getItem:key=>local.has(key)?local.get(key):null,setItem(key,raw){if(state.throwWrite)throw new Error('quota');state.writes++;local.set(key,String(raw));}},
     clearTimeout(){},setTimeout:fn=>fn(),syncMyIdpSoon:delay=>state.syncs.push(delay),
@@ -63,11 +64,11 @@ function harness(initial=blank()){
     qgLadder:()=>'',rSwFree:()=>'<section class="card">strengths input</section>',
     wpPicks:()=>c.doc.weapon?.picks||[],myThread:()=>c.doc.qgoal?.goals?.[0]||null,WP_SRC:{me:'내가 적음'},
     openLadderSheet(){throw new Error('first setup must not open the ladder');}
-  });c.window=c;
+  });c.window=c;c.parent=c;
   const helperStart=source.indexOf('  function visionCore('),helperEnd=source.indexOf('  /* 시간은 자유 입력',helperStart);
   assert.ok(helperStart>=0&&helperEnd>helperStart);
   vm.runInContext(source.slice(helperStart,helperEnd),c);
-  for(const name of ['persistMyIdpNow','visionBeginEdit','visionEndEdit','visionLatestRoot','visionWriteRoot','rVisionCard','bindVisionCard','rGoal'])vm.runInContext(actual(name),c,{filename:'idp.html '+name});
+  for(const name of ['idpSaveApi','idpSaveOwner','idpSaveOwnerCurrent','idpRecoveryOwner','idpRecoveryController','idpRecoveryCapture','idpRecoveryBlocked','idpRecoverySaved','idpRecoveryConflict','idpVisionCapture','persistMyIdpNow','visionBeginEdit','visionEndEdit','visionLatestRoot','visionWriteRoot','rVisionCard','bindVisionCard','rGoal'])vm.runInContext(actual(name),c,{filename:'idp.html '+name});
   return {c,state,local,read:()=>JSON.parse(local.get(KEY)),
     begin(){assert.equal(c.visionBeginEdit(),true);card=cardFrom(c.rVisionCard());c.bindVisionCard();return card;},
     form(statement='공을 받기 전에 생각하는 선수',action='공이 오기 전에 주변을 확인한다'){
@@ -127,6 +128,15 @@ test('an unchanged direction opens today without adding a revision or history',(
 test('cancel keeps storage unchanged and stays on the goal screen',()=>{
   const h=harness(),card=h.begin(),before=h.local.get(KEY);h.form();card.querySelector('[data-vs-cancel]').click();
   assert.equal(h.local.get(KEY),before);assert.equal(h.state.writes,0);assert.equal(h.c.curL,'goal');assert.equal(h.c.visionEdit,false);
+});
+test('cancel adopts the latest root as the edit base rather than recapturing remote fields as mine',()=>{
+  const h=harness({...blank(),vision:vision()});h.begin();const latest=h.read();latest.profile.name='remote profile';h.local.set(KEY,JSON.stringify(latest));h.card().querySelector('[data-vs-cancel]').click();
+  assert.equal(h.c.doc.profile.name,'remote profile');assert.equal(h.c._idpEditBase.profile.name,'remote profile');assert.equal(h.state.writes,0);
+});
+test('a root deleted during direction editing is not restored by cancel or a later ordinary save',()=>{
+  const h=harness({...blank(),profile:{name:'old private name'},vision:vision()});h.begin();h.local.delete(KEY);h.card().querySelector('[data-vs-cancel]').click();
+  assert.equal(h.c.doc.profile.name,undefined);assert.equal(h.c.doc.vision,undefined);assert.equal(h.c._idpEditBase.vision,undefined);assert.equal(h.c._docSeenRaw,null);assert.equal(h.state.writes,0);
+  assert.equal(h.c.persistMyIdpNow(),true);assert.equal(h.read().vision,undefined);assert.equal(h.read().profile.name,undefined);
 });
 
 test('local storage failure keeps the draft and does not navigate',()=>{

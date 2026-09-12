@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="storage.js"></script>
 <script src="idp-evidence.js"></script>
+<script src="idp-recovery.js"></script>
+<link rel="stylesheet" href="idp-recovery.css">
 <link rel="stylesheet" href="idp-start.css">
 <link rel="stylesheet" href="idp-evidence.css">
 <link rel="stylesheet" href="idp-daily.css">
@@ -4745,6 +4747,7 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
       <button class="btn" id="repBtn" title="리포트·이력서·평가지·목표를 PDF로 저장합니다" style="padding:7px 12px;font-size:12px;flex:0 0 auto">PDF 내보내기</button>
     </div>
   </div>
+  <div id="idpRecovery" hidden></div>
   <div class="stage"><div class="wrap" id="wrap"></div></div>
 
   <!-- 목표 걸기 / 리뷰 시트 -->
@@ -5103,6 +5106,7 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
             if(key===viewing){
               _docSeenRaw=photoRaw;
               if(doc&&doc.profile&&doc.profile.photo===photoRef)doc.profile.photo=s2;
+              if(_idpEditBase&&_idpEditBase.profile&&_idpEditBase.profile.photo===photoRef)_idpEditBase.profile.photo=s2;
             }
             syncMyIdpSoon();
           }catch(_){}
@@ -5114,14 +5118,16 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
   var doc=load(viewing);
   var _saveT=null,_cloudSaveT=null,_docSeenRaw=null,_docSourceValid=false,_privateWriteConflict=false;
   try{ _docSeenRaw=localStorage.getItem(viewing); _docSourceValid=validPrivateRaw(_docSeenRaw); }catch(_){}
+  var _idpEditBase=JSON.parse(JSON.stringify(doc)),_idpDocumentOwner=idpEditingIdentity(),_idpRecovery=null,_idpRecoveryAuthLocked=false;
   function adoptViewing(key){
     /* 선수/화면 전환 직전에는 현재 내 문서의 250ms pending 입력부터 exact-write한다.
        최신 raw가 달라졌다면 전환을 중단해 메모리의 마지막 입력을 버리지 않는다. */
     if(visionEdit){
       try{gToast('내 방향을 저장하거나 취소한 뒤 다른 화면으로 이동해 주세요.');}catch(_){} return false;
     }
+    if(idpRecoveryBlocked()){var recovery=idpRecoveryController();if(recovery)recovery.show();return false;}
     if(_privateWriteConflict&&viewing===myKey()){
-      try{gToast('다른 곳에서 IDP가 바뀌어 화면을 옮기지 않았어요. 방금 입력을 복사한 뒤 새로고침해 최신 내용을 확인해 주세요.');}catch(_){} return false;
+      idpRecoveryConflict(); return false;
     }
     if(_saveT&&viewing===myKey()&&!persistMyIdpNow()){
       try{gToast('방금 입력을 먼저 안전하게 저장해야 해요. 최신 IDP를 확인해 주세요.');}catch(_){} return false;
@@ -5130,7 +5136,9 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
     if(viewing===myKey()){
       try{ _docSeenRaw=localStorage.getItem(viewing); _docSourceValid=validPrivateRaw(_docSeenRaw); }catch(_){ _docSeenRaw=null; _docSourceValid=false; }
       _privateWriteConflict=false;
+      _idpEditBase=JSON.parse(JSON.stringify(doc));_idpDocumentOwner=idpSaveOwner();
     }
+    try{if(_idpRecovery)_idpRecovery.refresh();}catch(_){}
     return true;
   }
   /* 2.747 — 예약된 입력은 같은 계정·공간·화면 문서일 때만 쓴다.
@@ -5152,7 +5160,58 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
   function idpSaveOwnerCurrent(owner,documentRef){
     var now=idpSaveOwner();
     return !!(owner&&now&&owner.uid===now.uid&&owner.wid===now.wid&&owner.key===now.key&&
+      (typeof _idpDocumentOwner==='undefined'||!_idpDocumentOwner||(owner.uid===_idpDocumentOwner.uid&&owner.wid===_idpDocumentOwner.wid))&&
       (arguments.length<2||(viewing===owner.key&&doc===documentRef)));
+  }
+  function idpEditingIdentity(){
+    try{return {uid:String((sess()||{}).uid||''),wid:String(localStorage.getItem('ps_active_ws')||''),key:myKey()};}catch(_){return null;}
+  }
+  function idpRecoveryOwner(){
+    var owner=idpSaveOwner();if(!owner||_idpRecoveryAuthLocked||!idpSaveOwnerCurrent(owner,doc))return null;
+    if(!owner.uid&&owner.wid)return null;
+    return owner;
+  }
+  function idpRecoveryController(){
+    if(!window.PSIDPRecovery)return null;
+    if(!_idpRecovery)_idpRecovery=PSIDPRecovery.create({window:window,owner:idpRecoveryOwner,blank:blank,
+      lock:function(on){var el=document.getElementById('wrap');if(el)el.inert=on;},
+      transform:function(path,next,current){
+        if(path[0]!=='vision'||!next.has)return next;
+        var v=visionCore(next.value),old=visionOf({vision:current.has?current.value:null});
+        if(!visionHas(v))throw new Error('vision-incomplete');
+        if(visionSame(old,v))return current;
+        v.updatedAt=Date.now();v.revision='v'+uid().slice(1);
+        var hist=(old.history||[]).map(visionSnap);if(visionHas(old))hist.push(visionSnap(old));v.history=hist.slice(-8);
+        return {has:true,value:v};
+      },
+      applied:function(root,raw){
+        clearTimeout(_saveT);_saveT=null;doc=root;_docSeenRaw=raw;_docSourceValid=true;_privateWriteConflict=false;
+        visionEdit=false;visionEditBase=null;visionEditHadKey=false;_idpVisionBaseDoc=null;
+        _idpEditBase=JSON.parse(JSON.stringify(doc));syncMyIdpSoon(80);render();gToast('선택한 입력을 최신 IDP에 적용했어요');
+      },
+      resume:function(pending){
+        if(pending.mode!=='vision')return;var op=pending.ops.filter(function(o){return o.path.length===1&&o.path[0]==='vision';})[0];if(!op)return;
+        var raw=localStorage.getItem(viewing);if(!validPrivateRaw(raw)){gToast('최신 IDP를 확인한 뒤 이어서 작성할 수 있어요.');return;}
+        doc=load(viewing);_docSeenRaw=raw;_docSourceValid=true;_idpEditBase=JSON.parse(JSON.stringify(doc));
+        _idpVisionBaseDoc=JSON.parse(JSON.stringify(doc));if(op.before.has)_idpVisionBaseDoc.vision=op.before.value;else delete _idpVisionBaseDoc.vision;
+        doc.vision=op.after.has?op.after.value:{};visionEditBase=JSON.stringify(visionSnap(visionOf(_idpVisionBaseDoc)));visionEditHadKey=raw!==null;visionEdit=true;
+        curL='goal';squadView=false;render();
+      }});
+    return _idpRecovery;
+  }
+  function idpRecoveryCapture(){
+    var api=idpRecoveryController();if(!api)return true;
+    return api.capture(_idpEditBase,doc,'normal');
+  }
+  function idpRecoveryBlocked(){var api=idpRecoveryController();return !!(api&&api.blocked());}
+  function idpRecoverySaved(){
+    if(typeof _idpEditBase!=='undefined')_idpEditBase=JSON.parse(JSON.stringify(doc));
+    var api=idpRecoveryController();if(api)api.confirmed(_docSeenRaw);
+  }
+  function idpRecoveryConflict(){
+    _privateWriteConflict=true;
+    try{if(visionEdit)idpVisionCapture();else idpRecoveryCapture();var api=idpRecoveryController();if(api)api.show();}catch(_){}
+    gToast('다른 곳에서 IDP가 바뀌었어요. 최신 내용과 내 입력을 비교하고 복구해 주세요.');
   }
   var _idpCloudSaveSeq=0;
   function syncMyIdpSoon(delay){
@@ -5172,16 +5231,17 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
   }
   function persistMyIdpNow(){
     var owner=idpSaveOwner(),savingDoc=doc;
+    if(idpRecoveryBlocked())return false;
     if(!idpSaveOwnerCurrent(owner,savingDoc)||visionEdit||_privateWriteConflict||!_docSourceValid||!savingDoc||savingDoc.v!==1||Array.isArray(savingDoc)||typeof savingDoc!=='object')return false;
     clearTimeout(_saveT); _saveT=null;
     try{
       var current=localStorage.getItem(owner.key);
-      if(current!==_docSeenRaw){ _privateWriteConflict=true; return false; }
+      if(current!==_docSeenRaw){ idpRecoveryConflict(); return false; }
       var raw=JSON.stringify(savingDoc);if(!idpSaveOwnerCurrent(owner,savingDoc))return false;
       localStorage.setItem(owner.key,raw);
       if(!idpSaveOwnerCurrent(owner,savingDoc)||localStorage.getItem(owner.key)!==raw)return false;
-      _docSeenRaw=raw; syncMyIdpSoon(80); return true;
-    }catch(_){ return false; }
+      _docSeenRaw=raw; idpRecoverySaved();syncMyIdpSoon(80); return true;
+    }catch(_){ try{idpRecoveryCapture();var recovery=idpRecoveryController();if(recovery)recovery.show();}catch(__){}return false; }
   }
 /* 2.022 — 핵심 행동 핑(관리자 통계): 하루 1회·유저·행동 이름만, 내용 없음. 부모 sync.js 의 usagePing 재사용 */
 function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.PSSync;
@@ -5189,22 +5249,24 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   if(api&&api.act)api.act(n,'idp'); else if(api&&api.ping)api.ping(n); }catch(_){} }
   function save(){
     var owner=idpSaveOwner(),savingDoc=doc;
+    if(idpRecoveryBlocked())return;
     if(!idpSaveOwnerCurrent(owner,savingDoc))return;   /* 남의 IDP엔 절대 쓰지 않는다 */
     if(!_docSourceValid||!savingDoc||savingDoc.v!==1||Array.isArray(savingDoc)||typeof savingDoc!=='object')return;
+    idpRecoveryCapture();
     /* malformed/v2 fallback 화면은 원문을 절대 blank v1로 바꾸지 않는다. */
     clearTimeout(_saveT); _saveT=setTimeout(function(){
       _saveT=null; if(!idpSaveOwnerCurrent(owner,savingDoc)||visionEdit||_privateWriteConflict||!_docSourceValid)return;
       try{ var current=localStorage.getItem(owner.key);
-        if(current!==_docSeenRaw){ _privateWriteConflict=true; gToast('다른 곳에서 IDP가 바뀌어 방금 입력은 덮어쓰지 않았어요. 최신 내용을 다시 확인해 주세요.'); return; }
+        if(current!==_docSeenRaw){ idpRecoveryConflict(); return; }
         var raw=JSON.stringify(savingDoc);if(!idpSaveOwnerCurrent(owner,savingDoc))return;
         localStorage.setItem(owner.key,raw);
         if(!idpSaveOwnerCurrent(owner,savingDoc)||localStorage.getItem(owner.key)!==raw)return;
-        _docSeenRaw=raw; syncMyIdpSoon();
-      }catch(e){}
+        _docSeenRaw=raw;idpRecoverySaved();syncMyIdpSoon();
+      }catch(e){try{idpRecoveryCapture();var recovery=idpRecoveryController();if(recovery)recovery.show();}catch(_){} }
     },250);
   }
-  window.addEventListener('pagehide',function(){ if(!visionEdit)persistMyIdpNow(); });
-  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&!visionEdit)persistMyIdpNow();});
+  window.addEventListener('pagehide',function(){ if(visionEdit)idpVisionCapture();else persistMyIdpNow(); });
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'){if(visionEdit)idpVisionCapture();else persistMyIdpNow();}});
   function ro(){ return viewing!==myKey(); }
   /* 2.463 — 사진 필드는 참조(psimg:)일 수 있다(stripIdp — 남의 문서 사진을 큰 저장소로).
      그리기 전에 바이트로 푼다. 모든 <img src> 자리는 이 함수를 거친다. */
@@ -5574,6 +5636,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   var pfOpen=false, evOpen=false;   /* 1.977 — 프로필·평가 카드는 접힌 요약이 기본(사용자), 누르면 세부 입력 */
   var arcOpen=false;   /* 2.408 — 유형 카드도 접힌 요약이 기본(사용자 "유형카드도 접히게") */
   var visionEdit=false, visionEditBase=null, visionEditHadKey=false;   /* 2.741 — 명시 저장 + 편집 시작 판본 */
+  var _idpVisionBaseDoc=null;
   var curL='profile';   /* 2.195 — 첫 화면 = 내 프로필(사용자). 2.510 — 'learn' 은 더 이상 유효한 화면이 아니다 */
   try{ if(!isCoach()&&matchMedia('(max-width:767px)').matches){ curL='cal'; } }catch(_){}   /* 2.260 — 선수 폰은 첫 화면 = 오늘(일정 일간, 오늘 카드) — "들어가자마자 기록"(사용자). 코치·데스크톱은 프로필 유지 */    /* 1.918 — 첫 화면 = 홈 대시보드(사용자). 1.836 — 첫 화면 = 일정(사용자 지시). 홈 탭은 숨김(design-v2). 코치 선수단 목록(idp-squad)은 여전히 'home' 을 쓴다 */
   /* ⚠ 2.408 — 기본을 **전체(-1)** 로 바꿨다(사용자 "전체가 먼저 쫙 열리게 쭉쭉 평가 작성할 수 있게").
@@ -5615,6 +5678,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      재생하지 않는다(피드백: 선수단 한눈에가 주기적으로 깜빡임). 스크롤도 화면 전환에만 올린다. */
   var _lastViewSig='';
   function render(){
+    if(_idpRecoverySuspended){wrap.innerHTML='';return;}
+    try{var recovery=idpRecoveryController();if(recovery)recovery.refresh();}catch(_){}
     /* 2.740 — 선수 상세 안에서 이야기·평가·면담을 오가거나 내용을 다시 그려도 왼쪽 목록의
        독립 스크롤을 유지한다. 검색·오늘·공통질문·기준은 새 목록이므로 위치를 넘기지 않는다. */
     var _sqeListTop=null;
@@ -9688,10 +9753,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   function visionBeginEdit(){
     if(ro())return false;
+    if(idpRecoveryBlocked()){var recovery=idpRecoveryController();if(recovery)recovery.show();return false;}
     /* 자동 저장 충돌 뒤 메모리에는 아직 화면의 마지막 입력이 남아 있다. 여기서 최신 root를
        채택하면 그 입력을 조용히 잃으므로, 사용자가 복사·새로고침으로 명시적으로 해소할 때까지 막는다. */
     if(_privateWriteConflict){
-      gToast('다른 곳에서 IDP가 바뀌어 내 방향 편집을 열지 않았어요. 방금 입력을 복사한 뒤 새로고침해 주세요.'); return false;
+      idpRecoveryConflict();return false;
     }
     var raw=null, fresh=null, hadPending=!!_saveT;
     try{ raw=localStorage.getItem(viewing); }catch(_){ gToast('IDP를 확인하지 못해 편집을 열지 않았어요.'); return false; }
@@ -9709,8 +9775,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(hadPending){
       /* 직전 일지 input의 250ms 저장을 취소해 버리면 마지막 글자가 사라진다. 우리가 읽은 raw가
          마지막으로 본 판본과 같을 때만 현재 doc을 먼저 exact-write하고, 그 뒤 fresh root를 읽는다. */
-      if(raw!==_docSeenRaw){ clearTimeout(_saveT); _saveT=null; _privateWriteConflict=true;
-        gToast('다른 곳에서 IDP가 바뀌어 방금 입력을 덮어쓰지 않았어요. 최신 내용을 먼저 확인해 주세요.'); return false; }
+      if(raw!==_docSeenRaw){ clearTimeout(_saveT); _saveT=null;idpRecoveryConflict();return false; }
       if(!persistMyIdpNow()){ gToast('방금 입력을 저장하지 못해 내 방향 편집을 열지 않았어요.'); return false; }
       try{ raw=localStorage.getItem(viewing); fresh=raw===null?JSON.parse(JSON.stringify(doc)):load(viewing); }catch(_){ return false; }
     }else if(raw!==null){
@@ -9719,6 +9784,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       fresh=load(viewing);
     }
     doc=fresh; _docSeenRaw=raw; _docSourceValid=true; _privateWriteConflict=false; visionEditHadKey=raw!==null;
+    if(typeof _idpEditBase!=='undefined')_idpEditBase=JSON.parse(JSON.stringify(doc));
+    _idpVisionBaseDoc=JSON.parse(JSON.stringify(doc));
     visionEditBase=JSON.stringify(visionSnap(visionOf(doc))); visionEdit=true;
     return true;
   }
@@ -9726,9 +9793,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     visionEdit=false; visionEditBase=null; visionEditHadKey=false;
     /* 편집 중 무시했던 storage 갱신이 있으면 취소·저장 직후 최신 root를 다시 채택한다. */
     if(viewing===myKey())try{ var raw=localStorage.getItem(viewing), latest=raw===null?null:JSON.parse(raw);
-      if(raw===null){ _docSeenRaw=null; _docSourceValid=true; _privateWriteConflict=false; }
+      if(raw===null){doc=blank();_docSeenRaw=null;_docSourceValid=true;_privateWriteConflict=false;if(typeof _idpEditBase!=='undefined')_idpEditBase=JSON.parse(JSON.stringify(doc));}
       else if(latest&&latest.v===1&&typeof latest==='object'&&!Array.isArray(latest)){
         doc=load(viewing); _docSeenRaw=raw; _docSourceValid=true; _privateWriteConflict=false;
+        if(typeof _idpEditBase!=='undefined')_idpEditBase=JSON.parse(JSON.stringify(doc));
       }else{ _docSourceValid=false; _privateWriteConflict=true; }
     }catch(_){}
   }
@@ -9741,31 +9809,45 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     try{ var o=JSON.parse(raw); return o&&o.v===1&&typeof o==='object'&&!Array.isArray(o)?{root:o,raw:raw}:null; }catch(_){ return null; }
   }
   function visionWriteRoot(root,expectedRaw){
-    if(viewing!==myKey()||!root||root.v!==1||Array.isArray(root)||typeof root!=='object')return false;
+    var owner=idpSaveOwner();if(!idpSaveOwnerCurrent(owner,doc)||viewing!==myKey()||!root||root.v!==1||Array.isArray(root)||typeof root!=='object')return false;
     var raw='';
     try{
       raw=JSON.stringify(root);
       if(!raw||raw.length>1500000)return false;   /* sync.js 일반 키와 같은 1.5M 방어선 */
-      if(localStorage.getItem(viewing)!==expectedRaw)return false;   /* 읽은 뒤 다른 창이 바꿨으면 재시도 전까지 쓰지 않는다 */
+      if(!idpSaveOwnerCurrent(owner,doc)||localStorage.getItem(viewing)!==expectedRaw)return false;
       clearTimeout(_saveT); _saveT=null; localStorage.setItem(viewing,raw);
-      if(localStorage.getItem(viewing)!==raw)return false;
+      if(!idpSaveOwnerCurrent(owner)||localStorage.getItem(viewing)!==raw)return false;
     }catch(_){ return false; }
-    doc=root; _docSeenRaw=raw; _docSourceValid=true; _privateWriteConflict=false; syncMyIdpSoon(80); return true;
+    doc=root; _docSeenRaw=raw; _docSourceValid=true; _privateWriteConflict=false;idpRecoverySaved();syncMyIdpSoon(80);return true;
+  }
+  function idpVisionCapture(){
+    if(!visionEdit||!_idpVisionBaseDoc||!idpRecoveryOwner())return false;
+    var card=wrap.querySelector('.vs-card');if(!card)return false;
+    var value=Object.assign({},_idpVisionBaseDoc.vision||{},visionSnap(visionOf(_idpVisionBaseDoc))),bs=[],pick=card.querySelector('[data-vs-focus].on');
+    value.statement=String((card.querySelector('#vsStatement')||{}).value||'').trim().slice(0,80);
+    value.reason=String((card.querySelector('#vsReason')||{}).value||'').trim().slice(0,180);
+    Array.prototype.forEach.call(card.querySelectorAll('[data-vs-beh]'),function(i){var text=String(i.value||'').trim().slice(0,80);if(!text)return;var id=String(i.dataset.vsBid||'');if(!id){id='vb'+uid().slice(1);i.dataset.vsBid=id;}bs.push({id:id,text:text,slot:i.dataset.vsBeh});});
+    var chosen=bs.filter(function(b){return b.slot===String(pick&&pick.dataset.vsFocus||'0');})[0]||bs[0];value.focusId=chosen?chosen.id:'';value.behaviors=bs.map(function(b){return {id:b.id,text:b.text};});
+    var draft=JSON.parse(JSON.stringify(_idpVisionBaseDoc));draft.vision=value;
+    var api=idpRecoveryController();return api?api.capture(_idpVisionBaseDoc,draft,'vision'):false;
   }
   function bindVisionCard(){
     var card=wrap.querySelector('.vs-card'); if(!card)return;
     var start=function(){ if(ro()||!visionBeginEdit())return; render(); setTimeout(function(){ try{ var i=document.getElementById('vsStatement'); if(i)i.focus(); }catch(_){} },30); };
     [].forEach.call(card.querySelectorAll('[data-vs-edit]'),function(b){ b.onclick=start; });
-    var cancel=card.querySelector('[data-vs-cancel]'); if(cancel)cancel.onclick=function(){ visionEndEdit(); render(); };
+    card.addEventListener('input',idpVisionCapture);
+    var cancel=card.querySelector('[data-vs-cancel]'); if(cancel)cancel.onclick=function(){var recovery=idpRecoveryController();if(recovery&&!recovery.discard()&&recovery.record()&&recovery.record().pending){recovery.show();return;}visionEndEdit();render();};
     [].forEach.call(card.querySelectorAll('[data-vs-focus]'),function(b){ b.onclick=function(){
       [].forEach.call(card.querySelectorAll('[data-vs-focus]'),function(x){ var on=x===b; x.classList.toggle('on',on); x.setAttribute('aria-pressed',on?'true':'false'); });
       var inp=card.querySelector('[data-vs-beh="'+b.dataset.vsFocus+'"]'); if(inp&&!inp.value.trim())inp.focus();
+      idpVisionCapture();
     }; });
     var ex=card.querySelector('[data-vs-example]'); if(ex)ex.onclick=function(){
       var s=card.querySelector('#vsStatement'),first=card.querySelector('[data-vs-beh="0"]');
       if(s&&!s.value.trim())s.value='압박 속에서도 동료를 살리는 미드필더';
       if(first&&!first.value.trim())first.value='공을 받기 전에 두 번 확인한다';
       if(s)s.focus();
+      idpVisionCapture();
     };
     function goGoal(v){ var f=visionFocus(v); window.__visionGoalSeed=(f&&f.text)||''; openLadderSheet('week'); }
     function goToday(){
@@ -9774,12 +9856,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     function commit(andToday){
       if(ro())return;
+      idpVisionCapture();
       var st=String((card.querySelector('#vsStatement')||{}).value||'').trim().slice(0,80);
       var rs=String((card.querySelector('#vsReason')||{}).value||'').trim().slice(0,180);
       var picked=card.querySelector('[data-vs-focus].on'), pick=+(picked&&picked.dataset.vsFocus||0), latestState=visionLatestRoot(), latest=latestState&&latestState.root, used={}, bs=[];
       if(!latest){ gToast('최신 IDP를 확인하지 못해 저장하지 않았어요. 잠시 뒤 다시 시도해 주세요.'); return; }
       var old=visionOf(latest), nowBase=JSON.stringify(visionSnap(old));
-      if(visionEditBase!==null&&nowBase!==visionEditBase){ gToast('다른 곳에서 내 방향이 바뀌어 저장하지 않았어요. 작성한 내용은 그대로 두었어요. 취소하면 최신 방향을 확인할 수 있어요.'); return; }
+      if(visionEditBase!==null&&nowBase!==visionEditBase){idpRecoveryConflict();return;}
       [].forEach.call(card.querySelectorAll('[data-vs-beh]'),function(i){ var t=String(i.value||'').trim().slice(0,80); if(!t)return;
         var id=String(i.dataset.vsBid||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48);
         if(!id||used[id])id='vb'+uid().slice(1); used[id]=1; bs.push({id:id,text:t,_slot:+i.dataset.vsBeh}); });
@@ -9788,7 +9871,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var chosen=bs.filter(function(b){return b._slot===pick;})[0]||bs[0]; bs.forEach(function(b){delete b._slot;});
       var next={statement:st,reason:rs,behaviors:bs,focusId:chosen.id,updatedAt:Date.now(),revision:'v'+uid().slice(1)};
       if(visionSame(old,next)){
-        doc=latest; visionEndEdit(); if(andToday)goToday(); else render(); return;
+        doc=latest;_docSeenRaw=latestState.raw;idpRecoverySaved();visionEndEdit();if(andToday)goToday();else render();return;
       }
       var hist=(old.history||[]).map(visionSnap); if(visionHas(old))hist.push(visionSnap(old)); next.history=hist.slice(-8);
       latest.vision=next;
@@ -14349,7 +14432,25 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   window.addEventListener('afterprint',function(){ document.body.classList.remove('rep'); _repTitleRestore(); });
 
   /* 다른 창(셸 동기화)이 IDP 키를 갱신하면 반영 — 입력 중엔 건드리지 않는다 */
+  var _idpRecoverySuspended=false;
+  function idpRecoverySessionChanged(unlocked){
+    if(unlocked===false)_idpRecoveryAuthLocked=true;else if(unlocked===true)_idpRecoveryAuthLocked=false;
+    var owner=idpSaveOwner(),same=owner&&_idpDocumentOwner&&owner.uid===_idpDocumentOwner.uid&&owner.wid===_idpDocumentOwner.wid;
+    if(_idpRecoveryAuthLocked||!same){
+      clearTimeout(_saveT);clearTimeout(_cloudSaveT);_saveT=null;_cloudSaveT=null;_idpCloudSaveSeq++;
+      if(_idpRecovery)_idpRecovery.hide();
+      if(!_idpRecoverySuspended){_idpRecoverySuspended=true;visionEdit=false;_idpVisionBaseDoc=null;doc=blank();_docSourceValid=false;wrap.innerHTML='';gbox.innerHTML='';gmask.classList.remove('on');}
+      return;
+    }
+    if(_idpRecoverySuspended){_idpRecoverySuspended=false;viewing=myKey();doc=load(viewing);_docSeenRaw=localStorage.getItem(viewing);_docSourceValid=validPrivateRaw(_docSeenRaw);_idpEditBase=JSON.parse(JSON.stringify(doc));render();}
+    else if(_idpRecovery)_idpRecovery.refresh();
+  }
+  window.addEventListener('ps-auth-state',function(e){idpRecoverySessionChanged((e.detail||{}).unlocked);});
+  window.addEventListener('message',function(e){if(window.parent===window||e.source!==window.parent||e.origin!==location.origin)return;var data=e.data||{};if(data.source==='process-studio'&&data.type==='ps-auth-state')idpRecoverySessionChanged(data.unlocked);});
+  window.addEventListener('storage',function(e){if(!e||e.key===null||/^(ps_sync_session|ps_active_ws|ps_ws_list|cs_perms_v1|ps_cache_owner_v1)$/.test(e.key||''))idpRecoverySessionChanged();});
+  setInterval(function(){idpRecoverySessionChanged();},800);
   window.addEventListener('storage',function(e){
+    if(_idpRecoverySuspended)return;
     var typing=visionEdit||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
     /* 일정 iframe·다른 기기 동기화가 최신 팀 일정을 넣으면, IDP를 다시 열지 않아도
        읽기 전용 카드와 오늘 루틴 후보를 즉시 다시 계산한다. 입력 중인 개인 기록은 지키기. */
@@ -14363,7 +14464,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     else renderViewer();
   });
 
-  render();
+  idpRecoverySessionChanged();if(!_idpRecoverySuspended)render();
 })();
 </script>
 <style id="ps-2253-propose">/* ══ 2.253 · 선수 제안 + 담당·기한 — 폰 우선(입력 46px·행 44px·타깃 ≥34px) ══ */

@@ -6,7 +6,10 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const { chromium } = require(process.env.PS_PLAYWRIGHT_MODULE || 'playwright');
+const playwright = require(process.env.PS_PLAYWRIGHT_MODULE || 'playwright');
+const engine = process.env.PS_BROWSER_ENGINE || 'chromium';
+assert.ok(['chromium','webkit'].includes(engine), 'supported test engine');
+const browserType = playwright[engine];
 const root = process.env.PS_TEST_REPO || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const build = fs.readFileSync(path.join(root, 'studio/app.html'), 'utf8').match(/window\.PS_BUILD='([^']+)'/)[1];
 const out = process.env.PS_TEST_OUTPUT || path.join(root, 'test-results/storage-safety');
@@ -102,7 +105,7 @@ async function sharedStoreScenario(page, name) {
 }
 
 try {
-  browser = await chromium.launch({ headless: true, ...(process.env.PS_CHROME_PATH ? { executablePath: process.env.PS_CHROME_PATH } : {}) });
+  browser = await browserType.launch({ headless: true, ...(engine === 'chromium' && process.env.PS_CHROME_PATH ? { executablePath: process.env.PS_CHROME_PATH } : {}) });
   for (const spec of [
     { name: '375-mobile', width: 375, height: 812, touch: true, mobile: true },
     { name: '1100-coarse', width: 1100, height: 820, touch: true },
@@ -154,7 +157,7 @@ try {
     results.push({ viewport: spec.name, cases, storageCases, dimensions, pageErrors: errors });
     await context.close();
   }
-  fs.writeFileSync(path.join(out, 'browser-results.json'), JSON.stringify({ ok: true, build, method: 'Isolated local Chrome, synthetic data, all non-local requests blocked', results }, null, 2));
+  fs.writeFileSync(path.join(out, 'browser-results.json'), JSON.stringify({ ok: true, build, engine, method: 'Isolated local browser, synthetic data, all non-local requests blocked', results }, null, 2));
   console.log(JSON.stringify({ ok: true, output: out, results }, null, 2));
 } finally {
   if (browser) await browser.close();
