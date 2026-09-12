@@ -374,37 +374,41 @@ function psBuild(){ try{ return String(window.PS_BUILD||''); }catch(_){ return '
 function prefBuild(base){ var b=psBuild(); return b?(base+',ps-build='+b):base; }
 /* ── 사용 핑: 기능별 하루 1회 (day, uid, feature) — DAU/기능 사용 통계용. 콘텐츠 없음, 실패해도 무해.
    feature = 셸 탭 이름(board/design/process/idp/…) 또는 'app'(로그인 동기화 = 접속).
-   보낸 기록은 ps_usage_pings에 {feature:'YYYY-MM-DD'}로 — 날짜가 바뀌면 자연히 다시 보낸다 ── */
+   보낸 기록은 계정별 ps_usage_pings:<uid>에 {feature:'YYYY-MM-DD'}로 보관한다 ── */
 var PINGKEY='ps_usage_pings';
-function pingMap(){ try{ return JSON.parse(localStorage.getItem(PINGKEY)||'{}')||{}; }catch(_){ return {}; } }
+function pingMap(uid){ try{ return JSON.parse(localStorage.getItem(PINGKEY+':'+String(uid||''))||'{}')||{}; }catch(_){ return {}; } }
 function usagePing(at,feature){
   try{
     var f=String(feature||'app').toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,24); if(!f) return;
     var s=getSess(); if(!s) return;
+    var owner=String(s.uid||''),epoch=signOutEpoch,wid=activeWs()||null;
     var d=new Date();
     var ymd=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    if(pingMap()[f]===ymd) return;
+    if(owner&&pingMap(owner)[f]===ymd) return;
     var send=function(tok){ if(!tok) return;
       var post=function(uid){
-      if(!uid)return;
+      var live=getSess();
+      if(!uid||!live||String(live.uid||'')!==String(uid)||live.at!==tok||signOutEpoch!==epoch||pingMap(uid)[f]===ymd)return;
       var h=hj(tok); h['Prefer']='resolution=ignore-duplicates,return=minimal';
       fetch(BASE+'/rest/v1/ps_usage?on_conflict=day,user_id,feature',{method:'POST',headers:h,
-        body:JSON.stringify([{day:ymd,user_id:uid,feature:f,workspace_id:activeWs()||null}])})
+        body:JSON.stringify([{day:ymd,user_id:uid,feature:f,workspace_id:wid}])})
         .then(function(r){ if(r.ok||r.status===409){ try{
-          var m=pingMap(); m[f]=ymd;
+          var m=pingMap(uid); m[f]=ymd;
           Object.keys(m).forEach(function(k){ if(m[k]!==ymd) delete m[k]; });   /* 지난 날짜 정리 */
-          localStorage.setItem(PINGKEY,JSON.stringify(m));
+          localStorage.setItem(PINGKEY+':'+String(uid),JSON.stringify(m));
         }catch(_){} } })
         .catch(function(e){syncDiagnostic('usage-ping',e);});
       };
       var cur=getSess();
+      if(!cur||cur.at!==tok||signOutEpoch!==epoch||(owner&&String(cur.uid||'')!==owner))return;
       if(cur&&cur.uid){post(cur.uid);return;}
       /* OAuth 직후에는 토큰이 먼저 저장되고 uid가 조금 늦게 채워질 수 있다.
          이때 핑을 버리지 않고 인증 서버에서 본인 uid를 확인한 뒤 한 번만 전송한다. */
       fetch(BASE+'/auth/v1/user',{headers:hj(tok)}).then(function(r){return r.ok?r.json():null;}).then(function(u){
         if(!u||!u.id)return;
         var latest=getSess();
-        if(latest){latest.uid=u.id;latest.email=u.email||latest.email||'';setSess(latest);}
+        if(!latest||latest.at!==tok||signOutEpoch!==epoch||(latest.uid&&String(latest.uid)!==String(u.id)))return;
+        if(!latest.uid){latest.uid=u.id;latest.email=u.email||latest.email||'';setSess(latest);}
         post(u.id);
       }).catch(function(e){syncDiagnostic('usage-user-lookup',e);});
     };
@@ -415,7 +419,10 @@ function usagePing(at,feature){
 /* ── 제품 이벤트·안정성 로그
    텍스트 메모·평가 내용·작전판 데이터는 절대 보내지 않는다.
    이벤트 이름, 성공/실패, 기능, 기기, 오류 코드와 숫자/불리언 메타만 저장한다. */
-var EVENT_QUEUE='ps_event_queue_v1', EVENT_SEEN='ps_event_seen_v1';
+/* 2.748 — 큐의 소유자·확인 ID는 기기에만 보관한다. v1에는 소유자가 없어서
+   새 로그인에 귀속할 수 없으므로 자동 이관하지 않는다(제품 이벤트만, 콘텐츠 아님). */
+var EVENT_QUEUE='ps_event_queue_v2', EVENT_SEEN='ps_event_seen_v1',eventSequence=0;
+function eventUserKey(key){var s=getSess();return key+':'+String(s&&s.uid||'');}
 function eventDevice(){
   try{
     var ua=navigator.userAgent||'';
@@ -429,7 +436,7 @@ function safeEventMeta(meta){
   Object.keys(meta).slice(0,12).forEach(function(k){
     var v=meta[k];
     if(typeof v==='number'||typeof v==='boolean')out[String(k).slice(0,32)]=v;
-    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage|name|msg)$/i.test(k))out[String(k).slice(0,32)]=v.slice(k==='msg'?120:80);   /* 2.727 — 2.631 이 넣은 name·msg 를 여기서 버려 서버에 stage·code 만 남았다(9/9 실측 1,275건). 내용·토큰 없음(4508 에서 지움) */
+    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage|name|msg)$/i.test(k))out[String(k).slice(0,32)]=v.slice(0,k==='msg'?120:80);   /* 짧은 stage/source도 보존. 내용·토큰은 호출부에서 제외한다. */
   });
   return out;
 }
@@ -453,16 +460,18 @@ var ACT_SEEN='ps_act_seen', ACT_CAP='ps_act_cap';
 var ACT_GAP={a_match:300000,a_review:300000};
 function actAllowed(name){
   try{
+    var s=getSess();if(!s||!s.uid)return false;
+    var seenKey=eventUserKey(ACT_SEEN),capKey=eventUserKey(ACT_CAP);
     var now=Date.now(), day=new Date().toISOString().slice(0,10), seen={};
-    try{ seen=JSON.parse(localStorage.getItem(ACT_SEEN)||'{}')||{}; }catch(_){}
+    try{ seen=JSON.parse(localStorage.getItem(seenKey)||'{}')||{}; }catch(_){}
     if(seen[name]&&now-seen[name]<(ACT_GAP[name]||20000)) return false;
     seen[name]=now;
     Object.keys(seen).forEach(function(k){ if(now-seen[k]>86400000) delete seen[k]; });
-    try{ localStorage.setItem(ACT_SEEN,JSON.stringify(seen)); }catch(_){}
-    var cap={}; try{ cap=JSON.parse(localStorage.getItem(ACT_CAP)||'{}')||{}; }catch(_){}
+    try{ localStorage.setItem(seenKey,JSON.stringify(seen)); }catch(_){}
+    var cap={}; try{ cap=JSON.parse(localStorage.getItem(capKey)||'{}')||{}; }catch(_){}
     if(cap.d!==day) cap={d:day,n:0};
     if(cap.n>=300) return false;
-    cap.n++; try{ localStorage.setItem(ACT_CAP,JSON.stringify(cap)); }catch(_){}
+    cap.n++; try{ localStorage.setItem(capKey,JSON.stringify(cap)); }catch(_){}
     return true;
   }catch(_){ return true; }
 }
@@ -474,8 +483,15 @@ function actTrack(name,feature){
     eventTrack(f,{feature:String(feature||'app'),status:'ok'});
   }catch(_){}
 }
-function eventQueue(){try{return JSON.parse(localStorage.getItem(EVENT_QUEUE)||'[]')||[];}catch(_){return [];}}
+function eventQueue(){try{
+  var q=JSON.parse(localStorage.getItem(EVENT_QUEUE)||'[]');
+  return Array.isArray(q)?q.filter(function(x){return x&&typeof x.id==='string'&&typeof x.uid==='string'&&x.uid&&x.row&&typeof x.row.event_name==='string';}):[];
+}catch(_){return [];}}
 function setEventQueue(q){try{localStorage.setItem(EVENT_QUEUE,JSON.stringify((q||[]).slice(-50)));}catch(_){}}
+function eventId(){
+  try{if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();}catch(_){}
+  return Date.now().toString(36)+'-'+(++eventSequence).toString(36)+'-'+Math.random().toString(36).slice(2);
+}
 function eventTrack(name,opts){
   try{
     opts=opts||{};
@@ -485,36 +501,49 @@ function eventTrack(name,opts){
     var code=String(opts.error_code||'').replace(/[^a-zA-Z0-9_.:-]/g,'').slice(0,80);
     /* 같은 오류가 반복 폭주해도 5분에 한 번만 기록 */
     if(status==='error'){
-      var sk=ev+'|'+code, seen={};try{seen=JSON.parse(localStorage.getItem(EVENT_SEEN)||'{}')||{};}catch(_){}
+      var seenKey=eventUserKey(EVENT_SEEN),sk=ev+'|'+code, seen={};try{seen=JSON.parse(localStorage.getItem(seenKey)||'{}')||{};}catch(_){}
       if(seen[sk]&&Date.now()-seen[sk]<300000)return;
       seen[sk]=Date.now();Object.keys(seen).forEach(function(k){if(Date.now()-seen[k]>86400000)delete seen[k];});
-      try{localStorage.setItem(EVENT_SEEN,JSON.stringify(seen));}catch(_){}
+      try{localStorage.setItem(seenKey,JSON.stringify(seen));}catch(_){}
     }
     /* 2.599 — 저장 이벤트(content_saved 등)는 저장마다 한 줄이었다(실측 ps_events 4,195,993행 중 content_saved 4,042,966 = 96%, 1.6GB).
        사용 흔적은 «이름별 10분에 한 번» 이면 충분하다 — 오류 이벤트의 5분 억제와 같은 표. */
     if(status==='ok'&&/_saved$/.test(ev)){
-      var sk2='ok|'+ev, seen2={};try{seen2=JSON.parse(localStorage.getItem(EVENT_SEEN)||'{}')||{};}catch(_){}
+      var seenKey2=eventUserKey(EVENT_SEEN),sk2='ok|'+ev, seen2={};try{seen2=JSON.parse(localStorage.getItem(seenKey2)||'{}')||{};}catch(_){}
       if(seen2[sk2]&&Date.now()-seen2[sk2]<600000)return;
-      seen2[sk2]=Date.now();try{localStorage.setItem(EVENT_SEEN,JSON.stringify(seen2));}catch(_){}
+      seen2[sk2]=Date.now();try{localStorage.setItem(seenKey2,JSON.stringify(seen2));}catch(_){}
     }
     var w=activeWsObj()||{};
     var row={event_name:ev,status:status,feature:String(opts.feature||'app').slice(0,32),
       workspace_id:w.id||null,device:eventDevice(),app_version:appVer(),
       error_code:code||null,meta:safeEventMeta(opts.meta),created_at:new Date().toISOString()};
-    var q=eventQueue();q.push(row);setEventQueue(q);flushEvents();
+    var q=eventQueue();q.push({id:eventId(),uid:String(s.uid),row:row});setEventQueue(q);flushEvents();
   }catch(_){}
 }
 var eventFlushing=false;
 function flushEvents(){
   if(eventFlushing||!navigator.onLine)return;
-  var q=eventQueue();if(!q.length)return;
+  var s=getSess();if(!s||!s.uid)return;
+  var uid=String(s.uid),epoch=signOutEpoch;
+  var batch=eventQueue().filter(function(x){return x.uid===uid;}).slice(0,20);if(!batch.length)return;
   eventFlushing=true;
-  ensureToken().then(function(at){
-    if(!at)throw new Error('no token');
-    return fetch(BASE+'/rest/v1/ps_events',{method:'POST',headers:hj(at),body:JSON.stringify(q.slice(0,20))})
-      .then(function(r){if(!r.ok)throw new Error('event '+r.status);var left=eventQueue();left.splice(0,Math.min(20,left.length));setEventQueue(left);});
-  }).then(function(){eventFlushing=false;if(eventQueue().length)setTimeout(flushEvents,250);})
-    .catch(function(){eventFlushing=false;});
+  return Promise.resolve().then(function(){return ensureToken();}).then(function(at){
+    var cur=getSess();
+    if(!at||!cur||String(cur.uid||'')!==uid||cur.at!==at||signOutEpoch!==epoch)throw new Error('event owner changed');
+    return fetch(BASE+'/rest/v1/ps_events',{method:'POST',headers:hj(at),body:JSON.stringify(batch.map(function(x){return x.row;}))})
+      .then(function(r){
+        if(!r.ok)throw new Error('event '+r.status);
+        /* 요청 중 추가·상한 정리·다른 계정 기록이 있어도 실제 보낸 ID만 확인한다. */
+        var sent=Object.create(null);batch.forEach(function(x){sent[x.id]=true;});
+        setEventQueue(eventQueue().filter(function(x){return x.uid!==uid||!sent[x.id];}));
+      });
+  }).then(function(){eventFlushing=false;var cur=getSess();if(cur&&eventQueue().some(function(x){return x.uid===String(cur.uid||'');}))setTimeout(flushEvents,250);})
+    .catch(function(){
+      eventFlushing=false;
+      /* 이전 로그인 요청을 기다리며 쌓인 새 계정의 첫 이벤트는 따로 재개한다.
+         같은 소유자의 네트워크 실패에는 즉시 반복 재시도를 만들지 않는다. */
+      var cur=getSess();if(cur&&(String(cur.uid||'')!==uid||signOutEpoch!==epoch)&&eventQueue().some(function(x){return x.uid===String(cur.uid||'');}))setTimeout(flushEvents,250);
+    });
 }
 
 /* ── 워크스페이스 상태 ── */

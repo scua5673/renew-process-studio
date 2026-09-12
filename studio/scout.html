@@ -2157,15 +2157,6 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     .match-summary-main{display:grid;grid-template-columns:auto auto;align-items:end;gap:2px 12px}
     .match-summary-main strong{font-size:var(--fs-h1);line-height:1.2;letter-spacing:-.03em}.match-summary-main>span:last-child{grid-column:1/-1;color:rgba(255,255,255,.72);font-size:var(--fs-sub)}
     .match-kicker{font-size:var(--fs-micro);letter-spacing:.08em;color:#92B9FF;font-weight:var(--fw-head)}
-    .match-summary-side{margin-left:auto;text-align:right;display:grid;gap:4px;justify-items:end;font-size:var(--fs-sub);line-height:1.35}
-    .match-summary-side .ms-geo{border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:var(--fs-caption);font-weight:var(--fw-strong);cursor:pointer}
-    .match-summary-side .ms-geo:hover{background:rgba(255,255,255,.16)}
-    .match-summary-side .ms-loc{color:rgba(255,255,255,.78);font-size:var(--fs-caption)}
-    .match-summary-side .ms-wx{font-weight:var(--fw-head);font-size:var(--fs-body);display:flex;align-items:center;gap:8px}
-    .match-summary-side .ms-wx b{font-size:var(--fs-h3);letter-spacing:-.02em}
-    .match-summary-side .ms-wx small{color:rgba(255,255,255,.7);font-weight:var(--fw-body)}
-    .match-summary-side .ms-err{color:rgba(255,255,255,.7);font-size:var(--fs-caption)}
-    .match-summary-side .ms-re{background:none;border:0;color:rgba(255,255,255,.55);font:inherit;font-size:var(--fs-caption);cursor:pointer;padding:0;text-decoration:underline}
     .match-summary-meta{display:none!important}   /* 1.991 — 요약 띠의 장소·구분·담당 칩 제거(사용자 "이건 지워죠"). 값은 '경기 정보 · 선수 상태' 접이에서 계속 편집 */
     .match-summary-meta{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
     /* 1.621 — 경기 담당 칩.
@@ -3579,7 +3570,6 @@ body.ps-viewonly .tge-seg button{pointer-events:none}
       .match-picker{align-items:stretch;flex-direction:column;padding:10px}.match-picker>label{display:grid;grid-template-columns:62px 1fr}.match-picker select{min-width:0;width:100%}
       .match-status{margin:0;justify-content:center}.match-status span{font-size:var(--fs-micro)}.match-status span:not(:last-child):after{width:12px}
       .match-summary{align-items:flex-start;padding:15px;flex-direction:column}.match-summary-main strong{font-size:var(--fs-h2)}.match-summary-meta{justify-content:flex-start}
-      .match-summary-side{margin-left:0;text-align:left;justify-items:start;width:100%;padding-top:10px;border-top:1px solid rgba(255,255,255,.14)}
       .match-workflow{display:flex;overflow:auto;padding-bottom:3px;scrollbar-width:none}.match-workflow button{flex:0 0 172px}
       .match-modebar{align-items:stretch;flex-direction:column}.match-mode-switch{width:100%;box-sizing:border-box}.match-mode-switch button{flex:1}
       .match-grid{grid-template-columns:1fr}.match-card-wide{grid-column:auto}.match-card{border-radius:14px;padding:14px}
@@ -4926,10 +4916,6 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
               <span id="matchHomeAway">구분 미정</span>
               <!-- 1.621 — 이 경기를 누가 맡는지. 운영진이면 눌러서 바꾼다. -->
               <button type="button" id="matchOwnerChip" class="mt-own">담당 없음</button>
-            </div>
-            <!-- 2.007 — 오른쪽 정렬 경기 정보: 현재 위치 + 날씨(경기 날짜가 16일 안이면 그날 예보, 아니면 지금 날씨). 위치 권한은 처음 한 번 버튼으로. -->
-            <div class="match-summary-side" id="matchSide">
-              <button type="button" class="ms-geo" id="matchGeoBtn">📍 현재 위치 · 날씨 보기</button>
             </div>
           </div>
           <nav class="match-workflow" aria-label="경기 분석 순서">
@@ -13508,12 +13494,11 @@ function renderMatch(){
   $("matchCompetition").textContent=m.competition||"경기";
   $("matchTitle").textContent=m.opponent||"상대 미정";
   $("matchWhen").textContent=[m.date||"날짜 미정",m.time||""].filter(Boolean).join(" · ");
-  try{matchSideRender(m);}catch(_){}   /* 2.007 — 위치·날씨 */
   $("matchVenue").textContent=m.venue||"장소 미정";$("matchHomeAway").textContent=m.homeAway||"구분 미정";
   try{$("matchVenue").classList.toggle("empty",!m.venue);$("matchHomeAway").classList.toggle("empty",!m.homeAway);}catch(_){}   /* 1.674 — 미정 칩 강등 */
   $("matchStatus").innerHTML=matchStatusHTML(m);
   /* 2.018 — 상태 세그(준비 중·경기·리뷰 완료)를 숨긴 선택줄에서 꺼내 요약 띠 오른쪽으로(문서 목업 원칙 6) */
-  try{ var _st=$("matchStatus"), _sum=document.querySelector("#matchView .match-summary"); if(_st&&_sum&&_st.parentElement&&_st.parentElement.classList.contains("match-picker")){ var _side=_sum.querySelector(".match-summary-side"); _sum.insertBefore(_st,_side||null); } }catch(_){}
+  try{ var _st=$("matchStatus"), _sum=document.querySelector("#matchView .match-summary"); if(_st&&_sum&&_st.parentElement&&_st.parentElement.classList.contains("match-picker")){ _sum.appendChild(_st); } }catch(_){}
   try{ paintMatchOwner(m.id,readonly); }catch(_){}          /* 1.621 — 담당 칩 */
   matchRenderPlayers(m,readonly);matchSetFields(m,readonly);matchRenderRating(m,readonly);matchRenderFifa(m,readonly);matchRenderBoards(m,"prep",readonly);matchRenderBoards(m,"review",readonly);
   document.querySelectorAll(".match-tabs button").forEach(function(b){b.classList.toggle("on",b.dataset.matchTab===matchTab);});
@@ -14923,13 +14908,6 @@ function mb2Deselect(){
   var pit=$("mb2Pitch"); if(pit)pit.querySelectorAll(".mb2-edit").forEach(function(x){x.remove();});
 }
 function mb2Save(){try{matchQueueSave();}catch(_){} psAct('a_lineup');}
-/* ── 2.007 — 경기 요약 띠 오른쪽: 현재 위치 + 날씨 ───────────────────────────────
-   위치: navigator.geolocation (권한은 버튼으로 한 번; 허락한 뒤엔 자동, ps_geo_auto=1)
-   역지오코딩: bigdatacloud reverse-geocode-client (키 없음) — 실패하면 좌표만
-   날씨: open-meteo (키 없음). 경기 날짜가 오늘~15일 안이면 그날 일별 예보(코드·최저/최고·강수확률), 아니면 지금 날씨.
-   주의: 날씨는 '현재 위치' 기준이다. 경기 장소 좌표는 없으므로 원정이면 다를 수 있다 — 화면에 '(현재 위치)'로 밝힌다. */
-var _msGeo=null,_msLoc="",_msWx={},_msBusy=false;
-var MS_WX={0:["☀️","맑음"],1:["🌤","대체로 맑음"],2:["⛅","구름 조금"],3:["☁️","흐림"],45:["🌫","안개"],48:["🌫","안개"],51:["🌦","이슬비"],53:["🌦","이슬비"],55:["🌧","이슬비"],56:["🌧","언 이슬비"],57:["🌧","언 이슬비"],61:["🌧","비"],63:["🌧","비"],65:["🌧","강한 비"],66:["🌧","언 비"],67:["🌧","언 비"],71:["🌨","눈"],73:["🌨","눈"],75:["❄️","많은 눈"],77:["🌨","싸락눈"],80:["🌦","소나기"],81:["🌧","소나기"],82:["⛈","강한 소나기"],85:["🌨","눈 소나기"],86:["🌨","눈 소나기"],95:["⛈","뇌우"],96:["⛈","뇌우·우박"],99:["⛈","뇌우·우박"]};
 /* ══ 2.399 · 단계 카드에 **얼마나 채웠나**를 적는다 ═════════════════════════════════
    사용자: "상대분석 경기준비 경기 리뷰 카드로 만들어서 잘 선택할 수 있게".
    ⚠ 카드를 크게만 만들면 고르기 쉬워지지 않는다 — **무엇이 비었는지 보여야** 고를 수 있다.
@@ -14971,90 +14949,6 @@ function matchStepMark(m){
     b.classList.toggle("done",f.n>0&&f.n>=f.t);
     b.classList.toggle("empty",!f.n);
   });
-}
-function matchSideRender(m){
-  var box=$("matchSide"); if(!box)return;
-  var auto=false; try{auto=localStorage.getItem("ps_geo_auto")==="1";}catch(_){}
-  if(!_msGeo){
-    if(auto&&!_msBusy){matchSideLocate(m);}
-    if(!_msBusy){ box.innerHTML='<button type="button" class="ms-geo" id="matchGeoBtn">📍 현재 위치 · 날씨 보기</button>'; $("matchGeoBtn").onclick=function(){matchSideLocate(m,true);}; }
-    return;
-  }
-  var key=(m.date||"now"), wx=_msWx[key];
-  var h='<span class="ms-loc">📍 '+esc(_msLoc||(_msGeo.lat.toFixed(3)+", "+_msGeo.lon.toFixed(3)))+' <small>(현재 위치)</small></span>';
-  if(wx===undefined||wx==="pending"){ h+='<span class="ms-err">날씨 불러오는 중…</span>'; if(wx===undefined)matchSideWeather(m); }
-  else if(wx===null){ h+='<span class="ms-err">날씨를 불러오지 못했어요 <button type="button" class="ms-re" id="msRetry">다시</button></span>'; }
-  else{
-    var ic=MS_WX[wx.code]||["🌡","날씨"];
-    /* 2.399 — 앞날은 '강수 확률', 지난 날은 이미 일어난 일이라 **내린 양(mm)** 으로 말한다 */
-    if(wx.kind==="day"||wx.kind==="past"){
-      var wet=(wx.kind==="past")
-        ? ('비 '+(wx.mm==null?"–":(wx.mm>0?(Math.round(wx.mm*10)/10)+"mm":"없음")))
-        : ('강수 '+(wx.pop==null?"–":wx.pop+"%"));
-      h+='<span class="ms-wx'+(wx.kind==="past"?' past':'')+'"><span>'+ic[0]+' '+ic[1]+'</span><b>'
-        +(wx.tmin==null?"–":Math.round(wx.tmin))+'° / '+(wx.tmax==null?"–":Math.round(wx.tmax))+'°</b>'
-        +'<small>'+wet+' · '+esc(wx.label||"")+'</small></span>';
-    }
-    else h+='<span class="ms-wx"><span>'+ic[0]+' '+ic[1]+'</span><b>'+Math.round(wx.temp)+'°</b><small>지금 · 바람 '+Math.round(wx.wind)+'km/h'+(wx.noRec?' · 이 날 기록이 아직 없어요':(m.date?' · 경기일 예보 범위 밖':''))+'</small></span>';
-  }
-  h+='<button type="button" class="ms-re" id="msRelocate">위치 다시 잡기</button>';
-  box.innerHTML=h;
-  if($("msRetry"))$("msRetry").onclick=function(){delete _msWx[key];matchSideRender(m);};
-  if($("msRelocate"))$("msRelocate").onclick=function(){_msGeo=null;_msLoc="";_msWx={};matchSideLocate(m,true);};
-}
-function matchSideLocate(m,byUser){
-  var box=$("matchSide"); if(!navigator.geolocation){ if(box)box.innerHTML='<span class="ms-err">이 기기는 위치를 지원하지 않아요</span>'; return; }
-  _msBusy=true; if(box)box.innerHTML='<span class="ms-err">📍 위치 확인 중…</span>';
-  navigator.geolocation.getCurrentPosition(function(pos){
-    _msBusy=false; _msGeo={lat:pos.coords.latitude,lon:pos.coords.longitude};
-    try{localStorage.setItem("ps_geo_auto","1");}catch(_){}
-    var m2=matchGet()||m; matchSideRender(m2);
-    fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="+_msGeo.lat+"&longitude="+_msGeo.lon+"&localityLanguage=ko").then(function(r){return r.json();}).then(function(j){
-      var parts=[j.principalSubdivision,j.city,j.locality].filter(Boolean).filter(function(x,i,arr){return arr.indexOf(x)===i;}); /* 서울특별시 서울특별시 중복 제거 */
-      if(parts.length>2)parts=parts.slice(0,2);
-      _msLoc=parts.join(" "); var m3=matchGet()||m; matchSideRender(m3);
-    }).catch(function(){});
-  },function(err){
-    _msBusy=false; try{if(err&&err.code===1)localStorage.removeItem("ps_geo_auto");}catch(_){}
-    if(box){ box.innerHTML='<span class="ms-err">'+(err&&err.code===1?"위치 권한이 꺼져 있어요 — 브라우저 설정에서 허용":"위치를 못 찾았어요")+' <button type="button" class="ms-re" id="msRetry2">다시</button></span>'; if($("msRetry2"))$("msRetry2").onclick=function(){matchSideLocate(m,true);}; }
-  },{timeout:12000,maximumAge:600000});
-}
-/* ══ 2.399 · 지난 경기는 **그날 실제 날씨**를 부른다 ═══════════════════════════════
-   사용자: "그날 실제 날씨 뜨게 해줘".
-   ⚠ 지금까지는 `diff>=0 && diff<=15`(앞으로 15일) 만 그날 값을 가져오고, **지난 경기는 전부
-      '지금 날씨'로 갈아치웠다** — 8월 19일 경기를 열어도 8월 27일 지금 기온이 떴다. 기록으로선 거짓말이다.
-   ⚠ 지난 날은 두 곳에서 온다. 최근(약 92일 안)은 같은 예보 API 가 지난 날도 돌려주고,
-      그보다 오래면 **기록 보관 API**(archive-api)를 써야 한다. 둘 다 열쇠 없이 쓴다.
-   ⚠ 지난 날에는 '강수 확률'이 없다(이미 일어난 일이다) — **강수량(mm)** 으로 바꿔 말한다.
-   ⚠ 기록 보관은 며칠 늦게 채워진다. 값이 비면 조용히 '지금 날씨'로 물러난다(그때는 그렇게 밝혀 적는다). */
-function matchSideWeather(m){
-  if(!_msGeo)return; var key=(m.date||"now"); if(_msWx[key]!==undefined)return; _msWx[key]="pending";
-  var today=new Date(); today.setHours(0,0,0,0);
-  var d=m.date?new Date(m.date+"T00:00:00"):null, diff=d&&!isNaN(d)?Math.round((d-today)/864e5):null;
-  var future=diff!==null&&diff>=0&&diff<=15;
-  var past=diff!==null&&diff<0;
-  var geo="latitude="+_msGeo.lat+"&longitude="+_msGeo.lon+"&timezone=auto";
-  var day="&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum"+(future?",precipitation_probability_max":"")
-         +"&start_date="+m.date+"&end_date="+m.date;
-  var now="&current=temperature_2m,weather_code,wind_speed_10m";
-  var host=(past&&diff<-92)?"https://archive-api.open-meteo.com/v1/archive":"https://api.open-meteo.com/v1/forecast";
-  /* 지난 날 조회에도 `current` 를 같이 달아 둔다 — 기록이 아직 비었을 때 한 번 더 부르지 않고 바로 물러난다.
-     ⚠ 기록 보관 API 는 current 를 모르므로 붙이지 않는다. */
-  var u=host+"?"+geo+((future||past)?day:"")+((past&&diff<-92)?"":now);
-  fetch(u).then(function(r){return r.json();}).then(function(j){
-    var dd=j.daily, got=!!(dd&&dd.time&&dd.time.length&&dd.weather_code&&dd.weather_code[0]!=null);
-    if(got&&(future||past)){
-      _msWx[key]={kind:past?"past":"day",code:dd.weather_code[0],
-        tmax:dd.temperature_2m_max?dd.temperature_2m_max[0]:null,
-        tmin:dd.temperature_2m_min?dd.temperature_2m_min[0]:null,
-        pop:(dd.precipitation_probability_max?dd.precipitation_probability_max[0]:null),
-        mm:(dd.precipitation_sum?dd.precipitation_sum[0]:null),
-        label:past?"이 날 기록":((diff===0?"오늘":diff===1?"내일":"D-"+diff)+" 예보")};
-    }
-    else if(j.current){ _msWx[key]={kind:"now",code:j.current.weather_code,temp:j.current.temperature_2m,wind:j.current.wind_speed_10m,noRec:!!past}; }
-    else _msWx[key]=null;
-    var m2=matchGet()||m; if(m2&&(m2.date||"now")===key)matchSideRender(m2);
-  }).catch(function(){ _msWx[key]=null; var m2=matchGet()||m; if(m2)matchSideRender(m2); });
 }
 /* ══ 2.736 · 경기 보드 유니폼 ════════════════════════════════════════════════
    작전판과 같은 10개 무늬를 쓰되 데이터는 경기 안에만 둔다.
