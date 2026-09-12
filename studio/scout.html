@@ -2755,6 +2755,14 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     #obCard .ob-head{display:flex;flex-direction:column;gap:1px;margin-right:6px;flex:none}
     #obCard .ob-head b{font-size:13px;font-weight:800;color:var(--txt)} #obCard .ob-head small{font-size:11px;color:var(--muted)}
     #obCard .mb2-phead{flex-wrap:wrap}
+    /* 2.757 — 담당 상대 칩 */
+    .match-mark{display:flex;align-items:flex-start;gap:10px;margin:0 0 10px}
+    .match-mark .k{flex:none;font-size:12px;font-weight:800;color:var(--txt);padding-top:6px;width:76px}
+    .mk-chips{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+    .mk-chip{border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:999px;padding:5px 11px;font:600 12px/1.2 inherit;font-family:inherit;cursor:pointer;max-width:100%;text-align:left}
+    .mk-chip.on{border-color:var(--red,#C24A46);background:color-mix(in srgb,var(--red,#C24A46) 10%,var(--bar2));color:var(--txt)}
+    .mk-chip.none.on{border-color:var(--line);background:var(--bar2);color:var(--muted)}
+    .mk-none{font-size:12px;color:var(--muted);padding-top:6px}
     .match-carry .match-card-head{align-items:center}
     .match-carry .match-card-head .btn{margin-left:auto;flex:none}
     .match-carry-rows{display:grid;grid-template-columns:96px minmax(0,1fr);gap:6px 12px;align-items:start}
@@ -5081,6 +5089,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                     <button class="match-kit-open" type="button" id="mb2KitOpen" title="우리 팀과 상대 팀의 필드·GK 유니폼 설정">유니폼 설정</button>
                     <select class="inp mb2-sel" id="mb2FormOp" title="상대 포메이션"><option value="gk4">GK + 수비 4</option><option value="442" selected>4-4-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option><option value="343">3-4-3</option><option value="352">3-5-2</option></select>
                     <button class="btn sm mb2-red" type="button" id="mb2FillOp" title="선택한 포메이션으로 상대 토큰 1~11 배치">상대 배치</button>
+                    <button class="btn sm" type="button" id="mb2ImportOb" title="상대 분석의 같은 국면 상대 배치를 이 보드로 복사">상대 분석에서</button>
                     <button class="mb2-clear-lite" type="button" id="mb2ClearOp" title="상대 토큰만 지우기">상대 비우기</button>
                     <label class="mb2-opp-color" title="상대 유니폼 색"><input type="color" id="mb2OppColor" value="#c2403c"><span>유니폼</span></label>
                     <label class="mb2-opp-color" title="상대 등번호 글자 색"><input type="color" id="mb2OppNumColor" value="#ffffff"><span>번호</span></label>
@@ -5119,6 +5128,8 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 <div class="match-person-strip match-individual-coach-control" id="matchPrepPersonStrip"></div>
                 <div class="match-individual-empty" id="matchPrepIndividualEmpty" hidden></div>
                 <div class="match-individual-editor" id="matchPrepIndividualEditor">
+                  <!-- 2.757 — 담당 상대: 상대 분석 키 선수에서 고른다(설계 목업). 선수에게 공개되면 그대로 보인다 -->
+                  <div class="match-mark" id="matchPrepMark"><span class="k">담당 상대</span><div class="mk-chips" id="matchPrepMarkChips"></div></div>
                   <label>개인 역할·집중 포인트<textarea class="inp" id="matchPrepIndividualMessage" placeholder="예: 수비 시 6번 공간을 먼저 닫고, 공을 받기 전 오른쪽 어깨를 확인하세요."></textarea></label>
                 </div>
                 <div class="match-individual-foot match-individual-coach-control">
@@ -12021,12 +12032,12 @@ function matchDraft(m,kind,pid,create){
 function matchFields(kind,entry){
   entry=entry||{};
   return kind==="prep"
-    ?{message:String(entry.message||"")}
+    ?{message:String(entry.message||""),mark:String(entry.mark||"")}   /* 2.757 — mark: 담당 상대(키 선수 줄 그대로) */
     :{good:String(entry.good||""),improve:String(entry.improve||""),action:String(entry.action||""),score:(+entry.score>0?+entry.score:0)};   /* 1.880 — score(1~10) 추가, action 은 '메모'로 표시 */
 }
 function matchHasIndividual(kind,entry){
   var v=matchFields(kind,entry);
-  return kind==="prep"?!!v.message.trim():!!(v.good+v.improve+v.action).trim();
+  return kind==="prep"?!!(v.message.trim()||v.mark.trim()):!!(v.good+v.improve+v.action).trim();
 }
 function matchPreferredIndividual(kind,pub,draft){
   if(!pub)return draft;if(!draft)return pub;
@@ -12316,6 +12327,7 @@ function matchRenderIndividual(m,kind,readonly,keepCurrent){
   if(editor)editor.hidden=unavailable;
   if(kind==="prep"){
     var msg=$("matchPrepIndividualMessage");if(msg){msg.value=val.message;msg.disabled=playerMode||readonly||!pid;}
+    try{matchPrepMarkRender(m,val,playerMode||readonly||!pid);}catch(_){}   /* 2.757 */
   }else{
     [["matchReviewIndividualGood","good"],["matchReviewIndividualImprove","improve"],["matchReviewIndividualAction","action"]].forEach(function(x){var el=$(x[0]);if(el){el.value=val[x[1]];el.disabled=playerMode||readonly||!pid;}});
     var extra=$("matchReviewExtra"); if(extra&&extra.dataset.pid!==pid){extra.dataset.pid=pid||"";extra.open=!!String(val.action||"").trim();}
@@ -15516,6 +15528,7 @@ function renderMB2(){
       pb.cur=b.dataset.ph;mb2RenderPhases(m2);mb2Draw(m2);mb2Save();
     });
     $("mb2FillUs").onclick=function(){var m2=matchGet();if(!m2)return;if(!matchCanEdit()){obEditBlocked();return;}mb2FillUs(m2);};   /* 2.753 */
+    if($("mb2ImportOb"))$("mb2ImportOb").onclick=function(){var m2=matchGet();if(!m2)return;if(!matchCanEdit()){obEditBlocked();return;}mb2ImportFromOb(m2);};   /* 2.757 */
     $("mb2FillOp").onclick=function(){var m2=matchGet();if(m2&&matchCanEdit())mb2FillOp(m2);};
     if($("mb2KitOpen"))$("mb2KitOpen").onclick=function(){matchKitOpen("prep",this);};
     if($("mb2KitOpenMobile"))$("mb2KitOpenMobile").onclick=function(){matchKitOpen("prep",this);};
@@ -15620,6 +15633,29 @@ function matchStartersToSlots(m){
     .forEach(function(same){ labels.forEach(function(l,i){ if(picked[i])return; var ix=pool.findIndex(function(p){return same(p,l);}); if(ix>=0)picked[i]=pool.splice(ix,1)[0]; }); });
   labels.forEach(function(l,i){ if(!picked[i]&&pool.length)picked[i]=pool.shift(); });
   return {ok:true,formKey:formKey,slots:slots,labels:labels,picked:picked,pool:pool,norm:norm};
+}
+/* ══ 2.757 · 경기 준비 ← 상대 분석 «장면 가져오기» ═════════════════════════════════════
+   같은 국면 키(atk/def/ta/td/set)의 상대 분석 현재 프레임 상대 토큰을 경기 준비 보드의 상대 자리로 복사한다.
+   연결이 아니라 복사 — 여기서 옮기면 여기만 바뀐다. 두 운동장은 같은 % 좌표계(105×68 가로). */
+function mb2ImportFromOb(m){
+  var pb=mb2Ensure(m), key=pb.cur, ob=obEnsure(m), src=ob.boards[key], label=OB_PHASE_LABEL[key]||(pb.list.find(function(ph){return ph[0]===key;})||[])[1]||key;
+  var fr=src&&Array.isArray(src.frames)?src.frames[src.cur||0]:null, opp=fr&&Array.isArray(fr.opp)?fr.opp:[];
+  if(!opp.length){ toast("상대 분석 «"+label+"» 장면에 상대 배치가 없어요 — 01 상대 분석에서 먼저 놓으세요"); return false; }
+  mb2Cur(m).opp=JSON.parse(JSON.stringify(opp)).map(function(t){ return {num:String(t.num||""),pos:t.pos||"",x:+t.x||50,y:+t.y||50,gk:!!t.gk}; });
+  mb2Draw(m);mb2Counts(m);mb2Save();
+  toast("상대 분석 «"+label+"» 상대 "+opp.length+"명을 가져왔어요"); return true;
+}
+/* 2.757 — 담당 상대 칩: 상대 분석 키 선수 줄(oppKeyPlayers)에서 하나를 고른다. 선수 모드는 고른 것만 보인다 */
+function matchPrepMarkRender(m,val,locked){
+  var box=$("matchPrepMarkChips"), wrap=$("matchPrepMark"); if(!box||!wrap)return;
+  var keys=matchCarryLines(m.oppKeyPlayers), cur=String((val&&val.mark)||"").trim();
+  if(cur&&keys.indexOf(cur)<0)keys.push(cur);   /* 키 선수 줄이 바뀌어도 고른 것은 남는다 */
+  if(!keys.length){ wrap.hidden=true; box.innerHTML=""; return; }
+  wrap.hidden=false;
+  if(locked){ box.innerHTML=cur?('<span class="mk-chip on">'+esc(cur)+'</span>'):'<span class="mk-none">없음</span>'; return; }
+  box.innerHTML=keys.map(function(k){ return '<button type="button" class="mk-chip'+(k===cur?" on":"")+'" data-mark="'+esc(k)+'" aria-pressed="'+(k===cur?"true":"false")+'">'+esc(k)+'</button>'; }).join("")
+    +'<button type="button" class="mk-chip none'+(cur?"":" on")+'" data-mark="" aria-pressed="'+(cur?"false":"true")+'">없음</button>';
+  if(!box.__w){ box.__w=1; box.addEventListener("click",function(e){ var b=e.target.closest("button[data-mark]"); if(!b)return; matchUpdateIndividual("prep","mark",b.getAttribute("data-mark")||""); var m2=matchGet(); if(m2)try{matchRenderIndividual(m2,"prep");}catch(_){ } }); }
 }
 function obEditBlocked(){ try{ toast(matchDocPending()?"경기 자료를 서버와 맞추는 중이에요 — 잠시 뒤 다시 눌러 주세요":(matchRole()==="player"?"선수 계정은 상대 분석을 볼 수만 있어요":"팀 자료를 고칠 권한이 없어요")); }catch(_){} }
 try{ (function(){ var w=function(){ var pit=$("obPitch"); if(pit&&!pit.__obEd){ pit.__obEd=1; pit.addEventListener("pointerdown",function(){obCloseEdit();}); } }; if(document.readyState!=="loading")w(); else document.addEventListener("DOMContentLoaded",w); })(); }catch(_){}
