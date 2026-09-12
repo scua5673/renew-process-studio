@@ -877,9 +877,6 @@ html.ps-page-scout #matchView .match-summary{background:#fff!important;color:var
 html.ps-page-scout #matchView .match-summary .match-kicker{color:var(--ps-muted)!important}
 html.ps-page-scout #matchView .match-summary-main strong{font-size:16px!important;letter-spacing:-.02em!important;color:var(--ps-ink)!important}
 html.ps-page-scout #matchView .match-summary-main>span:last-child{color:var(--ps-muted)!important}
-html.ps-page-scout #matchView .match-summary .match-summary-side{color:var(--ps-ink)}
-html.ps-page-scout #matchView .match-summary .ms-loc,html.ps-page-scout #matchView .match-summary .ms-wx small,html.ps-page-scout #matchView .match-summary .ms-err{color:var(--ps-muted)!important}
-html.ps-page-scout #matchView .match-summary .ms-geo,html.ps-page-scout #matchView .match-summary .ms-re{color:var(--ps-blue)!important;border-color:var(--ps-line)!important;background:#fff!important}
 html.ps-page-scout #matchView .match-summary .match-status{margin-left:0!important;display:inline-flex!important;align-items:center!important;gap:2px!important;padding:3px!important;border-radius:10px!important;background:var(--ps-sunken)!important;flex:0 0 auto!important}
 html.ps-page-scout #matchView .match-summary .match-status span{height:26px;padding:0 10px;border-radius:8px;color:var(--ps-muted);font-size:11px!important;font-weight:600!important;gap:6px!important}
 html.ps-page-scout #matchView .match-summary .match-status span:not(:last-child):after{display:none!important}

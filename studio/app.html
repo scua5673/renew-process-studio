@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.747';</script>
+<script>window.PS_BUILD='2.748';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -4986,6 +4986,8 @@ window.__buildScoutForm=function(k){
 </script>
 
 <!-- 2.745 — 현재 메뉴·저장 범위에 맞춘 6개 언어 사용법. -->
+<link rel="stylesheet" href="first-work.css">
+<script src="first-work.js"></script>
 <div id="guideOv" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(16,24,40,.5);backdrop-filter:blur(4px);">
   <div class="gd-panel">
     <button id="guideClose" aria-label="닫기">✕</button>
@@ -5420,14 +5422,20 @@ window.__buildScoutForm=function(k){
 <script>
 (function(){
   var ov=document.getElementById('guideOv');if(!ov)return;
+  var firstHost=document.createElement('section'),firstWork=null;
+  firstHost.id='psFirstWork';
+  if(window.PSFirstWork)firstWork=PSFirstWork.mount(window,firstHost,close);
   function gdSet(l){
     ov.querySelectorAll('.gd-body .L').forEach(function(d){d.classList.toggle('on',d.dataset.l===l);});
     ov.querySelectorAll('#gdLangs button').forEach(function(b){b.classList.toggle('on',b.dataset.l===l);});
+    var active=ov.querySelector('.gd-body .L.on'),intro=active&&active.querySelector('.sub');
+    if(firstWork&&intro){intro.insertAdjacentElement('afterend',firstHost);firstWork.render(l);}
   }
   function open(){
     var l='ko';try{l=localStorage.getItem('cs_lang')||'ko';}catch(e){}
     if(['ko','ja','en','zh','es','pt'].indexOf(l)<0)l='en';
     gdSet(l);ov.style.display='block';
+    var panel=ov.querySelector('.gd-panel');if(panel)panel.scrollTop=0;
     var gp=document.getElementById('gearPop');if(gp)gp.classList.remove('on');
   }
   function close(){ov.style.display='none';}

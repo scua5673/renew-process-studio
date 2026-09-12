@@ -1,0 +1,23 @@
+/* Kept inside the existing, user-opened guide. */
+#guideOv{z-index:100000!important} /* Help remains usable above the data-lock dialog; the data lock stays in place. */
+body.ps-data-locked .appbar:has(#psAcctWrap .acct-pop.on){z-index:99998!important} /* The account menu is the exit from locked-data guidance. */
+#guideOv .ps-first-work{padding:18px;margin:22px 0 24px;border:1px solid var(--line,#e3e6ea);border-radius:14px;background:var(--bar2,#f6f7f9);text-align:left}
+#guideOv .ps-first-work h2{margin:0;font-size:19px;line-height:1.35;border:0;padding:0}
+#guideOv .ps-fw-head p{margin:6px 0 0;color:var(--dim,#5c6068);font-size:13px;line-height:1.6}
+#guideOv .ps-fw-context{margin:12px 0 14px;font-size:12px;font-weight:700;color:var(--dim,#5c6068)}
+#guideOv .ps-fw-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#guideOv .ps-fw-card{display:flex;flex-direction:column;min-width:0;padding:15px 13px;border:1px solid var(--line,#e3e6ea);border-radius:10px;background:var(--surface,#fff)}
+#guideOv .ps-fw-card.ps-fw-primary{border-color:var(--accent,#3a6df0)}
+#guideOv .ps-fw-card h3{margin:0 0 10px;font-size:15px;line-height:1.5;color:var(--txt,#16181c)}
+#guideOv .ps-fw-card ol{margin:0 0 16px;padding-left:19px;font-size:12px;line-height:1.7;color:var(--dim,#5c6068)}
+#guideOv .ps-fw-card li{padding:0;margin:0 0 7px;overflow-wrap:anywhere}
+#guideOv .ps-fw-card li:last-child{margin-bottom:0}
+#guideOv .ps-fw-card li::before{content:none}
+#guideOv .ps-fw-go{margin-top:auto;min-height:42px;padding:9px 10px;border:1px solid var(--line,#e3e6ea);border-radius:8px;background:var(--bar2,#f6f7f9);color:var(--txt,#16181c);font-family:inherit;font-weight:700;font-size:12px;line-height:1.5;cursor:pointer;white-space:normal;overflow-wrap:anywhere}
+#guideOv .ps-fw-primary .ps-fw-go{background:var(--accent,#3a6df0);border-color:var(--accent,#3a6df0);color:#fff}
+#guideOv .ps-fw-go:focus-visible{outline:3px solid var(--accent,#3a6df0);outline-offset:3px}
+#guideOv .ps-fw-message{font-size:12px;line-height:1.6;margin:12px 0 0;color:var(--txt,#16181c)}
+#guideOv .ps-fw-message:empty{display:none}
+#guideOv .ps-fw-cards:has(>.ps-fw-card:only-child){grid-template-columns:1fr}
+#guideOv .ps-fw-cards:has(>.ps-fw-card:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:650px){#guideOv .ps-first-work{padding:14px;margin:18px 0}#guideOv .ps-fw-cards,#guideOv .ps-fw-cards:has(>.ps-fw-card:nth-child(2):last-child){grid-template-columns:1fr}#guideOv .ps-fw-card ol{font-size:13px}#guideOv .ps-fw-go{font-size:13px}}
