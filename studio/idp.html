@@ -4401,6 +4401,17 @@ body.fmdark .qa-paper{background:var(--surface)}
 .st-bub .pk{display:flex;flex-direction:column;gap:4px;margin-top:6px} .st-bub .pk span{border:1px solid var(--line-soft);border-radius:8px;padding:4px 8px;font-size:12px;background:var(--surface)} .st-bub .pk span.on{border-color:#7C4DFF;font-weight:700} .st-bub .pk small{color:var(--text-3);font-weight:500}
 .st-bub .st-pick{display:block;margin-top:5px;font-size:11px;color:var(--text-3)} .st-hrt{font-style:normal;color:#C24A46}
 .st-note{font-size:11px;color:var(--text-3);margin-top:10px}
+/* 2.768 — 코치의 선수 한 장 */
+.cp-card{padding:10px 14px 12px}
+.cp-nav{display:flex;align-items:center;gap:8px;margin-bottom:8px} .cp-nav .sp{flex:1}
+.cp-back,.cp-app{border:1px solid var(--line-soft);background:var(--surface);color:var(--text-2,var(--text));border-radius:8px;padding:5px 10px;font:600 12px/1.2 inherit;font-family:inherit;cursor:pointer} .cp-app{color:var(--text-3)}
+.cp-head{display:flex;align-items:center;gap:10px}
+.cp-av{width:38px;height:38px;border-radius:50%;background:#ECE7FB;color:#6d4de0;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.cp-name{font-size:17px;font-weight:800;line-height:1.2} .cp-sub{font-size:12px;color:var(--text-3);margin-top:2px}
+.cp-stat{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:6px;margin-top:10px}
+.cp-stat div{background:var(--surface-2);border-radius:10px;padding:8px 10px;min-width:0} .cp-stat b{display:block;font-size:14px;font-weight:800;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .cp-stat b .z{color:var(--text-3);font-weight:500} .cp-stat span{font-size:11px;color:var(--text-3)}
+.cp-more{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px} .cp-more button{border:1px solid var(--line-soft);background:transparent;color:var(--text-2,var(--text));border-radius:999px;padding:4px 10px;font:600 12px/1.2 inherit;font-family:inherit;cursor:pointer}
+html[data-theme="dark"] .cp-av,.fmdark .cp-av{background:#2a2350;color:#c9bdf3}
 .st-compose{display:flex;gap:6px;align-items:center;margin-top:12px;padding:6px 6px 6px 12px;border:1px solid var(--line-soft);border-radius:999px;background:var(--surface)}
 .st-compose input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:13px;color:var(--text);outline:none}
 .st-compose .btn{border-radius:999px;padding:6px 12px;font-size:12px;flex:0 0 auto}
@@ -8982,7 +8993,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var nx=wrap.querySelector('[data-sqe-next]'); if(nx)nx.onclick=function(){ sqEvalSel=nx.dataset.sqeNext; render(); try{ document.querySelector('.stage').scrollTop=0; }catch(_){} };
     /* 2.397 — 줄 끝 `›` : 그 선수의 IDP 문서를 연다(옛 `[data-sqtd-doc]` 과 같은 경로, 이름만 바뀌었다) */
     [].forEach.call(wrap.querySelectorAll('[data-sqd-doc]'),function(b){ b.onclick=function(){
-      if(!adoptViewing(b.dataset.sqdDoc))return; squadView=false; personalOnly=false; curL='home'; render();
+      if(!adoptViewing(b.dataset.sqdDoc))return; squadView=false; personalOnly=false; curL='story'; render();   /* 2.768 — 코치의 선수 한 장(머리 + 이야기)으로 연다 */
       try{ (wrap.closest('.stage')||document.querySelector('.stage')).scrollTop=0; }catch(_){} }; });
     /* ── 2.397 · 오늘 한 장: 날짜 옮기기 · ♥ · 한마디 ── */
     var _sqdDay=function(){ var t0=new Date(); t0.setHours(0,0,0,0); return sqTdDay||ymd(t0); };
@@ -11317,20 +11328,45 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       default: return E(it.text||'');
     }
   }
+  /* ══ 2.768 · 코치의 선수 한 장(사용자 «› 눌렀을 때 어떤 게 나오는 게 좋을까» → 목업) ═══════════════════
+     선수단 표의 › 는 선수 앱 전체(일지 오늘)로 떨어뜨렸다. 이제 머리 한 장(누구·연결·이번 주 초점·기록·마지막 기록) +
+     이야기 스레드(코치 기준: 내가 보낸 말이 오른쪽) + «선수에게 한 마디» + 더 보기 칩 + «선수 앱 그대로 보기» + «‹ 선수단». */
+  function cpTeamPlayer(){ try{ var uid=String(viewing||'').slice(PREFIX.length); if(!uid)return null;
+    var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), me=pm&&pm.members&&pm.members[uid], pid=me&&me.playerId; if(!pid)return {linked:true,p:null};
+    var t=JSON.parse(localStorage.getItem('scout_tool_v1')||'null'); var pl=(t&&Array.isArray(t.players))?t.players.filter(function(x){return x&&x.id===pid;})[0]:null;
+    var posNm=''; try{ if(pl&&pl.posId&&t.positions){ var po=t.positions.filter(function(x){return x&&x.id===pl.posId;})[0]; posNm=(po&&po.name)||''; } }catch(_){}
+    return {linked:true,p:pl,pos:posNm}; }catch(_){ return null; } }
+  function rCoachPlayerCard(){
+    var name=(doc.profile&&doc.profile.name)||'선수', tp=cpTeamPlayer(), pl=tp&&tp.p, pos=(tp&&tp.pos)||(doc.profile&&doc.profile.pos)||'', grp=(pl&&(pl.grp||pl.group))||'';
+    var today=new Date(); today.setHours(0,0,0,0), mon=mondayOf(today), wkN=0, lastD='';
+    for(var i=0;i<7;i++){ var d=addDays(mon,i); if(d>today)break; var l=dlog(d)||{}; if(l.t||l.body||l.sleepq||l.try!=null||l.memo)wkN++; }
+    try{ Object.keys(doc.log||{}).sort().reverse().some(function(k){ var l=doc.log[k]||{}; if(l.t||l.body||l.sleepq||l.try!=null||l.memo){ lastD=k; return true; } return false; }); }catch(_){}
+    var fc=null; try{ fc=focusOf(ymd(mon)); }catch(_){}
+    var lastLb=lastD?((lastD===ymd(today))?'오늘':rvFmt(lastD)):'없음';
+    var sub=[pos,grp,(tp&&tp.linked)?'계정 연결 ✓':'계정 연결 안 됨','마지막 기록 '+lastLb].filter(Boolean).map(esc).join(' · ');
+    return '<section class="card cp-card"><div class="cp-nav"><button type="button" class="cp-back" data-cp-back>‹ 선수단</button><span class="sp"></span><button type="button" class="cp-app" data-cp-go="cal">선수 앱 그대로 보기 ›</button></div>'
+      +'<div class="cp-head"><span class="cp-av">'+esc(name.charAt(0)||'?')+'</span><div><div class="cp-name">'+esc(name)+'</div><div class="cp-sub">'+sub+'</div></div></div>'
+      +'<div class="cp-stat"><div><b>'+(fc&&fc.text?esc(fc.text):'<span class="z">없음</span>')+'</b><span>이번 주 초점</span></div><div><b>'+wkN+' / '+(Math.min(7,Math.round((today-mon)/864e5)+1))+'</b><span>이번 주 기록</span></div></div>'
+      +'<div class="cp-more"><button type="button" data-cp-go="profile">평가 · 프로필</button><button type="button" data-cp-go="goal">목표</button><button type="button" data-cp-go="match">경기</button><button type="button" data-cp-go="report">리포트</button></div></section>';
+  }
   function rStory(){
-    var items=stItems(), cname=lrCoachName()||'코치';
-    var h='<section class="card st-card"><div class="td-top"><b>이야기</b><span>코치와 나 · 시간순</span><span class="sp"></span><span class="td-pill">'+items.length+'</span></div>';
-    if(!items.length){ h+='<div class="td-q-empty">아직 오간 말이 없어요 — 일지에 한 마디를 남기면 코치의 답글이 여기 쌓여요.</div></section>'; return h; }
+    var items=stItems(), cname=lrCoachName()||'코치', coachMode=ro()&&isCoach(), pname=(doc.profile&&doc.profile.name)||'선수';
+    var h=coachMode?rCoachPlayerCard():'';
+    h+='<section class="card st-card"><div class="td-top"><b>이야기</b><span>'+(coachMode?esc(pname)+'와 나':'코치와 나')+' · 시간순</span><span class="sp"></span><span class="td-pill">'+items.length+'</span></div>';
+    if(coachMode)h+=stCompose();
+    if(!items.length){ h+='<div class="td-q-empty">'+(coachMode?'아직 오간 말이 없어요 — 위에 한 마디를 보내면 여기부터 쌓입니다.':'아직 오간 말이 없어요 — 일지에 한 마디를 남기면 코치의 답글이 여기 쌓여요.')+'</div></section>'; return h; }
     var byDate={}; try{ mtList().forEach(function(m){ if(m&&m.date)byDate[m.date]=m.opponent||''; }); }catch(_){}
     var LIM=40, show=_stAll?items:items.slice(0,LIM), lastD=''; h+='<div class="st-list">';
     show.forEach(function(it){
       if(it.d&&it.d!==lastD){ lastD=it.d; var dd=new Date(it.d+'T12:00:00'); var wd=['일','월','화','수','목','금','토'][dd.getDay()]||''; h+='<div class="st-day"><span>'+(dd.getMonth()+1)+'월 '+dd.getDate()+'일 · '+wd+(byDate[it.d]?(' · vs '+esc(byDate[it.d])):'')+'</span></div>'; }
-      var who=it.who==='coach'?'coach':'me', go=stGo(it), body=stBody(it); if(!body)return;
-      h+='<div class="st-msg '+who+'"'+(go?' data-st-go="'+esc(go)+'" role="button" tabindex="0" title="원래 자리로"':'')+'><span class="st-src">'+(who==='coach'?'<b>'+esc(it.by||(it.r&&it.r.by)||(it.fb&&it.fb.updatedBy)||cname)+'</b> · ':'')+esc(stSrc(it))+'</span><div class="st-bub">'+body+'</div></div>';
+      var isC=it.who==='coach', mine=coachMode?isC:!isC, who=mine?'me':'coach', go=stGo(it), body=stBody(it); if(!body)return;   /* 2.768 — 보는 사람 기준으로 내 말이 오른쪽 */
+      var byName=isC?(it.by||(it.r&&it.r.by)||(it.fb&&it.fb.updatedBy)||cname):pname;
+      if(coachMode&&isC&&byName===lrCoachName())byName='나';
+      h+='<div class="st-msg '+who+'"'+(go?' data-st-go="'+esc(go)+'" role="button" tabindex="0" title="원래 자리로"':'')+'><span class="st-src">'+((isC||coachMode)?'<b>'+esc(byName)+'</b> · ':'')+esc(stSrc(it))+'</span><div class="st-bub">'+body+'</div></div>';
     });
     h+='</div>';
     if(items.length>LIM&&!_stAll)h+='<button type="button" class="qg-add" data-st-more>지난 이야기 '+(items.length-LIM)+'개 더 보기</button>';
-    h+=stCompose();
+    if(!coachMode)h+=stCompose();
     h+='<div class="st-note">말풍선을 누르면 그 자리로 갑니다</div></section>'; return h;
   }
   /* 2.767 — 답 보내기: 선수는 «코치에게 한 마디»(doc.talk, 내 문서), 코치는 «선수에게 한 마디»(pub.talk, 코치 문서). 둘 다 덧붙이기만 */
@@ -11346,6 +11382,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return false;
   }
   function bindStory(){
+    try{ var cp=wrap.querySelector('.cp-card'); if(cp){
+      var bk=cp.querySelector('[data-cp-back]'); if(bk)bk.onclick=function(){ try{ if(!adoptViewing(myKey()))return; }catch(_){} squadView=true; personalOnly=false; curL='home'; render(); try{ window.scrollTo(0,0); }catch(_){} };
+      [].forEach.call(cp.querySelectorAll('[data-cp-go]'),function(b){ b.onclick=function(){ curL=b.dataset.cpGo; try{ [].forEach.call(document.getElementById('layers').children,function(x){ x.classList.toggle('on',x.dataset.l===curL); }); }catch(_){} render(); try{ window.scrollTo(0,0); }catch(_){} }; });
+    } }catch(_){}
     var card=wrap.querySelector('.st-card'); if(!card)return;
     var mo=card.querySelector('[data-st-more]'); if(mo)mo.onclick=function(){ _stAll=true; render(); };
     var inp=card.querySelector('[data-st-in]'), snd=card.querySelector('[data-st-send]');
