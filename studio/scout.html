@@ -5666,7 +5666,7 @@ const DEFAULT_ATTRS=[
   ["psy","침착함"],["psy","결정 자신감"],["psy","감정 조절"],["psy","집중력"],["psy","압박 대응"],["psy","회복 탄력성"],["psy","용기/투지"],
   ["att","자기 발전 의지"],["att","팀워크"],["att","리더십/소통"],["att","자기 관리"],["att","경쟁심"],["att","피드백 수용"],["att","시간 관리"],["att","훈련 태도"]
 ];
-const DEFAULT_POS=["GK","CB","LCB","RCB","LB","RB","LWB","RWB","DM","CM","LM","RM","AM","CF","LW","RW"];
+const DEFAULT_POS=["GK","CB","LCB","RCB","LB","RB","LWB","RWB","LDM","DM","RDM","LCM","CM","RCM","LM","RM","AM","CF","LW","RW"];   /* 2.752 — 세부 포지션(코치 피드백) */
 
 // ---- storage (window.storage → localStorage → memory, all guarded) ----
 const mem={};
@@ -5836,7 +5836,7 @@ function load(){
     if(!data.positions.some(p=>tmNorm(posAbbr(p.name))===k))
       data.positions.push({id:uid("p"),name:k,targets:{}});});}catch(_){}
   // LM·RM·LWB·RWB 보충 — 별칭(LM→LW)과 무관하게 '원래 이름'으로 확인해 추가
-  try{["LWB","RWB","LM","RM"].forEach(nm=>{
+  try{["LWB","RWB","LM","RM","LDM","RDM","LCM","RCM"].forEach(nm=>{   /* 2.752 — 세부 포지션 보충 */
     if(!data.positions.some(p=>(posAbbr(p.name)||p.name||"").toUpperCase()===nm))
       data.positions.push({id:uid("p"),name:nm,targets:{}});});}catch(_){}
   // ensure every position has a target entry (default 3) for every attr
@@ -6389,7 +6389,7 @@ function posXY(name){
 function posShort(name){var t=(name||"").trim();if(/^[A-Za-z]{1,3}$/.test(t))return t.toUpperCase();var ab=posAbbr(t);if(/^[A-Z]{2,3}$/.test(ab)&&t.toUpperCase()===ab)return ab;return t.replace(/\s+/g,"").slice(0,3);}
 function posAbbr(name){
   const K=(name||"").trim().toUpperCase();
-  if(["GK","LB","LCB","RCB","RB","DM","CM","AM","LW","RW","CF","LWB","RWB","LM","RM"].indexOf(K)>=0)return K;
+  if(["GK","LB","LCB","RCB","RB","DM","LDM","RDM","CM","LCM","RCM","AM","LW","RW","CF","LWB","RWB","LM","RM"].indexOf(K)>=0)return K;   /* 2.752 — LDM·RDM·LCM·RCM 도 그대로 */
   const s=(name||"").toLowerCase();
   const L=/좌|왼|left|\blb\b|\blw\b/.test(s), R=/우|오른|right|\brb\b|\brw\b/.test(s);
   if(/gk|골키퍼|키퍼|골리/.test(s))return "GK";
@@ -7794,7 +7794,7 @@ function renderScoutCands(){
   if(_phoneSeg&&sbShow!=="tgt"){
     var ours=data.players.filter(function(p){return p.type==="ours"&&String(p.name||"").trim();});
     if(q)ours=ours.filter(function(p){var po=data.positions.find(function(x){return x.id===p.posId;});var hay=[p.name,p.num,po?posAbbr(po.name):"",po?po.name:""].join(" ").toLowerCase();return q.split(/\s+/).every(function(w){return hay.indexOf(w)>=0;});});
-    var _pr=function(p){var po=data.positions.find(function(x){return x.id===p.posId;});if(!po)return 999;try{var i=TM_POS.indexOf(tmNorm(posAbbr(po.name)));return i<0?TM_POS.length:i;}catch(_){return TM_POS.length;}};
+    var _pr=function(p){var po=data.positions.find(function(x){return x.id===p.posId;});if(!po)return 999;try{var i=TM_POS.indexOf(tmBase(posAbbr(po.name)));return i<0?TM_POS.length:i;}catch(_){return TM_POS.length;}};
     ours.sort(function(a,b){var d=_pr(a)-_pr(b);if(d)return d;return (parseInt(a.num,10)||999)-(parseInt(b.num,10)||999);});
     var lp=null,oh='<div class="sc-grp sc-grp-ours"><b>우리 선수</b><span>'+ours.length+'명</span></div>';
     oh+=ours.map(function(p){var po=data.positions.find(function(x){return x.id===p.posId;});var pk=po?po.id:"__none",gh="";
@@ -7817,7 +7817,7 @@ function renderScoutCands(){
   var posRank=function(p){
     var po=data.positions.find(function(x){return x.id===p.posId;});
     if(!po)return 999;
-    try{ var i=TM_POS.indexOf(tmNorm(posAbbr(po.name))); return i<0?TM_POS.length:i; }
+    try{ var i=TM_POS.indexOf(tmBase(posAbbr(po.name))); return i<0?TM_POS.length:i; }
     catch(_){ return TM_POS.length; }
   };
   var grRank=function(p){ var i=SB_GRADES.indexOf(String(p.grade||"").toUpperCase()); return i<0?SB_GRADES.length:i; };
@@ -9418,6 +9418,10 @@ function wireScoutDrag(){
   });
 }
 function tmNorm(pos){const k=(pos||"").toUpperCase();return TM_ALIAS[k]||k;}
+/* 2.752 — 세부 포지션(LDM·RDM·LCM·RCM)은 팀 구성 포메이션에 그 자리가 없으면 기본 자리(DM·CM)로 선다. 정렬도 기본 자리 순서. */
+const TM_BASE={LDM:"DM",RDM:"DM",LCM:"CM",RCM:"CM"};
+function tmBase(k){k=tmNorm(k);return TM_BASE[k]||k;}
+function tmFormKey(pos,inForm){var k=tmNorm(pos);if(TM_DEF[k]&&inForm[k])return k;var b=tmBase(k);return (TM_DEF[b]&&inForm[b])?b:k;}
 function tmGet(){try{const v=localStorage.getItem(TM_KEY);if(v){const o=JSON.parse(v);if(o&&Array.isArray(o.players)){o.players.forEach(pl=>{if(pl&&pl.pos)pl.pos=tmNorm(pl.pos);});return o;}}}catch(_){}return {name:"",players:[]};}
 function tmSave(sq){try{localStorage.setItem(TM_KEY,JSON.stringify(sq));}catch(_){}}
 /* 제대로 된 세로 피치 (보드 스타일) */
@@ -9463,7 +9467,7 @@ function teamPitchSVG(sq,ink){
   const slots=adj.slice();
   const byPos={};const bench=[];
   const inForm={};slots.forEach(s2=>{inForm[s2[0]]=1;});
-  (sq.players||[]).forEach(pl=>{const k=tmNorm(pl.pos);
+  (sq.players||[]).forEach(pl=>{const k=tmFormKey(pl.pos,inForm);   /* 2.752 — LCM 은 CM 자리로 */
     if(TM_DEF[k]&&inForm[k]){(byPos[k]=byPos[k]||[]).push(pl);}else bench.push(pl);});
   /* 포메이션 슬롯(11자리)만 표시 — 포메이션에 없는 포지션 선수는 벤치 목록으로(3백에서 11명 초과 문제 수정) */
   let marks="",zones="";
@@ -14550,7 +14554,7 @@ var MB2_SLOTS={
   "343":[["GK",1],["CB",4],["CB",5],["CB",6],["RWB",2],["CM",8],["CM",10],["LWB",3],["RW",7],["ST",9],["LW",11]],
   "352":[["GK",1],["CB",4],["CB",5],["CB",6],["RWB",2],["CM",8],["CM",10],["CM",7],["LWB",3],["ST",9],["ST",11]]
 };
-var MB2_POS_LIST=["GK","RB","CB","LB","RWB","LWB","DM","CM","AM","RM","LM","RW","LW","ST"];
+var MB2_POS_LIST=["GK","RB","CB","LB","RWB","LWB","DM","LDM","RDM","CM","LCM","RCM","AM","RM","LM","RW","LW","ST"];   /* 2.752 */
 function mb2OppLabelMode(m){ return (m&&m.phaseBoards&&m.phaseBoards.oppLabel)==="pos"?"pos":"num"; }
 function mb2TokLabel(m,d,t,opp){ var ii=d.querySelector("i"); if(!ii)return; var _n=String(t.num||"").trim(); if(_n==="·")_n=""; if(opp&&mb2OppLabelMode(m)==="pos"&&t.pos){ ii.textContent=t.pos; ii.classList.add("pos"); } else { ii.textContent=_n; ii.classList.remove("pos"); } }
 var mb2Sel=null;   /* 선택 토큰 {d,t,opp,m} */
@@ -15499,7 +15503,8 @@ function obTok(m,t,opp){
   d.style.left=t.x+"%";d.style.top=t.y+"%";
   pit.appendChild(d);
   d.addEventListener("pointerdown",function(e){
-    if(window.__obPlaying||!matchCanEdit())return;
+    if(window.__obPlaying)return;
+    if(!matchCanEdit()){obEditBlocked();return;}   /* 2.752 — 조용히 무시하던 것을 이유와 함께 */
     e.preventDefault();e.stopPropagation();
     var pr=pit.getBoundingClientRect(),moved=false,sx=e.clientX,sy=e.clientY;
     function mv(ev){
@@ -15508,7 +15513,7 @@ function obTok(m,t,opp){
       d.style.left=Math.max(-3,Math.min(103,x))+"%";d.style.top=Math.max(-3,Math.min(103,y))+"%";}
     function up(ev){
       document.removeEventListener("pointermove",mv);document.removeEventListener("pointerup",up);
-      if(!moved)return;
+      if(!moved){obOpenEdit(m,d,t,opp);return;}   /* 2.752 — 탭 = 번호·삭제 편집기(경기 준비와 같은 모양) */
       var x=(ev.clientX-pr.left)/pr.width*100,y=(ev.clientY-pr.top)/pr.height*100;
       var f=obFrame(m),arr=opp?f.opp:f.us,i=arr.indexOf(t);
       if(x<-1||x>101||y<-1||y>101){ if(i>=0)arr.splice(i,1); obDraw(m); }
@@ -15517,6 +15522,27 @@ function obTok(m,t,opp){
     document.addEventListener("pointermove",mv);document.addEventListener("pointerup",up);
   });
 }
+/* 2.752 — 상대 분석 토큰 편집기: 탭하면 번호(상대는 포지션도)·삭제. 경기 준비 mb2OpenEdit 와 같은 .mb2-edit 모양. */
+function obCloseEdit(){ var pit=$("obPitch"); if(!pit)return; pit.querySelectorAll(".mb2-edit").forEach(function(x){x.remove();}); pit.querySelectorAll(".mlb-tok.sel").forEach(function(x){x.classList.remove("sel");}); }
+function obOpenEdit(m,d,t,opp){
+  obCloseEdit(); d.classList.add("sel");
+  var ed=document.createElement("div"); ed.className="mb2-edit"; ed.style.left=d.style.left; ed.style.top=d.style.top;
+  ed.innerHTML='<input maxlength="4" value="'+esc(String(t.num||""))+'" aria-label="등번호"><button class="del" type="button" title="삭제" aria-label="삭제">✕</button>';
+  $("obPitch").appendChild(ed);
+  var inp=ed.querySelector("input");
+  var paint=function(){ d.classList.toggle("gk",matchKitIsGK(t)); var ii=d.querySelector("i"); if(ii){ if(opp&&obEnsure(m).oppLabel==="pos"&&t.pos)ii.textContent=t.pos; else ii.textContent=String(t.num||""); } try{matchKitPaint(m,"analysis",ii,t,opp);}catch(_){} obSave(); };
+  if(opp){ var sel=document.createElement("select"); sel.className="pos"; sel.title="포지션";
+    sel.innerHTML='<option value="">포지션</option>'+MB2_POS_LIST.map(function(p){return '<option value="'+p+'"'+(t.pos===p?' selected':'')+'>'+p+'</option>';}).join("");
+    ed.insertBefore(sel,inp.nextSibling); sel.addEventListener("change",function(){t.pos=sel.value;paint();}); sel.addEventListener("keydown",function(e){e.stopPropagation();}); }
+  inp.addEventListener("input",function(){t.num=(inp.value||"").trim();paint();});
+  inp.addEventListener("keydown",function(e){e.stopPropagation();if(e.key==="Enter"||e.key==="Escape")obCloseEdit();});
+  ed.querySelector(".del").addEventListener("pointerdown",function(e){e.stopPropagation();e.preventDefault();
+    var f=obFrame(m),arr=opp?f.opp:f.us,i=arr.indexOf(t); if(i>=0)arr.splice(i,1); obCloseEdit(); obDraw(m); obSave(); });
+  ed.addEventListener("pointerdown",function(e){e.stopPropagation();});
+  try{inp.focus();inp.select();}catch(_){}
+}
+function obEditBlocked(){ try{ toast(matchDocPending()?"경기 자료를 서버와 맞추는 중이에요 — 잠시 뒤 다시 눌러 주세요":(matchRole()==="player"?"선수 계정은 상대 분석을 볼 수만 있어요":"팀 자료를 고칠 권한이 없어요")); }catch(_){} }
+try{ (function(){ var w=function(){ var pit=$("obPitch"); if(pit&&!pit.__obEd){ pit.__obEd=1; pit.addEventListener("pointerdown",function(){obCloseEdit();}); } }; if(document.readyState!=="loading")w(); else document.addEventListener("DOMContentLoaded",w); })(); }catch(_){}
 function obCounts(m){
   var f=obFrame(m);
   if($("obCntUs"))$("obCntUs").textContent=(f.us||[]).length;
@@ -15532,7 +15558,7 @@ function obToolsSync(m){
 }
 function obDraw(m){
   var pit=$("obPitch"); if(!pit)return;
-  pit.querySelectorAll(".mlb-tok").forEach(function(x){x.remove();});
+  pit.querySelectorAll(".mlb-tok,.mb2-edit").forEach(function(x){x.remove();});   /* 2.752 — 열린 편집기도 함께 */
   var f=obFrame(m);
   f.us.forEach(function(t){obTok(m,t,false);});
   f.opp.forEach(function(t){obTok(m,t,true);});
@@ -15606,14 +15632,29 @@ function renderOB(){
     var m2=matchGet(); obEnsure(m2).oppLabel=bt.dataset.v; obDraw(m2); obSave();});
   $("obAddOp").onclick=function(){if(!matchCanEdit())return;var m2=matchGet();var f=obFrame(m2);
     f.opp.push({num:"D"+(f.opp.length+1),x:50,y:50});obDraw(m2);obSave();};
-  $("obFillUs").onclick=function(){if(!matchCanEdit())return;var m2=matchGet();
-    var slots=MB2_FORMS["4231"];
-    var ours=tmOurs().filter(function(p){return String(p.name||"").trim();});
-    var starters=(m2.startingIds||[]).map(function(id){return ours.find(function(p){return p.id===id;});}).filter(Boolean);
-    var pool=(starters.length?starters:ours.filter(function(p){return plStatusOf(p)==="ok";})).slice(0,11);
-    obFrame(m2).us=slots.map(function(a,i){var pl=pool[i];
-      return {num:pl?String(pl.num||i+1):String(i+1),name:pl?(pl.name||""):"",x:a[0],y:a[1],gk:i===0};});
-    obDraw(m2);obSave();};
+  $("obFillUs").onclick=function(){if(!matchCanEdit()){obEditBlocked();return;}var m2=matchGet();
+    /* ══ 2.752 · 코치 피드백 «상대 분석 클릭 시 선발 명단에 랜덤으로 추가되며 수정이 안 됨» ══════════
+       전에는 포메이션을 4-2-3-1 로 고정하고, 선발이 없으면 출전 가능 선수를 **명단 순서대로 11명 잘라 자리 순서대로**
+       앉혔다(첫 선수가 GK 자리, 공격수가 수비 자리) — 그게 «랜덤» 이다. 토큰엔 pid 도 편집기도 없어 고칠 길이 없었다.
+       이제 ① 선발 명단만 놓는다(없으면 안내하고 아무것도 안 놓는다 — 앱은 거울) ② 이 경기의 포메이션
+       ③ 포지션 → 자리(정확 → 세부·기본 → 라인, 남은 선발은 빈 자리) ④ pid·포지션을 실어 명단과 이어 둔다. */
+    var sq=matchReviewSquad(m2), ours=tmOurs().filter(function(p){return String(p.name||"").trim();});
+    var starters=sq.start.map(function(id){return ours.find(function(p){return p.id===id;});}).filter(Boolean);
+    if(!starters.length){ toast("선발 명단이 아직 없어요 — 02 경기 준비에서 선발을 정하면 그대로 놓입니다"); return; }
+    var formKey=String(m2.formation||matchFormLabel((data.meta&&data.meta.form)||"4231")).replace(/[^0-9]/g,"");
+    if(!MB2_FORMS[formKey]||!MB2_SLOTS[formKey])formKey="4231";
+    var slots=MB2_FORMS[formKey], labels=MB2_SLOTS[formKey].map(function(x){return x[0];});
+    var norm=function(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");};
+    var base=function(v){v=norm(v);if(/^(L|R)?CB$/.test(v))return"CB";if(/^(L|R)?CM$/.test(v))return"CM";if(/^(L|R)?DM$/.test(v))return"DM";if(v==="CF")return"ST";if(v==="LWB")return"LB";if(v==="RWB")return"RB";return v;};
+    var line=function(v){v=norm(v);if(!v)return"";if(v==="GK")return"GK";if(/CB|LB|RB|WB|FB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";};
+    var pool=starters.slice(), picked=slots.map(function(){return null;});
+    [function(p,l){return norm(tmAbbrOf(p))===norm(l);},function(p,l){return base(tmAbbrOf(p))===base(l);},function(p,l){return line(tmAbbrOf(p))===line(l);}]
+      .forEach(function(same){ labels.forEach(function(l,i){ if(picked[i])return; var ix=pool.findIndex(function(p){return same(p,l);}); if(ix>=0)picked[i]=pool.splice(ix,1)[0]; }); });
+    labels.forEach(function(l,i){ if(!picked[i]&&pool.length)picked[i]=pool.shift(); });
+    obFrame(m2).us=slots.map(function(a,i){var pl=picked[i]; if(!pl)return null; var ps=tmAbbrOf(pl)||"";
+      return {pid:pl.id,num:String(pl.num||MB2_SLOTS[formKey][i][1]||i+1),name:pl.name||"",pos:ps,x:a[0],y:a[1],gk:i===0||norm(ps)==="GK"};}).filter(Boolean);
+    obDraw(m2);obSave();
+    toast("선발 "+picked.filter(Boolean).length+"명을 "+matchFormLabel(formKey)+" 자리에 놓았어요"+(pool.length?(" · 자리 없는 선발 "+pool.length+"명"):""));};
   $("obClear").onclick=function(){if(!matchCanEdit())return;var m2=matchGet();
     psConfirm("이 프레임의 우리·상대 토큰을 모두 지울까요?",function(){var f=obFrame(m2);f.us=[];f.opp=[];obDraw(m2);obSave();});};
   $("obAddFrame").onclick=function(){if(!matchCanEdit())return;var m2=matchGet(),b=obCur(m2);
@@ -17955,7 +17996,7 @@ function init(){
   if($("plEditModal"))$("plEditModal").addEventListener("click",e=>{if(e.target.id==="plEditModal")closePlayer();});
   if($("posReset"))$("posReset").onclick=resetPositions;
   if($("posSort"))$("posSort").onclick=()=>{ // 표준 순서(GK→…→ST) 정렬 — 커스텀/미인식 포지션은 상대 순서 유지하며 뒤로
-    const rank=p2=>{const i=TM_POS.indexOf(tmNorm(posAbbr(p2.name)));return i<0?TM_POS.length:i;};
+    const rank=p2=>{const i=TM_POS.indexOf(tmBase(posAbbr(p2.name)));return i<0?TM_POS.length:i;};
     data.positions=data.positions.map((p2,i)=>({p2,i}))
       .sort((a,b2)=>(rank(a.p2)-rank(b2.p2))||(a.i-b2.i)).map(o=>o.p2);
     posOrderChanged("표준 순서(GK→…→ST)로 정렬됨 ✓");};
@@ -18004,7 +18045,7 @@ function syncPlayerPickerLabel(){
 <script>(function(){function host(){var cs=document.querySelectorAll("#playersView .card-h"),h=null;for(var i=0;i<cs.length;i++){if((cs[i].textContent||"").indexOf("\uc601\uc785 \uc758\uc0ac\uacb0\uc815")>=0)h=cs[i];}return h;}function bar(){var h=host();if(!h)return null;var btn=document.getElementById("ps3del");if(!btn){btn=document.createElement("button");btn.id="ps3del";btn.type="button";btn.className="btn danger sm";btn.style.display="none";btn.addEventListener("click",ps3bulkDel);h.appendChild(btn);}return btn;}window.ps3sync=function(){var btn=bar();if(!btn)return;var n=document.querySelectorAll(".pl-cb:checked").length;btn.textContent="\uc120\ud0dd \uc0ad\uc81c ("+n+")";btn.style.display=n?"inline-flex":"none";};window.ps3bulkDel=function(){var ids=[].map.call(document.querySelectorAll(".pl-cb:checked"),function(c){return c.getAttribute("data-cbpl");});if(!ids.length)return;psConfirm(ids.length+"\uba85\uc744 \uc0ad\uc81c\ud560\uae4c\uc694?",function(){data.players=data.players.filter(function(p){return ids.indexOf(p.id)<0;});try{if(typeof editingPlayer!=="undefined"&&ids.indexOf(editingPlayer)>=0&&typeof closePlayer==="function")closePlayer();}catch(e){}save();renderPlayers();try{ps3sync();}catch(e){}});};function wrap(){if(window.__ps3wrap)return;if(typeof renderPlayers!=="function"){setTimeout(wrap,300);return;}window.__ps3wrap=1;var _o=renderPlayers;renderPlayers=function(){var r=_o.apply(this,arguments);try{ps3sync();}catch(e){}return r;};}wrap();setTimeout(function(){try{ps3sync();}catch(e){}},800);})();</script>
 <script>(function(){
   /* 명단 일괄 입력 — 한 줄에 한 명, 번호/이름/포지션 자유 순서 */
-  var POS=["GK","CB","LCB","RCB","LB","RB","DM","CM","AM","CF","ST","LW","RW","LM","RM"];
+  var POS=["GK","CB","LCB","RCB","LB","RB","LWB","RWB","DM","LDM","RDM","CM","LCM","RCM","AM","CF","ST","LW","RW","LM","RM"];   /* 2.752 */
   function $(id){return document.getElementById(id);}
   function parseLine(line){
     var raw=(line||"").trim();
