@@ -1510,7 +1510,7 @@ function mxExtraHtml(day,cls,di,mymd){
   var e=wkbdEsc;
   return mxExtraList(day).map(function(x,xi){ var L=mxExtraLabel(x);
     return '<div class="'+cls+(L.friendly?' friendly':'')+'">'+(L.friendly?'친선':'경기')+(L.t?' · '+e(L.t):'')+' · '+e(L.o)+(L.g?' <i>'+e(L.g)+'</i>':'')
-      +((di!=null&&mymd)?' <button type="button" class="mx-go" onclick="event.stopPropagation();wkbdGoMatchX(\''+e(mymd)+'\','+di+','+xi+')">준비 →</button>':'')+'</div>'; }).join('');
+      +((di!=null&&mymd)?' <button type="button" class="mx-go" onclick="event.stopPropagation();wkbdGoMatchX(\''+e(mymd)+'\','+di+','+xi+')">'+e(wkbdMatchDoor(mymd,x.opp||'').short)+'</button>':'')+'</div>'; }).join('');
 }
 /* ══ 2.449 · 첫 경기에도 × 와 조 ═════════════════════════════════════════════════
    사용자: "경기 추가했을 때 오른쪽 상단에 x 넣어서 지울 수도 있게 해주고 조 태그도 넣게 해줘".
@@ -3859,7 +3859,7 @@ function renderWeekBoard(el){
         +(_mTime?'<div class="wkbd-mko">'+wkbdEsc(_mTime)+'</div>':'')
         +mxExtraHtml(day,'wkbd-mx',di,mymd)   /* 2.620 */
         +'<label class="wkbd-mlogo-up">'+(mlogo?'로고 변경':'＋ 로고')+'<input type="file" accept="image/*" style="display:none" onchange="matchLogoUpload('+di+',event)"></label>'
-        +'<button class="wkbd-gomatch" onclick="wkbdGoMatch(\''+mymd+'\','+di+')">경기 준비 →</button>'
+        +'<button class="wkbd-gomatch" onclick="wkbdGoMatch(\''+mymd+'\','+di+')">'+wkbdEsc(wkbdMatchDoor(mymd,opp).label)+'</button>'
         +'<div class="wkbd-mergetr">'+wkbdTrainInner(di,b.trains,b.trainThemes,b.trainSlot)+'</div>'
         +'</div>';
       continue;
@@ -3897,7 +3897,7 @@ function renderWeekBoard(el){
         +'<div class="wkbd-tx wkbd-opp" contenteditable="true" data-di="'+ci+'" data-f="opp" data-ph="상대팀" onblur="wkbdSave(this)">'+wkbdEsc(oppC)+'</div>'
         +(mTimeC?'<div class="wkbd-mko">'+wkbdEsc(mTimeC)+'</div>':'')
         +mxExtraHtml(dayC,'wkbd-mx',ci,mymdC)   /* 2.620 */
-        +'<button class="wkbd-gomatch" onclick="event.stopPropagation();wkbdGoMatch(\''+mymdC+'\','+ci+')">경기 준비 →</button>'+'<div class="wkbd-mergetr">'+wkbdTrainInner(ci,bC.trains,bC.trainThemes,bC.trainSlot)+'</div>'+'</div>';
+        +'<button class="wkbd-gomatch" onclick="event.stopPropagation();wkbdGoMatch(\''+mymdC+'\','+ci+')">'+wkbdEsc(wkbdMatchDoor(mymdC,oppC).label)+'</button>'+'<div class="wkbd-mergetr">'+wkbdTrainInner(ci,bC.trains,bC.trainThemes,bC.trainSlot)+'</div>'+'</div>';
     } else if(bC.sched==='OFF'){
       body='<div class="wkday-off"><button class="wkbd-mlabel" onclick="wkbdPick('+ci+',\'sched\')">OFF ▾</button><span>휴식</span>'+'<div class="wkbd-mergetr">'+wkbdTrainInner(ci,bC.trains,bC.trainThemes,bC.trainSlot)+'</div>'+'</div>';
     } else {
@@ -4794,7 +4794,7 @@ function renderWeekSessions(el){
         +'</div>'
         +'<div class="wks-krow">'
           +'<div class="wkbd-tx wks-opp" contenteditable="true" data-di="'+di+'" data-f="opp" data-ph="상대팀" title="'+wkbdEsc(opp||'상대팀')+'" onblur="wkbdSave(this)">'+wkbdEsc(opp)+'</div>'
-          +'<button type="button" class="wks-go" onclick="wkbdGoMatch(\''+mymd+'\','+di+')">경기 준비 →</button>'
+          +'<button type="button" class="wks-go" onclick="wkbdGoMatch(\''+mymd+'\','+di+')">'+wkbdEsc(wkbdMatchDoor(mymd,opp).label)+'</button>'
         +'</div>'
         /* ══ 2.436 · 추가 경기(A팀·B팀…) ═══════════════════════════════════════════
            첫 경기 아래로 쌓인다. 조 칩은 훈련 세션과 **같은 `wks-grp`** — 눌러서 고른다.
@@ -5246,14 +5246,35 @@ function wkbdMeetStack(col,row,di,meets,data){
 window.wkbdAddMeet=function(di,slot){if(schedEditBlocked()){schedBlockNotice();return;}__pendSlot=slot||'';if(__pendSlot)ensureSlotSession(di,__pendSlot);var b=dayBoard(week[di]);if(!b.meets)b.meets=[];wkbdPick(di,'meet',b.meets.length);};   /* 2.129 · 2.132 */
 /* 경기 칸 '경기 준비 →' — 팀 허브의 경기 화면에서 이 날짜 경기를 바로 연다(1.484) */
 /* 2.436 — 추가 경기의 '경기 준비 →'. 첫 경기와 **같은 통로**(openTeamMatch)를 쓰고 상대만 다르다 */
+/* ══ 2.758 · 경기 카드의 문 하나가 **지금 비어 있는 첫 걸음**을 가리킨다(설계 목업 «상대 분석에서 경기 준비까지»).
+   상대 분석이 비었으면 «상대 분석 →», 채워졌으면 «경기 준비 →», 경기가 지났으면 «경기 리뷰 →». 제안이 아니라 상태다.
+   경기 문서는 cs_team_matches_v1(로컬 사본)에서 날짜(+상대)로 찾는다 — 없으면 예전처럼 «경기 준비 →». 선수는 상대 분석을 못 보니 준비. */
+function wkbdMatchDoor(ymd,opp){
+  var out={label:'경기 준비 →',short:'준비 →',step:'prep'};
+  try{
+    var st=JSON.parse(localStorage.getItem('cs_team_matches_v1')||'null'); var L=(st&&st.matches)||[]; if(!L.length)return out;
+    var norm=function(v){ var t=String(v==null?'':v).replace(/\s+/g,' ').trim(); return (t==='상대 미정'||t==='새 경기')?'':t; };
+    var o=norm(opp), same=L.filter(function(m){return String(m.date||'')===String(ymd||'');});
+    var m=o?(same.filter(function(x){return norm(x.opponent)===o;})[0]||null):null;
+    if(!m&&(!o||same.length<2))m=same[0]||null;
+    if(!m)return out;
+    var player=false; try{ player=!!(window.PSPerms&&PSPerms.role&&PSPerms.role()==='player'); }catch(_){}
+    var now=new Date(), today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+    if(String(m.date||'')<today)return {label:'경기 리뷰 →',short:'리뷰 →',step:'review'};
+    if(player)return out;
+    var oppDone=['oppAttack','oppDefense','oppAttackTransition','oppDefenseTransition','oppSetPlay','oppConclusion','oppKeyPlayers'].some(function(k){return String(m[k]||'').trim();});
+    if(!oppDone)return {label:'상대 분석 →',short:'분석 →',step:'opp'};
+    return out;
+  }catch(_){ return out; }
+}
 window.wkbdGoMatchX=function(ymd,di,xi){
   var day=week[di]||{}, m=(mxList(day)||[])[xi]||{};
-  try{parent.postMessage({source:'process',type:'openTeamMatch',date:ymd,opp:m.opp||''},'*');}catch(_){}
+  try{parent.postMessage({source:'process',type:'openTeamMatch',date:ymd,opp:m.opp||'',step:wkbdMatchDoor(ymd,m.opp||'').step},'*');}catch(_){}
 };
 window.wkbdGoMatch=function(ymd,di){
   var day=week[di]||{},b=dayBoard(day);
   var opp=(day.match&&day.match.opp)||b.opp||'';
-  try{parent.postMessage({source:'process',type:'openTeamMatch',date:ymd,opp:opp},'*');}catch(_){}
+  try{parent.postMessage({source:'process',type:'openTeamMatch',date:ymd,opp:opp,step:wkbdMatchDoor(ymd,opp).step},'*');}catch(_){}
 };
 function wkbdSetMeetItem(di,mi,d){var b=dayBoard(week[di]);if(!b.meets)b.meets=[];if(!b.meetsData)b.meetsData=[];b.meets[mi]=d.name||'미팅';b.meetsData[mi]={minutes:+d.minutes||0,thumb:d.thumb||'',snap:d.snap||null,focus:d.focus||''};b.meet=b.meets.join(' · ');try{var _dy=week[di];if(_dy)_dy.meeting=b.meet;}catch(_){}try{save();}catch(_){}syncViews();closeSheet();}
 window.wkbdMeetTap=function(di,mi){var b=dayBoard(week[di]);var nm=(b.meets&&b.meets[mi])||'미팅';var md=(b.meetsData&&b.meetsData[mi])||{};var sheet=document.getElementById('sheet');var thumb=md.thumb?('<div class="trd-thumb">'+md.thumb+'</div>'):'<div class="trd-thumb empty">그림 없음 — 작전판에서 그려보세요</div>';sheet.innerHTML='<button class="closex" onclick="closeSheet()">×</button><h3>'+wkbdEsc(nm)+(md.minutes?(' <span style="color:var(--text-3);font-weight:600">· '+md.minutes+'분</span>'):'')+'</h3>'+thumb+'<div class="trd-btns"><button class="btn solid" onclick="boardDrawForMeet('+di+','+mi+')">작전판에서 '+(md.snap?'열기·수정':'그리기')+'</button><button class="btn" onclick="wkbdPick('+di+',\'meet\','+mi+')">이름·드릴 교체</button><button class="btn" onclick="wkbdMeetDel('+di+','+mi+')">삭제</button></div>';document.getElementById('scrim').classList.add('show');};
