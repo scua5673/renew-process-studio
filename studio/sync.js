@@ -1015,13 +1015,14 @@ function ensureToken(){
 
 /* ── 동기화 ── */
 /* n = 키별 '지난번에 알던 항목 수' — 1.573 출고 검사의 기준(아래 pushHold). 옛 메타에는 없으므로 채워 준다. */
-var matchReadyPending=false;
+var matchReadyPending=false,scheduleReadyPending=false;
 function meta(){ try{ var m=JSON.parse(localStorage.getItem(MKEY)||'null')||{h:{},c:{},last:0}; if(!m.n)m.n={}; if(!m.r||typeof m.r!=='object'||Array.isArray(m.r))m.r={}; return m; }catch(_){ return {h:{},c:{},last:0,n:{},r:{}}; } }
 function setMeta(m){
   try{
     /* kvWrite 전에 meta를 캡처한 restore/snapshot 경로가 나중에 예전 m을 쓰면
        지운 ready 표가 부활한다. exact 3자 commit이 아직이면 모든 setMeta에서 닫힌 상태를 강제한다. */
     if(matchReadyPending&&m&&m.r)delete m.r[MATCH_KEY];
+    if(typeof scheduleReadyPending!=='undefined'&&scheduleReadyPending&&m&&m.r)delete m.r[SCHEDULE_KEY];
     localStorage.setItem(MKEY,JSON.stringify(m));
   }catch(_){}
 }
@@ -1030,6 +1031,7 @@ function setMeta(m){
    성공으로 오인하지 않는다. */
 function setMetaExact(m){
   if(matchReadyPending&&m&&m.r)delete m.r[MATCH_KEY];
+  if(typeof scheduleReadyPending!=='undefined'&&scheduleReadyPending&&m&&m.r)delete m.r[SCHEDULE_KEY];
   var raw=JSON.stringify(m);localStorage.setItem(MKEY,raw);
   if(localStorage.getItem(MKEY)!==raw)throw new Error('sync meta verification failed');
   return true;
@@ -1038,12 +1040,67 @@ function keyReady(k,wid){
   if(k===MATCH_KEY&&matchReadyPending)return false;
   var m=meta(),r=m.r&&m.r[k];if(!wid||!r)return false;
   if(typeof r!=='object'||String(r.w||'')!==String(wid))return false;
+  /* 2.750 — 일정은 현재 계정·작업 공간의 서버 확인을 마친 표만 사용한다.
+     uid/wid가 같아도 전환 nonce가 달라진 과거 캐시 표는 다시 확인해야 한다. */
+  if(k===SCHEDULE_KEY){
+    try{
+      var s=getSess(),raw=localStorage.getItem(k),seal=localStorage.getItem(OWNERKEY)||'';
+      if(scheduleReadyPending||!dataUnlocked()||!s||String(s.uid||'')!==String(r.u||'')||
+         String(activeWs()||'')!==String(wid)||!seal||r.o!==seal)return false;
+      if(r.present!==true&&r.present!==false)return false;
+      return raw==null?r.present===false:scheduleReadyRaw(raw);
+    }catch(_){return false;}
+  }
   /* 서버에 행이 없음을 확인한 상태(present:false)는 거울이 없어도 준비 완료다.
      행이 있었던 상태는 거울이 사라지면 즉시 다시 닫아 빈 문서 생성을 막는다.
      h는 착지 시점 감사값이고, 이후 정상 로컬 편집은 ready를 닫지 않는다. */
   if(r.present===false)return true;
   if(r.present!==true)return false;
   try{return localStorage.getItem(k)!=null;}catch(_){return false;}
+}
+/* 2.750 — 문서가 없다는 서버 확인과, 파싱할 수 없는 기기 사본을 구분한다.
+   읽기 검사만 한다. 날짜 이동/정규화는 기존 동기화 경로에서만 수행한다. */
+function scheduleReadyRaw(raw,allowLegacyAnchor){
+  try{
+    var d=JSON.parse(raw),a=d&&String(d.anchorMonday||''),p=/^(\d{4})-(\d{2})-(\d{2})$/.exec(a);
+    if(!d||typeof d!=='object'||Array.isArray(d)||!d.weeks||typeof d.weeks!=='object'||Array.isArray(d.weeks))return false;
+    if(allowLegacyAnchor&&!d.anchorMonday)return true; /* 기준일 없는 옛 문서는 기존 정규화에서 처리 */
+    if(!p)return false;
+    var dt=new Date(a+'T00:00:00Z');
+    return Number.isFinite(dt.getTime())&&dt.toISOString().slice(0,10)===a&&dt.getUTCDay()===1;
+  }catch(_){return false;}
+}
+function scheduleReadyInvalidate(){
+  scheduleReadyPending=true;
+  var before=localStorage.getItem(MKEY),m=before==null?{h:{},c:{},n:{},r:{}}:JSON.parse(before);
+  if(!m||typeof m!=='object'||Array.isArray(m))throw syncIssue('sync_storage','schedule_ready_invalidate','일정 준비표 메타 형식을 확인하지 못했습니다');
+  if(!m.r||typeof m.r!=='object'||Array.isArray(m.r))m.r={};
+  delete m.r[SCHEDULE_KEY];
+  var raw=JSON.stringify(m);localStorage.setItem(MKEY,raw);
+  if(localStorage.getItem(MKEY)!==raw)throw syncIssue('sync_storage','schedule_ready_invalidate','일정 준비표 닫기를 확인하지 못했습니다');
+}
+function scheduleReadyCommit(m,raw,uid,wid,seal,current){
+  /* 호출자는 서버에서 받은 원문(기준일 정규화 포함) 또는 실제 ACK 원문만 넘긴다.
+     세 저장 위치가 같아도 서버 확인 후보가 없으면 이 함수를 호출하지 않는다. */
+  if(raw!==null&&!scheduleReadyRaw(raw))return Promise.reject(syncIssue('sync_storage','schedule_ready_shape','일정 문서 형식을 확인하지 못했습니다'));
+  function guard(){
+    if(typeof current!=='function'||!current()||String(localStorage.getItem(OWNERKEY)||'')!==seal)
+      throw syncIssue('sync_workspace_changed','schedule_ready_owner','일정 확인 중 계정이나 팀이 바뀌었습니다');
+  }
+  return Promise.resolve(editMirrorCommit).then(function(){
+    guard();return window.PSStorage&&PSStorage.sharedReady?PSStorage.sharedReady(SCHEDULE_KEY):true;
+  }).then(function(){
+    guard();if(!window.storage||!window.storage.get)throw syncIssue('sync_storage','schedule_ready_idb','일정 저장소를 확인할 수 없습니다');
+    return window.storage.get(SCHEDULE_KEY);
+  }).then(function(rec){
+    guard();var idb=rec&&rec.value!=null?String(rec.value):null,mirror=localStorage.getItem(SCHEDULE_KEY);
+    if(idb!==raw||mirror!==raw)throw syncIssue('sync_local_changed','schedule_ready_exact','일정 서버 확인 원문·기기 저장소·화면 사본이 다릅니다');
+    var marker={w:String(wid),u:String(uid),o:seal,present:raw!==null,h:hash(raw)},latest=meta();
+    latest.r=latest.r||{};latest.r[SCHEDULE_KEY]=marker;
+    var next=JSON.stringify(latest);localStorage.setItem(MKEY,next);
+    if(localStorage.getItem(MKEY)!==next)throw syncIssue('sync_storage','schedule_ready_commit','일정 준비표 저장을 확인하지 못했습니다');
+    guard();m.r=m.r||{};m.r[SCHEDULE_KEY]=marker;scheduleReadyPending=false;return true;
+  });
 }
 /* 경기 준비표는 단순 최종 상태가 아니라 “서버 원문·IDB·거울이
    한 번 정확히 같았다”는 commit 표다. 동기화가 경기 저장을 시작하기 전에
@@ -4168,6 +4225,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
   /* IDB가 먼저 바뀌는 비동기 구간에 예전 ready 표가 남아 있으면
      scout가 예전 거울을 편집해 다시 올릴 수 있다. 쓰기 자체보다 먼저 표를 닫는다. */
   if(k===MATCH_KEY)matchReadyInvalidate();
+  if(k===SCHEDULE_KEY)scheduleReadyInvalidate();
   /* 덮기 전에 지금 값을 읽어 남긴다. IDB 키(스카우팅 후보·보관함 등)가 오히려 중요하다 —
      2026-08-05 에 날아간 cs_scout_targets_v1 이 바로 이쪽이었다. */
   if(idbBacked(k)){
@@ -4969,6 +5027,11 @@ function syncNowCore(reason){
       .then(function(pre){
       var metaRows=pre[0], idbVals=pre[1];
       var m0=meta(), needV=[];
+      /* 2.750 — 전체 메타 목록에 없는 일정도 키를 직접 조회한다.
+         목록 조회와 원문 조회 사이에 생긴 행은 받아들이고, 명시 조회가 빈 경우에만
+         서버 부재로 확정한다(아직 조회하지 않음/목록 밖을 빈 일정으로 오해하지 않는다). */
+      var scheduleMetaPresent=metaRows.some(function(r0){return r0&&r0.k===SCHEDULE_KEY;});
+      if(KEYS.indexOf(SCHEDULE_KEY)>=0&&!scheduleMetaPresent)needV.push(SCHEDULE_KEY);
       metaRows.forEach(function(r0){
         var k=r0.k;
         if(PERSONAL[k])return;   /* 2.744 — 개인 원문은 공통 개인 채널만 읽고 판정한다. */
@@ -4998,7 +5061,7 @@ function syncNowCore(reason){
           var effectiveLoc=(mirrorLoc!=null?mirrorLoc:idbLoc);
           var split=(mirrorLoc!=null&&idbLoc!=null&&mirrorLoc!==idbLoc);
           var sameSrv=(r0.cupd===(m0.c[k]||0));
-          if(!sameSrv||effectiveLoc==null||split){ needV.push(k); return; }
+          if(!keyReady(k,wid)||!sameSrv||mirrorLoc==null||idbLoc==null||split){ needV.push(k); return; }
           if(hash(effectiveLoc)!==(m0.h[k]||'')){
             /* 2.607 — 편집 중(로컬 dirty)에 서버 cupd 가 지난 확정과 같으면 서버 원문 = 마지막 확정 base(1.658, IDB). 그 base 의 hash 가
                확정 hash(m.h) 와 같을 때만 base 를 서버 원문으로 쓰고 다시 받지 않는다(가드는 수락 시 v 를 고쳐 쓰지 않는다 — lineage-guard 확인).
@@ -5033,11 +5096,14 @@ function syncNowCore(reason){
         var fv={}; (full||[]).forEach(function(r0){ fv[r0.k]=r0; });
         /* meta 조회 뒤 해당 행이 지워지면 full 조회에서 빠질 수 있다.
            그때 meta-only 행을 원문으로 오해하지 않도록 요청 여부를 다음 단계에 건네준다. */
-        return [metaRows.map(function(r0){ return fv[r0.k]||r0; }),idbVals,needV.indexOf(MATCH_KEY)>=0];
+        var complete=metaRows.map(function(r0){ return fv[r0.k]||r0; });
+        if(!scheduleMetaPresent&&fv[SCHEDULE_KEY])complete.push(fv[SCHEDULE_KEY]);
+        return [complete,idbVals,needV.indexOf(MATCH_KEY)>=0,needV.indexOf(SCHEDULE_KEY)>=0];
       });
     }).then(function(pair){
       var rows=pair[0], idbVals=pair[1];
       var matchFullRequested=!!pair[2];
+      var scheduleFullRequested=!!pair[3];
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
       var m=meta(), pushRows=[], idpBaseNext={},idpPushCandidate={},idpPushConfirmed={},idpLocalStage={},idpCommitDone=false, applied=0, skippedBig=0, skippedKeys=[], heldKeys=[], dependencyDeferredKeys=[], now=Date.now(), writes=[], itemsApplied=0,matchReadyBlocked=false;
       var idpMetaBefore={h:{},c:{},n:{}};Object.keys(m.h||{}).forEach(function(k){idpMetaBefore.h[k]=m.h[k];});Object.keys(m.c||{}).forEach(function(k){idpMetaBefore.c[k]=m.c[k];});Object.keys(m.n||{}).forEach(function(k){idpMetaBefore.n[k]=m.n[k];});
@@ -5057,6 +5123,10 @@ function syncNowCore(reason){
       var matchMetaBefore={h:m.h[MATCH_KEY],c:m.c[MATCH_KEY],n:m.n[MATCH_KEY],base:syncBaseGet(MATCH_KEY)};
       var matchResolutionPlanned=false,matchResolved=false,matchExpectedRaw,matchPushPlanned=false,matchTouched=false,matchWriteGuards=[];
       var scheduleGuard={stale:false},schedulePushExpected=null,scheduleMetaBefore=null,scheduleAppliedPlanned=0,scheduleDeferred=false,scheduleMetaRestored=false,schedulePushHeld=false,scheduleDependencyBlocked=false,scheduleDependencyRetry=false;
+      var scheduleExpectedRaw,scheduleObserved=false,schedulePushConfirmed=false,schedulePushRow=null;
+      function invalidateScheduleReadyLocal(){
+        m.r=m.r||{};delete m.r[SCHEDULE_KEY];scheduleReadyInvalidate();
+      }
       function commitIdpBasesAndMeta(){
         requireRoundWorkspace('idp_base_commit');
         var missing=Object.keys(idpPushCandidate).filter(function(k){return !Object.prototype.hasOwnProperty.call(idpPushConfirmed,k);});
@@ -5185,6 +5255,7 @@ function syncNowCore(reason){
       function queuePush(k,raw,confirmedRaw,expectedLoc,casCupd,casMissing){
         var send=raw,scheduleImportRec=null,scheduleImportMoved=false;
         if(k===SCHEDULE_KEY){
+          invalidateScheduleReadyLocal();
           scheduleImportRec=importApprovalGet(k,raw);
           if(confirmedRaw==null&&scheduleMetaBefore)confirmedRaw=scheduleMetaBefore.base;
           send=scheduleCommitRaw(raw,confirmedRaw);
@@ -5207,6 +5278,7 @@ function syncNowCore(reason){
           if(!expectMatchRaw(send,false))return null;
         }
         var pushRow={workspace_id:wid,k:k,v:send,cupd:now};if(casCupd!=null)pushRow._casCupd=casCupd;if(casMissing)pushRow._casMissing=true;pushRows.push(pushRow);
+        if(k===SCHEDULE_KEY)schedulePushRow=pushRow;
         m.h[k]=hash(send);m.c[k]=now;nSet(m,k,send);syncBaseSet(k,send);
         return send;
       }
@@ -5234,6 +5306,9 @@ function syncNowCore(reason){
         if(k===SCHEDULE_KEY){
           try{var scheduleMirror=localStorage.getItem(k);if(scheduleMirror!=null)loc=scheduleMirror;}catch(_){}
           scheduleMetaBefore={h:m.h[k],c:m.c[k],n:m.n[k],base:syncBaseGet(k)};
+          /* 편집 hold를 지난 회차만 새 판정을 시작한다. 메타만 받았거나
+             현재 계정에 확인표가 없으면 로컬 두 사본만으로 준비 완료를 추정하지 않는다. */
+          if(scheduleFullRequested||!keyReady(k,wid))invalidateScheduleReadyLocal();
         }
         var lh=hash(loc);
         var dirty=(lh!==(m.h[k]||''));
@@ -5253,11 +5328,15 @@ function syncNowCore(reason){
         }
         if(k===SCHEDULE_KEY&&row&&row.v!=null){
           scheduleServerOriginal=row.v;
-          var safeSchedule=normalizeCoachDocument(row.v);
-          if(!safeSchedule){scheduleDeferred=true;syncDiagnostic('schedule-anchor-invalid',new Error('일정 기준일 검증 실패'));return;}
+          var safeSchedule=scheduleReadyRaw(row.v,true)?normalizeCoachDocument(row.v):null;
+          if(!safeSchedule||!scheduleReadyRaw(safeSchedule)){invalidateScheduleReadyLocal();scheduleDependencyBlocked=true;syncDiagnostic('schedule-anchor-invalid',new Error('일정 기준일·문서 검증 실패'));return;}
+          scheduleExpectedRaw=safeSchedule;scheduleObserved=true;
           if(safeSchedule!==row.v){scheduleServerNormalized=true;row={k:row.k,v:safeSchedule,cupd:row.cupd};}
         }
         var srvChanged=row?(row.cupd!==(m.c[k]||0)):false;
+        if(k===SCHEDULE_KEY&&row&&scheduleFullRequested&&typeof row.v!=='string'){
+          scheduleDeferred=true;syncDiagnostic('schedule-full-missing',new Error('일정 서버 원문을 확인하지 못했습니다'));return;
+        }
         if(k===MATCH_KEY&&row&&matchFullRequested&&typeof row.v!=='string'){
           /* meta 조회와 full 조회 사이에 행이 바뀌었거나 사라졌다.
              v가 없는 meta 행을 빈 문서·서버 원문으로 채택하지 않고 다음 회차로 미룬다. */
@@ -5271,12 +5350,19 @@ function syncNowCore(reason){
           return;
         }
         if(loc==null&&!row){
+          if(k===SCHEDULE_KEY){scheduleExpectedRaw=null;scheduleObserved=true;}
           if(k===MATCH_KEY){
             var absentMirror=null;try{absentMirror=localStorage.getItem(MATCH_KEY);}catch(_){absentMirror=null;}
             if(absentMirror==null)expectMatchRaw(null,true);
             else blockMatchReady('match-absence-split',new Error('경기 IDB는 비었지만 거울에 원문이 남아 있습니다'));
           }
           return;
+        }
+        /* 서버 확인본과 화면이 같아도 IDB 또는 거울 한쪽이 빠졌으면 복구한다.
+           최초 준비표는 이 쓰기와 CAS 확인이 끝난 뒤에만 발급한다. */
+        if(k===SCHEDULE_KEY&&row&&typeof row.v==='string'&&loc===row.v&&
+           ((idbVals[k]===undefined?null:idbVals[k])!==row.v||localStorage.getItem(k)!==row.v)){
+          if(roundKvWrite(k,row.v,writes,loc,scheduleGuard)){applied++;scheduleAppliedPlanned++;}
         }
         /* 1.644 — 읽기 전용 기기는 dirty 판정보다 서버 일정이 먼저다.
            예전에는 로컬 승리 본을 먼저 만든 뒤 권한 필터에서 push만 제거해,
@@ -5313,6 +5399,7 @@ function syncNowCore(reason){
           if(approvedRaw==null){
             if(k===MATCH_KEY)blockMatchReady('import-rebase-pending',new Error('팀 메뉴 병합 대기: '+k));
             else syncDiagnostic('import-rebase-pending',new Error('팀 메뉴 병합 대기: '+k));
+            if(k===SCHEDULE_KEY)scheduleDeferred=true;
             return;
           }
           if(approvedRaw!==loc){
@@ -5830,12 +5917,23 @@ function syncNowCore(reason){
         if(scheduleMetaBefore.c===undefined)delete m.c[SCHEDULE_KEY];else m.c[SCHEDULE_KEY]=scheduleMetaBefore.c;
         m.n=m.n||{};if(scheduleMetaBefore.n===undefined)delete m.n[SCHEDULE_KEY];else m.n[SCHEDULE_KEY]=scheduleMetaBefore.n;
         syncBaseSet(SCHEDULE_KEY,scheduleMetaBefore.base,wid);
+        m.r=m.r||{};delete m.r[SCHEDULE_KEY];
+        if(roundWorkspaceCurrent())invalidateScheduleReadyLocal();
         applied=Math.max(0,applied-scheduleAppliedPlanned);scheduleDeferred=true;
       }
       function schedulePushCurrent(){
         if(schedulePushExpected==null)return true;
         var cur=null;try{cur=localStorage.getItem(SCHEDULE_KEY);}catch(_){}
         return !scheduleGuard.stale&&!scheduleHeld()&&cur===schedulePushExpected;
+      }
+      function commitScheduleReady(){
+        if(scheduleDeferred||schedulePushHeld||scheduleDependencyBlocked||scheduleGuard.stale||scheduleHeld())return true;
+        if(schedulePushExpected!==null){
+          if(!schedulePushConfirmed){restoreScheduleMeta();return true;}
+          scheduleExpectedRaw=schedulePushExpected;scheduleObserved=true;
+        }
+        if(!scheduleObserved)return true;
+        return scheduleReadyCommit(m,scheduleExpectedRaw,s.uid,wid,roundOwnerSeal,roundWorkspaceCurrent);
       }
       function commitMatchReady(){
         /* 기존의 유효한 준비표를 routine defer 하나 때문에 닫지는 않는다. 다만 이번 회차가
@@ -5901,6 +5999,9 @@ function syncNowCore(reason){
               /* IDP base는 CAS가 실제 성공한 뒤에만 전진한다. 미리 바꾸면 전송 직전 다른
                  기기가 저장해 CAS 0행이 된 다음 회차에서 옛 meta hash와 기준본이 갈라진다. */
               if(sent&&Object.prototype.hasOwnProperty.call(idpPushCandidate,sent.k))confirmIdpCandidate(sent.k);
+              /* blobPrepRows는 같은 요청 객체의 그림을 검증된 참조로 바꾼다.
+                 서버가 그 요청을 실제로 수락했을 때, 변환 전 기기 원문을 확정한다. */
+              if(sent&&sent.k===SCHEDULE_KEY&&sent===schedulePushRow)schedulePushConfirmed=true;
               if(sent&&sent.k===MATCH_KEY&&matchPushPlanned){
                 if(sent.v===matchExpectedRaw)matchResolved=true;
                 else blockMatchReady('match-push-confirm-mismatch',new Error('경기 push 확인 원문이 다릅니다'));
@@ -5910,10 +6011,11 @@ function syncNowCore(reason){
             /* 403 개별 격리는 배치 전체를 reject하지 않는다. onOk가 오지 않은
                경기를 성공으로 간주하지 않고 meta/outbox를 예전 상태로 돌린다. */
             if(matchPushPlanned&&!matchResolved)blockMatchReady('match-push-unconfirmed',new Error('경기 push 확인 응답이 없습니다'));
+            if(schedulePushExpected!==null&&!schedulePushConfirmed)restoreScheduleMeta();
             return itemsResolveConflicts(at,wid,roundWorkspaceCurrent,m).then(function(){return res;});
           });   /* 2.731 */
         });
-      }).then(function(){return commitIdpBasesAndMeta();}).then(function(){return commitMatchReady();}).then(function(){ return syncLibrary(at,m,now,wid,roundWorkspaceCurrent); }).then(function(lr){
+      }).then(function(){return commitIdpBasesAndMeta();}).then(function(){return commitScheduleReady();}).then(function(){return commitMatchReady();}).then(function(){ return syncLibrary(at,m,now,wid,roundWorkspaceCurrent); }).then(function(lr){
         applied+=(lr&&lr.applied)||0;
         m.last=Date.now();requireRoundWorkspace('round_meta_final');setMetaExact(m);lastIssue=null;   /* 2.625 */
         try{ rtConnect(); }catch(_){}   /* 2.628 — 회차가 성공하면 실시간 채널도 맞춰 둔다(워크스페이스가 바뀌었으면 다시 붙는다) */
@@ -5936,7 +6038,7 @@ function syncNowCore(reason){
         /* 급감 hold와 그 의존성 보류는 아직 서버 확인을 받은 것이 아니다.
            예전 meta hash가 우연히 현재 raw와 같아도 outbox를 지우지 않는다. */
         var ackSkipped=curKeys.concat(heldKeys,dependencyDeferredKeys,KEYS.filter(function(k){return PERSONAL[k];}));
-        if(scheduleDeferred||scheduleHeld())ackSkipped.push(SCHEDULE_KEY);
+        if(scheduleDeferred||scheduleDependencyBlocked||scheduleHeld())ackSkipped.push(SCHEDULE_KEY);
         return doPersonal.then(function(){ return outboxAckSynced(wid,m,ackSkipped,lr&&lr.ackHash); }).then(function(){
         busy=false; try{ clearTimeout(busyDog); }catch(_){}
         clearSyncRetry();

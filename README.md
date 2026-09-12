@@ -85,7 +85,7 @@ node tests/browser/review-training.mjs
 
 과거 일간·주간 및 주간 회고에서 저장된 행동과 한 마디를 다시 읽을 수 있다.
 당시 방향은 정확히 같은 판본이 남아 있을 때만 표시하며 현재 문장으로 과거를 바꾸지 않는다.
-내 방향 저장 충돌은 작성 중인 문장을 화면에 남기며, 취소하면 최신 방향을 확인할 수 있다.
+내 방향 저장 충돌은 작성 중인 문장을 기기 초안에 보관하고, 최신 내용과 비교해 사용할 내용을 고를 수 있다.
 
 ```bash
 node tests/browser/idp-start.mjs
@@ -110,8 +110,9 @@ node tests/browser/idp-start.mjs
 서버 이벤트 형식은 유지하며, 기기 큐의 소유자·확인 ID는 서버에 추가하지 않는다.
 큐의 크기 제한·전송 재시도·일부 행동 억제가 있으므로 이벤트 수를 성공한 작업 수로 해석하지 않는다.
 
-실제 팀 모집이나 파일럿 실행은 아직 하지 않았다. 역할별 관찰 과제, 지표의 분모,
-주차별 점검과 다음 개발을 결정할 제안 기준은 [4주 파일럿 계획](docs/pilot-2026-09.md)에 있다.
+김포U15·풋볼A·재현중·김천팀이 현장에서 계속 사용하며 피드백을 주고 있다(사용자 설명).
+측정 결과와 제보 본문은 별도 확인이 필요하다. 역할별 과제, 지표의 분모, 수정 후 제보자 재확인과
+주차별 점검 기준은 [기존 팀의 4주 개선 검증 계획](docs/pilot-2026-09.md)에 있다.
 
 
 ```bash
@@ -150,3 +151,32 @@ node tests/browser/training-context.mjs
 격리된 Chrome의 375px·393px·768px·1280px에서 현재·과거·미래 주, 저장된 조 상속,
 분리된 강도, 잘못된 값, 잠금과 선수 권한, 원본 개인 문서 불변을 확인한다.
 같은 Playwright·Chrome 환경변수를 지원하며 결과는 `test-results/training-context/`에 남긴다.
+
+## 2.750 일정 준비 확인과 IDP 편집 복구
+
+경기에서 훈련 과제를 열기 전에 일정의 서버 확인본, IndexedDB와 화면 사본이 일치했는지
+현재 계정·팀·전환 시점을 함께 확인한다. 서버에서 없음을 확인한 일정만 새 일정으로 다루며,
+권한 거절·저장 실패·원문 누락은 빈 일정으로 간주하지 않는다. 입력 중인 일정이나 경기 리뷰는
+준비 상태 알림 때문에 교체하지 않는다.
+훈련 연결 폼은 화면에 고정해 배경 스크롤에 따라 잘리지 않으며, 작은 화면에서도 닫기 버튼에 접근할 수 있다.
+
+IDP 편집 초안은 계정·팀·탭별 `ps_idp_edit_recovery_v1:` 기기 키에 보관한다.
+서버 동기화 대상에 넣지 않는다. 최신 문서와 겹치지 않는 변경을 구분하고, 같은 항목은 사용자가
+선택한 뒤 적용한다. 비교 뒤 최신 내용이 다시 바뀌면 재확인을 요청한다. 날짜별 일지·배열·내 방향의
+기록 구조를 보존하며, 정상 저장 또는 명시적인 취소 뒤에만 해당 초안을 정리한다.
+새로고침 뒤 같은 탭의 미완료 초안을 찾을 수 있고 최근 해결 기록 한 건을 보관한다.
+브라우저 기기 저장이 막히면 복구를 보장하는 대신 화면을 닫기 전에 저장하도록 안내한다.
+
+```bash
+node tests/browser/idp-recovery.mjs
+PS_BROWSER_ENGINE=webkit node tests/browser/idp-recovery.mjs
+PS_BROWSER_ENGINE=webkit node tests/browser/idp-start.mjs
+PS_BROWSER_ENGINE=webkit node tests/browser/review-training.mjs
+PS_BROWSER_ENGINE=webkit node tests/browser/storage-safety.mjs
+```
+
+위 네 브라우저 검사는 `PS_BROWSER_ENGINE=chromium|webkit`을 지원한다(기본 Chromium).
+WebKit 엔진은 Playwright 설치 환경에 별도 준비해야 한다. 모바일 크기의 Mac WebKit 검증은
+실제 iPhone Safari·홈 화면 설치·키보드·서버 권한 검증을 대체하지 않는다.
+Node 회귀에는 독립 로컬 상태 두 벌과 가상 서버에서 오프라인 수정·재연결·응답 유실 뒤 재시도·
+오래된 충돌 선택을 실행하는 검사가 포함된다. 실제 두 기기 검증 결과와 구분한다.

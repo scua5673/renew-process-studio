@@ -12572,6 +12572,12 @@ window.addEventListener("storage",function(e){
   if(e.key==="ps_sync_meta"){
     /* 2.733 — 서버에 경기 행이 없다는 확인도 meta.r로 도착한다. 그때만
        대기 화면을 풀어 일정에서 첫 경기 문서를 안전하게 만들 수 있다. */
+    /* 2.750 — 일정 준비표도 같은 meta로 온다. 타이핑 중인 리뷰를
+       새 matchState로 교체하지 않고 기존 focusout 경로에서 갱신한다. */
+    var focused=document.activeElement;
+    if(focused&&(/INPUT|TEXTAREA|SELECT/.test(focused.tagName)||focused.isContentEditable)){
+      window.__matchStale=1;return;
+    }
     if(!matchDocPending()){try{__matchRefresh();}catch(_){}}
     return;
   }
@@ -12798,13 +12804,12 @@ function matchTrainingSame(c){
 function matchTrainingSchedule(){try{
   var c=matchTrainingContext();if(!c.uid||!c.wid)return null;
   var api=(parent&&parent!==window)?parent.PSSync:window.PSSync;
-  if(api&&typeof api.keyReady==="function"){
-    if(!api.keyReady("process_coach_v1",c.wid))return null;
-  }else{
-    var meta=JSON.parse(localStorage.getItem("ps_sync_meta")||"null"),r=meta&&meta.r&&meta.r.process_coach_v1;
-    if(!r||String(r.w||"")!==c.wid||(r.present!==true&&r.present!==false))return null;
-  }
-  return store.get("process_coach_v1")||{};
+  /* 2.750 — 현재 계정의 서버·IDB·거울 확인표만 사용한다. 옛 메타 표나
+     API 부재를 빈 일정으로 해석하지 않는다. */
+  if(!api||typeof api.keyReady!=="function"||!api.keyReady("process_coach_v1",c.wid))return null;
+  var doc=store.get("process_coach_v1");
+  if(doc!=null&&(!doc||typeof doc!=="object"||Array.isArray(doc)||!doc.weeks||typeof doc.weeks!=="object"||Array.isArray(doc.weeks)))return null;
+  return matchTrainingSame(c)&&api.keyReady("process_coach_v1",c.wid)?(doc||{weeks:{}}):null;
 }catch(_){return null;}}
 function matchTrainingRecentRows(doc,m){
   var api=window.PSReviewTraining;

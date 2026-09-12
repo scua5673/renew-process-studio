@@ -6,10 +6,11 @@
   function api(){try{return parent!==window?parent.PSSync:window.PSSync;}catch(_){return null;}}
   function owner(){
     try{var s=api(),u=s&&s.session&&s.session(),w=localStorage.getItem('ps_active_ws')||'';
-      return u&&u.uid&&w&&s.dataUnlocked&&s.dataUnlocked()===true&&(!s.keyReady||s.keyReady(KEY,w))?{uid:String(u.uid),wid:w}:null;
+      return u&&u.uid&&w&&s.dataUnlocked&&s.dataUnlocked()===true&&typeof s.keyReady==='function'&&s.keyReady(KEY,w)?
+        {uid:String(u.uid),wid:w,seal:String(localStorage.getItem('ps_cache_owner_v1')||'')}:null;
     }catch(_){return null;}
   }
-  function sameOwner(o){var n=owner();return !!(o&&n&&o.uid===n.uid&&o.wid===n.wid);}
+  function sameOwner(o){var n=owner();return !!(o&&n&&o.uid===n.uid&&o.wid===n.wid&&(!Object.prototype.hasOwnProperty.call(o,'seal')||o.seal===n.seal));}
   function canWrite(){try{return !!owner()&&typeof schedEditBlocked==='function'&&!schedEditBlocked()&&PSPerms.role()!=='player';}catch(_){return false;}}
   function canUseMatch(m){
     try{if(!canWrite()||!m||!PSPerms.canEdit('team'))return false;
@@ -115,10 +116,15 @@
   function open(request){
     var o=owner();if(!o){tell('로그인하고 자료 준비가 끝난 뒤 열어 주세요.');return false;}
     if(request.uid&&(!sameOwner(request)||request.uid!==o.uid)){tell('계정이나 팀이 바뀌었습니다. 다시 열어 주세요.');return false;}
+    if(curSession||document.getElementById('scrim').classList.contains('show')){tell('열려 있는 편집을 마친 뒤 다시 열어 주세요.');return false;}
+    /* 2.750 — 서버/IDB/거울 준비가 먼저 끝나도 프레임의 weeksMap 적용은 늦을 수 있다.
+       화면의 편집본을 교체하지 않고 기존 수신 처리 완료 후 다시 열도록 한다. */
+    if(typeof __schedSavedRaw==='string'&&String(localStorage.getItem(KEY)||'')!==__schedSavedRaw){
+      tell('팀 일정을 화면에 반영하는 중입니다. 잠시 뒤 다시 열어 주세요.');return false;
+    }
     var found=request.taskId?row(String(request.taskId)):null,m=match(String(request.matchId||found&&found.task.matchId||''));
     if(request.taskId&&(!found||request.matchId&&found.task.matchId!==request.matchId)){tell('연결된 훈련 과제를 찾지 못했습니다.');return false;}
     if(!found&&!canUseMatch(m)){tell('이 경기와 팀 일정을 편집할 권한이 있어야 과제를 추가할 수 있습니다.');return false;}
-    if(curSession||document.getElementById('scrim').classList.contains('show')){tell('열려 있는 편집을 마친 뒤 다시 열어 주세요.');return false;}
     var task=found&&found.task,dt=new Date();dt.setHours(0,0,0,0);
     if(m&&PSReviewTraining.validDate(m.date)){var after=new Date(m.date+'T00:00:00');after.setDate(after.getDate()+1);if(after>dt)dt=after;}
     draft={owner:o,match:m,matchId:task?task.matchId:m.id,matchDate:task?task.matchDate:m.date,opponent:task?task.opponent:m.opponent,
