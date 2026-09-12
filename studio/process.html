@@ -4726,7 +4726,7 @@ function wksCard(di,slot){
       ? '<div class="wks-aims" onclick="'+_ps('rpe')+'">RPE '+rpe+'</div>'
       : '<div class="wks-chips"><button type="button" class="wks-plus" title="세션 채우기 — 주제·강도·미팅·훈련·보관함" onclick="'+_fp('rpe')+'">＋</button></div>')+'</div>';
   var _ms=wksSecSum(b.meets,b.meetSlot,slot,b.meetsData);
-  h+=wksRow('미팅', wksChips(di,b.meets,b.meetSlot,slot,'wkbdMeetTap',b.meetsData,true,'meet'), '세션 채우기 — 주제·강도·미팅·훈련·보관함', "wksFill("+di+",'"+slot+"','meet')", _ms.n?(_ms.n+(_ms.sec?(' · '+psDurFmt(_ms.sec)):'')):'');
+  h+=wksRow('미팅', wksChips(di,b.meets,b.meetSlot,slot,'wkbdMeetTap',b.meetsData,true,'meet'), '세션 채우기 — 주제·강도·미팅·훈련·보관함', "wksFill("+di+",'"+slot+"','meet')", _ms.sec?psDurFmt(_ms.sec):'');
   /* 2.305 — **웜업 줄을 걷고 훈련 한 줄로**(사용자 "웜업을 따로 분리하지 말고 훈련만 넣자").
      웜업도 훈련의 하나다 — 준비 이름(Activation·Mobility…)은 훈련 ＋ 의 프리셋으로 들어왔다.
      ⚠ **데이터는 옮기지 않는다.** 옛 저장본의 `b.warms` 를 여기서 **함께 그려** 사라지지 않게 하고,
@@ -4735,7 +4735,7 @@ function wksCard(di,slot){
   var _ws=wksSecSum(b.warms,b.warmSlot,slot,b.warmsData), _ts=wksSecSum(b.trains,b.trainSlot,slot,b.trainData), _tn=_ws.n+_ts.n, _tsec=_ws.sec+_ts.sec;
   h+=wksRow('훈련', wksChips(di,b.warms,b.warmSlot,slot,'wkbdWarmTap',b.warmsData,true,'warm')
                    +wksChips(di,b.trains,b.trainSlot,slot,'wkbdTrainTap',b.trainData,true,'train',b.trainThemes),
-       '세션 채우기 — 주제·강도·미팅·훈련·보관함', "wksFill("+di+",'"+slot+"','train')", _tn?(_tn+(_tsec?(' · '+psDurFmt(_tsec)):'')):'');
+       '세션 채우기 — 주제·강도·미팅·훈련·보관함', "wksFill("+di+",'"+slot+"','train')", _tsec?psDurFmt(_tsec):'');
   /* 2.135 — 보관함은 **세션마다**(사용자). 하루 아래 한 줄이던 것을 옥겼다 —
      어느 세션에 쓰는 드릴인지가 곹 정보다. 예전 저장본(slot 없는 것)은 '시간대 없음' 카드로 간다 */
   var _lch='';
@@ -8344,7 +8344,7 @@ button.wks-slot.nos:hover{background:#d7dbe3;color:#2f3542}
 .wks-chips{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
 .wks-chip{min-height:0;padding:4px 7px;font-size:11px}
 /* 2.764 — 목록 행 */
-.wks-row>i small{display:block;font-size:10px;font-weight:600;letter-spacing:0;color:var(--text-3,#9aa1ac);font-variant-numeric:tabular-nums;line-height:1.2;margin-top:1px}
+.wks-row>i small{display:block;font-size:10px;font-weight:600;letter-spacing:0;color:var(--text-3,#9aa1ac);font-variant-numeric:tabular-nums;line-height:1.2;margin-top:1px;white-space:nowrap}
 .wks-li{flex:1 1 100%;display:grid;grid-template-columns:3px minmax(0,1fr) auto;gap:7px;align-items:center;min-height:28px;padding:4px 6px 4px 0;border-radius:7px;background:var(--surface-2,#f5f6f8);cursor:pointer;min-width:0}
 .wks-li:hover{background:var(--fill,#eef0f4)}
 .wks-li .wks-bar{width:3px;align-self:stretch;border-radius:2px;background:var(--text-3,#9aa1ac)}
