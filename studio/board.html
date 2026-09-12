@@ -14768,6 +14768,47 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 
   // renderDrillFiles 재정의 (타입+폴더 필터)
   /* PDF 묶음 내보내기(다중 선택) 제거 — 개별 PDF 저장은 항목 메뉴에 유지 */
+  /* ══ 2.763 · 보관함 세 열 폭을 끌어서(사용자 «보관함 3열을 가로 크기를 자유롭게 조절») ═══════════════════
+     트리|목록, 목록|미리보기 경계에 손잡이 둘. 끌면 인라인 grid-template-columns 를 !important 로 써서
+     design-v2·figma-premium·vault-full 의 !important 규칙을 이긴다. 폭은 cs_vault_cols_v1 에 남고, 두 번 누르면 기본으로.
+     3열 그리드가 아닐 때(폰·2열 접힘)는 손잡이를 두지 않는다. */
+  var VX_COLS_KEY="cs_vault_cols_v1", VX_MIN={c1:140,c3:220,mid:280}, VX_MAX={c1:420,c3:640};
+  function vxColsLoad(){ try{ var o=JSON.parse(localStorage.getItem(VX_COLS_KEY)||"null"); return (o&&isFinite(o.c1)&&isFinite(o.c3))?o:null; }catch(_){ return null; } }
+  function vxColsSave(o){ try{ if(o)localStorage.setItem(VX_COLS_KEY,JSON.stringify(o)); else localStorage.removeItem(VX_COLS_KEY); }catch(_){} }
+  function vxColsSet(shell,c1,c3){ shell.style.setProperty("--vx-c1",c1+"px"); shell.style.setProperty("--vx-c3",c3+"px"); shell.style.setProperty("grid-template-columns","var(--vx-c1) minmax(0,1fr) var(--vx-c3)","important"); }
+  function vxColsApply(shell){
+    if(!shell||shell.__vxCols)return; shell.__vxCols=1;
+    var cs=getComputedStyle(shell); if(cs.display!=="grid")return;
+    var tracks=String(cs.gridTemplateColumns||"").trim().split(/\s+/); if(tracks.length!==3)return;
+    var saved=vxColsLoad(); if(saved)vxColsSet(shell,saved.c1,saved.c3);
+    var cur=function(){ var t=String(getComputedStyle(shell).gridTemplateColumns||"").trim().split(/\s+/).map(parseFloat); return {c1:t[0]||0,c3:t[2]||0,w:shell.getBoundingClientRect().width}; };
+    var c0=cur(); shell.style.setProperty("--vx-c1",c0.c1+"px"); shell.style.setProperty("--vx-c3",c0.c3+"px");
+    ["l","r"].forEach(function(side){
+      var h=document.createElement("div"); h.className="vx-split "+side; h.setAttribute("role","separator"); h.setAttribute("aria-orientation","vertical");
+      h.title=side==="l"?"끌어서 왼쪽 열 폭 조절 · 두 번 누르면 기본":"끌어서 미리보기 폭 조절 · 두 번 누르면 기본";
+      h.addEventListener("dblclick",function(){ vxColsSave(null); shell.style.removeProperty("grid-template-columns"); var c=cur(); shell.style.setProperty("--vx-c1",c.c1+"px"); shell.style.setProperty("--vx-c3",c.c3+"px"); });
+      h.addEventListener("pointerdown",function(e){
+        e.preventDefault(); var st=cur(), x0=e.clientX; h.classList.add("on"); document.body.classList.add("vx-resizing");
+        try{h.setPointerCapture(e.pointerId);}catch(_){}
+        var mv=function(ev){ var dx=ev.clientX-x0, c1=st.c1, c3=st.c3;
+          if(side==="l")c1=Math.max(VX_MIN.c1,Math.min(VX_MAX.c1,st.c1+dx)); else c3=Math.max(VX_MIN.c3,Math.min(VX_MAX.c3,st.c3-dx));
+          var mid=st.w-c1-c3; if(mid<VX_MIN.mid){ if(side==="l")c1=Math.max(VX_MIN.c1,st.w-c3-VX_MIN.mid); else c3=Math.max(VX_MIN.c3,st.w-c1-VX_MIN.mid); }
+          vxColsSet(shell,Math.round(c1),Math.round(c3)); };
+        var up=function(){ h.removeEventListener("pointermove",mv); h.removeEventListener("pointerup",up); h.removeEventListener("pointercancel",up); h.classList.remove("on"); document.body.classList.remove("vx-resizing"); var c=cur(); vxColsSave({c1:Math.round(c.c1),c3:Math.round(c.c3)}); };
+        h.addEventListener("pointermove",mv); h.addEventListener("pointerup",up); h.addEventListener("pointercancel",up);
+      });
+      shell.appendChild(h);
+    });
+    shell.classList.add("vx-resizable");
+  }
+  try{ if(!document.getElementById("ps-2763-vxcols")){ var _st=document.createElement("style"); _st.id="ps-2763-vxcols"; _st.textContent=
+    ".vault-explorer.vx-resizable{position:relative}"
+    +".vault-explorer>.vx-split{position:absolute;top:0;bottom:0;width:9px;margin-left:-4px;cursor:col-resize;z-index:6;touch-action:none;background:transparent}"
+    +".vault-explorer>.vx-split.l{left:var(--vx-c1,212px)}.vault-explorer>.vx-split.r{left:auto;right:var(--vx-c3,300px);margin-left:0;margin-right:-4px}"
+    +".vault-explorer>.vx-split::after{content:\"\";position:absolute;top:0;bottom:0;left:4px;width:1px;background:transparent;transition:background .12s}"
+    +".vault-explorer>.vx-split:hover::after,.vault-explorer>.vx-split.on::after{background:var(--blue,#3a6df0)}"
+    +"body.vx-resizing{cursor:col-resize;user-select:none;-webkit-user-select:none}"
+    +"@media(max-width:820px){.vault-explorer>.vx-split{display:none}}"; document.head.appendChild(_st); } }catch(_){}
   renderDrillFiles=function(){
     if(!psVaultRequireLogin())return;
     var box=$id("drillFiles");if(!box)return;
@@ -14934,6 +14975,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       try{ _pathBarEl=vaultPathBar(cf,selected,arr.length); shell.appendChild(_pathBarEl); }
       catch(e){ try{console.warn("[vault] 경로 표시줄을 못 그렸습니다:",e&&e.message||e);}catch(_){} }   /* 2.518 경로 표시줄 · 2.527 조용히 삼키지 않는다 */
       box.appendChild(shell);
+      try{ vxColsApply(shell); }catch(_){}   /* 2.763 — 세 열 폭 손잡이 */
       /* 1.859 — 필터 줄(#vaultBar)을 목록 열 맨 위로 — 커뮤니티 .comm-list .bar 자리. 검색 포커스는 보존
          2.478 — 입양을 멱등 settle 로(사용자 "누를 때마다 화면이 달라져"): 한 번의 appendChild 는 렌더 경합·
          잠금 화면 등 다른 손이 끼어들면 어긋난 채 남았다. settle 은 "제자리 아니면 넣는다"만 하고,
