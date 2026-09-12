@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PS_PLAYWRIGHT_MODULE || 'playwright');
 const root = process.env.PS_TEST_REPO || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const build = fs.readFileSync(path.join(root, 'studio/app.html'), 'utf8').match(/window\.PS_BUILD='([^']+)'/)[1];
 const out = process.env.PS_TEST_OUTPUT || path.join(root, 'test-results/storage-safety');
 fs.mkdirSync(out, { recursive: true });
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
@@ -153,7 +154,7 @@ try {
     results.push({ viewport: spec.name, cases, storageCases, dimensions, pageErrors: errors });
     await context.close();
   }
-  fs.writeFileSync(path.join(out, 'browser-results.json'), JSON.stringify({ ok: true, build: '2.744', method: 'Isolated local Chrome, synthetic data, all non-local requests blocked', results }, null, 2));
+  fs.writeFileSync(path.join(out, 'browser-results.json'), JSON.stringify({ ok: true, build, method: 'Isolated local Chrome, synthetic data, all non-local requests blocked', results }, null, 2));
   console.log(JSON.stringify({ ok: true, output: out, results }, null, 2));
 } finally {
   if (browser) await browser.close();

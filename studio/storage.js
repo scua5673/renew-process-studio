@@ -781,7 +781,11 @@
       headers:{'Content-Type':'application/json',apikey:c.anonKey,Authorization:'Bearer '+c.anonKey,Prefer:'return=minimal'},
       body:JSON.stringify(arr.map(function(e){return {t:new Date(e.t).toISOString(),kind:e.k,msg:e.m,src:e.s,line:e.l,page:e.p,ua:String(navigator.userAgent||'').slice(0,120)};}))
     }).then(function(r){ if(r.ok){ try{localStorage.setItem(KEY,'[]');}catch(_){} } })
-      .catch(function(error){ diagnostic('event-flush',error); }).then(function(){ flushing=false; });
+      .catch(function(error){
+        /* 2.745 — diagnostic은 저장소 IIFE 안에 있다. 공개 API로 보고하고,
+           진단 자체가 실패해도 전송 중 표시를 풀어 다음 재시도를 막지 않는다. */
+        try{ if(typeof window.PSStorageDiagnostic==='function')window.PSStorageDiagnostic('event-flush',error); }catch(_){}
+      }).then(function(){ flushing=false; });
   }
   window.addEventListener('error',function(e){ if(e&&e.message)log('err',e.message,e.filename,e.lineno); });
   window.addEventListener('unhandledrejection',function(e){ var r=e&&e.reason; log('rej',(r&&(r.message||r))||'rejection','',0); });

@@ -2658,11 +2658,10 @@ function staffEditNotice(){
      쓰지 않고, 실제 판정에 쓰는 것과 같은 목록에서 만든다(PLAYER_BLIND · PERSONAL · isItemKey). */
 function shareNote(k){
   try{
-    if(!isTeamWs()) return '이 기기와 내 다른 기기에만 저장됩니다';
-    if(PERSONAL[k]) return '나만 봅니다 · 팀에 올라가지 않습니다';
+    if(!isTeamWs()) return '이 기기에 저장하고 내 계정의 클라우드로 동기화합니다';
+    if(PERSONAL[k]) return '내 계정으로 동기화합니다 · 팀에는 공유하지 않습니다';
     if(k==='cs_scout_targets_v1') return '임원만 봅니다 · 코칭스태프에게도 안 보입니다';
-    var edit=(k==='process_coach_v1'||k==='cs_perms_v1'||k==='cs_assign_v1')
-      ? '운영진만 편집' : '코칭스태프가 함께 편집';
+    var edit='편집은 팀 권한에 따릅니다';
     var see=(PLAYER_BLIND.indexOf(k)>=0||isItemKey(k))
       ? '선수에게는 안 보입니다' : '팀 전원이 봅니다';
     return edit+' · '+see;
@@ -3568,6 +3567,8 @@ function histLoad(k){
     .catch(function(){ return null; });          /* null = 못 불러옴(권한·서버) */
 }
 function histRestore(k,v){
+  /* 2.745 — 변경 이력만 남고 본문이 만료된 판본을 빈 자료로 복원하지 않는다. */
+  if(typeof v!=='string'||!v.trim())return Promise.resolve(false);
   var writes=[];
   var ok=kvWrite(k,v,writes);
   return Promise.all(writes).then(function(){
@@ -3587,7 +3588,7 @@ function dataReviewOpen(){
   var body=list.length
     ? ('<div style="margin-bottom:12px">기기마다 <b>다르게 저장된 자료</b>입니다.<br>'
        +'남길 판본을 고르세요. 개인 자료는 선택 전까지 이 기기와 클라우드에 각각 남아 있습니다. 선택하면 고른 내용으로 맞춥니다.</div>')
-    : '<div style="margin-bottom:4px">이 기기와 팀의 자료가 같습니다 — 지금 고를 것은 없습니다.</div>';
+    : '<div style="margin-bottom:4px">지금 선택이 필요한 자료는 없습니다. 저장 완료 여부는 동기화 상태에서 확인하세요.</div>';
   body+=list.map(function(x,i){
     var num=(x.mine!=null&&x.theirs!=null)
       ? '<div style="font-size:12px;margin-top:3px">이 기기 <b>'+x.mine+'개</b> · 팀 <b>'+x.theirs+'개</b></div>' : '';
@@ -3607,8 +3608,8 @@ function dataReviewOpen(){
     var opts=HIST_KEYS.map(function(k){ return '<option value="'+k+'">'+esc(keyLabel(k))+'</option>'; }).join('');
     body+='<div style="margin-top:16px;padding-top:14px;border-top:2px solid rgba(128,128,128,.3)">'
       +'<div style="font-size:14px;font-weight:800">지난 판본으로 되돌리기</div>'
-      +'<div style="font-size:11px;opacity:.72;margin:3px 0 9px">팀 서버에 최근 90일치가 남아 있습니다. '
-      +'며칠 지나 알아챈 일도 여기서 되돌릴 수 있습니다.</div>'
+      +'<div style="font-size:11px;opacity:.72;margin:3px 0 9px">서버에 본문이 남아 있는 판본을 확인하고 되돌립니다. '
+      +'변경 기록이 있어도 본문 보관이 끝난 판본은 복구할 수 없습니다.</div>'
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
       +'<select id="drHistKey" style="font-family:inherit;font-size:13px;padding:7px 9px;border-radius:8px;'
       +'border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit">'+opts+'</select>'
@@ -3669,16 +3670,17 @@ function dataReviewOpen(){
       lb.disabled=true; lb.textContent='불러오는 중…'; out.innerHTML='';
       histLoad(k).then(function(rows){
         lb.disabled=false; lb.textContent='판본 보기';
-        if(rows===null){ out.innerHTML='<div style="font-size:12px;opacity:.7">판본을 불러오지 못했습니다 — 팀 소유자만 볼 수 있습니다.</div>'; return; }
-        if(!rows.length){ out.innerHTML='<div style="font-size:12px;opacity:.7">이 자료의 지난 판본이 아직 없습니다.</div>'; return; }
+        if(rows===null){ out.innerHTML='<div style="font-size:12px;opacity:.7">판본을 불러오지 못했습니다. 인터넷 연결과 팀 권한을 확인한 뒤 다시 시도해 주세요.</div>'; return; }
+        if(!rows.length){ out.innerHTML='<div style="font-size:12px;opacity:.7">현재 조회할 수 있는 지난 판본이 없습니다.</div>'; return; }
         out.innerHTML=rows.map(function(r,i){
           var t=new Date(r.at||r.changed_at||r.ts||0);
-          var n=null; try{ n=psCount(r.v); }catch(_){}
+          var available=typeof r.v==='string'&&!!r.v.trim();
+          var n=null; if(available)try{ n=psCount(r.v); }catch(_){}
           return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;'
             +'padding:9px 0;border-top:1px solid rgba(128,128,128,.2)">'
             +'<div><div style="font-size:13px;font-weight:700">'+esc(t.toLocaleString())+'</div>'
-            +'<div style="font-size:11px;opacity:.62">'+(n!=null?(n+'개 항목'):(String(r.v||'').length+'자'))+'</div></div>'
-            +'<button type="button" data-hist="'+i+'" style="'+bcss+'">되돌리기</button></div>';
+            +'<div style="font-size:11px;opacity:.62">'+(!available?'본문 보관 종료 · 복구 불가':n!=null?(n+'개 항목'):(r.v.length+'자'))+'</div></div>'
+            +(available?'<button type="button" data-hist="'+i+'" style="'+bcss+'">되돌리기</button>':'<button type="button" disabled style="'+bcss+';opacity:.5">복구 불가</button>')+'</div>';
         }).join('');
         out.querySelectorAll('[data-hist]').forEach(function(hb){
           hb.addEventListener('click',function(){
@@ -3687,7 +3689,7 @@ function dataReviewOpen(){
             var when=new Date(r.at||r.changed_at||r.ts||0).toLocaleString();
             if(!confirm(keyLabel(k)+' 을(를) '+when+' 판본으로 되돌립니다.'
               +(n!=null?('\n그때는 '+n+'개였습니다.'):'')
-              +'\n\n지금 값은 되돌리기 목록에 남아 다시 복구할 수 있습니다.\n계속할까요?')) return;
+              +'\n\n현재 자료가 선택한 판본으로 바뀌고 팀에도 반영됩니다. 필요한 내용은 먼저 파일로 보관하세요.\n계속할까요?')) return;
             hb.disabled=true; hb.textContent='되돌리는 중…';
             histRestore(k,r.v).then(function(ok){
               try{ if(mo&&mo.close)mo.close(true); }catch(_){}
@@ -3695,8 +3697,8 @@ function dataReviewOpen(){
                 body:'자료는 그대로 두었습니다. 다시 시도해 주세요.',hideCancel:true,ok:'확인'}); }catch(_){} return; }
               try{ syncNow('hist-restore'); }catch(_){}
               try{ psModal({title:'되돌렸습니다',
-                body:'<b>'+esc(keyLabel(k))+'</b> 을(를) '+esc(when)+' 판본으로 되돌리고 팀에도 올렸습니다.<br>'
-                  +'화면을 새로고침하면 보입니다.',hideCancel:true,ok:'확인'}); }catch(_){}
+                body:'<b>'+esc(keyLabel(k))+'</b> 을(를) 이 기기에서 '+esc(when)+' 판본으로 되돌렸습니다.<br>'
+                  +'팀 반영 여부는 동기화 상태에서 확인하세요. 화면을 새로고침하면 보입니다.',hideCancel:true,ok:'확인'}); }catch(_){}
             });
           });
         });
@@ -6950,7 +6952,7 @@ function ensureDisplayName(){
             psModal({title:'이름을 저장하지 못했어요',
               body:'브라우저 저장 공간이 가득 차서 이 기기에 이름을 쓸 수 없습니다.<br><br>'
                 +'설정 → <b>저장 공간</b>의 <b>안전 정리</b>를 눌러 공간을 확보한 뒤 다시 시도해 주세요.'
-                +'<br>(정리해도 안 되면 설정에서 <b>내보내기</b>로 백업 후 브라우저 저장소를 비워 주세요.)',
+                +'<br>정리 후에도 실패하면 저장되지 않은 내용을 따로 보관하고 운영자에게 알려 주세요. 브라우저 데이터를 지우면 이 기기에만 남은 변경을 잃을 수 있습니다.',
               hideCancel:true,ok:'확인'});
             return;
           }
@@ -7007,7 +7009,7 @@ function uiAudit(wa){
         +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">'+esc(keyLabel(r2.k))+'</span>'
         +'<span style="flex:0 0 auto;color:var(--dim,#8a8f98)">'+(AC[r2.action]||r2.action)+'</span></div>';
     });
-    h+='</div><div style="margin-top:8px;font-size:11px;color:var(--dim,#8a8f98)">내용(v)은 기록하지 않습니다 — 누가·무엇을·언제만 90일 보관</div>';
+    h+='</div><div style="margin-top:8px;font-size:11px;color:var(--dim,#8a8f98)">이 목록은 누가·무엇을·언제 바꿨는지 보여줍니다. 복구할 본문은 포함하지 않습니다.</div>';
     psModal({title:'변경 기록 · 최근 '+rows.length+'건',body:h,hideCancel:true,ok:'닫기'});
   }).catch(function(){ mm.close(); psModal({title:'변경 기록',body:'기록을 불러오지 못했어요 — 서버에 감사 로그가 아직 설치되지 않았을 수 있어요.',hideCancel:true,ok:'확인'}); });
 }
@@ -7503,7 +7505,7 @@ function renderUI(){
     if(!s){
       var sub=document.createElement('div'); sub.className='ap-sub';
       sub.style.cssText='font-size:11px;font-weight:600;line-height:1.45;color:#767B85;margin:-2px 2px 8px;';
-      sub.textContent='작업은 먼저 내 기기에 저장됩니다. 팀 스페이스에는 공유를 선택한 항목만 올라갑니다.';
+      sub.textContent='로그인한 뒤 내 작업이나 팀을 선택하세요. 개인 자료와 팀 자료는 각 범위에 맞게 클라우드로 동기화됩니다.';
       pop.appendChild(sub);
       pb('카카오로 계속','kakao',function(){ signIn('kakao'); });
       pb('Google로 계속','solid',function(){ signIn('google'); });
@@ -7513,7 +7515,7 @@ function renderUI(){
       stEl=document.createElement('div'); stEl.className='ap-st';
       var m=meta(),pi2=pendingInfo(activeWs());
       stEl.textContent=(wa&&wa.kind==='team')
-        ?'새 작업은 내 기기에 저장 · 공유할 때만 팀에 올라감'
+        ?'팀 자료는 권한에 따라 자동 동기화 · 개인 노트·분석은 내 계정에 저장'
         :navigator.onLine===false
         ?(pi2.count?('오프라인이에요 · 이 기기에 '+pi2.count+'건 안전하게 있어요'):'오프라인이에요 · 이 기기에 저장돼요')
         :(pi2.count?('올리는 중 · '+pi2.count+' — 눌러서 자세히')

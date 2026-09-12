@@ -7,9 +7,9 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
-for (const file of ['app.html', 'process.html', 'scout.html', 'idp.html', 'board.html']) {
+for (const file of ['studio/app.html', 'studio/process.html', 'studio/scout.html', 'studio/idp.html', 'studio/board.html', 'start/index.html', 'start/idp.html', 'guide/index.html']) {
   test(`${file}: inline JavaScript parses`, () => {
-    const source = fs.readFileSync(path.join(root, 'studio', file), 'utf8');
+    const source = fs.readFileSync(path.join(root, file), 'utf8');
     let count = 0;
     for (const match of source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
       if (/\bsrc\s*=/.test(match[1])) continue;
@@ -19,7 +19,7 @@ for (const file of ['app.html', 'process.html', 'scout.html', 'idp.html', 'board
       new vm.Script(match[2], { filename: `${file}:${line}` });
       count++;
     }
-    assert.ok(count > 0, 'inline application scripts must be discovered');
+    if (file.startsWith('studio/')) assert.ok(count > 0, 'inline application scripts must be discovered');
   });
 }
 
