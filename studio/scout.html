@@ -6095,6 +6095,7 @@ try{ window.PSRoster={missing:rosterMissing,restore:rosterRestoreMissing}; }catc
 function save(){
   if(evalMode()==="team")rememberTeamSet();
   data.meta=data.meta||{};data.meta.activeEvalSetId=evalSetId();
+  try{ if(typeof tbSlotsCompute==="function"){ var _ts=tbSlotsCompute(); if(_ts&&_ts.length===11)data.meta.tbSlots=_ts; } }catch(_){}   /* 2.760 */
   /* 1.540 — 저장할 때 우리 선수 / 후보를 갈라 쓴다. 메모리의 data.players 는 건드리지 않는다.
      후보를 볼 수 없는 역할(스태프·선수)은 후보 키를 쓰지 않는다 — 빈 값으로 서버 것을 지우면 안 되니까. */
   (function(){
@@ -9928,6 +9929,14 @@ function tbPosSelectHTML(gr){
   return '<select class="tb-pos" data-posid="'+esc(gr.id)+'" title="이 카드의 포지션 — 바꾸면 자리는 그대로, 포지션만 바뀝니다" aria-label="포지션 고르기">'
     +P.map(function(ps){ var ab=posAbbr(ps.name)||ps.name; return '<option value="'+esc(ps.id)+'"'+(ps.id===gr.id?' selected':'')+'>'+esc(ab)+'</option>'; }).join("")+'</select>';
 }
+/* 2.760 — 카드 11장을 «자리» 로 내보낸다(meta.tbSlots: [{ab,x,y}] 팀 구성 운동장 % 좌표). 경기 준비·상대 분석·작전판 «선발 배치» 가 포메이션 표 대신 이것을 읽는다 */
+function tbSlotsCompute(){ try{
+  var xy=tbXYStore(), def=tbDefaultMap(), fb=0, seen={};
+  var by={}; var P=data.positions||[];
+  return tbCards().map(function(id){ var ps=P.find(function(x){return x.id===id;}); var ab=String(posAbbr(ps.name)||ps.name||"").toUpperCase();
+    var pos=xy[id]||(!seen[ab]&&def[ab])||{x:14+(fb++)*15,y:90}; seen[ab]=1;
+    return {ab:ab,x:Math.round(+pos.x*10)/10,y:Math.round(+pos.y*10)/10}; });
+}catch(_){ return null; } }
 function tbShapePaint(){ try{ var el=$("tbShape"); if(!el)return; var sh=tbShape(); el.textContent=sh?("모양 "+sh):""; el.title="카드 11장에서 읽은 모양 — 포메이션을 고르지 않습니다"; }catch(_){} }
 function tbShownPosIds(){ var m={}; try{ tbGroups().concat(tbOffGroups()).forEach(function(g){ m[g.id]=1; }); }catch(_){} return m; }   /* 2.759 — 운동장 밖 카드 포함 */
 function tbPillHTML(p,first){
@@ -15545,9 +15554,9 @@ function mb2FillUs(m){
   if(!r.ok){ toast("선발 명단이 아직 없어요 — 위 명단에서 선발을 정하거나 운동장에 끌어다 놓으세요"); return; }
   var b=mb2Cur(m);
   b.us=r.slots.map(function(a,i){ var pl=r.picked[i]; if(!pl)return null; var ps=tmAbbrOf(pl)||"";
-    return {pid:pl.id,num:String(pl.num||MB2_SLOTS[r.formKey][i][1]||i+1),name:pl.name||"",x:a[0],y:a[1],gk:i===0||r.norm(ps)==="GK"}; }).filter(Boolean);
+    return {pid:pl.id,num:String(pl.num||((MB2_SLOTS[r.formKey]||[])[i]||[])[1]||i+1),name:pl.name||"",x:a[0],y:a[1],gk:r.labels[i]==="GK"||r.norm(ps)==="GK"}; }).filter(Boolean);
   mb2Draw(m);mb2Counts(m);mb2SyncTray(m);mb2Save();
-  toast("선발 "+r.picked.filter(Boolean).length+"명을 "+matchFormLabel(r.formKey)+" 자리에 놓았어요"+(r.pool.length?(" · 자리 없는 선발 "+r.pool.length+"명"):""));
+  toast("선발 "+r.picked.filter(Boolean).length+"명을 "+r.formLabel+" 자리에 놓았어요"+(r.pool.length?(" · 자리 없는 선발 "+r.pool.length+"명"):""));
 }
 function mb2FillOp(m){
   /* 2.004 — 상대 토큰 번호 1~11(사용자), 'gk4' = GK+수비 4 만 */
@@ -15707,8 +15716,12 @@ function matchStartersToSlots(m){
   var starters=sq.start.map(function(id){return ours.find(function(p){return p.id===id;});}).filter(Boolean);
   var formKey=String(m.formation||matchFormLabel((data.meta&&data.meta.form)||"4231")).replace(/[^0-9]/g,"");
   if(!MB2_FORMS[formKey]||!MB2_SLOTS[formKey])formKey="4231";
-  var slots=MB2_FORMS[formKey], labels=MB2_SLOTS[formKey].map(function(x){return x[0];});
-  if(!starters.length)return {ok:false,formKey:formKey,slots:slots,labels:labels,picked:[],pool:[]};
+  var slots=MB2_FORMS[formKey], labels=MB2_SLOTS[formKey].map(function(x){return x[0];}), formLabel=matchFormLabel(formKey);
+  /* 2.760 — 팀 구성 카드 11장이 있으면 그것이 자리다(포메이션 표 대신). 팀 구성 % 좌표(GK x≈14 → CF x≈89) → 경기 준비 % 좌표(6 → 68) */
+  var cards=(data.meta&&Array.isArray(data.meta.tbSlots)&&data.meta.tbSlots.length===11)?data.meta.tbSlots:null;
+  if(cards){ slots=cards.map(function(c){ var x=6+((+c.x||14)-14)/75*62, y=+c.y||50; return [Math.max(4,Math.min(96,Math.round(x*10)/10)),Math.max(4,Math.min(96,Math.round(y*10)/10))]; });
+    labels=cards.map(function(c){return String(c.ab||"");}); formKey="cards"; formLabel="팀 구성 카드"+(function(){try{var sh=tbShape();return sh?(" "+sh):"";}catch(_){return "";}})(); }
+  if(!starters.length)return {ok:false,formKey:formKey,formLabel:formLabel,slots:slots,labels:labels,picked:[],pool:[]};
   var norm=function(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");};
   var base=function(v){v=norm(v);if(/^(L|R)?CB$/.test(v))return"CB";if(/^(L|R)?CM$/.test(v))return"CM";if(/^(L|R)?DM$/.test(v))return"DM";if(v==="CF")return"ST";if(v==="LWB")return"LB";if(v==="RWB")return"RB";return v;};
   var line=function(v){v=norm(v);if(!v)return"";if(v==="GK")return"GK";if(/CB|LB|RB|WB|FB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";};
@@ -15716,7 +15729,7 @@ function matchStartersToSlots(m){
   [function(p,l){return norm(tmAbbrOf(p))===norm(l);},function(p,l){return base(tmAbbrOf(p))===base(l);},function(p,l){return line(tmAbbrOf(p))===line(l);}]
     .forEach(function(same){ labels.forEach(function(l,i){ if(picked[i])return; var ix=pool.findIndex(function(p){return same(p,l);}); if(ix>=0)picked[i]=pool.splice(ix,1)[0]; }); });
   labels.forEach(function(l,i){ if(!picked[i]&&pool.length)picked[i]=pool.shift(); });
-  return {ok:true,formKey:formKey,slots:slots,labels:labels,picked:picked,pool:pool,norm:norm};
+  return {ok:true,formKey:formKey,formLabel:formLabel,slots:slots,labels:labels,picked:picked,pool:pool,norm:norm};
 }
 /* ══ 2.757 · 경기 준비 ← 상대 분석 «장면 가져오기» ═════════════════════════════════════
    같은 국면 키(atk/def/ta/td/set)의 상대 분석 현재 프레임 상대 토큰을 경기 준비 보드의 상대 자리로 복사한다.
@@ -15847,9 +15860,9 @@ function renderOB(){
     var r=matchStartersToSlots(m2);
     if(!r.ok){ toast("선발 명단이 아직 없어요 — 02 경기 준비에서 선발을 정하면 그대로 놓입니다"); return; }
     obFrame(m2).us=r.slots.map(function(a,i){var pl=r.picked[i]; if(!pl)return null; var ps=tmAbbrOf(pl)||"";
-      return {pid:pl.id,num:String(pl.num||MB2_SLOTS[r.formKey][i][1]||i+1),name:pl.name||"",pos:ps,x:a[0],y:a[1],gk:i===0||r.norm(ps)==="GK"};}).filter(Boolean);
+      return {pid:pl.id,num:String(pl.num||((MB2_SLOTS[r.formKey]||[])[i]||[])[1]||i+1),name:pl.name||"",pos:ps,x:a[0],y:a[1],gk:r.labels[i]==="GK"||r.norm(ps)==="GK"};}).filter(Boolean);
     obDraw(m2);obSave();
-    toast("선발 "+r.picked.filter(Boolean).length+"명을 "+matchFormLabel(r.formKey)+" 자리에 놓았어요"+(r.pool.length?(" · 자리 없는 선발 "+r.pool.length+"명"):""));};
+    toast("선발 "+r.picked.filter(Boolean).length+"명을 "+r.formLabel+" 자리에 놓았어요"+(r.pool.length?(" · 자리 없는 선발 "+r.pool.length+"명"):""));};
   $("obClear").onclick=function(){if(!matchCanEdit())return;var m2=matchGet();
     psConfirm("이 프레임의 우리·상대 토큰을 모두 지울까요?",function(){var f=obFrame(m2);f.us=[];f.opp=[];obDraw(m2);obSave();});};
   $("obAddFrame").onclick=function(){if(!matchCanEdit())return;var m2=matchGet(),b=obCur(m2);
