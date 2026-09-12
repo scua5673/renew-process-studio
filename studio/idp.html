@@ -4390,6 +4390,23 @@ body.fmdark .qa-paper{background:var(--surface)}
 .mr-list em{font-style:normal;font-weight:800;color:#B5762B}
 .mr-note{font-size:11px;color:var(--text-3);line-height:1.5;margin-top:7px}
 .mr-heat{margin-top:8px} .mr-heat svg{width:100%;max-width:264px;height:auto;display:block}
+/* 2.765 — 12주 격자(주 행·요일 열)·표·막대 */
+.mr-cal{display:grid;grid-template-columns:34px repeat(7,minmax(0,1fr)) 24px;gap:3px;align-items:center;margin-top:8px}
+.mr-cal .dh{font-size:10px;color:var(--text-3);text-align:center}
+.mr-cal .wl{font-size:10.5px;color:var(--text-3);font-variant-numeric:tabular-nums;white-space:nowrap}.mr-cal .wl.m{color:var(--text);font-weight:700}
+.mr-cal i{display:block;aspect-ratio:1;border-radius:5px;background:var(--surface-2)}
+.mr-cal i.a{background:#C9BDF3}.mr-cal i.b{background:#7C4DFF}.mr-cal i.t{outline:2px solid #7C4DFF;outline-offset:-2px}.mr-cal i.f{background:transparent;border:1px dashed var(--line-soft)}
+.mr-cal .n{font-size:10.5px;color:var(--text-3);text-align:right;font-variant-numeric:tabular-nums}.mr-cal .n.on{color:var(--text);font-weight:700}
+.mr-legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:10.5px;color:var(--text-3);margin-top:8px}
+.mr-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:3px;background:var(--surface-2)}
+.mr-legend i.l1{background:#C9BDF3}.mr-legend i.l2{background:#7C4DFF}.mr-legend i.lt{background:transparent;border:2px solid #7C4DFF;width:8px;height:8px}
+.mr-stat{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
+.mr-stat th{font-size:11px;font-weight:600;color:var(--text-3);text-align:right;padding:2px 0 6px}.mr-stat th:first-child{text-align:left}
+.mr-stat td{padding:6px 0;border-top:1px solid var(--line-soft);text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.mr-stat td:first-child{text-align:left;font-weight:500;color:var(--text-2,var(--text))}.mr-stat td.z{color:var(--text-3);font-weight:500}
+.mr-bars{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;align-items:center;margin-top:10px;font-size:12px}
+.mr-bars .l{color:var(--text-2,var(--text))}.mr-bars .bar{height:6px;border-radius:3px;background:var(--surface-2);position:relative;overflow:hidden}.mr-bars .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:#C9BDF3}.mr-bars .v{font-weight:800;font-variant-numeric:tabular-nums}
+html[data-theme="dark"] .mr-cal i.a,.fmdark .mr-cal i.a{background:#4b3f8a} html[data-theme="dark"] .mr-bars .bar i,.fmdark .mr-bars .bar i{background:#4b3f8a}
 .mr-heat .cap{display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);max-width:264px;margin-top:3px}
 .mr-row{display:grid;grid-template-columns:40px minmax(0,1fr);gap:8px;align-items:start;margin-top:8px}
 .mr-row>i{font-style:normal;font-size:10px;font-weight:800;color:var(--text-3);padding-top:3px}
@@ -12843,31 +12860,21 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* ③ 기록 · 리뷰 — 2.501 위계: 묶음마다 제목을 두고 그리드를 끊는다(빈 칸 order 규칙도 묶음 안에서만 돈다) */
     h+='</div>'; var _done0=h.length;   /* 2.647 */
     h+='<div class="mr-group">해 온 것 <small>'+(th?'흔들리지 않는 숫자':'이미 쌓인 사실')+'</small></div><div class="mr-grid">';
-    h+='<div class="mr-sec"><div class="mr-k">최근 12주 기록 <small>'+(hm?'기록 '+hm.total+'일':'')+'</small></div>'
-      +(hm?'<div class="mr-heat">'+hm.svg+'<div class="cap"><span>'+(hm.start.getMonth()+1)+'/'+hm.start.getDate()+'</span><span>오늘</span></div></div>':'')
-      /* ⚠ 2.503 — `mo` 는 **이번 달**이다. 카드 제목은 '최근 12주 기록' 인데 이 네 칸만 한 달이라,
-         바로 아래 '얼마나 했나(최근 12주)' 의 같은 이름 숫자와 **값이 달랐다**(실측: 팀 훈련 0 vs 훈련 1).
-         기간 이름을 숫자 **위**로 올려 어느 기간인지 읽기 전에 알게 한다(전에는 밑에 회색 '8월' 한 줄). */
-      +(mo?'<div class="mr-k mr-k2">'+(today.getMonth()+1)+'월 <small>이번 달</small></div><div class="mr-kpi four"><div><b>'+mo.cnt.team+'</b><i>팀 훈련</i></div><div><b>'+mo.cnt.match+'</b><i>경기</i></div><div><b>'+mo.cnt.solo+'</b><i>개인</i></div><div><b>'+mo.body+' · '+mo.sleep+'</b><i>몸 · 잠</i></div></div>':'')+'</div>';
-    /* ══ 2.379 · 얼마나 했나 — 노력의 숫자 ═══════════════════════════════════════════
-       어린 선수의 리포트에서 가장 정직한 칭찬은 '얼마나 꾸준했나' 다. 능력 점수는 보는 눈에 따라
-       흔들리지만 기록한 날 수는 흔들리지 않는다. 위의 히트맵이 '9일'만 말하던 자리를 숫자로 편다. */
+    /* 2.765 — 격자(주 행·요일 열) + 표 하나(이번 달 · 12주) + 몸·잠 막대. 예전 «이번 달» 네 타일·«얼마나 했나» 여덟 타일을 대신한다 */
     (function(){
+      var cal=null; try{ cal=mrCal12(); }catch(_){}
+      h+='<div class="mr-sec"><div class="mr-k">최근 12주 <small>'+(cal?('기록한 날 '+cal.total+' / 84'):'')+'</small></div>'+(cal?cal.html:'');
       var ef=rpEffort12();
-      h+='<div class="mr-sec"><div class="mr-k">얼마나 했나 <small>최근 12주</small></div>';
-      if(!ef.days){ h+='<div class="mr-empty">'+mine('일지에 기록을 남기면 여기에 쌓여요','아직 기록이 없어요')+'</div></div>'; return; }
-      h+='<div class="mr-kpi four">'
-        +'<div><b>'+ef.days+'</b><i>기록한 날</i></div>'
-        +'<div><b>'+ef.tryDays+'</b><i>초점 시도</i></div>'
-        +'<div><b>'+ef.team+'</b><i>훈련</i></div>'
-        +'<div><b>'+ef.match+'</b><i>경기</i></div>'
-        +'</div>'
-        +'<div class="mr-kpi four" style="margin-top:8px">'
-        +'<div><b>'+ef.solo+'</b><i>개인운동</i></div>'
-        +'<div><b>'+ef.rest+'</b><i>휴식</i></div>'
-        +'<div><b>'+(ef.rehab+ef.injury)+'</b><i>재활·부상</i></div>'
-        +'<div><b>'+ef.memo+'</b><i>한 줄</i></div>'
-        +'</div></div>';
+      if(!ef.days&&!(mo&&mo.days)){ h+='<div class="mr-empty" style="margin-top:10px">'+mine('일지에 기록을 남기면 여기에 쌓여요','아직 기록이 없어요')+'</div></div>'; return; }
+      var mc=(mo&&mo.cnt)||{}, z=function(v){ return '<td class="'+(v?'':'z')+'">'+v+'</td>'; };
+      var rowsT=[['팀 훈련',mc.team||0,ef.team],['경기',mc.match||0,ef.match],['개인 운동',mc.solo||0,ef.solo],['휴식',mc.rest||0,ef.rest],['재활 · 부상',(mc.rehab||0)+(mc.injury||0),ef.rehab+ef.injury],['초점 시도',(mo&&mo.tries)||0,ef.tryDays],['한 줄',(mo&&mo.memo)||0,ef.memo]];
+      h+='<div class="mr-k mr-k2">얼마나 했나</div><table class="mr-stat"><tr><th></th><th>'+((mo&&mo.m)||(today.getMonth()+1))+'월</th><th>12주</th></tr>'
+        +rowsT.map(function(r){ return '<tr><td>'+r[0]+'</td>'+z(r[1])+z(r[2])+'</tr>'; }).join('')+'</table>';
+      if(mo&&(mo.bodyN||mo.sleepN)){ h+='<div class="mr-bars">'
+        +(mo.bodyN?('<span class="l">몸</span><span class="bar"><i style="width:'+Math.round(mo.bodyN/5*100)+'%"></i></span><span class="v">'+mo.body+'</span>'):'')
+        +(mo.sleepN?('<span class="l">잠</span><span class="bar"><i style="width:'+Math.round(mo.sleepN/5*100)+'%"></i></span><span class="v">'+mo.sleep+'</span>'):'')
+        +'</div><div class="mr-note">'+((mo&&mo.m)||'')+'월 평균 · 5가 최고</div>'; }
+      h+='</div>';
     })();
     /* ══ 2.379 · 컨디션 · 수면 추이 ═══════════════════════════════════════════════════
        매일 넣는 값이 여기서 처음으로 쓰인다. 주 단위 12칸 — 하루하루는 들쭉날쭉해서 흐름이 안 보인다.
@@ -13992,10 +13999,22 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rpHeat(weeks){ var today=new Date(); today.setHours(0,0,0,0); var start=addDays(mondayOf(today),-(weeks-1)*7); var h='<svg viewBox="0 0 '+(weeks*11)+' 78" width="'+(weeks*11)+'" height="78" class="rp2-heat">'; var total=0;
     for(var w=0;w<weeks;w++){ for(var d=0;d<7;d++){ var dt=addDays(start,w*7+d), l=dlog(dt)||{}, n=0; if(l.t)n++; if(l.body)n++; if(l.sleepq)n++; if(l.try!=null)n++; if(l.memo||(l.tags&&l.tags.length))n++; if(n)total++; var col=dt>today?'#fff':(n>=4?RP_ACC:n>=2?'#B3A3F2':n>=1?'#E4DDFB':RP_G4); h+='<rect x="'+(w*11)+'" y="'+(d*11)+'" width="9" height="9" rx="2" fill="'+col+'" stroke="'+(dt>today?RP_G3:'none')+'" stroke-width=".6"/>'; } }
     return {svg:h+'</svg>',total:total,start:start}; }
-  function rpMonth(){ var today=new Date(); today.setHours(0,0,0,0); var mp=ymd(new Date(today.getFullYear(),today.getMonth(),1)).slice(0,7); var cnt={team:0,match:0,rest:0,solo:0}, body=[], sleep=[], tries=0, tryN=0;
-    Object.keys(doc.log||{}).forEach(function(k){ if(k.slice(0,7)!==mp)return; var v=doc.log[k]||{}; if(v.t&&cnt[v.t]!=null)cnt[v.t]++; if(v.solo)cnt.solo++; if(v.body)body.push(v.body); if(v.sleepq)sleep.push(v.sleepq); if(v.try!=null){tryN++; if(v.try>0)tries++;} });
+  function rpMonth(){ var today=new Date(); today.setHours(0,0,0,0); var mp=ymd(new Date(today.getFullYear(),today.getMonth(),1)).slice(0,7); var cnt={team:0,match:0,rest:0,solo:0,rehab:0,injury:0}, body=[], sleep=[], tries=0, tryN=0, memo=0, days=0;
+    Object.keys(doc.log||{}).forEach(function(k){ if(k.slice(0,7)!==mp)return; var v=doc.log[k]||{}; var any=false; if(v.t&&cnt[v.t]!=null){cnt[v.t]++;any=true;} if(v.solo&&v.t!=='solo'){cnt.solo++;any=true;} if(v.body){body.push(v.body);any=true;} if(v.sleepq){sleep.push(v.sleepq);any=true;} if(v.try!=null){tryN++; if(v.try>0)tries++; any=true;} if(String(v.memo||'').trim()){memo++;any=true;} if(any)days++; });
     var avg=function(a){return a.length?(a.reduce(function(x,y){return x+y;},0)/a.length).toFixed(1):'–';};
-    return {m:today.getMonth()+1,cnt:cnt,body:avg(body),sleep:avg(sleep),tries:tries,tryN:tryN}; }
+    var avgN=function(a){return a.length?(a.reduce(function(x,y){return x+y;},0)/a.length):0;};
+    return {m:today.getMonth()+1,cnt:cnt,body:avg(body),sleep:avg(sleep),bodyN:avgN(body),sleepN:avgN(sleep),tries:tries,tryN:tryN,memo:memo,days:days}; }   /* 2.765 — 재활·부상·한 줄·기록한 날도 */
+  /* ══ 2.765 · 리포트 «최근 12주» — 주가 행, 요일이 열(사용자 «이것도 디자인 잘 해주고», 목업). 카드 폭을 다 쓰고 주 시작 날짜·주별 일수·오늘 테두리.
+     색 셋: 없음 · 기록 · 초점 시도. 앱은 거울 — 숫자만 놓는다. PDF 의 rpHeat 는 그대로. */
+  function mrCal12(){ var today=new Date(); today.setHours(0,0,0,0); var weeks=12, start=addDays(mondayOf(today),-(weeks-1)*7), total=0, rows='', prevM=-1;
+    for(var w=0;w<weeks;w++){ var ws=addDays(start,w*7), cnt=0, cells=''; var m=ws.getMonth(), mchg=(m!==prevM); prevM=m;
+      for(var d=0;d<7;d++){ var dt=addDays(ws,d), l=dlog(dt)||{}, n=0; if(l.t)n++; if(l.body)n++; if(l.sleepq)n++; if(l.try!=null)n++; if(l.memo||(l.tags&&l.tags.length))n++;
+        var fut=dt>today, isT=(dt.getTime()===today.getTime()), tried=(l.try!=null&&l.try>0);
+        if(n&&!fut){cnt++;total++;}
+        cells+='<i class="'+(fut?'f':(tried?'b':(n?'a':'')))+(isT?' t':'')+'" title="'+ymd(dt)+(n?(' · '+(tried?'초점 시도':'기록')):'')+'"></i>'; }
+      rows+='<span class="wl'+(mchg?' m':'')+'">'+(ws.getMonth()+1)+'/'+ws.getDate()+'</span>'+cells+'<span class="n'+(cnt?' on':'')+'">'+cnt+'</span>'; }
+    return {html:'<div class="mr-cal"><span></span>'+['월','화','수','목','금','토','일'].map(function(x){return '<span class="dh">'+x+'</span>';}).join('')+'<span></span>'+rows+'</div>'
+      +'<div class="mr-legend"><span><i class="l0"></i>없음</span><span><i class="l1"></i>기록</span><span><i class="l2"></i>초점 시도</span><span><i class="lt"></i>오늘</span></div>', total:total, start:start}; }
   function rpMonthKpi(){ var m=rpMonth(); return '<div class="rp2-kpi four"><div><b>'+m.cnt.team+'</b><i>팀 훈련</i></div><div><b>'+m.cnt.match+'</b><i>경기</i></div><div><b>'+m.cnt.solo+'</b><i>개인 훈련</i></div><div><b>'+m.body+' · '+m.sleep+'</b><i>몸 · 잠 평균</i></div></div>'; }
   function rpHeatBlock(weeks,label){ var hm=rpHeat(weeks||12); return rpSec(label||'최근 '+(weeks||12)+'주 기록','기록 '+hm.total+'일 · 진하면 많이 적은 날')+'<div class="rp2-heatwrap">'+hm.svg+'<div class="cap"><span>'+(hm.start.getMonth()+1)+'/'+hm.start.getDate()+'</span><span>오늘</span></div></div>'; }
   function rpTrend(){ var hist=((doc.selfEval||{}).hist)||[]; if(hist.length<2)return ''; var h=hist.slice(-8), mx=setMax((doc.selfEval||{}).setId)||5, W=150, H=34;
