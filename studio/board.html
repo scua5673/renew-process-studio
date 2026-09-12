@@ -14801,6 +14801,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     });
     shell.classList.add("vx-resizable");
   }
+  try{ window.__vxColsApply=vxColsApply; }catch(_){}   /* 검증·다른 화면에서 재사용 */
   try{ if(!document.getElementById("ps-2763-vxcols")){ var _st=document.createElement("style"); _st.id="ps-2763-vxcols"; _st.textContent=
     ".vault-explorer.vx-resizable{position:relative}"
     +".vault-explorer>.vx-split{position:absolute;top:0;bottom:0;width:9px;margin-left:-4px;cursor:col-resize;z-index:6;touch-action:none;background:transparent}"
