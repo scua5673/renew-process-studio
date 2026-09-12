@@ -3746,7 +3746,9 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sqg-t em.s5{color:#fff;background:var(--text)}
   .sqg-tr{font-style:normal;font-size:10px;margin-left:4px;vertical-align:1px}
   /* 2.616 — 한 줄 왕복 2단계 · 코치 «오늘 한 장» */
-  .sqg-t.sqg-ol{min-width:1040px}
+  .sqg-t.sqg-ol{min-width:920px}   /* 2.770 — 1040 이면 아이패드 iframe(≈1000) 에서 › 가 오른쪽 밖으로 나갔다. 내용 최소폭(≈920)만 */
+  /* 2.770 — 마지막 칸(›)은 오른쪽에 붙여 가로 스크롤과 무관하게 늘 보이게. 특이도는 hover·hot 행(.sqg-t tr… td)보다 낮게 둔다 */
+  .sqg-ol td:last-child,.sqg-ol th:last-child{position:sticky;right:-4px;background:var(--surface);z-index:1;padding-right:12px}
   .sqg-t .sqg-rule{font-style:normal;font-weight:500;color:var(--text-3);margin-left:6px}
   .sqg-t .sqg-rule::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:1px}
   .sqg-t tr.sqg-hot td{background:rgba(224,155,26,.08)}
@@ -11374,7 +11376,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(it.d&&it.d!==lastD){ lastD=it.d; var dd=new Date(it.d+'T12:00:00'); var wd=['일','월','화','수','목','금','토'][dd.getDay()]||''; h+='<div class="st-day"><span>'+(dd.getMonth()+1)+'월 '+dd.getDate()+'일 · '+wd+(byDate[it.d]?(' · vs '+esc(byDate[it.d])):'')+'</span></div>'; }
       var isC=it.who==='coach', mine=coachMode?isC:!isC, who=mine?'me':'coach', go=stGo(it), body=stBody(it); if(!body)return;   /* 2.768 — 보는 사람 기준으로 내 말이 오른쪽 */
       var byName=isC?(it.by||(it.r&&it.r.by)||(it.fb&&it.fb.updatedBy)||cname):pname;
-      if(coachMode&&isC&&byName===lrCoachName())byName='나';
+      if(coachMode&&isC&&stSameCoach(byName))byName='나';   /* 2.770 — «이슬기» 와 «이슬기 코치» 는 같은 사람 */
       h+='<div class="st-msg '+who+'"'+(go?' data-st-go="'+esc(go)+'" role="button" tabindex="0" title="원래 자리로"':'')+'><span class="st-src">'+((isC||coachMode)?'<b>'+esc(byName)+'</b> · ':'')+esc(stSrc(it))+'</span><div class="st-bub">'+body+'</div></div>';
     });
     h+='</div>';
@@ -11382,6 +11384,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!coachMode)h+=stCompose();
     h+='<div class="st-note">말풍선을 누르면 그 자리로 갑니다</div></section>'; return h;
   }
+  /* 2.770 — 실계정에서 코치 이름이 기록마다 달랐다(좋아요 by=«이슬기», 보내기 by=«이슬기 코치»=displayName). 뒤의 코치·감독·님과 공백을 걷고 비교 */
+  function stSameCoach(name){ function nz(x){ return String(x||'').replace(/\s+/g,'').replace(/(코치|감독|선생님|쌤|님)$/,''); } var a=nz(name), b=nz(lrCoachName()); return !!a&&!!b&&a===b; }
   /* 2.767 — 답 보내기: 선수는 «코치에게 한 마디»(doc.talk, 내 문서), 코치는 «선수에게 한 마디»(pub.talk, 코치 문서). 둘 다 덧붙이기만 */
   function stCompose(){
     var me=!ro(), coach=ro()&&isCoach(); if(!me&&!coach)return '';
