@@ -1,0 +1,15 @@
+.rt-day{margin:8px 0;padding:10px;background:var(--accent-soft,#edf2fe);border:1px solid var(--accent-dim,#bcd0fb);border-radius:10px;min-width:0}
+.rt-day>b{font-size:11px;color:var(--accent,#3a6df0)}
+.rt-task{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:8px;padding:9px;border:1px solid var(--line,#e3e6ea);border-radius:8px;background:var(--surface,#fff);color:var(--text,#14161a);text-align:left;cursor:pointer;font:inherit;overflow-wrap:anywhere}
+.rt-task span{font-size:12px;font-weight:600;white-space:pre-wrap}.rt-task small{font-size:10px;color:var(--text-2,#646a73)}.rt-task em{font-size:11px;font-style:normal;white-space:pre-wrap}
+#sheet[data-review-training]{position:relative;width:min(560px,calc(100vw - 24px));max-width:100%;box-sizing:border-box;overflow-wrap:anywhere}
+#sheet[data-review-training] .closex{top:6px;right:8px;width:44px;height:44px;padding:0;font-size:24px;line-height:1}
+#sheet[data-review-training] h3{padding-right:30px}.rt-origin{font-size:12px;color:var(--text-2,#646a73);margin:0 0 20px}
+.rt-label,.rt-fields label,.rt-source label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:600;min-width:0}.rt-label{margin:16px 0}
+#sheet[data-review-training] input,#sheet[data-review-training] select,#sheet[data-review-training] textarea{box-sizing:border-box;min-width:0;width:100%;padding:10px;border:1px solid var(--line,#e3e6ea);border-radius:8px;font-family:inherit;font-size:14px;font-weight:400;line-height:1.5;color:var(--text,#14161a);background:var(--surface,#fff)}
+#sheet[data-review-training] textarea{min-height:96px;resize:vertical;font-family:inherit;font-size:14px}
+.rt-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rt-source{display:flex;align-items:flex-end;gap:8px}.rt-source label{flex:1}
+.rt-source button,.rt-actions button{flex-shrink:0;padding:10px 12px;border:1px solid var(--line,#e3e6ea);border-radius:8px;background:var(--surface,#fff);color:var(--text,#14161a);font-family:inherit;font-size:12px;font-weight:600;line-height:1.4;cursor:pointer}
+.rt-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}.rt-actions .solid{background:var(--accent,#3a6df0);color:#fff;border-color:transparent}
+.rt-scope{font-size:11px;line-height:1.6;color:var(--text-2,#646a73);margin:18px 0 8px}#rtError{font-size:12px;color:var(--match,#c24a46);line-height:1.6;min-height:20px}
+@media(max-width:420px){.rt-source{align-items:stretch;flex-direction:column}.rt-fields{grid-template-columns:1fr}}

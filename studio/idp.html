@@ -5,6 +5,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="storage.js"></script>
+<script src="idp-evidence.js"></script>
+<link rel="stylesheet" href="idp-start.css">
+<link rel="stylesheet" href="idp-evidence.css">
+<link rel="stylesheet" href="idp-daily.css">
 <script src="rpt-i18n.js"></script>
 <script src="eval-standard.js"></script><!-- 1.974 — PROCESS 평가 표준 v1(팀 평가표·셀프평가 한 벌) -->
 <script src="eval-anchors.js"></script><!-- 2.164 — 수준 앵커 사전(72항목×4문장). "3인지 4인지"의 기준 문장 -->
@@ -5129,24 +5133,53 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
     }
     return true;
   }
+  /* 2.747 — 예약된 입력은 같은 계정·공간·화면 문서일 때만 쓴다.
+     부모 API가 없는 기존 단독 화면과 비로그인 local 문서는 그대로 허용한다. */
+  function idpSaveApi(){
+    try{return parent&&parent!==window?parent.PSSync:window.PSSync;}catch(_){return null;}
+  }
+  function idpSaveOwner(){
+    try{
+      var s=sess(),uid=String(s&&s.uid||''),wid=String(localStorage.getItem('ps_active_ws')||''),api=idpSaveApi();
+      if(api&&typeof api.session==='function'){
+        var live=api.session();if(String(live&&live.uid||'')!==uid)return null;
+      }
+      /* 익명 local 모드는 로그인 잠금과 별개인 기존 저장 범위다. */
+      if(uid&&api&&typeof api.dataUnlocked==='function'&&api.dataUnlocked()!==true)return null;
+      return {uid:uid,wid:wid,key:PREFIX+(uid||'local')};
+    }catch(_){return null;}
+  }
+  function idpSaveOwnerCurrent(owner,documentRef){
+    var now=idpSaveOwner();
+    return !!(owner&&now&&owner.uid===now.uid&&owner.wid===now.wid&&owner.key===now.key&&
+      (arguments.length<2||(viewing===owner.key&&doc===documentRef)));
+  }
+  var _idpCloudSaveSeq=0;
   function syncMyIdpSoon(delay){
-    clearTimeout(_cloudSaveT);_cloudSaveT=setTimeout(function runSync(){
+    var owner=idpSaveOwner(),seq=++_idpCloudSaveSeq;
+    clearTimeout(_cloudSaveT);_cloudSaveT=null;if(!owner)return;
+    _cloudSaveT=setTimeout(function runSync(){
+      if(seq!==_idpCloudSaveSeq||!idpSaveOwnerCurrent(owner))return;
       try{
-        var api=parent&&parent.PSSync;if(!api||typeof api.syncNow!=='function')return;
+        var api=idpSaveApi();if(!api||typeof api.syncNow!=='function')return;
         Promise.resolve(api.syncNow('idp-save')).then(function(r){
-          if(r&&r.skip){clearTimeout(_cloudSaveT);_cloudSaveT=setTimeout(runSync,2200);}
+          if(r&&r.skip&&seq===_idpCloudSaveSeq&&idpSaveOwnerCurrent(owner)){
+            clearTimeout(_cloudSaveT);_cloudSaveT=setTimeout(runSync,2200);
+          }
         },function(){});
       }catch(_){}
     },delay==null?1200:delay);
   }
   function persistMyIdpNow(){
-    if(viewing!==myKey()||visionEdit||_privateWriteConflict||!_docSourceValid||!doc||doc.v!==1||Array.isArray(doc)||typeof doc!=='object')return false;
+    var owner=idpSaveOwner(),savingDoc=doc;
+    if(!idpSaveOwnerCurrent(owner,savingDoc)||visionEdit||_privateWriteConflict||!_docSourceValid||!savingDoc||savingDoc.v!==1||Array.isArray(savingDoc)||typeof savingDoc!=='object')return false;
     clearTimeout(_saveT); _saveT=null;
     try{
-      var current=localStorage.getItem(viewing);
+      var current=localStorage.getItem(owner.key);
       if(current!==_docSeenRaw){ _privateWriteConflict=true; return false; }
-      var raw=JSON.stringify(doc); localStorage.setItem(viewing,raw);
-      if(localStorage.getItem(viewing)!==raw)return false;
+      var raw=JSON.stringify(savingDoc);if(!idpSaveOwnerCurrent(owner,savingDoc))return false;
+      localStorage.setItem(owner.key,raw);
+      if(!idpSaveOwnerCurrent(owner,savingDoc)||localStorage.getItem(owner.key)!==raw)return false;
       _docSeenRaw=raw; syncMyIdpSoon(80); return true;
     }catch(_){ return false; }
   }
@@ -5154,14 +5187,18 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
 function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.PSSync;
   /* 2.516 — act 는 하루 한 줄 핑에 더해 횟수·시각·기기까지 남긴다(옛 셸이면 ping 으로) */
   if(api&&api.act)api.act(n,'idp'); else if(api&&api.ping)api.ping(n); }catch(_){} }
-  function save(){ if(viewing!==myKey())return;   /* 남의 IDP엔 절대 쓰지 않는다 */
-    if(!_docSourceValid)return;   /* malformed/v2 fallback 화면은 원문을 절대 blank v1로 바꾸지 않는다 */
+  function save(){
+    var owner=idpSaveOwner(),savingDoc=doc;
+    if(!idpSaveOwnerCurrent(owner,savingDoc))return;   /* 남의 IDP엔 절대 쓰지 않는다 */
+    if(!_docSourceValid||!savingDoc||savingDoc.v!==1||Array.isArray(savingDoc)||typeof savingDoc!=='object')return;
+    /* malformed/v2 fallback 화면은 원문을 절대 blank v1로 바꾸지 않는다. */
     clearTimeout(_saveT); _saveT=setTimeout(function(){
-      _saveT=null; if(visionEdit||_privateWriteConflict)return;
-      try{ var current=localStorage.getItem(viewing);
+      _saveT=null; if(!idpSaveOwnerCurrent(owner,savingDoc)||visionEdit||_privateWriteConflict||!_docSourceValid)return;
+      try{ var current=localStorage.getItem(owner.key);
         if(current!==_docSeenRaw){ _privateWriteConflict=true; gToast('다른 곳에서 IDP가 바뀌어 방금 입력은 덮어쓰지 않았어요. 최신 내용을 다시 확인해 주세요.'); return; }
-        var raw=JSON.stringify(doc); localStorage.setItem(viewing,raw);
-        if(localStorage.getItem(viewing)!==raw)return;
+        var raw=JSON.stringify(savingDoc);if(!idpSaveOwnerCurrent(owner,savingDoc))return;
+        localStorage.setItem(owner.key,raw);
+        if(!idpSaveOwnerCurrent(owner,savingDoc)||localStorage.getItem(owner.key)!==raw)return;
         _docSeenRaw=raw; syncMyIdpSoon();
       }catch(e){}
     },250);
@@ -9613,26 +9650,30 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(editing){
       var rows=v.behaviors.slice(); while(rows.length<3)rows.push({id:'',text:''});
       var fi=Math.max(0,rows.findIndex(function(b){return !!(b&&b.id&&b.id===v.focusId);}));
+      /* 2.747 — 첫 시작은 문장과 행동 하나. 접힌 입력도 같은 DOM에 두어 기존 행동·집중 ID를 보존한다. */
+      function behaviorRow(b,i){ return '<div class="vs-beh-row"><button type="button" class="vs-focus'+(i===fi?' on':'')+'" data-vs-focus="'+i+'" aria-pressed="'+(i===fi?'true':'false')+'">집중</button>'
+        +'<input aria-label="'+(i===0?'이번에 키울 행동 하나':('추가 행동 '+i))+'" data-vs-beh="'+i+'" data-vs-bid="'+esc(b.id||'')+'" maxlength="80" value="'+esc(b.text||'')+'" placeholder="'+esc(['공을 받기 전에 두 번 확인한다','첫 터치를 전진할 쪽으로 둔다','공을 잃으면 가장 가까운 동료와 압박한다'][i])+'"></div>'; }
       h+='<div class="vs-example"><span>처음이라면</span><button type="button" data-vs-example>예시로 시작하기</button></div>'
         +'<label class="vs-field"><span>내가 되고 싶은 선수</span><input id="vsStatement" maxlength="80" value="'+esc(v.statement)+'" placeholder="예: 압박 속에서도 동료를 살리는 미드필더"></label>'
+        +'<div class="vs-beh"><div class="vs-beh-h"><b>이번에 키울 행동 하나</b><span>훈련이나 경기에서 직접 해볼 행동으로 적어요.</span></div>'+behaviorRow(rows[0],0)+'</div>'
+        +'<details class="vs-start-more"'+(v.reason||v.behaviors.length>1?' open':'')+'><summary>이유·행동 더 적기 <span>선택</span></summary><div class="vs-start-more-body">'
         +'<label class="vs-field"><span>왜 이런 선수가 되고 싶어? <i>선택</i></span><textarea id="vsReason" maxlength="180" rows="2" placeholder="예: 팀이 어려울 때 공을 받아 흐름을 바꾸고 싶다">'+esc(v.reason)+'</textarea></label>'
-        +'<div class="vs-beh"><div class="vs-beh-h"><b>경기에서 무엇을 보면 알 수 있을까?</b><span>성격이나 점수 대신, 같이 볼 행동 2~3개</span></div>'
-        +rows.map(function(b,i){ return '<div class="vs-beh-row"><button type="button" class="vs-focus'+(i===fi?' on':'')+'" data-vs-focus="'+i+'" aria-pressed="'+(i===fi?'true':'false')+'">집중</button>'
-          +'<input data-vs-beh="'+i+'" data-vs-bid="'+esc(b.id||'')+'" maxlength="80" value="'+esc(b.text||'')+'" placeholder="'+esc(['공을 받기 전에 두 번 확인한다','첫 터치를 전진할 쪽으로 둔다','공을 잃으면 가장 가까운 동료와 압박한다'][i])+'"></div>'; }).join('')+'</div>'
+        +'<div class="vs-beh"><div class="vs-beh-h"><b>함께 키울 행동</b><span>더 적었다면 이번에 집중할 행동을 하나 골라요.</span></div>'
+        +rows.slice(1).map(function(b,i){return behaviorRow(b,i+1);}).join('')+'</div></div></details>'
         +'<div class="vs-safe">저장을 눌렀을 때만 바뀌고, 이전 문장은 최대 8개까지 남아요.</div>'
-        +'<div class="vs-actions"><button type="button" class="btn ghost" data-vs-cancel>취소</button><button type="button" class="btn" data-vs-save>저장</button><button type="button" class="btn primary" data-vs-save="goal">저장하고 12주 목표 고르기</button></div>';
+        +'<div class="vs-actions"><button type="button" class="btn ghost" data-vs-cancel>취소</button><button type="button" class="btn primary" data-vs-save="today">저장하고 오늘 기록하기</button></div>';
       return h+'</section>';
     }
     if(!has){
       h+='<div class="vs-empty"><b>'+(can?'아직 내 방향을 적지 않았어요':'아직 선수가 내 방향을 적지 않았어요')+'</b>'
-        +'<span>'+(can?'3~5분이면 충분해요. 문장 하나와 경기에서 보일 행동부터 시작해요.':'선수가 직접 적으면 이 자리에 그대로 보여요.')+'</span>'
+        +'<span>'+(can?'되고 싶은 선수 모습과 행동 하나를 적고, 오늘 해본 장면으로 이어가요.':'선수가 직접 적으면 이 자리에 그대로 보여요.')+'</span>'
         +(can?'<button type="button" class="btn primary" data-vs-edit>내 방향 쓰기</button>':'')+'</div>';
       return h+'</section>';
     }
     var fb=visionFocus(v), qg=null; try{ qg=(doc.qgoal&&Array.isArray(doc.qgoal.goals))?doc.qgoal.goals.filter(function(g){return g&&String(g.t||'').trim();})[0]:null; }catch(_){}
     h+='<blockquote class="vs-statement">'+esc(v.statement)+'</blockquote>'
       +(v.reason?'<div class="vs-reason"><span>이유</span><p>'+esc(v.reason)+'</p></div>':'')
-      +'<div class="vs-beh-view"><div class="vs-beh-h"><b>경기에서 보일 행동</b><span>2~3개만 함께 확인해요</span></div><ol>'
+      +'<div class="vs-beh-view"><div class="vs-beh-h"><b>경기에서 보일 행동</b><span>이번에 집중할 행동부터 함께 확인해요</span></div><ol>'
       +v.behaviors.map(function(b){ return '<li class="'+(b.id===v.focusId?'on':'')+'"><i></i><span>'+esc(b.text)+'</span>'+(b.id===v.focusId?'<em>이번에 집중</em>':'')+'</li>'; }).join('')+'</ol></div>'
       +'<div class="vs-goal"><div><span>12주 목표</span><b>'+(qg?esc(qg.t):'아직 연결하지 않았어요')+'</b>'
       +(fb&&!qg?'<small>먼저 이어갈 행동 · '+esc(fb.text)+'</small>':'')+'</div>'
@@ -9721,38 +9762,41 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var inp=card.querySelector('[data-vs-beh="'+b.dataset.vsFocus+'"]'); if(inp&&!inp.value.trim())inp.focus();
     }; });
     var ex=card.querySelector('[data-vs-example]'); if(ex)ex.onclick=function(){
-      var s=card.querySelector('#vsStatement'),r=card.querySelector('#vsReason');
-      if(s)s.value='압박 속에서도 동료를 살리는 미드필더';
-      if(r)r.value='팀이 어려울 때 공을 받아 흐름을 바꾸고 싶다';
-      ['공을 받기 전에 두 번 확인한다','첫 터치를 전진할 쪽으로 둔다','공을 잃으면 가장 가까운 동료와 압박한다'].forEach(function(t,i){ var x=card.querySelector('[data-vs-beh="'+i+'"]'); if(x)x.value=t; });
-      var f=card.querySelector('[data-vs-focus="0"]'); if(f)f.click(); if(s)s.focus();
+      var s=card.querySelector('#vsStatement'),first=card.querySelector('[data-vs-beh="0"]');
+      if(s&&!s.value.trim())s.value='압박 속에서도 동료를 살리는 미드필더';
+      if(first&&!first.value.trim())first.value='공을 받기 전에 두 번 확인한다';
+      if(s)s.focus();
     };
     function goGoal(v){ var f=visionFocus(v); window.__visionGoalSeed=(f&&f.text)||''; openLadderSheet('week'); }
-    function commit(andGoal){
+    function goToday(){
+      curL='cal'; calView='day'; calAnchor=new Date(); calAnchor.setHours(0,0,0,0);
+      render(); try{window.scrollTo(0,0);}catch(_){}
+    }
+    function commit(andToday){
       if(ro())return;
       var st=String((card.querySelector('#vsStatement')||{}).value||'').trim().slice(0,80);
       var rs=String((card.querySelector('#vsReason')||{}).value||'').trim().slice(0,180);
       var picked=card.querySelector('[data-vs-focus].on'), pick=+(picked&&picked.dataset.vsFocus||0), latestState=visionLatestRoot(), latest=latestState&&latestState.root, used={}, bs=[];
       if(!latest){ gToast('최신 IDP를 확인하지 못해 저장하지 않았어요. 잠시 뒤 다시 시도해 주세요.'); return; }
       var old=visionOf(latest), nowBase=JSON.stringify(visionSnap(old));
-      if(visionEditBase!==null&&nowBase!==visionEditBase){ doc=latest; visionEndEdit(); render(); gToast('다른 곳에서 내 방향이 바뀌어 최신 내용을 불러왔어요. 확인 후 다시 고쳐 주세요.'); return; }
+      if(visionEditBase!==null&&nowBase!==visionEditBase){ gToast('다른 곳에서 내 방향이 바뀌어 저장하지 않았어요. 작성한 내용은 그대로 두었어요. 취소하면 최신 방향을 확인할 수 있어요.'); return; }
       [].forEach.call(card.querySelectorAll('[data-vs-beh]'),function(i){ var t=String(i.value||'').trim().slice(0,80); if(!t)return;
         var id=String(i.dataset.vsBid||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48);
         if(!id||used[id])id='vb'+uid().slice(1); used[id]=1; bs.push({id:id,text:t,_slot:+i.dataset.vsBeh}); });
       if(!st){ var si=card.querySelector('#vsStatement'); if(si)si.focus(); gToast('되고 싶은 선수 모습을 한 문장으로 적어 주세요'); return; }
-      if(bs.length<2){ var bi=card.querySelector('[data-vs-beh="'+bs.length+'"]')||card.querySelector('[data-vs-beh="0"]'); if(bi)bi.focus(); gToast('경기에서 함께 볼 행동을 두 개 이상 적어 주세요'); return; }
+      if(!bs.length){ var bi=card.querySelector('[data-vs-beh="0"]'); if(bi)bi.focus(); gToast('이번에 키울 행동을 하나 적어 주세요'); return; }
       var chosen=bs.filter(function(b){return b._slot===pick;})[0]||bs[0]; bs.forEach(function(b){delete b._slot;});
       var next={statement:st,reason:rs,behaviors:bs,focusId:chosen.id,updatedAt:Date.now(),revision:'v'+uid().slice(1)};
       if(visionSame(old,next)){
-        doc=latest; visionEndEdit(); render(); if(andGoal)setTimeout(function(){goGoal(old);},0); return;
+        doc=latest; visionEndEdit(); if(andToday)goToday(); else render(); return;
       }
       var hist=(old.history||[]).map(visionSnap); if(visionHas(old))hist.push(visionSnap(old)); next.history=hist.slice(-8);
       latest.vision=next;
       if(!visionWriteRoot(latest,latestState.raw)){ gToast('내 방향을 저장하지 못했어요. 기존 IDP는 바꾸지 않았습니다.'); return; }
       try{ psAct('a_vision'); }catch(_){}
-      visionEndEdit(); gToast('내 방향을 저장했어요'); render(); if(andGoal)setTimeout(function(){goGoal(visionOf(doc));},0);
+      visionEndEdit(); gToast('내 방향을 저장했어요'); if(andToday)goToday(); else render();
     }
-    [].forEach.call(card.querySelectorAll('[data-vs-save]'),function(b){ b.onclick=function(){ commit(b.dataset.vsSave==='goal'); }; });
+    [].forEach.call(card.querySelectorAll('[data-vs-save]'),function(b){ b.onclick=function(){ commit(b.dataset.vsSave==='today'); }; });
     var goal=card.querySelector('[data-vs-goal]'); if(goal)goal.onclick=function(){ goGoal(visionOf(doc)); };
   }
   function rGrowCore(){
@@ -9799,6 +9843,17 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           같은 두께의 카드 셋이 나란히 서면 무엇이 주인공인지 사라진다. 주인공은 12주 문장.
        ⚠ 코치 피드백은 **온 소식**이라 그보다도 위(새것일 때만 스스로 뜬다). */
     h+=rCoachFeedback();
+    /* 2.747 — 아직 목표 내용이 없으면 시작 문장에 집중한다. 이름·포지션·일지는 첫 목표를 막지 않는다. */
+    var startEmpty=false;
+    try{ var sv=visionOf(doc), se=doc.selfEval||{};
+      startEmpty=!ro()&&!String((doc.profile||{}).goal||'').trim()
+        &&!sv.statement&&!sv.reason&&!sv.behaviors.length&&!sv.history.length
+        &&!doc.qgoal&&!(doc.qgoalHist||[]).length&&!Object.keys(g).length&&!myThread()
+        &&!se.strengths&&!se.improve&&!se.seasonGoal&&!Object.keys(se.levels||{}).length
+        &&!wpPicks().length&&!doc.focus&&!Object.keys(doc.focusByWk||{}).length
+        &&!Object.keys(doc.weekly||{}).length&&!doc.propose;
+    }catch(_){}
+    if(startEmpty)h+='<details class="idp-start-more"><summary>목표 더 살펴보기 <span>선택 · 목표 사다리, 장단점, 내 무기</span></summary><div class="idp-start-more-body">';
     /* ══ 2.412 · 목표 탭은 **두 장**이다 ═══════════════════════════════════════════
        사용자: "가장 위에 올해 몇 일 남았는지 카드 · 그 밑으로 장점과 단점 자유롭게 쓰는 카드 ·
        목표에 있는 다른 카드들은 다 지우자 헷갈려".
@@ -9827,6 +9882,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
                     :'<div class="td-q-empty" style="margin:6px 0 10px">아직 고르지 않았어요 — 내가 이미 잘하는 것 하나.</div>')
         +'<button type="button" class="btn'+(_wp.length?'':' primary')+'" data-wp-open style="width:100%;justify-content:center">'+(_wp.length?'무기 고치기':'＋ 무기 고르기')+'</button></section>'; } }catch(_){}
 
+    if(startEmpty)h+='</div></details>';
     return h;
   }
 
@@ -11745,7 +11801,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +(function(){ var tl2=teamLineOf(dt2);
               return '<span class="wk-team'+(tl2.k?' '+tl2.k:'')+'">'+(tl2.txt||'일정 없음')+'</span>'; })()
           +(function(){
-              var has=!!(lg2.t||lg2.solo||lg2.rpe||lg2.memo||lg2.body||lg2.sleepq);
+              var has=!!(lg2.t||lg2.solo||lg2.rpe||lg2.memo||lg2.body||lg2.sleepq||(window.PSIDPEvidence&&PSIDPEvidence.has(lg2)));
               if(!has)return '<span class="wk-none">기록하기 ›</span>';
               var parts=[];
               if(lg2.t)parts.push(DT_LB[lg2.t]); if(lg2.solo)parts.push('개인운동');
@@ -11762,6 +11818,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           h+='<div class="tr-line"><span class="chk ro on" aria-hidden="true">✓</span>'
             +'<span class="t">'+esc(t.title||'훈련')+'</span><span class="m">계획 외</span></div>'; });
         if(lg2.solo) h+='<div class="wk-solo">개인운동 ✓</div>';
+        try{if(window.PSIDPEvidence)h+=PSIDPEvidence.render(lg2,doc.vision,{compact:true});}catch(_){}   /* 2.747 — 그날 저장한 행동·판본을 읽는다. */
         if(lg2.memo) h+='<div class="wk-memo">'+ic('note')+' '+esc(lg2.memo)+'</div>';
         h+='</div>';
       }
@@ -11828,6 +11885,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         }catch(_){}
         if(parts.length)h+='<div class="pub-row td-dayline"><b>한 장</b><span>'+parts.join('<em> · </em>')+'</span>'+'</div>';
       })();
+      try{if(window.PSIDPEvidence)h+=PSIDPEvidence.render(lg,doc.vision);}catch(_){}   /* 2.747 — 지난 일지의 근거는 현재 방향이 없어도 읽힌다. */
       }
       if(_l1open){
         /* 2.037 — 팀 줄 / 나 줄. 2.314 부터 **오늘도** 그린다(참여여부가 1층의 첫 질문) */
@@ -11850,7 +11908,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
            근거: 노션 연구자료 아카이브 【종합】 해외 6축 비교(2026-09-05) — KNVB «선수가 자기 말로», 하타 교환노트, FIFA «숙제로 주도», Güllich «점수·재촉 없음».
            저장은 전부 기존 필드(log.try · log.memo · cs_idp_pub reacts) — 새 어휘 없음. */
         if(_todaySimple){ try{ var _ww=olWrapTarget(); if(_ww)h+='<div class="dc-sec ol-sec ol-wrapsec">'+rWeekWrapCard(_ww)+'</div>'; }catch(e){ console.warn('주 마무리 카드 그리기 실패',e); } }   /* 2.618 */
-        if(_todaySimple){ try{ h+='<div class="dc-sec vd-sec">'+rVisionDaily(lg)+'</div>'; }catch(e){ console.warn('내 방향 일지 연결 실패',e); } }   /* 2.741 */
         if(_todaySimple){ try{ var _ol=rOneLine(lg); if(_ol)h+='<div class="dc-sec ol-sec">'+_ol+'</div>'; }catch(e){ console.warn('한 줄 왕복 그리기 실패',e); } }
         h+='<div class="dc-sec">'+_att.body+'</div>';
         if(attNow==='in'){
@@ -11996,8 +12053,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         curL='goal'; render(); try{window.scrollTo(0,0);}catch(_){} }; });
       [].forEach.call(wrap.querySelectorAll('[data-vd-b]'),function(b){ b.onclick=function(){ if(ro())return;
         var v=visionOf(doc), hit=visionBehavior(v,b.dataset.vdB); if(!hit)return;
-        var o=dlog(calAnchor)||{}, old=visionEvidenceOf(o,v), next=(old&&old.id===hit.id)?null:{id:hit.id,text:hit.text,revision:v.revision||''};
+        var o=dlog(calAnchor)||{}, old=visionEvidenceOf(o,v), next=(o.visionEvidence&&old&&old.id===hit.id&&old.text===hit.text&&old.revision===(v.revision||''))?null:{id:hit.id,text:hit.text,revision:v.revision||''};
         setLog(calAnchor,{visionEvidence:next,visionBehaviorId:null}); try{ psAct('a_vision_evidence'); }catch(_){} render(); }; });
+      [].forEach.call(wrap.querySelectorAll('[data-vd-clear]'),function(b){b.onclick=function(){if(ro())return;
+        setLog(calAnchor,{visionEvidence:null,visionBehaviorId:null});render();};});
       /* 일간: 자유 기록 */
       var dm=document.getElementById('dayMemo');
       if(dm)dm.addEventListener('input',function(){ setLog(calAnchor,{memo:this.value.trim()||null}); });
@@ -12020,8 +12079,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       /* 2.325 — 한 줄 여섯. 개인운동(solo)만 겹침 토글, 나머지 다섯은 배타(`log.t`) */
       /* 2.489 — 오늘 해봤어(try) */
       [].forEach.call(wrap.querySelectorAll('[data-td-try]'),function(b){ b.onclick=function(){ if(ro())return;
-        var v=+b.dataset.tdTry, o=dlog(calAnchor)||{};
-        setLog(calAnchor,{try:(o.try===v?null:v)}); psAct('a_diary'); render(); }; });
+        idpRecordTry(calAnchor,+b.dataset.tdTry); psAct('a_diary'); render(); }; });
       [].forEach.call(wrap.querySelectorAll('[data-att6]'),function(b){ b.onclick=function(){ if(ro())return;
         var k=b.dataset.att6, o=dlog(calAnchor)||{};
         if(k==='solo'){ setLog(calAnchor,{solo:o.solo?null:true}); }
@@ -12865,15 +12923,37 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       else { if(!r.h)return; at=+r.hAt||+r.at||0; cand=Object.assign({k:k},r,{t:'',at:at}); }   /* 오래된 답글+새 좋아요면 좋아요 소식만 */
       if(!at||now-at>7*864e5)return; if(!best||at>best.at)best=cand; });
     return best; }catch(_){ return null; } }
-  function rVisionDaily(lg){
-    var v=visionOf(doc), has=visionHas(v);
-    if(!has)return '<div class="vd empty"><div><span>내 방향</span><b>되고 싶은 선수 모습을 먼저 적어 볼까요?</b><small>적어 두면 오늘 일지에서 행동과 근거가 이어져요.</small></div><button type="button" data-vd-go>내 방향 쓰기 ›</button></div>';
-    var chosen=visionEvidenceOf(lg,v), focus=visionFocus(v);
-    return '<div class="vd"><div class="vd-top"><div><span>내 방향</span><b>'+esc(v.statement)+'</b></div><button type="button" data-vd-go>보기 ›</button></div>'
-      +'<div class="vd-q">오늘 내 방향에 가까워진 장면이 있었어?</div><div class="vd-picks">'
-      +v.behaviors.map(function(b){ var on=!!(chosen&&chosen.id===b.id), rec=!chosen&&focus&&focus.id===b.id;
-        return '<button type="button" class="'+(on?'on':(rec?'focus':''))+'" data-vd-b="'+esc(b.id)+'" aria-pressed="'+(on?'true':'false')+'"><i></i>'+esc(b.text)+(rec?'<em>이번에 집중</em>':'')+'</button>'; }).join('')+'</div>'
-      +'<div class="vd-note">'+(chosen?('한 마디에 <b>“'+esc(chosen.text)+'”</b> 장면을 근거로 남겨 봐요.'):'행동 하나를 고르면 오늘 한 마디와 연결돼요.')+'</div></div>';
+  /* 2.747 — 기존 주간 초점·12주 문장을 먼저 쓰고, 없을 때 내 방향의 한 행동으로 시작한다.
+     읽기만 하며 목표를 자동 생성하지 않는다. 같은 문장일 때만 시도와 방향 근거를 연결한다. */
+  function idpDailyAction(dt){
+    var fc=focusOf(ymd(mondayOf(dt))),g=null,v=visionOf(doc),f=visionHas(v)?visionFocus(v):null;
+    try{g=(doc.qgoal&&doc.qgoal.goals||[]).filter(function(x){return x&&typeof x.t==='string'&&x.t.trim();})[0]||null;}catch(_){}
+    var text=String((fc&&fc.text)||(g&&g.t)||(f&&f.text)||'').trim();
+    var behavior=visionHas(v)?v.behaviors.find(function(b){return b.text===text;}):null;
+    return {text:text,weekly:!!(fc&&fc.text||g&&g.t),behavior:behavior||null,revision:v.revision||''};
+  }
+  function idpRecordTry(dt,value){
+    if(ro()||[0,1,2].indexOf(value)<0)return false;
+    var lg=dlog(dt)||{},action=idpDailyAction(dt),patch={try:lg.try===value?null:value};
+    if(!action.text||dayAtt(lg)==='off')return false;
+    /* 기존 장면은 독립 기록이다. 시도 횟수를 바꿔도 이전 근거를 지우거나 새 문장으로 바꾸지 않는다. */
+    if(patch.try>0&&action.behavior&&!lg.visionEvidence&&!lg.visionBehaviorId){
+      patch.visionEvidence={id:action.behavior.id,text:action.behavior.text,revision:action.revision};
+    }
+    setLog(dt,patch);return true;
+  }
+  function rVisionDaily(lg,actionText){
+    var v=visionOf(doc),has=visionHas(v),chosen=visionEvidenceOf(lg,v),snapshot=!!(lg&&lg.visionEvidence&&typeof lg.visionEvidence.text==='string'&&lg.visionEvidence.text.trim()),h='';
+    if(chosen||(window.PSIDPEvidence&&PSIDPEvidence.has(lg))){
+      h+='<div class="idp-day-evidence">'+(snapshot&&chosen&&chosen.text===actionText?'<p class="idp-day-linked">이 행동을 오늘 기록에 연결했어요.</p>':(window.PSIDPEvidence?PSIDPEvidence.render(lg,v,{compact:true}):'<p>'+esc(chosen.text)+'</p>'))
+        +(!ro()?'<button type="button" data-vd-clear>행동 연결 해제</button>':'')+'</div>';
+    }
+    if(!has)return h+'<button type="button" class="idp-start-link" data-vd-go>내 방향 · 한 행동부터 정하기 ›</button>';
+    return h+'<details class="idp-day-direction"><summary>내 방향 · '+esc(v.statement)+'</summary>'
+      +'<p>다른 행동의 장면도 남겼다면 한 마디와 연결할 수 있어요. 선택 사항이에요.</p><div class="vd-picks">'
+      +v.behaviors.map(function(b){var on=!!(snapshot&&chosen&&chosen.id===b.id&&chosen.text===b.text&&chosen.revision===(v.revision||''));
+        return '<button type="button" class="'+(on?'on':'')+'" data-vd-b="'+esc(b.id)+'" aria-pressed="'+(on?'true':'false')+'">'+esc(b.text)+'</button>';}).join('')
+      +'</div><button type="button" class="idp-start-link" data-vd-go>내 방향 보기 ›</button></details>';
   }
   function rOneLine(lg){
     var today=new Date(); today.setHours(0,0,0,0);
@@ -12882,7 +12962,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!fc&&!ro()){ try{ var _nw=new Date(); if(!(_nw.getDay()===1&&_nw.getHours()<12)){ var _pr=propsAll(viewing)[wk]||null, _pv=focusOf(ymd(addDays(mondayOf(today),-7)));
       var _at=(_pr&&String(_pr.a||'').trim())||(_pv&&_pv.text)||''; if(_at){ focusSet(wk,_at,(_pr&&String(_pr.a||'').trim())?'coach-auto':'keep-auto'); fc=focusOf(wk); } } }catch(_){} }
     var g1=null; try{ g1=(doc.qgoal&&(doc.qgoal.goals||[]).filter(function(g){return g&&String(g.t||'').trim();})[0])||null; }catch(_){}
-    var sen=(fc&&fc.text)||(g1&&g1.t)||'';
+    var dailyAction=idpDailyAction(today),sen=dailyAction.text;
     var h='';
     var _todayRxKey='day:'+ymd(today), _todayRx=reactOf(_todayRxKey), _todayHas=!!(_todayRx&&(_todayRx.h||String(_todayRx.t||'').trim()));
     /* 오늘 답글 > 최근 답글 > 오늘 좋아요 > 최근 좋아요. 빈 legacy 객체는 소식으로 세지 않는다. */
@@ -12895,6 +12975,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +(rxHasT?'<span class="ol-say">'+esc(rc.t)+'</span>':(mine?'<span class="ol-q">«'+esc(mine.slice(0,70))+'» 봤어요</span>':'<span class="ol-q">봤어요</span>'))
         +'<small>'+esc(dlab)+(isDay?' 한 마디에':'')+'</small></div></div>';
     }
+    h+=rVisionDaily(lg,sen);
     /* 2.689 — 초점·목표 문장이 없어도 «한 마디»는 매일 쓴다(사용자 "한줄은 매일 쓸 수 있게"). 초점 줄·칩만 건너뛴다. */
     if(!sen){
       h+='<div class="ol-focus"><div class="ol-lb">한 줄 <small>선택 · 잘 된 장면 / 다음엔 이렇게</small></div></div>';
@@ -12905,9 +12986,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var tv=(lg.try==null?-1:+lg.try), off=(dayAtt(lg)==='off');
     var nwk=0; try{ var m=doc.focusByWk||{}, cur=wk; while(m[cur]&&m[cur].text===sen&&nwk<52){ nwk++; cur=ymd(addDays(new Date(cur+'T00:00:00'),-7)); } }catch(_){}
     var _fromLb=(fc&&fc.from==='coach-auto')?'코치 제안 그대로':((fc&&fc.from==='keep-auto')?'지난 주 그대로':((fc&&/^pick-[ab]$/.test(fc.from||''))?'내가 고른 코치 제안':''));   /* 2.618 */
-    h+='<div class="ol-focus"><div class="ol-lb">이번 주 초점'+(nwk>1?' · '+nwk+'주째':'')+(_fromLb?'<small class="ol-auto">'+_fromLb+'</small>':'')+'</div><div class="ol-sen">'+esc(sen)+'</div>'
+    h+='<div class="ol-focus"><div class="ol-lb">'+(dailyAction.weekly?'이번 주 초점':'이번에 키울 행동')+(nwk>1?' · '+nwk+'주째':'')+(_fromLb?'<small class="ol-auto">'+_fromLb+'</small>':'')+'</div><div class="ol-sen">'+esc(sen)+'</div>'
       +(g1&&g1.t&&g1.t!==sen?'<div class="ol-sub">내가 키우는 것 · '+esc(g1.t)+'</div>':'')+'</div>';
-    if(!off){ h+='<div class="td-emo ol-chips">'+[[0,'아직'],[1,'1~2번'],[2,'계속']].map(function(o){ return '<button type="button" class="td-chip'+(tv===o[0]?' on':'')+'" data-td-try="'+o[0]+'"><small>'+o[1]+'</small></button>'; }).join('')+'</div>'; }
+    if(!off){ h+='<div class="idp-day-question">오늘 이 행동을 해봤어?</div><div class="td-emo ol-chips">'+[[0,'아직'],[1,'1~2번'],[2,'계속']].map(function(o){ return '<button type="button" class="td-chip'+(tv===o[0]?' on':'')+'" data-td-try="'+o[0]+'"><small>'+o[1]+'</small></button>'; }).join('')+'</div>'; }
     else h+='<div class="td-lb" style="margin:8px 0 0">쉰 날은 초점을 묻지 않아요.</div>';
     h+='<textarea id="dayMemo" class="ol-memo" rows="2" maxlength="300" placeholder="한 마디 (안 써도 돼)">'+esc(lg.memo||'')+'</textarea>';
     if(!lg.memo) h+='<div class="ol-prompts">'+['언제 됐어?','뭐가 어려웠어?'].map(function(q){ return '<button type="button" class="ol-pr" data-ol-pr="'+esc(q)+'">'+esc(q)+'</button>'; }).join('')+'</div>';
@@ -12936,6 +13017,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<div class="ol-lb">'+(ww.late?'지난 주 끝':'이번 주 끝')+' · '+(mon.getMonth()+1)+'월 '+mon.getDate()+'일 ~ '+(sun.getMonth()+1)+'월 '+sun.getDate()+'일</div>';
     if(fcT)h+='<div class="ol-sen">'+(ww.late?'지난 주':'이번 주')+' · '+esc(fcT)+'</div>';
     h+='<div class="ol-week">'+cells+'</div>';
+    try{if(window.PSIDPEvidence)h+=PSIDPEvidence.weekHTML(doc.log,wk,doc.vision);}catch(_){}   /* 2.747 — 회고 전에 이 주의 장면을 펼쳐 읽는다. */
     h+='<input id="olGood" class="ol-in" maxlength="120" value="'+esc(w.good||'')+'" placeholder="'+(ww.late?'지난 주':'이번 주')+' 배운 것 한 문장 (안 써도 돼)">';
     h+='<div class="ol-lb" style="margin-top:14px">다음 주는 무엇을 키울까 <small class="ol-auto">'+(pr?'코치가 둘 골라 뒀어':'코치 제안은 아직 — 계속 또는 직접')+'</small></div>';
     h+='<div class="ol-opts">'+opts.map(function(o){ var on=!!(chosen&&chosen.text===o.t); return '<button type="button" class="ol-opt'+(on?' on':'')+'" data-ol-pick="'+esc(o.t)+'" data-ol-from="'+o.k+'"><b>'+esc(o.t)+'</b><small>'+esc(o.sub)+'</small></button>'; }).join('')
@@ -13047,10 +13129,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var wk=ymd(mondayOf(new Date()));
     var w=(doc.weekly||{})[wk]||null;
     var has=!!(w&&(w.good||w.better));
+    var evidence='';try{if(window.PSIDPEvidence)evidence=PSIDPEvidence.weekHTML(doc.log,wk,doc.vision);}catch(_){}
     if(has&&!window.__wrOpen)
-      return '<button type="button" class="td-wkline ms-line" data-wr-open style="width:100%;text-align:left;cursor:pointer"><b>주간 회고 ✓</b><span class="sep">·</span><span>'+esc(String((w.good||w.better)||'').slice(0,40))+'</span><u style="margin-left:auto">고치기 ›</u></button>';
+      return '<button type="button" class="td-wkline ms-line" data-wr-open style="width:100%;text-align:left;cursor:pointer"><b>주간 회고 ✓</b><span class="sep">·</span><span>'+esc(String((w.good||w.better)||'').slice(0,40))+'</span><u style="margin-left:auto">고치기 ›</u></button>'+evidence;
     return '<section class="card td-card wr-card"><div class="td-top"><b>주간 회고</b><span>이번 주를 한 줄로 — 쓰는 대로 저장돼요</span><span class="sp"></span><span class="td-pill">2분</span></div>'
-      +'<div class="td-body">'
+      +'<div class="td-body">'+evidence
       +'<div class="td-q">잘된 것</div><input id="wrGood" maxlength="120" value="'+esc((w&&w.good)||'')+'" placeholder="이번 주 잘된 장면 하나">'
       +'<div class="td-q" style="margin-top:8px">다음 주엔</div><input id="wrBetter" maxlength="120" value="'+esc((w&&w.better)||'')+'" placeholder="다음 주에 해볼 것 하나">'
       +'</div></section>';

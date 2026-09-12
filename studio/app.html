@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.742';</script>
+<script>window.PS_BUILD='2.747';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1111,7 +1111,7 @@ function psShowUpdBand(){
           <span id="psDiagLine" style="font-size:11px;font-weight:600;color:#646A73;line-height:1.45;min-width:0">확인 중…</span>
           <button type="button" id="psDiagOpen" style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font:800 11px Pretendard,system-ui;cursor:pointer;white-space:nowrap">진단 보기</button>
         </div>
-        <!-- 2.465 — 팀 기록: 누가 언제 무엇을 고쳤나 + 판 되돌리기(운영진 전용 · 서버 90일 보관) -->
+        <!-- 팀 기록: 운영진이 서버에 남아 있는 이전 판본을 확인한다. -->
         <div class="gp-row" id="psHistRow" style="display:none"><span class="gp-lb">팀 기록</span>
           <span style="font-size:11px;font-weight:600;color:#646A73;line-height:1.45;min-width:0">누가 언제 무엇을 고쳤는지 · 판 되돌리기</span>
           <button type="button" id="psHistOpen" style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font:800 11px Pretendard,system-ui;cursor:pointer;white-space:nowrap">기록 보기</button>
@@ -1124,7 +1124,7 @@ function psShowUpdBand(){
              평소에는 '지금 동기화' 하나만 보이고, 실제로 크게 줄어든 변경이 막혔을 때만
              같은 버튼이 '확인'으로 바뀐다. 안전장치는 유지하되 내부 상태를 여러 군데 노출하지 않는다. -->
         <!-- 2.337 ⚠ 탭 CSS 가 [data-gp-tab] 에 display:grid!important 를 강제한다 — 문장을 span 하나로 감싸 그리드 칸 하나로 만든다(안 감싸면 <b> 마다 행으로 갈라진다) -->
-        <div data-gp-tab="data" style="font-size:11px;line-height:1.55;color:#8A9099;padding:2px 2px 0"><span>팀과 맞춤 · 백업은 이 기기 · 파일은 내 손</span></div>
+        <div data-gp-tab="data" style="font-size:11px;line-height:1.55;color:#8A9099;padding:2px 2px 0"><span>동기화는 클라우드와 맞춤 · 자동 백업은 이 기기 · 파일은 표시된 메뉴 범위</span></div>
         <div class="gp-row"><span class="gp-lb">상태</span>
           <span id="psPushState" style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4">확인 중…</span>
           <button type="button" id="psPushNow" title="이 기기와 팀의 최신 자료를 서로 맞춥니다"
@@ -1469,7 +1469,7 @@ function psShowUpdBand(){
       if(!L.length){ ub.style.display='none'; ub.className=''; return; }
       var u=L[L.length-1], lbl=(S.label?S.label(u.k):u.k), lost=(u.before!=null&&u.after!=null)?(u.before-u.after):0;
       ub.style.display='flex'; ub.className=''; ub.setAttribute('data-k',u.k);
-      utx.innerHTML='<b>'+lbl+'에서 '+(lost>0?(lost+'개가 빠진 채 올라갔어요'):'많이 줄어든 채 올라갔어요')+'</b><span>실수라면 되돌릴 수 있어요 · 지난 판본은 팀 서버에 90일 남아요</span>';
+      utx.innerHTML='<b>'+lbl+'에서 '+(lost>0?(lost+'개가 빠진 채 올라갔어요'):'많이 줄어든 채 올라갔어요')+'</b><span>실수라면 지난 판본을 확인하세요 · 서버에 본문이 남아 있어야 복구할 수 있어요</span>';
     }
     udo.addEventListener('click',function(){
       var S=window.PSSync, k=ub.getAttribute('data-k'); if(!S||!k)return;
@@ -1477,7 +1477,7 @@ function psShowUpdBand(){
       udo.disabled=true; udo.textContent='되돌리는 중…';
       S.undo.restore(k).then(function(ok){
         udo.disabled=false; udo.textContent='되돌리기';
-        if(!ok){ utx.innerHTML='<b>되돌리지 못했어요</b><span>설정 › 고급 › 지난 판본으로 되돌리기에서 다시 시도해 주세요</span>'; return; }
+        if(!ok){ utx.innerHTML='<b>되돌리지 못했어요</b><span>설정 › 데이터 › 상태에서 자료를 확인하거나, 운영진에게 팀 기록 확인을 요청하세요</span>'; return; }
         uDone={label:(S.label?S.label(k):k),at:u?new Date(u.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'',n:u?(u.before-u.after):0};
         drawUndo(); setTimeout(function(){ uDone=null; drawUndo(); },6000);
       });
@@ -1684,7 +1684,7 @@ function psShowUpdBand(){
                gamemodel:'4국면별 우리 팀의 플레이 원칙을 정리하고 문서로 내보내세요',
                scout:'포지션이 원하는 바와 선수의 현재를 속성별로 비교해 디렉터 보고서로 내보내세요',
                terms:'팀 공용 신호·용어 사전 — 경기 중 외침, 훈련 동작, 분석 명사를 한 곳에서 검색하세요',
-               idp:'개인 성장 계획 — 프로필·셀프 평가·스스로 만드는 훈련 (로그인·팀 없이도 사용 가능)',
+               idp:'개인 성장 계획 — 로그인 후 프로필·셀프 평가·훈련을 기록하세요. 팀 합류 전에도 개인으로 사용할 수 있습니다',
                scouting:'후보 선수를 빠르게 기록하고 프로필·평가를 쌓아, 이름·출신·포지션으로 바로 찾으세요',
                note:'아이패드 펜슬로 자유롭게 — 줄노트·모눈·피치 배경, 이미지 내보내기',
                memo:'키보드로 자유롭게 — 맥 메모처럼 텍스트 메모를 쓰고 모아두세요',
@@ -2273,8 +2273,39 @@ function psShowUpdBand(){
     }catch(_){} })();
     // ---- bridge relay between the apps ----
     var captureReq='process'; // who asked the board to capture
+    /* 2.746 — 새 훈련 연결은 출처 iframe·계정·팀을 모두 확인하고 한 요청 ID로 전달한다. */
+    function reviewTrainingOwner(d){
+      try{var s=window.PSSync&&PSSync.session();return !!(s&&s.uid===d.uid&&localStorage.getItem('ps_active_ws')===d.wid&&PSSync.dataUnlocked());}catch(_){return false;}
+    }
+    function reviewTrainingRelay(fr,d){
+      var tries=0;
+      function send(){
+        if(!reviewTrainingOwner(d))return;
+        try{if(fr.contentDocument&&fr.contentDocument.readyState==='complete'){
+          fr.contentWindow.postMessage(Object.assign({},d,{source:'app'}),location.origin);return;
+        }}catch(_){}
+        if(++tries<40)setTimeout(send,150);
+        else try{if(window.toast)toast('화면을 열지 못했습니다. 다시 시도해 주세요.');}catch(_){}
+      }
+      send();
+    }
     window.addEventListener('message',function(e){
       var d=e.data||{};
+      if(d.type==='reviewTrainingOpen'||d.type==='reviewTrainingBack'||d.type==='reviewTrainingSaved'){
+        if(e.origin!==location.origin||!reviewTrainingOwner(d))return;
+        if(d.type==='reviewTrainingOpen'){
+          if(e.source!==fScout.contentWindow||d.source!=='scout')return;
+          var training=teamKeyBtn('training');if(training)openTeamButton(training);else showApp('process');
+          reviewTrainingRelay(fProcess,d);
+        }else{
+          if(e.source!==fProcess.contentWindow||d.source!=='process')return;
+          if(d.type==='reviewTrainingBack'){
+            var matches=teamKeyBtn('match');if(matches)openTeamButton(matches);else showApp('scout');
+          }
+          reviewTrainingRelay(fScout,d);
+        }
+        return;
+      }
       /* 보관함 공통 셸 전환 — 같은 origin과 정확한 iframe만 허용한다.
          iframe 자체는 유지하므로 보관함 폴더·스크롤과 현재 노트·페이지가 모두 보존된다. */
       if(d.type==='vaultSection'){
@@ -2985,7 +3016,7 @@ function psShowUpdBand(){
     });
   })();
   /* ── 2.465 · 팀 기록(판 역사) — 사용자 "로그를 남겨서 그쪽으로 가거나 되돌리거나" ──────
-     서버가 90일 보관하는 이전 판(ps_kv_history)과 수정자(updated_by)를 사람 앞에 꺼낸다.
+     서버에 남아 있는 이전 판(ps_kv_history)과 수정자(updated_by)를 사람 앞에 꺼낸다.
      행 = "그 시각에 그 사람이 그 자료를 고침" · 본문 = 고치기 **직전** 판.
      운영진 전용(서버가 강제) · 팀 워크스페이스에서만 · SQL 설치 전엔 안내만. */
   (function(){
@@ -3020,7 +3051,7 @@ function psShowUpdBand(){
       var w=document.createElement('div'); w.id='psHistSheet';
       w.innerHTML='<div class="pd-scrim"></div><div class="pd-card" role="dialog" aria-modal="true" aria-label="팀 기록">'
         +'<button type="button" class="pd-x" aria-label="닫기">×</button>'
-        +'<h3>팀 기록</h3><div class="pd-meta">누가 언제 무엇을 고쳤는지 · 복구 가능한 서버 판본</div>'
+        +'<h3>팀 기록</h3><div class="pd-meta">누가 언제 무엇을 고쳤는지 · 본문이 남은 판본만 복구 가능</div>'
         +'<div class="ph-body"><div class="pd-note">불러오는 중…</div></div></div>';
       document.body.appendChild(w);
       function close(){ try{w.remove();}catch(_){} }
@@ -3052,7 +3083,7 @@ function psShowUpdBand(){
           if(rs)rs.addEventListener('click',function(){
             var msg=isMatch
               ?lbl+'의 '+fmtT(new Date(row2.changed_at).getTime())+' 직전 판에서 빈·누락 기록을 복구합니다.\n현재 작성된 값은 덮어쓰지 않으며, 삭제 기록이 남은 경기는 되살리지 않습니다.'
-              :lbl+'을(를) '+fmtT(new Date(row2.changed_at).getTime())+' 직전 판으로 되돌립니다.\n지금 판도 서버 기록에 남아 다시 되돌릴 수 있어요.';
+              :lbl+'을(를) '+fmtT(new Date(row2.changed_at).getTime())+' 직전 판으로 되돌립니다.\n현재 자료가 바뀌고 팀에도 반영됩니다. 필요한 내용은 먼저 파일로 보관하세요.';
             var go=function(){
               rs.disabled=true; rs.textContent='되돌리는 중…';
               PSSync.historyApply(row2.k,row2.v,{expectedWid:historyWid}).then(function(ok){
@@ -3072,11 +3103,11 @@ function psShowUpdBand(){
           var why=h&&h.reason;
           body.innerHTML='<div class="pd-note">'+(why==='team-only'?'팀 워크스페이스에서만 볼 수 있어요.'
             :why==='login'?'로그인한 기기에서만 볼 수 있어요.'
-            :'서버에 기록 통로가 아직 없어요.<br><b>supabase-설치/supabase-history-log.sql</b> 을 Supabase SQL Editor 에서 한 번 실행하면 열립니다.')+'</div>';
+            :'팀 기록을 현재 불러올 수 없어요. 다시 시도해도 같으면 서비스 운영자에게 알려 주세요.')+'</div>';
           return;
         }
         if(h.denied){ body.innerHTML='<div class="pd-note">팀 기록은 운영진만 볼 수 있어요.</div>'; return; }
-        if(!h.rows.length){ body.innerHTML='<div class="pd-note">아직 보관된 판이 없어요 — 다음 수정부터 쌓입니다.</div>'; return; }
+        if(!h.rows.length){ body.innerHTML='<div class="pd-note">현재 조회할 수 있는 팀 기록이 없어요.</div>'; return; }
         body.innerHTML='';
         h.rows.forEach(function(r){
           var who=(h.names&&h.names[r.changed_by])||'팀원';
@@ -3135,6 +3166,8 @@ function psShowUpdBand(){
      syncNow 는 원래 올리기와 받기를 한 번에 한다. 같은 엔진을 두 버튼으로 나눠 설명하던 UI를
      한 줄로 되돌린다. 크게 줄어든 변경만 예외로 같은 버튼이 '확인'으로 바뀐다. */
   var pbtn=document.getElementById('psPushNow'), pst=document.getElementById('psPushState');
+  var pushNotice=null;
+  function pushState(){try{return window.PSSync&&PSSync.state&&PSSync.state();}catch(_){return null;}}
   function holdCount(){ try{ return ((window.PSSync&&PSSync.hold&&PSSync.hold.list&&PSSync.hold.list())||[]).length; }catch(_){ return 0; } }
   /* 2.337 — '확인할 변경'은 보류(hold)만 세고 [확인]도 보류 화면만 열었다.
      1.591 이 바로 이 헷갈림("다른 기기와 부딪힌 자료 헷갈려") 때문에 보류·덮임·충돌 셋을
@@ -3150,17 +3183,15 @@ function psShowUpdBand(){
     var S=window.PSSync;
     if(!S||!S.session||!S.session()){ pst.textContent='로그인하면 팀과 함께 씁니다'; if(pbtn)pbtn.disabled=true; return; }
     if(pbtn)pbtn.disabled=false;
-    var n=0; try{ n=(S.pending&&S.pending().count)||0; }catch(_){}
-    var rc=reviewCount();
-    if(pbtn)pbtn.textContent=rc?'보기':'지금 다시 맞추기';   /* 2.625 말 바꾸기 */
-    if(rc)      pst.textContent='확인할 것 '+rc+' — 이 기기와 팀이 다르게 저장됐어요';
-    else if(n)  pst.textContent='올리는 중 · '+n;
-    else{
-      /* '최신 상태'가 언제 기준인지 — 1.611 의 ps_last_pull_at 로 말한다 */
-      var at=0; try{ at=+localStorage.getItem('ps_last_pull_at')||0; }catch(_){}
-      var ago=''; try{ ago=(at&&S.ago)?S.ago(at):''; }catch(_){}
-      pst.textContent='팀과 같아요'+(ago?(' · '+ago):'');   /* 2.625 */
-    }
+    /* 2.745 — 팀 대기함만 비었다고 개인 자료까지 완료한 것은 아니다. 공통 상태를 그대로 읽는다. */
+    var state=pushState(),rc=reviewCount();
+    if(pbtn)pbtn.textContent=rc?'보기':'지금 동기화';
+    if(pushNotice&&state&&state.kind==='ok'&&+state.at>pushNotice.at)pushNotice=null;
+    if(state&&state.kind==='bad')pst.textContent=state.text;
+    else if(rc)pst.textContent='확인할 자료 '+rc+'건 — 남길 판본을 선택하세요';
+    else if(pushNotice)pst.textContent=pushNotice.text;
+    else if(state&&state.kind==='ok')pst.textContent=+state.at>0?state.text+(state.ago?(' · '+state.ago):''):'아직 동기화 완료를 확인하지 못했어요';
+    else pst.textContent=state&&state.text||'동기화 상태를 확인하지 못했어요';
   }
   window.__psRefreshPushState=refreshPushState;
   /* sync.js의 기존 성공 알림 경로도 같은 한 줄만 갱신한다. */
@@ -3172,6 +3203,9 @@ function psShowUpdBand(){
       openReview();   /* 2.337 — 자료 확인 한 화면(보류·덮임·충돌 + 지난 판본) */
       setTimeout(refreshPushState,500);return;
     }
+    pushNotice=null;
+    var beforeState=pushState(),beforeAt=+(beforeState&&beforeState.at)||0;
+    function notice(text){pushNotice={text:text,at:beforeAt};if(pst)pst.textContent=text;}
     pbtn.disabled=true; pbtn.textContent='올리는 중…';
     if(pst)pst.textContent='올리는 중…';
     /* syncNow 는 이미 돌고 있으면 {skip:1} 을 준다 — 그때는 잠깐 뒤 다시 시도한다(최대 8초). */
@@ -3183,19 +3217,17 @@ function psShowUpdBand(){
       });
     })().then(function(r){
       r=r||{};
-      var hc=reviewCount();
-      if(r.error){ if(pst)pst.textContent='동기화하지 못했습니다 — 네트워크를 확인해 주세요'; alert('동기화하지 못했습니다.\n네트워크 연결을 확인한 뒤 다시 눌러 주세요.\n\n기록은 이 기기에 그대로 있습니다.'); }
-      else if(r.scheduleDeferred){ if(pst)pst.textContent='일정 편집이 끝나면 자동으로 맞춰집니다';
+      var hc=reviewCount(),state=pushState();
+      if(r.error||r.personalError){ notice(state&&state.kind==='bad'?state.text:(r.personalError?'개인 자료 동기화를 완료하지 못했어요 · 다시 시도해 주세요':'동기화하지 못했어요 · 연결과 권한을 확인해 주세요')); }
+      else if(r.noauth){ notice('로그인 상태를 확인한 뒤 다시 동기화해 주세요'); }
+      else if(r.scheduleDeferred){ notice('일정 편집이 끝나면 자동으로 맞춰집니다');
         try{ if(window.toast)toast('일정은 편집을 마친 뒤 동기화됩니다'); }catch(_){} }
-      else if(hc){ if(pst)pst.textContent='이 기기와 팀이 다르게 저장된 자료 '+hc+'건';
-        try{ if(window.toast)toast('이 기기와 팀이 다른 자료가 있어요 — [확인]에서 고르세요'); }catch(_){} }
-      else if(r.pushed>0||r.applied>0){ if(pst)pst.textContent='최신 상태';
-        try{ if(window.toast)toast('동기화했습니다 ✓'); }catch(_){ } }
-      else if(r.noauth){ if(pst)pst.textContent='로그인하면 팀과 함께 씁니다'; }
-      else { if(pst)pst.textContent='최신 상태';
-        try{ if(window.toast)toast('이미 최신입니다'); }catch(_){ } }
+      else if(r.skip||r.pending||(Array.isArray(r.skipped)?r.skipped.length:r.skipped)){ notice('아직 완료하지 못한 동기화가 있어요 · 상태를 확인한 뒤 다시 시도해 주세요'); }
+      else if(hc||!state||state.kind!=='ok'||!+state.at){refreshPushState();}
+      else { refreshPushState();
+        try{ if(window.toast)toast(r.pushed>0||r.applied>0?'동기화했습니다 ✓':'확인된 자료가 클라우드와 같습니다'); }catch(_){ } }
     }).catch(function(){
-      if(pst)pst.textContent='동기화하지 못했습니다 — 다시 시도해 주세요';
+      notice('동기화하지 못했습니다 — 다시 시도해 주세요');
     }).then(function(){
       pbtn.disabled=false; setTimeout(refreshPushState,400);
     });
@@ -3266,7 +3298,7 @@ function psShowUpdBand(){
     if(!snSt)return;
     if(!snapDataUnlocked(false)){snSt.textContent='로그인 후 이용';if(snBtn)snBtn.disabled=true;return;}
     var l=[]; try{ l=(window.PSSnapshots&&PSSnapshots.list())||[]; }catch(_){}
-    if(!l.length){ snSt.textContent='아직 없습니다 — 곧 자동으로 만들어집니다'; if(snBtn)snBtn.disabled=true; return; }
+    if(!l.length){ snSt.textContent='이 기기에 보관된 자동 백업이 없습니다'; if(snBtn)snBtn.disabled=true; return; }
     if(snBtn)snBtn.disabled=false;
     var last=l[l.length-1];
     snSt.textContent=l.length+'개 · 마지막 '+new Date(last.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -3282,14 +3314,14 @@ function psShowUpdBand(){
     /* 1.847 — prompt/confirm → psPrompt/psConfirm(설치형 PWA 에서 네이티브가 막힘). 콜백 체인으로 재구성. */
     var _ask=window.psPrompt||function(m,d,ok){var v=prompt(m,d);if(v!=null)ok(v);};
     var _cfm=window.psConfirm||function(m,ok){if(confirm(m))ok();};
-    _ask('되돌릴 시점의 번호를 입력하세요.\n지금 상태는 먼저 자동으로 저장되니 다시 돌아올 수 있습니다.\n\n'+lines,'1',function(pick){
+    _ask('이 기기에 남아 있는 백업 중 되돌릴 시점의 번호를 입력하세요.\n현재 기록이 바뀔 수 있으니 필요한 내용은 먼저 파일로 보관하세요.\n\n'+lines,'1',function(pick){
       var idx=parseInt(pick,10);
       var target=l.slice().reverse()[idx-1];
       if(!target){ alert('번호를 확인해 주세요.'); return; }
-      _cfm(new Date(target.at).toLocaleString('ko-KR')+' 상태로 되돌립니다.\n\n지금 상태는 자동으로 한 판 저장한 뒤 진행합니다.\n계속할까요?',function(){
+      _cfm(new Date(target.at).toLocaleString('ko-KR')+' 상태로 되돌립니다.\n\n복구한 자료는 다음 동기화에서 팀에도 반영될 수 있습니다.\n계속할까요?',function(){
         snBtn.disabled=true; snBtn.textContent='되돌리는 중…';
         Promise.resolve(PSSnapshots.restore(target.at)).then(function(ok){
-          if(ok) alert('되돌렸습니다. 화면을 새로고침하면 보입니다.\n(마음에 안 들면 같은 자리에서 방금 저장된 시점으로 다시 돌아갈 수 있습니다)');
+          if(ok) alert('이 기기에 복구한 자료를 적용했습니다. 화면을 새로고침하고 동기화 상태를 확인하세요.');
           else   alert('되돌리지 못했습니다. 자료는 그대로 두었습니다.');
         }).catch(function(){ alert('되돌리지 못했습니다. 자료는 그대로 두었습니다.'); })
           .then(function(){ snBtn.disabled=false; snBtn.textContent='지난 상태'; refreshSnapState(); });
@@ -4953,299 +4985,433 @@ window.__buildScoutForm=function(k){
 })();
 </script>
 
+<!-- 2.745 — 현재 메뉴·저장 범위에 맞춘 6개 언어 사용법. -->
 <div id="guideOv" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(16,24,40,.5);backdrop-filter:blur(4px);">
   <div class="gd-panel">
     <button id="guideClose" aria-label="닫기">✕</button>
     <div class="gd-langs" id="gdLangs">
-      <button data-l="ko" class="on">한국어</button><button data-l="ja">日本語</button><button data-l="en">EN</button>
+      <button data-l="ko" class="on">한국어</button><button data-l="ja">日本語</button><button data-l="en">EN</button><button data-l="zh">中文</button><button data-l="es">ES</button><button data-l="pt">PT</button>
     </div>
     <div class="gd-body">
 <div class="L on" data-l="ko">
 <h1>사용법 안내</h1>
-<div class="sub">작전판 · 보관함 · 일정 · 팀 · 노트 · 메모 · 양식 — 일곱 가지 도구가 하나로. 설치 없이 브라우저에서 바로 쓰고, 폰·태블릿·PC 어디서나 열립니다.</div>
-<nav class="toc"><a href="#gd-ko0">시작하기</a><a href="#gd-ko1">작전판</a><a href="#gd-ko2">보관함</a><a href="#gd-ko3">일정</a><a href="#gd-ko4">팀</a><a href="#gd-ko5">노트·메모</a><a href="#gd-ko6">양식</a><a href="#gd-ko7">공유·백업</a></nav>
-
+<div class="sub">전술을 준비하고, 팀의 경기·훈련을 기록하고, 선수의 성장을 돌아보는 공간입니다. 필요한 메뉴부터 시작하세요.</div>
+<nav class="toc"><a href="#gd-ko0">시작하기</a><a href="#gd-ko1">보드</a><a href="#gd-ko2">보관함</a><a href="#gd-ko3">일정</a><a href="#gd-ko4">팀 운영</a><a href="#gd-ko5">IDP·학습</a><a href="#gd-ko6">개인 노트·양식</a><a href="#gd-ko7">저장·공유·복구</a></nav>
 <section id="gd-ko0"><h2><span class="n">0</span>시작하기</h2>
-<p class="lead">상단에 탭 7개와 버튼 2개가 전부입니다.</p>
+<p class="lead">보드·커뮤니티는 로그인 전 둘러볼 수 있습니다. 팀 자료·클라우드 동기화는 로그인 후 이용하세요.</p>
 <ul>
-<li><kbd>작전판 · 보관함 · 일정 · 팀 · 노트 · 메모 · 양식</kbd> — 도구 전환 탭</li>
-<li><kbd>공유</kbd> — 지금 보고 있는 화면(작전판·드릴 등)을 링크로 복사</li>
-<li><kbd>⚙︎ 설정</kbd> — 테마(라이트/다크) · 언어 6개(한국어·日本語·English·中文·Español·Português) · 백업 내려받기/복원 · 사용법 · build 표시</li>
+<li><b>계정</b> — 카카오 또는 Google로 로그인하고 계정 메뉴에서 내 작업 또는 팀을 선택하세요. 팀을 만들거나 초대 코드로 합류할 수도 있습니다.</li>
+<li><b>메뉴</b> — 보드 · 보관함 · 팀 운영 · IDP · 커뮤니티 · 학습으로 이동합니다. 보이는 메뉴와 편집 범위는 화면 크기·선택한 팀·권한에 따라 달라집니다.</li>
+<li><b>앱 설정</b> — 일반에서 언어·테마·사용법, 데이터에서 동기화·복구·파일, 기기에서 설치·앱 상태를 확인합니다.</li>
 </ul>
-<div class="tip">폰에서 자주 쓴다면 브라우저 메뉴의 <b>"홈 화면에 추가"</b>를 해두세요. 앱처럼 열립니다.</div>
-<div class="warn">데이터는 전부 이 기기 브라우저에 저장됩니다 — 서버로 전송되지 않아요. 기기를 바꾸거나 브라우저 데이터를 지우면 사라지니, <b>⚙︎ → 백업 내려받기</b>를 습관으로 해주세요.</div>
+<div class="tip">폰에서 자주 쓴다면 브라우저의 <b>홈 화면에 추가</b>를 사용할 수 있습니다. 설치·오프라인 상태는 앱 설정의 기기 탭에서 확인하세요.</div>
 </section>
-
-<section id="gd-ko1"><h2><span class="n">1</span>작전판</h2>
-<p class="lead">전술을 그리고, 움직임을 애니메이션으로 만들고, 파일로 내보냅니다.</p>
+<section id="gd-ko1"><h2><span class="n">1</span>보드</h2>
+<p class="lead">선수와 공의 움직임을 그림과 애니메이션으로 설명합니다.</p>
 <ul>
-<li><b>그리기</b> — 토큰·화살표·도형·텍스트로 전술 표현, 운동장은 1~3개까지</li>
-<li><b>유니폼</b> — 팀 칩을 한 번 더 탭하면 색·패턴 변경</li>
-<li><kbd>경기</kbd> 모드 — 전광판·기록, <kbd>미팅</kbd> 모드 — 키노트처럼 선수단 앞 발표</li>
-<li><b>애니메이션</b> — 장면을 추가하며 토큰을 옮기고 이어서 재생. <kbd>이동</kbd>은 선택한 장면의 아이콘 속도, <kbd>유지</kbd>는 모든 장면의 일정한 대기 시간을 조절합니다</li>
-<li><b>내보내기</b> — PNG · 영상 · PPT</li>
+<li>선수·장비를 놓고 화살표·도형·텍스트로 전술을 그립니다. 장면을 추가하면 움직임을 이어서 재생할 수 있습니다.</li>
+<li>다시 쓸 전술은 <kbd>보관함 저장</kbd>으로 이름을 붙여 남기세요. 이미지·영상 등은 화면의 내보내기 메뉴에서 지원하는 형식을 선택합니다.</li>
 </ul>
 </section>
-
 <section id="gd-ko2"><h2><span class="n">2</span>보관함</h2>
-<p class="lead">훈련 드릴을 만들고, 작전판·드릴·미팅을 한곳에 모아둡니다.</p>
+<p class="lead">저장한 자료를 다시 열고 훈련을 설계합니다.</p>
 <ul>
-<li><b>훈련 만들기</b> — 그림을 만든 뒤 훈련 메모를 <kbd>설계 → 운영 → 학습 리뷰</kbd> 순서로 작성</li>
-<li><b>빠른 메모</b> — 훈련 중 떠오른 내용은 먼저 짧게 기록하고 나중에 정리</li>
-<li><b>설계</b> — 학습 목적·성공 기준·선수 과제와 4Ds(Direction · Definition · Decisions · Difference) 점검</li>
-<li><b>운영</b> — Organisation · Explanation · Variations · Coaching Points와 안전·재미·포용성 확인</li>
-<li><b>학습 리뷰</b> — 선수의 말·학습의 증거·기억할 한 문장·코치 성찰·다음 세션 연결</li>
-<li>폴더·태그·즐겨찾기로 정리</li>
-<li>항목 카드에서 제목변경·복제·PDF</li>
-<li><b>발표 모드</b> — 저장한 항목을 그대로 띄워 미팅 진행</li>
-<li><b>드릴 팩(JSON)</b> 내보내기/가져오기 — 드릴 묶음을 파일로 교환</li>
+<li><b>자료</b> — 보드·훈련·세트피스를 만들고 폴더·태그로 정리합니다. 훈련 메모는 <kbd>설계 → 운영 → 학습 리뷰</kbd> 순서로 보완하세요.</li>
+<li><b>분석 · 게임모델 · 개인 노트</b>도 보관함 안에서 엽니다. 먼저 짧게 기록하고 필요한 내용을 나중에 채워도 됩니다.</li>
+<li>자료를 나눌 때는 항목·폴더의 공유 범위나 커뮤니티 게시 내용을 확인하세요. 보관함 저장과 팀 공유·커뮤니티 공개는 서로 다른 작업입니다.</li>
 </ul>
-<div class="tip"><b>처음에는 전부 채우지 않아도 됩니다.</b> 빠른 메모와 학습 목적만 기록하고, 훈련이 끝난 뒤 학습 리뷰를 보완하면 됩니다. 저장한 항목은 보관함·커뮤니티 공유·PDF에도 함께 유지됩니다.</div>
 </section>
-
 <section id="gd-ko3"><h2><span class="n">3</span>일정</h2>
-<p class="lead">경기일(MD)을 기준으로 주간·월간 훈련을 계획합니다.</p>
+<p class="lead">팀 운영 › 일정에서 경기일을 기준으로 훈련을 계획합니다.</p>
 <ul>
-<li><b>주간 보드</b> — 경기일을 잡으면 각 날에 MD(경기까지 며칠)가 붙습니다</li>
-<li><b>세션 시트</b> — 블록 단위로 훈련 설계</li>
-<li><b>월간 달력</b>과 <b>그래프</b>(부하 리뷰)</li>
-<li><b>지난주 복사 · MD 리듬 채우기</b>로 빈 주를 빠르게</li>
-<li>PDF 출력 지원</li>
+<li>주간·월간 화면에서 날짜를 고르고 세션의 시간·목표·훈련 내용을 작성합니다. 보관함의 훈련을 세션에 연결할 수 있습니다.</li>
+<li>훈련 뒤에는 세션 리뷰를 남기고 부하 그래프를 확인하세요. 출력이 필요하면 일정 화면의 PDF 기능을 사용합니다.</li>
 </ul>
 </section>
-
-<section id="gd-ko4"><h2><span class="n">4</span>팀</h2>
-<p class="lead">선수단·스카우트·게임모델을 한 탭에서 관리합니다.</p>
+<section id="gd-ko4"><h2><span class="n">4</span>팀 운영</h2>
+<p class="lead">오늘 할 일부터 경기 준비와 리뷰까지 팀 메뉴에서 이어갑니다.</p>
 <ul>
-<li><b>선수단</b> — 포메이션·선수 프로필·평가</li>
-<li><b>스카우트</b> — 관찰 대상 선수 관리</li>
-<li><b>기준 설정</b> — 우리 팀의 평가 기준 정의</li>
-<li><b>게임모델</b> — 국면·단계별 플레이 원칙 정리</li>
-<li><b>매치데이 명단</b> 출력</li>
+<li><b>오늘 · 경기 · 출석</b> — 일정과 해야 할 일을 확인하고, 경기 준비·기록·리뷰 및 참가 상태를 관리합니다.</li>
+<li><b>선수단 · 스카우팅 · 평가표</b> — 선수 정보와 관찰 기록을 모으고 평가 기준을 정합니다.</li>
+<li><b>플레이북</b> — 팀의 플레이 원칙을 정리합니다. 게임모델과 공용어는 플레이북의 하위 메뉴에서 엽니다. 폰에서는 보이지 않는 메뉴를 <kbd>더보기</kbd>에서 찾으세요.</li>
 </ul>
 </section>
-
-<section id="gd-ko5"><h2><span class="n">5</span>노트·메모</h2>
-<p class="lead">필기는 노트, 짧은 기록은 메모.</p>
+<section id="gd-ko5"><h2><span class="n">5</span>IDP·학습</h2>
+<p class="lead">개인 목표와 기록을 돌아보고, 필요한 축구 지식을 익힙니다.</p>
 <ul>
-<li><b>노트</b> — 펜슬 필기, 배경 양식 선택</li>
-<li>PDF를 불러와 그 위에 필기할 수 있어요</li>
-<li><b>메모</b> — 빠른 텍스트 메모</li>
+<li><b>IDP</b> — 개인 목표·훈련·리뷰를 기록합니다. 팀 운영의 IDP에서는 권한과 선수 연결 상태에 따라 선수의 기록을 확인합니다.</li>
+<li><b>학습</b> — 경기 읽기·용어·게임모델 등의 학습 자료를 엽니다. 선수 기록을 나누기 전에는 화면에 표시된 공개·공유 범위를 확인하세요.</li>
 </ul>
 </section>
-
-<section id="gd-ko6"><h2><span class="n">6</span>양식</h2>
-<p class="lead">펜으로 쓰는 1장짜리 인쇄 폼 모음입니다.</p>
+<section id="gd-ko6"><h2><span class="n">6</span>개인 노트·양식</h2>
+<p class="lead">보관함 › 개인 노트에서 필기와 짧은 메모를 남깁니다.</p>
 <ul>
-<li>월간·주간·일간·매치데이 + 스카우트·분석 폼들</li>
-<li>누르면 미리보기 → <kbd>인쇄 / PDF 저장</kbd></li>
-<li><b>잉크 절약</b> 모드 지원</li>
+<li><b>노트 · 메모 · 문서 보관함</b>에서 기록 방식과 문서를 선택합니다. 노트의 <kbd>양식</kbd>으로 배경을 고를 수 있습니다.</li>
+<li><kbd>도구 › 파일</kbd>에서 PDF를 가져와 필기하거나 이미지 저장·A4 인쇄를 사용합니다. 개인 기록의 기기 저장과 클라우드 동기화 범위는 아래 설명을 확인하세요.</li>
 </ul>
 </section>
-
-<section id="gd-ko7"><h2><span class="n">7</span>공유·백업</h2>
-<p class="lead">링크로 전달하고, 데이터는 직접 지킵니다.</p>
+<section id="gd-ko7"><h2><span class="n">7</span>저장·공유·복구</h2>
+<p class="lead">개인 자료, 팀 자료, 이 기기에만 남는 자료를 구분해 확인하세요.</p>
 <ul>
-<li>상단 <kbd>공유</kbd> — 현재 화면(작전판·드릴 등)을 링크로, 받는 사람은 설치 없이 열람</li>
-<li><kbd>⚙︎ → ⤓</kbd> 모든 데이터를 JSON 한 파일로 내려받기</li>
-<li><kbd>⚙︎ → ⤒</kbd> 백업 파일 선택 → 불러오기 (기존 데이터에 합쳐집니다 · 항목 삭제 없음)</li>
-<li>기기를 바꾸기 전엔 반드시 백업 — 데이터는 서버가 아니라 이 기기 브라우저에만 있습니다</li>
+<li><b>클라우드</b> — 동기화 대상 자료는 계정의 개인 공간 또는 선택한 팀 공간과 맞춥니다. 노트·매치 데스크 등 동기화 대상인 개인 자료는 팀 화면에서 작성해도 본인 개인 공간으로 동기화됩니다.</li>
+<li><b>기기 저장</b> — 작업 중인 보드·일부 초안과 설정은 기기에 남습니다. 기기에 저장됐다는 표시만으로 클라우드 전송 완료를 뜻하지는 않습니다. 기기를 바꾸기 전 <kbd>앱 설정 › 데이터 › 지금 동기화</kbd>에서 상태를 확인하고, 충돌 안내가 있으면 내용을 비교해 선택하세요.</li>
+<li><b>파일</b> — <kbd>앱 설정 › 데이터 › 고급 · 운영진</kbd>을 펼치면 파일 저장·가져오기가 있습니다. 현재 불러온 자료 중 지원하는 범위를 다루며, 모든 팀·기기의 전체 백업은 아닙니다. 가져오기 전에 대상과 적용 내용을 확인하세요.</li>
+<li><b>지난 상태</b> — 로그인한 계정의 자료가 준비되면 같은 고급 메뉴에서 이 기기에 남아 있는 자동 백업을 확인합니다. 브라우저 저장소를 지우면 기기 백업도 사라질 수 있습니다.</li>
+<li><b>서버의 지난 판본</b> — 팀 운영진은 같은 메뉴의 <kbd>기록 보기</kbd>에서 지원 자료의 복구 가능한 판본을 선택합니다. 일정은 일정 화면의 <kbd>시점 복구</kbd>를 이용하세요. 모든 자료·기간의 복구가 보장되지는 않습니다.</li>
 </ul>
 </section>
-
-<footer><b>PRO</b>CESS STUDIO<br>불편한 점·바라는 점은 언제든 알려주세요. 빠르게 고칩니다.<br><a href="/guide/" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#3a6df0;text-decoration:none">전체 사용 설명서 보기 →</a><br><span style="display:inline-block;margin-top:8px;font-size:11px"><a href="/privacy.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">개인정보처리방침</a> · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">이용약관</a></span><br><span style="display:inline-block;margin-top:4px;opacity:.55;font-size:11px">© 2026 PROCESS STUDIO™ · All rights reserved. · 무단 복제·배포 금지</span></footer>
+<footer><b>PRO</b>CESS STUDIO<br><a href="/guide/" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#3a6df0;text-decoration:none">전체 사용 설명서 보기 →</a><br><span style="display:inline-block;margin-top:8px;font-size:11px"><a href="/privacy.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">개인정보처리방침</a> · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">이용약관</a></span><br><span style="display:inline-block;margin-top:4px;opacity:.55;font-size:11px">© 2026 PROCESS STUDIO™ · All rights reserved.</span></footer>
 </div>
 
 <div class="L" data-l="ja">
 <h1>使い方ガイド</h1>
-<div class="sub">戦術ボード · 保管庫 · スケジュール · チーム · ノート · メモ · フォーム — 7つのツールをひとつに。インストール不要、スマホ・タブレット・PCのブラウザですぐ使えます。</div>
-<nav class="toc"><a href="#gd-ja0">はじめに</a><a href="#gd-ja1">戦術ボード</a><a href="#gd-ja2">保管庫</a><a href="#gd-ja3">スケジュール</a><a href="#gd-ja4">チーム</a><a href="#gd-ja5">ノート・メモ</a><a href="#gd-ja6">フォーム</a><a href="#gd-ja7">共有・バックアップ</a></nav>
-
+<div class="sub">戦術を準備し、チームの試合・練習を記録し、選手の成長を振り返る場所です。必要なメニューから始めましょう。</div>
+<nav class="toc"><a href="#gd-ja0">はじめに</a><a href="#gd-ja1">ボード</a><a href="#gd-ja2">保管庫</a><a href="#gd-ja3">スケジュール</a><a href="#gd-ja4">チーム運営</a><a href="#gd-ja5">IDP・学習</a><a href="#gd-ja6">個人ノート・フォーム</a><a href="#gd-ja7">保存・共有・復元</a></nav>
 <section id="gd-ja0"><h2><span class="n">0</span>はじめに</h2>
-<p class="lead">上部にあるのはタブ7つとボタン2つだけです。</p>
+<p class="lead">ボード・コミュニティはログイン前に試せます。チーム資料とクラウド同期はログイン後に利用してください。</p>
 <ul>
-<li><kbd>戦術ボード · 保管庫 · スケジュール · チーム · ノート · メモ · フォーム</kbd> — ツール切り替えタブ</li>
-<li><kbd>共有</kbd> — 今見ている画面（ボード・ドリルなど）をリンクとしてコピー</li>
-<li><kbd>⚙︎ 設定</kbd> — テーマ（ライト/ダーク）· 言語6つ（한국어·日本語·English·中文·Español·Português）· バックアップのダウンロード/復元 · 使い方 · build表示</li>
+<li><b>アカウント</b> — カカオまたはGoogleでログインし、アカウントメニューで自分の作業場所かチームを選びます。チームの作成や招待コードでの参加もできます。</li>
+<li><b>メニュー</b> — ボード・保管庫・チーム運営・IDP・コミュニティ・学習へ移動します。表示されるメニューと編集範囲は画面サイズ・選択中のチーム・権限によって異なります。</li>
+<li><b>アプリ設定</b> — 一般で言語・テーマ・使い方、データで同期・復元・ファイル、端末でインストールとアプリの状態を確認します。</li>
 </ul>
-<div class="tip">スマホでよく使うなら、ブラウザメニューの<b>「ホーム画面に追加」</b>を。アプリのように開けます。</div>
-<div class="warn">データはすべてこの端末のブラウザに保存されます — サーバーには送信されません。端末を替えたりブラウザデータを消すと失われるため、<b>⚙︎ → バックアップのダウンロード</b>を習慣にしてください。</div>
+<div class="tip">スマホでよく使う場合は、ブラウザの<b>ホーム画面に追加</b>を利用できます。インストール・オフラインの状態はアプリ設定の端末タブで確認してください。</div>
 </section>
-
-<section id="gd-ja1"><h2><span class="n">1</span>戦術ボード</h2>
-<p class="lead">戦術を描き、動きをアニメーションにして、ファイルに書き出します。</p>
+<section id="gd-ja1"><h2><span class="n">1</span>ボード</h2>
+<p class="lead">選手とボールの動きを図とアニメーションで説明します。</p>
 <ul>
-<li><b>描く</b> — トークン・矢印・図形・テキストで戦術を表現、ピッチは1〜3面まで</li>
-<li><b>ユニフォーム</b> — チームチップをもう一度タップすると色・柄を変更</li>
-<li><kbd>試合</kbd>モード — スコアボード・記録、<kbd>ミーティング</kbd>モード — キーノートのようにチームの前で発表</li>
-<li><b>アニメーション</b> — 場面を追加して再生。<kbd>移動</kbd>は選択場面のアイコン速度、<kbd>維持</kbd>は全場面共通の待ち時間です</li>
-<li><b>書き出し</b> — PNG · 動画 · PPT</li>
+<li>選手・用具を配置し、矢印・図形・テキストで戦術を描きます。場面を追加すると動きをつなげて再生できます。</li>
+<li>再利用する戦術は<kbd>保管庫に保存</kbd>で名前を付けて残します。画像・動画などは画面の書き出しメニューで対応形式を選びます。</li>
 </ul>
 </section>
-
 <section id="gd-ja2"><h2><span class="n">2</span>保管庫</h2>
-<p class="lead">トレーニングドリルを作り、ボード・ドリル・ミーティングをひとつにまとめます。</p>
+<p class="lead">保存した資料を開き、トレーニングを設計します。</p>
 <ul>
-<li><b>トレーニング作成</b> — 図を作り、<kbd>設計 → 運営 → 学習レビュー</kbd>の順で記録</li>
-<li><b>クイックメモ</b> — 現場で気づいたことを先に短く残す</li>
-<li><b>設計</b> — 学習目的・成功基準・選手タスクと4Ds（Direction · Definition · Decisions · Difference）</li>
-<li><b>運営</b> — Organisation · Explanation · Variations · Coaching Pointsと安全・楽しさ・包摂性を確認</li>
-<li><b>学習レビュー</b> — 選手の言葉・学習の証拠・要約・コーチの振り返り・次回への接続</li>
-<li>フォルダ・タグ・お気に入りで整理</li>
-<li>項目カードから名前変更・複製・PDF</li>
-<li><b>発表モード</b> — 保存した項目をそのまま映してミーティング</li>
-<li><b>ドリルパック（JSON）</b>の書き出し/読み込み — ドリルのセットをファイルで交換</li>
+<li><b>資料</b> — ボード・練習・セットプレーを作り、フォルダ・タグで整理します。練習メモは<kbd>設計 → 運営 → 学習レビュー</kbd>の順に補足しましょう。</li>
+<li><b>分析・ゲームモデル・個人ノート</b>も保管庫から開きます。まず短く記録し、必要な内容を後から追加できます。</li>
+<li>共有前に項目・フォルダの共有範囲やコミュニティへの投稿内容を確認してください。保管庫への保存、チーム共有、コミュニティ公開は別の操作です。</li>
 </ul>
 </section>
-
 <section id="gd-ja3"><h2><span class="n">3</span>スケジュール</h2>
-<p class="lead">試合日（MD）を基準に週間・月間トレーニングを計画します。</p>
+<p class="lead">チーム運営 › スケジュールで試合日を基準に練習を計画します。</p>
 <ul>
-<li><b>週間ボード</b> — 試合日を決めると各日にMD（試合まで何日）が付きます</li>
-<li><b>セッションシート</b> — ブロック単位でトレーニングを設計</li>
-<li><b>月間カレンダー</b>と<b>グラフ</b>（負荷レビュー）</li>
-<li><b>先週コピー · MDリズム入力</b>で空の週を素早く</li>
-<li>PDF出力対応</li>
+<li>週間・月間画面で日付を選び、セッションの時間・目標・練習内容を記入します。保管庫の練習をセッションに関連付けられます。</li>
+<li>練習後はセッションレビューを残し、負荷グラフを確認します。印刷にはスケジュール画面のPDF機能を使います。</li>
 </ul>
 </section>
-
-<section id="gd-ja4"><h2><span class="n">4</span>チーム</h2>
-<p class="lead">スカッド・スカウト・ゲームモデルをひとつのタブで管理します。</p>
+<section id="gd-ja4"><h2><span class="n">4</span>チーム運営</h2>
+<p class="lead">今日の作業から試合の準備・レビューまでチームメニューで進めます。</p>
 <ul>
-<li><b>スカッド</b> — フォーメーション・選手プロフィール・評価</li>
-<li><b>スカウト</b> — 観察対象の選手を管理</li>
-<li><b>基準設定</b> — チームの評価基準を定義</li>
-<li><b>ゲームモデル</b> — 局面・段階ごとのプレー原則を整理</li>
-<li><b>マッチデーの名簿</b>を出力</li>
+<li><b>今日・試合・出欠</b> — 予定と作業を確認し、試合の準備・記録・レビューと参加状況を管理します。</li>
+<li><b>スカッド・スカウティング・評価表</b> — 選手情報と観察記録を集め、評価基準を設定します。</li>
+<li><b>プレーブック</b> — チームのプレー原則を整理します。ゲームモデルと共通語は下位メニューから開きます。スマホで見えないメニューは<kbd>その他</kbd>から探してください。</li>
 </ul>
 </section>
-
-<section id="gd-ja5"><h2><span class="n">5</span>ノート・メモ</h2>
-<p class="lead">手書きはノート、短い記録はメモ。</p>
+<section id="gd-ja5"><h2><span class="n">5</span>IDP・学習</h2>
+<p class="lead">個人目標と記録を振り返り、必要なサッカーの知識を学びます。</p>
 <ul>
-<li><b>ノート</b> — ペンシル手書き、背景フォームを選択</li>
-<li>PDFを読み込んで、その上に書き込めます</li>
-<li><b>メモ</b> — 素早いテキストメモ</li>
+<li><b>IDP</b> — 個人目標・練習・レビューを記録します。チーム運営のIDPでは権限と選手との連携状態に応じて選手の記録を確認します。</li>
+<li><b>学習</b> — 試合の読み方・用語・ゲームモデルなどの教材を開きます。選手の記録を共有する前に、画面に表示される公開・共有範囲を確認してください。</li>
 </ul>
 </section>
-
-<section id="gd-ja6"><h2><span class="n">6</span>フォーム</h2>
-<p class="lead">ペンで書き込む1枚ものの印刷フォーム集です。</p>
+<section id="gd-ja6"><h2><span class="n">6</span>個人ノート・フォーム</h2>
+<p class="lead">保管庫 › 個人ノートで手書きと短いメモを残します。</p>
 <ul>
-<li>月間・週間・日間・マッチデー + スカウト・分析フォーム</li>
-<li>押すとプレビュー → <kbd>印刷 / PDF保存</kbd></li>
-<li><b>インク節約</b>モード対応</li>
+<li><b>ノート・メモ・文書保管庫</b>で記録方法と文書を選びます。ノートの<kbd>フォーム</kbd>から背景を選べます。</li>
+<li><kbd>ツール › ファイル</kbd>からPDFを読み込んで書き込んだり、画像保存・A4印刷を使えます。個人記録の端末保存とクラウド同期の範囲は以下を確認してください。</li>
 </ul>
 </section>
-
-<section id="gd-ja7"><h2><span class="n">7</span>共有・バックアップ</h2>
-<p class="lead">リンクで届け、データは自分で守ります。</p>
+<section id="gd-ja7"><h2><span class="n">7</span>保存・共有・復元</h2>
+<p class="lead">個人資料、チーム資料、この端末だけに残る資料を区別して確認しましょう。</p>
 <ul>
-<li>上部の<kbd>共有</kbd> — 今の画面（ボード・ドリルなど）をリンクに。受け取った人はインストールなしで閲覧</li>
-<li><kbd>⚙︎ → ⤓</kbd> 全データをJSONファイルひとつでダウンロード</li>
-<li><kbd>⚙︎ → ⤒</kbd> バックアップファイルを選択 → 復元（現在のデータを上書きします）</li>
-<li>端末を替える前は必ずバックアップ — データはサーバーではなくこの端末のブラウザだけにあります</li>
+<li><b>クラウド</b> — 同期対象の資料はアカウントの個人スペースまたは選択中のチームスペースと同期します。ノート・マッチデスクなど同期対象の個人資料は、チーム画面で作成しても本人の個人スペースに同期されます。</li>
+<li><b>端末保存</b> — 作業中のボード・一部の下書きや設定は端末に残ります。端末への保存表示だけではクラウドへの送信完了を意味しません。端末を替える前に<kbd>アプリ設定 › データ › 今すぐ同期</kbd>で状態を確認し、競合の案内があれば内容を比較して選択してください。</li>
+<li><b>ファイル</b> — <kbd>アプリ設定 › データ › 詳細・運営者</kbd>を開くとファイルの保存・読み込みがあります。現在読み込んでいる資料の対応範囲が対象で、全チーム・全端末の完全なバックアップではありません。読み込み前に対象と適用内容を確認してください。</li>
+<li><b>過去の状態</b> — ログインしたアカウントの資料が準備できたら、同じ詳細メニューでこの端末に残る自動バックアップを確認します。ブラウザの保存データを消すと端末のバックアップも失われる場合があります。</li>
+<li><b>サーバーの過去の版</b> — チーム運営者は同じメニューの<kbd>記録を見る</kbd>から、対応資料の復元可能な版を選びます。スケジュールはその画面の<kbd>時点復元</kbd>を使ってください。すべての資料・期間の復元が保証されるわけではありません。</li>
 </ul>
 </section>
-
-<footer><b>PRO</b>CESS STUDIO · 過程に没頭せよ<br>不便な点・ご要望はいつでもお知らせください。すぐ直します。</footer>
+<footer><b>PRO</b>CESS STUDIO<br><a href="/guide/" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#3a6df0;text-decoration:none">詳しい使い方を見る →</a><br><span style="display:inline-block;margin-top:8px;font-size:11px"><a href="/privacy.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">プライバシーポリシー</a> · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">利用規約</a></span><br><span style="display:inline-block;margin-top:4px;opacity:.55;font-size:11px">© 2026 PROCESS STUDIO™ · All rights reserved.</span></footer>
 </div>
 
 <div class="L" data-l="en">
 <h1>How to use</h1>
-<div class="sub">Tactics board · Library · Schedule · Team · Notes · Memo · Forms — seven tools in one. No install needed; runs in the browser on phone, tablet and PC.</div>
-<nav class="toc"><a href="#gd-en0">Getting started</a><a href="#gd-en1">Tactics board</a><a href="#gd-en2">Library</a><a href="#gd-en3">Schedule</a><a href="#gd-en4">Team</a><a href="#gd-en5">Notes & Memo</a><a href="#gd-en6">Forms</a><a href="#gd-en7">Sharing & Backup</a></nav>
-
+<div class="sub">Prepare tactics, record team matches and training, and reflect on player development. Start with the menu you need.</div>
+<nav class="toc"><a href="#gd-en0">Getting started</a><a href="#gd-en1">Board</a><a href="#gd-en2">Library</a><a href="#gd-en3">Schedule</a><a href="#gd-en4">Team operations</a><a href="#gd-en5">IDP & Learning</a><a href="#gd-en6">Personal notes & Forms</a><a href="#gd-en7">Saving, sharing & recovery</a></nav>
 <section id="gd-en0"><h2><span class="n">0</span>Getting started</h2>
-<p class="lead">The header is just seven tabs and two buttons.</p>
+<p class="lead">You can explore Board and Community before signing in. Sign in to use team data and cloud sync.</p>
 <ul>
-<li><kbd>Tactics board · Library · Schedule · Team · Notes · Memo · Forms</kbd> — tool tabs</li>
-<li><kbd>Share</kbd> — copies what you're looking at (board, drill, …) as a link</li>
-<li><kbd>⚙︎ Settings</kbd> — theme (light/dark) · 6 languages (한국어·日本語·English·中文·Español·Português) · backup download/restore · guide · build tag</li>
+<li><b>Account</b> — Sign in with Kakao or Google, then choose My work or a team in the account menu. You can also create a team or join with an invitation code.</li>
+<li><b>Menus</b> — Open Board, Library, Team operations, IDP, Community or Learning. Available menus and editing access depend on screen size, the selected team and your permissions.</li>
+<li><b>App settings</b> — General contains language, theme and this guide; Data contains sync, recovery and files; Device shows installation and app status.</li>
 </ul>
-<div class="tip">If you use it on your phone, tap <b>"Add to Home Screen"</b> in the browser menu — it opens like an app.</div>
-<div class="warn">All data lives in this device's browser — nothing is sent to a server. It's lost if you switch devices or clear browser data, so make <b>⚙︎ → backup download</b> a habit.</div>
+<div class="tip">On a phone, you can use the browser’s <b>Add to Home Screen</b>. Check installation and offline status in the Device tab of App settings.</div>
 </section>
-
-<section id="gd-en1"><h2><span class="n">1</span>Tactics board</h2>
-<p class="lead">Draw tactics, animate the movement, export to files.</p>
+<section id="gd-en1"><h2><span class="n">1</span>Board</h2>
+<p class="lead">Explain player and ball movements with diagrams and animation.</p>
 <ul>
-<li><b>Draw</b> — tokens, arrows, shapes and text; use 1–3 pitches</li>
-<li><b>Kits</b> — tap a team chip again to change its colour and pattern</li>
-<li><kbd>Match</kbd> mode — scoreboard & log; <kbd>Meeting</kbd> mode — present keynote-style to the squad</li>
-<li><b>Animation</b> — add scenes and play them as one sequence. <kbd>Move</kbd> sets icon speed for the selected scene; <kbd>Hold</kbd> keeps the pause between scenes consistent</li>
-<li><b>Export</b> — PNG · video · PPT</li>
+<li>Place players and equipment, then draw tactics with arrows, shapes and text. Add scenes to play movements in sequence.</li>
+<li>Name and keep reusable tactics with <kbd>Save to library</kbd>. For images, video and other exports, choose a format supported by the on-screen export menu.</li>
 </ul>
 </section>
-
 <section id="gd-en2"><h2><span class="n">2</span>Library</h2>
-<p class="lead">Build training drills and keep boards, drills and meetings in one place.</p>
+<p class="lead">Reopen saved materials and design training.</p>
 <ul>
-<li><b>Create training</b> — build the diagram, then use <kbd>Design → Delivery → Learning review</kbd></li>
-<li><b>Quick memo</b> — capture observations on the pitch and organise them later</li>
-<li><b>Design</b> — learning purpose, success criteria, player task and the 4Ds (Direction · Definition · Decisions · Difference)</li>
-<li><b>Delivery</b> — Organisation · Explanation · Variations · Coaching Points, plus safety, fun and inclusion</li>
-<li><b>Learning review</b> — player voice, evidence of learning, one-line summary, coach reflection and the next session</li>
-<li>Organise with folders, tags and favourites</li>
-<li>Rename, duplicate or PDF any item from its card</li>
-<li><b>Presentation mode</b> — run a meeting straight from a saved item</li>
-<li><b>Drill pack (JSON)</b> export/import — swap drill sets as files</li>
+<li><b>Materials</b> — Create boards, training and set pieces, then organise them with folders and tags. Build your training notes through <kbd>Design → Delivery → Learning review</kbd>.</li>
+<li>Open <b>Analysis, Game Model and Personal notes</b> from the Library too. Start with a brief note and fill in details later.</li>
+<li>Before sharing, check the item or folder’s sharing scope and any Community post. Saving to the Library, sharing with a team and publishing to Community are separate actions.</li>
 </ul>
 </section>
-
 <section id="gd-en3"><h2><span class="n">3</span>Schedule</h2>
-<p class="lead">Plan weekly and monthly training around matchday (MD).</p>
+<p class="lead">Plan training around matchday in Team operations › Schedule.</p>
 <ul>
-<li><b>Weekly board</b> — set a match and every day gets an MD (days to match) tag</li>
-<li><b>Session sheet</b> — design sessions block by block</li>
-<li><b>Monthly calendar</b> and <b>Graph</b> (load review)</li>
-<li><b>Copy last week · fill the MD rhythm</b> to build an empty week fast</li>
-<li>Exports to PDF</li>
+<li>Choose a date in the weekly or monthly view and enter the session time, goals and training content. You can link training from the Library to a session.</li>
+<li>After training, add a session review and check the load graph. Use the Schedule’s PDF feature when you need a printout.</li>
 </ul>
 </section>
-
-<section id="gd-en4"><h2><span class="n">4</span>Team</h2>
-<p class="lead">Squad, scouting and your game model in one tab.</p>
+<section id="gd-en4"><h2><span class="n">4</span>Team operations</h2>
+<p class="lead">Use team menus for today’s tasks, match preparation and reviews.</p>
 <ul>
-<li><b>Squad</b> — formation, player profiles, ratings</li>
-<li><b>Scout</b> — track the players you're watching</li>
-<li><b>Criteria</b> — define your team's evaluation standards</li>
-<li><b>Game Model</b> — organise play principles by phase and stage</li>
-<li>Print the <b>match day squad list</b></li>
+<li><b>Today, Match and Attendance</b> — Check plans and tasks, manage match preparation, records and reviews, and track participation.</li>
+<li><b>Squad, Scouting and Ratings</b> — Collect player information and observations, and define evaluation criteria.</li>
+<li><b>Playbook</b> — Organise team playing principles. Open Game Model and Glossary from its submenus. On a phone, look in <kbd>More</kbd> for menus that are not visible.</li>
 </ul>
 </section>
-
-<section id="gd-en5"><h2><span class="n">5</span>Notes & Memo</h2>
-<p class="lead">Handwriting in Notes, quick text in Memo.</p>
+<section id="gd-en5"><h2><span class="n">5</span>IDP & Learning</h2>
+<p class="lead">Reflect on personal goals and records, and build your football knowledge.</p>
 <ul>
-<li><b>Notes</b> — pencil handwriting with background templates</li>
-<li>Import a PDF and write on top of it</li>
-<li><b>Memo</b> — quick text notes</li>
+<li><b>IDP</b> — Record personal goals, training and reviews. Team operations’ IDP shows player records according to permissions and player account links.</li>
+<li><b>Learning</b> — Open materials on reading the game, terminology, game models and more. Check the on-screen publication and sharing scope before sharing player records.</li>
 </ul>
 </section>
-
-<section id="gd-en6"><h2><span class="n">6</span>Forms</h2>
-<p class="lead">One-page printable forms you fill in by pen.</p>
+<section id="gd-en6"><h2><span class="n">6</span>Personal notes & Forms</h2>
+<p class="lead">Keep handwriting and quick memos in Library › Personal notes.</p>
 <ul>
-<li>Monthly, weekly, daily and match day forms plus scouting & analysis forms</li>
-<li>Tap one for a preview → <kbd>Print / Save PDF</kbd></li>
-<li><b>Ink-saver</b> mode included</li>
+<li>Choose your writing mode and documents in <b>Notes, Memo and Document library</b>. Use <kbd>Forms</kbd> in Notes to choose a background.</li>
+<li>Use <kbd>Tools › File</kbd> to import and annotate a PDF, save an image or print on A4. See below for the scope of device storage and cloud sync for personal records.</li>
 </ul>
 </section>
-
-<section id="gd-en7"><h2><span class="n">7</span>Sharing & Backup</h2>
-<p class="lead">Deliver with a link; guard your data yourself.</p>
+<section id="gd-en7"><h2><span class="n">7</span>Saving, sharing & recovery</h2>
+<p class="lead">Distinguish personal data, team data and data kept only on this device.</p>
 <ul>
-<li>Header <kbd>Share</kbd> — turns the current view (board, drill, …) into a link; recipients open it without installing</li>
-<li><kbd>⚙︎ → ⤓</kbd> downloads all data as a single JSON file</li>
-<li><kbd>⚙︎ → ⤒</kbd> pick a backup file → import (merges into current data · nothing deleted)</li>
-<li>Always back up before switching devices — data lives only in this device's browser, not on a server</li>
+<li><b>Cloud</b> — Data eligible for sync is matched with your account’s personal space or the selected team space. Eligible personal data, such as notes and Match Desk records, syncs to your own personal space even when created from a team screen.</li>
+<li><b>Device storage</b> — The board you are working on, some drafts and settings remain on the device. A device-save indicator alone does not mean cloud upload is complete. Before switching devices, check <kbd>App settings › Data › Sync now</kbd>. If a conflict is shown, compare the contents before choosing.</li>
+<li><b>Files</b> — Expand <kbd>App settings › Data › Advanced · Team management</kbd> to save or import a file. This covers supported data currently loaded here, rather than a complete backup of every team and device. Check the target and the changes to be applied before importing.</li>
+<li><b>Past state</b> — Once your signed-in account’s data is ready, check automatic backups remaining on this device in the same advanced menu. Clearing browser storage can also remove device backups.</li>
+<li><b>Past server versions</b> — Authorised team managers can use <kbd>View history</kbd> in the same menu to select a restorable version of supported data. For schedules, use <kbd>Point-in-time recovery</kbd> on the Schedule screen. Recovery is not guaranteed for every item or time period.</li>
 </ul>
 </section>
-
-<footer><b>PRO</b>CESS STUDIO · Obsess over the process<br>Tell us what's awkward or missing — we fix fast.</footer>
+<footer><b>PRO</b>CESS STUDIO<br><a href="/guide/" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#3a6df0;text-decoration:none">Open the full guide →</a><br><span style="display:inline-block;margin-top:8px;font-size:11px"><a href="/privacy.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">Privacy policy</a> · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">Terms of use</a></span><br><span style="display:inline-block;margin-top:4px;opacity:.55;font-size:11px">© 2026 PROCESS STUDIO™ · All rights reserved.</span></footer>
 </div>
 
+<div class="L" data-l="zh">
+<h1>使用指南</h1>
+<div class="sub">准备战术，记录球队比赛与训练，回顾球员成长。从需要的菜单开始使用。</div>
+<nav class="toc"><a href="#gd-zh0">开始使用</a><a href="#gd-zh1">战术板</a><a href="#gd-zh2">资料库</a><a href="#gd-zh3">日程</a><a href="#gd-zh4">球队管理</a><a href="#gd-zh5">IDP与学习</a><a href="#gd-zh6">个人笔记与表单</a><a href="#gd-zh7">保存、共享与恢复</a></nav>
+<section id="gd-zh0"><h2><span class="n">0</span>开始使用</h2>
+<p class="lead">登录前可以体验战术板和社区。球队资料与云端同步需要登录后使用。</p>
+<ul>
+<li><b>账户</b> — 使用Kakao或Google登录，然后在账户菜单中选择“我的工作”或球队。也可以创建球队或通过邀请码加入。</li>
+<li><b>菜单</b> — 进入战术板、资料库、球队管理、IDP、社区或学习。显示的菜单及可编辑范围取决于屏幕大小、当前球队和你的权限。</li>
+<li><b>应用设置</b> — 在常规中设置语言、主题及查看指南；在数据中查看同步、恢复及文件；在设备中查看安装与应用状态。</li>
+</ul>
+<div class="tip">在手机上可以使用浏览器的<b>添加到主屏幕</b>。安装与离线状态可在应用设置的设备选项卡中查看。</div>
+</section>
+<section id="gd-zh1"><h2><span class="n">1</span>战术板</h2>
+<p class="lead">用图示和动画讲解球员与球的移动。</p>
+<ul>
+<li>放置球员和器材，用箭头、图形及文字绘制战术。添加场景后，可以连续播放移动过程。</li>
+<li>需要再次使用的战术，请通过<kbd>保存到资料库</kbd>命名并保存。图片、视频等导出格式，请在当前页面的导出菜单中选择。</li>
+</ul>
+</section>
+<section id="gd-zh2"><h2><span class="n">2</span>资料库</h2>
+<p class="lead">重新打开已保存的资料，并设计训练。</p>
+<ul>
+<li><b>资料</b> — 创建战术板、训练和定位球，用文件夹与标签整理。按照<kbd>设计 → 执行 → 学习回顾</kbd>完善训练笔记。</li>
+<li><b>分析、比赛模型和个人笔记</b>也从资料库进入。可以先简短记录，之后再补充细节。</li>
+<li>分享前请检查项目或文件夹的共享范围，以及社区帖子的内容。保存到资料库、与球队共享、发布到社区是不同操作。</li>
+</ul>
+</section>
+<section id="gd-zh3"><h2><span class="n">3</span>日程</h2>
+<p class="lead">在球队管理 › 日程中，以比赛日为基准安排训练。</p>
+<ul>
+<li>在周视图或月视图中选择日期，填写训练课的时间、目标及内容。可以将资料库中的训练关联到训练课。</li>
+<li>训练后留下训练课回顾，并查看负荷图表。需要打印时，使用日程页面的PDF功能。</li>
+</ul>
+</section>
+<section id="gd-zh4"><h2><span class="n">4</span>球队管理</h2>
+<p class="lead">通过球队菜单处理今日任务、赛前准备及赛后回顾。</p>
+<ul>
+<li><b>今日、比赛和出勤</b> — 查看安排与任务，管理比赛准备、记录、回顾及参与情况。</li>
+<li><b>阵容、球探和评价表</b> — 汇总球员信息和观察记录，并制定评价标准。</li>
+<li><b>战术手册</b> — 整理球队的比赛原则。从其子菜单打开比赛模型和术语。手机上未显示的菜单，可在<kbd>更多</kbd>中查找。</li>
+</ul>
+</section>
+<section id="gd-zh5"><h2><span class="n">5</span>IDP与学习</h2>
+<p class="lead">回顾个人目标和记录，学习所需的足球知识。</p>
+<ul>
+<li><b>IDP</b> — 记录个人目标、训练和回顾。球队管理中的IDP会根据权限及球员账户关联情况显示球员记录。</li>
+<li><b>学习</b> — 打开比赛阅读、术语、比赛模型等学习资料。分享球员记录前，请检查页面显示的公开与共享范围。</li>
+</ul>
+</section>
+<section id="gd-zh6"><h2><span class="n">6</span>个人笔记与表单</h2>
+<p class="lead">在资料库 › 个人笔记中手写记录或留下简短备忘。</p>
+<ul>
+<li>在<b>笔记、备忘和文档库</b>中选择记录方式与文档。使用笔记中的<kbd>表单</kbd>选择背景。</li>
+<li>在<kbd>工具 › 文件</kbd>中导入PDF并批注，或保存图片、打印A4。个人记录的设备存储与云端同步范围见下文。</li>
+</ul>
+</section>
+<section id="gd-zh7"><h2><span class="n">7</span>保存、共享与恢复</h2>
+<p class="lead">请区分个人资料、球队资料及仅保存在此设备上的资料。</p>
+<ul>
+<li><b>云端</b> — 支持同步的资料会与账户的个人空间或所选球队空间同步。笔记、比赛分析台等支持同步的个人资料，即使在球队页面中创建，也会同步到本人的个人空间。</li>
+<li><b>设备存储</b> — 正在编辑的战术板、部分草稿和设置会保留在设备中。仅显示已保存到设备，不代表云端上传已完成。更换设备前，请在<kbd>应用设置 › 数据 › 立即同步</kbd>中检查状态。如有冲突提示，请比较内容后再选择。</li>
+<li><b>文件</b> — 展开<kbd>应用设置 › 数据 › 高级·球队管理</kbd>，即可保存或导入文件。文件只涵盖当前已加载且受支持的资料，并非所有球队和设备的完整备份。导入前请检查目标与将应用的更改。</li>
+<li><b>过去状态</b> — 登录账户的资料准备就绪后，在同一高级菜单中查看此设备上保留的自动备份。清除浏览器存储也可能删除设备备份。</li>
+<li><b>服务器历史版本</b> — 有权限的球队管理人员可在同一菜单的<kbd>查看记录</kbd>中，选择受支持资料的可恢复版本。日程请使用日程页面的<kbd>时间点恢复</kbd>。无法保证所有资料或时间段都可恢复。</li>
+</ul>
+</section>
+<footer><b>PRO</b>CESS STUDIO<br><a href="/guide/" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#3a6df0;text-decoration:none">查看完整指南 →</a><br><span style="display:inline-block;margin-top:8px;font-size:11px"><a href="/privacy.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">隐私政策</a> · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">使用条款</a></span><br><span style="display:inline-block;margin-top:4px;opacity:.55;font-size:11px">© 2026 PROCESS STUDIO™ · All rights reserved.</span></footer>
+</div>
+
+<div class="L" data-l="es">
+<h1>Guía de uso</h1>
+<div class="sub">Prepara tácticas, registra partidos y entrenamientos del equipo y revisa el desarrollo de los jugadores. Empieza por el menú que necesites.</div>
+<nav class="toc"><a href="#gd-es0">Primeros pasos</a><a href="#gd-es1">Pizarra</a><a href="#gd-es2">Biblioteca</a><a href="#gd-es3">Agenda</a><a href="#gd-es4">Gestión del equipo</a><a href="#gd-es5">IDP y Aprendizaje</a><a href="#gd-es6">Notas personales y Planillas</a><a href="#gd-es7">Guardar, compartir y recuperar</a></nav>
+<section id="gd-es0"><h2><span class="n">0</span>Primeros pasos</h2>
+<p class="lead">Puedes explorar Pizarra y Comunidad antes de iniciar sesión. Inicia sesión para usar los datos del equipo y la sincronización en la nube.</p>
+<ul>
+<li><b>Cuenta</b> — Inicia sesión con Kakao o Google y elige Mi trabajo o un equipo en el menú de cuenta. También puedes crear un equipo o unirte con un código de invitación.</li>
+<li><b>Menús</b> — Abre Pizarra, Biblioteca, Gestión del equipo, IDP, Comunidad o Aprendizaje. Los menús disponibles y el acceso de edición dependen del tamaño de pantalla, el equipo seleccionado y tus permisos.</li>
+<li><b>Ajustes de la app</b> — General incluye idioma, tema y esta guía; Datos incluye sincronización, recuperación y archivos; Dispositivo muestra la instalación y el estado de la app.</li>
+</ul>
+<div class="tip">En el móvil puedes usar <b>Añadir a la pantalla de inicio</b> del navegador. Consulta la instalación y el estado sin conexión en la pestaña Dispositivo de los ajustes de la app.</div>
+</section>
+<section id="gd-es1"><h2><span class="n">1</span>Pizarra</h2>
+<p class="lead">Explica los movimientos de jugadores y balón con diagramas y animación.</p>
+<ul>
+<li>Coloca jugadores y material y dibuja tácticas con flechas, formas y texto. Añade escenas para reproducir los movimientos en secuencia.</li>
+<li>Pon nombre a las tácticas que quieras reutilizar con <kbd>Guardar en biblioteca</kbd>. Para imágenes, vídeos y otras exportaciones, elige un formato admitido en el menú de exportación de la pantalla.</li>
+</ul>
+</section>
+<section id="gd-es2"><h2><span class="n">2</span>Biblioteca</h2>
+<p class="lead">Abre materiales guardados y diseña entrenamientos.</p>
+<ul>
+<li><b>Materiales</b> — Crea pizarras, entrenamientos y jugadas a balón parado y organízalos con carpetas y etiquetas. Completa las notas de entrenamiento siguiendo <kbd>Diseño → Ejecución → Revisión del aprendizaje</kbd>.</li>
+<li>También puedes abrir <b>Análisis, Modelo de juego y Notas personales</b> desde la Biblioteca. Empieza con una nota breve y añade detalles después.</li>
+<li>Antes de compartir, revisa el alcance del elemento o carpeta y el contenido de la publicación en Comunidad. Guardar en la Biblioteca, compartir con el equipo y publicar en Comunidad son acciones distintas.</li>
+</ul>
+</section>
+<section id="gd-es3"><h2><span class="n">3</span>Agenda</h2>
+<p class="lead">Planifica los entrenamientos en torno al partido desde Gestión del equipo › Agenda.</p>
+<ul>
+<li>Elige una fecha en la vista semanal o mensual y escribe la hora, los objetivos y el contenido de la sesión. Puedes vincular entrenamientos de la Biblioteca a una sesión.</li>
+<li>Después del entrenamiento, añade una revisión de la sesión y consulta el gráfico de carga. Usa la función PDF de la Agenda si necesitas imprimir.</li>
+</ul>
+</section>
+<section id="gd-es4"><h2><span class="n">4</span>Gestión del equipo</h2>
+<p class="lead">Usa los menús del equipo para las tareas de hoy, la preparación y la revisión de partidos.</p>
+<ul>
+<li><b>Hoy, Partido y Asistencia</b> — Consulta planes y tareas, gestiona la preparación, los registros y las revisiones de partidos y controla la participación.</li>
+<li><b>Plantel, Scouting y Evaluaciones</b> — Reúne información de jugadores y observaciones y define criterios de evaluación.</li>
+<li><b>Libro de juego</b> — Organiza los principios de juego del equipo. Abre Modelo de juego y Glosario desde sus submenús. En el móvil, busca los menús que no ves en <kbd>Más</kbd>.</li>
+</ul>
+</section>
+<section id="gd-es5"><h2><span class="n">5</span>IDP y Aprendizaje</h2>
+<p class="lead">Revisa objetivos y registros personales y amplía tus conocimientos de fútbol.</p>
+<ul>
+<li><b>IDP</b> — Registra objetivos personales, entrenamientos y revisiones. El IDP de Gestión del equipo muestra los registros según los permisos y la vinculación de las cuentas de jugadores.</li>
+<li><b>Aprendizaje</b> — Abre materiales sobre lectura del juego, terminología, modelos de juego y otros temas. Antes de compartir registros de jugadores, comprueba el alcance de publicación y uso compartido indicado en pantalla.</li>
+</ul>
+</section>
+<section id="gd-es6"><h2><span class="n">6</span>Notas personales y Planillas</h2>
+<p class="lead">Escribe a mano o deja notas breves en Biblioteca › Notas personales.</p>
+<ul>
+<li>Elige el modo de escritura y los documentos en <b>Notas, Memo y Biblioteca de documentos</b>. Usa <kbd>Planillas</kbd> en Notas para elegir un fondo.</li>
+<li>En <kbd>Herramientas › Archivo</kbd> puedes importar y anotar un PDF, guardar una imagen o imprimir en A4. Consulta abajo el alcance del almacenamiento local y la sincronización en la nube de los registros personales.</li>
+</ul>
+</section>
+<section id="gd-es7"><h2><span class="n">7</span>Guardar, compartir y recuperar</h2>
+<p class="lead">Distingue los datos personales, los del equipo y los que solo quedan en este dispositivo.</p>
+<ul>
+<li><b>Nube</b> — Los datos compatibles con la sincronización se sincronizan con el espacio personal de tu cuenta o con el equipo seleccionado. Los datos personales compatibles, como notas y registros de Match Desk, se sincronizan con tu espacio personal aunque se creen desde una pantalla del equipo.</li>
+<li><b>Almacenamiento local</b> — La pizarra en uso, algunos borradores y ajustes permanecen en el dispositivo. El aviso de guardado local no significa por sí solo que la subida a la nube haya terminado. Antes de cambiar de dispositivo, revisa <kbd>Ajustes de la app › Datos › Sincronizar ahora</kbd>. Si aparece un conflicto, compara el contenido antes de elegir.</li>
+<li><b>Archivos</b> — Despliega <kbd>Ajustes de la app › Datos › Avanzado · Gestión del equipo</kbd> para guardar o importar un archivo. Abarca los datos compatibles cargados aquí, no una copia completa de todos los equipos y dispositivos. Revisa el destino y los cambios que se aplicarán antes de importar.</li>
+<li><b>Estado anterior</b> — Cuando los datos de tu cuenta estén listos tras iniciar sesión, consulta en el mismo menú avanzado las copias automáticas que quedan en este dispositivo. Borrar el almacenamiento del navegador también puede eliminar estas copias.</li>
+<li><b>Versiones anteriores del servidor</b> — Los responsables del equipo con permiso pueden usar <kbd>Ver historial</kbd> en el mismo menú para elegir una versión recuperable de los datos compatibles. Para la agenda, usa <kbd>Recuperar un momento anterior</kbd> en su pantalla. No se garantiza la recuperación de todos los datos ni de todos los periodos.</li>
+</ul>
+</section>
+<footer><b>PRO</b>CESS STUDIO<br><a href="/guide/" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#3a6df0;text-decoration:none">Abrir la guía completa →</a><br><span style="display:inline-block;margin-top:8px;font-size:11px"><a href="/privacy.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">Política de privacidad</a> · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">Condiciones de uso</a></span><br><span style="display:inline-block;margin-top:4px;opacity:.55;font-size:11px">© 2026 PROCESS STUDIO™ · All rights reserved.</span></footer>
+</div>
+
+<div class="L" data-l="pt">
+<h1>Guia de uso</h1>
+<div class="sub">Prepare táticas, registre jogos e treinos da equipe e acompanhe o desenvolvimento dos jogadores. Comece pelo menu de que precisa.</div>
+<nav class="toc"><a href="#gd-pt0">Primeiros passos</a><a href="#gd-pt1">Prancheta</a><a href="#gd-pt2">Biblioteca</a><a href="#gd-pt3">Agenda</a><a href="#gd-pt4">Gestão da equipe</a><a href="#gd-pt5">IDP e Aprendizado</a><a href="#gd-pt6">Notas pessoais e Formulários</a><a href="#gd-pt7">Salvar, compartilhar e recuperar</a></nav>
+<section id="gd-pt0"><h2><span class="n">0</span>Primeiros passos</h2>
+<p class="lead">Você pode explorar Prancheta e Comunidade antes de entrar na conta. Entre para usar os dados da equipe e a sincronização na nuvem.</p>
+<ul>
+<li><b>Conta</b> — Entre com Kakao ou Google e escolha Meu trabalho ou uma equipe no menu da conta. Você também pode criar uma equipe ou entrar com um código de convite.</li>
+<li><b>Menus</b> — Abra Prancheta, Biblioteca, Gestão da equipe, IDP, Comunidade ou Aprendizado. Os menus e o acesso de edição dependem do tamanho da tela, da equipe selecionada e das suas permissões.</li>
+<li><b>Configurações do app</b> — Geral contém idioma, tema e este guia; Dados contém sincronização, recuperação e arquivos; Dispositivo mostra a instalação e o estado do app.</li>
+</ul>
+<div class="tip">No celular, você pode usar <b>Adicionar à tela de início</b> no navegador. Confira a instalação e o estado offline na aba Dispositivo das configurações do app.</div>
+</section>
+<section id="gd-pt1"><h2><span class="n">1</span>Prancheta</h2>
+<p class="lead">Explique os movimentos de jogadores e da bola com desenhos e animação.</p>
+<ul>
+<li>Posicione jogadores e equipamentos e desenhe táticas com setas, formas e texto. Adicione cenas para reproduzir os movimentos em sequência.</li>
+<li>Dê um nome às táticas que deseja reutilizar com <kbd>Salvar na biblioteca</kbd>. Para imagens, vídeos e outras exportações, escolha um formato disponível no menu de exportação da tela.</li>
+</ul>
+</section>
+<section id="gd-pt2"><h2><span class="n">2</span>Biblioteca</h2>
+<p class="lead">Reabra materiais salvos e planeje treinos.</p>
+<ul>
+<li><b>Materiais</b> — Crie pranchetas, treinos e bolas paradas e organize com pastas e etiquetas. Complete as anotações do treino seguindo <kbd>Planejamento → Condução → Revisão do aprendizado</kbd>.</li>
+<li>Abra também <b>Análise, Modelo de jogo e Notas pessoais</b> pela Biblioteca. Comece com uma nota breve e acrescente os detalhes depois.</li>
+<li>Antes de compartilhar, confira o alcance do item ou da pasta e o conteúdo da publicação na Comunidade. Salvar na Biblioteca, compartilhar com a equipe e publicar na Comunidade são ações distintas.</li>
+</ul>
+</section>
+<section id="gd-pt3"><h2><span class="n">3</span>Agenda</h2>
+<p class="lead">Planeje os treinos em torno do dia de jogo em Gestão da equipe › Agenda.</p>
+<ul>
+<li>Escolha uma data na visualização semanal ou mensal e informe o horário, os objetivos e o conteúdo da sessão. Você pode vincular treinos da Biblioteca a uma sessão.</li>
+<li>Após o treino, registre uma revisão da sessão e consulte o gráfico de carga. Use a função PDF da Agenda quando precisar imprimir.</li>
+</ul>
+</section>
+<section id="gd-pt4"><h2><span class="n">4</span>Gestão da equipe</h2>
+<p class="lead">Use os menus da equipe para as tarefas de hoje, a preparação e a revisão dos jogos.</p>
+<ul>
+<li><b>Hoje, Jogo e Presença</b> — Confira os planos e as tarefas, gerencie a preparação, os registros e as revisões dos jogos e acompanhe a participação.</li>
+<li><b>Elenco, Scouting e Avaliações</b> — Reúna informações e observações sobre jogadores e defina critérios de avaliação.</li>
+<li><b>Livro de jogo</b> — Organize os princípios de jogo da equipe. Abra Modelo de jogo e Glossário nos submenus. No celular, procure em <kbd>Mais</kbd> os menus que não estiverem visíveis.</li>
+</ul>
+</section>
+<section id="gd-pt5"><h2><span class="n">5</span>IDP e Aprendizado</h2>
+<p class="lead">Reveja metas e registros pessoais e desenvolva seus conhecimentos de futebol.</p>
+<ul>
+<li><b>IDP</b> — Registre metas pessoais, treinos e revisões. O IDP da Gestão da equipe mostra os registros conforme as permissões e a vinculação das contas dos jogadores.</li>
+<li><b>Aprendizado</b> — Abra materiais sobre leitura do jogo, terminologia, modelos de jogo e outros temas. Antes de compartilhar registros dos jogadores, confira o alcance de publicação e compartilhamento indicado na tela.</li>
+</ul>
+</section>
+<section id="gd-pt6"><h2><span class="n">6</span>Notas pessoais e Formulários</h2>
+<p class="lead">Escreva à mão e deixe notas rápidas em Biblioteca › Notas pessoais.</p>
+<ul>
+<li>Escolha o modo de escrita e os documentos em <b>Notas, Memo e Biblioteca de documentos</b>. Use <kbd>Formulários</kbd> em Notas para escolher um fundo.</li>
+<li>Em <kbd>Ferramentas › Arquivo</kbd>, importe e anote um PDF, salve uma imagem ou imprima em A4. Veja abaixo o alcance do armazenamento no dispositivo e da sincronização na nuvem dos registros pessoais.</li>
+</ul>
+</section>
+<section id="gd-pt7"><h2><span class="n">7</span>Salvar, compartilhar e recuperar</h2>
+<p class="lead">Diferencie dados pessoais, dados da equipe e dados que ficam apenas neste dispositivo.</p>
+<ul>
+<li><b>Nuvem</b> — Os dados compatíveis com a sincronização são sincronizados com o espaço pessoal da sua conta ou com a equipe selecionada. Dados pessoais compatíveis, como notas e registros do Match Desk, são sincronizados com seu espaço pessoal mesmo quando criados em uma tela da equipe.</li>
+<li><b>Armazenamento no dispositivo</b> — A prancheta em uso, alguns rascunhos e configurações ficam no dispositivo. O aviso de salvamento local, por si só, não significa que o envio à nuvem terminou. Antes de trocar de dispositivo, confira <kbd>Configurações do app › Dados › Sincronizar agora</kbd>. Se houver um conflito, compare os conteúdos antes de escolher.</li>
+<li><b>Arquivos</b> — Expanda <kbd>Configurações do app › Dados › Avançado · Gestão da equipe</kbd> para salvar ou importar um arquivo. Isso abrange os dados compatíveis carregados aqui, não um backup completo de todas as equipes e dispositivos. Confira o destino e as alterações que serão aplicadas antes de importar.</li>
+<li><b>Estado anterior</b> — Quando os dados da conta estiverem prontos após a entrada, consulte no mesmo menu avançado os backups automáticos que ainda estão neste dispositivo. Limpar o armazenamento do navegador também pode apagar esses backups.</li>
+<li><b>Versões anteriores no servidor</b> — Gestores da equipe com permissão podem usar <kbd>Ver histórico</kbd> no mesmo menu para escolher uma versão recuperável dos dados compatíveis. Para a agenda, use <kbd>Recuperar um momento anterior</kbd> na tela da Agenda. A recuperação não é garantida para todos os dados ou períodos.</li>
+</ul>
+</section>
+<footer><b>PRO</b>CESS STUDIO<br><a href="/guide/" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#3a6df0;text-decoration:none">Abrir o guia completo →</a><br><span style="display:inline-block;margin-top:8px;font-size:11px"><a href="/privacy.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">Política de privacidade</a> · <a href="/terms.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75">Termos de uso</a></span><br><span style="display:inline-block;margin-top:4px;opacity:.55;font-size:11px">© 2026 PROCESS STUDIO™ · All rights reserved.</span></footer>
+</div>
 
     </div>
   </div>
@@ -5260,7 +5426,7 @@ window.__buildScoutForm=function(k){
   }
   function open(){
     var l='ko';try{l=localStorage.getItem('cs_lang')||'ko';}catch(e){}
-    if(['ko','ja','en'].indexOf(l)<0)l='en';
+    if(['ko','ja','en','zh','es','pt'].indexOf(l)<0)l='en';
     gdSet(l);ov.style.display='block';
     var gp=document.getElementById('gearPop');if(gp)gp.classList.remove('on');
   }

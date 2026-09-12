@@ -7,6 +7,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script src="storage.js"></script>
+<script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
 <script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 -->
 <script src="rpt-i18n.js"></script>
@@ -2299,6 +2300,21 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     .match-card-head>span{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:#EDF2FF;color:#3A6DF0;font-size:var(--fs-micro);font-weight:var(--fw-head)}
     .match-card-head div{display:flex;flex-direction:column;gap:3px}.match-card-head b{font-size:var(--fs-title);letter-spacing:-.02em}.match-card-head small{font-size:var(--fs-micro);color:var(--muted);line-height:1.4}
     .match-fields{display:grid;gap:10px}.match-fields.cols-2{grid-template-columns:1fr 1fr}
+    /* 2.746 — 경기 리뷰에서 일정의 훈련 과제와 결과를 확인한다. */
+    #matchTrainingCard .match-card-head{flex-wrap:wrap;align-items:center}
+    #matchTrainingCard .match-card-head>div{flex:1;min-width:180px}
+    #matchTrainingCard .btn{min-height:40px;white-space:normal}
+    .match-training-hint{font-size:var(--fs-caption);color:var(--muted);line-height:1.5}
+    .match-training-list{display:grid;gap:9px;margin-top:10px}
+    .match-training-row{padding:12px;border:1px solid var(--line);border-radius:12px;min-width:0}
+    .match-training-meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:var(--fs-micro)}
+    .match-training-action,.match-training-result{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--fs-sub);line-height:1.6;margin-top:7px}
+    .match-training-result{color:var(--muted);border-left:2px solid var(--line);padding-left:9px}
+    .match-training-row .btn{margin-top:9px}
+    #matchTrainingRecent{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+    #matchTrainingRecent>summary{cursor:pointer;font-size:var(--fs-sub);font-weight:600;line-height:1.6}
+    #matchTrainingRecentList{max-height:420px;overflow:auto}
+    .match-shell.player-view #matchTrainingCard{display:none!important}
     /* 1.879 — 국면 평가 · 선수 평가 */
     .mpr-avg{margin-left:auto;font-size:var(--fs-sub);font-weight:800;font-variant-numeric:tabular-nums;color:var(--txt);white-space:nowrap;flex:0 0 auto}
     #matchPhaseReviewCard .match-card-head{display:flex;align-items:flex-start;gap:10px}
@@ -5126,6 +5142,13 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 <div class="match-phase-review-head"><b>국면별 리뷰</b><small>점수 · 잘된 점 · 개선할 점을 국면별로 빠르게 기록</small></div>
                 <div class="mpr-list" id="matchPhaseReview"></div>
               </section>
+              <!-- 2.746 — 확정한 훈련 과제·결과만 일정에서 읽는다. 리뷰 원문은 이 카드에서 복사하지 않는다. -->
+              <section class="match-card match-card-wide" id="matchTrainingCard" hidden>
+                <div class="match-card-head"><div><b>다음 훈련으로</b><small>리뷰에서 훈련할 행동을 정하고, 일정에서 진행 결과를 남깁니다</small></div><button type="button" class="btn" id="matchTrainingOpen">다음 훈련으로</button></div>
+                <div class="match-training-hint" id="matchTrainingHint"></div>
+                <div class="match-training-list" id="matchTrainingTasks"></div>
+                <details id="matchTrainingRecent" hidden><summary>최근 훈련에서 확인한 것</summary><div class="match-training-hint">이 경기 전 14일 동안 진행한 다른 경기의 훈련 과제</div><div class="match-training-list" id="matchTrainingRecentList"></div></details>
+              </section>
               <!-- 2.540 — 선수가 쓴 경기 리뷰(doc.matchSelf[경기id]). 코치가 팀 리뷰를 올리면
                    선수는 자기 리뷰를 쓰는데, 그게 코치에게 **모여 오는 길이 없었다** — 명단에서
                    한 명씩 IDP 를 열어야만 보였다. 팀 리뷰 바로 다음에 둔다: 내가 쓴 총평 → 선수들이 쓴 것.
@@ -5650,9 +5673,16 @@ const mem={};
 const SHARED_IDB={"cs_team_matches_v1":1,"cs_scout_targets_v1":1,"cs_perms_v1":1,"cs_squad_v1":1,
   /* 1.619 — matchMergeSchedule 이 경기 ID 를 일정 문서에도 도장 찍는다(7570행 부근). */
   "process_coach_v1":1};
+/* 2.744 — 키별 완료 장벽. 팀/계정이 바뀌면 이전 저장의 늦은 응답은 새 화면을 건드리지 않는다. */
+function teamSaveOwner(){
+  try{var s=JSON.parse(localStorage.getItem("ps_sync_session")||"null");
+    return JSON.stringify([localStorage.getItem("ps_active_ws")||"",s&&s.uid||""]);
+  }catch(_){return "unavailable-owner";}
+}
+const teamSaves=window.PSSaveState.createTracker("team",teamSaveOwner);
 const store={
   get(k){try{const v=localStorage.getItem(k);if(v)return JSON.parse(v);}catch(_){}return mem[k]??null;},
-  /* 성공 여부를 돌려준다. 예전에는 실패를 삼키고 mem에만 넣은 뒤 호출부가 "저장됨"이라고
+  /* 동기 접수 여부를 돌려준다. 예전에는 실패를 삼키고 mem에만 넣은 뒤 호출부가 "저장됨"이라고
      말해서, 코치는 저장된 줄 알고 앱을 닫았다. mem 사본은 이 탭이 살아 있는 동안의
      임시 대비일 뿐 저장이 아니다. */
   /* 1.618 — 이 store 는 localStorage 껍데기다(IndexedDB 가 아니다 — 이름이 board.html 의 store 와
@@ -5661,17 +5691,34 @@ const store={
      팀에는 옛 자료가 계속 올라갔다. 해당 키는 psSaveShared 로 두 곳에 같이 쓴다. */
   set(k,v){
     try{
-      const raw=JSON.stringify(v);
-      if(SHARED_IDB[k]&&window.psSaveShared){ if(!window.psSaveShared(k,raw)) throw new Error("저장 실패"); }
-      else localStorage.setItem(k,raw);
-      mem[k]=v;try{window.PSSaveState.ok("team");}catch(__){}return true;}
+      const raw=JSON.stringify(v),owner=store.owner(),shared=!!(SHARED_IDB[k]&&window.psSaveShared);let ready=true;
+      if(shared){
+        if(!window.psSaveShared(k,raw)) throw new Error("저장 실패");
+        if(!window.PSStorage||!window.PSStorage.sharedReady)throw new Error("저장 확인을 할 수 없습니다");
+        ready=window.PSStorage.sharedReady(k);
+      }else{
+        localStorage.setItem(k,raw);
+        if(localStorage.getItem(k)!==raw)throw new Error("저장 확인 실패");
+      }
+      mem[k]=v;teamSaves.track(k,ready,function(){
+        /* 2.744 — 재시도는 이 키의 같은 거울 원문만. 다른 창/팀의 새 내용은 덮지 않는다. */
+        function verify(){if(owner!==store.owner()||localStorage.getItem(k)!==raw)throw new Error("저장 내용이 바뀌어 다시 확인해야 합니다");return true;}
+        verify();
+        if(shared&&(!window.PSStorage||!PSStorage.sharedVerified))throw new Error("저장 확인을 할 수 없습니다");
+        return Promise.resolve(shared?PSStorage.sharedVerified(k,raw):true).then(verify);
+      });return true;}
     catch(e){
       mem[k]=v;
       try{const n=Date.now();if(!window.__psQwT||n-window.__psQwT>15000){window.__psQwT=n;toast("⚠︎ 저장 공간 부족 — 변경사항이 저장되지 않아요! 사진·오래된 데이터를 정리해주세요");}}catch(__){}
-      try{window.PSSaveState.fail("team",e);}catch(__){}
+      teamSaves.track(k,Promise.reject(e));
       return false;
     }
-  }
+  },
+  /* boolean은 접수 결과다. 저장됨 표시·화면 종료는 ready의 검증 완료를 기다린다. */
+  ready(retryFailed){return teamSaves.ready(retryFailed);},
+  hasFailed(k){return teamSaves.hasFailed(k);},
+  hasPending(){return teamSaves.hasPending();},
+  owner(){return teamSaves.owner();}
 };
 const KEY="scout_tool_v1";
 /* 1.540 — 스카우팅 후보(type:'target')를 별도 키로 분리한다.
@@ -11117,6 +11164,8 @@ function matchOpenAtRequest(d){
 }
 window.addEventListener("message",e=>{const d=e.data||{};
   if(d.type==="setView"&&d.view){try{setView(d.view);}catch(_){}}
+  if(d.source==="app"&&d.type==="reviewTrainingBack")matchReviewTrainingBack(e);
+  if(d.source==="app"&&d.type==="reviewTrainingSaved")matchReviewTrainingSaved(e);
   if(d.type==="openMatchAt")matchOpenAtRequest(d);   /* 일정 주간 보드 '경기 준비 →' — 날짜(+상대)로 해당 경기를 바로 연다(1.484) */
   if(d.source==="app"&&d.type==="closeTransientUI"){
     try{var m=$("teamMore"),b=$("teamMoreBtn");if(m)m.classList.remove("open");if(b)b.setAttribute("aria-expanded","false");}catch(_){}
@@ -11379,6 +11428,7 @@ function syncGrowthFromCloud(){
    기존 경기 시계(cs_match_v1)와 충돌하지 않도록 별도 키를 사용한다. */
 const MATCH_KEY="cs_team_matches_v1", MATCH_PRIVATE_KEY="cs_team_match_private_v1";
 let matchState=null,matchCurrent="",matchTab="prep",matchStage="prep",matchSaveTimer=0,matchPrepPlayer="",matchReviewPlayer="",matchFifaPrepPlan="",matchFifaReviewPlan="";
+let matchSaveRevision=0; /* 2.744 — 이전 완료가 새 입력을 저장됨으로 표시하지 않는다. */
 const MATCH_FIFA_GROUPS=[
   {id:"in",code:"IP",label:"볼 소유 · In possession",phases:[
     ["build_unopposed","비압박 빌드업 · Build-up unopposed"],["build_opposed","압박 속 빌드업 · Build-up opposed"],
@@ -12397,13 +12447,21 @@ function matchFifaUpdate(kind,field,value){
 }
 function matchSaveNow(){
   if(!matchState)return false;
+  clearTimeout(matchSaveTimer);matchSaveTimer=0;clearTimeout(_mprT);_mprT=null;
+  var revision=++matchSaveRevision,owner=store.owner(),mid=matchCurrent;
   var scheduleOk=matchWriteSchedule(matchState)!==false;
-  /* 저장 결과를 그대로 표시한다. 실패했는데 "저장됨"이라고 말하지 않는다. */
+  /* 2.744 — 접수 boolean은 저장 완료가 아니다. 관련 키가 모두 검증된 뒤에만 표시한다. */
   var matchOk=store.set(MATCH_KEY,matchState),ok=matchOk&&scheduleOk;
-  matchSayState(ok?(matchIndividualPublicPendingAny()?"초안 저장됨 · 상단 저장 시 선수에게 반영":"방금 자동 저장됨"):"⚠ 저장 안 됨 — 앱을 닫으면 사라집니다",!ok);
+  matchSayState(ok?"저장 중…":"⚠ 저장 안 됨 — 앱을 닫으면 사라집니다",!ok);
   /* 2.516 — 경기 준비·리뷰도 핵심 행동이다(관리자 표에 줄만 있고 값이 없었다).
      자동 저장이라 자주 불리지만 act 쪽에서 20초에 한 번으로 묶는다. */
-  if(ok){ try{ psAct(matchTab==="review"?'a_review':'a_match'); }catch(_){} }
+  if(ok)store.ready().then(function(){
+    if(revision!==matchSaveRevision||owner!==store.owner()||mid!==matchCurrent)return;
+    matchSayState(matchIndividualPublicPendingAny()?"초안 저장됨 · 상단 저장 시 선수에게 반영":"방금 자동 저장됨",false);
+    try{ psAct(matchTab==="review"?'a_review':'a_match'); }catch(_){}
+  },function(){
+    if(revision===matchSaveRevision&&owner===store.owner()&&mid===matchCurrent)matchSayState("⚠ 저장 안 됨 — 앱을 닫으면 사라집니다",true);
+  });
   return ok;
 }
 /* 경기 화면의 저장 표시 한 곳. 실패는 눈에 띄게, 그리고 다음 성공까지 남는다. */
@@ -12502,7 +12560,7 @@ function matchWriteSchedule(state){
     }
     newLinks.push({m:m,sid:oldSid});srcChanged=true;
   });
-  if(!srcChanged)return true;
+  if(!srcChanged&&!store.hasFailed("process_coach_v1"))return true; /* 2.744 — 같은 일정의 실패는 저장 버튼으로 재시도한다. */
   var saved=matchSaveScheduleDoc(src)!==false;
   /* 새 슬롯 저장 자체가 실패했으면 존재하지 않는 sourceId를 경기 문서에 남기지 않는다. */
   if(!saved)newLinks.forEach(function(x){x.m.sourceId=x.sid;});
@@ -12559,8 +12617,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
 function matchQueueSave(){
   var m=matchGet();if(m)m.updatedAt=Date.now();
   try{ var _mst=m&&matchStatusOf(m); psAct(_mst==='review'||_mst==='reviewing'?'a_review':'a_match'); }catch(_){}
+  matchSaveRevision++;
   matchSayState("저장 중…",false);
-  clearTimeout(matchSaveTimer);matchSaveTimer=setTimeout(matchSaveNow,320);
+  clearTimeout(matchSaveTimer);matchSaveTimer=setTimeout(function(){matchSaveTimer=0;matchSaveNow();},320);
 }
 /* ══ 2.395 · 아직 안 쓰인 것이 있으면 **지금 쓴다**(사용자: 업데이트되면 입력이 사라짐) ═══════
    경기 입력은 320ms 지연 저장이다. 그 사이에 화면이 새로고침되면(2.388 자동 업데이트) 그 타이핑은
@@ -12589,13 +12648,13 @@ window.psFlushPendingReady=function(){
   /* matchSaveNow() 는 경기 문서 뿐 아니라 일정(process_coach_v1)도 같은
      iframe 저장 큐에 넣을 수 있다. 경기 키만 기다리면 팀 전환 stash가
      새 경기와 예전 일정을 섞어 읽는다 — 이 프레임의 전체 큐를 확정한다. */
-  var p=window.PSStorage&&PSStorage.sharedReady?PSStorage.sharedReady():Promise.resolve(true);
+  var p=store.ready(true).then(function(){return window.PSStorage&&PSStorage.sharedReady?PSStorage.sharedReady():true;});
   return Promise.resolve(p).then(function(){
     if(window.psHasPending())throw new Error('경기 지연 저장이 남아 있습니다');
     return true;
   });
 };
-window.psHasPending=function(){ try{ return !!(matchSaveTimer||_mprT||matchIndividualPendingAny()||matchIndividualPublicPendingAny()); }catch(_){ return false; } };
+window.psHasPending=function(){ try{ return !!(store.hasPending()||matchSaveTimer||_mprT||matchIndividualPendingAny()||matchIndividualPublicPendingAny()); }catch(_){ return true; } };
 /* ⚠ 새로고침만이 아니라 **화면을 떠나는 모든 길**에서 민다. iOS 는 pagehide 보다
    visibilitychange 가 더 확실히 온다 — 둘 다 건다. */
 window.addEventListener('pagehide',matchFlushNow);
@@ -12738,7 +12797,107 @@ function matchStatusHTML(m){
 function matchReviewMetaPaint(m){
   try{var st=$("matchStatus");if(st)st.innerHTML=matchStatusHTML(m);}catch(_){}
   try{matchStepMark(m);}catch(_){}
+  try{matchRenderTraining(m);}catch(_){}
 }
+/* 2.746 — 경기 → 날짜별 훈련 과제. 일정만 과제 원본이며 메시지는 식별자만 전달한다. */
+var matchTrainingOpening=null;
+function matchTrainingContext(){
+  var s=matchSession()||{};
+  return {uid:String(s.uid||""),wid:String(localStorage.getItem("ps_active_ws")||""),owner:store.owner(),mid:String(matchCurrent||"")};
+}
+function matchTrainingSame(c){
+  var now=matchTrainingContext();
+  return c.uid===now.uid&&c.wid===now.wid&&c.owner===now.owner&&c.mid===now.mid;
+}
+function matchTrainingSchedule(){try{
+  var c=matchTrainingContext();if(!c.uid||!c.wid)return null;
+  var api=(parent&&parent!==window)?parent.PSSync:window.PSSync;
+  if(api&&typeof api.keyReady==="function"){
+    if(!api.keyReady("process_coach_v1",c.wid))return null;
+  }else{
+    var meta=JSON.parse(localStorage.getItem("ps_sync_meta")||"null"),r=meta&&meta.r&&meta.r.process_coach_v1;
+    if(!r||String(r.w||"")!==c.wid||(r.present!==true&&r.present!==false))return null;
+  }
+  return store.get("process_coach_v1")||{};
+}catch(_){return null;}}
+function matchTrainingRecentRows(doc,m){
+  var api=window.PSReviewTraining;
+  if(!api||!m||!api.validDate(m.date))return [];
+  var end=Date.parse(m.date+"T00:00:00Z"),start=end-14*864e5;
+  return api.list(doc).filter(function(row){
+    var t=Date.parse(row.date+"T00:00:00Z");
+    return row.task.matchId!==m.id&&row.task.status==="done"&&t>=start&&t<end;
+  }).sort(function(a,b){return b.date.localeCompare(a.date)||b.task.updatedAt-a.task.updatedAt;});
+}
+function matchTrainingRowHTML(row,linked){
+  var api=window.PSReviewTraining,t=row.task,e=api.esc;
+  var group=Array.isArray(t.grp)&&t.grp.length?t.grp.join(", "):"팀 공통";
+  return '<div class="match-training-row"><div class="match-training-meta"><span>'+e(row.date+" · "+group)+'</span><span>'+e(api.statusLabel(t))+'</span></div><div class="match-training-action">'+e(t.action)+'</div>'+
+    (String(t.observation||"").trim()?'<div class="match-training-result"><b>확인한 것</b> · '+e(t.observation)+'</div>':'')+
+    (linked?'<button type="button" class="btn" data-review-training-task="'+e(t.id)+'">훈련·결과 보기</button>':'')+'</div>';
+}
+function matchRenderTraining(m){
+  var card=$("matchTrainingCard");if(!card)return;
+  var player=matchRole()==="player";card.hidden=!m||player;
+  if(!m||player)return;
+  var api=window.PSReviewTraining,btn=$("matchTrainingOpen"),hint=$("matchTrainingHint"),host=$("matchTrainingTasks"),recent=$("matchTrainingRecent"),recentHost=$("matchTrainingRecentList");
+  var can=matchCanEditOne(m.id),sources=api?api.sources(m):[],doc=api?matchTrainingSchedule():null;
+  var rows=api&&doc?api.forMatch(doc,m.id):[],prev=api&&doc?matchTrainingRecentRows(doc,m):[];
+  if(btn){btn.disabled=!api||!can||!sources.length||!!matchTrainingOpening;btn.textContent=matchTrainingOpening?"저장 확인 중…":"다음 훈련으로";}
+  if(hint)hint.textContent=!api?"훈련 연결을 불러오지 못했어요. 화면을 새로 열어 주세요.":!can?"연결된 훈련과 결과를 확인할 수 있어요. 새 과제는 이 경기를 편집할 수 있는 코치가 정합니다.":!sources.length?"전체 또는 국면별 개선할 점을 적으면 다음 훈련으로 이어갈 수 있어요.":"일정에서 날짜·조와 팀에 공유할 훈련 문장을 확인한 뒤 저장합니다.";
+  if(host){
+    host.innerHTML=rows.length?rows.map(function(row){return matchTrainingRowHTML(row,true);}).join(""):'<div class="match-training-hint">'+(doc?"아직 연결한 훈련 과제가 없어요.":"일정 자료를 확인 중입니다.")+'</div>';
+    host.querySelectorAll("[data-review-training-task]").forEach(function(b){b.disabled=!!matchTrainingOpening;b.onclick=function(){matchReviewTrainingOpen(b.dataset.reviewTrainingTask);};});
+  }
+  if(recent)recent.hidden=!prev.length;
+  if(recentHost)recentHost.innerHTML=prev.map(function(row){return matchTrainingRowHTML(row,false);}).join("");
+}
+async function matchReviewTrainingOpen(taskId){
+  var api=window.PSReviewTraining,m=matchGet(),c=matchTrainingContext(),tid=String(taskId||"");
+  if(matchTrainingOpening||!api||!m||matchRole()==="player"||!c.uid||!c.wid||matchDocPending())return false;
+  if(tid){if(!api.forMatch(matchTrainingSchedule(),m.id).some(function(row){return row.task.id===tid;}))return false;}
+  else if(!matchCanEditOne(m.id)||!api.sources(m).length)return false;
+  if(!matchCanLeaveCurrent())return false;
+  var token={};matchTrainingOpening=token;matchRenderTraining(m);
+  try{
+    /* flush 안의 즉시 저장이 revision을 올릴 수 있어 호출 직후의 값을 비교한다. */
+    var ready=window.psFlushPendingReady(),revision=matchSaveRevision,raw=JSON.stringify(matchGet());
+    await ready;
+    if(!matchTrainingSame(c)||revision!==matchSaveRevision||raw!==JSON.stringify(matchGet())||matchDocPending()||matchRole()==="player")return false;
+    m=matchGet();if(!m||(!tid&&(!matchCanEditOne(m.id)||!api.sources(m).length)))return false;
+    if(tid&&!api.forMatch(matchTrainingSchedule(),m.id).some(function(row){return row.task.id===tid;}))return false;
+    /* 이동 전 확정한 원문을 이후 ‘되돌리고 나가기’가 지우지 않게 한다. */
+    matchTakeSnap(m.id);
+    var msg={source:"scout",type:"reviewTrainingOpen",requestId:"review-"+Date.now()+"-"+Math.random().toString(36).slice(2),uid:c.uid,wid:c.wid,matchId:m.id};
+    if(tid)msg.taskId=tid;
+    parent.postMessage(msg,location.origin);return true;
+  }catch(_){if(matchTrainingSame(c))try{toast("경기 저장 확인이 끝나지 않았어요. 다시 시도해 주세요.");}catch(__){}return false;}
+  finally{if(matchTrainingOpening===token)matchTrainingOpening=null;if(matchTrainingSame(c))matchRenderTraining(matchGet());}
+}
+function matchReviewTrainingSaved(e){
+  var d=e&&e.data||{},c=matchTrainingContext();
+  if(!e||e.origin!==location.origin||e.source!==parent||d.source!=="app"||d.type!=="reviewTrainingSaved"||
+     !c.uid||!c.wid||d.uid!==c.uid||d.wid!==c.wid||typeof d.matchId!=="string"||!d.matchId||matchRole()==="player")return false;
+  /* 카드만 다시 읽어 현재 리뷰의 입력·취소 기준·포커스를 유지한다. */
+  matchRenderTraining(matchGet());return true;
+}
+async function matchReviewTrainingBack(e){
+  var d=e&&e.data||{},c=matchTrainingContext();
+  if(!e||e.origin!==location.origin||e.source!==parent||d.source!=="app"||d.type!=="reviewTrainingBack"||
+     !c.uid||!c.wid||d.uid!==c.uid||d.wid!==c.wid||typeof d.matchId!=="string"||!d.matchId||matchRole()==="player")return false;
+  if(matchDocPending()){try{toast("경기 자료 확인이 끝난 뒤 경기 리뷰를 다시 열어 주세요.");}catch(_){}return false;}
+  if(!matchCanLeaveCurrent())return false;
+  try{
+    var ready=window.psFlushPendingReady(),revision=matchSaveRevision;await ready;
+    if(!matchTrainingSame(c)||revision!==matchSaveRevision||matchDocPending()||matchRole()==="player")return false;
+    var m=(matchLoad().matches||[]).find(function(x){return x.id===d.matchId;});
+    if(!m){try{toast("연결한 경기를 찾을 수 없어요. 경기 목록을 확인해 주세요.");}catch(_){}return false;}
+    matchTab="review";matchStage="review";
+    if(matchOpen(m.id)===false)return false;
+    setView("match");matchRenderTraining(m);return true;
+  }catch(_){if(matchTrainingSame(c))try{toast("경기 저장 확인이 끝나지 않았어요. 다시 시도해 주세요.");}catch(__){}return false;}
+}
+/* 2.746 — 경기 훈련 연결 끝 */
 function matchPlayerName(id){var p=tmOurs().find(function(x){return x.id===id;});return p?(p.name||p.num||"선수"):"";}
 /* 1.676 — 키 선수 줄 입력기: 한 줄에 한 명, 기본 3줄, ＋로 추가(사용자 요청).
    저장 형식은 예전 그대로 oppKeyPlayers 한 문자열(줄바꿈) — 옛 경기 데이터가 그대로 열린다.
@@ -12963,7 +13122,7 @@ var MPR_COL={ao:"#2E7D63",do:"#C24A46",dt:"#B5762B",at:"#3A6DF0"};
 function mprSeg(cls,val,col,onPick,ro){ var seg=document.createElement("span"); seg.className=cls; seg.style.setProperty("--gc",col||"var(--blue)"); seg.setAttribute("role","radiogroup");seg.setAttribute("aria-label","국면 평점");
   for(var i=1;i<=10;i++){ (function(n){ var b=document.createElement("button"); b.type="button"; b.className=(val!=null&&n<=val)?"on":""; b.title=n+"점"; b.setAttribute("role","radio"); b.setAttribute("aria-label",n+"점"); b.setAttribute("aria-checked",String(val===n)); if(ro)b.disabled=true; b.onclick=function(e){ e.stopPropagation(); if(ro)return; onPick(val===n?0:n); }; seg.appendChild(b); })(i); }
   return seg; }
-var _mprT=null; function mprSaveSoon(){ if(_mprT)clearTimeout(_mprT); _mprT=setTimeout(function(){ try{matchSaveNow();}catch(_){} },300); }
+var _mprT=null; function mprSaveSoon(){ matchSaveRevision++;if(_mprT)clearTimeout(_mprT); _mprT=setTimeout(function(){ _mprT=null;try{matchSaveNow();}catch(_){} },300); }
 /* ══ 2.097 · 구간 기록 — 전·후반 / 3쿼터 / 4쿼터, 그리고 얼마든지 추가 ══════════════════
    사용자: "경기 리뷰도 전반전 후반전 그리고 전반전 후반전을 또 추가 할 수 있게 해줘.
             연습경기는 30분씩 3쿼터나 4쿼터 이렇게 할 때도 있어".
@@ -13267,10 +13426,15 @@ function matchDirty(){
     return cur!==matchSnapPriv;
   }catch(_){ return false; }
 }
-window.matchSaveAndExit=function(){
+window.matchSaveAndExit=async function(){
+  var exitOwner=store.owner(),exitId=matchCurrent;
   var ok=true;
   try{ok=matchIndividualFlushPendingAll(matchCurrent)&&matchSaveNow();}catch(_){ok=false;}
   if(!ok){ try{ toast("저장이 안 됐어요 — 화면을 닫지 마세요"); }catch(_){} return; }   /* 실패하면 나가지 않는다 */
+  var exitRevision=matchSaveRevision;
+  /* 2.744 — 실제 저장 실패 때는 편집 화면과 초안을 그대로 남긴다. */
+  try{await store.ready(true);}catch(_){if(exitOwner===store.owner()&&exitId===matchCurrent)try{toast("저장이 안 됐어요 — 화면을 닫지 마세요");}catch(__){}return;}
+  if(exitOwner!==store.owner()||exitId!==matchCurrent||exitRevision!==matchSaveRevision)return;
   var stale=[];try{stale=matchIndividualPublicStaleRows(matchGet());}catch(_){}
   if(stale.length){
     var first=stale[0];matchTab=first.kind;matchStage=first.kind==="review"?"review":"prep";
@@ -13282,13 +13446,16 @@ window.matchSaveAndExit=function(){
   }
   try{ok=matchIndividualPublishPendingAll(matchCurrent);}catch(_){ok=false;}
   if(!ok){matchSayState("경기와 초안은 저장됨 · 선수 공개 반영을 다시 시도해 주세요",true);try{toast("일부 선수에게 반영하지 못했어요 — 저장을 다시 눌러 주세요");}catch(_){}return;}
+  try{await window.psFlushPendingReady();}catch(_){if(exitOwner===store.owner()&&exitId===matchCurrent)try{toast("저장 확인이 끝나지 않았어요 — 화면을 닫지 마세요");}catch(__){}return;}
+  if(exitOwner!==store.owner()||exitId!==matchCurrent||exitRevision!==matchSaveRevision)return;
   matchBackToList();
   try{ toast("저장했어요"); }catch(_){}
 };
 window.matchCancelExit=function(){
   if(matchIndividualPublishWasAttempted(matchSnapId)){try{toast("선수 공개 반영이 끝나지 않았어요 — 저장을 다시 눌러 주세요");}catch(_){}return;}
   if(!matchDirty()){ matchBackToList(); return; }              /* 고친 게 없으면 그냥 나간다 */
-  psConfirm("이 경기에서 고친 것을 되돌리고 나갈까요?",function(){
+  psConfirm("이 경기에서 고친 것을 되돌리고 나갈까요?",async function(){
+    var exitOwner=store.owner(),exitId=matchCurrent;
     var ok=true;
     try{
       var st=matchLoad(), i=-1;
@@ -13301,6 +13468,9 @@ window.matchCancelExit=function(){
       if(!matchSaveNow())ok=false;
     }catch(_){ok=false;}
     if(!ok){try{toast("되돌린 내용을 저장하지 못했어요 — 화면을 닫지 마세요");}catch(_){}return;}
+    var exitRevision=matchSaveRevision;
+    try{await window.psFlushPendingReady();}catch(_){if(exitOwner===store.owner()&&exitId===matchCurrent)try{toast("되돌린 내용을 저장하지 못했어요 — 화면을 닫지 마세요");}catch(__){}return;}
+    if(exitOwner!==store.owner()||exitId!==matchCurrent||exitRevision!==matchSaveRevision)return;
     matchBackToList();
     try{ toast("고친 것을 되돌렸어요"); }catch(_){}
   });
@@ -13361,8 +13531,10 @@ function renderMatch(){
   matchRenderIndividual(m,"prep",readonly);matchRenderIndividual(m,"review",readonly);
   try{ matchRenderSelf(m); }catch(e){ console.warn("선수 리뷰 그리기 실패",e); }
   try{ matchRenderPhaseReview(m,readonly); matchRenderRosterPick(m,readonly); matchRenderPeriods(m,readonly); matchRenderGoals(m,readonly); }catch(e){ try{console.warn("matchReview",e);}catch(_){} }   /* 1.879·1.880·2.097 */
+  matchRenderTraining(m);
 }
 function matchWire(){
+  if($("matchTrainingOpen"))$("matchTrainingOpen").onclick=function(){matchReviewTrainingOpen();};
   ["matchAdd","matchEmptyAdd"].forEach(function(id){if($(id))$(id).onclick=matchAdd;});
   if($("matchImport"))$("matchImport").onclick=matchImportSchedule;
   if($("matchDelete"))$("matchDelete").onclick=matchDelete;
@@ -16963,6 +17135,22 @@ function ckWeekPhasePanel(wk){
   }
   return h+'</div></div>';
 }
+/* 2.746 — 체크리스트와 같은 완료 기준. 점수 입력과 리뷰 완료는 별개다. */
+function ckReviewDone(m){
+  var ck=m&&m.ckDone&&typeof m.ckDone==="object"?m.ckDone:{};
+  return ck.review!=null?!!ck.review:matchStatusOf(m)==="review";
+}
+async function ckOpenMatchReview(id){
+  if(!matchCanEditOne(id)||!matchCanLeaveCurrent())return false;
+  var c=matchTrainingContext();
+  try{
+    var ready=window.psFlushPendingReady(),revision=matchSaveRevision;await ready;
+    if(!matchTrainingSame(c)||revision!==matchSaveRevision||!matchCanEditOne(id))return false;
+    if(!(matchLoad().matches||[]).some(function(m){return m.id===id;}))return false;
+    if(matchOpen(id)===false)return false;
+    setView("review");return true;
+  }catch(_){if(matchTrainingSame(c))try{toast("경기 저장 확인이 끝나지 않았어요. 다시 시도해 주세요.");}catch(__){}return false;}
+}
 /* 2.634 — 지금 박자의 할 일 하나. 순서: 지난 경기 리뷰 → 주 마무리(토 18시~월 12시) → MD-2 상대 분석 → MD-1 경기 준비 → 오늘 세션 → 다음 경기 */
 function ckNextTask(c){
   var today=c.today, ymd=function(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
@@ -16971,12 +17159,12 @@ function ckNextTask(c){
      버튼이 아무 반응이 없었다(사용자 "이거 눌렀을 때 반응이 없어"). 실측: DOM 의 onclick 이 `try{parent.document.querySelector('[data-app=` 에서 잘려 있었다 */
   function attr(v){ return String(v==null?"":v).replace(/&/g,"&amp;").replace(/"/g,"&quot;"); }
   function line(kind,txt,act,onclick){ return '<div class="ck-next '+kind+'"><i></i><span class="nx-l">다음 할 일</span><span class="nx-t">'+txt+'</span>'+(act?('<button type="button" class="nx-go" onclick="'+attr(onclick)+'">'+act+' →</button>'):'')+'</div>'; }
-  /* 1) 지난 경기 리뷰(7일 안, 리뷰 없음) */
+  /* 1) 지난 경기 리뷰(7일 안, 담당 경기의 리뷰 미완료) */
   try{
     var st=matchLoad(), t0=ymd(today), past=(st.matches||[]).filter(function(x){ var d=String(x.date||""); return /^\d{4}-\d{2}-\d{2}$/.test(d)&&d<t0&&((today-new Date(d+"T00:00:00"))/864e5)<=7; })
       .sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); });
-    var need=past.filter(function(x){ var ck=(x.ckDone&&typeof x.ckDone==="object")?x.ckDone:{}; if(ck.review)return false; return !(String(x.reviewGood||"").trim()||String(x.reviewImprove||"").trim()||String(x.scoreUs||"")!==""); })[0];
-    if(need){ var d1=new Date(need.date+"T00:00:00"); return line("m","지난 경기 리뷰 · vs "+esc(need.opponent||"상대 미정")+" ("+DOW[d1.getDay()]+")","리뷰 쓰기","setView('match');matchOpen('"+esc(need.id)+"')"); }
+    var need=past.filter(function(x){return matchCanEditOne(x.id)&&!ckReviewDone(x);})[0];
+    if(need){ var d1=new Date(need.date+"T00:00:00"); return line("m","지난 경기 리뷰 · vs "+esc(need.opponent||"상대 미정")+" ("+DOW[d1.getDay()]+")","리뷰 쓰기","ckOpenMatchReview("+JSON.stringify(String(need.id))+")"); }
   }catch(_){}
   /* 2) 주 마무리 — 토 18시부터 월 12시까지, 다음 월요일 초점 제안이 한 명도 없으면 */
   try{
