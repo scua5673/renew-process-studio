@@ -16906,6 +16906,35 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
 }
 </style>
 
+<style id="ps-2751-dock-alignment">
+/* Accepted B layout: keep intrinsic control sizes/order and existing surfaces.
+   Fine-pointer desktop only; touch wrapping and the folded handle retain their own heights. */
+@media (min-width:768px) and (hover:hover) and (pointer:fine) and (not (any-pointer:coarse)){
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________){
+    grid-template-rows:36px 72px!important;height:108px!important;min-height:108px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#animBar,
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #drawPanel,
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-tool-row{
+    height:36px!important;min-height:36px!important;padding:0 16px!important;align-items:center!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .cmd-cluster{
+    height:34px!important;min-height:34px!important;align-items:center!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#animBar,
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-tool-row,
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #railL2{
+    column-gap:8px!important;
+  }
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .cmd-cluster,
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #benchCat,
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #railEquip,
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #toolSeg{
+    column-gap:3px!important;
+  }
+}
+</style>
+
 <!-- 2.704 — 도크 접기(사용자 "하단도크 접을 수 있게 · 오른쪽 상단 누르면 한번에"). 도크 오른쪽 위 ▾ 한 번 = 세 줄 다 접힘, 손잡이 한 줄(지금 도구 · 장면 n/N · ▴ 도구 펼치기)만 남는다.
      데스크톱·아이패드 도크(#ps-command-dock)와 폰 도크(#ps-dock) 둘 다. 기억: ps_dock_folded_v1. 단축키 ⌘. (설정 › 단축키 «도구 도크 접기·펼치기»로도). ⌘\ 는 셸의 사이드바 접기로 넘긴다. -->
 <style id="ps-2704-fold">

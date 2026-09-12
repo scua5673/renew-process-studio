@@ -66,8 +66,8 @@
     var multiple=groups.length>1?'<option value="__keep_groups__" selected>'+esc(groups.join(' · '))+'</option>':'';
     var date=t?t.date:d.date;
     var h='<button type="button" class="closex" data-rt-close aria-label="닫기">×</button>'
-      +'<h3 id="rtTitle">'+(editing?'훈련 과제 · 결과':'다음 훈련으로')+'</h3>'
-      +'<p class="rt-origin">'+esc(d.matchDate)+' · '+esc(d.opponent||'상대 미정')+' 경기에서</p>';
+      +'<h3 id="rtTitle">'+(editing?'훈련 과제 · 결과':'훈련 과제 추가')+'</h3>'
+      +'<p class="rt-origin">원 경기 · '+esc(d.matchDate)+' · '+esc(d.opponent||'상대 미정')+'</p>';
     if(!editing)h+='<div class="rt-source"><label>리뷰에서 고르기<select id="rtSource"><option value="custom">직접 작성</option>'
       +sources.map(function(s){return '<option value="'+esc(s.key)+'">'+esc(sourceLabel(s))+'</option>';}).join('')+'</select></label>'
       +'<button type="button" id="rtCopy">개선점 가져오기</button></div>';
@@ -77,7 +77,7 @@
     if(editing)h+='<label class="rt-label">실행 여부<select id="rtStatus"'+(readonly?' disabled':'')+'>'
       +[['planned','훈련 예정'],['done','진행함'],['skipped','진행하지 않음']].map(function(s){return '<option value="'+s[0]+'"'+(task.status===s[0]?' selected':'')+'>'+s[1]+'</option>';}).join('')+'</select></label>'
       +'<label class="rt-label">관찰한 변화 · 다음에 확인할 것<textarea id="rtObservation" maxlength="2000" placeholder="실제로 보인 장면을 한 줄로 남기세요"'+(readonly?' disabled':'')+'>'+esc(task.observation||'')+'</textarea></label>';
-    h+='<p class="rt-scope">행동과 결과는 선수도 읽을 수 있는 팀 일정에 저장됩니다. 경기 리뷰 원문은 함께 복사하지 않습니다.</p>'
+    h+='<p class="rt-scope"><strong>선수도 읽는 팀 일정</strong>행동과 결과가 저장됩니다. 경기 리뷰 원문은 함께 복사하지 않습니다.</p>'
       +'<p id="rtError" role="status" aria-live="polite"></p><div class="rt-actions">'
       +(editing?'<button type="button" id="rtBack">경기 리뷰로</button>':'')
       +(readonly?'<span>일정 보기 전용입니다</span>':'<button type="button" class="solid" id="rtSave">'+(editing?'결과 저장':'훈련 과제 추가')+'</button>')+'</div>';
