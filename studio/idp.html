@@ -4401,6 +4401,9 @@ body.fmdark .qa-paper{background:var(--surface)}
 .st-bub .pk{display:flex;flex-direction:column;gap:4px;margin-top:6px} .st-bub .pk span{border:1px solid var(--line-soft);border-radius:8px;padding:4px 8px;font-size:12px;background:var(--surface)} .st-bub .pk span.on{border-color:#7C4DFF;font-weight:700} .st-bub .pk small{color:var(--text-3);font-weight:500}
 .st-bub .st-pick{display:block;margin-top:5px;font-size:11px;color:var(--text-3)} .st-hrt{font-style:normal;color:#C24A46}
 .st-note{font-size:11px;color:var(--text-3);margin-top:10px}
+.st-compose{display:flex;gap:6px;align-items:center;margin-top:12px;padding:6px 6px 6px 12px;border:1px solid var(--line-soft);border-radius:999px;background:var(--surface)}
+.st-compose input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:13px;color:var(--text);outline:none}
+.st-compose .btn{border-radius:999px;padding:6px 12px;font-size:12px;flex:0 0 auto}
 .mr-heat{margin-top:8px} .mr-heat svg{width:100%;max-width:264px;height:auto;display:block}
 /* 2.765 — 12주 격자(주 행·요일 열)·표·막대 */
 .mr-cal{display:grid;grid-template-columns:34px repeat(7,minmax(0,1fr)) 24px;gap:3px;align-items:center;margin-top:8px}
@@ -11265,6 +11268,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     try{ var P=propsAll(); Object.keys(P).forEach(function(wk){ var pr=P[wk]||{}; if(!pr.a&&!pr.b)return; var ts=+pr.at||new Date(wk+'T09:00:00').getTime(); var pick=null; try{ var f=focusOf(wk); if(f&&/^pick-/.test(String(f.from||'')))pick=f; }catch(_){} out.push({k:'props',who:'coach',d:ymd(new Date(ts)),ts:ts,p:pr,wk:wk,pick:pick,src:'다음 주 초점 제안',go:'cal:'+wk,by:pr.by||''}); }); }catch(_){}
     try{ var mm=rvRec(viewing).matchMessages||{}; if(mm&&typeof mm==='object'&&!Array.isArray(mm))Object.keys(mm).forEach(function(id){ var m=mm[id], pr=m&&m.prep; if(!pr||typeof pr!=='object')return; var msg=String(pr.message||'').trim(), mark=String(pr.mark||'').trim(); if(!msg&&!mark)return; var ts=+(pr.updatedAt||m.updatedAt)||0; var md=/^\d{4}-\d{2}-\d{2}$/.test(String(m.date||''))?String(m.date):''; if(!ts&&md)ts=new Date(md+'T09:00:00').getTime(); out.push({k:'prep',who:'coach',d:ts?ymd(new Date(ts)):md,ts:ts,text:msg,mark:mark,src:'경기 전'+(m.opponent?(' · vs '+m.opponent):''),go:'match',by:pr.updatedBy||''}); }); }catch(_){}
     try{ var Q=tmPrompts()||[], A=doc.answers||{}; Object.keys(A).forEach(function(qid){ var a=A[qid]||{}; var t=String(a.t||'').trim(); if(!t)return; var q=null; try{ q=Q.filter(function(x){return x&&x.id===qid;})[0]||null; }catch(_){} var ts=+a.at||0; out.push({k:'qa',who:'me',d:ts?ymd(new Date(ts)):'',ts:ts,text:t,q:(q&&q.q)||'',src:'공통질문 답',go:'cal'}); }); }catch(_){}
+    /* 2.767 — 한 마디(덧붙이는 목록): 선수 doc.talk[] · 코치 pub.talk[]. 답글(reacts)과 달리 고쳐도 이전 말이 남는다 */
+    try{ (doc.talk||[]).forEach(function(t){ var tx=String((t&&t.text)||'').trim(); if(!tx)return; var ts=+t.at||0; out.push({k:'talk',who:'me',d:ts?ymd(new Date(ts)):'',ts:ts,text:tx,src:'코치에게 한 마디'}); }); }catch(_){}
+    try{ (rvRec(viewing).talk||[]).forEach(function(t){ var tx=String((t&&t.text)||'').trim(); if(!tx)return; var ts=+t.at||0; out.push({k:'talk',who:'coach',d:ts?ymd(new Date(ts)):'',ts:ts,text:tx,src:'한 마디',by:t.by||''}); }); }catch(_){}
     out.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
     return out;
   }
@@ -11324,12 +11330,28 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     });
     h+='</div>';
     if(items.length>LIM&&!_stAll)h+='<button type="button" class="qg-add" data-st-more>지난 이야기 '+(items.length-LIM)+'개 더 보기</button>';
-    h+='<div class="st-note">말풍선을 누르면 그 자리로 갑니다 · 답 보내기는 다음 판에서</div></section>'; return h;
+    h+=stCompose();
+    h+='<div class="st-note">말풍선을 누르면 그 자리로 갑니다</div></section>'; return h;
+  }
+  /* 2.767 — 답 보내기: 선수는 «코치에게 한 마디»(doc.talk, 내 문서), 코치는 «선수에게 한 마디»(pub.talk, 코치 문서). 둘 다 덧붙이기만 */
+  function stCompose(){
+    var me=!ro(), coach=ro()&&isCoach(); if(!me&&!coach)return '';
+    return '<div class="st-compose"><input maxlength="300" data-st-in placeholder="'+(me?'코치에게 한 마디':'선수에게 한 마디')+'" aria-label="'+(me?'코치에게 한 마디':'선수에게 한 마디')+'"><button type="button" class="btn primary" data-st-send>보내기</button></div>';
+  }
+  function stSend(text){
+    text=String(text||'').trim().slice(0,300); if(!text)return false;
+    var item={id:'tk'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),text:text,at:Date.now()};
+    if(!ro()){ doc.talk=Array.isArray(doc.talk)?doc.talk:[]; doc.talk.push(item); if(save()===false){ try{gToast('저장하지 못했어요');}catch(_){} doc.talk.pop(); return false; } psAct('a_talk'); return true; }
+    if(isCoach()){ item.by=lrCoachName(); var kk=coachFeedbackKey(viewing); if(!kk||!pubPushAt(kk,'talk',item)){ try{gToast('저장하지 못했어요');}catch(_){} return false; } psAct('a_talk'); return true; }
+    return false;
   }
   function bindStory(){
     var card=wrap.querySelector('.st-card'); if(!card)return;
     var mo=card.querySelector('[data-st-more]'); if(mo)mo.onclick=function(){ _stAll=true; render(); };
-    card.addEventListener('click',function(e){ var el=e.target.closest('[data-st-go]'); if(!el)return; var go=String(el.getAttribute('data-st-go')||''); if(!go)return;
+    var inp=card.querySelector('[data-st-in]'), snd=card.querySelector('[data-st-send]');
+    if(inp&&snd){ var go=function(){ if(stSend(inp.value)){ inp.value=''; render(); try{ var c2=wrap.querySelector('[data-st-in]'); if(c2)c2.focus(); }catch(_){} } };
+      snd.onclick=go; inp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); go(); } }); }
+    card.addEventListener('click',function(e){ if(e.target.closest('.st-compose'))return; var el=e.target.closest('[data-st-go]'); if(!el)return; var go=String(el.getAttribute('data-st-go')||''); if(!go)return;
       var m=/^cal:(\d{4}-\d{2}-\d{2})$/.exec(go);
       if(m){ curL='cal'; calView='day'; calAnchor=new Date(m[1]+'T00:00:00'); calAnchor.setHours(0,0,0,0); }
       else if(go==='cal'){ curL='cal'; }
