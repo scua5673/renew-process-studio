@@ -5045,6 +5045,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 <div class="mb2-bar">
                   <button class="mb2-clear-lite" type="button" id="mb2Clear" title="우리·상대 토큰 모두 지우기">전체 비우기</button>
                   <span class="mb2-cnt">배치 <b id="mb2CntUs">0</b>/11 · 상대 <b id="mb2CntOp">0</b></span>
+                  <button class="btn sm" type="button" id="mb2FillUs" title="선발 명단을 이 경기의 포메이션·포지션대로 한 번에 배치">선발 배치</button>
                   <span class="mb2-opp-tools">
                     <button class="match-kit-open" type="button" id="mb2KitOpen" title="우리 팀과 상대 팀의 필드·GK 유니폼 설정">유니폼 설정</button>
                     <select class="inp mb2-sel" id="mb2FormOp" title="상대 포메이션"><option value="gk4">GK + 수비 4</option><option value="442" selected>4-4-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option><option value="343">3-4-3</option><option value="352">3-5-2</option></select>
@@ -5054,7 +5055,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                     <label class="mb2-opp-color" title="상대 등번호 글자 색"><input type="color" id="mb2OppNumColor" value="#ffffff"><span>번호</span></label>
                     <span class="mb2-seg" id="mb2OppLabel" title="상대 토큰에 보일 것"><button type="button" data-v="num" class="on">번호</button><button type="button" data-v="pos">포지션</button></span>
                   </span>
-                  <span hidden><button type="button" id="mb2FillUs"></button><select id="mb2FormUs"><option value="4231" selected>4-2-3-1</option><option value="442">4-4-2</option><option value="433">4-3-3</option><option value="343">3-4-3</option><option value="352">3-5-2</option></select><button type="button" id="mb2AddOp"></button><button type="button" id="mb2FillOpDef"></button></span>
+                  <span hidden><select id="mb2FormUs"><option value="4231" selected>4-2-3-1</option><option value="442">4-4-2</option><option value="433">4-3-3</option><option value="343">3-4-3</option><option value="352">3-5-2</option></select><button type="button" id="mb2AddOp"></button><button type="button" id="mb2FillOpDef"></button></span>
                 </div>
               </section>
               <section class="match-card match-card-wide">
@@ -15379,18 +15380,15 @@ function mb2RenderTray(m){
   try{mb2SyncTray(m);}catch(_){}   /* 2.003 — 렌더 직후 배치 표시(게스트 추가 등 재렌더 경로 포함) */
 }
 function mb2FillUs(m){
-  var form=$("mb2FormUs").value,slots=MB2_FORMS[form]||MB2_FORMS["4231"];
-  var ours=tmOurs().filter(function(p){return String(p.name||"").trim();});
-  var starters=(m.startingIds||[]).map(function(id){return ours.find(function(p){return p.id===id;});}).filter(Boolean);
-  var pool=(starters.length?starters:ours.filter(function(p){return plStatusOf(p)==="ok";})).slice(0,11);
+  /* 2.753 — 사용자 «경기 준비도 (상대 분석처럼) 선수단 배치할 수 있게». 2.001 에서 숨겼던 «우리 11» 을 «선발 배치» 로 되살린다.
+     규칙은 상대 분석과 같다(matchStartersToSlots): 선발 명단만 · 이 경기 포메이션 · 포지션 → 자리. 트레이에서 하나씩 끄는 것은 그대로. */
+  var r=matchStartersToSlots(m);
+  if(!r.ok){ toast("선발 명단이 아직 없어요 — 위 명단에서 선발을 정하거나 운동장에 끌어다 놓으세요"); return; }
   var b=mb2Cur(m);
-  b.us=slots.map(function(a,i){
-    var pl=pool[i];
-    var ps=pl?(data.positions||[]).find(function(x){return x.id===pl.posId;}):null;
-    return {pid:pl?pl.id:null,num:pl?String(pl.num||i+1):String(i+1),name:pl?(pl.name||""):"",
-      x:a[0],y:a[1],gk:i===0||(ps&&posGroupOf(ps.name)==="GK")};
-  });
-  mb2Draw(m);mb2Save();
+  b.us=r.slots.map(function(a,i){ var pl=r.picked[i]; if(!pl)return null; var ps=tmAbbrOf(pl)||"";
+    return {pid:pl.id,num:String(pl.num||MB2_SLOTS[r.formKey][i][1]||i+1),name:pl.name||"",x:a[0],y:a[1],gk:i===0||r.norm(ps)==="GK"}; }).filter(Boolean);
+  mb2Draw(m);mb2Counts(m);mb2SyncTray(m);mb2Save();
+  toast("선발 "+r.picked.filter(Boolean).length+"명을 "+matchFormLabel(r.formKey)+" 자리에 놓았어요"+(r.pool.length?(" · 자리 없는 선발 "+r.pool.length+"명"):""));
 }
 function mb2FillOp(m){
   /* 2.004 — 상대 토큰 번호 1~11(사용자), 'gk4' = GK+수비 4 만 */
@@ -15454,7 +15452,7 @@ function renderMB2(){
       var b=e.target.closest("button[data-ph]");if(!b)return;
       pb.cur=b.dataset.ph;mb2RenderPhases(m2);mb2Draw(m2);mb2Save();
     });
-    $("mb2FillUs").onclick=function(){var m2=matchGet();if(m2&&matchCanEdit())mb2FillUs(m2);};
+    $("mb2FillUs").onclick=function(){var m2=matchGet();if(!m2)return;if(!matchCanEdit()){obEditBlocked();return;}mb2FillUs(m2);};   /* 2.753 */
     $("mb2FillOp").onclick=function(){var m2=matchGet();if(m2&&matchCanEdit())mb2FillOp(m2);};
     if($("mb2KitOpen"))$("mb2KitOpen").onclick=function(){matchKitOpen("prep",this);};
     if($("mb2KitOpenMobile"))$("mb2KitOpenMobile").onclick=function(){matchKitOpen("prep",this);};
@@ -15540,6 +15538,24 @@ function obOpenEdit(m,d,t,opp){
     var f=obFrame(m),arr=opp?f.opp:f.us,i=arr.indexOf(t); if(i>=0)arr.splice(i,1); obCloseEdit(); obDraw(m); obSave(); });
   ed.addEventListener("pointerdown",function(e){e.stopPropagation();});
   try{inp.focus();inp.select();}catch(_){}
+}
+/* 2.753 — 선발 → 포메이션 자리 배정(상대 분석 «우리 11» 과 경기 준비 «선발 배치» 가 같은 규칙).
+   {ok, formKey, slots, labels, picked(자리별 선수|null), pool(자리 없는 선발)} · 선발이 없으면 ok:false */
+function matchStartersToSlots(m){
+  var sq=matchReviewSquad(m), ours=tmOurs().filter(function(p){return String(p.name||"").trim();});
+  var starters=sq.start.map(function(id){return ours.find(function(p){return p.id===id;});}).filter(Boolean);
+  var formKey=String(m.formation||matchFormLabel((data.meta&&data.meta.form)||"4231")).replace(/[^0-9]/g,"");
+  if(!MB2_FORMS[formKey]||!MB2_SLOTS[formKey])formKey="4231";
+  var slots=MB2_FORMS[formKey], labels=MB2_SLOTS[formKey].map(function(x){return x[0];});
+  if(!starters.length)return {ok:false,formKey:formKey,slots:slots,labels:labels,picked:[],pool:[]};
+  var norm=function(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");};
+  var base=function(v){v=norm(v);if(/^(L|R)?CB$/.test(v))return"CB";if(/^(L|R)?CM$/.test(v))return"CM";if(/^(L|R)?DM$/.test(v))return"DM";if(v==="CF")return"ST";if(v==="LWB")return"LB";if(v==="RWB")return"RB";return v;};
+  var line=function(v){v=norm(v);if(!v)return"";if(v==="GK")return"GK";if(/CB|LB|RB|WB|FB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";};
+  var pool=starters.slice(), picked=slots.map(function(){return null;});
+  [function(p,l){return norm(tmAbbrOf(p))===norm(l);},function(p,l){return base(tmAbbrOf(p))===base(l);},function(p,l){return line(tmAbbrOf(p))===line(l);}]
+    .forEach(function(same){ labels.forEach(function(l,i){ if(picked[i])return; var ix=pool.findIndex(function(p){return same(p,l);}); if(ix>=0)picked[i]=pool.splice(ix,1)[0]; }); });
+  labels.forEach(function(l,i){ if(!picked[i]&&pool.length)picked[i]=pool.shift(); });
+  return {ok:true,formKey:formKey,slots:slots,labels:labels,picked:picked,pool:pool,norm:norm};
 }
 function obEditBlocked(){ try{ toast(matchDocPending()?"경기 자료를 서버와 맞추는 중이에요 — 잠시 뒤 다시 눌러 주세요":(matchRole()==="player"?"선수 계정은 상대 분석을 볼 수만 있어요":"팀 자료를 고칠 권한이 없어요")); }catch(_){} }
 try{ (function(){ var w=function(){ var pit=$("obPitch"); if(pit&&!pit.__obEd){ pit.__obEd=1; pit.addEventListener("pointerdown",function(){obCloseEdit();}); } }; if(document.readyState!=="loading")w(); else document.addEventListener("DOMContentLoaded",w); })(); }catch(_){}
@@ -15638,23 +15654,12 @@ function renderOB(){
        앉혔다(첫 선수가 GK 자리, 공격수가 수비 자리) — 그게 «랜덤» 이다. 토큰엔 pid 도 편집기도 없어 고칠 길이 없었다.
        이제 ① 선발 명단만 놓는다(없으면 안내하고 아무것도 안 놓는다 — 앱은 거울) ② 이 경기의 포메이션
        ③ 포지션 → 자리(정확 → 세부·기본 → 라인, 남은 선발은 빈 자리) ④ pid·포지션을 실어 명단과 이어 둔다. */
-    var sq=matchReviewSquad(m2), ours=tmOurs().filter(function(p){return String(p.name||"").trim();});
-    var starters=sq.start.map(function(id){return ours.find(function(p){return p.id===id;});}).filter(Boolean);
-    if(!starters.length){ toast("선발 명단이 아직 없어요 — 02 경기 준비에서 선발을 정하면 그대로 놓입니다"); return; }
-    var formKey=String(m2.formation||matchFormLabel((data.meta&&data.meta.form)||"4231")).replace(/[^0-9]/g,"");
-    if(!MB2_FORMS[formKey]||!MB2_SLOTS[formKey])formKey="4231";
-    var slots=MB2_FORMS[formKey], labels=MB2_SLOTS[formKey].map(function(x){return x[0];});
-    var norm=function(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");};
-    var base=function(v){v=norm(v);if(/^(L|R)?CB$/.test(v))return"CB";if(/^(L|R)?CM$/.test(v))return"CM";if(/^(L|R)?DM$/.test(v))return"DM";if(v==="CF")return"ST";if(v==="LWB")return"LB";if(v==="RWB")return"RB";return v;};
-    var line=function(v){v=norm(v);if(!v)return"";if(v==="GK")return"GK";if(/CB|LB|RB|WB|FB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";};
-    var pool=starters.slice(), picked=slots.map(function(){return null;});
-    [function(p,l){return norm(tmAbbrOf(p))===norm(l);},function(p,l){return base(tmAbbrOf(p))===base(l);},function(p,l){return line(tmAbbrOf(p))===line(l);}]
-      .forEach(function(same){ labels.forEach(function(l,i){ if(picked[i])return; var ix=pool.findIndex(function(p){return same(p,l);}); if(ix>=0)picked[i]=pool.splice(ix,1)[0]; }); });
-    labels.forEach(function(l,i){ if(!picked[i]&&pool.length)picked[i]=pool.shift(); });
-    obFrame(m2).us=slots.map(function(a,i){var pl=picked[i]; if(!pl)return null; var ps=tmAbbrOf(pl)||"";
-      return {pid:pl.id,num:String(pl.num||MB2_SLOTS[formKey][i][1]||i+1),name:pl.name||"",pos:ps,x:a[0],y:a[1],gk:i===0||norm(ps)==="GK"};}).filter(Boolean);
+    var r=matchStartersToSlots(m2);
+    if(!r.ok){ toast("선발 명단이 아직 없어요 — 02 경기 준비에서 선발을 정하면 그대로 놓입니다"); return; }
+    obFrame(m2).us=r.slots.map(function(a,i){var pl=r.picked[i]; if(!pl)return null; var ps=tmAbbrOf(pl)||"";
+      return {pid:pl.id,num:String(pl.num||MB2_SLOTS[r.formKey][i][1]||i+1),name:pl.name||"",pos:ps,x:a[0],y:a[1],gk:i===0||r.norm(ps)==="GK"};}).filter(Boolean);
     obDraw(m2);obSave();
-    toast("선발 "+picked.filter(Boolean).length+"명을 "+matchFormLabel(formKey)+" 자리에 놓았어요"+(pool.length?(" · 자리 없는 선발 "+pool.length+"명"):""));};
+    toast("선발 "+r.picked.filter(Boolean).length+"명을 "+matchFormLabel(r.formKey)+" 자리에 놓았어요"+(r.pool.length?(" · 자리 없는 선발 "+r.pool.length+"명"):""));};
   $("obClear").onclick=function(){if(!matchCanEdit())return;var m2=matchGet();
     psConfirm("이 프레임의 우리·상대 토큰을 모두 지울까요?",function(){var f=obFrame(m2);f.us=[];f.opp=[];obDraw(m2);obSave();});};
   $("obAddFrame").onclick=function(){if(!matchCanEdit())return;var m2=matchGet(),b=obCur(m2);
