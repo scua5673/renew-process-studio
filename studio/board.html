@@ -8920,6 +8920,9 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   if(opts.startersOnly||opts.byPosition!==false){   /* 2.683 — 조·전체 불러오기도 포지션대로 자동 배치(사용자). 11명은 포메이션 자리, 나머지는 오른쪽 대기줄 */
     var formEl=document.getElementById("formHome"),formKey=(formEl&&formEl.value)||squad.form||"433";
     var slots=(FORM[formKey]||FORM["433"]||[]).slice(0,11),pool=sq.filter(function(p){return p&&String(p.name||"").trim();}),picked=[];
+    /* 2.760 — 팀 구성 카드 11장(scout_tool_v1.meta.tbSlots)이 있으면 그것이 자리다. 팀 구성 % 좌표(GK x≈14 → CF x≈89, y 0~100) → 작전판 정규 좌표(nx .045~.46, ny 0~1) */
+    try{ var _t=JSON.parse(localStorage.getItem("scout_tool_v1")||"null"), _cs=_t&&_t.meta&&_t.meta.tbSlots;
+      if(Array.isArray(_cs)&&_cs.length===11){ slots=_cs.map(function(c,i){ var nx=0.045+((+c.x||14)-14)/75*0.415, ny=(+c.y||50)/100; return [Math.max(.03,Math.min(.47,Math.round(nx*1000)/1000)),Math.max(.05,Math.min(.95,Math.round(ny*1000)/1000)),i+1,String(c.ab||"")]; }); opts.slotsFromCards=true; } }catch(_){}
     var normPos=posCode, groupPos=posGroup;   /* 2.752 — 한글·사용자 정의 이름도 코드로 */
     /* 2.699 — 조·전체 불러오기는 **정확히 자기 포지션**으로만(사용자 "빈자리를 억지로 채우지 말고 정확히 자기 포지션으로").
        LCB·RCB·CB 는 한 포지션(CB), LCM·RCM·CM 도 하나(CM), ST·CF 도 하나(ST)로 본다. 맞는 자리가 없으면 그 자리는 비워 두고,
@@ -9046,7 +9049,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   sel=null;renderTokens();if(typeof updateEmptyHint==="function")updateEmptyHint();closeSquad();
   /* 2.543 — 나눠 놓았으면 **몇 개에 몇 명씩**인지 말한다. 안 말하면 코치가 세어 봐야 한다 */
   var _sp=null; try{ _sp=window.__psSquadSpread; }catch(_){}
-  toast((opts.startersOnly?"선택 포메이션 선발 ":"")+sq.length+"명 작전판에 적용됨 ✓"
+  toast((opts.startersOnly?(opts.slotsFromCards?"팀 구성 카드 자리로 선발 ":"선택 포메이션 선발 "):"")+sq.length+"명 작전판에 적용됨 ✓"
     +(_sp&&_sp.formation?(" · 운동장 1번에"):"")
     +(_sp&&!_sp.formation?(" · 운동장 "+_sp.n+"개에 "+_sp.per.join("·")+"명"):"")
     +(!opts.startersOnly&&rest.length?(" · 포지션 미지정 "+rest.length+"명"):""));}
