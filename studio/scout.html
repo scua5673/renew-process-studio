@@ -2745,6 +2745,18 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     .plan-lines label{display:contents}
     .plan-lines label>span{font-size:12px;font-weight:800;color:var(--txt);text-align:left;line-height:1.3;padding-left:2px}
     .plan-lines .inp{width:100%;height:38px;min-height:38px;resize:none;overflow-y:auto;padding:8px 10px;box-sizing:border-box}
+    /* 2.755 — 게임플랜 줄 위 «상대 · …» 참고 줄(읽기만). label 이 display:contents 라 칸 하나로 묶는다 */
+    .plan-lines .plan-cell{display:flex;flex-direction:column;gap:3px;min-width:0}
+    .plan-lines .plan-ref{font-size:11px;line-height:1.35;color:var(--muted);padding-left:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+    .plan-lines .plan-ref b{font-weight:700;color:var(--muted)}
+    .match-carry .match-card-head{align-items:center}
+    .match-carry .match-card-head .btn{margin-left:auto;flex:none}
+    .match-carry-rows{display:grid;grid-template-columns:96px minmax(0,1fr);gap:6px 12px;align-items:start}
+    .match-carry-rows .k{font-size:12px;font-weight:800;color:var(--txt);padding-top:1px}
+    .match-carry-rows .k.in{color:var(--green,#1f8a5a)} .match-carry-rows .k.out{color:var(--red,#C24A46)}
+    .match-carry-rows .v{font-size:13px;line-height:1.45;color:var(--txt);white-space:pre-line;word-break:keep-all}
+    .match-carry-rows .empty{grid-column:1/-1;font-size:12px;color:var(--muted)}
+    @media (max-width:760px){ .match-carry-rows{grid-template-columns:76px minmax(0,1fr);gap:6px 8px} }
     #gmPlanHints{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
     #gmPlanHints .gm-hints-h{margin:0 0 6px 2px}
     #gmPlanHints .gm-hint{display:grid;grid-template-columns:96px minmax(0,1fr);gap:0 12px;align-items:baseline;margin-top:4px;padding:7px 10px 7px 2px;border:0;border-bottom:1px dashed var(--line);border-radius:0}
@@ -4977,8 +4989,9 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
               <section class="match-card match-card-wide">
                 <div class="match-card-head"><span>01</span><div><b>상대 팀 분석</b><small>상대가 어떻게 싸우는지 — 우리 게임플랜의 근거가 됩니다</small></div></div>
                 <div class="match-fields plan-lines">
-                  <label><span>공격 시</span><textarea class="inp" rows="1" data-match-field="oppAttack" placeholder="상대 공격의 핵심 — 빌드업·주 공격 루트"></textarea></label>
-                  <label><span>수비 시</span><textarea class="inp" rows="1" data-match-field="oppDefense" placeholder="상대 수비 대형·압박 방식과 트리거"></textarea></label>
+                  <!-- 2.755 — 국면 이름을 게임플랜과 같은 말로(공격 시 → 볼 소유 시). 저장 필드는 그대로 -->
+                  <label><span>볼 소유 시</span><textarea class="inp" rows="1" data-match-field="oppAttack" placeholder="상대가 공을 가졌을 때 — 빌드업·주 공격 루트"></textarea></label>
+                  <label><span>볼 비소유 시</span><textarea class="inp" rows="1" data-match-field="oppDefense" placeholder="상대가 공이 없을 때 — 수비 대형·압박 방식과 트리거"></textarea></label>
                   <label><span>공격 전환</span><textarea class="inp" rows="1" data-match-field="oppAttackTransition" placeholder="상대의 역습 패턴 — 누가 어디로 뛰나"></textarea></label>
                   <label><span>수비 전환</span><textarea class="inp" rows="1" data-match-field="oppDefenseTransition" placeholder="상대가 공을 잃은 직후 — 압박? 후퇴?"></textarea></label>
                   <label><span>세트피스</span><textarea class="inp" rows="1" data-match-field="oppSetPlay" placeholder="상대 세트피스 공격·수비 특징"></textarea></label>
@@ -5013,6 +5026,11 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
           </div>
           <div class="match-panel on" id="matchPrepPanel">
             <div class="match-grid">
+              <!-- 2.755 — 상대 분석에 적은 것이 여기 비친다(읽기만). 앱은 거울이라 대신 쓰지 않고, 누르면 상대 분석으로 간다 -->
+              <section class="match-card match-card-wide match-carry" id="matchCarryCard">
+                <div class="match-card-head"><div><b>상대에서 넘어온 것</b><small>상대 분석에 적은 그대로 — 읽기만</small></div><button type="button" class="btn sm" id="matchCarryGo">상대 분석 ›</button></div>
+                <div class="match-carry-rows" id="matchCarryRows"></div>
+              </section>
 
               <!-- 1.609 — 경기 정보를 맨 위로(사용자 지시). 이 화면에서 먼저 확인하는 건
                    "어떤 경기인가"이고, 큰 보드는 그 다음에 손대는 것이다.
@@ -5067,11 +5085,11 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
               <section class="match-card match-card-wide">
                 <div class="match-card-head"><span>01</span><div><b>게임플랜</b><small>국면별 한 줄 — 선수에게 전달할 핵심 원칙</small></div></div>
                 <div class="match-fields plan-lines">
-                  <label><span>볼 소유</span><textarea class="inp" rows="1" data-match-field="attack" placeholder="어디서 시작해 어떻게 전진할까요?"></textarea></label>
-                  <label><span>볼 비소유</span><textarea class="inp" rows="1" data-match-field="defense" placeholder="어디서 기다리고 언제 압박할까요?"></textarea></label>
-                  <label><span>공격 전환</span><textarea class="inp" rows="1" data-match-field="attackTransition" placeholder="공을 되찾은 직후 첫 번째 선택은?"></textarea></label>
-                  <label><span>수비 전환</span><textarea class="inp" rows="1" data-match-field="defenseTransition" placeholder="공을 잃은 직후 첫 번째 반응은?"></textarea></label>
-                  <label><span>세트피스</span><textarea class="inp" rows="1" data-match-field="setPlay" placeholder="코너·프리킥 공격과 수비 약속"></textarea></label>
+                  <label><span>볼 소유</span><span class="plan-cell"><small class="plan-ref" data-carry="oppDefense" hidden></small><textarea class="inp" rows="1" data-match-field="attack" placeholder="어디서 시작해 어떻게 전진할까요?"></textarea></span></label>
+                  <label><span>볼 비소유</span><span class="plan-cell"><small class="plan-ref" data-carry="oppAttack" hidden></small><textarea class="inp" rows="1" data-match-field="defense" placeholder="어디서 기다리고 언제 압박할까요?"></textarea></span></label>
+                  <label><span>공격 전환</span><span class="plan-cell"><small class="plan-ref" data-carry="oppDefenseTransition" hidden></small><textarea class="inp" rows="1" data-match-field="attackTransition" placeholder="공을 되찾은 직후 첫 번째 선택은?"></textarea></span></label>
+                  <label><span>수비 전환</span><span class="plan-cell"><small class="plan-ref" data-carry="oppAttackTransition" hidden></small><textarea class="inp" rows="1" data-match-field="defenseTransition" placeholder="공을 잃은 직후 첫 번째 반응은?"></textarea></span></label>
+                  <label><span>세트피스</span><span class="plan-cell"><small class="plan-ref" data-carry="oppSetPlay" hidden></small><textarea class="inp" rows="1" data-match-field="setPlay" placeholder="코너·프리킥 공격과 수비 약속"></textarea></span></label>
                 </div>
                 <!-- 게임모델 대원칙 참조(1.498) — 골든 스레드: 게임플랜을 쓸 때 우리 원칙이 옆에 있다. 탭하면 삽입 -->
                 <div class="gm-hints" id="gmPlanHints"></div>
@@ -13008,6 +13026,28 @@ function matchSetFields(m,readonly){
   try{okpRender(m,readonly);}catch(_){}   /* 1.676 — 키 선수 줄 입력 */
   try{mlRender("oppStrRows","oppStrAdd","oppStrengths",["빠른 측면 전환 — 경계할 무기","세트피스 득점력","전방 압박 강도"],m,readonly);}catch(_){}
   try{mlRender("oppWeakRows","oppWeakAdd","oppWeaknesses",["뒷공간 커버 느림 — 노릴 틈","골킥 빌드업 불안","후반 체력 저하"],m,readonly);}catch(_){}
+  try{matchCarryRender(m);}catch(_){}   /* 2.755 */
+}
+/* ══ 2.755 · 상대 분석 → 경기 준비 «이어짐» ═══════════════════════════════════════
+   실측: 상대 분석 필드(oppAttack…·oppConclusion·oppStrengths·oppWeaknesses)는 경기 준비·오늘·리뷰 어디에서도 읽히지 않았다.
+   코치는 상대 분석을 적고도 게임플랜을 빈 칸에서 외워서 다시 썼다. 여기서는 **읽기만** 한다 — 대신 쓰지 않는다(앱은 거울).
+   짝은 뒤집어서: 우리 볼 소유 ↔ 상대 볼 비소유, 우리 공격 전환 ↔ 상대 수비 전환. */
+var MATCH_CARRY_LABEL={oppAttack:"상대 볼 소유 시",oppDefense:"상대 볼 비소유 시",oppAttackTransition:"상대 공격 전환",oppDefenseTransition:"상대 수비 전환",oppSetPlay:"상대 세트피스"};
+function matchCarryLines(v){ return String(v||"").split("\n").map(function(x){return x.trim();}).filter(Boolean); }
+function matchCarryRender(m){
+  var rows=$("matchCarryRows"); if(rows){
+    var h="", con=String(m.oppConclusion||"").trim(), weak=matchCarryLines(m.oppWeaknesses), str=matchCarryLines(m.oppStrengths), keys=matchCarryLines(m.oppKeyPlayers);
+    if(con)h+='<span class="k">결론</span><span class="v">'+esc(con)+'</span>';
+    if(weak.length)h+='<span class="k in">파고들 것</span><span class="v">'+esc(weak.join(" · "))+'</span>';
+    if(str.length)h+='<span class="k out">조심할 것</span><span class="v">'+esc(str.join(" · "))+'</span>';
+    if(keys.length)h+='<span class="k">키 선수</span><span class="v">'+esc(keys.join(" · "))+'</span>';
+    rows.innerHTML=h||'<span class="empty">상대 분석에 적은 것이 아직 없어요 — 결론·파고들 것·조심할 것이 여기 비칩니다</span>';
+  }
+  document.querySelectorAll(".plan-ref[data-carry]").forEach(function(el){
+    var k=el.getAttribute("data-carry"), v=String(m[k]||"").trim();
+    el.hidden=!v; el.innerHTML=v?('<b>'+esc(MATCH_CARRY_LABEL[k]||"상대")+'</b> · '+esc(v)):"";
+  });
+  var go=$("matchCarryGo"); if(go&&!go.__w){ go.__w=1; go.onclick=function(){ var b=document.querySelector('[data-match-step="opp"]'); if(b)b.click(); }; }
 }
 /* ══ 2.541 · 지난 경기 명단 불러오기 ═══════════════════════════════════════
    일정에는 «내 자동구성»(myTemplates)이 있는데 명단에는 없었다 — 매 경기 11명을
