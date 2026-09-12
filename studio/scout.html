@@ -2749,6 +2749,12 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     .plan-lines .plan-cell{display:flex;flex-direction:column;gap:3px;min-width:0}
     .plan-lines .plan-ref{font-size:11px;line-height:1.35;color:var(--muted);padding-left:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
     .plan-lines .plan-ref b{font-weight:700;color:var(--muted)}
+    /* 2.756 — 상대 분석: 국면 줄의 «장면 ›» 와 장면 카드 머리 */
+    .plan-lines .plan-scene{display:block;margin-top:3px;border:0;background:transparent;color:var(--blue);font:700 11px/1.2 inherit;font-family:inherit;padding:2px 0;cursor:pointer;text-align:left}
+    .plan-lines .plan-scene:hover{text-decoration:underline}
+    #obCard .ob-head{display:flex;flex-direction:column;gap:1px;margin-right:6px;flex:none}
+    #obCard .ob-head b{font-size:13px;font-weight:800;color:var(--txt)} #obCard .ob-head small{font-size:11px;color:var(--muted)}
+    #obCard .mb2-phead{flex-wrap:wrap}
     .match-carry .match-card-head{align-items:center}
     .match-carry .match-card-head .btn{margin-left:auto;flex:none}
     .match-carry-rows{display:grid;grid-template-columns:96px minmax(0,1fr);gap:6px 12px;align-items:start}
@@ -4955,10 +4961,47 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
           </nav>
           <div class="match-panel" id="matchOppPanel">
             <div class="match-grid">
+              <section class="match-card match-card-wide">
+                <div class="match-card-head"><span>01</span><div><b>상대가 국면마다</b><small>한 줄씩 — 경기 준비의 게임플랜 옆에 그대로 비칩니다 · «장면 ›» 은 아래 보드를 그 국면으로</small></div></div>
+                <div class="match-fields plan-lines">
+                  <!-- 2.755 — 국면 이름을 게임플랜과 같은 말로(공격 시 → 볼 소유 시). 저장 필드는 그대로 -->
+                  <label><span>볼 소유 시<button type="button" class="plan-scene" data-obph-go="atk" title="아래 보드를 이 국면으로">장면 ›</button></span><textarea class="inp" rows="1" data-match-field="oppAttack" placeholder="상대가 공을 가졌을 때 — 빌드업·주 공격 루트"></textarea></label>
+                  <label><span>볼 비소유 시<button type="button" class="plan-scene" data-obph-go="def" title="아래 보드를 이 국면으로">장면 ›</button></span><textarea class="inp" rows="1" data-match-field="oppDefense" placeholder="상대가 공이 없을 때 — 수비 대형·압박 방식과 트리거"></textarea></label>
+                  <label><span>공격 전환<button type="button" class="plan-scene" data-obph-go="ta" title="아래 보드를 이 국면으로">장면 ›</button></span><textarea class="inp" rows="1" data-match-field="oppAttackTransition" placeholder="상대의 역습 패턴 — 누가 어디로 뛰나"></textarea></label>
+                  <label><span>수비 전환<button type="button" class="plan-scene" data-obph-go="td" title="아래 보드를 이 국면으로">장면 ›</button></span><textarea class="inp" rows="1" data-match-field="oppDefenseTransition" placeholder="상대가 공을 잃은 직후 — 압박? 후퇴?"></textarea></label>
+                  <label><span>세트피스<button type="button" class="plan-scene" data-obph-go="set" title="아래 보드를 이 국면으로">장면 ›</button></span><textarea class="inp" rows="1" data-match-field="oppSetPlay" placeholder="상대 세트피스 공격·수비 특징"></textarea></label>
+                </div>
+              </section>
+              <section class="match-card">
+                <div class="match-card-head"><span>02</span><div><b>키 선수</b><small>한 줄에 한 명 — 번호·이름·특징 · 기본 3명</small></div></div>
+                <!-- 1.676 — 통짜 텍스트영역 → 한 명씩 줄 입력(기본 3줄, ＋로 추가). 저장은 예전 그대로
+                     oppKeyPlayers 한 필드에 줄바꿈으로 합쳐 들어간다(옛 데이터 그대로 열림). -->
+                <div class="okp" id="okpRows"></div>
+                <button type="button" class="okp-add" id="okpAdd">＋ 키 선수 추가</button>
+              </section>
+              <!-- 1.676 — 상대 분석 마무리 카드 2장(사용자 요청): 장점·단점, 그리고 결론 -->
+              <section class="match-card">
+                <div class="match-card-head"><span>03</span><div><b>이 팀의 장점·단점</b><small>장점 = 우리가 조심할 것 · 단점 = 파고들 것</small></div></div>
+                <!-- 1.682 — 장점·단점도 키 선수처럼 한 줄씩 3개 기본 + 추가(사용자 요청).
+                     저장은 그대로 oppStrengths/oppWeaknesses 한 필드(줄바꿈) — 기존 데이터 호환. -->
+                <div class="match-fields cols-2">
+                  <label>장점<div class="okp" id="oppStrRows"></div><button type="button" class="okp-add" id="oppStrAdd">＋ 장점 추가</button></label>
+                  <label>단점<div class="okp" id="oppWeakRows"></div><button type="button" class="okp-add" id="oppWeakAdd">＋ 단점 추가</button></label>
+                </div>
+              </section>
+              <section class="match-card">
+                <div class="match-card-head"><span>04</span><div><b>결론</b><small>이 분석의 한 줄 결론 — 우리는 어떻게 이긴다</small></div></div>
+                <textarea class="inp match-note" data-match-field="oppConclusion" placeholder="예) 좌측 뒷공간이 열린다 — 7번 침투를 첫 15분에 반복한다"></textarea>
+              </section>
+              <section class="match-card">
+                <div class="match-card-head"><span>05</span><div><b>관찰 메모</b><small>영상 링크·직관 메모</small></div></div>
+                <textarea class="inp match-note" data-match-field="oppNote" placeholder="영상 링크, 지난 맞대결에서 본 것"></textarea>
+              </section>
+              <!-- 2.756 — 보드·트레이·프레임은 «장면» 으로 맨 아래: 국면 5줄이 문이고 보드는 근거(설계 목업 «상대 분석에서 경기 준비까지») -->
               <section class="match-card match-card-wide" id="obCard">
                 <!-- 2.754 — 경기 준비와 같은 우리 팀 트레이(선발·리저브·조별). 같은 m.squad 라 한쪽에서 바꾸면 다른 쪽도 바뀐다. 칩을 끌어 이 운동장에 놓으면 현재 국면·프레임에 토큰이 선다 -->
                 <div class="mb2-tray-row"><span class="mb2-lbl">우리 팀 <u id="obTrayN">0</u></span><span class="mb2-sqmode" id="obSqMode"><button type="button" data-sq="start">선발</button><button type="button" data-sq="res">리저브</button></span><div class="mb2-tray" id="obTray"></div></div>
-                <div class="mb2-phead"><div class="mb2-phases" id="obPhases"></div></div>
+                <div class="mb2-phead"><div class="ob-head"><b>장면</b><small>국면마다 상대 패턴 · ＋프레임 · ▶재생 — 위 줄의 근거</small></div><div class="mb2-phases" id="obPhases"></div></div>
                 <div class="mlb-pitch mb2-pitch" id="obPitch"><svg class="mlb-lines" viewBox="0 0 105 68" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="103" height="66"/><line x1="52.5" y1="1" x2="52.5" y2="67"/><circle cx="52.5" cy="34" r="9.15"/><circle class="spot" cx="52.5" cy="34" r=".5"/><rect x="1" y="13.84" width="16.5" height="40.32"/><rect x="87.5" y="13.84" width="16.5" height="40.32"/><rect x="1" y="24.84" width="5.5" height="18.32"/><rect x="98.5" y="24.84" width="5.5" height="18.32"/><circle class="spot" cx="12" cy="34" r=".5"/><circle class="spot" cx="93" cy="34" r=".5"/><path d="M17.5 26.7 A9.15 9.15 0 0 1 17.5 41.3"/><path d="M87.5 26.7 A9.15 9.15 0 0 0 87.5 41.3"/></svg></div>
                 <!-- 2.400 — 도구줄을 **경기 준비와 같은 문법**으로(사용자 "상대 분석도 경기준비와 보드사용 같은 걸로").
                      ⚠ 프레임·재생은 상대 분석에만 있는 것이라 **지우지 않고** 아랫줄로 내린다.
@@ -4985,42 +5028,6 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                   <button class="btn sm primary" type="button" id="obPlay">▶ 재생</button>
                   <span class="mb2-hint">국면마다 상대 패턴을 배치 · ＋프레임으로 다음 장면을 만들고 ▶로 움직임 재생</span>
                 </div>
-              </section>
-              <section class="match-card match-card-wide">
-                <div class="match-card-head"><span>01</span><div><b>상대 팀 분석</b><small>상대가 어떻게 싸우는지 — 우리 게임플랜의 근거가 됩니다</small></div></div>
-                <div class="match-fields plan-lines">
-                  <!-- 2.755 — 국면 이름을 게임플랜과 같은 말로(공격 시 → 볼 소유 시). 저장 필드는 그대로 -->
-                  <label><span>볼 소유 시</span><textarea class="inp" rows="1" data-match-field="oppAttack" placeholder="상대가 공을 가졌을 때 — 빌드업·주 공격 루트"></textarea></label>
-                  <label><span>볼 비소유 시</span><textarea class="inp" rows="1" data-match-field="oppDefense" placeholder="상대가 공이 없을 때 — 수비 대형·압박 방식과 트리거"></textarea></label>
-                  <label><span>공격 전환</span><textarea class="inp" rows="1" data-match-field="oppAttackTransition" placeholder="상대의 역습 패턴 — 누가 어디로 뛰나"></textarea></label>
-                  <label><span>수비 전환</span><textarea class="inp" rows="1" data-match-field="oppDefenseTransition" placeholder="상대가 공을 잃은 직후 — 압박? 후퇴?"></textarea></label>
-                  <label><span>세트피스</span><textarea class="inp" rows="1" data-match-field="oppSetPlay" placeholder="상대 세트피스 공격·수비 특징"></textarea></label>
-                </div>
-              </section>
-              <section class="match-card">
-                <div class="match-card-head"><span>02</span><div><b>키 선수</b><small>한 줄에 한 명 — 번호·이름·특징 · 기본 3명</small></div></div>
-                <!-- 1.676 — 통짜 텍스트영역 → 한 명씩 줄 입력(기본 3줄, ＋로 추가). 저장은 예전 그대로
-                     oppKeyPlayers 한 필드에 줄바꿈으로 합쳐 들어간다(옛 데이터 그대로 열림). -->
-                <div class="okp" id="okpRows"></div>
-                <button type="button" class="okp-add" id="okpAdd">＋ 키 선수 추가</button>
-              </section>
-              <section class="match-card">
-                <div class="match-card-head"><span>03</span><div><b>관찰 메모</b><small>영상 링크·직관 메모</small></div></div>
-                <textarea class="inp match-note" data-match-field="oppNote" placeholder="영상 링크, 지난 맞대결에서 본 것"></textarea>
-              </section>
-              <!-- 1.676 — 상대 분석 마무리 카드 2장(사용자 요청): 장점·단점, 그리고 결론 -->
-              <section class="match-card">
-                <div class="match-card-head"><span>04</span><div><b>이 팀의 장점·단점</b><small>우리가 조심할 것과 파고들 것</small></div></div>
-                <!-- 1.682 — 장점·단점도 키 선수처럼 한 줄씩 3개 기본 + 추가(사용자 요청).
-                     저장은 그대로 oppStrengths/oppWeaknesses 한 필드(줄바꿈) — 기존 데이터 호환. -->
-                <div class="match-fields cols-2">
-                  <label>장점<div class="okp" id="oppStrRows"></div><button type="button" class="okp-add" id="oppStrAdd">＋ 장점 추가</button></label>
-                  <label>단점<div class="okp" id="oppWeakRows"></div><button type="button" class="okp-add" id="oppWeakAdd">＋ 단점 추가</button></label>
-                </div>
-              </section>
-              <section class="match-card">
-                <div class="match-card-head"><span>05</span><div><b>결론</b><small>이 분석의 한 줄 결론 — 우리는 어떻게 이긴다</small></div></div>
-                <textarea class="inp match-note" data-match-field="oppConclusion" placeholder="예) 좌측 뒷공간이 열린다 — 7번 침투를 첫 15분에 반복한다"></textarea>
               </section>
             </div>
           </div>
@@ -15644,12 +15651,17 @@ function obFramesPaint(m){
       +((i===b.cur&&b.frames.length>1&&matchCanEdit())?'<u class="ob-fx" data-fx="'+i+'">×</u>':'')+'</button>';
   }).join("");
 }
+var OB_PHASE_LABEL={atk:"볼 소유 시",def:"볼 비소유 시",ta:"공격 전환",td:"수비 전환",set:"세트피스"};   /* 2.756 — 표시만, 저장 라벨은 그대로 */
 function obPhasesPaint(m){
   var pb=obEnsure(m),el=$("obPhases"); if(!el)return;
   el.innerHTML=pb.list.map(function(ph){
-    return '<button type="button" data-obph="'+esc(ph[0])+'" class="'+(ph[0]===pb.cur?"on":"")+'">'+esc(ph[1])+'</button>';
+    return '<button type="button" data-obph="'+esc(ph[0])+'" class="'+(ph[0]===pb.cur?"on":"")+'">'+esc(OB_PHASE_LABEL[ph[0]]||ph[1])+'</button>';
   }).join("");
 }
+/* 2.756 — 국면 줄의 «장면 ›»: 아래 보드를 그 국면으로 열고 스크롤 */
+function obGoPhase(key){ try{ var m=matchGet(); if(!m)return; var pb=obEnsure(m); if(pb.list.some(function(ph){return ph[0]===key;})){ pb.cur=key; obSave(); obPhasesPaint(m); obDraw(m); }
+  var card=$("obCard"); if(card)card.scrollIntoView({behavior:"smooth",block:"start"}); }catch(_){} }
+try{ document.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-obph-go]"); if(!b)return; e.preventDefault(); obGoPhase(b.getAttribute("data-obph-go")); }); }catch(_){}
 function obPlayToggle(m){
   var b=obCur(m),btn=$("obPlay"),pit=$("obPitch");
   if(window.__obPlaying){window.__obPlaying=false;return;}
