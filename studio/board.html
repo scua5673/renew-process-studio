@@ -4153,7 +4153,7 @@ const FORM={
          [.30,.30,8,"LCM"],[.26,.50,6,"DM"],[.30,.70,10,"RCM"],
          [.45,.20,7,"LW"],[.46,.50,9,"ST"],[.45,.80,11,"RW"]],
   "4231":[[.045,.5,1,"GK"],[.15,.15,3,"LB"],[.15,.38,4,"LCB"],[.15,.62,5,"RCB"],[.15,.85,2,"RB"],
-          [.24,.40,6,"DM"],[.24,.60,8,"DM"],
+          [.24,.40,6,"LDM"],[.24,.60,8,"RDM"],
           [.38,.20,7,"LM"],[.40,.50,10,"AM"],[.38,.80,11,"RM"],[.46,.50,9,"ST"]],
   "352":[[.045,.5,1,"GK"],[.15,.30,4,"LCB"],[.15,.50,5,"CB"],[.15,.70,6,"RCB"],
          [.26,.12,3,"LWB"],[.32,.34,8,"LCM"],[.30,.50,10,"CM"],[.32,.66,7,"RCM"],[.26,.88,2,"RWB"],
@@ -6905,7 +6905,7 @@ const EDRAFT_KEY="cs_editor_draft_v1";
 const EWORK_KEY="cs_editor_work_v1";
 let matchActive=false;
 let _bliveT=null;
-function autoSaveAnimFrame(){try{var __ab=document.getElementById("animBar");if(__ab&&__ab.classList.contains("on")&&typeof animPlaying!=="undefined"&&!animPlaying&&!document.body.classList.contains("meet-mode")&&typeof anim!=="undefined"&&anim.frames&&anim.frames.length&&animActive>=0&&animActive<anim.frames.length){anim.frames[animActive].snap=captureSnap();try{if(!sel&&!(typeof multiSel!=="undefined"&&multiSel&&multiSel.length))anim.frames[animActive].thumb=boardThumbSVG();}catch(_){}try{renderAnimFrames();}catch(_){}}}catch(_){}}
+function autoSaveAnimFrame(){try{var __ab=document.getElementById("animBar");if(__ab&&__ab.classList.contains("on")&&typeof animPlaying!=="undefined"&&!animPlaying&&!window.__animExport&&!document.body.classList.contains("meet-mode")&&typeof anim!=="undefined"&&anim.frames&&anim.frames.length&&animActive>=0&&animActive<anim.frames.length){anim.frames[animActive].snap=captureSnap();try{if(!sel&&!(typeof multiSel!=="undefined"&&multiSel&&multiSel.length))anim.frames[animActive].thumb=boardThumbSVG();}catch(_){}try{renderAnimFrames();}catch(_){}}}catch(_){}}
 function _boardLiveWriteNow(recovery){
   if(window.__capLock)return null;
   /* 1.962 — 훈련 편집기가 열려 있는 동안은 라이브 보드를 쓰지 않는다(사용자: 업데이트하면 피치가 자꾸 바뀜).
@@ -6916,6 +6916,11 @@ function _boardLiveWriteNow(recovery){
   var v=(window.__csView||"board");
   if(v==="session")return null;
   if(typeof animPlaying!=="undefined"&&animPlaying)return null;
+  /* ══ 2.752 · 영상·GIF 내보내기 중엔 쓰지 않는다(코치 피드백 «장면 2 로 돌아가 고치면 나머지 선수 위치가 랜덤으로»).
+     내보내기는 animPlaying 없이 renderInterp 로 **두 장면 사이의 중간 좌표**를 화면에 올린 채 프레임마다 await 로 쉰다.
+     그 사이 마지막 편집이 남긴 400ms 타이머·탭 전환(visibilitychange)·다른 UI 동작이 여기로 오면
+     anim.frames[animActive].snap 에 중간 좌표가 그대로 찍혔다 — 셸에서 재현(장면 2 의 선수 6명 좌표 변경). */
+  if(window.__animExport)return null;
   try{
     var __ab=document.getElementById("animBar");
     if(__ab&&__ab.classList.contains("on")&&!animPlaying&&!document.body.classList.contains("meet-mode")&&anim.frames.length&&animActive>=0&&animActive<anim.frames.length){
@@ -6971,6 +6976,7 @@ function boardSaveLive(){
   try{if(document.body.classList.contains("editing"))_schedEditorDraft();}catch(_){}
   var v=(window.__csView||"board");
   if(v==="session")return;
+  if(window.__animExport)return;   /* 2.752 — 내보내기 중간 좌표는 뷰 스냅에도 라이브에도 안 찍는다(끝나면 exportVideo/exportGif 가 한 번 부른다) */
   if((v==="board"||v==="match")&&!window.__vaultEdit&&!document.body.classList.contains("editing")){   /* 1.962 — 편집 중엔 뷰 스냅도 편집기 화면으로 덮지 않는다 */
     try{window.__viewSnaps=window.__viewSnaps||{};window.__viewSnaps[v]=captureSnap();}catch(_){}
   }
@@ -7536,7 +7542,7 @@ window.__animFrames=function(){ try{
           재생 중(animPlaying)만이 아니라 **애니 모드가 아닐 때도** 찍으면 안 된다. */
     var __ab=document.getElementById("animBar");
     var __inAnim=!!(__ab&&__ab.classList.contains("on"))&&!document.body.classList.contains("meet-mode");
-    if(__inAnim&&!animPlaying&&animActive>=0&&animActive<anim.frames.length){ try{anim.frames[animActive].snap=captureSnap();}catch(_){} }
+    if(__inAnim&&!animPlaying&&!window.__animExport&&animActive>=0&&animActive<anim.frames.length){ try{anim.frames[animActive].snap=captureSnap();}catch(_){} }   /* 2.752 — 내보내기 중 제외 */
     var arr=JSON.parse(JSON.stringify(anim.frames));
     /* 2.559 — 저장본엔 장면 0 의 썸네일만 남긴다. 나머지는 파생물이라 불러올 때 보이는 칸부터
        __snapToThumb 로 다시 만든다(__afWindow). 장면 100개 카드가 7.4MB→0.4MB — 보관함 전체를
@@ -7671,11 +7677,11 @@ function __afWindow(force){
          실측: 1000 장면이면 썸네일 문자열만 140MB — DOM 을 묶어도 이건 N 에 비례한다.
          다시 보이면 위 idle 경로가 __snapToThumb 로 되살린다(한 태스크 안이라 화면엔 안 비친다). */
       if(f.thumb&&i!==0&&i!==animActive&&(i<i0-32||i>i1+32))f.thumb=""; } }
-  if(missing.length&&!__afIdle&&!_afDragging&&!(typeof animPlaying!=="undefined"&&animPlaying)&&window.__snapToThumb){
+  if(missing.length&&!__afIdle&&!_afDragging&&!(typeof animPlaying!=="undefined"&&animPlaying)&&!(typeof psDragging==="function"&&psDragging())&&window.__snapToThumb){   /* 2.752 — 토큰 드래그 중 제외 */
     /* ⚠ timeout 없는 idle 은 바쁠 때 1초 넘게 미뤄져 끝으로 스크롤한 뒤 250ms 에도 빈 칸이었다(실측).
        120ms 안엔 반드시 돌고, 한 번에 셋씩 만든다(한 장 ≈ loadSnap 두 번, 수 ms). */
     var _ric=window.requestIdleCallback?function(cb){return requestIdleCallback(cb,{timeout:120});}:function(cb){return setTimeout(cb,60);};
-    __afIdle=_ric(function(){ __afIdle=0; try{ if(_afDragging||(typeof animPlaying!=="undefined"&&animPlaying))return;
+    __afIdle=_ric(function(){ __afIdle=0; try{ if(_afDragging||(typeof animPlaying!=="undefined"&&animPlaying)||(typeof psDragging==="function"&&psDragging())||window.__animExport)return;
       var made=0; for(var m=0;m<missing.length&&made<3;m++){ var fr=anim.frames[missing[m]]; if(!fr||fr.thumb)continue; var t=window.__snapToThumb(fr.snap||{}); if(t){ fr.thumb=t; made++; } }
       if(made)__afWindow(); }catch(_){ } });
   }
@@ -7860,7 +7866,15 @@ function drawBoardToCanvas(ctx,canvas,vbFix,dest){return new Promise(res=>{
     else { ctx.fillStyle=getCss("--grass-b")||"#1d8a47"; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0,canvas.width,canvas.height); }
     res();};
   img.onerror=()=>res();img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(xml);});}
-async function exportVideo(opts){
+/* 2.752 — 내보내기 동안 __animExport 를 켜고, 어떤 경로로 끝나든(예외 포함) 판을 되돌리고 라이브 저장을 한 번 다시 건다 */
+async function _animExportGuard(run){
+  var restore=null; try{ stopAnim(); restore=captureSnap(); }catch(_){}
+  window.__animExport=1;
+  try{ return await run(); }
+  finally{ window.__animExport=0; try{ if(restore)loadSnap(restore); }catch(_){} try{renderOnion();updateMotionPaths();}catch(_){} try{renderAnimFrames();}catch(_){} try{boardSaveLive();}catch(_){} }
+}
+async function exportVideo(opts){ return _animExportGuard(function(){ return _exportVideoRun(opts); }); }
+async function _exportVideoRun(opts){
   if(!psVaultRequireLogin())return;
   opts=opts||{};
   if(anim.frames.length<2){toast("장면을 2개 이상 만들어주세요");return;}
@@ -8085,7 +8099,8 @@ function _gifBakeOverlay(ctx,W,H,cap,idx,N,title,titleColor){
   }
   ctx.restore();
 }
-async function exportGif(){
+async function exportGif(){ return _animExportGuard(_exportGifRun); }
+async function _exportGifRun(){
   if(!psVaultRequireLogin())return;
   if(anim.frames.length<2){toast("장면을 2개 이상 만들어주세요");return;}
   stopAnim();const restore=captureSnap();
@@ -8843,7 +8858,25 @@ function closeSessLib(){document.getElementById("sessLib").classList.remove("on"
 /* ===== 선수단(팀) 매니저 ===== */
 let squad={name:"우리 선수단",players:[]};
 const TEAM_KEY="cs_squad_v1";
-const SQ_POS=["GK","CB","LCB","RCB","LB","RB","DM","CM","AM","CF","LW","RW"];
+/* 2.752 — 세부 포지션(코치 피드백 «CM·RCM·LCM·LDM·RDM 같은 세부 포지션이 없어 한쪽에 몰린다»).
+   포메이션 자리 라벨(LCM·RCM·LWB·RWB·LM·RM·ST)과 편집기 목록이 서로 달라 «자리 없음»으로 떨어지던 것을 한 목록으로 맞춘다.
+   posCode: 어떤 표기(코드·한글 이름·스카우트 사용자 정의 이름)든 코드 하나로. posBase: 세부 → 기본(LCM→CM, LDM→DM …). */
+const SQ_POS=["GK","LB","LCB","CB","RCB","RB","LWB","RWB","LDM","DM","RDM","LCM","CM","RCM","LM","RM","AM","LW","ST","CF","RW"];
+const POS_SET={}; SQ_POS.forEach(function(k){POS_SET[k]=1;}); POS_SET.FB=1; POS_SET.W=1;
+function posCode(v){ var t=String(v||"").trim(); if(!t)return ""; var K=t.toUpperCase().replace(/[^A-Z]/g,""); if(POS_SET[K])return K;
+  var s=t.toLowerCase(), L=/좌|왼|left/.test(s), R=/우|오른|right/.test(s);
+  if(/gk|골키퍼|키퍼|골리/.test(s))return "GK";
+  if(/cb|센터백|중앙\s*수비|스토퍼|중앙백/.test(s))return L?"LCB":(R?"RCB":"CB");
+  if(/풀백|윙백|fb|wb|측면\s*수비|사이드백/.test(s))return L?"LB":(R?"RB":"FB");
+  if(/수비형|dm|홀딩|앵커|6번/.test(s))return L?"LDM":(R?"RDM":"DM");
+  if(/공격형|am|10번|플레이메이커/.test(s))return "AM";
+  if(/윙|wing|wg/.test(s))return L?"LW":(R?"RW":"W");
+  if(/스트라이커|공격수|fw|\bst\b|\bcf\b|9번|타겟/.test(s))return "ST";
+  if(/중앙|미드|미들|cm|mf|8번/.test(s))return L?"LCM":(R?"RCM":"CM");
+  return K; }
+function posBase(v){ v=posCode(v); if(/^(L|R)?CB$/.test(v))return"CB"; if(/^(L|R)?CM$/.test(v))return"CM"; if(/^(L|R)?DM$/.test(v))return"DM";
+  if(v==="CF")return"ST"; if(v==="LWB")return"LB"; if(v==="RWB")return"RB"; return v; }
+function posGroup(v){ v=posCode(v); if(!v)return""; if(v==="GK")return"GK"; if(/CB|LB|RB|WB|FB/.test(v))return"DF"; if(/DM|CM|AM|LM|RM/.test(v))return"MF"; return"FW"; }
 async function squadLoad(){try{var ls=localStorage.getItem("cs_squad_v1");if(ls){var o=JSON.parse(ls);if(o&&Array.isArray(o.players)){squad=o;return;}}}catch(_){}try{const s=await store.get(TEAM_KEY);if(s&&Array.isArray(s.players))squad=s;}catch(_){}}
 function squadSave(){try{store.set(TEAM_KEY,squad);}catch(_){}try{localStorage.setItem("cs_squad_v1",JSON.stringify(squad));}catch(_){}if($("squadCount"))$("squadCount").textContent=(squad.players.length)+"명";}
 function renderSquad(){const box=$("squadList");if(!box)return;box.innerHTML="";
@@ -8855,7 +8888,8 @@ function renderSquad(){const box=$("squadList");if(!box)return;box.innerHTML="";
     const num=document.createElement("input");num.className="inp c-num";num.value=pl.num??"";num.placeholder="#";num.oninput=()=>{pl.num=num.value;squadSave();};
     const name=document.createElement("input");name.className="inp c-name";name.value=pl.name||"";name.placeholder="이름";name.oninput=()=>{pl.name=name.value;squadSave();};
     const pos=document.createElement("select");pos.className="inp c-pos";
-    {const e0=document.createElement("option");e0.value="";e0.textContent="포지션";pos.appendChild(e0);SQ_POS.forEach(p=>{const o=document.createElement("option");o.value=p;o.textContent=p;pos.appendChild(o);});}
+    {const e0=document.createElement("option");e0.value="";e0.textContent="포지션";pos.appendChild(e0);SQ_POS.forEach(p=>{const o=document.createElement("option");o.value=p;o.textContent=p;pos.appendChild(o);});
+     if(pl.pos&&SQ_POS.indexOf(pl.pos)<0){const ox=document.createElement("option");ox.value=pl.pos;ox.textContent=pl.pos;pos.appendChild(ox);}}   /* 2.752 — 목록 밖 표기도 비지 않게 */
     pos.value=pl.pos||"";pos.onchange=()=>{pl.pos=pos.value;squadSave();};
     const foot=document.createElement("select");foot.className="inp c-foot";
     [["","주발"],["L","왼발"],["R","오른발"],["B","양발"]].forEach(([v,t])=>{const o=document.createElement("option");o.value=v;o.textContent=t;foot.appendChild(o);});
@@ -8886,23 +8920,33 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   if(opts.startersOnly||opts.byPosition!==false){   /* 2.683 — 조·전체 불러오기도 포지션대로 자동 배치(사용자). 11명은 포메이션 자리, 나머지는 오른쪽 대기줄 */
     var formEl=document.getElementById("formHome"),formKey=(formEl&&formEl.value)||squad.form||"433";
     var slots=(FORM[formKey]||FORM["433"]||[]).slice(0,11),pool=sq.filter(function(p){return p&&String(p.name||"").trim();}),picked=[];
-    function normPos(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");}
-    function groupPos(v){v=normPos(v);if(v==="GK")return"GK";if(/CB|LB|RB|WB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";}
+    var normPos=posCode, groupPos=posGroup;   /* 2.752 — 한글·사용자 정의 이름도 코드로 */
     /* 2.699 — 조·전체 불러오기는 **정확히 자기 포지션**으로만(사용자 "빈자리를 억지로 채우지 말고 정확히 자기 포지션으로").
        LCB·RCB·CB 는 한 포지션(CB), LCM·RCM·CM 도 하나(CM), ST·CF 도 하나(ST)로 본다. 맞는 자리가 없으면 그 자리는 비워 두고,
        포메이션에 없는 포지션(예: 433 의 LM)은 그 포지션의 기본 자리에 선다. 포지션이 없는 선수만 오른쪽 대기줄. 선발(startersOnly)만 예전처럼 채운다. */
-    function basePos(v){ v=normPos(v); if(/^(L|R)?CB$/.test(v))return"CB"; if(/^(L|R)?CM$/.test(v))return"CM"; if(v==="CF")return"ST"; if(v==="LWB")return"LB"; if(v==="RWB")return"RB"; return v; }
+    var basePos=posBase;
     var extra=[];
     if(opts.startersOnly){
       slots.forEach(function(sl){
         var want=normPos(sl[3]),idx=pool.findIndex(function(p){return normPos(p.pos)===want;});
+        if(idx<0)idx=pool.findIndex(function(p){return basePos(p.pos)===basePos(want);});   /* 2.752 — 세부↔기본(CM↔LCM, DM↔LDM) 다음 */
         if(idx<0)idx=pool.findIndex(function(p){return groupPos(p.pos)===groupPos(want);});
         if(idx<0&&pool.length)idx=0;
         picked.push(idx>=0?pool.splice(idx,1)[0]:null);
       });
     } else {
       picked=slots.map(function(){return null;});
-      pool.forEach(function(p){ var b=basePos(p.pos); var i=-1; if(b){ i=slots.findIndex(function(sl,j){return !picked[j]&&basePos(sl[3])===b;}); }
+      /* 2.752 — 두 번 돈다: ① 정확히 같은 자리(LCM 은 LCM, RCB 는 RCB) ② 세부↔기본(CM 은 남은 LCM/RCM, LDM 은 남은 DM).
+         전에는 기본 접기만 해서 RCB 로 등록한 선수가 명단 순서 때문에 LCB 자리에 서고, 그 뒤 진짜 LCB 가 밀려났다. */
+      var left=[];
+      pool.forEach(function(p){ var c=normPos(p.pos), i=-1; if(c){ i=slots.findIndex(function(sl,j){return !picked[j]&&normPos(sl[3])===c;}); }
+        if(i>=0)picked[i]=p; else left.push(p); });
+      var left2=[];
+      left.forEach(function(p){ var b=basePos(p.pos), i=-1; if(b){ i=slots.findIndex(function(sl,j){return !picked[j]&&basePos(sl[3])===b;}); }
+        if(i>=0)picked[i]=p; else left2.push(p); });
+      /* ③ 같은 쪽 측면(LW↔LM, RW↔RM) — 4-2-3-1 의 측면 자리는 LM/RM 인데 선수는 LW/RW 로 등록돼 있는 경우 */
+      var WING={LW:"LM",LM:"LW",RW:"RM",RM:"RW"};
+      left2.forEach(function(p){ var c=normPos(p.pos), alt=WING[c], i=-1; if(alt){ i=slots.findIndex(function(sl,j){return !picked[j]&&normPos(sl[3])===alt;}); }
         if(i>=0)picked[i]=p; else extra.push(p); });
       pool=[];
     }
@@ -8917,10 +8961,10 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   try{ var _tl=tokScaleLevels(), _tw=Math.round(_tl[2]*100)/100; if((state.tokenScale||_tl[0])<_tw-0.001)state.tokenScale=_tw; }catch(_){}
   /* 맨 오른쪽 대기 정렬 — 위에서부터 GK → 수비 → 미드필더 → 공격수 한 줄씩.
      포메이션 자리가 아니라 "끌어다 쓰는 출발 대형"이라 코치가 원하는 곳으로 바로 배치한다. */
-  const GRP={GK:["GK"],DF:["CB","LCB","RCB","LB","RB"],MF:["DM","CM","AM","LM","RM"],FW:["CF","ST","LW","RW"]};
+  const GRP={GK:["GK"],DF:["CB","LCB","RCB","LB","RB","LWB","RWB","FB"],MF:["DM","LDM","RDM","CM","LCM","RCM","AM","LM","RM"],FW:["CF","ST","LW","RW","W"]};   /* 2.752 — 세부 포지션 포함 */
   const ROW_Y={GK:0.13,DF:0.37,MF:0.61,FW:0.85};
   const bucket={GK:[],DF:[],MF:[],FW:[]},rest=[];
-  sq.forEach(pl=>{const k=(pl.pos||"").toUpperCase();
+  sq.forEach(pl=>{const k=posCode(pl.pos);
     const g=Object.keys(GRP).find(gk=>GRP[gk].indexOf(k)>=0);
     if(g)bucket[g].push(pl);else rest.push(pl);});
   const numv=pl=>{const n=parseInt(pl.num,10);return isNaN(n)?999:n;};
@@ -8956,14 +9000,13 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   };
   /* 2.683 — 포메이션 밖 선수(12번째부터)는 오른쪽 대기줄(GK→DF→MF→FW, 미지정은 맨 아래) */
   function _placeWaiting(list){ var b={GK:[],DF:[],MF:[],FW:[]},r=[];
-    list.forEach(pl=>{const k=(pl.pos||"").toUpperCase();const g=Object.keys(GRP).find(gk=>GRP[gk].indexOf(k)>=0);if(g)b[g].push(pl);else r.push(pl);});
+    list.forEach(pl=>{const k=posCode(pl.pos);const g=Object.keys(GRP).find(gk=>GRP[gk].indexOf(k)>=0);if(g)b[g].push(pl);else r.push(pl);});
     ["GK","DF","MF","FW"].forEach(g=>{b[g].sort((a,c)=>numv(a)-numv(c)).forEach((pl,j)=>{put(pl,0.955-j*0.055,ROW_Y[g],gi++);});});
     r.forEach((pl,j)=>{put(pl,0.955-j*0.055,0.965,gi++);}); }
   /* 2.698 — 조·전체 불러오기: 11명 뒤의 선수는 오른쪽 대기줄이 아니라 **같은 포지션 자리 뒤로 줄줄이**(사용자 "11명만이 아니고 선수들이 줄줄이 포지션별로 따라오게").
      자기 골문 쪽으로 한 칸씩(0.068), 자리가 없으면(GK·끝줄) 앞쪽으로 이어 선다. 같은 포지션 자리가 여럿(LCB·RCB)이면 덜 찬 자리부터. */
   function _queueBySlot(extra,place){ var slots=opts.formationSlots||[], cnt=slots.map(function(){return 0;}), step=0.068;   /* 세로 보기(폰·아이패드)에서 토큰 지름이 0.05 쯤이라 0.052 는 붙는다(실측) */
-    function np(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");}
-    function bp(v){ v=np(v); if(/^(L|R)?CB$/.test(v))return"CB"; if(/^(L|R)?CM$/.test(v))return"CM"; if(v==="CF")return"ST"; if(v==="LWB")return"LB"; if(v==="RWB")return"RB"; return v; }
+    var np=posCode, bp=posBase;   /* 2.752 */
     /* 2.699 — 포메이션에 그 포지션 자리가 없을 때 서는 기본 자리(가로 기준 정규 좌표) */
     var DEF={GK:[.045,.5],LB:[.15,.15],CB:[.15,.5],RB:[.15,.85],DM:[.24,.5],LM:[.30,.16],CM:[.30,.5],RM:[.30,.84],AM:[.37,.5],LW:[.44,.18],ST:[.44,.5],RW:[.44,.82]};
     var dcnt={}, rest2=[];
@@ -12150,7 +12193,7 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
   if($("squadBtn"))$("squadBtn").onclick=openSquad;
   if($("squadClose"))$("squadClose").onclick=closeSquad;
   if($("squadAdd"))$("squadAdd").onclick=squadAddPlayer;
-  if($("squadApply"))$("squadApply").onclick=applySquadToBoard;
+  if($("squadApply"))$("squadApply").onclick=function(){applySquadToBoard({});};   /* 2.752 — MouseEvent 가 opts 로 들어가 formationSlots 등이 이벤트 객체에 쓰이던 것 */
   /* 더보기 → 팀 선수 불러오기: 등록된 선수단을 포지션대로 작전판/에디터에 배치(원클릭) */
   if($("loadSquadBtn"))$("loadSquadBtn").onclick=function(){try{document.querySelectorAll(".popmenu.on").forEach(function(m){m.classList.remove("on");});}catch(_){}loadTeamToBoard(true);};
   if($("squadName"))$("squadName").oninput=e=>{squad.name=e.target.value;squadSave();};
@@ -12591,6 +12634,7 @@ window.__importSessionDrills=function(drills){
    중간에 실패하면 사용자의 작업판이 남의 배치인 채로 남는다 → 되돌리기는 반드시 finally 에서(1.526). */
 window.__snapToThumb=function(snap,opts){
   if(!world)return "";
+  try{ if(psDragging()||window.__animExport)return ""; }catch(_){}   /* 2.752 — 드래그·내보내기 중엔 판을 갈아끼우지 않는다(끌던 토큰이 고아가 되고 썸네일이 다른 장면에 붙었다) */
   var cur=null;
   try{ cur=captureSnap(); }catch(_){ return ""; }
   /* 2.710 — opts.tokenScale: 저장된 스냅의 토큰 크기 대신 지금 크기로 그린다(PDF 가 «지금 보는 크기»를 따르게) */
