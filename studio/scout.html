@@ -860,6 +860,12 @@ body.sb-meet.sb-fs #sbWrap.sb-wrap .pitch-svg{height:calc(100vh - 56px);}
 .sb-box{background:var(--bar);border:1px solid var(--line);border-radius:10px;padding:4px;
   display:flex;flex-direction:column;gap:3px;box-shadow:var(--shadow-md);}
 .sb-slot.over .sb-box{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue);}
+/* 2.762 — 카드 모드: 머리의 포지션 고르기, 개수, 포메이션 셀렉트·＋자리 숨김 */
+.sb-head select.sb-pos{flex:1;min-width:0;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--txt);font:800 var(--fs-caption,11px)/1.3 inherit;font-family:inherit;padding:1px 2px;cursor:pointer}
+.sb-head select.sb-pos:hover,.sb-head select.sb-pos:focus{border-color:var(--blue);background:var(--bar2)}
+.sb-head .sb-n{margin-left:auto;text-decoration:none;color:var(--dim);font-weight:800;font-size:10px;font-variant-numeric:tabular-nums}
+body.sb-cards #sbForms,body.sb-cards #sbAdd{display:none!important}
+@media(min-width:761px){ body.sb-cards .sc-form-lab{display:none} }
 .sb-slot.moving{z-index:50;}
 .sb-head{display:flex;align-items:center;gap:3px;}
 .sb-grip{flex:0 0 auto;width:15px;height:20px;display:grid;place-items:center;cursor:grab;color:var(--dim);
@@ -5369,7 +5375,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
 
     <section class="view" id="reportView">
       <div class="card">
-        <div class="tm-head"><div class="ps-share-line" id="tgShareLine" style="display:none"></div><div class="tm-head-top"><span class="t">스카우트 대상</span><span class="muted" id="tgtCount" style="font-size:12px"></span><span style="margin-left:auto;display:inline-flex;align-items:center;gap:8px"><button class="btn primary" id="sTmAdd">＋ 대상 추가</button><button class="btn sm" id="sRosterBtn" title="스카우트 대상 명단 출력" style="height:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg>명단</button></span></div><div class="tm-head-set"><label class="tm-set-it">포메이션<select class="inp" id="scoutForm" style="width:auto;min-width:104px;height:34px;font-weight:600;font-size:13px"></select></label><label class="tm-set-it">유니폼<span class="kit-sw"><input type="color" id="sKitMain" title="유니폼 색"></span></label><label class="tm-set-it">GK<span class="kit-sw"><input type="color" id="sKitGk" title="GK 색"></span></label></div></div>
+        <div class="tm-head"><div class="ps-share-line" id="tgShareLine" style="display:none"></div><div class="tm-head-top"><span class="t">스카우트 대상</span><span class="muted" id="tgtCount" style="font-size:12px"></span><span style="margin-left:auto;display:inline-flex;align-items:center;gap:8px"><button class="btn primary" id="sTmAdd">＋ 대상 추가</button><button class="btn sm" id="sRosterBtn" title="스카우트 대상 명단 출력" style="height:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg>명단</button></span></div><div class="tm-head-set"><label class="tm-set-it sc-form-lab">포메이션<select class="inp" id="scoutForm" style="width:auto;min-width:104px;height:34px;font-weight:600;font-size:13px"></select></label><label class="tm-set-it">유니폼<span class="kit-sw"><input type="color" id="sKitMain" title="유니폼 색"></span></label><label class="tm-set-it">GK<span class="kit-sw"><input type="color" id="sKitGk" title="GK 색"></span></label></div></div>
         <div class="tm-split">
           <div id="rPitch" class="posfield"></div>
           <div class="tm-roster">
@@ -6957,10 +6963,17 @@ function sbFormLabel(k){
   if(c) return c.name||k;
   return String(k).replace(/(\d)(?=\d)/g,"$1-");
 }
-function sbSlots(){ return tmFormSlotsAdj(sbForm()); }
+/* ══ 2.762 · 스카우팅 보드도 포지션 카드 열한 장(사용자 «스카우팅도 똑같이»). 팀 구성의 카드 11장(tbCards·tbXY)이 그대로 자리다 —
+   포지션 고르기도, 끌어 둔 좌표도 두 보드가 같은 것을 읽고 쓴다. 카드가 없는 팀(옛 자료)은 예전처럼 포메이션 표. */
+function sbCardsMode(){ try{ return !!(typeof tbCardSlotsTm==="function"&&tbCardSlotsTm()); }catch(_){ return false; } }
+function sbSlots(){ if(sbCardsMode()){ var cs=tbCardSlotsTm(); return cs.map(function(sl){return [sl[0],sl[1],sl[2],sl[3]];}); } return tmFormSlotsAdj(sbForm()); }
 /* 자리를 옮기거나 이름을 바꾸면 팀 화면이 쓰는 그 자리에 그대로 기록한다. */
 function sbWriteSlot(i,x,y,label){
   data.meta=data.meta||{}; data.meta.formPos=data.meta.formPos||{};
+  if(sbCardsMode()){ /* 2.762 — 카드 좌표(tbXY)로: 저장용 세로 좌표(x'=tb.y, y'=100-tb.x) → 팀 구성 좌표 */
+    var id=tbCards()[i]; if(!id)return; var xy=tbXYStore(), cur0=xy[id]||{x:100-(+sbSlots()[i][2]||50),y:+sbSlots()[i][1]||50};
+    var r1=function(v){ return Math.round(v*10)/10; };
+    xy[id]={x:y==null?cur0.x:r1(100-y),y:x==null?cur0.y:r1(x)}; return; }
   var f=sbForm(), base=tmFormSlots(f);
   var cur=(data.meta.formPos[f]||[]).slice();
   for(var k=0;k<base.length;k++) if(!cur[k]) cur[k]=[base[k][1],base[k][2]];
@@ -7000,7 +7013,7 @@ function sbView(sl){
 }
 function sbStore(vx,vy){ return {x:vy, y:100-vx}; }
 /* 이 자리에 해당하는 포지션(있으면) — 적합도 계산의 기준이 된다. */
-function sbPosOf(sl,i){ return scoutPositionByCode(sl[0]); }
+function sbPosOf(sl,i){ if(sbCardsMode()){ var id=tbCards()[i]; return (data.positions||[]).find(function(x){return x.id===id;})||null; } return scoutPositionByCode(sl[0]); }   /* 2.762 — 카드 모드는 그 카드의 포지션 그대로 */
 /* ══ 1.632 · 같은 포지션 자리가 둘일 때 ═══════════════════════════════════════
    4-4-2 는 CF 자리가 둘이다(TM_FORMS "442": ["CF",38,13],["CF",62,13]). 그런데 선수는
    posId(포지션) 하나로만 자리에 붙어서, **한 명을 넣어도 두 카드에 똑같이 떴다.**
@@ -7203,6 +7216,7 @@ function renderScoutBoard(){
   var wrap=$("sbWrap"); if(!wrap) return;
   try{ renderSbGrpChips(); }catch(_){}
   /* 포메이션이 10개가 넘어 버튼으로 늘어놓으면 한 줄을 다 잡아먹는다. */
+  try{ document.body.classList.toggle("sb-cards",sbCardsMode()); }catch(_){}   /* 2.762 — 카드 모드: 포메이션 셀렉트·＋자리 숨김(CSS) */
   var seg=$("sbForms");
   if(seg) seg.innerHTML=sbFormList().map(function(k){
     return '<option value="'+PSSafe.html(k)+'"'+(k===sbForm()?' selected':'')+'>'
@@ -7256,8 +7270,10 @@ function renderScoutBoard(){
     el.style.left=v.x+"%"; el.style.top=v.y+"%";
     el.innerHTML='<div class="sb-box"><div class="sb-head">'
       +'<span class="sb-grip" data-sbgrip="'+i+'" title="끌어서 자리 이동" aria-label="자리 이동"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14" style="display:block;pointer-events:none" aria-hidden="true"><path d="M8 6h8M8 12h8M8 18h8"/></svg></span>'
-      +'<input class="sb-lab" value="'+PSSafe.html(sbSlotLabel(sl,i))+'" data-sblab="'+i+'" aria-label="포지션 이름">'
-      +'<button type="button" class="sb-x" data-sbdel="'+i+'" title="이 자리를 지웁니다 — 지금 '+(mine.length+cand.length)+'명" aria-label="자리 삭제">×</button>'   /* 2.564 — 숫자 자리를 × 가 받는다(숫자는 title 로) */
+      +(sbCardsMode()
+        ? '<select class="sb-pos" data-sbpos="'+i+'" title="이 카드의 포지션 — 팀 구성 카드와 같이 바뀝니다" aria-label="포지션 고르기">'+(data.positions||[]).map(function(ps){ var ab=posAbbr(ps.name)||ps.name; return '<option value="'+PSSafe.html(ps.id)+'"'+(ps.id===tbCards()[i]?' selected':'')+'>'+PSSafe.html(ab)+'</option>'; }).join("")+'</select><u class="sb-n" title="지금 '+(mine.length+cand.length)+'명">'+(mine.length+cand.length)+'</u>'
+        : '<input class="sb-lab" value="'+PSSafe.html(sbSlotLabel(sl,i))+'" data-sblab="'+i+'" aria-label="포지션 이름">'
+          +'<button type="button" class="sb-x" data-sbdel="'+i+'" title="이 자리를 지웁니다 — 지금 '+(mine.length+cand.length)+'명" aria-label="자리 삭제">×</button>')   /* 2.762 */   /* 2.564 — 숫자 자리를 × 가 받는다(숫자는 title 로) */
       +'</div>'+body+tail
       +'<div class="sb-mini">'+(
           (mine.length||cand.length)
@@ -7352,6 +7368,19 @@ function sbWire(){
       save(); renderScoutBoard(); try{renderTeam&&renderTeam();}catch(_){}
     });
     inp.addEventListener("keydown", function(e){ if(e.key==="Enter") this.blur(); });
+  });
+  /* 2.762 — 카드 포지션 고르기(팀 구성 카드와 같은 규칙: 자리 유지·포지션 교체·겹치면 맞바꿈) */
+  wrap.querySelectorAll("select.sb-pos").forEach(function(sel){
+    sel.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
+    sel.addEventListener("change", function(e){ e.stopPropagation();
+      if(document.body.classList.contains("ps-roster-locked")){ try{toast("선수단 편집 권한이 없어요");}catch(_){} renderScoutBoard(); return; }
+      var cards=tbCards(), i=+this.dataset.sbpos, from=cards[i], to=this.value, j=cards.indexOf(to);
+      if(!to||to===from){ renderScoutBoard(); return; }
+      var xy=tbXYStore(), a=xy[from]?{x:xy[from].x,y:xy[from].y}:null, b=xy[to]?{x:xy[to].x,y:xy[to].y}:null;
+      if(j>=0){ cards[j]=from; if(b)xy[from]=b; else delete xy[from]; }
+      cards[i]=to; if(a)xy[to]=a;
+      data.meta.tbCards=cards; save(); renderScoutBoard(); try{ renderTeam&&renderTeam(); }catch(_){}
+    });
   });
   wrap.querySelectorAll(".sb-add").forEach(function(b){
     b.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
@@ -8141,6 +8170,7 @@ function sbInit(){
   });
   var add=$("sbAdd");
   if(add&&!add.__sb){ add.__sb=1; add.addEventListener("click",function(){
+    if(sbCardsMode()){ toast("카드는 11장이에요 — 카드 머리에서 포지션을 고르세요"); return; }   /* 2.762 */
     var f=sbForm(), base=tmFormSlots(f).slice();
     var cf=tmCustomForms().find(function(x){return x.id===f;});
     if(!cf){ toast("기본 포메이션에는 자리를 더할 수 없어요 — 팀 설정에서 나만의 포메이션을 만들어 주세요"); return; }
@@ -8638,7 +8668,8 @@ function renderReportPitch(){
   const W=320,H=460,PAD=16,iw=W-2*PAD,ih=H-2*PAD;
   const px=x=>PAD+x/100*iw, py=y=>PAD+y/100*ih;
   const form=(data.meta&&(data.meta.scoutForm||data.meta.form))||"433";
-  const slots=tmFormSlotsAdj(form).slice();
+  const _cardSlots=(typeof tbCardSlotsTm==="function")?tbCardSlotsTm():null;   /* 2.762 — 카드 11장이 있으면 그 자리 */
+  const slots=(_cardSlots||tmFormSlotsAdj(form)).slice();
   const baseLen=slots.length;   // 배치 이동 대상은 포메이션 기본 슬롯만
   const posBy={};data.positions.forEach(p2=>{const k2=tmNorm(posAbbr(p2.name));if(!posBy[k2])posBy[k2]=p2;});
   /* 포메이션 슬롯(11자리)만 표시 — 포메이션에 없는 포지션은 피치에 추가하지 않음(3백에서 11명 초과 문제 수정) */
@@ -8675,7 +8706,7 @@ function renderReportPitch(){
   f.innerHTML='<svg class="pitch-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+tmPitchLines(W,H,PAD)+marks+'</svg>';
   /* 자리 클릭 → 그 포지션 대상 선수 바로 추가/관리 (팀 구성 피치와 동일). 배치 편집 모드면 드래그가 우선 */
   f.onclick=function(e){ if(tmPosEdit)return; var sl=e.target.closest('[data-slot]'); if(!sl)return; scoutPosPopup(sl.getAttribute('data-slot'), sl); };
-  try{if(tmPosEdit)wireScoutDrag();}catch(_){}
+  try{if(tmPosEdit&&!sbCardsMode())wireScoutDrag();}catch(_){}   /* 2.762 — 카드 모드의 자리는 보드에서 끈다 */
 }
 function selectedPlayers(){const el=$("rPlayer");if(!el)return [];return [...el.selectedOptions].map(o=>player(o.value)).filter(Boolean);}
 function readOpts(){return {note:($("rNote")?$("rNote").value.trim():""), grade:($("rGrade")?$("rGrade").value:""), coreOnly:($("rCoreOnly")?$("rCoreOnly").checked:true)};}
