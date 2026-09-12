@@ -1,0 +1,15 @@
+/* PROCESS STUDIO 2.747 — 지난 일지 근거: 입력 칸과 구분되는 읽기 영역. */
+.idp-evidence{margin:10px 0 14px;padding:11px 13px;border-left:3px solid var(--accent,#3a6df0);border-radius:0 9px 9px 0;background:var(--accent-soft,#eef3ff);color:var(--text,#1c2533);line-height:1.6;overflow-wrap:anywhere;min-width:0}
+.idp-evidence .ide-label{display:block;font-size:11px;font-weight:800;color:var(--text-3,#64748b)}
+.idp-evidence .ide-action{margin:3px 0 0;font-size:13px;white-space:pre-wrap}
+.idp-evidence .ide-direction{margin:5px 0 0;font-size:12px;white-space:pre-wrap;color:var(--text-2,#526071)}
+.idp-evidence .ide-direction>span{font-size:11px;font-weight:600;margin-right:7px}
+.idp-evidence .ide-note{display:block;margin-top:5px;font-size:11px;color:var(--text-3,#64748b)}
+.idp-evidence.compact{margin:7px 0;padding:8px 11px}
+.idp-evidence-week{margin:12px 0;border-top:1px solid var(--line,#dce2ea);border-bottom:1px solid var(--line,#dce2ea);color:var(--text,#1c2533)}
+.idp-evidence-week>summary{cursor:pointer;min-height:44px;padding:11px 0;box-sizing:border-box;font-size:12px;font-weight:800;line-height:1.7}
+.idp-evidence-week>summary>span{margin-left:7px;font-weight:500;color:var(--text-3,#64748b)}
+.idp-evidence-week>ol{list-style:none;padding:0 0 10px;margin:0;max-height:420px;overflow:auto}
+.idp-evidence-week>ol>li{padding:10px 0;border-top:1px solid var(--line,#dce2ea)}
+.idp-evidence-week time{font-size:11px;font-weight:800;color:var(--text-3,#64748b)}
+.idp-evidence-week .ide-memo{margin:6px 0 0;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}

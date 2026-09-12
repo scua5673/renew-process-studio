@@ -1,0 +1,8 @@
+.idp-day-direction{margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line);min-width:0}
+.idp-day-direction summary{cursor:pointer;font-size:12px;color:var(--text-2);line-height:1.6;overflow-wrap:anywhere}
+.idp-day-direction p{font-size:12px;line-height:1.6;color:var(--text-2);margin:10px 0}
+.idp-start-link,.idp-day-evidence>button{border:0;background:transparent;color:var(--accent);font:inherit;font-size:12px;line-height:1.5;padding:8px 0;min-height:40px;cursor:pointer;text-align:left}
+.idp-day-evidence{margin:0 0 12px;min-width:0;overflow-wrap:anywhere}
+.idp-day-evidence>button{color:var(--text-2)}
+.idp-day-linked{font-size:12px;color:var(--text-2);margin:0;line-height:1.6}
+.idp-day-question{font-size:13px;font-weight:600;margin:12px 0 8px;color:var(--text)}

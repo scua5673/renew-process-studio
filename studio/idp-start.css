@@ -1,0 +1,16 @@
+/* 2.747 — 내 방향 첫 설정: 문장과 행동 하나, 나머지는 선택. */
+html.ps-page-idp .vs-start-more,
+html.ps-page-idp .idp-start-more{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+html.ps-page-idp .vs-start-more>summary,
+html.ps-page-idp .idp-start-more>summary{min-height:44px;padding:12px;color:var(--text-2);font-size:12px;font-weight:800;line-height:1.5;cursor:pointer;overflow-wrap:anywhere}
+html.ps-page-idp .vs-start-more>summary span,
+html.ps-page-idp .idp-start-more>summary span{margin-left:5px;color:var(--text-3);font-size:11px;font-weight:600}
+html.ps-page-idp .vs-start-more-body{padding:0 12px 12px}
+html.ps-page-idp .idp-start-more-body{padding:0 10px 10px}
+html.ps-page-idp .vs-start-more-body>.vs-field{margin-top:2px}
+html.ps-page-idp .idp-start-more-body>.card:last-child{margin-bottom:0}
+@media(max-width:767px){
+  html.ps-page-idp .idp-start-more>summary span{display:block;margin:3px 0 0}
+  html.ps-page-idp .vs-card.editing .vs-actions{flex-wrap:wrap}
+  html.ps-page-idp .vs-card.editing .vs-actions [data-vs-save]{flex:1;white-space:normal}
+}
