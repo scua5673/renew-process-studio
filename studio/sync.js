@@ -1584,6 +1584,48 @@ function mergeNoteRevert(id){
     return Promise.all(writes).catch(function(){}).then(function(){ if(!ok)return false; mergeNoteDismiss(id); try{ syncNow('merge-revert'); }catch(_){} return true; });
   });
 }
+/* 2.746 — 리뷰 과제는 날짜별 id 배열이다. 구버전의 필드 없음과 빈 배열은
+   병합 안에서만 같은 값으로 취급한다. 평소 읽기/저장이나 다른 필드는 건드리지 않는다. */
+function scheduleReviewActionsPrepare(docs){
+  var own=Object.prototype.hasOwnProperty,present=Object.create(null),days=[],found=false;
+  (docs||[]).forEach(function(doc){
+    var seen=Object.create(null);
+    if(!doc||!doc.weeks||typeof doc.weeks!=='object')return;
+    Object.keys(doc.weeks).forEach(function(wk){
+      var week=doc.weeks[wk];if(!Array.isArray(week))return;
+      week.forEach(function(day,di){
+        if(!day||typeof day!=='object'||Array.isArray(day))return;
+        var key=wk+':'+di;days.push(day);
+        if(!own.call(day,'reviewActions'))return;
+        found=true;present[key]=true;
+        var rows=day.reviewActions,valid=Array.isArray(rows);
+        if(valid)rows.forEach(function(row){
+          if(!row||typeof row!=='object'||Array.isArray(row)||typeof row.id!=='string'||
+             !row.id.trim()||row.id!==row.id.trim()||row.id.length>160||
+             row.id==='__proto__'||row.id==='constructor'||row.id==='prototype'||seen[row.id])valid=false;
+          else seen[row.id]=true;
+        });
+        if(!valid){
+          var error=new Error('일정 훈련 과제의 식별 정보를 확인할 수 없습니다');
+          error.psScheduleReviewActions=true;error.psCode='sync_storage';error.psStage='schedule-review-actions-merge';
+          throw error; // null로 삼키면 호출자가 서버 승리 fallback으로 로컬을 덮는다.
+        }
+      });
+    });
+  });
+  if(!found)return null;
+  days.forEach(function(day){if(!own.call(day,'reviewActions'))day.reviewActions=[];});
+  return present;
+}
+function scheduleReviewActionsFinish(doc,present){
+  if(!present||!doc||!doc.weeks)return;
+  Object.keys(doc.weeks).forEach(function(wk){
+    var week=doc.weeks[wk];if(!Array.isArray(week))return;
+    week.forEach(function(day,di){
+      if(day&&!present[wk+':'+di]&&Array.isArray(day.reviewActions)&&!day.reviewActions.length)delete day.reviewActions;
+    });
+  });
+}
 function mergeCoachWeeks(baseStr,locStr,srvStr){
   try{
     var b=baseStr?JSON.parse(baseStr):null,l=JSON.parse(locStr),s=JSON.parse(srvStr);
@@ -1606,6 +1648,8 @@ function mergeCoachWeeks(baseStr,locStr,srvStr){
       /* 정규화 후 srvStr 재직렬화 — out이 서버본 바탕이므로 */
       srvStr=JSON.stringify(s);
     })();
+    var reviewActionDays=scheduleReviewActionsPrepare([b,l,s]);
+    if(reviewActionDays)srvStr=JSON.stringify(s);
     var bw=(b&&b.weeks)||{};
     var out=JSON.parse(srvStr);   /* 서버본 바탕 */
     var preferLocal=(+l.editedAt||0)>=(+s.editedAt||0), conf=[], _am=String(l.anchorMonday||'').match(/^(\d{4})-(\d{2})-(\d{2})$/), tamD=_am?new Date(+_am[1],+_am[2]-1,+_am[3]):new Date();   /* 2.629 — 정규화된 기준 월요일 */
@@ -1641,11 +1685,12 @@ function mergeCoachWeeks(baseStr,locStr,srvStr){
     var lat=+l.editedAt||0,sat=+s.editedAt||0;
     if(lat||sat){out.editedAt=Math.max(lat,sat);out.editedBy=(sat>lat?s.editedBy:l.editedBy)||out.editedBy||'';}
     try{ if(conf.length){ var byY={}; conf.forEach(function(c){ (byY[c.ymd]=byY[c.ymd]||[]).push(c); }); Object.keys(byY).forEach(function(y){ mergeNoteAdd(SCHEDULE_KEY,y,byY[y],s.editedBy||''); }); } }catch(_){}
+    scheduleReviewActionsFinish(out,reviewActionDays);
     delete out.wk;delete out.dayIdx;
     /* rev·token은 scheduleCommitRaw가 방금 확인한 서버 원문 위에서 한 번만 붙인다. */
     delete out.scheduleRev;delete out.scheduleBaseRev;delete out.scheduleToken;delete out.scheduleBaseToken;
     return JSON.stringify(out);
-  }catch(_){return null}
+  }catch(error){if(error&&error.psScheduleReviewActions)throw error;return null}
 }
 function pJSON(s,fb){ try{ var v=JSON.parse(s); return v==null?fb:v; }catch(_){ return fb; } }
 

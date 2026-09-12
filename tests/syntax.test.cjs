@@ -23,7 +23,7 @@ for (const file of ['studio/app.html', 'studio/process.html', 'studio/scout.html
   });
 }
 
-for (const file of ['studio/storage.js', 'studio/sync.js', 'sw.js']) {
+for (const file of ['studio/storage.js', 'studio/sync.js', 'studio/review-training.js', 'studio/review-training-schedule.js', 'sw.js']) {
   test(`${file}: JavaScript parses`, () => {
     new vm.Script(fs.readFileSync(path.join(root, file), 'utf8'), { filename: file });
   });

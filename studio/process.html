@@ -2,6 +2,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="storage.js"></script>
+<script src="review-training.js"></script>
+<script src="review-training-schedule.js"></script>
+<link rel="stylesheet" href="review-training.css">
 <script src="learn-model.js"></script><!-- 2.108 — 학습모델 카테고리 사전(고정 id). 블록이 어느 카테고리를 다뤘는지 여기에 건다 -->
 
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
@@ -2621,9 +2624,9 @@ function dupWeek(){
   const hasContent=src.some(d=>(d.trainings||[]).length);
   if(!hasContent) return;          // 빈 주는 복제할 게 없음
   const copy=JSON.parse(JSON.stringify(src));
-  copy.forEach(d=>{ if(d&&typeof d==='object'){ delete d.mid; mxStripMid(d); } });   /* 2.587 — 경기 id(mid)는 복제하지 않는다: 문서 안에서 유일해야 서버 구조 검사를 통과한다 */
+  copy.forEach(d=>{ if(d&&typeof d==='object'){ delete d.mid; delete d.reviewActions; mxStripMid(d); } });   /* 2.587 — 경기 id(mid)는 복제하지 않는다: 문서 안에서 유일해야 서버 구조 검사를 통과한다 */
   let t=wk+1;                      // 다음 빈 주를 찾아 거기에 복제
-  while(weeksMap[t] && weeksMap[t].some(d=>(d.trainings||[]).length)) t++;
+  while(weeksMap[t] && weeksMap[t].some(d=>(d.trainings||[]).length||(d.reviewActions||[]).length)) t++;
   weeksMap[t]=copy;
   wk=t; week=weeksMap[wk];
   recomputeMD(); renderWeek(); save();
@@ -3056,6 +3059,7 @@ function renderWeek(){
         <button class="addpill" onclick="openDayHub(wk,${di})" title="이 날 설정 — 훈련·경기·회복·OFF·미팅 추가/삭제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></button>
       </div>`;
     }
+    if(window.PSReviewSchedule)cells+=PSReviewSchedule.dayHTML(day,di);
     const md=day.md?`<div class="mdbadge ${day.match?'mdmatch':''}${day.mdManual?' mdman':''}" title="MD = 경기까지 남은 일수 · MD-1은 경기 전날">${day.md}</div>`:(noMatch?'':`<div class="mdbadge mdadd">＋MD</div>`);
     row.innerHTML=`<div class="daycol ${di===6?'sun':''}" onclick="openDayMD(${di})"><div class="dd">${day.d}</div><div class="dn">${dateOf(wk*7+di).getDate()}</div>${md}</div><div class="cells">${cells}</div>`;
     rows.appendChild(row);
@@ -4739,7 +4743,8 @@ function wksReviewStrip(){
     var st=JSON.parse(localStorage.getItem('cs_team_matches_v1')||'null'); var L=(st&&st.matches)||[]; if(!L.length)return '';
     var mon=dateOf(wk*7); mon.setHours(0,0,0,0); var from=new Date(mon); from.setDate(from.getDate()-7); var to=new Date(mon); to.setDate(to.getDate()+7);
     var f=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-    var a=f(from), b=f(to), items=L.filter(function(m){ var d=String(m.date||''); return d>=a&&d<b&&String(m.trainingAction||'').trim(); }).sort(function(x,y){return String(y.date).localeCompare(String(x.date));}).slice(0,2);
+    var player=window.PSPerms&&PSPerms.role&&PSPerms.role()==='player';
+    var a=f(from), b=f(to), items=L.filter(function(m){ var d=String(m.date||''); return d>=a&&d<b&&(!player||m.reviewPublished)&&String(m.trainingAction||'').trim(); }).sort(function(x,y){return String(y.date).localeCompare(String(x.date));}).slice(0,2);
     if(!items.length)return '';
     return '<div class="wks-review">'+items.map(function(m){ var d=new Date(m.date+'T00:00:00'); return '<div><b>지난 경기 → 다음 훈련</b><span>'+wkbdEsc(String(m.trainingAction).trim())+'</span><small>vs '+wkbdEsc(m.opponent||'')+' · '+(d.getMonth()+1)+'/'+d.getDate()+'</small></div>'; }).join('')+'</div>';
   }catch(_){ return ''; }
@@ -4815,6 +4820,7 @@ function renderWeekSessions(el){
     }else{
       h+='<div class="wks-kind"><button type="button" class="wks-kbtn" onclick="wkbdPick('+di+',\'sched\')">'+(b.sched?wkbdEsc(b.sched)+' ▾':'일정 ＋')+'</button></div>';   /* 2.391 — 비어 있으면 '일정 ＋'(더할 자리라는 뜻), 정해졌으면 '훈련 ▾'(바꿀 자리라는 뜻) */
     }
+    if(window.PSReviewSchedule)h+=PSReviewSchedule.dayHTML(day,di);
     /* 세션 카드 — 쓰는 시간대만. 옛 저장본(슬롯 없음)은 '시간대 없음' 으로 맨 아래 */
     var sl=wksSlotsOf(di);
     sl.list.forEach(function(x){ h+=wksCard(di,x); });
@@ -5608,12 +5614,13 @@ function renderDay(){
   }
   const bd=dayBoard(day);
   if(day.off||bd.sched==='OFF'){
-    wrap.innerHTML=`<div class="restoff" onclick="clearOff(${dayIdx})">OFF · 휴식일 · 탭하면 해제</div>`;
+    wrap.innerHTML=`<div class="restoff" onclick="clearOff(${dayIdx})">OFF · 휴식일 · 탭하면 해제</div>`+(window.PSReviewSchedule?PSReviewSchedule.dayHTML(day,dayIdx):'');
     return;
   }
   const mkTx=(lab,f,val,ti)=>{ const tid=(ti==null?'':` data-ti="${ti}"`); return `<div class="dayrow"><div class="drlab">${lab}</div><div class="wkbd-tx drtx" contenteditable="true" data-di="${dayIdx}" data-f="${f}"${tid} data-ph="${BOARD_PH[f]||''}" onblur="wkbdSave(this)">${wkbdEsc(val||'')}</div></div>`; };
   const mkPick=(lab,f,val)=>{ const c=bColor(f,val); const cell=val?`<button class="drpick" style="border-color:${c};color:${c}" onclick="wkbdPick(${dayIdx},'${f}')"><span class="cdot" style="background:${c}"></span>${val}</button>`:`<button class="drpick empty" onclick="wkbdPick(${dayIdx},'${f}')">＋</button>`; return `<div class="dayrow"><div class="drlab">${lab}</div><div class="drval">${cell}</div></div>`; };
   const mkPickTrain=(lab,val,ti)=>{ const c=bColor('train',val); const cell=val?`<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdPick(${dayIdx},'train',${ti})"><b>${val}</b></button>`:`<button class="drpick empty" onclick="wkbdPick(${dayIdx},'train',${ti})">＋</button>`; return `<div class="dayrow"><div class="drlab">${lab}</div><div class="drval">${cell}</div></div>`; };
+  if(window.PSReviewSchedule)html+=PSReviewSchedule.dayHTML(day,dayIdx);
   html+=mkPick('일정','sched',bd.sched);
   html+=mkPick('주제','theme',bd.theme);
   { let mch=(bd.meets||[]).map((mx,mi)=>{ const md=(bd.meetsData&&bd.meetsData[mi])||null; const c=bColor('meet',mx); const th=(md&&md.thumb)?`<span class="dthumb">${md.thumb}</span>`:''; const mn=(md&&md.minutes)?`<span class="dmin">${md.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdMeetTap(${dayIdx},${mi})">${th}<b style="flex:1;text-align:left">${mx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">미팅</div><div class="drval drtrains">${mch}<button class="drpick empty" onclick="wkbdAddMeet(${dayIdx})">＋ 미팅 추가</button></div></div>`; }
@@ -6791,7 +6798,10 @@ function dupMonth(){
   if(!src.length){ try{toast&&toast("복제할 내용이 없어요");}catch(_){} return; }
   src.forEach(function(o){ var nd=new Date(o.date.getFullYear(), o.date.getMonth()+1, o.date.getDate());
     var n=offsetOfDate(nd), r=Math.floor(n/7), col=((n%7)+7)%7; if(!weeksMap[r]) weeksMap[r]=blankWeek();
-    var copy=JSON.parse(JSON.stringify(o.day)); delete copy.mid; mxStripMid(copy); copy.d=weeksMap[r][col].d; copy.n=weeksMap[r][col].n; weeksMap[r][col]=copy; });   /* 2.587 — mid 는 안 옮긴다 */
+    var target=weeksMap[r][col],copy=JSON.parse(JSON.stringify(o.day)); delete copy.mid; delete copy.reviewActions; mxStripMid(copy);
+    /* 2.746 — 훈련 구성은 복사해도 대상 날짜에서 이어가던 경기 과제·결과는 유지한다. */
+    if(Object.prototype.hasOwnProperty.call(target,'reviewActions'))copy.reviewActions=target.reviewActions;
+    copy.d=target.d; copy.n=target.n; weeksMap[r][col]=copy; });   /* 2.587 — mid 는 안 옮긴다 */
   monthAnchor.m+=1; while(monthAnchor.m>11){monthAnchor.m-=12;monthAnchor.y++;}
   try{recomputeMD();}catch(_){} try{renderMonth();}catch(_){} try{renderMonthMix();}catch(_){} try{save();}catch(_){}
 }
@@ -8007,11 +8017,15 @@ function saveTpl(){
 function applyTemplate(mode){
   const t=myTemplates.find(x=>x.id===__tplSel); if(!t) return;
   const built=JSON.parse(JSON.stringify(t.week));
-  built.forEach(d=>{ if(d&&typeof d==='object'){ delete d.mid; mxStripMid(d); } });   /* 2.587 — 내 구성에서 온 날은 새 날이다: 경기 id 를 물려받지 않는다 */
+  built.forEach(d=>{ if(d&&typeof d==='object'){ delete d.mid; delete d.reviewActions; mxStripMid(d); } });   /* 2.587 — 내 구성에서 온 날은 새 날이다: 경기 id 를 물려받지 않는다 */
+  const cur=weeksMap[wk]||blankWeek();
+  /* 2.746 — 전체 구성을 바꿔도 이 날짜에 확정했던 경기 과제·결과는 남긴다. */
+  built.forEach((bd,i)=>{ const cd=cur[i];
+    if(bd&&typeof bd==='object'&&cd&&Object.prototype.hasOwnProperty.call(cd,'reviewActions'))bd.reviewActions=cd.reviewActions;
+  });
   if(mode==='merge'){
-    const cur=weeksMap[wk]||blankWeek();
     built.forEach((bd,i)=>{ const cd=cur[i];
-      const has=cd&&(cd.match||(cd.trainings&&cd.trainings.length));
+      const has=cd&&(cd.match||(cd.trainings&&cd.trainings.length)||(cd.reviewActions&&cd.reviewActions.length));
       if(!has) cur[i]=bd; });                  // 빈 날만 채움 (기존 건 보존)
     weeksMap[wk]=cur;
   } else { weeksMap[wk]=built; }
@@ -8019,7 +8033,7 @@ function applyTemplate(mode){
   closeSheet(); syncViews();
 }
 
-function closeSheet(){const sc=document.getElementById('scrim'),sheet=document.getElementById('sheet');var yq=(typeof __yearQuick!=='undefined')?__yearQuick:null;sc.classList.remove('show');if(sheet){delete sheet.dataset.psLibraryFlow;sheet.removeAttribute('role');sheet.removeAttribute('aria-modal');sheet.removeAttribute('aria-labelledby');}try{__themePanel=null;}catch(_){}sc.classList.remove('qpmode');if(typeof __qp!=='undefined')__qp=null;if(typeof __hub!=='undefined')__hub=null;if(typeof __yearQuick!=='undefined')__yearQuick=null;if(yq&&yq.trigger)setTimeout(function(){try{yq.trigger.focus();}catch(_){}},0);}
+function closeSheet(){if(document.getElementById('sheet').dataset.reviewTraining==='1'&&window.PSReviewSchedule){PSReviewSchedule.close();return;}const sc=document.getElementById('scrim'),sheet=document.getElementById('sheet');var yq=(typeof __yearQuick!=='undefined')?__yearQuick:null;sc.classList.remove('show');if(sheet){delete sheet.dataset.psLibraryFlow;sheet.removeAttribute('role');sheet.removeAttribute('aria-modal');sheet.removeAttribute('aria-labelledby');}try{__themePanel=null;}catch(_){}sc.classList.remove('qpmode');if(typeof __qp!=='undefined')__qp=null;if(typeof __hub!=='undefined')__hub=null;if(typeof __yearQuick!=='undefined')__yearQuick=null;if(yq&&yq.trigger)setTimeout(function(){try{yq.trigger.focus();}catch(_){}},0);}
 document.getElementById('scrim').onclick=(e)=>{ if(e.target.id!=='scrim') return; if(curSession){ cancelSession(); } else { closeSheet(); } };
 document.addEventListener('keydown',(e)=>{ if(e.key!=='Escape') return; try{ if(curSession){cancelSession();} else {closeSheet();} window.__importDraft=null; }catch(_){} });
 

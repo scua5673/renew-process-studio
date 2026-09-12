@@ -498,7 +498,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.745';</script>
+<script>window.PS_BUILD='2.746';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -2273,8 +2273,39 @@ function psShowUpdBand(){
     }catch(_){} })();
     // ---- bridge relay between the apps ----
     var captureReq='process'; // who asked the board to capture
+    /* 2.746 — 새 훈련 연결은 출처 iframe·계정·팀을 모두 확인하고 한 요청 ID로 전달한다. */
+    function reviewTrainingOwner(d){
+      try{var s=window.PSSync&&PSSync.session();return !!(s&&s.uid===d.uid&&localStorage.getItem('ps_active_ws')===d.wid&&PSSync.dataUnlocked());}catch(_){return false;}
+    }
+    function reviewTrainingRelay(fr,d){
+      var tries=0;
+      function send(){
+        if(!reviewTrainingOwner(d))return;
+        try{if(fr.contentDocument&&fr.contentDocument.readyState==='complete'){
+          fr.contentWindow.postMessage(Object.assign({},d,{source:'app'}),location.origin);return;
+        }}catch(_){}
+        if(++tries<40)setTimeout(send,150);
+        else try{if(window.toast)toast('화면을 열지 못했습니다. 다시 시도해 주세요.');}catch(_){}
+      }
+      send();
+    }
     window.addEventListener('message',function(e){
       var d=e.data||{};
+      if(d.type==='reviewTrainingOpen'||d.type==='reviewTrainingBack'||d.type==='reviewTrainingSaved'){
+        if(e.origin!==location.origin||!reviewTrainingOwner(d))return;
+        if(d.type==='reviewTrainingOpen'){
+          if(e.source!==fScout.contentWindow||d.source!=='scout')return;
+          var training=teamKeyBtn('training');if(training)openTeamButton(training);else showApp('process');
+          reviewTrainingRelay(fProcess,d);
+        }else{
+          if(e.source!==fProcess.contentWindow||d.source!=='process')return;
+          if(d.type==='reviewTrainingBack'){
+            var matches=teamKeyBtn('match');if(matches)openTeamButton(matches);else showApp('scout');
+          }
+          reviewTrainingRelay(fScout,d);
+        }
+        return;
+      }
       /* 보관함 공통 셸 전환 — 같은 origin과 정확한 iframe만 허용한다.
          iframe 자체는 유지하므로 보관함 폴더·스크롤과 현재 노트·페이지가 모두 보존된다. */
       if(d.type==='vaultSection'){

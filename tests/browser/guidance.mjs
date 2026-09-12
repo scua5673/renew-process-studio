@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PS_PLAYWRIGHT_MODULE || 'playwright');
 const root = process.env.PS_TEST_REPO || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const build = fs.readFileSync(path.join(root, 'studio/app.html'), 'utf8').match(/window\.PS_BUILD='([^']+)'/)[1];
 const out = process.env.PS_TEST_OUTPUT || path.join(root, 'test-results/guidance');
 fs.mkdirSync(out, { recursive: true });
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2' };
@@ -42,7 +43,7 @@ try {
     const page = await context.newPage(), errors = [];
     page.on('pageerror', error => errors.push(error.stack || String(error)));
     await page.goto(base + '/studio/app.html' + (spec.mobile ? '?layout=mobile' : ''), { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => window.PS_BUILD === '2.745' && document.getElementById('guideOpen'));
+    await page.waitForFunction(expected => window.PS_BUILD === expected && document.getElementById('guideOpen'), build);
     // Activate the shipped help handler without signing into an account. All help controls below use real pointer/keyboard input.
     await page.evaluate(() => document.getElementById('guideOpen').click());
     await page.locator('#guideOv').waitFor({ state: 'visible' });
@@ -94,7 +95,7 @@ try {
     results.push({ viewport: spec.name, languages, documents, pageErrors: errors });
     await context.close();
   }
-  fs.writeFileSync(path.join(out, 'guidance-results.json'), JSON.stringify({ ok: true, build: '2.745', method: 'Isolated local Chrome; no accounts; all non-local requests blocked', results }, null, 2));
+  fs.writeFileSync(path.join(out, 'guidance-results.json'), JSON.stringify({ ok: true, build, method: 'Isolated local Chrome; no accounts; all non-local requests blocked', results }, null, 2));
   console.log(JSON.stringify({ ok: true, output: out, viewports: results.map(r => r.viewport), languages: 6, documents: 3 }, null, 2));
 } finally {
   if (browser) await browser.close();
