@@ -665,7 +665,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
     body.ps-player-role .layers button{justify-content:flex-start;padding-top:11px}
     body.ps-player-role .layers button b{margin:0}
     /* 1.660 → 2.044 — 하단바는 홈·일정·목표·프로필·학습 다섯 곳. 루틴·이미지노트는 홈 아래 줄에서 연다. */
-    body.ps-player-role .layers button:not([data-l="home"]):not([data-l="goal"]):not([data-l="profile"]):not([data-l="cal"]):not([data-l="learn"]):not([data-l="report"]):not([data-l="match"]){display:none}
+    body.ps-player-role .layers button:not([data-l="home"]):not([data-l="goal"]):not([data-l="profile"]):not([data-l="cal"]):not([data-l="learn"]):not([data-l="report"]):not([data-l="match"]):not([data-l="story"]){display:none}
     body.ps-player-role .stage{padding:calc(58px + env(safe-area-inset-top)) 16px 22px}   /* 2.376 — 비울 자리가 아래→위로 */
     body.ps-player-role .wrap,body.ps-player-role .wrap.learn-wide{max-width:none}
     body.ps-player-role .card{padding:16px;margin-bottom:12px;border-radius:14px}
@@ -3881,7 +3881,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
     }
     body.fmdark.ps-player-role .layers{background:rgba(26,33,43,.96)!important}
     /* 2.044 — 선수 폰 하단 5탭 = 홈·일정·목표·프로필·학습 (프로필이 1.918 이후 폰에서 못 들어가던 것 복구). 루틴·이미지노트는 홈 아래 줄에서 */
-    body.ps-player-role .layers button:not([data-l="home"]):not([data-l="goal"]):not([data-l="profile"]):not([data-l="cal"]):not([data-l="learn"]):not([data-l="report"]):not([data-l="match"]){display:none!important}
+    body.ps-player-role .layers button:not([data-l="home"]):not([data-l="goal"]):not([data-l="profile"]):not([data-l="cal"]):not([data-l="learn"]):not([data-l="report"]):not([data-l="match"]):not([data-l="story"]){display:none!important}
     /* 2.314 — 폰 첫 탭 = 첫 화면. 선수 폰은 cal 로 열리는데(2.260) 왼쪽 첫 자리는 프로필이라 매일 어긋났다.
        ⚠ 키(cal)는 그대로 두고 **라벨과 순서만** 바꾼다 — 콕핏·코치 화면의 data-l 딥링크가 살아 있어야 한다. */
     /* 2.314 — 폰 탭 순서는 아래 <style id="ps-2314-taborder"> 에서 정한다.
@@ -4389,6 +4389,18 @@ body.fmdark .qa-paper{background:var(--surface)}
 .mr-list>div{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dotted var(--line-soft)}
 .mr-list em{font-style:normal;font-weight:800;color:#B5762B}
 .mr-note{font-size:11px;color:var(--text-3);line-height:1.5;margin-top:7px}
+/* 2.766 — 이야기 스레드 */
+.st-list{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.st-day{display:flex;align-items:center;gap:8px;margin:12px 0 6px;font-size:11px;color:var(--text-3)} .st-day::before,.st-day::after{content:"";flex:1;border-top:1px solid var(--line-soft)}
+.st-msg{display:flex;flex-direction:column;gap:3px;max-width:84%;margin:3px 0;cursor:pointer}
+.st-msg.me{align-self:flex-end;align-items:flex-end;margin-left:auto}
+.st-src{font-size:10.5px;color:var(--text-3)} .st-src b{color:var(--text);font-weight:700}
+.st-bub{border-radius:14px;padding:8px 11px;font-size:13px;line-height:1.45;background:var(--surface-2);border:1px solid var(--line-soft);word-break:keep-all;overflow-wrap:anywhere}
+.st-msg.me .st-bub{background:#7C4DFF;color:#fff;border-color:#7C4DFF}
+.st-bub .q{display:block;font-size:11px;color:var(--text-3);margin-top:4px} .st-bub .q:first-child{margin-top:0} .st-msg.me .st-bub .q{color:rgba(255,255,255,.78)}
+.st-bub .pk{display:flex;flex-direction:column;gap:4px;margin-top:6px} .st-bub .pk span{border:1px solid var(--line-soft);border-radius:8px;padding:4px 8px;font-size:12px;background:var(--surface)} .st-bub .pk span.on{border-color:#7C4DFF;font-weight:700} .st-bub .pk small{color:var(--text-3);font-weight:500}
+.st-bub .st-pick{display:block;margin-top:5px;font-size:11px;color:var(--text-3)} .st-hrt{font-style:normal;color:#C24A46}
+.st-note{font-size:11px;color:var(--text-3);margin-top:10px}
 .mr-heat{margin-top:8px} .mr-heat svg{width:100%;max-width:264px;height:auto;display:block}
 /* 2.765 — 12주 격자(주 행·요일 열)·표·막대 */
 .mr-cal{display:grid;grid-template-columns:34px repeat(7,minmax(0,1fr)) 24px;gap:3px;align-items:center;margin-top:8px}
@@ -4568,6 +4580,12 @@ html.ps-page-idp body.ps-player-role #layers button[data-l="match"]{order:-7!imp
 html.ps-page-idp body.ps-player-role #layers button[data-l="report"]{order:-6!important}
 html.ps-page-idp body.ps-player-role #layers button[data-l="profile"]{order:-5!important}
 html.ps-page-idp body.ps-player-role #layers button[data-l="learn"]{order:-4!important}
+/* 2.766 — 이야기: 일지 · 목표 · 이야기 · 경기 · 리포트 · 프로필 */
+html.ps-page-idp body.ps-player-role #layers button[data-l="story"]{order:-7!important}
+html.ps-page-idp body.ps-player-role #layers button[data-l="match"]{order:-6!important}
+html.ps-page-idp body.ps-player-role #layers button[data-l="report"]{order:-5!important}
+html.ps-page-idp body.ps-player-role #layers button[data-l="profile"]{order:-4!important}
+html.ps-page-idp body #layers button[data-l="story"]{order:-6!important}
 
 /* ══ 2.322 · 하단 바 — 폰트·아이콘으로 위계(사용자) ═══════════════════════════════════
    ⚠ **칸 수를 세지 않는다.** `grid-template-columns:repeat(5,…)` 로 다섯을 못 박아 두었더니 여섯째가 줄바꿈했다.
@@ -4732,6 +4750,8 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
       <!-- 2.195 — 순서(사용자): 내 프로필(첫 화면) → 오늘(옛 홈, data-l 은 home 그대로) → 경기(신설) → 일정 … -->
       <!-- 2.198 — "오늘" 탭 제거: 일정 탭이 오늘(일간)로 열리고 오늘 카드가 그 안에 있다 -->
       <button type="button" data-l="match"><svg class="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v3.2l3.2 2.3-1.2 3.8H10l-1.2-3.8L12 6.2M3.4 9.6l3.5 1.4M20.6 9.6l-3.5 1.4M6.2 19.2l2.6-2.4M17.8 19.2l-2.6-2.4"/></svg><b>경기</b></button>
+      <!-- 2.766 — 이야기: 코치와 주고받은 말을 한 스레드로(사용자 «이야기 탭 — 메신저처럼»). 스무 채널을 모아 읽기만, 답은 다음 판 -->
+      <button type="button" data-l="story"><svg class="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-1-1z"/></svg><b>이야기</b></button>
       <button type="button" data-l="goal"><svg class="tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3.5V1.8M20.5 12h1.7"/></svg><b>목표</b></button>
       <!-- 1.963 — 역할: 팀에서 내가 해야 할 역할을 국면별로 적는 곳(사용자). 폰 하단 5탭엔 없고 홈 목표 카드에서 연다 -->
       <!-- 1.976 — 역할 탭 제거: 목표 탭 안 '팀에서 내 역할' 카드로 통합(사용자 A안). data-l="role" 딥링크는 render() 가 goal 로 돌린다 -->
@@ -5685,7 +5705,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       img:['이미지노트','경기 전에 내 역할과 장면을 정리합니다.'],
       /* 2.447 — 이 둘이 빠져 있어 폰에서 두 탭 모두 머리글이 'IDP' 였다(탭은 '경기'·'리포트'인데) */
       match:['경기','무엇을 하려 했고 무엇이 됐는지 경기마다 남깁니다.'],
-      report:['리포트','12주 동안의 성장과 기록을 한 장으로 봅니다.']
+      report:['리포트','12주 동안의 성장과 기록을 한 장으로 봅니다.'],
+      story:['이야기','코치와 주고받은 말을 시간순으로 봅니다.']   /* 2.766 */
     }[curL]||['IDP','나의 성장 기록을 관리합니다.'];
     return '<header class="mob-screenhead">'
       +'<span class="mob-kicker">IDP</span><h1>'+m[0]+'</h1><p>'+m[1]+'</p></header>';   /* 1.984 — 뒤로가기 없음: 탭이 곧 위치 표시(2.475 — 죽은 mob-back 조각 철거) */
@@ -5794,6 +5815,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
          ⚠ 2.431 — **그것도 뺐다**(사용자 "일지에 넣어야 하지 않을까"). 측정은 이제 **일지 › 일간의
             수요일**에만 뜬다. `rMeasureCard`·`bindMeasureCard` 는 그대로다 — 되살리려면 이 줄만 되돌린다. */
       +rProfileSum(_po)+(_po?(ro()?rProfileView():rProfile()):rProfileView())+   /* 2.647 — 닫혀 있거나 코치 열람이면 «보기» 카드 */(function(){ try{ return rMyArch(); }catch(_){ return ''; } })()+rEvalSum(_eo)+(_eo?rEval():'')+rReviews()+((ro()&&isCoach())?rCompare():'')+(function(){ try{ return rThread(); }catch(_){ return ''; } })()+(function(){ try{ return rGrowth(); }catch(_){ return ''; } })();   /* 2.172 — 순서(사용자): 프로필 → 유형 → 셀프평가 → 리뷰·대조 → 성장 대화 → 자라는 프로필 */   /* 2.044 순서: 리뷰(현재)·대조 → 프로필 → 셀프평가 → 성장 대화 → 자라는 프로필 */ }   /* 1.977 — 접힌 요약 + 펼침 · 2.027 — 성장 리뷰(6주)·셀프 vs 코치 대조 */
+    else if(curL==='story') html+=(function(){ try{ return rStory(); }catch(e){ return '<section class="card"><b>이야기를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.766 */
     else if(curL==='routine') html+=rRoutine();
     else if(curL==='report') html+=(function(){ try{ return rMyReport(); }catch(e){ return '<section class="card"><b>리포트를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.172 */
     else if(curL==='img') html+=rImg();
@@ -11225,6 +11247,96 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(items.length>8&&!_thAll)h+='<button type="button" class="qg-add" data-th-more>지난 대화 '+(items.length-8)+'개 더 보기</button>';
     h+='</section>'; return h;
   }
+  /* ══ 2.766 · 이야기 — 코치와 나 사이의 말을 한 스레드로(목업 «IDP 이야기 탭과 12주 기록») ═══════════════
+     실측: 오가는 글이 스무 채널(일지 답글·♥, 주간 회고 답글, 초점 제안 둘, 6주 점검, 내 방향 질문, 경기 전 메시지·경기 리뷰·자기 리뷰,
+     성장 피드백·리뷰·면담과 그 답, 공통질문 답, 한 마디)로 다섯 탭에 흩어져 있었다. 기록 흐름(thItems)에 빠진 여덟을 더해 시간순 한 줄기로.
+     읽기만 — 저장 자료는 손대지 않고, 말풍선을 누르면 원래 자리로 간다. 팀 공지는 나에게 온 말이 아니라 넣지 않는다. 답 보내기는 다음 판. */
+  var _stAll=false;
+  function stItems(){
+    var out=[]; try{ out=thItems().slice(); }catch(_){}
+    var today=new Date(); today.setHours(0,0,0,0); var since=addDays(today,-84);
+    try{ Object.keys(doc.log||{}).forEach(function(k){ var l=doc.log[k]||{}; var t=String(l.memo||'').trim(); if(!t)return; var d=new Date(k+'T12:00:00'); if(!(d>=since))return; out.push({k:'memo',who:'me',d:k,ts:d.getTime()+1,text:t,src:'일지 한 마디',go:'cal:'+k}); }); }catch(_){}
+    try{ var R=reactsAll(); Object.keys(R).forEach(function(key){ var r=R[key]||{}; var t=String(r.t||'').trim(), h=!!r.h; if(!t&&!h)return; var ts=+(r.tAt||r.hAt||r.at)||0, by=r.tBy||r.hBy||r.by||'', m;
+      if((m=/^day:(\d{4}-\d{2}-\d{2})$/.exec(key))){ if(!ts)ts=new Date(m[1]+'T18:00:00').getTime(); out.push({k:'react',who:'coach',d:m[1],ts:ts,text:t,h:h,src:'일지 답글',go:'cal:'+m[1],by:by}); }
+      else if((m=/^wk:(\d{4}-\d{2}-\d{2})$/.exec(key))){ var sun=addDays(new Date(m[1]+'T12:00:00'),6); if(!ts)ts=sun.getTime()+1; out.push({k:'react',who:'coach',d:ymd(new Date(ts)),ts:ts,text:t,h:h,src:'주간 회고 답글',go:'cal:'+m[1],by:by}); }
+      else if((m=/^mid:(\d{4}-\d{2}-\d{2})$/.exec(key))){ if(!ts)ts=new Date(m[1]+'T12:00:00').getTime(); var c={keep:'그대로',step:'한 걸음 더',change:'바꾸자'}[r.c]||''; out.push({k:'react',who:'coach',d:ymd(new Date(ts)),ts:ts,text:(c?(c+(t?' — ':'')):'')+t,h:h,src:'6주 점검',go:'goal',by:by}); }
+      else if((m=/^vision:([a-zA-Z0-9_-]+)$/.exec(key))){ var stmt=''; try{ var v=visionOf(doc); if(v.revision===m[1])stmt=v.statement||''; else (v.history||[]).forEach(function(x){ if(x&&x.revision===m[1])stmt=x.statement||''; }); }catch(_){} out.push({k:'react',who:'coach',d:ts?ymd(new Date(ts)):'',ts:ts,text:t,h:h,src:'내 방향에 질문·제안'+(stmt?(' · «'+stmt.slice(0,20)+(stmt.length>20?'…':'')+'»'):''),go:'goal',by:by}); }
+    }); }catch(_){}
+    try{ var P=propsAll(); Object.keys(P).forEach(function(wk){ var pr=P[wk]||{}; if(!pr.a&&!pr.b)return; var ts=+pr.at||new Date(wk+'T09:00:00').getTime(); var pick=null; try{ var f=focusOf(wk); if(f&&/^pick-/.test(String(f.from||'')))pick=f; }catch(_){} out.push({k:'props',who:'coach',d:ymd(new Date(ts)),ts:ts,p:pr,wk:wk,pick:pick,src:'다음 주 초점 제안',go:'cal:'+wk,by:pr.by||''}); }); }catch(_){}
+    try{ var mm=rvRec(viewing).matchMessages||{}; if(mm&&typeof mm==='object'&&!Array.isArray(mm))Object.keys(mm).forEach(function(id){ var m=mm[id], pr=m&&m.prep; if(!pr||typeof pr!=='object')return; var msg=String(pr.message||'').trim(), mark=String(pr.mark||'').trim(); if(!msg&&!mark)return; var ts=+(pr.updatedAt||m.updatedAt)||0; var md=/^\d{4}-\d{2}-\d{2}$/.test(String(m.date||''))?String(m.date):''; if(!ts&&md)ts=new Date(md+'T09:00:00').getTime(); out.push({k:'prep',who:'coach',d:ts?ymd(new Date(ts)):md,ts:ts,text:msg,mark:mark,src:'경기 전'+(m.opponent?(' · vs '+m.opponent):''),go:'match',by:pr.updatedBy||''}); }); }catch(_){}
+    try{ var Q=tmPrompts()||[], A=doc.answers||{}; Object.keys(A).forEach(function(qid){ var a=A[qid]||{}; var t=String(a.t||'').trim(); if(!t)return; var q=null; try{ q=Q.filter(function(x){return x&&x.id===qid;})[0]||null; }catch(_){} var ts=+a.at||0; out.push({k:'qa',who:'me',d:ts?ymd(new Date(ts)):'',ts:ts,text:t,q:(q&&q.q)||'',src:'공통질문 답',go:'cal'}); }); }catch(_){}
+    out.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+    return out;
+  }
+  function stSrc(it){
+    switch(it.k){
+      case 'review': return '성장 리뷰 '+((it.r&&it.r.weeks)||6)+'주';
+      case 'feedback': return '성장 피드백';
+      case 'match': return '경기 리뷰'+(it.m&&it.m.opponent?(' · vs '+it.m.opponent):'');
+      case 'mself': return '내 경기 리뷰'+(it.mm2&&it.mm2.opponent?(' · vs '+it.mm2.opponent):'');
+      case 'self': return '셀프평가';
+      case 'weekly': return '주간 회고';
+      case 'qmeet': return ((it.qm&&it.qm.q)||'분기')+' 면담';
+      case 'prop': return '키우고 싶은 것 제안';
+      case 'qgoal': return it.closed?'분기 목표 마무리':'분기 목표 시작';
+      default: return it.src||'';
+    }
+  }
+  function stGo(it){
+    switch(it.k){
+      case 'review': case 'self': case 'qmeet': return 'profile';
+      case 'feedback': case 'prop': case 'qgoal': return 'goal';
+      case 'match': case 'mself': return 'match';
+      case 'weekly': return 'cal:'+(it.mon||'');
+      default: return it.go||'';
+    }
+  }
+  function stBody(it){
+    var E=esc, q=function(l){ return '<span class="q">'+E(l)+'</span>'; };
+    switch(it.k){
+      case 'memo': case 'qa': return (it.q?q(it.q):'')+E(it.text);
+      case 'react': return (it.text?E(it.text):'')+(it.h?(it.text?' ':'')+'<em class="st-hrt">♥'+(it.text?'':' 좋아요')+'</em>':'');
+      case 'props': { var p=it.p, pk=it.pick, on=function(w){ return pk&&pk.from==='pick-'+w; };
+        return '이번 주는 둘 중 하나<div class="pk">'+(p.a?'<span class="'+(on('a')?'on':'')+'">'+E(p.a)+(p.ra?' <small>'+E(p.ra)+'</small>':'')+'</span>':'')+(p.b?'<span class="'+(on('b')?'on':'')+'">'+E(p.b)+(p.rb?' <small>'+E(p.rb)+'</small>':'')+'</span>':'')+'</div>'+(pk?'<small class="st-pick">내가 고름 · '+E(pk.text||'')+'</small>':''); }
+      case 'prep': return (it.text?E(it.text):'')+(it.mark?(it.text?'<br>':'')+'담당 <b>'+E(it.mark)+'</b>':'');
+      case 'review': { var r=it.r||{}; return (r.strengths&&r.strengths.length?q('강점')+E(r.strengths.join(' · ')):'')+(r.develop&&r.develop.length?q('발전')+E(r.develop.join(' · ')):'')+(r.goals&&r.goals.length?q('목표')+E(r.goals.filter(function(g){return g&&g.t;}).map(function(g){return g.t;}).join(' · ')):'')+(r.note?q('메모')+E(r.note):''); }
+      case 'feedback': { var fb=it.fb||{}; return [['잘하고 있는 점',fb.praise],['더 발전시킬 점',fb.focus],['코치의 질문',fb.question],['다음 행동',fb.nextAction]].filter(function(x){return x[1];}).map(function(x){return q(x[0])+E(x[1]);}).join(''); }
+      case 'match': { var mr=it.mr||{}; return (mr.score?q('평점 '+mr.score+'/10'):'')+(mr.good?q('잘된 점')+E(mr.good):'')+(mr.improve?q('개선할 점')+E(mr.improve):'')+(mr.action?q('메모')+E(mr.action):''); }
+      case 'mself': { var ms=it.ms||{}; return (ms.tried?q('시도')+E(ms.tried):'')+(ms.good?q('잘 된 장면')+E(ms.good):'')+(ms.better?q('다음엔')+E(ms.better):''); }
+      case 'self': { var e=it.e||{}; return q('평균')+E(String(e.o||''))+' / 5'; }
+      case 'weekly': { var w=it.w||{}; return (w.good?q('잘된 것')+E(w.good):'')+(w.better?q('더 할 것')+E(w.better):''); }
+      case 'qmeet': { var qm=it.qm||{}; return (qm.promise?q('약속')+E(qm.promise):'')+(qm.nextArea?q('다음')+E(qm.nextArea):'')+(qm.strengths?q('강점 · 내 말')+E(qm.strengths):''); }
+      case 'prop': return E((it.p&&it.p.t)||'');
+      case 'qgoal': { var g=it.q||{}; return (g.theme?q('테마')+E(g.theme):'')+((g.goals||[]).filter(function(x){return x&&x.t;}).length?q('목표')+E(g.goals.filter(function(x){return x&&x.t;}).map(function(x){return x.t;}).join(' · ')):''); }
+      default: return E(it.text||'');
+    }
+  }
+  function rStory(){
+    var items=stItems(), cname=lrCoachName()||'코치';
+    var h='<section class="card st-card"><div class="td-top"><b>이야기</b><span>코치와 나 · 시간순</span><span class="sp"></span><span class="td-pill">'+items.length+'</span></div>';
+    if(!items.length){ h+='<div class="td-q-empty">아직 오간 말이 없어요 — 일지에 한 마디를 남기면 코치의 답글이 여기 쌓여요.</div></section>'; return h; }
+    var byDate={}; try{ mtList().forEach(function(m){ if(m&&m.date)byDate[m.date]=m.opponent||''; }); }catch(_){}
+    var LIM=40, show=_stAll?items:items.slice(0,LIM), lastD=''; h+='<div class="st-list">';
+    show.forEach(function(it){
+      if(it.d&&it.d!==lastD){ lastD=it.d; var dd=new Date(it.d+'T12:00:00'); var wd=['일','월','화','수','목','금','토'][dd.getDay()]||''; h+='<div class="st-day"><span>'+(dd.getMonth()+1)+'월 '+dd.getDate()+'일 · '+wd+(byDate[it.d]?(' · vs '+esc(byDate[it.d])):'')+'</span></div>'; }
+      var who=it.who==='coach'?'coach':'me', go=stGo(it), body=stBody(it); if(!body)return;
+      h+='<div class="st-msg '+who+'"'+(go?' data-st-go="'+esc(go)+'" role="button" tabindex="0" title="원래 자리로"':'')+'><span class="st-src">'+(who==='coach'?'<b>'+esc(it.by||(it.r&&it.r.by)||(it.fb&&it.fb.updatedBy)||cname)+'</b> · ':'')+esc(stSrc(it))+'</span><div class="st-bub">'+body+'</div></div>';
+    });
+    h+='</div>';
+    if(items.length>LIM&&!_stAll)h+='<button type="button" class="qg-add" data-st-more>지난 이야기 '+(items.length-LIM)+'개 더 보기</button>';
+    h+='<div class="st-note">말풍선을 누르면 그 자리로 갑니다 · 답 보내기는 다음 판에서</div></section>'; return h;
+  }
+  function bindStory(){
+    var card=wrap.querySelector('.st-card'); if(!card)return;
+    var mo=card.querySelector('[data-st-more]'); if(mo)mo.onclick=function(){ _stAll=true; render(); };
+    card.addEventListener('click',function(e){ var el=e.target.closest('[data-st-go]'); if(!el)return; var go=String(el.getAttribute('data-st-go')||''); if(!go)return;
+      var m=/^cal:(\d{4}-\d{2}-\d{2})$/.exec(go);
+      if(m){ curL='cal'; calView='day'; calAnchor=new Date(m[1]+'T00:00:00'); calAnchor.setHours(0,0,0,0); }
+      else if(go==='cal'){ curL='cal'; }
+      else curL=go;
+      try{ [].forEach.call(document.getElementById('layers').children,function(x){ x.classList.toggle('on',x.dataset.l===curL); }); }catch(_){}
+      render(); try{ window.scrollTo(0,0); }catch(_){} });
+  }
   function bindThread(){
     var card=wrap.querySelector('.th-card'); if(!card)return;
     var mo=card.querySelector('[data-th-more]'); if(mo)mo.onclick=function(){ _thAll=true; render(); };
@@ -13454,6 +13566,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     try{ if(curL==='profile'||curL==='eval'){ bindReviews(); bindThread(); bindReacts(); bindMyArch(); bindWelcome();
       bindMeasureCard(); } }catch(_){}   /* 2.320 — 몸·잠·태그와 이번 주 측정이 이 탭으로 왔다 */   /* 2.079 — 내 유형 */   /* 2.027 · 2.040 · 2.042 */   /* 2.255 — 환영 세 걸음 */
     try{ if(curL==='cal')bindReacts(); }catch(_){}   /* 2.739 — 과거 일간을 보는 코치의 답글 입력 */
+    try{ if(curL==='story')bindStory(); }catch(_){}   /* 2.766 */
     try{ bindGoalFamSeg(); }catch(_){}   /* 2.321 — 목표 · 루틴 · 이미지노트 세그 */
     try{ if(curL==='goal')bindVisionCard(); }catch(e){ try{console.warn('내 방향 연결 실패',e);}catch(_){} }
     try{ bindQgLadder(); }catch(_){}    /* 2.403 — 사다리 층을 누르면 그 편집기로 내려간다 */
