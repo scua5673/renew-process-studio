@@ -665,7 +665,8 @@
   .nav span{font-size:var(--fs-micro);font-weight:var(--fw-body)}
 
   /* ---------- MODAL ---------- */
-  .scrim{position:absolute;inset:0;background:rgba(16,24,40,.5);z-index:20;
+  /* 2.744 — 편집창의 닫기 버튼이 고정 헤더(40)·더보기(180)에 가리지 않도록 한다. */
+  .scrim{position:absolute;inset:0;background:rgba(16,24,40,.5);z-index:200;
     display:none;align-items:flex-end;animation:fade .25s}
   .scrim.show{display:flex}
   .sheet{width:100%;background:var(--frame);border-top:1px solid var(--line);border-radius:16px 16px 0 0;
@@ -7443,7 +7444,7 @@ function openSession(di, ti, bi){
   if(ti===null || ti===undefined){            // 새 훈련 → 위저드 (단계별, 완료 눌러야 추가)
     const t=SLOTS[(day.trainings||[]).length]||'18:00';
     draftSession={time:t, players:'', aims:'', note:'', load:{rpe:5}, blocks:[{phase:'메인훈련', theme:'', fmt:'', dur:PHASE_DUR['메인훈련'], desc:''}]};
-    curSession={di,draft:true,wizard:true,step:1,openBi:-1};   // 드릴은 접힌 채 시작
+    curSession={di,draft:true,wizard:true,step:1,openBi:-1,draftSeed:JSON.parse(JSON.stringify(draftSession))};   // 2.744 — 자동으로 채운 초깃값은 작성한 내용과 구분한다(메모리에만).
   } else {
     curSession={di,ti,draft:false,openBi:(bi==null?-1:bi)};  // 드릴 눌러 들어오면 그 블록 펼침
   }
@@ -7890,30 +7891,44 @@ function sbRemove(bi){
   curSession.openBi = -1;
   renderSession(); if(!curSession.draft) renderWeek();
 }
+/* 2.744 — 새 초안만 작성 여부를 판단한다. 시간·RPE·첫 빈 블록은 위저드가 넣은
+   기본값과 비교하고, 도입·리뷰·현행 보드의 같은 슬롯 자료도 실제 내용으로 인정한다. */
+function sessionDraftHasContent(tr,day,seed){
+  if(!tr)return false;
+  seed=seed||{};
+  const has=v=>typeof v==='string'?!!v.trim():typeof v==='number'?Number.isFinite(v)&&v!==0:
+    v===true?true:Array.isArray(v)?v.some(has):!!v&&typeof v==='object'?Object.keys(v).some(k=>has(v[k])):false;
+  if(['players','aims','note','intro','review','aimsP','topics','gmMoment','gmPhases','gmTags','fitness','grp'].some(k=>has(tr[k])))return true;
+  if(['time','load'].some(k=>has(tr[k])&&JSON.stringify(tr[k])!==JSON.stringify(seed[k])))return true;
+  if((tr.blocks||[]).some((b,i)=>{
+    const before=(seed.blocks||[])[i]||{};
+    return b&&Object.keys(b).some(k=>k!=='_open'&&has(b[k])&&JSON.stringify(b[k])!==JSON.stringify(before[k]));
+  }))return true;
+  const slot=String(tr.slot||'').trim(), board=day&&day.board||{};
+  if(!slot)return false; // 미배정 행은 다른 세션의 자료일 수 있으므로 세지 않는다.
+  return [['trains','trainSlot','trainData'],['warms','warmSlot','warmsData'],['meets','meetSlot','meetsData'],['libs','libSlot','libData']].some(([names,slots,details])=>{
+    const labels=board[names]||[], data=board[details]||[], links=board[slots]||[];
+    return links.some((s,i)=>String(s||'')===slot&&(has(labels[i])||has(data[i])));
+  });
+}
 function commitSession(){
-  // 빈 블록이어도 OK — 목표·메모만 있는 훈련도 유효. 완전히 빈 것만 정리.
-  const hasContent=tr=>tr && ((tr.blocks||[]).length || tr.aims || tr.note || tr.players);
+  if(!curSession)return;
   if(curSession.draft){
     const day=week[curSession.di];
-    if(hasContent(draftSession)){ day.trainings=day.trainings||[]; day.trainings.push(sesDefaults(draftSession,curSession.di)); day.rest=false; day.off=false; }
+    if(sessionDraftHasContent(draftSession,day,curSession.draftSeed)){ day.trainings=day.trainings||[]; day.trainings.push(sesDefaults(draftSession,curSession.di)); day.rest=false; day.off=false; }
     draftSession=null;
-  } else {
-    const {di,ti}=curSession; const day=week[di], tr=day.trainings[ti];
-    if(tr && !hasContent(tr)){ day.trainings.splice(ti,1); }
-    if(day.trainings.length===0 && !day.match) day.rest=true;
   }
+  // 2.744 — 기존 세션의 완료는 닫기다. 빈 세션도 명시적인 삭제 버튼에서만 지운다.
   curSession=null;
   document.getElementById('scrim').classList.remove('show');
   syncViews();
 }
 function cancelSession(){
+  if(!curSession)return;
   if(curSession.draft){
     draftSession=null;                       // 초안 폐기 — 아무것도 추가 안 됨
-  } else {
-    const {di,ti}=curSession; const day=week[di], tr=day.trainings[ti];
-    if(tr && tr.blocks.length===0 && !(tr.aims||tr.note||tr.players)){ day.trainings.splice(ti,1); }
-    if(day.trainings.length===0 && !day.match) day.rest=true;
   }
+  // 2.744 — ×·Escape·배경 클릭은 기존 훈련과 이미 저장한 리뷰를 삭제하지 않는다.
   curSession=null;
   document.getElementById('scrim').classList.remove('show');
   syncViews();

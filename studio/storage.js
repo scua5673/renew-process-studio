@@ -429,7 +429,11 @@
        전환 장벽이 그 한 번의 경합 때문에 영구히 막히지 않고 다시 확인할 수 있다. */
     sharedLatest[k]=raw;
     var prev=sharedWrites[k]||Promise.resolve();
-    var next=prev.catch(function(){}).then(function(){ return window.storage.set(k,raw); });
+    var next=prev.catch(function(){}).then(function(){ return window.storage.set(k,raw); }).then(function(ok){
+      /* 2.744 — 권한 어댑터의 false도 완료된 저장이 아니다. */
+      if(ok===false)throw new Error('shared storage write rejected');
+      return true;
+    });
     sharedWrites[k]=next;
     next.then(function(){
       if(sharedWrites[k]===next){
@@ -458,7 +462,16 @@
       /* 첫 목록을 기다리는 사이 다른 키가 추가됐을 수 있다. 전환·동기화가
          반쯤 저장된 판본을 읽지 않도록 큐가 실제로 빌 때까지 한 번 더 본다. */
       var more=k?(sharedWrites[k]?[k]:[]):Object.keys(sharedWrites);
-      return more.length?Promise.all(more.map(sharedWaitLatest)).then(function(){return true;}):true;
+      /* 2.744 — 두 번째 대기 중에도 새 꼬리가 생긴다. 큐가 빌 때까지 확인한다. */
+      return more.length?sharedReady(k):true;
+    });
+  }
+  /* 2.744 — 과거 실패를 회복할 때 빈 큐만으로 성공을 추정하지 않는다.
+     storage.get의 localStorage fallback 없이 IDB의 실제 원문을 확인한다. */
+  function sharedVerified(k,raw){
+    return sharedReady(k).then(function(){return afterMigrate(function(){return idbGet(k);});}).then(function(saved){
+      if(saved!==raw)throw new Error('shared storage verification failed');
+      return true;
     });
   }
   /* 큰 보조 사본 전용 API. 화면 본문과 달리 localStorage 거울을 새로 만들지 않는다.
@@ -576,6 +589,7 @@
   window.PSStorage={
     estimate:function(){ try{ return navigator.storage.estimate(); }catch(_){ return Promise.resolve(null); } },
     sharedReady:sharedReady,
+    sharedVerified:sharedVerified,
     auxGet:auxGet,
     auxSet:auxSet,
     auxReady:sharedReady,
@@ -1014,6 +1028,68 @@
       if(!el) return;
       bound.push({el:el,scope:String(scope||'app'),idle:idleText||''});
       paint();
+    },
+    /* 2.744 — 동기 쓰기 접수와 비동기 저장 완료를 구분한다. 실패는 같은 키의
+       새 쓰기가 검증될 때만 풀고, 늦게 끝난 다른 팀/이전 쓰기는 표시를 바꾸지 않는다. */
+    createTracker:function(scope,ownerOf){
+      var owner=null,entries=Object.create(null);
+      function current(){
+        var next=String(ownerOf?ownerOf():'');
+        if(next!==owner){owner=next;entries=Object.create(null);set(scope,'idle');}
+        return owner;
+      }
+      function paintTracked(){
+        current();
+        var rows=Object.keys(entries).map(function(k){return entries[k];});
+        var bad=rows.filter(function(r){return r.error;})[0];
+        set(scope,bad?'failed':(rows.some(function(r){return r.pending;})?'saving':(rows.length?'saved':'idle')),bad&&bad.error);
+      }
+      function track(key,work,retry){
+        current(); key=String(key);
+        var old=entries[key],row={owner:owner,pending:true,error:old&&old.error||null,promise:null,retry:retry};
+        entries[key]=row;
+        row.promise=Promise.resolve(work).then(function(ok){
+          if(ok===false)throw new Error('storage write rejected');
+          row.pending=false;row.error=null;
+          if(current()===row.owner&&entries[key]===row)paintTracked();
+          return true;
+        }).catch(function(error){
+          row.pending=false;row.error=error||new Error('storage write failed');
+          if(current()===row.owner&&entries[key]===row)paintTracked();
+          throw row.error;
+        });
+        /* 자동 저장 호출자는 Promise를 기다리지 않아도 실패를 잃지 않는다. */
+        row.promise.catch(function(){});
+        paintTracked();
+        return row.promise;
+      }
+      function ready(retryFailed){
+        var expected=current(),snapshot=Object.create(null),keys=Object.keys(entries);
+        /* 전환/명시적 저장은 같은 원문을 한 번 재검증할 수 있다. 다른 키 성공으로
+           해제하지 않고, 호출자가 소유자·거울 원문까지 확인한 경우에만 회복한다. */
+        if(retryFailed)keys.forEach(function(k){
+          var row=entries[k];
+          if(row.error&&!row.pending&&row.retry){
+            var work;try{work=row.retry();}catch(error){work=Promise.reject(error);}
+            track(k,work,row.retry);
+          }
+        });
+        keys.forEach(function(k){snapshot[k]=entries[k];});
+        return Promise.all(keys.map(function(k){
+          var row=snapshot[k];
+          return row.promise.catch(function(error){
+            if(current()!==expected)throw new Error('storage owner changed');
+            if(entries[k]===row)throw error; /* 이미 대체된 쓰기의 실패는 최신 꼬리가 결정한다. */
+          });
+        })).then(function(){
+          if(current()!==expected)throw new Error('storage owner changed');
+          if(Object.keys(entries).some(function(k){return snapshot[k]!==entries[k]||entries[k].pending;}))return ready();
+          return true;
+        });
+      }
+      return {track:track,ready:ready,owner:current,
+        hasFailed:function(key){current();return !!(entries[key]&&entries[key].error);},
+        hasPending:function(){current();return Object.keys(entries).some(function(k){return entries[k].pending||entries[k].error;});}};
     }
   };
 

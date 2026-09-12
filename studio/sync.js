@@ -628,7 +628,7 @@ function sensitiveLocalKey(k){
   if(!k)return false;
   if(k.indexOf('cs_')===0||k.indexOf('scout_')===0||k.indexOf('training_')===0||k.indexOf('process_')===0||k.indexOf('sq:')===0)return true;
   return k===WSKEY||k===WLKEY||k===MKEY||k===OWNERKEY||k==='ps_sync_outbox_v1'||k==='ps_sync_pending_summary_v1'||k==='ps_sync_skipped'
-    ||k==='ps_sync_conflicts_v1'||k==='ps_sync_conf_seen'||k==='ps_hold_list_v1'||k==='ps_rescue_list_v1'||k==='ps_tomb_v1'
+    ||k==='ps_sync_conflicts_v1'||k==='ps_sync_conf_seen'||k==='ps_hold_list_v1'||k==='ps_rescue_list_v1'||k==='ps_tomb_v1'||k==='ps_personal_review_v1'
     ||k==='ps_roster_keep_v1'
     ||k==='ps_display_name'||k==='ps_kv_who_v1'||k==='ps_member_names_v1'||k==='ps_perms_missing'
     ||/^(?:ps_(?:auto_snap_|rescue_|ws_stash_|sync_conflict_|sync_base_|push_ok_|section_preimport_|section_import_ok_|schedule_recovery_|items_))/.test(k);
@@ -1722,6 +1722,12 @@ function pendingInfo(wid){
   var sc=outboxScope(outboxOwner(),wid),b=(pendingSummary.by||{})[sc]||{};
   return {count:+b.count||0,oldest:+b.oldest||0};
 }
+/* 2.744 — 개인 자료는 팀 화면에서도 저장된다. 전환 장벽의 팀 전용 집계는 그대로
+   두고, 사용자에게 보이는 상태만 개인 대기까지 합쳐 “팀과 같아요” 오판을 막는다. */
+function visiblePendingInfo(wid){
+  var own=pendingInfo(wid),pwid=personalWid(),p=pwid&&pwid!==wid?pendingInfo(pwid):{count:0,oldest:0};
+  return {count:own.count+p.count,oldest:own.oldest&&p.oldest?Math.min(own.oldest,p.oldest):(own.oldest||p.oldest)};
+}
 function outboxMark(wid,key,h,source){
   return outboxMarkForOwner(outboxOwner(),wid,key,h,source);
 }
@@ -1815,15 +1821,17 @@ function outboxAckSynced(wid,m,skipped,libraryAckHash){
    이벤트가 이 변경을 현재 팀 wid의 대기함에 넣어, syncPersonal이 성공해도 m.h가
    아니라 m.p.h에만 확정값이 남으므로 대기 숫자가 영원히 사라지지 않았다.
    새 개인 scope와 이미 잘못 들어간 현재 팀 scope를 모두 같은 확정 hash로 정리한다. */
-function outboxAckPersonal(pwid,m){
+function outboxAckPersonal(pwid,m,guard){
   var uid=outboxOwner(),teamWid=isTeamWs()?activeWs():'',confirmed=(m&&m.p&&m.p.h)||{};
   if(!pwid)return Promise.resolve();
+  function requireCurrent(){if(typeof guard==='function'&&!guard())throw syncIssue('sync_workspace_changed','personal_ack_owner','개인 저장 확인 중 작업 공간이 바뀌었습니다');}
   return outboxTxn(function(q){
+    requireCurrent();
     return Promise.all(q.map(function(it){
       if(!it||String(it.uid)!==String(uid)||!PERSONAL[it.key])return Promise.resolve(true);
       if(String(it.wid)!==String(pwid)&&(!teamWid||String(it.wid)!==String(teamWid)))return Promise.resolve(true);
       return currentValueForKey(it.key).then(function(v){return hash(v)!==confirmed[it.key];}).catch(function(){return true;});
-    })).then(function(keep){return q.filter(function(_,i){return keep[i];});});
+    })).then(function(keep){requireCurrent();return q.filter(function(_,i){return keep[i];});});
   });
 }
 /* 워크스페이스를 바꿀 때 실제로 지워질 자료만 센다. PERSONAL 키는 어느 공간을
@@ -1905,6 +1913,10 @@ function syncCodeText(code){   /* 2.625 — 사람 쪽 말로. 첫 줄은 상태
     :code==='sync_permission'?'이 자료를 고칠 권한이 없어요'
     :code==='sync_rate_limit'?'요청이 많아요 · 잠시 뒤 다시'
     :code==='sync_storage'?'이 기기 저장소를 읽지 못했어요'
+    :code==='sync_personal_size'?'자료가 커서 올리지 못했어요'
+    :code==='sync_local_changed'?'새 편집을 확인하고 다시 올릴게요'
+    :code==='sync_confirm_missing'?'서버 저장을 확인하지 못했어요'
+    :code==='sync_conflict'?'다른 기기의 새 판본을 확인할게요'
     :String(code||'원인을 확인해 주세요');
 }
 /* 2.625 — 이유는 넷뿐: 인터넷 · 로그인 · 권한 · 저장소. 상태 한 줄 셋째 줄에 쓴다 */
@@ -1922,11 +1934,13 @@ function syncReasonText(code){
    판정 로직은 건드리지 않는다 — 기존 값(세션·온라인·busy·outbox 대기·lastIssue·자료 확인 목록·마지막 성공 시각)을 읽어 문장 하나로 만든다. */
 function syncState(){
   var s=getSess(); if(!s)return {kind:'off',text:'로그인하면 팀과 함께 써요'};
-  var wid=activeWs(), n=0; try{ n=pendingInfo(wid).count||0; }catch(_){}
+  var wid=activeWs(), n=0; try{ n=visiblePendingInfo(wid).count||0; }catch(_){}
   var m={}; try{ m=meta(); }catch(_){}
   /* «확인할 것»은 올리기를 막는 보류만 센다. 덮임·충돌·구조선은 설정 «자료 확인»에 남는다 — 실측(2026-09-06 풋볼A): 옛 충돌 18·구조선 8이 늘 떠 있어 띠가 영구 주황이 됐다 */
-  var rc=0; try{ rc=holdList().length; }catch(_){}
+  var rc=0; try{ rc=holdList().length+personalReviewList().length; }catch(_){}
   if(navigator.onLine===false)return {kind:'bad',reason:'sync_offline',text:'오프라인이에요'+(n?(' · 이 기기에 '+n+'건 안전하게 있어요'):''),n:n,review:rc};
+  if(personalIssue&&personalIssue.uid===String(s.uid||'')&&personalIssue.wid===personalWid())
+    return {kind:'bad',reason:personalIssue.code,text:'개인 자료를 못 올렸어요 · '+syncCodeText(personalIssue.code),n:n,review:rc,at:personalIssue.at};
   var fresh=lastIssue&&(Date.now()-lastIssue.at<10*60*1000);
   if(fresh&&(n||lastIssue.code==='sync_auth'||lastIssue.code==='sync_permission'))return {kind:'bad',reason:lastIssue.code,text:'못 올렸어요 · '+syncReasonText(lastIssue.code),n:n,review:rc,at:lastIssue.at};
   if(rc)return {kind:'ask',text:'올리기 전 확인할 것 '+rc,n:n,review:rc};
@@ -3500,6 +3514,8 @@ function rescueDismiss(k){
 function dataReviewList(){
   if(!dataUnlocked())return [];
   var out=[];
+  try{personalReviewList().forEach(function(x){out.push(Object.assign({},x,{src:'personal',mine:null,theirs:null,
+    why:x.choice?'선택을 기록했습니다 · 두 판본을 다시 확인한 뒤 반영합니다':'개인 자료가 두 기기에서 바뀌어 양쪽 내용을 그대로 보관 중입니다'}));});}catch(_){}
   try{ holdList().forEach(function(x){
     out.push({src:'hold',k:x.k,at:x.at,mine:x.after,theirs:x.before,
       why:'이 기기에서 크게 줄어 아직 안 올렸습니다'}); }); }catch(_){}
@@ -3513,12 +3529,13 @@ function dataReviewList(){
     out.push({src:'conflict',k:x.k,at:x.at,mine:null,theirs:null,
       why:'양쪽이 같이 바뀌어 지금은 이 기기 것이 쓰이고 있습니다'}); }); }catch(_){}
   /* 같은 키가 두 갈래에 걸리면 더 급한 쪽(보류 > 덮임 > 충돌) 하나만 */
-  var rank={hold:0,rescue:1,conflict:2}, seen={}, uniq=[];
+  var rank={personal:0,hold:1,rescue:2,conflict:3}, seen={}, uniq=[];
   out.sort(function(a,b){ return (rank[a.src]-rank[b.src])||(b.at-a.at); });
   out.forEach(function(x){ if(!seen[x.k]){ seen[x.k]=1; uniq.push(x); } });
   return uniq;
 }
-function dataReviewApply(src,k,keepMine){
+function dataReviewApply(src,k,keepMine,shown){
+  if(src==='personal')return personalReviewChoose(k,keepMine,shown);
   var run;
   if(src==='hold')          run=keepMine?holdApprove(k):holdTakeServer(k);
   else if(src==='rescue')   run=keepMine?rescueRestore(k):Promise.resolve(rescueDismiss(k));
@@ -3568,8 +3585,8 @@ function dataReviewOpen(){
   var list=dataReviewList();
   var bcss='border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font-family:inherit;font-size:12px;font-weight:700;padding:7px 11px;border-radius:8px;cursor:pointer';
   var body=list.length
-    ? ('<div style="margin-bottom:12px">이 기기와 팀에서 <b>다르게 저장된 자료</b>입니다.<br>'
-       +'어느 쪽을 남길지 고르세요. 고르지 않은 쪽은 사라지지 않고 되돌릴 수 있습니다.</div>')
+    ? ('<div style="margin-bottom:12px">기기마다 <b>다르게 저장된 자료</b>입니다.<br>'
+       +'남길 판본을 고르세요. 개인 자료는 선택 전까지 이 기기와 클라우드에 각각 남아 있습니다. 선택하면 고른 내용으로 맞춥니다.</div>')
     : '<div style="margin-bottom:4px">이 기기와 팀의 자료가 같습니다 — 지금 고를 것은 없습니다.</div>';
   body+=list.map(function(x,i){
     var num=(x.mine!=null&&x.theirs!=null)
@@ -3580,8 +3597,8 @@ function dataReviewOpen(){
       +'<div style="font-size:11px;opacity:.72;margin-top:3px">'+esc(x.why)+'</div>'
       +'<div style="font-size:11px;opacity:.55;margin-top:2px">'+new Date(x.at).toLocaleString()+'</div>'
       +'<div style="display:flex;gap:6px;margin-top:9px">'
-      +'<button type="button" data-dr="'+i+'" data-keep="1" style="'+bcss+'">이 기기 것</button>'
-      +'<button type="button" data-dr="'+i+'" data-keep="0" style="'+bcss+'">팀 것</button>'
+      +'<button type="button" data-dr="'+i+'" data-keep="1" style="'+bcss+'">'+(x.src==='personal'?'이 기기 것 올리기':'이 기기 것')+'</button>'
+      +'<button type="button" data-dr="'+i+'" data-keep="0" style="'+bcss+'">'+(x.src==='personal'?'다른 기기 것 받기':'팀 것')+'</button>'
       +'</div></div>';
   }).join('');
   /* ── 지난 판본으로 되돌리기 (1.620) ── */
@@ -3690,7 +3707,7 @@ function dataReviewOpen(){
     b.addEventListener('click',function(){
       var x=list[+b.getAttribute('data-dr')], keep=b.getAttribute('data-keep')==='1';
       b.disabled=true; b.textContent='…';
-      Promise.resolve(dataReviewApply(x.src,x.k,keep)).then(function(ok){
+      Promise.resolve(dataReviewApply(x.src,x.k,keep,x)).then(function(ok){
         try{ if(mo&&mo.close)mo.close(true); }catch(_){}
         if(ok===false){
           try{ psModal({title:'적용하지 못했습니다',
@@ -3700,11 +3717,18 @@ function dataReviewOpen(){
         }
         try{ syncNow('data-review'); }catch(_){}
         try{ renderUI(); }catch(_){}
+        if(ok&&ok.pending){
+          try{psModal({title:'선택을 기록했습니다',body:'동기화에서 두 판본이 그대로인지 확인한 뒤 '+(keep?'이 기기 내용을 올립니다.':'다른 기기 내용을 받습니다.')+' 그동안 내용이 바뀌면 다시 확인할 수 있게 남겨 둡니다.',hideCancel:true,ok:'확인'});}catch(_){}
+          return;
+        }
         /* 남은 게 있으면 이어서 묻는다 — 한 건씩 끝내는 편이 덜 헷갈린다 */
         if(dataReviewList().length) setTimeout(dataReviewOpen,250);
         else try{ psModal({title:'정리했습니다',
           body:(keep?'이 기기 것으로 두었습니다.':'팀 것으로 바꿨습니다.')+' 화면을 새로고침하면 보입니다.',
           hideCancel:true,ok:'확인'}); }catch(_){}
+      }).catch(function(){
+        b.disabled=false;b.textContent=keep?'이 기기 것':'다른 기기 것';
+        try{psModal({title:'선택을 저장하지 못했습니다',body:'자료는 그대로 두었습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.',hideCancel:true,ok:'확인'});}catch(_){}
       });
     });
   });
@@ -4164,10 +4188,10 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
     );
     return true;
   }
-  /* 2.742 — 동기화 fetch 뒤 IDP iframe/다른 탭이 새 입력을 썼다면, 그 입력을 방금
-     계산한 pull/merge로 덮지 않는다. expectedLoc을 준 IDP 쓰기만 exact CAS로 막는다. */
-  if((isIdpPrivateKey(k)||isIdpPubKey(k))&&expectedLoc!==undefined){
-    try{if(localStorage.getItem(k)!==expectedLoc)return false;}catch(_){return false;}
+  /* 2.742/2.744 — 동기화 fetch 뒤 IDP/개인 자료에 새 입력이 생겼다면,
+     그 입력을 방금 계산한 pull/merge로 덮지 않는다. expectedLoc을 exact로 비교한다. */
+  if((isIdpPrivateKey(k)||isIdpPubKey(k)||PERSONAL[k])&&expectedLoc!==undefined){
+    try{if(localStorage.getItem(k)!==expectedLoc)return ownerStale();}catch(_){return ownerStale();}
   }
   if(!ownerCurrent())return ownerStale();
   try{ rescueStash(k,localStorage.getItem(k),v); }catch(_){}
@@ -4583,87 +4607,195 @@ function scheduleSyncRetry(){
    그래서 활성 공간과 무관하게 **내 개인 공간 행**에 대고 따로 주고받는다.
    - 대상은 PERSONAL 키뿐이고, 서버에서 지우는 일은 절대 하지 않는다.
    - 개인 공간을 못 찾으면 조용히 건너뛴다(있던 동작 그대로).
-   - 개인 공간에 있을 땐 본 동기화가 이미 처리하므로 돌지 않는다. */
+   - 2.744: 개인 공간에서도 이 통로를 쓴다. 본 KEYS 루프의 무조건 쓰기로 우회하지 않는다. */
 function personalWid(){
   try{
     var l=wsList(),me=(getSess()||{}).uid;
     var p=l.filter(function(w){ return w&&w.kind==='personal'; });
     if(!p.length)return '';
     var mine=p.filter(function(w){ return !me||!w.owner_id||w.owner_id===me; });
-    return (mine[0]||p[0]).id||'';
+    return mine.length?(mine[0].id||''):'';   /* 2.744 — 명시적으로 다른 소유자인 공간으로 폴백하지 않는다. */
   }catch(_){ return ''; }
 }
+/* 2.744 — 개인 노트도 PC/폰이 동시에 고친다. 원문은 기존 로컬/서버에 그대로 두고
+   확인할 두 판본의 작은 메타만 남긴다. 기존 “덮인 뒤 복구” 목록과는 다른 대기 상태다. */
+var PERSONAL_REVIEW='ps_personal_review_v1',personalIssue=null;
+function personalContext(){
+  var s=getSess(),wid=personalWid();if(!s||!s.uid||!wid||!dataUnlocked())return null;
+  return {uid:String(s.uid),wid:String(wid),active:String(activeWs()||''),epoch:signOutEpoch,
+    seal:String(localStorage.getItem(OWNERKEY)||''),switchSeal:workspaceSwitchGuardRaw(),switchEpoch:workspaceSwitchEpochRaw()};
+}
+function personalCurrent(ctx,guard){
+  try{var s=getSess();return !!ctx&&dataUnlocked()&&!!s&&String(s.uid||'')===ctx.uid&&
+    String(personalWid())===ctx.wid&&String(activeWs()||'')===ctx.active&&signOutEpoch===ctx.epoch&&
+    String(localStorage.getItem(OWNERKEY)||'')===ctx.seal&&workspaceSwitchGuardRaw()===ctx.switchSeal&&workspaceSwitchEpochRaw()===ctx.switchEpoch&&
+    (typeof guard!=='function'||!!guard());}catch(_){return false;}
+}
+function personalReviewRead(){
+  var a;try{a=JSON.parse(localStorage.getItem(PERSONAL_REVIEW)||'[]');}catch(_){throw syncIssue('sync_storage','personal_review_read','개인 자료 확인 목록을 읽지 못했습니다');}
+  if(!Array.isArray(a))throw syncIssue('sync_storage','personal_review_read','개인 자료 확인 목록을 읽지 못했습니다');
+  return a;
+}
+function personalReviewWrite(a){
+  var raw=JSON.stringify(a);try{localStorage.setItem(PERSONAL_REVIEW,raw);}catch(_){throw syncIssue('sync_storage','personal_review_write','개인 자료 확인 목록을 저장하지 못했습니다');}
+  if(localStorage.getItem(PERSONAL_REVIEW)!==raw)throw syncIssue('sync_storage','personal_review_write','개인 자료 확인 목록을 저장하지 못했습니다');
+  try{window.dispatchEvent(new CustomEvent('ps-sync-state'));}catch(_){}
+}
+function personalReviewList(){
+  try{var c=personalContext();if(!c)return [];return personalReviewRead().filter(function(x){
+    return x&&x.uid===c.uid&&x.wid===c.wid&&PERSONAL[x.k];}).map(function(x){return Object.assign({},x,{viewActive:c.active,viewEpoch:c.switchEpoch,viewSeal:c.seal});});}catch(_){return [];}
+}
+function personalReviewSame(a,b){
+  return !!a&&!!b&&a.uid===b.uid&&a.wid===b.wid&&a.k===b.k&&a.h===b.h&&a.c===b.c&&a.sh===b.sh;
+}
+function personalReviewGet(ctx,k){
+  return personalReviewRead().filter(function(x){return x&&x.uid===ctx.uid&&x.wid===ctx.wid&&x.k===k;})[0]||null;
+}
+function personalReviewRecord(ctx,k,loc,row){
+  if(!personalCurrent(ctx))throw syncIssue('sync_workspace_changed','personal_review_owner','개인 자료 확인 중 작업 공간이 바뀌었습니다');
+  var entry={uid:ctx.uid,wid:ctx.wid,k:k,h:hash(loc),c:row.cupd,sh:hash(row.v),at:Date.now()},old=null;
+  var a=personalReviewRead().filter(function(x){if(x&&x.uid===ctx.uid&&x.wid===ctx.wid&&x.k===k){old=x;return false;}return true;});
+  if(personalReviewSame(old,entry))return old;
+  a.push(entry);personalReviewWrite(a);return entry;
+}
+function personalReviewClear(ctx,k){
+  if(!personalCurrent(ctx))throw syncIssue('sync_workspace_changed','personal_review_clear','개인 자료 확인 중 작업 공간이 바뀌었습니다');
+  var a=personalReviewRead(),next=a.filter(function(x){return !(x&&x.uid===ctx.uid&&x.wid===ctx.wid&&x.k===k);});
+  if(a.length!==next.length)personalReviewWrite(next);
+}
+function personalReviewChoose(k,keepMine,shown){
+  var ctx=personalContext();if(!ctx||!shown||shown.uid!==ctx.uid||shown.wid!==ctx.wid||shown.k!==k)return Promise.resolve(false);
+  if(shown.viewActive!==ctx.active||shown.viewEpoch!==ctx.switchEpoch||shown.viewSeal!==ctx.seal)return Promise.resolve(false);
+  /* 화면을 연 뒤 새 입력/다른 계정/팀 전환이 생겼으면 이전 선택을 새 내용에 적용하지 않는다. */
+  return currentValueForKey(k).then(function(loc){
+    if(!personalCurrent(ctx)||hash(loc)!==shown.h)return false;
+    var a=personalReviewRead(),chosen=false;
+    a=a.map(function(x){if(personalReviewSame(x,shown)){chosen=true;return Object.assign({},x,{choice:keepMine?'local':'server'});}return x;});
+    if(!chosen)return false;personalReviewWrite(a);return {pending:true};
+  });
+}
+/* 이미 확인한 서버 변경도 보호한다. CAS만 붙여서 올리면 읽기 전에
+   도착한 다른 기기의 변경을 덮기 때문에, 양쪽 변경은 반드시 명시 선택을 거친다. */
+function personalPlan(ctx,k,loc,row,confirmed){
+  if(row&&(row.cupd==null||!isFinite(+row.cupd)))throw syncIssue('sync_confirm_missing','personal_version_missing','개인 자료 판본을 확인하지 못했습니다');
+  var h=hash(loc),dirty=h!==((confirmed.h||{})[k]||''),changed=!!row&&row.cupd!==((confirmed.c||{})[k]||0);
+  if(loc==null&&!row)return {action:'none'};
+  if(row&&typeof row.v!=='string'&&(loc==null||changed||personalReviewGet(ctx,k)))
+    throw syncIssue('sync_confirm_missing','personal_pull_missing','개인 자료의 최신 원문을 확인하지 못했습니다');
+  if(row&&row.v===loc)return {action:'equal',raw:loc,cupd:row.cupd};
+  if(loc==null)return {action:'pull',raw:row.v,cupd:row.cupd};
+  if(!row)return {action:'push',raw:loc,missing:true};
+  if(dirty&&changed&&hash(row.v)!==((confirmed.h||{})[k]||'')){
+    var entry=personalReviewRecord(ctx,k,loc,row);
+    if(entry.choice==='local')return {action:'push',raw:loc,cupd:row.cupd};
+    if(entry.choice==='server')return {action:'pull',raw:row.v,cupd:row.cupd};
+    return {action:'review'};
+  }
+  if(dirty)return {action:'push',raw:loc,cupd:row.cupd};
+  if(changed)return {action:'pull',raw:row.v,cupd:row.cupd};
+  return {action:'none'};
+}
 function syncPersonal(at,ownerGuard){
-  function current(){try{return typeof ownerGuard!=='function'||!!ownerGuard();}catch(_){return false;}}
+  var ctx=personalContext(),team=isTeamWs();
+  function current(){return personalCurrent(ctx,ownerGuard);}
   function requireCurrent(stage){if(!current())throw syncIssue('sync_workspace_changed',stage,'개인 백업 중 계정 또는 작업 공간이 바뀌었습니다');}
-  if(!current())return Promise.resolve(0);
-  if(!isTeamWs()) return Promise.resolve(0);           /* 개인 공간이면 본 동기화가 처리 */
-  var pwid=personalWid(); if(!pwid) return Promise.resolve(0);
+  if(!ctx)return Promise.resolve(0);
+  requireCurrent('personal_start');
+  var pwid=ctx.wid;
+  if(!team&&ctx.active!==pwid)throw syncIssue('sync_workspace_changed','personal_workspace','개인 공간을 확인하지 못했습니다');
   var keys=KEYS.filter(function(k){ return PERSONAL[k]; });
   if(!keys.length) return Promise.resolve(0);
-  var idbKeys=keys.filter(function(k){ return idbBacked(k); });
-  var readIdb=idbKeys.length&&window.storage
-    ? Promise.all(idbKeys.map(function(k){ return window.storage.get(k).then(function(r){ return [k,r?r.value:null]; }); }))
-    : Promise.resolve([]);
-  return readIdb.then(function(pairs){
+  var startMeta=meta(),confirmed=team?(startMeta.p||{}):startMeta;
+  confirmed={h:Object.assign({},confirmed.h||{}),c:Object.assign({},confirmed.c||{})};
+  return Promise.all(keys.map(function(k){return currentValueForKey(k).then(function(raw){return [k,raw];});})).then(function(pairs){
     requireCurrent('personal_read');
     var vals={}; pairs.forEach(function(p){ vals[p[0]]=p[1]; });
     /* 2.599 — 두 단계: 메타(k,cupd)만 받고, 서버가 바뀐 키·로컬이 빈 키·검증 가져오기 키만 v 를 받는다.
        예전엔 회차(45초)마다 개인 키 여덟(노트 최대 927KB·IDP 수십 KB)의 v 를 통째로 받았다 — 이그레스의 가장 큰 상수항. */
     var base0=BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(pwid);
-    var mp=meta(); mp.p=mp.p||{}; mp.p.c=mp.p.c||{};
-    function locOf(k){ if(idbBacked(k)) return (vals[k]===undefined?null:vals[k]); try{ return localStorage.getItem(k); }catch(_){ return null; } }
+    function locOf(k){return vals[k]===undefined?null:vals[k];}
     return syncFetch('personal_meta',base0+'&k=in.('+keys.map(encodeURIComponent).join(',')+')&select=k,cupd',{headers:hj(at)}).then(function(r){
       requireCurrent('personal_meta_response');
       if(!r.ok)throw syncHttpError('personal_meta',r.status);
       return r.json();
     }).then(function(metaRows){
-      var need=[]; (metaRows||[]).forEach(function(r0){ var loc=locOf(r0.k); if(loc==null||r0.cupd!==(mp.p.c[r0.k]||0)||importApproved(r0.k,loc))need.push(r0.k); });
+      if(!Array.isArray(metaRows))throw syncIssue('sync_confirm_missing','personal_meta_shape','개인 자료 목록을 확인하지 못했습니다');
+      var need=[]; metaRows.forEach(function(r0){ var loc=locOf(r0.k); if(loc==null||r0.cupd!==(confirmed.c[r0.k]||0)||importApproved(r0.k,loc)||personalReviewGet(ctx,r0.k))need.push(r0.k); });
       if(!need.length) return metaRows||[];
       return syncFetch('personal_pull',base0+'&k=in.('+need.map(encodeURIComponent).join(',')+')&select=k,v,cupd',{headers:hj(at)}).then(function(r){
         requireCurrent('personal_pull_response');
         if(!r.ok)throw syncHttpError('personal_pull',r.status);
         return r.json();
-      }).then(function(vrows){ var vm={}; (vrows||[]).forEach(function(x){vm[x.k]=x;}); return (metaRows||[]).map(function(r0){ return vm[r0.k]||r0; }); });
+      }).then(function(vrows){
+        if(!Array.isArray(vrows))throw syncIssue('sync_confirm_missing','personal_pull_shape','개인 자료 원문을 확인하지 못했습니다');
+        var vm={}; vrows.forEach(function(x){vm[x.k]=x;}); return metaRows.map(function(r0){ return vm[r0.k]||r0; }); });
     }).then(function(rows){
       requireCurrent('personal_apply');
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
-      var m=meta(), now=Date.now(), pushRows=[], writes=[], applied=0,writeGuards=[];
-      function personalWrite(k,v,expected){var g={stale:false};writeGuards.push(g);return kvWrite(k,v,writes,expected,g,ownerGuard);}
-      m.p=m.p||{};                                     /* 개인 채널 전용 상태 — 본 동기화 메타(h/c)와 섞지 않는다 */
-      m.p.h=m.p.h||{}; m.p.c=m.p.c||{};
-      keys.forEach(function(k){
-        var loc=null;
-        if(idbBacked(k)) loc=(vals[k]===undefined?null:vals[k]);
-        else { try{ loc=localStorage.getItem(k); }catch(_){} }
-        if(loc!=null&&loc.length>MAXLEN) return;        /* 너무 크면 건너뛴다(본 동기화와 같은 기준) */
-        var row=srv[k], lh=hash(loc);
-        var dirty=(lh!==(m.p.h[k]||'')), srvChanged=row?(row.cupd!==(m.p.c[k]||0)):false;
-        if(loc==null&&!row) return;
-        if(row&&typeof row.v!=='string'&&(loc==null||srvChanged)) return;   /* 2.599 — v 가 안 온 행(두 단계 경합)은 다음 회차에 */
-        if(loc==null&&row){ if(personalWrite(k,row.v,loc)){ applied++; m.p.h[k]=hash(row.v); m.p.c[k]=row.cupd; } return; }
+      var now=Date.now(),pushRows=[],writes=[],applied=0,writeGuards=[],accepted={},candidates={};
+      function personalWrite(k,v,expected){var g={stale:false};writeGuards.push(g);return kvWrite(k,v,writes,expected,g,current);}
+      try{keys.forEach(function(k){
+        var loc=locOf(k),row=srv[k],plan;
+        if(loc!=null&&loc.length>MAXLEN)throw syncIssue('sync_personal_size','personal_size','개인 자료가 커서 올리지 못했습니다');
+        if(row&&(row.cupd==null||!isFinite(+row.cupd)))throw syncIssue('sync_confirm_missing','personal_version_missing','개인 자료 판본을 확인하지 못했습니다');
         /* 1.644 — 경기 파일의 개인 메모도 검증된 가져오기 원문이 우선이다.
            단, 서버의 다른 경기 메모는 importRebaseRaw가 그대로 보존한다. */
         if(row&&row.v!==loc&&importApproved(k,loc)){
           var approvedPersonal=importApprovedRebase(k,loc,row.v),personalRaw=approvedPersonal&&approvedPersonal.raw;
-          if(personalRaw==null){syncDiagnostic('import-rebase-pending',new Error('개인 경기 메모 병합 대기'));return;}
-          if(personalRaw!==loc){if(!personalWrite(k,personalRaw,loc)){importApprovalClear(k);return;}applied++;loc=personalRaw;lh=hash(loc);}
-          pushRows.push({workspace_id:pwid,k:k,v:loc,cupd:now,_casCupd:row.cupd});m.p.h[k]=lh;m.p.c[k]=now;return;
+          if(personalRaw==null)throw syncIssue('sync_confirm_missing','personal_import_rebase','개인 경기 메모를 합치지 못했습니다');
+          if(personalRaw!==loc){if(!personalWrite(k,personalRaw,loc))throw syncIssue('sync_local_changed','personal_import_write','새 개인 편집을 확인했습니다');applied++;loc=personalRaw;}
+          plan={action:'push',raw:loc,cupd:row.cupd};
         }
-        if(loc!=null&&!row){ var personalNew={workspace_id:pwid,k:k,v:loc,cupd:now};if(importApproved(k,loc))personalNew._casMissing=true;pushRows.push(personalNew); m.p.h[k]=lh; m.p.c[k]=now; return; }
-        if(dirty){                                     /* 내가 고쳤으면 내 것을 올린다(개인 자료라 경쟁자가 없다) */
-          pushRows.push({workspace_id:pwid,k:k,v:loc,cupd:now}); m.p.h[k]=lh; m.p.c[k]=now; return;
+        if(!plan)plan=personalPlan(ctx,k,loc,row,confirmed);
+        if(plan.action==='review'){
+          writes.push(outboxMarkForOwner(ctx.uid,pwid,k,hash(loc),'personal-conflict'));return;
         }
-        if(srvChanged){ if(personalWrite(k,row.v,loc)){ applied++; m.p.h[k]=hash(row.v); m.p.c[k]=row.cupd; } }
-      });
+        if(plan.action==='push'){
+          var req={workspace_id:pwid,k:k,v:plan.raw,cupd:now};
+          if(plan.missing)req._casMissing=true;else req._casCupd=plan.cupd;
+          pushRows.push(req);candidates[k]=plan.raw;
+          writes.push(outboxMarkForOwner(ctx.uid,pwid,k,hash(plan.raw),'personal-push'));return;
+        }
+        if(plan.action==='pull'){
+          if(!personalWrite(k,plan.raw,loc))throw syncIssue('sync_local_changed','personal_pull_write','개인 자료를 받는 동안 새 편집을 확인했습니다');
+          applied++;
+        }
+        if(plan.action==='pull'||plan.action==='equal')accepted[k]={raw:plan.raw,cupd:plan.cupd};
+      });}catch(planError){return Promise.all(writes.map(function(p){return Promise.resolve(p).catch(function(){});})).then(function(){throw planError;});}
       /* 1.630 — 개인 채널도 같은 통로다. 매치데스크·노트는 키 하나가 MAXLEN(1.5M)까지 갈 수 있어
          네 키가 함께 움직이면 한 요청이 몇 MB가 된다 — 팀 쪽과 똑같이 나눠 보낸다. */
-      requireCurrent('personal_push');
-      return kvPushRows(at,pushRows,null,'personal_push',current).then(function(){requireCurrent('personal_push_done');return Promise.all(writes); })
-        .then(function(){requireCurrent('personal_write_done');if(writeGuards.some(function(g){return g.stale;}))throw syncIssue('sync_workspace_changed','personal_write_stale','개인 백업 중 계정 또는 작업 공간이 바뀌었습니다');setMeta(m);return outboxAckPersonal(pwid,m); })
-        .then(function(){ return applied; });
+      /* 로컬 비교 저장과 outbox를 먼저 끝낸다. 거부/실패 후보의 hash를 meta에
+         미리 넣지 않고 서버가 확인한 행만 accepted에 넣는다. */
+      return Promise.all(writes).then(function(){
+        requireCurrent('personal_write_done');
+        if(writeGuards.some(function(g){return g.stale;}))throw syncIssue('sync_local_changed','personal_write_stale','개인 자료에 새 편집이 있습니다');
+        return Promise.all(pushRows.map(function(req){return currentValueForKey(req.k).then(function(raw){
+          if(raw!==candidates[req.k])throw syncIssue('sync_local_changed','personal_push_stale','개인 자료에 새 편집이 있습니다');
+        });}));
+      }).then(function(){
+        requireCurrent('personal_push');
+        return kvPushRows(at,pushRows,function(sent){(sent||[]).forEach(function(req){accepted[req.k]={raw:req.v,cupd:req.cupd};});},'personal_push',current);
+      }).then(function(){
+        requireCurrent('personal_push_done');
+        if(pushRows.some(function(req){return !accepted[req.k]||accepted[req.k].raw!==req.v;}))
+          throw syncIssue('sync_confirm_missing','personal_push_confirm','개인 자료의 서버 저장을 확인하지 못했습니다');
+        /* 다른 키의 최신 meta를 보존하고 이 회차의 확정 키만 반영한다. */
+        var m=meta(),target=team?(m.p=m.p||{}):m;target.h=target.h||{};target.c=target.c||{};
+        Object.keys(accepted).forEach(function(k){target.h[k]=hash(accepted[k].raw);target.c[k]=accepted[k].cupd;});
+        setMetaExact(m);
+        Object.keys(accepted).forEach(function(k){personalReviewClear(ctx,k);});
+        return outboxAckPersonal(pwid,{p:target},current);
+      }).then(function(){requireCurrent('personal_ack_done');personalIssue=null;return applied;});
     });
-  }).catch(function(e){ syncDiagnostic('personal-channel',e); return 0; });   /* 개인 채널 실패가 본 동기화를 막지 않는다 */
+  }).catch(function(e){
+    syncDiagnostic('personal-channel',e);
+    if(current()){
+      var info=classifySyncError(e);personalIssue={uid:ctx.uid,wid:ctx.wid,code:info.code,at:Date.now()};
+      try{window.dispatchEvent(new CustomEvent('ps-sync-state'));}catch(_){}
+      return outboxFail(pwid,info).then(function(){throw e;});
+    }
+    throw e;
+  });
 }
 /* 1.504 — 충돌 사본 청소: 밀려난 서버본은 ps_sync_conflict_<키>에 남겨 두는데, 알림 목록에서 빠진 뒤에도
    영영 남아 localStorage를 잠식한다(실측 15개·548KB — 노트 사본만 509KB).
@@ -4763,6 +4895,7 @@ function syncNowCore(reason){
       var m0=meta(), needV=[];
       metaRows.forEach(function(r0){
         var k=r0.k;
+        if(PERSONAL[k])return;   /* 2.744 — 개인 원문은 공통 개인 채널만 읽고 판정한다. */
         if(!ITEMS_ACTIVE&&isItemKey(k))return;
         /* 2.603 — 화면이 안 쓰는 키(KEYS·IDP 접두사 밖)는 값을 받지 않는다. 실측: 풋볼A 의 ps_kv 에 «팀 자료 통째로 올리기»(bulkPush)가 남긴
            cs_drill_lib_v1 한 줄(8,036KB, 9/1·9/2·9/4 세 번)을 그 팀의 다른 기기 전부가 회차(45초)마다 통째로 받고 있었다 —
@@ -5003,8 +5136,8 @@ function syncNowCore(reason){
       }
       var teamWs=isTeamWs();
       KEYS.forEach(function(k){
-        /* 개인 노트는 팀 워크스페이스에서 주고받지 않는다(통째 덮어쓰기 방지) */
-        if(PERSONAL[k] && teamWs) return;
+        /* 2.744 — 개인 공간에서도 공통 개인 채널이 CAS·충돌 선택을 담당한다. */
+        if(PERSONAL[k]) return;
         /* 1.659 — 일정과 연결 경기는 항상 2회차로 나눈다.
            편집 5초 hold 중 4초 자동 동기화가 먼저 시작하면 예전엔 경기만
            옛 서버 일정 앞으로 가 lineage guard에 거부됐다. 편집·급감·CAS 보류는
@@ -5710,7 +5843,12 @@ function syncNowCore(reason){
         try{ rtConnect(); }catch(_){}   /* 2.628 — 회차가 성공하면 실시간 채널도 맞춰 둔다(워크스페이스가 바뀌었으면 다시 붙는다) */
         /* 개인 자료(매치데스크·노트)는 팀 공간에서 일하는 중에도 내 개인 공간에 백업한다 —
            setMeta 뒤에 두어, 개인 채널이 쓴 m.p 상태를 본 동기화 메타가 덮지 않게 한다 */
-        var doPersonal=syncPersonal(at,roundWorkspaceCurrent).then(function(n){ applied+=n||0; });
+        var personalError=null;
+        var doPersonal=Promise.resolve().then(function(){return syncPersonal(at,roundWorkspaceCurrent);}).then(function(n){applied+=n||0;})
+          .catch(function(e){
+            if(!roundWorkspaceCurrent())throw e;
+            personalError=classifySyncError(e); /* 팀 저장은 완료됐지만 개인 실패 표시는 syncState에 남긴다. */
+          });
         try{ pruneConflictCopies(); }catch(_){}
         try{ staffEditNotice(); }catch(_){}
         syncErr=false;
@@ -5721,13 +5859,15 @@ function syncNowCore(reason){
            일정 outbox까지 지우면 설정에는 '최신'이라 뜨면서 실제 일정은 대기한다. */
         /* 급감 hold와 그 의존성 보류는 아직 서버 확인을 받은 것이 아니다.
            예전 meta hash가 우연히 현재 raw와 같아도 outbox를 지우지 않는다. */
-        var ackSkipped=curKeys.concat(heldKeys,dependencyDeferredKeys);
+        var ackSkipped=curKeys.concat(heldKeys,dependencyDeferredKeys,KEYS.filter(function(k){return PERSONAL[k];}));
         if(scheduleDeferred||scheduleHeld())ackSkipped.push(SCHEDULE_KEY);
         return doPersonal.then(function(){ return outboxAckSynced(wid,m,ackSkipped,lr&&lr.ackHash); }).then(function(){
         busy=false; try{ clearTimeout(busyDog); }catch(_){}
         clearSyncRetry();
-        var remain=pendingInfo(wid);
+        var remain=visiblePendingInfo(wid);
         var msg=remain.count?('올리는 중 · '+remain.count):'팀과 같아요 · '+new Date(m.last).toLocaleTimeString();   /* 2.625 말 바꾸기 */
+        if(personalError)msg='개인 자료를 못 올렸어요 · '+syncCodeText(personalError.code);
+        else if(personalReviewList().length)msg='개인 자료 확인이 필요해요 · '+personalReviewList().length;
         if(skippedBig)msg+=' (용량 초과 '+skippedBig+'개 제외)';
         setStatus(msg);
         try{ cacheWaitEnd(true); }catch(_){}   /* 2.675 — 지운 뒤 첫 회차가 끝났다 */
@@ -5762,7 +5902,7 @@ function syncNowCore(reason){
         try{ if(window.parent&&window.parent.__psRefreshPullState) window.parent.__psRefreshPullState(); }catch(_){}
         if(scheduleDeferred&&!scheduleHeld())setTimeout(function(){syncNow('schedule-stale-retry');},1100);
         else if(scheduleDependencyRetry&&!scheduleHeld())setTimeout(function(){syncNow('schedule-dependency-retry');},350);
-        var result={pushed:pushRows.length+((lr&&lr.pushed)||0),applied:applied,skipped:curKeys,
+        var result={pushed:pushRows.length+((lr&&lr.pushed)||0),applied:applied,skipped:curKeys,personalError:personalError,
           held:heldKeys.slice(),deferred:dependencyDeferredKeys.slice(),pending:remain.count,scheduleDeferred:scheduleDeferred};
         /* 선수 파일을 오프라인에서 가져왔어도 예전 sq:*는 block 때문에 이 회차에 올라가지 않는다.
            통짜 선수단 회차가 성공한 바로 여기에서만 exact 항목을 만들고, 두 번째 회차로 전송한다.
