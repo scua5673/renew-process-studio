@@ -3,6 +3,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="storage.js"></script>
 <script src="review-training.js"></script>
+<script src="daily-effort.js"></script>
+<script src="session-focus.js"></script>
+<link rel="stylesheet" href="daily-effort.css">
 <script src="review-training-schedule.js"></script>
 <link rel="stylesheet" href="review-training.css">
 <script src="learn-model.js"></script><!-- 2.108 — 학습모델 카테고리 사전(고정 id). 블록이 어느 카테고리를 다뤘는지 여기에 건다 -->
@@ -631,17 +634,16 @@
   .lbars .vv,.lbars .lt{max-width:100%;overflow:hidden;text-overflow:clip;white-space:nowrap}
   /* 폰에서는 8칸 × 최소폭 26px 이 간격 11px 과 겹쳐 16px 만큼 삐져나왔다 — 간격을 줄인다 */
   @media (max-width:560px){ .lbars{gap:6px} }
-  /* 2.539 — 계획 막대 위 «선수가 느낀 부하» 눈금. 막대를 바꾸지 않고 **겹친다** —
-     계획은 계획대로 읽히고, 체감은 그 위에 얹힌 다른 목소리로 읽혀야 한다. */
-  .lbars .lbw{position:relative;width:64%;height:64px;display:flex;align-items:flex-end;justify-content:center}
+  .lbars .lbw{width:64%;height:64px;display:flex;align-items:flex-end;justify-content:center}
   .lbars .lbw .lb{width:100%}
-  .lbars .lbw .ft{position:absolute;left:-18%;right:-18%;height:0;border-top:2px dashed #3A6DF0;opacity:.85;pointer-events:auto}
-  .lbars-felt{margin-top:9px;padding-top:9px;border-top:1px solid var(--line-2,#F1F2F4);
-    font-size:12px;color:var(--text-2,#646A73);font-variant-numeric:tabular-nums;line-height:1.5}
-  .lbars-felt b{font-weight:800;color:var(--text-1,#16213A)}
-  .lbars-felt em{font-style:normal;margin-left:5px;font-weight:600}
-  .lbars-felt em.hi{color:#C24A46} .lbars-felt em.lo{color:#3A6DF0}
-  .lbars-felt small{display:block;margin-top:2px;font-size:11px;color:var(--text-3,#8A9099)}
+  .session-focus-reference{margin:12px 0;border:1px solid var(--line,#E3E6EA);border-radius:12px;background:var(--panel,#fff);overflow:hidden}
+  .session-focus-reference>summary{padding:12px 14px;cursor:pointer;font-size:13px;font-weight:700;line-height:1.6;overflow-wrap:anywhere}
+  .session-focus-reference>summary span{font-size:11px;font-weight:500;color:var(--text-2,#646A73);margin-left:6px}
+  .session-focus-reference .sfocus{margin:0;border:0;border-top:1px solid var(--line,#E3E6EA);border-radius:0;background:transparent}
+  .session-focus-reference .sfh{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .session-focus-reference .sfh b{font-size:13px}
+  .session-focus-reference .sfn,.session-focus-reference .bd{overflow-wrap:anywhere}
+  @media(max-width:480px){.session-focus-reference .fr{grid-template-columns:minmax(0,1fr)}.session-focus-reference>summary span{display:block;margin-left:15px}}
   .lbars .vv{font-size:var(--fs-caption);color:var(--text-3);font-variant-numeric:tabular-nums}
   .lbars .lb{width:64%;border-radius:4px 4px 0 0;transform-origin:bottom;animation:grow .7s cubic-bezier(.2,.8,.2,1) backwards}
   .lbars .lt{font-size:var(--fs-micro);color:var(--text-3)}
@@ -1382,20 +1384,21 @@ body.fmdark .del,body.fmdark .brem:active,body.fmdark .wkx:active,body.fmdark .h
       <div class="top"><h2><b>그래프</b></h2><div class="mini" id="reviewMini">이번 주</div></div>
       <div class="stats">
         <div class="stat"><div class="v" id="statSessions">0</div><div class="k">세션</div></div>
-        <div class="stat"><div class="v" id="statLoad">0</div><div class="k">평균 부하</div></div>
-        <div class="stat"><div class="v" id="statMin">0</div><div class="k">총 훈련(분)</div></div>
+        <div class="stat"><div class="v" id="statLoad">0</div><div class="k">세션당 계획 부하</div></div>
+        <div class="stat"><div class="v" id="statMin">0</div><div class="k">계획 훈련(분)</div></div>
       </div>
 
       <div class="card">
-        <div class="lbl">주별 부하 흐름 <span class="sublbl">강도 × 시간</span><span class="sublbl" id="wbarsRange"></span></div>
+        <div class="lbl">주별 계획 부하 <span class="sublbl">전체 일정 · RPE × 분</span><span class="sublbl" id="wbarsRange"></span></div>
         <div class="lbars" id="wbars"></div>
       </div>
 
       <div class="card">
-        <div class="lbl">요일별 부하 <span class="sublbl">이번 주 보기</span></div>
+        <div class="lbl">요일별 계획 부하 <span class="sublbl">전체 일정 · RPE × 분</span></div>
         <div class="lbars" id="lbars"></div>
-        <div class="lbars-felt" id="lbarsFelt" style="display:none"></div>
       </div>
+
+      <div class="card" id="trainingEffortCard" style="display:none"></div>
 
       <div class="card">
         <div class="lbl">주제 배분 <span class="sublbl">세션에 고른 주제 기준</span></div>
@@ -1405,7 +1408,7 @@ body.fmdark .del,body.fmdark .brem:active,body.fmdark .wkx:active,body.fmdark .h
       <div class="actionbar" style="padding-top:16px">
         <button class="btn solid" onclick="exportPDF('review')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
-          이번 주 PDF로 내보내기
+          이번 주 계획 PDF로 내보내기
         </button>
       </div>
     </section>
@@ -4257,6 +4260,8 @@ function wksFillRender(keep,focus){
         return '<button class="fp'+(rpe===n?' on':'')+'" onclick="wksFillRpe('+n+')">'+n+'</button>';
       }).join('')+(rpe?'<button class="fp" onclick="wksFillRpe(0)">지우기</button>':'')+'</div></div>';
 
+  h+=sessFocusHTML({date:wkDayYmd(wk,di),session:tr,day:day});
+
   /* ③ 미팅 */
   var meets=_fillList(b,'meets','meetSlot');
   h+='<div class="wf-sec" id="wfSec-meet"><div class="pksub sm">미팅 <span class="cnt">'+meets.length+'</span></div>'
@@ -6869,29 +6874,23 @@ function wkShort(n){ n=n||0; return n>=1000?(Math.round(n/100)/10)+'k':String(n)
 function wkColor(v,max){ const r=max?v/max:0; return r>=0.8?'var(--warm)' : r<=0.34?'var(--accent)' : 'var(--accent-dim)'; }
 function wkColorPrint(v,max){ const r=max?v/max:0; return r>=0.8?'#B5762B' : r<=0.34?'#6FB5C1' : '#5E8FA8'; }
 
-/* ══ 2.539 · 계획한 부하 vs 선수가 느낀 부하 ═══════════════════════════════
-   이 화면의 부하는 전부 **코치가 계획한** 강도(RPE)×시간이다. 그런데 선수는 매일 자기가
-   느낀 강도를 일지에 적는다(`cs_idp_v1_<uid>.log[ymd].rpe`). 재료가 양쪽 다 있는데
-   서로 다른 앱에 떨어져 있어 한 번도 만난 적이 없었다 — 그게 곧 sRPE 모니터링이다.
-   ⚠ **분은 계획 그대로 쓴다.** 다른 건 강도 하나뿐이라야 «같은 훈련을 코치는 6으로,
-      선수는 7.4로 느꼈다»가 읽힌다. 분까지 바꾸면 무엇이 달라졌는지 알 수 없다.
-   ⚠ 적은 사람만 센다. 안 적은 날은 체감이 **없는** 날이지 0인 날이 아니다. */
+/* 2.749 — daily RPE is read separately from the unchanged planned-load calculation. */
+var __dailyEffortGroup=null,__dailyEffortOwner='';
 function feltRpeByDay(){
-  var out={};
-  try{
-    var t=JSON.parse(localStorage.getItem('scout_tool_v1')||'null'); if(!t)return out;
-    var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), ms=(pm&&pm.members)||{}, uids=[];
-    Object.keys(ms).forEach(function(u){ if(ms[u]&&ms[u].playerId)uids.push(u); });
-    uids.forEach(function(u){
-      var d=null; try{ d=JSON.parse(localStorage.getItem('cs_idp_v1_'+u)||'null'); }catch(_){ }
-      var lg=(d&&d.log)||null; if(!lg)return;
-      Object.keys(lg).forEach(function(k){
-        var r=parseInt((lg[k]||{}).rpe,10); if(isNaN(r)||r<=0)return;
-        var o=out[k]||(out[k]={s:0,n:0}); o.s+=r; o.n++;
-      });
-    });
-  }catch(_){ }
-  return out;
+  if(!window.PSDailyEffort)return null;
+  var owner=trainingReferenceAccess();
+  if(!owner)return null;
+  var seal=owner.uid+'|'+owner.wid;
+  if(seal!==__dailyEffortOwner){__dailyEffortOwner=seal;__dailyEffortGroup=null;}
+  if(__dailyEffortGroup===null)__dailyEffortGroup=typeof __schedGrp==='string'?__schedGrp:'';
+  return PSDailyEffort.read(window,Array.from({length:7},function(_,i){return wkDayYmd(wk,i);}),__dailyEffortGroup);
+}
+function renderDailyEffort(){
+  var host=document.getElementById('trainingEffortCard');if(!host)return;
+  var data=feltRpeByDay();host.innerHTML='';host.style.display=data?'':'none';if(!data)return;
+  host.innerHTML=PSDailyEffort.render(data,(week||[]).map(function(d){return d.d;}));
+  var select=host.querySelector('[data-effort-group]');if(select){select.id='effortGroup';select.onchange=function(){__dailyEffortGroup=this.value;renderDailyEffort();};}
+  var rows=host.querySelector('.daily-effort-list');if(rows)rows.id='dailyEffortRows';
 }
 /* 주차 i · 요일 j 의 실제 날짜 — 기준은 wkLabel·wkMD 와 같은 __ANCHOR */
 function wkDayYmd(wkI,di){
@@ -6957,50 +6956,19 @@ function renderReview(){
     });
   }
 
-  // 이번 주 요일별 부하 — 2.539: 계획 막대 위에 **선수가 느낀 부하**를 눈금으로 겹친다
-  const felt=feltRpeByDay();
-  let fSum=0,pSum=0,fDays=0,fPeak=null;
-  const perFelt=st.perDay.map((w,i)=>{
-    const y=wkDayYmd(wk,i), f=y?felt[y]:null;
-    if(!f||!f.n)return null;
-    /* 그날 계획된 분 — 강도만 바꿔 견준다 */
-    let min=0; try{ (week[i].trainings||[]).forEach(tr=>{ min+=trMinutes(tr,week[i]); }); }catch(_){ }
-    if(week[i]&&week[i].match)min+=(week[i].match.min!=null?week[i].match.min:MATCH_MIN);
-    if(!min)return null;
-    const r=f.s/f.n, load=Math.round(r*min);
-    fSum+=load; pSum+=w.load; fDays++;
-    if(!fPeak||load-w.load>fPeak.gap)fPeak={d:w.d,gap:load-w.load,r:Math.round(r*10)/10};
-    return {load:load,r:Math.round(r*10)/10,n:f.n};
-  });
+  // Planned load keeps its existing whole-schedule basis; daily self reports use a separate card.
   const lb=document.getElementById('lbars'); lb.innerHTML='';
-  const dmax=Math.max(1,...st.perDay.map(x=>x.load),...perFelt.map(x=>x?x.load:0));
+  const dmax=Math.max(1,...st.perDay.map(x=>x.load));
   st.perDay.forEach((w,i)=>{
     const col=document.createElement('div'); col.className='c';
     const h=8+(w.load/dmax)*56;
-    const bg=bandColor(w.rpe), pf=perFelt[i];
-    /* 체감 눈금 — 막대 안(계획보다 낮음)이든 위(계획보다 높음)든 같은 자리에 놓는다 */
-    const fh=pf?(8+(pf.load/dmax)*56):0;
+    const bg=bandColor(w.rpe);
     col.innerHTML=`<div class="vv">${w.match?'경기':(w.load||'·')}</div>`
-      +`<div class="lbw">${pf?`<u class="ft" style="bottom:${fh}px" title="선수 ${pf.n}명이 느낀 강도 ${pf.r} → 부하 ${pf.load} (계획 ${w.load})"></u>`:''}`
-      +`<div class="lb" style="height:${h}px;background:${bg};animation-delay:${i*60}ms"></div></div>`
+      +`<div class="lbw"><div class="lb" style="height:${h}px;background:${bg};animation-delay:${i*60}ms"></div></div>`
       +`<div class="lt">${w.d}</div>`;
     lb.appendChild(col);
   });
-  /* 한 줄 요약 — 눈금만으로는 «얼마나» 가 안 읽힌다 */
-  try{
-    const cap=document.getElementById('lbarsFelt');
-    if(cap){
-      if(!fDays){ cap.textContent=''; cap.style.display='none'; }
-      else{
-        const pc=pSum?Math.round((fSum-pSum)/pSum*100):0;
-        cap.style.display='';
-        cap.innerHTML='선수 체감 <b>'+fSum+'</b> · 계획 '+pSum
-          +(pSum?' <em class="'+(pc>10?'hi':pc<-10?'lo':'')+'">'+(pc>=0?'+':'')+pc+'%</em>':'')
-          +'<small>'+fDays+'일 · 분은 계획 그대로, 강도만 선수가 느낀 값'
-          +(fPeak&&fPeak.gap>0?' · 가장 벌어진 날 '+fPeak.d+'요일(체감 '+fPeak.r+')':'')+'</small>';
-      }
-    }
-  }catch(_){ }
+  renderDailyEffort();
 
   /* 2.336 — 배분은 주간·월간·년간·주간인쇄가 쓰는 그 함수 하나로(daysTopicCount + renderTopicMix).
      걷은 것 셋은 전부 tr.blocks 를 읽어 **새 훈련에선 늘 비어 있었고**, 살아 있었어도 주간 배분과
@@ -7332,9 +7300,9 @@ function reviewDocHTML(){
   st.perDay.forEach(w=>{ const h=14+(w.load/dmax)*72; const bg=w.match?'#C24A46':bandColor(w.rpe);
     wkbars+=`<div class="c"><div class="v">${w.match?'경기':(w.load||'·')}</div><div class="bar" style="height:${h}px;background:${bg}"></div><div class="t">${w.d}</div></div>`; });
   const dist=pTopicRows(st.mix);   /* 2.336 — 화면과 같은 배분 */
-  return `<div class="ponepage">`+pHeader(`${wkLabel()} 부하 리포트`)+
-    `<div class="pstats"><div class="pstat"><b>${st.sessions}</b><span>세션</span></div><div class="pstat"><b>${st.avg||'—'}</b><span>평균 부하</span></div><div class="pstat"><b>${st.mins}</b><span>총 훈련(분)</span></div></div>`+
-    `<h4 class="psec">요일별 부하 (강도×시간)</h4><div class="pwk">${wkbars}</div>`+
+  return `<div class="ponepage">`+pHeader(`${wkLabel()} 계획 부하 리포트`)+
+    `<div class="pstats"><div class="pstat"><b>${st.sessions}</b><span>세션</span></div><div class="pstat"><b>${st.avg||'—'}</b><span>세션당 계획 부하</span></div><div class="pstat"><b>${st.mins}</b><span>계획 훈련(분)</span></div></div>`+
+    `<h4 class="psec">요일별 계획 부하 (전체 일정 · RPE×분)</h4><div class="pwk">${wkbars}</div>`+
     `<h4 class="psec">주제 배분 (세션에 고른 주제 기준)</h4><div class="pdist">${dist}</div>`+pFooter()+`</div>`;
 }
 /* 완성된 독립 인쇄 문서(HTML 문자열)를 만든다. 셸(부모)에서도 window.__buildPrintDoc(kind, blank)로 호출 가능.
@@ -7547,7 +7515,7 @@ function renderSession(){setTimeout(renderDrillShelf,0);
     </div>
     ${sessMetaHTML(tr)}
     ${sessIntroHTML(tr)}
-    ${sessFocusHTML()}
+    ${sessFocusHTML({date:wkDayYmd(wk,curSession.di),session:tr,day:day})}
     <div class="seshr"><span>드릴</span></div>
     <div class="bcards">${cards||'<div class="emptyblk" style="padding:14px 0">블록 없이 저장해도 됩니다 — 필요하면 추가하세요</div>'}</div>
 <div class="drillShelf"></div><div class="qadd-row"><input class="qadd" placeholder="블록 이름 입력 후 Enter" onkeydown="qAddBlock(event,this)"></div><button class="add" style="margin:4px 0 16px" onclick="sbAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>블록 더하기</button><button class="add" onclick="openLibPicker()" style="margin-left:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>보관함에서 담기</button>
@@ -7631,68 +7599,71 @@ function sessReviewHTML(tr){
     +'<label class="sfl">오늘의 핵심 아이디어'
     +'<input class="stime" type="text" value="'+e(r.key)+'" placeholder="한 줄로" oninput="sbReview(\'key\',this.value)"></label></div>';
 }
-/* ══ 2.109 · 오늘 개인 초점 — 매뉴얼 6.3 "고립시키지 않는 개별화" ══════════════════════
-   매뉴얼: IDP 는 "훈련과 별도로 진행되는 프로그램이 아니다" · 훈련 **전에** ⓐ 학습모델의 특정 국면
-   ⓑ 포지션 역할의 특정 행동 ⓒ 특정 의사결정 요소를 안내한다. "목표는 압박을 주는 것이 아니라
-   무엇을 관찰하고 해석하며 조정해야 하는지에 의식적인 주의를 활성화하는 것."
-   개인 훈련을 따로 만드는 것이 아니라 **같은 팀 훈련 안에서 이 선수만 다른 것을 보게 하는 것**이다.
-   ⚠ **읽기만 한다.** 여기서 고칠 수 있게 하면 같은 것을 적는 곳이 두 곳이 되고, 리뷰와 어긋나는 순간
-      어느 쪽이 진짜인지 아무도 모른다. 쓰는 곳은 IDP › 선수단 › 코치 리뷰 한 곳이다.
-   ⚠ 적어 둔 것이 없는 선수는 **줄이 안 나온다.** 전원을 깔고 빈칸을 남기면 "n명 미작성" 잔소리가 된다.
-      한 명도 없으면 카드 자체가 안 뜬다.
-   ⚠ 선수 계정에는 scout_tool_v1 이 없다 — 이 카드는 자연히 코치 화면에서만 뜬다. */
-function focusMonday(){
-  var d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-((d.getDay()+6)%7));
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+/* 2.749 — Selected date/group, read-only personal references.
+   dataUnlocked checks the uid/workspace cache owner. keyReady is MATCH_KEY-only;
+   a missing IDP mirror is unknown, not a confirmed empty document. */
+var __trainingReferenceLocked=false,__trainingReferenceSeal='';
+function trainingReferenceAccess(){
+  if(__trainingReferenceLocked||!window.PSDailyEffort)return null;
+  var owner=PSDailyEffort.access(window);if(!owner)return null;
+  var seal=JSON.stringify([owner.uid,owner.wid,owner.role]);
+  if(__trainingReferenceSeal&&__trainingReferenceSeal!==seal)clearTrainingReferences();
+  __trainingReferenceSeal=seal;return owner;
 }
-function focusRows(){
-  var out=[];
-  try{
-    var t=JSON.parse(localStorage.getItem('scout_tool_v1')||'null'); if(!t)return out;
-    var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), ms=(pm&&pm.members)||{}, byPid={};
-    Object.keys(ms).forEach(function(u){ var pid=ms[u]&&ms[u].playerId; if(pid)byPid[String(pid)]=u; });
-    var posNm={}; (t.positions||[]).forEach(function(p){ if(p&&p.id)posNm[p.id]=p.name||''; });
-    var mon=focusMonday();
-    (t.players||[]).forEach(function(p){
-      if(!p||!String(p.name||'').trim())return;
-      var uid=byPid[String(p.id)]; if(!uid)return;
-      var row={name:p.name,num:p.num||'',pos:posNm[p.posId]||'',cat:'',b:'',dec:'',wk:''};
-      try{
-        var pub=JSON.parse(localStorage.getItem('cs_idp_pub_v1_'+uid)||'null');
-        var rvs=(pub&&Array.isArray(pub.reviews))?pub.reviews.slice():[];
-        rvs.sort(function(x,y){ return (+((y&&y.at)||0))-(+((x&&x.at)||0)); });
-        var gs=(rvs[0]&&Array.isArray(rvs[0].goals))?rvs[0].goals:[];
-        var g=gs.filter(function(x){ return x&&(x.cat||x.dec); })[0];
-        if(g){ row.cat=String(g.cat||''); row.b=String(g.t||''); row.dec=String(g.dec||''); }
-      }catch(_){}
-      try{
-        var pdoc=JSON.parse(localStorage.getItem('cs_idp_v1_'+uid)||'null'), f=pdoc&&pdoc.focus;
-        if(f&&f.text&&String(f.wk||'')===mon)row.wk=String(f.text);   /* 지난 주 초점을 오늘 것처럼 읽지 않는다 */
-      }catch(_){}
-      if(row.cat||row.b||row.dec||row.wk)out.push(row);
+function clearTrainingReferences(resetFilter){
+  document.querySelectorAll('.session-focus-reference').forEach(function(el){el.remove();});
+  var host=document.getElementById('trainingEffortCard');if(host){host.innerHTML='';host.style.display='none';}
+  if(resetFilter!==false){__dailyEffortGroup=null;__dailyEffortOwner='';}
+}
+function focusRows(context){
+  var api=window.PSSessionFocus,owner=trainingReferenceAccess();if(!api||!owner)return null;
+  context=context||{};
+  function readObject(key){
+    try{var v=JSON.parse(localStorage.getItem(key)||'null');return v&&typeof v==='object'&&!Array.isArray(v)?v:undefined;}catch(_){return undefined;}
+  }
+  var roster=readObject('scout_tool_v1'),permissions=readObject('cs_perms_v1'),tombs=readObject('cs_player_del_v1');
+  var docs=Object.create(null),pubs=Object.create(null),scope=api.scope(context.session,context.day);
+  if(roster&&Array.isArray(roster.players)&&permissions&&permissions.members&&scope.kind!=='unknown'){
+    var eligible=roster.players.filter(function(p){return p&&p.type!=='target'&&(!tombs||!tombs[p.id])&&(scope.kind==='team'||scope.groups.indexOf(typeof p.grp==='string'?p.grp.trim():'')>=0);});
+    PSDailyEffort.cohort(roster.players,permissions.members,'',tombs).forEach(function(p){
+      if(!p.uid||!eligible.some(function(row){return String(row.id).trim()===p.playerId;}))return;
+      var doc=readObject('cs_idp_v1_'+p.uid),pub=readObject('cs_idp_pub_v1_'+p.uid);
+      if(doc&&doc.v===1)docs[p.uid]=doc;if(pub)pubs[p.uid]=pub;
     });
-  }catch(_){}
-  return out;
+  }
+  var now=trainingReferenceAccess();
+  if(!now||now.uid!==owner.uid||now.wid!==owner.wid||now.role!==owner.role)return null;
+  return api.build({date:context.date,session:context.session,day:context.day,roster:roster,permissions:permissions,
+    docsByUid:docs,pubsByUid:pubs,deletedPlayers:tombs,canRead:true,ready:true});
 }
-function sessFocusHTML(){
-  var rows=[]; try{ rows=focusRows(); }catch(_){ rows=[]; }
-  if(!rows.length)return '';
-  var e=function(x){ return String(x==null?'':x).replace(/[<>&"]/g,function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]; }); };
-  var lm=function(id){ var c=null; try{ c=window.PS_LM?PS_LM.cat(id):null; }catch(_){}
-    return c?('<code>'+e(c.id)+'</code>'+e(c.name)):e(id); };
-  return '<div class="sfocus"><div class="sfh"><b>오늘 개인 초점</b><span>'+rows.length+'명 · 이름을 부르며 한 줄씩</span>'
-    +'<span class="ro">읽기 전용</span></div>'
-    +'<p class="sfn">코치 리뷰에 적어 둔 것이 그대로 옵니다 — 여기서 고치지 않아요.</p>'
-    +rows.map(function(r){
-      return '<div class="fr"><span class="who">'+(r.num?'<span class="no">'+e(r.num)+'</span>':'')
-        +'<i>'+e(r.name)+'</i>'+(r.pos?'<em>'+e(r.pos)+'</em>':'')+'</span><span class="bd">'
-        +(r.cat?'<span class="l"><span class="mk">ⓐ</span>'+lm(r.cat)+'</span>':'')
-        +(r.b?'<span class="l"><span class="mk b">ⓑ</span>'+e(r.b)+'</span>':'')
-        +(r.dec?'<span class="l"><span class="mk c">ⓒ</span>'+e(r.dec)+'</span>':'')
-        +(r.wk?'<span class="wk">이번 주 초점 · <b>'+e(r.wk)+'</b></span>':'')
-        +'</span></div>';
-    }).join('')+'</div>';
+function sessFocusHTML(context){
+  var result=focusRows(context);if(!result)return '';
+  var api=window.PSSessionFocus,labels=Object.create(null);
+  result.rows.forEach(function(r){if(r.coach)r.coach.goals.forEach(function(g){
+    try{var cat=window.PS_LM&&PS_LM.cat(g.cat);if(cat)labels[g.cat]=cat.id+' '+cat.name;}catch(_){}
+  });});
+  return '<details class="session-focus-reference"><summary>개인 초점 참고 <span>'+api.esc(result.date)+' · '+api.esc(result.scope.label)+'</span></summary>'
+    +api.render(result,labels)+'</details>';
 }
+function trainingReferencesAuth(unlocked){
+  if(unlocked===false)__trainingReferenceLocked=true;
+  else if(unlocked===true)__trainingReferenceLocked=false;
+  if(!trainingReferenceAccess())clearTrainingReferences();
+}
+window.addEventListener('ps-auth-state',function(e){trainingReferencesAuth((e.detail||{}).unlocked);});
+window.addEventListener('message',function(e){
+  if(window.parent===window||e.source!==window.parent||e.origin!==location.origin)return;
+  var d=e.data||{};if(d.source==='process-studio'&&d.type==='ps-auth-state')trainingReferencesAuth(d.unlocked);
+});
+window.addEventListener('storage',function(e){
+  if(!e||e.key===null||/^(ps_sync_session|ps_active_ws|ps_ws_list|cs_perms_v1|scout_tool_v1|cs_player_del_v1)$/.test(e.key||'')||/^cs_idp_(pub_)?v1_/.test(e.key||'')){
+    trainingReferencesAuth();clearTrainingReferences(false);
+    if(trainingReferenceAccess())renderDailyEffort();
+  }
+});
+window.addEventListener('focus',function(){trainingReferencesAuth();});
+window.addEventListener('pageshow',function(){trainingReferencesAuth();});
+setInterval(function(){trainingReferencesAuth();},800);
 /* ══ 2.108 · 블록 ↔ 학습모델 카테고리 ═══════════════════════════════════════════════
    매뉴얼 5.1 — "모든 훈련 경험은 학습 모델의 어떤 내용과도 연결되어 있어야 한다.
    어떤 경험이 학습 모델의 내용을 발전시키지 않는다면 그것은 이 시스템에 속하지 않는다."
@@ -9407,7 +9378,7 @@ window.quickFillWeek=function(){
   document.addEventListener('click',function(e){
     var t=e.target&&e.target.closest&&e.target.closest('button,input,textarea,select,[contenteditable="true"]');
     if(!t)return;
-    if(t.closest&&t.closest('#topNav'))return;
+    if(t.closest&&(t.closest('#topNav')||t.closest('#effortGroup')))return;
     e.preventDefault();e.stopImmediatePropagation();
   },true);
 })();

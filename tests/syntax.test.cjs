@@ -23,7 +23,7 @@ for (const file of ['studio/app.html', 'studio/process.html', 'studio/scout.html
   });
 }
 
-for (const file of ['studio/storage.js', 'studio/sync.js', 'studio/review-training.js', 'studio/review-training-schedule.js', 'studio/idp-evidence.js', 'studio/first-work.js', 'sw.js']) {
+for (const file of ['studio/storage.js', 'studio/sync.js', 'studio/review-training.js', 'studio/review-training-schedule.js', 'studio/idp-evidence.js', 'studio/first-work.js', 'studio/session-focus.js', 'studio/daily-effort.js', 'sw.js']) {
   test(`${file}: JavaScript parses`, () => {
     new vm.Script(fs.readFileSync(path.join(root, file), 'utf8'), { filename: file });
   });

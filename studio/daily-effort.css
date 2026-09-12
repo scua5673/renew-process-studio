@@ -1,0 +1,17 @@
+/* Intensity has its own unit and presentation, outside the planned-load chart. */
+.daily-effort-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.daily-effort-head .lbl{margin:0}
+.daily-effort-filter{display:flex;align-items:center;gap:7px;color:var(--text-2,#646A73);font:600 12px/1.5 var(--f,inherit);min-width:0;max-width:100%}
+.daily-effort-filter select{min-width:0;max-width:190px;min-height:36px;padding:6px 28px 6px 10px;border:1px solid var(--line,#E3E6EA);border-radius:8px;background:var(--surface,#fff);color:var(--text,#14161A);font:inherit}
+/* This selector changes only the displayed cohort; read-only staff may use it. */
+body.ps-player-schedule #effortGroup{pointer-events:auto!important}
+.daily-effort-note{margin:11px 0 0;color:var(--text-2,#646A73);font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.daily-effort-list{margin-top:14px;border-top:1px solid var(--line-soft,#ECEDF0)}
+.daily-effort-day{padding:10px 0;border-bottom:1px solid var(--line-soft,#ECEDF0)}
+.daily-effort-main{display:grid;grid-template-columns:minmax(75px,.75fr) minmax(54px,.5fr) minmax(112px,1fr);align-items:center;gap:10px;font-size:12px;line-height:1.5}
+.daily-effort-main>span:first-child{font-weight:600;color:var(--text,#14161A)}
+.daily-effort-main>b{font-size:16px;line-height:1.35;font-variant-numeric:tabular-nums;color:var(--text,#14161A);font-weight:650}
+.daily-effort-main>b small{font-size:11px;font-weight:500;color:var(--text-2,#646A73)}
+.daily-effort-main>span:last-child{color:var(--text-2,#646A73);text-align:right;font-variant-numeric:tabular-nums}
+.daily-effort-detail{margin-top:4px;color:var(--text-2,#646A73);font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+@media(max-width:420px){.daily-effort-main{grid-template-columns:minmax(62px,.8fr) minmax(40px,.5fr) minmax(92px,1.2fr);gap:6px;font-size:11px}.daily-effort-main>b{font-size:15px}.daily-effort-filter select{max-width:155px}.daily-effort-day{padding:9px 0}}
