@@ -138,7 +138,7 @@ async function openCreate(page) {
   const opened = await page.evaluate(mid => PSReviewSchedule.open({ matchId: mid }), MID);
   assert.equal(opened, true, 'real open handler accepts authorized match');
   await page.locator('#sheet[data-review-training]').waitFor({ state: 'visible' });
-  assert.match(await page.locator('.rt-scope').innerText(), /선수도 읽을 수 있는 팀 일정/);
+  assert.match(await page.locator('.rt-scope').innerText(), /선수도 읽는 팀 일정/);
 }
 
 async function fillCreate(page, { action = ACTION, group = 'A팀', source = 'reviewImprove' } = {}) {
