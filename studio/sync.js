@@ -21,8 +21,10 @@ function syncDiagnostic(stage,error){
   /* 1.650 — 브라우저 로그 수집기가 객체 인수를 전부 "Object"로 접어 원인(stage/code)을
      지웠다. 내용·토큰은 넣지 않고 분류값만 문자열로 남겨 실기기 실패를 구별한다. */
   try{ console.warn('[PSSync] '+JSON.stringify(info)); }catch(_){}
+  try{ SYNC_DIAG_LOG.push({stage:info.stage,code:info.code||'',at:Date.now()}); if(SYNC_DIAG_LOG.length>40)SYNC_DIAG_LOG.splice(0,SYNC_DIAG_LOG.length-40); }catch(_){}   /* 2.798 — 진단 시트·기기 보고에서 읽는 최근 진단 */
   try{ window.dispatchEvent(new CustomEvent('ps-sync-diagnostic',{detail:info})); }catch(_){}
 }
+var SYNC_DIAG_LOG=[];
 
 var SKEY='ps_sync_session', MKEY='ps_sync_meta', RLKEY='ps_sync_rl', SKIPKEY='ps_sync_skipped';
 var MATCH_KEY='cs_team_matches_v1', MATCH_DEL_KEY='cs_match_del_v1';
@@ -8807,6 +8809,7 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
   /* ══ 2.462 · 동기화 진단(사용자 "기기마다 엉켜 제대로 안 보여") ═══════════════════
      이 기기가 **왜** 못 올리는지/언제 받았는지를 한 장으로. 2.445 가 대기 항목에 적어 두는
      이유(lastError·roundError)를 처음으로 사람 앞에 꺼낸다 — 추측 대신 증거. */
+  diagLog:function(){ return SYNC_DIAG_LOG.slice(); },   /* 2.798 */
   diag:function(){
     var wid=activeWs();
     return outboxRead().then(function(q){
@@ -8820,7 +8823,7 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
         });
       var lastPull=0; try{ lastPull=+localStorage.getItem('ps_last_pull_at')||0; }catch(_){}
       var bytes=0,largest=[]; try{ if(window.PSStorage){ bytes=PSStorage.localBytes?PSStorage.localBytes():0; largest=PSStorage.largestLocal?PSStorage.largestLocal(3):[]; } }catch(_){}
-      return { ws:(activeWsObj()||{}).name||'', online:navigator.onLine!==false, session:!!getSess(),
+      return { recent:SYNC_DIAG_LOG.slice(-12), ws:(activeWsObj()||{}).name||'', online:navigator.onLine!==false, session:!!getSess(),
         lastPull:lastPull, pending:rows, localBytes:bytes, largest:largest.map(function(r){return {key:r.key,label:keyLabel(r.key),bytes:r.bytes};}) };
     });
   },

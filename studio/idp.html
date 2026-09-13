@@ -3808,6 +3808,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sqg-quiet .plr b{color:var(--text-3);font-weight:600}
   .sqg-t .sqd-in{min-width:150px;width:100%;box-sizing:border-box}
   .sqg-un{margin-top:10px;font-size:11px;color:var(--text-3)}
+  .sqg-un.sqg-nodoc{color:var(--accent,#5b47d6)}   /* 2.798 */
   @media (max-width:767px){ .sqg-t .c-in{display:none} .sqg-t{min-width:600px} .sqg{padding:12px 10px 10px} }
   /* 2.492 — 기준 페이지 접힌 한 줄들 */
   .rqw-line{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;margin:10px 0 0;
@@ -8109,7 +8110,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         o+='<b>이번 주 <i>'+(_m0.getMonth()+1)+'월 '+_m0.getDate()+'일 ~ '+(_s0.getMonth()+1)+'월 '+_s0.getDate()+'일</i></b>'+_seg
           +'<span class="sqd-cnt">제안 보냄 '+_sentN+' · 한 줄 '+_lnN+' <u>· 연결 '+linked.length+' / 전체 '+rows.length+'</u></span></div>';
         o+=sqWeekTable(linked,wkM,nextM,can);
-        var _unN0=rws.length-linked.length; if(_unN0)o+='<div class="sqg-un">계정 연결 안 됨 '+_unN0+'명 — 연결은 계정 › 권한 관리</div>';
+        o+=sqUnlinkedNote(rws);   /* 2.798 */
         var _midC=''; try{ _midC=sqMidCard(linked,wkM,can); }catch(e){ console.warn('6주 점검 카드',e); }   /* 2.619 — 6주째 선수가 있을 때만 위에 한 장 */
         return _midC+o+'</div>'; }
       o+='<button type="button" class="sqd-arw" data-sqd-go="-1" aria-label="앞날">‹</button>'
@@ -8163,8 +8164,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       /* 2.616 — 요약은 사실만(개수). 재촉 문구 없음 */
       (function(){ var cK=0,cY=0,cN=0,cX=0,bad=0,mm=0; linked.forEach(function(r){ if(r.tryV===2)cK++; else if(r.tryV===1)cY++; else if(r.tryV===0)cN++; else cX++; if(r.bodyBad)bad++; if(r.memoT)mm++; });
         o+='<div class="sqg-sum"><span>칩 · 계속 <b>'+cK+'</b> · 1~2번 <b>'+cY+'</b> · 아직 <b>'+cN+'</b> · 안 적음 <b>'+cX+'</b></span><span>한 마디 <b>'+mm+'</b></span>'+(sqTdAuto?'<span class="sqg-auto">오늘은 아직 아무도 안 적어 '+esc(dayTag||day)+' 것을 보여요</span>':'')+'</div>'; })();
-      var _unN=rws.length-linked.length;
-      if(_unN)o+='<div class="sqg-un">계정 연결 안 됨 '+_unN+'명 — 연결은 계정 › 권한 관리</div>';
+      o+=sqUnlinkedNote(rws);   /* 2.798 */
       return o+'</div>';
     }catch(_){ return ''; } })();
     /* 2.567 — «오늘 볼 스레드» 카드는 **지웠다**(사용자 "이건 지워").
@@ -8466,6 +8466,32 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(uid2){ var d2=JSON.parse(localStorage.getItem(PREFIX+uid2)||'null'); if(d2&&typeof d2==='object')out={uid:uid2,d:d2}; }
     }catch(_){}
     _sqLnCache.m[pid]=out; return out;
+  }
+  /* 2.798 — «연결 안 됨»을 둘로 나눈다: 권한표에 계정이 없는 선수(nolink) vs 계정은 있는데 이 기기에 문서가 아직 없는 선수(nodoc).
+     nodoc 이면 셸에 알려 한 회차 받게 한다(사용자 «매번 로그아웃해야 하나»). 문구는 사실만. */
+  function sqDocState(pid){
+    if(!pid)return 'nolink';
+    try{ var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), ms=(pm&&pm.members)||{}, uid2='';
+      Object.keys(ms).some(function(u){ if(String((ms[u]&&ms[u].playerId)||'')===String(pid)){ uid2=u; return true; } return false; });
+      if(!uid2)return 'nolink';
+      return localStorage.getItem(PREFIX+uid2)?'ok':'nodoc';
+    }catch(_){ return 'nolink'; }
+  }
+  var _sqDocsReqAt=0, _sqDocsAck=null;
+  function sqDocsMissingUids(rws){ var out=[]; try{ var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), ms=(pm&&pm.members)||{};
+    rws.forEach(function(r){ if(r.d2)return; var pid=r.x&&r.x.p&&r.x.p.id; Object.keys(ms).some(function(u){ if(String((ms[u]&&ms[u].playerId)||'')===String(pid)){ if(!localStorage.getItem(PREFIX+u))out.push(u); return true; } return false; }); }); }catch(_){}
+    return out; }
+  function sqUnlinkedNote(rws){
+    var nolink=0, nodoc=0; rws.forEach(function(r){ if(r.d2)return; var st=sqDocState(r.x&&r.x.p&&r.x.p.id); if(st==='nodoc')nodoc++; else nolink++; });
+    var o='';
+    if(nodoc){
+      var uids=sqDocsMissingUids(rws), now=Date.now();
+      if(uids.length&&window.parent!==window&&now-_sqDocsReqAt>20000){ _sqDocsReqAt=now; try{ window.parent.postMessage({source:'idp',type:'idpDocsMissing',uids:uids},'*'); }catch(_){} }
+      var failed=_sqDocsAck&&_sqDocsAck.missing>0&&(now-_sqDocsAck.at<120000);
+      o+='<div class="sqg-un sqg-nodoc">선수 문서 아직 안 받음 '+nodoc+'명 — '+(failed?('받지 못했어요 · 앱 설정 › 동기화 진단'+(_sqDocsAck.stage?(' ('+esc(_sqDocsAck.stage)+')'):'')):'서버에서 받는 중…')+'</div>';
+    }
+    if(nolink)o+='<div class="sqg-un">계정 연결 안 됨 '+nolink+'명 — 연결은 계정 › 권한 관리</div>';
+    return o;
   }
   /* 선택 선수의 경기 기록은 해당 계정의 문서만 읽는다. 이름 추정·새 저장·개인 화면 전환 없음. */
   function sqMatchObject(v){ return !!v&&typeof v==='object'&&!Array.isArray(v); }
@@ -14144,6 +14170,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   window.addEventListener('message',function(e){ var d=e.data||{};
     if(d.type==='boardResult'&&mCapPending){ mCapPending=false; mSnap={thumb:d.thumb,snap:d.snap}; renderMSnap(); }
     else if(d.type==='boardCancel'){ mCapPending=false; }
+    else if(d.type==='idpDocsMissingAck'&&d.source==='app'){ _sqDocsAck={missing:+d.missing||0,stage:String(d.stage||''),at:Date.now()}; _sqLnCache={t:0,m:{}}; try{ if(squadView)render(); }catch(_){} }   /* 2.798 */
     else if(d.type==='openSquad'&&isCoach()){
       /* 재시도 체인이 같은 메시지를 여러 번 보냄 — 이미 선수단 화면이면 재렌더(깜빡임·스크롤 튐) 금지 */
       if(!(squadView&&!personalOnly)){
