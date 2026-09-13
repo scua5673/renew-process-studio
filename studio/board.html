@@ -6906,8 +6906,62 @@ const EDRAFT_KEY="cs_editor_draft_v1";
 const EWORK_KEY="cs_editor_work_v1";
 let matchActive=false;
 let _bliveT=null;
+/* 보관함 작전판은 같은 캔버스를 빌려 쓴다. 첫 진입의 작업 맥락을 한 번만
+   보관하고 항목을 바꿔 열어도 바깥 보드·장면·페이지·실행 취소를 교체하지 않는다. */
+var _vaultBoardContext=null, _vaultBoardGeneration=0, _vaultBoardRestoring=false, _liveBoardAnimOpen=null;
+function vaultBoardOwner(){
+  try{var s=psCurrentUser(),w=psActiveWs();if(!s||!s.uid||!w||!w.id)return null;
+    return {uid:s.uid,wid:w.id,seal:localStorage.getItem('ps_cache_owner_v1')||''};
+  }catch(_){return null;}
+}
+function vaultBoardSameOwner(a){var b=vaultBoardOwner();return !!a&&!!b&&a.uid===b.uid&&a.wid===b.wid&&a.seal===b.seal;}
+function vaultBoardCurrent(g){return !!_vaultBoardContext&&g===_vaultBoardGeneration&&vaultBoardSameOwner(_vaultBoardContext.owner)&&psVaultUnlocked();}
+function vaultBoardBegin(){
+  if(_vaultBoardContext){if(!vaultBoardSameOwner(_vaultBoardContext.owner)){vaultBoardRestore();return null;}return ++_vaultBoardGeneration;}
+  var owner=vaultBoardOwner();if(!owner||!psVaultUnlocked())return null;
+  restoreAnimBeforeCapture();
+  /* 현재 보드에서 직접 열 때만 기존 flush를 쓴다. 보관함 진입 전 flush는
+     setView가 맡는다. 비동기 대기 뒤 새 소유자로 추가 쓰기를 시작하지 않는다. */
+  if((window.__csView||'board')==='board')boardFlushLive();
+  var snap=(window.__csView||'board')==='board'?captureSnap():
+    dc((window.__viewSnaps&&window.__viewSnaps.board)||{players:[],equipment:[],drawings:[],ball:null,pitchN:1});
+  var a=window.__animGet?window.__animGet():null;
+  var pages=window.__psPages&&window.__psPages.captureContext?window.__psPages.captureContext(snap,a):null;
+  _vaultBoardContext={owner:owner,snap:dc(snap),anim:a,pages:pages,undo:dc(undoStack),redo:dc(redoStack),
+    animOpen:window.__csView==='session'&&_liveBoardAnimOpen!==null?_liveBoardAnimOpen:!!($('animBar')&&$('animBar').classList.contains('on')),loop:animLoop,autoOrient:autoOrient};
+  window.__viewSnaps=window.__viewSnaps||{};window.__viewSnaps.board=dc(snap);
+  return ++_vaultBoardGeneration;
+}
+function vaultBoardRestore(){
+  var c=_vaultBoardContext;if(!c)return false;
+  ++_vaultBoardGeneration;_vaultBoardRestoring=true;
+  var same=vaultBoardSameOwner(c.owner),lock=window.__capLock,restored=false;window.__capLock=1;
+  try{
+    try{clearTimeout(_bliveT);}catch(_){}_bliveT=null;
+    restoreAnimBeforeCapture();
+    window.__vaultEdit=false;window.__vaultReadOnly=false;window.__vaultHydrating=false;
+    window.__vaultViewMode=false;window.__curVaultId=null;window.__vaultPending=null;window.__createPrev=null;
+    if(window.__psPages&&window.__psPages.restoreContext)window.__psPages.restoreContext(same?c.pages:null);
+    try{window.__animReset&&window.__animReset();}catch(_){}
+    if(same&&c.anim){anim.frames=dc(c.anim.frames||[]);animActive=c.anim.active;animHold=c.anim.hold;
+      anim.title=c.anim.title||'';anim.titleColor=c.anim.titleColor||'#e23b3b';animLoop=!!c.loop;}
+    var sn=same?c.snap:{players:[],equipment:[],drawings:[],ball:null,pitchN:1};
+    loadSnap(sn);window.__viewSnaps=window.__viewSnaps||{};window.__viewSnaps.board=dc(sn);
+    if(same)autoOrient=c.autoOrient;else _liveBoardAnimOpen=null;
+    var bar=$('animBar');if(bar)bar.classList.toggle('on',!!(same&&c.animOpen));
+    var hint=$('hint');if(hint)hint.style.display=(same&&c.animOpen)?'none':'';
+    try{renderAnimFrames();renderOnion();syncLoopUI();syncAnimTiming();_animFitPad();}catch(_){}
+    undoStack=same?dc(c.undo):[];redoStack=same?dc(c.redo):[];restored=true;
+  }finally{if(restored)_vaultBoardContext=null;window.__capLock=lock;_vaultBoardRestoring=false;}
+  return true;
+}
+function vaultBoardCheckOwner(){if(_vaultBoardContext&&!vaultBoardSameOwner(_vaultBoardContext.owner)){
+  try{window.__vaultAutoSaveCancel&&window.__vaultAutoSaveCancel();}catch(_){}
+  if(window.__vaultBoardLeave)window.__vaultBoardLeave();else vaultBoardRestore();
+}}
 function autoSaveAnimFrame(){try{var __ab=document.getElementById("animBar");if(__ab&&__ab.classList.contains("on")&&typeof animPlaying!=="undefined"&&!animPlaying&&!window.__animExport&&!document.body.classList.contains("meet-mode")&&typeof anim!=="undefined"&&anim.frames&&anim.frames.length&&animActive>=0&&animActive<anim.frames.length){anim.frames[animActive].snap=captureSnap();try{if(!sel&&!(typeof multiSel!=="undefined"&&multiSel&&multiSel.length))anim.frames[animActive].thumb=boardThumbSVG();}catch(_){}try{renderAnimFrames();}catch(_){}}}catch(_){}}
 function _boardLiveWriteNow(recovery){
+  if(_vaultBoardContext||_vaultBoardRestoring)return null;
   if(window.__capLock)return null;
   /* 1.962 — 훈련 편집기가 열려 있는 동안은 라이브 보드를 쓰지 않는다(사용자: 업데이트하면 피치가 자꾸 바뀜).
      편집기는 보드 자리에 자기 장면·'훈련' 피치를 올려 두는데, 그때 captureSnap() 이 편집기 화면을 '내 보드'로 저장했고,
@@ -6969,6 +7023,7 @@ function _boardLiveWriteNow(recovery){
   return payload;
 }
 function boardSaveLive(){
+  if(_vaultBoardContext||_vaultBoardRestoring)return;
   /* 커뮤니티 상세는 다른 사람의 게시물을 보는 읽기 전용 화면이다.
      이 상태를 내 라이브 작전판으로 저장하거나, 내 이전 작전판을 뒤늦게 복원하면
      다음 카드를 열 때 첫 카드가 다시 덮어써지는 문제가 생긴다. */
@@ -6992,6 +7047,7 @@ function restoreAnimBeforeCapture(){
   try{if(typeof animPlaying!=="undefined"&&animPlaying)stopAnim();}catch(_){}
 }
 function boardFlushLive(){
+  if(_vaultBoardContext||_vaultBoardRestoring)return null;
   try{if(new URLSearchParams(location.search).get("community_view")==="1"||document.body.classList.contains("comm-viewing"))return null;}catch(_){}
   if(window.__capLock)return null;
   /* 재생 중 화면은 보간용 임시 상태다. 강제 flush/리로드 전에 원래 편집 화면으로 복원해야
@@ -8500,6 +8556,7 @@ function psVaultRequireLogin(){
   psVaultShowLock();return false;
 }
 function psVaultAuthChanged(){
+  try{vaultBoardCheckOwner();}catch(_){}
   if(psVaultUnlocked()){psVaultHideLock();try{renderDrillFiles();}catch(_){}try{renderLibDock();}catch(_){}}
   else psVaultShowLock();
 }
@@ -10523,6 +10580,7 @@ window.__commPrepView=function(){ try{ __commPost=null; __commEdit=false;
 window.addEventListener("message",function(e){
   var d=e.data||{};
   if(d.source!=="app"||d.type!=="closeTransientUI")return;
+  if(d.nextApp!=='board'&&d.nextApp!=='design')try{++_vaultBoardGeneration;window.__vaultBoardLeave&&window.__vaultBoardLeave();}catch(_){}
   try{
     if(window.__psBoardPopover&&window.__psBoardPopover.close)window.__psBoardPopover.close();
     /* 2.561 — 보드 **설정 패널**도 닫는다(사용자: "다른탭으로 이동하거나 다른데 누르면 자동으로 닫히게").
@@ -10869,13 +10927,16 @@ function initWhiteboard(){if(wbInit)return;const s=wbSurf();if(!s)return;wbInit=
   if(sc2)sc2.addEventListener("click",wbClose);
   const wx=document.getElementById("wbX");
   if(wx)wx.addEventListener("click",wbClose);}
-window.boardShowDefault=function(){try{if(window.__vaultEdit){window.__vaultEdit=false;try{var _b=document.getElementById('vCreateBar');if(_b)_b.classList.remove('on');document.body.classList.remove('vcreating');}catch(_){}try{window.__vaultPending=null;window.__curVaultId=null;}catch(_){}var _w=(window.__viewSnaps&&window.__viewSnaps.board);if(_w){loadSnap(_w);renderTokens();renderDrawings();updateDelUI();}}}catch(_){}try{setView('board');}catch(_){}try{if(window.__applyPitchN)window.__applyPitchN(state.pitchN||1);}catch(_){}};   /* 작전판 복귀 시 운동장 개수를 state와 동기화. 빈 보드 자동 기본XI 재추가는 하지 않음 — 지운 보드는 지운 채로 유지 */
+window.boardShowDefault=function(){++_vaultBoardGeneration;try{if(_vaultBoardContext&&window.__vaultBoardLeave)window.__vaultBoardLeave();}catch(_){}try{if(window.__vaultEdit){window.__vaultEdit=false;try{var _b=document.getElementById('vCreateBar');if(_b)_b.classList.remove('on');document.body.classList.remove('vcreating');}catch(_){}try{window.__vaultPending=null;window.__curVaultId=null;}catch(_){}var _w=(window.__viewSnaps&&window.__viewSnaps.board);if(_w){loadSnap(_w);renderTokens();renderDrawings();updateDelUI();}}}catch(_){}try{setView('board');}catch(_){}try{if(window.__applyPitchN)window.__applyPitchN(state.pitchN||1);}catch(_){}};   /* 작전판 복귀 시 운동장 개수를 state와 동기화. 빈 보드 자동 기본XI 재추가는 하지 않음 — 지운 보드는 지운 채로 유지 */
 /* 1.693 — 허브에서 보관함 탭을 누를 때마다 호출(사용자: 들어가면 내 자료부터).
    보드 iframe은 숨겨질 뿐 세션 뷰에 머물러 있어 setView의 진입 감지(__prevV)가 안 걸렸다. */
 window.__vaultEnterReset=function(){
   try{ if(psIsTeamWs()){ libFilter.folder="__mine"; libFilter.sort=libFilter.sort||"new"; window.__vaultGuarded=0; } }catch(_){}
 };
 function setView(v){
+  /* 다음 화면이 session이면 기존 400ms 저장은 더 이상 쓰지 못한다.
+     캔버스를 바꾸기 전에 마지막 작업과 페이지를 기존 저장 경로로 확정한다. */
+  if(v==='session'&&(window.__csView||'board')==='board'&&!window.__vaultEdit&&!_vaultBoardContext)try{_liveBoardAnimOpen=!!($('animBar')&&$('animBar').classList.contains('on'));boardFlushLive();}catch(_){}
   try{wbCloseText();}catch(_){}
   try{const em=document.getElementById("editorModal");
     if(em&&em.classList.contains("on")&&v!=="session"&&!window.__closingEditor){
@@ -10926,6 +10987,9 @@ function setView(v){
   if(!wbOn)document.body.classList.remove("wb-show");
   else{initWhiteboard();const tg=document.getElementById("wbToggle");if(tg&&!document.body.classList.contains("wb-show"))tg.innerHTML="화이트보드";}
   if(typeof updateEmptyHint==="function")updateEmptyHint();
+  if(v==='board'&&__prevV==='session'&&!window.__vaultEdit&&!window.__vaultStarting&&_liveBoardAnimOpen!==null){
+    try{var _lab=$('animBar');if(_lab)_lab.classList.toggle('on',_liveBoardAnimOpen);var _lh=$('hint');if(_lh)_lh.style.display=_liveBoardAnimOpen?'none':'';_animFitPad();}catch(_){}
+  }
   try{boardSaveLive();}catch(_){}
 }
 /* ===== 경기 모드 — 러닝 클락 ===== */
@@ -13477,6 +13541,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function openItem(d, readOnly){
     if(!psVaultRequireLogin())return;
     var ty=d.type||"train";
+    if(ty!=='board'&&_vaultBoardContext)window.__vaultBoardLeave();
+    var boardGen=ty==='board'?vaultBoardBegin():null;
+    if(ty==='board'&&boardGen===null)return;
+    function stillOpen(){return ty!=='board'||vaultBoardCurrent(boardGen);}
     var ro=!!readOnly;
     try{
       window.__vaultReadOnly=ro;
@@ -13513,18 +13581,20 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
          보관함 자동저장이 원본 항목에까지 써 넣는다 — 사용자 제보 그대로.
          ⚠ 2.560 의 `__inAnim` 가드로는 못 막는다. __animLoad 가 **바를 켜 주기 때문**이다.
          고침: 장면이 실려 있으면 되얹을 대상은 d.snap 이 아니라 **활성 장면**이다. */
-      (function(_sn){ var _reapply=function(){ try{
+      (function(_sn){ var _reapply=function(){ if(!stillOpen())return;try{
           var _u=_sn;
           try{ if(anim&&anim.frames&&anim.frames.length>1&&animActive>=0&&anim.frames[animActive]&&anim.frames[animActive].snap)_u=anim.frames[animActive].snap; }catch(_){}
           if(_u&&((_u.players&&_u.players.length)||(_u.equipment&&_u.equipment.length)||(_u.drawings&&_u.drawings.length))){ loadSnap(_u); renderTokens(); renderDrawings(); updateDelUI(); } }catch(_e){} }; setTimeout(_reapply,60); setTimeout(_reapply,260); })(JSON.parse(JSON.stringify(d.snap||{})));
       try{ if(d.frames&&d.frames.length>1&&window.__animLoad)window.__animLoad(d.frames); }catch(_){}   /* 빈 상태 저장 전에 즉시 복원 */
-      try{ if(window.__psPages){ window.__psPages.restore(d.pages); setTimeout(function(){try{window.__psPages.restore(d.pages);}catch(_){}},120); } }catch(_){}   /* 저장된 멀티 페이지 복원(페이지0은 위 loadSnap로 이미 표시) */
+      try{ if(window.__psPages){ window.__psPages.restore(d.pages); setTimeout(function(){if(!stillOpen())return;try{window.__psPages.restore(d.pages);}catch(_){}},120); } }catch(_){}   /* 저장된 멀티 페이지 복원(페이지0은 위 loadSnap로 이미 표시) */
     }catch(_){try{loadSnap(d.snap||{});setView(ty==="setpiece"?"board":ty);}catch(e){}}
-    setTimeout(function(){window.__vaultHydrating=false;},420);
+    setTimeout(function(){if(stillOpen())window.__vaultHydrating=false;},420);
     try{parent.postMessage({source:'board',type:'vaultViewTab'},'*');}catch(_){}   // 보관함 탭 유지한 채 캔버스에 표시(작전판 탭·작업 화면은 보존)
   }
   function newBoardItem(type){
     if(!psVaultRequireLogin())return;
+    if(type==='board'){if(vaultBoardBegin()===null)return;}
+    else if(_vaultBoardContext)window.__vaultBoardLeave();
     try{var _pvs;if(window.__vaultEdit){_pvs=(window.__viewSnaps&&window.__viewSnaps.board)?JSON.parse(JSON.stringify(window.__viewSnaps.board)):{players:[],equipment:[],drawings:[],pitchN:1};}else{_pvs=captureSnap();}window.__createPrev={snap:_pvs,view:"board"};}catch(_){window.__createPrev=null;}   /* 보관함 항목을 보던 중이어도 취소 시 '원래 작업 보드'로 복귀(없으면 빈 보드) — 항목 내용이 작전판에 새지 않게 */
     try{window.__curVaultId=null;window.__vaultReadOnly=false;}catch(_){}
     window.__vaultPending={type:type,folder:curFolder()};
@@ -13768,8 +13838,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     $id("vCreateFull").onclick=function(e){e.stopPropagation();enterVaultFull(window.__vvName||"");};
     /* 2.276 — 보기 전용에서 바로 편집(사용자): 닫고 같은 항목을 편집 모드로 다시 연다(보관함 편집 버튼과 같은 경로) */
     $id("vCreateEdit").onclick=function(e){e.stopPropagation();var it=window.__vvItem;if(!it)return;
+      var owner=vaultBoardOwner();
       try{doViewClose();}catch(_){}
-      setTimeout(function(){try{openItemEdit(it);}catch(_){}},80);};
+      var generation=_vaultBoardGeneration;
+      setTimeout(function(){if(it.type==='board'&&(generation!==_vaultBoardGeneration||!vaultBoardSameOwner(owner)))return;try{openItemEdit(it);}catch(_){}},80);};
     return bar; }
   function showCreateBar(type, editing){ var bar=ensureCreateBar();
     try{window.__vaultViewMode=false;window.__vaultReadOnly=false;var _sb=$id("vCreateSave");if(_sb){_sb.style.display="";_sb.textContent="다음: 이름·폴더";}var _cb=$id("vCreateCancel");if(_cb)_cb.textContent="나가기";var _fl=$id("vCreateFlow");if(_fl)_fl.style.display="";}catch(_){}
@@ -13833,7 +13905,16 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{parent.postMessage({source:"board",type:"vaultFull",on:false},"*");}catch(_){}
     _vfRefit();
   }
-  function doViewClose(){ try{exitVaultFull();}catch(_){} try{if(window.__vaultReadOnly){window.__vaultAutoSaveCancel&&window.__vaultAutoSaveCancel();}else{window.__vaultAutoSaveFlush&&window.__vaultAutoSaveFlush();}}catch(_){} try{window.__vaultViewMode=false;}catch(_){} var bar=$id("vCreateBar"); if(bar)bar.classList.remove("on"); document.body.classList.remove("vcreating"); try{window.__createPrev=null;window.__curVaultId=null;window.__vaultReadOnly=false;}catch(_){} try{if(window.boardShowDefault)window.boardShowDefault();}catch(_){} try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){} }
+  window.__vaultBoardLeave=function(){
+    if(!_vaultBoardContext)return false;
+    try{if(window.__vaultReadOnly||!vaultBoardSameOwner(_vaultBoardContext.owner))window.__vaultAutoSaveCancel();else window.__vaultAutoSaveFlush();}catch(_){}
+    try{exitVaultFull();}catch(_){}
+    vaultBoardRestore();hideCreateBar();return true;
+  };
+  function doViewClose(){
+    if(_vaultBoardContext){window.__vaultBoardLeave();try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){}return;}
+    try{exitVaultFull();}catch(_){} try{if(window.__vaultReadOnly){window.__vaultAutoSaveCancel&&window.__vaultAutoSaveCancel();}else{window.__vaultAutoSaveFlush&&window.__vaultAutoSaveFlush();}}catch(_){} try{window.__vaultViewMode=false;}catch(_){} var bar=$id("vCreateBar"); if(bar)bar.classList.remove("on"); document.body.classList.remove("vcreating"); try{window.__createPrev=null;window.__curVaultId=null;window.__vaultReadOnly=false;}catch(_){} try{if(window.boardShowDefault)window.boardShowDefault();}catch(_){} try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){}
+  }
   function doViewSaveBack(){   /* 보관함에서 연 항목을 수정 후 저장(원본 덮어쓰기) — 작업 보드는 그대로 두고 보관함으로 복귀 */
     if(window.__vaultReadOnly){doViewClose();return;}
     try{exitVaultFull();}catch(_){}
@@ -14110,8 +14191,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   /* 보기 = 읽기전용 열기 · 편집 = 편집 열기(권한 확인) · 다른 유형(작전판/경기/미팅)은 기존 열기 */
   function openItemView(d){ if(!psVaultRequireLogin())return;window.__vvNextItem=d;   /* 2.276 — 보기 바의 편집 버튼용(원샷) */
+    if((d.type==='train'||d.type==='setpiece')&&_vaultBoardContext)window.__vaultBoardLeave();
     var ty=d.type||"train"; if(ty==="train"||ty==="setpiece"){ try{openLibDrawEditor(d.libId,true);}catch(_){} } else { openItem(d,true); } }
   function openItemEdit(d){ if(!psVaultRequireLogin())return;if(!canEditItem(d)){ try{toast("만든 사람만 편집할 수 있어요 — '복사'로 내 훈련을 만드세요");}catch(_){} return; }
+    if((d.type==='train'||d.type==='setpiece')&&_vaultBoardContext)window.__vaultBoardLeave();
     var ty=d.type||"train"; if(ty==="train"||ty==="setpiece"){ try{openLibDrawEditor(d.libId,false);}catch(_){} } else { openItem(d,false); } }
   function vaultRenameItem(d){   /* PWA에서 prompt() 차단 대비 — 자체 다이얼로그 */
     try{var ex=document.getElementById("psRenOv");if(ex)ex.remove();}catch(_){}
@@ -15064,6 +15147,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   window.addEventListener("resize",function(){clearTimeout(_saveResizeT);_saveResizeT=setTimeout(function(){try{toggleSave();}catch(_){}},80);});
   var _osetView=setView;
   setView=function(v){var _pv=window.__csView;
+  if(_vaultBoardContext&&v!=='board'&&!window.__vaultStarting)try{window.__vaultBoardLeave();}catch(_){}
   /* 2.359 — 폴더는 **원래 setView 앞**에서 맞춘다. 뒤에 두면 탐색기를 옛 폴더로 그린 다음
      '전체 자료'로 다시 그리게 된다(지금은 __vxSig 가 막고 있지만, 순서로 막는 편이 확실하다).
      '전체 자료'로 맞추는 이유는 그대로 — 루트(미분류만)는 "N개라는데 안 보인다" 혼란을 만든다.
@@ -15599,6 +15683,17 @@ try{ var _nb=document.getElementById('dfNew');
 
   /* ---- 보관함 저장/열기·라이브 복원용 API ---- */
   window.__psPages={
+    /* 보관함 작전판의 임시 화면과 별개로, 마지막 작업 페이지·위치를 보관/복원한다. */
+    captureContext:function(snap,a){
+      var p=pages? _clone(pages):null;
+      if(p&&p[idx]){p[idx].snap=_clone(snap);p[idx].anim=a?_clone(a):null;}
+      return {pages:p,idx:idx};
+    },
+    restoreContext:function(c){
+      pages=c&&Array.isArray(c.pages)?_clone(c.pages):null;
+      idx=pages?Math.max(0,Math.min(+(c&&c.idx)||0,pages.length-1)):0;
+      _inVault=false;_livePages=null;clearHistory();try{render();}catch(_){}
+    },
     /* 저장용: 현재 페이지 캡처 후, 2개 이상이면 깊은 복제 배열 반환(아니면 null) */
     forSave:function(){ if(pages && pages.length>1){ capture(); return _clone(pages); } return null; },
     /* 복원: 항목/라이브에 저장된 pages 배열을 상태로 반영(현재 페이지는 이미 로드돼 있다고 가정) */
