@@ -8463,7 +8463,7 @@ function renderPlayers(){
     }else tgt.forEach(pl=>bt.appendChild(mk(pl)));
     bt.appendChild(mkAdd("target","＋ 대상 추가"));}
 }
-function openPlayer(id){
+function openPlayer(id,opts){
   editingPlayer=id;const pl=player(id);if(!pl)return;
   var _m=$("plEditModal"); if(_m&&_m.parentNode!==document.body)document.body.appendChild(_m);   // 숨겨진 뷰 밖(body)으로 옮겨 어느 탭에서든 표시
   _m.style.display="flex";$("plEditTitle").textContent=pl.name||"선수 편집";
@@ -8567,6 +8567,8 @@ function openPlayer(id){
     } else if(!pl.posId){ var hint=document.createElement("div");hint.className="lvlmode-hint";hint.style.marginTop="8px";hint.textContent="주 포지션을 정하면 포지션별 문항 4개가 아래에 붙어요";box.appendChild(hint); }
   } }catch(_){}
   if($("plEditModal"))$("plEditModal").scrollTop=0;
+  /* 2.774 — «평가 시작 ›» 에서 열면 프로필 칸이 아니라 평가(#plLevels)부터 보이게. 모달(.pl-modal)이 스크롤 주체라 scrollIntoView 로 충분 */
+  try{ if(opts&&opts.to==="eval"){ setTimeout(function(){ var lv=$("plLevels"); if(lv)lv.scrollIntoView({block:"start"}); },40); } }catch(_){}
 }
 function closePlayer(){editingPlayer=null;$("plEditModal").style.display="none";
   // 프로필에서 고친 이름·번호·포지션이 팀 구성/스카우트 화면에 바로 반영되게 재렌더
@@ -18170,7 +18172,7 @@ function init(){
   if($("tmEvalTodo"))$("tmEvalTodo").onclick=function(){
     var p=tmOurs().filter(function(x){return x.manual===true||String(x.name||"").trim();})
       .find(function(x){return !(x.levels&&Object.keys(x.levels).length);});
-    if(p)openPlayer(p.id); else toast&&toast("모든 선수 평가 완료 ✓");
+    if(p)openPlayer(p.id,{to:"eval"}); else toast&&toast("모든 선수 평가 완료 ✓");   /* 2.774 — 평가부터 */
   };
   /* 1.851 — 선수 추가: 빈 행 대신 최소 입력 시트(이름·번호·포지션). 시트가 없으면(예외) 예전처럼 빈 행 */
   window.__tmAddSheet=function(){
