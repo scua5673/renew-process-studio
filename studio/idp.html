@@ -7,6 +7,7 @@
 <script src="storage.js"></script>
 <script src="idp-evidence.js"></script>
 <script src="idp-recovery.js"></script>
+<script src="shared-view-observation.js"></script>
 <link rel="stylesheet" href="idp-recovery.css">
 <link rel="stylesheet" href="idp-start.css">
 <link rel="stylesheet" href="idp-evidence.css">
@@ -8495,7 +8496,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rSqMatches(p){
     var ctx=sqMatchContext(p),rows=ctx.state==='ready'?sqMatchRows(ctx.doc):[];
     var state=ctx.state==='ready'&&!rows.length?'empty':ctx.state;
-    var h='<section class="sqm" data-sqm-state="'+state+'" aria-label="선수 경기 기록">';
+    var h='<section class="sqm" data-sqm-state="'+state+'"'+(state==='ready'?' data-sqm-subject="'+esc(ctx.uid)+'"':'')+' aria-label="선수 경기 기록">';
     var messages={
       unavailable:['경기 기록을 열 수 없어요','팀의 코치 계정으로 연결 상태를 확인해 주세요.'],
       unlinked:['선수 계정이 연결되지 않았어요','팀 설정에서 이 선수의 계정을 연결하면 작성한 경기 리뷰를 볼 수 있습니다.'],
@@ -9170,7 +9171,31 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       });
     }; });
   }
+  var sqSharedViewObserver=null;
+  function sqSharedViewContext(){
+    try{
+      if(!squadView||sqPanel!=='matches'||sqEvalState!=='ok'||_idpRecoveryAuthLocked)return null;
+      var owner=idpSaveOwner(),api=idpSaveApi(),role=myTeamRole();
+      if(!owner||!owner.uid||!owner.wid||!api||typeof api.reportSharedView!=='function'||!api.dataUnlocked||api.dataUnlocked()!==true||
+         !onTeam()||['admin','executive','staff'].indexOf(role)<0)return null;
+      var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0],ctx=p&&sqMatchContext(p);
+      var el=wrap.querySelector('.sqm[data-sqm-state="ready"]');
+      if(!ctx||ctx.state!=='ready'||ctx.uid===owner.uid||!el||el.dataset.sqmSubject!==ctx.uid||!el.querySelector('.sqm-record'))return null;
+      var seal=localStorage.getItem('ps_cache_owner_v1'),parsed=seal&&JSON.parse(seal);
+      if(!parsed||parsed.uid!==owner.uid||parsed.wid!==owner.wid)return null;
+      return {uid:owner.uid,wid:owner.wid,subject:ctx.uid,kind:'player_matches',state:'ready',role:role,seal:seal,element:el};
+    }catch(_){return null;}
+  }
+  function sqSharedViewObserve(){
+    try{
+      if(!window.PSSharedViewObservation)return;
+      if(!sqSharedViewObserver){sqSharedViewObserver=PSSharedViewObservation.createClient({window:window,context:sqSharedViewContext,
+        send:function(body,current){var api=idpSaveApi();return api&&typeof api.reportSharedView==='function'?api.reportSharedView(body,current):Promise.resolve(false);}});sqSharedViewObserver.start();}
+      sqSharedViewObserver.watch();
+    }catch(_){}
+  }
   function bindSquadEval(){
+    sqSharedViewObserve();
     var rt=wrap.querySelector('[data-sqe-retry]'); if(rt)rt.onclick=function(){ sqEvalLoad(true); };
     /* 2.769 — 선수 상세 이야기 탭의 스레드: 보내기는 그 선수의 코치 문서로, 말풍선을 누르면 그 선수 앱의 그 자리로 */
     try{ [].forEach.call(wrap.querySelectorAll('[data-st-more-key]'),function(b){b.onclick=function(){sqStoryExpanded[b.dataset.stMoreKey]=true;render();};});

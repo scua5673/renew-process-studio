@@ -1907,6 +1907,7 @@ function outboxUpdateSummary(q){
   });
   pendingSummary={total:(q||[]).length,by:by,updatedAt:Date.now()};
   try{localStorage.setItem(OUTBOXSUM,JSON.stringify(pendingSummary));}catch(_){}
+  try{if(syncObservationClient)syncObservationClient.poke();}catch(_){}
   try{renderUI();}catch(_){}
 }
 function outboxWrite(q){
@@ -5252,6 +5253,7 @@ function syncNowCore(reason){
     return Promise.resolve({skip:1,workspaceSwitching:1});
   var roundSignOutEpoch=signOutEpoch,roundOwnerSeal='',roundSwitchSeal=workspaceSwitchGuardRaw(),roundSwitchEpoch=workspaceSwitchEpochRaw();
   try{roundOwnerSeal=String(localStorage.getItem(OWNERKEY)||'');}catch(_){}
+  var observationOwner=null;try{observationOwner=syncObservationContext();}catch(_){}
   var syncBaseMetaSnapshot=meta();
   if(navigator.onLine===false){
     var po=pendingInfo(wid);
@@ -6450,6 +6452,7 @@ function syncNowCore(reason){
         else if(scheduleDependencyRetry&&!scheduleHeld())setTimeout(function(){syncNow('schedule-dependency-retry');},350);
         var result={pushed:Object.keys(confirmedPushKeys).length+((lr&&lr.pushed)||0),applied:applied,skipped:curKeys,personalError:personalError,
           held:heldKeys.slice(),deferred:dependencyDeferredKeys.slice(),pending:remain.count,scheduleDeferred:scheduleDeferred};
+        try{syncObservationRoundDone(observationOwner,result);}catch(_){}
         /* 선수 파일을 오프라인에서 가져왔어도 예전 sq:*는 block 때문에 이 회차에 올라가지 않는다.
            통짜 선수단 회차가 성공한 바로 여기에서만 exact 항목을 만들고, 두 번째 회차로 전송한다.
            exact/목록 검사가 실패하면 block을 남겨 부분 항목이 다음 자동 동기화에 섞이지 않게 한다. */
@@ -6486,6 +6489,7 @@ function syncNowCore(reason){
     var info=classifySyncError(e),pi=pendingInfo(wid);
     syncErr=info.code!=='sync_offline';
     lastIssue={code:info.code,stage:info.stage,at:Date.now()};   /* 2.625 */
+    try{syncObservationRoundDone(observationOwner,{error:info.code});}catch(_){}
     setStatus((info.code==='sync_offline'?'오프라인이에요':'못 올렸어요 · '+syncReasonText(info.code))
       +(pi.count?(' · 이 기기에 '+pi.count+'건 안전하게 있어요'):'')+(info.code==='sync_offline'?'':' · 곧 다시 시도해요'));   /* 2.625 말 바꾸기 */
     /* 2.631 — 원인 문장을 남긴다(내용·토큰 없음, 120자). 실측: sync_unexpected 11건·sync_storage 8건이 meta {stage,code} 뿐이라 서버에서 무엇인지 알 수 없었다 */
@@ -8675,7 +8679,105 @@ function historyMatchApplyExact(backupRaw,restoreWid,assertRestoreWid){
   });
 }
 
+/* Device observations are separate from sync guarantees. Only counts and fixed
+   error codes leave this adapter; reports cannot alter outbox, metadata or data. */
+var syncObservationClient=null,syncObservationRound=null;
+function syncObservationContext(){
+  try{
+    var s=getSess(),wid=String(activeWs()||''),owner=cacheOwner();
+    if(!s||!s.uid||!wid||!dataUnlocked()||workspaceSwitchGuardRead()||!owner||
+       String(owner.uid)!==String(s.uid)||String(owner.wid)!==wid)return null;
+    var seal=String(localStorage.getItem(OWNERKEY)||'');if(!seal)return null;
+    return {uid:String(s.uid),wid:wid,seal:seal,epoch:signOutEpoch,
+      switchSeal:workspaceSwitchGuardRaw(),switchEpoch:workspaceSwitchEpochRaw()};
+  }catch(_){return null;}
+}
+function syncObservationCurrent(c){
+  var n=syncObservationContext();return !!c&&!!n&&c.uid===n.uid&&c.wid===n.wid&&c.seal===n.seal&&
+    c.epoch===n.epoch&&c.switchSeal===n.switchSeal&&c.switchEpoch===n.switchEpoch;
+}
+function syncObservationRoundDone(c,result){
+  if(!syncObservationCurrent(c))return;
+  var prev=syncObservationRound,ack=prev&&syncObservationCurrent(prev.owner)?prev.ackAt:null;
+  syncObservationRound={owner:c,ackAt:result.error?ack:Date.now(),
+    held:result.error?null:result.held.length,skipped:result.error?null:result.skipped.length,
+    deferred:result.error?null:result.deferred.length,error:result.error||(result.personalError&&result.personalError.code)||null};
+  if(syncObservationClient)syncObservationClient.poke();
+}
+function syncObservationSnapshot(c){
+  if(!syncObservationCurrent(c))return null;
+  try{
+    var sum=pendingSummary,pwid=personalWid(),team=null,personal=null,oldest=null;
+    function pending(w){
+      if(!w||!sum||!Number.isFinite(sum.updatedAt)||sum.updatedAt<=0||!sum.by||typeof sum.by!=='object'||Array.isArray(sum.by))return null;
+      var b=sum.by[outboxScope(c.uid,w)];
+      if(!b)return {count:0,oldest:0};
+      if(!Number.isSafeInteger(b.count)||b.count<0||!Number.isFinite(b.oldest)||b.oldest<0)return null;
+      return b;
+    }
+    team=pending(c.wid);personal=pwid===c.wid?team:pending(pwid);
+    if(team&&personal){var times=[team.oldest,personal.oldest].filter(function(t){return t>0;});if(times.length)oldest=Math.min.apply(Math,times);}
+    var holds=JSON.parse(localStorage.getItem(HOLD_LIST)||'[]'),reviews=JSON.parse(localStorage.getItem(PERSONAL_REVIEW)||'[]');
+    if(!Array.isArray(holds)||!Array.isArray(reviews))return null;
+    var scoped=holds.filter(function(x){return x&&x.uid===c.uid&&x.wid===c.wid;});
+    var unscoped=holds.some(function(x){return !x||!x.uid||!x.wid;});
+    var conflicts=scoped.filter(function(x){return x.kind==='conflict';}).length+
+      reviews.filter(function(x){return x&&x.uid===c.uid&&x.wid===pwid&&PERSONAL[x.k];}).length;
+    var r=syncObservationRound&&syncObservationCurrent(syncObservationRound.owner)?syncObservationRound:null;
+    var issue=personalIssue&&personalIssue.uid===c.uid&&personalIssue.wid===pwid?personalIssue.code:r&&r.error;
+    var result={pending_team:pwid===c.wid?0:team&&team.count,pending_personal:personal&&personal.count,
+      held:unscoped?null:scoped.length,
+      skipped:r?r.skipped:null,deferred:r?r.deferred:null,conflicts:conflicts,
+      oldest_pending_at:oldest,last_round_ack_at:r?r.ackAt:null,error_code:issue||null,
+      device_class:eventDevice(),app_version:appVer(),online:navigator.onLine!==false,busy:!!busy};
+    return syncObservationCurrent(c)?result:null;
+  }catch(_){return null;}
+}
+function syncObservationSend(c,body){
+  function requireCurrent(){if(!syncObservationCurrent(c))throw new Error('report context changed');}
+  return Promise.resolve().then(function(){requireCurrent();return ensureToken();}).then(function(at){
+    requireCurrent();var s=getSess();if(!at||!s||s.at!==at||String(s.uid)!==c.uid)throw new Error('report session changed');
+    var controller=typeof AbortController==='function'?new AbortController():null;
+    var timer=controller?setTimeout(function(){controller.abort();},8000):null;
+    return Promise.resolve().then(function(){requireCurrent();
+      return fetch(BASE+'/rest/v1/rpc/ps_sync_report_put',{method:'POST',headers:hj(at),body:JSON.stringify(body),
+        signal:controller?controller.signal:undefined});
+    }).then(function(r){return r.text().then(function(t){
+      requireCurrent();
+      if(!r.ok){var e=new Error('device report rejected'),obj=null;try{obj=JSON.parse(t);}catch(_){}
+        e.status=r.status;e.code=obj&&typeof obj.code==='string'?obj.code:'';throw e;}
+      return true;
+    });}).then(function(ok){if(timer!=null)clearTimeout(timer);return ok;},function(e){if(timer!=null)clearTimeout(timer);throw e;});
+  });
+}
+function syncObservationStart(){
+  try{if(window.PSSyncObservability&&typeof window.PSSyncObservability.createClient==='function'){
+    syncObservationClient=window.PSSyncObservability.createClient({context:syncObservationContext,snapshot:syncObservationSnapshot,send:syncObservationSend});
+    syncObservationClient.start();
+  }}catch(_){}
+}
+
+/* Report only a currently visible, ready shared screen. This observation never
+   acknowledges a saved document and cannot affect the ordinary sync queue. */
+function reportSharedView(body,stillVisible){
+  var c=syncObservationContext(),allowed=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if(!c||!body||typeof stillVisible!=='function'||body.p_workspace_id!==c.wid||
+     !allowed.test(body.p_subject_user_id||'')||body.p_subject_user_id===c.uid||body.p_view_kind!=='player_matches')return Promise.resolve(false);
+  var payload={p_workspace_id:c.wid,p_subject_user_id:body.p_subject_user_id,p_view_kind:'player_matches'};
+  function current(){return syncObservationCurrent(c)&&stillVisible()===true;}
+  return Promise.resolve().then(function(){if(!current())throw 0;return ensureToken();}).then(function(at){
+    var s=getSess();if(!at||!s||s.at!==at||String(s.uid)!==c.uid||!current())throw 0;
+    var controller=typeof AbortController==='function'?new AbortController():null;
+    var timer=controller?setTimeout(function(){controller.abort();},8000):null;
+    return Promise.resolve().then(function(){if(!current())throw 0;
+      return fetch(BASE+'/rest/v1/rpc/ps_shared_view_put',{method:'POST',headers:hj(at),body:JSON.stringify(payload),signal:controller?controller.signal:undefined});
+    }).then(function(r){return r.text().then(function(){return r.ok&&current();});})
+      .then(function(ok){if(timer!=null)clearTimeout(timer);return ok;},function(e){if(timer!=null)clearTimeout(timer);throw e;});
+  }).catch(function(){return false;});
+}
+
 window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dataUnlocked:dataUnlocked,keys:KEYS,state:syncState,   /* 2.625 상태 한 줄 */
+  reportSharedView:reportSharedView,
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */
   rosterReady:function(wid){return rosterReady(wid||activeWs());},
   scheduleEdit:{set:scheduleEditSet,touch:scheduleEditTouch,active:scheduleHeld},
@@ -8809,4 +8911,5 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
   bulk:{pull:bulkPull,push:bulkPush,keys:bulkKeys,guard:bulkGuard},   /* 2.352 — 팀 자료 통째로 가져오기/올리기 */
   /* 2.622 — 서버에서 받은 일정 원문(시점 복구 등)의 그림 참조를 되돌린다. 못 되돌리면 원문 그대로 */
   blob:{hydrate:function(raw){ return ensureToken().then(function(at){ return schedHydrate(at,activeWs(),String(raw||'')); }).catch(function(){ return raw; }); }, strip:schedStrip, refs:schedRefs, off:function(){return blobOff;}}};
+syncObservationStart();
 })();

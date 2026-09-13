@@ -236,6 +236,8 @@
   .toast.on{opacity:1;}
   .loading{padding:40px;text-align:center;color:var(--dim);}
 </style>
+<link rel="stylesheet" href="studio/admin-user-detail.css?v=2.792">
+<link rel="stylesheet" href="studio/admin-operations.css?v=2.792">
 </head>
 <body>
 
@@ -361,11 +363,11 @@
         <div id="hmKpi"><div class="loading">불러오는 중…</div></div>
       </div>
       <div class="panel" style="margin-top:12px">
-        <div class="sec-t">일일 활성 유저 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 30일 · 로그인 기록 + 방문 핑</span></div>
+        <div class="sec-t">일별 사용 기록 계정 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 사용 핑 + 로그인 · 같은 계정은 날짜별 중복 제거</span></div>
         <div id="hmUsage"><div class="loading">불러오는 중…</div></div>
       </div>
       <div class="panel" style="margin-top:12px">
-        <div class="sec-t">IDP 온보딩 퍼널 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 가입→기록 습관</span></div>
+        <div class="sec-t">IDP 보유 현황 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 가입 계정 대비 현황 · 단계별 전환율 아님</span></div>
         <div id="hmFunnel"><div class="loading">불러오는 중…</div></div>
       </div>
       <div class="panel" style="margin-top:12px">
@@ -403,7 +405,7 @@
         <div id="hmTeams"><div class="loading">불러오는 중…</div></div>
       </div>
       <div class="panel" style="margin-top:12px">
-        <div class="sec-t">조용해진 팀 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 7일+ 무활동</span></div>
+        <div class="sec-t">갱신 없는 팀 공간 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 최근 7일 자료 갱신 없음</span></div>
         <div id="hmQuiet"><div class="loading">불러오는 중…</div></div>
       </div>
       <div class="panel" style="margin-top:12px">
@@ -556,29 +558,113 @@
 <div id="modalRoot"></div>
 <div class="toast" id="toast"></div>
 
+<script src="studio/admin-user-detail.js?v=2.792"></script>
+<script src="studio/admin-operations.js?v=2.792"></script>
 <script>
 /* ===== 설정 (publishable/anon 키만 — secret 키는 절대 두지 않음) ===== */
 var CFG={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publishable_-Es-apybpr1zPTLzLE2sUw_kV-5ap-k"};
 var BASE=CFG.url.replace(/\/+$/,''), SKEY='ps_sync_session';
 
 /* ===== 인증(앱 sync.js와 동일한 세션 재사용) ===== */
+var adminBoundUid=null,adminAuthEpoch=0,adminSessionLocked=false,adminRefreshFlight=null;
 function getSess(){ try{ var s=JSON.parse(localStorage.getItem(SKEY)||'null'); return (s&&s.at&&s.rt)?s:null; }catch(_){ return null; } }
-function setSess(s){ try{ if(s)localStorage.setItem(SKEY,JSON.stringify(s)); else localStorage.removeItem(SKEY);}catch(_){} }
+function adminLockSession(message){
+  if(adminSessionLocked)return;
+  adminSessionLocked=true;adminAuthEpoch++;
+  try{if(window.PSAdminUserDetail)PSAdminUserDetail.close();}catch(_){}
+  ['app','modalRoot'].forEach(function(id){var el=document.getElementById(id);if(el){el.classList.add('hide');el.replaceChildren();}});
+  try{WS=[];USERS=[];ALL_LIB=[];HOME=null;WHOLOG=null;IDP_CACHE={};ERR=null;USE=null;}catch(_){}
+  ['gateLogin','gateDenied'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hide');});
+  var gate=document.createElement('div');gate.id='adminSessionLock';gate.className='gate';gate.setAttribute('role','alert');
+  var title=document.createElement('h1');title.textContent='관리자 화면을 다시 확인해 주세요';
+  var detail=document.createElement('p');detail.textContent=message||'로그인 상태가 바뀌어 관리자 정보를 닫았습니다. 다시 확인한 뒤 이용해 주세요.';
+  var button=document.createElement('button');button.className='hbtn';button.type='button';button.textContent='로그인 상태 다시 확인';button.onclick=function(){location.reload();};
+  gate.append(title,detail,button);document.body.append(gate);
+}
+function adminCheckSession(s){
+  if(adminBoundUid&&(!s||s.uid!==adminBoundUid)){adminLockSession();return false;}
+  return !adminSessionLocked;
+}
+function setSess(s){
+  try{if(s)localStorage.setItem(SKEY,JSON.stringify(s));else localStorage.removeItem(SKEY);}catch(_){return false;}
+  adminCheckSession(s);return true;
+}
+window.addEventListener('storage',function(e){
+  if(e.key!==SKEY&&e.key!==null)return;
+  var s=null;try{s=e.key===null?getSess():JSON.parse(e.newValue||'null');}catch(_){}
+  adminCheckSession(s);
+});
+window.addEventListener('pageshow',function(){adminCheckSession(getSess());});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')adminCheckSession(getSess());});
 function hj(at){ var h={'apikey':CFG.anonKey,'Content-Type':'application/json'}; if(at)h['Authorization']='Bearer '+at; return h; }
+function adminSameSession(a,b){return !!a&&!!b&&a.uid===b.uid&&a.at===b.at&&a.rt===b.rt;}
 function ensureToken(){
-  var s=getSess(); if(!s) return Promise.resolve(null);
-  if(Date.now()<s.exp-60000) return Promise.resolve(s.at);
-  return fetch(BASE+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:hj(),body:JSON.stringify({refresh_token:s.rt})})
-    .then(function(r){ if(!r.ok)throw 0; return r.json(); })
-    .then(function(j){ var ns={at:j.access_token,rt:j.refresh_token||s.rt,exp:Date.now()+((+j.expires_in||3600)*1000),email:s.email,uid:s.uid};
-      if(j.user&&j.user.id){ns.uid=j.user.id;ns.email=j.user.email||ns.email;} setSess(ns); return ns.at; })
-    .catch(function(){ setSess(null); return null; });
+  var s=getSess();if(!adminCheckSession(s))return Promise.reject(new Error('session changed'));
+  if(!s)return Promise.resolve(null);
+  if(Date.now()<s.exp-60000)return Promise.resolve(s.at);
+  if(adminRefreshFlight&&adminSameSession(adminRefreshFlight.owner,s))return adminRefreshFlight.promise;
+  var flight={owner:s,promise:null},epoch=adminAuthEpoch;
+  function current(){return !adminSessionLocked&&epoch===adminAuthEpoch&&adminSameSession(getSess(),s);}
+  flight.promise=Promise.resolve().then(function(){
+    if(!current())throw new Error('session changed');
+    return fetch(BASE+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:hj(),body:JSON.stringify({refresh_token:s.rt})});
+  }).then(function(r){return r.json().catch(function(){return null;}).then(function(j){
+    if(!r.ok){
+      var code=j&&(j.code||j.error_code||j.error),error=new Error('refresh unavailable');error.status=r.status;
+      error.invalidAuth=(r.status===400||r.status===401)&&(['refresh_token_not_found','refresh_token_already_used','session_not_found','session_expired','invalid_grant','invalid_refresh_token'].indexOf(code)>=0);
+      throw error;
+    }
+    if(!current())throw new Error('session changed');
+    if(!j||typeof j.access_token!=='string'||!j.access_token||typeof j.refresh_token!=='string'||!j.refresh_token)throw new Error('invalid refresh response');
+    if(j.user&&j.user.id&&s.uid&&j.user.id!==s.uid){adminLockSession('로그인 계정을 확인하지 못해 관리자 정보를 닫았습니다.');throw new Error('refresh owner mismatch');}
+    var ns={at:j.access_token,rt:j.refresh_token,exp:Date.now()+((+j.expires_in||3600)*1000),email:s.email,uid:s.uid};
+    if(j.user&&j.user.id){ns.uid=j.user.id;ns.email=j.user.email||ns.email;}
+    if(!setSess(ns))throw new Error('session storage unavailable');return ns.at;
+  });}).catch(function(e){
+    if(e&&e.invalidAuth&&current())setSess(null);
+    throw e;
+  }).finally(function(){if(adminRefreshFlight===flight)adminRefreshFlight=null;});
+  adminRefreshFlight=flight;return flight.promise;
 }
-function rpc(name,body){
-  return ensureToken().then(function(at){ if(!at) throw new Error('no token');
-    return fetch(BASE+'/rest/v1/rpc/'+name,{method:'POST',headers:hj(at),body:JSON.stringify(body||{})})
-      .then(function(r){ return r.text().then(function(t){ if(!r.ok)throw new Error(name+' '+r.status+' '+t); return t?JSON.parse(t):null; }); }); });
+function adminRequest(path,options,bootstrap){
+  var first=getSess(),epoch=adminAuthEpoch,owner=bootstrap?(first&&first.uid||''):adminBoundUid;
+  if(!first||!adminCheckSession(first)||(!bootstrap&&!owner))return Promise.reject(new Error('no verified admin session'));
+  if(bootstrap&&path!=='rpc/ps_whoami')return Promise.reject(new Error('invalid bootstrap request'));
+  return ensureToken().then(function(at){
+    var live=getSess();
+    if(!at||!live||live.at!==at||adminSessionLocked||epoch!==adminAuthEpoch||(owner&&live.uid!==owner))throw new Error('session changed');
+    var sent={uid:live.uid,at:live.at,rt:live.rt};
+    function current(){var s=getSess();return !adminSessionLocked&&epoch===adminAuthEpoch&&adminCheckSession(s)&&
+      (bootstrap?adminSameSession(s,sent):s&&s.uid===owner&&adminBoundUid===owner);}
+    var o=Object.assign({},options||{});o.headers=Object.assign({},o.headers||{},hj(at));
+    if(!current())throw new Error('session changed');
+    return fetch(BASE+'/rest/v1/'+String(path).replace(/^\//,''),o).then(function(r){return r.text().then(function(t){
+      if(!current())throw new Error('session changed');
+      var j=null;try{j=t?JSON.parse(t):null;}catch(_){throw new Error('invalid response');}
+      if(!r.ok){var e=new Error((j&&j.message)||('request '+r.status));e.status=r.status;e.code=j&&j.code;throw e;}return j;
+    });});
+  });
 }
+function rpc(name,body){return adminRequest('rpc/'+name,{method:'POST',body:JSON.stringify(body||{})},name==='ps_whoami'&&!adminBoundUid);}
+/* 2.792: user-level support without loading private document bodies. */
+function openAdminUser(uid){
+  if(!adminBoundUid||!adminCheckSession(getSess()))return;
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid||''))return;
+  var user=USERS.find(function(u){return u.user_id===uid;})||{user_id:uid};
+  if(!window.PSAdminUserDetail){toast('사용자 상세를 불러오지 못했습니다. 새로고침해 주세요.');return;}
+  PSAdminUserDetail.open({user:user,users:USERS,workspaces:WS,rpc:adminRpc,request:adminRequest,
+    onTeam:function(wid){setTab('ws');selectWs(wid);},
+    onIdp:function(){setTab('idp');openIdp(uid,user.email||'');}});
+}
+var adminOps=null;
+function adminRpc(name,body){return adminRequest('rpc/'+name,{method:'POST',body:JSON.stringify(body||{})});}
+function loadAdminOps(){
+  if(!window.PSAdminOperations)return;
+  if(!adminOps)adminOps=PSAdminOperations.create({rpc:adminRpc,users:function(){return USERS;},workspaces:function(){return WS;},openUser:openAdminUser,
+    findUser:function(q){setTab('users');$('uSearch').value=q;renderUsers();$('uSearch').focus();}});
+  return adminOps.load();
+}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-admin-user]');if(b)openAdminUser(b.dataset.adminUser);});
 function loadErrorDetails24h(){
   return ensureToken().then(function(at){ if(!at) throw new Error('no token');
     var since=new Date(Date.now()-86400000).toISOString();
@@ -669,16 +755,22 @@ function normalizeLibRows(rows){
 /* ===== 부팅 ===== */
 consumeHash();
 (function boot(){
-  ensureToken().then(function(at){
-    if(!at){ show('gateLogin'); return; }
-    return rpc('ps_whoami').then(function(rows){
-      var me=(rows&&rows[0])||{};
-      if(!me.is_admin){ showDenied(me.uid); return; }
-      var s=getSess(); if(s){ s.uid=me.uid; s.email=me.email||s.email; setSess(s); }
-      $('meChip').textContent=me.email||me.uid||'관리자';
-      show('app'); reloadAll();
-    });
-  }).catch(function(e){ show('gateLogin'); });
+  var epoch=adminAuthEpoch;
+  if(!getSess()){show('gateLogin');return;}
+  rpc('ps_whoami').then(function(rows){
+    if(adminSessionLocked||epoch!==adminAuthEpoch)return;
+    var me=(rows&&rows[0])||{},s=getSess();
+    if(!s||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(me.uid||'')||(s.uid&&s.uid!==me.uid)){
+      adminLockSession('로그인 계정과 관리자 응답이 달라 화면을 닫았습니다.');return;
+    }
+    if(me.is_admin!==true){showDenied(me.uid);return;}
+    adminBoundUid=me.uid;s.uid=me.uid;s.email=me.email||s.email;
+    if(!setSess(s)){adminLockSession('로그인 정보를 기기에 보관하지 못했습니다.');return;}
+    $('meChip').textContent=me.email||me.uid||'관리자';show('app');reloadAll();
+  }).catch(function(){
+    if(adminSessionLocked||epoch!==adminAuthEpoch)return;
+    if(!getSess())show('gateLogin');else adminLockSession('연결 또는 관리자 권한을 확인하지 못했습니다. 로그인 정보는 유지했습니다.');
+  });
 })();
 function showDenied(uid){
   uid=uid||'(알 수 없음)';
@@ -700,6 +792,7 @@ function reloadAll(){
   ]).then(function(res){
     WS=res[0].v; USERS=res[1].v; ALL_LIB=normalizeLibRows(res[2].v);
     renderStats();
+    loadAdminOps();
     if(res[0].ok) renderWsList();
     else $('wsList').innerHTML='<div class="empty">팀 정보를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>';
     if(res[1].ok) renderUsers();
@@ -728,7 +821,7 @@ function renderStats(){
 function stat(n,l){ return '<div class="stat"><div class="n">'+n+'</div><div class="l">'+esc(l)+'</div></div>'; }
 
 /* ===== 탭 ===== */
-function setTab(t){ curTab=t;
+function setTab(t){ curTab=t; $('app').classList.toggle('admin-home-mode',t==='home');
   if($('tabBack'))$('tabBack').classList.toggle('on',t==='back'); if($('viewBack'))$('viewBack').classList.toggle('hide',t!=='back'); if(t==='back')loadBack();   /* 2.630 */
   if($('tabUse'))$('tabUse').classList.toggle('on',t==='use');
   if($('tabErrors'))$('tabErrors').classList.toggle('on',t==='errors');
@@ -1009,9 +1102,9 @@ function renderHome(){
     +(sub?'<div class="muted" style="font-size:10.5px;margin-top:1px">'+sub+'</div>':'')+'</div>'; };
   $('hmKpi').innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap">'
     +kpi(newU7,'신규 가입',usersOk?'총 '+users.length+'명':'사용자 집계 오류',"setTab('users')")
-    +kpi(act7,'접속 유저','7일 내',"setTab('users')")
-    +kpi(idpLog7,'IDP 기록 유저','7일 내 일지',"setTab('idp')")
-    +kpi(team7,'활성 팀','총 '+teams.length+'팀',"setTab('ws')")
+    +kpi(act7,'최근 로그인','최근 7×24시간 · 인증 기록',"setTab('users')")
+    +kpi(idpLog7,'IDP 갱신 계정','일지가 있는 문서 · 최근 7일 갱신',"setTab('idp')")
+    +kpi(team7,'갱신된 팀 공간','전체 '+teams.length+'개 공간',"setTab('ws')")
     +'</div>';
   /* ── 안정성: 실제 앱 오류·동기화 실패·연결 전환을 분리한다. 콘텐츠 본문은 수집하지 않는다 ── */
   var H=HOME.health;
@@ -1027,7 +1120,7 @@ function renderHome(){
     $('hmHealth').innerHTML=
       '<div class="health-grid">'
       +'<button id="hmErrorBtn" type="button" class="health-card" onclick="toggleHealthDetails()" aria-expanded="false" aria-controls="hmErrorDetails"><b style="color:'+severity+'">'+appErr24+'</b><span class="muted">'+(hV2?'24시간 실제 앱 오류':'24시간 분류 전 오류')+'</span><span class="open-hint">상세 보기 ›</span></button>'
-      +'<button id="hmSyncBtn" type="button" class="health-card" onclick="toggleSyncDetails()" aria-expanded="false" aria-controls="hmSyncDetails"><b style="color:'+(sync24?'var(--amber)':'var(--green)')+'">'+(hV2?sync24:'—')+'</b><span class="muted">24시간 동기화 실패</span><span class="open-hint">원인 보기 ›</span></button>'
+      +'<button id="hmSyncBtn" type="button" class="health-card" onclick="toggleSyncDetails()" aria-expanded="false" aria-controls="hmSyncDetails"><b style="color:'+(sync24?'var(--amber)':'var(--green)')+'">'+(hV2?sync24:'—')+'</b><span class="muted">24시간 동기화 실패 이벤트</span><span class="open-hint">원인 보기 ›</span></button>'
       +'<div class="health-card"><b>'+(+H.offline_7d||0)+'</b><span class="muted">7일 연결 끊김</span></div></div>'
       +'<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-top:1px solid var(--line)">'
       +'<span style="width:8px;height:8px;border-radius:50%;background:'+severity+'"></span>'
@@ -1041,20 +1134,20 @@ function renderHome(){
   }
   /* ── 운영자가 바로 처리할 수 있는 조치 목록 ── */
   var actionRows=[];
-  if(!F) actionRows.push(['danger','관리자 IDP RPC 설치 필요','supabase-admin.sql을 실행하면 참여·평가표 상태를 확인할 수 있습니다.']);
-  if(!H) actionRows.push(['danger','안정성 이벤트 RPC 설치 필요','supabase-events.sql을 실행하세요.']);
+  if(!F) actionRows.push(['danger','IDP 현황 조회 실패','권한·연결·조회 함수 상태를 확인하세요. 미사용이나 0건으로 판단하지 않습니다.']);
+  if(!H) actionRows.push(['danger','안정성 현황 조회 실패','권한·연결·조회 함수 상태를 확인하세요. 정상으로 판단하지 않습니다.']);
   else{
     var a24=+(H.app_errors_24h!=null?H.app_errors_24h:H.errors_24h)||0;
     var aUsers=+(H.app_affected_users_7d!=null?H.app_affected_users_7d:H.affected_users_7d)||0;
     var s24=+(H.sync_failures_24h||0);
-    if(a24>0) actionRows.push(['danger','최근 24시간 실제 앱 오류 '+a24+'건','영향 사용자 '+aUsers+'명 · '+esc(H.top_app_error||H.top_error||'오류 코드 없음')]);
-    if(s24>0) actionRows.push(['','최근 24시간 동기화 재시도 '+s24+'건','기기에는 먼저 저장되며 연결되면 자동 재시도합니다. 원인 코드를 확인하세요.']);
+    if(a24>0) actionRows.push(['danger','최근 24시간 실제 앱 오류 '+a24+'건','최근 7일 영향 사용자 '+aUsers+'명 · '+esc(H.top_app_error||H.top_error||'오류 코드 없음')]);
+    if(s24>0) actionRows.push(['','최근 24시간 동기화 실패 이벤트 '+s24+'건','유실·미해결 건수가 아닙니다. 위의 최근 기기 보고와 원인 코드를 함께 확인하세요.']);
   }
   var quietForAction=teams.filter(function(w){return !(_hmDaysAgo(w.last_kv,7)||_hmDaysAgo(w.last_lib,7));}).length;
-  if(quietForAction) actionRows.push(['','7일 이상 조용한 팀 '+quietForAction+'곳','팀 관리에서 최근 활동과 멤버 접속을 확인하세요.']);
+  if(quietForAction) actionRows.push(['','7일간 갱신 없는 팀 공간 '+quietForAction+'개','같은 팀의 다른 공간과 실제 훈련·경기 일정을 확인하세요. 사용 중단으로 단정하지 않습니다.']);
   var noIdp=usersOk?users.filter(function(u){return !u.idp_last;}).length:0;
   if(noIdp) actionRows.push(['','IDP 기록이 없는 사용자 '+noIdp+'명','계정–선수 연결과 IDP 시작 여부를 확인하세요.']);
-  if(!actionRows.length) actionRows.push(['ok','긴급 조치 없음','현재 수집된 운영 지표에서 즉시 확인할 문제를 찾지 못했습니다.']);
+  if(!actionRows.length) actionRows.push(['ok','현재 집계의 추가 확인 신호 없음','미수집 기기의 상태는 알 수 없습니다. 사용자별 최신 보고와 문의를 함께 확인하세요.']);
   $('hmActions').innerHTML='<div class="action-list">'+actionRows.slice(0,6).map(function(a){
     return '<div class="action-item '+a[0]+'"><i class="dot"></i><div class="body"><b>'+a[1]+'</b><span>'+a[2]+'</span></div></div>';
   }).join('')+'</div>';
@@ -1084,7 +1177,7 @@ function renderHome(){
   }
   /* ── IDP 퍼널 ── */
   if(F){
-    var steps=[['가입',F.total_users],['최근 7일 접속',F.active_7d],['IDP 시작',F.idp_users],['프로필 작성',F.has_profile],['평가 완료',F.has_eval],['목표 생성',F.has_goal],['최근 7일 기록',F.log_7d]];
+    var steps=[['가입',F.total_users],['7일 로그인',F.active_7d],['IDP 시작',F.idp_users],['프로필 작성',F.has_profile],['평가 완료',F.has_eval],['목표 생성',F.has_goal],['7일 문서 갱신',F.log_7d]];
     var mx=Math.max(F.total_users,1);
     $('hmFunnel').innerHTML=steps.map(function(s){
       var pct=Math.round(s[1]/mx*100);
@@ -1154,7 +1247,7 @@ function renderHome(){
         +'<span class="muted" style="font-size:11px">'+(w.member_count||0)+'명 · 7일 키 '+(w.keys_7d||0)+'</span>'
         +'<span class="muted" style="font-size:11px;flex:0 0 64px;text-align:right">'+fmtAgo(w.last_kv)+'</span></div>';
     }).join('');
-  /* ── 조용해진 팀 ── */
+  /* ── 갱신 없는 팀 공간 ── */
   var quiet=teams.filter(function(w){return !(_hmDaysAgo(w.last_kv,7)||_hmDaysAgo(w.last_lib,7));})
     .sort(function(a,b){return new Date(b.last_kv||0)-new Date(a.last_kv||0);});
   $('hmQuiet').innerHTML=!quiet.length?'<div class="empty">모든 팀이 7일 내 활동했습니다.</div>'
@@ -1288,14 +1381,9 @@ function renderUse(){
       .filter(function(x){ return x.o||x.s||x.a; })
       .sort(function(x,y){ return (y.o+y.s+y.a)-(x.o+x.s+x.a); });
     if(!list.length){ host.innerHTML='<div class="empty">아직 이벤트가 없습니다.</div>'; return; }
-    host.innerHTML='<div class="tablewrap"><table><thead><tr><th>기능</th><th>열었다</th><th>저장했다</th><th>핵심 행동</th><th>한 번 열 때</th></tr></thead><tbody>'
-      +list.map(function(x){
-        var per=x.o?((x.s+x.a)/x.o):null;
-        return '<tr><td><b>'+esc(featureLabel(x.k))+'</b></td><td>'+x.o+'회</td><td>'+x.s+'회</td><td>'+x.a+'회</td>'
-          +'<td>'+(per==null?'<span class="muted">—</span>'
-              :('<b>'+per.toFixed(1)+'</b>번'+(per<1?' <span class="muted" style="font-weight:600">· 열고 그냥 나가는 편</span>':'')))+'</td></tr>';
-      }).join('')+'</tbody></table></div>'
-      +'<div class="muted" style="font-size:11px;margin-top:6px">여는 것과 하는 것의 거리 — 한 번 열어서 저장·행동을 몇 번 했는지입니다. 1 보다 작으면 열어만 보고 나갑니다.</div>';
+    host.innerHTML='<div class="tablewrap"><table><thead><tr><th>기능</th><th>화면 진입 신호</th><th>기기 저장 신호</th><th>행동 신호</th></tr></thead><tbody>'
+      +list.map(function(x){return '<tr><td><b>'+esc(featureLabel(x.k))+'</b></td><td>'+x.o+'</td><td>'+x.s+'</td><td>'+x.a+'</td></tr>';}).join('')+'</tbody></table></div>'
+      +'<div class="muted" style="font-size:11px;margin-top:6px">수집된 이벤트 수입니다. 신호별 중복 억제와 수집 제한이 달라 서로 나눈 값을 전환율로 해석하지 않습니다. 기기 저장 신호는 서버 반영 완료와 구분합니다.</div>';
   })();
 
   /* ④ 무엇으로 쓰나 — 기기 · 버전 */
@@ -1379,7 +1467,7 @@ var FEATURE_LB={'cs_idp_v1_*':'IDP — 선수 개인 기록','training_sessions_
 /* ⚠ 이름을 loadActivity/renderActivity 로 지으면 **아래 '활동 분석' 탭의 같은 이름 함수와
      충돌한다**(뒤 선언이 이겨서 이 코드가 통째로 죽는다 — 실제로 한 번 그렇게 썼다가 잡았다).
      이 파일은 단일 스코프라 새 함수는 반드시 고유 이름으로 짓는다. */
-var WHOLOG=null, WHOLOG_DAYS=7;
+var WHOLOG=null, WHOLOG_DAYS=7, WHOLOG_FALLBACK=false, WHOLOG_ERROR=null;
 var WHOLOG_VERB={insert:'만들었습니다', update:'고쳤습니다', delete:'지웠습니다'};
 function actorName(r){
   var nm=(r.name||'').trim();
@@ -1389,19 +1477,21 @@ function actorName(r){
 }
 function loadWhoLog(){
   return rpc('ps_admin_recent_activity',{p_days:WHOLOG_DAYS,p_limit:120})
-    .then(function(rows){ WHOLOG=rows||[]; renderWhoLog(); })
+    .then(function(rows){ WHOLOG=rows||[]; WHOLOG_FALLBACK=false; WHOLOG_ERROR=null; renderWhoLog(); })
     /* SQL 미설치(supabase-admin-who.sql) 또는 ps_audit 없음 — 화면은 안 깨진다 */
-    .catch(function(){ WHOLOG='ERR'; renderWhoLog(); });
+    .catch(function(e){ WHOLOG_ERROR=e; return adminRequest('ps_events?select=event_name,feature,created_at,user_id,workspace_id,status&created_at=gte.'+encodeURIComponent(new Date(Date.now()-WHOLOG_DAYS*86400000).toISOString())+'&order=created_at.desc&limit=120').then(function(rows){WHOLOG=rows||[];WHOLOG_FALLBACK=true;renderWhoLog();}).catch(function(){WHOLOG='ERR';renderWhoLog();}); });
 }
 function renderWhoLog(){
   var el=$('hmActivity'); if(!el) return;
   var f=$('hmActFilter'); if(f) f.innerHTML='최근 '+WHOLOG_DAYS+'일';
   if(WHOLOG===null){ el.innerHTML='<div class="loading">불러오는 중…</div>'; return; }
   if(WHOLOG==='ERR'){
-    el.innerHTML='<div class="empty">활동 기록을 읽지 못했습니다.'
-      +'<br><span class="muted">supabase-설치/supabase-admin-who.sql 을 실행하세요. '
-      +'기록 자체는 supabase-security-v2.sql 을 깐 시점부터 쌓입니다.</span></div>';
+    el.innerHTML='<div class="empty">활동 기록을 읽지 못했습니다.<br><span class="muted">조회 권한·연결·서버 함수 상태를 확인하세요. 활동이 없다는 뜻은 아닙니다.</span><br><button type="button" class="rowbtn" onclick="loadWhoLog()">다시 확인</button></div>';
     return;
+  }
+  if(WHOLOG_FALLBACK){
+    el.innerHTML='<div class="admin-op-note" style="margin:0 0 10px">자료 변경 이력 조회 실패 · 대신 최근 수집된 앱 신호를 표시합니다. 서버 저장 완료 이력과 다릅니다.</div>'
+      +(WHOLOG.length?WHOLOG.slice(0,40).map(function(r){var u=USERS.find(function(x){return x.user_id===r.user_id;})||{};return '<div class="admin-op-row"><div><button class="admin-op-link" data-admin-user="'+esc(r.user_id)+'">'+esc(u.name||u.email||'사용자 상세')+' ↗</button><small>'+esc(featureLabel(r.feature||'app'))+' · '+esc(r.event_name)+'</small></div><small>'+fmtDateT(r.created_at)+'</small></div>';}).join(''):'<div class="empty">조회된 앱 신호가 없습니다. 수집 누락 여부는 별도 확인이 필요합니다.</div>');return;
   }
   if(!WHOLOG.length){
     el.innerHTML='<div class="empty">최근 '+WHOLOG_DAYS+'일 사이 기록이 없습니다.'
@@ -1629,7 +1719,7 @@ function membersTable(w,members){
   var rows=members.map(function(m){
     var canRemove=(w.kind==='team' && m.role!=='owner');
     var role=m.role||'member',label={owner:'임원',admin:'임원',executive:'임원',staff:'코칭스태프',player:'선수',member:'멤버'}[role]||role;
-    return '<tr><td class="nm">'+esc(m.auth_email||m.email||m.user_id.slice(0,8))+'</td>'
+    return '<tr><td class="nm"><button type="button" class="admin-user-open" data-admin-user="'+esc(m.user_id)+'">'+esc(m.auth_email||m.email||m.user_id.slice(0,8))+'</button></td>'
       +'<td><span class="rolebadge '+esc(role)+'">'+esc(label)+'</span></td>'
       +'<td class="muted">'+fmtDate(m.joined_at)+'</td>'
       +'<td class="muted">'+fmtDateT(m.last_sign_in_at)+'</td>'
@@ -1686,7 +1776,7 @@ function renderUsers(){
   var rows=list.map(function(u){
     var nm=(u.name||'').trim();
     var sub=nm?(u.email||('UID '+(u.user_id||'').slice(0,8))):('UID '+(u.user_id||'').slice(0,8));
-    return '<tr><td class="nm">'+esc(userLabel(u))
+    return '<tr><td class="nm"><button type="button" class="admin-user-open" data-admin-user="'+esc(u.user_id)+'">'+esc(userLabel(u))+'</button>'
       +'<div class="muted" style="font:600 11px ui-monospace,Menlo,monospace">'+esc(sub)+'</div></td>'
       +'<td class="muted">'+esc(u.team_names||'—')+'</td>'
       +'<td class="muted">'+fmtDate(u.created_at)+'</td>'
