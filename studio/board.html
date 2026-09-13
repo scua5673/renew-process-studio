@@ -7813,6 +7813,10 @@ function afCut(){ if(afCopy())afDeleteSel(); }
     if(mod&&k==="x"){ e.preventDefault(); e.stopImmediatePropagation(); afCut(); return; }
     if(mod&&k==="a"){ e.preventDefault(); e.stopImmediatePropagation(); _afSel.clear(); anim.frames.forEach(function(_,i){_afSel.add(i);}); afSelPaint(); return; }
     if(e.key==="Escape"&&_afSel.size){ e.preventDefault(); e.stopImmediatePropagation(); _afSel.clear(); afSelPaint(); return; }
+    /* 2.797 — ←/→ = 이전·다음 장면(사용자). 장면을 클릭하면 띠가 다시 그려져 초점이 사라지므로 요소 keydown 만으로는 안 됐다. 문맥(_afCtx)이 장면 띠일 때 창에서 받는다. 요소 핸들러가 먼저 처리했으면(defaultPrevented) 건너뜀. */
+    if((e.key==="ArrowLeft"||e.key==="ArrowRight"||e.key==="Home"||e.key==="End")&&!mod&&!e.altKey&&!e.defaultPrevented&&anim.frames.length){
+      var _cur=animActive<0?0:animActive, _to=e.key==="ArrowLeft"?Math.max(0,_cur-1):e.key==="ArrowRight"?Math.min(anim.frames.length-1,_cur+1):e.key==="Home"?0:anim.frames.length-1;
+      e.preventDefault(); e.stopImmediatePropagation(); if(_afSel.size){ _afSel.clear(); afSelPaint(); } if(_to!==animActive)selectAnimFrame(_to,true); else focusAnimFrame(_to); return; }
     if((e.key==="Backspace"||e.key==="Delete")&&(_afSel.size||animActive>=0)&&!mod){ e.preventDefault(); e.stopImmediatePropagation(); afDeleteSel(); return; }
   },true);
 })();
