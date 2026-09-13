@@ -3457,6 +3457,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
       <div class="sel-ctl">
         <span class="numbox" id="numCtl"><span class="numhash">#</span><input id="numInput" type="text" maxlength="3" placeholder="번호·글자" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" aria-label="선수 번호 또는 글자"></span>
         <span class="namebox" id="nameCtl"><input id="nameInput" type="text" maxlength="10" placeholder="이름" autocomplete="off"></span>
+        <span class="sizebox posbox" id="posCtl" title="포지션"><select id="posSel" aria-label="포지션"></select></span><!-- 2.804 — 선수 포지션 고르기(폰 시트·데스크톱 열 공용) -->
         <span class="sizebox" id="sizeCtl">
           <button id="sizeDown" title="이 토큰만 작게" data-tip="이 토큰만 작게"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></svg></button><span class="szlbl">크기</span><button id="sizeUp" title="이 토큰만 크게" data-tip="이 토큰만 크게"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         </span>
@@ -5205,6 +5206,9 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   if(numc){const showNum=!!_fieldPlayers.length;numc.style.display=showNum?"inline-flex":"none";
     const nui=document.getElementById("numInput");
     if(showNum&&nui&&document.activeElement!==nui){var _uv=sameSelectedValue(_fieldPlayers,"num");nui.value=_uv.value;nui.placeholder=_uv.same?"번호·글자":"여러 값";nui.dataset.mixed=_uv.same?"false":"true";}}
+  /* 2.804 — 포지션 select · 폰 ⋯ 줄의 «번호/포지션 표시» */
+  try{ const pc=document.getElementById("posCtl"); if(pc){ const showPos=!!_fieldPlayers.length; pc.style.display=showPos?"inline-flex":"none"; const ps=document.getElementById("posSel"); if(showPos&&ps&&document.activeElement!==ps){ var _pv=sameSelectedValue(_fieldPlayers,"pos"); ps.value=_pv.same?String(_pv.value||""):"__mixed"; if(ps.value!==(_pv.same?String(_pv.value||""):"__mixed"))ps.value=""; } }
+    const lm=document.getElementById("labelModeBtn"); if(lm){ lm.style.display=_fieldPlayers.length?"":"none"; lm.textContent=isPosLabel()?"번호 표시":"포지션 표시"; } }catch(_){}
   const gb=document.getElementById("gkBtn");if(gb)gb.style.display="none";
   const cb=document.getElementById("coachBtn");
   if(cb){var _allCoach=!!(_players.length&&_players.every(function(p){return !!p.coach;})),_someCoach=_players.some(function(p){return !!p.coach;});cb.style.display=_players.length?"inline-flex":"none";cb.classList.toggle("on",_allCoach);cb.setAttribute("aria-pressed",_allCoach?"true":(_someCoach?"mixed":"false"));}
@@ -17233,6 +17237,12 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
 }
 </style>
 <!-- 2.802 — 폰 토큰 시트 정돈(사용자 «조금 더 깔끔하게»). 2.711 구조(번호·이름·⋯ / 크기·색·C·글자 / 복제·삭제)는 그대로, 높이 40 통일·줄마다 같은 폭·간격 8·둥글기 12 한 값·판 여백 12·그림자. -->
+<style id="ps-2804-pos">
+  .sel-ctl .posbox{padding:0 6px;cursor:pointer}
+  .sel-ctl .posbox select{border:0;outline:0;background:transparent;color:#fff;font:inherit;font-size:var(--fs-sub,12px);font-weight:700;max-width:100px;cursor:pointer;-webkit-appearance:none;appearance:none;padding:0 14px 0 2px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 0 center;background-size:11px 11px}
+  .sel-ctl .posbox select option{color:#111}
+  html body:not(.ps-dock) .sel-ctl #labelModeBtn{display:none!important}
+</style>
 <style id="ps-2802-selsheet">
 @media (max-width:700px){
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not([style*="display:none"]):not([style*="display: none"]){left:12px!important;right:12px!important;bottom:calc(var(--ps-dock-h,100px) + 12px)!important;
@@ -17247,7 +17257,12 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .namebox input{height:38px!important;min-height:38px!important;font-size:14px!important;background:transparent!important;border:0!important;color:#EDEFF3!important;padding:0 4px!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox .numhash{opacity:.5!important;font-size:13px!important}
   /* 1줄: 번호 88 · 이름 나머지 · ⋯ 40 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox{flex:0 0 88px!important;width:88px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox{flex:0 0 72px!important;width:72px!important}
+  /* 2.804 — 1줄: 번호 72 · 포지션 92 · 이름 · ⋯ 40 */
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #posCtl{order:1!important;flex:0 0 92px!important;width:92px!important;padding:0 8px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #posCtl select{width:100%!important;height:38px!important;font-size:13px!important;color:#EDEFF3!important;max-width:none!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #labelModeBtn{order:20!important;flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____):not(.sel-more) > #labelModeBtn{display:none!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #selMoreBtn{flex:0 0 40px!important;width:40px!important;padding:0!important;font-size:18px!important;font-weight:700!important;letter-spacing:-.02em!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #selRowBreak{margin:-8px 0 0!important}
   /* 2줄: 크기·색상·C·글자 숨김 — 같은 폭 넷 */
@@ -17269,6 +17284,20 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
 }
 </style>
 <script>
+(function(){ /* 2.804 — 포지션 select 채우기·바꾸기 · «번호/포지션 표시» 토글(폰엔 보드 설정이 없어 되돌릴 길이 필요) */
+  var ps=document.getElementById("posSel"); if(ps){
+    var list=(typeof SQ_POS!=="undefined"&&SQ_POS.length)?SQ_POS:["GK","LB","LCB","CB","RCB","RB","LWB","RWB","LDM","DM","RDM","LCM","CM","RCM","LM","RM","AM","LW","ST","CF","RW"];
+    ps.innerHTML='<option value="">포지션</option>'+list.map(function(k){return '<option value="'+k+'">'+k+'</option>';}).join('')+'<option value="__mixed" hidden>여러 값</option>';
+    ps.addEventListener("pointerdown",function(e){e.stopPropagation();});
+    ps.addEventListener("change",function(){ var v=ps.value; if(v==="__mixed")return; var ts=selectedPlayers(false); if(!ts.length)return; try{pushUndo();}catch(_){}
+      ts.forEach(function(p){ if(v)p.pos=v; else delete p.pos; });
+      if(v&&!isPosLabel()){ var prev=state.label; state.label="pos"; try{convertPosVocab(prev,"pos");}catch(_){} try{renderBench();}catch(_){} try{toast("토큰에 포지션을 표시해요 · 번호로 보려면 ⋯ › 번호 표시");}catch(_){} }
+      try{renderTokens();}catch(_){} try{positionSelCtl();}catch(_){} try{updateDelUI();}catch(_){} try{boardSaveLive();}catch(_){} });
+  }
+  var sc0=document.querySelector(".sel-ctl");
+  if(sc0&&!document.getElementById("labelModeBtn")){ var lb=document.createElement("button"); lb.type="button"; lb.id="labelModeBtn"; lb.textContent="포지션 표시"; lb.title="토큰에 번호 또는 포지션 표시"; lb.style.display="none";
+    lb.addEventListener("click",function(e){ e.stopPropagation(); var prev=state.label, next=isPosLabel()?"num":"pos"; state.label=next; try{convertPosVocab(prev,next);}catch(_){} try{renderBench();}catch(_){} try{renderTokens();}catch(_){} try{updateDelUI();}catch(_){} try{boardSaveLive();}catch(_){} }); sc0.appendChild(lb); }
+})();
 (function(){ /* 2.711 — ⋯ 버튼과 줄바꿈 자리는 시트 모드에서만 보인다(위 CSS). 데스크톱은 display:none */
   var sc=document.querySelector(".sel-ctl"); if(!sc)return;
   if(!document.getElementById("selRowBreak")){ var br=document.createElement("span"); br.id="selRowBreak"; br.style.display="none"; sc.appendChild(br); }
