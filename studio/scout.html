@@ -2443,6 +2443,14 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     .match-rating button.on{background:var(--blue,#3a6df0);border-color:var(--blue,#3a6df0);color:#fff}
     .match-savebar{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:5px 2px;color:var(--muted);font-size:var(--fs-caption)}
     .match-shell.readonly [data-match-field],.match-shell.readonly #matchPrivateNote{pointer-events:none}
+    /* 2.775 — 상대 분석 «더 적기» */
+    .ob-more{grid-column:1/-1;border:1px dashed var(--line,#E3E6EA);border-radius:14px;padding:0 14px;background:transparent}
+    .ob-more>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:10px;padding:12px 2px;font-size:13px}
+    .ob-more>summary::-webkit-details-marker{display:none}
+    .ob-more>summary::before{content:'▸';color:var(--dim,#8A9099);font-size:11px}
+    .ob-more[open]>summary::before{content:'▾'}
+    .ob-more>summary b{font-weight:800}.ob-more>summary span{color:var(--dim,#8A9099);font-size:12px}
+    .ob-more>.match-card{margin:0 0 12px;border:1px solid var(--line,#E3E6EA)}
     /* 팀 운영 홈 — 경기 사이클, 선수 가용 상태, 오늘 세션, 분석 과제를 한 흐름으로 연결 */
     .team-home{max-width:1260px;margin:0 auto}
     .team-home-head{display:flex;align-items:center;gap:16px;margin-bottom:12px}
@@ -4995,7 +5003,11 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 <div class="match-carry-rows" id="matchPrevOppRows"></div>
               </section>
               <section class="match-card match-card-wide">
-                <div class="match-card-head"><span>01</span><div><b>상대가 국면마다</b><small>한 줄씩 — 경기 준비의 게임플랜 옆에 그대로 비칩니다 · «장면 ›» 은 아래 보드를 그 국면으로</small></div></div>
+                <div class="match-card-head"><span>01</span><div><b>결론</b><small>한 줄 — 우리는 어떻게 이긴다 · 경기 준비에 그대로 넘어가는 건 이 줄</small></div></div>
+                <textarea class="inp match-note" data-match-field="oppConclusion" placeholder="예) 좌측 뒷공간이 열린다 — 7번 침투를 첫 15분에 반복한다"></textarea>
+              </section>
+              <section class="match-card match-card-wide">
+                <div class="match-card-head"><span>02</span><div><b>상대가 국면마다</b><small>한 줄씩 — 경기 준비의 게임플랜 옆에 그대로 비칩니다 · «장면 ›» 은 아래 보드를 그 국면으로</small></div></div>
                 <div class="match-fields plan-lines">
                   <!-- 2.755 — 국면 이름을 게임플랜과 같은 말로(공격 시 → 볼 소유 시). 저장 필드는 그대로 -->
                   <label><span>볼 소유 시<button type="button" class="plan-scene" data-obph-go="atk" title="아래 보드를 이 국면으로">장면 ›</button></span><textarea class="inp" rows="1" data-match-field="oppAttack" placeholder="상대가 공을 가졌을 때 — 빌드업·주 공격 루트"></textarea></label>
@@ -5005,16 +5017,18 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                   <label><span>세트피스<button type="button" class="plan-scene" data-obph-go="set" title="아래 보드를 이 국면으로">장면 ›</button></span><textarea class="inp" rows="1" data-match-field="oppSetPlay" placeholder="상대 세트피스 공격·수비 특징"></textarea></label>
                 </div>
               </section>
+              <!-- 2.775 — 결론이 맨 위(01), 국면이 문(02), 나머지 셋은 «더 적기» 로 접는다(코치 첫 주 7번: 16칸이 시험지 같다). 적힌 게 있으면 matchSetFields 가 펼친다 -->
+              <details class="ob-more" id="obMore">
+                <summary><b>더 적기</b><span>키 선수 · 장점·단점 · 관찰 메모 — 기본 기록에 들어가요</span></summary>
               <section class="match-card">
-                <div class="match-card-head"><span>02</span><div><b>키 선수</b><small>한 줄에 한 명 — 번호·이름·특징 · 기본 3명</small></div></div>
+                <div class="match-card-head"><span>03</span><div><b>키 선수</b><small>한 줄에 한 명 — 번호·이름·특징 · 기본 3명</small></div></div>
                 <!-- 1.676 — 통짜 텍스트영역 → 한 명씩 줄 입력(기본 3줄, ＋로 추가). 저장은 예전 그대로
                      oppKeyPlayers 한 필드에 줄바꿈으로 합쳐 들어간다(옛 데이터 그대로 열림). -->
                 <div class="okp" id="okpRows"></div>
                 <button type="button" class="okp-add" id="okpAdd">＋ 키 선수 추가</button>
               </section>
-              <!-- 1.676 — 상대 분석 마무리 카드 2장(사용자 요청): 장점·단점, 그리고 결론 -->
               <section class="match-card">
-                <div class="match-card-head"><span>03</span><div><b>이 팀의 장점·단점</b><small>장점 = 우리가 조심할 것 · 단점 = 파고들 것</small></div></div>
+                <div class="match-card-head"><span>04</span><div><b>이 팀의 장점·단점</b><small>장점 = 우리가 조심할 것 · 단점 = 파고들 것</small></div></div>
                 <!-- 1.682 — 장점·단점도 키 선수처럼 한 줄씩 3개 기본 + 추가(사용자 요청).
                      저장은 그대로 oppStrengths/oppWeaknesses 한 필드(줄바꿈) — 기존 데이터 호환. -->
                 <div class="match-fields cols-2">
@@ -5023,13 +5037,10 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 </div>
               </section>
               <section class="match-card">
-                <div class="match-card-head"><span>04</span><div><b>결론</b><small>이 분석의 한 줄 결론 — 우리는 어떻게 이긴다</small></div></div>
-                <textarea class="inp match-note" data-match-field="oppConclusion" placeholder="예) 좌측 뒷공간이 열린다 — 7번 침투를 첫 15분에 반복한다"></textarea>
-              </section>
-              <section class="match-card">
                 <div class="match-card-head"><span>05</span><div><b>관찰 메모</b><small>영상 링크·직관 메모</small></div></div>
                 <textarea class="inp match-note" data-match-field="oppNote" placeholder="영상 링크, 지난 맞대결에서 본 것"></textarea>
               </section>
+              </details>
               <!-- 2.756 — 보드·트레이·프레임은 «장면» 으로 맨 아래: 국면 5줄이 문이고 보드는 근거(설계 목업 «상대 분석에서 경기 준비까지») -->
               <section class="match-card match-card-wide" id="obCard">
                 <!-- 2.754 — 경기 준비와 같은 우리 팀 트레이(선발·리저브·조별). 같은 m.squad 라 한쪽에서 바꾸면 다른 쪽도 바뀐다. 칩을 끌어 이 운동장에 놓으면 현재 국면·프레임에 토큰이 선다 -->
@@ -13146,6 +13157,7 @@ function matchSetFields(m,readonly){
     el.disabled=!!readonly||(k==="date"&&!!m.sourceId);
   });
   matchPublicStatePaint(m);
+  try{ var _mo=$("obMore"); if(_mo&&!_mo.__touched){ _mo.open=!!(String(m.oppKeyPlayers||"").trim()||String(m.oppStrengths||"").trim()||String(m.oppWeaknesses||"").trim()||String(m.oppNote||"").trim()); } }catch(_){}   /* 2.775 — 7번 */
   var dateGuide=$("matchDateGuide"),dateField=$("matchDateField");
   if(dateGuide)dateGuide.hidden=!m.sourceId;
   if(dateField)dateField.title=m.sourceId?"날짜는 일정에서 변경":"";
@@ -13908,7 +13920,7 @@ function renderAvailDaily(ours){
     list.forEach(function(p){ var st=stStatusAt(p.id,day)||""; if(st){ c.rec++; c[st]=(c[st]||0)+1; if(isTr){ tot.rec++; tot[st]=(tot[st]||0)+1; } }
       var ps=(data.positions||[]).find(function(q){return q.id===p.posId;});
       var row='<div class="av-pl"><span class="no">'+esc(p.num||"–")+'</span><span class="nm"><b>'+esc(p.name||"이름 없음")+'</b><small>'+esc(ps?(posAbbr(ps.name)||ps.name):"")+'</small></span>'
-        +'<button type="button" class="av-chip '+(st||"")+'" data-av-st="'+esc(p.id)+'" title="누르면 고를 수 있어요">'+(st?AV_ST_LB[st]:"미정")+'</button></div>';
+        +'<button type="button" class="av-chip '+(st||"")+'" data-av-st="'+esc(p.id)+'" title="누르면 고를 수 있어요">'+(st?((st==="ok"&&!isTr)?"가능":AV_ST_LB[st]):"미정")+'</button></div>';   /* 2.775 — 일정 없는 날엔 «훈련» 대신 «가능»(4번) */
       if(availView!=="name"&&st&&st!=="ok"){ restRows+=row; restN++; } else okRows+=row; });
     var restBox='';
     if(restN){ var parts=[]; [["injury","부상"],["rehab","재활"],["out","불참"],["rest","휴식"]].forEach(function(x){ if(c[x[0]])parts.push(x[1]+' '+c[x[0]]); });
@@ -13922,7 +13934,7 @@ function renderAvailDaily(ours){
   var rc={gk:0,field:0,rehab:0,out:0};
   ours.forEach(function(p){ var st=stStatusAt(p.id,day)||""; if(st==="rehab")rc.rehab++; else if(st&&st!=="ok")rc.out++; else { var ab=String(posOf(p)||"").toUpperCase(); if(/GK|GOALKEEPER|골키퍼|키퍼/.test(ab))rc.gk++; else rc.field++; } });
   h+=body;
-  h+='<div class="av-dfoot"><span class="lb">이 날 참여 <b>'+(rc.gk+rc.field)+'</b>명으로</span>'
+  h+='<div class="av-dfoot"><span class="lb">'+(anyTrain?('이 날 참여 <b>'+(rc.gk+rc.field)+'</b>명으로'):('일정 없는 날 — 참여를 세지 않아요 · 가능 '+(rc.gk+rc.field)+'명으로'))+'</span>'
     +(anyTrain?'<button type="button" class="av-lnk" data-av-sched="'+esc(day)+'">일정 →</button>':'')
     +'<button type="button" class="av-cta" data-av-new="'+esc(day)+'" data-av-roster="'+esc(JSON.stringify(rc))+'">＋ 훈련 세션 만들기</button></div>';
   h+='</div>';
@@ -15836,6 +15848,7 @@ function obPhasesPaint(m){
 /* 2.756 — 국면 줄의 «장면 ›»: 아래 보드를 그 국면으로 열고 스크롤 */
 function obGoPhase(key){ try{ var m=matchGet(); if(!m)return; var pb=obEnsure(m); if(pb.list.some(function(ph){return ph[0]===key;})){ pb.cur=key; obSave(); obPhasesPaint(m); obDraw(m); }
   var card=$("obCard"); if(card)card.scrollIntoView({behavior:"smooth",block:"start"}); }catch(_){} }
+try{ document.addEventListener("toggle",function(e){ var d=e.target; if(d&&d.id==="obMore")d.__touched=1; },true); }catch(_){}   /* 2.775 — 손으로 여닫으면 그 뒤로는 자동 펼침이 건드리지 않는다 */
 try{ document.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-obph-go]"); if(!b)return; e.preventDefault(); obGoPhase(b.getAttribute("data-obph-go")); }); }catch(_){}
 function obPlayToggle(m){
   var b=obCur(m),btn=$("obPlay"),pit=$("obPitch");

@@ -4854,7 +4854,7 @@ function renderWeekSessions(el){
        경기 날은 **경기가 그 날의 일**이다 — 훈련을 담을 문이 있으면 그 문이 담아도 된다고 말한다.
        ⚠ 경기 전 몸풀기는 '경기 준비' 안에서 다룬다(경기 카드의 '경기 준비 →'). 여기에 또 두지 않는다. */
     if(b.sched!=='OFF'&&b.sched!=='경기')
-      h+='<div class="wks-add one"><button type="button" onclick="wksAddSession('+di+')">＋ 훈련 추가</button></div>';
+      h+='<div class="wks-add one"><button type="button" onclick="wksAddSession('+di+')" title="이 날에 세션을 하나 더 — 세션 안에 훈련을 넣는 건 위 «훈련 ＋»">＋ 세션 추가</button></div>';   /* 2.775 — «＋ 훈련 추가» 가 세션을 하나 더 만드는데 세션 안 «훈련 ＋» 와 같은 말이었다(코치 첫 주 3번) */
     /* 2.135 — 하루 단위 보관함 줄은 뻐다. 세션마다 들어갔으니 같은 것이 두 번 있을 이유가 없다 */
     h+='</div>';
   }
