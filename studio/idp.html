@@ -2748,6 +2748,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
      높이를 한 자로 못 박고 `align-items:stretch` 로 위아래를 맞춘다. */
   .cal-bar{display:flex;align-items:stretch;gap:8px;margin-bottom:12px;flex-wrap:wrap}
   .cal-bar.cal-fold{display:none}   /* 2.780 — 일간에서 접힘, 날짜를 누르면 편다 */
+  .mt-appseg-head{margin-top:10px}   /* 2.782 */
   .idp-start-cta{display:flex;flex-direction:column;gap:4px;margin:2px 0 10px}
   .idp-start-cta b{font-size:15px;font-weight:800}
   .idp-start-cta small{font-size:12px;color:var(--text-3);line-height:1.5}
@@ -13517,6 +13518,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var sc=mtScore(m), kind=m.kind==='friendly'?'친선':'정식', rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', who=ro()?'선수':'내', future=String(m.date||'')>=mtTodayYmd();
     var mm={}; try{ mm=rvRec(viewing).matchMessages||{}; if(!mm||typeof mm!=='object'||Array.isArray(mm))mm={}; }catch(_){ mm={}; }
     var h='<button type="button" class="mt-back" data-mt-back>‹ 경기 목록</button>';
+    var r=mtSelf(m.id), sc2=mtSc5(r.score), _apps=String(r.apps||'');   /* 2.782 — 출전은 머리 카드로 올라간다 */
     h+='<section class="card mt-card"><div class="mt-top"><span class="mt-date">'+esc(mtDate(m.date))+(m.time?' '+esc(m.time):'')+'</span><span class="mt-kind">'+kind+(m.competition?' · '+esc(m.competition):'')+(m.venue?' · '+esc(m.venue):'')+'</span></div>'
       +'<div class="mt-line"><b class="mt-opp">vs '+esc(m.opponent||'상대')+'</b>'+(sc?'<span class="mt-score r-'+sc.r+'"><b>'+sc.us+'</b>:<b>'+sc.them+'</b><i>'+rl+'</i></span>':'<span class="mt-score none">'+(future?'경기 전':'결과 기록 없음')+'</span>')+'</div>'
       +(m.reviewPublished&&String(m.resultSummary||'').trim()?'<p class="mt-sum">'+esc(m.resultSummary)+'</p>':'');
@@ -13526,7 +13528,58 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     try{ var _pp=mm[m.id]&&mm[m.id].prep, _ppMsg=_pp?String(_pp.message||'').trim():'';
       if(_ppMsg)h+='<div class="mt-lb">코치가 '+(ro()?'이 선수':'나')+'에게 · 경기 전</div><p class="mt-sum" style="margin-top:0">'+esc(_ppMsg)+'</p>';
     }catch(_){}
+    /* 2.782 — 출전(선발·교체·미출전 · 분)은 경기 머리에(선수 첫 화면 목업 ⑥) */
+    if(!ro()){
+      h+='<div class="mt-appseg mt-appseg-head">'+[['start','선발'],['sub','교체'],['none','미출전']].map(function(o){
+            return '<button type="button" class="'+(_apps===o[0]?'on':'')+'" data-mt-apps="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div>'
+        +(_apps&&_apps!=='none'
+          ?'<label class="mt-f mt-mins"><span>뛴 시간</span><span class="mt-minrow"><input class="inp" type="number" inputmode="numeric" min="0" max="150" step="1" data-mt-self="mins" placeholder="0" value="'+esc(r.mins||'')+'"><em>분</em></span></label>'
+          :'');
+    } else if(r.apps){ var _AP0={start:'선발',sub:'교체',none:'미출전'}; h+='<div class="mt-lb">출전</div><p class="mt-sum" style="margin-top:0">'+esc((_AP0[r.apps]||r.apps)+(r.mins?(' · '+r.mins+'분'):''))+'</p>'; }
     h+='</section>';
+    /* ══ 2.333 · 경기 한 장 — 경기 전(임무) → 출전 → 경기 후(리뷰) ═══════════════════════
+       사용자: "경기 골라서 들어가면 몇 분 뛰었는지 · 역할과 임무를 공격/수비로 나눠서".
+       ⚠ **역할·임무는 이미 있었다** — 이미지노트가 `포지션 · 수비 시(roleDef) · 공격 시(roleAtk)` 를 갖고 있었다.
+          없는 게 아니라 **자리가 따로**였다(목표 탭 세그). 같은 경기를 두 곳에서 적고 있었고 두 쌍이 겹쳤다
+          (이미지노트 '오늘 잘한 것' ≡ 내 리뷰 '잘 된 장면' · '다음에 해볼 것' ≡ '다음엔 이렇게').
+          그래서 **새로 만들지 않고 경기 안으로 옮긴다** — 이미지노트 탭은 없앤다(목표 세그는 목표·루틴 둘).
+       ⚠ 말은 이미 쓰던 것 그대로: **공격 시 / 수비 시**(사용자의 "공격상황/수비상황").
+       ⚠ 출전은 **분만 물으면 '선발이었나'가 빠진다** → 선발·교체·미출전 먼저, 그다음 분.
+          미출전이면 분을 묻지 않는다(답이 다음 질문을 연다 — 2.314 그대로).
+       저장: `doc.matchSelf[matchId]` 에 `pos·roleAtk·roleDef·apps·mins` 를 더한다(기존 tried/good/better/score 그대로).
+       ⚠ 옛 `doc.imgNotes` 는 **지우지 않는다** — 아래 '지난 이미지노트' 로 그 경기 날짜 것을 읽어서 보여준다. */
+    if(!ro()){
+      /* 2.782 — 경기 전에 임무부터(사용자 «임무부터 쓰고 시작 → 경기를 되돌아볼 수 있을 것»). 포지션 상자는 걷었다 — 저장된 r.pos 는 그대로 남고 코치 열람에는 보인다 */
+      h+='<section class="card mt-card mt-plan"><div class="mt-lb" style="margin-top:0">경기 전 · 내 임무 <small>공 있을 때 · 없을 때</small></div>'
+        +'<label class="mt-f"><span>공격 시</span><textarea class="inp" data-mt-self="roleAtk" placeholder="예: 넓게 벌려서 폭 만들기 · 크로스는 간결하게">'+esc(r.roleAtk||'')+'</textarea></label>'
+        +'<label class="mt-f"><span>수비 시</span><textarea class="inp" data-mt-self="roleDef" placeholder="예: 안쪽 먼저 막기 · 뺏기면 바로 돌아오기">'+esc(r.roleDef||'')+'</textarea></label>'
+        +'</section>';
+    } else if(r.pos||r.roleAtk||r.roleDef){
+      h+='<section class="card mt-card"><div class="mt-lb" style="margin-top:0">경기에서 이 선수의 임무</div>'
+        +(r.pos?mtRvItem('memo','포지션',r.pos):'')
+        +(r.roleAtk?mtRvItem('good','공격 시',r.roleAtk):'')
+        +(r.roleDef?mtRvItem('imp','수비 시',r.roleDef):'')
+        +'</section>';
+    }
+    var _fcTx=''; try{ var _f=focusOf(ymd(mondayOf(new Date(String(m.date||'')+'T00:00:00')))); _fcTx=_f&&_f.text?String(_f.text):''; }catch(_){ _fcTx=''; }   /* 2.782 — 그 주 초점을 «시도한 것» 자리에 미리 보여 준다(placeholder — 저장은 선수가 적을 때만) */
+    h+='<section class="card mt-card mt-self"><div class="mt-lb" style="margin-top:0">'+(ro()?'선수의 되돌아보기':'경기 뒤 · 되돌아보기')+(!ro()?' <small>위 임무를 보면서</small>':'')+(r.at?' <small>'+esc(ymd(new Date(r.at)))+' 저장</small>':'')+'</div>';
+    if(future&&!ro())h+='<p class="mt-sum" style="margin-top:0;color:var(--text-3)">경기 전이에요 — 경기 뒤에 써도 되고, 지금 "이 경기에서 시도할 것"을 먼저 적어 둬도 좋아요.</p>';
+    if(ro()){
+      h+=mtSelfHas(m.id)?((r.tried?mtRvItem('memo','시도한 것',r.tried):'')+(r.good?mtRvItem('good','잘 된 장면',r.good):'')+(r.better?mtRvItem('imp','다음엔 이렇게',r.better):'')+(sc2?'<div class="mt-next"><div><span>내 평점</span>'+esc(mtSc5Lb(sc2))+'</div></div>':''))
+        :'<p class="mt-sum" style="margin-top:0;color:var(--text-3)">선수가 아직 안 썼어요.</p>';
+    }else{
+      h+='<label class="mt-f"><span>잘 된 장면 하나</span><textarea class="inp" data-mt-self="good" placeholder="예: 압박 오는데 미리 몸 열고 앞을 봤다">'+esc(r.good||'')+'</textarea></label>'
+        +'<label class="mt-f"><span>다음엔 이렇게</span><textarea class="inp" data-mt-self="better" placeholder="예: 받기 전에 한 번 더 본다">'+esc(r.better||'')+'</textarea></label>'
+        +'<label class="mt-f"><span>시도한 것 <small>'+(_fcTx?'이번 주 초점이 미리 적혀요':'이번 주 초점이나 내 유형으로')+'</small></span><textarea class="inp" data-mt-self="tried" placeholder="'+esc(_fcTx||'예: 받기 전에 어깨 너머 두 번 보기')+'">'+esc(r.tried||'')+'</textarea></label>'
+        +'<div class="mt-f"><span>내 평점 <small>오늘 나에게</small></span><div class="mt-sc5">'+MT_SC5.map(function(o){
+            return '<button type="button" class="'+(sc2===o[0]?'on':'')+'" data-mt-score="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div></div>';
+    }
+    h+='</section>';
+    /* 2.782 — 코치가 나에게 · 팀 리뷰는 되돌아보기 아래로(목업 ⑥) */
+    /* 코치 → 나 개인 리뷰(공개된 것만) */
+    var my=mm[m.id]&&mm[m.id].review;
+    if(my&&typeof my==='object'){ var mg=String(my.good||'').trim(), mi=String(my.improve||'').trim(), ma=String(my.action||'').trim(), ms=(+my.score>0)?Math.min(10,Math.round(+my.score)):0;
+      if(mg||mi||ma)h+='<section class="card mt-card"><div class="mt-lb" style="margin-top:0">코치가 '+(ro()?'이 선수':'나')+'에게'+(ms?' · 평점 '+ms:'')+'</div>'+(mg?mtRvItem('good','잘된 점',mg):'')+(mi?mtRvItem('imp','다음 행동',mi):'')+(ma?mtRvItem('memo','메모',ma):'')+'</section>'; }
     /* 팀 리뷰 — 공개된 경우만 */
     if(m.reviewPublished){
       var g=String(m.reviewGood||'').trim(), im=String(m.reviewImprove||'').trim(), ta=String(m.trainingAction||'').trim(), ia=String(m.idpAction||'').trim();
@@ -13542,62 +13595,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }else if(!future){
       h+='<section class="card mt-empty"><b>팀 리뷰는 아직 비공개예요</b><p>'+(isCoach()?'팀 › 경기 › 리뷰에서 "선수에게 팀 리뷰 공개"를 켜면 여기에 보여요.':'코치가 공개하면 여기에 보여요. 그 전에 '+who+' 리뷰를 먼저 써 두면 대조할 수 있어요.')+'</p></section>';
     }
-    /* 코치 → 나 개인 리뷰(공개된 것만) */
-    var my=mm[m.id]&&mm[m.id].review;
-    if(my&&typeof my==='object'){ var mg=String(my.good||'').trim(), mi=String(my.improve||'').trim(), ma=String(my.action||'').trim(), ms=(+my.score>0)?Math.min(10,Math.round(+my.score)):0;
-      if(mg||mi||ma)h+='<section class="card mt-card"><div class="mt-lb" style="margin-top:0">코치가 '+(ro()?'이 선수':'나')+'에게'+(ms?' · 평점 '+ms:'')+'</div>'+(mg?mtRvItem('good','잘된 점',mg):'')+(mi?mtRvItem('imp','다음 행동',mi):'')+(ma?mtRvItem('memo','메모',ma):'')+'</section>'; }
-    /* ══ 2.333 · 경기 한 장 — 경기 전(임무) → 출전 → 경기 후(리뷰) ═══════════════════════
-       사용자: "경기 골라서 들어가면 몇 분 뛰었는지 · 역할과 임무를 공격/수비로 나눠서".
-       ⚠ **역할·임무는 이미 있었다** — 이미지노트가 `포지션 · 수비 시(roleDef) · 공격 시(roleAtk)` 를 갖고 있었다.
-          없는 게 아니라 **자리가 따로**였다(목표 탭 세그). 같은 경기를 두 곳에서 적고 있었고 두 쌍이 겹쳤다
-          (이미지노트 '오늘 잘한 것' ≡ 내 리뷰 '잘 된 장면' · '다음에 해볼 것' ≡ '다음엔 이렇게').
-          그래서 **새로 만들지 않고 경기 안으로 옮긴다** — 이미지노트 탭은 없앤다(목표 세그는 목표·루틴 둘).
-       ⚠ 말은 이미 쓰던 것 그대로: **공격 시 / 수비 시**(사용자의 "공격상황/수비상황").
-       ⚠ 출전은 **분만 물으면 '선발이었나'가 빠진다** → 선발·교체·미출전 먼저, 그다음 분.
-          미출전이면 분을 묻지 않는다(답이 다음 질문을 연다 — 2.314 그대로).
-       저장: `doc.matchSelf[matchId]` 에 `pos·roleAtk·roleDef·apps·mins` 를 더한다(기존 tried/good/better/score 그대로).
-       ⚠ 옛 `doc.imgNotes` 는 **지우지 않는다** — 아래 '지난 이미지노트' 로 그 경기 날짜 것을 읽어서 보여준다. */
-    var r=mtSelf(m.id), sc2=mtSc5(r.score);
-    if(!ro()){
-      var _apps=String(r.apps||'');
-      h+='<section class="card mt-card mt-plan"><div class="mt-lb" style="margin-top:0">경기에서 내 임무 <small>공 있을 때 · 없을 때</small></div>'
-        /* 2.334 — 포지션은 **고르는 것**(사용자). 이미지노트가 쓰던 `POS_G` 를 그대로 쓴다 — 새 목록을 만들지 않는다 */
-        +'<label class="mt-f"><span>포지션</span><select class="inp" data-mt-self="pos"><option value="">선택</option>'
-          +POS_G.map(function(g){ return '<optgroup label="'+g[0]+'">'+g[1].map(function(x){
-              return '<option value="'+x+'"'+((r.pos===x)?' selected':'')+'>'+x+'</option>'; }).join('')+'</optgroup>'; }).join('')
-          +'</select></label>'
-        +'<label class="mt-f"><span>공격 시</span><textarea class="inp" data-mt-self="roleAtk" placeholder="예: 넓게 벌려서 폭 만들기 · 크로스는 간결하게">'+esc(r.roleAtk||'')+'</textarea></label>'
-        +'<label class="mt-f"><span>수비 시</span><textarea class="inp" data-mt-self="roleDef" placeholder="예: 안쪽 먼저 막기 · 뺏기면 바로 돌아오기">'+esc(r.roleDef||'')+'</textarea></label>'
-        +'</section>';
-      h+='<section class="card mt-card mt-apps"><div class="mt-lb" style="margin-top:0">출전</div>'
-        +'<div class="mt-appseg">'+[['start','선발'],['sub','교체'],['none','미출전']].map(function(o){
-            return '<button type="button" class="'+(_apps===o[0]?'on':'')+'" data-mt-apps="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div>'
-        +(_apps&&_apps!=='none'
-          ?'<label class="mt-f mt-mins"><span>뛴 시간</span><span class="mt-minrow"><input class="inp" type="number" inputmode="numeric" min="0" max="150" step="1" data-mt-self="mins" placeholder="0" value="'+esc(r.mins||'')+'"><em>분</em></span></label>'
-          :'')
-        +'</section>';
-    } else if(r.pos||r.roleAtk||r.roleDef||r.apps){
-      var _AP={start:'선발',sub:'교체',none:'미출전'};
-      h+='<section class="card mt-card"><div class="mt-lb" style="margin-top:0">경기에서 이 선수의 임무</div>'
-        +(r.pos?mtRvItem('memo','포지션',r.pos):'')
-        +(r.roleAtk?mtRvItem('good','공격 시',r.roleAtk):'')
-        +(r.roleDef?mtRvItem('imp','수비 시',r.roleDef):'')
-        +(r.apps?mtRvItem('memo','출전',(_AP[r.apps]||r.apps)+(r.mins?(' · '+r.mins+'분'):'')):'')
-        +'</section>';
-    }
-    h+='<section class="card mt-card mt-self"><div class="mt-lb" style="margin-top:0">'+who+' 리뷰'+(r.at?' <small>'+esc(ymd(new Date(r.at)))+' 저장</small>':'')+'</div>';
-    if(future&&!ro())h+='<p class="mt-sum" style="margin-top:0;color:var(--text-3)">경기 전이에요 — 경기 뒤에 써도 되고, 지금 "이 경기에서 시도할 것"을 먼저 적어 둬도 좋아요.</p>';
-    if(ro()){
-      h+=mtSelfHas(m.id)?((r.tried?mtRvItem('memo','시도한 것',r.tried):'')+(r.good?mtRvItem('good','잘 된 장면',r.good):'')+(r.better?mtRvItem('imp','다음엔 이렇게',r.better):'')+(sc2?'<div class="mt-next"><div><span>내 평점</span>'+esc(mtSc5Lb(sc2))+'</div></div>':''))
-        :'<p class="mt-sum" style="margin-top:0;color:var(--text-3)">선수가 아직 안 썼어요.</p>';
-    }else{
-      h+='<label class="mt-f"><span>시도한 것 <small>이번 주 초점이나 내 유형으로</small></span><textarea class="inp" data-mt-self="tried" placeholder="예: 받기 전에 어깨 너머 두 번 보기">'+esc(r.tried||'')+'</textarea></label>'
-        +'<label class="mt-f"><span>잘 된 장면 하나</span><textarea class="inp" data-mt-self="good" placeholder="예: 압박 오는데 미리 몸 열고 앞을 봤다">'+esc(r.good||'')+'</textarea></label>'
-        +'<label class="mt-f"><span>다음엔 이렇게</span><textarea class="inp" data-mt-self="better" placeholder="예: 받기 전에 한 번 더 본다">'+esc(r.better||'')+'</textarea></label>'
-        +'<div class="mt-f"><span>내 평점 <small>오늘 나에게</small></span><div class="mt-sc5">'+MT_SC5.map(function(o){
-            return '<button type="button" class="'+(sc2===o[0]?'on':'')+'" data-mt-score="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div></div>';
-    }
-    h+='</section>';
     /* 2.333 — 옛 이미지노트에 그 경기 날짜로 적어 둔 것이 있으면 **읽어서** 보여준다.
        ⚠ 옮겨 쓰지 않는다(자동 이관은 사용자가 안 시킨 쓰기다) — 보고 옮기고 싶으면 위 칸에 다시 쓰면 된다. */
     try{ var _old=(doc.imgNotes||[]).filter(function(n){ return n&&n.date&&m.date&&n.date===m.date; })[0];
