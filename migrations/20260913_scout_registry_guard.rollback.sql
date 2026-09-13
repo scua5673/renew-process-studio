@@ -10,6 +10,7 @@ DECLARE
   item record;
   marker constant text := 'process-studio/scout-registry-guard/20260913/v1';
 BEGIN
+  LOCK TABLE public.ps_kv IN SHARE ROW EXCLUSIVE MODE;
   FOR item IN SELECT p.oid FROM pg_catalog.pg_proc p
     JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
     WHERE n.nspname = 'public' AND p.proname IN (
