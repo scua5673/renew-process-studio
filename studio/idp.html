@@ -3748,7 +3748,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   /* 2.616 — 한 줄 왕복 2단계 · 코치 «오늘 한 장» */
   .sqg-t.sqg-ol{min-width:920px}   /* 2.770 — 1040 이면 아이패드 iframe(≈1000) 에서 › 가 오른쪽 밖으로 나갔다. 내용 최소폭(≈920)만 */
   /* 2.770 — 마지막 칸(›)은 오른쪽에 붙여 가로 스크롤과 무관하게 늘 보이게. 특이도는 hover·hot 행(.sqg-t tr… td)보다 낮게 둔다 */
-  .sqg-ol td:last-child,.sqg-ol th:last-child{position:sticky;right:-4px;background:var(--surface);z-index:1;padding-right:12px}
+  .sqg-ol td:last-child,.sqg-ol th:last-child,.sqg-wk td:last-child,.sqg-wk th:last-child{position:sticky;right:-4px;background:var(--surface);z-index:1;padding-right:12px}   /* 2.771 — «이번 주» 표(sqg-wk)의 › 도 같이 */
   .sqg-t .sqg-rule{font-style:normal;font-weight:500;color:var(--text-3);margin-left:6px}
   .sqg-t .sqg-rule::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:1px}
   .sqg-t tr.sqg-hot td{background:rgba(224,155,26,.08)}
@@ -15125,7 +15125,7 @@ html.ps-page-idp .ol-auto{font-weight:500;color:var(--text-3);margin-left:6px;le
 html.ps-page-idp .sqd-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--surface)}
 html.ps-page-idp .sqd-seg button{border:0;background:transparent;font:inherit;font-size:12px;font-weight:600;color:var(--text-3);padding:4px 10px;border-radius:999px;cursor:pointer;line-height:1.2}
 html.ps-page-idp .sqd-seg button.on{background:var(--accent-soft);color:var(--accent)}
-html.ps-page-idp .sqg-t.sqg-wk{min-width:1000px}
+html.ps-page-idp .sqg-t.sqg-wk{min-width:920px}   /* 2.771 — 1000 이면 아이패드 폭 iframe(≈1000)에서 › 가 밖으로. 2.770 의 «오늘» 표와 같은 값 */
 html.ps-page-idp .sqg-t.sqg-wk td{vertical-align:top}
 html.ps-page-idp .sqw-fc{font-size:10.5px;color:var(--text-3);margin-top:3px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 html.ps-page-idp .sqw-cnt{font-size:10.5px;color:var(--text-3);margin-top:4px;white-space:nowrap}
