@@ -418,6 +418,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
     /* 2.044 — 선수 폰: 팀 내비 줄('일정' 하나만 남아 빈 띠로 보이던 것) 숨김. 팀 일정은 IDP 안(이번 주 카드·일정 탭 팀 주간·전체 일정 열기)에서 */
     body.ps-player-idp-only #teamNav{display:none!important}
     body.ps-player-idp-only[data-ps-app="process"] #psBackIdp{display:inline-flex}
+    #fIdp.ps-routing{visibility:hidden}   /* 2.777 — IDP 프레임이 새로 보일 때 문 신호 ack 까지 가림 */
     body.ps-player-idp-only .appbar{min-height:54px;padding:8px 16px;padding-top:max(8px,env(safe-area-inset-top));}
     body.ps-player-idp-only .brand .wm{font-size:var(--fs-title)}
     body.ps-player-idp-only .gear{margin-left:auto}
@@ -498,7 +499,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.776';</script>
+<script>window.PS_BUILD='2.777';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1904,18 +1905,23 @@ function psShowUpdBand(){
       try{var gp=document.getElementById('gearPop');if(gp)gp.classList.remove('on');}catch(_){}
     }
     var idpLayerSeq=0;
-    function openIdpPersonalLayer(layer){
+    /* 2.777 — 프레임은 부팅 때 미리 로드돼 «프로필» 로 그려져 있다. 보여 준 뒤 신호를 보내면 그 그림이 한 프레임(실측 44ms) 보였다가 바뀐다.
+       프레임이 **새로** 보이는 전환이면 ack(문이 정해져 render 끝) 까지 visibility 로 가린다. 900ms 안전망. 같은 프레임 재클릭은 가리지 않는다 */
+    var _idpRevealT=0;
+    function idpCover(on){ try{ if(on){ fIdp.classList.add('ps-routing'); clearTimeout(_idpRevealT); _idpRevealT=setTimeout(function(){ fIdp.classList.remove('ps-routing'); },900); } else { clearTimeout(_idpRevealT); fIdp.classList.remove('ps-routing'); } }catch(_){} }
+    function openIdpPersonalLayer(layer,cover){
       var wanted=layer==='learn'?'learn':'home',seq=++idpLayerSeq,tries=0,done=false;
+      if(cover)idpCover(true);
       var onAck=function(ev){var d=ev.data||{};
         if(ev.source===fIdp.contentWindow&&d.type==='idpPersonalAck'&&d.requestId===seq){
-          done=true;window.removeEventListener('message',onAck);
+          done=true;window.removeEventListener('message',onAck); idpCover(false);
         }
       };
       window.addEventListener('message',onAck);
       var send=function(){
         if(done||seq!==idpLayerSeq){window.removeEventListener('message',onAck);return;}
         try{fIdp.contentWindow.postMessage({type:'openPersonal',layer:wanted,requestId:seq},'*');}catch(_){}
-        if(++tries<7)setTimeout(send,120+tries*100);else window.removeEventListener('message',onAck);
+        if(++tries<7)setTimeout(send,120+tries*100);else{ window.removeEventListener('message',onAck); idpCover(false); }
       };
       setTimeout(send,20);
       fIdp.addEventListener('load',function(){if(done||seq!==idpLayerSeq)return;tries=0;setTimeout(send,40);},{once:true});
@@ -2036,7 +2042,7 @@ function psShowUpdBand(){
       /* 최상위 IDP와 학습은 같은 화면·같은 저장 기록을 쓰되 진입 위치만 나눈다.
          팀의 IDP 버튼은 아래 openTeamButton이 선수단 화면을 열므로 여기서 건드리지 않는다. */
       /* 2.219 — 학습은 fLearning 으로 간다(옛: if(app==='learning')openIdpPersonalLayer('learn')) */
-      if(app==='idp'&&!currentTeamKey)openIdpPersonalLayer('home');
+      if(app==='idp'&&!currentTeamKey){ var _cov=false; try{ _cov=(typeof _psVisBefore!=='undefined')&&(_psVisBefore!==fIdp); }catch(_){ _cov=false; } openIdpPersonalLayer('home',_cov); }   /* 2.777 — 프레임이 새로 보일 때만 가림 */
       /* 2.359 — design(보관함) 갈래는 위 fBoard.style.display 바로 앞으로 옮겼다(깜빡임). 여기 되돌리지 말 것 */
       if(app==='board'){try{var _bw=fBoard.contentWindow;if(_bw.boardShowDefault)_bw.boardShowDefault();else _bw.setView('board');}catch(_){}}else if(app==='note'){/* 모드 강제 없음 — 노트 안의 노트|메모 세그가 마지막 모드 유지 */try{fNote.contentWindow.fit&&fNote.contentWindow.fit();}catch(_){}}else if(app==='memo'){try{fNote.contentWindow.__noteSetMode&&fNote.contentWindow.__noteSetMode('memo');}catch(_){}}
     }
@@ -2085,6 +2091,7 @@ function psShowUpdBand(){
     setTimeout(function(){try{var _pk=currentTeamKey;currentTeamKey='settings';ensureAppFrame('gamemodel');currentTeamKey=_pk;}catch(_){}} ,6400);
     function openTeamButton(b){
       currentTeamKey=b.dataset.teamKey||'today';
+      var _idpWasHidden=false; try{ _idpWasHidden=!(fIdp.offsetWidth>0&&fIdp.offsetHeight>0); }catch(_){ _idpWasHidden=true; }   /* 2.777 */
       showApp(b.dataset.app||'scout');
       if(b.dataset.teamView)sendTeamView(fScout,b);
       if(b.dataset.processMode)sendTeamView(fProcess,b);
@@ -2092,9 +2099,10 @@ function psShowUpdBand(){
       if(b.dataset.idpSquad){
         /* load 이벤트를 놓쳐도 선수단 화면이 뜨도록 재시도 체인 — 프레임이 squadAck로 받았다고 답하면 즉시 중단(반복 렌더 깜빡임 방지) */
         var _sqTry=0,_sqDone=false;
-        var _onAck=function(ev){ if(ev.data&&ev.data.type==='squadAck'){_sqDone=true;window.removeEventListener('message',_onAck);} };
+        if(_idpWasHidden)idpCover(true);   /* 2.777 — 프레임이 새로 보이는 전환이면 ack 까지 가림 */
+        var _onAck=function(ev){ if(ev.data&&ev.data.type==='squadAck'){_sqDone=true;window.removeEventListener('message',_onAck); idpCover(false);} };
         window.addEventListener('message',_onAck);
-        var send=function(){if(_sqDone)return;try{fIdp.contentWindow.postMessage({type:'openSquad'},'*');}catch(_){}if(++_sqTry<7)setTimeout(send,150+_sqTry*150);else window.removeEventListener('message',_onAck);};
+        var send=function(){if(_sqDone)return;try{fIdp.contentWindow.postMessage({type:'openSquad'},'*');}catch(_){}if(++_sqTry<7)setTimeout(send,150+_sqTry*150);else{ window.removeEventListener('message',_onAck); idpCover(false); }};
         setTimeout(send,20);
         fIdp.addEventListener('load',function(){if(_sqDone)return;_sqTry=0;setTimeout(send,60);},{once:true});
       }
