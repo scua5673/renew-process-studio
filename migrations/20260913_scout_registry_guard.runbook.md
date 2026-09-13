@@ -1,6 +1,6 @@
-# 후보 원본 보호 SQL — 운영 미적용
+# 후보 원본 보호 SQL — 운영 적용 완료
 
-이 파일 묶음은 운영 DB에 실행하지 않았다. 후보 통합을 활성화하기 전에 운영자가 서버 스키마와 정책을 확인하고 적용한다. 기존 `ps_kv_build_guard` 또는 JSON helper의 설치를 가정하지 않으며, `min_build`를 변경하지 않는다.
+2026-09-13 사용자 명시적 승인 후 대상 운영 DB에 설치했다. 카탈로그·TEMP text/jsonb 검증과 별도 후보 쓰기 제한 정책의 실제 authenticated 역할 합성 검증 15개가 통과했다. 후보 통합을 활성화하기 전에 서버 스키마와 정책을 확인하고 아래 절차를 따른다. 기존 `ps_kv_build_guard` 또는 JSON helper의 설치를 가정하지 않으며, `min_build`를 변경하지 않는다.
 
 ## 적용 순서
 
@@ -23,6 +23,12 @@
 ## 되돌리기
 
 먼저 후보 통합 쓰기를 비활성화하거나 호환성 문제를 해결한다. `20260913_scout_registry_guard.rollback.sql`은 이 마이그레이션 표식이 있는 트리거와 함수만 제거하며 데이터와 RLS를 변경하지 않는다. 예상치 못한 의존성이 있으면 CASCADE 없이 중단한다. 제거 직후 구버전 덮어쓰기가 다시 가능해진다.
+
+## 실제 테이블 결합 검증
+
+2026-09-13 명시 승인 후 `20260913_scout_registry_guard.synthetic-verify.sql`을 운영에서 실행해 10개 결과가 모두 통과했다. 새 가상 UUID만 사용해 admin/executive 각각 정상 이력 보존 수정, 구버전 UPDATE·UPSERT와 혼합 UPSERT의 정확한 guard 23514 거부, 후보/공지 원문과 cupd 보존, 별도 공지 저장을 확인하고 전체 ROLLBACK했다. 실제 팀 자료와 auth.users는 수정하지 않았다. 사전 격리 검증은 `20260913_scout_registry_guard.synthetic-local-test.cjs`에 있다.
+
+이 DB 검증은 실제 운영 트리거와 authenticated 권한을 함께 거친 결과이며, 브라우저 로그인 토큰 발급·REST 전송 전체와 실물 기기 검증은 별도다.
 
 ## 로컬 실행 기록
 

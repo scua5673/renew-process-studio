@@ -1,6 +1,6 @@
-# 후보 쓰기 권한 보완 — 운영 미적용
+# 후보 쓰기 권한 보완 — 운영 적용 완료
 
-이 보완은 후보 원본 보존용 `20260913_scout_registry_guard.sql`과 별개다. 원본 보호 장치는 DELETE 정책을 바꾸지 않는다. **이 추가 보완은 authenticated 역할의 후보 INSERT·UPDATE·DELETE를 제한한다.** 운영 실행과 실서비스 검증은 아직 하지 않았다.
+이 보완은 후보 원본 보존용 `20260913_scout_registry_guard.sql`과 별개다. 원본 보호 장치는 DELETE 정책을 바꾸지 않는다. **이 추가 보완은 authenticated 역할의 후보 INSERT·UPDATE·DELETE를 제한한다.** 2026-09-13 명시 승인 후 운영에 설치했으며, 카탈로그와 실제 authenticated 역할/JWT 문맥의 합성 검증 15개를 통과했다. 앱 로그인 토큰·REST 전송과 실물 기기 현장 검증은 이 결과에 포함하지 않는다.
 
 ## 확인된 범위
 
@@ -20,7 +20,7 @@
 
 ## 합성 운영 시험
 
-운영용 SQL은 아직 운영에서 실행하지 않았다. 확인된 스키마에는 사용자 FK가 없어 **auth.users를 만들지 않는다.** 매 케이스마다 새 UUID의 workspace·member·권한 문서만 생성한다. 관련 workspace/member 사용자 트리거가 없고 KV의 감사·이력·거부·핑 호출 체인은 DB 내부 쓰기뿐이며, 이 보조 테이블들에 추가 사용자 트리거/FK가 없다는 catalog 확인을 전제로 한다.
+운영용 SQL을 명시 승인 후 실행했으며 15개 기대 결과가 일치했다. 마지막 ROLLBACK 이후 가상 워크스페이스 잔여 수 0을 별도 조회로 확인했다. 확인된 스키마에는 사용자 FK가 없어 **auth.users를 만들지 않는다.** 매 케이스마다 새 UUID의 workspace·member·권한 문서만 생성한다. 관련 workspace/member 사용자 트리거가 없고 KV의 감사·이력·거부·핑 호출 체인은 DB 내부 쓰기뿐이며, 이 보조 테이블들에 추가 사용자 트리거/FK가 없다는 catalog 확인을 전제로 한다.
 
 관리자 연결은 합성 자료 준비와 결과 확인에만 사용한다. 시험 쓰기는 `SET LOCAL ROLE authenticated`로 실행하며, 실제 `current_user`, `auth.uid()`, `auth.role()`, `auth.jwt()`가 합성 행위자와 일치하는지 검사한다. individual/plural JWT GUC를 모두 같은 합성 값으로 설정한다. 실제 인증 토큰을 사용하지 않는다.
 
