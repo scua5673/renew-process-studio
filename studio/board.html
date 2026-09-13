@@ -17232,6 +17232,42 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl.open #colorPop{display:grid!important}
 }
 </style>
+<!-- 2.802 — 폰 토큰 시트 정돈(사용자 «조금 더 깔끔하게»). 2.711 구조(번호·이름·⋯ / 크기·색·C·글자 / 복제·삭제)는 그대로, 높이 40 통일·줄마다 같은 폭·간격 8·둥글기 12 한 값·판 여백 12·그림자. -->
+<style id="ps-2802-selsheet">
+@media (max-width:700px){
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not([style*="display:none"]):not([style*="display: none"]){left:12px!important;right:12px!important;bottom:calc(var(--ps-dock-h,100px) + 12px)!important;
+    gap:8px!important;padding:12px!important;border-radius:16px!important;background:rgba(20,23,28,.96)!important;border:1px solid rgba(255,255,255,.06)!important;box-shadow:0 14px 34px -14px rgba(0,0,0,.55)!important;backdrop-filter:blur(10px)!important}
+  /* 모든 제어 40px · 둥글기 12 · 글자 12 */
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > button,
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .sizebox,
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox,
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .namebox{height:40px!important;min-height:40px!important;border-radius:12px!important;font-size:12px!important;font-weight:600!important;padding:0 10px!important;box-sizing:border-box!important;
+    background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.08)!important;color:#EDEFF3!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox input,
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .namebox input{height:38px!important;min-height:38px!important;font-size:14px!important;background:transparent!important;border:0!important;color:#EDEFF3!important;padding:0 4px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox .numhash{opacity:.5!important;font-size:13px!important}
+  /* 1줄: 번호 88 · 이름 나머지 · ⋯ 40 */
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > .numbox{flex:0 0 88px!important;width:88px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #selMoreBtn{flex:0 0 40px!important;width:40px!important;padding:0!important;font-size:18px!important;font-weight:700!important;letter-spacing:-.02em!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #selRowBreak{margin:-8px 0 0!important}
+  /* 2줄: 크기·색상·C·글자 숨김 — 같은 폭 넷 */
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #sizeCtl,
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #colorCtl,
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #coachBtn,
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #labelVisBtn{flex:1 1 calc(25% - 6px)!important;width:auto!important;min-width:calc(25% - 6px)!important;max-width:calc(25% - 6px)!important;padding:0 6px!important;white-space:nowrap!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #sizeCtl{padding:0!important;gap:6px!important;justify-content:center!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #sizeCtl > span{display:none!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #sizeCtl > button{width:34px!important;height:34px!important;min-height:34px!important;border-radius:9px!important;background:rgba(255,255,255,.08)!important;border:0!important;color:#EDEFF3!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #colorCtl > .color-trig{height:38px!important;border:0!important;background:transparent!important;padding:0!important;gap:6px!important;color:#EDEFF3!important;font-size:12px!important;font-weight:600!important;width:100%!important;justify-content:center!important}
+  /* 3줄: 복제·삭제 — 반반, 삭제는 붉은 글자만 */
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #dupSelBtn,
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #delSelBtn{flex:1 1 calc(50% - 4px)!important;width:auto!important;min-width:calc(50% - 4px)!important;max-width:calc(50% - 4px)!important;margin-left:0!important;gap:6px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #delSelBtn{background:rgba(226,75,74,.12)!important;border-color:rgba(226,75,74,.22)!important;color:#FF7B73!important}
+  /* ⋯ 펼친 줄(사진·시야·잔상·시선·쉐이퍼·GK·대칭·회전)도 같은 결 */
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#rotCtl,#ballStyleBtn){flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > #selMoreBtn{background:#EDEFF3!important;color:#14171c!important;border-color:#EDEFF3!important}
+}
+</style>
 <script>
 (function(){ /* 2.711 — ⋯ 버튼과 줄바꿈 자리는 시트 모드에서만 보인다(위 CSS). 데스크톱은 display:none */
   var sc=document.querySelector(".sel-ctl"); if(!sc)return;
