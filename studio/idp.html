@@ -3758,9 +3758,10 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sqg-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
   .sqg-li{border:1px solid var(--line-soft);border-radius:12px;padding:10px 12px;background:var(--surface)}
   .sqg-li.quiet{opacity:.7}
-  .sqg-li.hot{border-color:var(--accent)}
+  .sqg-li.hot{border-left:3px solid var(--accent);padding-left:10px}
   .sqg-li-h{display:flex;align-items:center;gap:8px}
-  .sqg-li-h .plr{flex:1 1 auto;min-width:0;max-width:none}
+  .sqg-li-h .plr{flex:1 1 auto;min-width:0;max-width:none;display:inline-flex;align-items:center;gap:8px}
+  .sqg-li-h .plr .no{flex:none;width:26px;height:26px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-soft);display:inline-grid;place-items:center;font-size:11px;font-weight:700;color:var(--text-2)}
   .sqg-li-h .plr b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .sqg-li-h .sqd-h{flex:none}
   .sqg-li-h .sqd-open{flex:none;width:24px;font-size:16px}
