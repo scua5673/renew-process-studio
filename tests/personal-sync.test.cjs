@@ -310,8 +310,74 @@ test('partial server acceptance cannot acknowledge the rejected key or advance t
 });
 
 test('oversized personal data reports failure instead of silently skipping and claiming success',async()=>{
-  const h=harness({local:'x'.repeat(1500001)});await assert.rejects(h.run(),e=>e.psCode==='sync_personal_size');
+  const raw='x'.repeat(12000001),h=harness({local:raw});await assert.rejects(h.run(),e=>e.psCode==='sync_personal_size');
   assert.equal(h.c.syncState().kind,'bad');assert.equal(h.server.get(K).v,'BASE');
+  assert.equal(h.idb.get(K),raw);assert.deepEqual(h.queue.map(x=>x.key),[K]);
+  assert.match(h.c.syncState().text,/노트/);
+});
+
+for(const team of [true,false]) {
+  test(`large personal notes are uploaded intact with CAS ${team?'inside team':'inside personal workspace'}`,async()=>{
+    const raw=JSON.stringify({pages:[{text:'한국어 필기 ⚽ '.repeat(160000),image:'data:image/jpeg;base64,'+'a'.repeat(750000)}]});
+    assert.ok(raw.length>1500000);
+    const h=harness({team,local:raw});h.addPending(K,raw);await h.run();
+    assert.equal(h.server.get(K).v,raw);assert.equal(h.idb.get(K),raw);
+    assert.equal(h.queue.length,0);assert.equal(h.channel().h[K],h.c.hash(raw));
+    const writes=h.requests.filter(r=>r.method!=='GET');assert.equal(writes.length,1);
+    assert.equal(writes[0].method,'PATCH');assert.match(writes[0].url,/cupd=eq\.1/);
+    assert.match(writes[0].url,/workspace_id=eq\.personal-a/);
+    await h.run();assert.equal(h.requests.filter(r=>r.method!=='GET').length,1,'unchanged large notes are not resent');
+  });
+}
+
+test('personal upload admits the new boundary but does not change the team limit',async()=>{
+  const raw='x'.repeat(12000000),h=harness({local:raw});await h.run();
+  assert.equal(h.server.get(K).v,raw);assert.equal(h.queue.length,0);
+  assert.match(source,/var MAXLEN=1500000, SCHEDULE_MAXLEN=3500000;/);
+});
+
+test('a blocked large key leaves a smaller key confirmed and only itself pending',async()=>{
+  const raw='x'.repeat(12000001),h=harness({keys:[K,K2]});h.writeLocal(K2,raw);
+  const before=copy(h.channel());await assert.rejects(h.run(),e=>e.psCode==='sync_personal_size');
+  assert.equal(h.server.get(K).v,'PHONE_EDIT');assert.equal(h.server.get(K2).v,'BASE');
+  assert.equal(h.channel().h[K],h.c.hash('PHONE_EDIT'));assert.equal(h.channel().h[K2],before.h[K2]);
+  assert.equal(h.channel().c[K2],before.c[K2]);assert.deepEqual(h.queue.map(x=>x.key),[K2]);
+  assert.equal(h.idb.get(K2),raw);assert.equal(h.c.syncState().kind,'bad');
+  h.writeLocal(K2,'RESUMED');await h.run();assert.equal(h.server.get(K2).v,'RESUMED');
+  assert.equal(h.queue.length,0);assert.notEqual(h.c.syncState().kind,'bad');
+});
+
+test('an early blocked large key does not prevent a later smaller key from saving',async()=>{
+  const raw='x'.repeat(12000001),h=harness({keys:[K,K2]});h.writeLocal(K,raw);
+  await assert.rejects(h.run(),e=>e.psCode==='sync_personal_size');
+  assert.equal(h.server.get(K).v,'BASE');assert.equal(h.server.get(K2).v,'PHONE_EDIT');
+  assert.deepEqual(h.queue.map(x=>x.key),[K]);assert.equal(h.channel().h[K2],h.c.hash('PHONE_EDIT'));
+});
+
+test('equal oversized data is acknowledged without another upload or failure',async()=>{
+  const raw='x'.repeat(12000001),h=harness({local:raw,server:raw,cupd:2});h.addPending(K,raw);await h.run();
+  assert.equal(h.requests.filter(r=>r.method!=='GET').length,0);assert.equal(h.queue.length,0);
+  assert.equal(h.channel().h[K],h.c.hash(raw));assert.equal(h.channel().c[K],2);assert.notEqual(h.c.syncState().kind,'bad');
+});
+
+test('unchanged oversized local data can receive a later server edit',async()=>{
+  const raw='x'.repeat(12000001),h=harness({local:raw,base:raw,server:'NEW_SERVER',cupd:2});await h.run();
+  assert.equal(h.idb.get(K),'NEW_SERVER');assert.equal(h.requests.filter(r=>r.method!=='GET').length,0);
+  assert.equal(h.channel().h[K],h.c.hash('NEW_SERVER'));assert.equal(h.queue.length,0);
+});
+
+test('a large upload cannot overwrite a concurrent newer server version',async()=>{
+  const raw='x'.repeat(1500001),h=harness({local:raw});h.hooks.prepare=()=>h.server.set(K,{workspace_id:'personal-a',k:K,v:'PC_NEWER',cupd:2});
+  await assert.rejects(h.run(),e=>e.psCode==='sync_conflict');
+  assert.equal(h.server.get(K).v,'PC_NEWER');assert.equal(h.idb.get(K),raw);assert.equal(h.queue.length,1);
+});
+
+test('large unsent local and server edits still require an explicit choice',async()=>{
+  const raw='x'.repeat(12000001),h=harness({local:raw,server:'PC_NEWER',cupd:2});await h.run();
+  assert.equal(h.reviews().length,1);assert.equal(h.idb.get(K),raw);assert.equal(h.server.get(K).v,'PC_NEWER');
+  assert.equal(h.requests.filter(r=>r.method!=='GET').length,0);assert.equal(h.c.syncState().kind,'ask');
+  await h.c.personalReviewChoose(K,false,h.reviews()[0]);await h.run();
+  assert.equal(h.idb.get(K),'PC_NEWER');assert.equal(h.queue.length,0);
 });
 
 test('existing data review shows private cloud wording and a real choice entry',async()=>{

@@ -525,7 +525,7 @@ const $=id=>document.getElementById(id);
 let LW=1000, LH=1414;
 function applyOrient(){const l=note&&note.orient==='l';LW=l?1414:1000;LH=l?1000:1414;}
 const KEY='cs_notes_v1';
-const NOTE_SYNC_SAFE=1450000;
+const NOTE_SYNC_SAFE=11500000; // 개인 전송 한도 12M자보다 필기 여유 0.5M자를 남긴다.
 const COLORS=['#14161A','#3a6df0','#D6453D','#1D9E75'];
 const HL_COLORS={'#14161A':'#FFE066','#3a6df0':'#9FD0FF','#D6453D':'#FFB3AC','#1D9E75':'#A9EBC9'};
 let cv=$('cv');
@@ -1998,9 +1998,9 @@ async function importPdfBuffer(buf,name,meta){
     imported.title=name;imported.pages=pages;imported.orient=firstLand?'l':'p';imported.tpl='blank';
     imported.source={kind:meta.kind||'upload',libId:meta.libId||'',sourceSavedAt:meta.sourceSavedAt||0,fileName:meta.fileName||(name+'.pdf'),name:meta.sourceName||name,originalPages:total,importedAt:Date.now()};
     var s=store(),prev=s.cur;s.notes[imported.id]=imported;s.cur=imported.id;
-    /* cs_notes_v1은 개인 동기화의 단일 키다. 서버 안전 한도(1.5M) 직전에서
-       명시적으로 멈춰, 로컬에는 보이지만 다른 기기에는 사라지는 문서를 만들지 않는다. */
-    var syncChars=0;try{syncChars=JSON.stringify(s).length;}catch(_){syncChars=1500001;}
+    /* 개인 동기화 한도(12M자)에 필기 여유를 남겨 새 PDF를 받는다.
+       이미 저장된 문서는 자르거나 지우지 않는다. */
+    var syncChars=0;try{syncChars=JSON.stringify(s).length;}catch(_){syncChars=NOTE_SYNC_SAFE+1;}
     if(syncChars>NOTE_SYNC_SAFE){delete s.notes[imported.id];s.cur=prev;_noteMem=s;toast('문서 보관함 용량이 찼어요 — 오래된 PDF 문서를 정리한 뒤 다시 가져와 주세요');return false;}
     try{await persistImportedState(s);}catch(err){delete s.notes[imported.id];s.cur=prev;_noteMem=s;try{window.PSSaveState.fail('note',err);}catch(_){}toast('PDF 문서를 저장하지 못했어요 — 저장 공간을 확인해 주세요');return false;}
     note=imported;pi=0;redoStack=[];$('nTitle').value=note.title;refreshTplSel();$('nTpl').value='blank';
