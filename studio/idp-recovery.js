@@ -3,6 +3,8 @@
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.PSIDPRecovery=api;})(typeof window!=='undefined'?window:this,function(){
   'use strict';
   var PREFIX='ps_idp_edit_recovery_v1:',MAX=3000000;
+  /* 2.786 — 앱이 스스로 적는 값(공지 읽은 시각)은 «저장하지 못한 입력»이 아니다. 저장이 한 번 막히면 이 값 하나로 복구 띠가 떴다(실계정 실측: pending = noticeSeen 시각뿐). */
+  var AUTO={noticeSeen:true};
   var own=function(o,k){return Object.prototype.hasOwnProperty.call(o,k);};
   function object(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
   function copy(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v));}
@@ -21,7 +23,7 @@
       }
       if(!validPath(p))throw new Error('invalid-path');out.push({path:p,before:copy(a),after:copy(b)});
     }
-    Array.from(new Set(Object.keys(base).concat(Object.keys(draft)))).sort().forEach(function(k){if(k==='v')return;walk(at(base,[k]),at(draft,[k]),[k]);});
+    Array.from(new Set(Object.keys(base).concat(Object.keys(draft)))).sort().forEach(function(k){if(k==='v'||AUTO[k])return;walk(at(base,[k]),at(draft,[k]),[k]);});
     if(out.length>300)throw new Error('too-many-changes');return out;
   }
   function validOps(ops){return Array.isArray(ops)&&ops.length<=300&&ops.every(function(o){return object(o)&&validPath(o.path)&&object(o.before)&&typeof o.before.has==='boolean'&&object(o.after)&&typeof o.after.has==='boolean';});}

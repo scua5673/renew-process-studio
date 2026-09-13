@@ -9735,7 +9735,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           서버도 supabase-idp-share.sql 에서 자기 키만 쓰게 강제한다. 팀 공용 키에 쓰면
           아무나 남의 «읽음»을 덮어쓸 수 있다.
        ⚠ 코치가 남의 IDP 를 열어 본 것은 그 선수가 읽은 게 아니다 — ro() 로 거른다. */
-    try{ if(!ro()&&doc.noticeSeen!==now){ doc.noticeSeen=now; save(); } }catch(_){}
+    try{ if(!ro()&&doc.noticeSeen!==now){ doc.noticeSeen=now; try{ if(_idpEditBase&&typeof _idpEditBase==='object')_idpEditBase.noticeSeen=now; }catch(_){} save(); } }catch(_){}   /* 2.786 — 읽은 시각은 초안(복구) 대상이 아니다 */
   }
   function ntcWhen(ts){
     if(!ts)return '';
