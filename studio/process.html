@@ -7679,8 +7679,8 @@ function sessFocusHTML(context){
   result.rows.forEach(function(r){if(r.coach)r.coach.goals.forEach(function(g){
     try{var cat=window.PS_LM&&PS_LM.cat(g.cat);if(cat)labels[g.cat]=cat.id+' '+cat.name;}catch(_){}
   });});
-  return '<details class="session-focus-reference"><summary>개인 초점 참고 <span>'+api.esc(result.date)+' · '+api.esc(result.scope.label)+'</span></summary>'
-    +api.render(result,labels)+'</details>';
+  return '<details class="session-focus-reference"><summary>개인 초점 참고 <span>'+api.esc(result.date)+' · '+api.esc(result.scope.label)+' · 읽기 전용</span></summary>'
+    +api.render(result,labels,{heading:false})+'</details>';
 }
 function trainingReferencesAuth(unlocked){
   if(unlocked===false)__trainingReferenceLocked=true;

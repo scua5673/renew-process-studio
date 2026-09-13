@@ -109,8 +109,11 @@
     var h='<div class="daily-effort-head"><div class="lbl">선수 자기보고 강도 <span class="sublbl">RPE 1~10</span></div>'
       +'<label class="daily-effort-filter">선수 조 <select data-effort-group aria-label="자기보고 강도 선수 조"><option value="">전체 조</option>'
       +choices.map(function(g){return '<option value="'+esc(g)+'"'+(g===summary.group?' selected':'')+'>'+esc(g)+'</option>';}).join('')+'</select></label></div>';
-    h+='<p class="daily-effort-note">이 기기에서 확인한 날짜별 일지 응답 평균입니다. 참여 범위·실제 운동 시간은 확인되지 않아 계획 부하와 합산하거나 비교하지 않습니다.</p>';
-    if(!summary.linked)return h+'<p class="daily-effort-note">이 범위에 계정이 연결된 선수가 없습니다.</p>';
+    h+='<p class="daily-effort-note">이 기기에서 확인한 날짜별 일지 응답 평균 · 계획 부하와 별도 집계</p>';
+    var criteria='<details class="daily-effort-criteria"><summary>집계 기준</summary>'
+      +'<p class="daily-effort-note">응답하지 않은 선수는 평균에 넣지 않습니다. 참여 범위·실제 운동 시간은 확인되지 않아 계획 부하와 합산하거나 비교하지 않습니다.</p>'
+      +'<p class="daily-effort-note">팀훈련·경기 응답도 전체 세션 참여나 개인운동 제외를 뜻하지 않습니다.</p></details>';
+    if(!summary.linked)return h+'<p class="daily-effort-note">이 범위에 계정이 연결된 선수가 없습니다.</p>'+criteria;
     h+='<div class="daily-effort-list">';
     summary.days.forEach(function(d,i){
       var detail=[];
@@ -125,7 +128,7 @@
         +'<b'+(d.n?'':' aria-label="확인된 강도 없음"')+'>'+(d.n?esc(Number(d.mean).toFixed(1))+' <small>/ 10</small>':'—')+'</b><span>응답 '+d.n+' / 연결 '+d.linked+'명</span></div>'
         +(detail.length?'<div class="daily-effort-detail">'+esc(detail.join(' · '))+'</div>':'')+'</div>';
     });
-    return h+'</div><p class="daily-effort-note">응답하지 않은 선수는 평균에 넣지 않습니다. 팀훈련·경기 응답도 전체 세션 참여나 개인운동 제외를 뜻하지 않습니다.</p>';
+    return h+'</div>'+criteria;
   }
   return {rpe:rpe,validDate:validDate,cohort:cohort,groups:groups,summarize:summarize,access:access,read:read,render:render};
 });

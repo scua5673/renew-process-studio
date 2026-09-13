@@ -7,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
-for (const file of ['studio/app.html', 'studio/process.html', 'studio/scout.html', 'studio/idp.html', 'studio/board.html', 'start/index.html', 'start/idp.html', 'guide/index.html']) {
+for (const file of ['studio/app.html', 'studio/process.html', 'studio/scout.html', 'studio/analysis.html', 'studio/playbook.html', 'studio/idp.html', 'studio/board.html', 'start/index.html', 'start/idp.html', 'guide/index.html']) {
   test(`${file}: inline JavaScript parses`, () => {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
     let count = 0;

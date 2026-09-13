@@ -5070,7 +5070,6 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                   <span class="ob-frames" id="obFrames"></span>
                   <button class="btn sm" type="button" id="obAddFrame">＋ 프레임</button>
                   <button class="btn sm primary" type="button" id="obPlay">▶ 재생</button>
-                  <span class="mb2-hint">국면마다 상대 패턴을 배치 · ＋프레임으로 다음 장면을 만들고 ▶로 움직임 재생</span>
                 </div>
               </section>
             </div>
@@ -6310,9 +6309,7 @@ function renderAttrs(){
           물어보게 됐다(사용자 "이러면 헷갈리니까 하나로 통일").
        ⚠ 그래서 **질문을 한 벌만** 크게 놓고, 관찰 포인트는 그 아래 작은 회색 줄로 붙인다.
           지우지 않는다 — 코치가 '무엇을 보고 매기나'를 잃으면 점수가 느낌이 된다. */
-    const tg=document.createElement("div");tg.className="eval-tone";tg.style.gridColumn="1 / -1";
-    tg.innerHTML='<span class="eval-tone-hint">선수와 코치가 <b>같은 질문</b>을 읽습니다 — 회색 줄은 코치가 무엇을 보고 매기는지입니다</span>';
-    box.appendChild(tg);
+
     /* 2.025 — 포지션별 추가 문항(읽기): 그룹 6개 × 4문항. 선수 포지션에 따라 자동으로 붙는다는 안내 */
     try{ if(window.PS_EVAL_STD&&PS_EVAL_STD.posGroups){
       const pcard=document.createElement("div");pcard.className="card attr-cat attr-pos";pcard.style.setProperty("--evc","#16213A");

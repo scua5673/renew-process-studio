@@ -431,8 +431,6 @@ body.fmdark{--bg:#101216;--bar:#171A20;--bar2:#20242C;--line:#2C323D;--txt:#F1F3
    칸 자체는 남겨 두고(값을 담는 그릇으로 계속 쓴다) 화면에서만 감춘다 —
    추가는 날짜를 눌러서 그 자리에서 한다. */
 .cal-add,.cal-add2{display:none}
-/* 1.877 — 목록 상단: ＋ 경기 추가를 맨 앞·크게 */
-.cal-tools #calAddOpen{order:-1;height:36px;padding:0 14px;font-weight:800}
 .msearch{position:relative}
 .msearch input{width:100%}
 .ms-pop{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:60;max-height:320px;overflow:auto;
@@ -931,7 +929,7 @@ body.fmdark{ --ps-sh1:0 1px 2px rgba(0,0,0,.45); --ps-sh2:0 14px 34px -14px rgba
     <div class="head-actions"><!-- 1.969 — 헤더 정리(사용자): 오른쪽 동작 묶음 · 커뮤니티에 올리기를 헤더로 -->
       <button class="btn" id="toggleLibrary">저장 팀</button>
       <button class="btn head-pub" id="svPubHead" title="이 경기의 장면을 커뮤니티에 올립니다"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>커뮤니티에 올리기</button>
-      <button class="btn pri" id="newMatch">＋ 새 경기</button>
+      <button class="btn pri" id="newMatch">＋ 경기 추가</button>
     </div>
   </div>
   <div class="toprow">
@@ -1227,12 +1225,11 @@ body.fmdark{ --ps-sh1:0 1px 2px rgba(0,0,0,.45); --ps-sh2:0 14px 34px -14px rgba
       <div id="calView" class="hidden">
         <div class="card">
           <div class="ct">경기</div>
-          <div class="notice" style="margin:2px 0 0">경기를 추가하고, 열어서 장면·리뷰를 만든 뒤, 목록에서 바로 커뮤니티에 발행할 수 있어요. 매치 데스크는 나만 보는 개인 분석 공간이라 팀 일정의 경기와는 별개예요.</div>
+          <div class="notice" style="margin:2px 0 0">경기를 추가하고, 열어서 장면·리뷰를 만든 뒤, 목록에서 바로 커뮤니티에 발행할 수 있어요. 발행 전에는 나만 보는 개인 분석 공간이며, 팀 일정의 경기와는 별개예요.</div>
           <div class="cal-tools">
             <div class="seg" id="calModeSeg"><button data-cm="grid" class="on">달력</button><button data-cm="list">목록</button></div>
             <input class="inp cal-q" id="calQ" placeholder="팀·대회·장소로 찾기" aria-label="분석한 경기 찾기">
             <div class="seg" id="calStSeg"><button data-cs="" class="on">전체</button><button data-cs="done">분석함</button><button data-cs="pub">발행</button></div>
-            <button class="btn pri" id="calAddOpen" title="오늘 날짜로 경기 추가 — 달력의 날짜를 눌러도 됩니다">＋ 경기 추가</button>
           </div>
           <div class="cal-add"><input type="date" class="inp" id="calDate"><input class="inp" id="calHome" placeholder="홈팀"><input class="inp" id="calAway" placeholder="원정팀"><button class="btn pri" id="calAdd">＋ 경기 추가</button></div>
           <div class="cal-add2"><input class="inp" id="calLeague" placeholder="대회 (선택) — 예: K리그1, 주말리그"><input class="inp" id="calVenue" placeholder="장소 (선택) — 예: 목동운동장"><input class="inp" id="calTime" type="time" title="킥오프 시간(선택)"></div>
@@ -3097,7 +3094,7 @@ body.fmdark{ --ps-sh1:0 1px 2px rgba(0,0,0,.45); --ps-sh2:0 14px 34px -14px rgba
   document.getElementById('teamSeg').onclick=function(e){var b=e.target.closest('button');if(!b)return;team=b.dataset.team;selected='';[].forEach.call(this.children,function(x){x.classList.toggle('on',x===b)});renderAll()};
   document.getElementById('depthSeg').onclick=function(e){var b=e.target.closest('button');if(!b)return;depth=b.dataset.depth;localStorage.setItem(DEPTH,depth);renderWorkflow()};
   document.getElementById('sideNav').onclick=function(e){var b=e.target.closest('button');if(!b||!b.dataset.view)return;
-    if(!hasMatches()&&b.dataset.view!=='cal'){mdHint('경기를 먼저 추가해 주세요 — 달력의 ＋ 경기 추가');return} /* 1.671 */
+    if(!hasMatches()&&b.dataset.view!=='cal'){mdHint('경기를 먼저 추가해 주세요 — 상단 ＋');return} /* 1.671 */
     setView(b.dataset.view)};
   document.getElementById('tvModeBar').onclick=function(e){var b=e.target.closest('[data-tv-mode]');if(!b)return;tvBoard().mode=b.dataset.tvMode;if(b.dataset.tvMode==='live')ensureLivePositions();save();renderTv()};
   function bindTvRoster(box){
@@ -3565,9 +3562,9 @@ body.fmdark{ --ps-sh1:0 1px 2px rgba(0,0,0,.45); --ps-sh2:0 14px 34px -14px rgba
       }
       box.innerHTML=head;
       renderCalGrid(box,list);
-      if(!list.length)box.insertAdjacentHTML('beforeend','<div class="cal-empty">'+((calQ||calSt)?'조건에 맞는 경기가 없어요':'경기가 없습니다 — 날짜를 눌러 추가하세요<br><span style="font-weight:var(--fw-body);color:var(--dim)">팀 일정의 경기는 여기 나타나지 않아요 — 매치 데스크는 개인 분석 공간입니다</span>')+'</div>');
+      if(!list.length)box.insertAdjacentHTML('beforeend','<div class="cal-empty">'+((calQ||calSt)?'조건에 맞는 경기가 없어요':'경기가 없습니다 — 날짜나 상단 ＋를 눌러 추가하세요')+'</div>');
     } else {
-      box.innerHTML=head+(html||'<div class="cal-empty">'+((calQ||calSt)?'조건에 맞는 경기가 없어요':'경기가 없습니다 — 날짜를 눌러 추가하세요<br><span style="font-weight:var(--fw-body);color:var(--dim)">팀 일정의 경기는 여기 나타나지 않아요 — 매치 데스크는 개인 분석 공간입니다</span>')+'</div>');
+      box.innerHTML=head+(html||'<div class="cal-empty">'+((calQ||calSt)?'조건에 맞는 경기가 없어요':'경기가 없습니다 — 상단 ＋를 눌러 추가하세요')+'</div>');
     }
     [].forEach.call(box.querySelectorAll('[data-cal-open]'),function(b){b.onclick=function(e){e.stopPropagation();matchId=b.dataset.calOpen;selected='';save();setView('sheet');renderAll()}});
     /* 1.546 — 날짜를 누르면 그 날짜로 바로 경기 추가. 빈 칸이면 칸 어디를 눌러도 되고,
@@ -3599,12 +3596,10 @@ body.fmdark{ --ps-sh1:0 1px 2px rgba(0,0,0,.45); --ps-sh2:0 14px 34px -14px rgba
     }});
   }
   function startNewMatch(){var home=prompt('홈팀 이름','홈팀');if(!home)return;var away=prompt('원정팀 이름','원정팀');if(!away)return;var m={id:uid('m'),date:new Date().toISOString().slice(0,10),venue:'',home:home,away:away,homePlayers:defaultSquad(),awayPlayers:defaultSquad(),events:[],homeTactics:'',awayTactics:'',createdAt:Date.now()};_sessionNew[m.id]=1;db.matches.unshift(m);matchId=m.id;selected='';save();setView('sheet');renderAll()}
-  /* 상단 '＋ 새 경기'는 목록의 입력줄로 데려간다 — 날짜·대회·장소를 한 번에 넣게(사용자 요청) */
+  /* 상단과 모바일 ＋는 날짜별 추가와 같은 창·저장 경로를 사용한다. */
   document.getElementById('newMatch').onclick=function(){
     setView('cal');
-    setTimeout(function(){ var d=document.getElementById('calDate');
-      if(d){ if(!d.value)d.value=new Date().toISOString().slice(0,10);
-        var h=document.getElementById('calHome'); if(h)h.focus(); d.scrollIntoView({block:'center'}); } },60);
+    openAddMatch(new Date().toISOString().slice(0,10));
   };
   /* 1.510 — 달력/목록 전환·찾기·상태 거르기 */
   (function(){
@@ -3655,8 +3650,6 @@ body.fmdark{ --ps-sh1:0 1px 2px rgba(0,0,0,.45); --ps-sh2:0 14px 34px -14px rgba
     ov.addEventListener('keydown',function(e){ if(e.key==='Enter')ov.querySelector('#caGo').click(); if(e.key==='Escape')close(); });
     setTimeout(function(){ try{ov.querySelector('#caHome').focus();}catch(_){} },60);
   }
-  try{ document.getElementById('calAddOpen').onclick=function(){
-    openAddMatch(new Date().toISOString().slice(0,10)); }; }catch(_){}
   document.getElementById('calAdd').onclick=function(){
     var d=document.getElementById('calDate').value||new Date().toISOString().slice(0,10);
     var h=(document.getElementById('calHome').value||'').trim()||'홈팀';
@@ -3802,7 +3795,6 @@ html body #anPhBar .md-more-panel .btn.on:not(#_){color:var(--blue,#3A6DF0);font
 html body #anPhBar .md-more-panel .ph-only:not(#_):not(#__){display:block;border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding-top:4px}
 html body .cal-tools #calModeSeg:not(#_):not(#__),html body .cal-tools #calStSeg:not(#_):not(#__){display:none!important}
 html body .cal-tools .ph-sel:not(#_):not(#__){display:inline-flex;flex:0 0 auto;height:40px;min-height:40px;max-width:96px;padding:0 6px;border:1px solid var(--line);border-radius:10px;background:var(--bar,#fff);color:var(--txt);font:inherit;font-size:13px;font-weight:600;box-sizing:border-box}
-html body .cal-tools #calAddOpen:not(#_):not(#__){height:40px!important;min-height:40px!important;flex:1 1 100%}
 html body .cal-tools .cal-q:not(#_):not(#__){flex:1 1 120px;height:40px!important;min-height:40px!important;box-sizing:border-box!important}
 }
 </style>
@@ -3814,7 +3806,7 @@ html body .cal-tools .cal-q:not(#_):not(#__){flex:1 1 120px;height:40px!importan
   if(!head||!pick||!side||!more||!acts||document.getElementById('anPhBar'))return;
   var bar=document.createElement('div'); bar.id='anPhBar';
   var sel=document.createElement('select'); sel.id='anPhView'; sel.setAttribute('aria-label','보기');
-  var add=document.createElement('button'); add.type='button'; add.className='ph-add'; add.setAttribute('aria-label','새 경기'); add.title='＋ 새 경기'; add.textContent='＋';
+  var add=document.createElement('button'); add.type='button'; add.className='ph-add'; add.setAttribute('aria-label','경기 추가'); add.title='＋ 경기 추가'; add.textContent='＋';
   add.onclick=function(){ var b=document.getElementById('newMatch'); if(b)b.click(); };
   var panel=more.querySelector('.md-more-panel');
   var sum=more.querySelector('summary'); var sumTxt=sum?sum.textContent:'⋯ 더보기';

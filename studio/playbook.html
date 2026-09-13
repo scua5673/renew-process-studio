@@ -268,7 +268,7 @@ button:focus-visible{outline:2px solid var(--c-act,#3A6DF0);outline-offset:2px}
     if(canGm()&&model){ idn.setAttribute('contenteditable','plaintext-only'); idn.setAttribute('title','눌러서 고치기 · Enter 저장'); } else { idn.removeAttribute('contenteditable'); }
     $('wkLabel').textContent=week.label?('이번 주 '+week.label+' · '+Math.round(week.total)+'분'):'';
     var list=$('list');
-    if(!ms.length){ list.innerHTML='<div class="empty"><b>게임모델이 아직 없어요</b>기준 › 게임모델에서 국면을 세우면 여기에 플레이북이 생깁니다.<br><button class="lnk" data-go="settings" style="margin-top:10px">게임모델 열기 →</button></div>'; $('detail').innerHTML=''; return; }
+    if(!ms.length){ list.innerHTML='<div class="empty"><b>게임모델이 아직 없어요</b>플레이북 › 게임모델에서 국면을 세우면 여기에 플레이북이 생깁니다.<br><button class="lnk" data-go="settings" style="margin-top:10px">게임모델 열기 →</button></div>'; $('detail').innerHTML=''; return; }
     var maxPh=1; Object.keys(week.ph).forEach(function(k){ if(week.ph[k]>maxPh)maxPh=week.ph[k]; });
     var h='';
     ms.forEach(function(m){

@@ -4432,6 +4432,26 @@ body.fmdark .qa-paper{background:var(--surface)}
 .st-bub .pk{display:flex;flex-direction:column;gap:4px;margin-top:6px} .st-bub .pk span{border:1px solid var(--line-soft);border-radius:8px;padding:4px 8px;font-size:12px;background:var(--surface)} .st-bub .pk span.on{border-color:#7C4DFF;font-weight:700} .st-bub .pk small{color:var(--text-3);font-weight:500}
 .st-bub .st-pick{display:block;margin-top:5px;font-size:11px;color:var(--text-3)} .st-hrt{font-style:normal;color:#C24A46}
 .st-note{font-size:11px;color:var(--text-3);margin-top:10px}
+
+/* One story stream: preserve readable record details and accessible source links. */
+.st-msg{cursor:default;min-width:0}
+.st-origin{border:0;background:none;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.st-origin:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+.st-bub .th-row{display:flex;gap:8px;margin:4px 0}.st-bub .th-row>span{min-width:0;overflow-wrap:anywhere}
+.st-bub .th-row>i{flex:none;font-style:normal;font-size:11px;color:var(--text-3)}
+.st-bub .th-row b{font-size:inherit}.st-bub .th-meta{margin-top:6px}
+.st-bub .th-reply{margin-top:8px;padding-top:8px;border-top:1px solid var(--line-soft)}
+.st-bub .th-replyform{display:flex;gap:6px;margin-top:8px;min-width:0}.st-bub .th-replyform input{min-width:0;flex:1}
+.st-msg.me .th-row>i,.st-msg.me .th-meta,.st-msg.me .th-note,.st-msg.me .th-row small{color:rgba(255,255,255,.82)}
+.st-bub .sqst-t{font-size:inherit}.st-bub .sqst-m{line-height:1.5}.st-bub .sqrx-actions{flex-wrap:wrap}
+.st-card .sqst-tools{margin:10px 0 4px}.st-card .sqst-filt{flex-wrap:wrap}
+.st-card .st-bub .sqrx{min-width:0}.st-card .sqrx-compose textarea{box-sizing:border-box;max-width:100%}
+.gf-seg[hidden]{display:none!important}.vs-goal-linked{justify-content:flex-end}
+.wp-intro,.wp-count{font-size:12px;color:var(--text-3);line-height:1.5}.wp-source{padding:10px;background:var(--surface-2);border-radius:10px;margin-top:12px}.wp-source[hidden]{display:none}
+.wp-source span{font-size:11px;color:var(--text-3)}.wp-source p{margin:4px 0 0;font-size:13px;overflow-wrap:anywhere}
+.wp-actions{display:flex;gap:8px;margin-top:14px}.wp-actions .btn{flex:1}.wp-cb{white-space:normal;overflow-wrap:anywhere}
+@media(max-width:560px){.st-msg{max-width:100%}.st-bub .sqrx-help{flex-basis:100%}.st-bub .th-replyform{flex-wrap:wrap}.st-bub .th-replyform input{flex-basis:100%}}
+
 /* 2.768 — 코치의 선수 한 장 */
 .cp-card{padding:10px 14px 12px}
 .cp-nav{display:flex;align-items:center;gap:8px;margin-bottom:8px} .cp-nav .sp{flex:1}
@@ -5108,7 +5128,18 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
     return '<div class="gf-seg">'+GOAL_FAM.map(function(o){
       return '<button type="button" class="'+(curL===o[0]?'on':'')+'" data-gf="'+o[0]+'">'+o[1]+'</button>'; }).join('')+'</div>';
   }
+  function goalTopTabsVisible(){
+    if(window.innerWidth<900)return false;
+    return ['goal','routine'].every(function(k){var b=document.querySelector('#layers [data-l="'+k+'"]');return b&&b.offsetParent&&b.getBoundingClientRect().width>0;});
+  }
+  function syncGoalFamNav(){
+    var separate=goalTopTabsVisible();
+    [].forEach.call(wrap.querySelectorAll('.gf-seg'),function(el){el.hidden=separate;});
+    if(playerFace()&&curL==='routine')[] .forEach.call(document.querySelectorAll('#layers button'),function(b){var on=b.dataset.l===(separate?'routine':'goal');b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  }
+  window.addEventListener('resize',function(){try{syncGoalFamNav();}catch(_){}});
   function bindGoalFamSeg(){
+    syncGoalFamNav();
     [].forEach.call(wrap.querySelectorAll('[data-gf]'),function(b){
       b.onclick=function(){ curL=b.dataset.gf; render(); try{ window.scrollTo(0,0); }catch(_){} }; });
   }
@@ -5310,6 +5341,10 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
         },function(){});
       }catch(_){}
     },delay==null?1200:delay);
+  }
+  function idpOwnActionAllowed(key){
+    var owner=idpSaveOwner();
+    return key===viewing&&key===myKey()&&!ro()&&!visionEdit&&!_privateWriteConflict&&_docSourceValid&&!idpRecoveryBlocked()&&idpSaveOwnerCurrent(owner,doc);
   }
   function persistMyIdpNow(){
     var owner=idpSaveOwner(),savingDoc=doc;
@@ -5866,7 +5901,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       /* 2.321 — 몸·잠·태그는 **오늘로 되돌렸다**(사용자). 프로필에는 이번 주 측정만 남았었다
          ⚠ 2.431 — **그것도 뺐다**(사용자 "일지에 넣어야 하지 않을까"). 측정은 이제 **일지 › 일간의
             수요일**에만 뜬다. `rMeasureCard`·`bindMeasureCard` 는 그대로다 — 되살리려면 이 줄만 되돌린다. */
-      +rProfileSum(_po)+(_po?(ro()?rProfileView():rProfile()):rProfileView())+   /* 2.647 — 닫혀 있거나 코치 열람이면 «보기» 카드 */(function(){ try{ return rMyArch(); }catch(_){ return ''; } })()+rEvalSum(_eo)+(_eo?rEval():'')+rReviews()+((ro()&&isCoach())?rCompare():'')+(function(){ try{ return rThread(); }catch(_){ return ''; } })()+(function(){ try{ return rGrowth(); }catch(_){ return ''; } })();   /* 2.172 — 순서(사용자): 프로필 → 유형 → 셀프평가 → 리뷰·대조 → 성장 대화 → 자라는 프로필 */   /* 2.044 순서: 리뷰(현재)·대조 → 프로필 → 셀프평가 → 성장 대화 → 자라는 프로필 */ }   /* 1.977 — 접힌 요약 + 펼침 · 2.027 — 성장 리뷰(6주)·셀프 vs 코치 대조 */
+      +rProfileSum(_po)+(_po?(ro()?rProfileView():rProfile()):rProfileView())+   /* 2.647 — 닫혀 있거나 코치 열람이면 «보기» 카드 */(function(){ try{ return rMyArch(); }catch(_){ return ''; } })()+rEvalSum(_eo)+(_eo?rEval():'')+rReviews()+((ro()&&isCoach())?rCompare():'')+(function(){ try{ return rGrowth(); }catch(_){ return ''; } })();   /* 2.172 — 순서(사용자): 프로필 → 유형 → 셀프평가 → 리뷰·대조 → 성장 대화 → 자라는 프로필 */   /* 2.044 순서: 리뷰(현재)·대조 → 프로필 → 셀프평가 → 성장 대화 → 자라는 프로필 */ }   /* 1.977 — 접힌 요약 + 펼침 · 2.027 — 성장 리뷰(6주)·셀프 vs 코치 대조 */
     else if(curL==='story') html+=(function(){ try{ return rStory(); }catch(e){ return '<section class="card"><b>이야기를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.766 */
     else if(curL==='routine') html+=rRoutine();
     else if(curL==='report') html+=(function(){ try{ return rMyReport(); }catch(e){ return '<section class="card"><b>리포트를 그리지 못했어요</b><div style="font-size:12px;color:var(--text-3)">'+esc(String(e&&e.message||e))+'</div></section>'; } })();   /* 2.172 */
@@ -7813,7 +7848,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<div class="sqtd">';
     if(editable)h+='<div class="card sqtd-sec qa-ask">'
       +'<div class="sqtd-h"><b>팀 전체에게 묻기</b><span>한 번에 하나 — 짧고 분명한 질문이 긴 답을 부른다</span></div>'
-      +'<textarea id="sqQaQ" rows="2" maxlength="200" placeholder="예: 이번 대회에서 느낀 점을 A4 한 장으로 적어 오세요"></textarea>'
+      +'<textarea id="sqQaQ" rows="2" maxlength="200" placeholder="예: 이번 대회에서 배운 점과 다음에 해볼 것을 적어 주세요"></textarea>'
       +'<div class="qa-formbtns"><button type="button" class="btn primary" data-sqqa-send>모두에게 묻기</button></div></div>';
     if(!ps.length)
       return h+'<div class="card sqe-msg"><b>아직 질문이 없어요</b>위에 한 줄 적어 팀 전체에게 물어보세요. 선수 화면 <b>성장 대화</b>에 카드로 뜹니다.</div></div>';
@@ -7840,7 +7875,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           var t=String(w.a.t||'');
           h+='<div class="sqqa-a">'
             +'<div class="sqqa-who"><b>'+esc(w.p.name||'이름 없음')+'</b>'
-            +'<em>'+t.length.toLocaleString()+'자 · A4 '+(t.length/QA_PAGE).toFixed(1)+'쪽 · '+esc(rvFmt(w.a.at))+'</em>'
+            +'<em>'+t.length.toLocaleString()+'자 · '+esc(rvFmt(w.a.at))+'</em>'
             +'<button type="button" class="sqd-open" data-sqd-doc="'+esc(PREFIX+w.ln.uid)+'" aria-label="'+esc(w.p.name||'')+' IDP 열기">›</button></div>'
             +'<div class="sqqa-txt">'+esc(t)+'</div></div>';
         });
@@ -7937,7 +7972,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       h+='<div class="qm-h" style="margin-top:14px">3 · 함께 묻기 <small>선수의 말로 적는다</small></div><div class="qm-q">네 강점은 뭐라고 생각해?</div><input class="qm-in" data-qm="strengths" maxlength="140" placeholder="선수의 답" value="'+esc(dr.strengths||'')+'">'
         +'<div class="qm-q" style="margin-top:8px">다음 12주, 초점 영역은?</div><input class="qm-in" data-qm="nextArea" maxlength="140" placeholder="선수의 답" value="'+esc(dr.nextArea||'')+'">';
       h+='<div class="qm-h" style="margin-top:14px">4 · 약속 <small>다음 분기 «내가 키우는 것» — 선수가 자기 화면에서 시작을 누른다</small></div><input class="qm-in" data-qm="promise" maxlength="60" placeholder="예) 받는 순간 다음 플레이가 준비돼 있는 선수" value="'+esc(dr.promise||'')+'"><input class="qm-in" data-qm="firstFocus" maxlength="60" placeholder="첫 초점 — 예) 받기 전 몸 열기 (갭 항목에서)" value="'+esc(dr.firstFocus||'')+'" style="margin-top:6px">';
-      h+='<div class="qm-h" style="margin-top:14px">5 · 서면 <small>이 화면이 그대로 저장된다</small></div><button type="button" class="btn sm primary" data-qm-save>저장 · 선수 «기록 흐름»에 «'+esc(qmSeason(ev.st||ymd(t0)))+' 면담» 카드로</button>';
+      h+='<div class="qm-h" style="margin-top:14px">5 · 서면 <small>이 화면이 그대로 저장된다</small></div><button type="button" class="btn sm primary" data-qm-save>저장 · 선수 «이야기»에 «'+esc(qmSeason(ev.st||ymd(t0)))+' 면담» 카드로</button>';
       h+='</div></div>';
     }
     if(list.length){ h+='<div class="qm-list">'+list.map(function(m){ return '<div class="qm-past"><b>'+esc(m.q||'')+' 면담 <small>'+esc(m.at||'')+' · '+esc(m.by||'')+'</small></b>'
@@ -7954,7 +7989,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       focuses:ev.fcs.map(function(f){return f.t;}).filter(function(t,i,a){ return t&&t!==a[i-1]; }),hearts:ev.hearts.slice(-6),gaps:ev.gaps,mid:(ev.mid&&ev.mid.c)||'',   /* 같은 초점이 이어진 주는 하나로 */
       outside:pick('outside').slice(0,140),strengths:pick('strengths').slice(0,140),nextArea:pick('nextArea').slice(0,140),promise:pick('promise').slice(0,60),firstFocus:pick('firstFocus').slice(0,60)};
     if(!pubPushAt(kk,'qmeet',obj)){ gToast('저장하지 못했어요'); return; }
-    sqQmDraft={}; sqQmOpen=false; psAct('a_qmeet'); gToast('면담을 저장했어요 — 선수 «기록 흐름»에 카드로'); render();
+    sqQmDraft={}; sqQmOpen=false; psAct('a_qmeet'); gToast('면담을 저장했어요 — 선수 «이야기»에 카드로'); render();
   }
   function sqWeekTable(linked,wkM,nextM,can){
     _sqwAuto={};
@@ -8559,7 +8594,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         var t=String(a.t).trim(), n=t.length;
         out.push({k:'qa',kn:'공통질문',ts:+a.at||0,head:(q&&q.q)||'질문',
                   said:t,full:t,id:qid,
-                  meta:'<b>'+n.toLocaleString()+'자</b> · A4 '+(n/1600).toFixed(1)+'쪽'});
+                  meta:'<b>'+n.toLocaleString()+'자</b>'});
       }); }catch(_){}
     /* ══ 2.454 · 평가 항목 이름은 **세 곳**에 흩어져 있다 ═══════════════════════════
        ① 팀 평가표(`activeSet().groups` — 팀이 만든 항목은 여기에만 있다)
@@ -8608,10 +8643,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* ⑤ 분기 목표 — 선수가 적은 행동 문장 */
     try{ var q2=d.qgoal||null;
       if(q2&&Array.isArray(q2.goals)){
-        q2.goals.forEach(function(g){ if(!g||!String(g.t||'').trim())return;
+        q2.goals.forEach(function(g,i){ if(!g||!String(g.t||'').trim())return;
           var sc=g.sc||{}, wk=''; try{ wk=ymd(mondayOf(new Date())); }catch(_){}
           var cur=+(sc[wk]||0);
-          out.push({k:'goal',kn:'분기 목표',ts:(+q2.at||sqStTs(q2.start)||0),said:String(g.t).trim(),quote:true,
+          out.push({k:'goal',id:'goal:'+(g.id||i),kn:'분기 목표',ts:(+q2.at||sqStTs(q2.start)||0),said:String(g.t).trim(),quote:true,
             meta:(cur?('이번 주 <b>'+cur+'/5단계</b>'):'이번 주 단계는 아직')+(q2.theme?(' · 시즌 테마 “'+esc(q2.theme)+'”'):'')});
         });
       } }catch(_){}
@@ -8640,7 +8675,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var ans=d.answers||{};
     var open=qs.filter(function(x){return x.open;}), past=qs.filter(function(x){return !x.open;});
     var done=qs.filter(function(x){ return String((ans[x.id]&&ans[x.id].t)||'').trim(); }).length;
-    h+='<div class="pqa-top"><b>공통질문</b><span>'+done+'/'+qs.length+' 답함 · 질문은 팀 것, 답은 선수 것</span></div>';
+    h+='<div class="pqa-top"><b>공통질문</b><span>'+done+'/'+qs.length+' 답함</span></div>';
     function one(x){
       var a=ans[x.id], t=String((a&&a.t)||'').trim(), n=t.length;
       var g='<div class="pqa-q'+(t?' has':'')+'">'
@@ -8649,7 +8684,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(!t) return g+'<div class="pqa-none">아직 안 적었어요</div></div>';
       var op=!!sqStOpen[x.id], cut=(!op&&n>150)?(t.slice(0,150)+'…'):t;
       g+='<div class="pqa-a">'+esc(cut)+'</div>'
-        +'<div class="pqa-m"><b>'+n.toLocaleString()+'자</b> · A4 '+(n/1600).toFixed(1)+'쪽 · '+esc(rvFmt(a.at))+'</div>';
+        +'<div class="pqa-m"><b>'+n.toLocaleString()+'자</b> · '+esc(rvFmt(a.at))+'</div>';
       if(n>150)g+='<button type="button" class="sqst-more" data-sqst-more="'+esc(x.id)+'">'+(op?'접기':'전문 ›')+'</button>';
       return g+'</div>';
     }
@@ -8661,7 +8696,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     return h+'</div>';
   }
-  function rSqVision(d,uid2,storyReacts){
+  function rSqVision(d,uid2,storyReacts,hideNote){
     var v=visionOf(d); if(!visionHas(v))return '';
     var k=visionReactKey(v), rc=(storyReacts&&storyReacts[k])||null, qg=null;
     try{ qg=(d.qgoal&&Array.isArray(d.qgoal.goals))?d.qgoal.goals.filter(function(g){return g&&String(g.t||'').trim();})[0]:null; }catch(_){}
@@ -8670,65 +8705,118 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<div class="sqvision-beh"><b>경기에서 함께 볼 행동</b><ol>'+v.behaviors.map(function(b){ return '<li class="'+(b.id===v.focusId?'on':'')+'"><i></i><span>'+esc(b.text)+'</span>'+(b.id===v.focusId?'<em>이번에 집중</em>':'')+'</li>'; }).join('')+'</ol></div>'
       +(qg?'<div class="sqvision-goal"><span>12주 목표</span><b>'+esc(qg.t)+'</b></div>':'')
       +'<div class="sqvision-rule">코치는 선수의 문장을 고치지 않고 질문·제안으로 돕습니다.</div>'
-      +(uid2?rSqStoryReact(uid2,k,rc):'')+'</section>';
+      +(uid2?rSqStoryReact(uid2,k,rc,hideNote):'')+'</section>';
+  }
+  var sqStoryExpanded=Object.create(null);
+  function sqStoryContext(p){
+    var owner=idpSaveOwner();
+    if(!owner||!owner.uid||!owner.wid||!onTeam()||!isCoach()||_idpRecoveryAuthLocked)return {state:'unavailable'};
+    var pm,raw,d;
+    try{raw=localStorage.getItem('cs_perms_v1');if(!raw)return {state:'pending'};pm=JSON.parse(raw);}catch(_){return {state:'invalid'};}
+    if(!sqMatchObject(pm)||!sqMatchObject(pm.members))return {state:'invalid'};
+    var ids=Object.keys(pm.members).filter(function(u){return p&&p.id&&String((pm.members[u]||{}).playerId||'')===String(p.id);});
+    if(!ids.length)return {state:'unlinked'};
+    if(ids.length!==1)return {state:'ambiguous'};
+    try{raw=localStorage.getItem(PREFIX+ids[0]);if(!raw)return {state:'pending'};d=JSON.parse(raw);}catch(_){return {state:'invalid'};}
+    if(!sqMatchObject(d)||d.v!==1)return {state:'invalid'};
+    return {state:'ready',uid:ids[0],doc:d};
+  }
+  function sqStoryTarget(uid2){
+    if(!squadView)return false;
+    var ctx=sqStoryContext({id:sqEvalSel});
+    return ctx.state==='ready'&&ctx.uid===uid2;
+  }
+  function storyCoachTarget(key){
+    if(!key||key.indexOf(PREFIX)!==0||key===myKey())return false;
+    var u=key.slice(PREFIX.length),pm;
+    try{pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null');}catch(_){return false;}
+    var member=pm&&pm.members&&pm.members[u];if(!member||!member.playerId)return false;
+    var ctx=sqStoryContext({id:member.playerId});return ctx.state==='ready'&&ctx.uid===u;
+  }
+  function storyItemKey(it,i){
+    if(it.key)return it.key;
+    var id=it.id;
+    if(it.k==='review')id=it.r&&it.r.id;
+    else if(it.k==='feedback')id=it.fb&&it.fb.id;
+    else if(it.k==='qmeet')id=it.qm&&it.qm.id;
+    else if(it.k==='weekly')id=it.mon;
+    else if(it.k==='props')id=it.wk;
+    else if(it.k==='memo')id=it.d;
+    else if(it.k==='prop')id=it.p&&(it.p.id||it.p.at);
+    else if(it.k==='qgoal')id=(it.closed?'closed:':'current:')+((it.q&&it.q.start)||'')+':'+i;
+    return it.k+':'+(it.who||'')+':'+(id==null?'entry:'+i:String(id));
+  }
+  function storyCurrentEvalSnapshot(d){
+    var ev=d.selfEval||{},hist=Array.isArray(ev.hist)?ev.hist:[],last=hist[hist.length-1];
+    if(!last||!sqMatchObject(last.v)||!ev.at||last.d!==ymd(new Date(ev.at))||String(last.s||'')!==String(ev.setId||''))return null;
+    function levels(v){var out={};Object.keys(v||{}).sort().forEach(function(k){var n=+v[k]||0;if(n)out[k]=n;});return JSON.stringify(out);}
+    return levels(ev.levels)===levels(last.v)?last:null;
+  }
+  function sqStoryItems(d){
+    var old=sqStEntries(d),hasGoals=old.some(function(e){return e.k==='goal';}),sameEval=storyCurrentEvalSnapshot(d);
+    var hasEval=old.some(function(e){return e.k==='ev';});
+    var items=stItems().filter(function(it){return it.k!=='memo'&&it.k!=='qa'&&!(hasEval&&sameEval&&it.k==='self'&&it.e===sameEval)&&!(it.k==='qgoal'&&!it.closed&&hasGoals);});
+    old.forEach(function(e,i){
+      if(e.k==='ev'){e.kn='현재 셀프평가';if(sameEval)e.snapshot=sameEval;}
+      var id=e.k==='log'?e.day:(e.id||e.k);
+      items.push({k:'record',key:'record:'+e.k+':'+id,who:'me',ts:e.ts||0,d:e.day||(e.ts?ymd(new Date(e.ts)):''),record:e,src:e.kn,
+        go:e.k==='log'?'cal:'+e.day:(e.k==='qa'?'qa:'+e.id:(e.k==='goal'||e.k==='sw'?'goal':'profile'))});
+    });
+    var seen=Object.create(null);
+    return items.filter(function(it,i){var k=storyItemKey(it,i);if(seen[k])return false;seen[k]=true;it.key=k;return true;})
+      .sort(function(a,b){return ((+b.ts||0)-(+a.ts||0))||a.key.localeCompare(b.key);});
+  }
+  function sqStoryKind(it){
+    if(it.record)return it.record.k;
+    if(it.k==='match'||it.k==='mself'||it.k==='prep')return 'match';
+    if(it.k==='self')return 'ev';
+    if(it.k==='qgoal'||it.k==='props'||it.k==='prop')return 'goal';
+    if(it.k==='weekly')return 'log';
+    if(it.k==='react')return /^day:|^wk:/.test(it.id||'')?'log':(/^vision:/.test(it.id||'')?'vision':'goal');
+    return 'talk';
+  }
+  function rSqStoryRecord(e,uid2){
+    var h='';
+    if(e.head)h+='<div class="sqst-q">'+esc(e.head)+'</div>';
+    if(e.said){var open=e.id&&sqStOpen[e.id],txt=(!open&&e.full&&e.full.length>150)?e.full.slice(0,150)+'…':e.said;
+      h+='<div class="sqst-t'+(e.quote?' quote':'')+'">'+esc(txt)+'</div>';}
+    if(e.none)h+='<div class="sqst-t none">'+esc(e.none)+'</div>';
+    if(e.rows)h+='<div class="sqst-rows">'+e.rows.map(function(r){return '<div><i class="'+r[0]+'">'+esc(r[1])+'</i><span>'+esc(r[2])+'</span></div>';}).join('')+'</div>';
+    if(e.chips)h+='<div class="sqst-chips">'+e.chips.map(function(c){return '<span class="sqst-chip'+(c[1]<=2?' lo':'')+'">'+esc(c[0])+' <b>'+c[1]+'</b></span>';}).join('')+'</div>';
+    if(e.snapshot)h+=stRichBody({k:'self',e:e.snapshot},{squadUid:uid2});
+    if(e.meta)h+='<div class="sqst-m">'+e.meta+'</div>';
+    if(e.full&&e.full.length>150)h+='<button type="button" class="sqst-more" data-sqst-more="'+esc(e.id)+'">'+(sqStOpen[e.id]?'접기':'전문 ›')+'</button>';
+    if(e.reactKey&&uid2)h+=rSqStoryReact(uid2,e.reactKey,(rvRec(PREFIX+uid2).reacts||{})[e.reactKey]||null,true);
+    return h;
   }
   function rSqStory(p){
-    var ln=null; try{ ln=sqLinkOfPlayer(p&&p.id); }catch(_){}
-    /* ⚠ `sqLinkOfPlayer` 는 날 JSON 을 준다 — `v!==1` 은 선수 화면에서도 안 열리는 문서다(7746 과 같은 판단) */
-    var d=(ln&&ln.d&&ln.d.v===1)?ln.d:null;
-    var h='<div class="sqth">';
-    if(!d)
-      return h+'<div class="sqst-none"><b>아직 앱을 쓰지 않아요</b>'
-        +'<span>이 선수가 IDP에 적은 것이 없습니다. 계정을 연결하면 일지·셀프평가·목표·답변이 적히는 대로 여기에 쌓입니다.</span></div></div>';
-    var ents=sqStEntries(d), storyReacts={}, vision=visionOf(d), hasVision=visionHas(vision);
-    try{ if(ln&&ln.uid)storyReacts=((rvRec(PREFIX+ln.uid)||{}).reacts)||{}; }catch(_){ storyReacts={}; }
-    if(!ents.length&&!hasVision)
-      return h+'<div class="sqst-none"><b>아직 적은 것이 없어요</b>'
-        +'<span>계정은 연결됐지만 선수가 아직 아무것도 적지 않았습니다. 적으면 이 자리에 그대로 흐릅니다.</span></div></div>';
-    /* 2.769 — 같은 스레드(2.766~2.768)를 여기서도. 렌더 동안만 doc·viewing 을 이 선수로 바꾼다(읽기만, 저장 없음) */
-    try{ if(ln&&ln.uid){ var _d0=doc,_v0=viewing; doc=d; viewing=PREFIX+ln.uid; try{ h+=rStory({noHead:true}); } finally { doc=_d0; viewing=_v0; } } }catch(_){}
-    if(hasVision)h+=rSqVision(d,ln&&ln.uid,storyReacts);
-    if(!ents.length)return h+'<div class="sqst-none compact"><b>아직 다른 기록은 없어요</b><span>일지·셀프평가·목표를 적으면 내 방향 아래에 이어집니다.</span></div></div>';
-    /* 갈래 거르개 — 개수를 칩에 적어 **거르기 전에 무엇이 얼마나 쌓였는지** 보이게 */
-    var KIND=[['all','전체'],['log','일지'],['qa','답변'],['sw','장점·단점'],['ev','셀프평가'],['goal','목표']];
-    var cnt={}; ents.forEach(function(e){ cnt[e.k]=(cnt[e.k]||0)+1; });
-    if(!cnt[sqStFilt]&&sqStFilt!=='all')sqStFilt='all';
-    var likeN=0,replyN=0;
-    ents.forEach(function(e){ var r=e.reactKey&&storyReacts[e.reactKey]; if(r&&r.h)likeN++; if(r&&String(r.t||'').trim())replyN++; });
-    if(hasVision){ var vr=storyReacts[visionReactKey(vision)]; if(vr&&vr.h)likeN++; if(vr&&String(vr.t||'').trim())replyN++; }
-    h+='<div class="sqst-tools"><div class="sqst-filt">'+KIND.map(function(k){
-      var n=(k[0]==='all')?ents.length:(cnt[k[0]]||0);
-      if(!n)return '';
-      return '<button type="button" class="'+(sqStFilt===k[0]?'on':'')+'" data-sqst-f="'+k[0]+'">'+esc(k[1])+'<span class="n">'+n+'</span></button>';
-    }).join('')+'</div>'+(likeN||replyN?'<div class="sqst-talksum" aria-label="이 선수와 나눈 소통: 좋아요 '+likeN+'개, 답글 '+replyN+'개"><span>소통</span><b>좋아요 '+likeN+' · 답글 '+replyN+'</b></div>':'')+'</div>';
-    h+='<div class="sqst">';
-    ents.filter(function(e){ return sqStFilt==='all'||e.k===sqStFilt; }).forEach(function(e,i){
-      var dd=sqStDay(e.ts);
-      h+='<div class="sqst-e"><div class="sqst-d"><b>'+esc(dd.t)+'</b>'+(dd.w?'<span>'+esc(dd.w)+'</span>':'')+'</div><div class="sqst-b">'
-        +'<span class="sqst-k k-'+e.k+'"><i></i>'+esc(e.kn)+'</span>';
-      if(e.head)h+='<div class="sqst-q">'+esc(e.head)+'</div>';
-      if(e.said){
-        var open=e.id&&sqStOpen[e.id], txt=(!open&&e.full&&e.full.length>150)?(e.full.slice(0,150)+'…'):e.said;
-        h+='<div class="sqst-t'+(e.quote?' quote':'')+(open?' full':'')+'">'+esc(txt)+'</div>';
-      }
-      if(e.none)h+='<div class="sqst-t none">'+esc(e.none)+'</div>';
-      if(e.rows)h+='<div class="sqst-rows">'+e.rows.map(function(r){
-        return '<div><i class="'+r[0]+'">'+esc(r[1])+'</i><span>'+esc(r[2])+'</span></div>'; }).join('')+'</div>';
-      if(e.chips)h+='<div class="sqst-chips">'+e.chips.map(function(c){
-        return '<span class="sqst-chip'+(c[1]<=2?' lo':'')+'">'+esc(c[0])+' <b>'+c[1]+'</b></span>'; }).join('')+'</div>';
-      if(e.meta)h+='<div class="sqst-m">'+e.meta+'</div>';
-      if(e.full&&e.full.length>150)
-        h+='<button type="button" class="sqst-more" data-sqst-more="'+esc(e.id)+'">'+(sqStOpen[e.id]?'접기':'전문 ›')+'</button>';
-      if(e.reactKey&&ln&&ln.uid)h+=rSqStoryReact(ln.uid,e.reactKey,storyReacts[e.reactKey]||null);
-      h+='</div></div>';
-    });
-    return h+'</div></div>';
+    var ctx=sqStoryContext(p),h='<div class="sqth" data-story-state="'+ctx.state+'">';
+    if(ctx.state!=='ready'){
+      var msg={unavailable:['이야기를 열 수 없어요','팀의 코치 계정으로 연결 상태를 확인해 주세요.'],unlinked:['선수 계정이 연결되지 않았어요','계정을 연결하면 선수가 남긴 이야기를 볼 수 있어요.'],ambiguous:['선수 계정 연결을 확인해 주세요','여러 계정이 이 선수에게 연결되어 있어요.'],pending:['선수 기록을 아직 불러오지 못했어요','계정과 기록이 동기화되면 이곳에 표시돼요.'],invalid:['선수 기록을 읽을 수 없어요','동기화 상태를 확인한 뒤 다시 열어 주세요.']}[ctx.state];
+      return h+'<div class="sqst-none"><b>'+msg[0]+'</b><span>'+msg[1]+'</span></div></div>';
+    }
+    var d=ctx.doc,v=visionOf(d),reacts=(rvRec(PREFIX+ctx.uid).reacts)||{},d0=doc,k0=viewing;
+    try{
+      doc=d;viewing=PREFIX+ctx.uid;
+      var items=sqStoryItems(d),cnt=Object.create(null);
+      items.forEach(function(it){var k=sqStoryKind(it);cnt[k]=(cnt[k]||0)+1;});
+      if(sqStFilt!=='all'&&!cnt[sqStFilt])sqStFilt='all';
+      var filtered=items.filter(function(it){return sqStFilt==='all'||sqStoryKind(it)===sqStFilt;});
+      var kinds=[['all','전체'],['log','일지'],['qa','답변'],['match','경기'],['sw','장점·단점'],['ev','셀프평가'],['goal','목표'],['vision','내 방향'],['talk','소통']];
+      var filter='<div class="sqst-tools"><div class="sqst-filt">'+kinds.map(function(k){var n=k[0]==='all'?items.length:cnt[k[0]];return n?'<button type="button" class="'+(sqStFilt===k[0]?'on':'')+'" data-sqst-f="'+k[0]+'">'+k[1]+'<span class="n">'+n+'</span></button>':'';}).join('')+'</div></div>';
+      if(visionHas(v))h+=rSqVision(d,ctx.uid,reacts,true);
+      var likeN=0,replyN=0;Object.keys(reacts).forEach(function(k){if((/^day:/.test(k)&&d.log&&d.log[k.slice(4)])||k===visionReactKey(v)){var r=reacts[k]||{};if(r.h)likeN++;if(String(r.t||'').trim())replyN++;}});
+      if(likeN||replyN)filter+='<div class="sqst-talksum">소통 · 좋아요 '+likeN+' · 답글 '+replyN+'</div>';
+      var sk=ctx.uid+'|'+sqStFilt;
+      h+=rStory({noHead:true,items:filtered,total:items.length,filter:filter,squadUid:ctx.uid,expanded:!!sqStoryExpanded[sk],moreKey:sk});
+    }finally{doc=d0;viewing=k0;}
+    return h+'</div>';
   }
 
   /* 선수단 이야기에서는 `viewing` 이 코치 자신이다. 그래서 전역 rReact/reactSet 을 재사용하지 않고
      대상 uid를 DOM과 저장 함수에 끝까지 명시한다 — 다른 선수나 코치 자신의 공개 문서를 건드리지 않게. */
   function sqRxToken(uid2,key){ return String(uid2||'')+'|'+String(key||''); }
-  function rSqStoryReact(uid2,key,rc){
+  function rSqStoryReact(uid2,key,rc,hideNote){
     var isVision=/^vision:[a-zA-Z0-9_-]+$/.test(String(key||'')), isDay=/^day:\d{4}-\d{2}-\d{2}$/.test(String(key||''));
     if(!uid2||(!isVision&&!isDay))return '';
     rc=rc||null; var token=sqRxToken(uid2,key), editing=(sqRxEdit===token), has=!!(rc&&String(rc.t||'').trim());
@@ -8737,7 +8825,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<div class="sqrx-actions"><button type="button" class="sqrx-btn like'+(rc&&rc.h?' on':'')+'" data-sqrx-like aria-pressed="'+(rc&&rc.h?'true':'false')+'">'+(rc&&rc.h?'♥':'♡')+' 좋아요</button>'
       +'<button type="button" class="sqrx-btn reply'+(editing?' on':'')+'" data-sqrx-open aria-expanded="'+(editing?'true':'false')+'">'+(has?(isVision?'질문·제안 수정':'답글 수정'):(isVision?'질문·제안':'답글 달기'))+'</button>'
       +'<span class="sqrx-help">'+(isVision?'선수의 문장은 바뀌지 않아요':'선수 화면에 바로 보여요')+'</span></div>';
-    if(has&&!editing)h+='<div class="sqrx-note"><div class="sqrx-note-h"><b>'+(isVision?'코치 질문·제안':'코치 답글')+'</b>'+(meta?'<span>'+esc(meta)+'</span>':'')+'</div><p>'+esc(rc.t)+'</p></div>';
+    if(has&&!editing&&!hideNote)h+='<div class="sqrx-note"><div class="sqrx-note-h"><b>'+(isVision?'코치 질문·제안':'코치 답글')+'</b>'+(meta?'<span>'+esc(meta)+'</span>':'')+'</div><p>'+esc(rc.t)+'</p></div>';
     if(editing)h+='<div class="sqrx-compose"><textarea data-sqrx-in maxlength="300" rows="2" aria-label="'+(isVision?'선수에게 전할 질문이나 제안':'선수에게 전할 답글')+'" placeholder="'+(isVision?'궁금한 점이나 함께 해 볼 행동 한 줄':'선수에게 전할 한 줄')+'">'+esc((rc&&rc.t)||'')+'</textarea><button type="button" class="sqrx-save" data-sqrx-save>'+(has?'수정':'등록')+'</button></div>';
     return h+'</div>';
   }
@@ -9085,13 +9173,14 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function bindSquadEval(){
     var rt=wrap.querySelector('[data-sqe-retry]'); if(rt)rt.onclick=function(){ sqEvalLoad(true); };
     /* 2.769 — 선수 상세 이야기 탭의 스레드: 보내기는 그 선수의 코치 문서로, 말풍선을 누르면 그 선수 앱의 그 자리로 */
-    try{ [].forEach.call(wrap.querySelectorAll('.st-compose[data-st-key]'),function(box){ var inp=box.querySelector('[data-st-in]'), snd=box.querySelector('[data-st-send]'); if(!inp||!snd)return;
+    try{ [].forEach.call(wrap.querySelectorAll('[data-st-more-key]'),function(b){b.onclick=function(){sqStoryExpanded[b.dataset.stMoreKey]=true;render();};});
+      [].forEach.call(wrap.querySelectorAll('.st-compose[data-st-key]'),function(box){ var inp=box.querySelector('[data-st-in]'), snd=box.querySelector('[data-st-send]'); if(!inp||!snd)return;
         var go=function(){ if(stSend(inp.value,box.dataset.stKey)){ inp.value=''; render(); } };
         snd.onclick=go; inp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); go(); } }); });
       [].forEach.call(wrap.querySelectorAll('.st-card [data-st-go]'),function(el){ el.onclick=function(e){ e.stopPropagation(); var card=el.closest('.sqth'); var uidEl=null; var gov=String(el.getAttribute('data-st-go')||''); if(!gov)return;
-        var key=(function(){ try{ var box=wrap.querySelector('.st-compose[data-st-key]'); var kk=box&&box.dataset.stKey; return kk?PREFIX+kk.slice(PUBP.length):''; }catch(_){ return ''; } })();
-        if(!key||!adoptViewing(key))return; squadView=false; personalOnly=false;
-        var m=/^cal:(\d{4}-\d{2}-\d{2})$/.exec(gov); if(m){ curL='cal'; calView='day'; calAnchor=new Date(m[1]+'T00:00:00'); calAnchor.setHours(0,0,0,0); } else if(gov==='cal'){ curL='cal'; } else curL=gov;
+        var ownerCard=el.closest('.st-card'),key=ownerCard&&ownerCard.dataset.stOwner||'';
+        if(!key||!sqStoryTarget(key.slice(PREFIX.length))||!adoptViewing(key))return; squadView=false; personalOnly=false;
+        var m=/^cal:(\d{4}-\d{2}-\d{2})$/.exec(gov); if(m){ curL='cal'; calView='day'; calAnchor=new Date(m[1]+'T00:00:00'); calAnchor.setHours(0,0,0,0); } else if(gov.indexOf('qa:')===0){curL='cal';calView='qa';qaOpen=gov.slice(3);} else if(gov==='cal'){ curL='cal'; } else curL=gov;
         try{ [].forEach.call(document.getElementById('layers').children,function(x){ x.classList.toggle('on',x.dataset.l===curL); }); }catch(_){}
         render(); try{ window.scrollTo(0,0); }catch(_){} }; });
     }catch(_){}
@@ -9173,7 +9262,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var _sqRxTarget=function(box){ if(!box||!isCoach()||!squadView)return null;
       var uid2=box.dataset.sqrxUid||'', key=box.dataset.sqrxKey||'';
       var linked=false; try{ var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'), mem=pm&&pm.members&&pm.members[uid2]; linked=!!(mem&&String(mem.playerId)===String(sqEvalSel)); }catch(_){}
-      if(!linked||(!/^day:\d{4}-\d{2}-\d{2}$/.test(key)&&!/^vision:[a-zA-Z0-9_-]+$/.test(key)))return null;
+      if(!linked||!sqStoryTarget(uid2)||(!/^day:\d{4}-\d{2}-\d{2}$/.test(key)&&!/^vision:[a-zA-Z0-9_-]+$/.test(key)))return null;
       /* 화면을 연 뒤 선수가 방향을 고쳤다면 옛 revision DOM으로 질문을 보내지 않는다. */
       if(key.indexOf('vision:')===0)try{ var raw=localStorage.getItem(PREFIX+uid2), pd=raw&&JSON.parse(raw);
         if(!pd||pd.v!==1||visionReactKey(visionOf(pd))!==key)return null;
@@ -9370,7 +9459,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function wpPicks(){ var w=doc.weapon||{}; return (Array.isArray(w.picks)?w.picks:[]).filter(function(p){return p&&p.t;}); }
   function wpCands(){
     var out=[], seen={};
-    function add(t,src,cat){ t=String(t||'').trim().slice(0,24); if(!t||seen[t])return; seen[t]=1; out.push({t:t,src:src,cat:cat||''}); }
+    function add(t,src,cat,fromStrength){ t=String(t||'').trim(); if(!t||seen[t])return; seen[t]=1; out.push({t:t,src:src,cat:cat||'',fromStrength:!!fromStrength}); }
+    swLines((doc.selfEval||{}).strengths).forEach(function(t){add(t,'me','',true);});
     /* ① 셀프평가 — 상위 단계만. 5단 척도는 4↑('압박에서도'), 주니어 3단 세트는 3('항상') */
     try{ var ev=doc.selfEval||{}, set=activeSet(), gs=evalGroups(ev,set), mx=setMax(ev.setId||set.id), lv=ev.levels||{}, th=(mx===3?3:4), rows=[];
       gs.forEach(function(g){ (g.items||[]).forEach(function(it){ var v=+(lv[it[0]]||0); if(v>=th)rows.push({t:it[1],cat:g.cat,v:v}); }); });
@@ -9401,8 +9491,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }
     if(can&&picks.length<WP_MAX){
       if(cands.length){
-        h+='<div class="wp-sec"><div class="td-lb">후보 <small>내 평가 · 코치 리뷰 · 목표에서 자동으로 모았어요</small></div><div class="wp-cand">'
-          +cands.slice(0,10).map(function(c){ return '<button type="button" class="wp-cb" data-wp-add="'+esc(c.t)+'" data-wp-src="'+esc(c.src)+'" data-wp-cat="'+esc(c.cat)+'">'+esc(c.t)+' <em>'+esc(WP_SRC[c.src])+'</em></button>'; }).join('')+'</div></div>';
+        h+='<div class="wp-sec"><div class="td-lb">후보 <small>내 장점 · 평가 · 코치 리뷰 · 목표에서 자동으로 모았어요</small></div><div class="wp-cand">'
+          +cands.slice(0,10).map(function(c){ return '<button type="button" class="wp-cb" data-wp-add="'+esc(c.t)+'" data-wp-src="'+esc(c.src)+'" data-wp-cat="'+esc(c.cat)+'">'+esc(c.t)+' <em>'+esc(c.fromStrength?'내 장점':WP_SRC[c.src])+'</em></button>'; }).join('')+'</div></div>';
       }
       h+='<div class="wp-line"><input class="qg-in" id="wpIn" maxlength="24" placeholder="'+(cands.length?'직접 적기':'예: 좁은 곳에서 안 뺏기기')+'"><button type="button" class="td-mic" data-wp-save title="정하기">✓</button></div>';
       if(!cands.length)h+='<div class="wp-note">나를 평가하거나 코치 리뷰를 받으면 후보가 자동으로 생겨요.</div>';
@@ -9410,8 +9500,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return h+'</section>';
   }
   function bindWeapon(){
-    var card=wrap.querySelector('.wp-card'); if(!card||ro())return;
-    function put(t,src,cat){ t=String(t||'').trim().slice(0,24); if(!t){ gToast('한 가지만 적어 주세요'); return; }
+    var card=wrap.querySelector('.wp-card'),key=viewing; if(!card||ro())return;
+    function put(t,src,cat){ if(!idpOwnActionAllowed(key))return;t=String(t||'').trim();if(t.length>24){openWeaponSheet({t:t,src:src,cat:cat});return;} if(!t){ gToast('한 가지만 적어 주세요'); return; }
       var picks=wpPicks();
       if(picks.some(function(p){return p.t===t;})){ gToast('이미 있어요'); return; }
       if(picks.length>=WP_MAX){ gToast('무기는 '+WP_MAX+'개까지 — 하나를 먼저 빼 주세요'); return; }
@@ -9914,9 +10004,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +(v.reason?'<div class="vs-reason"><span>이유</span><p>'+esc(v.reason)+'</p></div>':'')
       +'<div class="vs-beh-view"><div class="vs-beh-h"><b>경기에서 보일 행동</b><span>이번에 집중할 행동부터 함께 확인해요</span></div><ol>'
       +v.behaviors.map(function(b){ return '<li class="'+(b.id===v.focusId?'on':'')+'"><i></i><span>'+esc(b.text)+'</span>'+(b.id===v.focusId?'<em>이번에 집중</em>':'')+'</li>'; }).join('')+'</ol></div>'
-      +'<div class="vs-goal"><div><span>12주 목표</span><b>'+(qg?esc(qg.t):'아직 연결하지 않았어요')+'</b>'
-      +(fb&&!qg?'<small>먼저 이어갈 행동 · '+esc(fb.text)+'</small>':'')+'</div>'
-      +(can?'<button type="button" data-vs-goal>'+(qg?'확인·고치기':'목표로 이어가기')+' ›</button>':'')+'</div>';
+      +(qg?(can?'<div class="vs-goal vs-goal-linked"><button type="button" data-vs-goal>연결된 목표 보기 ›</button></div>':''):'<div class="vs-goal"><div><span>12주 목표</span><b>아직 연결하지 않았어요</b>'+(fb?'<small>먼저 이어갈 행동 · '+esc(fb.text)+'</small>':'')+'</div>'+(can?'<button type="button" data-vs-goal>목표로 이어가기 ›</button>':'')+'</div>');
     try{ h+=rReact(visionReactKey(v),'내 방향을 봤어요'); }catch(_){}
     if(v.history.length){
       h+='<details class="vs-history"><summary>이전 방향 '+v.history.length+'개</summary><div>'
@@ -10261,46 +10349,32 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      리포트의 '내 무기' 빈 칸도 "목표 탭에서 내 무기를 고르면 여기에" 라고 안내하는데,
      그 자리(`rWeapon`)도 2.412 이후 **호출부가 0** 이다(실측). 죽은 문이 하나 더 있었다.
      저장 자리·모양은 그대로 `doc.weapon.picks = [{t,src,cat,at}]` — 후보도 같은 `wpCands()`. */
-  function openWeaponSheet(){
+  function openWeaponSheet(selected){
     if(ro())return;
-    var picks=wpPicks(), have={}; picks.forEach(function(p){have[p.t]=1;});
-    var cands=wpCands().filter(function(c){return !have[c.t];});
-    var full=picks.length>=WP_MAX;
-    var h='<h2 style="margin:0 0 3px;font-size:16px">내 무기</h2>'
-      +'<div style="font-size:12px;color:var(--text-3);margin-bottom:12px;line-height:1.55">잘하는 것 위에 과제를 얹어야 오래 갑니다. <b>내가 이미 잘하는 것</b> 하나만 정해 두세요 — 잘 안 풀리는 날 돌아올 자리가 됩니다. 최대 '+WP_MAX+'개.</div>';
-    if(picks.length){
-      h+='<div class="gs-cat">정한 것</div><div class="wp-picks" style="margin-bottom:12px">'
-        +picks.map(function(p,i){ return '<span class="wp-pick"><b>'+esc(p.t)+'</b><i>'+esc(WP_SRC[p.src]||WP_SRC.me)+(p.cat?' · '+esc(p.cat):'')+'</i><button type="button" class="x" data-ws-del="'+i+'" title="빼기">×</button></span>'; }).join('')+'</div>';
-    }
+    var key=viewing,picks=wpPicks(),have={};picks.forEach(function(p){have[p.t]=1;});
+    var cands=wpCands().filter(function(c){return !have[c.t];}),full=picks.length>=WP_MAX;
+    var h='<h2 style="margin:0 0 3px;font-size:16px">내 무기</h2><p class="wp-intro">내 장점에서 고르거나 직접 적어요. 최대 '+WP_MAX+'개.</p>';
+    if(picks.length)h+='<div class="gs-cat">정한 것</div><div class="wp-picks">'+picks.map(function(p,i){return '<span class="wp-pick"><b>'+esc(p.t)+'</b><i>'+esc(WP_SRC[p.src]||WP_SRC.me)+(p.cat?' · '+esc(p.cat):'')+'</i><button type="button" class="x" data-ws-del="'+i+'" title="빼기">×</button></span>';}).join('')+'</div>';
     if(!full){
-      if(cands.length){
-        h+='<div class="gs-cat">후보 <i style="font-style:normal;opacity:.7">내 평가 · 코치 리뷰 · 목표에서 모았어요</i></div>'
-          +'<div class="wp-cand" style="margin-bottom:12px">'
-          +cands.slice(0,10).map(function(c){ return '<button type="button" class="wp-cb" data-ws-add="'+esc(c.t)+'" data-ws-src="'+esc(c.src)+'" data-ws-cat="'+esc(c.cat)+'">'+esc(c.t)+' <em>'+esc(WP_SRC[c.src])+'</em></button>'; }).join('')+'</div>';
-      }
-      h+='<div class="gs-cat">직접 적기</div><div class="fld"><input id="wsIn" maxlength="24" placeholder="예: 좁은 곳에서 안 뺏기기" autocomplete="off"></div>'
-        +(cands.length?'':'<div style="font-size:11px;color:var(--text-3);margin:-4px 0 0;line-height:1.5">나를 평가하거나 코치 리뷰를 받으면 후보가 자동으로 생겨요.</div>');
-    } else {
-      h+='<div style="font-size:12px;color:var(--text-3);line-height:1.55">'+WP_MAX+'개를 다 정했어요 — 바꾸려면 하나를 먼저 빼 주세요.</div>';
-    }
-    h+='<div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" id="wsClose" style="flex:1">닫기</button>'
-      +(full?'':'<button class="btn primary" id="wsSave" style="flex:1">정하기</button>')+'</div>';
-    gbox.innerHTML=h; gmask.classList.add('on');
-    function put(t,src,cat){ t=String(t||'').trim().slice(0,24); if(!t){ gToast('한 가지만 적어 주세요'); return; }
-      var ps=wpPicks();
-      if(ps.some(function(p){return p.t===t;})){ gToast('이미 있어요'); return; }
-      if(ps.length>=WP_MAX){ gToast('무기는 '+WP_MAX+'개까지 — 하나를 먼저 빼 주세요'); return; }
-      ps.push({t:t,src:src||'me',cat:cat||'',at:Date.now()});
-      doc.weapon={picks:ps,at:Date.now()}; save(); try{ psAct('a_weapon'); }catch(_){}
-      gToast('내 무기 — '+t); render(); openWeaponSheet(); }
-    [].forEach.call(gbox.querySelectorAll('[data-ws-add]'),function(b){ b.onclick=function(){ put(b.dataset.wsAdd,b.dataset.wsSrc,b.dataset.wsCat); }; });
-    [].forEach.call(gbox.querySelectorAll('[data-ws-del]'),function(b){ b.onclick=function(){ var i=+b.dataset.wsDel, ps=wpPicks();
-      if(!ps[i])return; ps.splice(i,1); doc.weapon={picks:ps,at:Date.now()}; save(); render(); openWeaponSheet(); }; });
-    var inp=gbox.querySelector('#wsIn'), sv=gbox.querySelector('#wsSave');
-    if(sv)sv.onclick=function(){ put(inp?inp.value:'','me',''); };
-    if(inp)inp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); put(inp.value,'me',''); } });
-    gbox.querySelector('#wsClose').onclick=function(){ gmask.classList.remove('on'); };
-    setTimeout(function(){ try{ if(inp)inp.focus(); }catch(_){} },50);
+      if(cands.length)h+='<div class="gs-cat">후보</div><div class="wp-cand">'+cands.map(function(c){return '<button type="button" class="wp-cb" data-ws-add="'+esc(c.t)+'" data-ws-src="'+esc(c.src)+'" data-ws-cat="'+esc(c.cat)+'">'+esc(c.t)+' <em>'+esc(c.fromStrength?'내 장점':WP_SRC[c.src])+'</em></button>';}).join('')+'</div>';
+      h+='<div class="wp-source" id="wsSource" hidden><span>고른 문장</span><p></p></div><label class="gs-cat" for="wsIn">내 무기로 부를 짧은 이름</label>'
+        +'<div class="fld"><input id="wsIn" maxlength="24" placeholder="예: 좁은 곳에서 안 뺏기기" autocomplete="off" aria-describedby="wsCount"></div><div class="wp-count" id="wsCount">24자까지 적을 수 있어요.</div>';
+    }else h+='<p class="wp-intro">'+WP_MAX+'개를 다 정했어요. 바꾸려면 하나를 먼저 빼 주세요.</p>';
+    h+='<div class="wp-actions"><button class="btn ghost" id="wsClose">닫기</button>'+(full?'':'<button class="btn primary" id="wsSave">정하기</button>')+'</div>';
+    gbox.innerHTML=h;gmask.classList.add('on');
+    var inp=gbox.querySelector('#wsIn'),sv=gbox.querySelector('#wsSave'),chosen=null;
+    function count(){if(!inp||!sv)return;var n=inp.value.trim().length;sv.disabled=!n||n>24;gbox.querySelector('#wsCount').textContent=n>24?n+'자 · 24자 이하로 줄여 주세요. 원래 장점은 그대로 남아요.':n+'/24자';}
+    function choose(c){chosen=c;var source=gbox.querySelector('#wsSource');source.hidden=false;source.querySelector('p').textContent=c.t;inp.value=c.t;count();inp.focus();inp.setSelectionRange(0,inp.value.length);}
+    function put(t,src,cat){if(!idpOwnActionAllowed(key))return;t=String(t||'').trim();if(!t||t.length>24){count();if(inp)inp.focus();return;}
+      var ps=wpPicks();if(ps.some(function(p){return p.t===t;})){gToast('이미 있어요');return;}if(ps.length>=WP_MAX){gToast('무기는 '+WP_MAX+'개까지예요.');return;}
+      ps.push({t:t,src:src||'me',cat:cat||'',at:Date.now()});doc.weapon={picks:ps,at:Date.now()};
+      if(!persistMyIdpNow())return;psAct('a_weapon');gToast('내 무기 — '+t);render();openWeaponSheet();}
+    [].forEach.call(gbox.querySelectorAll('[data-ws-add]'),function(b){b.onclick=function(){var c={t:b.dataset.wsAdd,src:b.dataset.wsSrc,cat:b.dataset.wsCat};if(c.t.length>24)choose(c);else put(c.t,c.src,c.cat);};});
+    [].forEach.call(gbox.querySelectorAll('[data-ws-del]'),function(b){b.onclick=function(){if(!idpOwnActionAllowed(key))return;var ps=wpPicks(),i=+b.dataset.wsDel;if(!ps[i])return;ps.splice(i,1);doc.weapon={picks:ps,at:Date.now()};if(!persistMyIdpNow())return;render();openWeaponSheet();};});
+    if(sv)sv.onclick=function(){put(inp.value,chosen&&chosen.src,chosen&&chosen.cat);};
+    if(inp){inp.oninput=count;inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.preventDefault();if(!sv.disabled)sv.click();}});count();}
+    gbox.querySelector('#wsClose').onclick=function(){gmask.classList.remove('on');};
+    if(selected&&inp)choose(selected);
   }
   function openSeasonSheet(){
     var cur=(doc.goal&&doc.goal.season&&doc.goal.season.start)||'';
@@ -10854,7 +10928,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      6주 점검: cs_idp_pub_v1_<uid>.mid[분기 시작 ymd]={c:'keep'|'step'|'change',t,by,at} — 답은 셋, 기본 «계속».
        선수에게는 한 줄(t)이 있을 때만 reacts['mid:시작']={t,c} 로 오늘 카드 맨 위(«6주째 점검»)에 도착한다. «바꾸기»만 분기 면담 안건.
      분기 면담: cs_idp_pub_v1_<uid>.qmeet[]={id,ts,at,by,q(계절),start,focuses[],hearts[],gaps[],mid,outside,strengths,nextArea,promise,firstFocus}
-       — KNVB 5단계(도입·축구 밖·강점/개선점 함께·약속·서면). 서면 = 저장 그대로 선수 «기록 흐름» 카드. 약속은 선수가 «다음 분기 시작»을 눌러 doc.qgoal 이 된다(선수 소유).
+       — KNVB 5단계(도입·축구 밖·강점/개선점 함께·약속·서면). 서면 = 저장 그대로 선수 «이야기» 카드. 약속은 선수가 «다음 분기 시작»을 눌러 doc.qgoal 이 된다(선수 소유).
      근거: 영국 PL Rules 6주 리뷰·«상호 합의된 목표» · J리그 IDP 6주 · FIFA 나선형(«수정·반복») · KNVB voortgangsgesprek · FIFA 시드니 FC 질문 둘. */
   function pubSetAt(kk,field,key,patch){ if(!kk||!field||!key)return false;
     var r=null; try{ r=JSON.parse(localStorage.getItem(kk)||'null')||{}; }catch(_){ r={}; }
@@ -10880,21 +10954,23 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }catch(_){ return false; }
     return reactSetAt(coachFeedbackKey(viewing),k,patch);
   }
-  function rReact(k,label){ var coachMode=ro()&&isCoach(), me=!ro(), rc=reactOf(k);
+  function rReact(k,label,controlsOnly){ var coachMode=ro()&&isCoach(), me=!ro(), rc=reactOf(k);
     if(coachMode){ return '<div class="rx-row coach"><button type="button" class="rx-h'+(rc&&rc.h?' on':'')+'" data-rx-h="'+esc(k)+'" title="좋아요">'+(rc&&rc.h?'❤':'♡')+'</button>'
-      +(rc&&rc.t&&window.__rxEdit!==k?'<span class="rx-t" data-rx-edit="'+esc(k)+'">'+esc(rc.t)+'</span>':'<input class="rx-in" data-rx-in="'+esc(k)+'" maxlength="300" value="'+esc((rc&&rc.t)||'')+'" placeholder="한 줄 (선택)"><button type="button" class="rx-save" data-rx-save="'+esc(k)+'">✓</button>')+'</div>'; }
+      +(rc&&rc.t&&window.__rxEdit!==k?'<span class="rx-t" data-rx-edit="'+esc(k)+'">'+(controlsOnly?'답글 수정':esc(rc.t))+'</span>':'<input class="rx-in" data-rx-in="'+esc(k)+'" maxlength="300" value="'+esc((rc&&rc.t)||'')+'" placeholder="한 줄 (선택)"><button type="button" class="rx-save" data-rx-save="'+esc(k)+'">✓</button>')+'</div>'; }
+    if(controlsOnly)return '';
     var hasT=!!(rc&&String(rc.t||'').trim()); if(!rc||(!rc.h&&!hasT))return '';
     var by=hasT?(rc.tBy||rc.by||'코치'):(rc.hBy||rc.by||'코치');
     return '<div class="rx-row me"><i>'+(rc.h?'❤':'')+'</i><b>'+esc(by)+'</b>'+(hasT?'<span>'+esc(rc.t)+'</span>':'<span class="rx-seen">'+(label||'봤어요')+'</span>')+'</div>'; }
   function bindReacts(){ if(!(ro()&&isCoach()))return;
-    [].forEach.call(wrap.querySelectorAll('[data-rx-h]'),function(b){ b.onclick=function(){ var k=b.dataset.rxH, rc=reactOf(k); if(!reactSet(k,{h:rc&&rc.h?0:1}))return; if(!(rc&&rc.h))gToast('선수 화면에 ❤ 로 보여요'); render(); }; });
-    var sv=function(k){ var i=wrap.querySelector('[data-rx-in="'+k+'"]'); if(!i)return; if(!reactSet(k,{t:i.value.trim().slice(0,300)}))return;   /* 2.513 — 80자에서 멈추던 것(사용자 "써지다가 안써지는데 많이 써지게") */ window.__rxEdit=null; render(); };
+    var storyKey=curL==='story'?viewing:'';function allowed(){return !storyKey||(viewing===storyKey&&storyCoachTarget(storyKey));}
+    [].forEach.call(wrap.querySelectorAll('[data-rx-h]'),function(b){ b.onclick=function(){ if(!allowed())return;var k=b.dataset.rxH, rc=reactOf(k); if(!reactSet(k,{h:rc&&rc.h?0:1}))return; if(!(rc&&rc.h))gToast('선수 화면에 ❤ 로 보여요'); render(); }; });
+    var sv=function(k){ if(!allowed())return;var i=wrap.querySelector('[data-rx-in="'+k+'"]'); if(!i)return; if(!reactSet(k,{t:i.value.trim().slice(0,300)}))return;   /* 2.513 — 80자에서 멈추던 것(사용자 "써지다가 안써지는데 많이 써지게") */ window.__rxEdit=null; render(); };
     [].forEach.call(wrap.querySelectorAll('[data-rx-save]'),function(b){ b.onclick=function(){ sv(b.dataset.rxSave); }; });
     [].forEach.call(wrap.querySelectorAll('[data-rx-in]'),function(i){
       i.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); sv(i.dataset.rxIn); } });
       /* 2.513 — 칸을 벗어나면 저장한다(선수단 표의 한마디와 같은 문법). 전에는 Enter·✓ 만이라
          쓰다가 다른 곳을 누르면 통째로 사라졌다 — '써지다가 안 써진다'의 진짜 얼굴. */
-      i.addEventListener('blur',function(){ try{ var k=i.dataset.rxIn, v=String(i.value||'').trim();
+      i.addEventListener('blur',function(){ if(!allowed())return;try{ var k=i.dataset.rxIn, v=String(i.value||'').trim();
         var was=String((reactOf(k)||{}).t||''); if(v===was)return; reactSet(k,{t:v.slice(0,300)}); }catch(_){} });
     });
     [].forEach.call(wrap.querySelectorAll('[data-rx-edit]'),function(t){ t.onclick=function(){ window.__rxEdit=t.dataset.rxEdit; render(); }; }); }
@@ -11138,7 +11214,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(!isFinite(ts)||ts<0)ts=0;
       if(!ts&&md){ ts=new Date(md+'T12:00:00').getTime(); if(!isFinite(ts))ts=0; }
       var d=ts?ymd(new Date(ts)):md;
-      out.push({k:'match',who:'coach',d:d,ts:ts,m:m,mr:{good:good,improve:improve,action:action,score:score,updatedAt:r.updatedAt,updatedBy:r.updatedBy},by:String(r.updatedBy||'코치')});
+      out.push({k:'match',id:id,who:'coach',d:d,ts:ts,m:m,mr:{good:good,improve:improve,action:action,score:score,updatedAt:r.updatedAt,updatedBy:r.updatedBy},by:String(r.updatedBy||'코치')});
     }); }catch(_){}
     /* 2.468 — 내 경기 리뷰(matchSelf)도 같은 성장 기록이다(3판). 코치 공개 리뷰(k:'match')와
        한 흐름에서 나란히 — 같은 경기의 두 시선이 시간순으로 만난다. */
@@ -11148,7 +11224,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         if(!tried&&!good&&!better)return;
         var m0=_byM[id]||{}, md=/^\d{4}-\d{2}-\d{2}$/.test(String(m0.date||''))?String(m0.date):'';
         var ts=+r.at||0; if(!ts&&md){ ts=new Date(md+'T20:00:00').getTime(); } if(!isFinite(ts))ts=0;
-        out.push({k:'mself',who:'me',d:ts?ymd(new Date(ts)):md,ts:ts,ms:{tried:tried,good:good,better:better,score:mtSc5(r.score)},mm2:m0});
+        out.push({k:'mself',id:id,who:'me',d:ts?ymd(new Date(ts)):md,ts:ts,ms:{tried:tried,good:good,better:better,score:mtSc5(r.score)},mm2:m0});
       }); }catch(_){}
     /* 선수 셀프평가(제출 이력) */
     try{ ((doc.selfEval&&doc.selfEval.hist)||[]).slice(-12).forEach(function(e){ out.push({k:'self',who:'me',d:e.d,ts:new Date(e.d+'T09:00:00').getTime(),e:e}); }); }catch(_){}
@@ -11164,7 +11240,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     out.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
     return out;
   }
-  var _thAll=false, _thReplyOpen=null;
+  var _thReplyOpen=null;
   /* ══ 2.408 · 성장 대화 = **팀 공통 질문에 답하는 자리** ═══════════════════════════
      사용자: "코치가 전체 선수들에게 공통 질문을 주면 써 볼 수 있는 페이지 — 대회 끝나고 느낀 점".
      ⚠ 질문은 **팀 것**(scout_tool_v1.meta.prompts → 공개 미러 cs_team_attrs_v1.prompts),
@@ -11209,10 +11285,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var a=myAnswer(x.id), t=(a&&a.t)||'', n=t.length, isOpen=!!x.open, mine=!ro();
     var h='<section class="card qa-card qa-writing">'
       +'<div class="qa-back"><button type="button" data-qa-back>‹ 질문 목록</button>'
-      +'<span class="qa-count"><b>'+n.toLocaleString()+'</b>자 · A4 '+ (n/QA_PAGE).toFixed(1) +'쪽</span></div>'
+      +'<span class="qa-count"><b>'+n.toLocaleString()+'</b>자</span></div>'
       +'<div class="qa-qhead"><i>'+(isOpen?'묻는 중':'지난 질문')+'</i><b>'+esc(x.q)+'</b>'
       +'<small>'+esc(x.by||'코치')+' · '+esc(rvFmt(x.at))+'</small></div>'
-      +'<div class="qa-gauge"><i style="width:'+qaFill(n)+'%"></i></div>';
+      ;
     if(mine){
       h+='<div class="qa-paper"><textarea class="qa-sheet" data-qa-ans="'+esc(x.id)+'" maxlength="4000"'
         +(isOpen?'':' disabled')+' placeholder="천천히 고민해 보고 적어 주세요."'
@@ -11258,7 +11334,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +'<span class="qa-q"><i>'+(isOpen?'묻는 중':'지난 질문')+'</i><b>'+esc(x.q)+'</b>'
         +'<small>'+esc(x.by||'코치')+' · '+esc(rvFmt(x.at))+'</small></span>'
         +'<span class="qa-st'+(n?' done':'')+'">'+(mine
-            ? (n?'<b>'+n.toLocaleString()+'자</b><i>A4 '+(n/QA_PAGE).toFixed(1)+'쪽</i>':'<b>아직</b><i>안 적음</i>')
+            ? (n?'<b>'+n.toLocaleString()+'자</b><i>답함</i>':'<b>아직</b><i>안 적음</i>')
             : (n?'<b>'+n.toLocaleString()+'자</b><i>적음</i>':'<b>–</b><i>안 적음</i>'))
         +'</span><span class="qa-go">›</span></button>';
       if(coach&&!ro()&&isOpen)g+='<div class="qa-actions"><button type="button" data-qa-close="'+esc(x.id)+'">받기 끝내기</button></div>';
@@ -11304,22 +11380,15 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       /* 글자 수·채움 눈금은 **다시 그리지 않고** 그 자리만 고친다(칸을 잃지 않게) */
       t.oninput=function(){
         var n=t.value.length;
-        try{ var c=wrap.querySelector('.qa-count'); if(c)c.innerHTML='<b>'+n.toLocaleString()+'</b>자 · A4 '+(n/QA_PAGE).toFixed(1)+'쪽'; }catch(_){}
-        try{ var g=wrap.querySelector('.qa-gauge i'); if(g)g.style.width=qaFill(n)+'%'; }catch(_){}
+        try{ var c=wrap.querySelector('.qa-count'); if(c)c.innerHTML='<b>'+n.toLocaleString()+'</b>자'; }catch(_){}
         try{ var sb=wrap.querySelector('[data-qa-send]'); if(sb)sb.disabled=!t.value.trim(); }catch(_){}
       };
     });
   }
-  function rThread(){
-    var items=thItems(), coachMode=ro()&&isCoach(), me=!ro();
-    var name=(doc.profile&&doc.profile.name)||'선수', cname=lrCoachName();
-    /* ⚠ 2.408 — 이 카드는 '성장 대화'라는 이름을 새 질문·답 카드에 넘겼다. 하는 일은 **기록이 쌓인 흐름**이라
-       이름을 그대로 두면 한 화면에 같은 이름이 둘이 되어 어느 쪽이 대화인지 알 수 없다. */
-    var h='<section class="card th-card"><div class="td-top"><b>기록 흐름</b><span>셀프평가·리뷰가 쌓인 순서</span><span class="sp"></span><span class="td-pill">'+items.length+'</span></div>';
-    if(!items.length){ h+='<div class="td-q-empty">아직 비어 있어요 — 셀프평가·주간 회고를 쓰면 여기부터 쌓이고, 코치의 성장·경기 리뷰가 오면 대화가 시작돼요.</div></section>'; return h; }
-    var show=_thAll?items:items.slice(0,8);
-    h+='<div class="th-list">';
-    show.forEach(function(it){
+  /* Story owns chronological reading and the former profile timeline's actions. */
+  function stRichBody(it,opts){
+    opts=opts||{};
+    var coachMode=ro()&&isCoach(),me=!ro(),name=(doc.profile&&doc.profile.name)||'선수',cname=lrCoachName();
       var isCoachItem=it.who==='coach';
       var body='', title='';
       if(it.k==='review'){ var r=it.r; title='성장 리뷰 <small>'+(r.weeks||6)+'주</small>';
@@ -11357,7 +11426,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         if(me&&qm.promise){ var _started=!!(doc.qgoal&&doc.qgoal.fromMeet===qm.id)||(doc.qgoalHist||[]).some(function(x){return x&&x.fromMeet===qm.id;});
           body+=_started?'<div class="th-meta">이 약속으로 분기를 시작했어요 ✓</div>':'<button type="button" class="th-replybtn" data-th-qstart="'+esc(qm.id)+'">이 약속으로 다음 분기 시작하기 ›</button>'; } }
       else if(it.k==='weekly'){ var w=it.w; title='이번 주 2분 <small>'+rvFmt(it.mon)+'~</small>';
-        body=(w.good?'<div class="th-row"><i class="ok">✔</i><span>'+esc(w.good)+'</span></div>':'')+(w.better?'<div class="th-row"><i class="dev">↗</i><span>'+esc(w.better)+'</span></div>':'')+rReact('wk:'+it.mon,'회고 봤어요'); }
+        body=(w.good?'<div class="th-row"><i class="ok">✔</i><span>'+esc(w.good)+'</span></div>':'')+(w.better?'<div class="th-row"><i class="dev">↗</i><span>'+esc(w.better)+'</span></div>':'')+(opts.squadUid?'':rReact('wk:'+it.mon,'회고 봤어요',true)); }
       else if(it.k==='match'){ var mr=it.mr||{}, m=it.m||{}, score=(+mr.score>0?Math.min(10,+mr.score):0);
         var meta=[]; if(/^\d{4}-\d{2}-\d{2}$/.test(String(m.date||'')))meta.push(rvFmt(m.date)); if(m.opponent)meta.push('vs '+esc(m.opponent)); title='경기 리뷰'+(meta.length?'<small>'+meta.join(' · ')+'</small>':'');
         body=(score?'<div class="th-row"><i>평점</i><span><strong>'+score+'</strong> / 10</span></div>':'')
@@ -11375,34 +11444,29 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         title='키우고 싶은 것 제안'; body='<div class="th-row"><i>제안</i><span>'+esc(it.p.t)+((rcp&&rcp.h)?' <em class="th-hrt">❤</em>':'')+'</span></div>'; }
       else if(it.k==='qgoal'){ var q=it.q; title=it.closed?'분기 목표 마무리':'분기 목표 시작 <small>12주</small>';
         body=(q.theme?'<div class="th-row"><i>테마</i><span>'+esc(q.theme)+'</span></div>':'')+((q.goals||[]).filter(function(g){return g.t;}).length?'<div class="th-row"><i>목표</i><span>'+q.goals.filter(function(g){return g.t;}).map(function(g,i){var od=((g.owner&&g.owner!=='player')||g.due)?' <small>'+(g.owner==='coach'?'코치':(g.owner==='both'?'함께':'선수'))+(g.due?' · '+esc(rvFmt(g.due)):'')+'</small>':'';return '<b>'+(i+1)+'</b> '+esc(g.t)+od;}).join('<br>')+'</span></div>':'');   /* 2.253 — 담당·기한 */ }
-      h+='<div class="th-it '+(isCoachItem?'coach':'me')+'"><div class="th-who"><span class="th-av">'+(isCoachItem?'C':esc(name.charAt(0)||'P'))+'</span></div>'
-        +'<div class="th-bd"><div class="th-h"><b>'+(isCoachItem?esc(it.by||(it.r&&it.r.by)||(it.fb&&it.fb.updatedBy)||cname):esc(name))+'</b><span>'+title+'</span><small>'+(it.d?rvFmt(it.d):'')+'</small></div>'+body+'</div></div>';
-    });
-    h+='</div>';
-    if(items.length>8&&!_thAll)h+='<button type="button" class="qg-add" data-th-more>지난 대화 '+(items.length-8)+'개 더 보기</button>';
-    h+='</section>'; return h;
+    return body;
   }
   /* ══ 2.766 · 이야기 — 코치와 나 사이의 말을 한 스레드로(목업 «IDP 이야기 탭과 12주 기록») ═══════════════
      실측: 오가는 글이 스무 채널(일지 답글·♥, 주간 회고 답글, 초점 제안 둘, 6주 점검, 내 방향 질문, 경기 전 메시지·경기 리뷰·자기 리뷰,
      성장 피드백·리뷰·면담과 그 답, 공통질문 답, 한 마디)로 다섯 탭에 흩어져 있었다. 기록 흐름(thItems)에 빠진 여덟을 더해 시간순 한 줄기로.
      읽기만 — 저장 자료는 손대지 않고, 말풍선을 누르면 원래 자리로 간다. 팀 공지는 나에게 온 말이 아니라 넣지 않는다. 답 보내기는 다음 판. */
-  var _stAll=false;
+  var _stAll=false,_stAllKey='';
   function stItems(){
     var out=[]; try{ out=thItems().slice(); }catch(_){}
     var today=new Date(); today.setHours(0,0,0,0); var since=addDays(today,-84);
     try{ Object.keys(doc.log||{}).forEach(function(k){ var l=doc.log[k]||{}; var t=String(l.memo||'').trim(); if(!t)return; var d=new Date(k+'T12:00:00'); if(!(d>=since))return; out.push({k:'memo',who:'me',d:k,ts:d.getTime()+1,text:t,src:'일지 한 마디',go:'cal:'+k}); }); }catch(_){}
     try{ var R=reactsAll(); Object.keys(R).forEach(function(key){ var r=R[key]||{}; var t=String(r.t||'').trim(), h=!!r.h; if(!t&&!h)return; var ts=+(r.tAt||r.hAt||r.at)||0, by=r.tBy||r.hBy||r.by||'', m;
-      if((m=/^day:(\d{4}-\d{2}-\d{2})$/.exec(key))){ if(!ts)ts=new Date(m[1]+'T18:00:00').getTime(); out.push({k:'react',who:'coach',d:m[1],ts:ts,text:t,h:h,src:'일지 답글',go:'cal:'+m[1],by:by}); }
-      else if((m=/^wk:(\d{4}-\d{2}-\d{2})$/.exec(key))){ var sun=addDays(new Date(m[1]+'T12:00:00'),6); if(!ts)ts=sun.getTime()+1; out.push({k:'react',who:'coach',d:ymd(new Date(ts)),ts:ts,text:t,h:h,src:'주간 회고 답글',go:'cal:'+m[1],by:by}); }
-      else if((m=/^mid:(\d{4}-\d{2}-\d{2})$/.exec(key))){ if(!ts)ts=new Date(m[1]+'T12:00:00').getTime(); var c={keep:'그대로',step:'한 걸음 더',change:'바꾸자'}[r.c]||''; out.push({k:'react',who:'coach',d:ymd(new Date(ts)),ts:ts,text:(c?(c+(t?' — ':'')):'')+t,h:h,src:'6주 점검',go:'goal',by:by}); }
-      else if((m=/^vision:([a-zA-Z0-9_-]+)$/.exec(key))){ var stmt=''; try{ var v=visionOf(doc); if(v.revision===m[1])stmt=v.statement||''; else (v.history||[]).forEach(function(x){ if(x&&x.revision===m[1])stmt=x.statement||''; }); }catch(_){} out.push({k:'react',who:'coach',d:ts?ymd(new Date(ts)):'',ts:ts,text:t,h:h,src:'내 방향에 질문·제안'+(stmt?(' · «'+stmt.slice(0,20)+(stmt.length>20?'…':'')+'»'):''),go:'goal',by:by}); }
+      if((m=/^day:(\d{4}-\d{2}-\d{2})$/.exec(key))){ if(!ts)ts=new Date(m[1]+'T18:00:00').getTime(); out.push({k:'react',id:key,who:'coach',d:ymd(new Date(ts)),ts:ts,text:t,h:h,src:'일지 답글',go:'cal:'+m[1],by:by}); }
+      else if((m=/^wk:(\d{4}-\d{2}-\d{2})$/.exec(key))){ var sun=addDays(new Date(m[1]+'T12:00:00'),6); if(!ts)ts=sun.getTime()+1; out.push({k:'react',id:key,who:'coach',d:ymd(new Date(ts)),ts:ts,text:t,h:h,src:'주간 회고 답글',go:'cal:'+m[1],by:by}); }
+      else if((m=/^mid:(\d{4}-\d{2}-\d{2})$/.exec(key))){ if(!ts)ts=new Date(m[1]+'T12:00:00').getTime(); var c={keep:'그대로',step:'한 걸음 더',change:'바꾸자'}[r.c]||''; out.push({k:'react',id:key,who:'coach',d:ymd(new Date(ts)),ts:ts,text:(c?(c+(t?' — ':'')):'')+t,h:h,src:'6주 점검',go:'goal',by:by}); }
+      else if((m=/^vision:([a-zA-Z0-9_-]+)$/.exec(key))){ var stmt=''; try{ var v=visionOf(doc); if(v.revision===m[1])stmt=v.statement||''; else (v.history||[]).forEach(function(x){ if(x&&x.revision===m[1])stmt=x.statement||''; }); }catch(_){} out.push({k:'react',id:key,who:'coach',d:ts?ymd(new Date(ts)):'',ts:ts,text:t,h:h,src:'내 방향에 질문·제안'+(stmt?(' · «'+stmt.slice(0,20)+(stmt.length>20?'…':'')+'»'):''),go:'goal',by:by}); }
     }); }catch(_){}
     try{ var P=propsAll(); Object.keys(P).forEach(function(wk){ var pr=P[wk]||{}; if(!pr.a&&!pr.b)return; var ts=+pr.at||new Date(wk+'T09:00:00').getTime(); var pick=null; try{ var f=focusOf(wk); if(f&&/^pick-/.test(String(f.from||'')))pick=f; }catch(_){} out.push({k:'props',who:'coach',d:ymd(new Date(ts)),ts:ts,p:pr,wk:wk,pick:pick,src:'다음 주 초점 제안',go:'cal:'+wk,by:pr.by||''}); }); }catch(_){}
-    try{ var mm=rvRec(viewing).matchMessages||{}; if(mm&&typeof mm==='object'&&!Array.isArray(mm))Object.keys(mm).forEach(function(id){ var m=mm[id], pr=m&&m.prep; if(!pr||typeof pr!=='object')return; var msg=String(pr.message||'').trim(), mark=String(pr.mark||'').trim(); if(!msg&&!mark)return; var ts=+(pr.updatedAt||m.updatedAt)||0; var md=/^\d{4}-\d{2}-\d{2}$/.test(String(m.date||''))?String(m.date):''; if(!ts&&md)ts=new Date(md+'T09:00:00').getTime(); out.push({k:'prep',who:'coach',d:ts?ymd(new Date(ts)):md,ts:ts,text:msg,mark:mark,src:'경기 전'+(m.opponent?(' · vs '+m.opponent):''),go:'match',by:pr.updatedBy||''}); }); }catch(_){}
-    try{ var Q=tmPrompts()||[], A=doc.answers||{}; Object.keys(A).forEach(function(qid){ var a=A[qid]||{}; var t=String(a.t||'').trim(); if(!t)return; var q=null; try{ q=Q.filter(function(x){return x&&x.id===qid;})[0]||null; }catch(_){} var ts=+a.at||0; out.push({k:'qa',who:'me',d:ts?ymd(new Date(ts)):'',ts:ts,text:t,q:(q&&q.q)||'',src:'공통질문 답',go:'cal'}); }); }catch(_){}
+    try{ var mm=rvRec(viewing).matchMessages||{}; if(mm&&typeof mm==='object'&&!Array.isArray(mm))Object.keys(mm).forEach(function(id){ var m=mm[id], pr=m&&m.prep; if(!pr||typeof pr!=='object')return; var msg=String(pr.message||'').trim(), mark=String(pr.mark||'').trim(); if(!msg&&!mark)return; var ts=+(pr.updatedAt||m.updatedAt)||0; var md=/^\d{4}-\d{2}-\d{2}$/.test(String(m.date||''))?String(m.date):''; if(!ts&&md)ts=new Date(md+'T09:00:00').getTime(); out.push({k:'prep',id:id,who:'coach',d:ts?ymd(new Date(ts)):md,ts:ts,text:msg,mark:mark,src:'경기 전'+(m.opponent?(' · vs '+m.opponent):''),go:'match',by:pr.updatedBy||''}); }); }catch(_){}
+    try{ var Q=tmPrompts()||[], A=doc.answers||{}; Object.keys(A).forEach(function(qid){ var a=A[qid]||{}; var t=String(a.t||'').trim(); if(!t)return; var q=null; try{ q=Q.filter(function(x){return x&&x.id===qid;})[0]||null; }catch(_){} var ts=+a.at||0; out.push({k:'qa',id:qid,who:'me',d:ts?ymd(new Date(ts)):'',ts:ts,text:t,q:(q&&q.q)||'',src:'공통질문 답',go:'cal'}); }); }catch(_){}
     /* 2.767 — 한 마디(덧붙이는 목록): 선수 doc.talk[] · 코치 pub.talk[]. 답글(reacts)과 달리 고쳐도 이전 말이 남는다 */
-    try{ (doc.talk||[]).forEach(function(t){ var tx=String((t&&t.text)||'').trim(); if(!tx)return; var ts=+t.at||0; out.push({k:'talk',who:'me',d:ts?ymd(new Date(ts)):'',ts:ts,text:tx,src:'코치에게 한 마디'}); }); }catch(_){}
-    try{ (rvRec(viewing).talk||[]).forEach(function(t){ var tx=String((t&&t.text)||'').trim(); if(!tx)return; var ts=+t.at||0; out.push({k:'talk',who:'coach',d:ts?ymd(new Date(ts)):'',ts:ts,text:tx,src:'한 마디',by:t.by||''}); }); }catch(_){}
+    try{ (doc.talk||[]).forEach(function(t){ var tx=String((t&&t.text)||'').trim(); if(!tx)return; var ts=+t.at||0; out.push({k:'talk',id:t.id,who:'me',d:ts?ymd(new Date(ts)):'',ts:ts,text:tx,src:'코치에게 한 마디'}); }); }catch(_){}
+    try{ (rvRec(viewing).talk||[]).forEach(function(t){ var tx=String((t&&t.text)||'').trim(); if(!tx)return; var ts=+t.at||0; out.push({k:'talk',id:t.id,who:'coach',d:ts?ymd(new Date(ts)):'',ts:ts,text:tx,src:'한 마디',by:t.by||''}); }); }catch(_){}
     out.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
     return out;
   }
@@ -11410,26 +11474,31 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     switch(it.k){
       case 'review': return '성장 리뷰 '+((it.r&&it.r.weeks)||6)+'주';
       case 'feedback': return '성장 피드백';
-      case 'match': return '경기 리뷰'+(it.m&&it.m.opponent?(' · vs '+it.m.opponent):'');
+      case 'match': return '경기 리뷰'+(it.m&&it.m.date?' · '+rvFmt(it.m.date):'')+(it.m&&it.m.opponent?(' · vs '+it.m.opponent):'');
       case 'mself': return '내 경기 리뷰'+(it.mm2&&it.mm2.opponent?(' · vs '+it.mm2.opponent):'');
       case 'self': return '셀프평가';
-      case 'weekly': return '주간 회고';
-      case 'qmeet': return ((it.qm&&it.qm.q)||'분기')+' 면담';
+      case 'weekly': return '주간 회고 · '+rvFmt(it.mon)+'~'+rvFmt(ymd(addDays(new Date(it.mon+'T12:00:00'),6)));
+      case 'qmeet': return ((it.qm&&it.qm.q)||'분기')+' 면담 · 5단계';
       case 'prop': return '키우고 싶은 것 제안';
-      case 'qgoal': return it.closed?'분기 목표 마무리':'분기 목표 시작';
+      case 'qgoal': return it.closed?'분기 목표 마무리':'분기 목표 시작 · 12주';
       default: return it.src||'';
     }
   }
   function stGo(it){
     switch(it.k){
-      case 'review': case 'self': case 'qmeet': return 'profile';
+      case 'review': case 'self': return 'profile';
+      case 'qmeet': return '';
+      case 'qa': return 'qa:'+it.id;
       case 'feedback': case 'prop': case 'qgoal': return 'goal';
       case 'match': case 'mself': return 'match';
       case 'weekly': return 'cal:'+(it.mon||'');
       default: return it.go||'';
     }
   }
-  function stBody(it){
+  function stBody(it,opts){
+    opts=opts||{};
+    if(it.k==='record')return rSqStoryRecord(it.record,opts.squadUid);
+    if(['review','feedback','self','qmeet','weekly','match','mself','prop','qgoal'].indexOf(it.k)>=0)return stRichBody(it,opts);
     var E=esc, q=function(l){ return '<span class="q">'+E(l)+'</span>'; };
     switch(it.k){
       case 'memo': case 'qa': return (it.q?q(it.q):'')+E(it.text);
@@ -11437,15 +11506,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       case 'props': { var p=it.p, pk=it.pick, on=function(w){ return pk&&pk.from==='pick-'+w; };
         return '이번 주는 둘 중 하나<div class="pk">'+(p.a?'<span class="'+(on('a')?'on':'')+'">'+E(p.a)+(p.ra?' <small>'+E(p.ra)+'</small>':'')+'</span>':'')+(p.b?'<span class="'+(on('b')?'on':'')+'">'+E(p.b)+(p.rb?' <small>'+E(p.rb)+'</small>':'')+'</span>':'')+'</div>'+(pk?'<small class="st-pick">내가 고름 · '+E(pk.text||'')+'</small>':''); }
       case 'prep': return (it.text?E(it.text):'')+(it.mark?(it.text?'<br>':'')+'담당 <b>'+E(it.mark)+'</b>':'');
-      case 'review': { var r=it.r||{}; return (r.strengths&&r.strengths.length?q('강점')+E(r.strengths.join(' · ')):'')+(r.develop&&r.develop.length?q('발전')+E(r.develop.join(' · ')):'')+(r.goals&&r.goals.length?q('목표')+E(r.goals.filter(function(g){return g&&g.t;}).map(function(g){return g.t;}).join(' · ')):'')+(r.note?q('메모')+E(r.note):''); }
-      case 'feedback': { var fb=it.fb||{}; return [['잘하고 있는 점',fb.praise],['더 발전시킬 점',fb.focus],['코치의 질문',fb.question],['다음 행동',fb.nextAction]].filter(function(x){return x[1];}).map(function(x){return q(x[0])+E(x[1]);}).join(''); }
-      case 'match': { var mr=it.mr||{}; return (mr.score?q('평점 '+mr.score+'/10'):'')+(mr.good?q('잘된 점')+E(mr.good):'')+(mr.improve?q('개선할 점')+E(mr.improve):'')+(mr.action?q('메모')+E(mr.action):''); }
-      case 'mself': { var ms=it.ms||{}; return (ms.tried?q('시도')+E(ms.tried):'')+(ms.good?q('잘 된 장면')+E(ms.good):'')+(ms.better?q('다음엔')+E(ms.better):''); }
-      case 'self': { var e=it.e||{}; return q('평균')+E(String(e.o||''))+' / 5'; }
-      case 'weekly': { var w=it.w||{}; return (w.good?q('잘된 것')+E(w.good):'')+(w.better?q('더 할 것')+E(w.better):''); }
-      case 'qmeet': { var qm=it.qm||{}; return (qm.promise?q('약속')+E(qm.promise):'')+(qm.nextArea?q('다음')+E(qm.nextArea):'')+(qm.strengths?q('강점 · 내 말')+E(qm.strengths):''); }
-      case 'prop': return E((it.p&&it.p.t)||'');
-      case 'qgoal': { var g=it.q||{}; return (g.theme?q('테마')+E(g.theme):'')+((g.goals||[]).filter(function(x){return x&&x.t;}).length?q('목표')+E(g.goals.filter(function(x){return x&&x.t;}).map(function(x){return x.t;}).join(' · ')):''); }
       default: return E(it.text||'');
     }
   }
@@ -11471,24 +11531,25 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<div class="cp-more"><button type="button" data-cp-go="profile">평가 · 프로필</button><button type="button" data-cp-go="goal">목표</button><button type="button" data-cp-go="match">경기</button><button type="button" data-cp-go="report">리포트</button></div></section>';
   }
   function rStory(opts){ opts=opts||{};
-    var items=stItems(), cname=lrCoachName()||'코치', coachMode=ro()&&isCoach(), pname=(doc.profile&&doc.profile.name)||'선수';
+    var items=opts.items||stItems(), cname=lrCoachName()||'코치', coachMode=ro()&&isCoach(), pname=(doc.profile&&doc.profile.name)||'선수';
     var h=(coachMode&&!opts.noHead)?rCoachPlayerCard():'';
-    h+='<section class="card st-card"><div class="td-top"><b>이야기</b><span>'+(coachMode?esc(pname)+'와 나':'코치와 나')+' · 시간순</span><span class="sp"></span><span class="td-pill">'+items.length+'</span></div>';
+    h+='<section class="card st-card" data-st-owner="'+esc(viewing)+'"><div class="td-top"><b>이야기</b><span>'+(coachMode?esc(pname)+'와 나':'코치와 나')+' · 시간순</span><span class="sp"></span><span class="td-pill">'+(opts.total==null?items.length:opts.total)+'</span></div>';
     if(coachMode)h+=stCompose();
-    if(!items.length){ h+='<div class="td-q-empty">'+(coachMode?'아직 오간 말이 없어요 — 위에 한 마디를 보내면 여기부터 쌓입니다.':'아직 오간 말이 없어요 — 일지에 한 마디를 남기면 코치의 답글이 여기 쌓여요.')+'</div></section>'; return h; }
+    if(opts.filter)h+=opts.filter;
+    if(!items.length){ if(!coachMode)h+=stCompose(); h+='<div class="td-q-empty">'+(coachMode?'아직 오간 말이 없어요 — 위에 한 마디를 보내면 여기부터 쌓입니다.':'아직 오간 말이 없어요 — 일지에 한 마디를 남기면 코치의 답글이 여기 쌓여요.')+'</div></section>'; return h; }
     var byDate={}; try{ mtList().forEach(function(m){ if(m&&m.date)byDate[m.date]=m.opponent||''; }); }catch(_){}
-    var LIM=40, show=_stAll?items:items.slice(0,LIM), lastD=''; h+='<div class="st-list">';
+    var LIM=40, expanded=opts.squadUid?opts.expanded:(_stAll&&_stAllKey===viewing), show=expanded?items:items.slice(0,LIM), lastD=''; h+='<div class="st-list">';
     show.forEach(function(it){
       if(it.d&&it.d!==lastD){ lastD=it.d; var dd=new Date(it.d+'T12:00:00'); var wd=['일','월','화','수','목','금','토'][dd.getDay()]||''; h+='<div class="st-day"><span>'+(dd.getMonth()+1)+'월 '+dd.getDate()+'일 · '+wd+(byDate[it.d]?(' · vs '+esc(byDate[it.d])):'')+'</span></div>'; }
-      var isC=it.who==='coach', mine=coachMode?isC:!isC, who=mine?'me':'coach', go=stGo(it), body=stBody(it); if(!body)return;   /* 2.768 — 보는 사람 기준으로 내 말이 오른쪽 */
-      var byName=isC?(it.by||(it.r&&it.r.by)||(it.fb&&it.fb.updatedBy)||cname):pname;
+      var isC=it.who==='coach', mine=coachMode?isC:!isC, who=mine?'me':'coach', go=stGo(it), body=stBody(it,opts); if(!body)return;   /* 2.768 — 보는 사람 기준으로 내 말이 오른쪽 */
+      var byName=isC?(it.by||(it.r&&it.r.by)||(it.fb&&it.fb.updatedBy)||(it.qm&&it.qm.by)||cname):pname;
       if(coachMode&&isC&&stSameCoach(byName))byName='나';   /* 2.770 — «이슬기» 와 «이슬기 코치» 는 같은 사람 */
-      h+='<div class="st-msg '+who+'"'+(go?' data-st-go="'+esc(go)+'" role="button" tabindex="0" title="원래 자리로"':'')+'><span class="st-src">'+((isC||coachMode)?'<b>'+esc(byName)+'</b> · ':'')+esc(stSrc(it))+'</span><div class="st-bub">'+body+'</div></div>';
+      h+='<div class="st-msg '+who+'" data-story-id="'+esc(storyItemKey(it,items.indexOf(it)))+'" data-story-ts="'+(+it.ts||0)+'"><span class="st-src">'+((isC||coachMode)?'<b>'+esc(byName)+'</b> · ':'')+(go?'<button type="button" class="st-origin" data-st-go="'+esc(go)+'">'+esc(stSrc(it))+' ›</button>':esc(stSrc(it)))+'</span><div class="st-bub">'+body+'</div></div>';
     });
     h+='</div>';
-    if(items.length>LIM&&!_stAll)h+='<button type="button" class="qg-add" data-st-more>지난 이야기 '+(items.length-LIM)+'개 더 보기</button>';
+    if(items.length>LIM&&!expanded)h+='<button type="button" class="qg-add" data-st-more'+(opts.moreKey?' data-st-more-key="'+esc(opts.moreKey)+'"':'')+'>지난 이야기 '+(items.length-LIM)+'개 더 보기</button>';
     if(!coachMode)h+=stCompose();
-    h+='<div class="st-note">말풍선을 누르면 그 자리로 갑니다</div></section>'; return h;
+    h+='<div class="st-note">출처를 누르면 원래 기록으로 갑니다</div></section>'; return h;
   }
   /* 2.770 — 실계정에서 코치 이름이 기록마다 달랐다(좋아요 by=«이슬기», 보내기 by=«이슬기 코치»=displayName). 뒤의 코치·감독·님과 공백을 걷고 비교 */
   function stSameCoach(name){ function nz(x){ return String(x||'').replace(/\s+/g,'').replace(/(코치|감독|선생님|쌤|님)$/,''); } var a=nz(name), b=nz(lrCoachName()); return !!a&&!!b&&a===b; }
@@ -11501,9 +11562,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function stSend(text,key){
     text=String(text||'').trim().slice(0,300); if(!text)return false;
     var item={id:'tk'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),text:text,at:Date.now()};
-    if(key&&isCoach()){ item.by=lrCoachName(); if(!pubPushAt(key,'talk',item)){ try{gToast('저장하지 못했어요');}catch(_){} return false; } psAct('a_talk'); return true; }   /* 2.769 — 선수 상세에서 온 보내기 */
-    if(!ro()){ doc.talk=Array.isArray(doc.talk)?doc.talk:[]; doc.talk.push(item); if(save()===false){ try{gToast('저장하지 못했어요');}catch(_){} doc.talk.pop(); return false; } psAct('a_talk'); return true; }
-    if(isCoach()){ item.by=lrCoachName(); var kk=coachFeedbackKey(viewing); if(!kk||!pubPushAt(kk,'talk',item)){ try{gToast('저장하지 못했어요');}catch(_){} return false; } psAct('a_talk'); return true; }
+    if(key&&isCoach()){ if(!storyCoachTarget(PREFIX+key.slice(PUBP.length))||(squadView&&!sqStoryTarget(key.slice(PUBP.length))))return false; item.by=lrCoachName(); if(!pubPushAt(key,'talk',item)){ try{gToast('저장하지 못했어요');}catch(_){} return false; } psAct('a_talk'); return true; }   /* 2.769 — 선수 상세에서 온 보내기 */
+    if(!ro()){ if(!idpOwnActionAllowed(viewing))return false; doc.talk=Array.isArray(doc.talk)?doc.talk:[]; doc.talk.push(item); if(!persistMyIdpNow()){ try{gToast('저장하지 못했어요');}catch(_){} doc.talk.pop(); return false; } psAct('a_talk'); return true; }
+    if(isCoach()){ if(!storyCoachTarget(viewing))return false; item.by=lrCoachName(); var kk=coachFeedbackKey(viewing); if(!kk||!pubPushAt(kk,'talk',item)){ try{gToast('저장하지 못했어요');}catch(_){} return false; } psAct('a_talk'); return true; }
     return false;
   }
   function bindStory(){
@@ -11512,32 +11573,35 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       [].forEach.call(cp.querySelectorAll('[data-cp-go]'),function(b){ b.onclick=function(){ curL=b.dataset.cpGo; try{ [].forEach.call(document.getElementById('layers').children,function(x){ x.classList.toggle('on',x.dataset.l===curL); }); }catch(_){} render(); try{ window.scrollTo(0,0); }catch(_){} }; });
     } }catch(_){}
     var card=wrap.querySelector('.st-card'); if(!card)return;
-    var mo=card.querySelector('[data-st-more]'); if(mo)mo.onclick=function(){ _stAll=true; render(); };
+    var mo=card.querySelector('[data-st-more]'); if(mo)mo.onclick=function(){ _stAll=true; _stAllKey=viewing; render(); };
     var inp=card.querySelector('[data-st-in]'), snd=card.querySelector('[data-st-send]');
     if(inp&&snd){ var go=function(){ if(stSend(inp.value)){ inp.value=''; render(); try{ var c2=wrap.querySelector('[data-st-in]'); if(c2)c2.focus(); }catch(_){} } };
       snd.onclick=go; inp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); go(); } }); }
     card.addEventListener('click',function(e){ if(e.target.closest('.st-compose'))return; var el=e.target.closest('[data-st-go]'); if(!el)return; var go=String(el.getAttribute('data-st-go')||''); if(!go)return;
       var m=/^cal:(\d{4}-\d{2}-\d{2})$/.exec(go);
       if(m){ curL='cal'; calView='day'; calAnchor=new Date(m[1]+'T00:00:00'); calAnchor.setHours(0,0,0,0); }
+      else if(go.indexOf('qa:')===0){curL='cal';calView='qa';qaOpen=go.slice(3);}
       else if(go==='cal'){ curL='cal'; }
       else curL=go;
       try{ [].forEach.call(document.getElementById('layers').children,function(x){ x.classList.toggle('on',x.dataset.l===curL); }); }catch(_){}
       render(); try{ window.scrollTo(0,0); }catch(_){} });
   }
-  function bindThread(){
-    var card=wrap.querySelector('.th-card'); if(!card)return;
-    var mo=card.querySelector('[data-th-more]'); if(mo)mo.onclick=function(){ _thAll=true; render(); };
+  function bindStoryActions(){
+    var card=wrap.querySelector('.st-card'),key=viewing; if(!card)return;
     if(ro())return;
     /* 2.619 — 면담 약속 → 선수가 누르면 다음 분기 doc.qgoal(선수 소유) + 첫 초점 */
     [].forEach.call(card.querySelectorAll('[data-th-qstart]'),function(b){ b.onclick=function(){ if(ro())return; var id=b.dataset.thQstart;
       var qm=null; try{ qm=(rvRec(viewing).qmeet||[]).filter(function(m){return m&&m.id===id;})[0]||null; }catch(_){} if(!qm||!qm.promise)return;
       var nm=ymd(addDays(mondayOf(new Date()),7));
       psConfirm('다음 분기를 시작할까요?\n\n내가 키우는 것 · '+qm.promise+(qm.firstFocus?'\n첫 초점 · '+qm.firstFocus:'')+'\n시작 · '+nm+' (월)',function(){
+        if(!idpOwnActionAllowed(key))return;
+        if((doc.qgoal&&doc.qgoal.fromMeet===qm.id)||(doc.qgoalHist||[]).some(function(q){return q&&q.fromMeet===qm.id;}))return;
         if(doc.qgoal&&doc.qgoal.start){ doc.qgoalHist=doc.qgoalHist||[]; doc.qgoalHist.push(Object.assign({},doc.qgoal,{closedAt:Date.now()})); }
         doc.qgoal={start:nm,theme:'',goals:[{id:'g'+Date.now().toString(36),t:qm.promise,sc:{}}],at:Date.now(),fromMeet:qm.id};
-        if(qm.firstFocus)focusSet(nm,qm.firstFocus,'meet'); save(); psAct('a_qgoal'); gToast('다음 분기 시작 — '+qm.promise); render(); }); }; });
+        if(qm.firstFocus){doc.focusByWk=doc.focusByWk||{};doc.focusByWk[nm]={wk:nm,text:qm.firstFocus,from:'meet',at:Date.now()};if(nm===focusWk())doc.focus=doc.focusByWk[nm];}
+        if(!persistMyIdpNow())return; psAct('a_qgoal'); gToast('다음 분기 시작 — '+qm.promise); render(); }); }; });
     [].forEach.call(card.querySelectorAll('[data-th-reply]'),function(b){ b.onclick=function(){ _thReplyOpen=b.dataset.thReply; render(); setTimeout(function(){ try{ wrap.querySelector('[data-th-reply-in]').focus(); }catch(_){} },30); }; });
-    var saveReply=function(id){ var inp=card.querySelector('[data-th-reply-in="'+id+'"]'); var t=inp?inp.value.trim():''; if(!t){ gToast('한 줄만 적어 주세요'); return; } doc.rvReplies=doc.rvReplies||{}; doc.rvReplies[id]={text:t.slice(0,140),at:Date.now()}; save(); _thReplyOpen=null; psAct('a_reply'); gToast('답을 남겼어요 — 코치가 볼 수 있어요'); render(); };
+    var saveReply=function(id){ if(!idpOwnActionAllowed(key))return; var inp=card.querySelector('[data-th-reply-in="'+id+'"]'); var t=inp?inp.value.trim():''; if(!t){ gToast('한 줄만 적어 주세요'); return; } doc.rvReplies=doc.rvReplies||{}; doc.rvReplies[id]={text:t.slice(0,140),at:Date.now()}; if(!persistMyIdpNow())return; _thReplyOpen=null; psAct('a_reply'); gToast('답을 남겼어요 — 코치가 볼 수 있어요'); render(); };
     [].forEach.call(card.querySelectorAll('[data-th-reply-save]'),function(b){ b.onclick=function(){ saveReply(b.dataset.thReplySave); }; });
     [].forEach.call(card.querySelectorAll('[data-th-reply-in]'),function(i){ i.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); saveReply(i.dataset.thReplyIn); } }); });
   }
@@ -13755,10 +13819,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(_nm)_nm.onclick=function(){ window.__pNtcAll=!window.__pNtcAll; render(); };
       if(wrap.querySelector('.pntc')) setTimeout(ntcMarkSeen,1500);
     }catch(_){}
-    try{ if(curL==='profile'||curL==='eval'){ bindReviews(); bindThread(); bindReacts(); bindMyArch(); bindWelcome();
+    try{ if(curL==='profile'||curL==='eval'){ bindReviews(); bindReacts(); bindMyArch(); bindWelcome();
       bindMeasureCard(); } }catch(_){}   /* 2.320 — 몸·잠·태그와 이번 주 측정이 이 탭으로 왔다 */   /* 2.079 — 내 유형 */   /* 2.027 · 2.040 · 2.042 */   /* 2.255 — 환영 세 걸음 */
     try{ if(curL==='cal')bindReacts(); }catch(_){}   /* 2.739 — 과거 일간을 보는 코치의 답글 입력 */
-    try{ if(curL==='story')bindStory(); }catch(_){}   /* 2.766 */
+    try{ if(curL==='story'){bindStory();bindStoryActions();bindReacts();} }catch(_){}   /* 2.766 */
     try{ bindGoalFamSeg(); }catch(_){}   /* 2.321 — 목표 · 루틴 · 이미지노트 세그 */
     try{ if(curL==='goal')bindVisionCard(); }catch(e){ try{console.warn('내 방향 연결 실패',e);}catch(_){} }
     try{ bindQgLadder(); }catch(_){}    /* 2.403 — 사다리 층을 누르면 그 편집기로 내려간다 */

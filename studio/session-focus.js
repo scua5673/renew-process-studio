@@ -118,11 +118,12 @@
     else if(out.warnings.some(function(w){return w.code!=='attendance-unknown';}))out.status='unavailable';
     return out;
   }
-  function render(result,categoryLabels){
+  function render(result,categoryLabels,options){
     if(!object(result)||result.status==='forbidden')return '';
     var labels=object(categoryLabels)?categoryLabels:{},rows=Array.isArray(result.rows)?result.rows:[];
     var messages={'invalid-date':'훈련 날짜를 확인할 수 없어 개인 초점을 읽지 않았습니다.',unavailable:'선수 자료를 아직 확인하지 못했습니다. 자료가 준비되면 다시 확인해 주세요.','unknown-scope':'저장된 조 정보를 확인할 수 없어 개인 초점을 읽지 않았습니다.',empty:'이 날짜의 주간 초점이나 날짜가 확인되는 코치 리뷰 참고가 없습니다.'};
-    var h='<div class="sfocus"><div class="sfh"><b>훈련 날짜의 개인 초점</b><span>'+esc(result.date||'날짜 확인 필요')+'</span><span class="ro">읽기 전용</span></div>';
+    var h='<div class="sfocus">';
+    if(!options||options.heading!==false)h+='<div class="sfh"><b>훈련 날짜의 개인 초점</b><span>'+esc(result.date||'날짜 확인 필요')+'</span><span class="ro">읽기 전용</span></div>';
     if(result.date&&result.scope)h+='<p class="sfn">현재 선수단의 '+esc(result.scope.label)+' 기준 · 실제 출석 명단은 별도입니다.</p>';
     if(!rows.length)h+='<p class="sfn">'+esc(messages[result.status]||messages.empty)+'</p>';
     rows.forEach(function(r){
