@@ -12148,13 +12148,14 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       h+='<div class="cal-label">팀 공통 질문<small class="cal-sub">코치가 팀 전체에게 물은 것 — 여기 쌓입니다</small></div>';
     }else{
       /* 날짜와 그 날짜를 옮기는 손잡이는 **한 줄에** 둔다 */
+      var _navUnit=(calView==='day'?'날':calView==='week'?'주':calView==='year'?'해':'달');   /* 2.796 — 선수 ⑧: ‹ › 의 읽기 이름을 보기 단위로 */
       h+='<div class="cal-dateline">'
         +'<div class="cal-label">'+((calView==='day'&&!ro())?('<button type="button" id="calSegToggle" class="cal-label-btn" aria-expanded="'+(_segOpen?'true':'false')+'" title="년간·월간·주간·공통 보기">'+esc(label)+'<i>'+(_segOpen?'⌃':'⌄')+'</i></button>'):esc(label))   /* 2.780 — 날짜를 누르면 년간~공통 줄이 펴진다 */
         +(function(){ try{ return _ylMini(); }catch(_){ return ''; } })()   /* 2.507 — 올해 남은 날(아주 작게) */
         +(calView==='week'?'<button type="button" id="teamScheduleOpen" class="cal-teamgo">팀 전체 일정 ›</button>':'')
         +(_fold&&sk>=2?'<span class="streak">'+ic('flame')+sk+'일 연속</span>':'')
         +'</div>'
-        +'<div class="cal-nav"><button id="calPrev" aria-label="이전 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block;pointer-events:none" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><button class="today" id="calToday">오늘</button><button id="calNext" aria-label="다음 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block;pointer-events:none" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button></div>'
+        +'<div class="cal-nav"><button id="calPrev" aria-label="이전 '+_navUnit+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block;pointer-events:none" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><button class="today" id="calToday">오늘</button><button id="calNext" aria-label="다음 '+_navUnit+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block;pointer-events:none" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button></div>'
         +'</div>'
         +'</div>';
     }

@@ -157,7 +157,8 @@
       return state.doc;
     }
     function prepare(){
-      read();var owner=state.owner,raw=state.raw;
+      try{read();}catch(e){return Promise.reject(e);}   /* 2.796 — 세션·권한 없을 때 context() 의 동기 throw 를 거부로(호출부 catch 가 받게) */
+      var owner=state.owner,raw=state.raw;
       if(!win.PSStorage||!win.PSStorage.sharedReady||!win.PSStorage.sharedVerified)return Promise.reject(new Error('기기 저장소를 확인할 수 없습니다.'));
       return win.PSStorage.sharedReady(KEY).then(function(){
         if(raw!=null)return win.PSStorage.sharedVerified(KEY,raw);
