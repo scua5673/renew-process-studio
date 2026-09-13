@@ -6,6 +6,9 @@
 /* This selector changes only the displayed cohort; read-only staff may use it. */
 body.ps-player-schedule #effortGroup{pointer-events:auto!important}
 .daily-effort-note{margin:11px 0 0;color:var(--text-2,#646A73);font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.daily-effort-criteria{margin-top:6px;color:var(--text-2,#646A73);font-size:12px;line-height:1.65}
+.daily-effort-criteria>summary{width:fit-content;min-height:36px;padding:8px 0;box-sizing:border-box;cursor:pointer;font-weight:600}
+.daily-effort-criteria .daily-effort-note{margin:0 0 8px}
 .daily-effort-list{margin-top:14px;border-top:1px solid var(--line-soft,#ECEDF0)}
 .daily-effort-day{padding:10px 0;border-bottom:1px solid var(--line-soft,#ECEDF0)}
 .daily-effort-main{display:grid;grid-template-columns:minmax(75px,.75fr) minmax(54px,.5fr) minmax(112px,1fr);align-items:center;gap:10px;font-size:12px;line-height:1.5}
