@@ -62,7 +62,10 @@
     function refresh(){
       var current=context();if(!current){owner=null;record=null;key='';open=false;error='';paint();return;}
       if(same(owner,current))return;
-      if(!same(owner,current)){owner=current;key=storageKey(owner);record=null;open=false;attention=false;resuming=false;error='';invalidStored=false;choices={};try{revision=ls.getItem(key);if(revision){var parsed=JSON.parse(revision);if(!validRecord(parsed,owner))throw new Error('invalid');record=parsed;attention=!!record.pending;}}catch(_){invalidStored=true;error='복구 기록의 형식을 확인하지 못했어요. 원본 IDP는 바꾸지 않았습니다.';}}
+      if(!same(owner,current)){owner=current;key=storageKey(owner);record=null;open=false;attention=false;resuming=false;error='';invalidStored=false;choices={};try{revision=ls.getItem(key);if(revision){var parsed=JSON.parse(revision);if(!validRecord(parsed,owner))throw new Error('invalid');record=parsed;
+          /* 2.787 — 예전 판이 남긴 초안이 자동 값(AUTO)뿐이면 입력이 아니다: 기록에서 지우고 띠를 안 띄운다(기기 안 복구 키만 손댄다) */
+          if(record.pending&&validOps(record.pending.ops)&&record.pending.ops.length&&record.pending.ops.every(function(o){return AUTO[o.path[0]];})){var cleaned=copy(record);delete cleaned.pending;try{var cleanedRaw=JSON.stringify(cleaned);ls.setItem(key,cleanedRaw);revision=cleanedRaw;record=cleaned;}catch(_){}}
+          attention=!!record.pending;}}catch(_){invalidStored=true;error='복구 기록의 형식을 확인하지 못했어요. 원본 IDP는 바꾸지 않았습니다.';}}
       if(memory[key]){record=copy(memory[key]);attention=!!record.pending;error='초안이 아직 이 화면에만 남아 있어요. 저장을 다시 확인하기 전에는 화면을 닫지 마세요.';}
       paint();
     }
