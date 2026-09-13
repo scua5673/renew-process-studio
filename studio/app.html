@@ -499,7 +499,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.790';</script>
+<script>window.PS_BUILD='2.791';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1451,12 +1451,14 @@ function psShowUpdBand(){
       el.style.display='flex'; el.className=st.kind; tx.textContent=st.text; ago.textContent=(st.kind==='ok'&&st.ago)?st.ago:'';
       var lbl='';
       if(st.kind==='ask')lbl='보기';
+      else if(st.kind==='pending')lbl='상태';
       else if(st.kind==='bad'&&st.reason!=='sync_offline')lbl=(st.reason==='sync_permission')?'보기':(st.reason==='sync_auth'?'로그인':'다시');
       if(lbl){ btn.style.display=''; btn.innerHTML='<span>'+lbl+'</span>'; } else btn.style.display='none';
     }
     btn.addEventListener('click',function(){
       var S=window.PSSync, st=null; try{ st=S.state(); }catch(_){}
       if(!st)return;
+      if(st.kind==='pending'){var diag=document.getElementById('psDiagOpen');if(diag)diag.click();return;}
       if(st.kind==='ask'||st.reason==='sync_permission'){ try{ if(window.PSDataReview&&PSDataReview.open){PSDataReview.open();return;} }catch(_){} try{ S.hold.open(); }catch(_){} return; }
       if(st.reason==='sync_auth'){ try{ var b=document.querySelector('.acct-btn'); if(b)b.click(); }catch(_){} return; }
       btn.innerHTML='<span>…</span>'; try{ S.syncNow('strip'); }catch(_){} setTimeout(draw,400);

@@ -1,0 +1,102 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
+const engine=process.env.PS_BROWSER_ENGINE||'chromium';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/roster-recovery');
+fs.mkdirSync(out,{recursive:true});
+const browser=await pw[engine].launch(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true}:{});
+const base='https://roster-fixture.invalid';
+const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.woff2':'font/woff2','.png':'image/png'};
+try{
+  for(const width of [1280,375]){
+    const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+    await context.route('**/*',route=>{
+      const url=new URL(route.request().url());if(url.origin!==base)return route.abort();
+      const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
+      return route.fulfill({status:200,body:fs.readFileSync(file),contentType:mime[path.extname(file)]||'application/octet-stream'});
+    });
+    await context.addInitScript(()=>{
+      const uid='roster-fixture-coach',wid='roster-fixture-team';
+      localStorage.setItem('ps_sync_session',JSON.stringify({uid}));localStorage.setItem('ps_active_ws',wid);
+      localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid,wid,nonce:'fixture'}));
+      localStorage.setItem('ps_ws_list',JSON.stringify([{id:wid,name:'가상 검증팀',kind:'team',role:'owner'}]));
+      localStorage.setItem('cs_perms_v1',JSON.stringify({members:{[uid]:{role:'executive'}}}));
+      localStorage.setItem('cs_scout_targets_v1','{"v":1,"players":[]}');localStorage.setItem('cs_lang','ko');
+      window.PSSync={dataUnlocked:()=>true,keyReady:()=>true,rosterReady:()=>true,syncNow:async()=>({pushed:0,applied:0})};
+    });
+    const page=await context.newPage(),dialogs=[];
+    page.on('dialog',d=>{dialogs.push(d.message());d.dismiss();});
+    await page.goto(base+'/studio/scout.html',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>window.PSRosterRecovery&&window.PSPerms&&typeof rosterRecoveryOpen==='function');
+    await page.evaluate(async()=>{
+      await PSStorage.sharedReady();await psSaveSharedAsync(TKEY,localStorage.getItem(TKEY));await scPrepare();await store.ready(true);
+      const p=(id,name)=>({id,name,posId:'pos_CB',levels:{},num:'',profile:{},memo:'가상 검증 기록'});
+      const keep=[p('lost','김가상 · 보관 기록'),p('deleted','박가상 · 삭제 확인'),p('item','이가상 · 선수별 명단'),p('escape','<img src=x onerror="window.xss=true">')];
+      data.players=[p('current','정가상')];data.meta.evalMode='fifa';scMainMigrationPending=false;
+      localStorage.setItem('scout_tool_v1',JSON.stringify(data));localStorage.setItem('cs_player_del_v1',JSON.stringify({deleted:Date.now()}));
+      const c=rosterRecoveryContext(false),archive=PSRosterRecovery.capture(null,{...data,players:keep},c);
+      localStorage.setItem(PSRosterRecovery.key(c),JSON.stringify(archive));
+      await storage.set('sq:current',JSON.stringify(data.players[0]));await storage.set('sq:item',JSON.stringify(keep[2]));await storage.set('sq:deleted',JSON.stringify({_del:Date.now()}));
+      window.PSItems={active:()=>false,flush:async()=>true,writeReady:async (players,{expectedRows})=>{
+        const current=(await storage.keys()).filter(k=>k.startsWith('sq:')).sort(),expected=new Map(expectedRows.map(r=>['sq:'+r.id,r.raw]));
+        if(current.length!==expected.size)throw Error('SQ preimage changed');
+        for(const key of current)if((await storage.get(key)).value!==expected.get(key))throw Error('SQ preimage changed');
+        for(const p of players)await storage.set('sq:'+p.id,JSON.stringify(p));return {n:players.length,wrote:players.length};}};
+      await store.ready(true);document.querySelectorAll('.view.on').forEach(e=>e.classList.remove('on'));document.getElementById('teamView').classList.add('on');renderTeam();rosterRecoveryMenu();
+    });
+    await page.locator('#tmEtcBtn').click();await page.locator('#rosterRecoveryBtn').click();
+    await page.waitForFunction(()=>document.querySelector('#rosterRecoveryPanel [data-state]')?.textContent.includes('보관 기록 4명'));
+    assert.equal(await page.locator('#rosterRecoveryPanel').getAttribute('aria-labelledby'),'rosterRecoveryTitle');
+    await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>!!document.activeElement.closest('#rosterRecoveryPanel')),true);
+    await page.keyboard.press('Escape');assert.equal(await page.locator('#rosterRecoveryPanel').count(),0);assert.equal(await page.evaluate(()=>document.activeElement.id),'tmEtcBtn');
+    await page.locator('#tmEtcBtn').click();await page.locator('#rosterRecoveryBtn').click();
+    await page.waitForFunction(()=>document.querySelector('#rosterRecoveryPanel [data-state]')?.textContent.includes('보관 기록 4명'));
+    assert.equal(await page.locator('#rosterRecoveryPanel').getByText('이 선수 복구',{exact:true}).count(),2);
+    assert.ok(await page.locator('#rosterRecoveryPanel').getByText('삭제 기록 있음',{exact:false}).count());
+    assert.ok(await page.locator('#rosterRecoveryPanel').getByText('선수별 명단에 있음',{exact:false}).count());
+    assert.equal(await page.locator('#rosterRecoveryPanel [data-list] img').count(),0);
+    const bounds=await page.locator('#rosterRecoveryPanel').boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1);
+    await page.screenshot({path:path.join(out,`${engine}-${width}-list.png`)});
+    await page.locator('#rosterRecoveryPanel').getByText('이 선수 복구',{exact:true}).first().click();
+    await page.waitForFunction(()=>document.querySelector('#rosterRecoveryPanel [data-state]')?.textContent.includes('선수별 명단과 현재 명단을 아직 맞추지 못했어요.'));
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('scout_tool_v1')).players.length),1);
+    assert.equal(await page.evaluate(()=>!!JSON.parse(localStorage.getItem(PSRosterRecovery.key(rosterRecoveryContext(false)))).pendingRestore),false);
+    await page.screenshot({path:path.join(out,`${engine}-${width}-mismatch.png`)});
+    // Simulate ordinary synchronization delivering the exact current SQ row to main.
+    await page.evaluate(async()=>{const d=JSON.parse(localStorage.getItem('scout_tool_v1'));d.players.push(JSON.parse((await storage.get('sq:item')).value));localStorage.setItem('scout_tool_v1',JSON.stringify(d));load();});
+    await page.locator('#rosterRecoveryPanel [data-refresh]').click();
+    await page.waitForFunction(()=>document.querySelector('#rosterRecoveryPanel [data-state]')?.textContent.includes('보관 기록 3명'));
+    await page.locator('#rosterRecoveryPanel').getByText('이 선수 복구',{exact:true}).first().click();
+    await page.waitForFunction(()=>document.querySelector('#rosterRecoveryPanel [data-state]')?.textContent.includes('복구 저장을 확인했습니다.'));
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('scout_tool_v1')).players.length),3);
+    await page.screenshot({path:path.join(out,`${engine}-${width}-done.png`)});
+    await page.evaluate(()=>{window.fixtureWriteReady=PSItems.writeReady;PSItems.writeReady=async()=>{throw new Error('선수별 저장 확인에 실패했습니다. 보관 원본은 남아 있습니다.');};});
+    await page.locator('#rosterRecoveryPanel').getByText('이 선수 복구',{exact:true}).click();
+    await page.waitForFunction(()=>document.querySelector('#rosterRecoveryPanel [data-state]')?.textContent.includes('선수별 저장 확인에 실패했습니다.'));
+    assert.equal(await page.evaluate(()=>!!JSON.parse(localStorage.getItem(PSRosterRecovery.key(rosterRecoveryContext(false)))).pendingRestore),true);
+    await page.screenshot({path:path.join(out,`${engine}-${width}-failed.png`)});
+    await page.evaluate(()=>{PSItems.writeReady=window.fixtureWriteReady;});
+    await page.locator('#rosterRecoveryPanel [data-refresh]').click();
+    await page.locator('#rosterRecoveryPanel').getByText('복구 저장 다시 확인',{exact:true}).click();
+    await page.waitForFunction(()=>document.querySelector('#rosterRecoveryPanel [data-state]')?.textContent.includes('복구 저장을 확인했습니다.'));
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('scout_tool_v1')).players.length),4);
+    await page.evaluate(()=>{localStorage.setItem('ps_ws_list',JSON.stringify([{id:'roster-fixture-team',kind:'team',role:'member'}]));localStorage.setItem('cs_perms_v1',JSON.stringify({members:{'roster-fixture-coach':{role:'staff'}}}));dispatchEvent(new StorageEvent('storage',{key:'cs_perms_v1'}));});
+    assert.equal(await page.locator('#rosterRecoveryPanel [data-list]').innerText(),'');
+    await page.locator('#rosterRecoveryPanel [data-refresh]').click();
+    await page.locator('#rosterRecoveryPanel').getByText('복구는 선수단 편집 권한이 있는 코치가 할 수 있습니다.',{exact:true}).waitFor();
+    assert.equal(await page.locator('#rosterRecoveryPanel').getByText('이 선수 복구',{exact:true}).count(),0);
+    await page.evaluate(()=>{localStorage.setItem('cs_perms_v1',JSON.stringify({members:{'roster-fixture-coach':{role:'player'}}}));dispatchEvent(new StorageEvent('storage',{key:'cs_perms_v1'}));});
+    assert.equal(await page.locator('#rosterRecoveryBtn').isVisible(),false);
+    await page.locator('#rosterRecoveryPanel [data-refresh]').click();
+    await page.waitForFunction(()=>document.querySelector('#rosterRecoveryPanel [data-state]')?.textContent.includes('명단 보관 자료를 볼 권한이 없습니다.'));
+    await page.evaluate(()=>{localStorage.setItem('ps_active_ws','other-fixture-team');dispatchEvent(new StorageEvent('storage',{key:'ps_active_ws'}));});
+    assert.equal(await page.locator('#rosterRecoveryPanel [data-list]').innerText(),'');
+    assert.equal(dialogs.length,0,'no automatic native recovery confirmation');
+    await context.close();
+  }
+  console.log(JSON.stringify({engine,widths:[1280,375],manualList:true,dialogKeyboard:true,deletedNotRestorable:true,sqNotDuplicated:true,mainSqMismatchBlocked:true,xssEscaped:true,restoreConfirmed:true,failureVisibleAndRetryable:true,readOnlyCoachCannotRestore:true,playerCannotView:true,ownerChangeCleared:true,automaticConfirmations:0,output:out}));
+}finally{await browser.close();}

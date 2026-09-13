@@ -8,6 +8,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <script src="storage.js"></script>
 <script src="scouting-store.js"></script>
+<script src="roster-recovery.js"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
 <script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 -->
@@ -4574,6 +4575,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 <span class="tm-etc-menu" id="tmEtcMenu" hidden>
                   <button class="btn sm tm-more" id="rosterBtn" title="선수단 명단 출력" aria-label="명단 출력" style="display:none">명단 출력</button>
                   <button class="btn sm tm-idp-source" id="teamIdpOpen" title="선수들이 팀과 공유한 프로필과 셀프 평가를 코치 화면에서 확인"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="9" cy="7" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 11l2 2 3-4"/></svg><span>프로필·평가</span></button>
+                  <button class="btn sm" id="rosterRecoveryBtn" type="button" hidden style="display:none" onclick="rosterRecoveryOpen()">명단 보관·복구</button>
                 </span>
               </span>
             </span>
@@ -5802,7 +5804,10 @@ const store={
     }
   },
   /* boolean은 접수 결과다. 저장됨 표시·화면 종료는 ready의 검증 완료를 기다린다. */
-  ready(retryFailed){return teamSaves.ready(retryFailed);},
+  ready(retryFailed){return teamSaves.ready(retryFailed).then(function(){
+    var PI=typeof itemsPI==="function"?itemsPI():null;
+    return PI&&PI.flush?PI.flush():true;
+  });},
   hasFailed(k){return teamSaves.hasFailed(k);},
   hasPending(){return teamSaves.hasPending();},
   owner(){return teamSaves.owner();}
@@ -6138,88 +6143,185 @@ function load(){
   }catch(_){}
   try{ data.players=plTombApply(data.players||[]); }catch(_){}   /* 2.612 — 다른 기기의 옛 통짜가 되살린 선수를 다시 걸러 낸다 */
   posSelfHeal();   /* 1.626 — 후보까지 합쳐진 뒤에 자리를 잇는다 */
-  /* 1.629 — 명단에서 크게 사라진 사람이 있으면 알린다.
-     한두 명 빠진 건 보통 의도한 정리라 조용히 넘긴다(잣대는 출고 검사와 같게 5명·절반).
-     오늘 새벽 44→32(12명)가 정확히 여기 걸린다. */
-  try{
-    var _miss=rosterMissing(), _have=(data.players||[]).filter(function(p){return p&&String(p.name||"").trim();}).length;
-    var _missIds=_miss.map(function(p){return p&&p.id;}).filter(Boolean);
-    /* 1.741 — 이미 확인(취소)한 사람은 잣대에서 빼고, '새로' 사라진 사람만 센다. */
-    var _ackHas={}; rosterMissAck().forEach(function(id){ _ackHas[id]=1; });
-    var _novel=_missIds.filter(function(id){ return !_ackHas[id]; });
-    /* 되돌아온 사람은 확인 기록에서 지워 목록이 무한정 커지지 않게 한다 */
-    var _missHas={}; _missIds.forEach(function(id){ _missHas[id]=1; });
-    var _ackNow=rosterMissAck(), _ackPruned=_ackNow.filter(function(id){ return _missHas[id]; });
-    if(_ackPruned.length!==_ackNow.length) rosterMissAckSet(_ackPruned);
-    if(_novel.length>=5||(_have&&_novel.length>=4&&_novel.length>=_have)){
-      setTimeout(function(){
-        try{
-          if(confirm("명단에서 "+_miss.length+"명이 사라졌습니다.\n이 기기 보관소에 남아 있어요.\n\n지금 되돌릴까요?\n(나중에 해도 30일간 보관됩니다)")){
-            var n=rosterRestoreMissing();
-            try{ rosterMissAckSet([]); }catch(_){}       /* 되돌렸으면 확인 기록도 비운다 */
-            try{ toast(n+"명을 되돌렸어요"); }catch(_){}
-            try{ location.reload(); }catch(_){}
-          }else{
-            try{ rosterMissAckSet(_missIds); }catch(_){}  /* 취소 = 뺀 게 맞다 → 다시 안 묻는다 */
-          }
-        }catch(_){}
-      },900);
-    }
-  }catch(_){}
-  rosterKeepSave();   /* 첫 방문이면 지금 명단을 보관소에 채운다 */
+  // 복구는 선수단의 보관 목록에서 직접 확인한다. load 타이머로 판단·복원하지 않는다.
+  rosterKeepSave();
+  rosterRecoveryMenu();
 }
-/* ══ 1.629 · 선수를 **항목 단위로도** 남긴다 ═════════════════════════════════
-   사용자 지시: "팀에 있는 모든 것들이 보관함에 있는 것처럼 저장을 할 수 있게".
-   오늘(2026-08-07) 사고의 근원이 여기다 — 명단이 **통짜 문서 하나**라서 44명이 한 덩어리로
-   움직인다. 그래서 한 번 덮이면 44명이 통째로 32명이 됐고, 두 사본을 합치니 76명이 됐다.
-
-   서버 구조를 오늘 밤에 바꾸는 건 위험하다(이사 도중이 가장 위험한 걸 오늘 두 번 겪었다).
-   그래서 **먼저 저장만** 항목 단위로 간다:
-     · 저장할 때마다 선수 한 명 한 명을 id 로 따로 기록한다(이 기기에만, 서버 안 건드림).
-     · 이 보관소는 **줄어들지 않는다.** 명단에서 빠져도 30일은 남는다.
-     · 다음에 열 때 명단에서 크게 사라진 게 있으면 알려 주고 되돌릴 수 있게 한다.
-   읽기는 아직 통짜에서 한다 — 화면 동작은 하나도 안 바뀐다. 서버까지 항목으로 옮기는 건 그다음. */
-var KEEP_KEY="ps_roster_keep_v1", KEEP_DAYS=30;
-function rosterKeepLoad(){ try{ return JSON.parse(localStorage.getItem(KEEP_KEY)||"{}")||{}; }catch(_){ return {}; } }
+/* 계정·팀을 확인한 기기 보관본만 사용한다. 출처 없는 v1은 수정하거나 자동 귀속하지 않는다. */
+var rosterRecoveryBusy=false,rosterRecoveryPreview=null;
+function rosterRecoveryContext(edit){
+  var s=JSON.parse(localStorage.getItem("ps_sync_session")||"null"),wid=localStorage.getItem("ps_active_ws")||"",seal=localStorage.getItem("ps_cache_owner_v1")||"";
+  var perms=window.PSPerms,role=perms&&perms.role&&perms.role();
+  if(!perms||["admin","executive","staff"].indexOf(role)<0)throw new Error("명단 보관 자료를 볼 권한이 없습니다.");
+  var api=(window.parent&&window.parent!==window)?window.parent.PSSync:window.PSSync;
+  if(!s&&!wid&&!seal){if(role!=="admin")throw new Error("명단 권한을 확인할 수 없습니다.");return {uid:"local",wid:"local",owner:"local",local:true,api:null};}
+  var owner=JSON.parse(seal||"null"),ws=JSON.parse(localStorage.getItem("ps_ws_list")||"[]").find(function(w){return w.id===wid;});
+  if(!s||!s.uid||!wid||!owner||owner.uid!==s.uid||owner.wid!==wid||!ws||!api||!api.dataUnlocked||!api.dataUnlocked())throw new Error("계정과 팀 자료를 확인 중입니다. 잠시 후 다시 열어 주세요.");
+  if(edit&&(!perms.canEdit||!perms.canEdit("team")||(ws.kind==="team"&&role==="staff"&&(JSON.parse(localStorage.getItem("cs_perms_v1")||"{}")||{}).rosterEdit!=="staff")))throw new Error("선수단 편집 권한이 필요합니다.");
+  return {uid:s.uid,wid:wid,owner:JSON.stringify([s.uid,wid,seal]),local:false,api:api};
+}
+function rosterRecoveryGuard(c,edit){if(rosterRecoveryContext(edit).owner!==c.owner)throw new Error("계정이나 팀이 바뀌었습니다. 목록을 다시 열어 주세요.");}
+function rosterRecoveryMenu(){
+  var b=$("rosterRecoveryBtn");if(!b)return;
+  try{rosterRecoveryContext(false);b.hidden=false;b.style.display="";}catch(_){b.hidden=true;b.style.display="none";}
+  try{if(window.tmEtcSync)tmEtcSync();}catch(_){}
+}
+function rosterKeepLoad(c){return PSRosterRecovery.archive(localStorage.getItem(PSRosterRecovery.key(c)),c);}
+function rosterKeepWrite(c,d){
+  rosterRecoveryGuard(c,false);var k=PSRosterRecovery.key(c),raw=JSON.stringify(d);localStorage.setItem(k,raw);
+  if(localStorage.getItem(k)!==raw)throw new Error("기기 보관 자료를 저장하지 못했습니다.");
+}
 function rosterKeepSave(){
   try{
-    var keep=rosterKeepLoad(), now=Date.now(), seen={};
-    (data.players||[]).forEach(function(p){
-      if(!p||!p.id||!String(p.name||"").trim())return;
-      seen[p.id]=1; keep[p.id]={at:now,t:p.type||"",p:p};
+    var c=rosterRecoveryContext(false);
+    if(!c.local&&(!c.api.rosterReady||!c.api.rosterReady(c.wid)))return;
+    // 실패한 mem 사본이나 합쳐 보이는 private 후보가 아니라, 실제 저장된 팀 원문만 보관한다.
+    var raw=localStorage.getItem(KEY);if(raw==null)return;
+    rosterKeepWrite(c,PSRosterRecovery.capture(localStorage.getItem(PSRosterRecovery.key(c)),raw,c));
+  }catch(_){} // 보조 사본 실패는 본 명단 저장을 막지 않는다.
+}
+function rosterRecoverySync(c){
+  if(c.local)return Promise.resolve();
+  if(!c.api.syncNow||!c.api.rosterReady)return Promise.reject(new Error("명단 확인 기능을 불러오지 못했습니다. 앱을 새로고침해 주세요."));
+  return Promise.resolve(c.api.syncNow("roster-recovery-check")).then(function(r){
+    rosterRecoveryGuard(c,false);
+    if(!r||!Number.isFinite(r.pushed)||!c.api.rosterReady(c.wid))throw new Error("팀의 최신 명단을 아직 확인하지 못했습니다. 동기화가 끝나면 다시 확인해 주세요.");
+  });
+}
+function rosterRecoveryItems(c){
+  if(c.local)return Promise.resolve({rows:[],raw:"[]"});
+  var st=(window.parent&&window.parent.storage)||window.storage;
+  if(!st||!st.keys||!st.get)return Promise.reject(new Error("선수별 저장 자료를 확인할 수 없습니다."));
+  return Promise.resolve(st.keys()).then(function(keys){
+    rosterRecoveryGuard(c,false);if(!Array.isArray(keys))throw new Error("선수별 저장 목록을 확인할 수 없습니다.");
+    return Promise.all(keys.filter(function(k){return String(k).indexOf("sq:")===0;}).sort().map(function(k){
+      return Promise.resolve(st.get(k)).then(function(r){rosterRecoveryGuard(c,false);if(!r||typeof r.value!=="string")throw new Error("선수별 저장 자료를 확인할 수 없습니다.");
+        var p=JSON.parse(r.value),id=k.slice(3);if(!p||typeof p!=="object"||Array.isArray(p)||!id||(!p._del&&p.id!==id))throw new Error("선수별 저장 자료의 식별 정보를 확인해야 합니다.");
+        return {id:id,p:p,raw:r.value};});
+    }));
+  }).then(function(rows){return {rows:rows,raw:JSON.stringify(rows.map(function(r){return [r.id,r.raw];}))};});
+}
+function rosterRecoverySnapshot(edit){
+  var c=rosterRecoveryContext(edit);
+  if(typeof scMainMigrationPending!=="undefined"&&scMainMigrationPending)return Promise.reject(new Error("기존 명단의 정리가 끝나면 다시 확인해 주세요."));
+  if(store.hasPending()||store.hasFailed(KEY)||window.__teamStale) return Promise.reject(new Error("현재 명단의 저장·갱신이 끝난 뒤 다시 확인해 주세요."));
+  return rosterRecoverySync(c).then(function(){
+    rosterRecoveryGuard(c,edit);var raw=localStorage.getItem(KEY),deleted=localStorage.getItem(PDKEY);
+    PSRosterRecovery.main(raw);PSRosterRecovery.tombs(deleted);
+    return rosterRecoveryItems(c).then(function(items){
+      rosterRecoveryGuard(c,edit);
+      if(raw!==localStorage.getItem(KEY)||deleted!==localStorage.getItem(PDKEY)||(!c.local&&!c.api.rosterReady(c.wid)))throw new Error("확인 중 명단이 갱신되었습니다. 다시 확인해 주세요.");
+      var keep=localStorage.getItem(PSRosterRecovery.key(c));
+      return {context:c,owner:c.owner,raw:raw,deleted:deleted,itemsRaw:items.raw,items:items.rows,keep:keep,
+        rows:PSRosterRecovery.rows(keep,raw,deleted,items.rows,c)};
     });
-    Object.keys(keep).forEach(function(id){
-      if(!seen[id]&&(now-((keep[id]&&keep[id].at)||0))>KEEP_DAYS*864e5) delete keep[id];
+  });
+}
+function rosterRecoveryCommit(s,next,ids){
+  var c=s.context,expected=JSON.stringify(next),pi=itemsPI();
+  function unchanged(){rosterRecoveryGuard(c,true);if(localStorage.getItem(KEY)!==expected||localStorage.getItem(PDKEY)!==s.deleted)throw new Error("복구 저장 중 명단이 갱신되었습니다. 다시 확인해 주세요.");}
+  rosterRecoveryGuard(c,true);
+  PSRosterRecovery.assertAligned(s.raw,s.deleted,s.items);
+  if(!c.local&&(!pi||!pi.writeReady))return Promise.reject(new Error("명단 저장 기능을 새로 불러와야 합니다. 앱을 새로고침해 주세요."));
+  var keep=rosterKeepLoad(c);keep.pendingRestore={ids:ids.slice(),at:Date.now()};rosterKeepWrite(c,keep);
+  if(localStorage.getItem(KEY)!==s.raw||localStorage.getItem(PDKEY)!==s.deleted)throw new Error("명단이 갱신되었습니다. 목록을 다시 확인해 주세요.");
+  if(!store.set(KEY,next))return Promise.reject(new Error("복구 명단을 이 기기에 저장하지 못했습니다. 보관 원본은 남아 있습니다."));
+  return store.ready().then(function(){
+    unchanged();return c.local?{n:next.players.length,wrote:0}:pi.writeReady(next.players.filter(function(p){return p.type!=="target";}),{expectedRows:s.items.map(function(r){return {id:r.id,raw:r.raw};})});
+  }).then(function(result){
+    unchanged();var expectedCount=next.players.filter(function(p){return p.type!=="target"&&String(p.name||"").trim();}).length;
+    if(!result||result.skipped||result.held||result.n!==expectedCount||!Number.isFinite(result.wrote)||result.wrote<0)throw new Error("선수별 복구 저장을 확인하지 못했습니다. 보관 원본은 남아 있습니다.");
+    var mirror={name:(next.meta&&next.meta.teamName)||"",players:next.players.filter(function(p){return p.type!=="target"&&String(p.name||"").trim();}).map(function(p){
+      var pos=next.positions.find(function(x){return x.id===p.posId;});return {id:p.id,num:p.num||"",name:p.name||"",pos:pos?posAbbr(pos.name):"",foot:p.foot||"",bench:p.bench===true,status:plStatusOf(p),grp:String(p.grp||"").trim()};})};
+    var raw=JSON.stringify(mirror);
+    if(!window.psSaveShared||!window.PSStorage||!PSStorage.sharedReady||!PSStorage.sharedVerified||!window.psSaveShared("cs_squad_v1",raw))throw new Error("복구 명단의 공유 사본을 저장하지 못했습니다.");
+    return PSStorage.sharedReady("cs_squad_v1").then(function(){unchanged();return PSStorage.sharedVerified("cs_squad_v1",raw);});
+  }).then(function(){unchanged();return rosterRecoverySync(c);}).then(function(){
+    unchanged();return rosterRecoveryItems(c);
+  }).then(function(items){
+    unchanged();if(!c.local&&ids.some(function(id){var a=items.rows.find(function(r){return r.id===id;});var b=next.players.find(function(p){return p.id===id;});return !a||JSON.stringify(a.p)!==JSON.stringify(b);}))throw new Error("복구한 선수의 팀 저장 확인이 끝나지 않았습니다.");
+    var done=rosterKeepLoad(c);delete done.pendingRestore;rosterKeepWrite(c,PSRosterRecovery.capture(done,next,c));
+    load();itemsRerender();return ids.length;
+  });
+}
+function rosterRestoreMissing(ids,preview){
+  if(rosterRecoveryBusy)return Promise.reject(new Error("복구 확인 중입니다."));
+  if(!preview||!Array.isArray(ids)||!ids.length)return Promise.reject(new Error("목록에서 복구할 선수를 선택해 주세요."));
+  rosterRecoveryBusy=true;
+  return Promise.resolve().then(function(){return rosterRecoverySnapshot(true);}).then(function(s){
+    if(!PSRosterRecovery.sameSnapshot(s,preview))throw new Error("명단이나 보관 자료가 갱신되었습니다. 목록을 다시 확인해 주세요.");
+    if(rosterKeepLoad(s.context).pendingRestore)throw new Error("끝나지 않은 복구 저장을 먼저 다시 확인해 주세요.");
+    var planned=PSRosterRecovery.plan(s.keep,s.raw,s.deleted,s.items,s.context,ids);
+    planned.doc._items={build:(window.parent&&window.parent.PS_BUILD)||window.PS_BUILD||"2.791",n:planned.doc.players.filter(function(p){return p.type!=="target"&&String(p.name||"").trim();}).length};
+    return rosterRecoveryCommit(s,planned.doc,ids);
+  }).finally(function(){rosterRecoveryBusy=false;});
+}
+function rosterRecoveryRetry(preview){
+  if(rosterRecoveryBusy)return Promise.reject(new Error("복구 확인 중입니다."));
+  rosterRecoveryBusy=true;
+  return Promise.resolve().then(function(){return rosterRecoverySnapshot(true);}).then(function(s){
+    if(!PSRosterRecovery.sameSnapshot(s,preview))throw new Error("명단이 갱신되었습니다. 목록을 다시 확인해 주세요.");
+    var keep=rosterKeepLoad(s.context),ids=keep.pendingRestore&&keep.pendingRestore.ids,doc=PSRosterRecovery.main(s.raw),t=PSRosterRecovery.tombs(s.deleted);
+    if(!Array.isArray(ids)||!ids.length)throw new Error("확인할 복구 저장이 없습니다.");
+    var missing=[];
+    ids.forEach(function(id){
+      if(t[id]||s.items.some(function(r){return r.id===id&&r.p._del;}))throw new Error("삭제 기록이 있는 선수는 자동으로 복구하지 않습니다.");
+      var p=doc.players.find(function(p){return p.id===id;});
+      if(!p){missing.push(id);return;}
+      if(p.type==="target")throw new Error("명단이 달라졌습니다. 보관 목록에서 선수를 다시 확인해 주세요.");
     });
-    localStorage.setItem(KEEP_KEY,JSON.stringify(keep));
-  }catch(_){}   /* 용량이 모자라도 본 저장은 절대 막지 않는다 */
+    if(missing.length)doc=PSRosterRecovery.plan(s.keep,s.raw,s.deleted,s.items,s.context,missing).doc;
+    doc._items={build:(window.parent&&window.parent.PS_BUILD)||window.PS_BUILD||"2.791",n:doc.players.filter(function(p){return p.type!=="target"&&String(p.name||"").trim();}).length};
+    return rosterRecoveryCommit(s,doc,ids);
+  }).finally(function(){rosterRecoveryBusy=false;});
 }
-/* 지금 명단에서 빠졌지만 보관소에 남아 있는 사람 */
-function rosterMissing(){
-  var keep=rosterKeepLoad(), have={};
-  (data.players||[]).forEach(function(p){ if(p&&p.id)have[p.id]=1; });
-  return Object.keys(keep).filter(function(id){ return !have[id]; })
-    .map(function(id){ return keep[id].p; })
-    .filter(function(p){ return p&&String(p.name||"").trim(); });
+function rosterRecoveryOpen(){
+  var menu=$("tmEtcMenu");if(menu)menu.hidden=true;
+  var old=$("rosterRecoveryPanel");if(old)old.remove();
+  var box=document.createElement("dialog");box.id="rosterRecoveryPanel";box.setAttribute("aria-labelledby","rosterRecoveryTitle");
+  box.style.cssText="width:min(600px,calc(100vw - 28px));max-height:84vh;overflow:auto;border:1px solid var(--line);border-radius:16px;padding:20px;background:var(--bar);color:var(--txt);box-shadow:0 20px 80px #0003";
+  box.innerHTML='<div style="display:flex;align-items:center;gap:12px"><h3 id="rosterRecoveryTitle" style="flex:1;margin:0">이 기기의 명단 보관</h3><button type="button" class="btn sm" data-close aria-label="명단 보관 닫기">닫기</button></div><p class="muted" style="font-size:12px">이 계정·팀에서 확인한 선수만 30일간 보관합니다. 삭제 기록이 있는 선수는 자동으로 되살리지 않습니다.</p><p data-state role="status" style="font-size:13px"></p><div data-list></div><button type="button" class="btn sm" data-refresh>다시 확인</button>';
+  document.body.appendChild(box);var state=box.querySelector('[data-state]'),list=box.querySelector('[data-list]'),refresh=box.querySelector('[data-refresh]');
+  var close=function(){window.removeEventListener('storage',invalidate);window.removeEventListener('message',authChanged);box.close();box.remove();var b=$("tmEtcBtn");if(b&&b.style.display!=="none")b.focus();};box.querySelector('[data-close]').onclick=close;
+  box.addEventListener('cancel',function(e){e.preventDefault();close();});
+  box.addEventListener('keydown',function(e){
+    if(e.key!=='Tab')return;
+    var buttons=Array.from(box.querySelectorAll('button:not(:disabled)')).filter(function(b){return b.getClientRects().length;});
+    if(!buttons.length)return;e.preventDefault();var i=buttons.indexOf(document.activeElement);
+    buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length].focus();
+  });box.showModal();box.querySelector('[data-close]').focus();
+  function current(){return box.isConnected&&$("rosterRecoveryPanel")===box;}
+  function invalidate(e){
+    if(!current())return;
+    if(rosterRecoveryBusy&&e&&["ps_sync_session","ps_active_ws","ps_cache_owner_v1","cs_perms_v1"].indexOf(e.key)<0)return;
+    if(e&&[KEY,PDKEY,'ps_items_rev','ps_sync_session','ps_active_ws','ps_cache_owner_v1','cs_perms_v1'].indexOf(e.key)<0)return;
+    rosterRecoveryPreview=null;list.textContent='';state.textContent='명단이나 권한이 바뀌었습니다. 다시 확인해 주세요.';
+  }
+  function authChanged(e){if(e.source===window.parent&&e.origin===location.origin&&e.data&&e.data.source==='process-studio'&&e.data.type==='ps-auth-state'){rosterRecoveryMenu();invalidate({key:'ps_cache_owner_v1'});}}
+  window.addEventListener('storage',invalidate);
+  window.addEventListener('message',authChanged);
+  function run(work){list.querySelectorAll('button').forEach(function(b){b.disabled=true;});refresh.disabled=true;state.textContent="복구 저장을 확인하고 있습니다…";
+    Promise.resolve().then(work).then(function(n){if(current()){state.textContent=n+"명의 복구 저장을 확인했습니다.";return paint(true);}}).catch(function(e){if(current())state.textContent=e.message||"복구 저장 확인이 끝나지 않았습니다. 다시 확인해 주세요.";}).finally(function(){if(current())refresh.disabled=false;});}
+  function paint(keepMessage){
+    if(!current())return;list.textContent="";refresh.disabled=true;if(!keepMessage)state.textContent="팀의 최신 명단을 확인하고 있습니다…";
+    return Promise.resolve().then(function(){return rosterRecoverySnapshot(false);}).then(function(s){
+      if(!current())return;rosterRecoveryPreview=s;var a=PSRosterRecovery.archive(s.keep,s.context),editable=true;try{rosterRecoveryContext(true);}catch(_){editable=false;}
+      if(!keepMessage)state.textContent=s.rows.length?"현재 명단과 다른 보관 기록 "+s.rows.length+"명":"현재 명단에 없는 보관 기록이 없습니다.";
+      if(a.pendingRestore){var notice=document.createElement('p');notice.textContent="끝나지 않은 복구 저장 확인이 있습니다. 보관 원본은 남아 있습니다.";list.appendChild(notice);if(editable){var retry=document.createElement('button');retry.className='btn sm';retry.textContent='복구 저장 다시 확인';retry.onclick=function(){run(function(){return rosterRecoveryRetry(s);});};list.appendChild(retry);}}
+      s.rows.forEach(function(r){var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:12px 0';var text=document.createElement('span');text.style.cssText='flex:1;min-width:0;overflow-wrap:anywhere';var title=document.createElement('b');title.textContent=r.p.name;var meta=document.createElement('small');meta.style.cssText='display:block;color:var(--dim)';meta.textContent=new Date(r.at).toLocaleDateString('ko-KR')+' 보관 · '+(r.status==='deleted'?'삭제 기록 있음':r.status==='current-item'?'선수별 명단에 있음':'현재 명단에 없음');text.append(title,meta);row.appendChild(text);
+        if(r.status==='missing'&&editable&&!a.pendingRestore){var b=document.createElement('button');b.className='btn sm';b.textContent='이 선수 복구';b.onclick=function(){run(function(){return rosterRestoreMissing([r.id],s);});};row.appendChild(b);}list.appendChild(row);});
+      if(!editable){var p=document.createElement('p');p.className='muted';p.textContent='복구는 선수단 편집 권한이 있는 코치가 할 수 있습니다.';list.appendChild(p);}
+      if(localStorage.getItem('ps_roster_keep_v1')){var legacy=document.createElement('p');legacy.className='muted';legacy.style.fontSize='12px';legacy.textContent='이전 버전 보관본도 기기에 남아 있습니다. 팀 출처를 확인할 수 없는 자료는 이 명단에 합치지 않습니다.';list.appendChild(legacy);}
+    }).catch(function(e){if(current()){list.textContent='';state.textContent=e.message||'명단을 확인하지 못했습니다.';}}).finally(function(){if(current())refresh.disabled=false;});
+  }
+  refresh.onclick=function(){if(!rosterRecoveryBusy)paint();};paint();
 }
-/* 1.741 — '이미 확인한 실종자'는 다시 묻지 않는다.
-   1.629 급감 알림이 confirm 한 판만 띄우고 기억을 안 남겨서, 의도적으로 뺀 선수를
-   load()가 돌 때마다(동기화 도착·팀 전환·새로고침) 매번 다시 물었다(사용자: "자꾸 왜 뜨는거야").
-   취소하면 그 사람들 id 를 적어 두고, 이후엔 **새로 사라진 사람**이 생길 때만 다시 묻는다.
-   보관소(ps_roster_keep_v1)·계정 팝업 되돌리기는 그대로라 30일 안엔 언제든 복구된다. */
-var MISS_ACK_KEY="ps_roster_miss_ack_v1";
-function rosterMissAck(){ try{ return JSON.parse(localStorage.getItem(MISS_ACK_KEY)||"[]")||[]; }catch(_){ return []; } }
-function rosterMissAckSet(ids){ try{ localStorage.setItem(MISS_ACK_KEY,JSON.stringify((ids||[]).slice(0,500))); }catch(_){} }
-function rosterRestoreMissing(){
-  var miss=rosterMissing(); if(!miss.length) return 0;
-  data.players=(data.players||[]).concat(miss);
-  save();
-  return miss.length;
-}
-try{ window.PSRoster={missing:rosterMissing,restore:rosterRestoreMissing}; }catch(_){}
+try{window.PSRoster={open:rosterRecoveryOpen,missing:function(){return rosterRecoverySnapshot(false).then(function(s){return s.rows;});},restore:rosterRestoreMissing};}catch(_){}
 
 function save(){
+  var options=arguments[0]||{};
   if(scMainMigrationPending)return false;
+  var savedMain=true,savedTargets=true;
   if(evalMode()==="team")rememberTeamSet();
   data.meta=data.meta||{};data.meta.activeEvalSetId=evalSetId();
   try{ if(typeof tbSlotsCompute==="function"){ var _ts=tbSlotsCompute(); if(_ts&&_ts.length===11)data.meta.tbSlots=_ts; } }catch(_){}   /* 2.760 */
@@ -6241,12 +6343,13 @@ function save(){
          같은 명단·같은 판이면 **글자까지 같아야** 한다. */
     try{ main._items={build:(window.parent&&window.parent.PS_BUILD)||window.PS_BUILD||'',
                       n:ours.filter(function(p){return p&&String(p.name||"").trim();}).length}; }catch(_){}
-    store.set(KEY,main);
-    if(canSeeTargets()) store.set(TKEY,{v:1,players:tg});
+    if(!store.set(KEY,main)){savedMain=false;return;}
+    if(!options.skipTargets&&canSeeTargets()&&!store.set(TKEY,{v:1,players:tg}))savedTargets=false;
     /* 항목 단위 저장(1.631) — 선수 한 명이 키 하나. 실패해도 본 저장은 이미 끝났다.
        ⚠ ours 만 넘긴다. 후보(target)는 권한 등급이 달라 섞으면 코칭스태프에게 샌다. */
     try{ var PI=(window.parent&&window.parent.PSItems)||window.PSItems; if(PI&&PI.write)PI.write(main.players); }catch(_){}
   })();
+  if(!savedMain)return false;
   /* 속성 목록만 공개 미러(cs_team_attrs_v1) — 선수는 scout_tool_v1(전체 평가)을 서버에서 못 받지만
      IDP 팀 기준 셀프평가에 속성 이름은 필요하다. 평가 값은 미러에 넣지 않는다. */
   try{localStorage.setItem("cs_team_attrs_v1",JSON.stringify({
@@ -6284,6 +6387,7 @@ function save(){
   else localStorage.setItem("cs_squad_v1",squadJson);
 }catch(_){}
   rosterKeepSave();   /* 1.629 — 선수를 항목 단위로도 남긴다(이 기기, 30일) */
+  return savedTargets;
 }
 function attr(id){return data.attrs.find(a=>a.id===id);}
 function pos(id){return data.positions.find(p=>p.id===id);}
@@ -18241,7 +18345,7 @@ function idpPrint(){
 function init(){
   load();
   try{ if(migrateAttrWording()){ /* 옛 문구 → 선수 말 (1.520). 팀이 고친 항목은 그대로 둔다 */ } }catch(_){}
-  save(); /* 평가표 모드·공개 미러를 초기 진입 시에도 확정 */
+  save({skipTargets:true}); /* 후보 초기 이전·준비는 scPrepare가 담당한다. 준비 전 무변경 저장은 하지 않는다. */
   try{ itemsApply("boot").then(function(ch){ if(ch)itemsRerender(); }); }catch(_){}   /* 2.730 — 선수 행이 있으면 명단을 행에서 */
   matchWire();
   if($("teamIdpOpen")){
@@ -18486,6 +18590,8 @@ function syncPlayerPickerLabel(){
 <script src="perms.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded",scPrepare);
+document.addEventListener("DOMContentLoaded",function(){rosterRecoveryMenu();rosterKeepSave();});
+window.addEventListener("storage",function(e){if(!e)return;if(e.key==='ps_sync_meta')rosterKeepSave();if(['ps_sync_session','ps_active_ws','ps_cache_owner_v1','cs_perms_v1'].indexOf(e.key)>=0)rosterRecoveryMenu();});
 function scEventScope(){try{var u=JSON.parse(localStorage.getItem('ps_sync_session')||'null');return JSON.stringify([localStorage.getItem('ps_active_ws'),u&&u.uid,localStorage.getItem('ps_cache_owner_v1')]);}catch(_){return '';}}
 window.addEventListener("storage",function(e){
   if(!e||['cs_scout_targets_v1','ps_active_ws','ps_sync_meta','ps_cache_owner_v1','ps_sync_session'].indexOf(e.key)<0)return;

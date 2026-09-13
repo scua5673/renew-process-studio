@@ -15881,6 +15881,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     var exBtn=id("cmd-export-btn");if(!exBtn){exBtn=make("button","cmd-export-btn","btn cmd-export-btn");exBtn.type="button";exBtn.setAttribute("aria-haspopup","menu");exBtn.setAttribute("aria-expanded","false");exBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:15px;height:15px"><path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><span class="cmd-export-label">내보내기</span><span class="cmd-export-caret" aria-hidden="true">▾</span>';}
     var exPop=id("cmd-export-pop");if(!exPop){exPop=make("div","cmd-export-pop","cmd-popover cmd-export-pop");exPop.setAttribute("role","menu");exPop.setAttribute("aria-label","내보내기");document.body.appendChild(exPop);}
     exBtn.setAttribute("aria-controls","cmd-export-pop");
+    exBtn.setAttribute("aria-label","내보내기");if(!exBtn.title&&!exBtn.getAttribute("data-tip"))exBtn.title="내보내기";
     [["animGif","GIF 애니메이션"],["animExport","MP4 영상"],["pngBtn","PNG 이미지"]]
       .forEach(function(pair){var b=id(pair[0]);if(b){ b.classList.add("cmd-export-item"); var lb=b.querySelector(".cmd-export-item-label"); if(!lb){lb=document.createElement("span");lb.className="cmd-export-item-label";b.appendChild(lb);} lb.textContent=pair[1]; b.setAttribute("role","menuitem"); exPop.appendChild(b); if(!b.__exClose){b.__exClose=1;b.addEventListener("click",function(){try{closeCustom();}catch(_){}});} }});
     if(!exBtn.__bound){exBtn.__bound=1;exBtn.addEventListener("click",function(e){e.stopPropagation();toggleCustom(exPop,exBtn);});}
@@ -16557,8 +16558,8 @@ html.ps-page-board #ps-command-dock #cmdFormationBtn:not(#_):not(#_):hover{backg
    실측 1280: 유니폼 75px / 보드 설정 87px 로 12px 다르고, 다음 칸이 107 vs 125 로 18px 어긋나 있었다.
    둘을 92px 로 맞추고 뒤 간격도 10px 로 통일 → 두 행의 둘째 칸이 같은 x(130)에서 시작한다. */
 html.ps-page-board body:not(.ps-dock) #ps-command-dock #cmd-tool-end #viewBtn:not(#_):not(#_):not(#_){
-  width:104px!important;min-width:104px!important;max-width:104px!important;flex:0 0 104px!important;
-  justify-content:flex-start!important;padding-left:9px!important;padding-right:9px!important;gap:5px!important}
+  width:var(--dk-settings-width,104px)!important;min-width:var(--dk-settings-width,104px)!important;max-width:var(--dk-settings-width,104px)!important;flex:0 0 var(--dk-settings-width,104px)!important;
+  justify-content:var(--dk-settings-align,flex-start)!important;padding-left:var(--dk-settings-padding,9px)!important;padding-right:var(--dk-settings-padding,9px)!important;gap:var(--dk-settings-gap,5px)!important}
 /* 유니폼 칩 쪽은 위 2.216 규칙에서 폭 92 + margin-right 6 으로 처리했다(묶음 gap 4 와 합쳐 10) */
 </style>
 <style id="ps-2292-bsfont">/* 2.292 — 보드 설정 글자 크기 통일(사용자 "폰트크기를 맞추고 지금보다 조금 더 작게").
@@ -16835,31 +16836,28 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   fix(); setTimeout(fix,300); setTimeout(fix,1500);
 })();
 </script>
-<style id="ps-2614-dock">/* 2.614 — 하단 도크 고급화(사용자 "하단도크 UI/UX 를 더 고급지게"). 기능·순서·노드는 그대로, 시각 문법만 한 층 위에 얹는다.
-   원칙: ① 표면은 하나 — 반투명 유리(blur 18)·모서리 16·얇은 링+깊은 그림자, 행 사이는 실선 대신 5% 헤어라인.
-        ② 묶음(.cmd-cluster)은 연한 트레이, 버튼은 «고스트»(테두리·배경 없음) → 호버 6% 회색 → 켜짐(.on/aria-pressed)은 트레이 위로 떠오른 흰 면+파란 잉크. 상자 수십 개 → 트레이 몇 개로 읽힌다.
-        ③ 채운 파랑은 진짜 주요 동작 둘만: 재생(#animPlay)·보관함 저장(#vaultSave). 장면 추가(＋)는 연파랑, 내보내기는 테두리 알약.
-        ④ 장면 카드는 흰 카드+살짝 그림자, 활성은 2px 파란 링(레이아웃 안 밀림). ⑤ 활성 도구(#toolSeg .on)도 같은 «흰 면» 문법(2.216 C안 계승) — 채운 파랑은 둘뿐이라 위계가 선다.
-        ⑥ 다크(body.fmdark) 대응. ⑦ 전환 160ms, 누르면 .95 — 폰 도크(#ps-dock)·768 미만은 건드리지 않는다.
-   특이도: figma-premium.css 가 html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock … !important 로 덮으므로 :not(#_) 로 id 를 여덟 더 얹는다(실측: 2.216 도크 블록의 :is(#…)×3 체인이 id 여덟 급 — 다섯으로는 켜진 도구 배경이 2.216 연파랑에 밀렸다)(메모리 board-css-specificity). */
+<style id="ps-2614-dock">/* Shared command-dock surfaces. Desktop A uses the tokens below for a white panel,
+   ghost groups, compact icon actions and blue selection. Unspecified tokens retain the
+   existing tablet/touch treatment; dark mode keeps its own contrast palette.
+   The legacy eight-ID prefix is retained to resolve existing inline/figma-premium rules. */
 @media (min-width:768px){
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________){
     --dk-ink:#2B3442;--dk-text:#3B4556;--dk-muted:#6B7280;--dk-hover:rgba(15,23,42,.06);--dk-press:rgba(15,23,42,.1);
     --dk-line:rgba(15,23,42,.08);--dk-hair:rgba(15,23,42,.05);--dk-soft:#E8EFFF;--dk-soft-ink:#2B55D6;--dk-soft-line:rgba(58,109,240,.28);
     --dk-blue:#3A6DF0;--dk-blue-2:#2F62EA;--dk-blue-3:#2652CC;--dk-card:#FFFFFF;--dk-card-on:#F3F7FF;--dk-tray:rgba(15,23,42,.045);--dk-on:#FFFFFF;
-    border:0!important;border-radius:16px!important;
-    background:rgba(255,255,255,.9)!important;
-    -webkit-backdrop-filter:saturate(1.6) blur(18px)!important;backdrop-filter:saturate(1.6) blur(18px)!important;
-    box-shadow:0 0 0 1px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04),0 18px 44px -14px rgba(15,23,42,.26)!important;
+    border:0!important;border-radius:var(--dk-radius,16px)!important;
+    background:var(--dk-surface,rgba(255,255,255,.9))!important;
+    -webkit-backdrop-filter:var(--dk-backdrop,saturate(1.6) blur(18px))!important;backdrop-filter:var(--dk-backdrop,saturate(1.6) blur(18px))!important;
+    box-shadow:var(--dk-surface-shadow,0 0 0 1px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04),0 18px 44px -14px rgba(15,23,42,.26))!important;
     color:var(--dk-text)!important;
   }
   /* 행 구분: 실선 → 헤어라인 */
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#animBar,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #floatBar>#drawPanel{border-bottom:1px solid var(--dk-hair)!important;background:transparent!important;}
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-tool-row{background:transparent!important;}
-  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#animBar{border-radius:16px 16px 0 0!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#animBar{border-radius:var(--dk-radius,16px) var(--dk-radius,16px) 0 0!important;}
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#floatBar,
-  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-tool-row{border-radius:0 0 16px 16px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-tool-row{border-radius:0 0 var(--dk-radius,16px) var(--dk-radius,16px)!important;}
   /* 묶음 구분선: 짧고 옅게 */
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .cmd-cluster+.cmd-cluster{border-left-color:var(--dk-line)!important;}
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .cmd-separator{background:var(--dk-line)!important;}
@@ -16893,7 +16891,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #moreBtn,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-equip-color,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #railEquip .chip{
-    border:1px solid transparent!important;background:transparent!important;color:var(--dk-text)!important;box-shadow:none!important;border-radius:9px!important;
+    border:1px solid transparent!important;background:transparent!important;color:var(--dk-text)!important;box-shadow:none!important;border-radius:var(--dk-button-radius,9px)!important;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #railEquip .chip{border-radius:50%!important;}
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animUpdate:hover,
@@ -16920,13 +16918,13 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-tool-more.has-active,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-equip-color[aria-expanded="true"],
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) [aria-pressed="true"]:not(#animPlay):not(.cmd-stamp-token):not([data-tool]):not(.catpill.tpill):not(.chip){
-    background:var(--dk-on)!important;color:var(--dk-soft-ink)!important;border-color:transparent!important;box-shadow:0 1px 2px rgba(15,23,42,.14),0 0 0 1px rgba(15,23,42,.04)!important;
+    background:var(--dk-on)!important;color:var(--dk-soft-ink)!important;border-color:transparent!important;box-shadow:var(--dk-active-shadow,0 1px 2px rgba(15,23,42,.14),0 0 0 1px rgba(15,23,42,.04))!important;
   }
   /* ⑤ 활성 도구 = 트레이 위로 떠오른 흰 면 + 파란 잉크(2.216 C안 «켜진 것만 흰 면» 유지) */
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #toolSeg>button.on,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #toolSeg>button.on:hover{
     background:var(--dk-on)!important;color:var(--dk-soft-ink)!important;border-color:transparent!important;
-    box-shadow:0 1px 2px rgba(15,23,42,.14),0 0 0 1px rgba(15,23,42,.04)!important;
+    box-shadow:var(--dk-active-shadow,0 1px 2px rgba(15,23,42,.14),0 0 0 1px rgba(15,23,42,.04))!important;
   }
   /* 묶음 = 연한 트레이(구분선 대신). 안의 버튼은 고스트, 켜진 것만 떠오른다 */
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .cmd-cluster{background:var(--dk-tray)!important;border-radius:11px!important;padding:2px!important;border-left:0!important;}
@@ -16935,21 +16933,21 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   /* ③ 주요 동작 둘 — 재생·보관함 저장 */
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animPlay,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #vaultSave{
-    background:linear-gradient(180deg,#4A7BF7 0%,var(--dk-blue-2) 100%)!important;color:#fff!important;border:1px solid transparent!important;border-radius:9px!important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 2px rgba(47,98,234,.35),0 4px 10px -4px rgba(47,98,234,.5)!important;
+    background:var(--dk-primary-bg,linear-gradient(180deg,#4A7BF7 0%,var(--dk-blue-2) 100%))!important;color:#fff!important;border:1px solid transparent!important;border-radius:var(--dk-button-radius,9px)!important;
+    box-shadow:var(--dk-primary-shadow,inset 0 1px 0 rgba(255,255,255,.22),0 1px 2px rgba(47,98,234,.35),0 4px 10px -4px rgba(47,98,234,.5))!important;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animPlay:hover,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #vaultSave:hover{
-    background:linear-gradient(180deg,#3E6EEA 0%,var(--dk-blue-3) 100%)!important;color:#fff!important;border-color:transparent!important;
+    background:var(--dk-primary-hover,linear-gradient(180deg,#3E6EEA 0%,var(--dk-blue-3) 100%))!important;color:#fff!important;border-color:transparent!important;
   }
   /* 장면 추가 ＋ = 연파랑 · 내보내기 = 테두리 알약 */
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animAdd{
-    background:var(--dk-soft)!important;color:var(--dk-soft-ink)!important;border:1px solid transparent!important;border-radius:9px!important;box-shadow:inset 0 0 0 1px var(--dk-soft-line)!important;
+    background:var(--dk-add-bg,var(--dk-soft))!important;color:var(--dk-soft-ink)!important;border:1px solid transparent!important;border-radius:var(--dk-button-radius,9px)!important;box-shadow:var(--dk-add-shadow,inset 0 0 0 1px var(--dk-soft-line))!important;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animAdd:hover{background:#DCE7FF!important;color:var(--dk-blue-3)!important;border-color:transparent!important;}
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#animBar #cmd-export-btn,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animExport{
-    background:var(--dk-card)!important;color:var(--dk-text)!important;border:1px solid var(--dk-line)!important;border-radius:999px!important;box-shadow:0 1px 2px rgba(15,23,42,.05)!important;
+    background:var(--dk-export-bg,var(--dk-card))!important;color:var(--dk-text)!important;border:1px solid var(--dk-value-line,var(--dk-line))!important;border-radius:var(--dk-button-radius,999px)!important;box-shadow:var(--dk-value-shadow,0 1px 2px rgba(15,23,42,.05))!important;
     font-weight:700!important;letter-spacing:-.01em!important;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#animBar #cmd-export-btn:hover,
@@ -16957,15 +16955,15 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   /* 속도·머무름 = 테두리 알약, 숫자 고정폭 */
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animSpeedSel,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animHoldSel{
-    background-color:var(--dk-card)!important;color:var(--dk-text)!important;border:1px solid var(--dk-line)!important;border-radius:999px!important;
-    font-weight:700!important;font-variant-numeric:tabular-nums!important;box-shadow:0 1px 2px rgba(15,23,42,.05)!important;
+    background-color:var(--dk-value-bg,var(--dk-card))!important;color:var(--dk-text)!important;border:1px solid var(--dk-value-line,var(--dk-line))!important;border-radius:var(--dk-button-radius,999px)!important;
+    font-weight:700!important;font-variant-numeric:tabular-nums!important;box-shadow:var(--dk-value-shadow,0 1px 2px rgba(15,23,42,.05))!important;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animSpeedSel:hover,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animHoldSel:hover{border-color:rgba(15,23,42,.16)!important;}
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-scene-status{color:var(--dk-muted)!important;font-weight:700!important;font-variant-numeric:tabular-nums!important;letter-spacing:.02em!important;background:transparent!important;}
   /* ④ 장면 카드 */
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .anim-frame{
-    border:1px solid var(--dk-line)!important;background:var(--dk-card)!important;border-radius:9px!important;box-shadow:0 1px 2px rgba(15,23,42,.05)!important;
+    border:1px solid var(--dk-line)!important;background:var(--dk-card)!important;border-radius:var(--dk-button-radius,9px)!important;box-shadow:0 1px 2px rgba(15,23,42,.05)!important;
     transition:box-shadow .16s,border-color .16s,background-color .16s!important;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .anim-frame:hover{border-color:rgba(15,23,42,.18)!important;background:var(--dk-card)!important;}
@@ -16977,7 +16975,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .anim-frame .aft{border-radius:5px!important;box-shadow:inset 0 0 0 1px rgba(15,23,42,.08)!important;}
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .anim-frame .afi{color:var(--dk-muted)!important;font-variant-numeric:tabular-nums!important;}
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .anim-frame.on .afi{color:var(--dk-soft-ink)!important;}
-  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animFrames:empty::before{border:1px dashed var(--dk-line)!important;background:transparent!important;color:var(--dk-muted)!important;border-radius:9px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animFrames:empty::before{border:1px dashed var(--dk-line)!important;background:transparent!important;color:var(--dk-muted)!important;border-radius:var(--dk-button-radius,9px)!important;}
   /* 유니폼 설정 알약·색 버튼 */
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #benchCat .team-style-btn{border:1px solid var(--dk-line)!important;background:var(--dk-card)!important;color:var(--dk-text)!important;box-shadow:none!important;}
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #benchCat .team-style-btn:hover{background:var(--dk-hover)!important;}
@@ -16994,6 +16992,33 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   html.ps-page-board body.fmdark.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .anim-frame{box-shadow:0 1px 2px rgba(0,0,0,.3)!important;}
   html.ps-page-board body.fmdark.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .anim-frame .aft{box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)!important;}
   html.ps-page-board body.fmdark.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #colorBtn{box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)!important;}
+
+/* A white dock: visual tokens only. B's three 36px rows remain in ps-2751 below.
+   The existing legacy selector is reused; no stronger specificity chain is added.
+   Static captions are hidden only for a fine pointer. Team/role text and values remain. */
+@media (hover:hover) and (pointer:fine) and (not (any-pointer:coarse)){
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________){--dk-settings-width:30px;--dk-settings-align:center;--dk-settings-padding:0px;--dk-settings-gap:0px;--dk-radius:12px;--dk-button-radius:7px;--dk-backdrop:none;--dk-active-shadow:none;--dk-primary-bg:var(--dk-blue);--dk-primary-shadow:none;--dk-primary-hover:var(--dk-blue-3);--dk-add-bg:transparent;--dk-add-shadow:none;--dk-export-bg:transparent;--dk-value-line:transparent;--dk-value-shadow:none;--dk-tray:transparent;--dk-on:var(--dk-soft);}
+  html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________){--dk-surface:#FFFFFF;--dk-ink:#333E4C;--dk-text:#333E4C;--dk-muted:#7D8795;--dk-line:#E9EDF2;--dk-hair:#E9EDF2;--dk-soft:#E9F0FF;--dk-soft-ink:#2B61DC;--dk-blue:#3468EA;--dk-value-bg:#F3F5F8;--dk-surface-shadow:0 0 0 1px rgba(24,39,60,.08),0 6px 20px -8px rgba(21,34,55,.18);}
+  html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-equipment-group{--dk-text:#3B4556;--dk-ink:#2B3442;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(.cmd-cluster,#toolSeg,#benchCat,#railL2,#railEquip,#animFrames){background:transparent!important;box-shadow:none!important;border-color:transparent!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#floatBar,#drawPanel){background:transparent!important;box-shadow:none!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animHlBtn{background:transparent!important;color:var(--dk-text)!important;box-shadow:none!important;border:1px solid transparent!important;border-radius:var(--dk-button-radius)!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#animHlBtn,#viewBtn,#cmd-export-btn):hover:not(:disabled){background:var(--dk-hover)!important;color:var(--dk-ink)!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#animHlBtn.on,#animHlBtn[aria-pressed="true"],#viewBtn.on,#viewBtn[aria-expanded="true"],#cmd-export-btn[aria-expanded="true"]){background:var(--dk-soft)!important;color:var(--dk-soft-ink)!important;box-shadow:none!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#viewBtn,#cmd-export-btn){width:30px!important;min-width:30px!important;max-width:30px!important;flex:0 0 30px!important;padding:0!important;gap:0!important;justify-content:center!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #viewBtn:not(.on):not([aria-expanded="true"]){background:transparent!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#viewBtn,#cmd-export-btn)>span{display:none!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#cmd-tool-end,#cmd-scene-export,#cmd-tool-end .menuwrap){width:30px!important;min-width:30px!important;max-width:30px!important;flex:0 0 30px!important;padding:0!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) button:not(.catpill):not(.cmd-stamp-token):not(.chip):not(#colorBtn):not(#cmd-equip-color) svg{width:17px!important;height:17px!important;max-width:17px!important;max-height:17px!important;flex:0 0 17px!important;color:inherit!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) button:not(.catpill):not(.cmd-stamp-token):not(.chip):not(#colorBtn):not(#cmd-equip-color) svg[stroke]{stroke-width:1.8!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animFrames:empty::after{display:none!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animFrames:empty::before{background:var(--dk-soft)!important;color:var(--dk-soft-ink)!important;border:0!important;box-shadow:none!important;border-radius:7px!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #railEquip .chip.equip.stampon{background:var(--dk-soft)!important;box-shadow:inset 0 0 0 2px var(--dk-blue)!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-dock-fold{background:var(--dk-surface,var(--panel))!important;color:var(--dk-muted)!important;box-shadow:none!important;border-color:var(--dk-line)!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) button:disabled{opacity:.4!important;cursor:default!important;transform:none!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) button:disabled:hover{background:transparent!important;box-shadow:none!important;}
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#animPlay,#vaultSave):disabled:hover{background:var(--dk-primary-bg)!important;box-shadow:none!important;}
+}
 }
 </style>
 
