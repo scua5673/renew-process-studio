@@ -6431,7 +6431,8 @@ function renderEquipmentInto(box){if(!box)return;box.innerHTML="";
     EQUIP_TYPES.forEach(k=>{
       if(k==="marker"){[["#e23b3b","빨강 마커"],["#d4a017","노랑 마커"],["#34a56f","초록 마커"]].forEach(function(mc){
         const c=document.createElement("div");c.className="chip equip";c.style.color=mc[0];
-        c.innerHTML='<svg viewBox="-22 -22 44 44" preserveAspectRatio="xMidYMid meet">'+equipSVGInner("marker")+'</svg>';
+        /* 2.784 — 도크 CSS 가 칩의 color 를 !important 로 덮어 세 마커가 다 회색으로 보였다(사용자 «빨강 노랑 초록으로»). currentColor 대신 색을 fill 에 직접 박는다 */
+        c.innerHTML='<svg viewBox="-22 -22 44 44" preserveAspectRatio="xMidYMid meet">'+equipSVGInner("marker").replace(/currentColor/g,mc[0])+'</svg>';
         c.title=mc[1];attachChipDrag(c,"equip","marker",mc[0]);box.appendChild(c);});return;}
       const c=document.createElement("div");c.className="chip equip";
       c.style.color=(equipColor&&EQUIP_COL_DEF[k])?equipColor:(EQUIP_COL_DEF[k]||"#3a4150");
