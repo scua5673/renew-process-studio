@@ -4813,6 +4813,8 @@ function makeToken(p,kind){
   }
   g.setAttribute("data-kind",kind);
   g.setAttribute("transform",tokenTransform(p));
+  /* 2.799 — 폰: 보이는 원(r 21 ≈ 지름 13px)은 그대로 두고 잡히는 범위만 지름 ≈44px 로(사용자 «폰에서는 토큰을 가볍게 옮기는 것만»). 첫 자식이라 그림 위에 얹히지 않는다. */
+  try{ if(psBoardDevice()==="phone"){ g.insertBefore(el("circle",{r:70,fill:"transparent","class":"tok-hit"}),g.firstChild); } }catch(_){}
   enableDrag(g,p,removable,kind);return g;
 }
 function playerTeamCol(p){   // p.color 없을 때의 유효 팀색 — 렌더 로직과 동일 규칙(현재색 하이라이트용)
@@ -4860,7 +4862,8 @@ function enableDrag(g,p,removable,kind){
       }else{grp=null;grpStart=null;}
     }};
     // 모바일: 토큰 이동은 길게 눌러야(스크롤 충돌 방지). 그리기·데스크톱은 즉시.
-    if(e.pointerType==="touch" && !_isDrawStart){
+    /* 2.799 — 폰은 길게 누르지 않고 바로 잡는다(svg.board 가 touch-action:none 이라 스크롤 충돌이 없다). 아이패드·데스크톱 터치는 그대로. */
+    if(e.pointerType==="touch" && !_isDrawStart && psBoardDevice()!=="phone"){
       if(typeof toast==="function")toast("길게 눌러 이동하세요");
       const _lpT=setTimeout(function(){_cleanup();engage();},280);
       const _chk=ev=>{if(ev.pointerId!==e.pointerId)return;if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>10)_cleanup();};
