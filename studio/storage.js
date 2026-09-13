@@ -836,6 +836,10 @@
         mem[id]=dataUrl; return REF+id;
       });
   }
+  function verify(v,expected){
+    if(!isRef(v)||!window.storage||typeof expected!=='string')return Promise.resolve(false);
+    return window.storage.get(v.slice(REF.length)).then(function(r){return !!r&&r.value===expected;});
+  }
   function del(v){
     if(!isRef(v)) return Promise.resolve();
     var id=v.slice(REF.length); delete mem[id];
@@ -863,16 +867,25 @@
   }
   function stripIdp(k){
     if(!isForeignIdpKey(k)) return Promise.resolve(false);
-    var doc=readJSON(k), pf=doc&&doc.profile;
-    if(!pf||!isData(pf.photo)) return Promise.resolve(false);
-    var orig=pf.photo;
-    return put(orig).then(function(ref){
-      /* put 이 도는 사이 새 풀이 문서를 덮었을 수 있다 — 다시 읽어 같은 사진일 때만 바꾼다.
-         (다르면 방금 온 판이 더 새것이니 그쪽의 다음 strip 이 처리한다) */
-      var cur=readJSON(k), cp=cur&&cur.profile;
-      if(!cp||cp.photo!==orig) return false;
-      cp.photo=ref;
-      return writeJSON(k,cur);
+    var before=null,uid='',wid='',seal='';
+    try{
+      before=localStorage.getItem(k);uid=String((JSON.parse(localStorage.getItem('ps_sync_session')||'null')||{}).uid||'');
+      wid=String(localStorage.getItem('ps_active_ws')||'');seal=String(localStorage.getItem('ps_cache_owner_v1')||'');
+      var owner=JSON.parse(seal||'null');if(!owner||owner.uid!==uid||owner.wid!==wid)return Promise.resolve(false);
+    }catch(_){return Promise.resolve(false);}
+    var doc=null;try{doc=JSON.parse(before);}catch(_){return Promise.resolve(false);}
+    if(!doc||doc.v!==1||typeof doc!=='object'||Array.isArray(doc))return Promise.resolve(false);
+    var pf=doc.profile;if(!pf||!isData(pf.photo))return Promise.resolve(false);
+    function current(){
+      try{return isForeignIdpKey(k)&&uid===String((JSON.parse(localStorage.getItem('ps_sync_session')||'null')||{}).uid||'')&&
+        wid===String(localStorage.getItem('ps_active_ws')||'')&&seal===String(localStorage.getItem('ps_cache_owner_v1')||'')&&
+        localStorage.getItem(k)===before;}catch(_){return false;}
+    }
+    return put(pf.photo).then(function(ref){
+      // A photograph can stay equal while the diary, account or team changes.
+      // Only the exact document and owner that started migration may be replaced.
+      if(!current())return false;
+      pf.photo=ref;return writeJSON(k,doc);
     }).catch(function(){ return false; });
   }
 
@@ -928,7 +941,7 @@
     });
   }
 
-  window.PSImg={ ready:ready, src:src, put:put, del:del, migrate:migrate, isRef:isRef, isData:isData, stripIdp:stripIdp };
+  window.PSImg={ ready:ready, src:src, put:put, verify:verify, del:del, migrate:migrate, isRef:isRef, isData:isData, stripIdp:stripIdp };
   /* 화면이 사진을 그리기 전에 메모리에 올려 둔다. 이전은 조용히 넘어간다(실패해도 원본이 남아 있다). */
   try{ ready().then(function(){ return migrate(); }).catch(function(){}); }catch(_){}
 })();

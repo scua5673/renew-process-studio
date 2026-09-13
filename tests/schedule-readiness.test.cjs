@@ -17,6 +17,7 @@ function fn(name){return section(sync,'function '+name+'(','\nfunction ');}
 const code=[
   fn('cacheOwner'),fn('dataUnlocked'),
   section(sync,'var matchReadyPending=','/* 이 키가 지금 몇 항목인지'),
+  fn('holdList'),section(sync,'function holdConflictContext(','/* 올리기 직전 검사.'),
   fn('hash'),fn('nSet'),fn('syncIssue'),fn('syncHttpError'),fn('normalizeCoachDocument'),
   fn('scheduleRevOf'),fn('scheduleTokenNew'),fn('scheduleTokenValid'),fn('scheduleCommitRaw'),
   fn('kvMetaFetch'),fn('kvPullValues'),fn('blobPrepRows'),
@@ -53,12 +54,12 @@ function harness(opt={}){
       async set(k,v){if(hooks.idbWrite)await hooks.idbWrite(k,v);idb.set(k,v);},
       async replaceIfValue(k,old,value){if((idb.has(k)?idb.get(k):null)!==old)return false;if(value==null)idb.delete(k);else idb.set(k,value);return true;}},
     PSStorage:{async sharedReady(k){if(hooks.sharedReady)await hooks.sharedReady(k);}},editMirrorCommit:Promise.resolve(),
-    OWNERKEY:OWNER,MKEY:META,MATCH_KEY:MATCH,SCHEDULE_KEY:KEY,KEYS:[KEY],PERSONAL:{},MERGE_KEYS:{[KEY]:1},MERGE_LIST:{},
+    HOLD_LIST:'ps_hold_list_v1',OWNERKEY:OWNER,MKEY:META,MATCH_KEY:MATCH,SCHEDULE_KEY:KEY,KEYS:[KEY],PERSONAL:{},MERGE_KEYS:{[KEY]:1},MERGE_LIST:{},
     ITEMS_ACTIVE:false,COPIES_OFF:true,PLAYER_BLIND:[],MAXLEN:2e6,SKIPKEY:'skip',TOMBKEY:'tomb',IDP_PRIV_PREFIX:'cs_idp_v1_',
     busy:false,busyDog:0,signOutEpoch:0,dataReady:true,localSwitchToken:'',kvWho:true,KV_PULL_CHUNK:20,
     getSess:()=>session,activeWs:()=>active,activeWsObj:()=>({role:opt.teamRole||'owner'}),isTeamWs:()=>true,
     workspaceSwitchGuardRead:()=>null,workspaceSwitchGuardRaw:()=>'',workspaceSwitchEpochRaw:()=>'',
-    syncBasePrimeAll:async()=>{},syncBaseGet:k=>base.get(k)||null,syncBaseSet(k,v){if(v==null)base.delete(k);else base.set(k,v);},syncBaseReady:async()=>{},
+    itemsWriteFlush:async()=>{},syncBasePrimeAll:async()=>{},syncBaseGet:k=>base.get(k)||null,syncBaseSet(k,v){if(v==null)base.delete(k);else base.set(k,v);},syncBaseReady:async()=>{},
     ensureToken:async()=>'synthetic',permsPrime:async()=>{},permsRaw:()=>JSON.stringify({defaultRole:opt.role||'admin'}),
     kvPreload:async()=>Object.fromEntries(idb),idbBacked:k=>k===KEY,
     scheduleHeld:()=>held,scheduleWriteAllowed:()=>state.write,scheduleStructureRepair(){},
@@ -175,7 +176,7 @@ test('metadata persistence failure cannot emit a schedule ready marker',async()=
 });
 
 test('new local schedule becomes ready only after actual server ACK',async()=>{
-  const h=harness({server:null,mirror:doc('new'),idb:doc('new')}),wait=gate();h.hooks.fetch=stage=>stage==='kv_push'?wait.promise:undefined;
+  const h=harness({server:null,mirror:doc('new'),idb:doc('new')}),wait=gate();h.hooks.fetch=stage=>stage.startsWith('kv_push')?wait.promise:undefined;
   const pending=h.run();await tick();assert.equal(h.ready(),false);wait.resolve();const result=await pending;
   assert.equal(result.error,undefined,JSON.stringify(result));assert.equal(h.ready(),true);assert.equal(h.server.get(KEY).v,h.local.get(KEY));
 });
