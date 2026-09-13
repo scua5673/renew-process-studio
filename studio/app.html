@@ -499,7 +499,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.793';</script>
+<script>window.PS_BUILD='2.794';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1264,6 +1264,7 @@ function psShowUpdBand(){
     <button type="button" data-tb="today">오늘</button>
     <button type="button" data-tb="training">일정</button><!-- 2.581 — 위 줄과 같은 순서(오늘·일정·경기) -->
     <button type="button" data-tb="match">경기</button>
+    <button type="button" data-tb="idp" class="tb-ipad-idp">IDP</button>
     <button type="button" data-tb="players">선수단</button>
     <button type="button" data-tb="scouting">스카우팅</button><!-- 2.240 사용자: 하단에 스카우팅, 더보기까지 6개 -->
     <button type="button" data-tb="more">더보기</button>
@@ -1278,6 +1279,7 @@ function psShowUpdBand(){
   </style>
   <style id="ps-2179-bottom">
   .team-bottom,.team-more{display:none}
+  .team-bottom .tb-ipad-idp{display:none}
   @media (max-width:600px){
     body.ps-team-open .team-bottom{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:170;grid-template-columns:repeat(6,1fr);background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-top:1px solid var(--line,#e6e8ee);padding:6px 0 max(8px,env(safe-area-inset-bottom))}
     body.ps-team-open .team-bottom button{border:0;background:none;font:inherit;font-size:10px;letter-spacing:-.01em;white-space:nowrap;font-weight:600;color:var(--dim,#6f7580);padding:6px 0;min-height:40px}
@@ -1291,6 +1293,9 @@ function psShowUpdBand(){
     .team-more .tms-g{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line,#e6e8ee)}
     .team-more .tms-g i{font-style:normal;font-size:11px;color:var(--dim,#6f7580);width:28px}
     .team-more .tms-g button{border:1px solid var(--line,#e6e8ee);background:var(--surface);border-radius:999px;font:inherit;font-size:13px;font-weight:600;padding:6px 11px}
+    /* iPad 분할 창에서도 팀 IDP를 바로 연다. 폰의 기존 여섯 탭은 유지한다. */
+    html[data-ps-device="ipad"] body.ps-team-open:not(.ps-player-idp-only) .team-bottom{grid-template-columns:repeat(7,minmax(0,1fr))}
+    html[data-ps-device="ipad"] body.ps-team-open:not(.ps-player-idp-only) .team-bottom .tb-ipad-idp{display:block}
   }
   </style>
   <div class="tn-subbar" id="teamSub" hidden aria-label="플레이북 하위">
@@ -2136,6 +2141,7 @@ function psShowUpdBand(){
         if(b.dataset.tb){ go(b.dataset.tb); return; }
         if(b.dataset.tbApp){ sheet.hidden=true; currentTeamKey=''; showApp(b.dataset.tbApp); } });
       window.__teamBottomSync=function(){ var k=currentTeamKey||''; var moreKeys={avail:1,idp:1,settings:1,attrs:1,playbook:1,terms:1};   /* 2.576 · 2.581 공용어도 더보기 안 */   /* 2.240 — 스카우팅은 제 탭 */
+        var directIdp=tb.querySelector('.tb-ipad-idp');if(directIdp&&directIdp.offsetWidth>0)delete moreKeys.idp;
         [].forEach.call(tb.querySelectorAll('button'),function(x){ var on=(x.dataset.tb===k)||(x.dataset.tb==='more'&&!!moreKeys[k]); x.classList.toggle('on',on); }); };
     })();
     if(teamNav)teamNav.addEventListener('click',function(e){
@@ -7948,6 +7954,10 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
   var iv=setInterval(function(){ apply(); if(++tries>120)clearInterval(iv); },500);
   window.addEventListener('storage',function(e){ if(e&&(/^(ps_active_ws|ps_ws_list|cs_perms_v1|ps_sync_session)$/).test(e.key||''))setTimeout(apply,30); });
   window.addEventListener('focus',apply);
+  /* 같은 탭으로 권한이 늦게 도착해도 코치 메뉴를 다시 판정한다.
+     localStorage 직접 갱신은 이 창에 storage 이벤트를 발생시키지 않는다. */
+  window.addEventListener('ps-auth-state',apply);
+  window.addEventListener('ps-sync-state',apply);
 })();
 </script>
 
