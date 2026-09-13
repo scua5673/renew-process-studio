@@ -2503,6 +2503,22 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sqe-mode:hover{color:var(--text-2)}
   .sqe-mode.on{background:transparent;color:var(--text);font-weight:800;box-shadow:inset 0 -2px var(--accent)}
   .sqe-modes .sp{flex:1}
+  .sqe-modes:has([data-sqe-mode="matches"]){flex-wrap:wrap;gap:4px 18px}
+  .sqe-mode[data-sqe-mode]{white-space:nowrap}
+  .sqm{padding:4px 0 12px;min-width:0}
+  .sqm-intro{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:4px 0 16px}
+  .sqm-intro b{font-size:15px}.sqm-intro span,.sqm-note{font-size:12px;line-height:1.6;color:var(--text-3)}
+  .sqm-record{border-top:1px solid var(--line-soft);padding:20px 0;min-width:0;overflow-wrap:anywhere}
+  .sqm-record header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px 12px;margin-bottom:14px}
+  .sqm-record h3{font-size:16px;line-height:1.5;margin:3px 0 0;color:var(--text)}.sqm-record time{font-size:12px;color:var(--text-3)}
+  .sqm-rating{font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:8px;padding:5px 9px}
+  .sqm-fields{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px}
+  .sqm-field{min-width:0}.sqm-field b{font-size:12px;color:var(--text-3);font-weight:600}
+  .sqm-field p{font-size:14px;line-height:1.7;white-space:pre-wrap;margin:4px 0 0;color:var(--text)}
+  .sqm-field.wide{grid-column:1/-1}
+  .sqm-note{margin:10px 0 0}
+  @media(max-width:639px){.sqm-fields{grid-template-columns:minmax(0,1fr)}.sqm-record{padding:16px 0}.sqe-modes:has([data-sqe-mode="matches"]){gap:4px 14px}}
+  @media(pointer:coarse){.sqe-modes:has([data-sqe-mode="matches"]) .sqe-mode{min-height:44px}}
   .sqe-modenote{font-size:11px;font-weight:600;color:var(--accent)}
   .sqe-gapsum{font-size:11px;font-weight:800;color:var(--text-3);background:var(--surface-2);border-radius:999px;padding:3px 10px}
   .sqe-gaptop{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:-4px 0 12px;padding:9px 11px;border-radius:11px;background:var(--surface-2)}
@@ -5814,9 +5830,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
          코치가 모드를 한 번이라도 고르면(sqPanelSet) 그 뜻을 따른다. */
       /* 2.157 — 폰 기본도 '이야기'. 허용 모드는 이야기·지금·평가 셋(면담·리포트는 데스크톱) */
       /* ⚠ 2.429 — `pqa`(선수 공통질문)도 폰에서 연다. 여기 빠뜨리면 폰에서 탭을 눌러도 '오늘'로 튕긴다 */
-      if(window.innerWidth<640&&sqPanel!=='today'&&sqPanel!=='story'&&sqPanel!=='eval'&&sqPanel!=='pqa'&&sqPanel!=='qa'&&sqPanel!=='req')sqPanel='today';   /* 2.475 — 도달 불가 값 now·gap 삭제 + 'qa' 누락 수리(2.467 곁 발견: 폰 코치가 공통질문을 누르면 '오늘'로 튕겼다) */   /* 2.163 — 폰도 오늘·이야기·지금·평가 · 2.201 — 기준·팀 갭도 폰에서 연다(사용자: 눌러도 안 들어가짐) */
+      if(window.innerWidth<640&&sqPanel!=='today'&&sqPanel!=='story'&&sqPanel!=='matches'&&sqPanel!=='eval'&&sqPanel!=='pqa'&&sqPanel!=='qa'&&sqPanel!=='req')sqPanel='today';   /* 2.475 — 도달 불가 값 now·gap 삭제 + 'qa' 누락 수리(2.467 곁 발견: 폰 코치가 공통질문을 누르면 '오늘'로 튕겼다) */   /* 2.163 — 폰도 오늘·이야기·지금·평가 · 2.201 — 기준·팀 갭도 폰에서 연다(사용자: 눌러도 안 들어가짐) */
       _sqWasPhone=sqPhone();   /* 2.120 — 지금 그린 판을 기억한다. resize 는 이 값과 달라질 때만 다시 그린다 */
-      var _sqE=sqEval&&(window.innerWidth>=640||sqPanel==='today'||sqPanel==='story'||sqPanel==='eval'||sqPanel==='pqa'||sqPanel==='qa'||sqPanel==='req');   /* 2.201 */   /* 2.163 — 폰의 '오늘'도 선수단 화면이다 */   /* 2.073 — 640 = 아이패드 iframe 실폭(672) 아래 */
+      var _sqE=sqEval&&(window.innerWidth>=640||sqPanel==='today'||sqPanel==='story'||sqPanel==='matches'||sqPanel==='eval'||sqPanel==='pqa'||sqPanel==='qa'||sqPanel==='req');   /* 2.201 */   /* 2.163 — 폰의 '오늘'도 선수단 화면이다 */   /* 2.073 — 640 = 아이패드 iframe 실폭(672) 아래 */
       if(_sqE){ if(sqEvalState==='idle')sqEvalLoad(); wrap.innerHTML=rSquadEval(); bindSquadEval();
         if(_sqeListTop!=null)try{ var _sqeNewList=wrap.querySelector('.sqe-list'); if(_sqeNewList)_sqeNewList.scrollTop=_sqeListTop; }catch(_){} }
       else { wrap.innerHTML=rSquad(); bindSquad(); }
@@ -7234,11 +7250,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* ⚠⚠ 2.429 — 선수 탭의 공통질문 키는 **`pqa`** 다. `qa` 는 **팀 세그**(오늘·공통질문·선수…)가
        이미 쓰고 있고 그건 선수 선택을 무시하고 early return 한다(7999) — 같은 키를 쓰면
        선수 탭을 눌러도 팀 화면이 뜬다. */
-    var TABS=[['story','이야기'],['eval','평가'],['pqa','공통질문'],['meet','면담'+(mtN?' '+mtN:'')],['report','리포트']];
+    var TABS=[['story','이야기'],['matches','경기'],['eval','평가'],['pqa','공통질문'],['meet','면담'+(mtN?' '+mtN:'')],['report','리포트']];
     /* 2.121 — 폰은 두 칸(지금 · 평가). 면담은 데스크톱에 남는다 — 12칸 양식을 폰에서 쓰게 하지 않는다.
        ⚠ 면담을 **읽는** 길은 '지금'의 기록 층에 있다(2.120). 여기서 칸만 빼는 것이지 기능을 빼는 게 아니다. */
     if(sqPhone())return '<div class="sqe-modes">'
-      +TABS.slice(0,3).map(function(t){   /* 2.157 — 폰: 이야기·지금·평가 (면담·리포트는 데스크톱) */
+      +TABS.slice(0,4).map(function(t){   /* 폰: 이야기·경기·평가·공통질문. 기존 면담·리포트 정책 유지. */
         return '<button type="button" class="sqe-mode'+(sqPanel===t[0]?' on':'')+'" data-sqe-mode="'+t[0]+'">'+esc(t[1])+'</button>'; }).join('')
       +'<span class="sp"></span>'+(right||'')+'</div>';
     return '<div class="sqe-modes">'+TABS.map(function(t){
@@ -8245,6 +8261,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(sqIsReq()&&!posNm)
         main+='<div class="sqe-reqwarn">이 자리를 찾을 수 없어요 — 왼쪽에서 자리를 다시 골라 주세요.</div>';   /* 2.117 — 주어가 자리로 바뀌면서 문구도 바뀐다 */
       if(sqPanel==='story'){ main+=rSqStory(sel)+'</div>'; return sqeWrap(h,side,main); }   /* 2.157 — 이야기 먼저 */
+      if(sqPanel==='matches'){ main+=rSqMatches(sel)+'</div>'; return sqeWrap(h,side,main); }
       /* 2.429 — 선수 탭의 공통질문(팀 세그 `qa` 와 다른 `pqa`) */
       if(sqPanel==='pqa'){ main+=rSqPQA(sel)+'</div>'; return sqeWrap(h,side,main); }
       /* ⚠ 2.427 — '지금' 탭은 없앴다. 옛 저장 상태로 여기 오면 **평가로 보낸다**(닿을 수 없는 화면에
@@ -8407,6 +8424,70 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(uid2){ var d2=JSON.parse(localStorage.getItem(PREFIX+uid2)||'null'); if(d2&&typeof d2==='object')out={uid:uid2,d:d2}; }
     }catch(_){}
     _sqLnCache.m[pid]=out; return out;
+  }
+  /* 선택 선수의 경기 기록은 해당 계정의 문서만 읽는다. 이름 추정·새 저장·개인 화면 전환 없음. */
+  function sqMatchObject(v){ return !!v&&typeof v==='object'&&!Array.isArray(v); }
+  function sqMatchContext(p){
+    var owner=idpSaveOwner();
+    if(!owner||!owner.uid||!owner.wid||!onTeam()||!isCoach()||_idpRecoveryAuthLocked)return {state:'unavailable'};
+    var pm,raw;
+    try{ raw=localStorage.getItem('cs_perms_v1'); if(!raw)return {state:'pending'}; pm=JSON.parse(raw); }catch(_){return {state:'invalid'};}
+    if(!sqMatchObject(pm)||!sqMatchObject(pm.members))return {state:'invalid'};
+    var ids=Object.keys(pm.members).filter(function(uid2){return p&&p.id&&String((pm.members[uid2]||{}).playerId||'')===String(p.id);});
+    if(!ids.length)return {state:'unlinked'};
+    if(ids.length!==1)return {state:'ambiguous'};
+    var d;
+    try{ raw=localStorage.getItem(PREFIX+ids[0]); if(!raw)return {state:'pending'}; d=JSON.parse(raw); }catch(_){return {state:'invalid'};}
+    if(!sqMatchObject(d)||d.v!==1||(d.matchSelf!=null&&!sqMatchObject(d.matchSelf)))return {state:'invalid'};
+    return {state:'ready',uid:ids[0],doc:d};
+  }
+  function sqMatchRows(d){
+    var matches=[],deleted=[];
+    try{ var raw=JSON.parse(localStorage.getItem('cs_team_matches_v1')||'null'); if(raw&&Array.isArray(raw.matches))matches=raw.matches; }catch(_){}
+    try{ var tomb=JSON.parse(localStorage.getItem('cs_match_del_v1')||'null'); if(Array.isArray(tomb))deleted=tomb; }catch(_){}
+    var byId=Object.create(null); matches.forEach(function(m){if(m&&m.id)byId[String(m.id)]=m;});
+    var records=d.matchSelf||{};
+    return Object.keys(records).map(function(id){
+      var r=records[id]; if(!sqMatchObject(r))return null;
+      var hasText=['good','better','tried','pos','roleAtk','roleDef','apps'].some(function(k){return typeof r[k]==='string'&&r[k].trim();});
+      if(!hasText&&!mtSc5(r.score)&&!(r.mins!=null&&String(r.mins).trim()))return null;
+      var removed=deleted.indexOf(id)>=0,m=removed?null:byId[id]||null;
+      var date=m&&/^\d{4}-\d{2}-\d{2}$/.test(String(m.date||''))?m.date:'';
+      var at=Number(r.at),validAt=Number.isFinite(at)&&at>0&&!isNaN(new Date(at).getTime());
+      return {id:id,record:r,match:m,removed:removed,date:date,at:validAt?at:0,sort:date?Date.parse(date+'T00:00:00'):validAt?at:0};
+    }).filter(Boolean).sort(function(a,b){return b.sort-a.sort||b.at-a.at||a.id.localeCompare(b.id);});
+  }
+  function rSqMatches(p){
+    var ctx=sqMatchContext(p),rows=ctx.state==='ready'?sqMatchRows(ctx.doc):[];
+    var state=ctx.state==='ready'&&!rows.length?'empty':ctx.state;
+    var h='<section class="sqm" data-sqm-state="'+state+'" aria-label="선수 경기 기록">';
+    var messages={
+      unavailable:['경기 기록을 열 수 없어요','팀의 코치 계정으로 연결 상태를 확인해 주세요.'],
+      unlinked:['선수 계정이 연결되지 않았어요','팀 설정에서 이 선수의 계정을 연결하면 작성한 경기 리뷰를 볼 수 있습니다.'],
+      ambiguous:['선수 계정 연결을 확인해 주세요','여러 계정이 이 선수에게 연결되어 있습니다. 팀 설정에서 연결을 확인해 주세요.'],
+      pending:['선수 기록을 아직 불러오지 못했어요','계정과 기록이 동기화되면 이곳에 표시됩니다.'],
+      invalid:['선수 기록을 읽을 수 없어요','기록 형식을 확인하지 못했습니다. 동기화 상태를 확인한 뒤 다시 열어 주세요.'],
+      empty:['아직 작성한 경기 기록이 없어요','선수가 IDP의 경기에서 남긴 리뷰·역할·출전 기록이 여기에 모입니다.']
+    };
+    if(state!=='ready'){var msg=messages[state];return h+'<div class="sqst-none"><b>'+msg[0]+'</b><span>'+msg[1]+'</span></div></section>';}
+    h+='<div class="sqm-intro"><b>선수가 남긴 경기 기록</b><span>'+rows.length+'경기 · 최근순</span></div>';
+    rows.forEach(function(row){
+      var r=row.record,m=row.match,sc=mtSc5(r.score);
+      var title=m?(m.opponent?'vs '+m.opponent:'상대 미정'):(row.removed?'삭제된 경기':'경기 정보 확인 필요');
+      var date=row.date|| (row.at?'작성일 '+ymd(new Date(row.at)):'작성일 미상');
+      h+='<article class="sqm-record" data-sqm-id="'+esc(row.id)+'"><header><div><time>'+esc(date)+'</time><h3>'+esc(title)+'</h3></div>'
+        +(sc?'<span class="sqm-rating">자기 평점 · '+esc(mtSc5Lb(sc))+'</span>':'')+'</header><div class="sqm-fields">';
+      function field(label,value,wide){if(value==null||!String(value).trim())return;h+='<div class="sqm-field'+(wide?' wide':'')+'"><b>'+esc(label)+'</b><p>'+esc(String(value))+'</p></div>';}
+      field('잘 된 장면',r.good,true);field('다음엔 이렇게',r.better,true);field('시도한 것',r.tried,true);
+      field('포지션',r.pos);
+      var apps={start:'선발',sub:'교체',none:'미출전'},appearance=apps[r.apps]||r.apps||'';
+      if(r.apps!=='none'&&r.mins!=null&&String(r.mins).trim())appearance+=(appearance?' · ':'')+r.mins+'분';
+      field('출전',appearance);field('공격 시 임무',r.roleAtk);field('수비 시 임무',r.roleDef);
+      h+='</div>';
+      if(!m)h+='<p class="sqm-note">경기 일정 정보가 없어도 선수가 작성한 기록은 그대로 보여줍니다.</p>';
+      h+='</article>';
+    });
+    return h+'</section>';
   }
   var SQ_SL5=['','아직','훈련에서','경기에서','압박에서도','내 무기'];
   /* 스레드 = 분기 목표의 행동 문장 하나. 궤적은 주간 단계 기록(sc)에서 계산 — 단계 n 에 처음 닿은 주가 그 단계의 날짜다 */
@@ -14703,6 +14784,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* 일정 iframe·다른 기기 동기화가 최신 팀 일정을 넣으면, IDP를 다시 열지 않아도
        읽기 전용 카드와 오늘 루틴 후보를 즉시 다시 계산한다. 입력 중인 개인 기록은 지키기. */
     if(e.key==='process_coach_v1'){if(!typing)render();return;}
+    if(squadView&&sqPanel==='matches'&&(e.key==='cs_team_matches_v1'||e.key==='cs_match_del_v1'||e.key==='cs_perms_v1')){if(!typing)render();return;}
     if(e.key&&e.key.indexOf(PUBP)===0){if(!typing)render();return;}
     if(!e.key||e.key.indexOf(PREFIX)!==0)return;
     _sqLnCache={t:0,m:{}};   /* 선수의 새 방향·일지가 열린 Coach Story에 즉시 보이도록 캐시 무효화 */
