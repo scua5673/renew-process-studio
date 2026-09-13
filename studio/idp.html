@@ -91,7 +91,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
      /* 1.682 — 탭 행 오른쪽 끝 */
   :root[data-shell="1"] .top-h{display:none}   /* 1.682 — 셸에선 제목도 액션도 없는 빈 띠 제거 */
   /* 2.101 — 부팅 한 프레임 동안 상단 줄을 감춘다(위 data-boot 주석 참조) */
-  :root[data-boot="1"] #layers,:root[data-boot="1"] .idp-actions{visibility:hidden}
+  :root[data-boot="1"] #layers,:root[data-boot="1"] .idp-actions,:root[data-boot="1"] .stage{visibility:hidden}   /* 2.776 — 본문(.stage)도 가린다: 프로필이 한 프레임 먼저 그려지고 일지로 바뀌던 번쩍임 */
   /* ══ 2.101 · 팀에서 들어온 '한눈에'(선수단 목록)에서 상단 조작 줄 정리 ═══════════════════
      사용자: "팀에서 IDP 들어가면 안나와도 되는거 아냐? 한눈에 보기선택 이것도 지워도 되는거 아냐?" — 맞다.
      ① `한눈에`(#sqAllB) — **이미 그 화면이다.** 지금 있는 곳으로 가는 버튼이다.
@@ -5774,7 +5774,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       });
       /* '한눈에'(선수단 대시보드)에선 개인 IDP 탭이 의미 없다 — 카드만 보이게 */
       var _lay=document.getElementById('layers'); if(_lay)_lay.style.display=squadView?'none':'';
-      try{document.documentElement.removeAttribute('data-boot');}catch(_){}   /* 2.101 — 자리가 정해졌으니 가리개를 푼다 */
+      /* 2.776 — 셸 안에서는 셸의 문 신호(openPersonal·openSquad·openPlayer)를 받은 render 에서만 가리개를 푼다.
+         그 전의 첫 render(기본 화면=프로필)가 먼저 보였다가 일지로 바뀌던 것(사용자 "다른 페이지가 떴다가 순간적으로 바뀜", 실측 110ms).
+         신호가 안 오면 위 1.2초 타이머가 푼다 — 단독 실행은 data-boot 자체가 없다 */
+      try{ if(document.documentElement.getAttribute('data-shell')!=='1'||window.__psRouted)document.documentElement.removeAttribute('data-boot'); }catch(_){}
     }catch(_){}
     try{ var _pb2=document.getElementById('parentRepBtn');
       /* 2.490 — 죽은 조건(jrSet=null 고정) 교체: 개인 IDP 가 열려 있으면 선수든 코치든 만들 수 있다 */
@@ -13941,8 +13944,10 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       /* 재시도 체인이 같은 메시지를 여러 번 보냄 — 이미 선수단 화면이면 재렌더(깜빡임·스크롤 튐) 금지 */
       if(!(squadView&&!personalOnly)){
         if(!adoptViewing(myKey()))return;
+        window.__psRouted=true;   /* 2.776 */
         document.body.classList.remove('idp-top-learning');curL='home';personalOnly=false;squadView=true;render();
       }
+      window.__psRouted=true; try{ if(window.__psRouted)document.documentElement.removeAttribute('data-boot'); }catch(_){}
       try{ if(e.source)e.source.postMessage({type:'squadAck'},'*'); }catch(_){}
     }
     /* 상단 IDP 탭은 선수 개인이 자기 걸 보는 자리 — 다른 선수 IDP 열람은 팀 공간에서만 */
@@ -13950,7 +13955,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
        여기 남아 있으면 옛 신호 하나로 IDP 가 다시 학습 화면이 된다 — 그 길을 닫는다. */
     else if(d.type==='openPersonal'){
       var nextLayer=(d.layer==='cal'||d.layer==='learn')?'cal':'home';   /* 2.510 — 'learn' 요청도 일정으로(학습 층 봉인) */   /* 1.926 — 기본 = 홈 대시보드(셸은 'home'을 보내지만 여기서 'cal'로 바꿔 폰에서 일정부터 열리던 것 수리). 1.836 — 홈 탭 제거, 기본 = 일정 */
+      window.__psRouted=true;   /* 2.776 — 문이 정해졌다 */
       if(personalOnly&&!squadView&&viewing===myKey()&&curL===nextLayer&&document.body.classList.contains('idp-top-learning')===(nextLayer==='learn')){
+        try{document.documentElement.removeAttribute('data-boot');}catch(_){}
         try{if(e.source)e.source.postMessage({type:'idpPersonalAck',layer:nextLayer,requestId:d.requestId},'*');}catch(_){} return;
       }
       if(!adoptViewing(myKey()))return;
@@ -13961,6 +13968,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       try{if(e.source)e.source.postMessage({type:'idpPersonalAck',layer:nextLayer,requestId:d.requestId},'*');}catch(_){}
     }
     else if(d.type==='openPlayer'&&isCoach()){
+      window.__psRouted=true;   /* 2.776 */
       var key='',keys=idpKeys();
       if(d.key&&keys.indexOf(d.key)>=0)key=d.key;
       if(!key&&d.name){
