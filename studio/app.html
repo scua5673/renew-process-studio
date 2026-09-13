@@ -499,7 +499,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.797';</script>
+<script>window.PS_BUILD='2.798';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -2394,6 +2394,20 @@ function psShowUpdBand(){
         if(fComm.contentDocument&&fComm.contentDocument.readyState==='complete')setTimeout(_upSend,120);
         else fComm.addEventListener('load',function(){setTimeout(_upSend,180);},{once:true});
         return;
+      } else if(d.source==='idp' && d.type==='idpDocsMissing' && fIdp && e.source===fIdp.contentWindow){
+        /* 2.798 — 선수단 화면이 «권한표에는 있는데 이 기기에 문서가 없는 선수»를 알려 오면 앱이 스스로 한 회차 받는다(사용자: 로그아웃을 매번 할 수는 없다).
+           45초에 한 번. 받은 뒤에도 없으면 서버 이벤트로 남겨(관리자 › 오류) 어느 단계에서 막혔는지 보이게 하고, 프레임엔 «못 받음»을 알린다. */
+        (function(_uids){
+          var now=Date.now(); if(window.__idpDocsReqAt&&now-window.__idpDocsReqAt<45000)return; window.__idpDocsReqAt=now;
+          var run=(window.PSSync&&PSSync.syncNow)?Promise.resolve().then(function(){return PSSync.syncNow('idp-docs-missing');}):Promise.resolve(null);
+          run.catch(function(){}).then(function(){ setTimeout(function(){
+            var still=[]; try{ still=(_uids||[]).filter(function(u){ return !localStorage.getItem('cs_idp_v1_'+u); }); }catch(_){}
+            var stage=''; try{ var lg=(PSSync.diagLog&&PSSync.diagLog())||[]; for(var i=lg.length-1;i>=0;i--){ if(/idp|kv_pull|kv_meta|storage/.test(lg[i].stage||'')){ stage=lg[i].stage; break; } } }catch(_){}
+            if(still.length){ try{ PSSync.event('idp_docs_missing',{status:'error',error_code:'n'+still.length+'of'+(_uids||[]).length+(stage?(':'+stage):'')}); }catch(_){} }
+            try{ fIdp.contentWindow.postMessage({source:'app',type:'idpDocsMissingAck',missing:still.length,stage:stage},'*'); }catch(_){}
+          },1500); });
+        })(Array.isArray(d.uids)?d.uids.slice(0,200):[]);
+        return;
       } else if(d.source==='idp' && d.type==='openDrillEditor'){
         /* IDP 개인훈련의 그림 첨부 — 일정 탭과 같은 '훈련 편집기' 캡처 모드(장면 스트립 포함) */
         captureReq='idp'; showApp('design');
@@ -3019,6 +3033,7 @@ function psShowUpdBand(){
           +'<div class="pd-k">서버로 안 올라간 변경 '+(d.pending.length?d.pending.length+'건':'')+'</div>'+rows
           +'<div class="pd-k">이 기기 저장 공간 <b>'+mb(d.localBytes)+'</b></div>'
           +(big?'<div class="pd-meta">'+big+'</div>':'')
+          +((d.recent&&d.recent.length)?('<div class="pd-k">최근 진단</div><div class="pd-meta" style="font-family:ui-monospace,monospace;font-size:11px;line-height:1.5">'+d.recent.map(function(r){ return esc(new Date(r.at).toLocaleTimeString()+' '+r.stage+(r.code?(' · '+r.code):'')); }).join('<br>')+'</div>'):'')   /* 2.798 */
           +'<div class="pd-note">다른 기기에서 한 변경이 안 보이면: 그 기기에서도 이 진단을 열어 «안 올라간 변경»의 이유를 확인하세요 — 올라가지 않은 것은 여기서 받을 수도 없습니다.</div>'
           +'<div class="pd-acts"><button type="button" class="pd-sync">지금 주고받기</button><button type="button" class="pd-clean">안전 정리</button></div>'
           +'</div>';
