@@ -2749,6 +2749,11 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .cal-bar{display:flex;align-items:stretch;gap:8px;margin-bottom:12px;flex-wrap:wrap}
   .cal-bar.cal-fold{display:none}   /* 2.780 — 일간에서 접힘, 날짜를 누르면 편다 */
   .mt-appseg-head{margin-top:10px}   /* 2.782 */
+  .ql-adds{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px}
+  .ql-adds button{border:0;background:transparent;color:var(--text-3);font:inherit;font-size:12px;font-weight:700;padding:4px 0;cursor:pointer;min-height:32px}
+  .mr-steps.quiet{background:transparent;border:1px dashed var(--line)}
+  .mr-steps.quiet .mr-step{grid-template-columns:minmax(0,1fr) auto}   /* 2.783 — 번호 칸이 없다 */
+  .mr-steps.quiet .mr-steps-h em{font-style:normal;color:var(--text-3);font-weight:500;margin-left:auto;font-size:11.5px}   /* 2.783 */
   .idp-start-cta{display:flex;flex-direction:column;gap:4px;margin:2px 0 10px}
   .idp-start-cta b{font-size:15px;font-weight:800}
   .idp-start-cta small{font-size:12px;color:var(--text-3);line-height:1.5}
@@ -9362,31 +9367,34 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!si&&!q&&!th)return '';                      /* 아무것도 시작 안 했으면 사다리도 없다 */
     var SL=['','아직','훈련에서','경기에서','압박에서도','내 무기'];
     function bar(pct,cls){ return '<span class="ql-bar'+(cls?' '+cls:'')+'"><i style="width:'+Math.max(0,Math.min(100,pct))+'%"></i></span>'; }
-    var h='<section class="card ql"><div class="td-q">목표 사다리 <small>장기 → 중기 → 단기</small></div>';
+    var h='<section class="card ql"><div class="td-q">목표 사다리</div>', adds=[];   /* 2.783 — ⑤ 빈 층은 «비어 있어요» 대신 아래 ＋ 한 줄로(선수 첫 화면 목업) */
 
     /* ① 장기 — 시즌 */
-    h+='<button type="button" class="ql-row'+(theme?'':' empty')+'" data-ql="season">'
+    if(!theme)adds.push('<button type="button" data-ql="season">＋ 시즌 목표</button>');
+    if(theme)h+='<button type="button" class="ql-row" data-ql="season">'
       +'<span class="ql-tag long">장기</span>'
       +'<span class="ql-body"><b>'+(theme?esc(theme):'시즌 테마가 비어 있어요')+'</b>'
       +(outcome?'<span class="ql-sub">'+esc(outcome)+'</span>':'<span class="ql-sub none">결과 목표 — 어디로 가고 싶은지</span>')
       +(si?bar(si.pct,'long'):'')+'</span>'
-      +'<span class="ql-meta">'+(si?('<b>'+si.pct+'%</b><i>'+si.remain+'일 남음</i>'):'<b>–</b><i>시즌 없음</i>')+'</span></button>';
+      +'<span class="ql-meta">'+(si?('<b>'+si.pct+'%</b><i>'+si.remain+'일 남음</i>'):'')+'</span></button>';
 
     /* ② 중기 — 12주 · 숫자 */
     var cur=parseFloat(pf.cur), tgt=parseFloat(pf.target);
     var okNum=!isNaN(cur)&&!isNaN(tgt)&&tgt>0;
     var pPct=okNum?Math.round(cur/tgt*100):0;
-    h+='<button type="button" class="ql-row'+(pf.t?'':' empty')+'" data-ql="perf">'
+    if(!pf.t)adds.push('<button type="button" data-ql="perf">＋ 숫자로 볼 지표</button>');
+    if(pf.t)h+='<button type="button" class="ql-row" data-ql="perf">'
       +'<span class="ql-tag mid">중기</span>'
       +'<span class="ql-body"><b>'+(pf.t?esc(pf.t):'12주 안에 올릴 숫자가 비어 있어요')+'</b>'
       +(pf.metric?'<span class="ql-sub"><em>'+esc(pf.metric)+'</em>'+(okNum?' <u>'+esc(pf.cur)+' → '+esc(pf.target)+'</u>':'')+'</span>'
                  :'<span class="ql-sub none">지표 — 무엇을 숫자로 볼지</span>')
       +(okNum?bar(pPct,'mid'):'')+'</span>'
-      +'<span class="ql-meta">'+(d?('<b>'+(okNum?pPct+'%':'–')+'</b><i>'+(d.left>=0?'D-'+d.left:'끝')+'</i>'):'<b>–</b><i>분기 없음</i>')+'</span></button>';
+      +'<span class="ql-meta">'+(d?('<b>'+(okNum?pPct+'%':'–')+'</b><i>'+(d.left>=0?'D-'+d.left:'끝')+'</i>'):'')+'</span></button>';
 
     /* ③ 단기 — 이번 주 · 행동 */
     var stg=th?(th.cur||0):0;
-    h+='<button type="button" class="ql-row'+(th?'':' empty')+'" data-ql="week">'
+    if(!th)adds.push('<button type="button" data-ql="week">＋ 행동 문장</button>');
+    if(th)h+='<button type="button" class="ql-row" data-ql="week">'
       +'<span class="ql-tag short">단기</span>'
       +'<span class="ql-body"><b>'+(th?esc(th.t):'매일 돌아올 행동 문장이 비어 있어요')+'</b>'
       +(f&&f.text?'<span class="ql-sub"><em>이번 주 초점</em> '+esc(f.text)+'</span>'
@@ -9394,7 +9402,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +(th?'<span class="ql-dots">'+SL.slice(1).map(function(x,i){ var n=i+1;
           return '<i class="'+(stg&&n<stg?'done':(stg&&n===stg?'now':''))+'" title="'+esc(x)+'"></i>'; }).join('')+'</span>':'')
       +'</span>'
-      +'<span class="ql-meta">'+(th?('<b>'+(stg?stg:'–')+'/5</b><i>'+(stg?esc(SL[stg]):'아직')+'</i>'):'<b>–</b><i>문장 없음</i>')+'</span></button>';
+      +'<span class="ql-meta">'+(th?('<b>'+(stg?stg:'–')+'/5</b><i>'+(stg?esc(SL[stg]):'아직')+'</i>'):'')+'</span></button>';
+    if(adds.length&&!ro())h+='<div class="ql-adds">'+adds.join('')+'</div>';
+    if(!theme&&!pf.t&&!th)return '';   /* 셋 다 비면 사다리 자체를 안 그린다 — 빈 칸 셋을 보여 주는 게 곧 재촉 */
 
     return h+'</section>';
   }
@@ -12986,12 +12996,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* 2.647 — 빈 칸 셋 대신 «채우는 순서» 하나. 셋 다 되면 사라진다(코치 열람에는 없음 — 읽는 사람이 할 수 없는 일) */
     var _hasSelf=!!(ed&&ed.hasSelf), _doneN=(th?1:0)+(picks.length?1:0)+(_hasSelf?1:0), _stepsNeeded=!isRO&&_doneN<3;
     if(_stepsNeeded){
-      var _step=function(n,done,t,sub,act,tgt,pri){ return '<div class="mr-step'+(done?' done':'')+'"><span class="c">'+(done?'✓':n)+'</span><span class="t">'+t+'<small>'+sub+'</small></span>'+(done?'':'<button type="button" class="btn'+(pri?' primary':'')+'" data-mr-goto="'+tgt+'">'+act+'</button>')+'</div>'; };
-      var _first=!th?1:(!picks.length?2:3);
-      h+='<div class="mr-steps"><div class="mr-steps-h"><span>리포트 채우기</span><i class="bar"><b style="width:'+Math.round(_doneN/3*100)+'%"></b></i><em>'+_doneN+'/3</em></div>'
-        +_step(1,!!th,'내가 키우는 것','12주 동안 키울 행동 문장 하나','정하기','goal',_first===1)
-        +_step(2,!!picks.length,'내 무기','내가 이미 잘하는 것 하나','고르기','goal',_first===2)
-        +_step(3,_hasSelf,'셀프 평가','5축 · 5분이면 돼요','하기','eval',_first===3)+'</div>';
+      /* 2.783 — ⑤ 진행 막대·번호·✓ 를 걷고, 남은 것만 조용히(선수 첫 화면 목업). ⑦ «5분이면 돼요» → 문항 수와 «나눠서 해도 돼요» */
+      var _step=function(n,done,t,sub,act,tgt,pri){ return done?'':'<div class="mr-step"><span class="t">'+t+'<small>'+sub+'</small></span><button type="button" class="btn" data-mr-goto="'+tgt+'">'+act+'</button></div>'; };
+      var _evN=(doc.profile&&doc.profile.pos)?'32':'24';
+      h+='<div class="mr-steps quiet"><div class="mr-steps-h"><span>리포트에 더 올릴 수 있는 것</span><em>코치와 볼 때 같이 채워도 돼요</em></div>'
+        +_step(1,!!th,'내가 키우는 것','12주 동안 키울 행동 문장 하나','정하기','goal')
+        +_step(2,!!picks.length,'내 무기','내가 이미 잘하는 것 하나','고르기','goal')
+        +_step(3,_hasSelf,'셀프 평가',_evN+'문항 · 나눠서 해도 돼요','시작','eval')+'</div>';
     }
     /* ① 주인공 — 키우는 것 */
     if(th||!_stepsNeeded){   /* 2.647 — 순서 카드가 있으면 빈 히어로는 안 그린다 */
@@ -13285,7 +13296,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     /* 2.689 — 초점·목표 문장이 없어도 «한 마디»는 매일 쓴다(사용자 "한줄은 매일 쓸 수 있게"). 초점 줄·칩만 건너뛴다. */
     if(!sen){
       h+='<div class="ol-focus"><div class="ol-lb">한 마디</div></div>';   /* 2.781 — «선택 · 잘 된 장면 / 다음엔 이렇게» 세 요구를 걷었다 */
-      h+='<textarea id="dayMemo" class="ol-memo" rows="2" maxlength="300" placeholder="한 마디 (안 써도 돼)">'+esc(lg.memo||'')+'</textarea>';
+      h+='<textarea id="dayMemo" class="ol-memo" rows="2" maxlength="300" placeholder="한 마디">'+esc(lg.memo||'')+'</textarea>';
       if(!lg.memo) h+='<div class="ol-prompts">'+['언제 됐어?','뭐가 어려웠어?'].map(function(q){ return '<button type="button" class="ol-pr" data-ol-pr="'+esc(q)+'">'+esc(q)+'</button>'; }).join('')+'</div>';
       return h;
     }
@@ -13296,7 +13307,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +(g1&&g1.t&&g1.t!==sen?'<div class="ol-sub">내가 키우는 것 · '+esc(g1.t)+'</div>':'')+'</div>';
     if(!off){ h+='<div class="idp-day-question">오늘 이 행동을 해봤어?</div><div class="td-emo ol-chips">'+[[0,'아직'],[1,'1~2번'],[2,'계속']].map(function(o){ return '<button type="button" class="td-chip'+(tv===o[0]?' on':'')+'" data-td-try="'+o[0]+'"><small>'+o[1]+'</small></button>'; }).join('')+'</div>'; }
     else h+='<div class="td-lb" style="margin:8px 0 0">쉰 날은 초점을 묻지 않아요.</div>';
-    h+='<textarea id="dayMemo" class="ol-memo" rows="2" maxlength="300" placeholder="한 마디 (안 써도 돼)">'+esc(lg.memo||'')+'</textarea>';
+    h+='<textarea id="dayMemo" class="ol-memo" rows="2" maxlength="300" placeholder="한 마디">'+esc(lg.memo||'')+'</textarea>';
     if(!lg.memo) h+='<div class="ol-prompts">'+['언제 됐어?','뭐가 어려웠어?'].map(function(q){ return '<button type="button" class="ol-pr" data-ol-pr="'+esc(q)+'">'+esc(q)+'</button>'; }).join('')+'</div>';
     var mon=mondayOf(today), cells='';
     for(var i=0;i<7;i++){ var d=addDays(mon,i), l=(doc.log||{})[ymd(d)]||{}, cls=(l.try===2?'k':(l.try===1?'y':(l.try===0?'n':'')));
@@ -13324,7 +13335,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(fcT)h+='<div class="ol-sen">'+(ww.late?'지난 주':'이번 주')+' · '+esc(fcT)+'</div>';
     h+='<div class="ol-week">'+cells+'</div>';
     try{if(window.PSIDPEvidence)h+=PSIDPEvidence.weekHTML(doc.log,wk,doc.vision);}catch(_){}   /* 2.747 — 회고 전에 이 주의 장면을 펼쳐 읽는다. */
-    h+='<input id="olGood" class="ol-in" maxlength="120" value="'+esc(w.good||'')+'" placeholder="'+(ww.late?'지난 주':'이번 주')+' 배운 것 한 문장 (안 써도 돼)">';
+    h+='<input id="olGood" class="ol-in" maxlength="120" value="'+esc(w.good||'')+'" placeholder="'+(ww.late?'지난 주':'이번 주')+' 배운 것 한 문장">';
     h+='<div class="ol-lb" style="margin-top:14px">다음 주는 무엇을 키울까 <small class="ol-auto">'+(pr?'코치가 둘 골라 뒀어':'코치 제안은 아직 — 계속 또는 직접')+'</small></div>';
     h+='<div class="ol-opts">'+opts.map(function(o){ var on=!!(chosen&&chosen.text===o.t); return '<button type="button" class="ol-opt'+(on?' on':'')+'" data-ol-pick="'+esc(o.t)+'" data-ol-from="'+o.k+'"><b>'+esc(o.t)+'</b><small>'+esc(o.sub)+'</small></button>'; }).join('')
       +'<div class="ol-opt own'+(own?' on':'')+'"><input id="olOwn" maxlength="60" value="'+esc(own)+'" placeholder="직접 쓰기 — 내가 · 하는 동작 · 이번 주 · 할 수 있는 것"><button type="button" class="td-mic" data-ol-own aria-label="직접 쓴 초점으로">✓</button></div></div>';
