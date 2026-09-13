@@ -3754,6 +3754,20 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   /* 2.489/2.492 — 선수단 한 장: 이 화면의 기존 문법(원형 배지·단계칩·알약)으로 입힌 표 */
   .sqg{padding:16px 16px 12px;margin-bottom:12px}
   .sqg .sqd-nav{margin-bottom:12px}
+  /* 2.803 — 폰 선수당 한 장 */
+  .sqg-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .sqg-li{border:1px solid var(--line-soft);border-radius:12px;padding:10px 12px;background:var(--surface)}
+  .sqg-li.quiet{opacity:.7}
+  .sqg-li.hot{border-color:var(--accent)}
+  .sqg-li-h{display:flex;align-items:center;gap:8px}
+  .sqg-li-h .plr{flex:1 1 auto;min-width:0;max-width:none}
+  .sqg-li-h .plr b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sqg-li-h .sqd-h{flex:none}
+  .sqg-li-h .sqd-open{flex:none;width:24px;font-size:16px}
+  .sqg-li-f{font-size:12px;color:var(--text-3);margin-top:6px;line-height:1.4}
+  .sqg-li-m{margin:6px 0 0;font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere}
+  .sqg-li-m.dim{color:var(--text-3);font-size:12px}
+  @media (max-width:639px){ .sqd-seg{display:none} }
   .sqg-scroll{overflow-x:auto;margin:0 -4px;padding:0 4px}
   .sqg-t{width:100%;border-collapse:separate;border-spacing:0;min-width:800px}
   .sqg-t th{font-size:10px;color:var(--text-3);font-weight:600;letter-spacing:.02em;padding:2px 8px 8px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line-soft)}
@@ -8062,7 +8076,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var wkM=ymd(mondayOf(new Date())), pvM=ymd(addDays(new Date(wkM+'T00:00:00'),-7));
       var wkD=ymd(mondayOf(dayD));   /* 그 날이 속한 주의 월요일 — 초점·띠는 이 주 기준 */
       /* 2.618 — «이번 주» 표(주 마무리): 토 12시~일요일은 스스로, 세그먼트로 고르면 그대로. 이번 주 기준으로 강제 */
-      var _nw=new Date(), _wkMode=(sqWkMode===null)?(_nw.getDay()===0):!!sqWkMode;   /* 2.684 — 일요일에만 스스로 «이번 주» */
+      var _nw=new Date(), _wkMode=(sqWkMode===null)?(_nw.getDay()===0):!!sqWkMode;
+      if(sqPhone())_wkMode=false;   /* 2.803 — 폰은 표 대신 아래 목록(선수당 한 장) */   /* 2.684 — 일요일에만 스스로 «이번 주» */
       if(_wkMode){ day=tk; isToday=true; dayD=t0; wkD=wkM; }
       var nextM=ymd(addDays(new Date(wkM+'T00:00:00'),7));
       var BC={1:'#E24B4A',2:'#EF9F27',3:'#ECC94B',4:'#97C459',5:'#2BAF5E'};
@@ -8119,6 +8134,26 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +(isToday?'':'<button type="button" class="sqd-now" data-sqd-now>오늘로</button>')
         +_seg
         +'<span class="sqd-cnt">'+wroteN+'명 적음 <u>· 연결 '+linked.length+' / 전체 '+rows.length+'</u></span></div>';
+      /* ══ 2.803 · 폰(사용자 «팀 운영 › IDP 에서 선수들이 쓴 걸 더 잘 보고 싶어 · 모바일») ══
+         920px 표 대신 선수당 한 장: 번호·이름·그 날 칩·❤·› 한 줄, 아래에 초점 한 줄과 **한 마디 전문**(줄바꿈 그대로). 정렬·데이터·핸들러(data-sqd-h·data-sqd-doc)는 표와 같다.
+         출석 칩·답 입력칸은 폰에서 걷는다(출석은 출석 화면, 답은 선수 이야기에서). 데스크톱·아이패드 표는 그대로. */
+      if(sqPhone()){
+        o+='<div class="sqg-list">';
+        linked.forEach(function(r){ var uid=r.x.ln.uid;
+          var tryCell=(r.tryV>=0)?('<em class="sqg-try t'+r.tryV+'">'+TRY_LB[r.tryV]+'</em>'):'';
+          var memo=r.memoT?('<p class="sqg-li-m">'+esc(r.memoT)+'</p>'):(r.wrote?'<p class="sqg-li-m dim">칩만 눌렀어요</p>':'<p class="sqg-li-m dim">안 씀</p>');
+          o+='<div class="sqg-li'+(r.wrote?'':' quiet')+(r.hot?' hot':'')+'">'
+            +'<div class="sqg-li-h"><span class="plr"><span class="no">'+esc(r.x.p.num||'')+'</span><b>'+esc(r.x.p.name||'')+'</b></span>'+tryCell
+            +(can?('<button type="button" class="sqd-h'+(r.rc&&r.rc.h?' on':'')+'" data-sqd-h="'+esc(uid)+'" title="봤어요">'+(r.rc&&r.rc.h?'❤':'♡')+'</button>'):'')
+            +'<button type="button" class="sqd-open" data-sqd-doc="'+esc(PREFIX+uid)+'" aria-label="'+esc(r.x.p.name||'')+' IDP 열기">›</button></div>'
+            +(r.fcT?'<div class="sqg-li-f">'+esc(r.fcT)+'</div>':'')
+            +memo+'</div>';
+        });
+        o+='</div>';
+        (function(){ var mm=linked.filter(function(r){return r.memoT;}).length; o+='<div class="sqg-sum"><span>한 마디 <b>'+mm+'</b> · 적음 <b>'+wroteN+'</b> / 연결 '+linked.length+'</span></div>'; })();
+        o+=sqUnlinkedNote(rws);
+        return o+'</div>';
+      }
       o+='<div class="sqg-scroll"><table class="sqg-t sqg-ol"><thead><tr><th class="l">선수</th>'+(can?'<th>출석</th>':'')+'<th class="l">이번 주 초점</th><th class="l">한 마디</th>'+(can?'<th class="l c-in" colspan="2">내 답 <i class="sqg-rule">❤ 또는 제안·격려 한 줄</i></th>':'')+'<th></th></tr></thead><tbody>';
       linked.forEach(function(r){
         /* 2.492 — 표의 옷(사용자 "디자인도 전부 신경써줘야지"): 원형 번호 배지(.no)·단계칩(em.sN)·
