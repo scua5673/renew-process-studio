@@ -62,9 +62,10 @@ async function saved(page) {
 }
 
 async function sharedStoreScenario(page, name) {
+  await page.addInitScript(()=>{if(!location.pathname.endsWith('/scout.html'))return;const uid='fixture-scout-owner',wid='fixture-scout-team';localStorage.setItem('ps_sync_session',JSON.stringify({uid}));localStorage.setItem('ps_active_ws',wid);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid,wid,nonce:'fixture'}));localStorage.setItem('ps_ws_list',JSON.stringify([{id:wid,kind:'team',role:'owner'}]));localStorage.setItem('cs_perms_v1',JSON.stringify({members:{[uid]:{role:'executive'}}}));window.PSSync={dataUnlocked:()=>true,keyReady:(key,w)=>{const m=JSON.parse(localStorage.getItem('ps_sync_meta')||'{}'),r=m.r&&m.r[key];return !!r&&r.w===w&&r.u===uid&&r.o===localStorage.getItem('ps_cache_owner_v1');}};});
   await page.goto(base + '/studio/scout.html?fixture=storage-safety', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => typeof store !== 'undefined' && typeof store.ready === 'function');
-  await page.evaluate(() => PSStorage.sharedReady());
+  await page.evaluate(async()=>{await PSStorage.sharedReady();const raw=JSON.stringify({v:1,players:[]});await psSaveSharedAsync('cs_scout_targets_v1',raw);await PSStorage.sharedVerified('cs_scout_targets_v1',raw);localStorage.setItem('ps_sync_meta',JSON.stringify({r:{cs_scout_targets_v1:{w:localStorage.getItem('ps_active_ws'),u:JSON.parse(localStorage.getItem('ps_sync_session')).uid,o:localStorage.getItem('ps_cache_owner_v1'),present:true}}}));await scPrepare();if(!store.set('cs_scout_targets_v1',scStore().state.doc))throw new Error('fixture candidate baseline not ready');await store.ready();});
   const pending = await page.evaluate(() => {
     const key = 'cs_scout_targets_v1';
     window.fixtureStorageSet = storage.set.bind(storage);
@@ -82,7 +83,7 @@ async function sharedStoreScenario(page, name) {
   assert.deepEqual(committed, { state: 'saved', pending: false });
   const failed = await page.evaluate(async () => {
     storage.set = (k, raw) => k === 'cs_scout_targets_v1' ? Promise.reject(new Error('fixture: disk unavailable')) : fixtureStorageSet(k, raw);
-    store.set('cs_scout_targets_v1', { players: [{ id: 'fixture-target', type: 'target', name: '가상 후보 · 재시도', levels: {} }] });
+    var doc=PSScoutStore.copy(scStore().state.doc);PSScoutStore.edit(doc,'target:fixture-target','name','가상 후보 · 재시도',scStore().stamp());store.set('cs_scout_targets_v1',doc);
     let rejected = false; try { await store.ready(); } catch (_) { rejected = true; }
     store.set('fixture_unrelated', { ok: true });
     await new Promise(resolve => setTimeout(resolve, 0));

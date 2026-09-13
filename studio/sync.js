@@ -1015,7 +1015,8 @@ function ensureToken(){
 
 /* ── 동기화 ── */
 /* n = 키별 '지난번에 알던 항목 수' — 1.573 출고 검사의 기준(아래 pushHold). 옛 메타에는 없으므로 채워 준다. */
-var matchReadyPending=false,scheduleReadyPending=false;
+var matchReadyPending=false,scheduleReadyPending=false,scoutReadyPending=false;
+var SCOUT_KEY='cs_scout_targets_v1';
 function meta(){ try{ var m=JSON.parse(localStorage.getItem(MKEY)||'null')||{h:{},c:{},last:0}; if(!m.n)m.n={}; if(!m.r||typeof m.r!=='object'||Array.isArray(m.r))m.r={}; return m; }catch(_){ return {h:{},c:{},last:0,n:{},r:{}}; } }
 function setMeta(m){
   try{
@@ -1023,6 +1024,7 @@ function setMeta(m){
        지운 ready 표가 부활한다. exact 3자 commit이 아직이면 모든 setMeta에서 닫힌 상태를 강제한다. */
     if(matchReadyPending&&m&&m.r)delete m.r[MATCH_KEY];
     if(typeof scheduleReadyPending!=='undefined'&&scheduleReadyPending&&m&&m.r)delete m.r[SCHEDULE_KEY];
+    if(typeof scoutReadyPending!=='undefined'&&scoutReadyPending&&m&&m.r)delete m.r[SCOUT_KEY];
     localStorage.setItem(MKEY,JSON.stringify(m));
   }catch(_){}
 }
@@ -1032,6 +1034,7 @@ function setMeta(m){
 function setMetaExact(m){
   if(matchReadyPending&&m&&m.r)delete m.r[MATCH_KEY];
   if(typeof scheduleReadyPending!=='undefined'&&scheduleReadyPending&&m&&m.r)delete m.r[SCHEDULE_KEY];
+  if(typeof scoutReadyPending!=='undefined'&&scoutReadyPending&&m&&m.r)delete m.r[SCOUT_KEY];
   var raw=JSON.stringify(m);localStorage.setItem(MKEY,raw);
   if(localStorage.getItem(MKEY)!==raw)throw new Error('sync meta verification failed');
   return true;
@@ -1040,6 +1043,15 @@ function keyReady(k,wid){
   if(k===MATCH_KEY&&matchReadyPending)return false;
   var m=meta(),r=m.r&&m.r[k];if(!wid||!r)return false;
   if(typeof r!=='object'||String(r.w||'')!==String(wid))return false;
+  if(k==='cs_scout_targets_v1'){
+    try{
+      var scoutSession=getSess(),scoutRaw=localStorage.getItem(k),scoutSeal=localStorage.getItem(OWNERKEY)||'';
+      if(scoutReadyPending||!dataUnlocked()||!scoutWriteAllowed()||!scoutSession||String(scoutSession.uid||'')!==String(r.u||'')||
+         String(activeWs()||'')!==String(wid)||!scoutSeal||r.o!==scoutSeal)return false;
+      if(r.present!==true&&r.present!==false)return false;
+      return scoutRaw==null?r.present===false:scoutReadyRaw(scoutRaw);
+    }catch(_){return false;}
+  }
   /* 2.750 — 일정은 현재 계정·작업 공간의 서버 확인을 마친 표만 사용한다.
      uid/wid가 같아도 전환 nonce가 달라진 과거 캐시 표는 다시 확인해야 한다. */
   if(k===SCHEDULE_KEY){
@@ -1057,6 +1069,53 @@ function keyReady(k,wid){
   if(r.present===false)return true;
   if(r.present!==true)return false;
   try{return localStorage.getItem(k)!=null;}catch(_){return false;}
+}
+/* 후보 정본은 기존 운영진 전용 키 안에만 둔다. 기기 전용 구 DB를 읽거나
+   팀 명단/공개 IDP로 보내지 않는다. 새 클라이언트가 읽은 구버전 값은 합치며,
+   구버전의 직접 서버 쓰기는 별도 registry 가드가 원본 손실을 막는다. */
+function scoutWriteAllowed(){
+  try{
+    if(!isTeamWs()||!dataUnlocked())return false;
+    var ss=getSess(),w=activeWsObj();if(!ss||!ss.uid||!w)return false;
+    if(w.role==='owner')return true;
+    var p=JSON.parse(permsRaw()||'null'),me=p&&p.members&&p.members[ss.uid],role=me&&me.role||p&&p.defaultRole;
+    return role==='admin'||role==='executive';
+  }catch(_){return false;}
+}
+function scoutReadyRaw(raw){
+  try{return typeof raw==='string'&&!!window.PSScoutStore&&PSScoutStore.valid(JSON.parse(raw));}catch(_){return false;}
+}
+function scoutReadyInvalidate(){
+  scoutReadyPending=true;
+  var before=localStorage.getItem(MKEY),m=before==null?{h:{},c:{},n:{},r:{}}:JSON.parse(before);
+  if(!m||typeof m!=='object'||Array.isArray(m))throw syncIssue('sync_storage','scout_ready_invalidate','후보 준비표를 확인할 수 없습니다');
+  m.r=m.r||{};delete m.r[SCOUT_KEY];var raw=JSON.stringify(m);localStorage.setItem(MKEY,raw);
+  if(localStorage.getItem(MKEY)!==raw)throw syncIssue('sync_storage','scout_ready_invalidate','후보 준비표 저장을 확인할 수 없습니다');
+}
+function scoutSyncPlan(localRaw,serverRaw,dirty){
+  if(!window.PSScoutStore||typeof PSScoutStore.reconcile!=='function'||typeof PSScoutStore.valid!=='function')
+    throw syncIssue('sync_storage','scout_helper_missing','후보 자료 확인 기능을 불러오지 못했습니다');
+  if(localRaw!=null&&!scoutReadyRaw(localRaw)||serverRaw!=null&&!scoutReadyRaw(serverRaw))
+    throw syncIssue('sync_storage','scout_document_invalid','후보 원문 형식을 확인할 수 없습니다');
+  if(localRaw==null)return serverRaw;
+  if(serverRaw==null)return localRaw;
+  var l=JSON.parse(localRaw),s=JSON.parse(serverRaw),winner=dirty?l:s,previous=dirty?s:l;
+  if(!l.scoutRegistry&&!s.scoutRegistry)return dirty?localRaw:serverRaw;
+  var next=JSON.stringify(PSScoutStore.reconcile(previous,winner));
+  if(!scoutReadyRaw(next))throw syncIssue('sync_storage','scout_merge_invalid','합친 후보 자료 형식을 확인할 수 없습니다');
+  return next;
+}
+function scoutReadyCommit(m,raw,uid,wid,seal,guard){
+  function current(){return guard()&&scoutWriteAllowed()&&localStorage.getItem(OWNERKEY)===seal;}
+  if(!current())throw syncIssue('sync_workspace_changed','scout_ready_commit','후보 확인 중 팀 또는 권한이 바뀌었습니다');
+  return Promise.resolve(window.PSStorage&&PSStorage.sharedReady?PSStorage.sharedReady(SCOUT_KEY):true)
+    .then(function(){return window.storage.get(SCOUT_KEY);}).then(function(rec){
+      var idb=rec&&rec.value!=null?rec.value:null,mirror=localStorage.getItem(SCOUT_KEY);
+      if(!current()||idb!==raw||mirror!==raw||raw!=null&&!scoutReadyRaw(raw))
+        throw syncIssue('sync_local_changed','scout_ready_commit','후보 서버 확인본과 기기 자료가 다릅니다');
+      m.r=m.r||{};m.r[SCOUT_KEY]={w:String(wid),u:String(uid),o:seal,present:raw!==null,h:hash(raw)};
+      scoutReadyPending=false;return true;
+    });
 }
 /* 2.750 — 문서가 없다는 서버 확인과, 파싱할 수 없는 기기 사본을 구분한다.
    읽기 검사만 한다. 날짜 이동/정규화는 기존 동기화 경로에서만 수행한다. */
@@ -4226,6 +4285,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
      scout가 예전 거울을 편집해 다시 올릴 수 있다. 쓰기 자체보다 먼저 표를 닫는다. */
   if(k===MATCH_KEY)matchReadyInvalidate();
   if(k===SCHEDULE_KEY)scheduleReadyInvalidate();
+  if(k==='cs_scout_targets_v1')scoutReadyInvalidate();
   /* 덮기 전에 지금 값을 읽어 남긴다. IDB 키(스카우팅 후보·보관함 등)가 오히려 중요하다 —
      2026-08-05 에 날아간 cs_scout_targets_v1 이 바로 이쪽이었다. */
   if(idbBacked(k)){
@@ -4283,7 +4343,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
           var guardedWrite=expectedLoc===undefined
             ? window.storage.set(k,v)
             : (window.storage.replaceIfValue
-              ? window.storage.replaceIfValue(k,expectedLoc,v).then(function(changed){
+              ? window.storage.replaceIfValue(k,k==='cs_scout_targets_v1'&&writeGuard&&Object.prototype.hasOwnProperty.call(writeGuard,'expectedIdb')?writeGuard.expectedIdb:expectedLoc,v).then(function(changed){
                   if(changed)return true;
                   ownerStale();throw syncIssue('sync_local_changed','kv_write_idb_changed','저장 중 더 새로운 기기 편집을 발견했습니다');
                 })
@@ -4315,6 +4375,9 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
           if(k===MATCH_KEY){
             try{matchMirrorWriteExact(v);}
             catch(e){syncDiagnostic('match-mirror-write',e);throw e;}
+          }else if(k==='cs_scout_targets_v1'){
+            localStorage.setItem(k,v);
+            if(localStorage.getItem(k)!==v)throw syncIssue('sync_storage','scout_mirror_write','후보 화면 저장을 확인할 수 없습니다');
           }else try{ if(k==='cs_perms_v1'||localStorage.getItem(k)!==null) localStorage.setItem(k,v); }catch(_){}
           if(k==='cs_perms_v1') __permsRaw=v;
           return {stale:false};
@@ -5032,6 +5095,8 @@ function syncNowCore(reason){
          서버 부재로 확정한다(아직 조회하지 않음/목록 밖을 빈 일정으로 오해하지 않는다). */
       var scheduleMetaPresent=metaRows.some(function(r0){return r0&&r0.k===SCHEDULE_KEY;});
       if(KEYS.indexOf(SCHEDULE_KEY)>=0&&!scheduleMetaPresent)needV.push(SCHEDULE_KEY);
+      var scoutMetaPresent=metaRows.some(function(r0){return r0&&r0.k===SCOUT_KEY;});
+      if(KEYS.indexOf(SCOUT_KEY)>=0&&scoutWriteAllowed()&&!scoutMetaPresent)needV.push(SCOUT_KEY);
       metaRows.forEach(function(r0){
         var k=r0.k;
         if(PERSONAL[k])return;   /* 2.744 — 개인 원문은 공통 개인 채널만 읽고 판정한다. */
@@ -5040,6 +5105,13 @@ function syncNowCore(reason){
            cs_drill_lib_v1 한 줄(8,036KB, 9/1·9/2·9/4 세 번)을 그 팀의 다른 기기 전부가 회차(45초)마다 통째로 받고 있었다 —
            적용 루프(KEYS.forEach)는 무시하니 m.c[k] 가 영영 안 올라가 매번 «바뀐 키»로 보였다. 이그레스 250GB 의 가장 큰 후보. */
         if(KEYS.indexOf(k)<0&&k.indexOf('cs_idp_v1_')!==0&&k.indexOf('cs_idp_pub_v1_')!==0&&!(ITEMS_ACTIVE&&isItemKey(k)))return;   /* 2.730 — 선수 행도 받는다 */
+        if(k===SCOUT_KEY){
+          if(!scoutWriteAllowed())return;
+          var scoutIdb=idbVals[k]===undefined?null:idbVals[k],scoutMirror=localStorage.getItem(k);
+          if(!keyReady(k,wid)||r0.cupd!==(m0.c[k]||0)||scoutIdb==null||scoutMirror!==scoutIdb||
+             hash(scoutIdb)!==(m0.h[k]||''))needV.push(k);
+          return;
+        }
         if(k===MATCH_KEY){
           /* 준비 표는 localStorage를 동기로 읽는다. 워크스페이스 확인표가 없거나
              IDB 정본과 거울이 갈라졌다면 cupd가 같아도 서버 원문을 받아 두 저장소를 다시 맞춘다.
@@ -5098,12 +5170,14 @@ function syncNowCore(reason){
            그때 meta-only 행을 원문으로 오해하지 않도록 요청 여부를 다음 단계에 건네준다. */
         var complete=metaRows.map(function(r0){ return fv[r0.k]||r0; });
         if(!scheduleMetaPresent&&fv[SCHEDULE_KEY])complete.push(fv[SCHEDULE_KEY]);
-        return [complete,idbVals,needV.indexOf(MATCH_KEY)>=0,needV.indexOf(SCHEDULE_KEY)>=0];
+        if(!scoutMetaPresent&&fv[SCOUT_KEY])complete.push(fv[SCOUT_KEY]);
+        return [complete,idbVals,needV.indexOf(MATCH_KEY)>=0,needV.indexOf(SCHEDULE_KEY)>=0,needV.indexOf(SCOUT_KEY)>=0];
       });
     }).then(function(pair){
       var rows=pair[0], idbVals=pair[1];
       var matchFullRequested=!!pair[2];
       var scheduleFullRequested=!!pair[3];
+      var scoutFullRequested=!!pair[4];
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
       var m=meta(), pushRows=[], idpBaseNext={},idpPushCandidate={},idpPushConfirmed={},idpLocalStage={},idpCommitDone=false, applied=0, skippedBig=0, skippedKeys=[], heldKeys=[], dependencyDeferredKeys=[], now=Date.now(), writes=[], itemsApplied=0,matchReadyBlocked=false;
       var idpMetaBefore={h:{},c:{},n:{}};Object.keys(m.h||{}).forEach(function(k){idpMetaBefore.h[k]=m.h[k];});Object.keys(m.c||{}).forEach(function(k){idpMetaBefore.c[k]=m.c[k];});Object.keys(m.n||{}).forEach(function(k){idpMetaBefore.n[k]=m.n[k];});
@@ -5124,6 +5198,26 @@ function syncNowCore(reason){
       var matchResolutionPlanned=false,matchResolved=false,matchExpectedRaw,matchPushPlanned=false,matchTouched=false,matchWriteGuards=[];
       var scheduleGuard={stale:false},schedulePushExpected=null,scheduleMetaBefore=null,scheduleAppliedPlanned=0,scheduleDeferred=false,scheduleMetaRestored=false,schedulePushHeld=false,scheduleDependencyBlocked=false,scheduleDependencyRetry=false;
       var scheduleExpectedRaw,scheduleObserved=false,schedulePushConfirmed=false,schedulePushRow=null;
+      var scoutStage=null;
+      function deferScout(stage){
+        if(dependencyDeferredKeys.indexOf(SCOUT_KEY)<0)dependencyDeferredKeys.push(SCOUT_KEY);
+        if(scoutStage){
+          ['h','c','n'].forEach(function(part){var old=idpMetaBefore[part][SCOUT_KEY];if(old===undefined)delete m[part][SCOUT_KEY];else m[part][SCOUT_KEY]=old;});
+          applied=Math.max(0,applied-(scoutStage.applied||0));scoutStage.applied=0;scoutStage.deferred=true;
+        }
+        m.r=m.r||{};delete m.r[SCOUT_KEY];if(roundWorkspaceCurrent())scoutReadyInvalidate();
+        pushRows=pushRows.filter(function(r){return r.k!==SCOUT_KEY;});
+        if(stage)syncDiagnostic(stage,new Error('후보 자료를 다시 확인한 뒤 동기화합니다'));
+      }
+      function scoutPushCurrent(){
+        if(!scoutStage||scoutStage.deferred)return true;
+        return roundWorkspaceCurrent()&&scoutWriteAllowed()&&!scoutStage.guard.stale&&localStorage.getItem(SCOUT_KEY)===scoutStage.raw;
+      }
+      function commitScoutReady(){
+        if(!scoutStage||scoutStage.deferred)return true;
+        if(!scoutPushCurrent()||scoutStage.push&&!scoutStage.confirmed){deferScout('scout-confirm-pending');return true;}
+        return scoutReadyCommit(m,scoutStage.raw,s.uid,wid,roundOwnerSeal,roundWorkspaceCurrent);
+      }
       function invalidateScheduleReadyLocal(){
         m.r=m.r||{};delete m.r[SCHEDULE_KEY];scheduleReadyInvalidate();
       }
@@ -5286,6 +5380,7 @@ function syncNowCore(reason){
       KEYS.forEach(function(k){
         /* 2.744 — 개인 공간에서도 공통 개인 채널이 CAS·충돌 선택을 담당한다. */
         if(PERSONAL[k]) return;
+        if(k===SCOUT_KEY&&!scoutWriteAllowed())return;
         /* 1.659 — 일정과 연결 경기는 항상 2회차로 나눈다.
            편집 5초 hold 중 4초 자동 동기화가 먼저 시작하면 예전엔 경기만
            옛 서버 일정 앞으로 가 lineage guard에 거부됐다. 편집·급감·CAS 보류는
@@ -5334,6 +5429,45 @@ function syncNowCore(reason){
           if(safeSchedule!==row.v){scheduleServerNormalized=true;row={k:row.k,v:safeSchedule,cupd:row.cupd};}
         }
         var srvChanged=row?(row.cupd!==(m.c[k]||0)):false;
+        if(k===SCOUT_KEY){
+          /* 항상 읽은 cupd에 CAS한다. 읽어 온 players-only 값을 정본과 합치고,
+             현재 기기에 새 편집이 생기면 이전 회차는 확정하지 않는다.
+             구버전의 직접 서버 덮어쓰기는 배포 전 적용하는 서버 가드의 책임이다. */
+          if(row&&(typeof row.cupd!=='number'||!Number.isFinite(row.cupd)||row.cupd<0)){deferScout('scout-version-missing');return;}
+          if(row&&typeof row.v!=='string'){
+            if(scoutFullRequested||dirty||!keyReady(k,wid))deferScout('scout-full-missing');
+            return;
+          }
+          var scoutMirrorNow=localStorage.getItem(k);
+          var scoutIdbBefore=loc,scoutWriteBefore=loc;
+          if(scoutMirrorNow!==null&&scoutMirrorNow!==loc){
+            /* 서버와 같은 거울은 느린/누락 IDB를 고칠 수 있다. 반대로 거울이
+               마지막 확정본이고 IDB가 서버와 같으면 뒤처진 거울만 맞춘다.
+               어느 쪽도 증명되지 않는 새 편집은 임의로 선택하지 않는다. */
+            if(row&&scoutMirrorNow===row.v){loc=scoutMirrorNow;dirty=hash(loc)!==(m.h[k]||'');}
+            else if(!(row&&loc===row.v&&hash(scoutMirrorNow)===(m.h[k]||''))){deferScout('scout-local-split');return;}
+            scoutWriteBefore=scoutMirrorNow;
+          }
+          var scoutRaw;
+          try{scoutRaw=scoutSyncPlan(loc,row?row.v:null,dirty);}
+          catch(e){deferScout('scout-document-invalid');return;}
+          if(scoutRaw!=null&&scoutRaw.length>syncMaxLen(k)){
+            skippedBig++;skippedKeys.push(k);deferScout('scout-document-size');return;
+          }
+          if(scoutRaw!==null&&(!row||scoutRaw!==row.v)&&pushHoldTracked(k,scoutRaw,row?row.v:null,m.n[k])){
+            deferScout();return;
+          }
+          if(!scoutFullRequested&&!row){deferScout('scout-absence-unconfirmed');return;}
+          scoutStage={raw:scoutRaw,guard:{stale:false,expectedIdb:scoutIdbBefore},push:scoutRaw!==null&&(!row||scoutRaw!==row.v),confirmed:false,applied:0};
+          scoutReadyInvalidate();m.r=m.r||{};delete m.r[k];
+          if(scoutRaw!==null&&(scoutIdbBefore!==scoutRaw||scoutMirrorNow!==scoutRaw)){
+            if(!roundKvWrite(k,scoutRaw,writes,scoutWriteBefore,scoutStage.guard)){deferScout('scout-local-write');return;}
+            applied++;scoutStage.applied++;
+          }
+          if(scoutStage.push){queuePush(k,scoutRaw,row&&row.v,scoutRaw,row?row.cupd:null,!row);}
+          else if(row){m.h[k]=hash(scoutRaw);m.c[k]=row.cupd;nSet(m,k,scoutRaw);holdClear(k);}
+          return;
+        }
         if(k===SCHEDULE_KEY&&row&&scheduleFullRequested&&typeof row.v!=='string'){
           scheduleDeferred=true;syncDiagnostic('schedule-full-missing',new Error('일정 서버 원문을 확인하지 못했습니다'));return;
         }
@@ -5970,6 +6104,7 @@ function syncNowCore(reason){
       /* 로컬 IDB 쓰기와 CAS 검사를 서버 push보다 먼저 끝낸다. 사용자가 회차 중
          다시 저장했다면 일정 행만 이 회차에서 빼고 다음 회차에 최신본을 읽는다. */
       return Promise.all(writes).then(function(){
+        if(!scoutPushCurrent())deferScout('scout-local-changed');
         if(matchWriteGuards.some(function(g){return !!(g&&g.stale);}))
           blockMatchReady('match-cas-stale',new Error('경기 저장 중 더 새로운 편집을 발견했습니다'));
         /* CAS가 막은 원문을 marker만 닫고 서버에는 계속 보내면, 바로 그 새 편집을
@@ -5987,6 +6122,7 @@ function syncNowCore(reason){
           if(!scheduleGuard.stale)restoreScheduleMeta();
         }
         return outboxMarkRows(wid,pushRows,m).then(function(){
+          if(!scoutPushCurrent())deferScout('scout-local-changed');
           if(!schedulePushCurrent()){
             var hadMatch=pushRows.some(function(r){return r.k==='cs_team_matches_v1';});
             pushRows=pushRows.filter(function(r){return r.k!==SCHEDULE_KEY&&r.k!=='cs_team_matches_v1';});
@@ -6002,20 +6138,22 @@ function syncNowCore(reason){
               /* blobPrepRows는 같은 요청 객체의 그림을 검증된 참조로 바꾼다.
                  서버가 그 요청을 실제로 수락했을 때, 변환 전 기기 원문을 확정한다. */
               if(sent&&sent.k===SCHEDULE_KEY&&sent===schedulePushRow)schedulePushConfirmed=true;
+              if(sent&&sent.k===SCOUT_KEY&&scoutStage&&sent.v===scoutStage.raw)scoutStage.confirmed=true;
               if(sent&&sent.k===MATCH_KEY&&matchPushPlanned){
                 if(sent.v===matchExpectedRaw)matchResolved=true;
                 else blockMatchReady('match-push-confirm-mismatch',new Error('경기 push 확인 원문이 다릅니다'));
               }
             });
-          },'kv_push',roundWorkspaceCurrent).then(function(res){
+          },'kv_push',function(){return roundWorkspaceCurrent()&&scoutPushCurrent();}).then(function(res){
             /* 403 개별 격리는 배치 전체를 reject하지 않는다. onOk가 오지 않은
                경기를 성공으로 간주하지 않고 meta/outbox를 예전 상태로 돌린다. */
             if(matchPushPlanned&&!matchResolved)blockMatchReady('match-push-unconfirmed',new Error('경기 push 확인 응답이 없습니다'));
             if(schedulePushExpected!==null&&!schedulePushConfirmed)restoreScheduleMeta();
+            if(scoutStage&&scoutStage.push&&!scoutStage.confirmed)deferScout('scout-push-unconfirmed');
             return itemsResolveConflicts(at,wid,roundWorkspaceCurrent,m).then(function(){return res;});
           });   /* 2.731 */
         });
-      }).then(function(){return commitIdpBasesAndMeta();}).then(function(){return commitScheduleReady();}).then(function(){return commitMatchReady();}).then(function(){ return syncLibrary(at,m,now,wid,roundWorkspaceCurrent); }).then(function(lr){
+      }).then(function(){return commitIdpBasesAndMeta();}).then(function(){return commitScheduleReady();}).then(function(){return commitMatchReady();}).then(function(){return commitScoutReady();}).then(function(){ return syncLibrary(at,m,now,wid,roundWorkspaceCurrent); }).then(function(lr){
         applied+=(lr&&lr.applied)||0;
         m.last=Date.now();requireRoundWorkspace('round_meta_final');setMetaExact(m);lastIssue=null;   /* 2.625 */
         try{ rtConnect(); }catch(_){}   /* 2.628 — 회차가 성공하면 실시간 채널도 맞춰 둔다(워크스페이스가 바뀌었으면 다시 붙는다) */
