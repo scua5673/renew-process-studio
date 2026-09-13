@@ -473,7 +473,6 @@ body.fmdark #libOvl .doclib-card{border-color:#2E333A}body.fmdark .doclib-head,b
       <div class="doclib-actions">
         <button type="button" class="btn" id="libNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>새 노트</span></button>
         <button type="button" class="btn" id="libPdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/></svg><span>PDF 가져오기</span></button>
-        <button type="button" class="btn pri" id="libVault"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h6l2 2h8v10H4z"/><path d="M4 7V5h6l2 2"/></svg><span>보관함 훈련</span></button>
         <button type="button" class="btn doclib-close" id="libClose" aria-label="문서 보관함 닫기">×</button>
       </div>
     </div>
@@ -1840,7 +1839,6 @@ $('docMineTab').onclick=function(){setDocLibTab('mine');};$('docVaultTab').oncli
 $('docSearch').addEventListener('input',function(){_docQuery=this.value.trim().toLowerCase();if(_docLibTab==='mine')renderLib();else renderVaultDocs();});
 $('libNew').onclick=function(){closeDocLibrary();newNoteNow();};
 $('libPdf').onclick=function(){$('pdfFile').click();};
-$('libVault').onclick=function(){setDocLibTab('vault');};
 $('vaultPdfB').onclick=function(){openDocLibrary('vault');};
 
 function renderLib(){

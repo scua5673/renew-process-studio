@@ -13934,7 +13934,7 @@ function renderAvailDaily(ours){
   var rc={gk:0,field:0,rehab:0,out:0};
   ours.forEach(function(p){ var st=stStatusAt(p.id,day)||""; if(st==="rehab")rc.rehab++; else if(st&&st!=="ok")rc.out++; else { var ab=String(posOf(p)||"").toUpperCase(); if(/GK|GOALKEEPER|골키퍼|키퍼/.test(ab))rc.gk++; else rc.field++; } });
   h+=body;
-  h+='<div class="av-dfoot"><span class="lb">'+(anyTrain?('이 날 참여 <b>'+(rc.gk+rc.field)+'</b>명으로'):('일정 없는 날 — 참여를 세지 않아요 · 가능 '+(rc.gk+rc.field)+'명으로'))+'</span>'
+  h+='<div class="av-dfoot"><span class="lb">'+(anyTrain?('이 날 참여 <b>'+(rc.gk+rc.field)+'</b>명으로'):('가능 '+(rc.gk+rc.field)+'명으로'))+'</span>'
     +(anyTrain?'<button type="button" class="av-lnk" data-av-sched="'+esc(day)+'">일정 →</button>':'')
     +'<button type="button" class="av-cta" data-av-new="'+esc(day)+'" data-av-roster="'+esc(JSON.stringify(rc))+'">＋ 훈련 세션 만들기</button></div>';
   h+='</div>';
@@ -14067,7 +14067,7 @@ function renderAvail(){
   }
   var DOW=["일","월","화","수","목","금","토"];
   var pct=function(a,b){ return b?Math.round(a/b*100):0; };
-  var h='<div class="av-head"><h3>출석</h3><span class="n">최근 '+N+'일 · 훈련·경기일 '+trainDays+' · OFF '+offDays+'</span>'
+  var h='<div class="av-head"><h3>출석</h3><span class="n">최근 '+N+'일</span>'
     +'<span class="av-seg">'+[[14,"2주"],[28,"4주"],[90,"시즌"]].map(function(x){return '<button type="button" data-av-range="'+x[0]+'"'+(N===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join("")+'</span></div>';
   try{ h+=renderAvailDaily(ours); }catch(e){ try{console.warn("avail daily",e);}catch(_){} }   /* 2.691 — 날짜별 조별 명단 */
   var avgOk=trainDays?Math.round(sumOk/trainDays*10)/10:0, avgRec=trainDays?Math.round(sumRec/trainDays*10)/10:0;
@@ -17517,7 +17517,7 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
                 그래서 값을 여기서 바꾸지 않고, 그 시트를 열어 준다(시간·세트 편집기는 2.488/2.535 에 이미 있다). */
           +(bl.t?'<time class="ckt" role="button" tabindex="0" data-ck="edittime" title="눌러서 일정에서 시간·세트 고치기">'+ckEsc(bl.t)+'</time>':'')+(bl.ph?'<span class="ph">'+ckEsc(bl.ph)+'</span>':'')+(bl.libId?'<u class="go">→</u>':'')+'</div>'; }).join("")
       /* 2.201 — OFF 날 '개별 재활·부상' 줄 제거(사용자). 가용 인원 패널이 같은 정보를 보여 준다 */
-      :(ss.kind==="off"?'':'<div class="empty">'+(ss.kind==="m"?"경기일입니다 — 경기 탭에서 라인업·계획을 확인하세요":"훈련 블록이 아직 없어요")+'</div>'))
+      :((ss.kind==="off"||ss.kind==="none")?'':'<div class="empty">'+(ss.kind==="m"?"경기일입니다 — 경기 탭에서 라인업·계획을 확인하세요":"훈련 블록이 아직 없어요")+'</div>'))
     /* 2.570 — 2.299 의 «다음 경기» 줄은 «이번 주» 머리줄의 D-n 칩으로 **옮겼다**(같은 data-ck="match"). 카드에서는 그린다면 두 번이 된다. */
     +'</div></div>';
   /* ② 인원 */

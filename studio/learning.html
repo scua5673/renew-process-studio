@@ -635,7 +635,7 @@ function renderCards(){
   var list=keys.filter(function(k){var c=S.cards[k];return f==='all'||(f==='mine'&&c.stage>=3)||(f==='due'&&c.stage<3&&c.due<=now())||(f==='wait'&&c.stage<3&&c.due>now())});
   var h='<div class="card"><h4>카드 · '+keys.length+'장</h4><div>'+[['all','전체'],['due','기한 옴'],['wait','기다리는 중'],['mine','내 것']].map(function(x){return '<button class="chip'+(f===x[0]?' on':'')+'" data-cf="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</div>';
   h+=list.length?'<div class="cards" style="margin-top:8px">'+list.map(function(k){var c=S.cards[k];return '<div class="gl"><div class="id">'+esc(k)+' <span class="tag '+(c.stage>=3?'ok':c.due<=now()?'due':'mikl')+'">'+(c.stage>=3?'내 것':c.due<=now()?'기한':'대기')+'</span></div>'+esc(c.ko)+'<div class="life">'+esc(c.from)+'에서 · '+(c.stage>=3?'재학습 3회 완료':'재학습 '+(c.stage+1)+'번째 · '+fmtDays(c.due))+'</div></div>'}).join('')+'</div>':'<p style="color:var(--faint);margin-top:8px">아직 없음 — 절을 마치면 생깁니다.</p>';
-  h+='</div><div class="card"><h4>사전 (목업 범위)</h4><p style="color:var(--gray)">지금은 절에서 쥔 카드만. 도구말·FIFA 용어·가이드라인 160·역할·질문을 합친 사전은 다음 판.</p><div class="row" style="margin-top:10px"><button class="btn" id="resetAll">진행 전부 지우기</button></div></div>';
+  h+='</div><div class="row" style="margin-top:18px"><button class="btn" id="resetAll">진행 전부 지우기</button></div>';
   $('#p-cards').innerHTML=h;
   $$('#p-cards [data-cf]').forEach(function(b){b.onclick=function(){cardFilter=b.dataset.cf;render()}});
   $('#resetAll').onclick=function(){if(confirm('이 기기의 학습 기록을 지울까요?')){localStorage.removeItem(KEY);S=load();bookState={view:'toc',sec:null,step:0,mixI:0};render();toast('지웠습니다')}};
