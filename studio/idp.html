@@ -2747,6 +2747,9 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   /* 2.329 — 세그와 ‹오늘› 을 **같은 높이 한 줄**로. 각자 padding·테두리가 달라 2px 씩 어긋나 있었다 —
      높이를 한 자로 못 박고 `align-items:stretch` 로 위아래를 맞춘다. */
   .cal-bar{display:flex;align-items:stretch;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .cal-bar.cal-fold{display:none}   /* 2.780 — 일간에서 접힘, 날짜를 누르면 편다 */
+  .cal-label-btn{border:0;background:transparent;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;display:inline-flex;align-items:baseline;gap:4px}
+  .cal-label-btn i{font-style:normal;font-size:12px;color:var(--text-3);font-weight:800;position:relative;top:-1px}
   .cal-bar>.cal-seg,.cal-bar>.cal-nav{min-height:40px;align-items:center}
   .cal-seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:2px;gap:2px}
   .cal-seg button{border:0;background:transparent;color:var(--text-3);font-family:var(--f);font-weight:var(--fw-body);font-size:var(--fs-sub);
@@ -11922,6 +11925,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       first=false; d2=addDays(d2,-1); }
     return n; }
 
+  var calSegOpen=false;   /* 2.780 — 일간에서 «년간 월간 주간 일간 공통» 줄은 접어 두고 날짜 옆 «달력 ›» 로 편다 */
   function rCal(){
     var today=new Date(); today.setHours(0,0,0,0);
     var h='';   /* 1.849 — 일정 탭 상단 목표 스트립(g-strip) 제거(사용자). 퀵 시트(#qStrip)에는 그대로 */
@@ -11939,7 +11943,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
        ⚠ `‹ 오늘 ›` 은 **날짜 옆으로** 내렸다(사용자). 날짜를 옮기는 손잡이가 날짜에서 멀리 있으면
           무엇을 옮기는지 눈이 잇지 못한다. 공통 뷰에는 날짜가 없으니 그 줄도 함께 빠진다. */
     var _isQa=(calView==='qa');
-    h+='<div class="cal-bar"><div class="cal-seg" id="calSeg">'
+    var _segOpen=false; try{ _segOpen=!!calSegOpen; }catch(_){ _segOpen=false; }   /* 2.780 — 테스트 하네스는 rCal 만 떼어 돌린다 */
+    var _fold=(!ro()&&calView==='day'&&!_segOpen);   /* 2.780 */
+    h+='<div class="cal-bar'+(_fold?' cal-fold':'')+'"><div class="cal-seg" id="calSeg">'
       +'<button data-v="year"'+(calView==='year'?' class="on"':'')+'>년간</button>'
       +'<button data-v="month"'+(calView==='month'?' class="on"':'')+'>월간</button>'
       +'<button data-v="week"'+(calView==='week'?' class="on"':'')+'>주간</button>'
@@ -11952,11 +11958,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }else{
       /* 날짜와 그 날짜를 옮기는 손잡이는 **한 줄에** 둔다 */
       h+='<div class="cal-dateline">'
-        +'<div class="cal-label">'+esc(label)
+        +'<div class="cal-label">'+((calView==='day'&&!ro())?('<button type="button" id="calSegToggle" class="cal-label-btn" aria-expanded="'+(_segOpen?'true':'false')+'" title="년간·월간·주간·공통 보기">'+esc(label)+'<i>'+(_segOpen?'⌃':'⌄')+'</i></button>'):esc(label))   /* 2.780 — 날짜를 누르면 년간~공통 줄이 펴진다 */
         +(function(){ try{ return _ylMini(); }catch(_){ return ''; } })()   /* 2.507 — 올해 남은 날(아주 작게) */
         +(calView==='week'?'<button type="button" id="teamScheduleOpen" class="cal-teamgo">팀 전체 일정 ›</button>':'')
+        +(_fold&&sk>=2?'<span class="streak">'+ic('flame')+sk+'일 연속</span>':'')
         +'</div>'
-        +'<div class="cal-nav"><button id="calPrev" aria-label="이전 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block;pointer-events:none" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><button class="today" id="calToday">오늘</button><button id="calNext" aria-label="다음 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block;pointer-events:none" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button></div></div>'
+        +'<div class="cal-nav"><button id="calPrev" aria-label="이전 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block;pointer-events:none" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><button class="today" id="calToday">오늘</button><button id="calNext" aria-label="다음 달"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block;pointer-events:none" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button></div>'
+        +'</div>'
         +'</div>';
     }
     /* ══ 2.317 · 팀 일정 7칸은 **주간 뷰의 것**이다 ═══════════════════════════════════
@@ -12152,7 +12160,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(_isTodayDay&&!ro()){ try{ var _fb474=coachFeedbackFor(viewing);
         if(_fb474&&_fb474.id&&(doc.feedbackReply||{}).feedbackId!==_fb474.id)h+='<button type="button" class="td-note" data-hd-go="goal">'+ic('eye')+' 코치 피드백이 왔어요 — 읽기 ›</button>'; }catch(_){} }
       /* 2.489 — 이번 주 단계가 비어 있으면 그 물음이 첫 카드(월요 리듬 — 알림이 아니라 그 주의 첫 카드일 뿐) */
-      if(_isTodayDay&&!ro()){ try{ h+=rWeekStepCard(); }catch(_){} }
+      var _wsCard=''; if(_isTodayDay&&!ro()){ try{ _wsCard=rWeekStepCard()||''; }catch(_){} }   /* 2.780 — ③ «이번 주 나는 10초» 는 오늘 카드 아래로(선수 첫 화면 목업) */
       /* ══ 2.314 · 1층 = 오늘 적는 것 ═══════════════════════════════════════════════
          사용자: "IDP 딱 들어가면 바로 운동 참여여부·훈련강도·키·몸무게·한 줄". 실측해 보니 다섯이
          **이미 이 화면에 다 있었다** — 순서가 흩어졌고 **몸무게와 한 줄은 두 번씩** 묻고 있었다
@@ -12197,11 +12205,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
            ⚠ 안쪽 조각들(rTodayCard·한 줄)은 여전히 제 `<section class="card">` 를 만든다 —
               그 껍데기는 CSS(`.daycard .card`)가 벗긴다. 렌더 함수를 건드리지 않으려는 선택이다. */
         var _att=rDayAttend(calAnchor,lg,!ro());
-        h+=_att.strip;
+        var _below=_att.strip;   /* 2.780 — ① 읽는 것(오늘 팀 일정·공지)은 적는 카드 아래로 — 매일 하는 것이 첫 화면 맨 위 */
         /* 2.537 — 공지는 **오늘 팀 일정 바로 밑**(사용자: "공지사항 오늘 팀일정 밑으로 뜨게해줘").
            처음엔 프로필 첫 화면 맨 위에 뒀는데, 선수가 매일 여는 화면은 프로필이 아니라 **일지**다.
            읽는 것끼리(팀 일정 → 공지) 붙여 두면 "오늘 뭐 하지"와 "코치가 뭐랬지"가 한자리에서 끝난다. */
-        h+=(function(){ try{ return rNotice(); }catch(e){ console.warn('공지 그리기 실패',e); return ''; } })();
+        _below+=(function(){ try{ return rNotice(); }catch(e){ console.warn('공지 그리기 실패',e); return ''; } })();
         h+='<section class="card daycard">';
         /* ══ 2.615 · 한 줄 왕복 — 오늘 카드 첫 층(사용자 "순서대로 가봅시다" 1번) ═══════════════
            코치 반응(있을 때만) → 이번 주 초점 → 칩 셋 → 한 마디(선택·질문 칩) → 이번 주 띠. 그 아래는 참여·강도·몸·잠 그대로.
@@ -12236,6 +12244,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           h+='<div class="dc-sec"><div class="td-q">한 줄 <small>선택 · 잘 된 장면 / 다음엔 이렇게</small></div>'
           +'<textarea id="dayMemo" rows="3" placeholder="예: 압박 오는데 몸을 미리 열어서 앞을 봤다"'+(ro()?' disabled':'')+'>'+esc(lg.memo||'')+'</textarea>'+_pastRx+'</div>'; }   /* 2.615 — 오늘(선수)은 첫 층의 한 마디가 같은 log.memo */
         h+='</section>';   /* 2.362 — daycard 닫기. 아래 측정 카드는 별개의 일이라 밖에 둔다 */
+        h+=_wsCard+_below;   /* 2.780 — 순서: 오늘 카드 → 이번 주 나는 → 오늘 팀 일정 → 공지 */
         /* 2.489 — 일요일엔 주간 회고가 이 자리에(doc.weekly — 읽는 곳(9539 내 말 아카이브)만 있고
            쓰는 문이 어느 판에선가 사라져 고아였던 필드를 되살린다) */
         if(_isTodayDay&&!ro()&&calAnchor.getDay()===0&&!olWrapTarget()){ try{ h+=rWeeklyCard(); }catch(_){} }   /* 2.618 — 주 마무리 카드가 그 자리를 맡으면 옛 회고 카드는 쉰다 */
@@ -12300,6 +12309,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(ts)ts.onclick=function(){try{parent.postMessage({source:'idp',type:'openSchedule'},'*');}catch(_){}};
     var seg=document.getElementById('calSeg');
     if(seg)seg.onclick=function(e){ var b=e.target.closest('button'); if(!b)return; calView=b.dataset.v; render(); };
+    var _tg=document.getElementById('calSegToggle'); if(_tg)_tg.onclick=function(){ calSegOpen=!calSegOpen; render(); };   /* 2.780 */
     var step = calView==='year'?function(n){ calAnchor=new Date(calAnchor.getFullYear()+n,calAnchor.getMonth(),1); }
              : calView==='month'?function(n){ calAnchor=new Date(calAnchor.getFullYear(),calAnchor.getMonth()+n,1); }
              : calView==='week'?function(n){ calAnchor=addDays(calAnchor,7*n); }
