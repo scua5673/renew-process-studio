@@ -178,6 +178,7 @@
      앱 본문은 뒤에서 준비하고, 완료 시 이 레이어만 부드럽게 걷어 깜빡임을 막는다. */
   body.ps-booting{background:var(--surface-2);}
   body.ps-booting .appbar,body.ps-booting #bkBanner,body.ps-booting .frames>iframe{visibility:hidden;}
+  #fIdp.ps-routing{visibility:hidden!important}   /* 2.778 — 2.777 의 가리개가 폰 세로 @media 안에 들어가 데스크톱에서 안 먹었다. 최상위로 */
   #loading.ps-boot-screen{position:fixed;inset:0;z-index:2147482000;background:var(--surface-2);color:var(--dim);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;opacity:1;
     transition:opacity .14s ease;pointer-events:auto;}
@@ -418,7 +419,6 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
     /* 2.044 — 선수 폰: 팀 내비 줄('일정' 하나만 남아 빈 띠로 보이던 것) 숨김. 팀 일정은 IDP 안(이번 주 카드·일정 탭 팀 주간·전체 일정 열기)에서 */
     body.ps-player-idp-only #teamNav{display:none!important}
     body.ps-player-idp-only[data-ps-app="process"] #psBackIdp{display:inline-flex}
-    #fIdp.ps-routing{visibility:hidden}   /* 2.777 — IDP 프레임이 새로 보일 때 문 신호 ack 까지 가림 */
     body.ps-player-idp-only .appbar{min-height:54px;padding:8px 16px;padding-top:max(8px,env(safe-area-inset-top));}
     body.ps-player-idp-only .brand .wm{font-size:var(--fs-title)}
     body.ps-player-idp-only .gear{margin-left:auto}
@@ -499,7 +499,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.777';</script>
+<script>window.PS_BUILD='2.778';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
