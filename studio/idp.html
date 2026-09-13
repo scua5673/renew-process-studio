@@ -5481,7 +5481,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
        그래서 명단이 있으면 뷰어를 살리고, 없는 쪽 버튼만 CSS 로 숨긴다. */
     var hasRoster=false;
     try{ var _td=teamData(); hasRoster=!!(_td&&(_td.players||[]).some(function(p){ return p&&p.type!=='target'&&String(p.name||'').trim(); })); }catch(_){}
-    if(!others.length&&!hasRoster){ if(viewing!==mine&&!adoptViewing(mine))return; box.classList.remove('on'); squadView=false; return; }
+    if(!others.length&&!hasRoster){
+      /* 팀 IDP로 들어온 선택은 로컬 명단·선수 문서의 도착 여부로 취소하지 않는다.
+         로딩·빈 명단·오류는 teamEvalList를 받는 기존 선수단 화면에서 처리한다. */
+      if(squadView){ box.classList.remove('on'); return; }
+      if(viewing!==mine&&!adoptViewing(mine))return;
+      box.classList.remove('on'); squadView=false; return;
+    }
     box.classList.add('on');
     box.classList.toggle('no-others',!others.length);
     var opts='<option value="'+esc(mine)+'">내 IDP</option>';
