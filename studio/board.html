@@ -4610,7 +4610,9 @@ function clientToUnit(cx,cy){
   return {x:W/2,y:H/2};}
 function toUnit(evt){return clientToUnit(evt.clientX,evt.clientY);}
 
-function tokenTransform(p){const _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;const _eq=(equipKey(p.team)&&p.team!=="ball")?1.8:(p.team==="img"?0.82:1);const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor();
+var PHONE_PLAYER_TOK=0.754;   /* 2.801 — 폰 선수 토큰: 2.800 전 크기(345/366)로 되돌리고 크기 사다리 한 단계(÷1.25) 더 작게(사용자). 공·장비·그림은 그대로 */
+function phoneTokFactor(p){try{return (psBoardDevice()==="phone"&&p&&!equipKey(p.team)&&p.team!=="img")?PHONE_PLAYER_TOK:1;}catch(_){return 1;}}
+function tokenTransform(p){const _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;const _eq=(equipKey(p.team)&&p.team!=="ball")?1.8:(p.team==="img"?0.82:1);const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p);
   /* 세로 피치의 부모 world 회전과 반대 방향으로 토큰을 보정해 숫자·유니폼을 항상 정방향 유지.
      spFlip=true(골대 위)는 부모가 +90°이므로 -90°, 골대 아래는 부모가 -90°이므로 +90°. */
   const _upright=(state.orientation==="v")?(state.spFlip?-90:90):0;
@@ -4817,7 +4819,7 @@ function makeToken(p,kind){
   g.setAttribute("data-kind",kind);
   g.setAttribute("transform",tokenTransform(p));
   /* 2.799 — 폰: 보이는 원(r 21 ≈ 지름 13px)은 그대로 두고 잡히는 범위만 지름 ≈44px 로(사용자 «폰에서는 토큰을 가볍게 옮기는 것만»). 첫 자식이라 그림 위에 얹히지 않는다. */
-  try{ if(psBoardDevice()==="phone"){ g.insertBefore(el("circle",{r:70,fill:"transparent","class":"tok-hit"}),g.firstChild); } }catch(_){}
+  try{ if(psBoardDevice()==="phone"){ g.insertBefore(el("circle",{r:Math.round(70/phoneTokFactor(p)),fill:"transparent","class":"tok-hit"}),g.firstChild);   /* 2.801 — 토큰을 줄여도 잡히는 범위는 44px 유지 */ } }catch(_){}
   enableDrag(g,p,removable,kind);return g;
 }
 function playerTeamCol(p){   // p.color 없을 때의 유효 팀색 — 렌더 로직과 동일 규칙(현재색 하이라이트용)
@@ -5502,7 +5504,7 @@ function _fillPattern(kind,color){
   }catch(_){ return hexA(color,.24); }
 }
 function _visBlindPattern(light){try{ var ex=svg.querySelector("#psBlindHatch"); if(ex)ex.parentNode.removeChild(ex); var defs=svg.querySelector("defs"); if(!defs){defs=el("defs");svg.insertBefore(defs,svg.firstChild);} var rectF=light?"rgba(70,78,90,.10)":"rgba(120,128,138,.13)"; var lineS=light?"rgba(55,62,74,.55)":"rgba(195,203,213,.5)"; var pat=el("pattern",{id:"psBlindHatch",width:8,height:8,patternUnits:"userSpaceOnUse",patternTransform:"rotate(45)"}); pat.appendChild(el("rect",{width:8,height:8,fill:rectF})); pat.appendChild(el("line",{x1:0,y1:0,x2:0,y2:8,stroke:lineS,"stroke-width":1.2})); defs.appendChild(pat);}catch(_){}}
-function _tokScaleOf(p){var _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor();}
+function _tokScaleOf(p){var _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor()*phoneTokFactor(p);}
 /* 2.233 — 작은 규격에서는 토큰도 줄인다(완전 비례는 너무 작아 (길이/105)^0.6: 초등 0.75 · 풋살 0.56) */
 function specTokFactor(){try{var sp=pitchSpec();return sp===PITCH_SPECS.fifa?1:Math.pow(sp.len/105,0.6);}catch(_){return 1;}}
 function _shaperBody(g,cx,cy,deg,s,col){
