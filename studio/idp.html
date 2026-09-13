@@ -5694,8 +5694,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   /* 2.778 — 셸 안에서는 부팅 화면을 셸의 «개인 IDP» 문(openPersonal: home→'cal', personalOnly) 과 똑같이 맞춘다.
      그래야 신호가 왔을 때 같은 상태라 다시 그리지 않고 ack 만 보낸다(실측: 프레임이 «프로필» 로 미리 그려져 있다가
      신호를 받고 ~0.9초 다시 그리는 사이 프로필이 보였다). 팀에서 여는 선수단(openSquad)은 그 신호가 personalOnly 를 끈다. 단독 실행은 그대로 */
-  try{ if(document.documentElement.getAttribute('data-shell')==='1'){ curL='cal'; personalOnly=true; } }catch(_){}
   try{ if(!isCoach()&&matchMedia('(max-width:767px)').matches){ curL='cal'; } }catch(_){}   /* 2.260 — 선수 폰은 첫 화면 = 오늘(일정 일간, 오늘 카드) — "들어가자마자 기록"(사용자). 코치·데스크톱은 프로필 유지 */    /* 1.918 — 첫 화면 = 홈 대시보드(사용자). 1.836 — 첫 화면 = 일정(사용자 지시). 홈 탭은 숨김(design-v2). 코치 선수단 목록(idp-squad)은 여전히 'home' 을 쓴다 */
+  try{ if(document.documentElement.getAttribute('data-shell')==='1'){ curL='home'; personalOnly=true; } }catch(_){}   /* 2.779 — 2.778 의 'cal' 은 틀렸다: openPersonal 은 layer 'home' → nextLayer 'home' 이라 상태가 달라 매번 ~1초 다시 그렸다(실계정 실측). 문과 같은 'home' 으로, 2.260 뒤에 둔다 */
   /* ⚠ 2.408 — 기본을 **전체(-1)** 로 바꿨다(사용자 "전체가 먼저 쫙 열리게 쭉쭉 평가 작성할 수 있게").
      한 영역씩 열면 다 채우려고 다섯 번을 눌러야 했다 — 평가는 앉은 자리에서 끝내는 일이다. */
   var evArea=-1;   /* 2.113 — 선수 셀프평가에서 보고 있는 영역. -1 = 전체 */
