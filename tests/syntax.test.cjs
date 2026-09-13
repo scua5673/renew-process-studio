@@ -7,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 
-for (const file of ['studio/app.html', 'studio/process.html', 'studio/scout.html', 'studio/analysis.html', 'studio/playbook.html', 'studio/idp.html', 'studio/board.html', 'start/index.html', 'start/idp.html', 'guide/index.html']) {
+for (const file of ['studio/app.html', 'studio/process.html', 'studio/scout.html', 'studio/scouting.html', 'studio/analysis.html', 'studio/playbook.html', 'studio/idp.html', 'studio/board.html', 'start/index.html', 'start/idp.html', 'guide/index.html']) {
   test(`${file}: inline JavaScript parses`, () => {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
     let count = 0;
@@ -23,7 +23,7 @@ for (const file of ['studio/app.html', 'studio/process.html', 'studio/scout.html
   });
 }
 
-for (const file of ['studio/storage.js', 'studio/sync.js', 'studio/review-training.js', 'studio/review-training-schedule.js', 'studio/idp-evidence.js', 'studio/idp-recovery.js', 'studio/first-work.js', 'studio/session-focus.js', 'studio/daily-effort.js', 'sw.js']) {
+for (const file of ['studio/storage.js', 'studio/scouting-store.js', 'studio/sync.js', 'studio/review-training.js', 'studio/review-training-schedule.js', 'studio/idp-evidence.js', 'studio/idp-recovery.js', 'studio/first-work.js', 'studio/session-focus.js', 'studio/daily-effort.js', 'sw.js']) {
   test(`${file}: JavaScript parses`, () => {
     new vm.Script(fs.readFileSync(path.join(root, file), 'utf8'), { filename: file });
   });

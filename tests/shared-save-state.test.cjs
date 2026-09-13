@@ -15,6 +15,8 @@ function section(source, start, end) {
 const stateCode = section(storageSource, '/* PROCESS STUDIO — 저장 상태(PSSaveState)', '/* PROCESS STUDIO — 일정 기준선');
 const sharedCode = section(storageSource, '  var sharedWrites={},sharedLatest={};', '  /* 큰 보조 사본 전용 API.');
 const saveCode = section(storageSource, '  window.psSaveShared=function', '  /* v369 — 팀 전환');
+// Generic shared-write tracker cases use the squad key. Candidate identity now
+// has a separate guarded client, exercised by scouting-store and browser tests.
 const storeCode = section(scoutSource, 'const mem={};', 'const KEY="scout_tool_v1";');
 const matchCode = section(scoutSource, 'function matchSaveNow(){', 'function matchWriteSchedule(state){');
 const flushCode = section(scoutSource, 'function matchFlushNow(){', '/* ⚠ 새로고침만이 아니라');
@@ -27,7 +29,7 @@ function harness() {
   const context = vm.createContext({
     Promise, console, setTimeout, clearTimeout,
     CustomEvent:class { constructor(type,opts) { this.type=type; this.detail=opts.detail; } },
-    document:{body:null,getElementById(){return null;}},
+    document:{body:null,getElementById(){return null;},querySelectorAll(){return [];}},
     localStorage:{getItem(k){return local.has(k)?local.get(k):null;},setItem(k,v){local.set(k,String(v));}},
     addEventListener(){},dispatchEvent(e){events.push(e);},
     storage:{set(k,raw){const d=deferred();commits.push({k,raw,...d});return d.promise.then(ok=>{if(ok!==false)durable.set(k,raw);return ok;});}},
@@ -76,14 +78,14 @@ test('failed shared commit and verification retry reject flush; another key cann
 
 test('one committed shared key cannot confirm another pending key', async () => {
   const {c,commits}=harness();
-  c.testStore.set('cs_team_matches_v1',{title:'match'});c.testStore.set('cs_scout_targets_v1',{players:[]});
+  c.testStore.set('cs_team_matches_v1',{title:'match'});c.testStore.set('cs_squad_v1',{players:[]});
   await drain();commits[0].resolve(true);await drain();
   assert.equal(c.PSSaveState.get('team'),'saving');assert.equal(c.psHasPending(),true);
   commits[1].resolve(true);await c.testStore.ready();assert.equal(c.PSSaveState.get('team'),'saved');
 });
 
 for (const changed of [false,true]) test(`flush rechecks a failed key after external queue recovery (durable changed: ${changed})`, async () => {
-  const {c,commits,durable}=harness();const key='cs_scout_targets_v1';
+  const {c,commits,durable}=harness();const key='cs_squad_v1';
   c.testStore.set(key,{players:['new']});const initial=assert.rejects(c.testStore.ready(),/temporary/);
   await drain();commits[0].reject(new Error('temporary'));await drain();commits[1].reject(new Error('temporary'));await initial;
   const external=c.PSStorage.sharedReady(key);await drain();commits[2].resolve(true);await external;
@@ -94,7 +96,7 @@ for (const changed of [false,true]) test(`flush rechecks a failed key after exte
 });
 
 test('failed-key recovery refuses to replay a stale mirror value', async () => {
-  const {c,commits,local}=harness();const key='cs_scout_targets_v1';
+  const {c,commits,local}=harness();const key='cs_squad_v1';
   c.testStore.set(key,{players:['old']});const initial=assert.rejects(c.testStore.ready(),/temporary/);
   await drain();commits[0].reject(new Error('temporary'));await drain();commits[1].reject(new Error('temporary'));await initial;
   local.set(key,'{"players":["newer"]}');

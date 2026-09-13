@@ -6,6 +6,8 @@
 <title>스카우팅 · 후보 선수 DB</title>
 <script>document.documentElement.classList.add('ps-page-scouting')</script>
 <script src="storage.js"></script>
+<script src="scouting-store.js"></script>
+<script src="perms.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 -->
 <script src="profile-sheet.js"></script><!-- 2.617 — 프로필 한 장(A4) · scout.html 과 공용 -->
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
@@ -383,7 +385,7 @@ body.sc-points-only{background:var(--surface-2)!important}
 body.sc-points-only .sc-ptset{padding:12px 16px 24px!important;box-sizing:border-box}
 body.sc-points-only .sc-ptset>.sc-meet-top{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px 10px!important;padding:16px 18px!important;margin:0 0 12px!important;background:var(--surface)!important;border:1px solid var(--border,#E3E6EA)!important;border-radius:12px!important;box-shadow:none!important;position:static!important;height:auto!important}
 body.sc-points-only .sc-ptset>.sc-meet-top>b{font-size:16px!important;font-weight:600!important;letter-spacing:-.01em;margin-right:auto}
-body.sc-points-only .sc-ptset>.sc-meet-top>b::after{content:"포지션 그룹별 체크 질문 — 후보 평가표가 이 질문을 씁니다";display:block;margin-top:2px;font-size:13px;font-weight:500;color:var(--muted,#646a73)}
+
 body.sc-points-only .sc-ptset>.sc-meet-top .mm-note{display:none!important}
 body.sc-points-only .sc-ptset>.sc-meet-top .sc-tbtn{height:32px!important;padding:0 12px!important;border:1px solid var(--border,#E3E6EA)!important;border-radius:10px!important;background:var(--surface)!important;font-size:13px!important;font-weight:600!important;color:var(--text,#14161a)!important;white-space:nowrap}
 body.sc-points-only .sc-ptset>.sc-meet-top #ptTemplate{background:var(--accent,#3a6df0)!important;border-color:var(--accent,#3a6df0)!important;color:#fff!important}
@@ -407,6 +409,10 @@ body.sc-points-only .pt-empty{padding:28px 16px!important;border:1px dashed var(
   body.sc-points-only .sc-ptset>.sc-meet-top>b{flex:1 0 100%!important;margin-right:0}
   body.sc-points-only .sc-ptset>.sc-meet-top .sc-tbtn{flex:1 1 auto!important;text-align:center}
 }
+</style>
+<style id="sc-shared-state">
+#scStoreState{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--surface);color:var(--text);font-size:14px;text-align:center}#scStoreState[hidden]{display:none}.sc-pending .sc-main,.sc-pending .sc-ptset,.sc-pending .sc-pteval{visibility:hidden}
+body.sc-eval-only{height:auto;overflow:auto;background:transparent}body.sc-eval-only .sc-top,body.sc-eval-only .sc-band,body.sc-eval-only .sc-main,body.sc-eval-only .sc-fab,body.sc-eval-only #ptSet{display:none!important}body.sc-eval-only #ptEval{position:static;height:auto;min-height:0;background:transparent}body.sc-eval-only #ptEvalClose{display:none}body.sc-eval-only .sc-pteval-body{padding:8px 0}body.sc-eval-only #ptEval>.sc-meet-top{padding:0 0 10px}
 </style>
 </head>
 <body>
@@ -528,7 +534,47 @@ var esc=(window.PSSafe&&PSSafe.html)||function(s){return String(s==null?'':s).re
 var $=function(id){return document.getElementById(id);};
 var POS=["GK","CB","LB","RB","WB","DM","CM","AM","LM","RM","LW","RW","FW","ST"];
 var GRADES=["S","A","B","C","D"];
-var KEY="cs_scoutdb_v1";
+var KEY="cs_scout_targets_v1";
+var scPageClient=PSScoutStore.createClient(window),scPageSnapshot=null;
+var scPageSaves=PSSaveState.createTracker('scouting',function(){return scPageScope();});
+window.psHasPending=function(){return scPageSaves.hasPending();};
+window.psFlushPendingReady=function(){return scPageSaves.ready(true).then(function(){return PSStorage.sharedReady(KEY);});};
+function scPageState(message){var e=document.getElementById('scStoreState');if(!e){e=document.createElement('div');e.id='scStoreState';document.body.appendChild(e);}e.textContent=message||'';e.hidden=!message;document.body.classList.toggle('sc-pending',!!message);}
+function scPageLoad(){
+  if(!scPageClient.state.verified){scPageState('팀의 후보 자료와 저장소를 확인하고 있어요.');return;}
+  var d=scPageClient.read(),r=d.scoutRegistry;
+  db={players:Object.keys(r.candidates).filter(function(id){return !r.candidates[id].archivedAt;}).map(function(id){var c=r.candidates[id],p=PSScoutStore.copy(c.source||{}),i=c.info;p.id=id;p._candidateId=id;p.nameKr=i.name||'';p.num=i.num||'';p.foot=i.foot||'';p.club=i.club||'';p.grade=i.grade||'';p.points=PSScoutStore.copy(c.points||{});p.ratings=PSScoutStore.copy(c.ratings||{});p.pos=p.pos||[];p.tags=p.tags||[];p.contacts=p.contacts||[];p.videos=p.videos||[];p.custom=p.custom||{};p.obs=p.obs||[];['nameEn','nat','height','weight','photo'].forEach(function(k){if(i.profile&&i.profile[k]!=null)p[k]=PSScoutStore.copy(i.profile[k]);else delete p[k];});return p;}),meta:PSScoutStore.copy(r.meta||{})};
+  scPageSnapshot=PSScoutStore.copy(db);scPageState('');
+}
+function scPageSave(){
+  try{scPageClient.check();var d=PSScoutStore.copy(scPageClient.state.doc),stamp=scPageClient.stamp(),known={};
+    db.players.forEach(function(p){
+      var cid=p._candidateId;
+      if(!cid){PSScoutStore.importLegacy(d,{players:[p]},[p.id],false);cid='db:'+p.id;p._candidateId=cid;p.id=cid;}
+      var c=d.scoutRegistry.candidates[cid];if(!c)throw new Error('후보 자료가 바뀌었습니다. 다시 열어 주세요.');known[cid]=true;
+      [['name','nameKr'],['num','num'],['foot','foot'],['club','club'],['grade','grade']].forEach(function(pair){PSScoutStore.edit(d,cid,pair[0],p[pair[1]]||'',stamp);});
+      ['nameEn','nat','height','weight','photo'].forEach(function(k){PSScoutStore.edit(d,cid,'profile.'+k,p[k],stamp);});
+      Object.keys(p.points||{}).forEach(function(k){if(c.points[k]!==p.points[k])PSScoutStore.score(d,cid,k,p.points[k],stamp);});
+      Object.keys(p.ratings||{}).forEach(function(k){if(c.ratings[k]!==p.ratings[k]){c.ratings[k]=p.ratings[k];c.edits['ratings.'+k]=stamp;}});
+      var before=(scPageSnapshot&&scPageSnapshot.players||[]).find(function(x){return x._candidateId===cid;}),canonical=['id','_candidateId','nameKr','nameEn','num','foot','club','grade','nat','height','weight','photo','points','ratings','updatedAt'];
+      var sourceKeys=Array.from(new Set(Object.keys(p).concat(Object.keys(before||{})))).filter(function(k){return canonical.indexOf(k)<0&&typeof p[k]!=='function'&&k.indexOf('__')!==0;});
+      if(before&&sourceKeys.some(function(k){return JSON.stringify(before[k])!==JSON.stringify(p[k]);})){
+        var original=PSScoutStore.copy(c.source||{});sourceKeys.forEach(function(k){if(p[k]===undefined)delete original[k];else original[k]=PSScoutStore.copy(p[k]);});
+        canonical.forEach(function(k){delete original[k];});c.source=original;c.sourceEdit=stamp;
+      }
+    });
+    (scPageSnapshot&&scPageSnapshot.players||[]).forEach(function(p){if(!known[p._candidateId])PSScoutStore.archive(d,p._candidateId,Date.now(),stamp);});
+    if(JSON.stringify(d.scoutRegistry.meta)!==JSON.stringify(db.meta)){d.scoutRegistry.metaHistory=d.scoutRegistry.metaHistory||[];d.scoutRegistry.metaHistory.push(PSScoutStore.copy(d.scoutRegistry.meta));d.scoutRegistry.meta=PSScoutStore.copy(db.meta);d.scoutRegistry.metaEdit=stamp;}
+    var pending=scPageClient.save(d);scPageSaves.track(KEY,pending,function(){return scPageClient.retry();});pending.catch(function(e){scPageState('기기 저장 확인이 필요해요. '+e.message);});scPageSnapshot=PSScoutStore.copy(db);
+  }catch(e){scPageState(e.message);toast(e.message);}
+}
+function scPageHydrate(){
+  scPageClient.prepare().then(function(){load();renderAll();if(document.body.classList.contains('sc-points-only'))renderPtSet();
+    if(/[?&]view=evaluate\b/.test(location.search)){document.body.classList.add('sc-eval-only');var cid=new URLSearchParams(location.search).get('candidate'),p=db.players.find(function(p){return p._candidateId===cid;});if(p)openPtEval(p);else scPageState('후보를 찾을 수 없거나 보관된 기록입니다.');}
+  }).catch(function(e){scPageState(e.message);});
+}
+document.addEventListener('click',function(e){if(document.body.classList.contains('sc-pending')){e.preventDefault();e.stopImmediatePropagation();return;}try{scPageClient.check();}catch(err){e.preventDefault();e.stopImmediatePropagation();toast(err.message);}},true);
+
 var DEFAULT_TAGS=["프로","대학","고교","클럽","해외","자유계약"];
 
 /* ── 데이터 ── */
@@ -543,10 +589,8 @@ var PS_POINT_TEMPLATE=[
 {name:"사이드백(SB)",positions:["LB","RB","WB"],text:"## 오프 더 볼 · 움직임\n상대 패스 경로를 차단하고 안쪽을 봉쇄하는가?\n상대를 외곽으로 밀어내고 크로스를 방어하는가?\n대각선 패스와 돌파를 예측하고 대응하는가?\n볼이 뒤에 있을 때 신속히 복귀하고 압박하는가?\n## 오프 더 볼 · 프레싱\n안쪽에서 바깥쪽으로 효과적으로 프레싱하는가?\n상대 윙어를 선제적으로 압박하고 돌파를 차단하는가?\n반대편 공격 시 중앙으로 이동하여 CB를 지원하는가?\n상대 크로스 상황에서 적절히 대응하는가?\n## 온 더 볼 · 움직임\n대각선 패스가 가능한 위치에서 움직이는가?\n자기편 골대 근처에서 위험한 드리블을 하지 않는가?\n하프 스페이스에서 페널티 박스 안으로 쇄도하는가?\nWF가 안쪽으로 커팅할 때 윙 포지션을 점유하는가?\n반대편 공격 시 역습에 대비하는가?\n## 온 더 볼 · 빌드업\n패스 스테이션 역할을 위해 넓게 포지셔닝하는가?\n전방을 주시하며 수직적인 패스를 정확히 전달하는가?\nWF가 하프 스페이스에 있을 때 원투패스 기점이 되는가?\n정확하고 날카로운 패스를 안쪽으로 공급하는가?\n## 온 더 볼 · 기회 창출\nWF를 오버래핑하여 플랫 크로스를 시도하는가?\n달리는 상대를 향해 플랫 크로스를 정확히 시도하는가?\n상대 수비가 정렬되기 전에 빠르게 크로스를 시도하는가?"},
 {name:"중앙 수비수(CB)",positions:["CB"],text:"## 오프 더 볼 · 움직임\n팀을 조직화하고 안정화하는 리더십이 있는가?\n동료 CB와 서로 깊이를 바꾸며 상호 지원하는가?\n동료 CB의 공중볼 경합 시 빈 공간을 메우는가?\n공간 커버 시 공격적이고 피지컬한 대응을 하는가?\n적극적으로 수비 라인 앞에 상대를 막아서는가?\n수비 라인을 밀어올려 팀을 콤팩트하게 유지하는가?\n## 오프 더 볼 · 프레싱\n적극적인 공중볼 경합을 펼치는가?\n상대 접근 시 포위하여 골대 방향 회전을 막는가?\n상대 패스를 예측하고 오프사이드 트랩을 활용하는가?\n상대의 롱볼과 백패스를 유도하는가?\n크로스 상황에서 맨투맨 수비로 대응하는가?\n페널티 박스 안에서 밀착 마크를 하는가?\n위험 상황에서 과감하게 볼을 클리어하는가?\n## 온 더 볼 · 움직임\n필드의 너비와 깊이를 보는 시야가 있는가?\n상대 FW가 혼자일 때 미드필드로 과감히 드리블하는가?\n적절한 타이밍에 패스를 정확히 전달하는가?\n세트피스에서 페널티 박스 내 기회를 만드는가?\n## 온 더 볼 · 빌드업\nDMF와 연계하여 빌드업의 시작점이 되는가?\n전진하는 측면 공격수에게 빠른 패스를 정확히 전달하는가?\n깊고 플랫한 패스로 측면/하프 스페이스 공격을 지원하는가?\n상황에 맞게 롱 킥과 대각선 롱패스를 정확히 시도하는가?"},
 {name:"골키퍼(GK)",positions:["GK"],text:"## 오프 더 볼 · 움직임\n팀과 함께 움직이며 상대 볼을 클리어하는가?\n명확하고 침착하게 팀원들과 소통하고 지시하는가?\n상대 슛 시 균형을 잘 유지하는가?\n볼 방향에 맞춰 적절한 발을 먼저 움직이는가?\n## 오프 더 볼 · 대응\n프리킥 시 수비 라인과 벽 위치를 잘 조정하는가?\n슈팅 위험 시 효율적인 벽을 구축하는가?\n중거리 슛에 적절한 타이밍에 대응하는가?\n1대1 상황에서 신속하고 적절한 판단을 하는가?\n페널티 파울 없이 균형과 침착함을 유지하는가?\n복잡한 상황에서 볼 처리(캐칭/펀칭)를 적절히 결정하는가?\n## 온 더 볼 · 움직임\n팀 동료에게 높고 넓은 패스를 정확히 전달하는가?\n백패스 처리와 측면 전환을 안전하게 수행하는가?\n코너킥 후 빠르게 볼을 패스하여 위험을 벗어나는가?\n볼 지키기와 패스 플레이 완성도가 높은가?\n## 온 더 볼 · 빌드업\n짧고 간결하게 양발로 안정적인 플레이를 하는가?\n압박받는 팀원에게 위험한 패스를 하지 않는가?\n공중볼에 강한 공격수에게 적절한 롱패스를 전달하는가?\n## 온 더 볼 · 기회 창출\n빠르고 정확한 스로우로 역습을 효과적으로 유도하는가?"}];
-function load(){try{var raw=localStorage.getItem(KEY);if(raw){var d=JSON.parse(raw);if(d&&Array.isArray(d.players)){db=d;db.meta=db.meta||{};if(!Array.isArray(db.meta.tagOptions))db.meta.tagOptions=DEFAULT_TAGS.slice();}}}catch(_){}
-  if(!Array.isArray(db.meta.evalDomains)||!db.meta.evalDomains.length)db.meta.evalDomains=DEFAULT_EVAL.slice();
-  if(!Array.isArray(db.meta.customFields))db.meta.customFields=[];
-  if(!Array.isArray(db.meta.pointSets))db.meta.pointSets=[];}
+function load(){scPageLoad();if(!Array.isArray(db.meta.tagOptions))db.meta.tagOptions=DEFAULT_TAGS.slice();if(!Array.isArray(db.meta.evalDomains)||!db.meta.evalDomains.length)db.meta.evalDomains=DEFAULT_EVAL.slice();if(!Array.isArray(db.meta.customFields))db.meta.customFields=[];if(!Array.isArray(db.meta.pointSets))db.meta.pointSets=[];}
+
 /* 포인트 세트 파싱: '## '줄 = 섹션, 그 외 비지 않은 줄 = 질문 */
 function parsePoints(text){var out=[],cur={name:"",qs:[]};
   String(text||"").split(/\r?\n/).forEach(function(l){l=l.trim();if(!l)return;
@@ -558,8 +602,7 @@ function pointSummary(p){var s=0,n=0;
   (db.meta.pointSets||[]).forEach(function(set){parsePoints(set.text).forEach(function(sec){sec.qs.forEach(function(q){
     var v=(p.points||{})[pointKey(set.name,q)];if(v>0){s+=v;n++;}});});});
   return n?{avg:Math.round(s/n*10)/10,n:n}:null;}
-var saveT=null;
-function save(){if(saveT)clearTimeout(saveT);saveT=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){toast("저장 공간 부족 — 사진을 줄이거나 내보내기로 백업하세요");}},250);}
+function save(){scPageSave();}
 function uid(){return "sc"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function blank(name,pos,club){var now=new Date().toISOString();
   return {id:uid(),nameKr:name||"",nameEn:"",num:"",year:"",pos:pos?pos.slice():[],tags:[],nat:"",height:"",weight:"",foot:"",
@@ -693,7 +736,7 @@ function renderDetail(){
     +'<ul class="sc-obs" id="fObsList"></ul>'
     +'<div class="sc-dsec">메모</div>'
     +'<textarea class="sc-memo" id="fBio">'+esc(p.bio)+'</textarea>'
-    +'<button class="sc-danger" id="dDelete" type="button">이 후보 삭제</button>'
+    +'<button class="sc-danger" id="dDelete" type="button">후보 보관</button>'
     +'<p class="sc-privacy">타인의 개인정보(연락처 등)를 다루는 화면입니다 — 스카우팅 목적 외 사용·공유에 주의하세요.</p>'
     +'</div>';
   $("dClose").addEventListener("click",function(){selId=null;renderGrid();renderDetail();});
@@ -805,8 +848,8 @@ function renderDetail(){
   var rm=$("dPhotoRm");if(rm)rm.addEventListener("click",function(){p.photo="";touch(p);renderDetail();renderGrid();});
   /* 삭제 */
   $("dDelete").addEventListener("click",function(){
-    if(!confirm((p.nameKr||"이 후보")+" 를 삭제할까요? 되돌릴 수 없습니다."))return;
-    db.players=db.players.filter(function(x){return x.id!==p.id;});selId=null;save();renderAll();toast("삭제했습니다");});
+    if(!confirm((p.nameKr||"이 후보")+" 를 보관할까요? 팀 스카우팅의 보관한 후보에서 복원할 수 있습니다."))return;
+    db.players=db.players.filter(function(x){return x.id!==p.id;});selId=null;save();renderAll();toast("후보를 보관했습니다");});
 }
 $("photoFile").addEventListener("change",function(){
   var f=this.files&&this.files[0];this.value="";var p=cur();if(!f||!p)return;
@@ -970,7 +1013,7 @@ function renderPtSet(){
   /* 2.012 — 머리: 설명 + 통계(그룹·문항·평가한 후보) */
   (function(){ var tq=0; sets.forEach(function(x){tq+=ptStats(x).q;}); var evN=(db.players||[]).filter(function(p){return p&&p.points&&Object.keys(p.points).some(function(k){return p.points[k]>0;});}).length;
     var intro=document.createElement("div");intro.className="pt-intro";
-    intro.innerHTML='<p>포지션 그룹별 <b>체크 질문</b> — 후보 평가표가 이 질문으로 1~5를 매깁니다. 카드를 누르면 그 자리에서 편집.</p><div class="pt-stats"><span><b>'+sets.length+'</b>그룹</span><span><b>'+tq+'</b>문항</span><span><b>'+evN+'</b>명 평가됨</span></div>';
+    intro.innerHTML='<p>후보 프로필의 <b>스카우팅 포인트</b>에서 이 질문으로 평가합니다. 카드를 누르면 편집할 수 있어요.</p><div class="pt-stats"><span><b>'+sets.length+'</b>그룹</span><span><b>'+tq+'</b>문항</span><span><b>'+evN+'</b>명 평가됨</span></div>';
     host.appendChild(intro); })();
   /* 1.926 — 포지션 그룹마다 카드. 1.976 — 접이식(사용자): 그룹 전부가 한 목록에 접힌 카드로 있고, 머리를 누르면 그 자리에서 펼쳐져 표 편집기가 나온다(뒤로가기 없음) */
   {
@@ -1082,9 +1125,9 @@ function renderPtEval(){
   var p=ptEvalPlayer;if(!p)return;
   var sets=db.meta.pointSets||[],si=+($("ptEvalSet").value||0)||0;if(si>=sets.length)si=0;
   var set=sets[si];var host=$("ptEvalBody");host.innerHTML="";
-  if(!set){host.innerHTML='<div class="pt-empty">세트가 없습니다 — 포인트 설정에서 만들어주세요.</div>';return;}
+  if(!set){host.innerHTML='<div class="pt-empty">세트가 없습니다 — 포인트 설정에서 만들어주세요.</div>';renderOldPointRecords(host,p,sets);return;}
   var secs=parsePoints(set.text);
-  if(!secs.length){host.innerHTML='<div class="pt-empty">이 그룹에 질문이 없습니다 — 포인트 설정에서 붙여넣어 주세요.</div>';return;}
+  if(!secs.length){host.innerHTML='<div class="pt-empty">이 그룹에 질문이 없습니다 — 포인트 설정에서 붙여넣어 주세요.</div>';renderOldPointRecords(host,p,sets);return;}
   /* 2.012 — 평가표 재설계: 요약 띠(이 그룹 평균·응답 진행·척도 말·안 매긴 것만) → 섹션 헤더(평균·응답) → 번호 질문 + 말 붙은 1~5 */
   var SCALE=[[1,"거의 없음"],[2,"가끔"],[3,"보통"],[4,"자주"],[5,"항상"]];
   var tot=0,ans=0,sum=0, secStat=[];
@@ -1124,8 +1167,14 @@ function renderPtEval(){
     });
   });
   if(only&&ans===tot&&tot){var dn=document.createElement("div");dn.className="pt-empty";dn.textContent="이 그룹은 모두 매겼어요.";host.appendChild(dn);}
+  renderOldPointRecords(host,p,sets);
   var s=pointSummary(p);
   $("ptEvalSum").textContent=s?("전체 평균 "+s.avg+" · "+s.n+"문항"):"아직 매긴 점수 없음";
+}
+function renderOldPointRecords(host,p,sets){
+  var activeKeys={};sets.forEach(function(s){parsePoints(s.text).forEach(function(sec){sec.qs.forEach(function(q){activeKeys[pointKey(s.name,q)]=1;});});});
+  var oldKeys=Object.keys(p.points||{}).filter(function(k){return !activeKeys[k]&&p.points[k]>0;});
+  if(oldKeys.length){var archive=document.createElement('details');archive.className='pt-empty';archive.innerHTML='<summary>이전 질문의 기록 '+oldKeys.length+'개</summary>'+oldKeys.map(function(k){return '<p>'+esc(k)+' · '+esc(p.points[k])+'/5</p>';}).join('');host.appendChild(archive);}
 }
 function openPtEval(p){
   ptEvalPlayer=p;
@@ -1188,7 +1237,7 @@ $("meetPitch").addEventListener("click",function(e){
 });
 /* ── 전체 렌더 ── */
 function renderAll(){renderBand();renderRail();renderQuickPos();renderClubList();renderGrid();renderDetail();}
-load();renderAll();
+load();renderAll();scPageHydrate();
 /* 1.810 — 팀>스카우팅 '후보 DB' 탭 임베드일 때: 카드에 '자리에 붙이기' 액션(부모 scout.html이 자리 시트를 연다) */
 var IN_TEAM=false;try{IN_TEAM=(window.parent!==window)&&/scout\.html/.test(document.referrer||"");}catch(_){}
 if(!IN_TEAM){try{IN_TEAM=(window.parent!==window)&&!!(window.frameElement&&window.frameElement.id==="sbDbFrame");}catch(_){}}
@@ -1217,7 +1266,13 @@ try{ if(/[?&]view=points\b/.test(location.search)){
   var _pc=$("ptSetClose");if(_pc)_pc.style.display="none";
 } }catch(_){}
 /* 다른 창(사이드바 스카우팅 ↔ 팀 탭)에서 세트가 바뀌면 편집기 재렌더 */
-window.addEventListener("storage",function(e){ if(e&&e.key===KEY){ try{load();}catch(_){} if($("ptSet").classList.contains("on"))renderPtSet(); else renderAll(); } });
+function scPageScope(){try{var u=JSON.parse(localStorage.getItem('ps_sync_session')||'null');return JSON.stringify([localStorage.getItem('ps_active_ws'),u&&u.uid,localStorage.getItem('ps_cache_owner_v1')]);}catch(_){return '';}}
+window.addEventListener("storage",function(e){
+  if(!e||[KEY,'ps_active_ws','ps_cache_owner_v1','ps_sync_meta','ps_sync_session'].indexOf(e.key)<0)return;
+  if(scPageScope()===scPageClient.state.owner&&localStorage.getItem(KEY)===scPageClient.state.raw&&scPageClient.state.verified)return;
+  scPageHydrate();
+});
+document.addEventListener('beforeinput',function(e){try{scPageClient.check();}catch(err){e.preventDefault();toast(err.message);}},true);
 /* 셸에서 탭 전환 시 임시 UI 닫기 신호 — 상세 패널은 유지(작업 흐름 보존), 특별 동작 없음 */
 window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="closeTransientUI"){}});
 })();
