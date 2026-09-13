@@ -2158,8 +2158,10 @@ function syncState(){
   /* «확인할 것»은 올리기를 막는 보류만 센다. 덮임·충돌·구조선은 설정 «자료 확인»에 남는다 — 실측(2026-09-06 풋볼A): 옛 충돌 18·구조선 8이 늘 떠 있어 띠가 영구 주황이 됐다 */
   var rc=0; try{ rc=holdList().length+personalReviewList().length; }catch(_){}
   if(navigator.onLine===false)return {kind:'bad',reason:'sync_offline',text:'오프라인이에요'+(n?(' · 이 기기에 '+n+'건 안전하게 있어요'):''),n:n,review:rc};
-  if(personalIssue&&personalIssue.uid===String(s.uid||'')&&personalIssue.wid===personalWid())
-    return {kind:'bad',reason:personalIssue.code,text:'개인 자료를 못 올렸어요 · '+syncCodeText(personalIssue.code),n:n,review:rc,at:personalIssue.at};
+  if(personalIssue&&personalIssue.uid===String(s.uid||'')&&personalIssue.wid===personalWid()){
+    var personalNames=Object.keys(PERSONAL).filter(function(k){return Array.isArray(personalIssue.keys)&&personalIssue.keys.indexOf(k)>=0;}).map(keyLabel);
+    return {kind:'bad',reason:personalIssue.code,text:'개인 자료를 못 올렸어요'+(personalNames.length?' · '+personalNames.join('·'):'')+' · '+syncCodeText(personalIssue.code),n:n,review:rc,at:personalIssue.at};
+  }
   var fresh=lastIssue&&(Date.now()-lastIssue.at<10*60*1000);
   if(fresh&&(n||lastIssue.code==='sync_auth'||lastIssue.code==='sync_permission'))return {kind:'bad',reason:lastIssue.code,text:'못 올렸어요 · '+syncReasonText(lastIssue.code),n:n,review:rc,at:lastIssue.at};
   if(rc)return {kind:'ask',text:'올리기 전 확인할 것 '+rc,n:n,review:rc};
@@ -5012,6 +5014,9 @@ function personalWid(){
 /* 2.744 — 개인 노트도 PC/폰이 동시에 고친다. 원문은 기존 로컬/서버에 그대로 두고
    확인할 두 판본의 작은 메타만 남긴다. 기존 “덮인 뒤 복구” 목록과는 다른 대기 상태다. */
 var PERSONAL_REVIEW='ps_personal_review_v1',personalIssue=null;
+/* 개인 노트·매치데스크는 한 문서 안에 사진·필기를 누적한다. 서버의 개인 키에는
+   크기 check가 없으므로 개인 push만 12M자까지 허용한다. 팀/일정 한도와 원문 형식은 유지한다. */
+var PERSONAL_MAXLEN=12000000;
 function personalContext(){
   var s=getSess(),wid=personalWid();if(!s||!s.uid||!wid||!dataUnlocked())return null;
   return {uid:String(s.uid),wid:String(wid),active:String(activeWs()||''),epoch:signOutEpoch,
@@ -5124,11 +5129,10 @@ function syncPersonal(at,ownerGuard){
     }).then(function(rows){
       requireCurrent('personal_apply');
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
-      var now=Date.now(),pushRows=[],writes=[],applied=0,writeGuards=[],accepted={},candidates={};
+      var now=Date.now(),pushRows=[],writes=[],applied=0,writeGuards=[],accepted={},candidates={},oversized=[];
       function personalWrite(k,v,expected){var g={stale:false};writeGuards.push(g);return kvWrite(k,v,writes,expected,g,current);}
       try{keys.forEach(function(k){
         var loc=locOf(k),row=srv[k],plan;
-        if(loc!=null&&loc.length>MAXLEN)throw syncIssue('sync_personal_size','personal_size','개인 자료가 커서 올리지 못했습니다');
         if(row&&(row.cupd==null||!isFinite(+row.cupd)))throw syncIssue('sync_confirm_missing','personal_version_missing','개인 자료 판본을 확인하지 못했습니다');
         /* 1.644 — 경기 파일의 개인 메모도 검증된 가져오기 원문이 우선이다.
            단, 서버의 다른 경기 메모는 importRebaseRaw가 그대로 보존한다. */
@@ -5143,6 +5147,11 @@ function syncPersonal(at,ownerGuard){
           writes.push(outboxMarkForOwner(ctx.uid,pwid,k,hash(loc),'personal-conflict'));return;
         }
         if(plan.action==='push'){
+          /* 받기·이미 같은 문서·변경 없는 문서는 전송 크기로 막지 않는다.
+             큰 한 키는 원문과 대기를 남기고, 다른 개인 자료의 서버 확인은 계속한다. */
+          if(plan.raw.length>PERSONAL_MAXLEN){
+            oversized.push(k);writes.push(outboxMarkForOwner(ctx.uid,pwid,k,hash(plan.raw),'personal-size'));return;
+          }
           var req={workspace_id:pwid,k:k,v:plan.raw,cupd:now};
           if(plan.missing)req._casMissing=true;else req._casCupd=plan.cupd;
           pushRows.push(req);candidates[k]=plan.raw;
@@ -5154,8 +5163,7 @@ function syncPersonal(at,ownerGuard){
         }
         if(plan.action==='pull'||plan.action==='equal')accepted[k]={raw:plan.raw,cupd:plan.cupd};
       });}catch(planError){return Promise.all(writes.map(function(p){return Promise.resolve(p).catch(function(){});})).then(function(){throw planError;});}
-      /* 1.630 — 개인 채널도 같은 통로다. 매치데스크·노트는 키 하나가 MAXLEN(1.5M)까지 갈 수 있어
-         네 키가 함께 움직이면 한 요청이 몇 MB가 된다 — 팀 쪽과 똑같이 나눠 보낸다. */
+      /* 개인 채널도 기존 CAS 통로로 원문을 보낸다. 큰 키를 합쳐 일괄 덮어쓰지 않는다. */
       /* 로컬 비교 저장과 outbox를 먼저 끝낸다. 거부/실패 후보의 hash를 meta에
          미리 넣지 않고 서버가 확인한 행만 accepted에 넣는다. */
       return Promise.all(writes).then(function(){
@@ -5176,13 +5184,24 @@ function syncPersonal(at,ownerGuard){
         Object.keys(accepted).forEach(function(k){target.h[k]=hash(accepted[k].raw);target.c[k]=accepted[k].cupd;});
         setMetaExact(m);
         Object.keys(accepted).forEach(function(k){personalReviewClear(ctx,k);});
-        return outboxAckPersonal(pwid,{p:target},current);
-      }).then(function(){requireCurrent('personal_ack_done');personalIssue=null;return applied;});
+        /* 이전 확정 hash가 우연히 같더라도 이번에 못 보낸 키는 ACK하지 않는다. */
+        var ackHashes=Object.assign({},target.h);oversized.forEach(function(k){delete ackHashes[k];});
+        return outboxAckPersonal(pwid,{p:{h:ackHashes}},current);
+      }).then(function(){
+        requireCurrent('personal_ack_done');
+        if(oversized.length){
+          var sizeError=syncIssue('sync_personal_size','personal_size','개인 자료가 커서 올리지 못했습니다');
+          sizeError.psPersonalKeys=oversized.filter(function(k){return Object.prototype.hasOwnProperty.call(PERSONAL,k)&&PERSONAL[k]===1;});
+          throw sizeError;
+        }
+        personalIssue=null;return applied;
+      });
     });
   }).catch(function(e){
     syncDiagnostic('personal-channel',e);
     if(current()){
-      var info=classifySyncError(e);personalIssue={uid:ctx.uid,wid:ctx.wid,code:info.code,at:Date.now()};
+      var info=classifySyncError(e),issueKeys=info.code==='sync_personal_size'&&Array.isArray(e&&e.psPersonalKeys)?e.psPersonalKeys:[];
+      personalIssue={uid:ctx.uid,wid:ctx.wid,code:info.code,at:Date.now(),keys:Object.keys(PERSONAL).filter(function(k){return issueKeys.indexOf(k)>=0;})};
       try{window.dispatchEvent(new CustomEvent('ps-sync-state'));}catch(_){}
       return outboxFail(pwid,info).then(function(){throw e;});
     }
@@ -6414,7 +6433,7 @@ function syncNowCore(reason){
         var remain=visiblePendingInfo(wid);
         var msg=remain.count?('올리는 중 · '+remain.count):'팀과 같아요 · '+new Date(m.last).toLocaleTimeString();   /* 2.625 말 바꾸기 */
         if(heldKeys.length)msg='자료 확인이 필요해요 · '+heldKeys.length;
-        if(personalError)msg='개인 자료를 못 올렸어요 · '+syncCodeText(personalError.code);
+        if(personalError)msg=syncState().text;
         else if(personalReviewList().length)msg='개인 자료 확인이 필요해요 · '+personalReviewList().length;
         if(skippedBig)msg+=' (용량 초과 '+skippedBig+'개 제외)';
         setStatus(msg);
