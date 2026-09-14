@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-admin-support',date:'2026-09-15',title:'오류 제보와 관리자 답변 연결',
+    changes:[
+      '앱에서 보낸 오류 제보가 관리자 접수함에 연결됩니다.',
+      '운영자가 남긴 답변을 오류 제보의 내 제보와 답변에서 확인할 수 있습니다.'
+    ]
+  },{
     id:'2026-09-15-save-review-support',date:'2026-09-15',title:'저장 안내와 문의 기능 개선',
     changes:[
       '저장할 내용 선택 화면을 간결하게 정리했습니다. 복구와 점검은 앱 설정에서 열 수 있습니다.',
