@@ -4248,7 +4248,8 @@ function itemsHoldList(){ try{ return JSON.parse(localStorage.getItem(ITEMS_HOLD
 function itemVal(p){ try{ return JSON.stringify(p); }catch(_){ return null; } }
 var _itemsT=null, _itemsPending=null, _itemsWaiters=[], _itemsWriteTail=Promise.resolve(), _itemsFailedJob=null;
 var _itemsWritingN=0,_itemsActiveJobs=[];
-function itemsWriteBusy(){return !!(_itemsPending||_itemsWritingN||(_itemsFailedJob&&itemsWriteCurrent(_itemsFailedJob.owner)));}
+function itemsWriteBusy(){return !!(_itemsPending||_itemsWritingN||itemsWriteRetryable(_itemsFailedJob));}
+function itemsWriteRetryable(job){return !!job&&itemsWriteCurrent(job.owner)&&(!job.intent||itemsDeleteCurrent(job.intent));}
 function itemsWriteOwner(){
   var ss=getSess(),own=cacheOwner();
   if(!ss||!own||!dataUnlocked()||String(own.uid)!==String(ss.uid)||String(own.wid)!==String(activeWs()))return null;
@@ -4313,7 +4314,7 @@ function itemsWriteEnqueue(job){
     return value;
   }).then(function(value){finished();return value;},function(e){finished();throw e;});
   _itemsWriteTail=run.then(function(value){_itemsFailedJob=null;return value;},function(e){
-    if(itemsWriteCurrent(job.owner))_itemsFailedJob=job;
+    if(itemsWriteRetryable(job))_itemsFailedJob=job;
     syncDiagnostic('items-write',e);
   });
   return run;
@@ -4353,7 +4354,8 @@ function itemsWriteFlush(){
   if(_itemsPending)return itemsWriteDrain();
   return _itemsWriteTail.then(function(){
     var job=_itemsFailedJob;
-    if(job&&itemsWriteCurrent(job.owner))return itemsWriteEnqueue(job);
+    if(itemsWriteRetryable(job))return itemsWriteEnqueue(job);
+    if(job&&job.intent&&_itemsFailedJob===job)_itemsFailedJob=null;
     return true;
   });
 }
@@ -4419,6 +4421,16 @@ function itemsDeleteIntent(){
 }
 function itemsDeleteCurrent(intent){
   return !!intent&&itemsWriteCurrent(intent.owner)&&localStorage.getItem(ITEMS_HOLD)===intent.raw;
+}
+function itemsDeleteCancel(intent){
+  if(!itemsDeleteCurrent(intent))return false;
+  localStorage.removeItem(ITEMS_HOLD);
+  if(localStorage.getItem(ITEMS_HOLD)!==null)throw syncIssue('sync_storage','items_delete_cancel','추가 삭제를 멈추지 못했습니다');
+  /* Cancel only this approval's retry. Existing tombstones and ordinary queued
+     writes remain intact; an in-flight canceled job cannot register a retry. */
+  var failed=_itemsFailedJob;
+  if(failed&&failed.intent&&failed.intent.raw===intent.raw&&itemsWriteCurrent(failed.owner))_itemsFailedJob=null;
+  return true;
 }
 /* Approval uses the same tracked write tail as ordinary roster saves. The
    captured hold and row preimages survive retries; no retry adopts newer rows. */
@@ -4490,10 +4502,9 @@ function itemsHoldOpen(){
     if(!itemsWriteCurrent(intent.owner))return;
     try{ if(mo&&mo.close)mo.close(true); }catch(_){}
     try{ psModal({title:'삭제를 저장했습니다',body:n+'명의 삭제를 이 기기에 저장했습니다. 팀 반영 여부는 동기화 상태에서 확인하세요.',hideCancel:true,ok:'확인'}); }catch(_){}
-  }).catch(function(e){syncDiagnostic('items-delete',e);if(!itemsWriteCurrent(intent.owner))return;ok.disabled=false;try{chip('삭제 저장을 확인하지 못했어요 — 확인 목록을 남겨 두었습니다');}catch(_){}}); });
+  }).catch(function(e){syncDiagnostic('items-delete',e);if(!itemsDeleteCurrent(intent))return;ok.disabled=false;try{chip('삭제 저장을 확인하지 못했어요 — 확인 목록을 남겨 두었습니다');}catch(_){}}); });
   if(no)no.addEventListener('click',function(){
-    if(!itemsDeleteCurrent(intent))return;
-    try{ localStorage.removeItem(ITEMS_HOLD); }catch(_){}
+    try{if(!itemsDeleteCancel(intent))return;}catch(e){syncDiagnostic('items-delete-cancel',e);try{chip('추가 삭제를 멈추지 못했어요 — 다시 확인해 주세요');}catch(_){}return;}
     try{ if(mo&&mo.close)mo.close(true); }catch(_){}
     try{ psModal({title:'추가 삭제를 멈췄습니다',body:'이미 저장된 삭제는 되돌리지 않습니다. 명단에 다시 넣으려면 '
       +'<b>자료 확인 › 지난 판본으로 되돌리기</b>에서 선수단을 되돌리세요.',hideCancel:true,ok:'확인'}); }catch(_){}

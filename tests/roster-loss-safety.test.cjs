@@ -9,7 +9,7 @@ function deletion(){
   let uid='coach-a',wid='team-a',epoch='1';const local=new Map([['owner','seal-a']]),disk=new Map(),hooks={},syncs=[],downloads=[],blobs=[];
   const c={Promise,Date,JSON,Blob,ITEMP:'sq:',ITEMS_ACTIVE:true,ITEMS_HOLD:'hold',OWNERKEY:'owner',signOutEpoch:0,
     setTimeout:()=>0,clearTimeout(){},getSess:()=>({uid}),cacheOwner:()=>({uid,wid}),activeWs:()=>wid,dataUnlocked:()=>true,workspaceSwitchEpochRaw:()=>epoch,workspaceSwitchGuardRead:()=>null,
-    localStorage:{getItem:k=>local.get(k)??null,setItem(k,v){if(hooks.localWrite)hooks.localWrite(k,v);local.set(k,String(v));},removeItem:k=>local.delete(k)},
+    localStorage:{getItem:k=>local.get(k)??null,setItem(k,v){if(hooks.localWrite)hooks.localWrite(k,v);local.set(k,String(v));},removeItem(k){if(hooks.localRemove)hooks.localRemove(k);local.delete(k);}},
     storage:{async get(k){if(hooks.read)await hooks.read(k);return disk.has(k)?{value:disk.get(k)}:null;},async keys(){return [...disk.keys()];},async replaceIfValue(k,expected,value){
       if(hooks.write)await hooks.write(k,expected,value);if((disk.get(k)??null)!==expected)return false;if(value==null)disk.delete(k);else disk.set(k,value);if(hooks.after)await hooks.after(k,value);return true;
     }},itemsIdx:()=>JSON.parse(local.get('idx:'+wid)||'{}'),itemsIdxKey:()=>'idx:'+wid,itemsHoldList:()=>JSON.parse(local.get('hold')||'null'),itemsServerCheck:async()=>true,
@@ -37,6 +37,35 @@ test('reload after partial deletion resumes only tombstones from the same persis
   vm.runInContext('_itemsFailedJob=null;_itemsActiveJobs=[];_itemsWriteTail=Promise.resolve();',h.c);delete h.hooks.write;
   assert.equal(await h.c.itemsApproveDel(),2);assert.equal(h.disk.get('sq:a'),tomb);assert.equal(h.local.has('hold'),false);
   const other=deletion();other.disk.set('sq:a',raw({_del:1700000000001}));await assert.rejects(other.c.itemsApproveDel(),e=>e.psCode==='sync_local_changed');assert.ok(other.local.has('hold'));
+});
+test('canceling a partially failed deletion releases flush without reverting saved rows',async()=>{
+  const h=deletion(),intent=h.c.itemsDeleteIntent();h.hooks.write=k=>{if(k==='sq:b')throw Error('disk full');};await assert.rejects(h.c.itemsApproveDel(intent),/disk full/);
+  const before=[...h.disk],idx=h.local.get('idx:team-a');assert.equal(h.c.itemsWriteBusy(),true);
+  assert.equal(h.c.itemsDeleteCancel(intent),true);delete h.hooks.write;await h.c.itemsWriteFlush();await h.c.itemsWriteFlush();
+  assert.equal(h.c.itemsWriteBusy(),false);assert.equal(h.c._itemsFailedJob,null);assert.equal(h.local.has('hold'),false);assert.deepEqual([...h.disk],before);assert.equal(h.local.get('idx:team-a'),idx);assert.equal(h.syncs.length,0);
+});
+test('cancel during delayed approval cannot register a failed deletion retry afterward',async()=>{
+  const h=deletion(),intent=h.c.itemsDeleteIntent(),before=[...h.disk];let release;const gate=new Promise(r=>release=r);h.hooks.read=()=>gate;
+  const pending=h.c.itemsApproveDel(intent);await tick();assert.equal(h.c.itemsDeleteCancel(intent),true);release();
+  await assert.rejects(pending,e=>e.psCode==='sync_workspace_changed');await h.c.itemsWriteFlush();assert.equal(h.c.itemsWriteBusy(),false);assert.equal(h.c._itemsFailedJob,null);assert.deepEqual([...h.disk],before);
+});
+test('cancel preserves a different ordinary failed write and an ordinary pending write',async()=>{
+  const h=deletion(),intent=h.c.itemsDeleteIntent(),players=[...h.disk.values()].map(JSON.parse);players[1].name='Updated Player';
+  h.hooks.write=()=>{throw Error('disk full');};await assert.rejects(h.c.itemsWriteReady(players),/disk full/);const failed=h.c._itemsFailedJob;
+  const pendingResult=h.c.itemsWrite(players),pending=h.c._itemsPending;assert.equal(h.c.itemsDeleteCancel(intent),true);
+  assert.equal(h.c._itemsFailedJob,failed);assert.equal(h.c._itemsPending,pending);assert.equal(h.c.itemsWriteBusy(),true);
+  delete h.hooks.write;await h.c.itemsWriteFlush();await pendingResult;assert.equal(JSON.parse(h.disk.get('sq:b')).name,'Updated Player');assert.equal(h.c.itemsWriteBusy(),false);
+});
+test('stale or failed cancellation retains the current hold and retry',async()=>{
+  for(const change of ['owner','hold','storage']){const h=deletion(),intent=h.c.itemsDeleteIntent();h.hooks.write=()=>{throw Error('disk full');};await assert.rejects(h.c.itemsApproveDel(intent),/disk full/);const failed=h.c._itemsFailedJob,before=[...h.disk];
+    if(change==='owner')h.move();else if(change==='hold')h.local.set('hold',raw({at:1700000000010,ids:['c']}));else h.hooks.localRemove=()=>{throw Error('storage unavailable');};
+    const hold=h.local.get('hold');if(change==='storage')assert.throws(()=>h.c.itemsDeleteCancel(intent),/storage unavailable/);else assert.equal(h.c.itemsDeleteCancel(intent),false);
+    assert.equal(h.local.get('hold'),hold);assert.equal(h.c._itemsFailedJob,failed);assert.deepEqual([...h.disk],before);
+  }
+});
+test('another tab canceling a failed approval cannot leave a permanent busy barrier',async()=>{
+  const h=deletion();h.hooks.write=()=>{throw Error('disk full');};await assert.rejects(h.c.itemsApproveDel(),/disk full/);h.local.delete('hold');
+  assert.equal(h.c.itemsWriteBusy(),false);await h.c.itemsWriteFlush();await h.c.itemsWriteFlush();assert.equal(h.c._itemsFailedJob,null);assert.equal(h.syncs.length,0);
 });
 test('deletion preparation is tracked by the roster flush barrier and rejects an owner change',async()=>{
   const h=deletion();let release;const gate=new Promise(r=>release=r);h.hooks.read=()=>gate;
