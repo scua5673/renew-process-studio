@@ -663,6 +663,16 @@ function sessionIdentityCommit(snapshot,u,email){
   if(!saved||String(saved.uid||'')!==u.id)throw dataLockError();
   return saved;
 }
+/* storage 이벤트는 현재 값이 아니라 실제 바뀐 두 세션으로 판정한다.
+   A→B→A가 큐에 쌓여도 이전 로그인에서 시작한 작업을 무효화하고,
+   같은 uid의 평범한 토큰 갱신은 계속 허용한다. */
+function sessionStorageOwnerChanged(e){
+  if(!e||e.oldValue===e.newValue)return false;
+  var before=null,after=null;
+  try{before=JSON.parse(e.oldValue||'null');after=JSON.parse(e.newValue||'null');}catch(_){return true;}
+  if(!before||!after)return true;
+  return String(before.uid||'')!==String(after.uid||'')||(!before.uid&&before.rt!==after.rt);
+}
 function ensureSessionIdentity(){
   var s=getSess();if(!s)return Promise.reject(dataLockError());
   if(s.uid)return Promise.resolve(s);
@@ -692,8 +702,8 @@ function accountContentProbe(k){
     ||k.indexOf('cs_idp_v1_')===0||k.indexOf('cs_idp_pub_v1_')===0
     ||/^(?:cs_(?:board|snap|editor|vault_edit|drill_form|note_forms|note_myforms|matchnotes)|ps_(?:auto_snap_|rescue_|ws_stash_))/.test(k);
 }
-function removeLocalVerified(keys){
-  keys.forEach(function(k){localStorage.removeItem(k);if(localStorage.getItem(k)!=null)throw new Error(k+' local wipe verify failed');});
+function removeLocalVerified(keys,current){
+  keys.forEach(function(k){if(current)current();localStorage.removeItem(k);if(localStorage.getItem(k)!=null)throw new Error(k+' local wipe verify failed');});
 }
 function idbSensitiveKeys(workspaceOnly){
   if(!window.storage||!window.storage.keys)return Promise.resolve([]);
@@ -705,23 +715,29 @@ function idbSensitiveKeys(workspaceOnly){
     });
   });
 }
-function wipeWorkspaceCache(uid){
+function wipeWorkspaceCache(uid,current){
+  current();
   setDataReady(false);
   try{syncBaseCacheClear();}catch(_){}
   var local=[];try{CONTENT.concat([MKEY,'ps_sync_outbox_v1','ps_sync_pending_summary_v1']).forEach(function(k){if(local.indexOf(k)<0)local.push(k);});
     for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(k&&k.indexOf('cs_idp_v1_')===0&&k!=='cs_idp_v1_'+uid&&k!=='cs_idp_v1_local')local.push(k);}
     workspacePubLocalKeys().forEach(function(k){if(local.indexOf(k)<0)local.push(k);});
-    removeLocalVerified(local);
   }catch(e){return Promise.reject(e);}
-  return idbSensitiveKeys(true).then(function(keys){return Promise.all(keys.map(function(k){return window.storage.del(k);}));})
-    .then(verifyWorkspacePubCleared);
+  return idbSensitiveKeys(true).then(function(keys){
+    current();removeLocalVerified(local,current);
+    return Promise.all(keys.map(function(k){current();return window.storage.del(k,current);}));
+  }).then(function(){current();return verifyWorkspacePubCleared();}).then(function(){current();return true;});
 }
-function wipeAccountCache(){
+function wipeAccountCache(current){
+  current();
   setDataReady(false);
   try{syncBaseCacheClear();}catch(_){}
-  try{var keys=[];for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(sensitiveLocalKey(k))keys.push(k);}removeLocalVerified(keys);}catch(e){return Promise.reject(e);}
-  return idbSensitiveKeys(false).then(function(keys){return Promise.all(keys.map(function(k){return window.storage.del(k);}));})
-    .then(verifyWorkspacePubCleared);
+  var local=[];
+  try{for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i);if(sensitiveLocalKey(k))local.push(k);}}catch(e){return Promise.reject(e);}
+  return idbSensitiveKeys(false).then(function(keys){
+    current();removeLocalVerified(local,current);
+    return Promise.all(keys.map(function(k){current();return window.storage.del(k,current);}));
+  }).then(function(){current();return verifyWorkspacePubCleared();}).then(function(){current();return true;});
 }
 function legacyCacheInfo(){
   var info={has:false,uid:'',teamish:false},uids={};
@@ -760,14 +776,16 @@ function legacyWorkspace(rows,info){   /* → Promise<workspaceId> */
     return askPrompt(msg,'1').then(function(v){var n=parseInt(v,10);return n>0&&n<=teams.length?teams[n-1].id:personal;});
   }catch(_){return Promise.resolve(personal);}
 }
-function prepareCacheForSession(s,rows,prepareSwitchEpoch){
+function prepareCacheForSession(s,rows,prepareSwitchEpoch,prepareAuthEpoch){
   rows=Array.isArray(rows)?rows:[];if(!s||!s.uid||!rows.length)throw dataLockError();
-  var uid=String(s.uid),own=cacheOwner(),cur=activeWs();setDataReady(false);
+  var uid=String(s.uid),own=cacheOwner(),cur=activeWs();
   function prepareCurrent(){
+    var live=getSess();
+    if(!live||String(live.uid||'')!==uid||signOutEpoch!==prepareAuthEpoch)throw dataLockError();
     if(externalSwitchFrozen||String(prepareSwitchEpoch||'')!==workspaceSwitchEpochRaw()||freezeForPendingExternalSwitch())throw dataLockError();
     return true;
   }
-  prepareCurrent();
+  prepareCurrent();setDataReady(false);
   function valid(wid){return !!wid&&rows.some(function(w){return String(w.id)===String(wid);});}
   function finish(wid){
     prepareCurrent();
@@ -798,16 +816,18 @@ function prepareCacheForSession(s,rows,prepareSwitchEpoch){
     /* 2.255 — 방금 전환했던 공간이 서버 목록에 없으면 조용히 개인으로 돌아가던 것("팀 전환이 안 돼요"의 무음 경로): 원인 기록 */
     recSwitchFail('이 계정의 서버 목록에 그 워크스페이스가 없어요 — 다른 로그인으로 만든 팀이면: 계정 팝업의 \'로그인 방법 연결\'로 합치거나, 그 계정으로 초대 코드를 만들어 합류하세요','ws-not-in-bootstrap');
     var old=own.wid||cur,save=old?stashSnapshot(old).catch(function(e){syncDiagnostic('orphan-owner-stash',e);}):Promise.resolve();
-    return save.then(function(){return wipeWorkspaceCache(uid);}).then(function(){return finish(defaultWorkspace(rows));});
+    return save.then(function(){prepareCurrent();return wipeWorkspaceCache(uid,prepareCurrent);}).then(function(){return finish(defaultWorkspace(rows));});
   }
-  if(own&&String(own.uid)!==uid)return wipeAccountCache().then(function(){return finish(defaultWorkspace(rows));});
+  if(own&&String(own.uid)!==uid)return wipeAccountCache(prepareCurrent).then(function(){return finish(defaultWorkspace(rows));});
   if(valid(cur))return Promise.resolve(finish(cur)); /* 이미 로그인한 구버전을 올린 1회성 마이그레이션 */
   return legacyCacheInfo().then(function(info){
+    prepareCurrent();
     if(!info.has)return finish(defaultWorkspace(rows));
-    if(info.uid&&info.uid!==uid)return wipeAccountCache().then(function(){return finish(defaultWorkspace(rows));});
+    if(info.uid&&info.uid!==uid)return wipeAccountCache(prepareCurrent).then(function(){return finish(defaultWorkspace(rows));});
     if(!info.uid){
       return askConfirm('로그아웃 전에 이 기기에 저장된 자료가 있습니다.\n현재 로그인한 계정의 자료가 맞습니까?\n\n확인: 현재 계정에 연결\n취소: 이전 자료를 제거하고 서버 자료만 불러오기').then(function(mine){
-        if(!mine)return wipeAccountCache().then(function(){return finish(defaultWorkspace(rows));});
+        prepareCurrent();
+        if(!mine)return wipeAccountCache(prepareCurrent).then(function(){return finish(defaultWorkspace(rows));});
         return legacyWorkspace(rows,info).then(finish);
       });
     }
@@ -815,13 +835,14 @@ function prepareCacheForSession(s,rows,prepareSwitchEpoch){
   });
 }
 /* RPC 호출(PostgREST) */
-function rpc(name,body){
+function rpc(name,body,current){
   /* 이 창에서 시작한 공유 IDB 저장(기준선 정렬·복구 등)이 끝난 뒤 읽는다. */
   var storageReady=(window.PSStorage&&PSStorage.sharedReady)?PSStorage.sharedReady():Promise.resolve(true);
-  return Promise.resolve(storageReady).catch(function(e){syncDiagnostic('shared-write-barrier',e);throw e;}).then(ensureToken).then(function(at){
+  return Promise.resolve(storageReady).catch(function(e){syncDiagnostic('shared-write-barrier',e);throw e;}).then(function(){if(current)current();return ensureToken();}).then(function(at){
+    if(current)current();
     if(!at) throw new Error('no token');
     return fetch(BASE+'/rest/v1/rpc/'+name,{method:'POST',headers:hj(at),body:JSON.stringify(body||{})})
-      .then(function(r){ return r.text().then(function(t){ if(!r.ok)throw new Error('rpc '+name+' '+r.status+' '+t); return t?JSON.parse(t):null; }); });
+      .then(function(r){ return r.text().then(function(t){if(current)current();if(!r.ok)throw new Error('rpc '+name+' '+r.status+' '+t);return t?JSON.parse(t):null;});});
   });
 }
 /* 부팅: 개인 워크스페이스 보장 + 목록 로드 + 활성 워크스페이스 확정 */
@@ -850,17 +871,22 @@ function loadWorkspacesCore(){
      bootstrap·캐시 준비를 시작하지 말고 guard 해제 후 reload만 기다린다. */
   if(externalSwitchFrozen||freezeForPendingExternalSwitch())return Promise.reject(dataLockError());
   if(!getSess()){setDataReady(false);return Promise.resolve([]);}
-  var verified=null,prepareSwitchEpoch=workspaceSwitchEpochRaw();
+  var verified=null,prepareSwitchEpoch=workspaceSwitchEpochRaw(),prepareAuthEpoch=signOutEpoch;
+  function prepareCurrent(){
+    var live=getSess();
+    if(!live||!verified||String(live.uid||'')!==String(verified.uid||'')||signOutEpoch!==prepareAuthEpoch)throw dataLockError();
+  }
   var run=ensureSessionIdentity().then(function(s){
-    verified=s;
+    verified=s;prepareCurrent();
     /* 이미 같은 uid로 봉인된 기기는 오프라인이어도 보여 준다.
        단, 다른 uid나 소유자 미상 캐시는 서버 확인 전에 열지 않는다. */
     var own=cacheOwner(),cur=activeWs();
     if(own&&String(own.uid)===String(s.uid)&&String(own.wid)===String(cur)&&wsList().some(function(w){return String(w.id)===String(cur);}))setDataReady(true,s.uid,cur,true);
-    return rpc('ps_bootstrap',{p_email:s.email||null});
+    return rpc('ps_bootstrap',{p_email:s.email||null},prepareCurrent);
   }).then(function(rows){
+    prepareCurrent();
     if(externalSwitchFrozen||String(prepareSwitchEpoch)!==workspaceSwitchEpochRaw()||freezeForPendingExternalSwitch())throw dataLockError();
-    return prepareCacheForSession(verified,rows||[],prepareSwitchEpoch);
+    return prepareCacheForSession(verified,rows||[],prepareSwitchEpoch,prepareAuthEpoch);
   });
   return run;
 }
@@ -889,17 +915,28 @@ function linkIdentity(provider){
   if(provider!=='google'&&provider!=='kakao'){chip('추가할 로그인 방법을 다시 선택해 주세요');return;}
   var w=window; try{ if(window.top&&window.top!==window&&window.top.location.origin===location.origin)w=window.top; }catch(_){}
   var back=w.location.origin+w.location.pathname;
+  var owner=sessionIdentitySnapshot(getSess()),request=null;
+  function sameOwner(){var s=getSess();return !!(owner&&owner.uid&&s&&String(s.uid||'')===owner.uid&&signOutEpoch===owner.epoch);}
+  if(!sameOwner()){chip('로그인 계정을 확인한 뒤 다시 시도해 주세요');return;}
   ensureToken().then(function(at){
-    if(!at)throw new Error('로그인이 필요합니다');
+    var current=getSess();
+    if(!sameOwner()||!at||!current||current.at!==at)throw dataLockError();
+    request=sessionIdentitySnapshot(current);
     return fetch(BASE+'/auth/v1/user/identities/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back)+'&skip_http_redirect=true'+(provider==='google'?'&prompt=select_account':''),{headers:hj(at)});
   }).then(function(r){ return r.text().then(function(t){ var j=null; try{ j=JSON.parse(t); }catch(_){}
-    if(r.ok&&j&&j.url){ w.location.href=j.url; return; }
+    /* 연결 URL도 요청한 계정의 응답이다. 로그아웃/다른 로그인 뒤에는 이동하거나
+       새 계정 위에 옛 연결 실패 문구를 표시하지 않는다. */
+    if(!sessionIdentityCurrent(request))return;
+    if(r.ok&&j&&typeof j.url==='string'&&j.url){ w.location.href=j.url; return; }
     var raw=String((j&&(j.error_description||j.msg||j.message||j.error))||('연결 실패 '+r.status));
     var msg=raw;
     if(/already|exist/i.test(raw)) msg='이 '+(provider==='kakao'?'카카오':'Google')+' 로그인은 이미 다른 계정에 연결돼 있어요 — 그 계정의 팀에는 초대 코드로 합류하세요';
     else if(/disable|not.*enabl|manual/i.test(raw)) msg='서버에서 계정 연결이 꺼져 있어요 — Supabase 대시보드 › Authentication 에서 Manual Linking 을 켜 주세요';
     chip('연결 안 됨 — '+msg); setStatus(msg); syncDiagnostic('link-identity',new Error(raw.slice(0,80)));
-  }); }).catch(function(e){ var m='연결 실패 — '+String(e&&e.message||e).slice(0,100); chip(m); setStatus(m); });
+  }); }).catch(function(e){
+    if(request?!sessionIdentityCurrent(request):!sameOwner())return;
+    var m='연결 실패 — '+String(e&&e.message||e).slice(0,100); chip(m); setStatus(m);
+  });
 }
 function signOut(){
   if(signOutPromise)return signOutPromise;
@@ -1735,6 +1772,13 @@ function idpMergeRaw(k,baseRaw,localRaw,serverRaw,teamW){
    개인=현재 선수 입력·공개=서버를 따른다. malformed/v2는 null로 멈춘다. */
 function idpMergeInitialRaw(k,localRaw,serverRaw,teamW){
   return idpMergeRaw(k,isIdpPrivateKey(k)?'{"v":1}':'{}',localRaw,serverRaw,teamW);
+}
+function idpMergeNeedsReview(merged){
+  return !!(merged&&(merged.conflicts||[]).some(function(c){
+    /* Two edits often carry different authors/times even when the actual fields
+       merge cleanly. Only competing content needs a choice. */
+    return c&&!/\.(?:updatedAt|updatedBy|tAt|hAt|ts|at|by|tBy|hBy)$/.test(c.path||'');
+  }));
 }
 var MERGE_NOTE='ps_merge_note_v1', MERGE_NOTE_TTL=24*3600*1000;
 function mergeNoteList(){ try{ return (JSON.parse(localStorage.getItem(MERGE_NOTE)||'[]')||[]).filter(function(x){ return x&&(Date.now()-(+x.at||0))<MERGE_NOTE_TTL; }); }catch(_){ return []; } }
@@ -2876,32 +2920,6 @@ function editInfo(k){
     return {uid:w.u,at:w.at,mine:!!(s&&s.uid===w.u),name:(s&&s.uid===w.u)?'나':(nameMap()[w.u]||'')};
   }catch(_){ return null; }
 }
-/* ══ 1.634 · 소유자에게 한 번 알린다 ═════════════════════════════════════════
-   이 판부터 팀 자료는 **임원만 편집**이 기본이다. 이미 쓰고 있던 팀에서는 어제까지 고치던
-   코칭스태프가 오늘 못 고치게 된다 — 그걸 조용히 바꾸면 그 팀은 "저장이 안 된다"만 겪는다.
-   그건 이 프로젝트가 반복해서 데인 자리다(1.514·1.619).
-   그래서 아직 정하지 않은 팀(staffEdit 이 문서에 없는 팀)의 **소유자에게만** 한 번 알린다.
-   코칭스태프에게는 알리지 않는다 — 그들에게는 gate() 배너가 이미 이유를 말해 준다. */
-function staffEditNotice(){
-  try{
-    if(!isTeamWs()) return;
-    var w=activeWsObj(); if(!w||w.role!=='owner') return;      /* 정할 수 있는 사람에게만 */
-    var p=null; try{ p=JSON.parse(permsRaw()||'null'); }catch(_){}
-    if(!p) return;                                             /* 권한 문서가 아직 없는 팀은 대상이 아니다 */
-    if(p.staffEdit) return;                                    /* 이미 정했다 */
-    var seen=null; try{ seen=localStorage.getItem('ps_staffedit_notice'); }catch(_){}
-    if(seen) return;
-    try{ localStorage.setItem('ps_staffedit_notice',String(Date.now())); }catch(_){}
-    chip('🔒 이제 팀 자료는 임원만 편집합니다 — 눌러서 확인', function(){
-      psModal({title:'팀 자료는 임원만 편집합니다',
-        body:'<div style="line-height:1.6">이 판부터 <b>임원이 입력하고 코칭스태프는 봅니다.</b> '
-          +'코칭스태프 화면에는 편집 버튼이 사라지고, 고칠 곳이 있으면 임원에게 말하게 됩니다.'
-          +'<br><br>예전처럼 코칭스태프도 편집하게 하려면 <b>계정 → 권한 관리</b>에서 '
-          +'‘코칭스태프도 팀 자료를 편집’을 켜세요. 특정 코치에게만 열어 줄 수도 있습니다.</div>',
-        hideCancel:true,ok:'알겠습니다'});
-    });
-  }catch(_){}
-}
 /* ── 이 자료가 어떻게 공유되는지 한 줄 ────────────────────────────────────────
    IDP 화면에 이미 이런 줄이 있다("코치만 볼 수 있어요 · 이미지노트는 나만 봅니다").
    그 한 곳에만 있어서, 나머지 화면에서는 사용자가 **자기가 쓴 게 어디까지 보이는지 모른다.**
@@ -3030,7 +3048,8 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
       ready(label+'_cas_response');
       if(!r.ok)throw syncHttpError(label+'_cas',r.status);
       return r.text().then(function(t){var got=null;try{got=t?JSON.parse(t):null;}catch(_){};
-        /* 2.731 — 선수 행(_casSoft): 판본이 어긋나면 회차를 깨지 않고 «충돌 목록»에 적는다. itemsResolveConflicts 가 서버 행을 받아 화면에 적용한다(서버가 판정). */
+        /* 선수 행(_casSoft): 판본이 어긋나면 모아 두었다가 itemsResolveConflicts가
+           두 원문을 확인하고 자료 검토에 남긴다. 선택 전에는 로컬을 덮지 않는다. */
         if(!Array.isArray(got)||!got.length){ if(req._casSoft){ _itemConflicts.push(req); return null; } throw syncIssue('sync_conflict',label+'_cas','server changed during import'); }
         if(req._casSoft){ return Promise.resolve().then(function(){ return confirmed([req],got); }).catch(function(){ _itemConflicts.push(req); return null; }); }
         return confirmed([req],got);});
@@ -3827,7 +3846,7 @@ function dataReviewList(){
     why:x.choice?'선택을 기록했습니다 · 두 판본을 다시 확인한 뒤 반영합니다':'개인 자료가 두 기기에서 바뀌어 양쪽 내용을 그대로 보관 중입니다'}));});}catch(_){}
   try{ holdList().forEach(function(x){
     if(x.kind==='conflict'){out.push(Object.assign(holdConflictView(x),{src:'team',mine:x.after,theirs:x.before,
-      why:x.choice?'선택한 두 판본을 다시 확인한 뒤 반영합니다':'양쪽 변경을 보관 중입니다. 선택한 자료의 문서 전체를 반영하므로, 다른 경기·선수의 변경도 함께 바뀔 수 있습니다. 필요한 내용을 먼저 확인해 주세요.'}));return;}
+      why:x.choice?'선택한 두 판본을 다시 확인한 뒤 반영합니다':String(x.k).indexOf('sq:')===0?'한 선수의 정보가 두 기기에서 바뀌었습니다. 이 기기와 팀의 원문을 유지하고 있으며, 선택하면 그 선수 정보 전체를 반영합니다.':'양쪽 변경을 보관 중입니다. 선택한 자료의 문서 전체를 반영하므로, 다른 경기·선수의 변경도 함께 바뀔 수 있습니다. 필요한 내용을 먼저 확인해 주세요.'}));return;}
     out.push({src:'hold',k:x.k,at:x.at,mine:x.after,theirs:x.before,
       why:'이 기기에서 크게 줄어 아직 안 올렸습니다'}); }); }catch(_){}
   try{ if(!COPIES_OFF)rescueList().forEach(function(x){
@@ -3949,8 +3968,14 @@ function dataReviewOpen(){
         +'<button type="button" id="drItemsHold" style="'+bcss+'">확인하기</button></div>';
     body+='</div>';}
   }
+  var legacyItems=null;try{legacyItems=itemsLostSnapshot();}catch(_){}
+  if(legacyItems)body+='<div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(128,128,128,.3)"><b>이전 선수 충돌 사본 '+legacyItems.n+'건</b>'
+    +'<div style="font-size:12px;opacity:.75;margin:5px 0 8px">이전 앱이 남긴 원문입니다. 팀 구분 정보가 없어 현재 팀에 자동 적용하지 않으며, 파일로 내려받아 내용을 확인할 수 있습니다.</div>'
+    +'<button type="button" id="drItemsLegacyExport" style="'+bcss+'">충돌 사본 내보내기</button></div>';
   var mo=null;
   try{ mo=psModal({title:'자료 확인'+(list.length?(' '+list.length+'건'):''),body:body,hideCancel:true,ok:'닫기'}); }catch(_){}
+  var legacyExport=document.getElementById('drItemsLegacyExport');
+  if(legacyExport)legacyExport.addEventListener('click',function(){try{if(!itemsLostExport(legacyItems))chip('계정이나 사본이 바뀌었습니다. 자료 확인을 다시 열어 주세요.');}catch(e){syncDiagnostic('items-legacy-export',e);chip('충돌 사본을 내보내지 못했습니다. 사본은 그대로 남아 있습니다.');}});
   (function(){
     var hb=document.getElementById('drItemsHold');
     if(hb)hb.addEventListener('click',function(){ try{ if(mo&&mo.close)mo.close(true); }catch(_){} itemsHoldOpen(); });
@@ -4190,7 +4215,7 @@ var ITEMS_IDX='ps_items_idx_v1', ITEMS_SRV='ps_items_srv_v1', ITEMS_HOLD='ps_ite
    1.644 의 «팀 사이에 섞임» 은 색인을 워크스페이스별로 두어(itemsIdxKey) 풀었다 — IDB 의 sq: 키 자체는 전환 때 지워지고 다시 받는다(idbSwitchKeys). */
 var ITEMS_ACTIVE=true;
 function itemsIdxKey(){ var w=''; try{ w=activeWs()||''; }catch(_){} return ITEMS_IDX+':'+w; }
-var ITEMS_SRV_TTL=864e5;                    /* 하루에 한 번만 물어본다 */
+var ITEMS_SRV_TTL=864e5,itemsServerPromise=null;
 function itemsSrvState(){ try{ return JSON.parse(localStorage.getItem(ITEMS_SRV)||'null')||null; }catch(_){ return null; } }
 /* 동기(sync)로 읽는 판정 — 푸시 직전에 불린다 */
 function itemsPushAllowed(){
@@ -4199,18 +4224,23 @@ function itemsPushAllowed(){
   var s=itemsSrvState(); return !!(s&&s.ok);
 }
 function itemsServerCheck(){
-  var s=itemsSrvState();
-  if(s&&(Date.now()-(s.at||0)<ITEMS_SRV_TTL)) return Promise.resolve(!!s.ok);
-  return rpc('ps_key_scope',{key:ITEMP+'__probe'}).then(function(v){
+  var s=itemsSrvState(),age=s?Date.now()-(+s.at||0):Infinity;
+  /* A failed request proves no server capability. The old six-hour negative
+     cache stranded all roster writes after a brief network/auth interruption. */
+  var ttl=s&&s.ok?ITEMS_SRV_TTL:(s&&s.err?30000:300000);
+  if(s&&age>=0&&age<ttl&&(!s.err||s.v===2))return Promise.resolve(!!s.ok);
+  if(itemsServerPromise)return itemsServerPromise;
+  itemsServerPromise=Promise.resolve().then(function(){return rpc('ps_key_scope',{key:ITEMP+'__probe'});}).then(function(v){
     var ok=(String(v||'')==='team');
-    try{ localStorage.setItem(ITEMS_SRV,JSON.stringify({ok:ok?1:0,at:Date.now(),saw:String(v||'')})); }catch(_){}
+    try{ localStorage.setItem(ITEMS_SRV,JSON.stringify({v:2,ok:ok?1:0,at:Date.now(),saw:String(v||'')})); }catch(_){}
     if(!ok) syncDiagnostic('items-server-old',new Error('ps_key_scope='+v+' — supabase-item-keys.sql 미설치'));
     return ok;
   }).catch(function(e){
-    /* 못 물어봤다 = 모른다 = 올리지 않는다. 6시간 뒤에 다시 물어본다(하루를 통째로 버리지 않게) */
-    try{ localStorage.setItem(ITEMS_SRV,JSON.stringify({ok:0,at:Date.now()-ITEMS_SRV_TTL+216e5,err:1})); }catch(_){}
+    /* Remain closed, but check again on the next retry after 30 seconds. */
+    try{ localStorage.setItem(ITEMS_SRV,JSON.stringify({v:2,ok:0,at:Date.now(),err:1})); }catch(_){}
     syncDiagnostic('items-server-check',e); return false;
-  });
+  }).then(function(ok){itemsServerPromise=null;return ok;},function(e){itemsServerPromise=null;throw e;});
+  return itemsServerPromise;
 }
 function itemsIdx(){ try{ return JSON.parse(localStorage.getItem(itemsIdxKey())||'{}')||{}; }catch(_){ return {}; } }
 function itemsHoldList(){ try{ return JSON.parse(localStorage.getItem(ITEMS_HOLD)||'[]')||[]; }catch(_){ return []; } }
@@ -4278,8 +4308,8 @@ function itemsWriteCheckSnapshot(job){
 function itemsWriteEnqueue(job){
   _itemsWritingN++;
   function finished(){_itemsWritingN--;_itemsActiveJobs=_itemsActiveJobs.filter(function(x){return x!==job;});}
-  var run=_itemsWriteTail.catch(function(){}).then(function(){return job.ready;}).then(function(){return itemsWriteNow(job.players,job.owner,job);}).then(function(value){
-    if(value&&value.skipped==='server')throw syncIssue('sync_storage','items_write_server','선수별 저장 준비를 확인하지 못했습니다');
+  var run=_itemsWriteTail.catch(function(){}).then(function(){return job.ready;}).then(function(){return job.rows?itemsWriteRowsNow(job):itemsWriteNow(job.players,job.owner,job);}).then(function(value){
+    if(value&&value.skipped==='server')throw syncIssue('sync_confirm_missing','items_write_server','선수별 서버 저장 준비를 확인하지 못했습니다. 연결이 돌아오면 다시 확인합니다.');
     return value;
   }).then(function(value){finished();return value;},function(e){finished();throw e;});
   _itemsWriteTail=run.then(function(value){_itemsFailedJob=null;return value;},function(e){
@@ -4347,7 +4377,8 @@ function itemsWriteNow(players,owner,job){
     });
     var gone=Object.keys(idx).filter(function(id){return !seen[id];}),held=!!(gone.length&&bigDrop(Object.keys(idx).length,Object.keys(seen).length));
     if(held){
-      var hold={at:now,ids:gone.slice(0,80),before:Object.keys(idx).length,after:Object.keys(seen).length};
+      var hold={at:now,ids:gone.slice(),before:Object.keys(idx).length,after:Object.keys(seen).length,uid:owner.uid,wid:owner.wid,hashes:{}};
+      gone.forEach(function(id){hold.hashes[id]=hash(job.expected[id]);});
       localStorage.setItem(ITEMS_HOLD,JSON.stringify(hold));
       gone.forEach(function(id){next[id]=idx[id];});
     }else gone.forEach(function(id){rows.push({k:ITEMP+id,v:JSON.stringify({_del:now})});});
@@ -4380,41 +4411,91 @@ function itemsWriteNow(players,owner,job){
   });
 }
 /* "정말 지운 게 맞습니다" — 보류해 둔 삭제를 실행한다 */
-function itemsApproveDel(){
-  var h=itemsHoldList(); var ids=(h&&h.ids)||[];
-  if(!ids.length){ try{ localStorage.removeItem(ITEMS_HOLD); }catch(_){} return Promise.resolve(0); }
-  var now=Date.now(), idx=itemsIdx();
-  return Promise.all(ids.map(function(id){
-    delete idx[id];
-    return window.storage.set(ITEMP+id,JSON.stringify({_del:now})).catch(function(){});
-  })).then(function(){
-    try{ localStorage.setItem(itemsIdxKey(),JSON.stringify(idx)); }catch(_){}
-    try{ localStorage.removeItem(ITEMS_HOLD); }catch(_){}
-    try{ syncNow('items-del'); }catch(_){}
-    return ids.length;
+function itemsDeleteIntent(){
+  var owner=itemsWriteOwner(),raw=localStorage.getItem(ITEMS_HOLD),hold=raw&&JSON.parse(raw);
+  if(!owner||!itemsWriteCurrent(owner)||!hold||!Array.isArray(hold.ids)||!hold.ids.length)return null;
+  if((hold.uid&&hold.uid!==owner.uid)||(hold.wid&&hold.wid!==owner.wid))return null;
+  return {owner:owner,raw:raw,hold:hold};
+}
+function itemsDeleteCurrent(intent){
+  return !!intent&&itemsWriteCurrent(intent.owner)&&localStorage.getItem(ITEMS_HOLD)===intent.raw;
+}
+/* Approval uses the same tracked write tail as ordinary roster saves. The
+   captured hold and row preimages survive retries; no retry adopts newer rows. */
+function itemsApproveDel(intent){
+  try{
+    intent=intent||itemsDeleteIntent();
+    if(!itemsDeleteCurrent(intent))throw syncIssue('sync_workspace_changed','items_delete_owner','삭제를 확인하는 동안 계정·팀 또는 명단이 바뀌었습니다');
+    if(!window.storage||!window.storage.get||!window.storage.replaceIfValue)throw syncIssue('sync_storage','items_delete_storage','안전한 선수 저장소를 사용할 수 없습니다');
+    if(_itemsFailedJob&&_itemsFailedJob.intent&&_itemsFailedJob.intent.raw===intent.raw&&itemsWriteCurrent(_itemsFailedJob.owner))
+      return itemsWriteEnqueue(_itemsFailedJob).then(function(result){if(itemsWriteCurrent(intent.owner))try{syncNow('items-del');}catch(_){}return result.gone;});
+    /* The persisted hold timestamp identifies this approval's tombstones even
+       after a reload loses the in-memory retry job. Never adopt other deletions. */
+    var ids=intent.hold.ids.map(String),seen={},now=+intent.hold.at;
+    if(!isFinite(now)||now<=0)throw syncIssue('sync_storage','items_delete_stamp','삭제 보류 시점을 확인하지 못했습니다. 최신 명단을 확인해 주세요.');
+    var tomb=JSON.stringify({_del:now});
+    var job={owner:intent.owner,at:now,rows:[],written:[],intent:intent,ready:null};
+    ids.forEach(function(id){if(!id||seen[id])throw syncIssue('sync_storage','items_delete_ids','삭제할 선수 목록을 확인하지 못했습니다');seen[id]=1;});
+    job.ready=Promise.all(ids.map(function(id){return window.storage.get(ITEMP+id).then(function(r){
+      if(!itemsDeleteCurrent(intent))throw syncIssue('sync_workspace_changed','items_delete_owner','삭제를 확인하는 동안 계정·팀 또는 명단이 바뀌었습니다');
+      var raw=r&&r.value!=null?r.value:null,hashes=intent.hold.hashes;
+      if(raw!==tomb&&hashes&&Object.prototype.hasOwnProperty.call(hashes,id)&&hash(raw)!==hashes[id])throw syncIssue('sync_local_changed','items_delete_stale','삭제 보류 뒤 선수 정보가 바뀌었습니다. 최신 명단을 확인해 주세요.');
+      job.rows.push({k:ITEMP+id,expected:raw,v:tomb});
+    });}));
+    job.ready.catch(function(){});_itemsActiveJobs.push(job);itemsWriteDrain().catch(function(){});
+    return itemsWriteEnqueue(job).then(function(result){
+      if(!result||result.skipped)throw syncIssue('sync_confirm_missing','items_delete_unconfirmed','선수 삭제를 저장하지 못했습니다');
+      if(itemsWriteCurrent(intent.owner))try{syncNow('items-del');}catch(_){}
+      return result.gone;
+    });
+  }catch(e){return Promise.reject(e);}
+}
+function itemsWriteRowsNow(job){
+  function current(){return itemsDeleteCurrent(job.intent);}
+  function requireCurrent(){if(!current())throw syncIssue('sync_workspace_changed','items_delete_owner','선수 삭제 중 계정·팀 또는 명단이 바뀌었습니다');}
+  return Promise.resolve().then(function(){requireCurrent();if(!ITEMS_ACTIVE||localStorage.getItem('ps_items_write')==='0')throw syncIssue('sync_confirm_missing','items_delete_disabled','선수별 저장이 준비되지 않았습니다');return itemsServerCheck();}).then(function(ready){
+    requireCurrent();if(!ready)return {skipped:'server'};
+    return job.rows.reduce(function(chain,row){return chain.then(function(){
+      requireCurrent();var wrote=job.written.some(function(x){return x.k===row.k;});
+      return window.storage.replaceIfValue(row.k,wrote?row.v:row.expected,row.v).then(function(ok){
+        if(!ok)throw syncIssue('sync_local_changed','items_delete_cas','선수 정보에 더 새로운 변경이 있습니다');
+        if(!wrote)job.written.push({k:row.k});
+        if(!itemsWriteCurrent(job.owner))return window.storage.replaceIfValue(row.k,row.v,null).then(function(){requireCurrent();});
+        requireCurrent();return window.storage.get(row.k).then(function(check){requireCurrent();if(!check||check.value!==row.v)throw syncIssue('sync_storage','items_delete_verify','선수 삭제 저장을 확인하지 못했습니다');});
+      });
+    });},Promise.resolve());
+  }).then(function(result){
+    if(result&&result.skipped)return result;
+    requireCurrent();var idx=itemsIdx(),key=itemsIdxKey();job.rows.forEach(function(row){delete idx[row.k.slice(ITEMP.length)];});
+    var raw=JSON.stringify(idx);localStorage.setItem(key,raw);if(localStorage.getItem(key)!==raw)throw syncIssue('sync_storage','items_delete_index','선수 삭제 색인을 확인하지 못했습니다');
+    requireCurrent();localStorage.removeItem(ITEMS_HOLD);if(localStorage.getItem(ITEMS_HOLD)!==null)throw syncIssue('sync_storage','items_delete_hold','삭제 확인 상태를 저장하지 못했습니다');
+    return {gone:job.rows.length};
   });
 }
 function itemsHoldOpen(){
   var h=itemsHoldList();
   if(!h||!h.ids||!h.ids.length){ try{ psModal({title:'보류된 삭제가 없습니다',hideCancel:true,ok:'확인'}); }catch(_){} return; }
+  var intent=null;try{intent=itemsDeleteIntent();}catch(_){}if(!intent)return;
   var bcss='border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font:inherit;font-size:12px;padding:6px 10px;border-radius:8px;cursor:pointer';
   var body='<div style="margin-bottom:10px">명단이 <b>'+h.before+'명 → '+h.after+'명</b>으로 줄었습니다. '
-    +'빠진 '+h.ids.length+'명은 <b>팀에서 아직 지우지 않았습니다.</b><br>'
-    +'맞게 정리한 것이면 아래에서 확인해 주세요. 잘못된 것이면 그대로 두시면 됩니다 — '
-    +'그 선수들은 팀 서버에 그대로 있습니다.</div>'
+    +'빠진 '+h.ids.length+'명의 <b>삭제 확인이 남아 있습니다.</b><br>'
+    +'맞게 정리한 것이면 아래에서 확인해 주세요. 저장 도중 멈췄다면 이어서 처리합니다. '
+    +'추가 삭제를 멈춰도 이미 저장된 삭제는 되돌리지 않습니다.</div>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
     +'<button type="button" id="itDelOk" style="'+bcss+'">맞게 지웠습니다</button>'
-    +'<button type="button" id="itDelNo" style="'+bcss+'">그대로 두기</button></div>';
+    +'<button type="button" id="itDelNo" style="'+bcss+'">추가 삭제 안 하기</button></div>';
   var mo=null; try{ mo=psModal({title:'빠진 선수 '+h.ids.length+'명',body:body,hideCancel:true,ok:'닫기'}); }catch(_){}
   var ok=document.getElementById('itDelOk'), no=document.getElementById('itDelNo');
-  if(ok)ok.addEventListener('click',function(){ itemsApproveDel().then(function(n){
+  if(ok)ok.addEventListener('click',function(){ok.disabled=true;itemsApproveDel(intent).then(function(n){
+    if(!itemsWriteCurrent(intent.owner))return;
     try{ if(mo&&mo.close)mo.close(true); }catch(_){}
-    try{ psModal({title:'정리했습니다',body:n+'명을 팀에서도 지웠습니다.',hideCancel:true,ok:'확인'}); }catch(_){}
-  }); });
+    try{ psModal({title:'삭제를 저장했습니다',body:n+'명의 삭제를 이 기기에 저장했습니다. 팀 반영 여부는 동기화 상태에서 확인하세요.',hideCancel:true,ok:'확인'}); }catch(_){}
+  }).catch(function(e){syncDiagnostic('items-delete',e);if(!itemsWriteCurrent(intent.owner))return;ok.disabled=false;try{chip('삭제 저장을 확인하지 못했어요 — 확인 목록을 남겨 두었습니다');}catch(_){}}); });
   if(no)no.addEventListener('click',function(){
+    if(!itemsDeleteCurrent(intent))return;
     try{ localStorage.removeItem(ITEMS_HOLD); }catch(_){}
     try{ if(mo&&mo.close)mo.close(true); }catch(_){}
-    try{ psModal({title:'그대로 두었습니다',body:'그 선수들은 팀 서버에 남아 있습니다. 명단에 다시 넣으려면 '
+    try{ psModal({title:'추가 삭제를 멈췄습니다',body:'이미 저장된 삭제는 되돌리지 않습니다. 명단에 다시 넣으려면 '
       +'<b>자료 확인 › 지난 판본으로 되돌리기</b>에서 선수단을 되돌리세요.',hideCancel:true,ok:'확인'}); }catch(_){}
   });
 }
@@ -4431,18 +4512,21 @@ function itemsReadAll(){
     return {players:players,tombs:tombs,n:n,rows:rows};
   }).catch(function(e){ syncDiagnostic('items-read',e); return null; });
 }
-/* 2.731 — 서버 판정 뒷정리. _itemConflicts(판본 어긋난 행) 의 서버 행을 받아 IDB·메타에 적용하고, 내 값은 ps_items_lost_v1 에 남긴 뒤 한 번 알린다. */
-var _itemConflicts=[], _itemsLostNames=[];
-function itemsLost(k,mine,theirs){
-  try{ var L=JSON.parse(localStorage.getItem('ps_items_lost_v1')||'[]')||[]; L.push({k:k,at:Date.now(),mine:mine,theirs:theirs}); localStorage.setItem('ps_items_lost_v1',JSON.stringify(L.slice(-20))); }catch(_){}
-  try{ var o=JSON.parse(theirs||mine||'{}'); _itemsLostNames.push(String((o&&o.name)||k.slice(ITEMP.length))); }catch(_){ _itemsLostNames.push(k); }
+/* Legacy copies have no workspace identity. Keep them intact and offer an
+   exact file export in data review; never apply them to the current team. */
+var _itemConflicts=[];
+function itemsLostSnapshot(){
+  var owner=itemsWriteOwner();if(!owner||!itemsWriteCurrent(owner))return null;
+  var raw=localStorage.getItem('ps_items_lost_v1'),rows=raw&&JSON.parse(raw);
+  return Array.isArray(rows)&&rows.length?{owner:owner,raw:raw,n:rows.length}:null;
 }
-function itemsLostFlush(){
-  var names=_itemsLostNames.slice(); _itemsLostNames=[]; if(!names.length)return;
-  var msg='팀 것이 더 새로워요 — '+names[0]+(names.length>1?(' 외 '+(names.length-1)+'명'):'')+' (내 수정은 되돌리기에 남겨 뒀어요)';
-  try{ chip(msg); }catch(_){}
-  try{ syncDiagnostic('items-conflict',new Error(names.length+' rows')); }catch(_){}
+function itemsLostExport(snapshot){
+  if(!snapshot||!itemsWriteCurrent(snapshot.owner)||localStorage.getItem('ps_items_lost_v1')!==snapshot.raw)return false;
+  var url=URL.createObjectURL(new Blob([snapshot.raw],{type:'application/json'})),a=document.createElement('a');
+  a.href=url;a.download='process-roster-conflict-copies.json';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);return true;
 }
+/* A roster CAS miss must preserve its unsent local row. Persist an exact review
+   of the local/server pair and stop before any cache or metadata replacement. */
 function itemsResolveConflicts(at,wid,ownerGuard,roundMeta){
   function ownerCurrent(){try{return typeof ownerGuard!=='function'||!!ownerGuard();}catch(_){return false;}}
   var reqs=_itemConflicts.splice(0); if(!reqs.length)return Promise.resolve();
@@ -4454,28 +4538,27 @@ function itemsResolveConflicts(at,wid,ownerGuard,roundMeta){
     .then(function(rows){
       if(!ownerCurrent())throw syncIssue('sync_workspace_changed','items_conflict_pull','선수 행 확인 중 작업 공간이 바뀌었습니다');
       var sv={}; (rows||[]).forEach(function(x){ if(x&&x.k)sv[x.k]=x; });
-      var m=roundMeta||meta(), n=0,writes=[],planned=[],guards=[];
-      reqs.forEach(function(req){
+      var m=roundMeta||meta(),planned=[],conflicts=[];
+      return Promise.all(reqs.map(function(req){
         var x=sv[req.k];
         /* CAS-soft가 거부된 행의 서버 원문을 하나라도 확인하지 못하면 이 회차의
            provisional h/c를 저장하면 안 된다. 전체 회차를 실패시켜 fresh meta로 다시 읽는다. */
         if(!x||typeof x.v!=='string')throw syncIssue('sync_conflict','items_conflict_missing','선수 행의 최신 팀 원문을 확인하지 못했습니다');
         if(x.v===req.v){planned.push(x);return;}
         if(!ownerCurrent())throw syncIssue('sync_workspace_changed','items_conflict_apply','선수 행 적용 중 작업 공간이 바뀌었습니다');
-        itemsLost(req.k,req.v,x.v); n++;
-        var guard={stale:false};guards.push(guard);
-        if(!kvWrite(req.k,x.v,writes,req.v,guard,ownerGuard))throw syncIssue('sync_conflict','items_conflict_local_stale','선수 행에 더 새로운 기기 편집이 있습니다');
-        planned.push(x);
-      });
-      return Promise.all(writes).then(function(){
+        return currentValueForKey(req.k).then(function(raw){
+          if(!ownerCurrent())throw syncIssue('sync_workspace_changed','items_conflict_apply','선수 행 확인 중 작업 공간이 바뀌었습니다');
+          if(typeof raw!=='string')throw syncIssue('sync_conflict','items_conflict_local_stale','선수 기기 원문을 확인하지 못했습니다');
+          holdConflictRecord(req.k,raw,x);conflicts.push(req.k);
+        });
+      })).then(function(){
         if(!ownerCurrent())throw syncIssue('sync_workspace_changed','items_conflict_commit','선수 행 적용 중 작업 공간이 바뀌었습니다');
-        if(guards.some(function(g){return g.stale;}))throw syncIssue('sync_conflict','items_conflict_write_stale','선수 행에 더 새로운 기기 편집이 있습니다');
+        if(conflicts.length)throw syncIssue('sync_conflict','items_conflict_review','선수 정보가 두 기기에서 바뀌었습니다. 자료 확인에서 남길 판본을 골라 주세요.');
         if(planned.length!==reqs.length)throw syncIssue('sync_conflict','items_conflict_unresolved','선수 행 충돌 확인이 끝나지 않았습니다');
         planned.forEach(function(x){m.h[x.k]=hash(x.v);m.c[x.k]=x.cupd;});
         if(!roundMeta)setMeta(m);
-        if(n){ try{ localStorage.setItem('ps_items_rev',String(Date.now())); }catch(_){} } itemsLostFlush();
       });
-    }).catch(function(e){ syncDiagnostic('items-conflict',e); itemsLostFlush(); throw e; });
+    }).catch(function(e){ syncDiagnostic('items-conflict',e); throw e; });
 }
 function itemsActive(){ try{ return ITEMS_ACTIVE&&localStorage.getItem('ps_items_write')!=='0'; }catch(_){ return ITEMS_ACTIVE; } }
 try{ window.PSItems={audit:itemsAudit,write:itemsWrite,writeReady:itemsWriteReady,flush:itemsWriteFlush,prefix:ITEMP,
@@ -5656,6 +5739,13 @@ function syncNowCore(reason){
         if(k===MATCH_KEY)blockMatchReady('match-review-needed',new Error('두 기기의 경기 변경을 그대로 보관하고 있습니다'));
         if(k===SCHEDULE_KEY){scheduleDeferred=true;schedulePushHeld=true;}
       }
+      function idpConflictChoice(k,loc,row,merged){
+        if(!idpMergeNeedsReview(merged))return '';
+        var held=holdConflictRecord(k,loc,row);
+        if(held.choice==='local'||held.choice==='server')return held.choice;
+        if(heldKeys.indexOf(k)<0)heldKeys.push(k);
+        return 'pending';
+      }
       var teamWs=isTeamWs();
       KEYS.forEach(function(k){
         /* 2.744 — 개인 공간에서도 공통 개인 채널이 CAS·충돌 선택을 담당한다. */
@@ -5932,6 +6022,7 @@ function syncNowCore(reason){
         function pushVal(v){ return teamW?stripImg(v):v; }
         function queueMinePush(k,cloud,localRaw,row,before){
           if(typeof cloud!=='string'||typeof localRaw!=='string')return false;
+          if(cloud.length>MAXLEN){skippedBig++;if(skippedKeys.indexOf(k)<0)skippedKeys.push(k);return false;}
           /* 구버전 server imgNotes를 cloud []로 지우는 정리는 되돌릴 수 없다. 서버 CAS가
              성공한 직후 탭이 닫히거나 로컬 quota가 차도 마지막 이미지 사본이 남도록,
              이 경우에만 local-first union을 exact 검증 저장한 뒤 push를 시작한다.
@@ -5964,7 +6055,10 @@ function syncNowCore(reason){
             try{ localStorage.removeItem(k); }catch(_){} delete m.h[k]; delete m.c[k]; return; }
           var loc=null; try{ loc=localStorage.getItem(k); }catch(_){}
           var lh=hash(loc), dirty=(lh!==(m.h[k]||'')), row=srv[k], srvChanged=row?(row.cupd!==(m.c[k]||0)):false;
-          if(loc!=null&&loc.length>MAXLEN){ skippedBig++; skippedKeys.push(k); return; }
+          /* Team-only image notes remain on this device. Apply the upload cap
+             to the actual cloud document so they cannot block a new diary. */
+          var sizeRaw=mine&&teamW&&loc!=null?pushVal(loc):loc;
+          if(sizeRaw!=null&&sizeRaw.length>MAXLEN){ skippedBig++; skippedKeys.push(k); return; }
           /* 미래 판본/깨진 로컬을 v1 코드가 고쳐 쓰거나 깨끗한 pull로 덮지 않는다.
              서버와 글자까지 같을 때만 확정 시각을 따라잡을 수 있다. */
           if(loc!=null&&!idpRawMergeable(k,loc)){
@@ -6024,6 +6118,10 @@ function syncNowCore(reason){
                 /* malformed/v2는 어느 쪽도 덮지 않는다. 로컬 dirty/outbox를 남겨 새 판이 처리하게 한다. */
                 syncDiagnostic('idp-private-merge-shape',new Error('내 IDP 병합 형식을 확인할 수 없음'));return;
               }
+              var mineChoice=idpConflictChoice(k,loc,row,merged);if(mineChoice==='pending')return;
+              if(mineChoice==='local')merged={local:loc,cloud:pushVal(loc)};
+              if(mineChoice==='server')merged={local:keepMyImg(row.v,loc),cloud:pushVal(row.v)};
+              if(typeof merged.local!=='string'||typeof merged.cloud!=='string')return;
               if(pushHold(k,merged.local,null,m.n[k]))return;
               if(merged.cloud===row.v){if(merged.local!==loc){if(!roundKvWrite(k,merged.local,writes,loc))return;applied++;}m.h[k]=hash(merged.local);m.c[k]=row.cupd;nSet(m,k,merged.local);idpBaseNext[k]=merged.local;return;}
               if(!queueMinePush(k,merged.cloud,merged.local,row,loc))syncDiagnostic('idp-private-project',new Error('병합한 private IDP cloud 투영 실패'));return;
@@ -6154,6 +6252,9 @@ function syncNowCore(reason){
             if(!pubMerged){
               syncDiagnostic('idp-public-merge-shape',new Error('공개 IDP 병합 형식을 확인할 수 없음'));return;
             }
+            var pubChoice=idpConflictChoice(k,loc,row,pubMerged);if(pubChoice==='pending')return;
+            if(pubChoice==='local')pubMerged={local:loc,cloud:loc};
+            if(pubChoice==='server')pubMerged={local:row.v,cloud:row.v};
             if(pubMerged.cloud===row.v){if(pubMerged.local!==loc){if(!roundKvWrite(k,pubMerged.local,writes,loc))return;applied++;}m.h[k]=hash(pubMerged.local);m.c[k]=row.cupd;idpBaseNext[k]=pubMerged.local;return;}
             if(!planIdpCandidate(k,pubMerged.local,loc)){syncDiagnostic('idp-public-merge-stale',new Error('공개 IDP 병합 적용을 준비하지 못함'));return;}
             pushRows.push({workspace_id:wid,k:k,v:pubMerged.cloud,cupd:now,_casCupd:row.cupd});return;
@@ -6188,17 +6289,17 @@ function syncNowCore(reason){
           if(!pushable){ /* 올릴 수는 없어도 받는 것은 막지 않는다 */
             if(!dirty&&srvChanged&&row){ if(roundKvWrite(k,row.v,writes,loc)){ applied++; m.h[k]=hash(row.v); m.c[k]=row.cupd; } }
             return; }
-          /* 2.731 — 2단계 «서버 판정»: 올릴 때 내가 본 판본(cupd)을 붙인다(_casCupd → PATCH cupd=eq). 서버가 그새 바뀌었으면 0행 → 충돌 목록 →
-             itemsResolveConflicts 가 서버 행을 받아 적용하고 «팀 것이 더 새로워요»를 알린다. 새 행은 _casMissing(ignore-duplicates). */
+          /* 올릴 때 내가 본 판본(cupd)을 붙인다(_casCupd → PATCH cupd=eq).
+             CAS가 거부되면 itemsResolveConflicts가 자료 검토를 남기고 원문을 보존한다.
+             새 행은 _casMissing(ignore-duplicates)로 다른 기기의 생성을 덮지 않는다. */
           if(loc!=null&&!row){ pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now,_casMissing:true,_casSoft:true}); m.h[k]=lh; m.c[k]=now; return; }
           if(dirty&&!srvChanged){ pushRows.push({workspace_id:wid,k:k,v:loc,cupd:now,_casCupd:row.cupd,_casSoft:true}); m.h[k]=lh; m.c[k]=now; return; }
           if(!dirty&&srvChanged){ if(roundKvWrite(k,row.v,writes,loc)){ applied++; m.h[k]=hash(row.v); m.c[k]=row.cupd; } return; }
           if(dirty&&srvChanged){
-            /* 2.731 — 같은 선수를 두 기기에서 고쳤고 서버가 이미 더 새롭다 → **서버가 이긴다**(1단계까지는 손에 든 기기가 이겨 한 편집이 조용히 사라졌다).
-               내 값은 ps_items_lost_v1 에 남기고 화면은 서버 값으로, 회차 끝에 «팀 것이 더 새로워요 — 이름» 한 번. */
-            if(row.v===loc){ m.h[k]=lh; m.c[k]=row.cupd; return; }
-            itemsLost(k,loc,row.v);
-            if(roundKvWrite(k,row.v,writes,loc)){ applied++; m.h[k]=hash(row.v); m.c[k]=row.cupd; }
+            /* Preserve both originals until the same exact review used by other
+               shared data authorizes one player's complete document. */
+            resolveTeamConflict(k,loc,row);
+            if(heldKeys.indexOf(k)>=0)writes.push(outboxMarkForOwner(s.uid,wid,k,lh,'roster-conflict'));
           }
         });
         itemsApplied+=(applied-_ia0);
@@ -6388,7 +6489,6 @@ function syncNowCore(reason){
            옛 판으로 덮는다. 어떤 fail-closed 사유든 이 회차의 경기 push도 함께 제거한다. */
         if(matchReadyBlocked)pushRows=pushRows.filter(function(r){return r.k!==MATCH_KEY;});
         if(itemsApplied>0){ try{ localStorage.setItem('ps_items_rev',String(Date.now())); }catch(_){} }
-        try{ itemsLostFlush(); }catch(_){}
         return syncBaseReady();
       }).then(function(){   /* 2.730 — IDB 쓰기가 끝난 뒤에 «행이 왔다» 신호 */
         if(scheduleGuard.stale)restoreScheduleMeta();
@@ -6445,7 +6545,6 @@ function syncNowCore(reason){
             personalError=classifySyncError(e); /* 팀 저장은 완료됐지만 개인 실패 표시는 syncState에 남긴다. */
           });
         try{ pruneConflictCopies(); }catch(_){}
-        try{ staffEditNotice(); }catch(_){}
         syncErr=false;
         /* 용량 초과로 빠진 항목: 조용히 넘어가면 "저장됐다"고 오해한다 → 목록을 남기고 경고 칩으로 알린다 */
         var prev=skippedList().join(','), curKeys=skippedKeys.slice();
@@ -7446,8 +7545,6 @@ function uiCreateTeam(){
     else{ psModal({title:'표시 이름', body:'팀에서 <b>만든 사람</b>으로 표시될 이름을 입력하세요.', input:'', placeholder:'예: 김철수 코치', maxlength:20, ok:'팀 만들기', onOk:function(nm){ if(nm)setDisplayName(nm); go(); }}); }
   }});
 }
-/* 1.533 — 팀에서는 이름이 필수다. 이메일이 없는 팀원이 많아(501명 중 336명) 이름이 없으면
-   서로 누가 누군지 알 수 없다. 팀 공간에 있는데 이름이 비어 있으면 채울 때까지 묻는다. */
 /* 1.533 — 권한 관리·팀원 목록에서 이름과 이메일을 함께 보여준다.
    이름을 주인공으로(굵게), 이메일은 아래 줄에 옅게. 이름이 없으면 그 사실을 표시해
    관리자가 "이 사람 이름 좀 넣어 달라"고 말할 수 있게 한다. */
@@ -7463,8 +7560,7 @@ function memberLabel(r,dark){
          :(nm?'':'<span style="display:block;font-size:11px;font-weight:700;color:#c9772b">⚠ 이름 없음 — 본인이 앱에서 이름을 입력하면 표시됩니다</span>'))
     +'</span>';
 }
-var _dnAsking=false,_dnAskAt=0,_dnDone=false;
-var _dnHydratePromise=null,_dnHydrateKey='',_dnHydrateRetryKey='',_dnHydrateRetryAt=0;
+var _dnHydratePromise=null,_dnHydrateKey='',_dnHydrateDoneKey='',_dnHydrateRetryKey='',_dnHydrateRetryAt=0;
 /* 1.657 — 이름은 기기(DNKEY)와 서버(ps_members.name)에 함께 저장된다. 계정 보호를 위해
    다른 계정이 이 기기를 열면 DNKEY를 지우는 것이 맞지만, 예전에는 로그인 뒤 서버 이름을
    다시 채우지 않아 iPad·새 브라우저마다 이미 정한 이름을 또 물었다.
@@ -7500,67 +7596,33 @@ function restoreDisplayNameFromServer(){
   _dnHydrateKey=key;_dnHydratePromise=done;
   return done;
 }
-/* 1.583 — '이 세션에서는 더 묻지 않는다' 플래그(_dnDone).
-   renderUI() 는 수시로 불리고 그때마다 이 검사를 예약한다. 예전에는 종료 조건이
-   "이름이 저장됐다" 하나뿐이라, 저장이 실패하거나 사용자가 배경을 눌러 닫으면
-   30초 뒤 같은 모달이 또 떴다 — 작업 중에 계속 앞을 가로막았다.
-   이제 ① 저장 성공 ② 사용자가 '나중에' 로 미룸 — 둘 다 이 세션의 종료 조건이다. */
+/* 진입할 때 이름 입력창을 열지 않는다. 이미 정한 이름만 서버에서 조용히
+   복원하고, 이름이 없으면 계정 메뉴의 '표시 이름 설정'에서 직접 정한다.
+   확인을 마친 계정·팀은 이번 진입 동안 반복 조회하지 않고 연결 실패만 재시도한다. */
 function ensureDisplayName(){
   try{
-    if(_dnDone)return;
     var s=getSess(),wid=activeWs();
     if(!s||!s.uid||!isTeamWs()||!dataUnlocked())return;
     if(getDisplayName())return;
-    if(_dnAsking&&Date.now()-_dnAskAt<30000)return;
     var key=String(s.uid)+'|'+String(wid);
+    if(_dnHydrateDoneKey===key)return;
     if(_dnHydratePromise&&_dnHydrateKey===key)return;
     if(_dnHydrateRetryKey===key&&Date.now()<_dnHydrateRetryAt)return;
-    restoreDisplayNameFromServer().then(function(restored){
+    return restoreDisplayNameFromServer().then(function(restored){
+      var now=getSess();
+      if(!now||String(now.uid)!==String(s.uid)||String(activeWs())!==String(wid)||!isTeamWs()||!dataUnlocked())return;
       if(getDisplayName()){
-        _dnDone=true;
+        _dnHydrateDoneKey=key;
         try{ renderUI(); }catch(_){}
         return;
       }
-      /* 서버에 이름이 있는 것은 확인됐지만 이 기기 저장소만 쓸 수 없는 경우에도
-         같은 이름 입력창을 다시 띄우지 않는다. 다음 부팅 때 서버에서 다시 복원한다. */
-      if(restored&&restored.name){ _dnDone=true; return; }
       if(!restored||!restored.known){
         _dnHydrateRetryKey=key;_dnHydrateRetryAt=Date.now()+30000;
-        return;                         /* 네트워크 실패를 '이름 없음'으로 오판하지 않는다 */
+        return;
       }
-      var now=getSess();
-      if(!now||String(now.uid)!==String(s.uid)||String(activeWs())!==String(wid)||!isTeamWs()||!dataUnlocked())return;
-      _dnAsking=true;_dnAskAt=Date.now();
-      (function ask(msg){
-      psModal({title:'팀에서 쓸 이름',
-        body:(msg?'<div style="margin-bottom:8px;color:#d12f38;font-weight:800">'+esc(msg)+'</div>':'')
-          +'팀원 목록·작전판·보관함에 <b>이 이름</b>으로 표시됩니다.<br>이메일이 없는 팀원도 서로 알아볼 수 있게 이름은 꼭 필요합니다.',
-        input:getDisplayName(),placeholder:'예: 김민준 또는 minjun10',maxlength:20,
-        cancel:'나중에',ok:'저장',
-        /* 닫기를 막지 않는다(hideCancel 제거) — 이름이 없어도 앱은 돌아가고,
-           못 닫는 창은 저장이 실패할 때 그대로 덫이 된다. */
-        onCancel:function(){ _dnAsking=false; _dnDone=true; },
-        onOk:function(nm){
-          nm=String(nm||'').trim();
-          if(nm.length<2){ ask('이름 또는 아이디를 2자 이상 입력해 주세요.'); return; }
-          if(!setDisplayName(nm)){
-            /* 저장 자체가 실패했다. 같은 질문을 또 하면 사용자는 무한히 같은 걸 입력하게 된다 —
-               왜 안 되는지와 무엇을 해야 하는지를 말하고 멈춘다. */
-            _dnAsking=false; _dnDone=true;
-            psModal({title:'이름을 저장하지 못했어요',
-              body:'브라우저 저장 공간이 가득 차서 이 기기에 이름을 쓸 수 없습니다.<br><br>'
-                +'설정 → <b>저장 공간</b>의 <b>안전 정리</b>를 눌러 공간을 확보한 뒤 다시 시도해 주세요.'
-                +'<br>정리 후에도 실패하면 저장되지 않은 내용을 따로 보관하고 운영자에게 알려 주세요. 브라우저 데이터를 지우면 이 기기에만 남은 변경을 잃을 수 있습니다.',
-              hideCancel:true,ok:'확인'});
-            return;
-          }
-          _dnAsking=false; _dnDone=true;
-          try{ toast&&toast('이름 저장됨 ✓'); }catch(_){}
-          try{ renderUI(); }catch(_){}
-        }});
-      })('');
-    }).catch(function(){ _dnAsking=false; });
-  }catch(_){ _dnAsking=false; }
+      _dnHydrateDoneKey=key;
+    }).catch(function(){});
+  }catch(_){}
 }
 function uiJoin(){
   function askName(message,value){
@@ -8072,11 +8134,26 @@ function uiLeave(wa){
   }});
 }
 
-var _popOpen=false;
+var _popOpen=false,_accountLogoutHint=false;
+function openAccountLogout(){
+  if(externalSwitchFrozen||!document.getElementById('psAcctWrap'))return false;
+  _accountLogoutHint=true;_popOpen=true;renderUI();return true;
+}
+window.__psOpenAccountLogout=openAccountLogout;
+function consumeAccountAction(){
+  try{
+    if(window.top!==window)return;
+    var q=new URLSearchParams(location.search);
+    if(q.get('account')!=='logout')return;
+    q.delete('account');
+    history.replaceState(null,'',location.pathname+(q.toString()?'?'+q.toString():'')+location.hash);
+    _accountLogoutHint=true;_popOpen=true;
+  }catch(_){}
+}
 function renderUI(){
   try{
     ensureCSS();
-    try{ setTimeout(ensureDisplayName,600); }catch(_){}   /* 팀 공간인데 이름이 없으면 물어본다(1.533) */
+    try{ setTimeout(ensureDisplayName,600); }catch(_){}   /* 기존 표시 이름을 조용히 복원한다 */
     var wrap=document.getElementById('psAcctWrap'); if(!wrap) return;
     wrap.style.display='';
     var s=getSess();
@@ -8097,6 +8174,13 @@ function renderUI(){
     /* 드롭다운 */
     var pop=document.createElement('div'); pop.className='acct-pop'+(_popOpen?' on':'');
     var hd=document.createElement('div'); hd.className='ap-hd'; hd.textContent='계정'; pop.appendChild(hd);
+    if(_accountLogoutHint&&s){
+      var logoutHint=document.createElement('div');logoutHint.className='ap-st';logoutHint.setAttribute('role','status');
+      logoutHint.textContent=dataUnlocked()
+        ?'아직 로그아웃되지 않았습니다. 아래 로그아웃을 누르면 저장 상태를 확인합니다.'
+        :'로그아웃을 위해 자료를 확인하고 있습니다. 준비가 끝나면 아래 버튼을 눌러 주세요.';
+      pop.appendChild(logoutHint);
+    }
     /* 1.850 — 팝업 안 버튼을 누르면(권한 관리·팀원·초대 등 모달이 뜨는 것들) 계정 팝업은 먼저 닫는다 — 모달 위에 팝업이 3층으로 남지 않게 */
     function closePop(){ _popOpen=false; try{ pop.classList.remove('on'); }catch(_){} }
     function pb(label,cls,fn,parent){ var b=document.createElement('button'); b.type='button'; b.className='ap-b'+(cls?' '+cls:''); b.textContent=label; b.onclick=function(e){e.stopPropagation();closePop();fn();}; (parent||pop).appendChild(b); return b; }
@@ -8196,7 +8280,11 @@ function renderUI(){
       div(pop);
       /* 관리자에게만 관리 페이지 링크(실제 데이터 접근은 서버 RPC가 재검증) */
       if(isAdminEmail(s.email)) pb('🛠 관리자 페이지','',function(){ try{ window.open('/admin.html','_blank'); }catch(_){ location.href='/admin.html'; } });
-      pb('로그아웃','',function(){ _popOpen=false; signOut(); });
+      var logoutButton=pb('로그아웃','',function(){
+        if(_accountLogoutHint&&!dataUnlocked()){_popOpen=true;renderUI();return;}
+        _popOpen=false;signOut();
+      });
+      if(_accountLogoutHint&&!dataUnlocked())logoutButton.disabled=true;
       /* 1.850 — '내 계정·데이터 삭제'는 로그아웃 아래 작은 글자 링크로 (일상 동선에서 붉은 버튼이 눈에 먼저 들어오지 않게) */
       var er=pb('내 계정·데이터 삭제…','',function(){var b=document.getElementById('bkErase');if(b)b.click();});
       er.style.cssText='border:0;background:transparent;font-size:11px;font-weight:600;color:#a84440;opacity:.8;padding:4px 0 0;';
@@ -8212,6 +8300,7 @@ function renderUI(){
 /* ── 부팅 ── */
 function boot(){
   consumeHash();
+  consumeAccountAction();
   try{ if(COPIES_OFF){ var _pc=purgeCopies(); if(_pc)syncDiagnostic('copies-purged',new Error('기기 사본 '+_pc+'개 정리')); } }catch(_){}   /* 2.674 — 쌓여 있던 구조선·충돌 사본 한 번에 정리 */
   /* 2.675 — 닫을 때 팀 자료 지우기 · 지운 뒤 첫 부팅은 서버를 기다린다 */
   try{ window.addEventListener('pagehide',function(e){ if(e&&e.persisted)return; try{ var _n=wipeTeamCacheSoft(); if(_n)syncDiagnostic('cache-wiped',new Error('닫으며 팀 자료 '+_n+'키 지움')); }catch(_){} }); }catch(_){}
@@ -8298,6 +8387,10 @@ function boot(){
       return;
     }
     if(e.key===SKEY){
+      if(sessionStorageOwnerChanged(e)){
+        signOutEpoch++;
+        freezeForExternalSwitch(JSON.stringify({token:'external-session',from:tabReadyWid,to:''}));reloadAfterExternalSwitch();return;
+      }
       var changedSession=getSess();
       if(tabReadyUid&&String(changedSession&&changedSession.uid||'')!==String(tabReadyUid)){
         freezeForExternalSwitch(JSON.stringify({token:'external-session',from:tabReadyWid,to:''}));reloadAfterExternalSwitch();return;

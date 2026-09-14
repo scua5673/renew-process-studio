@@ -260,7 +260,7 @@
     <p>이 계정에는 관리자 권한이 없습니다.<br>서비스 책임자에게 관리자 등록을 요청하세요.</p>
     <div style="margin-top:12px;display:flex;gap:8px;justify-content:center">
       <button class="hbtn" onclick="location.reload()">다시 확인</button>
-      <button class="hbtn danger" onclick="signOut()">다른 계정으로</button>
+      <button class="hbtn danger" onclick="signOut()" title="앱에서 저장 상태를 확인한 뒤 로그아웃합니다">앱에서 로그아웃</button>
     </div>
     <div class="uidbox" id="myUid" style="margin-top:12px;font-size:11px;opacity:.7">—</div>
   </div>
@@ -289,7 +289,7 @@
     <div class="sp"></div>
     <span class="hchip" id="meChip">—</span>
     <button class="hbtn" onclick="reloadAll()" title="새로고침">↻ 새로고침</button>
-    <button class="hbtn danger" onclick="signOut()">로그아웃</button>
+    <button class="hbtn danger" onclick="signOut()" title="앱에서 저장 상태를 확인한 뒤 로그아웃합니다">앱에서 로그아웃</button>
   </header>
 
   <div class="stats" id="stats"></div>
@@ -711,7 +711,22 @@ function loadSyncDetails24h(){
   });
 }
 function signIn(p){ location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(p)+'&redirect_to='+encodeURIComponent(location.origin+location.pathname); }
-function signOut(){ var s=getSess(); if(s){try{fetch(BASE+'/auth/v1/logout',{method:'POST',headers:hj(s.at)});}catch(_){}} setSess(null); location.reload(); }
+function signOut(){
+  /* 앱과 로그인 세션을 공유한다. 관리자는 편집 장벽/미전송 자료를 확인할 수
+     없으므로 여기서 토큰을 지우지 않고 실제 앱의 안전한 로그아웃으로 연결한다. */
+  var s=getSess(),app=null;
+  try{
+    app=window.opener;
+    if(app&&!app.closed&&app.location.origin===location.origin&&app.PSSync&&app.__psOpenAccountLogout){
+      var other=app.PSSync.session();
+      if(s&&other&&s.uid&&s.uid===other.uid&&app.__psOpenAccountLogout()){
+        adminLockSession('아직 로그아웃되지 않았습니다. 앱의 계정 메뉴에서 저장 상태를 확인한 뒤 로그아웃해 주세요.');
+        app.focus();return false;
+      }
+    }
+  }catch(_){}
+  location.href='/studio/app.html?account=logout';return false;
+}
 function consumeHash(){
   try{ if(location.hash.indexOf('access_token=')<0)return false;
     var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){var i=kv.indexOf('=');if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1));});

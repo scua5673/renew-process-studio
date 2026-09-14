@@ -137,3 +137,25 @@ test('link identity stays in the app when the server rejects or omits a usable r
   assert.equal(h.location.href,before);assert.deepEqual(h.session,initial);assert.equal(h.writes.length,0);assert.equal(h.requests.length,1);assert.ok(h.statuses.length>0);
  }
 });
+
+for(const change of ['logout','other-account','new-tokens','same-uid-new-login'])test('stale identity-link URL cannot navigate after '+change,async()=>{
+ const h=harness(session(A)),g=deferred(),before=h.location.href;h.hooks.link=()=>g.promise;
+ h.c.linkIdentity('google');await tick();assert.equal(h.requests.length,1);
+ if(change==='logout'){h.setSession(null);h.c.signOutEpoch++;}
+ if(change==='other-account')h.setSession(session(B,{at:'synthetic-b-at',rt:'synthetic-b-rt'}));
+ if(change==='new-tokens')h.setSession(session(A,{at:'rotated-at',rt:'rotated-rt'}));
+ if(change==='same-uid-new-login')h.c.signOutEpoch++;
+ const latest=h.session;g.resolve(response({url:'https://synthetic-provider.invalid/stale-A-link'}));await tick();
+ assert.equal(h.location.href,before);assert.deepEqual(h.session,latest);assert.equal(h.writes.length,0);assert.equal(h.statuses.length,0);
+});
+for(const mode of ['server-error','network-error'])test('stale identity-link '+mode+' does not show old-account feedback',async()=>{
+ const h=harness(session(A)),g=deferred();h.hooks.link=()=>g.promise;h.c.linkIdentity('kakao');await tick();
+ h.setSession(session(B,{at:'b-at',rt:'b-rt'}));
+ if(mode==='server-error')g.resolve(response({message:'old account error'},403));else g.reject(Error('old network error'));
+ await tick();assert.equal(h.statuses.length,0);assert.equal(h.diagnostics.length,0);
+});
+test('identity-link waiting for token refresh cannot authorize a later login',async()=>{
+ const h=harness(session(A,{exp:1})),g=deferred();h.hooks.refresh=()=>g.promise;h.c.linkIdentity('google');await tick();
+ h.setSession(session(B,{at:'b-at',rt:'b-rt'}));g.resolve(response({access_token:'old-refresh-at',refresh_token:'old-refresh-rt',user:userA}));await tick();
+ assert.equal(h.requests.length,1);assert.equal(h.session.uid,B);assert.equal(h.statuses.length,0);
+});
