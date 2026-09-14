@@ -643,16 +643,38 @@ function setDataReady(on,uid,wid,readOnlyMarkers){
   return dataUnlocked();
 }
 function dataLockError(){var e=new Error('로그인한 계정의 자료가 확인되지 않았습니다');e.name='PSDataLockedError';e.psDataLocked=true;return e;}
+/* 사용자 조회는 요청한 세션에만 적용한다. 늦은 OAuth /user 응답이
+   다른 로그인 토큰에 이전 계정의 uid·이메일을 붙이면 캐시 소유자까지 뒤섞인다. */
+function sessionIdentitySnapshot(s){
+  return s&&s.at&&s.rt?{at:s.at,rt:s.rt,uid:String(s.uid||''),epoch:signOutEpoch}:null;
+}
+function sessionIdentityCurrent(snapshot){
+  var s=getSess();
+  return snapshot&&s&&snapshot.epoch===signOutEpoch&&s.at===snapshot.at&&s.rt===snapshot.rt&&
+    (!snapshot.uid||String(s.uid||'')===snapshot.uid)?s:null;
+}
+function sessionIdentityCommit(snapshot,u,email){
+  var latest=sessionIdentityCurrent(snapshot);
+  if(!latest||!u||typeof u.id!=='string'||!u.id||
+     (latest.uid&&String(latest.uid)!==u.id))throw dataLockError();
+  var next=Object.assign({},latest,{uid:u.id,email:email||latest.email||''});
+  setSess(next);
+  var saved=sessionIdentityCurrent(snapshot);
+  if(!saved||String(saved.uid||'')!==u.id)throw dataLockError();
+  return saved;
+}
 function ensureSessionIdentity(){
   var s=getSess();if(!s)return Promise.reject(dataLockError());
   if(s.uid)return Promise.resolve(s);
+  var epoch=signOutEpoch,request=null;
   return ensureToken().then(function(at){
-    if(!at)throw dataLockError();
+    var latest=getSess();
+    if(epoch!==signOutEpoch||!at||!latest||latest.at!==at)throw dataLockError();
+    /* ensureToken의 정상 갱신은 허용하고, 조회를 시작한 뒤의 세션 변경은 막는다. */
+    request=sessionIdentitySnapshot(latest);if(!request)throw dataLockError();
     return fetch(BASE+'/auth/v1/user',{headers:hj(at)}).then(function(r){if(!r.ok)throw new Error('user '+r.status);return r.json();});
   }).then(function(u){
-    if(!u||!u.id)throw dataLockError();
-    var latest=getSess();if(!latest)throw dataLockError();
-    latest.uid=u.id;latest.email=u.email||latest.email||'';setSess(latest);return latest;
+    return sessionIdentityCommit(request,u,u&&u.email);
   });
 }
 function sensitiveLocalKey(k){
@@ -850,22 +872,26 @@ function loadWorkspaces(){
 }
 
 function signIn(provider){
+  if(provider!=='google'&&provider!=='kakao'){chip('로그인 방법을 다시 선택해 주세요');return false;}
   /* 2.254 — 잠금 오버레이는 iframe 페이지(sync.js 로드되는 board·scout 등)에도 뜬다. 거기서 누르면 iframe 이
      카카오로 가고 콜백 토큰이 iframe 주소로 떨어진다 — 같은 origin 이면 top 창으로 올려서 연다. */
   var w=window; try{ if(window.top&&window.top!==window&&window.top.location.origin===location.origin)w=window.top; }catch(_){}
   var back=w.location.origin+w.location.pathname;
-  w.location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back);
+  /* Google 브라우저 세션이 남아 있어도 로그인할 계정을 직접 고를 수 있게 한다. */
+  w.location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back)+(provider==='google'?'&prompt=select_account':'');
+  return true;
 }
 /* 2.256 — 로그인 방법 연결(사용자 "뭘로 만들어도 들어갈 수 있게"): 지금 로그인한 계정에 카카오·Google
    아이덴티티를 둘 다 연결한다(Supabase manual identity linking). 연결되면 어느 쪽으로 로그인해도 같은 사용자
    = 같은 워크스페이스·팀. ⚠ 서버 준비물: Supabase 대시보드 → Authentication → 설정에서 Manual Linking ON.
    이미 다른 계정에 붙은 아이덴티티는 연결이 거부된다(그 계정의 팀은 초대 코드로 합류가 길). */
 function linkIdentity(provider){
+  if(provider!=='google'&&provider!=='kakao'){chip('추가할 로그인 방법을 다시 선택해 주세요');return;}
   var w=window; try{ if(window.top&&window.top!==window&&window.top.location.origin===location.origin)w=window.top; }catch(_){}
   var back=w.location.origin+w.location.pathname;
   ensureToken().then(function(at){
     if(!at)throw new Error('로그인이 필요합니다');
-    return fetch(BASE+'/auth/v1/user/identities/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back)+'&skip_http_redirect=true',{headers:hj(at)});
+    return fetch(BASE+'/auth/v1/user/identities/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back)+'&skip_http_redirect=true'+(provider==='google'?'&prompt=select_account':''),{headers:hj(at)});
   }).then(function(r){ return r.text().then(function(t){ var j=null; try{ j=JSON.parse(t); }catch(_){}
     if(r.ok&&j&&j.url){ w.location.href=j.url; return; }
     var raw=String((j&&(j.error_description||j.msg||j.message||j.error))||('연결 실패 '+r.status));
@@ -953,10 +979,13 @@ function consumeHash(){
     var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){ var i=kv.indexOf('='); if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1)); });
     if(!p.access_token||!p.refresh_token) return false;
     var exp=Date.now()+(( +p.expires_in||3600)*1000);
+    signOutEpoch++; // 새 OAuth 세션은 이전 조회·갱신의 응답을 무효화한다.
     setSess({at:p.access_token,rt:p.refresh_token,exp:exp,email:'',uid:''});
+    var request=sessionIdentitySnapshot(getSess());
+    if(!request||request.at!==p.access_token||request.rt!==p.refresh_token)throw dataLockError();
     try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){}
     fetch(BASE+'/auth/v1/user',{headers:hj(p.access_token)}).then(function(r){return r.ok?r.json():null;}).then(function(u){
-      if(u&&u.id){ var s=getSess(); if(s){ s.uid=u.id; s.email=u.email||((u.user_metadata&&(u.user_metadata.email||u.user_metadata.name))||''); setSess(s); } }
+      if(u&&u.id)sessionIdentityCommit(request,u,u.email||((u.user_metadata&&(u.user_metadata.email||u.user_metadata.name))||''));
     }).catch(function(e){syncDiagnostic('oauth-user-lookup',e);});
     return true;
   }catch(_){ return false; }
@@ -8126,9 +8155,10 @@ function renderUI(){
       var nameBtn=document.createElement('button'); nameBtn.type='button'; nameBtn.className='ap-b'; nameBtn.style.marginTop='6px';
       nameBtn.textContent=dn?('표시 이름: '+dn+' (변경)'):'표시 이름 설정'; nameBtn.onclick=function(e){e.stopPropagation();closePop();uiSetName();}; pop.appendChild(nameBtn);
       /* 2.256 — 로그인 방법 연결: 어느 쪽으로 로그인해도 이 계정으로 들어오게 */
-      (function(){ var cap=document.createElement('div'); cap.className='ap-hd'; cap.textContent='로그인 방법 연결 — 어느 쪽으로도 이 계정에'; pop.appendChild(cap);
+      (function(){ var cap=document.createElement('div'); cap.className='ap-hd'; cap.textContent='이 계정에 로그인 방법 추가'; pop.appendChild(cap);
+        var help=document.createElement('div');help.className='ap-st';help.textContent='추가한 로그인 방법으로 같은 팀과 자료를 이어서 사용합니다.';pop.appendChild(help);
         var mini=document.createElement('div'); mini.className='ap-mini';
-        [['kakao','카카오 연결'],['google','Google 연결']].forEach(function(pv){
+        [['kakao','카카오 로그인 추가'],['google','Google 로그인 추가']].forEach(function(pv){
           var b=document.createElement('button'); b.type='button'; b.className='ap-b'+(pv[0]==='kakao'?' kakao':''); b.textContent=pv[1];
           b.onclick=function(e){ e.stopPropagation(); closePop(); linkIdentity(pv[0]); }; mini.appendChild(b); });
         pop.appendChild(mini); })();
