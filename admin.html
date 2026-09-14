@@ -49,7 +49,7 @@
     #app{padding:0 0 70px;}
     .admin-side{position:fixed;inset:auto 0 0 0;width:auto;height:64px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));border:0;border-top:1px solid var(--line);background:rgba(17,23,32,.96);backdrop-filter:blur(18px);}
     .admin-brand,.admin-side-foot{display:none;}
-    .admin-nav{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;}
+    .admin-nav{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(60px,1fr);gap:2px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;}
     .admin-nav button{height:48px;flex-direction:column;justify-content:center;gap:3px;padding:0;font-size:10px;border-radius:10px;}
     .admin-nav button svg{width:16px;height:16px;}
     #app>header{padding:10px 12px;}
@@ -242,7 +242,8 @@
   .loading{padding:40px;text-align:center;color:var(--dim);}
 </style>
 <link rel="stylesheet" href="studio/admin-user-detail.css?v=2.792">
-<link rel="stylesheet" href="studio/admin-operations.css?v=2.792">
+<link rel="stylesheet" href="studio/admin-operations.css?v=2.816">
+<link rel="stylesheet" href="studio/admin-support.css?v=2.816">
 </head>
 <body>
 
@@ -285,6 +286,7 @@
       <button data-admin-tab="idp" onclick="setTab('idp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>IDP</button>
       <button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>백엔드</button>
       <button data-admin-tab="errors" onclick="setTab('errors')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 9v4M12 17h.01"/></svg>오류</button>
+      <button data-admin-tab="support" onclick="setTab('support')" title="오류 제보"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v12H9l-5 4V4z"/><path d="M8 8h8M8 12h5"/></svg>오류 제보</button>
     </nav>
     <div class="admin-side-foot">PROCESS STUDIO<br>운영 관리자 전용</div>
   </aside>
@@ -309,7 +311,10 @@
     <button class="tab" id="tabIdp" onclick="setTab('idp')">IDP</button>
     <button class="tab" id="tabBack" onclick="setTab('back')">백엔드</button>
     <button class="tab" id="tabErrors" onclick="setTab('errors')">오류</button>
+    <button class="tab" id="tabSupport" onclick="setTab('support')">오류 제보</button>
   </div>
+
+  <section class="wrap hide" id="viewSupport" style="grid-template-columns:1fr" aria-label="오류 제보 접수함"></section>
 
   <!-- 2.630 — 백엔드 건강 한 장(ps_admin_health): 코치가 제보하기 전에 본다 -->
   <div class="wrap hide" id="viewBack">
@@ -358,6 +363,10 @@
 
   <!-- 홈 — 모든 데이터 한눈에: 7일 지표 · IDP 퍼널 · 팀 활성/침묵 · 기능 사용 · 최근 가입 -->
   <div class="wrap hide" id="viewHome">
+    <section class="panel admin-support-entry" style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div><b>오류 제보 접수함</b><p class="muted" style="margin:6px 0 0">앱에서 보낸 제보와 오류 로그를 확인하고 답변합니다.</p></div>
+      <button type="button" class="hbtn" onclick="setTab('support')">오류 제보 열기</button>
+    </section>
     <div class="col">
       <div class="panel">
         <div class="sec-t">사용 현황 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 실가입자 = 코치 + 선수 · 팀 (누적)</span></div>
@@ -565,6 +574,9 @@
 
 <script src="studio/admin-user-detail.js?v=2.792"></script>
 <script src="studio/admin-operations.js?v=2.792"></script>
+<script src="studio/support-diagnostics.js?v=2.816"></script>
+<script src="studio/support.js?v=2.816"></script>
+<script src="studio/admin-support.js?v=2.816"></script>
 <script>
 /* ===== 설정 (publishable/anon 키만 — secret 키는 절대 두지 않음) ===== */
 var CFG={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publishable_-Es-apybpr1zPTLzLE2sUw_kV-5ap-k"};
@@ -577,6 +589,7 @@ function adminLockSession(message){
   if(adminSessionLocked)return;
   adminSessionLocked=true;adminAuthEpoch++;
   try{if(window.PSAdminUserDetail)PSAdminUserDetail.close();}catch(_){}
+  try{if(adminSupport){adminSupport.destroy();adminSupport=null;}}catch(_){}
   ['app','modalRoot'].forEach(function(id){var el=document.getElementById(id);if(el){el.classList.add('hide');el.replaceChildren();}});
   try{WS=[];USERS=[];ALL_LIB=[];HOME=null;WHOLOG=null;IDP_CACHE={};ERR=null;USE=null;}catch(_){}
   ['gateLogin','gateDenied'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hide');});
@@ -661,8 +674,22 @@ function openAdminUser(uid){
     onTeam:function(wid){setTab('ws');selectWs(wid);},
     onIdp:function(){setTab('idp');openIdp(uid,user.email||'');}});
 }
-var adminOps=null;
+var adminOps=null,adminSupport=null;
 function adminRpc(name,body){return adminRequest('rpc/'+name,{method:'POST',body:JSON.stringify(body||{})});}
+function adminSupportContext(){
+  var s=getSess();
+  return {uid:adminBoundUid||'',epoch:adminAuthEpoch,ready:!!(adminBoundUid&&!adminSessionLocked&&s&&s.uid===adminBoundUid)};
+}
+function loadAdminSupport(){
+  if(!adminSupportContext().ready)return;
+  if(!window.PSAdminSupport||!window.PSSupportDiagnostics||!window.PSSupport){
+    $('viewSupport').textContent='오류 제보 화면을 불러오지 못했습니다. 페이지를 다시 열어 주세요.';return;
+  }
+  if(!adminSupport)adminSupport=PSAdminSupport.create({window:window,host:$('viewSupport'),rpc:adminRpc,context:adminSupportContext,
+    format:PSSupportDiagnostics.format,copyText:PSSupport.copyText});
+  return adminSupport.load();
+}
+window.addEventListener('beforeunload',function(e){if(adminSupport&&adminSupport.pendingUnsafe()){e.preventDefault();e.returnValue='';}});
 function loadAdminOps(){
   if(!window.PSAdminOperations)return;
   if(!adminOps)adminOps=PSAdminOperations.create({rpc:adminRpc,users:function(){return USERS;},workspaces:function(){return WS;},openUser:openAdminUser,
@@ -800,6 +827,7 @@ function showDenied(uid){
 
 /* ===== 데이터 로드 ===== */
 function reloadAll(){
+  if(curTab==='support'){loadAdminSupport();return;}
   $('wsList').innerHTML='<div class="loading">불러오는 중…</div>';
   $('alBody').innerHTML='<div class="loading">불러오는 중…</div>';
   var safe=function(p){return p.then(function(v){return {ok:true,v:v||[]};}).catch(function(e){return {ok:false,v:[],e:e};});};
@@ -841,20 +869,25 @@ function renderStats(){
 function stat(n,l){ return '<div class="stat"><div class="n">'+n+'</div><div class="l">'+esc(l)+'</div></div>'; }
 
 /* ===== 탭 ===== */
-function setTab(t){ curTab=t; $('app').classList.toggle('admin-home-mode',t==='home');
+function setTab(t){
+  if(adminSupport&&curTab==='support'&&t!=='support')adminSupport.deactivate();
+  curTab=t; $('app').classList.toggle('admin-home-mode',t==='home');
   if($('tabBack'))$('tabBack').classList.toggle('on',t==='back'); if($('viewBack'))$('viewBack').classList.toggle('hide',t!=='back'); if(t==='back')loadBack();   /* 2.630 */
   if($('tabUse'))$('tabUse').classList.toggle('on',t==='use');
   if($('tabErrors'))$('tabErrors').classList.toggle('on',t==='errors');
   if($('viewUse'))$('viewUse').classList.toggle('hide',t!=='use');
   if($('viewErrors'))$('viewErrors').classList.toggle('hide',t!=='errors');
+  if($('tabSupport'))$('tabSupport').classList.toggle('on',t==='support');
+  if($('viewSupport'))$('viewSupport').classList.toggle('hide',t!=='support');
   $('tabHome').classList.toggle('on',t==='home'); $('tabAct').classList.toggle('on',t==='act'); $('tabAll').classList.toggle('on',t==='all'); $('tabWs').classList.toggle('on',t==='ws'); $('tabUsers').classList.toggle('on',t==='users'); $('tabIdp').classList.toggle('on',t==='idp');
   [].forEach.call(document.querySelectorAll('[data-admin-tab]'),function(b){b.classList.toggle('on',b.dataset.adminTab===t);});
-  var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({back:'백엔드 건강',errors:'오류 분석',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
+  var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({support:'오류 제보',back:'백엔드 건강',errors:'오류 분석',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
   $('viewHome').classList.toggle('hide',t!=='home'); $('viewAct').classList.toggle('hide',t!=='act'); $('viewAll').classList.toggle('hide',t!=='all'); $('viewWs').classList.toggle('hide',t!=='ws'); $('viewUsers').classList.toggle('hide',t!=='users'); $('viewIdp').classList.toggle('hide',t!=='idp');
   if(t==='idp') loadIdpList();
   if(t==='home') loadHome();
   if(t==='use') loadUse();
   if(t==='errors') loadErrors();
+  if(t==='support') loadAdminSupport();
 }
 
 /* ===== 2.630 · 백엔드 건강 ===== */

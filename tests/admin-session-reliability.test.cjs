@@ -53,6 +53,13 @@ test('a token rotated in another tab is retained when an old refresh fails',asyn
 test('account switch closes drawer and clears already-rendered administrative information',()=>{
  const h=harness();h.bind();h.change(session(B));assert.equal(h.c.adminSessionLocked,true);assert.equal(h.nodes.app.cleared,true);assert.equal(h.nodes.modalRoot.cleared,true);assert.equal(h.nodes.app.classList.values.has('hide'),true);assert.equal(h.closed,1);assert.equal(h.c.USERS.length,0);assert.equal(Object.keys(h.c.IDP_CACHE).length,0);assert.equal(h.doc.body.children.length,1);
 });
+test('account switch destroys the support inbox before releasing its private state',()=>{
+ const h=harness();h.bind();let destroyed=0;
+ h.c.adminSupport={destroy(){destroyed++;assert.equal(h.c.adminSessionLocked,true);}};
+ h.change(session(B));
+ assert.equal(destroyed,1);assert.equal(h.c.adminSupport,null);assert.equal(h.nodes.app.cleared,true);
+ h.change(session(A));assert.equal(destroyed,1);
+});
 test('an A to B to A switch remains locked and rejects an old request completion',async()=>{
  const h=harness(),g=deferred();h.bind();h.hooks.fetch=()=>g.promise;const run=h.c.adminRequest('rpc/private',{method:'POST'});await tick();h.change(session(B));h.change(session(A));g.resolve(response({private:'old result'}));await assert.rejects(run,/session changed/);assert.equal(h.c.adminSessionLocked,true);
 });
