@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const presentation = require('../studio/autosave-status.js');
 
 // Execute the actual settings status renderer and its registered manual-sync
 // click handler. Only the DOM, timers and sync API responses are simulated.
@@ -13,13 +14,15 @@ const start = source.indexOf("  var pbtn=document.getElementById('psPushNow')");
 const end = source.indexOf('  /* ══ 2.352 · 팀 자료 통째로', start);
 assert.ok(start >= 0 && end > start, 'Can extract the shipped sync settings block');
 const code = source.slice(start, end);
-const SUCCESS = /동기화했습니다|이미 최신입니다|최신 상태|팀과 같아요|모든 변경을 맞췄/;
+const SUCCESS = /저장됨|동기화했습니다|팀과 같아요|모든 변경을 맞췄/;
 const confirmed = {kind:'ok',text:'팀과 같아요',at:100,ago:'방금',n:0,review:0};
 
 function harness(options = {}) {
   const textHistory = [], toasts = [], alerts = [], timers = [], calls = [];
-  const handlers = {};
-  let current = options.state === undefined ? {...confirmed} : options.state;
+  const handlers = {}, events = {};
+  let workspace='team-a';
+  const activeReviews=(options.reviews||[]).filter(x=>!['rescue','conflict'].includes(x.src)).length;
+  let current = options.state === undefined ? {...confirmed,...(activeReviews?{kind:'ask',review:activeReviews}:{})} : options.state;
   let session = options.session === undefined ? {uid:'coach-a'} : options.session;
   let reviews = options.reviews || [], opened = 0, resultIndex = 0;
   const button = {disabled:false,textContent:'',addEventListener(type, fn){handlers[type]=fn;}};
@@ -29,13 +32,14 @@ function harness(options = {}) {
     set textContent(v){this.value=String(v);textHistory.push(this.value);},
   };
   const api = {
-    session:()=>session,
+    session:()=>session,activeWs:()=>workspace,
     pending:()=>({count:options.teamPending || 0}),
     state:()=>current,
     ago:()=> '오래전',
     hold:{list:()=>[],open:()=>{opened++;}},
     syncNow(reason){
       calls.push(reason);
+      if(options.pendingPromise)return options.pendingPromise;
       if(options.reject)return Promise.reject(new Error('simulated network failure'));
       if(options.nextState !== undefined)current=options.nextState;
       if(options.nextReviews)reviews=options.nextReviews;
@@ -49,7 +53,8 @@ function harness(options = {}) {
     Promise, console,
     document:{getElementById:id=>id==='psPushNow'?button:id==='psPushState'?status:null},
     localStorage:{getItem:k=>k==='ps_last_pull_at'?String(options.lastPull || 999):null},
-    PSSync:api,
+    PSSync:api,PSAutosaveStatus:presentation,
+    addEventListener(name,fn){(events[name]||(events[name]=[])).push(fn);},
     PSDataReview:{list:()=>reviews,pending:()=>reviews.filter(x=>!['rescue','conflict'].includes(x.src)),open:()=>{opened++;}},
     toast:message=>toasts.push(String(message)),
     alert:message=>alerts.push(String(message)),
@@ -73,8 +78,11 @@ function harness(options = {}) {
     get opened(){return opened;},
     refresh(){ctx.__psRefreshPushState();},
     async click(){assert.equal(typeof handlers.click,'function');handlers.click();await flush();},
+    start(){return handlers.click();},flush,
     state(value){current=value;},
     logout(){session=null;},
+    switchTeam(){workspace='team-b';},
+    event(name,detail){for(const fn of events[name]||[])fn({detail});},
   };
 }
 
@@ -87,7 +95,7 @@ test('personal pending remains visible when the active team outbox is empty',()=
   const state={kind:'busy',text:'개인 자료 올리는 중 · 2',n:2,review:0};
   const h=harness({state,teamPending:0});
   h.refresh();
-  assert.ok(h.status.textContent.includes(state.text));
+  assert.ok(h.status.textContent===presentation.view(state).text);
   noSuccess(h);
 });
 
@@ -95,7 +103,7 @@ test('personal upload failure is preserved despite an old successful team pull',
   const state={kind:'bad',text:'개인 자료를 못 올렸어요 · 저장소를 확인해 주세요',reason:'sync_storage',n:1,review:0};
   const h=harness({state,teamPending:0,lastPull:99999});
   h.refresh();h.refresh();
-  assert.ok(h.status.textContent.includes(state.text));
+  assert.ok(h.status.textContent===presentation.view(state).text);
   noSuccess(h);
 });
 
@@ -117,13 +125,13 @@ test('a confirmed state can display its successful synchronization status',()=>{
   assert.ok(SUCCESS.test(h.status.textContent));
 });
 
-test('personal conflict opens the actual data review instead of uploading again',async()=>{
+test('personal conflict stays compact and retry never opens document choices',async()=>{
   const h=harness({state:{kind:'ask',text:'올리기 전 확인할 것 1',n:1,review:1},reviews:[{src:'personal',k:'cs_notes_v1'}]});
   h.refresh();
-  assert.equal(h.button.textContent,'내용 선택');
+  assert.equal(h.button.textContent,'다시 시도');
   await h.click();
-  assert.equal(h.opened,1);
-  assert.equal(h.calls.length,0);
+  assert.equal(h.opened,0);
+  assert.equal(h.calls.length,1);
   noSuccess(h);
 });
 
@@ -132,7 +140,7 @@ test('manual team success cannot conceal a failed personal backup',async()=>{
   const h=harness({result:{pushed:1,applied:0,personalError:'permission'},nextState:state,teamPending:0});
   await h.click();
   assert.equal(h.calls.length,1);
-  assert.ok(h.status.textContent.includes(state.text));
+  assert.ok(h.status.textContent===presentation.view(state).text);
   assert.equal(h.button.disabled,false);
   noSuccess(h);
 });
@@ -166,7 +174,7 @@ for(const kind of ['busy','bad']){
     const state={kind,text:kind==='busy'?'개인 자료 올리는 중 · 1':'개인 자료를 못 올렸어요 · 오프라인',n:1,review:0};
     const h=harness({result:{pushed:2,applied:1},nextState:state});
     await h.click();
-    assert.ok(h.status.textContent.includes(state.text));
+    assert.ok(h.status.textContent===presentation.view(state).text);
     noSuccess(h);
   });
 }
@@ -175,7 +183,7 @@ test('a review discovered during sync prevents a completion announcement',async(
   const state={kind:'ask',text:'올리기 전 확인할 것 1',n:1,review:1};
   const h=harness({result:{pushed:1},nextState:state,nextReviews:[{src:'personal'}]});
   await h.click();
-  assert.equal(h.button.textContent,'내용 선택');
+  assert.equal(h.button.textContent,'다시 시도');
   noSuccess(h);
 });
 
@@ -188,38 +196,41 @@ test('unconfirmed ok does not turn an empty manual response into success',async(
 test('confirmed completion still announces success and enables the button',async()=>{
   const h=harness({result:{pushed:1,applied:1},nextState:{...confirmed,at:200}});
   await h.click();
-  assert.ok(h.toasts.some(x=>SUCCESS.test(x)),'Real completion remains visible');
+  assert.equal(h.status.textContent,'저장됨','Only the confirmed status announces completion');
+  assert.deepEqual(h.toasts,[]);
   assert.equal(h.button.disabled,false);
 });
 
 test('archived recovery copies do not prompt or replace ordinary manual synchronization',async()=>{
   const h=harness({reviews:[{src:'rescue',k:'saved-roster'},{src:'conflict',k:'saved-notes'}],result:{pushed:1,applied:1},nextState:{...confirmed,at:200}});
   h.refresh();
-  assert.equal(h.button.textContent,'지금 동기화');
+  assert.equal(h.button.textContent,'저장 확인');
   assert.ok(SUCCESS.test(h.status.textContent));
   await h.click();
   assert.equal(h.opened,0,'Archived copies remain accessible separately and never open a required choice');
   assert.deepEqual(h.calls,['manual-push']);
-  assert.ok(h.toasts.some(x=>SUCCESS.test(x)));
+  assert.equal(h.status.textContent,'저장됨');
+  assert.deepEqual(h.toasts,[]);
   assert.equal(h.button.disabled,false);
 });
 
-test('an active choice still blocks manual upload when archived copies are present',async()=>{
+test('active conflicts keep their status during a safe engine retry without a popup',async()=>{
   const h=harness({reviews:[{src:'rescue',k:'saved-roster'},{src:'personal',k:'current-notes'},{src:'conflict',k:'saved-analysis'}]});
   h.refresh();
-  assert.equal(h.button.textContent,'내용 선택');
-  assert.match(h.status.textContent,/1건/,'Only the unresolved item contributes to the required choice count');
+  assert.equal(h.button.textContent,'다시 시도');
+  assert.equal(h.status.textContent,'일부 변경 보관');
+  assert.doesNotMatch(h.status.textContent,/선택|건/);
   await h.click();
-  assert.equal(h.opened,1);
-  assert.deepEqual(h.calls,[]);
+  assert.equal(h.opened,0);
+  assert.deepEqual(h.calls,['manual-push']);
 });
 
-test('pending deletion alone opens the normal review instead of starting synchronization',async()=>{
+test('pending deletion stays protected by the engine without opening an ordinary dialog',async()=>{
   const h=harness({state:{kind:'ask',text:'저장할 내용 선택 · 1건',review:1,n:0},reviews:[{src:'item-hold',k:'scout_tool_v1'}]});
   h.refresh();
-  assert.equal(h.button.textContent,'내용 선택');assert.match(h.status.textContent,/1건/);
+  assert.equal(h.button.textContent,'다시 시도');assert.equal(h.status.textContent,'일부 변경 보관');
   await h.click();
-  assert.equal(h.opened,1);assert.deepEqual(h.calls,[]);noSuccess(h);
+  assert.equal(h.opened,0);assert.deepEqual(h.calls,['manual-push']);noSuccess(h);
 });
 
 test('rejected manual sync never announces success and re-enables retry',async()=>{
@@ -263,4 +274,35 @@ test('logged-out settings remain disabled and do not advertise synchronized data
   h.refresh();
   assert.equal(h.button.disabled,true);
   noSuccess(h);
+});
+
+
+test('an in-flight manual retry cannot display an old saved state',async()=>{
+  let resolve;const promise=new Promise(r=>{resolve=r;}),h=harness({pendingPromise:promise});
+  const request=h.start();await new Promise(r=>setImmediate(r));h.refresh();
+  assert.equal(h.status.textContent,'저장 중…');assert.equal(h.button.disabled,true);noSuccess(h);
+  h.state({...confirmed,at:200});resolve({pushed:1});await request;
+  assert.equal(h.status.textContent,'저장됨');assert.equal(h.button.disabled,false);
+});
+
+test('a late failure from a previous team cannot replace the new team status',async()=>{
+  let reject;const promise=new Promise((_,r)=>{reject=r;}),h=harness({pendingPromise:promise});
+  const request=h.start();await new Promise(r=>setImmediate(r));
+  h.switchTeam();h.state({...confirmed,at:500});h.refresh();
+  reject(new Error('previous team request failed'));await request;
+  assert.equal(h.status.textContent,'저장됨');assert.equal(h.opened,0);assert.equal(h.button.disabled,false);
+});
+
+test('newly archived edits retain an explicit preserved-content status after server acknowledgement',async()=>{
+  const h=harness({result:{pushed:1},nextState:{...confirmed,at:200,archivedCount:27}});
+  await h.click();assert.equal(h.status.textContent,'일부 변경 별도 보관');
+  assert.equal(h.opened,0);assert.deepEqual(h.toasts,[]);noSuccess(h);
+});
+
+
+test('same-account authentication refresh never releases an in-flight save status',async()=>{
+  let resolve;const promise=new Promise(r=>{resolve=r;}),h=harness({pendingPromise:promise});
+  const request=h.start();await new Promise(r=>setImmediate(r));h.event('ps-auth-state',{unlocked:true});
+  assert.equal(h.status.textContent,'저장 중…');assert.equal(h.button.disabled,true);noSuccess(h);
+  h.state({...confirmed,at:200});resolve({pushed:1});await request;assert.equal(h.status.textContent,'저장됨');
 });

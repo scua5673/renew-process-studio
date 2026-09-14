@@ -32,6 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
+<script src="autosave-status.js?v=2.817"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -501,7 +502,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.816';</script>
+<script>window.PS_BUILD='2.817';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1130,16 +1131,27 @@ function psShowUpdBand(){
              평소에는 '지금 동기화' 하나만 보이고, 실제로 크게 줄어든 변경이 막혔을 때만
              같은 버튼이 '확인'으로 바뀐다. 안전장치는 유지하되 내부 상태를 여러 군데 노출하지 않는다. -->
         <!-- 2.337 ⚠ 탭 CSS 가 [data-gp-tab] 에 display:grid!important 를 강제한다 — 문장을 span 하나로 감싸 그리드 칸 하나로 만든다(안 감싸면 <b> 마다 행으로 갈라진다) -->
-        <div data-gp-tab="data" style="font-size:11px;line-height:1.55;color:#8A9099;padding:2px 2px 0"><span>동기화는 클라우드와 맞춤 · 자동 백업은 이 기기 · 파일은 표시된 메뉴 범위</span></div>
+        <div data-gp-tab="data" style="font-size:11px;line-height:1.55;color:#8A9099;padding:2px 2px 0"><span>변경사항은 자동 저장됩니다. 백업과 복구 도구는 고급에서 확인합니다.</span></div>
         <div class="gp-row"><span class="gp-lb">상태</span>
           <span id="psPushState" style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4">확인 중…</span>
-          <button type="button" id="psPushNow" title="이 기기와 팀의 최신 자료를 서로 맞춥니다"
-            style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font-family:Pretendard,system-ui;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap">지금 동기화</button>
+          <button type="button" id="psPushNow" title="자동 저장 상태를 다시 확인합니다"
+            style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font-family:Pretendard,system-ui;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap">저장 확인</button>
         </div>
         <div class="gp-row"><span class="gp-lb">자료 복구</span>
           <span style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4">이전 저장 내용과 보관된 사본을 확인합니다</span>
           <button type="button" id="psRecoveryOpen" style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font:800 11px Pretendard,system-ui;cursor:pointer;white-space:nowrap">복구 도구</button>
         </div>
+        <div class="gp-row"><span class="gp-lb">보관된 변경</span>
+          <span id="psAutosaveRecoveryState" style="font-size:11px;color:var(--dim);line-height:1.4">다른 변경과 겹쳐 별도로 보관한 내용</span>
+          <button type="button" id="psAutosaveRecoveryOpen" style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font:800 11px Pretendard,system-ui;cursor:pointer;white-space:nowrap">보관 내용 보기</button>
+        </div>
+        <div id="psRecoveryNotes" class="gp-row"><span class="gp-lb">최근 복구</span><div class="ps-recovery-notes">
+  <!-- 2.626 — 막지 않고 되돌리기: 줄어든 값이 올라간 뒤 24시간 동안 그 자리에 «n개가 빠진 채 올라갔어요 [되돌리기]» -->
+  <div id="psUndoBar" style="display:none" role="status"><div id="psUndoTx"></div><button type="button" id="psUndoDo">되돌리기</button><button type="button" id="psUndoClose" aria-label="닫기">닫기</button></div>
+  <!-- 2.629 — 같은 항목을 둘이 다르게 고쳐 내 것이 밀렸을 때 한 줄(묻지 않는다 · 24시간) -->
+  <div id="psMergeBar" style="display:none" role="status"><div id="psMergeTx"></div><button type="button" id="psMergeMine">내 것으로</button><button type="button" id="psMergeOk" aria-label="확인">확인</button></div>
+          <p id="psRecoveryNotesEmpty" style="font-size:11px;color:var(--dim);margin:0">되돌릴 최근 변경이 없습니다.</p>
+        </div></div>
         <!-- 2.352 — 팀 자료를 **한 방향으로** 통일하는 도구(사용자). 평소 동기화는 양방향 병합이라
              "지금 팀 것으로" · "지금 내 것으로" 를 못 한다. 되돌릴 수 없으므로 **두 번 묻는다**. -->
         <div class="gp-row"><span class="gp-lb">고급</span>
@@ -1200,16 +1212,16 @@ function psShowUpdBand(){
       /* 2.632 — 데이터 탭을 세 묶음으로(목업 «설정 › 동기화»): 상태 → 문제가 있을 때 → 고급·운영진. 마크업·id·핸들러는 그대로, 순서와 묶음 제목만.
          진단·팀 기록 행은 탭이 안 달려 모든 탭에 보이던 것을 데이터 탭으로 모은다. */
       try{
-        ['psDiagOpen','psHistOpen','psRecoveryOpen'].forEach(function(id){var r=rowOf(id);if(r)r.setAttribute('data-gp-tab','data');});
+        ['psDiagOpen','psHistOpen','psRecoveryOpen','psAutosaveRecoveryOpen','psRecoveryNotes'].forEach(function(id){var r=rowOf(id);if(r)r.setAttribute('data-gp-tab','data');});
         var lb=function(id,t){var r=rowOf(id);var e=r&&r.querySelector('.gp-lb');if(e)e.textContent=t;};
-        lb('psPushNow','동기화'); lb('psDiagOpen','진단'); lb('psHistOpen','되돌리기'); lb('psBulkPull','통째로'); lb('psSnapOpen','자동 백업');
+        lb('psPushNow','자동 저장'); lb('psDiagOpen','진단'); lb('psHistOpen','되돌리기'); lb('psBulkPull','통째로'); lb('psSnapOpen','자동 백업');
         var grp=function(t){var d=document.createElement('div');d.className='gp-grp';d.setAttribute('data-gp-tab','data');d.innerHTML='<span>'+t+'</span>';return d;};
         /* 2.633 — 고급 묶음은 접어 둔다(사용자 "앱 설정이 너무 긴데"). 누르면 펼침. 높이 고정(lockH)은 접힌 상태로 다시 잰다 */
         var adv=grp('고급 · 운영진 ▸'); adv.classList.add('gp-grp-adv'); adv.setAttribute('role','button'); adv.setAttribute('tabindex','0');
         var advToggle=function(e){ if(e)e.stopPropagation(); var open=!p.classList.contains('gp-adv-open'); p.classList.toggle('gp-adv-open',open); adv.firstChild.textContent='고급 · 운영진 '+(open?'▾':'▸'); p.style.minHeight=''; try{ lockH(); }catch(_){} };
         adv.addEventListener('click',advToggle); adv.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); advToggle(e); } });
-        ['psHistOpen','psRecoveryOpen','psBulkPull','psSnapOpen','bkup'].forEach(function(id){ var r=rowOf(id); if(r)r.setAttribute('data-gp-adv','1'); });
-        var order=[grp('지금 상태'),rowOf('psPushNow'),grp('문제가 있을 때'),rowOf('psDiagOpen'),adv,rowOf('psHistOpen'),rowOf('psRecoveryOpen'),rowOf('psBulkPull'),rowOf('psSnapOpen'),rowOf('bkup')].filter(Boolean);
+        ['psDiagOpen','psHistOpen','psRecoveryOpen','psAutosaveRecoveryOpen','psRecoveryNotes','psBulkPull','psSnapOpen','bkup'].forEach(function(id){ var r=rowOf(id); if(r)r.setAttribute('data-gp-adv','1'); });
+        var order=[grp('지금 상태'),rowOf('psPushNow'),adv,rowOf('psDiagOpen'),rowOf('psHistOpen'),rowOf('psRecoveryOpen'),rowOf('psAutosaveRecoveryOpen'),rowOf('psRecoveryNotes'),rowOf('psBulkPull'),rowOf('psSnapOpen'),rowOf('bkup')].filter(Boolean);
         var first=rowOf('psPushNow'),box=first&&first.parentNode;
         if(box){var mk=document.createComment('gp-data');box.insertBefore(mk,first);order.forEach(function(el){if(el.parentNode===box||!el.parentNode)box.insertBefore(el,mk);});box.removeChild(mk);}
       }catch(_){}
@@ -1235,9 +1247,9 @@ function psShowUpdBand(){
       }catch(_){}}
       try{var gb=document.getElementById('gearBtn');
         if(gb)gb.addEventListener('click',function(){try{select('device');}catch(_){} requestAnimationFrame(lockH);});}catch(_){}   /* 2.700 — 열 때마다 기기 탭 */
-      /* 데이터 탭 점: 동기화 버튼이 '지금 동기화'가 아니면(막힘·확인 필요) */
-      var dot=function(){try{var b=document.getElementById('psPushNow');btns.data.setAttribute('data-dot',(b&&b.textContent.trim()&&b.textContent.trim()!=='지금 동기화')?'1':'0');}catch(_){}};
-      dot();try{var pn=document.getElementById('psPushNow');if(pn)new MutationObserver(dot).observe(pn,{childList:true,characterData:true,subtree:true});}catch(_){}
+      /* 버튼 문구 대신 실제 저장 상태만 데이터 탭 알림에 반영한다. */
+      var dot=function(){try{var s=window.__psAutosaveView?window.__psAutosaveView():(window.PSAutosaveStatus&&PSAutosaveStatus.view(window.PSSync&&PSSync.state?PSSync.state():null));btns.data.setAttribute('data-dot',s&&s.attention?'1':'0');}catch(_){btns.data.setAttribute('data-dot','0');}};
+      window.__psRefreshSaveDot=dot;dot();window.addEventListener('ps-sync-state',dot);window.addEventListener('ps-auth-state',dot);
     })();
     </script>
     <button type="button" id="psSupportOpen" aria-haspopup="dialog" aria-controls="psSupportDialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l6 6v6l-6 6H9l-6-6V9z"/><path d="M12 7v6m0 4h.01"/></svg><span>오류 제보</span></button>
@@ -1392,52 +1404,21 @@ function psShowUpdBand(){
       <button id="bkLater" style="border:0;background:transparent;color:#A8946B;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;padding:5px 6px">나중에</button>
     </span>
   </div>
-  <!-- 2.625 — 상태 한 줄(목업 «코치는 동기화를 이해할 필요가 없어야 한다» 첫 판). 팀 화면 어디서나 같은 자리, 세 상태 + 과도기 «확인할 것». 로그아웃이면 숨김 -->
+  <!-- 자동 저장 상태: 서버 확인 전에는 완료로 표시하지 않는다. 복구는 설정 고급에서 연다. -->
   <div id="psSyncStrip" style="display:none" role="status" aria-live="polite"><i></i><span id="psSyncStripTx"></span><span id="psSyncStripAgo"></span><button type="button" id="psSyncStripBtn" style="display:none"></button></div>
-  <!-- 2.626 — 막지 않고 되돌리기: 줄어든 값이 올라간 뒤 24시간 동안 그 자리에 «n개가 빠진 채 올라갔어요 [되돌리기]» -->
-  <div id="psUndoBar" style="display:none" role="status"><div id="psUndoTx"></div><button type="button" id="psUndoDo">되돌리기</button><button type="button" id="psUndoClose" aria-label="닫기">닫기</button></div>
-  <!-- 2.629 — 같은 항목을 둘이 다르게 고쳐 내 것이 밀렸을 때 한 줄(묻지 않는다 · 24시간) -->
-  <div id="psMergeBar" style="display:none" role="status"><div id="psMergeTx"></div><button type="button" id="psMergeMine">내 것으로</button><button type="button" id="psMergeOk" aria-label="확인">확인</button></div>
   <style id="ps-2625-strip">
-    #psSyncStrip{display:flex;align-items:center;gap:8px;height:32px;padding:0 14px;font:600 12px Pretendard,system-ui,sans-serif;border-bottom:1px solid var(--line);background:var(--bar2);color:var(--dim);flex:0 0 auto}
-    #psSyncStrip i{width:8px;height:8px;border-radius:50%;background:#8A9099;flex:0 0 auto}
-    #psSyncStrip.ok{background:rgba(31,138,76,.10);color:#1F8A4C}#psSyncStrip.ok i{background:#1F8A4C}
-    /* 2.651 — «괜찮은» 상태(ok·busy)는 한 줄을 다 쓰지 않는다(사용자 "오른쪽 상단에 아주 작게"). 띠 없이 오른쪽 위 구석에 점 + 짧은 글씨만.
-       확인이 필요한 상태(ask·bad)는 그대로 띠 — 눈에 띄어야 하니까. 폰(≤600)은 머리줄이 좁아 지금처럼 */
-    /* 2.701 — 편집기(훈련 세션 만들기 등)가 열려 있는 동안 오른쪽 위 동기화 글씨(ok·busy 모두)를 숨긴다 — «저장하기»와 겹침. 2.698 에 넣은 규칙이 폰(≤600) 블록 안에 들어가 데스크톱·아이패드에서 안 먹었다(실측: busy 글씨 right 1153 = 저장하기 right 1153) */
-    body.ps-editor-open[data-ps-app="design"] #psSyncStrip,body.ps-editor-open[data-ps-app="board"] #psSyncStrip{display:none!important}
-    @media (min-width:601px){
-      /* 2.652 — 제 줄을 갖지 않고 **헤더 줄 안** 오른쪽 위 구석에 얹는다(사용자 "여기 헤더에 같이"). 흐름에서 빼(fixed) 본문이 맨 위부터 시작하고,
-         프레임 머리줄(보드·보관함·IDP 상단 바)의 위 여백 자리(y 3~17)에 10px 글씨로만. 눌리는 것도 아니라 pointer-events 없음 */
-      #psSyncStrip.ok,#psSyncStrip.busy{position:fixed;top:21px;right:14px;left:auto;height:14px;line-height:14px;margin:0!important;justify-content:flex-end;gap:5px;padding:0;background:transparent;border-bottom:0;font-size:10px;font-weight:600;color:var(--dim);z-index:300;pointer-events:none;max-width:40vw}
-      #psSyncStrip.ok{color:#1F8A4C}
-      #psSyncStrip.ok i,#psSyncStrip.busy i{width:6px;height:6px}
-      #psSyncStrip.ok #psSyncStripTx,#psSyncStrip.busy #psSyncStripTx{flex:0 0 auto}
-      #psSyncStrip.ok #psSyncStripAgo,#psSyncStrip.busy #psSyncStripAgo{margin-left:0;opacity:.7}
-      #psSyncStrip.ok #psSyncStripAgo::before,#psSyncStrip.busy #psSyncStripAgo::before{content:'· '}
-      #psSyncStrip.ok #psSyncStripAgo:empty::before{content:none}
-      /* 2.655 — 머리줄(56px)과 세로 가운데(사용자 "헤더의 가운데 정렬 … 세로로"): 기본 top 21(14px 글씨의 중심 = 28).
-         팀 공간은 머리줄 오른쪽이 날짜·날씨 글이라 탭 줄(56~96) 가운데 top 69. IDP(폰 틀)는 위 20px 이 비어 있어 top 3 그대로 */
-      /* 2.656 — 팀 공간도 머리줄 가운데(top 21): 오른쪽의 날짜 줄을 지워 자리가 났다 */
-      body.ps-idp-phone #psSyncStrip.ok,body.ps-idp-phone #psSyncStrip.busy{top:3px}
-    }
-    /* 2.662 — 폰(≤600)도 «괜찮은» 상태는 띠 대신 얇은 한 줄(18px·오른쪽·투명). 실측: 초록 띠가 팀 머리줄·서브 탭 사이에 끼어 한 줄을 통째로 썼다 */
-    @media (max-width:600px){
-      #psSyncStrip.ok,#psSyncStrip.busy{height:18px;justify-content:flex-end;gap:5px;padding:0 12px;background:transparent;border-bottom:0;font-size:10px;font-weight:600;color:var(--dim)}
-      #psSyncStrip.ok{color:#1F8A4C}
-      #psSyncStrip.ok i,#psSyncStrip.busy i{width:6px;height:6px}
-      #psSyncStrip.ok #psSyncStripTx,#psSyncStrip.busy #psSyncStripTx{flex:0 0 auto}
-      #psSyncStrip.ok #psSyncStripAgo,#psSyncStrip.busy #psSyncStripAgo{margin-left:0;opacity:.7}
-      #psSyncStrip.ok #psSyncStripAgo::before,#psSyncStrip.busy #psSyncStripAgo::before{content:'· '}
-      #psSyncStrip.ok #psSyncStripAgo:empty::before{content:none}
-    }
+    #psSyncStrip{display:flex;align-items:center;justify-content:flex-end;gap:6px;height:24px;padding:0 12px;font:600 11px Pretendard,system-ui,sans-serif;color:var(--dim);flex:0 0 auto;background:transparent}
+    #psSyncStrip i{width:6px;height:6px;border-radius:50%;background:#8A9099;flex:none}
+    #psSyncStrip.ok{color:#1F8A4C}#psSyncStrip.ok i{background:#1F8A4C}
+    #psSyncStrip.bad i{background:#C24A46}#psSyncStrip.held i{background:#B5762B}
     #psSyncStrip.busy i{animation:psStripPulse 1.2s infinite}
-    #psSyncStrip.bad{background:rgba(194,74,70,.10);color:#C24A46}#psSyncStrip.bad i{background:#C24A46}
-    #psSyncStrip.ask{background:rgba(181,118,43,.12);color:#B5762B}#psSyncStrip.ask i{background:#B5762B}
     #psSyncStripTx{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    #psSyncStripAgo{margin-left:auto;font-weight:500;opacity:.8;white-space:nowrap}
-    #psSyncStripBtn{margin-left:auto;height:24px;padding:0 12px;border-radius:999px;border:0;background:currentColor;font:600 11px Pretendard,system-ui,sans-serif;cursor:pointer;flex:0 0 auto;position:relative}
-    #psSyncStripBtn span{color:#fff;position:relative}
+    #psSyncStripAgo{display:none}
+    #psSyncStripBtn{height:24px;padding:0 5px;border:0;border-radius:5px;background:transparent;color:inherit;font:600 11px Pretendard,system-ui,sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer;flex:none}
+    #psSyncStripBtn:disabled{opacity:.5;cursor:default}
+    #psSyncStripBtn:focus-visible{outline:2px solid var(--blue,#3a6df0);outline-offset:2px}
+    body.ps-editor-open[data-ps-app="design"] #psSyncStrip,body.ps-editor-open[data-ps-app="board"] #psSyncStrip{display:none!important}
+    @media(min-width:601px){#psSyncStrip{position:fixed;top:16px;right:14px;left:auto;margin:0!important;padding:0;max-width:40vw;z-index:300}body.ps-idp-phone #psSyncStrip{top:0}}
     #psUndoBar{display:flex;align-items:center;gap:10px;padding:8px 14px;font:600 12px Pretendard,system-ui,sans-serif;background:rgba(181,118,43,.12);color:var(--ink);border-bottom:1px solid var(--line);flex:0 0 auto;margin-left:var(--ps-side-w)}
     body.focus #psUndoBar,body.vfull #psUndoBar{margin-left:0}
     #psMergeBar{display:flex;align-items:center;gap:10px;padding:8px 14px;font:600 12px Pretendard,system-ui,sans-serif;background:rgba(58,109,240,.10);color:var(--ink);border-bottom:1px solid var(--line);flex:0 0 auto;margin-left:var(--ps-side-w)}
@@ -1450,32 +1431,38 @@ function psShowUpdBand(){
     #psUndoDo{height:28px;padding:0 12px;border-radius:999px;border:1px solid #B5762B;background:var(--surface);color:#B5762B;font:600 12px Pretendard,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
     #psUndoBar.done #psUndoDo{display:none}
     #psUndoClose{height:28px;padding:0 8px;border:0;background:transparent;color:var(--faint);font:600 12px Pretendard,system-ui,sans-serif;cursor:pointer}
+    @media(min-width:601px){#psReleaseNotes:not([hidden])~#psSyncStrip{position:static;top:auto;right:auto;left:auto;margin:0 0 0 var(--ps-side-w,0px)!important;max-width:none;padding:0 14px;z-index:auto}body.focus #psReleaseNotes:not([hidden])~#psSyncStrip,body.vfull #psReleaseNotes:not([hidden])~#psSyncStrip{margin-left:0!important}}
+    #gearPop .gp-row:has(>#psPushNow),#gearPop .gp-row:has(>#psDiagOpen),#gearPop .gp-row:has(>#psHistOpen),#gearPop .gp-row:has(>#psRecoveryOpen),#gearPop .gp-row:has(>#psAutosaveRecoveryOpen){grid-template-columns:64px minmax(0,1fr) auto}
+    #gearPop #psRecoveryNotes{grid-template-columns:64px minmax(0,1fr);align-items:start}
+    #gearPop .ps-recovery-notes{min-width:0}
+    #gearPop #psUndoBar,#gearPop #psMergeBar{flex-wrap:wrap;margin:0 0 9px;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:11px}
+    #gearPop #psUndoTx,#gearPop #psMergeTx{flex-basis:100%}
+    #gearPop #psUndoTx span,#gearPop #psMergeTx span{font-size:10px}
     @keyframes psStripPulse{0%,100%{opacity:.35}50%{opacity:1}}
     @media (prefers-reduced-motion:reduce){#psSyncStrip.busy i{animation:none}}
   </style>
   <script>
-  /* 2.625 — 상태 한 줄. sync.js 의 PSSync.state() 를 읽어 그린다. 판정은 sync.js 그대로, 여기는 문장·색·버튼뿐 */
+  /* 엔진 상태를 작은 자동 저장 표시로 그린다. 일반 진입에서 문서 선택창을 열지 않는다. */
   (function(){
     var el=document.getElementById('psSyncStrip'),tx=document.getElementById('psSyncStripTx'),ago=document.getElementById('psSyncStripAgo'),btn=document.getElementById('psSyncStripBtn');
+    function currentView(){
+      if(window.__psAutosaveView)return window.__psAutosaveView();
+      var state=null;try{state=window.PSSync&&PSSync.state&&PSSync.state();}catch(_){}
+      return window.PSAutosaveStatus?PSAutosaveStatus.view(state):{kind:'off'};
+    }
     function draw(){
-      var S=window.PSSync; if(!S||!S.state){ el.style.display='none'; return; }
-      var st=null; try{ st=S.state(); }catch(_){ st=null; }
-      if(!st||st.kind==='off'){ el.style.display='none'; return; }
-      el.style.display='flex'; el.className=st.kind; tx.textContent=st.text; ago.textContent=(st.kind==='ok'&&st.ago)?st.ago:'';
-      var lbl='';
-      if(st.kind==='ask')lbl='내용 선택';
-      else if(st.kind==='pending')lbl='상태';
-      else if(st.kind==='bad'&&st.reason!=='sync_offline')lbl=(st.reason==='sync_permission')?'보기':(st.reason==='sync_auth'?'로그인':'다시');
-      if(lbl){ btn.style.display=''; btn.innerHTML='<span>'+lbl+'</span>'; } else btn.style.display='none';
+      var st=currentView();
+      if(!st||st.kind==='off'){el.style.display='none';return;}
+      el.style.display='flex';el.className=st.kind;el.title=st.detail||'';tx.textContent=st.text;ago.textContent='';
+      var label=st.action==='login'?'로그인':st.action==='retry'?'다시 시도':st.action==='recovery'?'보관 내용':'';
+      btn.style.display=label?'':'none';btn.textContent=label;btn.disabled=st.kind==='busy';
     }
     btn.addEventListener('click',function(){
-      var S=window.PSSync, st=null; try{ st=S.state(); }catch(_){}
-      if(!st)return;
-      if(st.kind==='pending'){var diag=document.getElementById('psDiagOpen');if(diag)diag.click();return;}
-      if(st.kind==='ask'||st.reason==='sync_permission'){ try{ if(window.PSDataReview&&PSDataReview.open){PSDataReview.open();return;} }catch(_){} try{ S.hold.open(); }catch(_){} return; }
-      if(st.reason==='sync_auth'){ try{ var b=document.querySelector('.acct-btn'); if(b)b.click(); }catch(_){} return; }
-      btn.innerHTML='<span>…</span>'; try{ S.syncNow('strip'); }catch(_){} setTimeout(draw,400);
+      var st=currentView();if(!st||!st.action)return;
+      if(st.action==='recovery'){var recovery=document.getElementById('psAutosaveRecoveryOpen');if(recovery)recovery.click();return;}
+      if(window.__psAutosaveRetry)window.__psAutosaveRetry();
     });
+    window.__psDrawAutosave=draw;
     /* 2.626 — 되돌리기 줄 */
     var ub=document.getElementById('psUndoBar'),utx=document.getElementById('psUndoTx'),udo=document.getElementById('psUndoDo'),ucl=document.getElementById('psUndoClose'),uDone=null;
     function drawUndo(){
@@ -1516,7 +1503,7 @@ function psShowUpdBand(){
     mmine.addEventListener('click',function(){ var S=window.PSSync, id=mb.getAttribute('data-id'); if(!S||!id)return; mmine.disabled=true; mmine.textContent='되돌리는 중…';
       S.merge.revert(id).then(function(ok){ mmine.disabled=false; mmine.textContent='내 것으로'; if(!ok){ mtx.innerHTML='<b>되돌리지 못했어요</b><span>그 날짜를 열어 직접 고쳐 주세요</span>'; return; } drawMerge(); }); });
     mok.addEventListener('click',function(){ var S=window.PSSync, id=mb.getAttribute('data-id'); try{ if(S&&S.merge&&id)S.merge.dismiss(id); }catch(_){} drawMerge(); });
-    var draw0=draw; draw=function(){ draw0(); drawUndo(); drawMerge(); };
+    var draw0=draw; draw=function(){draw0();drawUndo();drawMerge();var empty=document.getElementById('psRecoveryNotesEmpty');if(empty)empty.style.display=ub.style.display==='none'&&mb.style.display==='none'?'':'none';};
     window.addEventListener('ps-sync-state',draw); window.addEventListener('online',draw); window.addEventListener('offline',draw);
     setInterval(draw,5000); setTimeout(draw,1500); setTimeout(draw,6000);
   })();
@@ -3201,81 +3188,75 @@ function psShowUpdBand(){
     setTimeout(go,3000);
   });
 
-  /* ── 1.643 · 동기화 한 줄 ────────────────────────────────────────────────
-     syncNow 는 원래 올리기와 받기를 한 번에 한다. 같은 엔진을 두 버튼으로 나눠 설명하던 UI를
-     한 줄로 되돌린다. 크게 줄어든 변경만 예외로 같은 버튼이 '확인'으로 바뀐다. */
+  /* 상단과 설정은 같은 저장 상태를 쓴다. 수동 재시도도 일반 자동 저장 엔진으로 보낸다. */
   var pbtn=document.getElementById('psPushNow'), pst=document.getElementById('psPushState');
-  var pushNotice=null;
+  var pushNotice=null,pushInFlight=null,pushSequence=0;
   function pushState(){try{return window.PSSync&&PSSync.state&&PSSync.state();}catch(_){return null;}}
-  function holdCount(){ try{ return ((window.PSSync&&PSSync.hold&&PSSync.hold.list&&PSSync.hold.list())||[]).length; }catch(_){ return 0; } }
-  /* 일반 저장 상태에는 실제 보류만 센다. 과거 사본은 고급 복구 도구에서 따로 확인한다. */
-  function reviewCount(){ try{ if(window.PSDataReview){
-    if(PSDataReview.pending)return (PSDataReview.pending()||[]).length;
-    if(PSDataReview.list)return (PSDataReview.list()||[]).filter(function(x){return x.src!=='rescue'&&x.src!=='conflict';}).length;
-  } }catch(_){} return holdCount(); }
-  function openReview(){
-    try{ if(window.PSDataReview&&PSDataReview.open){ PSDataReview.open(); return; } }catch(_){}
-    try{ window.PSSync.hold.open(); }catch(_){ alert('확인 화면을 열지 못했습니다.'); }
+  function pushScope(){try{var S=window.PSSync,s=S&&S.session&&S.session();return s&&s.uid&&(!S.dataUnlocked||S.dataUnlocked())?JSON.stringify([s.uid,S.activeWs?S.activeWs():'',localStorage.getItem('ps_ws_switch_epoch_v1')||'']):'';}catch(_){return '';}}
+  function autosaveView(state){return window.PSAutosaveStatus?PSAutosaveStatus.view(state):{kind:'pending',text:'저장 상태를 불러오지 못했어요',detail:'페이지를 다시 열어 주세요.',action:'retry',attention:true,complete:false};}
+  function saveView(){
+    var scope=pushScope(),state=pushState(),view=autosaveView(scope?state:null);
+    if(pushInFlight&&pushInFlight.scope!==scope)pushInFlight=null;
+    if(pushNotice&&pushNotice.scope!==scope)pushNotice=null;
+    if(pushNotice&&view.complete&&Number(state.at)>pushNotice.at)pushNotice=null;
+    if(pushInFlight)return autosaveView({kind:'busy'});
+    if(view.kind==='bad')return view;
+    return pushNotice?pushNotice.view:view;
   }
+  window.__psAutosaveView=saveView;
   var recoveryButton=document.getElementById('psRecoveryOpen');
   if(recoveryButton)recoveryButton.addEventListener('click',function(){
     try{if(window.PSDataReview&&PSDataReview.recovery){PSDataReview.recovery();return;}}catch(_){}
     alert('복구 도구를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
   });
+  var autosaveRecoveryButton=document.getElementById('psAutosaveRecoveryOpen');
+  if(autosaveRecoveryButton)autosaveRecoveryButton.addEventListener('click',function(){
+    try{if(window.PSAutosaveRecovery&&PSAutosaveRecovery.open){PSAutosaveRecovery.open();return;}}catch(_){}
+    var status=document.getElementById('psAutosaveRecoveryState');if(status)status.textContent='보관 내용을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+  });
   function refreshPushState(){
     if(!pst)return;
-    var S=window.PSSync;
-    if(!S||!S.session||!S.session()){ pst.textContent='로그인하면 팀과 함께 씁니다'; if(pbtn)pbtn.disabled=true; return; }
-    if(pbtn)pbtn.disabled=false;
-    /* 2.745 — 팀 대기함만 비었다고 개인 자료까지 완료한 것은 아니다. 공통 상태를 그대로 읽는다. */
-    var state=pushState(),rc=reviewCount();
-    if(pbtn)pbtn.textContent=rc?'내용 선택':'지금 동기화';
-    if(pushNotice&&state&&state.kind==='ok'&&+state.at>pushNotice.at)pushNotice=null;
-    if(state&&state.kind==='bad')pst.textContent=state.text;
-    else if(rc)pst.textContent='저장할 내용 선택 · '+rc+'건';
-    else if(pushNotice)pst.textContent=pushNotice.text;
-    else if(state&&state.kind==='ok')pst.textContent=+state.at>0?state.text+(state.ago?(' · '+state.ago):''):'아직 동기화 완료를 확인하지 못했어요';
-    else pst.textContent=state&&state.text||'동기화 상태를 확인하지 못했어요';
+    var view=saveView();pst.textContent=view.text;pst.title=view.detail||'';
+    if(pbtn){pbtn.disabled=!pushScope()||view.kind==='busy';pbtn.textContent=view.kind==='busy'?'저장 중…':view.action==='login'?'로그인':view.action==='retry'?'다시 시도':'저장 확인';}
+    try{if(window.__psDrawAutosave)window.__psDrawAutosave();if(window.__psRefreshSaveDot)window.__psRefreshSaveDot();}catch(_){}
   }
   window.__psRefreshPushState=refreshPushState;
-  /* sync.js의 기존 성공 알림 경로도 같은 한 줄만 갱신한다. */
   window.__psRefreshPullState=refreshPushState;
-  if(pbtn)pbtn.addEventListener('click',function(){
-    var S=window.PSSync;
-    if(!S||!S.syncNow){ alert('동기화를 사용할 수 없습니다. 로그인 상태를 확인해 주세요.'); return; }
-    if(reviewCount()){
-      openReview();
-      setTimeout(refreshPushState,500);return;
-    }
-    pushNotice=null;
-    var beforeState=pushState(),beforeAt=+(beforeState&&beforeState.at)||0;
-    function notice(text){pushNotice={text:text,at:beforeAt};if(pst)pst.textContent=text;}
-    pbtn.disabled=true; pbtn.textContent='올리는 중…';
-    if(pst)pst.textContent='올리는 중…';
-    /* syncNow 는 이미 돌고 있으면 {skip:1} 을 준다 — 그때는 잠깐 뒤 다시 시도한다(최대 8초). */
+  function retryAutosave(){
+    var S=window.PSSync,scope=pushScope(),view=saveView();
+    if(!scope||!S||!S.syncNow||pushInFlight)return Promise.resolve();
+    if(view.action==='login'){try{var account=document.querySelector('.acct-btn');if(account)account.click();}catch(_){}return Promise.resolve();}
+    var beforeState=pushState(),beforeAt=Number(beforeState&&beforeState.at)||0;
+    var task={scope:scope,id:++pushSequence};pushInFlight=task;pushNotice=null;refreshPushState();
+    function current(){return pushInFlight===task&&pushScope()===scope;}
+    function notice(value){if(current())pushNotice={scope:scope,at:beforeAt,view:value};}
     var tries=0;
-    (function attempt(){
-      return S.syncNow('manual-push').then(function(r){
-        if(r&&r.skip&&tries++<32){ return new Promise(function(res){setTimeout(res,250);}).then(attempt); }
+    function attempt(){
+      if(!current())return Promise.resolve({ownerChanged:true});
+      return Promise.resolve().then(function(){if(!current())return {ownerChanged:true};return S.syncNow('manual-push');}).then(function(r){
+        if(current()&&r&&r.skip&&tries++<32)return new Promise(function(resolve){setTimeout(resolve,250);}).then(attempt);
         return r;
       });
-    })().then(function(r){
-      r=r||{};
-      var hc=reviewCount(),state=pushState();
-      if(r.error||r.personalError){ notice(state&&state.kind==='bad'?state.text:(r.personalError?'개인 자료 동기화를 완료하지 못했어요 · 다시 시도해 주세요':'동기화하지 못했어요 · 연결과 권한을 확인해 주세요')); }
-      else if(r.noauth){ notice('로그인 상태를 확인한 뒤 다시 동기화해 주세요'); }
-      else if(r.scheduleDeferred){ notice('일정 편집이 끝나면 자동으로 맞춰집니다');
-        try{ if(window.toast)toast('일정은 편집을 마친 뒤 동기화됩니다'); }catch(_){} }
-      else if(r.skip||r.pending||(Array.isArray(r.skipped)?r.skipped.length:r.skipped)){ notice('아직 완료하지 못한 동기화가 있어요 · 상태를 확인한 뒤 다시 시도해 주세요'); }
-      else if(hc||!state||state.kind!=='ok'||!+state.at){refreshPushState();}
-      else { refreshPushState();
-        try{ if(window.toast)toast(r.pushed>0||r.applied>0?'동기화했습니다 ✓':'확인된 자료가 클라우드와 같습니다'); }catch(_){ } }
-    }).catch(function(){
-      notice('동기화하지 못했습니다 — 다시 시도해 주세요');
-    }).then(function(){
-      pbtn.disabled=false; setTimeout(refreshPushState,400);
+    }
+    return attempt().then(function(r){
+      if(!current())return;r=r||{};var state=pushState(),latest=autosaveView(state);
+      if(r.noauth){notice(autosaveView({kind:'bad',reason:'sync_auth'}));return;}
+      if(r.error||r.personalError){notice(latest.kind==='bad'?latest:autosaveView({kind:'bad'}));return;}
+      if(r.offline){notice(autosaveView({kind:'bad',reason:'sync_offline'}));return;}
+      if(r.nows){notice(autosaveView({kind:'bad',reason:'sync_permission'}));return;}
+      if(r.skip||r.pending||r.scheduleDeferred||r.itemPending||(Array.isArray(r.skipped)?r.skipped.length:r.skipped)){
+        notice(latest.kind==='held'||latest.kind==='bad'?latest:autosaveView({kind:'pending'}));return;
+      }
+      if(!latest.complete||!state||Number(state.at)<=beforeAt)notice(latest.complete?autosaveView({kind:'unknown'}):latest);
+    }).catch(function(){notice(autosaveView({kind:'bad'}));}).then(function(){
+      if(pushInFlight===task)pushInFlight=null;refreshPushState();
     });
-  });
+  }
+  window.__psAutosaveRetry=retryAutosave;
+  if(pbtn)pbtn.addEventListener('click',retryAutosave);
+  window.addEventListener('ps-sync-state',refreshPushState);
+  window.addEventListener('ps-auth-state',function(e){if(e&&e.detail&&e.detail.unlocked===false){pushSequence++;pushInFlight=null;pushNotice=null;}refreshPushState();});
+  window.addEventListener('online',refreshPushState);window.addEventListener('offline',refreshPushState);
 
   /* ══ 2.352 · 팀 자료 통째로 — 두 번 묻고 실행 ═════════════════════════════════
      ⚠ 한 방향 덮어쓰기라 **되돌릴 수 없다**. 그래서 ① 무엇이 덮이는지 말하고 ② 한 번 더 묻는다.
@@ -7868,9 +7849,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="sync.js"></script>
+<script src="autosave-journal.js?v=2.817"></script>
+<script src="autosave-merge.js?v=2.817"></script>
+<script src="autosave-runtime.js?v=2.817"></script>
+<script src="autosave-recovery.js?v=2.817"></script>
+<script src="sync.js?v=2.817"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.816">
+<link rel="stylesheet" href="support.css?v=2.817">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
