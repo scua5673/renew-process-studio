@@ -2647,7 +2647,6 @@ var BLOB_MIN=512, BLOB_PREFIX='ps_blob:', BLOB_IN=40, BLOB_UP_BYTES=900000, blob
    그대로(2.605 다이어트는 그 팀이 새 판으로 열어야 걸린다). 참조 키 이름은 «키+Ref»(thumbRef·emblemRef). 대상 키는 BLOB_KEYS. */
 var BLOB_KEYS={process_coach_v1:1,scout_tool_v1:1};
 var BLOB_RE_STRIP=/"(thumb|emblem)":(\s*)"((?:[^"\\]|\\.){512,})"/g;    /* JSON 문자열 내용(이스케이프 포함), 512자 이상만 */
-var BLOB_RE_REF=/"(thumb|emblem)":(\s*)"","(?:thumb|emblem)Ref":"([0-9a-f]{16,64})"/g;
 function blobHash(s){
   try{ if(window.crypto&&crypto.subtle&&window.TextEncoder){ return crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)).then(function(b){ var a=new Uint8Array(b),h=''; for(var i=0;i<12;i++)h+=('0'+a[i].toString(16)).slice(-2); return h; }); } }catch(_){}
   return Promise.resolve((function(){ var h1=5381,h2=52711,i=s.length; while(i){var c=s.charCodeAt(--i); h1=(h1*33)^c; h2=(h2*33)^c;} return ('00000000'+(h1>>>0).toString(16)).slice(-8)+('00000000'+(h2>>>0).toString(16)).slice(-8)+('00000000'+(s.length>>>0).toString(16)).slice(-8); })());
@@ -2664,7 +2663,42 @@ function schedStrip(raw){
     return {v:v,blobs:keys.map(function(s){return {h:map[s],v:s};})};
   });
 }
-function schedRefs(raw){ var m={},x; BLOB_RE_REF.lastIndex=0; while((x=BLOB_RE_REF.exec(String(raw))))m[x[3]]=1; BLOB_RE_REF.lastIndex=0; return Object.keys(m); }
+/* SQL jsonb가 키 순서·공백을 바꿔도 같은 객체의 빈 값과 짝 Ref를 찾는다.
+   전체 재직렬화 대신 JSON 토큰 위치만 기록해 그림 외의 원문 바이트를 보존한다. */
+function schedRefParts(raw){
+  raw=String(raw);var parts=[],lex=/"(?:[^"\\]|\\.)*"|[{}\[\]:,]|[^\s{}\[\]:,]+/g,t;
+  function next(){t=lex.exec(raw);}
+  function walk(){
+    var start=t.index,token=t[0],end,fields=[],seen={},key,value,comma;
+    if(token==='{'){
+      next();while(t[0]!=='}'){
+        key={name:JSON.parse(t[0]),start:t.index};next();next();value=walk();comma=t[0]===','?t.index:-1;
+        fields.push({name:key.name,start:key.start,value:value,comma:comma});if(comma<0)break;next();
+      }
+      end=t.index+1;next();
+      fields.forEach(function(f,i){if(f.name==='thumb'||f.name==='emblem'||f.name==='thumbRef'||f.name==='emblemRef'){if(seen[f.name]===undefined)seen[f.name]=i;else seen[f.name]=-1;}});
+      ['thumb','emblem'].forEach(function(name){var a=seen[name],b=seen[name+'Ref'];if(a===undefined||b===undefined||a<0||b<0)return;var h=fields[b].value.text;
+        if(fields[a].value.text===''&&typeof h==='string'&&/^[0-9a-f]{16,64}$/.test(h))parts.push({fields:fields,value:a,ref:b,h:h});});
+      return {start:start,end:end};
+    }
+    if(token==='['){next();while(t[0]!==']'){walk();if(t[0]!==',')break;next();}end=t.index+1;next();return {start:start,end:end};}
+    end=start+token.length;next();return {start:start,end:end,text:token.charAt(0)==='"'?JSON.parse(token):undefined};
+  }
+  try{JSON.parse(raw);next();walk();return parts;}catch(_){return [];}
+}
+function schedRefs(raw){var m={};schedRefParts(raw).forEach(function(p){m[p.h]=1;});return Object.keys(m);}
+function schedRestore(raw,parts,map){
+  var edits=[],groups=[];
+  parts.forEach(function(p){var seg=map[p.h];if(typeof seg!=='string')return;
+    try{if(typeof JSON.parse('"'+seg+'"')!=='string')return;}catch(_){return;}
+    var v=p.fields[p.value].value;edits.push({start:v.start,end:v.end,v:'"'+seg+'"'});
+    var g=groups.filter(function(x){return x.fields===p.fields;})[0];if(!g){g={fields:p.fields,removed:{}};groups.push(g);}g.removed[p.ref]=1;
+  });
+  groups.forEach(function(g){var f=g.fields;for(var i=0;i<f.length;i++){if(!g.removed[i])continue;var first=i;while(i+1<f.length&&g.removed[i+1])i++;
+    edits.push({start:first?f[first-1].comma:f[first].start,end:first?f[i].value.end:f[i].comma+1,v:''});
+  }});
+  var out=String(raw);edits.sort(function(a,b){return b.start-a.start;}).forEach(function(e){out=out.slice(0,e.start)+e.v+out.slice(e.end);});return out;
+}
 function blobInFilter(hs){ return 'h=in.('+hs.map(function(h){return '"'+h+'"';}).join(',')+')'; }
 function blobDisable(stage,status){ blobOff=true; try{ syncDiagnostic('blob-off',new Error(stage+' '+status)); }catch(_){} }
 /* 서버에 없는 그림만 올린다. 404/403/401 이면 기능을 끄고 false 를 돌려 통째 전송으로 물러선다. */
@@ -2699,7 +2733,7 @@ function blobPrepRows(at,rows){
 }
 /* 받은 직후: thumbRef 를 그림으로 되돌린다. 못 받은 참조는 그대로 둔다(썸네일만 비고, 다음에 다시 받는다). */
 function schedHydrate(at,wid,raw){
-  var refs=schedRefs(raw); if(!refs.length)return Promise.resolve(raw);
+  var parts=schedRefParts(raw),seen={};parts.forEach(function(p){seen[p.h]=1;});var refs=Object.keys(seen); if(!refs.length)return Promise.resolve(raw);
   var map={};
   return Promise.all(refs.map(function(h){ return blobCacheGet(h).then(function(v){ if(v!=null)map[h]=v; }); })).then(function(){
     var miss=refs.filter(function(h){return map[h]==null;}); if(!miss.length||!at)return;
@@ -2710,7 +2744,7 @@ function schedHydrate(at,wid,raw){
         .then(function(rows){ return Promise.all((rows||[]).map(function(x){ if(x&&typeof x.v==='string'){ map[x.h]=x.v; return blobCacheSet(x.h,x.v); } })); });
     }); },Promise.resolve());
   }).then(function(){
-    return String(raw).replace(BLOB_RE_REF,function(all,key,ws,h){ return map[h]!=null?('"'+key+'":'+ws+'"'+map[h]+'"'):all; });
+    return schedRestore(raw,parts,map);
   });
 }
 /* ══ 2.727 · 보관함 사진 분리(사용자 «갑시다», 백엔드 점검 2026-09-09) ═══════════════════════════════════════
@@ -2822,7 +2856,7 @@ function kvPullValues(at,wid,keys){
       .then(function(r){ if(!r.ok) throw syncHttpError('kv_pull',r.status); return r.json(); })
       .then(function(rows){ return Promise.all((rows||[]).map(function(r0){
         /* 2.622 — 일정 행은 그림 참조를 되돌린 뒤에 엔진에 준다(엔진 안은 늘 그림이 든 모양) */
-        if(r0&&BLOB_KEYS[r0.k]&&typeof r0.v==='string'&&(r0.v.indexOf('"thumbRef":"')>=0||r0.v.indexOf('"emblemRef":"')>=0)){ return schedHydrate(at,wid,r0.v).then(function(v){ r0.v=v; out.push(r0); }); }
+        if(r0&&BLOB_KEYS[r0.k]&&typeof r0.v==='string'&&/"(?:thumb|emblem)Ref"\s*:/.test(r0.v)){ return schedHydrate(at,wid,r0.v).then(function(v){ r0.v=v; out.push(r0); }); }
         out.push(r0);
       })); });
   }); },Promise.resolve()).then(function(){ return out; });
