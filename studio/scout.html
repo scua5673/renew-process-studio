@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <script>/* 2.205 — 앱 셸 안(iframe)에서 열릴 때 셸이 setView 를 보내기 전 기본 뷰(스카우팅)가 한 프레임 보였다(사용자: "팀 들어가면 다른 게 열렸다가 갑자기 뜬다"). 첫 setView 까지 뷰를 가린다. 1.5초 안전장치 */
 try{ if(window.parent&&window.parent!==window){ document.documentElement.classList.add('ps-wait'); setTimeout(function(){ document.documentElement.classList.remove('ps-wait'); },1500); } }catch(_){}</script>
 <style id="ps-2205-wait">html.ps-wait .wrap>.view{visibility:hidden!important}</style>

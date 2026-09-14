@@ -383,7 +383,7 @@ test('large unsent local and server edits still require an explicit choice',asyn
 test('existing data review shows private cloud wording and a real choice entry',async()=>{
   const h=harness({server:'PC_EDIT',cupd:2});await h.run();
   assert.equal(h.c.dataReviewList()[0].src,'personal');h.c.dataReviewOpen();
-  const modal=h.modals.at(-1);assert.match(modal.body,/이 기기 것 올리기/);assert.match(modal.body,/다른 기기 것 받기/);assert.match(modal.body,/선택 전까지/);
+  const modal=h.modals.at(-1);assert.match(modal.body,/이 기기 내용 저장/);assert.match(modal.body,/다른 기기 내용 사용/);assert.match(modal.body,/선택 전까지/);
 });
 
 test('main synchronization excludes personal payloads and delegates both workspace modes',()=>{

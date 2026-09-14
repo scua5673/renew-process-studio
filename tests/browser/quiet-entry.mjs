@@ -104,6 +104,31 @@ try{
         assert.deepEqual(automatic,[],'no transient automatic name/account/legacy notice UI');
         await page.screenshot({path:path.join(out,label+'-'+phase+'.png')});
       }
+      const release=page.locator('#psReleaseNotes');await release.waitFor({state:'visible'});
+      assert.match(await release.innerText(),/최근 업데이트/);
+      const releaseStatusOverlap=await page.evaluate(()=>{
+        const status=document.querySelector('#psSyncStrip');if(!status||!status.checkVisibility())return false;
+        const a=status.getBoundingClientRect();return Array.from(document.querySelectorAll('#psReleaseNotes button')).some(button=>{
+          const b=button.getBoundingClientRect();return Math.min(a.right,b.right)-Math.max(a.left,b.left)>1&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>1;
+        });
+      });
+      assert.equal(releaseStatusOverlap,false,'The synchronization status must not overlay release notice actions');
+      await page.screenshot({path:path.join(out,label+'-release-support-entry.png')});
+      if(spec.mobile){
+        await page.locator('#gearBtn').tap();await page.locator('#gearPop [data-gp-go="general"]').click();
+        await page.locator('#psSupportSettingsOpen').waitFor({state:'visible'});await page.locator('#psSupportSettingsOpen').click();
+      }else{
+        const gear=await page.locator('#gearBtn').boundingBox(),support=await page.locator('#psSupportOpen').boundingBox();
+        assert.ok(gear&&support&&support.y>=gear.y+gear.height,'Desktop support entry sits below app settings');
+        await page.locator('#psSupportOpen').click();
+      }
+      const supportDialog=page.locator('#psSupportDialog');await supportDialog.waitFor({state:'visible'});
+      assert.equal(await supportDialog.evaluate(el=>el.open),true);assert.match(await supportDialog.innerText(),/제보 작성/);
+      await page.screenshot({path:path.join(out,label+'-support-dialog.png')});
+      await supportDialog.getByRole('button',{name:'오류 제보 닫기',exact:true}).click();assert.equal(await supportDialog.evaluate(el=>el.open),false);
+      await release.getByRole('button',{name:'일주일간 안 보기',exact:true}).click();assert.equal(await release.isVisible(),false);
+      const releaseHide=await page.evaluate(()=>JSON.parse(localStorage.getItem(PSReleaseNotes.STORAGE_KEY)));
+      assert.equal(releaseHide.until-releaseHide.from,7*24*60*60*1000,'Real shell saves a seven-day release notice hide');
       const acct=page.locator('#psAcctWrap .acct-btn');if(spec.mobile)await acct.tap();else await acct.click();
       const nameButton=page.locator('#psAcctWrap .acct-pop.on button').filter({hasText:serverName?'표시 이름: '+serverName:'표시 이름 설정'});
       await nameButton.click();await page.locator('#psWsModal').waitFor({state:'visible'});assert.match(await page.locator('#psWsModal').innerText(),/표시 이름/);
@@ -112,7 +137,7 @@ try{
       assert.ok(calls.some(c=>c.path.endsWith('/ps_members_of_v2')),'real server-name hydration path ran');
       const runtimeErrors=errors.filter(e=>!/^ResizeObserver loop (completed with undelivered notifications\.|limit exceeded)$/.test(e));
       assert.deepEqual(runtimeErrors,[],'no JavaScript runtime errors');
-      results.push({viewport:spec,serverName:!!serverName,open:true,reload:true,manualNameEditor:true,silentHydration:!!serverName,passed:true});
+      results.push({viewport:spec,serverName:!!serverName,open:true,reload:true,manualNameEditor:true,silentHydration:!!serverName,releaseBanner:true,releaseNoStatusOverlap:true,releaseSevenDayHide:true,supportEntry:true,passed:true});
       console.log(JSON.stringify({label,passed:true}));
     }catch(e){await page.screenshot({path:path.join(out,label+'-failure.png')}).catch(()=>{});throw e;}
     finally{fs.writeFileSync(path.join(out,label+'-network.json'),JSON.stringify({calls,blocked,errors},null,2));await context.close();}

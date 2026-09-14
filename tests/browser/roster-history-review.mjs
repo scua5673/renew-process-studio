@@ -63,13 +63,24 @@ try{
   },{uid,wid,current});
   await page.addScriptTag({content:actual});
   await page.evaluate(()=>{
-   document.querySelector('#openReview').onclick=()=>dataReviewOpen();
+   document.querySelector('#openReview').onclick=()=>dataReviewOpen('recovery');
    window.fixtureMutationLog=[];
    for(const name of ['setItem','removeItem','clear']){const original=Storage.prototype[name];Storage.prototype[name]=function(...args){fixtureMutationLog.push({store:'localStorage',name,key:args[0]});return original.apply(this,args);};}
    for(const name of ['put','add','delete','clear']){const original=IDBObjectStore.prototype[name];IDBObjectStore.prototype[name]=function(...args){fixtureMutationLog.push({store:'IndexedDB',name});return original.apply(this,args);};}
    window.fixtureSnapshot=async()=>({local:Object.fromEntries(Object.keys(localStorage).sort().map(k=>[k,localStorage.getItem(k)])),idb:await Promise.all((await storage.keys()).sort().map(async k=>[k,(await storage.get(k))?.value]))});
   });
   const before=await page.evaluate(()=>fixtureSnapshot());
+  await page.evaluate(()=>{personalReviewList=()=>[{k:'cs_team_matches_v1',at:Date.now()}];dataReviewOpen();});
+  assert.match(await page.locator('#psWsModal').innerText(),/저장할 내용 선택/);
+  assert.equal(await page.locator('#drHistKey').count(),0,'Ordinary saving choices do not expose history recovery');
+  assert.equal(await page.locator('#drItemsRun').count(),0,'Ordinary saving choices do not expose server diagnostics');
+  assert.deepEqual(await page.evaluate(()=>fixtureSnapshot()),before,'Opening the ordinary choice view retains all data');
+  assert.deepEqual(await page.evaluate(()=>fixtureMutationLog),[],'No storage writes occur before dismissing ordinary choices');
+  assert.equal(requests.length,0,'Opening ordinary choices never makes a history request');
+  await page.screenshot({path:path.join(out,`${width}-save-choice.png`)});
+  await page.locator('#psWsOk').click();
+  assert.deepEqual(await page.evaluate(()=>fixtureMutationLog),[],'Dismissing ordinary choices does not mutate storage');
+  await page.evaluate(()=>{personalReviewList=()=>[];});
   await page.locator('#openReview').click();await page.locator('#drHistKey').selectOption('scout_tool_v1');await page.locator('#drHistLoad').click();
   await page.locator('[data-hist-compare="0"]').click();
   const area=page.locator('[data-hist-backup]');await area.waitFor({state:'attached'});
