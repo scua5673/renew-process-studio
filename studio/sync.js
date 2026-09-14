@@ -29,7 +29,12 @@ var SYNC_DIAG_LOG=[];
 var SKEY='ps_sync_session', MKEY='ps_sync_meta', RLKEY='ps_sync_rl', SKIPKEY='ps_sync_skipped';
 var MATCH_KEY='cs_team_matches_v1', MATCH_DEL_KEY='cs_match_del_v1';
 var OWNERKEY='ps_cache_owner_v1';
-var dataReady=false,tabReadyUid='',tabReadyWid='',authPreparePromise=null;
+var dataReady=false,tabReadyUid='',tabReadyWid='',authPreparePromise=null,authPrepareOwner=null;
+var oauthCallbackIssue=null;
+try{
+  oauthCallbackIssue=JSON.parse(sessionStorage.getItem('ps_oauth_callback_issue')||'null');
+  if(oauthCallbackIssue&&(typeof oauthCallbackIssue.message!=='string'||oauthCallbackIssue.uid!==String((getSess()||{}).uid||''))){oauthCallbackIssue=null;sessionStorage.removeItem('ps_oauth_callback_issue');}
+}catch(_){}
 var syncErr=false;   /* 마지막 동기화 실패 여부 — 상단 배지에 반영 */
 var lastIssue=null;  /* 2.625 — 마지막 회차 실패 {code,stage,at}. 성공하면 비운다. 상태 한 줄(syncState)이 읽는다 */
 var refreshPromise=null, refreshOwner=null, refreshRetryTimer=null, refreshRetryDelay=15000;
@@ -367,7 +372,7 @@ function getSess(){ try{ var s=JSON.parse(localStorage.getItem(SKEY)||'null'); r
 function setSess(s){ try{ if(s)localStorage.setItem(SKEY,JSON.stringify(s)); else localStorage.removeItem(SKEY); }catch(_){}
   /* 로그인이 살아나면 '만료로 백업 멈춤' 배너 근거를 지운다 (앱 셸 expBanner) */
   if(s){ try{ localStorage.removeItem('ps_login_expired'); }catch(_){}}
-  else setDataReady(false);
+  else {oauthCallbackSetIssue(null);setDataReady(false);}
   renderUI(); }
 function hj(at){ var h={'apikey':CFG.anonKey,'Content-Type':'application/json'}; if(at)h['Authorization']='Bearer '+at; return h; }
 /* 2.627 — 쓰기 요청에 앱 판을 실어 보낸다(Prefer 의 모르는 토큰은 PostgREST 가 무시한다 — 실계정 탭에서 GET 200 확인). 서버 ps_kv_build_guard 가
@@ -590,6 +595,15 @@ function renderDataLock(unlocked){
     /* 2.254 — 세션이 있는데 잠겨 있으면(자료 준비 실패) '로그인이 필요합니다'는 거짓말이었다(실제 제보: 카카오 로그인 뒤에도 이 화면).
        실패 원인 한 줄(ps_last_unlock_err) + 다시 시도를 보여 준다. */
     var _sInfo=getSess(), _lastErr=''; try{ _lastErr=localStorage.getItem('ps_last_unlock_err')||''; }catch(_){}
+    if(oauthCallbackIssue){
+      ov.style.setProperty('display','flex','important'); // 게스트 보드의 일반 로그인 숨김 규칙보다 OAuth 실패·탈출 안내를 우선한다.
+      ov.innerHTML='<div style="width:min(420px,100%);text-align:center;background:var(--bar,#fff);border:1px solid var(--line,#e2e4e8);border-radius:18px;padding:28px 22px"><div style="font-size:20px;font-weight:850;margin-bottom:8px">로그인을 완료하지 못했어요</div><div style="font-size:13px;line-height:1.6;margin-bottom:16px">'+esc(oauthCallbackIssue.message)+'<br>이 기기의 작업 자료는 그대로 있습니다.</div><div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><button type="button" data-ps-login="google">Google로 다시 로그인</button><button type="button" data-ps-login="kakao">카카오로 다시 로그인</button>'+(_sInfo&&_sInfo.uid?'<button type="button" data-ps-previous>기존 계정으로 계속</button>':'')+(_sInfo?'<button type="button" data-ps-relogout>로그아웃</button>':'')+'</div></div>';
+      ov.querySelectorAll('[data-ps-login]').forEach(function(b){b.onclick=function(){signIn(b.getAttribute('data-ps-login'));};});
+      ov.querySelectorAll('button').forEach(function(b){b.style.cssText='min-height:44px;border:1px solid var(--line,#d8dbe1);background:#fff;color:#202124;border-radius:10px;padding:10px 15px;font:800 13px inherit;cursor:pointer;';});
+      var previous=ov.querySelector('[data-ps-previous]');if(previous)previous.onclick=function(){oauthCallbackContinue();};
+      var logout=ov.querySelector('[data-ps-relogout]');if(logout)logout.onclick=function(){signOut();};
+      host.appendChild(ov);return;
+    }
     if(_sInfo){
       ov.innerHTML='<div style="width:min(420px,100%);text-align:center;background:var(--bar,#fff);border:1px solid var(--line,#e2e4e8);border-radius:18px;padding:28px 22px;box-shadow:0 18px 48px rgba(20,24,32,.12)"><div style="font-size:20px;font-weight:850;margin-bottom:8px">자료를 불러오지 못했어요</div><div style="font-size:13px;line-height:1.6;color:var(--dim,#6f7580);margin-bottom:8px">'+(_sInfo.email?('<b>'+String(_sInfo.email).replace(/[<>&]/g,'')+'</b> 로 로그인은 됐어요.<br>'):'')+'서버에서 워크스페이스를 불러오는 중 문제가 있었습니다.</div>'+(_lastErr?'<div style="font-size:11px;line-height:1.5;color:#a05b57;background:#fdf3f3;border-radius:8px;padding:7px 10px;margin-bottom:14px;word-break:break-all">'+String(_lastErr).replace(/[<>&]/g,'')+'</div>':'<div style="margin-bottom:10px"></div>')+'<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><button type="button" data-ps-retry style="border:0;background:var(--blue,#3a6df0);color:#fff;border-radius:10px;padding:10px 18px;font:800 13px inherit;cursor:pointer">다시 시도</button><button type="button" data-ps-relogout style="border:1px solid var(--line,#d8dbe1);background:#fff;color:#202124;border-radius:10px;padding:10px 15px;font:800 13px inherit;cursor:pointer">로그아웃</button></div></div>';
       var rb=ov.querySelector('[data-ps-retry]'); if(rb)rb.onclick=function(){ rb.disabled=true; rb.textContent='불러오는 중…'; setDataReady(false);
@@ -609,6 +623,7 @@ function broadcastAuthState(unlocked){
 }
 function dataUnlocked(){
   var s=getSess(),o=cacheOwner(),wid=activeWs();
+  if(typeof oauthCallbackIssue!=='undefined'&&oauthCallbackIssue)return false;
   /* ══ 2.418 · 세션이 없으면 **잠근다**(사용자 "로그아웃하면 그냥 안보이게 해줘 로그인 유도해줘") ══
      ⚠ 1.831 의 '게스트 개방'(세션도·이전 계정 흔적도·워크스페이스도 없는 새 기기는 안 잠근다)을 걷어냈다.
         그 길로 들어오면 **앱 전체가 빈 채로 멀쩡히 열려** — 이름 없음 · 아직 비어 있어요 · 0/24항목 —
@@ -620,6 +635,7 @@ function dataUnlocked(){
   return !!(dataReady&&s.uid&&o&&o.uid===String(s.uid)&&o.wid===String(wid));
 }
 function setDataReady(on,uid,wid,readOnlyMarkers){
+  if(typeof oauthCallbackIssue!=='undefined'&&oauthCallbackIssue)on=false;
   /* 다른 탭이 팀 전환 guard를 잡은 채 새 창이 부팅하면 storage 이벤트의
      과거를 받지 못한다. 준비 완료를 표시하기 직전에도 현재 guard를 다시 보고,
      이 탭이 소유한 guard가 아니면 예전 workspace 화면을 열지 않는다. */
@@ -887,7 +903,7 @@ function tryWorkspaceTransitionLock(fn){
 function loadWorkspacesCore(){
   /* 이 창이 열리기 전에 다른 탭의 전환이 시작됐을 수 있다. 그 경우에는
      bootstrap·캐시 준비를 시작하지 말고 guard 해제 후 reload만 기다린다. */
-  if(externalSwitchFrozen||freezeForPendingExternalSwitch())return Promise.reject(dataLockError());
+  if((typeof oauthCallbackIssue!=='undefined'&&oauthCallbackIssue)||externalSwitchFrozen||freezeForPendingExternalSwitch())return Promise.reject(dataLockError());
   if(!getSess()){setDataReady(false);return Promise.resolve([]);}
   var verified=null,prepareSwitchEpoch=workspaceSwitchEpochRaw(),prepareAuthEpoch=signOutEpoch;
   function prepareCurrent(){
@@ -908,11 +924,20 @@ function loadWorkspacesCore(){
   });
   return run;
 }
+function authPreparationCurrent(owner){
+  var s=getSess();
+  if(!owner||!s||owner.epoch!==signOutEpoch)return false;
+  return owner.uid?String(s.uid||'')===owner.uid:!!sessionIdentityCurrent(owner);
+}
 function loadWorkspaces(){
-  if(authPreparePromise)return authPreparePromise;
-  var run=withWorkspaceTransitionLock(loadWorkspacesCore);
-  authPreparePromise=run.then(function(v){authPreparePromise=null;try{expireStashes(7);}catch(_){}return v;},function(e){authPreparePromise=null;throw e;});   /* 2.669 — 부팅 때 7일 지난 전환 백업 정리 */
-  return authPreparePromise;
+  var owner=sessionIdentitySnapshot(getSess());if(!owner)return Promise.resolve([]);
+  if(authPreparePromise&&authPreparationCurrent(authPrepareOwner))return authPreparePromise;
+  var work=withWorkspaceTransitionLock(function(){if(!authPreparationCurrent(owner))throw dataLockError();return loadWorkspacesCore();});
+  var run=Promise.resolve(work).then(function(v){
+    if(!authPreparationCurrent(owner))throw dataLockError();
+    try{expireStashes(7);}catch(_){}return v;
+  }).then(function(v){if(authPreparePromise===run){authPreparePromise=null;authPrepareOwner=null;}return v;},function(e){if(authPreparePromise===run){authPreparePromise=null;authPrepareOwner=null;}throw e;});
+  authPrepareOwner=owner;authPreparePromise=run;return run;
 }
 
 function signIn(provider){
@@ -1026,32 +1051,81 @@ function signOut(){
   return run;
 }
 /* OAuth 콜백: 토큰이 URL 해시로 돌아옴 → 저장 후 해시 제거 */
-function consumeHash(){
+function consumeHash(options){
   try{
     /* 2.254 — 인증 실패 콜백(#error=...)은 지금까지 무음 폐기됐다("로그인이 안 돼요"의 원인 규명 불가).
        원인 한 줄을 남기고 잠금 오버레이가 보여 준다. */
-    if(location.hash.indexOf('access_token=')<0&&/[#&]error(_description)?=/.test(location.hash)){
+    if(location.hash.indexOf('access_token=')<0&&/[#&]error(_description|_code)?=/.test(location.hash)){
       var pe={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){ var i=kv.indexOf('='); if(i>0)pe[kv.slice(0,i)]=decodeURIComponent((kv.slice(i+1)||'').replace(/\+/g,' ')); });
-      var msg='로그인 실패 — '+(pe.error_description||pe.error||'인증 서버 오류');
+      var msg='로그인 실패 — '+(pe.error_description||pe.error||pe.error_code||'인증 서버 오류');
       try{ localStorage.setItem('ps_last_unlock_err',msg.slice(0,200)); }catch(_){}
-      try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){}
-      setStatus(msg); try{ renderDataLock(dataUnlocked()); }catch(_){}
+      oauthCallbackClearUrl();
+      setStatus(msg); try{ chip(msg);renderDataLock(dataUnlocked()); }catch(_){}
       return false;
     }
-    if(location.hash.indexOf('access_token=')<0) return false;
+    if(location.hash.indexOf('access_token=')<0){
+      if(/(?:^#|&)refresh_token=/.test(location.hash||''))oauthCallbackSetIssue('로그인 응답이 완전하지 않습니다. 다시 로그인해 주세요.');
+      return false;
+    }
     var p={}; location.hash.replace(/^#/,'').split('&').forEach(function(kv){ var i=kv.indexOf('='); if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1)); });
-    if(!p.access_token||!p.refresh_token) return false;
+    if(!p.access_token||!p.refresh_token){oauthCallbackSetIssue('로그인 응답이 완전하지 않습니다. 다시 로그인해 주세요.');return false;}
     var exp=Date.now()+(( +p.expires_in||3600)*1000);
     signOutEpoch++; // 새 OAuth 세션은 이전 조회·갱신의 응답을 무효화한다.
+    setDataReady(false);
     setSess({at:p.access_token,rt:p.refresh_token,exp:exp,email:'',uid:''});
     var request=sessionIdentitySnapshot(getSess());
     if(!request||request.at!==p.access_token||request.rt!==p.refresh_token)throw dataLockError();
-    try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){}
+    oauthCallbackSetIssue(null);
+    if(!oauthCallbackClearUrl())throw new Error('OAuth callback URL cleanup failed');
+    if(options&&options.deferIdentity)return true;
     fetch(BASE+'/auth/v1/user',{headers:hj(p.access_token)}).then(function(r){return r.ok?r.json():null;}).then(function(u){
       if(u&&u.id)sessionIdentityCommit(request,u,u.email||((u.user_metadata&&(u.user_metadata.email||u.user_metadata.name))||''));
     }).catch(function(e){syncDiagnostic('oauth-user-lookup',e);});
     return true;
-  }catch(_){ return false; }
+  }catch(e){
+    if(/(?:^#|&)(?:access_token|refresh_token)=/.test(location.hash||'')){
+      oauthCallbackSetIssue('기기에 새 로그인 상태를 저장하지 못했습니다. 다시 로그인해 주세요.');
+      syncDiagnostic('oauth-callback-storage',e);
+    }
+    return false;
+  }
+}
+function oauthCallbackPending(){
+  return /(?:^#|&)(?:access_token|refresh_token|error|error_code|error_description)=/.test(location.hash||'');
+}
+function oauthCallbackClearUrl(){
+  try{history.replaceState(null,'',location.pathname+location.search);}catch(_){}
+  /* history가 막힌 설치 앱에서도 reload 주소에 토큰을 남기지 않는다.
+     hash 할당은 동기적으로 주소를 바꾸며, 뒤따르는 hashchange는 빈 값을 본다. */
+  if(oauthCallbackPending())try{location.hash='';}catch(_){}
+  return !oauthCallbackPending();
+}
+function oauthCallbackSetIssue(message){
+  if(message&&!oauthCallbackIssue)signOutEpoch++; // 실패한 새 로그인 이전의 bootstrap도 뒤늦게 화면을 열지 못한다.
+  oauthCallbackIssue=message?{message:message,uid:String((getSess()||{}).uid||'')}:null;
+  try{if(oauthCallbackIssue)sessionStorage.setItem('ps_oauth_callback_issue',JSON.stringify(oauthCallbackIssue));else sessionStorage.removeItem('ps_oauth_callback_issue');}catch(_){}
+  try{var ov=document.getElementById('psDataLock');if(ov)ov.remove();}catch(_){}
+  if(message){
+    setDataReady(false);setStatus('로그인을 완료하지 못했습니다');
+    try{renderDataLock(false);}catch(_){}
+  }
+}
+function oauthCallbackContinue(){
+  var owner=sessionIdentitySnapshot(getSess());if(!owner||!owner.uid)return;
+  if(!oauthCallbackClearUrl()){setStatus('로그인 응답 주소를 정리하지 못했습니다. 새 창에서 다시 열어 주세요.');return;}
+  oauthCallbackSetIssue(null);
+  loadWorkspaces().then(function(){if(authPreparationCurrent(owner))return syncNow('oauth-previous-account');})
+    .catch(function(e){if(authPreparationCurrent(owner)){setDataReady(false);syncDiagnostic('oauth-previous-account',e);renderDataLock(false);}});
+}
+/* 설치 앱·복원된 문서는 새 문서를 만들지 않고 callback fragment만 받을 수 있다.
+   토큰을 검증 저장한 뒤 새 문서로 열어 이전 iframe의 메모리와 리스너도 교체한다. */
+function resumeOAuthCallback(){
+  if(!oauthCallbackPending())return false;
+  if(consumeHash({deferIdentity:true})){
+    setDataReady(false);
+    location.reload();
+  }
+  return true;
 }
 function ensureToken(){
   var s=getSess();
@@ -8982,12 +9056,14 @@ function boot(){
     },function(err){syncDiagnostic('outbox-edit-mark',err);});
   });
   function recheckAuth(){
+    if(resumeOAuthCallback())return;
     if(!getSess()){setDataReady(false);return;}
     if(!dataUnlocked())loadWorkspaces().then(function(){return syncNow('auth-recheck');}).catch(function(e){syncDiagnostic('auth-recheck',e);});
     else broadcastAuthState(true);
   }
   window.addEventListener('pageshow',recheckAuth);
   window.addEventListener('focus',recheckAuth);
+  window.addEventListener('hashchange',resumeOAuthCallback);
   document.addEventListener('load',function(e){if(e&&e.target&&e.target.tagName==='IFRAME')broadcastAuthState(dataUnlocked());},true);
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
