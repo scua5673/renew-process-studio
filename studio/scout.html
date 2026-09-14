@@ -5952,31 +5952,35 @@ function loadTargets(){
 let data={attrs:[],positions:[],players:[],meta:{}};
 /* ══ 2.730 · 선수 행(sq:<id>) 읽기 — 백엔드 계획 1단계 ═══════════════════════════════════════════
    서버가 각 팀의 scout_tool_v1.players 를 sq: 행으로 옮겨 두면, 동기화가 그 행들을 이 기기 IDB 에 내려준다(sync.js 항목 블록).
-   여기서는 행이 하나라도 있으면 행을 명단의 정본으로 삼는다: 통짜에만 있는 선수는 «옛 판 기기가 넣은 것»일 때만(도장 _items.build < 2.73, 5명 이하) 흡수하고,
-   묘비(_del)가 있는 선수는 뺀다. 행이 없으면(이행 전·새 기기 첫 회차 전) 통짜 그대로. 바뀌면 save() 로 통짜·거울을 행에서 다시 만든다(다른 화면들이 통짜를 읽는다).
+   현재 명단을 유지하면서 이 계정·팀에서 서버 판본까지 확인한 행만 반영한다. 기기에만 남은 옛 행이나 충돌 검토 원문은 새 현역으로 추가하지 않는다.
+   두 삭제 기록을 모두 적용하고, 바뀌면 통짜·거울만 다시 만든다. 이 투영 저장은 선수별 원문에 다시 쓰지 않는다.
    되돌리기: localStorage ps_items_write='0' → PSItems.active() 가 false → 이 함수는 아무것도 안 한다. */
 function itemsPI(){ try{ return (window.parent&&window.parent.PSItems)||window.PSItems||null; }catch(_){ return null; } }
 function itemsApply(reason){
   var PI=itemsPI(); if(!PI||!PI.readAll||!(PI.active&&PI.active()))return Promise.resolve(false);
   return PI.readAll().then(function(r){
-    if(!r||!r.rows)return false;
-    var doc=(data.players||[]), byId={}; r.players.forEach(function(p){ if(p&&p.id)byId[p.id]=p; });
+    if(!r||!r.rows||r.pending)return false;
+    var doc=(data.players||[]), byId={},held=r.held||{},confirmed=r.confirmed||{}; r.players.forEach(function(p){ if(p&&p.id)byId[p.id]=p; });
     var seen={}, out=[], absorb=[];
     var stamp=parseFloat((data._items&&data._items.build)||"0")||0, oldDoc=!(stamp>=2.73);
     doc.forEach(function(p){
       if(!p||!p.id||isTargetPl(p)){ out.push(p); return; }
-      if(byId[p.id]){ out.push(byId[p.id]); seen[p.id]=1; return; }
+      if(held['sq:'+p.id]){out.push(p);seen[p.id]=1;return;} /* 검토 원문으로 현재 명단·조를 자동 교체하지 않는다 */
+      if(byId[p.id]){ out.push(confirmed['sq:'+p.id]?byId[p.id]:p); seen[p.id]=1; return; }
       if(r.tombs[p.id]) return;                          /* 다른 기기가 지운 선수(묘비) */
       absorb.push(p);                                     /* 통짜에만 있는 선수 — 아래에서 판정 */
     });
-    r.players.forEach(function(p){ if(p&&p.id&&!seen[p.id]){ out.push(p); seen[p.id]=1; } });
+    r.players.forEach(function(p){ if(p&&p.id&&!seen[p.id]&&!held['sq:'+p.id]&&confirmed['sq:'+p.id]){ out.push(p); seen[p.id]=1; } });
     /* 통짜에만 있고 묘비도 없는 선수: 새 판이 쓴 통짜(도장 ≥2.73)면 «행이 아직 안 써진 방금 추가한 선수»라 그대로 둔다(잃지 않는다 — 다음 save 가 행을 만든다).
        옛 판이 쓴 통짜면 5명까지만 흡수한다(옛 tmMigrate 가 거울에서 수십 명을 새 id 로 만든 경우를 걸러 «2배»를 막는다). */
     if(absorb.length&&(!oldDoc||absorb.length<=5)) absorb.forEach(function(p){ out.push(p); });
+    /* Both deletion channels apply after assembling rows. A retained conflict
+       original is recovery material, not permission to reactivate a player. */
+    out=plTombApply(out);
     var before=JSON.stringify(doc), after=JSON.stringify(out);
     if(before===after)return false;
     data.players=out;
-    try{ save(); }catch(_){}
+    try{ save({skipItems:true}); }catch(_){} /* 통짜·거울 투영은 선수별 검토 원문에 다시 쓰지 않는다 */
     try{ psAct&&psAct("a_items_apply"); }catch(_){}
     return true;
   }).catch(function(){ return false; });
@@ -6347,7 +6351,7 @@ function save(){
     if(!options.skipTargets&&canSeeTargets()&&!store.set(TKEY,{v:1,players:tg}))savedTargets=false;
     /* 항목 단위 저장(1.631) — 선수 한 명이 키 하나. 실패해도 본 저장은 이미 끝났다.
        ⚠ ours 만 넘긴다. 후보(target)는 권한 등급이 달라 섞으면 코칭스태프에게 샌다. */
-    try{ var PI=(window.parent&&window.parent.PSItems)||window.PSItems; if(PI&&PI.write)PI.write(main.players); }catch(_){}
+    try{ var PI=(window.parent&&window.parent.PSItems)||window.PSItems; if(!options.skipItems&&PI&&PI.write)PI.write(main.players); }catch(_){}
   })();
   if(!savedMain)return false;
   /* 속성 목록만 공개 미러(cs_team_attrs_v1) — 선수는 scout_tool_v1(전체 평가)을 서버에서 못 받지만
