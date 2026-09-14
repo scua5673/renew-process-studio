@@ -499,7 +499,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.807';</script>
+<script>window.PS_BUILD='2.808';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -6680,7 +6680,7 @@ window.__buildScoutForm=function(k){
           if(!doc.getElementById('ps-uni-css')){ var uc=doc.createElement('style'); uc.id='ps-uni-css'; uc.textContent="#ps-uni{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;}#ps-uni .ps-uni-chips{display:inline-flex;gap:4px;}#ps-uni .ps-uni-chip{width:26px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;flex:0 0 auto;}#ps-uni .ps-uni-chip.on{border-color:var(--txt,#e7ebf1);}#ps-uni .ps-uni-col{width:26px;height:26px;border:1px solid var(--line);border-radius:7px;padding:0;background:none;cursor:pointer;flex:0 0 auto;}#ps-uni .ps-uni-pat{display:inline-flex;gap:2px;padding:2px;border-radius:8px;background:color-mix(in srgb,var(--bg) 55%,var(--panel2));border:0.5px solid var(--line);}#ps-uni .ps-uni-pat button{height:24px;padding:0 9px;border:0;border-radius:6px;background:transparent;color:var(--txt-dim);font-size:11px;font-weight:600;cursor:pointer;}#ps-uni .ps-uni-pat button.on{background:color-mix(in srgb,var(--txt) 20%,transparent);color:var(--txt);}"; (doc.head||doc.documentElement).appendChild(uc); }
           try{win.__syncUniformDock=_uniSync;}catch(_){}
           selTeam=_uniGV(); _uniSync();
-          try{ if(!localStorage.getItem('cs_hint_teamstyle')){ win.setTimeout(function(){ try{ if(doc.defaultView.toast) doc.defaultView.toast('팀 색·패턴 변경: 팀칩을 한 번 더 탭하세요'); localStorage.setItem('cs_hint_teamstyle','1'); }catch(_){} },1500); } }catch(_){}
+          /* 팀 색·패턴은 사용자가 팀칩을 눌러 연다. 진입 안내는 자동으로 띄우지 않는다. */
           try{ var __bc=doc.getElementById('benchCat'); if(__bc) __bc.addEventListener('click',function(){setTimeout(_uniSync,30);}); }catch(_){}
           /* 색상 휠(teamWheel)·초기화(teamReset)로 팀 색을 바꿔도 유니폼 칩 색이 따라 바뀌게 */
           try{ var __tw=doc.getElementById('teamWheel'); if(__tw){ __tw.addEventListener('input',function(){setTimeout(_uniSync,10);}); __tw.addEventListener('change',function(){setTimeout(_uniSync,10);}); } }catch(_){}

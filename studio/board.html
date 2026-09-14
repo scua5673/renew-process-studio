@@ -8588,6 +8588,12 @@ function psVaultRequireLogin(){
   if((window.__csView||'board')!=='session'){ try{toast('로그인하면 보관함에 저장할 수 있어요');}catch(_){}; return false; }
   psVaultShowLock();return false;
 }
+/* 숨은 보관함도 부팅 중 다시 그려진다. 자료 확인 전에는 읽지 않고 기다리며,
+   사용자가 저장을 누른 것처럼 로그인 안내 토스트를 띄우지 않는다. */
+function psVaultRenderReady(){
+  if(psVaultUnlocked())return true;
+  psVaultShowLock();return false;
+}
 function psVaultAuthChanged(){
   try{vaultBoardCheckOwner();}catch(_){}
   if(psVaultUnlocked()){psVaultHideLock();try{renderDrillFiles();}catch(_){}try{renderLibDock();}catch(_){}}
@@ -8696,7 +8702,7 @@ function libCard(d){
   const del=document.createElement("button");del.className="btn ghost danger";del.textContent="삭제";del.onclick=()=>{psConfirm("라이브러리에서 삭제할까요?",()=>{delFromLib(d.libId);});};
   act.append(add,edt,del);c.appendChild(act);
   return c;}
-async function renderLib(){if(!psVaultRequireLogin())return;const grid=$("libGrid");if(!grid)return;const lib=await libGet();
+async function renderLib(){if(!psVaultRenderReady())return;const grid=$("libGrid");if(!grid)return;const lib=await libGet();
   const arr=lib.filter(d=>{
     if(libFilter.q && !((d.name||"").toLowerCase().includes(libFilter.q.toLowerCase())))return false;
     if(libFilter.src==="mine"&&isTpl(d))return false;
@@ -8728,7 +8734,7 @@ function setDockCollapsed(on){
 }
 function renderDrillFiles(){
   window.__thumbGenBudget=30;   /* 1.968 — 렌더 한 번에 즉석 썸네일 최대 30장(loadSnap 왕복 비용) */
-  if(!psVaultRequireLogin())return;
+  if(!psVaultRenderReady())return;
   var box=document.getElementById("drillFiles");if(!box)return;
   var sb=document.getElementById("dfSearch");
   if(sb&&!sb._b){sb._b=1;sb._ime=false;
@@ -8763,7 +8769,7 @@ function dfRow(d){
   return row;
 }
 async function renderLibDock(){
-  if(!psVaultRequireLogin())return;
+  if(!psVaultRenderReady())return;
   try{renderDrillFiles();}catch(_){}
   const strip=$("dockStrip");if(!strip)return;
   const lib=await libGet();
@@ -8816,7 +8822,7 @@ function updateLibSelBar(){
   if(libSel)renderLibTray();
 }
 async function renderLibTray(){
-  if(!psVaultRequireLogin())return;
+  if(!psVaultRenderReady())return;
   const wrap=$("libTrayCards");if(!wrap||!libSel)return;
   const lib=await libGet();
   if(!libSel)return;   // await 사이에 모드 종료됐을 수 있음
@@ -11689,9 +11695,7 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
     try{updateEmptyHint();}catch(_){ }});   /* 2.457 — 문은 열기만 안다. 어디가 열릴지는 __psOpenFormation 이 정한다(2.277) */
   const shX=document.getElementById("sessHintX");
   if(shX)shX.addEventListener("click",()=>{csHintMark("cs_hint_design");const sh=document.getElementById("sessHint");if(sh)sh.classList.remove("on");});
-  (async function(){try{const seen=await store.get("cs_onboard_v1");
-    if(!seen){setTimeout(()=>{toast("설정 메뉴에 포메이션·그리드·명단·저장이 있어요");
-      try{store.set("cs_onboard_v1",1);}catch(_){}},2500);}}catch(_){}})();
+  /* 시작 안내는 설정의 사용법에서 직접 연다. 접속만으로 안내 토스트를 띄우지 않는다. */
 
   $("formAway").addEventListener("change",e=>{const v=e.target.value;if(v){applyFormationTo("red",v);deselect();}});
   try{renderSquadGrpRow();}catch(_){}   /* 2.475 — 옛 renderFormLib 호출의 유일한 산 일(보드 설정 '선수' 탭의 선수 불러오기 행)만 직접 부른다 */
@@ -12593,14 +12597,13 @@ window.__psSignalBoardReady=function(){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',afterDom,{once:true});else afterDom();
 };
 try{Promise.resolve(restoreLiveBoard()).then(function(){window.__boardReady=true;window.__boardRestoreDone=true;try{window.__autoOrient&&window.__autoOrient();}catch(_){}try{window.__psPagesConsume&&window.__psPagesConsume();}catch(_){}window.__psSignalBoardReady();},function(){window.__boardReady=true;window.__boardRestoreDone=true;try{window.__autoOrient&&window.__autoOrient();}catch(_){}window.__psSignalBoardReady();});}catch(_){window.__boardReady=true;window.__boardRestoreDone=true;window.__psSignalBoardReady();}
-/* ===== 경기·작전판 완전분리 빌드 마커 + 1회 확인 토스트 ===== */
+/* ===== 경기·작전판 완전분리 빌드 마커 — 이전 처리는 조용히 완료 ===== */
 window.__PS_BUILD="2026.06.25-개수항목별";
 try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전판 완전 분리");}catch(_){}
 (function(){try{
   try{store.set("cs_snap_match_v1",null);}catch(_){}  // 옛 공유 오염 데이터 폐기
   Promise.resolve(store.get("cs_build_seen")).then(function(v){
     if(v!==window.__PS_BUILD){
-      setTimeout(function(){try{toast("업데이트 적용됨 ✓ 운동장 개수 항목별 저장 ("+window.__PS_BUILD+")");}catch(_){}} ,900);
       try{store.set("cs_build_seen",window.__PS_BUILD);}catch(_){}
     }
   });
@@ -14930,9 +14933,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     +"body.vx-resizing{cursor:col-resize;user-select:none;-webkit-user-select:none}"
     +"@media(max-width:820px){.vault-explorer>.vx-split{display:none}}"; document.head.appendChild(_st); } }catch(_){}
   renderDrillFiles=function(){
-    if(!psVaultRequireLogin())return;
+    if(!psVaultRenderReady())return;
     var box=$id("drillFiles");if(!box)return;
-    /* 보관함은 로컬 저장(IndexedDB)이라 로그인 없이 완전 동작 — 로그인은 기기 간 동기화용 선택사항 (게이트 제거) */
+    /* 계정 자료 확인을 통과한 뒤에만 보관함 목록을 읽는다. */
     var _vb0=$id("vaultBar");if(_vb0)_vb0.style.display="";
     try{maybeBackfillCreators();}catch(_){}
     /* 1.966 — 기본 보기 = 카드(사용자). 이미 저장된 목록 선호는 한 번(cs_vault_view_v2 표식) 카드로 돌리고, 그 뒤 고른 것은 그대로 기억 */

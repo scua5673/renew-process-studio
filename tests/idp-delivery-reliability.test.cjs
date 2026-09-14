@@ -22,6 +22,47 @@ async function run(h){const r=await h.run();assert.equal(r.error,undefined,JSON.
 const oldMark=h=>h.c.outboxTxn(q=>q.concat({id:'coach-a|team-a|'+PRIVATE,uid:'coach-a',wid:'team-a',key:PRIVATE,hash:h.c.hash(h.local.get(PRIVATE)),at:Date.now()}));
 const set=(h,k,v,cupd)=>h.server.set(k,{workspace_id:'team-a',k,v,cupd});
 
+for(const key of [PRIVATE,PUBLIC])for(const choice of ['local','server'])test('competing IDP text stays pending until an exact '+choice+' choice: '+key,async()=>{
+ const make=(text,at)=>key===PRIVATE?doc({'2026-09-14':{memo:text,at}}):pub({'day:2026-09-14':{t:text,at,tBy:'coach-'+at}});
+ const initial=make('SYNTHETIC base',1),mine=make('SYNTHETIC local',2),other=make('SYNTHETIC server',3);
+ const h=fixture(key,{uid:key===PRIVATE?'player-a':'coach-a',server:other,cupd:2,mirror:mine});h.baseline(initial);await h.mark();
+ const r=await run(h);assert.ok(r.held.includes(key));assert.equal(h.local.get(key),mine);assert.equal(h.server.get(key).v,other);assert.equal(h.queue.length,1);assert.equal(push(h).length,0);
+ await run(h);assert.equal(h.queue.length,1);assert.equal(h.c.holdList().length,1);
+ const shown=h.c.holdConflictView(h.c.holdList()[0]);assert.ok(await h.c.holdConflictChoose(key,choice==='local',shown));await run(h);
+ const expected=choice==='local'?mine:other;assert.equal(h.local.get(key),expected);assert.equal(h.server.get(key).v,expected);assert.equal(h.queue.length,0);assert.equal(h.c.holdList().length,0);
+});
+
+test('a later server edit invalidates an earlier IDP conflict choice',async()=>{
+ const initial=pub({day:{t:'base'}}),mine=pub({day:{t:'mine'}}),other=pub({day:{t:'server'}}),newer=pub({day:{t:'server changed again'}});
+ const h=fixture(PUBLIC,{server:other,cupd:2,mirror:mine});h.baseline(initial);await h.mark();await run(h);
+ const shown=h.c.holdConflictView(h.c.holdList()[0]);await h.c.holdConflictChoose(PUBLIC,true,shown);set(h,PUBLIC,newer,3);await run(h);
+ assert.equal(h.local.get(PUBLIC),mine);assert.equal(h.server.get(PUBLIC).v,newer);assert.equal(h.queue.length,1);assert.equal(push(h).length,0);
+});
+
+test('separate heart and reply changes merge without a content-conflict warning',async()=>{
+ const initial=pub({day:{h:0,t:'base',at:1,by:'old'}}),mine=pub({day:{h:1,t:'base',at:2,by:'coach-a'}}),other=pub({day:{h:0,t:'reply',at:3,by:'coach-b'}});
+ const h=fixture(PUBLIC,{server:other,cupd:2,mirror:mine});h.baseline(initial);await h.mark();const r=await run(h);
+ assert.equal(r.held.length,0);const saved=JSON.parse(h.server.get(PUBLIC).v).reacts.day;assert.equal(saved.h,1);assert.equal(saved.t,'reply');assert.equal(h.queue.length,0);
+});
+
+test('large device-only image notes do not block diary delivery or leak to a team',async()=>{
+ const initial=doc(),mine=raw({v:1,log:{today:{memo:'SYNTHETIC new diary'}},imgNotes:[{id:'local-note',memo:'x'.repeat(1500100)}]});
+ const h=fixture(PRIVATE,{uid:'player-a',server:initial,mirror:mine});h.baseline(initial);await h.mark();await run(h);
+ assert.equal(JSON.parse(h.server.get(PRIVATE).v).log.today.memo,'SYNTHETIC new diary');assert.deepEqual(JSON.parse(h.server.get(PRIVATE).v).imgNotes,[]);assert.equal(h.local.get(PRIVATE),mine);assert.equal(h.queue.length,0);
+});
+
+test('an oversized actual IDP upload is still retained and pending',async()=>{
+ const initial=doc(),mine=doc({today:{memo:'x'.repeat(1500100)}}),h=fixture(PRIVATE,{uid:'player-a',server:initial,mirror:mine});h.baseline(initial);await h.mark();const r=await run(h);
+ assert.ok(r.skipped.includes(PRIVATE));assert.equal(h.local.get(PRIVATE),mine);assert.equal(h.server.get(PRIVATE).v,initial);assert.equal(h.queue.length,1);
+});
+
+test('choosing team IDP text preserves device-only notes and never publishes them',async()=>{
+ const initial=doc({today:{memo:'base'}}),mine=raw({v:1,log:{today:{memo:'mine'}},imgNotes:[{id:'local',memo:'SYNTHETIC private note'}]}),other=doc({today:{memo:'server'}});
+ const h=fixture(PRIVATE,{uid:'player-a',server:other,cupd:2,mirror:mine});h.baseline(initial);await h.mark();await run(h);
+ await h.c.holdConflictChoose(PRIVATE,false,h.c.holdConflictView(h.c.holdList()[0]));await run(h);
+ assert.equal(JSON.parse(h.local.get(PRIVATE)).log.today.memo,'server');assert.equal(JSON.parse(h.local.get(PRIVATE)).imgNotes[0].memo,'SYNTHETIC private note');assert.equal(h.server.get(PRIVATE).v,other);assert.equal(h.queue.length,0);
+});
+
 test('a player edit reaches the team server and the coach reads that exact log without republishing it',async()=>{
  const initial=doc(),edited=doc({'2026-09-13':{text:'SYNTHETIC player diary'}});
  const player=fixture(PRIVATE,{uid:'player-a',role:'player',teamRole:'member',server:initial,mirror:edited});player.baseline(initial);await player.mark();await run(player);

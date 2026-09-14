@@ -5250,6 +5250,9 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
   try{ _docSeenRaw=localStorage.getItem(viewing); _docSourceValid=validPrivateRaw(_docSeenRaw); }catch(_){}
   var _idpEditBase=JSON.parse(JSON.stringify(doc)),_idpDocumentOwner=idpEditingIdentity(),_idpRecovery=null,_idpRecoveryAuthLocked=false;
   function adoptViewing(key){
+    if(_rvOpen&&_rvDraft&&key!==viewing){
+      gToast('작성 중인 성장 리뷰를 저장하거나 취소한 뒤 다른 선수를 열어 주세요.');return false;
+    }
     /* 선수/화면 전환 직전에는 현재 내 문서의 250ms pending 입력부터 exact-write한다.
        최신 raw가 달라졌다면 전환을 중단해 메모리의 마지막 입력을 버리지 않는다. */
     if(visionEdit){
@@ -11067,7 +11070,19 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         var was=String((reactOf(k)||{}).t||''); if(v===was)return; reactSet(k,{t:v.slice(0,300)}); }catch(_){} });
     });
     [].forEach.call(wrap.querySelectorAll('[data-rx-edit]'),function(t){ t.onclick=function(){ window.__rxEdit=t.dataset.rxEdit; render(); }; }); }
-  function rvSave(list){ var k=coachFeedbackKey(viewing); if(!k)return false; var r=rvRec(); r.reviews=list; try{ localStorage.setItem(k,JSON.stringify(r)); }catch(_){ return false; } try{ var api=parent&&parent.PSSync; if(api&&api.syncNow)api.syncNow('idp-review'); }catch(_){} try{ psAct('a_review_idp'); }catch(_){} return true; }
+  function rvSave(list,draft){
+    if(!rvDraftCurrent(draft))return false;
+    var k=coachFeedbackKey(draft.owner.viewing);if(!k)return false;
+    try{
+      var before=localStorage.getItem(k),r=before?JSON.parse(before):{};
+      if(!r||typeof r!=='object'||Array.isArray(r)||(r.v!=null&&r.v!==1))return false;
+      r.reviews=list;var raw=JSON.stringify(r);
+      if(!rvDraftCurrent(draft)||localStorage.getItem(k)!==before)return false;
+      localStorage.setItem(k,raw);if(localStorage.getItem(k)!==raw)return false;
+    }catch(_){return false;}
+    try{var api=idpSaveApi();if(api&&api.syncNow)api.syncNow('idp-review');}catch(_){}
+    try{psAct('a_review_idp');}catch(_){}return true;
+  }
   function rvDaysTo(d){ if(!d)return null; var t=new Date(d+'T00:00:00').getTime(); if(isNaN(t))return null; var now=new Date(); now.setHours(0,0,0,0); return Math.round((t-now.getTime())/864e5); }
   function rvNextAt(list){ var l=list[list.length-1]; return l&&l.nextAt||''; }
   /* ⚠ 2.403 — 리뷰의 `at` 은 `ymd()` 문자열이다. 그런데 밀리초가 들어오면 그대로 화면에 뱉었다
@@ -11116,6 +11131,14 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return h+'</div>';
   }
   var _rvOpen=false, _rvDraft=null, myArchOpen=null;   /* 2.079 — null = 자동(유형이 없으면 펼침) */
+  function rvDraftOwner(){
+    var owner=idpSaveOwner();if(!owner||!owner.uid||!(ro()&&isCoach()))return null;
+    return {uid:owner.uid,wid:owner.wid,viewing:viewing,seal:localStorage.getItem('ps_cache_owner_v1')||''};
+  }
+  function rvDraftCurrent(draft){
+    var now=rvDraftOwner(),owner=draft&&draft.owner;
+    return !!(draft&&draft===_rvDraft&&_rvOpen&&now&&owner&&now.uid===owner.uid&&now.wid===owner.wid&&now.viewing===owner.viewing&&now.seal===owner.seal);
+  }
   /* 대조 자료 — 셀프(ev.levels) vs 코치(coachLevels) 를 표준 항목(24+포지션) 위에서 */
   function cmpData(){
     var ev=doc.selfEval||{}, self=ev.levels||{}, uid=viewedUid(), coach=(ro()&&isCoach()&&uid)?(coachLevels(uid)||{}):{};
@@ -11705,7 +11728,11 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<div class="card rv-card'+(due?' due':'')+'"><div class="rv-head"><div><div class="lp-kicker">GROWTH REVIEW · 6주</div><h3>성장 리뷰</h3></div>'
       +'<span class="rv-next'+(due?' due':(soon?' soon':''))+'">'+(nextAt?('다음 리뷰 '+rvFmt(nextAt)+(dn!=null?(dn===0?' · 오늘':(dn<0?' · '+(-dn)+'일 지남':' · D-'+dn)):'')):(list.length?'다음 리뷰 미정':'첫 리뷰 전'))+'</span>'
       +(coachMode&&!_rvOpen?'<button type="button" class="btn primary" data-rv-start>'+(list.length?'리뷰 시작':'첫 리뷰 시작')+'</button>':'')+'</div>';
-    if(coachMode&&_rvOpen&&_rvDraft){ h+=rvForm(last); h+='</div>'; return h; }
+    if(coachMode&&_rvOpen&&_rvDraft){
+      if(rvDraftCurrent(_rvDraft))h+=rvForm(last);
+      else h+='<p>계정이나 선수가 바뀌어 작성 중인 리뷰를 잠갔습니다. 원래 계정과 선수 화면에서 다시 확인해 주세요.</p><button type="button" class="btn" data-rv-cancel>작성 취소</button>';
+      h+='</div>';return h;
+    }
     if(last){
       h+='<div class="rv-last"><div class="rv-meta">'+esc(rvFmt(last.at))+' · '+esc(last.by||'코치')+(list.length>1?' · 지난 리뷰 '+(list.length-1)+'회':'')+'</div>';
       if(last.strengths&&last.strengths.length) h+='<div class="rv-sec"><span>강점</span><div class="rv-chips">'+last.strengths.map(function(x){return '<i>'+esc(x)+'</i>';}).join('')+'</div></div>';
@@ -11803,9 +11830,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return h;
   }
   function bindReviews(){
-    var st=wrap.querySelector('[data-rv-start]'); if(st) st.onclick=function(){ if(!(ro()&&isCoach()))return; var last=rvList().slice(-1)[0]; _rvDraft={prevProgress:{},strengths:[],develop:[],goals:[],weeks:6,note:''}; _rvOpen=true; render(); };
+    var st=wrap.querySelector('[data-rv-start]'); if(st) st.onclick=function(){ var owner=rvDraftOwner();if(!owner)return;_rvDraft={owner:owner,prevProgress:{},strengths:[],develop:[],goals:[],weeks:6,note:''}; _rvOpen=true; render(); };
     var cc=wrap.querySelector('[data-rv-cancel]'); if(cc) cc.onclick=function(){ _rvOpen=false; _rvDraft=null; render(); };
-    if(!_rvOpen||!_rvDraft)return; var d=_rvDraft;
+    if(!rvDraftCurrent(_rvDraft))return; var d=_rvDraft;
     [].forEach.call(wrap.querySelectorAll('[data-rv-prev]'),function(b){ b.onclick=function(){ d.prevProgress[b.dataset.rvPrev]=b.dataset.v; render(); }; });
     /* 2.169 — 별첨 칩 → 보고 정할 것(dec). 같은 칩을 다시 누르면 비운다 */
     [].forEach.call(wrap.querySelectorAll('[data-rv-gl]'),function(b){ b.onclick=function(){ var i=+b.dataset.rvGl; d.goals[i]=d.goals[i]||{t:'',owner:'player',due:''}; d.goals[i].dec=(d.goals[i].dec===b.dataset.t)?'':b.dataset.t; render(); }; });
@@ -11838,6 +11865,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     }); });
     [].forEach.call(wrap.querySelectorAll('[data-rv-g]'),function(el){ el.addEventListener('input',function(){ var i=+el.dataset.rvG; d.goals[i]=d.goals[i]||{t:'',owner:'player',due:''}; d.goals[i][el.dataset.k]=el.value; }); el.addEventListener('change',function(){ var i=+el.dataset.rvG; d.goals[i]=d.goals[i]||{t:'',owner:'player',due:''}; d.goals[i][el.dataset.k]=el.value; }); });
     var sv=wrap.querySelector('[data-rv-save]'); if(sv) sv.onclick=function(){
+      if(!rvDraftCurrent(d)){gToast('계정이나 선수가 바뀌어 리뷰를 저장하지 않았어요. 작성하던 선수에서 다시 확인해 주세요.');return;}
       var goals=d.goals.filter(function(g){return g&&g.t&&g.t.trim();}).map(function(g){ var o={t:g.t.trim(),owner:g.owner||'player',due:g.due||'',id:g.id||uid()};
         /* 2.110 — 매뉴얼 6.3 의 ⓐ 국면 · ⓒ 의사결정 요소. 비어 있으면 아예 안 담는다 */
         if(g.cat&&window.PS_LM&&PS_LM.cat(g.cat))o.cat=g.cat;
@@ -11847,7 +11875,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(!goals.length&&!d.strengths.length&&!d.develop.length){ gToast('강점·발전점·목표 중 하나는 적어 주세요'); return; }
       var now=new Date(), at=ymd(now), nx=new Date(now.getTime()+(+d.weeks||6)*7*864e5), nextAt=ymd(nx);
       var list=rvList(); list.push({id:'rv'+Date.now().toString(36),at:at,by:lrCoachName(),weeks:+d.weeks||6,prevProgress:d.prevProgress,strengths:d.strengths,develop:d.develop,goals:goals,nextAt:nextAt,note:(d.note||'').trim(),link:String(d.link||'').trim().slice(0,300)});
-      if(rvSave(list)){ _rvOpen=false; _rvDraft=null; gToast('리뷰를 저장했어요 — 다음 리뷰 '+rvFmt(nextAt)); render(); } else gToast('저장하지 못했어요');
+      if(rvSave(list,d)){ _rvOpen=false; _rvDraft=null; gToast('리뷰를 저장했어요 — 다음 리뷰 '+rvFmt(nextAt)); render(); } else gToast('저장하지 못했어요');
     };
   }
   function rProfileSum(open){

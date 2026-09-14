@@ -52,7 +52,7 @@ test('cleanup cannot remove a newer value written by the new team',async()=>{
   await assert.rejects(h.c.itemsWriteReady([p('a','Alpha')]),e=>e.psCode==='sync_workspace_changed');assert.equal(h.disk.get('sq:a'),'NEW_TEAM_VALUE');
 });
 test('unready backend and deliberate bulk deletion stay unconfirmed',async()=>{
-  const h=harness();h.unready();await assert.rejects(h.c.itemsWriteReady([p('a','Alpha')]),e=>e.psCode==='sync_storage');assert.equal(h.disk.size,0);
+  const h=harness();h.unready();await assert.rejects(h.c.itemsWriteReady([p('a','Alpha')]),e=>e.psCode==='sync_confirm_missing');assert.equal(h.disk.size,0);
   const h2=harness();h2.local.set('idx:team-a',JSON.stringify(Object.fromEntries(['a','b','c','d','e'].map(id=>[id,'old']))));
   await assert.rejects(h2.c.itemsWriteReady([]),e=>e.psCode==='sync_storage');assert.equal(h2.disk.size,0);assert.equal(JSON.parse(h2.local.get('hold')).ids.length,5);
 });

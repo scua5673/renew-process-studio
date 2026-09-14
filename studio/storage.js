@@ -115,7 +115,9 @@
       throw error;
     });
   }
-  function idbDel(k){ return tx('readwrite',function(s){ s.delete(k); return null; }); }
+  /* 계정 캐시 정리는 DB 열기까지 기다린 뒤 실제 삭제 요청 직전에도
+     소유자를 확인한다. 대기 중 바뀐 로그인 자료는 삭제하지 않는다. */
+  function idbDel(k,current){ return tx('readwrite',function(s){ if(current)current();s.delete(k);return null; }); }
   /* sync 회차의 팀/계정이 IDB write 도중 바뀐 경우에만 쓰는 exact 정리.
      get→del을 두 transaction으로 나누면 그 사이 새 팀 저장까지 지울 수 있으므로,
      같은 readwrite transaction 안에서 방금 쓴 원문과 정확히 같을 때만 지운다. */
@@ -404,7 +406,7 @@
       });
     },
     set:function(k,v){ return afterMigrate(function(){ return idbSet(k,v); }); },
-    del:function(k){ return afterMigrate(function(){ return idbDel(k); }); },
+    del:function(k,current){ return afterMigrate(function(){ if(current)current();return idbDel(k,current); }); },
     delIfValue:function(k,v){ return afterMigrate(function(){ return idbDelIfValue(k,v); }); },
     replaceIfValue:function(k,expected,replacement){ return afterMigrate(function(){ return idbReplaceIfValue(k,expected,replacement); }); },
     keys:function(prefix){ return afterMigrate(function(){ return idbKeys(prefix); }); }
