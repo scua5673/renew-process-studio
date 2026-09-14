@@ -91,3 +91,9 @@ test('failed deletion-record save leaves the profile and roster intact before an
   vm.runInContext(section(scout,'  if($("plDelete"))$("plDelete").onclick=()=>{','  $("plName").value'),h.c);h.c.store.set=(k)=>k!==PD;button.onclick();confirmed();
   assert.equal(h.c.data.players.length,1);assert.equal(h.c._itemsActiveJobs.length,0);assert.equal(h.c.itemsWriteBusy(),false);
 });
+test('stale explicit deletion holds only its player while unrelated changes complete real synchronization',async()=>{
+  const h=fixture([p('a'),p('b')]),key='sq:b',before=h.idb.get(key),changed=raw({...p('b'),memo:'later edit'});h.c.plTombAdd('b');h.c.data.players=h.c.data.players.filter(x=>x.id!=='b');let race=true;
+  h.hooks.idbWrite=k=>{if(k===key&&race){race=false;h.idb.set(key,changed);}};h.c.save({deletedIds:['b']});await h.c.itemsWriteFlush();assert.equal(h.c.itemsWriteBusy(),false);const review=h.c.itemsDeleteReviews()[0];assert.equal(review.expected,before);assert.equal(review.current,changed);
+  h.c.data.players[0].memo='unrelated saved edit';h.c.save();for(let i=0;i<3;i++)await h.round();
+  assert.equal(JSON.parse(h.server.get('sq:a').v).memo,'unrelated saved edit');assert.equal(h.idb.get(key),changed);assert.equal(h.server.get(key).v,before);assert.equal(h.c.itemsDeleteReviews().length,1);assert.equal(h.c.itemsWriteBusy(),false);
+});
