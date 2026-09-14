@@ -173,3 +173,37 @@ test('missing write owner rejects before snapshot reads or active-job registrati
   await assert.rejects(h.c.itemsWriteReady([p('a','Unowned')]),e=>e.psStage==='items_write_owner');
   assert.equal(reads,0);assert.equal(h.c._itemsActiveJobs.length,0);assert.equal(h.c.itemsWriteBusy(),false);
 });
+test('explicit deletion tombstones an unindexed imported row and touches no other player',async()=>{
+  const h=harness(),a=p('a','Active'),extra=p('extra','Imported'),other=p('other','Unrelated original');seed(h,[a]);h.disk.set('sq:extra',JSON.stringify(extra));h.disk.set('sq:other',JSON.stringify(other));
+  const result=await h.c.itemsWrite([a],{deletedIds:['extra']});
+  assert.equal(result.gone,1);assert.ok(JSON.parse(h.disk.get('sq:extra'))._del);assert.equal(h.disk.get('sq:other'),JSON.stringify(other));assert.deepEqual(h.writes.map(x=>x.k),['sq:extra']);assert.deepEqual(Object.keys(JSON.parse(h.local.get('idx:team-a'))),['a']);
+});
+test('later ordinary saves cannot coalesce away an explicit deletion',async()=>{
+  const h=harness(),a=p('a','Active');seed(h,[a]);h.disk.set('sq:extra',JSON.stringify(p('extra','Imported')));
+  let release;const gate=new Promise(r=>release=r);h.hooks.ready=()=>gate;
+  const deletion=h.c.itemsWrite([a],{deletedIds:['extra']}),ordinary=h.c.itemsWrite([a]);assert.equal(h.c.itemsWriteBusy(),true);
+  release();await h.c.itemsWriteFlush();await Promise.all([deletion,ordinary]);assert.ok(JSON.parse(h.disk.get('sq:extra'))._del);assert.equal(h.c.itemsWriteBusy(),false);
+});
+test('failed explicit deletion survives a second completed deletion and never replays its stale roster',async()=>{
+  const h=harness(),a=p('a','Active'),b=p('b','Delete first'),c=p('c','Delete next');seed(h,[a]);h.disk.set('sq:b',JSON.stringify(b));h.disk.set('sq:c',JSON.stringify(c));
+  h.hooks.write=k=>{if(k==='sq:b')throw new Error('temporary IO');};assert.equal(await h.c.itemsWrite([a,c],{deletedIds:['b']}),null);
+  await h.c.itemsWrite([a],{deletedIds:['c']});const ct=h.disk.get('sq:c');assert.ok(JSON.parse(ct)._del);assert.equal(h.c.itemsWriteBusy(),true);
+  const newer=p('a','Later edit');const ordinary=h.c.itemsWrite([newer]);await h.c.itemsWriteDrain();await ordinary;assert.equal(h.c.itemsWriteBusy(),true);
+  delete h.hooks.write;await h.c.itemsWriteFlush();assert.ok(JSON.parse(h.disk.get('sq:b'))._del);assert.equal(h.disk.get('sq:c'),ct);assert.equal(h.disk.get('sq:a'),JSON.stringify(newer));assert.equal(h.c.itemsWriteBusy(),false);
+});
+test('multiple failed explicit deletions remain independently retryable',async()=>{
+  const h=harness(),a=p('a','Active');seed(h,[a]);for(const id of ['b','c'])h.disk.set('sq:'+id,JSON.stringify(p(id,id)));
+  h.hooks.write=()=>{throw new Error('disk full');};await h.c.itemsWrite([a,p('c','c')],{deletedIds:['b']});await h.c.itemsWrite([a],{deletedIds:['c']});assert.equal(h.c._itemsExplicitFailures.length,2);
+  delete h.hooks.write;await h.c.itemsWriteFlush();for(const id of ['b','c'])assert.ok(JSON.parse(h.disk.get('sq:'+id))._del);assert.equal(h.c._itemsExplicitFailures.length,0);assert.equal(h.c.itemsWriteBusy(),false);
+});
+test('explicit deletion CAS and every retry preserve a later edit',async()=>{
+  const h=harness(),a=p('a','Active');seed(h,[a]);h.disk.set('sq:extra',JSON.stringify(p('extra','Original')));let changed=false;
+  h.hooks.write=(k)=>{if(k==='sq:extra'&&!changed){changed=true;h.disk.set(k,'NEWER_ROW');}};
+  assert.equal(await h.c.itemsWrite([a],{deletedIds:['extra']}),null);assert.equal(h.disk.get('sq:extra'),'NEWER_ROW');
+  await assert.rejects(h.c.itemsWriteFlush(),e=>e.psStage==='items_write_stale_job');assert.equal(h.disk.get('sq:extra'),'NEWER_ROW');assert.equal(h.c.itemsWriteBusy(),true);
+});
+test('explicit deletion stays closed on unavailable server and cannot follow its owner to another team',async()=>{
+  const h=harness(),a=p('a','Active');seed(h,[a]);h.disk.set('sq:extra',JSON.stringify(p('extra','Original')));h.unready();
+  assert.equal(await h.c.itemsWrite([a],{deletedIds:['extra']}),null);assert.equal(h.writes.length,0);assert.equal(h.c.itemsWriteBusy(),true);
+  h.move();await h.c.itemsWriteFlush();assert.equal(h.writes.length,0);assert.equal(h.c.itemsWriteBusy(),false);
+});

@@ -5758,7 +5758,9 @@ const DEFAULT_POS=["GK","CB","LCB","RCB","LB","RB","LWB","RWB","LDM","DM","RDM",
 const mem={};
 /* 1.618 — 이 파일이 쓰는 키 중 sync.js 가 IndexedDB 에서 읽어 올리는 것들(sync.js 의 IDBK).
    여기 없으면 화면에만 저장되고 팀에는 안 올라간다. IDBK 를 늘릴 때 이 목록도 같이 볼 것. */
-const SHARED_IDB={"cs_team_matches_v1":1,"cs_scout_targets_v1":1,"cs_perms_v1":1,"cs_squad_v1":1,
+const SHARED_IDB={"scout_tool_v1":1,"cs_team_matches_v1":1,"cs_scout_targets_v1":1,"cs_perms_v1":1,"cs_squad_v1":1,
+  /* 백업·이전 읽기가 main을 IDB에 만들면 sync도 그 원문을 정본으로 읽는다.
+     선수 저장은 항상 양쪽을 갱신하고 store.ready가 IDB 확인까지 기다려야 한다. */
   /* 1.619 — matchMergeSchedule 이 경기 ID 를 일정 문서에도 도장 찍는다(7570행 부근). */
   "process_coach_v1":1};
 /* 2.744 — 키별 완료 장벽. 팀/계정이 바뀌면 이전 저장의 늦은 응답은 새 화면을 건드리지 않는다. */
@@ -5827,10 +5829,10 @@ function isTargetPl(p){ return !!(p&&p.type==="target"); }
 const PDKEY="cs_player_del_v1";
 function plTombs(){ try{ var d=store.get(PDKEY); return (d&&typeof d==="object"&&!Array.isArray(d))?d:{}; }catch(_){ return {}; } }
 function plTombAdd(id){
-  if(id==null||id==="")return;
+  if(id==null||id==="")return false;
   try{ var d=plTombs(); d[String(id)]=Date.now(); var ks=Object.keys(d);
     if(ks.length>400){ ks.sort(function(x,y){return (d[x]||0)-(d[y]||0);}).slice(0,ks.length-400).forEach(function(k){ delete d[k]; }); }
-    store.set(PDKEY,d); }catch(_){}
+    return store.set(PDKEY,d)!==false; }catch(_){return false;}
 }
 function plTombApply(arr){
   if(!Array.isArray(arr))return arr; var d=plTombs(); if(!Object.keys(d).length)return arr;
@@ -6351,7 +6353,7 @@ function save(){
     if(!options.skipTargets&&canSeeTargets()&&!store.set(TKEY,{v:1,players:tg}))savedTargets=false;
     /* 항목 단위 저장(1.631) — 선수 한 명이 키 하나. 실패해도 본 저장은 이미 끝났다.
        ⚠ ours 만 넘긴다. 후보(target)는 권한 등급이 달라 섞으면 코칭스태프에게 샌다. */
-    try{ var PI=(window.parent&&window.parent.PSItems)||window.PSItems; if(!options.skipItems&&PI&&PI.write)PI.write(main.players); }catch(_){}
+    try{ var PI=(window.parent&&window.parent.PSItems)||window.PSItems; if(!options.skipItems&&PI&&PI.write)PI.write(main.players,{deletedIds:options.deletedIds}); }catch(_){}
   })();
   if(!savedMain)return false;
   /* 속성 목록만 공개 미러(cs_team_attrs_v1) — 선수는 scout_tool_v1(전체 평가)을 서버에서 못 받지만
@@ -8619,7 +8621,7 @@ function renderPlayers(){
     posSel.onclick=function(ev){ev.stopPropagation();};
     const edit=document.createElement("button");edit.className="btn sm";edit.textContent="편집";edit.onclick=()=>openPlayer(pl.id);
     const del=document.createElement("button");del.className="btn danger sm";del.textContent="삭제";
-    del.onclick=()=>{psConfirm(`"${pl.name||"이름 없는"}" 선수를 삭제할까요?`,()=>{plTombAdd(pl.id);data.players=data.players.filter(x=>x.id!==pl.id);if(editingPlayer===pl.id)closePlayer();save();renderPlayers();});};
+    del.onclick=()=>{psConfirm(`"${pl.name||"이름 없는"}" 선수를 삭제할까요?`,()=>{if(!plTombAdd(pl.id))return;data.players=data.players.filter(x=>x.id!==pl.id);if(editingPlayer===pl.id)closePlayer();save({deletedIds:pl.type==='target'?[]:[String(pl.id)]});renderPlayers();});};
     const pdf=document.createElement("button");pdf.className="btn sm";pdf.textContent="PDF";pdf.title="이력서+세부평가 PDF 내보내기";pdf.onclick=()=>printPlayerReport(pl.id);const cb=document.createElement("input");cb.type="checkbox";cb.className="pl-cb";cb.setAttribute("data-cbpl",pl.id);cb.onclick=ev=>ev.stopPropagation();cb.addEventListener("change",function(){try{ps3sync();}catch(_){}});
     row.append(cb,nm,posSel);
     if(pl.type!=="target"){   /* 우리 선수만 — 스카우트 대상은 훈련 상태 개념이 없음 */
@@ -8691,10 +8693,10 @@ function openPlayer(id,opts){
   if($("plDelete"))$("plDelete").onclick=()=>{
     if(pl.type==="target"){scArchiveCandidate(pl.id);closePlayer();return;}
     psConfirm((pl.name||"이 선수")+" 삭제? 평가 기록도 함께 삭제됩니다.",()=>{
-      plTombAdd(pl.id); var gi=data.players.indexOf(pl); if(gi>=0)data.players.splice(gi,1);
-      save(); closePlayer();
+      if(!plTombAdd(pl.id))return; var gi=data.players.findIndex(x=>String(x.id)===String(pl.id)); if(gi>=0)data.players.splice(gi,1);
+      var deletedSaved=save({deletedIds:[String(pl.id)]}); closePlayer();
       try{renderTeam();}catch(_){} try{renderScoutCands();}catch(_){} try{renderScoutBoard();}catch(_){} try{redrawTeamPitch();}catch(_){}
-      try{toast("삭제됨");}catch(_){}
+      try{toast(deletedSaved?"이 기기에서 삭제했습니다 · 팀 반영은 동기화 상태에서 확인하세요":"삭제 저장 확인이 필요합니다 · 자료 확인에서 확인하세요");}catch(_){}
     });
   };
   $("plName").value=pl.name||"";$("plMemo").value=pl.memo||"";
@@ -10814,7 +10816,7 @@ function renderTeam(){
       data.players[pj]=pl;data.players[gi]=ours[i+1];save();renderTeam();};
     const del=document.createElement("button");del.className="t-x";del.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     del.onclick=()=>{psConfirm((pl.name||"이 선수")+" 삭제? 평가 기록도 함께 삭제됩니다.",()=>{
-      plTombAdd(pl.id);data.players.splice(gi,1);save();renderTeam();});};
+      if(!plTombAdd(pl.id))return;var di=data.players.findIndex(x=>String(x.id)===String(pl.id));if(di>=0)data.players.splice(di,1);save({deletedIds:[String(pl.id)]});renderTeam();});};
     const acts=document.createElement("div");acts.className="tm-acts";acts.append(up,dn,del);
     var _key=pl.posId||"__none";
     if(_key!==_prevPos[_ck]){_prevPos[_ck]=_key;_depthMap[_ck+"|"+_key]=0;
