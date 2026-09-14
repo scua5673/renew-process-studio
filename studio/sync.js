@@ -2308,7 +2308,7 @@ function libRow(it,t,wid,priv){ var clean=libShareCopy(it); return libStamp({wor
    어댑터가 없으면(구버전/IDB 불가) 예전처럼 localStorage에서 읽는다. */
 /* board.html이 store(=IndexedDB)로 저장하는 동기화 대상 키들.
    localStorage에서 읽으면 값이 없거나 낡아서 팀에 전파되지 않는다 → 반드시 어댑터로 읽고 쓴다. */
-var IDBK={'training_sessions_v1':1,'cs_squad_v1':1,'cs_vault_folders_v1':1,'cs_meet_sit_v1':1,
+var IDBK={'scout_tool_v1':1,'training_sessions_v1':1,'cs_squad_v1':1,'cs_vault_folders_v1':1,'cs_meet_sit_v1':1,
   /* 1.501 — 매치데스크(analysis.html)는 v309부터 IndexedDB에 저장한다.
      KEYS에만 넣고 여기 빠뜨리면 localStorage에서 빈 값으로 읽혀 서버에 안 올라간다("저장이 안 돼"). */
   'cs_analysis_workspaces_v1':1,'cs_analysis_team_library_v1':1,
@@ -3293,8 +3293,8 @@ function bigDrop(before,after){
   if(before==null||after==null)return false;
   return (before-after>=5)||(before>=4&&after<=before/2);
 }
-function holdList(){ if(!dataUnlocked())return [];try{ var s=getSess(),wid=String(activeWs()||'');return (JSON.parse(localStorage.getItem(HOLD_LIST)||'[]')||[]).filter(function(x){return x&&(!x.kind||x.kind!=='conflict'||(s&&x.uid===String(s.uid||'')&&x.wid===wid));}); }catch(_){ return []; } }
-function holdSetList(a){ try{ var conflicts=a.filter(function(x){return x&&x.kind==='conflict';}),ordinary=a.filter(function(x){return !x||x.kind!=='conflict';});localStorage.setItem(HOLD_LIST,JSON.stringify(conflicts.concat(ordinary.slice(-HOLD_MAX)))); }catch(_){} }
+function holdList(){ if(!dataUnlocked())return [];try{ var s=getSess(),wid=String(activeWs()||'');return (JSON.parse(localStorage.getItem(HOLD_LIST)||'[]')||[]).filter(function(x){return x&&((x.kind!=='conflict'&&x.kind!=='item-delete')||(s&&x.uid===String(s.uid||'')&&x.wid===wid));}); }catch(_){ return []; } }
+function holdSetList(a){ try{ var conflicts=a.filter(function(x){return x&&(x.kind==='conflict'||x.kind==='item-delete');}),ordinary=a.filter(function(x){return !x||(x.kind!=='conflict'&&x.kind!=='item-delete');});localStorage.setItem(HOLD_LIST,JSON.stringify(conflicts.concat(ordinary.slice(-HOLD_MAX)))); }catch(_){} }
 function holdUnlist(k){ try{ holdSetList(holdList().filter(function(x){ return x.k!==k||x.kind==='conflict'; })); }catch(_){} }
 function holdClear(k){ try{ holdUnlist(k); localStorage.removeItem('ps_push_ok_'+k); }catch(_){} }
 /* A whole shared document that both coaches changed is never silently replaced.
@@ -3845,6 +3845,7 @@ function dataReviewList(){
   try{personalReviewList().forEach(function(x){out.push(Object.assign({},x,{src:'personal',mine:null,theirs:null,
     why:x.choice?'선택을 기록했습니다 · 두 판본을 다시 확인한 뒤 반영합니다':'개인 자료가 두 기기에서 바뀌어 양쪽 내용을 그대로 보관 중입니다'}));});}catch(_){}
   try{ holdList().forEach(function(x){
+    if(x.kind==='item-delete'){var view=itemsDeleteReviewView(x);if(view)out.push(Object.assign(view,{src:'item-delete',mine:null,theirs:null,why:'삭제를 확인한 뒤 선수 원문이 바뀌어 자동 삭제를 멈췄습니다. 변경된 원문과 이전 삭제 요청을 보관했습니다. 원문을 확인하고 삭제를 다시 선택하거나 추가 삭제를 취소하세요.'}));return;}
     if(x.kind==='conflict'){out.push(Object.assign(holdConflictView(x),{src:'team',mine:x.after,theirs:x.before,
       why:x.choice?'선택한 두 판본을 다시 확인한 뒤 반영합니다':String(x.k).indexOf('sq:')===0?'한 선수의 정보가 두 기기에서 바뀌었습니다. 이 기기와 팀의 원문을 유지하고 있으며, 선택하면 그 선수 정보 전체를 반영합니다.':'양쪽 변경을 보관 중입니다. 선택한 자료의 문서 전체를 반영하므로, 다른 경기·선수의 변경도 함께 바뀔 수 있습니다. 필요한 내용을 먼저 확인해 주세요.'}));return;}
     out.push({src:'hold',k:x.k,at:x.at,mine:x.after,theirs:x.before,
@@ -3859,12 +3860,13 @@ function dataReviewList(){
     out.push({src:'conflict',k:x.k,at:x.at,mine:null,theirs:null,
       why:'양쪽이 같이 바뀌어 지금은 이 기기 것이 쓰이고 있습니다'}); }); }catch(_){}
   /* 같은 키가 두 갈래에 걸리면 더 급한 쪽(보류 > 덮임 > 충돌) 하나만 */
-  var rank={personal:0,team:0,hold:1,rescue:2,conflict:3}, seen={}, uniq=[];
+  var rank={personal:0,team:0,'item-delete':0,hold:1,rescue:2,conflict:3}, seen={}, uniq=[];
   out.sort(function(a,b){ return (rank[a.src]-rank[b.src])||(b.at-a.at); });
   out.forEach(function(x){ if(!seen[x.k]){ seen[x.k]=1; uniq.push(x); } });
   return uniq;
 }
 function dataReviewApply(src,k,keepMine,shown){
+  if(src==='item-delete')return itemsDeleteReviewChoose(shown,keepMine);
   if(src==='personal')return personalReviewChoose(k,keepMine,shown);
   if(src==='team')return holdConflictChoose(k,keepMine,shown);
   var run;
@@ -4011,13 +4013,14 @@ function dataReviewOpen(){
     var num=(x.mine!=null&&x.theirs!=null)
       ? '<div style="font-size:12px;margin-top:3px">이 기기 <b>'+x.mine+'개</b> · 팀 <b>'+x.theirs+'개</b></div>' : '';
     return '<div style="padding:11px 0;border-top:1px solid rgba(128,128,128,.22)">'
-      +'<div style="font-size:14px;font-weight:800">'+esc(keyLabel(x.k))+'</div>'
+      +'<div style="font-size:14px;font-weight:800">'+esc(x.src==='item-delete'?itemsDeleteReviewLabel(x):keyLabel(x.k))+'</div>'
       +num
       +'<div style="font-size:11px;opacity:.72;margin-top:3px">'+esc(x.why)+'</div>'
       +'<div style="font-size:11px;opacity:.55;margin-top:2px">'+(x.src==='team'?'이 기기 확인 '+new Date(x.at).toLocaleString()+'<br>서버 판본 '+new Date(x.c).toLocaleString():new Date(x.at).toLocaleString())+'</div>'
       +'<div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap">'
-      +'<button type="button" data-dr="'+i+'" data-keep="1" style="'+bcss+'">'+(x.src==='team'?'이 기기 문서 전체 올리기':x.src==='personal'?'이 기기 것 올리기':'이 기기 것')+'</button>'
-      +'<button type="button" data-dr="'+i+'" data-keep="0" style="'+bcss+'">'+(x.src==='team'?'팀 문서 전체 받기':x.src==='personal'?'다른 기기 것 받기':'팀 것')+'</button>'
+      +'<button type="button" data-dr="'+i+'" data-keep="1" style="'+bcss+'">'+(x.src==='item-delete'?'현재 원문도 삭제':x.src==='team'?'이 기기 문서 전체 올리기':x.src==='personal'?'이 기기 것 올리기':'이 기기 것')+'</button>'
+      +'<button type="button" data-dr="'+i+'" data-keep="0" style="'+bcss+'">'+(x.src==='item-delete'?'추가 삭제 취소':x.src==='team'?'팀 문서 전체 받기':x.src==='personal'?'다른 기기 것 받기':'팀 것')+'</button>'
+      +(x.src==='item-delete'?'<button type="button" data-dr-delete-export="'+i+'" style="'+bcss+'">삭제 요청·원문 저장</button>':'')
       +'</div></div>';
   }).join('');
   /* ── 지난 판본으로 되돌리기 (1.620) ── */
@@ -4060,6 +4063,8 @@ function dataReviewOpen(){
     +'<button type="button" id="drItemsLegacyExport" style="'+bcss+'">충돌 사본 내보내기</button></div>';
   var mo=null;
   try{ mo=psModal({title:'자료 확인'+(list.length?(' '+list.length+'건'):''),body:body,hideCancel:true,ok:'닫기'}); }catch(_){}
+  var deleteView=list.find(function(x){return x.src==='item-delete';}),reviewBody=document.getElementById('psWsBody');
+  if(deleteView&&reviewBody)histReadView(reviewBody,deleteView.reviewContext);
   var legacyExport=document.getElementById('drItemsLegacyExport');
   if(legacyExport)legacyExport.addEventListener('click',function(){try{if(!itemsLostExport(legacyItems))chip('계정이나 사본이 바뀌었습니다. 자료 확인을 다시 열어 주세요.');}catch(e){syncDiagnostic('items-legacy-export',e);chip('충돌 사본을 내보내지 못했습니다. 사본은 그대로 남아 있습니다.');}});
   (function(){
@@ -4145,9 +4150,13 @@ function dataReviewOpen(){
       });
     });
   })();
+  document.querySelectorAll('[data-dr-delete-export]').forEach(function(b){b.addEventListener('click',function(){itemsDeleteReviewExport(list[+b.getAttribute('data-dr-delete-export')]);});});
   document.querySelectorAll('[data-dr]').forEach(function(b){
     b.addEventListener('click',function(){
       var x=list[+b.getAttribute('data-dr')], keep=b.getAttribute('data-keep')==='1';
+      if(x.src==='item-delete'&&keep){psModal({title:'현재 선수 원문도 삭제할까요?',body:'평가 기록이 삭제됩니다. 원문을 보관하려면 먼저 자료 확인에서 삭제 요청·원문 저장을 눌러 주세요.',danger:true,ok:'삭제',onOk:apply,onCancel:dataReviewOpen});return;}
+      apply();
+      function apply(){
       b.disabled=true; b.textContent='…';
       Promise.resolve(dataReviewApply(x.src,x.k,keep,x)).then(function(ok){
         try{ if(mo&&mo.close)mo.close(true); }catch(_){}
@@ -4159,6 +4168,10 @@ function dataReviewOpen(){
         }
         try{ syncNow('data-review'); }catch(_){}
         try{ renderUI(); }catch(_){}
+        if(x.src==='item-delete'){
+          try{psModal({title:keep?'삭제를 이 기기에 저장했습니다':'추가 삭제를 취소했습니다',body:keep?'팀 반영 여부는 동기화 상태에서 확인하세요.':'이미 저장된 삭제 기록은 되돌리지 않습니다. 바뀐 선수 원문은 그대로 유지합니다.',hideCancel:true,ok:'확인'});}catch(_){}
+          return;
+        }
         if(ok&&ok.pending){
           try{psModal({title:'선택을 기록했습니다',body:'동기화에서 두 판본이 그대로인지 확인한 뒤 '+(keep?'이 기기 내용을 올립니다.':'다른 기기 내용을 받습니다.')+' 그동안 내용이 바뀌면 다시 확인할 수 있게 남겨 둡니다.',hideCancel:true,ok:'확인'});}catch(_){}
           return;
@@ -4172,6 +4185,7 @@ function dataReviewOpen(){
         b.disabled=false;b.textContent=keep?'이 기기 것':'다른 기기 것';
         try{psModal({title:'선택을 저장하지 못했습니다',body:'자료는 그대로 두었습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.',hideCancel:true,ok:'확인'});}catch(_){}
       });
+      }
     });
   });
 }
@@ -4349,11 +4363,60 @@ function itemsHoldList(){ try{ return JSON.parse(localStorage.getItem(ITEMS_HOLD
 /* 선수 한 명이 지금 어떤 모습인지 — 이 값이 그대로 서버 행이 된다 */
 function itemVal(p){ try{ return JSON.stringify(p); }catch(_){ return null; } }
 var _itemsT=null, _itemsPending=null, _itemsWaiters=[], _itemsWriteTail=Promise.resolve(), _itemsFailedJob=null;
-var _itemsWritingN=0,_itemsActiveJobs=[],_itemsObserved=null;
-function itemsWriteBusy(){return !!(_itemsPending||_itemsWritingN||itemsWriteRetryable(_itemsFailedJob));}
-function itemsWriteRetryable(job){return !!job&&itemsWriteCurrent(job.owner)&&(!job.intent||itemsDeleteCurrent(job.intent));}
+var _itemsWritingN=0,_itemsActiveJobs=[],_itemsObserved=null,_itemsExplicitFailures=[];
+function itemsWriteBusy(){return !!(_itemsPending||_itemsWritingN||_itemsExplicitFailures.some(itemsWriteRetryable)||itemsWriteRetryable(_itemsFailedJob));}
+function itemsWriteRetryable(job){return !!job&&(!job.explicit||job.deletedIds.length>0)&&itemsWriteCurrent(job.owner)&&(!job.reviewContext||histRosterCurrent(job.reviewContext))&&(!job.intent||itemsDeleteCurrent(job.intent));}
 function itemsReviewKeys(){
-  var keys={};if(typeof holdList==='function')holdList().forEach(function(x){if(x&&x.kind==='conflict'&&x.k&&x.k.indexOf(ITEMP)===0)keys[x.k]=1;});return keys;
+  var keys={};if(typeof holdList==='function')holdList().forEach(function(x){if(x&&x.kind==='item-delete'&&x.itemKey)keys[x.itemKey]=1;else if(x&&x.kind==='conflict'&&x.k&&x.k.indexOf(ITEMP)===0)keys[x.k]=1;});return keys;
+}
+function itemsDeleteReviews(){return typeof holdList==='function'?holdList().filter(function(x){return x&&x.kind==='item-delete';}):[];}
+function itemsDeleteReviewLabel(rec){var name='';[rec.current,rec.expected].some(function(raw){try{var p=JSON.parse(raw);name=String(p&&p.name||'').trim();}catch(_){}return !!name;});return '선수 삭제 확인 · '+(name||'이름 없음')+' ('+rec.itemKey.slice(ITEMP.length)+')';}
+function itemsDeleteReviewView(rec){var ctx=histRosterContext();return ctx?Object.assign(holdConflictView(rec),{reviewContext:ctx}):null;}
+function itemsDeleteReviewShown(shown){
+  var ctx=holdConflictContext();if(!ctx||!shown||!histRosterCurrent(shown.reviewContext)||shown.uid!==ctx.uid||shown.wid!==ctx.wid||shown.viewSeal!==ctx.seal||shown.viewEpoch!==ctx.switchEpoch||shown.viewSwitch!==ctx.switchSeal)return null;
+  return itemsDeleteReviews().find(function(x){return x.k===shown.k&&x.at===shown.at&&x.expected===shown.expected&&x.current===shown.current&&x.tomb===shown.tomb;})||null;
+}
+function itemsDeleteReviewExport(shown){
+  var rec=itemsDeleteReviewShown(shown);if(!rec)return false;
+  var url=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='process-player-delete-review.json';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);return true;
+}
+function itemsDeleteReviewChoose(shown,remove){
+  var rec=itemsDeleteReviewShown(shown),owner=itemsWriteOwner();if(!rec||!owner)return Promise.resolve(false);
+  if(!scoutWriteAllowed())return Promise.resolve(false);
+  if(!remove){holdConflictWrite(holdList().filter(function(x){return x.k!==rec.k;}));return Promise.resolve(true);}
+  var id=rec.itemKey.slice(ITEMP.length),job=itemsWriteJob([],owner,{deletedIds:[id]});job.reviewContext=shown.reviewContext;
+  job.ready=job.ready.then(function(){
+    if(!itemsDeleteReviewShown(shown)||!itemsWriteCurrent(owner))throw syncIssue('sync_workspace_changed','items_delete_review','삭제 확인 중 계정이나 팀이 바뀌었습니다');
+    if(job.expected[id]!==rec.current){
+      holdConflictWrite(holdList().map(function(x){return x.k===rec.k?Object.assign({},x,{current:job.expected[id]}):x;}));
+      throw syncIssue('sync_local_changed','items_delete_review','선수 원문이 다시 바뀌었습니다. 자료 확인을 다시 열어 주세요.');
+    }
+  });
+  job.ready.catch(function(){});itemsWriteDrain().catch(function(){});
+  return itemsWriteEnqueue(job).then(function(result){return !!result&&!result.held&&!result.skipped;});
+}
+/* A stale delete is a review, not a global upload barrier. Persist both the
+   request-time original and the changed row before releasing its failed job. */
+function itemsWriteReview(job){
+  return Promise.all(job.deletedIds.map(function(id){return window.storage.get(ITEMP+id).then(function(r){return {id:id,raw:r&&r.value!=null?r.value:null};});})).then(function(rows){
+    if(!itemsWriteCurrent(job.owner))throw syncIssue('sync_workspace_changed','items_delete_review','선수 삭제 확인 중 계정이나 팀이 바뀌었습니다');
+    var reviews=holdList(),tomb=JSON.stringify({_del:job.at});
+    rows.forEach(function(row){
+      if(row.raw===tomb)return;
+      var k='@item-delete:'+row.id,old=reviews.find(function(x){return x.k===k;});
+      if(old&&old.at>job.at)return;
+      reviews=reviews.filter(function(x){return x.k!==k;});
+      reviews.push({kind:'item-delete',k:k,itemKey:ITEMP+row.id,uid:job.owner.uid,wid:job.owner.wid,at:old?old.at:job.at,expected:old?old.expected:job.expected[row.id],current:row.raw,tomb:old?old.tomb:tomb});
+    });
+    holdConflictWrite(reviews);return {held:true,review:rows.length,gone:0};
+  });
+}
+function itemsDeleteComplete(job){
+  if(!job.deletedIds||!job.deletedIds.length)return;
+  var ids=job.deletedIds.slice(),reviews=itemsDeleteReviews(),done=reviews.filter(function(x){return ids.indexOf(x.itemKey.slice(ITEMP.length))>=0&&x.at<=job.at;});
+  if(done.length)holdConflictWrite(holdList().filter(function(x){return !done.some(function(r){return r.k===x.k&&r.at===x.at&&r.current===x.current&&r.expected===x.expected&&r.tomb===x.tomb;});}));
+  _itemsExplicitFailures.forEach(function(old){if(old!==job&&old.at<=job.at&&itemsWriteCurrent(old.owner))old.deletedIds=old.deletedIds.filter(function(id){return ids.indexOf(id)<0;});});
+  _itemsExplicitFailures=_itemsExplicitFailures.filter(function(old){return old.deletedIds.length>0;});
 }
 function itemsObserveServer(srv){
   var owner=itemsWriteOwner(),versions={};if(!owner||!itemsWriteCurrent(owner))return;
@@ -4390,8 +4453,18 @@ function itemsWriteSnapshot(players){
 function itemsWriteJob(players,owner,options){
   if(!owner)throw syncIssue('sync_workspace_changed','items_write_owner','선수 명단의 계정과 팀을 확인할 수 없습니다');
   var job={players:itemsWriteSnapshot(players),owner:owner,at:Date.now(),written:[],predecessors:_itemsActiveJobs.slice(),expected:{},strict:!!(options&&Object.prototype.hasOwnProperty.call(options,'expectedRows'))};
+  job.deletedIds=[];
+  if(options&&options.deletedIds!=null){
+    if(!Array.isArray(options.deletedIds))throw syncIssue('sync_storage','items_delete_ids','삭제할 선수 ID를 확인할 수 없습니다');
+    options.deletedIds.forEach(function(id){if(typeof id!=='string'||!id||job.deletedIds.indexOf(id)>=0||job.players.some(function(p){return p&&String(p.id)===id;}))throw syncIssue('sync_storage','items_delete_ids','삭제할 선수와 남길 명단이 다릅니다');job.deletedIds.push(id);});
+  }
+  job.explicit=job.deletedIds.length>0;
   var ids={},seen={},idx=itemsIdx();job.players.forEach(function(p){if(p&&p.id&&String(p.name||'').trim()&&p.type!=='target'){var id=String(p.id);seen[id]=1;if(idx[id]!==hash(itemVal(p)))ids[id]=1;}});
   Object.keys(idx).forEach(function(id){if(!seen[id])ids[id]=1;});
+  /* A deletion retry must never replay its old whole-roster snapshot over a
+     later edit or a second confirmed deletion. Its only writes are these IDs. */
+  if(job.deletedIds.length)ids={};
+  job.deletedIds.forEach(function(id){ids[id]=1;});
   if(job.strict){
     if(!Array.isArray(options.expectedRows))throw syncIssue('sync_storage','items_write_snapshot','선수 복구 기준을 확인할 수 없습니다');
     options.expectedRows.forEach(function(row){var id=String(row&&row.id||'');if(!id||!row||typeof row.raw!=='string'||Object.prototype.hasOwnProperty.call(job.expected,id))throw syncIssue('sync_storage','items_write_snapshot','선수 복구 기준 형식이 다릅니다');job.expected[id]=row.raw;});
@@ -4434,10 +4507,16 @@ function itemsWriteEnqueue(job){
   function finished(){_itemsWritingN--;_itemsActiveJobs=_itemsActiveJobs.filter(function(x){return x!==job;});}
   var run=_itemsWriteTail.catch(function(){}).then(function(){return job.ready;}).then(function(){return job.rows?itemsWriteRowsNow(job):itemsWriteNow(job.players,job.owner,job);}).then(function(value){
     if(value&&value.skipped==='server')throw syncIssue('sync_confirm_missing','items_write_server','선수별 서버 저장 준비를 확인하지 못했습니다. 연결이 돌아오면 다시 확인합니다.');
-    return value;
+    if(value&&!value.held&&!value.skipped)itemsDeleteComplete(job);return value;
+  }).catch(function(e){
+    if(job.deletedIds&&job.deletedIds.length&&e.psCode==='sync_local_changed'&&itemsWriteCurrent(job.owner))return itemsWriteReview(job);
+    throw e;
   }).then(function(value){finished();return value;},function(e){finished();throw e;});
-  _itemsWriteTail=run.then(function(value){_itemsFailedJob=null;return value;},function(e){
-    if(itemsWriteRetryable(job))_itemsFailedJob=job;
+  _itemsWriteTail=run.then(function(value){_itemsFailedJob=null;_itemsExplicitFailures=_itemsExplicitFailures.filter(function(x){return x!==job;});return value;},function(e){
+    if(itemsWriteRetryable(job)){
+      if(job.deletedIds&&job.deletedIds.length){if(_itemsExplicitFailures.indexOf(job)<0)_itemsExplicitFailures.push(job);}
+      else _itemsFailedJob=job;
+    }
     syncDiagnostic('items-write',e);
   });
   return run;
@@ -4452,10 +4531,13 @@ function itemsWriteDrain(){
 }
 /* 입력은 모아서 쓰되 요청 시점의 계정·팀과 자료를 고정한다. 지연 중 팀이 바뀌면
    예전 명단을 새 팀의 sq: 행으로 저장하지 않고, 실패한 행의 색인도 전진하지 않는다. */
-function itemsWrite(players){
+function itemsWrite(players,options){
   if(!ITEMS_ACTIVE)return Promise.resolve({skipped:'disabled'});
   var owner=itemsWriteOwner();if(!owner)return Promise.resolve({skipped:'owner'});
-  var job;try{job=itemsWriteJob(players,owner);}catch(e){syncDiagnostic('items-write',e);return Promise.resolve(null);}
+  var job;try{job=itemsWriteJob(players,owner,options);}catch(e){syncDiagnostic('items-write',e);return Promise.resolve(null);}
+  /* An explicit confirmation is not a debounced roster snapshot. Imported rows
+     may be absent from the index, and the next ordinary save must not erase it. */
+  if(job.deletedIds.length){itemsWriteDrain().catch(function(){});return itemsWriteEnqueue(job).catch(function(e){syncDiagnostic('items-write',e);return null;});}
   if(_itemsPending&&(_itemsPending.owner.seal!==owner.seal||_itemsPending.owner.epoch!==owner.epoch))itemsWriteDrain().catch(function(){});
   if(_itemsPending){var replaced=_itemsPending;_itemsActiveJobs=_itemsActiveJobs.filter(function(x){return x!==replaced;});job.predecessors=job.predecessors.filter(function(x){return x!==replaced;});}
   _itemsPending=job;
@@ -4474,8 +4556,11 @@ function itemsWriteReady(players,options){
   });
 }
 function itemsWriteFlush(){
-  if(_itemsPending)return itemsWriteDrain();
-  return _itemsWriteTail.then(function(){
+  var tail=_itemsPending?itemsWriteDrain():_itemsWriteTail;
+  return tail.then(function(){
+    _itemsExplicitFailures=_itemsExplicitFailures.filter(itemsWriteRetryable);
+    return _itemsExplicitFailures.slice().reduce(function(p,job){return p.then(function(){return _itemsExplicitFailures.indexOf(job)>=0&&itemsWriteRetryable(job)?itemsWriteEnqueue(job):true;});},Promise.resolve());
+  }).then(function(){
     var job=_itemsFailedJob;
     if(itemsWriteRetryable(job))return itemsWriteEnqueue(job);
     if(job&&job.intent&&_itemsFailedJob===job)_itemsFailedJob=null;
@@ -4483,35 +4568,40 @@ function itemsWriteFlush(){
   });
 }
 function itemsWriteNow(players,owner,job){
+  if(job&&job.explicit&&!job.deletedIds.length)return Promise.resolve({superseded:true});
   if(!ITEMS_ACTIVE)return Promise.resolve({skipped:'disabled'});
   if(!window.storage||!window.storage.get||!window.storage.replaceIfValue)return Promise.reject(syncIssue('sync_storage','items_write_storage','안전한 선수 저장소를 사용할 수 없습니다'));
   if(!Array.isArray(players))return Promise.reject(syncIssue('sync_storage','items_write_input','선수 명단 형식 오류'));
   if(localStorage.getItem('ps_items_write')==='0')return Promise.resolve({skipped:'disabled'});
   owner=owner||itemsWriteOwner();
   if(!job){try{job=itemsWriteJob(players,owner);}catch(e){return Promise.reject(e);}return itemsWriteEnqueue(job);}
-  function requireOwner(){if(!itemsWriteCurrent(owner))throw syncIssue('sync_workspace_changed','items_write_owner','선수 저장 중 계정이나 팀이 바뀌었습니다');}
+  function requireOwner(){if(!itemsWriteCurrent(owner)||(job.reviewContext&&(!histRosterCurrent(job.reviewContext)||!scoutWriteAllowed())))throw syncIssue('sync_workspace_changed','items_write_owner','선수 저장 중 계정·팀 또는 권한이 바뀌었습니다');}
   return Promise.resolve().then(function(){requireOwner();return itemsServerCheck();}).then(function(ready){
     requireOwner();if(!ready)return {skipped:'server'};
-    var idx=itemsIdx(),now=job.at,seen={},next={},rows=[],wrote=0,review=itemsReviewKeys(),reviewHeld={};
+    var idx=itemsIdx(),now=job.at,seen={},next={},rows=[],wrote=0,review=itemsReviewKeys(),reviewHeld={},deleted={},explicit=!!(job.deletedIds&&job.deletedIds.length);
+    if(explicit)next=Object.assign({},idx);
+    (job.deletedIds||[]).forEach(function(id){deleted[id]=1;});
     players.forEach(function(p){
       if(!p||!p.id||!String(p.name||'').trim()||p.type==='target')return;
       var id=String(p.id),v=itemVal(p);if(v==null)return;
       if(seen[id])throw syncIssue('sync_storage','items_write_duplicate','선수 식별자가 중복되어 저장을 멈췄습니다');
       seen[id]=1;
+      if(explicit)return;
       /* A whole-roster projection is not a decision about an unresolved row.
          Keep its exact local review original and its previous index entry. */
       if(review[ITEMP+id]){reviewHeld[id]=1;if(Object.prototype.hasOwnProperty.call(idx,id))next[id]=idx[id];return;}
       next[id]=hash(v);
       if(idx[id]!==next[id]){rows.push({k:ITEMP+id,v:v});wrote++;}
     });
-    Object.keys(idx).forEach(function(id){if(review[ITEMP+id]){next[id]=idx[id];reviewHeld[id]=1;}});
-    var gone=Object.keys(idx).filter(function(id){return !seen[id]&&!review[ITEMP+id];}),held=!!(gone.length&&bigDrop(Object.keys(idx).filter(function(id){return !review[ITEMP+id];}).length,Object.keys(seen).filter(function(id){return !review[ITEMP+id];}).length));
+    if(!explicit)Object.keys(idx).forEach(function(id){if(review[ITEMP+id]){next[id]=idx[id];reviewHeld[id]=1;}});
+    var gone=explicit?[]:Object.keys(idx).filter(function(id){return !seen[id]&&!review[ITEMP+id];}),held=!!(gone.length&&bigDrop(Object.keys(idx).filter(function(id){return !review[ITEMP+id];}).length,Object.keys(seen).filter(function(id){return !review[ITEMP+id];}).length));
     if(held){
       var hold={at:now,ids:gone.slice(),before:Object.keys(idx).length,after:Object.keys(seen).length,uid:owner.uid,wid:owner.wid,hashes:{}};
       gone.forEach(function(id){hold.hashes[id]=hash(job.expected[id]);});
       localStorage.setItem(ITEMS_HOLD,JSON.stringify(hold));
       gone.forEach(function(id){next[id]=idx[id];});
     }else gone.forEach(function(id){rows.push({k:ITEMP+id,v:JSON.stringify({_del:now})});});
+    Object.keys(deleted).forEach(function(id){delete next[id];rows.push({k:ITEMP+id,v:JSON.stringify({_del:now}),explicit:true});});
     return itemsWriteCheckSnapshot(job).then(function(){return Promise.all(rows.map(function(row){return window.storage.get(row.k).then(function(before){
       requireOwner();var raw=before&&before.value!=null?before.value:null,id=row.k.slice(ITEMP.length);
       if(raw!==row.v&&!itemsWritePreimage(job,id,raw))throw syncIssue('sync_local_changed','items_write_stale_job','입력 뒤 선수 정보가 바뀌었습니다. 최신 명단과 내 입력을 확인해 주세요.');
@@ -4521,7 +4611,7 @@ function itemsWriteNow(players,owner,job){
        adopted after the debounce. Own earlier queued batches may advance it. */
     return rows.reduce(function(chain,row){return chain.then(function(){
       requireOwner();return Promise.resolve().then(function(){
-        if(itemsReviewKeys()[row.k]){var id=row.k.slice(ITEMP.length);reviewHeld[id]=1;if(Object.prototype.hasOwnProperty.call(idx,id))next[id]=idx[id];else delete next[id];row.review=true;return;}
+        if(!row.explicit&&itemsReviewKeys()[row.k]){var id=row.k.slice(ITEMP.length);reviewHeld[id]=1;if(Object.prototype.hasOwnProperty.call(idx,id))next[id]=idx[id];else delete next[id];row.review=true;return;}
         if(row.expected===row.v)return;
         return window.storage.replaceIfValue(row.k,row.expected,row.v).then(function(ok){
           if(!ok)throw syncIssue('sync_local_changed','items_write_cas','선수 정보에 더 새로운 변경이 있습니다');
@@ -4537,7 +4627,7 @@ function itemsWriteNow(players,owner,job){
     });},Promise.resolve()).then(function(){return itemsWriteCheckSnapshot(job);}).then(function(){
       requireOwner();var key=itemsIdxKey(),raw=JSON.stringify(next);
       localStorage.setItem(key,raw);if(localStorage.getItem(key)!==raw)throw syncIssue('sync_storage','items_write_index','선수 저장 색인을 확인하지 못했습니다');
-      return {wrote:wrote,gone:gone.length,held:held||Object.keys(reviewHeld).length>0,review:Object.keys(reviewHeld).length,n:Object.keys(seen).length};
+      return {wrote:wrote,gone:gone.length+Object.keys(deleted).length,held:held||Object.keys(reviewHeld).length>0,review:Object.keys(reviewHeld).length,n:Object.keys(seen).length};
     });
     });
   });
@@ -6426,7 +6516,9 @@ function syncNowCore(reason){
         var keys=Object.keys(set);
         if(!keys.length) return;
         var pushable=itemsPushAllowed();   /* 서버 규칙이 아직이면 받기만 한다(올리지 않는다) */
+        var deleteReview={};itemsDeleteReviews().forEach(function(x){deleteReview[x.itemKey]=1;});
         keys.forEach(function(k){
+          if(deleteReview[k]){if(heldKeys.indexOf(k)<0)heldKeys.push(k);return;}
           var loc=(idbVals[k]===undefined?null:idbVals[k]);
           var row=srv[k], lh=hash(loc);
           var dirty=(lh!==(m.h[k]||'')), srvChanged=row?(row.cupd!==(m.c[k]||0)):false;
@@ -8060,13 +8152,58 @@ function uiMembers(wa){
 }
 /* ── 권한 관리(관리자 전용) — 멤버별 역할·구역 편집 → cs_perms_v1 저장 ── */
 var permsOnlyUnlinked=false;   /* 1.534 — '연결 안 된 사람만 보기' 토글 상태 */
+function permsEditChanges(before,after,staffBefore,staffAfter,sections){
+  var changes=[],ids=sections.map(function(s){return s.id;});
+  if(staffBefore!==staffAfter)changes.push({field:'staffEdit',value:staffAfter?'edit':'view'});
+  Object.keys(after).forEach(function(uid){
+    var old=before[uid],now=after[uid];if(!old)return;
+    var roleChanged=old.role!==now.role;
+    if(roleChanged)changes.push({uid:uid,field:'role',value:now.role});
+    if(old.playerId!==now.playerId)changes.push({uid:uid,field:'playerId',value:now.playerId,remove:!now.playerId});
+    if(roleChanged||ids.some(function(id){return !!old.scopes[id]!==!!now.scopes[id];}))
+      changes.push({uid:uid,field:'scopes',value:ids.filter(function(id){return now.role==='admin'||now.role==='executive'||now.scopes[id];}),preserveUnknown:!roleChanged,known:ids});
+  });
+  return changes;
+}
+function permsEditApply(opened,latest,changes){
+  function object(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
+  function own(v,k){return Object.prototype.hasOwnProperty.call(v,k);}
+  function sameField(a,b,k){return own(a,k)===own(b,k)&&JSON.stringify(a[k])===JSON.stringify(b[k]);}
+  if(!object(opened)||!object(latest)||(opened.members!=null&&!object(opened.members))||(latest.members!=null&&!object(latest.members)))throw new Error('권한 원문을 확인하지 못했습니다. 창을 다시 열어 주세요.');
+  if(!changes.length)return null;
+  var out=JSON.parse(JSON.stringify(latest)),initial=opened.members||{},current=latest.members||{};
+  changes.forEach(function(change){
+    var field=change.field,before=opened,live=latest,target=out;
+    if(change.uid!=null){
+      var uid=change.uid;
+      if(['role','scopes','playerId'].indexOf(field)<0||own(initial,uid)!==own(current,uid)||
+         (own(initial,uid)&&(!object(initial[uid])||!object(current[uid]))))throw new Error('팀원 설정이 바뀌었습니다. 창을 다시 열어 확인해 주세요.');
+      before=own(initial,uid)?initial[uid]:{};live=own(current,uid)?current[uid]:{};
+      if(!out.members)out.members={};
+      if(!own(out.members,uid))Object.defineProperty(out.members,uid,{value:{},enumerable:true,writable:true,configurable:true});
+      target=out.members[uid];
+    }else if(field!=='staffEdit')throw new Error('변경할 권한 항목을 확인하지 못했습니다.');
+    if(!sameField(before,live,field))throw new Error('다른 곳에서 같은 설정이 바뀌었습니다. 창을 다시 열어 확인해 주세요.');
+    if(change.remove)delete target[field];
+    else if(field==='scopes'&&change.preserveUnknown){
+      var unknown=Array.isArray(live.scopes)?live.scopes.filter(function(id){return change.known.indexOf(id)<0;}):[];
+      target[field]=unknown.concat(change.value);
+    }else target[field]=JSON.parse(JSON.stringify(change.value));
+  });
+  return out;
+}
 function uiPerms(wa){
   var P=window.PSPerms;
   if(!P){ psModal({title:'권한 관리',body:'권한 모듈을 불러오지 못했어요. 새로고침 후 다시 시도하세요.',hideCancel:true,ok:'확인'}); return; }
+  var editOwner=holdConflictContext();
+  function current(){var w=activeWsObj();return !!editOwner&&!!wa&&String(wa.id)===editOwner.wid&&holdConflictCurrent(editOwner)&&!workspaceSwitchGuardRead()&&!!w&&w.id===wa.id&&w.role==='owner';}
+  if(!current())return;
   var mm=psModal({title:'팀원 불러오는 중…',body:'잠시만요',hideCancel:true,ok:' '});
   membersOf(wa.id).then(function(rows){ mm.close();
+    if(!current())return;
     rows=rows||[];
-    var cur=P.get()||{v:1,defaultRole:'player',members:{}};
+    var rawOpened=P.get(),cur=rawOpened||{v:1,defaultRole:'player',members:{}};
+    var opened=JSON.parse(JSON.stringify(cur));
     if(!cur.members)cur.members={};
     var dark=document.body.classList.contains('fmdark');
     try{ var ex=document.getElementById('psPermsOv'); if(ex)ex.remove(); }catch(_){}
@@ -8090,6 +8227,7 @@ function uiPerms(wa){
     var seWrap=document.createElement('div');
     seWrap.style.cssText='display:flex;align-items:center;gap:10px;padding:11px 12px;margin-bottom:12px;border:1px solid '+(dark?'#2C3744':'#E3E5E9')+';border-radius:11px;background:'+(dark?'#222c39':'#F7F8FA')+';';
     var seOn=false; try{ seOn=!!(P.staffEditOpen&&P.staffEditOpen()); }catch(_){}
+    var staffBefore=seOn;
     var seTxt=document.createElement('div'); seTxt.style.cssText='flex:1;min-width:0';
     var seBtn=document.createElement('button'); seBtn.type='button';
     function sePaint(){
@@ -8117,7 +8255,7 @@ function uiPerms(wa){
       var none=document.createElement('div'); none.style.cssText='font-size:13px;color:'+(dark?'#9AA4B3':'#8a8f98')+';padding:8px 2px 4px';
       none.textContent='아직 합류한 팀원이 없어요. 초대 코드로 팀원을 먼저 초대하세요.'; card.appendChild(none);
     }
-    var state={};   /* uid -> {role, scopes:{id:bool}} */
+    var state={},initialState={};   /* uid -> {role, scopes:{id:bool}} */
     /* 1.534 — 새로 들어온 팀원을 코치가 명단과 이어 주는 자리다.
        연결이 안 된 사람이 목록에 섞여 있으면 못 찾으므로 ①숫자로 알리고 ②맨 위로 올리고 ③거를 수 있게 한다. */
     (function(){
@@ -8233,8 +8371,10 @@ function uiPerms(wa){
       /* 초기 표시는 저장된 범위 그대로 (관리자만 전체 강제) — 열었다 저장해도 권한이 바뀌지 않게 */
       if(role==='admin'||role==='executive') secs.forEach(function(s){ boxes[s.id].checked=true; state[uid].scopes[s.id]=true; });
       lockUI();
+      initialState[uid]=JSON.parse(JSON.stringify(state[uid]));
       card.appendChild(d);
     });
+    var saveError=document.createElement('div');saveError.setAttribute('role','alert');saveError.style.cssText='font-size:12px;color:#c24a46;line-height:1.5;margin-top:8px';card.appendChild(saveError);
     var btns=document.createElement('div'); btns.style.cssText='display:flex;gap:8px;justify-content:flex-end;margin-top:8px;position:sticky;bottom:0;padding-top:10px;background:'+(dark?'#1A212B':'#fff')+';';
     var cancel=document.createElement('button'); cancel.textContent='취소';
     cancel.style.cssText='padding:10px 16px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;border:1px solid '+(dark?'#2C3744':'#d2d6dd')+';background:'+(dark?'#222c39':'#f1f3f5')+';color:inherit';
@@ -8242,28 +8382,17 @@ function uiPerms(wa){
     save.style.cssText='padding:10px 20px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;border:0;background:var(--blue,#3a6df0);color:#fff';
     cancel.onclick=function(){ ov.remove(); };
     save.onclick=function(){
-      /* 1.619 — 예전에는 여기서 문서를 **통째로 새로 만들었다.**
-         그래서 ①이 창의 팀원 목록에 안 뜬 사람(불러오기 실패·탈퇴 처리 지연 등)은 저장할 때마다
-         권한이 사라졌고 ②일정·선수단 잠금 토글(schedEdit·rosterEdit)도 매번 초기화됐다.
-         이제 지금 문서를 바탕으로 놓고, 이 창에서 다룬 사람만 덮어쓴다. */
-      var base={};
-      try{ var cur=P.get&&P.get(); if(cur&&typeof cur==='object') base=JSON.parse(JSON.stringify(cur)); }catch(_){ base={}; }
-      var out={v:1,defaultRole:base.defaultRole||'player',members:{}};
-      Object.keys(base).forEach(function(kk){                 /* schedEdit·rosterEdit 등 보존 */
-        if(kk!=='members'&&kk!=='v'&&kk!=='defaultRole') out[kk]=base[kk];
-      });
-      Object.keys(base.members||{}).forEach(function(u){ out.members[u]=base.members[u]; });
-      /* 1.634 — 스위치 상태를 명시적으로 적는다. 끈 상태도 'view' 로 적어 둬야
-         "아직 못 정한 팀"과 "임원이 직접 끈 팀"을 구분할 수 있다(아래 소유자 알림이 이걸 본다). */
-      out.staffEdit=seOn?'edit':'view';
-      Object.keys(state).forEach(function(uid){
-        var st=state[uid], sc=[];
-        secs.forEach(function(s){ if(st.role==='admin'||st.role==='executive'||st.scopes[s.id])sc.push(s.id); });
-        out.members[uid]={role:st.role,scopes:sc};
-        if(st.playerId) out.members[uid].playerId=st.playerId;
-      });
-      P.set(out);
+      /* Only user-changed fields are applied to the latest document. A link
+         change must not materialize inherited scopes or rewrite other members. */
+      var out;
+      try{
+        if(!current())throw new Error('계정이나 팀 권한이 바뀌었습니다. 창을 다시 열어 주세요.');
+        var latest=P.get();if(latest==null&&rawOpened==null)latest=opened;
+        out=permsEditApply(opened,latest,permsEditChanges(initialState,state,staffBefore,seOn,secs));
+        if(out)P.set(out);
+      }catch(e){saveError.textContent=e.message||'권한을 저장하지 못했습니다. 다시 확인해 주세요.';return;}
       ov.remove();
+      if(!out)return;
       setStatus('권한 저장됨 · 동기화 중…');
       try{ forceSync('perms'); }catch(_){}
     };

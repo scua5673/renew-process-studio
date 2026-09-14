@@ -16,7 +16,7 @@ function fixture(players){
   c.storage.keys=async()=>[...h.idb.keys()];
   vm.runInContext(section(sync,'var _itemsT=null, _itemsPending=null','function itemsHoldOpen(')+'\n'+['itemsIdxKey','itemsIdx','itemVal','bigDrop','itemsReadAll','itemsResolveConflicts'].map(n=>fn(sync,n)).join('\n'),c);
   c.PSItems={active:()=>true,readAll:c.itemsReadAll,write:c.itemsWrite};c.parent.PSItems=c.PSItems;c.parent.PS_BUILD='2.809';
-  vm.runInContext(['isTargetPl','plTombs','plTombApply','itemsPI','itemsApply','save'].map(n=>fn(scout,n)).join('\n'),c);
+  vm.runInContext(['isTargetPl','plTombs','plTombAdd','plTombApply','itemsPI','itemsApply','save'].map(n=>fn(scout,n)).join('\n'),c);
   function seedMain(){h.local.set(MAIN,raw(c.data));h.local.set(PD,'{}');for(const k of [MAIN,PD])h.server.set(k,{workspace_id:'team-a',k,v:h.local.get(k),cupd:10});}
   seedMain();const m=c.meta(),idx={};for(const player of players){const k='sq:'+player.id,v=raw(player);h.idb.set(k,v);h.server.set(k,{workspace_id:'team-a',k,v,cupd:10});m.h[k]=c.hash(v);m.c[k]=10;idx[player.id]=c.hash(v);}
   for(const k of [MAIN,PD]){m.h[k]=c.hash(h.local.get(k));m.c[k]=10;}c.setMeta(m);h.local.set('ps_items_idx_v1:team-a',raw(idx));
@@ -74,4 +74,26 @@ for(const local of [true,false])test('deleted-row '+(local?'local':'server')+' c
   await h.round();const shown=h.c.holdConflictView(h.c.holdList().find(x=>x.k===key));assert.ok(await h.c.holdConflictChoose(key,local,shown));const start=h.requests.length;
   h.c.itemsPushAllowed=()=>false;await h.round();assert.equal(h.idb.get(key),mine);assert.equal(h.server.get(key).v,tomb);assert.equal(h.c.holdList().find(x=>x.k===key).choice,local?'local':'server');
   assert.equal(h.requests.slice(start).some(r=>r.stage.startsWith('kv_push')&&r.url.includes('sq%3Adeleted')),false);
+});
+for(const origin of ['profile','team row'])test(origin+' confirmed deletion removes the same unindexed ID after roster reorder and two real sync rounds',async()=>{
+  const players=Array.from({length:69},(_,i)=>p('synthetic-'+i,'Synthetic '+i,i<44?'A':'')),h=fixture(players),id='synthetic-44',key='sq:'+id;
+  const idx=JSON.parse(h.local.get('ps_items_idx_v1:team-a'));for(let i=44;i<69;i++)delete idx['synthetic-'+i];h.local.set('ps_items_idx_v1:team-a',raw(idx));
+  let confirmed;const button={};Object.assign(h.c,{$:()=>button,psConfirm:(_text,fn)=>confirmed=fn,closePlayer(){},renderTeam(){},toast(){},pl:h.c.data.players.find(x=>x.id===id),gi:44,del:button});
+  const handler=origin==='profile'?section(scout,'  if($("plDelete"))$("plDelete").onclick=()=>{','  $("plName").value'):section(scout,'    del.onclick=()=>{psConfirm((pl.name||"이 선수")+" 삭제? 평가 기록도 함께 삭제됩니다.",()=>{','    const acts=');
+  vm.runInContext(handler,h.c);button.onclick();assert.equal(typeof confirmed,'function');
+  // The modal captured an old object/index. A sync replaced and reordered the list meanwhile.
+  h.c.data.players=copy(h.c.data.players).reverse();confirmed();assert.equal(h.c.data.players.length,68);assert.equal(h.c.data.players.some(x=>x.id===id),false);assert.ok(JSON.parse(h.local.get(PD))[id]);
+  h.c.save();await h.round();await h.round();assert.equal(h.main().players.length,68);assert.equal(JSON.parse(h.server.get(MAIN).v).players.length,68);assert.ok(JSON.parse(h.idb.get(key))._del);assert.ok(JSON.parse(h.server.get(key).v)._del);
+  const remaining=[...h.server.values()].filter(x=>x.k.startsWith('sq:')&&!JSON.parse(x.v)._del);assert.equal(remaining.length,68);assert.equal(h.c.holdList().length,0);
+});
+test('failed deletion-record save leaves the profile and roster intact before any item request',()=>{
+  const h=fixture([p('a')]),button={};let confirmed;Object.assign(h.c,{$:()=>button,psConfirm:(_text,fn)=>confirmed=fn,pl:h.c.data.players[0]});
+  vm.runInContext(section(scout,'  if($("plDelete"))$("plDelete").onclick=()=>{','  $("plName").value'),h.c);h.c.store.set=(k)=>k!==PD;button.onclick();confirmed();
+  assert.equal(h.c.data.players.length,1);assert.equal(h.c._itemsActiveJobs.length,0);assert.equal(h.c.itemsWriteBusy(),false);
+});
+test('stale explicit deletion holds only its player while unrelated changes complete real synchronization',async()=>{
+  const h=fixture([p('a'),p('b')]),key='sq:b',before=h.idb.get(key),changed=raw({...p('b'),memo:'later edit'});h.c.plTombAdd('b');h.c.data.players=h.c.data.players.filter(x=>x.id!=='b');let race=true;
+  h.hooks.idbWrite=k=>{if(k===key&&race){race=false;h.idb.set(key,changed);}};h.c.save({deletedIds:['b']});await h.c.itemsWriteFlush();assert.equal(h.c.itemsWriteBusy(),false);const review=h.c.itemsDeleteReviews()[0];assert.equal(review.expected,before);assert.equal(review.current,changed);
+  h.c.data.players[0].memo='unrelated saved edit';h.c.save();for(let i=0;i<3;i++)await h.round();
+  assert.equal(JSON.parse(h.server.get('sq:a').v).memo,'unrelated saved edit');assert.equal(h.idb.get(key),changed);assert.equal(h.server.get(key).v,before);assert.equal(h.c.itemsDeleteReviews().length,1);assert.equal(h.c.itemsWriteBusy(),false);
 });

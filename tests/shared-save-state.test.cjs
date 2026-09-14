@@ -69,10 +69,15 @@ test('failed shared commit and verification retry reject flush; another key cann
   commits[1].reject(new Error('disk unavailable'));await rejection;
   assert.equal(c.PSSaveState.get('team'),'failed');assert.equal(c.psHasPending(),true);
   c.testStore.set('scout_tool_v1',{players:[]});await drain();
+  assert.equal(commits.length,3);assert.equal(commits[2].k,'scout_tool_v1','main now has its own durable write');
   assert.equal(c.PSSaveState.get('team'),'failed');
-  const recovered=c.psFlushPendingReady();await drain();
+  let recoveredDone=false;const recovered=c.psFlushPendingReady().then(()=>{recoveredDone=true;});await drain();
+  assert.equal(commits.length,4);assert.equal(commits[3].k,'cs_team_matches_v1','the failed match has a separate verification retry');
   assert.equal(c.PSSaveState.get('team'),'failed','failure remains visible while its retry is pending');
-  commits[2].resolve(true);await recovered;
+  commits[2].resolve(true);await drain();
+  assert.equal(c.PSSaveState.get('team'),'failed','committing the main roster cannot confirm the failed match');
+  assert.equal(recoveredDone,false);assert.equal(c.psHasPending(),true);
+  commits[3].resolve(true);await recovered;
   assert.equal(c.PSSaveState.get('team'),'saved');
 });
 
