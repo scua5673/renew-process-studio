@@ -2345,6 +2345,7 @@ function syncReasonText(code){
    상태는 셋 + 과도기 하나: ok(팀과 같아요) · busy(올리는 중 · n) · bad(못 올렸어요 · 이유) · ask(확인할 것 n — 2단계 «되돌리기»가 보류·덮임·충돌을 대체할 때까지).
    판정 로직은 건드리지 않는다 — 기존 값(세션·온라인·busy·outbox 대기·lastIssue·자료 확인 목록·마지막 성공 시각)을 읽어 문장 하나로 만든다. */
 function syncState(){
+  var readState=function(){
   var s=getSess(); if(!s)return {kind:'off',text:'로그인하면 팀과 함께 써요'};
   var wid=activeWs(), n=0; try{ n=visiblePendingInfo(wid).count||0; }catch(_){}
   var m={}; try{ m=meta(); }catch(_){}
@@ -2363,6 +2364,14 @@ function syncState(){
   if(n)return {kind:'pending',text:'전송 대기 · '+n+'건',n:n,review:rc};
   var at=0; try{ at=+localStorage.getItem('ps_last_pull_at')||0; }catch(_){} at=Math.max(at,+m.last||0);
   return {kind:'ok',text:'팀과 같아요',at:at,ago:at?agoText(at):'',n:0,review:0,rt:rtConnected(),rtAt:rtLast,rtHits:rtHits};
+
+  };
+  var state=readState();
+  if(typeof autosaveEnabled==='function'&&autosaveEnabled()){
+    var c=autosaveContext();state.archivedCount=c&&autosaveArchiveState.owner===c.uid+':'+c.seal?autosaveArchiveState.count:0;
+    if(autosaveRunner&&autosaveRunner.busy()&&state.kind!=='off'&&state.kind!=='bad'){state.kind='busy';state.text='저장 중…';}
+  }
+  return state;
 }
 function classifySyncError(e){
   var msg=String((e&&e.message)||e||'').toLowerCase(),status=+(e&&e.psStatus)||0;
@@ -5106,7 +5115,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
   }
   /* 2.742/2.744 — 동기화 fetch 뒤 IDP/개인 자료에 새 입력이 생겼다면,
      그 입력을 방금 계산한 pull/merge로 덮지 않는다. expectedLoc을 exact로 비교한다. */
-  if((isIdpPrivateKey(k)||isIdpPubKey(k)||PERSONAL[k])&&expectedLoc!==undefined){
+  if(expectedLoc!==undefined){
     try{if(localStorage.getItem(k)!==expectedLoc)return ownerStale();}catch(_){return ownerStale();}
   }
   if(!ownerCurrent())return ownerStale();
@@ -5767,6 +5776,199 @@ function rejectedMatchRetry(e,wid){
   var latest=meta();latest.c=latest.c||{};keys.forEach(function(k){latest.c[k]=0;});setMeta(latest);
   return {serverRejected:keys,pending:pendingInfo(wid).count};
 }
+/* 2.817 — automatic field reconciliation. Only this adapter can advance the
+   local draft; the next ordinary round still needs an exact server CAS ACK. */
+var autosaveRunner=null,autosaveJournals={},autosaveArchiveState={owner:'',count:0},autosaveRemembered={};
+function autosaveEnabled(){return !!(window.PSAutosaveRuntime&&window.PSAutosaveMerge&&window.PSAutoSaveJournal&&window.storage&&window.storage.keys);}
+function autosaveContext(wid){
+  var c=holdConflictContext();if(!c)return null;
+  wid=String(wid||c.wid);if(wid!==c.wid&&wid!==String(personalWid()||''))return null;
+  return {uid:c.uid,wid:wid,seal:JSON.stringify([c.seal,c.wid,c.switchSeal,c.switchEpoch,permsRaw(),(activeWsObj()||{}).role]),epoch:c.epoch};
+}
+function autosaveCanRead(wid,k){
+  try{
+    var c=autosaveContext(wid),ss=getSess(),pw=String(personalWid()||''),w=activeWsObj();
+    if(!c||!ss||!autosaveKnownKey(k))return false;
+    wid=String(wid||activeWs());
+    if(PERSONAL[k])return !!pw&&wid===pw;
+    if(wid===pw){
+      if(isIdpPrivateKey(k))return k==='cs_idp_v1_'+ss.uid;
+      if(isIdpPubKey(k))return k==='cs_idp_pub_v1_'+ss.uid;
+      return true;
+    }
+    if(wid!==String(activeWs())||!w||w.kind!=='team')return false;
+    var p=JSON.parse(permsRaw()||'null'),me=p&&p.members&&p.members[ss.uid];
+    var role=w.role==='owner'?'admin':((me&&me.role)||(p&&p.defaultRole)||'player');
+    var executive=role==='admin'||role==='executive',staff=role==='staff';
+    if(isIdpPrivateKey(k))return k==='cs_idp_v1_'+ss.uid||executive||staff;
+    if(k==='cs_scout_targets_v1')return executive;
+    if(PLAYER_BLIND.indexOf(k)>=0||isItemKey(k)){
+      if(executive||staff)return true;
+      var sc=k==='cs_meet_sit_v1'?'board':'team';
+      return !!(me&&Array.isArray(me.scopes)&&me.scopes.indexOf(sc)>=0);
+    }
+    return true;
+  }catch(_){return false;}
+}
+function autosaveJournal(wid){
+  var c=autosaveContext(wid);if(!c)throw syncIssue('sync_workspace_changed','autosave_owner','저장 중 계정이나 팀이 바뀌었습니다');
+  var key=c.uid+':'+c.wid;
+  if(!autosaveJournals[key]){
+    var raw=PSAutoSaveJournal.create({storage:window.storage,hash:hash,context:function(){return autosaveContext(wid);}}),safe={};
+    function allowed(k){if(!autosaveCanRead(wid,k))throw syncIssue('sync_permission','autosave_access','자료 접근 권한이 바뀌었습니다');}
+    ['base','remember','archive'].forEach(function(name){safe[name]=function(){
+      var args=arguments,k=args[1];allowed(k);return raw[name].apply(raw,args).then(function(value){allowed(k);return value;});
+    };});
+    safe.list=function(ctx){return raw.list(ctx).then(function(rows){return rows.filter(function(r){return autosaveCanRead(wid,r.k);});});};
+    safe.read=function(ctx,id){return safe.list(ctx).then(function(rows){
+      var found=rows.find(function(r){return r.id===id;});if(!found)throw syncIssue('sync_permission','autosave_read','보관 원문을 확인할 수 없습니다');
+      allowed(found.k);return raw.read(ctx,id).then(function(value){allowed(found.k);if(!value||value.metadata.k!==found.k)throw new Error('autosave_archive_mismatch');return value;});
+    });};
+    autosaveJournals[key]=safe;
+  }
+  return autosaveJournals[key];
+}
+function autosaveVersion(wid,k){
+  var m=meta(),part=PERSONAL[k]&&isTeamWs()?m.p||{}:m;
+  return {h:(part.h||{})[k]||'',c:(part.c||{})[k]||0};
+}
+function autosaveKnownKey(k){return KEYS.indexOf(k)>=0||isItemKey(k)||isIdpPrivateKey(k)||isIdpPubKey(k);}
+function autosaveConfirmed(){
+  var c=autosaveContext();if(!c)return [];
+  var m=meta(),out=[],parts=[{wid:c.wid,meta:m}];
+  if(isTeamWs()&&personalWid())parts.push({wid:personalWid(),meta:m.p||{}});
+  parts.forEach(function(p){Object.keys(p.meta.h||{}).forEach(function(k){
+    if(!autosaveCanRead(p.wid,k)||(PERSONAL[k]&&p.wid!==personalWid()))return;
+    var h=p.meta.h[k],v=(p.meta.c||{})[k],id=c.uid+':'+p.wid+':'+k;
+    if(!h||!Number.isFinite(v)||v<0||autosaveRemembered[id]===h+':'+v)return;
+    out.push({k:k,wid:p.wid,h:h,c:v});
+  });});return out;
+}
+function autosavePending(){
+  var c=autosaveContext();if(!c)return [];
+  var out=holdList().filter(function(r){return r.kind!=='item-delete'&&autosaveCanRead(c.wid,r.k);}).map(function(r){
+    return Object.assign({},r,{wid:c.wid,channel:'team',token:JSON.stringify(r)});
+  });
+  personalReviewList().forEach(function(r){if(!autosaveCanRead(r.wid,r.k))return;out.push(Object.assign({},r,{channel:'personal',token:JSON.stringify(r)}));});
+  return out;
+}
+function autosaveReviewCurrent(review){return autosavePending().some(function(r){return r.channel===review.channel&&r.wid===review.wid&&r.k===review.k&&r.token===review.token;});}
+function autosavePrepare(review,plan,base,local,row){
+  if(/^remote-/.test(plan.reason||''))return null;
+  // Unapproved bulk-emptying is not an ordinary user edit. Preserve both
+  // originals and keep the confirmed document, rather than guessing a delete.
+  var bulk=review.channel==='team'&&review.kind!=='conflict';
+  if(review.k==='cs_player_del_v1'||review.k===MATCH_DEL_KEY){
+    // Deletion markers are monotonic across ordinary automatic saves. Removing
+    // an old marker is reserved for the explicit restoration workflow.
+    try{
+      var lm=JSON.parse(local),rm=JSON.parse(row.v),tombs=Object.create(null);
+      if(!lm||!rm||Array.isArray(lm)||Array.isArray(rm)||typeof lm!=='object'||typeof rm!=='object')return null;
+      var valid=true;[rm,lm].forEach(function(map){Object.keys(map).forEach(function(id){
+        var at=map[id];if(!id||!Number.isFinite(at)||at<=0){valid=false;return;}
+        tombs[id]=Math.max(tombs[id]||0,at);
+      });});
+      if(!valid)return null;
+      var tombRaw=JSON.stringify(tombs);
+      return {raw:tombRaw,needsArchive:local!==row.v,reason:'deletion-markers-preserved'};
+    }catch(_){return null;}
+  }
+  if(isItemKey(review.k)){
+    var remote;try{remote=JSON.parse(row.v);}catch(_){return null;}
+    if(!remote||typeof remote!=='object'||Array.isArray(remote)||(!remote._del&&remote.id!==review.k.slice(ITEMP.length)))return null;
+    if(itemsDeletedLive(review.k,local)){if(!remote._del)return null;return {raw:row.v,needsArchive:local!==row.v,reason:'deleted-player-copy'};}
+  }
+  // IDP's established merge also preserves local image notes and feedback
+  // history. Its cloud projection remains enforced by the ordinary transport.
+  if(isIdpPrivateKey(review.k)||isIdpPubKey(review.k)){
+    if(!idpRawMergeable(review.k,row.v))return null;
+    if(bulk)return {raw:row.v,needsArchive:local!==row.v,reason:'unapproved-bulk-change'};
+    var merged=typeof base==='string'?idpMergeRaw(review.k,base,local,row.v,isTeamWs()):null;
+    if(merged)return {raw:merged.local,needsArchive:plan.needsArchive||idpMergeNeedsReview(merged),reason:'idp-concurrent-edit'};
+    if(!idpRawMergeable(review.k,row.v))return null;
+  }
+  if(review.k===SCHEDULE_KEY){
+    if(scheduleHeld()||!scheduleReadyRaw(row.v,true))return null;
+    var normalized=normalizeCoachDocument(row.v);if(!normalized)return null;
+    // Existing date-aware merging already handles trusted schedule ancestors.
+    // A legacy draft without one is kept in full before the server calendar is used.
+    return {raw:normalized,needsArchive:local!==row.v,reason:'schedule-concurrent-edit'};
+  }
+  if(bulk)return {raw:row.v,needsArchive:local!==row.v,reason:'unapproved-bulk-change'};
+  return plan;
+}
+function autosaveApply(review,expected,candidate,row,current,version){
+  current();if(!autosaveReviewCurrent(review))return Promise.resolve(false);
+  var guard={stale:false,skipIdpStrip:true},writes=[];
+  if(!kvWrite(review.k,candidate,writes,expected,guard,current))return Promise.resolve(false);
+  return Promise.all(writes).then(function(){
+    current();if(guard.stale)return false;
+    return currentValueForKey(review.k).then(function(raw){
+      current();var latest=autosaveVersion(review.wid,review.k);
+      if(raw!==candidate||latest.h!==version.h||latest.c!==version.c||!autosaveReviewCurrent(review))return false;
+      var m=meta(),target=review.channel==='personal'&&isTeamWs()?(m.p=m.p||{}):m,baseMeta=JSON.parse(JSON.stringify(target));
+      target.h=target.h||{};target.c=target.c||{};
+      // This acknowledges only the body read from the server. A merged local
+      // draft remains dirty and in the outbox until the next conditional push.
+      target.h[review.k]=hash(row.v);target.c[review.k]=row.cupd;
+      if(isIdpPrivateKey(review.k)||isIdpPubKey(review.k))return syncIdpBaseSet(review.k,row.v,hash(row.v),row.cupd,review.wid,baseMeta).then(function(){
+        current();return currentValueForKey(review.k).then(function(rawNow){
+          current();var vNow=autosaveVersion(review.wid,review.k);
+          if(rawNow!==candidate||vNow.h!==version.h||vNow.c!==version.c||!autosaveReviewCurrent(review))return false;
+          var fresh=meta(),part=review.channel==='personal'&&isTeamWs()?(fresh.p=fresh.p||{}):fresh;
+          part.h=part.h||{};part.c=part.c||{};part.h[review.k]=hash(row.v);part.c[review.k]=row.cupd;
+          setMetaExact(fresh);return true;
+        });
+      });
+      setMetaExact(m);return true;
+    });
+  }).then(function(ok){
+    if(!ok)return false;current();if(!autosaveReviewCurrent(review))return false;
+    if(review.channel==='personal')personalReviewClear(personalContext(),review.k);
+    else holdConflictWrite(holdList().filter(function(r){return !(r.k===review.k&&JSON.stringify(r)===review.token);}));
+    if(isItemKey(review.k))try{localStorage.setItem('ps_items_rev',String(Date.now()));}catch(_){}
+    if(review.k===MATCH_KEY)matchReadyInvalidate();
+    return outboxMarkForOwner(getSess().uid,review.wid,review.k,hash(candidate),'autosave-rebase').then(function(){current();onApplied('autosave-rebase',1);return true;});
+  });
+}
+function autosaveRecoveryContext(){var c=autosaveContext();return c?JSON.stringify([c.uid,c.wid,c.seal,c.epoch]):null;}
+function autosaveArchiveList(){
+  var c=autosaveContext();if(!c)return Promise.resolve([]);var owner=autosaveRecoveryContext();
+  var scopes=[c.wid],p=personalWid();if(p&&p!==c.wid)scopes.push(p);
+  return Promise.all(scopes.map(function(wid){var ctx=autosaveContext(wid);return autosaveJournal(wid).list(ctx).then(function(rows){return rows.map(function(r){return Object.assign({},r,{wid:wid});});});})).then(function(lists){
+    if(autosaveRecoveryContext()!==owner)throw new Error('autosave_owner_changed');
+    return [].concat.apply([],lists).sort(function(a,b){return b.at-a.at;});
+  });
+}
+function autosaveRefreshArchives(){
+  var c=autosaveContext();if(!c){autosaveArchiveState={owner:'',count:0};return Promise.resolve();}var owner=c.uid+':'+c.seal;
+  return autosaveArchiveList().then(function(rows){var now=autosaveContext();if(now&&now.uid+':'+now.seal===owner)autosaveArchiveState={owner:owner,count:rows.length};});
+}
+var autosaveRecoveryUI=null;
+window.PSAutosaveRecovery={open:function(){
+  if(!autosaveEnabled()||!window.PSAutosaveRecoveryUI)return;
+  if(!autosaveRecoveryUI)autosaveRecoveryUI=PSAutosaveRecoveryUI.create({
+    context:autosaveRecoveryContext,list:autosaveArchiveList,label:keyLabel,
+    read:function(row){var ctx=autosaveContext(row.wid);if(!ctx||!autosaveCanRead(row.wid,row.k))return Promise.reject(new Error('autosave_owner_changed'));return autosaveJournal(row.wid).read(ctx,row.id);}
+  });
+  return autosaveRecoveryUI.open();
+}};
+function autosaveSyncRun(reason){
+  if(!autosaveEnabled())return syncNowCore(reason);
+  if(!autosaveRunner)autosaveRunner=PSAutosaveRuntime.create({
+    context:autosaveContext,hash:hash,read:currentValueForKey,version:autosaveVersion,confirmed:autosaveConfirmed,
+    journal:function(wid){var j=autosaveJournal(wid);return {base:j.base,archive:j.archive,
+      remember:function(ctx,k,raw,h,c){return j.remember(ctx,k,raw,h,c).then(function(){autosaveRemembered[ctx.uid+':'+wid+':'+k]=h+':'+c;});}};},
+    pending:autosavePending,reviewCurrent:autosaveReviewCurrent,plan:PSAutosaveMerge.plan,prepare:autosavePrepare,apply:autosaveApply,
+    legacyBase:function(wid,k,v){var b=syncBaseGet(k,wid);return typeof b==='string'&&v.h&&hash(b)===v.h?b:null;},
+    remote:function(wid,keys){return ensureToken().then(function(at){if(!at)throw syncIssue('sync_auth','autosave_token','로그인 확인이 필요합니다');return kvPullValues(at,wid,keys);});},
+    core:syncNowCore,
+    fail:function(e){var info=/Owner|owner_changed/.test(String(e&&e.message))?{code:'sync_workspace_changed',stage:'autosave'}:classifySyncError(e);
+      lastIssue={code:info.code,stage:info.stage||'autosave',at:Date.now()};syncDiagnostic('autosave',e);return {error:'자동 저장을 완료하지 못했습니다',code:info.code};},
+    notify:function(){autosaveRefreshArchives().then(function(){try{window.dispatchEvent(new CustomEvent('ps-sync-state'));}catch(_){};}).catch(function(e){syncDiagnostic('autosave-archive-list',e);});}
+  });
+  return autosaveRunner.run(reason);
+}
 function syncNow(reason){
   var lockWid=activeWs();
   if(importSyncLock){
@@ -5777,10 +5979,10 @@ function syncNow(reason){
     return navigator.locks.request('process-studio-sync-'+lockWid,{mode:'exclusive'},function(){
       var own=cacheOwner(),ss=getSess();
       if(String(activeWs()||'')!==String(lockWid)||!own||String(own.wid||'')!==String(lockWid)||!ss||String(own.uid||'')!==String(ss.uid||''))return {skip:1,workspaceChanged:1};
-      return syncNowCore(reason);
+      return autosaveSyncRun(reason);
     });
   }
-  return syncNowCore(reason);
+  return autosaveSyncRun(reason);
 }
 function syncNowCore(reason){
   if(busy) return Promise.resolve({skip:1});
@@ -7451,6 +7653,10 @@ function switchWorkspaceCore(wid, skipSave){
     restorePreMeta();
     switching=false;clearTimeout(overlayGuard);clearTimeout(overlaySlow);hideSwitchOverlay();
     var n=keys.length;
+    if(typeof autosaveEnabled==='function'&&autosaveEnabled()){
+      setStatus('변경사항을 보관 중입니다. 저장 상태를 확인한 뒤 다시 전환해 주세요');
+      var pendingError=new Error('preswitch holds');pendingError.psPreswitch=true;throw pendingError;
+    }
     setStatus('전환 전에 확인할 변경 '+n+'건이 있습니다');
     workspaceHoldReviewPrepare(keys,from,wid,switchAttemptSeq).then(function(intent){
       if(!canResumeSwitch())return;
@@ -7586,6 +7792,7 @@ function switchWorkspaceCore(wid, skipSave){
         if(_pm.n&&_pm.n[k]!=null)_keep.n[k]=_pm.n[k];
       });
     }catch(_){}
+    if(typeof autosaveEnabled==='function'&&autosaveEnabled())_keep=JSON.parse(preMetaRaw||'null')||_keep;
     localStorage.setItem(MKEY,JSON.stringify(_keep));
   }catch(_){}
   var _pre = skipSave ? Promise.resolve({__skip:1}) : withTimeout(forceSync('preswitch'),15000);
@@ -9061,7 +9268,7 @@ function boot(){
     });
     editOutboxCommit.then(function(){
       if(seq!==edSeq)return;
-      clearTimeout(edT);edT=setTimeout(function(){syncNow('edit');},4000);
+      clearTimeout(edT);edT=setTimeout(function(){syncNow('edit');},1000);
     },function(err){syncDiagnostic('outbox-edit-mark',err);});
   });
   function recheckAuth(){

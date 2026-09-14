@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-automatic-save',date:'2026-09-15',title:'자동 저장과 기기 간 자료 맞추기 개선',
+    changes:[
+      '저장 중·저장됨 상태를 화면에서 간단히 확인합니다.',
+      '서로 다른 항목의 수정은 자동으로 합치며, 겹친 원문은 이 기기에 별도 보관합니다.',
+      '보관한 원문은 앱 설정 → 데이터 → 고급 → 최근 변경 복구에서 확인하고 내려받을 수 있습니다.'
+    ]
+  },{
     id:'2026-09-15-admin-support',date:'2026-09-15',title:'오류 제보와 관리자 답변 연결',
     changes:[
       '앱에서 보낸 오류 제보가 관리자 접수함에 연결됩니다.',
