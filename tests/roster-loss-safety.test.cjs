@@ -94,8 +94,8 @@ vm.runInNewContext(harnessSource.slice(0,harnessSource.indexOf('\nconst pushed='
 const KEY='sq:a',BASE=raw({id:'a',name:'Player',note:'base'}),MINE=raw({id:'a',name:'Player',note:'mine'}),OTHER=raw({id:'a',name:'Player',note:'other'});
 function conflict(opts={}){
   const h=box.module.exports.harness({key:KEY,dynamic:true,server:OTHER,cupd:2,idb:MINE,...opts});h.baseline(BASE);
-  Object.assign(h.c,{ITEMS_ACTIVE:true,ITEMP:'sq:',_itemConflicts:[],itemsServerCheck:async()=>true,itemsPushAllowed:()=>true,isItemKey:k=>k.startsWith('sq:')});
-  vm.runInContext(fn('itemsResolveConflicts'),h.c);
+  Object.assign(h.c,{ITEMS_ACTIVE:true,ITEMP:'sq:',_itemConflicts:[],_itemsObserved:null,itemsServerCheck:async()=>true,itemsPushAllowed:()=>true,isItemKey:k=>k.startsWith('sq:')});
+  vm.runInContext(['itemsResolveConflicts','itemsWriteOwner','itemsWriteCurrent','itemsObserveServer','itemsCreateAllowed','itemsDeletedLive'].map(fn).join('\n'),h.c);
   const fetch=h.c.syncFetch;h.c.syncFetch=async(stage,...args)=>stage==='items_conflict'?{ok:true,json:async()=>[...h.server.values()]}:fetch(stage,...args);
   return h;
 }
