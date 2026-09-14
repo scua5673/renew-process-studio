@@ -3520,6 +3520,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <button id="visBtn" class="gk-btn" title="선수 시야 표시·끄기" style="display:none">시야</button>
         <button id="trailBtn" class="gk-btn" title="잔상 — 재생할 때 지나온 길을 남깁니다 (누를 때마다 1→5단계→끔 · 단축키 J)" style="display:none">잔상</button>
         <button id="lookBtn" class="gk-btn" title="시선 — 다음에 누르는 선수나 공을 계속 바라봅니다 (단축키 O · 다시 누르면 끔)" style="display:none">시선</button>
+        <button id="lockSelBtn" class="gk-btn" title="선택한 항목 위치 고정" style="display:none">고정</button>
         <span class="sizebox" id="visCtl" style="display:none"><button id="visNarrow" title="시야 좁게"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="szlbl">시야폭</span><button id="visWide" title="시야 넓게"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></span>
         <button id="visBlindBtn" class="gk-btn" title="등 뒤 사각지대 표시·끄기" style="display:none">사각</button>
         <button id="shaperBtn" class="gk-btn" title="쉐이퍼(몸 방향) 토큰 디자인" style="display:none">쉐이퍼</button>
@@ -4836,6 +4837,12 @@ function makeToken(p,kind){
   g.setAttribute("transform",tokenTransform(p));
   /* 2.799 — 폰: 보이는 원(r 21 ≈ 지름 13px)은 그대로 두고 잡히는 범위만 지름 ≈44px 로(사용자 «폰에서는 토큰을 가볍게 옮기는 것만»). 첫 자식이라 그림 위에 얹히지 않는다. */
   try{ if(psBoardDevice()==="phone"){ g.insertBefore(el("circle",{r:Math.round(70/phoneTokFactor(p)),fill:"transparent","class":"tok-hit"}),g.firstChild);   /* 2.801 — 토큰을 줄여도 잡히는 범위는 44px 유지 */ } }catch(_){}
+  if(p.locked){
+    var lg=el("g",{"class":"tok-lock",transform:"translate(24,-24)"});
+    lg.appendChild(el("circle",{r:8.5,fill:"rgba(18,22,30,.86)",stroke:"#fff","stroke-width":1.4}));
+    lg.appendChild(el("path",{d:"M-3 -1.2v-2.2a3 3 0 0 1 6 0v2.2M-4 -1.2h8v5.2h-8z",fill:"none",stroke:"#fff","stroke-width":1.4,"stroke-linecap":"round","stroke-linejoin":"round"}));
+    g.appendChild(lg);
+  }
   enableDrag(g,p,removable,kind);return g;
 }
 function playerTeamCol(p){   // p.color 없을 때의 유효 팀색 — 렌더 로직과 동일 규칙(현재색 하이라이트용)
@@ -4858,6 +4865,7 @@ function enableDrag(g,p,removable,kind){
 	    if(_lookPick){e.stopPropagation();lookPickTarget(p);return;}   /* 2.680 — 시선 대상 고르기 */
 	    e.stopPropagation();
 	    if(state.boardLocked&&state.tool==="move"){selectItem(kind,p);toast("배치가 고정되어 있습니다");return;}
+	    if(p.locked&&state.tool==="move"){selectItem(kind,p);try{toast("고정된 항목입니다 · 고정 해제 후 이동하세요");}catch(_){}return;}
     moved=false;mvUndo=false;sx=e.clientX;sy=e.clientY;
     const selected=!!(sel&&sel.ref===p);
     const _isDrawStart=(kind!=="ball"&&!selected&&isDraw());
@@ -4878,7 +4886,7 @@ function enableDrag(g,p,removable,kind){
          기울임·배율이 바뀌어도 맞는다(화면 px 은 원근에서 위치마다 다른 거리를 뜻한다). */
       try{ var _g0=toUnit(e); _mvGrab=(_g0&&isFinite(_g0.x)&&isFinite(_g0.y))?{x:p.x-_g0.x,y:p.y-_g0.y}:null; }catch(_){ _mvGrab=null; }
       if(multiSel.length>=2&&multiSel.indexOf(p)>=0){
-        grp=multiSel.map(o=>{var _di=state.drawings.indexOf(o);if(_di>=0)return{o:o,draw:true,pts0:(o.pts||[]).map(q=>({x:q.x,y:q.y})),g:drawLayer.children[_di]};return{o:o,x0:o.x,y0:o.y,g:tokenLayer.querySelector('[data-id="'+o.id+'"]')};});
+        grp=multiSel.map(o=>{var _di=state.drawings.indexOf(o);if(_di>=0)return{o:o,draw:true,locked:!!(o&&o.locked),pts0:(o.pts||[]).map(q=>({x:q.x,y:q.y})),g:drawLayer.children[_di]};return{o:o,x0:o.x,y0:o.y,locked:!!(o&&o.locked),g:tokenLayer.querySelector('[data-id="'+o.id+'"]')};});
         gu0=toUnit(e);grpUndo=false; grpStart=grp.slice();
       }else{grp=null;grpStart=null;}
     }};
@@ -4902,7 +4910,7 @@ function enableDrag(g,p,removable,kind){
     if(mode==="draw"){moveDraw(toUnit(e));}
     else if(grp){if(!grpUndo){pushUndo();grpUndo=true;}const u=toUnit(e);let dx=u.x-gu0.x,dy=u.y-gu0.y;
       if(e.shiftKey){ if(!_mvAxis&&(Math.abs(dx)>6||Math.abs(dy)>6))_mvAxis=Math.abs(dx)>=Math.abs(dy)?"x":"y"; if(_mvAxis==="x")dy=0; else if(_mvAxis==="y")dx=0; } else _mvAxis=null;
-      grp.forEach(it=>{if(it.draw){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else{it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(tokShape==="shaper"||grp.some(function(it){return it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
+      grp.forEach(it=>{if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(tokShape==="shaper"||grp.some(function(it){return !it.locked&&it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
     else{if(!mvUndo){pushUndo();mvUndo=true;}
       var _u0=toUnit(e);
       /* 2.375 — 잡은 지점 보정. 스냅(snapDrag)은 보정한 뒤에 걸어야 한다 — 보정 전에 걸면 스냅이
@@ -4952,6 +4960,22 @@ function selectedItemsOfType(kind){
   return[];
 }
 function selectedPlayers(includeCoaches){var a=selectedItemsOfType("player");return includeCoaches===false?a.filter(function(p){return !p.coach;}):a;}
+function selectedLockables(){
+  if(sel&&(sel.type==="player"||sel.type==="equip"||sel.type==="drawing"||sel.type==="ball")&&sel.ref)return[sel.ref];
+  if(!sel&&typeof multiSel!=="undefined"&&multiSel.length)return multiSel.filter(function(o){var t=typeOfItem(o);return t==="player"||t==="equip"||t==="drawing"||t==="ball";});
+  return[];
+}
+function syncLockButton(){
+  try{
+    const lb=document.getElementById("lockSelBtn"), sc=document.querySelector(".sel-ctl");if(!lb)return;
+    const ts=selectedLockables(), on=!!ts.length;
+    lb.style.setProperty("display",on?"inline-flex":"none","important");
+    if(sc&&on){const anchor=document.getElementById("dupSelBtn")||document.getElementById("delSelBtn");if(anchor&&lb.nextSibling!==anchor)sc.insertBefore(lb,anchor);}
+    const all=!!(ts.length&&ts.every(function(o){return !!o.locked;})), some=ts.some(function(o){return !!o.locked;});
+    lb.classList.toggle("on",all);lb.textContent=all?"고정 해제":"고정";lb.setAttribute("aria-pressed",all?"true":(some?"mixed":"false"));
+    lb.title=all?"선택한 항목 위치 고정 해제":"선택한 항목 위치 고정";
+  }catch(_){}
+}
 function sameSelectedValue(items,key){
   if(!items.length)return{same:true,value:""};var v=items[0][key]==null?"":String(items[0][key]);
   for(var i=1;i<items.length;i++){var n=items[i][key]==null?"":String(items[i][key]);if(n!==v)return{same:false,value:""};}
@@ -5168,7 +5192,6 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   const _sc=document.querySelector(".sel-ctl");if(_sc){const _showSc=!!(sel||_multiOn);const _nextSc=_showSc?"":"none";if(_sc.style.display!==_nextSc)_sc.style.display=_nextSc;
     _sc.dataset.kind=_multiOn?"multi":(_isTextSel?"text":(sel?sel.type:""));_sc.dataset.title=_multiOn?("선택 "+multiSel.length+"개"):"";}
   const b=document.getElementById("delSelBtn");if(b)b.style.display=(sel||_multiOn)?"inline-flex":"none";
-  try{ psSelBarLayout(); }catch(e){ console.warn("selbar",e); }
   const _bsb=document.getElementById("ballStyleBtn");if(_bsb)_bsb.style.display=(sel&&sel.type==="ball")?"inline-flex":"none";
   const _multiResz=(typeof multiSel!=="undefined"&&multiSel.length&&multiSel.some(function(o){var t=typeOfItem(o);return t==="player"||t==="equip"||(t==="drawing"&&o&&o.type!=="text");}));
   const s=document.getElementById("sizeCtl");if(s)s.style.display=((sel&&(sel.type==="player"||sel.type==="equip"||sel.type==="ball"||(sel.type==="drawing"&&sel.ref&&sel.ref.type!=="text")))||_multiResz)?"inline-flex":"none";
@@ -5178,6 +5201,10 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   const _mv=document.getElementById("mirVBtn");if(_mv)_mv.style.display=_mShow?"inline-flex":"none";
   const _rotTargets=_multiOn?multiSel.filter(function(o){var t=typeOfItem(o);return t==="equip"||(t==="player"&&!o.coach&&(o.vis||o.shaper));}):[];
   const rc=document.getElementById("rotCtl");if(rc)rc.style.display=((sel&&(sel.type==="equip"||(sel.type==="player"&&(sel.ref.vis||sel.ref.shaper))))||_rotTargets.length)?"inline-flex":"none";
+  const _locks=selectedLockables(),_lb=document.getElementById("lockSelBtn");
+  if(_lb){var _allLocked=!!(_locks.length&&_locks.every(function(o){return !!o.locked;})),_someLocked=_locks.some(function(o){return !!o.locked;});
+    _lb.style.display=_locks.length?"inline-flex":"none";_lb.classList.toggle("on",_allLocked);_lb.textContent=_allLocked?"고정 해제":"고정";_lb.setAttribute("aria-pressed",_allLocked?"true":(_someLocked?"mixed":"false"));
+    _lb.title=_allLocked?"선택한 항목 위치 고정 해제":"선택한 항목 위치 고정"; }
   try{_renderRotHandle();}catch(_){}   /* 선택만 바뀌고 renderTokens 가 안 도는 경우가 있어 여기서도 갱신 */
   const cc=document.getElementById("colorCtl");
   if(cc){const isPlayerCol=!!(sel&&sel.type==="player");
@@ -5257,7 +5284,10 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   if(vbl){vbl.style.display=_visPlayers.length?"inline-flex":"none";vbl.classList.toggle("on",!!(_visPlayers.length&&_visPlayers.every(function(p){return p.blind===true;})));}
   const shb=document.getElementById("shaperBtn");
   if(shb){shb.style.display=_fieldPlayers.length?"inline-flex":"none";shb.classList.toggle("on",!!(_fieldPlayers.length&&_fieldPlayers.every(function(p){return !!p.shaper;})));}
-  if(sel||_multiOn)positionSelCtl();}
+  syncLockButton();
+  try{ psSelBarLayout(); }catch(e){ console.warn("selbar",e); }
+  if(sel||_multiOn)positionSelCtl();
+  syncLockButton();}
 function scaleSel(f){
   if(typeof multiSel!=="undefined"&&multiSel.length){   /* 다중 선택 — 토큰·장비 배율, 그림 굵기 함께 조절 */
     var _ch=false;
@@ -5750,18 +5780,19 @@ function enableDrawingDrag(g,d){
 	    if(state.tool==="text"){e.stopPropagation();const _u=toUnit(e);addText(_u,d.type==="text"?d:findTextAt(_u));return;}
 	    if(state.tool!=="move")return;e.stopPropagation();
 	    if(state.boardLocked){selectItem("drawing",d);toast("배치가 고정되어 있습니다");return;}
+	    if(d.locked){selectItem("drawing",d);try{toast("고정된 항목입니다 · 고정 해제 후 이동하세요");}catch(_){}return;}
     dragging=true;moved=false;p0=toUnit(e);try{g.setPointerCapture(e.pointerId)}catch(_){};g.style.cursor="grabbing";
     /* 1.688 — 다중 선택에 든 그림에서 시작한 드래그도 그룹을 함께 끈다(사용자: "같이 선택했을 때
        드래그가 잘 안 돼" — 토큰에서 시작할 때만 그룹이 움직이고 그림에서 시작하면 혼자 움직였다).
        토큰 쪽(3228행)과 같은 구조. */
     if(typeof multiSel!=="undefined"&&multiSel.length>=2&&multiSel.indexOf(d)>=0){
-      grp=multiSel.map(o=>{var _di=state.drawings.indexOf(o);if(_di>=0)return{o:o,draw:true,pts0:(o.pts||[]).map(q=>({x:q.x,y:q.y})),g:drawLayer.children[_di]};return{o:o,x0:o.x,y0:o.y,g:tokenLayer.querySelector('[data-id="'+o.id+'"]')};});
+      grp=multiSel.map(o=>{var _di=state.drawings.indexOf(o);if(_di>=0)return{o:o,draw:true,locked:!!(o&&o.locked),pts0:(o.pts||[]).map(q=>({x:q.x,y:q.y})),g:drawLayer.children[_di]};return{o:o,x0:o.x,y0:o.y,locked:!!(o&&o.locked),g:tokenLayer.querySelector('[data-id="'+o.id+'"]')};});
       grpUndo=false;
     }else grp=null;});
   g.addEventListener("pointermove",e=>{if(!dragging)return;const p=toUnit(e);
     let dx=p.x-p0.x,dy=p.y-p0.y;if(Math.hypot(dx,dy)>3)moved=true;
     if(grp){if(!grpUndo){pushUndo();grpUndo=true;}
-      grp.forEach(it=>{if(it.draw){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else{it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});
+      grp.forEach(it=>{if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});
       renderMultiGuides();return;}
     const _cs=d.pts.reduce((a,q)=>({x:a.x+q.x,y:a.y+q.y}),{x:0,y:0}),_n=d.pts.length||1,c0x=_cs.x/_n,c0y=_cs.y/_n,_CTH=13;
     if(Math.abs((c0x+dx)-CX)<=_CTH){dx=CX-c0x;}
@@ -5789,7 +5820,7 @@ function enableDrawingDrag(g,d){
 }
 function enableEndpointDrag(hg,d,idx){
   hg.style.cursor="grab";
-	  hg.addEventListener("pointerdown",e=>{if(state.tool!=="move"||state.boardLocked)return;e.stopPropagation();
+	  hg.addEventListener("pointerdown",e=>{if(state.tool!=="move"||state.boardLocked||d.locked)return;e.stopPropagation();
     pushUndo();
     let gRef=hg.parentNode;
     const move=ev=>{const u=toUnit(ev); d.pts[idx]={x:u.x,y:u.y}; const f2=redrawOne(d,gRef);if(f2)gRef=f2; showMeas(d,d.pts[idx]);};
@@ -5800,7 +5831,7 @@ function enableEndpointDrag(hg,d,idx){
 }
 function enableCurveDrag(hg,d){   // 중간 핸들 드래그 → 커브(2차 베지어 제어점) 조절
   hg.style.cursor="grab";
-	  hg.addEventListener("pointerdown",e=>{if(state.tool!=="move"||state.boardLocked)return;e.stopPropagation();
+	  hg.addEventListener("pointerdown",e=>{if(state.tool!=="move"||state.boardLocked||d.locked)return;e.stopPropagation();
     pushUndo();
     const a=d.pts[0],b=d.pts[1];
     const move=ev=>{const u=toUnit(ev); d.pts[2]={x:2*u.x-(a.x+b.x)/2, y:2*u.y-(a.y+b.y)/2}; renderDrawings();};
@@ -5812,7 +5843,7 @@ function enableCurveDrag(hg,d){   // 중간 핸들 드래그 → 커브(2차 베
     window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);});
 }
 function enableResize(hg,d,i){
-  hg.addEventListener("pointerdown",e=>{if(state.tool!=="move"||state.boardLocked)return;e.stopPropagation();
+  hg.addEventListener("pointerdown",e=>{if(state.tool!=="move"||state.boardLocked||d.locked)return;e.stopPropagation();
     const a=d.pts[0],b=d.pts[1];
     const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
     const corners=[[x,y],[x+w,y],[x,y+h],[x+w,y+h]],fx=corners[3-i];
@@ -5837,11 +5868,24 @@ function wavyPath(a,b){const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
 function inkColor(c){return c;}                  // 코치가 고른 색 그대로 그린다
 function needCase(c){var lc=(""+c).toLowerCase(); // 밝은 잉크는 흰 피치에서 안 보이므로 어두운 외곽선으로 살린다
   return (lc==="#ffffff"||lc==="#fff"||lc==="#f2f4f7")&&document.documentElement.dataset.pitch==="white";}
+function appendDrawingLockBadge(g,d){
+  if(!d||!d.locked)return;
+  var pts=(d.pts||[]).filter(function(p){return p&&isFinite(p.x)&&isFinite(p.y);});if(!pts.length)return;
+  var x=pts[0].x,y=pts[0].y;
+  if(d.type==="rect"||d.type==="rectline"||d.type==="rectdash"||d.type==="ellipse"){
+    var a=pts[0],b=pts[1]||pts[0];x=Math.max(a.x,b.x);y=Math.min(a.y,b.y);
+  }else if(d.type==="text"){x=pts[0].x+18;y=pts[0].y-18;}
+  else{x=0;y=0;pts.forEach(function(p){x+=p.x;y+=p.y;});x/=pts.length;y/=pts.length;}
+  var lg=el("g",{"class":"tok-lock",transform:"translate("+x+","+y+")"});
+  lg.appendChild(el("circle",{r:8.5,fill:"rgba(18,22,30,.86)",stroke:"#fff","stroke-width":1.4}));
+  lg.appendChild(el("path",{d:"M-3 -1.2v-2.2a3 3 0 0 1 6 0v2.2M-4 -1.2h8v5.2h-8z",fill:"none",stroke:"#fff","stroke-width":1.4,"stroke-linecap":"round","stroke-linejoin":"round"}));
+  g.appendChild(lg);
+}
 function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof multiSel!=="undefined"&&!!multiSel&&multiSel.indexOf(d)>=0);const C=inkColor(d.color);const cap=needCase(d.color);const LW=(d&&d.lw)||1;   /* 선 굵기 배수 — 선택 후 크기 ±로 조절 */
   const CASE=document.documentElement.dataset.pitch!=="white"?"rgba(255,255,255,.92)":"#20242c";  // 배경 대비 외곽선(어느 운동장에서도 잘 보이게)
   if(d.type==="link"){   /* 2.679 — 토큰 id 로 그리는 연결선·다각형(좌표는 매번 토큰에서 읽는다) */
     const pts=(d.ids||[]).map(_linkPt).filter(Boolean);
-    if(pts.length===1){g.appendChild(el("circle",{cx:pts[0].x,cy:pts[0].y,r:16,fill:"none",stroke:C,"stroke-width":3,"stroke-dasharray":"4 4","pointer-events":"none"}));return g;}
+    if(pts.length===1){g.appendChild(el("circle",{cx:pts[0].x,cy:pts[0].y,r:16,fill:"none",stroke:C,"stroke-width":3,"stroke-dasharray":"4 4","pointer-events":"none"}));appendDrawingLockBadge(g,d);return g;}
     if(pts.length>=2){
       const dd="M "+pts.map(p=>p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" L ")+(d.closed?" Z":"");
       if(isSel)g.appendChild(el("path",{d:dd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linejoin":"round","stroke-linecap":"round"}));
@@ -5862,7 +5906,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       }
     }
     try{ var _fo2=(d.op!=null?d.op:1)*(d._fade==null?1:d._fade); if(!isSel && _fo2<1) g.setAttribute("opacity", Math.max(0,Math.min(1,_fo2))); }catch(_){}   /* 2.719 */
-    return g;
+    appendDrawingLockBadge(g,d);return g;
   }
   if(d.type==="rect"||d.type==="rectline"||d.type==="rectdash"||d.type==="ellipse"){const a=d.pts[0],b=d.pts[1]||d.pts[0];
     const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
@@ -5875,24 +5919,18 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       const dash=d.type==="rectdash"?"11 8":null;
       const os={x,y,width:w,height:h,rx:4,fill:"none",stroke:C,"stroke-width":4.5*LW,"pointer-events":"none"};if(dash)os["stroke-dasharray"]=dash;g.appendChild(el("rect",os));
     }
-    /* 내부 탭 → 선택(모서리 핸들 표시). 드래그는 여전히 테두리만 — 아이패드 오작동 방지는 유지.
-       tokenLayer가 drawLayer 위에 있어 구역 아래 선수/장비 선택도 그대로 된다. */
+    /* 내부 빈 공간도 구역 자체를 끌 수 있다. tokenLayer가 drawLayer 위에 있어 구역 안 선수/장비는 그대로 먼저 잡힌다. */
     (function(){
       const inner=el("rect",{x,y,width:w,height:h,rx:4,fill:"#000",opacity:"0","pointer-events":"fill"});
       inner.style.cursor="pointer";
       inner.addEventListener("pointerdown",e=>{
         if(state.tool==="eraser"){e.stopPropagation();removeDrawing(d);return;}
         if(state.tool!=="move")return;            /* 그리기 도구면 통과 → 구역 위에 새로 그릴 수 있음 */
-        e.stopPropagation();                      /* g의 드래그 핸들러로 전파 차단 = 내부 드래그 이동 안 함 */
-        const sx=e.clientX,sy=e.clientY;let moved=false;
-        const mv=ev=>{if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>6)moved=true;};
-        const up=()=>{window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);
-          window.removeEventListener("pointercancel",up);if(!moved)selectItem("drawing",d);};
-        window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);
+        if(d.locked){e.stopPropagation();selectItem("drawing",d);try{toast("고정된 항목입니다 · 고정 해제 후 이동하세요");}catch(_){}}
       });
       g.appendChild(inner);
     })();
-    /* 드래그 히트: 테두리(선)만 잡히게 — 구역 내부를 드래그해도 이동 안 됨(아이패드 QA). 선·화살표와 동일한 stroke 히트 패턴 */
+    /* 드래그 히트: 테두리도 넓게 잡히게 — 선·화살표와 동일한 stroke 히트 패턴 */
     g.appendChild(el("rect",{x,y,width:w,height:h,rx:4,fill:"none",stroke:"#000","stroke-width":22,opacity:"0","pointer-events":"stroke"}));
     if(isSel){
       const _lab=`${Math.round(w/MPP)} × ${Math.round(h/MPP)} m`,_fs=18,_pw=_lab.length*_fs*0.6+16,_ph=_fs+12,_cx=x+w/2,_cy=y;
@@ -5978,6 +6016,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       }
     }
   }
+  appendDrawingLockBadge(g,d);
   enableDrawingDrag(g,d);
   /* 투명도 — 선택/편집 중엔 또렷하게(1), 배치 완료·재생·영상에서만 반영. 2.719: 장면 사이 서서히 켜짐/꺼짐(_fade) 곱함 */
   try{ var _fo=(d.op!=null?d.op:1)*(d._fade==null?1:d._fade); if(!isSel && _fo<1) g.setAttribute("opacity", Math.max(0,Math.min(1,_fo))); }catch(_){}
@@ -6027,7 +6066,7 @@ function _textBox(d){ var fs=d.size||30; var lines=_wrapText(d.text,fs,d.w);
   var boxW=(d.w||maxW)+padX*2,boxH=((lines.length-1)*lh+fs)+padY*2;
   return {fs:fs,lines:lines,lh:lh,padX:padX,padY:padY,boxW:boxW,boxH:boxH}; }
 function enableTextResize(hg,d){ hg.style.cursor=(state.orientation==="v"?"ns-resize":"ew-resize"); try{hg.style.touchAction="none";}catch(_){}
-  hg.addEventListener("pointerdown",function(e){ if(state.tool!=="move"||state.boardLocked)return; e.stopPropagation(); e.preventDefault();
+  hg.addEventListener("pointerdown",function(e){ if(state.tool!=="move"||state.boardLocked||d.locked)return; e.stopPropagation(); e.preventDefault();
     try{hg.setPointerCapture(e.pointerId);}catch(_){} pushUndo();
     var gRef=hg.parentNode;
     var mv=function(ev){ var u=toUnit(ev),delta=(state.orientation==="v")?Math.abs(u.y-d.pts[0].y):Math.abs(u.x-d.pts[0].x);
@@ -12083,6 +12122,10 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
   if($("visBtn"))$("visBtn").onclick=()=>toggleVision();
   if($("trailBtn"))$("trailBtn").onclick=()=>cycleTrail();   /* 2.680 */
   if($("lookBtn"))$("lookBtn").onclick=()=>toggleLookAt();
+  if($("lockSelBtn"))$("lockSelBtn").onclick=()=>{var ts=selectedLockables();if(!ts.length)return;var on=!ts.every(function(o){return !!o.locked;});try{pushUndo();}catch(_){}
+    ts.forEach(function(o){if(on)o.locked=true;else delete o.locked;});
+    try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}
+    try{toast(ts.length>1?(ts.length+"개 위치 "+(on?"고정":"고정 해제")):(on?"위치 고정 — 해제 전까지 움직이지 않아요":"위치 고정 해제"));}catch(_){} };
   if($("visWide"))$("visWide").onclick=()=>visWidth(12);
   if($("visNarrow"))$("visNarrow").onclick=()=>visWidth(-12);
   if($("visBlindBtn"))$("visBlindBtn").onclick=()=>toggleBlind();
@@ -17288,6 +17331,9 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   .sel-ctl .posbox select{border:0;outline:0;background:transparent;color:#fff;font:inherit;font-size:var(--fs-sub,12px);font-weight:700;max-width:100px;cursor:pointer;-webkit-appearance:none;appearance:none;padding:0 14px 0 2px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 0 center;background-size:11px 11px}
   .sel-ctl .posbox select option{color:#111}
   html body:not(.ps-dock) .sel-ctl #labelModeBtn{display:none!important}
+  html body:not(.ps-dock) .sel-ctl #lockSelBtn{grid-column:1/-1!important}
+  .sel-ctl #lockSelBtn.on{background:rgba(255,255,255,.86)!important;color:#14171c!important;border-color:transparent!important}
+  .tok-lock{pointer-events:none}
 </style>
 <style id="ps-2802-selsheet">
 @media (max-width:700px){
@@ -17309,6 +17355,7 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #posCtl select{width:100%!important;height:38px!important;font-size:13px!important;color:#EDEFF3!important;max-width:none!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #labelModeBtn{order:20!important;flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____):not(.sel-more) > #labelModeBtn{display:none!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #lockSelBtn{order:11!important;flex:1 1 calc(50% - 4px)!important;min-width:calc(50% - 4px)!important;max-width:calc(50% - 4px)!important;padding:0 6px!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #selMoreBtn{flex:0 0 40px!important;width:40px!important;padding:0!important;font-size:18px!important;font-weight:700!important;letter-spacing:-.02em!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #selRowBreak{margin:-8px 0 0!important}
   /* 2줄: 크기·색상·C·글자 숨김 — 같은 폭 넷 */
