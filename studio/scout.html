@@ -8621,7 +8621,7 @@ function renderPlayers(){
     posSel.onclick=function(ev){ev.stopPropagation();};
     const edit=document.createElement("button");edit.className="btn sm";edit.textContent="편집";edit.onclick=()=>openPlayer(pl.id);
     const del=document.createElement("button");del.className="btn danger sm";del.textContent="삭제";
-    del.onclick=()=>{psConfirm(`"${pl.name||"이름 없는"}" 선수를 삭제할까요?`,()=>{if(!plTombAdd(pl.id))return;data.players=data.players.filter(x=>x.id!==pl.id);if(editingPlayer===pl.id)closePlayer();save({deletedIds:pl.type==='target'?[]:[String(pl.id)]});renderPlayers();});};
+    del.onclick=()=>{psConfirm(`"${pl.name||"이름 없는"}" 선수를 삭제할까요?`,()=>{if(!plTombAdd(pl.id))return;data.players=data.players.filter(x=>x.id!==pl.id);if(editingPlayer===pl.id)closePlayer();save({deletedIds:pl.type==='target'?[]:[String(pl.id)],skipTargets:pl.type!=='target'});renderPlayers();});};
     const pdf=document.createElement("button");pdf.className="btn sm";pdf.textContent="PDF";pdf.title="이력서+세부평가 PDF 내보내기";pdf.onclick=()=>printPlayerReport(pl.id);const cb=document.createElement("input");cb.type="checkbox";cb.className="pl-cb";cb.setAttribute("data-cbpl",pl.id);cb.onclick=ev=>ev.stopPropagation();cb.addEventListener("change",function(){try{ps3sync();}catch(_){}});
     row.append(cb,nm,posSel);
     if(pl.type!=="target"){   /* 우리 선수만 — 스카우트 대상은 훈련 상태 개념이 없음 */
@@ -8694,7 +8694,7 @@ function openPlayer(id,opts){
     if(pl.type==="target"){scArchiveCandidate(pl.id);closePlayer();return;}
     psConfirm((pl.name||"이 선수")+" 삭제? 평가 기록도 함께 삭제됩니다.",()=>{
       if(!plTombAdd(pl.id))return; var gi=data.players.findIndex(x=>String(x.id)===String(pl.id)); if(gi>=0)data.players.splice(gi,1);
-      var deletedSaved=save({deletedIds:[String(pl.id)]}); closePlayer();
+      var deletedSaved=save({deletedIds:[String(pl.id)],skipTargets:true}); closePlayer();
       try{renderTeam();}catch(_){} try{renderScoutCands();}catch(_){} try{renderScoutBoard();}catch(_){} try{redrawTeamPitch();}catch(_){}
       try{toast(deletedSaved?"이 기기에서 삭제했습니다 · 팀 반영은 동기화 상태에서 확인하세요":"삭제 저장 확인이 필요합니다 · 자료 확인에서 확인하세요");}catch(_){}
     });
@@ -10816,7 +10816,7 @@ function renderTeam(){
       data.players[pj]=pl;data.players[gi]=ours[i+1];save();renderTeam();};
     const del=document.createElement("button");del.className="t-x";del.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     del.onclick=()=>{psConfirm((pl.name||"이 선수")+" 삭제? 평가 기록도 함께 삭제됩니다.",()=>{
-      if(!plTombAdd(pl.id))return;var di=data.players.findIndex(x=>String(x.id)===String(pl.id));if(di>=0)data.players.splice(di,1);save({deletedIds:[String(pl.id)]});renderTeam();});};
+      if(!plTombAdd(pl.id))return;var di=data.players.findIndex(x=>String(x.id)===String(pl.id));if(di>=0)data.players.splice(di,1);save({deletedIds:[String(pl.id)],skipTargets:true});renderTeam();});};
     const acts=document.createElement("div");acts.className="tm-acts";acts.append(up,dn,del);
     var _key=pl.posId||"__none";
     if(_key!==_prevPos[_ck]){_prevPos[_ck]=_key;_depthMap[_ck+"|"+_key]=0;
