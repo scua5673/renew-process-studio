@@ -22,7 +22,7 @@ function harness(initial=session(),options={}){
   BASE:'https://synthetic-auth.invalid',getSess:()=>copy(current),setSess(s){current=copy(s);writes.push(copy(s));},hj:at=>({Authorization:at?'Bearer '+at:'',apikey:'synthetic-public-key'}),
   localStorage:{getItem:k=>local.get(k)||null,setItem:(k,v)=>local.set(k,String(v)),removeItem:k=>local.delete(k)},
   fetch(url,opts){requests.push({url,opts});if(url.includes('/auth/v1/user/identities/authorize?'))return hooks.link?hooks.link(url,opts):Promise.resolve(response({url:'https://synthetic-provider.invalid/authorize'}));if(url.includes('/auth/v1/user'))return hooks.user?hooks.user(url,opts):Promise.resolve(response(userA));if(url.includes('/token?'))return hooks.refresh?hooks.refresh(url,opts):Promise.resolve(response({access_token:'synthetic-access-fresh',refresh_token:'synthetic-refresh-fresh',expires_in:3600}));throw Error('Unexpected network route');},
-  signOutEpoch:0,refreshPromise:null,refreshRetryTimer:null,refreshRetryDelay:15000,syncErr:false,
+  signOutEpoch:0,refreshPromise:null,refreshOwner:null,refreshRetryTimer:null,refreshRetryDelay:15000,syncErr:false,
   setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),navigator:{onLine:true},
   setStatus:msg=>statuses.push(msg),chip:msg=>statuses.push(msg),syncDiagnostic:(stage,e)=>diagnostics.push({stage,message:e?.message}),renderDataLock(){},dataUnlocked:()=>false,renderUI(){},syncNow:async()=>{}});
  vm.runInContext(code,c);

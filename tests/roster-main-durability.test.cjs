@@ -3,18 +3,18 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.join(__dirname,'..'),scout=fs.readFileSync(path.join(root,'studio/scout.html'),'utf8'),storage=fs.readFileSync(path.join(root,'studio/storage.js'),'utf8'),sync=fs.readFileSync(path.join(root,'studio/sync.js'),'utf8');
 function section(src,a,b){const i=src.indexOf(a),j=src.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return src.slice(i,j);}
 const tracker=section(storage,'/* PROCESS STUDIO — 저장 상태(PSSaveState)','/* PROCESS STUDIO — 일정 기준선');
-const shared=section(storage,'  var sharedWrites={},sharedLatest={};','  /* v369 — 팀 전환 전체 백업');
+const shared=section(storage,'  function migrationOwner(','  function localKeys(')+'\n'+section(storage,'  var sharedWrites={},sharedLatest={};','  /* v369 — 팀 전환 전체 백업');
 const store=section(scout,'const mem={};','const KEY=');
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
 const tick=()=>new Promise(r=>setImmediate(r));
 const doc=n=>({attrs:[],positions:[],players:Array.from({length:n},(_,i)=>({id:'p'+i,name:'Synthetic '+i,memo:'latest '+i})),meta:{teamName:'Synthetic'}});
 function harness(){
-  const values=new Map([['ps_active_ws','team-a'],['ps_sync_session','{"uid":"coach-a"}'],['scout_tool_v1',JSON.stringify(doc(69))]]),disk=new Map([['scout_tool_v1',JSON.stringify(doc(69))]]),calls=[],hooks={};
+  const values=new Map([['ps_cache_owner_v1','{"uid":"coach-a","wid":"team-a"}'],['ps_active_ws','team-a'],['ps_sync_session','{"uid":"coach-a"}'],['scout_tool_v1',JSON.stringify(doc(69))]]),disk=new Map([['scout_tool_v1',JSON.stringify(doc(69))]]),calls=[],hooks={};
   const c={Promise,JSON,Object,String,Date,Error,Set,Map,setTimeout,clearTimeout,
     document:{body:null,getElementById(){return null;}},CustomEvent:function(type,opts){this.type=type;this.detail=opts?.detail;},
     addEventListener(){},dispatchEvent(){},PSStorageDiagnostic(){},toast(){},
     localStorage:{getItem:k=>values.get(k)??null,setItem(k,v){values.set(k,String(v));}},
-    storage:{async set(k,v){calls.push({k,v});if(hooks.set)await hooks.set(k,v);disk.set(k,v);return true;},async get(k){return disk.has(k)?{value:disk.get(k)}:null;},async keys(){return [...disk.keys()];}},
+    storage:{async set(k,v,current){calls.push({k,v});if(hooks.set)await hooks.set(k,v);if(current)current();disk.set(k,v);return true;},async get(k){return disk.has(k)?{value:disk.get(k)}:null;},async keys(){return [...disk.keys()];}},
     idbGet:k=>Promise.resolve(disk.get(k)),afterMigrate:fn=>Promise.resolve().then(fn),itemsPI:()=>null,
   };c.window=c;vm.createContext(c);vm.runInContext(tracker+'\n'+shared+'\nwindow.PSStorage={sharedReady:sharedReady,sharedVerified:sharedVerified};\n'+store+'\nwindow.fixtureStore=store;',c);
   return {c,values,disk,calls,hooks,store:c.fixtureStore};

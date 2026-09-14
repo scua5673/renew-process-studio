@@ -3,28 +3,30 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const source=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8'),perms=fs.readFileSync(path.join(__dirname,'../studio/perms.js'),'utf8');
 const raw=JSON.stringify,clone=x=>JSON.parse(raw(x));
 function section(a,b){const start=source.indexOf(a),end=source.indexOf(b,start+a.length);assert.ok(start>=0&&end>start,a);return source.slice(start,end);}
-const code=section('function permsEditChanges(','function uiLeave(');
+const code=section('function accountActionWatch(','function psModal(')+'\n'+section('function permsEditChanges(','function uiLeave(');
 class Element{
  constructor(tag){this.tagName=tag;this.children=[];this.style={};this.attributes={};this.classList={contains:()=>false};this.textContent='';this.innerHTML='';this.value='';}
  appendChild(node){node.parent=this;this.children.push(node);return node;}
  append(...nodes){nodes.forEach(n=>this.appendChild(n));}
  setAttribute(k,v){this.attributes[k]=v;}
  addEventListener(){}
- remove(){if(this.parent)this.parent.children=this.parent.children.filter(n=>n!==this);}
+ remove(){if(this.parent)this.parent.children=this.parent.children.filter(n=>n!==this);this.parent=null;}
+ get isConnected(){return this.tagName==='body'||!!this.parent?.isConnected;}
+ querySelectorAll(q){return all(this).filter(n=>q.split(',').includes(n.tagName));}
 }
 function all(node){return [node,...node.children.flatMap(all)];}
 function fixture(initial){
  const values=new Map([['cs_perms_v1',raw(initial)],['ps_sync_session',raw({uid:'owner'})],['ps_active_ws','team'],['ps_ws_list',raw([{id:'team',kind:'team',role:'owner'}])],['scout_tool_v1',raw({players:[{id:'legacy-player',name:'Same name'},{id:'kept-player',name:'Same name'}]})],['cs_idp_v1_a','PRIVATE A'],['cs_idp_v1_b','PRIVATE B']]),writes=[],syncs=[];
- const body=new Element('body');let current=true,resolveMembers=null;
+ const body=new Element('body'),timers=new Map(),modals=[];let current=true,resolveMembers=null,timerId=0;
  const rows=[{user_id:'owner',role:'owner',name:'Owner'},...['a','b','staff','exec'].map(user_id=>({user_id,role:'member',name:user_id}))];
- const c={Promise,JSON,Set,Object,Date,permsOnlyUnlinked:false,document:{body,createElement:t=>new Element(t),createTextNode:t=>Object.assign(new Element('#text'),{textContent:t}),getElementById:id=>all(body).find(n=>n.id===id)||null},
+ const c={Promise,JSON,Set,Object,Date,permsOnlyUnlinked:false,setInterval:f=>{timers.set(++timerId,f);return timerId;},clearInterval:id=>timers.delete(id),addEventListener(){},removeEventListener(){},document:{body,createElement:t=>new Element(t),createTextNode:t=>Object.assign(new Element('#text'),{textContent:t}),getElementById:id=>all(body).find(n=>n.id===id)||null},
  localStorage:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k)},
- psSaveShared(k,v){writes.push({k,v});values.set(k,v);return true;},psModal:()=>({close(){}}),memberLabel:r=>r.name,esc:String,
+ psSaveShared(k,v){writes.push({k,v});values.set(k,v);return true;},psModal:o=>{modals.push(o);return{close(){}};},memberLabel:r=>r.name,esc:String,
  holdConflictContext:()=>({wid:'team',uid:'owner'}),holdConflictCurrent:()=>current,workspaceSwitchGuardRead:()=>null,activeWsObj:()=>({id:current?'team':'other',role:'owner'}),
  membersOf:()=>new Promise(r=>resolveMembers=r),setStatus(){},forceSync:r=>syncs.push(r)};c.window=c;
  vm.createContext(c);vm.runInContext(perms,c);vm.runInContext(code,c);
  function member(uid){return all(body).find(n=>n.innerHTML===uid&&n.children.some(x=>x.tagName==='select'))?.parent;}
- return {c,body,values,writes,syncs,rows,get:()=>JSON.parse(values.get('cs_perms_v1')),external:p=>values.set('cs_perms_v1',raw(p)),switch(){current=false;},
+ return {c,body,values,writes,syncs,rows,modals,check(){[...timers.values()].forEach(f=>f());},get:()=>JSON.parse(values.get('cs_perms_v1')),external:p=>values.set('cs_perms_v1',raw(p)),switch(){current=false;},
  async open(){c.uiPerms({id:'team'});resolveMembers(rows);await Promise.resolve();},
  link(uid,id){const select=member(uid).children[1].children.find(x=>x.tagName==='select');select.value=id;select.onchange();},
  role(uid,role){const select=member(uid).children[0].children.find(x=>x.tagName==='select');select.value=role;select.onchange();},
@@ -73,4 +75,10 @@ test('an owner/workspace change blocks an already-open permissions save',async()
 });
 test('a first explicit link can initialize a previously absent permissions document',async()=>{
  const h=fixture(null);await h.open();h.link('a','legacy-player');h.save();assert.deepEqual(h.get(),{v:1,defaultRole:'player',members:{a:{playerId:'legacy-player'}}});assert.equal(h.writes.length,1);
+});
+test('already-rendered permissions details are removed after the owner or workspace changes',async()=>{
+ const h=fixture(base());await h.open();const overlay=h.c.document.getElementById('psPermsOv');assert.ok(overlay?.isConnected);h.switch();h.check();assert.equal(overlay.isConnected,false);assert.equal(overlay.textContent,'');assert.deepEqual(h.writes,[]);
+});
+test('permissions loading modal is bound to the same owner as the editor',()=>{
+ const h=fixture(base());h.c.uiPerms({id:'team'});assert.equal(h.modals.length,1);assert.equal(h.modals[0].current(),true);h.switch();assert.equal(h.modals[0].current(),false);
 });

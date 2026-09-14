@@ -94,6 +94,38 @@ for(const key of [PRIVATE,PUBLIC])test('same body with a later server version ac
  assert.equal(push(h).length,0);assert.equal(h.queue.length,0);assert.equal(h.c.meta().c[key],2);
 });
 
+// IDP screens and the IDP sync planner read localStorage. An old migration can
+// leave another body in IDB; discovering that key must not change the ACK source.
+for(const key of [PRIVATE,PUBLIC])for(const delivered of [false,true])test('legacy IDB copy cannot strand '+(delivered?'confirmed':'new')+' IDP delivery: '+key,async()=>{
+ const initial=key===PRIVATE?doc():pub(),edited=key===PRIVATE?doc({'2026-09-14':{memo:'SYNTHETIC normalized diary'}}):pub({day:{t:'SYNTHETIC new feedback'}});
+ const h=fixture(key,{uid:key===PRIVATE?'player-a':'coach-a',server:delivered?edited:initial,cupd:delivered?2:1,mirror:edited,idb:initial});
+ h.c.idbBacked=k=>k===key;h.baseline(initial);await h.mark();await run(h);
+ assert.equal(h.local.get(key),edited);assert.equal(h.server.get(key).v,edited);assert.equal(h.idb.get(key),initial,'acknowledgment never alters the legacy copy');
+ assert.equal(h.queue.length,0);assert.equal(push(h).length,delivered?0:1);
+ await run(h);assert.equal(h.queue.length,0);assert.equal(push(h).length,delivered?0:1,'repeated checks do not upload an old copy');
+});
+
+test('a newer IDP edit remains pending even when legacy IDB matches the acknowledged server body',async()=>{
+ const delivered=doc({today:{memo:'SYNTHETIC delivered'}}),newer=doc({today:{memo:'SYNTHETIC next input'}});
+ const h=fixture(PRIVATE,{uid:'player-a',server:delivered,mirror:delivered,idb:delivered});h.c.idbBacked=k=>k===PRIVATE;h.baseline(delivered);await h.mark();
+ h.local.set(PRIVATE,newer);await h.c.outboxAckSynced('team-a',h.c.meta(),[],null,()=>true);
+ assert.equal(h.queue.length,1);assert.equal(h.local.get(PRIVATE),newer);assert.equal(h.idb.get(PRIVATE),delivered);
+});
+
+test('missing IDP local source does not acknowledge or revive an accidental IDB copy',async()=>{
+ const old=doc({today:{memo:'SYNTHETIC old copy'}}),h=fixture(PRIVATE,{uid:'player-a',server:old,mirror:old,idb:old});h.c.idbBacked=k=>k===PRIVATE;h.baseline(old);await h.mark();
+ h.local.delete(PRIVATE);assert.equal(await h.c.currentValueForKey(PRIVATE),null);await h.c.outboxAckSynced('team-a',h.c.meta(),[],null,()=>true);
+ assert.equal(h.queue.length,1);assert.equal(h.local.has(PRIVATE),false);assert.equal(h.idb.get(PRIVATE),old);
+});
+
+test('IDP source read failure and owner change retain the pending item',async()=>{
+ const value=doc({today:{memo:'SYNTHETIC pending'}}),h=fixture(PRIVATE,{uid:'player-a',server:value,mirror:value,idb:value});h.c.idbBacked=k=>k===PRIVATE;h.baseline(value);await h.mark();
+ h.hooks.localRead=k=>{if(k===PRIVATE)throw Error('SYNTHETIC storage unavailable');};
+ await h.c.outboxAckSynced('team-a',h.c.meta(),[],null,()=>true);assert.equal(h.queue.length,1);
+ let current=true;h.hooks.localRead=k=>{if(k===PRIVATE)current=false;};
+ await assert.rejects(h.c.outboxAckSynced('team-a',h.c.meta(),[],null,()=>current),e=>e.psCode==='sync_workspace_changed');assert.equal(h.queue.length,1);
+});
+
 test('an accidental outbox mark of unchanged other-player IDP clears without a push',async()=>{
  const value=doc({'2026-09-13':{text:'SYNTHETIC read-only player'}});
  const h=fixture(PRIVATE,{uid:'coach-a',server:value,mirror:value});h.baseline(value);await oldMark(h);await run(h);

@@ -16,7 +16,7 @@ function fixture(players){
   c.storage.keys=async()=>[...h.idb.keys()];
   vm.runInContext(section(sync,'var _itemsT=null, _itemsPending=null','function itemsHoldOpen(')+'\n'+['itemsIdxKey','itemsIdx','itemVal','bigDrop','itemsReadAll','itemsResolveConflicts'].map(n=>fn(sync,n)).join('\n'),c);
   c.PSItems={active:()=>true,readAll:c.itemsReadAll,write:c.itemsWrite};c.parent.PSItems=c.PSItems;c.parent.PS_BUILD='2.809';
-  vm.runInContext(['isTargetPl','plTombs','plTombAdd','plTombApply','itemsPI','itemsApply','save'].map(n=>fn(scout,n)).join('\n'),c);
+  vm.runInContext(['isTargetPl','plTombs','plTombAdd','plTombApply','itemsPI','scoutAutomaticWriteAllowed','itemsApply','save'].map(n=>fn(scout,n)).join('\n'),c);
   function seedMain(){h.local.set(MAIN,raw(c.data));h.local.set(PD,'{}');for(const k of [MAIN,PD])h.server.set(k,{workspace_id:'team-a',k,v:h.local.get(k),cupd:10});}
   seedMain();const m=c.meta(),idx={};for(const player of players){const k='sq:'+player.id,v=raw(player);h.idb.set(k,v);h.server.set(k,{workspace_id:'team-a',k,v,cupd:10});m.h[k]=c.hash(v);m.c[k]=10;idx[player.id]=c.hash(v);}
   for(const k of [MAIN,PD]){m.h[k]=c.hash(h.local.get(k));m.c[k]=10;}c.setMeta(m);h.local.set('ps_items_idx_v1:team-a',raw(idx));

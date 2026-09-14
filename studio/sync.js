@@ -32,8 +32,8 @@ var OWNERKEY='ps_cache_owner_v1';
 var dataReady=false,tabReadyUid='',tabReadyWid='',authPreparePromise=null;
 var syncErr=false;   /* 마지막 동기화 실패 여부 — 상단 배지에 반영 */
 var lastIssue=null;  /* 2.625 — 마지막 회차 실패 {code,stage,at}. 성공하면 비운다. 상태 한 줄(syncState)이 읽는다 */
-var refreshPromise=null, refreshRetryTimer=null, refreshRetryDelay=15000;
-var signOutPromise=null,signOutEpoch=0;
+var refreshPromise=null, refreshOwner=null, refreshRetryTimer=null, refreshRetryDelay=15000;
+var signOutPromise=null,signOutOwner=null,signOutEpoch=0;
 /* 용량 초과로 동기화에서 빠진 키를 사용자에게 이름으로 알리기 위한 표 */
 var KEY_LABEL={
   'cs_notes_v1':'노트','cs_note_papers_v1':'노트 용지','cs_gamemodel_v1':'게임모델','cs_terms_v1':'공용어',
@@ -835,14 +835,32 @@ function prepareCacheForSession(s,rows,prepareSwitchEpoch,prepareAuthEpoch){
   });
 }
 /* RPC 호출(PostgREST) */
+function rpcContext(accountOnly){
+  var s=getSess(),owner={uid:String(s&&s.uid||''),epoch:signOutEpoch,accountOnly:!!accountOnly};
+  if(!accountOnly){owner.wid=String(activeWs()||'');owner.seal=String(localStorage.getItem(OWNERKEY)||'');
+    owner.switchEpoch=workspaceSwitchEpochRaw();owner.switchSeal=workspaceSwitchGuardRaw();}
+  return owner;
+}
+function rpcCurrent(owner){
+  var s=getSess();
+  if(!owner||!owner.uid||!s||String(s.uid||'')!==owner.uid||signOutEpoch!==owner.epoch||
+     (!owner.accountOnly&&(String(activeWs()||'')!==owner.wid||String(localStorage.getItem(OWNERKEY)||'')!==owner.seal||
+       workspaceSwitchEpochRaw()!==owner.switchEpoch||workspaceSwitchGuardRaw()!==owner.switchSeal)))throw dataLockError();
+  return true;
+}
 function rpc(name,body,current){
+  /* 호출 시점의 의도는 그 계정에만 속한다. 토큰 갱신은 허용하되, 대기 중
+     계정/팀 전환 뒤 새 토큰으로 옛 요청을 보내거나 옛 응답을 전달하지 않는다.
+     별도 guard를 준 부팅·복구는 자신이 허용하는 workspace 전이를 검사한다. */
+  var owner=rpcContext(!!current);
+  function requestCurrent(){rpcCurrent(owner);if(current)current();}
   /* 이 창에서 시작한 공유 IDB 저장(기준선 정렬·복구 등)이 끝난 뒤 읽는다. */
   var storageReady=(window.PSStorage&&PSStorage.sharedReady)?PSStorage.sharedReady():Promise.resolve(true);
-  return Promise.resolve(storageReady).catch(function(e){syncDiagnostic('shared-write-barrier',e);throw e;}).then(function(){if(current)current();return ensureToken();}).then(function(at){
-    if(current)current();
+  return Promise.resolve(storageReady).catch(function(e){syncDiagnostic('shared-write-barrier',e);throw e;}).then(function(){requestCurrent();return ensureToken();}).then(function(at){
+    requestCurrent();
     if(!at) throw new Error('no token');
     return fetch(BASE+'/rest/v1/rpc/'+name,{method:'POST',headers:hj(at),body:JSON.stringify(body||{})})
-      .then(function(r){ return r.text().then(function(t){if(current)current();if(!r.ok)throw new Error('rpc '+name+' '+r.status+' '+t);return t?JSON.parse(t):null;});});
+      .then(function(r){ return r.text().then(function(t){requestCurrent();if(!r.ok)throw new Error('rpc '+name+' '+r.status+' '+t);return t?JSON.parse(t):null;});});
   });
 }
 /* 부팅: 개인 워크스페이스 보장 + 목록 로드 + 활성 워크스페이스 확정 */
@@ -939,21 +957,28 @@ function linkIdentity(provider){
   });
 }
 function signOut(){
-  if(signOutPromise)return signOutPromise;
   var s=getSess();if(!s)return Promise.resolve(true);
+  var logoutEpoch=signOutEpoch,logoutSwitchEpoch=workspaceSwitchEpochRaw();
+  if(signOutPromise&&signOutOwner&&signOutOwner.uid===String(s.uid||'')&&signOutOwner.wid===String(activeWs()||'')&&signOutOwner.epoch===logoutEpoch&&signOutOwner.switchEpoch===logoutSwitchEpoch)return signOutPromise;
   function finish(){
-    var latest=getSess();signOutEpoch++;
+    var latest=getSess();
+    if(logoutEpoch!==signOutEpoch||!latest||String(latest.uid||'')!==String(s.uid||''))return false;
+    signOutEpoch++;
     if(latest){try{Promise.resolve(fetch(BASE+'/auth/v1/logout',{method:'POST',headers:hj(latest.at)})).catch(function(){});}catch(_){}}
     /* 자료와 소유자 표식은 남긴다. 표시만 잠그며, 같은 uid로 다시 로그인해야 열린다.
        WSKEY를 지우면 다음 계정의 개인 공간에 이전 팀 캐시가 붙는 사고가 생긴다. */
-    setSess(null);setStatus('로그아웃됨');return true;
+    setSess(null);
+    var cleared=false;try{cleared=localStorage.getItem(SKEY)===null;}catch(_){}
+    if(!cleared){setStatus('로그아웃하지 못했습니다 — 기기의 로그인 상태를 지우지 못했어요');return false;}
+    setStatus('로그아웃됨');return true;
   }
   /* 서버 자료를 아직 열지 못한 오류 화면에서는 플러시할 안전한 편집본 자체가 없다.
      이 탈출구만 즉시 열어 잘못된 로그인에 갇히지 않게 한다. */
   if(!dataUnlocked())return Promise.resolve(finish());
   var uid=String(s.uid||''),wid=String(activeWs()||''),overlay=false;
-  function sameOwner(){var now=getSess();return !!(now&&String(now.uid||'')===uid&&String(activeWs()||'')===wid&&dataUnlocked());}
+  function sameOwner(){var now=getSess();return !!(logoutEpoch===signOutEpoch&&logoutSwitchEpoch===workspaceSwitchEpochRaw()&&now&&String(now.uid||'')===uid&&String(activeWs()||'')===wid&&dataUnlocked());}
   function fail(msg,code,e){
+    if(!sameOwner())return false; // 새 로그인·전환 화면에 이전 로그아웃의 상태나 오버레이를 적용하지 않는다.
     if(overlay)hideSwitchOverlay();
     setStatus(msg);try{chip(msg);}catch(_){}
     try{var x=e instanceof Error?e:new Error(code||'prelogout failed');x.psCode=code||'prelogout_failed';syncDiagnostic('prelogout',x);}catch(_){}
@@ -964,7 +989,7 @@ function signOut(){
   if(navigator.onLine===false)return Promise.resolve(fail('로그아웃 취소 — 오프라인이어서 변경 사항을 팀에 확인할 수 없어요','sync_offline'));
   try{showSwitchOverlay('');var ot=document.getElementById('psSwitchTxt');if(ot)ot.textContent='로그아웃 전 변경 사항을 저장하는 중…';overlay=true;}catch(_){}
   setStatus('로그아웃 전 저장 중…');
-  signOutPromise=workspaceSwitchWriteBarrier().then(function(gate){
+  var run=workspaceSwitchWriteBarrier().then(function(gate){
     if(!sameOwner())throw syncIssue('prelogout_owner','prelogout','account or workspace changed');
     if(!gate||gate.held)throw syncIssue('prelogout_held','prelogout','pending editor');
     if(gate.__timeout||gate.error)throw syncIssue('sync_storage','prelogout','write barrier failed');
@@ -996,8 +1021,9 @@ function signOut(){
       ?'로그아웃 취소 — 오프라인이어서 변경 사항을 팀에 확인할 수 없어요'
       :'로그아웃 취소 — 변경 사항의 서버 저장을 확인하지 못했어요';
     return fail(msg,info.code,e);
-  }).then(function(ok){signOutPromise=null;return ok;},function(e){signOutPromise=null;return fail('로그아웃 취소 — 저장 확인 중 문제가 생겼어요','prelogout_unexpected',e);});
-  return signOutPromise;
+  }).then(function(ok){if(signOutPromise===run){signOutPromise=null;signOutOwner=null;}return ok;},function(e){if(signOutPromise===run){signOutPromise=null;signOutOwner=null;}return fail('로그아웃 취소 — 저장 확인 중 문제가 생겼어요','prelogout_unexpected',e);});
+  signOutOwner={uid:uid,wid:wid,epoch:logoutEpoch,switchEpoch:logoutSwitchEpoch};signOutPromise=run;
+  return run;
 }
 /* OAuth 콜백: 토큰이 URL 해시로 돌아옴 → 저장 후 해시 제거 */
 function consumeHash(){
@@ -1031,29 +1057,40 @@ function ensureToken(){
   var s=getSess();
   if(!s) return Promise.resolve(null);
   if(Date.now()<s.exp-60000) return Promise.resolve(s.at);
-  /* 여러 동기화 요청이 한꺼번에 들어와도 회전형 refresh token은 한 번만 사용한다. */
-  if(refreshPromise) return refreshPromise;
-  var refreshEpoch=signOutEpoch;
-  refreshPromise=fetch(BASE+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:hj(),body:JSON.stringify({refresh_token:s.rt})})
+  /* 같은 세션의 회전형 토큰만 한 번 갱신한다. 이전 계정의 느린 요청은
+     새 로그인의 갱신을 막거나 새 요청의 대기 상태를 지우지 않는다. */
+  if(refreshPromise&&sessionIdentityCurrent(refreshOwner)) return refreshPromise;
+  var request=sessionIdentitySnapshot(s);
+  var run=Promise.resolve().then(function(){
+    if(!sessionIdentityCurrent(request))return null;
+    return fetch(BASE+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:hj(),body:JSON.stringify({refresh_token:s.rt})});
+  })
     .then(function(r){
+      if(!r)return null;
       if(r.ok) return r.json();
       return r.text().then(function(t){
         var e=new Error('token refresh '+r.status); e.status=r.status; e.body=t||''; throw e;
       });
     })
     .then(function(j){
-      var current=getSess();
+      var current=sessionIdentityCurrent(request);
       /* 로그아웃/다른 계정 로그인 뒤에 늦은 refresh 응답이 예전 세션을 부활시키지 못한다. */
-      if(refreshEpoch!==signOutEpoch||!current||String(current.rt||'')!==String(s.rt||''))return null;
-      var ns={at:j.access_token,rt:j.refresh_token||s.rt,exp:Date.now()+((+j.expires_in||3600)*1000),email:s.email,uid:s.uid};
+      if(!current)return null;
+      if(!j||typeof j.access_token!=='string'||!j.access_token||typeof j.refresh_token!=='string'||!j.refresh_token)
+        throw new Error('invalid refresh response');
+      if(j.user&&j.user.id&&current.uid&&String(j.user.id)!==String(current.uid))throw new Error('refresh owner mismatch');
+      var ns=Object.assign({},current,{at:j.access_token,rt:j.refresh_token,exp:Date.now()+((+j.expires_in||3600)*1000)});
       if(j.user&&j.user.id){ ns.uid=j.user.id; ns.email=j.user.email||ns.email; }
-      setSess(ns); syncErr=false; refreshRetryDelay=15000;
+      setSess(ns);
+      var saved=getSess();
+      if(request.epoch!==signOutEpoch||!saved||saved.at!==ns.at||saved.rt!==ns.rt||String(saved.uid||'')!==String(ns.uid||''))throw new Error('session storage unavailable');
+      syncErr=false; refreshRetryDelay=15000;
       if(refreshRetryTimer){ clearTimeout(refreshRetryTimer); refreshRetryTimer=null; }
       return ns.at;
     })
     .catch(function(e){
-      var current=getSess();
-      if(refreshEpoch!==signOutEpoch||!current||String(current.rt||'')!==String(s.rt||''))return null;
+      var current=sessionIdentityCurrent(request);
+      if(!current)return null;
       /* 인증 서버가 토큰 자체를 거부한 경우에만 로그아웃한다.
          오프라인·타임아웃·5xx는 세션을 보존해 앱 재실행/온라인 복귀 때 다시 시도한다. */
       var rejected=!!(e&&(e.status===400||e.status===401||e.status===403));
@@ -1077,8 +1114,9 @@ function ensureToken(){
       }
       throw e;
     })
-    .then(function(v){ refreshPromise=null; return v; },function(e){ refreshPromise=null; throw e; });
-  return refreshPromise;
+    .then(function(v){ if(refreshPromise===run){refreshPromise=null;refreshOwner=null;}return v; },function(e){ if(refreshPromise===run){refreshPromise=null;refreshOwner=null;}throw e; });
+  refreshOwner=request;refreshPromise=run;
+  return run;
 }
 
 /* ── 동기화 ── */
@@ -2040,6 +2078,12 @@ function currentValueForKey(k){
     var rv=null;try{rv=localStorage.getItem('cs_lib_rev');}catch(_){}
     return Promise.resolve(rv);
   }
+  /* IDP 화면과 private/public 동기화는 localStorage 원문을 정본으로 쓴다.
+     예전 IDB 사본이 inventory에 남아 있어도 확인 해시의 출처를 바꾸지 않는다.
+     없는 원문을 옛 IDB로 되살리거나, 읽기 실패를 저장 완료로 확인하지 않는다. */
+  if(isIdpPrivateKey(k)||isIdpPubKey(k)){
+    try{return Promise.resolve(localStorage.getItem(k));}catch(e){return Promise.reject(e);}
+  }
   /* 일정 화면은 localStorage 거울을 먼저 바꾼다. IDB commit 직전의 짧은 틈에
      outbox가 옛 IDB를 집지 않게 거울의 최신 raw를 쓴다. */
   if(k===SCHEDULE_KEY){var sv=null;try{sv=localStorage.getItem(k);}catch(_){}if(sv!=null)return Promise.resolve(sv);}
@@ -2432,16 +2476,28 @@ function idbBacked(k){ return !!(window.storage && (IDBK[k]||IDB_LIVE[k]||isItem
    그래서 ①localStorage 거울을 먼저 보고 ②없으면 미리 받아 둔 IDB 사본을 쓴다.
    이 값을 못 읽으면 role 이 'player' 로 닫히므로(fail-closed), 읽기 경로를 확실히 해 둬야
    정당한 스태프가 억울하게 막히지 않는다. */
-var __permsRaw=null;
+var __permsRaw=null,__permsOwner=null,__permsGeneration=0,__permsPrimeSequence=0;
+function permsCacheSet(raw,owner){
+  if(__permsRaw!==raw||JSON.stringify(__permsOwner)!==JSON.stringify(owner)){
+    __permsGeneration++;__permsRaw=raw;__permsOwner=owner;
+  }
+}
 function permsRaw(){
-  try{ var v=localStorage.getItem('cs_perms_v1'); if(v!=null){ __permsRaw=v; return v; } }catch(_){}
-  return __permsRaw;
+  if(!dataUnlocked()){permsCacheSet(null,null);return null;}
+  try{var v=localStorage.getItem('cs_perms_v1');if(v!=null){permsCacheSet(v,rpcContext());return v;}}catch(_){}
+  try{rpcCurrent(__permsOwner);return __permsRaw;}catch(_){permsCacheSet(null,null);return null;}
 }
 function permsPrime(){
-  if(!window.storage||!window.storage.get) return Promise.resolve();
+  if(!dataUnlocked()||!window.storage||!window.storage.get) return Promise.resolve();
+  var owner=rpcContext(),generation=__permsGeneration,sequence=++__permsPrimeSequence,mirror=null;
+  try{mirror=localStorage.getItem('cs_perms_v1');}catch(_){}
   return Promise.resolve(window.storage.get('cs_perms_v1')).then(function(r){
+    rpcCurrent(owner);if(!dataUnlocked())return;
+    /* 같은 계정에서도 새 권한/역할을 관측한 뒤 늦은 IDB 사본으로 되돌리지 않는다. */
+    if(sequence!==__permsPrimeSequence||generation!==__permsGeneration)return;
+    try{if(localStorage.getItem('cs_perms_v1')!==mirror)return;}catch(_){}
     if(r&&r.value!=null){
-      __permsRaw=r.value;
+      permsCacheSet(r.value,owner);
       /* 거울이 없으면 만들어 둔다 — 3KB 남짓이라 한도 걱정이 없고,
          이게 있어야 다음 회차 권한 판정이 IDB 를 기다리지 않는다. */
       try{ if(localStorage.getItem('cs_perms_v1')===null) localStorage.setItem('cs_perms_v1',r.value); }catch(_){}
@@ -4955,11 +5011,11 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
           if(k===MATCH_KEY){
             try{matchMirrorWriteExact(v);}
             catch(e){syncDiagnostic('match-mirror-write',e);throw e;}
-          }else if(k==='cs_scout_targets_v1'){
+          }else if(k==='scout_tool_v1'||k==='cs_scout_targets_v1'){
             localStorage.setItem(k,v);
-            if(localStorage.getItem(k)!==v)throw syncIssue('sync_storage','scout_mirror_write','후보 화면 저장을 확인할 수 없습니다');
+            if(localStorage.getItem(k)!==v)throw syncIssue('sync_storage','scout_mirror_write','선수 자료의 화면 저장을 확인할 수 없습니다');
           }else try{ if(k==='cs_perms_v1'||localStorage.getItem(k)!==null) localStorage.setItem(k,v); }catch(_){}
-          if(k==='cs_perms_v1') __permsRaw=v;
+          if(k==='cs_perms_v1')permsCacheSet(v,rpcContext());
           return {stale:false};
         });})
     );
@@ -5710,6 +5766,9 @@ function syncNowCore(reason){
              hash(scoutIdb)!==(m0.h[k]||''))needV.push(k);
           return;
         }
+        /* 선수단 화면은 localStorage를 동기로 읽는다. IDB에 서버 확인본이
+           있어도 거울이 없으면 원문을 다시 받아 빈 초기 명단 생성을 막는다. */
+        if(k==='scout_tool_v1'&&localStorage.getItem(k)===null){needV.push(k);return;}
         if(k===MATCH_KEY){
           /* 준비 표는 localStorage를 동기로 읽는다. 워크스페이스 확인표가 없거나
              IDB 정본과 거울이 갈라졌다면 cupd가 같아도 서버 원문을 받아 두 저장소를 다시 맞춘다.
@@ -6130,6 +6189,10 @@ function syncNowCore(reason){
             if(absentMirror==null)expectMatchRaw(null,true);
             else blockMatchReady('match-absence-split',new Error('경기 IDB는 비었지만 거울에 원문이 남아 있습니다'));
           }
+          return;
+        }
+        if(k==='scout_tool_v1'&&row&&typeof row.v==='string'&&loc===row.v&&localStorage.getItem(k)===null){
+          if(roundKvWrite(k,row.v,writes,loc)){applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;nSet(m,k,row.v);}
           return;
         }
         /* 서버 확인본과 화면이 같아도 IDB 또는 거울 한쪽이 빠졌으면 복구한다.
@@ -7208,6 +7271,8 @@ function switchWorkspaceCore(wid, skipSave){
   }
   if(!wid) return Promise.resolve();
   if(wid===activeWs()){ try{chip('이미 그 워크스페이스가 활성이에요 — 화면이 다르게 보이면 새로고침해 주세요');}catch(_){} return Promise.resolve({cancelled:1,same:1}); }
+  var target=wsList().filter(function(w){return w.id===wid;})[0];
+  if(!target){setStatus('현재 계정에서 전환할 수 있는 팀인지 다시 확인해 주세요');return Promise.resolve({cancelled:1,unknownWorkspace:1});}
   if(!dataUnlocked()){
     setStatus('로그인한 계정의 자료를 확인한 뒤 팀을 바꿀 수 있어요');
     try{chip('로그인한 계정의 자료를 확인한 뒤 팀을 바꿀 수 있어요');}catch(_){}   /* 2.338 — 유일하게 무음이던 가드 */
@@ -7234,8 +7299,13 @@ function switchWorkspaceCore(wid, skipSave){
     }
     setStatus('일정 저장 마무리 대기 중…');
     try{chip('일정 저장을 마무리하고 전환합니다…');}catch(_){}
+    var heldSession=getSess(),heldUid=String(heldSession&&heldSession.uid||''),heldFrom=String(activeWs()||''),
+      heldOwner=String(localStorage.getItem(OWNERKEY)||''),heldAuthEpoch=signOutEpoch,heldSwitchEpoch=workspaceSwitchEpochRaw();
     return (function waitHold(t0){
       return sleep(300).then(function(){
+        var now=getSess();
+        if(!now||String(now.uid||'')!==heldUid||signOutEpoch!==heldAuthEpoch||String(activeWs()||'')!==heldFrom
+          ||String(localStorage.getItem(OWNERKEY)||'')!==heldOwner||workspaceSwitchEpochRaw()!==heldSwitchEpoch)return {cancelled:1,stale:1};
         if(!scheduleHeld()) return switchWorkspaceCore(wid, skipSave);   /* 같은 origin lock 안에서 처음부터 가드 재통과 */
         if(scheduleEditActive || Date.now()-t0>8000){
           setStatus('전환 취소 — 일정 편집을 끝내고 저장 완료 후 다시 시도하세요');
@@ -7249,31 +7319,36 @@ function switchWorkspaceCore(wid, skipSave){
   }
   /* 열린 전환 확인창이 있는 동안 다른 워크스페이스를 눌렀다면 마지막 선택만 유효하다. */
   var switchAttemptSeq=++WS_HOLD_REVIEW_SEQ;
-  /* 2.338 — 이 체인의 세대. staleStop 은 와이프 전 각 문턱에서 부른다 — 와이프가 시작되면(wipeStarted)
-     끝(리로드/롤백)까지 간다. 중간에 멈추면 반쯤 지운 상태가 남기 때문이다. */
-  var myGen=++switchGen, wipeStarted=false;
+  /* 전환의 각 단계와 실제 IDB 삭제 직전에 계정·팀·세대를 확인한다.
+     지우기 시작한 뒤 실패하면 같은 소유자만 복구하고, 바뀐 소유자의 자료는 건드리지 않는다. */
+  var myGen=++switchGen, wipeStarted=false,switchFinished=false,targetOwnerSeal='';
   function staleStop(){
-    if(myGen===switchGen&&workspaceSwitchGuardOwned(switchGuardToken)) return;
+    if(!sourceMarkersCurrent())throw externalMarkerError();
+    if(!switchFinished&&myGen===switchGen&&(!switchGuardStarted||workspaceSwitchGuardOwned(switchGuardToken))) return;
     restorePreMeta();
     var e=new Error('superseded'); e.psStale=true; throw e;
   }
   switching=true; switchingAt=Date.now(); setStatus('워크스페이스 전환 중…');
   var from=activeWs();
-  var switchGuardToken=workspaceSwitchGuardStart(from,wid),switchOwner=getSess();
-  if(!switchGuardToken||!switchOwner||!switchOwner.uid||!setCacheOwner(switchOwner.uid,from)){
-    if(switchGuardToken)workspaceSwitchGuardClear(switchGuardToken);
-    switching=false;setStatus('다른 창의 전환이 끝난 뒤 다시 시도해 주세요');try{chip('다른 창에서 팀을 바꾸고 있어요 — 잠시 뒤 다시 시도해 주세요');}catch(_){}
-    return Promise.resolve({cancelled:1,crossTabBusy:1});
-  }
+  var switchGuardToken='',switchGuardStarted=false,switchOwner=getSess();
+  if(!switchOwner||!switchOwner.uid){switching=false;return Promise.resolve({cancelled:1,locked:1});}
+  var switchAuthEpoch=signOutEpoch,switchEpoch=workspaceSwitchEpochRaw(),sourceOwnerSeal=String(localStorage.getItem(OWNERKEY)||'');
+  function switchAccountCurrent(){var ss=getSess();return !!ss&&String(ss.uid||'')===String(switchOwner.uid||'')&&signOutEpoch===switchAuthEpoch&&workspaceSwitchEpochRaw()===switchEpoch;}
+  function sourceMarkersCurrent(){return switchAccountCurrent()&&String(activeWs()||'')===String(from)&&String(localStorage.getItem(OWNERKEY)||'')===sourceOwnerSeal;}
+  function externalMarkerError(){var e=new Error('Account or workspace changed during transition');e.psExternalMarker=true;return e;}
+  /* 타임아웃은 이미 시작한 IDB 작업을 취소하지 않는다. 실제 delete transaction이
+     시작될 때도 이 전환의 계정·팀·세대를 확인해 새로 받은 자료를 지우지 않는다. */
+  function wipeCurrent(){staleStop();return true;}
+  function canResumeSwitch(){return switchAttemptSeq===WS_HOLD_REVIEW_SEQ&&sourceMarkersCurrent()&&dataUnlocked();}
+  function resumeSwitch(){if(!canResumeSwitch())return;setTimeout(function(){if(canResumeSwitch())switchWorkspace(wid,true);},60);}
   function switchTargetMarkersCurrent(){
     var ss=getSess(),own=cacheOwner();
-    return !!(workspaceSwitchGuardOwned(switchGuardToken)&&ss&&String(ss.uid||'')===String(switchOwner.uid||'')
+    return !!(!switchFinished&&myGen===switchGen&&switchAccountCurrent()&&workspaceSwitchGuardOwned(switchGuardToken)&&ss&&String(ss.uid||'')===String(switchOwner.uid||'')
       &&String(activeWs()||'')===String(wid)&&own&&String(own.uid||'')===String(switchOwner.uid||'')&&String(own.wid||'')===String(wid));
   }
-  var target=wsList().filter(function(w){return w.id===wid;})[0];
   var preMetaRaw=null,preMetaCaptured=false,switchItemKeys=[];
   function restorePreMeta(){
-    if(!preMetaCaptured)return;
+    if(!preMetaCaptured||wipeStarted||!sourceMarkersCurrent())return;
     try{
       if(preMetaRaw==null)localStorage.removeItem(MKEY);
       else if(matchReadyPending){var pm=JSON.parse(preMetaRaw);pm.r=pm.r||{};delete pm.r[MATCH_KEY];localStorage.setItem(MKEY,JSON.stringify(pm));}
@@ -7295,6 +7370,7 @@ function switchWorkspaceCore(wid, skipSave){
     var n=keys.length;
     setStatus('전환 전에 확인할 변경 '+n+'건이 있습니다');
     workspaceHoldReviewPrepare(keys,from,wid,switchAttemptSeq).then(function(intent){
+      if(!canResumeSwitch())return;
       if(!intent){
         if(switchAttemptSeq===WS_HOLD_REVIEW_SEQ)setStatus('전환을 멈췄습니다 — 자료가 다시 바뀌어 다시 확인해 주세요');
         return;
@@ -7318,7 +7394,6 @@ function switchWorkspaceCore(wid, skipSave){
     switching=false;clearTimeout(overlayGuard);clearTimeout(overlaySlow);hideSwitchOverlay();
     var head='서버에 닿지 못해 '+labels.join('·')+' 를 아직 올리지 못했습니다';
     setStatus(head);
-    var tgt=wid;
     try{
       psModal({title:'서버에 닿지 못했습니다',
         body:'<div style="margin-bottom:8px">'+esc(head)+'.</div>'
@@ -7326,8 +7401,7 @@ function switchWorkspaceCore(wid, skipSave){
           +'<div style="margin-bottom:8px">먼저 인터넷 연결과 서버 상태를 확인해 주세요. 연결이 돌아오면 저절로 올라갑니다.</div>'
           +'<div style="padding:9px 11px;border-radius:9px;background:rgba(128,128,128,.12)">그래도 지금 전환해야 한다면, 이 기기의 팀 자료는 <b>전환 직전 백업</b>에 담겨 있습니다.<br>되돌리려면 <b>설정 → 전환 백업 복구</b>를 쓰세요.</div>',
         ok:'그래도 전환',danger:true,cancel:'여기 머무르기',
-        onOk:function(){ try{chip('백업을 남기고 전환합니다 — 설정 → 전환 백업 복구로 되돌릴 수 있어요');}catch(_){}
-          setTimeout(function(){ try{switchWorkspace(tgt,true);}catch(_){} },60); }});
+        onOk:resumeSwitch});
     }catch(_){ try{chip(head);}catch(_){} }
     var e=new Error(code||'preswitch unreachable');e.psPreswitch=true;throw e;
   }
@@ -7344,11 +7418,12 @@ function switchWorkspaceCore(wid, skipSave){
     var head='서버가 '+labels.join('·')+' 저장을 거부했습니다';
     setStatus(head); recSwitchFail(head,code||'sync_server_rejected');
     try{var dg=new Error('preswitch rejected');dg.psCode='sync_server_rejected';syncDiagnostic('workspace-preswitch-rejected',dg);}catch(_){}
-    var tgt=wid, fromWid=from;
-    var reasons=ensureToken().then(function(at){ if(!at)return null;
+    var fromWid=from;
+    var reasons=ensureToken().then(function(at){ if(!at||!canResumeSwitch())return null;
       return fetch(BASE+'/rest/v1/ps_kv_denied?workspace_id=eq.'+encodeURIComponent(fromWid)+'&select=k,reason,at&order=at.desc&limit=20',{headers:hj(at)})
         .then(function(r){ return r.ok?r.json():null; }); }).catch(function(){ return null; });
     withTimeout(reasons,4000).then(function(rows){
+      if(!canResumeSwitch())return;
       var list=Array.isArray(rows)?rows:[];
       var why={}; list.forEach(function(x){ if(x&&x.k&&!why[x.k])why[x.k]=String(x.reason||''); });
       var show=keys.length?keys:Object.keys(why);
@@ -7360,8 +7435,7 @@ function switchWorkspaceCore(wid, skipSave){
             +'<div style="margin-bottom:8px">흔한 원인: 낡은 앱이 지난 주 일정을 올리려 함 · 편집 권한이 없는 자료 · 경기 자료 판본 충돌. 이 자료는 <b>서버본이 정본</b>입니다.</div>'
             +'<div style="padding:9px 11px;border-radius:9px;background:rgba(128,128,128,.12)">«서버본으로 두고 전환»을 누르면 거부된 사본은 올리지 않고 넘어갑니다. 이 기기의 팀 자료는 <b>전환 직전 백업</b>에 담기며, 되돌리려면 <b>설정 → 전환 백업 복구</b>를 쓰세요.</div>',
           ok:'서버본으로 두고 전환',danger:true,cancel:'여기 머무르기',
-          onOk:function(){ try{chip('거부된 사본은 두고 전환합니다 — 설정 → 전환 백업 복구로 되돌릴 수 있어요');}catch(_){}
-            setTimeout(function(){ try{switchWorkspace(tgt,true);}catch(_){} },60); }});
+          onOk:resumeSwitch});
       }catch(_){ try{chip(head+' — 앱을 새로고침한 뒤 다시 시도해 주세요');}catch(_){} }
     });
     var e=new Error(code||'preswitch rejected');e.psPreswitch=true;throw e;
@@ -7388,6 +7462,14 @@ function switchWorkspaceCore(wid, skipSave){
     staleStop();
     if(!gate||gate.held)return stopPreswitch('전환 취소 — 일정 편집을 끝내고 저장 완료 후 다시 시도하세요','preswitch schedule held');
     if(gate.__timeout||gate.error)return stopPreswitch('전환 취소 — 현재 일정 저장을 완료하지 못했습니다','preswitch shared write failed');
+    /* origin lock을 잡은 채 기존 소유자의 저장을 먼저 마친다. guard/nonce를
+       먼저 바꾸면 정상 저장 큐까지 이전 세대 작업으로 취소된다. 이후 새로
+       끼어드는 작업에는 예외 없이 새 소유자 검사를 적용한다. */
+    switchGuardToken=workspaceSwitchGuardStart(from,wid);switchGuardStarted=true;
+    if(!switchGuardToken)throw externalMarkerError();
+    switchEpoch=workspaceSwitchEpochRaw();
+    if(!sourceMarkersCurrent()||!workspaceSwitchGuardOwned(switchGuardToken)||!setCacheOwner(switchOwner.uid,from))throw externalMarkerError();
+    sourceOwnerSeal=String(localStorage.getItem(OWNERKEY)||'');
     /* 2.338 — 상한이 없어 IDB 가 멈추면 체인이 영원히 매달렸다(감사 확정). 아직 지우기 전이라 중단이 안전하다. */
     return withTimeout(stashSnapshot(from),10000);
   }).then(function(st){
@@ -7489,6 +7571,7 @@ function switchWorkspaceCore(wid, skipSave){
         try{var pendingDiag=new Error('blocking pending');pendingDiag.psCode=blockingKeys.join(',');syncDiagnostic('workspace-preswitch-pending',pendingDiag);}catch(_){}
         /* 2.257 — 왜 확인이 안 끝나는지(항목별 마지막 오류)를 문장에 붙인다 — 실제 제보에서 원인 확정용 */
         return outboxRead().then(function(q){
+          staleStop();
           var uid=outboxOwner(),sc=outboxScope(uid,from),errs={},mine=[];
           (q||[]).forEach(function(it){ if(!it||outboxScope(it.uid,it.wid)!==sc||blockingKeys.indexOf(it.key)<0)return;
             mine.push(it);
@@ -7540,7 +7623,8 @@ function switchWorkspaceCore(wid, skipSave){
   }).then(function(){
     /* 3) 안전 — 아직 예전 팀이 활성인 상태에서 예전 팀 거울을 먼저 비운다.
        활성 ID를 먼저 바꾸면 중간 실패 시 '새 팀 + 예전 팀 일부'가 섞인다. */
-    function removeLocal(k){try{localStorage.removeItem(k);if(localStorage.getItem(k)!=null)throw new Error(k+' local wipe verify failed');}catch(e){e.psSwitchWipe=true;throw e;}}
+    function removeLocal(k){try{wipeCurrent();localStorage.removeItem(k);if(localStorage.getItem(k)!=null)throw new Error(k+' local wipe verify failed');}catch(e){e.psSwitchWipe=true;throw e;}}
+    wipeCurrent();
     CONTENT.forEach(removeLocal);
     /* 남의 IDP는 팀 콘텐츠라 정리 — 내 키(cs_idp_v1_<내uid>)와 local은 나를 따라다닌다(설계 v1.1) */
     try{ var _mk='cs_idp_v1_'+((getSess()||{}).uid||'@');
@@ -7553,20 +7637,26 @@ function switchWorkspaceCore(wid, skipSave){
     /* 1.631 — 항목(sq:*)을 여기 안 넣으면 A팀 선수단이 B팀으로 따라가고 B팀 서버로 올라간다 */
     /* 2.244 — switchItemKeys 가 이미 IDB_CONTENT + 항목 + 실측 팀 키 전부(idbSwitchKeys) */
     var wiped = withTimeout((window.storage)
-      ? Promise.all(switchItemKeys.map(function(k){return window.storage.del(k).catch(function(e){syncDiagnostic('workspace-switch-wipe',e);e.psSwitchWipe=true;throw e;});}))
+      ? Promise.all(switchItemKeys.map(function(k){return window.storage.del(k,wipeCurrent).catch(function(e){syncDiagnostic('workspace-switch-wipe',e);e.psSwitchWipe=true;throw e;});}))
       : Promise.resolve(),12000).then(function(r){
+      /* withTimeout은 거절 사유를 요약하므로, 소유자 변경을 일반 삭제 실패로
+         바꾸어 이전 팀 marker를 복원하지 않도록 다시 확인한다. */
+      wipeCurrent();
       /* 2.338 — 와이프가 멈추면 localStorage 만 지워진 반쪽 상태로 방치됐다 → 상한 걸고 롤백 경로로 */
       if(r&&(r.__timeout||r.err)){var e=new Error(r.err?'idb wipe failed':'idb wipe timeout');e.psSwitchWipe=true;throw e;}
     });
     /* IDB까지 모두 빈 뒤에만 활성 팀을 바꾼다. */
     return wiped.then(function(){
+      wipeCurrent();
       return verifyWorkspacePubCleared().catch(function(e){e.psSwitchWipe=true;throw e;});
     }).then(function(){
+      wipeCurrent();
       if(!setActiveWs(wid)){
         var e=new Error('workspace id write failed');e.psSwitchWipe=true;throw e;
       }
       var _ss=getSess();
-      if(!_ss||!_ss.uid||!setDataReady(true,_ss.uid,wid)){
+      if(!_ss||!switchAccountCurrent())throw externalMarkerError();
+      if(!setDataReady(true,switchOwner.uid,wid)){
         var e2=dataLockError();e2.psSwitchWipe=true;throw e2;
       }
       /* guard 시작 전의 느린 bootstrap이 공유 marker를 되감았다면 여기서
@@ -7575,6 +7665,7 @@ function switchWorkspaceCore(wid, skipSave){
       if(!switchTargetMarkersCurrent()){
         var e3=new Error('workspace target marker changed before guard clear');e3.psSwitchWipe=true;e3.psExternalMarker=true;throw e3;
       }
+      targetOwnerSeal=String(localStorage.getItem(OWNERKEY)||'');
       /* postswitch도 백스톱 — 데이터는 이미 서버 저장됨. 늦어도 reload로 재동기화되므로 무조건 진행 */
       workspaceSwitchGuardClear(switchGuardToken);
       var _finalOwner=cacheOwner();
@@ -7584,6 +7675,8 @@ function switchWorkspaceCore(wid, skipSave){
       return withTimeout(forceSyncPostSwitch('postswitch'),15000);
     });
   }).then(function(){
+    if(!switchAccountCurrent()||myGen!==switchGen||String(activeWs()||'')!==String(wid)||String(localStorage.getItem(OWNERKEY)||'')!==targetOwnerSeal)throw externalMarkerError();
+    switchFinished=true;
     switching=false;
     clearTimeout(overlayGuard);clearTimeout(overlaySlow);
     try{ sessionStorage.removeItem(RLKEY); }catch(_){}
@@ -7598,9 +7691,17 @@ function switchWorkspaceCore(wid, skipSave){
     location.reload();   /* 오버레이는 reload로 사라짐 */
   });
   }).catch(function(e){
+    /* 새 marker를 쓰는 짧은 구간에서도 다른 탭이 바뀔 수 있다. 일반 실패로
+       분류된 오류라도 rollback은 이 전환이 남긴 정확한 marker만 복원한다. */
+    if(e&&e.psSwitchWipe&&!e.psExternalMarker){
+      var failedWid=String(activeWs()||''),failedSeal=String(localStorage.getItem(OWNERKEY)||'');
+      if(!switchAccountCurrent()||(failedWid!==String(from)&&failedWid!==String(wid))
+        ||(failedSeal!==sourceOwnerSeal&&(!targetOwnerSeal||failedSeal!==targetOwnerSeal)))e.psExternalMarker=true;
+    }
+    switchFinished=true;
     clearTimeout(overlayGuard);clearTimeout(overlaySlow);
     workspaceSwitchGuardClear(switchGuardToken);
-    switchWiping=false;   /* 2.340 — 되돌아왔으면 미러를 다시 연다 */
+    if(myGen===switchGen)switchWiping=false;   /* 늦은 체인은 새 전환의 미러 잠금을 풀지 않는다. */
     if(e&&e.psStale)return {cancelled:1,stale:1};   /* 2.338 — 밀려난 체인의 조용한 끝(UI 는 새 체인 소유) */
     if(myGen===switchGen){switching=false;hideSwitchOverlay();}
     if(e&&e.psExternalMarker){
@@ -7619,39 +7720,46 @@ function switchWorkspaceCore(wid, skipSave){
 }
 function createTeam(name){
   var s=getSess(); if(!s) return Promise.reject();
-  return rpc('ps_create_team',{p_name:name,p_email:s.email||null}).then(function(wid){
+  var owner=rpcContext();function current(){rpcCurrent(owner);}
+  return rpc('ps_create_team',{p_name:name,p_email:s.email||null},current).then(function(wid){
+    current();
     /* 새 팀도 합류와 똑같이 생성자의 이름을 그 팀 멤버 행에 먼저 기록한다(1.657). */
     return pushMyName(wid).then(function(){
-      return loadWorkspaces().then(function(){ return switchWorkspace(wid); });
+      current();return loadWorkspaces().then(function(){current();return switchWorkspace(wid);});
     });
   });
 }
 function joinTeam(code){
   var s=getSess(); if(!s) return Promise.reject();
-  return rpc('ps_join',{p_code:code,p_email:s.email||null}).then(function(wid){
+  var owner=rpcContext();function current(){rpcCurrent(owner);}
+  return rpc('ps_join',{p_code:code,p_email:s.email||null},current).then(function(wid){
+    current();
     /* 합류 직후 이름을 서버에 올린다 — 이게 없으면 팀원 목록에 uid 앞자리로만 보인다(1.533) */
     return pushMyName(wid).then(function(){
-      return loadWorkspaces().then(function(){ return switchWorkspace(wid); }).then(function(){ return wid; });
+      current();return loadWorkspaces().then(function(){current();return switchWorkspace(wid);}).then(function(){return wid;});
     });
   });
 }
-function createInvite(wid){ return rpc('ps_get_or_create_invite',{p_wid:wid}).catch(function(){ return rpc('ps_create_invite',{p_wid:wid}); }); }
+function createInvite(wid){var owner=rpcContext();function current(){rpcCurrent(owner);}return rpc('ps_get_or_create_invite',{p_wid:wid},current).catch(function(){current();return rpc('ps_create_invite',{p_wid:wid},current);});}
 function createRoleInvite(wid,role){ return rpc('ps_get_or_create_role_invite',{p_wid:wid,p_role:role}); }
 function regenRoleInvite(wid,role){ return rpc('ps_regenerate_role_invite',{p_wid:wid,p_role:role}); }
 function membersOf(wid){
   /* 1.516 — 이름·이메일을 나눠 주는 v2를 먼저 쓰고, 서버에 아직 없으면 예전 함수로 돌아간다.
      (SQL 적용 전에 앱만 올라가도 화면이 깨지지 않게) */
-  return rpc('ps_members_of_v2',{p_wid:wid}).catch(function(){ return rpc('ps_members_of',{p_wid:wid}); });
+  var owner=rpcContext();function current(){rpcCurrent(owner);}
+  return rpc('ps_members_of_v2',{p_wid:wid},current).catch(function(){current();return rpc('ps_members_of',{p_wid:wid},current);});
 }
 function leaveTeam(wid){ return rpc('ps_leave',{p_wid:wid}); }
 /* 1.538 — 팀 이름 바꾸기. 서버 RLS(ws_upd)가 이미 '소유자만'으로 열려 있어 RPC 없이 바로 쓴다.
    목록(ps_ws_list)도 함께 고쳐야 화면이 즉시 바뀐다 — 다음 부팅 때 서버 목록으로 다시 맞춰진다. */
 function renameWorkspace(wid,name){
+  var owner=rpcContext();
   name=String(name||'').trim();
   if(!wid)return Promise.reject(new Error('워크스페이스를 찾지 못했습니다'));
   if(name.length<1)return Promise.reject(new Error('이름을 입력해 주세요'));
   if(name.length>40)name=name.slice(0,40);
   return ensureToken().then(function(at){
+    rpcCurrent(owner);
     if(!at)throw new Error('로그인이 필요합니다');
     /* RLS는 권한이 없으면 오류가 아니라 '0건 수정'으로 조용히 지나간다.
        return=representation 으로 실제 바뀐 행을 돌려받아 확인한다(1.538). */
@@ -7664,6 +7772,7 @@ function renameWorkspace(wid,name){
         return r.json().catch(function(){ return []; });
       })
       .then(function(rows){
+        rpcCurrent(owner);
         if(!rows||!rows.length)throw new Error('팀 이름은 팀을 만든 사람만 바꿀 수 있어요');
         try{ var l=wsList().map(function(w){ if(w.id===wid)w.name=name; return w; }); setWsList(l); }catch(_){}
         try{ renderUI(); }catch(_){}
@@ -7672,14 +7781,18 @@ function renameWorkspace(wid,name){
   });
 }
 function uiRenameWs(wa){
-  psModal({title:'팀 이름 바꾸기',
+  var current=accountActionCurrent(wa&&wa.id,true);
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current())return;
+  modal({title:'팀 이름 바꾸기',
     body:'팀원 모두에게 이 이름으로 보입니다. 자료·일정·권한은 그대로예요.',
     input:(wa&&wa.name)||'',placeholder:'예: 풋볼A U15',maxlength:40,ok:'저장',
     onOk:function(v){
       renameWorkspace(wa.id,v).then(function(nm){
+        if(!current())return;
         try{ toast&&toast('팀 이름을 「'+nm+'」로 바꿨어요'); }catch(_){}
       }).catch(function(e){
-        psModal({title:'바꾸지 못했어요',body:esc((e&&e.message)||'잠시 후 다시 시도해 주세요.'),hideCancel:true,ok:'확인'});
+        modal({title:'바꾸지 못했어요',body:esc((e&&e.message)||'잠시 후 다시 시도해 주세요.'),hideCancel:true,ok:'확인'});
       });
     }});
 }
@@ -7786,7 +7899,10 @@ function pushMyName(wid){
   }catch(_){ return Promise.resolve(); }
 }
 function uiSetName(){
-  psModal({title:'표시 이름', body:'작전판·보관함에서 <b>만든 사람</b>으로 표시될 이름입니다. (이메일 대신)', input:getDisplayName(), placeholder:'예: 김철수 코치', maxlength:20, ok:'저장', onOk:function(v){ setDisplayName(v); try{renderUI();}catch(_){} }});
+  var current=accountActionCurrent();
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current())return;
+  modal({title:'표시 이름', body:'작전판·보관함에서 <b>만든 사람</b>으로 표시될 이름입니다. (이메일 대신)', input:getDisplayName(), placeholder:'예: 김철수 코치', maxlength:20, ok:'저장', onOk:function(v){ setDisplayName(v); try{renderUI();}catch(_){} }});
 }
 /* 관리 페이지 링크 노출용 이메일 화이트리스트(표시 전용 — 접근 권한은 서버 ps_is_admin이 판정) */
 var ADMIN_EMAILS=['scua5673@gmail.com'];
@@ -7795,7 +7911,26 @@ function div(pop){ var d=document.createElement('div'); d.className='ap-div'; po
 function wsColor(id){ var h=0,i=id.length; while(i)h=(h*31+id.charCodeAt(--i))>>>0; var cs=['#3a6df0','#e0569f','#34a56f','#BA7517','#7F77DD','#d12f38','#2f9e8f']; return cs[h%cs.length]; }
 
 /* 공용 모달(prompt/알림) — PWA에서 window.prompt 차단 대비 */
+function accountActionCurrent(wid,ownerOnly){
+  var owner=rpcContext();
+  return function(){try{
+    if(!rpcCurrent(owner)||!dataUnlocked())return false;
+    if(ownerOnly){var w=wsList().filter(function(x){return String(x.id)===String(wid);})[0];if(!w||w.role!=='owner')return false;}
+    return true;
+  }catch(_){return false;}};
+}
+function accountActionWatch(host,current){
+  var timer=null,closed=false,events=['ps-auth-state','ps-sync-state','storage'];
+  function stop(){if(closed)return;closed=true;clearInterval(timer);events.forEach(function(e){window.removeEventListener(e,check);});}
+  function check(){
+    if(host.isConnected===false){stop();return;}
+    if(!current()){stop();host.querySelectorAll('input,textarea').forEach(function(x){x.value='';});host.textContent='';host.remove();}
+  }
+  events.forEach(function(e){window.addEventListener(e,check);});timer=setInterval(check,250);check();
+  return stop;
+}
 function psModal(opts){
+  if(opts.current&&!opts.current())return {close:function(){}};
   try{ var ex=document.getElementById('psWsModal'); if(ex)ex.remove(); }catch(_){}
   var ov=document.createElement('div'); ov.id='psWsModal';
   ov.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(8,12,18,.55);display:flex;align-items:center;justify-content:center;padding:18px;';
@@ -7811,10 +7946,11 @@ function psModal(opts){
   if(!opts.hideCancel)h+='<button id="psWsX" style="padding:10px 16px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;border:1px solid '+(dark?'#2C3744':'#d2d6dd')+';background:'+(dark?'#222c39':'#f1f3f5')+';color:inherit">'+esc(opts.cancel||'취소')+'</button>';
   h+='<button id="psWsOk" style="padding:10px 20px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;border:0;background:'+(opts.danger?'#d12f38':'var(--blue,#3a6df0)')+';color:#fff">'+esc(opts.ok||'확인')+'</button></div>';
   card.innerHTML=h; ov.appendChild(card); document.body.appendChild(ov);
-  function close(silent){ try{ov.remove();}catch(_){} if(!silent && opts.onCancel){ var f=opts.onCancel; opts.onCancel=null; f(); } }
+  var stopWatch=opts.current?accountActionWatch(ov,opts.current):null;
+  function close(silent){if(stopWatch)stopWatch();try{ov.remove();}catch(_){}if(!silent&&opts.onCancel&&(!opts.current||opts.current())){var f=opts.onCancel;opts.onCancel=null;f();}}
   var inp=card.querySelector('#psWsIn');
   if(inp&&opts.input)inp.value=String(opts.input);
-  function ok(){ var v=inp?(inp.value||'').trim():true; close(true); if(opts.onOk)opts.onOk(v); }
+  function ok(){var v=inp?(inp.value||'').trim():true;close(true);if(opts.onOk&&(!opts.current||opts.current()))opts.onOk(v);}
   var okb=card.querySelector('#psWsOk'); if(okb)okb.onclick=ok;
   var xb=card.querySelector('#psWsX'); if(xb)xb.onclick=function(){close();};
   ov.addEventListener('click',function(e){ if(e.target===ov)close(); });
@@ -7822,12 +7958,15 @@ function psModal(opts){
   return {close:close};
 }
 function uiCreateTeam(){
-  psModal({title:'새 팀 워크스페이스', body:'팀 이름을 정하면 그 팀 전용 보관함·일정·팀명단이 만들어집니다.', input:'', placeholder:'예: FC 프로세스 U12', maxlength:30, ok:'다음', onOk:function(v){
+  var current=accountActionCurrent();
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current())return;
+  modal({title:'새 팀 워크스페이스', body:'팀 이름을 정하면 그 팀 전용 보관함·일정·팀명단이 만들어집니다.', input:'', placeholder:'예: FC 프로세스 U12', maxlength:30, ok:'다음', onOk:function(v){
     if(!v)return;
-    var go=function(){ var mm=psModal({title:'만드는 중…',body:'잠시만요',hideCancel:true,ok:' '});
-      createTeam(v).then(function(){}).catch(function(){ mm.close(); psModal({title:'실패',body:'팀 생성에 실패했어요. 네트워크를 확인해주세요.',hideCancel:true,ok:'확인'}); }); };
+    var go=function(){ var mm=modal({title:'만드는 중…',body:'잠시만요',hideCancel:true,ok:' '});
+      createTeam(v).then(function(){}).catch(function(){ mm.close(); modal({title:'실패',body:'팀 생성에 실패했어요. 네트워크를 확인해주세요.',hideCancel:true,ok:'확인'}); }); };
     if(getDisplayName()){ go(); }
-    else{ psModal({title:'표시 이름', body:'팀에서 <b>만든 사람</b>으로 표시될 이름을 입력하세요.', input:'', placeholder:'예: 김철수 코치', maxlength:20, ok:'팀 만들기', onOk:function(nm){ if(nm)setDisplayName(nm); go(); }}); }
+    else{ modal({title:'표시 이름', body:'팀에서 <b>만든 사람</b>으로 표시될 이름을 입력하세요.', input:'', placeholder:'예: 김철수 코치', maxlength:20, ok:'팀 만들기', onOk:function(nm){ if(nm)setDisplayName(nm); go(); }}); }
   }});
 }
 /* 1.533 — 권한 관리·팀원 목록에서 이름과 이메일을 함께 보여준다.
@@ -7910,10 +8049,13 @@ function ensureDisplayName(){
   }catch(_){}
 }
 function uiJoin(){
+  var current=accountActionCurrent();
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current())return;
   function askName(message,value){
     var body=(message?'<div style="margin-bottom:8px;color:#d12f38;font-weight:800">'+esc(message)+'</div>':'')
       +'팀에서 구분할 수 있는 <b>이름 또는 아이디</b>를 입력하세요. 합류하면 기본적으로 <b>선수</b> 역할이 적용됩니다.';
-    psModal({title:'팀 합류 — 이름 또는 아이디',body:body,input:value||getDisplayName(),placeholder:'예: 김민준 또는 minjun10',maxlength:20,ok:'다음',onOk:function(nm){
+    modal({title:'팀 합류 — 이름 또는 아이디',body:body,input:value||getDisplayName(),placeholder:'예: 김민준 또는 minjun10',maxlength:20,ok:'다음',onOk:function(nm){
       nm=String(nm||'').trim();
       if(nm.length<2){ askName('이름 또는 아이디를 2자 이상 입력해 주세요.',nm); return; }
       setDisplayName(nm);
@@ -7923,27 +8065,30 @@ function uiJoin(){
   function askCode(message){
     var body=(message?'<div style="margin-bottom:8px;color:#d12f38;font-weight:800">'+esc(message)+'</div>':'')
       +'팀 관리자에게 받은 8자리 코드를 입력하세요. 역할 변경이 필요하면 합류 후 관리자가 설정합니다.';
-    psModal({title:'초대 코드로 합류',body:body,input:'',placeholder:'예: A1B2C3D4',maxlength:12,upper:true,ok:'선수로 합류',onOk:function(v){
+    modal({title:'초대 코드로 합류',body:body,input:'',placeholder:'예: A1B2C3D4',maxlength:12,upper:true,ok:'선수로 합류',onOk:function(v){
       v=String(v||'').trim().toUpperCase();
       if(!v){ askCode('초대 코드를 입력해 주세요.'); return; }
-      var mm=psModal({title:'합류 중…',body:'잠시만요',hideCancel:true,ok:' '});
-      joinTeam(v).catch(function(e){ mm.close(); psModal({title:'합류 실패',body:'코드가 올바르지 않거나 만료됐어요.',hideCancel:true,ok:'확인'}); });
+      var mm=modal({title:'합류 중…',body:'잠시만요',hideCancel:true,ok:' '});
+      joinTeam(v).catch(function(e){ mm.close(); modal({title:'합류 실패',body:'코드가 올바르지 않거나 만료됐어요.',hideCancel:true,ok:'확인'}); });
     }});
   }
   askName('',getDisplayName());
 }
 /* 변경 기록(감사 로그) — 소유자만. 서버 ps_audit(메타만: 누가·어떤 키·언제·무슨 동작) 최근 200건 */
 function uiAudit(wa){
+  var current=accountActionCurrent(wa&&wa.id,true);
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current())return;
   var s=getSess(); if(!s)return;
-  var mm=psModal({title:'변경 기록 불러오는 중…',body:'잠시만요',hideCancel:true,ok:' '});
+  var mm=modal({title:'변경 기록 불러오는 중…',body:'잠시만요',hideCancel:true,ok:' '});
   Promise.all([
     fetch(BASE+'/rest/v1/ps_audit?workspace_id=eq.'+encodeURIComponent(wa.id)+'&order=at.desc&limit=200&select=at,user_id,k,action',{headers:hj(s.at)})
       .then(function(r){ return r.ok?r.json():Promise.reject(r.status); }),
     membersOf(wa.id).catch(function(){ return []; })
   ]).then(function(res){
-    mm.close();
+    mm.close();if(!current())return;
     var rows=res[0]||[], em={}; (res[1]||[]).forEach(function(m2){ em[m2.user_id]=(m2.email||'').split('@')[0]||String(m2.user_id).slice(0,6); });
-    if(!rows.length){ psModal({title:'변경 기록',body:'아직 기록이 없어요 — 이제부터의 변경이 기록됩니다.',hideCancel:true,ok:'확인'}); return; }
+    if(!rows.length){ modal({title:'변경 기록',body:'아직 기록이 없어요 — 이제부터의 변경이 기록됩니다.',hideCancel:true,ok:'확인'}); return; }
     var AC={insert:'생성',update:'수정','delete':'삭제'};
     var h='<div style="max-height:340px;overflow:auto;font-size:12px;line-height:1.5">';
     rows.forEach(function(r2){
@@ -7955,17 +8100,20 @@ function uiAudit(wa){
         +'<span style="flex:0 0 auto;color:var(--dim,#8a8f98)">'+(AC[r2.action]||r2.action)+'</span></div>';
     });
     h+='</div><div style="margin-top:8px;font-size:11px;color:var(--dim,#8a8f98)">이 목록은 누가·무엇을·언제 바꿨는지 보여줍니다. 복구할 본문은 포함하지 않습니다.</div>';
-    psModal({title:'변경 기록 · 최근 '+rows.length+'건',body:h,hideCancel:true,ok:'닫기'});
-  }).catch(function(){ mm.close(); psModal({title:'변경 기록',body:'기록을 불러오지 못했어요 — 서버에 감사 로그가 아직 설치되지 않았을 수 있어요.',hideCancel:true,ok:'확인'}); });
+    modal({title:'변경 기록 · 최근 '+rows.length+'건',body:h,hideCancel:true,ok:'닫기'});
+  }).catch(function(){ mm.close(); modal({title:'변경 기록',body:'기록을 불러오지 못했어요 — 서버에 감사 로그가 아직 설치되지 않았을 수 있어요.',hideCancel:true,ok:'확인'}); });
 }
 function uiInvite(wid){
-  var mm=psModal({title:'선수 초대 코드 불러오는 중…',body:'합류한 팀원은 기본적으로 선수로 시작합니다.',hideCancel:true,ok:' '});
+  var current=accountActionCurrent(wid,true);
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current())return;
+  var mm=modal({title:'선수 초대 코드 불러오는 중…',body:'합류한 팀원은 기본적으로 선수로 시작합니다.',hideCancel:true,ok:' '});
   createRoleInvite(wid,'player').then(function(code){
-    mm.close();
+    mm.close();if(!current())return;
     showInvite(wid,code,'player');
   }).catch(function(){
     mm.close();
-    psModal({title:'선수 초대 설정 필요',body:'배포 파일의 <b>supabase-player-invites.sql</b>을 Supabase SQL Editor에서 한 번 실행해주세요.',hideCancel:true,ok:'확인'});
+    modal({title:'선수 초대 설정 필요',body:'배포 파일의 <b>supabase-player-invites.sql</b>을 Supabase SQL Editor에서 한 번 실행해주세요.',hideCancel:true,ok:'확인'});
   });
 }
 /* 1.528 — 코드만 복사하면 받는 사람이 "이걸 어디에 넣지?"에서 막힌다.
@@ -8011,6 +8159,9 @@ function inviteMessage(wid,code,roleName){
     +'(코드는 30일간 사용할 수 있어요. '+roleName+josaRo(roleName)+' 합류합니다.)';
 }
 function showInvite(wid,code,role){
+  var current=accountActionCurrent(wid,true);
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current())return;
   role=role==='executive'?'executive':(role==='staff'?'staff':'player');
   var roleName=role==='player'?'선수':(role==='executive'?'임원':'코칭스태프');
   var msg=inviteMessage(wid,code,roleName);
@@ -8025,35 +8176,40 @@ function showInvite(wid,code,role){
     +(canShare?'<button id="psInvShare" style="flex:1;padding:9px 0;border:1px solid var(--line,#d2d6dd);background:transparent;color:inherit;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">공유하기</button>':'')
     +'</div>'
     +'<button id="psInvRegen" style="margin-top:6px;width:100%;padding:9px 0;border:1px solid var(--line,#d2d6dd);background:transparent;color:var(--dim,#8a8f98);border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">🔄 코드 바꾸기 (기존 코드 무효화)</button>';
-  psModal({title:roleName+' 초대 코드', body:body, ok:'초대 메시지 복사', cancel:'닫기',
+  modal({title:roleName+' 초대 코드', body:body, ok:'초대 메시지 복사', cancel:'닫기',
     onOk:function(){ if(psCopy(msg))psCopied('초대 메시지'); } });
   setTimeout(function(){
     var cb=document.getElementById('psInvCode');
-    if(cb)cb.onclick=function(){ if(psCopy(code))psCopied('초대 코드'); };
+    if(!current())return;
+    if(cb)cb.onclick=function(){if(!current())return; if(psCopy(code))psCopied('초대 코드'); };
     var sb=document.getElementById('psInvShare');
-    if(sb)sb.onclick=function(){ try{ navigator.share({title:'PROCESS STUDIO 초대',text:msg}); }catch(_){} };
+    if(sb)sb.onclick=function(){if(!current())return; try{ navigator.share({title:'PROCESS STUDIO 초대',text:msg}); }catch(_){} };
   },0);
   setTimeout(function(){
+    if(!current())return;
     var btn=document.getElementById('psInvRegen'); if(!btn)return;
     btn.onclick=function(){
-      psModal({title:roleName+' 코드를 바꿀까요?', body:'기존 '+roleName+' 코드는 즉시 <b>무효화</b>됩니다.', ok:'새 코드 생성', cancel:'취소', danger:true,
+      if(!current())return;
+      modal({title:roleName+' 코드를 바꿀까요?', body:'기존 '+roleName+' 코드는 즉시 <b>무효화</b>됩니다.', ok:'새 코드 생성', cancel:'취소', danger:true,
         onOk:function(){
-          var mm=psModal({title:'새 코드 생성 중…',body:'잠시만요',hideCancel:true,ok:' '});
-          regenRoleInvite(wid,role).then(function(nc){ mm.close(); showInvite(wid,nc,role); })
-          .catch(function(){ mm.close(); psModal({title:'실패',body:'코드 변경에 실패했어요.',hideCancel:true,ok:'확인'}); });
+          var mm=modal({title:'새 코드 생성 중…',body:'잠시만요',hideCancel:true,ok:' '});
+          regenRoleInvite(wid,role).then(function(nc){mm.close();if(current())showInvite(wid,nc,role);})
+          .catch(function(){ mm.close(); modal({title:'실패',body:'코드 변경에 실패했어요.',hideCancel:true,ok:'확인'}); });
         },
-        onCancel:function(){ showInvite(wid,code,role); }
+        onCancel:function(){if(current())showInvite(wid,code,role);}
       });
     };
   },50);
 }
 function removeMember(wid,uid){
+  var owner=rpcContext();
   /* 2.669 — RLS(mem_del: 본인 또는 ps_is_owner)는 권한이 없으면 오류가 아니라 «0건 삭제»로 조용히 지나간다. 지운 행을 돌려받아 확인한다(실측 정책: mem_del · DELETE · user_id=auth.uid() OR ps_is_owner) */
   return ensureToken().then(function(at){
+    rpcCurrent(owner);if(!at)throw dataLockError();
     var h=hj(at); h['Prefer']='return=representation';
     return syncFetch('member_remove',BASE+'/rest/v1/ps_members?workspace_id=eq.'+encodeURIComponent(wid)+'&user_id=eq.'+encodeURIComponent(uid)+'&select=user_id',
       {method:'DELETE',headers:h}).then(function(r){ if(!r.ok)throw new Error('remove '+r.status); return r.json().catch(function(){ return []; }); })
-      .then(function(rows){ if(!rows||!rows.length)throw new Error('팀원 내보내기는 팀을 만든 사람만 할 수 있어요'); return true; });
+      .then(function(rows){rpcCurrent(owner);if(!rows||!rows.length)throw new Error('팀원 내보내기는 팀을 만든 사람만 할 수 있어요');return true;});
   });
 }
 /* 2.669 — 전환 백업(ps_ws_stash_*)은 7일 지나면 지운다. 퇴단한 사람 기기에 팀 자료 사본이 무기한 남던 것(유소년 개인정보 실측 ②). */
@@ -8069,8 +8225,12 @@ function expireStashes(days){
 /* ── 팀원 관리(1.513) — 코드로 합류한 사람을 여기서 다 본다: 이름·이메일, 역할, 내보내기.
    역할은 cs_perms_v1(동기화 키)에, 팀 소속 자체는 서버 ps_members에 있다. 둘을 한 화면에서 다룬다. */
 function uiMembers(wa){
-  var mm=psModal({title:'팀원 불러오는 중…',body:'잠시만요',hideCancel:true,ok:' '});
+  var current=accountActionCurrent();
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current())return;
+  var mm=modal({title:'팀원 불러오는 중…',body:'잠시만요',hideCancel:true,ok:' '});
   membersOf(wa.id).then(function(rows){ mm.close();
+    if(!current())return;
     rows=rows||[];
     var P=window.PSPerms;
     var cur=(P&&P.get&&P.get())||{v:1,defaultRole:'player',members:{}};
@@ -8144,16 +8304,20 @@ function uiMembers(wa){
           var rm=document.createElement('button'); rm.type='button'; rm.textContent='내보내기';
           rm.style.cssText='height:32px;flex:0 0 auto;border:1px solid rgba(194,74,70,.38);background:rgba(194,74,70,.08);color:#C24A46;border-radius:8px;font-family:inherit;font-weight:700;font-size:12px;padding:0 10px;cursor:pointer;';
           rm.onclick=function(){
+            if(!current()||!accountActionCurrent(wa.id,true)())return;
             var who2=nm||mail||uid.slice(0,8);
             /* 2.612 — 네이티브 confirm 은 설치형 PWA 에서 막혀 false 만 돌려줬다(1.847 과 같은 함정) → 버튼이 아무 말 없이 죽어 있었다(사용자 "내보내기 하면 내보내게 해줘"). askConfirm(psConfirm) 으로. */
             askConfirm(who2+' 님을 팀에서 내보낼까요?\n\n· 그 사람 기기에서 팀 자료가 정리됩니다\n· 팀이 만든 자료는 서버에 그대로 남습니다\n· 다시 부르려면 초대 코드를 새로 주면 됩니다').then(function(ok){
-              if(!ok)return;
+              if(!ok||!current()||!accountActionCurrent(wa.id,true)())return;
               rm.disabled=true; rm.textContent='내보내는 중…';
               removeMember(wa.id,uid).then(function(){
-                try{ if(cur.members[uid]){ delete cur.members[uid]; P&&P.set&&P.set(cur); syncNow('member-remove'); } }catch(_){}
+                if(!current()||!accountActionCurrent(wa.id,true)())return;
+                try{var latest=P&&P.get&&P.get();if(latest&&latest.members&&Object.prototype.hasOwnProperty.call(latest.members,uid)){
+                  latest=JSON.parse(JSON.stringify(latest));delete latest.members[uid];P.set(latest);syncNow('member-remove');
+                }}catch(_){}
                 d.remove();
                 try{ chip(who2+' 님을 내보냈어요'); }catch(_){}
-              }).catch(function(e){ rm.disabled=false; rm.textContent='내보내기'; try{ syncDiagnostic('member-remove',e); }catch(_){} try{ chip('내보내지 못했어요 — 잠시 후 다시 시도해 주세요'); }catch(_){ alert('내보내지 못했어요 — 잠시 후 다시 시도해 주세요'); } });
+              }).catch(function(e){if(!current())return; rm.disabled=false; rm.textContent='내보내기'; try{ syncDiagnostic('member-remove',e); }catch(_){} try{ chip('내보내지 못했어요 — 잠시 후 다시 시도해 주세요'); }catch(_){ alert('내보내지 못했어요 — 잠시 후 다시 시도해 주세요'); } });
             });
           };
           d.appendChild(rm);
@@ -8180,7 +8344,7 @@ function uiMembers(wa){
       foot.appendChild(save);
     }
     card.appendChild(foot);
-    ov.appendChild(card); document.body.appendChild(ov);
+    ov.appendChild(card);document.body.appendChild(ov);accountActionWatch(ov,current);
     ov.addEventListener('click',function(e){ if(e.target===ov)ov.remove(); });
   }).catch(function(){ mm.close(); });
 }
@@ -8232,7 +8396,7 @@ function uiPerms(wa){
   var editOwner=holdConflictContext();
   function current(){var w=activeWsObj();return !!editOwner&&!!wa&&String(wa.id)===editOwner.wid&&holdConflictCurrent(editOwner)&&!workspaceSwitchGuardRead()&&!!w&&w.id===wa.id&&w.role==='owner';}
   if(!current())return;
-  var mm=psModal({title:'팀원 불러오는 중…',body:'잠시만요',hideCancel:true,ok:' '});
+  var mm=psModal({current:current,title:'팀원 불러오는 중…',body:'잠시만요',hideCancel:true,ok:' '});
   membersOf(wa.id).then(function(rows){ mm.close();
     if(!current())return;
     rows=rows||[];
@@ -8431,17 +8595,21 @@ function uiPerms(wa){
       try{ forceSync('perms'); }catch(_){}
     };
     btns.appendChild(cancel); btns.appendChild(save); card.appendChild(btns);
-    ov.appendChild(card); document.body.appendChild(ov);
+    ov.appendChild(card);document.body.appendChild(ov);accountActionWatch(ov,current);
     ov.addEventListener('click',function(e){ if(e.target===ov)ov.remove(); });
-  }).catch(function(){ mm.close(); psModal({title:'실패',body:'팀원을 불러오지 못했어요.',hideCancel:true,ok:'확인'}); });
+  }).catch(function(){mm.close();if(!current())return;psModal({current:current,title:'실패',body:'팀원을 불러오지 못했어요.',hideCancel:true,ok:'확인'}); });
 }
 function uiLeave(wa){
-  psModal({title:'팀 나가기', body:'<b>'+esc(wa.name)+'</b> 워크스페이스에서 나갑니다. 이 팀의 공유 데이터는 더 이상 보이지 않아요.', ok:'나가기', danger:true, onOk:function(){
+  var current=accountActionCurrent();
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current())return;
+  modal({title:'팀 나가기', body:'<b>'+esc(wa.name)+'</b> 워크스페이스에서 나갑니다. 이 팀의 공유 데이터는 더 이상 보이지 않아요.', ok:'나가기', danger:true, onOk:function(){
     var leaving=(activeWs()===wa.id);   /* 지금 이 팀에 들어와 있으면 나간 뒤 개인 공간으로 전환 필요 */
     setStatus('팀에서 나가는 중…');
     /* 나가기 전, 이 팀에 대한 내 최근 변경을 최대한 서버로 밀어올림(멤버일 때만 쓸 수 있음) — 실패해도 진행 */
     var pre = leaving ? withTimeout(forceSync('preleave'),8000) : Promise.resolve();
-    pre.then(function(){ return leaveTeam(wa.id); }).then(function(){
+    pre.then(function(){if(!current())throw dataLockError();return leaveTeam(wa.id);}).then(function(){
+      if(!current())return;
       var wl=wsList().filter(function(w){return w.id!==wa.id;}); setWsList(wl);
       var personal=wl.filter(function(w){return w.kind==='personal';})[0];
       var target=(personal||wl[0]||{}).id;
@@ -8452,7 +8620,7 @@ function uiLeave(wa){
         try{ renderUI(); }catch(_){}
         setStatus('팀에서 나갔습니다');
       }
-    }).catch(function(){ setStatus('나가기 실패 — 네트워크 확인'); });
+    }).catch(function(){if(current())setStatus('나가기 실패 — 네트워크 확인');});
   }});
 }
 

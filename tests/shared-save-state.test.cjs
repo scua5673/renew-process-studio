@@ -13,7 +13,7 @@ function section(source, start, end) {
   return source.slice(a, b);
 }
 const stateCode = section(storageSource, '/* PROCESS STUDIO — 저장 상태(PSSaveState)', '/* PROCESS STUDIO — 일정 기준선');
-const sharedCode = section(storageSource, '  var sharedWrites={},sharedLatest={};', '  /* 큰 보조 사본 전용 API.');
+const sharedCode = section(storageSource,'  function migrationOwner(','  function localKeys(')+'\n'+section(storageSource, '  var sharedWrites={},sharedLatest={};', '  /* 큰 보조 사본 전용 API.');
 const saveCode = section(storageSource, '  window.psSaveShared=function', '  /* v369 — 팀 전환');
 // Generic shared-write tracker cases use the squad key. Candidate identity now
 // has a separate guarded client, exercised by scouting-store and browser tests.
@@ -24,7 +24,7 @@ const exitCode = section(scoutSource, 'window.matchSaveAndExit=', 'window.matchC
 function deferred() { let resolve, reject; const promise = new Promise((a,b) => { resolve=a; reject=b; }); return {promise,resolve,reject}; }
 const drain = () => new Promise(resolve => setImmediate(resolve));
 function harness() {
-  const local = new Map([['ps_active_ws','team-a'], ['ps_sync_session','{"uid":"coach-a"}']]);
+  const local = new Map([['ps_cache_owner_v1','{"uid":"coach-a","wid":"team-a"}'],['ps_active_ws','team-a'], ['ps_sync_session','{"uid":"coach-a"}']]);
   const durable = new Map(), commits = [], calls = {closed:0,acts:0,toasts:0}, label = {style:{}}, events = [];
   const context = vm.createContext({
     Promise, console, setTimeout, clearTimeout,
@@ -32,7 +32,7 @@ function harness() {
     document:{body:null,getElementById(){return null;},querySelectorAll(){return [];}},
     localStorage:{getItem(k){return local.has(k)?local.get(k):null;},setItem(k,v){local.set(k,String(v));}},
     addEventListener(){},dispatchEvent(e){events.push(e);},
-    storage:{set(k,raw){const d=deferred();commits.push({k,raw,...d});return d.promise.then(ok=>{if(ok!==false)durable.set(k,raw);return ok;});}},
+    storage:{set(k,raw,current){const d=deferred();commits.push({k,raw,...d});return d.promise.then(ok=>{if(current)current();if(ok!==false)durable.set(k,raw);return ok;});}},
     afterMigrate(fn){return Promise.resolve().then(fn);},idbGet(k){return Promise.resolve(durable.get(k));},
     toast(){calls.toasts++;},PSStorageDiagnostic(){},
     $(id){return id==='matchSavedState'?label:null;},

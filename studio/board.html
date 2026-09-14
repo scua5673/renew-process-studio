@@ -16961,12 +16961,17 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   var st=document.getElementById('boardStage'); if(!st)return;
   var busy=false;
   function fix(){ if(busy)return; busy=true; try{ if(!document.body.classList.contains('ps-dock')){
+      /* 숨은 iframe의 폭은 0이어도 WebKit은 padding만큼 높이를 돌려준다.
+         그 높이를 도크 겹침으로 쓰면 여백이 매번 12px씩 늘어 observer가 끝나지 않는다. */
+      var sr=st.getBoundingClientRect(); if(!(sr.width>0&&sr.height>0))return;
       /* 예약 = 도크가 무대 아래를 먹는 만큼(+12)만. 띠 한 줄(50px) 몫은 뺀다. 인라인을 지우면 mobile-polish 의 140px 이 되살아나 오히려 커진다(실측). */
-      var below=0; try{ var fb=document.getElementById('ps-command-dock')||document.getElementById('floatBar'); if(fb&&getComputedStyle(fb).display!=='none'){ var fr=fb.getBoundingClientRect(), sr=st.getBoundingClientRect(); below=Math.max(0,Math.round(sr.bottom-fr.top)); } }catch(_){}
+      var below=0; try{ var fb=document.getElementById('ps-command-dock')||document.getElementById('floatBar'); if(fb&&getComputedStyle(fb).display!=='none'){ var fr=fb.getBoundingClientRect(); if(fr.width>0&&fr.height>0)below=Math.max(0,Math.round(sr.bottom-fr.top)); } }catch(_){}
       var want=(below+12)+'px'; if(st.style.getPropertyValue('padding-bottom')!==want){ st.style.setProperty('padding-bottom',want,'important'); try{ if(window.applyView)applyView(); }catch(_){} }
-      var c=document.querySelector('.sel-ctl'); if(c&&(c.style.top||c.style.bottom||c.style.maxHeight)){ c.style.top=''; c.style.bottom=''; c.style.maxHeight=''; } } }catch(_){} busy=false; }
+      var c=document.querySelector('.sel-ctl'); if(c&&(c.style.top||c.style.bottom||c.style.maxHeight)){ c.style.top=''; c.style.bottom=''; c.style.maxHeight=''; } } }catch(_){} finally{busy=false;} }
   try{ new MutationObserver(fix).observe(st,{attributes:true,attributeFilter:['style']}); }catch(_){}
   try{ var c0=document.querySelector('.sel-ctl'); if(c0)new MutationObserver(fix).observe(c0,{attributes:true,attributeFilter:['style']}); }catch(_){}
+  /* 숨은 보드가 열리거나 도크 때문에 작업영역이 바뀌면 유효한 크기로 다시 맞춘다. */
+  try{ if(window.ResizeObserver)new ResizeObserver(function(){requestAnimationFrame(fix);}).observe(st); }catch(_){}
   fix(); setTimeout(fix,300); setTimeout(fix,1500);
 })();
 </script>

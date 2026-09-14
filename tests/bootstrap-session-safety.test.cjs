@@ -5,7 +5,7 @@ function section(a,b){const i=source.indexOf(a),j=source.indexOf(b,i+a.length);a
 const code=[section('function wsList(){','function activeWsObj(){'),section('function cacheOwner(){','function renderDataLock('),
   section('function dataUnlocked(){','function sensitiveLocalKey('),section('function sensitiveLocalKey(k){','function legacyCacheInfo(){'),
   section('function defaultWorkspace(rows){','/* 1.847'),section('function prepareCacheForSession(','/* RPC 호출(PostgREST) */'),
-  section('function rpc(name,body,','/* 부팅: 개인 워크스페이스'),section('function loadWorkspacesCore(){','function loadWorkspaces(){'),
+  section('function rpcContext(','/* 부팅: 개인 워크스페이스'),section('function loadWorkspacesCore(){','function loadWorkspaces(){'),
   'function authStorageEvent(e){'+section('    if(e.key===SKEY){','    /* 보관함 본문은 IDB에')+'}'].join('\n');
 const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222222222';
 const tick=()=>new Promise(r=>setImmediate(r));
