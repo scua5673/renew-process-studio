@@ -2,13 +2,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 function section(a,b){const i=source.indexOf(a),j=source.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return source.slice(i,j);}
-const code=[section("var DNKEY='ps_display_name';",'/* 1.583'),section('function setDisplayName(v){','/* 1.533'),
+const code=[section('function rpcContext(','function rpc(name,'),section('function accountActionCurrent(','function accountActionWatch('),section("var DNKEY='ps_display_name';",'/* 1.583'),section('function setDisplayName(v){','/* 1.533'),
   section('function uiSetName(){','/* 관리 페이지'),section('var _dnHydratePromise=','function uiJoin(){')].join('\n');
 function deferred(){let resolve;const promise=new Promise(r=>resolve=r);return{promise,resolve};}
 function harness(){
   const state={uid:'synthetic-a',wid:'synthetic-team',ready:true,team:true,now:100000,rows:[],fail:false,storageFail:false};
   const local=new Map(),calls={reads:[],modals:[],renders:0,pushes:0},hooks={};
-  const c=vm.createContext({Promise,String,Date:{now:()=>state.now},
+  const c=vm.createContext({Promise,String,signOutEpoch:0,OWNERKEY:'owner',workspaceSwitchEpochRaw:()=>'',workspaceSwitchGuardRaw:()=>'',dataLockError:()=>Error('stale'),Date:{now:()=>state.now},
     localStorage:{getItem:k=>local.get(k)||null,setItem(k,v){if(state.storageFail)throw Error('synthetic storage unavailable');local.set(k,String(v));},removeItem:k=>local.delete(k)},
     getSess:()=>state.uid?{uid:state.uid}:null,activeWs:()=>state.wid,isTeamWs:()=>state.team,dataUnlocked:()=>state.ready,
     membersOf(wid){calls.reads.push(wid);return hooks.read?hooks.read(wid):state.fail?Promise.reject(Error('synthetic offline')):Promise.resolve(state.rows);},

@@ -16,7 +16,7 @@ function fixture(players){
   c.storage.keys=async()=>[...h.idb.keys()];
   vm.runInContext(section(sync,'var _itemsT=null, _itemsPending=null','function itemsHoldOpen(')+'\n'+['itemsIdxKey','itemsIdx','itemVal','bigDrop','itemsReadAll','itemsResolveConflicts'].map(n=>fn(sync,n)).join('\n'),c);
   c.PSItems={active:()=>true,readAll:c.itemsReadAll,write:c.itemsWrite};c.parent.PSItems=c.PSItems;c.parent.PS_BUILD='2.809';
-  vm.runInContext(['isTargetPl','plTombs','plTombAdd','plTombApply','itemsPI','itemsApply','save'].map(n=>fn(scout,n)).join('\n'),c);
+  vm.runInContext(['isTargetPl','plTombs','plTombAdd','plTombApply','itemsPI','scoutAutomaticWriteAllowed','itemsApply','save'].map(n=>fn(scout,n)).join('\n'),c);
   function seedMain(){h.local.set(MAIN,raw(c.data));h.local.set(PD,'{}');for(const k of [MAIN,PD])h.server.set(k,{workspace_id:'team-a',k,v:h.local.get(k),cupd:10});}
   seedMain();const m=c.meta(),idx={};for(const player of players){const k='sq:'+player.id,v=raw(player);h.idb.set(k,v);h.server.set(k,{workspace_id:'team-a',k,v,cupd:10});m.h[k]=c.hash(v);m.c[k]=10;idx[player.id]=c.hash(v);}
   for(const k of [MAIN,PD]){m.h[k]=c.hash(h.local.get(k));m.c[k]=10;}c.setMeta(m);h.local.set('ps_items_idx_v1:team-a',raw(idx));
@@ -90,6 +90,44 @@ test('failed deletion-record save leaves the profile and roster intact before an
   const h=fixture([p('a')]),button={};let confirmed;Object.assign(h.c,{$:()=>button,psConfirm:(_text,fn)=>confirmed=fn,pl:h.c.data.players[0]});
   vm.runInContext(section(scout,'  if($("plDelete"))$("plDelete").onclick=()=>{','  $("plName").value'),h.c);h.c.store.set=(k)=>k!==PD;button.onclick();confirmed();
   assert.equal(h.c.data.players.length,1);assert.equal(h.c._itemsActiveJobs.length,0);assert.equal(h.c.itemsWriteBusy(),false);
+});
+function deletionHandler(origin){
+  if(origin==='profile')return section(scout,'  if($("plDelete"))$("plDelete").onclick=()=>{','  $("plName").value');
+  if(origin==='player list')return section(scout,'    del.onclick=()=>{psConfirm(`"${pl.name||"이름 없는"}" 선수를 삭제할까요?`,','    const pdf=');
+  return section(scout,'    del.onclick=()=>{psConfirm((pl.name||"이 선수")+" 삭제? 평가 기록도 함께 삭제됩니다.",()=>{','    const acts=');
+}
+function deletionButton(h,origin,id){
+  const button={};let confirmed;Object.assign(h.c,{$:()=>button,psConfirm:(_text,fn)=>confirmed=fn,closePlayer(){},renderTeam(){},renderPlayers(){},toast(){},editingPlayer:id,pl:h.c.data.players.find(x=>x.id===id),del:button});
+  vm.runInContext(deletionHandler(origin),h.c);button.onclick();return ()=>{assert.equal(typeof confirmed,'function');confirmed();};
+}
+for(const origin of ['profile','team row','player list'])test(origin+' roster deletion does not save an untouched candidate document, even when candidate writes would fail',async()=>{
+  const h=fixture([p('a'),p('deleted')]),candidate={...p('private','Private candidate'),type:'target',memo:'Unchanged candidate original'},tkey=h.c.TKEY;
+  h.c.data.players.push(copy(candidate));h.c.canSeeTargets=()=>true;h.local.set(tkey,raw({v:1,players:[candidate],scoutRegistry:{source:'retained'}}));
+  const before=h.local.get(tkey),untouched=h.idb.get('sq:a'),write=h.c.store.set,piWrite=h.c.PSItems.write,calls=[];
+  h.c.store.set=(k,v)=>{assert.notEqual(k,tkey,'unrelated candidate write would fail its current verification');return write(k,v);};
+  h.c.PSItems.write=(players,options)=>{calls.push(copy({players,options}));return piWrite(players,options);};
+  // The server-confirmed deletion target may not be in this tab's legacy index.
+  h.local.set('ps_items_idx_v1:team-a',raw({a:h.c.hash(untouched)}));
+  deletionButton(h,origin,'deleted')();await h.c.itemsWriteFlush();
+  assert.deepEqual(h.main().players.map(x=>x.id),['a']);assert.ok(JSON.parse(h.local.get(PD)).deleted);
+  assert.deepEqual(calls.map(x=>x.options.deletedIds),[['deleted']]);assert.deepEqual(calls[0].players.map(x=>x.id),['a']);
+  assert.ok(JSON.parse(h.idb.get('sq:deleted'))._del);assert.equal(h.idb.get('sq:a'),untouched);assert.equal(h.c.itemsWriteBusy(),false);
+  assert.equal(h.local.get(tkey),before);assert.equal(h.saves.some(x=>x.k===tkey),false);assert.deepEqual(copy(h.c.data.players.find(x=>x.id==='private')),candidate);
+});
+test('candidate list deletion still saves the changed candidate document and requests no roster deletion',async()=>{
+  const h=fixture([p('a')]),candidate={...p('private'),type:'target'},calls=[],write=h.c.PSItems.write;
+  h.c.data.players.push(candidate);h.c.canSeeTargets=()=>true;h.local.set(h.c.TKEY,raw({v:1,players:[candidate]}));h.c.PSItems.write=(players,options)=>{calls.push(copy(options));return write(players,options);};
+  deletionButton(h,'player list','private')();await h.c.itemsWriteFlush();
+  assert.equal(h.saves.filter(x=>x.k===h.c.TKEY).length,1);assert.deepEqual(JSON.parse(h.local.get(h.c.TKEY)).players,[]);assert.deepEqual(calls,[{deletedIds:[]}]);assert.equal(JSON.parse(h.idb.get('sq:a'))._del,undefined);
+});
+test('candidate profile removal still uses candidate archiving without the roster save handler',()=>{
+  const h=fixture([p('a')]),candidate={...p('private'),type:'target'},archived=[];h.c.data.players.push(candidate);h.c.scArchiveCandidate=id=>archived.push(id);
+  deletionButton(h,'profile','private');assert.deepEqual(archived,['private']);assert.equal(h.saves.length,0);assert.equal(h.c.itemsWriteBusy(),false);
+});
+test('ordinary candidate editing still saves its candidate fields through the actual save function',async()=>{
+  const h=fixture([p('a')]),candidate={...p('private'),type:'target',memo:'New candidate edit'};h.c.data.players.push(candidate);h.c.canSeeTargets=()=>true;
+  assert.equal(h.c.save(),true);await h.c.itemsWriteFlush();assert.equal(h.saves.filter(x=>x.k===h.c.TKEY).length,1);assert.equal(JSON.parse(h.local.get(h.c.TKEY)).players[0].memo,'New candidate edit');
+  assert.deepEqual(h.main().players.map(x=>x.id),['a']);assert.equal(h.idb.has('sq:private'),false);
 });
 test('stale explicit deletion holds only its player while unrelated changes complete real synchronization',async()=>{
   const h=fixture([p('a'),p('b')]),key='sq:b',before=h.idb.get(key),changed=raw({...p('b'),memo:'later edit'});h.c.plTombAdd('b');h.c.data.players=h.c.data.players.filter(x=>x.id!=='b');let race=true;

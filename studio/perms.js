@@ -177,8 +177,8 @@
       try{
         var st=window.storage; if(!st) return false; if(st.__psGated) return true;
         var _set=st.set.bind(st), _del=st.del?st.del.bind(st):null;
-        st.set=function(k,v){ if(syncedKey(k)){ notice(); return Promise.resolve(); } return _set(k,v); };
-        if(_del) st.del=function(k){ if(syncedKey(k)){ notice(); return Promise.resolve(); } return _del(k); };
+        st.set=function(k,v,current){if(syncedKey(k)){notice();return Promise.resolve(false);}return _set(k,v,current);};
+        if(_del)st.del=function(k,current){if(syncedKey(k)){notice();return Promise.resolve(false);}return _del(k,current);};
         st.__psGated=true; return true;
       }catch(_){ return false; }
     }

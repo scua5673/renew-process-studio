@@ -947,6 +947,16 @@
   .sel-ctl #colorCtl .cdot{width:19px;height:19px;border-radius:50%;border:2px solid rgba(255,255,255,.4);padding:0;cursor:pointer;}
   .sel-ctl #colorCtl .cdot.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.4);}
   .sel-ctl #colorCtl .cdot.mine{border-style:dashed;border-color:rgba(255,255,255,.7)}   /* 2.805 — 내가 고른 고정색 */
+  html.ps-page-board body .sel-ctl #colorCtl #colorPop{width:224px!important;max-width:calc(100vw - 24px)!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;justify-items:center;gap:8px 6px!important}
+  html body .sel-ctl #colorCtl #colorPop .cdot:not(#_):not(#__){width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;padding:0!important;border-radius:50%!important}
+  html body .sel-ctl #colorCtl #colorPop .cdot.uni:not(#_):not(#__){border-radius:6px!important}
+  #colorPop .color-pop-actions{grid-column:1 / -1;display:flex;gap:6px;width:100%;padding-top:7px;border-top:1px solid rgba(255,255,255,.15)}
+  #colorPop .color-pop-actions button{border:1px solid rgba(255,255,255,.18);border-radius:7px;background:rgba(255,255,255,.08);color:#fff;font:inherit;font-size:11px;font-weight:600;line-height:1.2;white-space:nowrap;cursor:pointer}
+  #colorCtl #colorPop #myColPin,#colorCtl #colorPop #myColEdit{width:auto!important;height:30px!important;min-height:30px!important;padding:0 8px!important}
+  #colorPop #myColPin{flex:1}#colorPop #myColEdit{min-width:48px}
+  #colorPop .color-pop-actions button:disabled{opacity:.45;cursor:default}
+  #colorPop .cdot.mine.is-removing{position:relative}
+  #colorPop .cdot.mine.is-removing::after{content:"×";position:absolute;right:-7px;top:-8px;width:14px;height:14px;border-radius:50%;background:#fff;color:#222;font:bold 12px/14px sans-serif;text-align:center;box-shadow:0 1px 4px #0005}
   .sel-ctl #colorCtl .cdot-custom{-webkit-appearance:none;appearance:none;background:conic-gradient(from 90deg,#e23b3b,#ff7a1a,#d4a017,#34a56f,#2f6df0,#8b5cf6,#e23b3b)!important;cursor:pointer;}
   .sel-ctl #colorCtl .cdot-custom::-webkit-color-swatch-wrapper{padding:0;}
   .sel-ctl #colorCtl .cdot-custom::-webkit-color-swatch{border:none;border-radius:50%;opacity:0;}
@@ -3475,9 +3485,11 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
             <button class="cdot" data-col="#34a56f" style="background:#34a56f" title="초록"></button>
             <button class="cdot" data-col="#2f6df0" style="background:#2f6df0" title="파랑"></button>
             <button class="cdot" data-col="#f2f4f7" style="background:#f2f4f7" title="흰색"></button>
-            <span id="myDots" style="display:contents"></span><!-- 2.805 — 내가 고른 색(고정) -->
+            <button class="cdot" data-col="#808080" style="background:#808080" title="회색" aria-label="회색"></button>
             <input type="color" id="equipColCustom" class="cdot cdot-custom" title="직접 색 선택 — 고르면 고정색에 남아요">
+            <span id="myDots" style="display:contents"></span><!-- 내가 고른 색(고정) -->
             <button class="cdot cdot-reset" id="colReset" title="팀 색으로 되돌리기" style="display:none">↺</button>
+            <span class="color-pop-actions"><button type="button" id="myColPin">＋ 현재 색 고정</button><button type="button" id="myColEdit" aria-pressed="false">편집</button></span>
           </span>
         </span>
         <button type="button" id="textEditBtn" class="text-edit-btn" title="선택한 텍스트 내용 수정">
@@ -5175,6 +5187,7 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
     if(!showCol)cc.classList.remove("open");
     if(showCol){var _cols=_multiColors.map(function(o){return String(o.color||(typeOfItem(o)==="player"?playerTeamCol(o):EQUIP_COL_DEF[o.team])||"").toLowerCase();});
       const cur=_multiColors.length?(_cols.every(function(x){return x===_cols[0];})?_cols[0]:""):(sel.ref.color||(isPlayerCol?playerTeamCol(sel.ref):EQUIP_COL_DEF[sel.ref.team])||"").toLowerCase();
+      cc.dataset.currentColor=cur;
       const _trg=document.getElementById("colorTrigSw");if(_trg)_trg.style.background=/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(cur)?cur:"linear-gradient(135deg,#e23b3b 0 33%,#34a56f 33% 66%,#2f6df0 66%)";
       /* 도크 유니폼 색(현재 팀 색 그대로) — 선택할 때마다 재구성해 팀 색 변경을 반영 */
       const ud=document.getElementById("uniDots");
@@ -6381,19 +6394,21 @@ function mergeCustomEquip(a,b){var seen={},out=[];(a||[]).concat(b||[]).forEach(
 function loadRoleColors(){var d={N:"#f2c94c",T:"#8b5cf6",S:"#20a67a"};try{var x=JSON.parse(localStorage.getItem(ROLE_COLOR_KEY)||"null");if(x&&typeof x==="object")Object.assign(d,x);}catch(_){}return d;}
 function roleColor(v){return loadRoleColors()[String(v||"").toUpperCase()]||null;}
 /* ── 2.805 · 내가 고른 고정색 ── */
-var MY_COL_KEY="cs_my_cols_v1", MY_COL_MAX=6;
-function myColList(){ try{ var a=JSON.parse(localStorage.getItem(MY_COL_KEY)||"[]"); return Array.isArray(a)?a.filter(function(c){return /^#[0-9a-f]{6}$/i.test(c);}).slice(0,MY_COL_MAX):[]; }catch(_){ return []; } }
-function myColAdd(hex){ hex=String(hex||"").toLowerCase(); if(!/^#[0-9a-f]{6}$/.test(hex))return; var a=myColList().filter(function(c){return c.toLowerCase()!==hex;}); a.unshift(hex); a=a.slice(0,MY_COL_MAX); try{ localStorage.setItem(MY_COL_KEY,JSON.stringify(a)); }catch(_){} }
-function myColRemove(hex){ hex=String(hex||"").toLowerCase(); var a=myColList().filter(function(c){return c.toLowerCase()!==hex;}); try{ localStorage.setItem(MY_COL_KEY,JSON.stringify(a)); }catch(_){} }
+var MY_COL_KEY="cs_my_cols_v1", MY_COL_MAX=6, myColEditing=false;
+function myColList(){ try{ var a=JSON.parse(localStorage.getItem(MY_COL_KEY)||"[]"),seen={}; return Array.isArray(a)?a.filter(function(c){if(typeof c!=="string"||!/^#[0-9a-f]{6}$/i.test(c)||seen[c.toLowerCase()])return false;seen[c.toLowerCase()]=1;return true;}).map(function(c){return c.toLowerCase();}).slice(0,MY_COL_MAX):[]; }catch(_){ return []; } }
+function myColSave(a){try{var raw=JSON.stringify(a);localStorage.setItem(MY_COL_KEY,raw);if(localStorage.getItem(MY_COL_KEY)!==raw)throw new Error("color preference not saved");return true;}catch(_){try{toast("고정색을 기억하지 못했어요. 다시 시도해 주세요.");}catch(_){}return false;}}
+function myColAdd(hex){ hex=String(hex||"").toLowerCase(); if(!/^#[0-9a-f]{6}$/.test(hex))return false; var a=myColList();if(a.indexOf(hex)>=0)return true;if(a.length>=MY_COL_MAX){try{toast("고정색은 6개까지예요. 편집에서 하나를 빼 주세요.");}catch(_){}return false;}a.push(hex);return myColSave(a); }
+function myColRemove(hex){ hex=String(hex||"").toLowerCase();return myColSave(myColList().filter(function(c){return c!==hex;})); }
 function applyPickedColor(hex){ if(sel&&(sel.type==="equip"||sel.type==="player")){pushUndo();sel.ref.color=hex;if(sel.type==="player")rememberRoleColor(sel.ref,hex);renderTokens();updateDelUI();}else if(typeof multiSel!=="undefined"&&multiSel.length)applyMultiTokenColor(hex); }
 function renderMyDots(){ var host=document.getElementById("myDots"); if(!host)return; var cur=""; try{ cur=String((sel&&sel.ref&&sel.ref.color)||"").toLowerCase(); }catch(_){}
-  var list=myColList(); host.innerHTML="";
-  list.forEach(function(hex){ var b=document.createElement("button"); b.type="button"; b.className="cdot mine"+(hex.toLowerCase()===cur?" on":""); b.dataset.col=hex; b.style.background=hex; b.title=hex+" · 길게 누르면 고정색에서 뺌";
-    b.onclick=function(){ applyPickedColor(hex); };
-    var t=null; function arm(){ clearTimeout(t); t=setTimeout(function(){ t=null; myColRemove(hex); renderMyDots(); try{ toast("고정색에서 뺐어요"); }catch(_){} },600); }
-    b.addEventListener("pointerdown",function(e){ arm(); }); b.addEventListener("pointerup",function(){ if(t){ clearTimeout(t); t=null; } }); b.addEventListener("pointerleave",function(){ if(t){ clearTimeout(t); t=null; } });
-    b.addEventListener("contextmenu",function(e){ e.preventDefault(); e.stopPropagation(); if(t){ clearTimeout(t); t=null; } myColRemove(hex); renderMyDots(); try{ toast("고정색에서 뺐어요"); }catch(_){} });
-    host.appendChild(b); }); }
+  var list=myColList();if(!list.length)myColEditing=false;host.innerHTML="";
+  list.forEach(function(hex){ var b=document.createElement("button"); b.type="button"; b.className="cdot mine"+(hex===cur?" on":"")+(myColEditing?" is-removing":""); b.dataset.col=hex; b.style.background=hex;b.title=(myColEditing?"고정색에서 삭제 ":"고정색 ")+hex;b.setAttribute("aria-label",b.title);
+    b.onclick=function(){if(myColEditing){if(myColRemove(hex))renderMyDots();}else applyPickedColor(hex);};
+    host.appendChild(b); });
+  var pin=document.getElementById("myColPin"),edit=document.getElementById("myColEdit");
+  if(pin){var current=document.getElementById("colorCtl").dataset.currentColor;pin.disabled=myColEditing||!/^#[0-9a-f]{6}$/i.test(current||"");pin.textContent="＋ 현재 색 고정";}
+  if(edit){edit.disabled=!list.length;edit.textContent=myColEditing?"완료":"편집";edit.setAttribute("aria-pressed",String(myColEditing));}
+}
 function rememberRoleColor(p,hex){try{var k=String((p&&(p.num||p.pos))||"").toUpperCase();if(!/^[NTS]$/.test(k)||!hex)return;var d=loadRoleColors();d[k]=hex;localStorage.setItem(ROLE_COLOR_KEY,JSON.stringify(d));renderBench();}catch(_){}}
 function triggerEquipUpload(){const i=document.getElementById("equipImgInput");if(!i)return;i.value="";i.click();}
 function delCustomImg(id){state.customImages=(state.customImages||[]).filter(x=>x.id!==id);saveCustomEquipLib(loadCustomEquipLib().filter(function(x){return x.id!==id;}));renderBench();}
@@ -12203,8 +12218,10 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
   const _cr=document.getElementById("colReset");if(_cr)_cr.onclick=()=>{if(sel&&(sel.type==="player"||sel.type==="equip")&&sel.ref.color){pushUndo();delete sel.ref.color;renderTokens();updateDelUI();}else if(multiSel.length)applyMultiTokenColor(null);};
   const _eii=document.getElementById("equipImgInput");if(_eii)_eii.onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)_addEquipImage(f);};
   const _ecc=document.getElementById("equipColCustom");if(_ecc)_ecc.oninput=()=>{if(sel&&(sel.type==="equip"||sel.type==="player")){pushUndo();sel.ref.color=_ecc.value;if(sel.type==="player")rememberRoleColor(sel.ref,_ecc.value);renderTokens();updateDelUI();}else if(multiSel.length)applyMultiTokenColor(_ecc.value);};
-  /* 2.805 — 직접 고른 색은 고정색으로 남긴다(사용자 «회색을 추가해 두고 고정색에서 누르게»). 최근 6개, 같은 색은 한 번. 길게 누르거나 오른쪽 클릭하면 뺀다. */
+  /* 직접 고른 색은 기존 개인 팔레트에 기억한다. 고정색은 사용자가 편집에서 뺄 때까지 유지한다. */
   if(_ecc)_ecc.onchange=()=>{ try{ myColAdd(_ecc.value); renderMyDots(); }catch(_){} };
+  if($("myColPin"))$("myColPin").onclick=()=>{if(myColAdd($("colorCtl").dataset.currentColor)){renderMyDots();toast("현재 색을 고정색에 추가했어요");}};
+  if($("myColEdit"))$("myColEdit").onclick=()=>{myColEditing=!myColEditing;renderMyDots();};
   /* 색상 컨트롤 접힘/펼침 — 스와치를 누르면 팔레트가 열리고, 색을 고르거나 바깥을 누르면 닫힘.
      터치는 click이 유실되는 일이 있어(아이패드 제보: 누르면 메뉴가 사라짐) pointerup에서 직접 토글한다. */
   const _colCtl=document.getElementById("colorCtl"),_colTrig=document.getElementById("colorTrig"),_colPop=document.getElementById("colorPop");
@@ -16961,12 +16978,17 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   var st=document.getElementById('boardStage'); if(!st)return;
   var busy=false;
   function fix(){ if(busy)return; busy=true; try{ if(!document.body.classList.contains('ps-dock')){
+      /* 숨은 iframe의 폭은 0이어도 WebKit은 padding만큼 높이를 돌려준다.
+         그 높이를 도크 겹침으로 쓰면 여백이 매번 12px씩 늘어 observer가 끝나지 않는다. */
+      var sr=st.getBoundingClientRect(); if(!(sr.width>0&&sr.height>0))return;
       /* 예약 = 도크가 무대 아래를 먹는 만큼(+12)만. 띠 한 줄(50px) 몫은 뺀다. 인라인을 지우면 mobile-polish 의 140px 이 되살아나 오히려 커진다(실측). */
-      var below=0; try{ var fb=document.getElementById('ps-command-dock')||document.getElementById('floatBar'); if(fb&&getComputedStyle(fb).display!=='none'){ var fr=fb.getBoundingClientRect(), sr=st.getBoundingClientRect(); below=Math.max(0,Math.round(sr.bottom-fr.top)); } }catch(_){}
+      var below=0; try{ var fb=document.getElementById('ps-command-dock')||document.getElementById('floatBar'); if(fb&&getComputedStyle(fb).display!=='none'){ var fr=fb.getBoundingClientRect(); if(fr.width>0&&fr.height>0)below=Math.max(0,Math.round(sr.bottom-fr.top)); } }catch(_){}
       var want=(below+12)+'px'; if(st.style.getPropertyValue('padding-bottom')!==want){ st.style.setProperty('padding-bottom',want,'important'); try{ if(window.applyView)applyView(); }catch(_){} }
-      var c=document.querySelector('.sel-ctl'); if(c&&(c.style.top||c.style.bottom||c.style.maxHeight)){ c.style.top=''; c.style.bottom=''; c.style.maxHeight=''; } } }catch(_){} busy=false; }
+      var c=document.querySelector('.sel-ctl'); if(c&&(c.style.top||c.style.bottom||c.style.maxHeight)){ c.style.top=''; c.style.bottom=''; c.style.maxHeight=''; } } }catch(_){} finally{busy=false;} }
   try{ new MutationObserver(fix).observe(st,{attributes:true,attributeFilter:['style']}); }catch(_){}
   try{ var c0=document.querySelector('.sel-ctl'); if(c0)new MutationObserver(fix).observe(c0,{attributes:true,attributeFilter:['style']}); }catch(_){}
+  /* 숨은 보드가 열리거나 도크 때문에 작업영역이 바뀌면 유효한 크기로 다시 맞춘다. */
+  try{ if(window.ResizeObserver)new ResizeObserver(function(){requestAnimationFrame(fix);}).observe(st); }catch(_){}
   fix(); setTimeout(fix,300); setTimeout(fix,1500);
 })();
 </script>
@@ -17255,7 +17277,7 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #alignBar{order:30!important;flex:0 0 100%!important;width:100%!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > button,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .sizebox{min-height:30px!important;height:30px!important;font-size:11px!important;padding:0 9px!important;border-radius:9px!important}
   /* 색 팔레트는 시트 안에 펼쳐 두지 않고(폰 예전 판은 늘 펼침) «색상» 을 눌렀을 때만 시트 위로 띄운다 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl #colorPop{display:none!important;position:absolute!important;left:0!important;bottom:calc(100% + 8px)!important;top:auto!important;z-index:5!important;background:var(--panel,#1b1f27)!important;border:1px solid var(--line,#2e333a)!important;border-radius:10px!important;padding:8px!important;box-shadow:0 8px 24px rgba(0,0,0,.35)!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl #colorPop{display:none!important;position:absolute!important;left:0!important;bottom:calc(100% + 8px)!important;top:auto!important;z-index:5!important;background:rgba(24,28,36,.97)!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:10px!important;padding:8px!important;box-shadow:0 8px 24px rgba(0,0,0,.35)!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #colorCtl.open #colorPop{display:grid!important}
 }
 </style>

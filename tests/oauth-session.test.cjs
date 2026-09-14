@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const source=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 function section(a,b){const i=source.indexOf(a),j=source.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return source.slice(i,j);}
 const code=[section('function dataLockError()','function sensitiveLocalKey('),section('function signIn(','/* 2.256'),section('function linkIdentity(','function signOut('),
- section('function consumeHash()','/* ── 동기화 ── */')].join('\n');
+ section('function consumeHash(','/* ── 동기화 ── */')].join('\n');
 const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222222222';
 const copy=x=>x==null?x:JSON.parse(JSON.stringify(x));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
@@ -22,9 +22,9 @@ function harness(initial=session(),options={}){
   BASE:'https://synthetic-auth.invalid',getSess:()=>copy(current),setSess(s){current=copy(s);writes.push(copy(s));},hj:at=>({Authorization:at?'Bearer '+at:'',apikey:'synthetic-public-key'}),
   localStorage:{getItem:k=>local.get(k)||null,setItem:(k,v)=>local.set(k,String(v)),removeItem:k=>local.delete(k)},
   fetch(url,opts){requests.push({url,opts});if(url.includes('/auth/v1/user/identities/authorize?'))return hooks.link?hooks.link(url,opts):Promise.resolve(response({url:'https://synthetic-provider.invalid/authorize'}));if(url.includes('/auth/v1/user'))return hooks.user?hooks.user(url,opts):Promise.resolve(response(userA));if(url.includes('/token?'))return hooks.refresh?hooks.refresh(url,opts):Promise.resolve(response({access_token:'synthetic-access-fresh',refresh_token:'synthetic-refresh-fresh',expires_in:3600}));throw Error('Unexpected network route');},
-  signOutEpoch:0,refreshPromise:null,refreshRetryTimer:null,refreshRetryDelay:15000,syncErr:false,
+  signOutEpoch:0,refreshPromise:null,refreshOwner:null,refreshRetryTimer:null,refreshRetryDelay:15000,syncErr:false,
   setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),navigator:{onLine:true},
-  setStatus:msg=>statuses.push(msg),chip:msg=>statuses.push(msg),syncDiagnostic:(stage,e)=>diagnostics.push({stage,message:e?.message}),renderDataLock(){},dataUnlocked:()=>false,renderUI(){},syncNow:async()=>{}});
+  setStatus:msg=>statuses.push(msg),chip:msg=>statuses.push(msg),syncDiagnostic:(stage,e)=>diagnostics.push({stage,message:e?.message}),setDataReady(){},renderDataLock(){},dataUnlocked:()=>false,renderUI(){},syncNow:async()=>{}});
  vm.runInContext(code,c);
  return {c,win,location,writes,requests,hooks,diagnostics,statuses,historyCalls,local,timers,
   get session(){return copy(current);},setSession(s){current=copy(s);},

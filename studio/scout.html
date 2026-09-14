@@ -5982,13 +5982,27 @@ function itemsApply(reason){
     var before=JSON.stringify(doc), after=JSON.stringify(out);
     if(before===after)return false;
     data.players=out;
-    try{ save({skipItems:true}); }catch(_){} /* 통짜·거울 투영은 선수별 검토 원문에 다시 쓰지 않는다 */
+    try{ if(scoutAutomaticWriteAllowed())save({skipItems:true}); }catch(_){} /* 보기 전용은 최신 행을 화면에만 적용한다. */
     try{ psAct&&psAct("a_items_apply"); }catch(_){}
     return true;
   }).catch(function(){ return false; });
 }
 function itemsRerender(){ try{ const av=document.querySelector(".view.on"); if(av&&av.id==="teamView")renderTeam(); else if(av&&av.id==="homeView")renderTeamHome(); }catch(_){} }
+var scoutReadOnlyLoad=false;
+function scoutAutomaticWriteAllowed(){
+  try{
+    if(document.body&&document.body.classList.contains('ps-viewonly'))return false;
+    var perms=window.PSPerms||(window.parent&&window.parent!==window&&window.parent.PSPerms);
+    if(perms&&typeof perms.canEdit==='function')return perms.canEdit('team')===true;
+    return !localStorage.getItem('ps_sync_session')&&!localStorage.getItem('ps_active_ws')&&!localStorage.getItem('ps_cache_owner_v1');
+  }catch(_){return false;}
+}
 function load(){
+  if(typeof scoutBootPending!=='undefined'&&scoutBootPending)return false;
+  /* 보기 전용에서도 표시용 정규화는 한다. 그 안의 save/setEvalMode는
+     사용자 입력이 아니므로 저장 실패 표시나 권한 차단 쓰기를 만들지 않는다. */
+  var previousReadOnly=scoutReadOnlyLoad;scoutReadOnlyLoad=previousReadOnly||!scoutAutomaticWriteAllowed();
+  try{
   const d=store.get(KEY);
   if(d&&Array.isArray(d.attrs)&&Array.isArray(d.positions)){
     data=d;data.players=data.players||[];data.meta=data.meta||{};
@@ -6012,7 +6026,7 @@ function load(){
         Object.keys(nl).forEach(function(k){ if(pl.levels[k]==null)pl.levels[k]=nl[k]; }); } });
       (data.positions||[]).forEach(function(po){ if(po&&po.targets){ var nt=PS_EVAL_STD.migrateLevels(po.targets);
         Object.keys(nt).forEach(function(k){ if(po.targets[k]==null)po.targets[k]=nt[k]; }); } });
-      data.meta.evalStdForcedAt=Date.now(); store.set(KEY,data);
+      data.meta.evalStdForcedAt=Date.now(); if(!scoutReadOnlyLoad)store.set(KEY,data);
     } }catch(_){}
     /* 1.974 — 기본 평가표(evalMode fifa)를 쓰던 팀이 옛 44(b_*)를 들고 있으면 표준 v1 20항목으로 올린다.
        선수 점수는 옛 키를 그대로 두고(스냅샷·이력 보존) 새 키 초기값을 대응표 평균으로 채운다. 포지션 기준(targets)도 같은 방식.
@@ -6021,16 +6035,16 @@ function load(){
       data.attrs=fifaAttrs(); data.meta.cats=fifaCats();
       (data.players||[]).forEach(function(pl){ if(pl&&pl.levels){ var nl=PS_EVAL_STD.migrateLevels(pl.levels); Object.keys(nl).forEach(function(k){ if(pl.levels[k]==null)pl.levels[k]=nl[k]; }); } });
       (data.positions||[]).forEach(function(po){ if(po&&po.targets){ var nt=PS_EVAL_STD.migrateLevels(po.targets); Object.keys(nt).forEach(function(k){ if(po.targets[k]==null)po.targets[k]=nt[k]; }); } });
-      data.meta.evalStdMigratedAt=Date.now(); store.set(KEY,data);
+      data.meta.evalStdMigratedAt=Date.now(); if(!scoutReadOnlyLoad)store.set(KEY,data);
     } }catch(_){}
     /* 2.026 — 표준 항목이 늘면(20→24) 기본 평가표(fifa 모드) 팀에 빠진 항목을 채운다. 점수·기준은 건드리지 않는다 */
-    try{ if(window.PS_EVAL_STD&&data.meta.evalMode==="fifa"&&Array.isArray(data.attrs)){ var _have={}; data.attrs.forEach(function(a){ if(a&&a.id)_have[a.id]=1; }); var _add=PS_EVAL_STD.items.filter(function(it){return !_have[it.id];}); if(_add.length){ _add.forEach(function(it){ data.attrs.push({id:it.id,cat:it.cat,name:it.name,source:"process-fifa"}); }); store.set(KEY,data); } } }catch(_){}
+    try{ if(window.PS_EVAL_STD&&data.meta.evalMode==="fifa"&&Array.isArray(data.attrs)){ var _have={}; data.attrs.forEach(function(a){ if(a&&a.id)_have[a.id]=1; }); var _add=PS_EVAL_STD.items.filter(function(it){return !_have[it.id];}); if(_add.length){ _add.forEach(function(it){ data.attrs.push({id:it.id,cat:it.cat,name:it.name,source:"process-fifa"}); }); if(!scoutReadOnlyLoad)store.set(KEY,data); } } }catch(_){}
   }
   else{
     data.attrs=fifaAttrs();
     data.positions=DEFAULT_POS.map(name=>({id:uid("p"),name,targets:{}}));
     data.players=[];data.meta={evalMode:"fifa",cats:fifaCats()};
-    store.set(KEY,data); // first run: persist scout data only — do NOT mirror empty roster to cs_squad_v1 (tmMigrate must read it first)
+    if(!scoutReadOnlyLoad)store.set(KEY,data); // first run: persist scout data only — do NOT mirror empty roster to cs_squad_v1 (tmMigrate must read it first)
   }
   refreshCats();
   // 표준 12 포지션 보충 (기존 데이터에 CB 등 누락 시 자동 추가)
@@ -6152,6 +6166,7 @@ function load(){
   // 복구는 선수단의 보관 목록에서 직접 확인한다. load 타이머로 판단·복원하지 않는다.
   rosterKeepSave();
   rosterRecoveryMenu();
+  }finally{scoutReadOnlyLoad=previousReadOnly;}
 }
 /* 계정·팀을 확인한 기기 보관본만 사용한다. 출처 없는 v1은 수정하거나 자동 귀속하지 않는다. */
 var rosterRecoveryBusy=false,rosterRecoveryPreview=null;
@@ -6326,6 +6341,8 @@ try{window.PSRoster={open:rosterRecoveryOpen,missing:function(){return rosterRec
 
 function save(){
   var options=arguments[0]||{};
+  if(typeof scoutBootPending!=='undefined'&&scoutBootPending)return false;
+  if(typeof scoutReadOnlyLoad!=='undefined'&&scoutReadOnlyLoad)return false;
   if(scMainMigrationPending)return false;
   var savedMain=true,savedTargets=true;
   if(evalMode()==="team")rememberTeamSet();
@@ -8621,7 +8638,7 @@ function renderPlayers(){
     posSel.onclick=function(ev){ev.stopPropagation();};
     const edit=document.createElement("button");edit.className="btn sm";edit.textContent="편집";edit.onclick=()=>openPlayer(pl.id);
     const del=document.createElement("button");del.className="btn danger sm";del.textContent="삭제";
-    del.onclick=()=>{psConfirm(`"${pl.name||"이름 없는"}" 선수를 삭제할까요?`,()=>{if(!plTombAdd(pl.id))return;data.players=data.players.filter(x=>x.id!==pl.id);if(editingPlayer===pl.id)closePlayer();save({deletedIds:pl.type==='target'?[]:[String(pl.id)]});renderPlayers();});};
+    del.onclick=()=>{psConfirm(`"${pl.name||"이름 없는"}" 선수를 삭제할까요?`,()=>{if(!plTombAdd(pl.id))return;data.players=data.players.filter(x=>x.id!==pl.id);if(editingPlayer===pl.id)closePlayer();save({deletedIds:pl.type==='target'?[]:[String(pl.id)],skipTargets:pl.type!=='target'});renderPlayers();});};
     const pdf=document.createElement("button");pdf.className="btn sm";pdf.textContent="PDF";pdf.title="이력서+세부평가 PDF 내보내기";pdf.onclick=()=>printPlayerReport(pl.id);const cb=document.createElement("input");cb.type="checkbox";cb.className="pl-cb";cb.setAttribute("data-cbpl",pl.id);cb.onclick=ev=>ev.stopPropagation();cb.addEventListener("change",function(){try{ps3sync();}catch(_){}});
     row.append(cb,nm,posSel);
     if(pl.type!=="target"){   /* 우리 선수만 — 스카우트 대상은 훈련 상태 개념이 없음 */
@@ -8694,7 +8711,7 @@ function openPlayer(id,opts){
     if(pl.type==="target"){scArchiveCandidate(pl.id);closePlayer();return;}
     psConfirm((pl.name||"이 선수")+" 삭제? 평가 기록도 함께 삭제됩니다.",()=>{
       if(!plTombAdd(pl.id))return; var gi=data.players.findIndex(x=>String(x.id)===String(pl.id)); if(gi>=0)data.players.splice(gi,1);
-      var deletedSaved=save({deletedIds:[String(pl.id)]}); closePlayer();
+      var deletedSaved=save({deletedIds:[String(pl.id)],skipTargets:true}); closePlayer();
       try{renderTeam();}catch(_){} try{renderScoutCands();}catch(_){} try{renderScoutBoard();}catch(_){} try{redrawTeamPitch();}catch(_){}
       try{toast(deletedSaved?"이 기기에서 삭제했습니다 · 팀 반영은 동기화 상태에서 확인하세요":"삭제 저장 확인이 필요합니다 · 자료 확인에서 확인하세요");}catch(_){}
     });
@@ -10816,7 +10833,7 @@ function renderTeam(){
       data.players[pj]=pl;data.players[gi]=ours[i+1];save();renderTeam();};
     const del=document.createElement("button");del.className="t-x";del.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     del.onclick=()=>{psConfirm((pl.name||"이 선수")+" 삭제? 평가 기록도 함께 삭제됩니다.",()=>{
-      if(!plTombAdd(pl.id))return;var di=data.players.findIndex(x=>String(x.id)===String(pl.id));if(di>=0)data.players.splice(di,1);save({deletedIds:[String(pl.id)]});renderTeam();});};
+      if(!plTombAdd(pl.id))return;var di=data.players.findIndex(x=>String(x.id)===String(pl.id));if(di>=0)data.players.splice(di,1);save({deletedIds:[String(pl.id)],skipTargets:true});renderTeam();});};
     const acts=document.createElement("div");acts.className="tm-acts";acts.append(up,dn,del);
     var _key=pl.posId||"__none";
     if(_key!==_prevPos[_ck]){_prevPos[_ck]=_key;_depthMap[_ck+"|"+_key]=0;
@@ -18348,10 +18365,38 @@ function idpPrint(){
   printStandalone(build(false),build);
 }
 
+/* 새 기기는 IDB/서버 명단을 확인하기 전까지 화면 거울이 비어 있다.
+   미리 로드한 iframe이 그 부재를 새 팀으로 오해해 빈 명단을 저장하지 않는다.
+   확인 뒤 init의 load가 최신 원문을 다시 읽으므로 기다리던 빈 메모리도 쓰지 않는다. */
+var scoutBootPending=true;
+function scoutBootAllowed(){
+  try{
+    var s=JSON.parse(localStorage.getItem('ps_sync_session')||'null'),uid=String(s&&s.uid||''),wid=String(localStorage.getItem('ps_active_ws')||''),seal=localStorage.getItem('ps_cache_owner_v1'),owner=JSON.parse(seal||'null');
+    if(localStorage.getItem('ps_ws_switch_guard_v1'))return false;
+    if(!uid&&!wid&&!seal)return true; /* 로그인 없이 쓰던 로컬 명단은 그대로 연다. */
+    var api=psSync();
+    if(!uid||!wid||!owner||owner.uid!==uid||owner.wid!==wid||!api||!api.dataUnlocked||!api.dataUnlocked())return false;
+    var raw=localStorage.getItem(KEY),d=raw===null?null:JSON.parse(raw);
+    if(d&&Array.isArray(d.attrs)&&Array.isArray(d.positions)&&Array.isArray(d.players)){
+      /* 첫 pull은 IDB/거울을 먼저 쓰고 회차 끝에 기준 해시를 확정한다.
+         그 틈의 자동 정규화가 원문을 바꾸면 첫 확인 자체가 실패할 수 있다.
+         이전 기준본이 있는 dirty cache와 오프라인의 유효 원문은 계속 연다. */
+      var m=JSON.parse(localStorage.getItem('ps_sync_meta')||'null');
+      if(navigator.onLine===false||m&&m.h&&typeof m.h[KEY]==='string'&&m.h[KEY])return true;
+      return !!(api.rosterReady&&api.rosterReady(wid));
+    }
+    /* 없는 문서만 서버의 부재 확인 후 새로 만든다. 손상된 원문은 덮지 않는다. */
+    return raw===null&&!!(api.rosterReady&&api.rosterReady(wid));
+  }catch(_){return false;}
+}
+function scoutBoot(){
+  if(!scoutBootAllowed()){setTimeout(scoutBoot,250);return;}
+  scoutBootPending=false;init();
+}
 function init(){
   load();
   try{ if(migrateAttrWording()){ /* 옛 문구 → 선수 말 (1.520). 팀이 고친 항목은 그대로 둔다 */ } }catch(_){}
-  save({skipTargets:true}); /* 후보 초기 이전·준비는 scPrepare가 담당한다. 준비 전 무변경 저장은 하지 않는다. */
+  if(scoutAutomaticWriteAllowed())save({skipTargets:true}); /* 보기 전용 진입은 자동 저장하지 않는다. */
   try{ itemsApply("boot").then(function(ch){ if(ch)itemsRerender(); }); }catch(_){}   /* 2.730 — 선수 행이 있으면 명단을 행에서 */
   matchWire();
   if($("teamIdpOpen")){
@@ -18488,7 +18533,7 @@ function init(){
   var _vh=/^#view=(attrs)$/.exec(location.hash||"");
   setView(_vh?_vh[1]:"home");
 }
-init();
+scoutBoot();
 
 function rebuildPlayerPicker(){
   const sel=$("rPlayer"),pop=$("pPickPop");if(!sel||!pop)return;

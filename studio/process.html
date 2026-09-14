@@ -8080,10 +8080,22 @@ window.addEventListener('storage',function(e){
    조용히 실패 → 메타는 '판 받음'인데 이 화면(거울만 읽음)은 옛 일정. IDB 에는 새 판이 있으므로
    부팅·수동 받아오기 뒤 IDB 와 거울을 비교해, IDB 가 더 새로우면(rev·editedAt) 그걸로 그리고
    거울 수리를 시도한다. 수리가 또 실패하면 __schedMirrorFull — 동기화 줄이 '안전 정리'를 안내. */
+function __schedReadScope(){
+  try{
+    if(localStorage.getItem('ps_ws_switch_guard_v1'))return null;
+    var s=JSON.parse(localStorage.getItem('ps_sync_session')||'null'),uid=String(s&&s.uid||''),wid=String(localStorage.getItem('ps_active_ws')||''),seal=String(localStorage.getItem('ps_cache_owner_v1')||''),owner=JSON.parse(seal||'null');
+    if((uid||wid||seal)&&(!uid||!wid||!owner||owner.uid!==uid||owner.wid!==wid))return null;
+    var api=(window.parent&&window.parent.PSSync)||window.PSSync;
+    if(api&&api.dataUnlocked&&api.dataUnlocked()!==true)return null;
+    return JSON.stringify([uid,wid,seal,localStorage.getItem('ps_ws_switch_epoch_v1')||'']);
+  }catch(_){return null;}
+}
 window.__schedIdbCheck=function(){
   try{
     if(!(window.storage&&window.storage.get))return;
+    var scope=__schedReadScope(),before=localStorage.getItem(STORE_KEY);if(scope===null)return;
     window.storage.get(STORE_KEY).then(function(r){
+      if(__schedReadScope()!==scope||localStorage.getItem(STORE_KEY)!==before)return;
       var idb=r&&r.value; if(!idb)return;
       var mir=null; try{ mir=localStorage.getItem(STORE_KEY); }catch(_){}
       if(mir===idb){ window.__schedMirrorFull=false; return; }
@@ -8092,6 +8104,7 @@ window.__schedIdbCheck=function(){
       if(mir!=null&&(rm[0]>ri[0]||(rm[0]===ri[0]&&rm[1]>=ri[1])))return;   /* 거울이 더 새로움(이 기기 편집) — 그대로 */
       try{ localStorage.setItem(STORE_KEY,idb); window.__schedMirrorFull=false; }
       catch(_){ window.__schedMirrorFull=true; }   /* 저장 공간 부족 — 거울 수리 실패, 화면만이라도 새 판으로 */
+      if(__schedReadScope()!==scope)return;
       if(__schedWritePending||__schedEditorActive()){ __schedQueueIncoming(idb); setTimeout(__schedDrainIncoming,0); }
       else __schedRenderIncoming(idb);
     }).catch(function(){});

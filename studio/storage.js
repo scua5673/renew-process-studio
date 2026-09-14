@@ -94,16 +94,18 @@
     });
   }
   function idbGet(k){ return tx('readonly',function(s){ return s.get(k); }); }
-  function idbSet(k,v){
-    return tx('readwrite',function(s){ s.put(v,k); return null; }).then(function(){
+  function idbSet(k,v,current){
+    return tx('readwrite',function(s){if(current)current();s.put(v,k);return null;}).then(function(){
+      if(current)current();
       /* transaction complete만으로 성공 처리하지 않는다. 실제 값을 다시 읽어
          Safari의 중단·스토리지 제거 상황에서도 "저장됨" 오판을 막는다. */
       return idbGet(k).then(function(saved){
+        if(current)current();
         if(saved===v)return true;
         /* 2.631 — 한 번 더 읽는다(150ms 뒤). 같은 키를 두 창(작전판·셸)이 겹쳐 쓰면 첫 읽기가 다른 쪽 값을 볼 수 있다 — 실측 24h sync_storage 8건 전부 모바일.
            두 번째도 다르면 그때 실패. 실제 Safari 저장소 제거·용량 초과는 두 번 다 다르게 나온다. */
         return new Promise(function(res){ setTimeout(res,150); }).then(function(){ return idbGet(k); }).then(function(again){
-          if(again===v)return true;
+          if(current)current();if(again===v)return true;
           var e=new Error('storage verification failed');
           e.name='StorageVerificationError';
           throw e;
@@ -131,17 +133,22 @@
   /* 늦게 끝난 이전 워크스페이스 쓰기를 되돌릴 때 쓰는 exact 교체.
      get→put을 나누면 그 사이 새 팀 값까지 덮을 수 있으므로 한 transaction에서
      아직 expected가 그대로일 때만 replacement로 바꾼다. */
-  function idbReplaceIfValue(k,expected,replacement){
-    return open().then(function(db){return new Promise(function(res,rej){
+  function idbReplaceIfValue(k,expected,replacement,current,serialized){
+    return open().then(function(db){if(current)current();return new Promise(function(res,rej){
       var changed=false,t=db.transaction(STORE,'readwrite'),s=t.objectStore(STORE),r=s.get(k);
-      r.onsuccess=function(){
+      r.onsuccess=function(){try{
+        if(current)current();
         /* IDB get은 없는 키를 undefined로 돌리지만 동기화 계층은 부재를 null로
            정규화한다. null expected도 한 transaction 안에서 "아직 없음"과
            비교할 수 있어야 새 행 pull과 선수 항목 CAS가 원자적으로 동작한다. */
         var same=r.result===expected||(expected===null&&(r.result===undefined||r.result===null));
+        /* 썸네일 정리만 객체 정본의 직전 JSON을 비교한다. IDB 객체는 매 읽기마다
+           복제되므로 참조 동등성으로는 같은 원문도 확인할 수 없다. */
+        if(serialized)same=JSON.stringify(r.result)===expected;
         if(!same)return;
         if(replacement===undefined||replacement===null)s.delete(k);else s.put(replacement,k);
         changed=true;
+        }catch(e){try{t.abort();}catch(_){}rej(e);}
       };
       t.oncomplete=function(){res(changed);};t.onerror=function(){rej(t.error);};t.onabort=function(){rej(t.error);};
     });});
@@ -286,6 +293,20 @@
      빈 값([]·{})은 실데이터로 치지 않아 덮어쓸 수 있게 한다. */
   var MIGRATE=['cs_drill_lib_v1','cs_board_live_v1','cs_snap_board_v1','cs_snap_match_v2'];
   function emptyish(s){ return s==null||s===''||s==='[]'||s==='{}'||s==='null'; }
+  function migrationOwner(allowSwitch){
+    try{
+      var guard=localStorage.getItem('ps_ws_switch_guard_v1')||'';
+      if(guard&&!allowSwitch)return null;
+      var s=JSON.parse(localStorage.getItem('ps_sync_session')||'null'),uid=String(s&&s.uid||''),wid=String(localStorage.getItem('ps_active_ws')||''),seal=String(localStorage.getItem('ps_cache_owner_v1')||''),owner=JSON.parse(seal||'null');
+      if((uid||wid||seal)&&(!uid||!wid||!owner||owner.uid!==uid||owner.wid!==wid))return null;
+      return JSON.stringify([uid,wid,seal,localStorage.getItem('ps_ws_switch_epoch_v1')||'',allowSwitch?guard:'']);
+    }catch(_){return null;}
+  }
+  function migrationCurrent(k,raw){
+    var owner=migrationOwner();return function(){
+      if(owner===null||migrationOwner()!==owner||localStorage.getItem(k)!==raw){var e=new Error('migration source or owner changed');e.name='StorageOwnerChangedError';throw e;}
+    };
+  }
   function localKeys(prefix){
     var out=[];try{for(var i=0;i<localStorage.length;i++){
       var k=localStorage.key(i);if(k&&(!prefix||String(k).indexOf(prefix)===0))out.push(String(k));
@@ -295,7 +316,9 @@
   function migrateAuxKey(k){
     var lv=null;try{lv=localStorage.getItem(k);}catch(_){}
     if(lv==null)return Promise.resolve(null);
+    var current=migrationCurrent(k,lv);
     return idbGet(k).then(function(iv){
+      current();
       if(iv===lv){try{localStorage.removeItem(k);}catch(_){}return true;}
       /* IDB가 비어 있을 때만 구버전의 localStorage 기준본을 정본으로 받아들인다.
          양쪽이 다르면 구버전 탭과 새 탭이 동시에 쓴 것일 수 있으므로 하나를 덮지 않는다. */
@@ -303,22 +326,34 @@
         var conflict=new Error('auxiliary storage versions differ');conflict.name='StorageConflictError';
         diagnostic('aux-migration-conflict:'+k,conflict);return false;
       }
-      return idbSet(k,lv).then(function(){return idbGet(k);}).then(function(saved){
+      return idbReplaceIfValue(k,iv==null?null:iv,lv,current).then(function(changed){
+        if(!changed)return false;
+        return idbGet(k).then(function(saved){
+        current();
         if(saved!==lv)throw new Error('auxiliary storage verification failed');
         try{localStorage.removeItem(k);}catch(_){}
         return true;
+        });
       });
     }).catch(function(error){diagnostic('aux-migration:'+k,error);return false;});
   }
   var fixedMigrated=Promise.all(MIGRATE.map(function(k){
     var lv=null; try{ lv=localStorage.getItem(k); }catch(_){}
     if(emptyish(lv)) return null;
+    var current=migrationCurrent(k,lv);
     return idbGet(k).then(function(cur){
+      current();
       if(!emptyish(cur)) return null;                 /* IDB에 이미 실데이터 → 그대로 둔다 */
-      return idbSet(k,lv).then(function(){
-        /* IDB 저장이 확인된 뒤에만 사본 제거 — 이게 5MB 캡을 실제로 되찾는 지점.
-           (구버전으로 되돌리면 IDB를 못 읽으므로, 되돌릴 땐 백업 파일로 복원해야 한다) */
-        try{ localStorage.removeItem(k); }catch(_){}
+      /* 빈 IDB 확인 뒤 다른 탭이 채웠을 수 있다. 같은 transaction에서
+         그 빈 원문과 소유자를 다시 확인하고, 실제로 옮긴 때만 사본을 지운다. */
+      return idbReplaceIfValue(k,cur==null?null:cur,lv,current).then(function(changed){
+        if(!changed)return;
+        return idbGet(k).then(function(saved){
+          current();if(saved!==lv)throw new Error('migration verification failed');
+          /* IDB 저장이 확인된 뒤에만 사본 제거 — 이게 5MB 캡을 실제로 되찾는 지점.
+             (구버전으로 되돌리면 IDB를 못 읽으므로, 되돌릴 땐 백업 파일로 복원해야 한다) */
+          try{ localStorage.removeItem(k); }catch(_){}
+        });
       });
     }).catch(function(error){ diagnostic('migration:'+k,error); return null; });
   })).catch(function(error){ diagnostic('migration:all',error); });
@@ -357,6 +392,7 @@
   /* 한 키를 읽어(작은 저장소 우선, 없으면 IDB) 다이어트하고 있던 자리에 돌려놓는다 */
   function slimKey(k,stat){
     var lv=null; try{ lv=localStorage.getItem(k); }catch(_){}
+    var current=migrationCurrent(k,lv);
     var work=function(txt,put){
       if(!txt||txt.indexOf('psRealGrass')<0)return Promise.resolve();
       var obj; try{ obj=JSON.parse(txt); }catch(_){ return Promise.resolve(); }
@@ -364,23 +400,22 @@
       if(!st.n)return Promise.resolve();
       var out; try{ out=JSON.stringify(obj); }catch(_){ return Promise.resolve(); }
       if(out.length>=txt.length)return Promise.resolve();
-      stat.n+=st.n; stat.saved+=(txt.length-out.length);
-      return put(out);
+      return Promise.resolve(put(out)).then(function(ok){if(ok!==false){stat.n+=st.n;stat.saved+=(txt.length-out.length);}});
     };
-    if(lv!=null) return work(lv,function(out){ try{ localStorage.setItem(k,out); }catch(_){} return Promise.resolve(); });
+    if(lv!=null) return work(lv,function(out){current();localStorage.setItem(k,out);return localStorage.getItem(k)===out;});
     return idbGet(k).then(function(iv){
-      if(typeof iv==='string')return work(iv,function(out){ return idbSet(k,out); });
+      current();
+      if(typeof iv==='string')return work(iv,function(out){return idbReplaceIfValue(k,iv,out,current);});
       /* 보관함(cs_drill_lib_v1)은 문자열이 아니라 **객체 그대로** IndexedDB 에 앉는다.
          여기를 건너뛰면 원본 썸네일이 뚱뚱한 채 남고, 그걸 일정에 넣는 순간 다시 4MB 로 불어난다.
          (2.519 첫 판에서 실제로 이 구멍이 있었다 — 일정만 줄이고 원본은 그대로였다.) */
       if(!iv||typeof iv!=='object')return;
-      var before=0,after=0; try{ before=JSON.stringify(iv).length; }catch(_){ return; }
+      var before=0,after=0,beforeRaw;try{beforeRaw=JSON.stringify(iv);before=beforeRaw.length;}catch(_){return;}
       var st={n:0,saved:0}; var slim=slimDeep(iv,st);
       if(!st.n)return;
       try{ after=JSON.stringify(slim).length; }catch(_){ return; }
       if(after>=before)return;
-      stat.n+=st.n; stat.saved+=(before-after);
-      return idbSet(k,slim);
+      return idbReplaceIfValue(k,beforeRaw,slim,current,true).then(function(changed){if(changed){stat.n+=st.n;stat.saved+=(before-after);}});
     }).catch(function(){});
   }
   function slimThumbs(){
@@ -392,20 +427,30 @@
 
   window.storage={
     get:function(k){
+      var reader=sharedReadContext();
+      function readCurrent(){if(reader===null||sharedReadContext()!==reader){var e=new Error('storage read owner changed');e.name='StorageOwnerChangedError';throw e;}}
       return afterMigrate(function(){
+        readCurrent();
         return idbGet(k).then(function(v){
+          readCurrent();
           if(v!==undefined&&v!==null) return {value:v};
           /* 그래도 없으면 남은 localStorage 값을 끌어온다(마이그레이션 목록 밖의 키 대비) */
           var lv=null; try{ lv=localStorage.getItem(k); }catch(_){}
           if(lv==null) return null;
-          return idbSet(k,lv).then(function(){
-            if(DEVICE_LOCAL[k]){ try{ localStorage.removeItem(k); }catch(_){} }
+          var capture=sharedCapture(k);function current(){readCurrent();sharedCurrent(k,capture);}
+          /* 로그인 준비 중 소유자 미확인 cache는 읽기만 한다. 정본이 없다는
+             첫 조회 뒤 다른 창이 채운 행도 폴백 사본으로 덮지 않는다. */
+          if(capture.owner===null)return {value:lv};
+          return idbReplaceIfValue(k,null,lv,current).then(function(changed){
+            current();
+            if(!changed)return idbGet(k).then(function(latest){readCurrent();return latest==null?{value:lv}:{value:latest};});
+            if(DEVICE_LOCAL[k]){try{current();localStorage.removeItem(k);}catch(e){if(e.name==='StorageOwnerChangedError')throw e;}}
             return {value:lv};
-          }).catch(function(){ return {value:lv}; });
+          }).catch(function(e){readCurrent();if(e&&e.name==='StorageOwnerChangedError')throw e;return {value:lv};});
         });
       });
     },
-    set:function(k,v){ return afterMigrate(function(){ return idbSet(k,v); }); },
+    set:function(k,v,current){return afterMigrate(function(){if(current)current();return idbSet(k,v,current);});},
     del:function(k,current){ return afterMigrate(function(){ if(current)current();return idbDel(k,current); }); },
     delIfValue:function(k,v){ return afterMigrate(function(){ return idbDelIfValue(k,v); }); },
     replaceIfValue:function(k,expected,replacement){ return afterMigrate(function(){ return idbReplaceIfValue(k,expected,replacement); }); },
@@ -425,21 +470,39 @@
      동기화가 예전 IDB를 읽어 거울을 다시 덮는 경쟁이 있었다. 키별 큐와
      sharedReady() 장벽을 남겨 동기화가 아직 저장 중인 판본을 읽지 않게 한다. */
   var sharedWrites={},sharedLatest={};
-  function sharedSet(k,raw){
+  var sharedOwners={};
+  function sharedReadContext(){
+    try{var s=JSON.parse(localStorage.getItem('ps_sync_session')||'null');
+      return JSON.stringify([String(s&&s.uid||''),localStorage.getItem('ps_active_ws')||'',localStorage.getItem('ps_cache_owner_v1')||'',
+        localStorage.getItem('ps_ws_switch_epoch_v1')||'',localStorage.getItem('ps_ws_switch_guard_v1')||'']);
+    }catch(_){return null;}
+  }
+  function sharedCapture(k){return {owner:migrationOwner(true),mirror:localStorage.getItem(k)};}
+  function sharedCurrent(k,capture){
+    if(!capture||capture.owner===null||migrationOwner(true)!==capture.owner||localStorage.getItem(k)!==capture.mirror){
+      var e=new Error('shared source or owner changed');e.name='StorageOwnerChangedError';throw e;
+    }
+  }
+  function sharedSet(k,raw,capture){
+    capture=capture||sharedCapture(k);
+    function current(){sharedCurrent(k,capture);}
     /* 검증 읽기 직전에 같은 키의 더 새 쓰기가 들어오면 Safari는 앞 쓰기를
        StorageVerificationError로 끝낼 수 있다. 최신 거울 원문을 남겨 두면
        전환 장벽이 그 한 번의 경합 때문에 영구히 막히지 않고 다시 확인할 수 있다. */
     sharedLatest[k]=raw;
+    sharedOwners[k]=capture;
     var prev=sharedWrites[k]||Promise.resolve();
-    var next=prev.catch(function(){}).then(function(){ return window.storage.set(k,raw); }).then(function(ok){
+    var next=prev.catch(function(){}).then(function(){current();return window.storage.set(k,raw,current);}).then(function(ok){
+      current();
       /* 2.744 — 권한 어댑터의 false도 완료된 저장이 아니다. */
-      if(ok===false)throw new Error('shared storage write rejected');
+      if(ok!==true)throw new Error('shared storage write rejected');
       return true;
     });
     sharedWrites[k]=next;
     next.then(function(){
       if(sharedWrites[k]===next){
         delete sharedWrites[k];
+        delete sharedOwners[k];
         if(sharedLatest[k]===raw)delete sharedLatest[k];
       }
     },function(){ /* 실패한 최신 쓰기는 sharedReady가 같은 원문으로 재검증한다. */ });
@@ -452,20 +515,34 @@
       /* 기다리는 동안 더 새 쓰기가 이어졌다면 그 꼬리를 기다린다. */
       if(sharedWrites[k]!==p)return sharedWaitLatest(k);
       if(!Object.prototype.hasOwnProperty.call(sharedLatest,k))throw error;
+      var capture=sharedOwners[k];
+      try{sharedCurrent(k,capture);}catch(stale){
+        delete sharedWrites[k];delete sharedLatest[k];delete sharedOwners[k];
+        /* A의 실패한 원문을 B에서 재시도하지 않는다. 기존 A 장벽은 아래
+           sharedReady의 소유자 검사로 실패하고 B는 자기 큐를 계속 사용할 수 있다. */
+        if(capture&&capture.owner!==migrationOwner(true))return true;
+        throw stale;
+      }
       /* 앞 쓰기의 검증 실패가 큐에 영구히 남아 모든 워크스페이스 전환을
          막지 않게 한다. 최신 localStorage 거울을 IDB에 한 번 더 쓰고 다시 읽어
          확인하며, 재시도도 실패하면 그대로 reject하여 전환은 안전하게 중단한다. */
-      return sharedSet(k,sharedLatest[k]);
+      return sharedSet(k,sharedLatest[k],capture);
     });
   }
-  function sharedReady(k){
+  function sharedReady(k,owner){
     var keys=k?[k]:Object.keys(sharedWrites);
+    keys=keys.filter(function(key){return !!sharedWrites[key];});
+    /* 로그인 준비는 이전 계정 cache를 지우기 전에 이 장벽을 통과한다.
+       작업이 없으면 불일치한 cache seal 자체를 쓰기 실패로 취급하지 않는다. */
+    if(!keys.length)return Promise.resolve(true);
+    if(owner===undefined)owner=sharedReadContext();
     return Promise.all(keys.map(sharedWaitLatest)).then(function(){
+      if(owner===null||sharedReadContext()!==owner){var e=new Error('shared wait owner changed');e.name='StorageOwnerChangedError';throw e;}
       /* 첫 목록을 기다리는 사이 다른 키가 추가됐을 수 있다. 전환·동기화가
          반쯤 저장된 판본을 읽지 않도록 큐가 실제로 빌 때까지 한 번 더 본다. */
       var more=k?(sharedWrites[k]?[k]:[]):Object.keys(sharedWrites);
       /* 2.744 — 두 번째 대기 중에도 새 꼬리가 생긴다. 큐가 빌 때까지 확인한다. */
-      return more.length?sharedReady(k):true;
+      return more.length?sharedReady(k,owner):true;
     });
   }
   /* 2.744 — 과거 실패를 회복할 때 빈 큐만으로 성공을 추정하지 않는다.
@@ -480,16 +557,20 @@
      legacy 사본이 있으면 IDB와 같은지 확인해 제거하고, 서로 다르면 어느 쪽도 덮지 않는다. */
   function auxGet(k){
     if(!isAuxIDBKey(k))return Promise.reject(new Error('unsupported auxiliary key'));
+    var capture=sharedCapture(k);function current(){sharedCurrent(k,capture);}
     return sharedReady(k).then(function(){
+      current();
       var lv=null;try{lv=localStorage.getItem(k);}catch(_){}
       /* window.storage.get의 localStorage 폴백을 쓰면 IDB 쓰기 실패 뒤에도
          legacy 값이 IDB에 있는 것으로 오판할 수 있다. 검증은 raw IDB에서만 한다. */
       return afterMigrate(function(){return idbGet(k);}).then(function(value){
+        current();
         var iv=value!=null?String(value):null;
         if(lv==null)return emptyish(iv)?null:iv;
         if(iv===lv){try{localStorage.removeItem(k);}catch(_){}return emptyish(iv)?null:iv;}
         if(emptyish(iv)){
-          return sharedSet(k,lv).then(function(){return idbGet(k);}).then(function(check){
+          return sharedSet(k,lv,capture).then(function(){return idbGet(k);}).then(function(check){
+            current();
             if(check!==lv)throw new Error('auxiliary storage verification failed');
             try{localStorage.removeItem(k);}catch(_){}
             return lv;
@@ -503,7 +584,9 @@
   function auxSet(k,v){
     if(!isAuxIDBKey(k))return Promise.reject(new Error('unsupported auxiliary key'));
     var raw=v==null?'':String(v);
-    return sharedSet(k,raw).then(function(){return idbGet(k);}).then(function(check){
+    var capture=sharedCapture(k);function current(){sharedCurrent(k,capture);}
+    return sharedSet(k,raw,capture).then(function(){return idbGet(k);}).then(function(check){
+      current();
       if(check!==raw)throw new Error('auxiliary storage verification failed');
       /* 새 기준본이 IDB에 정확히 착지한 뒤에야 구버전 사본을 없앤다. */
       try{localStorage.removeItem(k);}catch(_){}
@@ -512,7 +595,7 @@
   }
   window.psSaveShared=function(k,raw){
     var ok=false;
-    try{ localStorage.setItem(k,raw); ok=true; }catch(e){ ok=false; }
+    try{localStorage.setItem(k,raw);ok=localStorage.getItem(k)===raw;}catch(e){ok=false;}
     try{
       if(window.storage&&window.storage.set){
         var p=sharedSet(k,raw);
@@ -528,13 +611,16 @@
   /* 새 저장 경로는 검증이 끝난 때를 정확히 알 수 있다. 기존 호출부는
      동기 boolean 계약을 유지하고, 일정처럼 경쟁을 막아야 하는 화면만 이 Promise를 쓴다. */
   window.psSaveSharedAsync=function(k,raw){
-    try{ localStorage.setItem(k,raw); }
+    try{localStorage.setItem(k,raw);if(localStorage.getItem(k)!==raw)throw new Error('shared mirror write rejected');}
     catch(e){ return Promise.reject(e); }
     return sharedSet(k,raw);
   };
   /* storage 이벤트 미러는 iframe이 이미 쓴 localStorage를 다시 쓰지 않는다.
      다시 쓰면 오래된 이벤트가 새 워크스페이스의 거울까지 되돌릴 수 있다. */
-  window.psMirrorSharedAsync=function(k,raw){ return sharedSet(k,raw); };
+  window.psMirrorSharedAsync=function(k,raw){
+    if(localStorage.getItem(k)!==raw){var e=new Error('shared mirror source changed');e.name='StorageOwnerChangedError';return Promise.reject(e);}
+    return sharedSet(k,raw);
+  };
 
   /* v369 — 팀 전환 전체 백업은 localStorage의 작은 한도를 가장 빨리 소진한다.
      기존 백업을 IDB로 옮겨 다시 읽어 확인한 뒤에만 로컬 사본을 제거한다. */
@@ -613,6 +699,8 @@
        다시 읽어 확인한 기기 전용 중복 사본만 localStorage에서 제거한다. */
     optimize:function(){
       var self=this,before=self.localBytes(),moved=[],kept=[],imgMoved=0;
+      var owner=migrationOwner();
+      function current(){if(owner===null||migrationOwner()!==owner){var e=new Error('storage optimization owner changed');e.name='StorageOwnerChangedError';throw e;}}
       /* 1.535 — 정리 버튼이 **사진 이전까지** 수행한다.
          부팅 때도 migrate()가 돌지만, 그때 실패했거나(용량·IDB 지연) 그 뒤에 새 사진이
          본문에 박힌 경우 사용자는 손쓸 방법이 없었다. 가장 필요한 순간에 다시 시도한다. */
@@ -621,27 +709,35 @@
         try{ return window.PSImg&&PSImg.migrate?PSImg.migrate().then(function(r){ imgMoved=(r&&r.moved)||0; }).catch(function(){}):Promise.resolve(); }
         catch(_){ return Promise.resolve(); }
       })().then(function(){
+        current();
         /* 2.519 — 사진 이전 다음에 썸네일 다이어트. 실패해도 원본은 그대로 둔다 */
         return slimThumbs().then(function(t){ thumbStat=t||thumbStat; }).catch(function(){});
       }).then(function(){
       return afterMigrate(function(){
+        current();
         var cleanupKeys=Object.keys(DEVICE_LOCAL);
         localKeys(AUX_IDB_PREFIX).forEach(function(k){if(cleanupKeys.indexOf(k)<0)cleanupKeys.push(k);});
         return Promise.all(cleanupKeys.map(function(k){
           var lv=null;try{lv=localStorage.getItem(k);}catch(_){}
           if(lv==null)return null;
+          var sourceCurrent=migrationCurrent(k,lv);
+          function keepCurrent(){current();sourceCurrent();}
           if(isAuxIDBKey(k)){
             return auxGet(k).then(function(){
               try{if(localStorage.getItem(k)==null)moved.push(k);else kept.push(k);}catch(_){kept.push(k);}
             }).catch(function(){kept.push(k);});
           }
           return idbGet(k).then(function(iv){
+            keepCurrent();
             if(iv===lv){
               try{localStorage.removeItem(k);moved.push(k);}catch(_){}
               return null;
             }
             if(emptyish(iv)&&!emptyish(lv)){
-              return idbSet(k,lv).then(function(){return idbGet(k);}).then(function(check){
+              return idbReplaceIfValue(k,iv==null?null:iv,lv,keepCurrent).then(function(changed){
+                if(!changed){kept.push(k);return null;}return idbGet(k);
+              }).then(function(check){
+                keepCurrent();
                 if(check===lv){try{localStorage.removeItem(k);moved.push(k);}catch(_){}}
                 else kept.push(k);
               });
@@ -651,8 +747,10 @@
           }).catch(function(){kept.push(k);});
         }));
       }).then(function(){
+        current();
         return requestPersist().catch(function(){return false;});
       }).then(function(){
+        current();
         var after=self.localBytes();
         try{window.dispatchEvent(new CustomEvent('ps-storage-optimized',{detail:{before:before,after:after,freed:Math.max(0,before-after),moved:moved,kept:kept,imgMoved:imgMoved}}));}catch(_){}
         return {before:before,after:after,freed:Math.max(0,before-after),moved:moved,kept:kept,imgMoved:imgMoved,
@@ -891,17 +989,30 @@
     }).catch(function(){ return false; });
   }
 
+  function imageMigrationOwner(){
+    try{
+      if(localStorage.getItem('ps_ws_switch_guard_v1'))return null;
+      var s=JSON.parse(localStorage.getItem('ps_sync_session')||'null'),uid=String(s&&s.uid||''),wid=String(localStorage.getItem('ps_active_ws')||''),seal=String(localStorage.getItem('ps_cache_owner_v1')||''),owner=JSON.parse(seal||'null');
+      if((uid||wid||seal)&&(!uid||!wid||!owner||owner.uid!==uid||owner.wid!==wid))return null;
+      return JSON.stringify([uid,wid,seal,localStorage.getItem('ps_ws_switch_epoch_v1')||'']);
+    }catch(_){return null;}
+  }
+
   function migrate(){
+    var owner=imageMigrationOwner();if(owner===null)return Promise.resolve({moved:0,failed:0});
     return ready().then(function(){
-      var jobs=[];
-      var sc=readJSON('scout_tool_v1');
+      if(imageMigrationOwner()!==owner)return {moved:0,failed:0};
+      var jobs=[],sources={};
+      function root(k){try{var raw=localStorage.getItem(k);sources[k]=raw;return raw?JSON.parse(raw):null;}catch(_){return null;}}
+      function current(k){try{return imageMigrationOwner()===owner&&localStorage.getItem(k)===sources[k];}catch(_){return false;}}
+      var sc=root('scout_tool_v1');
       if(sc&&Array.isArray(sc.players)){
         sc.players.forEach(function(pl){
           var pf=pl&&pl.profile;
           if(pf&&isData(pf.photo)) jobs.push({o:pf,k:'photo',v:pf.photo,root:'scout_tool_v1',data:sc});
         });
       }
-      var pc=readJSON('process_coach_v1');
+      var pc=root('process_coach_v1');
       if(pc&&pc.weeks&&typeof pc.weeks==='object'){
         Object.keys(pc.weeks).forEach(function(wk){
           var arr=pc.weeks[wk]; if(!Array.isArray(arr)) return;
@@ -911,7 +1022,7 @@
           });
         });
       }
-      var tm=readJSON('cs_team_v1');
+      var tm=root('cs_team_v1');
       if(tm&&isData(tm.logo)) jobs.push({o:tm,k:'logo',v:tm.logo,root:'cs_team_v1',data:tm});
       /* 2.463 — 이미 쌓여 있는 남의 IDP 문서 사진(위 stripIdp 참조). 재읽기 검증이 있는
          stripIdp 를 키마다 직렬로 돌린다 — jobs 파이프라인의 '읽고 한참 뒤 통째로 다시
@@ -920,20 +1031,26 @@
       try{ for(var ii=0;ii<localStorage.length;ii++){ var ik=localStorage.key(ii); if(isForeignIdpKey(ik))idpKeys.push(ik); } }catch(_){}
       var idpMoved=0;
       var idpChain=idpKeys.reduce(function(ch,k2){
-        return ch.then(function(){ return stripIdp(k2).then(function(ok){ if(ok)idpMoved++; }); });
+        return ch.then(function(){if(imageMigrationOwner()!==owner)return;return stripIdp(k2).then(function(ok){ if(ok)idpMoved++; }); });
       }, Promise.resolve());
       if(!jobs.length) return idpChain.then(function(){ return {moved:idpMoved,failed:0}; });
 
       var moved=0, failed=0, roots={};
       return jobs.reduce(function(chain,j){
         return chain.then(function(){
+          if(!current(j.root)){failed++;return;}
           return put(j.v).then(function(ref){
-            j.o[j.k]=ref; moved++; roots[j.root]=j.data;   /* 확인된 뒤에만 참조로 바꾼다 */
+            if(!current(j.root)){failed++;return;}
+            j.o[j.k]=ref;
+            if(!roots[j.root])roots[j.root]={data:j.data,n:0};roots[j.root].n++;   /* 확인된 뒤에만 참조로 바꾼다 */
           }).catch(function(){ failed++; });
         });
       }, Promise.resolve()).then(function(){
         Object.keys(roots).forEach(function(k){
-          if(!writeJSON(k,roots[k])) failed++;
+          /* 부모 셸도 사진을 옮긴다. iframe을 내려도 남는 늦은 작업이
+             새 팀이나 같은 팀의 후속 편집 원문을 되감지 않게 한다. */
+          if(!current(k)||!writeJSON(k,roots[k].data))failed+=roots[k].n;
+          else moved+=roots[k].n;
         });
         return idpChain.then(function(){ moved+=idpMoved;
           try{ if(moved) window.dispatchEvent(new CustomEvent('ps-img-migrated',{detail:{moved:moved,failed:failed}})); }catch(_){}
