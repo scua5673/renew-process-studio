@@ -50,7 +50,7 @@ function harness(options = {}) {
     document:{getElementById:id=>id==='psPushNow'?button:id==='psPushState'?status:null},
     localStorage:{getItem:k=>k==='ps_last_pull_at'?String(options.lastPull || 999):null},
     PSSync:api,
-    PSDataReview:{list:()=>reviews,open:()=>{opened++;}},
+    PSDataReview:{list:()=>reviews,pending:()=>reviews.filter(x=>!['rescue','conflict'].includes(x.src)),open:()=>{opened++;}},
     toast:message=>toasts.push(String(message)),
     alert:message=>alerts.push(String(message)),
     setTimeout(fn){timers.push(fn);return timers.length;},
@@ -120,7 +120,7 @@ test('a confirmed state can display its successful synchronization status',()=>{
 test('personal conflict opens the actual data review instead of uploading again',async()=>{
   const h=harness({state:{kind:'ask',text:'올리기 전 확인할 것 1',n:1,review:1},reviews:[{src:'personal',k:'cs_notes_v1'}]});
   h.refresh();
-  assert.equal(h.button.textContent,'보기');
+  assert.equal(h.button.textContent,'내용 선택');
   await h.click();
   assert.equal(h.opened,1);
   assert.equal(h.calls.length,0);
@@ -175,7 +175,7 @@ test('a review discovered during sync prevents a completion announcement',async(
   const state={kind:'ask',text:'올리기 전 확인할 것 1',n:1,review:1};
   const h=harness({result:{pushed:1},nextState:state,nextReviews:[{src:'personal'}]});
   await h.click();
-  assert.equal(h.button.textContent,'보기');
+  assert.equal(h.button.textContent,'내용 선택');
   noSuccess(h);
 });
 
@@ -190,6 +190,36 @@ test('confirmed completion still announces success and enables the button',async
   await h.click();
   assert.ok(h.toasts.some(x=>SUCCESS.test(x)),'Real completion remains visible');
   assert.equal(h.button.disabled,false);
+});
+
+test('archived recovery copies do not prompt or replace ordinary manual synchronization',async()=>{
+  const h=harness({reviews:[{src:'rescue',k:'saved-roster'},{src:'conflict',k:'saved-notes'}],result:{pushed:1,applied:1},nextState:{...confirmed,at:200}});
+  h.refresh();
+  assert.equal(h.button.textContent,'지금 동기화');
+  assert.ok(SUCCESS.test(h.status.textContent));
+  await h.click();
+  assert.equal(h.opened,0,'Archived copies remain accessible separately and never open a required choice');
+  assert.deepEqual(h.calls,['manual-push']);
+  assert.ok(h.toasts.some(x=>SUCCESS.test(x)));
+  assert.equal(h.button.disabled,false);
+});
+
+test('an active choice still blocks manual upload when archived copies are present',async()=>{
+  const h=harness({reviews:[{src:'rescue',k:'saved-roster'},{src:'personal',k:'current-notes'},{src:'conflict',k:'saved-analysis'}]});
+  h.refresh();
+  assert.equal(h.button.textContent,'내용 선택');
+  assert.match(h.status.textContent,/1건/,'Only the unresolved item contributes to the required choice count');
+  await h.click();
+  assert.equal(h.opened,1);
+  assert.deepEqual(h.calls,[]);
+});
+
+test('pending deletion alone opens the normal review instead of starting synchronization',async()=>{
+  const h=harness({state:{kind:'ask',text:'저장할 내용 선택 · 1건',review:1,n:0},reviews:[{src:'item-hold',k:'scout_tool_v1'}]});
+  h.refresh();
+  assert.equal(h.button.textContent,'내용 선택');assert.match(h.status.textContent,/1건/);
+  await h.click();
+  assert.equal(h.opened,1);assert.deepEqual(h.calls,[]);noSuccess(h);
 });
 
 test('rejected manual sync never announces success and re-enables retry',async()=>{

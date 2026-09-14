@@ -1,0 +1,53 @@
+#psSupportOpen{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;border:1px solid var(--line,#e3e6ea);border-radius:10px;background:var(--bar2,#f5f6f8);color:var(--txt,#20242b);font:600 12px/1.3 inherit;cursor:pointer;padding:7px 10px}
+#psSupportOpen svg{width:17px;height:17px;flex:none}
+@media(min-width:768px){.appbar>#psSupportOpen{order:11;width:100%;border:0;background:transparent;flex-direction:column;justify-content:center;gap:5px;padding:8px 4px;border-radius:10px;min-height:50px;font:600 10px/1.3 Pretendard,system-ui,sans-serif}.appbar>#psSupportOpen span{white-space:nowrap}.appbar>#psSupportOpen:hover{background:var(--bar2,#f2f4f7)}.appbar>#psBoardMoreBtn{order:12}}
+@media(max-width:767px){.appbar>#psSupportOpen{display:none}}
+@media(min-width:601px){#psReleaseNotes:not([hidden])~#psSyncStrip.ok,#psReleaseNotes:not([hidden])~#psSyncStrip.busy{position:static;top:auto;right:auto;left:auto;height:18px;margin:0 0 0 var(--ps-side-w,0px)!important;padding:0 14px;max-width:none;z-index:auto}body.focus #psReleaseNotes:not([hidden])~#psSyncStrip,body.vfull #psReleaseNotes:not([hidden])~#psSyncStrip{margin-left:0!important}}
+#psSupportDialog{width:min(720px,calc(100% - 24px));max-width:720px;max-height:calc(100dvh - 32px);margin:auto;padding:0;border:1px solid var(--line,#e3e6ea);border-radius:18px;background:var(--surface,#fff);color:var(--txt,#20242b);box-shadow:0 20px 70px rgba(0,0,0,.22);font:400 14px/1.55 Pretendard,system-ui,sans-serif;overflow:auto}
+#psSupportDialog::backdrop{background:rgba(15,23,42,.45)}
+body.fmdark #psSupportDialog{--surface:#1b1e23;--bar:#20242b;--bar2:#272d35;--line:#3b424e;--txt:#f0f2f5;--dim:#abb4c2;--blue:#547ef1;--red:#fa9892}
+body.fmdark #psSupportOpen{color:#d5dae2}
+#psSupportDialog *{box-sizing:border-box}
+#psSupportDialog button,#psSupportDialog input,#psSupportDialog textarea{font:inherit}
+#psSupportDialog button{cursor:pointer;border:1px solid var(--line,#e3e6ea);border-radius:9px;padding:8px 12px;background:var(--bar2,#f6f7f9);color:inherit;min-height:40px}
+#psSupportDialog button:disabled{cursor:default;opacity:.55}
+#psSupportDialog .support-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 24px 16px}
+#psSupportDialog h2{font-size:20px;line-height:1.3;margin:0;font-weight:800}
+#psSupportDialog h3{font-size:16px;margin:0 0 8px;font-weight:800}
+#psSupportDialog .support-head p{margin:6px 0 0;color:var(--dim,#646a73);font-size:12px}
+#psSupportDialog .support-close{font-size:22px;line-height:1;min-width:40px;flex:none;background:transparent;border:0}
+#psSupportDialog .support-tabs{display:flex;gap:8px;padding:0 24px 14px;border-bottom:1px solid var(--line,#e3e6ea)}
+#psSupportDialog .support-tabs button{border:0;background:transparent;font-weight:600}
+#psSupportDialog .support-tabs button[aria-pressed=true]{background:var(--bar2,#edf2ff);color:var(--blue,#3a6df0)}
+#psSupportDialog .support-content{padding:20px 24px 24px}
+#psSupportDialog form>label{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;font-weight:600}
+#psSupportDialog input,#psSupportDialog textarea{width:100%;border:1px solid var(--line,#dce0e6);border-radius:10px;background:var(--bar,#fff);color:inherit;padding:10px 12px;font-weight:400;font-size:16px;line-height:1.55;resize:vertical}
+#psSupportDialog .support-logs{border:1px solid var(--line,#e3e6ea);border-radius:10px;overflow:hidden;margin:12px 0}
+#psSupportDialog summary{cursor:pointer;padding:11px 12px;background:var(--bar2,#f6f7f9);font-size:13px;font-weight:600}
+#psSupportDialog pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:12px;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}
+#psSupportDialog .support-log-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:12px;color:var(--dim,#646a73)}
+#psSupportDialog .support-log-actions button{flex:none;font-size:12px}
+#psSupportDialog .support-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:16px}
+#psSupportDialog .support-primary{background:var(--blue,#3a6df0);border-color:transparent;color:#fff;font-weight:600}
+#psSupportDialog .support-status{font-size:13px;min-height:20px;margin:14px 0 0;color:var(--dim,#646a73)}
+#psSupportDialog .support-status.is-error{color:var(--red,#b84238)}
+#psSupportDialog .support-hint{font-size:12px;color:var(--dim,#646a73);margin:12px 0}
+#psSupportDialog .support-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#psSupportDialog .support-list-head h3{margin:0}
+#psSupportDialog .support-empty{padding:32px 0;color:var(--dim,#646a73);text-align:center}
+#psSupportDialog .support-list{display:flex;flex-direction:column}
+#psSupportDialog .support-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;border-bottom:1px solid var(--line,#e3e6ea);border-radius:0;padding:16px 0;text-align:left;background:transparent}
+#psSupportDialog .support-row>span:first-child{min-width:0}
+#psSupportDialog .support-row strong{display:block;overflow-wrap:anywhere;font-size:14px;font-weight:600}
+#psSupportDialog small,#psSupportDialog time{display:block;font-size:12px;color:var(--dim,#646a73);margin-top:4px}
+#psSupportDialog .support-answer{flex:none;font-size:12px;color:var(--blue,#3a6df0)}
+#psSupportDialog .support-more{margin-top:16px;width:100%}
+#psSupportDialog .support-back{padding-left:0;border:0;background:transparent;margin-bottom:16px}
+#psSupportDialog .support-report p,#psSupportDialog .support-replies p{white-space:pre-wrap;overflow-wrap:anywhere}
+#psSupportDialog .support-report h3{overflow-wrap:anywhere}
+#psSupportDialog .support-replies{margin-top:24px;border-top:1px solid var(--line,#e3e6ea);padding-top:20px}
+#psSupportDialog .support-replies article{padding:12px;border-radius:10px;background:var(--bar2,#f6f7f9);margin:12px 0}
+#psSupportDialog .support-replies article>div{display:flex;gap:12px;align-items:baseline;justify-content:space-between}
+#psSupportDialog .support-replies article p{margin-bottom:0}
+#psSupportDialog .support-copy-fallback{margin-top:12px;min-height:200px;font-family:ui-monospace,monospace;font-size:12px}
+@media(max-width:480px){#psSupportDialog{width:calc(100% - 16px);max-height:calc(100dvh - 20px);border-radius:14px}#psSupportDialog .support-head{padding:18px 16px 14px}#psSupportDialog .support-tabs{padding:0 16px 12px}#psSupportDialog .support-content{padding:16px}#psSupportDialog .support-log-actions{align-items:flex-start;flex-direction:column;gap:8px}#psSupportDialog .support-actions{flex-direction:column}#psSupportDialog .support-actions button{width:100%;min-height:44px}#psSupportDialog button{min-height:44px}}

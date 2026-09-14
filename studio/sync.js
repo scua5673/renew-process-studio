@@ -2350,6 +2350,7 @@ function syncState(){
   var m={}; try{ m=meta(); }catch(_){}
   /* «확인할 것»은 올리기를 막는 보류만 센다. 덮임·충돌·구조선은 설정 «자료 확인»에 남는다 — 실측(2026-09-06 풋볼A): 옛 충돌 18·구조선 8이 늘 떠 있어 띠가 영구 주황이 됐다 */
   var rc=0; try{ rc=holdList().length+personalReviewList().length; }catch(_){}
+  try{if(dataUnlocked()&&isTeamWs()&&ITEMS_ACTIVE){var deletion=itemsHoldList();if(deletion&&deletion.ids&&deletion.ids.length)rc++;}}catch(_){}
   if(navigator.onLine===false)return {kind:'bad',reason:'sync_offline',text:'오프라인이에요'+(n?(' · 이 기기에 '+n+'건 안전하게 있어요'):''),n:n,review:rc};
   if(personalIssue&&personalIssue.uid===String(s.uid||'')&&personalIssue.wid===personalWid()){
     var personalNames=Object.keys(PERSONAL).filter(function(k){return Array.isArray(personalIssue.keys)&&personalIssue.keys.indexOf(k)>=0;}).map(keyLabel);
@@ -2357,7 +2358,7 @@ function syncState(){
   }
   var fresh=lastIssue&&(Date.now()-lastIssue.at<10*60*1000);
   if(fresh&&(n||lastIssue.code==='sync_auth'||lastIssue.code==='sync_permission'))return {kind:'bad',reason:lastIssue.code,text:'못 올렸어요 · '+syncReasonText(lastIssue.code),n:n,review:rc,at:lastIssue.at};
-  if(rc)return {kind:'ask',text:'올리기 전 확인할 것 '+rc,n:n,review:rc};
+  if(rc)return {kind:'ask',text:'저장할 내용 선택 · '+rc+'건',n:n,review:rc};
   if(busy)return {kind:'busy',text:'올리는 중'+(n?(' · '+n):''),n:n,review:rc};
   if(n)return {kind:'pending',text:'전송 대기 · '+n+'건',n:n,review:rc};
   var at=0; try{ at=+localStorage.getItem('ps_last_pull_at')||0; }catch(_){} at=Math.max(at,+m.last||0);
@@ -4167,29 +4168,40 @@ function histRestore(k,v){
 }
 function dataReviewOpen(){
   if(!dataUnlocked()){renderDataLock(false);return;}
-  var list=dataReviewList();
+  /* 저장 선택과 복구 도구는 다른 작업이다. 사본은 유지하고 일반 진입에서는 현재 보류만 보여 준다. */
+  var recovery=arguments[0]==='recovery';
+  function visibleList(){return dataReviewList().filter(function(x){return recovery||(x.src!=='rescue'&&x.src!=='conflict');});}
+  function reopen(){dataReviewOpen(recovery?'recovery':undefined);}
+  var list=visibleList(),isTeam=false,pendingDelete=null;
+  try{isTeam=isTeamWs();if(isTeam&&ITEMS_ACTIVE)pendingDelete=itemsHoldList();}catch(_){}
+  var hasPendingDelete=!!(pendingDelete&&pendingDelete.ids&&pendingDelete.ids.length);
   var bcss='border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font-family:inherit;font-size:12px;font-weight:700;padding:7px 11px;border-radius:8px;cursor:pointer';
-  var body=list.length
-    ? ('<div style="margin-bottom:12px">기기마다 <b>다르게 저장된 자료</b>입니다.<br>'
-       +'남길 판본을 고르세요. 개인 자료는 선택 전까지 이 기기와 클라우드에 각각 남아 있습니다. 선택하면 고른 내용으로 맞춥니다.</div>')
-    : '<div style="margin-bottom:4px">지금 선택이 필요한 자료는 없습니다. 저장 완료 여부는 동기화 상태에서 확인하세요.</div>';
+  var body=recovery
+    ? '<div style="margin-bottom:12px">이전 저장 내용과 보관된 사본을 확인합니다. 복원할 내용을 직접 선택하기 전에는 자료를 바꾸지 않습니다.</div>'
+    : list.length
+      ? '<div style="margin-bottom:12px">변경된 내용 중 사용할 내용을 선택해 주세요.<br>선택 전까지 기존 내용과 내 변경사항을 보관합니다.</div>'
+      : hasPendingDelete?'':'<div style="margin-bottom:4px">지금 선택이 필요한 변경은 없습니다. 저장 완료 여부는 상단의 저장 상태에서 확인할 수 있습니다.</div>';
   body+=list.map(function(x,i){
     var num=(x.mine!=null&&x.theirs!=null)
       ? '<div style="font-size:12px;margin-top:3px">이 기기 <b>'+x.mine+'개</b> · 팀 <b>'+x.theirs+'개</b></div>' : '';
     return '<div style="padding:11px 0;border-top:1px solid rgba(128,128,128,.22)">'
       +'<div style="font-size:14px;font-weight:800">'+esc(x.src==='item-delete'?itemsDeleteReviewLabel(x):keyLabel(x.k))+'</div>'
       +num
-      +'<div style="font-size:11px;opacity:.72;margin-top:3px">'+esc(x.why)+'</div>'
+      +'<div style="font-size:12px;opacity:.8;margin-top:3px">'+esc(!recovery&&x.src==='personal'?(x.choice?'선택을 기록했습니다. 저장 완료 여부는 상단에서 확인해 주세요.':'같은 자료가 두 기기에서 수정되었습니다. 선택한 내용으로 맞춥니다.'):x.why)+'</div>'
       +'<div style="font-size:11px;opacity:.55;margin-top:2px">'+(x.src==='team'?'이 기기 확인 '+new Date(x.at).toLocaleString()+'<br>서버 판본 '+new Date(x.c).toLocaleString():new Date(x.at).toLocaleString())+'</div>'
       +'<div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap">'
-      +'<button type="button" data-dr="'+i+'" data-keep="1" style="'+bcss+'">'+(x.src==='item-delete'?'현재 원문도 삭제':x.src==='team'?'이 기기 문서 전체 올리기':x.src==='personal'?'이 기기 것 올리기':'이 기기 것')+'</button>'
-      +'<button type="button" data-dr="'+i+'" data-keep="0" style="'+bcss+'">'+(x.src==='item-delete'?'추가 삭제 취소':x.src==='team'?'팀 문서 전체 받기':x.src==='personal'?'다른 기기 것 받기':'팀 것')+'</button>'
+      +'<button type="button" data-dr="'+i+'" data-keep="1" style="'+bcss+'">'+(x.src==='item-delete'?'현재 원문도 삭제':x.src==='team'?'이 기기 문서 전체 저장':x.src==='personal'?'이 기기 내용 저장':x.src==='hold'?'이 기기 변경 반영':'이 기기 것')+'</button>'
+      +'<button type="button" data-dr="'+i+'" data-keep="0" style="'+bcss+'">'+(x.src==='item-delete'?'추가 삭제 취소':x.src==='team'?'팀 문서 전체 사용':x.src==='personal'?'다른 기기 내용 사용':x.src==='hold'?'팀 내용 사용':'팀 것')+'</button>'
       +(x.src==='item-delete'?'<button type="button" data-dr-delete-export="'+i+'" style="'+bcss+'">삭제 요청·원문 저장</button>':'')
       +'</div></div>';
   }).join('');
+  /* 선수 삭제 보류는 실제 저장 선택이다. 진단 도구를 옮겨도 일반 화면에서 처리할 수 있어야 한다. */
+  if(hasPendingDelete)body+='<div style="margin-top:12px;padding:11px 0;border-top:1px solid rgba(128,128,128,.22)">'
+    +'<b>선수 '+pendingDelete.ids.length+'명 삭제 확인</b>'
+    +'<div style="font-size:12px;margin:4px 0 9px">'+esc(pendingDelete.before+'명 → '+pendingDelete.after+'명으로 줄었습니다. 삭제할 선수가 맞는지 확인해 주세요.')+'</div>'
+    +'<button type="button" id="drItemsHold" style="'+bcss+'">삭제 내용 확인</button></div>';
   /* ── 지난 판본으로 되돌리기 (1.620) ── */
-  var isTeam=false; try{ isTeam=isTeamWs(); }catch(_){}
-  if(isTeam){
+  if(recovery&&isTeam){
     var opts=HIST_KEYS.map(function(k){ return '<option value="'+k+'">'+esc(keyLabel(k))+'</option>'; }).join('');
     body+='<div style="margin-top:16px;padding-top:14px;border-top:2px solid rgba(128,128,128,.3)">'
       +'<div style="font-size:14px;font-weight:800">지난 판본으로 되돌리기</div>'
@@ -4210,23 +4222,14 @@ function dataReviewOpen(){
       +'선수단이 통짜와 항목 양쪽에서 같은지 봅니다.</div>'
       +'<button type="button" id="drItemsRun" style="'+bcss+'">서버 확인</button>'
       +'<div id="drItemsOut" style="margin-top:10px;font-size:13px"></div>';
-    /* 보류된 삭제는 칩으로만 알리면 그 순간을 놓쳤을 때 영영 못 본다(1.620 에서 지적된 것).
-       여기 남겨 두면 나중에라도 찾아온다. */
-    var _ih=itemsHoldList();
-    if(_ih&&_ih.ids&&_ih.ids.length)
-      body+='<div style="margin-top:10px;padding:9px 11px;border-radius:9px;'
-        +'border:1px solid rgba(194,74,70,.45);font-size:13px">'
-        +'<b>빠진 선수 '+_ih.ids.length+'명이 팀에 남아 있습니다</b>'
-        +'<div style="opacity:.75;margin:2px 0 8px">'+esc(_ih.before+'명 → '+_ih.after+'명으로 줄어 지우지 않고 멈춰 뒀습니다.')+'</div>'
-        +'<button type="button" id="drItemsHold" style="'+bcss+'">확인하기</button></div>';
     body+='</div>';}
   }
-  var legacyItems=null;try{legacyItems=itemsLostSnapshot();}catch(_){}
+  var legacyItems=null;if(recovery)try{legacyItems=itemsLostSnapshot();}catch(_){}
   if(legacyItems)body+='<div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(128,128,128,.3)"><b>이전 선수 충돌 사본 '+legacyItems.n+'건</b>'
     +'<div style="font-size:12px;opacity:.75;margin:5px 0 8px">이전 앱이 남긴 원문입니다. 팀 구분 정보가 없어 현재 팀에 자동 적용하지 않으며, 파일로 내려받아 내용을 확인할 수 있습니다.</div>'
     +'<button type="button" id="drItemsLegacyExport" style="'+bcss+'">충돌 사본 내보내기</button></div>';
   var mo=null;
-  try{ mo=psModal({title:'자료 확인'+(list.length?(' '+list.length+'건'):''),body:body,hideCancel:true,ok:'닫기'}); }catch(_){}
+  try{ mo=psModal({title:recovery?'자료 복구 및 점검':'저장할 내용 선택',body:body,hideCancel:true,ok:'닫기'}); }catch(_){}
   var deleteView=list.find(function(x){return x.src==='item-delete';}),reviewBody=document.getElementById('psWsBody');
   if(deleteView&&reviewBody)histReadView(reviewBody,deleteView.reviewContext);
   var legacyExport=document.getElementById('drItemsLegacyExport');
@@ -4318,7 +4321,7 @@ function dataReviewOpen(){
   document.querySelectorAll('[data-dr]').forEach(function(b){
     b.addEventListener('click',function(){
       var x=list[+b.getAttribute('data-dr')], keep=b.getAttribute('data-keep')==='1';
-      if(x.src==='item-delete'&&keep){psModal({title:'현재 선수 원문도 삭제할까요?',body:'평가 기록이 삭제됩니다. 원문을 보관하려면 먼저 자료 확인에서 삭제 요청·원문 저장을 눌러 주세요.',danger:true,ok:'삭제',onOk:apply,onCancel:dataReviewOpen});return;}
+      if(x.src==='item-delete'&&keep){psModal({title:'현재 선수 원문도 삭제할까요?',body:'평가 기록이 삭제됩니다. 원문을 보관하려면 먼저 이전 화면에서 삭제 요청·원문 저장을 눌러 주세요.',danger:true,ok:'삭제',onOk:apply,onCancel:reopen});return;}
       apply();
       function apply(){
       b.disabled=true; b.textContent='…';
@@ -4341,7 +4344,7 @@ function dataReviewOpen(){
           return;
         }
         /* 남은 게 있으면 이어서 묻는다 — 한 건씩 끝내는 편이 덜 헷갈린다 */
-        if(dataReviewList().length) setTimeout(dataReviewOpen,250);
+        if(visibleList().length) setTimeout(reopen,250);
         else try{ psModal({title:'정리했습니다',
           body:(keep?'이 기기 것으로 두었습니다.':'팀 것으로 바꿨습니다.')+' 화면을 새로고침하면 보입니다.',
           hideCancel:true,ok:'확인'}); }catch(_){}
@@ -4353,7 +4356,13 @@ function dataReviewOpen(){
     });
   });
 }
-try{ window.PSDataReview={list:dataReviewList,open:dataReviewOpen}; }catch(_){}
+try{ window.PSDataReview={list:dataReviewList,open:dataReviewOpen,
+  pending:function(){
+    var list=dataReviewList().filter(function(x){return x.src!=='rescue'&&x.src!=='conflict';});
+    try{if(dataUnlocked()&&isTeamWs()&&ITEMS_ACTIVE){var deletion=itemsHoldList();if(deletion&&deletion.ids&&deletion.ids.length)list.push({src:'item-hold',k:'scout_tool_v1'});}}catch(_){}
+    return list;
+  },
+  recovery:function(){dataReviewOpen('recovery');}}; }catch(_){}
 
 /* ══ 1.592 · 자동 스냅샷 — 파일 없이도 며칠 전으로 ═══════════════════════════
    지금 있는 백업은 **사람이 눌러야** 만들어진다(설정 → 내보내기). 7일 지나면 '백업 권장' 칩이
@@ -4891,7 +4900,7 @@ function itemsHoldOpen(){
     try{if(!itemsDeleteCancel(intent))return;}catch(e){syncDiagnostic('items-delete-cancel',e);try{chip('추가 삭제를 멈추지 못했어요 — 다시 확인해 주세요');}catch(_){}return;}
     try{ if(mo&&mo.close)mo.close(true); }catch(_){}
     try{ psModal({title:'추가 삭제를 멈췄습니다',body:'이미 저장된 삭제는 되돌리지 않습니다. 명단에 다시 넣으려면 '
-      +'<b>자료 확인 › 지난 판본으로 되돌리기</b>에서 선수단을 되돌리세요.',hideCancel:true,ok:'확인'}); }catch(_){}
+      +'<b>앱 설정 › 데이터 › 고급 › 복구 도구</b>에서 지난 선수단을 확인해 주세요.',hideCancel:true,ok:'확인'}); }catch(_){}
   });
 }
 /* 2.730 — 이 기기 IDB 의 선수 행을 모두 읽는다 → {players, tombs, n, rows}. rows=0 이면 «아직 행이 없다»(이행 전·첫 회차 전) → 화면은 통짜를 쓴다. */

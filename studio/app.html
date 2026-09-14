@@ -29,6 +29,8 @@
   var d=detect();document.documentElement.setAttribute('data-ps-device',d.phone?'phone':(d.pad?'ipad':'desktop'));
 })();
 </script>
+<script src="support-diagnostics.js"></script>
+<script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
 
 <title>PROCESS STUDIO</title>
@@ -499,11 +501,12 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.813';</script>
+<script>window.PS_BUILD='2.815';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
 function psSafeToReload(){
+  if(window.__psSupportController&&window.__psSupportController.pendingUnsafe())return false;
   function busyDoc(d){
     try{
       var a=d.activeElement;
@@ -548,6 +551,7 @@ function psFlushAllPending(){
    하나라도 실패하거나 타이머가 남으면 Promise를 거부해 stash·wipe가 시작되지 않게 한다. */
 function psFlushAllPendingReady(){
   var jobs=[];
+  if(window.__psSupportController)jobs.push(window.__psSupportController.flushReady());
   try{
     var fr=document.querySelectorAll('iframe');
     for(var i=0;i<fr.length;i++)(function(frame){
@@ -1058,6 +1062,7 @@ function psShowUpdBand(){
       <div class="gearpop" id="gearPop">
         <div class="gp-head"><span class="gp-titlebox"><span>앱 설정</span><span class="gp-scope">앱 전체</span></span><button class="gp-close" id="gearClose" type="button" title="앱 설정 닫기" aria-label="앱 설정 닫기">×</button></div>
         <div class="gp-section-title">도움말·도구</div>
+        <div class="gp-row"><span class="gp-lb">오류 제보</span><span style="font-size:12px;color:var(--dim)">제보·답변·오류 로그</span><button type="button" id="psSupportSettingsOpen" class="btn">열기</button></div>
         <button class="btn" id="guideOpen" style="width:100%;justify-content:center;border:1px solid var(--line);background:var(--bar2);border-radius:10px;padding:9px 0;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;color:var(--txt);">사용법</button>
         <div class="gp-row" hidden style="display:none!important"><span class="gp-lb">개인 도구</span>
           <span style="display:flex;gap:6px">
@@ -1131,9 +1136,10 @@ function psShowUpdBand(){
           <button type="button" id="psPushNow" title="이 기기와 팀의 최신 자료를 서로 맞춥니다"
             style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font-family:Pretendard,system-ui;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap">지금 동기화</button>
         </div>
-        <!-- 1.591 — 자료 확인(사용자 지적: "다른 기기와 부딪힌 자료 이런 것들이 헷갈려").
-             '보류' '덮인 자료' '충돌' 세 갈래를 한 곳에서 «이 기기 것 / 팀 것» 두 선택으로만 묻는다.
-             셋의 내부 의미가 서로 다른데, 그 차이는 sync.js 의 dataReviewApply 가 흡수한다. -->
+        <div class="gp-row"><span class="gp-lb">자료 복구</span>
+          <span style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4">이전 저장 내용과 보관된 사본을 확인합니다</span>
+          <button type="button" id="psRecoveryOpen" style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font:800 11px Pretendard,system-ui;cursor:pointer;white-space:nowrap">복구 도구</button>
+        </div>
         <!-- 2.352 — 팀 자료를 **한 방향으로** 통일하는 도구(사용자). 평소 동기화는 양방향 병합이라
              "지금 팀 것으로" · "지금 내 것으로" 를 못 한다. 되돌릴 수 없으므로 **두 번 묻는다**. -->
         <div class="gp-row"><span class="gp-lb">고급</span>
@@ -1187,14 +1193,14 @@ function psShowUpdBand(){
     (function(){
       var p=document.getElementById('gearPop');if(!p||p.classList.contains('gp-tabbed'))return;
       var rowOf=function(id){var e=document.getElementById(id);return e?(e.closest('.gp-row')||e):null;};
-      var map={general:['langSw','themeSw','guideOpen'],data:['psPushNow','psBulkPull','psSnapOpen','bkup'],device:['psPwaStatus','psStorageOptimize','psHardReload','psBuildTag']};   /* 2.732 — 화면 판은 기기가 정하므로 laySw 행은 사용자 설정 탭에서 제외 */
+      var map={general:['langSw','themeSw','guideOpen','psSupportSettingsOpen'],data:['psPushNow','psBulkPull','psSnapOpen','bkup'],device:['psPwaStatus','psStorageOptimize','psHardReload','psBuildTag']};   /* 2.732 — 화면 판은 기기가 정하므로 laySw 행은 사용자 설정 탭에서 제외 */
       Object.keys(map).forEach(function(t){map[t].forEach(function(id){var r=rowOf(id);if(r)r.setAttribute('data-gp-tab',t);});});
       /* 순서: 데이터 탭은 동기화 → 자동 백업 → 파일 (파일은 가끔 쓰는 것) */
       try{var fileRow=rowOf('bkup'),snapRow=rowOf('psSnapOpen');if(fileRow&&snapRow&&snapRow.parentNode===fileRow.parentNode)snapRow.after(fileRow);}catch(_){}
       /* 2.632 — 데이터 탭을 세 묶음으로(목업 «설정 › 동기화»): 상태 → 문제가 있을 때 → 고급·운영진. 마크업·id·핸들러는 그대로, 순서와 묶음 제목만.
          진단·팀 기록 행은 탭이 안 달려 모든 탭에 보이던 것을 데이터 탭으로 모은다. */
       try{
-        ['psDiagOpen','psHistOpen'].forEach(function(id){var r=rowOf(id);if(r)r.setAttribute('data-gp-tab','data');});
+        ['psDiagOpen','psHistOpen','psRecoveryOpen'].forEach(function(id){var r=rowOf(id);if(r)r.setAttribute('data-gp-tab','data');});
         var lb=function(id,t){var r=rowOf(id);var e=r&&r.querySelector('.gp-lb');if(e)e.textContent=t;};
         lb('psPushNow','동기화'); lb('psDiagOpen','진단'); lb('psHistOpen','되돌리기'); lb('psBulkPull','통째로'); lb('psSnapOpen','자동 백업');
         var grp=function(t){var d=document.createElement('div');d.className='gp-grp';d.setAttribute('data-gp-tab','data');d.innerHTML='<span>'+t+'</span>';return d;};
@@ -1202,8 +1208,8 @@ function psShowUpdBand(){
         var adv=grp('고급 · 운영진 ▸'); adv.classList.add('gp-grp-adv'); adv.setAttribute('role','button'); adv.setAttribute('tabindex','0');
         var advToggle=function(e){ if(e)e.stopPropagation(); var open=!p.classList.contains('gp-adv-open'); p.classList.toggle('gp-adv-open',open); adv.firstChild.textContent='고급 · 운영진 '+(open?'▾':'▸'); p.style.minHeight=''; try{ lockH(); }catch(_){} };
         adv.addEventListener('click',advToggle); adv.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); advToggle(e); } });
-        ['psHistOpen','psBulkPull','psSnapOpen','bkup'].forEach(function(id){ var r=rowOf(id); if(r)r.setAttribute('data-gp-adv','1'); });
-        var order=[grp('지금 상태'),rowOf('psPushNow'),grp('문제가 있을 때'),rowOf('psDiagOpen'),adv,rowOf('psHistOpen'),rowOf('psBulkPull'),rowOf('psSnapOpen'),rowOf('bkup')].filter(Boolean);
+        ['psHistOpen','psRecoveryOpen','psBulkPull','psSnapOpen','bkup'].forEach(function(id){ var r=rowOf(id); if(r)r.setAttribute('data-gp-adv','1'); });
+        var order=[grp('지금 상태'),rowOf('psPushNow'),grp('문제가 있을 때'),rowOf('psDiagOpen'),adv,rowOf('psHistOpen'),rowOf('psRecoveryOpen'),rowOf('psBulkPull'),rowOf('psSnapOpen'),rowOf('bkup')].filter(Boolean);
         var first=rowOf('psPushNow'),box=first&&first.parentNode;
         if(box){var mk=document.createComment('gp-data');box.insertBefore(mk,first);order.forEach(function(el){if(el.parentNode===box||!el.parentNode)box.insertBefore(el,mk);});box.removeChild(mk);}
       }catch(_){}
@@ -1234,6 +1240,7 @@ function psShowUpdBand(){
       dot();try{var pn=document.getElementById('psPushNow');if(pn)new MutationObserver(dot).observe(pn,{childList:true,characterData:true,subtree:true});}catch(_){}
     })();
     </script>
+    <button type="button" id="psSupportOpen" aria-haspopup="dialog" aria-controls="psSupportDialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l6 6v6l-6 6H9l-6-6V9z"/><path d="M12 7v6m0 4h.01"/></svg><span>오류 제보</span></button>
               </header>
   <nav class="teamnav" id="teamNav" aria-label="팀 운영">
     <span class="teamname" id="teamNavName"><b>팀 운영</b><small>내 작업 · 오늘의 의사결정</small></span>
@@ -1370,6 +1377,7 @@ function psShowUpdBand(){
       <button id="expClose" style="border:0;background:transparent;color:#A8946B;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;padding:5px 6px">닫기</button>
     </span>
   </div>
+  <div id="psReleaseNotes" style="margin-left:var(--ps-side-w,0px)" hidden></div>
   <div id="updBanner" style="display:none;background:#14161A;color:#F4F5F8;font-size:12px;font-weight:600;padding:7px 14px;align-items:center;gap:10px;margin-left:var(--ps-side-w)" role="status">
     <span>새 판이 있어요 · 하던 일을 저장하고 다시 열면 적용돼요</span>
     <span style="margin-left:auto;display:inline-flex;gap:6px;flex:0 0 auto">
@@ -1455,7 +1463,7 @@ function psShowUpdBand(){
       if(!st||st.kind==='off'){ el.style.display='none'; return; }
       el.style.display='flex'; el.className=st.kind; tx.textContent=st.text; ago.textContent=(st.kind==='ok'&&st.ago)?st.ago:'';
       var lbl='';
-      if(st.kind==='ask')lbl='보기';
+      if(st.kind==='ask')lbl='내용 선택';
       else if(st.kind==='pending')lbl='상태';
       else if(st.kind==='bad'&&st.reason!=='sync_offline')lbl=(st.reason==='sync_permission')?'보기':(st.reason==='sync_auth'?'로그인':'다시');
       if(lbl){ btn.style.display=''; btn.innerHTML='<span>'+lbl+'</span>'; } else btn.style.display='none';
@@ -3200,15 +3208,20 @@ function psShowUpdBand(){
   var pushNotice=null;
   function pushState(){try{return window.PSSync&&PSSync.state&&PSSync.state();}catch(_){return null;}}
   function holdCount(){ try{ return ((window.PSSync&&PSSync.hold&&PSSync.hold.list&&PSSync.hold.list())||[]).length; }catch(_){ return 0; } }
-  /* 2.337 — '확인할 변경'은 보류(hold)만 세고 [확인]도 보류 화면만 열었다.
-     1.591 이 바로 이 헷갈림("다른 기기와 부딪힌 자료 헷갈려") 때문에 보류·덮임·충돌 셋을
-     한 화면으로 합친 자료 확인(PSDataReview)을 만들었는데 **아무도 부르지 않았다** —
-     덮임·충돌은 설정에서 보이지도 않았다. 세는 것도 여는 것도 자료 확인 하나로 통일한다. */
-  function reviewCount(){ try{ if(window.PSDataReview&&PSDataReview.list)return (PSDataReview.list()||[]).length; }catch(_){} return holdCount(); }
+  /* 일반 저장 상태에는 실제 보류만 센다. 과거 사본은 고급 복구 도구에서 따로 확인한다. */
+  function reviewCount(){ try{ if(window.PSDataReview){
+    if(PSDataReview.pending)return (PSDataReview.pending()||[]).length;
+    if(PSDataReview.list)return (PSDataReview.list()||[]).filter(function(x){return x.src!=='rescue'&&x.src!=='conflict';}).length;
+  } }catch(_){} return holdCount(); }
   function openReview(){
     try{ if(window.PSDataReview&&PSDataReview.open){ PSDataReview.open(); return; } }catch(_){}
     try{ window.PSSync.hold.open(); }catch(_){ alert('확인 화면을 열지 못했습니다.'); }
   }
+  var recoveryButton=document.getElementById('psRecoveryOpen');
+  if(recoveryButton)recoveryButton.addEventListener('click',function(){
+    try{if(window.PSDataReview&&PSDataReview.recovery){PSDataReview.recovery();return;}}catch(_){}
+    alert('복구 도구를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  });
   function refreshPushState(){
     if(!pst)return;
     var S=window.PSSync;
@@ -3216,10 +3229,10 @@ function psShowUpdBand(){
     if(pbtn)pbtn.disabled=false;
     /* 2.745 — 팀 대기함만 비었다고 개인 자료까지 완료한 것은 아니다. 공통 상태를 그대로 읽는다. */
     var state=pushState(),rc=reviewCount();
-    if(pbtn)pbtn.textContent=rc?'보기':'지금 동기화';
+    if(pbtn)pbtn.textContent=rc?'내용 선택':'지금 동기화';
     if(pushNotice&&state&&state.kind==='ok'&&+state.at>pushNotice.at)pushNotice=null;
     if(state&&state.kind==='bad')pst.textContent=state.text;
-    else if(rc)pst.textContent='확인할 자료 '+rc+'건 — 남길 판본을 선택하세요';
+    else if(rc)pst.textContent='저장할 내용 선택 · '+rc+'건';
     else if(pushNotice)pst.textContent=pushNotice.text;
     else if(state&&state.kind==='ok')pst.textContent=+state.at>0?state.text+(state.ago?(' · '+state.ago):''):'아직 동기화 완료를 확인하지 못했어요';
     else pst.textContent=state&&state.text||'동기화 상태를 확인하지 못했어요';
@@ -3231,7 +3244,7 @@ function psShowUpdBand(){
     var S=window.PSSync;
     if(!S||!S.syncNow){ alert('동기화를 사용할 수 없습니다. 로그인 상태를 확인해 주세요.'); return; }
     if(reviewCount()){
-      openReview();   /* 2.337 — 자료 확인 한 화면(보류·덮임·충돌 + 지난 판본) */
+      openReview();
       setTimeout(refreshPushState,500);return;
     }
     pushNotice=null;
@@ -7857,6 +7870,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="sync-observability.js"></script>
 <script src="sync.js"></script>
 <script src="team-files.js"></script>
+<link rel="stylesheet" href="support.css?v=2.815">
+<script src="support.js"></script>
+<script src="release-notes.js"></script>
+<script>
+if(window.PSSupport)PSSupport.mount({window:window});
+if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getElementById('psReleaseNotes')});
+</script>
 <script>
 /* OAuth 콜백이 만료되거나 다른 탭에서 이미 사용된 경우 Supabase 오류 문구를
    그대로 노출하지 않고, 안전하게 주소를 정리한 뒤 다시 로그인할 선택지를 준다. */
