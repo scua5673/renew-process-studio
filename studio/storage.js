@@ -23,12 +23,20 @@
 
   /* 콘텐츠·사용자 식별값은 남기지 않고 실패 단계와 브라우저 오류 코드만 기록한다. */
   function diagnostic(stage,error){
-    var info={stage:String(stage||'storage').slice(0,48)};
+    var rawStage=String(stage||'storage'),parts=rawStage.split(':'),key=parts.slice(1).join(':'),safeStage=parts[0];
+    if(safeStage==='idb-set'){
+      var area=key==='process_coach_v1'?'schedule':key==='cs_team_matches_v1'?'match':
+        /^(scout_tool_v1|cs_squad_v1|sq:)/.test(key)?'roster':key==='cs_drill_lib_v1'?'library':
+        /^cs_idp_/.test(key)?'idp':/^ps_sync_base_/.test(key)?'base':key==='ps_sync_outbox_v1'?'outbox':
+        /^ps_autosave_/.test(key)?'journal':'other';
+      safeStage+='-'+area;
+    }
+    var info={stage:safeStage.slice(0,48)};
     if(error){
       info.name=String(error.name||'Error').slice(0,48);
       info.code=String(error.code||'').slice(0,48);
     }
-    try{ console.warn('[PSStorage]',info); }catch(_){}
+    try{ console.warn('[PSStorage]',JSON.stringify(info)); }catch(_){}
     try{ window.dispatchEvent(new CustomEvent('ps-storage-diagnostic',{detail:info})); }catch(_){}
   }
   window.PSStorageDiagnostic=diagnostic;
@@ -95,22 +103,14 @@
   }
   function idbGet(k){ return tx('readonly',function(s){ return s.get(k); }); }
   function idbSet(k,v,current){
-    return tx('readwrite',function(s){if(current)current();s.put(v,k);return null;}).then(function(){
+    /* Read our write in the SAME transaction. A later writer may commit before
+       a separate verification transaction and must not make this commit fail.
+       tx resolves only after commit; callers that need the value to remain
+       current still perform their own owner/value CAS before acknowledging it. */
+    return tx('readwrite',function(s){if(current)current();s.put(v,k);return s.get(k);}).then(function(saved){
       if(current)current();
-      /* transaction complete만으로 성공 처리하지 않는다. 실제 값을 다시 읽어
-         Safari의 중단·스토리지 제거 상황에서도 "저장됨" 오판을 막는다. */
-      return idbGet(k).then(function(saved){
-        if(current)current();
-        if(saved===v)return true;
-        /* 2.631 — 한 번 더 읽는다(150ms 뒤). 같은 키를 두 창(작전판·셸)이 겹쳐 쓰면 첫 읽기가 다른 쪽 값을 볼 수 있다 — 실측 24h sync_storage 8건 전부 모바일.
-           두 번째도 다르면 그때 실패. 실제 Safari 저장소 제거·용량 초과는 두 번 다 다르게 나온다. */
-        return new Promise(function(res){ setTimeout(res,150); }).then(function(){ return idbGet(k); }).then(function(again){
-          if(current)current();if(again===v)return true;
-          var e=new Error('storage verification failed');
-          e.name='StorageVerificationError';
-          throw e;
-        });
-      });
+      if(saved===v)return true;
+      var e=new Error('storage verification failed');e.name='StorageVerificationError';throw e;
     }).catch(function(error){
       diagnostic('idb-set:'+k,error);
       if(isQuotaErr(error))warnFull(k);

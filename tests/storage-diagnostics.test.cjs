@@ -79,6 +79,11 @@ test('failed error-report upload emits the public sanitized diagnostic without a
   assert.equal(JSON.stringify(h.diagnostics).includes(h.failure.message),false,'Diagnostic does not copy user content from an error message');
   assert.equal(h.warnings.length,1);
 });
+test('storage diagnostics identify the document family without including dynamic IDs or content',()=>{
+ const h=harness();h.ctx.PSStorageDiagnostic('idb-set:cs_idp_v1_PRIVATE-ACCOUNT',Object.assign(new Error('PRIVATE BODY'),{name:'StorageVerificationError'}));
+ assert.equal(h.diagnostics[0].stage,'idb-set-idp');assert.equal(JSON.stringify(h.warnings).includes('PRIVATE'),false);
+ assert.equal(typeof h.warnings[0][1],'string');
+});
 
 test('a failed report upload releases the in-flight flag so the next real error can retry',async()=>{
   const h=harness();
