@@ -298,3 +298,11 @@ for(const [label,old,mirror,candidate] of [
  const writes=[],guard={stale:false};h.c.kvWrite(key,raw(candidate),writes,raw(old),guard,()=>true);await Promise.allSettled(writes);
  assert.equal(guard.stale,true);assert.equal(h.local.get(key),raw(mirror));assert.equal(h.idb.get(key),raw(old));
 });
+
+test('storage mismatch diagnostics contain shape/count only, never folder contents',async()=>{
+ const key='cs_vault_folders_v1',h=harness({key}),events=[];h.c.syncDiagnostic=(stage,error)=>events.push({stage,code:error.psCode,message:error.message});
+ const old=raw(['private old folder']),mirror=raw(['private new folder','private note']),candidate=raw(['server folder']);
+ await h.seed(key,old,candidate);h.local.set(key,mirror);const writes=[],guard={stale:false};h.c.kvWrite(key,candidate,writes,old,guard,()=>true);await Promise.all(writes);
+ assert.deepEqual(events,[{stage:'kv-write-source-mismatch',code:'mirror-array2_idb-array1_expected-array1_next-array1_extra2',message:'storage copies disagree'}]);
+ assert.equal(guard.stale,true);assert.equal(h.idb.get(key),old);assert.equal(h.local.get(key),mirror);
+});
