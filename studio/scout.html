@@ -10,7 +10,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="storage.js"></script>
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
-<script src="participation.js?v=2.822"></script>
+<script src="participation.js?v=2.823"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
 <script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 -->
@@ -14185,7 +14185,7 @@ var availRange=14;
 var availDay=null;   /* 2.691 — 날짜별 명단에서 보고 있는 날(ymd). null=오늘 */
 var availView="grp"; try{ availView=localStorage.getItem("cs_av_view_v1")||"grp"; }catch(_){}   /* 2.692 — grp 조별 · pos 포지션별 · name 이름순. 2.693 기본은 조별 — 조 안은 훈련 가능자(포지션 순·이름순) → 쉼(재활·부상·불참)(사용자 확정) */
 var AV_ST_LB={ok:"훈련",rest:"휴식",rehab:"재활",injury:"부상",out:"불참"}, AV_ST_ORDER=["ok","rest","rehab","injury","out"];
-/* 2.822 — 날짜별 직접 기록. 오늘은 현재 상태와 연결하고 과거 날짜는 해당 셀만 수정한다. */
+/* 2.823 — 날짜별 직접 기록. 오늘은 현재 상태와 연결하고 과거 날짜는 해당 셀만 수정한다. */
 /* Date records have their own cells. Editing yesterday never splits a status
    run or changes today's player. Today also controls continuing availability. */
 var avSaving=false;
