@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>팀 운영 안내 | PROCESS STUDIO</title>
+  <meta name="description" content="프로세스 스튜디오 팀 운영 사용 안내. 팀 만들기와 초대, 권한과 선수 연결, 일정·출석·경기·IDP·플레이북 활용, 자료 공유와 자동 저장을 순서대로 설명합니다.">
+  <meta name="theme-color" content="#121a28">
+  <meta property="og:title" content="팀 운영 안내 | PROCESS STUDIO">
+  <meta property="og:description" content="팀의 첫 설정부터 매주 운영하는 순서까지. 코치와 운영진을 위한 팀 운영 설명서.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="/favicon.png">
+  <style>
+    :root{color-scheme:light;--ink:#182232;--muted:#586577;--line:#e2e7ee;--paper:#f5f7fa;--blue:#315fd5;--blue-soft:#edf2ff;--green:#a9e4cd;--radius:16px}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+    body{margin:0;background:#fff;color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:16px;line-height:1.85;letter-spacing:-.025em;word-break:keep-all;overflow-wrap:anywhere}
+    a{color:var(--blue);text-underline-offset:4px}
+    a:hover{text-decoration-thickness:2px}
+    a:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:4px;border-radius:4px}
+    p{margin:0 0 16px}strong{font-weight:700}h1,h2,h3,h4{line-height:1.4;letter-spacing:-.045em;margin:0}ul,ol{padding-left:23px;margin:12px 0 0}li+li{margin-top:9px}
+    .skip{position:fixed;top:-100px;left:16px;z-index:100;background:#fff;padding:12px 20px;border:2px solid var(--blue)}.skip:focus{top:8px}
+    .topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}
+    .top-inner{max-width:1200px;min-height:68px;margin:auto;padding:10px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:760;letter-spacing:.01em;line-height:1.3}.brand img{width:30px;height:30px;border-radius:7px}.brand span span{font-weight:450;color:var(--muted)}
+    .app-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:7px 16px;background:var(--ink);color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:650;white-space:nowrap}
+    .hero{background:#121a28;color:#fff;padding:62px 32px 40px;position:relative;overflow:hidden}
+    .hero-inner{position:relative;max-width:1136px;margin:auto}
+    .eyebrow{font-size:11px;font-weight:750;letter-spacing:.16em;text-transform:uppercase;color:var(--green);margin-bottom:15px}
+    .hero-grid{display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:64px}
+    .hero h1{font-size:clamp(36px,5vw,58px);font-weight:780;line-height:1.15;letter-spacing:-.055em}
+    .hero .headline{margin:22px 0 12px;font-size:clamp(21px,2.8vw,28px);line-height:1.5;font-weight:550;color:#dfebe7}
+    .hero .intro{max-width:500px;font-size:15px;color:#b7c3d3;line-height:1.85;margin:0}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:25px}.hero-actions a{display:inline-flex;align-items:center;min-height:44px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;background:var(--green);color:#152d28}.hero-actions .secondary{background:transparent;color:#e1e8f1;border:1px solid #495668}
+    .flow{margin:0;padding:23px;border:1px solid #3c495b;border-radius:var(--radius);background:#1a2535}
+    .flow figcaption{font-size:12px;color:#bdc9d9;margin-bottom:14px}.flow ol{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}.flow li{margin:0}
+    .flow a{display:block;min-height:108px;padding:15px;border-radius:10px;background:#243247;color:#fff;text-decoration:none}.flow a:hover{background:#2f4059}.flow b{display:block;font-size:16px;line-height:1.5}.flow small{display:block;margin-top:5px;font-size:12px;color:#c0ccdb;line-height:1.6}.flow .num{font:650 11px/1.4 ui-monospace,monospace;color:var(--green);display:block;margin-bottom:7px}.flow .flow-note{font-size:12px;color:#b9c9d9;margin:15px 0 0;line-height:1.6}
+    .hero-foot{display:flex;flex-wrap:wrap;gap:10px 28px;border-top:1px solid #354255;margin-top:36px;padding-top:19px;font-size:12px;color:#bcc8d8}.hero-foot b{color:#edf2f9;font-weight:550}
+    .layout{max-width:1200px;margin:0 auto;padding:44px 32px 80px;display:grid;grid-template-columns:210px minmax(0,1fr);gap:62px;align-items:start}
+    .toc{position:sticky;top:95px;font-size:13px}.toc h2{font-size:11px;letter-spacing:.09em;color:var(--muted);margin:0 0 13px}.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}.toc li{margin:0;counter-increment:toc}.toc a{min-height:40px;display:flex;gap:11px;align-items:center;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:7px}.toc a::before{content:counter(toc,decimal-leading-zero);font:500 11px ui-monospace,monospace;color:#778498}.toc a:hover,.toc a[aria-current="location"]{background:var(--blue-soft);color:var(--blue)}.toc .toc-extra{display:block;margin-top:18px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.toc-extra a{padding:7px 0}.toc-extra a::before{display:none}
+    main{min-width:0;scroll-margin-top:88px}.section{padding:14px 0 43px;margin:0 0 28px;border-bottom:1px solid var(--line);scroll-margin-top:88px}.section:last-child{margin-bottom:0;border-bottom:0;padding-bottom:0}.section .section-no{font:650 11px/1.4 ui-monospace,monospace;letter-spacing:.09em;color:var(--blue);display:block;margin-bottom:9px}.section h2{font-size:28px;margin-bottom:13px}.section>.lead{color:var(--muted);font-size:16px;margin-bottom:25px}.section h3{font-size:19px;margin:27px 0 12px}.section h4{font-size:16px;margin:0 0 6px}.section p:last-child{margin-bottom:0}
+    .path{display:inline-block;font-size:12px;color:var(--blue);background:var(--blue-soft);padding:4px 10px;border-radius:6px;margin:0 0 12px;font-weight:600;line-height:1.7}
+    .steps{padding:0;list-style:none;counter-reset:step}.steps>li{position:relative;padding:0 0 21px 44px;counter-increment:step;margin:0}.steps>li:last-child{padding-bottom:0}.steps>li::before{content:counter(step);position:absolute;left:0;top:0;width:28px;height:28px;background:var(--blue-soft);color:var(--blue);border:1px solid #d9e3fc;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:750;line-height:1}.steps p{margin:5px 0 0;color:var(--muted);font-size:15px}
+    .callout{margin:22px 0 0;padding:18px 20px;background:var(--paper);border-left:3px solid #97aac7;border-radius:0 10px 10px 0;font-size:14px;color:#4d5c70;line-height:1.85}.callout strong{color:var(--ink)}.callout p{margin:5px 0 0}.callout.blue{background:var(--blue-soft);border-color:var(--blue)}
+    .menu-list{margin:0}.menu-row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:20px;padding:13px 0;border-top:1px solid var(--line)}.menu-row dt{font-size:14px;font-weight:750}.menu-row dt a{color:var(--ink)}.menu-row dd{font-size:14px;color:var(--muted);margin:0}.menu-row dd b{color:var(--ink);font-weight:600}
+    .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}.card{padding:21px;border:1px solid var(--line);border-radius:12px;min-width:0}.card h3{margin:0 0 9px;font-size:17px}.card p,.card li{font-size:14px;color:var(--muted)}.card ul{margin:10px 0 0;padding-left:18px}.card .tag{display:block;color:var(--blue);font-size:10px;font-weight:750;letter-spacing:.09em;margin-bottom:8px}
+    .example{background:#f3f8f5;border:1px solid #dbe9e1;border-radius:12px;padding:21px;margin-top:22px;font-size:14px}.example .label{display:block;color:#386b56;font-size:11px;font-weight:750;margin-bottom:8px}.example p{margin-bottom:8px}.example ol{margin:10px 0 0}.example li{margin-top:6px}
+    .roles{display:grid;grid-template-columns:1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:18px 0}.role-row{padding:18px 21px;display:grid;grid-template-columns:105px minmax(0,1fr);gap:20px}.role-row+.role-row{border-top:1px solid var(--line)}.role-row h4{font-size:14px;line-height:1.8;margin:0}.role-row p{font-size:14px;color:var(--muted);margin:0}.role-row small{display:block;color:var(--muted);font-size:11px;font-weight:500}
+    .routine{list-style:none;margin:19px 0 0;padding:0}.routine li{display:grid;grid-template-columns:80px minmax(0,1fr);gap:18px;padding:17px 0;border-top:1px solid var(--line);margin:0}.routine .when{font-size:12px;font-weight:750;color:var(--blue);padding-top:3px}.routine h3{font-size:16px;margin:0 0 5px}.routine p{font-size:14px;color:var(--muted);margin:0}
+    .faq{border-top:1px solid var(--line)}.faq details{border-bottom:1px solid var(--line)}.faq summary{position:relative;padding:18px 32px 18px 0;cursor:pointer;list-style:none;font-size:15px;font-weight:650;min-height:56px}.faq summary::-webkit-details-marker{display:none}.faq summary::after{content:'＋';position:absolute;right:4px;top:18px;color:var(--muted);font-weight:400}.faq details[open] summary::after{content:'−'}.faq details>div{padding:0 8px 21px 0;font-size:14px;color:var(--muted)}.faq details p{margin-bottom:10px}
+    .closing{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:25px;margin-top:32px}.closing h3{font-size:19px;margin:0 0 8px}.closing p{font-size:14px;color:var(--muted)}.closing .app-link{margin-top:8px}
+    footer{background:var(--paper);border-top:1px solid var(--line);padding:26px 32px;color:var(--muted);font-size:12px}.footer-inner{max-width:1136px;margin:auto;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}.footer-inner a{color:var(--muted)}
+    @media(max-width:1000px){.hero-grid{gap:30px}.layout{grid-template-columns:175px minmax(0,1fr);gap:32px}.toc a{font-size:12px;padding-left:4px;gap:7px}.hero{padding-top:45px}}
+    @media(max-width:760px){.top-inner{padding:9px 20px;min-height:64px}.hero{padding:34px 20px 27px}.hero-grid{grid-template-columns:1fr;gap:30px}.hero .intro{max-width:100%}.hero h1{font-size:40px}.hero .headline{font-size:23px;margin-top:18px}.hero-foot{margin-top:25px;gap:6px 18px}.flow{padding:18px}.flow a{min-height:100px}.layout{display:block;padding:26px 20px 48px}.toc{position:static;margin:0 0 28px;border-bottom:1px solid var(--line);padding-bottom:24px}.toc ol{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px}.toc a{font-size:13px;min-height:44px;gap:10px;padding:7px}.toc .toc-extra{display:none}.section{padding-top:12px;margin-bottom:21px;padding-bottom:31px}.section h2{font-size:25px}.cards{gap:12px}.card{padding:17px}.section>.lead{font-size:15px}.menu-row{grid-template-columns:80px minmax(0,1fr);gap:15px}.role-row{grid-template-columns:90px minmax(0,1fr);padding:17px;gap:14px}footer{padding:22px 20px}}
+    @media(max-width:440px){body{font-size:15px}.brand{font-size:12px;gap:7px}.brand img{width:27px;height:27px}.app-link{padding:7px 12px;font-size:12px}.hero h1{font-size:36px}.hero .headline{font-size:21px}.flow{padding:15px}.flow a{padding:12px}.flow b{font-size:15px}.hero-foot{font-size:11px}.cards{grid-template-columns:1fr}.role-row{grid-template-columns:1fr;gap:5px}.role-row small{display:inline;margin-left:8px}.menu-row{grid-template-columns:76px minmax(0,1fr);gap:10px}.menu-row dd{font-size:13px}.routine li{grid-template-columns:62px minmax(0,1fr);gap:12px}.callout,.example{padding:16px}.section h2{font-size:23px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    @media print{html{scroll-behavior:auto}.topbar,.toc,.hero-actions,.closing .app-link,.skip{display:none}.hero{background:white;color:#182232;padding:20px 0}.hero .headline,.hero .intro,.hero-foot,.hero-foot b,.eyebrow{color:#182232}.hero-grid{display:block}.flow{display:none}.hero-foot{border-color:#ccc}.layout{display:block;max-width:none;padding:20px 0}.section{break-inside:auto}.card,.callout,.example,.role-row{break-inside:avoid}.faq details>div{display:block}.faq summary::after{display:none}a{color:inherit}footer{background:white;padding:15px 0}.section h2,.section h3{break-after:avoid}}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">본문으로 건너뛰기</a>
+  <header class="topbar">
+    <div class="top-inner">
+      <a class="brand" href="/"><img src="/icon-192.png" alt="" width="30" height="30"><span>PROCESS <span>STUDIO</span></span></a>
+      <a class="app-link" href="/studio/">앱 열기 <span aria-hidden="true">&nbsp;↗</span></a>
+    </div>
+  </header>
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">PROCESS STUDIO · TEAM GUIDE</div>
+          <h1>팀 운영 안내</h1>
+          <p class="headline">한 팀의 계획부터,<br>선수의 성장까지.</p>
+          <p class="intro">누가 함께하고, 무엇을 훈련하며, 경기에서 무엇을 배웠는지.<br>팀을 처음 만드는 날부터 매주 운영하는 순서까지 안내합니다.</p>
+          <div class="hero-actions"><a href="#start">처음 설정하기 <span aria-hidden="true">&nbsp;↓</span></a><a class="secondary" href="#menus">메뉴부터 살펴보기</a></div>
+        </div>
+        <figure class="flow" aria-label="팀 운영의 네 단계">
+          <figcaption>팀 운영은 이렇게 이어집니다</figcaption>
+          <ol>
+            <li><a href="#people"><span class="num">01 / 함께할 사람</span><b>팀과 선수</b><small>초대 · 권한 · 선수 연결</small></a></li>
+            <li><a href="#planning"><span class="num">02 / 오늘의 계획</span><b>일정과 출석</b><small>훈련 계획 · 참여 확인</small></a></li>
+            <li><a href="#matches"><span class="num">03 / 경기의 경험</span><b>준비와 리뷰</b><small>상대 분석 · 다음 훈련</small></a></li>
+            <li><a href="#growth"><span class="num">04 / 다음의 변화</span><b>선수의 성장</b><small>IDP · 관찰 · 피드백</small></a></li>
+          </ol>
+          <p class="flow-note">리뷰에서 찾은 개선점은 다음 일정과 선수의 행동으로 이어갑니다.</p>
+        </figure>
+      </div>
+      <div class="hero-foot"><span><b>대상</b> &nbsp;팀 관리자 · 임원 · 코칭스태프</span><span><b>열기</b> &nbsp;앱 설정 → 일반 → 팀 운영 안내</span><span>로그인 없이 읽을 수 있는 안내 페이지</span></div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside class="toc" aria-label="페이지 목차">
+      <h2>이 페이지에서</h2>
+      <nav aria-label="팀 운영 안내 목차"><ol>
+        <li><a href="#start">팀 시작하기</a></li><li><a href="#menus">메뉴 한눈에 보기</a></li><li><a href="#people">멤버·선수·권한</a></li><li><a href="#planning">일정과 출석</a></li><li><a href="#matches">경기 준비와 리뷰</a></li><li><a href="#growth">IDP와 선수 성장</a></li><li><a href="#playbook">팀의 기준 정하기</a></li><li><a href="#scouting">스카우팅</a></li><li><a href="#sharing">공유와 저장</a></li><li><a href="#routine">한 주 운영 예시</a></li><li><a href="#faq">자주 묻는 질문</a></li>
+      </ol></nav>
+      <div class="toc-extra"><a href="/start/how.html">IDP 자세히 배우기 ↗</a><a href="/guide/">전체 사용 설명서 ↗</a></div>
+    </aside>
+
+    <main id="main" tabindex="-1">
+      <section class="section" id="start" aria-labelledby="start-title">
+        <span class="section-no">01 · START</span><h2 id="start-title">팀 시작하기</h2>
+        <p class="lead">먼저 팀 공간을 만들고, 선수 명단과 실제 로그인 계정을 연결합니다. 처음에는 선수 몇 명과 일정 하나로 시작해도 충분합니다.</p>
+        <ol class="steps">
+          <li><h4>로그인하고 팀을 만듭니다</h4><p>앱의 계정 메뉴에서 로그인한 뒤 <strong>팀 만들기</strong>를 선택합니다. 팀을 만든 사람은 팀 관리자가 됩니다. 이미 만들어진 팀이 있다면 새로 만들지 않고 초대 코드로 합류합니다.</p></li>
+          <li><h4>현재 선택한 팀을 확인합니다</h4><p>계정 메뉴의 목록에서 작업할 팀을 고릅니다. <strong>내 작업</strong>과 팀 공간, 여러 팀 사이를 전환할 수 있으므로 명단이나 일정을 작성하기 전에 팀 이름을 확인하세요.</p></li>
+          <li><h4>팀의 선수 명단을 등록합니다</h4><p><strong>팀 운영 → 선수단</strong>에서 선수를 추가하고 이름·번호·포지션 등 필요한 정보를 입력합니다. 여기의 선수 한 명은 팀이 관리하는 명단 항목입니다. 선수가 아직 앱에 가입하지 않았어도 명단부터 준비할 수 있습니다.</p></li>
+          <li><h4>초대 코드를 전달하고 역할을 정합니다</h4><p>관리자가 계정 메뉴의 <strong>팀 관리</strong>에서 초대 코드를 확인합니다. 팀원은 자신의 계정으로 로그인한 뒤 <strong>코드로 합류</strong>에서 팀에서 쓸 이름과 8자리 코드를 입력합니다. 처음에는 모두 선수 역할로 들어오며, 관리자가 합류 후 역할과 편집 범위를 정합니다.</p></li>
+          <li><h4>선수 계정을 명단의 본인과 연결합니다</h4><p><strong>계정 → 팀 관리 → 권한 관리</strong>에서 선수 계정의 <strong>선수 연결</strong>을 지정하고 저장합니다. 이름이 비슷한 선수가 있다면 명단을 먼저 확인하세요. 이 연결이 팀에서 해당 선수의 IDP를 찾아보는 기준이 됩니다.</p></li>
+          <li><h4>일정 하나를 만들고 함께 확인합니다</h4><p><strong>일정</strong>에서 날짜를 골라 훈련 시간과 목표를 적습니다. 저장 상태를 확인한 뒤 합류한 팀원의 화면에서도 같은 날짜가 보이는지 확인합니다.</p></li>
+        </ol>
+        <div class="callout blue"><strong>처음 설정의 완료 기준</strong><p>선택한 팀이 맞고, 운영진의 역할이 정해졌으며, 선수 계정이 본인 명단에 연결되고, 같은 일정을 함께 확인할 수 있으면 준비가 끝났습니다.</p></div>
+      </section>
+
+      <section class="section" id="menus" aria-labelledby="menus-title">
+        <span class="section-no">02 · OVERVIEW</span><h2 id="menus-title">어느 메뉴에서 무엇을 하나요?</h2>
+        <p class="lead">현재 팀 운영 메뉴를 기준으로 정리했습니다. 역할과 권한에 따라 표시되는 메뉴가 다릅니다.</p>
+        <dl class="menu-list">
+          <div class="menu-row"><dt><a href="#routine">오늘</a></dt><dd>오늘의 팀 상황을 확인하고 일정·경기·선수 기록 등 필요한 작업으로 들어가는 시작 화면입니다.</dd></div>
+          <div class="menu-row"><dt><a href="#planning">일정</a></dt><dd>월·주·일 단위로 훈련, 경기, 회복, 휴식 등의 계획을 정리합니다. <b>언제 무엇을 할지</b> 정할 때 사용합니다.</dd></div>
+          <div class="menu-row"><dt><a href="#matches">경기</a></dt><dd>경기별 <b>상대 분석 → 준비 → 리뷰</b>를 관리합니다. 리뷰에서 정한 개선점을 다음 훈련에 연결할 수 있습니다.</dd></div>
+          <div class="menu-row"><dt><a href="#planning">출석</a></dt><dd>날짜와 선수별 참여 상태를 확인하고 정리합니다. 훈련 계획과 실제 참여를 함께 살펴봅니다.</dd></div>
+          <div class="menu-row"><dt><a href="#growth">IDP</a></dt><dd>팀에서 연결된 선수의 성장 기록·일지·이야기를 확인하고 피드백합니다. 선수 자신의 <b>내 IDP</b>와 구분됩니다.</dd></div>
+          <div class="menu-row"><dt><a href="#people">선수단</a></dt><dd>우리 선수의 명단·프로필·포지션·조와 팀 구성을 관리합니다.</dd></div>
+          <div class="menu-row"><dt><a href="#scouting">스카우팅</a></dt><dd>영입 후보를 기록하고 스카우팅 포인트와 관찰 내용을 정리합니다.</dd></div>
+          <div class="menu-row"><dt><a href="#playbook">평가표</a></dt><dd>선수를 관찰할 평가 항목과 포지션별 요구 수준을 정리합니다. 팀이 같은 기준으로 이야기하기 위한 도구입니다.</dd></div>
+          <div class="menu-row"><dt><a href="#playbook">플레이북</a></dt><dd>팀의 플레이를 정리합니다. 하위 메뉴에서 <b>게임모델</b>과 <b>공용어</b>도 열 수 있습니다.</dd></div>
+        </dl>
+        <div class="callout"><strong>휴대폰에서는</strong><p>팀 화면의 아래쪽 메뉴를 사용합니다. 출석·IDP·평가표·플레이북은 <strong>더보기</strong>에서 찾을 수 있습니다. 화면 크기에 따라 일부 메뉴는 바로 표시됩니다.</p></div>
+      </section>
+
+      <section class="section" id="people" aria-labelledby="people-title">
+        <span class="section-no">03 · PEOPLE</span><h2 id="people-title">멤버, 선수 명단, 권한 이해하기</h2>
+        <div class="cards">
+          <div class="card"><span class="tag">ACCOUNT</span><h3>팀 멤버</h3><p>로그인해서 팀에 합류한 사람입니다. 계정 메뉴의 <strong>팀원 보기</strong>에서 확인하고, 관리자는 <strong>권한 관리</strong>에서 역할과 편집 범위를 정합니다.</p></div>
+          <div class="card"><span class="tag">ROSTER</span><h3>선수단의 선수</h3><p>우리 팀 명단에 등록된 선수입니다. 번호·포지션·프로필·평가 등 팀의 기록이 연결됩니다. 팀에 합류한 계정과는 <strong>선수 연결</strong>로 이어 줍니다.</p></div>
+        </div>
+        <p>팀원이 합류했다고 선수 명단의 본인과 자동으로 연결되는 것은 아닙니다. 반대로 명단에 선수를 추가해도 그 선수의 로그인 계정이 생기지는 않습니다.</p>
+        <h3>역할과 편집 범위</h3>
+        <span class="path">계정 → 팀 관리 → 권한 관리</span>
+        <div class="roles">
+          <div class="role-row"><h4>팀 관리자<small>팀을 만든 사람</small></h4><p>초대와 멤버 관리를 하고, 권한 관리에서 역할·편집 구역·선수 연결을 설정합니다.</p></div>
+          <div class="role-row"><h4>임원</h4><p>팀 운영 자료를 입력·편집하는 역할입니다. 멤버 권한을 바꾸는 팀 관리자 기능과는 구분됩니다.</p></div>
+          <div class="role-row"><h4>코칭스태프</h4><p>기본적으로 팀 자료를 읽습니다. 관리자가 팀의 코칭스태프 편집 설정이나 개인별 구역을 지정하면 해당 범위를 편집할 수 있습니다.</p></div>
+          <div class="role-row"><h4>선수</h4><p>자신의 IDP를 작성하고 허용된 팀 정보를 확인합니다. 다른 선수의 개인 IDP를 읽거나 팀 운영 자료를 자유롭게 편집하는 역할은 아닙니다.</p></div>
+        </div>
+        <p>편집 구역은 <strong>작전판·보관함 / 일정 / 팀 / 스카우트 / 게임모델 / 공용어</strong>로 나뉩니다. 개인별로 지정한 구역이 코칭스태프 전체의 기본 설정보다 우선하므로, 편집이 안 될 때는 해당 멤버의 설정도 함께 확인하세요.</p>
+        <p><strong>일정과 선수단에는 각 화면의 별도 편집 잠금도 적용됩니다.</strong> 구역을 허용했는데도 수정할 수 없다면 운영진이 해당 화면의 <strong>일정 편집</strong> 또는 <strong>선수단 편집</strong> 설정을 함께 확인해야 합니다.</p>
+        <h3>선수단은 이렇게 준비하세요</h3>
+        <ul><li>명단의 이름·번호·포지션을 정리하고 필요한 조를 지정합니다.</li><li>팀 구성에서 포지션별 배치를 정리합니다. 경기 준비의 선발 배치에서 이 구성을 활용할 수 있습니다.</li><li>평가를 시작할 때는 점수만 채우기보다 관찰한 행동과 장면을 함께 남깁니다.</li><li>동명이인이나 비슷한 이름은 번호·프로필을 확인한 뒤 계정에 연결합니다.</li></ul>
+        <div class="callout"><strong>팀원 보기에서는 역할을 바꾸지 않습니다.</strong><p>관리자가 <strong>권한 관리</strong>를 열어 변경하고 <strong>저장</strong>해야 적용됩니다. 연결이 잘못되었다면 선수를 새로 등록하기 전에 기존 연결부터 확인하세요.</p></div>
+      </section>
+
+      <section class="section" id="planning" aria-labelledby="planning-title">
+        <span class="section-no">04 · PLAN</span><h2 id="planning-title">일정으로 계획하고, 출석으로 확인하기</h2>
+        <p class="lead">한 주의 방향을 정한 뒤 하루의 세션으로 구체화합니다. 일정은 계획을, 출석은 선수별 참여 상태를 확인하는 곳입니다.</p>
+        <span class="path">팀 운영 → 일정</span>
+        <ol class="steps">
+          <li><h4>큰 흐름부터 봅니다</h4><p>월간에서 경기일과 휴식일을 확인하고 주간에서 훈련 배치를 살펴봅니다. <strong>MD</strong>는 경기일을 기준으로 한 표시입니다. MD-2는 경기 이틀 전, MD+1은 경기 다음 날입니다.</p></li>
+          <li><h4>날짜를 고르고 세션을 작성합니다</h4><p>훈련·경기·회복·OFF·미팅 등 하루의 성격을 정합니다. 세션에는 시간과 목표를 먼저 적고, 필요한 경우 대상 조·주제·강도·세부 내용을 채웁니다.</p></li>
+          <li><h4>실제로 할 훈련을 붙입니다</h4><p>일정에서 훈련을 작성하거나 보관함의 자료를 활용합니다. 전술 배치나 진행 방식을 그림으로 설명해야 하면 작전판과 훈련 디자인을 함께 사용합니다.</p></li>
+          <li><h4>당일에는 참여 상태를 확인합니다</h4><p><strong>출석</strong>에서 날짜와 선수별 상태를 확인합니다. 선수의 IDP 기록도 함께 살펴보고, 계획한 훈련을 그대로 진행할지 조정할지 판단합니다.</p></li>
+        </ol>
+        <div class="example"><span class="label">작성 예시 · 가상의 훈련</span><p><strong>화요일 16:00 · 1조 · 전방 압박</strong></p><p>목표: 상대의 백패스가 나올 때 가까운 선수가 압박하고 뒤의 선수는 전진 패스 길을 막는다.</p><p>훈련 뒤 확인: 압박 시작 신호를 함께 읽었는가? 다음 세션에서 한 가지 더 다듬을 것은 무엇인가?</p></div>
+        <h3>출석 상태와 집계 읽는 법</h3>
+        <p>출석은 팀에서 기록한 선수 상태와 일정을 기준으로 계산합니다. <strong>정상</strong>은 참여, <strong>재활·부상·불참·조절</strong>은 쉼으로 집계하며 OFF와 일정이 없는 날은 제외합니다. 상태는 다시 바꿀 때까지 이어지므로 복귀한 선수의 상태도 갱신하세요.</p>
+        <p>기간은 2주·4주·시즌으로 볼 수 있으며, 현재 <strong>시즌은 최근 90일</strong>을 뜻합니다. 선수의 IDP 일지에 적은 참여 답변은 출석에 자동 반영되지 않으므로 두 기록을 함께 확인합니다.</p>
+        <div class="callout"><strong>일정 편집이 안 되면</strong><p>선택한 팀과 역할을 먼저 확인하세요. 운영진은 일정 화면의 <strong>일정 편집: 운영진만 / 모든 스태프</strong> 설정도 확인해야 합니다. 일반 권한 관리에서 일정 구역을 체크한 것만으로 이 잠금이 해제되지는 않습니다.</p></div>
+      </section>
+
+      <section class="section" id="matches" aria-labelledby="matches-title">
+        <span class="section-no">05 · MATCH</span><h2 id="matches-title">경기 전의 계획을, 다음 훈련으로</h2>
+        <p class="lead">한 경기 안에서 상대를 읽고, 우리 계획을 세우고, 실제로 어땠는지 돌아봅니다.</p>
+        <span class="path">팀 운영 → 경기 → 해당 경기</span>
+        <ol class="steps">
+          <li><h4>상대 분석 — 무엇에 대응할 것인가</h4><p>상대의 공격·수비·전환·세트피스에서 특징을 정리합니다. 핵심 선수와 장면을 남기고, 우리 팀이 취할 대응을 분명히 적습니다.</p></li>
+          <li><h4>준비 — 우리 선수는 무엇을 할 것인가</h4><p>경기 명단·선발·배치와 게임플랜을 정리합니다. 상대 분석에서 확인한 내용과 장면을 참고해 선수별 임무를 구체화합니다.</p></li>
+          <li><h4>리뷰 — 계획이 경기에서 작동했는가</h4><p>잘된 점과 개선점을 돌아봅니다. 결과만 적기보다 준비 단계의 판단이 맞았는지, 어느 장면에서 차이가 났는지 남기면 다음 결정에 도움이 됩니다.</p></li>
+          <li><h4>다음 훈련 — 관찰 가능한 행동을 정합니다</h4><p>리뷰의 <strong>다음 훈련</strong> 카드에서 <strong>훈련 과제 추가</strong>를 누릅니다. 개선점을 선택하고 경기 이후의 날짜와 대상 조를 지정합니다. 일정의 <strong>경기에서 이어온 과제</strong>에서 실행 여부와 관찰 결과를 적으면 원래 경기 리뷰에서도 확인할 수 있습니다.</p></li>
+        </ol>
+        <div class="example"><span class="label">연결 예시 · 가상의 경기 리뷰</span><ol><li><strong>리뷰:</strong> 공을 잃은 뒤 가까운 선수들의 대응이 늦었다.</li><li><strong>다음 행동:</strong> 공을 잃으면 가까운 선수는 즉시 압박하고 나머지는 중앙 패스 길을 닫는다.</li><li><strong>일정:</strong> 다음 화요일, 1조의 전환 훈련 과제로 연결한다.</li><li><strong>관찰:</strong> 어떤 상황에서 함께 반응했고, 언제 흩어졌는지 남긴다.</li></ol></div>
+        <div class="callout"><strong>선수에게도 전달되는 내용</strong><p>일정으로 연결한 행동과 관찰 결과는 선수도 읽을 수 있는 팀 일정 자료입니다. 선수에게 설명할 수 있는 구체적인 문장으로 작성하세요.</p></div>
+        <h3>경기 내용을 작성한 뒤에는 공개 상태를 확인하세요</h3>
+        <p>팀 경기 준비·팀 리뷰와 선수별 안내는 각각 공개 상태를 확인해야 합니다. 선수별 초안은 공개하기 전에는 작성한 코치의 개인 초안이며, 공개하면 연결된 해당 선수가 볼 수 있습니다. 공개 후 초안을 수정했다면 <strong>최신 초안 공개 반영</strong>으로 변경 내용을 다시 반영합니다.</p>
+      </section>
+
+      <section class="section" id="growth" aria-labelledby="growth-title">
+        <span class="section-no">06 · DEVELOPMENT</span><h2 id="growth-title">IDP로 선수의 변화 살펴보기</h2>
+        <p class="lead">IDP는 개인 성장 계획입니다. 선수 스스로 목표와 경험을 남기고, 코치는 관찰과 대화를 더합니다.</p>
+        <div class="cards"><div class="card"><span class="tag">PLAYER</span><h3>선수의 ‘내 IDP’</h3><p>선수 본인이 내 방향, 이번 주에 시도할 행동, 일지와 한 마디, 경기 경험 등을 작성합니다. 자신의 기록 원문은 본인이 편집합니다.</p></div><div class="card"><span class="tag">TEAM</span><h3>팀 운영의 ‘IDP’</h3><p>코치·운영진이 팀에 연결된 선수들의 기록을 확인하는 화면입니다. 선수를 골라 이야기를 읽고, 권한이 있는 범위에서 별도의 피드백을 남깁니다.</p></div></div>
+        <span class="path">팀 운영 → IDP → 선수 선택</span>
+        <ol class="steps"><li><h4>먼저 오늘의 한 마디를 읽습니다</h4><p>선수가 무엇을 시도했고 어떻게 느꼈는지 확인합니다. 기록이 없다는 이유만으로 선수의 태도나 성장을 판단하지 않고, 실제 훈련의 관찰과 함께 봅니다.</p></li><li><h4>선수의 방향과 연결해 답합니다</h4><p>선수 상세의 이야기와 기록을 보고 반응이나 한 마디를 남깁니다. “잘했어”에 더해 어느 행동을 보았는지 짧게 알려주면 다음 시도의 기준이 됩니다.</p></li><li><h4>목표·평가·경기 기록을 함께 봅니다</h4><p>오늘만 보지 않고 선수의 목표, 평가와 경기 자기 리뷰를 함께 살펴봅니다. 다음에 시도할 행동 하나를 선수와 이야기합니다.</p></li></ol>
+        <div class="callout blue"><strong>선수 기록이 안 보인다면</strong><p>선수의 팀 합류 → 권한 관리의 선수 연결 → 선수 계정의 IDP 작성과 저장 → 현재 기기의 자료 받기 순서로 확인하세요. 연결 안 됨과 아직 자료를 받지 못한 상태는 서로 다릅니다.</p></div>
+        <p style="margin-top:20px"><a href="/start/how.html">선수와 코치를 위한 IDP 상세 안내 읽기 →</a></p>
+      </section>
+
+      <section class="section" id="playbook" aria-labelledby="playbook-title">
+        <span class="section-no">07 · TEAM PRINCIPLES</span><h2 id="playbook-title">팀이 같은 기준으로 이야기하기</h2>
+        <p class="lead">무엇을 잘하려는 팀인지, 선수에게 어떤 행동을 요구하는지, 그 행동을 어떤 말로 부를지 정합니다.</p>
+        <div class="cards"><div class="card"><h3>플레이북</h3><p>팀이 함께 익힐 플레이를 정리합니다. 경기와 훈련에서 반복해 사용할 내용을 모아 두고, 필요한 상황에서 다시 확인합니다.</p><p><strong>위치:</strong> 팀 운영 → 플레이북</p></div><div class="card"><h3>게임모델</h3><p>팀의 정체성과 경기 국면별 원칙을 정리합니다. “어떤 축구를 할 것인가”를 선수의 행동으로 설명하는 기준입니다.</p><p><strong>위치:</strong> 플레이북 → 게임모델</p></div><div class="card"><h3>공용어</h3><p>팀이 같은 뜻으로 쓰는 말과 외침을 정리합니다. 기존 표현을 참고하고 우리 팀의 표현과 의미를 맞춥니다.</p><p><strong>위치:</strong> 플레이북 → 공용어</p></div><div class="card"><h3>평가표</h3><p>관찰 항목과 포지션별 요구 수준을 정리합니다. 선수의 현재 모습과 역할에 필요한 행동을 비교하는 데 활용합니다.</p><p><strong>위치:</strong> 팀 운영 → 평가표</p></div></div>
+        <div class="example"><span class="label">같은 기준으로 연결하는 예시</span><p><strong>게임모델:</strong> 공을 잃으면 중앙을 먼저 보호한다.<br><strong>공용어:</strong> “중앙 잠가”라는 말의 뜻과 반응을 맞춘다.<br><strong>훈련·플레이:</strong> 전환 상황에서 가까운 선수와 뒤 선수의 행동을 반복한다.<br><strong>평가·리뷰:</strong> 실제로 그 행동이 나타났는지 확인한다.</p></div>
+        <p style="margin-top:20px">게임모델 작성 방법 자체를 배우려면 앱의 <strong>학습 → 게임모델 만드는 법</strong>을 활용하세요.</p>
+      </section>
+
+      <section class="section" id="scouting" aria-labelledby="scouting-title">
+        <span class="section-no">08 · SCOUTING</span><h2 id="scouting-title">후보 선수의 관찰을 쌓기</h2>
+        <p class="lead">우리 선수단과 영입 후보를 구분해 관리합니다. 후보의 장점뿐 아니라 어떤 근거로 판단했는지를 남깁니다.</p>
+        <span class="path">팀 운영 → 스카우팅</span>
+        <ol class="steps"><li><h4>후보를 등록합니다</h4><p>이름·소속·포지션 등 필요한 정보를 정리합니다. 후보를 기록하는 일과 우리 선수 명단에 선수를 등록하는 일은 구분합니다.</p></li><li><h4>확인할 포인트를 정합니다</h4><p>스카우팅 포인트에서 포지션 그룹별 질문과 관찰 기준을 준비합니다. 모든 후보에게 같은 질문을 적용하면 비교할 때 도움이 됩니다.</p></li><li><h4>장면과 관찰을 기록합니다</h4><p>어느 경기와 상황에서 본 행동인지 남기고 팀이 요구하는 역할과 비교합니다. 한 번의 점수보다 여러 관찰의 근거를 함께 봅니다.</p></li></ol>
+        <div class="callout"><strong>스카우팅은 관리자·임원에게 표시됩니다.</strong><p>코칭스태프나 선수에게 같은 메뉴가 보이지 않을 수 있습니다. 필요한 경우 팀 관리자가 멤버의 역할과 <strong>스카우트</strong> 구역을 함께 확인해야 합니다.</p></div>
+      </section>
+
+      <section class="section" id="sharing" aria-labelledby="sharing-title">
+        <span class="section-no">09 · SAVE & SHARE</span><h2 id="sharing-title">무엇이 공유되고, 어디에 저장되나요?</h2>
+        <p class="lead">선택한 팀의 자료와 개인 계정의 자료는 저장·공유 범위가 다릅니다. 화면에 팀 이름이 있다고 모든 개인 자료가 팀에 공개되는 것은 아닙니다.</p>
+        <dl class="menu-list"><div class="menu-row"><dt>팀 자료</dt><dd>팀 일정·선수단·경기·팀 기준 등은 선택한 팀의 자료로 저장·동기화됩니다. 팀원마다 읽고 편집할 수 있는 범위는 역할과 권한을 따릅니다.</dd></div><div class="menu-row"><dt>선수 IDP</dt><dd>선수가 작성한 성장 기록은 팀의 코치·운영진이 확인할 수 있습니다. 다른 선수의 IDP가 선수들에게 모두 공개되는 것은 아닙니다.</dd></div><div class="menu-row"><dt>개인 노트</dt><dd>개인 계정의 자료입니다. 팀 공간에서 열어도 개인 자료로 저장되며 팀원에게 공유되지 않습니다. IDP의 이미지노트도 팀에 공유되지 않습니다.</dd></div><div class="menu-row"><dt>보관함</dt><dd>항목과 폴더의 공유 범위를 확인하세요. 팀을 선택한 뒤 편집 가능한 카드의 <b>⋯ → 팀과 공유</b>에서 공유할 수 있습니다. 공유 폴더 안의 항목에는 폴더의 범위도 적용됩니다.</dd></div></dl>
+        <h3>자동 저장은 상태까지 확인하세요</h3>
+        <p>변경사항은 자동으로 저장됩니다. 다른 기기나 팀원에게 전달되었는지 확인할 때는 화면의 저장 상태와 <strong>앱 설정 → 데이터 → 자동 저장</strong>을 봅니다. 인터넷이 끊겼거나 전송이 대기 중이면 서버 반영이 끝나지 않았을 수 있습니다.</p>
+        <ul><li><strong>팀·계정 전환 전:</strong> 저장 중이거나 확인이 필요한 내용이 있는지 봅니다.</li><li><strong>새 기기에서:</strong> 같은 계정과 팀을 선택하고 자료 받기가 끝났는지 확인합니다.</li><li><strong>저장에 문제가 있으면:</strong> 앱 설정 → 데이터의 진단을 확인하고, 화면에 나온 안내에 따라 처리합니다.</li><li><strong>중요한 수정 전:</strong> 필요한 메뉴 자료를 파일로 저장해 별도 사본을 보관할 수 있습니다.</li></ul>
+        <div class="callout"><strong>복구 사본과 파일 백업</strong><p>앱 설정 → 데이터 → 고급에서 복구 도구와 보관된 변경 등을 확인할 수 있습니다. 기기에 보관된 복구 사본은 다른 기기에 자동으로 복제되지 않습니다. 남겨야 할 사본은 파일로 저장해 두세요.</p></div>
+      </section>
+
+      <section class="section" id="routine" aria-labelledby="routine-title">
+        <span class="section-no">10 · WEEKLY ROUTINE</span><h2 id="routine-title">한 주는 이렇게 운영해 보세요</h2>
+        <p class="lead">아래는 활용 예시입니다. 팀의 경기 일정과 운영 방식에 맞춰 필요한 순서만 사용하세요.</p>
+        <ol class="routine"><li><span class="when">주초</span><div><h3>지난 경기에서 이번 주의 초점 정하기</h3><p>경기 리뷰에서 개선할 행동을 고르고 일정에 연결합니다. 주간 일정에서 경기·훈련·회복의 흐름을 맞춥니다.</p></div></li><li><span class="when">훈련 전</span><div><h3>오늘 일정과 선수 상태 확인하기</h3><p>오늘의 세션과 대상 조를 확인합니다. 출석과 IDP 기록을 함께 보고 필요하면 시간·내용·참여 방식을 조정합니다.</p></div></li><li><span class="when">훈련 후</span><div><h3>관찰 하나, 피드백 한 마디 남기기</h3><p>일정에 연결한 과제의 실행 결과를 적고 선수의 이야기에 답합니다. 무엇을 봤는지 구체적으로 남깁니다.</p></div></li><li><span class="when">경기 전</span><div><h3>상대 분석을 우리 임무로 바꾸기</h3><p>상대 특징과 대응을 경기 준비에 반영합니다. 명단·배치·게임플랜을 정리하고 선수별 임무를 확인합니다.</p></div></li><li><span class="when">경기 후</span><div><h3>계획과 실제를 비교하기</h3><p>경기 리뷰와 선수의 자기 리뷰를 돌아봅니다. 잘된 행동은 유지하고 다음에 바꿀 행동은 다시 일정으로 이어갑니다.</p></div></li></ol>
+        <div class="callout blue"><strong>처음부터 모든 메뉴를 채울 필요는 없습니다.</strong><p>선수단, 이번 주 일정, 오늘의 기록부터 운영하고 팀에 필요한 기준·분석·스카우팅을 차례로 더하세요.</p></div>
+      </section>
+
+      <section class="section" id="faq" aria-labelledby="faq-title">
+        <span class="section-no">11 · HELP</span><h2 id="faq-title">자주 묻는 질문</h2>
+        <p class="lead">팀 운영에서 자주 헷갈리는 상황과 확인 순서입니다.</p>
+        <div class="faq">
+          <details><summary>팀에 합류했는데 코치 메뉴가 보이지 않아요.</summary><div><p>코드로 처음 합류하면 선수 역할입니다. 팀 관리자가 <strong>계정 → 팀 관리 → 권한 관리</strong>에서 역할을 코칭스태프 또는 임원으로 바꾸고 저장했는지 확인하세요.</p><p>현재 선택한 팀이 맞는지, 변경된 권한을 아직 받고 있는지도 확인합니다.</p></div></details>
+          <details><summary>코칭스태프인데 일정을 수정할 수 없어요.</summary><div>일정에는 별도의 편집 잠금이 있습니다. 운영진이 일정 화면의 <strong>일정 편집: 운영진만 / 모든 스태프</strong> 설정을 확인해야 합니다. 권한 관리에서 개인별 일정 구역을 체크한 것만으로는 이 잠금이 풀리지 않습니다.</div></details>
+          <details><summary>선수 명단은 있는데 IDP 기록이 안 보여요.</summary><div><p>먼저 선수가 같은 팀에 합류했는지 확인합니다. 다음으로 관리자가 <strong>선수 연결</strong>에서 계정을 명단의 본인과 연결했는지, 선수가 자신의 계정으로 IDP를 작성·저장했는지 확인하세요.</p><p>이미 연결되어 있다면 기록을 아직 받지 못한 상태일 수 있습니다. 저장 상태와 앱 설정의 동기화 진단을 확인하세요.</p></div></details>
+          <details><summary>선수의 일지를 코치가 대신 고칠 수 있나요?</summary><div>선수 IDP의 원문은 선수 본인이 편집합니다. 코치·스태프는 허용된 성장 기록을 읽고 별도의 피드백과 이야기를 남깁니다. 팀의 평가·피드백과 선수 자신의 기록을 구분해 사용하세요.</div></details>
+          <details><summary>휴대폰에서 IDP나 플레이북을 못 찾겠어요.</summary><div>팀 화면 아래쪽의 <strong>더보기</strong>를 열어 보세요. 출석·IDP·평가표·플레이북이 있습니다. 선수 역할에서는 코치용 팀 메뉴가 동일하게 표시되지 않습니다.</div></details>
+          <details><summary>다른 기기에서는 내용이 다르게 보여요.</summary><div><p>같은 계정과 같은 팀을 선택했는지, 수정한 기기의 전송이 끝났는지, 새 기기가 자료를 받았는지 순서대로 확인하세요. 앱 설정 → 데이터에서 저장 상태와 진단을 볼 수 있습니다.</p><p>전송이 남았거나 오류가 표시되면 기기의 자료를 지우기 전에 안내와 복구 도구를 확인합니다.</p></div></details>
+          <details><summary>팀을 바꾸면 개인 노트도 다른 팀에 공개되나요?</summary><div>개인 노트는 개인 계정의 자료이며 팀 전환으로 공유되지 않습니다. 보관함 항목은 별도의 팀 공유 범위가 있으므로 카드와 폴더의 공유 상태를 확인하세요.</div></details>
+          <details><summary>문제가 계속되면 어디에 알려야 하나요?</summary><div><strong>앱 설정 → 일반 → 오류 제보</strong>에서 문제를 작성하고 답변을 확인할 수 있습니다. 어떤 화면에서 무엇을 누른 뒤 문제가 발생했는지 적으면 확인하는 데 도움이 됩니다.</div></details>
+        </div>
+        <div class="closing"><h3>이번 주 일정 하나부터 시작하세요.</h3><p>함께할 사람을 연결하고, 오늘 할 일을 정하고, 끝난 뒤 한 가지를 돌아봅니다. 그 기록이 다음 훈련과 선수의 성장으로 이어집니다.</p><a class="app-link" href="/studio/">프로세스 스튜디오 열기 ↗</a></div>
+      </section>
+    </main>
+  </div>
+  <footer><div class="footer-inner"><span>PROCESS STUDIO · 팀 운영 안내 · 2026.09.15 기준</span><span><a href="/guide/">전체 사용 설명서</a> &nbsp;·&nbsp; <a href="/start/how.html">IDP 안내</a> &nbsp;·&nbsp; <a href="#start">처음으로 ↑</a></span></div></footer>
+  <script>
+    // The guide and all anchor links also work without JavaScript.
+    (function(){
+      if(!('IntersectionObserver' in window))return;
+      var links=Array.from(document.querySelectorAll('.toc nav a'));
+      var sections=Array.from(document.querySelectorAll('main .section'));
+      function mark(id){links.forEach(function(link){if(link.hash==='#'+id)link.setAttribute('aria-current','location');else link.removeAttribute('aria-current');});}
+      var observer=new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){if(entry.isIntersecting)mark(entry.target.id);});
+      },{rootMargin:'-80px 0px -65% 0px',threshold:0});
+      sections.forEach(function(section){observer.observe(section);});
+      links.forEach(function(link){link.addEventListener('click',function(){mark(link.hash.slice(1));});});
+    })();
+  </script>
+</body>
+</html>
