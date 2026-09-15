@@ -41,6 +41,33 @@
       if(raw===null)return null;var r=decode(raw);
       if(r.v!==1||r.kind!=='base'||r.uid!==ctx.uid||r.wid!==ctx.wid||r.k!==k||!entry(r.current)||(r.previous!==null&&!entry(r.previous)))fail('AutosaveJournalCorruptError');return r;
     }
+    function capturedKey(c,k,h,cupd){return scope(c)+'captured:'+key(k)+':'+key(h)+':'+version(cupd);}
+    function captured(raw,c,k,h,cupd){
+      if(raw===null)return null;var r=decode(raw);
+      if(r.v!==1||r.kind!=='captured'||r.uid!==c.uid||r.wid!==c.wid||r.k!==k||!entry(r.entry)||r.entry.h!==h||r.entry.c!==cupd)fail('AutosaveJournalCorruptError');
+      return r.entry.raw;
+    }
+    function keepCaptured(c,k,raw,h,cupd,current){
+      var id=capturedKey(c,k,h,cupd),value=JSON.stringify({v:1,kind:'captured',uid:c.uid,wid:c.wid,k:k,entry:{raw:raw,h:h,c:cupd}});
+      return serial(id,function(){return get(scope(c)+'base:'+key(k),current).then(function(primary){
+        var old=baseline(primary,c,k);
+        if(old&&[old.current,old.previous].some(function(e){return e&&e.h===h&&e.c===cupd&&e.raw!==raw;}))fail('AutosaveJournalCollisionError');
+        return get(id,current);
+      }).then(function(existing){
+        if(existing!==null){if(captured(existing,c,k,h,cupd)!==raw)fail('AutosaveJournalCollisionError');if(existing!==value)fail('AutosaveJournalVerificationError');return true;}
+        // This is an immutable extra ancestor, never a replacement for the
+        // current server baseline. A second tab may have filled it meanwhile.
+        if(typeof storage.replaceIfValue!=='function')fail('AutosaveJournalVerificationError');
+        current();return Promise.resolve(storage.replaceIfValue(id,null,value,current)).then(function(){
+          return get(id,current);
+        }).then(function(check){
+          if(check===null)fail('AutosaveJournalVerificationError');
+          if(captured(check,c,k,h,cupd)!==raw)fail('AutosaveJournalCollisionError');
+          if(check!==value)fail('AutosaveJournalVerificationError');
+          return true;
+        });
+      });});
+    }
     function metadata(r){return {id:r.id,k:r.k,at:r.at,cupd:r.cupd,reason:r.reason,localHash:r.localHash,remoteHash:r.remoteHash};}
     function archived(raw,ctx,id){
       var r=decode(raw);
@@ -51,14 +78,18 @@
       return r;
     }
     function serial(k,fn){var before=tails[k]||Promise.resolve(),run=before.catch(function(){}).then(fn);tails[k]=run;return run.then(function(v){if(tails[k]===run)delete tails[k];return v;},function(e){if(tails[k]===run)delete tails[k];throw e;});}
-    return {
+    var api={
       base:function(ctx,k,metaH,metaC){return run(ctx,function(c,current){
         var id=scope(c)+'base:'+key(k);
         if(metaH!=null&&typeof metaH!=='string')fail('AutosaveJournalInputError');
         if(metaC!=null)version(metaC);
-        return get(id,current).then(function(raw){var r=baseline(raw,c,k);if(!r)return null;
-          if(!metaH)return r.current.raw;
-          var found=[r.current,r.previous].filter(function(e){return e&&e.h===metaH&&(metaC==null||e.c===metaC);});return found.length?found[0].raw:null;
+        return get(id,current).then(function(raw){var r=baseline(raw,c,k);
+          if(!metaH)return r?r.current.raw:null;
+          var found=r?[r.current,r.previous].filter(function(e){return e&&e.h===metaH&&(metaC==null||e.c===metaC);}):[];
+          if(found.length)return found[0].raw;
+          // Extra ancestors are selectable only by both persisted meta fields.
+          if(metaC==null)return null;
+          return get(capturedKey(c,k,metaH,metaC),current).then(function(saved){return captured(saved,c,k,metaH,metaC);});
         });
       });},
       remember:function(ctx,k,raw,h,cupd){return run(ctx,function(c,current){
@@ -74,6 +105,14 @@
           if(old&&old.current.raw===raw&&old.current.h===h&&old.current.c===cupd)return true;
           return write(id,JSON.stringify({v:1,kind:'base',uid:c.uid,wid:c.wid,k:k,current:next,previous:old?old.current:null}),current);
         });});
+      });},
+      capture:function(ctx,k,raw,h,cupd){return run(ctx,function(c,current){
+        // Only capture may retain an older confirmed local ancestor. Remote
+        // reconcile still uses remember(), whose version fence is unchanged.
+        return api.remember(c,k,raw,h,cupd).catch(function(error){
+          current();if(!error||error.name!=='AutosaveJournalVersionError')throw error;
+          return keepCaptured(c,k,raw,h,cupd,current);
+        });
       });},
       archive:function(ctx,k,localRaw,remoteRaw,cupd,reason){return run(ctx,function(c,current){
         key(k);version(cupd);
@@ -94,7 +133,7 @@
         if(!validId(id))fail('AutosaveJournalInputError');
         return get(scope(c)+'archive:'+id,current).then(function(raw){if(raw===null)return null;var r=archived(raw,c,id);return {metadata:metadata(r),localRaw:r.localRaw,remoteRaw:r.remoteRaw};});
       });}
-    };
+    };return api;
   }
   return {create:create,hash:hash,PREFIX:PREFIX};
 });

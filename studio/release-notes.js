@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-autosave-record-recovery',date:'2026-09-15',title:'멈춰 있던 저장 재시도를 고쳤습니다',
+    changes:[
+      '이전 저장 기록이 남아 있을 때 재시도가 멈추던 문제를 고쳤습니다.',
+      '기존 기록을 보존하며, 서버에서 저장된 내용을 확인한 뒤 저장 완료로 표시합니다.',
+      '오류 안내에서 기기 저장과 서버 확인 문제를 구분합니다.'
+    ]
+  },{
     id:'2026-09-15-private-working-board',date:'2026-09-15',title:'작업 중인 보드를 개인 공간으로 분리했습니다',
     changes:[
       '작업 중인 보드는 내 계정에 저장되며, 다른 코치의 보드는 자동으로 열리지 않습니다.',

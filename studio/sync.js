@@ -2357,6 +2357,8 @@ function syncReasonText(code){
     :code==='sync_permission'?'이 자료를 고칠 권한이 없어요'
     :code==='sync_storage'?'이 기기 저장소를 읽지 못했어요'
     :code==='sync_offline'?'오프라인이에요'
+    :code==='sync_confirm_missing'?'저장 완료 여부를 다시 확인해야 해요'
+    :code==='sync_unexpected'?'저장 처리 중 오류가 발생했어요'
     :'인터넷을 확인해 주세요';
 }
 /* ══ 2.625 · 상태 한 줄 ════════════════════════════════════════════════════════
@@ -2396,6 +2398,8 @@ function classifySyncError(e){
   var msg=String((e&&e.message)||e||'').toLowerCase(),status=+(e&&e.psStatus)||0;
   if(navigator.onLine===false||(e&&e.psCode==='sync_offline'))return {code:'sync_offline',stage:(e&&e.psStage)||'sync'};
   if(e&&e.psCode)return {code:e.psCode,stage:e.psStage||'sync',status:status};
+  if(e&&e.name==='AutosaveJournalVersionError')return {code:'sync_confirm_missing',stage:'autosave_baseline'};
+  if(e&&/^AutosaveJournal(?:Corrupt|Input|Random|Verification|Collision)Error$/.test(e.name))return {code:'sync_storage',stage:'autosave_journal'};
   if(status===401||/\b401\b|no token/.test(msg))return {code:'sync_auth',stage:(e&&e.psStage)||'auth',status:401};
   if(status===403||/\b403\b/.test(msg))return {code:'sync_permission',stage:(e&&e.psStage)||'sync',status:403};
   if(status===429||/\b429\b/.test(msg))return {code:'sync_rate_limit',stage:(e&&e.psStage)||'sync',status:429};
@@ -5957,7 +5961,7 @@ function autosaveJournal(wid){
   if(!autosaveJournals[key]){
     var raw=PSAutoSaveJournal.create({storage:window.storage,hash:hash,context:function(){return autosaveContext(wid);}}),safe={};
     function allowed(k){if(!autosaveCanRead(wid,k))throw syncIssue('sync_permission','autosave_access','자료 접근 권한이 바뀌었습니다');}
-    ['base','remember','archive'].forEach(function(name){safe[name]=function(){
+    ['base','remember','capture','archive'].forEach(function(name){safe[name]=function(){
       var args=arguments,k=args[1];allowed(k);return raw[name].apply(raw,args).then(function(value){allowed(k);return value;});
     };});
     safe.list=function(ctx){return raw.list(ctx).then(function(rows){return rows.filter(function(r){return autosaveCanRead(wid,r.k);});});};
@@ -6098,8 +6102,9 @@ function autosaveSyncRun(reason){
   if(!autosaveEnabled())return syncNowCore(reason);
   if(!autosaveRunner)autosaveRunner=PSAutosaveRuntime.create({
     context:autosaveContext,hash:hash,read:currentValueForKey,version:autosaveVersion,confirmed:autosaveConfirmed,
-    journal:function(wid){var j=autosaveJournal(wid);return {base:j.base,archive:j.archive,
-      remember:function(ctx,k,raw,h,c){return j.remember(ctx,k,raw,h,c).then(function(){autosaveRemembered[ctx.uid+':'+wid+':'+k]=h+':'+c;});}};},
+    journal:function(wid){var j=autosaveJournal(wid);function remembered(method,ctx,k,raw,h,c){return j[method](ctx,k,raw,h,c).then(function(value){autosaveRemembered[ctx.uid+':'+wid+':'+k]=h+':'+c;return value;});}return {base:j.base,archive:j.archive,
+      remember:function(ctx,k,raw,h,c){return remembered('remember',ctx,k,raw,h,c);},
+      capture:function(ctx,k,raw,h,c){return remembered('capture',ctx,k,raw,h,c);}};},
     pending:autosavePending,reviewCurrent:autosaveReviewCurrent,plan:PSAutosaveMerge.plan,prepare:autosavePrepare,apply:autosaveApply,
     legacyBase:function(wid,k,v){var b=syncBaseGet(k,wid);return typeof b==='string'&&v.h&&hash(b)===v.h?b:null;},
     remote:function(wid,keys){return ensureToken().then(function(at){if(!at)throw syncIssue('sync_auth','autosave_token','로그인 확인이 필요합니다');return kvPullValues(at,wid,keys);});},

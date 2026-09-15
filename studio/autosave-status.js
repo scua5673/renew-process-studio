@@ -10,7 +10,8 @@
       if(s.reason==='sync_auth')return result('bad','로그인이 필요해요','다시 로그인한 뒤 저장을 이어갑니다.','login',true);
       if(s.reason==='sync_storage')return result('bad','기기 저장을 확인해 주세요','저장 공간을 확인한 뒤 다시 시도해 주세요.','retry',true);
       if(s.reason==='sync_permission')return result('bad','저장 권한을 확인해 주세요','이 자료를 저장할 권한을 확인하지 못했습니다.','retry',true);
-      return result('bad','저장을 확인하지 못했어요','연결을 확인한 뒤 다시 시도해 주세요.','retry',true);
+      if(s.reason==='sync_confirm_missing')return result('bad','저장 상태를 다시 확인해 주세요','저장 기록이 일치하지 않아 완료 여부를 확인하지 못했습니다. 다시 시도해 주세요.','retry',true);
+      return result('bad','저장을 확인하지 못했어요','변경사항의 서버 저장 여부를 확인하지 못했습니다. 다시 시도해 주세요.','retry',true);
     }
     if(kind==='busy')return result('busy','저장 중…','변경사항의 서버 저장을 확인하고 있습니다.');
     if(review||kind==='ask'||kind==='held')return result('held','일부 변경 보관','자동으로 맞추지 못한 변경을 이 기기에 보관했습니다.','retry',true);
