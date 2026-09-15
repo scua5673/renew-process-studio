@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-compact-participation',date:'2026-09-15',title:'선수별 누적을 한 줄 목록으로',
+    changes:[
+      '선수 이름·번호·포지션과 누적 일수를 한 줄로 정리해 더 많은 선수를 한눈에 봅니다.',
+      '휴대폰에서도 운동·쉼·부상·재활·미기록을 나란히 확인하고, 이름을 누르면 상세 기록이 열립니다.'
+    ]
+  },{
     id:'2026-09-15-participation-history',date:'2026-09-15',title:'날짜별 참여 기록과 선수별 누적 현황',
     changes:[
       '참여 화면에서 날짜를 누르면 그날 선수 명단과 기록을 확인하고 수정할 수 있습니다.',

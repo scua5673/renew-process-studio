@@ -10,7 +10,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="storage.js"></script>
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
-<script src="participation.js?v=2.821"></script>
+<script src="participation.js?v=2.822"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
 <script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 -->
@@ -4415,15 +4415,21 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       #availRoot .av-lg{flex-wrap:wrap;gap:8px 14px}
       #availRoot .av-player-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--dim)}
       #availRoot .av-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);max-width:100%}
-      #availRoot .av-total-table{border-collapse:collapse;min-width:630px;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
-      #availRoot .av-total-table th,#availRoot .av-total-table td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle;white-space:nowrap}
-      #availRoot .av-total-table th:first-child{min-width:140px;max-width:180px;white-space:normal;text-align:left;position:sticky;left:0;z-index:1;background:var(--surface)}
-      #availRoot .av-total-table .av-player-link{max-width:170px;white-space:normal}
+      #availRoot .av-total-table{border-collapse:collapse;table-layout:fixed;min-width:0;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+      #availRoot .av-total-table th,#availRoot .av-total-table td{padding:0 14px;height:44px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle;white-space:nowrap}
+      #availRoot .av-total-table th:first-child{width:26%;text-align:left;background:var(--surface)}
+      #availRoot .av-total-table thead th:nth-child(2){width:22%}
+      #availRoot .av-player-summary{display:flex;align-items:center;gap:8px;min-width:0}
+      #availRoot .av-total-table .av-player-link{flex:0 1 auto;min-width:0;max-width:100%;min-height:44px;padding:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       #availRoot .av-total-table thead th{font-size:12px;font-weight:700;background:var(--surface-2,#f1f3f5)}
       #availRoot .av-total-table thead th:first-child{background:var(--surface-2,#f1f3f5)}
-      #availRoot .av-total-table small{display:block;color:var(--dim);font-size:11px;font-weight:400;margin-top:4px}
-      #availRoot .av-total-table td>span{font-size:18px;font-weight:650}
-      #availRoot .av-total-table .av-table-group th{padding:8px 14px;background:var(--surface-2,#f1f3f5);font-size:12px}
+      #availRoot .av-total-table small{color:var(--dim);font-size:11px;font-weight:400}
+      #availRoot .av-total-table thead small{display:block;margin-top:2px}
+      #availRoot .av-total-table .av-player-meta{flex-shrink:0;margin:0}
+      #availRoot .av-total-table .av-exercise-detail{display:inline;margin-left:8px}
+      #availRoot .av-total-table td>span{font-size:15px;font-weight:650}
+      #availRoot .av-total-table .av-table-group th{height:28px;padding:0 14px;background:var(--surface-2,#f1f3f5);font-size:12px}
+      #availRoot .av-total-table tbody tr:not(.av-table-group):hover>th,#availRoot .av-total-table tbody tr:not(.av-table-group):hover>td{background:var(--surface-2,#f1f3f5)}
       #availRoot .av-total-table tr.is-selected>th,#availRoot .av-total-table tr.is-selected>td{background:color-mix(in srgb,var(--accent,#3a6df0) 7%,var(--surface))}
       #availRoot .av-history{margin-top:18px;scroll-margin-top:16px;outline:none}
       #availRoot .av-history .hd{flex-wrap:wrap}
@@ -4461,22 +4467,17 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
         #availRoot .av-dnav{gap:7px;flex-wrap:wrap}
         #availRoot .av-dnav>.av-vseg{flex-basis:auto;margin:6px 0 0}
         #availRoot .av-dsched{flex-wrap:wrap;gap:5px}
-        #availRoot .av-table-wrap{overflow:visible;border:0;background:transparent;border-radius:0}
-        #availRoot .av-total-table{display:block;width:100%;min-width:0}
-        #availRoot .av-total-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-        #availRoot .av-total-table tbody{display:block}
-        #availRoot .av-total-table tbody tr{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:0 0 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
-        #availRoot .av-total-table th,#availRoot .av-total-table td{display:block;border:0;min-width:0;padding:10px 5px;white-space:normal}
-        #availRoot .av-total-table th:first-child{position:static;grid-column:1/-1;min-width:0;max-width:none;width:auto;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
-        #availRoot .av-total-table .av-player-link{max-width:none;width:auto;min-height:28px}
-        #availRoot .av-total-table th:first-child>small{display:inline;margin:0 0 0 8px}
-        #availRoot .av-total-table td+td{border-left:1px solid var(--line)}
-        #availRoot .av-total-table td:before{content:attr(data-label);display:block;font-size:10px;font-weight:500;line-height:1.4;min-height:28px;color:var(--dim);margin-bottom:4px}
-        #availRoot .av-total-table td>small{font-size:9px;line-height:1.5;min-height:14px}
-        #availRoot .av-total-table .av-table-group{display:block;border:0;background:transparent;margin:12px 0 5px}
-        #availRoot .av-total-table .av-table-group th{border:0;border-radius:0;background:transparent;padding:4px 2px}
-        #availRoot .av-total-table td.av-empty{grid-column:1/-1}
-        #availRoot .av-total-table td.av-empty:before{display:none}
+        #availRoot .av-total-table{font-size:12px}
+        #availRoot .av-total-table th,#availRoot .av-total-table td{padding:0 3px}
+        #availRoot .av-total-table th:first-child{width:40%;padding-left:8px}
+        #availRoot .av-total-table thead th:nth-child(2){width:auto}
+        #availRoot .av-total-table thead th{font-size:11px}
+        #availRoot .av-total-table thead small{font-size:9px}
+        #availRoot .av-player-summary{gap:5px}
+        #availRoot .av-total-table .av-player-meta{font-size:9px}
+        #availRoot .av-total-table .av-exercise-detail{display:none}
+        #availRoot .av-total-table td>span{font-size:14px}
+        #availRoot .av-total-table .av-table-group th{padding-left:8px}
         #availRoot .av-history-row{grid-template-columns:115px 65px auto;gap:5px 8px;padding:10px}
         #availRoot .av-history-date{font-size:12px}
       }
@@ -14184,7 +14185,7 @@ var availRange=14;
 var availDay=null;   /* 2.691 — 날짜별 명단에서 보고 있는 날(ymd). null=오늘 */
 var availView="grp"; try{ availView=localStorage.getItem("cs_av_view_v1")||"grp"; }catch(_){}   /* 2.692 — grp 조별 · pos 포지션별 · name 이름순. 2.693 기본은 조별 — 조 안은 훈련 가능자(포지션 순·이름순) → 쉼(재활·부상·불참)(사용자 확정) */
 var AV_ST_LB={ok:"훈련",rest:"휴식",rehab:"재활",injury:"부상",out:"불참"}, AV_ST_ORDER=["ok","rest","rehab","injury","out"];
-/* 2.821 — 날짜별 직접 기록. 오늘은 현재 상태와 연결하고 과거 날짜는 해당 셀만 수정한다. */
+/* 2.822 — 날짜별 직접 기록. 오늘은 현재 상태와 연결하고 과거 날짜는 해당 셀만 수정한다. */
 /* Date records have their own cells. Editing yesterday never splits a status
    run or changes today's player. Today also controls continuing availability. */
 var avSaving=false;
@@ -14325,13 +14326,14 @@ function renderAvailPlayers(ours,from,to){
   var h='<div class="av-player-toolbar"><span>선수 이름을 누르면 날짜별 기록이 열립니다.</span>'+avGrouping()+'</div><div class="av-table-wrap" tabindex="0" role="region" aria-label="선수별 누적 기록"><table class="av-total-table"><caption class="av-sr-only">'+esc(from+'부터 '+to+'까지 선수별 누적')+'</caption><thead><tr><th scope="col">선수</th><th scope="col">운동<small>일정일</small></th><th scope="col">쉼<small>일정일</small></th><th scope="col">부상<small>달력일</small></th><th scope="col">재활<small>달력일</small></th><th scope="col">미기록<small>일정일</small></th></tr></thead><tbody>';
   avGroups(ours).forEach(function(group){
     if(availView!=='name')h+='<tr class="av-table-group"><th colspan="6" scope="rowgroup">'+esc(group.name)+'</th></tr>';
-    group.players.forEach(function(p){var t=avTotals(p,from,to);h+='<tr'+(String(p.id)===String(availPlayer)?' class="is-selected"':'')+'><th scope="row">'+avPlayerLink(p)+'<small>'+esc([p.num?'#'+p.num:'',avPosition(p)].filter(Boolean).join(' · '))+'</small></th><td data-label="운동 · 일정일">'+avStat(t.exercise,'exercise')+'<small>훈련 '+avStat(t.training,'training')+' · 경기 '+avStat(t.match,'match')+'</small></td><td data-label="쉼 · 일정일">'+avStat(t.rest,'rest')+'</td><td data-label="부상 · 달력일">'+avStat(t.injury,'injury')+'</td><td data-label="재활 · 달력일">'+avStat(t.rehab,'rehab')+'</td><td data-label="미기록 · 일정일">'+avStat(t.unknown,'unknown')+'</td></tr>';});
+    group.players.forEach(function(p){var t=avTotals(p,from,to);h+='<tr'+(String(p.id)===String(availPlayer)?' class="is-selected"':'')+'><th scope="row"><div class="av-player-summary">'+avPlayerLink(p)+'<small class="av-player-meta">'+esc([p.num?'#'+p.num:'',avPosition(p)].filter(Boolean).join(' · '))+'</small></div></th><td data-label="운동 · 일정일">'+avStat(t.exercise,'exercise')+'<small class="av-exercise-detail">훈련 '+avStat(t.training,'training')+' · 경기 '+avStat(t.match,'match')+'</small></td><td data-label="쉼 · 일정일">'+avStat(t.rest,'rest')+'</td><td data-label="부상 · 달력일">'+avStat(t.injury,'injury')+'</td><td data-label="재활 · 달력일">'+avStat(t.rehab,'rehab')+'</td><td data-label="미기록 · 일정일">'+avStat(t.unknown,'unknown')+'</td></tr>';});
   });
   if(!ours.length)h+='<tr><td colspan="6" class="av-empty">등록된 선수가 없습니다.</td></tr>';
   h+='</tbody></table></div><p class="av-note">운동은 훈련·경기에 참여한 날, 쉼은 해당 일정에서 휴식·부상·재활·불참한 날입니다. 부상·재활은 주말과 OFF를 포함해 복귀 전까지 센 달력일입니다. 같은 날이 쉼과 부상·재활에 함께 포함될 수 있습니다.</p>';
   var p=ours.find(function(x){return String(x.id)===String(availPlayer);});
   if(p){
-    h+='<section class="av-pn av-history" id="avPlayerHistory" tabindex="-1" aria-label="'+esc((p.name||'선수')+' 날짜별 기록')+'"><div class="hd"><b>'+esc(p.name||'선수')+' · 날짜별 기록</b><small>'+esc(from+' ~ '+to)+'</small></div><div class="av-history-list">';
+    var selectedTotals=avTotals(p,from,to);
+    h+='<section class="av-pn av-history" id="avPlayerHistory" tabindex="-1" aria-label="'+esc((p.name||'선수')+' 날짜별 기록')+'"><div class="hd"><b>'+esc(p.name||'선수')+' · 날짜별 기록</b><small>'+esc(from+' ~ '+to)+'</small><small>훈련 '+selectedTotals.training+'일 · 경기 '+selectedTotals.match+'일</small></div><div class="av-history-list">';
     for(var day=to;day>=from;day=stAddDays(day,-1)){var r=avResolve(p,day);h+='<div class="av-history-row"><button type="button" class="av-history-date" data-av-date="'+esc(day)+'">'+esc(avDayLabel(day))+'</button><span class="av-history-kind">'+(r.kind==='match'?'경기':r.kind==='train'?'훈련':r.kind==='off'?'OFF':'일정 없음')+'</span>'+avEditButton(p,day,r)+'<p>'+(r.note?esc(r.note):'<span class="av-dim">사유·메모 없음</span>')+'</p></div>';}
     h+='</div></section>';
   }else if(ours.length)h+='<div class="av-empty av-history-placeholder">위에서 선수를 선택하면 날짜별 상태와 사유·메모를 확인할 수 있습니다.</div>';
