@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-data-stability',date:'2026-09-15',title:'저장과 팀 전환의 반복 오류를 수정했습니다',
+    changes:[
+      '팀 전환이 취소돼도 그 사이 완료된 저장 기록을 유지합니다.',
+      '연속 저장을 검증 실패로 잘못 표시하던 문제를 수정했습니다.',
+      '저장 이력에서 정확한 기준본을 확인할 수 있는 IDP 자료는 자동으로 동기화를 재개합니다.'
+    ]
+  },{
     id:'2026-09-15-workspace-save-wait',date:'2026-09-15',title:'작업 공간 전환의 저장 대기를 개선했습니다',
     changes:[
       '자료 확인이 진행 중인데도 개인 작업과 팀 사이의 전환이 일찍 취소되는 문제를 줄였습니다.',

@@ -46,6 +46,20 @@ function harness(){
 test('ordinary workspace switch still saves and opens the selected team',async()=>{
   const h=harness();await h.run();assert.equal(h.local.get('active'),'team-B');assert.equal(h.c.cacheOwner().uid,'account-A');assert.equal(h.calls.reloads,1);assert.deepEqual(h.calls.deleted,['roster']);
 });
+for(const autosave of [true,false])test('cancelled switch preserves later confirmed meta with autosave '+autosave,async()=>{
+  const h=harness(),key='cs_idp_v1_account-A';
+  const before=JSON.stringify({h:{[key]:'old-confirmed'},c:{[key]:1},r:{}});
+  const confirmed=JSON.stringify({h:{[key]:'new-confirmed'},c:{[key]:2},r:{schedule:'new-ready'}});
+  h.local.set('meta',before);h.c.autosaveEnabled=()=>autosave;
+  h.hooks.sync=()=>{h.local.set('meta',confirmed);h.local.set(key,'confirmed body');return Promise.resolve({error:1,code:'sync_storage'});};
+  const result=await h.run();assert.equal(result.cancelled,1);assert.equal(h.local.get('active'),'team-A');
+  assert.equal(h.local.get('meta'),confirmed);assert.equal(h.local.get(key),'confirmed body');assert.deepEqual(h.calls.deleted,[]);
+});
+test('cancelled legacy switch still restores only its unchanged temporary meta',async()=>{
+  const h=harness(),before=JSON.stringify({h:{roster:'confirmed'},c:{roster:1},r:{}});h.local.set('meta',before);
+  h.c.autosaveEnabled=()=>false;h.hooks.sync=()=>Promise.resolve({error:1,code:'sync_storage'});
+  await h.run();assert.equal(h.local.get('meta'),before);assert.deepEqual(h.calls.deleted,[]);
+});
 test('pending source writes finish before the transition rotates its ownership markers',async()=>{
   const h=harness(),gate=deferred(),seal=h.local.get('owner'),epoch=h.c.workspaceSwitchEpochRaw();let passes=0;
   h.hooks.barrier=()=>++passes===1?gate.promise.then(()=>{assert.equal(h.local.get('owner'),seal);assert.equal(h.c.workspaceSwitchEpochRaw(),epoch);return {ready:1};}):Promise.resolve({ready:1});

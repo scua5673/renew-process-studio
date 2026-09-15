@@ -13,11 +13,11 @@ function harness(){
   diagnostic:(stage,e)=>diagnostics.push([stage,e.name]),isQuotaErr:()=>false,warnFull(){},setTimeout:f=>setImmediate(f),CustomEvent:function(){},dispatchEvent(){},migrated:Promise.resolve(),idbKeys:async()=>[],
   localStorage:{getItem:k=>local.get(k)??null,setItem:(k,v)=>local.set(k,String(v)),removeItem(k){removals.push(k);local.delete(k);}},
   async open(){if(hooks.open)await hooks.open();return {transaction(store,mode){
-   const n=++txNum;let aborted=false,pending=[],scheduled=false;
+   const n=++txNum;let aborted=false,pending=[],scheduled=false,reading=false;const staged=new Map();
    const t={error:null,abort(){aborted=true;setImmediate(()=>t.onabort&&t.onabort());},objectStore:()=>({
-    get(k){const req={};scheduled=true;setImmediate(async()=>{try{const captured=clone(disk.get(k));if(hooks.read)await hooks.read({k,n,mode});req.result=captured;if(req.onsuccess)req.onsuccess();if(!aborted){pending.forEach(f=>f());if(t.oncomplete)t.oncomplete();}}catch(e){t.error=e;if(t.onerror)t.onerror();}});return req;},
-    put(v,k){pending.push(()=>{disk.set(k,clone(v));writes.push({k,v:clone(v)});});if(!scheduled){scheduled=true;setImmediate(()=>{if(!aborted){pending.forEach(f=>f());if(t.oncomplete)t.oncomplete();}});}},
-    delete(k){pending.push(()=>{disk.delete(k);writes.push({k,deleted:true});});}
+    get(k){reading=true;const req={};scheduled=true;setImmediate(async()=>{try{const captured=clone(staged.has(k)?staged.get(k):disk.get(k));if(hooks.read)await hooks.read({k,n,mode});req.result=captured;if(req.onsuccess)req.onsuccess();if(!aborted){pending.forEach(f=>f());if(t.oncomplete)t.oncomplete();}}catch(e){t.error=e;if(t.onerror)t.onerror();}});return req;},
+    put(v,k){staged.set(k,clone(v));pending.push(()=>{disk.set(k,clone(v));writes.push({k,v:clone(v)});});if(!scheduled){scheduled=true;setImmediate(()=>{if(!aborted&&!reading){pending.forEach(f=>f());if(t.oncomplete)t.oncomplete();}});}},
+    delete(k){staged.set(k,undefined);pending.push(()=>{disk.delete(k);writes.push({k,deleted:true});});}
    })};if(hooks.transaction)hooks.transaction({n,mode});return t;
   }};}
  };
@@ -61,6 +61,16 @@ test('mirror entry refuses an old event value and normal mirror preserves its cu
  const h=harness();h.local.set('scout_tool_v1','new');await assert.rejects(h.c.psMirrorSharedAsync('scout_tool_v1','old'),stale);assert.deepEqual(h.writes,[]);await h.c.psMirrorSharedAsync('scout_tool_v1','new');assert.equal(h.disk.get('scout_tool_v1'),'new');
 });
 function thumb(marker){return {marker,thumb:'<svg><pattern id="psRealGrass">'+('x'.repeat(2300))+'</pattern><path fill="url(#psRealGrass)"/></svg>'};}
+test('overlapping committed writes verify their own transaction and retain the newer body',async()=>{
+ const h=harness(),key='process_coach_v1';
+ const results=await Promise.all([h.c.idbSet(key,'first'),h.c.idbSet(key,'newer')]);
+ assert.deepEqual(results,[true,true]);assert.equal(h.disk.get(key),'newer');assert.deepEqual(h.diagnostics,[]);
+});
+test('an aborted transaction is never a successful save',async()=>{
+ const h=harness(),e=Object.assign(new Error('abort'),{name:'AbortError'});h.disk.set('key','before');
+ h.c.open=async()=>({transaction(){const t={error:e,objectStore:()=>({put(){},get(){return {result:'candidate'};}})};setImmediate(()=>t.onabort());return t;}});
+ await assert.rejects(h.c.idbSet('key','candidate'),x=>x===e);assert.equal(h.disk.get('key'),'before');
+});
 for(const object of [false,true])for(const stage of ['read','atomic-read'])test('thumbnail cleanup '+(object?'object':'string')+' '+stage+' cannot overwrite new-owner data',async()=>{
  const h=harness(),g=gate(),key='process_coach_v1',a=object?thumb('A'):JSON.stringify(thumb('A')),b=object?{marker:'B',weeks:{B:true}}:JSON.stringify({marker:'B',weeks:{B:true}});h.disk.set(key,a);
  h.hooks.read=({mode})=>(stage==='read'?mode==='readonly':mode==='readwrite')?g.promise:undefined;const p=h.c.slimKey(key,{n:0,saved:0});await tick();h.change('account',key,b);g.resolve();await p;assert.deepEqual(h.disk.get(key),b);assert.deepEqual(h.writes,[]);

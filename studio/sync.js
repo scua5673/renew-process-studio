@@ -1566,6 +1566,27 @@ function syncIdpBaseCompact(k,m0,widArg){
   var chosen=idpBasePickEntry(k,stored,m0);if(!chosen||chosen.h!==env.c.h||chosen.r!==env.c.r)return Promise.resolve(true);
   return scoped?syncBaseStore(k,IDP_BASE_TAG+JSON.stringify({v:1,c:env.c}),widArg):syncBaseStore(k,IDP_BASE_TAG+JSON.stringify({v:1,c:env.c}));
 }
+/* A cancelled legacy switch may have restored old meta after compacting its
+   IDP base. Recover only that EXACT confirmed hash+server version from the
+   owner-scoped immutable journal. This primes memory, never rewrites content
+   or ACKs pending edits. Ordinary merge/CAS must still complete afterwards. */
+function syncIdpJournalPrime(wid,m0){
+  if(typeof autosaveEnabled!=='function'||!autosaveEnabled()||typeof autosaveJournal!=='function')return Promise.resolve();
+  var ctx=autosaveContext(wid);if(!ctx)return Promise.resolve();
+  var keys=Object.keys(m0.h||{}).filter(function(k){return (isIdpPrivateKey(k)||isIdpPubKey(k))&&m0.h[k]&&
+    Number.isSafeInteger(m0.c&&m0.c[k])&&m0.c[k]>=0&&syncBaseHas(k,wid)&&syncBaseGet(k,wid,m0)==null;});
+  return Promise.all(keys.map(function(k){
+    var stored=syncBaseStored(k,wid),h=m0.h[k],c=m0.c[k];
+    return autosaveJournal(wid).base(ctx,k,h,c).then(function(raw){
+      var now=autosaveContext(wid),latest=meta();
+      if(!now||JSON.stringify(now)!==JSON.stringify(ctx)||!latest.h||latest.h[k]!==h||!latest.c||latest.c[k]!==c||syncBaseStored(k,wid)!==stored)return;
+      if(typeof raw!=='string'||hash(raw)!==h||!idpRawMergeable(k,raw))return;
+      var env=idpBaseEnvelope(stored),entry={r:raw,h:h,u:c};
+      syncBaseMem[syncBaseKey(k,wid)]=IDP_BASE_TAG+JSON.stringify({v:1,c:env&&env.c||entry,p:entry});
+      syncDiagnostic('idp-base-history-recovered');
+    }).catch(function(e){syncDiagnostic('idp-base-history-read',e);});
+  }));
+}
 function syncBasePrimeAll(widArg,m0){
   var scoped=arguments.length>0,currentWid='';
   if(scoped)currentWid=String(widArg||'');else try{currentWid=localStorage.getItem('ps_active_ws')||'';}catch(_){}
@@ -1597,7 +1618,7 @@ function syncBasePrimeAll(widArg,m0){
   if(!keys.length)return Promise.resolve(true);
   if(!(window.PSStorage&&PSStorage.auxGet)){
     keys.forEach(function(k){try{syncBaseMem[k]=localStorage.getItem(k);}catch(_){syncBaseMem[k]=null;}});
-    return Promise.resolve(true);
+    return syncIdpJournalPrime(currentWid,m0||meta()).then(function(){return true;});
   }
   /* 현재 팀은 병합 전에 반드시 준비한다. 예전에 열었던 다른 팀 base도 함께 옮겨
      localStorage에 팀 수만큼 큰 문자열이 누적되지 않게 하되, 그 팀의 충돌은 현재 sync를 막지 않는다. */
@@ -1609,7 +1630,7 @@ function syncBasePrimeAll(widArg,m0){
       if(legacy!=null&&e&&e.name!=='StorageConflictError'){syncBaseMem[key]=legacy;return true;}
       throw e;
     });
-  })).then(function(){return true;});
+  })).then(function(){return syncIdpJournalPrime(currentWid,m0||meta());}).then(function(){return true;});
 }
 function syncBaseReady(){
   return (window.PSStorage&&PSStorage.auxReady)?PSStorage.auxReady():Promise.resolve(true);
@@ -7777,10 +7798,13 @@ function switchWorkspaceCore(wid, skipSave){
     return !!(!switchFinished&&myGen===switchGen&&switchAccountCurrent()&&workspaceSwitchGuardOwned(switchGuardToken)&&ss&&String(ss.uid||'')===String(switchOwner.uid||'')
       &&String(activeWs()||'')===String(wid)&&own&&String(own.uid||'')===String(switchOwner.uid||'')&&String(own.wid||'')===String(wid));
   }
-  var preMetaRaw=null,preMetaCaptured=false,switchItemKeys=[];
+  var preMetaRaw=null,preMetaCaptured=false,preMetaWrittenRaw=null,switchItemKeys=[];
   function restorePreMeta(){
     if(!preMetaCaptured||wipeStarted||!sourceMarkersCurrent())return;
     try{
+      /* A completed sync can advance an IDP base and compact its predecessor.
+         Undo only our temporary meta write, never a later confirmed commit. */
+      if(localStorage.getItem(MKEY)!==preMetaWrittenRaw){preMetaCaptured=false;return;}
       if(preMetaRaw==null)localStorage.removeItem(MKEY);
       else if(matchReadyPending){var pm=JSON.parse(preMetaRaw);pm.r=pm.r||{};delete pm.r[MATCH_KEY];localStorage.setItem(MKEY,JSON.stringify(pm));}
       else localStorage.setItem(MKEY,preMetaRaw);
@@ -7939,7 +7963,8 @@ function switchWorkspaceCore(wid, skipSave){
       });
     }catch(_){}
     if(typeof autosaveEnabled==='function'&&autosaveEnabled())_keep=JSON.parse(preMetaRaw||'null')||_keep;
-    localStorage.setItem(MKEY,JSON.stringify(_keep));
+    preMetaWrittenRaw=JSON.stringify(_keep);
+    localStorage.setItem(MKEY,preMetaWrittenRaw);
   }catch(_){}
   /* 정상 저장도 기존 회차의 잠금 대기와 보관함 확인을 합치면 15초를 넘는다.
      완료 확인 전에 성공으로 처리하지 않으며, 전체 전환·소유자 가드는 유지한다. */
