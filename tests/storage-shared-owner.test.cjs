@@ -132,3 +132,15 @@ test('unverified login cache can be inspected without performing an implicit mig
 test('an existing-row read cannot deliver the previous account response',async()=>{
  const h=harness(),g=gate(),key='cs_perms_v1';h.disk.set(key,'A');h.hooks.read=()=>g.promise;const p=h.c.storage.get(key),rejected=assert.rejects(p,stale);await tick();h.change('account',key,'B');g.resolve();await rejected;assert.deepEqual(h.writes,[]);
 });
+
+function recovery(h,suffix='old',uid='A'){const k='ps_private_board_draft_v1:'+uid+':kept:'+suffix;const raw=JSON.stringify({v:1,uid,wid:'personal-'+uid,raw:'{"snap":{"players":[]}}'});h.local.set(k,raw);return {k,raw};}
+test('optimization moves existing recovery copies exactly and leaves another account untouched',async()=>{
+ const h=harness();h.c.slimThumbs=async()=>({n:0,saved:0});const a=recovery(h),b=recovery(h,'other','B');const active='ps_private_board_draft_v1:A';h.local.set(active,'active head');
+ await h.c.optimizer.optimize();assert.equal(h.disk.get(a.k),a.raw);assert.equal(h.local.has(a.k),false);assert.equal(h.local.get(b.k),b.raw);assert.equal(h.local.get(active),'active head');
+});
+test('different disk recovery body is never overwritten or removed by cleanup',async()=>{
+ const h=harness();h.c.slimThumbs=async()=>({n:0,saved:0});const a=recovery(h);h.disk.set(a.k,'other original');await h.c.optimizer.optimize();assert.equal(h.disk.get(a.k),'other original');assert.equal(h.local.get(a.k),a.raw);
+});
+test('newer local recovery draft arriving during migration remains intact',async()=>{
+ const h=harness();h.c.slimThumbs=async()=>({n:0,saved:0});const a=recovery(h),g=gate();h.hooks.read=()=>g.promise;const work=h.c.optimizer.optimize();await tick();h.local.set(a.k,'newer draft');g.resolve();await work;assert.equal(h.local.get(a.k),'newer draft');assert.equal(h.disk.has(a.k),false);
+});

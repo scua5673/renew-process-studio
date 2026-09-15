@@ -13203,7 +13203,7 @@ function matchWriteSchedule(state){
 /* 1.486 다중 기기 핵심 수정: cs_team_matches_v1(경기)도 감시한다.
    전에는 일정만 들어서 — 컴퓨터에서 작성한 경기 준비가 아이패드로 동기화돼 와도
    열려 있던 경기 화면이 옛 메모리(matchState)를 유지하다가 다음 저장에서 통째로 덮었다(사용자 제보). */
-/* 2.840 — a save ACK must not replace a held token or its match object.
+/* 2.841 — a save ACK must not replace a held token or its match object.
    Commit on pointerup, discard canceled previews, then drain deferred refresh after storage settles. */
 var matchBoardGesture=null,matchRefreshTimer=0;
 function matchRefreshLater(){

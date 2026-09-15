@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.840"></script>
+<script src="autosave-status.js?v=2.841"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -476,7 +476,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.840';</script>
+<script>window.PS_BUILD='2.841';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -3476,6 +3476,8 @@ function psShowUpdBand(){
   }
   function backupKeyAllowed(k,uid){
     k=String(k||'');
+    var privateKey='ps_private_board_draft_v1:'+encodeURIComponent(uid||'');
+    if(uid&&(k===privateKey||k.indexOf(privateKey+':kept:')===0))return true;
     if(backupHas(BACKUP_TEAM_KEYS,k)||backupHas(BACKUP_OWNER_KEYS,k)||k.indexOf('sq:')===0||k.indexOf('cs_idp_pub_v1_')===0)return true;
     return !!uid&&(k==='cs_idp_v1_'+uid||k==='cs_learn_v1_'+uid);
   }
@@ -3520,7 +3522,15 @@ function psShowUpdBand(){
         });}));
       });
     });
-    pre.then(function(){return collectBackupImages(data);}).then(function(){_makeBackup(data,ctx);}).catch(function(){
+    pre.then(function(){
+      Object.keys(data).forEach(function(k){
+        if(k.indexOf('ps_private_board_draft_v1:')!==0)return;
+        var record=JSON.parse(data[k]);
+        if(!record||record.v!==1||record.uid!==ctx.uid||typeof record.wid!=='string'||!record.wid||typeof record.raw!=='string')throw new Error('Private board backup owner mismatch');
+        JSON.parse(record.raw);
+      });
+      return collectBackupImages(data);
+    }).then(function(){_makeBackup(data,ctx);}).catch(function(){
       alert('백업할 안전 저장소를 확인하지 못해 파일을 만들지 않았습니다. 자료는 그대로입니다. 다시 시도해 주세요.');
     });
   });
@@ -7428,13 +7438,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.840"></script>
-<script src="autosave-merge.js?v=2.840"></script>
-<script src="autosave-runtime.js?v=2.840"></script>
-<script src="autosave-recovery.js?v=2.840"></script>
-<script src="sync.js?v=2.840"></script>
+<script src="autosave-journal.js?v=2.841"></script>
+<script src="autosave-merge.js?v=2.841"></script>
+<script src="autosave-runtime.js?v=2.841"></script>
+<script src="autosave-recovery.js?v=2.841"></script>
+<script src="sync.js?v=2.841"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.840">
+<link rel="stylesheet" href="support.css?v=2.841">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

@@ -166,6 +166,31 @@ try{
       await page.waitForTimeout(250);assert.deepEqual(await ids(reloaded),['A-LATE-ACK']);
       await switchTo(page,reloaded,B);assert.deepEqual(await ids(reloaded),['B-NEW']);
       r.cases.push('reload-restores-only-explicit-current-account-data');
+      const recovery=await reloaded.evaluate(async()=>{
+        const o=boardPrivateOwner(),key=boardPrivateKey(o),before=localStorage.getItem(key);
+        const oldKey=key+':kept:legacy-fixture';localStorage.setItem(oldKey,before);
+        const other=JSON.stringify({...JSON.parse(before),token:'synthetic-other-tab',seq:Date.now()+1000});localStorage.setItem(key,other);
+        for(let i=0;i<30;i++){state.players[0].name='RECOVERY-'+i;await _boardLiveWriteNow(false);}
+        const branch=_boardPrivateKept.key;await PSStorage.optimize();
+        const preserved=await storage.get(branch),legacy=await storage.get(oldKey);
+        return {mainSame:localStorage.getItem(key)===other,branchKeys:(await storage.keys()).filter(k=>k.startsWith(key+':kept:')),localBranch:localStorage.getItem(branch),localLegacy:localStorage.getItem(oldKey),legacySame:legacy?.value===before,lastName:JSON.parse(JSON.parse(preserved.value).raw).snap.players[0].name,durable:_boardPrivateDurableToken===_boardPrivateRecord.token};
+      });
+      assert.equal(recovery.mainSame,true);assert.equal(recovery.branchKeys.length,2);assert.equal(recovery.localBranch,null);assert.equal(recovery.localLegacy,null);assert.equal(recovery.legacySame,true);assert.equal(recovery.lastName,'RECOVERY-29');assert.equal(recovery.durable,true);
+      r.cases.push('real-indexeddb-bounds-conflict-draft-and-migrates-legacy-copy-with-exact-body');
+      const quota=await reloaded.evaluate(async()=>{
+        let full=false,n=0;const native=Storage.prototype.setItem;
+        try{for(;n<80;n++)native.call(localStorage,'fixture-quota-'+n,'x'.repeat(128*1024));}catch(e){full=e.name==='QuotaExceededError';}
+        let tail='';try{for(let i=0;i<1024;i++){tail+='x'.repeat(256);native.call(localStorage,'fixture-quota-tail',tail);}}catch(_){}
+        let probeFailed=false;try{native.call(localStorage,'fixture-quota-probe','x'.repeat(2048));}catch(e){probeFailed=e.name==='QuotaExceededError';}
+        if(!probeFailed)throw Error('Quota fixture did not exhaust the small store');
+        state.players[0].name='QUOTA-RECOVERED';await _boardLiveWriteNow(false);
+        const row=await storage.get(_boardPrivateKept.key),result={full,lastName:JSON.parse(JSON.parse(row.value).raw).snap.players[0].name,durable:_boardPrivateDurableToken===_boardPrivateRecord.token,falseBanner:!!document.getElementById('psStorageFull')};
+        for(let i=0;i<n;i++)localStorage.removeItem('fixture-quota-'+i);return result;
+      });
+      assert.equal(quota.full,true);assert.equal(quota.lastName,'QUOTA-RECOVERED');assert.equal(quota.durable,true);assert.equal(quota.falseBanner,false);
+      r.cases.push('real-localstorage-quota-falls-back-to-indexeddb-without-false-loss-banner');
+
+
       assert.deepEqual(errors.filter(e=>!e.includes('ResizeObserver loop')),[]);
       Object.assign(r,{ok:true,errors,externalOriginsBlocked:[...new Set(blocked)]});
     }catch(e){r.ok=false;r.error=e.stack;r.errors=errors;r.state=await frame.evaluate(()=>({ids:captureSnap().players.map(p=>p.name||p.id),owner:_boardPrivateOwner,loaded:_boardPrivateLoaded,dirty:_bliveDirty,text:document.body.innerText.slice(0,1600)})).catch(()=>null);await page.screenshot({path:path.join(out,spec.name+'-failure.png')}).catch(()=>{});}
