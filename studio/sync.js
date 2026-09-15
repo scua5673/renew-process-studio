@@ -88,9 +88,10 @@ var COPIES_OFF=true;
    받고 나면 한 번 새로고침한다 — 셸(app.html)은 같은 창이라 storage 이벤트를 못 받기 때문. */
 /* 2.676 — 실측(9/7 14:23~14:29, 코치 아이패드 2.675): 팀 전환 → 리로드 → 부팅 리로드(1.981) → 그때마다 pagehide 지우기 → «받는 중» 덮개 → 성공 시 또 리로드.
    리로드가 겹치며 진행 중 fetch 가 끊겨 sync_network(kv_meta) 2건, 스플래시가 몇 분 이어졌다(«자기 팀으로 이동이 안 된다»).
-   고침: ① 우리가 스스로 하는 리로드(ps_self_reload 표시)·부팅 중(ps-booting)·연 지 15초 안에는 지우지 않는다 ② 받은 뒤 리로드하지 않는다(화면은 storage 이벤트로 갱신)
-   ③ 기본은 꺼 둔다 — 실기기 로그인 검증 뒤 켠다(`localStorage.ps_cache_wipe='1'` 로 기기별 켜기). */
-var CACHE_WIPE=(function(){ try{ return localStorage.getItem('ps_cache_wipe')==='1'; }catch(_){ return false; } })();
+   고침: ① 우리가 스스로 하는 리로드(ps_self_reload 표시)·부팅 중(ps-booting)·연 지 15초 안에는 지우지 않는다 ② 받은 뒤 리로드하지 않는다(화면은 storage 이벤트로 갱신).
+   2.819 — 로그인해야 쓰는 팀 자료는 서버본을 우선한다. 서버와 같은 로컬 캐시는 닫을 때 지우고 다음 진입에서 서버 수신을 기다린다.
+   문제가 있는 기기는 `localStorage.ps_cache_wipe='0'` 으로 끌 수 있고, 구버전의 `'1'` 값도 계속 켜짐으로 취급한다. */
+var CACHE_WIPE=(function(){ try{ return localStorage.getItem('ps_cache_wipe')!=='0'; }catch(_){ return true; } })();
 var CACHE_WAIT_MS=12000, CACHE_FLAG='ps_cache_wiped_v1', SELF_RELOAD='ps_self_reload', BOOT_AT=Date.now(), cacheWaitTimer=null;
 function markSelfReload(){ try{ sessionStorage.setItem(SELF_RELOAD,'1'); }catch(_){} }
 function wipeAllowedNow(){
