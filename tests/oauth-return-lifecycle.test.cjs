@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 function section(a,b){const i=source.indexOf(a),j=source.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return source.slice(i,j);}
-const code=[section('function getSess(){','/* 2.627'),section('function dataUnlocked(){','function sensitiveLocalKey('),section('function authPreparationCurrent(','function signIn('),section('function consumeHash(','function ensureToken('),section('  function recheckAuth(){',"  document.addEventListener('load'")].join('\n');
+const code=[section('function clearExpiredWorkspaceGuard(lock){','function workspaceSwitchGuardStart(from,to){'),section('function getSess(){','/* 2.627'),section('function dataUnlocked(){','function sensitiveLocalKey('),section('function authPreparationCurrent(','function signIn('),section('function consumeHash(','function ensureToken('),section('  function recheckAuth(){',"  document.addEventListener('load'")].join('\n');
 const tick=()=>new Promise(r=>setImmediate(r));
 function gate(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};}
 function session(uid='A',name='old'){return{uid,at:uid+'-'+name,rt:uid+'-refresh-'+name,exp:Date.now()+3600000,email:uid+'@synthetic.invalid'};}
