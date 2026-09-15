@@ -13387,7 +13387,34 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 (function(){
   if(window.__vaultInit)return; window.__vaultInit=1;
   var VFOLD_KEY="cs_vault_folders_v1";
-  var vaultFolders=[];
+  var vaultFolders=[],vaultFolderReads=0,vaultFolderWrites=0;
+  function vaultFolderScope(){
+    try{if(!psVaultUnlocked()||localStorage.getItem('ps_ws_switch_guard_v1'))return null;
+      return JSON.stringify([psMyUid(),(psActiveWs()||{}).id,localStorage.getItem('ps_cache_owner_v1')]);
+    }catch(_){return null;}
+  }
+  function saveVaultFolders(){
+    var scope=vaultFolderScope(),raw=JSON.stringify(vaultFolders);if(!scope)return Promise.resolve(false);
+    vaultFolderWrites++;vaultFolderReads++;var pending;
+    try{pending=typeof window.psSaveSharedAsync==='function'?window.psSaveSharedAsync(VFOLD_KEY,raw):store.set(VFOLD_KEY,JSON.parse(raw));}
+    catch(e){pending=Promise.reject(e);}
+    return Promise.resolve(pending).then(function(ok){vaultFolderWrites--;return ok;},function(e){
+      vaultFolderWrites--;
+      // A newer edit owns the latest shared queue; an old rejection is not its failure.
+      if(scope===vaultFolderScope()&&JSON.stringify(vaultFolders)===raw)try{storeFailure(VFOLD_KEY,e);}catch(_){}
+      return false;
+    });
+  }
+  function reloadVaultFolders(){
+    var generation=++vaultFolderReads,scope=vaultFolderScope(),before=JSON.stringify(vaultFolders);
+    if(!scope||vaultFolderWrites)return Promise.resolve(false);
+    return store.get(VFOLD_KEY).then(function(a){
+      if(generation!==vaultFolderReads||vaultFolderWrites||scope!==vaultFolderScope()||before!==JSON.stringify(vaultFolders))return false;
+      if(!Array.isArray(a)||!a.every(function(name){return typeof name==='string';}))return false;
+      if(JSON.stringify(a)===before)return false;
+      vaultFolders=a;try{renderDrillFiles();}catch(_){}try{toggleSave();}catch(_){}return true;
+    }).catch(function(){return false;});
+  }
   var FTAG_KEY="cs_vault_folder_tags_v1";
   var folderTags={};try{folderTags=JSON.parse(localStorage.getItem(FTAG_KEY)||"{}")||{};}catch(_){folderTags={};}
   function folderTagsOf(p){return folderTags[p]||[];}
@@ -13431,7 +13458,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function vcatOf(k){for(var i=0;i<VCATS.length;i++)if(VCATS[i][0]===k)return {label:VCATS[i][1],c:VCATS[i][2]};return {label:'기타',c:'#8B93A3'};}
   function itemCat(d){return (d&&d.cat)||focusToCat(d&&d.focus);}
   function libSet(lib){return libWrite(lib).then(function(){libTouch();});}
-  function addFolder(name){if(vaultFolders.indexOf(name)<0){vaultFolders.push(name);try{store.set(VFOLD_KEY,vaultFolders);}catch(_){}}}
+  function addFolder(name){if(vaultFolders.indexOf(name)<0){vaultFolders.push(name);try{saveVaultFolders();}catch(_){}}}
   // 스타일
   var st=document.createElement("style");
   st.textContent=
@@ -14281,7 +14308,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(src==null)return; dest=dest||""; var leaf=folderLeaf(src); var ndest=dest?dest+"/"+leaf:leaf;
     if(ndest===src)return; if(ndest===src)return; if(ndest.indexOf(src+"/")===0||dest===src){try{toast&&toast("그 폴더 안으로는 못 옮겨요");}catch(_){}return;}
     var seen={}; vaultFolders=vaultFolders.map(function(fp){if(fp===src)return ndest;if(fp.indexOf(src+"/")===0)return ndest+fp.slice(src.length);return fp;}).filter(function(fp){if(seen[fp])return false;seen[fp]=1;return true;});
-    try{store.set(VFOLD_KEY,vaultFolders);}catch(_){}
+    try{saveVaultFolders();}catch(_){}
     libGet().then(function(lib){lib.forEach(function(it){var f=it.folder||"";if(f===src)it.folder=ndest;else if(f.indexOf(src+"/")===0)it.folder=ndest+f.slice(src.length);});libSet(lib).then(function(){var c=libFilter.folder||"";if(c===src)libFilter.folder=ndest;else if(c.indexOf(src+"/")===0)libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});});
   }
   function _zoneAt(x,y){var best=null,ba=1e15;for(var i=0;i<dropZones.length;i++){var z=dropZones[i];if(!z.el||!z.el.getBoundingClientRect)continue;var r=z.el.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom){var ar=r.width*r.height;if(ar<ba){ba=ar;best=z;}}}return best;}
@@ -14300,7 +14327,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       function _renameFolder(src,ndest){
     if(!ndest||ndest===src)return;
     var seen={};vaultFolders=vaultFolders.map(function(fp){if(fp===src)return ndest;if(fp.indexOf(src+"/")===0)return ndest+fp.slice(src.length);return fp;}).filter(function(fp){if(seen[fp])return false;seen[fp]=1;return true;});
-    try{store.set(VFOLD_KEY,vaultFolders);}catch(_){}
+    try{saveVaultFolders();}catch(_){}
     libGet().then(function(lib){var now=Date.now();lib.forEach(function(it){var f=it.folder||"",changed=false;if(f===src){it.folder=ndest;changed=true;}else if(f.indexOf(src+"/")===0){it.folder=ndest+f.slice(src.length);changed=true;}if(changed){it.editedAt=now;it.savedAt=Math.max(+it.savedAt||0,now);}});libSet(lib).then(function(){var c=libFilter.folder||"";if(c===src)libFilter.folder=ndest;else if(c.indexOf(src+"/")===0)libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});});
   }
   /* ══ 2.518 · 폴더 공유 토글 한 곳(사용자 "폴더별 공유를 쉽게") ══════════════════
@@ -14352,7 +14379,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var parent=full.indexOf("/")>=0?full.slice(0,full.lastIndexOf("/")):"";
       lib.forEach(function(it){var f=it.folder||"";if(f===full||f.indexOf(full+"/")===0)it.folder=parent;});
       vaultFolders=vaultFolders.filter(function(fp){return !(fp===full||fp.indexOf(full+"/")===0);});
-      try{store.set(VFOLD_KEY,vaultFolders);}catch(_){}
+      try{saveVaultFolders();}catch(_){}
       libSet(lib).then(function(){var c=libFilter.folder||"";if(c===full||c.indexOf(full+"/")===0)libFilter.folder=parent;renderDrillFiles();});
       });
     });
@@ -15215,7 +15242,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         var _gf=vaultFolders.filter(function(p){ return String(p||"").indexOf("__")===0; });
         if(_gf.length){
           vaultFolders=vaultFolders.filter(function(p){ return String(p||"").indexOf("__")!==0; });
-          try{store.set(VFOLD_KEY,vaultFolders);}catch(_){}
+          try{saveVaultFolders();}catch(_){}
         }
       }catch(_){}
       try{
@@ -15224,7 +15251,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           if(f.indexOf("__")===0)return;   /* 2.519 — 유령은 다시 만들지 않는다 */
           var acc="";f.split("/").forEach(function(s){s=s.trim();if(!s)return;acc=acc?acc+"/"+s:s;
             if(vaultFolders.indexOf(acc)<0){vaultFolders.push(acc);_healed=true;}});});
-        if(_healed){try{store.set(VFOLD_KEY,vaultFolders);}catch(_){}}
+        if(_healed){try{saveVaultFolders();}catch(_){}}
       }catch(_){}
       var q=((libFilter&&libFilter.q)||"").toLowerCase();
       var ft=libFilter.type||"";
@@ -15441,7 +15468,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
      보관함이 풀린 경우에만 아래에서 폴더를 읽고 한 번 더 상태를 맞춘다. */
   try{toggleSave();}catch(_){}
   // 폴더 로드 후 렌더
-  try{if(psVaultUnlocked())store.get(VFOLD_KEY).then(function(a){if(!psVaultUnlocked())return;vaultFolders=Array.isArray(a)?a:[];try{renderDrillFiles();}catch(_){}try{toggleSave();}catch(_){}});}catch(_){}
+  reloadVaultFolders();
+  window.addEventListener('storage',function(e){if(e&&[VFOLD_KEY,'ps_sync_meta','ps_cache_owner_v1','ps_active_ws','ps_sync_session'].indexOf(e.key)>=0)reloadVaultFolders();});
+  window.addEventListener('message',function(e){if(e.source===window.parent&&e.origin===location.origin&&e.data&&e.data.source==='process-studio'&&e.data.type==='ps-auth-state')reloadVaultFolders();});
 })();
 </script>
 

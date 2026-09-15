@@ -5175,8 +5175,9 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
     try{
       var arrays=[before,mirror,candidate].map(function(raw){return JSON.parse(raw);});
       if(!arrays.every(function(a){return Array.isArray(a)&&a.every(function(name,i){return typeof name==='string'&&!!name.trim()&&name.indexOf('__')!==0&&a.indexOf(name)===i;});}))return false;
-      function subsequence(a,b){var i=0;b.forEach(function(name){if(name===a[i])i++;});return i===a.length;}
-      return subsequence(arrays[0],arrays[1])&&subsequence(arrays[1],arrays[2]);
+      // Folder views sort names themselves; serialized insertion order is not an authored order.
+      function subset(a,b){return a.every(function(name){return b.indexOf(name)>=0;});}
+      return subset(arrays[0],arrays[1])&&subset(arrays[1],arrays[2]);
     }catch(_){return false;}
   }
   function ownerCurrent(){try{return typeof ownerGuard!=='function'||!!ownerGuard();}catch(_){return false;}}
@@ -5259,7 +5260,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
                in the mirror while IDB still contains expectedLoc. Complete only
                this convergent pair; the IDB CAS below still rejects fresh edits.
                Folder lists may be an intermediate server version: finish only
-               ordered additions that retain every name from both local copies. */
+               additions that retain every name from both local copies. */
             var mirrorAlreadyApplied=r&&r.value===expectedLoc&&(mirror===v||additiveFolderMirror(expectedLoc,mirror,v));
             if(current!==expectedLoc&&!mirrorAlreadyApplied){
               function sourceShape(raw){if(raw==null)return 'missing';if(typeof raw!=='string')return typeof raw;try{var a=JSON.parse(raw);return Array.isArray(a)?'array'+a.length:typeof a;}catch(_){return 'invalid';}}
