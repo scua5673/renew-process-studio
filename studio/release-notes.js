@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-match-lineup',date:'2026-09-15',title:'경기 준비 선수 이동과 세로 보기를 개선했습니다',
+    changes:[
+      '저장 중에도 선수를 다시 잡아 옮길 수 있도록 수정했습니다.',
+      '경기장 위 가로·세로 버튼으로 배치를 그대로 바꿔 볼 수 있습니다.',
+      '세로 경기장에서도 선수를 추가하고 위치를 옮길 수 있습니다.'
+    ]
+  },{
     id:'2026-09-15-folder-intermediate',date:'2026-09-15',title:'폴더 목록의 반복 저장을 보완했습니다',
     changes:[
       '폴더가 추가된 중간 목록 때문에 저장이 반복 대기하는 경우를 수정했습니다.',

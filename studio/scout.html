@@ -2046,6 +2046,15 @@ html.ps-page-scout .muted,html.ps-page-scout .ck .s,html.ps-page-scout .t-injury
 html.ps-page-scout .ck .ck-grid{gap:var(--g-gap)!important}
 html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
 </style>
+<style id="ps-match-lineup-orientation">
+  #mb2Card .mb2-phead{flex-wrap:wrap}
+  @media(max-width:767px){
+    html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-phead,html.ps-page-scout body:not(.mb2-meet) #mb2Card .mb2-bar{display:flex!important}
+    html.ps-page-scout #mb2Card #mb2Pitch{display:block!important}
+  }
+  html.ps-page-scout #mb2Card #mb2Pitch.portrait{aspect-ratio:68/105;width:min(100%,480px);max-width:480px!important;max-height:none;margin:0 auto!important;background:repeating-linear-gradient(0deg,#5e7e4d 0,#5e7e4d 10%,#547243 10%,#547243 20%)}
+  html.ps-page-scout body.mb2-meet #mb2Card #mb2Pitch.portrait{width:min(100%,calc((100dvh - 40px)*68/105));justify-self:center}
+</style>
 </head>
 <body>
 <script>
@@ -5213,8 +5222,8 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                   <!-- 1.676 — 연습경기 때 오는 테스트 선수를 명단에 바로 추가(사용자 요청). guest 표시로 구분 -->
                   <button type="button" class="mb2-guest-add" id="mb2GuestAdd">＋ 테스트 선수 (연습경기 게스트)</button></div>
                 <!-- 2.004 — 국면 탭 줄 오른쪽 끝에 전체 보기(사용자: 운동장 카드 오른쪽 상단) -->
-                <div class="mb2-phead"><div class="mb2-phases" id="mb2Phases"></div><button class="btn sm mb2-meet-btn" type="button" id="mb2Meet" title="선수 명단과 운동장만 전체화면 — 경기 중에">⛶ 전체 보기</button></div>
-                <div class="mlb-pitch mb2-pitch" id="mb2Pitch"><svg class="mlb-lines" viewBox="0 0 105 68" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="103" height="66"/><line x1="52.5" y1="1" x2="52.5" y2="67"/><circle cx="52.5" cy="34" r="9.15"/><circle class="spot" cx="52.5" cy="34" r=".5"/><rect x="1" y="13.84" width="16.5" height="40.32"/><rect x="87.5" y="13.84" width="16.5" height="40.32"/><rect x="1" y="24.84" width="5.5" height="18.32"/><rect x="98.5" y="24.84" width="5.5" height="18.32"/><circle class="spot" cx="12" cy="34" r=".5"/><circle class="spot" cx="93" cy="34" r=".5"/><path d="M17.5 26.7 A9.15 9.15 0 0 1 17.5 41.3"/><path d="M87.5 26.7 A9.15 9.15 0 0 0 87.5 41.3"/></svg></div>
+                <div class="mb2-phead"><div class="mb2-phases" id="mb2Phases"></div><span class="mb2-seg" id="mb2Orientation" role="group" aria-label="경기장 방향"><button type="button" data-orientation="landscape" class="on" aria-pressed="true">가로</button><button type="button" data-orientation="portrait" aria-pressed="false">세로</button></span><button class="btn sm mb2-meet-btn" type="button" id="mb2Meet" title="선수 명단과 운동장만 전체화면 — 경기 중에">⛶ 전체 보기</button></div>
+                <div class="mlb-pitch mb2-pitch" id="mb2Pitch"><svg class="mlb-lines" viewBox="0 0 105 68" preserveAspectRatio="none" aria-hidden="true"><g><rect x="1" y="1" width="103" height="66"/><line x1="52.5" y1="1" x2="52.5" y2="67"/><circle cx="52.5" cy="34" r="9.15"/><circle class="spot" cx="52.5" cy="34" r=".5"/><rect x="1" y="13.84" width="16.5" height="40.32"/><rect x="87.5" y="13.84" width="16.5" height="40.32"/><rect x="1" y="24.84" width="5.5" height="18.32"/><rect x="98.5" y="24.84" width="5.5" height="18.32"/><circle class="spot" cx="12" cy="34" r=".5"/><circle class="spot" cx="93" cy="34" r=".5"/><path d="M17.5 26.7 A9.15 9.15 0 0 1 17.5 41.3"/><path d="M87.5 26.7 A9.15 9.15 0 0 0 87.5 41.3"/></g></svg></div>
                 <!-- 2.001 — 도구줄 정리(사용자 "이건 지우고"): 상대 수비 배치 + 전체 보기만. 우리 11·포메이션·상대 11·＋상대 1·안내문 제거(옛 id는 숨김으로 남겨 바인딩 유지). 비우기는 작은 글자 버튼(없으면 토큰을 하나씩 끌어내야 함) -->
                 <div class="mb2-bar">
                   <button class="mb2-clear-lite" type="button" id="mb2Clear" title="우리·상대 토큰 모두 지우기">전체 비우기</button>
@@ -13194,7 +13203,44 @@ function matchWriteSchedule(state){
 /* 1.486 다중 기기 핵심 수정: cs_team_matches_v1(경기)도 감시한다.
    전에는 일정만 들어서 — 컴퓨터에서 작성한 경기 준비가 아이패드로 동기화돼 와도
    열려 있던 경기 화면이 옛 메모리(matchState)를 유지하다가 다음 저장에서 통째로 덮었다(사용자 제보). */
+/* 2.840 — a save ACK must not replace a held token or its match object.
+   Commit on pointerup, discard canceled previews, then drain deferred refresh after storage settles. */
+var matchBoardGesture=null,matchRefreshTimer=0;
+function matchRefreshLater(){
+  window.__matchStale=1;
+  if(matchRefreshTimer)return;
+  var owner=store.owner();
+  matchRefreshTimer=setTimeout(function(){
+    matchRefreshTimer=0;
+    if(owner!==store.owner())return;
+    if(matchBoardGesture||matchSaveTimer||_mprT){matchRefreshLater();return;}
+    var a=document.activeElement;
+    if(a&&(/INPUT|TEXTAREA|SELECT/.test(a.tagName)||a.isContentEditable))return;
+    if(store.hasPending()){
+      store.ready().then(function(){if(owner===store.owner())matchRefreshLater();},function(){});return;
+    }
+    if(store.hasFailed(MATCH_KEY)||store.hasFailed("process_coach_v1"))return;
+    if(window.__matchStale){window.__matchStale=0;__matchRefresh();}
+  },80);
+}
+function matchBoardBegin(m,pit,e){
+  if(matchBoardGesture||e.button>0||e.isPrimary===false)return null;
+  var ctx={owner:store.owner(),m:m,pit:pit,pointerId:e.pointerId,
+    phase:pit.id==="mb2Pitch"?mb2Ensure(m).cur:obEnsure(m).cur};
+  matchBoardGesture=ctx;return ctx;
+}
+function matchBoardCurrent(ctx){
+  return !!(ctx&&ctx===matchBoardGesture&&ctx.owner===store.owner()&&matchGet()===ctx.m&&matchCanEditOne(ctx.m.id)
+    &&ctx.phase===(ctx.pit.id==="mb2Pitch"?mb2Ensure(ctx.m).cur:obEnsure(ctx.m).cur));
+}
+function matchBoardEnd(ctx){
+  if(matchBoardGesture===ctx)matchBoardGesture=null;
+  if(window.__matchStale)matchRefreshLater();
+}
 function __matchRefresh(){
+  if(matchBoardGesture||matchSaveTimer||_mprT||store.hasPending()||store.hasFailed(MATCH_KEY)||store.hasFailed("process_coach_v1")){
+    matchRefreshLater();return;
+  }
   matchState=null;
   var state=matchLoad();
   if(matchCurrent&&!state.matches.some(function(m){return m.id===matchCurrent;}))matchCurrent="";
@@ -14160,6 +14206,7 @@ window.matchCancelExit=function(){
   });
 };
 function renderMatch(){
+  if(matchBoardGesture){matchRefreshLater();return;}
   try{ psShareLine("mtShareLine","cs_team_matches_v1"); }catch(_){}   /* 1.634 */
   try{setTimeout(function(){renderMatchChips();renderMB2();renderMB2Review();try{renderGmPlanHints();}catch(_){}renderOB();},0);}catch(_){}
   var pendingDoc=matchDocPending(),waiting=!store.get(MATCH_KEY)&&pendingDoc;
@@ -15853,11 +15900,28 @@ function mb2SyncTray(m,target){
   tray.querySelectorAll(".mb2-chip").forEach(function(c){c.classList.toggle("used",!!on[c.dataset.pid]);});
 }
 function obSyncTray(m){ mb2SyncTray(m,"ob"); }
+var mb2Portrait=false;
+function mb2DisplayPoint(t,pit){
+  return pit&&pit.id==="mb2Pitch"&&mb2Portrait?{x:t.y,y:100-t.x}:{x:t.x,y:t.y};
+}
+function mb2PlaceToken(d,t,pit){var p=mb2DisplayPoint(t,pit);d.style.left=p.x+"%";d.style.top=p.y+"%";}
+function mb2SetPortrait(on){
+  if(matchBoardGesture)return;
+  mb2Portrait=!!on;
+  var pit=$("mb2Pitch"),svg=pit&&pit.querySelector("svg.mlb-lines"),g=svg&&svg.querySelector("g");
+  if(!pit||!svg||!g)return;
+  pit.classList.toggle("portrait",mb2Portrait);
+  svg.setAttribute("viewBox",mb2Portrait?"0 0 68 105":"0 0 105 68");
+  if(mb2Portrait)g.setAttribute("transform","matrix(0 -1 1 0 0 105)");else g.removeAttribute("transform");
+  $("mb2Orientation").querySelectorAll("button").forEach(function(bt){var on=(bt.dataset.orientation==="portrait")===mb2Portrait;bt.classList.toggle("on",on);bt.setAttribute("aria-pressed",String(on));});
+  var m=matchGet();if(m)mb2Draw(m);
+}
 function mb2Pct(e,pitEl){
-  var r=(pitEl||$("mb2Pitch")).getBoundingClientRect();
-  return {x:Math.max(2,Math.min(98,(e.clientX-r.left)/r.width*100)),
-          y:Math.max(4,Math.min(96,(e.clientY-r.top)/r.height*100)),
-          inside:e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom};
+  var pit=pitEl||$("mb2Pitch"),r=pit.getBoundingClientRect();
+  var x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;
+  if(pit.id==="mb2Pitch"&&mb2Portrait){var oldX=x;x=100-y;y=oldX;}
+  return {x:Math.max(2,Math.min(98,x)),y:Math.max(4,Math.min(96,y)),
+    inside:e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom};
 }
 function mb2AddTok(m,t,opp){
   var pit=$("mb2Pitch");
@@ -15867,38 +15931,51 @@ function mb2AddTok(m,t,opp){
   d.innerHTML='<i>'+esc(_n)+'</i>'+(t.name?'<em>'+esc(t.name)+'</em>':'');
   if(opp)mb2TokLabel(m,d,t,true);   /* 2.008 — 번호/포지션 표시 모드 */
   matchKitPaint(m,"prep",d.querySelector("i"),t,opp);   /* 2.736 — 우리/상대 · 필드/GK 유니폼 */
-  d.style.left=t.x+"%"; d.style.top=t.y+"%";
+  mb2PlaceToken(d,t,pit);
   pit.appendChild(d);
   d.addEventListener("pointerdown",function(e){
-    if(!matchCanEdit())return;
+    if(!matchCanEditOne(m.id))return;
+    var ctx=matchBoardBegin(m,pit,e);if(!ctx)return;
     e.preventDefault();e.stopPropagation();
-    var sx=e.clientX,sy=e.clientY,moved=false;
+    try{d.setPointerCapture(e.pointerId);}catch(_){}
+    var sx=e.clientX,sy=e.clientY,moved=false,last={x:t.x,y:t.y,inside:true};
     function mv(ev){
+      if(ev.pointerId!==ctx.pointerId)return;
+      if(!matchBoardCurrent(ctx)){finish(ev,true);return;}
       if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<5)return;
       if(!moved){moved=true;mb2Deselect();d.classList.add("drag");}
-      var pp=mb2Pct(ev);d.style.left=pp.x+"%";d.style.top=pp.y+"%";d.style.opacity=pp.inside?"":".35";
-      t.x=Math.round(pp.x*10)/10;t.y=Math.round(pp.y*10)/10;
+      last=mb2Pct(ev,pit);mb2PlaceToken(d,last,pit);d.style.opacity=last.inside?"":".35";
     }
-    function up(ev){
+    function finish(ev,cancel){
+      if(ev&&ev.pointerId!=null&&ev.pointerId!==ctx.pointerId)return;
       window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);
+      window.removeEventListener("pointercancel",abort);window.removeEventListener("blur",abort);
+      d.removeEventListener("lostpointercapture",abort);
+      try{d.releasePointerCapture(ctx.pointerId);}catch(_){}
       d.classList.remove("drag");d.style.opacity="";
+      var valid=matchBoardCurrent(ctx);matchBoardEnd(ctx);
+      if(cancel||!valid){mb2PlaceToken(d,t,pit);return;}
       if(!moved){mb2OpenEdit(m,d,t,opp);return;}
-      var pp=mb2Pct(ev);
+      var pp=mb2Pct(ev,pit);
       if(!pp.inside){
         var b=mb2Cur(m);
         if(opp)b.opp=b.opp.filter(function(x){return x!==t;});
         else b.us=b.us.filter(function(x){return x!==t;});
         d.remove();mb2Counts(m);mb2SyncTray(m);
-      }
+      }else{t.x=Math.round(pp.x*10)/10;t.y=Math.round(pp.y*10)/10;mb2PlaceToken(d,t,pit);}
       mb2Save();
     }
+    function up(ev){finish(ev,false);}
+    function abort(ev){finish(ev,true);}
     window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);
+    window.addEventListener("pointercancel",abort);window.addEventListener("blur",abort);
+    d.addEventListener("lostpointercapture",abort);
   });
   return d;
 }
 function mb2OpenEdit(m,d,t,opp){
   mb2Deselect();
-  mb2Sel={d:d,t:t,opp:opp,m:m};
+  mb2Sel={d:d,t:t,opp:opp,m:m,owner:store.owner(),phase:mb2Ensure(m).cur};
   d.classList.add("sel");
   var ed=document.createElement("div");ed.className="mb2-edit";
   ed.style.left=d.style.left;ed.style.top=d.style.top;
@@ -15940,12 +16017,20 @@ function mb2RenderPhases(m){
   }).join("")+(matchCanEdit()?'<button type="button" class="add" data-phadd="1">＋ 국면</button>':'');
 }
 function mb2Draw(m){
+  if(matchBoardGesture){matchRefreshLater();return;}
   var pit=$("mb2Pitch"); if(!pit)return;
+  var selected=mb2Sel,selectedIndex=-1,selectedRaw="";
+  if(selected&&selected.owner===store.owner()&&selected.m.id===m.id&&selected.phase===mb2Ensure(m).cur){
+    selectedIndex=(mb2Cur(selected.m)[selected.opp?"opp":"us"]||[]).indexOf(selected.t);selectedRaw=JSON.stringify(selected.t);
+  }
   mb2Deselect();
   pit.querySelectorAll(".mlb-tok").forEach(function(x){x.remove();});
   var b=mb2Cur(m);
   b.us.forEach(function(t){mb2AddTok(m,t,false);});
   b.opp.forEach(function(t){mb2AddTok(m,t,true);});
+  if(selectedIndex>=0){var next=(selected.opp?b.opp:b.us)[selectedIndex];
+    if(next&&JSON.stringify(next)===selectedRaw){var nodes=pit.querySelectorAll(".mlb-tok");mb2OpenEdit(m,nodes[selected.opp?b.us.length+selectedIndex:selectedIndex],next,selected.opp);}}
+
   var _oppKit=matchKitStyle(m,"prep","opp","field");
   if($("mb2OppColor")){var _oc=_oppKit.main; if($("mb2OppColor").value!==_oc)$("mb2OppColor").value=_oc;}
   if($("mb2OppLabel")){var _lm=mb2OppLabelMode(m); $("mb2OppLabel").querySelectorAll("button").forEach(function(bt){bt.classList.toggle("on",bt.dataset.v===_lm);});}
@@ -16033,7 +16118,8 @@ function mb2RenderTray(m,target){
       var ghost=null,st2=null,fly=null,moved=false,sx=e.clientX,sy=e.clientY,reord=null,dropRow=null;   /* 2.190 — dropRow: 놓을 행 */
       var groupEl=c.closest(".mb2-tchips");
       function clearReord(){ if(reord&&reord.el){reord.el.classList.remove("reord-before","reord-after");} reord=null; }
-      var pit=$(T.pitch);
+      var pit=$(T.pitch),ctx=matchBoardBegin(m,pit,e);if(!ctx)return;
+      try{c.setPointerCapture(e.pointerId);}catch(_){}
       c.classList.add("grabbing");                       /* ① 누르는 즉시 '잡혔다'가 보인다 */
       try{ if(navigator.vibrate)navigator.vibrate(8); }catch(_){}
       function makeFly(){                                /* ② 손가락을 따라다니는 칩 */
@@ -16051,6 +16137,8 @@ function mb2RenderTray(m,target){
         if(pit)pit.classList.remove("hot");
       }
       function mv(ev){
+        if(ev.pointerId!==ctx.pointerId)return;
+        if(!matchBoardCurrent(ctx)){abort(ev);return;}
         if(!moved){                                      /* 손이 살짝 떨린 것과 구별 */
           if(Math.abs(ev.clientX-sx)<3&&Math.abs(ev.clientY-sy)<3)return;
           moved=true; makeFly();
@@ -16076,14 +16164,20 @@ function mb2RenderTray(m,target){
             st2={pid:pl.id,num:String(pl.num||""),name:pl.name||"",x:pp.x,y:pp.y,gk:posGroupOf(ps?ps.name:"")==="GK"};
             ghost=T.addTok(matchGet(),st2);ghost.classList.add("drag");
           }
-          ghost.style.left=pp.x+"%";ghost.style.top=pp.y+"%";st2.x=Math.round(pp.x*10)/10;st2.y=Math.round(pp.y*10)/10;
+          mb2PlaceToken(ghost,pp,pit);st2.x=Math.round(pp.x*10)/10;st2.y=Math.round(pp.y*10)/10;
         }else if(ghost){ghost.remove();ghost=null;st2=null;}
       }
-      function up(){
+      function abort(ev){up(ev,true);}
+      function up(ev,cancel){
+        if(ev&&ev.pointerId!=null&&ev.pointerId!==ctx.pointerId)return;
         window.removeEventListener("pointermove",mv);window.removeEventListener("pointerup",up);
-        window.removeEventListener("pointercancel",up);
+        window.removeEventListener("pointercancel",abort);window.removeEventListener("blur",abort);
+        c.removeEventListener("lostpointercapture",abort);
+        try{c.releasePointerCapture(ctx.pointerId);}catch(_){}
         killFly(); c.classList.remove("grabbing");
         var _dr=dropRow; if(dropRow){ dropRow.classList.remove("drop-hot"); dropRow=null; }
+        var valid=matchBoardCurrent(ctx);matchBoardEnd(ctx);
+        if(cancel||!valid){if(ghost)ghost.remove();clearReord();return;}
         if(ghost&&st2){
           ghost.classList.remove("drag");
           ghost.classList.add("landed");                 /* ④ 놓인 자리에서 톡 튄다 */
@@ -16110,7 +16204,8 @@ function mb2RenderTray(m,target){
         clearReord();
       }
       window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);
-      window.addEventListener("pointercancel",up);
+      window.addEventListener("pointercancel",abort);window.addEventListener("blur",abort);
+      c.addEventListener("lostpointercapture",abort);
     });
   });
   try{mb2SyncTray(m,target);}catch(_){}   /* 2.003 — 렌더 직후 배치 표시(게스트 추가 등 재렌더 경로 포함) */
@@ -16146,6 +16241,7 @@ function renderMB2(){
   var show=m&&(typeof matchTab==="undefined"||matchTab==="prep");
   card.style.display=show?"":"none";
   if(!show){document.body.classList.remove("mb2-meet");return;}
+  if(matchBoardGesture){matchRefreshLater();return;}
   mb2Ensure(m);
   mb2RenderTray(m);mb2RenderPhases(m);mb2Draw(m);
   if(!card.__wired){card.__wired=1;
@@ -16201,6 +16297,7 @@ function renderMB2(){
       var b=mb2Cur(m2);b.opp.push({num:"D"+(b.opp.length+1),x:60,y:50});mb2Draw(m2);mb2Save();};
     $("mb2Clear").onclick=function(){var m2=matchGet();if(!m2||!matchCanEdit())return;
       psConfirm("현재 국면의 배치를 비울까요?",function(){var b=mb2Cur(m2);b.us=[];b.opp=[];mb2Draw(m2);mb2Save();});};
+    $("mb2Orientation").onclick=function(e){var b=e.target.closest("[data-orientation]");if(b)mb2SetPortrait(b.dataset.orientation==="portrait");};
     $("mb2Meet").onclick=function(){document.body.classList.toggle("mb2-meet");};
     if($("mb2FillOpDef"))$("mb2FillOpDef").onclick=function(){ if(!matchCanEdit())return; var m=matchGet(); if(m)mb2FillOpDef(m); };   /* 2.001 */
 
@@ -16383,6 +16480,7 @@ function obPlayToggle(m){
   })();
 }
 function renderOB(){
+  if(matchBoardGesture){matchRefreshLater();return;}
   var card=$("obCard"); if(!card)return;
   var m=(typeof matchGet==="function")?matchGet():null; if(!m)return;
   try{mb2RenderTray(m,"ob");}catch(_){}   /* 2.754 */
