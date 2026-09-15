@@ -25,3 +25,7 @@ jobs:
         env:
           PGLITE_MODULE: ${{ runner.temp }}/ps-sql/node_modules/@electric-sql/pglite
         run: node migrations/20260915_roster_canonical.local-test.cjs
+      - name: Test private board ownership and history access
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/ps-sql/node_modules/@electric-sql/pglite
+        run: node migrations/20260915_private_board.local-test.cjs

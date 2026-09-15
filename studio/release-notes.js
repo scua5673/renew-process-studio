@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-private-working-board',date:'2026-09-15',title:'작업 중인 보드를 개인 공간으로 분리했습니다',
+    changes:[
+      '작업 중인 보드는 내 계정에 저장되며, 다른 코치의 보드는 자동으로 열리지 않습니다.',
+      '같은 계정은 팀을 바꿔도 내 보드를 이어서 사용합니다.',
+      '보관함에 저장한 자료는 기존 공유 설정을 유지합니다.'
+    ]
+  },{
     id:'2026-09-15-roster-server-confirmation',date:'2026-09-15',title:'선수 삭제와 저장 확인을 보강했습니다',
     changes:[
       '선수단에서 삭제한 기록을 보존하는 처리를 보강했습니다.',
