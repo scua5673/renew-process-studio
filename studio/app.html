@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.834"></script>
+<script src="autosave-status.js?v=2.835"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -476,11 +476,20 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.834';</script>
+<script>window.PS_BUILD='2.835';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
+function psReloadWorkspaceSeal(){
+  try{return JSON.stringify(['ps_active_ws','ps_cache_owner_v1','ps_ws_switch_epoch_v1'].map(function(k){return localStorage.getItem(k);}));}catch(_){return null;}
+}
+function psReloadWorkspaceBusy(){
+  try{var raw=localStorage.getItem('ps_ws_switch_guard_v1'),g=raw?JSON.parse(raw):null;
+    return !!(g&&g.token&&g.from&&Date.now()-(+g.at||0)<=90000);
+  }catch(_){return true;}
+}
 function psSafeToReload(){
+  if(psReloadWorkspaceBusy())return false;
   if(window.__psSupportController&&window.__psSupportController.pendingUnsafe())return false;
   function busyDoc(d){
     try{
@@ -548,25 +557,34 @@ function psFlushAllPendingReady(){
 window.psFlushAllPendingReady=psFlushAllPendingReady;
 function psAutoReloadWhenSafe(){
   if(window.__psReloading)return;
-  var go=function(){ if(window.__psReloading)return; window.__psReloading=1;
-    /* 2.733 — 시간(600ms)을 저장 완료로 추측하지 않는다. 전환과 같은 장벽으로
-       모든 iframe의 지연 저장과 실제 IDB 쓰기가 끝난 뒤에만 새 판을 연다. */
-    Promise.resolve(psFlushAllPendingReady()).then(function(){
-      try{location.reload();}catch(_){window.__psReloading=0;}
-    }).catch(function(){
-      window.__psReloading=0;
-      try{psShowUpdBand();}catch(_){}
+  var go=function(){
+    if(window.__psReloading||psReloadWorkspaceBusy())return;
+    window.__psReloading=1;
+    function commit(){
+      var seal=psReloadWorkspaceSeal();if(seal===null||psReloadWorkspaceBusy())return false;
+      return Promise.resolve(psFlushAllPendingReady()).then(function(){
+        // Flush is asynchronous: a workspace/account change must cancel this
+        // reload. Hold the same origin lock used by transitions and bootstrap.
+        if(psReloadWorkspaceBusy()||psReloadWorkspaceSeal()!==seal)return false;
+        location.reload();return true;
+      });
+    }
+    Promise.resolve().then(function(){
+      if(navigator.locks&&navigator.locks.request)return navigator.locks.request('process-studio-workspace-transition-v1',{mode:'exclusive',ifAvailable:true},function(lock){return lock?commit():false;});
+      return commit();
+    }).then(function(done){if(!done)window.__psReloading=0;}).catch(function(){
+      window.__psReloading=0;try{psShowUpdBand();}catch(_){}
     });
   };
-  /* 첫 자동 시도가 저장 실패로 멈춘 경우에도 띠의 버튼은 같은 안전 장벽을
-     다시 탄다. 이 참조가 없으면 fallback location.reload()가 바로 실행된다. */
   window.__psForceReload=go;
-  if(document.hidden){ go(); return; }          /* 안 보일 때가 가장 좋다 */
-  if(psSafeToReload()){ go(); return; }
-  if(window.__psWaitReload)return; window.__psWaitReload=1;
-  setTimeout(psShowUpdBand,60000);   /* 2.627 — 1분 넘게 «안전한 때» 가 안 오면 띠로 알린다(목업 «새 판 띠») */
-  document.addEventListener('visibilitychange',function(){ if(document.hidden)go(); });
-  setInterval(function(){ if(document.hidden||psSafeToReload())go(); },15000);
+  // Install retry before the first attempt: a held transition lock is a wait,
+  // not permission to reload and not a permanently abandoned update.
+  if(!window.__psWaitReload){
+    window.__psWaitReload=1;setTimeout(psShowUpdBand,60000);
+    document.addEventListener('visibilitychange',function(){if(document.hidden)window.__psForceReload();});
+    setInterval(function(){if(document.hidden||psSafeToReload())window.__psForceReload();},15000);
+  }
+  if(document.hidden||psSafeToReload())go();
 }
 /* 2.627 — 새 판 띠. 자동 새로고침(2.388)이 «안전한 때» 를 기다리는 동안 사람이 알 길이 작은 버튼 하나뿐이었다.
    배너들과 같은 자리(.frames 위)에 «새 판이 있어요 · 하던 일을 저장하고 다시 열면 적용돼요 [다시 열기]». 버튼은 입력을 밀어낸 뒤 새로고침. */
@@ -7410,13 +7428,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.834"></script>
-<script src="autosave-merge.js?v=2.834"></script>
-<script src="autosave-runtime.js?v=2.834"></script>
-<script src="autosave-recovery.js?v=2.834"></script>
-<script src="sync.js?v=2.834"></script>
+<script src="autosave-journal.js?v=2.835"></script>
+<script src="autosave-merge.js?v=2.835"></script>
+<script src="autosave-runtime.js?v=2.835"></script>
+<script src="autosave-recovery.js?v=2.835"></script>
+<script src="sync.js?v=2.835"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.834">
+<link rel="stylesheet" href="support.css?v=2.835">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
