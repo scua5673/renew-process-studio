@@ -10,7 +10,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="storage.js"></script>
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
-<script src="roster-outbox.js?v=2.825"></script>
+<script src="roster-outbox.js?v=2.826"></script>
 <script src="participation.js?v=2.823"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
@@ -10241,6 +10241,7 @@ function tmPopOutside(e){ if(__tmpop && !__tmpop.contains(e.target)) closeTmPop(
 function closeTmPop(){ if(__tmpop){__tmpop.remove();__tmpop=null;try{document.removeEventListener('mousedown',tmPopOutside,true);}catch(_){}} }
 function tmPosPopup(k, anchorEl){
   closeTmPop();
+  var popupOwner=teamSaveOwner();
   var po=data.positions.find(function(x){return tmNorm(posAbbr(x.name))===tmNorm(k);});
   if(!po){ po={id:uid("p"),name:k,targets:{}}; data.positions.push(po); }
   /* 포지션 이름 자유 변경 — 슬롯 인덱스(data-si)와 현재 표시 라벨 파악 (매칭 키 k는 그대로 유지) */
@@ -10280,7 +10281,21 @@ function tmPosPopup(k, anchorEl){
       closeTmPop();
     });
   };}
-  p.querySelector('.tmpop-list').addEventListener('click',function(e){ var x=e.target.closest('[data-del]'); if(x){ var id=x.getAttribute('data-del'); data.players=data.players.filter(function(pp){return pp.id!==id;}); refresh(); } });
+  p.querySelector('.tmpop-list').addEventListener('click',function(e){
+    var x=e.target.closest('[data-del]');if(!x)return;
+    if(popupOwner!==teamSaveOwner()||!scoutAutomaticWriteAllowed())return;
+    var id=x.getAttribute('data-del'),pl=data.players.find(function(pp){return String(pp.id)===id&&!isTargetPl(pp)&&pp.posId===po.id;});
+    if(!pl)return;
+    var before=JSON.stringify(pl);closeTmPop();
+    psConfirm((pl.name||"이 선수")+" 삭제? 평가 기록도 함께 삭제됩니다.",function(){
+      if(popupOwner!==teamSaveOwner()||!scoutAutomaticWriteAllowed())return;
+      var current=data.players.find(function(pp){return String(pp.id)===id&&!isTargetPl(pp);});
+      if(!current||JSON.stringify(current)!==before){toast("선수 정보가 바뀌었습니다. 다시 확인한 뒤 삭제해 주세요.");return;}
+      if(!plTombAdd(id))return;
+      data.players=data.players.filter(function(pp){return String(pp.id)!==id;});
+      save({deletedIds:[id],skipTargets:true});redrawTeamPitch();renderTeam();
+    });
+  });
   p.querySelector('.tmpop-list').addEventListener('input',function(e){ var t=e.target; if(!t.classList||(!t.classList.contains('tmpop-num')&&!t.classList.contains('tmpop-name')))return; var id=t.getAttribute('data-pid'); var pl=data.players.find(function(x){return x.id===id;}); if(!pl)return; if(t.classList.contains('tmpop-num'))pl.num=t.value; else pl.name=t.value; save(); redrawTeamPitch(); });
   p.querySelector('.tmpop-list').addEventListener('keydown',function(e){ e.stopPropagation(); if(e.key==='Enter'){e.preventDefault(); var ni=p.querySelector('.tmpop-numin')||p.querySelector('.tmpop-inp'); if(ni)ni.focus();} });
   __tmpop=p;
