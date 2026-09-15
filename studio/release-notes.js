@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-folder-save-convergence',date:'2026-09-15',title:'보관함 폴더의 반복 저장을 수정했습니다',
+    changes:[
+      '두 기기 저장소 중 한쪽에 이미 같은 내용이 반영됐을 때, 나머지 저장도 정상적으로 마무리합니다.',
+      '저장 도중 새로 편집한 내용은 그대로 보호합니다.'
+    ]
+  },{
     id:'2026-09-15-data-stability',date:'2026-09-15',title:'저장과 팀 전환의 반복 오류를 수정했습니다',
     changes:[
       '팀 전환이 취소돼도 그 사이 완료된 저장 기록을 유지합니다.',
