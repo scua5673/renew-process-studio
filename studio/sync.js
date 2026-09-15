@@ -7881,7 +7881,7 @@ function switchWorkspaceCore(wid, skipSave){
      이제 20초엔 말만 바꾸고(오버레이 유지), 60초에야 세대를 올려 체인을 문턱에서 멈춘다.
      와이프가 시작됐으면 붙잡지 않는다 — 남은 단계는 전부 상한이 있어 리로드/롤백으로 끝난다. */
   var overlaySlow=setTimeout(function(){
-    if(switching&&myGen===switchGen){ setStatus('전환이 오래 걸리고 있어요 — 네트워크가 느립니다');
+    if(switching&&myGen===switchGen){ setStatus('전환할 자료를 확인하고 있어요 — 잠시만 기다려 주세요');
       try{var _t=document.getElementById('psSwitchTxt'); if(_t)_t.textContent='전환이 오래 걸리고 있어요 — 잠시만요';}catch(_){} }
   },20000);
   var overlayGuard=setTimeout(function(){
@@ -7912,7 +7912,7 @@ function switchWorkspaceCore(wid, skipSave){
   if(st&&(st.__timeout||st.err))return stopPreswitch('전환 취소 — 전환 전 백업을 만들지 못했습니다','preswitch stash failed');
   if(scheduleHeld())return stopPreswitch('전환 취소 — 일정 편집을 끝내고 저장 완료 후 다시 시도하세요','preswitch schedule held');
   /* 1) 현재 공간 데이터를 서버로 강제 저장 — 메타를 비워 전부 dirty로 취급해 확실히 push.
-        15초 하드 백스톱: 저장이 안 끝나면 지우지 않고 중단(오버레이가 영구히 멈추지 않도록).
+        40초 하드 백스톱: 저장이 안 끝나면 지우지 않고 중단(전체 전환은 기존 60초 가드 유지).
         skipSave: 팀 나가기처럼 더 이상 현재 공간에 쓸 수 없을 때 저장을 건너뛰고 바로 전환 */
   /* ══ 2.340/2.742 · 메타를 통째로 비우면 병합 키는 정반대로 작동한다 ═════════════
      의도는 '전부 dirty 로 취급해 확실히 push' 였다. 그런데 일정(`SCHEDULE_KEY`)·경기(`cs_team_matches_v1`)는
@@ -7941,7 +7941,9 @@ function switchWorkspaceCore(wid, skipSave){
     if(typeof autosaveEnabled==='function'&&autosaveEnabled())_keep=JSON.parse(preMetaRaw||'null')||_keep;
     localStorage.setItem(MKEY,JSON.stringify(_keep));
   }catch(_){}
-  var _pre = skipSave ? Promise.resolve({__skip:1}) : withTimeout(forceSync('preswitch'),15000);
+  /* 정상 저장도 기존 회차의 잠금 대기와 보관함 확인을 합치면 15초를 넘는다.
+     완료 확인 전에 성공으로 처리하지 않으며, 전체 전환·소유자 가드는 유지한다. */
+  var _pre = skipSave ? Promise.resolve({__skip:1}) : withTimeout(forceSync('preswitch'),40000);
   return _pre.then(function(r){
     staleStop();
     /* forceSync가 일정을 보류해도 다른 키는 정상 동기화되므로 전체 Promise는
@@ -7964,7 +7966,7 @@ function switchWorkspaceCore(wid, skipSave){
     var _unreachRound = !!(r && r.error && UNREACHABLE[String(r.code||'')]);
     if(!skipSave && !_unreachRound && (!r || r.__timeout || r.error || r.offline || r.noauth || r.nows || r.skip || r.itemPending || unsafeSkipped.length)){
       if(r&&r.error&&String(r.code||'')==='sync_server_rejected')return stopPreswitchRejected(r.rejectedKeys||r.serverRejected||[],r.code);   /* 2.586 */
-      var failMsg=r&&r.__timeout?'전환 취소 — 네트워크가 느립니다. 잠시 후 다시 시도하세요'
+      var failMsg=r&&r.__timeout?'전환 전 저장 확인이 오래 걸려 중단했습니다. 잠시 후 다시 시도해 주세요'
         :r&&r.error?'전환 취소 — 동기화 오류 ('+String(r.code||'확인 필요')+')'
         :r&&r.offline?'전환 취소 — 오프라인 상태입니다'
         :r&&r.noauth?'전환 취소 — 로그인 확인이 필요합니다'

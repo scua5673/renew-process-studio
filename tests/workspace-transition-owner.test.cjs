@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const source=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
+const source=fs.readFileSync(process.env.PS_SYNC_SOURCE_FILE||path.join(__dirname,'../studio/sync.js'),'utf8');
 const start=source.indexOf('function switchWorkspaceCore('),end=source.indexOf('function createTeam(',start);
 assert.ok(start>=0&&end>start);
 const code=source.slice(start,end);
@@ -97,4 +97,57 @@ test('late rejected-save details cannot open a confirmation for another account'
 test('postswitch completion cannot announce or reload a newer account as the old target',async()=>{
   const h=harness(),gate=deferred();h.hooks.postsync=()=>gate.promise;const pending=h.run();await tick();h.change();const before=h.snapshot();gate.resolve({});await pending;
   assert.equal(h.snapshot(),before);assert.equal(h.local.has('ps_ws_switched_v1'),false);
+});
+
+// Run the shipped timeout helper on a virtual clock, including the real
+// transition's outer watchdog. A slow but successful save must still reach
+// the original owner checks and confirmed-data gate before any wipe.
+function timedHarness(from='personal-A'){
+  const h=harness(),jobs=new Map();let now=0,serial=0;
+  h.local.set('active',from);h.c.setCacheOwner('account-A',from);
+  h.c.wsList=()=>[{id:from,kind:from==='personal-A'?'personal':'team',name:'Source'},{id:'team-B',kind:'team',name:'Destination'}];
+  h.local.set('cs_private_board_v1','personal working board');
+  h.c.setTimeout=(fn,ms)=>{const id=++serial;jobs.set(id,{fn,at:now+ms});return id;};
+  h.c.clearTimeout=id=>jobs.delete(id);
+  h.c.Date=class extends Date{static now(){return 1700000000000+now;}};
+  vm.runInContext(source.slice(source.indexOf('function withTimeout(p,ms)'),source.indexOf('/* busy면 스킵')),h.c);
+  return Object.assign(h,{
+    contentSnapshot(){return JSON.stringify([...h.local].filter(([k])=>k!=='owner'));},
+    later(ms,value){return new Promise(resolve=>h.c.setTimeout(()=>resolve(value),ms));},
+    async advance(ms){
+      const until=now+ms;
+      for(;;){
+        const entry=[...jobs].filter(([,j])=>j.at<=until).sort((a,b)=>a[1].at-b[1].at)[0];
+        if(!entry)break;
+        now=entry[1].at;jobs.delete(entry[0]);entry[1].fn();await tick();
+      }
+      now=until;await tick();
+    }
+  });
+}
+for(const from of ['personal-A','team-A'])for(const delay of [18000,32000])test(from+' confirmed save after '+delay+'ms can open the selected team',async()=>{
+  const h=timedHarness(from);h.hooks.sync=()=>h.later(delay,{saved:1});
+  const pending=h.run();await tick();await h.advance(15000);
+  assert.equal(h.local.get('active'),from);assert.deepEqual(h.calls.deleted,[],'No deletion while save is unconfirmed');
+  await h.advance(delay-15000);await pending;
+  assert.equal(h.local.get('active'),'team-B');assert.equal(h.calls.reloads,1);
+  assert.equal(h.local.get('cs_private_board_v1'),'personal working board');
+});
+test('an unconfirmed save still times out without deleting source data; its late response cannot switch',async()=>{
+  const h=timedHarness();h.hooks.sync=()=>h.later(50000,{saved:1});const before=h.contentSnapshot();
+  const pending=h.run();await tick();await h.advance(41000);const result=await pending;
+  assert.equal(result.cancelled,1);assert.equal(h.contentSnapshot(),before);assert.deepEqual(h.calls.deleted,[]);assert.equal(h.calls.frames,0);
+  assert.equal(h.c.cacheOwner().uid,'account-A');assert.equal(h.c.cacheOwner().wid,'personal-A');
+  await h.advance(20000);assert.equal(h.contentSnapshot(),before);assert.equal(h.calls.reloads,0);
+});
+test('a changed account during extended confirmation wait never receives the old transition',async()=>{
+  const h=timedHarness();h.hooks.sync=()=>h.later(20000,{saved:1});const pending=h.run();await tick();await h.advance(16000);
+  h.change();const before=h.snapshot();await h.advance(5000);await pending;
+  assert.equal(h.snapshot(),before);assert.deepEqual(h.calls.deleted,[]);assert.equal(h.calls.frames,0);
+});
+test('slow confirmation that returns a storage error still keeps the source intact',async()=>{
+  const h=timedHarness();h.hooks.sync=()=>h.later(18000,{error:'disk failure',code:'sync_storage'});const before=h.contentSnapshot();
+  const pending=h.run();await tick();await h.advance(18000);const result=await pending;
+  assert.equal(result.cancelled,1);assert.equal(h.contentSnapshot(),before);assert.deepEqual(h.calls.deleted,[]);assert.equal(h.calls.frames,0);
+  assert.equal(h.c.cacheOwner().uid,'account-A');assert.equal(h.c.cacheOwner().wid,'personal-A');
 });

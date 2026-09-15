@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-workspace-save-wait',date:'2026-09-15',title:'작업 공간 전환의 저장 대기를 개선했습니다',
+    changes:[
+      '자료 확인이 진행 중인데도 개인 작업과 팀 사이의 전환이 일찍 취소되는 문제를 줄였습니다.',
+      '저장 확인이 끝난 뒤 전환하며, 확인에 실패하면 현재 자료를 유지합니다.'
+    ]
+  },{
     id:'2026-09-15-quiet-save-footer',date:'2026-09-15',title:'저장 상태를 오른쪽 아래로 옮겼습니다',
     changes:[
       '저장 상태를 화면 오른쪽 아래에 작게 표시하고 깜빡임을 없앴습니다.',
