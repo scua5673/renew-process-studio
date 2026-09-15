@@ -903,7 +903,7 @@ var WORKSPACE_TRANSITION_LOCK='process-studio-workspace-transition-v1';
 function withWorkspaceTransitionLock(fn){
   try{
     if(navigator.locks&&navigator.locks.request)
-      return navigator.locks.request(WORKSPACE_TRANSITION_LOCK,{mode:'exclusive'},function(){return fn();});
+      return navigator.locks.request(WORKSPACE_TRANSITION_LOCK,{mode:'exclusive'},function(lock){return fn(lock);});
   }catch(_){}
   return Promise.resolve().then(fn);
 }
@@ -951,7 +951,7 @@ function authPreparationCurrent(owner){
 function loadWorkspaces(){
   var owner=sessionIdentitySnapshot(getSess());if(!owner)return Promise.resolve([]);
   if(authPreparePromise&&authPreparationCurrent(authPrepareOwner))return authPreparePromise;
-  var work=withWorkspaceTransitionLock(function(){if(!authPreparationCurrent(owner))throw dataLockError();return loadWorkspacesCore();});
+  var work=withWorkspaceTransitionLock(function(lock){if(!authPreparationCurrent(owner))throw dataLockError();clearExpiredWorkspaceGuard(lock);return loadWorkspacesCore();});
   var run=Promise.resolve(work).then(function(v){
     if(!authPreparationCurrent(owner))throw dataLockError();
     try{expireStashes(7);}catch(_){}return v;
@@ -7518,10 +7518,21 @@ function workspaceSwitchGuardRead(){
   try{var g=JSON.parse(raw);if(!g||!g.token||!g.from)return null;
     /* 만료 guard는 읽는 곳에서 지우지 않는다. localStorage get→remove는 원자적이지
        않아 그 사이 새 전환 guard까지 지울 수 있다. 다음 guardStart의 setItem이
-       만료 값을 안전하게 덮으며, 평소 부팅은 그 값을 무시한다. */
+       만료 값을 안전하게 덮는다. 부팅은 전환 잠금을 얻은 뒤에만 정리한다. */
     if(Date.now()-(+g.at||0)>90000)return null;
     return g;
   }catch(_){return null;}
+}
+/* Only bootstrap holding the origin transition lock may remove an abandoned guard.
+   Keep the epoch: delayed work from before the interrupted switch must stay fenced. */
+function clearExpiredWorkspaceGuard(lock){
+  if(!lock||lock.name!==WORKSPACE_TRANSITION_LOCK||lock.mode!=='exclusive')return false;
+  try{
+    var raw=workspaceSwitchGuardRaw(),g=raw?JSON.parse(raw):null;
+    if(!g||g.v!==1||!g.token||!g.from||typeof g.at!=='number'||!isFinite(g.at)||g.at<=0||Date.now()-g.at<=90000)return false;
+    if(workspaceSwitchGuardRaw()!==raw)return false;
+    localStorage.removeItem(WS_SWITCH_GUARD);return true;
+  }catch(_){return false;}
 }
 function workspaceSwitchGuardStart(from,to){
   if(workspaceSwitchGuardRead())return '';

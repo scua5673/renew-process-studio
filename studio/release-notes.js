@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-update-transition-wait',date:'2026-09-15',title:'팀 전환 중 자동 업데이트가 기다립니다',
+    changes:[
+      '자동 업데이트의 새로고침이 팀 전환을 중간에 끊지 않도록 수정했습니다.',
+      '전환과 기기 저장이 끝난 뒤 새 버전을 적용합니다.',
+      '중단된 전환 표시가 남아 다음 작업을 막는 경우를 복구합니다.'
+    ]
+  },{
     id:'2026-09-15-idp-read-state',date:'2026-09-15',title:'IDP의 불필요한 저장 대기를 줄였습니다',
     changes:[
       '작성 내용은 같은데 공지 읽은 시각만 달라 저장이 막히던 경우를 자동으로 맞춥니다.',
