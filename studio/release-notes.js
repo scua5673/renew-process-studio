@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-quiet-save-footer',date:'2026-09-15',title:'저장 상태를 오른쪽 아래로 옮겼습니다',
+    changes:[
+      '저장 상태를 화면 오른쪽 아래에 작게 표시하고 깜빡임을 없앴습니다.',
+      '하단 도구와 겹치지 않으며, 저장 상태가 바뀌어도 화면 위치를 유지합니다.',
+      '저장 오류나 별도 보관된 변경은 같은 자리에서 확인할 수 있습니다.'
+    ]
+  },{
     id:'2026-09-15-stable-save-status',date:'2026-09-15',title:'저장 중에도 화면 위치를 유지합니다',
     changes:[
       '저장 상태 표시의 높이를 고정해 보관함과 보드 화면이 위아래로 움직이지 않도록 했습니다.',
