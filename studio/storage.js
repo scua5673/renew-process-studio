@@ -453,7 +453,7 @@
     set:function(k,v,current){return afterMigrate(function(){if(current)current();return idbSet(k,v,current);});},
     del:function(k,current){ return afterMigrate(function(){ if(current)current();return idbDel(k,current); }); },
     delIfValue:function(k,v,current){ return afterMigrate(function(){ if(current)current();return idbDelIfValue(k,v,current); }); },
-    replaceIfValue:function(k,expected,replacement){ return afterMigrate(function(){ return idbReplaceIfValue(k,expected,replacement); }); },
+    replaceIfValue:function(k,expected,replacement,current){ return afterMigrate(function(){ return idbReplaceIfValue(k,expected,replacement,current); }); },
     keys:function(prefix){ return afterMigrate(function(){ return idbKeys(prefix); }); }
   };
 

@@ -39,6 +39,7 @@ function harness() {
     matchState:{matches:[]},matchCurrent:'match-a',matchTab:'prep',matchSaveRevision:0,
     matchSaveTimer:0,_mprT:null,MATCH_KEY:'cs_team_matches_v1',
     matchWriteSchedule(){return true;},
+    rosterPendingRows(){return false;},
     matchIndividualPendingAny(){return false;},matchIndividualPublicPendingAny(){return false;},
     matchIndividualFlushPendingAll(){return true;},matchIndividualPublicStaleRows(){return [];},
     matchIndividualPublishPendingAll(){return true;},matchGet(){return {};},

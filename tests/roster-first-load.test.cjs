@@ -106,7 +106,9 @@ const scout=fs.readFileSync(path.join(__dirname,'../studio/scout.html'),'utf8');
 const scoutCode=[
   section(scout,'function scoutBootAllowed(){','function init(){'),
   section(scout,'var scoutReadOnlyLoad=','/* 계정·팀을 확인한 기기 보관본만'),
-  section(scout,'function save(){','function attr('),
+  section(scout,'/* 2.825 — roster save coordinator.','function attr('),
+  section(scout,'function teamSaveOwner(){','const teamSaves='),
+  section(scout,'function itemsPI(){','function itemsRerender(){'),
 ].join('\n');
 function roster(){return {attrs:[],positions:[],players:[{id:'synthetic-p1',name:'Synthetic retained',levels:{passing:5},memo:'latest note',records:[{at:17,value:'preserve'}]}],meta:{teamName:'Synthetic',evalMode:'fifa'}};}
 function mountScout(h){
@@ -114,7 +116,8 @@ function mountScout(h){
   h.local.set('ps_sync_session','{"uid":"coach-a"}');
   Object.assign(h.c,{
     KEY,TKEY:'cs_scout_targets_v1',data:{attrs:[],positions:[],players:[],meta:{}},scoutBootPending:true,scMainMigrationPending:false,
-    itemsWriteBusy:()=>false,itemsHoldList:()=>({ids:[]}),psSync:()=>h.c,
+    itemsWriteBusy:()=>false,itemsHoldList:()=>({ids:[]}),psSync:()=>h.c,PDKEY:'cs_player_del_v1',
+    teamSaves:{track(k,p){Promise.resolve(p).catch(()=>{});}},PSItems:{active:()=>false},PSRosterOutbox:require('../studio/roster-outbox.js'),
     store:{get(k){const value=h.local.get(k);return value==null?null:JSON.parse(value);},set(k,value){const valueRaw=raw(value);writes.push({k,value:valueRaw});h.local.set(k,valueRaw);h.idb.set(k,valueRaw);return true;}},
     setTimeout(fn){timers.push(fn);return timers.length;},
     init(){h.initCount=(h.initCount||0)+1;h.c.load();if(h.c.scoutAutomaticWriteAllowed())h.c.save({skipTargets:true});},
@@ -287,4 +290,14 @@ test('an actual user save after read-only initialization still returns failure a
   h.c.data.players[0].memo='attempted user change';assert.equal(h.c.save(),false);
   await assert.rejects(h.c.actualStore.ready());assert.equal(h.c.PSSaveState.get('team'),'failed');
   assert.equal(h.local.get(KEY),value);assert.equal(h.idb.get(KEY),value);
+});
+
+// Validation belongs at the write boundary: a bad legacy ID must not turn a
+// retained roster into a blank initialization or hide all its original rows.
+test('duplicate legacy IDs remain visible while coordinated writes are rejected',async()=>{
+  const d=roster();d.players.push({...clone(d.players[0]),name:'Second retained record'});
+  const value=raw(d),h=mountScout(harness({server:value}));
+  await succeeds(h);h.c.scoutBoot();
+  assert.equal(h.c.data.players.length,2);assert.equal(h.c.data.players[1].name,'Second retained record');
+  assert.equal(h.c.save(),false);assert.equal(h.local.get(KEY),value);assert.equal(h.idb.get(KEY),value);
 });
