@@ -134,18 +134,31 @@ function teamCacheKeys(){
 function wipeTeamCacheSoft(){
   if(!CACHE_WIPE||!dataUnlocked()||!getSess()||!wipeAllowedNow())return 0;
   var wid=activeWs(); if(!wid)return 0;
+  var owner=holdConflictContext();if(!owner)return 0;
   try{ if(pendingInfo(wid).count>0)return 0; }catch(_){ return 0; }
   var m=meta(), n=0;
   teamCacheKeys().forEach(function(k){
     var loc=null; try{ loc=localStorage.getItem(k); }catch(_){}
     if(loc==null)return;
     if(hash(loc)!==(m.h[k]||''))return;                       /* 아직 안 올린 편집 — 남긴다 */
+    var inIdb=idbBacked(k);
+    if(inIdb&&(!window.storage||!window.storage.delIfValue))return;
+    if(!holdConflictCurrent(owner)||localStorage.getItem(k)!==loc)return;
     try{ localStorage.removeItem(k); n++; }catch(_){ return; }
     /* 2.733 — 경기 사본을 지웠으면 이 워크스페이스에서 경기 키를 확인했다는 표도 지운다.
        표만 남으면 다음 부팅이 빈 로컬을 확인 완료로 오해해 일정에서 빈 문서를 만든다. */
     if(k===MATCH_KEY&&m.r)delete m.r[k];
-    try{ if(idbBacked(k)&&window.storage&&window.storage.del)window.storage.del(k); }catch(_){}
-    try{ syncBaseSet(k,null); }catch(_){}
+    if(inIdb)try{
+      // Another tab can save after pagehide starts but before IDB opens. Both
+      // its new raw and a new owner's identical raw must survive this cleanup.
+      var current=function(){
+        if(!holdConflictCurrent(owner)||localStorage.getItem(k)!==null||pendingInfo(wid).count>0)
+          throw syncIssue('sync_local_changed','cache_wipe_stale','팀 캐시 정리 중 새 자료를 확인했습니다');
+      };
+      Promise.resolve(window.storage.delIfValue(k,loc,current)).catch(function(e){syncDiagnostic('cache-wipe-delete',e);});
+    }catch(e){syncDiagnostic('cache-wipe-delete',e);}
+    // Confirmed merge ancestors outlive disposable caches. An asynchronous
+    // base deletion here could erase a newer ACK from another active tab.
   });
   if(n){ setMeta(m); try{ localStorage.setItem(CACHE_FLAG,String(Date.now())); }catch(_){} }
   return n;
