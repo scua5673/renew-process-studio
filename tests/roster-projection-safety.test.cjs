@@ -15,9 +15,10 @@ function fixture(players){
     store:{get:k=>JSON.parse(h.local.get(k)||'null'),set(k,v){h.local.set(k,raw(v));saves.push({k,v:copy(v)});return true;}},
     evalMode:()=>'fifa',evalSetId:()=>'standard',canSeeTargets:()=>false,rosterKeepSave(){},posAbbr:x=>x,plStatusOf:p=>p.status||'ok',psAct(){}});
   h.local.set('ps_sync_session',raw(c.getSess()));
+  c.storage.conditionalGuardVersion=1;
   c.storage.keys=async()=>[...h.idb.keys()];
   vm.runInContext(section(sync,'var _itemsT=null, _itemsPending=null','function itemsHoldOpen(')+'\n'+['itemsIdxKey','itemsIdx','itemVal','bigDrop','itemsReadAll','itemsResolveConflicts'].map(n=>fn(sync,n)).join('\n'),c);
-  c.PSItems={active:()=>true,readAll:c.itemsReadAll,write:c.itemsWrite,writeReady:c.itemsWriteReady,flush:c.itemsWriteFlush};c.parent.PSItems=c.PSItems;c.parent.PS_BUILD='2.809';
+  c.PSItems={patchVersion:1,active:()=>true,readAll:c.itemsReadAll,write:c.itemsWrite,writeReady:c.itemsWriteReady,flush:c.itemsWriteFlush};c.parent.PSItems=c.PSItems;c.parent.PS_BUILD='2.809';
   c.teamSaves={track(k,p){Promise.resolve(p).catch(()=>{});}};
   vm.runInContext(section(scout,'/* 2.825 — roster save coordinator.','\nfunction save(){')+'\n'+section(scout,'function teamSaveOwner(){','const teamSaves='),c);
   vm.runInContext(['isTargetPl','plTombs','plTombAdd','plTombApply','itemsPI','scoutAutomaticWriteAllowed','itemsApply','save'].map(n=>fn(scout,n)).join('\n'),c);

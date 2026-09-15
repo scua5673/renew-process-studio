@@ -10,7 +10,7 @@ function harness(){
     localStorage:{getItem:k=>local.get(k)??null,setItem(k,v){if(hooks.localWrite)hooks.localWrite(k,v);local.set(k,String(v));},removeItem:k=>local.delete(k)},syncIssue:(code,stage,msg)=>Object.assign(new Error(msg),{psCode:code,psStage:stage}),syncDiagnostic(){},
     hash:s=>s,itemVal:p=>JSON.stringify(p),itemsIdx:()=>JSON.parse(local.get('idx:'+wid)||'{}'),itemsIdxKey:()=>'idx:'+wid,bigDrop:(b,a)=>b-a>=5,
     itemsServerCheck:async()=>{if(hooks.ready)await hooks.ready();return ready;},
-    storage:{async keys(){return [...disk.keys()];},async get(k){if(hooks.read)await hooks.read(k);return disk.has(k)?{value:disk.get(k)}:null;},async replaceIfValue(k,old,value,current){
+    storage:{conditionalGuardVersion:1,async keys(){return [...disk.keys()];},async get(k){if(hooks.read)await hooks.read(k);return disk.has(k)?{value:disk.get(k)}:null;},async replaceIfValue(k,old,value,current){
       if(hooks.write)await hooks.write(k,old,value);if(current)current();if((disk.get(k)??null)!==old)return false;
       writes.push({k,value});if(value===null)disk.delete(k);else disk.set(k,value);if(hooks.after)await hooks.after(k,value);return true;
     }},

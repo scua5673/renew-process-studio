@@ -234,3 +234,23 @@ test('actual durable outbox stage A, stage B, late ACK A and reload authorize on
   const resumed=client(reloaded),receipt=resumed.read(),reqB=request(receipt);assert.deepEqual(reqB.options.basePlayers,[original]);assert.deepEqual(reqB.options.baseHistory,[{id:'a',players:[first]}]);
   assert.equal(reloaded.disk.get('sq:a'),raw(first));await reloaded.c.itemsWriteReady(reqB.players,reqB.options);assert.equal(reloaded.disk.get('sq:a'),raw(latest));assert.equal(resumed.ack(receipt),1);assert.equal(resumed.pending(),false);
 });
+
+test('new patch writer rejects old storage facades before reading or writing player data',async()=>{
+  for(const capability of [undefined,0,'1',2]){
+    const h=harness();seed(h,[p('a','A')]);h.c.storage.conditionalGuardVersion=capability;let reads=0;h.hooks.read=()=>reads++;
+    await assert.rejects(h.c.itemsWriteReady([p('a','Mine')],options(h,'a')),e=>e.psStage==='items_patch_permission');
+    assert.equal(reads,0);assert.equal(h.writes.length,0);assert.equal(h.c._itemsActiveJobs.length,0);assert.equal(h.disk.get('sq:a'),raw(p('a','A')));
+  }
+});
+test('storage capability changes while a patch waits stop its actual CAS',async()=>{
+  for(const phase of ['readiness','transaction']){
+    const h=harness();seed(h,[p('a','A')]);h.hooks[phase==='readiness'?'ready':'write']=()=>{h.c.storage.conditionalGuardVersion=0;};
+    await assert.rejects(h.c.itemsWriteReady([p('a','Mine')],options(h,'a')),e=>e.psCode==='sync_workspace_changed');assert.equal(h.writes.length,0);assert.equal(h.disk.get('sq:a'),raw(p('a','A')));
+  }
+});
+test('shipped public storage and PSItems objects expose the supported guard and patch capabilities',()=>{
+  const c=vm.createContext({window:{}});vm.runInContext(section(storageSource,'  window.storage={','\n\n  /* 1.618'),c);assert.equal(c.window.storage.conditionalGuardVersion,1);
+  const sync=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8'),h=harness();
+  for(const name of ['itemsAudit','itemsPushAllowed','itemsHoldOpen','itemsReadAll','itemsActive'])h.c[name]=()=>{};
+  vm.runInContext(section(sync,'try{ window.PSItems={','\n\nfunction matchMirrorWriteExact'),h.c);assert.equal(h.c.PSItems.patchVersion,1);assert.equal(h.c.PSItems.writeReady,h.c.itemsWriteReady);
+});

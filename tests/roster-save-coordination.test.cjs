@@ -44,7 +44,7 @@ function fixture({privateCandidate=false,persisted=null}={}){
     if(!job.done){for(const id of job.options.changedIds||[]){const p=job.players.find(p=>p.id===id);if(p){h.disk.set('sq:'+id,raw(p));rowWrites.push(id);}}job.done=true;}
     return {n:job.players.length,wrote:(job.options.changedIds||[]).length};
   }
-  c.PSItems={active:()=>rowState.active,readAll:async()=>null,
+  c.PSItems={patchVersion:1,active:()=>rowState.active,readAll:async()=>null,
     writeReady(players,options){if(rowState.rejectBeforeEnqueue)throw Error('synthetic SQ rejected before enqueue');const job={players:copy(players),options:copy(options||{}),owner:c.teamSaveOwner(),done:false};rowCalls.push(job);rowJobs.push(job);return deliver(job);},
     async flush(){for(const job of rowJobs)if(!job.done)await deliver(job);return true;}
   };c.parent=c;
@@ -179,9 +179,10 @@ test('reload retains an uncommitted row and its original base even after main is
 
 test('reload replays only the newest pending row while keeping the original CAS base',async()=>{
   const first=fixture();first.rowState.failure=true;first.c.data.players[0].memo='first unsent';first.save();await assert.rejects(first.ready());
+  const partial=copy(first.rowCalls[0].players[0]);first.disk.set('sq:p1',raw(partial));
   first.c.data.players[0].memo='second unsent';first.save();await assert.rejects(first.ready());
   const second=fixture({persisted:first.persisted()});assert.equal(second.resume(),true);await second.ready();
-  assert.equal(second.rowCalls.length,1);assert.equal(second.rowCalls[0].players[0].memo,'second unsent');assert.deepEqual(second.rowCalls[0].options.basePlayers,[first.initial.players[0]]);assert.equal(second.c.rosterPendingRows(),false);assert.equal(JSON.parse(second.disk.get('sq:p1')).memo,'second unsent');
+  assert.equal(second.rowCalls.length,1);assert.equal(second.rowCalls[0].players[0].memo,'second unsent');assert.deepEqual(second.rowCalls[0].options.basePlayers,[first.initial.players[0]]);assert.deepEqual(second.rowCalls[0].options.baseHistory,[{id:'p1',players:[partial]}]);assert.equal(second.c.rosterPendingRows(),false);assert.equal(JSON.parse(second.disk.get('sq:p1')).memo,'second unsent');
 });
 
 test('a late row completion cannot acknowledge the previous owner pending edit',async()=>{
@@ -193,4 +194,16 @@ test('a late row completion cannot acknowledge the previous owner pending edit',
 test('outbox quota failure stops the main save before an unretained row can be published',async()=>{
   const h=fixture(),before=h.values.get(MAIN),set=h.c.localStorage.setItem;h.c.localStorage.setItem=(k,v)=>{if(k.startsWith(Outbox.prefix))throw Error('synthetic intent quota');return set(k,v);};
   h.c.data.players[0].memo='unretained';assert.equal(h.save(),false);await assert.rejects(h.ready(),/intent quota/);assert.equal(h.values.get(MAIN),before);assert.deepEqual(h.rowCalls,[]);assert.equal(h.values.has(MIRROR),false);
+});
+
+test('an old parent API never receives a partial roster and its retained intent resumes after an updated reload',async()=>{
+  for(const capability of [undefined,0,'1']){
+    const h=fixture();if(capability===undefined)delete h.c.PSItems.patchVersion;else h.c.PSItems.patchVersion=capability;
+    h.c.data.players[0].memo='retained for the updated app';assert.equal(h.save(),false);await assert.rejects(h.ready());
+    assert.deepEqual(h.rowCalls,[]);assert.deepEqual(h.rowWrites,[]);assert.equal(h.c.rosterPendingRows(),true);assert.deepEqual(h.main().players.map(p=>p.id),['p1','p2']);
+    // Retrying the captured incompatible API cannot turn an empty flush into
+    // success. A fresh compatible application resumes the durable intent.
+    h.c.PSItems.patchVersion=1;await assert.rejects(h.ready(true));assert.deepEqual(h.rowCalls,[]);assert.equal(h.c.rosterPendingRows(),true);
+    const updated=fixture({persisted:h.persisted()});assert.equal(updated.resume(),true);await updated.ready();assert.deepEqual(changed(updated),['p1']);assert.equal(updated.c.rosterPendingRows(),false);assert.equal(JSON.parse(updated.disk.get('sq:p1')).memo,'retained for the updated app');assert.deepEqual(updated.main().players.map(p=>p.id),['p1','p2']);
+  }
 });

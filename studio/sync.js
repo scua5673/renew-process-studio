@@ -4671,7 +4671,7 @@ function itemsWriteSnapshot(players){
   return JSON.parse(JSON.stringify(players));
 }
 function itemsPatchPermission(){
-  try{var p=window.PSPerms,w=activeWsObj();if(!p||typeof p.canEdit!=='function'||!p.canEdit('team')||!w)return null;
+  try{var p=window.PSPerms,w=activeWsObj();if(!window.storage||window.storage.conditionalGuardVersion!==1||!p||typeof p.canEdit!=='function'||!p.canEdit('team')||!w)return null;
     return JSON.stringify([permsRaw(),String(w.role||''),p.role?p.role():'']);
   }catch(_){return null;}
 }
@@ -5107,7 +5107,7 @@ function itemsResolveConflicts(at,wid,ownerGuard,roundMeta){
     }).catch(function(e){ syncDiagnostic('items-conflict',e); throw e; });
 }
 function itemsActive(){ try{ return ITEMS_ACTIVE&&localStorage.getItem('ps_items_write')!=='0'; }catch(_){ return ITEMS_ACTIVE; } }
-try{ window.PSItems={audit:itemsAudit,write:itemsWrite,writeReady:itemsWriteReady,flush:itemsWriteFlush,prefix:ITEMP,
+try{ window.PSItems={patchVersion:1,audit:itemsAudit,write:itemsWrite,writeReady:itemsWriteReady,flush:itemsWriteFlush,prefix:ITEMP,
   ready:itemsPushAllowed,check:itemsServerCheck,holdOpen:itemsHoldOpen,readAll:itemsReadAll,active:itemsActive}; }catch(_){}
 
 function matchMirrorWriteExact(v){

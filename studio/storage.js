@@ -426,6 +426,7 @@
   function afterMigrate(fn){ return migrated.then(fn,fn); }
 
   window.storage={
+    conditionalGuardVersion:1,
     get:function(k){
       var reader=sharedReadContext();
       function readCurrent(){if(reader===null||sharedReadContext()!==reader){var e=new Error('storage read owner changed');e.name='StorageOwnerChangedError';throw e;}}

@@ -6498,7 +6498,7 @@ function rosterSaveRows(players,options,receipt){
   if(local||(PI&&PI.active&&PI.active()===false))return true;
   var owner=teamSaveOwner(),work,accepted=true,request=null;
   try{
-    if(!PI||!PI.writeReady||!PI.flush)throw new Error("선수 저장 기능을 준비하지 못했습니다. 앱을 새로고침해 주세요.");
+    if(!PI||PI.patchVersion!==1||!PI.writeReady||!PI.flush)throw new Error("선수 저장 기능을 업데이트해야 합니다. 변경사항은 보관됩니다. 앱을 새로고침해 주세요.");
     if(receipt){
       players=receipt.rows.filter(function(r){return !r.deleted;}).map(function(r){return r.player;});
       ids=receipt.rows.filter(function(r){return !r.deleted;}).map(function(r){return r.id;});
@@ -6516,7 +6516,7 @@ function rosterSaveRows(players,options,receipt){
   }catch(e){work=Promise.reject(e);accepted=false;}
   function retry(){
     if(owner!==teamSaveOwner())throw new Error("계정이나 팀이 바뀌어 이전 저장을 재시도하지 않습니다");
-    if(!PI||!PI.writeReady||!request)throw new Error("선수 저장 기능을 준비하지 못했습니다");
+    if(!PI||PI.patchVersion!==1||!PI.writeReady||!request)throw new Error("선수 저장 기능을 업데이트해야 합니다. 변경사항은 보관됩니다.");
     return PI.writeReady(request.players,request.options).then(function(result){
       if(owner!==teamSaveOwner())throw new Error("선수 저장 중 계정이나 팀이 바뀌었습니다");
       if(receipt)rosterOutbox().ack(receipt);return result;
