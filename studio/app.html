@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.829"></script>
+<script src="autosave-status.js?v=2.830"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -379,7 +379,8 @@
        가진 화면(IDP·학습)에서 두 바가 겹쳤다(실측: IDP 바 697~756 vs 셸 바 753~812).
        바 높이는 글자·언어·safe-area 에 따라 변하므로 상수로 맞출 수 없다 — **재서** 변수에 넣는다.
        `.seg` 의 padding-bottom 이 이미 safe-area 를 품으므로 offsetHeight 하나면 충분하다. */
-    .frames{margin-bottom:var(--ps-seg-h,calc(60px + env(safe-area-inset-bottom)));}
+    /* The shell footer now reserves this navigation space below the frames. */
+    .frames{margin-bottom:0;}
     body.focus .frames{margin-bottom:0;}
   }
   @media (max-width:360px){
@@ -475,7 +476,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.829';</script>
+<script>window.PS_BUILD='2.830';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1406,20 +1407,22 @@ function psShowUpdBand(){
   <!-- 자동 저장 상태: 서버 확인 전에는 완료로 표시하지 않는다. 복구는 설정 고급에서 연다. -->
   <div id="psSyncStrip" role="status" aria-live="polite" aria-hidden="true"><i></i><span id="psSyncStripTx"></span><span id="psSyncStripAgo"></span><button type="button" id="psSyncStripBtn" style="display:none"></button></div>
   <style id="ps-2625-strip">
-    #psSyncStrip{display:flex;align-items:center;justify-content:flex-end;gap:6px;box-sizing:border-box;height:24px;min-height:24px;max-height:24px;padding:0 12px;font:600 11px Pretendard,system-ui,sans-serif;color:var(--dim);flex:0 0 24px;background:transparent}
-    /* Keep the status slot stable during saves, login checks and editor changes. */
+    /* The last flex item reserves a stable footer below every iframe toolbar. */
+    #psSyncStrip{order:1;display:flex;align-items:center;justify-content:flex-end;gap:6px;box-sizing:border-box;height:24px;min-height:24px;max-height:24px;padding:0 max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));margin-bottom:env(safe-area-inset-bottom,0px);font:500 11px Pretendard,system-ui,sans-serif;color:var(--dim);flex:0 0 24px;background:transparent}
     #psSyncStrip[aria-hidden="true"]{visibility:hidden;pointer-events:none}
-    #psSyncStrip i{width:6px;height:6px;border-radius:50%;background:#8A9099;flex:none}
-    #psSyncStrip.ok{color:#1F8A4C}#psSyncStrip.ok i{background:#1F8A4C}
+    #psSyncStrip i{width:5px;height:5px;border-radius:50%;background:#8A9099;flex:none}
     #psSyncStrip.bad i{background:#C24A46}#psSyncStrip.held i{background:#B5762B}
-    #psSyncStrip.busy i{animation:psStripPulse 1.2s infinite}
     #psSyncStripTx{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     #psSyncStripAgo{display:none}
-    #psSyncStripBtn{height:24px;padding:0 5px;border:0;border-radius:5px;background:transparent;color:inherit;font:600 11px Pretendard,system-ui,sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer;flex:none}
+    #psSyncStripBtn{height:24px;padding:0 5px;border:0;border-radius:5px;background:transparent;color:inherit;font:500 11px Pretendard,system-ui,sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer;flex:none}
     #psSyncStripBtn:disabled{opacity:.5;cursor:default}
-    #psSyncStripBtn:focus-visible{outline:2px solid var(--blue,#3a6df0);outline-offset:2px}
-    body.ps-editor-open[data-ps-app="design"] #psSyncStrip,body.ps-editor-open[data-ps-app="board"] #psSyncStrip{visibility:hidden!important;pointer-events:none}
-    @media(min-width:601px){#psSyncStrip{position:fixed;top:16px;right:14px;left:auto;margin:0!important;padding:0;max-width:40vw;z-index:300}body.ps-idp-phone #psSyncStrip{top:0}}
+    #psSyncStripBtn:focus-visible{outline:2px solid var(--blue,#3a6df0);outline-offset:-2px}
+    body.ps-editor-open[data-ps-app="design"] #psSyncStrip:not(.bad):not(.held),body.ps-editor-open[data-ps-app="board"] #psSyncStrip:not(.bad):not(.held){visibility:hidden!important;pointer-events:none}
+    /* Reserve mobile navigation once, below the footer instead of the frame. */
+    @media(max-width:600px){
+      #psSyncStrip{margin-bottom:var(--ps-footer-nav-h,var(--ps-seg-h,calc(60px + env(safe-area-inset-bottom))))}
+    }
+    @media print{#psSyncStrip{display:none}}
     #psUndoBar{display:flex;align-items:center;gap:10px;padding:8px 14px;font:600 12px Pretendard,system-ui,sans-serif;background:rgba(181,118,43,.12);color:var(--ink);border-bottom:1px solid var(--line);flex:0 0 auto;margin-left:var(--ps-side-w)}
     body.focus #psUndoBar,body.vfull #psUndoBar{margin-left:0}
     #psMergeBar{display:flex;align-items:center;gap:10px;padding:8px 14px;font:600 12px Pretendard,system-ui,sans-serif;background:rgba(58,109,240,.10);color:var(--ink);border-bottom:1px solid var(--line);flex:0 0 auto;margin-left:var(--ps-side-w)}
@@ -1432,15 +1435,12 @@ function psShowUpdBand(){
     #psUndoDo{height:28px;padding:0 12px;border-radius:999px;border:1px solid #B5762B;background:var(--surface);color:#B5762B;font:600 12px Pretendard,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
     #psUndoBar.done #psUndoDo{display:none}
     #psUndoClose{height:28px;padding:0 8px;border:0;background:transparent;color:var(--faint);font:600 12px Pretendard,system-ui,sans-serif;cursor:pointer}
-    @media(min-width:601px){#psReleaseNotes:not([hidden])~#psSyncStrip{position:static;top:auto;right:auto;left:auto;margin:0 0 0 var(--ps-side-w,0px)!important;max-width:none;padding:0 14px;z-index:auto}body.focus #psReleaseNotes:not([hidden])~#psSyncStrip,body.vfull #psReleaseNotes:not([hidden])~#psSyncStrip{margin-left:0!important}}
     #gearPop .gp-row:has(>#psPushNow),#gearPop .gp-row:has(>#psDiagOpen),#gearPop .gp-row:has(>#psHistOpen),#gearPop .gp-row:has(>#psRecoveryOpen),#gearPop .gp-row:has(>#psAutosaveRecoveryOpen){grid-template-columns:64px minmax(0,1fr) auto}
     #gearPop #psRecoveryNotes{grid-template-columns:64px minmax(0,1fr);align-items:start}
     #gearPop .ps-recovery-notes{min-width:0}
     #gearPop #psUndoBar,#gearPop #psMergeBar{flex-wrap:wrap;margin:0 0 9px;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:11px}
     #gearPop #psUndoTx,#gearPop #psMergeTx{flex-basis:100%}
     #gearPop #psUndoTx span,#gearPop #psMergeTx span{font-size:10px}
-    @keyframes psStripPulse{0%,100%{opacity:.35}50%{opacity:1}}
-    @media (prefers-reduced-motion:reduce){#psSyncStrip.busy i{animation:none}}
   </style>
   <script>
   /* 엔진 상태를 작은 자동 저장 표시로 그린다. 일반 진입에서 문서 선택창을 열지 않는다. */
@@ -2380,7 +2380,7 @@ function psShowUpdBand(){
       }
       if(d.source==='board' && d.type==='toggleSide'){ try{ window.__psSideFold&&window.__psSideFold('toggle'); }catch(_){} return; }   /* 2.704 — 보드 안에서 ⌘\ */
       if(d.source==='board' && d.type==='boardSettingsState'){ if(d.open){ try{ if(window.__psCloseAppSettings)window.__psCloseAppSettings(); }catch(_){} } return; }   /* 2.700 — 보드 설정이 열리면 앱 설정은 닫는다(둘 중 하나만) */
-      if(d.source==='board' && d.type==='editorState'){ document.body.classList.toggle('ps-editor-open',!!d.open); return; }   /* 2.698 — 편집기(훈련 세션 만들기 등)가 열리면 오른쪽 위 동기화 글씨를 숨긴다(사용자 "저장하기와 겹친다") */
+      if(d.source==='board' && d.type==='editorState'){ document.body.classList.toggle('ps-editor-open',!!d.open); return; }   /* 2.698 — 편집기가 열리면 일반 저장 표시를 숨긴다. 하단 오류·보관 상태는 유지한다. */
       if(d.source==='board' && d.type==='boardLiveSaved'){ if(!__psBoardLiveMuted)try{ localStorage.setItem('ps_private_board_rev_v1',String(Date.now())); }catch(_){} return; }
       if((d.source==='process'||d.source==='scout'||d.source==='playbook') && d.type==='openDrillEditor'){   /* 2.312 — 콕핏에서도 보관함 훈련을 바로 연다 · 2.580 플레이북에서 열면 저장·취소 뒤 플레이북으로 돌아온다 */ captureReq=(d.source==='playbook')?'playbook':'process'; showApp('design'); var _ed=d; setTimeout(function(){try{ if(_ed.readonly){ if(fBoard.contentWindow.__openScheduleDrillView)fBoard.contentWindow.__openScheduleDrillView({libId:_ed.libId,name:_ed.name,snap:_ed.snap}); else fBoard.contentWindow.__openScheduleDrillEdit&&fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); }   /* 2.669 — 지난 날은 보기 전용 */ else if(_ed.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); } else if(_ed.wizard){ fBoard.contentWindow.__openSessionWizard && fBoard.contentWindow.__openSessionWizard({date:_ed.date||'',roster:_ed.roster||null}); }   /* 2.698 — 출석 그 날 카드에서 온 «훈련 세션 만들기»: 날짜·인원 프리셋 */ else { try{ fBoard.contentWindow.__psPreselectPhases=(Array.isArray(_ed.gmPhases)&&_ed.gmPhases.length)?_ed.gmPhases.slice():null; }catch(_){}   /* 1.958 — 보강 추천에서 온 국면 프리셀렉트 */ fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); } }catch(_){}},80); return; }
       if(d.source==='process' && d.type==='openBoard'){
@@ -5038,16 +5038,22 @@ window.__buildScoutForm=function(k){
   var previewMobile=false;try{previewMobile=new URLSearchParams(location.search).get('layout')==='mobile';}catch(_){}
   /* 2.349 — 하단 바 높이를 재서 `--ps-seg-h` 로. iframe 앱(IDP·학습)이 제 바를 이 위에 올린다 */
   (function(){
-    var seg=document.getElementById('appSeg'); if(!seg)return;
+    var seg=document.getElementById('appSeg'),teamBottom=document.getElementById('teamBottom'); if(!seg)return;
     function measure(){
       try{
+        /* The quiet footer sits above whichever navigation is actually visible. */
+        var footerNavHeight=0;
+        [seg,teamBottom].forEach(function(nav){
+          if(nav&&nav.offsetHeight>0&&getComputedStyle(nav).position==='fixed')footerNavHeight=Math.max(footerNavHeight,nav.getBoundingClientRect().height);
+        });
+        document.documentElement.style.setProperty('--ps-footer-nav-h',footerNavHeight>0?footerNavHeight+'px':'env(safe-area-inset-bottom,0px)');
         if(getComputedStyle(seg).position!=='fixed'){ document.documentElement.style.removeProperty('--ps-seg-h'); return; }
         var h=seg.offsetHeight;
         if(h>0)document.documentElement.style.setProperty('--ps-seg-h',h+'px');
       }catch(_){}
     }
     measure();
-    try{ if(window.ResizeObserver)new ResizeObserver(measure).observe(seg); }catch(_){}
+    try{ if(window.ResizeObserver){var navSize=new ResizeObserver(measure);navSize.observe(seg);if(teamBottom)navSize.observe(teamBottom);} }catch(_){}
     window.addEventListener('resize',measure,{passive:true});
     window.addEventListener('orientationchange',function(){setTimeout(measure,120);});
     setTimeout(measure,300); setTimeout(measure,1200);   /* 폰트·부팅 뒤 한 번 더 */
@@ -7404,13 +7410,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.829"></script>
-<script src="autosave-merge.js?v=2.829"></script>
-<script src="autosave-runtime.js?v=2.829"></script>
-<script src="autosave-recovery.js?v=2.829"></script>
-<script src="sync.js?v=2.829"></script>
+<script src="autosave-journal.js?v=2.830"></script>
+<script src="autosave-merge.js?v=2.830"></script>
+<script src="autosave-runtime.js?v=2.830"></script>
+<script src="autosave-recovery.js?v=2.830"></script>
+<script src="sync.js?v=2.830"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.829">
+<link rel="stylesheet" href="support.css?v=2.830">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

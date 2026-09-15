@@ -82,7 +82,9 @@ try{
       await page.evaluate(()=>{
         window.__fixtureSaveState={kind:'ok',at:100,n:0,review:0};
         PSSync.state=()=>window.__fixtureSaveState;
-        PSSync.syncNow=async()=>({pending:1});
+        window.__fixtureRetries=0;window.__fixtureRecoveryOpens=0;
+        PSSync.syncNow=async()=>{window.__fixtureRetries++;return new Promise(resolve=>{window.__fixtureRetryResolve=resolve;});};
+        window.PSAutosaveRecovery={open:()=>{window.__fixtureRecoveryOpens++;}};
         window.__psShowApp('design');
       });
       await frame.locator('#sessionView').waitFor({state:'visible'});
@@ -112,10 +114,44 @@ try{
           return {main:box(document.querySelector('.frames')),frame:box(f),scrollBox:box(scroller),scrollTop:scroller.scrollTop,anchor:box(anchor),documentScroll:document.scrollingElement.scrollTop,childDocumentScroll:doc.scrollingElement.scrollTop,strip:{...box(strip),display:getComputedStyle(strip).display,position:getComputedStyle(strip).position,text:strip.innerText},banner:box(document.getElementById('psReleaseNotes'))};
         });
       }
-      for(const editor of [false,true])for(const shown of [true,false]){
-        // This is the shell's existing editor-mode class, intentionally applied
-        // over the same scrollable list so geometry remains directly comparable.
-        await page.evaluate(editor=>document.body.classList.toggle('ps-editor-open',editor),editor);
+      async function footerGeometry(){
+        return page.evaluate(()=>{
+          const rect=(el,offset={left:0,top:0})=>{const r=el.getBoundingClientRect(),sx=offset.scaleX||1,sy=offset.scaleY||1;return {left:r.left*sx+offset.left,right:r.right*sx+offset.left,top:r.top*sy+offset.top,bottom:r.bottom*sy+offset.top,width:r.width*sx,height:r.height*sy};};
+          const visible=el=>!!el&&el.checkVisibility({opacityProperty:true,visibilityProperty:true});
+          const strip=document.getElementById('psSyncStrip'),tx=document.getElementById('psSyncStripTx'),btn=document.getElementById('psSyncStripBtn'),fr=document.getElementById('fBoard'),f=rect(fr),doc=fr.contentDocument,style=getComputedStyle(strip);
+          // At tablet widths the shell scales its wider board iframe. Child
+          // DOMRects are in that unscaled viewport, so convert both axes.
+          const childOffset={left:f.left,top:f.top,scaleX:f.width/fr.clientWidth,scaleY:f.height/fr.clientHeight};
+          const controls=['#dfNew','#vaultSave','#ps-command-dock','#ps-dock','#animBar'].map(selector=>{const el=doc.querySelector(selector);return visible(el)?{selector,rect:rect(el,childOffset)}:null;}).filter(Boolean);
+          const navs=['#appSeg','#teamBottom'].map(selector=>{const el=document.querySelector(selector);return visible(el)&&rect(el).top>innerHeight/2?{selector,rect:rect(el)}:null;}).filter(Boolean);
+          const b=rect(btn),hit=visible(btn)?document.elementFromPoint((b.left+b.right)/2,(b.top+b.bottom)/2):null;
+          return {strip:rect(strip),text:rect(tx),button:visible(btn)?{rect:b,disabled:btn.disabled,hit:hit===btn||btn.contains(hit),label:btn.textContent}:null,visible:visible(strip),main:rect(document.querySelector('.frames')),frame:f,controls,navs,viewport:{width:innerWidth,height:innerHeight},style:{position:style.position,fontSize:parseFloat(style.fontSize),fontWeight:style.fontWeight,color:style.color,textAlign:style.textAlign,justifyContent:style.justifyContent,pulse:getComputedStyle(strip.querySelector('i')).animationName},content:tx.textContent};
+        });
+      }
+      function assertFooter(g,s,editor=false){
+        if(measureOnly)return;
+        const label=spec.width+'px '+s.kind+(editor?' editor':''),r=g.strip;
+        assert.equal(r.height,24,label+' uses a stable 24px footer slot');
+        assert.ok(r.left>=-.5&&r.right<=g.viewport.width+.5&&r.bottom<=g.viewport.height+.5,label+' is inside the viewport');
+        assert.ok(g.main.bottom<=r.top+.5&&g.frame.bottom<=r.top+.5,label+' sits below the actual content and iframe');
+        assert.ok(g.viewport.height-r.bottom<=80,label+' stays near the bottom edge');
+        const overlap=(a,b)=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>.5&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>.5;
+        for(const n of g.navs){assert.ok(r.bottom<=n.rect.top+.5,label+' is above '+n.selector);assert.equal(overlap(r,n.rect),false,label+' avoids navigation');}
+        for(const c of g.controls)assert.equal(overlap(r,c.rect),false,label+' avoids '+c.selector);
+        const attention=s.kind==='bad'||s.kind==='held'||s.kind==='ask'||s.archivedCount>0;
+        assert.equal(g.visible,s.kind!=='off'&&(!editor||attention),label+' has the expected visibility');
+        if(!g.visible)return;
+        const edge=g.button?g.button.rect.right:g.text.right;
+        assert.ok(g.viewport.width-edge>=0&&g.viewport.width-edge<=24,label+' content is aligned at the right edge');
+        if(g.button){assert.equal(g.button.hit,true,label+' action has an unobstructed hit target');assert.equal(g.button.disabled,false,label+' action remains enabled');}
+        if(s.kind==='busy'||s.kind==='ok'&&!s.archivedCount){
+          assert.ok(g.style.fontSize<=11.5&&Number(g.style.fontWeight)<=500,label+' stays small and quiet');
+          const rgb=g.style.color.match(/[\d.]+/g)?.slice(0,3).map(Number)||[];
+          assert.ok(rgb.length===3&&Math.max(...rgb)-Math.min(...rgb)<=30,label+' uses a neutral text color');
+          assert.equal(g.style.pulse,'none',label+' does not flash');
+        }
+      }
+      async function banner(shown){
         if(shown){
           await page.evaluate(()=>{localStorage.removeItem('ps_release_notes_hidden_v1');document.getElementById('psReleaseNotes').__psReleaseNotes.refresh();});
           assert.equal(await page.locator('#psReleaseNotes').isVisible(),true);
@@ -123,21 +159,71 @@ try{
           await page.locator('#psReleaseNotes').getByRole('button',{name:'일주일간 안 보기',exact:true}).click();
           assert.equal(await page.locator('#psReleaseNotes').isVisible(),false);
         }
+      }
+      for(const editor of [false,true])for(const shown of [true,false]){
+        // This is the shell's existing editor-mode class, intentionally applied
+        // over the same scrollable list so geometry remains directly comparable.
+        await page.evaluate(editor=>document.body.classList.toggle('ps-editor-open',editor),editor);
+        await banner(shown);
         await state(states[0][1]);
         const scrolled=await frame.locator('#sessionView .sess-wrap').evaluate(el=>{el.scrollTop=500;return {top:el.scrollTop,range:el.scrollHeight-el.clientHeight};});
         assert.ok(scrolled.top>100&&scrolled.range>600,'Actual vault list must be genuinely scrollable');
         const initial=await geometry(),phase={bannerShown:shown,editorMarker:editor,initial,transitions:[]};report.phases.push(phase);
         for(const [name,s] of states){
-          await state(s);const g=await geometry(),delta={};
+          await state(s);const g=await geometry(),footer=await footerGeometry(),delta={};
           for(const k of ['main','frame','scrollBox','anchor'])for(const axis of ['top','height'])delta[k+'.'+axis]=g[k][axis]-initial[k][axis];
           delta.scrollTop=g.scrollTop-initial.scrollTop;delta.documentScroll=g.documentScroll-initial.documentScroll;delta.childDocumentScroll=g.childDocumentScroll-initial.childDocumentScroll;
           const moved=Object.entries(delta).filter(([,v])=>Math.abs(v)>.5);
-          phase.transitions.push({name,geometry:g,delta,moved});
+          phase.transitions.push({name,geometry:g,footer,delta,moved});
           assert.equal(await page.locator('#psWsModal').count(),0,'A status transition must not open a modal');
           if(!measureOnly)assert.deepEqual(moved,[],`${spec.width}px, banner ${shown}, ${name}: status changed list geometry/scroll`);
-          if(editor)assert.equal(await page.locator('#psSyncStrip').isVisible(),false,'Editor mode keeps status hidden');
+          assertFooter(footer,s,editor);
           if(['ok','bad','archived'].includes(name))await page.screenshot({path:path.join(out,spec.width+'-'+(editor?'editor-':'')+(shown?'banner':'no-banner')+'-'+name+'.png')});
         }
+      }
+      await page.evaluate(()=>document.body.classList.remove('ps-editor-open'));
+      await banner(true);await state({kind:'bad',reason:'sync_storage',n:1});
+      const actionBefore=await geometry();
+      await page.locator('#psSyncStripBtn').focus();await page.locator('#psSyncStripBtn').press('Enter');
+      await page.waitForFunction(()=>typeof window.__fixtureRetryResolve==='function');
+      assert.equal(await page.evaluate(()=>window.__fixtureRetries),1,'Bottom retry uses the real autosave retry handler once');
+      assert.equal(await page.locator('#psSyncStripTx').innerText(),'저장 중…');
+      assert.equal(await page.locator('#psSyncStripBtn').isVisible(),false,'No duplicate retry action while saving');
+      await page.evaluate(()=>{
+        window.__fixtureSaveState={kind:'ok',at:Date.now(),n:0};
+        window.__fixtureRetryResolve({saved:1});
+      });
+      await page.waitForFunction(()=>document.getElementById('psSyncStripTx').textContent==='저장됨');
+      const actionAfter=await geometry();
+      for(const k of ['main','frame','scrollBox','scrollTop','anchor'])assert.deepEqual(actionAfter[k],actionBefore[k],'Retry and ACK preserve '+k);
+      await state({kind:'ok',at:Date.now()+1,n:0,archivedCount:2});
+      assert.equal(await page.locator('#psSyncStripBtn').innerText(),'보관 내용');await page.locator('#psSyncStripBtn').click();
+      assert.equal(await page.evaluate(()=>window.__fixtureRecoveryOpens),1,'Bottom recovery button reaches the existing advanced recovery action');
+      report.actions={retry:1,confirmedAck:true,recovery:1};
+      await page.evaluate(()=>window.__psShowApp('board'));
+      await frame.locator('#boardView').waitFor({state:'visible'});await page.waitForTimeout(900);
+      report.boardPhases=[];
+      for(const shown of [true,false]){
+        await banner(shown);await state(states[0][1]);
+        const initial=await footerGeometry(),phase={bannerShown:shown,initial,transitions:[]};report.boardPhases.push(phase);
+        for(const [name,s] of states){
+          await state(s);const g=await footerGeometry();phase.transitions.push({name,geometry:g});
+          if(!measureOnly){assert.deepEqual(g.main,initial.main,'Board container stays still: '+name);assert.deepEqual(g.frame,initial.frame,'Board iframe stays still: '+name);}
+          assertFooter(g,s);
+          if(['ok','bad'].includes(name))await page.screenshot({path:path.join(out,spec.width+'-board-'+(shown?'banner':'no-banner')+'-'+name+'.png')});
+        }
+      }
+      if(spec.mobile){
+        // Exercise the second real fixed navigation, whose height differs
+        // from the normal application menu, without loading unrelated tools.
+        await page.evaluate(()=>{document.body.classList.add('ps-team-open');document.getElementById('teamBottom').hidden=false;dispatchEvent(new Event('resize'));});
+        await page.locator('#teamBottom').waitFor({state:'visible'});await page.waitForTimeout(250);
+        await state({kind:'busy',n:1});const before=await footerGeometry();assertFooter(before,{kind:'busy',n:1});
+        assert.ok(before.navs.some(n=>n.selector==='#teamBottom'),'Team navigation participates in the actual footer boundary');
+        await state({kind:'bad',reason:'sync_storage',n:1});const after=await footerGeometry();assertFooter(after,{kind:'bad',reason:'sync_storage',n:1});
+        assert.deepEqual(after.frame,before.frame,'Team navigation + save status changes do not move the board');
+        report.teamNavigation={before,after};
+        await page.screenshot({path:path.join(out,spec.width+'-team-nav-bad.png')});
       }
       assert.deepEqual(errors.filter(e=>!/^ResizeObserver loop/.test(e)),[]);
       report.passed=true;console.log(JSON.stringify({width:report.width,phases:report.phases.map(p=>({bannerShown:p.bannerShown,editorMarker:p.editorMarker,transitions:p.transitions.map(t=>({name:t.name,stripHeight:t.geometry.strip.height,moved:t.moved}))}))}));
