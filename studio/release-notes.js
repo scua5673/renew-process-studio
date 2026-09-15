@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-folder-intermediate',date:'2026-09-15',title:'폴더 목록의 반복 저장을 보완했습니다',
+    changes:[
+      '폴더가 추가된 중간 목록 때문에 저장이 반복 대기하는 경우를 수정했습니다.',
+      '기기에만 있는 폴더나 순서 변경은 자동으로 덮지 않습니다.'
+    ]
+  },{
     id:'2026-09-15-update-transition-wait',date:'2026-09-15',title:'팀 전환 중 자동 업데이트가 기다립니다',
     changes:[
       '자동 업데이트의 새로고침이 팀 전환을 중간에 끊지 않도록 수정했습니다.',

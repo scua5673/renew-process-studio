@@ -279,3 +279,22 @@ for(const race of ['mirror','idb'])test('convergent folder repair preserves a ne
   await Promise.allSettled(writes);assert.equal(guard.stale,true);
   assert.equal(race==='mirror'?h.local.get(key):h.idb.get(key),fresh);
 });
+
+test('folder reconciliation completes an intermediate mirror when the newer server includes every name in the same order',async()=>{
+  const key='cs_vault_folders_v1',h=harness({key}),local=raw(['A']),mirror=raw(['A','B']),remote=raw(['A','B','C']);
+  await h.seed(key,local,remote);h.local.set(key,mirror);await success(h);
+  assertSources(h,key,remote,remote);assert.equal(h.queue.length,0);
+  const count=(await h.archives()).length;await success(h);assert.equal((await h.archives()).length,count);
+});
+for(const [label,old,mirror,candidate] of [
+ ['unique local name',['A'],['A','Mine'],['A','B']],
+ ['reordered mirror',['A','B'],['B','A'],['A','B','C']],
+ ['local deletion',['A','B'],['A'],['A','B','C']],
+ ['remote deletion',['A'],['A','B'],['A','C']],
+ ['duplicate names',['A'],['A','B','B'],['A','B','C']],
+ ['invalid shape',['A'],{folder:'A'},['A','B']]
+])test('folder intermediate repair protects '+label,async()=>{
+ const key='cs_vault_folders_v1',h=harness({key});await h.seed(key,raw(old),raw(candidate));h.local.set(key,raw(mirror));
+ const writes=[],guard={stale:false};h.c.kvWrite(key,raw(candidate),writes,raw(old),guard,()=>true);await Promise.allSettled(writes);
+ assert.equal(guard.stale,true);assert.equal(h.local.get(key),raw(mirror));assert.equal(h.idb.get(key),raw(old));
+});
