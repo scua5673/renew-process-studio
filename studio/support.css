@@ -2,7 +2,6 @@
 #psSupportOpen svg{width:17px;height:17px;flex:none}
 @media(min-width:768px){.appbar>#psSupportOpen{order:11;width:100%;border:0;background:transparent;flex-direction:column;justify-content:center;gap:5px;padding:8px 4px;border-radius:10px;min-height:50px;font:600 10px/1.3 Pretendard,system-ui,sans-serif}.appbar>#psSupportOpen span{white-space:nowrap}.appbar>#psSupportOpen:hover{background:var(--bar2,#f2f4f7)}.appbar>#psBoardMoreBtn{order:12}}
 @media(max-width:767px){.appbar>#psSupportOpen{display:none}}
-@media(min-width:601px){#psReleaseNotes:not([hidden])~#psSyncStrip.ok,#psReleaseNotes:not([hidden])~#psSyncStrip.busy{position:static;top:auto;right:auto;left:auto;height:18px;margin:0 0 0 var(--ps-side-w,0px)!important;padding:0 14px;max-width:none;z-index:auto}body.focus #psReleaseNotes:not([hidden])~#psSyncStrip,body.vfull #psReleaseNotes:not([hidden])~#psSyncStrip{margin-left:0!important}}
 #psSupportDialog{width:min(720px,calc(100% - 24px));max-width:720px;max-height:calc(100dvh - 32px);margin:auto;padding:0;border:1px solid var(--line,#e3e6ea);border-radius:18px;background:var(--surface,#fff);color:var(--txt,#20242b);box-shadow:0 20px 70px rgba(0,0,0,.22);font:400 14px/1.55 Pretendard,system-ui,sans-serif;overflow:auto}
 #psSupportDialog::backdrop{background:rgba(15,23,42,.45)}
 body.fmdark #psSupportDialog{--surface:#1b1e23;--bar:#20242b;--bar2:#272d35;--line:#3b424e;--txt:#f0f2f5;--dim:#abb4c2;--blue:#547ef1;--red:#fa9892}

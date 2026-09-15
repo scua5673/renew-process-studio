@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-stable-save-status',date:'2026-09-15',title:'저장 중에도 화면 위치를 유지합니다',
+    changes:[
+      '저장 상태 표시의 높이를 고정해 보관함과 보드 화면이 위아래로 움직이지 않도록 했습니다.',
+      '표시가 잠시 숨겨져도 보고 있던 화면의 위치와 높이를 유지합니다.'
+    ]
+  },{
     id:'2026-09-15-autosave-record-recovery',date:'2026-09-15',title:'멈춰 있던 저장 재시도를 고쳤습니다',
     changes:[
       '이전 저장 기록이 남아 있을 때 재시도가 멈추던 문제를 고쳤습니다.',
