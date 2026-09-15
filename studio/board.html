@@ -6990,7 +6990,7 @@ const EDRAFT_KEY="cs_editor_draft_v1";
 const EWORK_KEY="cs_editor_work_v1";
 let matchActive=false;
 let _bliveT=null;
-let _bliveSaveSeq=0,_bliveToastAt=0,_bliveDirty=false;
+let _bliveSaveSeq=0,_bliveToastAt=0,_bliveDirty=false,_bliveApplying=false;
 /* 보관함 작전판은 같은 캔버스를 빌려 쓴다. 첫 진입의 작업 맥락을 한 번만
    보관하고 항목을 바꿔 열어도 바깥 보드·장면·페이지·실행 취소를 교체하지 않는다. */
 var _vaultBoardContext=null, _vaultBoardGeneration=0, _vaultBoardRestoring=false, _liveBoardAnimOpen=null;
@@ -7048,6 +7048,7 @@ function autoSaveAnimFrame(){try{var __ab=document.getElementById("animBar");if(
 function _boardLiveWriteNow(recovery){
   if(_vaultBoardContext||_vaultBoardRestoring)return null;
   if(window.__capLock)return null;
+  if(_bliveApplying)return null;
   if(recovery&&!_bliveDirty)return null;
   /* 1.962 — 훈련 편집기가 열려 있는 동안은 라이브 보드를 쓰지 않는다(사용자: 업데이트하면 피치가 자꾸 바뀜).
      편집기는 보드 자리에 자기 장면·'훈련' 피치를 올려 두는데, 그때 captureSnap() 이 편집기 화면을 '내 보드'로 저장했고,
@@ -7109,7 +7110,7 @@ function _boardLiveWriteNow(recovery){
   function _done(ok,localOnly){
     if(ok){
       if(_seq===_bliveSaveSeq)_bliveDirty=false;
-      if(!localOnly)try{parent.postMessage({source:"board",type:"boardLiveSaved"},"*");}catch(_){}
+      if(!localOnly&&!recovery)try{parent.postMessage({source:"board",type:"boardLiveSaved"},"*");}catch(_){}
       if(recovery||_seq!==_bliveSaveSeq)return;
       var _now=Date.now(); if(_now-_bliveToastAt<1200)return; _bliveToastAt=_now;
       try{toast(localOnly?"이 기기에 자동 저장됨":"자동 저장됨");}catch(_){}
@@ -7138,6 +7139,7 @@ function _boardLiveWriteNow(recovery){
 }
 function boardSaveLive(){
   if(_vaultBoardContext||_vaultBoardRestoring)return;
+  if(_bliveApplying)return;
   /* 커뮤니티 상세는 다른 사람의 게시물을 보는 읽기 전용 화면이다.
      이 상태를 내 라이브 작전판으로 저장하거나, 내 이전 작전판을 뒤늦게 복원하면
      다음 카드를 열 때 첫 카드가 다시 덮어써지는 문제가 생긴다. */
@@ -7187,7 +7189,7 @@ async function restoreLiveBoard(){try{
     if(_cloudReady){ var srv=await cloudGet(); if(srv&&srv.raw){ _liveRaw=srv.raw; live=JSON.parse(srv.raw); _liveAt=+(live&&live._savedAt)||+(srv&&srv.cupd)||0; } }
   }catch(_){ _liveRaw=null; live=null; }
   var _localLive=null,_localAt=0;try{_localLive=await store.get(BLIVE_KEY);_localAt=+(_localLive&&_localLive._savedAt)||0;}catch(_){}
-  if(_localLive&&(!live||(_localAt&&_localAt>_liveAt))){
+  if(!_bliveApplying&&_localLive&&(!live||(_localAt&&_localAt>_liveAt))){
     live=_localLive;_liveRaw=null;_liveAt=_localAt;
     if(_cloudReady&&_localAt)try{
       var cloudSave=parent&&parent.PSSync&&parent.PSSync.boardLive&&parent.PSSync.boardLive.save;
@@ -7233,12 +7235,14 @@ function boardApplyServerLive(){
   try{
     if(_bliveDirty||_bliveT)return false;
     if(window.__capLock||_vaultBoardContext||_vaultBoardRestoring||window.__vaultEdit||document.body.classList.contains("editing")||document.body.classList.contains("meet-mode"))return false;
+    _bliveApplying=true;
     return Promise.resolve(restoreLiveBoard()).then(function(){
       try{renderTokens();renderDrawings();updateDelUI();}catch(_){}
+      _bliveApplying=false;
       try{toast("팀 보드 최신본 반영");}catch(_){}
       return true;
-    },function(){return false;});
-  }catch(_){return false;}
+    },function(){_bliveApplying=false;return false;});
+  }catch(_){_bliveApplying=false;return false;}
 }
 try{window.addEventListener("message",function(e){
   var d=e&&e.data||{};
