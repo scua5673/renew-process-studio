@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-help-web-pages',date:'2026-09-15',title:'사용법을 웹페이지로 모았습니다',
+    changes:[
+      '앱 설정의 사용법 탭에서 앱·팀 운영·IDP·설치 안내와 전체 설명서를 찾습니다.',
+      '모든 안내는 새 웹페이지로 열립니다. 앱 사용법은 기존 6개 언어를 지원합니다.'
+    ]
+  },{
     id:'2026-09-15-compact-participation',date:'2026-09-15',title:'선수별 누적을 한 줄 목록으로',
     changes:[
       '선수 이름·번호·포지션과 누적 일수를 한 줄로 정리해 더 많은 선수를 한눈에 봅니다.',
