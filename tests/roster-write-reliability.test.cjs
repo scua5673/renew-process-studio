@@ -6,12 +6,12 @@ function harness(){
   const local=new Map([['owner','seal-a']]),disk=new Map(),writes=[],timers=[],hooks={};let uid='coach-a',wid='team-a',epoch='1',ready=true,role='executive';
   const context={Promise,setTimeout(fn){timers.push(fn);return timers.length;},clearTimeout(){},ITEMS_ACTIVE:true,ITEMP:'sq:',ITEMS_HOLD:'hold',HOLD_LIST:'reviews',OWNERKEY:'owner',signOutEpoch:0,
     getSess:()=>({uid}),cacheOwner:()=>({uid,wid}),dataUnlocked:()=>true,activeWs:()=>wid,workspaceSwitchEpochRaw:()=>epoch,workspaceSwitchGuardRead:()=>false,workspaceSwitchGuardRaw:()=>'',
-    activeWsObj:()=>({kind:'team',role:'owner'}),PSPerms:{role:()=>role},externalSwitchFrozen:false,
+    activeWsObj:()=>({kind:'team',role:'owner'}),PSPerms:{role:()=>role,canEdit:()=>['admin','executive','staff'].includes(role)},permsRaw:()=>local.get('perms')||'{}',externalSwitchFrozen:false,
     localStorage:{getItem:k=>local.get(k)??null,setItem(k,v){if(hooks.localWrite)hooks.localWrite(k,v);local.set(k,String(v));},removeItem:k=>local.delete(k)},syncIssue:(code,stage,msg)=>Object.assign(new Error(msg),{psCode:code,psStage:stage}),syncDiagnostic(){},
     hash:s=>s,itemVal:p=>JSON.stringify(p),itemsIdx:()=>JSON.parse(local.get('idx:'+wid)||'{}'),itemsIdxKey:()=>'idx:'+wid,bigDrop:(b,a)=>b-a>=5,
     itemsServerCheck:async()=>{if(hooks.ready)await hooks.ready();return ready;},
-    storage:{async keys(){return [...disk.keys()];},async get(k){if(hooks.read)await hooks.read(k);return disk.has(k)?{value:disk.get(k)}:null;},async replaceIfValue(k,old,value){
-      if(hooks.write)await hooks.write(k,old,value);if((disk.get(k)??null)!==old)return false;
+    storage:{conditionalGuardVersion:1,async keys(){return [...disk.keys()];},async get(k){if(hooks.read)await hooks.read(k);return disk.has(k)?{value:disk.get(k)}:null;},async replaceIfValue(k,old,value,current){
+      if(hooks.write)await hooks.write(k,old,value);if(current)current();if((disk.get(k)??null)!==old)return false;
       writes.push({k,value});if(value===null)disk.delete(k);else disk.set(k,value);if(hooks.after)await hooks.after(k,value);return true;
     }},
   };context.window=context;const c=vm.createContext(context);vm.runInContext(source.slice(start,end),c);

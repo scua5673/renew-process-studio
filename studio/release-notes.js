@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-roster-save-coordination',date:'2026-09-15',title:'선수단 저장 안정성을 높였습니다',
+    changes:[
+      '선수별 저장은 실제로 수정한 선수만 반영하도록 정리했습니다.',
+      '저장 대기 중인 선수 변경은 이 기기에 보관하고, 다시 열었을 때 이어서 저장합니다.',
+      '계정·팀 전환 중 늦게 도착한 명단이 현재 편집을 덮지 않도록 보강했습니다.'
+    ]
+  },{
     id:'2026-09-15-help-web-pages',date:'2026-09-15',title:'사용법을 웹페이지로 모았습니다',
     changes:[
       '앱 설정의 사용법 탭에서 앱·팀 운영·IDP·설치 안내와 전체 설명서를 찾습니다.',

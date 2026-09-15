@@ -10,6 +10,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="storage.js"></script>
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
+<script src="roster-outbox.js?v=2.825"></script>
 <script src="participation.js?v=2.823"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
@@ -5857,7 +5858,7 @@ const SHARED_IDB={"scout_tool_v1":1,"cs_team_matches_v1":1,"cs_scout_targets_v1"
 /* 2.744 — 키별 완료 장벽. 팀/계정이 바뀌면 이전 저장의 늦은 응답은 새 화면을 건드리지 않는다. */
 function teamSaveOwner(){
   try{var s=JSON.parse(localStorage.getItem("ps_sync_session")||"null");
-    return JSON.stringify([localStorage.getItem("ps_active_ws")||"",s&&s.uid||""]);
+    return JSON.stringify([localStorage.getItem("ps_active_ws")||"",s&&s.uid||"",localStorage.getItem("ps_cache_owner_v1")||"",localStorage.getItem("ps_ws_switch_epoch_v1")||"",localStorage.getItem("cs_perms_v1")||""]);
   }catch(_){return "unavailable-owner";}
 }
 const teamSaves=window.PSSaveState.createTracker("team",teamSaveOwner);
@@ -6051,7 +6052,9 @@ let data={attrs:[],positions:[],players:[],meta:{}};
 function itemsPI(){ try{ return (window.parent&&window.parent.PSItems)||window.PSItems||null; }catch(_){ return null; } }
 function itemsApply(reason){
   var PI=itemsPI(); if(!PI||!PI.readAll||!(PI.active&&PI.active()))return Promise.resolve(false);
+  var owner=teamSaveOwner(),draft=JSON.stringify(data),raw=localStorage.getItem(KEY),deleted=localStorage.getItem(PDKEY);
   return PI.readAll().then(function(r){
+    if(owner!==teamSaveOwner()||draft!==JSON.stringify(data)||raw!==localStorage.getItem(KEY)||deleted!==localStorage.getItem(PDKEY))return false;
     if(!r||!r.rows||r.pending)return false;
     var doc=(data.players||[]), byId={},held=r.held||{},confirmed=r.confirmed||{}; r.players.forEach(function(p){ if(p&&p.id)byId[p.id]=p; });
     var seen={}, out=[], absorb=[];
@@ -6070,10 +6073,12 @@ function itemsApply(reason){
     /* Both deletion channels apply after assembling rows. A retained conflict
        original is recovery material, not permission to reactivate a player. */
     out=plTombApply(out);
+    if(rosterOutboxOwner())out=plTombApply(rosterOutbox().overlay(out));
     var before=JSON.stringify(doc), after=JSON.stringify(out);
     if(before===after)return false;
     data.players=out;
-    try{ if(scoutAutomaticWriteAllowed())save({skipItems:true}); }catch(_){} /* 보기 전용은 최신 행을 화면에만 적용한다. */
+    if(scoutAutomaticWriteAllowed())rosterProject(out);
+    else rosterRemember(out); /* 보기 전용은 최신 행을 화면에만 적용한다. */
     try{ psAct&&psAct("a_items_apply"); }catch(_){}
     return true;
   }).catch(function(){ return false; });
@@ -6095,6 +6100,10 @@ function load(){
   var previousReadOnly=scoutReadOnlyLoad;scoutReadOnlyLoad=previousReadOnly||!scoutAutomaticWriteAllowed();
   try{
   const d=store.get(KEY);
+  try{if(d&&Array.isArray(d.players)&&rosterOutboxOwner())d.players=rosterOutbox().overlay(d.players);}
+  catch(e){teamSaves.track(KEY,Promise.reject(e));}
+  try{rosterRemember(d&&Array.isArray(d.players)?d.players:[]);}
+  catch(e){rosterEditBase=null;teamSaves.track(KEY,Promise.reject(e));} // Keep a malformed source visible; never replace it with an empty roster.
   if(d&&Array.isArray(d.attrs)&&Array.isArray(d.positions)){
     data=d;data.players=data.players||[];data.meta=data.meta||{};
     /* 이전 버전에서 만든 팀 평가표는 팀표로 간주해 그대로 보존한다. */
@@ -6257,6 +6266,7 @@ function load(){
   // 복구는 선수단의 보관 목록에서 직접 확인한다. load 타이머로 판단·복원하지 않는다.
   rosterKeepSave();
   rosterRecoveryMenu();
+  if(!scoutReadOnlyLoad)try{rosterResumeRows();}catch(e){teamSaves.track(KEY,Promise.reject(e));}
   }finally{scoutReadOnlyLoad=previousReadOnly;}
 }
 /* 계정·팀을 확인한 기기 보관본만 사용한다. 출처 없는 v1은 수정하거나 자동 귀속하지 않는다. */
@@ -6430,6 +6440,151 @@ function rosterRecoveryOpen(){
 }
 try{window.PSRoster={open:rosterRecoveryOpen,missing:function(){return rosterRecoverySnapshot(false).then(function(s){return s.rows;});},restore:rosterRestoreMissing};}catch(_){}
 
+/* 2.825 — roster save coordinator. Whole-document compatibility copies remain
+   during migration; only explicit edits may write player rows. A projection is
+   not a new user edit and must never save candidates or change evaluation state. */
+var rosterEditBase=null,rosterOutboxClient=null,rosterResumeToken='';
+function rosterOutboxOwner(){
+  var ss=JSON.parse(localStorage.getItem('ps_sync_session')||'null'),wid=localStorage.getItem('ps_active_ws'),own=JSON.parse(localStorage.getItem('ps_cache_owner_v1')||'null');
+  if(!ss&&!wid&&!own)return null;
+  if(!ss||!ss.uid||!wid||!own||String(own.uid)!==String(ss.uid)||String(own.wid)!==String(wid))throw new Error("선수 변경을 보관할 계정과 팀을 확인하지 못했습니다");
+  return {uid:String(ss.uid),wid:String(wid)};
+}
+function rosterOutbox(){
+  if(!window.PSRosterOutbox)throw new Error("선수 변경 보관 기능을 준비하지 못했습니다. 앱을 새로고침해 주세요.");
+  return rosterOutboxClient||(rosterOutboxClient=PSRosterOutbox.create({storage:localStorage,owner:rosterOutboxOwner}));
+}
+function rosterPendingRows(){
+  try{return !!rosterOutboxOwner()&&rosterOutbox().pending();}catch(_){return true;}
+}
+function rosterResumeRows(force){
+  if(!scoutAutomaticWriteAllowed()||!rosterOutboxOwner())return false;
+  var receipt=rosterOutbox().read();if(!receipt.rows.length)return false;
+  var token=teamSaveOwner()+JSON.stringify(receipt);
+  if(!force&&token===rosterResumeToken)return false;
+  rosterResumeToken=token;
+  var original=store.get(KEY),projected=rosterSnapshot(data.players);
+  if(!original||JSON.stringify(rosterSnapshot(original.players||[]))!==JSON.stringify(projected)){if(!rosterProject(data.players))return false;}
+  return rosterSaveRows([],{},receipt);
+}
+function rosterSnapshot(players){
+  if(!Array.isArray(players))throw new Error("선수 명단 형식을 확인할 수 없습니다");
+  var seen=Object.create(null);
+  return players.filter(function(p){return p&&!isTargetPl(p);}).map(function(p){
+    var clean=JSON.parse(JSON.stringify(p)),id=String(clean.id||"");
+    if(!id||seen[id])throw new Error("선수 식별자가 없거나 중복되어 저장할 수 없습니다");
+    seen[id]=1;delete clean._scoutRef;delete clean._scoutHidden;delete clean._scoutMove;return clean;
+  });
+}
+function rosterRemember(players){
+  var owner=teamSaveOwner(),previous=Object.create(null);
+  if(rosterEditBase&&rosterEditBase.owner===owner)rosterEditBase.players.forEach(function(p){previous[p.id]=p;});
+  rosterEditBase={owner:owner,players:rosterSnapshot(players).map(function(p){
+    // An unfinished name is a main-only draft, not a new confirmed row basis.
+    return !String(p.name||'').trim()&&previous[p.id]&&String(previous[p.id].name||'').trim()?previous[p.id]:p;
+  })};
+}
+function rosterChangedIds(players){
+  var owner=teamSaveOwner(),base=rosterEditBase;
+  if(base&&base.owner!==owner)throw new Error("계정이나 팀이 바뀌었습니다. 최신 명단을 불러온 뒤 수정해 주세요.");
+  if(!base){var doc=store.get(KEY);base={owner:owner,players:rosterSnapshot(doc&&doc.players||[])};}
+  var before=Object.create(null);base.players.forEach(function(p){before[String(p.id)]=JSON.stringify(p);});
+  return rosterSnapshot(players).filter(function(p){return String(p.name||"").trim()&&before[String(p.id)]!==JSON.stringify(p);}).map(function(p){return String(p.id);});
+}
+function rosterSaveRows(players,options,receipt){
+  var ids=options.changedIds||[],deleted=options.deletedIds||[],touched=ids.concat(deleted),PI=itemsPI();
+  if(!receipt&&!touched.length)return true;
+  var local=!localStorage.getItem('ps_sync_session')&&!localStorage.getItem('ps_active_ws')&&!localStorage.getItem('ps_cache_owner_v1');
+  if(local||(PI&&PI.active&&PI.active()===false))return true;
+  var owner=teamSaveOwner(),work,accepted=true,request=null;
+  try{
+    if(!PI||PI.patchVersion!==1||!PI.writeReady||!PI.flush)throw new Error("선수 저장 기능을 업데이트해야 합니다. 변경사항은 보관됩니다. 앱을 새로고침해 주세요.");
+    if(receipt){
+      players=receipt.rows.filter(function(r){return !r.deleted;}).map(function(r){return r.player;});
+      ids=receipt.rows.filter(function(r){return !r.deleted;}).map(function(r){return r.id;});
+      deleted=receipt.rows.filter(function(r){return r.deleted;}).map(function(r){return r.id;});
+      touched=ids.concat(deleted);
+    }
+    var bases=receipt?receipt.rows.filter(function(r){return r.base;}).map(function(r){return r.base;}):options.basePlayers||[];
+    request={players:JSON.parse(JSON.stringify(players)),options:{changedIds:ids.slice(),deletedIds:deleted.slice(),basePlayers:JSON.parse(JSON.stringify(bases)),baseHistory:receipt?receipt.rows.map(function(r){return {id:r.id,players:r.history||[]};}):[]}};
+    work=PI.writeReady(request.players,request.options);
+    work=Promise.resolve(work).then(function(result){
+      if(owner!==teamSaveOwner())throw new Error("선수 저장 중 계정이나 팀이 바뀌었습니다");
+      if(receipt)rosterOutbox().ack(receipt);
+      return result;
+    });
+  }catch(e){work=Promise.reject(e);accepted=false;}
+  function retry(){
+    if(owner!==teamSaveOwner())throw new Error("계정이나 팀이 바뀌어 이전 저장을 재시도하지 않습니다");
+    if(!PI||PI.patchVersion!==1||!PI.writeReady||!request)throw new Error("선수 저장 기능을 업데이트해야 합니다. 변경사항은 보관됩니다.");
+    return PI.writeReady(request.players,request.options).then(function(result){
+      if(owner!==teamSaveOwner())throw new Error("선수 저장 중 계정이나 팀이 바뀌었습니다");
+      if(receipt)rosterOutbox().ack(receipt);return result;
+    });
+  }
+  touched.forEach(function(id){teamSaves.track('sq:'+id,work,retry);});
+  return accepted;
+}
+function rosterSaveMirrors(main){
+  /* 속성 목록만 공개 미러(cs_team_attrs_v1) — 선수는 scout_tool_v1(전체 평가)을 서버에서 못 받지만
+     IDP 팀 기준 셀프평가에 속성 이름은 필요하다. 평가 값은 미러에 넣지 않는다. */
+  var accepted=true;
+  try{if(!store.set("cs_team_attrs_v1",{
+    /* ⚠⚠ 2.417 — 팀이 고쳐 쓴 문장도 함께 보낸다. 선수 기기는 `scout_tool_v1` 을 서버에서 못 받으므로
+       **여기 없으면 팀 문장이 선수 화면에 영영 안 보인다.** 표준과 같으면(빈 값) 안 싣는다 — 미러를 가볍게. */
+    attrs:(main.attrs||[]).map(function(a){
+      var o={id:a.id,cat:a.cat,name:a.name,source:a.source||""};
+      var q=String(a.q||"").trim(), w=String(a.w||"").trim();
+      if(q)o.q=q; if(w)o.w=w; return o; }),
+    /* 2.408 — 팀 공통 질문도 선수가 읽어야 한다(질문만 — 답은 각자 문서에 있다) */
+    prompts:((main.meta&&main.meta.prompts)||[]).slice(0,30).map(function(x){return {id:x.id,q:x.q,at:x.at,by:x.by,open:x.open?1:0};}),
+    ex:Object.assign({},main.exLinks||{}),   /* 2.167 — 모범 장면 링크는 선수도 본다(내 무기의 증거) */
+    /* 2.168 — 자리 기준(요구 숫자·이상형·서술)도 선수가 본다(사용자: "선수들이 우리 팀의 게임모델과 기준을 볼 수 있게").
+       scout_tool_v1 은 선수가 못 읽는 민감 키라 여기로 내린다. 선수 평가·면담·이름은 넣지 않는다. */
+    positions:(main.positions||[]).map(p=>({id:p.id,name:p.name,req:Object.assign({},p.req||{}),wantArch:p.wantArch||"",ideal:Object.assign({},p.ideal||{})})),
+    cats:(main.meta.cats||[]).map(c=>({id:c.id,name:c.name})),
+    /* 2.215 — 선수→조 · 조 이름(공개): 선수 기기가 자기 조의 일정(grpWeeks)을 읽기 위해. 이름·평가는 안 넣는다 */
+    grpBy:(function(){ var m={}; (main.players||[]).forEach(function(p){ if(p&&p.type!=="target"&&String(p.grp||"").trim())m[p.id]=String(p.grp).trim(); }); return m; })(),
+    grpBase:(main.meta.grpBase||[]).slice(),
+    evalMode:main.meta.evalMode,setId:main.meta.activeEvalSetId
+  }))accepted=false;}catch(e){teamSaves.track("cs_team_attrs_v1",Promise.reject(e));accepted=false;}
+  try{
+  const ours=main.players.filter(p2=>p2.type!=="target"&&String(p2.name||"").trim());
+  const squadMirror={name:(main.meta&&main.meta.teamName)||"",
+    players:ours.map(p2=>{const po=main.positions.find(x=>x.id===p2.posId);
+      return {id:p2.id,num:p2.num||"",name:p2.name||"",pos:po?posAbbr(po.name):"",foot:p2.foot||"",bench:p2.bench===true,status:plStatusOf(p2),grp:(p2.grp||"").trim()};})};   /* status: 작전판이 부상자를 걸러낼 수 있게. grp(조): 1.699 — 작전판/훈련에서 A팀·B팀별로 올릴 수 있게 함께 전달 */
+  if(!store.set("cs_squad_v1",squadMirror))accepted=false;
+}catch(e){teamSaves.track("cs_squad_v1",Promise.reject(e));accepted=false;}
+  return accepted;
+
+}
+function rosterPersist(main,options){
+  options=options||{};
+  var changed=[],receipt=null,bases=[];
+  try{
+    if(!options.skipItems){
+      changed=rosterChangedIds(main.players);
+      bases=(rosterEditBase?rosterEditBase.players:rosterSnapshot((store.get(KEY)||{}).players||[])).filter(function(p){return String(p.name||"").trim();});
+      var PI=itemsPI();
+      if((changed.length||(options.deletedIds||[]).length)&&rosterOutboxOwner()&&!(PI&&PI.active&&PI.active()===false)){
+        receipt=rosterOutbox().stage({players:main.players,basePlayers:bases,changedIds:changed,deletedIds:options.deletedIds||[]});
+      }
+    }
+  }catch(e){teamSaves.track(KEY,Promise.reject(e));return false;}
+  // The durable intent is written before main: a failed row write must survive
+  // a reload even when main already contains the newly accepted draft.
+  if(!store.set(KEY,main))return false;
+  var rows=options.skipItems||rosterSaveRows(main.players,{changedIds:changed,deletedIds:options.deletedIds||[],basePlayers:bases},receipt);
+  if(rows)rosterRemember(main.players);
+  var mirrors=rosterSaveMirrors(main);
+  return rows&&mirrors;
+}
+function rosterProject(players){
+  var main=JSON.parse(JSON.stringify(data));main.players=rosterSnapshot(players);
+  if(!rosterPersist(main,{skipItems:true}))return false;
+  rosterRemember(players);return true;
+}
+
 function save(){
   var options=arguments[0]||{};
   if(typeof scoutBootPending!=='undefined'&&scoutBootPending)return false;
@@ -6457,50 +6612,12 @@ function save(){
          같은 명단·같은 판이면 **글자까지 같아야** 한다. */
     try{ main._items={build:(window.parent&&window.parent.PS_BUILD)||window.PS_BUILD||'',
                       n:ours.filter(function(p){return p&&String(p.name||"").trim();}).length}; }catch(_){}
-    if(!store.set(KEY,main)){savedMain=false;return;}
+    if(!rosterPersist(main,options)){savedMain=false;return;}
     if(!options.skipTargets&&canSeeTargets()&&!store.set(TKEY,{v:1,players:tg}))savedTargets=false;
-    /* 항목 단위 저장(1.631) — 선수 한 명이 키 하나. 실패해도 본 저장은 이미 끝났다.
-       ⚠ ours 만 넘긴다. 후보(target)는 권한 등급이 달라 섞으면 코칭스태프에게 샌다. */
-    try{ var PI=(window.parent&&window.parent.PSItems)||window.PSItems; if(!options.skipItems&&PI&&PI.write)PI.write(main.players,{deletedIds:options.deletedIds}); }catch(_){}
+
   })();
   if(!savedMain)return false;
-  /* 속성 목록만 공개 미러(cs_team_attrs_v1) — 선수는 scout_tool_v1(전체 평가)을 서버에서 못 받지만
-     IDP 팀 기준 셀프평가에 속성 이름은 필요하다. 평가 값은 미러에 넣지 않는다. */
-  try{localStorage.setItem("cs_team_attrs_v1",JSON.stringify({
-    /* ⚠⚠ 2.417 — 팀이 고쳐 쓴 문장도 함께 보낸다. 선수 기기는 `scout_tool_v1` 을 서버에서 못 받으므로
-       **여기 없으면 팀 문장이 선수 화면에 영영 안 보인다.** 표준과 같으면(빈 값) 안 싣는다 — 미러를 가볍게. */
-    attrs:(data.attrs||[]).map(function(a){
-      var o={id:a.id,cat:a.cat,name:a.name,source:a.source||""};
-      var q=String(a.q||"").trim(), w=String(a.w||"").trim();
-      if(q)o.q=q; if(w)o.w=w; return o; }),
-    /* 2.408 — 팀 공통 질문도 선수가 읽어야 한다(질문만 — 답은 각자 문서에 있다) */
-    prompts:((data.meta&&data.meta.prompts)||[]).slice(0,30).map(function(x){return {id:x.id,q:x.q,at:x.at,by:x.by,open:x.open?1:0};}),
-    ex:Object.assign({},data.exLinks||{}),   /* 2.167 — 모범 장면 링크는 선수도 본다(내 무기의 증거) */
-    /* 2.168 — 자리 기준(요구 숫자·이상형·서술)도 선수가 본다(사용자: "선수들이 우리 팀의 게임모델과 기준을 볼 수 있게").
-       scout_tool_v1 은 선수가 못 읽는 민감 키라 여기로 내린다. 선수 평가·면담·이름은 넣지 않는다. */
-    positions:(data.positions||[]).map(p=>({id:p.id,name:p.name,req:Object.assign({},p.req||{}),wantArch:p.wantArch||"",ideal:Object.assign({},p.ideal||{})})),
-    cats:(data.meta.cats||[]).map(c=>({id:c.id,name:c.name})),
-    /* 2.215 — 선수→조 · 조 이름(공개): 선수 기기가 자기 조의 일정(grpWeeks)을 읽기 위해. 이름·평가는 안 넣는다 */
-    grpBy:(function(){ var m={}; (data.players||[]).forEach(function(p){ if(p&&p.type!=="target"&&String(p.grp||"").trim())m[p.id]=String(p.grp).trim(); }); return m; })(),
-    grpBase:(data.meta.grpBase||[]).slice(),
-    evalMode:evalMode(),setId:evalSetId()
-  }));}catch(_){}
-  /* 1.618 — 선수단 거울(cs_squad_v1)은 localStorage 에만 썼다. 그런데 sync.js 의 IDBK 에
-     cs_squad_v1 이 들어 있어서 동기화는 IndexedDB(window.storage)를 읽어 올린다.
-     여기서 IDB 를 안 쓰니 선수 DB를 아무리 고쳐도 팀에는 옛 선수단이 계속 올라갔다
-     (내 화면 44명 / 팀 27명).
-     주의 — 이 파일의 store 는 IndexedDB 가 아니라 localStorage 껍데기다. IDB 는 window.storage 다.
-     그리고 window.storage 는 '문자열'을 담는다(sync 가 JSON.parse(r.value) 로 읽는다). */
-  try{
-  const ours=data.players.filter(p2=>p2.type!=="target"&&String(p2.name||"").trim());
-  const squadMirror={name:(data.meta&&data.meta.teamName)||"",
-    players:ours.map(p2=>{const po=data.positions.find(x=>x.id===p2.posId);
-      return {id:p2.id,num:p2.num||"",name:p2.name||"",pos:po?posAbbr(po.name):"",foot:p2.foot||"",bench:p2.bench===true,status:plStatusOf(p2),grp:(p2.grp||"").trim()};})};   /* status: 작전판이 부상자를 걸러낼 수 있게. grp(조): 1.699 — 작전판/훈련에서 A팀·B팀별로 올릴 수 있게 함께 전달 */
-  const squadJson=JSON.stringify(squadMirror);
-  if(window.psSaveShared)window.psSaveShared("cs_squad_v1",squadJson);
-  else localStorage.setItem("cs_squad_v1",squadJson);
-}catch(_){}
-  rosterKeepSave();   /* 1.629 — 선수를 항목 단위로도 남긴다(이 기기, 30일) */
+  rosterKeepSave();
   return savedTargets;
 }
 function attr(id){return data.attrs.find(a=>a.id===id);}
@@ -13153,7 +13270,7 @@ window.psFlushPendingReady=function(){
   });
 };
 function scChildWindows(){return Array.from(document.querySelectorAll('iframe')).filter(function(f){return /scouting\.html/.test(f.getAttribute('src')||'');}).map(function(f){return f.contentWindow;}).filter(Boolean);}
-window.psHasPending=function(){ try{ return !!(store.hasPending()||scChildWindows().some(function(w){return w.psHasPending&&w.psHasPending();})||matchSaveTimer||_mprT||matchIndividualPendingAny()||matchIndividualPublicPendingAny()); }catch(_){ return true; } };
+window.psHasPending=function(){ try{ return !!(store.hasPending()||rosterPendingRows()||scChildWindows().some(function(w){return w.psHasPending&&w.psHasPending();})||matchSaveTimer||_mprT||matchIndividualPendingAny()||matchIndividualPublicPendingAny()); }catch(_){ return true; } };
 /* ⚠ 새로고침만이 아니라 **화면을 떠나는 모든 길**에서 민다. iOS 는 pagehide 보다
    visibilitychange 가 더 확실히 온다 — 둘 다 건다. */
 window.addEventListener('pagehide',matchFlushNow);

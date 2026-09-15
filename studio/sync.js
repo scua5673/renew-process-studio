@@ -726,13 +726,13 @@ function sensitiveLocalKey(k){
   if(k.indexOf('cs_')===0||k.indexOf('scout_')===0||k.indexOf('training_')===0||k.indexOf('process_')===0||k.indexOf('sq:')===0)return true;
   return k===WSKEY||k===WLKEY||k===MKEY||k===OWNERKEY||k==='ps_sync_outbox_v1'||k==='ps_sync_pending_summary_v1'||k==='ps_sync_skipped'
     ||k==='ps_sync_conflicts_v1'||k==='ps_sync_conf_seen'||k==='ps_hold_list_v1'||k==='ps_rescue_list_v1'||k==='ps_tomb_v1'||k==='ps_personal_review_v1'
-    ||k==='ps_roster_keep_v1'||k.indexOf('ps_roster_keep_v2:')===0
+    ||k==='ps_roster_keep_v1'||k.indexOf('ps_roster_keep_v2:')===0||k.indexOf('ps_roster_pending_v1:')===0
     ||k==='ps_display_name'||k==='ps_kv_who_v1'||k==='ps_member_names_v1'||k==='ps_perms_missing'
     ||/^(?:ps_(?:auto_snap_|rescue_|ws_stash_|sync_conflict_|sync_base_|push_ok_|section_preimport_|section_import_ok_|schedule_recovery_|items_))/.test(k);
 }
 function accountContentProbe(k){
   return KEYS.indexOf(k)>=0||CONTENT.indexOf(k)>=0||k===LIBKEY||k===TOMBKEY||k.indexOf('sq:')===0
-    ||k==='ps_roster_keep_v1'||k.indexOf('ps_roster_keep_v2:')===0
+    ||k==='ps_roster_keep_v1'||k.indexOf('ps_roster_keep_v2:')===0||k.indexOf('ps_roster_pending_v1:')===0
     ||k.indexOf('cs_idp_v1_')===0||k.indexOf('cs_idp_pub_v1_')===0
     ||/^(?:cs_(?:board|snap|editor|vault_edit|drill_form|note_forms|note_myforms|matchnotes)|ps_(?:auto_snap_|rescue_|ws_stash_))/.test(k);
 }
@@ -4571,9 +4571,9 @@ function itemsHoldList(){ try{ return JSON.parse(localStorage.getItem(ITEMS_HOLD
 /* 선수 한 명이 지금 어떤 모습인지 — 이 값이 그대로 서버 행이 된다 */
 function itemVal(p){ try{ return JSON.stringify(p); }catch(_){ return null; } }
 var _itemsT=null, _itemsPending=null, _itemsWaiters=[], _itemsWriteTail=Promise.resolve(), _itemsFailedJob=null;
-var _itemsWritingN=0,_itemsActiveJobs=[],_itemsObserved=null,_itemsExplicitFailures=[];
-function itemsWriteBusy(){return !!(_itemsPending||_itemsWritingN||_itemsExplicitFailures.some(itemsWriteRetryable)||itemsWriteRetryable(_itemsFailedJob));}
-function itemsWriteRetryable(job){return !!job&&(!job.explicit||job.deletedIds.length>0)&&itemsWriteCurrent(job.owner)&&(!job.reviewContext||histRosterCurrent(job.reviewContext))&&(!job.intent||itemsDeleteCurrent(job.intent));}
+var _itemsWritingN=0,_itemsActiveJobs=[],_itemsObserved=null,_itemsExplicitFailures=[],_itemsPatchFailures=[],_itemsJobSequence=0;
+function itemsWriteBusy(){return !!(_itemsPending||_itemsWritingN||_itemsExplicitFailures.some(itemsWriteRetryable)||_itemsPatchFailures.some(itemsWriteRetryable)||itemsWriteRetryable(_itemsFailedJob));}
+function itemsWriteRetryable(job){return !!job&&(job.patch?job.changedIds.length+job.deletedIds.length>0:(!job.explicit||job.deletedIds.length>0))&&itemsWriteCurrent(job.owner)&&(!job.patch||itemsPatchPermission()===job.permission)&&(!job.reviewContext||histRosterCurrent(job.reviewContext))&&(!job.intent||itemsDeleteCurrent(job.intent));}
 function itemsReviewKeys(){
   var keys={};if(typeof holdList==='function')holdList().forEach(function(x){if(x&&x.kind==='item-delete'&&x.itemKey)keys[x.itemKey]=1;else if(x&&x.kind==='conflict'&&x.k&&x.k.indexOf(ITEMP)===0)keys[x.k]=1;});return keys;
 }
@@ -4607,7 +4607,7 @@ function itemsDeleteReviewChoose(shown,remove){
    request-time original and the changed row before releasing its failed job. */
 function itemsWriteReview(job){
   return Promise.all(job.deletedIds.map(function(id){return window.storage.get(ITEMP+id).then(function(r){return {id:id,raw:r&&r.value!=null?r.value:null};});})).then(function(rows){
-    if(!itemsWriteCurrent(job.owner))throw syncIssue('sync_workspace_changed','items_delete_review','선수 삭제 확인 중 계정이나 팀이 바뀌었습니다');
+    if(!itemsWriteCurrent(job.owner)||(job.patch&&itemsPatchPermission()!==job.permission))throw syncIssue('sync_workspace_changed','items_delete_review','선수 삭제 확인 중 계정이나 팀이 바뀌었습니다');
     var reviews=holdList(),tomb=JSON.stringify({_del:job.at});
     rows.forEach(function(row){
       if(row.raw===tomb)return;
@@ -4625,6 +4625,18 @@ function itemsDeleteComplete(job){
   if(done.length)holdConflictWrite(holdList().filter(function(x){return !done.some(function(r){return r.k===x.k&&r.at===x.at&&r.current===x.current&&r.expected===x.expected&&r.tomb===x.tomb;});}));
   _itemsExplicitFailures.forEach(function(old){if(old!==job&&old.at<=job.at&&itemsWriteCurrent(old.owner))old.deletedIds=old.deletedIds.filter(function(id){return ids.indexOf(id)<0;});});
   _itemsExplicitFailures=_itemsExplicitFailures.filter(function(old){return old.deletedIds.length>0;});
+}
+/* A newer confirmed edit supersedes only the same IDs in older failed patches.
+   Distinct edits retain their own exact preimages, including after partial I/O. */
+function itemsPatchComplete(job){
+  var ids=(job.patch?job.changedIds:[]).concat(job.deletedIds||[],job.reviewedDeletes||[]);
+  if(!ids.length)return;
+  _itemsPatchFailures.forEach(function(old){
+    if(old===job||old.sequence>=job.sequence||!itemsWriteCurrent(old.owner))return;
+    old.changedIds=old.changedIds.filter(function(id){return ids.indexOf(id)<0;});
+    old.deletedIds=old.deletedIds.filter(function(id){return ids.indexOf(id)<0;});
+  });
+  _itemsPatchFailures=_itemsPatchFailures.filter(function(old){return old.changedIds.length+old.deletedIds.length>0;});
 }
 function itemsObserveServer(srv){
   var owner=itemsWriteOwner(),versions={};if(!owner||!itemsWriteCurrent(owner))return;
@@ -4658,22 +4670,65 @@ function itemsWriteSnapshot(players){
   if(!Array.isArray(players))throw syncIssue('sync_storage','items_write_input','선수 명단 형식을 확인할 수 없습니다');
   return JSON.parse(JSON.stringify(players));
 }
+function itemsPatchPermission(){
+  try{var p=window.PSPerms,w=activeWsObj();if(!window.storage||window.storage.conditionalGuardVersion!==1||!p||typeof p.canEdit!=='function'||!p.canEdit('team')||!w)return null;
+    return JSON.stringify([permsRaw(),String(w.role||''),p.role?p.role():'']);
+  }catch(_){return null;}
+}
 function itemsWriteJob(players,owner,options){
   if(!owner)throw syncIssue('sync_workspace_changed','items_write_owner','선수 명단의 계정과 팀을 확인할 수 없습니다');
-  var job={players:itemsWriteSnapshot(players),owner:owner,at:Date.now(),written:[],predecessors:_itemsActiveJobs.slice(),expected:{},strict:!!(options&&Object.prototype.hasOwnProperty.call(options,'expectedRows'))};
+  var job={players:itemsWriteSnapshot(players),owner:owner,at:Date.now(),sequence:++_itemsJobSequence,written:[],predecessors:_itemsActiveJobs.slice(),expected:{},strict:!!(options&&Object.prototype.hasOwnProperty.call(options,'expectedRows')),patch:!!(options&&Object.prototype.hasOwnProperty.call(options,'changedIds')),changedIds:[]};
   job.deletedIds=[];
   if(options&&options.deletedIds!=null){
     if(!Array.isArray(options.deletedIds))throw syncIssue('sync_storage','items_delete_ids','삭제할 선수 ID를 확인할 수 없습니다');
     options.deletedIds.forEach(function(id){if(typeof id!=='string'||!id||job.deletedIds.indexOf(id)>=0||job.players.some(function(p){return p&&String(p.id)===id;}))throw syncIssue('sync_storage','items_delete_ids','삭제할 선수와 남길 명단이 다릅니다');job.deletedIds.push(id);});
   }
+  if(job.patch){
+    job.permission=itemsPatchPermission();
+    if(job.permission===null)throw syncIssue('sync_workspace_changed','items_patch_permission','선수 명단을 저장할 권한을 확인할 수 없습니다');
+    /* A prior patch may have committed this row before another row or its
+       index failed. Its proven CAS transitions remain valid predecessors. */
+    _itemsPatchFailures.forEach(function(old){if(job.predecessors.indexOf(old)<0)job.predecessors.push(old);});
+    if(job.strict||!Array.isArray(options.changedIds)||!Array.isArray(options.basePlayers))throw syncIssue('sync_storage','items_patch_ids','변경한 선수와 편집 기준을 확인할 수 없습니다');
+    function patchId(id){return typeof id==='string'&&id.trim()===id&&!!id&&['__proto__','constructor','prototype'].indexOf(id)<0;}
+    if(job.deletedIds.some(function(id){return !patchId(id);}))throw syncIssue('sync_storage','items_patch_ids','삭제할 선수 ID를 확인할 수 없습니다');
+    options.changedIds.forEach(function(id){
+      var matches=job.players.filter(function(p){return p&&String(p.id)===id;});
+      if(!patchId(id)||job.changedIds.indexOf(id)>=0||job.deletedIds.indexOf(id)>=0||matches.length!==1||!String(matches[0].name||'').trim()||matches[0].type==='target'||matches[0]._del)throw syncIssue('sync_storage','items_patch_ids','변경한 선수와 저장할 명단이 다릅니다');
+      job.changedIds.push(id);
+    });
+    var bases=Object.create(null);
+    itemsWriteSnapshot(options.basePlayers).forEach(function(p){
+      if(!p||!patchId(p.id)||Object.prototype.hasOwnProperty.call(bases,p.id))throw syncIssue('sync_storage','items_patch_base','선수 편집 기준의 ID를 확인할 수 없습니다');
+      bases[p.id]=itemVal(p);
+    });
+    job.changedIds.concat(job.deletedIds).forEach(function(id){job.expected[id]=Object.prototype.hasOwnProperty.call(bases,id)?bases[id]:null;});
+    job.history=Object.create(null);
+    if(options.baseHistory!=null){
+      if(!Array.isArray(options.baseHistory))throw syncIssue('sync_storage','items_patch_history','보관한 선수 변경 이력을 확인할 수 없습니다');
+      options.baseHistory.forEach(function(row){
+        if(!row||!patchId(row.id)||!Object.prototype.hasOwnProperty.call(job.expected,row.id)||Object.prototype.hasOwnProperty.call(job.history,row.id)||!Array.isArray(row.players))throw syncIssue('sync_storage','items_patch_history','보관한 선수 변경 이력의 ID가 다릅니다');
+        job.history[row.id]=itemsWriteSnapshot(row.players).map(function(p){
+          if(!p||Array.isArray(p)||p.id!==row.id||p._del||p.type==='target')throw syncIssue('sync_storage','items_patch_history','보관한 선수 변경 이력의 원문이 다릅니다');
+          return itemVal(p);
+        });
+      });
+    }
+  }
   job.explicit=job.deletedIds.length>0;
-  var ids={},seen={},idx=itemsIdx();job.players.forEach(function(p){if(p&&p.id&&String(p.name||'').trim()&&p.type!=='target'){var id=String(p.id);seen[id]=1;if(idx[id]!==hash(itemVal(p)))ids[id]=1;}});
-  Object.keys(idx).forEach(function(id){if(!seen[id])ids[id]=1;});
+  var ids=Object.create(null),seen={},idx=itemsIdx();
+  if(job.patch)job.changedIds.forEach(function(id){ids[id]=1;});
+  else{job.players.forEach(function(p){if(p&&p.id&&String(p.name||'').trim()&&p.type!=='target'){var id=String(p.id);seen[id]=1;if(idx[id]!==hash(itemVal(p)))ids[id]=1;}});
+    Object.keys(idx).forEach(function(id){if(!seen[id])ids[id]=1;});}
   /* A deletion retry must never replay its old whole-roster snapshot over a
      later edit or a second confirmed deletion. Its only writes are these IDs. */
-  if(job.deletedIds.length)ids={};
+  if(job.deletedIds.length&&!job.patch)ids=Object.create(null);
   job.deletedIds.forEach(function(id){ids[id]=1;});
-  if(job.strict){
+  if(job.patch){
+    /* The displayed/outbox baseline is the only predecessor the edit knew.
+       Reading a newer IDB row now cannot authorize overwriting its fields. */
+    job.ready=Promise.resolve();
+  }else if(job.strict){
     if(!Array.isArray(options.expectedRows))throw syncIssue('sync_storage','items_write_snapshot','선수 복구 기준을 확인할 수 없습니다');
     options.expectedRows.forEach(function(row){var id=String(row&&row.id||'');if(!id||!row||typeof row.raw!=='string'||Object.prototype.hasOwnProperty.call(job.expected,id))throw syncIssue('sync_storage','items_write_snapshot','선수 복구 기준 형식이 다릅니다');job.expected[id]=row.raw;});
     Object.keys(ids).forEach(function(id){if(!Object.prototype.hasOwnProperty.call(job.expected,id))job.expected[id]=null;});
@@ -4691,6 +4746,9 @@ function itemsWriteJob(players,owner,options){
 }
 function itemsWritePreimage(job,id,raw){
   var known=Object.prototype.hasOwnProperty.call(job.expected,id),value=known?job.expected[id]:null,allowed=known?[value]:[];
+  /* Owner-scoped durable pending records may retain earlier authored values
+     after a reload loses the in-memory CAS chain. Never adopt a fresh read. */
+  if(job.patch&&job.history&&job.history[id])allowed=allowed.concat(job.history[id]);
   var earlier=job.strict?[]:job.predecessors.filter(function(p){return p.owner&&job.owner&&p.owner.seal===job.owner.seal&&p.owner.epoch===job.owner.epoch;});
   earlier.concat([job]).forEach(function(p){(p.written||[]).forEach(function(w){if(w.id!==id)return;
     if(!known&&!allowed.length){allowed.push(w.before);known=true;}
@@ -4713,16 +4771,26 @@ function itemsWriteCheckSnapshot(job){
 function itemsWriteEnqueue(job){
   _itemsWritingN++;
   function finished(){_itemsWritingN--;_itemsActiveJobs=_itemsActiveJobs.filter(function(x){return x!==job;});}
-  var run=_itemsWriteTail.catch(function(){}).then(function(){return job.ready;}).then(function(){return job.rows?itemsWriteRowsNow(job):itemsWriteNow(job.players,job.owner,job);}).then(function(value){
-    if(value&&value.skipped==='server')throw syncIssue('sync_confirm_missing','items_write_server','선수별 서버 저장 준비를 확인하지 못했습니다. 연결이 돌아오면 다시 확인합니다.');
-    if(value&&!value.held&&!value.skipped)itemsDeleteComplete(job);return value;
-  }).catch(function(e){
-    if(job.deletedIds&&job.deletedIds.length&&e.psCode==='sync_local_changed'&&itemsWriteCurrent(job.owner))return itemsWriteReview(job);
+  var run=_itemsWriteTail.catch(function(){}).then(function(){return job.ready;}).then(function(){return job.rows?itemsWriteRowsNow(job):itemsWriteNow(job.players,job.owner,job);}).catch(function(e){
+    if(job.deletedIds&&job.deletedIds.length&&e.psCode==='sync_local_changed'&&itemsWriteCurrent(job.owner)&&(!job.patch||e.psItemDeleted))return itemsWriteReview(job).then(function(value){
+      if(!job.patch)return value;
+      /* Durable review owns these deletion requests now. It must not hide a
+         failed live edit in the same patch or block unrelated later edits. */
+      job.reviewedDeletes=(job.reviewedDeletes||[]).concat(job.deletedIds);job.deletedIds=[];
+      return itemsWriteNow(job.players,job.owner,job);
+    });
     throw e;
+  }).then(function(value){
+    if(value&&value.skipped==='server')throw syncIssue('sync_confirm_missing','items_write_server','선수별 서버 저장 준비를 확인하지 못했습니다. 연결이 돌아오면 다시 확인합니다.');
+    if(job.patch&&(!value||value.skipped))throw syncIssue('sync_confirm_missing','items_patch_unconfirmed','변경한 선수의 저장을 확인하지 못했습니다');
+    if(job.patch&&value&&value.held)throw syncIssue('sync_storage','items_patch_unconfirmed','변경한 선수의 저장 확인이 남아 있습니다');
+    if(value&&job.reviewedDeletes&&job.reviewedDeletes.length)value.reviewedDeletes=job.reviewedDeletes.slice();
+    if(value&&!value.held&&!value.skipped){itemsDeleteComplete(job);itemsPatchComplete(job);}return value;
   }).then(function(value){finished();return value;},function(e){finished();throw e;});
-  _itemsWriteTail=run.then(function(value){_itemsFailedJob=null;_itemsExplicitFailures=_itemsExplicitFailures.filter(function(x){return x!==job;});return value;},function(e){
+  _itemsWriteTail=run.then(function(value){if(!job.patch||_itemsFailedJob===job)_itemsFailedJob=null;_itemsExplicitFailures=_itemsExplicitFailures.filter(function(x){return x!==job;});_itemsPatchFailures=_itemsPatchFailures.filter(function(x){return x!==job;});return value;},function(e){
     if(itemsWriteRetryable(job)){
-      if(job.deletedIds&&job.deletedIds.length){if(_itemsExplicitFailures.indexOf(job)<0)_itemsExplicitFailures.push(job);}
+      if(job.patch){if(_itemsPatchFailures.indexOf(job)<0)_itemsPatchFailures.push(job);}
+      else if(job.deletedIds&&job.deletedIds.length){if(_itemsExplicitFailures.indexOf(job)<0)_itemsExplicitFailures.push(job);}
       else _itemsFailedJob=job;
     }
     syncDiagnostic('items-write',e);
@@ -4745,7 +4813,7 @@ function itemsWrite(players,options){
   var job;try{job=itemsWriteJob(players,owner,options);}catch(e){syncDiagnostic('items-write',e);return Promise.resolve(null);}
   /* An explicit confirmation is not a debounced roster snapshot. Imported rows
      may be absent from the index, and the next ordinary save must not erase it. */
-  if(job.deletedIds.length){itemsWriteDrain().catch(function(){});return itemsWriteEnqueue(job).catch(function(e){syncDiagnostic('items-write',e);return null;});}
+  if(job.patch||job.deletedIds.length){itemsWriteDrain().catch(function(){});return itemsWriteEnqueue(job).catch(function(e){syncDiagnostic('items-write',e);return null;});}
   if(_itemsPending&&(_itemsPending.owner.seal!==owner.seal||_itemsPending.owner.epoch!==owner.epoch))itemsWriteDrain().catch(function(){});
   if(_itemsPending){var replaced=_itemsPending;_itemsActiveJobs=_itemsActiveJobs.filter(function(x){return x!==replaced;});job.predecessors=job.predecessors.filter(function(x){return x!==replaced;});}
   _itemsPending=job;
@@ -4769,40 +4837,61 @@ function itemsWriteFlush(){
     _itemsExplicitFailures=_itemsExplicitFailures.filter(itemsWriteRetryable);
     return _itemsExplicitFailures.slice().reduce(function(p,job){return p.then(function(){return _itemsExplicitFailures.indexOf(job)>=0&&itemsWriteRetryable(job)?itemsWriteEnqueue(job):true;});},Promise.resolve());
   }).then(function(){
+    _itemsPatchFailures=_itemsPatchFailures.filter(itemsWriteRetryable);
+    return _itemsPatchFailures.slice().reduce(function(p,job){return p.then(function(){return _itemsPatchFailures.indexOf(job)>=0&&itemsWriteRetryable(job)?itemsWriteEnqueue(job):true;});},Promise.resolve());
+  }).then(function(){
     var job=_itemsFailedJob;
     if(itemsWriteRetryable(job))return itemsWriteEnqueue(job);
     if(job&&job.intent&&_itemsFailedJob===job)_itemsFailedJob=null;
     return true;
   });
 }
+/* Older teams may have a main-document player but no per-player row yet.
+   Missing local cache or a truncated roster list cannot prove remote absence.
+   Probe only this exact key; the later server INSERT still uses ignore/CAS. */
+function itemsWriteConfirmAbsent(job,row,current){
+  return Promise.resolve().then(function(){current();return ensureToken();}).then(function(at){
+    current();if(!at)throw syncIssue('sync_confirm_missing','items_patch_absence','선수별 저장 기준을 확인할 로그인이 없습니다');
+    var url=BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(job.owner.wid)+'&k=eq.'+encodeURIComponent(row.k)+'&select=k,v,cupd&limit=2';
+    return syncFetch('items_patch_absence',url,{headers:hj(at)});
+  }).then(function(r){current();if(!r.ok)throw syncHttpError('items_patch_absence',r.status);return r.json();}).then(function(rows){
+    current();if(!Array.isArray(rows))throw syncIssue('sync_confirm_missing','items_patch_absence','선수별 저장 기준 응답을 확인하지 못했습니다');
+    return rows.length===0;
+  });
+}
 function itemsWriteNow(players,owner,job){
-  if(job&&job.explicit&&!job.deletedIds.length)return Promise.resolve({superseded:true});
+  if(job&&(job.patch?!job.changedIds.length&&!job.deletedIds.length:job.explicit&&!job.deletedIds.length)){
+    if(!itemsWriteCurrent(job.owner)||(job.patch&&itemsPatchPermission()!==job.permission))return Promise.reject(syncIssue('sync_workspace_changed','items_write_owner','선수 저장 중 계정·팀 또는 권한이 바뀌었습니다'));
+    return Promise.resolve({superseded:true});
+  }
   if(!ITEMS_ACTIVE)return Promise.resolve({skipped:'disabled'});
   if(!window.storage||!window.storage.get||!window.storage.replaceIfValue)return Promise.reject(syncIssue('sync_storage','items_write_storage','안전한 선수 저장소를 사용할 수 없습니다'));
   if(!Array.isArray(players))return Promise.reject(syncIssue('sync_storage','items_write_input','선수 명단 형식 오류'));
   if(localStorage.getItem('ps_items_write')==='0')return Promise.resolve({skipped:'disabled'});
   owner=owner||itemsWriteOwner();
   if(!job){try{job=itemsWriteJob(players,owner);}catch(e){return Promise.reject(e);}return itemsWriteEnqueue(job);}
-  function requireOwner(){if(!itemsWriteCurrent(owner)||(job.reviewContext&&(!histRosterCurrent(job.reviewContext)||!scoutWriteAllowed())))throw syncIssue('sync_workspace_changed','items_write_owner','선수 저장 중 계정·팀 또는 권한이 바뀌었습니다');}
+  function requireOwner(){if(!itemsWriteCurrent(owner)||(job.patch&&itemsPatchPermission()!==job.permission)||(job.reviewContext&&(!histRosterCurrent(job.reviewContext)||!scoutWriteAllowed())))throw syncIssue('sync_workspace_changed','items_write_owner','선수 저장 중 계정·팀 또는 권한이 바뀌었습니다');}
+  function rowChanged(stage,message,row){var e=syncIssue('sync_local_changed',stage,message);e.psItemId=row.k.slice(ITEMP.length);e.psItemDeleted=!!row.explicit;return e;}
   return Promise.resolve().then(function(){requireOwner();return itemsServerCheck();}).then(function(ready){
     requireOwner();if(!ready)return {skipped:'server'};
-    var idx=itemsIdx(),now=job.at,seen={},next={},rows=[],wrote=0,review=itemsReviewKeys(),reviewHeld={},deleted={},explicit=!!(job.deletedIds&&job.deletedIds.length);
-    if(explicit)next=Object.assign({},idx);
+    var idx=itemsIdx(),now=job.at,seen={},next={},rows=[],wrote=0,review=itemsReviewKeys(),reviewHeld={},deleted={},explicit=!!(job.deletedIds&&job.deletedIds.length),changed=Object.create(null);
+    if(explicit||job.patch)next=Object.assign({},idx);
+    job.changedIds.forEach(function(id){changed[id]=1;});
     (job.deletedIds||[]).forEach(function(id){deleted[id]=1;});
     players.forEach(function(p){
       if(!p||!p.id||!String(p.name||'').trim()||p.type==='target')return;
       var id=String(p.id),v=itemVal(p);if(v==null)return;
       if(seen[id])throw syncIssue('sync_storage','items_write_duplicate','선수 식별자가 중복되어 저장을 멈췄습니다');
       seen[id]=1;
-      if(explicit)return;
+      if(job.patch?!changed[id]:explicit)return;
       /* A whole-roster projection is not a decision about an unresolved row.
          Keep its exact local review original and its previous index entry. */
       if(review[ITEMP+id]){reviewHeld[id]=1;if(Object.prototype.hasOwnProperty.call(idx,id))next[id]=idx[id];return;}
       next[id]=hash(v);
-      if(idx[id]!==next[id]){rows.push({k:ITEMP+id,v:v});wrote++;}
+      if(job.patch||idx[id]!==next[id]){rows.push({k:ITEMP+id,v:v});wrote++;}
     });
-    if(!explicit)Object.keys(idx).forEach(function(id){if(review[ITEMP+id]){next[id]=idx[id];reviewHeld[id]=1;}});
-    var gone=explicit?[]:Object.keys(idx).filter(function(id){return !seen[id]&&!review[ITEMP+id];}),held=!!(gone.length&&bigDrop(Object.keys(idx).filter(function(id){return !review[ITEMP+id];}).length,Object.keys(seen).filter(function(id){return !review[ITEMP+id];}).length));
+    if(!explicit&&!job.patch)Object.keys(idx).forEach(function(id){if(review[ITEMP+id]){next[id]=idx[id];reviewHeld[id]=1;}});
+    var gone=(explicit||job.patch)?[]:Object.keys(idx).filter(function(id){return !seen[id]&&!review[ITEMP+id];}),held=!!(gone.length&&bigDrop(Object.keys(idx).filter(function(id){return !review[ITEMP+id];}).length,Object.keys(seen).filter(function(id){return !review[ITEMP+id];}).length));
     if(held){
       var hold={at:now,ids:gone.slice(),before:Object.keys(idx).length,after:Object.keys(seen).length,uid:owner.uid,wid:owner.wid,hashes:{}};
       gone.forEach(function(id){hold.hashes[id]=hash(job.expected[id]);});
@@ -4812,7 +4901,13 @@ function itemsWriteNow(players,owner,job){
     Object.keys(deleted).forEach(function(id){delete next[id];rows.push({k:ITEMP+id,v:JSON.stringify({_del:now}),explicit:true});});
     return itemsWriteCheckSnapshot(job).then(function(){return Promise.all(rows.map(function(row){return window.storage.get(row.k).then(function(before){
       requireOwner();var raw=before&&before.value!=null?before.value:null,id=row.k.slice(ITEMP.length);
-      if(raw!==row.v&&!itemsWritePreimage(job,id,raw))throw syncIssue('sync_local_changed','items_write_stale_job','입력 뒤 선수 정보가 바뀌었습니다. 최신 명단과 내 입력을 확인해 주세요.');
+      if(raw!==row.v&&!itemsWritePreimage(job,id,raw)){
+        if(job.patch&&raw===null&&typeof job.expected[id]==='string')return itemsWriteConfirmAbsent(job,row,requireOwner).then(function(absent){
+          requireOwner();if(!absent)throw rowChanged('items_write_stale_job','선수별 서버 원문이 있어 최신 명단 확인이 필요합니다.',row);
+          job.expected[id]=null;row.expected=null;
+        });
+        throw rowChanged('items_write_stale_job','입력 뒤 선수 정보가 바뀌었습니다. 최신 명단과 내 입력을 확인해 주세요.',row);
+      }
       row.expected=raw;
     });}));}).then(function(){
     /* Every CAS uses the validated request-time preimage, never a fresh value
@@ -4821,8 +4916,8 @@ function itemsWriteNow(players,owner,job){
       requireOwner();return Promise.resolve().then(function(){
         if(!row.explicit&&itemsReviewKeys()[row.k]){var id=row.k.slice(ITEMP.length);reviewHeld[id]=1;if(Object.prototype.hasOwnProperty.call(idx,id))next[id]=idx[id];else delete next[id];row.review=true;return;}
         if(row.expected===row.v)return;
-        return window.storage.replaceIfValue(row.k,row.expected,row.v).then(function(ok){
-          if(!ok)throw syncIssue('sync_local_changed','items_write_cas','선수 정보에 더 새로운 변경이 있습니다');
+        return window.storage.replaceIfValue(row.k,row.expected,row.v,job.patch?requireOwner:undefined).then(function(ok){
+          if(!ok)throw rowChanged('items_write_cas','선수 정보에 더 새로운 변경이 있습니다',row);
           job.written.push({id:row.k.slice(ITEMP.length),before:row.expected,after:row.v});
           if(!itemsWriteCurrent(owner))return window.storage.replaceIfValue(row.k,row.v,null).then(function(){requireOwner();});
         });
@@ -4833,7 +4928,15 @@ function itemsWriteNow(players,owner,job){
         });
       });
     });},Promise.resolve()).then(function(){return itemsWriteCheckSnapshot(job);}).then(function(){
-      requireOwner();var key=itemsIdxKey(),raw=JSON.stringify(next);
+      requireOwner();
+      if(job.patch){
+        /* Another tab may advance an unrelated index entry while these row
+           transactions wait. Only this patch's verified IDs may change it. */
+        var latest=Object.assign({},itemsIdx());
+        job.changedIds.forEach(function(id){if(!reviewHeld[id]&&Object.prototype.hasOwnProperty.call(next,id))latest[id]=next[id];});
+        job.deletedIds.forEach(function(id){delete latest[id];});next=latest;
+      }
+      var key=itemsIdxKey(),raw=JSON.stringify(next);
       localStorage.setItem(key,raw);if(localStorage.getItem(key)!==raw)throw syncIssue('sync_storage','items_write_index','선수 저장 색인을 확인하지 못했습니다');
       return {wrote:wrote,gone:gone.length+Object.keys(deleted).length,held:held||Object.keys(reviewHeld).length>0,review:Object.keys(reviewHeld).length,n:Object.keys(seen).length};
     });
@@ -4874,7 +4977,7 @@ function itemsApproveDel(intent){
     var ids=intent.hold.ids.map(String),seen={},now=+intent.hold.at;
     if(!isFinite(now)||now<=0)throw syncIssue('sync_storage','items_delete_stamp','삭제 보류 시점을 확인하지 못했습니다. 최신 명단을 확인해 주세요.');
     var tomb=JSON.stringify({_del:now});
-    var job={owner:intent.owner,at:now,rows:[],written:[],intent:intent,ready:null};
+    var job={owner:intent.owner,at:now,sequence:++_itemsJobSequence,rows:[],written:[],intent:intent,ready:null};
     ids.forEach(function(id){if(!id||seen[id])throw syncIssue('sync_storage','items_delete_ids','삭제할 선수 목록을 확인하지 못했습니다');seen[id]=1;});
     job.ready=Promise.all(ids.map(function(id){return window.storage.get(ITEMP+id).then(function(r){
       if(!itemsDeleteCurrent(intent))throw syncIssue('sync_workspace_changed','items_delete_owner','삭제를 확인하는 동안 계정·팀 또는 명단이 바뀌었습니다');
@@ -5004,7 +5107,7 @@ function itemsResolveConflicts(at,wid,ownerGuard,roundMeta){
     }).catch(function(e){ syncDiagnostic('items-conflict',e); throw e; });
 }
 function itemsActive(){ try{ return ITEMS_ACTIVE&&localStorage.getItem('ps_items_write')!=='0'; }catch(_){ return ITEMS_ACTIVE; } }
-try{ window.PSItems={audit:itemsAudit,write:itemsWrite,writeReady:itemsWriteReady,flush:itemsWriteFlush,prefix:ITEMP,
+try{ window.PSItems={patchVersion:1,audit:itemsAudit,write:itemsWrite,writeReady:itemsWriteReady,flush:itemsWriteFlush,prefix:ITEMP,
   ready:itemsPushAllowed,check:itemsServerCheck,holdOpen:itemsHoldOpen,readAll:itemsReadAll,active:itemsActive}; }catch(_){}
 
 function matchMirrorWriteExact(v){
