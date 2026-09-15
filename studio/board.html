@@ -6989,6 +6989,7 @@ var _boardPrivateOwner=null,_boardPrivateRecord=null,_boardPrivateBase=null;
 var _boardPrivateLoaded=false,_boardPrivateGeneration=0,_boardPrivateEditSeq=0;
 var _boardPrivateFlight=null,_boardPrivateLocal=Promise.resolve(),_boardPrivateHead=null,_boardPrivateIdbHead=null;
 var _boardPrivateDurableToken=null;
+var _boardPrivateKept=null;
 function boardPrivateAPI(){try{var a=parent&&parent.PSSync&&parent.PSSync.boardLive;return a&&a.version===2&&a.scope==='personal'&&a.owner&&a.get&&a.save?a:null;}catch(_){return null;}}
 function boardPrivateOwner(){try{var a=boardPrivateAPI(),o=a&&a.owner();return o&&typeof o.uid==='string'&&o.uid&&typeof o.wid==='string'&&o.wid?JSON.parse(JSON.stringify(o)):null;}catch(_){return null;}}
 function boardPrivateCurrent(o){var now=boardPrivateOwner();return !!o&&!!now&&JSON.stringify(o)===JSON.stringify(now);}
@@ -7005,14 +7006,46 @@ function boardPrivateDecode(raw,o){
   JSON.parse(r.raw);return r;
 }
 function boardPrivateMake(o,raw,base,pending,attempt){return {v:1,uid:o.uid,wid:o.wid,raw:raw,base:base&&{raw:base.raw,cupd:base.cupd},pending:!!pending,attempt:attempt?JSON.parse(JSON.stringify(attempt)):null,token:boardPrivateToken(),seq:Math.max(Date.now(),((_boardPrivateRecord&&_boardPrivateRecord.seq)||0)+1)};}
+function boardPrivateKeep(o,r){
+  // One recovery draft per editor/account, not a new full copy on every retry.
+  // Only this editor's verified preimage may be replaced; the main draft and
+  // older recovery keys are never adopted or overwritten here.
+  if(!_boardPrivateKept||!boardPrivateSameAccount(_boardPrivateKept,o))
+    _boardPrivateKept={uid:o.uid,wid:o.wid,key:boardPrivateKey(o)+':kept:'+boardPrivateToken(),local:null,idb:null,queue:Promise.resolve()};
+  var branch=_boardPrivateKept,raw=JSON.stringify(r),local=false;
+  function current(){if(!boardPrivateCurrent(o))throw new Error('보드 계정이 바뀌었습니다');}
+  current();
+  var before=localStorage.getItem(branch.key);
+  if(before!==null&&before!==branch.local) return Promise.reject(new Error('다른 복구 사본을 보존합니다'));
+  try{localStorage.setItem(branch.key,raw);local=localStorage.getItem(branch.key)===raw;if(local)branch.local=raw;}catch(_){}
+  var work=branch.queue.catch(function(){}).then(async function(){
+    current();
+    if(!window.storage||!window.storage.get||!window.storage.replaceIfValue)throw new Error('복구 사본 저장소를 확인하지 못했습니다');
+    var value=await window.storage.get(branch.key);current();var prior=value&&value.value;prior=prior==null?null:prior;
+    if(prior!==raw){
+      if(prior!==branch.idb)throw new Error('다른 복구 사본을 보존합니다');
+      if(!await window.storage.replaceIfValue(branch.key,prior,raw,current))throw new Error('복구 사본이 바뀌었습니다');
+    }
+    current();branch.idb=raw;
+    var check=await window.storage.get(branch.key);current();
+    if(!check||check.value!==raw)throw new Error('복구 사본 저장을 확인하지 못했습니다');
+    // Free the small-store copy only after reading the complete identical body.
+    if(localStorage.getItem(branch.key)===raw){localStorage.removeItem(branch.key);if(localStorage.getItem(branch.key)===null)branch.local=null;}
+    return true;
+  });
+  branch.queue=work;
+  return work.catch(function(e){current();if(local&&localStorage.getItem(branch.key)===raw)return true;throw e;}).then(function(){
+    current();if(_boardPrivateRecord===r)_boardPrivateDurableToken=r.token;return true;
+  });
+}
 function boardPrivatePersist(o,r){
   if(!boardPrivateCurrent(o))return Promise.reject(new Error('보드 계정이 바뀌었습니다'));
   var key=boardPrivateKey(o),raw=JSON.stringify(r),local=false,localError=null,head=localStorage.getItem(key);
   if(head!==_boardPrivateHead){
     // A second tab owns its newer draft. Keep both originals rather than using
     // an acknowledgement from this tab to erase its work.
-    try{localStorage.setItem(key+':kept:'+r.token,raw);}catch(_){}
-    return Promise.reject(new Error('다른 창의 개인 보드가 바뀌었습니다. 현재 작업은 별도로 보관합니다'));
+    _boardPrivateRecord=r;
+    return boardPrivateKeep(o,r).then(function(){throw new Error('다른 창의 개인 보드가 바뀌었습니다. 현재 작업은 별도로 보관합니다');});
   }
   _boardPrivateRecord=r;
   try{localStorage.setItem(key,raw);local=localStorage.getItem(key)===raw;if(local){_boardPrivateHead=raw;_boardPrivateDurableToken=r.token;}}catch(e){localError=e;}
@@ -7300,6 +7333,10 @@ async function restoreLiveBoard(){
       _boardPrivateBase={raw:remote.raw,cupd:remote.cupd};
       chosen=remote.raw===null?null:boardPrivateMake(owner,remote.raw,_boardPrivateBase,false,null);
     }else if(!chosen&&local)chosen=local;
+    // An unavailable server is not an empty board. Keep the visible canvas,
+    // animation and undo state; offline edits still have an unknown base and
+    // cannot replace a server document until its preimage is confirmed.
+    if(!chosen&&remoteError)throw remoteError;
     if(chosen)_boardPrivateBase=chosen.base;
     else if(remote)_boardPrivateBase={raw:remote.raw,cupd:remote.cupd};
     _boardPrivateRecord=chosen;_boardPrivateLoaded=true;

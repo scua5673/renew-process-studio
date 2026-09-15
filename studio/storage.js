@@ -69,6 +69,7 @@
   };
   function spaceLabel(k){
     if(!k)return ['기타',''];
+    if(k.indexOf('ps_private_board_draft_v1:')===0)return k.indexOf(':kept:')>=0?['개인 보드 복구 사본','원문 확인 후 큰 저장소로 옮깁니다']:['작업 중인 개인 보드',''];
     if(k.indexOf('cs_idp_pub_v1_')===0)return ['코치 피드백',''];
     if(k.indexOf('cs_idp_v1_')===0)return ['IDP','이미지노트 사진이 큽니다'];
     if(k.indexOf('ps_sync_base_')===0)return ['일정 동기화 기준본','안전 저장소 확인 뒤 자동으로 정리됩니다'];
@@ -266,7 +267,10 @@
           try{localStorage.removeItem(k);return _si(k,v);}
           catch(auxErr){try{console.warn('[PSStorage] 보조 복구 사본 생략:',k);}catch(_){}return;}
         }
-        if(isQuotaErr(e)) warnFull(k); throw e;
+        // The private-board writer verifies its full IndexedDB fallback and
+        // reports failure if neither store succeeds. A failed small-store copy
+        // alone must not announce that the board was lost before that result.
+        if(isQuotaErr(e)&&String(k).indexOf('ps_private_board_draft_v1:')!==0) warnFull(k); throw e;
       }
     };
   }catch(_){}
@@ -718,6 +722,12 @@
         current();
         var cleanupKeys=Object.keys(DEVICE_LOCAL);
         localKeys(AUX_IDB_PREFIX).forEach(function(k){if(cleanupKeys.indexOf(k)<0)cleanupKeys.push(k);});
+        // The active head stays in place. Recovery copies are moved only for
+        // the signed-in owner, with the same exact-body/CAS checks below.
+        var recoveryUid=JSON.parse(owner)[0],recoveryPrefix='ps_private_board_draft_v1:'+encodeURIComponent(recoveryUid)+':kept:';
+        if(recoveryUid)localKeys(recoveryPrefix).forEach(function(k){
+          try{var r=JSON.parse(localStorage.getItem(k));if(r&&r.v===1&&r.uid===recoveryUid&&typeof r.wid==='string'&&r.wid&&typeof r.raw==='string')cleanupKeys.push(k);}catch(_){}
+        });
         return Promise.all(cleanupKeys.map(function(k){
           var lv=null;try{lv=localStorage.getItem(k);}catch(_){}
           if(lv==null)return null;
@@ -1072,14 +1082,15 @@
    보관함·라이브 보드 사본(DEVICE_LOCAL)이 localStorage에 눌러앉아 "공간이 자꾸 차는"
    첫 원인이 됐다. 하루 한 번, 부팅이 가라앉은 뒤 조용히 돌린다 — 여유만 남긴다. */
 (function(){
-  var K='ps_opt_auto_at', DAY=86400000;
-  function due(){ var t=0; try{ t=+localStorage.getItem(K)||0; }catch(_){ } return Date.now()-t>DAY; }
+  var K='ps_opt_auto_at', REC='ps_opt_board_recovery_v1', DAY=86400000;
+  function due(){ var t=0; try{ if(!localStorage.getItem(REC))return true;t=+localStorage.getItem(K)||0; }catch(_){ } return Date.now()-t>DAY; }
   try{
     if(!due())return;
     setTimeout(function(){
       if(!due())return; /* 다른 화면(iframe)이 그 사이 먼저 돌았으면 그만둔다 */
-      try{ localStorage.setItem(K,String(Date.now())); }catch(_){}
-      try{ window.PSStorage.optimize().catch(function(){}); }catch(_){}
+      try{ window.PSStorage.optimize().then(function(){
+        try{localStorage.setItem(K,String(Date.now()));localStorage.setItem(REC,'1');}catch(_){}
+      }).catch(function(){}); }catch(_){}
     },12000);
   }catch(_){}
 })();
