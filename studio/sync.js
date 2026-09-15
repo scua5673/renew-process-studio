@@ -1810,6 +1810,24 @@ function idpTeamCloudRaw(raw){
     o.imgNotes=[];return JSON.stringify(o);
   }catch(_){return null;}
 }
+/* noticeSeen is app-maintained read state, not an authored IDP field.
+   No ancestor is needed only when ALL remaining cloud content is identical.
+   Keep team image notes local and use the ordinary server CAS for the marker. */
+function idpReadStateMerge(k,localRaw,serverRaw,teamW){
+  if(!isIdpPrivateKey(k)||!idpRawMergeable(k,localRaw)||!idpRawMergeable(k,serverRaw))return null;
+  try{
+    var originalLocal=JSON.parse(localRaw),originalServer=JSON.parse(serverRaw);
+    var l=JSON.parse(teamW?idpTeamCloudRaw(localRaw):localRaw),r=JSON.parse(teamW?idpTeamCloudRaw(serverRaw):serverRaw);
+    var own=Object.prototype.hasOwnProperty,hasL=own.call(l,'noticeSeen'),hasR=own.call(r,'noticeSeen');
+    if((hasL&&(!Number.isFinite(l.noticeSeen)||l.noticeSeen<0))||(hasR&&(!Number.isFinite(r.noticeSeen)||r.noticeSeen<0)))return null;
+    var seen=Math.max(hasL?l.noticeSeen:0,hasR?r.noticeSeen:0);
+    delete l.noticeSeen;delete r.noticeSeen;if(!idpSame(l,r))return null;
+    if(hasL||hasR)r.noticeSeen=seen;
+    var cloud=JSON.stringify(r);
+    if(teamW)r.imgNotes=idpImageUnion([originalLocal.imgNotes,originalServer.imgNotes]);
+    return {local:JSON.stringify(r),cloud:cloud};
+  }catch(_){return null;}
+}
 function idpStamp(v){
   if(!idpObj(v))return 0;
   var n=0;['updatedAt','tAt','hAt','ts','at'].forEach(function(k){
@@ -6902,6 +6920,14 @@ function syncNowCore(reason){
               /* 같은 cloud raw라면 메타만 뒤처진 것. 팀 전용 imgNotes는 local raw/base에 남긴다. */
               if(typeof row.v!=='string'){syncDiagnostic('idp-private-merge-missing',new Error('private IDP 서버 원문이 없음'));return;}
               if(row.v===localCloud){m.h[k]=lh;m.c[k]=row.cupd;nSet(m,k,loc);idpBaseNext[k]=loc;return;}
+              var readState=idpReadStateMerge(k,loc,row.v,teamW);
+              if(readState){
+                if(readState.cloud===row.v){
+                  if(readState.local!==loc){if(!roundKvWrite(k,readState.local,writes,loc))return;applied++;}
+                  m.h[k]=hash(readState.local);m.c[k]=row.cupd;nSet(m,k,readState.local);idpBaseNext[k]=readState.local;
+                }else queueMinePush(k,readState.cloud,readState.local,row,loc);
+                return;
+              }
               if(mineBaseStored&&!mineBaseTrusted){syncDiagnostic('idp-private-base-untrusted',new Error('private IDP 기준본과 확정 meta가 맞지 않음'));return;}
               var merged=mineBaseTrusted?idpMergeRaw(k,mineBase,loc,row.v,teamW):idpMergeInitialRaw(k,loc,row.v,teamW);
               if(!merged){

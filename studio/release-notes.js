@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-idp-read-state',date:'2026-09-15',title:'IDP의 불필요한 저장 대기를 줄였습니다',
+    changes:[
+      '작성 내용은 같은데 공지 읽은 시각만 달라 저장이 막히던 경우를 자동으로 맞춥니다.',
+      '개인 이미지 노트는 기기에 유지하고, 실제 작성 내용이 다르면 기존 보호 절차를 따릅니다.'
+    ]
+  },{
     id:'2026-09-15-folder-save-convergence',date:'2026-09-15',title:'보관함 폴더의 반복 저장을 수정했습니다',
     changes:[
       '두 기기 저장소 중 한쪽에 이미 같은 내용이 반영됐을 때, 나머지 저장도 정상적으로 마무리합니다.',
