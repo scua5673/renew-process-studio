@@ -288,7 +288,6 @@ test('folder reconciliation completes an intermediate mirror when the newer serv
 });
 for(const [label,old,mirror,candidate] of [
  ['unique local name',['A'],['A','Mine'],['A','B']],
- ['reordered mirror',['A','B'],['B','A'],['A','B','C']],
  ['local deletion',['A','B'],['A'],['A','B','C']],
  ['remote deletion',['A'],['A','B'],['A','C']],
  ['duplicate names',['A'],['A','B','B'],['A','B','C']],
@@ -305,4 +304,10 @@ test('storage mismatch diagnostics contain shape/count only, never folder conten
  await h.seed(key,old,candidate);h.local.set(key,mirror);const writes=[],guard={stale:false};h.c.kvWrite(key,candidate,writes,old,guard,()=>true);await Promise.all(writes);
  assert.deepEqual(events,[{stage:'kv-write-source-mismatch',code:'mirror-array2_idb-array1_expected-array1_next-array1_extra2',message:'storage copies disagree'}]);
  assert.equal(guard.stale,true);assert.equal(h.idb.get(key),old);assert.equal(h.local.get(key),mirror);
+});
+
+// Folder navigation sorts alphabetically, so storage insertion order is not an edit.
+test('folder copies with different insertion orders converge without losing any names',async()=>{
+ const key='cs_vault_folders_v1',h=harness({key}),old=raw(['C','A','B']),mirror=raw(['A','B','C','F','D','E']),remote=raw(['C','A','B','D','E','F','G']);
+ await h.seed(key,old,remote);h.local.set(key,mirror);await success(h);assertSources(h,key,remote,remote);assert.equal(h.queue.length,0);
 });
