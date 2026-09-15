@@ -290,7 +290,6 @@ for(const [label,old,mirror,candidate] of [
  ['unique local name',['A'],['A','Mine'],['A','B']],
  ['local deletion',['A','B'],['A'],['A','B','C']],
  ['remote deletion',['A'],['A','B'],['A','C']],
- ['duplicate names',['A'],['A','B','B'],['A','B','C']],
  ['invalid shape',['A'],{folder:'A'},['A','B']]
 ])test('folder intermediate repair protects '+label,async()=>{
  const key='cs_vault_folders_v1',h=harness({key});await h.seed(key,raw(old),raw(candidate));h.local.set(key,raw(mirror));
@@ -302,12 +301,17 @@ test('storage mismatch diagnostics contain shape/count only, never folder conten
  const key='cs_vault_folders_v1',h=harness({key}),events=[];h.c.syncDiagnostic=(stage,error)=>events.push({stage,code:error.psCode,message:error.message});
  const old=raw(['private old folder']),mirror=raw(['private new folder','private note']),candidate=raw(['server folder']);
  await h.seed(key,old,candidate);h.local.set(key,mirror);const writes=[],guard={stale:false};h.c.kvWrite(key,candidate,writes,old,guard,()=>true);await Promise.all(writes);
- assert.deepEqual(events,[{stage:'kv-write-source-mismatch',code:'mirror-array2_idb-array1_expected-array1_next-array1_extra2',message:'storage copies disagree'}]);
+ assert.deepEqual(events,[{stage:'kv-write-source-mismatch',code:'mirror-array2_idb-array1_expected-array1_next-array1_extra2_removed1',message:'storage copies disagree'}]);
  assert.equal(guard.stale,true);assert.equal(h.idb.get(key),old);assert.equal(h.local.get(key),mirror);
 });
 
 // Folder navigation sorts alphabetically, so storage insertion order is not an edit.
 test('folder copies with different insertion orders converge without losing any names',async()=>{
  const key='cs_vault_folders_v1',h=harness({key}),old=raw(['C','A','B']),mirror=raw(['A','B','C','F','D','E']),remote=raw(['C','A','B','D','E','F','G']);
+ await h.seed(key,old,remote);h.local.set(key,mirror);await success(h);assertSources(h,key,remote,remote);assert.equal(h.queue.length,0);
+});
+
+test('duplicate folder paths are representation copies, not additional folders',async()=>{
+ const key='cs_vault_folders_v1',h=harness({key}),old=raw(['A','B','C']),mirror=raw(['A','B','C','A','B','C']),remote=raw(['A','B','C','D']);
  await h.seed(key,old,remote);h.local.set(key,mirror);await success(h);assertSources(h,key,remote,remote);assert.equal(h.queue.length,0);
 });

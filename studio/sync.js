@@ -5174,7 +5174,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
     if(k!=='cs_vault_folders_v1')return false;
     try{
       var arrays=[before,mirror,candidate].map(function(raw){return JSON.parse(raw);});
-      if(!arrays.every(function(a){return Array.isArray(a)&&a.every(function(name,i){return typeof name==='string'&&!!name.trim()&&name.indexOf('__')!==0&&a.indexOf(name)===i;});}))return false;
+      if(!arrays.every(function(a){return Array.isArray(a)&&a.every(function(name,i){return typeof name==='string'&&!!name.trim()&&name.indexOf('__')!==0;});}))return false;
       // Folder views sort names themselves; serialized insertion order is not an authored order.
       function subset(a,b){return a.every(function(name){return b.indexOf(name)>=0;});}
       return subset(arrays[0],arrays[1])&&subset(arrays[1],arrays[2]);
@@ -5266,7 +5266,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
               function sourceShape(raw){if(raw==null)return 'missing';if(typeof raw!=='string')return typeof raw;try{var a=JSON.parse(raw);return Array.isArray(a)?'array'+a.length:typeof a;}catch(_){return 'invalid';}}
               var mismatch=new Error('storage copies disagree');
               mismatch.psCode='mirror-'+sourceShape(mirror)+'_idb-'+sourceShape(r&&r.value)+'_expected-'+sourceShape(expectedLoc)+'_next-'+sourceShape(v);
-              if(k==='cs_vault_folders_v1')try{var ma=JSON.parse(mirror),va=JSON.parse(v);if(Array.isArray(ma)&&Array.isArray(va))mismatch.psCode+='_extra'+ma.filter(function(x){return va.indexOf(x)<0;}).length;}catch(_){}
+              if(k==='cs_vault_folders_v1')try{var ma=JSON.parse(mirror),va=JSON.parse(v);if(Array.isArray(ma)&&Array.isArray(va)){var ea=JSON.parse(expectedLoc);mismatch.psCode+='_extra'+ma.filter(function(x){return va.indexOf(x)<0;}).length;if(Array.isArray(ea))mismatch.psCode+='_removed'+ea.filter(function(x){return ma.indexOf(x)<0;}).length;}}catch(_){}
               syncDiagnostic('kv-write-source-mismatch',mismatch);
               ownerStale();return {stale:true};}}
           try{ rescueStash(k, r&&r.value, v); }catch(_){}
