@@ -13,7 +13,8 @@
         var current=owner(ctx),raw=await o.read(r.k);current();
         var now=o.version(r.wid,r.k);
         if(typeof raw!=='string'||o.hash(raw)!==r.h||now.h!==r.h||now.c!==r.c)continue;
-        await o.journal(r.wid).remember(ctx,r.k,raw,r.h,r.c);current();
+        var journal=o.journal(r.wid);
+        await (journal.capture||journal.remember).call(journal,ctx,r.k,raw,r.h,r.c);current();
       }
     }
     async function reconcile(){
