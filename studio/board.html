@@ -3001,15 +3001,9 @@ body.bc-tilt3d #tiltGoals{display:block}
    2.568 의 comm-settling 은 `body.comm-viewing #editorBoardWrap #board{visibility:visible!important}` 에 져서 한 번도 감춘 적이 없었다.
    여기서 html.comm-boot 를 달고 __commView 가 자리 잡은 뒤 한 번만 벗긴다. */
 try{ if(/[?&]community_view=1(&|$)/.test(location.search)) document.documentElement.classList.add("comm-boot"); }catch(_){}
-/* 부팅 색 깜빡임 방지: 저장된 라이브 보드의 잔디 색을 첫 페인트 전에 미리 적용 (calm→저장색 전환 제거) */
-try{ var _lr=localStorage.getItem("cs_board_live_v1"); if(_lr){ var _sn=(JSON.parse(_lr)||{}).snap;
-  if(_sn){
-    if(_sn.pitchCustom){ var _c=String(_sn.pitchCustom), _hx=_c.charAt(0)==="#"?_c.slice(1):"", _r=parseInt(_hx.slice(0,2),16)||0,_g=parseInt(_hx.slice(2,4),16)||0,_b=parseInt(_hx.slice(4,6),16)||0, _L=(0.2126*_r+0.7152*_g+0.0722*_b)/255, _st=document.documentElement.style;
-      document.documentElement.dataset.pitch="custom"; _st.setProperty("--pitchbg",_c); _st.setProperty("--pline",_L>0.62?"#39414f":"#ffffff"); _st.setProperty("--grid",_L>0.62?"#7b8494":"#cfe0ff"); _st.setProperty("--zone",_L>0.62?"#7b8494":"#cfe0ff"); }
-    else if(_sn.pitchTheme!=null){ document.documentElement.dataset.pitch=(_sn.pitchTheme==="navy"?"":_sn.pitchTheme); }
-  }
-} else { document.documentElement.dataset.pitch="grass"; }   /* 2.365 — 저장된 보드가 **아예 없을 때만** 기본을 실사 잔디로. 첫 페인트 전에 정해 색이 바뀌어 보이지 않게 */
-}catch(_){}
+/* Personal board appearance is restored only after its account is verified.
+   An unowned legacy team snapshot must not color even the first frame. */
+try{document.documentElement.dataset.pitch="grass";}catch(_){}
 </script>
 <link rel="stylesheet" href="mobile-polish.css">
 <style id="ps-2202-sheet">/* 2.202 → 2.205 — 폰 선택 카드(body.ps-dock): 사용자 "더 작게, 우상단에". 바텀시트(mobile-polish 786)를 덮어 오른쪽 위 작은 카드로. 링크는 mobile-polish.css 바로 뒤여야 이긴다 */
@@ -6983,14 +6977,129 @@ const store={
   }
 };
 const SESS_KEY="training_sessions_v1",SESS_CUR="training_session_cur_v1";
-const BLIVE_KEY="cs_board_live_v1";
-const BRECV_KEY="cs_board_recovery_v1";
-const BSNAP_KEY={board:"cs_snap_board_v1",match:"cs_snap_match_v2"};
+/* Working boards belong to an account. Legacy team/unowned live, recovery and
+   view snapshots remain untouched; their timestamp is not proof of ownership. */
+const PRIVATE_BOARD_PREFIX="ps_private_board_draft_v1:";
 const EDRAFT_KEY="cs_editor_draft_v1";
 const EWORK_KEY="cs_editor_work_v1";
 let matchActive=false;
 let _bliveT=null;
 let _bliveSaveSeq=0,_bliveToastAt=0,_bliveDirty=false,_bliveApplying=false;
+var _boardPrivateOwner=null,_boardPrivateRecord=null,_boardPrivateBase=null;
+var _boardPrivateLoaded=false,_boardPrivateGeneration=0,_boardPrivateEditSeq=0;
+var _boardPrivateFlight=null,_boardPrivateLocal=Promise.resolve(),_boardPrivateHead=null,_boardPrivateIdbHead=null;
+var _boardPrivateDurableToken=null;
+function boardPrivateAPI(){try{var a=parent&&parent.PSSync&&parent.PSSync.boardLive;return a&&a.version===2&&a.scope==='personal'&&a.owner&&a.get&&a.save?a:null;}catch(_){return null;}}
+function boardPrivateOwner(){try{var a=boardPrivateAPI(),o=a&&a.owner();return o&&typeof o.uid==='string'&&o.uid&&typeof o.wid==='string'&&o.wid?JSON.parse(JSON.stringify(o)):null;}catch(_){return null;}}
+function boardPrivateCurrent(o){var now=boardPrivateOwner();return !!o&&!!now&&JSON.stringify(o)===JSON.stringify(now);}
+function boardPrivateSameAccount(a,b){return !!a&&!!b&&a.uid===b.uid&&a.wid===b.wid;}
+function boardPrivateKey(o){return PRIVATE_BOARD_PREFIX+encodeURIComponent(o.uid);}
+function boardPrivateToken(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+'-'+(++_bliveSaveSeq);}
+function boardPrivateVersion(v){return v&&((v.raw===null&&v.cupd===null)||(typeof v.raw==='string'&&Number.isSafeInteger(v.cupd)&&v.cupd>0));}
+function boardPrivateReceipt(r,o){return !!r&&r.ok===true&&r.uid===o.uid&&r.wid===o.wid&&boardPrivateVersion(r);}
+function boardPrivateDecode(raw,o){
+  if(raw==null)return null;
+  var r=JSON.parse(raw);
+  if(!r||r.v!==1||r.uid!==o.uid||r.wid!==o.wid||typeof r.raw!=='string'||typeof r.token!=='string'||!Number.isSafeInteger(r.seq)||typeof r.pending!=='boolean'||(r.base!==null&&!boardPrivateVersion(r.base)))throw new Error('개인 보드 보관 형식을 확인하지 못했습니다');
+  if(r.attempt&&(!boardPrivateVersion(r.attempt.base)||typeof r.attempt.raw!=='string'))throw new Error('개인 보드 저장 시도를 확인하지 못했습니다');
+  JSON.parse(r.raw);return r;
+}
+function boardPrivateMake(o,raw,base,pending,attempt){return {v:1,uid:o.uid,wid:o.wid,raw:raw,base:base&&{raw:base.raw,cupd:base.cupd},pending:!!pending,attempt:attempt?JSON.parse(JSON.stringify(attempt)):null,token:boardPrivateToken(),seq:Math.max(Date.now(),((_boardPrivateRecord&&_boardPrivateRecord.seq)||0)+1)};}
+function boardPrivatePersist(o,r){
+  if(!boardPrivateCurrent(o))return Promise.reject(new Error('보드 계정이 바뀌었습니다'));
+  var key=boardPrivateKey(o),raw=JSON.stringify(r),local=false,localError=null,head=localStorage.getItem(key);
+  if(head!==_boardPrivateHead){
+    // A second tab owns its newer draft. Keep both originals rather than using
+    // an acknowledgement from this tab to erase its work.
+    try{localStorage.setItem(key+':kept:'+r.token,raw);}catch(_){}
+    return Promise.reject(new Error('다른 창의 개인 보드가 바뀌었습니다. 현재 작업은 별도로 보관합니다'));
+  }
+  _boardPrivateRecord=r;
+  try{localStorage.setItem(key,raw);local=localStorage.getItem(key)===raw;if(local){_boardPrivateHead=raw;_boardPrivateDurableToken=r.token;}}catch(e){localError=e;}
+  function current(){if(!boardPrivateCurrent(o)||_boardPrivateRecord!==r||localStorage.getItem(key)!==_boardPrivateHead)throw new Error('새 개인 보드 변경을 보존합니다');}
+  var work=_boardPrivateLocal.catch(function(){}).then(function(){
+    current();
+    if(!window.storage||!window.storage.set){if(local)return true;throw localError||new Error('기기에 보드를 보관하지 못했습니다');}
+    return window.storage.get(key).then(function(before){
+      current();var prior=before&&before.value;prior=prior==null?null:prior;boardPrivateDecode(prior,o);
+      if(prior===raw){_boardPrivateIdbHead=raw;return true;}
+      // Only a head read by this editor (or its own successful CAS) is a basis.
+      // A later timestamp cannot authorize overwriting another tab's IDB draft.
+      if(prior!==_boardPrivateIdbHead)throw new Error('다른 창의 최신 개인 보드를 보존합니다');
+      if(!window.storage.replaceIfValue)throw new Error('개인 보드의 안전한 저장 기능을 새로 불러와 주세요');
+      return window.storage.replaceIfValue(key,prior,raw,current).then(function(ok){if(!ok)throw new Error('다른 창의 개인 보드가 바뀌었습니다');if(boardPrivateCurrent(o))_boardPrivateIdbHead=raw;return true;});
+    }).then(function(){current();return window.storage.get(key);}).then(function(saved){current();if(!saved||saved.value!==raw)throw new Error('개인 보드 저장을 확인하지 못했습니다');_boardPrivateDurableToken=r.token;return true;});
+  });
+  _boardPrivateLocal=work;
+  // localStorage is a complete synchronous recovery copy, never a thumbnail or
+  // a snapshot with animation/pages stripped to make it fit.
+  if(local){work.catch(function(){});return Promise.resolve(true);}
+  return work;
+}
+async function boardPrivateRead(o){
+  var key=boardPrivateKey(o),localRaw=localStorage.getItem(key),local=boardPrivateDecode(localRaw,o),saved=null,idbRaw=null;
+  if(window.storage&&window.storage.get){var v=await window.storage.get(key);if(!boardPrivateCurrent(o))throw new Error('보드 계정이 바뀌었습니다');idbRaw=v&&v.value;idbRaw=idbRaw==null?null:idbRaw;saved=boardPrivateDecode(idbRaw,o);}
+  if(!boardPrivateCurrent(o)||localStorage.getItem(key)!==localRaw)throw new Error('개인 보드가 읽는 동안 바뀌었습니다');
+  _boardPrivateHead=localRaw;_boardPrivateIdbHead=idbRaw;
+  var chosen=!saved||local&&local.seq>=saved.seq?local:saved;
+  _boardPrivateDurableToken=chosen&&chosen.token;return chosen;
+}
+function boardPrivateSend(o){
+  if(_boardPrivateFlight)return _boardPrivateFlight;
+  var work=(async function(){
+    if(!boardPrivateCurrent(o)||!_boardPrivateLoaded)throw new Error('개인 보드를 먼저 확인해 주세요');
+    var r=_boardPrivateRecord;if(!r||!r.pending)return true;
+    if(!r.base)throw new Error('다른 기기의 보드를 확인하지 못해 현재 작업을 기기에 보관합니다');
+    if(!r.attempt){r=boardPrivateMake(o,r.raw,r.base,true,{raw:r.raw,base:r.base});await boardPrivatePersist(o,r);}
+    var attempt=r.attempt,a=boardPrivateAPI();
+    if(!boardPrivateCurrent(o)||!a)throw new Error('보드 계정이 바뀌었습니다');
+    var ack=await a.save(attempt.raw,{uid:o.uid,wid:o.wid,expected_raw:attempt.base.raw,expected_cupd:attempt.base.cupd});
+    if(!boardPrivateCurrent(o))throw new Error('보드 계정이 바뀌었습니다');
+    if(!boardPrivateReceipt(ack,o)||ack.raw!==attempt.raw)throw new Error('개인 보드 저장 응답을 확인하지 못했습니다');
+    var latest=_boardPrivateRecord;
+    if(!latest||JSON.stringify(latest.attempt)!==JSON.stringify(attempt))throw new Error('새 개인 보드 변경을 보존합니다');
+    _boardPrivateBase={raw:ack.raw,cupd:ack.cupd};
+    await boardPrivatePersist(o,boardPrivateMake(o,latest.raw,_boardPrivateBase,latest.raw!==ack.raw,null));
+    return !_boardPrivateRecord.pending;
+  })();
+  _boardPrivateFlight=work;
+  return work.then(function(done){if(_boardPrivateFlight===work)_boardPrivateFlight=null;if(!done&&boardPrivateCurrent(o))return boardPrivateSend(o);return done;},function(e){if(_boardPrivateFlight===work)_boardPrivateFlight=null;throw e;});
+}
+async function boardPrivateRetry(){
+  var o=boardPrivateOwner(),r=_boardPrivateRecord;
+  if(!o||!_boardPrivateLoaded||!r||!r.pending)return false;
+  try{
+    if(!r.base){
+      var remote=await boardPrivateAPI().get();
+      if(!boardPrivateCurrent(o)||_boardPrivateRecord!==r||!boardPrivateReceipt(remote,o)||remote.raw!==null)return false;
+      await boardPrivatePersist(o,boardPrivateMake(o,r.raw,{raw:null,cupd:null},true,r.attempt));
+    }
+    if(!boardPrivateCurrent(o))return false;
+    var ok=await boardPrivateSend(o);if(!boardPrivateCurrent(o))return false;
+    _bliveDirty=!!(_boardPrivateRecord&&_boardPrivateRecord.pending);
+    if(ok&&!_bliveDirty)try{parent.postMessage({source:'board',type:'boardLiveSaved'},location.origin);}catch(_){}
+    return !!ok;
+  }catch(_){return false;}
+}
+function boardPrivateResetCanvas(){
+  var lock=window.__capLock;window.__capLock=1;
+  try{restoreAnimBeforeCapture();try{window.__animReset&&window.__animReset();}catch(_){}try{window.__psPages&&window.__psPages.restoreContext(null);}catch(_){}
+    anim.slides=[];window.__viewSnaps={};window.__pendingBoardPages=null;window.__meetBoardStash=null;undoStack=[];redoStack=[];matchActive=false;
+    loadSnap({players:[],equipment:[],drawings:[],ball:null,pitchN:1});try{renderTokens();renderDrawings();updateDelUI();}catch(_){}
+  }finally{window.__capLock=lock;}
+}
+function boardPrivateAuthChanged(){
+  try{if(new URLSearchParams(location.search).get('community_view')==='1'||document.body.classList.contains('comm-viewing'))return;}catch(_){}
+  var o=boardPrivateOwner();if(_boardPrivateOwner&&boardPrivateCurrent(_boardPrivateOwner))return;
+  ++_boardPrivateGeneration;clearTimeout(_bliveT);_bliveT=null;_boardPrivateLoaded=false;_boardPrivateFlight=null;
+  var sessionUid='';try{var s=parent.PSSync.session&&parent.PSSync.session();sessionUid=String(s&&s.uid||'');}catch(_){}
+  // A temporary team-switch lock suspends writes but does not turn the same
+  // account's private canvas into another team's draft.
+  if(!o&&_boardPrivateOwner&&sessionUid===_boardPrivateOwner.uid)return;
+  if(!boardPrivateSameAccount(_boardPrivateOwner,o)){boardPrivateResetCanvas();_boardPrivateRecord=null;_boardPrivateBase=null;_boardPrivateHead=null;_boardPrivateIdbHead=null;_boardPrivateDurableToken=null;_bliveDirty=false;}
+  _boardPrivateOwner=o;
+  if(o)restoreLiveBoard();
+}
 /* 보관함 작전판은 같은 캔버스를 빌려 쓴다. 첫 진입의 작업 맥락을 한 번만
    보관하고 항목을 바꿔 열어도 바깥 보드·장면·페이지·실행 취소를 교체하지 않는다. */
 var _vaultBoardContext=null, _vaultBoardGeneration=0, _vaultBoardRestoring=false, _liveBoardAnimOpen=null;
@@ -7089,53 +7198,28 @@ function _boardLiveWriteNow(recovery){
   var _af=null,_ai=0;
   try{ _af=window.__animFrames?window.__animFrames():null; if(_af)_ai=Math.max(0,Math.min(animActive,_af.length-1)); }catch(_){}
   var payload={snap:_bs,view:_bv,matchActive:matchActive,meetSlides:anim.slides,animFrames:_af,animActive:_ai,boardPages:_bp,_savedAt:Date.now()};
-  /* 새로고침·앱 종료 직전에는 IDB 쓰기가 끝나기 전에 문서가 닫힐 수 있다.
-     900KB 이하만 동기식 안전 사본으로 남겨 용량 위험 없이 마지막 입력을 보호한다. */
-  if(recovery&&!window.__vaultEdit){
-    try{
-      var raw=JSON.stringify(payload);
-      /* 장면이 많으면 900KB 를 넘는다. 그때 통째로 포기하면 마지막 입력까지 잃으므로
-         썸네일부터 버리고, 그래도 크면 장면을 빼고 스냅샷만이라도 남긴다. */
-      if(raw.length>900000&&_af){
-        var lite=JSON.parse(JSON.stringify(payload));
-        (lite.animFrames||[]).forEach(function(f){ if(f)delete f.thumb; });
-        raw=JSON.stringify(lite);
-        if(raw.length>900000){ lite.animFrames=null; raw=JSON.stringify(lite); }
-      }
-      if(raw.length<=900000)localStorage.setItem(BRECV_KEY,raw);
+  var owner=boardPrivateOwner();
+  if(!owner||!boardPrivateSameAccount(owner,_boardPrivateOwner)||!_boardPrivateLoaded)return Promise.resolve(false);
+  var raw=JSON.stringify(payload),old=_boardPrivateRecord;
+  var rec=boardPrivateMake(owner,raw,old?old.base:_boardPrivateBase,true,old&&old.attempt);
+  _bliveDirty=true;
+  var localOnly=arguments[1]===true;
+  return boardPrivatePersist(owner,rec).then(function(){return localOnly?false:boardPrivateSend(owner);}).then(function(ok){
+    if(!boardPrivateCurrent(owner))return false;
+    _bliveDirty=!!(_boardPrivateRecord&&_boardPrivateRecord.pending);
+    if(ok&&!_bliveDirty){
+      try{parent.postMessage({source:"board",type:"boardLiveSaved"},location.origin);}catch(_){}
+      if(!recovery)try{toast("내 보드에 자동 저장됨");}catch(_){}
+    }
+    return !!ok;
+  },function(){
+    if(boardPrivateCurrent(owner)&&!recovery)try{
+      var durable=_boardPrivateRecord&&_boardPrivateDurableToken===_boardPrivateRecord.token;
+      if(!durable)toast("기기에 저장하지 못했습니다 — 앱을 닫지 말고 다시 시도해 주세요");
+      else if(!localOnly)toast("개인 보드 저장 대기 — 현재 작업은 기기에 보관됐습니다");
     }catch(_){}
-  }
-  var rawPayload="";try{rawPayload=JSON.stringify(payload);}catch(_){}
-  var _seq=++_bliveSaveSeq;
-  function _done(ok,localOnly){
-    if(ok){
-      if(_seq===_bliveSaveSeq)_bliveDirty=false;
-      if(!localOnly&&!recovery)try{parent.postMessage({source:"board",type:"boardLiveSaved"},"*");}catch(_){}
-      if(recovery||_seq!==_bliveSaveSeq)return;
-      var _now=Date.now(); if(_now-_bliveToastAt<1200)return; _bliveToastAt=_now;
-      try{toast(localOnly?"이 기기에 자동 저장됨":"자동 저장됨");}catch(_){}
-    }else if(!recovery){
-      try{toast("자동 저장 실패 — 이 기기에 임시 보관");}catch(_){}
-    }
-  }
-  var _savePromise=null;
-  try{
-    var cloud=null,cloudReady=false;try{
-      cloud=parent&&parent.PSSync&&parent.PSSync.boardLive&&parent.PSSync.boardLive.save;
-      cloudReady=!!(cloud&&parent.PSSync.session&&parent.PSSync.session()&&parent.PSSync.dataUnlocked&&parent.PSSync.dataUnlocked());
-    }catch(_){cloudReady=false;}
-    if(cloudReady&&rawPayload){
-      _savePromise=Promise.resolve(cloud(rawPayload)).then(function(ok){
-        if(ok){_done(true);return;}
-        try{return store.set(BLIVE_KEY,payload).then(function(){_done(false);return false;});}catch(_){_done(false);return false;}
-      },function(){try{return store.set(BLIVE_KEY,payload).then(function(){_done(false);return false;});}catch(_){_done(false);return false;}});
-    }else{
-      var _p=store.set(BLIVE_KEY,payload);
-      _savePromise=(_p&&_p.then)?_p.then(function(){_done(true,true);return true;},function(){_done(false);return false;}):Promise.resolve(true);
-    }
-  }catch(_){_savePromise=Promise.resolve(false);}
-  if(recovery)try{if((_bv==="board"||_bv==="match")&&!window.__vaultEdit)store.set(BSNAP_KEY[_bv],_bs);}catch(_){}
-  return _savePromise||Promise.resolve(!!payload);
+    return false;
+  });
 }
 function boardSaveLive(){
   if(_vaultBoardContext||_vaultBoardRestoring)return;
@@ -7153,7 +7237,12 @@ function boardSaveLive(){
     try{window.__viewSnaps=window.__viewSnaps||{};window.__viewSnaps[v]=captureSnap();}catch(_){}
   }
   if(typeof animPlaying!=="undefined"&&animPlaying)return;
+  if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner))return;
   _bliveDirty=true;
+  ++_boardPrivateEditSeq;
+  // Stage the complete owner-tagged draft immediately. A team/account switch
+  // may cancel the cloud debounce before its two seconds have elapsed.
+  try{_boardLiveWriteNow(false,true);}catch(_){}
   try{clearTimeout(_bliveT);}catch(_){}
   _bliveT=setTimeout(function(){_bliveT=null;_boardLiveWriteNow(false);},2000);
 }
@@ -7178,76 +7267,88 @@ function boardFlushLive(){
 try{window.__boardFlushLive=boardFlushLive;}catch(_){}
 try{window.addEventListener("pagehide",boardFlushLive);window.addEventListener("beforeunload",boardFlushLive);}catch(_){}
 try{document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")boardFlushLive();});}catch(_){}
-async function restoreLiveBoard(){try{
-  /* 커뮤니티 iframe은 전달받은 게시물만 표시한다.
-     IndexedDB의 마지막 개인 작전판을 비동기로 불러와 게시물을 덮어쓰지 않는다. */
-  try{if(new URLSearchParams(location.search).get("community_view")==="1")return;}catch(_){}
-  try{ localStorage.removeItem("cs_board_pin_v1"); }catch(_){}   /* 구버전 '첫화면 고정' 기능 제거 — 남은 키 정리 */
-  var _liveRaw=null, live=null, _liveAt=0, _cloudReady=false;
-  try{ var cloudGet=parent&&parent.PSSync&&parent.PSSync.boardLive&&parent.PSSync.boardLive.get;
-    _cloudReady=!!(cloudGet&&parent.PSSync.session&&parent.PSSync.session()&&parent.PSSync.dataUnlocked&&parent.PSSync.dataUnlocked());
-    if(_cloudReady){ var srv=await cloudGet(); if(srv&&srv.raw){ _liveRaw=srv.raw; live=JSON.parse(srv.raw); _liveAt=+(live&&live._savedAt)||+(srv&&srv.cupd)||0; } }
-  }catch(_){ _liveRaw=null; live=null; }
-  var _localLive=null,_localAt=0;try{_localLive=await store.get(BLIVE_KEY);_localAt=+(_localLive&&_localLive._savedAt)||0;}catch(_){}
-  if(!_bliveApplying&&_localLive&&(!live||(_localAt&&_localAt>_liveAt))){
-    live=_localLive;_liveRaw=null;_liveAt=_localAt;
-    if(_cloudReady&&_localAt)try{
-      var cloudSave=parent&&parent.PSSync&&parent.PSSync.boardLive&&parent.PSSync.boardLive.save;
-      if(cloudSave)cloudSave(JSON.stringify(_localLive));
-    }catch(_){}
-  }
-  if(!live){ live={}; }
-  var _rec=null;try{_rec=JSON.parse(localStorage.getItem(BRECV_KEY)||"null");}catch(_){}
-  if(_rec&&(!_liveAt||(+_rec._savedAt||0)>=_liveAt)){
-    live=_rec;
-    try{localStorage.removeItem(BRECV_KEY);}catch(_){}
-  }else if(_rec){try{localStorage.removeItem(BRECV_KEY);}catch(_){}}
-  var sm=await store.get(BSNAP_KEY.match);var sb=await store.get(BSNAP_KEY.board);
-  /* 라이브 레코드는 스냅과 메타가 한 번에 저장된다. 별도 스냅 쓰기보다 최신이면 이를 우선한다. */
-  try{if(live&&live.snap&&live._savedAt){if(live.view==="match")sm=live.snap;else if(live.view==="board")sb=live.snap;}}catch(_){}
-  window.__viewSnaps=window.__viewSnaps||{};if(sm&&(sm.players||[]).length)window.__viewSnaps.match=sm;if(sb)window.__viewSnaps.board=sb;try{if(Array.isArray(live.meetSlides))anim.slides=live.meetSlides;}catch(_){}matchActive=!!live.matchActive;
-  /* 장면은 여기서 되살리되 화면은 건드리지 않는다 — 아래에서 마지막 작업 스냅샷을 따로 복원하기 때문이다 */
-  try{ if(Array.isArray(live.animFrames)&&live.animFrames.length>1&&window.__animRestore){ var _ai=live.animActive;
-    /* 2.682 — 화면(마지막 작업 판)과 글자까지 같은 장면이 있으면 그 장면을 활성으로 — 다른 장면(예: 1번)이 마지막 화면으로 덮이지 않게(사용자 5번) */
-    try{ var _bsnap=(live.view==="board"&&live.snap)?live.snap:sb; var _key=function(x){return JSON.stringify([x&&x.players,x&&x.equipment,x&&x.drawings,x&&x.ball]);}; var _bk=_key(_bsnap); var _m=live.animFrames.findIndex(function(f){return f&&f.snap&&_key(f.snap)===_bk;}); if(_m>=0)_ai=_m; }catch(_){}
-    window.__animRestore(live.animFrames,_ai); } }catch(_){}
-  /* 자동 유지(작업을 안 잃게): 마지막 작업(경기·작전판)을 새로고침·재진입 시 그대로 복원. 저장된 페이지는 __psPages가 이어받아 복원 */
-  try{ if(live.boardPages) window.__pendingBoardPages=live.boardPages; }catch(_){}
-  try{ var _ed=await store.get(EDRAFT_KEY); if(_ed&&_ed.trainings&&_ed.trainings.length) window.__editorDraft=_ed; }catch(_){}   /* 저장 안 한 훈련 초안 — '새 훈련' 열 때 이어서 복원 */
-  function _hasCont(s){ return !!(s&&((s.players&&s.players.length)||(s.drawings&&s.drawings.length)||(s.equipment&&s.equipment.length)||(s.pitchN&&s.pitchN>1))); }
-  var _restoredView=false;
-  if(live.view==="match"&&sm&&(sm.players||[]).length){loadSnap(sm);_restoredView=true;try{window.__svSkip=1;setView("match");window.__svSkip=0;}catch(_){}}
-  /* 선수가 없는 빈 작전판이어도 마지막 세로·회전·하프코트 방향은 사용자의 작업 상태다.
-     방향 필드가 있는 저장본은 콘텐츠 유무와 관계없이 복원해 재실행 때 같은 화면으로 연다. */
-  else if(sb&&(_hasCont(sb)||sb.orientation)){loadSnap(sb);_restoredView=true;try{renderTokens();renderDrawings();updateDelUI();}catch(_){}}
-  if(_restoredView)autoOrient=false;   /* 복원 직후 80/500ms 자동 방향 타이머가 저장된 세로 방향을 가로로 덮지 못하게 */
-   /* 2.572 — 복원은 비동기라 도장 라벨(«선수 N 연속 배치»)이 복원 전 값(빈 판 기준)으로 남았다 — 복원 뒤 한 번 맞춘다 */
-   try{if(window.__syncCommandStamps)window.__syncCommandStamps();}catch(_){}
-  /* 1.911 — 처음 쓰는 사용자 기본값(사용자): 15존 그리드 + 실사 잔디. 복원할 작업본이 없고(첫 진입) 잔디 설정을 만진 적도 없을 때 한 번만.
-     한 번 적용하면 표식(cs_board_defaults_v1)을 남겨 이후 사용자가 끄더라도 다시 켜지 않는다 */
-  try{ if(!_restoredView&&!_liveRaw&&!localStorage.getItem('cs_pitch_img')&&!localStorage.getItem('cs_board_defaults_v1')){
-    localStorage.setItem('cs_board_defaults_v1','1');
-    try{ window.__applyZonePreset&&window.__applyZonePreset('full|grid15'); }catch(_){}
-    /* 2.290 — 1.911 이 첫 진입에 '실사 잔디'를 켰지만 기본은 네이비로 바꿨다(사용자). 15존 그리드만 남긴다 */
-  } }catch(_){}
-  }catch(_){}}
-function boardApplyServerLive(){
+async function restoreLiveBoard(){
+  try{if(new URLSearchParams(location.search).get("community_view")==="1"||document.body.classList.contains("comm-viewing"))return false;}catch(_){}
+  var owner=boardPrivateOwner();if(!owner)return false;
+  var generation=++_boardPrivateGeneration,edit=_boardPrivateEditSeq,api=boardPrivateAPI();
+  if(_boardPrivateOwner&&!boardPrivateSameAccount(_boardPrivateOwner,owner))boardPrivateResetCanvas();
+  _boardPrivateOwner=owner;_boardPrivateLoaded=false;
+  function current(){return generation===_boardPrivateGeneration&&boardPrivateCurrent(owner);}
   try{
-    if(_bliveDirty||_bliveT)return false;
-    if(window.__capLock||_vaultBoardContext||_vaultBoardRestoring||window.__vaultEdit||document.body.classList.contains("editing")||document.body.classList.contains("meet-mode"))return false;
-    _bliveApplying=true;
-    return Promise.resolve(restoreLiveBoard()).then(function(){
-      try{renderTokens();renderDrawings();updateDelUI();}catch(_){}
-      _bliveApplying=false;
-      try{toast("팀 보드 최신본 반영");}catch(_){}
-      return true;
-    },function(){_bliveApplying=false;return false;});
-  }catch(_){_bliveApplying=false;return false;}
+    var local=await boardPrivateRead(owner);if(!current())return false;
+    _boardPrivateRecord=local;_boardPrivateBase=local&&local.base;_boardPrivateLoaded=true;
+    var remote=null,remoteError=null;
+    try{remote=await api.get();if(!boardPrivateReceipt(remote,owner))throw new Error('개인 보드 조회 응답을 확인하지 못했습니다');}catch(e){remoteError=e;}
+    if(!current())return false;
+    if(edit!==_boardPrivateEditSeq||_bliveDirty&&!local){
+      // Preserve the draft captured during this GET. A previously unknown
+      // preimage may become a creation only when the server explicitly is empty.
+      if(!_boardPrivateRecord&&remote&&remote.raw===null)_boardPrivateBase={raw:null,cupd:null};
+      if(_boardPrivateRecord&&!_boardPrivateRecord.base&&remote&&remote.raw===null){
+        var draft=_boardPrivateRecord;await boardPrivatePersist(owner,boardPrivateMake(owner,draft.raw,{raw:null,cupd:null},true,draft.attempt));
+      }
+      return false;
+    }
+    // Server time and client time are not an ownership or conflict decision.
+    // Unsent drafts keep their original preimage and exact retry attempt.
+    var chosen=local&&local.pending?local:null;
+    if(chosen&&!chosen.base&&!chosen.attempt&&remote&&remote.raw===null){
+      chosen=boardPrivateMake(owner,chosen.raw,{raw:null,cupd:null},true,null);
+      await boardPrivatePersist(owner,chosen);if(!current()||edit!==_boardPrivateEditSeq||_boardPrivateRecord!==chosen)return false;
+    }
+    if(!chosen&&remote){
+      _boardPrivateBase={raw:remote.raw,cupd:remote.cupd};
+      chosen=remote.raw===null?null:boardPrivateMake(owner,remote.raw,_boardPrivateBase,false,null);
+    }else if(!chosen&&local)chosen=local;
+    if(chosen)_boardPrivateBase=chosen.base;
+    else if(remote)_boardPrivateBase={raw:remote.raw,cupd:remote.cupd};
+    _boardPrivateRecord=chosen;_boardPrivateLoaded=true;
+    var live=chosen?JSON.parse(chosen.raw):{},sm=null,sb=null;
+    if(!live||typeof live!=='object'||Array.isArray(live))throw new Error('개인 보드 형식을 확인하지 못했습니다');
+    if(!current())return false;
+    var lock=window.__capLock;window.__capLock=1;
+    try{
+      try{window.__animReset&&window.__animReset();}catch(_){}
+      if(live.snap){if(live.view==='match')sm=live.snap;else sb=live.snap;}
+      window.__viewSnaps={};if(sm)window.__viewSnaps.match=sm;if(sb)window.__viewSnaps.board=sb;
+      anim.slides=Array.isArray(live.meetSlides)?live.meetSlides:[];matchActive=!!live.matchActive;
+      if(Array.isArray(live.animFrames)&&live.animFrames.length&&window.__animRestore)window.__animRestore(live.animFrames,live.animActive);
+      window.__pendingBoardPages=live.boardPages||null;
+      try{if(window.__psPages&&window.__psPages.restoreContext)window.__psPages.restoreContext(live.boardPages?{pages:live.boardPages.pages,idx:live.boardPages.idx}:null);}catch(_){}
+      var snap=sm||sb;if(snap){loadSnap(snap);autoOrient=false;}else boardPrivateResetCanvas();
+      if(sm)try{window.__svSkip=1;setView('match');}finally{window.__svSkip=0;}
+      try{renderTokens();renderDrawings();updateDelUI();window.__syncCommandStamps&&window.__syncCommandStamps();}catch(_){}
+    }finally{window.__capLock=lock;}
+    _bliveDirty=!!(chosen&&chosen.pending);
+    if(chosen&&remote&&!chosen.pending)await boardPrivatePersist(owner,chosen);
+    if(!current())return false;
+    if(chosen&&chosen.pending&&!remoteError)boardPrivateSend(owner).then(function(){if(current())_bliveDirty=!!(_boardPrivateRecord&&_boardPrivateRecord.pending);}).catch(function(){});
+    // Training editor drafts retain their existing separate workflow. They are
+    // never used as a personal working-board snapshot.
+    try{var ed=await store.get(EDRAFT_KEY);if(current()&&ed&&ed.trainings&&ed.trainings.length)window.__editorDraft=ed;}catch(_){}
+    return current();
+  }catch(e){if(current())try{toast('개인 보드를 확인하지 못했습니다. 이 기기의 원문은 보존됩니다');}catch(_){}return false;}
 }
-try{window.addEventListener("message",function(e){
-  var d=e&&e.data||{};
-  if(d&&d.source==="app"&&d.type==="boardLivePulled")boardApplyServerLive();
+function boardApplyServerLive(){
+  if(_boardPrivateFlight)return Promise.resolve(false);
+  if(_bliveDirty||_bliveT)return boardPrivateRetry();
+  if(window.__capLock||_vaultBoardContext||_vaultBoardRestoring||window.__vaultEdit||document.body.classList.contains('editing')||document.body.classList.contains('meet-mode'))return Promise.resolve(false);
+  return restoreLiveBoard();
+}
+try{window.addEventListener('message',function(e){
+  if(e.source!==parent||e.origin!==location.origin)return;
+  var d=e.data||{};
+  if(d.source==='app'&&d.type==='boardLivePulled'){
+    var o=boardPrivateOwner();if(!o||(d.uid!=null&&d.uid!==o.uid)||(d.wid!=null&&d.wid!==o.wid))return;
+    boardApplyServerLive();
+  }
+  if(d.source==='process-studio'&&d.type==='ps-auth-state')boardPrivateAuthChanged();
+});window.addEventListener('storage',function(e){if(e&&['ps_sync_session','ps_cache_owner_v1','ps_active_ws','ps_ws_switch_epoch_v1','ps_ws_switch_guard_v1'].indexOf(e.key)>=0)boardPrivateAuthChanged();});window.addEventListener('ps-auth-state',boardPrivateAuthChanged);}catch(_){}
+try{window.addEventListener('online',boardPrivateRetry);}catch(_){}
+try{window.addEventListener('beforeunload',function(e){
+  if(_boardPrivateRecord&&_boardPrivateRecord.pending&&_boardPrivateDurableToken!==_boardPrivateRecord.token){e.preventDefault();e.returnValue='';}
 });}catch(_){}
+
 /* 배치 저장·배치 라이브러리 제거 — 저장은 보관함으로 일원화 (tactics_plays_v1 데이터는 건드리지 않음) */
 
 /* 세로 운동장은 #world가 90° 회전하지만 각 레이어 getBBox()는 회전 전 좌표를 돌려준다.
@@ -12302,13 +12403,13 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
   if($("focusTab"))$("focusTab").onclick=enterFocus;
   window.__bmEnterMeeting=function(){document.body.classList.add("meet-mode");
     meetIdx=-1;ensureMeetNav();
-    try{var _bs=captureSnap();window.__meetBoardStash=_bs;store.set("cs_board_stash_v1",_bs);}catch(_){}
+    try{var _bs=captureSnap();window.__meetBoardStash=_bs;}catch(_){}
     const c2=document.getElementById("meetCnt");if(c2)c2.textContent=anim.slides.length?("0/"+anim.slides.length):"";
     setTimeout(meetHint,600);try{if(window.__ksEnter)window.__ksEnter();}catch(_){}};
   window.__bmExitMeeting=function(){var _wasMeet=document.body.classList.contains("meet-mode");document.body.classList.remove("meet-mode");exitFocus();try{if(window.__ksExit)window.__ksExit();}catch(_){}
     if(_wasMeet){ try{ if(window.__meetBoardStash){loadSnap(window.__meetBoardStash);} }catch(_){} }   // 실제 미팅 종료일 때만 메모리 스태시 복원 — 뷰 전환마다 옛 저장분(cs_board_stash_v1)이 부활하던 근본 원인 제거
     window.__meetBoardStash=null;
-    try{store.set("cs_board_stash_v1",null);}catch(_){} try{localStorage.removeItem("cs_board_stash_v1");}catch(_){} };   // 좀비 스냅 자동 청소
+    };   // The live meeting stash is memory-only and stays inside this account session.
   if($("epName"))$("epName").oninput=function(){if(editorDraft){editorDraft.name=$("epName").value;try{renderTrainingTabs();}catch(_){}}};   /* 훈련 제목 → 탭 라벨 갱신 */
   if($("epNameTop"))$("epNameTop").oninput=function(){editorFileName=$("epNameTop").value;try{if(__trainingWizardActive){var _m=trainingWizardMeta();_m.name=editorFileName;if($("twName"))$("twName").value=editorFileName;}}catch(_){}};   /* 파일 제목. 2.722 — 마법사 meta·1단계 «세션 이름»과 같이 간다 */
   if($("epMin"))$("epMin").oninput=function(){if(editorDraft)editorDraft.minutes=+$("epMin").value||0;};
@@ -12725,7 +12826,6 @@ try{Promise.resolve(restoreLiveBoard()).then(function(){window.__boardReady=true
 window.__PS_BUILD="2026.06.25-개수항목별";
 try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전판 완전 분리");}catch(_){}
 (function(){try{
-  try{store.set("cs_snap_match_v1",null);}catch(_){}  // 옛 공유 오염 데이터 폐기
   Promise.resolve(store.get("cs_build_seen")).then(function(v){
     if(v!==window.__PS_BUILD){
       try{store.set("cs_build_seen",window.__PS_BUILD);}catch(_){}

@@ -70,7 +70,8 @@ function keyLabel(k){
 }
 function skippedList(){ try{ return JSON.parse(localStorage.getItem(SKIPKEY)||'[]')||[]; }catch(_){ return []; } }
 function boardLivePulled(raw){
-  try{ window.dispatchEvent(new CustomEvent('ps-board-live-pulled',{detail:{raw:raw||''}})); }catch(_){}
+  /* Old generic/team pull events never restore a private working board. */
+  return false;
 }
 /* ── 동기화 충돌 ──
    양쪽이 같은 자료를 고치면 내 것을 밀어 넣고 서버 것을 ps_sync_conflict_<키>에 남긴다.
@@ -3002,14 +3003,7 @@ function rtPing(rec){
   var k=rec&&rec.k, c=+(rec&&rec.cupd)||0; if(!k)return;
   rtLast=Date.now(); rtHits++;
   try{ var m=meta(); if(m.c&&m.c[k]===c)return; }catch(_){}   /* 내가 올린 것 */
-  if(k==='cs_board_live_v1'){
-    clearTimeout(rtTimer);
-    rtTimer=setTimeout(function(){
-      if(!dataUnlocked()||navigator.onLine===false)return;
-      try{ boardLiveGet().then(function(r){ if(r&&r.raw)boardLivePulled(r.raw); }); }catch(_){}
-    },1200);
-    return;
-  }
+  if(k==='cs_board_live_v1'||k==='cs_private_board_v1')return;
   clearTimeout(rtTimer); rtTimer=setTimeout(function(){ if(!dataUnlocked()||navigator.onLine===false)return; syncNow('realtime'); },1200);
 }
 try{ window.addEventListener('online',function(){ setTimeout(rtConnect,500); }); }catch(_){}
@@ -3154,7 +3148,7 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
   function ready(stage){if(typeof preflight!=='function'||preflight())return true;throw syncIssue('sync_workspace_changed',stage||label,'동기화 중 작업 공간이 바뀌었습니다');}
   // Roster copies have server guards that can retain or transform the body.
   // A matching timestamp alone is not proof that the player's edit was saved.
-  function exactBody(k){return k.indexOf('sq:')===0||['scout_tool_v1','cs_squad_v1','cs_team_attrs_v1','cs_player_del_v1'].indexOf(k)>=0;}
+  function exactBody(k){return k.indexOf('sq:')===0||['scout_tool_v1','cs_squad_v1','cs_team_attrs_v1','cs_player_del_v1','cs_private_board_v1'].indexOf(k)>=0;}
   function columns(ch){return 'workspace_id,k,cupd'+(ch.some(function(r){return exactBody(r.k);})?',v':'');}
   var plain=rows.filter(function(r){return r._casCupd==null&&!r._casMissing;}),cas=rows.filter(function(r){return r._casCupd!=null||r._casMissing;});
   var chunks=[],cur=[],sz=0;
@@ -9853,46 +9847,84 @@ function reportSharedView(body,stillVisible){
   }).catch(function(){return false;});
 }
 
-var BOARD_LIVE_KEY='cs_board_live_v1';
+/* 2.827 — 작업 보드는 팀 문서가 아니다. 전용 개인 키만 사용하며,
+   예전 팀 live/무소유 캐시는 읽거나 개인 원본으로 승격하지 않는다. */
+var BOARD_LIVE_KEY='cs_private_board_v1';
 function boardLiveContext(){
-  try{ var s=getSess(),wid=String(activeWs()||''); if(!s||!s.uid||!wid||!dataUnlocked())return null;
-    return {uid:String(s.uid),wid:wid,seal:String(localStorage.getItem(OWNERKEY)||''),epoch:signOutEpoch};
-  }catch(_){ return null; }
+  try{
+    var ctx=personalContext(),s=getSess(),own=cacheOwner();
+    if(!ctx||!s||!own||workspaceSwitchGuardRead()||String(own.uid)!==ctx.uid||String(own.wid)!==ctx.active)return null;
+    var list=wsList().filter(function(w){return w&&String(w.id)===ctx.wid&&w.kind==='personal';});
+    if(list.length!==1||list[0].role!=='owner'||(list[0].owner_id&&String(list[0].owner_id)!==ctx.uid))return null;
+    return ctx;
+  }catch(_){return null;}
 }
 function boardLiveCurrent(ctx){
-  try{ var s=getSess(),seal=String(localStorage.getItem(OWNERKEY)||'');
-    return !!ctx&&dataUnlocked()&&s&&String(s.uid||'')===ctx.uid&&String(activeWs()||'')===ctx.wid&&seal===ctx.seal&&signOutEpoch===ctx.epoch;
-  }catch(_){return false;}
+  var now=boardLiveContext();
+  return !!ctx&&!!now&&['uid','wid','active','seal','epoch','switchSeal','switchEpoch'].every(function(k){return now[k]===ctx[k];});
+}
+function boardLiveRequire(ctx){
+  if(!boardLiveCurrent(ctx))throw syncIssue('sync_workspace_changed','private_board_owner','개인 보드의 계정 확인이 바뀌었습니다');
+}
+function boardLiveRaw(raw){
+  if(typeof raw!=='string'||!raw||raw.length>PERSONAL_MAXLEN)throw syncIssue('sync_storage','private_board_shape','개인 보드 원문을 확인할 수 없습니다');
+  var doc;try{doc=JSON.parse(raw);}catch(_){throw syncIssue('sync_storage','private_board_shape','개인 보드 원문을 읽을 수 없습니다');}
+  if(!doc||typeof doc!=='object'||Array.isArray(doc)||!doc.snap||typeof doc.snap!=='object'||Array.isArray(doc.snap)||!Array.isArray(doc.snap.players)||['board','match'].indexOf(doc.view)<0)
+    throw syncIssue('sync_storage','private_board_shape','개인 보드 형식이 다릅니다');
+  return raw;
+}
+function boardLiveVersion(c){
+  if((typeof c!=='number'&&typeof c!=='string')||!Number.isSafeInteger(Number(c))||Number(c)<=0)throw syncIssue('sync_confirm_missing','private_board_version','개인 보드의 저장 판본을 확인할 수 없습니다');
+  return Number(c);
+}
+function boardLiveRead(at,ctx){
+  boardLiveRequire(ctx);
+  return syncFetch('private_board_get',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(ctx.wid)+'&k=eq.'+BOARD_LIVE_KEY+'&select=workspace_id,k,v,cupd&limit=2',{headers:hj(at)}).then(function(r){
+    boardLiveRequire(ctx);if(!r.ok)throw syncHttpError('private_board_get',r.status);return r.json();
+  }).then(function(rows){
+    boardLiveRequire(ctx);
+    if(!Array.isArray(rows)||rows.length>1)throw syncIssue('sync_confirm_missing','private_board_get','개인 보드의 저장 응답을 확인할 수 없습니다');
+    if(!rows.length)return {ok:true,uid:ctx.uid,wid:ctx.wid,raw:null,cupd:null};
+    var r=rows[0];
+    if(!r||r.workspace_id!==ctx.wid||r.k!==BOARD_LIVE_KEY)throw syncIssue('sync_confirm_missing','private_board_get','다른 공간의 보드는 불러오지 않습니다');
+    return {ok:true,uid:ctx.uid,wid:ctx.wid,raw:boardLiveRaw(r.v),cupd:boardLiveVersion(r.cupd)};
+  });
 }
 function boardLiveGet(){
-  var ctx=boardLiveContext(); if(!ctx)return Promise.resolve(null);
-  return ensureToken().then(function(at){
-    if(!at||!boardLiveCurrent(ctx))return null;
-    return kvPullValues(at,ctx.wid,[BOARD_LIVE_KEY]).then(function(rows){
-      if(!boardLiveCurrent(ctx))return null;
-      var r=(rows||[]).filter(function(x){return x&&x.k===BOARD_LIVE_KEY&&typeof x.v==='string';})[0];
-      return r?{raw:r.v,cupd:r.cupd||0}:null;
-    });
-  }).catch(function(e){syncDiagnostic('board-live-get',e);return null;});
+  var ctx=boardLiveContext();
+  if(!ctx)return Promise.reject(syncIssue('sync_workspace_changed','private_board_owner','개인 보드를 불러올 계정을 확인할 수 없습니다'));
+  return ensureToken().then(function(at){boardLiveRequire(ctx);if(!at)throw syncIssue('sync_auth','private_board_auth','개인 보드 로그인을 확인할 수 없습니다');return boardLiveRead(at,ctx);});
 }
-function boardLiveSave(raw){
-  raw=String(raw||'');
-  var ctx=boardLiveContext(); if(!ctx||!raw)return Promise.resolve(false);
+function boardLiveSave(raw,options){
+  var ctx=boardLiveContext(),expected;
+  try{
+    boardLiveRequire(ctx);boardLiveRaw(raw);
+    if(!options||options.uid!==ctx.uid||options.wid!==ctx.wid||!Object.prototype.hasOwnProperty.call(options,'expected_raw')||!Object.prototype.hasOwnProperty.call(options,'expected_cupd'))throw syncIssue('sync_confirm_missing','private_board_base','개인 보드의 편집 기준을 확인할 수 없습니다');
+    expected={raw:options.expected_raw,cupd:options.expected_cupd};
+    if(expected.raw===null){if(expected.cupd!==null)throw syncIssue('sync_confirm_missing','private_board_base','개인 보드의 빈 저장 기준이 다릅니다');}
+    else{boardLiveRaw(expected.raw);expected.cupd=boardLiveVersion(expected.cupd);}
+  }catch(e){return Promise.reject(e);}
   return ensureToken().then(function(at){
-    if(!at||!boardLiveCurrent(ctx))return false;
-    var now=Date.now(), row={workspace_id:ctx.wid,k:BOARD_LIVE_KEY,v:raw,cupd:now}, ok=false;
-    return kvPushRows(at,[row],function(){ok=true;},'board_live_push',function(){return boardLiveCurrent(ctx);}).then(function(){
-      if(!ok||!boardLiveCurrent(ctx))return false;
-      var m=meta();m.h=m.h||{};m.c=m.c||{};m.n=m.n||{};
-      m.h[BOARD_LIVE_KEY]=hash(raw);m.c[BOARD_LIVE_KEY]=now;nSet(m,BOARD_LIVE_KEY,raw);m.last=Date.now();setMetaExact(m);
-      return true;
+    boardLiveRequire(ctx);if(!at)throw syncIssue('sync_auth','private_board_auth','개인 보드 로그인을 확인할 수 없습니다');
+    return boardLiveRead(at,ctx).then(function(current){
+      boardLiveRequire(ctx);
+      // A lost response is retried with the original preimage, never a fresh
+      // overwrite permission. Only an exact stored body is already complete.
+      if(current.raw===raw)return current;
+      if(current.raw!==expected.raw||current.cupd!==expected.cupd)throw syncIssue('sync_conflict','private_board_base','다른 기기에서 개인 보드가 변경되었습니다. 내 작업은 이 기기에 보관됩니다');
+      var row={workspace_id:ctx.wid,k:BOARD_LIVE_KEY,v:raw,cupd:Math.max(Date.now(),(expected.cupd||0)+1)},ack=null;
+      if(expected.raw===null)row._casMissing=true;else row._casCupd=expected.cupd;
+      return kvPushRows(at,[row],function(rows){if(rows.length===1&&rows[0].v===raw)ack={ok:true,uid:ctx.uid,wid:ctx.wid,raw:raw,cupd:boardLiveVersion(rows[0].cupd)};},'private_board_push',function(){return boardLiveCurrent(ctx);}).then(function(){
+        boardLiveRequire(ctx);if(!ack)throw syncIssue('sync_confirm_missing','private_board_push','개인 보드 저장 확인이 끝나지 않았습니다');
+        return ack;
+      });
     });
-  }).catch(function(e){syncDiagnostic('board-live-save',e);return false;});
+  });
 }
 
 window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dataUnlocked:dataUnlocked,keys:KEYS,state:syncState,   /* 2.625 상태 한 줄 */
   reportSharedView:reportSharedView,
-  boardLive:{get:boardLiveGet,save:boardLiveSave},
+  boardLive:{version:2,scope:'personal',owner:boardLiveContext,get:boardLiveGet,save:boardLiveSave},
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */
   rosterReady:function(wid){return rosterReady(wid||activeWs());},
   scheduleEdit:{set:scheduleEditSet,touch:scheduleEditTouch,active:scheduleHeld},
