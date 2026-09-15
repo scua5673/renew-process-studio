@@ -262,3 +262,20 @@ test('a legacy bulk review cannot install another player ID or a nonobject item 
   const prepared = h.c.autosavePrepare({channel: 'team', kind: 'bulk', k: key}, {raw: tomb, needsArchive: true, reason: 'base-missing'}, null, local, {v: tomb, cupd: 2});
   assert.equal(prepared.raw, tomb); assert.equal(prepared.needsArchive, true);
 });
+
+test('folder reconciliation finishes when its mirror already contains the exact server candidate', async () => {
+  const key='cs_vault_folders_v1',h=harness({key}),local=raw(['Training','Shared']),remote=raw(['Training','Shared','New folder']);
+  await h.seed(key,local,remote);h.local.set(key,remote);
+  await success(h);
+  assertSources(h,key,remote,remote);assert.equal(h.queue.length,0);
+  const count=(await h.archives()).length;await success(h);assert.equal((await h.archives()).length,count);
+});
+
+for(const race of ['mirror','idb'])test('convergent folder repair preserves a newer '+race+' edit',async()=>{
+  const key='cs_vault_folders_v1',h=harness({key}),old=raw(['A']),candidate=raw(['A','B']),fresh=raw(['A','B','C']);
+  await h.seed(key,old,candidate);h.local.set(key,race==='mirror'?fresh:candidate);
+  if(race==='idb')h.hooks.idbReplace=k=>{if(k===key)h.idb.set(key,fresh);};
+  const writes=[],guard={stale:false};assert.equal(h.c.kvWrite(key,candidate,writes,old,guard,()=>true),true);
+  await Promise.allSettled(writes);assert.equal(guard.stale,true);
+  assert.equal(race==='mirror'?h.local.get(key):h.idb.get(key),fresh);
+});

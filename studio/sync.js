@@ -5227,7 +5227,12 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
           if(!ownerCurrent()){ownerStale();return {stale:true};}
           var mirror=null,mirrorReadable=false;
           if(expectedLoc!==undefined){try{mirror=localStorage.getItem(k);mirrorReadable=true;}catch(_){}
-            var current=mirror!=null?mirror:(r&&r.value!=null?r.value:null);if(current!==expectedLoc){ownerStale();return {stale:true};}}
+            var current=mirror!=null?mirror:(r&&r.value!=null?r.value:null);
+            /* A previous partial apply can already have put the exact candidate
+               in the mirror while IDB still contains expectedLoc. Complete only
+               this convergent pair; the IDB CAS below still rejects fresh edits. */
+            var mirrorAlreadyApplied=mirror===v&&r&&r.value===expectedLoc;
+            if(current!==expectedLoc&&!mirrorAlreadyApplied){ownerStale();return {stale:true};}}
           try{ rescueStash(k, r&&r.value, v); }catch(_){}
           if(!ownerCurrent()){ownerStale();return {stale:true};}
           /* expectedLoc이 있는 pull/병합은 get→set 두 transaction으로 나누지 않는다.
