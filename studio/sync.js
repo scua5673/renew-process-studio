@@ -9753,7 +9753,6 @@ function boardLiveSave(raw){
       if(!ok||!boardLiveCurrent(ctx))return false;
       var m=meta();m.h=m.h||{};m.c=m.c||{};m.n=m.n||{};
       m.h[BOARD_LIVE_KEY]=hash(raw);m.c[BOARD_LIVE_KEY]=now;nSet(m,BOARD_LIVE_KEY,raw);m.last=Date.now();setMetaExact(m);
-      boardLivePulled(raw);
       return true;
     });
   }).catch(function(e){syncDiagnostic('board-live-save',e);return false;});
