@@ -5261,7 +5261,13 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
                Folder lists may be an intermediate server version: finish only
                ordered additions that retain every name from both local copies. */
             var mirrorAlreadyApplied=r&&r.value===expectedLoc&&(mirror===v||additiveFolderMirror(expectedLoc,mirror,v));
-            if(current!==expectedLoc&&!mirrorAlreadyApplied){ownerStale();return {stale:true};}}
+            if(current!==expectedLoc&&!mirrorAlreadyApplied){
+              function sourceShape(raw){if(raw==null)return 'missing';if(typeof raw!=='string')return typeof raw;try{var a=JSON.parse(raw);return Array.isArray(a)?'array'+a.length:typeof a;}catch(_){return 'invalid';}}
+              var mismatch=new Error('storage copies disagree');
+              mismatch.psCode='mirror-'+sourceShape(mirror)+'_idb-'+sourceShape(r&&r.value)+'_expected-'+sourceShape(expectedLoc)+'_next-'+sourceShape(v);
+              if(k==='cs_vault_folders_v1')try{var ma=JSON.parse(mirror),va=JSON.parse(v);if(Array.isArray(ma)&&Array.isArray(va))mismatch.psCode+='_extra'+ma.filter(function(x){return va.indexOf(x)<0;}).length;}catch(_){}
+              syncDiagnostic('kv-write-source-mismatch',mismatch);
+              ownerStale();return {stale:true};}}
           try{ rescueStash(k, r&&r.value, v); }catch(_){}
           if(!ownerCurrent()){ownerStale();return {stale:true};}
           /* expectedLoc이 있는 pull/병합은 get→set 두 transaction으로 나누지 않는다.
@@ -9451,7 +9457,7 @@ function boot(){
       /* storage 이벤트는 과거 값을 들고 큐에서 기다릴 수 있다. 현재 거울이 이미 다른
          값이면 그 이벤트로 IDB를 되돌리지 않는다(복구 직후 stale overwrite 차단). */
       if(!drop&&nowValue!==newValue)drop='value-stale';
-      if(drop){try{syncDiagnostic('edit-idb-mirror-drop',new Error(drop+':'+String(key)));}catch(_){}return {drop:1,reason:drop};}
+      if(drop){try{var dropped=new Error('stale storage event');dropped.psCode=drop;syncDiagnostic('edit-idb-mirror-drop',dropped);}catch(_){}return {drop:1,reason:drop};}
       return {ok:1};
     }
     function discardStaleEvent(wrote,fenced){
