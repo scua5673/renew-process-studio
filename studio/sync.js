@@ -57,7 +57,8 @@ var KEY_LABEL={
   /* 1.573 — 1.540에서 후보를 별도 키로 가르면서 이름을 안 넣어, 하필 8월 5일에 날아간 바로 그 자료가
      되돌리기 창에 'cs_scout_targets_v1' 이라는 날것 키로 찍히고 있었다. */
   'cs_scout_targets_v1':'스카우팅 후보',
-  'cs_assign_v1':'경기 담당'
+  'cs_assign_v1':'경기 담당',
+  'cs_board_live_v1':'작업 중인 작전판'
 };
 function keyLabel(k){
   if(k&&k.indexOf('cs_idp_pub_v1_')===0)return '코치 피드백';
@@ -68,6 +69,9 @@ function keyLabel(k){
   return KEY_LABEL[k]||k;
 }
 function skippedList(){ try{ return JSON.parse(localStorage.getItem(SKIPKEY)||'[]')||[]; }catch(_){ return []; } }
+function boardLivePulled(raw){
+  try{ window.dispatchEvent(new CustomEvent('ps-board-live-pulled',{detail:{raw:raw||''}})); }catch(_){}
+}
 /* ── 동기화 충돌 ──
    양쪽이 같은 자료를 고치면 내 것을 밀어 넣고 서버 것을 ps_sync_conflict_<키>에 남긴다.
    그동안 그 사본을 읽는 코드가 없어서, 다른 코치의 작업이 조용히 사라졌다.
@@ -314,7 +318,7 @@ function syncMaxLen(k){return k==='process_coach_v1'?SCHEDULE_MAXLEN:MAXLEN;}
 /* 동기화 대상 = 사용자 콘텐츠. 기기별 선호(토큰 크기·힌트·라이브 작업본)는 제외.
    보관함(cs_drill_lib_v1)은 여기 없음 — ps_library 테이블에 항목 단위로 동기화(아래 syncLibrary) */
 /* training_session_cur_v1(편집 중 초안)은 여기서 뺐다 — 작업 버퍼라 팀에 전파하면 서로 튕긴다.
-   (작전판 작업본 cs_board_live_v1이 원래 빠져 있던 것과 같은 이유) */
+   cs_board_live_v1은 PSSync.boardLive 전용 통로가 Supabase를 직접 읽고 쓴다. */
 var KEYS=[
   'cs_vault_folders_v1','cs_vault_folder_tags_v1','cs_vault_folder_meta_v1',
   'process_coach_v1','cs_themes_v1','cs_team_v1',
@@ -2981,6 +2985,14 @@ function rtPing(rec){
   var k=rec&&rec.k, c=+(rec&&rec.cupd)||0; if(!k)return;
   rtLast=Date.now(); rtHits++;
   try{ var m=meta(); if(m.c&&m.c[k]===c)return; }catch(_){}   /* 내가 올린 것 */
+  if(k==='cs_board_live_v1'){
+    clearTimeout(rtTimer);
+    rtTimer=setTimeout(function(){
+      if(!dataUnlocked()||navigator.onLine===false)return;
+      try{ boardLiveGet().then(function(r){ if(r&&r.raw)boardLivePulled(r.raw); }); }catch(_){}
+    },1200);
+    return;
+  }
   clearTimeout(rtTimer); rtTimer=setTimeout(function(){ if(!dataUnlocked()||navigator.onLine===false)return; syncNow('realtime'); },1200);
 }
 try{ window.addEventListener('online',function(){ setTimeout(rtConnect,500); }); }catch(_){}
@@ -5108,6 +5120,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
             if(localStorage.getItem(k)!==v)throw syncIssue('sync_storage','scout_mirror_write','선수 자료의 화면 저장을 확인할 수 없습니다');
           }else try{ if(k==='cs_perms_v1'||localStorage.getItem(k)!==null) localStorage.setItem(k,v); }catch(_){}
           if(k==='cs_perms_v1')permsCacheSet(v,rpcContext());
+          if(k==='cs_board_live_v1')boardLivePulled(v);
           return {stale:false};
         });})
     );
@@ -5124,6 +5137,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
     /* 2.463 — 방금 받은 남의 IDP 문서라면 사진 바이트를 큰 저장소로 옮긴다(pull 전용이라
        서버·다른 기기 영향 없음, storage.js stripIdp 참조). 비동기 뒷처리 — 회차 판정과 무관. */
     if(__ok&&!(writeGuard&&writeGuard.skipIdpStrip))try{ if(window.PSImg&&PSImg.stripIdp)PSImg.stripIdp(k); }catch(_){}
+    if(__ok&&k==='cs_board_live_v1')boardLivePulled(v);
     return __ok; }catch(_){ return false; }
 }
 function libLoad(){
@@ -7906,7 +7920,11 @@ function switchWorkspaceCore(wid, skipSave){
        방금 비운 자료를 이전 팀 값으로 되살려 새 팀 서버로 올리는 경합 —
        어차피 끝에 reload 하므로 프레임을 먼저 내린다. unload 계열 저장이 남긴 값은
        뒤이은 비우기가 지우도록 잠깐 기다린 뒤 진행한다. */
-    staleStop();   /* 2.338 — 마지막 문턱. 이 아래(프레임 내리기~리로드)는 끝까지 간다 */
+    try{ window.dispatchEvent(new CustomEvent('ps-before-workspace-switch',{detail:{from:from,to:wid}})); }catch(_){}
+    return withTimeout((window.__psFlushBoardLive?window.__psFlushBoardLive():Promise.resolve(null)),2500).then(function(){
+      staleStop();   /* 2.338 — 마지막 문턱. 이 아래(프레임 내리기~리로드)는 끝까지 간다 */
+    });
+  }).then(function(){
     wipeStarted=true; switchWiping=true; clearTimeout(overlayGuard);
     try{ [].forEach.call(document.querySelectorAll('.frames iframe'),function(f){ try{ f.src='about:blank'; }catch(_){} }); }catch(_){}
     return sleep(350);
@@ -9702,8 +9720,47 @@ function reportSharedView(body,stillVisible){
   }).catch(function(){return false;});
 }
 
+var BOARD_LIVE_KEY='cs_board_live_v1';
+function boardLiveContext(){
+  try{ var s=getSess(),wid=String(activeWs()||''); if(!s||!s.uid||!wid||!dataUnlocked())return null;
+    return {uid:String(s.uid),wid:wid,seal:String(localStorage.getItem(OWNERKEY)||''),epoch:signOutEpoch};
+  }catch(_){ return null; }
+}
+function boardLiveCurrent(ctx){
+  try{ var s=getSess(),seal=String(localStorage.getItem(OWNERKEY)||'');
+    return !!ctx&&dataUnlocked()&&s&&String(s.uid||'')===ctx.uid&&String(activeWs()||'')===ctx.wid&&seal===ctx.seal&&signOutEpoch===ctx.epoch;
+  }catch(_){return false;}
+}
+function boardLiveGet(){
+  var ctx=boardLiveContext(); if(!ctx)return Promise.resolve(null);
+  return ensureToken().then(function(at){
+    if(!at||!boardLiveCurrent(ctx))return null;
+    return kvPullValues(at,ctx.wid,[BOARD_LIVE_KEY]).then(function(rows){
+      if(!boardLiveCurrent(ctx))return null;
+      var r=(rows||[]).filter(function(x){return x&&x.k===BOARD_LIVE_KEY&&typeof x.v==='string';})[0];
+      return r?{raw:r.v,cupd:r.cupd||0}:null;
+    });
+  }).catch(function(e){syncDiagnostic('board-live-get',e);return null;});
+}
+function boardLiveSave(raw){
+  raw=String(raw||'');
+  var ctx=boardLiveContext(); if(!ctx||!raw)return Promise.resolve(false);
+  return ensureToken().then(function(at){
+    if(!at||!boardLiveCurrent(ctx))return false;
+    var now=Date.now(), row={workspace_id:ctx.wid,k:BOARD_LIVE_KEY,v:raw,cupd:now}, ok=false;
+    return kvPushRows(at,[row],function(){ok=true;},'board_live_push',function(){return boardLiveCurrent(ctx);}).then(function(){
+      if(!ok||!boardLiveCurrent(ctx))return false;
+      var m=meta();m.h=m.h||{};m.c=m.c||{};m.n=m.n||{};
+      m.h[BOARD_LIVE_KEY]=hash(raw);m.c[BOARD_LIVE_KEY]=now;nSet(m,BOARD_LIVE_KEY,raw);m.last=Date.now();setMetaExact(m);
+      boardLivePulled(raw);
+      return true;
+    });
+  }).catch(function(e){syncDiagnostic('board-live-save',e);return false;});
+}
+
 window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dataUnlocked:dataUnlocked,keys:KEYS,state:syncState,   /* 2.625 상태 한 줄 */
   reportSharedView:reportSharedView,
+  boardLive:{get:boardLiveGet,save:boardLiveSave},
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */
   rosterReady:function(wid){return rosterReady(wid||activeWs());},
   scheduleEdit:{set:scheduleEditSet,touch:scheduleEditTouch,active:scheduleHeld},

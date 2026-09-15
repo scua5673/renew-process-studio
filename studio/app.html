@@ -2205,6 +2205,12 @@ function psShowUpdBand(){
       if('headline' in d){ try{ psTeamMotto(d.headline); }catch(_){} }
     },false); }catch(_){}
     try{ window.addEventListener('storage',function(e){ if(e&&e.key==='scout_tool_v1'){ try{applyWorkspaceShell();}catch(_){} } }); }catch(_){}
+    try{ window.addEventListener('storage',function(e){ if(e&&e.key==='ps_board_live_rev'){ try{
+      if(window.PSSync&&PSSync.boardLive&&PSSync.boardLive.get)PSSync.boardLive.get().then(function(r){ if(r&&r.raw)window.dispatchEvent(new CustomEvent('ps-board-live-pulled',{detail:{raw:r.raw}})); });
+    }catch(_){} } }); }catch(_){}
+    try{ window.addEventListener('ps-board-live-pulled',function(){ try{ if(fBoard&&fBoard.contentWindow)fBoard.contentWindow.postMessage({source:'app',type:'boardLivePulled'},location.origin); }catch(_){} }); }catch(_){}
+    window.__psFlushBoardLive=function(){ try{ if(fBoard&&fBoard.contentWindow&&fBoard.contentWindow.__boardFlushLive)return Promise.resolve(fBoard.contentWindow.__boardFlushLive()); }catch(_){} return Promise.resolve(null); };
+    try{ window.addEventListener('ps-before-workspace-switch',function(){ try{ window.__psFlushBoardLive(); }catch(_){} }); }catch(_){}
     document.body.classList.add('ps-space-personal');
     var shellTry=0,shellTimer=setInterval(function(){
       shellTry++;
@@ -2361,6 +2367,7 @@ function psShowUpdBand(){
       if(d.source==='board' && d.type==='toggleSide'){ try{ window.__psSideFold&&window.__psSideFold('toggle'); }catch(_){} return; }   /* 2.704 — 보드 안에서 ⌘\ */
       if(d.source==='board' && d.type==='boardSettingsState'){ if(d.open){ try{ if(window.__psCloseAppSettings)window.__psCloseAppSettings(); }catch(_){} } return; }   /* 2.700 — 보드 설정이 열리면 앱 설정은 닫는다(둘 중 하나만) */
       if(d.source==='board' && d.type==='editorState'){ document.body.classList.toggle('ps-editor-open',!!d.open); return; }   /* 2.698 — 편집기(훈련 세션 만들기 등)가 열리면 오른쪽 위 동기화 글씨를 숨긴다(사용자 "저장하기와 겹친다") */
+      if(d.source==='board' && d.type==='boardLiveSaved'){ try{ localStorage.setItem('ps_board_live_rev',String(Date.now())); }catch(_){} return; }
       if((d.source==='process'||d.source==='scout'||d.source==='playbook') && d.type==='openDrillEditor'){   /* 2.312 — 콕핏에서도 보관함 훈련을 바로 연다 · 2.580 플레이북에서 열면 저장·취소 뒤 플레이북으로 돌아온다 */ captureReq=(d.source==='playbook')?'playbook':'process'; showApp('design'); var _ed=d; setTimeout(function(){try{ if(_ed.readonly){ if(fBoard.contentWindow.__openScheduleDrillView)fBoard.contentWindow.__openScheduleDrillView({libId:_ed.libId,name:_ed.name,snap:_ed.snap}); else fBoard.contentWindow.__openScheduleDrillEdit&&fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); }   /* 2.669 — 지난 날은 보기 전용 */ else if(_ed.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); } else if(_ed.wizard){ fBoard.contentWindow.__openSessionWizard && fBoard.contentWindow.__openSessionWizard({date:_ed.date||'',roster:_ed.roster||null}); }   /* 2.698 — 출석 그 날 카드에서 온 «훈련 세션 만들기»: 날짜·인원 프리셋 */ else { try{ fBoard.contentWindow.__psPreselectPhases=(Array.isArray(_ed.gmPhases)&&_ed.gmPhases.length)?_ed.gmPhases.slice():null; }catch(_){}   /* 1.958 — 보강 추천에서 온 국면 프리셀렉트 */ fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); } }catch(_){}},80); return; }
       if(d.source==='process' && d.type==='openBoard'){
         captureReq='process';

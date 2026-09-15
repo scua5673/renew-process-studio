@@ -6990,6 +6990,7 @@ const EDRAFT_KEY="cs_editor_draft_v1";
 const EWORK_KEY="cs_editor_work_v1";
 let matchActive=false;
 let _bliveT=null;
+let _bliveSaveSeq=0,_bliveToastAt=0,_bliveDirty=false;
 /* 보관함 작전판은 같은 캔버스를 빌려 쓴다. 첫 진입의 작업 맥락을 한 번만
    보관하고 항목을 바꿔 열어도 바깥 보드·장면·페이지·실행 취소를 교체하지 않는다. */
 var _vaultBoardContext=null, _vaultBoardGeneration=0, _vaultBoardRestoring=false, _liveBoardAnimOpen=null;
@@ -7047,6 +7048,7 @@ function autoSaveAnimFrame(){try{var __ab=document.getElementById("animBar");if(
 function _boardLiveWriteNow(recovery){
   if(_vaultBoardContext||_vaultBoardRestoring)return null;
   if(window.__capLock)return null;
+  if(recovery&&!_bliveDirty)return null;
   /* 1.962 — 훈련 편집기가 열려 있는 동안은 라이브 보드를 쓰지 않는다(사용자: 업데이트하면 피치가 자꾸 바뀜).
      편집기는 보드 자리에 자기 장면·'훈련' 피치를 올려 두는데, 그때 captureSnap() 이 편집기 화면을 '내 보드'로 저장했고,
      새로고침(업데이트)·탭 숨김 때 그 저장본으로 부팅해 피치가 흰 훈련 격자로 바뀌었다. 편집기 진입 직전에 한 번 확정 저장(openEditor)하고, 편집 중엔 건너뛴다.
@@ -7102,9 +7104,37 @@ function _boardLiveWriteNow(recovery){
       if(raw.length<=900000)localStorage.setItem(BRECV_KEY,raw);
     }catch(_){}
   }
-  try{store.set(BLIVE_KEY,payload);}catch(_){}
-  try{if((_bv==="board"||_bv==="match")&&!window.__vaultEdit)store.set(BSNAP_KEY[_bv],_bs);}catch(_){}
-  return payload;
+  var rawPayload="";try{rawPayload=JSON.stringify(payload);}catch(_){}
+  var _seq=++_bliveSaveSeq;
+  function _done(ok,localOnly){
+    if(ok){
+      if(_seq===_bliveSaveSeq)_bliveDirty=false;
+      if(!localOnly)try{parent.postMessage({source:"board",type:"boardLiveSaved"},"*");}catch(_){}
+      if(recovery||_seq!==_bliveSaveSeq)return;
+      var _now=Date.now(); if(_now-_bliveToastAt<1200)return; _bliveToastAt=_now;
+      try{toast(localOnly?"이 기기에 자동 저장됨":"자동 저장됨");}catch(_){}
+    }else if(!recovery){
+      try{toast("자동 저장 실패 — 이 기기에 임시 보관");}catch(_){}
+    }
+  }
+  var _savePromise=null;
+  try{
+    var cloud=null,cloudReady=false;try{
+      cloud=parent&&parent.PSSync&&parent.PSSync.boardLive&&parent.PSSync.boardLive.save;
+      cloudReady=!!(cloud&&parent.PSSync.session&&parent.PSSync.session()&&parent.PSSync.dataUnlocked&&parent.PSSync.dataUnlocked());
+    }catch(_){cloudReady=false;}
+    if(cloudReady&&rawPayload){
+      _savePromise=Promise.resolve(cloud(rawPayload)).then(function(ok){
+        if(ok){_done(true);return;}
+        try{return store.set(BLIVE_KEY,payload).then(function(){_done(false);return false;});}catch(_){_done(false);return false;}
+      },function(){try{return store.set(BLIVE_KEY,payload).then(function(){_done(false);return false;});}catch(_){_done(false);return false;}});
+    }else{
+      var _p=store.set(BLIVE_KEY,payload);
+      _savePromise=(_p&&_p.then)?_p.then(function(){_done(true,true);return true;},function(){_done(false);return false;}):Promise.resolve(true);
+    }
+  }catch(_){_savePromise=Promise.resolve(false);}
+  if(recovery)try{if((_bv==="board"||_bv==="match")&&!window.__vaultEdit)store.set(BSNAP_KEY[_bv],_bs);}catch(_){}
+  return _savePromise||Promise.resolve(!!payload);
 }
 function boardSaveLive(){
   if(_vaultBoardContext||_vaultBoardRestoring)return;
@@ -7121,8 +7151,9 @@ function boardSaveLive(){
     try{window.__viewSnaps=window.__viewSnaps||{};window.__viewSnaps[v]=captureSnap();}catch(_){}
   }
   if(typeof animPlaying!=="undefined"&&animPlaying)return;
+  _bliveDirty=true;
   try{clearTimeout(_bliveT);}catch(_){}
-  _bliveT=setTimeout(function(){_bliveT=null;_boardLiveWriteNow(false);},400);
+  _bliveT=setTimeout(function(){_bliveT=null;_boardLiveWriteNow(false);},2000);
 }
 function restoreAnimBeforeCapture(){
   /* 상황 미리보기는 anim.frames 자체를 임시 배열로 바꾼다. pagehide·수동 저장이
@@ -7150,11 +7181,24 @@ async function restoreLiveBoard(){try{
      IndexedDB의 마지막 개인 작전판을 비동기로 불러와 게시물을 덮어쓰지 않는다. */
   try{if(new URLSearchParams(location.search).get("community_view")==="1")return;}catch(_){}
   try{ localStorage.removeItem("cs_board_pin_v1"); }catch(_){}   /* 구버전 '첫화면 고정' 기능 제거 — 남은 키 정리 */
-  var _liveRaw=await store.get(BLIVE_KEY);var live=_liveRaw||{};
+  var _liveRaw=null, live=null, _liveAt=0, _cloudReady=false;
+  try{ var cloudGet=parent&&parent.PSSync&&parent.PSSync.boardLive&&parent.PSSync.boardLive.get;
+    _cloudReady=!!(cloudGet&&parent.PSSync.session&&parent.PSSync.session()&&parent.PSSync.dataUnlocked&&parent.PSSync.dataUnlocked());
+    if(_cloudReady){ var srv=await cloudGet(); if(srv&&srv.raw){ _liveRaw=srv.raw; live=JSON.parse(srv.raw); _liveAt=+(live&&live._savedAt)||+(srv&&srv.cupd)||0; } }
+  }catch(_){ _liveRaw=null; live=null; }
+  var _localLive=null,_localAt=0;try{_localLive=await store.get(BLIVE_KEY);_localAt=+(_localLive&&_localLive._savedAt)||0;}catch(_){}
+  if(_localLive&&(!live||(_localAt&&_localAt>_liveAt))){
+    live=_localLive;_liveRaw=null;_liveAt=_localAt;
+    if(_cloudReady&&_localAt)try{
+      var cloudSave=parent&&parent.PSSync&&parent.PSSync.boardLive&&parent.PSSync.boardLive.save;
+      if(cloudSave)cloudSave(JSON.stringify(_localLive));
+    }catch(_){}
+  }
+  if(!live){ live={}; }
   var _rec=null;try{_rec=JSON.parse(localStorage.getItem(BRECV_KEY)||"null");}catch(_){}
-  if(_rec&&(!_liveRaw||(+_rec._savedAt||0)>=(+_liveRaw._savedAt||0))){
+  if(_rec&&(!_liveAt||(+_rec._savedAt||0)>=_liveAt)){
     live=_rec;
-    try{await store.set(BLIVE_KEY,_rec);localStorage.removeItem(BRECV_KEY);}catch(_){}
+    try{localStorage.removeItem(BRECV_KEY);}catch(_){}
   }else if(_rec){try{localStorage.removeItem(BRECV_KEY);}catch(_){}}
   var sm=await store.get(BSNAP_KEY.match);var sb=await store.get(BSNAP_KEY.board);
   /* 라이브 레코드는 스냅과 메타가 한 번에 저장된다. 별도 스냅 쓰기보다 최신이면 이를 우선한다. */
@@ -7185,6 +7229,21 @@ async function restoreLiveBoard(){try{
     /* 2.290 — 1.911 이 첫 진입에 '실사 잔디'를 켰지만 기본은 네이비로 바꿨다(사용자). 15존 그리드만 남긴다 */
   } }catch(_){}
   }catch(_){}}
+function boardApplyServerLive(){
+  try{
+    if(_bliveDirty||_bliveT)return false;
+    if(window.__capLock||_vaultBoardContext||_vaultBoardRestoring||window.__vaultEdit||document.body.classList.contains("editing")||document.body.classList.contains("meet-mode"))return false;
+    return Promise.resolve(restoreLiveBoard()).then(function(){
+      try{renderTokens();renderDrawings();updateDelUI();}catch(_){}
+      try{toast("팀 보드 최신본 반영");}catch(_){}
+      return true;
+    },function(){return false;});
+  }catch(_){return false;}
+}
+try{window.addEventListener("message",function(e){
+  var d=e&&e.data||{};
+  if(d&&d.source==="app"&&d.type==="boardLivePulled")boardApplyServerLive();
+});}catch(_){}
 /* 배치 저장·배치 라이브러리 제거 — 저장은 보관함으로 일원화 (tactics_plays_v1 데이터는 건드리지 않음) */
 
 /* 세로 운동장은 #world가 90° 회전하지만 각 레이어 getBBox()는 회전 전 좌표를 돌려준다.
