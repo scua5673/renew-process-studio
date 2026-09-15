@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-roster-server-confirmation',date:'2026-09-15',title:'선수 삭제와 저장 확인을 보강했습니다',
+    changes:[
+      '선수단에서 삭제한 기록을 보존하는 처리를 보강했습니다.',
+      '선수 변경은 서버에 저장된 내용까지 확인한 뒤 저장 완료로 표시합니다.',
+      '삭제 확인 중 계정·팀이나 선수 정보가 달라지면 이전 요청을 적용하지 않습니다.'
+    ]
+  },{
     id:'2026-09-15-roster-save-coordination',date:'2026-09-15',title:'선수단 저장 안정성을 높였습니다',
     changes:[
       '선수별 저장은 실제로 수정한 선수만 반영하도록 정리했습니다.',

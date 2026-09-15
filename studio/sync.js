@@ -2771,10 +2771,13 @@ function bulkPush(){
       if(!rows.length)return {ok:1,n:0,total:0};
       /* kvPushRows는 일정·스카우팅 그림을 blob 참조로 바꾸며 rows를 in-place 변경한다.
          서버로 보낼 wire 본과 이 기기의 full 원문 기준본을 분리해 로컬이 즉시 dirty로 오판되지 않게 한다. */
-      var commitRows=rows.map(function(r){return {workspace_id:r.workspace_id,k:r.k,v:r.v,cupd:r.cupd};}),confirmedKeys={};
-      return kvPushRows(at,rows,function(ch){(ch||[]).forEach(function(r){confirmedKeys[r.k]=1;});},'bulk_push',bulkOwnerCurrent).then(function(){
+      var commitRows=rows.map(function(r){return {workspace_id:r.workspace_id,k:r.k,v:r.v,cupd:r.cupd};}),confirmedVersions={};
+      return kvPushRows(at,rows,function(ch){(ch||[]).forEach(function(r){confirmedVersions[r.k]=r.cupd;});},'bulk_push',bulkOwnerCurrent).then(function(){
         requireBulkOwner('bulk_push_server_done');
-        var confirmedRows=commitRows.filter(function(r){return !!confirmedKeys[r.k];});
+        var confirmedRows=commitRows.filter(function(r){return Object.prototype.hasOwnProperty.call(confirmedVersions,r.k);});
+        // Keep the full local body, but commit the version that the exact
+        // server acknowledgement returned, including an idempotent retry.
+        confirmedRows.forEach(function(r){r.cupd=confirmedVersions[r.k];});
         return Promise.all(confirmedRows.map(function(r){return syncBaseSet(r.k,r.v,wid);})).then(function(){
           requireBulkOwner('bulk_push_base_done');
           /* 다른 탭이 그새 확정한 meta 형제를 보존하고 이 작업이 올린 키만 최신본에 합친다. */
@@ -3149,6 +3152,10 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
   label=label||'kv_push';
   if(!rows||!rows.length) return Promise.resolve();
   function ready(stage){if(typeof preflight!=='function'||preflight())return true;throw syncIssue('sync_workspace_changed',stage||label,'동기화 중 작업 공간이 바뀌었습니다');}
+  // Roster copies have server guards that can retain or transform the body.
+  // A matching timestamp alone is not proof that the player's edit was saved.
+  function exactBody(k){return k.indexOf('sq:')===0||['scout_tool_v1','cs_squad_v1','cs_team_attrs_v1','cs_player_del_v1'].indexOf(k)>=0;}
+  function columns(ch){return 'workspace_id,k,cupd'+(ch.some(function(r){return exactBody(r.k);})?',v':'');}
   var plain=rows.filter(function(r){return r._casCupd==null&&!r._casMissing;}),cas=rows.filter(function(r){return r._casCupd!=null||r._casMissing;});
   var chunks=[],cur=[],sz=0;
   plain.forEach(function(r0){
@@ -3157,28 +3164,37 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
     cur.push(r0); sz+=l;
   });
   if(cur.length)chunks.push(cur);
-  /* 2.599 — 확인 응답에서 v 를 돌려받지 않는다(올린 만큼 다시 내려받아 이그레스가 2배였다 — 실측 30일 일정 503MB·스카우트 415MB).
+  /* 2.599 — 일반 키의 확인 응답에서는 v 를 돌려받지 않는다(올린 만큼 다시 내려받아 이그레스가 2배였다 — 실측 30일 일정 503MB·스카우트 415MB).
      select=workspace_id,k,cupd 만 받고 cupd 로 대조한다: 가드가 거부하면 old.v 와 함께 old.cupd 를 돌리므로 cupd 가 다르다.
-     단 «같은 원문 재전송»(응답 유실 뒤 재시도)도 가드가 old.cupd 를 유지하므로, cupd 가 다른 키만 v 를 다시 읽어 진짜 거부인지 가른다(드문 경로). */
+     단 «같은 원문 재전송»(응답 유실 뒤 재시도)도 가드가 old.cupd 를 유지하므로, cupd 가 다른 키만 v 를 다시 읽어 진짜 거부인지 가른다(드문 경로).
+     2.826 — 선수 관련 키는 본문까지 한 응답으로 받아 대조한다. 반환이 불완전하면 정확한 원문·판본을 다시 확인한다. */
   function confirmed(ch,got){
     ready(label+'_confirm');
     if(!Array.isArray(got))throw syncIssue('sync_confirm_missing',label,'server confirmation missing');
+    var versions=new Map();
+    function exactMatch(req,found){
+      var matches=found.filter(function(row){return String(row.workspace_id||'')===String(req.workspace_id||'')&&row.k===req.k;});
+      if(matches.length!==1)return false;
+      var row=matches[0],version=Number(row.cupd);
+      if(typeof row.v!=='string'||row.v!==req.v||(typeof row.cupd!=='number'&&typeof row.cupd!=='string')||!Number.isSafeInteger(version)||version<=0)return false;
+      versions.set(req,version);return true;
+    }
     function finish(bad){
       ready(label+'_finish');
       if(bad.length){var e=syncIssue('sync_server_rejected',label,'server rejected');e.psRejectedKeys=bad.map(function(x){return x.k;});throw e;}
-      ch.forEach(function(req){try{holdClear(req.k);importApprovalClear(req.k);}catch(_){}});
+      ch.forEach(function(req){if(exactBody(req.k))req.cupd=versions.get(req);try{holdClear(req.k);importApprovalClear(req.k);}catch(_){}});
       if(onOk)onOk(ch);return got;
     }
-    var doubt=ch.filter(function(req){return !got.some(function(row){
+    var doubt=ch.filter(function(req){if(exactBody(req.k))return !exactMatch(req,got);return !got.some(function(row){
       return String(row.workspace_id||'')===String(req.workspace_id||'')&&row.k===req.k&&Number(row.cupd)===Number(req.cupd);
     });});
     if(!doubt.length)return Promise.resolve().then(function(){return finish([]);});
     var byWs={}; doubt.forEach(function(req){ (byWs[req.workspace_id]=byWs[req.workspace_id]||[]).push(req); });
     return Promise.all(Object.keys(byWs).map(function(w0){
       var reqs=byWs[w0];
-      return syncFetch(label+'_verify',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(w0)+'&'+kvInFilter(reqs.map(function(x){return x.k;}))+'&select=k,v',{headers:hj(at)})
+      return syncFetch(label+'_verify',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(w0)+'&'+kvInFilter(reqs.map(function(x){return x.k;}))+'&select=workspace_id,k,v,cupd',{headers:hj(at)})
         .then(function(r){ if(!r.ok)throw syncHttpError(label+'_verify',r.status); return r.json(); })
-        .then(function(rows){ var sv={}; (rows||[]).forEach(function(x){sv[x.k]=x.v;}); return reqs.filter(function(req){ return sv[req.k]!==req.v; }); });
+        .then(function(rows){ if(!Array.isArray(rows))throw syncIssue('sync_confirm_missing',label+'_verify','server confirmation missing');var sv={};rows.forEach(function(x){sv[x.k]=x.v;});return reqs.filter(function(req){return exactBody(req.k)?!exactMatch(req,rows):sv[req.k]!==req.v;}); });
     })).then(function(parts){ return finish([].concat.apply([],parts)); });
   }
   /* 2.604 — 청크(최대 15행)가 403 이면 어느 키가 막혔는지 모른 채 회차 전체가 실패하고 다음 회차에 그대로 반복됐다.
@@ -3188,7 +3204,7 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
     try{ syncDiagnostic('push-403-key',new Error(String(k))); }catch(_){} }
   function postChunk(ch){
     ready(label+'_post');
-    return syncFetch(label,BASE+'/rest/v1/ps_kv?select=workspace_id,k,cupd',{method:'POST',
+    return syncFetch(label,BASE+'/rest/v1/ps_kv?select='+columns(ch),{method:'POST',
         headers:(function(){var h=hj(at);h['Prefer']=prefBuild('resolution=merge-duplicates,return=representation');return h;})(),
         body:JSON.stringify(ch)});
   }
@@ -3241,8 +3257,8 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
       if(!Number.isSafeInteger(previous)||previous<0||!Number.isSafeInteger(next)||next<=previous)throw syncIssue('sync_confirm_missing',label+'_version','서버 판본을 안전하게 갱신할 수 없습니다');
       req.cupd=next;
     }
-    var missing=!!req._casMissing,url=BASE+'/rest/v1/ps_kv?select=workspace_id,k,cupd',method='POST',body={workspace_id:req.workspace_id,k:req.k,v:req.v,cupd:req.cupd};
-    if(!missing){method='PATCH';url=BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(req.workspace_id)+'&k=eq.'+encodeURIComponent(req.k)+'&cupd=eq.'+encodeURIComponent(req._casCupd)+'&select=workspace_id,k,cupd';body={v:req.v,cupd:req.cupd};}
+    var missing=!!req._casMissing,url=BASE+'/rest/v1/ps_kv?select='+columns([req]),method='POST',body={workspace_id:req.workspace_id,k:req.k,v:req.v,cupd:req.cupd};
+    if(!missing){method='PATCH';url=BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(req.workspace_id)+'&k=eq.'+encodeURIComponent(req.k)+'&cupd=eq.'+encodeURIComponent(req._casCupd)+'&select='+columns([req]);body={v:req.v,cupd:req.cupd};}
     var h=hj(at);h['Prefer']=prefBuild((missing?'resolution=ignore-duplicates,':'')+'return=representation');
     return syncFetch(label+'_cas',url,{method:method,headers:h,body:JSON.stringify(body)}).then(function(r){
       ready(label+'_cas_response');
