@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-15-participation-history',date:'2026-09-15',title:'날짜별 참여 기록과 선수별 누적 현황',
+    changes:[
+      '참여 화면에서 날짜를 누르면 그날 선수 명단과 기록을 확인하고 수정할 수 있습니다.',
+      '선수별로 운동한 날과 쉰 날, 부상·재활 일수를 한눈에 확인합니다.',
+      '오늘 부상으로 바꾼 상태는 복귀 전까지 주말을 포함해 누적하며, 지난 날짜의 정정은 그날에만 반영합니다.'
+    ]
+  },{
     id:'2026-09-15-automatic-save',date:'2026-09-15',title:'자동 저장과 기기 간 자료 맞추기 개선',
     changes:[
       '저장 중·저장됨 상태를 화면에서 간단히 확인합니다.',

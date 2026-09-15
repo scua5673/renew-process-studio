@@ -123,10 +123,10 @@
   /* sync 회차의 팀/계정이 IDB write 도중 바뀐 경우에만 쓰는 exact 정리.
      get→del을 두 transaction으로 나누면 그 사이 새 팀 저장까지 지울 수 있으므로,
      같은 readwrite transaction 안에서 방금 쓴 원문과 정확히 같을 때만 지운다. */
-  function idbDelIfValue(k,expected){
-    return open().then(function(db){return new Promise(function(res,rej){
+  function idbDelIfValue(k,expected,current){
+    return open().then(function(db){if(current)current();return new Promise(function(res,rej){
       var removed=false,t=db.transaction(STORE,'readwrite'),s=t.objectStore(STORE),r=s.get(k);
-      r.onsuccess=function(){if(r.result===expected){s.delete(k);removed=true;}};
+      r.onsuccess=function(){try{if(current)current();if(r.result===expected){s.delete(k);removed=true;}}catch(e){try{t.abort();}catch(_){}rej(e);}};
       t.oncomplete=function(){res(removed);};t.onerror=function(){rej(t.error);};t.onabort=function(){rej(t.error);};
     });});
   }
@@ -452,7 +452,7 @@
     },
     set:function(k,v,current){return afterMigrate(function(){if(current)current();return idbSet(k,v,current);});},
     del:function(k,current){ return afterMigrate(function(){ if(current)current();return idbDel(k,current); }); },
-    delIfValue:function(k,v){ return afterMigrate(function(){ return idbDelIfValue(k,v); }); },
+    delIfValue:function(k,v,current){ return afterMigrate(function(){ if(current)current();return idbDelIfValue(k,v,current); }); },
     replaceIfValue:function(k,expected,replacement){ return afterMigrate(function(){ return idbReplaceIfValue(k,expected,replacement); }); },
     keys:function(prefix){ return afterMigrate(function(){ return idbKeys(prefix); }); }
   };

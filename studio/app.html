@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.817"></script>
+<script src="autosave-status.js?v=2.821"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -502,7 +502,7 @@ body.fmdark .gd-body .tip{background:rgba(217,161,90,.14);border-color:#5C4A2A;c
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.821';</script>
+<script>window.PS_BUILD='2.822';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1276,7 +1276,7 @@ function psShowUpdBand(){
       <button data-team-key="today" data-app="scout" data-team-view="home">오늘</button>
       <button data-team-key="training" data-app="process" data-process-mode="week">일정</button>
       <button data-team-key="match" data-app="scout" data-team-view="match">경기</button>
-      <button data-team-key="avail" data-app="scout" data-team-view="avail">출석</button>
+      <button data-team-key="avail" data-app="scout" data-team-view="avail">참여</button>
       <button data-team-key="idp" data-app="idp" data-idp-squad="1">IDP</button>
       <button data-team-key="players" data-app="scout" data-team-view="team">선수단</button>
       <button data-team-key="scouting" data-app="scout" data-team-view="players">스카우팅</button>
@@ -1297,7 +1297,7 @@ function psShowUpdBand(){
   </nav>
   <div class="team-more" id="teamMoreSheet" hidden>
     <div class="tms-h"><b>더보기</b><button type="button" data-tb="close" aria-label="닫기">×</button></div>
-    <div class="tms-g"><i>팀</i><button type="button" data-tb="avail">출석</button><button type="button" data-tb="idp">IDP</button><button type="button" data-tb="attrs">평가표</button><button type="button" data-tb="playbook">플레이북</button></div><!-- 2.581 — 기준 → 평가표·플레이북(게임모델·공용어는 플레이북 서브탭) -->
+    <div class="tms-g"><i>팀</i><button type="button" data-tb="avail">참여</button><button type="button" data-tb="idp">IDP</button><button type="button" data-tb="attrs">평가표</button><button type="button" data-tb="playbook">플레이북</button></div><!-- 2.581 — 기준 → 평가표·플레이북(게임모델·공용어는 플레이북 서브탭) -->
     <div class="tms-g"><i>앱</i><button type="button" data-tb-app="board">보드</button><button type="button" data-tb-app="design">보관함</button><button type="button" data-tb-app="idp">내 IDP</button><button type="button" data-tb-app="learning">학습</button><button type="button" data-tb-app="community">커뮤니티</button></div>
   </div>
   <style id="ps-2180-nav">/* 2.180 — 보관함 버튼 숨김(사용자: 훈련과 겹침). 보관함 화면은 '훈련' 버튼이 연다 */
@@ -5074,7 +5074,7 @@ window.__buildScoutForm=function(k){
 <section id="gd-ko4"><h2><span class="n">4</span>팀 운영</h2>
 <p class="lead">오늘 할 일부터 경기 준비와 리뷰까지 팀 메뉴에서 이어갑니다.</p>
 <ul>
-<li><b>오늘 · 경기 · 출석</b> — 일정과 해야 할 일을 확인하고, 경기 준비·기록·리뷰 및 참가 상태를 관리합니다.</li>
+<li><b>오늘 · 경기 · 참여</b> — 일정과 해야 할 일을 확인하고, 경기 준비·기록·리뷰 및 참가 상태를 관리합니다.</li>
 <li><b>선수단 · 스카우팅 · 평가표</b> — 선수 정보와 관찰 기록을 모으고 평가 기준을 정합니다.</li>
 <li><b>플레이북</b> — 팀의 플레이 원칙을 정리합니다. 게임모델과 공용어는 플레이북의 하위 메뉴에서 엽니다. 폰에서는 보이지 않는 메뉴를 <kbd>더보기</kbd>에서 찾으세요.</li>
 </ul>
@@ -7865,13 +7865,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.817"></script>
-<script src="autosave-merge.js?v=2.817"></script>
-<script src="autosave-runtime.js?v=2.817"></script>
-<script src="autosave-recovery.js?v=2.817"></script>
-<script src="sync.js?v=2.817"></script>
+<script src="autosave-journal.js?v=2.821"></script>
+<script src="autosave-merge.js?v=2.821"></script>
+<script src="autosave-runtime.js?v=2.821"></script>
+<script src="autosave-recovery.js?v=2.821"></script>
+<script src="sync.js?v=2.821"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.817">
+<link rel="stylesheet" href="support.css?v=2.821">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
