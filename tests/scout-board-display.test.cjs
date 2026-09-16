@@ -146,54 +146,108 @@ test('legacy custom formations are not truncated or rewritten by the compact dis
 function clampSetup(specs,baseHeight=520){
   const props={},state={baseHeight,width:1000};
   const slots=specs.map(s=>({x:s.x,y:s.y}));
-  const cards=specs.map((s,i)=>({dataset:{sbslot:String(i)},style:{},offsetWidth:s.w||164,offsetHeight:s.h}));
+  const cards=specs.map((s,i)=>({dataset:{sbslot:String(i)},style:{setProperty(k,v){this[k]=v;}},offsetWidth:s.w||146,offsetHeight:s.h}));
   const wrap={style:{setProperty(k,v){props[k]=v;},removeProperty(k){delete props[k];}},
-    getBoundingClientRect:()=>({width:state.width,height:Math.max(state.baseHeight,parseFloat(props['--sb-content-min-height'])||0)}),
+    scrollTop:0,scrollLeft:0,
+    getBoundingClientRect:()=>({left:0,top:0,width:state.width,height:Math.max(state.baseHeight,parseFloat(props['--sb-content-min-height'])||0)}),
     querySelectorAll:()=>cards};
+  cards.forEach(card=>{card.getBoundingClientRect=()=>{
+    const r=wrap.getBoundingClientRect(),x=parseFloat(card.style.left)/100*r.width,
+      y=parseFloat(card.style.top)/100*r.height+(parseFloat(card.style['--oy'])||0);
+    return {left:x-card.offsetWidth/2-wrap.scrollLeft,top:y-card.offsetHeight/2-wrap.scrollTop,width:card.offsetWidth,height:card.offsetHeight};
+  };});
   const c=vm.createContext({$:()=>wrap,sbSlots:()=>slots,sbView:s=>s});
   vm.runInContext(part('function sbClamp()','/* 포지션별 기준 탭'),c);
-  const rect=card=>{const r=wrap.getBoundingClientRect(),x=parseFloat(card.style.left)/100*r.width,y=parseFloat(card.style.top)/100*r.height;
-    return {left:x-card.offsetWidth/2,right:x+card.offsetWidth/2,top:y-card.offsetHeight/2,bottom:y+card.offsetHeight/2};};
+  const rect=card=>{const r=card.getBoundingClientRect(),left=r.left+wrap.scrollLeft,top=r.top+wrap.scrollTop;
+    return {left,right:left+r.width,top,bottom:top+r.height};};
   const assertContained=()=>cards.forEach(card=>{const r=rect(card),pitch=wrap.getBoundingClientRect();
-    assert.ok(r.top>=0&&r.bottom<=pitch.height,'the full card remains inside the pitch');});
+    assert.ok(r.left>=0&&r.right<=pitch.width&&r.top>=0&&r.bottom<=pitch.height,'the full card remains inside the pitch');});
   return {c,slots,cards,props,state,wrap,rect,assertContained};
 }
 
-test('the pitch expands for a tall card and shrinks to its normal height after filtering without changing saved positions',()=>{
+test('an unusually tall card starts at the top of the fixed board so every row remains reachable by board scrolling',()=>{
   const h=clampSetup([{x:50,y:90,h:1800}]);
-  const before=plain(h.slots);h.c.sbClamp();
-  assert.ok(h.wrap.getBoundingClientRect().height>1800);h.assertContained();
+  const before=plain(h.slots);h.props['--sb-content-min-height']='2400px';h.c.sbClamp();
+  assert.equal(h.wrap.getBoundingClientRect().height,520);
+  assert.equal(h.rect(h.cards[0]).top,8);assert.equal(h.rect(h.cards[0]).bottom,1808);
+  assert.equal(h.props['--sb-content-min-height'],undefined);
   assert.deepEqual(plain(h.slots),before);
   h.cards[0].offsetHeight=150;h.c.sbClamp();
   assert.equal(h.wrap.getBoundingClientRect().height,520);
-  assert.equal(h.props['--sb-content-min-height'],undefined);h.assertContained();
+  assert.equal(h.cards[0].style['--oy'],'0px');h.assertContained();
   assert.deepEqual(plain(h.slots),before);
 });
 
-test('horizontally intersecting crowded cards gain a clear vertical gap while retaining saved position proportions',()=>{
-  for(const specs of [
-    [{x:50,y:20,h:250},{x:52,y:55,h:300}],
-    [{x:50,y:0,h:80},{x:50,y:8,h:160}],
-    [{x:50,y:92,h:160},{x:50,y:100,h:80}]
-  ]){
-    const h=clampSetup(specs),before=plain(h.slots);h.c.sbClamp();
-    assert.ok(h.rect(h.cards[1]).top-h.rect(h.cards[0]).bottom>=8,'crowded cards do not obscure each other');
-    h.assertContained();assert.deepEqual(plain(h.slots),before);
-    const height=h.wrap.getBoundingClientRect().height;h.c.sbClamp();
-    assert.equal(h.wrap.getBoundingClientRect().height,height,'repeated layout does not accumulate extra height');
-    h.cards.forEach(card=>{card.offsetHeight=32;});h.c.sbClamp();
-    assert.ok(h.wrap.getBoundingClientRect().height<height,'fewer players remove obsolete expanded space');
+test('cards at every pitch edge are clamped into the fixed dimensions without writing saved coordinates',()=>{
+  for(const pos of [[0,0],[100,0],[0,100],[100,100]]){
+    const h=clampSetup([{x:pos[0],y:pos[1],h:160}]),before=plain(h.slots);h.c.sbClamp();
+    h.assertContained();assert.equal(h.wrap.getBoundingClientRect().height,520);
+    assert.deepEqual(plain(h.slots),before);
   }
 });
 
-test('separate columns and manually colocated cards preserve the existing pitch height',()=>{
-  for(const specs of [
-    [{x:10,y:30,h:300},{x:90,y:60,h:300}],
-    [{x:50,y:50,h:300},{x:50,y:50,h:300}],
-    [{x:50,y:50,h:300},{x:50,y:51,h:300}]
-  ]){
-    const h=clampSetup(specs,840);h.c.sbClamp();
-    assert.equal(h.wrap.getBoundingClientRect().height,840,'the viewport or meeting-mode baseline remains effective');
-    assert.equal(h.props['--sb-content-min-height'],undefined);h.assertContained();
+test('overlapping cards receive display offsets while board dimensions and saved positions stay unchanged',()=>{
+  const h=clampSetup([{x:50,y:50,h:100},{x:52,y:51,h:100}]),before=plain(h.slots);h.c.sbClamp();
+  assert.ok(h.rect(h.cards[1]).top-h.rect(h.cards[0]).bottom>=7,'crowded cards gain a visible gap after pixel rounding');
+  assert.notEqual(h.cards[0].style['--oy'],'0px');
+  const offsets=h.cards.map(card=>card.style['--oy']);
+  h.assertContained();assert.deepEqual(plain(h.slots),before);
+  assert.equal(h.wrap.getBoundingClientRect().height,520);
+  h.wrap.scrollTop=200;h.c.sbClamp();
+  assert.deepEqual(h.cards.map(card=>card.style['--oy']),offsets,'scrolling and repeated layout do not accumulate offsets');
+  assert.deepEqual(plain(h.slots),before);
+  h.cards.pop();h.c.sbClamp();
+  assert.equal(h.cards[0].style['--oy'],'0px','removing the overlap clears the previous display offset');
+});
+
+test('separate columns retain their positions and the viewport or meeting-mode baseline',()=>{
+  const h=clampSetup([{x:10,y:30,h:300},{x:90,y:60,h:300}],840),before=plain(h.slots);h.c.sbClamp();
+  assert.equal(h.wrap.getBoundingClientRect().height,840);
+  assert.equal(h.props['--sb-content-min-height'],undefined);h.assertContained();
+  assert.deepEqual(h.cards.map(card=>card.style['--oy']),['0px','0px']);
+  assert.deepEqual(plain(h.slots),before);
+});
+
+test('cards too crowded for the fixed pitch continue below it without overlapping and remain stable while scrolling',()=>{
+  const h=clampSetup([
+    {x:50,y:18,h:196,w:132},{x:52,y:38,h:196,w:132},
+    {x:50,y:62,h:196,w:132},{x:52,y:82,h:196,w:132},
+    {x:90,y:50,h:100,w:132}
+  ],616);h.state.width=734;
+  const before=plain(h.slots);h.c.sbClamp();
+  const boxes=h.cards.map(h.rect),offsets=h.cards.map(card=>card.style['--oy']);
+  for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
+    const a=boxes[i],b=boxes[j];
+    assert.ok(Math.min(a.right,b.right)<=Math.max(a.left,b.left)||Math.min(a.bottom,b.bottom)<=Math.max(a.top,b.top),'no card covers another card');
   }
+  assert.ok(boxes[3].bottom>616,'overflow is available below the fixed board instead of being compressed');
+  assert.equal(h.wrap.getBoundingClientRect().height,616);
+  assert.equal(h.cards[4].style['--oy'],'0px','a separate column keeps its preferred position');
+  assert.deepEqual(plain(h.slots),before);
+  h.wrap.scrollTop=260;h.c.sbClamp();
+  assert.deepEqual(h.cards.map(card=>card.style['--oy']),offsets,'scrolling does not change the display layout');
+  h.c.sbClamp();assert.deepEqual(h.cards.map(card=>card.style['--oy']),offsets);
+  assert.deepEqual(plain(h.slots),before);
+  h.cards.forEach(card=>{card.offsetHeight=32;});h.c.sbClamp();h.assertContained();
+  assert.deepEqual(h.cards.map(card=>card.style['--oy']),['0px','0px','0px','0px','0px'],'less crowded cards return to their preferred positions');
+});
+
+test('dragging clears the display offset, follows the pointer in a scrolled board, and saves only the chosen position',()=>{
+  const h=clampSetup([{x:50,y:50,h:100},{x:52,y:51,h:100}]);h.c.sbClamp();
+  const card=h.cards[0],before=plain(h.slots),writes=[];let saves=0;
+  assert.notEqual(card.style['--oy'],'0px');
+  card.classList={remove(){}};
+  Object.assign(h.c,{sbCard:{el:card,i:0},sbStore:(x,y)=>({x:y,y:100-x}),
+    window:{removeEventListener(){}},sbWriteSlot:(...args)=>writes.push(args),save(){saves++;},renderTeam(){},renderScoutBoard(){}});
+  vm.runInContext(part('function sbCardMove(e)','/* 카드는 중앙 정렬이라'),h.c);
+  h.wrap.scrollTop=100;h.c.sbCardMove({clientX:250,clientY:200});
+  assert.equal(card.style['--oy'],'0px');
+  const visual=card.getBoundingClientRect();
+  assert.ok(Math.abs(visual.left+visual.width/2-250)<0.001);
+  assert.ok(Math.abs(visual.top+visual.height/2-200)<0.001);
+  assert.deepEqual(plain(h.slots),before,'moving does not write saved positions before drop');
+  assert.equal(saves,0);h.c.sbCardUp();
+  assert.equal(saves,1);assert.equal(writes.length,1);
+  assert.deepEqual(writes[0],[0,300/520*100,75,null]);
+  assert.equal(h.c.sbCard,null);
 });

@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-17-scout-board-size',date:'2026-09-17',title:'스카우팅 보드 크기를 선수단과 맞췄습니다',
+    changes:[
+      '스카우팅 운동장과 카드 폭·여백·선수 행 높이를 선수단 보드 기준으로 통일했습니다.',
+      '우리팀과 후보는 모두 표시하며, 선수 수에 따라 운동장 자체가 커지지 않습니다.'
+    ]
+  },{
     id:'2026-09-17-scout-alignment',date:'2026-09-17',title:'스카우트 명단 정렬과 카드 크기를 다듬었습니다',
     changes:[
       '등번호와 평가 배지를 가운데로 맞추고, 데스크톱의 팀명 입력 칸을 줄였습니다.',

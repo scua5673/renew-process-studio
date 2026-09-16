@@ -5540,11 +5540,36 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
     <!-- ===== 스카우팅 ===== -->
     <style id="ps-2848-scout-board">
       /* 포지션 카드는 선수 수에 맞춰 늘어나며 우리팀과 후보를 모두 펼쳐 보인다. */
-      html.ps-page-scout #playersView #sbWrap.sb-wrap .pitch-svg{min-height:max(520px,var(--sb-content-min-height,0px))}
+      /* 선수단과 같은 외곽 비율·폭을 쓰고 인원수로 운동장을 늘리지 않는다. */
+      @media(min-width:761px){html.ps-page-scout .wrap:has(> #playersView.on){padding-left:0;padding-right:0}}
+      html.ps-page-scout #playersView #sbWrap.sb-wrap{height:auto!important;aspect-ratio:1190/1000!important;min-height:520px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto}
+      html.ps-page-scout #playersView #sbWrap.sb-wrap .pitch-svg{position:absolute;inset:0;width:100%;height:100%!important;min-height:0;aspect-ratio:auto!important;pointer-events:none}
+      html.ps-page-scout body.sb-meet #playersView #sbWrap.sb-wrap{height:calc(100vh - 72px)!important;aspect-ratio:auto!important}
+      html.ps-page-scout #playersView #sbWrap .sb-slot{width:146px;transform:translate(-50%,calc(-50% + var(--oy,0px)))}
+      html.ps-page-scout #playersView #sbWrap .sb-box{padding:6px 7px;gap:3px}
+      html.ps-page-scout #playersView #sbWrap .sb-head{height:19px;min-height:19px;gap:6px}
+      html.ps-page-scout #playersView #sbWrap .sb-head .sb-grip,
+      html.ps-page-scout #playersView #sbWrap .sb-head .sb-pos{height:19px;min-height:0;font-size:11px}
       html.ps-page-scout #playersView #sbWrap .sb-players{display:flex;flex-direction:column;gap:3px;min-height:0}
-      html.ps-page-scout #playersView #sbWrap .sb-players .sb-chip{flex:0 0 auto;min-width:0;margin:0}
+      html.ps-page-scout #playersView #sbWrap .sb-players .sb-chip{flex:0 0 28px;height:28px;min-height:28px;min-width:0;margin:0;padding:0 5px;box-sizing:border-box;grid-template-rows:16px 10px;row-gap:0;column-gap:5px}
+      html.ps-page-scout #playersView #sbWrap .sb-chip .nm{font-size:11px;line-height:14px}
+      html.ps-page-scout #playersView #sbWrap .sb-chip .mt2,
+      html.ps-page-scout #playersView #sbWrap .sb-chip .mt2 .mt,
+      html.ps-page-scout #playersView #sbWrap .sb-chip .mt2 .no{font-size:9px;line-height:10px}
+      html.ps-page-scout #playersView #sbWrap .sb-chip .pf,
+      html.ps-page-scout #playersView #sbWrap .sb-chip .st{height:16px;min-height:0;line-height:16px}
+      html.ps-page-scout #playersView #sbWrap .sb-chip .st{padding:0 4px}
+      html.ps-page-scout #playersView #sbWrap .sb-add{height:23px;min-height:23px;padding:3px 0;box-sizing:border-box}
       html.ps-page-scout #playersView #sbWrap .sb-players .sb-chip.ours{background:var(--blue-soft,#eef4ff)}
       html.ps-page-scout #playersView #sbSplit.with-side #sbWrap .sb-players{display:none}
+      html.ps-page-scout #playersView #sbWrap .sb-slot:hover,
+      html.ps-page-scout #playersView #sbWrap .sb-slot:focus-within{z-index:30}
+      html.ps-page-scout #playersView #sbWrap .sb-slot.moving{z-index:50}
+      @media(max-width:1000px){
+        html.ps-page-scout #playersView #sbWrap .sb-slot{width:132px}
+        html.ps-page-scout #playersView #sbWrap .sb-box{padding:6px}
+      }
+      @media(max-width:760px){html.ps-page-scout #playersView #sbWrap.sb-wrap{height:460px!important}}
     </style>
     <section class="view on" id="playersView">
       <div class="growth-head">
@@ -8216,9 +8241,11 @@ function sbCardDown(e){
 }
 function sbCardMove(e){
   if(!sbCard) return;
-  var r=$("sbWrap").getBoundingClientRect();
-  var vx=Math.max(4,Math.min(96,((e.clientX-r.left)/r.width)*100));
-  var vy=Math.max(4,Math.min(96,((e.clientY-r.top)/r.height)*100));
+  var wrap=$("sbWrap"),r=wrap.getBoundingClientRect();
+  if(!r.width||!r.height)return;
+  sbCard.el.style.setProperty("--oy","0px");   /* 끌 때는 표시 보정을 걷고 포인터를 따른다. */
+  var vx=Math.max(4,Math.min(96,((e.clientX-r.left+(wrap.scrollLeft||0))/r.width)*100));
+  var vy=Math.max(4,Math.min(96,((e.clientY-r.top+(wrap.scrollTop||0))/r.height)*100));
   var st=sbStore(vx,vy);              /* 화면(가로) 좌표를 저장용 세로 좌표로 되돌린다 */
   sbCard.x=st.x; sbCard.y=st.y;
   sbCard.el.style.left=vx+"%"; sbCard.el.style.top=vy+"%";
@@ -8238,42 +8265,66 @@ function sbCardUp(){
 /* 카드는 중앙 정렬이라 가장자리 자리는 절반이 밖으로 나간다. 보이는 위치만 안으로 당긴다. */
 function sbClamp(){
   var wrap=$("sbWrap"); if(!wrap) return;
-  /* 필터나 화면 크기가 바뀌면 기존 확장값부터 지워 원래 높이로 다시 잰다.
-     카드가 더 길 때만 표시 높이를 늘리며 저장 좌표는 바꾸지 않는다. */
+  /* 운동장 크기는 선수단과 같다. 이전 화면의 표시 높이 확장값도 제거한다. */
   wrap.style.removeProperty("--sb-content-min-height");
   var r=wrap.getBoundingClientRect(); if(!r.width||!r.height) return;
-  var slots=sbSlots(), layout=[], needed=0, edge=0.008, gap=8;
+  var slots=sbSlots();
   wrap.querySelectorAll(".sb-slot").forEach(function(el){
     var sl=slots[+el.dataset.sbslot]; if(!sl) return;
-    var v=sbView(sl), w=el.offsetWidth, h=el.offsetHeight;
-    var mx=w/2/r.width+edge;
-    var x=Math.max(mx,Math.min(1-mx,v.x/100))*r.width;
-    layout.push({el:el,v:v,x:x,w:w,h:h,y:Math.max(edge,Math.min(1-edge,v.y/100))});
-    needed=Math.max(needed,h/(1-2*edge));
-  });
-  /* 가로 범위가 겹치는 카드만 세로 간격을 확보한다. 저장된 비율은 그대로다.
-     같은 높이 또는 2% 이내의 수동 겹침은 화면 전체를 과도하게 늘리지 않는다. */
-  layout.forEach(function(a,i){
-    layout.slice(i+1).forEach(function(b){
-      if(Math.abs(a.x-b.x)>=(a.w+b.w)/2)return;
-      var top=a.y<b.y?a:b, bottom=a.y<b.y?b:a, dy=bottom.y-top.y;
-      if(dy<=0.02)return;
-      needed=Math.max(needed,
-        ((top.h+bottom.h)/2+gap)/dy,
-        (top.h+bottom.h/2+gap)/(bottom.y-edge),
-        (top.h/2+bottom.h+gap)/(1-edge-top.y),
-        (top.h+bottom.h+gap)/(1-2*edge));
-    });
-  });
-  if(needed+2>r.height){
-    wrap.style.setProperty("--sb-content-min-height",Math.ceil(needed+2)+"px");
-    r=wrap.getBoundingClientRect();
-  }
-  layout.forEach(function(card){
-    var el=card.el, v=card.v;
+    var v=sbView(sl);
     var mx=(el.offsetWidth/2)/r.width*100+0.8, my=(el.offsetHeight/2)/r.height*100+0.8;
+    el.style.setProperty("--oy","0px");
     el.style.left=Math.max(mx,Math.min(100-mx,v.x))+"%";
-    el.style.top =Math.max(my,Math.min(100-my,v.y))+"%";
+    /* 운동장보다 긴 카드도 맨 위부터 전체 보드 스크롤로 접근할 수 있다. */
+    el.style.top=(el.offsetHeight>r.height-16
+      ? (el.offsetHeight/2+8)/r.height*100
+      : Math.max(my,Math.min(100-my,v.y)))+"%";
+  });
+  sbUnclutter(wrap);
+}
+/* 선수단 tbUnclutter와 같은 표시 전용 겹침 보정. 저장 좌표·선수 순서는 그대로다. */
+function sbUnclutter(pitch){
+  var slots=[].slice.call(pitch.querySelectorAll(".sb-slot")); if(slots.length<2)return;
+  var pr=pitch.getBoundingClientRect(); if(!pr.width||!pr.height)return;
+  var els=slots.map(function(el,i){
+    var r=el.getBoundingClientRect();
+    var y=r.top-pr.top+(pitch.scrollTop||0);
+    return {el:el,x:r.left-pr.left+(pitch.scrollLeft||0),y:y,baseY:y,w:r.width,h:r.height,order:i};
+  });
+  for(var pass=0;pass<6;pass++){
+    var moved=false;
+    for(var i=0;i<els.length;i++)for(var j=i+1;j<els.length;j++){
+      var a=els[i],b=els[j];
+      var ox=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);
+      var oy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
+      if(ox<=6||oy<=6)continue;
+      var push=(oy+8)/2,top=(a.y<=b.y)?a:b,bot=(top===a)?b:a;
+      top.y-=push;bot.y+=push;moved=true;
+    }
+    if(!moved)break;
+  }
+  els.forEach(function(e){
+    e.y=e.h>pr.height-16?8:Math.max(4,Math.min(pr.height-e.h-4,e.y));
+  });
+  var overlaps=els.some(function(a,i){return els.slice(i+1).some(function(b){
+    return Math.min(a.x+a.w,b.x+b.w)>Math.max(a.x,b.x)
+      &&Math.min(a.y+a.h,b.y+b.h)>Math.max(a.y,b.y);
+  });});
+  if(overlaps){
+    /* 고정 운동장에 모두 들어가지 않을 때만 원래 위·아래 순서로 아래에 잇는다.
+       바깥 크기는 유지하며 넘친 카드는 운동장 전체 스크롤로 볼 수 있다. */
+    var ordered=els.slice().sort(function(a,b){return a.baseY-b.baseY||a.order-b.order;});
+    ordered.forEach(function(e,i){
+      e.y=Math.max(e.h>pr.height-16?8:4,e.baseY);
+      for(var j=0;j<i;j++){
+        var prev=ordered[j];
+        if(Math.min(e.x+e.w,prev.x+prev.w)>Math.max(e.x,prev.x))
+          e.y=Math.max(e.y,prev.y+prev.h+8);
+      }
+    });
+  }
+  els.forEach(function(e){
+    e.el.style.setProperty("--oy",Math.round(e.y-e.baseY)+"px");
   });
 }
 /* 포지션별 기준 탭 — 편집기를 복제하지 않는다. 기존 positionsView 를 그대로 빌려 쓰고
