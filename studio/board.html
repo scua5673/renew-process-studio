@@ -1258,12 +1258,16 @@
   /* 2.579 — 폰: 안쪽 머리줄(«커뮤니티 훈련 · 이름 · 닫기», 52px)은 바깥 뷰어 머리(제목·×)와 겹친다 → 감춘다. 판과 설명에 그만큼 더(사용자 "헤더들 폰트 크기를 더 줄여서 보드와 밑에 설명이 잘 보이게") */
   /* ⚠ mobile-polish 1.927 의 `html.ps-page-board #editorModal .modal-head{display:flex!important}` 가 이긴다 — html 클래스까지 붙여 특이도를 넘긴다 */
   @media (max-width:700px){ html.ps-page-board body.comm-viewing #editorModal .modal-head,body.comm-viewing #editorModal .modal-head{display:none!important} body.comm-viewing #editorBoardWrap{padding-top:0!important} }
-  /* 커뮤니티 뷰어 전용 재생 버튼 — 보드 위 하단 중앙 플로팅 */
-  #commPlayBtn{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;
-    display:inline-flex;align-items:center;border:0;border-radius:20px;
-    background:var(--blue,#3a6df0);color:#fff;font-family:inherit;font-weight:var(--fw-head);font-size:var(--fs-body);
-    padding:10px 18px;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.32);}
-  #commPlayBtn:active{transform:translateX(-50%) scale(.96);}
+  /* 커뮤니티/보관함 뷰어 전용 재생 컨트롤 — 보드 위 하단 중앙 플로팅 */
+  #commPlayControls{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;
+    display:inline-flex;align-items:center;gap:8px;padding:6px;border-radius:22px;background:rgba(10,16,28,.62);
+    box-shadow:0 8px 22px rgba(0,0,0,.32);}
+  #commPlayControls button{display:inline-flex;align-items:center;border:0;border-radius:17px;
+    background:rgba(255,255,255,.14);color:#fff;font-family:inherit;font-weight:var(--fw-head);font-size:var(--fs-body);
+    padding:8px 13px;cursor:pointer;white-space:nowrap;}
+  #commPlayControls button.primary{background:var(--blue,#3a6df0);}
+  #commPlayControls button[hidden]{display:none!important}
+  #commPlayControls:active{transform:translateX(-50%) scale(.98);}
   @media (min-width:760px){#editorPanel{flex:0 0 332px;border-top:0;border-left:1px solid var(--line);}}
   @media (max-width:759px){#editorPanel{max-height:34vh;}}
   #editorPanel .ep-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -10828,7 +10832,7 @@ window.__commView=function(post, editMode){
       /* 애니메이션(작전판 움직임 프레임) 복원 + 재생 버튼 — 보기 전용에서도 움직임을 볼 수 있게 (#13 뷰어 대응) */
       try{
         var _cf=post.item&&post.item.frames;
-        var _wrap=$("editorBoardWrap"); var _oldPb=document.getElementById("commPlayBtn"); if(_oldPb)_oldPb.remove();
+        var _wrap=$("editorBoardWrap"); var _oldCtl=document.getElementById("commPlayControls"); if(_oldCtl)_oldCtl.remove();
         if(_cf&&_cf.length>1&&window.__animLoad){
           window.__animLoad(_cf);
           /* 재생 데이터만 필요하며 편집용 애니메이션 바는 커뮤니티에서 숨긴다.
@@ -10847,17 +10851,34 @@ window.__commView=function(post, editMode){
           setTimeout(_commRefit,100); setTimeout(_commRefit,320);
           /* 2.575 — 드러내기는 위 _commReveal(420ms) 하나로. 여기서 따로 벗기지 않는다 */
           if(_wrap&&anim.frames&&anim.frames.length>1){
-            var _pb=document.createElement("button"); _pb.id="commPlayBtn"; _pb.type="button";
-            var _pbLabel=function(){ _pb.innerHTML=(typeof animPlaying!=="undefined"&&animPlaying)
-              ? "<svg viewBox='0 0 24 24' width='15' height='15' fill='currentColor' style='vertical-align:-3px;margin-right:6px'><rect x='6' y='5' width='4' height='14' rx='1'/><rect x='14' y='5' width='4' height='14' rx='1'/></svg>정지"
-              : "<svg viewBox='0 0 24 24' width='15' height='15' fill='currentColor' style='vertical-align:-3px;margin-right:6px'><path d='M8 5v14l11-7z'/></svg>움직임 재생"; };
-            _pbLabel();
-            _pb.onclick=function(){ try{ playAnim(); }catch(_){} _pbLabel();
-              try{if(_pb.__t)clearInterval(_pb.__t);}catch(_){}
-              if(typeof animPlaying!=="undefined"&&animPlaying){   /* 자연 종료 시 라벨 되돌리기 */
-                _pb.__t=setInterval(function(){ if(typeof animPlaying==="undefined"||!animPlaying){ _pbLabel(); try{clearInterval(_pb.__t);}catch(_){} _pb.__t=null; } },200);
-              } };
-            _wrap.appendChild(_pb);
+            var _ctl=document.createElement("div"); _ctl.id="commPlayControls";
+            var _play=document.createElement("button"); _play.type="button"; _play.className="primary";
+            var _pause=document.createElement("button"); _pause.type="button";
+            var _stop=document.createElement("button"); _stop.type="button";
+            _play.innerHTML="<svg viewBox='0 0 24 24' width='15' height='15' fill='currentColor' style='vertical-align:-3px;margin-right:6px'><path d='M8 5v14l11-7z'/></svg>움직임 재생";
+            _pause.innerHTML="<svg viewBox='0 0 24 24' width='15' height='15' fill='currentColor' style='vertical-align:-3px;margin-right:6px'><rect x='6' y='5' width='4' height='14' rx='1'/><rect x='14' y='5' width='4' height='14' rx='1'/></svg>일시정지";
+            _stop.innerHTML="<svg viewBox='0 0 24 24' width='15' height='15' fill='currentColor' style='vertical-align:-3px;margin-right:6px'><rect x='6' y='6' width='12' height='12' rx='1.5'/></svg>정지";
+            function _syncPlaybackButtons(){
+              var playing=(typeof animPlaying!=="undefined"&&animPlaying);
+              _play.hidden=playing;_pause.hidden=!playing;_stop.hidden=!playing&&!animRestore;
+              try{if(!playing&&_ctl.__t){clearInterval(_ctl.__t);_ctl.__t=null;}}catch(_){}
+            }
+            function _pauseAtCurrent(){
+              try{ if(typeof animPlaying==="undefined"||!animPlaying)return;
+                animPlaying=false;if(animRaf)cancelAnimationFrame(animRaf);animRaf=null;
+                try{trailReset();}catch(_){}try{_animCapShow(null);}catch(_){}
+                try{updatePlayUI();}catch(_){}try{renderAnimFrames();}catch(_){}
+              }catch(_){}
+              _syncPlaybackButtons();
+            }
+            _play.onclick=function(){ try{ if(typeof animPlaying==="undefined"||!animPlaying)playAnim(); }catch(_){} _syncPlaybackButtons();
+              try{if(_ctl.__t)clearInterval(_ctl.__t);}catch(_){}
+              _ctl.__t=setInterval(function(){ _syncPlaybackButtons(); },200);
+            };
+            _pause.onclick=function(){ _pauseAtCurrent(); };
+            _stop.onclick=function(){ try{ if(typeof stopAnim==="function")stopAnim(); }catch(_){} _syncPlaybackButtons(); };
+            _ctl.appendChild(_play);_ctl.appendChild(_pause);_ctl.appendChild(_stop);_syncPlaybackButtons();
+            _wrap.appendChild(_ctl);
           }
         }
       }catch(_){}
@@ -10869,7 +10890,7 @@ window.__commView=function(post, editMode){
    comm 상태만 조용히 비운다. (사용자가 '닫기'로 나갈 때만 commClosed가 나가도록) */
 window.__commPrepView=function(){ try{ __commPost=null; __commEdit=false;
   if(document.body.classList.contains("comm-viewing")){ document.body.classList.remove("comm-viewing");
-    try{ var _pbc=document.getElementById("commPlayBtn"); if(_pbc){ if(_pbc.__t)clearInterval(_pbc.__t); _pbc.remove(); } }catch(_){}
+    try{ var _pbc=document.getElementById("commPlayControls"); if(_pbc){ if(_pbc.__t)clearInterval(_pbc.__t); _pbc.remove(); } }catch(_){}
     try{ if(typeof stopAnim==="function")stopAnim(); var _ab=document.getElementById("animBar"); if(_ab)_ab.classList.remove("on"); }catch(_){} }
   }catch(_){} };
 window.addEventListener("message",function(e){
@@ -11027,7 +11048,7 @@ function closeEditor(save){
   if(editorReadOnly){editorReadOnly=false;try{applyEditorReadOnly(null);}catch(_){}}
   if(__commPost){ __commPost=null; __commEdit=false; try{parent.postMessage({source:"board",type:"commClosed"},"*");}catch(_){} }
   if(document.body.classList.contains("comm-viewing")){ document.body.classList.remove("comm-viewing");
-    try{ var _pbc=document.getElementById("commPlayBtn"); if(_pbc){ if(_pbc.__t)clearInterval(_pbc.__t); _pbc.remove(); } }catch(_){}
+    try{ var _pbc=document.getElementById("commPlayControls"); if(_pbc){ if(_pbc.__t)clearInterval(_pbc.__t); _pbc.remove(); } }catch(_){}
     try{ if(typeof stopAnim==="function")stopAnim(); var _ab=document.getElementById("animBar"); if(_ab)_ab.classList.remove("on"); }catch(_){} }
   if(__spPrevPitch!=null){try{ if(window.__applyPitch)window.__applyPitch(__spPrevPitch,__spPrevCustom); else document.documentElement.dataset.pitch=__spPrevPitch; if(__spPrevLines!=null)state.lines=__spPrevLines;if(__spPrevGrid!=null)state.gridType=__spPrevGrid;buildPitch();buildLines();buildGrid();renderTokens();renderDrawings();}catch(_){}__spPrevPitch=null;__spPrevLines=null;__spPrevGrid=null;__spPrevCustom=null;}
   editorScenes=null;editorSceneIdx=0;editorTrainings=null;editorTrainIdx=0;editorFileName="";renderSceneStrip();renderTrainingTabs();
