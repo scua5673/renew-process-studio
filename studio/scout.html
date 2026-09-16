@@ -4757,14 +4757,14 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       <style id="ps-match-roster-layout">/* 경기 준비·상대 분석: 명단은 운동장 왼쪽, 좁은 화면에서는 위쪽에 둔다. */
       @media (min-width:768px){
         html.ps-page-scout body:not(.mb2-meet) :is(#mb2Card,#obCard){
-          grid-template-columns:clamp(164px,18vw,208px) minmax(0,1fr)!important;
-          grid-template-areas:"tray phases" "tray pitch" "tray bar"!important;column-gap:16px;row-gap:10px!important
+          grid-template-columns:clamp(128px,11vw,144px) minmax(0,1fr)!important;
+          grid-template-areas:"tray phases" "tray squad" "tray pitch" "tray bar"!important;column-gap:10px;row-gap:10px!important
         }
-        html.ps-page-scout body:not(.mb2-meet) #obCard{grid-template-areas:"tray phases" "tray pitch" "tray bar" "tray fbar"!important}
+        html.ps-page-scout body:not(.mb2-meet) #obCard{grid-template-areas:"tray phases" "tray squad" "tray pitch" "tray bar" "tray fbar"!important}
         html.ps-page-scout body:not(.mb2-meet) :is(#mb2Card,#obCard) .mb2-tray-row{
           grid-area:tray!important;display:block!important;min-width:0;align-self:stretch!important;
           height:0;min-height:100%;max-height:none!important;overflow-x:hidden!important;overflow-y:auto!important;
-          padding:0 12px 0 0!important;margin:0;border-right:1px solid var(--line)!important;
+          padding:0 8px 0 0!important;margin:0;border-right:1px solid var(--line)!important;
           overscroll-behavior-y:contain;scrollbar-width:thin;scrollbar-gutter:stable
         }
         html.ps-page-scout body:not(.mb2-meet) :is(#mb2Card,#obCard) .mb2-tray-row .mb2-lbl{
@@ -4802,6 +4802,37 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       }
       @media (min-width:768px) and (max-width:1099px){
         html.ps-page-scout body:not(.mb2-meet) :is(#mb2Card,#obCard) .mb2-opp-tools{width:100%;margin-left:0}
+      }
+      /* 2.846 — 선발·리저브는 운동장 위, 미배정 선수는 좁은 왼쪽 명단에 둔다. */
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray{grid-area:squad;min-width:0;padding:0!important;margin:0 0 6px}
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-trow{
+        flex-direction:row!important;align-items:flex-start!important;gap:8px!important;padding:5px 0!important
+      }
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-grp{
+        flex:0 0 48px!important;width:48px!important;padding:7px 0 0!important;gap:3px;font-size:10px!important
+      }
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-tchips{
+        flex:1;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;width:auto!important;gap:4px!important;min-height:28px;padding:2px
+      }
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-chip{
+        width:auto!important;max-width:160px!important;min-width:0!important;min-height:28px;gap:5px!important;padding:3px 6px 3px 4px!important;border-radius:7px!important
+      }
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-chip i{flex:0 0 auto;width:18px;height:18px;line-height:18px;font-size:9px}
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-chip b{min-width:0;white-space:normal!important;overflow-wrap:anywhere;font-size:11px!important;line-height:1.3}
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-chip.used::after{content:"✓"!important;flex:0 0 auto}
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-chip.reord-before{box-shadow:-2px 0 0 0 var(--blue,#3a6df0)}
+      html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-chip.reord-after{box-shadow:2px 0 0 0 var(--blue,#3a6df0)}
+      @media (min-width:768px){
+        html.ps-page-scout body.mb2-meet :is(#mb2Card,#obCard){grid-template-areas:"tray squad" "tray pitch"!important;grid-template-rows:auto minmax(0,1fr);row-gap:8px}
+        html.ps-page-scout body.mb2-meet :is(#mb2Card,#obCard) .mb2-squad-tray{padding-top:40px!important;max-height:30vh;overflow-y:auto;box-sizing:border-box}
+        html.ps-page-scout body.mb2-meet :is(#mb2Card,#obCard) .mb2-pitch{align-self:start}
+      }
+      @media (pointer:coarse){
+        html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-chip{min-height:36px!important;touch-action:pan-y!important}
+        html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-chip i{width:24px;height:24px;line-height:24px;touch-action:none}
+      }
+      @media (min-width:768px) and (pointer:coarse){
+        html.ps-page-scout body:not(.mb2-meet) :is(#mb2Card,#obCard){grid-template-columns:clamp(136px,11vw,144px) minmax(0,1fr)!important}
       }
       /* 2.190 — 선수별 준비: 선발|리저브|전체 세그 */
       html.ps-page-scout .match-person-strip .mp-seg{display:inline-flex;flex:0 0 auto;gap:2px;padding:2px;border-radius:9px;background:var(--fill,#f1f2f4);margin-right:6px;align-self:center}
@@ -5153,6 +5184,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 <!-- 2.754 — 경기 준비와 같은 우리 팀 트레이(선발·리저브·조별). 같은 m.squad 라 한쪽에서 바꾸면 다른 쪽도 바뀐다. 칩을 끌어 이 운동장에 놓으면 현재 국면·프레임에 토큰이 선다 -->
                 <div class="mb2-tray-row"><span class="mb2-lbl">우리 팀 <u id="obTrayN">0</u></span><span class="mb2-sqmode" id="obSqMode"><button type="button" data-sq="start">선발</button><button type="button" data-sq="res">리저브</button></span><div class="mb2-tray" id="obTray"></div></div>
                 <div class="mb2-phead"><div class="ob-head"><b>장면</b><small>국면마다 상대 패턴 · ＋프레임 · ▶재생 — 위 줄의 근거</small></div><div class="mb2-phases" id="obPhases"></div></div>
+                <div class="mb2-tray mb2-squad-tray" id="obSquadTray" aria-label="선발과 리저브"></div>
                 <div class="mlb-pitch mb2-pitch" id="obPitch"><svg class="mlb-lines" viewBox="0 0 105 68" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="103" height="66"/><line x1="52.5" y1="1" x2="52.5" y2="67"/><circle cx="52.5" cy="34" r="9.15"/><circle class="spot" cx="52.5" cy="34" r=".5"/><rect x="1" y="13.84" width="16.5" height="40.32"/><rect x="87.5" y="13.84" width="16.5" height="40.32"/><rect x="1" y="24.84" width="5.5" height="18.32"/><rect x="98.5" y="24.84" width="5.5" height="18.32"/><circle class="spot" cx="12" cy="34" r=".5"/><circle class="spot" cx="93" cy="34" r=".5"/><path d="M17.5 26.7 A9.15 9.15 0 0 1 17.5 41.3"/><path d="M87.5 26.7 A9.15 9.15 0 0 0 87.5 41.3"/></svg></div>
                 <!-- 2.400 — 도구줄을 **경기 준비와 같은 문법**으로(사용자 "상대 분석도 경기준비와 보드사용 같은 걸로").
                      ⚠ 프레임·재생은 상대 분석에만 있는 것이라 **지우지 않고** 아랫줄로 내린다.
@@ -5222,6 +5254,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                   <button type="button" class="mb2-guest-add" id="mb2GuestAdd">＋ 테스트 선수 (연습경기 게스트)</button></div>
                 <!-- 2.004 — 국면 탭 줄 오른쪽 끝에 전체 보기(사용자: 운동장 카드 오른쪽 상단) -->
                 <div class="mb2-phead"><div class="mb2-phases" id="mb2Phases"></div><span class="mb2-seg" id="mb2Orientation" role="group" aria-label="경기장 방향"><button type="button" data-orientation="landscape" class="on" aria-pressed="true">가로</button><button type="button" data-orientation="portrait" aria-pressed="false">세로</button></span><button class="btn sm mb2-meet-btn" type="button" id="mb2Meet" title="선수 명단과 운동장만 전체화면 — 경기 중에">⛶ 전체 보기</button></div>
+                <div class="mb2-tray mb2-squad-tray" id="mb2SquadTray" aria-label="선발과 리저브"></div>
                 <div class="mlb-pitch mb2-pitch" id="mb2Pitch"><svg class="mlb-lines" viewBox="0 0 105 68" preserveAspectRatio="none" aria-hidden="true"><g><rect x="1" y="1" width="103" height="66"/><line x1="52.5" y1="1" x2="52.5" y2="67"/><circle cx="52.5" cy="34" r="9.15"/><circle class="spot" cx="52.5" cy="34" r=".5"/><rect x="1" y="13.84" width="16.5" height="40.32"/><rect x="87.5" y="13.84" width="16.5" height="40.32"/><rect x="1" y="24.84" width="5.5" height="18.32"/><rect x="98.5" y="24.84" width="5.5" height="18.32"/><circle class="spot" cx="12" cy="34" r=".5"/><circle class="spot" cx="93" cy="34" r=".5"/><path d="M17.5 26.7 A9.15 9.15 0 0 1 17.5 41.3"/><path d="M87.5 26.7 A9.15 9.15 0 0 0 87.5 41.3"/></g></svg></div>
                 <!-- 2.001 — 도구줄 정리(사용자 "이건 지우고"): 상대 수비 배치 + 전체 보기만. 우리 11·포메이션·상대 11·＋상대 1·안내문 제거(옛 id는 숨김으로 남겨 바인딩 유지). 비우기는 작은 글자 버튼(없으면 토큰을 하나씩 끌어내야 함) -->
                 <div class="mb2-bar">
@@ -15886,17 +15919,27 @@ function mb2Counts(m){
 }
 /* 2.754 — 트레이 대상: 경기 준비(prep)와 상대 분석(ob)이 같은 트레이 코드를 쓴다. 다른 것은 운동장·토큰·저장뿐 */
 var MB2_TARGETS={
-  prep:{tray:"mb2Tray",n:"mb2TrayN",sqmode:"mb2SqMode",guest:"mb2GuestAdd",pitch:"mb2Pitch",kit:"prep",
+  prep:{tray:"mb2Tray",squad:"mb2SquadTray",n:"mb2TrayN",sqmode:"mb2SqMode",guest:"mb2GuestAdd",pitch:"mb2Pitch",kit:"prep",
     us:function(m){return mb2Cur(m).us;},addTok:function(m,t){return mb2AddTok(m,t,false);},after:function(m){mb2Counts(m);mb2SyncTray(m,"prep");},save:function(){mb2Save();}},
-  ob:{tray:"obTray",n:"obTrayN",sqmode:"obSqMode",guest:null,pitch:"obPitch",kit:"analysis",
+  ob:{tray:"obTray",squad:"obSquadTray",n:"obTrayN",sqmode:"obSqMode",guest:null,pitch:"obPitch",kit:"analysis",
     us:function(m){return obFrame(m).us;},addTok:function(m,t){return obTok(m,t,false);},after:function(m){obCounts(m);mb2SyncTray(m,"ob");},save:function(){obSave();}}
 };
+function mb2TrayChips(T){
+  var chips=[];
+  [T.tray,T.squad].forEach(function(id){var el=$(id);if(el)chips=chips.concat(Array.from(el.querySelectorAll(".mb2-chip")));});
+  return chips;
+}
+function mb2ReorderBefore(groupEl,hit,ev){
+  var r=hit.getBoundingClientRect(),horizontal=false;
+  try{horizontal=getComputedStyle(groupEl).flexDirection.indexOf("row")===0;}catch(_){}
+  return horizontal?ev.clientX<r.left+r.width/2:ev.clientY<r.top+r.height/2;
+}
 function mb2RenderTrays(m){ Object.keys(MB2_TARGETS).forEach(function(k){ if($(MB2_TARGETS[k].tray))mb2RenderTray(m,k); }); }
 function mb2SyncTray(m,target){
   var T=MB2_TARGETS[target||"prep"],on={};
   try{ T.us(m).forEach(function(t){if(t.pid)on[t.pid]=1;}); }catch(_){}
   var tray=$(T.tray); if(!tray)return;
-  tray.querySelectorAll(".mb2-chip").forEach(function(c){c.classList.toggle("used",!!on[c.dataset.pid]);});
+  mb2TrayChips(T).forEach(function(c){c.classList.toggle("used",!!on[c.dataset.pid]);});
 }
 function obSyncTray(m){ mb2SyncTray(m,"ob"); }
 var mb2Portrait=false;
@@ -16077,7 +16120,7 @@ function mb2Draw(m){
 }
 function mb2RenderTray(m,target){
   var T=MB2_TARGETS[target||"prep"]; target=target||"prep";
-  var tray=$(T.tray); if(!tray)return;
+  var tray=$(T.tray),squadTray=$(T.squad); if(!tray)return;
   var ours=tmOurs().filter(function(p){return p.manual===true||String(p.name||"").trim();});
   if($(T.n))$(T.n).textContent=ours.length;
   var isHurt=function(p){return plOut(plStatusOf(p));};
@@ -16115,6 +16158,7 @@ function mb2RenderTray(m,target){
   var chipSq=function(p){ return chip(p).replace('class="mb2-chip',inSt[p.id]?'class="mb2-chip st':(inRs[p.id]?'class="mb2-chip rs':'class="mb2-chip')); };
   var sqm=$(T.sqmode); if(sqm){ sqm.style.display=matchCanEdit()?"":"none"; sqm.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",mb2SqModeV===b.dataset.sq);}); if(!sqm.__w){sqm.__w=1; sqm.addEventListener("click",function(e){var b=e.target.closest("button[data-sq]");if(!b)return; mb2SqModeV=(mb2SqModeV===b.dataset.sq)?null:b.dataset.sq; var m2=matchGet(); if(m2)mb2RenderTrays(m2); if(mb2SqModeV)toast(mb2SqModeV==="start"?"선수를 눌러 선발로 표시":"선수를 눌러 리저브로 표시"); });} }
   tray.classList.toggle("sqmode",!!mb2SqModeV);
+  if(squadTray)squadTray.classList.toggle("sqmode",!!mb2SqModeV);
   /* 선발·리저브는 빈 행도 놓을 자리로 남긴다. 아래 행은 실제 선수단 조만 만들며,
      조가 하나도 없는 팀은 종전처럼 '미지정' 한 행을 쓴다. */
   var rows=[
@@ -16136,13 +16180,15 @@ function mb2RenderTray(m,target){
   }
   function availableFirst(list){return list.filter(function(p){return !isHurt(p);}).concat(list.filter(isHurt));}
   var dropDock='<div class="mb2-dropdock" aria-hidden="true"><span data-squad-drop data-row="start">선발로</span><span data-squad-drop data-row="res">리저브로</span><span data-squad-drop data-row="none">명단 외</span></div>';
-  tray.innerHTML=dropDock+rows.map(function(r){
+  function rowHTML(r){
     var list=r.kind==="none"?availableFirst(r.list):r.list;
     var grpAttr=r.lockGrp?' data-grp="'+esc(r.grp)+'"':'';
     var empty=r.kind==="none"?"모두 배정됨":"여기로 끌어오기";
     return '<div class="mb2-trow'+r.cls+'" data-row="'+r.kind+'"'+grpAttr+' role="group" aria-label="'+esc(r.label+' '+list.length+'명')+'"><span class="mb2-grp">'+esc(r.label)+'<b>'+list.length+'</b></span><div class="mb2-tchips">'+(list.length?list.map(chipSq).join(""):'<i class="mb2-drop">'+empty+'</i>')+'</div></div>';
-  }).join("");
-  tray.querySelectorAll(".mb2-chip").forEach(function(c){
+  }
+  tray.innerHTML=dropDock+rows.filter(function(r){return !squadTray||r.kind==="none";}).map(rowHTML).join("");
+  if(squadTray)squadTray.innerHTML=rows.filter(function(r){return r.kind!=="none";}).map(rowHTML).join("");
+  mb2TrayChips(T).forEach(function(c){
     var kitPl=ours.find(function(p){return p.id===c.dataset.pid;});
     if(kitPl){var kitPos=(data.positions||[]).find(function(x){return x.id===kitPl.posId;});matchKitPaint(m,T.kit,c.querySelector("i"),{num:kitPl.num,pos:posGroupOf(kitPos?kitPos.name:"")==="GK"?"GK":""},false);}
     c.addEventListener("pointerdown",function(e){
@@ -16186,9 +16232,9 @@ function mb2RenderTray(m,target){
         if(isUsed)pp={inside:false};   /* 배치된 선수는 운동장에 다시 못 놓음 */
         if(pit)pit.classList.toggle("hot",!!pp.inside);
         if(fly)fly.classList.toggle("over",!!pp.inside);
-        /* 현재 명단의 배치 방향으로 삽입 위치를 판정한다. 줄바꿈 명단은 기존 위·아래 판정을 유지한다. */
+        /* 가로로 줄바꿈한 선발·리저브도 칩의 좌·우로, 세로 명단은 위·아래로 삽입한다. */
         if(!pp.inside&&groupEl){ var hit=null; try{ var els=document.elementsFromPoint(ev.clientX,ev.clientY); for(var i=0;i<els.length;i++){ var ce=els[i].closest?els[i].closest(".mb2-chip"):null; if(ce&&ce!==c&&ce.parentNode===groupEl){hit=ce;break;} } }catch(_){}
-          if(hit){ var r=hit.getBoundingClientRect(), horizontal=false; try{var flow=getComputedStyle(groupEl);horizontal=flow.flexDirection.indexOf("row")===0&&flow.flexWrap==="nowrap";}catch(_){} var before=horizontal?(ev.clientX<r.left+r.width/2):(ev.clientY<r.top+r.height/2); if(!reord||reord.el!==hit||reord.before!==before){ clearReord(); reord={el:hit,before:before,pid:hit.dataset.pid}; hit.classList.add(before?"reord-before":"reord-after"); } }
+          if(hit){ var before=mb2ReorderBefore(groupEl,hit,ev); if(!reord||reord.el!==hit||reord.before!==before){ clearReord(); reord={el:hit,before:before,pid:hit.dataset.pid}; hit.classList.add(before?"reord-before":"reord-after"); } }
           else clearReord(); }
         else clearReord();
         /* 다른 행 위면 그 행을 놓을 자리로 표시한다. 조 행은 그 선수의 원래 조만 받는다 —
