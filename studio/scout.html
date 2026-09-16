@@ -5193,7 +5193,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 <div class="mb2-bar">
                   <button class="mb2-clear-lite" type="button" id="obClear" title="우리·상대 토큰 모두 지우기">전체 비우기</button>
                   <span class="mb2-cnt">배치 <b id="obCntUs">0</b>/11 · 상대 <b id="obCntOp">0</b></span>
-                  <button class="btn sm" type="button" id="obFillUs" title="선발(없으면 출전 가능)로 우리 11 배치">우리 11</button>
+                  <button class="btn sm" type="button" id="obFillUs" title="경기 준비 배치 우선 · 포지션에 맞는 선발만 배치">우리 11</button>
                   <span class="mb2-opp-tools">
                     <button class="match-kit-open" type="button" id="obKitOpen" title="우리 팀과 상대 팀의 필드·GK 유니폼 설정">유니폼 설정</button>
                     <select class="inp mb2-sel" id="obFormOp" title="상대 포메이션"><option value="gk4">GK + 수비 4</option><option value="442" selected>4-4-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option><option value="343">3-4-3</option><option value="352">3-5-2</option></select>
@@ -15841,8 +15841,40 @@ function matchKitStyle(m,mode,side,role){
   }
   return st;
 }
-function matchKitIsGK(t){return !!(t&&(t.gk===true||String(t.pos||"").toUpperCase()==="GK"||String(t.num||"").trim()==="1"));}
-function matchKitPaint(m,mode,el,t,opp){if(!el)return;var st=matchKitStyle(m,mode,opp?"opp":"us",matchKitIsGK(t)?"gk":"field");el.style.background=matchKitCSSBG(st.main,st.accent,st.pat);el.style.borderColor=st.stroke;el.style.color=st.txt;el.style.textShadow=st.pat==="solid"?"":(matchKitLum(st.txt)>.5?"0 1px 1px rgba(0,0,0,.55)":"0 1px 1px rgba(255,255,255,.65)");if(!(el.parentElement&&el.parentElement.classList.contains("mlb-tok"))){el.style.outline="2px solid "+st.stroke;el.style.outlineOffset="-2px";}}
+/* 경기 역할은 선수단 포지션과 분리한다. 양쪽 보드의 모든 페이지에서 같은 선수를 식별한다. */
+function matchPlayerRole(m,pid){var roles=m&&m.boardPlayerRolesV1,v=roles&&Object.prototype.hasOwnProperty.call(roles,pid)?roles[pid]:"";return v==="gk"||v==="field"?v:"";}
+function matchPlayerRoleSet(m,pid,role){
+  if(!m||!pid||["gk","field",""].indexOf(role)<0||["__proto__","constructor","prototype"].indexOf(String(pid))>=0)return;
+  if(role){m.boardPlayerRolesV1=m.boardPlayerRolesV1||{};m.boardPlayerRolesV1[pid]=role;}
+  else if(m.boardPlayerRolesV1){delete m.boardPlayerRolesV1[pid];if(!Object.keys(m.boardPlayerRolesV1).length)delete m.boardPlayerRolesV1;}
+}
+function matchKitIsGK(t,m,opp){
+  if(!t)return false;
+  var role=!opp&&t.pid?matchPlayerRole(m,t.pid):"";if(role)return role==="gk";
+  if(typeof t.gk==="boolean")return t.gk;
+  var pos=String(t.pos||"").trim().toUpperCase();if(pos)return pos==="GK";
+  return String(t.num||"").trim()==="1";
+}
+function matchKitPaint(m,mode,el,t,opp){if(!el)return;var st=matchKitStyle(m,mode,opp?"opp":"us",matchKitIsGK(t,m,opp)?"gk":"field");el.style.background=matchKitCSSBG(st.main,st.accent,st.pat);el.style.borderColor=st.stroke;el.style.color=st.txt;el.style.textShadow=st.pat==="solid"?"":(matchKitLum(st.txt)>.5?"0 1px 1px rgba(0,0,0,.55)":"0 1px 1px rgba(255,255,255,.65)");if(!(el.parentElement&&el.parentElement.classList.contains("mlb-tok"))){el.style.outline="2px solid "+st.stroke;el.style.outlineOffset="-2px";}}
+function matchPlayerRoleEditor(m,ed,t,mode){
+  var pb=mode==="analysis"?obEnsure(m):mb2Ensure(m),phase=pb.cur,frame=mode==="analysis"?obFrame(m):mb2Cur(m),owner=store.owner();
+  var sel=document.createElement("select");sel.className="pos";sel.setAttribute("aria-label","이 경기 역할");sel.title="이 경기의 모든 페이지에 적용 · 선수 기본 포지션은 유지";
+  sel.innerHTML='<option value="">기본 역할</option><option value="field">필드</option><option value="gk">GK</option>';sel.value=matchPlayerRole(m,t.pid);
+  ed.insertBefore(sel,ed.querySelector(".del"));
+  sel.addEventListener("keydown",function(e){e.stopPropagation();});
+  sel.addEventListener("change",function(){
+    var current=mode==="analysis"?obEnsure(m):mb2Ensure(m),now=mode==="analysis"?obFrame(m):mb2Cur(m);
+    if(matchGet()!==m||owner!==store.owner()||!matchCanEditOne(m.id)||current!==pb||current.cur!==phase||now!==frame||(frame.us||[]).indexOf(t)<0){mb2Deselect();obCloseEdit();return;}
+    if(t.pid)matchPlayerRoleSet(m,t.pid,sel.value);else if(sel.value)t.gk=sel.value==="gk";else delete t.gk;
+    mb2Deselect();obCloseEdit();mb2RenderTrays(m);mb2Draw(m);obDraw(m);matchQueueSave();
+    toast(sel.value==="gk"?"이 경기에서 GK 유니폼으로 표시합니다":sel.value==="field"?"이 경기에서 필드 유니폼으로 표시합니다":"기본 역할로 되돌렸어요");
+  });
+}
+function matchTokenEditorPosition(ed,d,pit){
+  var w=pit.clientWidth,half=Math.min(w/2,ed.offsetWidth/2+4),x=parseFloat(d.style.left)*w/100;
+  ed.style.left=Math.max(half,Math.min(w-half,x))+"px";
+  if(parseFloat(d.style.top)*pit.clientHeight/100<ed.offsetHeight*1.35+4)ed.style.transform="translate(-50%,24px)";
+}
 function matchKitEnsureLeaf(m,mode,side,role){m.boardKitsV1=m.boardKitsV1||{};m.boardKitsV1[mode]=m.boardKitsV1[mode]||{};m.boardKitsV1[mode][side]=m.boardKitsV1[mode][side]||{};m.boardKitsV1[mode][side][role]=m.boardKitsV1[mode][side][role]||{};return m.boardKitsV1[mode][side][role];}
 function matchKitSet(m,mode,side,role,key,value){
   var leaf=matchKitEnsureLeaf(m,mode,side,role);leaf[key]=value;
@@ -15889,7 +15921,7 @@ function matchKitOpen(mode,opener){
     ov.querySelectorAll("[data-kit-role]").forEach(function(b){var on=b.dataset.kitRole===ctx.role;b.classList.toggle("on",on);b.setAttribute("aria-selected",on?"true":"false");});
     $("matchKitMain").value=st.main;$("matchKitAccent").value=st.accent;$("matchKitStroke").value=st.stroke;$("matchKitTxt").value=st.txt;
     ov.querySelectorAll("[data-kit-pattern]").forEach(function(b){var on=b.dataset.kitPattern===st.pat;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on?"true":"false");b.querySelector(".match-kit-swatch").style.background=matchKitCSSBG(st.main,st.accent,b.dataset.kitPattern);});
-    $("matchKitHelp").textContent=(ctx.side==="us"?"우리 팀":"상대 팀")+" "+(ctx.role==="gk"?"골키퍼(1번·GK)":"일반 선수")+" 토큰에 적용됩니다.";
+    $("matchKitHelp").textContent=(ctx.side==="us"?"우리 팀":"상대 팀")+" "+(ctx.role==="gk"?"GK 선수":"필드 선수")+"에 적용됩니다."+(ctx.side==="us"?" 운동장 선수를 눌러 필드 / GK를 바꿀 수 있습니다.":"");
   }
   function mutate(key,value){var now=current();if(!now)return;matchKitSet(now,ctx.mode,ctx.side,ctx.role,key,value);matchKitRedraw(ctx.mode,now);try{matchQueueSave();}catch(_){}sync();}
   ov.querySelector(".match-kit-side").onclick=function(e){var b=e.target.closest("[data-kit-side]");if(!b||!current())return;ctx.side=b.dataset.kitSide;sync();};
@@ -15968,7 +16000,7 @@ function mb2Pct(e,pitEl){
 function mb2AddTok(m,t,opp){
   var pit=$("mb2Pitch");
   var d=document.createElement("div");
-  d.className="mlb-tok"+(matchKitIsGK(t)?" gk":"")+(opp?" opp":"");
+  d.className="mlb-tok"+(matchKitIsGK(t,m,opp)?" gk":"")+(opp?" opp":"");
   var _n=String(t.num||"").trim();if(_n==="·")_n="";
   d.innerHTML='<i>'+esc(_n)+'</i>'+(t.name?'<em>'+esc(t.name)+'</em>':'');
   if(opp)mb2TokLabel(m,d,t,true);   /* 2.008 — 번호/포지션 표시 모드 */
@@ -16021,22 +16053,24 @@ function mb2OpenEdit(m,d,t,opp){
   d.classList.add("sel");
   var ed=document.createElement("div");ed.className="mb2-edit";
   ed.style.left=d.style.left;ed.style.top=d.style.top;
-  ed.innerHTML='<input maxlength="4" value="'+esc(String(t.num||""))+'"><button class="del" type="button" title="삭제" aria-label="삭제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12" style="display:block;pointer-events:none" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
+  ed.innerHTML='<input maxlength="4" value="'+esc(String(t.num||""))+'" aria-label="등번호"><button class="del" type="button" title="삭제" aria-label="삭제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12" style="display:block;pointer-events:none" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
   $("mb2Pitch").appendChild(ed);
   var inp=ed.querySelector("input");
+  if(!opp)matchPlayerRoleEditor(m,ed,t,"prep");
   if(opp){ /* 2.008 — 상대 토큰: 포지션도 고른다 */
     var sel=document.createElement("select"); sel.className="pos"; sel.title="포지션";
     sel.innerHTML='<option value="">포지션</option>'+MB2_POS_LIST.map(function(p){return '<option value="'+p+'"'+(t.pos===p?' selected':'')+'>'+p+'</option>';}).join("");
     ed.insertBefore(sel,inp.nextSibling);
-    sel.addEventListener("change",function(){t.pos=sel.value;d.classList.toggle("gk",matchKitIsGK(t));mb2TokLabel(m,d,t,true);matchKitPaint(m,"prep",d.querySelector("i"),t,true);mb2Save();});
+    sel.addEventListener("change",function(){t.pos=sel.value;if(t.pos)t.gk=t.pos==="GK";else delete t.gk;d.classList.toggle("gk",matchKitIsGK(t,m,true));mb2TokLabel(m,d,t,true);matchKitPaint(m,"prep",d.querySelector("i"),t,true);mb2Save();});
     sel.addEventListener("keydown",function(e){e.stopPropagation();});
-    inp.addEventListener("input",function(){t.num=(inp.value||"").trim();d.classList.toggle("gk",matchKitIsGK(t));mb2TokLabel(m,d,t,true);matchKitPaint(m,"prep",d.querySelector("i"),t,true);mb2Save();});
+    inp.addEventListener("input",function(){t.num=(inp.value||"").trim();d.classList.toggle("gk",matchKitIsGK(t,m,true));mb2TokLabel(m,d,t,true);matchKitPaint(m,"prep",d.querySelector("i"),t,true);mb2Save();});
   }
   inp.addEventListener("keydown",function(e){e.stopPropagation();
-    if(e.key==="Enter"){t.num=(inp.value||"").trim()||t.num;d.classList.toggle("gk",matchKitIsGK(t));mb2TokLabel(m,d,t,opp);matchKitPaint(m,"prep",d.querySelector("i"),t,opp);mb2Save();mb2Deselect();}
+    if(e.key==="Enter"){t.num=(inp.value||"").trim()||t.num;d.classList.toggle("gk",matchKitIsGK(t,m,opp));mb2TokLabel(m,d,t,opp);matchKitPaint(m,"prep",d.querySelector("i"),t,opp);mb2Save();mb2Deselect();}
     if(e.key==="Escape")mb2Deselect();});
   ed.querySelector(".del").addEventListener("pointerdown",function(e){e.stopPropagation();e.preventDefault();mb2RemoveSel();});
   ed.addEventListener("pointerdown",function(e){e.stopPropagation();});
+  matchTokenEditorPosition(ed,d,$("mb2Pitch"));
 }
 function mb2RemoveSel(){
   if(!mb2Sel)return;
@@ -16190,7 +16224,7 @@ function mb2RenderTray(m,target){
   if(squadTray)squadTray.innerHTML=rows.filter(function(r){return r.kind!=="none";}).map(rowHTML).join("");
   mb2TrayChips(T).forEach(function(c){
     var kitPl=ours.find(function(p){return p.id===c.dataset.pid;});
-    if(kitPl){var kitPos=(data.positions||[]).find(function(x){return x.id===kitPl.posId;});matchKitPaint(m,T.kit,c.querySelector("i"),{num:kitPl.num,pos:posGroupOf(kitPos?kitPos.name:"")==="GK"?"GK":""},false);}
+    if(kitPl){var kitPos=(data.positions||[]).find(function(x){return x.id===kitPl.posId;});matchKitPaint(m,T.kit,c.querySelector("i"),{pid:kitPl.id,num:kitPl.num,gk:posGroupOf(kitPos?kitPos.name:"")==="GK"},false);}
     c.addEventListener("pointerdown",function(e){
       if(!matchCanEdit())return;
       if(mb2SqModeV){ e.preventDefault(); mb2SquadToggle(m,c.dataset.pid,mb2SqModeV); return; }   /* 2.013 — 표시 모드: 탭 = 선발/리저브 토글 */
@@ -16211,7 +16245,7 @@ function mb2RenderTray(m,target){
         fly=document.createElement("div"); fly.className="mb2-ghost";
         fly.innerHTML='<i>'+esc(String(pl.num||""))+'</i><b>'+esc(pl.name||"이름 없음")+'</b>';
         var flyPos=(data.positions||[]).find(function(x){return x.id===pl.posId;});
-        matchKitPaint(m,T.kit,fly.querySelector("i"),{num:pl.num,pos:posGroupOf(flyPos?flyPos.name:"")==="GK"?"GK":""},false);
+        matchKitPaint(m,T.kit,fly.querySelector("i"),{pid:pl.id,num:pl.num,gk:posGroupOf(flyPos?flyPos.name:"")==="GK"},false);
         document.body.appendChild(fly);
         document.body.classList.add("mb2-dragging");     /* ③ 운동장이 놓을 자리로 바뀐다 */
       }
@@ -16295,15 +16329,14 @@ function mb2RenderTray(m,target){
   try{mb2SyncTray(m,target);}catch(_){}   /* 2.003 — 렌더 직후 배치 표시(게스트 추가 등 재렌더 경로 포함) */
 }
 function mb2FillUs(m){
-  /* 2.753 — 사용자 «경기 준비도 (상대 분석처럼) 선수단 배치할 수 있게». 2.001 에서 숨겼던 «우리 11» 을 «선발 배치» 로 되살린다.
-     규칙은 상대 분석과 같다(matchStartersToSlots): 선발 명단만 · 이 경기 포메이션 · 포지션 → 자리. 트레이에서 하나씩 끄는 것은 그대로. */
+  if(!m||!matchCanEditOne(m.id))return;
   var r=matchStartersToSlots(m);
   if(!r.ok){ toast("선발 명단이 아직 없어요 — 위 명단에서 선발을 정하거나 운동장에 끌어다 놓으세요"); return; }
-  var b=mb2Cur(m);
-  b.us=r.slots.map(function(a,i){ var pl=r.picked[i]; if(!pl)return null; var ps=tmAbbrOf(pl)||"";
-    return {pid:pl.id,num:String(pl.num||((MB2_SLOTS[r.formKey]||[])[i]||[])[1]||i+1),name:pl.name||"",x:a[0],y:a[1],gk:r.labels[i]==="GK"||r.norm(ps)==="GK"}; }).filter(Boolean);
+  var tokens=r.slots.map(function(a,i){return r.picked[i]?matchLineupToken(m,r.picked[i],a[0],a[1]):null;}).filter(Boolean);
+  if(!tokens.length){toast("포지션에 맞는 자리를 찾지 못했어요 — 선발 "+r.pool.length+"명은 명단에서 직접 배치해 주세요");return;}
+  mb2Cur(m).us=tokens;
   mb2Draw(m);mb2Counts(m);mb2SyncTray(m);mb2Save();
-  toast("선발 "+r.picked.filter(Boolean).length+"명을 "+r.formLabel+" 자리에 놓았어요"+(r.pool.length?(" · 자리 없는 선발 "+r.pool.length+"명"):""));
+  toast("선발 "+tokens.length+"명을 "+r.formLabel+" 자리에 놓았어요"+(r.pool.length?(" · 나머지 "+r.pool.length+"명은 명단에서 직접 배치해 주세요"):""));
 }
 function mb2FillOp(m){
   /* 2.004 — 상대 토큰 번호 1~11(사용자), 'gk4' = GK+수비 4 만 */
@@ -16377,7 +16410,7 @@ function obSave(){try{matchQueueSave();}catch(_){}}
 function obTok(m,t,opp){
   var pit=$("obPitch");
   var d=document.createElement("div");
-  d.className="mlb-tok"+(matchKitIsGK(t)?" gk":"")+(opp?" opp":"");
+  d.className="mlb-tok"+(matchKitIsGK(t,m,opp)?" gk":"")+(opp?" opp":"");
   d.innerHTML='<i>'+esc(String(t.num||""))+'</i>'+(t.name?'<em>'+esc(t.name)+'</em>':'');
   /* 2.400 — 상대 유니폼·번호 색과 번호/포지션 전환을 **경기 준비와 같은 규칙**으로 */
   if(opp){
@@ -16417,38 +16450,94 @@ function obOpenEdit(m,d,t,opp){
   ed.innerHTML='<input maxlength="4" value="'+esc(String(t.num||""))+'" aria-label="등번호"><button class="del" type="button" title="삭제" aria-label="삭제">✕</button>';
   $("obPitch").appendChild(ed);
   var inp=ed.querySelector("input");
-  var paint=function(){ d.classList.toggle("gk",matchKitIsGK(t)); var ii=d.querySelector("i"); if(ii){ if(opp&&obEnsure(m).oppLabel==="pos"&&t.pos)ii.textContent=t.pos; else ii.textContent=String(t.num||""); } try{matchKitPaint(m,"analysis",ii,t,opp);}catch(_){} obSave(); };
+  if(!opp)matchPlayerRoleEditor(m,ed,t,"analysis");
+  var paint=function(){ d.classList.toggle("gk",matchKitIsGK(t,m,opp)); var ii=d.querySelector("i"); if(ii){ if(opp&&obEnsure(m).oppLabel==="pos"&&t.pos)ii.textContent=t.pos; else ii.textContent=String(t.num||""); } try{matchKitPaint(m,"analysis",ii,t,opp);}catch(_){} obSave(); };
   if(opp){ var sel=document.createElement("select"); sel.className="pos"; sel.title="포지션";
     sel.innerHTML='<option value="">포지션</option>'+MB2_POS_LIST.map(function(p){return '<option value="'+p+'"'+(t.pos===p?' selected':'')+'>'+p+'</option>';}).join("");
-    ed.insertBefore(sel,inp.nextSibling); sel.addEventListener("change",function(){t.pos=sel.value;paint();}); sel.addEventListener("keydown",function(e){e.stopPropagation();}); }
+    ed.insertBefore(sel,inp.nextSibling); sel.addEventListener("change",function(){t.pos=sel.value;if(t.pos)t.gk=t.pos==="GK";else delete t.gk;paint();}); sel.addEventListener("keydown",function(e){e.stopPropagation();}); }
   inp.addEventListener("input",function(){t.num=(inp.value||"").trim();paint();});
   inp.addEventListener("keydown",function(e){e.stopPropagation();if(e.key==="Enter"||e.key==="Escape")obCloseEdit();});
   ed.querySelector(".del").addEventListener("pointerdown",function(e){e.stopPropagation();e.preventDefault();
     var f=obFrame(m),arr=opp?f.opp:f.us,i=arr.indexOf(t); if(i>=0)arr.splice(i,1); obCloseEdit(); obDraw(m); obSave(); });
   ed.addEventListener("pointerdown",function(e){e.stopPropagation();});
+  matchTokenEditorPosition(ed,d,$("obPitch"));
   try{inp.focus();inp.select();}catch(_){}
 }
-/* 2.753 — 선발 → 포메이션 자리 배정(상대 분석 «우리 11» 과 경기 준비 «선발 배치» 가 같은 규칙).
-   {ok, formKey, slots, labels, picked(자리별 선수|null), pool(자리 없는 선발)} · 선발이 없으면 ok:false */
+/* 선발 클릭 순서는 포지션이 아니다. 정해진 포지션·경기 역할만 자리 배정에 사용한다. */
+function matchLineupStarters(m){
+  var ids=matchReviewSquad(m).start,seen={};
+  return tmOurs().filter(function(p){if(!p||seen[p.id]||ids.indexOf(p.id)<0||(!p.manual&&!String(p.name||"").trim()))return false;seen[p.id]=1;return true;});
+}
+function matchLineupIsGK(m,p){var role=matchPlayerRole(m,p.id);return role?role==="gk":String(tmAbbrOf(p)||"").toUpperCase()==="GK";}
+function matchLineupToken(m,p,x,y,source){
+  var t=source?JSON.parse(JSON.stringify(source)):{};
+  t.pid=p.id;t.num=String(source&&source.num!=null?source.num:(p.num==null?"":p.num));t.name=t.name||p.name||"";
+  t.pos=t.pos||tmAbbrOf(p)||"";t.x=x;t.y=y;
+  /* 경기 override는 경기 문서에서만 읽는다. 기본 역할을 토큰에 남겨야 override 해제도 되돌아간다. */
+  t.gk=source&&typeof source.gk==="boolean"?source.gk:String(tmAbbrOf(p)||"").trim().toUpperCase()==="GK";
+  return t;
+}
+/* {picked: 자리별 선수|null, pool: 직접 배치할 선발}. 미지정 선수를 빈 GK/수비 자리로 밀어 넣지 않는다. */
 function matchStartersToSlots(m){
-  var sq=matchReviewSquad(m), ours=tmOurs().filter(function(p){return String(p.name||"").trim();});
-  var starters=sq.start.map(function(id){return ours.find(function(p){return p.id===id;});}).filter(Boolean);
-  var formKey=String(m.formation||matchFormLabel((data.meta&&data.meta.form)||"4231")).replace(/[^0-9]/g,"");
-  if(!MB2_FORMS[formKey]||!MB2_SLOTS[formKey])formKey="4231";
-  var slots=MB2_FORMS[formKey], labels=MB2_SLOTS[formKey].map(function(x){return x[0];}), formLabel=matchFormLabel(formKey);
-  /* 2.760 — 팀 구성 카드 11장이 있으면 그것이 자리다(포메이션 표 대신). 팀 구성 % 좌표(GK x≈14 → CF x≈89) → 경기 준비 % 좌표(6 → 68) */
-  var cards=(data.meta&&Array.isArray(data.meta.tbSlots)&&data.meta.tbSlots.length===11)?data.meta.tbSlots:null;
-  if(cards){ slots=cards.map(function(c){ var x=6+((+c.x||14)-14)/75*62, y=+c.y||50; return [Math.max(4,Math.min(96,Math.round(x*10)/10)),Math.max(4,Math.min(96,Math.round(y*10)/10))]; });
-    labels=cards.map(function(c){return String(c.ab||"");}); formKey="cards"; formLabel="팀 구성 카드"+(function(){try{var sh=tbShape();return sh?(" "+sh):"";}catch(_){return "";}})(); }
-  if(!starters.length)return {ok:false,formKey:formKey,formLabel:formLabel,slots:slots,labels:labels,picked:[],pool:[]};
+  var starters=matchLineupStarters(m);
   var norm=function(v){return String(v||"").toUpperCase().replace(/[^A-Z]/g,"");};
   var base=function(v){v=norm(v);if(/^(L|R)?CB$/.test(v))return"CB";if(/^(L|R)?CM$/.test(v))return"CM";if(/^(L|R)?DM$/.test(v))return"DM";if(v==="CF")return"ST";if(v==="LWB")return"LB";if(v==="RWB")return"RB";return v;};
-  var line=function(v){v=norm(v);if(!v)return"";if(v==="GK")return"GK";if(/CB|LB|RB|WB|FB/.test(v))return"DF";if(/DM|CM|AM|LM|RM/.test(v))return"MF";return"FW";};
-  var pool=starters.slice(), picked=slots.map(function(){return null;});
-  [function(p,l){return norm(tmAbbrOf(p))===norm(l);},function(p,l){return base(tmAbbrOf(p))===base(l);},function(p,l){return line(tmAbbrOf(p))===line(l);}]
-    .forEach(function(same){ labels.forEach(function(l,i){ if(picked[i])return; var ix=pool.findIndex(function(p){return same(p,l);}); if(ix>=0)picked[i]=pool.splice(ix,1)[0]; }); });
-  labels.forEach(function(l,i){ if(!picked[i]&&pool.length)picked[i]=pool.shift(); });
-  return {ok:true,formKey:formKey,formLabel:formLabel,slots:slots,labels:labels,picked:picked,pool:pool,norm:norm};
+  var side=function(v){v=norm(v);return /^(L|R)(CB|CM|DM|B|WB|M|W)$/.test(v)?v.charAt(0):"";};
+  var formKey=String(m.formation||matchFormLabel((data.meta&&data.meta.form)||"4231")).replace(/[^0-9]/g,"");
+  if(!MB2_FORMS[formKey]||!MB2_SLOTS[formKey])formKey="4231";
+  var slots=MB2_FORMS[formKey], labels=MB2_SLOTS[formKey].map(function(x){return x[0];}), formLabel=matchFormLabel(formKey),posIds=[];
+  var cards=(data.meta&&Array.isArray(data.meta.tbSlots)&&data.meta.tbSlots.length===11)?data.meta.tbSlots:null;
+  if(cards&&!cards.every(function(c){return c&&c.x!=null&&c.y!=null&&isFinite(+c.x)&&isFinite(+c.y);})){cards=null;}
+  if(cards){ slots=cards.map(function(c){ var x=6+((+c.x)-14)/75*62,y=+c.y;return [Math.max(4,Math.min(96,Math.round(x*10)/10)),Math.max(4,Math.min(96,Math.round(y*10)/10))]; });
+    /* tbSlots는 옛 자료에서 약어만 가진다. 같은 순서·약어인 저장 카드의 posId를 함께 읽는다. */
+    posIds=cards.map(function(c,i){var id=c.posId||(data.meta.tbCards||[])[i],ps=(data.positions||[]).find(function(p){return p.id===id;});return ps&&norm(tmAbbrOf({posId:id}))===norm(c.ab)?id:"";});
+    labels=cards.map(function(c){return String(c.ab||"");}); formKey="cards"; formLabel="팀 구성 카드"+(function(){try{var sh=tbShape();return sh?(" "+sh):"";}catch(_){return "";}})(); }
+  function slotSide(i){var explicit=side(labels[i]);if(explicit)return explicit;
+    if(!/^(CB|CM|DM)$/.test(base(labels[i]))||labels.filter(function(l){return base(l)===base(labels[i]);}).length<2)return"";
+    return slots[i][1]<50?(cards?"L":"R"):(slots[i][1]>50?(cards?"R":"L"):"");}
+  function fit(p,i){
+    var gk=matchLineupIsGK(m,p),label=norm(labels[i]),code=norm(tmAbbrOf(p));
+    if(gk||label==="GK")return gk&&label==="GK"?(matchPlayerRole(m,p.id)==="gk"?3000:1000):0;
+    if(matchPlayerRole(m,p.id)==="field"&&code==="GK")return 0;
+    if(posIds[i]&&p.posId===posIds[i])return 2000;
+    if(!code||!label||base(code)!==base(label))return 0;
+    var ps=side(code),ss=slotSide(i);if(ps&&ss&&ps!==ss)return 0;
+    return (code===label?200:100)+(ps&&ss?20:0);
+  }
+  /* 열한 자리의 작은 배정표: 최대한 많은 호환 선수를 놓되 카드 소속·정확한 포지션을 우선한다.
+     동점은 선수단 순서로 고정하므로 선발을 클릭한 순서가 좌우 배치를 바꾸지 않는다. */
+  var best=[];best[0]={score:0,picked:slots.map(function(){return null;})};
+  starters.forEach(function(p){var next=best.slice();best.forEach(function(state,mask){slots.forEach(function(_,i){
+    if(mask&(1<<i))return;var score=fit(p,i);if(!score)return;
+    var key=mask|(1<<i),total=state.score+100000+score;
+    if(!next[key]||total>next[key].score){var picked=state.picked.slice();picked[i]=p;next[key]={score:total,picked:picked};}
+  });});best=next;});
+  var win=best[0];best.forEach(function(state){if(state.score>win.score)win=state;});
+  var picked=win.picked,pool=starters.filter(function(p){return picked.indexOf(p)<0;});
+  return {ok:!!starters.length,formKey:formKey,formLabel:formLabel,slots:slots,labels:labels,picked:picked,pool:pool,norm:norm};
+}
+function matchPreparedStarters(m){
+  var pb=m.phaseBoards,ob=m.oppPB,starters=matchLineupStarters(m),tokens=[],seen={};
+  if(!pb||!pb.boards)return {tokens:tokens,pool:starters};
+  var key=ob&&ob.cur&&pb.boards[ob.cur]?ob.cur:pb.cur,board=pb.boards[key];
+  (board&&Array.isArray(board.us)?board.us:[]).forEach(function(t){
+    var p=t&&starters.find(function(p){return p.id===t.pid;});
+    if(!p||seen[p.id]||t.x==null||t.y==null||!isFinite(+t.x)||!isFinite(+t.y)||+t.x<0||+t.x>100||+t.y<0||+t.y>100)return;
+    seen[p.id]=1;tokens.push(matchLineupToken(m,p,+t.x,+t.y,t));
+  });
+  return {tokens:tokens,pool:starters.filter(function(p){return !seen[p.id];}),name:((pb.list||[]).find(function(ph){return ph[0]===key;})||[])[1]||"현재 페이지"};
+}
+function obFillUs(m){
+  if(!m||!matchCanEditOne(m.id))return;
+  var prepared=matchPreparedStarters(m),tokens=prepared.tokens,pool=prepared.pool,from="";
+  if(tokens.length)from="경기 준비 «"+prepared.name+"» 배치";
+  else{
+    var r=matchStartersToSlots(m);if(!r.ok){toast("선발 명단이 아직 없어요 — 경기 준비에서 선발을 정해 주세요");return;}
+    tokens=r.slots.map(function(a,i){return r.picked[i]?matchLineupToken(m,r.picked[i],a[0],a[1]):null;}).filter(Boolean);pool=r.pool;from=r.formLabel+" 자리";
+  }
+  if(!tokens.length){toast("포지션에 맞는 자리를 찾지 못했어요 — 선발 "+pool.length+"명은 명단에서 직접 배치해 주세요");return;}
+  obFrame(m).us=tokens;obDraw(m);obSave();
+  toast(from+"로 선발 "+tokens.length+"명을 놓았어요"+(pool.length?(" · 나머지 "+pool.length+"명은 명단에서 직접 배치해 주세요"):""));
 }
 /* ══ 2.757 · 경기 준비 ← 상대 분석 «장면 가져오기» ═════════════════════════════════════
    기존 국면 페이지는 같은 국면을, 자유 페이지는 현재 상대 분석에서 보고 있는 국면의 상대 토큰을 복사한다.
@@ -16457,7 +16546,7 @@ function mb2ImportFromOb(m){
   var pb=mb2Ensure(m), ob=obEnsure(m), key=ob.boards[pb.cur]?pb.cur:ob.cur, src=ob.boards[key], label=OB_PHASE_LABEL[key]||(ob.list.find(function(ph){return ph[0]===key;})||[])[1]||key;
   var fr=src&&Array.isArray(src.frames)?src.frames[src.cur||0]:null, opp=fr&&Array.isArray(fr.opp)?fr.opp:[];
   if(!opp.length){ toast("상대 분석 «"+label+"» 장면에 상대 배치가 없어요 — 01 상대 분석에서 먼저 놓으세요"); return false; }
-  mb2Cur(m).opp=JSON.parse(JSON.stringify(opp)).map(function(t){ return {num:String(t.num||""),pos:t.pos||"",x:+t.x||50,y:+t.y||50,gk:!!t.gk}; });
+  mb2Cur(m).opp=JSON.parse(JSON.stringify(opp)).map(function(t){var copy={num:String(t.num||""),pos:t.pos||"",x:+t.x||50,y:+t.y||50};if(typeof t.gk==="boolean")copy.gk=t.gk;return copy;});
   mb2Draw(m);mb2Counts(m);mb2Save();
   toast("상대 분석 «"+label+"» 상대 "+opp.length+"명을 가져왔어요"); return true;
 }
@@ -16529,7 +16618,7 @@ function obPlayToggle(m){
     if(i>=b.frames.length){setTimeout(end,900);return;}
     var f=b.frames[i],toks=pit.querySelectorAll(".mlb-tok"),flat=[].concat(f.us,f.opp);
     if(toks.length!==flat.length){b.cur=i;obDraw(m);pit.classList.add("ob-anim");}
-    else [].forEach.call(toks,function(el,k){var tk=flat[k],isOpp=k>=f.us.length;el.style.left=tk.x+"%";el.style.top=tk.y+"%";el.classList.toggle("gk",matchKitIsGK(tk));el.classList.toggle("opp",isOpp);matchKitPaint(m,"analysis",el.querySelector("i"),tk,isOpp);});
+    else [].forEach.call(toks,function(el,k){var tk=flat[k],isOpp=k>=f.us.length;el.style.left=tk.x+"%";el.style.top=tk.y+"%";el.classList.toggle("gk",matchKitIsGK(tk,m,isOpp));el.classList.toggle("opp",isOpp);matchKitPaint(m,"analysis",el.querySelector("i"),tk,isOpp);});
     setTimeout(step,950);
   })();
 }
@@ -16573,17 +16662,7 @@ function renderOB(){
   $("obAddOp").onclick=function(){if(!matchCanEdit())return;var m2=matchGet();var f=obFrame(m2);
     f.opp.push({num:"D"+(f.opp.length+1),x:50,y:50});obDraw(m2);obSave();};
   $("obFillUs").onclick=function(){if(!matchCanEdit()){obEditBlocked();return;}var m2=matchGet();
-    /* ══ 2.752 · 코치 피드백 «상대 분석 클릭 시 선발 명단에 랜덤으로 추가되며 수정이 안 됨» ══════════
-       전에는 포메이션을 4-2-3-1 로 고정하고, 선발이 없으면 출전 가능 선수를 **명단 순서대로 11명 잘라 자리 순서대로**
-       앉혔다(첫 선수가 GK 자리, 공격수가 수비 자리) — 그게 «랜덤» 이다. 토큰엔 pid 도 편집기도 없어 고칠 길이 없었다.
-       이제 ① 선발 명단만 놓는다(없으면 안내하고 아무것도 안 놓는다 — 앱은 거울) ② 이 경기의 포메이션
-       ③ 포지션 → 자리(정확 → 세부·기본 → 라인, 남은 선발은 빈 자리) ④ pid·포지션을 실어 명단과 이어 둔다. */
-    var r=matchStartersToSlots(m2);
-    if(!r.ok){ toast("선발 명단이 아직 없어요 — 02 경기 준비에서 선발을 정하면 그대로 놓입니다"); return; }
-    obFrame(m2).us=r.slots.map(function(a,i){var pl=r.picked[i]; if(!pl)return null; var ps=tmAbbrOf(pl)||"";
-      return {pid:pl.id,num:String(pl.num||((MB2_SLOTS[r.formKey]||[])[i]||[])[1]||i+1),name:pl.name||"",pos:ps,x:a[0],y:a[1],gk:r.labels[i]==="GK"||r.norm(ps)==="GK"};}).filter(Boolean);
-    obDraw(m2);obSave();
-    toast("선발 "+r.picked.filter(Boolean).length+"명을 "+r.formLabel+" 자리에 놓았어요"+(r.pool.length?(" · 자리 없는 선발 "+r.pool.length+"명"):""));};
+    obFillUs(m2);};
   $("obClear").onclick=function(){if(!matchCanEdit())return;var m2=matchGet();
     psConfirm("이 프레임의 우리·상대 토큰을 모두 지울까요?",function(){var f=obFrame(m2);f.us=[];f.opp=[];obDraw(m2);obSave();});};
   $("obAddFrame").onclick=function(){if(!matchCanEdit())return;var m2=matchGet(),b=obCur(m2);
