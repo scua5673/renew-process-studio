@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-16-match-roster-left',date:'2026-09-16',title:'경기 준비와 상대 분석의 명단을 왼쪽으로 옮겼습니다',
+    changes:[
+      '데스크톱과 태블릿에서 우리 팀 명단을 경기장 왼쪽의 세로 목록으로 볼 수 있습니다.',
+      '선발·리저브·조별 구분과 선수 끌어 놓기를 유지하며, 좁은 휴대폰 화면에서는 명단을 경기장 위에 표시합니다.'
+    ]
+  },{
     id:'2026-09-16-training-viewer-pause',date:'2026-09-16',title:'훈련 보기 화면에 일시정지를 추가했습니다',
     changes:[
       '보관함과 커뮤니티에서 훈련을 열어 보는 화면의 움직임 재생 컨트롤을 재생·일시정지·정지로 분리했습니다.',
