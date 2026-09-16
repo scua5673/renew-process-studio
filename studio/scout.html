@@ -5540,11 +5540,36 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
     <!-- ===== 스카우팅 ===== -->
     <style id="ps-2848-scout-board">
       /* 포지션 카드는 선수 수에 맞춰 늘어나며 우리팀과 후보를 모두 펼쳐 보인다. */
-      html.ps-page-scout #playersView #sbWrap.sb-wrap .pitch-svg{min-height:max(520px,var(--sb-content-min-height,0px))}
+      /* 선수단과 같은 외곽 비율·폭을 쓰고 인원수로 운동장을 늘리지 않는다. */
+      @media(min-width:761px){html.ps-page-scout .wrap:has(> #playersView.on){padding-left:0;padding-right:0}}
+      html.ps-page-scout #playersView #sbWrap.sb-wrap{height:auto!important;aspect-ratio:1190/1000!important;min-height:520px;box-sizing:border-box;overflow-x:hidden;overflow-y:auto}
+      html.ps-page-scout #playersView #sbWrap.sb-wrap .pitch-svg{position:absolute;inset:0;width:100%;height:100%!important;min-height:0;aspect-ratio:auto!important;pointer-events:none}
+      html.ps-page-scout body.sb-meet #playersView #sbWrap.sb-wrap{height:calc(100vh - 72px)!important;aspect-ratio:auto!important}
+      html.ps-page-scout #playersView #sbWrap .sb-slot{width:146px;transform:translate(-50%,calc(-50% + var(--oy,0px)))}
+      html.ps-page-scout #playersView #sbWrap .sb-box{padding:6px 7px;gap:3px}
+      html.ps-page-scout #playersView #sbWrap .sb-head{height:19px;min-height:19px;gap:6px}
+      html.ps-page-scout #playersView #sbWrap .sb-head .sb-grip,
+      html.ps-page-scout #playersView #sbWrap .sb-head .sb-pos{height:19px;min-height:0;font-size:11px}
       html.ps-page-scout #playersView #sbWrap .sb-players{display:flex;flex-direction:column;gap:3px;min-height:0}
-      html.ps-page-scout #playersView #sbWrap .sb-players .sb-chip{flex:0 0 auto;min-width:0;margin:0}
+      html.ps-page-scout #playersView #sbWrap .sb-players .sb-chip{flex:0 0 28px;height:28px;min-height:28px;min-width:0;margin:0;padding:0 5px;box-sizing:border-box;grid-template-rows:16px 10px;row-gap:0;column-gap:5px}
+      html.ps-page-scout #playersView #sbWrap .sb-chip .nm{font-size:11px;line-height:14px}
+      html.ps-page-scout #playersView #sbWrap .sb-chip .mt2,
+      html.ps-page-scout #playersView #sbWrap .sb-chip .mt2 .mt,
+      html.ps-page-scout #playersView #sbWrap .sb-chip .mt2 .no{font-size:9px;line-height:10px}
+      html.ps-page-scout #playersView #sbWrap .sb-chip .pf,
+      html.ps-page-scout #playersView #sbWrap .sb-chip .st{height:16px;min-height:0;line-height:16px}
+      html.ps-page-scout #playersView #sbWrap .sb-chip .st{padding:0 4px}
+      html.ps-page-scout #playersView #sbWrap .sb-add{height:23px;min-height:23px;padding:3px 0;box-sizing:border-box}
       html.ps-page-scout #playersView #sbWrap .sb-players .sb-chip.ours{background:var(--blue-soft,#eef4ff)}
       html.ps-page-scout #playersView #sbSplit.with-side #sbWrap .sb-players{display:none}
+      html.ps-page-scout #playersView #sbWrap .sb-slot:hover,
+      html.ps-page-scout #playersView #sbWrap .sb-slot:focus-within{z-index:30}
+      html.ps-page-scout #playersView #sbWrap .sb-slot.moving{z-index:50}
+      @media(max-width:1000px){
+        html.ps-page-scout #playersView #sbWrap .sb-slot{width:132px}
+        html.ps-page-scout #playersView #sbWrap .sb-box{padding:6px}
+      }
+      @media(max-width:760px){html.ps-page-scout #playersView #sbWrap.sb-wrap{height:460px!important}}
     </style>
     <section class="view on" id="playersView">
       <div class="growth-head">
@@ -8216,9 +8241,11 @@ function sbCardDown(e){
 }
 function sbCardMove(e){
   if(!sbCard) return;
-  var r=$("sbWrap").getBoundingClientRect();
-  var vx=Math.max(4,Math.min(96,((e.clientX-r.left)/r.width)*100));
-  var vy=Math.max(4,Math.min(96,((e.clientY-r.top)/r.height)*100));
+  var wrap=$("sbWrap"),r=wrap.getBoundingClientRect();
+  if(!r.width||!r.height)return;
+  sbCard.el.style.setProperty("--oy","0px");   /* 끌 때는 표시 보정을 걷고 포인터를 따른다. */
+  var vx=Math.max(4,Math.min(96,((e.clientX-r.left+(wrap.scrollLeft||0))/r.width)*100));
+  var vy=Math.max(4,Math.min(96,((e.clientY-r.top+(wrap.scrollTop||0))/r.height)*100));
   var st=sbStore(vx,vy);              /* 화면(가로) 좌표를 저장용 세로 좌표로 되돌린다 */
   sbCard.x=st.x; sbCard.y=st.y;
   sbCard.el.style.left=vx+"%"; sbCard.el.style.top=vy+"%";
@@ -8238,42 +8265,66 @@ function sbCardUp(){
 /* 카드는 중앙 정렬이라 가장자리 자리는 절반이 밖으로 나간다. 보이는 위치만 안으로 당긴다. */
 function sbClamp(){
   var wrap=$("sbWrap"); if(!wrap) return;
-  /* 필터나 화면 크기가 바뀌면 기존 확장값부터 지워 원래 높이로 다시 잰다.
-     카드가 더 길 때만 표시 높이를 늘리며 저장 좌표는 바꾸지 않는다. */
+  /* 운동장 크기는 선수단과 같다. 이전 화면의 표시 높이 확장값도 제거한다. */
   wrap.style.removeProperty("--sb-content-min-height");
   var r=wrap.getBoundingClientRect(); if(!r.width||!r.height) return;
-  var slots=sbSlots(), layout=[], needed=0, edge=0.008, gap=8;
+  var slots=sbSlots();
   wrap.querySelectorAll(".sb-slot").forEach(function(el){
     var sl=slots[+el.dataset.sbslot]; if(!sl) return;
-    var v=sbView(sl), w=el.offsetWidth, h=el.offsetHeight;
-    var mx=w/2/r.width+edge;
-    var x=Math.max(mx,Math.min(1-mx,v.x/100))*r.width;
-    layout.push({el:el,v:v,x:x,w:w,h:h,y:Math.max(edge,Math.min(1-edge,v.y/100))});
-    needed=Math.max(needed,h/(1-2*edge));
-  });
-  /* 가로 범위가 겹치는 카드만 세로 간격을 확보한다. 저장된 비율은 그대로다.
-     같은 높이 또는 2% 이내의 수동 겹침은 화면 전체를 과도하게 늘리지 않는다. */
-  layout.forEach(function(a,i){
-    layout.slice(i+1).forEach(function(b){
-      if(Math.abs(a.x-b.x)>=(a.w+b.w)/2)return;
-      var top=a.y<b.y?a:b, bottom=a.y<b.y?b:a, dy=bottom.y-top.y;
-      if(dy<=0.02)return;
-      needed=Math.max(needed,
-        ((top.h+bottom.h)/2+gap)/dy,
-        (top.h+bottom.h/2+gap)/(bottom.y-edge),
-        (top.h/2+bottom.h+gap)/(1-edge-top.y),
-        (top.h+bottom.h+gap)/(1-2*edge));
-    });
-  });
-  if(needed+2>r.height){
-    wrap.style.setProperty("--sb-content-min-height",Math.ceil(needed+2)+"px");
-    r=wrap.getBoundingClientRect();
-  }
-  layout.forEach(function(card){
-    var el=card.el, v=card.v;
+    var v=sbView(sl);
     var mx=(el.offsetWidth/2)/r.width*100+0.8, my=(el.offsetHeight/2)/r.height*100+0.8;
+    el.style.setProperty("--oy","0px");
     el.style.left=Math.max(mx,Math.min(100-mx,v.x))+"%";
-    el.style.top =Math.max(my,Math.min(100-my,v.y))+"%";
+    /* 운동장보다 긴 카드도 맨 위부터 전체 보드 스크롤로 접근할 수 있다. */
+    el.style.top=(el.offsetHeight>r.height-16
+      ? (el.offsetHeight/2+8)/r.height*100
+      : Math.max(my,Math.min(100-my,v.y)))+"%";
+  });
+  sbUnclutter(wrap);
+}
+/* 선수단 tbUnclutter와 같은 표시 전용 겹침 보정. 저장 좌표·선수 순서는 그대로다. */
+function sbUnclutter(pitch){
+  var slots=[].slice.call(pitch.querySelectorAll(".sb-slot")); if(slots.length<2)return;
+  var pr=pitch.getBoundingClientRect(); if(!pr.width||!pr.height)return;
+  var els=slots.map(function(el,i){
+    var r=el.getBoundingClientRect();
+    var y=r.top-pr.top+(pitch.scrollTop||0);
+    return {el:el,x:r.left-pr.left+(pitch.scrollLeft||0),y:y,baseY:y,w:r.width,h:r.height,order:i};
+  });
+  for(var pass=0;pass<6;pass++){
+    var moved=false;
+    for(var i=0;i<els.length;i++)for(var j=i+1;j<els.length;j++){
+      var a=els[i],b=els[j];
+      var ox=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x);
+      var oy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);
+      if(ox<=6||oy<=6)continue;
+      var push=(oy+8)/2,top=(a.y<=b.y)?a:b,bot=(top===a)?b:a;
+      top.y-=push;bot.y+=push;moved=true;
+    }
+    if(!moved)break;
+  }
+  els.forEach(function(e){
+    e.y=e.h>pr.height-16?8:Math.max(4,Math.min(pr.height-e.h-4,e.y));
+  });
+  var overlaps=els.some(function(a,i){return els.slice(i+1).some(function(b){
+    return Math.min(a.x+a.w,b.x+b.w)>Math.max(a.x,b.x)
+      &&Math.min(a.y+a.h,b.y+b.h)>Math.max(a.y,b.y);
+  });});
+  if(overlaps){
+    /* 고정 운동장에 모두 들어가지 않을 때만 원래 위·아래 순서로 아래에 잇는다.
+       바깥 크기는 유지하며 넘친 카드는 운동장 전체 스크롤로 볼 수 있다. */
+    var ordered=els.slice().sort(function(a,b){return a.baseY-b.baseY||a.order-b.order;});
+    ordered.forEach(function(e,i){
+      e.y=Math.max(e.h>pr.height-16?8:4,e.baseY);
+      for(var j=0;j<i;j++){
+        var prev=ordered[j];
+        if(Math.min(e.x+e.w,prev.x+prev.w)>Math.max(e.x,prev.x))
+          e.y=Math.max(e.y,prev.y+prev.h+8);
+      }
+    });
+  }
+  els.forEach(function(e){
+    e.el.style.setProperty("--oy",Math.round(e.y-e.baseY)+"px");
   });
 }
 /* 포지션별 기준 탭 — 편집기를 복제하지 않는다. 기존 positionsView 를 그대로 빌려 쓰고
@@ -8402,6 +8453,67 @@ function contractLeftText(sct){ if(!sct)return ""; if(sct.contract==="fa")return
   var m=String(sct.contractEnd||"").match(/^(\d{4})(?:[-./](\d{1,2}))?/); if(!m)return "";
   var y=+m[1], mo=m[2]?(+m[2]-1):5; var end=new Date(y,mo+1,0); var now=new Date(); var months=(end.getFullYear()-now.getFullYear())*12+(end.getMonth()-now.getMonth());
   if(months<0)return "만료"; if(months<1)return "이번 달 만료"; if(months<12)return months+"개월 남음"; var yrs=Math.floor(months/12), rm=months%12; return yrs+"년"+(rm?" "+rm+"개월":"")+" 남음"; }
+function scNameEditBegin(input){
+  if(input.__scNameEdit)return input.__scNameEdit;
+  try{
+    var client=scStore();client.check();
+    var p=data.players.find(function(p){return p.id===input.dataset.scname;});
+    if(!p||p.type!=="target"||p._scoutHidden)throw new Error("후보 목록이 바뀌었습니다. 다시 열어 주세요.");
+    return input.__scNameEdit={player:p,owner:client.state.owner,cid:PSScoutStore.idOf(p),name:String(p.name||""),composing:false,pendingBlur:false};
+  }catch(e){scWarn(e);return null;}
+}
+function scNameEditFinish(input,cancel){
+  var edit=input.__scNameEdit;if(!edit){input.value=input.defaultValue;return false;}
+  if(!cancel&&edit.composing){edit.pendingBlur=true;return false;}
+  delete input.__scNameEdit;
+  if(input.isConnected===false)return false;
+  if(cancel){input.value=edit.name;return false;}
+  var name=String(input.value||"").trim();
+  if(!name){input.value=edit.name;toast("이름을 입력해 주세요.");return false;}
+  var changed=false;
+  try{
+    var client=scStore();client.check();
+    var p=data.players.find(function(p){return p.id===input.dataset.scname;});
+    if(client.state.owner!==edit.owner||p!==edit.player||p.type!=="target"||p._scoutHidden||PSScoutStore.idOf(p)!==edit.cid||String(p.name||"")!==edit.name)
+      throw new Error("후보 정보가 바뀌었습니다. 목록을 다시 열어 주세요.");
+    input.value=name;
+    if(name===edit.name)return false;
+    p.name=name;changed=true;input.defaultValue=name;input.title=name;
+    input.setAttribute("aria-label",name+" 이름 편집");
+    var row=input.closest(".sc-row"),profile=row&&row.querySelector("[data-sccard]");
+    if(profile)profile.setAttribute("aria-label",name+" 프로필 수정");
+    if(!save()){scWarn(new Error("이름 저장을 확인하지 못했어요. 저장 상태에서 다시 확인해 주세요."));return false;}
+    try{renderScoutBoard();}catch(_){}
+    return true;
+  }catch(e){if(!changed)input.value=edit.name;scWarn(e);return false;}
+}
+function scWireNameEdits(box){
+  box.addEventListener("focusin",function(e){
+    var input=e.target.closest("[data-scname]");if(!input)return;
+    var edit=scNameEditBegin(input);if(edit)edit.pendingBlur=false;
+  });
+  box.addEventListener("focusout",function(e){
+    var input=e.target.closest("[data-scname]");if(input)scNameEditFinish(input,false);
+  });
+  box.addEventListener("compositionstart",function(e){
+    var input=e.target.closest("[data-scname]");if(!input)return;
+    var edit=scNameEditBegin(input);if(edit)edit.composing=true;
+  });
+  box.addEventListener("compositionend",function(e){
+    var input=e.target.closest("[data-scname]"),edit=input&&input.__scNameEdit;if(!edit)return;
+    edit.composing=false;
+    if(edit.pendingBlur)setTimeout(function(){if(input.__scNameEdit===edit&&edit.pendingBlur)scNameEditFinish(input,false);},0);
+  });
+  box.addEventListener("keydown",function(e){
+    var input=e.target.closest("[data-scname]");if(!input)return;
+    var edit=input.__scNameEdit;
+    if(e.isComposing||e.keyCode===229||(edit&&edit.composing))return;
+    if(e.key==="Enter"||e.key==="Escape"){
+      e.preventDefault();e.stopPropagation();
+      scNameEditFinish(input,e.key==="Escape");input.blur();
+    }
+  });
+}
 function renderScoutCands(){
   scRenderTools();
   var box=$("scList"); if(!box)return;
@@ -8483,7 +8595,7 @@ function renderScoutCands(){
      관찰일도 뺐다(메모 두 칸을 넣기로). 날짜는 프로필·평가 편집에서 계속 볼 수 있다. */
   /* 1.566 — 상태를 맨 앞 열로(사용자 지시). 이름 옆에 붙어 있어 이름 길이에 따라 위치가 흔들렸다. */
   /* 1.685 — '기준 대비' 열 제거(사용자: 없애도 될 것 같아). 적합도·핵심 점은 프로필 카드에서 본다. */
-  var head='<div class="sc-row sc-head"><i>팀</i><i>배번</i><i>이름</i><i>상태</i><i>프로필</i><i>평가</i><i>＋메모</i></div>';
+  var head='<div class="sc-row sc-head"><i>이름 · 출신 · 배번</i><i>상태</i><i>평가</i><i>＋메모</i><i aria-label="프로필"></i></div>';
 
   /* 1.558 — 선수 탭처럼 **포지션별로 묶는다**(사용자 지시). 정렬은 이미 포지션 순이라
      경계가 바뀌는 지점에 머리글만 끼워 넣으면 된다. */
@@ -8513,15 +8625,15 @@ function renderScoutCands(){
 
   /* 한 줄 그리기 — 위에서 포지션 머리글과 함께 쓴다 */
   function _scRow(p){
-    var age=sbAge(p);
     var st=scStOf(p.scoutSt);
     var g=String(p.grade||"").toUpperCase();
     return '<div class="sc-row" data-pid="'+esc(p.id)+'" data-ini="'+esc(String(p.name||"?").trim().charAt(0)||"?")+'">'
-      +'<input class="sc-club" data-scclub="'+esc(p.id)+'" value="'+esc(p.club||"")+'" placeholder="팀" aria-label="'+esc(p.name)+' 소속팀">'
+      +'<div class="sc-identity">'
+      +'<input type="text" class="sc-name" data-scname="'+esc(p.id)+'" value="'+esc(p.name)+'" title="'+esc(p.name)+'" aria-label="'+esc(p.name)+' 이름 편집" autocomplete="off">'
+      +'<input class="sc-club" data-scclub="'+esc(p.id)+'" value="'+esc(p.club||"")+'" placeholder="출신" aria-label="'+esc(p.name)+' 출신 팀">'
       +'<input class="sc-num" data-scnum="'+esc(p.id)+'" value="'+esc(String(p.num||""))+'" placeholder="#" inputmode="numeric" maxlength="3" aria-label="'+esc(p.name)+' 배번">'
-      +'<span class="sc-name" title="'+esc(p.name)+'"><b>'+esc(p.name)+'</b></span>'
+      +'</div>'
       +'<button type="button" class="sc-st" data-scst="'+esc(p.id)+'" style="--c:'+st[2]+'" title="상태 — 눌러서 고르기" aria-haspopup="menu">'+st[1]+'</button>'
-      +'<button type="button" class="sc-prof" data-sccard="'+esc(p.id)+'" title="프로필·평가 편집 열기 — PDF도 여기서" aria-label="'+esc(p.name)+' 프로필">'+esc([age?age+"세":"",p.foot==="L"?"왼발":p.foot==="R"?"오른발":p.foot||""].filter(Boolean).join(" · ")||"프로필 ›")+'</button>'
       +'<span class="sc-eval"><button type="button" class="sc-gr'+(g?" on g"+g:"")+'" data-scgrade="'+esc(p.id)+'"'
         +' title="평가 '+(g||"없음")+' — 눌러서 '+SB_GRADES.join(" → ")+' → 없음">'+(g||"–")+'</button>'
       +'<span class="sc-cats">'+catAvgCellsHTML(p.levels||{})+'</span></span>'
@@ -8533,20 +8645,20 @@ function renderScoutCands(){
         +'<button type="button" class="sc-madd" data-scmadd="'+esc(p.id)+'">＋ 메모</button>'
         +'<button type="button" class="sc-del" data-scdel="'+esc(p.id)+'" title="후보 보관 — 기록을 남기고 목록에서 숨김">후보 보관</button>'
       +'</div></details></div>'
+      +'<button type="button" class="sc-prof" data-sccard="'+esc(p.id)+'" title="프로필 수정" aria-label="'+esc(p.name)+' 프로필 수정"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 4 6 6-6 6"/></svg></button>'
       +'</div>';
   }
   /* 2.650 — 후보 바로 삭제(사용자 "바로 삭제 할 수 있게"). 묻지 않고 지우고 6초 «되돌리기»(앱은 묻지 않는다 · 되돌리기, 2.626 과 같은 결). 다른 삭제와 같이 묘비(plTombAdd)를 남겨 동기화로 되살아나지 않게 */
   function scDelCand(id){scArchiveCandidate(id);}
   function _wire(){
   if(!box.__sc){box.__sc=1;
+    scWireNameEdits(box);
     box.addEventListener("click",function(e){
       /* 1.686 — 프로필 셀 클릭 = 곧장 프로필·평가 편집(사용자: "중간 카드 말고 편집이 바로").
          선수 카드 PDF는 편집 화면 상단 버튼으로. */
       var pc=e.target.closest("[data-sccard]");
       if(pc){ e.stopPropagation(); try{openPlayer(pc.dataset.sccard);}catch(_){} return; }
-      /* 1.822 — 폰 카드: 프로필 버튼이 숨겨져 있으면 이름 탭이 프로필을 연다 */
-      var nm=e.target.closest(".sc-name"); if(nm){ var rw=nm.closest(".sc-row"); var pb=rw&&rw.querySelector("[data-sccard]");
-        if(pb&&getComputedStyle(pb).display==="none"){ e.stopPropagation(); try{openPlayer(pb.dataset.sccard);}catch(_){} return; } }
+      if(e.target.closest("[data-scname]")){e.stopPropagation();return;}
       var dl=e.target.closest("[data-scdel]");
       if(dl){ e.stopPropagation(); scDelCand(dl.dataset.scdel); return; }   /* 2.650 */
       var ma=e.target.closest("[data-scmadd]"), md=e.target.closest("[data-scmdel]");
@@ -19786,29 +19898,32 @@ html body .ck .wk-c:not(.m):not(.off):has(.t.dim) .ls:not(#_),html body .ck .wk-
    반복 ID는 기존 모바일 카드의 !important 규칙보다 이 목록의 셀 배치를 우선한다. */
 html.ps-page-scout #playersView #scList#scList .sc-row[data-pid],
 html.ps-page-scout #playersView #scList#scList .sc-head{
-  display:grid!important;grid-template-columns:minmax(90px,140px) 28px minmax(100px,1fr) 58px 70px 250px 64px!important;
+  display:grid!important;grid-template-columns:minmax(120px,160px) 58px minmax(250px,1fr) 64px 28px!important;
   grid-template-areas:none!important;gap:0 8px!important;align-items:center!important;
-  min-height:36px!important;padding:3px 4px!important;margin:0!important;box-sizing:border-box!important;
+  min-height:48px!important;padding:3px 4px!important;margin:0!important;box-sizing:border-box!important;
   border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
 }
 html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]>*{grid-row:1!important;min-width:0!important;order:0!important}
 html.ps-page-scout #playersView #scList#scList .sc-num{grid-column:2!important;width:100%!important;height:28px!important;line-height:28px!important;padding:0!important;box-sizing:border-box!important;-webkit-appearance:none;appearance:none;font-family:inherit!important;font-size:11px!important;font-weight:600!important;letter-spacing:0!important;font-variant-numeric:tabular-nums!important;text-align:center!important}
 html.ps-page-scout #playersView #scList#scList .sc-name{grid-column:3!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
 html.ps-page-scout #playersView #scList#scList .sc-name b{font-size:12px!important;line-height:1.3!important}
+html.ps-page-scout #playersView #scList#scList input.sc-name{display:block!important;width:100%!important;height:28px!important;min-height:0!important;padding:0 2px!important;border:1px solid transparent!important;border-radius:5px!important;background:transparent!important;color:var(--txt)!important;font-family:inherit!important;font-size:12px!important;font-weight:600!important;line-height:1.3!important;box-sizing:border-box!important;cursor:text}
+html.ps-page-scout #playersView #scList#scList input.sc-name:focus{border-color:var(--blue)!important;background:var(--surface)!important;outline:none}
 html.ps-page-scout #playersView #scList#scList .sc-club{grid-column:1!important;display:block!important;text-align:left!important;width:100%!important;max-width:none!important;height:28px!important;padding:0!important;font-size:11px!important;border:0!important;background:transparent!important}
-html.ps-page-scout #playersView #scList#scList .sc-cats{grid-column:auto!important;display:flex!important;align-items:center!important;gap:4px!important;padding:0!important;min-height:0!important;height:28px!important;background:none!important;border:0!important}
+html.ps-page-scout #playersView #scList#scList .sc-cats{grid-column:auto!important;display:flex!important;align-items:center!important;gap:4px!important;padding:0!important;min-height:0!important;height:28px!important;width:228px!important;max-width:228px!important;flex:0 1 228px!important;background:none!important;border:0!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg{display:inline-flex!important;align-items:center!important;gap:2px!important;margin:0!important;min-width:0!important;white-space:nowrap!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg i{font-size:9px!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg b{font-size:10px!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cav-g{display:none!important}
 html.ps-page-scout #playersView #scList#scList .sc-gr{grid-column:auto!important;flex:0 0 22px!important;justify-self:center!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:22px!important;min-width:22px!important;height:22px!important;min-height:22px!important;line-height:1!important;box-sizing:border-box!important;-webkit-appearance:none;appearance:none;border-radius:50%!important;padding:0!important;font-family:inherit!important;font-size:11px!important;letter-spacing:0!important;text-align:center!important}
-html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:4!important;height:28px!important;min-height:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;white-space:nowrap!important}
-html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:5!important;display:block!important;width:100%!important;height:28px!important;min-height:0!important;padding:0!important;font-size:11px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-html.ps-page-scout #playersView #scList#scList .sc-actions{grid-column:7!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:2px!important}
-html.ps-page-scout #playersView #scList#scList .sc-eval{grid-column:6!important;display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:2!important;height:28px!important;min-height:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;white-space:nowrap!important}
+html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:5!important;display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:28px!important;min-height:0!important;padding:0!important;font-size:11px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;border:1px solid var(--line)!important;border-radius:6px!important;background:var(--surface)!important}
+html.ps-page-scout #playersView #scList#scList .sc-actions{grid-column:4!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:2px!important}
+html.ps-page-scout #playersView #scList#scList .sc-eval{grid-column:3!important;display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
 html.ps-page-scout #playersView #scList#scList .sc-head i{text-align:left!important}
 html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(2){text-align:center!important}
-html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(6){width:22px!important;justify-self:start!important;text-align:center!important}
+html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(3){width:22px!important;justify-self:start!important;text-align:center!important;letter-spacing:0!important;overflow:visible!important}
+html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(4),html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(5){text-align:center!important}
 html.ps-page-scout #playersView #scList#scList .sc-grp{padding:10px 4px 4px!important;margin:0!important;font-size:11px!important;min-height:0!important}
 html.ps-page-scout #playersView #scList#scList .sc-grp b{font-size:11px!important}
 html.ps-page-scout #playersView #scList#scList .sc-notes{position:relative;flex:1;min-width:0}
@@ -19829,21 +19944,19 @@ html.ps-page-scout #playersView #scList#scList .sc-notes .sc-mx{opacity:.7!impor
 html.ps-page-scout #playersView #scList#scList .sc-notes .sc-madd{height:32px!important;min-height:32px!important;flex:0 0 auto!important;width:100%!important;font-size:12px!important}
 html.ps-page-scout #playersView #scList#scList .sc-del{width:100%!important;height:32px!important;min-height:32px!important;margin:2px 0 0!important;padding:0!important;border-radius:6px!important;color:var(--dim)!important;font-size:12px!important;opacity:1!important}
 @media(max-width:1000px){
-  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid],html.ps-page-scout #playersView #scList#scList .sc-head{grid-template-columns:minmax(60px,112px) 28px minmax(80px,1fr) 58px 64px 32px 58px!important;gap:0 6px!important}
+  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid],html.ps-page-scout #playersView #scList#scList .sc-head{grid-template-columns:minmax(120px,160px) 58px minmax(32px,1fr) 58px 28px!important;gap:0 6px!important}
   html.ps-page-scout #playersView #scList#scList .sc-cats{display:none!important}
-  html.ps-page-scout #playersView #scList#scList .sc-eval{justify-content:center!important}
-  html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(6){width:100%!important}
+  html.ps-page-scout #playersView #scList#scList .sc-eval{justify-content:flex-start!important}
 }
 @media(max-width:600px){
-  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]{grid-template-columns:minmax(32px,.85fr) 28px minmax(40px,1.2fr) 52px 24px 24px 50px!important;gap:0 3px!important;min-height:42px!important;padding:4px 0!important}
+  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]{grid-template-columns:minmax(80px,1fr) 48px 24px 46px 24px!important;gap:0 4px!important;min-height:48px!important;padding:3px 0!important}
   html.ps-page-scout #playersView #scList#scList{margin-left:-8px!important;margin-right:-8px!important;width:auto!important;max-width:none!important}
   html.ps-page-scout #playersView #scList#scList .sc-head{display:none!important}
   html.ps-page-scout #playersView #scList#scList .sc-name b{font-size:12px!important}
-  html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:4!important;font-size:10px!important}
-  html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:5!important;font-size:0!important}
-  html.ps-page-scout #playersView #scList#scList .sc-prof::after{content:'›';font-size:18px!important}
+  html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:2!important;font-size:10px!important}
+  html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:5!important;font-size:10px!important}
   html.ps-page-scout #playersView #scList#scList .sc-num,html.ps-page-scout #playersView #scList#scList .sc-st,html.ps-page-scout #playersView #scList#scList .sc-prof,
-  html.ps-page-scout #playersView #scList#scList .sc-notes summary,html.ps-page-scout #playersView #scList#scList .sc-club{height:32px!important}
+  html.ps-page-scout #playersView #scList#scList .sc-notes summary,html.ps-page-scout #playersView #scList#scList .sc-club,html.ps-page-scout #playersView #scList#scList input.sc-name{height:32px!important}
   html.ps-page-scout #playersView #scList#scList .sc-num{line-height:32px!important}
   html.ps-page-scout #playersView #scList#scList .sc-grp{padding-top:12px!important}
   html.ps-page-scout #playersView #scList#scList .sc-notes .sc-memo{font-size:16px!important}
@@ -19854,6 +19967,14 @@ html.ps-page-scout #playersView #scList#scList .sc-del{width:100%!important;heig
   html.ps-page-scout #playersView #scList#scList .sc-our-pos{grid-column:3!important;font-size:11px!important}
   html.ps-page-scout #playersView #scList#scList .sc-our-go{grid-column:4!important;font-size:11px!important}
 }
+/* 이름 아래 출신 팀·배번을 묶어 작은 화면에서도 이름 폭을 확보한다. */
+html.ps-page-scout #playersView #scList#scList .sc-identity{grid-column:1!important;display:grid!important;grid-template-columns:minmax(0,1fr) 28px!important;grid-template-rows:20px 20px!important;gap:0 4px!important;min-width:0!important;width:100%!important;max-width:160px!important;align-items:center!important}
+html.ps-page-scout #playersView #scList#scList .sc-identity input{grid-area:auto!important;order:0!important;min-width:0!important;min-height:0!important;margin:0!important;height:20px!important;line-height:20px!important;box-sizing:border-box!important}
+html.ps-page-scout #playersView #scList#scList .sc-identity .sc-name{grid-column:1 / -1!important;grid-row:1!important;padding:0 2px!important}
+html.ps-page-scout #playersView #scList#scList .sc-identity .sc-club{grid-column:1!important;grid-row:2!important;padding:0 2px!important;font-size:10px!important;color:var(--dim)!important;text-overflow:ellipsis!important}
+html.ps-page-scout #playersView #scList#scList .sc-identity .sc-num{grid-column:2!important;grid-row:2!important;border-radius:4px!important;font-size:10px!important}
+html.ps-page-scout #playersView #scList#scList .sc-prof::after{content:none!important}
+html.ps-page-scout #playersView #scList#scList .sc-prof svg{display:block;flex:none}
 </style>
 </body>
 </html>
