@@ -5539,15 +5539,12 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
 
     <!-- ===== 스카우팅 ===== -->
     <style id="ps-2848-scout-board">
-      /* 포지션 카드는 그대로 두고 선수 목록만 카드 안에서 스크롤한다. */
-      html.ps-page-scout #playersView #sbWrap .sb-players{display:flex;flex-direction:column;gap:3px;min-height:0;max-height:48px;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-width:thin;scrollbar-gutter:stable;touch-action:pan-y}
+      /* 포지션 카드는 선수 수에 맞춰 늘어나며 우리팀과 후보를 모두 펼쳐 보인다. */
+      html.ps-page-scout #playersView #sbWrap.sb-wrap .pitch-svg{min-height:max(520px,var(--sb-content-min-height,0px))}
+      html.ps-page-scout #playersView #sbWrap .sb-players{display:flex;flex-direction:column;gap:3px;min-height:0}
       html.ps-page-scout #playersView #sbWrap .sb-players .sb-chip{flex:0 0 auto;min-width:0;margin:0}
       html.ps-page-scout #playersView #sbWrap .sb-players .sb-chip.ours{background:var(--blue-soft,#eef4ff)}
       html.ps-page-scout #playersView #sbSplit.with-side #sbWrap .sb-players{display:none}
-      @media(pointer:coarse){
-        /* 칩은 끌기 대상이다. 오른쪽 빈 띠는 손가락으로 목록을 내리는 자리다. */
-        html.ps-page-scout #playersView #sbWrap .sb-players{padding-right:18px;background:linear-gradient(to right,transparent calc(100% - 16px),var(--bar2,#f3f4f6) calc(100% - 16px))}
-      }
     </style>
     <section class="view on" id="playersView">
       <div class="growth-head">
@@ -7759,10 +7756,10 @@ function renderScoutBoard(){
        '＋ 선수'가 이미 '여기가 비었고 여기를 누르면 채운다'를 말하므로 위 상자는 같은 말을 한 번 더 한 것이고,
        11개 자리 × 2 = 22개 점선 상자가 운동장을 덮고 있었다.
        선수 탭 보드는 원래 빈 자리에 '＋ 선수' 하나만 둔다 — 같은 운동장이니 같게 맞춘다. */
-    /* 두 종류를 따로 스크롤해 우리 선수가 많아도 첫 후보가 처음부터 보인다. */
+    /* 우리팀과 후보를 모두 펼친다. 선수 수에 맞춰 카드 높이가 자연스럽게 늘어난다. */
     var body=[{kind:"ours",label:"우리 팀",list:mine},{kind:"target",label:"스카우트 후보",list:cand}].map(function(group){
       if(!group.list.length)return "";
-      return '<div class="sb-players" data-sbgroup="'+group.kind+'" tabindex="0" aria-label="'+PSSafe.html(sbSlotLabel(sl,i)+' '+group.label+' 선수 목록')+'">'
+      return '<div class="sb-players" data-sbgroup="'+group.kind+'" role="group" aria-label="'+PSSafe.html(sbSlotLabel(sl,i)+' '+group.label+' 선수 목록')+'">'
         +group.list.map(function(p){return sbChip(p,po);}).join("")+'</div>';
     }).join("");
     var tail = sbAdding===String(i)
@@ -8241,11 +8238,39 @@ function sbCardUp(){
 /* 카드는 중앙 정렬이라 가장자리 자리는 절반이 밖으로 나간다. 보이는 위치만 안으로 당긴다. */
 function sbClamp(){
   var wrap=$("sbWrap"); if(!wrap) return;
+  /* 필터나 화면 크기가 바뀌면 기존 확장값부터 지워 원래 높이로 다시 잰다.
+     카드가 더 길 때만 표시 높이를 늘리며 저장 좌표는 바꾸지 않는다. */
+  wrap.style.removeProperty("--sb-content-min-height");
   var r=wrap.getBoundingClientRect(); if(!r.width||!r.height) return;
-  var slots=sbSlots();
+  var slots=sbSlots(), layout=[], needed=0, edge=0.008, gap=8;
   wrap.querySelectorAll(".sb-slot").forEach(function(el){
     var sl=slots[+el.dataset.sbslot]; if(!sl) return;
-    var v=sbView(sl);
+    var v=sbView(sl), w=el.offsetWidth, h=el.offsetHeight;
+    var mx=w/2/r.width+edge;
+    var x=Math.max(mx,Math.min(1-mx,v.x/100))*r.width;
+    layout.push({el:el,v:v,x:x,w:w,h:h,y:Math.max(edge,Math.min(1-edge,v.y/100))});
+    needed=Math.max(needed,h/(1-2*edge));
+  });
+  /* 가로 범위가 겹치는 카드만 세로 간격을 확보한다. 저장된 비율은 그대로다.
+     같은 높이 또는 2% 이내의 수동 겹침은 화면 전체를 과도하게 늘리지 않는다. */
+  layout.forEach(function(a,i){
+    layout.slice(i+1).forEach(function(b){
+      if(Math.abs(a.x-b.x)>=(a.w+b.w)/2)return;
+      var top=a.y<b.y?a:b, bottom=a.y<b.y?b:a, dy=bottom.y-top.y;
+      if(dy<=0.02)return;
+      needed=Math.max(needed,
+        ((top.h+bottom.h)/2+gap)/dy,
+        (top.h+bottom.h/2+gap)/(bottom.y-edge),
+        (top.h/2+bottom.h+gap)/(1-edge-top.y),
+        (top.h+bottom.h+gap)/(1-2*edge));
+    });
+  });
+  if(needed+2>r.height){
+    wrap.style.setProperty("--sb-content-min-height",Math.ceil(needed+2)+"px");
+    r=wrap.getBoundingClientRect();
+  }
+  layout.forEach(function(card){
+    var el=card.el, v=card.v;
     var mx=(el.offsetWidth/2)/r.width*100+0.8, my=(el.offsetHeight/2)/r.height*100+0.8;
     el.style.left=Math.max(mx,Math.min(100-mx,v.x))+"%";
     el.style.top =Math.max(my,Math.min(100-my,v.y))+"%";
@@ -19761,13 +19786,13 @@ html body .ck .wk-c:not(.m):not(.off):has(.t.dim) .ls:not(#_),html body .ck .wk-
    반복 ID는 기존 모바일 카드의 !important 규칙보다 이 목록의 셀 배치를 우선한다. */
 html.ps-page-scout #playersView #scList#scList .sc-row[data-pid],
 html.ps-page-scout #playersView #scList#scList .sc-head{
-  display:grid!important;grid-template-columns:minmax(90px,1fr) 28px minmax(100px,1.3fr) 58px 70px 250px 64px!important;
+  display:grid!important;grid-template-columns:minmax(90px,140px) 28px minmax(100px,1fr) 58px 70px 250px 64px!important;
   grid-template-areas:none!important;gap:0 8px!important;align-items:center!important;
   min-height:36px!important;padding:3px 4px!important;margin:0!important;box-sizing:border-box!important;
   border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
 }
 html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]>*{grid-row:1!important;min-width:0!important;order:0!important}
-html.ps-page-scout #playersView #scList#scList .sc-num{grid-column:2!important;width:100%!important;height:28px!important;padding:0!important;font-size:11px!important;text-align:right!important}
+html.ps-page-scout #playersView #scList#scList .sc-num{grid-column:2!important;width:100%!important;height:28px!important;line-height:28px!important;padding:0!important;box-sizing:border-box!important;-webkit-appearance:none;appearance:none;font-family:inherit!important;font-size:11px!important;font-weight:600!important;letter-spacing:0!important;font-variant-numeric:tabular-nums!important;text-align:center!important}
 html.ps-page-scout #playersView #scList#scList .sc-name{grid-column:3!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
 html.ps-page-scout #playersView #scList#scList .sc-name b{font-size:12px!important;line-height:1.3!important}
 html.ps-page-scout #playersView #scList#scList .sc-club{grid-column:1!important;display:block!important;text-align:left!important;width:100%!important;max-width:none!important;height:28px!important;padding:0!important;font-size:11px!important;border:0!important;background:transparent!important}
@@ -19776,13 +19801,14 @@ html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg{display:inline-
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg i{font-size:9px!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg b{font-size:10px!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cav-g{display:none!important}
-html.ps-page-scout #playersView #scList#scList .sc-gr{grid-column:auto!important;flex:0 0 22px!important;justify-self:center!important;width:22px!important;min-width:22px!important;height:22px!important;min-height:22px!important;border-radius:50%!important;padding:0!important;font-size:11px!important}
+html.ps-page-scout #playersView #scList#scList .sc-gr{grid-column:auto!important;flex:0 0 22px!important;justify-self:center!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:22px!important;min-width:22px!important;height:22px!important;min-height:22px!important;line-height:1!important;box-sizing:border-box!important;-webkit-appearance:none;appearance:none;border-radius:50%!important;padding:0!important;font-family:inherit!important;font-size:11px!important;letter-spacing:0!important;text-align:center!important}
 html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:4!important;height:28px!important;min-height:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;white-space:nowrap!important}
 html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:5!important;display:block!important;width:100%!important;height:28px!important;min-height:0!important;padding:0!important;font-size:11px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 html.ps-page-scout #playersView #scList#scList .sc-actions{grid-column:7!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:2px!important}
 html.ps-page-scout #playersView #scList#scList .sc-eval{grid-column:6!important;display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
 html.ps-page-scout #playersView #scList#scList .sc-head i{text-align:left!important}
-html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(2){text-align:right!important}
+html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(2){text-align:center!important}
+html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(6){width:22px!important;justify-self:start!important;text-align:center!important}
 html.ps-page-scout #playersView #scList#scList .sc-grp{padding:10px 4px 4px!important;margin:0!important;font-size:11px!important;min-height:0!important}
 html.ps-page-scout #playersView #scList#scList .sc-grp b{font-size:11px!important}
 html.ps-page-scout #playersView #scList#scList .sc-notes{position:relative;flex:1;min-width:0}
@@ -19803,12 +19829,13 @@ html.ps-page-scout #playersView #scList#scList .sc-notes .sc-mx{opacity:.7!impor
 html.ps-page-scout #playersView #scList#scList .sc-notes .sc-madd{height:32px!important;min-height:32px!important;flex:0 0 auto!important;width:100%!important;font-size:12px!important}
 html.ps-page-scout #playersView #scList#scList .sc-del{width:100%!important;height:32px!important;min-height:32px!important;margin:2px 0 0!important;padding:0!important;border-radius:6px!important;color:var(--dim)!important;font-size:12px!important;opacity:1!important}
 @media(max-width:1000px){
-  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid],html.ps-page-scout #playersView #scList#scList .sc-head{grid-template-columns:minmax(60px,1fr) 28px minmax(80px,1.3fr) 58px 64px 32px 58px!important;gap:0 6px!important}
+  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid],html.ps-page-scout #playersView #scList#scList .sc-head{grid-template-columns:minmax(60px,112px) 28px minmax(80px,1fr) 58px 64px 32px 58px!important;gap:0 6px!important}
   html.ps-page-scout #playersView #scList#scList .sc-cats{display:none!important}
   html.ps-page-scout #playersView #scList#scList .sc-eval{justify-content:center!important}
+  html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(6){width:100%!important}
 }
 @media(max-width:600px){
-  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]{grid-template-columns:minmax(32px,.85fr) 22px minmax(40px,1.2fr) 52px 24px 24px 50px!important;gap:0 3px!important;min-height:42px!important;padding:4px 0!important}
+  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]{grid-template-columns:minmax(32px,.85fr) 28px minmax(40px,1.2fr) 52px 24px 24px 50px!important;gap:0 3px!important;min-height:42px!important;padding:4px 0!important}
   html.ps-page-scout #playersView #scList#scList{margin-left:-8px!important;margin-right:-8px!important;width:auto!important;max-width:none!important}
   html.ps-page-scout #playersView #scList#scList .sc-head{display:none!important}
   html.ps-page-scout #playersView #scList#scList .sc-name b{font-size:12px!important}
@@ -19817,6 +19844,7 @@ html.ps-page-scout #playersView #scList#scList .sc-del{width:100%!important;heig
   html.ps-page-scout #playersView #scList#scList .sc-prof::after{content:'›';font-size:18px!important}
   html.ps-page-scout #playersView #scList#scList .sc-num,html.ps-page-scout #playersView #scList#scList .sc-st,html.ps-page-scout #playersView #scList#scList .sc-prof,
   html.ps-page-scout #playersView #scList#scList .sc-notes summary,html.ps-page-scout #playersView #scList#scList .sc-club{height:32px!important}
+  html.ps-page-scout #playersView #scList#scList .sc-num{line-height:32px!important}
   html.ps-page-scout #playersView #scList#scList .sc-grp{padding-top:12px!important}
   html.ps-page-scout #playersView #scList#scList .sc-notes .sc-memo{font-size:16px!important}
   html.ps-page-scout #playersView #scList#scList .sc-row.sc-our{display:grid!important;grid-template-columns:28px minmax(0,1fr) 38px 56px!important;grid-template-areas:none!important;gap:6px!important;align-items:center!important;min-height:42px!important;padding:4px 0!important;margin:0!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important}
