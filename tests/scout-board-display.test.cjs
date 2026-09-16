@@ -53,19 +53,44 @@ test('the initial eleven position cards show both registered squad players and s
   assert.equal(h.state.wired,1);assert.equal(h.state.clamped,1);
 });
 
-test('crowded positions retain every player inside one scrollable card without adding cards or changing saved positions',()=>{
+test('crowded positions render all players in one naturally sized card without changing saved positions',()=>{
   const h=setup();h.data.players=Array.from({length:48},(_,i)=>h.player('player-'+i,'pos-0',i%2?'target':'ours'));
   const before=plain(h.data),first=h.data.players[0];h.c.renderScoutBoard();
   assert.equal(h.wrap.children.length,11);
   const ids=h.renderedIds();assert.equal(ids.length,48);assert.equal(new Set(ids).size,48);
-  assert.match(h.wrap.children[0].innerHTML,/<div class="sb-players" data-sbgroup="ours" tabindex="0" aria-label="GK 우리 팀 선수 목록">/);
-  assert.match(h.wrap.children[0].innerHTML,/<div class="sb-players" data-sbgroup="target" tabindex="0" aria-label="GK 스카우트 후보 선수 목록">/);
+  assert.match(h.wrap.children[0].innerHTML,/<div class="sb-players" data-sbgroup="ours" role="group" aria-label="GK 우리 팀 선수 목록">/);
+  assert.match(h.wrap.children[0].innerHTML,/<div class="sb-players" data-sbgroup="target" role="group" aria-label="GK 스카우트 후보 선수 목록">/);
   assert.equal(h.wrap.children.filter(el=>el.innerHTML.includes('class="sb-players"')).length,1);
   const groups=[...h.wrap.children[0].innerHTML.matchAll(/<div class="sb-players" data-sbgroup="([^"]+)"[^>]*>([\s\S]*?)(?=<div class="sb-players"|<button type="button" class="sb-add")/g)];
   assert.deepEqual(groups.map(g=>g[1]),['ours','target']);
   assert.equal([...groups[0][2].matchAll(/data-pid="/g)].length,24);
   assert.equal([...groups[1][2].matchAll(/data-pid="/g)].length,24);
   assert.deepEqual(plain(h.data),before);assert.equal(h.data.players[0],first);
+});
+
+test('each populated card displays the full ordered roster for both groups instead of allocating a limited row count',()=>{
+  for(let ours=0;ours<=5;ours++)for(let candidates=0;candidates<=5;candidates++){
+    const h=setup();
+    h.data.players=[...Array.from({length:ours},(_,i)=>h.player('ours-'+i,'pos-0')),
+      ...Array.from({length:candidates},(_,i)=>h.player('candidate-'+i,'pos-0','target'))];
+    const before=plain(h.data);h.c.renderScoutBoard();
+    const html=h.wrap.children[0].innerHTML;
+    assert.equal(html.includes('data-sbgroup="ours"'),ours>0,'our players remain visible');
+    assert.equal(html.includes('data-sbgroup="target"'),candidates>0,'candidates remain visible');
+    assert.doesNotMatch(html,/--sb-visible-rows|max-height|overflow/);
+    assert.deepEqual(h.renderedIds(),h.data.players.map(p=>p.id),'all players retain their order');
+    assert.deepEqual(plain(h.data),before);
+  }
+});
+
+test('switching to one group displays every player without changing player order',()=>{
+  const h=setup();h.data.players=[...Array.from({length:5},(_,i)=>h.player('ours-'+i,'pos-0')),
+    ...Array.from({length:5},(_,i)=>h.player('candidate-'+i,'pos-0','target'))];
+  for(const [filter,kind,prefix]of [['ours','ours','ours'],['tgt','target','candidate']]){
+    h.c.sbShow=filter;h.c.renderScoutBoard();
+    assert.match(h.wrap.children[0].innerHTML,new RegExp('data-sbgroup="'+kind+'" role="group"'));
+    assert.deepEqual(h.renderedIds(),Array.from({length:5},(_,i)=>prefix+'-'+i));
+  }
 });
 
 test('distinct card positions with the same abbreviation do not lose players through legacy seat filtering',()=>{
@@ -116,4 +141,59 @@ test('legacy custom formations are not truncated or rewritten by the compact dis
   h.state.fallback=Array.from({length:12},(_,i)=>['CB',10+i*6,60]);
   const before=plain(h.data);h.c.renderScoutBoard();
   assert.equal(h.wrap.children.length,12);assert.deepEqual(plain(h.data),before);
+});
+
+function clampSetup(specs,baseHeight=520){
+  const props={},state={baseHeight,width:1000};
+  const slots=specs.map(s=>({x:s.x,y:s.y}));
+  const cards=specs.map((s,i)=>({dataset:{sbslot:String(i)},style:{},offsetWidth:s.w||164,offsetHeight:s.h}));
+  const wrap={style:{setProperty(k,v){props[k]=v;},removeProperty(k){delete props[k];}},
+    getBoundingClientRect:()=>({width:state.width,height:Math.max(state.baseHeight,parseFloat(props['--sb-content-min-height'])||0)}),
+    querySelectorAll:()=>cards};
+  const c=vm.createContext({$:()=>wrap,sbSlots:()=>slots,sbView:s=>s});
+  vm.runInContext(part('function sbClamp()','/* 포지션별 기준 탭'),c);
+  const rect=card=>{const r=wrap.getBoundingClientRect(),x=parseFloat(card.style.left)/100*r.width,y=parseFloat(card.style.top)/100*r.height;
+    return {left:x-card.offsetWidth/2,right:x+card.offsetWidth/2,top:y-card.offsetHeight/2,bottom:y+card.offsetHeight/2};};
+  const assertContained=()=>cards.forEach(card=>{const r=rect(card),pitch=wrap.getBoundingClientRect();
+    assert.ok(r.top>=0&&r.bottom<=pitch.height,'the full card remains inside the pitch');});
+  return {c,slots,cards,props,state,wrap,rect,assertContained};
+}
+
+test('the pitch expands for a tall card and shrinks to its normal height after filtering without changing saved positions',()=>{
+  const h=clampSetup([{x:50,y:90,h:1800}]);
+  const before=plain(h.slots);h.c.sbClamp();
+  assert.ok(h.wrap.getBoundingClientRect().height>1800);h.assertContained();
+  assert.deepEqual(plain(h.slots),before);
+  h.cards[0].offsetHeight=150;h.c.sbClamp();
+  assert.equal(h.wrap.getBoundingClientRect().height,520);
+  assert.equal(h.props['--sb-content-min-height'],undefined);h.assertContained();
+  assert.deepEqual(plain(h.slots),before);
+});
+
+test('horizontally intersecting crowded cards gain a clear vertical gap while retaining saved position proportions',()=>{
+  for(const specs of [
+    [{x:50,y:20,h:250},{x:52,y:55,h:300}],
+    [{x:50,y:0,h:80},{x:50,y:8,h:160}],
+    [{x:50,y:92,h:160},{x:50,y:100,h:80}]
+  ]){
+    const h=clampSetup(specs),before=plain(h.slots);h.c.sbClamp();
+    assert.ok(h.rect(h.cards[1]).top-h.rect(h.cards[0]).bottom>=8,'crowded cards do not obscure each other');
+    h.assertContained();assert.deepEqual(plain(h.slots),before);
+    const height=h.wrap.getBoundingClientRect().height;h.c.sbClamp();
+    assert.equal(h.wrap.getBoundingClientRect().height,height,'repeated layout does not accumulate extra height');
+    h.cards.forEach(card=>{card.offsetHeight=32;});h.c.sbClamp();
+    assert.ok(h.wrap.getBoundingClientRect().height<height,'fewer players remove obsolete expanded space');
+  }
+});
+
+test('separate columns and manually colocated cards preserve the existing pitch height',()=>{
+  for(const specs of [
+    [{x:10,y:30,h:300},{x:90,y:60,h:300}],
+    [{x:50,y:50,h:300},{x:50,y:50,h:300}],
+    [{x:50,y:50,h:300},{x:50,y:51,h:300}]
+  ]){
+    const h=clampSetup(specs,840);h.c.sbClamp();
+    assert.equal(h.wrap.getBoundingClientRect().height,840,'the viewport or meeting-mode baseline remains effective');
+    assert.equal(h.props['--sb-content-min-height'],undefined);h.assertContained();
+  }
 });
