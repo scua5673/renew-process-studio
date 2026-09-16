@@ -8,6 +8,11 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-17-scout-mobile-origin',date:'2026-09-17',title:'모바일 출신 팀명과 등번호를 붙였습니다',
+    changes:[
+      '스카우트 명단에서 출신 팀명 바로 옆에 등번호를 표시합니다. 팀명을 수정해도 간격이 따라 바뀝니다.'
+    ]
+  },{
     id:'2026-09-17-scout-board-size',date:'2026-09-17',title:'스카우팅 보드와 명단 편집을 다듬었습니다',
     changes:[
       '스카우팅 운동장과 카드 폭·여백·선수 행 높이를 선수단 보드 기준으로 통일했습니다.',

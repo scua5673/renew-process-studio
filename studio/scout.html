@@ -8630,9 +8630,10 @@ function renderScoutCands(){
     return '<div class="sc-row" data-pid="'+esc(p.id)+'" data-ini="'+esc(String(p.name||"?").trim().charAt(0)||"?")+'">'
       +'<div class="sc-identity">'
       +'<input type="text" class="sc-name" data-scname="'+esc(p.id)+'" value="'+esc(p.name)+'" title="'+esc(p.name)+'" aria-label="'+esc(p.name)+' 이름 편집" autocomplete="off">'
-      +'<input class="sc-club" data-scclub="'+esc(p.id)+'" value="'+esc(p.club||"")+'" placeholder="출신" aria-label="'+esc(p.name)+' 출신 팀">'
+      +'<span class="sc-origin"><span class="sc-club-field"><span class="sc-club-measure" aria-hidden="true">'+esc(p.club||'출신')+'</span>'
+      +'<input class="sc-club" data-scclub="'+esc(p.id)+'" value="'+esc(p.club||"")+'" placeholder="출신" aria-label="'+esc(p.name)+' 출신 팀"></span>'
       +'<input class="sc-num" data-scnum="'+esc(p.id)+'" value="'+esc(String(p.num||""))+'" placeholder="#" inputmode="numeric" maxlength="3" aria-label="'+esc(p.name)+' 배번">'
-      +'</div>'
+      +'</span></div>'
       +'<button type="button" class="sc-st" data-scst="'+esc(p.id)+'" style="--c:'+st[2]+'" title="상태 — 눌러서 고르기" aria-haspopup="menu">'+st[1]+'</button>'
       +'<span class="sc-eval"><button type="button" class="sc-gr'+(g?" on g"+g:"")+'" data-scgrade="'+esc(p.id)+'"'
         +' title="평가 '+(g||"없음")+' — 눌러서 '+SB_GRADES.join(" → ")+' → 없음">'+(g||"–")+'</button>'
@@ -8690,6 +8691,11 @@ function renderScoutCands(){
       if(e.target.closest("input,.sc-notes"))return;
       var row=e.target.closest(".sc-row[data-pid]");
       if(row){try{openPlayer(row.dataset.pid);}catch(_){}}
+    });
+    box.addEventListener("input",function(e){
+      var c=e.target.closest('[data-scclub]');if(!c)return;
+      var field=c.closest('.sc-club-field'),measure=field&&field.querySelector('.sc-club-measure');
+      if(measure)measure.textContent=c.value||c.placeholder;
     });
     box.addEventListener("change",function(e){
       var c=e.target.closest("[data-scclub]"),s=e.target.closest("[data-scseen]");
@@ -19975,6 +19981,16 @@ html.ps-page-scout #playersView #scList#scList .sc-identity .sc-club{grid-column
 html.ps-page-scout #playersView #scList#scList .sc-identity .sc-num{grid-column:2!important;grid-row:2!important;border-radius:4px!important;font-size:10px!important}
 html.ps-page-scout #playersView #scList#scList .sc-prof::after{content:none!important}
 html.ps-page-scout #playersView #scList#scList .sc-prof svg{display:block;flex:none}
+html.ps-page-scout #playersView #scList#scList .sc-origin,
+html.ps-page-scout #playersView #scList#scList .sc-club-field{display:contents}
+html.ps-page-scout #playersView #scList#scList .sc-club-measure{display:none}
+@media(max-width:600px){
+  html.ps-page-scout #playersView #scList#scList .sc-identity .sc-origin{grid-column:1 / -1;grid-row:2;display:flex;align-items:center;gap:2px;min-width:0}
+  html.ps-page-scout #playersView #scList#scList .sc-identity .sc-club-field{display:grid;position:relative;flex:0 1 auto;min-width:24px;max-width:calc(100% - 30px);font-family:inherit;font-size:10px;font-weight:400;letter-spacing:0;line-height:20px}
+  html.ps-page-scout #playersView #scList#scList .sc-club-measure{display:block;visibility:hidden;pointer-events:none;white-space:pre;overflow:hidden;height:20px;padding:0 2px;box-sizing:border-box}
+  html.ps-page-scout #playersView #scList#scList .sc-identity .sc-club{position:absolute;inset:0;font-weight:inherit!important;letter-spacing:inherit!important}
+  html.ps-page-scout #playersView #scList#scList .sc-identity .sc-num{flex:0 0 28px!important;width:28px!important}
+}
 </style>
 </body>
 </html>
