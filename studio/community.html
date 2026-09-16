@@ -212,7 +212,9 @@
   .cpa:before{content:"";position:absolute;inset:6px;border:1.5px solid rgba(255,255,255,.7);border-radius:3px}
   .cpt{position:absolute;transform:translate(-50%,-50%);width:23px;height:23px;border-radius:50%;border:1.5px solid #fff;font-style:normal;font-weight:800;font-size:10px;line-height:20px;text-align:center;transition:left .85s ease,top .85s ease;box-shadow:0 2px 5px rgba(0,0,0,.3)}
   .cpb{position:absolute;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--surface);border:1.5px solid #111;transition:left .85s ease,top .85s ease}
-  .cpa-x{position:absolute;right:8px;top:8px;width:28px;height:28px;border-radius:8px;border:0;background:rgba(10,16,28,.55);color:#fff;font-size:13px;cursor:pointer}
+  .cpa-ctl{position:absolute;right:8px;top:8px;display:flex;gap:6px;z-index:8}
+  .cpa-ctl button{width:28px;height:28px;border-radius:8px;border:0;background:rgba(10,16,28,.55);color:#fff;font-size:13px;cursor:pointer}
+  .cpa-ctl button:hover{background:rgba(10,16,28,.75)}
   .cp-thumb img{width:100%;height:100%;object-fit:cover;display:block}
   .cp-summary b{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--text-3);margin:6px 6px 0 0;text-transform:uppercase}
   .cp-summary{min-height:0;overflow:auto;font-size:var(--fs-body);line-height:1.65;color:var(--text-2);
@@ -834,6 +836,14 @@ function cpAnimStart(p){
   if(cpAnimReal(box,frames,(p.item&&p.item.thumb)||p.thumb,function(){cpAnimStop();renderPreview(p);}))return;
   cpAnimGeneric(box,frames,p);
 }
+function cpAnimControls(onPause,onStop){
+  var ctl=document.createElement('div');ctl.className='cpa-ctl';
+  var pause=document.createElement('button');pause.type='button';pause.setAttribute('aria-label','일시정지');pause.title='일시정지';pause.textContent='⏸';
+  var stop=document.createElement('button');stop.type='button';stop.setAttribute('aria-label','정지');stop.title='정지';stop.textContent='✕';
+  pause.onclick=function(e){e.stopPropagation();onPause();};
+  stop.onclick=function(e){e.stopPropagation();onStop();};
+  ctl.appendChild(pause);ctl.appendChild(stop);return ctl;
+}
 function cpAnimReal(box,frames,thumbSvg,onStop){
   var s=sanSvg(thumbSvg);if(!s)return false;
   var wrap=document.createElement('div');wrap.className='cpa-real';wrap.innerHTML=s;
@@ -841,8 +851,7 @@ function cpAnimReal(box,frames,thumbSvg,onStop){
   var toks={};[].forEach.call(svgEl.querySelectorAll('.token[data-id]'),function(g){toks[g.getAttribute('data-id')]=g;});
   if(!Object.keys(toks).length)return false;
   box.innerHTML='';box.appendChild(wrap);
-  var xb=document.createElement('button');xb.className='cpa-x';xb.type='button';xb.setAttribute('aria-label','정지');xb.textContent='✕';box.appendChild(xb);
-  xb.onclick=function(e){e.stopPropagation();onStop();};
+  box.appendChild(cpAnimControls(cpAnimStop,onStop));
   /* 토큰의 현재 위치(translate)와 나머지 변환(rotate·scale)을 분리해 보존 */
   var cur={};Object.keys(toks).forEach(function(id){
     var tr=toks[id].getAttribute('transform')||'';
@@ -899,9 +908,9 @@ function cpAnimGeneric(box,frames,p){
       return '<i class="cpt" data-id="'+esc(String(q.id))+'" style="left:'+X(q.x)+'%;top:'+Y(q.y)+'%;background:'+esc(bg)+';color:'+(cpDark(bg)?'#fff':'#16213a')+'">'+esc(String(q.num||''))+'</i>';
     }).join('')
     +(f0.ball?'<i class="cpb" style="left:'+X(f0.ball.x)+'%;top:'+Y(f0.ball.y)+'%"></i>':'')
-    +'</div><button class="cpa-x" type="button" aria-label="정지">✕</button>';
+    +'</div>';
   var host=box.querySelector('.cpa');
-  box.querySelector('.cpa-x').onclick=function(){cpAnimStop();renderPreview(p);};
+  box.appendChild(cpAnimControls(cpAnimStop,function(){cpAnimStop();renderPreview(p);}));
   var i=0;
   function step(){
     i=(i+1)%frames.length;

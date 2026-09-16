@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-16-training-preview-pause',date:'2026-09-16',title:'훈련 애니메이션 일시정지 추가',
+    changes:[
+      '보관함과 커뮤니티 훈련 미리보기에서 정지와 일시정지를 분리했습니다.',
+      '일시정지는 현재 장면에 그대로 멈추고, 정지는 기존처럼 미리보기를 닫아 처음 화면으로 돌아갑니다.'
+    ]
+  },{
     id:'2026-09-16-save-conflict',date:'2026-09-16',title:'반복 저장 충돌과 경기 확인을 개선했습니다',
     changes:[
       '서버에 같은 내용이 저장됐는데도 재시도가 반복되던 경우를 다시 확인해 마무리합니다.',
