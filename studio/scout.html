@@ -8458,7 +8458,7 @@ function renderScoutCands(){
      관찰일도 뺐다(메모 두 칸을 넣기로). 날짜는 프로필·평가 편집에서 계속 볼 수 있다. */
   /* 1.566 — 상태를 맨 앞 열로(사용자 지시). 이름 옆에 붙어 있어 이름 길이에 따라 위치가 흔들렸다. */
   /* 1.685 — '기준 대비' 열 제거(사용자: 없애도 될 것 같아). 적합도·핵심 점은 프로필 카드에서 본다. */
-  var head='<div class="sc-row sc-head"><i style="text-align:right">#</i><i>이름</i><i>출신</i><i>평가 평균</i><i>평가</i><i>상태</i><i>프로필</i><i>메모</i></div>';   /* 2.269 — v3 열 순서(명단과 같은 골격) */
+  var head='<div class="sc-row sc-head"><i>팀</i><i>배번</i><i>이름</i><i>상태</i><i>프로필</i><i>평가</i><i>＋메모</i></div>';
 
   /* 1.558 — 선수 탭처럼 **포지션별로 묶는다**(사용자 지시). 정렬은 이미 포지션 순이라
      경계가 바뀌는 지점에 머리글만 끼워 넣으면 된다. */
@@ -8492,22 +8492,22 @@ function renderScoutCands(){
     var st=scStOf(p.scoutSt);
     var g=String(p.grade||"").toUpperCase();
     return '<div class="sc-row" data-pid="'+esc(p.id)+'" data-ini="'+esc(String(p.name||"?").trim().charAt(0)||"?")+'">'
+      +'<input class="sc-club" data-scclub="'+esc(p.id)+'" value="'+esc(p.club||"")+'" placeholder="팀" aria-label="'+esc(p.name)+' 소속팀">'
+      +'<input class="sc-num" data-scnum="'+esc(p.id)+'" value="'+esc(String(p.num||""))+'" placeholder="#" inputmode="numeric" maxlength="3" aria-label="'+esc(p.name)+' 배번">'
+      +'<span class="sc-name" title="'+esc(p.name)+'"><b>'+esc(p.name)+'</b></span>'
       +'<button type="button" class="sc-st" data-scst="'+esc(p.id)+'" style="--c:'+st[2]+'" title="상태 — 눌러서 고르기" aria-haspopup="menu">'+st[1]+'</button>'
-      +'<button type="button" class="sc-gr'+(g?" on g"+g:"")+'" data-scgrade="'+esc(p.id)+'"'
+      +'<button type="button" class="sc-prof" data-sccard="'+esc(p.id)+'" title="프로필·평가 편집 열기 — PDF도 여기서" aria-label="'+esc(p.name)+' 프로필">'+esc([age?age+"세":"",p.foot==="L"?"왼발":p.foot==="R"?"오른발":p.foot||""].filter(Boolean).join(" · ")||"프로필 ›")+'</button>'
+      +'<span class="sc-eval"><button type="button" class="sc-gr'+(g?" on g"+g:"")+'" data-scgrade="'+esc(p.id)+'"'
         +' title="평가 '+(g||"없음")+' — 눌러서 '+SB_GRADES.join(" → ")+' → 없음">'+(g||"–")+'</button>'
-      +'<span class="sc-name"><b>'+esc(p.name)+'</b></span>'
-      +'<input class="sc-club" data-scclub="'+esc(p.id)+'" value="'+esc(p.club||"")+'" placeholder="소속팀">'
-      +'<input class="sc-num" data-scnum="'+esc(p.id)+'" value="'+esc(String(p.num||""))+'" placeholder="#" inputmode="numeric" maxlength="3">'
-      +'<button type="button" class="sc-prof" data-sccard="'+esc(p.id)+'" title="프로필·평가 편집 열기 — PDF도 여기서">'+esc([age?age+"세":"",p.foot==="L"?"왼발":p.foot==="R"?"오른발":p.foot||""].filter(Boolean).join(" · ")||"프로필 ›")+'</button>'
-      +'<span class="sc-cats">'+catAvgCellsHTML(p.levels||{})+'</span>'
-      +'<div class="sc-actions"><details class="sc-notes" data-scnotes="'+esc(p.id)+'"><summary title="'+esc(p.name)+' 메모" aria-label="'+esc(p.name)+' 메모 '+scMemos(p).length+'개">메모 <span class="sc-note-count">'+scMemos(p).length+'</span></summary><div class="sc-memos">'
+      +'<span class="sc-cats">'+catAvgCellsHTML(p.levels||{})+'</span></span>'
+      +'<div class="sc-actions"><details class="sc-notes" data-scnotes="'+esc(p.id)+'"><summary title="'+esc(p.name)+' 메모" aria-label="'+esc(p.name)+' 메모 '+scMemos(p).length+'개">＋메모'+(scMemos(p).length?' <span class="sc-note-count">'+scMemos(p).length+'</span>':'')+'</summary><div class="sc-memos">'
         +scMemos(p).map(function(t,mi){
           return '<span class="sc-mrow"><input class="sc-memo" data-scmemo="'+esc(p.id)+'" data-mi="'+mi+'" value="'+esc(t)+'" placeholder="메모">'
             +'<button type="button" class="sc-mx" data-scmdel="'+esc(p.id)+'" data-mi="'+mi+'" title="이 메모 지우기" aria-label="메모 지우기">×</button></span>';
         }).join("")
-        +'<button type="button" class="sc-madd" data-scmadd="'+esc(p.id)+'">＋ 메모</button></div></details>'
-        +'<button type="button" class="sc-del" data-scdel="'+esc(p.id)+'" title="후보 보관 — 기록을 남기고 목록에서 숨김" aria-label="후보 보관">×</button>'   /* 2.650 — 바로 삭제(사용자) */
-      +'</div>'
+        +'<button type="button" class="sc-madd" data-scmadd="'+esc(p.id)+'">＋ 메모</button>'
+        +'<button type="button" class="sc-del" data-scdel="'+esc(p.id)+'" title="후보 보관 — 기록을 남기고 목록에서 숨김">후보 보관</button>'
+      +'</div></details></div>'
       +'</div>';
   }
   /* 2.650 — 후보 바로 삭제(사용자 "바로 삭제 할 수 있게"). 묻지 않고 지우고 6초 «되돌리기»(앱은 묻지 않는다 · 되돌리기, 2.626 과 같은 결). 다른 삭제와 같이 묘비(plTombAdd)를 남겨 동기화로 되살아나지 않게 */
@@ -19761,29 +19761,32 @@ html body .ck .wk-c:not(.m):not(.off):has(.t.dim) .ls:not(#_),html body .ck .wk-
    반복 ID는 기존 모바일 카드의 !important 규칙보다 이 목록의 셀 배치를 우선한다. */
 html.ps-page-scout #playersView #scList#scList .sc-row[data-pid],
 html.ps-page-scout #playersView #scList#scList .sc-head{
-  display:grid!important;grid-template-columns:28px minmax(88px,1.3fr) minmax(72px,1fr) 220px 32px 58px 70px 90px!important;
+  display:grid!important;grid-template-columns:minmax(90px,1fr) 28px minmax(100px,1.3fr) 58px 70px 250px 64px!important;
   grid-template-areas:none!important;gap:0 8px!important;align-items:center!important;
   min-height:36px!important;padding:3px 4px!important;margin:0!important;box-sizing:border-box!important;
   border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
 }
 html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]>*{grid-row:1!important;min-width:0!important;order:0!important}
-html.ps-page-scout #playersView #scList#scList .sc-num{grid-column:1!important;width:100%!important;height:28px!important;padding:0!important;font-size:11px!important;text-align:right!important}
-html.ps-page-scout #playersView #scList#scList .sc-name{grid-column:2!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+html.ps-page-scout #playersView #scList#scList .sc-num{grid-column:2!important;width:100%!important;height:28px!important;padding:0!important;font-size:11px!important;text-align:right!important}
+html.ps-page-scout #playersView #scList#scList .sc-name{grid-column:3!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
 html.ps-page-scout #playersView #scList#scList .sc-name b{font-size:12px!important;line-height:1.3!important}
-html.ps-page-scout #playersView #scList#scList .sc-club{grid-column:3!important;width:100%!important;max-width:none!important;height:28px!important;padding:0!important;font-size:11px!important;border:0!important;background:transparent!important}
-html.ps-page-scout #playersView #scList#scList .sc-cats{grid-column:4!important;display:flex!important;align-items:center!important;gap:4px!important;padding:0!important;min-height:0!important;height:28px!important;background:none!important;border:0!important}
+html.ps-page-scout #playersView #scList#scList .sc-club{grid-column:1!important;display:block!important;text-align:left!important;width:100%!important;max-width:none!important;height:28px!important;padding:0!important;font-size:11px!important;border:0!important;background:transparent!important}
+html.ps-page-scout #playersView #scList#scList .sc-cats{grid-column:auto!important;display:flex!important;align-items:center!important;gap:4px!important;padding:0!important;min-height:0!important;height:28px!important;background:none!important;border:0!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg{display:inline-flex!important;align-items:center!important;gap:2px!important;margin:0!important;min-width:0!important;white-space:nowrap!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg i{font-size:9px!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg b{font-size:10px!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cav-g{display:none!important}
-html.ps-page-scout #playersView #scList#scList .sc-gr{grid-column:5!important;justify-self:center!important;width:22px!important;min-width:22px!important;height:22px!important;min-height:22px!important;border-radius:50%!important;padding:0!important;font-size:11px!important}
-html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:6!important;height:28px!important;min-height:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;white-space:nowrap!important}
-html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:7!important;display:block!important;width:100%!important;height:28px!important;min-height:0!important;padding:0!important;font-size:11px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-html.ps-page-scout #playersView #scList#scList .sc-actions{grid-column:8!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:2px!important}
+html.ps-page-scout #playersView #scList#scList .sc-gr{grid-column:auto!important;flex:0 0 22px!important;justify-self:center!important;width:22px!important;min-width:22px!important;height:22px!important;min-height:22px!important;border-radius:50%!important;padding:0!important;font-size:11px!important}
+html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:4!important;height:28px!important;min-height:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;white-space:nowrap!important}
+html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:5!important;display:block!important;width:100%!important;height:28px!important;min-height:0!important;padding:0!important;font-size:11px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+html.ps-page-scout #playersView #scList#scList .sc-actions{grid-column:7!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:2px!important}
+html.ps-page-scout #playersView #scList#scList .sc-eval{grid-column:6!important;display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+html.ps-page-scout #playersView #scList#scList .sc-head i{text-align:left!important}
+html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(2){text-align:right!important}
 html.ps-page-scout #playersView #scList#scList .sc-grp{padding:10px 4px 4px!important;margin:0!important;font-size:11px!important;min-height:0!important}
 html.ps-page-scout #playersView #scList#scList .sc-grp b{font-size:11px!important}
 html.ps-page-scout #playersView #scList#scList .sc-notes{position:relative;flex:1;min-width:0}
-html.ps-page-scout #playersView #scList#scList .sc-notes summary{display:flex;align-items:center;justify-content:center;gap:4px;list-style:none;cursor:pointer;height:28px;border-radius:6px;font-size:11px;color:var(--dim);white-space:nowrap}
+html.ps-page-scout #playersView #scList#scList .sc-notes summary{display:flex;align-items:center;justify-content:center;gap:2px;list-style:none;cursor:pointer;height:28px;border-radius:6px;font-size:11px;color:var(--dim);white-space:nowrap}
 html.ps-page-scout #playersView #scList#scList .sc-notes summary::-webkit-details-marker{display:none}
 html.ps-page-scout #playersView #scList#scList .sc-notes summary:hover,
 html.ps-page-scout #playersView #scList#scList .sc-notes[open] summary{background:var(--bar);color:var(--blue)}
@@ -19798,26 +19801,22 @@ html.ps-page-scout #playersView #scList#scList .sc-notes .sc-mrow{flex:0 0 auto!
 html.ps-page-scout #playersView #scList#scList .sc-notes .sc-memo{height:32px!important;min-height:32px!important;padding:4px 8px!important;border:1px solid var(--line)!important;background:var(--bar)!important;font-size:13px!important}
 html.ps-page-scout #playersView #scList#scList .sc-notes .sc-mx{opacity:.7!important;width:28px!important;height:32px!important}
 html.ps-page-scout #playersView #scList#scList .sc-notes .sc-madd{height:32px!important;min-height:32px!important;flex:0 0 auto!important;width:100%!important;font-size:12px!important}
-html.ps-page-scout #playersView #scList#scList .sc-del{width:24px!important;height:28px!important;min-height:0!important;margin:0!important;padding:0!important}
+html.ps-page-scout #playersView #scList#scList .sc-del{width:100%!important;height:32px!important;min-height:32px!important;margin:2px 0 0!important;padding:0!important;border-radius:6px!important;color:var(--dim)!important;font-size:12px!important;opacity:1!important}
 @media(max-width:1000px){
-  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid],html.ps-page-scout #playersView #scList#scList .sc-head{grid-template-columns:28px minmax(84px,1.2fr) minmax(64px,1fr) 32px 58px 64px 90px!important}
-  html.ps-page-scout #playersView #scList#scList .sc-cats,html.ps-page-scout #playersView #scList#scList .sc-head i:nth-child(4){display:none!important}
-  html.ps-page-scout #playersView #scList#scList .sc-gr{grid-column:4!important}
-  html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:5!important}
-  html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:6!important}
-  html.ps-page-scout #playersView #scList#scList .sc-actions{grid-column:7!important}
+  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid],html.ps-page-scout #playersView #scList#scList .sc-head{grid-template-columns:minmax(60px,1fr) 28px minmax(80px,1.3fr) 58px 64px 32px 58px!important;gap:0 6px!important}
+  html.ps-page-scout #playersView #scList#scList .sc-cats{display:none!important}
+  html.ps-page-scout #playersView #scList#scList .sc-eval{justify-content:center!important}
 }
 @media(max-width:600px){
-  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]{grid-template-columns:22px minmax(0,1fr) 26px 46px 24px 70px!important;gap:0 3px!important;min-height:42px!important;padding:4px 0!important}
-  html.ps-page-scout #playersView #scList#scList .sc-head,html.ps-page-scout #playersView #scList#scList .sc-club{display:none!important}
-  html.ps-page-scout #playersView #scList#scList .sc-name b{font-size:13px!important}
-  html.ps-page-scout #playersView #scList#scList .sc-gr{grid-column:3!important}
+  html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]{grid-template-columns:minmax(32px,.85fr) 22px minmax(40px,1.2fr) 52px 24px 24px 50px!important;gap:0 3px!important;min-height:42px!important;padding:4px 0!important}
+  html.ps-page-scout #playersView #scList#scList{margin-left:-8px!important;margin-right:-8px!important;width:auto!important;max-width:none!important}
+  html.ps-page-scout #playersView #scList#scList .sc-head{display:none!important}
+  html.ps-page-scout #playersView #scList#scList .sc-name b{font-size:12px!important}
   html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:4!important;font-size:10px!important}
   html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:5!important;font-size:0!important}
   html.ps-page-scout #playersView #scList#scList .sc-prof::after{content:'›';font-size:18px!important}
-  html.ps-page-scout #playersView #scList#scList .sc-actions{grid-column:6!important}
   html.ps-page-scout #playersView #scList#scList .sc-num,html.ps-page-scout #playersView #scList#scList .sc-st,html.ps-page-scout #playersView #scList#scList .sc-prof,
-  html.ps-page-scout #playersView #scList#scList .sc-notes summary,html.ps-page-scout #playersView #scList#scList .sc-del{height:32px!important}
+  html.ps-page-scout #playersView #scList#scList .sc-notes summary,html.ps-page-scout #playersView #scList#scList .sc-club{height:32px!important}
   html.ps-page-scout #playersView #scList#scList .sc-grp{padding-top:12px!important}
   html.ps-page-scout #playersView #scList#scList .sc-notes .sc-memo{font-size:16px!important}
   html.ps-page-scout #playersView #scList#scList .sc-row.sc-our{display:grid!important;grid-template-columns:28px minmax(0,1fr) 38px 56px!important;grid-template-areas:none!important;gap:6px!important;align-items:center!important;min-height:42px!important;padding:4px 0!important;margin:0!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important}
