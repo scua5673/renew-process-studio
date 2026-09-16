@@ -13701,7 +13701,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   +".vxa{position:absolute;inset:0;background:#1e8c4c;border-radius:inherit}"
   +".vxt{position:absolute;width:20px;height:20px;border-radius:50%;transform:translate(-50%,-50%);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.75);transition:left .8s ease,top .8s ease}"
   +".vxb{position:absolute;width:10px;height:10px;border-radius:50%;background:#fff;border:1.5px solid #333;transform:translate(-50%,-50%);transition:left .8s ease,top .8s ease}"
-  +".vxa-x{position:absolute;right:8px;top:8px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(10,16,28,.55);color:#fff;font-size:11px;cursor:pointer;z-index:2}"
+  +".vxa-ctl{position:absolute;right:8px;top:8px;display:flex;gap:6px;z-index:2}.vxa-ctl button{width:26px;height:26px;border-radius:50%;border:0;background:rgba(10,16,28,.55);color:#fff;font-size:11px;cursor:pointer}.vxa-ctl button:hover{background:rgba(10,16,28,.75)}"
   +".vx-desc{display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:1.6;color:var(--txt);margin:2px 0 6px}"
   +".vx-desc b{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;color:var(--txt-dim,#8a9099);margin-right:6px}"
   +".vx-preview-actions.v2{display:flex;flex-direction:column;gap:6px}"
@@ -15011,6 +15011,14 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   function vxFramesOf(d){var fr=Array.isArray(d&&d.frames)?d.frames.filter(function(f){return f&&f.snap&&Array.isArray(f.snap.players)&&f.snap.players.length;}):[];return fr.length>1?fr:null;}
   var _vxaT=[],_vxaR=null;function vxAnimStop(){_vxaT.forEach(clearTimeout);_vxaT=[];if(_vxaR){cancelAnimationFrame(_vxaR);_vxaR=null;}}
+  function vxAnimControls(onPause,onStop){
+    var ctl=document.createElement('div');ctl.className='vxa-ctl';
+    var pause=document.createElement('button');pause.type='button';pause.setAttribute('aria-label','일시정지');pause.title='일시정지';pause.textContent='⏸';
+    var stop=document.createElement('button');stop.type='button';stop.setAttribute('aria-label','정지');stop.title='정지';stop.textContent='✕';
+    pause.onclick=function(e){e.stopPropagation();onPause();};
+    stop.onclick=function(e){e.stopPropagation();onStop();};
+    ctl.appendChild(pause);ctl.appendChild(stop);return ctl;
+  }
   function vxAnimStart(box,d){
     var frames=vxFramesOf(d);if(!box||!frames)return;
     vxAnimStop();
@@ -15026,8 +15034,8 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     box.innerHTML='<div class="vxa">'
       +(f0.players||[]).slice(0,40).map(function(q){return '<i class="vxt" data-id="'+esc(String(q.id))+'" style="left:'+X(q.x)+'%;top:'+Y(q.y)+'%;background:'+esc(colOf(q))+'">'+esc(String(q.num||''))+'</i>';}).join('')
       +(f0.ball?'<i class="vxb" style="left:'+X(f0.ball.x)+'%;top:'+Y(f0.ball.y)+'%"></i>':'')
-      +'</div><button class="vxa-x" type="button" aria-label="정지">✕</button>';
-    box.querySelector('.vxa-x').onclick=function(e){e.stopPropagation();vxAnimStop();renderDrillFiles();};
+      +'</div>';
+    box.appendChild(vxAnimControls(vxAnimStop,function(){vxAnimStop();renderDrillFiles();}));
     var i=0;
     function step(){
       i=(i+1)%frames.length;var f=frames[i].snap;
@@ -15043,8 +15051,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var toks={};[].forEach.call(svgEl.querySelectorAll('.token[data-id]'),function(g){toks[g.getAttribute('data-id')]=g;});
     if(!Object.keys(toks).length)return false;
     var pb=box.querySelector('.vx-play');if(pb)pb.style.display='none';
-    var xb=document.createElement('button');xb.className='vxa-x';xb.type='button';xb.setAttribute('aria-label','정지');xb.textContent='✕';box.appendChild(xb);
-    xb.onclick=function(e){e.stopPropagation();vxAnimStop();renderDrillFiles();};
+    box.appendChild(vxAnimControls(vxAnimStop,function(){vxAnimStop();renderDrillFiles();}));
     var cur={};Object.keys(toks).forEach(function(id){
       var tr=toks[id].getAttribute('transform')||'';
       var m=/translate\(\s*([-\d.]+)[ ,]+([-\d.]+)\s*\)/.exec(tr);
