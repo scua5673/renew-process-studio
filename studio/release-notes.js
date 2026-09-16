@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-16-training-viewer-pause',date:'2026-09-16',title:'훈련 보기 화면에 일시정지를 추가했습니다',
+    changes:[
+      '보관함과 커뮤니티에서 훈련을 열어 보는 화면의 움직임 재생 컨트롤을 재생·일시정지·정지로 분리했습니다.',
+      '일시정지는 현재 장면을 그대로 유지하고, 정지는 재생 전 화면으로 돌아갑니다.'
+    ]
+  },{
     id:'2026-09-16-training-preview-pause',date:'2026-09-16',title:'훈련 애니메이션 일시정지 추가',
     changes:[
       '보관함과 커뮤니티 훈련 미리보기에서 정지와 일시정지를 분리했습니다.',
