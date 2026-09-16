@@ -236,3 +236,13 @@ test('an empty selected analysis source does not erase the page opponent arrange
   assert.deepEqual(plain(m.phaseBoards.boards.atk),before);
   assert.equal(state.saves,0);
 });
+
+test('import preserves an absent legacy GK flag instead of converting it to an explicit field role',()=>{
+  const {c,m}=setup();analysis(m);
+  m.oppPB.boards.atk.frames[0].opp=[{num:'1',pos:'GK',x:91,y:50},{num:'1',pos:'GK',gk:false,x:75,y:45}];
+  c.mb2ImportFromOb(m);
+  const copied=m.phaseBoards.boards.atk.opp;
+  assert.equal(Object.hasOwn(copied[0],'gk'),false);
+  assert.equal(copied[0].pos,'GK');
+  assert.equal(copied[1].gk,false);
+});
