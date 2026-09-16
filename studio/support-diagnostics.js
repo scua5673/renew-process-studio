@@ -12,6 +12,9 @@
   var STORAGE_STAGES=('aux-migration aux-read-conflict idb-set migration stash-migration stash-migration-all stash-migration-conflict').split(' ');
   STORAGE_STAGES=STORAGE_STAGES.concat('schedule match roster library idp base outbox journal other'.split(' ').map(function(k){return 'idb-set-'+k;}));
   STAGES=STAGES.concat(['idp-base-history-recovered','idp-base-history-read']);
+  // Fixed request phases distinguish stale-write checks from failed reads without
+  // retaining workspace IDs, document keys or any caller-supplied stage suffix.
+  STAGES=STAGES.concat(('kv_meta kv_pull kv_push kv_push_verify kv_push_cas kv_push_cas_verify personal_meta personal_pull personal_push personal_push_verify personal_push_cas personal_push_cas_verify library_probe library_pull library_push library_insert library_body').split(' '));
   var FILES=('daily-effort.js learn-book-coach.js learn-mikl.js learn-book-at.js roster-recovery.js idp.html shared-view-observation.js idp-evidence.js community.html balls.js index.html rpt-i18n.js learn-book-physical.js learn-book-player.js process.html req-baseline.js perms.js analysis.html learn-concepts.js football-language.js scout.html learning.html first-work.js learn-books.js terms.html sync.js playbook.html review-training-schedule.js archetypes.js team-files.js profile-sheet.js admin-user-detail.js learn-principles.js eval-standard.js learn-model.js note.html admin-operations.js scouting.html learn-toc.js board.html sync-observability.js scouting-store.js learn-futsal.js review-training.js app.html idp-recovery.js learn-curriculum-pro.js board2474.html gamemodel.html learn-book-analysis.js pitches.js learn-curriculum.js session-focus.js eval-anchors.js storage.js learn-gamemodel.js support-diagnostics.js').split(' ');
   FILES=FILES.concat(['support.js','release-notes.js','support.css','autosave-journal.js','autosave-merge.js','autosave-runtime.js','autosave-status.js','autosave-recovery.js','participation.js']);
   var CATEGORIES=('javascript network storage permission authentication conflict timeout unknown').split(' ');
@@ -110,7 +113,13 @@
         return readable&&binding.generation===generation&&binding.frame.isConnected&&binding.frame.contentWindow===binding.window&&binding.frame.ownerDocument===binding.parent.document&&parentBinding&&current(parentBinding);
       }catch(_){return false;}
     }
-    function record(kind,value,binding){if(!current(binding))return false;logs.push(sanitizeLog(kind,value,binding.window,now()));if(logs.length>40)logs.shift();return true;}
+    function record(kind,value,binding){
+      if(!current(binding))return false;
+      // sync.js emits this uncoded Error only after old copies were cleaned up.
+      // It is successful maintenance; coded failures remain support errors.
+      if(kind==='sync'&&own(value,'stage')==='copies-purged'&&own(value,'name')==='Error'&&!own(value,'code')&&!own(value,'psCode')&&!own(value,'error')&&!own(value,'reason'))return false;
+      logs.push(sanitizeLog(kind,value,binding.window,now()));if(logs.length>40)logs.shift();return true;
+    }
     function remove(binding){binding.listeners.forEach(function(x){try{x[0].removeEventListener(x[1],x[2],x[3]);}catch(_){}});if(binding.observer)binding.observer.disconnect();}
     function prune(){bindings=bindings.filter(function(b){try{if(b.window===w||(b.frame.isConnected&&b.window.document===b.document))return true;}catch(_){}remove(b);return false;});}
     function attach(win,frame,parent){

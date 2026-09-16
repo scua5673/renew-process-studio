@@ -2391,7 +2391,8 @@ function syncCodeText(code){   /* 2.625 — 사람 쪽 말로. 첫 줄은 상태
 }
 /* 2.625 — 이유는 넷뿐: 인터넷 · 로그인 · 권한 · 저장소. 상태 한 줄 셋째 줄에 쓴다 */
 function syncReasonText(code){
-  return code==='sync_server_rejected'||code==='sync_conflict'?'팀 것이 더 새로워요 · 다시 맞추는 중'   /* 2.630 — 거부는 인터넷 탓이 아니다 */
+  return code==='sync_server_rejected'?'서버가 저장을 받아들이지 않았어요'
+    :code==='sync_conflict'?'다른 저장 내용을 확인하고 다시 맞추는 중'
     :code==='sync_auth'?'다시 로그인해 주세요'
     :code==='sync_permission'?'이 자료를 고칠 권한이 없어요'
     :code==='sync_storage'?'이 기기 저장소를 읽지 못했어요'
@@ -3281,6 +3282,31 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
         });
       });
   }); },Promise.resolve()); };   /* 2.604 — 옛 경로(참고용, 안 부름) */
+  /* An empty conditional response is not proof of a competing edit. A lost
+     acknowledgement or an unchanged-body trigger can leave the exact draft
+     already on the server. Read only this row before deciding, and never turn
+     that read into an unconditional overwrite. */
+  function verifyEmptyCas(req){
+    var stage=label+'_cas_verify';ready(stage);
+    var url=BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(req.workspace_id)+'&k=eq.'+encodeURIComponent(req.k)+'&select=workspace_id,k,v,cupd';
+    return syncFetch(stage,url,{headers:hj(at)}).then(function(r){
+      ready(stage);if(!r.ok)throw syncHttpError(stage,r.status);return r.json();
+    }).then(function(rows){
+      ready(stage);
+      if(!Array.isArray(rows)||rows.length!==1)throw syncIssue('sync_confirm_missing',stage,'조건부 저장 뒤 서버 원문을 확인하지 못했습니다');
+      var row=rows[0],version=row&&Number(row.cupd);
+      if(!row||String(row.workspace_id||'')!==String(req.workspace_id||'')||row.k!==req.k||typeof row.v!=='string'||
+         (typeof row.cupd!=='number'&&typeof row.cupd!=='string')||!Number.isSafeInteger(version)||version<=0)
+        throw syncIssue('sync_confirm_missing',stage,'조건부 저장 확인 응답이 올바르지 않습니다');
+      if(row.v===req.v){
+        req.cupd=version;
+        return confirmed([req],rows);
+      }
+      if(!req._casMissing&&version===Number(req._casCupd))
+        throw syncIssue('sync_server_rejected',stage,'서버 판본은 같지만 저장이 반영되지 않았습니다');
+      throw syncIssue('sync_conflict',stage,'조건부 저장 중 다른 서버 판본을 확인했습니다');
+    });
+  }
   /* 검증된 파일 가져오기는 읽은 서버 cupd가 아직 같을 때만 PATCH한다.
      읽기와 쓰기 사이에 다른 기기가 저장했다면 0행이 돌아오고, 그 서버본을
      덮지 않은 채 다음 회차에 다시 투영·병합한다. */
@@ -3303,7 +3329,8 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
       return r.text().then(function(t){var got=null;try{got=t?JSON.parse(t):null;}catch(_){};
         /* 선수 행(_casSoft): 판본이 어긋나면 모아 두었다가 itemsResolveConflicts가
            두 원문을 확인하고 자료 검토에 남긴다. 선택 전에는 로컬을 덮지 않는다. */
-        if(!Array.isArray(got)||!got.length){ if(req._casSoft){ _itemConflicts.push(req); return null; } throw syncIssue('sync_conflict',label+'_cas','server changed during import'); }
+        if(!Array.isArray(got))throw syncIssue('sync_confirm_missing',label+'_cas','조건부 저장 확인 응답이 올바르지 않습니다');
+        if(!got.length){ if(req._casSoft){ _itemConflicts.push(req); return null; } return verifyEmptyCas(req); }
         if(req._casSoft){ return Promise.resolve().then(function(){ return confirmed([req],got); }).catch(function(){ _itemConflicts.push(req); return null; }); }
         return confirmed([req],got);});
     });
@@ -6236,7 +6263,8 @@ function syncNowCore(reason){
       return permsPrime().then(kvPreload).then(function(idbVals){ return [metaRows||[],idbVals]; }); })
       .then(function(pre){
       var metaRows=pre[0], idbVals=pre[1];
-      var m0=meta(), needV=[];
+      var m0=meta(), needV=[],metaKeys={};
+      metaRows.forEach(function(r0){if(r0&&r0.k)metaKeys[r0.k]=1;});
       /* 2.750 — 전체 메타 목록에 없는 일정도 키를 직접 조회한다.
          목록 조회와 원문 조회 사이에 생긴 행은 받아들이고, 명시 조회가 빈 경우에만
          서버 부재로 확정한다(아직 조회하지 않음/목록 밖을 빈 일정으로 오해하지 않는다). */
@@ -6244,6 +6272,14 @@ function syncNowCore(reason){
       if(KEYS.indexOf(SCHEDULE_KEY)>=0&&!scheduleMetaPresent)needV.push(SCHEDULE_KEY);
       var scoutMetaPresent=metaRows.some(function(r0){return r0&&r0.k===SCOUT_KEY;});
       if(KEYS.indexOf(SCOUT_KEY)>=0&&scoutWriteAllowed()&&!scoutMetaPresent)needV.push(SCOUT_KEY);
+      /* A metadata list can omit an existing row (for example at a server row
+         limit). Check locally present shared keys directly before treating them
+         as new inserts; otherwise ignore-duplicates returns zero rows forever. */
+      KEYS.forEach(function(k){
+        if(PERSONAL[k]||metaKeys[k]||(k===SCOUT_KEY&&!scoutWriteAllowed()))return;
+        var loc=idbBacked(k)?(idbVals[k]===undefined?null:idbVals[k]):localStorage.getItem(k);
+        if(loc!=null&&needV.indexOf(k)<0)needV.push(k);
+      });
       metaRows.forEach(function(r0){
         var k=r0.k;
         if(PERSONAL[k])return;   /* 2.744 — 개인 원문은 공통 개인 채널만 읽고 판정한다. */
@@ -6324,8 +6360,7 @@ function syncNowCore(reason){
         /* meta 조회 뒤 해당 행이 지워지면 full 조회에서 빠질 수 있다.
            그때 meta-only 행을 원문으로 오해하지 않도록 요청 여부를 다음 단계에 건네준다. */
         var complete=metaRows.map(function(r0){ return fv[r0.k]||r0; });
-        if(!scheduleMetaPresent&&fv[SCHEDULE_KEY])complete.push(fv[SCHEDULE_KEY]);
-        if(!scoutMetaPresent&&fv[SCOUT_KEY])complete.push(fv[SCOUT_KEY]);
+        needV.forEach(function(k){if(!metaKeys[k]&&fv[k]){complete.push(fv[k]);metaKeys[k]=1;}});
         return [complete,idbVals,needV.indexOf(MATCH_KEY)>=0,needV.indexOf(SCHEDULE_KEY)>=0,needV.indexOf(SCOUT_KEY)>=0];
       });
     }).then(function(pair){
@@ -7302,17 +7337,21 @@ function syncNowCore(reason){
         if(matchReadyBlocked||dependencyDeferredKeys.indexOf(MATCH_KEY)>=0||heldKeys.indexOf(MATCH_KEY)>=0||skippedKeys.indexOf(MATCH_KEY)>=0)return true;
         if(!matchResolutionPlanned)return true;
         if(!matchResolved){blockMatchReady('match-push-unconfirmed',new Error('경기 서버 저장 확인을 받지 못했습니다'));return true;}
+        requireRoundWorkspace('match_ready_commit');
         if(String(activeWs()||'')!==String(wid)){
           blockMatchReady('match-workspace-changed',new Error('경기 확인 중 워크스페이스가 바뀌었습니다'));
           var we=new Error('경기 확인 워크스페이스가 바뀌었습니다');we.psCode='match_workspace_changed';throw we;
         }
         var waitMirror=Promise.resolve(editMirrorCommit).then(function(){
+          requireRoundWorkspace('match_ready_mirror');
           return (window.PSStorage&&PSStorage.sharedReady)?PSStorage.sharedReady(MATCH_KEY):true;
         });
         return waitMirror.then(function(){
+          requireRoundWorkspace('match_ready_idb');
           if(!window.storage||!window.storage.get)throw new Error('경기 저장소를 확인할 수 없습니다');
           return window.storage.get(MATCH_KEY);
         }).then(function(rec){
+          requireRoundWorkspace('match_ready_exact');
           if(String(activeWs()||'')!==String(wid)){
             blockMatchReady('match-workspace-changed',new Error('경기 저장소 확인 중 워크스페이스가 바뀌었습니다'));
             var moved=new Error('경기 확인 워크스페이스가 바뀌었습니다');moved.psCode='match_workspace_changed';throw moved;
@@ -7461,10 +7500,19 @@ function syncNowCore(reason){
         /* CAS 미확정/기준본 commit 실패라면 이 회차가 합쳐 쓴 값만 exact로 되돌린다.
            그 뒤 다른 탭이 쓴 값은 비교에서 달라지므로 그대로 보존된다. */
         rollbackIdpLocal();
-        if(matchTouched&&matchReadyPending){
-          try{blockMatchReady('match-round-failed',e);}catch(ie){syncDiagnostic('match-ready-fail-close',ie);}
-        }
-        throw e;
+        /* 다른 키의 실패가 이미 서버 확인을 마친 경기까지 영구 잠그면
+           선발 저장 다음 국면 편집을 할 수 없다. 전체 회차의 성공 메타는
+           쓰지 않고, 같은 소유자의 서버 원문·IDB·거울 일치만 다시 확인한다. */
+        return Promise.resolve().then(function(){
+          if(roundWorkspaceCurrent()&&matchResolutionPlanned&&matchResolved)return commitMatchReady();
+        }).catch(function(readyError){
+          syncDiagnostic('match-ready-recovery',readyError);
+        }).then(function(){
+          if(roundWorkspaceCurrent()&&matchTouched&&matchReadyPending){
+            try{blockMatchReady('match-round-failed',e);}catch(ie){syncDiagnostic('match-ready-fail-close',ie);}
+          }
+          throw e;
+        });
       });
     });
   }).catch(function(e){
@@ -7493,7 +7541,7 @@ function syncNowCore(reason){
     /* 2.631 — 원인 문장을 남긴다(내용·토큰 없음, 120자). 실측: sync_unexpected 11건·sync_storage 8건이 meta {stage,code} 뿐이라 서버에서 무엇인지 알 수 없었다 */
     try{eventTrack('sync_failed',{status:'error',feature:'sync',error_code:info.code,meta:{stage:info.stage,code:info.code,name:String(e&&e.name||'').slice(0,40),msg:String(e&&e.message||e||'').replace(/eyJ[A-Za-z0-9._-]{20,}/g,'<tok>').slice(0,120)}});}catch(_){}
     try{ renderUI(); }catch(_){}
-    try{console.warn('[PSSync]',info,e);}catch(_){}
+    syncDiagnostic(info.stage,e);
     return outboxFail(wid,info).then(function(){if(info.code!=='sync_offline')scheduleSyncRetry();return {error:String(e),code:info.code,pending:pi.count,rejectedKeys:(e&&Array.isArray(e.psRejectedKeys))?e.psRejectedKeys.slice(0,20):null};});   /* 2.586 — 거부된 키를 전환 출구가 쓴다 */
   });
 }

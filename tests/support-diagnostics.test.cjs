@@ -76,6 +76,49 @@ test('known sync/storage diagnostic events retain classifier stages but discard 
   assert.ok(!JSON.stringify(logs).includes('PRIVATE'));assert.ok(!JSON.stringify(logs).includes('SECRET'));
 });
 
+test('sync conflict reports retain fixed request phases through snapshot and formatting',()=>{
+  const s=surface(),c=collector(s);
+  const stages=['kv_meta','kv_pull','kv_push','kv_push_verify','kv_push_cas','kv_push_cas_verify','personal_meta','personal_pull','personal_push','personal_push_verify','personal_push_cas','personal_push_cas_verify','library_probe','library_pull','library_push','library_insert','library_body'];
+  for(const stage of stages)s.w.emit('ps-sync-diagnostic',{detail:{stage,name:'Error',code:'sync_conflict',message:'PRIVATE_DOCUMENT',key:'PRIVATE_PLAYER_ID',workspace_id:'PRIVATE_TEAM_ID'}});
+  const snapshot=c.snapshot(),report=D.format(snapshot);
+  assert.deepEqual(snapshot.logs.map(log=>log.stage),stages);
+  assert.ok(snapshot.logs.every(log=>log.code==='sync_conflict'&&log.category==='conflict'));
+  for(const stage of stages)assert.ok(report.includes(' · sync_conflict · '+stage+'\n'),stage);
+  assert.ok(!JSON.stringify(snapshot).includes('PRIVATE'));assert.ok(!report.includes('PRIVATE'));
+});
+
+test('sync request phase allowlist rejects appended identifiers and arbitrary phase names',()=>{
+  const s=surface(),c=collector(s);
+  for(const stage of ['kv_push_cas:PRIVATE_PLAYER_ID','personal_push_cas_verify_PRIVATE_UID','kv_push_cas_verify?token=TOKEN_SECRET','kv_push_UNKNOWN_PHASE','library_insert/PRIVATE_TEAM_ID']){
+    s.w.emit('ps-sync-diagnostic',{detail:{stage,name:'Error',code:'sync_conflict'}});
+  }
+  const snapshot=c.snapshot();assert.equal(snapshot.logs.length,5);assert.ok(snapshot.logs.every(log=>log.stage===''));
+  const report=D.format(snapshot);assert.ok(!report.includes('PRIVATE'));assert.ok(!report.includes('SECRET'));assert.ok(!report.includes('UNKNOWN_PHASE'));
+  snapshot.logs[0].stage='kv_push_cas_verify:PRIVATE_UID';assert.ok(!D.format(snapshot).includes('PRIVATE_UID'));
+});
+
+test('successful copies cleanup does not count as an error or evict real failures',()=>{
+  const s=surface(),c=collector(s);s.w.emit('ps-sync-diagnostic',{detail:{stage:'kv_push_cas',name:'Error',code:'sync_conflict'}});
+  for(let i=0;i<50;i++)s.w.emit('ps-sync-diagnostic',{detail:{stage:'copies-purged',name:'Error',code:''}});
+  const snapshot=c.snapshot();assert.equal(snapshot.logs.length,1);assert.equal(snapshot.logs[0].stage,'kv_push_cas');
+  const report=D.format(snapshot);assert.ok(report.includes('최근 오류 (1개)'));assert.ok(!report.includes('copies-purged'));
+  c.clear();s.w.emit('ps-sync-diagnostic',{detail:{stage:'copies-purged',name:'Error',code:''}});
+  assert.equal(c.snapshot().logs.length,0);assert.ok(D.format(c.snapshot()).includes('기록된 오류 없음'));
+});
+
+test('cleanup filter retains coded failures and non-maintenance event types',()=>{
+  const s=surface(),c=collector(s);
+  s.w.emit('ps-sync-diagnostic',{detail:{stage:'copies-purged',name:'Error',code:'sync_storage'}});
+  s.w.emit('ps-sync-diagnostic',{detail:{stage:'copies-purged',name:'Error',psCode:'sync_conflict'}});
+  s.w.emit('ps-sync-diagnostic',{detail:{stage:'copies-purged',name:'QuotaExceededError',code:''}});
+  s.w.emit('ps-storage-diagnostic',{detail:{stage:'copies-purged',name:'Error',code:''}});
+  s.w.emit('error',{stage:'copies-purged',name:'Error',code:''});
+  s.w.emit('ps-sync-diagnostic',{detail:{stage:'copies-purged',name:'Error',error:{name:'TypeError',message:'PRIVATE_FAILURE'}}});
+  const logs=c.snapshot().logs;assert.equal(logs.length,6);
+  assert.deepEqual(logs.map(log=>log.category),['storage','conflict','storage','unknown','unknown','javascript']);
+  assert.ok(!D.format(c.snapshot()).includes('PRIVATE_FAILURE'));
+});
+
 test('safe known error classes remain meaningful without their original messages',()=>{
   assert.equal(D.sanitizeLog('error',{message:'Failed to fetch https://private.invalid/TOKEN_SECRET'},null,0).category,'network');
   assert.equal(D.sanitizeLog('sync',{name:'Error',code:403,message:'PRIVATE_TEAM'},null,0).category,'permission');
