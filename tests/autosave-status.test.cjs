@@ -29,3 +29,11 @@ test('the number of conflicts never becomes an ordinary document-choice prompt',
   assert.equal(shown.text,'일부 변경 보관');assert.equal(shown.action,'retry');
   assert.doesNotMatch(JSON.stringify(shown),/27|문서 전체|내용 선택/);
 });
+test('a conflict and a server refusal have distinct truthful failure states',()=>{
+  const conflict=view({kind:'bad',reason:'sync_conflict'}),refusal=view({kind:'bad',reason:'sync_server_rejected'});
+  assert.notEqual(conflict.text,refusal.text);
+  for(const shown of [conflict,refusal]){
+    assert.equal(shown.complete,false);assert.equal(shown.action,'retry');assert.match(shown.detail,/오류 제보/);
+    assert.doesNotMatch(shown.text+shown.detail,/인터넷|저장됨|안전하게|더 새로/);
+  }
+});
