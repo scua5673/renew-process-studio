@@ -47,16 +47,16 @@ test('same-name players remain separate by exact ID', () => {
   let meta = { names: { 'player-a': '같은 이름', 'player-b': '같은 이름' } };
   meta = P.record(meta, 'player-a', today, 'injury', 'train', 1, today);
   meta = P.record(meta, 'player-b', today, 'ok', 'match', 2, today);
-  assert.equal(P.resolve(meta, 'player-a', today, 'train', 'ok', today).s, 'injury');
+  assert.equal(P.resolve(meta, 'player-a', today, 'train', 'injury', today).s, 'injury');
   assert.equal(P.resolve(meta, 'player-b', today, 'train', 'ok', today).s, 'ok');
-  assert.equal(P.resolve(meta, 'missing', today, 'train', 'ok', today).source, 'none');
+  assert.equal(P.resolve(meta, 'missing', today, 'train', undefined, today).source, 'none');
 });
 
 for (const kind of ['off', 'none']) {
   test(`explicit training on ${kind} keeps its training snapshot after schedule changes`, () => {
     const meta = P.record({}, pid, today, 'ok', kind, 1, today, '개인 훈련');
-    assert.deepEqual(P.resolve(meta, pid, today, 'match', 'injury', today), { s: 'ok', kind: 'train', source: 'record', note: '개인 훈련' });
-    assert.equal(P.totals(meta, pid, today, today, 'off', 'injury', today).training, 1);
+    assert.deepEqual(P.resolve(meta, pid, today, 'match', 'ok', today), { s: 'ok', kind: 'train', source: 'record', note: '개인 훈련' });
+    assert.equal(P.totals(meta, pid, today, today, 'off', 'ok', today).training, 1);
   });
 }
 
@@ -117,7 +117,8 @@ test('malformed target containers are not silently overwritten', () => {
 
 test('prototype fields cannot create records or leak an inherited status', () => {
   const inherited = Object.create({ participationDays: { [today]: { [pid]: { s: 'ok', kind: 'train', at: 1 } } } });
-  assert.equal(P.resolve(inherited, pid, today, 'train', 'ok', today).source, 'none');
+  assert.equal(P.resolve(inherited, pid, today, 'train', undefined, today).source, 'none');
+  assert.deepEqual(P.resolve(inherited, pid, today, 'train', 'injury', today), { s: 'injury', kind: 'train', source: 'current', note: '' });
   const meta = JSON.parse('{"__proto__":{"polluted":true},"statusRuns":{}}');
   const next = P.record(meta, pid, today, 'ok', 'train', 1, today);
   assert.equal(Object.getPrototypeOf(next), Object.prototype);
@@ -148,7 +149,7 @@ test('injury continues across unopened days and weekends only with a matching cu
   for (const day of ['2026-09-12', '2026-09-13', today]) {
     assert.deepEqual(P.resolve(meta, pid, day, 'off', 'injury', today), { s: 'injury', kind: 'off', source: 'status', note: 'ankle' });
   }
-  assert.equal(P.resolve(meta, pid, today, 'off', 'ok', today).source, 'none');
+  assert.deepEqual(P.resolve(meta, pid, today, 'off', 'ok', today), { s: 'ok', kind: 'off', source: 'current', note: '' });
   assert.equal(P.resolve(meta, pid, today, 'off', undefined, today).source, 'none');
   assert.equal(P.resolve(meta, pid, today, 'off', 'injury').source, 'none');
   assert.equal(meta.statusRuns[pid][0].to, '2026-09-11');
@@ -169,13 +170,100 @@ test('return today closes the previous injury and later dates never count', () =
 test('current status alone invents no history before the first run or in earlier gaps', () => {
   const meta = metaOf([run('injury', '2026-09-10', '2026-09-11'), run('injury', '2026-09-14')]);
   for (const day of ['2026-09-09', '2026-09-12', '2026-09-13']) assert.equal(P.resolve(meta, pid, day, 'train', 'injury', today).source, 'none');
-  assert.equal(P.resolve({}, pid, today, 'train', 'injury', today).source, 'none');
+  assert.equal(P.resolve({}, pid, today, 'train', 'injury', today).source, 'current');
   assert.equal(P.resolve(meta, pid, today, 'train', 'injury', today).s, 'injury');
+});
+
+test('valid availability fills only the explicitly supplied today with its current schedule', () => {
+  for (const s of ['ok', 'rest', 'rehab', 'injury', 'out']) {
+    assert.deepEqual(P.resolve({}, pid, today, 'match', s, today), { s, kind: 'match', source: 'current', note: '' });
+    assert.equal(P.resolve({}, pid, '2026-09-14', 'train', s, today).source, 'none');
+    assert.equal(P.resolve({}, pid, '2026-09-16', 'train', s, today).source, 'none');
+    assert.equal(P.resolve({}, pid, today, 'train', s).source, 'none');
+    assert.equal(P.resolve({}, pid, today, 'train', s, '2026-02-29').source, 'none');
+  }
+  for (const s of ['', 'unknown', 'train', undefined, null]) {
+    assert.equal(P.resolve({}, pid, today, 'train', s, today).source, 'none');
+  }
+  assert.deepEqual(P.resolve({}, pid, today, 'invalid', 'ok', today), { s: 'ok', kind: 'none', source: 'current', note: '' });
+});
+
+test('today availability overrides stale records, runs and legacy snapshots without changing past evidence', () => {
+  const previous = '2026-09-14';
+  const cases = [
+    { participationDays: { [previous]: { [pid]: { s: 'injury', kind: 'off', at: 1, n: 'past note' } }, [today]: { [pid]: { s: 'injury', kind: 'off', at: 2, n: 'stale note' } } } },
+    metaOf([run('injury', previous, today, { n: 'injury episode' })]),
+    { statusLog: { [previous]: { [pid]: 'injury' }, [today]: { [pid]: 'injury' } } }
+  ];
+  for (const meta of cases.map(freeze)) {
+    const original = JSON.stringify(meta);
+    assert.deepEqual(P.resolve(meta, pid, today, 'match', 'ok', today), { s: 'ok', kind: 'match', source: 'current', note: '' });
+    assert.equal(P.resolve(meta, pid, previous, 'train', 'ok', today).s, 'injury');
+    assert.equal(P.resolve(meta, pid, today, 'train', undefined, today).s, 'injury');
+    const total = P.totals(meta, pid, today, today, 'match', 'ok', today);
+    assert.equal(total.match, 1);
+    assert.equal(total.injury, 0);
+    assert.equal(total.recorded, 0);
+    assert.equal(total.statusDays, 0);
+    assert.equal(total.currentDays, 1);
+    assert.equal(JSON.stringify(meta), original);
+  }
+});
+
+test('matching today evidence retains record, run and legacy precedence and notes', () => {
+  const direct = { s: 'ok', kind: 'train', at: 1, n: 'personal session' };
+  const meta = { ...metaOf([run('injury', today, today, { n: 'stale episode' })]), statusLog: { [today]: { [pid]: 'rest' } }, participationDays: { [today]: { [pid]: direct } } };
+  assert.deepEqual(P.resolve(meta, pid, today, 'off', 'ok', today), { s: 'ok', kind: 'train', source: 'record', note: 'personal session' });
+  const matchingRun = { ...metaOf([run('rehab', today, today, { n: 'recovery' })]), statusLog: meta.statusLog };
+  assert.deepEqual(P.resolve(matchingRun, pid, today, 'off', 'rehab', today), { s: 'rehab', kind: 'off', source: 'status', note: 'recovery' });
+  assert.deepEqual(P.resolve({ statusLog: meta.statusLog }, pid, today, 'train', 'rest', today), { s: 'rest', kind: 'train', source: 'status', note: '' });
+});
+
+test('repeated reads and refreshes do not stamp current availability into historical data', () => {
+  const raw = JSON.stringify({ statusRuns: {}, participationDays: {}, statusLog: {}, custom: { keep: true } });
+  for (let refresh = 0; refresh < 3; refresh++) {
+    const meta = freeze(JSON.parse(raw));
+    assert.equal(P.resolve(meta, pid, today, 'train', 'ok', today).source, 'current');
+    const total = P.totals(meta, pid, '2026-09-14', today, 'train', 'ok', today);
+    assert.equal(total.training, 1);
+    assert.equal(total.unknown, 1);
+    assert.equal(total.recorded, 0);
+    assert.equal(total.statusDays, 0);
+    assert.equal(total.currentDays, 1);
+    assert.equal(JSON.stringify(meta), raw);
+    assert.equal(P.resolve(meta, pid, today, 'train', 'ok', '2026-09-16').source, 'none');
+  }
+});
+
+test('today totals use availability while off days create neither exercise nor missed participation', () => {
+  for (const k of ['off', 'none', 'train', 'match']) {
+    const scheduled = k === 'train' || k === 'match';
+    for (const s of ['ok', 'rest', 'rehab', 'injury', 'out']) {
+      const total = P.totals({}, pid, today, '2026-09-16', k, s, today);
+      assert.equal(total.exercise, s === 'ok' && scheduled ? 1 : 0);
+      assert.equal(total.rest, s !== 'ok' && scheduled ? 1 : 0);
+      assert.equal(total.injury, s === 'injury' ? 1 : 0);
+      assert.equal(total.rehab, s === 'rehab' ? 1 : 0);
+      assert.equal(total.out, s === 'out' ? 1 : 0);
+      assert.equal(total.unknown, 0);
+      assert.equal(total.days, 1);
+      assert.equal(total.recorded, 0);
+      assert.equal(total.statusDays, 0);
+      assert.equal(total.currentDays, 1);
+    }
+  }
+  const weekend = '2026-09-13';
+  const total = P.totals({}, pid, '2026-09-11', weekend, day => day === '2026-09-11' ? 'train' : 'off', 'ok', weekend);
+  assert.equal(total.unknown, 1);
+  assert.equal(total.exercise, 0);
+  assert.equal(total.rest, 0);
+  assert.equal(total.currentDays, 1);
 });
 
 test('malformed last run cannot extend an earlier episode accidentally', () => {
   const meta = metaOf([run('injury', '2026-09-10'), { s: 'injury', from: '2026-09-14', to: 'broken' }]);
-  assert.equal(P.resolve(meta, pid, today, 'train', 'injury', today).source, 'none');
+  assert.deepEqual(P.resolve(meta, pid, today, 'train', 'injury', today), { s: 'injury', kind: 'train', source: 'current', note: '' });
+  assert.equal(P.resolve(meta, pid, '2026-09-14', 'train', 'injury', today).source, 'none');
   assert.equal(P.resolve(meta, pid, '2026-09-10', 'train', 'injury', today).s, 'injury');
 });
 
@@ -198,12 +286,12 @@ test('multiple injury episodes count cumulatively with recovery and rehab in bet
     run('ok', '2026-09-12', today)
   ]);
   const total = P.totals(meta, pid, '2026-09-01', today, day => day.endsWith('05') ? 'match' : ['2026-09-06', '2026-09-07', '2026-09-10'].includes(day) ? 'off' : 'train', 'ok', today);
-  assert.deepEqual(total, { training: 5, match: 1, exercise: 6, rest: 6, injury: 6, rehab: 2, out: 0, unknown: 0, recorded: 0, statusDays: 15, days: 15, first: '2026-09-01', last: today });
+  assert.deepEqual(total, { training: 5, match: 1, exercise: 6, rest: 6, injury: 6, rehab: 2, out: 0, unknown: 0, recorded: 0, statusDays: 15, currentDays: 0, days: 15, first: '2026-09-01', last: today });
 });
 
 test('unknown counts scheduled dates only, and all empty states contribute no activity', () => {
-  const total = P.totals({}, pid, '2026-09-12', today, day => ({ '2026-09-12': 'off', '2026-09-13': 'none', '2026-09-14': 'match', [today]: 'train' }[day]), 'ok', today);
-  assert.deepEqual(total, { training: 0, match: 0, exercise: 0, rest: 0, injury: 0, rehab: 0, out: 0, unknown: 2, recorded: 0, statusDays: 0, days: 4, first: null, last: null });
+  const total = P.totals({}, pid, '2026-09-12', today, day => ({ '2026-09-12': 'off', '2026-09-13': 'none', '2026-09-14': 'match', [today]: 'train' }[day]), undefined, today);
+  assert.deepEqual(total, { training: 0, match: 0, exercise: 0, rest: 0, injury: 0, rehab: 0, out: 0, unknown: 2, recorded: 0, statusDays: 0, currentDays: 0, days: 4, first: null, last: null });
 });
 
 test('rest counts every known non-ok scheduled day; injury rehab and out retain calendar counts', () => {
@@ -250,8 +338,10 @@ test('legacy day snapshots remain readable without migration or invented continu
   const before = JSON.stringify(meta);
   const total = P.totals(meta, pid, '2026-09-12', today, 'train', 'rehab', today);
   assert.equal(total.injury, 1);
-  assert.equal(total.rehab, 1);
-  assert.equal(total.unknown, 2);
+  assert.equal(total.rehab, 2);
+  assert.equal(total.unknown, 1);
+  assert.equal(total.statusDays, 2);
+  assert.equal(total.currentDays, 1);
   assert.equal(JSON.stringify(meta), before);
   assert.equal(P.resolve({ ...meta, statusRuns: {} }, pid, '2026-09-12', 'train', 'injury', today).s, 'injury');
 });
@@ -266,7 +356,7 @@ test('partial status runs preserve exact legacy dates but take priority where th
   assert.equal(P.resolve(meta, pid, '2026-09-12', 'train', 'rehab', today).s, 'rehab');
   assert.equal(P.resolve(meta, pid, '2026-09-14', 'train', 'rehab', today).s, 'rehab');
   assert.equal(P.resolve(meta, pid, '2026-09-14', 'train', 'out', today).s, 'injury');
-  assert.equal(P.resolve(meta, pid, today, 'train', 'out', today).source, 'none');
+  assert.equal(P.resolve(meta, pid, today, 'train', 'out', today).source, 'current');
 });
 
 test('actual today status creation retains both players legacy history without modifying its raw content', () => {
@@ -283,10 +373,10 @@ test('actual today status creation retains both players legacy history without m
   assert.equal(P.resolve(next, 'p', '2026-09-10', 'train', 'ok', today).s, 'injury');
   assert.equal(P.resolve(next, 'q', '2026-09-10', 'train', 'rehab', today).s, 'rehab');
   assert.equal(P.resolve(next, 'p', '2026-09-11', 'train', 'ok', today).source, 'none');
-  assert.equal(P.resolve(next, 'q', today, 'train', 'rehab', today).source, 'none');
+  assert.equal(P.resolve(next, 'q', today, 'train', 'rehab', today).source, 'current');
   assert.equal(P.resolve(next, 'p', today, 'train', 'ok', today).s, 'ok');
   assert.equal(P.totals(next, 'p', '2026-09-10', today, 'train', 'ok', today).injury, 2);
-  assert.equal(P.totals(next, 'q', '2026-09-10', today, 'train', 'rehab', today).rehab, 1);
+  assert.equal(P.totals(next, 'q', '2026-09-10', today, 'train', 'rehab', today).rehab, 2);
   assert.equal(JSON.stringify(meta), original);
   assert.equal(next.statusLog, meta.statusLog);
   assert.equal(next.unknown, meta.unknown);

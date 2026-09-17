@@ -2882,7 +2882,7 @@ body.match-mode:not(.token-drag) #tokenLayer>g{transition:transform .22s cubic-b
   .scn-badge{position:absolute;right:5px;bottom:5px;background:rgba(12,15,23,.78);color:#fff;font-size:var(--fs-micro);font-weight:var(--fw-head);border-radius:8px;padding:1px 6px;pointer-events:none;z-index:1;}
 
   /* ===== 인쇄 미리보기 (보드) ===== */
-  #printPrevB{position:fixed;inset:0;z-index:130;display:none;flex-direction:column;background:rgba(10,12,18,.8);}
+  #printPrevB{position:fixed;inset:0;z-index:100000;display:none;flex-direction:column;background:rgba(10,12,18,.8);}
   #printPrevB.on{display:flex;}
   #printPrevB .ppb-bar{flex:0 0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 14px;padding-top:max(9px,env(safe-area-inset-top));background:var(--panel);border-bottom:1px solid var(--line);}
   #printPrevB .ppb-t{font-size:14px;}
@@ -9558,7 +9558,9 @@ body.ink .p-card,body.ink .p-diagram,body.ink .p-scene,body.ink .fs-scn{border-c
 function printDocHTML(title,opts,body,extraCss){
   return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+PRINT_B_CSS+(extraCss||"")+'</style></head><body class="'+(opts&&opts.ink?"ink":"")+'">'+body+'</body></html>';}
 let _ppbRebuild=null,_ppbOpts=null;
-function _ppbRefresh(){const f=$("ppbFrame");if(f&&_ppbRebuild)f.srcdoc=_ppbRebuild(_ppbOpts);}
+function _ppbRefresh(){const f=$("ppbFrame");if(f&&_ppbRebuild){var html=_ppbRebuild(_ppbOpts);f.classList.toggle("land",/@page[^{}]*\{[^}]*landscape/.test(html||""));f.srcdoc=html;}}
+function _ppbFitMeeting(){var f=$("ppbFrame"),doc=f&&f.contentDocument;if(doc&&doc.querySelector(".mp-page"))doc.body.style.zoom=Math.min(1,(doc.documentElement.clientWidth||f.clientWidth)/(f.classList.contains("land")?1123:794));}
+window.addEventListener("resize",_ppbFitMeeting);
 function _ppbScnUI(){const a=$("ppbScnAll"),b=$("ppbScnFirst");
   if(a)a.classList.toggle("on",!!_ppbOpts.allScenes);if(b)b.classList.toggle("on",!_ppbOpts.allScenes);}
 function closePrintPrevB(){const ov=$("printPrevB");if(ov)ov.classList.remove("on");const f=$("ppbFrame");if(f)f.srcdoc="";_ppbRebuild=null;}
@@ -9572,7 +9574,8 @@ function _ppbRasterPage(pageEl,styleText,land){
     var W=land?1123:794, H=land?794:1123, SC=2;
     var tmp=document.implementation.createHTMLDocument("");
     tmp.body.innerHTML='<style>'+styleText+'\n.page{page-break-after:auto!important;}\n.page.fsx-page{height:100%!important;}</style>'+pageEl.outerHTML;   /* 2.588 — 현장 시트는 래스터 종이(794px−45px×2)에 꼭 맞게 */
-    tmp.body.setAttribute("style","margin:0;padding:45px;width:"+W+"px;height:"+H+"px;box-sizing:border-box;background:#fff;overflow:hidden");
+    var pagePadding=pageEl.classList.contains("mp-page")?23:45;
+    tmp.body.setAttribute("style","margin:0;padding:"+pagePadding+"px;width:"+W+"px;height:"+H+"px;box-sizing:border-box;background:#fff;overflow:hidden");
     var ser;
     try{ser=new XMLSerializer().serializeToString(tmp.body);}catch(e){rej(e);return;}
     var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'
@@ -9667,14 +9670,15 @@ async function _ppbSavePdf(){
     if(btn){btn.disabled=false;btn.textContent="PDF 내려받기";}
   }
 }
-function printStandaloneB(html,rebuild,hasScenes,title){   // 독립 문서 미리보기: rebuild(opts) => html 로 srcdoc 갱신
-  _ppbRebuild=rebuild||null;_ppbOpts={ink:false,allScenes:true};
+function printStandaloneB(html,rebuild,hasScenes,title,settings){   // 독립 문서 미리보기: rebuild(opts) => html 로 srcdoc 갱신
+  _ppbRebuild=rebuild||null;_ppbOpts={ink:false,allScenes:true,orientation:"portrait"};
   let ov=$("printPrevB");
   if(!ov){
     ov=document.createElement("div");ov.id="printPrevB";
     ov.innerHTML='<div class="ppb-bar"><b class="ppb-t" id="ppbTitle"></b>'
       +'<label class="ppb-opt"><input type="checkbox" id="ppbInk"> 잉크 절약</label>'
       +'<span class="ppb-opt" id="ppbScnWrap">장면 <span class="ppb-seg"><button type="button" id="ppbScnAll" class="on">모두</button><button type="button" id="ppbScnFirst">첫 장면만</button></span></span>'
+      +'<label class="ppb-opt" id="ppbOrientationWrap">방향 <select id="ppbOrientation" aria-label="PDF 방향"><option value="portrait">세로 · 휴대폰</option><option value="landscape">가로</option></select></label>'
       +'<span class="ppb-sp"></span>'
       +'<button type="button" class="btn ghost" id="ppbNote">개인 노트로</button>'
       +'<button type="button" class="btn primary" id="ppbSave">PDF 내려받기</button>'
@@ -9682,6 +9686,8 @@ function printStandaloneB(html,rebuild,hasScenes,title){   // 독립 문서 미�
       +'<button type="button" class="btn ghost" id="ppbClose">닫기</button></div>'
       +'<div class="ppb-body"><iframe id="ppbFrame" title="인쇄 미리보기"></iframe></div>';
     document.body.appendChild(ov);
+    $("ppbFrame").addEventListener("load",_ppbFitMeeting);
+    $("ppbOrientation").addEventListener("change",()=>{_ppbOpts.orientation=$("ppbOrientation").value;_ppbRefresh();});
     $("ppbInk").addEventListener("change",()=>{_ppbOpts.ink=$("ppbInk").checked;_ppbRefresh();});
     $("ppbScnAll").addEventListener("click",()=>{_ppbOpts.allScenes=true;_ppbScnUI();_ppbRefresh();});
     $("ppbScnFirst").addEventListener("click",()=>{_ppbOpts.allScenes=false;_ppbScnUI();_ppbRefresh();});
@@ -9692,6 +9698,7 @@ function printStandaloneB(html,rebuild,hasScenes,title){   // 독립 문서 미�
     $("ppbClose").addEventListener("click",closePrintPrevB);
   }
   $("ppbInk").checked=false;_ppbScnUI();
+  $("ppbOrientationWrap").style.display=settings&&settings.orientation?"":"none";$("ppbOrientation").value="portrait";
   $("ppbScnWrap").style.display=hasScenes?"":"none";
   $("ppbTitle").textContent=title||"인쇄 미리보기";
   _ppbFname=String(title||"문서").replace(/ — PDF$/,"");
@@ -9779,8 +9786,66 @@ const DRILL_PDF_CSS=`
 .pd-scn .p-head h2{font-size:12px;}
 `;
 /* 파일(카드) PDF — 안에 든 훈련들을 한 페이지 3개씩. 세션 PDF와 같은 카드 레이아웃 재사용 */
+/* 미팅 PDF: 화면 편집 상태를 저장하지 않고 복사해 내보낸다. 세로는 모바일 읽기용이다. */
+function meetingPdfSlides(){
+  var slides=dc((anim.slides&&anim.slides.length)?anim.slides:[]);
+  var i=window.__meet?window.__meet.idx():-1;
+  if(i>=0&&slides[i]){slides[i].snap=captureSnap();slides[i].thumb=boardThumbSVG();}
+  if(!slides.length)slides=[{snap:captureSnap(),thumb:boardThumbSVG(),title:"미팅",points:[]}];
+  return slides;
+}
+function meetingPdfPicture(slide,land){
+  if(!slide.snap)return slide.thumb||"";
+  var current=captureSnap(),selected=sel,selectedMany=multiSel;
+  try{loadSnap(land?Object.assign({},slide.snap,{orientation:"h",spFlip:false}):slide.snap);sel=null;multiSel=[];renderTokens();renderDrawings();return boardImageXML().xml;}
+  finally{loadSnap(current);sel=selected;multiSel=selectedMany;renderTokens();renderDrawings();}
+}
+function meetingPdfLines(text,width,font){
+  var canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");ctx.font=font;
+  var lines=[];
+  String(text==null?"":text).replace(/\r\n?/g,"\n").split("\n").forEach(function(p){
+    var chars=typeof Intl!=="undefined"&&Intl.Segmenter?Array.from(new Intl.Segmenter("ko",{granularity:"grapheme"}).segment(p),function(x){return x.segment;}):Array.from(p);
+    var line="";chars.forEach(function(c){if(line&&ctx.measureText(line+c).width>width){
+      var space=Math.max(line.lastIndexOf(" "),line.lastIndexOf("\t"));
+      if(space>0&&ctx.measureText(line.slice(0,space+1)).width>width*0.4){lines.push(line.slice(0,space+1));line=line.slice(space+1);}
+      else{lines.push(line);line="";}
+    }line+=c;});lines.push(line);
+  });
+  return lines;
+}
+function buildMeetingPrintDoc(slides,title,opts){
+  opts=opts||{};var land=opts.orientation==="landscape",size=land?22:24,leading=land?30:32;
+  var font=size+'px system-ui, sans-serif',width=land?1055:728,capacity=4,pages=[];
+  slides=Array.isArray(slides)?slides:[];
+  slides.forEach(function(slide,i){
+    var rows=[],group=0,push=function(text,kind){group++;meetingPdfLines(text,width,(kind==="title"?'bold ':'')+font).forEach(function(line){rows.push({text:line,kind:kind,group:group});});};
+    if(title&&title!=="미팅")push(title,"name");
+    push(slide.title||("슬라이드 "+(i+1)),"title");
+    (Array.isArray(slide.points)?slide.points:[]).forEach(function(point){if(String(point==null?"":point).trim())push("• "+point,"point");});
+    var svg="";try{svg=meetingPdfPicture(slide,land);}catch(_){}
+    svg=svg||slide.thumb||"";if(opts.ink)svg=inkifySVG(svg);
+    // Saved thumbnail markup stays an image, so it cannot add active HTML to the print document.
+    var picture=svg?'<img alt="슬라이드 '+(i+1)+' 운동장" src="data:image/svg+xml;charset=utf-8,'+esc(encodeURIComponent(svg.replace(/<svg\b([^>]*)>/i,function(tag){return tag.replace(/\s+preserveAspectRatio\s*=\s*(["']).*?\1/i,"").replace(/>$/,' preserveAspectRatio="none">');})))+'">':'<span>운동장 그림 없음</span>';
+    for(var start=0;start<rows.length;){
+      var end=Math.min(start+capacity,rows.length);
+      if(end<rows.length&&rows[end-1].group===rows[end].group){var boundary=end-1;while(boundary>start&&rows[boundary-1].group===rows[end].group)boundary--;if(boundary>start)end=boundary;}
+      var notes=rows.slice(start,end).map(function(r){return '<div class="mp-line '+r.kind+'">'+(esc(r.text)||'&#160;')+'</div>';}).join("");
+      pages.push('<section class="page mp-page"><header><b>PROCESS</b><span>미팅 · 슬라이드 '+(i+1)+' / '+slides.length+(start?' · 계속':'')+'</span></header><main><div class="mp-pitch">'+picture+'</div><div class="mp-notes">'+notes+'</div></main><footer>'+ (pages.length+1) +'</footer></section>');
+      start=end;
+    }
+  });
+  if(!pages.length)pages.push('<section class="page mp-page"><p>미팅 슬라이드가 없습니다.</p></section>');
+  var css='@page{size:A4 '+(land?'landscape':'portrait')+';margin:6mm;}*{box-sizing:border-box}body{margin:0;color:#172235;background:#fff;font-family:system-ui,sans-serif}.mp-page{width:'+(land?'285':'198')+'mm;height:'+(land?'196':'283')+'mm;page-break-after:always;display:flex;flex-direction:column}.mp-page:last-child{page-break-after:auto}.mp-page header{height:22px;flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-start;font-size:11px;color:#64748b;margin-bottom:4px}.mp-page header b{letter-spacing:2px;color:#172235}.mp-page main{display:flex;flex:1;min-height:0;gap:8px;flex-direction:column}.mp-pitch{display:flex;align-items:center;justify-content:center;overflow:hidden;width:100%;flex:1;min-height:0}.mp-pitch img{display:block;width:100%;height:100%;object-fit:fill}.mp-notes{width:100%;padding:0 8px;min-width:0;flex-shrink:0}.mp-line{font-size:'+size+'px;line-height:'+leading+'px;height:'+leading+'px;white-space:pre;letter-spacing:0}.mp-line.title{font-weight:700}.mp-line.name{color:#64748b}.mp-page footer{padding-top:4px;height:18px;flex-shrink:0;text-align:right;color:#64748b;font-size:10px}@media screen{body{width:'+(land?'297':'210')+'mm;padding:6mm}.mp-page{margin-bottom:12mm;border-bottom:1px solid #e2e8f0}}';
+  return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(title||"미팅")+'</title><style>'+css+'</style></head><body>'+pages.join("")+'</body></html>';
+}
+function exportMeetingPDF(){
+  var slides=meetingPdfSlides(),title="미팅";
+  printStandaloneB(buildMeetingPrintDoc(slides,title,{orientation:"portrait"}),function(o){return buildMeetingPrintDoc(slides,title,o);},false,title+" — PDF",{orientation:true});
+}
+
 function vaultPrintSpec(d,fname,opts){
   fname=fname||d.name||"훈련";opts=Object.assign({ink:false,allScenes:true},opts||{});
+  if(d.type==="meeting"){var slides=Array.isArray(d.slides)&&d.slides.length?d.slides:[{snap:d.snap,thumb:d.thumb,title:d.name,points:[]}];return {html:buildMeetingPrintDoc(slides,fname,opts),hasScenes:false,land:opts.orientation==="landscape",orientation:true};}
   /* 저장된 훈련 카드는 1개여도 trainings[]가 정본이다. 예전엔 2개 이상일 때만 배열을 읽어
      단일 훈련의 메모가 PDF에서 빠졌으므로 언제나 같은 정본을 사용한다. */
   var trs=(Array.isArray(d.trainings)&&d.trainings.length)?d.trainings:((Array.isArray(d.drills)&&d.drills.length)?d.drills:[d]);
@@ -9792,7 +9857,7 @@ function vaultPrintSpec(d,fname,opts){
 }
 function printDrill(d,fname){
   fname=(fname||d.name||"훈련");var spec=vaultPrintSpec(d,fname,{ink:false,allScenes:true});
-  printStandaloneB(spec.html,function(o){return vaultPrintSpec(d,fname,o).html;},spec.hasScenes,fname+" — PDF");
+  printStandaloneB(spec.html,function(o){return vaultPrintSpec(d,fname,o).html;},spec.hasScenes,fname+" — PDF",{orientation:spec.orientation});
 }
 async function vaultPdfPayload(d,fname){
   var nm=fname||d.name||"훈련",spec=vaultPrintSpec(d,nm,{ink:false,allScenes:true});
@@ -15875,7 +15940,8 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var bt=document.createElement("button");bt.className="kstxt"+(edOpen?" on":"");bt.innerHTML="<svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px'><path d='M4 20l1-4L16 5l3 3L8 19z'/><path d='M14 7l3 3'/></svg> 제목·메모";bt.onclick=function(){edOpen=!edOpen;edSync();stripRender();if(edOpen){try{var ti=ed.querySelector("#ksTitle");if(ti)setTimeout(function(){ti.focus();},0);}catch(_){}}};
     var bsave=document.createElement("button");bsave.className="kssave";bsave.textContent="⤓ 보관함 저장";bsave.onclick=function(){try{if(window.__vaultSave)window.__vaultSave();}catch(_){}};
     var bppt=document.createElement("button");bppt.className="kspptx";bppt.textContent="⤓ PPT 내보내기";bppt.onclick=function(){try{exportPPTX();}catch(_){}};
-    bar.appendChild(bn);bar.appendChild(bt);bar.appendChild(bs);bar.appendChild(bppt);bar.appendChild(bsave);strip.appendChild(bar);
+    var bpdf=document.createElement("button");bpdf.className="kspdf";bpdf.textContent="⤓ PDF 내보내기";bpdf.onclick=function(){exportMeetingPDF();};
+    bar.appendChild(bn);bar.appendChild(bt);bar.appendChild(bs);bar.appendChild(bpdf);bar.appendChild(bppt);bar.appendChild(bsave);strip.appendChild(bar);
     fr.forEach(function(f,i){
       var c=document.createElement("div");c.className="ksc"+(i===ci?" on":"");c.setAttribute("draggable","true");
       c.innerHTML='<div class="ktb">'+(f.thumb||'')+'</div><div class="kn">'+esc(f.title||("슬라이드 "+(i+1)))+'</div><span class="knum">'+(i+1)+'</span><button class="kx" title="삭제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button><button class="kdup" title="복제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" style="vertical-align:-1px"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button>';

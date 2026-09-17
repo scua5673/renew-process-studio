@@ -74,3 +74,42 @@ test('explicit current-state changes in other views update only the current dire
   assert.equal(h.c.data.meta.participationDays['2026-09-11'].p.n,'과거 메모');
   assert.deepEqual(JSON.parse(JSON.stringify(h.c.data.meta.statusRuns)),before);
 });
+
+function reasonEditor(h){
+  const nodes={input:{value:'',disabled:false,focus(){}},ok:{disabled:false},error:{textContent:''},close:{}};
+  const overlay={removed:false,innerHTML:'',addEventListener(){},remove(){this.removed=true;},querySelector(s){return ({'#stNoteInp':nodes.input,'#stNoteOk':nodes.ok,'#stNoteError':nodes.error,'.ts-x':nodes.close})[s];}};
+  h.c.document={createElement:()=>overlay,body:{appendChild(){}}};
+  h.c.PL_STATUS=[];h.c.ST_DOT={};h.c.esc=String;
+  h.c.stRuns=()=>h.c.data.meta.statusRuns;
+  h.c.stCurRun=pid=>h.c.data.meta.statusRuns[pid].at(-1);
+  h.c.renderStatusView=()=>{};h.c.itemsRerender=()=>{};
+  const begin=src.indexOf('function stNoteModal(pid){'),end=src.indexOf('function stGroupAdd(){',begin);
+  assert.ok(begin>=0&&end>begin);vm.runInContext(src.slice(begin,end),h.c);
+  h.c.stNoteModal('p');return {...nodes,overlay};
+}
+test('legacy availability reason editor saves through the same day record and preserves past notes',async()=>{
+  const h=harness();await h.c.stSetAt('p','injury','2026-09-15',h.c.avEditContext('p','2026-09-15'),'원래 사유');
+  const past=JSON.stringify(h.get().meta.statusRuns.p.slice(0,-1));
+  const ui=reasonEditor(h);ui.input.value='오늘 변경 사유';await ui.ok.onclick();
+  const d=h.get();assert.equal(d.players[0].status,'injury');
+  assert.equal(d.meta.participationDays['2026-09-15'].p.n,'오늘 변경 사유');
+  assert.equal(d.meta.statusRuns.p.at(-1).n,'오늘 변경 사유');
+  assert.equal(JSON.stringify(d.meta.statusRuns.p.slice(0,-1)),past);assert.equal(ui.overlay.removed,true);
+});
+test('clearing an availability reason clears today in both views without erasing past notes',async()=>{
+  const h=harness();await h.c.stSetAt('p','injury','2026-09-15',h.c.avEditContext('p','2026-09-15'),'오늘 사유');
+  const ui=reasonEditor(h);ui.input.value='';await ui.ok.onclick();const d=h.get();
+  assert.equal(d.meta.participationDays['2026-09-15'].p.n,'');assert.equal(d.meta.statusRuns.p.at(-1).n,undefined);
+  assert.equal(d.meta.statusRuns.p[0].n,'발목');
+});
+test('failed reason save keeps the draft visible and never claims completion',async()=>{
+  const h=harness();await h.c.stSetAt('p','injury','2026-09-15',h.c.avEditContext('p','2026-09-15'),'저장본');
+  const before=h.get(),ui=reasonEditor(h);h.failSave();ui.input.value='미저장 초안';await ui.ok.onclick();
+  assert.deepEqual(h.get(),before);assert.equal(ui.overlay.removed,false);assert.equal(ui.input.value,'미저장 초안');
+  assert.equal(ui.input.disabled,false);assert.equal(ui.ok.disabled,false);assert.match(ui.error.textContent,/기록하지 못했습니다/);
+});
+test('reason dialog cannot write after the active team changes',async()=>{
+  const h=harness();await h.c.stSetAt('p','injury','2026-09-15',h.c.avEditContext('p','2026-09-15'),'저장본');
+  const ui=reasonEditor(h),writes=h.writes();h.ls.set('ps_active_ws','other');ui.input.value='이전 팀 초안';await ui.ok.onclick();
+  assert.equal(h.writes(),writes);assert.equal(ui.overlay.removed,true);
+});
