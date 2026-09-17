@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-17-vault-training-description',date:'2026-09-17',title:'보관함 훈련 설명을 열 때도 이어서 보여줍니다',
+    changes:[
+      '보관함 오른쪽 미리보기에는 보이던 설명이 실제 훈련 보기·편집 화면에서 빈 칸처럼 보이던 호환 문제를 수정했습니다.',
+      '예전 설명·진행·준비 필드는 현재 훈련 방법 칸으로 이어서 열리고, 코칭 포인트는 그대로 유지됩니다.'
+    ]
+  },{
     id:'2026-09-17-scout-mobile-origin',date:'2026-09-17',title:'모바일 출신 팀명과 등번호를 붙였습니다',
     changes:[
       '스카우트 명단에서 출신 팀명 바로 옆에 등번호를 표시합니다. 팀명을 수정해도 간격이 따라 바뀝니다.'
