@@ -789,10 +789,10 @@
   .anim-bar #animCap::placeholder,.anim-bar #animTitle::placeholder{color:rgba(255,255,255,.4);font-weight:var(--fw-body);}
   .anim-bar #animCap:focus,.anim-bar #animTitle:focus{border-color:#2fa8ff;}
   .anim-bar #animTitleColor{border:1px solid rgba(255,255,255,.25);height:26px;border-radius:8px;cursor:pointer;}
-  /* 2.721 — 보드 화면 워터마크(사용자 "워터마크 보드에 안보이는데"): 우측하단, 로고처럼 PRO 굵게 + CESS 가늘게. 화면 전용(HTML) — 내보내기는 _wmDraw 가 캔버스에 따로 그린다 */
-  #psWm{position:absolute;left:0;top:0;z-index:6;pointer-events:none;user-select:none;font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:clamp(10px,1.35vw,15px);line-height:1;letter-spacing:.06em;color:#fff;opacity:.55;text-shadow:0 1px 2px rgba(0,0,0,.45);white-space:nowrap;}
-  #psWm b{font-weight:800;}#psWm span{font-weight:300;}
-  html[data-pitch="white"] #psWm,html[data-pitch="train"] #psWm{color:#20242c;text-shadow:none;opacity:.42;}
+  /* 운동장 왼쪽 위·오른쪽 아래 코너 바깥의 작은 로고. 화면 장식만 표시하고 선수 선택·저장 데이터에는 관여하지 않는다. */
+  .ps-board-watermark{position:absolute;left:0;top:0;z-index:6;pointer-events:none;user-select:none;font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:8px;line-height:1;letter-spacing:.04em;color:#fff;opacity:.48;text-shadow:0 1px 2px rgba(0,0,0,.35);white-space:nowrap;}
+  .ps-board-watermark b{font-weight:800;}.ps-board-watermark span{font-weight:300;}
+  html[data-pitch="white"] .ps-board-watermark,html[data-pitch="train"] .ps-board-watermark{color:#20242c;text-shadow:none;opacity:.38;}
   #animTitleBand{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:7;display:none;padding:7px 18px;border-radius:10px;font-weight:var(--fw-head);font-size:var(--fs-h2);color:#fff;max-width:76%;text-align:center;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 4px 14px rgba(0,0,0,.35);letter-spacing:-.01em;}
   /* 장면 깜박임(강조) — 편집 중 미리보기 펄스 + 버튼 on 상태 */
   .token.tok-blink{animation:psTokBlink .9s ease-in-out infinite;}
@@ -3351,18 +3351,51 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
       <div class="team-style-foot"><span class="team-style-help" id="teamStyleHelp">선택한 팀의 모든 일반 선수 토큰에 적용됩니다.</span><button class="team-style-reset" id="teamStyleResetAll" type="button">기본으로</button></div>
     </div>
     <div class="stage" id="boardStage">
-      <div id="psWm" aria-hidden="true"><b>PRO</b><span>CESS</span></div>
-      <script>/* 2.721 — 워터마크를 스테이지가 아니라 운동장 카드(#board svg)의 우측하단에 붙인다(스테이지 아래엔 도구 도크가 있다) */
-      (function(){ var el=document.getElementById("psWm"); if(!el)return;
-        function place(){ try{ var sv=document.getElementById("board"), st=el.parentElement; if(!sv||!st)return;
-          var b=sv.getBoundingClientRect(), s=st.getBoundingClientRect(); if(!b.width||!b.height){ el.style.display="none"; return; } el.style.display="";
-          var m=Math.max(8,Math.round(b.height*0.018));
-          el.style.left=Math.round(b.right-s.left-m-el.offsetWidth)+"px"; el.style.top=Math.round(b.bottom-s.top-m-el.offsetHeight)+"px"; }catch(_){} }
+      <div id="psWmLeft" class="ps-board-watermark" aria-hidden="true" style="display:none"><b>PRO</b><span>CESS</span></div>
+      <div id="psWm" class="ps-board-watermark" aria-hidden="true" style="display:none"><b>PRO</b><span>CESS</span></div>
+      <script>/* 실제 터치라인의 왼쪽 위·오른쪽 아래 코너 바깥에 붙인다. */
+      (function(){
+        var left=document.getElementById("psWmLeft"),right=document.getElementById("psWm"),observer;
+        if(!left||!right)return;
+        function place(){try{
+          var sv=document.getElementById("board"),st=right.parentElement,w=sv&&sv.querySelector("#world");
+          if(!sv||!st||!w||typeof PR!=="function")return;
+          var b=sv.getBoundingClientRect(),s=st.getBoundingClientRect(),matrix=w.getScreenCTM();
+          if(!b.width||!b.height||!matrix){left.style.display=right.style.display="none";return;}
+          var p=PR();
+          /* 일부 운동장 보기에서는 화면에 남은 터치라인 범위에 맞춘다. */
+          if(pitchViewKey()!=="full"){
+            var span=pitchViewSpan(pitchViewKey());
+            if(state.halfSide==="R")p.L=Math.max(p.L,W-span);else p.R=Math.min(p.R,span);
+          }
+          var corners=[[p.L,p.T],[p.R,p.T],[p.L,p.B],[p.R,p.B]].map(function(c){
+            var pt=sv.createSVGPoint();pt.x=c[0];pt.y=c[1];return pt.matrixTransform(matrix);
+          });
+          var x1=Math.min.apply(null,corners.map(function(c){return c.x;})),x2=Math.max.apply(null,corners.map(function(c){return c.x;}));
+          var y1=Math.min.apply(null,corners.map(function(c){return c.y;})),y2=Math.max.apply(null,corners.map(function(c){return c.y;}));
+          var fs=Math.max(6,Math.min(9,b.width*0.011)),gap=Math.max(3,Math.round(fs*.5));
+          left.style.fontSize=right.style.fontSize=fs.toFixed(1)+"px";
+          left.style.display=right.style.display="";
+          var ox=-s.left+st.scrollLeft-st.clientLeft,oy=-s.top+st.scrollTop-st.clientTop;
+          function pin(mark,x,y){
+            /* 확대·좁은 화면에서도 로고가 잔디 영역 밖으로 잘리지 않게 한다. */
+            x=Math.max(b.left+2,Math.min(b.right-mark.offsetWidth-2,x));
+            y=Math.max(b.top+2,Math.min(b.bottom-mark.offsetHeight-2,y));
+            mark.style.left=Math.round(x+ox)+"px";mark.style.top=Math.round(y+oy)+"px";
+          }
+          pin(left,x1,y1-left.offsetHeight-gap);
+          pin(right,x2-right.offsetWidth,y2+gap);
+        }catch(_){} }
+        function init(){
+          var sv=document.getElementById("board");
+          try{observer=new ResizeObserver(place);observer.observe(right.parentElement);observer.observe(sv);}catch(_){}
+          if(sv)sv.addEventListener("transitionend",place);
+          place();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(place);
+        }
         window.__psWmPlace=place;
-        try{ new ResizeObserver(place).observe(document.getElementById("board")); }catch(_){}
-        try{ new ResizeObserver(place).observe(el.parentElement); }catch(_){}
-        window.addEventListener("resize",place); window.addEventListener("orientationchange",place);
-        if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",place); setTimeout(place,0); setTimeout(place,400); setTimeout(place,1500);
+        window.addEventListener("resize",place);window.addEventListener("orientationchange",place);
+        if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+        setTimeout(place,400);setTimeout(place,1500);
       })();</script>
       <svg class="board" id="board" xmlns="http://www.w3.org/2000/svg"></svg>
       <button id="mrToggle">명단</button>
@@ -4578,6 +4611,7 @@ function applyView(){
   /* 확장 모드에서는 SVG와 viewBox 모두 가운데 정렬 — 잔디 카드와 축구 라인의 중심을 일치시킨다. */
   try{ var _stg=svg&&svg.parentElement; if(_abH>0){ if(_vbExt){ if(svg.style.height)svg.style.height=""; svg.setAttribute("preserveAspectRatio","xMidYMid meet"); } else { svg.style.height="calc(100% - "+_abH+"px)"; svg.setAttribute("preserveAspectRatio","xMidYMax meet"); } svg.style.background="var(--pitchbg,#1b8044)"; if(_stg){_stg.style.alignItems="flex-start";_stg.style.background="var(--pitchbg,#1b8044)";} } else { if(svg.style.height)svg.style.height=""; if(svg.style.background)svg.style.background=""; var _par=svg.getAttribute("preserveAspectRatio"); if(_par==="xMidYMax meet"||_par==="xMidYMin meet"||_par==="xMidYMid meet")svg.removeAttribute("preserveAspectRatio"); if(_stg){if(_stg.style.alignItems==="flex-start")_stg.style.alignItems="";if(_stg.style.background)_stg.style.background="";} } }catch(_){ if(svg.style.height)svg.style.height=""; }   /* 확장 모드: SVG 전체 높이 + 대칭 viewBox → 위·아래 잔디 여백도 작업 가능 */
   try{if(typeof renderPitchImg==="function")renderPitchImg();}catch(_){}
+  try{if(window.__psWmPlace)window.__psWmPlace();}catch(_){}
 }
 function worldBounds(){
   const fx=FILL_X,fy=FILL_Y,fw=FILL_W,fh=FILL_H;
@@ -8038,6 +8072,7 @@ try{ var __afOnScroll=function(e){ if(!e.target||e.target.id!=="animFrames")retu
      document.addEventListener("scroll",__afOnScroll,true); document.addEventListener("scrollend",function(e){ if(e.target&&e.target.id==="animFrames")try{__afWindow();}catch(_){ } },true); }catch(_){ }
 function renderAnimFrames(){const box=$("animFrames");if(!box)return;
   if(_afDragging){_afDirty=true;return;}
+  _afDirty=false;
   closeAnimFrameMenu();
   /* 2.559 — 다시 그릴 때 스크롤 자리를 지킨다. autoSaveAnimFrame 이 판을 건드릴 때마다(400ms) 이 함수를
      불러 띠를 통째로 다시 세우는데, innerHTML="" 이 scrollLeft 를 0 으로 되돌려 보던 장면이 사라졌다(실측). */
@@ -8140,7 +8175,13 @@ function afCut(){ if(afCopy())afDeleteSel(); }
     window.removeEventListener("pointerup",finish,true);
     window.removeEventListener("pointercancel",cancel,true);
     try{d.el.releasePointerCapture(e.pointerId);}catch(_){}
-    if(!d.moved||!tb||tb===d.el){ if(_afDirty){_afDirty=false;try{renderAnimFrames();}catch(_){}} return; }
+    /* pointerup 다음 click까지 눌렀던 DOM을 유지한다. blur/자동저장이 예약한 렌더를
+       여기서 바로 실행하면 장면 번호가 사라져 마우스 선택만 취소된다. */
+    if(!d.moved){
+      if(_afDirty)setTimeout(function(){if(_afDirty&&!_afDragging)try{renderAnimFrames();}catch(_){}},0);
+      return;
+    }
+    if(!tb||tb===d.el){ if(_afDirty){_afDirty=false;try{renderAnimFrames();}catch(_){}} return; }
     _afDragT=Date.now();e.preventDefault();
     var from=idxOf(d.el),to=idxOf(tb);
     if(from<0||to<0||from===to)return;
@@ -8156,6 +8197,7 @@ function afCut(){ if(afCopy())afDeleteSel(); }
   }
   box.addEventListener("pointerdown",function(e){
     if(e.pointerType&&e.pointerType!=="mouse")return;
+    if(e.button!=null&&e.button!==0)return;
     var b=e.target.closest(".anim-frame");if(!b||e.target.closest(".afm"))return;
     drag={el:b,x:e.clientX,y:e.clientY,moved:false,pointerId:e.pointerId};
     _afDragging=true;_afDirty=false;
@@ -16869,7 +16911,8 @@ html.ps-page-board body:not(.ps-dock) #ps-command-dock :is(#ps-boost,#cmd-scene-
 /* 2.228 — 도크 글자 전부 가운데(사용자): 칩·버튼·select·카운터 line-height 1·가운데 */
 html.ps-page-board body:not(.ps-dock) #ps-command-dock :is(#ps-boost,.catpill,.chip,.cmd-stamp-token,.cpreset,.btn,.seg>button,button,select,#cmd-scene-status,.anim-frame):is(#ps-boost2,.catpill,.chip,.cmd-stamp-token,.cpreset,.btn,.seg>button,button,select,#cmd-scene-status,.anim-frame){text-align:center!important;line-height:1!important;letter-spacing:0!important}
 /* 2.807 — 공용 작전판 저장의 표시 여부는 화면 상태가 결정한다. 훈련 편집기의 숨김을 도구 정렬 규칙으로 덮지 않는다. */
-html.ps-page-board body:not(.ps-dock) #ps-command-dock :is(#ps-boost,.catpill,.chip,.cmd-stamp-token,.cpreset,.cmd-cluster .btn,.cmd-cluster .seg>button,.cmd-cluster button):is(#ps-boost2,.catpill,.chip,.cmd-stamp-token,.cpreset,.cmd-cluster .btn,.cmd-cluster .seg>button,.cmd-cluster button):not(#viewBtn):not(#cmd-export-btn):not(#cmd-equip-color):not(#vaultSave){display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
+/* 장면 메뉴(.afm)의 표시 여부는 활성 장면 규칙에 맡겨 번호 클릭을 가리지 않는다. */
+html.ps-page-board body:not(.ps-dock) #ps-command-dock :is(#ps-boost,.catpill,.chip,.cmd-stamp-token,.cpreset,.cmd-cluster .btn,.cmd-cluster .seg>button,.cmd-cluster button):is(#ps-boost2,.catpill,.chip,.cmd-stamp-token,.cpreset,.cmd-cluster .btn,.cmd-cluster .seg>button,.cmd-cluster button):not(#viewBtn):not(#cmd-export-btn):not(#cmd-equip-color):not(#vaultSave):not(.afm){display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
 html.ps-page-board body:not(.ps-dock) #ps-command-dock :is(#ps-boost,select):is(#ps-boost2,select){text-align-last:center!important;padding:0 6px!important}
 html.ps-page-board body:not(.ps-dock) #ps-command-dock :is(#ps-boost,.cmd-cluster .seg>button.on,.cmd-cluster .btn.on,.cmd-cluster button.on,.cmd-cluster .seg>button[aria-pressed="true"]):is(#ps-boost2,.cmd-cluster .seg>button.on,.cmd-cluster .btn.on,.cmd-cluster button.on,.cmd-cluster .seg>button[aria-pressed="true"]):is(#ps-boost3,.cmd-cluster .seg>button.on,.cmd-cluster .btn.on,.cmd-cluster button.on,.cmd-cluster .seg>button[aria-pressed="true"]):not(.catpill):not(.cmd-stamp-token):not(.chip){color:var(--ink,#14161A)!important}   /* 2.234 — 팀·역할 칩은 제외(남색 위 검정 글자 문제) */   /* 켜진 칩 글자·아이콘이 흰색이라 안 보이던 것(이동·선택) */
 html.ps-page-board body:not(.ps-dock) #ps-command-dock :is(#ps-boost,#animPlay.on,#animPlay[aria-pressed="true"]):is(#ps-boost2,#animPlay.on,#animPlay[aria-pressed="true"]):is(#ps-boost3,#animPlay.on,#animPlay[aria-pressed="true"]):is(#ps-boost4,#animPlay.on,#animPlay[aria-pressed="true"]){color:#fff!important}
