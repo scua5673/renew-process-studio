@@ -39,3 +39,21 @@ test('upright goal posts use the pitch meet scale in horizontal and vertical vie
  let m=matrix(fronts[0]);assert.equal(m[12],125);assert.ok(Math.abs(m[13]-272.55)<.001);assert.equal(m[6],-1);assert.equal(m[14],1.83);assert.equal(parseFloat(fronts[0].style.height),1.83);
  c.state.orientation='v';svg.viewBox.baseVal={x:0,y:0,width:800,height:1200};c.window.tiltGoalsSync();fronts=elements.tiltGoals.children.filter(n=>n.className==='goal-plane goal-front');assert.equal(fronts.length,2);m=matrix(fronts[0]);assert.ok(Math.abs(m[12]-481.7)<.001);assert.equal(m[13],550);assert.equal(m[0],1);assert.equal(m[1],0);assert.equal(m[6],-1);
 });
+test('perspective fitting coalesces layout changes and stays idle without a resize',()=>{
+ let on=true,fits=0,observer,queue=[];
+ const c=vm.createContext({document:{body:{classList:{contains:()=>on}},getElementById:()=>({})},svg:{},requestAnimationFrame:f=>queue.push(f),window:{__tiltFit:()=>fits++,addEventListener(){},ResizeObserver:true},ResizeObserver:class{constructor(cb){observer=cb;}observe(){}}});
+ vm.runInContext(section('  var tiltFitPending=false;','  window.__setTilt='),c);
+ observer();observer();observer();assert.equal(queue.length,1);queue.shift()();assert.equal(fits,1);assert.equal(queue.length,0);
+ on=false;observer();assert.equal(queue.length,0);
+ on=true;observer();queue.shift()();assert.equal(fits,2);
+ assert.doesNotMatch(section('  window.__setTilt=','  window.tiltGoalsSync='),/setInterval/);
+});
+test('arrival frame preserves its exact photos, identity and removed tokens during playback and export',()=>{
+ const c=vm.createContext({state:{},dc,lerp:(a,b,u)=>a+(b-a)*u,_curvePt:(x,y,xx,yy,c,u)=>({x:x+(xx-x)*u,y:y+(yy-y)*u}),ballRollTrack(){},_interpDrawings:()=>[],normPitchView:x=>x,applyView(){},renderTokens(){},renderDrawings(){},window:{}});
+ vm.runInContext(section('function renderInterp(','function _mpPair'),c);
+ const a={players:[{id:1,name:'Old',num:'8',pos:'CM',img:'old-photo',x:0,y:0},{id:2,x:0,y:0}],equipment:[{id:3,x:0,y:0}],ball:{x:0,y:0}};
+ const b={players:[{id:1,name:'New',num:'10',pos:'AM',img:'cropped-photo',x:100,y:100}],equipment:[],ball:null};
+ c.renderInterp(a,b,.5);assert.equal(c.state.players[0].img,'old-photo');assert.equal(c.state.players[0].x,50);
+ c.renderInterp(a,b,1);assert.deepEqual(dc(c.state.players),b.players);assert.deepEqual(dc(c.state.equipment),[]);assert.equal(c.state.ball,null);
+ delete b.players[0].img;c.renderInterp(a,b,1);assert.equal(c.state.players[0].img,undefined);
+});

@@ -2908,7 +2908,7 @@ body.bc-tilt3d #boardStage{perspective:1250px;perspective-origin:50% 24%;overflo
    `--tilt-k`(맞춤 배율)·`--tilt-ty`(맞춤 이동)는 기본값이 예전 값이라, JS 가 못 돌아도 예전과 같이 보인다.
    ⚠ translateY 를 **맨 앞**에 두는 이유: transform 은 오른쪽부터 적용되므로 맨 앞이 마지막 —
       그래야 이동량이 화면 px 과 1:1 로 맞아 계산이 단순해진다. 순서를 바꾸지 말 것. */
-body.bc-tilt3d svg#board,body.bc-tilt3d #tiltGoals{transform:translateY(var(--tilt-ty,-30px)) scale(calc(1.02*var(--tilt-k,1)),calc(1.44*var(--tilt-k,1))) rotateX(38deg);transform-origin:50% 55%;transition:transform .35s ease}   /* 2.275 — 하단 도크 침범 방지(사용자): -30px 들어올림 + 세로 1.52→1.44 */
+body.bc-tilt3d svg#board,body.bc-tilt3d #tiltGoals{transform:translateY(var(--tilt-ty,-30px)) scale(calc(1.02*var(--tilt-k,1)),calc(1.44*var(--tilt-k,1))) rotateX(38deg);transform-origin:50% 55%;transition:none}   /* 2.275 — 하단 도크 침범 방지(사용자): -30px 들어올림 + 세로 1.52→1.44 */
 /* ══ 2.372 · 원근 뷰의 여백을 경기장으로(사용자 "관중석이나 전광판으로 채워져") ═══════
    2.370 이 기울인 운동장을 틀 안에 맞추면서 둘레에 여백이 생겼다. 그 여백이 그냥 빈 바닥이면
    운동장이 공중에 떠 있는 것처럼 보인다. 관중석과 전광판으로 채우면 **여백이 배경이 된다.**
@@ -3006,7 +3006,7 @@ body.bc-tilt3d #tiltGoals{display:block}
 /* Continuous pitch surface; goals share the exact pitch projection and have upright posts. */
 body.bc-tilt3d #tiltStands{display:none!important}
 #tiltSurface{display:none;position:absolute;z-index:0;pointer-events:none;transform-style:preserve-3d}
-body.bc-tilt3d #tiltSurface{transform:translateY(var(--tilt-ty,-30px)) scale(calc(1.02*var(--tilt-k,1)),calc(1.44*var(--tilt-k,1))) rotateX(38deg);transform-origin:50% 55%;transition:transform .35s ease}
+body.bc-tilt3d #tiltSurface{transform:translateY(var(--tilt-ty,-30px)) scale(calc(1.02*var(--tilt-k,1)),calc(1.44*var(--tilt-k,1))) rotateX(38deg);transform-origin:50% 55%;transition:none}
 #tiltSurface .tilt-turf{position:absolute;inset:-3000px;background-repeat:repeat}
 body.bc-tilt3d #boardStage{background:var(--pitchbg,#252839)}
 body.bc-tilt3d svg#board{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
@@ -7704,14 +7704,16 @@ function renderInterp(a,b,u,curves){
   const bp={};(b.players||[]).forEach(o=>bp[o.id]=o);
   const be={};(b.equipment||[]).forEach(o=>be[o.id]=o);
   state.players=(a.players||[]).map(p=>{const q=bp[p.id]||p;const c=curves&&curves[p.id];const pt=_curvePt(p.x,p.y,q.x,q.y,c,u);
-    return Object.assign({},p,{x:pt.x,y:pt.y,scale:lerp(p.scale||1,q.scale||1,u)});});
+    return Object.assign({},u>=1?q:p,{x:pt.x,y:pt.y,scale:lerp(p.scale||1,q.scale||1,u)});});
   (b.players||[]).forEach(q=>{if(!(a.players||[]).some(p=>p.id===q.id))state.players.push(Object.assign({},q));});
   state.equipment=(a.equipment||[]).map(p=>{const q=be[p.id]||p;const c=curves&&curves[p.id];const pt=_curvePt(p.x,p.y,q.x,q.y,c,u);
     if(p.team==="ball"){try{ballRollTrack(p.id,pt.x,pt.y);}catch(_){} if(c&&c.air&&u<1)__ballAirS[p.id]=_airS(c.air);}   /* 2.271 — 장비 공도 굴림 · 2.272 공중볼 */
-    return Object.assign({},p,{x:pt.x,y:pt.y,scale:lerp(p.scale||1,q.scale||1,u)});});
+    return Object.assign({},u>=1?q:p,{x:pt.x,y:pt.y,scale:lerp(p.scale||1,q.scale||1,u)});});
   (b.equipment||[]).forEach(q=>{if(!(a.equipment||[]).some(p=>p.id===q.id))state.equipment.push(Object.assign({},q));});
+  if(u>=1){state.players=dc(b.players||[]);state.equipment=dc(b.equipment||[]);}
   if(a.ball||b.ball){const ba=a.ball||b.ball,bb=b.ball||a.ball;const cbl=curves&&curves.ball;const bpt=_curvePt(ba.x,ba.y,bb.x,bb.y,cbl,u);try{ballRollTrack("ball",bpt.x,bpt.y);}catch(_){}if(cbl&&cbl.air&&u<1)__ballAirS["ball"]=_airS(cbl.air);state.ball={x:bpt.x,y:bpt.y};}
   else{state.ball=null;}
+  if(u>=1)state.ball=b.ball?dc(b.ball):null;
   state.drawings=_interpDrawings(a.drawings||[],b.drawings||[],u);   /* 2.719 — 장면 사이 그림 서서히 */
   state.orientation=a.orientation||"h";state.area=a.area||"full";state.pitchView=normPitchView(a.pitchView||((state.area||"full")==="half"?"half":"full"));state.tokenScale=a.tokenScale||1;
   sel=null;applyView();renderTokens();renderDrawings();try{trailTick();}catch(_){}
@@ -11870,14 +11872,21 @@ function init(){
       try{ tiltGoalsSync(); }catch(_){}   /* 골대 레이어도 같은 배율을 따라와야 한다 */
     }catch(_){}
   };
-  try{ window.addEventListener("resize",function(){ setTimeout(function(){try{window.__tiltFit();}catch(_){}} ,120); }); }catch(_){}
+  var tiltFitPending=false;
+  function scheduleTiltFit(){
+    if(tiltFitPending||!document.body.classList.contains('bc-tilt3d'))return;
+    tiltFitPending=true;requestAnimationFrame(function(){tiltFitPending=false;window.__tiltFit();});
+  }
+  window.addEventListener('resize',scheduleTiltFit);
+  try{if(window.ResizeObserver){var tiltResize=new ResizeObserver(scheduleTiltFit);tiltResize.observe(document.getElementById('boardStage'));tiltResize.observe(svg);}}catch(_){}
   window.__setTilt=function(on){ on=!!on; document.body.classList.toggle("bc-tilt3d",on);
     try{localStorage.setItem("ps_board_tilt3d",on?"1":"0");}catch(_){}
     try{ if(on)bcAddLight(); else if(!document.body.classList.contains("bc-cam"))bcDelLight(); }catch(_){}
     try{ if(on)window.__tiltStands(); }catch(_){}   /* 2.372 — 켜기 전에 배경을 깔아 둔다 */
     try{ if(on)setTimeout(function(){try{window.__tiltFit();}catch(_){}},30); else { var _s=document.documentElement.style; _s.removeProperty("--tilt-k"); _s.removeProperty("--tilt-ty"); } }catch(_){}   /* 2.370 — 켤 때 맞추고, 끌 때 되돌린다 */
     try{ tiltGoalsSync(); }catch(_){}
-    try{ if(on&&!window.__tiltIv){ window.__tiltIv=setInterval(function(){ try{ if(!document.body.classList.contains("bc-tilt3d")){clearInterval(window.__tiltIv);window.__tiltIv=null;return;} tiltGoalsSync(); }catch(_){} },1200); } }catch(_){}
+    // Geometry follows actual layout changes; never periodically reset the live transform.
+    try{ if(window.__tiltIv){clearInterval(window.__tiltIv);window.__tiltIv=null;} }catch(_){}
     try{toast(on?"원근 뷰 — 끌기·그리기 그대로 됩니다":"원근 뷰 끔");}catch(_){}
     try{__syncStageUI();}catch(_){} };
   /* 2.274 — 서 있는 골대(사용자 "TV 중계처럼 · 골대도 서 있게"): SVG 는 한 평면이라 골대만 HTML 3D 레이어에.
@@ -12738,7 +12747,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
   /* 토큰 얼굴 사진 — 위치·확대를 선택한 뒤 256px 정방형으로 저장한다. */
   let _tokImgTargets=[];
   if($("photoBtn"))$("photoBtn").onclick=()=>{_tokImgTargets=selectedPlayers(true).slice();if(_tokImgTargets.length)$("tokImgInput").click();};
-  if($("photoDelBtn"))$("photoDelBtn").onclick=()=>{var ps=selectedPlayers(true).filter(function(p){return !!p.img;});if(!ps.length)return;pushUndo();ps.forEach(function(p){delete p.img;});renderTokens();updateDelUI();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}toast(ps.length>1?(ps.length+"명 사진 제거됨"):"사진 제거됨");};
+  if($("photoDelBtn"))$("photoDelBtn").onclick=()=>{var ps=selectedPlayers(true).filter(function(p){return !!p.img;});if(!ps.length)return;pushUndo();ps.forEach(function(p){delete p.img;});renderTokens();autoSaveAnimFrame();updateDelUI();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}toast(ps.length>1?(ps.length+"명 사진 제거됨"):"사진 제거됨");};
   if($("tokImgInput"))$("tokImgInput").addEventListener("change",function(){
     const f=this.files&&this.files[0];this.value="";
     const ps=_tokImgTargets.filter(function(p){return state.players.indexOf(p)>=0;});_tokImgTargets=[];
