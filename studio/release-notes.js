@@ -8,6 +8,9 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-17-meeting-portrait-text',date:'2026-09-17',title:'세로형 미팅의 텍스트를 위로 옮겼습니다',
+    changes:['세로형 미팅은 텍스트 위·보드 아래로 표시하며 PDF에도 같은 배치를 적용합니다.','미팅 페이지 오른쪽 상단의 슬라이드 안내 문구를 제거했습니다.']
+  },{
     id:'2026-09-17-meeting-page-editor',date:'2026-09-17',title:'미팅 페이지를 바로 편집하고 PDF로 저장하세요',
     changes:[
       '미팅에서 가로형·세로형을 선택하고 화면과 같은 배치로 PDF를 내보낼 수 있습니다.',

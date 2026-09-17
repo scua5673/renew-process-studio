@@ -19,7 +19,7 @@ test('portrait and landscape produce distinct A4 layout with every slide in orde
 });
 test('long notes paginate without losing Korean, long words, emoji, or the final point',()=>{
  const c=fixture(),message='가나다ABC👨‍👩‍👧‍👦'.repeat(110),slides=[{title:'긴 제목'.repeat(25),points:[message,'마지막 확인']}],before=JSON.stringify(slides);
- for(const orientation of ['portrait','landscape']){const html=c.buildMeetingPrintDoc(slides,'미팅',{orientation});assert.ok((html.match(/class="page mp-page"/g)||[]).length>2);const text=Array.from(html.matchAll(/class="mp-line point"[^>]*>(.*?)<\/div>/g),m=>m[1]).join('');assert.equal(text,'• '+message+'• 마지막 확인');assert.ok(html.includes('계속'));}
+ for(const orientation of ['portrait','landscape']){const html=c.buildMeetingPrintDoc(slides,'미팅',{orientation});assert.ok((html.match(/class="page mp-page"/g)||[]).length>2);const text=Array.from(html.matchAll(/class="mp-line point"[^>]*>(.*?)<\/div>/g),m=>m[1]).join('');assert.equal(text,'• '+message+'• 마지막 확인');assert.equal(html.includes('미팅 · 슬라이드'),false);}
  assert.equal(JSON.stringify(slides),before);
 });
 test('titles and notes are escaped and legacy SVG stays inside inert image data',()=>{
