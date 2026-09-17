@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">   <!-- 2.290 — 보드 기본 피치 = 네이비(사용자). 베이스 :root 변수가 곧 네이비라 data-pitch 를 비운다 -->
+<html lang="ko" data-pitch="grass">   <!-- 새 보드는 잔디가 기본, 빈 data-pitch는 네이비. 저장된 보드 외형은 스냅샷에서 복원한다. -->
 <head>
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <meta charset="UTF-8">
@@ -3239,8 +3239,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
               <button data-tg="5">5m</button>
             </div>
           </div>
-          <div class="menurow"><span class="menulbl">피치</span><div class="seg" id="pitchSeg"><!-- 2.287 — 사용자: 실사를 맨 앞에 두고 이름을 '잔디'로. 옛 평면 잔디(data-p=grass) 버튼은 뺀다.
-                 실사는 내부적으로 잔디 테마 + 실사 사진이라 이름이 겹쳐 있었다. --><button data-p="real" class="on">잔디</button><button data-p="calm">딥그린</button><button data-p="navy">네이비</button><button data-p="white">화이트</button><button data-p="train">훈련</button><label class="ps-pcol" title="피치 색 직접 선택"><input type="color" id="pitchColPick" aria-label="피치 색 직접 선택"></label></div></div>
+          <div class="menurow"><span class="menulbl">피치</span><div class="seg" id="pitchSeg" role="group" aria-label="운동장 배경"><button type="button" data-p="real" class="on" aria-pressed="true">잔디</button><button type="button" data-p="navy" aria-pressed="false">네이비</button></div></div>
           <div class="menurow" data-bs-tab="pitch" id="pitchSpecRow"><span class="menulbl">규격</span><div class="seg" id="pitchSpecSeg" role="group" aria-label="운동장 규격"><button data-spec="fifa" class="on" title="FIFA 105×68m · 골 7.32×2.44">11인제</button><button data-spec="u12" title="KFA 8인제 경기규칙 — 65×48m · 골 5.7×2.15 · PA 12.5 · GA 4.5 · PK 8.5 · 센터서클 7">8인제</button><button data-spec="futsal" title="FIFA 풋살 — 40×20m · 골 3×2 · PA r6 사분원 · PK 6 · 제2 PK 10 · 센터서클 3">풋살</button></div></div>
           <!-- 2.272 — 잔디 줄무늬(있던 엔진 __setGrassM 에 UI만) · 원근 뷰(보기 전용, fmstadio 레퍼런스 C안) -->
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">잔디 줄무늬</span><div class="seg" id="grassSeg" role="group" aria-label="잔디 줄무늬"><button data-g="0">없음</button><button data-g="5" title="5m 폭 모잉 스트라이프">기본</button><button data-g="10" title="10m 폭">넓게</button></div></div>
@@ -6773,7 +6772,7 @@ window.__syncPitchSeg=function(){try{var sg=document.getElementById("pitchSeg");
   var ds=document.documentElement.dataset.pitch||"";
   var key=(state.pitchImg==="@real")?"real":(ds===""?"navy":ds);
   if(key==="grass")key="real";   /* 2.287 — 옛 평면 잔디도 새 '잔디' 버튼으로 표시(보드 모습은 안 건드린다) */
-  [].forEach.call(sg.querySelectorAll("button[data-p]"),function(x){x.classList.toggle("on",x.getAttribute("data-p")===key);});}catch(_){}};
+  [].forEach.call(sg.querySelectorAll("button[data-p]"),function(x){var on=x.getAttribute("data-p")===key;x.classList.toggle("on",on);x.setAttribute("aria-pressed",String(on));});}catch(_){}};
 try{ var _pp=localStorage.getItem('cs_pitch_img'); if(_pp&&_pp.charAt(0)==='@'&&!state.pitchImg)state.pitchImg=_pp; }catch(_){}
 window.__getPitchN=function(){return state.pitchN||1;};
 window.__getPitchSpec=function(){ try{ return pitchSpec(); }catch(_){ return null; } };   /* 2.658 — 멀티피치 카드(셸 applyPitches)가 규격을 따라 그린다(풋살이면 풋살장) */
@@ -11931,7 +11930,8 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
     const p=b.getAttribute("data-p");
     /* '실사' = 잔디 테마 + 실사 타일 배경. 다른 색 선택 시 실사 배경 해제 */
     if(p==="real"){ document.documentElement.dataset.pitch="grass"; try{window.__setPitchImg('@real');}catch(_){} }
-    else { try{ if(state.pitchImg==='@real')window.__clearPitchImg(); }catch(_){} document.documentElement.dataset.pitch=(p==="navy"?"":p); }
+    else { try{ if(state.pitchImg)window.__clearPitchImg(); }catch(_){} document.documentElement.dataset.pitch=(p==="navy"?"":p); }
+    try{window.__syncPitchSeg();}catch(_){}
     buildPitch();renderTokens();renderDrawings();updateDelUI();try{boardSaveLive();}catch(_){}});})();
   seg("labelSeg","data-l",l=>{var prev=state.label;state.label=l;try{convertPosVocab(prev,l);}catch(_){}renderBench();renderTokens();try{boardSaveLive();}catch(_){}});
   /* 2.239 — 포지션 어휘 변환(사용자 "포지션 눌러도 풋살 포지션이 나와"): '포지션'↔'풋살' 전환 때 선수 pos 를 축구/풋살 이름으로 바꾼다.
@@ -13371,7 +13371,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           clearCustom(); document.documentElement.dataset.pitch=wantPitch; try{buildPitch();renderTokens();renderDrawings();updateDelUI();}catch(e){}
         }
       }
-      try{var __hl2=(state.pitchImg==='@real')?'real':(document.documentElement.dataset.pitch||"navy");if(__hl2==='grass')__hl2='real';   /* 2.287 */document.querySelectorAll("#pitchSeg button").forEach(function(b){b.classList.toggle("on",b.dataset.p===__hl2);});}catch(_){}
+      try{window.__syncPitchSeg();}catch(_){}
     }catch(_){}
   }
   window.__applyPitch=applyPitchState;
@@ -13435,14 +13435,6 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var grp=document.getElementById("ps-group-pitch"); var pop=grp&&grp.querySelector(".popmenu"); var seg=document.getElementById("pitchSeg"); if(!pop||!seg||!pop.contains(seg))return false;
     var box=document.getElementById("pitchExtra"); if(box){ if(box.parentElement!==pop)pop.appendChild(box); refreshUI(); return true; }
     box=document.createElement("div"); box.id="pitchExtra";
-    // custom color row
-    var r1=document.createElement("div"); r1.className="pe-row";
-    var l1=document.createElement("span"); l1.className="pe-lb"; l1.textContent="직접 색";
-    var ci=document.createElement("input"); ci.type="color"; ci.id="pitchCustomColor"; ci.value=lsGet("cs_pitch_custom")||"#1b8044";
-    var ab=document.createElement("button"); ab.className="pe-btn"; ab.textContent="적용";
-    ci.addEventListener("input",function(){applyCustom(ci.value);});
-    ab.addEventListener("click",function(e){e.stopPropagation();applyCustom(ci.value);});
-    r1.appendChild(l1);r1.appendChild(ci);r1.appendChild(ab);
     // emblem row
     var r2=document.createElement("div"); r2.className="pe-row";
     var l2=document.createElement("span"); l2.className="pe-lb"; l2.textContent="엠블럼";
@@ -13454,7 +13446,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var seg2=document.createElement("div"); seg2.className="pe-seg"; seg2.id="emblemPosSeg";
     [["off","끄기"],["center","중앙"]].forEach(function(o){ var b=document.createElement("button"); b.dataset.ep=o[0]; b.textContent=o[1]; b.addEventListener("click",function(e){e.stopPropagation();setEpos(o[0]);}); seg2.appendChild(b); });
     r2.appendChild(l2);r2.appendChild(th);r2.appendChild(up);r2.appendChild(fi);r2.appendChild(seg2);
-    box.appendChild(r1);box.appendChild(r2);
+    box.appendChild(r2);
     pop.appendChild(box);
     refreshUI();
     return true;
@@ -13470,15 +13462,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 
   // ---------- init: restore saved ----------
   function init(){
-    try{var _pcp=document.getElementById("pitchColPick"); if(_pcp){ _pcp.value=lsGet("cs_pitch_custom")||"#2f9e50"; _pcp.addEventListener("input",function(){try{localStorage.setItem('cs_pitch_set','1');}catch(_){} applyCustom(_pcp.value);}); _pcp.addEventListener("click",function(e){e.stopPropagation();}); }}catch(e){}
     emblem=lsGet("cs_emblem")||null;
     epos=lsGet("cs_emblem_pos")||"off"; if(epos==="corner")epos="center";
-    var pc=lsGet("cs_pitch_custom");
     hookBuild();
-    if(pc) window.__pitchDef={theme:"custom",custom:pc};   // 레거시(피치 미저장) 항목의 기본값
     setTimeout(function(){
-      if(pc) applyCustom(pc, true);
-      else if(emblem){ try{buildPitch();}catch(e){} }
+      if(emblem){ try{buildPitch();}catch(e){} }
     }, 700);
     tryBuildUI(); hookPresets();
   }
@@ -13998,7 +13986,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(type==="match"){try{if(window.__mcResetAll)window.__mcResetAll();}catch(_){}}
     try{window.__vaultStarting=true;setView(_nvt);window.__vaultStarting=false;}catch(_){}
     if(_nvt==="board"){
-      try{loadSnap({players:[],equipment:[],drawings:[],ball:{x:CX,y:CY},orientation:state.orientation,area:state.area,pitchView:pitchViewKey(),pitchN:1});}catch(_){}
+      try{var emptyBoard={players:[],equipment:[],drawings:[],ball:{x:CX,y:CY},orientation:state.orientation,area:state.area,pitchView:pitchViewKey(),pitchN:1};
+        if(type==="board"){emptyBoard.pitchTheme="grass";emptyBoard.pitchImg="@real";emptyBoard.pitchCustom=null;}
+        loadSnap(emptyBoard);}catch(_){}
       try{state.players=[];state.equipment=[];state.drawings=[];state.pitchN=1;}catch(_){}   // loadSnap 실패해도 무조건 빈 보드 보장
       try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}
       try{if(window.__applyPitchN)window.__applyPitchN(1);}catch(_){}   // 남은 멀티피치 제거
@@ -15948,7 +15938,7 @@ try{ var _nb=document.getElementById('dfNew');
     var s=_snap()||{};
     return {pitchSpec:s.pitchSpec,orientation:s.orientation,area:s.area,pitchView:s.pitchView,gridType:s.gridType,label:s.label,lines:s.lines,spFlip:s.spFlip,
       tokenScale:s.tokenScale,pitchN:s.pitchN,teamColors:s.teamColors,teamColor2:s.teamColor2,teamPattern:s.teamPattern,
-      teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,customImages:s.customImages,
+      teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,pitchTheme:s.pitchTheme,pitchCustom:s.pitchCustom,customImages:s.customImages,
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};
   }
   function loadIdx(i){ try{ window.loadSnap(pages[i].snap||{}); window.renderTokens&&window.renderTokens(); window.renderDrawings&&window.renderDrawings(); window.updateDelUI&&window.updateDelUI(); }catch(_){}
