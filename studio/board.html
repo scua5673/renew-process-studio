@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-pitch="grass">   <!-- 새 보드는 잔디가 기본, 빈 data-pitch는 네이비. 저장된 보드 외형은 스냅샷에서 복원한다. -->
+<html lang="ko" data-pitch="">   <!-- 처음 사용하는 보드는 네이비. 저장된 보드 외형은 스냅샷에서 복원한다. -->
 <head>
 <script>try{if(parent!==window&&parent.PSSupportDiagnostics&&parent.PSSupportDiagnostics.attachFrame)parent.PSSupportDiagnostics.attachFrame(window);}catch(_){}</script>
 <meta charset="UTF-8">
@@ -3007,7 +3007,7 @@ body.bc-tilt3d #tiltGoals{display:block}
 try{ if(/[?&]community_view=1(&|$)/.test(location.search)) document.documentElement.classList.add("comm-boot"); }catch(_){}
 /* Personal board appearance is restored only after its account is verified.
    An unowned legacy team snapshot must not color even the first frame. */
-try{document.documentElement.dataset.pitch="grass";}catch(_){}
+try{document.documentElement.dataset.pitch="";}catch(_){}
 </script>
 <link rel="stylesheet" href="mobile-polish.css">
 <style id="ps-2202-sheet">/* 2.202 → 2.205 — 폰 선택 카드(body.ps-dock): 사용자 "더 작게, 우상단에". 바텀시트(mobile-polish 786)를 덮어 오른쪽 위 작은 카드로. 링크는 mobile-polish.css 바로 뒤여야 이긴다 */
@@ -3239,7 +3239,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
               <button data-tg="5">5m</button>
             </div>
           </div>
-          <div class="menurow"><span class="menulbl">피치</span><div class="seg" id="pitchSeg" role="group" aria-label="운동장 배경"><button type="button" data-p="real" class="on" aria-pressed="true">잔디</button><button type="button" data-p="navy" aria-pressed="false">네이비</button></div></div>
+          <div class="menurow"><span class="menulbl">피치</span><div class="seg" id="pitchSeg" role="group" aria-label="운동장 배경"><button type="button" data-p="real" aria-pressed="false">잔디</button><button type="button" data-p="calm" aria-pressed="false">딥그린</button><button type="button" data-p="navy" class="on" aria-pressed="true">네이비</button><button type="button" data-p="white" aria-pressed="false">화이트</button><button type="button" data-p="train" aria-pressed="false">훈련</button><label class="ps-pcol" title="피치 색 직접 선택"><input type="color" id="pitchColPick" aria-label="피치 색 직접 선택"></label></div></div>
           <div class="menurow" data-bs-tab="pitch" id="pitchSpecRow"><span class="menulbl">규격</span><div class="seg" id="pitchSpecSeg" role="group" aria-label="운동장 규격"><button data-spec="fifa" class="on" title="FIFA 105×68m · 골 7.32×2.44">11인제</button><button data-spec="u12" title="KFA 8인제 경기규칙 — 65×48m · 골 5.7×2.15 · PA 12.5 · GA 4.5 · PK 8.5 · 센터서클 7">8인제</button><button data-spec="futsal" title="FIFA 풋살 — 40×20m · 골 3×2 · PA r6 사분원 · PK 6 · 제2 PK 10 · 센터서클 3">풋살</button></div></div>
           <!-- 2.272 — 잔디 줄무늬(있던 엔진 __setGrassM 에 UI만) · 원근 뷰(보기 전용, fmstadio 레퍼런스 C안) -->
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">잔디 줄무늬</span><div class="seg" id="grassSeg" role="group" aria-label="잔디 줄무늬"><button data-g="0">없음</button><button data-g="5" title="5m 폭 모잉 스트라이프">기본</button><button data-g="10" title="10m 폭">넓게</button></div></div>
@@ -4149,10 +4149,8 @@ const MDS=["MD-5","MD-4","MD-3","MD-2","MD-1","MD","MD+1"];
 
 const DRAW_TOOLS=["run","pass","dribble","line","dashline","link","free","rect","ellipse","rectline","rectdash"];   /* 2.683 — ellipse: 원형 구역 */   /* 2.679 — link: 선수를 차례로 눌러 잇는 연결선·다각형(선수를 따라감) */
 const isDraw=()=>DRAW_TOOLS.includes(state.tool);
-/* 2.365 — 새 보드의 기본은 **실사 잔디 + 15존**(사용자 "처음화면 기본설정은 실사 그리드로 15존").
-   실사는 내부적으로 `data-pitch="grass"` + `pitchImg:"@real"` 두 짝이다(10305 의 p==="real" 갈래와 같은 뜻).
-   ⚠ 이미 저장된 보드는 영향 없다 — loadSnap 이 `s.gridType`·`s.pitchTheme`·`s.pitchImg` 로 제 값을 덮어쓴다. */
-const state={orientation:"h",area:"full",pitchView:"full",fieldMode:"standard",pitchN:1,tool:"move",color:"#1c1c1e",tokenScale:0.46,grid:true,lines:true,gridType:"grid15",pitchImg:"@real",label:"num",   /* 2.459 — 기본 표시=번호(사용자). 저장본은 제 값(6188)을 그대로 쓴다 */drawLw:1,drawOp:1,boardLocked:false,
+/* 처음 사용하는 보드는 네이비 + 15존. 저장된 보드는 loadSnap의 배경·그리드 설정을 복원한다. */
+const state={orientation:"h",area:"full",pitchView:"full",fieldMode:"standard",pitchN:1,tool:"move",color:"#1c1c1e",tokenScale:0.46,grid:true,lines:true,gridType:"grid15",pitchImg:null,label:"num",   /* 2.459 — 기본 표시=번호(사용자). 저장본은 제 값(6188)을 그대로 쓴다 */drawLw:1,drawOp:1,boardLocked:false,
   players:[],equipment:[],ball:{x:CX,y:CY},drawings:[],teamColors:{},customImages:[]};
 function normPitchView(v){return (v==="q1"||v==="half"||v==="q3")?v:"full";}
 function pitchViewKey(){return normPitchView(state.pitchView||((state.area||"full")==="half"?"half":"full"));}
@@ -6773,7 +6771,7 @@ window.__syncPitchSeg=function(){try{var sg=document.getElementById("pitchSeg");
   var key=(state.pitchImg==="@real")?"real":(ds===""?"navy":ds);
   if(key==="grass")key="real";   /* 2.287 — 옛 평면 잔디도 새 '잔디' 버튼으로 표시(보드 모습은 안 건드린다) */
   [].forEach.call(sg.querySelectorAll("button[data-p]"),function(x){var on=x.getAttribute("data-p")===key;x.classList.toggle("on",on);x.setAttribute("aria-pressed",String(on));});}catch(_){}};
-try{ var _pp=localStorage.getItem('cs_pitch_img'); if(_pp&&_pp.charAt(0)==='@'&&!state.pitchImg)state.pitchImg=_pp; }catch(_){}
+/* 계정 확인 전에는 기기 공용 cs_pitch_img를 적용하지 않는다. 저장된 배경은 loadSnap이 복원한다. */
 window.__getPitchN=function(){return state.pitchN||1;};
 window.__getPitchSpec=function(){ try{ return pitchSpec(); }catch(_){ return null; } };   /* 2.658 — 멀티피치 카드(셸 applyPitches)가 규격을 따라 그린다(풋살이면 풋살장) */
 /* 잔디 줄무늬만 현재 운동장 개수에 맞춰 다시 그림(토큰·라인 유지, 원자 교체) */
@@ -13329,7 +13327,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 
   // ---------- custom pitch color ----------
   function applyCustom(color, _silent){
-    try{ if(!_silent&&state.pitchImg==='@real')window.__clearPitchImg(); }catch(_){}   /* 직접 색 선택 시 실사 배경 해제 */
+    try{ if(!_silent&&state.pitchImg)window.__clearPitchImg(); }catch(_){}   /* 직접 색 선택 시 이전 배경 이미지 해제 */
     var L2=lum(color);
     var line=L2>0.62?"#39414f":"#ffffff";
     var grid=L2>0.62?"#7b8494":"#cfe0ff";
@@ -13339,6 +13337,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     s.setProperty("--pline",line);
     s.setProperty("--grid",grid);
     s.setProperty("--zone",grid);
+    try{window.__syncPitchSeg();}catch(_){}
     try{buildPitch();renderTokens();renderDrawings();updateDelUI();}catch(e){}
     if(!_silent){try{boardSaveLive();}catch(_){}}   // 현재 보드에만 저장(전역 X)
   }
@@ -13435,6 +13434,14 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var grp=document.getElementById("ps-group-pitch"); var pop=grp&&grp.querySelector(".popmenu"); var seg=document.getElementById("pitchSeg"); if(!pop||!seg||!pop.contains(seg))return false;
     var box=document.getElementById("pitchExtra"); if(box){ if(box.parentElement!==pop)pop.appendChild(box); refreshUI(); return true; }
     box=document.createElement("div"); box.id="pitchExtra";
+    // custom color row
+    var r1=document.createElement("div"); r1.className="pe-row";
+    var l1=document.createElement("span"); l1.className="pe-lb"; l1.textContent="직접 색";
+    var ci=document.createElement("input"); ci.type="color"; ci.id="pitchCustomColor"; ci.value=lsGet("cs_pitch_custom")||"#1b8044";
+    var ab=document.createElement("button"); ab.className="pe-btn"; ab.textContent="적용";
+    ci.addEventListener("input",function(){applyCustom(ci.value);});
+    ab.addEventListener("click",function(e){e.stopPropagation();applyCustom(ci.value);});
+    r1.appendChild(l1);r1.appendChild(ci);r1.appendChild(ab);
     // emblem row
     var r2=document.createElement("div"); r2.className="pe-row";
     var l2=document.createElement("span"); l2.className="pe-lb"; l2.textContent="엠블럼";
@@ -13446,7 +13453,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var seg2=document.createElement("div"); seg2.className="pe-seg"; seg2.id="emblemPosSeg";
     [["off","끄기"],["center","중앙"]].forEach(function(o){ var b=document.createElement("button"); b.dataset.ep=o[0]; b.textContent=o[1]; b.addEventListener("click",function(e){e.stopPropagation();setEpos(o[0]);}); seg2.appendChild(b); });
     r2.appendChild(l2);r2.appendChild(th);r2.appendChild(up);r2.appendChild(fi);r2.appendChild(seg2);
-    box.appendChild(r2);
+    box.appendChild(r1);box.appendChild(r2);
     pop.appendChild(box);
     refreshUI();
     return true;
@@ -13462,6 +13469,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 
   // ---------- init: restore saved ----------
   function init(){
+    try{var _pcp=document.getElementById("pitchColPick"); if(_pcp){ _pcp.value=lsGet("cs_pitch_custom")||"#2f9e50"; _pcp.addEventListener("input",function(){try{localStorage.setItem('cs_pitch_set','1');}catch(_){} applyCustom(_pcp.value);}); _pcp.addEventListener("click",function(e){e.stopPropagation();}); }}catch(e){}
     emblem=lsGet("cs_emblem")||null;
     epos=lsGet("cs_emblem_pos")||"off"; if(epos==="corner")epos="center";
     hookBuild();
@@ -13987,7 +13995,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{window.__vaultStarting=true;setView(_nvt);window.__vaultStarting=false;}catch(_){}
     if(_nvt==="board"){
       try{var emptyBoard={players:[],equipment:[],drawings:[],ball:{x:CX,y:CY},orientation:state.orientation,area:state.area,pitchView:pitchViewKey(),pitchN:1};
-        if(type==="board"){emptyBoard.pitchTheme="grass";emptyBoard.pitchImg="@real";emptyBoard.pitchCustom=null;}
+        if(type==="board"){var appearance=captureSnap();emptyBoard.pitchTheme=appearance.pitchTheme;emptyBoard.pitchImg=appearance.pitchImg;emptyBoard.pitchCustom=appearance.pitchCustom;}
         loadSnap(emptyBoard);}catch(_){}
       try{state.players=[];state.equipment=[];state.drawings=[];state.pitchN=1;}catch(_){}   // loadSnap 실패해도 무조건 빈 보드 보장
       try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}
@@ -17542,6 +17550,56 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-ipad-work):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #toolSeg{
     column-gap:3px!important;
   }
+}
+</style>
+
+<style id="ps-ipad-desktop-dock">
+/* iPad shares the desktop's three-row dock and surfaces. Keep its 36px touch
+   controls, with a small settings caption. Narrow rows scroll rather than
+   wrapping into extra rows; dock reservation still uses the measured height. */
+@media (min-width:768px){
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________){
+    --dk-settings-width:82px;--dk-settings-align:center;--dk-settings-padding:5px;--dk-settings-gap:4px;
+    --dk-radius:12px;--dk-button-radius:7px;--dk-backdrop:none;--dk-active-shadow:none;--dk-primary-bg:var(--dk-blue);--dk-primary-shadow:none;--dk-primary-hover:var(--dk-blue-3);--dk-add-bg:transparent;--dk-add-shadow:none;--dk-export-bg:transparent;--dk-value-line:transparent;--dk-value-shadow:none;--dk-tray:transparent;--dk-on:var(--dk-soft);
+  }
+  html.ps-page-board body.ps-ipad-work:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________){
+    --dk-surface:#FFFFFF;--dk-ink:#333E4C;--dk-text:#333E4C;--dk-muted:#7D8795;--dk-line:#E9EDF2;--dk-hair:#E9EDF2;--dk-soft:#E9F0FF;--dk-soft-ink:#2B61DC;--dk-blue:#3468EA;--dk-value-bg:#F3F5F8;--dk-surface-shadow:0 0 0 1px rgba(24,39,60,.08),0 6px 20px -8px rgba(21,34,55,.18);
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________){
+    grid-template-rows:36px 72px!important;height:108px!important;min-height:108px!important;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#floatBar{
+    height:72px!important;min-height:72px!important;grid-template-rows:36px 36px!important;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#animBar,#drawPanel,#cmd-tool-row){
+    height:36px!important;min-height:36px!important;max-height:36px!important;flex-wrap:nowrap!important;align-items:center!important;padding:0 12px!important;column-gap:8px!important;row-gap:0!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#animBar,#drawPanel,#cmd-tool-row)::-webkit-scrollbar{display:none}
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #railL2{
+    flex-wrap:nowrap!important;height:36px!important;min-height:36px!important;column-gap:8px!important;row-gap:0!important;overflow:visible!important;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(.cmd-cluster,#toolSeg,#benchCat,#railL2,#railEquip,#animFrames){
+    background:transparent!important;box-shadow:none!important;border-color:transparent!important;column-gap:3px!important;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .cmd-cluster{
+    height:36px!important;min-height:36px!important;padding-block:0!important;align-items:center!important;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-style #colorWrap{
+    width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;flex:0 0 36px!important;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(.catpill,.cpreset,.chip,.cmd-stamp-token,.cmd-cluster>button,.cmd-cluster .seg>button,.cmd-cluster select){
+    height:36px!important;min-height:36px!important;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(.catpill.tpill,.cpreset,.chip,.cmd-stamp-token,#toolSeg>button){
+    width:36px!important;min-width:36px!important;flex:0 0 36px!important;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #viewBtn{
+    height:36px!important;min-height:36px!important;font-size:11px!important;line-height:1!important;white-space:nowrap!important;
+  }
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #viewBtn>span{font-size:11px!important;line-height:1!important;}
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#cmd-tool-end,#cmd-tool-end .menuwrap){width:82px!important;min-width:82px!important;max-width:82px!important;flex:0 0 82px!important;padding:0!important;}
+  html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animFrames:empty::after{display:none!important;}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock) #cmd-board-settings-pop:not(#_):not(#_) .cmd-board-settings-title{font-size:13px!important;}
 }
 </style>
 
