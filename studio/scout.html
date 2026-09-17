@@ -8453,66 +8453,102 @@ function contractLeftText(sct){ if(!sct)return ""; if(sct.contract==="fa")return
   var m=String(sct.contractEnd||"").match(/^(\d{4})(?:[-./](\d{1,2}))?/); if(!m)return "";
   var y=+m[1], mo=m[2]?(+m[2]-1):5; var end=new Date(y,mo+1,0); var now=new Date(); var months=(end.getFullYear()-now.getFullYear())*12+(end.getMonth()-now.getMonth());
   if(months<0)return "만료"; if(months<1)return "이번 달 만료"; if(months<12)return months+"개월 남음"; var yrs=Math.floor(months/12), rm=months%12; return yrs+"년"+(rm?" "+rm+"개월":"")+" 남음"; }
-function scNameEditBegin(input){
-  if(input.__scNameEdit)return input.__scNameEdit;
-  try{
-    var client=scStore();client.check();
-    var p=data.players.find(function(p){return p.id===input.dataset.scname;});
-    if(!p||p.type!=="target"||p._scoutHidden)throw new Error("후보 목록이 바뀌었습니다. 다시 열어 주세요.");
-    return input.__scNameEdit={player:p,owner:client.state.owner,cid:PSScoutStore.idOf(p),name:String(p.name||""),composing:false,pendingBlur:false};
-  }catch(e){scWarn(e);return null;}
+var scIdentityEditState=null;
+function scIdentityEditRead(id,client){
+  var p=data.players.find(function(p){return p.id===id;}),doc=client.state.doc;
+  var origin=doc&&doc.players.find(function(p){return p.id===id;}),cid=p&&PSScoutStore.idOf(p);
+  var candidate=doc&&doc.scoutRegistry.candidates[cid],tomb=plTombs()[id];
+  if(!p||p.type!=="target"||p._scoutHidden||!origin||origin._scoutHidden||PSScoutStore.idOf(origin)!==cid||!candidate||candidate.archivedAt||
+    tomb&&!(origin._scoutMove&&origin._scoutMove.at>tomb))throw new Error("후보 정보가 바뀌었습니다. 창을 닫고 다시 열어 주세요.");
+  var values={},edits={};
+  ["name","club","num"].forEach(function(k){values[k]=String(candidate.info[k]==null?"":candidate.info[k]);edits[k]=candidate.edits&&candidate.edits[k]||null;
+    if(String(p[k]==null?"":p[k])!==values[k])throw new Error("후보 정보가 바뀌었습니다. 창을 닫고 다시 열어 주세요.");});
+  return {pid:id,player:p,cid:cid,values:values,revision:JSON.stringify([values,edits,candidate.archiveEdit||null])};
 }
-function scNameEditFinish(input,cancel){
-  var edit=input.__scNameEdit;if(!edit){input.value=input.defaultValue;return false;}
-  if(!cancel&&edit.composing){edit.pendingBlur=true;return false;}
-  delete input.__scNameEdit;
-  if(input.isConnected===false)return false;
-  if(cancel){input.value=edit.name;return false;}
-  var name=String(input.value||"").trim();
-  if(!name){input.value=edit.name;toast("이름을 입력해 주세요.");return false;}
-  var changed=false;
-  try{
-    var client=scStore();client.check();
-    var p=data.players.find(function(p){return p.id===input.dataset.scname;});
-    if(client.state.owner!==edit.owner||p!==edit.player||p.type!=="target"||p._scoutHidden||PSScoutStore.idOf(p)!==edit.cid||String(p.name||"")!==edit.name)
-      throw new Error("후보 정보가 바뀌었습니다. 목록을 다시 열어 주세요.");
-    input.value=name;
-    if(name===edit.name)return false;
-    p.name=name;changed=true;input.defaultValue=name;input.title=name;
-    input.setAttribute("aria-label",name+" 이름 편집");
-    var row=input.closest(".sc-row"),profile=row&&row.querySelector("[data-sccard]");
-    if(profile)profile.setAttribute("aria-label",name+" 프로필 수정");
-    if(!save()){scWarn(new Error("이름 저장을 확인하지 못했어요. 저장 상태에서 다시 확인해 주세요."));return false;}
-    try{renderScoutBoard();}catch(_){}
-    return true;
-  }catch(e){if(!changed)input.value=edit.name;scWarn(e);return false;}
+function scIdentityEditCheck(ctx,receipt){
+  var client=scStore();
+  if(receipt){
+    if(client.state.doc!==receipt.doc||client.state.raw!==receipt.raw||client.state.pending!==receipt.pending||
+      PSScoutStore.context(window,false)!==ctx.owner||window.localStorage.getItem(TKEY)!==receipt.raw)
+      throw new Error("선수 정보나 팀이 바뀌었습니다. 창을 닫고 다시 열어 주세요.");
+  }else client.check();
+  var current=scIdentityEditRead(ctx.pid,client);
+  if(client!==ctx.client||client.state.owner!==ctx.owner||current.player!==ctx.player||current.cid!==ctx.cid||
+    current.revision!==(receipt?receipt.revision:ctx.revision))throw new Error("선수 정보나 팀이 바뀌었습니다. 창을 닫고 다시 열어 주세요.");
+  return current;
 }
-function scWireNameEdits(box){
-  box.addEventListener("focusin",function(e){
-    var input=e.target.closest("[data-scname]");if(!input)return;
-    var edit=scNameEditBegin(input);if(edit)edit.pendingBlur=false;
+function scIdentityEditOpen(id,trigger){
+  if(scIdentityEditState&&!scIdentityEditState.closed&&scIdentityEditState.busy)return scIdentityEditState.dialog;
+  if(scIdentityEditState&&!scIdentityEditState.closed&&scIdentityEditState.ctx.pid===id){
+    scIdentityEditState.dialog.querySelector('#scIdentityName').focus();return scIdentityEditState.dialog;
+  }
+  var client,ctx;
+  try{client=scStore();client.check();ctx=scIdentityEditRead(id,client);ctx.client=client;ctx.owner=client.state.owner;}
+  catch(e){scWarn(e);return null;}
+  if(scIdentityEditState)scIdentityEditState.close(false);
+  var dialog=document.createElement('dialog');dialog.id='scIdentityDialog';dialog.className='sc-identity-dialog';dialog.setAttribute('aria-labelledby','scIdentityTitle');
+  dialog.innerHTML='<div class="sc-identity-title"><h3 id="scIdentityTitle">선수 정보 수정</h3><button type="button" data-sc-identity-cancel aria-label="선수 정보 수정 닫기">닫기</button></div>'
+    +'<form novalidate><label for="scIdentityName">이름<input id="scIdentityName" data-sc-identity-field="name" type="text" autocomplete="off" required></label>'
+    +'<label for="scIdentityClub">출신 팀<input id="scIdentityClub" data-sc-identity-field="club" type="text" autocomplete="off"></label>'
+    +'<label for="scIdentityNum">등번호<input id="scIdentityNum" data-sc-identity-field="num" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]{0,3}"></label>'
+    +'<p id="scIdentityError" class="sc-identity-error" role="status" aria-live="polite"></p>'
+    +'<div class="sc-identity-actions"><button type="button" data-sc-identity-cancel>취소</button><button type="submit" data-sc-identity-save>저장</button></div></form>';
+  var form=dialog.querySelector('form'),error=dialog.querySelector('.sc-identity-error'),saveButton=dialog.querySelector('[data-sc-identity-save]'),fields={};
+  dialog.querySelectorAll('[data-sc-identity-field]').forEach(function(input){fields[input.dataset.scIdentityField]=input;input.value=ctx.values[input.dataset.scIdentityField];});
+  var state={ctx:ctx,dialog:dialog,closed:false,busy:false,composing:false,imeGuard:false,receipt:null},imeTimer=null;
+  state.close=function(restoreFocus){
+    if(state.closed||state.busy)return;state.closed=true;clearTimeout(imeTimer);
+    if(scIdentityEditState===state)scIdentityEditState=null;
+    try{dialog.close();}catch(_){}dialog.remove();
+    if(restoreFocus!==false){try{client.check();if(client.state.owner!==ctx.owner)return;
+      var target=trigger&&trigger.isConnected?trigger:Array.from(document.querySelectorAll('[data-scidentity]')).find(function(el){return el.dataset.scidentity===id;});
+      if(target)target.focus();
+    }catch(_){}}
+  };
+  scIdentityEditState=state;
+  function busy(value){state.busy=value;form.setAttribute('aria-busy',String(value));Object.keys(fields).forEach(function(k){fields[k].disabled=value;});dialog.querySelectorAll('[data-sc-identity-cancel]').forEach(function(button){button.disabled=value;});saveButton.disabled=value;saveButton.textContent=value?'저장 중…':'저장';}
+  function imeGuard(){clearTimeout(imeTimer);state.imeGuard=true;imeTimer=setTimeout(function(){state.imeGuard=false;},0);}
+  form.addEventListener('compositionstart',function(){state.composing=true;});
+  form.addEventListener('compositionend',function(){state.composing=false;imeGuard();});
+  form.addEventListener('keydown',function(e){if(e.isComposing||e.keyCode===229||state.composing)imeGuard();});
+  dialog.addEventListener('cancel',function(e){e.preventDefault();state.close();});
+  dialog.addEventListener('close',function(){state.close();});
+  dialog.addEventListener('click',function(e){if(e.target!==dialog)return;var r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)state.close();});
+  dialog.querySelectorAll('[data-sc-identity-cancel]').forEach(function(button){button.addEventListener('click',function(){state.close();});});
+  form.addEventListener('submit',async function(e){
+    e.preventDefault();if(state.closed||state.busy||state.composing||state.imeGuard)return;
+    var draft={name:fields.name.value.trim(),club:fields.club.value.trim(),num:fields.num.value.trim()};
+    error.textContent='';Object.keys(fields).forEach(function(k){fields[k].removeAttribute('aria-invalid');});
+    if(!draft.name){error.textContent='이름을 입력해 주세요.';fields.name.setAttribute('aria-invalid','true');fields.name.focus();return;}
+    if(!/^[0-9]{0,3}$/.test(draft.num)){error.textContent='등번호는 숫자 3자리까지 입력해 주세요.';fields.num.setAttribute('aria-invalid','true');fields.num.focus();return;}
+    busy(true);
+    try{
+      if(state.receipt){
+        var receipt=state.receipt;
+        function retry(){try{scIdentityEditCheck(ctx,receipt);return client.retry().then(function(){scIdentityEditCheck(ctx,receipt);});}catch(e){return Promise.reject(e);}}
+        var retryPending=retry();teamSaves.track(TKEY,retryPending,retry);await retryPending;
+        if(state.closed)return;scIdentityEditCheck(ctx,receipt);ctx.values=receipt.values;ctx.revision=receipt.revision;state.receipt=null;
+      }
+      scIdentityEditCheck(ctx);
+      if(["name","club","num"].some(function(k){return draft[k]!==ctx.values[k];})){
+        var next=PSScoutStore.copy(client.state.doc),stamp=client.stamp();
+        ["name","club","num"].forEach(function(k){var prior=next.scoutRegistry.candidates[ctx.cid].edits&&next.scoutRegistry.candidates[ctx.cid].edits[k];if(prior&&Number.isFinite(+prior.at))stamp.at=Math.max(stamp.at,+prior.at+1);});
+        ["name","club","num"].forEach(function(k){PSScoutStore.edit(next,ctx.cid,k,draft[k],stamp);});
+        if(!scSaveTargetDoc(next))throw new Error('저장하지 못했습니다. 입력은 남아 있으니 다시 시도해 주세요.');
+        var accepted=scIdentityEditRead(id,client);
+        state.receipt={doc:client.state.doc,raw:client.state.raw,pending:client.state.pending,revision:accepted.revision,values:accepted.values};
+        await state.receipt.pending;
+        if(state.closed)return;scIdentityEditCheck(ctx,state.receipt);
+        if(["name","club","num"].some(function(k){return accepted.values[k]!==draft[k];}))throw new Error('선수 정보가 바뀌었습니다. 창을 닫고 다시 열어 주세요.');
+      }
+      if(state.closed)return;
+      renderScoutCands();renderScoutBoard();busy(false);state.close();
+    }catch(e){if(!state.closed)error.textContent=(e&&e.message||'저장하지 못했습니다.')+' 입력은 이 창에 남아 있습니다.';}
+    finally{if(!state.closed)busy(false);}
   });
-  box.addEventListener("focusout",function(e){
-    var input=e.target.closest("[data-scname]");if(input)scNameEditFinish(input,false);
-  });
-  box.addEventListener("compositionstart",function(e){
-    var input=e.target.closest("[data-scname]");if(!input)return;
-    var edit=scNameEditBegin(input);if(edit)edit.composing=true;
-  });
-  box.addEventListener("compositionend",function(e){
-    var input=e.target.closest("[data-scname]"),edit=input&&input.__scNameEdit;if(!edit)return;
-    edit.composing=false;
-    if(edit.pendingBlur)setTimeout(function(){if(input.__scNameEdit===edit&&edit.pendingBlur)scNameEditFinish(input,false);},0);
-  });
-  box.addEventListener("keydown",function(e){
-    var input=e.target.closest("[data-scname]");if(!input)return;
-    var edit=input.__scNameEdit;
-    if(e.isComposing||e.keyCode===229||(edit&&edit.composing))return;
-    if(e.key==="Enter"||e.key==="Escape"){
-      e.preventDefault();e.stopPropagation();
-      scNameEditFinish(input,e.key==="Escape");input.blur();
-    }
-  });
+  document.body.appendChild(dialog);
+  try{dialog.showModal();fields.name.focus();fields.name.select();}catch(e){state.close(false);scWarn(e);return null;}
+  return dialog;
 }
 function renderScoutCands(){
   scRenderTools();
@@ -8628,12 +8664,11 @@ function renderScoutCands(){
     var st=scStOf(p.scoutSt);
     var g=String(p.grade||"").toUpperCase();
     return '<div class="sc-row" data-pid="'+esc(p.id)+'" data-ini="'+esc(String(p.name||"?").trim().charAt(0)||"?")+'">'
-      +'<div class="sc-identity">'
-      +'<input type="text" class="sc-name" data-scname="'+esc(p.id)+'" value="'+esc(p.name)+'" title="'+esc(p.name)+'" aria-label="'+esc(p.name)+' 이름 편집" autocomplete="off">'
-      +'<span class="sc-origin"><span class="sc-club-field"><span class="sc-club-measure" aria-hidden="true">'+esc(p.club||'출신')+'</span>'
-      +'<input class="sc-club" data-scclub="'+esc(p.id)+'" value="'+esc(p.club||"")+'" placeholder="출신" aria-label="'+esc(p.name)+' 출신 팀"></span>'
-      +'<input class="sc-num" data-scnum="'+esc(p.id)+'" value="'+esc(String(p.num||""))+'" placeholder="#" inputmode="numeric" maxlength="3" aria-label="'+esc(p.name)+' 배번">'
-      +'</span></div>'
+      +'<button type="button" class="sc-identity" data-scidentity="'+esc(p.id)+'" title="이름·팀명·등번호 수정" aria-label="'+esc(p.name)+' 기본 정보 수정" aria-haspopup="dialog">'
+      +'<span class="sc-identity-name">'+esc(p.name)+'</span>'
+      +'<span class="sc-origin"><span class="sc-origin-club">'+esc(p.club||'팀 미입력')+'</span>'
+      +(p.num!=null&&String(p.num)!==''?'<span class="sc-origin-dot" aria-hidden="true">·</span><span class="sc-origin-num" title="등번호">'+esc(String(p.num))+'</span>':'')
+      +'</span></button>'
       +'<button type="button" class="sc-st" data-scst="'+esc(p.id)+'" style="--c:'+st[2]+'" title="상태 — 눌러서 고르기" aria-haspopup="menu">'+st[1]+'</button>'
       +'<span class="sc-eval"><button type="button" class="sc-gr'+(g?" on g"+g:"")+'" data-scgrade="'+esc(p.id)+'"'
         +' title="평가 '+(g||"없음")+' — 눌러서 '+SB_GRADES.join(" → ")+' → 없음">'+(g||"–")+'</button>'
@@ -8653,13 +8688,13 @@ function renderScoutCands(){
   function scDelCand(id){scArchiveCandidate(id);}
   function _wire(){
   if(!box.__sc){box.__sc=1;
-    scWireNameEdits(box);
     box.addEventListener("click",function(e){
       /* 1.686 — 프로필 셀 클릭 = 곧장 프로필·평가 편집(사용자: "중간 카드 말고 편집이 바로").
          선수 카드 PDF는 편집 화면 상단 버튼으로. */
       var pc=e.target.closest("[data-sccard]");
       if(pc){ e.stopPropagation(); try{openPlayer(pc.dataset.sccard);}catch(_){} return; }
-      if(e.target.closest("[data-scname]")){e.stopPropagation();return;}
+      var identity=e.target.closest("[data-scidentity]");
+      if(identity){e.stopPropagation();scIdentityEditOpen(identity.dataset.scidentity,identity);return;}
       var dl=e.target.closest("[data-scdel]");
       if(dl){ e.stopPropagation(); scDelCand(dl.dataset.scdel); return; }   /* 2.650 */
       var ma=e.target.closest("[data-scmadd]"), md=e.target.closest("[data-scmdel]");
@@ -8692,18 +8727,8 @@ function renderScoutCands(){
       var row=e.target.closest(".sc-row[data-pid]");
       if(row){try{openPlayer(row.dataset.pid);}catch(_){}}
     });
-    box.addEventListener("input",function(e){
-      var c=e.target.closest('[data-scclub]');if(!c)return;
-      var field=c.closest('.sc-club-field'),measure=field&&field.querySelector('.sc-club-measure');
-      if(measure)measure.textContent=c.value||c.placeholder;
-    });
     box.addEventListener("change",function(e){
-      var c=e.target.closest("[data-scclub]"),s=e.target.closest("[data-scseen]");
-      var mm=e.target.closest("[data-scmemo]"), nu=e.target.closest("[data-scnum]");
-      if(nu){var p4=data.players.find(function(x){return x.id===nu.dataset.scnum;});
-        if(p4){p4.num=String(nu.value||"").replace(/[^0-9]/g,"").slice(0,3);nu.value=p4.num;save();try{renderScoutBoard();}catch(_){}}}
-      if(c){var p=data.players.find(function(x){return x.id===c.dataset.scclub;});if(p){p.club=c.value.trim();save();}}
-      if(s){var p2=data.players.find(function(x){return x.id===s.dataset.scseen;});if(p2){p2.seen=s.value;save();}}
+      var mm=e.target.closest("[data-scmemo]");
       if(mm){var p3=data.players.find(function(x){return x.id===mm.dataset.scmemo;});
         if(p3){ var a=scMemos(p3).slice(); a[+mm.dataset.mi]=mm.value.trim(); scMemoSet(p3,a); save(); }}
     });
@@ -19910,12 +19935,6 @@ html.ps-page-scout #playersView #scList#scList .sc-head{
   border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
 }
 html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]>*{grid-row:1!important;min-width:0!important;order:0!important}
-html.ps-page-scout #playersView #scList#scList .sc-num{grid-column:2!important;width:100%!important;height:28px!important;line-height:28px!important;padding:0!important;box-sizing:border-box!important;-webkit-appearance:none;appearance:none;font-family:inherit!important;font-size:11px!important;font-weight:600!important;letter-spacing:0!important;font-variant-numeric:tabular-nums!important;text-align:center!important}
-html.ps-page-scout #playersView #scList#scList .sc-name{grid-column:3!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
-html.ps-page-scout #playersView #scList#scList .sc-name b{font-size:12px!important;line-height:1.3!important}
-html.ps-page-scout #playersView #scList#scList input.sc-name{display:block!important;width:100%!important;height:28px!important;min-height:0!important;padding:0 2px!important;border:1px solid transparent!important;border-radius:5px!important;background:transparent!important;color:var(--txt)!important;font-family:inherit!important;font-size:12px!important;font-weight:600!important;line-height:1.3!important;box-sizing:border-box!important;cursor:text}
-html.ps-page-scout #playersView #scList#scList input.sc-name:focus{border-color:var(--blue)!important;background:var(--surface)!important;outline:none}
-html.ps-page-scout #playersView #scList#scList .sc-club{grid-column:1!important;display:block!important;text-align:left!important;width:100%!important;max-width:none!important;height:28px!important;padding:0!important;font-size:11px!important;border:0!important;background:transparent!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats{grid-column:auto!important;display:flex!important;align-items:center!important;gap:4px!important;padding:0!important;min-height:0!important;height:28px!important;width:228px!important;max-width:228px!important;flex:0 1 228px!important;background:none!important;border:0!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg{display:inline-flex!important;align-items:center!important;gap:2px!important;margin:0!important;min-width:0!important;white-space:nowrap!important}
 html.ps-page-scout #playersView #scList#scList .sc-cats .cat-avg i{font-size:9px!important}
@@ -19958,12 +19977,10 @@ html.ps-page-scout #playersView #scList#scList .sc-del{width:100%!important;heig
   html.ps-page-scout #playersView #scList#scList .sc-row[data-pid]{grid-template-columns:minmax(80px,1fr) 48px 24px 46px 24px!important;gap:0 4px!important;min-height:48px!important;padding:3px 0!important}
   html.ps-page-scout #playersView #scList#scList{margin-left:-8px!important;margin-right:-8px!important;width:auto!important;max-width:none!important}
   html.ps-page-scout #playersView #scList#scList .sc-head{display:none!important}
-  html.ps-page-scout #playersView #scList#scList .sc-name b{font-size:12px!important}
   html.ps-page-scout #playersView #scList#scList .sc-st{grid-column:2!important;font-size:10px!important}
   html.ps-page-scout #playersView #scList#scList .sc-prof{grid-column:5!important;font-size:10px!important}
-  html.ps-page-scout #playersView #scList#scList .sc-num,html.ps-page-scout #playersView #scList#scList .sc-st,html.ps-page-scout #playersView #scList#scList .sc-prof,
-  html.ps-page-scout #playersView #scList#scList .sc-notes summary,html.ps-page-scout #playersView #scList#scList .sc-club,html.ps-page-scout #playersView #scList#scList input.sc-name{height:32px!important}
-  html.ps-page-scout #playersView #scList#scList .sc-num{line-height:32px!important}
+  html.ps-page-scout #playersView #scList#scList .sc-st,html.ps-page-scout #playersView #scList#scList .sc-prof,
+  html.ps-page-scout #playersView #scList#scList .sc-notes summary{height:32px!important}
   html.ps-page-scout #playersView #scList#scList .sc-grp{padding-top:12px!important}
   html.ps-page-scout #playersView #scList#scList .sc-notes .sc-memo{font-size:16px!important}
   html.ps-page-scout #playersView #scList#scList .sc-row.sc-our{display:grid!important;grid-template-columns:28px minmax(0,1fr) 38px 56px!important;grid-template-areas:none!important;gap:6px!important;align-items:center!important;min-height:42px!important;padding:4px 0!important;margin:0!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important}
@@ -19973,24 +19990,34 @@ html.ps-page-scout #playersView #scList#scList .sc-del{width:100%!important;heig
   html.ps-page-scout #playersView #scList#scList .sc-our-pos{grid-column:3!important;font-size:11px!important}
   html.ps-page-scout #playersView #scList#scList .sc-our-go{grid-column:4!important;font-size:11px!important}
 }
-/* 이름 아래 출신 팀·배번을 묶어 작은 화면에서도 이름 폭을 확보한다. */
-html.ps-page-scout #playersView #scList#scList .sc-identity{grid-column:1!important;display:grid!important;grid-template-columns:minmax(0,1fr) 28px!important;grid-template-rows:20px 20px!important;gap:0 4px!important;min-width:0!important;width:100%!important;max-width:160px!important;align-items:center!important}
-html.ps-page-scout #playersView #scList#scList .sc-identity input{grid-area:auto!important;order:0!important;min-width:0!important;min-height:0!important;margin:0!important;height:20px!important;line-height:20px!important;box-sizing:border-box!important}
-html.ps-page-scout #playersView #scList#scList .sc-identity .sc-name{grid-column:1 / -1!important;grid-row:1!important;padding:0 2px!important}
-html.ps-page-scout #playersView #scList#scList .sc-identity .sc-club{grid-column:1!important;grid-row:2!important;padding:0 2px!important;font-size:10px!important;color:var(--dim)!important;text-overflow:ellipsis!important}
-html.ps-page-scout #playersView #scList#scList .sc-identity .sc-num{grid-column:2!important;grid-row:2!important;border-radius:4px!important;font-size:10px!important}
+/* 기본 정보는 하나의 읽기 묶음으로 표시하고 누르면 함께 편집한다. */
+html.ps-page-scout #playersView #scList#scList button.sc-identity{grid-column:1!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:center!important;gap:2px!important;min-width:0!important;min-height:40px!important;width:100%!important;max-width:160px!important;margin:0!important;padding:2px!important;border:0!important;border-radius:4px!important;background:transparent!important;box-shadow:none!important;color:var(--txt)!important;font-family:inherit!important;text-align:left!important;cursor:pointer}
+html.ps-page-scout #playersView #scList#scList .sc-identity-name{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px;font-weight:600;line-height:18px}
+html.ps-page-scout #playersView #scList#scList .sc-origin{display:flex;align-items:baseline;gap:4px;min-width:0;color:var(--dim);font-size:10px;font-weight:400;line-height:16px;white-space:nowrap}
+html.ps-page-scout #playersView #scList#scList .sc-origin-club{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+html.ps-page-scout #playersView #scList#scList .sc-origin-dot,html.ps-page-scout #playersView #scList#scList .sc-origin-num{flex:none;font:inherit;color:inherit;background:none;border:0;padding:0}
+html.ps-page-scout #playersView #scList#scList .sc-origin-num{font-variant-numeric:tabular-nums}
+html.ps-page-scout #playersView #scList#scList button.sc-identity:hover{background:var(--bar)!important}
+html.ps-page-scout #playersView #scList#scList button.sc-identity:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 html.ps-page-scout #playersView #scList#scList .sc-prof::after{content:none!important}
 html.ps-page-scout #playersView #scList#scList .sc-prof svg{display:block;flex:none}
-html.ps-page-scout #playersView #scList#scList .sc-origin,
-html.ps-page-scout #playersView #scList#scList .sc-club-field{display:contents}
-html.ps-page-scout #playersView #scList#scList .sc-club-measure{display:none}
-@media(max-width:600px){
-  html.ps-page-scout #playersView #scList#scList .sc-identity .sc-origin{grid-column:1 / -1;grid-row:2;display:flex;align-items:center;gap:2px;min-width:0}
-  html.ps-page-scout #playersView #scList#scList .sc-identity .sc-club-field{display:grid;position:relative;flex:0 1 auto;min-width:24px;max-width:calc(100% - 30px);font-family:inherit;font-size:10px;font-weight:400;letter-spacing:0;line-height:20px}
-  html.ps-page-scout #playersView #scList#scList .sc-club-measure{display:block;visibility:hidden;pointer-events:none;white-space:pre;overflow:hidden;height:20px;padding:0 2px;box-sizing:border-box}
-  html.ps-page-scout #playersView #scList#scList .sc-identity .sc-club{position:absolute;inset:0;font-weight:inherit!important;letter-spacing:inherit!important}
-  html.ps-page-scout #playersView #scList#scList .sc-identity .sc-num{flex:0 0 28px!important;width:28px!important}
-}
+dialog.sc-identity-dialog{display:none;position:fixed;inset:0;margin:auto;width:min(380px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;box-sizing:border-box;padding:20px;border:1px solid var(--line,#e3e6ea);border-radius:16px;color:var(--txt,#14161a);background:var(--panel,var(--surface,#fff));box-shadow:0 16px 48px rgba(15,23,42,.18)}
+dialog.sc-identity-dialog[open]{display:block}
+dialog.sc-identity-dialog::backdrop{background:rgba(15,23,42,.35)}
+dialog.sc-identity-dialog form{display:grid;gap:14px;margin:0}
+dialog.sc-identity-dialog .sc-identity-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;font-size:16px;font-weight:700;line-height:1.4}
+dialog.sc-identity-dialog .sc-identity-title h3{margin:0;font:inherit}
+dialog.sc-identity-dialog .sc-identity-title button{display:flex;align-items:center;justify-content:center;flex:none;min-width:32px;min-height:32px;padding:0 4px;border:0;background:transparent;color:var(--dim);font-size:12px;line-height:1}
+dialog.sc-identity-dialog label{display:grid;gap:6px;margin:0;font-size:12px;font-weight:600;line-height:1.4;color:var(--dim)}
+dialog.sc-identity-dialog input{display:block;box-sizing:border-box;width:100%;min-width:0;height:44px;margin:0;padding:10px 12px;border:1px solid var(--line,#e3e6ea);border-radius:8px;background:var(--surface,#fff);color:var(--txt,#14161a);font-family:inherit;font-size:16px;font-weight:400;line-height:22px}
+dialog.sc-identity-dialog input:focus{outline:2px solid var(--blue,#3a6df0);outline-offset:1px}
+dialog.sc-identity-dialog input[aria-invalid="true"]{border-color:var(--danger,#d92d20)}
+dialog.sc-identity-dialog .sc-identity-error{margin:0;color:var(--danger,#b42318);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+dialog.sc-identity-dialog .sc-identity-error:empty{display:none}
+dialog.sc-identity-dialog .sc-identity-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+dialog.sc-identity-dialog .sc-identity-actions button{min-width:72px;min-height:40px;padding:8px 16px;border:1px solid var(--line,#e3e6ea);border-radius:8px;background:var(--surface,#fff);color:var(--txt,#14161a);font-family:inherit;font-size:13px;font-weight:600}
+dialog.sc-identity-dialog .sc-identity-actions button[type="submit"]{border-color:var(--blue,#3a6df0);background:var(--blue,#3a6df0);color:#fff}
+@media(max-width:600px){html.ps-page-scout #playersView #scList#scList button.sc-identity{min-height:42px!important}}
 </style>
 </body>
 </html>

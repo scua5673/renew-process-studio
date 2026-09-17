@@ -494,7 +494,7 @@
   <div class="wrap hide" id="viewAll" style="grid-template-columns:1fr">
     <div class="col">
       <div class="searchrow">
-        <input id="alSearch" placeholder="훈련·워크스페이스·이메일 검색" oninput="renderAllLib()">
+        <input id="alSearch" placeholder="훈련·워크스페이스·소유자 검색" oninput="renderAllLib()">
         <select id="alType" onchange="renderAllLib()">
           <option value="">유형 전체</option>
           <option value="train">훈련</option>
@@ -525,7 +525,7 @@
   <div class="wrap hide" id="viewWs">
     <div class="col">
       <div class="searchrow">
-        <input id="wsSearch" placeholder="이름·이메일 검색" oninput="renderWsList()">
+        <input id="wsSearch" placeholder="워크스페이스·소유자 검색" oninput="renderWsList()">
         <select id="wsKind" onchange="renderWsList()">
           <option value="team">실제 팀만</option><option value="all">전체 공간</option><option value="personal">개인 공간만</option>
         </select>
@@ -1642,6 +1642,18 @@ function renderActivity(){
 }
 
 /* ===== 훈련 전체 ===== */
+function adminOwnerInfo(record,fallback){
+  record=record||{};fallback=fallback||{};
+  function clean(v){return typeof v==='string'?v.trim():'';}
+  var ownId=clean(record.owner_id),fallbackId=clean(fallback.owner_id),uid=ownId;
+  /* 콘텐츠 작성자와 공간 소유자는 다를 수 있다. 다른 계정의 이름·메일을 섞지 않는다. */
+  var sameOwner=!!ownId&&ownId===fallbackId;
+  var user=uid?(USERS||[]).filter(function(u){return u.user_id===uid;})[0]||{}:{};
+  var email=clean(record.owner_email)||clean(user.email)||(sameOwner?clean(fallback.owner_email):'');
+  var name=clean(record.owner_name)||clean(user.name)||clean(user.display_name)||(sameOwner?clean(fallback.owner_name):'');
+  return {uid:uid,email:email,name:name,label:email||name||(uid?'사용자 '+uid.slice(0,8):'소유자 확인 필요'),
+    search:[email,name,uid].join(' ').toLowerCase()};
+}
 function wsInfo(wid){ return WS.filter(function(w){return w.id===wid;})[0]||{}; }
 function renderAllLib(){
   var q=($('alSearch').value||'').trim().toLowerCase();
@@ -1651,7 +1663,7 @@ function renderAllLib(){
   if(ty) list=list.filter(function(l){return (l.type||'train')===ty;});
   if(q) list=list.filter(function(l){ var w=wsInfo(l.workspace_id);
     return (l.name||'').toLowerCase().indexOf(q)>=0 || (l.ws_name||l.workspace_name||'').toLowerCase().indexOf(q)>=0
-        || (l.owner_email||w.owner_email||'').toLowerCase().indexOf(q)>=0 || (l.folder||'').toLowerCase().indexOf(q)>=0; });
+        || adminOwnerInfo(l,w).search.indexOf(q)>=0 || (l.folder||'').toLowerCase().indexOf(q)>=0; });
   if(sort==='name') list.sort(function(a,b){return (a.name||'').localeCompare(b.name||'');});
   else if(sort==='ws') list.sort(function(a,b){return (a.ws_name||'').localeCompare(b.ws_name||'')||(new Date(b.made_at)-new Date(a.made_at));});
   else list.sort(function(a,b){return new Date(b.made_at)-new Date(a.made_at);});   /* 1.636 — 실제 저장 시각 */
@@ -1668,7 +1680,7 @@ function renderAllLib(){
       +'<td><span class="tybadge">'+esc(typeName(l.type))+'</span></td>'
       +'<td><div class="nm" style="font-size:12px">'+esc(l.ws_name||l.workspace_name||w.name||'(이름없음)')
       +' <span class="kbadge '+(w.kind==='personal'?'personal':'team')+'" style="vertical-align:1px">'+(w.kind==='personal'?'개인':'팀')+'</span></div>'
-      +'<div class="muted" style="font-size:11px">'+esc(l.owner_email||w.owner_email||'—')+'</div></td>'
+      +'<div class="muted" style="font-size:11px">'+esc(adminOwnerInfo(l,w).label)+'</div></td>'
       +'<td class="muted">'+esc(l.folder||'—')+'</td>'
       +'<td class="muted">'+fmtDateT(l.made_at)+'</td>'
       +'<td style="text-align:right;white-space:nowrap">'+act+'</td></tr>';
@@ -1682,7 +1694,7 @@ function renderWsList(){
   var sort=$('wsSort').value,kind=($('wsKind')&&$('wsKind').value)||'team';
   var list=WS.slice();
   if(kind!=='all')list=list.filter(function(w){return w.kind===kind;});
-  if(q) list=list.filter(function(w){ return (w.name||'').toLowerCase().indexOf(q)>=0 || (w.owner_email||'').toLowerCase().indexOf(q)>=0; });
+  if(q) list=list.filter(function(w){ return (w.name||'').toLowerCase().indexOf(q)>=0 || adminOwnerInfo(w).search.indexOf(q)>=0; });
   if(sort==='lib') list.sort(function(a,b){return (b.lib_count||0)-(a.lib_count||0);});
   else if(sort==='new') list.sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);});
   else list.sort(function(a,b){return new Date(b.last_activity||0)-new Date(a.last_activity||0);});
@@ -1695,7 +1707,7 @@ function renderWsList(){
     b.onclick=function(){ selectWs(w.id); };
     b.innerHTML='<div class="top"><span class="nm">'+esc(w.name||'(이름없음)')+'</span>'
       +'<span class="kbadge '+(w.kind==='personal'?'personal':'team')+'">'+(w.kind==='personal'?'개인':'팀')+'</span></div>'
-      +'<div class="em">'+esc(w.owner_email||'(이메일 없음)')+'</div>'
+      +'<div class="em">'+esc(adminOwnerInfo(w).label)+'</div>'
       +'<div class="meta"><span>훈련 '+(w.lib_count||0)+'</span><span>멤버 '+(w.member_count||0)+'</span>'
       +'<span>활동 '+fmtDate(w.last_activity)+'</span></div>';
     box.appendChild(b);
@@ -1740,7 +1752,7 @@ function renderWsDetail(w,members,lib,idpRows){
   var initials=String(w.name||'PS').replace(/\s/g,'').slice(0,2).toUpperCase();
   var head='<div class="panel">'
     +'<div class="ws-hero"><div class="ws-mark">'+esc(initials)+'</div><div><h2>'+esc(w.name||'(이름없음)')
-    +' <span class="ws-state">운영 중</span></h2><div class="sub" style="margin:0">소유자 '+esc(w.owner_email||'—')+' · 생성 '+fmtDate(w.created_at)+' · 최근 활동 '+fmtDateT(w.last_activity)+'</div></div></div>'
+    +' <span class="ws-state">운영 중</span></h2><div class="sub" style="margin:0">소유자 '+esc(adminOwnerInfo(w).label)+' · 생성 '+fmtDate(w.created_at)+' · 최근 활동 '+fmtDateT(w.last_activity)+'</div></div></div>'
     +'<div class="ws-kpis"><div class="ws-kpi"><b>'+members.length+'</b><span>전체 멤버</span></div>'
     +'<div class="ws-kpi"><b>'+active7+'</b><span>7일 활성 멤버</span></div>'
     +'<div class="ws-kpi"><b>'+live.length+'</b><span>훈련·항목</span></div>'
@@ -1796,7 +1808,7 @@ function wsIdpPane(rows){
 }
 function wsSettingsPane(w){
   var base='<div class="kv"><span class="k">워크스페이스 ID</span><span style="font:600 11px ui-monospace,Menlo,monospace">'+esc(w.id||'—')+'</span>'
-    +'<span class="k">종류</span><span>'+(w.kind==='personal'?'개인':'팀')+'</span><span class="k">소유자</span><span>'+esc(w.owner_email||'—')+'</span><span class="k">생성일</span><span>'+fmtDate(w.created_at)+'</span></div>';
+    +'<span class="k">종류</span><span>'+(w.kind==='personal'?'개인':'팀')+'</span><span class="k">소유자</span><span>'+esc(adminOwnerInfo(w).label)+'</span><span class="k">생성일</span><span>'+fmtDate(w.created_at)+'</span></div>';
   if(w.kind!=='team')return base;
   return base+'<div class="ws-danger"><b>위험 작업</b><p>워크스페이스 삭제는 소속 훈련·멤버·데이터에 영향을 줍니다. 일반 운영 정보와 분리해 두었습니다.</p><button class="rowbtn danger" onclick="delWorkspace(\''+w.id+'\')">워크스페이스 삭제</button></div>';
 }
