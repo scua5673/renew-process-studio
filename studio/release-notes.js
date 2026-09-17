@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-17-board-scene-click',date:'2026-09-17',title:'장면 번호를 클릭해 바로 이동하세요',
+    changes:[
+      '새 장면을 추가한 뒤 다른 장면 번호를 마우스로 눌러도 이동하지 않던 문제를 수정했습니다. 키보드 이동과 장면 메뉴도 함께 사용할 수 있습니다.',
+      '운동장 왼쪽 위와 오른쪽 아래 코너 바깥에 작은 PROCESS 워터마크를 넣었습니다.'
+    ]
+  },{
     id:'2026-09-17-scout-identity-popup',date:'2026-09-17',title:'선수 기본 정보를 한 번에 수정합니다',
     changes:[
       '스카우트 명단에서 이름을 누르면 이름·출신 팀·등번호를 함께 수정할 수 있습니다. 저장하면 함께 반영되고 취소하면 기존 정보를 유지합니다.',
