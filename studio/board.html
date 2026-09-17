@@ -9502,6 +9502,20 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
     +(!opts.startersOnly&&rest.length?(" · 포지션 미지정 "+rest.length+"명"):""));}
 function openSquad(){document.querySelectorAll(".popmenu.on").forEach(m=>m.classList.remove("on"));document.getElementById("squadMgr").classList.add("on");renderSquad();}
 function closeSquad(){document.getElementById("squadMgr").classList.remove("on");}
+function openAnalysisTeamLibrary(){
+  if(window.__vaultReadOnly||communityBoardReadOnly())return;
+  var teams=[];try{teams=JSON.parse(localStorage.getItem('cs_analysis_team_library_v1')||'[]');}catch(_){}if(!Array.isArray(teams))teams=[];
+  var mask=document.createElement('div');mask.style.cssText='position:fixed;inset:0;z-index:100000;background:#0007;display:grid;place-items:center;padding:16px';
+  mask.innerHTML='<section role="dialog" aria-label="저장 팀 불러오기" style="background:var(--panel,#fff);color:var(--txt,#172235);border-radius:14px;padding:20px;width:440px;max-width:100%;max-height:85vh;overflow:auto"><h3>저장 팀 불러오기</h3><p>보관함 › 팀 등록에 저장한 명단입니다. 불러올 선수를 선택하세요.</p><select id="alTeam" aria-label="저장 팀" style="width:100%;padding:8px"></select><select id="alSide" aria-label="배치할 팀" style="width:100%;padding:8px;margin:8px 0"><option value="blue">팀 1</option><option value="red">팀 2</option></select><img id="alEmblem" alt="팀 엠블럼" width="56" height="56" style="object-fit:contain" hidden><div id="alPlayers"></div><p id="alError" role="status"></p><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="alManage">팀·선수 관리</button><button class="btn" id="alCancel">취소</button><button class="btn primary" id="alLoad">불러오기</button></div></section>';
+  document.body.appendChild(mask);var select=mask.querySelector('#alTeam');teams.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.name;select.appendChild(o);});
+  function roster(){var t=teams.find(function(t){return t.id===select.value;}),box=mask.querySelector('#alPlayers');box.innerHTML='';var emblem=mask.querySelector('#alEmblem');emblem.hidden=!(t&&typeof t.emblem==='string'&&t.emblem.length<250000&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(t.emblem));if(!emblem.hidden)emblem.src=t.emblem;(t&&t.players||[]).forEach(function(p,i){var label=document.createElement('label');label.style.cssText='display:flex;gap:8px;padding:7px;border-bottom:1px solid #ddd';var c=document.createElement('input');c.type='checkbox';c.value=String(i);c.checked=i<11;label.appendChild(c);label.appendChild(document.createTextNode([p.no,p.name,p.pos].filter(Boolean).join(' · ')));box.appendChild(label);});mask.querySelector('#alError').textContent=t?'선택한 쪽의 기존 선수만 바뀝니다.':'저장된 팀이 없습니다. 팀·선수 관리에서 등록하세요.';}
+  select.onchange=roster;roster();mask.querySelector('#alCancel').onclick=function(){mask.remove();};mask.querySelector('#alManage').onclick=function(){mask.remove();parent.postMessage({source:'board',type:'goApp',app:'analysis'},location.origin);};
+  mask.querySelector('#alLoad').onclick=function(){var t=teams.find(function(t){return t.id===select.value;}),side=mask.querySelector('#alSide').value,list=Array.from(mask.querySelectorAll('#alPlayers input:checked')).map(function(c){return t.players[Number(c.value)];});if(!list.length||list.length>11){mask.querySelector('#alError').textContent='선수를 1~11명 선택하세요.';return;}if(state.players.some(function(p){return p.team===side;})&&!confirm('선택한 쪽의 기존 선수를 저장 명단으로 바꿀까요?'))return;
+    var slots=(FORM['433']||[]).slice(0,11),free=slots.slice(),assigned=[];
+    list.forEach(function(p){var at=free.findIndex(function(slot){return posCode(slot[3])===posCode(p.pos);});assigned.push({p:p,slot:at>=0?free.splice(at,1)[0]:null});});assigned.forEach(function(x){if(!x.slot)x.slot=free.shift()||[.25,.5];});
+    pushUndo();if(t.kit){var mapping={main:'teamColors',accent:'teamColor2',stroke:'teamStrokeC',text:'teamTxtC',gkMain:'gkColors',gkAccent:'gkColor2',gkStroke:'gkStrokeC',gkText:'gkTxtC'};Object.keys(mapping).forEach(function(k){if(/^#[0-9a-f]{6}$/i.test(t.kit[k]||'')){state[mapping[k]]=state[mapping[k]]||{};state[mapping[k]][side]=t.kit[k];}});[['pattern','teamPattern'],['gkPattern','gkPattern']].forEach(function(pair){if(KIT_PATS.indexOf(t.kit[pair[0]])>=0){state[pair[1]]=state[pair[1]]||{};state[pair[1]][side]=t.kit[pair[0]];}});}state.players=state.players.filter(function(p){return p.team!==side;});assigned.forEach(function(x){var nx=x.slot[0],ny=x.slot[1];if(side==='red'){nx=1-nx;ny=1-ny;}var at=n2u(nx,ny);state.players.push({id:uid++,team:side,num:x.p.no||'',name:x.p.name||'',pos:x.p.pos||'',x:at.x,y:at.y});});sel=null;multiSel=[];renderTokens();renderDrawings();try{if(window.boardSaveLive)window.boardSaveLive();}catch(_){}mask.remove();toast(t.name+' · '+list.length+'명 불러옴');
+  };
+}
 function loadTeamToBoard(startersOnly){try{var ls=localStorage.getItem("cs_squad_v1");if(ls){var o=JSON.parse(ls);if(o&&Array.isArray(o.players))squad=o;}}catch(_){}applySquadToBoard({startersOnly:!!startersOnly});}
 try{window.applySquadToBoard=applySquadToBoard;window.loadTeamToBoard=loadTeamToBoard;}catch(_){}
 
@@ -12757,6 +12771,7 @@ try{ if(false&&localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.cla
   if($("squadAdd"))$("squadAdd").onclick=squadAddPlayer;
   if($("squadApply"))$("squadApply").onclick=function(){applySquadToBoard({});};   /* 2.752 — MouseEvent 가 opts 로 들어가 formationSlots 등이 이벤트 객체에 쓰이던 것 */
   /* 더보기 → 팀 선수 불러오기: 등록된 선수단을 포지션대로 작전판/에디터에 배치(원클릭) */
+  if($("loadSquadBtn")){var analysisLoad=document.createElement("button");analysisLoad.id="loadAnalysisTeamBtn";analysisLoad.className="btn";analysisLoad.textContent="저장 팀 불러오기";analysisLoad.style.cssText="width:100%;margin-top:6px";analysisLoad.onclick=openAnalysisTeamLibrary;$("loadSquadBtn").closest(".menurow").after(analysisLoad);}
   if($("loadSquadBtn"))$("loadSquadBtn").onclick=function(){try{document.querySelectorAll(".popmenu.on").forEach(function(m){m.classList.remove("on");});}catch(_){}loadTeamToBoard(true);};
   if($("squadName"))$("squadName").oninput=e=>{squad.name=e.target.value;squadSave();};
   if($("sessLibClose"))$("sessLibClose").onclick=closeSessLib;
@@ -14501,7 +14516,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       {type:"board",name:"작전판",desc:"포메이션과 움직임을 자유롭게 배치하고 여러 페이지·애니메이션을 저장합니다.",icon:"판",color:"#3a6df0"},
       {type:"setpiece",name:"세트피스",desc:"코너킥·프리킥 상황을 전용 필드에서 설계하고 훈련 카드로 저장합니다.",icon:"SP",color:"#44a6a6"},
       {type:"meeting",name:"미팅 자료",desc:"작전판 장면과 핵심 포인트를 여러 슬라이드로 구성합니다.",icon:"M",color:"#d59c35"},
-      {type:"analysis",name:"경기 분석",desc:"한 경기의 장면·선수 메모·리뷰를 매치 데스크에서 시작합니다.",icon:"분",color:"#7c5ce0"}
+      {type:"analysis",name:"팀 등록",desc:"팀과 선수 명단을 등록하고 보드에서 불러옵니다.",icon:"팀",color:"#3a6df0"}
       /* 1.950 — '팀 선수로 작전판' 항목 제거(사용자). 팀 선수 올리기는 훈련 편집·보드 설정의 선수단에서 */
     ];
     var grid=card.querySelector("#vccGrid");
@@ -14916,7 +14931,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         if(_vh&&!_vh.querySelector(".vault-section-seg")){
           var _vs=document.createElement("nav");_vs.className="vault-section-seg";_vs.setAttribute("role","tablist");_vs.setAttribute("aria-label","보관함 보기");
           var _vf=document.createElement("button");_vf.type="button";_vf.className="on";_vf.textContent="자료";_vf.setAttribute("role","tab");_vf.setAttribute("aria-selected","true");
-          var _va=document.createElement("button");_va.type="button";_va.id="vaultAnalysisTab";_va.textContent="분석";_va.setAttribute("role","tab");_va.setAttribute("aria-selected","false");_va.title="경기 분석 열기";
+          var _va=document.createElement("button");_va.type="button";_va.id="vaultAnalysisTab";_va.textContent="팀 등록";_va.setAttribute("role","tab");_va.setAttribute("aria-selected","false");_va.title="팀·선수 등록 열기";
           var _vg=document.createElement("button");_vg.type="button";_vg.id="vaultGameModelTab";_vg.textContent="게임모델";_vg.setAttribute("role","tab");_vg.setAttribute("aria-selected","false");_vg.title="게임모델 열기";
           _va.onclick=function(){try{parent.postMessage({source:"board",type:"vaultSection",section:"analysis"},location.origin);}catch(_){}};
           _vg.onclick=function(){try{parent.postMessage({source:"board",type:"vaultSection",section:"gamemodel"},location.origin);}catch(_){}};

@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.860"></script>
+<script src="autosave-status.js?v=2.862"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -476,7 +476,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.861';</script>
+<script>window.PS_BUILD='2.862';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1540,7 +1540,7 @@ function psShowUpdBand(){
     <iframe id="fNote" title="개인 노트" style="display:none"></iframe>
     <iframe id="fScouting" title="스카우팅" style="display:none"></iframe>
 <iframe id="fComm" title="커뮤니티" style="display:none"></iframe>
-    <iframe id="fAnalysis" title="경기 분석" style="display:none" allowfullscreen allow="fullscreen"></iframe>
+    <iframe id="fAnalysis" title="팀 · 선수 등록" style="display:none" allowfullscreen allow="fullscreen"></iframe>
     <iframe id="fPlaybook" title="플레이북" style="display:none"></iframe><!-- 2.576 -->
     <!-- 옛 코치 교재 프레임은 구버전 복귀 호환을 위해 남기되 더는 메뉴에서 열지 않는다.
          최상위 학습은 fIdp의 기존 경기 읽기 화면을 공유해 기록을 둘로 가르지 않는다. -->
@@ -1700,7 +1700,7 @@ function psShowUpdBand(){
     var hints={board:'전술·세션을 그리고, 애니메이션·영상으로 내보내세요',
                design:'드릴 블록을 쌓아 오늘 세션을 만들고, 링크·PDF로 전달하세요',
                community:'코치들의 작전판·훈련·경기 분석을 탐색하고 보관함에 담기',
-               analysis:'한 경기를 양 팀 관점에서 관찰하고, 근거를 남겨 분석·발행하세요',
+               analysis:'팀과 선수 명단을 등록하고 보드에서 불러오세요',
                learning:'경기 읽기와 축구 용어를 익히고 다음 훈련 행동으로 연결하세요',
                process:'경기일(MD) 기준 자동 주기화 · 훈련 블록에서 작전판 첨부 가능',
                gamemodel:'4국면별 우리 팀의 플레이 원칙을 정리하고 문서로 내보내세요',
@@ -7437,13 +7437,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.860"></script>
-<script src="autosave-merge.js?v=2.860"></script>
-<script src="autosave-runtime.js?v=2.860"></script>
-<script src="autosave-recovery.js?v=2.860"></script>
-<script src="sync.js?v=2.860"></script>
+<script src="autosave-journal.js?v=2.862"></script>
+<script src="autosave-merge.js?v=2.862"></script>
+<script src="autosave-runtime.js?v=2.862"></script>
+<script src="autosave-recovery.js?v=2.862"></script>
+<script src="sync.js?v=2.862"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.860">
+<link rel="stylesheet" href="support.css?v=2.862">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
