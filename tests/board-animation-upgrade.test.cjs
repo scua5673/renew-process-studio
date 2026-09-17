@@ -31,7 +31,7 @@ test('airborne levels 1, 2, 3 increase lift, ground and endpoints stay grounded'
 test('upright goal posts use the pitch meet scale in horizontal and vertical views',()=>{
  const elements={};function node(){return {style:{},children:[],setAttribute(){},appendChild(x){this.children.push(x);if(x.id)elements[x.id]=x;},insertBefore(x){this.appendChild(x);},replaceChildren(){this.children=[];},set innerHTML(x){this.firstElementChild=node();},getBoundingClientRect(){return {left:0,top:0,width:1000,height:600};}};}
  const stage=node();Object.assign(stage,{scrollLeft:0,scrollTop:0,clientLeft:0,clientTop:0});elements.boardStage=stage;
- const svg=node();svg.viewBox={baseVal:{x:0,y:0,width:1200,height:800}};
+ const svg=node();svg.querySelector=()=>null;svg.viewBox={baseVal:{x:0,y:0,width:1200,height:800}};
  const c=vm.createContext({window:{},document:{body:{classList:{contains:()=>true}},documentElement:{dataset:{pitch:'navy'}},getElementById:id=>elements[id],createElement:node},svg,state:{orientation:'h'},getCss:()=> '#123456',PR:()=>({L:100,R:1100}),pitchSpec:()=>({goal:73.2,goalD:20}),M2U:x=>x,W:1200,H:800,CY:400,pitchViewKey:()=> 'full'});
  vm.runInContext(section('  window.tiltGoalsSync=function(){','  window.__syncStageUI='),c);c.window.tiltGoalsSync();
  const matrix=n=>n.style.transform.slice(9,-1).split(',').map(Number);

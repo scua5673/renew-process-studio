@@ -3010,7 +3010,7 @@ body.bc-tilt3d #tiltSurface{transform:translateY(var(--tilt-ty,-30px)) scale(cal
 #tiltSurface .tilt-turf{position:absolute;inset:-3000px;background-repeat:repeat}
 body.bc-tilt3d #boardStage{background:var(--pitchbg,#252839)}
 body.bc-tilt3d svg#board{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
-body.bc-tilt3d #board #world>rect:not([id]),body.bc-tilt3d #board .grass-stripes,body.bc-tilt3d #board #ps-pitchtile,body.bc-tilt3d #board #ps-pitchimg,body.bc-tilt3d #board .pitch-goal{visibility:hidden}
+body.bc-tilt3d #board #world>rect:not([id]),body.bc-tilt3d #board .grass-stripes,body.bc-tilt3d #board #ps-pitchtile,body.bc-tilt3d #board #ps-pitchimg,body.bc-tilt3d #board .pitch-goal,body.bc-tilt3d #board .ps-pitch-goal{visibility:hidden}
 #tiltGoals .goal-plane{position:absolute;left:0;top:0;box-sizing:border-box;transform-origin:0 0;backface-visibility:visible}
 #tiltGoals .goal-net{background:repeating-linear-gradient(45deg,#ffffff60 0 .6px,transparent .6px 3px),repeating-linear-gradient(-45deg,#ffffff60 0 .6px,transparent .6px 3px);border:1px solid #ffffff90}
 #tiltGoals .goal-side{clip-path:polygon(0 0,100% 35%,100% 100%,0 100%)}
@@ -4466,7 +4466,7 @@ function buildLines(){
     dot({cx:base+dir*spotX,cy:CY,r:3.5*LSF});
     /* 2.738 — TacticalPad 참고처럼 골라인 밖으로 깊이가 보이는 사다리꼴 골대.
        입구보다 뒤 프레임을 살짝 넓히고 촘촘한 마름모 망을 채워 작은 화면에서도 '골대'로 읽히게 한다. */
-    const gy=CY-goalH/2,out=side<0?-1:1,depth=Math.min(M-4*LSF,goalD*1.25),flare=Math.max(1.6*LSF,goalH*.052),backX=base+out*depth,backTop=gy-flare,backBottom=gy+goalH+flare;
+    const gy=CY-goalH/2,out=side<0?-1:1,depth=Math.min(M-4*LSF,goalD*1.25),flare=0,backX=base+out*depth,backTop=gy-flare,backBottom=gy+goalH+flare;
     const goalPath=`M ${base} ${gy} L ${backX} ${backTop} L ${backX} ${backBottom} L ${base} ${gy+goalH} Z`;
     const goalGroup=el("g",{class:"pitch-goal","data-side":side<0?"left":"right","data-goal-depth":depth});
     goalGroup.appendChild(el("path",{class:"pitch-goal-bed",d:goalPath,fill:PLN,opacity:".055",stroke:"none"}));
@@ -7541,7 +7541,10 @@ function _boardImageXMLRaw(vbFix){
 function appendBoardExportWatermarks(clone,vb){
   const old=clone.querySelector('#boardWatermarks');if(old)old.remove();
   const group=el('g',{id:'boardWatermarks','pointer-events':'none','aria-hidden':'true'});
-  const p=PR();if(pitchViewKey()!=='full'){const span=pitchViewSpan(pitchViewKey());if(state.halfSide==='R')p.L=Math.max(p.L,W-span);else p.R=Math.min(p.R,span);}
+  const p=PR();
+  const cards=(state.pitchN||1)>1?Array.from(svg.querySelectorAll('#ps-multipitch [data-pitch-rect]')).map(g=>g.getAttribute('data-pitch-rect').split(',').map(Number)):[];
+  if(cards.length){p.L=Math.min(...cards.map(r=>r[0]));p.T=Math.min(...cards.map(r=>r[1]));p.R=Math.max(...cards.map(r=>r[0]+r[2]));p.B=Math.max(...cards.map(r=>r[1]+r[3]));}
+  if(!cards.length&&pitchViewKey()!=='full'){const span=pitchViewSpan(pitchViewKey());if(state.halfSide==='R')p.L=Math.max(p.L,W-span);else p.R=Math.min(p.R,span);}
   const points=[[p.L,p.T],[p.R,p.T],[p.L,p.B],[p.R,p.B]].map(([x,y])=>state.orientation==='v'?(state.spFlip?[H-y,x]:[y,W-x]):[x,y]);
   const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
   const fs=9,gap=5,light=['white','train'].includes(document.documentElement.dataset.pitch);
@@ -11855,7 +11858,8 @@ function init(){
       var prevTr=svg.style.transition; svg.style.transition="none";
       st.setProperty("--tilt-k","1"); st.setProperty("--tilt-ty","-30px");
       void svg.offsetWidth;
-      var sr=stage.getBoundingClientRect(), br=svg.getBoundingClientRect();
+      var raw=stage.getBoundingClientRect(), cs=getComputedStyle(stage), pt=parseFloat(cs.paddingTop)||0,pb=parseFloat(cs.paddingBottom)||0;
+      var sr={top:raw.top+pt,bottom:raw.bottom-pb,height:raw.height-pt-pb,width:raw.width}, br=svg.getBoundingClientRect();
       if(!sr.height||!br.height){ svg.style.transition=prevTr; return; }
       /* ① 틀 안에 들어갈 배율. 0.55 아래로는 줄이지 않는다 — 그 아래는 운동장이 아니라 우표가 된다 */
       var k=Math.min(1,(sr.height-PAD*2)/br.height,(sr.width-PAD*2)/br.width);
@@ -11907,7 +11911,7 @@ function init(){
     if(!vb.width||!vb.height||!r.width||!r.height)return;
     const scale=Math.min(r.width/vb.width,r.height/vb.height),ox=(r.width-vb.width*scale)/2,oy=(r.height-vb.height*scale)/2;
     [host,surface].forEach(h=>{h.style.display='block';h.style.left=(r.left-sr.left+stage.scrollLeft-stage.clientLeft)+'px';h.style.top=(r.top-sr.top+stage.scrollTop-stage.clientTop)+'px';h.style.width=r.width+'px';h.style.height=r.height+'px';});
-    const signature=[r.width,r.height,r.left-sr.left,r.top-sr.top,vb.x,vb.y,vb.width,vb.height,state.orientation,state.spFlip,state.pitchSpec,state.lines,state.pitchN,pitchViewKey(),state.halfSide,state.pitchImg,document.documentElement.dataset.pitch,!!window.__ballImgOK].join('|');
+    const signature=[r.width,r.height,r.left-sr.left,r.top-sr.top,vb.x,vb.y,vb.width,vb.height,state.orientation,state.spFlip,state.pitchSpec,state.lines,state.pitchN,svg.querySelector('#ps-multipitch')?.getAttribute('data-layout'),pitchViewKey(),state.halfSide,state.pitchImg,document.documentElement.dataset.pitch,!!window.__ballImgOK].join('|');
     if(host.__projectionSignature===signature)return;host.__projectionSignature=signature;
     const turf=surface.firstElementChild,key=String(state.pitchImg||'').replace(/^@/,'');
     const texture=String(state.pitchImg||'').startsWith('@')&&window.PITCH_IMG&&window.PITCH_IMG[key];
@@ -11915,7 +11919,7 @@ function init(){
     turf.style.backgroundImage=texture?'url("'+texture+'")':(state.pitchImg?'url("'+state.pitchImg+'")':'none');
     turf.style.backgroundSize=texture?(M2U(10)*scale)+'px '+(M2U(10)*scale)+'px':(state.pitchImg?'cover':'auto');
     host.replaceChildren();
-    if(state.lines===false||(state.pitchN||1)>1)return;
+    if(state.lines===false)return;
     const p=PR(),sp=pitchSpec(),mouth=M2U(sp.goal),height=M2U(sp.futsal?2:(sp.goal<6?2.15:2.44))*scale,depth=M2U(sp.goalD||2)*scale;
     const map=(x,y)=>{let a=state.orientation==='v'?(state.spFlip?[H-y,x]:[y,W-x]):[x,y];return [(a[0]-vb.x)*scale+ox,(a[1]-vb.y)*scale+oy];};
     function face(w,h,origin,u,v,kind){
@@ -11923,9 +11927,19 @@ function init(){
       const n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
       d.style.transform='matrix3d('+[...u,0,...v,0,...n,0,...origin,1].join(',')+')';host.appendChild(d);
     }
-    [[p.L,-1],[p.R,1]].forEach(([x,side])=>{
+    const goals=[];
+    if((state.pitchN||1)>1){
+      svg.querySelectorAll('#ps-multipitch .ps-pitch-goal').forEach(g=>{
+        const mouth=g.querySelector('.ps-pitch-goal-mouth');if(!mouth)return;
+        const x=+mouth.getAttribute('x1'),y=+mouth.getAttribute('y1'),x2=+mouth.getAttribute('x2'),y2=+mouth.getAttribute('y2'),side=g.getAttribute('data-side')==='top'?-1:1;
+        goals.push({a:map(x,y),b:map(x2,y2),out:map(x,y+side),height:Math.abs(x2-x)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*scale,depth:+g.getAttribute('data-goal-depth')*scale});
+      });
+    }else [[p.L,-1],[p.R,1]].forEach(([x,side])=>{
       if(pitchViewKey()!=='full'&&((state.halfSide==='R'&&side<0)||(state.halfSide!=='R'&&side>0)))return;
-      const a=map(x,CY-mouth/2),b=map(x,CY+mouth/2),out=map(x+side,CY-mouth/2),width=Math.hypot(b[0]-a[0],b[1]-a[1]);
+      goals.push({a:map(x,CY-mouth/2),b:map(x,CY+mouth/2),out:map(x+side,CY-mouth/2),height,depth});
+    });
+    goals.forEach(({a,b,out,height,depth})=>{
+      const width=Math.hypot(b[0]-a[0],b[1]-a[1]);
       const u=[(b[0]-a[0])/width,(b[1]-a[1])/width,0],n=[(out[0]-a[0])/scale,(out[1]-a[1])/scale,0],down=[0,0,-1];
       const rear=[a[0]+n[0]*depth,a[1]+n[1]*depth,height*.65],front=[a[0],a[1],height],slope=Math.hypot(depth,height*.35);
       face(width,height*.65,rear,u,down,'goal-net goal-back');
@@ -17822,7 +17836,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
 </style>
 
 <style id="ps-ipad-desktop-dock">
-/* iPad shares the desktop's three-row dock and surfaces. Keep its 36px touch
+/* iPad shares the desktop's three-row dock and surfaces. Keep its 32px touch
    controls, with a small settings caption. Narrow rows scroll rather than
    wrapping into extra rows; dock reservation still uses the measured height. */
 @media (min-width:768px){
@@ -17834,35 +17848,35 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
     --dk-surface:#FFFFFF;--dk-ink:#333E4C;--dk-text:#333E4C;--dk-muted:#7D8795;--dk-line:#E9EDF2;--dk-hair:#E9EDF2;--dk-soft:#E9F0FF;--dk-soft-ink:#2B61DC;--dk-blue:#3468EA;--dk-value-bg:#F3F5F8;--dk-surface-shadow:0 0 0 1px rgba(24,39,60,.08),0 6px 20px -8px rgba(21,34,55,.18);
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________){
-    grid-template-rows:36px 72px!important;height:108px!important;min-height:108px!important;
+    grid-template-rows:32px 64px!important;height:96px!important;min-height:96px!important;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________)>#floatBar{
-    height:72px!important;min-height:72px!important;grid-template-rows:36px 36px!important;
+    height:64px!important;min-height:64px!important;grid-template-rows:32px 32px!important;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#animBar,#drawPanel,#cmd-tool-row){
-    height:36px!important;min-height:36px!important;max-height:36px!important;flex-wrap:nowrap!important;align-items:center!important;padding:0 12px!important;column-gap:8px!important;row-gap:0!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    height:32px!important;min-height:32px!important;max-height:32px!important;flex-wrap:nowrap!important;align-items:center!important;padding:0 8px!important;column-gap:6px!important;row-gap:0!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#animBar,#drawPanel,#cmd-tool-row)::-webkit-scrollbar{display:none}
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #railL2{
-    flex-wrap:nowrap!important;height:36px!important;min-height:36px!important;column-gap:8px!important;row-gap:0!important;overflow:visible!important;
+    flex-wrap:nowrap!important;height:32px!important;min-height:32px!important;column-gap:6px!important;row-gap:0!important;overflow:visible!important;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(.cmd-cluster,#toolSeg,#benchCat,#railL2,#railEquip,#animFrames){
     background:transparent!important;box-shadow:none!important;border-color:transparent!important;column-gap:3px!important;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) .cmd-cluster{
-    height:36px!important;min-height:36px!important;padding-block:0!important;align-items:center!important;
+    height:32px!important;min-height:32px!important;padding-block:0!important;align-items:center!important;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #cmd-style #colorWrap{
-    width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;flex:0 0 36px!important;
+    width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important;flex:0 0 32px!important;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(.catpill,.cpreset,.chip,.cmd-stamp-token,.cmd-cluster>button,.cmd-cluster .seg>button,.cmd-cluster select){
-    height:36px!important;min-height:36px!important;
+    height:32px!important;min-height:32px!important;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(.catpill.tpill,.cpreset,.chip,.cmd-stamp-token,#toolSeg>button){
-    width:36px!important;min-width:36px!important;flex:0 0 36px!important;
+    width:32px!important;min-width:32px!important;flex:0 0 32px!important;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #viewBtn{
-    height:36px!important;min-height:36px!important;font-size:11px!important;line-height:1!important;white-space:nowrap!important;
+    height:32px!important;min-height:32px!important;font-size:11px!important;line-height:1!important;white-space:nowrap!important;
   }
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #viewBtn>span{font-size:11px!important;line-height:1!important;}
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#cmd-tool-end,#cmd-tool-end .menuwrap){width:82px!important;min-width:82px!important;max-width:82px!important;flex:0 0 82px!important;padding:0!important;}
