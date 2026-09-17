@@ -244,6 +244,7 @@
 <link rel="stylesheet" href="studio/admin-user-detail.css?v=2.792">
 <link rel="stylesheet" href="studio/admin-operations.css?v=2.816">
 <link rel="stylesheet" href="studio/admin-support.css?v=2.816">
+<link rel="stylesheet" href="studio/admin-content.css?v=2.854">
 </head>
 <body>
 
@@ -490,33 +491,30 @@
     </div>
   </div>
 
-  <!-- 훈련 전체 뷰 -->
+  <!-- 콘텐츠 탐색 -->
   <div class="wrap hide" id="viewAll" style="grid-template-columns:1fr">
     <div class="col">
-      <div class="searchrow">
-        <input id="alSearch" placeholder="훈련·워크스페이스·소유자 검색" oninput="renderAllLib()">
-        <select id="alType" onchange="renderAllLib()">
-          <option value="">유형 전체</option>
-          <option value="train">훈련</option>
-          <option value="setpiece">세트피스</option>
-          <option value="board">작전판</option>
-          <option value="match">경기</option>
-          <option value="meeting">미팅</option>
+      <div class="searchrow ac-toolbar">
+        <input id="alSearch" aria-label="콘텐츠 검색" placeholder="제목·팀·작성자·폴더 검색" oninput="renderAllLib()">
+        <select id="alType" aria-label="콘텐츠 유형" onchange="renderAllLib()">
+          <option value="">유형 전체</option><option value="train">훈련</option><option value="setpiece">세트피스</option><option value="board">작전판</option><option value="match">경기</option><option value="meeting">미팅</option><option value="note">노트</option>
         </select>
-        <select id="alSort" onchange="renderAllLib()">
-          <option value="upd">최근 수정</option>
-          <option value="name">이름</option>
-          <option value="ws">워크스페이스</option>
-        </select>
+        <select id="alSort" aria-label="콘텐츠 정렬" onchange="renderAllLib()"><option value="upd">최근 저장순</option><option value="name">이름순</option><option value="ws">워크스페이스순</option></select>
       </div>
-      <div class="panel ps-scroll">
-        <div style="display:flex;align-items:center;margin-bottom:11px">
-          <div class="sec-t" id="alCount" style="margin:0">—</div>
-          <label style="margin-left:auto;font-size:12px;font-weight:600;color:var(--dim);display:inline-flex;align-items:center;gap:6px;cursor:pointer">
-            <input type="checkbox" id="alShowDel" onchange="renderAllLib()"> 삭제됨 포함</label>
+      <details class="ac-filter-toggle"><summary>상세 필터 · 팀·작성자·기간·폴더</summary>
+        <div class="ac-filters">
+          <label>팀·워크스페이스<select id="alWorkspace" onchange="renderAllLib()"><option value="">팀·공간 전체</option></select></label>
+          <label>작성자<select id="alAuthor" onchange="renderAllLib()"><option value="">작성자 전체</option></select></label>
+          <label>폴더<select id="alFolder" onchange="renderAllLib()"><option value="">폴더 전체</option></select></label>
+          <label>저장 기간 시작<input id="alFrom" type="date" onchange="renderAllLib()"></label>
+          <label>저장 기간 끝<input id="alTo" type="date" onchange="renderAllLib()"></label>
+          <button type="button" onclick="resetContentFilters()">필터 초기화</button>
         </div>
-        <div class="ws-alert" style="margin-bottom:10px"><b>삭제는 휴지통 처리됩니다.</b><br>목록에서 `삭제됨 포함`을 켜면 다시 복구할 수 있습니다. 팀 전체 삭제는 팀 관리의 별도 위험 작업에서만 가능합니다.</div>
-        <div id="alBody" class="ps-flow"><div class="loading">불러오는 중…</div></div>
+      </details>
+      <div class="panel ps-scroll ac-shell">
+        <div class="ac-countbar"><div class="sec-t" id="alCount">—</div><label><input type="checkbox" id="alShowDel" onchange="renderAllLib()"> 삭제됨 포함</label></div>
+        <p class="ac-notice" id="alOwnerNotice" hidden></p>
+        <div id="alBody" class="ps-flow ac-host"><div class="loading">불러오는 중…</div></div>
       </div>
     </div>
   </div>
@@ -577,6 +575,8 @@
 <script src="studio/support-diagnostics.js?v=2.816"></script>
 <script src="studio/support.js?v=2.816"></script>
 <script src="studio/admin-support.js?v=2.816"></script>
+<script src="studio/admin-content-data.js?v=2.854"></script>
+<script src="studio/admin-content.js?v=2.854"></script>
 <script>
 /* ===== 설정 (publishable/anon 키만 — secret 키는 절대 두지 않음) ===== */
 var CFG={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publishable_-Es-apybpr1zPTLzLE2sUw_kV-5ap-k"};
@@ -590,6 +590,7 @@ function adminLockSession(message){
   adminSessionLocked=true;adminAuthEpoch++;
   try{if(window.PSAdminUserDetail)PSAdminUserDetail.close();}catch(_){}
   try{if(adminSupport){adminSupport.destroy();adminSupport=null;}}catch(_){}
+  try{if(adminContent){adminContent.destroy();adminContent=null;}ADMIN_CONTENT_OWNERS=[];}catch(_){}
   ['app','modalRoot'].forEach(function(id){var el=document.getElementById(id);if(el){el.classList.add('hide');el.replaceChildren();}});
   try{WS=[];USERS=[];ALL_LIB=[];HOME=null;WHOLOG=null;IDP_CACHE={};ERR=null;USE=null;}catch(_){}
   ['gateLogin','gateDenied'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hide');});
@@ -674,7 +675,7 @@ function openAdminUser(uid){
     onTeam:function(wid){setTab('ws');selectWs(wid);},
     onIdp:function(){setTab('idp');openIdp(uid,user.email||'');}});
 }
-var adminOps=null,adminSupport=null;
+var adminOps=null,adminSupport=null,adminContent=null;
 function adminRpc(name,body){return adminRequest('rpc/'+name,{method:'POST',body:JSON.stringify(body||{})});}
 function adminSupportContext(){
   var s=getSess();
@@ -786,8 +787,10 @@ function typeName(t){ return TYPES[t]||t||'항목'; }
 
 /* ===== 상태 ===== */
 var WS=[], USERS=[], ALL_LIB=[], curWid=null, curTab='all';
+var ADMIN_CONTENT_OWNERS=[],adminOwnersReady=false,adminLibraryTicket=0,adminReloadTicket=0;
 function normalizeLibRows(rows){
-  return (rows||[]).map(function(l){
+  var attributed=window.PSAdminContent?PSAdminContent.joinOwners(rows,ADMIN_CONTENT_OWNERS):(rows||[]).map(function(r){return Object.assign({},r,{owner_id:'',owner_name:'',owner_email:''});});
+  return attributed.map(function(l){
     if(!l.ws_name)l.ws_name=l.workspace_name||'';
     if(!l.workspace_name)l.workspace_name=l.ws_name||'';
     /* 1.636 — 화면이 보여 주던 updated_at 은 **DB 행이 마지막으로 닿은 시각**(=동기화 시각)이라
@@ -828,6 +831,8 @@ function showDenied(uid){
 /* ===== 데이터 로드 ===== */
 function reloadAll(){
   if(curTab==='support'){loadAdminSupport();return;}
+  var libTicket=++adminLibraryTicket,reloadTicket=++adminReloadTicket,epoch=adminAuthEpoch;
+  if(adminContent)adminContent.deactivate();
   $('wsList').innerHTML='<div class="loading">불러오는 중…</div>';
   $('alBody').innerHTML='<div class="loading">불러오는 중…</div>';
   var safe=function(p){return p.then(function(v){return {ok:true,v:v||[]};}).catch(function(e){return {ok:false,v:[],e:e};});};
@@ -836,25 +841,37 @@ function reloadAll(){
     /* 1.636 — 이름·소속 팀·본인이 만든 수까지 주는 v2 를 먼저 쓰고, 아직 SQL 을 안 깐
        프로젝트에서는 예전 함수로 돌아간다(화면은 두 모양을 다 그린다 — renderUsers 의 hasV2). */
     safe(rpc('ps_admin_users_v2').catch(function(){ return rpc('ps_admin_users'); })),
-    safe(rpc('ps_admin_library',{p_wid:null,p_include_deleted:true}))
+    safe(rpc('ps_admin_library',{p_wid:null,p_include_deleted:true})),
+    safe(rpc('ps_admin_content_owners',{p_wid:null,p_include_deleted:true}))
   ]).then(function(res){
-    WS=res[0].v; USERS=res[1].v; ALL_LIB=normalizeLibRows(res[2].v);
+    if(adminSessionLocked||epoch!==adminAuthEpoch||reloadTicket!==adminReloadTicket)return;
+    WS=res[0].v; USERS=res[1].v;
+    if(libTicket===adminLibraryTicket){
+      ADMIN_CONTENT_OWNERS=res[3].ok&&Array.isArray(res[3].v)?res[3].v:[];adminOwnersReady=res[3].ok&&Array.isArray(res[3].v);
+      ALL_LIB=normalizeLibRows(res[2].v);
+    }
     renderStats();
     loadAdminOps();
     if(res[0].ok) renderWsList();
     else $('wsList').innerHTML='<div class="empty">팀 정보를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>';
     if(res[1].ok) renderUsers();
-    else $('userBody').innerHTML='<tr><td colspan="6"><div class="empty">사용자 집계 오류 — 최신 supabase-admin.sql을 다시 실행하세요.</div></td></tr>';
-    if(res[2].ok) renderAllLib();
+    else $('usersTable').innerHTML='<tr><td colspan="6"><div class="empty">사용자 집계 오류 — 최신 supabase-admin.sql을 다시 실행하세요.</div></td></tr>';
+    if(res[2].ok||libTicket!==adminLibraryTicket) renderAllLib();
     else $('alBody').innerHTML='<div class="empty">콘텐츠 정보를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>';
     if(curWid && res[0].ok && WS.some(function(w){return w.id===curWid;})) selectWs(curWid);
     if(res.some(function(x){return !x.ok;})) toast('일부 관리자 지표를 불러오지 못했습니다.');
   });
   loadActivity();
   loadWhoLog();                /* 1.636 — 홈의 '최근 활동'(누가 뭘 만들었나) */
-  HOME=null; setTab('home');   /* 첫 화면 = 홈 대시보드 */
+  HOME=null; setTab(curTab==='all'&&!ALL_LIB.length?'home':curTab); /* 새로고침 때 보고 있던 화면 유지 */
 }
-function reloadAllLib(){ return rpc('ps_admin_library',{p_wid:null,p_include_deleted:true}).then(function(r){ ALL_LIB=normalizeLibRows(r); renderAllLib(); }).catch(function(){}); }
+function reloadAllLib(){
+  var ticket=++adminLibraryTicket,epoch=adminAuthEpoch;
+  return Promise.all([rpc('ps_admin_library',{p_wid:null,p_include_deleted:true}),rpc('ps_admin_content_owners',{p_wid:null,p_include_deleted:true}).catch(function(){return null;})]).then(function(res){
+    if(adminSessionLocked||epoch!==adminAuthEpoch||ticket!==adminLibraryTicket)return;
+    ADMIN_CONTENT_OWNERS=Array.isArray(res[1])?res[1]:[];adminOwnersReady=Array.isArray(res[1]);ALL_LIB=normalizeLibRows(res[0]);renderAllLib();
+  }).catch(function(){if(!adminSessionLocked&&epoch===adminAuthEpoch)toast('콘텐츠 목록을 새로고침하지 못했습니다.');});
+}
 function renderStats(){
   var libTotal=WS.reduce(function(a,w){return a+(w.lib_count||0);},0);
   var teams=WS.filter(function(w){return w.kind==='team';}).length;
@@ -871,7 +888,8 @@ function stat(n,l){ return '<div class="stat"><div class="n">'+n+'</div><div cla
 /* ===== 탭 ===== */
 function setTab(t){
   if(adminSupport&&curTab==='support'&&t!=='support')adminSupport.deactivate();
-  curTab=t; $('app').classList.toggle('admin-home-mode',t==='home');
+  if(adminContent&&curTab==='all'&&t!=='all')adminContent.deactivate();
+  curTab=t; $('app').classList.toggle('admin-home-mode',t==='home'); $('app').classList.toggle('admin-content-mode',t==='all');
   if($('tabBack'))$('tabBack').classList.toggle('on',t==='back'); if($('viewBack'))$('viewBack').classList.toggle('hide',t!=='back'); if(t==='back')loadBack();   /* 2.630 */
   if($('tabUse'))$('tabUse').classList.toggle('on',t==='use');
   if($('tabErrors'))$('tabErrors').classList.toggle('on',t==='errors');
@@ -888,6 +906,7 @@ function setTab(t){
   if(t==='use') loadUse();
   if(t==='errors') loadErrors();
   if(t==='support') loadAdminSupport();
+  if(t==='all')renderAllLib();
 }
 
 /* ===== 2.630 · 백엔드 건강 ===== */
@@ -1655,7 +1674,19 @@ function adminOwnerInfo(record,fallback){
     search:[email,name,uid].join(' ').toLowerCase()};
 }
 function wsInfo(wid){ return WS.filter(function(w){return w.id===wid;})[0]||{}; }
+function resetContentFilters(){
+  ['alSearch','alType','alWorkspace','alAuthor','alFolder','alFrom','alTo'].forEach(function(id){if($(id))$(id).value='';});
+  $('alSort').value='upd';$('alShowDel').checked=false;renderAllLib();
+}
 function renderAllLib(){
+  if(typeof window!=='undefined'&&window.PSAdminContent&&window.PSAdminContentData){
+    if(!adminSupportContext().ready)return;
+    if(!adminContent)adminContent=PSAdminContent.create({window:window,host:$('alBody'),rpc:adminRpc,context:adminSupportContext,
+      controls:{search:$('alSearch'),type:$('alType'),sort:$('alSort'),deleted:$('alShowDel'),workspace:$('alWorkspace'),author:$('alAuthor'),folder:$('alFolder'),from:$('alFrom'),to:$('alTo'),count:$('alCount'),ownerNotice:$('alOwnerNotice')},
+      owner:adminOwnerInfo,workspace:wsInfo,typeName:typeName,date:fmtDateT,snapPreview:snapPreview,
+      onDelete:function(r){softDelLib(r.workspace_id,encodeURIComponent(r.lib_id));},onRestore:function(r){restoreLib(r.workspace_id,encodeURIComponent(r.lib_id));}});
+    adminContent.update(ALL_LIB,adminOwnersReady);return;
+  }
   var q=($('alSearch').value||'').trim().toLowerCase();
   var ty=$('alType').value, sort=$('alSort').value, showDel=$('alShowDel').checked;
   var list=ALL_LIB.slice();
@@ -2168,6 +2199,7 @@ function snapPreview(snap){
   ps.slice(0,60).forEach(function(p){
     var x=(+p.x||0)*sx, y=(+p.y||0)*sy, team=String(p.team||'').toLowerCase();
     var fill=cols[team]||cols[p.team]||((team==='red'||team==='home')?'#d81b42':(team==='blue'||team==='away')?'#f4f7fb':'#f2c94c');
+    if(!/^#[0-9a-f]{3,8}$/i.test(String(fill)))fill='#f2c94c';
     out+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="14" fill="'+fill+'" stroke="#fff" stroke-width="2"/>';
     var nm=txt(p.num).trim();
     if(nm)out+='<text x="'+x.toFixed(1)+'" y="'+(y+4.5).toFixed(1)+'" text-anchor="middle" font-family="sans-serif" font-size="12.5" font-weight="800" fill="'+(dark(fill)?'#fff':'#16213a')+'">'+nm+'</text>';
@@ -2203,6 +2235,13 @@ function sceneInfo(it){ var t=0,s=0;
   return {t:t,s:s};
 }
 function preview(wid,lidEnc){ var lid=decodeURIComponent(lidEnc);
+  if(window.PSAdminContent&&window.PSAdminContentData){
+    setTab('all');resetContentFilters();
+    var meta=(_libCache||[]).filter(function(r){return r.workspace_id===wid&&r.lib_id===lid;})[0];
+    if(!ALL_LIB.some(function(r){return r.workspace_id===wid&&r.lib_id===lid;})&&meta)ALL_LIB=ALL_LIB.concat(normalizeLibRows([meta]));
+    if((meta&&meta.deleted_at)||ALL_LIB.some(function(r){return r.workspace_id===wid&&r.lib_id===lid&&r.deleted_at;}))$('alShowDel').checked=true;
+    renderAllLib();if(adminContent)adminContent.open(wid,lid);return;
+  }
   var meta=(_libCache||[]).concat(ALL_LIB||[]).filter(function(l){return l.lib_id===lid && l.workspace_id===wid;})[0]||{};
   openModal('<div class="loading">불러오는 중…</div>');
   rpc('ps_admin_library_item',{p_wid:wid,p_lib_id:lid}).then(function(raw){

@@ -29,3 +29,7 @@ jobs:
         env:
           PGLITE_MODULE: ${{ runner.temp }}/ps-sql/node_modules/@electric-sql/pglite
         run: node migrations/20260915_private_board.local-test.cjs
+      - name: Test admin-only authoritative content author lookup
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/ps-sql/node_modules/@electric-sql/pglite
+        run: node migrations/20260917_admin_content_owners.local-test.cjs
