@@ -8,6 +8,13 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-17-availability-meeting-pdf',date:'2026-09-17',title:'가용인원과 미팅 PDF를 개선했습니다',
+    changes:[
+      '참여 화면을 가용인원으로 통일했습니다. 오늘의 선수 상태와 명단·인원 집계가 함께 반영되며 과거 기록은 유지됩니다.',
+      '미팅을 A4 세로·가로 PDF로 내보낼 수 있습니다. 보드는 여백을 채우고 가로형에서는 운동장도 가로로 출력됩니다.',
+      '제목과 메모는 페이지당 최대 4줄로 표시하며 긴 내용은 다음 페이지로 이어집니다.'
+    ]
+  },{
     id:'2026-09-17-ipad-board-pitch-options',date:'2026-09-17',title:'아이패드 보드와 피치 선택을 개선했습니다',
     changes:[
       '아이패드의 보드 도구를 데스크톱과 같은 배치로 정리하고, 보드 설정 글자를 줄였습니다.',

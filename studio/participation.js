@@ -1,5 +1,6 @@
 /* Pure date-specific participation model. No clock, storage, or status mutation.
  * A direct day record is an observation; a status run is an inferred state.
+ * Current availability is authoritative for an explicitly supplied today only.
  * Callers supply the player's schedule kind and local calendar date explicitly.
  */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSParticipation=api;})(typeof window!=='undefined'?window:null,function(){
@@ -55,22 +56,28 @@
     var legacy=has(meta,'statusLog')?meta.statusLog:null;
     return function(day,k){
       if(dateNumber(day)===null||(today!==undefined&&(dateNumber(today)===null||day>today)))return none(k);
+      var current=dateNumber(today)!==null&&day===today&&state(currentStatus)?{s:currentStatus,kind:kind(k)?k:'none',source:'current',note:''}:null;
+      // Availability owns today's state. Keep matching observations and their
+      // notes; a stale, conflicting state must not override current availability.
+      function preferCurrent(result){return current&&current.s!==result.s?current:result;}
       var entries=has(days,day)?days[day]:null;
       if(has(entries,pid)){
         var cell=entries[pid];
         // A malformed explicit observation must not appear as a valid inference.
-        return validRecord(cell)?{s:cell.s,kind:cell.kind,source:'record',note:note(cell)}:none(k);
+        return validRecord(cell)?preferCurrent({s:cell.s,kind:cell.kind,source:'record',note:note(cell)}):none(k);
       }
       for(var i=runs.length-1;i>=0;i--){
-        var r=runs[i];if(r.from<=day&&day<=r.to)return {s:r.s,kind:kind(k)?k:'none',source:'status',note:note(r)};
+        var r=runs[i];if(r.from<=day&&day<=r.to)return preferCurrent({s:r.s,kind:kind(k)?k:'none',source:'status',note:note(r)});
       }
       // Extend only the last known matching state, never backfill earlier gaps.
       if(last&&state(currentStatus)&&last.s===currentStatus&&dateNumber(today)!==null&&last.to<day&&day<=today){
         return {s:last.s,kind:kind(k)?k:'none',source:'status',note:note(last)};
       }
       var old=has(legacy,day)?legacy[day]:null;
-      if(has(old,pid)&&state(old[pid]))return {s:old[pid],kind:kind(k)?k:'none',source:'status',note:''};
-      return none(k);
+      if(has(old,pid)&&state(old[pid]))return preferCurrent({s:old[pid],kind:kind(k)?k:'none',source:'status',note:''});
+      // Today's availability is useful without creating a historical observation.
+      // Never use it to fill past gaps, future dates, or malformed direct records.
+      return current||none(k);
     };
   }
   function resolve(meta,pid,day,k,currentStatus,today){
@@ -78,7 +85,7 @@
     return model(meta,pid,currentStatus,today)(day,k);
   }
   function totals(meta,pid,from,to,kindOf,currentStatus,today){
-    var out={training:0,match:0,exercise:0,rest:0,injury:0,rehab:0,out:0,unknown:0,recorded:0,statusDays:0,days:0,first:null,last:null};
+    var out={training:0,match:0,exercise:0,rest:0,injury:0,rehab:0,out:0,unknown:0,recorded:0,statusDays:0,currentDays:0,days:0,first:null,last:null};
     var start=dateNumber(from),end=dateNumber(to),limit=today===undefined?null:dateNumber(today);
     if(!player(pid)||start===null||end===null||(today!==undefined&&limit===null))return out;
     if(limit!==null)end=Math.min(end,limit);
@@ -88,7 +95,9 @@
       var scheduled=result.kind==='train'||result.kind==='match';out.days++;
       if(result.source==='none'){if(scheduled)out.unknown++;continue;}
       if(out.first===null)out.first=day;out.last=day;
-      if(result.source==='record')out.recorded++;else out.statusDays++;
+      if(result.source==='record')out.recorded++;
+      else if(result.source==='status')out.statusDays++;
+      else if(result.source==='current')out.currentDays++;
       if(result.s==='ok'){
         if(result.kind==='train')out.training++;
         else if(result.kind==='match')out.match++;
