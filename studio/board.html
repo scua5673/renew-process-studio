@@ -6738,6 +6738,32 @@ function captureSnap(){return {pitchSpec:state.pitchSpec||"fifa",players:dc(stat
 	  ball:state.ball?{...state.ball}:null,drawings:dc(state.drawings),teamColors:dc(state.teamColors||{}),gkColors:dc(state.gkColors||{}),teamColor2:dc(state.teamColor2||{}),teamPattern:dc(state.teamPattern||{}),teamStrokeC:dc(state.teamStrokeC||{}),teamTxtC:dc(state.teamTxtC||{}),gkColor2:dc(state.gkColor2||{}),gkPattern:dc(state.gkPattern||{}),gkStrokeC:dc(state.gkStrokeC||{}),gkTxtC:dc(state.gkTxtC||{}),orientation:state.orientation,area:state.area,pitchView:pitchViewKey(),fieldMode:state.fieldMode||"standard",halfSide:state.halfSide||"L",gridType:state.gridType,label:state.label,lines:state.lines,boardLocked:!!state.boardLocked,spFlip:!!state.spFlip,tokenScale:state.tokenScale,pitchN:state.pitchN||1,/* 2.559 — customImages 를 스냅에 안 넣는다(아래 설명) */press:(state.press&&state.press.on)?{...state.press}:null,spMarks:(function(){var sm=state.spMarks;if(!sm||!sm.on)return null;var pts=Array.isArray(sm.pts)?sm.pts.slice():[];if(!pts.length){if(sm.m1)pts.push(sm.m1);if(sm.m2)pts.push(sm.m2);}if(!pts.length)return null;return {on:true,pts:pts.map(function(p){return {x:p.x,y:p.y};})};})(),spMark:(state.spMark&&state.spMark!=="none")?state.spMark:null,pitchImg:state.pitchImg||null,matchNote:state.matchNote||"",
   pitchTheme:(function(){try{return document.documentElement.dataset.pitch||"";}catch(_){return "";}})(),
   pitchCustom:(function(){try{return (document.documentElement.dataset.pitch==="custom")?((document.documentElement.style.getPropertyValue("--pitchbg")||"").trim()||null):null;}catch(_){return null;}})()};}
+const BOARD_DEFAULT_KEY="cs_board_default_v1";
+function boardDefaultSnap(src){
+  src=src||{};
+  return {pitchSpec:src.pitchSpec||"fifa",players:dc(src.players||[]),equipment:[],drawings:[],ball:src.ball?{x:src.ball.x,y:src.ball.y}:{x:CX,y:CY},
+    teamColors:dc(src.teamColors||{}),gkColors:dc(src.gkColors||{}),teamColor2:dc(src.teamColor2||{}),teamPattern:dc(src.teamPattern||{}),
+    teamStrokeC:dc(src.teamStrokeC||{}),teamTxtC:dc(src.teamTxtC||{}),gkColor2:dc(src.gkColor2||{}),gkPattern:dc(src.gkPattern||{}),
+    gkStrokeC:dc(src.gkStrokeC||{}),gkTxtC:dc(src.gkTxtC||{}),orientation:src.orientation||"h",area:src.area||"full",
+    pitchView:src.pitchView||((src.area||"full")==="half"?"half":"full"),fieldMode:src.fieldMode||"standard",halfSide:src.halfSide||"L",
+    gridType:src.gridType,label:src.label,lines:src.lines,spFlip:!!src.spFlip,tokenScale:src.tokenScale,pitchN:1,
+    pitchImg:src.pitchImg||null,pitchTheme:src.pitchTheme||"",pitchCustom:src.pitchCustom||null,matchNote:"",press:null,spMarks:null,spMark:null};
+}
+function boardDefaultRead(){try{var raw=localStorage.getItem(BOARD_DEFAULT_KEY);if(!raw)return null;var data=JSON.parse(raw);var snap=data&&(data.snap||data);return snap?boardDefaultSnap(snap):null;}catch(_){return null;}}
+function boardDefaultSave(){
+  try{localStorage.setItem(BOARD_DEFAULT_KEY,JSON.stringify({v:1,at:Date.now(),snap:boardDefaultSnap(captureSnap())}));
+    try{toast("현재 보드를 기본 세팅으로 저장했어요");}catch(_){}
+    try{window.__syncBoardDefaultUI&&window.__syncBoardDefaultUI();}catch(_){}
+    return true;}catch(_){try{toast("기본 세팅을 저장하지 못했어요");}catch(__){}return false;}
+}
+function boardDefaultClear(){
+  try{localStorage.removeItem(BOARD_DEFAULT_KEY);try{toast("기본 세팅을 해제했어요");}catch(_){}
+    try{window.__syncBoardDefaultUI&&window.__syncBoardDefaultUI();}catch(_){}
+    return true;}catch(_){return false;}
+}
+window.__psSaveBoardDefault=boardDefaultSave;
+window.__psClearBoardDefault=boardDefaultClear;
+window.__psGetBoardDefault=boardDefaultRead;
 function renderPitchImg(){try{
   if(!world||!svg)return;
   var ex=svg.querySelector('#ps-pitchimg');
@@ -14096,10 +14122,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(type==="match"){try{if(window.__mcResetAll)window.__mcResetAll();}catch(_){}}
     try{window.__vaultStarting=true;setView(_nvt);window.__vaultStarting=false;}catch(_){}
     if(_nvt==="board"){
-      try{var emptyBoard={players:[],equipment:[],drawings:[],ball:{x:CX,y:CY},orientation:state.orientation,area:state.area,pitchView:pitchViewKey(),pitchN:1};
-        if(type==="board"){var appearance=captureSnap();emptyBoard.pitchTheme=appearance.pitchTheme;emptyBoard.pitchImg=appearance.pitchImg;emptyBoard.pitchCustom=appearance.pitchCustom;}
+      try{var emptyBoard=(type==="board"&&typeof boardDefaultRead==="function")?boardDefaultRead():null;
+        if(!emptyBoard){emptyBoard={players:[],equipment:[],drawings:[],ball:{x:CX,y:CY},orientation:state.orientation,area:state.area,pitchView:pitchViewKey(),pitchN:1};
+          if(type==="board"){var appearance=captureSnap();emptyBoard.pitchTheme=appearance.pitchTheme;emptyBoard.pitchImg=appearance.pitchImg;emptyBoard.pitchCustom=appearance.pitchCustom;}}
         loadSnap(emptyBoard);}catch(_){}
-      try{state.players=[];state.equipment=[];state.drawings=[];state.pitchN=1;}catch(_){}   // loadSnap 실패해도 무조건 빈 보드 보장
+      try{state.equipment=[];state.drawings=[];state.pitchN=1;}catch(_){}   // 기본 세팅은 선수 배치만 유지하고 장비·그림은 비운다
       try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}
       try{if(window.__applyPitchN)window.__applyPitchN(1);}catch(_){}   // 남은 멀티피치 제거
     } else if(_nvt==="match"){try{if(typeof applyDefaultXI==="function")applyDefaultXI();}catch(_){}}
@@ -16789,6 +16816,17 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       sync();
       return sync;
     })();
+    var defaultRow=make("div","cmd-board-default-row","menurow");
+    defaultRow.appendChild(make("span",null,"menulbl","기본 세팅"));
+    var defaultSeg=make("div",null,"seg");
+    var defaultSave=make("button","cmd-board-default-save",null,"현재 보드 저장");defaultSave.type="button";defaultSave.title="현재 보드를 새 보드 기본 세팅으로 저장";
+    var defaultClear=make("button","cmd-board-default-clear",null,"해제");defaultClear.type="button";defaultClear.title="새 보드 기본 세팅 해제";
+    defaultSave.addEventListener("click",function(e){e.stopPropagation();try{if(window.__psSaveBoardDefault)window.__psSaveBoardDefault();}catch(_){}syncDefaultRow();});
+    defaultClear.addEventListener("click",function(e){e.stopPropagation();try{if(window.__psClearBoardDefault)window.__psClearBoardDefault();}catch(_){}syncDefaultRow();});
+    defaultSeg.appendChild(defaultSave);defaultSeg.appendChild(defaultClear);defaultRow.appendChild(defaultSeg);
+    function syncDefaultRow(){try{var on=!!(window.__psGetBoardDefault&&window.__psGetBoardDefault());defaultClear.disabled=!on;defaultClear.classList.toggle("on",on);}catch(_){}}
+    window.__syncBoardDefaultUI=syncDefaultRow;syncDefaultRow();
+    formPane.appendChild(defaultRow);
     /* 2.222 — 보기 행을 '보기'(선수 모양·표시·라인·크기) / '운동장'(전술 그리드·피치·개수·범위·회전)으로 나눈다. 노드는 안 옮기고 data-bs-tab 만 */
     try{var PITCH_LBL={"규격":1,"전술 그리드":1,"피치":1,"운동장 개수":1,"운동장 범위":1,"운동장 회전":1,"잔디 줄무늬":1,"원근 뷰":1};   /* 2.272 */
       [].forEach.call(viewMenu.querySelectorAll(".menurow"),function(row){var l=row.querySelector(".menulbl"),t=l?l.textContent.trim():"";row.setAttribute("data-bs-tab",PITCH_LBL[t]?"pitch":"view");});}catch(_){}
