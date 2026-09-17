@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.855"></script>
+<script src="autosave-status.js?v=2.856"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -476,7 +476,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.855';</script>
+<script>window.PS_BUILD='2.856';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -5746,7 +5746,7 @@ window.__buildScoutForm=function(k){
         full(rowOf('pitchSeg')); full(rowOf('zonePreset')); full(pitchInset);
         [].forEach.call(spm2.querySelectorAll(':scope > .menusec'), full);
 
-        /* 피치 선택은 7개 버튼을 좁게 우겨 넣지 않고 한 개의 select로 정리한다.
+        /* 잔디·네이비 선택을 설정 패널의 select로 표시한다.
            원래 버튼은 동작 소스로 유지하므로 저장·렌더링 로직은 바뀌지 않는다. */
         var pitchRow=rowOf('pitchSeg'),pitchSeg=doc.getElementById('pitchSeg');
         if(pitchRow&&pitchSeg&&!pitchRow.querySelector('.ps-pitch-select')){
@@ -5760,17 +5760,18 @@ window.__buildScoutForm=function(k){
           function syncPitchSelect(){
             var on=pitchSeg.querySelector('button[data-p].on');
             if(on&&pitchSelect.value!==on.dataset.p)pitchSelect.value=on.dataset.p;
+            else if(!on)pitchSelect.selectedIndex=-1;
           }
           pitchSelect.addEventListener('change',function(ev){
             ev.stopPropagation();
+            if(ev.isTrusted){try{win.localStorage.setItem('cs_pitch_set','1');}catch(_){}}
             var button=pitchSeg.querySelector('button[data-p="'+pitchSelect.value+'"]');
             if(button)button.click();
             syncPitchSelect();
           });
           pitchSeg.addEventListener('click',function(){win.setTimeout(syncPitchSelect,0);});
           observeInOwnerDocument(pitchSeg,syncPitchSelect,{subtree:true,attributes:true,attributeFilter:['class']});
-          var pitchColor=pitchSeg.querySelector('.ps-pcol');
-          pitchWrap.appendChild(pitchSelect);if(pitchColor)pitchWrap.appendChild(pitchColor);
+          pitchWrap.appendChild(pitchSelect);
           pitchSeg.classList.add('ps-pitch-source');pitchRow.appendChild(pitchWrap);syncPitchSelect();
         }
 
@@ -7338,9 +7339,6 @@ window.__buildScoutForm=function(k){
     setTimeout(function(){
       var pPlus=function(e){return e.tagName==='BUTTON'&&T(e)==='＋'&&e.getBoundingClientRect().width<60;};
       var steps=[
-        function(){try{
-          if(!doc.defaultView.localStorage.getItem('cs_pitch_set')){ var g=find(doc,function(e){return T(e)==='실사'&&e.children.length===0;}); if(g)g.click(); }
-        }catch(e){}},   /* 기본 피치 = 실사 — 사용자가 직접 고른 적 없을 때만, 골랐으면 존중 */
         function(){var c=find(doc,function(e){return T(e).indexOf('원형')>=0&&e.children.length===0;}); if(c)c.click();},
         function(){var n=find(doc,function(e){return T(e)==='번호'&&e.children.length===0;}); if(n)n.click();},
         function(){try{var a=doc.querySelector('#areaSeg [data-a=full]'); if(a)a.click(); var g=doc.querySelector('#gridSeg [data-g=grid15]'); if(g)g.click();}catch(e){}}
@@ -7438,13 +7436,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.855"></script>
-<script src="autosave-merge.js?v=2.855"></script>
-<script src="autosave-runtime.js?v=2.855"></script>
-<script src="autosave-recovery.js?v=2.855"></script>
-<script src="sync.js?v=2.855"></script>
+<script src="autosave-journal.js?v=2.856"></script>
+<script src="autosave-merge.js?v=2.856"></script>
+<script src="autosave-runtime.js?v=2.856"></script>
+<script src="autosave-recovery.js?v=2.856"></script>
+<script src="sync.js?v=2.856"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.855">
+<link rel="stylesheet" href="support.css?v=2.856">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
