@@ -6673,12 +6673,23 @@ function psDragging(){ var t=window.__psPtrDown; return !!t&&(Date.now()-t<15000
     window.addEventListener("pointerup",up,true); window.addEventListener("pointercancel",up,true); window.addEventListener("blur",up);
     document.addEventListener("visibilitychange",function(){ if(document.hidden)up(); }); }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind); else bind(); })();
-function boardThumbSVG(){ if(psDragging()&&window.__psLastThumb!=null)return window.__psLastThumb;
-  var r;
-  if(!document.body.classList.contains("editing")||window.__psThumbNoEd) r=_boardThumbSVGRaw();
-  else { window.__psThumbNoEd=true; try{ renderTokens(); }catch(_){}
-    try{ r=_boardThumbSVGRaw(); } finally{ window.__psThumbNoEd=false; try{ renderTokens(); }catch(_){} } }
-  window.__psLastThumb=r; return r; }
+function boardThumbSVG(){
+  if(window.__psThumbCapturing)return window.__psLastThumb||"";
+  if(psDragging()&&window.__psLastThumb!=null)return window.__psLastThumb;
+  /* Thumbnail rendering is a read operation, never another live save. */
+  window.__psThumbCapturing=true;
+  var savedSel=sel,savedMulti=multiSel,r;
+  try{
+    if(!document.body.classList.contains("editing")||window.__psThumbNoEd)r=_boardThumbSVGRaw();
+    else{window.__psThumbNoEd=true;try{renderTokens();r=_boardThumbSVGRaw();}
+      finally{window.__psThumbNoEd=false;renderTokens();}}
+    window.__psLastThumb=r;return r;
+  }finally{
+    sel=savedSel;multiSel=savedMulti;
+    try{_setSelRings();}catch(_){}
+    window.__psThumbCapturing=false;
+  }
+}
 function _boardThumbSVGRaw(){var _s=sel,_ms=(typeof multiSel!=="undefined")?multiSel:null,_had=_s||(_ms&&_ms.length);
   /* 2.582 — 색 팔레트 열림도 지킨다(사용자 "색상 눌렀을 때 뜨는 것이 선택하기도 전에 바로 사라져"). 실측: 편집기 자동 저장(saveEditorDraft ≈250ms) → 썸네일 → 여기서 선택을 잠깐 풀 때
      updateDelUI 가 «선택 없음» 으로 보고 #colorCtl.open 을 지웠다. 선택은 아래에서 되살리면서 열림은 안 되살려 팔레트가 0.25초 만에 닫혔다. */
@@ -7278,6 +7289,7 @@ function vaultBoardCheckOwner(){if(_vaultBoardContext&&!vaultBoardSameOwner(_vau
 }}
 function autoSaveAnimFrame(){try{var __ab=document.getElementById("animBar");if(__ab&&__ab.classList.contains("on")&&typeof animPlaying!=="undefined"&&!animPlaying&&!window.__animExport&&!document.body.classList.contains("meet-mode")&&typeof anim!=="undefined"&&anim.frames&&anim.frames.length&&animActive>=0&&animActive<anim.frames.length){anim.frames[animActive].snap=captureSnap();try{if(!sel&&!(typeof multiSel!=="undefined"&&multiSel&&multiSel.length))anim.frames[animActive].thumb=boardThumbSVG();}catch(_){}try{renderAnimFrames();}catch(_){}}}catch(_){}}
 function _boardLiveWriteNow(recovery){
+  if(window.__psThumbCapturing)return null;
   if(_vaultBoardContext||_vaultBoardRestoring)return null;
   if(window.__capLock)return null;
   if(_bliveApplying)return null;
@@ -7345,6 +7357,7 @@ function _boardLiveWriteNow(recovery){
   });
 }
 function boardSaveLive(){
+  if(window.__psThumbCapturing)return;
   if(_vaultBoardContext||_vaultBoardRestoring)return;
   if(_bliveApplying)return;
   /* 커뮤니티 상세는 다른 사람의 게시물을 보는 읽기 전용 화면이다.
@@ -12886,9 +12899,10 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     _mq.rect.setAttribute("x",x);_mq.rect.setAttribute("y",y);_mq.rect.setAttribute("width",w);_mq.rect.setAttribute("height",h);
   });
   const mqEnd=e=>{
-    if(!_mq)return;const u=toUnit(e);
-    const x1=Math.min(_mq.x0,u.x),y1=Math.min(_mq.y0,u.y),x2=Math.max(_mq.x0,u.x),y2=Math.max(_mq.y0,u.y);
-    clearMarquee();const drag=(x2-x1>6||y2-y1>6);_mq=null;
+    if(!_mq)return;const box=_mq;clearMarquee();_mq=null;
+    const u=toUnit(e);
+    const x1=Math.min(box.x0,u.x),y1=Math.min(box.y0,u.y),x2=Math.max(box.x0,u.x),y2=Math.max(box.y0,u.y);
+    const drag=(x2-x1>6||y2-y1>6);
     try{svg.releasePointerCapture(e.pointerId);}catch(_){}
     if(!drag)return;
     const inside=[];
@@ -12904,7 +12918,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
         return;
       }
       let cx=0,cy=0;o.pts.forEach(q=>{cx+=q.x;cy+=q.y;});cx/=o.pts.length;cy/=o.pts.length;if(cx>=x1&&cx<=x2&&cy>=y1&&cy<=y2)inside.push(o);});
-    if(inside.length>=2){sel=null;multiSel=inside;renderTokens();renderDrawings();updateDelUI();updateAlignBar();renderMultiGuides();}
+    if(inside.length>=2){sel=null;multiSel=inside;_setSelRings();renderDrawings();updateDelUI();updateAlignBar();renderMultiGuides();}
     else if(inside.length===1){selectItem(typeOfItem(inside[0])||"equip",inside[0]);}
   };
   svg.addEventListener("pointerup",mqEnd);svg.addEventListener("pointercancel",mqEnd);
@@ -14367,6 +14381,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(_vaultAutoWriting){try{vaultSaveCurrent({skipSheet:true,silent:true});}catch(_){}}else _vaultAutoRun();
   };
   try{var _boardSaveLiveAuto=boardSaveLive;boardSaveLive=function(){
+    if(window.__psThumbCapturing)return;
     /* 자동 저장 중 썸네일 캡처가 boardSaveLive를 다시 호출해도 재저장을 예약하지 않는다.
        실제 사용자 입력은 아래 문서 이벤트가 __vaultAutoSaveSchedule을 호출하므로 놓치지 않는다. */
     try{if(!_vaultAutoWriting)window.__vaultAutoSaveSchedule();}catch(_){}
