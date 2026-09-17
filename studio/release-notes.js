@@ -8,6 +8,9 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-17-board-default-settings',date:'2026-09-17',title:'새 보드를 기본 세팅으로 시작할 수 있습니다',
+    changes:['보드 설정에서 현재 보드를 기본 세팅으로 저장하면 새 보드를 만들 때 포메이션·표시 방식·운동장 디자인을 이어서 시작합니다.','장비와 그린 선·도형 같은 작업 내용은 기본 세팅에 섞이지 않도록 비워 둡니다.']
+  },{
     id:'2026-09-17-meeting-portrait-text',date:'2026-09-17',title:'세로형 미팅의 텍스트를 위로 옮겼습니다',
     changes:['세로형 미팅은 텍스트 위·보드 아래로 표시하며 PDF에도 같은 배치를 적용합니다.','미팅 페이지 오른쪽 상단의 슬라이드 안내 문구를 제거했습니다.']
   },{

@@ -179,3 +179,35 @@ test('creating a vault board retains the current appearance and clears only boar
     assert.deepEqual(copy(h.c.__createPrev.snap),original,'cancel can still restore the original board');
   }
 });
+
+test('saved board defaults seed new vault boards with formation and appearance only',()=>{
+  const h=setup();
+  h.c.loadSnap({
+    players:[{id:7,team:'blue',num:8,pos:'CM',x:180,y:220},{id:8,team:'red',num:10,pos:'AM',x:780,y:260}],
+    equipment:[{id:10,team:'cone',x:20,y:30}],drawings:[{type:'line',pts:[{x:1,y:2},{x:3,y:4}]}],
+    ball:{x:321,y:222},pitchTheme:'white',pitchImg:null,label:'pos',gridType:'thirds',lines:false,tokenScale:0.62,
+    teamColors:{blue:'#123456'},gkColors:{red:'#abcdef'},orientation:'v',area:'half',pitchView:'half',fieldMode:'setpiece',halfSide:'R',spFlip:true,pitchN:4
+  });
+  assert.equal(h.c.__psSaveBoardDefault(),true);
+  h.c.loadSnap({players:[{id:99,x:1,y:1}],equipment:[{id:100,x:2,y:2}],drawings:[{type:'arrow',pts:[]}],pitchTheme:'calm',label:'num',gridType:'grid15',lines:true,tokenScale:0.46});
+  h.c.newBoardItem('board');
+  const created=h.c.captureSnap();
+  assert.deepEqual(copy(created.players),[{id:7,team:'blue',num:8,pos:'CM',x:180,y:220},{id:8,team:'red',num:10,pos:'AM',x:780,y:260}]);
+  assert.deepEqual(copy(created.equipment),[]);assert.deepEqual(copy(created.drawings),[]);
+  assert.deepEqual(copy(created.ball),{x:321,y:222});
+  assert.equal(created.pitchTheme,'white');assert.equal(created.label,'pos');assert.equal(created.gridType,'thirds');assert.equal(created.lines,false);
+  assert.equal(created.tokenScale,0.62);assert.equal(created.orientation,'v');assert.equal(created.pitchView,'half');assert.equal(created.fieldMode,'setpiece');
+  assert.equal(created.pitchN,1,'new boards still start as a single board canvas');
+  assert.deepEqual(copy(created.teamColors),{blue:'#123456'});assert.deepEqual(copy(created.gkColors),{red:'#abcdef'});
+});
+
+test('clearing board defaults restores the previous blank-new-board behavior',()=>{
+  const h=setup();
+  h.c.loadSnap({players:[{id:7,x:180,y:220}],pitchTheme:'white',label:'pos'});
+  h.c.__psSaveBoardDefault();h.c.__psClearBoardDefault();
+  h.c.loadSnap({players:[{id:99,x:1,y:1}],equipment:[{id:100,x:2,y:2}],drawings:[{type:'arrow',pts:[]}],pitchTheme:'train',pitchImg:null,label:'num'});
+  h.c.newBoardItem('board');
+  const created=h.c.captureSnap();
+  assert.deepEqual(created.players,[]);assert.deepEqual(created.equipment,[]);assert.deepEqual(created.drawings,[]);
+  assert.equal(created.pitchTheme,'train');assert.equal(created.label,'num');
+});
