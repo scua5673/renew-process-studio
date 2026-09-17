@@ -8,6 +8,12 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-17-scout-identity-popup',date:'2026-09-17',title:'선수 기본 정보를 한 번에 수정합니다',
+    changes:[
+      '스카우트 명단에서 이름을 누르면 이름·출신 팀·등번호를 함께 수정할 수 있습니다. 저장하면 함께 반영되고 취소하면 기존 정보를 유지합니다.',
+      '이름 아래의 팀명과 등번호를 같은 글자 형태로 정리했습니다.'
+    ]
+  },{
     id:'2026-09-17-vault-training-description',date:'2026-09-17',title:'보관함 훈련 설명을 열 때도 이어서 보여줍니다',
     changes:[
       '보관함 오른쪽 미리보기에는 보이던 설명이 실제 훈련 보기·편집 화면에서 빈 칸처럼 보이던 호환 문제를 수정했습니다.',

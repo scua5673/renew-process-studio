@@ -98,7 +98,7 @@
       else fields(infoOf(p)).forEach(function(f){var val=get(infoOf(p),f);if(!same(val,get(c.info,f)))variants(c,f,val,'다른 배치의 기록');});
       if(prior&&idOf(prior)===id)fields(infoOf(prior)).forEach(function(f){var val=get(infoOf(prior),f);if(!same(val,get(c.info,f)))variants(c,f,val,'이전 배치의 기본정보');});
       p.type='target';p._scoutRef={id:id,base:{}};
-      BASIC.forEach(function(k){p[k]=copy(c.info[k]||'');p._scoutRef.base[k]=copy(p[k]);});
+      BASIC.forEach(function(k){p[k]=copy(c.info[k]==null?'':c.info[k]);p._scoutRef.base[k]=copy(p[k]);});
       p.profile=copy(c.info.profile||{});
       /* Photos live once in the private candidate registry. Old clients keep the
          text compatibility mirror; current clients resolve the photo by ID. */
@@ -130,7 +130,7 @@
   }
   function project(d,p,onEdit){
     var id=idOf(p),current=function(){return (typeof d==='function'?d():d).scoutRegistry.candidates[id];};if(!current())return p;
-    BASIC.forEach(function(k){Object.defineProperty(p,k,{configurable:true,enumerable:true,get:function(){return current().info[k]||'';},set:function(v){onEdit(id,k,v);}});});
+    BASIC.forEach(function(k){Object.defineProperty(p,k,{configurable:true,enumerable:true,get:function(){var value=current().info[k];return value==null?'':value;},set:function(v){onEdit(id,k,v);}});});
     var pf=new Proxy({},{get:function(o,k){return (current().info.profile||{})[k];},ownKeys:function(){return Object.keys(current().info.profile||{});},getOwnPropertyDescriptor:function(){return {enumerable:true,configurable:true};},set:function(o,k,v){onEdit(id,'profile.'+k,v);return true;},deleteProperty:function(o,k){onEdit(id,'profile.'+k,undefined);return true;}});
     Object.defineProperty(p,'profile',{configurable:true,enumerable:true,get:function(){return pf;},set:function(v){Object.keys(v||{}).forEach(function(k){onEdit(id,'profile.'+k,v[k]);});}});
     return p;
