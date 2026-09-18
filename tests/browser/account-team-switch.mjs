@@ -45,13 +45,20 @@ try{
   await context.routeWebSocket('**/*',socket=>socket.close());
   await context.route('**/*',async route=>{
     const req=route.request(),url=new URL(req.url());
-    if(url.origin===base){
+    const isApi=url.pathname.startsWith('/rest/v1/')||url.pathname.startsWith('/auth/v1/');
+    if(url.origin!==base)return route.abort('blockedbyclient');
+    if(!isApi){
       if(url.pathname==='/__fixture__/seed.html')return route.fulfill({contentType:'text/html',body:'<!doctype html><title>Synthetic storage seed</title>'});
       const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
       if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
-      return route.fulfill({body:fs.readFileSync(file),contentType:mime[path.extname(file)]||'application/octet-stream'});
+      let content=fs.readFileSync(file);
+      if(url.pathname==='/studio/app.html'){
+        // Exercise real sync/auth against the isolated fixture, never a production API origin.
+        const html=content.toString(),configured=html.replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b);
+        assert.notEqual(configured,html,'fixture API configuration was applied');content=Buffer.from(configured);
+      }
+      return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream'});
     }
-    if(!url.pathname.startsWith('/rest/v1/')&&!url.pathname.startsWith('/auth/v1/'))return route.abort('blockedbyclient');
     // Mirror authenticated API preflights explicitly: Authorization is not covered by '*'.
     const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':base,
       'Access-Control-Allow-Methods':'GET, POST, PATCH, DELETE, OPTIONS',
@@ -165,7 +172,7 @@ try{
   assert.deepEqual(learningErrors,[]);
   await learning.close();
   results.push({scenario:'learning-content-failure-recovery',passed:true});
-  fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({passed:true,engine,results,writeCount:writes.length,telemetry,network:'All external auth/data mocked; exact anonymous public-feed and telemetry endpoints mocked; other HTTP and WebSocket requests blocked.'},null,2));
+  fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({passed:true,engine,results,writeCount:writes.length,telemetry,network:'Auth/data API configured to the same isolated fixture origin; exact anonymous public-feed and telemetry endpoints mocked; all external HTTP and WebSocket requests blocked.'},null,2));
   console.log(JSON.stringify({passed:true,engine,scenarios:results.length,logout:true,otherAccountLogin:true,writeCount:writes.length}));
 }catch(e){
   if(profiler){const profile=await bounded(profiler.send('Profiler.stop'),'profile stop',3000).catch(()=>null);if(profile)fs.writeFileSync(path.join(out,'failure-profile.json'),JSON.stringify(profile));}
