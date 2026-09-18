@@ -156,8 +156,14 @@ try{
   await frame.evaluate(()=>{Object.defineProperty(window,'localStorage',{configurable:true,value:window.fixtureStorage});delete window.fixtureStorage;});
   await row().locator('[data-sqrx-save]').click();await waitRaw(page,'cs_idp_pub_v1_'+A,['reacts','day:2026-09-12','t'],'실패 후 남아야 할 초안');
   const lockedBefore=await raw(page,'cs_idp_pub_v1_'+A);
-  await page.evaluate(()=>{PSSync.dataUnlocked=()=>false;});await row().locator('[data-sqrx-like]').click();assert.deepEqual(await raw(page,'cs_idp_pub_v1_'+A),lockedBefore);
-  await page.evaluate(()=>{PSSync.dataUnlocked=()=>true;});
+  // Exercise the existing handler at the instant the workspace locks, before a
+  // legitimate reactive redraw removes its button. Do not wait for a new button
+  // to become actionable in a deliberately locked screen.
+  const lockedAfter=await row().locator('[data-sqrx-like]').evaluate((el,key)=>{
+    const unlocked=parent.PSSync.dataUnlocked;parent.PSSync.dataUnlocked=()=>false;
+    try{el.click();return JSON.parse(parent.localStorage.getItem(key));}finally{parent.PSSync.dataUnlocked=unlocked;}
+  },'cs_idp_pub_v1_'+A);
+  assert.deepEqual(lockedAfter,lockedBefore);assert.deepEqual(await raw(page,'cs_idp_pub_v1_'+A),lockedBefore);
   await row().locator('[data-sqrx-open]').click();await row().locator('[data-sqrx-in]').fill('');await row().locator('[data-sqrx-save]').click();await waitRaw(page,'cs_idp_pub_v1_'+A,['reacts','day:2026-09-12'],undefined);
   assert.deepEqual((await raw(page,'cs_idp_v1_'+A)),documents['cs_idp_v1_'+A]);assert.deepEqual((await raw(page,'cs_idp_v1_'+B)),documents['cs_idp_v1_'+B]);
   // Stale target: relink to a second account without re-rendering. The existing node must refuse writes.

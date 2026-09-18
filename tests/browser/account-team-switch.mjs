@@ -21,63 +21,12 @@ const teams=[{id:WA,kind:'team',name:'가상 빨강 팀',role:'owner',owner_id:A
 const bTeams=[{id:WC,kind:'personal',name:'가상 초록 계정',role:'owner',owner_id:B}];
 const players=(wid)=>[{id:wid+'-player',name:wid===WA?'가상 빨강 선수':wid===WB?'가상 파랑 선수':'가상 초록 선수',grp:'A',type:'ours',posId:'pos_CB',levels:{},profile:{}}];
 const db=new Map(),writes=[],errors=[],results=[],calls=[],diagnostics=[],unauthorized=[],telemetry=[];
-// Use real loopback transport for background reports. WebKit on Linux can emit a
-// native access-control pageerror when an intercepted fetch is aborted at reload,
-// even on the same origin. Keep the real fetch/abort lifecycle and validate its
-// synthetic identity at the HTTP boundary instead of suppressing that error.
+// All authenticated API calls use real loopback HTTP. On Linux, WebKit can
+// report intercepted fetch cancellation during navigation as a native CORS
+// pageerror. Preserve real fetch/abort behavior and all strict identity checks.
 const reports=[];
-const reportServer=http.createServer(async(req,res)=>{
-  if(req.url!=='/rest/v1/rpc/ps_sync_report_put'||req.method!=='POST'){res.writeHead(404);res.end();return;}
-  let raw='';for await(const chunk of req)raw+=chunk;
-  const uid=req.headers.authorization==='Bearer fixture-access-A'?A:req.headers.authorization==='Bearer fixture-access-B'?B:null;
-  let body;try{body=JSON.parse(raw);}catch(_){body=null;}
-  const valid=uid&&body&&(uid===B?body.p_workspace_id===WC:[WA,WB].includes(body.p_workspace_id));
-  if(!valid){unauthorized.push({method:req.method,path:req.url,uid});res.writeHead(401);res.end('{}');return;}
-  reports.push({uid,wid:body.p_workspace_id});calls.push({uid,method:req.method,path:req.url,search:''});
-  res.writeHead(200,{'Content-Type':'application/json'});res.end('[]');
-});
-await new Promise(resolve=>reportServer.listen(0,'127.0.0.1',resolve));
-base='http://127.0.0.1:'+reportServer.address().port;
-let initialPullDelayed=false;
-for(const wid of [WA,WB,WC]){
-  const uid=wid===WC?B:A;
-  for(const [k,v] of [['scout_tool_v1',{attrs:[],positions:[{id:'pos_CB',name:'CB',targets:{}}],players:players(wid),meta:{evalMode:'fifa'},_items:{build}}],['cs_perms_v1',{members:{[uid]:{role:'executive'}},defaultRole:'player'}],['sq:'+players(wid)[0].id,players(wid)[0]]]){
-    db.set(wid+'|'+k,{workspace_id:wid,k,v:JSON.stringify(v),cupd:1000,updated_by:uid});
-  }
-}
-for(const wid of [WA,WB])db.set(wid+'|'+privateAKey,{workspace_id:wid,k:privateAKey,v:privateARaw,cupd:1000,updated_by:A});
-const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2'};
-async function bounded(p,label,ms=30000){let timer;try{return await Promise.race([p,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label+' timed out')),ms);})]);}finally{clearTimeout(timer);}}
-const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
-let context,page,profiler;
-try{
-  context=await browser.newContext({viewport:{width:1280,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul'});
-  await context.addInitScript(({A,WA,teams,base})=>{
-    if(location.origin!==base)return;
-    if(localStorage.getItem('switch_fixture_seeded'))return;
-    localStorage.setItem('switch_fixture_seeded','1');
-    localStorage.setItem('ps_sync_session',JSON.stringify({uid:A,at:'fixture-access-A',rt:'fixture-refresh-A',exp:Date.now()+3600000,email:'a@example.invalid'}));
-    localStorage.setItem('ps_active_ws',WA);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:A,wid:WA}));
-    localStorage.setItem('ps_ws_list',JSON.stringify(teams));
-  },{A,WA,teams,base});
-  await context.routeWebSocket('**/*',socket=>socket.close());
-  await context.route('**/*',async route=>{
+async function handleFixtureApi(route){
     const req=route.request(),url=new URL(req.url());
-    const isApi=url.pathname.startsWith('/rest/v1/')||url.pathname.startsWith('/auth/v1/');
-    if(url.origin!==base)return route.abort('blockedbyclient');
-    if(url.pathname==='/rest/v1/rpc/ps_sync_report_put')return route.continue();
-    if(!isApi){
-      if(url.pathname==='/__fixture__/seed.html')return route.fulfill({contentType:'text/html',body:'<!doctype html><title>Synthetic storage seed</title>'});
-      const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
-      if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
-      let content=fs.readFileSync(file);
-      if(url.pathname==='/studio/app.html'){
-        // Exercise real sync/auth against the isolated fixture, never a production API origin.
-        const html=content.toString(),configured=html.replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b);
-        assert.notEqual(configured,html,'fixture API configuration was applied');content=Buffer.from(configured);
-      }
-      return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream'});
-    }
     // Mirror authenticated API preflights explicitly: Authorization is not covered by '*'.
     const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':base,
       'Access-Control-Allow-Methods':'GET, POST, PATCH, DELETE, OPTIONS',
@@ -90,6 +39,11 @@ try{
     // storage.js submits error telemetry anonymously. Capture it locally without assigning an account.
     if(!uid&&req.method()==='POST'&&url.pathname==='/rest/v1/ps_err'&&authorization==='Bearer '+publicKey&&req.headers().apikey===publicKey){telemetry.push(...req.postDataJSON());return route.fulfill({status:201,headers,body:''});}
     if(!uid){unauthorized.push({method:req.method(),path:url.pathname});return route.fulfill({status:401,headers,body:'{"error":"unknown synthetic bearer"}'});}
+    if(url.pathname==='/rest/v1/rpc/ps_sync_report_put'){
+      const report=req.postDataJSON();
+      if(!report||(uid===B?report.p_workspace_id!==WC:![WA,WB].includes(report.p_workspace_id))){unauthorized.push({method:req.method(),path:url.pathname,uid});return route.fulfill({status:401,headers,body:'{}'});}
+      reports.push({uid,wid:report.p_workspace_id});
+    }
     calls.push({uid,method:req.method(),path:url.pathname,search:url.search});
     let body=[];
     if(url.pathname==='/auth/v1/user')body={id:uid,email:uid===B?'b@example.invalid':'a@example.invalid'};
@@ -117,6 +71,57 @@ try{
       }
     }
     await route.fulfill({status:200,headers,body:JSON.stringify(body)});
+}
+const fixtureServer=http.createServer(async(req,res)=>{
+  try{
+    let raw='';for await(const chunk of req)raw+=chunk;
+    const request={url:()=>base+req.url,method:()=>req.method,headers:()=>req.headers,postDataJSON:()=>raw?JSON.parse(raw):null};
+    await handleFixtureApi({request:()=>request,fulfill:({status=200,headers={},body=''})=>{res.writeHead(status,headers);res.end(body);}});
+  }catch(e){if(req.aborted)return;diagnostics.push({type:'fixture-server-error',text:e.message});res.writeHead(500);res.end('{}');}
+});
+await new Promise(resolve=>fixtureServer.listen(0,'127.0.0.1',resolve));
+base='http://127.0.0.1:'+fixtureServer.address().port;
+let initialPullDelayed=false;
+for(const wid of [WA,WB,WC]){
+  const uid=wid===WC?B:A;
+  for(const [k,v] of [['scout_tool_v1',{attrs:[],positions:[{id:'pos_CB',name:'CB',targets:{}}],players:players(wid),meta:{evalMode:'fifa'},_items:{build}}],['cs_perms_v1',{members:{[uid]:{role:'executive'}},defaultRole:'player'}],['sq:'+players(wid)[0].id,players(wid)[0]]]){
+    db.set(wid+'|'+k,{workspace_id:wid,k,v:JSON.stringify(v),cupd:1000,updated_by:uid});
+  }
+}
+for(const wid of [WA,WB])db.set(wid+'|'+privateAKey,{workspace_id:wid,k:privateAKey,v:privateARaw,cupd:1000,updated_by:A});
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2'};
+async function bounded(p,label,ms=30000){let timer;try{return await Promise.race([p,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label+' timed out')),ms);})]);}finally{clearTimeout(timer);}}
+const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
+let context,page,profiler;
+try{
+  context=await browser.newContext({viewport:{width:1280,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+  await context.addInitScript(({A,WA,teams,base})=>{
+    if(location.origin!==base)return;
+    if(localStorage.getItem('switch_fixture_seeded'))return;
+    localStorage.setItem('switch_fixture_seeded','1');
+    localStorage.setItem('ps_sync_session',JSON.stringify({uid:A,at:'fixture-access-A',rt:'fixture-refresh-A',exp:Date.now()+3600000,email:'a@example.invalid'}));
+    localStorage.setItem('ps_active_ws',WA);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:A,wid:WA}));
+    localStorage.setItem('ps_ws_list',JSON.stringify(teams));
+  },{A,WA,teams,base});
+  await context.routeWebSocket('**/*',socket=>socket.close());
+  await context.route(url=>!(url.origin===base&&(url.pathname.startsWith('/rest/v1/')||url.pathname.startsWith('/auth/v1/'))),async route=>{
+    const req=route.request(),url=new URL(req.url());
+    const isApi=url.pathname.startsWith('/rest/v1/')||url.pathname.startsWith('/auth/v1/');
+    if(url.origin!==base)return route.abort('blockedbyclient');
+    if(isApi)return route.continue();
+    if(!isApi){
+      if(url.pathname==='/__fixture__/seed.html')return route.fulfill({contentType:'text/html',body:'<!doctype html><title>Synthetic storage seed</title>'});
+      const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
+      if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
+      let content=fs.readFileSync(file);
+      if(url.pathname==='/studio/app.html'){
+        // Exercise real sync/auth against the isolated fixture, never a production API origin.
+        const html=content.toString(),configured=html.replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b);
+        assert.notEqual(configured,html,'fixture API configuration was applied');content=Buffer.from(configured);
+      }
+      return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream'});
+    }
+
   });
   page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>{errors.push(e.message);diagnostics.push({at:Date.now(),type:'pageerror',text:e.message,stack:e.stack});});
   page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')diagnostics.push({at:Date.now(),type:m.type(),text:m.text()});});
@@ -199,4 +204,4 @@ try{
   const state=await Promise.race([page?.evaluate(async({privateAKey})=>({url:location.href,logoutResult:window.__fixtureLogoutResult,switchResult:window.__fixtureSwitchResult,sync:window.PSSync?.state(),active:window.PSSync?.activeWs(),session:window.PSSync?.session()?.uid,owner:localStorage.getItem('ps_cache_owner_v1'),guard:localStorage.getItem('ps_ws_switch_guard_v1'),meta:localStorage.getItem('ps_sync_meta'),diag:await window.PSSync?.diag(),privateA:{local:localStorage.getItem(privateAKey),idb:(await window.storage?.get(privateAKey))?.value??null}}),{privateAKey}).catch(()=>null),new Promise(resolve=>setTimeout(()=>resolve({unresponsive:true}),2000))]);
   fs.writeFileSync(path.join(out,'failure.json'),JSON.stringify({message:e.message,state,errors,diagnostics,unauthorized,telemetry,results,writes,calls},null,2));
   await page?.screenshot({path:path.join(out,'failure.png'),timeout:2000}).catch(()=>{});throw e;
-}finally{await context?.close();await browser.close();await new Promise(resolve=>reportServer.close(resolve));}
+}finally{await context?.close();await browser.close();await new Promise(resolve=>fixtureServer.close(resolve));}
