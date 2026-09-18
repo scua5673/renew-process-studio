@@ -32,8 +32,10 @@
     var o=options||{},w=o.window||(typeof window!=='undefined'?window:null),doc=o.document||(w&&w.document);
     var storage=o.storage||(w&&w.localStorage),crypto=o.crypto||(w&&w.crypto),now=o.now||Date.now;
     var later=o.setTimeout||setTimeout,cancel=o.clearTimeout||clearTimeout;
-    var active=false,disabled=false,inFlight=false,dirty=false,timer=null,heartbeat=null;
-    function visible(){return !doc||doc.visibilityState==='visible';}
+    var active=false,disabled=false,inFlight=false,dirty=false,timer=null,heartbeat=null,suspended=false;
+    function visible(){return !suspended&&(!doc||doc.visibilityState==='visible');}
+    function pageHide(){suspended=true;if(timer!=null)cancel(timer);timer=null;}
+    function pageShow(){suspended=false;poke();}
     function context(){try{var c=o.context();return identity(c)?{uid:c.uid,wid:c.wid,seal:c.seal,epoch:c.epoch,switchSeal:c.switchSeal,switchEpoch:c.switchEpoch}:null;}catch(_){return null;}}
     function same(c){return identity(c)===identity(context());}
     function randomUuid(){
@@ -100,13 +102,13 @@
     function start(){
       if(active||disabled)return;
       active=true;
-      if(w&&w.addEventListener){w.addEventListener('ps-sync-state',poke);w.addEventListener('online',poke);w.addEventListener('storage',storageChanged);}
+      if(w&&w.addEventListener){w.addEventListener('ps-sync-state',poke);w.addEventListener('online',poke);w.addEventListener('storage',storageChanged);w.addEventListener('pagehide',pageHide);w.addEventListener('pageshow',pageShow);}
       if(doc&&doc.addEventListener)doc.addEventListener('visibilitychange',poke);
       heartbeat=later(beat,120000);poke();
     }
     function stop(){
       active=false;dirty=false;if(timer!=null)cancel(timer);if(heartbeat!=null)cancel(heartbeat);timer=null;heartbeat=null;
-      if(w&&w.removeEventListener){w.removeEventListener('ps-sync-state',poke);w.removeEventListener('online',poke);w.removeEventListener('storage',storageChanged);}
+      if(w&&w.removeEventListener){w.removeEventListener('ps-sync-state',poke);w.removeEventListener('online',poke);w.removeEventListener('storage',storageChanged);w.removeEventListener('pagehide',pageHide);w.removeEventListener('pageshow',pageShow);}
       if(doc&&doc.removeEventListener)doc.removeEventListener('visibilitychange',poke);
     }
     return {start:start,stop:stop,poke:poke,flush:flush,disabled:function(){return disabled;}};
