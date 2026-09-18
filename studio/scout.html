@@ -5907,7 +5907,9 @@ function setEvalMode(mode,copyBase){
       data.meta.cats=DEFAULT_CATS.map(([id,name])=>({id,name}));
     }
   }
-  refreshCats();save();renderAttrs();renderForms();
+  // Evaluation metadata belongs to the roster. Candidate preparation may still
+  // be pending during load; this operation has not edited any candidate.
+  refreshCats();save({skipTargets:true});renderAttrs();renderForms();
 }
 
 // 기본 속성 없음 — 코치가 직접 속성을 입력 (속성 탭에서 추가)
