@@ -5000,7 +5000,7 @@ function enableDrag(g,p,removable,kind){
   g.addEventListener("pointermove",e=>{
     if(!mode)return;
     if(Math.hypot(e.clientX-sx,e.clientY-sy)>4)moved=true;
-    if(mode==="move"&&(document.body.classList.contains("bc-tilt3d")||document.body.classList.contains("bc-cam"))){
+    if(mode==="move"){
       // Coalesce input, not the final position: read projection once before the
       // frame's writes. Freehand drawing retains every point; release flushes.
       pendingMove={clientX:e.clientX,clientY:e.clientY,shiftKey:e.shiftKey,metaKey:e.metaKey,ctrlKey:e.ctrlKey};
