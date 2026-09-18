@@ -129,6 +129,18 @@ try{
     await bounded(page.waitForFunction(({wid,uid})=>window.PSSync&&PSSync.dataUnlocked()&&PSSync.activeWs()===wid&&PSSync.session()?.uid===uid&&PSSync.rosterReady(wid),{wid,uid}),'account ready '+wid,35000);
     await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
     await page.waitForFunction(()=>{try{const frame=document.querySelector('#fScout');return frame?.contentWindow?.scoutBootPending===false;}catch(_){return false;}});
+    // Roster readiness is narrower than initial page-save completion: attribute
+    // normalization can still be queued in a child frame. Starting a normal
+    // switch here races that save and correctly trips the preswitch barrier.
+    // Wait on real pending/ACK state, never a fixed delay or ignored save error.
+    await page.waitForFunction(()=>{
+      const state=PSSync.state();
+      if(state.kind!=='ok'||PSSync.pending().count)return false;
+      return [...document.querySelectorAll('.frames iframe')].every(frame=>{
+        try{const w=frame.contentWindow;return !w?.psHasPending||!w.psHasPending();}catch(_){return false;}
+      });
+    });
+    await page.evaluate(async()=>{await psFlushAllPendingReady();await PSStorage.sharedReady();});
     // Initialization may normalize positions and enqueue a main save. Confirm that final version too.
     await page.waitForFunction(({wid,uid})=>PSSync.session()?.uid===uid&&PSSync.activeWs()===wid&&PSSync.rosterReady(wid),{wid,uid});
     const state=await page.evaluate(async({privateAKey})=>{
