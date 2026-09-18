@@ -132,7 +132,12 @@ try{
     // Roster readiness is narrower than initial page-save completion: attribute
     // normalization can still be queued in a child frame. Starting a normal
     // switch here races that save and correctly trips the preswitch barrier.
-    // Wait on real pending/ACK state, never a fixed delay or ignored save error.
+    // Wait on server ACK first, then run the real local verification barrier.
+    // hasPending also includes a failed write awaiting exact-value revalidation;
+    // waiting for it to clear BEFORE ready(true) can deadlock after the server
+    // already confirmed the unchanged local value. Never clear or ignore errors.
+    await page.waitForFunction(()=>PSSync.state().kind==='ok'&&!PSSync.pending().count);
+    await page.evaluate(async()=>{await psFlushAllPendingReady();await PSStorage.sharedReady();});
     await page.waitForFunction(()=>{
       const state=PSSync.state();
       if(state.kind!=='ok'||PSSync.pending().count)return false;
