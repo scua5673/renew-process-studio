@@ -198,7 +198,10 @@ try{
  await frame.locator('[data-wp-open]').click();const long=frame.locator('[data-ws-add]').filter({hasText:STRENGTH});assert.equal(await long.count(),1);await long.click();assert.equal(await frame.locator('#wsIn').inputValue(),STRENGTH);assert.equal(await frame.locator('#wsSave').isDisabled(),true);
  assert.equal((await raw(page,'cs_idp_v1_'+A)).weapon,undefined);await frame.locator('#wsIn').fill('압박 속 패스 방향 찾기');await frame.locator('#wsSave').click();await waitRaw(page,'cs_idp_v1_'+A,['weapon','picks','0','t'],'압박 속 패스 방향 찾기');assert.equal((await raw(page,'cs_idp_v1_'+A)).selfEval.strengths,STRENGTH+'\n짧은 장점');
  await frame.locator('#wsClose').click();await page.waitForTimeout(300);await page.screenshot({path:path.join(out,'personal-goal.png')});
- await page.setViewportSize({width:375,height:812});assert.equal(await frame.locator('.gf-seg').isVisible(),true);await frame.locator('[data-gf="routine"]').click();assert.equal(await frame.locator('body').getAttribute('data-idp-layer'),'routine');
+ // WebKit acknowledges the outer viewport before delivering the iframe's
+ // resize event. Assert the resulting UI after it becomes visible, as the
+ // reverse resize below already waits for the resulting navigation state.
+ await page.setViewportSize({width:375,height:812});await frame.locator('.gf-seg').waitFor({state:'visible'});assert.equal(await frame.locator('.gf-seg').isVisible(),true);await frame.locator('[data-gf="routine"]').click();assert.equal(await frame.locator('body').getAttribute('data-idp-layer'),'routine');
  await page.setViewportSize({width:1280,height:1000});await frame.waitForFunction(()=>document.querySelector('#layers [data-l="routine"]')?.getAttribute('aria-current')==='page');assert.equal(await frame.locator('#layers [data-l="routine"]').getAttribute('aria-current'),'page');
  await tab('story');await allStory(frame);await frame.locator('[data-st-go="qa:q1"]').click();assert.equal(await frame.locator('[data-qa-ans="q1"]').inputValue(),LONG);assert.equal((await frame.locator('.qa-count').innerText()).includes('A4'),false);
  assert.deepEqual(await raw(page,'cs_idp_v1_'+B),documents['cs_idp_v1_'+B]);assert.deepEqual(await raw(page,'cs_idp_pub_v1_'+A),documents['cs_idp_pub_v1_'+A]);
