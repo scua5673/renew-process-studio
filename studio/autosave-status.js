@@ -8,7 +8,8 @@
     if(kind==='bad'){
       if(s.reason==='sync_offline')return result('bad','오프라인 · 저장 대기','인터넷에 연결되면 다시 저장합니다.','retry',true);
       if(s.reason==='sync_auth')return result('bad','로그인이 필요해요','다시 로그인한 뒤 저장을 이어갑니다.','login',true);
-      if(s.reason==='sync_storage')return result('bad','기기 저장을 확인해 주세요','저장 공간을 확인한 뒤 다시 시도해 주세요.','retry',true);
+      if(s.reason==='sync_storage')return result('bad','기기 저장을 확인해 주세요','미저장 자료를 보존하고 저장소 진단을 확인한 뒤 다시 시도해 주세요.','retry',true);
+      if(s.reason==='sync_local_changed'||s.reason==='sync_workspace_changed')return result('bad','변경된 작업을 다시 확인하고 있어요','계정·팀 또는 새 편집이 바뀌어 이전 작업을 멈췄습니다. 현재 화면에서 다시 확인해 주세요.','retry',true);
       if(s.reason==='sync_permission')return result('bad','저장 권한을 확인해 주세요','이 자료를 저장할 권한을 확인하지 못했습니다.','retry',true);
       if(s.reason==='sync_server_rejected')return result('bad','서버에 저장이 반영되지 않았어요','다시 시도해도 같으면 오류 제보로 알려 주세요. 저장 완료는 아직 확인되지 않았습니다.','retry',true);
       if(s.reason==='sync_conflict')return result('bad','다른 저장 내용을 확인하고 있어요','기기와 서버의 저장 내용이 달라 다시 확인해야 합니다. 같은 문제가 반복되면 오류 제보로 알려 주세요.','retry',true);

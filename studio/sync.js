@@ -1623,11 +1623,24 @@ function syncBasePrimeAll(widArg,m0){
   /* 현재 팀은 병합 전에 반드시 준비한다. 예전에 열었던 다른 팀 base도 함께 옮겨
      localStorage에 팀 수만큼 큰 문자열이 누적되지 않게 하되, 그 팀의 충돌은 현재 sync를 막지 않는다. */
   return Promise.all(keys.map(function(key){
-    return PSStorage.auxGet(key).then(function(v){syncBaseMem[key]=v==null?null:String(v);return true;}).catch(function(e){
+    return PSStorage.auxGet(key,function(legacy,disk){
+      if(key!==active&&key.indexOf(currentPrefix)!==0)return null;
+      var k=key.slice(currentPrefix.length),snapshot=m0||meta(),h=snapshot&&snapshot.h&&snapshot.h[k];
+      if(!h)return null;
+      function ancestor(raw){
+        if(isIdpPrivateKey(k)||isIdpPubKey(k)){var entry=idpBasePickEntry(k,raw,snapshot);return entry&&entry.h===h?entry.r:null;}
+        return hash(raw)===h?raw:null;
+      }
+      var a=ancestor(legacy),b=ancestor(disk);
+      /* Conflicting hashes/ancestors cannot authorize a merge. Equal ancestors
+         in different IDP envelopes are safe; retain both original envelopes. */
+      if(a!=null&&b!=null&&a!==b)return null;
+      return a!=null?legacy:b!=null?disk:null;
+    }).then(function(v){syncBaseMem[key]=v==null?null:String(v);return true;}).catch(function(e){
       var legacy=null;try{legacy=localStorage.getItem(key);}catch(_){}
       var current=(key===active||key.indexOf(currentPrefix)===0);
       if(!current){syncDiagnostic('sync-base-prime-old-workspace',e);return false;}
-      if(legacy!=null&&e&&e.name!=='StorageConflictError'){syncBaseMem[key]=legacy;return true;}
+      if(legacy!=null&&e&&e.name!=='StorageConflictError'&&e.name!=='StorageOwnerChangedError'){syncBaseMem[key]=legacy;return true;}
       throw e;
     });
   })).then(function(){return syncIdpJournalPrime(currentWid,m0||meta());}).then(function(){return true;});
@@ -2383,9 +2396,12 @@ function syncCodeText(code){   /* 2.625 — 사람 쪽 말로. 첫 줄은 상태
     :code==='sync_permission'?'이 자료를 고칠 권한이 없어요'
     :code==='sync_rate_limit'?'요청이 많아요 · 잠시 뒤 다시'
     :code==='sync_storage'?'이 기기 저장소를 읽지 못했어요'
+    :code==='sync_workspace_changed'?'현재 계정과 팀을 다시 확인할게요'
     :code==='sync_personal_size'?'자료가 커서 올리지 못했어요'
     :code==='sync_local_changed'?'새 편집을 확인하고 다시 올릴게요'
     :code==='sync_confirm_missing'?'서버 저장을 확인하지 못했어요'
+    :code==='sync_server_rejected'?'서버에 저장이 반영되지 않았어요'
+    :code==='match_not_ready'?'경기 자료의 저장 사본을 확인할게요'
     :code==='sync_conflict'?'다른 기기의 새 판본을 확인할게요'
     :String(code||'원인을 확인해 주세요');
 }
@@ -2396,6 +2412,12 @@ function syncReasonText(code){
     :code==='sync_auth'?'다시 로그인해 주세요'
     :code==='sync_permission'?'이 자료를 고칠 권한이 없어요'
     :code==='sync_storage'?'이 기기 저장소를 읽지 못했어요'
+    :code==='sync_workspace_changed'?'계정이나 팀이 바뀌어 이전 작업을 멈췄어요'
+    :code==='sync_local_changed'?'새 편집을 확인하고 다시 맞추는 중이에요'
+    :code==='match_not_ready'?'경기 자료의 저장 사본을 다시 확인해야 해요'
+    :code==='sync_timeout'?'서버 응답을 기다리다 시간이 초과됐어요'
+    :code==='sync_server'?'서버 오류로 잠시 뒤 다시 시도해야 해요'
+    :code==='sync_rate_limit'?'요청이 많아 잠시 뒤 다시 시도해야 해요'
     :code==='sync_offline'?'오프라인이에요'
     :code==='sync_confirm_missing'?'저장 완료 여부를 다시 확인해야 해요'
     :code==='sync_unexpected'?'저장 처리 중 오류가 발생했어요'
@@ -2438,13 +2460,15 @@ function classifySyncError(e){
   var msg=String((e&&e.message)||e||'').toLowerCase(),status=+(e&&e.psStatus)||0;
   if(navigator.onLine===false||(e&&e.psCode==='sync_offline'))return {code:'sync_offline',stage:(e&&e.psStage)||'sync'};
   if(e&&e.psCode)return {code:e.psCode,stage:e.psStage||'sync',status:status};
+  if(e&&e.name==='StorageOwnerChangedError')return {code:'sync_local_changed',stage:e.psStage||'storage_source_changed'};
+  if(e&&e.name==='StorageConflictError')return {code:'sync_conflict',stage:e.psStage||'storage_copies_differ'};
   if(e&&e.name==='AutosaveJournalVersionError')return {code:'sync_confirm_missing',stage:'autosave_baseline'};
   if(e&&/^AutosaveJournal(?:Corrupt|Input|Random|Verification|Collision)Error$/.test(e.name))return {code:'sync_storage',stage:'autosave_journal'};
   if(status===401||/\b401\b|no token/.test(msg))return {code:'sync_auth',stage:(e&&e.psStage)||'auth',status:401};
   if(status===403||/\b403\b/.test(msg))return {code:'sync_permission',stage:(e&&e.psStage)||'sync',status:403};
   if(status===429||/\b429\b/.test(msg))return {code:'sync_rate_limit',stage:(e&&e.psStage)||'sync',status:429};
-  if(status>=500||/\b5\\d\\d\b/.test(msg))return {code:'sync_server',stage:(e&&e.psStage)||'sync',status:status};
-  if(/quota|indexeddb|idb|storage|transaction|aborterror/.test(msg))return {code:'sync_storage',stage:(e&&e.psStage)||'storage'};
+  if(status>=500||/\b5\d\d\b/.test(msg))return {code:'sync_server',stage:(e&&e.psStage)||'sync',status:status};
+  if(/quota|indexed\s*db|indexed database|idb|storage|transaction|aborterror/.test(msg))return {code:'sync_storage',stage:(e&&e.psStage)||'storage'};
   if(/timeout|timed out/.test(msg))return {code:'sync_timeout',stage:(e&&e.psStage)||'sync'};
   if(/fetch|network|load failed|internet/.test(msg))return {code:'sync_network',stage:(e&&e.psStage)||'sync'};
   return {code:'sync_unexpected',stage:(e&&e.psStage)||'sync'};

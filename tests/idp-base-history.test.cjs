@@ -86,3 +86,10 @@ test('read-state repair needs a matching server CAS acknowledgement before clear
  const result=await f.h.run();assert.ok(result.error||result.pending);assert.equal(f.h.server.get(f.key).v,remote);
  assert.equal(f.h.local.get(f.key),local);assert.equal(f.h.queue.length,1);
 });
+for(const choice of ['legacy','disk','neither'])test('auxiliary IDP conflict uses only the confirmed ancestor: '+choice,async()=>{
+ const f=await setup(privateKey,false),c=f.h.c,legacy=choice==='legacy'?f.original:f.local,disk=choice==='disk'?f.original:f.remote;
+ c.PSStorage.auxGet=async(k,resolve)=>{if(k!==f.auxKey)return null;const result=resolve(legacy,disk);if(result==null)throw Object.assign(Error('copies differ'),{name:'StorageConflictError'});return result;};
+ if(choice==='neither')await assert.rejects(c.syncBasePrimeAll('team-a',c.meta()),{name:'StorageConflictError'});else{await c.syncBasePrimeAll('team-a',c.meta());assert.equal(c.syncBaseGet(f.key,'team-a'),f.original);}
+ assert.equal(f.h.local.get(f.key),f.local);assert.equal(f.h.server.get(f.key).v,f.remote);
+});
+test('an auxiliary owner change cannot silently fall back to an older local baseline',async()=>{const f=await setup(privateKey,false),c=f.h.c;f.h.local.set(f.auxKey,f.original);c.PSStorage.auxGet=async()=>{throw Object.assign(Error('owner changed'),{name:'StorageOwnerChangedError'});};await assert.rejects(c.syncBasePrimeAll('team-a',c.meta()),{name:'StorageOwnerChangedError'});assert.equal(f.h.local.get(f.auxKey),f.original);});

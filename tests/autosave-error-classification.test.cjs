@@ -26,3 +26,10 @@ test('unknown errors do not blame connectivity without evidence',()=>{
   assert.equal(info.code,'sync_unexpected');
   assert.doesNotMatch(view({kind:'bad',reason:info.code}).detail+c.syncReasonText(info.code),/인터넷|연결/);
 });
+for(const [name,msg,code] of [
+ ['StorageOwnerChangedError','storage read owner changed','sync_local_changed'],
+ ['StorageConflictError','legacy and IndexedDB values differ','sync_conflict'],
+ ['Error','An internal error was encountered in the Indexed Database server','sync_storage'],
+ ['Error','HTTP 503','sync_server']
+])test('classifies observed error without blaming unrelated causes: '+msg,()=>{const c=fixture(),info=c.classifySyncError(Object.assign(new Error(msg),{name}));assert.equal(info.code,code);assert.doesNotMatch(c.syncReasonText(code),/인터넷/);});
+for(const code of ['sync_workspace_changed','sync_local_changed','match_not_ready','sync_timeout','sync_server','sync_rate_limit'])test(code+' gets its own reason instead of an internet diagnosis',()=>{assert.doesNotMatch(fixture().syncReasonText(code),/인터넷/);});

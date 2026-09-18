@@ -83,24 +83,47 @@
   function hasIDB(){ try{ return typeof indexedDB!=='undefined' && indexedDB; }catch(_){ return false; } }
   function open(){
     if(dbp) return dbp;
-    dbp=new Promise(function(res,rej){
+    var pending=new Promise(function(res,rej){
       var r=indexedDB.open(DB,VER);
+      var failed=false;
       r.onupgradeneeded=function(){ try{ r.result.createObjectStore(STORE); }catch(_){} };
-      r.onsuccess=function(){ res(r.result); };
-      r.onerror=function(){ rej(r.error); };
-      r.onblocked=function(){ rej(new Error('idb blocked')); };
+      function fail(e){failed=true;rej(e);}
+      r.onsuccess=function(){
+        var db=r.result;
+        if(failed){db.close();return;}
+        function forget(){if(dbp===pending)dbp=null;}
+        db.onclose=forget;
+        db.onversionchange=function(){forget();db.close();};
+        res(db);
+      };
+      r.onerror=function(){ fail(r.error); };
+      r.onblocked=function(){ fail(new Error('idb blocked')); };
     });
-    return dbp;
+    dbp=pending;
+    pending.catch(function(){if(dbp===pending)dbp=null;});
+    return pending;
   }
   function tx(mode,fn){
-    return open().then(function(db){
+    function run(retried){var connection=open();return connection.then(function(db){
+      var t;
+      try{t=db.transaction(STORE,mode);}catch(e){
+        /* Only retry before a transaction exists. Replaying an aborted write
+           could overwrite a newer edit or cross an account transition. */
+        if(!retried&&e&&e.name==='InvalidStateError'){
+          if(dbp===connection)dbp=null;try{db.close();}catch(_){}
+          return run(true);
+        }
+        throw e;
+      }
       return new Promise(function(res,rej){
-        var t=db.transaction(STORE,mode), s=t.objectStore(STORE), req=fn(s);
+        var s=t.objectStore(STORE),req;
         t.oncomplete=function(){ res(req?req.result:undefined); };
         t.onerror=function(){ rej(t.error); };
-        t.onabort=function(){ rej(t.error); };
+        t.onabort=function(){var e=t.error||new Error('IndexedDB transaction aborted');if(!t.error)e.name='AbortError';rej(e);};
+        try{req=fn(s);}catch(e){try{t.abort();}catch(_){}rej(e);}
       });
-    });
+    });}
+    return run(false);
   }
   function idbGet(k){ return tx('readonly',function(s){ return s.get(k); }); }
   function idbSet(k,v,current){
@@ -560,7 +583,7 @@
   }
   /* 큰 보조 사본 전용 API. 화면 본문과 달리 localStorage 거울을 새로 만들지 않는다.
      legacy 사본이 있으면 IDB와 같은지 확인해 제거하고, 서로 다르면 어느 쪽도 덮지 않는다. */
-  function auxGet(k){
+  function auxGet(k,resolveConflict){
     if(!isAuxIDBKey(k))return Promise.reject(new Error('unsupported auxiliary key'));
     var capture=sharedCapture(k);function current(){sharedCurrent(k,capture);}
     return sharedReady(k).then(function(){
@@ -570,6 +593,7 @@
          legacy 값이 IDB에 있는 것으로 오판할 수 있다. 검증은 raw IDB에서만 한다. */
       return afterMigrate(function(){return idbGet(k);}).then(function(value){
         current();
+        if(localStorage.getItem(k)!==lv){var changed=new Error('auxiliary source changed');changed.name='StorageOwnerChangedError';throw changed;}
         var iv=value!=null?String(value):null;
         if(lv==null)return emptyish(iv)?null:iv;
         if(iv===lv){try{localStorage.removeItem(k);}catch(_){}return emptyish(iv)?null:iv;}
@@ -577,9 +601,18 @@
           return sharedSet(k,lv,capture).then(function(){return idbGet(k);}).then(function(check){
             current();
             if(check!==lv)throw new Error('auxiliary storage verification failed');
-            try{localStorage.removeItem(k);}catch(_){}
+            if(localStorage.getItem(k)===lv){try{localStorage.removeItem(k);}catch(_){}}
             return lv;
           });
+        }
+        /* A caller may identify its already-confirmed merge ancestor. Return
+           only an original copy and retain BOTH on disk until a later verified
+           baseline write. Never guess which timestamp represents user intent. */
+        if(typeof resolveConflict==='function'){
+          var chosen=resolveConflict(lv,iv);
+          current();
+          if(localStorage.getItem(k)!==lv){var stale=new Error('auxiliary source changed');stale.name='StorageOwnerChangedError';throw stale;}
+          if(chosen===lv||chosen===iv)return chosen;
         }
         var e=new Error('legacy and IndexedDB values differ');e.name='StorageConflictError';
         diagnostic('aux-read-conflict:'+k,e);throw e;

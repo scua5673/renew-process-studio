@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.870"></script>
+<script src="autosave-status.js?v=2.871"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -476,7 +476,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.870';</script>
+<script>window.PS_BUILD='2.871';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1006,7 +1006,7 @@ function psShowUpdBand(){
   window.psPrompt=function(msg,def,onOk,onCancel){ build(String(msg),true,def,function(v){onOk&&onOk(v);},onCancel); };
 })();
 </script>
-<script>(function(){if(window.__psErrInit)return;window.__psErrInit=1;function track(code,stage,msg){try{var send=function(){try{window.PSSync&&PSSync.event&&PSSync.event('app_error',{status:'error',feature:'app',error_code:code||'unknown',meta:{stage:stage||'runtime',msg:String(msg||'').slice(0,140)}});}catch(_){}};send();setTimeout(send,2200);}catch(_){}}function show(m){try{var b=document.getElementById('ps-errbar');if(!b){b=document.createElement('div');b.id='ps-errbar';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99999;max-width:84vw;background:#3a1414;color:#ffd7d7;border:1px solid #a33;border-radius:10px;padding:8px 12px;font:600 12px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;';b.title='탭하면 닫기';b.addEventListener('click',function(){b.style.display='none';});(document.body||document.documentElement).appendChild(b);}b.style.display='block';b.textContent='⚠︎ 오류: '+m;clearTimeout(b.__t);b.__t=setTimeout(function(){b.style.display='none';},6000);}catch(_){}}window.addEventListener('error',function(e){var _m=(e&&e.message)||'';if(/ResizeObserver loop/i.test(_m))return;/* 2.476 — 무해한 브라우저 경고가 사용자 오류 토스트로 떴다(폰 실측) */try{console.error('[PS]',(e&&(e.error||e.message)),e&&e.filename,e&&e.lineno);}catch(_){}track('js_error','runtime',(_m||'')+' @'+((e&&e.filename)||'').split('/').pop()+':'+((e&&e.lineno)||0));show(_m||'스크립트 오류');});window.addEventListener('unhandledrejection',function(e){var r=e&&e.reason,msg='';try{msg=String((r&&r.message)||r||'');}catch(_){}if(/service\\s*worker|failed to update a serviceworker|fetching the script|sw\\.js/i.test(msg)){try{e.preventDefault();}catch(_){}return;}try{console.error('[PS promise]',r);}catch(_){}track('promise_rejection','promise',msg);show('작업을 완료하지 못했습니다');});})();</script>
+<script>(function(){if(window.__psErrInit)return;window.__psErrInit=1;function errorSource(reason){try{var lines=String(reason&&reason.stack||'').split('\n').slice(1,8);for(var i=0;i<lines.length;i++){var m=lines[i].match(/((?:https?|chrome-extension|moz-extension):\/\/[^\s)]+):(\d+):(\d+)/);if(!m)continue;var u=new URL(m[1]);if(u.origin!==location.origin)return 'external-script';var file=u.pathname.split('/').pop();if(!/^[a-zA-Z0-9_.-]{1,60}$/.test(file))return 'app-script';return file+':'+m[2]+':'+m[3];}}catch(_){}return 'unknown-script';}function track(code,stage,msg,source){try{var send=function(){try{window.PSSync&&PSSync.event&&PSSync.event('app_error',{status:'error',feature:'app',error_code:code||'unknown',meta:{stage:stage||'runtime',source:source||'',msg:String(msg||'').slice(0,140)}});}catch(_){}};send();setTimeout(send,2200);}catch(_){}}function show(m){try{var b=document.getElementById('ps-errbar');if(!b){b=document.createElement('div');b.id='ps-errbar';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99999;max-width:84vw;background:#3a1414;color:#ffd7d7;border:1px solid #a33;border-radius:10px;padding:8px 12px;font:600 12px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;';b.title='탭하면 닫기';b.addEventListener('click',function(){b.style.display='none';});(document.body||document.documentElement).appendChild(b);}b.style.display='block';b.textContent='⚠︎ 오류: '+m;clearTimeout(b.__t);b.__t=setTimeout(function(){b.style.display='none';},6000);}catch(_){}}window.addEventListener('error',function(e){var _m=(e&&e.message)||'';if(/ResizeObserver loop/i.test(_m))return;/* 2.476 — 무해한 브라우저 경고가 사용자 오류 토스트로 떴다(폰 실측) */try{console.error('[PS]',(e&&(e.error||e.message)),e&&e.filename,e&&e.lineno);}catch(_){}track('js_error','runtime',(_m||'')+' @'+((e&&e.filename)||'').split('/').pop()+':'+((e&&e.lineno)||0));show(_m||'스크립트 오류');});window.addEventListener('unhandledrejection',function(e){var r=e&&e.reason,msg='';try{msg=String((r&&r.message)||r||'');}catch(_){}if(/service\\s*worker|failed to update a serviceworker|fetching the script|sw\\.js/i.test(msg)){try{e.preventDefault();}catch(_){}return;}try{console.error('[PS promise]',r);}catch(_){}track('promise_rejection','promise',msg,errorSource(r));show('작업을 완료하지 못했습니다');});})();</script>
   <style>
     /* 화면 방향은 사용자가 선택한다 — 폰·아이패드·컴퓨터 모두 세로/가로 사용 가능 */
     #rotateGate{display:none!important;}
@@ -7446,13 +7446,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.870"></script>
-<script src="autosave-merge.js?v=2.870"></script>
-<script src="autosave-runtime.js?v=2.870"></script>
-<script src="autosave-recovery.js?v=2.870"></script>
-<script src="sync.js?v=2.870"></script>
+<script src="autosave-journal.js?v=2.871"></script>
+<script src="autosave-merge.js?v=2.871"></script>
+<script src="autosave-runtime.js?v=2.871"></script>
+<script src="autosave-recovery.js?v=2.871"></script>
+<script src="sync.js?v=2.871"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.870">
+<link rel="stylesheet" href="support.css?v=2.871">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
