@@ -643,6 +643,16 @@ function renderCards(){
 }
 /* ───────── 공통 ───────── */
 function render(){
+  // A cancelled prewarm or failed content request must leave a recoverable page.
+  if(!BOOK||!Array.isArray(BOOK.chapters)||!BOOK.chapters.length){
+    $('#posLine').textContent='학습 자료를 불러오지 못했어요';
+    var panel=$('#p-'+page);
+    if(panel){
+      panel.innerHTML='<div class="card" role="status"><p>학습 자료를 다시 불러와 주세요. 저장된 학습 기록은 유지됩니다.</p><button class="btn pri" id="retryLearning">다시 불러오기</button></div>';
+      $('#retryLearning').onclick=function(){location.reload()};
+    }
+    return;
+  }
   $('#trackBtn').textContent=S.track==='coach'?'코치':'선수';
   var s=nextSec(),c=chapOf(s.id),d=c.sections.filter(function(x){return isDone(x.id)}).length;
   $('#posLine').textContent='『'+BOOK.ko+'』 '+c.id+' · '+d+'/'+c.sections.length;
