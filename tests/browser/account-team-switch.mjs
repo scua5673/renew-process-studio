@@ -52,7 +52,11 @@ try{
       return route.fulfill({body:fs.readFileSync(file),contentType:mime[path.extname(file)]||'application/octet-stream'});
     }
     if(!url.pathname.startsWith('/rest/v1/')&&!url.pathname.startsWith('/auth/v1/'))return route.abort('blockedbyclient');
-    const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*'};
+    // Mirror authenticated API preflights explicitly: Authorization is not covered by '*'.
+    const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':base,
+      'Access-Control-Allow-Methods':'GET, POST, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers':req.headers()['access-control-request-headers']||'authorization, apikey, content-type, prefer, x-client-info',
+      'Vary':'Origin, Access-Control-Request-Headers'};
     if(req.method()==='OPTIONS')return route.fulfill({status:204,headers,body:''});
     const authorization=req.headers().authorization,uid=authorization==='Bearer fixture-access-A'?A:authorization==='Bearer fixture-access-B'?B:null;
     // The public community feed deliberately uses the configured publishable key, never a user identity.
@@ -88,7 +92,7 @@ try{
     }
     await route.fulfill({status:200,headers,body:JSON.stringify(body)});
   });
-  page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>errors.push(e.message));
+  page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>{errors.push(e.message);diagnostics.push({at:Date.now(),type:'pageerror',text:e.message,stack:e.stack});});
   page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')diagnostics.push({at:Date.now(),type:m.type(),text:m.text()});});
   async function ready(wid,uid){
     await bounded(page.waitForFunction(({wid,uid})=>window.PSSync&&PSSync.dataUnlocked()&&PSSync.activeWs()===wid&&PSSync.session()?.uid===uid&&PSSync.rosterReady(wid),{wid,uid}),'account ready '+wid,35000);
