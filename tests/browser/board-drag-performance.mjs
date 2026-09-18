@@ -1,0 +1,113 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/board-drag-performance');
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',base='https://board-depth-fixture.invalid';
+const UID='11111111-1111-4111-8111-111111111111',WID='22222222-2222-4222-8222-222222222222';
+fs.mkdirSync(out,{recursive:true});
+const browser=await pw[engine].launch({headless:true,...(engine==='chromium'&&process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
+const results=[];
+try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{width:393,height:852}]){
+  const context=await browser.newContext({viewport,serviceWorkers:'block'}),errors=[];
+  try{
+    await context.route('**/*',route=>{
+      const u=new URL(route.request().url());if(u.origin!==base)return route.abort();
+      const file=path.resolve(root,'.'+u.pathname);if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});
+      return route.fulfill({body:fs.readFileSync(file),contentType:{'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml'}[path.extname(file)]||'application/octet-stream'});
+    });
+    await context.addInitScript(({UID,WID})=>{
+      localStorage.setItem('ps_sync_session',JSON.stringify({uid:UID,at:'fixture',rt:'fixture'}));
+      localStorage.setItem('ps_active_ws',WID);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:UID,wid:WID}));
+      localStorage.setItem('ps_ws_list',JSON.stringify([{id:WID,kind:'personal',role:'owner',owner_id:UID}]));
+      localStorage.setItem('cs_perms_v1',JSON.stringify({members:{[UID]:{role:'executive'}},defaultRole:'player'}));
+      window.PSSync={session:()=>({uid:UID}),activeWs:()=>WID,activeWsObj:()=>({id:WID,kind:'personal',role:'owner',owner_id:UID}),dataUnlocked:()=>true,keyReady:()=>true,act(){},ping(){},event(){}};
+    },{UID,WID});
+    const page=await context.newPage();page.on('pageerror',e=>errors.push(String(e)));
+    await page.goto(base+'/studio/board.html?fixture=depth');
+    await page.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone);
+    await page.evaluate(()=>{
+      boardShowDefault();const s=captureSnap();s.players=[{id:'depth-a',team:'blue',num:8,name:'A',x:450,y:340},{id:'depth-b',team:'red',num:9,name:'B',x:620,y:470}];
+      s.equipment=[{id:'cone-a',team:'cone',x:720,y:340},{id:'marker-a',team:'marker',x:780,y:470}];s.ball={id:'ball',team:'ball',x:570,y:350};s.drawings=[];loadSnap(s);state.tool='move';
+    });
+    await page.evaluate(()=>{
+      const s=captureSnap();for(let i=2;i<22;i++)s.players.push({id:'depth-'+i,team:i%2?'blue':'red',num:i+1,x:180+(i%8)*100,y:180+Math.floor(i/8)*180});loadSnap(s);
+    });
+    for(const orientation of ['h','v']){
+      await page.evaluate(orientation=>{state.orientation=orientation;buildPitch();__setTilt(true);__tiltFit();},orientation);
+      // Let the normal fit/resize callbacks settle before measuring a fixed projection.
+      await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+      for(const finish of ['frame','release','cancel']){
+        const metrics=await page.evaluate(async finish=>{
+          sel=null;multiSel=[];state.tool='move';renderTokens();clearBoardHistory();
+          const p=state.players[0],g=tokenLayer.querySelector('[data-id="depth-a"]'),face=g.querySelector('.ps-depth-face');
+          const start={x:p.x,y:p.y},b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2;
+          const a=clientToUnit(x,y),z=clientToUnit(x+30,y+20),expected={x:start.x+z.x-a.x,y:start.y+z.y-a.y};
+          const fire=(type,x,y)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:42,pointerType:'mouse',buttons:type==='pointerup'?0:1,clientX:x,clientY:y}));
+          let transforms=0,solves=0,reads=0;const attr=g.setAttribute,solve=_bcSolveH;
+          g.setAttribute=function(k,v){if(k==='transform')transforms++;return attr.call(this,k,v);};
+          _bcSolveH=function(...a){solves++;return solve(...a);};
+          const markers=[0,1,2,3].map(i=>world.querySelector('#bcM'+i)),rects=markers.map(m=>m.getBoundingClientRect);
+          markers.forEach((m,i)=>m.getBoundingClientRect=function(){reads++;return rects[i].call(this);});
+          fire('pointerdown',x,y);transforms=0;solves=0;reads=0;
+          for(let i=1;i<=120;i++)fire('pointermove',x+i/4,y+i/6);
+          if(finish==='frame')await new Promise(requestAnimationFrame);
+          // A release/cancel in the same task must flush the latest sample before undo/save.
+          const beforeEnd={transforms,solves,reads};fire(finish==='cancel'?'pointercancel':'pointerup',x+30,y+20);
+          const afterEnd=transforms;
+          await new Promise(requestAnimationFrame);
+          const result={moves:120,beforeEnd,transforms,solves,reads,afterEnd,expected,actual:{x:p.x,y:p.y},undo:undoStack.length,sameFace:face===g.querySelector('.ps-depth-face'),dragging:document.body.classList.contains('token-drag')};
+          g.setAttribute=attr;_bcSolveH=solve;markers.forEach((m,i)=>m.getBoundingClientRect=rects[i]);
+          undoLast();result.undoPosition={x:state.players[0].x,y:state.players[0].y};result.start=start;return result;
+        },finish);
+        assert.equal(metrics.transforms,1);assert.equal(metrics.afterEnd,1);assert.ok(metrics.solves<=1);assert.equal(metrics.reads,4);
+        assert.equal(metrics.beforeEnd.transforms,finish==='frame'?1:0);
+        assert.ok(Math.abs(metrics.actual.x-metrics.expected.x)<1e-5);assert.ok(Math.abs(metrics.actual.y-metrics.expected.y)<1e-5);
+        assert.deepEqual(metrics.undoPosition,metrics.start);assert.equal(metrics.undo,1);assert.equal(metrics.sameFace,true);assert.equal(metrics.dragging,false);
+        results.push({width:viewport.width,orientation,finish,...metrics});
+      }
+      const group=await page.evaluate(()=>{
+        state.tool='move';sel=null;state.players[2].locked=true;multiSel=state.players.slice(0,3);renderTokens();clearBoardHistory();
+        const p=state.players[0],g=tokenLayer.querySelector('[data-id="depth-a"]'),b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2;
+        const before=state.players.slice(0,3).map(p=>({x:p.x,y:p.y}));
+        const fire=(type,x,y)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:45,pointerType:'mouse',buttons:1,clientX:x,clientY:y,shiftKey:true}));
+        fire('pointerdown',x,y);for(let i=1;i<=60;i++)fire('pointermove',x+i/2,y+i/12);fire('pointerup',x+30,y+5);
+        const delta=state.players.slice(0,3).map((p,i)=>({x:p.x-before[i].x,y:p.y-before[i].y})),undo=undoStack.length;
+        undoLast();const restored=state.players.slice(0,3).map(p=>({x:p.x,y:p.y}));state.players[2].locked=false;multiSel=[];renderTokens();return {delta,before,restored,undo};
+      });
+      assert.ok(Math.abs(group.delta[0].x-group.delta[1].x)<1e-7);assert.ok(Math.abs(group.delta[0].y-group.delta[1].y)<1e-7);assert.deepEqual(group.delta[2],{x:0,y:0});assert.ok(Math.hypot(group.delta[0].x,group.delta[0].y)>5);
+      assert.ok(group.delta[0].x===0||group.delta[0].y===0);assert.deepEqual(group.restored,group.before);assert.equal(group.undo,1);
+    }
+    // Keep the 22-player stress checks above. Isolate the trusted drag target here:
+    // phone hit circles intentionally overlap nearby players on the small pitch.
+    await page.evaluate(()=>{state.players=state.players.slice(0,2);renderTokens();});
+    // Actual trusted mouse events still move the raised face through pointer capture.
+    const before=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));
+    const box=await page.locator('.token[data-id="depth-a"] .ps-depth-face').boundingBox();
+    assert.equal(await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.closest('.token')?.getAttribute('data-id'),{x:box.x+box.width/2,y:box.y+box.height/3}),'depth-a');
+    await page.mouse.move(box.x+box.width/2,box.y+box.height/3);await page.mouse.down();await page.mouse.move(box.x+box.width/2+35,box.y+box.height/3+25,{steps:10});await page.mouse.up();
+    const after=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));assert.ok(Math.hypot(after.x-before.x,after.y-before.y)>8);
+    const touch=await page.evaluate(async()=>{
+      sel=null;multiSel=[];renderTokens();clearBoardHistory();document.body.classList.add('ps-ipad-work');
+      const p=state.players[0],start={x:p.x,y:p.y},g=tokenLayer.querySelector('[data-id="depth-a"]'),b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2;
+      const fire=(type,dx,dy)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:61,pointerType:'touch',buttons:1,clientX:x+dx,clientY:y+dy}));
+      fire('pointerdown',0,0);await new Promise(r=>setTimeout(r,320));
+      for(let i=1;i<=40;i++)fire('pointermove',i/2,i/3);fire('pointerup',20,40/3);
+      const r={distance:Math.hypot(p.x-start.x,p.y-start.y),undo:undoStack.length};document.body.classList.remove('ps-ipad-work');return r;
+    });
+    assert.ok(touch.distance>8);assert.equal(touch.undo,1);
+    const drawing=await page.evaluate(()=>{
+      sel=null;multiSel=[];state.tool='free';renderTokens();
+      const g=tokenLayer.querySelector('[data-id="depth-a"]'),b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2;
+      const fire=(type,dx,dy)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:62,pointerType:'mouse',buttons:1,clientX:x+dx,clientY:y+dy}));
+      let moves=0;const orig=moveDraw;moveDraw=function(...a){moves++;return orig(...a);};
+      fire('pointerdown',0,0);for(let i=1;i<=40;i++)fire('pointermove',i/2,i/3);const points=_draw.pts.length;fire('pointerup',20,40/3);moveDraw=orig;state.tool='move';return {moves,points};
+    });
+    assert.deepEqual(drawing,{moves:40,points:41});
+    assert.deepEqual(errors,[]);
+  }finally{await context.close();}
+}}finally{await browser.close();fs.writeFileSync(path.join(out,'drag-metrics.json'),JSON.stringify({engine,results},null,2));}
+console.log(JSON.stringify({engine,cases:results.length,movesPerFrame:120,transformsPerFrame:1,passed:true}));

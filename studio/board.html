@@ -4921,6 +4921,12 @@ function eraseToken(p){if(p.id==="ball"){pushUndo();state.ball=null;sel=null;ren
 function enableDrag(g,p,removable,kind){
   let mode=null,moved=false,sx=0,sy=0,grp=null,gu0=null,grpUndo=false,mvUndo=false;     // mode: 'move' | 'draw'
   let _mvAlt=false,_mvP0=null,_mvAxis=null,grpStart=null,_mvGrab=null;   /* 2.030 */
+  let moveFrame=0,pendingMove=null;
+  function flushDragMove(){
+    if(moveFrame){cancelAnimationFrame(moveFrame);moveFrame=0;}
+    const next=pendingMove;pendingMove=null;
+    if(next&&mode)applyDragMove(next);
+  }
 	  g.addEventListener("pointerdown",e=>{
 	    if(state.tool==="eraser"){e.stopPropagation();eraseToken(p);return;}
 	    if(state.tool==="link"){e.stopPropagation();linkTap(p);return;}   /* 2.679 — 연결선: 선수를 차례로 누른다 */
@@ -4967,7 +4973,7 @@ function enableDrag(g,p,removable,kind){
     }
     engage();
     });
-  g.addEventListener("pointermove",e=>{if(!mode)return;
+  function applyDragMove(e){if(!mode)return;
     if(Math.hypot(e.clientX-sx,e.clientY-sy)>4)moved=true;
     if(mode==="draw"){moveDraw(toUnit(e));}
     else if(grp){if(!grpUndo){pushUndo();grpUndo=true;}const u=toUnit(e);let dx=u.x-gu0.x,dy=u.y-gu0.y;
@@ -4990,8 +4996,18 @@ function enableDrag(g,p,removable,kind){
       const s=_snapOn?snapDrag(p,kind,u):u;
       if(_snapOn&&(s.gx!=null||s.gy!=null))drawSnapGuides(s.gx,s.gy); else drawSnapGuides(null,null);
       if(e.shiftKey&&_mvP0){ if(!_mvAxis&&(Math.abs(s.x-_mvP0.x)>6||Math.abs(s.y-_mvP0.y)>6))_mvAxis=Math.abs(s.x-_mvP0.x)>=Math.abs(s.y-_mvP0.y)?"x":"y"; if(_mvAxis==="x")s.y=_mvP0.y; else if(_mvAxis==="y")s.x=_mvP0.x; } else _mvAxis=null;
-      p.x=s.x;p.y=s.y;if(kind==="ball"){state.ball.x=s.x;state.ball.y=s.y;}g.setAttribute("transform",tokenTransform(p));try{if(window.psMeasDrag)psMeasDrag(p);}catch(_){}if(kind==="player"&&(p.vis||p.shaper||tokShape==="shaper")){renderVisionRAF();}}});
-  const end=e=>{if(!mode)return;clearGuides();try{if(window.psMeasDragEnd)psMeasDragEnd();}catch(_){}document.body.classList.remove("token-drag");const m=mode,wasGrp=!!grp;mode=null;grp=null;_mvGrab=null;   /* 2.375 — 잡은 지점은 드래그마다 새로 잰다(남겨 두면 다음 드래그가 그만큼 밀린다) */try{if(moved)autoSaveAnimFrame();}catch(_){}
+      p.x=s.x;p.y=s.y;if(kind==="ball"){state.ball.x=s.x;state.ball.y=s.y;}g.setAttribute("transform",tokenTransform(p));try{if(window.psMeasDrag)psMeasDrag(p);}catch(_){}if(kind==="player"&&(p.vis||p.shaper||tokShape==="shaper")){renderVisionRAF();}}}
+  g.addEventListener("pointermove",e=>{
+    if(!mode)return;
+    if(Math.hypot(e.clientX-sx,e.clientY-sy)>4)moved=true;
+    if(mode==="move"&&(document.body.classList.contains("bc-tilt3d")||document.body.classList.contains("bc-cam"))){
+      // Coalesce input, not the final position: read projection once before the
+      // frame's writes. Freehand drawing retains every point; release flushes.
+      pendingMove={clientX:e.clientX,clientY:e.clientY,shiftKey:e.shiftKey,metaKey:e.metaKey,ctrlKey:e.ctrlKey};
+      if(!moveFrame)moveFrame=requestAnimationFrame(flushDragMove);
+    }else{flushDragMove();applyDragMove(e);}
+  });
+  const end=e=>{if(!mode)return;flushDragMove();clearGuides();try{if(window.psMeasDragEnd)psMeasDragEnd();}catch(_){}document.body.classList.remove("token-drag");const m=mode,wasGrp=!!grp;mode=null;grp=null;_mvGrab=null;   /* 2.375 — 잡은 지점은 드래그마다 새로 잰다(남겨 두면 다음 드래그가 그만큼 밀린다) */try{if(moved)autoSaveAnimFrame();}catch(_){}
     try{g.releasePointerCapture(e.pointerId);}catch(_){}
     if(m==="move"&&kind!=="ball"&&document.body.classList.contains("match-mode")){try{var _rp=document.getElementById("msRoster");if(_rp){var rr=_rp.getBoundingClientRect();if(rr.width&&e.clientX>=rr.left&&e.clientX<=rr.right&&e.clientY>=rr.top&&e.clientY<=rr.bottom){eraseToken(p);try{renderMsRoster();}catch(_){}return;}}}catch(_){}}
     if(m==="move"&&_mvAlt&&moved){ try{ /* 2.030 — ⌥ 복제: 원래 자리에 사본 */
@@ -11795,7 +11811,24 @@ function bcAddLight(){try{if(!svg||!world)return;
 }catch(_){}}
 function bcDelLight(){try{["bcSpotR","bcVigR","bcM0","bcM1","bcM2","bcM3"].forEach(function(id){var e=world&&world.querySelector("#"+id);if(e)e.remove();});}catch(_){}}
 function _bcSolveH(s2,d2){var A=[],b=[];for(var i=0;i<4;i++){var xs=s2[i][0],ys=s2[i][1],xd=d2[i][0],yd=d2[i][1];A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]);b.push(xd);A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]);b.push(yd);}var n=8;for(var col=0;col<n;col++){var piv=col;for(var r=col+1;r<n;r++){if(Math.abs(A[r][col])>Math.abs(A[piv][col]))piv=r;}if(Math.abs(A[piv][col])<1e-9)return null;var tA=A[col];A[col]=A[piv];A[piv]=tA;var tb=b[col];b[col]=b[piv];b[piv]=tb;for(var r2=0;r2<n;r2++){if(r2===col)continue;var f=A[r2][col]/A[col][col];for(var c2=col;c2<n;c2++)A[r2][c2]-=f*A[col][c2];b[r2]-=f*b[col];}}var h=[];for(var k=0;k<n;k++)h.push(b[k]/A[k][k]);return h;}
-function bcUnproject(cx,cy){try{var ids=["bcM0","bcM1","bcM2","bcM3"],dst=[[0,0],[W,0],[W,H],[0,H]],src=[];for(var i=0;i<4;i++){var e=world&&world.querySelector("#"+ids[i]);if(!e)return null;var rr=e.getBoundingClientRect();src.push([rr.left+rr.width/2,rr.top+rr.height/2]);}var Hm=_bcSolveH(src,dst);if(!Hm)return null;var de=Hm[6]*cx+Hm[7]*cy+1;return {x:(Hm[0]*cx+Hm[1]*cy+Hm[2])/de,y:(Hm[3]*cx+Hm[4]*cy+Hm[5])/de};}catch(_){return null;}}
+var bcProjectionCache=null;
+function bcUnproject(cx,cy){try{
+  var ids=["bcM0","bcM1","bcM2","bcM3"],dst=[[0,0],[W,0],[W,H],[0,H]],src=[];
+  for(var i=0;i<4;i++){
+    var e=world&&world.querySelector("#"+ids[i]);if(!e){bcProjectionCache=null;return null;}
+    var rr=e.getBoundingClientRect();src.push([rr.left+rr.width/2,rr.top+rr.height/2]);
+  }
+  // Reuse only an exactly matching measured projection. Resize, scroll, zoom,
+  // orientation and animated camera changes are observed on the next frame.
+  var c=bcProjectionCache,same=!!(c&&c.w===W&&c.h===H);
+  for(var j=0;same&&j<4;j++)same=c.src[j][0]===src[j][0]&&c.src[j][1]===src[j][1];
+  var Hm=same?c.matrix:_bcSolveH(src,dst);
+  bcProjectionCache=Hm?{src:src,w:W,h:H,matrix:Hm}:null;
+  if(!Hm)return null;
+  var de=Hm[6]*cx+Hm[7]*cy+1;
+  return {x:(Hm[0]*cx+Hm[1]*cy+Hm[2])/de,y:(Hm[3]*cx+Hm[4]*cy+Hm[5])/de};
+}catch(_){bcProjectionCache=null;return null;}}
+
 function _setPitch(theme){document.documentElement.dataset.pitch=(theme==="navy"?"":theme);
   try{buildPitch();renderTokens();renderDrawings();updateDelUI();}catch(_){}
   const sg=document.getElementById("pitchSeg");
