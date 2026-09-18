@@ -935,7 +935,7 @@ function loadBack(){
   }).catch(function(e){ el.innerHTML='<div class="loading">불러오지 못했어요 — '+String(e&&e.message||e).replace(/[<>&]/g,'')+'</div>'; });
 }
 /* ===== 오류 분석 ===== */
-var ERR=null, ERR_BUSY=false, ERR_LIMIT=5000;
+var ERR=null, ERR_BUSY=false, ERR_LIMIT=5000, ERR_TICKET=0;
 function errDaysVal(){ var e=$('errDays'); return Math.max(1,Math.min(90,+((e&&e.value)||7)||7)); }
 function errUserName(uid){
   if(!uid)return '—';
@@ -967,9 +967,21 @@ function errMeta(e,k){
 }
 function errCode(e){ return e.error_code||e.event_name||'unknown'; }
 function errKindOf(e){ return e.event_name==='sync_failed'||e.feature==='sync'?'sync':'app'; }
+function errStorageDetail(code,stage,msg){
+  var s=String(stage||'')+' '+String(msg||'');
+  if(/values differ|versions differ|storage_copies_differ/.test(s))return ['저장 기준 사본 충돌','기기 안의 두 저장 사본이 달라 덮어쓰기를 보류했습니다. 저장공간 부족이라는 뜻은 아닙니다.','두 사본을 보존하세요. 최신 앱에서 확정된 기준본으로 재확인하며, 계속되면 자료 확인에서 원문을 비교하세요. 브라우저 자료를 지우지 마세요.'];
+  if(/owner changed|source changed|source or owner changed/.test(s)||code==='sync_workspace_changed'||code==='sync_local_changed')return ['변경된 작업 재확인','계정·팀 또는 편집 내용이 바뀌어 이전 작업의 적용을 멈췄습니다. 새 자료를 덮지 않기 위한 보호 동작입니다.','현재 계정과 팀에서 다음 동기화 결과를 확인하세요. 같은 화면에서 계속 반복되면 해당 stage의 동시 편집 경로를 점검하세요.'];
+  if(/connection is closing|indexed database server/i.test(s))return ['기기 저장소 연결 종료','브라우저가 IndexedDB 연결을 종료했거나 저장소 내부 오류를 반환했습니다.','최신 앱은 닫힌 연결을 다시 엽니다. 반복되면 미저장 작업을 보존한 뒤 앱을 다시 열고 기기 저장소 상태를 확인하세요.'];
+  return null;
+}
 function errHuman(code,event,stage,msg){
   code=String(code||'unknown'); event=String(event||''); stage=String(stage||''); msg=String(msg||'');
   var map={
+    sync_conflict:['새 판본 확인 필요','서버 또는 기기 사본이 달라 자동 덮어쓰기를 멈췄습니다. 원문을 보존하며 병합 기준을 다시 확인합니다.'],
+    sync_server_rejected:['서버 저장 미반영','조건부 저장 후 확인한 서버 원문이 요청 내용과 달랐습니다. 저장 완료로 처리하지 않고 대기 항목을 유지합니다.'],
+    sync_confirm_missing:['저장 완료 확인 대기','서버 또는 기기의 원문 확인을 끝내지 못했습니다. 실제 저장 성공 여부는 아직 확정되지 않았습니다.'],
+    match_not_ready:['경기 자료 확인 대기','경기 자료의 서버 원문과 기기 사본 확인이 끝나지 않아 저장을 보류했습니다.'],
+    idp_docs_missing:['선수 성장 기록 확인 필요','IDP 문서 수 또는 병합 구조 확인에 실패했습니다. 기존 기록과 대기 편집을 보존하고 확인해야 합니다.'],
     promise_rejection:['처리되지 않은 작업 실패','앱의 비동기 작업이 실패했지만 해당 화면에서 따로 처리하지 못했습니다. 아래 메시지와 stage를 보고 어느 저장/이동/불러오기 작업인지 확인하세요.'],
     js_error:['스크립트 오류','화면 실행 중 JavaScript 예외가 발생했습니다. 같은 기기와 버전에서 반복되면 해당 화면 코드 결함일 가능성이 큽니다.'],
     sync_network:['동기화 연결 실패','서버 요청이 중간에 끊겼습니다. 네트워크 불안정, 앱 새로고침, 팀 전환 중 요청 중단, 브라우저의 fetch 실패가 흔한 원인입니다.'],
@@ -982,20 +994,25 @@ function errHuman(code,event,stage,msg){
     sync_storage:['기기 저장소 오류','localStorage 또는 IndexedDB 읽기/쓰기 실패입니다. 저장공간 부족, 브라우저 저장소 제한, 깨진 IndexedDB 가능성이 있습니다.'],
     sync_unexpected:['예상 밖 동기화 오류','분류되지 않은 동기화 실패입니다. 메시지와 stage를 기준으로 추가 분류가 필요합니다.']
   };
-  var r=map[code]||null;
+  var detail=errStorageDetail(code,stage,msg),r=detail||map[code]||(event==='idp_docs_missing'?map.idp_docs_missing:null);
   if(!r&&/^sync_http_/.test(code))r=['동기화 HTTP 오류','서버가 HTTP '+code.replace('sync_http_','')+' 응답을 반환했습니다. 권한, 요청 형식, 서버 정책을 확인하세요.'];
   if(!r)r=[event==='sync_failed'?'동기화 실패':'앱 오류','아직 사람이 읽는 설명이 없는 오류입니다. stage와 메시지를 보고 분류를 추가하세요.'];
   var cause=r[1];
   if(stage)cause+=' stage: '+stage+'.';
   if(/load failed|failed to fetch|network/i.test(msg)&&code!=='sync_network')cause+=' 메시지는 네트워크 계열 실패처럼 보입니다.';
-  if(/quota|indexeddb|storage/i.test(msg)&&code!=='sync_storage')cause+=' 메시지는 기기 저장소 문제처럼 보입니다.';
+  if(!detail&&/quota|indexeddb|storage/i.test(msg)&&code!=='sync_storage')cause+=' 메시지는 기기 저장소 문제처럼 보입니다.';
   return {name:r[0],cause:cause};
 }
 function errResolution(code,event,stage,msg){
   code=String(code||'unknown'); event=String(event||''); stage=String(stage||''); msg=String(msg||'');
+  var detail=errStorageDetail(code,stage,msg);if(detail)return detail[2];
+  if(code==='sync_conflict')return '자료 확인에서 기기·서버 원문과 병합 기준을 비교하세요. 확인 전에는 덮어쓰거나 브라우저 자료를 지우지 마세요.';
+  if(code==='sync_server_rejected')return '대기 편집을 보존하고 최신 앱에서 재시도하세요. 반복되면 조건부 저장 응답과 서버 원문, 권한 정책을 확인하세요.';
+  if(code==='sync_confirm_missing'||code==='match_not_ready')return '저장 완료로 간주하지 말고 대기 작업을 유지하세요. 최신 앱에서 다시 확인하고 동일 stage가 반복되는지 확인하세요.';
+  if(code==='idp_docs_missing'||event==='idp_docs_missing')return '기록을 보존한 채 최신 앱에서 다시 확인하세요. 반복되면 문서 구조와 확인된 병합 기준본을 비교하고 누락 원문을 복구하세요.';
   if(code==='sync_auth')return '사용자에게 다시 로그인하게 하고, 반복되면 사용자 상세에서 최근 로그인/세션 변경 시점을 확인하세요.';
   if(code==='sync_permission'||/401|403|permission|policy|rls/i.test(msg))return '사용자 상세에서 소속 팀과 역할을 확인한 뒤, 해당 팀 권한 또는 RLS 정책을 점검하세요.';
-  if(code==='sync_storage'||/quota|indexeddb|storage/i.test(msg))return '사용자에게 브라우저 저장공간 확보, Safari 비공개 모드 해제, 앱 새로고침 후 재시도를 안내하세요.';
+  if(code==='sync_storage'||/quota|indexeddb|indexed database|storage/i.test(msg))return '미저장 자료를 보존하고 저장소 진단을 확인하세요. 공간 부족이 확인된 경우에만 기기 공간을 확보하며, 브라우저 자료는 지우지 마세요.';
   if(code==='sync_offline'||code==='sync_network'||/load failed|failed to fetch|network|offline/i.test(msg))return '기기 네트워크와 재시도 여부를 먼저 확인하세요. 같은 버전에서 다수 발생하면 배포/서버 연결 상태를 함께 봅니다.';
   if(code==='sync_timeout')return '큰 문서나 팀 자료 저장 중인지 확인하고, 같은 stage가 반복되면 요청 크기와 서버 응답 시간을 줄이세요.';
   if(code==='sync_server'||/^sync_http_5/.test(code))return '같은 시간대 Supabase 상태와 서버 로그를 확인하세요. 여러 사용자에게 동시에 보이면 운영 이슈로 분류합니다.';
@@ -1014,23 +1031,42 @@ function errSortRows(rows,mode){
     return new Date(b.created_at)-new Date(a.created_at);
   });
 }
+function readErrorPages(days,current){
+  var until=new Date().toISOString(),since=new Date(Date.now()-days*86400000).toISOString(),rows=[];
+  function page(cursor){
+    if(!current())return Promise.reject(new Error('error view changed'));
+    var q='ps_events?select=id,event_name,status,feature,device,app_version,error_code,created_at,user_id,meta'
+      +'&status=eq.error&created_at=gte.'+encodeURIComponent(since)+'&created_at=lte.'+encodeURIComponent(until)
+      +'&order=created_at.desc,id.desc&limit='+Math.min(500,ERR_LIMIT+1-rows.length);
+    if(cursor)q+='&or='+encodeURIComponent('(created_at.lt.'+cursor.created_at+',and(created_at.eq.'+cursor.created_at+',id.lt.'+cursor.id+'))');
+    return adminRequest(q).then(function(batch){
+      if(!current())throw new Error('error view changed');
+      if(!Array.isArray(batch))throw new Error('invalid error response');
+      if(!batch.length)return {rows:rows,capped:false};
+      var last=batch[batch.length-1];
+      if(!/^\d+$/.test(String(last.id))||!/^\d{4}-\d\d-\d\dT[\d:.+Z-]+$/.test(String(last.created_at)))throw new Error('invalid error cursor');
+      if(cursor&&(last.created_at>cursor.created_at||(last.created_at===cursor.created_at&&Number(last.id)>=Number(cursor.id))))throw new Error('error cursor did not advance');
+      rows=rows.concat(batch);
+      if(rows.length>ERR_LIMIT)return {rows:rows.slice(0,ERR_LIMIT),capped:true};
+      /* Continue even after a short page: the API may enforce a smaller cap. */
+      return page(last);
+    });
+  }
+  return page(null);
+}
 function loadErrors(force){
-  if(ERR_BUSY)return;
   var days=errDaysVal();
   if(ERR&&!force&&ERR.days===days){ renderErrors(); return; }
+  var ticket=++ERR_TICKET,epoch=adminAuthEpoch;
+  function current(){return ticket===ERR_TICKET&&epoch===adminAuthEpoch&&!adminSessionLocked;}
   ERR_BUSY=true;
   ['errSummary','errGroups','errRecent'].forEach(function(id){ if($(id))$(id).innerHTML='<div class="loading">불러오는 중…</div>'; });
-  ensureToken().then(function(at){ if(!at)throw new Error('no token');
-    var since=new Date(Date.now()-days*86400000).toISOString();
-    var q='?select=event_name,status,feature,device,app_version,error_code,created_at,user_id,meta'
-      +'&status=eq.error&created_at=gte.'+encodeURIComponent(since)+'&order=created_at.desc&limit='+ERR_LIMIT;
-    return fetch(BASE+'/rest/v1/ps_events'+q,{headers:hj(at)}).then(function(r){
-      return r.text().then(function(t){ if(!r.ok)throw new Error('errors '+r.status+' '+t); return t?JSON.parse(t):[]; });
-    });
-  }).then(function(rows){
-    ERR={days:days,rows:(rows||[]).filter(function(e){return e.event_name!=='network_offline'&&e.event_name!=='network_restored';}),capped:(rows||[]).length>=ERR_LIMIT,err:null};
+  return readErrorPages(days,current).then(function(result){
+    if(!current())return;
+    ERR={days:days,rows:result.rows.filter(function(e){return e.event_name!=='network_offline'&&e.event_name!=='network_restored';}),capped:result.capped,err:null};
     ERR_BUSY=false; renderErrors();
   }).catch(function(e){
+    if(!current())return;
     ERR={days:days,rows:[],capped:false,err:String(e&&e.message||e)}; ERR_BUSY=false; renderErrors();
   });
 }
@@ -1048,12 +1084,12 @@ function renderErrors(){
     if(!term)return true;
     var hm=errHuman(errCode(e),e.event_name,errMeta(e,'stage'),errMeta(e,'msg'));
     var ui=errUserInfo(e.user_id);
-    var hay=[errCode(e),hm.name,hm.cause,e.event_name,e.feature,e.device,e.app_version,ui.label,ui.sub,ui.team,errMeta(e,'stage'),errMeta(e,'msg')].join(' ').toLowerCase();
+    var hay=[errCode(e),hm.name,hm.cause,e.event_name,e.feature,e.device,e.app_version,ui.label,ui.sub,ui.team,errMeta(e,'stage'),errMeta(e,'source'),errMeta(e,'msg')].join(' ').toLowerCase();
     return hay.indexOf(term)>=0;
   });
   var users={}, devices={}, versions={}, codes={};
   rows.forEach(function(e){ if(e.user_id)users[e.user_id]=1; if(e.device)devices[e.device]=1; if(e.app_version)versions[e.app_version]=1; codes[errCode(e)]=1; });
-  var cap=ERR.capped?'<div class="muted" style="font-size:11px;margin-bottom:8px">최근 '+ERR_LIMIT.toLocaleString()+'건까지만 읽었습니다. 기간이나 검색어를 줄이면 더 정확합니다.</div>':'';
+  var cap=ERR.capped?'<div class="muted" style="font-size:11px;margin-bottom:8px">선택 기간 중 최근 '+ERR_LIMIT.toLocaleString()+'건까지만 읽었습니다. 이전 기록은 집계에서 제외되며, 검색은 불러온 기록 안에서만 적용됩니다.</div>':'';
   $('errSummary').innerHTML=cap+'<div class="err-kpis">'
     +'<div class="err-kpi"><b>'+rows.length.toLocaleString()+'</b><span>'+ERR.days+'일 오류 이벤트</span></div>'
     +'<div class="err-kpi"><b>'+Object.keys(users).length.toLocaleString()+'</b><span>영향 사용자</span></div>'
@@ -1062,7 +1098,7 @@ function renderErrors(){
 
   var groups={};
   rows.forEach(function(e){
-    var k=[errCode(e),e.event_name||'',e.feature||'',e.device||'—',e.app_version||'—'].join('|');
+    var k=JSON.stringify([errCode(e),e.event_name||'',e.feature||'',e.device||'—',e.app_version||'—',errMeta(e,'stage'),errHuman(errCode(e),e.event_name,errMeta(e,'stage'),errMeta(e,'msg')).name]);
     var g=groups[k]||(groups[k]={code:errCode(e),event:e.event_name||'—',feature:e.feature||'app',device:e.device||'—',version:e.app_version||'—',n:0,users:{},last:e.created_at,stage:{},msg:{}});
     g.n++; if(e.user_id)g.users[e.user_id]=(g.users[e.user_id]||0)+1;
     if(e.created_at&&new Date(e.created_at)>new Date(g.last||0))g.last=e.created_at;
@@ -1079,7 +1115,7 @@ function renderErrors(){
     if(groupSort==='version')return String(a.version).localeCompare(String(b.version))||b.n-a.n;
     return b.n-a.n||b.u-a.u||new Date(b.last)-new Date(a.last);
   });
-  $('errGroups').innerHTML=list.length?'<div class="tablewrap"><table><thead><tr><th>오류명</th><th>기능</th><th>기기</th><th>앱 버전</th><th>횟수</th><th>사용자</th><th>원인 추정</th><th>해결 방향</th><th>마지막</th></tr></thead><tbody>'
+  $('errGroups').innerHTML=list.length?'<div class="tablewrap"><table><thead><tr><th>오류명</th><th>기능</th><th>기기</th><th>앱 버전</th><th>횟수</th><th>사용자 수</th><th>사용자</th><th>원인 추정</th><th>해결 방향</th><th>마지막</th></tr></thead><tbody>'
     +list.map(function(g){var hm=errHuman(g.code,g.event,g.topStage,g.topMsg);return '<tr><td><div class="err-title">'+esc(hm.name)+'</div><span class="err-pill">'+esc(g.code)+'</span><div class="muted" style="font-size:10px;margin-top:4px">'+esc(g.event)+'</div></td>'
       +'<td>'+esc(featureLabel(g.feature))+'</td><td><b>'+esc(g.device)+'</b></td><td>'+esc(g.version)+'</td><td><b>'+g.n+'</b>건</td><td>'+g.u+'명</td>'
       +'<td><div class="err-users">'+errTopUsers(g.users,3)+'</div></td><td><div class="err-cause">'+esc(hm.cause)+'</div><div class="err-msg" title="'+esc(g.topMsg)+'">'+esc(g.topMsg||'메시지 없음')+'</div></td>'
@@ -1087,11 +1123,11 @@ function renderErrors(){
     +'</tbody></table></div>':'<div class="empty">조건에 맞는 오류가 없습니다.</div>';
 
   var recent=errSortRows(rows,recentSort);
-  $('errRecent').innerHTML=recent.length?'<div class="tablewrap"><table><thead><tr><th>발생</th><th>사용자</th><th>오류명</th><th>기기</th><th>기능·버전</th><th>stage</th><th>원인 / 메시지</th></tr></thead><tbody>'
+  $('errRecent').innerHTML=recent.length?'<div class="tablewrap"><table><thead><tr><th>발생</th><th>사용자</th><th>오류명</th><th>기기</th><th>기능·버전</th><th>stage · 위치</th><th>원인 / 메시지</th></tr></thead><tbody>'
     +recent.slice(0,120).map(function(e){ var msg=errMeta(e,'msg'), stage=errMeta(e,'stage'), hm=errHuman(errCode(e),e.event_name,stage,msg);
       return '<tr><td>'+fmtDateT(e.created_at)+'</td><td>'+errUserCell(e.user_id)+'</td><td><div class="err-title">'+esc(hm.name)+'</div><span class="err-pill">'+esc(errCode(e))+'</span><div class="muted" style="font-size:10px;margin-top:4px">'+esc(e.event_name||'')+'</div></td>'
         +'<td><b>'+esc(e.device||'—')+'</b></td><td>'+esc(featureLabel(e.feature))+'<div class="muted" style="font-size:10px">'+esc(e.app_version||'버전 없음')+'</div></td>'
-        +'<td><div class="err-meta">'+esc(stage||'—')+'</div></td><td><div class="err-cause">'+esc(hm.cause)+'</div><div class="err-fix">'+esc(errResolution(errCode(e),e.event_name,stage,msg))+'</div><div class="err-msg" title="'+esc(msg)+'">'+esc(msg||'—')+'</div></td></tr>';
+        +'<td><div class="err-meta">'+esc(stage||'—')+(errMeta(e,'source')?'<br>'+esc(errMeta(e,'source')):'')+'</div></td><td><div class="err-cause">'+esc(hm.cause)+'</div><div class="err-fix">'+esc(errResolution(errCode(e),e.event_name,stage,msg))+'</div><div class="err-msg" title="'+esc(msg)+'">'+esc(msg||'—')+'</div></td></tr>';
     }).join('')+'</tbody></table></div>'
     +(recent.length>120?'<div class="muted" style="font-size:11px;margin-top:8px">목록은 120건만 표시합니다. 묶음 표는 현재 조건의 전체 '+recent.length.toLocaleString()+'건 기준입니다.</div>':'')
     :'<div class="empty">조건에 맞는 오류가 없습니다.</div>';

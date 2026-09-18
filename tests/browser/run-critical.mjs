@@ -7,7 +7,7 @@ const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGH
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites={
   board:['gamemodel-sync','board-depth','board-color-palette','vault-board-isolation'],
-  identity:['service-worker-update','account-team-switch','mobile-oauth-recovery'],
+  identity:['admin-errors','service-worker-update','account-team-switch','mobile-oauth-recovery'],
   storage:['storage-safety','private-board-isolation','roster-main-save','autosave-journal-recovery'],
   idp:['idp-recovery','idp-story-dedup','support']
 };
