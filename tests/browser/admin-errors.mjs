@@ -12,7 +12,7 @@ const server=http.createServer((req,res)=>{const f=path.resolve(root,'.'+new URL
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
 const uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',created_at=new Date(Date.now()-60000).toISOString();
 const fixtures=[['sync_storage','storage','legacy and IndexedDB values differ'],['sync_storage','storage',"Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing."],['sync_local_changed','storage_source_changed','shared source or owner changed']];
-const rows=Array.from({length:1251},(_,i)=>{const [error_code,stage,msg]=fixtures[i%3];return {id:1251-i,event_name:'sync_failed',status:'error',feature:'sync',device:'tablet',app_version:'test',user_id:uid,created_at,meta:{stage,msg}};});
+const rows=Array.from({length:1251},(_,i)=>{const [error_code,stage,msg]=fixtures[i%3];return {id:1251-i,error_code,event_name:'sync_failed',status:'error',feature:'sync',device:'tablet',app_version:'test',user_id:uid,created_at,meta:{stage,msg}};});
 let browser;
 try{
  browser=await pw[engine].launch({headless:true,...(engine==='chromium'&&process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
@@ -34,6 +34,7 @@ try{
  await page.waitForFunction(()=>document.querySelector('#errSummary')?.textContent.includes('1,251'));
  assert.equal(calls.length,8);assert.match(await page.locator('#errGroups').innerText(),/저장 기준 사본 충돌/);assert.match(await page.locator('#errGroups').innerText(),/기기 저장소 연결 종료/);assert.match(await page.locator('#errGroups').innerText(),/변경된 작업 재확인/);
  assert.equal(await page.locator('#errGroups thead th').count(),10);assert.equal(await page.locator('#errGroups tbody tr').count(),3);assert.equal(await page.locator('#errGroups tbody tr').first().locator('td').count(),10);
+ assert.equal(await page.locator('#errGroups .err-pill').filter({hasText:'sync_storage'}).count(),2);assert.equal(await page.locator('#errGroups .err-pill').filter({hasText:'sync_local_changed'}).count(),1);
  await page.locator('#errSearch').fill('storage_source_changed');assert.equal(await page.locator('#errGroups tbody tr').count(),1);assert.match(await page.locator('#errSummary').innerText(),/417/);
  await page.locator('#errSearch').fill('');await page.locator('#errDays').selectOption('30');await page.waitForFunction(()=>document.querySelector('#errSummary')?.textContent.includes('1,251'));assert.equal(calls.length,16);
  await page.screenshot({path:path.join(out,'errors.png')});assert.deepEqual(errors,[]);fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify({engine,rows:1251,groups:3,pagesPerLoad:8,errors,fixture:'Synthetic errors only; all external endpoints intercepted.'},null,2));console.log(JSON.stringify({engine,rows:1251,passed:true}));await context.close();
