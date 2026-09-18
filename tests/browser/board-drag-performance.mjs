@@ -44,7 +44,7 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
       for(const target of targets)for(const finish of ['frame','frame-layout','release','cancel']){
         const metrics=await page.evaluate(async ({finish,target})=>{
           sel=null;multiSel=[];state.tool='move';renderTokens();clearBoardHistory();
-          const p=tokenItems().find(it=>String(it.o.id)===target).o,g=tokenLayer.querySelector('[data-id="'+target+'"]'),face=g.querySelector('.ps-depth-face');
+          const p=tokenItems().find(it=>String(it.o.id)===target).o,g=tokenLayer.querySelector('[data-id="'+target+'"]'),face=g.querySelector('.ps-depth-face'),mesh=g.querySelector('.ps-equipment-mesh');
           const start={x:p.x,y:p.y},b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2;
           // Layout can change between input and its RAF (including normal tilt
           // fitting). Verify against the projection actually used at each end,
@@ -68,7 +68,7 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
           const afterEnd=transforms;
           await new Promise(requestAnimationFrame);
           const a=samples[0],z=samples.at(-1),expected={x:start.x+z.x-a.x,y:start.y+z.y-a.y};
-          const result={moves:120,beforeEnd,transforms,solves,reads,ctmReads,afterEnd,expected,samples,lastInput:{x:x+30,y:y+20},actual:{x:p.x,y:p.y},undo:undoStack.length,sameFace:face===g.querySelector('.ps-depth-face'),dragging:document.body.classList.contains('token-drag')};
+          const result={moves:120,beforeEnd,transforms,solves,reads,ctmReads,afterEnd,expected,samples,lastInput:{x:x+30,y:y+20},actual:{x:p.x,y:p.y},undo:undoStack.length,sameFace:face===g.querySelector('.ps-depth-face'),sameMesh:mesh===g.querySelector('.ps-equipment-mesh'),dragging:document.body.classList.contains('token-drag')};
           clientToUnit=toUnitOriginal;drawLayer.getScreenCTM=ctm;stage.style.transform=stageTransform;
           g.setAttribute=attr;_bcSolveH=solve;markers.forEach((m,i)=>m.getBoundingClientRect=rects[i]);
           undoLast();const restored=tokenItems().find(it=>String(it.o.id)===target).o;result.undoPosition={x:restored.x,y:restored.y};result.start=start;return result;
@@ -80,7 +80,7 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
         assert.equal(metrics.samples[1].cx,metrics.lastInput.x);assert.equal(metrics.samples[1].cy,metrics.lastInput.y);
         if(finish==='frame-layout'&&view==='depth')assert.equal(metrics.solves,1,'a layout change invalidates the cached projection');
         assert.ok(Math.abs(metrics.actual.x-metrics.expected.x)<1e-5);assert.ok(Math.abs(metrics.actual.y-metrics.expected.y)<1e-5);
-        assert.deepEqual(metrics.undoPosition,metrics.start);assert.equal(metrics.undo,1);assert.equal(metrics.sameFace,true);assert.equal(metrics.dragging,false);
+        assert.deepEqual(metrics.undoPosition,metrics.start);assert.equal(metrics.undo,1);assert.equal(metrics.sameFace,true);assert.equal(metrics.sameMesh,true);assert.equal(metrics.dragging,false);
       }
       const group=await page.evaluate(()=>{
         state.tool='move';sel=null;state.players[2].locked=true;multiSel=[state.players[0],state.ball,state.equipment[0],state.players[2]];const selected=multiSel.slice(),ids=selected.map(p=>String(p.id));renderTokens();clearBoardHistory();

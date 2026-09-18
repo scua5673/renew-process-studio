@@ -59,10 +59,50 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       setTokShape('shirt');state.players[0].img=photo;state.players[1].color='#238c71';state.players[1].rot=90;state.players[1].scale=1.4;renderTokens();
       const p=tokenLayer.querySelector('[data-id="depth-a"]'),shirt=tokenLayer.querySelector('[data-id="depth-b"]');
       const before=JSON.stringify(captureSnap()),saved=boardImageXML().xml;
-      const cone=state.equipment[0],g=tokenLayer.querySelector('[data-id="cone-a"]');cone.rot=90;g.setAttribute('transform',tokenTransform(cone));PSBoardDepth.update(g,cone);
-      return {photo:p.querySelector('image').getAttribute('href')===photo,shirt:shirt.querySelector('.tok-c').tagName==='path',color:shirt.querySelector('.tok-c').getAttribute('fill'),face:shirt.querySelector('.ps-depth-face').getAttribute('transform'),exportPhoto:saved.includes('data:image/svg+xml'),rotatedCone:g.querySelector('.ps-depth-face').getAttribute('transform')};
+      const cone=state.equipment[0],g=tokenLayer.querySelector('[data-id="cone-a"]'),coneBefore=g.querySelector('.ps-equipment-mesh').innerHTML;cone.rot=90;g.setAttribute('transform',tokenTransform(cone));PSBoardDepth.update(g,cone);
+      return {photo:p.querySelector('image').getAttribute('href')===photo,shirt:shirt.querySelector('.tok-c').tagName==='path',color:shirt.querySelector('.tok-c').getAttribute('fill'),face:shirt.querySelector('.ps-depth-face').getAttribute('transform'),exportPhoto:saved.includes('data:image/svg+xml'),rotatedCone:g.querySelector('.ps-equipment-mesh').innerHTML!==coneBefore};
     });
-    assert.equal(variants.photo,true);assert.equal(variants.shirt,true);assert.equal(variants.color,'#238c71');assert.equal(variants.exportPhoto,true);assert.match(variants.face,/translate\(-13,/);assert.match(variants.rotatedCone,/translate\(-7,/);
+    assert.equal(variants.photo,true);assert.equal(variants.shirt,true);assert.equal(variants.color,'#238c71');assert.equal(variants.exportPhoto,true);assert.match(variants.face,/translate\(-13,/);assert.equal(variants.rotatedCone,true);
+    for(const theme of ['navy','white','train']){
+      const equipment=await page.evaluate(theme=>{
+        __setTilt(false);state.players=[];state.ball=null;state.orientation='h';document.documentElement.dataset.pitch=theme;
+        state.equipment=PSBoardDepth.equipmentTypes.map((team,i)=>({id:'mesh-'+team,team,x:150+i%5*170,y:180+Math.floor(i/5)*210,color:/goal/.test(team)?undefined:'#ed8b23',rot:i%3===0?25:0,locked:team==='pole'}));
+        sel=null;multiSel=[];buildPitch();renderTokens();
+        const before=JSON.stringify(captureSnap()),flat=Array.from(tokenLayer.children).map(g=>g.innerHTML);
+        __setTilt(true);__tiltFit();
+        const clone=tokenLayer.cloneNode(true);PSBoardDepth.flattenAll(clone);
+        const restored=Array.from(clone.children).map(g=>g.innerHTML);
+        const meshes=Array.from(tokenLayer.querySelectorAll('.ps-equipment-mesh')).map(g=>({type:g.dataset.equipment,faces:g.querySelectorAll('polygon,polyline').length,width:g.getBBox().width,height:g.getBBox().height}));
+        const xml=boardImageXML().xml;
+        return {before,after:JSON.stringify(captureSnap()),flat,restored,meshes,exportMesh:xml.includes('ps-equipment-mesh'),lockVisible:!!tokenLayer.querySelector('[data-id="mesh-pole"] .ps-depth-face > .tok-lock')};
+      },theme);
+      assert.equal(equipment.before,equipment.after);assert.deepEqual(equipment.restored,equipment.flat);
+      assert.equal(equipment.meshes.length,15);assert.equal(equipment.exportMesh,false);assert.equal(equipment.lockVisible,true);
+      for(const m of equipment.meshes){assert.ok(m.faces>=10,m.type);assert.ok(m.width>0&&m.height>0&&Number.isFinite(m.width+m.height),m.type);}
+      await page.screenshot({path:path.join(out,viewport.width+'-equipment-'+theme+'.png')});
+      if(viewport.width===1280&&theme==='white'){
+        for(const m of equipment.meshes.filter(m=>m.type!=='pole')){
+          const point=await page.evaluate(type=>{
+            const mesh=tokenLayer.querySelector('[data-id="mesh-'+type+'"] .ps-equipment-mesh'),b=mesh.getBoundingClientRect();
+            let best=null;
+            const hits=(x,y)=>document.elementFromPoint(x,y)?.closest('.ps-equipment-mesh')===mesh;
+            for(let iy=1;iy<30;iy++)for(let ix=1;ix<30;ix++){
+              const x=Math.round(b.x+b.width*ix/30),y=Math.round(b.y+b.height*iy/30);
+              if(!hits(x,y))continue;
+              const score=[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>hits(x+dx,y+dy)).length;
+              if(!best||score>best.score)best={x,y,score};
+            }
+            return best;
+          },m.type);
+          assert.ok(point,m.type+' has a visible draggable surface');
+          const before=await page.evaluate(type=>{clearBoardHistory();const p=state.equipment.find(p=>p.team===type);return {x:p.x,y:p.y};},m.type);
+          await page.mouse.move(point.x,point.y);await page.mouse.down();await page.mouse.move(point.x+15,point.y+10,{steps:4});await page.mouse.up();
+          const after=await page.evaluate(type=>{const p=state.equipment.find(p=>p.team===type),r={x:p.x,y:p.y};undoLast();return r;},m.type);
+          assert.ok(Math.hypot(after.x-before.x,after.y-before.y)>5,m.type+' moves from its mesh surface '+JSON.stringify({point,before,after}));
+        }
+      }
+
+    }
     await page.evaluate(()=>__setTilt(false));assert.equal(await page.locator('.token[data-depth]').count(),0);
     assert.deepEqual(errors,[]);
   }finally{await context.close();}
