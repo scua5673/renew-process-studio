@@ -21,6 +21,18 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'phone',widt
   await context.addInitScript(({UID,WID})=>{
    if(!localStorage.getItem('palette_fixture_seeded')){localStorage.setItem('palette_fixture_seeded','1');localStorage.setItem('ps_sync_session',JSON.stringify({uid:UID,at:'fixture-only',rt:'fixture-only'}));localStorage.setItem('ps_active_ws',WID);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:UID,wid:WID}));localStorage.setItem('ps_ws_list',JSON.stringify([{id:WID,kind:'team',role:'owner'}]));localStorage.setItem('cs_perms_v1',JSON.stringify({members:{[UID]:{role:'executive'}},defaultRole:'player'}));localStorage.setItem('cs_lang','ko');}
    window.PSSync={session:()=>JSON.parse(localStorage.getItem('ps_sync_session')),activeWs:()=>WID,activeWsObj:()=>({id:WID,kind:'team',role:'owner'}),dataUnlocked:()=>true,keyReady:()=>true,act(){},ping(){},event(){}};
+    // Enforce the real personal-board v2 owner and compare-and-swap contract.
+    const personal='33333333-3333-4333-8333-333333333333', serverKey='fixture_personal_board_v2';
+    const owner=()=>({uid:UID,wid:personal,active:WID,seal:UID+':'+WID+':1',epoch:1,switchSeal:'',switchEpoch:'1'});
+    const response=()=>({ok:true,uid:UID,wid:personal,...JSON.parse(localStorage.getItem(serverKey)||'{"raw":null,"cupd":null}')});
+    const spaces=JSON.parse(localStorage.getItem('ps_ws_list')||'[]');
+    if(!spaces.some(w=>w.id===personal)){spaces.push({id:personal,kind:'personal',role:'owner',owner_id:UID});localStorage.setItem('ps_ws_list',JSON.stringify(spaces));}
+    window.PSSync.boardLive={version:2,scope:'personal',owner,async get(){return response();},async save(raw,options){
+      const old=response();if(options.uid!==UID||options.wid!==personal)throw Error('fixture owner mismatch');
+      if(raw!==old.raw){if(options.expected_raw!==old.raw||options.expected_cupd!==old.cupd)throw Error('fixture CAS conflict');
+        localStorage.setItem(serverKey,JSON.stringify({raw,cupd:Math.max(Date.now(),(old.cupd||0)+1)}));}
+      return response();
+    }};
   },{UID,WID});
   page=await context.newPage();page.setDefaultTimeout(12000);page.on('pageerror',e=>errors.push(String(e)));
   async function ready(){frame=page.frame({url:/board.html\?fixture=color-palette/});await frame.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone);await page.waitForTimeout(1100);if(spec.shellDock)await frame.evaluate(()=>{document.body.classList.add('ps-dock','ps-phone-work');dispatchEvent(new Event('resize'));});}

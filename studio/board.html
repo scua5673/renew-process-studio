@@ -3012,9 +3012,11 @@ body.bc-tilt3d #boardStage{background:var(--pitchbg,#252839)}
 body.bc-tilt3d svg#board{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 body.bc-tilt3d #board #world>rect:not([id]),body.bc-tilt3d #board .grass-stripes,body.bc-tilt3d #board #ps-pitchtile,body.bc-tilt3d #board #ps-pitchimg,body.bc-tilt3d #board .pitch-goal,body.bc-tilt3d #board .ps-pitch-goal{visibility:hidden}
 #tiltGoals .goal-plane{position:absolute;left:0;top:0;box-sizing:border-box;transform-origin:0 0;backface-visibility:visible}
-#tiltGoals .goal-net{background:repeating-linear-gradient(45deg,#ffffff60 0 .6px,transparent .6px 3px),repeating-linear-gradient(-45deg,#ffffff60 0 .6px,transparent .6px 3px);border:1px solid #ffffff90}
+#tiltGoals{--goal-post:#fff;--goal-net:rgba(255,255,255,.48);--goal-edge:rgba(255,255,255,.65)}
+html[data-pitch="white"] #tiltGoals,html[data-pitch="train"] #tiltGoals{--goal-post:#303c4c;--goal-net:rgba(37,50,67,.5);--goal-edge:rgba(37,50,67,.7)}
+#tiltGoals .goal-net{background:repeating-linear-gradient(45deg,var(--goal-net) 0 .6px,transparent .6px 3px),repeating-linear-gradient(-45deg,var(--goal-net) 0 .6px,transparent .6px 3px);border:1px solid var(--goal-edge)}
 #tiltGoals .goal-side{clip-path:polygon(0 0,100% 35%,100% 100%,0 100%)}
-#tiltGoals .goal-front{border:2px solid #fff;border-bottom:0;background:none}
+#tiltGoals .goal-front{border:2px solid var(--goal-post);border-bottom:0;background:none}
 </style>
 <style id="ps-custompitch-css">body.ps-custompitch .grass-stripes{display:none!important;}body.ps-custompitch #world>rect:not([id]){display:none!important;}body.ps-custompitch #board{background:#e9edf2;}#ps-pitchimg{pointer-events:none;}#pitchSeg .ps-pcol{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin-left:3px;border-radius:50%;border:1px solid var(--line);overflow:hidden;cursor:pointer;padding:2px;flex:0 0 auto;box-sizing:border-box;background:var(--panel,#fff);box-shadow:0 1px 2px rgba(12,20,32,.10);}#pitchSeg .ps-pcol:focus-within{border-color:var(--blue,#3a6df0);box-shadow:0 0 0 2px color-mix(in srgb,var(--blue,#3a6df0) 22%,transparent);}#pitchSeg .ps-pcol input{-webkit-appearance:none;appearance:none;width:100%;height:100%;border:0;padding:0;margin:0;cursor:pointer;background:transparent;border-radius:50%;outline:0;}#pitchSeg .ps-pcol input::-webkit-color-swatch-wrapper{padding:0;}#pitchSeg .ps-pcol input::-webkit-color-swatch{border:0;border-radius:50%;}#pitchSeg .ps-pcol input::-moz-color-swatch{border:0;border-radius:50%;}</style>
 <script>
@@ -3997,6 +3999,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
+<script src="board-token-depth.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -4901,6 +4904,7 @@ function makeToken(p,kind){
     lg.appendChild(el("path",{d:"M-3 -1.2v-2.2a3 3 0 0 1 6 0v2.2M-4 -1.2h8v5.2h-8z",fill:"none",stroke:"#fff","stroke-width":1.4,"stroke-linecap":"round","stroke-linejoin":"round"}));
     g.appendChild(lg);
   }
+  if(document.body.classList.contains("bc-tilt3d")&&!window.__animExport&&window.PSBoardDepth)PSBoardDepth.apply(g,p,kind);
   enableDrag(g,p,removable,kind);return g;
 }
 function playerTeamCol(p){   // p.color 없을 때의 유효 팀색 — 렌더 로직과 동일 규칙(현재색 하이라이트용)
@@ -5677,7 +5681,7 @@ function _rotMove(e){
   d=e.shiftKey?Math.round(d/45)*45:Math.round(d/5)*5;   /* 기본 5° 스냅(손떨림 제거) · Shift 는 45° */
   p[_rotDrag.k]=((d%360)+360)%360;
   if(_rotDrag.k==="rot"){   /* 장비 — 토큰 변환만 즉시 갱신 */
-    try{var _g=tokenLayer.querySelector('[data-id="'+p.id+'"]');if(_g)_g.setAttribute("transform",tokenTransform(p));}catch(_){}
+    try{var _g=tokenLayer.querySelector('[data-id="'+p.id+'"]');if(_g){_g.setAttribute("transform",tokenTransform(p));if(window.PSBoardDepth)PSBoardDepth.update(_g,p);}}catch(_){}
   }else{renderVisionRAF();}
   _renderRotHandle();
 }
@@ -6676,28 +6680,16 @@ function psDragging(){ var t=window.__psPtrDown; return !!t&&(Date.now()-t<15000
 function boardThumbSVG(){
   if(window.__psThumbCapturing)return window.__psLastThumb||"";
   if(psDragging()&&window.__psLastThumb!=null)return window.__psLastThumb;
-  /* Thumbnail rendering is a read operation, never another live save. */
+  var savedSel=sel,savedMulti=multiSel;
   window.__psThumbCapturing=true;
-  var savedSel=sel,savedMulti=multiSel,r;
-  try{
-    if(!document.body.classList.contains("editing")||window.__psThumbNoEd)r=_boardThumbSVGRaw();
-    else{window.__psThumbNoEd=true;try{renderTokens();r=_boardThumbSVGRaw();}
-      finally{window.__psThumbNoEd=false;renderTokens();}}
-    window.__psLastThumb=r;return r;
-  }finally{
-    sel=savedSel;multiSel=savedMulti;
-    try{_setSelRings();}catch(_){}
-    window.__psThumbCapturing=false;
-  }
+  try{return window.__psLastThumb=_boardThumbSVGRaw();}
+  finally{sel=savedSel;multiSel=savedMulti;window.__psThumbCapturing=false;}
 }
-function _boardThumbSVGRaw(){var _s=sel,_ms=(typeof multiSel!=="undefined")?multiSel:null,_had=_s||(_ms&&_ms.length);
-  /* 2.582 — 색 팔레트 열림도 지킨다(사용자 "색상 눌렀을 때 뜨는 것이 선택하기도 전에 바로 사라져"). 실측: 편집기 자동 저장(saveEditorDraft ≈250ms) → 썸네일 → 여기서 선택을 잠깐 풀 때
-     updateDelUI 가 «선택 없음» 으로 보고 #colorCtl.open 을 지웠다. 선택은 아래에서 되살리면서 열림은 안 되살려 팔레트가 0.25초 만에 닫혔다. */
-  var _cc=document.getElementById("colorCtl"),_ccOpen=!!(_cc&&_cc.classList.contains("open"));
-  /* 2.712 — 선택은 잠시 풀되 **패널(.sel-ctl)은 숨기지 않는다**(updateDelUI 생략). 숨기면 그 안의 <input type=color>(글자색·배경색)가 사라져
-     열린 기본 색 고르개가 즉시 닫혔다(사용자 "배경색 누르면 바로 사라져" — 편집기 자동 저장 250ms 마다 여기를 지난다). 핸들·선택 링은 renderTokens/renderDrawings 가 sel=null 로 그려 빠진다. */
-  if(_had){sel=null;if(_ms)multiSel=[];renderTokens();renderDrawings();}
+function _boardThumbSVGRaw(){
   const c=svg.cloneNode(true);
+  if(window.PSBoardDepth)PSBoardDepth.flattenAll(c);
+  c.querySelectorAll(".ps-selring,.tok-hit,.tok-lock,.draw-handle").forEach(function(n){n.remove();});
+  if(document.body.classList.contains("editing"))c.querySelectorAll(".token").forEach(function(n){n.setAttribute("transform",(n.getAttribute("transform")||"")+" scale("+(1/0.68)+")");});
   /* 2.559 — "#ps-pitchimg" 도 뺀다: 올린 운동장 **사진**이 원본 크기 data URI 째로 루트 svg 밑에 있어(renderPitchImg)
      클론마다 통째로 실렸다. 감사 실측: 사진 있는 판의 썸네일이 장면·카드·PDF 페이지(×3)마다 사진 한 장씩 —
      «실질적 OOM 방아쇠». 2.519 가 잔디 텍스처에 한 것과 같은 처리다. 원본 작전판은 그대로다. */
@@ -6732,7 +6724,6 @@ function _boardThumbSVGRaw(){var _s=sel,_ms=(typeof multiSel!=="undefined")?mult
   const suf="_th"+Date.now().toString(36)+"_"+window.__thumbSeq.toString(36);
   c.removeAttribute("id");c.querySelectorAll("[id]").forEach(e=>{e.id=e.id+suf;});
   c.innerHTML=c.innerHTML.replace(/url\(#([\w-]+)\)/g,(m,id)=>"url(#"+id+suf+")").replace(/href="#([\w-]+)"/g,(m,id)=>'href="#'+id+suf+'"');
-  if(_had){sel=_s;if(_ms)multiSel=_ms;renderTokens();renderDrawings();updateDelUI();try{if(_ccOpen&&_cc)_cc.classList.add("open");}catch(_){}try{positionSelCtl();}catch(_){}}   /* 선택 복원 — 썸네일 생성이 사용자의 선택을 지우지 않게(아이패드 QA: 화살표 편집 핸들·복제/삭제 버튼 유지) */
   /* outerHTML(HTML 직렬화)은 xlink: 접두사를 쓰면서 xmlns:xlink 선언을 안 붙인다 → data:image/svg+xml 로 <img>에 넣으면
      "Namespace prefix xlink for href on image is not defined" 로 SVG 전체가 파싱 실패(잔디 텍스처 쓴 보드가 통째로 깨짐).
      XMLSerializer 는 네임스페이스를 자동으로 선언한다 — 내보내기(아래 exportSVG)와 같은 방식으로 통일. */
@@ -7311,8 +7302,6 @@ function _boardLiveWriteNow(recovery){
     var __ab=document.getElementById("animBar");
     if(__ab&&__ab.classList.contains("on")&&!animPlaying&&!document.body.classList.contains("meet-mode")&&anim.frames.length&&animActive>=0&&animActive<anim.frames.length){
       anim.frames[animActive].snap=captureSnap();
-      try{if(!sel&&!(typeof multiSel!=="undefined"&&multiSel&&multiSel.length))anim.frames[animActive].thumb=boardThumbSVG();}catch(_){}
-      try{renderAnimFrames();}catch(_){}
     }
   }catch(_){}
   try{
@@ -7320,22 +7309,29 @@ function _boardLiveWriteNow(recovery){
       var _mi=window.__meet.idx();
       if(_mi>=0&&anim.slides[_mi]){
         anim.slides[_mi].snap=captureSnap();
-        try{if(!sel&&!(typeof multiSel!=="undefined"&&multiSel&&multiSel.length))anim.slides[_mi].thumb=boardThumbSVG();}catch(_){}
-        if(window.__ksThumb)window.__ksThumb(_mi);
       }
     }
   }catch(_){}
-  var _bs=null,_bv=window.__vaultEdit?"board":v,_bp=null;
-  try{_bs=window.__vaultEdit?((window.__viewSnaps&&window.__viewSnaps.board)||{}):captureSnap();}catch(_){_bs={};}
-  try{_bp=window.__psPages?window.__psPages.liveVal():null;}catch(_){}
-  /* 애니메이션 장면도 문서 데이터다. meetSlides 만 저장하고 anim.frames 는 빼먹어서,
-     보관함에 저장하지 않은 애니메이션이 다시 들어오면 사라져 있었다. */
-  var _af=null,_ai=0;
-  try{ _af=window.__animFrames?window.__animFrames():null; if(_af)_ai=Math.max(0,Math.min(animActive,_af.length-1)); }catch(_){}
-  var payload={snap:_bs,view:_bv,matchActive:matchActive,meetSlides:anim.slides,animFrames:_af,animActive:_ai,boardPages:_bp,_savedAt:Date.now()};
+  var _bs=null,_bv=window.__vaultEdit?"board":v,_bp=null,_af=null,_ai=0,payload,raw;
   var owner=boardPrivateOwner();
   if(!owner||!boardPrivateSameAccount(owner,_boardPrivateOwner)||!_boardPrivateLoaded)return Promise.resolve(false);
-  var raw=JSON.stringify(payload),old=_boardPrivateRecord;
+  /* A failed capture is not an empty board. Keep the last durable record intact. */
+  try{
+    _bs=window.__vaultEdit?((window.__viewSnaps&&window.__viewSnaps.board)||{}):captureSnap();
+    _bp=window.__psPages?window.__psPages.liveVal():null;
+    _af=window.__animFrames?window.__animFrames(true):null;
+    if(_af)_ai=Math.max(0,Math.min(animActive,_af.length-1));
+    payload={snap:_bs,view:_bv,matchActive:matchActive,meetSlides:anim.slides,animFrames:_af,animActive:_ai,boardPages:_bp,_savedAt:Date.now()};
+    raw=JSON.stringify(payload);
+  }catch(error){
+    _bliveDirty=true;
+    try{if(!window.__psCaptureErrorAt||Date.now()-window.__psCaptureErrorAt>10000){
+      window.__psCaptureErrorAt=Date.now();
+      toast("저장 준비를 완료하지 못했습니다 — 현재 화면을 유지하고 다시 저장해 주세요");
+    }}catch(_){}
+    return Promise.resolve(false);
+  }
+  var old=_boardPrivateRecord;
   var rec=boardPrivateMake(owner,raw,old?old.base:_boardPrivateBase,true,old&&old.attempt);
   _bliveDirty=true;
   var localOnly=arguments[1]===true;
@@ -7356,8 +7352,26 @@ function _boardLiveWriteNow(recovery){
     return false;
   });
 }
+/* Preview is derived UI, scheduled separately from durable capture. A broken
+   thumbnail must never prevent a document from reaching local storage. */
+var _boardPreviewTimer=null;
+function boardSchedulePreview(){
+  clearTimeout(_boardPreviewTimer);
+  _boardPreviewTimer=setTimeout(function(){
+    _boardPreviewTimer=null;
+    if(window.__animExport||window.__capLock||_vaultBoardContext||_vaultBoardRestoring||_bliveApplying||animPlaying)return;
+    if(typeof psDragging==='function'&&psDragging())return;
+    window.__psPreviewRefreshing=true;
+    try{
+      autoSaveAnimFrame();
+      if(document.body.classList.contains('meet-mode')&&window.__meet&&!window.__ksNav){
+        var i=window.__meet.idx();if(i>=0&&anim.slides[i]){anim.slides[i].thumb=boardThumbSVG();if(window.__ksThumb)window.__ksThumb(i);}
+      }
+    }catch(_){}finally{window.__psPreviewRefreshing=false;}
+  },350);
+}
 function boardSaveLive(){
-  if(window.__psThumbCapturing)return;
+  if(window.__psThumbCapturing||window.__psPreviewRefreshing)return;
   if(_vaultBoardContext||_vaultBoardRestoring)return;
   if(_bliveApplying)return;
   /* 커뮤니티 상세는 다른 사람의 게시물을 보는 읽기 전용 화면이다.
@@ -7376,6 +7390,7 @@ function boardSaveLive(){
   if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner))return;
   _bliveDirty=true;
   ++_boardPrivateEditSeq;
+  if(typeof boardSchedulePreview==='function')boardSchedulePreview();
   // Stage the complete owner-tagged draft immediately. A team/account switch
   // may cancel the cloud debounce before its two seconds have elapsed.
   try{_boardLiveWriteNow(false,true);}catch(_){}
@@ -7521,11 +7536,14 @@ function __exportVB(){
   }catch(_){}
   return vb;}
 /* 2.705 — 내보내기(PNG·GIF·MP4)도 썸네일과 같이 편집기 화면용 0.68 배수를 뺀다 */
-function boardImageXML(vbFix){ if(!document.body.classList.contains("editing")||window.__psThumbNoEd)return _boardImageXMLRaw(vbFix);
-  window.__psThumbNoEd=true; try{ renderTokens(); }catch(_){}
-  try{ return _boardImageXMLRaw(vbFix); } finally{ window.__psThumbNoEd=false; try{ renderTokens(); }catch(_){} } }
+function boardImageXML(vbFix){ return _boardImageXMLRaw(vbFix); }
 function _boardImageXMLRaw(vbFix){
   const clone=svg.cloneNode(true);
+  if(window.PSBoardDepth)PSBoardDepth.flattenAll(clone);
+  clone.querySelectorAll('.ps-selring,.tok-hit,.tok-lock,.draw-handle').forEach(n=>n.remove());
+  if(document.body.classList.contains('editing')&&!window.__psThumbNoEd){
+    clone.querySelectorAll('.token').forEach(n=>n.setAttribute('transform',(n.getAttribute('transform')||'')+' scale('+(1/0.68)+')'));
+  }
   /* 내보내기에는 결과물만 포함 — 애니메이션 편집용 점선 경로·어니언스킨·선택/정렬 핸들은 제외 */
   ["#drawCatch","#pathLayer","#onionLayer","#guideLayer","#snapGuideLayer","#rotHandle","#multiGuideLayer","#lassoRect"].forEach(function(q){
     try{var n=clone.querySelector(q);if(n)n.remove();}catch(_){}
@@ -8003,7 +8021,7 @@ function toggleHl(){
 }
 try{ var _ahb=document.getElementById("animHlBtn"); if(_ahb)_ahb.onclick=function(e){e.stopPropagation();toggleHl();}; }catch(_){}
 /* 애니메이션(anim.frames)을 항목에 저장/복원 — 작전판 애니메이션이 보관함·커뮤니티에서 유지되도록 (#13) */
-window.__animFrames=function(){ try{
+window.__animFrames=function(strict){ try{
   /* 애니메이션 바를 접어도 제작한 장면은 문서 데이터다.
      예전에는 바가 열려 있을 때만 반환해 훈련 저장·커뮤니티 업로드에서 장면이 빠졌다. */
   if(anim.frames&&anim.frames.length>1){
@@ -8017,7 +8035,7 @@ window.__animFrames=function(){ try{
           재생 중(animPlaying)만이 아니라 **애니 모드가 아닐 때도** 찍으면 안 된다. */
     var __ab=document.getElementById("animBar");
     var __inAnim=!!(__ab&&__ab.classList.contains("on"))&&!document.body.classList.contains("meet-mode");
-    if(__inAnim&&!animPlaying&&!window.__animExport&&animActive>=0&&animActive<anim.frames.length){ try{anim.frames[animActive].snap=captureSnap();}catch(_){} }   /* 2.752 — 내보내기 중 제외 */
+    if(__inAnim&&!animPlaying&&!window.__animExport&&animActive>=0&&animActive<anim.frames.length){ try{anim.frames[animActive].snap=captureSnap();}catch(error){if(strict)throw error;} }   /* 2.752 — 내보내기 중 제외 */
     var arr=JSON.parse(JSON.stringify(anim.frames));
     /* 2.559 — 저장본엔 장면 0 의 썸네일만 남긴다. 나머지는 파생물이라 불러올 때 보이는 칸부터
        __snapToThumb 로 다시 만든다(__afWindow). 장면 100개 카드가 7.4MB→0.4MB — 보관함 전체를
@@ -8025,7 +8043,7 @@ window.__animFrames=function(){ try{
     for(var _k=1;_k<arr.length;_k++){ if(arr[_k])delete arr[_k].thumb; }
     if(arr[0]){ arr[0].__t=anim.title||""; arr[0].__tc=anim.titleColor||"#e23b3b"; arr[0].__hold=animHold||.6; }   /* 전체 공통 메타를 프레임0에 실어 저장 */
     return arr;
-  } }catch(_){} return null; };
+  } }catch(error){if(strict)throw error;} return null; };
 window.__animReset=function(){ try{
   try{stopAnim();}catch(_){}
   anim.frames=[]; animActive=-1; anim.title=""; anim.titleColor="#e23b3b"; animHold=.6; animLoop=false;try{syncLoopUI();}catch(_){}
@@ -8051,7 +8069,7 @@ window.__animRestore=function(frames,activeIdx){ try{
   return true;
 }catch(_){return false;} };
 window.__animRestoreMeta=function(a){animHold=+a.hold||.6;anim.title=a.title||"";anim.titleColor=a.titleColor||"#e23b3b";syncAnimTiming();};
-window.__animGet=function(){ try{ return {frames:JSON.parse(JSON.stringify(anim.frames||[])),active:animActive,hold:animHold,title:anim.title||"",titleColor:anim.titleColor||"#e23b3b"}; }catch(_){ return null; } };   /* 2.682 — 페이지별 장면 저장용 */
+window.__animGet=function(strict){ try{ return {frames:JSON.parse(JSON.stringify(anim.frames||[])),active:animActive,hold:animHold,title:anim.title||"",titleColor:anim.titleColor||"#e23b3b"}; }catch(error){if(strict)throw error;return null;} };   /* 2.682 — 페이지별 장면 저장용 */
 window.__animLoad=function(frames){ try{
   if(!Array.isArray(frames)||frames.length<2)return false;
   anim.frames=JSON.parse(JSON.stringify(frames)); animActive=0;
@@ -11901,7 +11919,7 @@ function init(){
     try{ if(on)bcAddLight(); else if(!document.body.classList.contains("bc-cam"))bcDelLight(); }catch(_){}
     try{ if(on)window.__tiltStands(); }catch(_){}   /* 2.372 — 켜기 전에 배경을 깔아 둔다 */
     try{ if(on)setTimeout(function(){try{window.__tiltFit();}catch(_){}},30); else { var _s=document.documentElement.style; _s.removeProperty("--tilt-k"); _s.removeProperty("--tilt-ty"); } }catch(_){}   /* 2.370 — 켤 때 맞추고, 끌 때 되돌린다 */
-    try{ tiltGoalsSync(); }catch(_){}
+    try{ tiltGoalsSync();renderTokens(); }catch(_){}
     // Geometry follows actual layout changes; never periodically reset the live transform.
     try{ if(window.__tiltIv){clearInterval(window.__tiltIv);window.__tiltIv=null;} }catch(_){}
     try{toast(on?"원근 뷰 — 끌기·그리기 그대로 됩니다":"원근 뷰 끔");}catch(_){}
@@ -16225,7 +16243,12 @@ try{ var _nb=document.getElementById('dfNew');
   function isBoardView(){ try{ return (window.__csView||"board")==="board" && !document.body.classList.contains("meet-mode") && !document.body.classList.contains("comm-viewing"); }catch(_){ return false; } }
 
   function _animNow(){ try{ if(window.autoSaveAnimFrame)window.autoSaveAnimFrame(); return window.__animGet?window.__animGet():null; }catch(_){ return null; } }
-  function capture(){ if(pages && pages[idx]){ pages[idx].snap=_snap(); pages[idx].thumb=_thumb(); pages[idx].anim=_animNow(); } }   /* 2.682 — 페이지마다 장면 목록 */
+  function capture(strict){ if(pages && pages[idx]){
+    var snap=strict?window.captureSnap():_snap();
+    var animation=strict?(window.__animGet?window.__animGet(true):null):_animNow();
+    var thumb=strict?pages[idx].thumb:_thumb();
+    pages[idx].snap=snap;pages[idx].thumb=thumb;pages[idx].anim=animation;
+  } }   /* 2.682 — 페이지마다 장면 목록 */
   function ensure(){ if(!pages){ pages=[{snap:_snap(),thumb:_thumb(),name:"",anim:_animNow()}]; idx=0; } }
   function blankSnap(){
     /* 현재 페이지의 피치/방향/개수 설정은 유지하고 선수·장비·그림만 비운 새 페이지 */
@@ -16425,7 +16448,7 @@ try{ var _nb=document.getElementById('dfNew');
       if(ch) persist();
       return {pages:pages.length,changed:ch}; },
     /* 라이브 저장 페이로드에 실을 값 (보관함 열람 중엔 라이브 보드를 덮지 않도록 제외) */
-    liveVal:function(){ if(window.__vaultEdit) return null; if(pages && pages.length>1){ capture(); return {pages:_clone(pages), idx:idx}; } return null; }
+    liveVal:function(){ if(window.__vaultEdit) return null; if(pages && pages.length>1){ capture(true); return {pages:JSON.parse(JSON.stringify(pages)), idx:idx}; } return null; }
   };
 })();
 </script>

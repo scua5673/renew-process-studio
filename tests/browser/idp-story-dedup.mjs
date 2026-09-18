@@ -125,6 +125,7 @@ try{
  browser=await playwright[engine].launch({headless:true,...(engine==='chromium'&&process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
  for(const spec of [{name:'desktop',width:1280,height:1000},{name:'phone',width:375,height:812,touch:true,mobile:true}]){
   const context=await newContext(browser,spec),page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',e=>result.errors.push(e.message));
+  await page.clock.setFixedTime(new Date('2026-09-13T14:00:00+09:00'));
   const frame=await openSquad(page);await showPlayer(frame,'p-a');
   const before=await snapshot(page);
   assert.equal(await frame.locator('.st-list').count(),1);assert.equal(await frame.locator('.sqst').count(),0);
