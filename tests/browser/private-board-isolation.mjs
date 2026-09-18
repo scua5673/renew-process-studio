@@ -90,7 +90,7 @@ async function edit(frame,label){
     loadSnap(sn);boardSaveLive();
   },label);
 }
-async function flush(frame){assert.equal(await frame.evaluate(()=>window.__boardFlushLive()),true);}
+async function flush(frame){assert.equal(await frame.evaluate(()=>window.__boardSaveExplicit()),true);}
 async function fullPrivateState(frame){return frame.evaluate(()=>({snap:captureSnap(),frames:anim.frames,slides:anim.slides,pages:window.__psPages.liveVal(),undo:undoStack,redo:redoStack,views:window.__viewSnaps}));}
 
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
@@ -109,11 +109,19 @@ try{
       await page.screenshot({path:path.join(out,spec.name+'-blank-personal.png')});
 
       await edit(frame,'A-PRIVATE');
-      const staged=await boardRecord(page,A);assert.equal(staged.uid,A);assert.equal(staged.wid,PA);assert.equal(staged.pending,true);assert.equal(JSON.parse(staged.raw).snap.players[0].name,'A-PRIVATE');
+      await page.waitForTimeout(2300);
+      assert.equal(await boardRecord(page,A),null,'edits must not persist before Save');
+      await frame.evaluate(()=>{window.__boardFlushLive();dispatchEvent(new PageTransitionEvent('pagehide'));});
+      assert.equal(await boardRecord(page,A),null,'lifecycle flush must not save edits');
       // Exercise a real selected-token edit, including mobile input events.
       await frame.locator('.token[data-id="synthetic-A-PRIVATE"]').click();
       await frame.locator('#nameInput').fill('A-EDIT');await frame.locator('#nameInput').press('Tab');
-      assert.deepEqual(await ids(frame),['A-EDIT']);await flush(frame);
+      assert.deepEqual(await ids(frame),['A-EDIT']);
+      const token=frame.locator('.token[data-id="synthetic-A-PRIVATE"]');const rect=await token.boundingBox();
+      await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.mouse.down();await page.mouse.move(rect.x+rect.width/2+35,rect.y+rect.height/2+20,{steps:8});await page.mouse.up();
+      await page.waitForTimeout(2300);assert.equal(await boardRecord(page,A),null,'actual drag must not save');
+      await frame.locator('#boardManualSave').click();
+      await frame.waitForFunction(()=>_boardPrivateRecord&&!_boardPrivateRecord.pending&&!_boardManualSaving);
       const ackA=await boardRecord(page,A);assert.equal(ackA.pending,false);assert.equal(JSON.parse(ackA.base.raw).snap.players[0].name,'A-EDIT');
       await page.screenshot({path:path.join(out,spec.name+'-coach-a.png')});
       r.cases.push('actual-token-edit-persists-owner-tagged-draft-and-exact-cloud-ack');
@@ -132,7 +140,7 @@ try{
       await edit(frame,'A-TEAM2');
       await page.evaluate(({A,T2})=>fixture.switch(A,T2,true),{A,T2});
       await page.waitForTimeout(100);assert.deepEqual(await ids(frame),['A-TEAM2'],'temporary team switch lock preserves same-account canvas');
-      await switchTo(page,frame,A,T2);await frame.waitForFunction(()=>_boardPrivateRecord&&!_boardPrivateRecord.pending);
+      await switchTo(page,frame,A,T2);await flush(frame);await frame.waitForFunction(()=>_boardPrivateRecord&&!_boardPrivateRecord.pending);
       assert.deepEqual(await ids(frame),['A-TEAM2']);assert.equal((await boardRecord(page,A)).wid,PA);assert.equal((await boardRecord(page,B)).raw,savedB.raw);
       const teamSave=await page.evaluate(()=>fixture.requests.filter(r=>r.type==='save').at(-1));assert.equal(teamSave.owner.active,T2);assert.equal(teamSave.options.wid,PA);
       r.cases.push('same-account-team-switch-keeps-unsent-work-in-original-personal-workspace');
@@ -149,7 +157,7 @@ try{
 
       await switchTo(page,frame,A);await edit(frame,'A-LATE-ACK');
       await page.evaluate(A=>{fixture.holdSave=A;},A);
-      await frame.evaluate(()=>{window.fixtureFlush=window.__boardFlushLive();});
+      await frame.evaluate(()=>{window.fixtureFlush=window.__boardSaveExplicit();});
       await page.waitForFunction(()=>fixture.deferred.some(d=>d.type==='save'));
       const frozenA=await boardRecord(page,A);assert.ok(frozenA.attempt);
       await switchTo(page,frame,B);await edit(frame,'B-NEW');await flush(frame);

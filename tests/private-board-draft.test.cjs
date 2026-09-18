@@ -41,26 +41,26 @@ test('legacy team live, recovery and snapshots are neither read nor promoted, ev
 test('explicit personal remote reply restores full snapshot, animation and pages',async()=>{
  const h=harness();h.setServer({raw:payload(12),cupd:7});await h.boot();assert.equal(h.c.state.players[0].x,12);assert.equal(h.c.anim.frames.length,2);assert.equal(h.c.pages.idx,1);assert.equal(h.record().pending,false);assert.equal(h.record().base.cupd,7);
 });
-test('edits stage owner-tagged full drafts immediately before the cloud debounce',async()=>{
- const h=harness();await h.boot();h.c.state=snap(22);h.c.boardSaveLive();assert.equal(h.record().pending,true);assert.equal(JSON.parse(h.record().raw).snap.players[0].x,22);assert.equal(h.saves.length,0);await h.c._boardLiveWriteNow(false);assert.equal(h.record().pending,false);assert.equal(h.saves.length,1);assert.equal(h.saves[0].opts.expected_raw,null);
+test('edits remain unsaved until explicit save',async()=>{
+ const h=harness();await h.boot();h.c.state=snap(22);h.c.boardSaveLive();assert.equal(h.record(),null);assert.equal(h.saves.length,0);await h.c.boardSaveExplicit();assert.equal(h.record().pending,false);assert.equal(h.saves.length,1);assert.equal(h.saves[0].opts.expected_raw,null);
 });
 test('same account resumes a private working board across a team switch',async()=>{
- const h=harness();await h.boot();h.c.state=snap(25);h.c.boardSaveLive();const pending=copy(h.record());await ticks();h.switch({active:'team-b',seal:'seal-b',switchEpoch:'2'});h.c.boardPrivateAuthChanged();await ticks();assert.equal(h.c.state.players[0].x,25);assert.equal(h.record().uid,pending.uid);assert.equal(h.record().wid,'personal-a');
+ const h=harness();await h.boot();h.c.state=snap(25);h.c.boardSaveLive();await h.c.boardSaveExplicit();const pending=copy(h.record());await ticks();h.switch({active:'team-b',seal:'seal-b',switchEpoch:'2'});h.c.boardPrivateAuthChanged();await ticks();assert.equal(h.c.state.players[0].x,25);assert.equal(h.record().uid,pending.uid);assert.equal(h.record().wid,'personal-a');
 });
 test('account switch clears previous canvas, pages, animation and undo without reading previous account drafts',async()=>{
  const h=harness();h.setServer({raw:payload(31),cupd:3});await h.boot();const old=copy(h.record());h.c.undoStack=[snap(90)];h.switch({uid:'synthetic-user-b',wid:'personal-b',seal:'seal-b'});h.setServer({raw:null,cupd:null});h.c.boardPrivateAuthChanged();assert.equal(h.c.state.players.length,0);assert.equal(h.c.anim.frames.length,0);assert.equal(h.c.pages,null);assert.equal(h.c.undoStack.length,0);await ticks();assert.equal(JSON.parse(h.ls.get('ps_private_board_draft_v1:synthetic-user-a')).raw,old.raw);
 });
 test('late personal GET cannot replace a gesture made while the request was pending',async()=>{
- const h=harness(),d=deferred(),o=h.owner();h.get(()=>d.promise);const boot=h.c.restoreLiveBoard();await ticks();h.c.state=snap(42);h.c.boardSaveLive();d.resolve({ok:true,uid:o.uid,wid:o.wid,raw:payload(88),cupd:8});assert.equal(await boot,false);assert.equal(h.c.state.players[0].x,42);assert.equal(JSON.parse(h.record().raw).snap.players[0].x,42);assert.equal(h.record().base,null);assert.equal(h.saves.length,0);
+ const h=harness(),d=deferred(),o=h.owner();h.get(()=>d.promise);const boot=h.c.restoreLiveBoard();await ticks();h.c.state=snap(42);h.c.boardSaveLive();d.resolve({ok:true,uid:o.uid,wid:o.wid,raw:payload(88),cupd:8});assert.equal(await boot,false);assert.equal(h.c.state.players[0].x,42);assert.equal(h.record(),null);assert.equal(h.c._boardManualDirty,true);assert.equal(h.saves.length,0);
 });
 test('late personal GET from account A cannot install data after account B is selected',async()=>{
  const h=harness(),d=deferred(),o=h.owner();h.get(()=>d.promise);const boot=h.c.restoreLiveBoard();await ticks();h.switch({uid:'synthetic-user-b',wid:'personal-b',seal:'seal-b'});h.c.state=snap(99);d.resolve({ok:true,uid:o.uid,wid:o.wid,raw:payload(77),cupd:1});assert.equal(await boot,false);assert.equal(h.c.state.players[0].x,99);assert.equal(h.writes.length,0);
 });
 test('A acknowledgement preserves a newer B draft and submits B only against confirmed A',async()=>{
- const h=harness(),d=deferred(),o=h.owner();await h.boot();let n=0;h.save(async(raw,opts)=>{n++;if(n===1)return d.promise;assert.equal(opts.expected_raw,h.saves[0].raw);assert.equal(opts.expected_cupd,4);return {ok:true,uid:o.uid,wid:o.wid,raw,cupd:5};});h.c.state=snap(1);const work=h.c._boardLiveWriteNow(false);await ticks();h.c.state=snap(2);h.c.boardSaveLive();assert.equal(JSON.parse(h.record().raw).snap.players[0].x,2);d.resolve({ok:true,uid:o.uid,wid:o.wid,raw:h.saves[0].raw,cupd:4});await work;assert.equal(h.record().pending,false);assert.equal(JSON.parse(h.record().raw).snap.players[0].x,2);assert.equal(h.saves.length,2);
+ const h=harness(),d=deferred(),o=h.owner();await h.boot();let n=0;h.save(async(raw,opts)=>{n++;if(n===1)return d.promise;assert.equal(opts.expected_raw,h.saves[0].raw);assert.equal(opts.expected_cupd,4);return {ok:true,uid:o.uid,wid:o.wid,raw,cupd:5};});h.c.state=snap(1);const work=h.c._boardLiveWriteNow(false);await ticks();h.c.state=snap(2);h.c.boardSaveLive();h.c._boardLiveWriteNow(false,true);assert.equal(JSON.parse(h.record().raw).snap.players[0].x,2);d.resolve({ok:true,uid:o.uid,wid:o.wid,raw:h.saves[0].raw,cupd:4});await work;assert.equal(h.record().pending,false);assert.equal(JSON.parse(h.record().raw).snap.players[0].x,2);assert.equal(h.saves.length,2);
 });
 test('lost reply keeps the exact A attempt plus newer B draft across reload',async()=>{
- const h=harness(),d=deferred();await h.boot();h.save(()=>d.promise);h.c.state=snap(51);const w=h.c._boardLiveWriteNow(false);await ticks();h.c.state=snap(52);h.c.boardSaveLive();d.reject(Error('synthetic lost reply'));await w;assert.equal(h.record().pending,true);const attempted=h.saves[0];assert.equal(h.record().attempt.raw,attempted.raw);
+ const h=harness(),d=deferred();await h.boot();h.save(()=>d.promise);h.c.state=snap(51);const w=h.c._boardLiveWriteNow(false);await ticks();h.c.state=snap(52);h.c.boardSaveLive();h.c._boardLiveWriteNow(false,true);d.reject(Error('synthetic lost reply'));await w;assert.equal(h.record().pending,true);const attempted=h.saves[0];assert.equal(h.record().attempt.raw,attempted.raw);
  await ticks();const reload=harness({ls:[...h.ls],idb:[...h.idb]});let n=0;const o=reload.owner();reload.save(async(raw,opts)=>{n++;if(n===1){assert.equal(raw,attempted.raw);assert.deepEqual(copy(opts),attempted.opts);}else{assert.equal(JSON.parse(raw).snap.players[0].x,52);assert.equal(opts.expected_raw,attempted.raw);}return {ok:true,uid:o.uid,wid:o.wid,raw,cupd:10+n};});await reload.boot();await ticks();assert.equal(reload.saves.length,2);assert.equal(reload.record().pending,false);
 });
 test('wrong acknowledgement retains the full immutable attempt and never claims saved',async()=>{
@@ -134,10 +134,27 @@ test('account switch during conflict preservation cannot write an old draft or r
 test('failed first server read preserves the visible canvas, animation, pages and undo',async()=>{
  const h=harness();h.c.state=snap(33);h.c.anim.frames=[{snap:snap(34)}];h.c.pages={pages:[{snap:snap(35)}],idx:0};h.c.undoStack=[snap(36)];h.get(async()=>{throw Error('offline');});
  assert.equal(await h.c.restoreLiveBoard(),false);assert.equal(h.c.state.players[0].x,33);assert.equal(h.c.anim.frames[0].snap.players[0].x,34);assert.equal(h.c.pages.pages[0].snap.players[0].x,35);assert.equal(h.c.undoStack[0].players[0].x,36);assert.equal(h.saves.length,0);assert.equal(h.ls.has(h.key()),false);
- h.c.boardSaveLive();await ticks();assert.equal(h.record().base,null);assert.equal(h.saves.length,0);
+ h.c.boardSaveLive();await ticks();assert.equal(h.record(),null);assert.equal(h.saves.length,0);
 });
 test('a no-op local cleanup does not strand the verified recovery branch',async()=>{
  const h=harness();await h.boot();h.c.state=snap(10);await h.c._boardLiveWriteNow(false);otherDraft(h);h.c.localStorage.removeItem=()=>{};
  for(let i=0;i<3;i++){h.c.state=snap(80+i);await h.c._boardLiveWriteNow(false);}
  assert.equal(keptKeys(h).length,1);assert.equal(JSON.parse(JSON.parse(h.idb.get(keptKeys(h)[0])).raw).snap.players[0].x,82);
+});
+
+test('unsaved movement cannot overwrite the last explicit save on server refresh',async()=>{
+ const h=harness();await h.boot();h.c.state=snap(10);h.c.boardSaveLive();assert.equal(await h.c.boardSaveExplicit(),true);
+ const saved=copy(h.record());h.c.state=snap(20);h.c.boardSaveLive();await h.c.boardApplyServerLive();
+ assert.deepEqual(h.record(),saved);assert.equal(h.c.state.players[0].x,20);assert.equal(h.c._boardManualDirty,true);assert.equal(h.saves.length,1);
+});
+test('failed explicit capture retains unsaved status and the previous saved version',async()=>{
+ const h=harness();await h.boot();h.c.state=snap(10);await h.c.boardSaveExplicit();const saved=copy(h.record());
+ h.c.state=snap(20);h.c.boardSaveLive();h.c.captureSnap=()=>{throw Error('capture failed');};
+ assert.equal(await h.c.boardSaveExplicit(),false);assert.equal(h.c._boardManualDirty,true);assert.deepEqual(h.record(),saved);
+});
+test('movement during explicit saving stays unsaved after the old acknowledgement',async()=>{
+ const h=harness(),d=deferred(),o=h.owner();await h.boot();h.c.state=snap(10);h.c.boardSaveLive();h.save(()=>d.promise);
+ const work=h.c.boardSaveExplicit();await ticks();h.c.state=snap(20);h.c.boardSaveLive();
+ d.resolve({ok:true,uid:o.uid,wid:o.wid,raw:h.saves[0].raw,cupd:1});await work;
+ assert.equal(h.c._boardManualDirty,true);assert.equal(h.c.state.players[0].x,20);assert.equal(JSON.parse(h.record().raw).snap.players[0].x,10);assert.equal(h.saves.length,1);
 });
