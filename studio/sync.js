@@ -85,7 +85,7 @@ var COPIES_OFF=true;
 /* 2.675 — 2단계 «열 때 서버부터, 닫으면 지우기»(사용자 "2단계도 이어서 가자").
    닫을 때(pagehide, bfcache 진입은 제외): 팀 자료 키 중 서버와 같은 것(dirty 아님)만 기기에서 지운다. 못 올린 편집이 하나라도 있으면(outbox) 통째로 건너뛴다.
    보드·보관함 키(BOARD_KEEP)와 개인 키(PERSONAL)는 건드리지 않는다. 지웠으면 표시(ps_cache_wiped_v1)를 남기고,
-   다음 부팅에서 그 표시가 있으면 «팀에서 받는 중…» 덮개를 띄워 첫 회차가 끝날 때까지 기기 사본 대신 서버를 기다린다(최대 12초, 오프라인이면 안내+다시 시도).
+   다음 부팅에서 그 표시가 있으면 «팀에서 받는 중…» 덮개를 띄운다. 2.872부터 최대 5초 뒤 작은 수신 안내로 바꿔 화면 전체를 계속 가리지 않는다.
    받고 나면 한 번 새로고침한다 — 셸(app.html)은 같은 창이라 storage 이벤트를 못 받기 때문. */
 /* 2.676 — 실측(9/7 14:23~14:29, 코치 아이패드 2.675): 팀 전환 → 리로드 → 부팅 리로드(1.981) → 그때마다 pagehide 지우기 → «받는 중» 덮개 → 성공 시 또 리로드.
    리로드가 겹치며 진행 중 fetch 가 끊겨 sync_network(kv_meta) 2건, 스플래시가 몇 분 이어졌다(«자기 팀으로 이동이 안 된다»).
@@ -93,7 +93,7 @@ var COPIES_OFF=true;
    2.819 — 로그인해야 쓰는 팀 자료는 서버본을 우선한다. 서버와 같은 로컬 캐시는 닫을 때 지우고 다음 진입에서 서버 수신을 기다린다.
    문제가 있는 기기는 `localStorage.ps_cache_wipe='0'` 으로 끌 수 있고, 구버전의 `'1'` 값도 계속 켜짐으로 취급한다. */
 var CACHE_WIPE=(function(){ try{ return localStorage.getItem('ps_cache_wipe')!=='0'; }catch(_){ return true; } })();
-var CACHE_WAIT_MS=12000, CACHE_FLAG='ps_cache_wiped_v1', SELF_RELOAD='ps_self_reload', BOOT_AT=Date.now(), cacheWaitTimer=null;
+var CACHE_WAIT_MS=5000, CACHE_FLAG='ps_cache_wiped_v1', SELF_RELOAD='ps_self_reload', BOOT_AT=Date.now(), cacheWaitTimer=null;
 function markSelfReload(){ try{ sessionStorage.setItem(SELF_RELOAD,'1'); }catch(_){} }
 function wipeAllowedNow(){
   try{ if(sessionStorage.getItem(SELF_RELOAD))return false; }catch(_){}
@@ -168,17 +168,31 @@ function cacheWipedFlag(){ try{ return !!localStorage.getItem(CACHE_FLAG); }catc
 function renderCacheWait(mode){
   try{
     var host=document.querySelector('.frames'), ov=document.getElementById('psCacheWait');
+    clearTimeout(cacheWaitTimer); cacheWaitTimer=null;
     if(!mode){ if(ov)ov.remove(); return; }
     if(!host)return;
     if(!ov){ ov=document.createElement('div'); ov.id='psCacheWait'; ov.setAttribute('aria-live','polite');
-      ov.style.cssText='position:absolute;inset:0;z-index:99996;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg,#f5f6f8);color:var(--txt,#16181c);font-family:inherit';
       host.appendChild(ov); }
+    /* The cover is tab-local; another tab clearing CACHE_FLAG must not strand it.
+       After a short wait, keep progress visible without blocking the whole app.
+       The independent account/workspace lock and per-document readiness stay in force. */
+    var compact=mode==='slow';
+    ov.style.cssText='position:absolute;z-index:99996;display:flex;justify-content:center;color:var(--txt,#16181c);font-family:inherit;'+
+      (compact?'top:8px;left:12px;right:12px;pointer-events:none;':'inset:0;align-items:center;padding:24px;background:var(--bg,#f5f6f8);');
     var box='width:min(360px,100%);text-align:center;background:var(--bar,#fff);border:1px solid var(--line,#e2e4e8);border-radius:16px;padding:24px 20px;font-size:14px;line-height:1.6';
-    if(mode==='offline'){
-      ov.innerHTML='<div style="'+box+'"><b>오프라인이에요</b><br><span style="color:var(--gray,#646a73)">팀 자료는 인터넷이 연결되면 나타나요</span><br><button data-ps-cw-retry style="margin-top:12px;padding:8px 16px;border-radius:999px;border:1px solid var(--line,#e2e4e8);background:var(--bar,#fff);color:inherit;font:inherit">다시 시도</button></div>';
-      var rb=ov.querySelector('[data-ps-cw-retry]'); if(rb)rb.onclick=function(){ rb.disabled=true; rb.textContent='받는 중…'; renderCacheWait('wait'); syncNow('cache-retry').then(function(r){ if(r&&(r.offline||r.error||r.noauth))cacheWaitEnd(false); }).catch(function(){ cacheWaitEnd(false); }); };
+    if(mode!=='wait'){
+      ov.innerHTML='<div style="'+box+(compact?'padding:10px 16px;width:auto;max-width:100%;pointer-events:auto':'')+'"><b>'+(mode==='offline'?'오프라인이에요':'팀 자료 수신이 지연되고 있어요')+'</b><br><span style="color:var(--gray,#646a73)">'+(mode==='offline'?'팀 자료는 인터넷이 연결되면 나타나요.':'확인된 자료부터 볼 수 있어요. 새 자료는 받는 대로 반영됩니다.')+'</span><br><button data-ps-cw-retry style="margin-top:8px;padding:6px 14px;border-radius:999px;border:1px solid var(--line,#e2e4e8);background:var(--bar,#fff);color:inherit;font:inherit">다시 시도</button></div>';
+      var rb=ov.querySelector('[data-ps-cw-retry]'); if(rb)rb.onclick=function(){
+        renderCacheWait('wait');
+        Promise.resolve().then(function(){return syncNow('cache-retry');}).then(function(){
+          /* Only the successful round itself can acknowledge CACHE_FLAG. A queued,
+             skipped or failed attempt must not leave a new unbounded cover. */
+          cacheWaitEnd(false);
+        }).catch(function(){cacheWaitEnd(false);});
+      };
     } else {
-      ov.innerHTML='<div style="'+box+'"><b>팀에서 받는 중…</b><br><span style="color:var(--gray,#646a73)">이 기기에는 팀 자료를 남기지 않아요</span></div>';
+      ov.innerHTML='<div style="'+box+'"><b>팀에서 받는 중…</b><br><span style="color:var(--gray,#646a73)">최신 팀 자료를 확인하고 있어요</span></div>';
+      cacheWaitTimer=setTimeout(function(){cacheWaitEnd(false);},CACHE_WAIT_MS);
     }
   }catch(e){ syncDiagnostic('cache-wait-ui',e); }
 }
@@ -186,19 +200,17 @@ function cacheWaitStart(){
   if(!CACHE_WIPE||!cacheWipedFlag()||!getSess())return;
   renderCacheWait(navigator.onLine===false?'offline':'wait');
   try{ setStatus('팀에서 받는 중…'); }catch(_){}
-  clearTimeout(cacheWaitTimer);
-  cacheWaitTimer=setTimeout(function(){ cacheWaitEnd(false); },CACHE_WAIT_MS);
 }
 function cacheWaitEnd(ok){
-  if(!cacheWipedFlag())return;
-  clearTimeout(cacheWaitTimer);
   if(ok){
+    var wasWaiting=cacheWipedFlag()||!!document.getElementById('psCacheWait');
     try{ localStorage.removeItem(CACHE_FLAG); }catch(_){}
     renderCacheWait(null);   /* 2.676 — 리로드하지 않는다. 화면(iframe)은 storage 이벤트로 이미 갱신된다 */
-    try{ renderUI(); }catch(_){}
+    if(wasWaiting)try{ renderUI(); }catch(_){}
     return;
   }
-  renderCacheWait(navigator.onLine===false?'offline':null);
+  /* CACHE_FLAG is shared across tabs, the overlay and timer are not. */
+  if(document.getElementById('psCacheWait'))renderCacheWait(navigator.onLine===false?'offline':'slow');
 }
 function purgeCopies(){ var n=0; try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(!k)continue;
   if(k.indexOf('ps_rescue_')===0||k.indexOf('ps_sync_conflict_')===0||k===CONFKEY||k==='ps_sync_conf_seen'){ localStorage.removeItem(k); n++; } } }catch(_){}
@@ -9406,7 +9418,7 @@ function boot(){
              if(!dataUnlocked())throw dataLockError();
              /* 소유자가 확인된 뒤에만 IndexedDB 대기함을 읽는다. */
              return outboxTxn(function(q){return q;}).catch(function(e){syncDiagnostic('outbox-boot-read',e);});
-           }).then(function(){ return syncNow('boot'); })
+           }).then(function(){ return syncNow('boot'); }).then(function(r){cacheWaitEnd(false);return r;})
            .catch(function(e){ syncErr=true; setStatus('워크스페이스 불러오기 실패 — 네트워크 확인'); try{renderUI();}catch(_){} try{console.warn('[PSSync]',e);}catch(_){} try{ cacheWaitEnd(false); }catch(_){}
              /* 2.254 — 실패가 침묵하면 '카카오 로그인이 안 돼요'로 보인다: 원인 기록 → 잠금 오버레이가 보여 줌 + 1회 자동 재시도 */
              try{ if(!(e&&e.psDataLocked&&dataUnlocked()))localStorage.setItem('ps_last_unlock_err',String(e&&e.message||e).slice(0,200)); }catch(_){}
