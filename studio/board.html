@@ -7384,7 +7384,7 @@ async function boardSaveExplicit(){
     var ok=await _boardLiveWriteNow(false);
     if(boardPrivateCurrent(owner)&&seq===_boardPrivateEditSeq){
       var durable=_boardPrivateRecord&&_boardPrivateDurableToken===_boardPrivateRecord.token;
-      if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;if(!ok)toast("이 기기에 저장됨 · 서버 연결 후 전송됩니다");}
+      if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;if(!ok)toast("이 기기에 저장됨 · 서버 저장은 아직 완료되지 않았습니다");}
     }
     return !!ok;
   }finally{if(_boardManualSaving===owner)_boardManualSaving=false;boardManualStatus();}

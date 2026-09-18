@@ -65,7 +65,7 @@ async function seed(frame,{blank=false}={}){
     const snap=(name,x)=>({...clone(template),players:blank&&name==='LIVE'?[]:[{id:name,team:'A',num:8,name,x,y:350}],equipment:[],drawings:[],ball:null,matchNote:name,orientation:template.orientation,pitchN:1});
     const live=snap('LIVE',460),other=snap('LIVE-OTHER',680),a=snap('LIBRARY-A',300),b=snap('LIBRARY-B',850);
     const thumb='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000"><rect width="1600" height="1000" fill="#eaf3e9"/></svg>';
-    const frames=(sn,label)=>[{snap:clone(sn),thumb,title:label+' 1',dur:1,__t:'',__tc:'#e23b3b',__hold:.6},{snap:clone(sn),thumb,title:label+' 2',dur:1}];
+    const frames=(sn,label)=>[{snap:clone(sn),thumb,title:label+' 1',dur:1,curves:{},__t:'',__tc:'#e23b3b',__hold:.6},{snap:clone(sn),thumb,title:label+' 2',dur:1,curves:{}}];
     const liveFrames=blank?[]:frames(live,'LIVE-FRAME');
     if(!blank){
       window.__pendingBoardPages={pages:[{name:'LIVE-PAGE-1',snap:other,thumb,anim:null},{name:'LIVE-PAGE-2',snap:live,thumb,anim:{frames:liveFrames,active:1}}],idx:1};
