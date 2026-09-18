@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -12,7 +13,7 @@ const out=process.env.PS_TEST_OUTPUT||path.join(root,'test-results/account-team-
 const build=fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_BUILD='([^']+)'/)[1];
 const publicKey=fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_SYNC=\{url:"[^"]+",anonKey:"([^"]+)"/)[1];
 fs.mkdirSync(out,{recursive:true});
-const base='https://account-team-fixture.invalid';
+let base;
 const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222222222';
 const privateAKey='cs_idp_v1_'+A,privateARaw=JSON.stringify({v:1,log:{'2026-09-14':{memo:'SYNTHETIC private account A record'}},imgNotes:[]});
 const WA='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',WB='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',WC='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
@@ -20,6 +21,23 @@ const teams=[{id:WA,kind:'team',name:'가상 빨강 팀',role:'owner',owner_id:A
 const bTeams=[{id:WC,kind:'personal',name:'가상 초록 계정',role:'owner',owner_id:B}];
 const players=(wid)=>[{id:wid+'-player',name:wid===WA?'가상 빨강 선수':wid===WB?'가상 파랑 선수':'가상 초록 선수',grp:'A',type:'ours',posId:'pos_CB',levels:{},profile:{}}];
 const db=new Map(),writes=[],errors=[],results=[],calls=[],diagnostics=[],unauthorized=[],telemetry=[];
+// Use real loopback transport for background reports. WebKit on Linux can emit a
+// native access-control pageerror when an intercepted fetch is aborted at reload,
+// even on the same origin. Keep the real fetch/abort lifecycle and validate its
+// synthetic identity at the HTTP boundary instead of suppressing that error.
+const reports=[];
+const reportServer=http.createServer(async(req,res)=>{
+  if(req.url!=='/rest/v1/rpc/ps_sync_report_put'||req.method!=='POST'){res.writeHead(404);res.end();return;}
+  let raw='';for await(const chunk of req)raw+=chunk;
+  const uid=req.headers.authorization==='Bearer fixture-access-A'?A:req.headers.authorization==='Bearer fixture-access-B'?B:null;
+  let body;try{body=JSON.parse(raw);}catch(_){body=null;}
+  const valid=uid&&body&&(uid===B?body.p_workspace_id===WC:[WA,WB].includes(body.p_workspace_id));
+  if(!valid){unauthorized.push({method:req.method,path:req.url,uid});res.writeHead(401);res.end('{}');return;}
+  reports.push({uid,wid:body.p_workspace_id});calls.push({uid,method:req.method,path:req.url,search:''});
+  res.writeHead(200,{'Content-Type':'application/json'});res.end('[]');
+});
+await new Promise(resolve=>reportServer.listen(0,'127.0.0.1',resolve));
+base='http://127.0.0.1:'+reportServer.address().port;
 let initialPullDelayed=false;
 for(const wid of [WA,WB,WC]){
   const uid=wid===WC?B:A;
@@ -47,6 +65,7 @@ try{
     const req=route.request(),url=new URL(req.url());
     const isApi=url.pathname.startsWith('/rest/v1/')||url.pathname.startsWith('/auth/v1/');
     if(url.origin!==base)return route.abort('blockedbyclient');
+    if(url.pathname==='/rest/v1/rpc/ps_sync_report_put')return route.continue();
     if(!isApi){
       if(url.pathname==='/__fixture__/seed.html')return route.fulfill({contentType:'text/html',body:'<!doctype html><title>Synthetic storage seed</title>'});
       const file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
@@ -156,6 +175,7 @@ try{
     if(write.k.startsWith('sq:'))assert.equal(write.k,'sq:'+players(write.wid)[0].id,'item writes stay in their source workspace');
     if(write.k.startsWith('cs_idp_v1_'))assert.equal(write.k,'cs_idp_v1_'+write.uid,'private IDP writes stay with their account');
   }
+  assert.ok(reports.length>0,'background reports reached the authenticated loopback server');
   assert.deepEqual(unauthorized,[],'all data and auth requests use an exact known synthetic bearer');
   assert.deepEqual(errors.filter(e=>!e.startsWith('ResizeObserver loop')),[]);
   // A failed book asset must expose recovery without discarding saved progress.
@@ -172,11 +192,11 @@ try{
   assert.deepEqual(learningErrors,[]);
   await learning.close();
   results.push({scenario:'learning-content-failure-recovery',passed:true});
-  fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({passed:true,engine,results,writeCount:writes.length,telemetry,network:'Auth/data API configured to the same isolated fixture origin; exact anonymous public-feed and telemetry endpoints mocked; all external HTTP and WebSocket requests blocked.'},null,2));
+  fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({passed:true,engine,results,writeCount:writes.length,telemetry,reports,network:'Auth/data API configured to the same isolated fixture origin; exact anonymous public-feed and telemetry endpoints mocked; all external HTTP and WebSocket requests blocked.'},null,2));
   console.log(JSON.stringify({passed:true,engine,scenarios:results.length,logout:true,otherAccountLogin:true,writeCount:writes.length}));
 }catch(e){
   if(profiler){const profile=await bounded(profiler.send('Profiler.stop'),'profile stop',3000).catch(()=>null);if(profile)fs.writeFileSync(path.join(out,'failure-profile.json'),JSON.stringify(profile));}
   const state=await Promise.race([page?.evaluate(async({privateAKey})=>({url:location.href,logoutResult:window.__fixtureLogoutResult,switchResult:window.__fixtureSwitchResult,sync:window.PSSync?.state(),active:window.PSSync?.activeWs(),session:window.PSSync?.session()?.uid,owner:localStorage.getItem('ps_cache_owner_v1'),guard:localStorage.getItem('ps_ws_switch_guard_v1'),meta:localStorage.getItem('ps_sync_meta'),diag:await window.PSSync?.diag(),privateA:{local:localStorage.getItem(privateAKey),idb:(await window.storage?.get(privateAKey))?.value??null}}),{privateAKey}).catch(()=>null),new Promise(resolve=>setTimeout(()=>resolve({unresponsive:true}),2000))]);
   fs.writeFileSync(path.join(out,'failure.json'),JSON.stringify({message:e.message,state,errors,diagnostics,unauthorized,telemetry,results,writes,calls},null,2));
   await page?.screenshot({path:path.join(out,'failure.png'),timeout:2000}).catch(()=>{});throw e;
-}finally{await context?.close();await browser.close();}
+}finally{await context?.close();await browser.close();await new Promise(resolve=>reportServer.close(resolve));}

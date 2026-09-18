@@ -7078,6 +7078,7 @@ let matchActive=false;
 let _bliveT=null;
 let _bliveSaveSeq=0,_bliveToastAt=0,_bliveDirty=false,_bliveApplying=false;
 var _boardPrivateOwner=null,_boardPrivateRecord=null,_boardPrivateBase=null;
+var _boardManualDirty=false,_boardManualSaving=false;
 var _boardPrivateLoaded=false,_boardPrivateGeneration=0,_boardPrivateEditSeq=0;
 var _boardPrivateFlight=null,_boardPrivateLocal=Promise.resolve(),_boardPrivateHead=null,_boardPrivateIdbHead=null;
 var _boardPrivateDurableToken=null;
@@ -7221,7 +7222,7 @@ function boardPrivateAuthChanged(){
   // A temporary team-switch lock suspends writes but does not turn the same
   // account's private canvas into another team's draft.
   if(!o&&_boardPrivateOwner&&sessionUid===_boardPrivateOwner.uid)return;
-  if(!boardPrivateSameAccount(_boardPrivateOwner,o)){boardPrivateResetCanvas();_boardPrivateRecord=null;_boardPrivateBase=null;_boardPrivateHead=null;_boardPrivateIdbHead=null;_boardPrivateDurableToken=null;_bliveDirty=false;}
+  if(!boardPrivateSameAccount(_boardPrivateOwner,o)){boardPrivateResetCanvas();_boardPrivateRecord=null;_boardPrivateBase=null;_boardPrivateHead=null;_boardPrivateIdbHead=null;_boardPrivateDurableToken=null;_bliveDirty=false;_boardManualDirty=false;_boardManualSaving=false;boardManualStatus();}
   _boardPrivateOwner=o;
   if(o)restoreLiveBoard();
 }
@@ -7340,7 +7341,7 @@ function _boardLiveWriteNow(recovery){
     _bliveDirty=!!(_boardPrivateRecord&&_boardPrivateRecord.pending);
     if(ok&&!_bliveDirty){
       try{parent.postMessage({source:"board",type:"boardLiveSaved"},location.origin);}catch(_){}
-      if(!recovery)try{toast("내 보드에 자동 저장됨");}catch(_){}
+      if(!recovery)try{toast("내 보드에 저장됨");}catch(_){}
     }
     return !!ok;
   },function(){
@@ -7370,6 +7371,25 @@ function boardSchedulePreview(){
     }catch(_){}finally{window.__psPreviewRefreshing=false;}
   },350);
 }
+function boardManualStatus(){
+  try{var b=document.getElementById('boardManualSave');if(b){b.textContent=_boardManualSaving?'저장 중…':(_boardManualDirty?'저장 · 변경됨':'저장');b.disabled=_boardManualSaving;b.title='현재 보드를 저장합니다';}}catch(_){}
+}
+async function boardSaveExplicit(){
+  if((_boardManualSaving&&boardPrivateCurrent(_boardManualSaving))||_vaultBoardContext||window.__vaultEdit)return false;
+  if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner)){toast("로그인과 보드 연결을 확인한 뒤 다시 저장해 주세요");return false;}
+  restoreAnimBeforeCapture();
+  var owner=_boardPrivateOwner,seq=_boardPrivateEditSeq,previous=_boardPrivateRecord;
+  _boardManualSaving=owner;boardManualStatus();
+  try{
+    var ok=await _boardLiveWriteNow(false);
+    if(boardPrivateCurrent(owner)&&seq===_boardPrivateEditSeq){
+      var durable=_boardPrivateRecord&&_boardPrivateDurableToken===_boardPrivateRecord.token;
+      if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;if(!ok)toast("이 기기에 저장됨 · 서버 저장은 아직 완료되지 않았습니다");}
+    }
+    return !!ok;
+  }finally{if(_boardManualSaving===owner)_boardManualSaving=false;boardManualStatus();}
+}
+window.__boardSaveExplicit=boardSaveExplicit;
 function boardSaveLive(){
   if(window.__psThumbCapturing||window.__psPreviewRefreshing)return;
   if(_vaultBoardContext||_vaultBoardRestoring)return;
@@ -7379,7 +7399,7 @@ function boardSaveLive(){
      다음 카드를 열 때 첫 카드가 다시 덮어써지는 문제가 생긴다. */
   try{if(new URLSearchParams(location.search).get("community_view")==="1"||document.body.classList.contains("comm-viewing"))return;}catch(_){}
   if(window.__capLock)return;
-  try{if(document.body.classList.contains("editing"))_schedEditorDraft();}catch(_){}
+  try{if(document.body.classList.contains("editing")){_schedEditorDraft();return;}}catch(_){}
   var v=(window.__csView||"board");
   if(v==="session")return;
   if(window.__animExport)return;   /* 2.752 — 내보내기 중간 좌표는 뷰 스냅에도 라이브에도 안 찍는다(끝나면 exportVideo/exportGif 가 한 번 부른다) */
@@ -7391,11 +7411,9 @@ function boardSaveLive(){
   _bliveDirty=true;
   ++_boardPrivateEditSeq;
   if(typeof boardSchedulePreview==='function')boardSchedulePreview();
-  // Stage the complete owner-tagged draft immediately. A team/account switch
-  // may cancel the cloud debounce before its two seconds have elapsed.
-  try{_boardLiveWriteNow(false,true);}catch(_){}
-  try{clearTimeout(_bliveT);}catch(_){}
-  _bliveT=setTimeout(function(){_bliveT=null;_boardLiveWriteNow(false);},2000);
+  _boardManualDirty=true;
+  try{clearTimeout(_bliveT);}catch(_){}_bliveT=null;
+  boardManualStatus();
 }
 function restoreAnimBeforeCapture(){
   /* 상황 미리보기는 anim.frames 자체를 임시 배열로 바꾼다. pagehide·수동 저장이
@@ -7413,7 +7431,8 @@ function boardFlushLive(){
   try{clearTimeout(_bliveT);}catch(_){}
   _bliveT=null;
   try{if(document.body.classList.contains("editing")&&typeof saveEditorDraft==="function")saveEditorDraft();}catch(_){}
-  return _boardLiveWriteNow(true);
+  // Lifecycle events may retry an explicitly saved record, never capture new edits.
+  return boardPrivateRetry();
 }
 try{window.__boardFlushLive=boardFlushLive;}catch(_){}
 try{window.addEventListener("pagehide",boardFlushLive);window.addEventListener("beforeunload",boardFlushLive);}catch(_){}
@@ -7431,7 +7450,7 @@ async function restoreLiveBoard(){
     var remote=null,remoteError=null;
     try{remote=await api.get();if(!boardPrivateReceipt(remote,owner))throw new Error('개인 보드 조회 응답을 확인하지 못했습니다');}catch(e){remoteError=e;}
     if(!current())return false;
-    if(edit!==_boardPrivateEditSeq||_bliveDirty&&!local){
+    if(edit!==_boardPrivateEditSeq||_boardManualDirty||_bliveDirty&&!local){
       // Preserve the draft captured during this GET. A previously unknown
       // preimage may become a creation only when the server explicitly is empty.
       if(!_boardPrivateRecord&&remote&&remote.raw===null)_boardPrivateBase={raw:null,cupd:null};
@@ -7486,7 +7505,7 @@ async function restoreLiveBoard(){
 }
 function boardApplyServerLive(){
   if(_boardPrivateFlight)return Promise.resolve(false);
-  if(_bliveDirty||_bliveT)return boardPrivateRetry();
+  if(_boardManualDirty||_bliveDirty||_bliveT)return boardPrivateRetry();
   if(window.__capLock||_vaultBoardContext||_vaultBoardRestoring||window.__vaultEdit||document.body.classList.contains('editing')||document.body.classList.contains('meet-mode'))return Promise.resolve(false);
   return restoreLiveBoard();
 }
@@ -7501,7 +7520,7 @@ try{window.addEventListener('message',function(e){
 });window.addEventListener('storage',function(e){if(e&&['ps_sync_session','ps_cache_owner_v1','ps_active_ws','ps_ws_switch_epoch_v1','ps_ws_switch_guard_v1'].indexOf(e.key)>=0)boardPrivateAuthChanged();});window.addEventListener('ps-auth-state',boardPrivateAuthChanged);}catch(_){}
 try{window.addEventListener('online',boardPrivateRetry);}catch(_){}
 try{window.addEventListener('beforeunload',function(e){
-  if(_boardPrivateRecord&&_boardPrivateRecord.pending&&_boardPrivateDurableToken!==_boardPrivateRecord.token){e.preventDefault();e.returnValue='';}
+  if(_boardManualDirty||window.__vaultManualDirty||(_boardPrivateRecord&&_boardPrivateRecord.pending&&_boardPrivateDurableToken!==_boardPrivateRecord.token)){e.preventDefault();e.returnValue='';}
 });}catch(_){}
 
 /* 배치 저장·배치 라이브러리 제거 — 저장은 보관함으로 일원화 (tactics_plays_v1 데이터는 건드리지 않음) */
@@ -11180,7 +11199,7 @@ function openEditor(id,type){
     try{ editorAnimStash=(window.__animFrames?__animFrames():null); editorAnimIdx=(typeof animActive!=="undefined"&&animActive>=0)?animActive:0; editorAnimStashed=true; }catch(_){}
     editorStash=captureSnap();
     /* 1.962 — 편집기로 들어가기 전, 지금 보드를 라이브에 확정 저장(디바운스 대기 중이던 것 포함). 편집 중엔 라이브 저장이 멈춘다(_boardLiveWriteNow) */
-    try{ if(!window.__vaultEdit&&typeof _boardLiveWriteNow==="function"){ try{clearTimeout(_bliveT);_bliveT=null;}catch(_){} _boardLiveWriteNow(false); } }catch(_){}
+    try{ if(!window.__vaultEdit&&typeof _boardLiveWriteNow==="function"){ try{clearTimeout(_bliveT);_bliveT=null;}catch(_){} boardFlushLive(); } }catch(_){}
   }
   try{window.__animReset&&window.__animReset();}catch(_){}
   editorLibId=null;
@@ -14272,8 +14291,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   /* 훈련·세트피스 편집기도 같은 저장 확인창을 사용한다. */
   try{window.__vaultOpenSaveSheet=openSaveSheet;}catch(_){}
   function vaultSaveCurrent(_o){
-    if(!psVaultRequireLogin())return Promise.resolve(false);
     _o=_o||{};
+    function failed(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");if(_o.onerror)_o.onerror(e);}
+    if(!psVaultRequireLogin()){failed();return Promise.resolve(false);}
     if(window.__vaultReadOnly){
       if(!_o.silent)try{toast("보기 전용입니다 — 편집하려면 보관함에서 ‘편집’ 또는 ‘복사’를 선택하세요");}catch(_){}
       return;
@@ -14306,15 +14326,15 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var folder=pend.folder||curFolder()||"";
     var thumb="", snap={};
     if(type==="meeting"){ thumb=(slides[0]&&slides[0].thumb)||""; snap=(slides[0]&&slides[0].snap)||{}; }
-    else { try{thumb=boardThumbSVG();}catch(_){} try{snap=captureSnap();}catch(_){} }
-    var frames=null; if(type!=="meeting"){ try{ frames=window.__animFrames?window.__animFrames():null; }catch(_){} }   /* 작전판 애니메이션 저장 (#13) */
-    var pages=null; if(type!=="meeting"){ try{ pages=window.__psPages&&window.__psPages.forSave(); }catch(_){} }   /* 작전판 멀티 페이지 저장 — 여러 페이지를 한 항목에 함께 */
+    else { try{snap=captureSnap();}catch(e){failed(e);return;}try{thumb=boardThumbSVG();}catch(_){} }
+    var frames=null; if(type!=="meeting"){ try{ frames=window.__animFrames?window.__animFrames(true):null; }catch(e){failed(e);return;} }   /* 작전판 애니메이션 저장 (#13) */
+    var pages=null; if(type!=="meeting"){ try{ pages=window.__psPages&&window.__psPages.forSave(); }catch(e){failed(e);return;} }   /* 작전판 멀티 페이지 저장 — 여러 페이지를 한 항목에 함께 */
     if(pages&&pages.length>1){ try{ snap=pages[0].snap||snap; if(pages[0].thumb)thumb=pages[0].thumb; }catch(_){} }   /* 대표 스냅·썸네일은 첫 페이지 */
     libGet().then(function(lib){
       var idx=-1; if(curId){for(var _k=0;_k<lib.length;_k++){if(lib[_k].libId===curId){idx=_k;break;}}}
       if(idx>=0 && !canEditItem(lib[idx])){
         if(!_o.silent)try{toast("만든 사람만 저장할 수 있어요 — 보관함의 ‘복사’를 사용하세요");}catch(_){}
-        return;
+        failed();return;
       }   /* 팀: 남의 항목은 자동 저장·자동 복사 모두 금지. 복사는 사용자가 보관함에서 명시적으로 선택 */
       if(idx>=0){
         lib[idx].thumb=thumb; lib[idx].snap=snap; if(slides)lib[idx].slides=slides; if(frames)lib[idx].frames=frames; else delete lib[idx].frames; if(pages)lib[idx].pages=pages; else delete lib[idx].pages; lib[idx].savedAt=Date.now();
@@ -14331,14 +14351,14 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         libSet(lib).then(function(){if(!_o.silent){try{toast("보관함에 저장됨 ✓");}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
           function(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");if(_o.onerror)try{_o.onerror(e);}catch(_){}});
       }
-    });
+    }).catch(failed);
   }
   try{window.__vaultSave=vaultSaveCurrent;}catch(_){}
-  /* 보관함에서 연 기존 항목은 자동 저장하며, 사용자가 확신할 수 있도록
-     상단의 '저장하고 나가기'로 같은 원본에 즉시 저장할 수도 있다. */
+  /* 보드는 명시적 저장만 허용한다. 미팅 등 다른 편집기의 자동 저장은 유지한다. */
   var _vaultAutoT=null,_vaultAutoWriting=false,_vaultAutoAgain=false;
   function _vaultAutoStatus(txt){try{var s=$id("vCreateSub");if(s&&window.__vaultEdit&&!window.__vaultReadOnly&&window.__curVaultId)s.textContent="· "+txt;}catch(_){}}
   function _vaultEmergencySnapshot(){
+    if(curType()==="board")return false;
     try{
       if(typeof animPlaying!=="undefined"&&animPlaying)return false;
       if(window.__vaultHydrating)return false;
@@ -14373,6 +14393,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     return false;
   }
   function _vaultAutoRun(){
+    if(curType()==="board")return;
     try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=null;
     if(window.__vaultHydrating)return;
     if(!window.__vaultEdit||window.__vaultReadOnly||!window.__curVaultId||window.__vaultPending)return;
@@ -14396,6 +14417,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   window.__vaultAutoSaveSchedule=function(){
     if(window.__vaultHydrating)return;
     if(!window.__vaultEdit||window.__vaultReadOnly||!window.__curVaultId||window.__vaultPending)return;
+    if(curType()==="board"){window.__vaultManualDirty=true;_vaultAutoStatus("변경 사항 있음 · 저장 버튼을 눌러 주세요");return;}
     if(_vaultAutoWriting){_vaultAutoAgain=true;return;}
     _vaultAutoStatus("저장 준비 중…");try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=setTimeout(_vaultAutoRun,850);
   };
@@ -14403,6 +14425,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=null;_vaultAutoAgain=false;
   };
   window.__vaultAutoSaveFlush=function(){
+    if(curType()==="board"){window.__vaultAutoSaveCancel();return;}
     if(window.__vaultReadOnly){window.__vaultAutoSaveCancel();return;}
     restoreAnimBeforeCapture();
     try{_vaultEmergencySnapshot();}catch(_){}
@@ -14476,11 +14499,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     $id("vCreateSub").textContent=(type==="meeting")?"· 슬라이드를 추가한 뒤 저장":"· 배치를 그린 뒤 저장";
     try{window.__vaultEdit=true;}catch(_){}bar.classList.add("on"); document.body.classList.add("vcreating");
     try{var sv=$id("vaultSave"); if(sv)sv.style.display="none";}catch(_){} }
-  function showViewBar(name,readOnly){ var bar=ensureCreateBar();   /* 보관함 항목 열기 — 보기와 편집을 분리하고 작업 보드는 보존 */
+  function showViewBar(name,readOnly){ window.__vaultManualDirty=false;var bar=ensureCreateBar();   /* 보관함 항목 열기 — 보기와 편집을 분리하고 작업 보드는 보존 */
     var ro=!!readOnly;
     try{window.__vaultViewMode=true;window.__vaultReadOnly=ro;var _sb=$id("vCreateSave");if(_sb){_sb.style.display=ro?"none":"";_sb.textContent="저장하고 나가기";}var _cb=$id("vCreateCancel");if(_cb)_cb.textContent=ro?"닫기":"나가기";var _fl=$id("vCreateFlow");if(_fl)_fl.style.display="none";}catch(_){}
     $id("vCreateTitle").textContent=(name||"작전판");
-    $id("vCreateSub").textContent=ro?"· 보기 전용 · 저장 안 함":"· 수정하면 이 기기에 자동 저장됩니다";
+    $id("vCreateSub").textContent=ro?"· 보기 전용 · 저장 안 함":"· 저장 버튼을 눌러야 저장됩니다";
     try{window.__vaultEdit=true;}catch(_){}bar.classList.add("on"); document.body.classList.add("vcreating");
     try{var sv=$id("vaultSave"); if(sv)sv.style.display="none";}catch(_){}
     try{window.__vvName=name||""; var _fb=$id("vCreateFull"); if(_fb)_fb.style.display="";}catch(_){}
@@ -14534,41 +14557,23 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(!_vaultBoardContext)return false;
     try{if(window.__vaultReadOnly||!vaultBoardSameOwner(_vaultBoardContext.owner))window.__vaultAutoSaveCancel();else window.__vaultAutoSaveFlush();}catch(_){}
     try{exitVaultFull();}catch(_){}
-    vaultBoardRestore();hideCreateBar();return true;
+    window.__vaultManualDirty=false;vaultBoardRestore();hideCreateBar();return true;
   };
   function doViewClose(){
+    if(window.__vaultManualDirty){psConfirm("저장하지 않은 변경 사항을 버리고 나갈까요?",function(){window.__vaultManualDirty=false;doViewClose();});return;}
     if(_vaultBoardContext){window.__vaultBoardLeave();try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){}return;}
     try{exitVaultFull();}catch(_){} try{if(window.__vaultReadOnly){window.__vaultAutoSaveCancel&&window.__vaultAutoSaveCancel();}else{window.__vaultAutoSaveFlush&&window.__vaultAutoSaveFlush();}}catch(_){} try{window.__vaultViewMode=false;}catch(_){} var bar=$id("vCreateBar"); if(bar)bar.classList.remove("on"); document.body.classList.remove("vcreating"); try{window.__createPrev=null;window.__curVaultId=null;window.__vaultReadOnly=false;}catch(_){} try{if(window.boardShowDefault)window.boardShowDefault();}catch(_){} try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){}
   }
-  function doViewSaveBack(){   /* 보관함에서 연 항목을 수정 후 저장(원본 덮어쓰기) — 작업 보드는 그대로 두고 보관함으로 복귀 */
+  function doViewSaveBack(){
     if(window.__vaultReadOnly){doViewClose();return;}
-    try{exitVaultFull();}catch(_){}
-    restoreAnimBeforeCapture();
-    var curId=window.__curVaultId||null;
-    var snap=null,thumb=""; try{snap=captureSnap();}catch(_){} try{thumb=boardThumbSVG();}catch(_){}
-    /* 페이지·애니메이션도 함께 저장 — 예전엔 snap/thumb 만 써서 '수정 중 추가한 페이지가 저장 안 되던' 버그가 있었다.
-       아래 boardShowDefault()가 exitToLive()로 페이지를 라이브 것으로 되돌리므로 반드시 여기서 먼저(동기) 캡처할 것. */
-    var pages=null; try{ pages=window.__psPages&&window.__psPages.forSave(); }catch(_){}
-    var frames=null; try{ frames=window.__animFrames?window.__animFrames():null; }catch(_){}
-    if(pages&&pages.length>1){ try{ snap=pages[0].snap||snap; if(pages[0].thumb)thumb=pages[0].thumb; }catch(_){} }   /* 대표 스냅·썸네일은 첫 페이지 — vaultSaveCurrent 와 같은 규칙 */
-    try{window.__vaultViewMode=false;}catch(_){}
-    var bar=$id("vCreateBar"); if(bar)bar.classList.remove("on"); document.body.classList.remove("vcreating");
-    if(curId&&snap){
-      libGet().then(function(lib){
-        var idx=-1; for(var i=0;i<lib.length;i++){ if(lib[i]&&lib[i].libId===curId){idx=i;break;} }
-        if(idx>=0){ lib[idx].snap=snap; if(thumb)lib[idx].thumb=thumb;
-          if(pages)lib[idx].pages=pages; else delete lib[idx].pages;         /* openItem 이 항상 restore() 하므로 null = 정말 1페이지 */
-          if(frames)lib[idx].frames=frames; else delete lib[idx].frames;
-          lib[idx].savedAt=Date.now();
-          libSet(lib).then(function(){ try{toast(pages?("이 기기에 저장됨 ✓ · 페이지 "+pages.length+"개"):"이 기기에 저장됨 ✓");}catch(_){} try{renderDrillFiles();}catch(_){} }); }
-        else { try{toast("보관함 항목을 찾지 못했어요");}catch(_){} }
-      });
-    } else { try{toast("저장할 항목이 없어요");}catch(_){} }
-    try{window.__createPrev=null;window.__curVaultId=null;}catch(_){}
-    try{if(window.boardShowDefault)window.boardShowDefault();}catch(_){}   // 작업 보드 복원 + __vaultEdit 해제
-    try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){}   // 보관함으로 복귀
+    var button=$id('vCreateSave');if(button&&button.disabled)return;
+    if(button)button.disabled=true;
+    vaultSaveCurrent({after:function(){
+      if(button)button.disabled=false;
+      window.__vaultManualDirty=false;doViewClose();
+    },onerror:function(){if(button)button.disabled=false;}});
   }
-  function hideCreateBar(){ try{window.__vaultEdit=false;window.__vaultReadOnly=false;}catch(_){} var bar=$id("vCreateBar"); if(bar)bar.classList.remove("on"); document.body.classList.remove("vcreating"); }
+  function hideCreateBar(){ window.__vaultManualDirty=false;try{window.__vaultEdit=false;window.__vaultReadOnly=false;}catch(_){} var bar=$id("vCreateBar"); if(bar)bar.classList.remove("on"); document.body.classList.remove("vcreating"); }
   function doCreateSave(){
     if(window.__vaultViewMode){ doViewSaveBack(); return; }   // 보관함에서 연 항목 수정 저장
     var type=(window.__vaultPending&&window.__vaultPending.type)||curType();
@@ -15766,6 +15771,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   saveBtn.title="현재 작전판을 보관함에 저장";saveBtn.setAttribute("aria-label","현재 작전판을 보관함에 저장");
   saveBtn.innerHTML='<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4z"/><path d="M3 4h18v3H3z"/><path d="M12 10v6M9.5 13.5 12 16l2.5-2.5"/></svg><span class="cmd-save-label">보관함 저장</span>';
   saveBtn.onclick=function(e){e.stopPropagation();vaultSaveCurrent();};
+  var manualSaveBtn=document.createElement('button');manualSaveBtn.id='boardManualSave';manualSaveBtn.type='button';
+  manualSaveBtn.className='primary';manualSaveBtn.style.cssText='flex:0 0 auto;white-space:nowrap;padding:8px 12px;border:1px solid var(--blue,#3a6df0);border-radius:9px;background:var(--blue,#3a6df0);color:#fff;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer';
+  manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveExplicit();};
+  var manualStyle=document.createElement('style');manualStyle.textContent='@media(max-width:639px){#boardManualSave{position:fixed!important;left:14px!important;right:auto!important;bottom:calc(102px + var(--ps-animbar-h,48px) + 8px)!important;z-index:171!important;min-height:42px;max-width:150px}}';document.head.appendChild(manualStyle);
+  boardManualStatus();
   function mountSave(){
     var strip=$id("boardPageStrip"),end=$id("cmd-tool-end"),stg=$id("boardStage"),cur=$id("vaultSave");
     /* 2.737 — 태블릿·데스크톱은 «보드 가져오기» 바로 뒤, 상단 띠가 앱 헤더 뒤로
@@ -15773,8 +15783,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var host=((window.innerWidth||0)>=640&&strip&&strip.classList.contains("on"))?strip:(end||stg);
     if(!cur){if(host)host.appendChild(saveBtn);}
     else if(host&&cur.parentNode!==host)host.appendChild(cur);
+    var manualHost=(window.innerWidth||0)<640?document.body:host;
+    if(manualHost&&manualSaveBtn.parentNode!==manualHost){if(manualHost===host)host.insertBefore(manualSaveBtn,saveBtn);else manualHost.appendChild(manualSaveBtn);}
+    boardManualStatus();
   }
-  function toggleSave(){mountSave();var v=window.__csView||"board";var hide=(v==="session")||!!window.__vaultEdit;saveBtn.style.display=hide?"none":"inline-flex";}   /* 보관함 목록·항목 보기/편집 중엔 숨김(vCreateBar 저장이 대신함) */
+  function toggleSave(){mountSave();var v=window.__csView||"board";var hide=(v==="session")||!!window.__vaultEdit;saveBtn.style.display=hide?"none":"inline-flex";manualSaveBtn.style.display=hide?"none":"inline-flex";}   /* 보관함 목록·항목 보기/편집 중엔 숨김(vCreateBar 저장이 대신함) */
   var _saveResizeT=null;
   window.addEventListener("resize",function(){clearTimeout(_saveResizeT);_saveResizeT=setTimeout(function(){try{toggleSave();}catch(_){}},80);});
   var _osetView=setView;
@@ -16073,7 +16086,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   +".ksbar .ksshow{background:var(--blue,#3a6df0);border-color:var(--blue,#3a6df0);color:#fff;}"
   +".ksbar .kssave{background:var(--green,#22a06b);border-color:var(--green,#22a06b);color:#fff;}"
   +"body.meet-mode #vaultSave{display:none!important;}"
-  +"body.editing #vaultSave{display:none!important;}"
+  +"body.editing #vaultSave,body.editing #boardManualSave,body.meet-mode #boardManualSave{display:none!important;}"
   +".ksbar .kstxt.on{background:var(--blue,#3a6df0);border-color:var(--blue,#3a6df0);color:#fff;}"
   +"#ksStrip .ksc .kdup{position:absolute;right:23px;top:3px;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:5px;font-size:10px;cursor:pointer;width:18px;height:18px;line-height:1;}"
   +".kspop{position:fixed;z-index:99999;background:var(--panel,#141a22);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.5);padding:6px;min-width:160px;}"
@@ -16235,7 +16248,7 @@ try{ var _nb=document.getElementById('dfNew');
   if(_nb && window.__openCreateMenu){ _nb._b=1; _nb.textContent='＋ 만들기'; _nb.addEventListener('click',window.__openCreateMenu); } }catch(_){}
 </script>
 <script src="perms.js"></script>
-<script>try{ if(window.PSPerms) PSPerms.gate('board',{hide:'#vaultSave,#vCreateSave'}); }catch(_){}</script>
+<script>try{ if(window.PSPerms) PSPerms.gate('board',{hide:'#vaultSave,#boardManualSave,#vCreateSave'}); }catch(_){}</script>
 <script>
 /* ===== 작전판 멀티 페이지 (독립 페이지 탭) — 훈련 만들기의 '＋ 훈련'과 동일 개념.
    한 작전판 파일 안에 서로 다른 보드 여러 개(선수·그림·설정 각각 별개)를 두고 탭으로 전환.
@@ -16330,7 +16343,7 @@ try{ var _nb=document.getElementById('dfNew');
     try{ PSTouchSort(box,".bp-tab",function(a,b){ reorder(a,b); },{dragClass:"bp-dragging",overClass:"bp-over",ctl:".bpx"}); }catch(_){}
     /* 2.737 — 태블릿·데스크톱의 보관함 저장을 «보드 가져오기» 바로 옆에 둔다.
        innerHTML 초기화 전에 원본 버튼 참조를 잡아 이벤트·권한 게이트를 보존한다. */
-    var vaultSave=document.getElementById("vaultSave");
+    var vaultSave=document.getElementById("vaultSave"),manualSave=document.getElementById("boardManualSave");
     box.innerHTML="";
     /* 다른 탭과 같은 결 — 제목+부제를 페이지 바 왼쪽에 둔다(줄을 새로 늘리지 않아 운동장 공간 손해 없음) */
     var hd=document.createElement("div"); hd.className="bp-head";
@@ -16383,6 +16396,7 @@ try{ var _nb=document.getElementById('dfNew');
       add3.textContent="보드 가져오기"; add3.title="보관함에 저장한 작전판을 골라 지금 페이지에 올립니다 (⌘Z 로 되돌리기)";
       add3.onclick=function(e){ e.stopPropagation(); try{ openBoardImport(); }catch(_){ } }; box.appendChild(add3);
     }
+    if(manualSave&&(window.innerWidth||0)>=640)box.appendChild(manualSave);
     if(vaultSave&&(window.innerWidth||0)>=640)box.appendChild(vaultSave);
     /* 1.814 — 상단 '내보내기' 버튼 제거(사용자 지시). PNG·GIF·MP4 내보내기는 하단 도크에 있다 */
   }
