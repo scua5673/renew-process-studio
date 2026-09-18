@@ -11,7 +11,7 @@ const UID='11111111-1111-4111-8111-111111111111',WID='22222222-2222-4222-8222-22
 fs.mkdirSync(out,{recursive:true});
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'&&process.env.PS_CHROME_PATH?{executablePath:process.env.PS_CHROME_PATH}:{})});
 const results=[];
-try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{width:393,height:852}]){
+try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height:900},{width:820,height:1180},{width:393,height:852}]){
   const context=await browser.newContext({viewport,serviceWorkers:'block'}),errors=[];
   try{
     await context.route('**/*',route=>{
@@ -31,19 +31,20 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
     await page.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone);
     await page.evaluate(()=>{
       boardShowDefault();const s=captureSnap();s.players=[{id:'depth-a',team:'blue',num:8,name:'A',x:450,y:340},{id:'depth-b',team:'red',num:9,name:'B',x:620,y:470}];
-      s.equipment=[{id:'cone-a',team:'cone',x:720,y:340},{id:'marker-a',team:'marker',x:780,y:470}];s.ball={id:'ball',team:'ball',x:570,y:350};s.drawings=[];loadSnap(s);state.tool='move';
+      s.equipment=Object.keys(EQUIP_LABEL).filter(team=>team!=='ball').map(team=>({id:'equip-'+team,team,x:720,y:340}));s.ball={id:'ball',team:'ball',x:570,y:350};s.drawings=[];loadSnap(s);state.tool='move';
     });
     await page.evaluate(()=>{
       const s=captureSnap();for(let i=2;i<22;i++)s.players.push({id:'depth-'+i,team:i%2?'blue':'red',num:i+1,x:180+(i%8)*100,y:180+Math.floor(i/8)*180});loadSnap(s);
     });
+    const targets=await page.evaluate(()=>['depth-a','ball',...state.equipment.map(p=>String(p.id))]);
     for(const orientation of ['h','v']){
-      await page.evaluate(orientation=>{state.orientation=orientation;buildPitch();__setTilt(true);__tiltFit();},orientation);
+      await page.evaluate(({orientation,view})=>{state.orientation=orientation;buildPitch();__setTilt(view==='depth');if(view==='depth')__tiltFit();},{orientation,view});
       // Let the normal fit/resize callbacks settle before measuring a fixed projection.
       await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
-      for(const finish of ['frame','frame-layout','release','cancel']){
-        const metrics=await page.evaluate(async finish=>{
+      for(const target of targets)for(const finish of ['frame','frame-layout','release','cancel']){
+        const metrics=await page.evaluate(async ({finish,target})=>{
           sel=null;multiSel=[];state.tool='move';renderTokens();clearBoardHistory();
-          const p=state.players[0],g=tokenLayer.querySelector('[data-id="depth-a"]'),face=g.querySelector('.ps-depth-face');
+          const p=tokenItems().find(it=>String(it.o.id)===target).o,g=tokenLayer.querySelector('[data-id="'+target+'"]'),face=g.querySelector('.ps-depth-face');
           const start={x:p.x,y:p.y},b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2;
           // Layout can change between input and its RAF (including normal tilt
           // fitting). Verify against the projection actually used at each end,
@@ -51,12 +52,13 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
           const samples=[],toUnitOriginal=clientToUnit;
           clientToUnit=function(cx,cy){const unit=toUnitOriginal(cx,cy);samples.push({cx,cy,x:unit.x,y:unit.y});return unit;};
           const fire=(type,x,y)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:42,pointerType:'mouse',buttons:type==='pointerup'?0:1,clientX:x,clientY:y}));
-          let transforms=0,solves=0,reads=0;const attr=g.setAttribute,solve=_bcSolveH;
+          let transforms=0,solves=0,reads=0,ctmReads=0;const attr=g.setAttribute,solve=_bcSolveH,ctm=drawLayer.getScreenCTM;
+          drawLayer.getScreenCTM=function(){ctmReads++;return ctm.call(this);};
           g.setAttribute=function(k,v){if(k==='transform')transforms++;return attr.call(this,k,v);};
           _bcSolveH=function(...a){solves++;return solve(...a);};
-          const markers=[0,1,2,3].map(i=>world.querySelector('#bcM'+i)),rects=markers.map(m=>m.getBoundingClientRect);
+          const markers=[0,1,2,3].map(i=>world.querySelector('#bcM'+i)).filter(Boolean),rects=markers.map(m=>m.getBoundingClientRect);
           markers.forEach((m,i)=>m.getBoundingClientRect=function(){reads++;return rects[i].call(this);});
-          fire('pointerdown',x,y);transforms=0;solves=0;reads=0;
+          fire('pointerdown',x,y);transforms=0;solves=0;reads=0;ctmReads=0;
           for(let i=1;i<=120;i++)fire('pointermove',x+i/4,y+i/6);
           const stage=document.getElementById('boardStage'),stageTransform=stage.style.transform;
           if(finish==='frame-layout')stage.style.transform='translateX(6px)';
@@ -66,38 +68,38 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
           const afterEnd=transforms;
           await new Promise(requestAnimationFrame);
           const a=samples[0],z=samples.at(-1),expected={x:start.x+z.x-a.x,y:start.y+z.y-a.y};
-          const result={moves:120,beforeEnd,transforms,solves,reads,afterEnd,expected,samples,lastInput:{x:x+30,y:y+20},actual:{x:p.x,y:p.y},undo:undoStack.length,sameFace:face===g.querySelector('.ps-depth-face'),dragging:document.body.classList.contains('token-drag')};
-          clientToUnit=toUnitOriginal;stage.style.transform=stageTransform;
+          const result={moves:120,beforeEnd,transforms,solves,reads,ctmReads,afterEnd,expected,samples,lastInput:{x:x+30,y:y+20},actual:{x:p.x,y:p.y},undo:undoStack.length,sameFace:face===g.querySelector('.ps-depth-face'),dragging:document.body.classList.contains('token-drag')};
+          clientToUnit=toUnitOriginal;drawLayer.getScreenCTM=ctm;stage.style.transform=stageTransform;
           g.setAttribute=attr;_bcSolveH=solve;markers.forEach((m,i)=>m.getBoundingClientRect=rects[i]);
-          undoLast();result.undoPosition={x:state.players[0].x,y:state.players[0].y};result.start=start;return result;
-        },finish);
-        assert.equal(metrics.transforms,1);assert.equal(metrics.afterEnd,1);assert.ok(metrics.solves<=1);assert.equal(metrics.reads,4);
-        results.push({width:viewport.width,orientation,finish,...metrics});
+          undoLast();const restored=tokenItems().find(it=>String(it.o.id)===target).o;result.undoPosition={x:restored.x,y:restored.y};result.start=start;return result;
+        },{finish,target});
+        assert.equal(metrics.transforms,1);assert.equal(metrics.afterEnd,1);assert.ok(metrics.solves<=1);assert.equal(metrics.reads,view==='depth'?4:0);assert.equal(metrics.ctmReads,view==='flat'?1:0);
+        results.push({view,target,width:viewport.width,orientation,finish,...metrics});
         assert.equal(metrics.beforeEnd.transforms,finish.startsWith('frame')?1:0);
         assert.equal(metrics.samples.length,2,'only grab and the latest movement are projected');
         assert.equal(metrics.samples[1].cx,metrics.lastInput.x);assert.equal(metrics.samples[1].cy,metrics.lastInput.y);
-        if(finish==='frame-layout')assert.equal(metrics.solves,1,'a layout change invalidates the cached projection');
+        if(finish==='frame-layout'&&view==='depth')assert.equal(metrics.solves,1,'a layout change invalidates the cached projection');
         assert.ok(Math.abs(metrics.actual.x-metrics.expected.x)<1e-5);assert.ok(Math.abs(metrics.actual.y-metrics.expected.y)<1e-5);
         assert.deepEqual(metrics.undoPosition,metrics.start);assert.equal(metrics.undo,1);assert.equal(metrics.sameFace,true);assert.equal(metrics.dragging,false);
       }
       const group=await page.evaluate(()=>{
-        state.tool='move';sel=null;state.players[2].locked=true;multiSel=state.players.slice(0,3);renderTokens();clearBoardHistory();
+        state.tool='move';sel=null;state.players[2].locked=true;multiSel=[state.players[0],state.ball,state.equipment[0],state.players[2]];const selected=multiSel.slice(),ids=selected.map(p=>String(p.id));renderTokens();clearBoardHistory();
         const p=state.players[0],g=tokenLayer.querySelector('[data-id="depth-a"]'),b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2;
-        const before=state.players.slice(0,3).map(p=>({x:p.x,y:p.y}));
+        const before=selected.map(p=>({x:p.x,y:p.y}));
         const fire=(type,x,y)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:45,pointerType:'mouse',buttons:1,clientX:x,clientY:y,shiftKey:true}));
         fire('pointerdown',x,y);for(let i=1;i<=60;i++)fire('pointermove',x+i/2,y+i/12);fire('pointerup',x+30,y+5);
-        const delta=state.players.slice(0,3).map((p,i)=>({x:p.x-before[i].x,y:p.y-before[i].y})),undo=undoStack.length;
-        undoLast();const restored=state.players.slice(0,3).map(p=>({x:p.x,y:p.y}));state.players[2].locked=false;multiSel=[];renderTokens();return {delta,before,restored,undo};
+        const delta=selected.map((p,i)=>({x:p.x-before[i].x,y:p.y-before[i].y})),undo=undoStack.length;
+        undoLast();const restored=ids.map(id=>{const p=tokenItems().find(it=>String(it.o.id)===id).o;return {x:p.x,y:p.y};});state.players[2].locked=false;multiSel=[];renderTokens();return {delta,before,restored,undo};
       });
-      assert.ok(Math.abs(group.delta[0].x-group.delta[1].x)<1e-7);assert.ok(Math.abs(group.delta[0].y-group.delta[1].y)<1e-7);assert.deepEqual(group.delta[2],{x:0,y:0});assert.ok(Math.hypot(group.delta[0].x,group.delta[0].y)>5);
+      assert.ok(Math.abs(group.delta[0].x-group.delta[1].x)<1e-7);assert.ok(Math.abs(group.delta[0].y-group.delta[1].y)<1e-7);assert.ok(Math.abs(group.delta[0].x-group.delta[2].x)<1e-7);assert.ok(Math.abs(group.delta[0].y-group.delta[2].y)<1e-7);assert.deepEqual(group.delta[3],{x:0,y:0});assert.ok(Math.hypot(group.delta[0].x,group.delta[0].y)>5);
       assert.ok(group.delta[0].x===0||group.delta[0].y===0);assert.deepEqual(group.restored,group.before);assert.equal(group.undo,1);
     }
     // Keep the 22-player stress checks above. Isolate the trusted drag target here:
     // phone hit circles intentionally overlap nearby players on the small pitch.
-    await page.evaluate(()=>{state.players=state.players.slice(0,2);renderTokens();});
+    await page.evaluate(()=>{state.players=state.players.slice(0,2);state.equipment=[];renderTokens();});
     // Actual trusted mouse events still move the raised face through pointer capture.
     const before=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));
-    const box=await page.locator('.token[data-id="depth-a"] .ps-depth-face').boundingBox();
+    const box=await page.locator('.token[data-id="depth-a"]'+(view==='depth'?' .ps-depth-face':'')).boundingBox();
     assert.equal(await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.closest('.token')?.getAttribute('data-id'),{x:box.x+box.width/2,y:box.y+box.height/3}),'depth-a');
     await page.mouse.move(box.x+box.width/2,box.y+box.height/3);await page.mouse.down();await page.mouse.move(box.x+box.width/2+35,box.y+box.height/3+25,{steps:10});await page.mouse.up();
     const after=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));assert.ok(Math.hypot(after.x-before.x,after.y-before.y)>8);
