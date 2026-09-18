@@ -9018,7 +9018,7 @@ async function psVaultReadForRender(){
     return lib;
   }catch(e){
     if(!e||!e.psVaultLocked)throw e;
-    psVaultShowLock();return null;
+    if(!psVaultUnlocked())psVaultShowLock();return null;
   }
 }
 function psVaultAuthChanged(){

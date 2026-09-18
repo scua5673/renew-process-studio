@@ -64,3 +64,10 @@ test('unrelated library read failures remain visible to callers',async()=>{
   const h=harness({unlocked:true});h.c.libGet=async()=>{throw Error('disk read failed');};
   await assert.rejects(h.c.psVaultReadForRender(),/disk read failed/);
 });
+
+test('a late lock rejection cannot cover a newly unlocked account',async()=>{
+  const h=harness({unlocked:true,view:'session'});let reject;
+  h.c.libGet=()=>new Promise((_,r)=>{reject=r;});
+  const pending=h.c.psVaultReadForRender();h.state.uid='synthetic-b';reject(h.c.psVaultLockedError());
+  assert.equal(await pending,null);assert.equal(h.nodes.psVaultAuthLock,undefined);
+});
