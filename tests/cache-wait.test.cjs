@@ -25,7 +25,7 @@ test('slow receipt becomes a small notice within five seconds without acknowledg
  const h=harness();h.c.cacheWaitStart();assert.equal([...h.timers.values()][0].ms,5000);h.expire();assert.match(h.cover().innerHTML,/다시 시도/);assert.equal(h.local.get('wiped'),'1');assert.equal(h.local.get('team-data'),'original');
 });
 test('offline retries have a fresh bounded timer even when sync never settles',async()=>{
- const h=harness();h.c.navigator.onLine=false;h.c.cacheWaitStart();assert.match(h.cover().innerHTML,/오프라인/);h.c.navigator.onLine=true;h.retry();await tick();assert.equal(h.timers.size,1);h.expire();assert.match(h.cover().innerHTML,/수신이 지연/);h.retry();await tick();assert.equal(h.timers.size,1);h.expire();assert.equal(h.timers.size,0);
+ const h=harness();h.c.navigator.onLine=false;h.c.cacheWaitStart();assert.match(h.cover().innerHTML,/오프라인/);assert.match(h.cover().style.cssText,/inset:0/);h.c.navigator.onLine=true;h.retry();await tick();assert.equal(h.timers.size,1);h.expire();assert.match(h.cover().innerHTML,/수신이 지연/);h.retry();await tick();assert.equal(h.timers.size,1);h.expire();assert.equal(h.timers.size,0);
 });
 for(const outcome of ['skip','error','locked','noauth','throw','reject'])test('retry '+outcome+' never leaves an indefinite waiting cover',async()=>{
  const h=harness();h.c.cacheWaitStart();h.expire();h.c.syncNow=()=>{if(outcome==='throw')throw Error('synthetic');if(outcome==='reject')return Promise.reject(Error('synthetic'));return Promise.resolve({[outcome]:1});};h.retry();await tick();assert.match(h.cover().innerHTML,/수신이 지연/);assert.equal(h.timers.size,0);assert.equal(h.local.get('wiped'),'1');assert.deepEqual(h.errors,[]);

@@ -176,12 +176,12 @@ function renderCacheWait(mode){
     /* The cover is tab-local; another tab clearing CACHE_FLAG must not strand it.
        After a short wait, keep progress visible without blocking the whole app.
        The independent account/workspace lock and per-document readiness stay in force. */
-    var compact=mode!=='wait';
+    var compact=mode==='slow';
     ov.style.cssText='position:absolute;z-index:99996;display:flex;justify-content:center;color:var(--txt,#16181c);font-family:inherit;'+
       (compact?'top:8px;left:12px;right:12px;pointer-events:none;':'inset:0;align-items:center;padding:24px;background:var(--bg,#f5f6f8);');
     var box='width:min(360px,100%);text-align:center;background:var(--bar,#fff);border:1px solid var(--line,#e2e4e8);border-radius:16px;padding:24px 20px;font-size:14px;line-height:1.6';
-    if(compact){
-      ov.innerHTML='<div style="'+box+'padding:10px 16px;width:auto;max-width:100%;pointer-events:auto"><b>'+(mode==='offline'?'오프라인이에요':'팀 자료 수신이 지연되고 있어요')+'</b><br><span style="color:var(--gray,#646a73)">'+(mode==='offline'?'연결되면 다시 확인해 주세요.':'확인된 자료부터 볼 수 있어요. 새 자료는 받는 대로 반영됩니다.')+'</span><br><button data-ps-cw-retry style="margin-top:8px;padding:6px 14px;border-radius:999px;border:1px solid var(--line,#e2e4e8);background:var(--bar,#fff);color:inherit;font:inherit">다시 시도</button></div>';
+    if(mode!=='wait'){
+      ov.innerHTML='<div style="'+box+(compact?'padding:10px 16px;width:auto;max-width:100%;pointer-events:auto':'')+'"><b>'+(mode==='offline'?'오프라인이에요':'팀 자료 수신이 지연되고 있어요')+'</b><br><span style="color:var(--gray,#646a73)">'+(mode==='offline'?'팀 자료는 인터넷이 연결되면 나타나요.':'확인된 자료부터 볼 수 있어요. 새 자료는 받는 대로 반영됩니다.')+'</span><br><button data-ps-cw-retry style="margin-top:8px;padding:6px 14px;border-radius:999px;border:1px solid var(--line,#e2e4e8);background:var(--bar,#fff);color:inherit;font:inherit">다시 시도</button></div>';
       var rb=ov.querySelector('[data-ps-cw-retry]'); if(rb)rb.onclick=function(){
         renderCacheWait('wait');
         Promise.resolve().then(function(){return syncNow('cache-retry');}).then(function(){
