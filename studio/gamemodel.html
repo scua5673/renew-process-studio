@@ -1123,7 +1123,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
 </div>
 
 <script>
-(function(){
+(async function(){
   /* 1.901 — 보관함 › 게임모델은 개인 것(사용자): 팀에 전파되는 cs_gamemodel_v1 이 아니라 별도 키. 셸이 ?scope=personal 로 연다.
      팀 운영 › 게임모델(팀 컨텍스트)은 그대로 cs_gamemodel_v1. 개인 키는 sync KEYS 밖이라 팀·클라우드에 올라가지 않는다(이 기기). */
   var GM_PERSONAL=/[?&]scope=personal(?:&|$)/.test(location.search);
@@ -1167,6 +1167,29 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
       mo.moments.push({key:st.key,name:st.name,tag:st.tag,cat:st.cat,phases:st.mk()});changed=true;
     });
     return changed;
+  }
+
+  // A cleared small-storage mirror is not an empty game model. Read the existing
+  // durable copy before enabling edits, and never carry it across an owner switch.
+  if(!GM_PERSONAL&&localStorage.getItem(LS)===null&&window.storage){
+    var gmOwner=function(){var session=JSON.parse(localStorage.getItem('ps_sync_session')||'null');return JSON.stringify([session&&session.uid,localStorage.getItem('ps_active_ws'),localStorage.getItem('ps_cache_owner_v1')]);};
+    var gmBootOwner=gmOwner();
+    stage.inert=true;
+    try{
+      var existing=await window.storage.get(LS);
+      if(gmOwner()!==gmBootOwner)throw new Error('game model owner changed');
+      if(existing&&existing.value!=null&&localStorage.getItem(LS)===null){
+        var restored=typeof existing.value==='string'?existing.value:JSON.stringify(existing.value);
+        var checked=JSON.parse(restored);
+        if(!checked||!Array.isArray(checked.moments))throw new Error('invalid game model');
+        localStorage.setItem(LS,restored);
+        if(localStorage.getItem(LS)!==restored)throw new Error('game model mirror unavailable');
+      }
+      stage.inert=false;
+    }catch(error){
+      var notice=document.createElement('p');notice.setAttribute('role','alert');notice.textContent='게임모델을 불러오지 못했습니다. 기존 자료는 유지했습니다. 새로고침 후 다시 확인해 주세요.';stage.before(notice);
+      return;
+    }
   }
 
   var model;
@@ -1488,14 +1511,24 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
     return out;
   }
   /* 1.863 — 팀 홈(scout.html) 국면 평가가 같은 키를 쓴다. 다른 프레임이 바꾸면 evals 만 받아 다시 그린다 */
-  try{ window.addEventListener('storage',function(e){ if(!e||e.key!==LS)return; try{ var nx=JSON.parse(e.newValue||'null');
-    if(nx&&Array.isArray(nx.evals)){ model.evals=nx.evals; if(typeof renderEval==='function')renderEval(); }
+  try{ window.addEventListener('storage',function(e){ if(!e||e.key!==LS)return; try{
+    // Ignore queued stale events: another frame may already have saved a newer edit.
+    if(e.newValue!==localStorage.getItem(LS))return;
+    var nx=JSON.parse(e.newValue||'null');
+    if(nx&&Array.isArray(nx.evals)&&JSON.stringify(nx.evals)!==JSON.stringify(model.evals)){ model.evals=nx.evals; if(typeof renderEval==='function')renderEval(); }
     /* 2.082 — IDP 요구 화면에서도 4국면 답을 바꾼다. 안 받아 오면 이쪽의 오래된 model 이 그 답을 덮어쓴다 */
-    if(nx&&nx.style&&typeof nx.style==='object'){ model.style=nx.style; try{ renderStyleCard(); try{renderLearnCard();}catch(_){} }catch(_){} }
+    if(nx&&nx.style&&typeof nx.style==='object'&&JSON.stringify(nx.style)!==JSON.stringify(model.style)){ model.style=nx.style; try{ renderStyleCard(); try{renderLearnCard();}catch(_){} }catch(_){} }
     /* ══ 2.577 · 플레이북(playbook.html)이 원칙·세부 국면 이름·정체성을 **같은 키에 직접 쓴다** ═══════
        이 프레임은 6.4s 에 미리 떠서 늘 메모리에 model 을 들고 있다. 안 받아 오면 다음 save() 가 플레이북에서 고친 것을
-       낡은 사본으로 덮어쓴다(evals·style 과 같은 이유). storage 이벤트는 **다른 문서**가 썼을 때만 오므로 여기서 타이핑 중일 수 없다. */
-    if(nx&&Array.isArray(nx.moments)){ model.moments=nx.moments; if(typeof nx.identity==='string')model.identity=nx.identity; try{ render(); }catch(_){} }
+       낡은 사본으로 덮어쓴다(evals·style 과 같은 이유). 다른 프레임의 저장 확인도 storage 이벤트를 보내므로 이 화면이 입력 중일 수 있다. */
+    if(nx&&Array.isArray(nx.moments)){
+      var momentsChanged=JSON.stringify(nx.moments)!==JSON.stringify(model.moments);
+      var identityChanged=typeof nx.identity==='string'&&nx.identity!==model.identity;
+      // Mirrored acknowledgements must not replace the inputs or interrupt Korean composition.
+      if(momentsChanged)model.moments=nx.moments;
+      if(identityChanged){model.identity=nx.identity;identityEl.value=nx.identity;updateIdPrev();}
+      if(momentsChanged){try{render();}catch(_){}}
+    }
   }catch(_){} }); }catch(_){}
 
   /* ── 코치의 게임모델 세 문장 (책 18장: 플레이 철학·육성 원칙·자기 역량) — model.canvas ── */

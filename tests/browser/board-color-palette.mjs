@@ -13,8 +13,8 @@ const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'t
 fs.mkdirSync(out,{recursive:true});
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
 const results=[];
-try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'phone',width:393,height:852,touch:true},{name:'phone-dock',width:393,height:852,touch:true,shellDock:true}]){
- const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:!!spec.touch,hasTouch:!!spec.touch,serviceWorkers:'block'});let page,frame;
+try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landscape',width:1100,height:729,touch:true},{name:'phone',width:393,height:852,touch:true},{name:'phone-dock',width:393,height:852,touch:true,shellDock:true}]){
+ const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:!!spec.touch&&spec.width<600,hasTouch:!!spec.touch,serviceWorkers:'block'});let page,frame;
  const errors=[];const result={viewport:spec.name};results.push(result);
  try{
   await context.route('**/*',async route=>{const u=new URL(route.request().url());if(u.origin!==base)return route.abort();if(u.pathname==='/fixture.html')return route.fulfill({contentType:'text/html',body:fixture});const file=path.resolve(root,'.'+u.pathname);if(!file.startsWith(root+path.sep)||!fs.existsSync(file))return route.fulfill({status:404,body:''});return route.fulfill({contentType:mime[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});});
@@ -65,6 +65,40 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'phone',widt
   await frame.locator('#equipColCustom').fill('#667788');assert.deepEqual(await frame.evaluate(MY=>JSON.parse(localStorage.getItem(MY)),MY),fixed,'a full fixed palette never evicts an older saved color');
   const full=await frame.locator('#colorPop').boundingBox();assert.ok(full.x>=0&&full.x+full.width<=spec.width&&full.y>=0&&full.y+full.height<=spec.height,'full fixed palette remains within the viewport');
   await page.screenshot({path:path.join(out,spec.name+'-full-palette.png')});
+  if(spec.name==='ipad-landscape'){
+    assert.equal(await frame.locator('#cmd-player-stamp').evaluate(el=>getComputedStyle(el).touchAction),'none');
+    assert.equal(await frame.locator('#railEquip .chip').first().evaluate(el=>getComputedStyle(el).touchAction),'none');
+    await press(frame.locator('#colorTrig'));
+    const panel=await frame.locator('.sel-ctl').evaluate(el=>({height:el.getBoundingClientRect().height,max:innerHeight*.62,overflow:getComputedStyle(el).overflowY}));
+    assert.ok(panel.height<=panel.max+1,JSON.stringify(panel));assert.equal(panel.overflow,'auto');
+    await press(frame.locator('#delSelBtn'));assert.equal((await colors()).length,1,'landscape tablet can reach and use delete');
+    if(engine==='chromium'){
+      const cdp=await context.newCDPSession(page),start=await frame.locator('#cmd-player-stamp').boundingBox(),target=await frame.locator('svg.board').boundingBox();
+      const sx=start.x+start.width/2,sy=start.y+start.height/2,tx=target.x+target.width*.45,ty=target.y+target.height*.4;
+      const beforeScroll=await frame.evaluate(()=>({x:scrollX,y:scrollY,stage:document.querySelector('#boardStage').scrollTop}));
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:sx,y:sy,id:1}]});
+      for(let n=1;n<=12;n++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:sx+(tx-sx)*n/12,y:sy+(ty-sy)*n/12,id:1}]});
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+      assert.equal((await colors()).length,2,'native touch drag places a player instead of panning');
+      await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',x:sx,y:sy,button:'left',buttons:1,clickCount:1,pointerType:'pen'});
+      await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:tx+60,y:ty,button:'left',buttons:1,pointerType:'pen'});
+      await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:tx+60,y:ty,button:'left',buttons:0,clickCount:1,pointerType:'pen'});
+      assert.equal((await colors()).length,3,'pen drag places a player');
+      assert.deepEqual(await frame.evaluate(()=>({x:scrollX,y:scrollY,stage:document.querySelector('#boardStage').scrollTop})),beforeScroll);
+      await cdp.detach();
+    }
+    await frame.evaluate(()=>openEditor(null,'train'));await frame.locator('body.editing #editorModal.on').waitFor();
+    const stamp=await frame.locator('#cmd-player-stamp').boundingBox(),pitch=await frame.locator('svg.board').boundingBox();
+    const countBefore=await frame.evaluate(()=>state.players.length);
+    await page.mouse.move(stamp.x+stamp.width/2,stamp.y+stamp.height/2);await page.mouse.down();await page.mouse.move(pitch.x+pitch.width*.4,pitch.y+pitch.height*.4,{steps:10});await page.mouse.up();
+    assert.equal(await frame.evaluate(()=>state.players.length),countBefore+1,'training editor accepts a palette drag');
+    const trainingPlayer=await frame.evaluate(()=>state.players.at(-1).id);
+    await press(frame.locator('.token[data-id="'+trainingPlayer+'"]'));await press(frame.locator('#colorTrig'));await press(frame.getByRole('button',{name:'회색',exact:true}));
+    await press(frame.locator('#colorTrig'));await press(frame.locator('#delSelBtn'));assert.equal(await frame.evaluate(()=>state.players.length),countBefore,'training editor delete is reachable in landscape');
+    await page.screenshot({path:path.join(out,spec.name+'-training.png')});
+
+
+  }
   assert.deepEqual(errors.filter(e=>!e.includes('ResizeObserver loop')),[]);Object.assign(result,{passed:true,fullPalettePreservesPins:true,gray:true,add:true,deduplicated:true,reselect:true,remove:true,reload:true,multiUndo:true,bounds});
  }catch(e){Object.assign(result,{passed:false,error:e.stack,errors});await page?.screenshot({path:path.join(out,spec.name+'-failure.png')}).catch(()=>{});}
  finally{await context.close();}
