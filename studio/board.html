@@ -4958,7 +4958,7 @@ function enableDrag(g,p,removable,kind){
       if(typeof toast==="function")toast("길게 눌러 이동하세요");
       const _lpT=setTimeout(function(){_cleanup();engage();},280);
       const _chk=ev=>{if(ev.pointerId!==e.pointerId)return;if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>10)_cleanup();};
-      const _fin=ev=>{if(ev.pointerId!==e.pointerId)return;_cleanup();};
+      const _fin=ev=>{if(ev.pointerId!==e.pointerId)return;_cleanup();if(ev.type==="pointerup"&&state.tool==="move")selectItem(kind,p);};
       function _cleanup(){clearTimeout(_lpT);document.removeEventListener("pointermove",_chk,true);document.removeEventListener("pointerup",_fin,true);document.removeEventListener("pointercancel",_fin,true);}
       document.addEventListener("pointermove",_chk,true);
       document.addEventListener("pointerup",_fin,true);
@@ -6553,6 +6553,7 @@ function equipStampSelect(chip,cat,val,color,extra){
   try{var K="cs_hint_equipstamp_v1";if(!localStorage.getItem(K)){localStorage.setItem(K,"1");setTimeout(function(){toast("보드를 탭하면 계속 배치 · 같은 장비를 다시 누르면 종료");},60);}}catch(_){}
 }
 function attachChipDrag(chip,cat,val,color,extra){
+  chip.style.touchAction="none";
   chip.addEventListener("pointerdown",e=>{e.preventDefault();
     const sx=e.clientX,sy=e.clientY;let moved=false,ghost=null;   /* 2.245 — 클릭(무이동)과 드래그를 가른다(wireStamp 와 같은 6px) */
     const mv=ev=>{
@@ -16807,7 +16808,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     stampKind=kind;syncStamps();
   }
   function wireStamp(button,kind){
-    if(!button||button.__stampWired)return;button.__stampWired=1;button.dataset.stampKind=kind;button.setAttribute("aria-pressed","false");
+    if(!button||button.__stampWired)return;button.__stampWired=1;button.style.touchAction="none";button.dataset.stampKind=kind;button.setAttribute("aria-pressed","false");
     button.addEventListener("pointerdown",function(e){
       if(e.button!==0)return;e.preventDefault();e.stopPropagation();
       var sx=e.clientX,sy=e.clientY,moved=false,ghost=null;
@@ -18104,5 +18105,16 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   try{ new MutationObserver(function(){ if(sc.style.display==="none")sc.classList.remove("sel-more"); }).observe(sc,{attributes:true,attributeFilter:["style","data-kind"]}); }catch(_){}
 })();
 </script>
+
+<style id="ps-tablet-selection-scroll">
+/* Keep the whole inspector reachable on landscape tablets. The palette joins the
+   scroll flow so clipping cannot hide its outer columns. */
+@media (pointer:coarse) and (min-width:761px){
+ html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl:not(#_):not(#__):not(#___){overflow-y:auto!important;overflow-x:hidden!important;max-height:min(62dvh,calc(100% - 24px))!important;overscroll-behavior:contain;touch-action:pan-y}
+ html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl:has(#colorCtl.open):not(#_):not(#__):not(#___){width:248px!important;max-width:248px!important}
+ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl.open:not(#_):not(#__):not(#___){height:auto!important}
+ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl #colorPop:not(#_):not(#__):not(#___){position:static!important;transform:none!important;margin:4px 0 0!important;width:224px!important;max-width:100%!important;box-sizing:border-box!important}
+}
+</style>
 </body>
 </html>
