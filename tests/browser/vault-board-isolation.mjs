@@ -161,12 +161,12 @@ try{
       await page.waitForTimeout(2300);
       await frame.evaluate(()=>{window.__vaultAutoSaveFlush();dispatchEvent(new PageTransitionEvent('pagehide'));});
       assert.deepEqual(await frame.evaluate(()=>store.get('cs_drill_lib_v1')),libraryBeforeEdit,'library edits and lifecycle events wait for Save');
-      await frame.evaluate(()=>{window.fixtureOriginalLibSet=libSet;libSet=()=>Promise.reject(new Error('synthetic save failure'));});
+      await frame.evaluate(()=>{window.fixtureOriginalLibWrite=libWrite;libWrite=()=>Promise.reject(new Error('synthetic save failure'));});
       await frame.locator('#vCreateSave').click();
       await frame.waitForFunction(()=>!document.getElementById('vCreateSave').disabled);
       assert.equal(await frame.locator('#vCreateBar.on').count(),1,'save failure keeps editor open');
       assert.equal(await frame.evaluate(()=>state.players[0].name),'가상 편집 저장 검증');
-      await frame.evaluate(()=>{libSet=window.fixtureOriginalLibSet;});
+      await frame.evaluate(()=>{libWrite=window.fixtureOriginalLibWrite;});
       await frame.locator('#vCreateSave').click();
       await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 편집 저장 검증');
       await page.locator('#live').click();await page.waitForTimeout(500);await assertLive(frame,before,'saving edited library item leaves working board intact');
