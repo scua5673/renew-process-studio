@@ -40,12 +40,16 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       await page.evaluate(orientation=>{state.orientation=orientation;buildPitch();__setTilt(true);__tiltFit();},orientation);
       // Let the normal fit/resize callbacks settle before measuring a fixed projection.
       await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
-      for(const finish of ['frame','release','cancel']){
+      for(const finish of ['frame','frame-layout','release','cancel']){
         const metrics=await page.evaluate(async finish=>{
           sel=null;multiSel=[];state.tool='move';renderTokens();clearBoardHistory();
           const p=state.players[0],g=tokenLayer.querySelector('[data-id="depth-a"]'),face=g.querySelector('.ps-depth-face');
           const start={x:p.x,y:p.y},b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2;
-          const a=clientToUnit(x,y),z=clientToUnit(x+30,y+20),expected={x:start.x+z.x-a.x,y:start.y+z.y-a.y};
+          // Layout can change between input and its RAF (including normal tilt
+          // fitting). Verify against the projection actually used at each end,
+          // not a future move projected with the pointerdown geometry.
+          const samples=[],toUnitOriginal=clientToUnit;
+          clientToUnit=function(cx,cy){const unit=toUnitOriginal(cx,cy);samples.push({cx,cy,x:unit.x,y:unit.y});return unit;};
           const fire=(type,x,y)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:42,pointerType:'mouse',buttons:type==='pointerup'?0:1,clientX:x,clientY:y}));
           let transforms=0,solves=0,reads=0;const attr=g.setAttribute,solve=_bcSolveH;
           g.setAttribute=function(k,v){if(k==='transform')transforms++;return attr.call(this,k,v);};
@@ -54,20 +58,27 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
           markers.forEach((m,i)=>m.getBoundingClientRect=function(){reads++;return rects[i].call(this);});
           fire('pointerdown',x,y);transforms=0;solves=0;reads=0;
           for(let i=1;i<=120;i++)fire('pointermove',x+i/4,y+i/6);
-          if(finish==='frame')await new Promise(requestAnimationFrame);
+          const stage=document.getElementById('boardStage'),stageTransform=stage.style.transform;
+          if(finish==='frame-layout')stage.style.transform='translateX(6px)';
+          if(finish.startsWith('frame'))await new Promise(requestAnimationFrame);
           // A release/cancel in the same task must flush the latest sample before undo/save.
           const beforeEnd={transforms,solves,reads};fire(finish==='cancel'?'pointercancel':'pointerup',x+30,y+20);
           const afterEnd=transforms;
           await new Promise(requestAnimationFrame);
-          const result={moves:120,beforeEnd,transforms,solves,reads,afterEnd,expected,actual:{x:p.x,y:p.y},undo:undoStack.length,sameFace:face===g.querySelector('.ps-depth-face'),dragging:document.body.classList.contains('token-drag')};
+          const a=samples[0],z=samples.at(-1),expected={x:start.x+z.x-a.x,y:start.y+z.y-a.y};
+          const result={moves:120,beforeEnd,transforms,solves,reads,afterEnd,expected,samples,lastInput:{x:x+30,y:y+20},actual:{x:p.x,y:p.y},undo:undoStack.length,sameFace:face===g.querySelector('.ps-depth-face'),dragging:document.body.classList.contains('token-drag')};
+          clientToUnit=toUnitOriginal;stage.style.transform=stageTransform;
           g.setAttribute=attr;_bcSolveH=solve;markers.forEach((m,i)=>m.getBoundingClientRect=rects[i]);
           undoLast();result.undoPosition={x:state.players[0].x,y:state.players[0].y};result.start=start;return result;
         },finish);
         assert.equal(metrics.transforms,1);assert.equal(metrics.afterEnd,1);assert.ok(metrics.solves<=1);assert.equal(metrics.reads,4);
-        assert.equal(metrics.beforeEnd.transforms,finish==='frame'?1:0);
+        results.push({width:viewport.width,orientation,finish,...metrics});
+        assert.equal(metrics.beforeEnd.transforms,finish.startsWith('frame')?1:0);
+        assert.equal(metrics.samples.length,2,'only grab and the latest movement are projected');
+        assert.equal(metrics.samples[1].cx,metrics.lastInput.x);assert.equal(metrics.samples[1].cy,metrics.lastInput.y);
+        if(finish==='frame-layout')assert.equal(metrics.solves,1,'a layout change invalidates the cached projection');
         assert.ok(Math.abs(metrics.actual.x-metrics.expected.x)<1e-5);assert.ok(Math.abs(metrics.actual.y-metrics.expected.y)<1e-5);
         assert.deepEqual(metrics.undoPosition,metrics.start);assert.equal(metrics.undo,1);assert.equal(metrics.sameFace,true);assert.equal(metrics.dragging,false);
-        results.push({width:viewport.width,orientation,finish,...metrics});
       }
       const group=await page.evaluate(()=>{
         state.tool='move';sel=null;state.players[2].locked=true;multiSel=state.players.slice(0,3);renderTokens();clearBoardHistory();

@@ -167,6 +167,27 @@ test('a valid dirty cache with an existing owner-scoped baseline remains editabl
   assert.equal(h.c.data.players[0].memo,changed.players[0].memo);assert.equal(h.requests.length,0);
 });
 
+test('initial evaluation normalization never writes candidates before their separate preparation',()=>{
+  const legacy=roster();legacy.meta.evalMode='team';
+  legacy.attrs=[{id:'old',cat:'tech',name:'Retained old field'}];
+  const value=raw(legacy),h=mountScout(harness({server:value,mirror:value,idb:value}));h.baseline(value);
+  h.c.canSeeTargets=()=>true;
+  h.c.PS_EVAL_STD={id:'standard',isLegacyAttrs:()=>false,migrateLevels:()=>({}),items:[]};
+  h.c.fifaAttrs=()=>[{id:'current',cat:'tech',name:'Current field'}];
+  h.c.renderAttrs=()=>{};h.c.renderForms=()=>{};
+  vm.runInContext(section(scout,'function setEvalMode(','// 기본 속성 없음'),h.c);
+  const set=h.c.store.set;let candidateAttempts=0;
+  h.c.store.set=(key,value)=>{if(key===h.c.TKEY){candidateAttempts++;throw Error('unprepared candidate document');}return set(key,value);};
+  h.c.scoutBoot();
+  assert.equal(h.initCount,1);assert.equal(h.c.data.meta.evalMode,'fifa');
+  assert.equal(JSON.parse(h.local.get(KEY)).attrs[0].id,'current');
+  assert.equal(h.local.has(h.c.TKEY),false);
+  assert.equal(candidateAttempts,0,'normalization never attempts a candidate save');
+  assert.deepEqual(JSON.parse(h.local.get(KEY)).players,legacy.players);
+  // Explicit candidate saves still take the guarded candidate write path.
+  assert.throws(()=>h.c.save(),/unprepared candidate document/);
+});
+
 test('a new tab repairs an absent main mirror when IDB and unchanged server already agree, with no server write',async()=>{
   const expected=roster(),value=raw(expected),h=mountScout(harness({server:value,idb:value}));h.baseline(value);
   assert.equal(h.c.scoutBootAllowed(),false);h.c.scoutBoot();assert.equal(h.draftWrites.length,0);

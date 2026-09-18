@@ -119,6 +119,21 @@ try{
         const html=content.toString(),configured=html.replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b);
         assert.notEqual(configured,html,'fixture API configuration was applied');content=Buffer.from(configured);
       }
+      if(url.pathname==='/studio/sync-observability.js'){
+        // Retain real authenticated report requests. Only expose test teardown so
+        // a normal-entry navigation can stop future timers and await current sends.
+        content=Buffer.from(content.toString()+`
+;(function(){
+          const create=PSSyncObservability.createClient;
+          PSSyncObservability.createClient=function(options){
+            const pending=new Set(),send=options.send;
+            options.send=function(...args){const p=Promise.resolve().then(()=>send(...args));pending.add(p);p.then(()=>pending.delete(p),()=>pending.delete(p));return p;};
+            const client=create(options);
+            window.__fixtureReportsSettled=async function(){client.stop();await Promise.all([...pending]);};
+            return client;
+          };
+        })();`);
+      }
       return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream'});
     }
 
@@ -172,15 +187,18 @@ try{
   },{privateAKey,privateARaw});
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});await ready(WA,A);
   for(const wid of [WB,WA]){
+    await page.evaluate(()=>window.__fixtureReportsSettled());
     await page.evaluate(wid=>{PSSync.switchWorkspace(wid).then(result=>{window.__fixtureSwitchResult=result;}).catch(e=>{window.__fixtureSwitchResult={error:e.message};});},wid);
     await ready(wid,A);
   }
+  await page.evaluate(()=>window.__fixtureReportsSettled());
   console.log(JSON.stringify({stage:'logout-start'}));
   await page.evaluate(()=>{window.__fixtureLogoutResult='pending';PSSync.signOut().then(result=>{window.__fixtureLogoutResult=result;}).catch(e=>{window.__fixtureLogoutResult={error:e.message};});});
   console.log(JSON.stringify({stage:'logout-requested'}));
   await page.waitForFunction(()=>window.PSSync&&!PSSync.session()&&!PSSync.dataUnlocked());
   console.log(JSON.stringify({stage:'logged-out'}));
   // OAuth returns from a provider document. A hash-only goto in the existing app is not a page load.
+  await page.evaluate(()=>window.__fixtureReportsSettled());
   await bounded(page.goto('about:blank'),'leave logged-out document',10000);
   console.log(JSON.stringify({stage:'provider-document'}));
   if(engine==='chromium'&&process.env.PS_PROFILE_LOGIN==='1'){
@@ -190,6 +208,11 @@ try{
   console.log(JSON.stringify({stage:'OAuth-return'}));
   await ready(WC,B);
   await page.screenshot({path:path.join(out,'new-account.png')});
+  // This case verifies a normal completed-entry reload, not an aborted diagnostic
+  // request. Let real loopback responses finish: Linux WebKit can report a native
+  // access-control pageerror when navigation aborts even a same-origin fetch.
+  // Report pagehide cancellation has separate deterministic regression coverage.
+  await page.evaluate(()=>window.__fixtureReportsSettled());
   await page.reload({waitUntil:'domcontentloaded'});await ready(WC,B);
   for(const write of writes){
     assert.ok(write.uid===B?write.wid===WC:[WA,WB].includes(write.wid),'writes use the intended account');
