@@ -2,6 +2,12 @@
 
 https://processstudio.netlify.app — 코치·선수용 축구 PWA (정적 HTML/JS, 빌드 없음).
 
+## 2.868 입체 토큰과 저장 안정화
+
+입체 보기의 토큰에 높이·측면·그림자를 적용하고 화이트·훈련 피치의 골대를 진하게 표시합니다. 저장 과정에서 미리보기 렌더링을 분리하고, 실패 시 마지막 저장본을 보존합니다. 업데이트 중 열린 문서는 기존 파일을 유지합니다. Chrome·WebKit 핵심 흐름, SQL 권한 및 격리 복원 검증을 CI와 운영 배포 관문에 연결했습니다.
+
+검증: `npm ci`, `npm test`, `npm run test:sql`, `npx playwright install --with-deps chromium webkit`, `npm run test:browser`.
+
 ## 2.867 다중 선택 멈춤 수정
 
 여러 페이지의 미리보기를 만드는 동안 자동 저장이 재진입하지 않도록 막았습니다. 드래그 다중 선택은 선택 테두리만 갱신하며, 미리보기 실패 시에도 선택 상태를 복원합니다. Chrome 다중 페이지 선택·이동 및 전체 테스트 2,469개를 확인했습니다.

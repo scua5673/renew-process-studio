@@ -11,7 +11,7 @@ const renders=[
   ['drill files current','renderDrillFiles',section('  renderDrillFiles=function(){','  /* ── 빈 보관함 스타터:')]
 ];
 function harness({view='board',unlocked=false}={}){
-  const state={unlocked},nodes={},calls={toasts:[],reads:0,writes:0};
+  const state={unlocked,uid:'synthetic-a',wid:'synthetic-team'},nodes={},calls={toasts:[],reads:0,writes:0};
   function node(id=''){
     const attrs=new Map();const n={id,style:{},innerHTML:'',textContent:'',inert:false,
       hasAttribute:k=>attrs.has(k),setAttribute:(k,v)=>attrs.set(k,v),removeAttribute:k=>attrs.delete(k),
@@ -22,7 +22,7 @@ function harness({view='board',unlocked=false}={}){
   const c=vm.createContext({Promise,Error,Date,Math,JSON,
     document:{body:node(),getElementById:id=>nodes[id]||null,createElement:()=>node()},
     parent:{PSSync:{dataUnlocked:()=>state.unlocked}},__csView:view,
-    toast:m=>calls.toasts.push(m),libGet:async()=>{calls.reads++;return[];},
+    psMyUid:()=>state.uid,psActiveWs:()=>({id:state.wid}),toast:m=>calls.toasts.push(m),libGet:async()=>{calls.reads++;return[];},
     store:{set(){calls.writes++;return Promise.resolve();}},LIB_KEY:'synthetic-library',
     $:id=>nodes[id]||null,$id:id=>nodes[id]||null,libFilter:{},libSel:null,updateLibSelBar(){},renderDrillFiles(){}});
   c.window=c;vm.runInContext(helpers,c);
@@ -44,4 +44,30 @@ test('confirmed ownership permits normal library rendering without any login not
   const h=harness({unlocked:true});h.run(renders[0][2]);
   assert.equal(h.c.psVaultRenderReady(),true);assert.equal(h.c.psVaultRequireLogin(),true);
   await h.c.renderLib();assert.equal(h.calls.reads,1);assert.match(h.nodes.libGrid.innerHTML,/저장된 드릴이 없어요/);assert.deepEqual(h.calls.toasts,[]);assert.equal(h.nodes.psVaultAuthLock,undefined);
+});
+
+test('library lock during an awaited read stops rendering without an unhandled rejection',async()=>{
+  const h=harness({unlocked:true,view:'session'});h.run(renders[0][2]);
+  let reject;h.c.libGet=()=>new Promise((_,r)=>{reject=r;});
+  const pending=h.c.renderLib();h.state.unlocked=false;reject(h.c.psVaultLockedError());
+  await pending;assert.ok(h.nodes.psVaultAuthLock);assert.equal(h.nodes.libGrid.innerHTML,'');assert.equal(h.calls.writes,0);
+});
+test('late library reads from another account or workspace never render',async()=>{
+  for(const key of ['uid','wid']){
+    const h=harness({unlocked:true});h.run(renders[0][2]);let resolve;
+    h.c.libGet=()=>new Promise(r=>{resolve=r;});
+    const pending=h.c.renderLib();h.state[key]='synthetic-other';resolve([{name:'old private item'}]);
+    await pending;assert.equal(h.nodes.libGrid.innerHTML,'');assert.equal(h.calls.writes,0);
+  }
+});
+test('unrelated library read failures remain visible to callers',async()=>{
+  const h=harness({unlocked:true});h.c.libGet=async()=>{throw Error('disk read failed');};
+  await assert.rejects(h.c.psVaultReadForRender(),/disk read failed/);
+});
+
+test('a late lock rejection cannot cover a newly unlocked account',async()=>{
+  const h=harness({unlocked:true,view:'session'});let reject;
+  h.c.libGet=()=>new Promise((_,r)=>{reject=r;});
+  const pending=h.c.psVaultReadForRender();h.state.uid='synthetic-b';reject(h.c.psVaultLockedError());
+  assert.equal(await pending,null);assert.equal(h.nodes.psVaultAuthLock,undefined);
 });

@@ -33,7 +33,7 @@ async function context(browser,spec,locked=false){
 async function ready(page){await page.waitForFunction(()=>window.PSIDPRecovery&&document.querySelector('#wrap')?.children.length>0);}
 async function tab(page,layer){await page.locator(`#layers button[data-l="${layer}"]`).click();}
 async function editDirection(page){await tab(page,'goal');await page.locator('[data-vs-edit]').click();await page.waitForFunction(()=>document.activeElement?.id==='vsStatement');}
-async function today(page){await tab(page,'cal');await page.locator('#calSeg [data-v="day"]').click();await page.locator('#calToday').click();await page.locator('#dayMemo').waitFor({state:'visible'});}
+async function today(page){await tab(page,'cal');if(!await page.locator('#calSeg [data-v="day"]').isVisible())await page.locator('#calSegToggle').click();await page.locator('#calSeg [data-v="day"]').click();await page.locator('#calToday').click();await page.locator('#dayMemo').waitFor({state:'visible'});}
 async function read(page){return page.evaluate(key=>JSON.parse(localStorage.getItem(key)),KEY);}
 async function records(page){return page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('ps_idp_edit_recovery_v1:')).map(k=>({key:k,...JSON.parse(localStorage.getItem(k))})));}
 async function waitPending(page){await page.waitForFunction(()=>Object.keys(localStorage).some(k=>k.startsWith('ps_idp_edit_recovery_v1:')&&JSON.parse(localStorage.getItem(k)).pending));}

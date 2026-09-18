@@ -1,4 +1,6 @@
-# 정적 PWA — 빌드 없음, 저장소 루트를 그대로 배포
+# Static PWA; production publishing waits for the exact commit's browser CI.
 [build]
-  publish = "."
-  command = ""
+  publish = "dist"
+  command = "npm test && npm run test:sql && node scripts/verify-release.mjs && node scripts/package-site.mjs"
+[build.environment]
+  NODE_VERSION = "22"

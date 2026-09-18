@@ -147,6 +147,20 @@ try{
   }
   assert.deepEqual(unauthorized,[],'all data and auth requests use an exact known synthetic bearer');
   assert.deepEqual(errors.filter(e=>!e.startsWith('ResizeObserver loop')),[]);
+  // A failed book asset must expose recovery without discarding saved progress.
+  const learning=await context.newPage(),learningErrors=[];
+  learning.on('pageerror',e=>learningErrors.push(e.message));
+  await learning.route('**/learn-mikl.js',route=>route.abort('failed'));
+  await learning.goto(base+'/studio/learning.html',{waitUntil:'load'});
+  await learning.locator('#retryLearning').waitFor();
+  const savedLearning=await learning.evaluate(()=>localStorage.getItem(KEY));
+  await learning.unroute('**/learn-mikl.js');
+  await Promise.all([learning.waitForNavigation({waitUntil:'load'}),learning.locator('#retryLearning').click()]);
+  assert.equal(await learning.locator('#retryLearning').count(),0);
+  assert.equal(await learning.evaluate(()=>localStorage.getItem(KEY)),savedLearning);
+  assert.deepEqual(learningErrors,[]);
+  await learning.close();
+  results.push({scenario:'learning-content-failure-recovery',passed:true});
   fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({passed:true,engine,results,writeCount:writes.length,telemetry,network:'All external auth/data mocked; exact anonymous public-feed and telemetry endpoints mocked; other HTTP and WebSocket requests blocked.'},null,2));
   console.log(JSON.stringify({passed:true,engine,scenarios:results.length,logout:true,otherAccountLogin:true,writeCount:writes.length}));
 }catch(e){

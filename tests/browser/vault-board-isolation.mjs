@@ -37,6 +37,18 @@ async function newFixture(browser,spec){
     }
     window.fixtureLocked=false;
     window.PSSync={session:()=>JSON.parse(localStorage.getItem('ps_sync_session')),activeWs:()=>localStorage.getItem('ps_active_ws'),activeWsObj:()=>JSON.parse(localStorage.getItem('ps_ws_list')).find(w=>w.id===localStorage.getItem('ps_active_ws')),dataUnlocked:()=>!window.fixtureLocked,keyReady:()=>true,displayName:()=> '가상 코치',act(){},ping(){},event(){}};
+    // Enforce the real personal-board v2 owner and compare-and-swap contract.
+    const personal='33333333-3333-4333-8333-333333333333', serverKey='fixture_personal_board_v2';
+    const owner=()=>({uid:uid,wid:personal,active:wid,seal:uid+':'+wid+':1',epoch:1,switchSeal:'',switchEpoch:'1'});
+    const response=()=>({ok:true,uid:uid,wid:personal,...JSON.parse(localStorage.getItem(serverKey)||'{"raw":null,"cupd":null}')});
+    const spaces=JSON.parse(localStorage.getItem('ps_ws_list')||'[]');
+    if(!spaces.some(w=>w.id===personal)){spaces.push({id:personal,kind:'personal',role:'owner',owner_id:uid});localStorage.setItem('ps_ws_list',JSON.stringify(spaces));}
+    window.PSSync.boardLive={version:2,scope:'personal',owner,async get(){return response();},async save(raw,options){
+      const old=response();if(options.uid!==uid||options.wid!==personal)throw Error('fixture owner mismatch');
+      if(raw!==old.raw){if(options.expected_raw!==old.raw||options.expected_cupd!==old.cupd)throw Error('fixture CAS conflict');
+        localStorage.setItem(serverKey,JSON.stringify({raw,cupd:Math.max(Date.now(),(old.cupd||0)+1)}));}
+      return response();
+    }};
   },{uid:UID,wid:WID});
   const page=await context.newPage();page.setDefaultTimeout(12000);
   await page.goto(base+'/fixture.html');
@@ -53,7 +65,7 @@ async function seed(frame,{blank=false}={}){
     const snap=(name,x)=>({...clone(template),players:blank&&name==='LIVE'?[]:[{id:name,team:'A',num:8,name,x,y:350}],equipment:[],drawings:[],ball:null,matchNote:name,orientation:template.orientation,pitchN:1});
     const live=snap('LIVE',460),other=snap('LIVE-OTHER',680),a=snap('LIBRARY-A',300),b=snap('LIBRARY-B',850);
     const thumb='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000"><rect width="1600" height="1000" fill="#eaf3e9"/></svg>';
-    const frames=(sn,label)=>[{snap:clone(sn),thumb,title:label+' 1',dur:1},{snap:clone(sn),thumb,title:label+' 2',dur:1}];
+    const frames=(sn,label)=>[{snap:clone(sn),thumb,title:label+' 1',dur:1,__t:'',__tc:'#e23b3b',__hold:.6},{snap:clone(sn),thumb,title:label+' 2',dur:1}];
     const liveFrames=blank?[]:frames(live,'LIVE-FRAME');
     if(!blank){
       window.__pendingBoardPages={pages:[{name:'LIVE-PAGE-1',snap:other,thumb,anim:null},{name:'LIVE-PAGE-2',snap:live,thumb,anim:{frames:liveFrames,active:1}}],idx:1};

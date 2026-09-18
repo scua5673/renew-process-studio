@@ -1,0 +1,14 @@
+{
+  "name": "process-studio",
+  "version": "2.868.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "test:browser": "node tests/browser/run-critical.mjs",
+    "test:sql": "node scripts/test-sql.cjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "playwright": "1.62.1"
+  }
+}

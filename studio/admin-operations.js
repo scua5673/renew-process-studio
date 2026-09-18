@@ -8,11 +8,14 @@
     var hasPending=names.some(function(k){return Number.isInteger(r[k])&&r[k]>0;});
     var unknown=names.some(function(k){return !Number.isInteger(r[k])||r[k]<0;});
     if(!fresh)return {kind:'stale',label:'오래된 보고 · 현재 미확인'};
-    if(hasPending||r.error_code)return {kind:'attention',label:'최근 보고에 확인할 항목'};
+    var pendingAge=Date.parse(r.received_at||'')-Date.parse(r.oldest_pending_at||'');
+    var longPending=hasPending&&r.online===true&&isFinite(pendingAge)&&pendingAge>=300000;
+    if(hasPending||r.error_code)return {kind:'attention',label:r.conflicts>0?'저장 충돌 확인':longPending?'5분 이상 저장 대기':r.error_code?'저장 오류 확인':'최근 보고에 확인할 항목',priority:r.conflicts>0?3:longPending||r.error_code?2:1,pendingMinutes:longPending?Math.floor(pendingAge/60000):null};
     if(unknown)return {kind:'unknown',label:'일부 상태 미확인'};
     return {kind:'clear',label:'보고 시점 대기 없음'};
   }
-  function reportIssue(r){
+  function reportIssue(r,now){
+    var status=classifyReport(r,now);if(status.priority>1)return status.label+(status.pendingMinutes?' · '+status.pendingMinutes+'분':'');
     var labels={pending_team:'팀 대기',pending_personal:'개인 대기',held:'보류',skipped:'건너뜀',deferred:'다음 회차',conflicts:'충돌'};
     var items=Object.keys(labels).filter(function(k){return Number.isInteger(r[k])&&r[k]>0;}).map(function(k){return labels[k]+' '+r[k];});
     return items.slice(0,2).join(' · ')||(r.error_code?'오류 보고':'상태 확인');
@@ -31,14 +34,14 @@
     function unavailable(result,label){return '<div class="admin-op-empty"><b>'+label+' '+(result===null?'불러오는 중…':'조회하지 못했습니다')+'</b>'+(result===null?'':'<p>권한·연결·운영 기능 설치 상태를 확인하세요. 0건으로 집계하지 않습니다.</p><button type="button" class="admin-op-link" data-op-reload>다시 확인</button>')+'</div>';}
     function render(){
       var now=Date.now(),reports=Array.isArray(state.reports)?state.reports:null,followups=Array.isArray(state.followups)?state.followups:null;
-      var flagged=reports?reports.filter(function(r){return classifyReport(r,now).kind==='attention';}):[];
+      var flagged=reports?reports.filter(function(r){return classifyReport(r,now).kind==='attention';}).sort(function(a,b){return classifyReport(b,now).priority-classifyReport(a,now).priority||Date.parse(a.oldest_pending_at)-Date.parse(b.oldest_pending_at)||Date.parse(b.received_at)-Date.parse(a.received_at);}):[];
       var stale=reports?reports.filter(function(r){return classifyReport(r,now).kind==='stale';}):[];
       var unknown=reports?reports.filter(function(r){return classifyReport(r,now).kind==='unknown';}):[];
       var todo=followups?dueFollowups(followups,now):[];
       section.innerHTML='<div class="admin-op-heading"><div><span>OPERATIONS</span><h1>오늘 확인할 일</h1><p>사용자 상태를 확인하고, 다음 조치까지 이어갑니다.</p></div><button type="button" class="hbtn" data-op-reload>운영 상태 새로고침</button></div>'
         +'<div class="admin-op-grid"><article class="admin-op-panel"><div class="admin-op-title"><h2>저장 상태 확인</h2><span>최근 기기 보고</span></div>'
         +(!reports?unavailable(state.reports,'저장 상태'):!reports.length?'<div class="admin-op-empty"><b>아직 기기 보고가 없습니다</b><p>지원 버전으로 앱을 사용하면 수집됩니다. 모든 기기가 정상이라는 뜻은 아닙니다.</p></div>':'<div class="admin-op-count"><b>'+flagged.length+'</b><span>확인할 보고 <small>조회된 '+reports.length+'개 보고 중</small></span></div>'
-          +flagged.slice(0,5).map(function(r){return '<div class="admin-op-row"><div>'+button(r.user_id)+'<small>'+esc(workspaceName(r.workspace_id))+' · '+esc(r.device_class||'기기 미확인')+'</small></div><div><span class="admin-op-state">'+esc(reportIssue(r))+'</span><small>'+time(r.received_at)+'</small></div></div>';}).join('')
+          +flagged.slice(0,5).map(function(r){return '<div class="admin-op-row"><div>'+button(r.user_id)+'<small>'+esc(workspaceName(r.workspace_id))+' · '+esc(r.device_class||'기기 미확인')+'</small></div><div><span class="admin-op-state">'+esc(reportIssue(r,now))+'</span><small>'+time(r.received_at)+'</small></div></div>';}).join('')
           +(stale.length?'<p class="admin-op-note">'+stale.length+'개는 10분 넘게 갱신되지 않았거나 시각이 맞지 않아 현재 상태를 판단하지 않습니다.</p>':'')
           +(unknown.length?'<p class="admin-op-note">'+unknown.length+'개는 일부 상태가 미확인입니다.</p>':'')
           +'<p class="admin-op-note">보고 수는 사용자 수나 유실 건수가 아닙니다. 사용자 상세에서 대기·보류·마지막 확인 시각을 구분합니다.</p>')+'</article>'

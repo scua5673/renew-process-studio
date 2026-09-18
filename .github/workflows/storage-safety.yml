@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: storage-safety-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   regression:
     runs-on: ubuntu-latest
@@ -19,17 +23,47 @@ jobs:
           node-version: '22'
       - name: Parse scripts and run isolated storage regressions
         run: node --test tests/*.test.cjs
-      - name: Install pinned in-memory SQL test runtime
-        run: npm install --prefix "$RUNNER_TEMP/ps-sql" --ignore-scripts --no-package-lock --no-audit --no-fund @electric-sql/pglite@0.5.8
-      - name: Test prepared roster migration without a database connection
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify SQL ownership and restore a synthetic archive in a fresh instance
+        run: npm run test:sql
+      - name: Verify runtime-only deploy artifact
+        run: node scripts/package-site.mjs
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+        group: [board, identity, storage, idp]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Exercise critical user flows with isolated synthetic accounts
         env:
-          PGLITE_MODULE: ${{ runner.temp }}/ps-sql/node_modules/@electric-sql/pglite
-        run: node migrations/20260915_roster_canonical.local-test.cjs
-      - name: Test private board ownership and history access
+          PS_BROWSER_ENGINE: ${{ matrix.engine }}
+          PS_TEST_GROUP: ${{ matrix.group }}
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-${{ matrix.engine }}-${{ matrix.group }}
+          path: test-results/
+          retention-days: 7
+
+  release-gate:
+    if: always()
+    needs: [regression, browser]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all regression and browser jobs
         env:
-          PGLITE_MODULE: ${{ runner.temp }}/ps-sql/node_modules/@electric-sql/pglite
-        run: node migrations/20260915_private_board.local-test.cjs
-      - name: Test admin-only authoritative content author lookup
-        env:
-          PGLITE_MODULE: ${{ runner.temp }}/ps-sql/node_modules/@electric-sql/pglite
-        run: node migrations/20260917_admin_content_owners.local-test.cjs
+          REGRESSION: ${{ needs.regression.result }}
+          BROWSER: ${{ needs.browser.result }}
+        run: test "$REGRESSION" = success && test "$BROWSER" = success
