@@ -9945,11 +9945,15 @@ function syncObservationSnapshot(c){
   }catch(_){return null;}
 }
 function syncObservationSend(c,body){
-  function requireCurrent(){if(!syncObservationCurrent(c))throw new Error('report context changed');}
+  var leaving=false,controller=null,timer=null;
+  function cancelOnLeave(){leaving=true;if(controller)controller.abort();}
+  function cleanup(){if(timer!=null)clearTimeout(timer);if(window.removeEventListener)window.removeEventListener('pagehide',cancelOnLeave);}
+  if(window.addEventListener)window.addEventListener('pagehide',cancelOnLeave);
+  function requireCurrent(){if(leaving||!syncObservationCurrent(c))throw new Error('report context changed');}
   return Promise.resolve().then(function(){requireCurrent();return ensureToken();}).then(function(at){
     requireCurrent();var s=getSess();if(!at||!s||s.at!==at||String(s.uid)!==c.uid)throw new Error('report session changed');
-    var controller=typeof AbortController==='function'?new AbortController():null;
-    var timer=controller?setTimeout(function(){controller.abort();},8000):null;
+    controller=typeof AbortController==='function'?new AbortController():null;
+    timer=controller?setTimeout(function(){controller.abort();},8000):null;
     return Promise.resolve().then(function(){requireCurrent();
       return fetch(BASE+'/rest/v1/rpc/ps_sync_report_put',{method:'POST',headers:hj(at),body:JSON.stringify(body),
         signal:controller?controller.signal:undefined});
@@ -9958,8 +9962,8 @@ function syncObservationSend(c,body){
       if(!r.ok){var e=new Error('device report rejected'),obj=null;try{obj=JSON.parse(t);}catch(_){}
         e.status=r.status;e.code=obj&&typeof obj.code==='string'?obj.code:'';throw e;}
       return true;
-    });}).then(function(ok){if(timer!=null)clearTimeout(timer);return ok;},function(e){if(timer!=null)clearTimeout(timer);throw e;});
-  });
+    });});
+  }).then(function(ok){cleanup();return ok;},function(e){cleanup();throw e;});
 }
 function syncObservationStart(){
   try{if(window.PSSyncObservability&&typeof window.PSSyncObservability.createClient==='function'){

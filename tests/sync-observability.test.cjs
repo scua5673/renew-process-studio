@@ -79,8 +79,8 @@ test('report storage events cannot make tabs ping-pong; application state change
 const src=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 const start=src.indexOf('/* Device observations are separate'),end=src.indexOf('\nwindow.PSSync={',start);assert.ok(start>0&&end>start);
 function adapter(){
-  const local=new Map(),requests=[],hooks={};let uid=A,wid=W,seal='owner-a',locked=false;
-  const c=vm.createContext({Promise,Date,Number,JSON,Error,AbortController,setTimeout:()=>1,clearTimeout(){},window:{},
+  const local=new Map(),requests=[],hooks={},listeners=new Map();let uid=A,wid=W,seal='owner-a',locked=false;
+  const c=vm.createContext({Promise,Date,Number,JSON,Error,AbortController,setTimeout:()=>1,clearTimeout(){},window:{addEventListener:(n,f)=>listeners.set(n,f),removeEventListener:(n,f)=>{if(listeners.get(n)===f)listeners.delete(n);}},
     localStorage:{getItem(k){if(hooks.read)hooks.read(k);return k==='ps_cache_owner_v1'?seal:local.get(k)||null;}},
     navigator:{onLine:true},OWNERKEY:'ps_cache_owner_v1',HOLD_LIST:'holds',PERSONAL_REVIEW:'personal-review',PERSONAL:{note:1},
     signOutEpoch:0,busy:false,personalIssue:null,pendingSummary:{updatedAt:1,by:{[A+'|'+W]:{count:3,oldest:1000},[A+'|'+P]:{count:2,oldest:2000}}},
@@ -90,7 +90,7 @@ function adapter(){
     ensureToken:()=>hooks.token?hooks.token():Promise.resolve('token-'+uid),hj:at=>({Authorization:'Bearer '+at}),BASE:'https://synthetic.invalid',
     fetch(url,options){requests.push({url,options});return hooks.fetch?hooks.fetch():Promise.resolve({ok:true,text:async()=> 'true'});}});
   vm.runInContext(src.slice(start,end),c);
-  return {c,local,requests,hooks,change(values){if(values.uid)uid=values.uid;if(values.wid)wid=values.wid;if(values.seal)seal=values.seal;if(values.locked!==undefined)locked=values.locked;},
+  return {c,local,requests,hooks,listeners,change(values){if(values.uid)uid=values.uid;if(values.wid)wid=values.wid;if(values.seal)seal=values.seal;if(values.locked!==undefined)locked=values.locked;},
     context:()=>c.syncObservationContext(),snapshot:()=>copy(c.syncObservationSnapshot(c.syncObservationContext()))};
 }
 test('adapter keeps team/personal counts separate and unconfirmed round values unknown',()=>{
@@ -126,4 +126,26 @@ test('transport validates owner after HTTP and detects missing RPC without repor
   assert.match(h.requests[0].url,/rpc\/ps_sync_report_put$/);h.change({wid:P});g.resolve({ok:true,text:async()=> 'true'});await assert.rejects(run,/context changed/);
   h.change({wid:W});h.hooks.fetch=async()=>({ok:false,status:404,text:async()=>JSON.stringify({code:'PGRST202',message:'private backend detail'})});
   await assert.rejects(h.c.syncObservationSend(h.context(),{}),e=>e.code==='PGRST202'&&!e.message.includes('private'));
+});
+
+test('page exit cancels a pending report before token refresh can dispatch it',async()=>{
+  const h=adapter(),g=gate();h.hooks.token=()=>g.promise;
+  const pending=h.c.syncObservationSend(h.context(),{});await tick();
+  h.listeners.get('pagehide')();g.resolve('token-'+A);
+  await assert.rejects(pending,/context changed/);assert.equal(h.requests.length,0);assert.equal(h.listeners.size,0);
+});
+test('page exit aborts an in-flight report and removes its listener',async()=>{
+  const h=adapter(),g=gate();h.hooks.fetch=()=>g.promise;
+  const pending=h.c.syncObservationSend(h.context(),{});await tick();
+  const signal=h.requests[0].options.signal;assert.equal(signal.aborted,false);
+  h.listeners.get('pagehide')();assert.equal(signal.aborted,true);
+  g.reject(Error('request aborted'));await assert.rejects(pending,/request aborted/);assert.equal(h.listeners.size,0);
+  delete h.hooks.fetch;assert.equal(await h.c.syncObservationSend(h.context(),{}),true);assert.equal(h.listeners.size,0);
+});
+
+test('a departing page stops reports even before visibility changes, and resumes on return',async()=>{
+  const h=harness();h.c.start();h.listeners.pagehide();
+  assert.equal(h.document.visibilityState,'visible');assert.equal(await h.c.flush(),false);assert.equal(h.requests.length,0);
+  h.listeners.pageshow();assert.equal(await h.c.flush(),true);assert.equal(h.requests.length,1);
+  h.c.stop();assert.equal(h.listeners.pagehide,undefined);assert.equal(h.listeners.pageshow,undefined);
 });
