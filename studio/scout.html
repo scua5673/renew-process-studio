@@ -6636,6 +6636,14 @@ function rosterSaveMirrors(main){
 }
 function rosterPersist(main,options){
   options=options||{};
+  // Branding has its own field-level writer; roster edits retain its latest values.
+  var currentBrand=store.get(KEY);
+  if(currentBrand&&currentBrand.meta){
+    main.meta=Object.assign({},main.meta||{});
+    ['emblem','color','headline'].forEach(function(k){
+      if(Object.prototype.hasOwnProperty.call(currentBrand.meta,k))main.meta[k]=currentBrand.meta[k];else delete main.meta[k];
+    });
+  }
   var changed=[],receipt=null,bases=[];
   try{
     if(!options.skipItems){
@@ -17666,13 +17674,33 @@ function tgeRender(){
     var seg=b.parentElement, id=seg.getAttribute("data-ph"), n=+b.getAttribute("data-n"); var ev=ensureToday(); ev.scores=ev.scores||{}; ev.scores[id]=(ev.scores[id]===n)?0:n; persist(); tgeRender(); };
 }
 try{ window.addEventListener("storage",function(e){ if(e&&e.key==="cs_gamemodel_v1"){ try{tgeRender();}catch(_){} } }); }catch(_){}
+/* Patch only the edited branding field onto the latest roster document. A hidden
+   frame's stale full roster must not reset newer team settings or player edits. */
+function teamBrandSave(field,value,owner,expected){
+  if(owner!==undefined&&owner!==teamSaveOwner())return false;
+  if(['emblem','color','headline'].indexOf(field)<0)return false;
+  if((typeof scoutBootPending!=='undefined'&&scoutBootPending)||(typeof scMainMigrationPending!=='undefined'&&scMainMigrationPending))return false;
+  if(!scoutAutomaticWriteAllowed()){toast('팀 설정을 편집할 권한이 없습니다.');return false;}
+  var latest=store.get(KEY);
+  if(!latest||!Array.isArray(latest.players)||!Array.isArray(latest.positions)||!Array.isArray(latest.attrs)){toast('팀 자료를 확인한 뒤 다시 시도해 주세요.');return false;}
+  if(expected!==undefined&&((latest.meta||{})[field]||'')!==expected)return false;
+  latest=JSON.parse(JSON.stringify(latest));latest.meta=latest.meta||{};
+  if(value)latest.meta[field]=value;else delete latest.meta[field];
+  if(!store.set(KEY,latest)){toast('팀 설정을 저장하지 못했습니다. 다시 시도해 주세요.');return false;}
+  data.meta=latest.meta;
+  if(!value)delete data.meta[field];
+  teamEmblemApply();psTeamMetaPing();
+  return true;
+}
 /* ── 1.891 · 팀 엠블럼·색 ── */
+var teamBrandUpload=0;
 function teamEmblemApply(){
   var m=(data&&data.meta)||{}; var btn=$("teamEmblemBtn"), bar=$("teamTopbar");
+  var brandOwner=teamSaveOwner(),brandSource=m.emblem;
   /* 1.897 — 1.891~1.896 에 JPEG 로 저장된 엠블럼은 배경이 남아 있다 → 한 번만 투명화해 다시 저장 */
-  if(m.emblem&&/^data:image\/jpe?g/i.test(m.emblem)&&!teamEmblemApply.__keying){ teamEmblemApply.__keying=1; try{ __psKeyEmblemBg(m.emblem,128,function(url){ if(url&&url!==m.emblem){ data.meta.emblem=url; save(); teamEmblemApply(); } }); }catch(_){} }
+  if(m.emblem&&/^data:image\/jpe?g/i.test(m.emblem)&&!teamEmblemApply.__keying){ teamEmblemApply.__keying=1; try{ __psKeyEmblemBg(m.emblem,128,function(url){ if(url&&url!==m.emblem){ if(teamSaveOwner()===brandOwner&&data.meta.emblem===brandSource)teamBrandSave("emblem",url,brandOwner,brandSource); } }); }catch(_){} }
   /* 2.605 — 60KB 를 넘는 엠블럼(옛 원본 크기 PNG)은 한 번만 128px 로 줄여 다시 저장한다 — 편집권이 있어야 save 가 서버로 간다 */
-  else if(m.emblem&&String(m.emblem).length>60000&&!teamEmblemApply.__diet){ teamEmblemApply.__diet=1; try{ __psKeyEmblemBg(m.emblem,128,function(url){ if(url&&url.length<String(m.emblem).length*0.8){ data.meta.emblem=url; save(); teamEmblemApply(); } }); }catch(_){} }
+  else if(m.emblem&&String(m.emblem).length>60000&&!teamEmblemApply.__diet){ teamEmblemApply.__diet=1; try{ __psKeyEmblemBg(m.emblem,128,function(url){ if(url&&url.length<String(m.emblem).length*0.8){ if(teamSaveOwner()===brandOwner&&data.meta.emblem===brandSource)teamBrandSave("emblem",url,brandOwner,brandSource); } }); }catch(_){} }
   if(btn){ btn.innerHTML=m.emblem?('<img alt="팀 엠블럼" src="'+String(m.emblem).replace(/"/g,"&quot;")+'">'):'<span class="te-ph">팀</span>'; }
   if(bar){ if(m.color&&/^#[0-9a-f]{6}$/i.test(m.color)){ bar.style.setProperty("--team-c",m.color); bar.classList.add("has-color"); } else { bar.style.removeProperty("--team-c"); bar.classList.remove("has-color"); } }
   var ci=$("tepColor"); if(ci&&m.color)ci.value=m.color;
@@ -17694,11 +17722,11 @@ function teamEmblemWire(){
   document.addEventListener("click",function(e){ if(!pop.hidden&&!pop.contains(e.target)&&e.target!==btn&&!(cbtn&&cbtn.contains(e.target)))pop.hidden=true; });
   pop.addEventListener("click",function(e){ e.stopPropagation(); });
   $("tepUpload").onclick=function(){ $("tepFile").click(); };
-  $("tepFile").onchange=function(){ var f=this.files&&this.files[0]; if(!f)return; var rd=new FileReader(); rd.onload=function(){ __psKeyEmblemBg(rd.result,128,function(url){ data.meta=data.meta||{}; data.meta.emblem=url; save(); teamEmblemApply(); try{toast("엠블럼 저장됨");}catch(_){} }); }; rd.readAsDataURL(f); this.value=""; };   /* 1.897 — 배경 투명 PNG */
-  $("tepClear").onclick=function(){ data.meta=data.meta||{}; delete data.meta.emblem; save(); teamEmblemApply(); };
-  $("tepColor").oninput=function(){ data.meta=data.meta||{}; data.meta.color=this.value; save(); teamEmblemApply(); psTeamMetaPing(); };
-  $("tepColorReset").onclick=function(){ data.meta=data.meta||{}; delete data.meta.color; save(); teamEmblemApply(); psTeamMetaPing(); };
-  var tt=$("tepText"); if(tt){ tt.oninput=function(){ data.meta=data.meta||{}; var v=String(this.value||'').slice(0,40); if(v)data.meta.headline=v; else delete data.meta.headline; save(); psTeamMetaPing(); }; }   /* 2.270 — 엠블럼 옆 자유 문구 · 2.277 — 셸 헤더에 바로 알린다 */
+  $("tepFile").onchange=function(){ var f=this.files&&this.files[0]; if(!f)return; var owner=teamSaveOwner(),upload=++teamBrandUpload; var rd=new FileReader(); rd.onload=function(){ __psKeyEmblemBg(rd.result,128,function(url){ if(upload===teamBrandUpload)teamBrandSave("emblem",url,owner); }); }; rd.readAsDataURL(f); this.value=""; };   /* 1.897 — 배경 투명 PNG */
+  $("tepClear").onclick=function(){ teamBrandUpload++;teamBrandSave("emblem",""); };
+  $("tepColor").oninput=function(){ teamBrandSave("color",this.value); };
+  $("tepColorReset").onclick=function(){ teamBrandSave("color",""); };
+  var tt=$("tepText"); if(tt){ tt.oninput=function(){ teamBrandSave('headline',String(this.value||'').slice(0,40)); }; }   /* 2.270 — 엠블럼 옆 자유 문구 · 2.277 — 셸 헤더에 바로 알린다 */
 }
 /* ══ 2.069 · IDP 코치 평가 다리 — 저장은 "이 파일의 진짜 save()" 로만 한다 ══════════════
    IDP 화면(idp.html)에서 코치가 선수 점수를 매길 수 있게 하되, 저장 로직을 그쪽에 복제하지 않는다.
