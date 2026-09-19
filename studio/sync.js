@@ -2535,7 +2535,7 @@ function libRow(it,t,wid,priv){ var clean=libShareCopy(it); return libStamp({wor
    어댑터가 없으면(구버전/IDB 불가) 예전처럼 localStorage에서 읽는다. */
 /* board.html이 store(=IndexedDB)로 저장하는 동기화 대상 키들.
    localStorage에서 읽으면 값이 없거나 낡아서 팀에 전파되지 않는다 → 반드시 어댑터로 읽고 쓴다. */
-var IDBK={'scout_tool_v1':1,'training_sessions_v1':1,'cs_squad_v1':1,'cs_vault_folders_v1':1,'cs_meet_sit_v1':1,
+var IDBK={'cs_gamemodel_v1':1,'cs_terms_v1':1,'scout_tool_v1':1,'training_sessions_v1':1,'cs_squad_v1':1,'cs_vault_folders_v1':1,'cs_meet_sit_v1':1,
   /* 1.501 — 매치데스크(analysis.html)는 v309부터 IndexedDB에 저장한다.
      KEYS에만 넣고 여기 빠뜨리면 localStorage에서 빈 값으로 읽혀 서버에 안 올라간다("저장이 안 돼"). */
   'cs_analysis_workspaces_v1':1,'cs_analysis_team_library_v1':1,

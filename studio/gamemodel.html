@@ -1129,7 +1129,6 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
   var GM_PERSONAL=/[?&]scope=personal(?:&|$)/.test(location.search);
   var LS=GM_PERSONAL?'cs_gamemodel_personal_v1':'cs_gamemodel_v1';
   try{ document.body.classList.toggle('gm-personal',GM_PERSONAL); }catch(_){}   /* 2.199 — 코치 세 문장은 개인 게임모델에서만 */
-  try{ if(GM_PERSONAL&&!localStorage.getItem(LS)){ var _seedFrom=localStorage.getItem('cs_gamemodel_v1'); if(_seedFrom)localStorage.setItem(LS,_seedFrom); } }catch(_){}   /* 첫 분리 때 지금 보이던 내용을 개인 것으로 복사(한 번) */
   var stage=document.getElementById('stage');
   var momentsEl=document.getElementById('moments');
   var identityEl=document.getElementById('identity');
@@ -1171,7 +1170,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
 
   // A cleared small-storage mirror is not an empty game model. Read the existing
   // durable copy before enabling edits, and never carry it across an owner switch.
-  if(!GM_PERSONAL&&localStorage.getItem(LS)===null&&window.storage){
+  if(localStorage.getItem(LS)===null&&window.storage){
     var gmOwner=function(){var session=JSON.parse(localStorage.getItem('ps_sync_session')||'null');return JSON.stringify([session&&session.uid,localStorage.getItem('ps_active_ws'),localStorage.getItem('ps_cache_owner_v1')]);};
     var gmBootOwner=gmOwner();
     stage.inert=true;
@@ -1206,7 +1205,19 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
   model.open={};
   try{ model.moments.forEach(function(m){ model.open[m.key]=true; }); }catch(_){}
 
-  function save(){ try{ var raw=JSON.stringify(model); if(window.psSaveShared)window.psSaveShared(LS,raw); else localStorage.setItem(LS,raw); }catch(e){ try{localStorage.setItem(LS,JSON.stringify(model));}catch(_){} } }
+  function save(){
+    try{
+      var raw=JSON.stringify(model);
+      if(window.psSaveShared){if(!window.psSaveShared(LS,raw))throw new Error('게임모델 저장 실패');}
+      else {localStorage.setItem(LS,raw);if(localStorage.getItem(LS)!==raw)throw new Error('게임모델 저장 실패');}
+      if(window.PSStorage&&PSStorage.sharedReady)PSStorage.sharedReady(LS).catch(gmSaveError);
+      return true;
+    }catch(e){gmSaveError(e);return false;}
+  }
+  function gmSaveError(error){
+    var n=document.getElementById('gmSaveError');if(!n){n=document.createElement('p');n.id='gmSaveError';n.setAttribute('role','alert');stage.before(n);}
+    n.textContent='게임모델 저장을 확인하지 못했습니다. 입력 내용은 현재 화면에 유지됩니다. 이 화면을 닫지 말고 저장 상태를 확인해 주세요.';
+  }
 
   /* ══ 2.367 · 만드는 순서 — 여덟 걸음 ═══════════════════════════════════════════
      국제적으로 공유되는 뼈대의 순서다(조건 요인 → 한 문장 → 4국면 대원칙 → 중원칙·신호 → 관찰 지표 → 재검토).

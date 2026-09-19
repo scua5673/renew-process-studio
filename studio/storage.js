@@ -1436,15 +1436,31 @@
     return data;
   }
 
+  // Group day overrides never mutate or delete another group's sessions.
+  function groupKind(day,grp){
+    var kinds=day&&day.groupKinds;
+    return grp&&kinds&&Object.prototype.hasOwnProperty.call(kinds,grp)&&['OFF','훈련'].indexOf(kinds[grp])>=0?kinds[grp]:'';
+  }
+  function groupDay(day,grp){
+    if(!day||!grp)return day;
+    var o=JSON.parse(JSON.stringify(day)),kind=groupKind(day,grp);
+    if(!kind)return o;
+    o.board=o.board||{};o.board.sched=kind;o.off=kind==='OFF';o.rest=false;
+    delete o.match;delete o.matchAdd;delete o.matches;delete o.board.type;delete o.board.kind;
+    if(kind==='OFF'){o.trainings=[];o.board.trains=[];o.board.warms=[];o.board.theme='';}
+    else o.trainings=(o.trainings||[]).filter(function(t){var g=t.grp||day.grp;return !g||(Array.isArray(g)?g:[g]).indexOf(grp)>=0;});
+    return o;
+  }
   window.PSSchedule={
     /* 2.475 — 죽은 export 정리(전수조사: 외부 사용은 anchor·hasMatch·mondayOf·newId·stampIds·cellOf·read·readFor 뿐).
        ymd·parseYmd·sourceId·normalize 본체는 내부 호출로 산다 — export 표면만 걷음 */
+    groupKind:groupKind, groupDay:groupDay,
     mondayOf:mondayOf,
     hasMatch:hasMatch, newId:newId, stampIds:stampIds,
     anchor:anchor, cellOf:cellOf,
     read:function(){ return readJSON(SCHED_KEY); },
     /* 2.215 — 조별 일정: grpWeeks[조] 가 있으면 그것을 weeks 로 돌려준다(없으면 전체). 원본은 건드리지 않는다 */
-    readFor:function(grp){ var d=readJSON(SCHED_KEY); if(!d||!grp||!d.grpWeeks||!d.grpWeeks[grp])return d; var o={}; for(var k in d)o[k]=d[k]; o.weeks=d.grpWeeks[grp]; o.grpScope=grp; return o; },
+    readFor:function(grp){ var d=readJSON(SCHED_KEY); if(!d||!grp)return d; var o=Object.assign({},d);o.weeks={};var weeks=d.grpWeeks&&d.grpWeeks[grp]||d.weeks||{};Object.keys(weeks).forEach(function(k){o.weeks[k]=(weeks[k]||[]).map(function(day){return groupDay(day,grp);});});o.grpScope=grp;return o; },
   };
 
   /* 페이지의 인라인 코드가 일정을 읽기 전에 기준선을 맞춘다. */
