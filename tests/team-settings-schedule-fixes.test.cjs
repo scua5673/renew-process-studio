@@ -61,3 +61,4 @@ test('adding group training keeps global OFF and assigns the intended group befo
  vm.runInContext(part(processSource,'window.wksAddSession=function(','/* 2.483'),c);c.window.wksAddSession(0,['B']);
  assert.equal(atSave.off,true);assert.equal(atSave.board.sched,'OFF');assert.deepEqual(atSave.trainings[0].grp,['B']);
 });
+test('late automatic emblem conversion cannot replace a newer logo',()=>{const h=brand();assert.equal(h.c.teamBrandSave('emblem','converted-old-logo',undefined,'stale-logo'),false);assert.equal(h.latest().meta.emblem,'new-logo');assert.equal(h.writes(),0);});
