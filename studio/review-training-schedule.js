@@ -142,7 +142,11 @@
     if(d.taskId&&(!current||JSON.stringify(current.task)!==d.baseline)){showError('이 과제가 다른 곳에서 바뀌었습니다. 내용을 따로 보관하고 다시 열어 주세요.');return;}
     if(!current&&(!canUseMatch(m)||sourceStamp(m)!==d.stamp)){showError('경기 리뷰나 담당이 바뀌었습니다. 내용을 따로 보관하고 다시 열어 주세요.');return;}
     var c=cell(v.date);if(!c){showError('훈련 날짜를 확인해 주세요.');return;}
-    if(!current&&c.day&&(c.day.off||c.day.match||(window.PSSchedule&&PSSchedule.hasMatch&&PSSchedule.hasMatch(c.day))||c.day.board&&(c.day.board.sched==='OFF'||c.day.board.sched==='경기'))){showError('휴식일·경기일에는 과제를 추가할 수 없습니다. 다른 훈련 날짜를 골라 주세요.');return;}
+    /* 2.878 — 대상 조가 있으면 **그 조로 본 하루**로 판정한다: 공통 OFF 라도 그 조가 훈련이면 넣을 수 있고,
+       공통 훈련이라도 그 조가 OFF 이면 막는다. 대상 조가 여럿이면 하나라도 열려 있으면 된다. */
+    var closedDay=function(day){return !!(day&&(day.off||day.match||(window.PSSchedule&&PSSchedule.hasMatch&&PSSchedule.hasMatch(day))||day.board&&(day.board.sched==='OFF'||day.board.sched==='경기')));};
+    var blockedForTask=(v.grp&&v.grp.length&&window.PSSchedule&&PSSchedule.groupDay)?v.grp.every(function(g){return closedDay(PSSchedule.groupDay(c.day,g));}):closedDay(c.day);
+    if(!current&&c.day&&blockedForTask){showError('휴식일·경기일에는 과제를 추가할 수 없습니다. 다른 훈련 날짜를 골라 주세요.');return;}
     var task=current?current.task:PSReviewTraining.newTask({id:d.id,matchId:d.matchId,matchDate:d.matchDate,opponent:d.opponent,sourceKey:d.sourceKey,action:v.action,grp:v.grp,now:Date.now()});
     if(!task){showError('경기·행동·대상 조를 확인해 주세요.');return;}
     if(!current&&c.day){var duplicate=PSReviewTraining.duplicate(c.day,task);if(duplicate){close();focus(v.date,duplicate.grp);open({taskId:duplicate.id,matchId:d.matchId});return;}}
