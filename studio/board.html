@@ -4542,7 +4542,7 @@ buildGrid();
   drawCatch=el("rect",{id:"drawCatch",x:-1500,y:-1500,width:W+3000,height:H+3000,fill:"transparent"});world.appendChild(drawCatch);
   tokenLayer=el("g",{id:"tokenLayer"});world.appendChild(tokenLayer);
   world.appendChild(el("g",{id:"snapGuideLayer","pointer-events":"none"}));   /* 2.469 — 끌기 자석 안내선(2.377이 강등한 이유가 '안내선이 없다'였다) */
-  attachDraw();applyView();requestAnimationFrame(function(){try{applyView();}catch(_){}});if(document.body.classList.contains("bc-cam")){try{bcAddLight();}catch(_){}}
+  attachDraw();applyView();requestAnimationFrame(function(){try{applyView();}catch(_){}});if(document.body.classList.contains("bc-cam")||document.body.classList.contains("bc-tilt3d")){try{bcAddLight();}catch(_){}}
 }
 let _lastVB="";
 function applyView(){
@@ -11799,18 +11799,20 @@ function msRosterDrag(e,pl,onField){e.preventDefault();
   (function(){var _mt=document.getElementById("msMemoText");if(_mt&&!_mt.__w){_mt.__w=1;_mt.addEventListener("input",function(){state.matchNote=_mt.value;});}})();
   if(wx)wx.addEventListener("click",close);
 })();
-function bcSetCam(on,instant){try{var b=document.getElementById("board");if(instant&&b)b.style.transition="none";document.body.classList.toggle("bc-cam",!!on);var btn=document.getElementById("bcCamBtn");if(btn){btn.classList.toggle("on",!!on);btn.title=on?"평면 보기":"중계캠 보기";}if(on){bcAddLight();}else{bcDelLight();}if(instant&&b){void b.offsetWidth;setTimeout(function(){try{b.style.transition="";}catch(_){}} ,30);}}catch(_){}}
+function bcSetCam(on,instant){try{var b=document.getElementById("board");if(instant&&b)b.style.transition="none";document.body.classList.toggle("bc-cam",!!on);var btn=document.getElementById("bcCamBtn");if(btn){btn.classList.toggle("on",!!on);btn.title=on?"평면 보기":"중계캠 보기";}if(on||document.body.classList.contains("bc-tilt3d")){bcAddLight();}else{bcDelLight();}if(instant&&b){void b.offsetWidth;setTimeout(function(){try{b.style.transition="";}catch(_){}} ,30);}}catch(_){}}
 function bcAddLight(){try{if(!svg||!world)return;
   if(!svg.querySelector("#bcDefs")){var d=el("defs",{id:"bcDefs"});
     var sp=el("radialGradient",{id:"bcSpot",cx:"50%",cy:"33%",r:"60%"});sp.appendChild(el("stop",{offset:"0%","stop-color":"#fff7e0","stop-opacity":"0.15"}));sp.appendChild(el("stop",{offset:"45%","stop-color":"#fff7e0","stop-opacity":"0"}));d.appendChild(sp);
     var vg=el("radialGradient",{id:"bcVig",cx:"50%",cy:"46%",r:"72%"});vg.appendChild(el("stop",{offset:"55%","stop-color":"#000","stop-opacity":"0"}));vg.appendChild(el("stop",{offset:"100%","stop-color":"#000","stop-opacity":"0.5"}));d.appendChild(vg);
     svg.insertBefore(d,svg.firstChild);}
+  // Keep projection anchors independent of the decorative light lifecycle.
+  ["bcM0","bcM1","bcM2","bcM3"].forEach(function(id,ii){if(world.querySelector("#"+id))return;var cc=[[0,0],[W,0],[W,H],[0,H]][ii];world.appendChild(el("circle",{id:id,cx:cc[0],cy:cc[1],r:2,fill:"none","pointer-events":"none"}));});
   if(world.querySelector("#bcSpotR"))return;
   var dl=world.querySelector("#drawLayer");
   var spot=el("rect",{id:"bcSpotR",x:-W,y:-H,width:3*W,height:3*H,fill:"url(#bcSpot)","pointer-events":"none"});
   var vig=el("rect",{id:"bcVigR",x:-W,y:-H,width:3*W,height:3*H,fill:"url(#bcVig)","pointer-events":"none"});
   if(dl){world.insertBefore(spot,dl);world.insertBefore(vig,dl);}else{world.appendChild(spot);world.appendChild(vig);}
-  ["bcM0","bcM1","bcM2","bcM3"].forEach(function(id,ii){if(world.querySelector("#"+id))return;var cc=[[0,0],[W,0],[W,H],[0,H]][ii];world.appendChild(el("circle",{id:id,cx:cc[0],cy:cc[1],r:2,fill:"none","pointer-events":"none"}));});
+
 }catch(_){}}
 function bcDelLight(){try{["bcSpotR","bcVigR","bcM0","bcM1","bcM2","bcM3"].forEach(function(id){var e=world&&world.querySelector("#"+id);if(e)e.remove();});}catch(_){}}
 function _bcSolveH(s2,d2){var A=[],b=[];for(var i=0;i<4;i++){var xs=s2[i][0],ys=s2[i][1],xd=d2[i][0],yd=d2[i][1];A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]);b.push(xd);A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]);b.push(yd);}var n=8;for(var col=0;col<n;col++){var piv=col;for(var r=col+1;r<n;r++){if(Math.abs(A[r][col])>Math.abs(A[piv][col]))piv=r;}if(Math.abs(A[piv][col])<1e-9)return null;var tA=A[col];A[col]=A[piv];A[piv]=tA;var tb=b[col];b[col]=b[piv];b[piv]=tb;for(var r2=0;r2<n;r2++){if(r2===col)continue;var f=A[r2][col]/A[col][col];for(var c2=col;c2<n;c2++)A[r2][c2]-=f*A[col][c2];b[r2]-=f*b[col];}}var h=[];for(var k=0;k<n;k++)h.push(b[k]/A[k][k]);return h;}
@@ -11847,7 +11849,7 @@ function enterMatch(){const h=matchHudEl();if(h)h.style.display="flex";mnEl();tr
   try{requestAnimationFrame(positionMsRoster);}catch(_){positionMsRoster();}}
 function exitMatch(){document.body.classList.remove("roster-show");
   if(_prevPitch!==null&&_prevPitch!=="grass"&&document.body.classList.contains("match-mode"))_setPitch(_prevPitch);
-  _prevPitch=null;if(matchClock.running){matchClock._base=matchClock.elapsed;matchClock.running=false;clearInterval(matchClock._iv);mcSave();}else{matchClock.running=false;clearInterval(matchClock._iv);}const h=document.getElementById("matchHud");if(h)h.style.display="none";mnClose();try{bcSetCam(false);bcDelLight();}catch(_){}document.body.classList.remove("match-mode");csRelWake();}
+  _prevPitch=null;if(matchClock.running){matchClock._base=matchClock.elapsed;matchClock.running=false;clearInterval(matchClock._iv);mcSave();}else{matchClock.running=false;clearInterval(matchClock._iv);}const h=document.getElementById("matchHud");if(h)h.style.display="none";mnClose();try{bcSetCam(false);}catch(_){}document.body.classList.remove("match-mode");csRelWake();}
 /* ===== 경기 메모 — 국면별(공격·수비·전환·세트피스) + 선수별 ===== */
 const NOTE_CATS=[["attack","공격","#C99250"],["defense","수비","#7E8BA3"],["transition","전환","#5FA86E"],["setpiece","세트피스","#6FB5C1"],["player","선수","#5E8FA8"]];
 let mnCat="attack";

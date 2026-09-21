@@ -39,8 +39,39 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
     const targets=await page.evaluate(()=>['depth-a','ball',...state.equipment.map(p=>String(p.id))]);
     for(const orientation of ['h','v']){
       await page.evaluate(({orientation,view})=>{state.orientation=orientation;buildPitch();__setTilt(view==='depth');if(view==='depth')__tiltFit();},{orientation,view});
+      // Rebuilding the pitch while depth stays enabled used to remove all four
+      // anchors. Re-enabling depth here would mask that real navigation path.
+      if(view==='depth')await page.evaluate(()=>{
+        buildPitch();renderTokens();
+        if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('pitch rebuild lost projection anchors');
+        bcSetCam(false,true);
+        if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('camera off lost depth anchors');
+        exitMatch();
+        if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('match exit lost depth anchors');
+        world.querySelector('#bcM0').remove();bcAddLight();
+        if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('existing light prevented anchor repair');
+      });
       // Let the normal fit/resize callbacks settle before measuring a fixed projection.
       await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+      // Independent rendered-point oracle: never compute expected movement with
+      // clientToUnit, since that would accept the same broken projection twice.
+      for(const target of ['depth-a','ball']){
+        const tracking=await page.evaluate(({target})=>{
+          sel=null;multiSel=[];state.tool='move';renderTokens();
+          const p=tokenItems().find(it=>String(it.o.id)===target).o;
+          const initial={x:p.x,y:p.y},g=tokenLayer.querySelector('[data-id="'+target+'"]');
+          const probe=el('circle',{cx:5,cy:-8,r:.001,fill:'none','pointer-events':'none'});g.appendChild(probe);
+          const point=()=>{const r=probe.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};};
+          const start=point(),expected={x:start.x+12,y:start.y+14};
+          const fire=(type,q)=>g.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:91,pointerType:'mouse',buttons:type==='pointerup'?0:1,clientX:q.x,clientY:q.y}));
+          fire('pointerdown',start);fire('pointermove',expected);fire('pointerup',expected);
+          const actual=point(),anchors=world.querySelectorAll('[id^="bcM"]').length;
+          probe.remove();p.x=initial.x;p.y=initial.y;renderTokens();
+          return {actual,expected,anchors};
+        },{target});
+        if(view==='depth')assert.equal(tracking.anchors,4,'pitch rebuild must retain perspective anchors');
+        assert.ok(Math.hypot(tracking.actual.x-tracking.expected.x,tracking.actual.y-tracking.expected.y)<.5,JSON.stringify({view,orientation,target,tracking}));
+      }
       for(const target of targets)for(const finish of ['frame','frame-layout','release','cancel']){
         const metrics=await page.evaluate(async ({finish,target})=>{
           sel=null;multiSel=[];state.tool='move';renderTokens();clearBoardHistory();
