@@ -11849,7 +11849,7 @@ function enterMatch(){const h=matchHudEl();if(h)h.style.display="flex";mnEl();tr
   try{requestAnimationFrame(positionMsRoster);}catch(_){positionMsRoster();}}
 function exitMatch(){document.body.classList.remove("roster-show");
   if(_prevPitch!==null&&_prevPitch!=="grass"&&document.body.classList.contains("match-mode"))_setPitch(_prevPitch);
-  _prevPitch=null;if(matchClock.running){matchClock._base=matchClock.elapsed;matchClock.running=false;clearInterval(matchClock._iv);mcSave();}else{matchClock.running=false;clearInterval(matchClock._iv);}const h=document.getElementById("matchHud");if(h)h.style.display="none";mnClose();try{bcSetCam(false);bcDelLight();}catch(_){}document.body.classList.remove("match-mode");csRelWake();}
+  _prevPitch=null;if(matchClock.running){matchClock._base=matchClock.elapsed;matchClock.running=false;clearInterval(matchClock._iv);mcSave();}else{matchClock.running=false;clearInterval(matchClock._iv);}const h=document.getElementById("matchHud");if(h)h.style.display="none";mnClose();try{bcSetCam(false);}catch(_){}document.body.classList.remove("match-mode");csRelWake();}
 /* ===== 경기 메모 — 국면별(공격·수비·전환·세트피스) + 선수별 ===== */
 const NOTE_CATS=[["attack","공격","#C99250"],["defense","수비","#7E8BA3"],["transition","전환","#5FA86E"],["setpiece","세트피스","#6FB5C1"],["player","선수","#5E8FA8"]];
 let mnCat="attack";

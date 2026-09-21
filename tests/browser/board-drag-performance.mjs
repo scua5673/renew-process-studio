@@ -46,6 +46,8 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
         if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('pitch rebuild lost projection anchors');
         bcSetCam(false,true);
         if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('camera off lost depth anchors');
+        exitMatch();
+        if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('match exit lost depth anchors');
         world.querySelector('#bcM0').remove();bcAddLight();
         if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('existing light prevented anchor repair');
       });
