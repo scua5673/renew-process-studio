@@ -41,7 +41,14 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
       await page.evaluate(({orientation,view})=>{state.orientation=orientation;buildPitch();__setTilt(view==='depth');if(view==='depth')__tiltFit();},{orientation,view});
       // Rebuilding the pitch while depth stays enabled used to remove all four
       // anchors. Re-enabling depth here would mask that real navigation path.
-      if(view==='depth')await page.evaluate(()=>{buildPitch();renderTokens();bcSetCam(false,true);});
+      if(view==='depth')await page.evaluate(()=>{
+        buildPitch();renderTokens();
+        if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('pitch rebuild lost projection anchors');
+        bcSetCam(false,true);
+        if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('camera off lost depth anchors');
+        world.querySelector('#bcM0').remove();bcAddLight();
+        if(world.querySelectorAll('[id^="bcM"]').length!==4)throw Error('existing light prevented anchor repair');
+      });
       // Let the normal fit/resize callbacks settle before measuring a fixed projection.
       await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
       // Independent rendered-point oracle: never compute expected movement with
