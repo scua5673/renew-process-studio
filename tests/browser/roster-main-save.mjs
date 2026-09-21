@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),ou
 const sync=fs.readFileSync(path.join(root,'studio/sync.js'),'utf8'),app=fs.readFileSync(path.join(root,'studio/app.html'),'utf8');
 function section(src,a,b){const i=src.indexOf(a),j=src.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return src.slice(i,j);}
 const syncHelpers=section(sync,'var IDBK=','/* 워크스페이스 전환 시')+section(sync,"var ITEMP='sq:';",'/* ── 권한 문서 읽기')+section(sync,'function idbRefreshLive(){','/* ══ 1.630 · kv 전송을');
-const barriers=section(app,'function psFlushAllPendingReady(){','function psAutoReloadWhenSafe(){')+section(sync,'function flushWorkspaceFrames(){','function workspaceSwitchWriteBarrier(){');
+const barriers=section(app,'function psFlushAllPendingReady(){','function psAutoReloadWhenSafe(')+section(sync,'function flushWorkspaceFrames(){','function workspaceSwitchWriteBarrier(){');
 const eventBody=section(sync,'    var seq=++edSeq,key=e.key,newValue=e.newValue;','\n  });\n  function recheckAuth(){');
 const base='https://roster-main-save-fixture.invalid',uid='synthetic-main-coach',wid='synthetic-main-team';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
