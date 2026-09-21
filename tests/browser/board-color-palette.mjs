@@ -40,6 +40,23 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
   await frame.evaluate(()=>{boardShowDefault();const snap=captureSnap();snap.players=[{id:'color-a',team:'blue',num:8,name:'Synthetic A',x:450,y:300},{id:'color-b',team:'red',num:9,name:'Synthetic B',x:700,y:300}];snap.ball=null;snap.equipment=[];snap.drawings=[];loadSnap(snap);undoStack=[];redoStack=[];});
   const press=locator=>spec.touch?locator.tap():locator.click();
   async function open(id='color-a'){await press(frame.locator('.token[data-id="'+id+'"]'));if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await frame.locator('#colorPop').waitFor({state:'visible'});}
+  // Replay browser composition events against the real controls. This does not emulate a native OS IME.
+  await press(frame.locator('.token[data-id="color-a"]'));
+  for(const [id,value] of [['nameInput','이슬기'],['numInput','김']]){
+    const input=frame.locator('#'+id);await input.focus();
+    const during=await input.evaluate((el,value)=>{
+      el.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true,data:''}));
+      el.value=value;el.dispatchEvent(new InputEvent('input',{bubbles:true,isComposing:true,data:value}));
+      const enter=new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true,isComposing:true});
+      el.dispatchEvent(enter);const result={focused:document.activeElement===el,canceled:enter.defaultPrevented};
+      el.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true,data:value}));
+      el.dispatchEvent(new InputEvent('input',{bubbles:true,data:value}));return result;
+    },value);
+    assert.deepEqual(during,{focused:true,canceled:false},id+' must not blur or cancel IME Enter');
+    await input.press('Enter');assert.equal(await input.evaluate(el=>document.activeElement===el),false);
+    assert.equal(await frame.evaluate(id=>state.players[0][id==='nameInput'?'name':'num'],id),value);
+  }
+  assert.equal(await frame.evaluate(()=>captureSnap().players[0].name),'이슬기');
   // The extra sheet-layout fixture has the shell's CSS marker, not its injected toolbar.
   const undo=()=>spec.shellDock?frame.evaluate(()=>undoLast()):press(frame.locator('#undoBtn'));
   const colors=()=>frame.evaluate(()=>state.players.map(p=>p.color||null));
