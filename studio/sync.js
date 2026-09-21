@@ -48,7 +48,7 @@ var KEY_LABEL={
   'training_sessions_v1':'훈련 세션','cs_match_v1':'경기','cs_match_roster_v1':'경기 명단','cs_meet_sit_v1':'미팅',
   'cs_psched_v1':'일정','cs_pmeet_v1':'미팅 계획','cs_pwarm_v1':'웜업','cs_ptrain_v1':'훈련',
   'process_coach_v1':'일정·주간 훈련','cs_themes_v1':'테마',
-  'cs_analysis_workspaces_v1':'매치데스크','cs_analysis_team_library_v1':'매치데스크 팀 자료',
+  'cs_analysis_workspaces_v1':'매치데스크','cs_analysis_team_library_v1':'등록한 팀·선수',
   /* 1.526 — 이름이 없어 화면에 날것 키(cs_vault_folders_v1 …)가 그대로 찍히던 것들 */
   'cs_vault_folders_v1':'보관함 폴더','cs_vault_folder_tags_v1':'보관함 폴더 태그','cs_vault_folder_meta_v1':'보관함 폴더 정보',
   'cs_coach_img_v1':'지도자 이미지노트','cs_team_attrs_v1':'평가 항목','cs_drill_lib_v1':'보관함',
