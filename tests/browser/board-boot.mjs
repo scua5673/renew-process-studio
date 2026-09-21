@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),en
 const app=fs.readFileSync(path.join(root,'studio/app.html'),'utf8');
 const boot=app.slice(app.indexOf('    var bootFinished=false;'),app.indexOf('    var hints='));
 const reload=app.slice(app.indexOf('function psReloadWorkspaceSeal(){'),app.indexOf('/* ⚠ 2.395'))+app.slice(app.indexOf('function psUpdateStatus('),app.indexOf('</script>',app.indexOf('function psUpdateStatus(')));
-const css=app.split('\n').filter(line=>line.trim().startsWith('#loading.ps-boot-screen')&&line.includes('span')).join('\n');
+const css=app.split('\n').filter(line=>line.trim().startsWith('#loading.ps-boot-screen')&&(line.includes('span')||line.includes('button'))).join('\n');
 const html=`<!doctype html><meta charset="utf-8"><style>${css}\nbody.ps-booting iframe{visibility:hidden}#loading.ps-boot-done{display:none}</style><body class="ps-booting"><div id="loading" class="ps-boot-screen"><span id="psBootMessage">불러오는 중…</span><button id="psBootRetry">다시 열기</button></div><iframe id="board" src="/board"></iframe><script>var fBoard=document.getElementById('board'),loading=document.getElementById('loading');${reload}\n${boot}\nwindow.__psShellBootReady=true;window.psFlushAllPendingReady=()=>Promise.reject(Error('fixture write failure'));</script>`;
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})});
 try{
