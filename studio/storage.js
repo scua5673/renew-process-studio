@@ -1441,20 +1441,67 @@
     var kinds=day&&day.groupKinds;
     return grp&&kinds&&Object.prototype.hasOwnProperty.call(kinds,grp)&&['OFF','훈련'].indexOf(kinds[grp])>=0?kinds[grp]:'';
   }
-  function groupDay(day,grp){
+  /* 2.878 — 조 꼬리표는 한 곳에서 읽는다: 세션·경기의 조 › 하루의 조(day.grp) › 공통(빈 목록).
+     일정 화면·IDP·출석·플레이북이 모두 이 규칙을 거쳐야 같은 날을 같은 말로 읽는다. */
+  function groupList(item,day){
+    var g=item&&item.grp,a=Array.isArray(g)?g:(g?[g]:[]);
+    a=a.map(function(x){return String(x==null?'':x).trim();}).filter(Boolean);
+    if(a.length)return a;
+    var d=day&&day.grp?String(day.grp).trim():'';
+    return d?[d]:[];
+  }
+  /* 그 조로 본 하루 — **표시용 사본**이다. 원본은 읽기만 하고 절대 되쓰지 않는다.
+     · 조별 OFF/훈련을 지정한 날: 그 지정을 따른다(2.876).
+     · 지정이 없는 날(2.878): 그 조 세션 + 공통 세션만 남기고, 다른 조 꼬리표가 붙은 세션·경기는 뺀다.
+       공통 경기(꼬리표 없음)는 언제나 남는다. opts.common===false 이면 공통 세션은 뺀다(일정 화면의 «공통 숨김»). */
+  function groupDay(day,grp,opts){
     if(!day||!grp)return day;
-    var o=JSON.parse(JSON.stringify(day)),kind=groupKind(day,grp);
-    if(!kind)return o;
-    o.board=o.board||{};o.board.sched=kind;o.off=kind==='OFF';o.rest=false;
-    delete o.match;delete o.matchAdd;delete o.matches;delete o.board.type;delete o.board.kind;
-    if(kind==='OFF'){o.trainings=[];o.board.trains=[];o.board.warms=[];o.board.theme='';}
-    else o.trainings=(o.trainings||[]).filter(function(t){var g=t.grp||day.grp;return !g||(Array.isArray(g)?g:[g]).indexOf(grp)>=0;});
+    var o=JSON.parse(JSON.stringify(day)),kind=groupKind(day,grp),withCommon=!(opts&&opts.common===false);
+    var keep=function(t){var L=groupList(t,day);return L.length?L.indexOf(grp)>=0:withCommon;};
+    var hadSes=Array.isArray(day.trainings)&&day.trainings.length>0;
+    if(kind){
+      o.board=o.board||{};o.board.sched=kind;o.off=kind==='OFF';o.rest=false;
+      delete o.match;delete o.matchAdd;delete o.matches;delete o.board.type;delete o.board.kind;
+      if(kind==='OFF'){o.trainings=[];o.board.trains=[];o.board.warms=[];o.board.theme='';o.board.trainData=[];o.board.warmsData=[];}
+      else{
+        o.trainings=(o.trainings||[]).filter(keep);
+        /* 세션이 있던 날인데 이 조 몫이 하나도 안 남았으면, 보드의 훈련 칩은 남의 세션에서 나온 것이다 — 사본에서 걷는다. */
+        if(hadSes&&!o.trainings.length){o.board.trains=[];o.board.warms=[];o.board.theme='';o.board.trainData=[];o.board.warmsData=[];}
+      }
+      return o;
+    }
+    if(Array.isArray(o.trainings))o.trainings=o.trainings.filter(keep);
+    if(hasMatch(day)){
+      var vis=function(m){var L=groupList(m,day);return !L.length||L.indexOf(grp)>=0;};
+      var extras=(Array.isArray(o.matchAdd)?o.matchAdd:[]).filter(function(x){return x&&typeof x==='object'&&vis(x);});
+      if(!vis(o.match||{})){
+        if(extras.length){
+          /* 첫 경기가 다른 조 것이면 이 조의 다음 경기를 사본에서만 대표로 올린다(process.html mxDel0 과 같은 모양). */
+          var nx=extras.shift();
+          if(nx.mid){o.mid=nx.mid;delete nx.mid;}else delete o.mid;
+          o.match=nx;if(o.board)o.board.opp=String(nx.opp||'');
+        }else{
+          delete o.match;delete o.mid;delete o.md;
+          if(o.board){if(o.board.sched==='경기')o.board.sched='';delete o.board.type;delete o.board.kind;o.board.opp='';}
+        }
+      }
+      if(Array.isArray(o.matchAdd)||extras.length)o.matchAdd=extras;
+    }
+    /* 하루 단위 보드 내용(주제·훈련 칩)은 하루의 조 것이다. 이 조의 세션이 하나도 안 남은 날에만 걷는다 —
+       세션이 남아 있으면 보드가 그 세션에서 나온 것일 수 있어 그대로 둔다.
+       세션이 있던 날인데 이 조 몫이 없으면 보드 칩도 남의 세션에서 나온 것이므로 같이 걷는다. */
+    var dayGrp=day.grp?String(day.grp).trim():'';
+    var boardMine=dayGrp?dayGrp===grp:withCommon;
+    if((!boardMine||hadSes)&&o.board&&!hasMatch(o)&&!(o.trainings&&o.trainings.length)){
+      if(o.board.sched==='훈련')o.board.sched='';
+      o.board.theme='';o.board.trains=[];o.board.warms=[];o.board.trainData=[];o.board.warmsData=[];
+    }
     return o;
   }
   window.PSSchedule={
     /* 2.475 — 죽은 export 정리(전수조사: 외부 사용은 anchor·hasMatch·mondayOf·newId·stampIds·cellOf·read·readFor 뿐).
        ymd·parseYmd·sourceId·normalize 본체는 내부 호출로 산다 — export 표면만 걷음 */
-    groupKind:groupKind, groupDay:groupDay,
+    groupKind:groupKind, groupList:groupList, groupDay:groupDay,
     mondayOf:mondayOf,
     hasMatch:hasMatch, newId:newId, stampIds:stampIds,
     anchor:anchor, cellOf:cellOf,

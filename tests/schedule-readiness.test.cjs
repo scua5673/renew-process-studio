@@ -79,6 +79,11 @@ function harness(opt={}){
       if(stage.startsWith('kv_push')){
         if(opt.deny)return response([],403);
         const rows=JSON.parse(options.body),list=Array.isArray(rows)?rows:[rows];
+        if(options.method==='PATCH'){
+          const query=new URL(url).searchParams,k=query.get('k').slice(3),wid=query.get('workspace_id').slice(3),cupd=Number(query.get('cupd').slice(3)),before=server.get(k);
+          if(!before||before.workspace_id!==wid||before.cupd!==cupd)return response([]);
+          list[0]={...before,...rows};
+        }
         if(opt.rejectAck)return response(list.map(r=>({workspace_id:r.workspace_id,k:r.k,cupd:0})));
         list.forEach(r=>server.set(r.k,clone(r)));
         return response(list.map(({workspace_id,k,cupd})=>({workspace_id,k,cupd})));
@@ -231,4 +236,36 @@ test('schedule-ready metadata events defer full match refresh while review input
     'document.addEventListener("focusout",function(){'),c);
   handler({key:META});assert.equal(refreshed,0);assert.equal(c.__matchStale,1);assert.equal(c.document.activeElement.value,'unsaved review');
   c.document.activeElement=null;handler({key:META});assert.equal(refreshed,1);
+});
+
+test('unchanged confirmed schedule advances an old anchor without a permanent exact mismatch',async()=>{
+  const old=doc('kept').replace('2026-09-07','2026-08-31'),h=harness({server:old,mirror:old,idb:old});h.baseline(old);
+  const result=await h.run();assert.equal(result.error,undefined,JSON.stringify(result));assert.equal(h.ready(),true);
+  const saved=JSON.parse(h.local.get(KEY));assert.equal(saved.anchorMonday,'2026-09-07');
+  assert.equal(saved.weeks['-1'][1].trainings[0].title,'kept');assert.equal(saved.weeks['0'],undefined);
+  assert.equal(h.idb.get(KEY),h.local.get(KEY));assert.equal(h.server.get(KEY).v,h.local.get(KEY));
+  const second=await h.run();assert.equal(second.error,undefined);assert.equal(h.ready(),true);
+});
+
+for(const previous of ['2026-08-31','2025-12-29'])test('anchor change preserves absolute dates and version lineage from '+previous,async()=>{
+ const old=JSON.stringify({...JSON.parse(doc('history')),anchorMonday:previous,scheduleRev:12,scheduleToken:'confirmed-token-123456'});
+ const h=harness({server:old,mirror:old,idb:old});h.baseline(old);
+ assert.equal((await h.run()).error,undefined);const saved=JSON.parse(h.server.get(KEY).v);
+ const offset=Number(Object.keys(saved.weeks)[0]);assert.equal(Date.parse(saved.anchorMonday)+offset*7*864e5,Date.parse(previous));
+ assert.equal(saved.scheduleBaseRev,12);assert.equal(saved.scheduleRev,13);assert.equal(saved.scheduleBaseToken,'confirmed-token-123456');
+});
+test('anchor normalization on a read-only device updates only its confirmed display',async()=>{
+ const old=doc().replace('2026-09-07','2026-08-31'),h=harness({server:old,mirror:old,idb:old,role:'staff',teamRole:'member'});h.baseline(old);h.state.write=false;
+ assert.equal((await h.run()).error,undefined);assert.equal(h.ready(),true);assert.equal(h.server.get(KEY).v,old);
+ assert.equal(JSON.parse(h.local.get(KEY)).anchorMonday,'2026-09-07');assert.equal(h.requests.some(r=>r.stage.startsWith('kv_push')),false);
+});
+test('new typing during anchor normalization is preserved and is not acknowledged',async()=>{
+ const old=doc().replace('2026-09-07','2026-08-31'),fresh=old.replaceAll('server','typed'),h=harness({server:old,mirror:old,idb:old});h.baseline(old);
+ const wait=gate();h.hooks.idbWrite=()=>wait.promise;const pending=h.run();await tick();h.local.set(KEY,fresh);wait.resolve();await pending;
+ assert.equal(h.local.get(KEY),fresh);assert.equal(h.idb.get(KEY),fresh);assert.equal(h.server.get(KEY).v,old);assert.equal(h.ready(),false);assert.ok(h.acks.at(-1).skip.includes(KEY));
+});
+test('another server writer wins the CAS race over automatic anchor normalization',async()=>{
+ const old=doc().replace('2026-09-07','2026-08-31'),fresh=doc('other coach'),h=harness({server:old,mirror:old,idb:old});h.baseline(old);
+ h.hooks.fetch=stage=>{if(stage==='kv_push_cas')h.server.set(KEY,{workspace_id:'team-a',k:KEY,v:fresh,cupd:99});};
+ const result=await h.run();assert.ok(result.error);assert.equal(h.server.get(KEY).v,fresh);assert.equal(h.ready(),false);
 });

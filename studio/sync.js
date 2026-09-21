@@ -6812,8 +6812,10 @@ function syncNowCore(reason){
         /* 응답만 잃은 재시도: 로컬 후보와 서버 확정 raw가 같으면 새 rev를 만들지 않고 확정한다. */
         if(k===SCHEDULE_KEY&&row&&row.v!=null&&loc===row.v&&!scheduleServerNormalized){m.h[k]=lh;m.c[k]=row.cupd;nSet(m,k,loc);syncBaseSet(k,loc);return;}
         /* 서버의 옛 anchor를 절대 날짜 보존 정규화한 결과가 이미 로컬과 같으면,
-           원본 서버 rev 위의 다음 커밋으로 서버도 교정한다. */
-        if(k===SCHEDULE_KEY&&scheduleServerNormalized&&loc===row.v){queuePush(k,loc,scheduleServerOriginal,loc);return;}
+           원본 서버 rev 위의 다음 커밋으로 서버도 교정한다.
+           2.878 — 양쪽이 같은 옛 원문인 경우도 포함한다. cupd/hash가 그대로면 일반
+           dirty/srvChanged 분기가 둘 다 false여서 날짜 정규화를 건너뛰고 exact 확인만 반복 실패했다. */
+        if(k===SCHEDULE_KEY&&scheduleServerNormalized&&(loc===row.v||loc===scheduleServerOriginal)){queuePush(k,row.v,scheduleServerOriginal,loc);return;}
         /* 1.590 — **여기가 1.573 보호가 뚫려 있던 자리다.**
            "서버에 이 키의 행이 없다"는 이유로 로컬을 조건 없이 올렸다. 그런데 행이 없는 건
            처음 올리는 경우만이 아니다 — 조회가 그 회차에 이 키를 못 받아 왔을 수도 있고,

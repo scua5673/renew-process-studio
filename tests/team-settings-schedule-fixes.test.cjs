@@ -3,7 +3,8 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const read=f=>fs.readFileSync(require('node:path').join(__dirname,'../studio',f),'utf8');
 function part(s,a,b){const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j);}
 const processSource=read('process.html'),storage=read('storage.js'),scout=read('scout.html');
-const groupCode=part(storage,'  function groupKind(','  window.PSSchedule=');
+/* 2.877 — groupDay 가 storage.js 의 hasMatch 를 쓴다. 단언은 그대로 두고 추출 범위만 넓힌다. */
+const groupCode=part(storage,'  function hasMatch(','  var seq=0;')+part(storage,'  function groupKind(','  window.PSSchedule=');
 function group(){const c=vm.createContext({});vm.runInContext(groupCode,c);return c;}
 test('A OFF and B training survive round-trip without changing either saved session',()=>{
  const c=group(),day={off:true,board:{sched:'OFF'},groupKinds:{A:'OFF',B:'훈련'},trainings:[{grp:['A'],title:'A 원본'},{grp:['B'],title:'B 원본'}],match:{opp:'보존'},matchAdd:[{opp:'추가 경기'}]};

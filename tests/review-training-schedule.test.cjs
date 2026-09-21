@@ -279,3 +279,21 @@ test('replayed request id opens at most once, while a fresh request remains usab
   const h=harness();h.message();assert.equal(h.shown(),true);h.api.close();h.message();assert.equal(h.shown(),false);
   h.message({requestId:'request-2'});assert.equal(h.shown(),true);assert.equal(h.state.saveCount,0);
 });
+
+/* 2.877 — 대상 조가 있으면 그 조로 본 하루로 휴식일·경기일을 판정한다. */
+function withGroupDay(h){
+  vm.runInContext(section(storage,'  function groupKind(','  window.PSSchedule='),h.c,{filename:'storage.js real group view'});
+  h.c.PSSchedule.groupDay=h.c.groupDay;return h;
+}
+test('a common OFF day still accepts a task for the group that trains',()=>{
+  const h=withGroupDay(harness());Object.assign(h.weeks[0][2],{off:true,board:{sched:'OFF'},groupKinds:{A:'훈련'}});
+  h.open();h.form();h.api.commit();assert.equal(h.state.saveCount,1);
+});
+test('a training day refuses a task for the group that is OFF',()=>{
+  const h=withGroupDay(harness());Object.assign(h.weeks[0][2],{board:{sched:'훈련'},groupKinds:{A:'OFF'}});
+  h.open();h.form();h.api.commit();assert.equal(h.state.saveCount,0);assert.equal(h.tasks().length,0);
+});
+test('another group\'s match does not close the day for the target group',()=>{
+  const h=withGroupDay(harness());Object.assign(h.weeks[0][2],{board:{sched:'경기'},match:{opp:'Away',grp:'B'}});
+  h.open();h.form();h.api.commit();assert.equal(h.state.saveCount,1);
+});
