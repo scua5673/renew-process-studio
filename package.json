@@ -1,6 +1,6 @@
 {
   "name": "process-studio",
-  "version": "2.880.0",
+  "version": "2.881.0",
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.cjs",
