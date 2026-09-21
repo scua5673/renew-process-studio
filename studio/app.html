@@ -565,7 +565,10 @@ function psUpdateStatus(message,busy){
 function psAutoReloadWhenSafe(){
   if(window.__psReloading)return;
   var go=function(manual){
-    if(window.__psReloading)return;
+    if(window.__psReloading){
+      if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.',true);
+      return;
+    }
     if(manual){window.__psUpdateLater=false;psShowUpdBand();}
     if(psReloadWorkspaceBusy()){
       if(manual)psUpdateStatus('팀·계정 전환 중입니다. 전환이 끝난 뒤 다시 열기를 눌러 주세요.',false);

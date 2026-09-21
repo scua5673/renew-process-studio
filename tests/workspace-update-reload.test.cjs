@@ -56,3 +56,9 @@ test('a timed out save cannot cause a late reload, and retry can succeed',async(
  resolve();await tick();assert.equal(f.reloads,0);
  delete f.hooks.flush;f.elements.updNow.click();await tick();assert.equal(f.reloads,1);
 });
+
+test('manual click during an automatic save shows progress without a second flush',async()=>{
+ const f=fixture({hidden:true});let resolve;f.hooks.flush=()=>new Promise(r=>resolve=r);f.c.psShowUpdBand();f.c.psAutoReloadWhenSafe();await tick();
+ f.elements.updNow.click();assert.equal(f.elements.updNow.disabled,true);assert.match(f.elements.updMessage.textContent,/保存|저장/);assert.equal(f.flushes,1);
+ resolve();await tick();assert.equal(f.reloads,1);
+});
