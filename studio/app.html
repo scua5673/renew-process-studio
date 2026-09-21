@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.878"></script>
+<script src="autosave-status.js?v=2.879"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -476,7 +476,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.878';</script>
+<script>window.PS_BUILD='2.879';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -555,30 +555,52 @@ function psFlushAllPendingReady(){
   });
 }
 window.psFlushAllPendingReady=psFlushAllPendingReady;
+function psUpdateStatus(message,busy){
+  try{
+    var text=document.getElementById('updMessage'),button=document.getElementById('updNow');
+    if(text)text.textContent=message;
+    if(button){button.disabled=!!busy;button.textContent=busy?'저장 확인 중…':'다시 열기';}
+  }catch(_){}
+}
 function psAutoReloadWhenSafe(){
   if(window.__psReloading)return;
-  var go=function(){
-    if(window.__psReloading||psReloadWorkspaceBusy())return;
+  var go=function(manual){
+    if(window.__psReloading){
+      if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.',true);
+      return;
+    }
+    if(manual){window.__psUpdateLater=false;psShowUpdBand();}
+    if(psReloadWorkspaceBusy()){
+      if(manual)psUpdateStatus('팀·계정 전환 중입니다. 전환이 끝난 뒤 다시 열기를 눌러 주세요.',false);
+      return;
+    }
     window.__psReloading=1;
+    if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.',true);
+    var active=true,timer;
+    function finish(message){
+      if(!active)return;active=false;clearTimeout(timer);window.__psReloading=0;
+      psUpdateStatus(message,false);psShowUpdBand();
+    }
+    timer=setTimeout(function(){finish('저장 확인이 지연되어 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.');},20000);
     function commit(){
+      if(!active)return false;
       var seal=psReloadWorkspaceSeal();if(seal===null||psReloadWorkspaceBusy())return false;
       return Promise.resolve(psFlushAllPendingReady()).then(function(){
-        // Flush is asynchronous: a workspace/account change must cancel this
-        // reload. Hold the same origin lock used by transitions and bootstrap.
-        if(psReloadWorkspaceBusy()||psReloadWorkspaceSeal()!==seal)return false;
-        location.reload();return true;
+        // A timed-out attempt or changed owner must never reload later.
+        if(!active||psReloadWorkspaceBusy()||psReloadWorkspaceSeal()!==seal)return false;
+        active=false;clearTimeout(timer);location.reload();return true;
       });
     }
     Promise.resolve().then(function(){
       if(navigator.locks&&navigator.locks.request)return navigator.locks.request('process-studio-workspace-transition-v1',{mode:'exclusive',ifAvailable:true},function(lock){return lock?commit():false;});
       return commit();
-    }).then(function(done){if(!done)window.__psReloading=0;}).catch(function(){
-      window.__psReloading=0;try{psShowUpdBand();}catch(_){}
+    }).then(function(done){
+      if(!done)finish('팀·계정의 저장 작업이 진행 중입니다. 잠시 후 다시 열기를 눌러 주세요.');
+    }).catch(function(){
+      finish('작성 내용의 기기 저장을 확인하지 못해 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.');
     });
   };
   window.__psForceReload=go;
-  // Install retry before the first attempt: a held transition lock is a wait,
-  // not permission to reload and not a permanently abandoned update.
   if(!window.__psWaitReload){
     window.__psWaitReload=1;setTimeout(psShowUpdBand,60000);
     document.addEventListener('visibilitychange',function(){if(document.hidden)window.__psForceReload();});
@@ -586,14 +608,17 @@ function psAutoReloadWhenSafe(){
   }
   if(document.hidden||psSafeToReload())go();
 }
-/* 2.627 — 새 판 띠. 자동 새로고침(2.388)이 «안전한 때» 를 기다리는 동안 사람이 알 길이 작은 버튼 하나뿐이었다.
-   배너들과 같은 자리(.frames 위)에 «새 판이 있어요 · 하던 일을 저장하고 다시 열면 적용돼요 [다시 열기]». 버튼은 입력을 밀어낸 뒤 새로고침. */
+/* 2.627 — 새 판 띠. 2.879: 나중에는 현재 문서에서 다시 표시하지 않는다.
+   자동 저장 확인·안전한 업데이트는 계속하되, 실패할 때 닫은 알림을 되살리지 않는다. */
 function psShowUpdBand(){
-  if(window.__psReloading)return;
+  if(window.__psReloading||window.__psUpdateLater)return;
   var b=document.getElementById('updBanner'); if(!b)return;
   b.style.display='flex';
-  var btn=document.getElementById('updNow'); if(btn&&!btn.__wired){ btn.__wired=1; btn.addEventListener('click',function(){ try{ if(window.__psForceReload)window.__psForceReload(); else location.reload(); }catch(_){ location.reload(); } }); }
-  var later=document.getElementById('updLater'); if(later&&!later.__wired){ later.__wired=1; later.addEventListener('click',function(){ b.style.display='none'; }); }
+  var btn=document.getElementById('updNow'); if(btn&&!btn.__wired){ btn.__wired=1; btn.addEventListener('click',function(){
+    if(!window.__psForceReload)psAutoReloadWhenSafe();
+    if(window.__psForceReload)window.__psForceReload(true);
+  }); }
+  var later=document.getElementById('updLater'); if(later&&!later.__wired){ later.__wired=1; later.addEventListener('click',function(){window.__psUpdateLater=true;b.style.display='none';}); }
 }
 </script>
 <script>var __swT0=Date.now();if("serviceWorker" in navigator){window.addEventListener("load",function(){var hadCtrl=!!navigator.serviceWorker.controller,refreshing=false;function safeSwUpdate(reg){try{var p=reg&&reg.update&&reg.update();if(p&&p.catch)p.catch(function(){});}catch(_){}}navigator.serviceWorker.register("/sw.js").then(function(reg){safeSwUpdate(reg);setInterval(function(){safeSwUpdate(reg);} ,1800000);document.addEventListener("visibilitychange",function(){if(!document.hidden)safeSwUpdate(reg);});window.addEventListener("focus",function(){safeSwUpdate(reg);});reg.addEventListener("updatefound",function(){var nw=reg.installing;if(!nw)return;nw.addEventListener("statechange",function(){if(nw.state==="installed"&&navigator.serviceWorker.controller){try{if(window.toast)toast("\uc0c8 \ubc84\uc804 \uc801\uc6a9 \uc911\u2026");}catch(_){}}});});}).catch(function(){});navigator.serviceWorker.addEventListener("controllerchange",function(){if(refreshing)return;refreshing=true;
@@ -606,7 +631,7 @@ function psShowUpdBand(){
         ② 입력 중이 아니고, 열린 모달·시트가 없고, 토큰을 끌고 있지 않을 때
         아직 아니면 기다렸다가(탭이 숨을 때 / 15초마다 다시 확인) 조용히 바꾼다.
      ⚠ 버튼은 **남긴다** — 기다리는 게 답답한 사람이 지금 당장 바꿀 길이 있어야 한다. */
-  try{ psAutoReloadWhenSafe(); }catch(_){ try{location.reload();}catch(__){} }
+  try{ psAutoReloadWhenSafe(); }catch(_){ try{psShowUpdBand();}catch(__){} }
   if(false&&hadCtrl){
   /* 실행 직후(3초 이내) 감지된 업데이트는 즉시 조용히 재시작 — 시작하자마자 "로드→배너→리로드" 이중 깜빡임 방지. 사용 중 감지된 경우에만 배너+지연 */
   /* 시작 직후에도 강제 새로고침하지 않는다. 현재 작업 화면은 유지하고,
@@ -1409,7 +1434,7 @@ function psShowUpdBand(){
   </div>
   <div id="psReleaseNotes" style="margin-left:var(--ps-side-w,0px)" hidden></div>
   <div id="updBanner" style="display:none;background:#14161A;color:#F4F5F8;font-size:12px;font-weight:600;padding:7px 14px;align-items:center;gap:10px;margin-left:var(--ps-side-w)" role="status">
-    <span>새 판이 있어요 · 하던 일을 저장하고 다시 열면 적용돼요</span>
+    <span id="updMessage">새 판이 있어요 · 하던 일을 저장하고 다시 열면 적용돼요</span>
     <span style="margin-left:auto;display:inline-flex;gap:6px;flex:0 0 auto">
       <button id="updNow" type="button" style="border:0;background:#fff;color:#14161A;font-weight:800;font-size:12px;border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit">다시 열기</button>
       <button id="updLater" type="button" style="border:0;background:transparent;color:#8A9099;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;padding:5px 6px">나중에</button>
@@ -7446,13 +7471,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.878"></script>
-<script src="autosave-merge.js?v=2.878"></script>
-<script src="autosave-runtime.js?v=2.878"></script>
-<script src="autosave-recovery.js?v=2.878"></script>
-<script src="sync.js?v=2.878"></script>
+<script src="autosave-journal.js?v=2.879"></script>
+<script src="autosave-merge.js?v=2.879"></script>
+<script src="autosave-runtime.js?v=2.879"></script>
+<script src="autosave-recovery.js?v=2.879"></script>
+<script src="sync.js?v=2.879"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.878">
+<link rel="stylesheet" href="support.css?v=2.879">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
