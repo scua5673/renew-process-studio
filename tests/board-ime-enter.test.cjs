@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const source=fs.readFileSync(require('node:path').join(__dirname,'../studio/board2474.html'),'utf8');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../studio/board.html'),'utf8');
 function setup(id,players=[{id:'a',name:'원래',num:'7'}]){
  const start=source.indexOf('(function(){const ni=$("'+id+'")'),end=source.indexOf('})();',start)+5;
  assert.ok(start>=0&&end>start);

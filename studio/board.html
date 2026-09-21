@@ -12637,15 +12637,16 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
   if($("mirHBtn"))$("mirHBtn").onclick=()=>mirrorSelection("h");
   if($("mirVBtn"))$("mirVBtn").onclick=()=>mirrorSelection("v");
   document.querySelectorAll("#alignBar .align-btn[data-al]").forEach(b=>b.onclick=()=>alignMulti(b.dataset.al));   /* data-al 있는 정렬 버튼만 — 크기·대칭·복제·삭제의 onclick을 덮지 않게 */
-  (function(){const ni=$("nameInput");if(!ni)return;let dirty=false;
+  (function(){const ni=$("nameInput");if(!ni)return;let dirty=false,composing=false;
     function _targets(){return selectedPlayers(true);}
     function _apply(trim){const ts=_targets();if(!ts.length||(!dirty&&ts.length>1))return;const v=trim?ni.value.trim():ni.value;ts.forEach(function(p){p.name=v;});}
     ni.addEventListener("focus",()=>{dirty=false;});
     ni.addEventListener("input",()=>{dirty=true;_apply(false);});            // 입력 중엔 모델만 갱신 — 한글 조합 깨짐·마지막 글자 중복 방지
-    ni.addEventListener("compositionend",()=>{dirty=true;_apply(false);});
+    ni.addEventListener("compositionstart",()=>{composing=true;});
+    ni.addEventListener("compositionend",()=>{composing=false;dirty=true;_apply(false);});
     ni.addEventListener("blur",()=>{const ts=_targets();if(ts.length===1||dirty)_apply(true);try{ts.forEach(function(p){syncNameToScenes(p);});}catch(_){}try{renderTokens();updateDelUI();}catch(_){}dirty=false;});   // 토큰 라벨 렌더는 입력이 끝난 뒤에만
     ni.addEventListener("pointerdown",e=>e.stopPropagation());
-    ni.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();ni.blur();}});})();
+    ni.addEventListener("keydown",e=>{if(e.key==="Enter"){if(composing||e.isComposing||e.keyCode===229)return;e.preventDefault();ni.blur();}});})();
   (function(){const ni=$("numInput");if(!ni)return;
     let composing=false,paintT=0,undoRef=null,dirty=false;
     const clean=v=>Array.from(String(v||"").replace(/\s/g,"")).slice(0,3).join("");
@@ -12664,7 +12665,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     ni.addEventListener("compositionend",()=>{composing=false;dirty=true;applyValue(true);});
     ni.addEventListener("blur",()=>{composing=false;if(selectedPlayers(false).length===1||dirty)applyValue(true);undoRef=null;dirty=false;try{updateDelUI();}catch(_){}});
     ni.addEventListener("pointerdown",e=>e.stopPropagation());
-    ni.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();ni.blur();}});})();
+    ni.addEventListener("keydown",e=>{if(e.key==="Enter"){if(composing||e.isComposing||e.keyCode===229)return;e.preventDefault();ni.blur();}});})();
   $("sizeUp").onclick=()=>scaleSel(1.18);$("sizeDown").onclick=()=>scaleSel(1/1.18);
   function _selectedTextRef(){return (sel&&sel.type==="drawing"&&sel.ref&&sel.ref.type==="text")?sel.ref:null;}
   function _applySelectedText(fn,msg){const d=_selectedTextRef();if(!d)return;const probe=dc(d);fn(probe);
