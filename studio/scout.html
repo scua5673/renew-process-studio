@@ -16576,6 +16576,7 @@ function mb2MountTools(){
  state:function(){var m=matchGet();if(!m)return null;var pb=mb2Ensure(m),ph=pb.list.find(function(p){return p[0]===pb.cur;});return {key:JSON.stringify(store.owner())+"/"+m.id+"/"+pb.cur,board:mb2Cur(m),title:(m.opponent||"경기")+" · "+ph[1]};},
  canEdit:function(){var m=matchGet();return !!m&&matchCanEditOne(m.id);},portrait:function(){return mb2Portrait;},point:function(e){return mb2Pct(e,$("mb2Pitch"));},save:mb2Save,draw:function(){var m=matchGet();if(m)mb2Draw(m);},
  text:function(done){window.psForm({title:"텍스트 추가",ok:"추가",fields:[{key:"text",label:"내용",type:"text",required:true,maxlength:120}],onOk:function(v){done(String(v.text||"").trim());}});},
+ label:function(t,opp){return String(opp&&mb2OppLabelMode(matchGet())==="pos"&&t.pos?t.pos:t.num||"");},
  kit:function(t,opp){var m=matchGet();return matchKitStyle(m,"prep",opp?"opp":"us",matchKitIsGK(t,m,opp)?"gk":"field");}
  });
  $("mb2Export").addEventListener("click",async function(e){var bt=e.target.closest("[data-pdf]");if(!bt)return;bt.disabled=true;var label=bt.textContent;bt.textContent="PDF 만드는 중…";try{await mb2Tools.exportPdf(bt.dataset.pdf==="portrait");$("mb2Export").open=false;toast("PDF를 저장했어요");}catch(err){toast(err.message||"PDF를 만들지 못했어요. 다시 시도해 주세요.");}finally{bt.disabled=false;bt.textContent=label;}});
