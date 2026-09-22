@@ -9,7 +9,7 @@ const suites={
   board:['gamemodel-sync','board-depth','board-drag-performance','board-color-palette','vault-board-isolation'],
   identity:['session-team-picker','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery'],
   storage:['storage-safety','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery'],
-  idp:['availability','idp-recovery','idp-story-dedup','support']
+  idp:['match-board-tools','availability','idp-recovery','idp-story-dedup','support']
 };
 const group=process.env.PS_TEST_GROUP||'all',engines=(process.env.PS_BROWSER_ENGINE||'chromium,webkit').split(',');
 if(group!=='all'&&!suites[group])throw Error('Unknown browser test group: '+group);

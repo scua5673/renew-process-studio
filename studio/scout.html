@@ -11,7 +11,8 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
 <script src="roster-outbox.js?v=2.826"></script>
-<script src="participation.js?v=2.884"></script>
+<script src="participation.js?v=2.885"></script>
+<script src="match-board-tools.js?v=2.885"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
 <script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 -->
@@ -2760,6 +2761,7 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     .mb2-edit{position:absolute;z-index:20;transform:translate(-50%,-135%);display:flex;gap:4px}
     .mb2-edit input{width:52px;height:28px;border:2px solid var(--blue);border-radius:6px;font-weight:var(--fw-head);font-size:var(--fs-input);line-height:1;text-align:center;background:var(--bar);color:var(--txt)}
     .mb2-edit .del{width:34px;height:30px;border:2px solid #C24A46;border-radius:8px;background:var(--bar);color:#C24A46;font-weight:var(--fw-head);font-size:var(--fs-body);line-height:1;cursor:pointer}
+    .mb2-page{display:inline-flex;align-items:center;border:1px solid #dce2ef;border-radius:10px;overflow:hidden}.mb2-page.on{background:#182238;color:white}.mb2-phases .mb2-page button{border:0;background:transparent;color:inherit;margin:0;padding:8px}.mb2-phases .mb2-page button[data-ph]{font-weight:700}.mb2-export{position:relative}.mb2-export summary{cursor:pointer;padding:8px;white-space:nowrap}.mb2-export>div{position:absolute;right:0;top:100%;background:white;padding:8px;box-shadow:0 6px 24px #18223822;border-radius:10px;z-index:30;min-width:150px}.mb2-export button{display:block;width:100%;padding:10px;border:0;background:white;text-align:left;cursor:pointer}.mbt-layer{position:absolute;inset:0;width:100%;height:100%;touch-action:none}.mbt-dock{width:100%;border-top:1px solid #e0e5ef;padding-top:8px}.mbt-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.mbt-row button{border:0;background:#f0f2f6;border-radius:8px;min-width:34px;height:34px;font-size:20px;cursor:pointer}.mbt-row button.on{background:#3c67f5;color:white}.mbt-row button:disabled{opacity:.35;cursor:default}.mbt-row input{width:30px;height:30px;border:0;padding:0;background:transparent}#mb2Card>.mb2-bar{padding:10px;border:1px solid #e0e5ef;border-radius:12px;background:white}
     .mb2-bar{display:flex;align-items:center;gap:6px;margin-top:9px;flex-wrap:wrap}
     .mb2-sel{width:auto;height:32px;font-size:11px;font-weight:800;padding:0 5px}
     .mb2-red{color:#C24A46!important;border-color:#dcb3b1!important}
@@ -5253,11 +5255,11 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                   <!-- 1.676 — 연습경기 때 오는 테스트 선수를 명단에 바로 추가(사용자 요청). guest 표시로 구분 -->
                   <button type="button" class="mb2-guest-add" id="mb2GuestAdd">＋ 테스트 선수 (연습경기 게스트)</button></div>
                 <!-- 2.004 — 국면 탭 줄 오른쪽 끝에 전체 보기(사용자: 운동장 카드 오른쪽 상단) -->
-                <div class="mb2-phead"><div class="mb2-phases" id="mb2Phases"></div><span class="mb2-seg" id="mb2Orientation" role="group" aria-label="경기장 방향"><button type="button" data-orientation="landscape" class="on" aria-pressed="true">가로</button><button type="button" data-orientation="portrait" aria-pressed="false">세로</button></span><button class="btn sm mb2-meet-btn" type="button" id="mb2Meet" title="선수 명단과 운동장만 전체화면 — 경기 중에">⛶ 전체 보기</button></div>
+                <div class="mb2-phead"><div class="mb2-phases" id="mb2Phases"></div><span class="mb2-seg" id="mb2Orientation" role="group" aria-label="경기장 방향"><button type="button" data-orientation="landscape" class="on" aria-pressed="true">가로</button><button type="button" data-orientation="portrait" aria-pressed="false">세로</button></span><details class="mb2-export" id="mb2Export"><summary>내보내기</summary><div><button type="button" data-pdf="landscape">가로 PDF 저장</button><button type="button" data-pdf="portrait">세로 PDF 저장</button></div></details><button class="btn sm mb2-meet-btn" type="button" id="mb2Meet" title="선수 명단과 운동장만 전체화면 — 경기 중에">⛶ 전체 보기</button></div>
                 <div class="mb2-tray mb2-squad-tray" id="mb2SquadTray" aria-label="선발과 리저브"></div>
                 <div class="mlb-pitch mb2-pitch" id="mb2Pitch"><svg class="mlb-lines" viewBox="0 0 105 68" preserveAspectRatio="none" aria-hidden="true"><g><rect x="1" y="1" width="103" height="66"/><line x1="52.5" y1="1" x2="52.5" y2="67"/><circle cx="52.5" cy="34" r="9.15"/><circle class="spot" cx="52.5" cy="34" r=".5"/><rect x="1" y="13.84" width="16.5" height="40.32"/><rect x="87.5" y="13.84" width="16.5" height="40.32"/><rect x="1" y="24.84" width="5.5" height="18.32"/><rect x="98.5" y="24.84" width="5.5" height="18.32"/><circle class="spot" cx="12" cy="34" r=".5"/><circle class="spot" cx="93" cy="34" r=".5"/><path d="M17.5 26.7 A9.15 9.15 0 0 1 17.5 41.3"/><path d="M87.5 26.7 A9.15 9.15 0 0 0 87.5 41.3"/></g></svg></div>
                 <!-- 2.001 — 도구줄 정리(사용자 "이건 지우고"): 상대 수비 배치 + 전체 보기만. 우리 11·포메이션·상대 11·＋상대 1·안내문 제거(옛 id는 숨김으로 남겨 바인딩 유지). 비우기는 작은 글자 버튼(없으면 토큰을 하나씩 끌어내야 함) -->
-                <div class="mb2-bar">
+                <div class="mb2-bar"><div class="mbt-dock" id="mb2Dock"></div>
                   <button class="mb2-clear-lite" type="button" id="mb2Clear" title="우리·상대 토큰 모두 지우기">전체 비우기</button>
                   <span class="mb2-cnt">배치 <b id="mb2CntUs">0</b>/11 · 상대 <b id="mb2CntOp">0</b></span>
                   <button class="btn sm" type="button" id="mb2FillUs" title="선발 명단을 이 경기의 포메이션·포지션대로 한 번에 배치">선발 배치</button>
@@ -16302,9 +16304,9 @@ function mb2RenderPhases(m){
   var pb=mb2Ensure(m),el=$("mb2Phases"),editable=matchCanEditOne(m.id); if(!el)return;
   el.innerHTML=pb.list.map(function(ph){
     var on=ph[0]===pb.cur;
-    return '<button type="button" data-ph="'+esc(ph[0])+'" aria-pressed="'+on+'" class="'+(on?"on":"")+'">'+esc(ph[1])
-      +(on&&editable&&pb.list.length>1?'<span class="x" data-phdel="'+esc(ph[0])+'" title="페이지 삭제">×</span>':'')+'</button>';
-  }).join("")+(editable?'<button type="button" data-phrename="1" title="현재 페이지 이름 변경">이름 변경</button><button type="button" class="add" data-phadd="1" title="현재 배치를 복제해 페이지 추가">＋ 페이지</button>':'');
+    return '<span class="mb2-page'+(on?' on':'')+'"><button type="button" data-ph="'+esc(ph[0])+'" aria-pressed="'+on+'">'+esc(ph[1])+'</button>'
+      +(on&&editable?'<button type="button" data-phrename="1" aria-label="페이지 이름 수정" title="이름 수정">✎</button><button type="button" data-phadd="1" aria-label="페이지 복제" title="페이지 복제">⧉</button>'+(pb.list.length>1?'<button type="button" data-phdel="'+esc(ph[0])+'" aria-label="페이지 삭제">×</button>':''):'')+'</span>';
+  }).join("")+(editable?'<button type="button" class="add" data-phadd="1" title="현재 배치를 복제해 페이지 추가">＋ 페이지</button>':'');
 }
 /* 페이지 편집 대기 중 팀·경기·페이지가 바뀌면 이전 대상을 저장하지 않는다. */
 function mb2PageContext(m){
@@ -16365,6 +16367,7 @@ function mb2Draw(m){
   if($("mb2OppLabel")){var _lm=mb2OppLabelMode(m); $("mb2OppLabel").querySelectorAll("button").forEach(function(bt){bt.classList.toggle("on",bt.dataset.v===_lm);});}
   if($("mb2OppNumColor")){var _onc=_oppKit.txt; if($("mb2OppNumColor").value!==_onc)$("mb2OppNumColor").value=_onc;}
   mb2Counts(m);mb2SyncTray(m);
+  if(typeof mb2Tools!=="undefined"&&mb2Tools)mb2Tools.sync();
 }
 function mb2RenderTray(m,target){
   var T=MB2_TARGETS[target||"prep"]; target=target||"prep";
@@ -16566,6 +16569,17 @@ function mb2FillOpDef(m){
   b.opp=slots.map(function(a,i){var mt=MB2_SLOTS["gk4"][i]||["",i+1];return {num:String(mt[1]),pos:mt[0],x:Math.max(6,Math.min(97,100-a[0])),y:a[1],gk:i===0||mt[0]==="GK"||String(mt[1])==="1"};});
   mb2Draw(m);mb2Save();
 }
+var mb2Tools=null;
+function mb2MountTools(){
+ if(mb2Tools||!window.PSMatchBoardTools)return;
+ mb2Tools=PSMatchBoardTools.mount({pitch:$("mb2Pitch"),dock:$("mb2Dock"),
+ state:function(){var m=matchGet();if(!m)return null;var pb=mb2Ensure(m),ph=pb.list.find(function(p){return p[0]===pb.cur;});return {key:JSON.stringify(store.owner())+"/"+m.id+"/"+pb.cur,board:mb2Cur(m),title:(m.opponent||"경기")+" · "+ph[1]};},
+ canEdit:function(){var m=matchGet();return !!m&&matchCanEditOne(m.id);},portrait:function(){return mb2Portrait;},point:function(e){return mb2Pct(e,$("mb2Pitch"));},save:mb2Save,draw:function(){var m=matchGet();if(m)mb2Draw(m);},
+ text:function(done){window.psForm({title:"텍스트 추가",ok:"추가",fields:[{key:"text",label:"내용",type:"text",required:true,maxlength:120}],onOk:function(v){done(String(v.text||"").trim());}});},
+ kit:function(t,opp){var m=matchGet();return matchKitStyle(m,"prep",opp?"opp":"us",matchKitIsGK(t,m,opp)?"gk":"field");}
+ });
+ $("mb2Export").addEventListener("click",async function(e){var bt=e.target.closest("[data-pdf]");if(!bt)return;bt.disabled=true;var label=bt.textContent;bt.textContent="PDF 만드는 중…";try{await mb2Tools.exportPdf(bt.dataset.pdf==="portrait");$("mb2Export").open=false;toast("PDF를 저장했어요");}catch(err){toast(err.message||"PDF를 만들지 못했어요. 다시 시도해 주세요.");}finally{bt.disabled=false;bt.textContent=label;}});
+}
 function renderMB2(){
   var card=$("mb2Card"); if(!card)return;
   var m=(typeof matchGet==="function")?matchGet():null;
@@ -16574,7 +16588,7 @@ function renderMB2(){
   if(!show){document.body.classList.remove("mb2-meet");return;}
   if(matchBoardGesture){matchRefreshLater();return;}
   mb2Ensure(m);
-  mb2RenderTray(m);mb2RenderPhases(m);mb2Draw(m);
+  mb2MountTools();mb2RenderTray(m);mb2RenderPhases(m);mb2Draw(m);
   if(!card.__wired){card.__wired=1;
     $("mb2Phases").addEventListener("click",function(e){
       var m2=matchGet(); if(!m2)return; var pb=mb2Ensure(m2);
@@ -16597,7 +16611,7 @@ function renderMB2(){
     $("mb2AddOp").onclick=function(){var m2=matchGet();if(!m2||!matchCanEdit())return;
       var b=mb2Cur(m2);b.opp.push({num:"D"+(b.opp.length+1),x:60,y:50});mb2Draw(m2);mb2Save();};
     $("mb2Clear").onclick=function(){var m2=matchGet();if(!m2||!matchCanEdit())return;
-      psConfirm("현재 페이지의 배치를 비울까요?",function(){var b=mb2Cur(m2);b.us=[];b.opp=[];mb2Draw(m2);mb2Save();});};
+      var ctx=mb2PageContext(m2);psConfirm("현재 페이지의 배치와 그림을 비울까요?",function(){if(!mb2PageCurrent(ctx))return;var b=mb2Cur(m2);b.us=[];b.opp=[];b.drawings=[];mb2Draw(m2);mb2Save();});};
     $("mb2Orientation").onclick=function(e){var b=e.target.closest("[data-orientation]");if(b)mb2SetPortrait(b.dataset.orientation==="portrait");};
     $("mb2Meet").onclick=function(){document.body.classList.toggle("mb2-meet");};
     if($("mb2FillOpDef"))$("mb2FillOpDef").onclick=function(){ if(!matchCanEdit())return; var m=matchGet(); if(m)mb2FillOpDef(m); };   /* 2.001 */
