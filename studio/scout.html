@@ -11,8 +11,8 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
 <script src="roster-outbox.js?v=2.826"></script>
-<script src="participation.js?v=2.885"></script>
-<script src="match-board-tools.js?v=2.885"></script>
+<script src="participation.js?v=2.886"></script>
+<script src="match-board-tools.js?v=2.886"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
 <script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 -->
@@ -5259,7 +5259,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
                 <div class="mb2-tray mb2-squad-tray" id="mb2SquadTray" aria-label="선발과 리저브"></div>
                 <div class="mlb-pitch mb2-pitch" id="mb2Pitch"><svg class="mlb-lines" viewBox="0 0 105 68" preserveAspectRatio="none" aria-hidden="true"><g><rect x="1" y="1" width="103" height="66"/><line x1="52.5" y1="1" x2="52.5" y2="67"/><circle cx="52.5" cy="34" r="9.15"/><circle class="spot" cx="52.5" cy="34" r=".5"/><rect x="1" y="13.84" width="16.5" height="40.32"/><rect x="87.5" y="13.84" width="16.5" height="40.32"/><rect x="1" y="24.84" width="5.5" height="18.32"/><rect x="98.5" y="24.84" width="5.5" height="18.32"/><circle class="spot" cx="12" cy="34" r=".5"/><circle class="spot" cx="93" cy="34" r=".5"/><path d="M17.5 26.7 A9.15 9.15 0 0 1 17.5 41.3"/><path d="M87.5 26.7 A9.15 9.15 0 0 0 87.5 41.3"/></g></svg></div>
                 <!-- 2.001 — 도구줄 정리(사용자 "이건 지우고"): 상대 수비 배치 + 전체 보기만. 우리 11·포메이션·상대 11·＋상대 1·안내문 제거(옛 id는 숨김으로 남겨 바인딩 유지). 비우기는 작은 글자 버튼(없으면 토큰을 하나씩 끌어내야 함) -->
-                <div class="mb2-bar"><div class="mbt-dock" id="mb2Dock"></div>
+                <div class="mb2-bar"><div class="mbt-dock" id="mb2Dock" hidden style="display:none!important"></div>
                   <button class="mb2-clear-lite" type="button" id="mb2Clear" title="우리·상대 토큰 모두 지우기">전체 비우기</button>
                   <span class="mb2-cnt">배치 <b id="mb2CntUs">0</b>/11 · 상대 <b id="mb2CntOp">0</b></span>
                   <button class="btn sm" type="button" id="mb2FillUs" title="선발 명단을 이 경기의 포메이션·포지션대로 한 번에 배치">선발 배치</button>
