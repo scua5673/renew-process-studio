@@ -1527,17 +1527,10 @@ function wksSetGroupKind(di,g,kind){
   if(!Object.keys(day.groupKinds).length)delete day.groupKinds;
   save();syncViews();
 }
-function wksGroupDays(di){
-  if(schedEditBlocked()){schedBlockNotice();return;}
-  var sheet=document.getElementById('sheet');if(!sheet)return;
-  sheet.innerHTML='<button class="closex" onclick="closeSheet()" aria-label="닫기">×</button><h3>'+wkbdEsc(week[di].d)+'요일 · 조별 일정</h3><p>각 조의 휴식과 훈련을 따로 정합니다. 기존 세션은 삭제하지 않습니다.</p>'+
-    schedGroups().map(function(g,i){return '<label style="display:flex;gap:12px;align-items:center;margin:12px 0">'+wkbdEsc(g)+'<select data-group-index="'+i+'" style="padding:8px">'+['','훈련','OFF'].map(function(k){return '<option value="'+k+'"'+(wksGroupKind(week[di],g)===k?' selected':'')+'>'+(k||'공통 일정 따름')+'</option>';}).join('')+'</select></label>';}).join('')+'<button class="btn" onclick="closeSheet()">완료</button>';
-  sheet.querySelectorAll('select[data-group-index]').forEach(function(el){var g=schedGroups()[+el.dataset.groupIndex];el.onchange=function(){wksSetGroupKind(di,g,this.value);};});
-  document.getElementById('scrim').classList.add('show');
-}
+function wksGroupDays(di){wksChooseSession(di);}
 function wksGroupSummary(di){
-  var day=week[di],keys=Object.keys(day.groupKinds||{}).filter(function(g){return !__schedGrp||g===__schedGrp;});
-  return '<div class="wks-group-days">'+keys.map(function(g){return '<div style="padding:5px 8px">'+wkbdEsc(g)+' · <b>'+wkbdEsc(wksGroupKind(day,g))+'</b></div>';}).join('')+'<button type="button" class="wks-kbtn" onclick="wksGroupDays('+di+')">조별 훈련 / OFF</button></div>';
+  var day=week[di],keys=Object.keys(day.groupKinds||{}).filter(function(g){return (!__schedGrp||g===__schedGrp)&&wksGroupKind(day,g)==='OFF';});
+  return keys.length?'<div class="wks-group-days">'+keys.map(function(g){return '<div style="padding:5px 8px">'+wkbdEsc(g)+' · OFF</div>';}).join('')+'</div>':'';
 }
 function schedGrpOf(tr,di){ return schedGrpList(tr,di).join(' · '); }
 /* ══ 2.436 · 하루에 경기 여러 개 — A팀·B팀 ═══════════════════════════════════════
@@ -2342,6 +2335,43 @@ window.wksAddSlot=function(di,slot){   /* 옛 진입점 — 월간·허브가 �
   ensureSlotSession(di,slot);
   try{save();}catch(_){}
   syncViews();
+};
+/* 세션 추가에서 대상 팀을 먼저 선택한다. 확인 전에는 일정에 쓰지 않는다. */
+var __sessionTeamPick=null;
+function sessionTeamOwner(){try{var session=JSON.parse(localStorage.getItem('ps_sync_session')||'null');return JSON.stringify([session&&session.uid||'',localStorage.getItem('ps_active_ws')||'',localStorage.getItem('ps_cache_owner_v1')||'']);}catch(_){return null;}}
+window.wksChooseSession=function(di){
+  if(schedEditBlocked()){schedBlockNotice();return;}
+  var day=week[di];if(!day)return;
+  var available=schedGroups(),g=__schedGrp||schedDayGrp(di)||schedDefGrp();
+  __sessionTeamPick={di:di,day:day,owner:sessionTeamOwner(),available:available,groups:available.indexOf(g)>=0?[g]:available.slice(0,1)};
+  wksSessionTeamRender();
+};
+function wksSessionTeamRender(){
+  var pick=__sessionTeamPick,sheet=document.getElementById('sheet');if(!pick||!sheet)return;
+  sheet.innerHTML='<div class="wf-bar"><h3>'+wkbdEsc(pick.day.d)+'요일 · 세션 추가</h3><button type="button" class="wf-x" onclick="closeSheet()" aria-label="닫기">×</button></div>'+
+    '<div class="wf-sec"><div class="pksub sm">참여 팀</div><p>이 세션에 참여할 팀을 선택하세요. 여러 팀을 함께 선택할 수 있습니다.</p><div class="fmtpick">'+
+    pick.available.map(function(g,i){var on=pick.groups.indexOf(g)>=0;return '<button type="button" class="fp'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="wksSessionTeamToggle('+i+')">'+wkbdEsc(g)+'</button>';}).join('')+
+    '<button type="button" class="fp" onclick="wksSessionTeamToggle(-1)">전체 선택</button></div></div>'+
+    '<div class="wf-sec"><button type="button" class="btn" onclick="wksConfirmSession()"'+(pick.groups.length?'':' disabled')+'>세션 만들기</button></div>';
+  document.getElementById('scrim').classList.add('show');
+}
+window.wksSessionTeamToggle=function(i){
+  var p=__sessionTeamPick;if(!p)return;
+  if(i===-1)p.groups=p.available.slice();
+  else {var g=p.available[i];if(!g)return;var at=p.groups.indexOf(g);if(at<0)p.groups.push(g);else p.groups.splice(at,1);}
+  wksSessionTeamRender();
+};
+window.wksConfirmSession=function(){
+  var p=__sessionTeamPick;if(!p||!p.groups.length)return;
+  if(schedEditBlocked()){schedBlockNotice();return;}
+  if(p.owner===null||p.owner!==sessionTeamOwner()||week[p.di]!==p.day){__sessionTeamPick=null;closeSheet();toast('일정이 바뀌었습니다. 세션 추가를 다시 열어 주세요.');return;}
+  __sessionTeamPick=null;
+  /* 선택한 팀의 휴식만 훈련으로 바꾼다. 다른 팀과 기존 세션은 그대로 둔다. */
+  var d=p.day;
+  p.groups.forEach(function(g){if(wksGroupKind(d,g)==='OFF'||d.off||(d.board&&d.board.sched==='OFF')){
+    d.groupKinds=d.groupKinds||{};Object.defineProperty(d.groupKinds,g,{value:'훈련',enumerable:true,writable:true,configurable:true});
+  }});
+  wksAddSession(p.di,p.groups);
 };
 /* 2.310 — 훈련 추가 하나. 세션마다 고유 키를 주고, 시각은 팀이 자주 쓰는 것으로 시작한다.
    같은 날에 그 시각이 이미 있으면 두 시간 뒤로 밀어 **겹치지 않게** 한다. */
@@ -4246,7 +4276,7 @@ function wksFillRender(keep,focus){
     var L=[]; try{ L=schedGrpList(tr,di); }catch(_){}
     var own=[]; try{ own=Array.isArray(tr&&tr.grp)?tr.grp:((tr&&tr.grp)?[tr.grp]:[]); }catch(_){}
     var lbl=L.length?L.join(' · '):'팀 공통';
-    h+='<div class="wf-sec" id="wfSec-grp"><div class="pksub sm">조 <span class="cnt">'+wkbdEsc(lbl)+'</span></div><div class="fmtpick">'
+    h+='<div class="wf-sec" id="wfSec-grp"><div class="pksub sm">참여 팀 <span class="cnt">'+wkbdEsc(lbl)+'</span></div><div class="fmtpick">'
       + (function(){ try{ return schedGroups().map(function(g){
             return '<button class="fp'+(own.indexOf(g)>=0?' on':'')+'" onclick="wksFillGrp(\''+_fillEsc(g)+'\')">'+wkbdEsc(g)+'</button>'; }).join(''); }catch(_){ return ''; } })()
       /* 2.385 — 팀 공통을 **마지막**에(사용자). 조를 고르는 게 보통이고 팀 공통은 그 예외라 뒤가 맞다 */
@@ -4852,7 +4882,7 @@ function renderWeekSessions(el){
     /* ══ 2.878 · 조를 고르면 **그 조의 경기만**(인수인계 «B팀 필터에 A팀 경기가 보임») ═══════════
        경기마다 조 꼬리표가 있다(2.436·2.449). 꼬리표 없는 경기는 팀 공통이라 언제나 보인다.
        ⚠ 다른 조 경기만 있는 날을 «일정 ＋» 로 그리면 안 된다 — 거기서 종류를 바꾸면 **다른 조의 경기가 지워진다**.
-          그래서 편집 문 없이 «다른 조 경기» 한 줄만 두고, 이 조의 일정은 아래 «조별 훈련 / OFF» 로 정하게 한다.
+          그래서 편집 문 없이 «다른 조 경기» 한 줄만 두고, 이 조의 세션은 세션 추가에서 참여 팀을 선택해 정한다.
        ⚠ 숨기기만 한다 — xi(경기 순번)는 원본 그대로라 조 칩·×·상대팀 입력이 같은 경기를 가리킨다. */
     var mxFirstVis=true, mxAnyVis=true, mxOtherNames='';
     if(__schedGrp&&b.sched==='경기'&&!groupDayKind){
@@ -4868,7 +4898,7 @@ function renderWeekSessions(el){
         +'<span>'+(dt.getMonth()+1)+'/'+dt.getDate()+'</span>'+md+'</div>';
     /* 일정 한 줄 — 하루의 성격. 편집 경로는 옛 보드와 같다(wkbdPick 의 sched) */
     if(b.sched==='경기'&&!mxAnyVis){
-      h+='<div class="wks-kind"><span class="wks-othermatch">'+wkbdEsc(mxOtherNames||'다른 조')+' 경기 — '+wkbdEsc(__schedGrp)+' 일정은 아래 «조별 훈련 / OFF» 에서</span></div>';
+      h+='<div class="wks-kind"><span class="wks-othermatch">'+wkbdEsc(mxOtherNames||'다른 조')+' 경기 — '+wkbdEsc(__schedGrp)+' 일정은 일정 메뉴에서</span></div>';
     }else if(b.sched==='경기'){
       var opp=(day.match&&day.match.opp)||b.opp||'';
       var _mTime=(day.match&&day.match.time)||'';
@@ -4945,7 +4975,7 @@ function renderWeekSessions(el){
        경기 날은 **경기가 그 날의 일**이다 — 훈련을 담을 문이 있으면 그 문이 담아도 된다고 말한다.
        ⚠ 경기 전 몸풀기는 '경기 준비' 안에서 다룬다(경기 카드의 '경기 준비 →'). 여기에 또 두지 않는다. */
     if((b.sched!=='OFF'&&b.sched!=='경기')||(!__schedGrp&&Object.keys(day.groupKinds||{}).some(function(g){return day.groupKinds[g]==='훈련';})))
-      h+='<div class="wks-add one"><button type="button" onclick="wksAddSession('+di+')" title="이 날에 세션을 하나 더 — 세션 안에 훈련을 넣는 건 위 «훈련 ＋»">＋ 세션 추가</button></div>';   /* 2.775 — «＋ 훈련 추가» 가 세션을 하나 더 만드는데 세션 안 «훈련 ＋» 와 같은 말이었다(코치 첫 주 3번) */
+      h+='<div class="wks-add one"><button type="button" onclick="wksChooseSession('+di+')" title="참여 팀을 선택하고 세션 추가">＋ 세션 추가</button></div>';   /* 2.775 — «＋ 훈련 추가» 가 세션을 하나 더 만드는데 세션 안 «훈련 ＋» 와 같은 말이었다(코치 첫 주 3번) */
     /* 2.135 — 하루 단위 보관함 줄은 뻐다. 세션마다 들어갔으니 같은 것이 두 번 있을 이유가 없다 */
     h+='</div>';
   }
@@ -5755,12 +5785,12 @@ function renderDay(){
   if(day.off||bd.sched==='OFF'){
     /* 조별 OFF 는 공통 OFF 가 아니다 — 탭이 공통 OFF 해제(clearOff)로 가면 안 된다. 조별 설정 시트를 연다. */
     wrap.innerHTML=(grpKind==='OFF'
-      ?`<div class="restoff" onclick="wksGroupDays(${dayIdx})">${wkbdEsc(__schedGrp)} OFF · 조별 설정 · 탭하면 바꾸기</div>`
+      ?`<div class="restoff" onclick="wksChooseSession(${dayIdx})">${wkbdEsc(__schedGrp)} OFF · 세션 추가</div>`
       :`<div class="restoff" onclick="clearOff(${dayIdx})">OFF · 휴식일 · 탭하면 해제</div>`)+(window.PSReviewSchedule?PSReviewSchedule.dayHTML(rawDay,dayIdx):'');
     return;
   }
   const mkTx=(lab,f,val,ti)=>{ const tid=(ti==null?'':` data-ti="${ti}"`); return `<div class="dayrow"><div class="drlab">${lab}</div><div class="wkbd-tx drtx" contenteditable="true" data-di="${dayIdx}" data-f="${f}"${tid} data-ph="${BOARD_PH[f]||''}" onblur="wkbdSave(this)">${wkbdEsc(val||'')}</div></div>`; };
-  const mkPick=(lab,f,val)=>{ const c=bColor(f,val); const action=f==='sched'&&__schedGrp?`wksGroupDays(${dayIdx})`:`wkbdPick(${dayIdx},'${f}')`; const cell=val?`<button class="drpick" style="border-color:${c};color:${c}" onclick="${action}"><span class="cdot" style="background:${c}"></span>${val}</button>`:`<button class="drpick empty" onclick="${action}">＋</button>`; return `<div class="dayrow"><div class="drlab">${lab}</div><div class="drval">${cell}</div></div>`; };
+  const mkPick=(lab,f,val)=>{ const c=bColor(f,val); const action=f==='sched'&&__schedGrp?`wksChooseSession(${dayIdx})`:`wkbdPick(${dayIdx},'${f}')`; const cell=val?`<button class="drpick" style="border-color:${c};color:${c}" onclick="${action}"><span class="cdot" style="background:${c}"></span>${val}</button>`:`<button class="drpick empty" onclick="${action}">＋</button>`; return `<div class="dayrow"><div class="drlab">${lab}</div><div class="drval">${cell}</div></div>`; };
   const mkPickTrain=(lab,val,ti)=>{ const c=bColor('train',val); const cell=val?`<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdPick(${dayIdx},'train',${ti})"><b>${val}</b></button>`:`<button class="drpick empty" onclick="wkbdPick(${dayIdx},'train',${ti})">＋</button>`; return `<div class="dayrow"><div class="drlab">${lab}</div><div class="drval">${cell}</div></div>`; };
   if(window.PSReviewSchedule)html+=PSReviewSchedule.dayHTML(day,dayIdx);
   html+=mkPick('일정','sched',bd.sched);
@@ -8217,7 +8247,7 @@ function applyTemplate(mode){
   closeSheet(); syncViews();
 }
 
-function closeSheet(){if(document.getElementById('sheet').dataset.reviewTraining==='1'&&window.PSReviewSchedule){PSReviewSchedule.close();return;}const sc=document.getElementById('scrim'),sheet=document.getElementById('sheet');var yq=(typeof __yearQuick!=='undefined')?__yearQuick:null;sc.classList.remove('show');if(sheet){delete sheet.dataset.psLibraryFlow;sheet.removeAttribute('role');sheet.removeAttribute('aria-modal');sheet.removeAttribute('aria-labelledby');}try{__themePanel=null;}catch(_){}sc.classList.remove('qpmode');if(typeof __qp!=='undefined')__qp=null;if(typeof __hub!=='undefined')__hub=null;if(typeof __yearQuick!=='undefined')__yearQuick=null;if(yq&&yq.trigger)setTimeout(function(){try{yq.trigger.focus();}catch(_){}},0);}
+function closeSheet(){__sessionTeamPick=null;if(document.getElementById('sheet').dataset.reviewTraining==='1'&&window.PSReviewSchedule){PSReviewSchedule.close();return;}const sc=document.getElementById('scrim'),sheet=document.getElementById('sheet');var yq=(typeof __yearQuick!=='undefined')?__yearQuick:null;sc.classList.remove('show');if(sheet){delete sheet.dataset.psLibraryFlow;sheet.removeAttribute('role');sheet.removeAttribute('aria-modal');sheet.removeAttribute('aria-labelledby');}try{__themePanel=null;}catch(_){}sc.classList.remove('qpmode');if(typeof __qp!=='undefined')__qp=null;if(typeof __hub!=='undefined')__hub=null;if(typeof __yearQuick!=='undefined')__yearQuick=null;if(yq&&yq.trigger)setTimeout(function(){try{yq.trigger.focus();}catch(_){}},0);}
 document.getElementById('scrim').onclick=(e)=>{ if(e.target.id!=='scrim') return; if(curSession){ cancelSession(); } else { closeSheet(); } };
 document.addEventListener('keydown',(e)=>{ if(e.key!=='Escape') return; try{ if(curSession){cancelSession();} else {closeSheet();} window.__importDraft=null; }catch(_){} });
 
@@ -9702,7 +9732,7 @@ html body #psPhBar.rv .vw:not(#_){margin-left:auto}
 </script>
 
 <style id="ps-2595-empty">/* 2.595 — 디자인 5단계 · 빈 상태는 문 하나(일정 주간): 세션이 없는 날은 «일정 ＋» 한 문만(종류 고르개 — 리그·컵·친선·훈련·OFF 가 그 안에 있다). 점선 «＋ 훈련 추가» 는 세션이 있는 날에만. 경기·OFF 날은 원래 모양. :has() 로 마크업·렌더는 손대지 않는다. */
-.wks-day:not(.is-match):not(.is-off):not(:has(.wks-ses))>.wks-add{display:none!important}
+/* 빈 날짜에도 세션 추가에서 참여 팀을 고를 수 있다. */
 .wks-day:not(.is-match):not(.is-off):not(:has(.wks-ses))>.wks-kind{border-bottom:0;padding:8px;flex:1 1 auto;align-items:flex-start}
 html body .wks-day:not(.is-match):not(.is-off):not(:has(.wks-ses))>.wks-kind .wks-kbtn:not(#_):not(#__){flex:1 1 auto;width:100%;height:32px!important;min-height:32px!important;padding:0 8px!important;display:inline-flex;align-items:center;justify-content:center;border:1px dashed var(--line);border-radius:6px;background:var(--panel2,#F4F5F7);color:var(--text-2,#646A73);font-size:12px;font-weight:600;box-sizing:border-box!important}
 html body .wks-day:not(.is-match):not(.is-off):not(:has(.wks-ses))>.wks-kind .wks-kbtn:not(#_):not(#__):hover{border-style:solid;border-color:var(--c-act,#3A6DF0);color:var(--c-act,#3A6DF0);background:var(--surface,#fff)}
