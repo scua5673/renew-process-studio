@@ -1562,7 +1562,7 @@ const CORE = [
   '/studio/idp-recovery.js', '/studio/idp-recovery.css',
   '/studio/idp-evidence.js', '/studio/idp-evidence.css', '/studio/idp-start.css', '/studio/idp-daily.css',
   '/studio/storage.js', '/studio/team-library.js', '/studio/profile-sheet.js',
-  '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/participation.js', '/studio/sync-observability.js', '/studio/sync.js',
+  '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/participation.js', '/studio/match-board-tools.js', '/studio/sync-observability.js', '/studio/sync.js',
   '/studio/autosave-status.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
   '/studio/shared-view-observation.js',
   '/studio/team-files.js',
