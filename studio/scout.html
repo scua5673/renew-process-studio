@@ -15598,7 +15598,7 @@ function mb2Dedupe(){
       return !!((m.squadIds&&m.squadIds.length)||(m.startingIds&&m.startingIds.length)||(m.fifaPlans&&m.fifaPlans.length)
         ||(m.boardLinks&&m.boardLinks.length)||m.attack||m.defense||m.attackTransition||m.defenseTransition||m.setPlay
         ||m.briefing||m.reviewGood||m.reviewImprove||m.trainingAction||m.resultSummary||m.scoreUs!==""||m.scoreThem!==""||matchPhaseReviewHas(m)
-        ||(m.phaseBoards&&Object.keys(m.phaseBoards.boards||{}).some(function(k){var b=m.phaseBoards.boards[k];return (b.us&&b.us.length)||(b.opp&&b.opp.length);})));
+        ||(m.phaseBoards&&Object.keys(m.phaseBoards.boards||{}).some(function(k){var b=m.phaseBoards.boards[k];return (b.us&&b.us.length)||(b.opp&&b.opp.length)||(b.drawings&&b.drawings.length);})));
     }
     list.forEach(function(m){
       var k=(m.date||"")+"|"+String(m.opponent||"").trim();
