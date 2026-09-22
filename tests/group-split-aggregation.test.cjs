@@ -116,7 +116,7 @@ test('month, year, day and print views all read the day through the single view 
 });
 test('a group OFF day never offers the common OFF release in the day view',()=>{
   const a=P.indexOf('function renderDay('),b=P.indexOf('\nfunction ',a+10),src=P.slice(a,b);
-  assert.match(src,/grpKind==='OFF'\s*\?`<div class="restoff" onclick="wksGroupDays\(/);
+  assert.match(src,/grpKind==='OFF'\s*\?`<div class="restoff" onclick="wksChooseSession\(/);
 });
 
 test('daily group controls preserve hidden matches and use the original extra-match index',()=>{
@@ -124,5 +124,5 @@ test('daily group controls preserve hidden matches and use the original extra-ma
  const c=page({document:{getElementById:id=>nodes[id]},week:[day],dayIdx:0,wk:0,dateOf:()=>new Date(2026,8,21),dayBoard:d=>d.board||{},bColor:()=>'',mxExtraHtml:()=>'',BOARD_PH:{}});c.__schedGrp='B팀';
  vm.runInContext(part(P,'function renderDay(){','/* ---------- 세션 주제'),c);c.renderDay();
  const html=nodes.dayView.innerHTML;assert.match(html,/B상대/);assert.doesNotMatch(html,/openMatch\(0\)/);assert.match(html,/wkbdGoMatchX\('2026-09-21',0,1\)/);
- assert.match(html,/onclick="wksGroupDays\(0\)"/);assert.doesNotMatch(html,/wkbdPick\(0,'sched'\)/);assert.equal(day.match.opp,'A상대');assert.equal(day.matchAdd.length,2);
+ assert.match(html,/onclick="wksChooseSession\(0\)"/);assert.doesNotMatch(html,/wkbdPick\(0,'sched'\)/);assert.equal(day.match.opp,'A상대');assert.equal(day.matchAdd.length,2);
 });
