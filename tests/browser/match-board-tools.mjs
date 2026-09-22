@@ -39,21 +39,18 @@ try{
    await f.evaluate(async()=>{
     await PSStorage.sharedReady();
     const roster={attrs:[],positions:[{id:'gk',name:'GK',targets:{}},{id:'cm',name:'CM',targets:{}}],players:[{id:'qa-p1',name:'가상 선수 1',num:'1',type:'ours',manual:true,grp:'A팀',posId:'gk',status:'ok'},{id:'qa-p2',name:'가상 선수 2',num:'8',type:'ours',manual:true,grp:'A팀',posId:'cm',status:'ok'}],meta:{evalMode:'fifa'}};
-    const m=matchBlank();m.id='qa-match';m.opponent='가상 상대';m.date='2026-09-16';m.sourceId='sched:qa-schedule';m.phaseBoards={list:[['atk','공격']],cur:'atk',boards:{atk:{us:[{pid:"qa-p1",num:"1",name:"가상 선수 1",x:20,y:50}],opp:[{num:"9",x:80,y:50}]}}};
+    const m=matchBlank();m.id='qa-match';m.opponent='가상 상대';m.date='2026-09-16';m.sourceId='sched:qa-schedule';m.phaseBoards={list:[['atk','공격']],cur:'atk',boards:{atk:{us:[{pid:"qa-p1",num:"1",name:"가상 선수 1",x:20,y:50}],opp:[{num:"9",x:80,y:50}],drawings:[{type:"ball",x:50,y:50},{type:"arrow",x:35,y:45,x2:65,y2:60,color:"#ffffff"}]}}};
     data=roster;store.set('scout_tool_v1',roster);store.set('process_coach_v1',{version:1,anchorMonday:'2026-09-14',weeks:{'0':[{}, {},{mid:'qa-schedule',match:{opp:'가상 상대'},board:{sched:'경기'}},{},{},{},{}]}});store.set('cs_team_matches_v1',{version:1,matches:[m]});await store.ready();
     await scPrepare();load();data=roster;matchState=null;matchLoad();setView('match');matchOpen('qa-match');matchTab='prep';matchStage='prep';renderMatch();
    });
    await f.locator('#mb2Pitch').waitFor({state:'visible'});await page.waitForTimeout(400);
    const drawings=()=>f.evaluate(()=>JSON.parse(JSON.stringify(mb2Cur(matchGet()).drawings||[])));
-   async function pitchPoint(x,y){await f.locator('#mb2Pitch').scrollIntoViewIfNeeded();const r=await f.locator('#mb2Pitch').boundingBox();return {x:r.x+r.width*x,y:r.y+r.height*y};}
-   await f.getByLabel('공',{exact:true}).click();let p=await pitchPoint(.5,.5);await page.mouse.click(p.x,p.y);assert.equal((await drawings()).length,1);
-   await f.getByLabel('이동 화살표',{exact:true}).click();p=await pitchPoint(.35,.45);await page.mouse.move(p.x,p.y);await page.mouse.down();let q=await pitchPoint(.65,.6);await page.mouse.move(q.x,q.y,{steps:8});await page.mouse.up();assert.equal((await drawings()).length,2);result.cases.push('ball-and-arrow');
-   await f.getByLabel('실행 취소',{exact:true}).click();assert.equal((await drawings()).length,1);await f.getByLabel('다시 실행',{exact:true}).click();assert.equal((await drawings()).length,2);
-   const source=await drawings();await f.getByLabel('페이지 복제',{exact:true}).click();assert.deepEqual(await drawings(),source);
-   await f.getByLabel('콘',{exact:true}).click();p=await pitchPoint(.25,.6);await page.mouse.click(p.x,p.y);assert.equal((await drawings()).length,3);
-   await f.locator('[data-ph="atk"]').click();assert.deepEqual(await drawings(),source);result.cases.push('independent-page-copy');
+   assert.equal(await f.locator('#mb2Dock').isVisible(),false);result.cases.push('drawing-toolbar-hidden');
+   const source=await drawings();assert.equal(source.length,2);
+   await f.getByLabel('페이지 복제',{exact:true}).click();assert.deepEqual(await drawings(),source);
+   await f.locator('[data-ph="atk"]').click();assert.deepEqual(await drawings(),source);result.cases.push('existing-drawings-preserved-on-copy');
    assert.equal(await f.getByRole('button',{name:'이름 변경',exact:true}).count(),0);await f.getByLabel('페이지 이름 수정',{exact:true}).click();await f.getByRole('textbox',{name:/페이지 이름/}).fill('빌드업');await f.getByRole('button',{name:'저장',exact:true}).last().click();assert.equal(await f.locator('[data-ph="atk"]').innerText(),'빌드업');
-   await f.locator('[data-orientation="portrait"]').click();await f.getByLabel('공',{exact:true}).click();p=await pitchPoint(.3,.4);await page.mouse.click(p.x,p.y);let last=(await drawings()).at(-1);assert.ok(Math.abs(last.x-60)<1&&Math.abs(last.y-30)<1);result.cases.push('portrait-coordinates');
+   await f.locator('[data-orientation="portrait"]').click();assert.deepEqual(await drawings(),source);result.cases.push('existing-drawings-preserved-on-rotation');
    for(const orientation of ['landscape','portrait']){await f.locator('#mb2Export summary').click();const pending=page.waitForEvent('download');await f.locator('[data-pdf="'+orientation+'"]').click();const download=await pending;const dest=path.join(out,width+'-'+orientation+'.pdf');await download.saveAs(dest);const bytes=fs.readFileSync(dest);assert.equal(bytes.subarray(0,8).toString(),'%PDF-1.4');assert.ok(bytes.length>20000);assert.ok(bytes.includes(Buffer.from(orientation==='portrait'?'/MediaBox [0 0 595.28 841.89]':'/MediaBox [0 0 841.89 595.28]')));}
    result.cases.push('actual-pdf-downloads');
    await page.waitForTimeout(800);const saved=await drawings();const disk=await f.evaluate(async()=>{await store.ready();const record=await storage.get('cs_team_matches_v1');return JSON.parse(record.value).matches.find(m=>m.id==='qa-match').phaseBoards.boards.atk.drawings;});assert.deepEqual(disk,saved);result.cases.push('durable-idb');
