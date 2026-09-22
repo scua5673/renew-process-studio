@@ -11,7 +11,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="scouting-store.js"></script>
 <script src="roster-recovery.js"></script>
 <script src="roster-outbox.js?v=2.826"></script>
-<script src="participation.js?v=2.823"></script>
+<script src="participation.js?v=2.884"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
 <script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 -->
@@ -14625,7 +14625,7 @@ function avCellSignature(doc,pid,day){
   var p=(doc.players||[]).find(function(x){return x.id===pid&&!isTargetPl(x);});
   if(!p)throw new Error("현재 명단에 없는 선수입니다.");
   var kind=avDayKind(new Date(day+"T00:00:00"),plGrpOf(p));
-  var resolved=PSParticipation.resolve(doc.meta||{},pid,day,kind,plStatusOf(p),stYmd());
+  var resolved=PSParticipation.resolve(doc.meta||{},pid,day,kind,plStatusOf(p),stYmd(),true);
   var rec=doc.meta&&doc.meta.participationDays&&doc.meta.participationDays[day]&&doc.meta.participationDays[day][pid];
   return JSON.stringify([rec||null,resolved,day===stYmd()?plStatusOf(p):null]);
 }
@@ -14691,7 +14691,7 @@ function avPosition(p){ var q=(data.positions||[]).find(function(x){return x.id=
 function avResolve(p,day){
   var model=window.PSParticipation;
   if(!model||typeof model.resolve!=="function")throw new Error("가용인원 기록 기능을 불러오지 못했습니다. 새로고침해 주세요.");
-  return model.resolve(data.meta||{},p.id,day,avDayKind(new Date(day+"T00:00:00"),plGrpOf(p)),plStatusOf(p),stYmd());
+  return model.resolve(data.meta||{},p.id,day,avDayKind(new Date(day+"T00:00:00"),plGrpOf(p)),plStatusOf(p),stYmd(),true);
 }
 function avScheduled(kind){ return kind==="train"||kind==="match"; }
 function avStateLabel(r){ return AV_ST_LB[r.s]||"미기록"; }
@@ -14714,7 +14714,7 @@ function avGroups(ours,day){
   })};});
 }
 function avEditButton(p,day,r){
-  var can=typeof avCanEdit==="function"&&avCanEdit();
+  var can=avRenderCache?avRenderCache.canEdit:typeof avCanEdit==="function"&&avCanEdit();
   return '<button type="button" class="av-chip '+esc(r.s||"")+'" data-av-st="'+esc(p.id)+'" data-av-edit-day="'+esc(day)+'" aria-label="'+esc((p.name||"선수")+' '+avDayLabel(day)+' '+avStateLabel(r)+(can?' 기록 수정':' 기록 조회'))+'"'+(can?'':' disabled')+'>'+esc(avStateLabel(r))+(can?' <span aria-hidden="true">⌄</span>':'')+'</button>';
 }
 function avPlayerLink(p){return '<button type="button" class="av-player-link" data-av-player-total="'+esc(p.id)+'">'+esc(p.name||"이름 없음")+'</button>';}
@@ -14739,7 +14739,7 @@ function renderAvailDaily(ours){
   if(typeof avCanEdit==='function'&&avCanEdit())h+='<button type="button" class="av-cta" data-av-new="'+esc(day)+'" data-av-roster="'+esc(JSON.stringify(rc))+'">＋ 훈련 세션 만들기</button>';
   return h+'</div></section>';
 }
-function avTotals(p,from,to){return window.PSParticipation.totals(data.meta||{},p.id,from,to,function(day){return avDayKind(new Date(day+'T00:00:00'),plGrpOf(p));},plStatusOf(p),stYmd());}
+function avTotals(p,from,to){return window.PSParticipation.totals(data.meta||{},p.id,from,to,function(day){return avDayKind(new Date(day+'T00:00:00'),plGrpOf(p));},plStatusOf(p),stYmd(),true);}
 function avStat(value,key){return '<span data-av-stat="'+key+'">'+(+value||0)+'</span>';}
 function renderAvailPlayers(ours,from,to){
   var h='<div class="av-player-toolbar"><span>선수 이름을 누르면 날짜별 기록이 열립니다.</span>'+avGrouping()+'</div><div class="av-table-wrap" tabindex="0" role="region" aria-label="선수별 누적 기록"><table class="av-total-table"><caption class="av-sr-only">'+esc(from+'부터 '+to+'까지 선수별 누적')+'</caption><thead><tr><th scope="col">선수</th><th scope="col">가용<small>일정일</small></th><th scope="col">쉼<small>일정일</small></th><th scope="col">부상<small>달력일</small></th><th scope="col">재활<small>달력일</small></th><th scope="col">미기록<small>일정일</small></th></tr></thead><tbody>';
@@ -14748,7 +14748,7 @@ function renderAvailPlayers(ours,from,to){
     group.players.forEach(function(p){var t=avTotals(p,from,to);h+='<tr'+(String(p.id)===String(availPlayer)?' class="is-selected"':'')+'><th scope="row"><div class="av-player-summary">'+avPlayerLink(p)+'<small class="av-player-meta">'+esc([p.num?'#'+p.num:'',avPosition(p)].filter(Boolean).join(' · '))+'</small></div></th><td data-label="가용 · 일정일">'+avStat(t.exercise,'exercise')+'<small class="av-exercise-detail">훈련 '+avStat(t.training,'training')+' · 경기 '+avStat(t.match,'match')+'</small></td><td data-label="쉼 · 일정일">'+avStat(t.rest,'rest')+'</td><td data-label="부상 · 달력일">'+avStat(t.injury,'injury')+'</td><td data-label="재활 · 달력일">'+avStat(t.rehab,'rehab')+'</td><td data-label="미기록 · 일정일">'+avStat(t.unknown,'unknown')+'</td></tr>';});
   });
   if(!ours.length)h+='<tr><td colspan="6" class="av-empty">등록된 선수가 없습니다.</td></tr>';
-  h+='</tbody></table></div><p class="av-note">가용일은 훈련·경기 일정에서 상태가 가능인 날, 쉼은 휴식·부상·재활·불참인 날입니다. 오늘은 현재 가용 상태를 반영하고 과거는 저장된 기록을 사용합니다. 부상·재활은 주말과 OFF를 포함해 복귀 전까지 센 달력일입니다. 같은 날이 쉼과 부상·재활에 함께 포함될 수 있습니다.</p>';
+  h+='</tbody></table></div><p class="av-note">가용일은 훈련·경기 일정에서 상태가 가능인 날, 쉼은 휴식·부상·재활·불참인 날입니다. 체크하지 않은 날은 기본 참여로 계산합니다. 오늘 수정한 상태는 다시 수정할 때까지 유지됩니다. 부상·재활은 주말과 OFF를 포함해 복귀 전까지 센 달력일입니다. 같은 날이 쉼과 부상·재활에 함께 포함될 수 있습니다.</p>';
   var p=ours.find(function(x){return String(x.id)===String(availPlayer);});
   if(p){
     var selectedTotals=avTotals(p,from,to);
@@ -14769,7 +14769,7 @@ function avOpenPicker(button){
   var current=avResolve(p,day),selected=current.s||'ok',isToday=day===stYmd(),returning=isToday&&(plStatusOf(p)==='injury'||plStatusOf(p)==='rehab');
   avClosePicker();
   var pk=document.createElement('dialog');pk.className='av-pick';pk.setAttribute('aria-labelledby','avPickerTitle');
-  pk.innerHTML='<div class="av-pick-title"><b id="avPickerTitle">'+esc(p.name||'선수')+' · '+esc(avDayLabel(day))+'</b><button type="button" data-av-cancel aria-label="닫기">×</button></div><p class="av-pick-help">'+(isToday?'오늘 기록과 현재 선수 상태에 반영됩니다. 부상은 복귀 전까지 이어집니다.':'선택한 날짜만 수정합니다.')+'</p><div class="av-pick-states" role="group" aria-label="가용 상태">'+AV_ST_ORDER.map(function(k){return '<button type="button" data-k="'+k+'" aria-pressed="'+(k===selected)+'"'+(k===selected?' class="on"':'')+'>'+(k==='ok'&&returning?'복귀 · 가능':AV_ST_LB[k])+'</button>';}).join('')+'</div><label class="av-pick-note">사유·메모<textarea data-av-note maxlength="2000" rows="3" placeholder="예: 오른쪽 발목 부상"></textarea></label><p class="av-pick-feedback" data-av-save-error role="status" aria-live="polite"></p><div class="av-pick-actions"><button type="button" data-av-cancel>닫기</button><button type="button" data-av-save>기록하기</button></div>';
+  pk.innerHTML='<div class="av-pick-title"><b id="avPickerTitle">'+esc(p.name||'선수')+' · '+esc(avDayLabel(day))+'</b><button type="button" data-av-cancel aria-label="닫기">×</button></div><p class="av-pick-help">'+(isToday?'오늘부터 다시 수정할 때까지 이 상태가 유지됩니다.':'선택한 날짜만 수정합니다.')+'</p><div class="av-pick-states" role="group" aria-label="가용 상태">'+AV_ST_ORDER.map(function(k){return '<button type="button" data-k="'+k+'" aria-pressed="'+(k===selected)+'"'+(k===selected?' class="on"':'')+'>'+(k==='ok'&&returning?'복귀 · 가능':AV_ST_LB[k])+'</button>';}).join('')+'</div><label class="av-pick-note">사유·메모<textarea data-av-note maxlength="2000" rows="3" placeholder="예: 오른쪽 발목 부상"></textarea></label><p class="av-pick-feedback" data-av-save-error role="status" aria-live="polite"></p><div class="av-pick-actions"><button type="button" data-av-cancel>닫기</button><button type="button" data-av-save>기록하기</button></div>';
   document.body.appendChild(pk);var note=pk.querySelector('[data-av-note]');note.value=current.note||'';
   var closed=false,busy=false,timer=null;
   var state={ctx:ctx,close:function(){if(closed)return;closed=true;clearInterval(timer);window.removeEventListener('storage',check);window.removeEventListener('focus',check);pk.removeEventListener('cancel',cancel);pk.removeEventListener('close',closeEvent);note.value='';pk.textContent='';try{pk.close();}catch(_){}pk.remove();if(avPickerState===state)avPickerState=null;if(button.isConnected&&avEditCurrent(ctx))try{button.focus();}catch(_){}}};
@@ -14803,9 +14803,14 @@ function avOpenPicker(button){
 function schedGrpCur(){ try{ return localStorage.getItem("ps_sched_grp")||""; }catch(_){ return ""; } }
 function schedReadCur(){ var PS=window.PSSchedule; return (PS&&PS.readFor)?(PS.readFor(schedGrpCur())||{}):((PS&&PS.read&&PS.read())||{}); }
 function plGrpOf(p){ return String((p&&p.grp)||"").trim(); }
+var avRenderCache=null;
 function avDayKind(date,grp){
   var PS=window.PSSchedule; if(!PS||!PS.read)return "none";
-  var data2=(PS.readFor?PS.readFor(grp||""):PS.read())||{}, weeks=data2.weeks||{}; var c=PS.cellOf(date)||{wk:0,di:0}; var day=(weeks[c.wk]||[])[c.di]||{}, b=day.board||{};
+  var key=String(grp||""),cache=avRenderCache;
+  var data2=cache&&cache.schedules.has(key)?cache.schedules.get(key):(PS.readFor?PS.readFor(key):PS.read())||{};
+  if(cache)cache.schedules.set(key,data2);
+  if(cache&&!Object.prototype.hasOwnProperty.call(cache,'anchor'))cache.anchor=PS.anchor?PS.anchor():undefined;
+  var weeks=data2.weeks||{}; var c=PS.cellOf(date,cache&&cache.anchor)||{wk:0,di:0}; var day=(weeks[c.wk]||[])[c.di]||{}, b=day.board||{};
   if(PS.hasMatch(day))return "match";
   if(day.off||b.sched==="OFF")return "off";
   var tr=(day.trainings&&day.trainings[0])||null, txt=b.theme||(tr&&(tr.aims||tr.title))||((b.trains&&b.trains[0])||"")||(b.sched==="훈련"?"훈련":"");
@@ -14908,6 +14913,7 @@ function renderAvail(){
   if(avUiNotice)h+='<p class="av-feedback" role="status">'+esc(avUiNotice.text)+'</p>';
   if(typeof avCanEdit==='function'&&!avCanEdit())h+='<p class="av-note av-readonly">조회만 가능한 상태입니다. 가용인원 기록은 수정할 수 없습니다.</p>';
   try{
+    avRenderCache={schedules:new Map(),canEdit:typeof avCanEdit==='function'&&avCanEdit()};
     if(!window.PSParticipation)throw new Error('model unavailable');
     if(availMode==='players')h+=renderAvailPlayers(ours,from,today);
     else{
@@ -14924,9 +14930,9 @@ function renderAvail(){
       days.forEach(function(x){var c=x.c,rest=c.rest+c.rehab+c.injury+c.out,scheduled=avScheduled(x.kind),selected=x.ymd===(availDay||today),label=avDayLabel(x.ymd)+' 명단 보기';
         h+='<button type="button" class="av-row'+(selected?' is-selected':'')+'" data-av-date="'+x.ymd+'" aria-label="'+esc(label)+'" aria-pressed="'+selected+'"><span class="d">'+(x.d.getMonth()+1)+'/'+x.d.getDate()+'<small>'+['일','월','화','수','목','금','토'][x.d.getDay()]+'</small></span><span class="k '+x.kind+'">'+(x.kind==='match'?'경기':x.kind==='train'?'훈련':x.kind==='off'?'OFF':'일정 없음')+'</span><span class="av-bar" aria-hidden="true">'+(c.rec?'<i class="ok" style="width:'+pct(c.ok,c.rec)+'%"></i><i class="re" style="width:'+pct(c.rehab+c.rest,c.rec)+'%"></i><i class="inj" style="width:'+pct(c.injury,c.rec)+'%"></i><i class="out" style="width:'+pct(c.out,c.rec)+'%"></i>':'')+'</span><span class="v">'+('<b>'+c.ok+'</b> 가능<small>쉼 '+rest+'</small><small>미기록 '+(c.scheduled-c.rec)+'</small>')+'</span></button>';
       });
-      h+='<div class="av-lg"><span><i style="background:#1f8a4c"></i>가능</span><span><i style="background:#c77d00"></i>재활·휴식</span><span><i style="background:#d4403a"></i>부상</span><span><i style="background:#8A9099"></i>불참</span></div></div><p class="av-note">날짜별 인원은 전체 선수 상태를 기준으로 표시합니다. 평균·비율은 선수의 훈련·경기 일정일만 집계합니다. 부상·재활의 주말을 포함한 누적 일수는 선수별 누적에서 확인하세요. 과거 날짜를 수정하면 그날만, 오늘을 수정하면 선수단·오늘 화면에도 함께 반영됩니다.</p>';
+      h+='<div class="av-lg"><span><i style="background:#1f8a4c"></i>가능</span><span><i style="background:#c77d00"></i>재활·휴식</span><span><i style="background:#d4403a"></i>부상</span><span><i style="background:#8A9099"></i>불참</span></div></div><p class="av-note">날짜별 인원은 전체 선수 상태를 기준으로 표시합니다. 평균·비율은 선수의 훈련·경기 일정일만 집계합니다. 부상·재활의 주말을 포함한 누적 일수는 선수별 누적에서 확인하세요. 체크하지 않으면 기본 참여입니다. 오늘 수정한 상태는 다시 수정할 때까지 유지되며 선수단·오늘 화면에도 반영됩니다. 과거 날짜 정정은 그날만 바꿉니다.</p>';
     }
-  }catch(error){h+='<div class="av-empty" role="alert">가용인원 기록을 불러오지 못했습니다. 화면을 다시 열거나 새로고침해 주세요.</div>';}
+  }catch(error){h+='<div class="av-empty" role="alert">가용인원 기록을 불러오지 못했습니다. 화면을 다시 열거나 새로고침해 주세요.</div>';}finally{avRenderCache=null;}
   root.innerHTML=h;
   root.querySelectorAll('[data-av-mode]').forEach(function(b){b.onclick=function(){avClosePicker();availMode=b.dataset.avMode==='players'?'players':'days';renderAvail();};});
   root.querySelectorAll('[data-av-range]').forEach(function(b){b.onclick=function(){avClosePicker();availRange=+b.dataset.avRange||14;renderAvail();};});

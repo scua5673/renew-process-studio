@@ -45,7 +45,7 @@
     nextEntries[pid]=cell;nextDays[day]=nextEntries;nextMeta.participationDays=nextDays;
     return nextMeta;
   }
-  function model(meta,pid,currentStatus,today){
+  function model(meta,pid,currentStatus,today,assumeTraining){
     var runsRoot=has(meta,'statusRuns')?meta.statusRuns:null;
     var arr=has(runsRoot,pid)&&Array.isArray(runsRoot[pid])?runsRoot[pid]:[];
     function validRun(r){return object(r)&&state(r.s)&&dateNumber(r.from)!==null&&dateNumber(r.to)!==null&&r.from<=r.to;}
@@ -76,20 +76,21 @@
       var old=has(legacy,day)?legacy[day]:null;
       if(has(old,pid)&&state(old[pid]))return preferCurrent({s:old[pid],kind:kind(k)?k:'none',source:'status',note:''});
       // Today's availability is useful without creating a historical observation.
-      // Never use it to fill past gaps, future dates, or malformed direct records.
-      return current||none(k);
+      // Opt-in availability defaults fill unmarked past dates as participation,
+      // without writing observations or replacing invalid records/future dates.
+      return current||(assumeTraining===true&&state(currentStatus)&&dateNumber(today)!==null?{s:'ok',kind:kind(k)?k:'none',source:'default',note:''}:none(k));
     };
   }
-  function resolve(meta,pid,day,k,currentStatus,today){
+  function resolve(meta,pid,day,k,currentStatus,today,assumeTraining){
     if(!player(pid))return none(k);
-    return model(meta,pid,currentStatus,today)(day,k);
+    return model(meta,pid,currentStatus,today,assumeTraining)(day,k);
   }
-  function totals(meta,pid,from,to,kindOf,currentStatus,today){
+  function totals(meta,pid,from,to,kindOf,currentStatus,today,assumeTraining){
     var out={training:0,match:0,exercise:0,rest:0,injury:0,rehab:0,out:0,unknown:0,recorded:0,statusDays:0,currentDays:0,days:0,first:null,last:null};
     var start=dateNumber(from),end=dateNumber(to),limit=today===undefined?null:dateNumber(today);
     if(!player(pid)||start===null||end===null||(today!==undefined&&limit===null))return out;
     if(limit!==null)end=Math.min(end,limit);
-    var read=model(meta,pid,currentStatus,today);
+    var read=model(meta,pid,currentStatus,today,assumeTraining);
     for(var d=start;d<=end;d++){
       var day=dateString(d),k=typeof kindOf==='function'?kindOf(day,pid):kindOf,result=read(day,k);
       var scheduled=result.kind==='train'||result.kind==='match';out.days++;
