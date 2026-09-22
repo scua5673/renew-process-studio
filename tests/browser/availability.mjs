@@ -96,6 +96,11 @@ try{
       await scPrepare();load();await store.ready(true);availRange=14;availDay=null;setView('avail');
     },{fixture,schedule,UID,WID});
     await frame.locator('[data-av-date="2026-09-11"]').waitFor();assert.equal(await frame.locator('.av-stale').count(),0);
+    const perf=await frame.evaluate(()=>{
+      const api=PSSchedule,old=api.readFor;let reads=0;api.readFor=function(...args){reads++;return old.apply(this,args);};
+      try{availRange=90;const start=performance.now();renderAvail();return {reads,duration:performance.now()-start};}
+      finally{api.readFor=old;availRange=14;renderAvail();}
+    });assert.ok(perf.reads<=3,'a render reads common/A/B schedules at most once: '+JSON.stringify(perf));
     const initialRuns=await frame.evaluate(()=>JSON.stringify(data.meta.statusRuns.p2));
     await page.screenshot({path:path.join(out,width+'-days.png')});
     const dateButton=frame.locator('[data-av-date="2026-09-11"]');await dateButton.focus();await dateButton.press('Enter');await frame.locator('#avDailyCard').waitFor();
@@ -108,7 +113,7 @@ try{
     for(const day of ['2026-09-10','2026-09-12',TODAY])assert.equal((await resolved(frame,'p2',day)).s,'injury');
     assert.equal(await frame.evaluate(()=>data.players.find(p=>p.id==='p2').status),'injury');assert.equal(await frame.evaluate(()=>JSON.stringify(data.meta.statusRuns.p2)),initialRuns,'A past correction does not rewrite the current injury run');
     await frame.locator('[data-av-mode=players]').click();await frame.locator('[data-av-player-total=p1]').waitFor();
-    for(const [pid,name,expected] of [['p1','training',2],['p1','match',1],['p1','exercise',3],['p2','training',1],['p2','injury',13],['p3','rehab',14],['p4','training',2],['p4','match',0],['p5','unknown',1]])assert.equal(await metric(frame,pid,name),expected,pid+' '+name);
+    for(const [pid,name,expected] of [['p1','training',2],['p1','match',1],['p1','exercise',3],['p2','training',1],['p2','injury',13],['p3','rehab',14],['p4','training',2],['p4','match',0],['p5','unknown',0],['p5','training',2]])assert.equal(await metric(frame,pid,name),expected,pid+' '+name);
     assert.equal(await frame.locator('#availRoot img[onerror],#availRoot script').count(),0);assert.equal(await frame.evaluate(()=>fixtureXss),0);
     await page.screenshot({path:path.join(out,width+'-player-totals.png')});
     if(width<600){
