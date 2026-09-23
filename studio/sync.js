@@ -405,6 +405,19 @@ function setSess(s){ try{ if(s)localStorage.setItem(SKEY,JSON.stringify(s)); els
   if(s){ try{ localStorage.removeItem('ps_login_expired'); }catch(_){}}
   else {oauthCallbackSetIssue(null);setDataReady(false);}
   renderUI(); }
+function sessionProviderKey(p){p=String(p||'').toLowerCase();return p==='google'||p==='kakao'?p:'';}
+function sessionProviderLabel(p){p=sessionProviderKey(p);return p==='kakao'?'카카오':(p==='google'?'Google':'');}
+function sessionUserProviders(u,fallback){
+  var seen={},out=[];
+  function add(p){p=sessionProviderKey(p);if(p&&!seen[p]){seen[p]=1;out.push(p);}}
+  add(fallback);
+  try{add(u&&u.app_metadata&&u.app_metadata.provider);}catch(_){}
+  try{(u&&u.identities||[]).forEach(function(x){add(x&&x.provider);});}catch(_){}
+  return out;
+}
+function sessionPendingProvider(clear){
+  try{var p=sessionStorage.getItem('ps_oauth_provider')||'';if(clear)sessionStorage.removeItem('ps_oauth_provider');return sessionProviderKey(p);}catch(_){return '';}
+}
 function hj(at){ var h={'apikey':CFG.anonKey,'Content-Type':'application/json'}; if(at)h['Authorization']='Bearer '+at; return h; }
 /* 2.627 — 쓰기 요청에 앱 판을 실어 보낸다(Prefer 의 모르는 토큰은 PostgREST 가 무시한다 — 실계정 탭에서 GET 200 확인). 서버 ps_kv_build_guard 가
    ps_app_policy.min_build 보다 낮은 판의 ps_kv 쓰기를 거부할 수 있다(지금은 min_build 2.000 = 아무도 안 막음, 운영자가 올릴 때 켠다). */
@@ -704,7 +717,9 @@ function sessionIdentityCommit(snapshot,u,email){
   var latest=sessionIdentityCurrent(snapshot);
   if(!latest||!u||typeof u.id!=='string'||!u.id||
      (latest.uid&&String(latest.uid)!==u.id))throw dataLockError();
+  var providers=sessionUserProviders(u,latest.provider||sessionPendingProvider(true));
   var next=Object.assign({},latest,{uid:u.id,email:email||latest.email||''});
+  if(providers.length){next.provider=providers[0];next.providers=providers;}
   setSess(next);
   var saved=sessionIdentityCurrent(snapshot);
   if(!saved||String(saved.uid||'')!==u.id)throw dataLockError();
@@ -977,6 +992,7 @@ function signIn(provider){
      카카오로 가고 콜백 토큰이 iframe 주소로 떨어진다 — 같은 origin 이면 top 창으로 올려서 연다. */
   var w=window; try{ if(window.top&&window.top!==window&&window.top.location.origin===location.origin)w=window.top; }catch(_){}
   var back=w.location.origin+w.location.pathname;
+  try{ w.sessionStorage.setItem('ps_oauth_provider',provider); }catch(_){}
   /* Google 브라우저 세션이 남아 있어도 로그인할 계정을 직접 고를 수 있게 한다. */
   w.location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back)+(provider==='google'?'&prompt=select_account':'');
   return true;
@@ -1103,7 +1119,7 @@ function consumeHash(options){
     var exp=Date.now()+(( +p.expires_in||3600)*1000);
     signOutEpoch++; // 새 OAuth 세션은 이전 조회·갱신의 응답을 무효화한다.
     setDataReady(false);
-    setSess({at:p.access_token,rt:p.refresh_token,exp:exp,email:'',uid:''});
+    setSess({at:p.access_token,rt:p.refresh_token,exp:exp,email:'',uid:'',provider:sessionPendingProvider(false)});
     var request=sessionIdentitySnapshot(getSess());
     if(!request||request.at!==p.access_token||request.rt!==p.refresh_token)throw dataLockError();
     oauthCallbackSetIssue(null);
@@ -1185,7 +1201,11 @@ function ensureToken(){
         throw new Error('invalid refresh response');
       if(j.user&&j.user.id&&current.uid&&String(j.user.id)!==String(current.uid))throw new Error('refresh owner mismatch');
       var ns=Object.assign({},current,{at:j.access_token,rt:j.refresh_token,exp:Date.now()+((+j.expires_in||3600)*1000)});
-      if(j.user&&j.user.id){ ns.uid=j.user.id; ns.email=j.user.email||ns.email; }
+      if(j.user&&j.user.id){
+        ns.uid=j.user.id; ns.email=j.user.email||ns.email;
+        var providers=sessionUserProviders(j.user,ns.provider);
+        if(providers.length){ns.provider=providers[0];ns.providers=providers;}
+      }
       setSess(ns);
       var saved=getSess();
       if(request.epoch!==signOutEpoch||!saved||saved.at!==ns.at||saved.rt!==ns.rt||String(saved.uid||'')!==String(ns.uid||''))throw new Error('session storage unavailable');
@@ -9238,6 +9258,7 @@ function uiLeave(wa){
 }
 
 var _popOpen=false,_accountLogoutHint=false;
+var _providerRefreshKey='';
 function openAccountLogout(){
   if(externalSwitchFrozen||!document.getElementById('psAcctWrap'))return false;
   _accountLogoutHint=true;_popOpen=true;renderUI();return true;
@@ -9260,6 +9281,19 @@ function renderUI(){
     var wrap=document.getElementById('psAcctWrap'); if(!wrap) return;
     wrap.style.display='';
     var s=getSess();
+    if(s&&s.uid&&!s.provider&&!Array.isArray(s.providers)&&_providerRefreshKey!==String(s.uid||'')+':'+String(s.at||'')){
+      _providerRefreshKey=String(s.uid||'')+':'+String(s.at||'');
+      setTimeout(function(){
+        var cur=getSess(),key=String(cur&&cur.uid||'')+':'+String(cur&&cur.at||'');
+        if(!cur||key!==_providerRefreshKey||cur.provider||Array.isArray(cur.providers))return;
+        fetch(BASE+'/auth/v1/user',{headers:hj(cur.at)}).then(function(r){return r.ok?r.json():null;}).then(function(u){
+          var live=getSess(),providers=sessionUserProviders(u,'');
+          if(!live||String(live.uid||'')!==String(cur.uid||'')||live.at!==cur.at||!providers.length)return;
+          live=Object.assign({},live,{provider:providers[0],providers:providers});
+          setSess(live);
+        }).catch(function(e){syncDiagnostic('session-provider-lookup',e);});
+      },0);
+    }
     wrap.innerHTML='';
     /* 버튼 */
     var btn=document.createElement('button'); btn.type='button'; btn.className='acct-btn'+(s?' in':'');
@@ -9343,11 +9377,26 @@ function renderUI(){
       nameBtn.textContent=dn?('표시 이름: '+dn+' (변경)'):'표시 이름 설정'; nameBtn.onclick=function(e){e.stopPropagation();closePop();uiSetName();}; pop.appendChild(nameBtn);
       /* 2.256 — 로그인 방법 연결: 어느 쪽으로 로그인해도 이 계정으로 들어오게 */
       (function(){ var cap=document.createElement('div'); cap.className='ap-hd'; cap.textContent='이 계정에 로그인 방법 추가'; pop.appendChild(cap);
-        var help=document.createElement('div');help.className='ap-st';help.textContent='추가한 로그인 방법으로 같은 팀과 자료를 이어서 사용합니다.';pop.appendChild(help);
+        var known={},providers=Array.isArray(s.providers)?s.providers.slice():(s.provider?[s.provider]:[]);
+        providers.forEach(function(p){p=sessionProviderKey(p);if(p)known[p]=1;});
+        var active=sessionProviderKey(s.provider)||sessionProviderKey(providers[0]);
+        if(active){
+          var cur=document.createElement('div');cur.className='ap-st';
+          cur.textContent=sessionProviderLabel(active)+' 로그인 계정 · '+(s.email||dn||'로그인됨');
+          pop.appendChild(cur);
+        }
+        var help=document.createElement('div');help.className='ap-st';help.textContent=active?'다른 로그인 방법을 더 연결하면 같은 팀과 자료를 이어서 사용합니다.':'추가한 로그인 방법으로 같은 팀과 자료를 이어서 사용합니다.';pop.appendChild(help);
         var mini=document.createElement('div'); mini.className='ap-mini';
         [['kakao','카카오 로그인 추가'],['google','Google 로그인 추가']].forEach(function(pv){
-          var b=document.createElement('button'); b.type='button'; b.className='ap-b'+(pv[0]==='kakao'?' kakao':''); b.textContent=pv[1];
-          b.onclick=function(e){ e.stopPropagation(); closePop(); linkIdentity(pv[0]); }; mini.appendChild(b); });
+          var b=document.createElement('button'); b.type='button'; b.className='ap-b'+(pv[0]==='kakao'?' kakao':'');
+          if(known[pv[0]]){
+            b.textContent=sessionProviderLabel(pv[0])+' 로그인 연결됨';
+            b.disabled=true;
+          }else{
+            b.textContent=pv[1];
+            b.onclick=function(e){ e.stopPropagation(); closePop(); linkIdentity(pv[0]); };
+          }
+          mini.appendChild(b); });
         pop.appendChild(mini); })();
       div(pop);
       /* 워크스페이스 목록 */
