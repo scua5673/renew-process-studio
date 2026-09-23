@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const admin=fs.readFileSync(path.join(__dirname,'../admin.html'),'utf8'),sync=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 function section(s,a,b){const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return s.slice(i,j);}
 const logoutCode=section(admin,'function signOut(){','function consumeHash(){');
-const menuCode=section(sync,'var _popOpen=false','/* ── 부팅 ── */');
+const menuCode=[section(sync,'function sessionProviderKey(','function hj('),section(sync,'var _popOpen=false','/* ── 부팅 ── */')].join('\n');
 const session={uid:'synthetic-A',at:'synthetic-at',rt:'synthetic-rt',email:'synthetic@example.invalid',exp:Date.now()+3600000};
 function adminHarness(opener=null){
  const raw=JSON.stringify(session),local=new Map([['ps_sync_session',raw],['cs_notes_v1','synthetic unacknowledged draft']]);

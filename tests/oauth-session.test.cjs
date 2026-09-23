@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 function section(a,b){const i=source.indexOf(a),j=source.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return source.slice(i,j);}
-const code=[section('function dataLockError()','function sensitiveLocalKey('),section('function signIn(','/* 2.256'),section('function linkIdentity(','function signOut('),
+const code=[section('var oauthCallbackIssue=null;','var syncErr=false;'),section('function sessionProviderKey(','function hj('),section('function dataLockError()','function sensitiveLocalKey('),section('function signIn(','/* 2.256'),section('function linkIdentity(','function signOut('),
  section('function consumeHash(','/* ── 동기화 ── */')].join('\n');
 const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222222222';
 const copy=x=>x==null?x:JSON.parse(JSON.stringify(x));
@@ -13,7 +13,7 @@ const userA={id:A,email:'synthetic-a@example.invalid',user_metadata:{provider:'g
 const userB={id:B,email:'synthetic-b@example.invalid',user_metadata:{provider:'kakao'}};
 const response=(body,status=200)=>({ok:status>=200&&status<300,status,json:async()=>copy(body),text:async()=>JSON.stringify(body)});
 function harness(initial=session(),options={}){
- let current=copy(initial);const writes=[],requests=[],hooks={},diagnostics=[],statuses=[],historyCalls=[],local=new Map(),timers=new Map();let timerId=0;
+ let current=copy(initial);const writes=[],requests=[],hooks={},diagnostics=[],statuses=[],historyCalls=[],local=new Map(),sessionStore=new Map(),timers=new Map();let timerId=0;
  const location={origin:'https://synthetic.invalid',pathname:'/studio/app.html',search:'?fixture=oauth',hash:'',href:'https://synthetic.invalid/studio/app.html'};
  const win={location};win.top=win;
  if(options.iframe){location.pathname='/studio/scout.html';location.href='https://synthetic.invalid/studio/scout.html';win.top={location:{origin:location.origin,pathname:'/studio/app.html',href:'https://synthetic.invalid/studio/app.html'}};}
@@ -21,6 +21,7 @@ function harness(initial=session(),options={}){
   window:win,location,history:{replaceState(...args){historyCalls.push(args);location.hash='';}},
   BASE:'https://synthetic-auth.invalid',getSess:()=>copy(current),setSess(s){current=copy(s);writes.push(copy(s));},hj:at=>({Authorization:at?'Bearer '+at:'',apikey:'synthetic-public-key'}),
   localStorage:{getItem:k=>local.get(k)||null,setItem:(k,v)=>local.set(k,String(v)),removeItem:k=>local.delete(k)},
+  sessionStorage:{getItem:k=>sessionStore.get(k)||null,setItem:(k,v)=>sessionStore.set(k,String(v)),removeItem:k=>sessionStore.delete(k)},
   fetch(url,opts){requests.push({url,opts});if(url.includes('/auth/v1/user/identities/authorize?'))return hooks.link?hooks.link(url,opts):Promise.resolve(response({url:'https://synthetic-provider.invalid/authorize'}));if(url.includes('/auth/v1/user'))return hooks.user?hooks.user(url,opts):Promise.resolve(response(userA));if(url.includes('/token?'))return hooks.refresh?hooks.refresh(url,opts):Promise.resolve(response({access_token:'synthetic-access-fresh',refresh_token:'synthetic-refresh-fresh',expires_in:3600}));throw Error('Unexpected network route');},
   signOutEpoch:0,refreshPromise:null,refreshOwner:null,refreshRetryTimer:null,refreshRetryDelay:15000,syncErr:false,
   setTimeout(fn,ms){const id=++timerId;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),navigator:{onLine:true},
