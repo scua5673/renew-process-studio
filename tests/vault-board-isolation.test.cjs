@@ -11,6 +11,10 @@ const wrapperSource=part('  var _osetView=setView;','  // 신규 드릴에 현�
 const copy=o=>o==null?o:JSON.parse(JSON.stringify(o));
 function snap(x){return {players:x==null?[]:[{id:1,x,y:50}],equipment:[],drawings:[],ball:null,pitchN:1,orientation:'h'};}
 function item(x){return{type:'board',libId:'synthetic-'+x,name:'합성 작전판',snap:snap(x),frames:[{snap:snap(x)},{snap:snap(x+1)}],pages:[{snap:snap(x),name:'첫 페이지'},{snap:snap(x+10),name:'둘째 페이지'}]};}
+function pageAnimItem(x){return{type:'board',libId:'synthetic-page-anim-'+x,name:'페이지별 애니메이션',snap:snap(x),frames:[{snap:snap(x+900)},{snap:snap(x+901)}],pages:[
+  {snap:snap(x),name:'첫 페이지',anim:{frames:[{snap:snap(x+1)},{snap:snap(x+2)}],active:1,hold:.6,title:'첫 페이지 장면',titleColor:'#111111'}},
+  {snap:snap(x+10),name:'둘째 페이지',anim:{frames:[{snap:snap(x+11)},{snap:snap(x+12)}],active:1,hold:.6,title:'둘째 페이지 장면',titleColor:'#222222'}}
+]};}
 function harness({empty=false,view='board',withPages=true}={}){
  const timers=[],nodes={},events=[],writes=[],ls=new Map([['ps_cache_owner_v1','synthetic-owner-seal']]);let uid='synthetic-user-a',wid='synthetic-workspace-a';
  function node(){return{style:{},classList:{set:new Set(),contains(x){return this.set.has(x);},add(x){this.set.add(x);},remove(x){this.set.delete(x);},toggle(x,on){if(on===undefined)on=!this.set.has(x);if(on)this.set.add(x);else this.set.delete(x);return on;}}};}
@@ -35,6 +39,8 @@ function harness({empty=false,view='board',withPages=true}={}){
  if(c.pages)c.pages[c.idx].anim=c.__animGet();
  c.__animReset=()=>{c.anim.frames=[];c.animActive=-1;c.anim.title='';c.animHold=.6;c.animLoop=false;nodes.animBar.classList.remove('on');};
  c.__animLoad=fr=>{c.anim.frames=copy(fr);c.animActive=0;c.state=copy(fr[0].snap);nodes.animBar.classList.add('on');};
+ c.__animRestore=(fr,active)=>{c.anim.frames=copy(fr);c.animActive=Math.max(0,Math.min(+active||0,c.anim.frames.length-1));};
+ c.loadIdx=i=>{c.loadSnap(c.pages[i].snap||{});const a=c.pages[i].anim;if(a&&Array.isArray(a.frames)&&a.frames.length>1)c.__animRestore(a.frames,a.active);else c.__animReset();};
  c.__vaultAutoSaveCancel=()=>events.push('cancel-vault-save');c.__vaultAutoSaveFlush=()=>events.push('flush-vault-save');
  vm.runInContext(contextSource+pagesSource+openSource+closeSource+defaultSource,c);
  const before=()=>({snap:copy(c.state),anim:copy(c.__animGet()),loop:c.animLoop,pages:copy(c.pages),idx:c.idx,undo:copy(c.undoStack),redo:copy(c.redoStack)});
@@ -51,6 +57,14 @@ test('opening another library item retains the first live context and rejects pr
  const h=harness(),before=h.before();h.c.openItem(item(80),true);const old=h.timers.slice();h.c.openItem(item(200),true);
  for(const t of old)t.fn();assert.equal(h.c.state.players[0].x,200);assert.equal(h.c.pages[0].snap.players[0].x,200);assert.equal(h.c.__vaultHydrating,true);
  h.c.boardShowDefault();assert.deepEqual(h.before(),before);
+});
+test('opening a saved multi-page board restores the active page animation instead of the last global frames',()=>{
+ const h=harness();h.c.openItem(pageAnimItem(80),true);
+ assert.deepEqual(h.c.anim.frames.map(f=>f.snap.players[0].x),[81,82]);
+ assert.equal(h.c.animActive,1);
+ assert.equal(h.c.pages[0].anim.frames[1].snap.players[0].x,82);
+ assert.equal(h.c.pages[1].anim.frames[1].snap.players[0].x,92);
+ h.run(60);assert.equal(h.c.state.players[0].x,82);
 });
 test('all delayed board and page restoration callbacks are inert after close',()=>{
  const h=harness(),before=h.before();h.c.openItem(item(80),true);h.c.doViewClose();for(const t of h.timers)t.fn();assert.deepEqual(h.before(),before);assert.equal(h.c._inVault,false);

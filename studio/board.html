@@ -14265,8 +14265,12 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           var _u=_sn;
           try{ if(anim&&anim.frames&&anim.frames.length>1&&animActive>=0&&anim.frames[animActive]&&anim.frames[animActive].snap)_u=anim.frames[animActive].snap; }catch(_){}
           if(_u&&((_u.players&&_u.players.length)||(_u.equipment&&_u.equipment.length)||(_u.drawings&&_u.drawings.length))){ loadSnap(_u); renderTokens(); renderDrawings(); updateDelUI(); } }catch(_e){} }; setTimeout(_reapply,60); setTimeout(_reapply,260); })(JSON.parse(JSON.stringify(d.snap||{})));
-      try{ if(d.frames&&d.frames.length>1&&window.__animLoad)window.__animLoad(d.frames); }catch(_){}   /* 빈 상태 저장 전에 즉시 복원 */
-      try{ if(window.__psPages){ window.__psPages.restore(d.pages); setTimeout(function(){if(!stillOpen())return;try{window.__psPages.restore(d.pages);}catch(_){}},120); } }catch(_){}   /* 저장된 멀티 페이지 복원(페이지0은 위 loadSnap로 이미 표시) */
+      try{ if(window.__psPages&&Array.isArray(d.pages)&&d.pages.length>1){
+        window.__psPages.restore(d.pages,true,0);
+        setTimeout(function(){if(!stillOpen())return;try{window.__psPages.restore(d.pages,true,0);}catch(_){}},120);
+      }else if(d.frames&&d.frames.length>1&&window.__animLoad){
+        window.__animLoad(d.frames);
+      } }catch(_){}   /* 멀티 페이지는 각 페이지의 anim 을 우선 복원. 예전 단일 페이지 저장본만 전역 frames 를 쓴다. */
     }catch(_){try{loadSnap(d.snap||{});setView(ty==="setpiece"?"board":ty);}catch(e){}}
     setTimeout(function(){if(stillOpen())window.__vaultHydrating=false;},420);
     try{parent.postMessage({source:'board',type:'vaultViewTab'},'*');}catch(_){}   // 보관함 탭 유지한 채 캔버스에 표시(작전판 탭·작업 화면은 보존)
