@@ -5840,7 +5840,8 @@ function renderRoster(){
       numIn.oninput=()=>{pl.num=numIn.value.replace(/[^0-9]/g,"").slice(0,3);numIn.value=pl.num;renderTokens();};
       row.append(dot,numIn);}
     const name=document.createElement("input");name.className="rs-name";name.placeholder="이름";name.value=pl.name||"";
-    name.oninput=()=>{pl.name=name.value;};name.onblur=()=>{pl.name=name.value.trim();try{syncNameToScenes(pl);}catch(_){}try{renderTokens();}catch(_){}};name.addEventListener("keydown",e=>{if(e.key==="Enter")name.blur();});
+    let nameComposing=false;
+    name.oninput=()=>{pl.name=name.value;};name.onblur=()=>{nameComposing=false;pl.name=name.value.trim();try{syncNameToScenes(pl);}catch(_){}try{renderTokens();}catch(_){}};name.addEventListener("compositionstart",()=>{nameComposing=true;});name.addEventListener("compositionend",()=>{nameComposing=false;pl.name=name.value;});name.addEventListener("keydown",e=>{if(e.key==="Enter"){if(nameComposing||e.isComposing||e.keyCode===229)return;e.preventDefault();name.blur();}});
     row.append(name);panel.appendChild(row);});}
 function toggleRoster(){rosterOpen=!rosterOpen;const st=document.getElementById("boardStage");if(st)st.classList.toggle("roster-open",rosterOpen);if(rosterOpen)renderRoster();}
 

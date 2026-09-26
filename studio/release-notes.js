@@ -8,6 +8,9 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-26-v2-889-board-roster-ime',date:'2026-09-26',title:'v2.889 · 작전판 명단 이름 입력의 한글 Enter를 바로잡았습니다',
+    changes:['작전판 명단에서 선수 이름을 한글로 입력한 뒤 Enter를 눌러도 마지막 글자가 한 번 더 붙지 않게 했습니다.','한글 조합 중 Enter는 입력기 확정으로 두고, 조합이 끝난 뒤 일반 Enter만 입력 완료로 처리합니다.']
+  },{
     id:'2026-09-23-v2-888-account-provider',date:'2026-09-23',title:'v2.888 · 계정 창에서 현재 로그인 방법을 보여줍니다',
     changes:['Google이나 카카오로 이미 로그인한 계정은 계정 창에서 같은 로그인 방법을 추가 버튼 대신 연결된 계정으로 표시합니다.','다른 로그인 방법을 추가로 연결할 때만 로그인 추가 버튼을 남깁니다.']
   },{
