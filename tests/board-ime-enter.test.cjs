@@ -31,3 +31,31 @@ test('name edit applies complete Hangul to each selected player and scenes',()=>
  const h=setup('nameInput',[{id:'a',name:'a'},{id:'b',name:'b'}]);h.fire('compositionstart');h.input.value='이슬기';h.fire('input');h.fire('compositionend');h.fire('keydown',{key:'Enter'});
  assert.deepEqual(h.players.map(p=>p.name),['이슬기','이슬기']);assert.equal(h.counts.sync,2);
 });
+function rosterSetup(){
+ const start=source.indexOf('const TEAMHEX='),end=source.indexOf('function toggleRoster()',start);
+ assert.ok(start>=0&&end>start);
+ const handlers=new WeakMap(),counts={blur:0,paint:0,sync:0};
+ function node(tag='div'){
+  const n={tag,children:[],style:{},className:'',textContent:'',value:'',placeholder:'',maxLength:0,inputMode:'',
+   append(...xs){xs.forEach(x=>this.children.push(x));},appendChild(x){this.children.push(x);return x;},
+   addEventListener(k,fn){const h=handlers.get(this)||{};h[k]=fn;handlers.set(this,h);},
+   blur(){counts.blur++;fire(this,'blur');}};
+  return n;
+ }
+ const panel=node('div'),players=[{id:'a',team:'yellow',name:'원래',num:'7'}];
+ const context={document:{getElementById:id=>id==='rosterPanel'?panel:null,createElement:node},state:{players,teamColors:{}},autoTxt:()=>"#111",syncNameToScenes(){counts.sync++;},renderTokens(){counts.paint++;}};
+ vm.runInNewContext(source.slice(start,end),context);
+ context.renderRoster();
+ const name=panel.children.find(x=>x.className==='rs-row').children.find(x=>x.className==='rs-name');
+ function fire(target,k,props={}){const e={prevented:false,preventDefault(){this.prevented=true;},...props};if(typeof target['on'+k]==='function')target['on'+k](e);handlers.get(target)?.[k]?.(e);return e;}
+ return {name,players,counts,fire:(k,props)=>fire(name,k,props)};
+}
+for(const mode of ['composition-state','isComposing','keyCode229'])test('roster name leaves IME Enter to browser: '+mode,()=>{
+ const h=rosterSetup();h.name.value='이슬기';if(mode==='composition-state')h.fire('compositionstart');h.fire('input');
+ const e=h.fire('keydown',{key:'Enter',...(mode==='isComposing'?{isComposing:true}:mode==='keyCode229'?{keyCode:229}:{})});
+ assert.equal(e.prevented,false);assert.equal(h.counts.blur,0);assert.equal(h.players[0].name,'이슬기');
+});
+test('roster name ordinary Enter finalizes once after Hangul composition',()=>{
+ const h=rosterSetup();h.fire('compositionstart');h.name.value='황진성';h.fire('input');h.fire('keydown',{key:'Enter',isComposing:true});h.fire('compositionend');
+ assert.equal(h.counts.blur,0);const e=h.fire('keydown',{key:'Enter'});assert.equal(e.prevented,true);assert.equal(h.counts.blur,1);assert.equal(h.players[0].name,'황진성');assert.equal(h.counts.paint,1);
+});
