@@ -27,9 +27,28 @@
     if(/^data:image\/svg\+xml(?:;charset=(?:utf-8|us-ascii))?(?:;base64)?,/i.test(value))return value;
     return /^data:image\/(?:png|jpeg|jpg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(value)?value:'';
   }
+  /* 애니메이션 재생(읽기 전용): 작전판 playAnim 의 리듬 — 장면 유지 후 다음 장면으로 가감속 이동.
+     관리자 미리보기 그림(snapPreview)은 선수·공만 그리므로 곡선·강조·그리기 선은 보이지 않는다. */
+  var HOLD_MS=600;
+  function frameGroupKey(p){return String(p&&p.id||'').replace(/\[\d+\]$/,'');}
+  function framesOf(pages,index){
+    var p=pages[index];if(!p||!p.meta||p.meta.kind!=='frame')return null;var g=frameGroupKey(p);
+    var out=pages.filter(function(x){return x&&x.meta&&x.meta.kind==='frame'&&frameGroupKey(x)===g&&x.snap&&typeof x.snap==='object';});
+    return out.length>=2?out:null;
+  }
+  function ease(u){return u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;}
+  function num(v){v=+v;return isFinite(v)?v:0;}
+  function lerpSnap(a,b,u){
+    var bp=Array.isArray(b.players)?b.players:[],by={};
+    bp.forEach(function(q,i){by[q&&q.id!=null?'id:'+q.id:'i:'+i]=q;});
+    var players=(Array.isArray(a.players)?a.players:[]).map(function(p,i){var q=by[p&&p.id!=null?'id:'+p.id:'i:'+i];
+      if(!p||!q)return p;return Object.assign({},p,{x:num(p.x)+(num(q.x)-num(p.x))*u,y:num(p.y)+(num(q.y)-num(p.y))*u});});
+    var ball=a.ball&&b.ball?{x:num(a.ball.x)+(num(b.ball.x)-num(a.ball.x))*u,y:num(a.ball.y)+(num(b.ball.y)-num(a.ball.y))*u}:(u<1?a.ball:b.ball);
+    return Object.assign({},a,{players:players,ball:ball});
+  }
   function create(o){
     var w=o.window||window,d=w.document,host=o.host,controls=o.controls||{},model=o.model||w.PSAdminContentData;
-    var rows=[],list=[],source=null,selected='',detail=null,page=0,loading=false,error='',limit=40,focused=false,destroyed=false,ticket=0,ownerStamp='',active=true;
+    var play=null,rows=[],list=[],source=null,selected='',detail=null,page=0,loading=false,error='',limit=40,focused=false,destroyed=false,ticket=0,ownerStamp='',active=true;
     function context(){var c=o.context();return c&&c.ready?String(c.uid)+':'+String(c.epoch):'';}
     function valid(stamp,t){return !destroyed&&active&&!!stamp&&stamp===context()&&stamp===ownerStamp&&(t==null||t===ticket);}
     function guard(){var s=context();if(!s||s!==ownerStamp){ticket++;selected='';detail=null;rows=[];list=[];source=null;host.innerHTML='';ownerStamp=s;return false;}return !destroyed&&active;}
@@ -56,7 +75,29 @@
     }
     function button(action,text,disabled,extra){return '<button type="button" data-ac-action="'+action+'"'+(disabled?' disabled':'')+(extra||'')+'>'+text+'</button>';}
     function current(){return list.find(function(r){return key(r)===selected;});}
+    function stopPlay(){if(play){try{(w.cancelAnimationFrame||clearTimeout)(play.raf);}catch(_){}play=null;}}
+    function startPlay(){
+      var frames=detail&&framesOf(detail.pages,page),img=host.querySelector('.ac-figure img'),btn=host.querySelector('[data-ac-action="play"]');
+      if(!frames||!img||!o.snapPreview)return;
+      var raf=w.requestAnimationFrame?w.requestAnimationFrame.bind(w):function(f){return setTimeout(function(){f(Date.now());},40);};
+      var s=0,phase='hold',t0=null,last=0,me={raf:0};play=me;if(btn){btn.textContent='■ 정지';btn.setAttribute('aria-pressed','true');}
+      function draw(snap){var src=imageSource(o.snapPreview(snap));if(src)img.src=src;}
+      draw(frames[0].snap);
+      function step(now){
+        if(play!==me||!img.isConnected)return;if(t0===null)t0=now;
+        if(phase==='hold'){
+          if(now-t0>=HOLD_MS){if(s>=frames.length-1){play=null;render(true);return;}phase='move';t0=now;}
+        }else{
+          var dur=Math.max(.3,num(frames[s].meta&&frames[s].meta.duration)||1)*1000,u=Math.min(1,(now-t0)/dur);
+          if(now-last>=40||u>=1){last=now;try{draw(lerpSnap(frames[s].snap,frames[s+1].snap,ease(u)));}catch(_){}}
+          if(u>=1){s++;phase='hold';t0=now;}
+        }
+        me.raf=raf(step);
+      }
+      me.raf=raf(step);
+    }
     function render(keepScroll){
+      stopPlay();
       if(!valid(ownerStamp))return;
       var oldList=host.querySelector('.ac-list'),oldDetail=host.querySelector('.ac-detail'),ls=oldList?oldList.scrollTop:0,ds=keepScroll&&oldDetail?oldDetail.scrollTop:0;
       var idx=list.findIndex(function(r){return key(r)===selected;}),meta=current(),pages=detail?detail.pages:[],p=pages[page],ws=meta?o.workspace(meta.workspace_id)||{}:{},own=meta?o.owner(meta,ws):{};
@@ -77,6 +118,8 @@
           if(detail.summary.truncated)h+='<p class="ac-notice">페이지가 많아 앞부분만 표시했습니다.</p>';
           if(p){var src=imageSource(p.thumb);if(!src&&p.snap&&o.snapPreview){try{src=imageSource(o.snapPreview(p.snap));}catch(_){src='';}}
             h+='<article class="ac-page"><h3>'+esc(p.label||'페이지')+'</h3><div class="ac-visual">'+(src?'<figure class="ac-figure"><img src="'+esc(src)+'" alt="'+esc(p.label||'저장된 장면')+'" referrerpolicy="no-referrer"><figcaption hidden>저장된 그림을 표시하지 못했습니다.</figcaption></figure>':'<div class="ac-no-image">'+(p.snap?'이 페이지에는 배치 데이터가 있지만 표시할 수 있는 그림이 없습니다.':'이 페이지에는 저장된 그림이 없습니다.')+'</div>');
+            var frames=framesOf(pages,page);
+            if(frames&&o.snapPreview)h+='<div class="ac-play">'+button('play','▶ 애니메이션 재생 · '+frames.length+'장면',false,' aria-pressed="false"')+'<small>선수·공 움직임만 보여 줍니다(곡선·강조·그리기 선 제외)</small></div>';
             var desc=p.descriptionRows||[],m=p.meta||{},chips=[];if(m.minutes!=null&&m.minutes!=='')chips.push(m.minutes+'분');if(m.sets!=null&&m.sets!=='')chips.push(m.sets+'세트');if(m.rpe!=null&&m.rpe!=='')chips.push('RPE '+m.rpe);
             if(chips.length)h+='<div class="ac-load">'+esc(chips.join(' · '))+'</div>';
             h+='</div><div class="ac-description"><h3>설명·코칭·메모</h3>'+(desc.length?'<dl>'+desc.map(function(r){return '<div><dt>'+esc(r.label)+'</dt><dd>'+esc(r.value)+'</dd></div>';}).join('')+'</dl>':'<p class="ac-muted">저장된 설명이 없습니다.</p>')+'</div></article>';
@@ -104,7 +147,8 @@
     function click(e){
       if(!guard())return;var row=e.target.closest('[data-ac-index]');if(row&&host.contains(row)){var r=list[Number(row.dataset.acIndex)];if(r)select(key(r),true);return;}
       var b=e.target.closest('[data-ac-action]');if(!b||!host.contains(b)||b.disabled)return;var action=b.dataset.acAction,idx=list.findIndex(function(r){return key(r)===selected;}),meta=current();
-      if(action==='more'){limit+=40;render(true);}
+      if(action==='play'){if(play)render(true);else startPlay();}
+      else if(action==='more'){limit+=40;render(true);}
       else if(action==='previous'||action==='next'){var next=list[idx+(action==='next'?1:-1)];if(next)select(key(next),true);}
       else if(action==='retry'&&meta)select(selected,false);
       else if(action==='page-prev'||action==='page-next'){if(detail){page=Math.max(0,Math.min(detail.pages.length-1,page+(action==='page-next'?1:-1)));render(false);}}
@@ -116,8 +160,8 @@
     function change(e){if(e.target.id==='acPage'&&guard()&&detail){var n=Number(e.target.value);if(Number.isInteger(n)&&n>=0&&n<detail.pages.length){page=n;render(false);}}}
     host.addEventListener('click',click);host.addEventListener('change',change);
     return {update:update,open:function(wid,lid){return select(key({workspace_id:wid,lib_id:lid}),true);},
-      deactivate:function(){active=false;ticket++;selected='';detail=null;loading=false;error='';focused=false;host.innerHTML='';},
-      destroy:function(){destroyed=true;active=false;ticket++;rows=[];list=[];source=null;detail=null;host.removeEventListener('click',click);host.removeEventListener('change',change);host.innerHTML='';}};
+      deactivate:function(){stopPlay();active=false;ticket++;selected='';detail=null;loading=false;error='';focused=false;host.innerHTML='';},
+      destroy:function(){stopPlay();destroyed=true;active=false;ticket++;rows=[];list=[];source=null;detail=null;host.removeEventListener('click',click);host.removeEventListener('change',change);host.innerHTML='';}};
   }
-  return {create:create,filtered:filtered,joinOwners:joinOwners,key:key,authorKey:authorKey,imageSource:imageSource};
+  return {create:create,filtered:filtered,joinOwners:joinOwners,key:key,authorKey:authorKey,imageSource:imageSource,framesOf:framesOf,lerpSnap:lerpSnap};
 });

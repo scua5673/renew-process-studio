@@ -12,6 +12,11 @@
   var STORAGE_STAGES=('aux-migration aux-read-conflict idb-set migration stash-migration stash-migration-all stash-migration-conflict').split(' ');
   STORAGE_STAGES=STORAGE_STAGES.concat('schedule match roster library idp base outbox journal other'.split(' ').map(function(k){return 'idb-set-'+k;}));
   STAGES=STAGES.concat(['idp-base-history-recovered','idp-base-history-read']);
+  // 2.890 — fixed reasons only (no keys or content): why a frame save signal skipped the IDB mirror.
+  CODES=CODES.concat(('owner-read local-read external-switch-frozen locked-or-wiping tab-workspace-stale uid-changed workspace-changed generation-changed owner-generation-changed switch-seal-changed foreign-switch value-stale frame_pending').split(' '));
+  // Workspace-switch barrier: fixed shell frame ids and steps, never document names.
+  CODES=CODES.concat(('fBoard fProcess fGameModel fScout fTerms fIdp fNote fScouting fComm fAnalysis fPlaybook fLearning support shell mirror frames shared aux').split(' '));
+  STAGES=STAGES.concat(['workspace-switch-frames','workspace-switch-mirror','workspace-switch-shared','workspace-switch-aux','workspace-switch-timeout']);
   // Fixed request phases distinguish stale-write checks from failed reads without
   // retaining workspace IDs, document keys or any caller-supplied stage suffix.
   STAGES=STAGES.concat(('kv_meta kv_pull kv_push kv_push_verify kv_push_cas kv_push_cas_verify personal_meta personal_pull personal_push personal_push_verify personal_push_cas personal_push_cas_verify library_probe library_pull library_push library_insert library_body').split(' '));

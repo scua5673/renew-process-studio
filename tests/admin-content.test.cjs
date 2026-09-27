@@ -253,3 +253,30 @@ test('a malformed saved snapshot cannot hide its description or reject the compl
   assert.doesNotMatch(f.host.innerHTML,/콘텐츠를 불러오는 중|다시 불러오기/);
   f.controller.destroy();
 });
+
+test('animation frames are grouped for playback and interpolate players by id',()=>{
+  const snap=(x,bx)=>({players:[{id:'p1',x,y:100,team:'red'},{id:'p2',x:500,y:300,team:'blue'}],ball:{x:bx,y:100}});
+  const detail=model.model({name:'가상 전환',anim:{frames:[{snap:snap(100,100),dur:1},{snap:snap(300,300),dur:2},{snap:snap(500,500)}]}});
+  const idx=detail.pages.findIndex(p=>p.meta.kind==='frame');
+  assert.ok(idx>=0);
+  const frames=content.framesOf(detail.pages,idx);
+  assert.equal(frames.length,3);
+  assert.equal(frames[1].meta.duration,2,'per-scene move time is kept');
+  const mid=content.lerpSnap(frames[0].snap,frames[1].snap,.5);
+  assert.equal(mid.players[0].x,200);assert.equal(mid.players[1].x,500);assert.equal(mid.ball.x,200);
+  assert.equal(frames[0].snap.players[0].x,100,'interpolation does not mutate saved frames');
+  assert.equal(content.framesOf(model.model({name:'정지',thumb:svg}).pages,0),null,'a static page has no playback');
+});
+
+test('a frame page offers playback only when a scene renderer is available',async()=>{
+  const r=row(A,'anim','Anim');
+  const snap=x=>({players:[{id:'p1',x,y:100}],ball:{x,y:100}});
+  const item={name:'Anim',anim:{frames:[{snap:snap(100)},{snap:snap(300)}]}};
+  const withRenderer=setup([r],{rpc:()=>Promise.resolve({workspace_id:A,lib_id:'anim',item}),snapPreview:()=>svg});
+  await withRenderer.controller.open(A,'anim');await tick();
+  assert.match(withRenderer.host.innerHTML,/data-ac-action="play"/);
+  assert.match(withRenderer.host.innerHTML,/2장면/);
+  const without=setup([r],{rpc:()=>Promise.resolve({workspace_id:A,lib_id:'anim',item})});
+  await without.controller.open(A,'anim');await tick();
+  assert.doesNotMatch(without.host.innerHTML,/data-ac-action="play"/);
+});
