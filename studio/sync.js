@@ -7766,41 +7766,80 @@ function forceSyncPostSwitch(reason){
    일정 편집이 열려 있거나 shared write가 끝나지 않았다면 preswitch sync가
    `scheduleDeferred`로 정상 종료해도 저장 성공이 아니다. 스냅샷을 읽기 전과
    지우기 직전 두 번 확인해, 현재 팀 일정이 완전히 저장된 때만 전환한다. */
-function flushWorkspaceFrames(){
+function flushWorkspaceFrames(track){
+  function watch(id,p){
+    if(track){track.pending=track.pending||{};track.pending[id]=1;}
+    return Promise.resolve(p).then(function(v){if(track&&track.pending)delete track.pending[id];return v;},function(e){
+      if(track&&track.pending)delete track.pending[id];
+      if(!e||typeof e!=='object')e=new Error(String(e||'flush failed'));
+      try{if(!e.psFrame)e.psFrame=id;}catch(_){}
+      throw e;
+    });
+  }
+  function mirrorTail(){
+    if(track)track.step='mirror';
+    return watch('mirror',Promise.all([editMirrorCommit,editOutboxCommit]));
+  }
   if(typeof window.psFlushAllPendingReady==='function'){
-    return Promise.resolve(window.psFlushAllPendingReady()).then(function(){return sleep(0);}).then(function(){return Promise.all([editMirrorCommit,editOutboxCommit]);});
+    return Promise.resolve(window.psFlushAllPendingReady(track)).then(function(){return sleep(0);}).then(mirrorTail);
   }
   var jobs=[];
   try{
-    [].forEach.call(document.querySelectorAll('.frames iframe'),function(f){
+    [].forEach.call(document.querySelectorAll('.frames iframe'),function(f,n){
       var w=f.contentWindow;if(!w)return;
-      jobs.push(Promise.resolve().then(function(){
+      jobs.push(watch(f.id||('frame'+n),Promise.resolve().then(function(){
         if(typeof w.psFlushPendingReady==='function')return w.psFlushPendingReady();
         if(typeof w.psFlushPending==='function')w.psFlushPending();
         return w.PSStorage&&w.PSStorage.sharedReady?w.PSStorage.sharedReady():true;
       }).then(function(){
-        if(w.psHasPending&&w.psHasPending())throw new Error('프레임 지연 저장이 남아 있습니다');
+        if(w.psHasPending&&w.psHasPending()){var e=new Error('프레임 지연 저장이 남아 있습니다');e.psCode='frame_pending';throw e;}
         return true;
-      }));
+      })));
     });
   }catch(e){return Promise.reject(e);}
   /* localStorage storage 이벤트는 별도 task다. 한 차례 양보한 뒤 부모 미러 꼬리도
      기다려야 stash와 preswitch가 같은 최신 원문을 본다. */
-  return Promise.all(jobs).then(function(){return sleep(0);}).then(function(){return Promise.all([editMirrorCommit,editOutboxCommit]);});
+  return Promise.all(jobs).then(function(){return sleep(0);}).then(mirrorTail);
 }
+/* 2.890 — 전환 장벽 실패를 단계별로 남긴다(실제 제보: iPhone에서 «현재 일정 저장을 완료하지
+   못했습니다»만 보였고, 8초 초과는 흔적이 없었으며 실패도 어느 화면인지 버려졌다).
+   장벽 자체(무엇을 기다리고 언제 막는지)는 바꾸지 않는다. 결과에 step·frame(s)을 붙이고
+   진단 로그에 workspace-switch-<단계>로 남긴다. */
+var WS_BARRIER_MS=8000;
 function workspaceSwitchWriteBarrier(){
   if(scheduleHeld())return Promise.resolve({held:1});
-  var p=flushWorkspaceFrames().then(function(){
+  var track={step:'frames',pending:{}};
+  var p=flushWorkspaceFrames(track).then(function(){
+    track.step='shared';
     return (window.PSStorage&&PSStorage.sharedReady)?PSStorage.sharedReady():true;
-  });
-  return withTimeout(Promise.resolve(p).then(function(){
+  }).then(function(){
+    track.step='aux';
     return typeof syncBaseReady==='function'?syncBaseReady():Promise.resolve(true);
-  }).then(function(){return {ready:1};},function(e){
-    syncDiagnostic('workspace-switch-shared-ready',e);return {error:1};
-  }),8000).then(function(r){
+  });
+  return withTimeout(p.then(function(){return {ready:1};},function(e){
+    var step=track.step,frame=String((e&&e.psFrame)||''),name=String((e&&e.name)||'Error');
+    try{var d=new Error('switch barrier failed');d.name=name;d.psCode=frame||String((e&&(e.psCode||e.code))||name);syncDiagnostic('workspace-switch-'+step,d);}catch(_){}
+    return {error:1,step:step,frame:frame,errName:name};
+  }),WS_BARRIER_MS).then(function(r){
     if(scheduleHeld())return {held:1};
+    if(r&&r.__timeout){
+      var frames=Object.keys(track.pending||{});
+      try{var d=new Error('switch barrier timeout');d.psCode=frames[0]||track.step;syncDiagnostic('workspace-switch-timeout',d);}catch(_){}
+      return {__timeout:1,step:track.step,frames:frames};
+    }
     return r||{error:1};
   });
+}
+/* 장벽 결과 → 사용자 문장·기록 코드. 일정 편집(held)은 호출부가 따로 다룬다. */
+var WS_FRAME_LABEL={fScout:'선수단·경기',fProcess:'훈련 일정',fBoard:'작전판·보관함',fGameModel:'게임 모델',fTerms:'공용어',fIdp:'IDP',fNote:'개인 노트',fScouting:'스카우팅',fAnalysis:'팀·선수 등록',fPlaybook:'플레이북',fLearning:'학습',fComm:'커뮤니티',support:'오류 제보 작성'};
+function workspaceBarrierStop(gate){
+  var g=gate||{},frames=g.frame?[g.frame]:(g.frames||[]).filter(function(f){return f!=='shell'&&f!=='mirror';});
+  var labels=frames.map(function(f){return WS_FRAME_LABEL[f]||'';}).filter(Boolean);
+  var where=labels.length?labels.join('·')+' 화면의 ':'';
+  var tail=(g.step||'')+(frames.length?':'+frames.join(','):'');
+  if(g.__timeout)return {msg:'전환 취소 — '+where+'저장 확인이 '+(WS_BARRIER_MS/1000)+'초 안에 끝나지 않았어요. 자료는 그대로이니 잠시 뒤 다시 시도해 주세요',code:'barrier timeout '+tail};
+  if(labels.length)return {msg:'전환 취소 — '+where+'저장을 확인하지 못했어요. 그 화면을 열어 저장된 것을 확인한 뒤 다시 시도해 주세요',code:'barrier failed '+tail+' '+(g.errName||'')};
+  return {msg:'전환 취소 — 이 기기에 저장하는 것을 확인하지 못했어요. 앱을 새로고침한 뒤 다시 시도해 주세요',code:'barrier failed '+tail+' '+(g.errName||'')};
 }
 /* 지우기 전 현재 콘텐츠를 IDB에 백업(서버 저장 실패 대비 복구망).
    IDB에 사는 키까지 담아야 한다 — 안 그러면 보관함·선수단이 복구망에서 빠진다.
@@ -8086,7 +8125,7 @@ function switchWorkspaceCore(wid, skipSave){
   return workspaceSwitchWriteBarrier().then(function(gate){
     staleStop();
     if(!gate||gate.held)return stopPreswitch('전환 취소 — 일정 편집을 끝내고 저장 완료 후 다시 시도하세요','preswitch schedule held');
-    if(gate.__timeout||gate.error)return stopPreswitch('전환 취소 — 현재 일정 저장을 완료하지 못했습니다','preswitch shared write failed');
+    if(gate.__timeout||gate.error){var bs=workspaceBarrierStop(gate);return stopPreswitch(bs.msg,bs.code);}
     /* origin lock을 잡은 채 기존 소유자의 저장을 먼저 마친다. guard/nonce를
        먼저 바꾸면 정상 저장 큐까지 이전 세대 작업으로 취소된다. 이후 새로
        끼어드는 작업에는 예외 없이 새 소유자 검사를 적용한다. */
@@ -8227,7 +8266,7 @@ function switchWorkspaceCore(wid, skipSave){
       return workspaceSwitchWriteBarrier().then(function(gate2){
         staleStop();
         if(!gate2||gate2.held)return stopPreswitch('전환 취소 — 일정 편집을 끝내고 저장 완료 후 다시 시도하세요','preswitch schedule held');
-        if(gate2.__timeout||gate2.error)return stopPreswitch('전환 취소 — 현재 일정 저장을 완료하지 못했습니다','preswitch shared write failed');
+        if(gate2.__timeout||gate2.error){var bs2=workspaceBarrierStop(gate2);return stopPreswitch(bs2.msg,bs2.code);}
         return r;
       });
     });
