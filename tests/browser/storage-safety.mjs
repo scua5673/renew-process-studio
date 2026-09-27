@@ -31,7 +31,10 @@ let browser;
 const results = [];
 
 function fixture(kind) {
-  const anchor = new Date(); anchor.setHours(12, 0, 0, 0); anchor.setDate(anchor.getDate() - (anchor.getDay() + 6) % 7);
+  /* 브라우저 컨텍스트가 Asia/Seoul 이므로 이번 주 월요일도 서울 날짜로 만든다. 러너 시간대(CI=UTC)로
+     만들면 한국 월요일 0~9시에 한 주 전 월요일이 되어, 앱이 주를 옮기고 weeks[0] 이 비었다(2026-09-28 CI). */
+  const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const anchor = new Date(seoul.getFullYear(), seoul.getMonth(), seoul.getDate(), 12); anchor.setDate(anchor.getDate() - (anchor.getDay() + 6) % 7);
   const date = `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`;
   const session = { slot: 'S1', time: '16:00', blocks: [], load: { rpe: 6 } };
   if (kind === 'review') session.review = { said: '주변을 먼저 확인했다', key: '다음에는 첫 터치를 전진 방향으로' };
