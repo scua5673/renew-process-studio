@@ -17,6 +17,21 @@ try{
  await page.locator('.mpop').getByRole('button',{name:'오전',exact:true}).click();
  assert.deepEqual((await day()).slots,['오전@09:00','저녁@19:30'],'same slot is not created twice');
  assert.match(await page.locator('.mpop .mp-sum').textContent(),/훈련 2회/);
+ // 2.892 — 조 선택: 기본 A, B 를 고르면 같은 시간대라도 B 세션이 따로, 여러 조 동시, 전부 끄면 A 로 돌아간다
+ const grps=()=>page.evaluate(()=>(weeksMap[1][2].trainings||[]).map(t=>t.slot+':'+(t.grp||[]).join('+')));
+ assert.deepEqual(await grps(),['오전:A팀','저녁:A팀'],'without choosing, sessions go to group A');
+ const chip=g=>page.locator('.mpop .mp-grps button[data-grp="'+g+'"]');
+ assert.equal(await chip('A팀').getAttribute('aria-pressed'),'true','A is selected by default');
+ await chip('A팀').click();assert.equal(await chip('A팀').getAttribute('aria-pressed'),'true','clearing every group falls back to A');
+ await chip('B팀').click();await chip('A팀').click();
+ assert.equal(await page.locator('.mpop .mp-slots button[data-slot="오전"]').getAttribute('aria-pressed'),'false','B has no morning session yet');
+ await page.locator('.mpop').getByRole('button',{name:'오전',exact:true}).click();
+ assert.deepEqual(await grps(),['오전:A팀','오전:B팀','저녁:A팀'],'B morning is its own session');
+ assert.equal(await chip('B팀').getAttribute('aria-pressed'),'true','reopened popup keeps the chosen group');
+ await chip('A팀').click();await page.locator('.mpop').getByRole('button',{name:'새벽',exact:true}).click();
+ assert.ok((await grps()).includes('새벽:A팀+B팀'),'several groups share one session');
+ await page.evaluate(()=>{const d=weeksMap[1][2];d.trainings=d.trainings.filter(t=>t.slot==='오전'&&(t.grp||[]).join()==='A팀'||t.slot==='저녁');save();renderMonth();});
+ await page.keyboard.press('Escape');await page.locator(cellSel).click();await page.locator('.mpop').waitFor();
  // OFF 날에서 시간대를 누르면 OFF 가 풀리고 훈련이 된다
  await page.locator('.mpop').getByRole('button',{name:'OFF',exact:true}).click();assert.equal((await day()).off,true);
  await page.locator('.mpop').getByRole('button',{name:'오후',exact:true}).isVisible().then(v=>assert.equal(v,false,'OFF hides slots'));

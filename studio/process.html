@@ -880,6 +880,12 @@
   .mpop .mp-kind button.on[data-mk="friendly"]{border-color:var(--warm,#B5762B);background:var(--warm-soft,#FBF1E0);color:var(--warm,#B5762B)}
   body.fmdark .mpop .mp-kind button{background:#23272D!important;color:#F2F3F5!important}
   /* 2.890 — 월간에서 바로: 훈련 시간대·경기 상대 팀(사용자 제보 «스케줄») */
+  .mpop .mp-grps{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .mpop .mp-grps-l{font-size:var(--fs-sub);font-weight:var(--fw-head);color:var(--text-3);margin-right:2px}
+  .mpop .mp-grps button{min-width:44px;height:30px;padding:0 10px;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;font-size:var(--fs-sub);font-weight:var(--fw-head);color:var(--text-2);cursor:pointer;font-family:inherit}
+  .mpop .mp-grps button.on{border-color:var(--accent);background:var(--accent);color:#fff}
+  body.fmdark .mpop .mp-grps button{background:#23272D!important;color:#F2F3F5!important}
+  body.fmdark .mpop .mp-grps button.on{background:var(--accent)!important;color:#fff!important}
   .mpop .mp-slots{display:flex;gap:6px}
   .mpop .mp-slots button{flex:1;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 0;font-size:var(--fs-sub);font-weight:var(--fw-head);color:var(--text-2);cursor:pointer;font-family:inherit}
   .mpop .mp-slots button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
@@ -938,6 +944,7 @@
     .mpop .mp-seg{border-radius:12px}
     .mpop .mp-seg button{min-height:40px;font-size:var(--fs-body)}
     .mpop .mp-slots button{min-height:40px;font-size:var(--fs-body)}
+    .mpop .mp-grps button{height:36px;font-size:var(--fs-body)}
     .mpop .mp-opp{height:44px;font-size:var(--fs-input)}
     .mpop .metainput{min-height:48px;margin-bottom:0;font-size:var(--fs-input)}
     .mpop .mp-add,.mpop .mp-more{min-height:48px;font-size:var(--fs-title)}
@@ -6584,26 +6591,30 @@ function monthQuickAdd(r,col,kind,detail,matchKind){
    다만 «오전·오후·저녁 중 언제» 와 «누구와»는 밀도의 일부라 여기서 바로 적는다.
    ⚠ 주간의 ensureSlotSession 은 지금 보는 주(week[di])만 다룬다. 월간 칸은 다른 주일 수 있어
      같은 모양의 세션을 그 날짜(weeksMap[r][col])에 직접 만든다. 조 기본값도 그 날짜의 조를 읽는다. */
-function monthAddSlot(r,col,slot){
+function monthGrpKey(g){ return (Array.isArray(g)?g.slice():[]).map(String).sort().join('|'); }
+function monthAddSlot(r,col,slot,grps){
   if(schedEditBlocked()){ schedBlockNotice(); return; }
   if(TOD.indexOf(slot)<0)return;
   if(!weeksMap[r]) weeksMap[r]=blankWeek();
   var day=weeksMap[r][col]; if(!day)return;
   if(!day.trainings)day.trainings=[];
-  var hit=day.trainings.some(function(t){ return String((t&&t.slot)||'')===slot; });
+  /* 2.892 — 조를 고른다(사용자 "월간에서도 조 선택, 안 고르면 A조"). 같은 시간대라도 조가 다르면 따로 만든다. */
+  var gs=(Array.isArray(grps)&&grps.length)?grps.slice():null;
+  if(!gs){ var g=''; try{ g=String(__schedGrp||''); }catch(_){} if(!g)g=schedDefGrp(); gs=g?[g]:null; }
+  var key=monthGrpKey(gs);
+  var hit=day.trainings.some(function(t){ return String((t&&t.slot)||'')===slot&&monthGrpKey(t&&t.grp)===key; });
   if(!hit){
     var tr={time:SLOT_TIME[slot]||'18:00',players:'',aims:'',note:'',load:{rpe:5},slot:slot,blocks:[]};
-    var g=''; try{ g=String(__schedGrp||''); }catch(_){}
-    if(!g)g=schedDayGrp(col,day);
-    if(!g)g=schedDefGrp();
-    if(g)tr.grp=[g];
+    if(gs)tr.grp=gs;
     day.trainings.push(tr);
   }
   var b=dayBoard(day);
   if(b.sched!=='경기') setSched(r,col,'훈련');   /* OFF 를 풀고 저장·다시 그리기까지 */
   else { try{save();}catch(_){} syncViews(); }
+  _mpGrpKeep={r:r,col:col,grps:gs};
   _mpReopen(r,col);
 }
+var _mpGrpKeep=null;   /* 다시 열린 팝업이 방금 고른 조를 그대로 보이게 */
 function monthSetOpp(r,col,v){
   if(schedEditBlocked()){ schedBlockNotice(); return false; }
   var W=weeksMap[r], day=W&&W[col]; if(!day||!day.match)return false;
@@ -6634,13 +6645,18 @@ function openMonthPop(r,col,cellEl){
               :((day.off||__b.sched==='OFF')?'OFF'
               :(nS?('훈련 '+nS+'회'):'아직 없음'));
   /* 2.890 — 이미 있는 시간대 세션은 켜진 버튼으로 보인다(같은 시간대를 두 번 만들지 않는다) */
-  const mSlotOn={}; (day.trainings||[]).forEach(function(t){ if(t&&t.slot)mSlotOn[t.slot]=1; });
+  const mGrpAll=(function(){ try{ return schedGroups()||[]; }catch(_){ return []; } })();
+  let mGrps=(_mpGrpKeep&&_mpGrpKeep.r===r&&_mpGrpKeep.col===col&&_mpGrpKeep.grps)?_mpGrpKeep.grps.slice():null; _mpGrpKeep=null;
+  if(!mGrps){ var _fg=''; try{ _fg=String(__schedGrp||''); }catch(_){} mGrps=[_fg&&mGrpAll.indexOf(_fg)>=0?_fg:(schedDefGrp()||mGrpAll[0]||'')].filter(Boolean); }
+  const mSlotOnFor=function(gs){ var on={},k=monthGrpKey(gs); (day.trainings||[]).forEach(function(t){ if(t&&t.slot&&(!gs.length||monthGrpKey(t.grp)===k))on[t.slot]=1; }); return on; };
+  const mSlotOn=mSlotOnFor(mGrps);
   const mRo=schedEditBlocked();   /* 편집 권한이 없으면 보여 주기만 한다 */
   const p=document.createElement('div'); p.className='mpop thin';
   p.innerHTML='<button class="mp-close" onclick="closeMonthPop()">×</button>'
     +'<div class="mp-date">'+dlabel+'</div>'
     +'<div class="mp-sum">'+_mpEsc(sumTxt)+'</div>'
     +'<div class="mp-seg"><button class="'+(initialKind==='tr'?'on':'')+'" data-k="tr">훈련</button><button class="'+(initialKind==='match'?'on':'')+'" data-k="match">경기</button><button class="'+(initialOff?'on':'')+'" data-k="off">OFF</button></div>'
+    +(mGrpAll.length>1?'<div class="mp-grps"'+(initialKind==='tr'?'':' style="display:none"')+'><span class="mp-grps-l">조</span>'+mGrpAll.map(function(g){var on=mGrps.indexOf(g)>=0;return '<button type="button" class="'+(on?'on':'')+'" data-grp="'+_mpEsc(g)+'" aria-pressed="'+on+'"'+(mRo?' disabled':'')+'>'+_mpEsc(g)+'</button>';}).join('')+'</div>':'')
     +'<div class="mp-slots"'+(initialKind==='tr'?'':' style="display:none"')+'>'+TOD.map(function(sl){return '<button type="button" class="'+(mSlotOn[sl]?'on':'')+'" data-slot="'+sl+'" aria-pressed="'+(mSlotOn[sl]?'true':'false')+'"'+(mRo?' disabled':'')+'>'+sl+'</button>';}).join('')+'</div>'
     +'<input class="mp-opp" type="text" maxlength="30" placeholder="상대 팀 (예: ○○FC)" value="'+_mpEsc((day.match&&day.match.opp)||__b.opp||'')+'"'+(mRo?' readonly':'')+(initialKind==='match'?'':' style="display:none"')+'>'
     +'<div class="mp-kind"'+(initialKind==='match'?'':' style="display:none"')+'><button class="'+(initMatchKind==='official'?'on':'')+'" data-mk="official"><span class="kd"></span>정식경기</button><button class="'+(initMatchKind==='friendly'?'on':'')+'" data-mk="friendly"><span class="kd"></span>친선경기</button></div>'
@@ -6654,6 +6670,7 @@ function openMonthPop(r,col,cellEl){
     p.querySelectorAll('.mp-seg button').forEach(x=>x.classList.remove('on'));bt.classList.add('on');
     p.querySelector('.mp-kind').style.display=(k==='match')?'':'none';
     p.querySelector('.mp-slots').style.display=(k==='tr')?'':'none';
+    var _gr=p.querySelector('.mp-grps'); if(_gr)_gr.style.display=(k==='tr')?'':'none';
     p.querySelector('.mp-opp').style.display=(k==='match')?'':'none';
     monthQuickAdd(r,col,k,false,matchKind);   /* 누르면 바로 찍힌다 — 입력칸이 없으니 title 은 '' */
   });
@@ -6661,7 +6678,15 @@ function openMonthPop(r,col,cellEl){
   p.querySelectorAll('.mp-kind button').forEach(bt=>bt.onclick=()=>{
     p.querySelectorAll('.mp-kind button').forEach(x=>x.classList.remove('on')); bt.classList.add('on');
     matchKind=bt.dataset.mk; monthQuickAdd(r,col,'match',false,matchKind); });
-  p.querySelectorAll('.mp-slots button').forEach(bt=>bt.onclick=()=>monthAddSlot(r,col,bt.dataset.slot));
+  p.querySelectorAll('.mp-slots button').forEach(bt=>bt.onclick=()=>monthAddSlot(r,col,bt.dataset.slot,mGrps.length?mGrps:null));
+  /* 조 칩: 여러 조를 함께 고를 수 있다. 하나도 안 남기면 기본 조(A)로 돌아간다. */
+  p.querySelectorAll('.mp-grps button').forEach(bt=>bt.onclick=()=>{
+    var g=bt.dataset.grp,i=mGrps.indexOf(g); if(i>=0)mGrps.splice(i,1); else mGrps.push(g);
+    if(!mGrps.length){ var d0=schedDefGrp()||mGrpAll[0]; if(d0)mGrps.push(d0); }
+    mGrps.sort(function(a,b){return mGrpAll.indexOf(a)-mGrpAll.indexOf(b);});
+    p.querySelectorAll('.mp-grps button').forEach(function(x){ var on=mGrps.indexOf(x.dataset.grp)>=0; x.classList.toggle('on',on); x.setAttribute('aria-pressed',String(on)); });
+    var on2=mSlotOnFor(mGrps); p.querySelectorAll('.mp-slots button').forEach(function(x){ var o=!!on2[x.dataset.slot]; x.classList.toggle('on',o); x.setAttribute('aria-pressed',String(o)); });
+  });
   const opp=p.querySelector('.mp-opp');
   /* 2.876 과 같은 규칙: 글자를 칠 때마다 저장하되 한글 조합 중에는 기다린다. 닫을 때 한 번 더 확정. */
   opp.__commit=function(){ if(opp.__composing||mRo)return; if(opp.value!==opp.__saved&&monthSetOpp(r,col,opp.value)){ opp.__saved=opp.value; opp.__changed=true; } };
