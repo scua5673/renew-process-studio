@@ -879,6 +879,14 @@
   .mpop .mp-kind button.on[data-mk="official"]{border-color:var(--match,#C24A46);background:var(--match-soft,#FBEBEA);color:var(--match,#C24A46)}
   .mpop .mp-kind button.on[data-mk="friendly"]{border-color:var(--warm,#B5762B);background:var(--warm-soft,#FBF1E0);color:var(--warm,#B5762B)}
   body.fmdark .mpop .mp-kind button{background:#23272D!important;color:#F2F3F5!important}
+  /* 2.890 — 월간에서 바로: 훈련 시간대·경기 상대 팀(사용자 제보 «스케줄») */
+  .mpop .mp-slots{display:flex;gap:6px}
+  .mpop .mp-slots button{flex:1;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 0;font-size:var(--fs-sub);font-weight:var(--fw-head);color:var(--text-2);cursor:pointer;font-family:inherit}
+  .mpop .mp-slots button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .mpop .mp-opp{width:100%;box-sizing:border-box;height:36px;border:1.5px solid var(--line);border-radius:10px;padding:0 10px;font-size:var(--fs-body);font-family:inherit;background:var(--surface);color:var(--text)}
+  .mpop .mp-opp:focus{outline:none;border-color:var(--match,#C24A46)}
+  body.fmdark .mpop .mp-slots button,body.fmdark .mpop .mp-opp{background:#23272D!important;color:#F2F3F5!important}
+  body.fmdark .mpop .mp-slots button.on{border-color:var(--accent)!important;color:var(--accent)!important}
   .mpop .mp-actions{display:flex;gap:7px;}
   .mpop .mp-add{flex:1;border:none;background:var(--accent);color:#fff;font-weight:var(--fw-body);font-size:var(--fs-body);border-radius:10px;padding:7px 0;cursor:pointer;}
   .mpop .mp-more{border:1px solid var(--line);background:var(--surface);color:var(--text-2);font-size:var(--fs-body);font-weight:var(--fw-body);border-radius:10px;padding:7px 11px;cursor:pointer;}
@@ -929,6 +937,8 @@
     .mpop .mp-item{min-height:38px;padding:8px 10px;font-size:var(--fs-body)}
     .mpop .mp-seg{border-radius:12px}
     .mpop .mp-seg button{min-height:40px;font-size:var(--fs-body)}
+    .mpop .mp-slots button{min-height:40px;font-size:var(--fs-body)}
+    .mpop .mp-opp{height:44px;font-size:var(--fs-input)}
     .mpop .metainput{min-height:48px;margin-bottom:0;font-size:var(--fs-input)}
     .mpop .mp-add,.mpop .mp-more{min-height:48px;font-size:var(--fs-title)}
     .schedule-fab{display:flex;position:fixed;right:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:90;
@@ -6423,7 +6433,15 @@ function _mpPh(k){
        : '제목·주제 (예: 빌드업)';
 }
 function _mpEsc(s){return (''+(s==null?'':s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function closeMonthPop(){ if(_mpop){ _mpop.remove(); _mpop=null; document.removeEventListener('mousedown',_mpopOutside,true); document.removeEventListener('keydown',_mpopKey); } }
+function closeMonthPop(){
+  if(!_mpop)return;
+  /* 2.890 — 닫기 직전 상대 팀 입력을 확정하고, 팝업에서 바꾼 것이 있으면 달력 칸을 다시 그린다 */
+  var oi=_mpop.querySelector('.mp-opp'),redraw=false;
+  if(oi&&oi.__commit){ oi.__composing=false; oi.__commit(); redraw=!!oi.__changed; }
+  _mpop.remove(); _mpop=null;
+  document.removeEventListener('mousedown',_mpopOutside,true); document.removeEventListener('keydown',_mpopKey);
+  if(redraw){ try{renderMonth();}catch(_){} }
+}
 function _mpopOutside(e){ if(_mpop && !_mpop.contains(e.target)) closeMonthPop(); }
 function _mpopKey(e){ if(e.key==='Escape') closeMonthPop(); }
 function _mpReopen(r,col){ renderMonth(); const cell=document.querySelector('#monthGrid .mcell[data-r="'+r+'"][data-col="'+col+'"]'); if(cell) openMonthPop(r,col,cell); }
@@ -6559,6 +6577,40 @@ function monthQuickAdd(r,col,kind,detail,matchKind){
   if(detail){ closeMonthPop(); focusScheduleDate(r,col,{syncMonth:false}); try{renderWeek();}catch(_){} var el=document.querySelector('#vtoggle div[data-v=\"week\"]'); if(el) el.click(); return; }
   _mpReopen(r,col);
 }
+/* ══ 2.890 · 월간에서 바로 시간대 세션·상대 팀(사용자 제보 «스케줄») ═══════════════════
+   월간은 여전히 '밀도'만 찍는다 — 세션 내용(주제·강도·블록)은 주간이 맡는다(2.307).
+   다만 «오전·오후·저녁 중 언제» 와 «누구와»는 밀도의 일부라 여기서 바로 적는다.
+   ⚠ 주간의 ensureSlotSession 은 지금 보는 주(week[di])만 다룬다. 월간 칸은 다른 주일 수 있어
+     같은 모양의 세션을 그 날짜(weeksMap[r][col])에 직접 만든다. 조 기본값도 그 날짜의 조를 읽는다. */
+function monthAddSlot(r,col,slot){
+  if(schedEditBlocked()){ schedBlockNotice(); return; }
+  if(TOD.indexOf(slot)<0)return;
+  if(!weeksMap[r]) weeksMap[r]=blankWeek();
+  var day=weeksMap[r][col]; if(!day)return;
+  if(!day.trainings)day.trainings=[];
+  var hit=day.trainings.some(function(t){ return String((t&&t.slot)||'')===slot; });
+  if(!hit){
+    var tr={time:SLOT_TIME[slot]||'18:00',players:'',aims:'',note:'',load:{rpe:5},slot:slot,blocks:[]};
+    var g=''; try{ g=String(__schedGrp||''); }catch(_){}
+    if(!g)g=schedDayGrp(col,day);
+    if(!g)g=schedDefGrp();
+    if(g)tr.grp=[g];
+    day.trainings.push(tr);
+  }
+  var b=dayBoard(day);
+  if(b.sched!=='경기') setSched(r,col,'훈련');   /* OFF 를 풀고 저장·다시 그리기까지 */
+  else { try{save();}catch(_){} syncViews(); }
+  _mpReopen(r,col);
+}
+function monthSetOpp(r,col,v){
+  if(schedEditBlocked()){ schedBlockNotice(); return false; }
+  var W=weeksMap[r], day=W&&W[col]; if(!day||!day.match)return false;
+  v=String(v==null?'':v).replace(/\u00a0/g,' ').trim();
+  var b=dayBoard(day); day.match.opp=v; b.opp=v;   /* 주간 wkbdSave('opp')와 같은 두 곳 */
+  try{save();}catch(_){}
+  try{ var sum=_mpop&&_mpop.querySelector('.mp-sum'); if(sum)sum.textContent='경기'+(v?' · '+v:'')+(mxExtraList(day).length?(' 외 '+mxExtraList(day).length):''); }catch(_){}
+  return true;
+}
 function openMonthPop(r,col,cellEl){
   closeMonthPop();
   const W=weeksMap[r]||blankWeek(); const day=W[col]||{trainings:[]};
@@ -6579,11 +6631,16 @@ function openMonthPop(r,col,cellEl){
   const sumTxt=day.match?('경기'+((day.match.opp||'').trim()?(' · '+(day.match.opp||'').trim()):'')+(mxExtraList(day).length?(' 외 '+mxExtraList(day).length):''))   /* 2.620 */
               :((day.off||__b.sched==='OFF')?'OFF'
               :(nS?('훈련 '+nS+'회'):'아직 없음'));
+  /* 2.890 — 이미 있는 시간대 세션은 켜진 버튼으로 보인다(같은 시간대를 두 번 만들지 않는다) */
+  const mSlotOn={}; (day.trainings||[]).forEach(function(t){ if(t&&t.slot)mSlotOn[t.slot]=1; });
+  const mRo=schedEditBlocked();   /* 편집 권한이 없으면 보여 주기만 한다 */
   const p=document.createElement('div'); p.className='mpop thin';
   p.innerHTML='<button class="mp-close" onclick="closeMonthPop()">×</button>'
     +'<div class="mp-date">'+dlabel+'</div>'
     +'<div class="mp-sum">'+_mpEsc(sumTxt)+'</div>'
     +'<div class="mp-seg"><button class="'+(initialKind==='tr'?'on':'')+'" data-k="tr">훈련</button><button class="'+(initialKind==='match'?'on':'')+'" data-k="match">경기</button><button class="'+(initialOff?'on':'')+'" data-k="off">OFF</button></div>'
+    +'<div class="mp-slots"'+(initialKind==='tr'?'':' style="display:none"')+'>'+TOD.map(function(sl){return '<button type="button" class="'+(mSlotOn[sl]?'on':'')+'" data-slot="'+sl+'" aria-pressed="'+(mSlotOn[sl]?'true':'false')+'"'+(mRo?' disabled':'')+'>'+sl+'</button>';}).join('')+'</div>'
+    +'<input class="mp-opp" type="text" maxlength="30" placeholder="상대 팀 (예: ○○FC)" value="'+_mpEsc((day.match&&day.match.opp)||__b.opp||'')+'"'+(mRo?' readonly':'')+(initialKind==='match'?'':' style="display:none"')+'>'
     +'<div class="mp-kind"'+(initialKind==='match'?'':' style="display:none"')+'><button class="'+(initMatchKind==='official'?'on':'')+'" data-mk="official"><span class="kd"></span>정식경기</button><button class="'+(initMatchKind==='friendly'?'on':'')+'" data-mk="friendly"><span class="kd"></span>친선경기</button></div>'
     +'<button class="mp-week" onclick="closeMonthPop();monthGoEdit('+r+','+col+')">주간에서 열기 →</button>'
     /* 2.393 — 지우기는 **맨 아래·조용한 글자**로. 자주 쓰는 것이 아니고 되돌릴 수 없으니 눈에 먼저 들어오면 안 된다 */
@@ -6594,12 +6651,24 @@ function openMonthPop(r,col,cellEl){
     const k=bt.dataset.k;
     p.querySelectorAll('.mp-seg button').forEach(x=>x.classList.remove('on'));bt.classList.add('on');
     p.querySelector('.mp-kind').style.display=(k==='match')?'':'none';
+    p.querySelector('.mp-slots').style.display=(k==='tr')?'':'none';
+    p.querySelector('.mp-opp').style.display=(k==='match')?'':'none';
     monthQuickAdd(r,col,k,false,matchKind);   /* 누르면 바로 찍힌다 — 입력칸이 없으니 title 은 '' */
   });
   var _clr=p.querySelector('.mp-clear'); if(_clr)_clr.onclick=function(){ monthQuickAdd(r,col,'clear',false,matchKind); };
   p.querySelectorAll('.mp-kind button').forEach(bt=>bt.onclick=()=>{
     p.querySelectorAll('.mp-kind button').forEach(x=>x.classList.remove('on')); bt.classList.add('on');
     matchKind=bt.dataset.mk; monthQuickAdd(r,col,'match',false,matchKind); });
+  p.querySelectorAll('.mp-slots button').forEach(bt=>bt.onclick=()=>monthAddSlot(r,col,bt.dataset.slot));
+  const opp=p.querySelector('.mp-opp');
+  /* 2.876 과 같은 규칙: 글자를 칠 때마다 저장하되 한글 조합 중에는 기다린다. 닫을 때 한 번 더 확정. */
+  opp.__commit=function(){ if(opp.__composing||mRo)return; if(opp.value!==opp.__saved&&monthSetOpp(r,col,opp.value)){ opp.__saved=opp.value; opp.__changed=true; } };
+  opp.__saved=opp.value;
+  opp.addEventListener('compositionstart',function(){opp.__composing=true;});
+  opp.addEventListener('compositionend',function(){opp.__composing=false;opp.__commit();});
+  opp.addEventListener('input',function(e){ if(e&&e.isComposing)return; opp.__commit(); });
+  opp.addEventListener('change',function(){ opp.__commit(); try{renderMonth();}catch(_){} });
+  opp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); closeMonthPop(); } });
   const anchor=cellEl||document.getElementById('monthGrid'); const cr=anchor.getBoundingClientRect();
   const pw=Math.min(300, window.innerWidth-16); p.style.width=pw+'px'; p.style.zIndex='9999';
   let left=cr.left; if(left+pw>window.innerWidth-8) left=window.innerWidth-8-pw; if(left<8) left=8;
