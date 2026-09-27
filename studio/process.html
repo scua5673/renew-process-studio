@@ -6398,8 +6398,10 @@ function monthCellInfo(day){
   var b=day.board;
   /* 1.524 — 달력 칸에 상대팀 이름을 그대로 보여준다. 빨간색·MD 배지가 이미 '경기'라고 말하므로
      좁은 칸에는 '경기'보다 상대 이름이 훨씬 쓸모 있다(누구와 하는 날인지가 알고 싶은 것). */
-  if(day.match){
-    var _opp=((day.match.opp||'')+'').trim();
+  /* 2.891 — 주간·오늘·경기 목록과 같은 판정(dayIsMatch). board.sched='경기'만 받은 기기에서
+     월간 칸만 경기를 빈 칸으로 그렸다(합성 워크스루: 달 넘김 칸 10/3). 상대 이름도 board.opp 로 보완. */
+  if(dayIsMatch(day)){
+    var _opp=(((day.match&&day.match.opp)||(b&&b.opp)||'')+'').trim();
     var _k=mMatchKind(day);
     var _pre=(_k==='friendly')?'친선 ':'';
     return {md:(day.md||'MD'), txt:_opp?(_pre+'vs '+_opp):(_pre+((b&&b.theme)?('경기 · '+b.theme):'경기')), match:true, kind:_k};
@@ -7041,7 +7043,7 @@ function buildMonthGrid(g){
     let body='';
     if(info.match){
       const _kl=M_KIND_LB[info.kind]||'리그';
-      const _opp=((day&&day.match&&day.match.opp)||'').trim();
+      const _opp=((day&&day.match&&day.match.opp)||(day&&day.board&&day.board.opp)||'').trim();   /* 2.891 — board 만 있는 경기 */
       body=`<div class="mtxt mmatch"><b class="mkind k-${info.kind}">${_kl}</b>`
         +(_opp?`<span class="mopp">${wkbdEsc(_opp)}</span>`:'')+`</div>`
         /* 2.620 — 추가 경기도 같은 알약으로 한 줄씩(코치 "일정표에도 두 경기 다 나오게") */

@@ -15291,7 +15291,7 @@ function renderTeamSessionFor(o){
   var plannedLoad=teamSessionPlannedLoad(training,b);
   var DOW=["일","월","화","수","목","금","토"];
   var when=(o===0)?"TODAY":(DOW[date.getDay()]+" "+date.getDate());
-  var md=hasM?(o===diff?"MATCH DAY":(o<diff?"MD-"+(diff-o):"MD+"+(o-diff))):String((day&&day.md)||"");
+  var md=isMatch?"MATCH DAY":ckMdAt(o,hasM?diff:null,day);   /* 2.891 — 날마다 가장 가까운 경기 기준 */
   if(sessionMd)sessionMd.textContent=md?(when+" · "+md):when;
   try{ window.__todaySess={t:training||null,plannedLoad:plannedLoad}; }catch(_){}
   var pre=(o===0)?"오늘":(when.replace(" "," ")+"일");
@@ -15367,7 +15367,7 @@ function teamHomeWeekHTML(diff,opp){
     var c=PS.cellOf(date)||{wk:0,di:0};
     var day=(weeks[c.wk]||[])[c.di]||{}, b=day.board||{};
     var scheduledMatch=!!PS.hasMatch(day), nextMatch=(hasM&&o===diff), isMatch=scheduledMatch||nextMatch;
-    var md=isMatch?"MD":(hasM?(o<diff?"MD-"+(diff-o):"MD+"+(o-diff)):String(day.md||""));
+    var md=isMatch?"MD":ckMdAt(o,hasM?diff:null,day);   /* 2.891 */
     var dm=day.match||{},dayOpp=dm.opponent||dm.opp||b.opp||(nextMatch?opp:"");
     var cls="",txt="";
     if(isMatch){ cls=" m"; txt="경기"+(dayOpp?" · "+dayOpp:""); }
@@ -18081,6 +18081,30 @@ function ckNames(arr){
       +byG[g].map(function(n){ return '<span class="nm">'+ckEsc(n)+'</span>'; }).join("");
   }).join("");
 }
+/* ══ 2.891 · MD 는 날마다 «가장 가까운 경기» 기준(일정 주간 recomputeMD 와 같은 규칙) ════════════════
+   예전엔 오늘 기준 «다음 경기» 하나로 14칸을 전부 셌다 — 어제 경기가 있었던 주의 화요일이 MD-4 가 아니라
+   다음 주 경기 기준 MD-11 로 나왔다(합성 워크스루: 오늘 띠 vs 주간). 동률이면 다가오는 경기, MD-5~MD+1 만,
+   수동 지정(mdManual)은 그대로. nextO 는 경기 목록에만 있는 다음 경기(__twCtx.diff)를 더한다. */
+function ckMdAt(o,nextO,day){
+  if(day&&day.mdManual&&day.md)return String(day.md);
+  var PS=window.PSSchedule;if(!PS||!PS.cellOf)return String((day&&day.md)||"");
+  var weeks={};try{weeks=(schedReadCur()||{}).weeks||{};}catch(_){}
+  var today=new Date();today.setHours(0,0,0,0);
+  var mis=[];
+  for(var k=o-6;k<=o+6;k++){
+    var dt=new Date(today);dt.setDate(dt.getDate()+k);
+    var c=null;try{c=PS.cellOf(dt);}catch(_){}
+    var d2=c?((weeks[c.wk]||[])[c.di]):null;
+    if((d2&&PS.hasMatch(d2))||k===nextO)mis.push(k);
+  }
+  if(!mis.length)return "";
+  var best=null,bestAbs=99;
+  mis.forEach(function(mi){var a=Math.abs(o-mi);if(a<bestAbs||(a===bestAbs&&mi>o)){best=mi;bestAbs=a;}});
+  var diff=o-best;
+  if(diff===0)return "MD";
+  if(diff<-5||diff>1)return "";
+  return diff<0?("MD"+diff):("MD+"+diff);
+}
 function ckIsoWeek(d){ var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); var dn=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-dn); var y0=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil((((t-y0)/864e5)+1)/7); }
 function ckWeekCells(){
   var PS=window.PSSchedule; if(!PS||!PS.read)return [];
@@ -18093,7 +18117,7 @@ function ckWeekCells(){
     var date=new Date(today); date.setDate(date.getDate()+o);
     var c=PS.cellOf(date)||{wk:0,di:0}, day=(weeks[c.wk]||[])[c.di]||{}, b=day.board||{};
     var scheduledMatch=!!PS.hasMatch(day), nextMatch=(hasM&&o===diff), isMatch=scheduledMatch||nextMatch;
-    var md=isMatch?"MD":(hasM?(o<diff?"MD-"+(diff-o):"MD+"+(o-diff)):String(day.md||""));
+    var md=isMatch?"MD":ckMdAt(o,hasM?diff:null,day);   /* 2.891 */
     var dm=day.match||{}, dayOpp=dm.opponent||dm.opp||b.opp||(nextMatch?opp:"");
     var kind="none", big="—", sub="", col="";
     if(isMatch){ kind="m"; big="경기"; sub=dayOpp; }
@@ -18325,7 +18349,7 @@ function ckWeek7(){
     var bl=(training&&training.blocks)||[]; if(!bl.length){ try{ var bs=teamBoardSession(b); if(bs&&bs.blocks)bl=bs.blocks; }catch(_){} }
     var mins=ckBlocksMin(bl); if(!mins&&training){ try{ mins=teamHomeMinutes(training)||0; }catch(_){} }
     var load=""; try{ load=teamSessionPlannedLoad(training,b)||""; }catch(_){}
-    var md=(s.kind==="m")?"MD":(hasM?(o<diff?"MD-"+(diff-o):(o===diff?"MD":"MD+"+(o-diff))):String(day.md||""));
+    var md=(s.kind==="m")?"MD":ckMdAt(o,hasM?diff:null,day);   /* 2.891 */
     var title="", dim=false;
     if(s.kind==="m")title=String(s.title||"").replace(/^경기\s*·\s*/,"");
     else if(s.kind==="off"){ title="OFF"; dim=true; }

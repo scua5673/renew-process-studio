@@ -8,7 +8,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites={
   board:['gamemodel-sync','board-depth','board-drag-performance','board-color-palette','vault-board-isolation'],
   identity:['session-team-picker','month-quick-detail','admin-content-play','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery'],
-  storage:['storage-safety','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery'],
+  storage:['storage-safety','library-insert-ack','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery'],
   idp:['match-board-tools','availability','idp-recovery','idp-story-dedup','support']
 };
 const group=process.env.PS_TEST_GROUP||'all',engines=(process.env.PS_BROWSER_ENGINE||'chromium,webkit').split(',');

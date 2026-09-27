@@ -40,6 +40,11 @@ try{
  await page.waitForFunction(()=>{const w=JSON.parse(localStorage.getItem('process_coach_v1')||'{}').weeks||{};return JSON.stringify(w).includes('가상 유나이티드');});
  await page.reload({waitUntil:'domcontentloaded'});await page.locator(cellSel).waitFor();
  assert.equal((await day()).opp,'가상 유나이티드','opponent survives reload');
+ // 2.891 — board.sched='경기'만 있는 날(day.match 없음)도 월간 칸은 주간처럼 경기로 그린다
+ await page.evaluate(()=>{const d=weeksMap[1][4];delete d.match;const b=dayBoard(d);b.sched='경기';b.opp='가상 보드 상대';d.off=false;renderMonth();});
+ const boardOnly=page.locator('#monthGrid .mcell[data-r="1"][data-col="4"]');
+ assert.ok(await boardOnly.evaluate(el=>el.classList.contains('m')),'board-only match cell is a match cell');
+ assert.match(await boardOnly.textContent(),/가상 보드 상대/,'board-only match shows the opponent');
  // 폰 폭: 팝업 안에서 가로로 넘치지 않는다
  await page.setViewportSize({width:375,height:812});await page.locator(cellSel).click();await page.locator('.mpop .mp-opp').waitFor();
  assert.ok(await page.locator('.mpop').evaluate(el=>el.scrollWidth<=el.clientWidth+1&&el.getBoundingClientRect().right<=window.innerWidth));
