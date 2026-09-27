@@ -8,6 +8,9 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-27-v2-890-animation-frame-drag',date:'2026-09-27',title:'v2.890 · 애니메이션 장면 드래그를 부드럽게 했습니다',
+    changes:['애니메이션 장면 띠에서 마우스·손가락·펜 드래그가 같은 방식으로 시작되게 했습니다.','장면을 끌 때 띠 가장자리에서 자동으로 스크롤해 멀리 있는 장면으로 옮기기 쉬워졌습니다.']
+  },{
     id:'2026-09-26-v2-889-board-roster-ime',date:'2026-09-26',title:'v2.889 · 작전판 명단 이름 입력의 한글 Enter를 바로잡았습니다',
     changes:['작전판 명단에서 선수 이름을 한글로 입력한 뒤 Enter를 눌러도 마지막 글자가 한 번 더 붙지 않게 했습니다.','한글 조합 중 Enter는 입력기 확정으로 두고, 조합이 끝난 뒤 일반 Enter만 입력 완료로 처리합니다.']
   },{

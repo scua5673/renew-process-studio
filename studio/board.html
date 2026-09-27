@@ -814,15 +814,15 @@
   .anim-frames{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
     -webkit-overflow-scrolling:touch;flex:1 1 280px;min-width:160px;max-width:min(42vw,520px);padding:3px 2px;scrollbar-width:thin;}
   .anim-frame{position:relative;flex:0 0 auto;width:72px;height:44px;border-radius:8px;overflow:hidden;
-    border:1px solid var(--line);background:#1e8c4c;cursor:pointer;scroll-snap-align:center;touch-action:pan-x;
-    -webkit-user-select:none;user-select:none;}
+    border:1px solid var(--line);background:#1e8c4c;cursor:pointer;scroll-snap-align:center;touch-action:none;
+    -webkit-user-select:none;user-select:none;transition:opacity .12s ease,transform .12s ease;}
   .anim-frame.on{border-color:var(--blue);box-shadow:0 0 0 2px color-mix(in srgb,var(--blue) 34%,transparent);}
   /* 2.028 — 다중 선택 장면: 파란 채움 테두리 + 체크 점 */
   .anim-frame.sel{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 12%,#fff);}
   .anim-frame.sel::after{content:"✓";position:absolute;right:3px;top:2px;width:14px;height:14px;border-radius:50%;background:var(--blue);color:#fff;font-size:9px;font-weight:800;display:grid;place-items:center;z-index:3}
   #cmd-scene-status.has-sel::after{content:" · " attr(data-sel-note);color:var(--blue);font-weight:800}
   .anim-frame:focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 35%,transparent);outline-offset:2px;}
-  .anim-frame.dragging{opacity:.45;}
+  .anim-frame.dragging{opacity:.52;transform:scale(.96);cursor:grabbing;}
   .anim-frame.drop{outline:2px dashed var(--blue,#3a6df0);outline-offset:1px;}
   .anim-frame .aft,.anim-frame .aft svg{width:100%;height:100%;display:block;}
   .anim-frame .aft:empty::after{content:"미리보기 없음";position:absolute;inset:0;display:grid;place-items:center;padding:4px;
@@ -8296,12 +8296,15 @@ function afCut(){ if(afCopy())afDeleteSel(); }
     if((e.key==="Backspace"||e.key==="Delete")&&(_afSel.size||animActive>=0)&&!mod){ e.preventDefault(); e.stopImmediatePropagation(); afDeleteSel(); return; }
   },true);
 })();
-/* 장면 드래그 순서 변경: iPad에서도 포인터 캡처 대상과 무관하게 좌표로 목적지를 계산 */
+/* 장면 드래그 순서 변경: 마우스·손가락·펜 모두 짧은 이동 뒤 같은 포인터 흐름으로 처리 */
 (function(){
   var box=document.getElementById("animFrames");if(!box)return;
-  var drag=null;
+  var drag=null,START=8,EDGE=46,MAX_SPEED=14;
   function idxOf(el){return Array.prototype.indexOf.call(box.children,el);}
-  function clear(){[].forEach.call(box.children,function(x){x.classList.remove("drop");x.classList.remove("dragging");});}
+  function clear(){
+    [].forEach.call(box.children,function(x){x.classList.remove("drop");x.classList.remove("dragging");});
+    box.classList.remove("dragging");
+  }
   function targetAt(x){
     var items=[].slice.call(box.querySelectorAll(".anim-frame"));
     if(!items.length)return null;
@@ -8312,17 +8315,44 @@ function afCut(){ if(afCopy())afDeleteSel(); }
   function reorder(from,to){
     reorderAnimFrame(from,to,false);
   }
+  function clearRaf(d){ if(d&&d.raf){ try{cancelAnimationFrame(d.raf);}catch(_){} d.raf=0; } }
+  function paintTarget(x){
+    var tb=targetAt(x);
+    [].forEach.call(box.children,function(x){x.classList.remove("drop");});
+    if(tb&&drag&&tb!==drag.el)tb.classList.add("drop");
+    return tb;
+  }
+  function autoSpeed(x){
+    var r=box.getBoundingClientRect(),pad=Math.min(EDGE,Math.max(28,r.width*.18));
+    if(x<r.left+pad)return -Math.ceil(((r.left+pad)-x)/pad*MAX_SPEED);
+    if(x>r.right-pad)return Math.ceil((x-(r.right-pad))/pad*MAX_SPEED);
+    return 0;
+  }
+  function tick(){
+    if(!drag||!drag.moved){ if(drag)drag.raf=0; return; }
+    drag.raf=0;
+    if(drag.speed){
+      box.scrollLeft+=drag.speed;
+      paintTarget(drag.lastX);
+      drag.raf=requestAnimationFrame(tick);
+    }
+  }
   function move(e){
     if(!drag||e.pointerId!==drag.pointerId)return;
-    if(!drag.moved&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<8)return;
-    drag.moved=true;drag.el.classList.add("dragging");e.preventDefault();
-    var tb=targetAt(e.clientX);
-    [].forEach.call(box.children,function(x){x.classList.remove("drop");});
-    if(tb&&tb!==drag.el)tb.classList.add("drop");
+    drag.lastX=e.clientX;drag.lastY=e.clientY;
+    if(!drag.moved){
+      if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<START)return;
+      drag.moved=true;drag.el.classList.add("dragging");box.classList.add("dragging");
+    }
+    e.preventDefault();
+    paintTarget(e.clientX);
+    drag.speed=autoSpeed(e.clientX);
+    if(drag.speed&&!drag.raf)drag.raf=requestAnimationFrame(tick);
+    else if(!drag.speed)clearRaf(drag);
   }
   function finish(e){
     if(!drag||e.pointerId!==drag.pointerId)return;
-    var d=drag,tb=targetAt(e.clientX);drag=null;_afDragging=false;clear();
+    var d=drag,tb=targetAt(e.clientX);clearRaf(d);drag=null;_afDragging=false;clear();
     window.removeEventListener("pointermove",move,true);
     window.removeEventListener("pointerup",finish,true);
     window.removeEventListener("pointercancel",cancel,true);
@@ -8341,24 +8371,22 @@ function afCut(){ if(afCopy())afDeleteSel(); }
   }
   function cancel(e){
     if(!drag||(e&&e.pointerId!==drag.pointerId))return;
-    drag=null;_afDragging=false;clear();
+    clearRaf(drag);drag=null;_afDragging=false;clear();
     if(_afDirty){_afDirty=false;try{renderAnimFrames();}catch(_){}}
     window.removeEventListener("pointermove",move,true);
     window.removeEventListener("pointerup",finish,true);
     window.removeEventListener("pointercancel",cancel,true);
   }
   box.addEventListener("pointerdown",function(e){
-    if(e.pointerType&&e.pointerType!=="mouse")return;
-    if(e.button!=null&&e.button!==0)return;
+    if(e.pointerType==="mouse"&&e.button!=null&&e.button!==0)return;
     var b=e.target.closest(".anim-frame");if(!b||e.target.closest(".afm"))return;
-    drag={el:b,x:e.clientX,y:e.clientY,moved:false,pointerId:e.pointerId};
+    drag={el:b,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false,pointerId:e.pointerId,speed:0,raf:0};
     _afDragging=true;_afDirty=false;
     try{b.setPointerCapture(e.pointerId);}catch(_){}
     window.addEventListener("pointermove",move,{capture:true,passive:false});
     window.addEventListener("pointerup",finish,true);
     window.addEventListener("pointercancel",cancel,true);
   });
-  try{PSTouchSort(box,".anim-frame",reorder,{dragClass:"dragging",overClass:"drop",ctl:".afm",hold:220});}catch(_){}
 })();
 /* 자막 입력 바인딩 — 활성 장면의 cap 필드에 저장 */
 (function(){ var el=document.getElementById("animCap"); if(!el)return;
