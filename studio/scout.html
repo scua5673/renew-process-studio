@@ -12569,6 +12569,17 @@ function matchDedupeBySource(state){
    ③ 상대팀 이름이 없다
    ③이 중요하다. 내용이 비어 있어도 "안동FC"처럼 이름이 남아 있으면
    그 팀과 경기했다는 사실 자체가 기록이므로 지우지 않는다. */
+/* 2.893 — 서버 확인 대기 중에도 안전한 정리만: 지금 일정의 어느 경기 칸과도 이어지지 않는 빈 껍데기.
+   일정 칸이 하나도 없거나(아직 동기화 전일 수 있다) 일정 문서가 없으면 아무것도 하지 않는다. */
+function matchPruneDeadShells(state){
+  var src=store.get("process_coach_v1"),weeks=src&&src.weeks;if(!weeks||typeof weeks!=="object")return false;
+  var alive={};
+  Object.keys(weeks).forEach(function(wk){var arr=weeks[wk];if(!Array.isArray(arr))return;
+    arr.forEach(function(day){scheduleMatchSlots(day).forEach(function(sl){var mid=scheduleMid(sl.h,false);if(!mid)return;
+      alive[scheduleSlotSourceId(sl,mid)]=1;alive[scheduleSlotAltSourceId(sl,mid)]=1;});});});
+  if(!Object.keys(alive).length)return false;
+  return matchDropStaleAuto(state,alive);
+}
 function matchDropStaleAuto(state,alive){
   var before=(state.matches||[]).length;
   state.matches=(state.matches||[]).filter(function(m){
@@ -12766,6 +12777,11 @@ function matchLoad(){
   if(matchDocPending()){
     /* 서버 확인 전에는 기존 로컬본을 읽기 전용으로 보여 줄 수는 있지만, 일정 병합·자동 정리는
        실행하지 않는다. 로컬본도 없으면 캐시하지 않는 빈 문서만 돌려준다. */
+    /* 2.893 — 예외 하나: 일정에서 사라진 경기의 **빈 껍데기**는 지운다(실측 9/27 23:42 풋볼A 데스크톱:
+       10/3 을 경기→OFF 로 바꾼 뒤 «상대 미정» 빈 행이 sched: 연결을 단 채 남음 → 서버 1644 가드가
+       «낡은 기기의 부활»로 경기 문서 전체를 거부 → 확인 대기라 이 정리가 안 돌아 영구 읽기 전용).
+       조건은 matchDropStaleAuto 와 같다(내용·상대 이름이 있으면 남긴다). 새 행은 만들지 않는다. */
+    if(o&&Array.isArray(o.matches)&&matchPruneDeadShells(o))store.set(MATCH_KEY,o);
     if(o&&Array.isArray(o.matches)){matchState=o;return o;}
     return {version:1,matches:[]};
   }
