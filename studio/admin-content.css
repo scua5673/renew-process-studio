@@ -80,3 +80,8 @@
 #app>#viewAll{width:100%}
 #app.admin-content-mode>.stats{display:none}
 .ac-title{display:block;position:static;top:auto;z-index:auto;background:transparent;border:0;backdrop-filter:none}
+
+/* 애니메이션 재생 */
+.ac-play{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.ac-grid .ac-play button{min-height:36px;padding:0 14px;border-color:var(--blue2);color:var(--blue2);font-size:12px;font-weight:700}
+.ac-play small{color:var(--dim);font-size:11px}
