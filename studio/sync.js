@@ -5694,12 +5694,31 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
               var got=[];try{got=t0?JSON.parse(t0):[];}catch(_){got=null;}
               if(!Array.isArray(got))throw syncIssue('sync_confirm_missing','library_insert','server confirmation missing');
               var seen={};got.forEach(function(x){if(x&&x.lib_id)seen[x.lib_id]=1;});
+              var unseen=[];
               ch.forEach(function(x){
                 if(seen[x.lib_id]){pushedOk++;return;}
                 if(!teamOnly)throw syncIssue('sync_conflict','library_insert','library id conflict');
-                if(delLocal.indexOf(x.lib_id)<0)delLocal.push(x.lib_id);
-                delete m.li[x.lib_id];
+                unseen.push(x);
               });
+              /* 2.891 — 0행 응답만으로 이 기기 항목을 지우지 않는다. 지우는 것은 «남의 팀 공유본»
+                 표시가 남은 캐시뿐이다. 그 밖(내가 만든 새 자료)은 그 행을 다시 읽어, 내 행이 보이면
+                 저장 확인, 안 보이면 지우지 않고 충돌로 멈춘다(합성 워크스루: 빈 응답 → 방금 저장한
+                 보관함 항목이 기기에서 지워지고 묘비가 남았다). */
+              return unseen.reduce(function(p1,x){return p1.then(function(){
+                var loc=locMap[x.lib_id];
+                if(loc&&loc._teamSource==='team'){
+                  if(delLocal.indexOf(x.lib_id)<0)delLocal.push(x.lib_id);
+                  delete m.li[x.lib_id];return;
+                }
+                requireLibrarySource('library_insert_verify');
+                return syncFetch('library_insert_verify',BASE+'/rest/v1/ps_library?workspace_id=eq.'+encodeURIComponent(wid)+'&lib_id=eq.'+encodeURIComponent(x.lib_id)+'&select=lib_id,saved_at,deleted_at',{headers:hj(at)})
+                  .then(function(r){if(!r.ok)throw syncHttpError('library_insert_verify',r.status);return r.json();})
+                  .then(function(rows){
+                    var row=Array.isArray(rows)&&rows.length===1?rows[0]:null;
+                    if(row&&row.lib_id===x.lib_id&&!row.deleted_at){pushedOk++;return;}
+                    throw syncIssue('sync_conflict','library_insert_verify','보관함 항목을 서버에서 확인하지 못해 기기 사본을 그대로 두었습니다');
+                  });
+              });},Promise.resolve());
             });
         });},updateRun);
       });
