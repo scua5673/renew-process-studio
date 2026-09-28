@@ -3268,3 +3268,8 @@ html.ps-page-board body.fmdark #ps-command-dock>#floatBar:not(#_){background:var
   html.ps-page-board body #boardPageStrip.on>#bpImportBoard,
   html.ps-page-board body #boardPageStrip.on>#bpImportBoard+#vaultSave:not(#_):not(#__){height:44px!important;min-height:44px!important}
 }
+/* 2.904 — #197 뒤로 띠 순서가 «보드 가져오기 · 저장 · 보관함 저장» 이라 위 `+#vaultSave` 가 안 맞는다.
+   아이패드에서 저장 둘만 32px 로 낮았다 — 위치는 그대로 두고 손가락 높이 44px 만 같이 준다. */
+@media (min-width:640px) and (any-pointer:coarse){
+  html.ps-page-board body #boardPageStrip.on>:is(#boardManualSave,#vaultSave):not(#_):not(#__){height:44px!important;min-height:44px!important;align-items:center!important;justify-content:center!important}
+}

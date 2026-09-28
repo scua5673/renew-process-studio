@@ -10,6 +10,7 @@ import {fileURLToPath} from 'node:url';
 // request is mocked or blocked. No production data is read or modified.
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=process.env.PS_TEST_REPO||path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const out=process.env.PS_TEST_OUTPUT||'/private/tmp/process-save-status-layout';
 const measureOnly=process.env.PS_LAYOUT_MEASURE_ONLY==='1',baseline=process.env.PS_LAYOUT_BASELINE;
 const frozen=new Map(['studio/app.html','studio/support.css'].map(p=>[path.join(root,p),baseline?execFileSync('git',['show',baseline+':'+p],{cwd:root}):fs.readFileSync(path.join(root,p))]));
@@ -29,13 +30,14 @@ await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0
 const base='http://127.0.0.1:'+server.address().port,results=[];
 let browser;
 try{
-  browser=await pw.chromium.launch({headless:true,executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+  browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
   for(const spec of [{width:1280,height:900,mobile:false},{width:768,height:900,mobile:false},{width:393,height:852,mobile:true}])for(const serverName of ['가상 테스트 코치']){
     const label=spec.width+'-'+(serverName?'server-name':'no-name'),calls=[],blocked=[],errors=[];
     if(process.env.PS_TEST_LABEL&&process.env.PS_TEST_LABEL!==label)continue;
     const db=new Map([[WID+'|cs_perms_v1',{workspace_id:WID,k:'cs_perms_v1',v:perms,cupd:1,updated_by:UID}]]);
     const library=new Map();
-    const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:spec.mobile,hasTouch:spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul'});
+    // 2.904 — 폰은 실제 폰으로 보이게 한다. WebKit 기본 UA(Macintosh)+터치는 앱이 아이패드로 읽어 width=1100 데스크톱 판을 편다.
+    const context=await browser.newContext({viewport:{width:spec.width,height:spec.height},isMobile:spec.mobile,hasTouch:spec.mobile,serviceWorkers:'block',timezoneId:'Asia/Seoul',...(spec.mobile?{screen:{width:spec.width,height:spec.height},userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'}:{})});
     await context.addInitScript(({UID,WID,workspaces,perms})=>{
       if(!localStorage.getItem('quiet_fixture_seeded')){
         localStorage.setItem('ps_sync_session',JSON.stringify({uid:UID,at:'synthetic-at',rt:'synthetic-rt',exp:Date.now()+3600000,email:'fixture@example.invalid'}));
@@ -156,7 +158,9 @@ try{
           await page.evaluate(()=>{localStorage.removeItem('ps_release_notes_hidden_v1');document.getElementById('psReleaseNotes').__psReleaseNotes.refresh();});
           assert.equal(await page.locator('#psReleaseNotes').isVisible(),true);
         }else{
-          await page.locator('#psReleaseNotes').getByRole('button',{name:'일주일간 안 보기',exact:true}).click();
+          // 2.904 — 폰(≤767)은 2.902부터 한 줄 머리라 «일주일간 안 보기» 대신 같은 hideWeek 를 부르는 ✕ 만 보인다.
+          const week=page.locator('#psReleaseNotes').getByRole('button',{name:'일주일간 안 보기',exact:true});
+          await (await week.isVisible()?week:page.locator('#psReleaseNotes').getByRole('button',{name:'업데이트 안내 닫기',exact:true})).click();
           assert.equal(await page.locator('#psReleaseNotes').isVisible(),false);
         }
       }
@@ -231,5 +235,5 @@ try{
     finally{fs.writeFileSync(path.join(out,spec.width+'-network.json'),JSON.stringify({calls,blocked,errors},null,2));await context.close();}
   }
 }finally{await browser?.close();await new Promise(r=>server.close(r));}
-const verification={passed:results.length>0&&results.every(r=>r.passed),measureOnly,baseline:baseline||'working-tree',engine:'chromium',network:'Actual app with all external requests mocked or blocked; synthetic vault records only.',results};
+const verification={passed:results.length>0&&results.every(r=>r.passed),measureOnly,baseline:baseline||'working-tree',engine,network:'Actual app with all external requests mocked or blocked; synthetic vault records only.',results};
 fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify(verification,null,2));if(!verification.passed)process.exitCode=1;
