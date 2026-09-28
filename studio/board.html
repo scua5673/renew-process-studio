@@ -729,6 +729,8 @@
   #lsPop input#lsZoneName{display:block;width:100%;min-width:0;height:30px;padding:0 9px;border:1px solid var(--line,#e3e6ea);border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:13px;box-sizing:border-box;}   /* 2.902 */
   #lsPop .ls-val{text-align:right;font-size:var(--fs-caption);font-weight:var(--fw-strong);color:var(--txt,#14161A);font-variant-numeric:tabular-nums;white-space:nowrap;}
   #lsPop .ls-apply{width:100%;height:34px;margin-top:10px;border:1px solid var(--line,#E3E6EA);background:var(--panel2,#F1F2F4);color:var(--txt,#14161A);font-family:inherit;font-weight:var(--fw-strong);font-size:var(--fs-sub);padding:0 10px;border-radius:10px;cursor:pointer;}
+  #lsPop .ls-apply.ls-apply2{margin-top:6px;}   /* 2.902 */
+  #lsPop{max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain;}   /* 2.902 — 줄이 늘어 폰에서 넘치지 않게 */
   #lsPop .ls-apply:active{background:var(--blue,#3a6df0);color:#fff;border-color:var(--blue,#3a6df0);}
   #lsPop .ls-prev{height:22px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;overflow:hidden;}
 
@@ -6147,9 +6149,14 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       else if(d.dash&&type!=="dashline"&&type!=="run"){at["stroke-dasharray"]=(11*LW)+" "+(8*LW);}
       g.appendChild(el("path",at));}
     /* 화살촉 크기·각도를 선 굵기와 분리한다. 굵기를 바꾸거나 길게 그려도 같은 모양을 유지한다. */
-    if(type!=="line"&&type!=="dashline"){const ang=Math.atan2(b.y-_tan.y,b.x-_tan.x),s=15,hw=6.6;
-      const bx=b.x-s*Math.cos(ang),by=b.y-s*Math.sin(ang),px=-Math.sin(ang)*hw,py=Math.cos(ang)*hw;
-      g.appendChild(el("path",{d:`M ${b.x} ${b.y} L ${bx+px} ${by+py} L ${bx-px} ${by-py} Z`,fill:C}));}
+    /* 2.902 — 끝 모양(FmStadio 참고): 화살 · 막기(T자) · 원 · 없음. 지정이 없으면 직선·점선은 없음, 나머지는 화살(옛 자료 그대로). */
+    const _hd=d.head||((type==="line"||type==="dashline")?"none":"arrow");
+    if(_hd!=="none"){const ang=Math.atan2(b.y-_tan.y,b.x-_tan.x),s=15,hw=6.6;
+      if(_hd==="bar"){const bw=11,qx=-Math.sin(ang)*bw,qy=Math.cos(ang)*bw;
+        g.appendChild(el("line",{x1:b.x+qx,y1:b.y+qy,x2:b.x-qx,y2:b.y-qy,stroke:C,"stroke-width":(5*LW).toFixed(1),"stroke-linecap":"round"}));}
+      else if(_hd==="dot"){g.appendChild(el("circle",{cx:b.x,cy:b.y,r:7.5,fill:C}));}
+      else{const bx=b.x-s*Math.cos(ang),by=b.y-s*Math.sin(ang),px=-Math.sin(ang)*hw,py=Math.cos(ang)*hw;
+      g.appendChild(el("path",{d:`M ${b.x} ${b.y} L ${bx+px} ${by+py} L ${bx-px} ${by-py} Z`,fill:C}));}}
     g.appendChild(el("path",{d:_pd,fill:"none",stroke:"#000","stroke-width":22,opacity:"0","pointer-events":"stroke"}));
     if(isSel){                                   // 끝점 핸들 — 끌어서 기울기·길이 조절
       [a,b].forEach((pt,idx)=>{
@@ -6442,7 +6449,7 @@ function linkCancel(){_link=null;try{if(_linkTmp)_linkTmp.remove();}catch(_){} _
 function beginDraw(u){
   _draw={type:state.tool,color:state.color,lw:(state.drawLw||1),op:(state.drawOp==null?1:state.drawOp),pts:state.tool==="free"?[u]:[u,{x:u.x,y:u.y}],
     dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined,
-    lob:(state.tool==="pass"&&state.drawLob)||undefined};   /* 2.681 · 2.902 로빙 기본값 */
+    lob:(state.tool==="pass"&&state.drawLob)||undefined,head:(state.drawHead&&/^(pass|run|dribble|shot|line|dashline)$/.test(state.tool))?state.drawHead:undefined};   /* 2.681 · 2.902 로빙 기본값 */
   _drawTmp=drawingEl(_draw);drawLayer.appendChild(_drawTmp);}
 function moveDraw(u){if(!_draw)return;
   if(_draw.type==="rect"||_draw.type==="rectline"||_draw.type==="rectdash"){const o=_draw.pts[0];
@@ -12299,10 +12306,12 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
         +'<div class="ls-row"><span class="ls-lb">굵기</span><input type="range" id="lsW" min="0.5" max="3" step="0.1" value="'+lw+'"><span class="ls-val" id="lsWv">'+lw.toFixed(1)+'</span></div>'
         +'<div class="ls-row"><span class="ls-lb">투명도</span><input type="range" id="lsO" min="0.2" max="1" step="0.05" value="'+op+'"><span class="ls-val" id="lsOv">'+Math.round(op*100)+'</span></div>'
         +'<div class="ls-row"><span class="ls-lb">모양</span><div class="ls-seg" id="lsShape"><button type="button" data-v="solid">실선</button><button type="button" data-v="dash">점선</button><button type="button" data-v="dot">둥근 점선</button></div><span></span></div>'   /* 2.681 */
+        +((!ds.length||ds.some(function(d){return /^(pass|run|dribble|shot|line|dashline)$/.test(d.type);}))?'<div class="ls-row"><span class="ls-lb">끝</span><div class="ls-seg" id="lsHead"><button type="button" data-v="arrow" title="화살">→</button><button type="button" data-v="bar" title="막기(T자)">⊣</button><button type="button" data-v="dot" title="원">●</button><button type="button" data-v="none" title="없음">─</button></div><span></span></div>':'')   /* 2.902 끝 모양 */
         +((base&&/^(rect|rectline|rectdash|ellipse)$/.test(base.type))?'<div class="ls-row"><span class="ls-lb">이름</span><input type="text" id="lsZoneName" maxlength="24" placeholder="예: 압박 함정" autocomplete="off" value="'+String(base.label||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];})+'"><span></span></div>':'')   /* 2.902 구역 이름 */
         +((!ds.length||ds.some(function(d){return d.type==="pass";}))?'<div class="ls-row"><span class="ls-lb">패스</span><div class="ls-seg" id="lsLob"><button type="button" data-v="ground">땅볼</button><button type="button" data-v="lob">로빙</button></div><span></span></div>':'')   /* 2.902 — 패스를 골랐거나 아무것도 안 골랐을 때(새로 그릴 기본값) */
         +'<div class="ls-row"><span class="ls-lb">채움</span><div class="ls-seg" id="lsFill"><button type="button" data-v="solid">반투명</button><button type="button" data-v="dots">점</button><button type="button" data-v="hatch">빗금</button></div><span></span></div>'
-        +'<button class="ls-apply" id="lsAll">그린 선 전체에 적용</button>';
+        +'<button class="ls-apply" id="lsAll">그린 선 전체에 적용</button>'
+        +'<button class="ls-apply ls-apply2" id="lsClearNext" title="다음 장면을 만들고 그 장면에서 화살표·선만 뺍니다. 재생하면 서서히 사라져요.">새 장면에서 화살표 모두 지우기</button>';   /* 2.902 */
       document.body.appendChild(pop);
       var r=lsBtn.getBoundingClientRect(), pw=pop.offsetWidth||252, ph=pop.offsetHeight||150;
       var vw=document.documentElement.clientWidth||window.innerWidth;
@@ -12330,6 +12339,20 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
           mark(); }; });
         mark();
       })();
+      /* 2.902 — 끝 모양: 고른 선(자유선 제외)에 바로, 없으면 새로 그릴 기본값. */
+      (function(){ var seg=pop.querySelector("#lsHead"); if(!seg)return; var LT=/^(pass|run|dribble|shot|line|dashline)$/;
+        function cur(){ var sd=selDraws().filter(function(d){return LT.test(d.type);}); if(sd.length)return sd[0].head||((sd[0].type==="line"||sd[0].type==="dashline")?"none":"arrow"); return state.drawHead||"arrow"; }
+        function mark(){ var v=cur(); seg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===v);}); }
+        seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; state.drawHead=v; var sd=selDraws().filter(function(d){return LT.test(d.type);});
+          if(sd.length){ pushUndo(); sd.forEach(function(d){ d.head=v; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
+          mark(); }; });
+        mark(); })();
+      /* 2.902 — 새 장면에서 화살표 모두 지우기(FmStadio «Animate all arrows out»): 다음 장면을 만들고 선 종류만 뺀다. 구역·글·다각형은 남긴다. */
+      (function(){ var bt=pop.querySelector("#lsClearNext"); if(!bt)return; bt.onclick=function(e){ e.stopPropagation();
+        var LT=/^(pass|run|dribble|shot|line|dashline|free)$/; if(!(state.drawings||[]).some(function(d){return LT.test(d.type);})){ try{toast("지울 화살표·선이 없어요");}catch(_){} return; }
+        close(); try{ var add=document.getElementById("animAdd"); if(!add)return; add.click(); }catch(_){ return; }
+        state.drawings=(state.drawings||[]).filter(function(d){return !LT.test(d.type);}); try{sel=null;multiSel=[];}catch(_){}
+        renderDrawings(); try{autoSaveAnimFrame();}catch(_){} try{boardSaveLive();}catch(_){} try{toast("장면 "+(animActive+1)+": 화살표를 뺐어요 · 재생하면 서서히 사라져요");}catch(_){} }; })();
       /* 2.902 — 구역 이름: 입력하는 대로 선택한 구역(여럿이면 모두)에 붙는다. 비우면 이름 없음. */
       (function(){ var zi=pop.querySelector("#lsZoneName"); if(!zi)return; var pushed=false;
         zi.addEventListener("keydown",function(e){ e.stopPropagation(); if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); zi.blur(); } });
