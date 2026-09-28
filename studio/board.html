@@ -3301,7 +3301,8 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
           <div class="menurow" data-bs-tab="pitch" id="pitchSpecRow"><span class="menulbl">규격</span><div class="seg" id="pitchSpecSeg" role="group" aria-label="운동장 규격"><button data-spec="fifa" class="on" title="FIFA 105×68m · 골 7.32×2.44">11인제</button><button data-spec="u12" title="KFA 8인제 경기규칙 — 65×48m · 골 5.7×2.15 · PA 12.5 · GA 4.5 · PK 8.5 · 센터서클 7">8인제</button><button data-spec="futsal" title="FIFA 풋살 — 40×20m · 골 3×2 · PA r6 사분원 · PK 6 · 제2 PK 10 · 센터서클 3">풋살</button></div></div>
           <!-- 2.272 — 잔디 줄무늬(있던 엔진 __setGrassM 에 UI만) · 원근 뷰(보기 전용, fmstadio 레퍼런스 C안) -->
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">잔디 줄무늬</span><div class="seg" id="grassSeg" role="group" aria-label="잔디 줄무늬"><button data-g="0">없음</button><button data-g="5" title="5m 폭 모잉 스트라이프">기본</button><button data-g="10" title="10m 폭">넓게</button></div></div>
-          <div class="menurow" data-bs-tab="pitch"><span class="menulbl">경기장</span><div class="seg" id="rimSeg" role="group" aria-label="경기장 둘레"><button type="button" data-rim="0">없음</button><button type="button" data-rim="1" title="운동장 밖에 관중석, 터치라인 밖에 팀 색 광고판(팀 이름). 영상·사진 내보내기에도 들어갑니다">관중석·광고판</button></div></div><!-- 2.902 -->
+          <div class="menurow" data-bs-tab="pitch"><span class="menulbl">칩</span><div class="seg" id="chip3dSeg" role="group" aria-label="선수 칩 모양"><button type="button" data-c3="0">평면</button><button type="button" data-c3="1" title="광택과 바닥 그림자 — 영상·사진 내보내기에도 들어갑니다">입체</button></div></div><!-- 2.902 -->
+          <div class="menurow" data-bs-tab="pitch"><span class="menulbl">경기장</span><div class="seg" id="rimSeg" role="group" aria-label="경기장 둘레"><button type="button" data-rim="0">없음</button><button type="button" data-rim="1" title="운동장 밖에 관중석. 영상·사진 내보내기에도 들어갑니다">관중석</button></div></div><!-- 2.902 -->
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">보드 보기</span><div class="seg" id="tiltSeg" role="group" aria-label="보드 보기"><button data-t="0" class="on">평면</button><button data-t="1">입체</button></div></div>
           <!-- 2.377 — 원근 뷰 설정 줄 제거(사용자 "원근뷰는 보드 설정에서도 지우고").
                엔진(__setTilt · __tiltFit · __tiltStands · tiltGoalsSync)과 CSS 는 **지우지 않는다** —
@@ -5779,7 +5780,7 @@ function _setSelRings(){ try{
     if(dash)s.setAttribute("stroke-dasharray",dash); gg.appendChild(s); }
   if(sel&&sel.ref&&(sel.type==="player"||sel.type==="equip"||sel.type==="ball")) ring(sel.ref,"#ffd60a",28,3,"6 5");
   if(typeof multiSel!=="undefined"&&multiSel.length){ multiSel.forEach(function(o){ ring(o,"#2fa8ff",27,3.5,null); }); }
-}catch(_){} try{_setRoleRings();}catch(_){} try{_syncRingBtn();}catch(_){}}
+}catch(_){} try{_setRoleRings();}catch(_){} try{_setChip3d();}catch(_){} try{_syncRingBtn();}catch(_){}}
 /* ══ 2.902 · 역할 링(FmStadio 참고) — 선수 칩 둘레 굵은 링으로 역할을 나눈다: 압박(빨강) · 목표·받는 선수(초록) · 주목(노랑).
    p.ring 은 선수 객체의 값이라 장면(snap)마다 따로 저장되고, 정지 보드·재생·영상·PNG 에 모두 그려진다(SVG 요소). ══ */
 var ROLE_RING={press:{c:"#ff3b3b",lb:"압박"},target:{c:"#2fd07a",lb:"목표"},focus:{c:"#ffd24a",lb:"주목"}};
@@ -5789,6 +5790,27 @@ function _setRoleRings(){ if(!tokenLayer)return;
   (state.players||[]).forEach(function(p){ var R=p&&ROLE_RING[p.ring]; if(!R)return; var gg=tokenLayer.querySelector('[data-id="'+p.id+'"]'); if(!gg)return;
     var c=el("circle",{r:27.5,fill:"none",stroke:R.c,"stroke-width":5.5,"class":"ps-rolering","pointer-events":"none"});
     gg.insertBefore(c,gg.firstChild); }); }
+/* ══ 2.902 · 입체 칩(FmStadio 참고) — 선수 칩에 바닥 그림자와 위쪽 광택. SVG 요소라 내보내기에 그대로 들어간다. 기기 설정 cs_chip3d. ══ */
+function _setChip3d(){ if(!tokenLayer)return;
+  var olds=tokenLayer.querySelectorAll(".ps-c3"); for(var i=0;i<olds.length;i++)olds[i].parentNode.removeChild(olds[i]);
+  if(window.__chip3d!==true)return;
+  try{ if(!document.getElementById("psChipGloss")){ var d=svg.querySelector("defs"); if(!d){ d=el("defs"); svg.insertBefore(d,svg.firstChild); }
+    var gr=el("radialGradient",{id:"psChipGloss",cx:"38%",cy:"30%",r:"70%"});
+    gr.appendChild(el("stop",{offset:"0%","stop-color":"#fff","stop-opacity":".55"}));
+    gr.appendChild(el("stop",{offset:"45%","stop-color":"#fff","stop-opacity":".08"}));
+    gr.appendChild(el("stop",{offset:"100%","stop-color":"#000","stop-opacity":".28"}));
+    d.appendChild(gr); } }catch(_){}
+  (state.players||[]).forEach(function(p){ var gg=tokenLayer.querySelector('[data-id="'+p.id+'"]'); if(!gg)return;
+    var c=gg.querySelector(".tok-c"); if(!c)return;
+    gg.insertBefore(el("ellipse",{cx:3,cy:9,rx:23,ry:18,fill:"rgba(0,0,0,.5)","class":"ps-c3","pointer-events":"none"}),gg.firstChild);
+    var gl=el("circle",{r:21,fill:"url(#psChipGloss)","class":"ps-c3","pointer-events":"none"}); if(c.nextSibling)gg.insertBefore(gl,c.nextSibling); else gg.appendChild(gl); }); }
+(function(){ try{
+  try{ window.__chip3d=localStorage.getItem("cs_chip3d")==="1"; }catch(_){ window.__chip3d=false; }
+  function sync(){ document.querySelectorAll("#chip3dSeg button").forEach(function(b){ var on=(b.getAttribute("data-c3")==="1")===(window.__chip3d===true); b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); }); }
+  window.__setChip3d=function(on){ window.__chip3d=!!on; try{localStorage.setItem("cs_chip3d",on?"1":"0");}catch(_){} try{_setChip3d();}catch(_){} sync(); };
+  document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest("#chip3dSeg button[data-c3]"); if(!b)return; e.stopPropagation(); window.__setChip3d(b.getAttribute("data-c3")==="1"); },true);
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync); else sync();
+}catch(_){} })();
 function _ringTargets(){ var a=[];
   try{ if(typeof multiSel!=="undefined"&&multiSel&&multiSel.length){ multiSel.forEach(function(o){ if(o&&(state.players||[]).indexOf(o)>=0)a.push(o); }); } }catch(_){}
   try{ if(!a.length&&sel&&sel.type==="player"&&sel.ref)a.push(sel.ref); }catch(_){}
@@ -12090,13 +12112,9 @@ function redrawGrass(){
     if(document.documentElement.dataset.pitch!=="white"){ var vig=el("rect",{x:-_SX,y:-_SX,width:W+2*_SX,height:H+2*_SX,fill:"url(#grassVig)","clip-path":"url(#pitchClip)"}); if(ref) world.insertBefore(vig, ref); else world.appendChild(vig); }
   }catch(e){}
 }
-/* ══ 2.902 · 경기장 둘레(FmStadio 참고) — 평면 보기에도 관중석과 광고판. 원근 보기(#tiltStands)는 HTML 이라 내보내기에 안 들어가서
+/* ══ 2.902 · 경기장 둘레(FmStadio 참고) — 평면 보기에도 관중석. 원근 보기(#tiltStands)는 HTML 이라 내보내기에 안 들어가서
    이것은 world 안 SVG 로 그린다(가로·세로 회전과 영상·PNG 내보내기를 그대로 따라간다). 잔디 위, 그리드·라인 아래에 끼운다.
-   광고판 = 팀 색(scout_tool_v1.meta.color) + «팀 이름 · PROCESS». 개인 공간은 PROCESS STUDIO. 켜고 끄기는 기기 설정(cs_stadium_rim). ══ */
-function _rimTeam(){ var name="",color="";
-  try{ var ws=localStorage.getItem("ps_active_ws"),list=JSON.parse(localStorage.getItem("ps_ws_list")||"[]"); var w=(list||[]).filter(function(x){return x&&x.id===ws;})[0]; if(w&&w.kind==="team")name=String(w.name||"").slice(0,20); }catch(_){}
-  try{ var st=JSON.parse(localStorage.getItem("scout_tool_v1")||"null"); var c=st&&st.meta&&st.meta.color; if(/^#[0-9a-f]{6}$/i.test(c||""))color=c; }catch(_){}
-  return {text:name?(name+"  ·  PROCESS"):"PROCESS STUDIO",color:color||"#0f4fc9"}; }
+   광고판은 넣지 않는다(사용자 2026-09-28 «광고판은 빼자»). 켜고 끄기는 기기 설정(cs_stadium_rim). ══ */
 function drawStadiumRim(){ try{
   if(!world)return; var old=world.querySelector("#stadiumRim"); if(old)old.remove();
   if(window.__rimOn!==true)return;
@@ -12112,11 +12130,6 @@ function drawStadiumRim(){ try{
   g.appendChild(el("path",{d:"M "+(-SX)+" "+(-SX)+" L "+(W+SX)+" "+(-SX)+" L "+x1+" "+y0+" L "+x0+" "+y0+" Z M "+(-SX)+" "+(H+SX)+" L "+(W+SX)+" "+(H+SX)+" L "+x1+" "+y1+" L "+x0+" "+y1+" Z",fill:"url(#psSeatH)"}));
   g.appendChild(el("path",{d:"M "+(-SX)+" "+(-SX)+" L "+x0+" "+y0+" L "+x0+" "+y1+" L "+(-SX)+" "+(H+SX)+" Z M "+(W+SX)+" "+(-SX)+" L "+x1+" "+y0+" L "+x1+" "+y1+" L "+(W+SX)+" "+(H+SX)+" Z",fill:"url(#psSeatV)"}));
   g.appendChild(el("rect",{x:x0,y:y0,width:x1-x0,height:y1-y0,fill:"none",stroke:"rgba(0,0,0,.45)","stroke-width":4}));
-  var tm=_rimTeam(), tc=autoTxt(tm.color), bh=14, gap=60;
-  [T-25,B+11].forEach(function(by){ g.appendChild(el("rect",{x:L,y:by,width:R-L,height:bh,fill:tm.color}));
-    var t=el("text",{x:L+10,y:by+bh/2,"dominant-baseline":"central",fill:tc,"font-size":9.5,"font-weight":"800","letter-spacing":".8","font-family":"Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo',sans-serif"});
-    var one=tm.text, w1=_txMeasW(one,9.5)+gap, n=Math.max(1,Math.floor((R-L-20)/w1)), s=[]; for(var i=0;i<n;i++)s.push(one);
-    t.textContent=s.join("        "); g.appendChild(t); });
   if(ref)world.insertBefore(g,ref); else world.appendChild(g);
 }catch(e){} }
 (function(){ try{
