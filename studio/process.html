@@ -6421,12 +6421,17 @@ function monthCellInfo(day){
 }
 function monthGoEdit(r,col){
   focusScheduleDate(r,col,{syncMonth:false});
+  try{curSession=null;draftSession=null;}catch(_){}
   try{renderWeek();}catch(_){}
-  document.querySelector('#vtoggle div[data-v="week"]').click();
-  const day=week[col];
-  if(day.match) openMatch(col);
-  else if((day.trainings||[]).length) openSession(col,0);
-  else openDayHub(r,col);
+  try{
+    document.querySelectorAll('#vtoggle div').forEach(function(x){x.classList.toggle('on',x.dataset.v==='week');});
+    document.getElementById('weekView').style.display='block';
+    document.getElementById('dayViewWrap').style.display='none';
+    document.getElementById('monthViewWrap').style.display='none';
+    document.getElementById('yearViewWrap').style.display='none';
+    localStorage.setItem('cs_schedule_view','week');
+  }catch(_){}
+  try{saveCursor();}catch(_){}
 }
 function monthDayClick(r,col,cellEl){
   focusScheduleDate(r,col,{syncMonth:false});

@@ -77,6 +77,14 @@ try{
  // 폰 폭: 팝업 안에서 가로로 넘치지 않는다
  await page.setViewportSize({width:375,height:812});await page.locator(cellSel).click();await page.locator('.mpop .mp-opp').waitFor();
  assert.ok(await page.locator('.mpop').evaluate(el=>el.scrollWidth<=el.clientWidth+1&&el.getBoundingClientRect().right<=window.innerWidth));
+ // 월간 팝업의 주간 이동은 편집 시트를 열지 않고 선택한 주를 보여 주며, 폰 주간 좌우 이동도 계속 동작한다
+ await page.locator('.mpop .mp-week').click();
+ await page.waitForFunction(([w,di])=>document.querySelector('#weekView')?.style.display==='block'&&wk===w&&dayIdx===di&&curSession==null,[0,C1]);
+ assert.equal(await page.locator('#vtoggle div[data-v="week"]').evaluate(el=>el.classList.contains('on')),true,'month week button selects weekly view');
+ await page.locator('#psPhBar .nv[data-d="1"]').click();
+ await page.waitForFunction(()=>wk===1);
+ await page.locator('#psPhBar .nv[data-d="-1"]').click();
+ await page.waitForFunction(()=>wk===0);
  assert.deepEqual(errors,[]);
- console.log(JSON.stringify({engine,passed:true,cases:['slot-from-month','slot-toggle-off','content-kept','no-duplicate-slot','off-to-training','opponent-while-typing','enter-closes','close-commits','reload','phone-width']}));await context.close();
+ console.log(JSON.stringify({engine,passed:true,cases:['slot-from-month','slot-toggle-off','content-kept','no-duplicate-slot','off-to-training','opponent-while-typing','enter-closes','close-commits','reload','phone-width','month-to-week','phone-week-nav']}));await context.close();
 }finally{await browser.close();}
