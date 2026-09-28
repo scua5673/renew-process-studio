@@ -726,6 +726,7 @@
   #lsPop .ls-row:last-of-type{margin-bottom:0;}
   #lsPop .ls-lb{flex:0 0 42px;font-size:var(--fs-sub);font-weight:var(--fw-body);color:var(--txt-dim,#646A73);}
   #lsPop input[type=range]{display:block;width:100%;min-width:0;margin:0;accent-color:var(--blue,#3a6df0);}
+  #lsPop input#lsZoneName{display:block;width:100%;min-width:0;height:30px;padding:0 9px;border:1px solid var(--line,#e3e6ea);border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:13px;box-sizing:border-box;}   /* 2.902 */
   #lsPop .ls-val{text-align:right;font-size:var(--fs-caption);font-weight:var(--fw-strong);color:var(--txt,#14161A);font-variant-numeric:tabular-nums;white-space:nowrap;}
   #lsPop .ls-apply{width:100%;height:34px;margin-top:10px;border:1px solid var(--line,#E3E6EA);background:var(--panel2,#F1F2F4);color:var(--txt,#14161A);font-family:inherit;font-weight:var(--fw-strong);font-size:var(--fs-sub);padding:0 10px;border-radius:10px;cursor:pointer;}
   #lsPop .ls-apply:active{background:var(--blue,#3a6df0);color:#fff;border-color:var(--blue,#3a6df0);}
@@ -755,6 +756,11 @@
   body.drawmode #drawCatch{pointer-events:all;cursor:crosshair;}
   body.drawmode .token{pointer-events:all;}
   body[data-tool="eraser"] svg.board{cursor:pointer;}
+  /* 2.902 — 역할 링 버튼: 색 동그라미가 지금 링 색 */
+  .sel-ctl #ringBtn{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border:0;background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .sel-ctl #ringBtn .ring-sw{flex:0 0 14px;width:14px;height:14px;border-radius:50%;box-sizing:border-box;border:3px solid var(--ring-c,#9aa0ad);background:transparent}
+  .sel-ctl #ringBtn:not(.on) .ring-sw{border-style:dashed;border-color:#9aa0ad}
+  .sel-ctl #ringBtn:focus-visible{outline:2px solid #3a6df0;outline-offset:2px;border-radius:6px}
   #rosterPanel{display:none;flex:0 0 232px;align-self:stretch;background:var(--panel);border-left:1px solid var(--line);
     overflow:auto;padding:11px 12px;flex-direction:column;gap:7px;}
   .stage.roster-open{justify-content:stretch;}
@@ -3550,6 +3556,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
             <span class="color-pop-actions"><button type="button" id="myColPin">＋ 현재 색 고정</button><button type="button" id="myColEdit" aria-pressed="false">편집</button></span>
           </span>
         </span>
+        <span class="sizebox" id="ringCtl" style="display:none"><button type="button" id="ringBtn" class="ring-btn" title="역할 링 — 누를 때마다 압박 · 목표 · 주목 · 없음 (H)"><span class="ring-sw" aria-hidden="true"></span><span id="ringLb">링</span></button></span><!-- 2.902 -->
         <button type="button" id="textEditBtn" class="text-edit-btn" title="선택한 텍스트 내용 수정">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14.5 6.5l3 3"/></svg>내용 수정
         </button>
@@ -5769,7 +5776,35 @@ function _setSelRings(){ try{
     if(dash)s.setAttribute("stroke-dasharray",dash); gg.appendChild(s); }
   if(sel&&sel.ref&&(sel.type==="player"||sel.type==="equip"||sel.type==="ball")) ring(sel.ref,"#ffd60a",28,3,"6 5");
   if(typeof multiSel!=="undefined"&&multiSel.length){ multiSel.forEach(function(o){ ring(o,"#2fa8ff",27,3.5,null); }); }
-}catch(_){}}
+}catch(_){} try{_setRoleRings();}catch(_){} try{_syncRingBtn();}catch(_){}}
+/* ══ 2.902 · 역할 링(FmStadio 참고) — 선수 칩 둘레 굵은 링으로 역할을 나눈다: 압박(빨강) · 목표·받는 선수(초록) · 주목(노랑).
+   p.ring 은 선수 객체의 값이라 장면(snap)마다 따로 저장되고, 정지 보드·재생·영상·PNG 에 모두 그려진다(SVG 요소). ══ */
+var ROLE_RING={press:{c:"#ff3b3b",lb:"압박"},target:{c:"#2fd07a",lb:"목표"},focus:{c:"#ffd24a",lb:"주목"}};
+var ROLE_RING_ORDER=["","press","target","focus"];
+function _setRoleRings(){ if(!tokenLayer)return;
+  var olds=tokenLayer.querySelectorAll(".ps-rolering"); for(var i=0;i<olds.length;i++)olds[i].parentNode.removeChild(olds[i]);
+  (state.players||[]).forEach(function(p){ var R=p&&ROLE_RING[p.ring]; if(!R)return; var gg=tokenLayer.querySelector('[data-id="'+p.id+'"]'); if(!gg)return;
+    var c=el("circle",{r:27.5,fill:"none",stroke:R.c,"stroke-width":5.5,"class":"ps-rolering","pointer-events":"none"});
+    gg.insertBefore(c,gg.firstChild); }); }
+function _ringTargets(){ var a=[];
+  try{ if(typeof multiSel!=="undefined"&&multiSel&&multiSel.length){ multiSel.forEach(function(o){ if(o&&(state.players||[]).indexOf(o)>=0)a.push(o); }); } }catch(_){}
+  try{ if(!a.length&&sel&&sel.type==="player"&&sel.ref)a.push(sel.ref); }catch(_){}
+  return a; }
+function _syncRingBtn(){ var box=document.getElementById("ringCtl"),b=document.getElementById("ringBtn"),lb=document.getElementById("ringLb"); if(!box||!b)return;
+  var t=_ringTargets(); box.style.display=t.length?"flex":"none"; if(!t.length)return;
+  var R=ROLE_RING[t[0].ring]; b.style.setProperty("--ring-c",R?R.c:"transparent"); b.classList.toggle("on",!!R); if(lb)lb.textContent=R?R.lb:"링";
+  b.setAttribute("aria-label","역할 링: "+(R?R.lb:"없음")+" — 누르면 다음"); }
+function cycleRoleRing(){ var t=_ringTargets(); if(!t.length){ try{toast("선수를 먼저 고르세요");}catch(_){} return; }
+  var cur=ROLE_RING_ORDER.indexOf(t[0].ring||""), next=ROLE_RING_ORDER[(cur+1)%ROLE_RING_ORDER.length];
+  pushUndo(); t.forEach(function(p){ if(next)p.ring=next; else delete p.ring; });
+  _setRoleRings(); _syncRingBtn(); try{autoSaveAnimFrame();}catch(_){} try{boardSaveLive();}catch(_){}
+  try{toast(next?("링: "+ROLE_RING[next].lb):"링 없음");}catch(_){} }
+(function(){ try{
+  document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest("#ringBtn"); if(!b)return; e.stopPropagation(); cycleRoleRing(); },true);
+  window.addEventListener("keydown",function(e){ if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.altKey)return; if((e.key||"").toLowerCase()!=="h")return;
+    var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable))return;
+    if(!_ringTargets().length)return; e.preventDefault(); e.stopImmediatePropagation(); cycleRoleRing(); },true);
+}catch(_){} })();
 var _rvRAF=0;
 function renderVisionRAF(){ if(_rvRAF)return; try{_rvRAF=(window.requestAnimationFrame||function(f){return setTimeout(f,16);})(function(){_rvRAF=0;try{renderVision();}catch(_){}});}catch(_){_rvRAF=0;try{renderVision();}catch(__){}} }
 function renderTokens(){try{applyLookAt();}catch(_){} tokenLayer.innerHTML="";
@@ -6037,6 +6072,15 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     })();
     /* 드래그 히트: 테두리도 넓게 잡히게 — 선·화살표와 동일한 stroke 히트 패턴 */
     g.appendChild(el("rect",{x,y,width:w,height:h,rx:4,fill:"none",stroke:"#000","stroke-width":22,opacity:"0","pointer-events":"stroke"}));
+    /* 2.902 — 구역 이름(FmStadio «Target zone»): 화면 기준 위쪽 가운데 안쪽에 흰 딱지. 세로 운동장은 글자를 반대로 돌려 바로 세운다. */
+    if(d.label){ try{ const up=_lobUp(),ext=Math.abs(up.x)?w/2:h/2,fs=17,lb=String(d.label).slice(0,24);
+      const cx=x+w/2+up.x*Math.max(0,ext-18),cy=y+h/2+up.y*Math.max(0,ext-18),tw=_txMeasW(lb,fs)+18,th=fs+10;
+      const lg=el("g",{"class":"zone-label","pointer-events":"none"});
+      lg.appendChild(el("rect",{x:cx-tw/2,y:cy-th/2,width:tw,height:th,rx:5,fill:"#ffffff",opacity:".94"}));
+      const lt=el("text",{x:cx,y:cy,"text-anchor":"middle","dominant-baseline":"central",fill:"#161a22","font-size":fs,"font-weight":"800","font-family":"Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif"});
+      lt.textContent=lb; lg.appendChild(lt);
+      if(state.orientation==="v")lg.setAttribute("transform","rotate("+(state.spFlip?-90:90)+" "+cx+" "+cy+")");
+      g.appendChild(lg); }catch(_){} }
     if(isSel){
       const _lab=`${Math.round(w/MPP)} × ${Math.round(h/MPP)} m`,_fs=18,_pw=_lab.length*_fs*0.6+16,_ph=_fs+12,_cx=x+w/2,_cy=y;
       const _pg=el("g");
@@ -12255,7 +12299,8 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
         +'<div class="ls-row"><span class="ls-lb">굵기</span><input type="range" id="lsW" min="0.5" max="3" step="0.1" value="'+lw+'"><span class="ls-val" id="lsWv">'+lw.toFixed(1)+'</span></div>'
         +'<div class="ls-row"><span class="ls-lb">투명도</span><input type="range" id="lsO" min="0.2" max="1" step="0.05" value="'+op+'"><span class="ls-val" id="lsOv">'+Math.round(op*100)+'</span></div>'
         +'<div class="ls-row"><span class="ls-lb">모양</span><div class="ls-seg" id="lsShape"><button type="button" data-v="solid">실선</button><button type="button" data-v="dash">점선</button><button type="button" data-v="dot">둥근 점선</button></div><span></span></div>'   /* 2.681 */
-        +'<div class="ls-row"><span class="ls-lb">패스</span><div class="ls-seg" id="lsLob"><button type="button" data-v="ground">땅볼</button><button type="button" data-v="lob">로빙</button></div><span></span></div>'   /* 2.902 */
+        +((base&&/^(rect|rectline|rectdash|ellipse)$/.test(base.type))?'<div class="ls-row"><span class="ls-lb">이름</span><input type="text" id="lsZoneName" maxlength="24" placeholder="예: 압박 함정" autocomplete="off" value="'+String(base.label||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];})+'"><span></span></div>':'')   /* 2.902 구역 이름 */
+        +((!ds.length||ds.some(function(d){return d.type==="pass";}))?'<div class="ls-row"><span class="ls-lb">패스</span><div class="ls-seg" id="lsLob"><button type="button" data-v="ground">땅볼</button><button type="button" data-v="lob">로빙</button></div><span></span></div>':'')   /* 2.902 — 패스를 골랐거나 아무것도 안 골랐을 때(새로 그릴 기본값) */
         +'<div class="ls-row"><span class="ls-lb">채움</span><div class="ls-seg" id="lsFill"><button type="button" data-v="solid">반투명</button><button type="button" data-v="dots">점</button><button type="button" data-v="hatch">빗금</button></div><span></span></div>'
         +'<button class="ls-apply" id="lsAll">그린 선 전체에 적용</button>';
       document.body.appendChild(pop);
@@ -12285,6 +12330,12 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
           mark(); }; });
         mark();
       })();
+      /* 2.902 — 구역 이름: 입력하는 대로 선택한 구역(여럿이면 모두)에 붙는다. 비우면 이름 없음. */
+      (function(){ var zi=pop.querySelector("#lsZoneName"); if(!zi)return; var pushed=false;
+        zi.addEventListener("keydown",function(e){ e.stopPropagation(); if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); zi.blur(); } });
+        zi.addEventListener("input",function(){ var v=zi.value.trim().slice(0,24); var sd=selDraws().filter(function(d){return /^(rect|rectline|rectdash|ellipse)$/.test(d.type);});
+          if(!sd.length)return; if(!pushed){ pushUndo(); pushed=true; }
+          sd.forEach(function(d){ if(v)d.label=v; else delete d.label; }); renderDrawings(); try{boardSaveLive();}catch(_){} }); })();
       /* 2.902 — 패스: 땅볼 · 로빙. 고른 그림 중 패스 화살표에만 적용하고, 새로 그리는 패스의 기본값으로도 남긴다. */
       (function(){
         var seg=pop.querySelector("#lsLob"); if(!seg)return;
