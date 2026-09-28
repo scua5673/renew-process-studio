@@ -36,8 +36,8 @@ try{
     await f.evaluate(()=>{const r=document.querySelector('#teamList .tm-row[data-status="injury"]');const n=r.querySelector('.t-name').getBoundingClientRect();
       const t=document.elementFromPoint(n.left+10,n.top+n.height/2);(t||r).click();});
     await page.waitForTimeout(500);
-    const sheet=await f.evaluate(()=>({open:getComputedStyle(document.getElementById('plEditModal')).display!=='none',title:document.getElementById('plEditTitle').textContent,del:document.getElementById('plDelete').parentNode.id}));
-    assert.equal(sheet.open,true,'행 탭으로 시트가 열린다');assert.equal(sheet.title,'가상 선수 5');assert.equal(sheet.del,'plFoot','선수 삭제는 시트 맨 아래');
+    const sheet=await f.evaluate(()=>({open:getComputedStyle(document.getElementById('plEditModal')).display!=='none',title:document.getElementById('plEditTitle').textContent,del:document.getElementById('plDelete').parentNode.id,delTag:document.getElementById('plDelete').parentNode.tagName,footSel:document.getElementById('plFoot').tagName,delVis:document.getElementById('plDelete').getBoundingClientRect().height>20}));
+    assert.equal(sheet.open,true,'행 탭으로 시트가 열린다');assert.equal(sheet.title,'가상 선수 5');assert.equal(sheet.del,'plDelFoot','선수 삭제는 시트 맨 아래');assert.equal(sheet.delTag,'DIV');assert.equal(sheet.footSel,'SELECT','주발 select 는 그대로');assert.ok(sheet.delVis,'삭제 버튼이 보인다');
     await f.evaluate(()=>document.getElementById('plClose').click());
     // ⋯ 메뉴
     await f.evaluate(()=>document.getElementById('tmGrpMore').click());await page.waitForTimeout(200);
