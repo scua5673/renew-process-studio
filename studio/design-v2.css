@@ -856,6 +856,9 @@ html.ps-page-scout #homeView .team-session .team-home-empty{display:flex!importa
    파랑 하나(--ps-blue) · 페이지 머리 34px(.ps-ph) · 세그 한 모양(.ps-seg) · 버튼 2종(.ps-btn / .ps-btn.pri) · 카드 12px
    ══════════════════════════════════════════════════════════════════════ */
 :root{--ps-blue:var(--ps-color-action,#3a6df0);--ps-blue-soft:var(--ps-color-action-soft,#edf2fe);--ps-ink:#14213D;--ps-sunken:#EEF0F4;--ps-line:#E4E7EC;--ps-muted:#646A73;}
+/* 2.894 — :root 에서 한 번 계산된 값은 body.fmdark 의 --ps-color-* 를 따라가지 않는다. 다크에서 직접 다시 정한다
+   (실측: IDP «선수단» 제목이 다크 배경에 #14213D, 대비 1.16). */
+body.fmdark{--ps-blue:var(--ps-color-action,#5e88ee);--ps-blue-soft:var(--ps-color-action-soft,#182743);--ps-ink:var(--ps-color-text,#e7ebf1);--ps-sunken:var(--ps-color-surface-soft,#232c38);--ps-line:var(--ps-color-border,#2c3744);--ps-muted:var(--ps-color-muted,#9aa4b3);}
 .ps-ph{display:flex;align-items:center;gap:12px;min-height:34px;margin:0 0 12px}
 .ps-ph>b,.ps-ph>h2{font-size:14px;font-weight:800;letter-spacing:-.02em;margin:0;line-height:1.2;color:var(--ps-ink)}
 .ps-ph>small,.ps-ph>p{font-size:12px;color:var(--ps-muted);margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

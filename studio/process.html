@@ -8595,6 +8595,8 @@ try{
 .wks-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 /* 2.130 — 한 주가 한 화면에 들어가야 주간 보드다. 178×7 이면 넘쳐서 가로 스크롤이 생겼다(실측) */
 .wks{display:grid;grid-template-columns:repeat(7,minmax(148px,1fr));gap:6px;min-width:0;padding:2px 0 6px}
+/* 2.894 — 태블릿(아이패드 1100 등)에서 7열×148px 가 사이드바 옆 폭을 넘어 일요일 열이 잘렸다(합성 워크스루). 이 폭에서만 열을 좁힌다 */
+@media (min-width:768px) and (max-width:1199px){ .wks{grid-template-columns:repeat(7,minmax(112px,1fr));gap:5px} }
 .wks-day{border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff);overflow:hidden;display:flex;flex-direction:column;min-width:0}
 .wks-day.is-match{border-color:#eccfcd}
 .wks-day.is-off{background:var(--surface-2)}
