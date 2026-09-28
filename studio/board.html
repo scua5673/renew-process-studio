@@ -3301,6 +3301,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
           <div class="menurow" data-bs-tab="pitch" id="pitchSpecRow"><span class="menulbl">규격</span><div class="seg" id="pitchSpecSeg" role="group" aria-label="운동장 규격"><button data-spec="fifa" class="on" title="FIFA 105×68m · 골 7.32×2.44">11인제</button><button data-spec="u12" title="KFA 8인제 경기규칙 — 65×48m · 골 5.7×2.15 · PA 12.5 · GA 4.5 · PK 8.5 · 센터서클 7">8인제</button><button data-spec="futsal" title="FIFA 풋살 — 40×20m · 골 3×2 · PA r6 사분원 · PK 6 · 제2 PK 10 · 센터서클 3">풋살</button></div></div>
           <!-- 2.272 — 잔디 줄무늬(있던 엔진 __setGrassM 에 UI만) · 원근 뷰(보기 전용, fmstadio 레퍼런스 C안) -->
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">잔디 줄무늬</span><div class="seg" id="grassSeg" role="group" aria-label="잔디 줄무늬"><button data-g="0">없음</button><button data-g="5" title="5m 폭 모잉 스트라이프">기본</button><button data-g="10" title="10m 폭">넓게</button></div></div>
+          <div class="menurow" data-bs-tab="pitch"><span class="menulbl">경기장</span><div class="seg" id="rimSeg" role="group" aria-label="경기장 둘레"><button type="button" data-rim="0">없음</button><button type="button" data-rim="1" title="운동장 밖에 관중석, 터치라인 밖에 팀 색 광고판(팀 이름). 영상·사진 내보내기에도 들어갑니다">관중석·광고판</button></div></div><!-- 2.902 -->
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">보드 보기</span><div class="seg" id="tiltSeg" role="group" aria-label="보드 보기"><button data-t="0" class="on">평면</button><button data-t="1">입체</button></div></div>
           <!-- 2.377 — 원근 뷰 설정 줄 제거(사용자 "원근뷰는 보드 설정에서도 지우고").
                엔진(__setTilt · __tiltFit · __tiltStands · tiltGoalsSync)과 CSS 는 **지우지 않는다** —
@@ -12089,6 +12090,44 @@ function redrawGrass(){
     if(document.documentElement.dataset.pitch!=="white"){ var vig=el("rect",{x:-_SX,y:-_SX,width:W+2*_SX,height:H+2*_SX,fill:"url(#grassVig)","clip-path":"url(#pitchClip)"}); if(ref) world.insertBefore(vig, ref); else world.appendChild(vig); }
   }catch(e){}
 }
+/* ══ 2.902 · 경기장 둘레(FmStadio 참고) — 평면 보기에도 관중석과 광고판. 원근 보기(#tiltStands)는 HTML 이라 내보내기에 안 들어가서
+   이것은 world 안 SVG 로 그린다(가로·세로 회전과 영상·PNG 내보내기를 그대로 따라간다). 잔디 위, 그리드·라인 아래에 끼운다.
+   광고판 = 팀 색(scout_tool_v1.meta.color) + «팀 이름 · PROCESS». 개인 공간은 PROCESS STUDIO. 켜고 끄기는 기기 설정(cs_stadium_rim). ══ */
+function _rimTeam(){ var name="",color="";
+  try{ var ws=localStorage.getItem("ps_active_ws"),list=JSON.parse(localStorage.getItem("ps_ws_list")||"[]"); var w=(list||[]).filter(function(x){return x&&x.id===ws;})[0]; if(w&&w.kind==="team")name=String(w.name||"").slice(0,20); }catch(_){}
+  try{ var st=JSON.parse(localStorage.getItem("scout_tool_v1")||"null"); var c=st&&st.meta&&st.meta.color; if(/^#[0-9a-f]{6}$/i.test(c||""))color=c; }catch(_){}
+  return {text:name?(name+"  ·  PROCESS"):"PROCESS STUDIO",color:color||"#0f4fc9"}; }
+function drawStadiumRim(){ try{
+  if(!world)return; var old=world.querySelector("#stadiumRim"); if(old)old.remove();
+  if(window.__rimOn!==true)return;
+  var ref=world.querySelector("#gridLayer")||world.querySelector("#lineLayer")||null, SX=1600, IN=44;
+  var g=el("g",{id:"stadiumRim","pointer-events":"none"}), defs=el("defs");
+  function pat(id,horiz){ var p=el("pattern",{id:id,width:horiz?9:6,height:horiz?6:9,patternUnits:"userSpaceOnUse"});
+    p.appendChild(el("rect",{width:horiz?9:6,height:horiz?6:9,fill:"#1a2131"}));
+    p.appendChild(horiz?el("rect",{x:0,y:0,width:9,height:1.2,fill:"rgba(255,255,255,.07)"}):el("rect",{x:0,y:0,width:1.2,height:9,fill:"rgba(255,255,255,.07)"}));
+    p.appendChild(el("circle",{cx:horiz?3:3.2,cy:horiz?3.4:3,r:1,fill:"rgba(255,255,255,.14)"}));
+    p.appendChild(el("circle",{cx:horiz?7.2:1.6,cy:horiz?2.6:7.4,r:.9,fill:"rgba(255,214,150,.12)"})); defs.appendChild(p); }
+  pat("psSeatH",true); pat("psSeatV",false); g.appendChild(defs);
+  var x0=L-IN,x1=R+IN,y0=T-IN,y1=B+IN;
+  g.appendChild(el("path",{d:"M "+(-SX)+" "+(-SX)+" L "+(W+SX)+" "+(-SX)+" L "+x1+" "+y0+" L "+x0+" "+y0+" Z M "+(-SX)+" "+(H+SX)+" L "+(W+SX)+" "+(H+SX)+" L "+x1+" "+y1+" L "+x0+" "+y1+" Z",fill:"url(#psSeatH)"}));
+  g.appendChild(el("path",{d:"M "+(-SX)+" "+(-SX)+" L "+x0+" "+y0+" L "+x0+" "+y1+" L "+(-SX)+" "+(H+SX)+" Z M "+(W+SX)+" "+(-SX)+" L "+x1+" "+y0+" L "+x1+" "+y1+" L "+(W+SX)+" "+(H+SX)+" Z",fill:"url(#psSeatV)"}));
+  g.appendChild(el("rect",{x:x0,y:y0,width:x1-x0,height:y1-y0,fill:"none",stroke:"rgba(0,0,0,.45)","stroke-width":4}));
+  var tm=_rimTeam(), tc=autoTxt(tm.color), bh=14, gap=60;
+  [T-25,B+11].forEach(function(by){ g.appendChild(el("rect",{x:L,y:by,width:R-L,height:bh,fill:tm.color}));
+    var t=el("text",{x:L+10,y:by+bh/2,"dominant-baseline":"central",fill:tc,"font-size":9.5,"font-weight":"800","letter-spacing":".8","font-family":"Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo',sans-serif"});
+    var one=tm.text, w1=_txMeasW(one,9.5)+gap, n=Math.max(1,Math.floor((R-L-20)/w1)), s=[]; for(var i=0;i<n;i++)s.push(one);
+    t.textContent=s.join("        "); g.appendChild(t); });
+  if(ref)world.insertBefore(g,ref); else world.appendChild(g);
+}catch(e){} }
+(function(){ try{
+  var _bp=buildPitch; buildPitch=function(){ var r=_bp.apply(this,arguments); try{drawStadiumRim();}catch(_){} return r; };
+  var _rg=redrawGrass; redrawGrass=function(){ var r=_rg.apply(this,arguments); try{drawStadiumRim();}catch(_){} return r; };
+  try{ window.__rimOn=localStorage.getItem("cs_stadium_rim")==="1"; }catch(_){ window.__rimOn=false; }
+  function sync(){ document.querySelectorAll("#rimSeg button").forEach(function(b){ var on=(b.getAttribute("data-rim")==="1")===(window.__rimOn===true); b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); }); }
+  window.__setRim=function(on){ window.__rimOn=!!on; try{localStorage.setItem("cs_stadium_rim",on?"1":"0");}catch(_){} drawStadiumRim(); sync(); };
+  document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest("#rimSeg button[data-rim]"); if(!b)return; e.stopPropagation(); window.__setRim(b.getAttribute("data-rim")==="1"); },true);
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync); else sync();
+}catch(_){} })();
 function init(){
   try{var _g=parseFloat(localStorage.getItem("cs_grass_m"));window.__grassM=isNaN(_g)?0:_g;}catch(_){window.__grassM=5;}
   /* 마지막으로 고른 펜 색은 도구·장면·페이지를 바꿔도 계속 사용한다. */
