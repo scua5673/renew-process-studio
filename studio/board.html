@@ -7144,7 +7144,8 @@ let undoStack=[],redoStack=[];
 function _animSnapForUndo(){ try{ return {frames:(anim.frames||[]).map(function(f){ var c=Object.assign({},f); if(f.hl)c.hl=f.hl.slice(); if(f.blink)c.blink=JSON.parse(JSON.stringify(f.blink)); if(f.curves)c.curves=JSON.parse(JSON.stringify(f.curves)); return c; }),active:animActive}; }catch(_){ return null; } }
 function _animApplyUndo(a){ if(!a||!Array.isArray(a.frames))return; anim.frames=a.frames; animActive=Math.max(-1,Math.min(+a.active,anim.frames.length-1)); try{renderAnimFrames();}catch(_){} try{renderOnion();}catch(_){} try{_animFitPad();}catch(_){} }
 function _undoEntry(e){ if(e&&e.board){ loadSnap(e.board); _animApplyUndo(e.anim); } else loadSnap(e); }
-function pushUndo(){try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();redoStack.length=0;}catch(_){}}
+function pushUndo(){try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();redoStack.length=0;}catch(_){} try{_boardUserTouched=true;}catch(_){}}   /* 2.903 — 사용자가 손댐 */
+try{document.addEventListener("input",function(e){ try{ var t=e.target; if(t&&e.isTrusted!==false&&t.closest&&t.closest(".sel-ctl,#lsPop"))_boardUserTouched=true; }catch(_){} },true);}catch(_){}
 function undoLast(){if(!undoStack.length){toast("되돌릴 작업이 없어요");return;}try{redoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(redoStack.length>50)redoStack.shift();_undoEntry(undoStack.pop());}catch(_){}toast("되돌렸습니다 ↩");}
 function redoLast(){if(!redoStack.length){toast("다시 실행할 작업이 없어요");return;}try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();_undoEntry(redoStack.pop());}catch(_){}toast("다시 실행 ↪");}
 function clearBoardHistory(){undoStack.length=0;redoStack.length=0;}
@@ -7200,6 +7201,10 @@ let _bliveT=null;
 let _bliveSaveSeq=0,_bliveToastAt=0,_bliveDirty=false,_bliveApplying=false;
 var _boardPrivateOwner=null,_boardPrivateRecord=null,_boardPrivateBase=null;
 var _boardManualDirty=false,_boardManualSaving=false;
+/* 2.903 — «변경됨» 글자는 사용자가 실제로 손댔을 때만(목업 ⑤ «새 보드는 저장됨»).
+   _boardManualDirty 는 화면을 다시 그릴 때마다 켜지고, 서버 덮어쓰기 보류(boardApplyServerLive)·초안 보존·닫기 경고가 그 값을 쓴다.
+   그 뜻은 건드리지 않고 버튼 글자만 _boardUserTouched(되돌리기 기록이 쌓였거나 선택 패널 입력칸을 고침)와 함께 본다. */
+var _boardUserTouched=false;
 var _boardPrivateLoaded=false,_boardPrivateGeneration=0,_boardPrivateEditSeq=0;
 var _boardPrivateFlight=null,_boardPrivateLocal=Promise.resolve(),_boardPrivateHead=null,_boardPrivateIdbHead=null;
 var _boardPrivateDurableToken=null;
@@ -7492,8 +7497,10 @@ function boardSchedulePreview(){
     }catch(_){}finally{window.__psPreviewRefreshing=false;}
   },350);
 }
+function boardManualChanged(){ if(!_boardManualDirty)_boardUserTouched=false; return !!(_boardManualDirty&&_boardUserTouched); }
 function boardManualStatus(){
-  try{var b=document.getElementById('boardManualSave');if(b){b.textContent=_boardManualSaving?'저장 중…':(_boardManualDirty?'저장 · 변경됨':'저장');b.disabled=_boardManualSaving;b.title='현재 보드를 저장합니다';}}catch(_){}
+  var _chg=boardManualChanged(); try{ if(typeof window.__psSaveBarSync==='function')window.__psSaveBarSync(_chg); }catch(_){}
+  try{var b=document.getElementById('boardManualSave');if(b){b.textContent=_boardManualSaving?'저장 중…':(_chg?'저장 · 변경됨':'저장');b.disabled=_boardManualSaving;b.title='현재 보드를 저장합니다';}}catch(_){}
 }
 async function boardSaveExplicit(){
   if((_boardManualSaving&&boardPrivateCurrent(_boardManualSaving))||_vaultBoardContext||window.__vaultEdit)return false;
@@ -7560,6 +7567,7 @@ try{window.addEventListener("pagehide",boardFlushLive);window.addEventListener("
 try{document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")boardFlushLive();});}catch(_){}
 async function restoreLiveBoard(){
   try{if(new URLSearchParams(location.search).get("community_view")==="1"||document.body.classList.contains("comm-viewing"))return false;}catch(_){}
+  if(!_boardManualDirty)_boardUserTouched=false;   /* 2.903 — 깨끗한 상태에서 불러오면 불러오기 렌더는 «변경»이 아니다 */
   var owner=boardPrivateOwner();if(!owner)return false;
   var generation=++_boardPrivateGeneration,edit=_boardPrivateEditSeq,api=boardPrivateAPI();
   if(_boardPrivateOwner&&!boardPrivateSameAccount(_boardPrivateOwner,owner))boardPrivateResetCanvas();
