@@ -5567,6 +5567,15 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       html.ps-page-scout #playersView #sbWrap .sb-add{height:23px;min-height:23px;padding:3px 0;box-sizing:border-box}
       html.ps-page-scout #playersView #sbWrap .sb-players .sb-chip.ours{background:var(--blue-soft,#eef4ff)}
       html.ps-page-scout #playersView #sbSplit.with-side #sbWrap .sb-players{display:none}
+      /* 2.896 — 후보 칩 × (목록에서 바로 지우기 = 보관). 둘째 줄이 10px 이라 두 줄을 걸친 16px 칸, 눌리는 범위는 ::before 로 넓힌다 */
+      html.ps-page-scout .sb-chip .dx{position:relative;border:0;background:transparent;color:var(--dim);font:inherit;font-size:13px;font-weight:700;line-height:1;padding:0;width:16px;min-width:16px;height:16px;min-height:0;max-height:16px;cursor:pointer;border-radius:50%}
+      html.ps-page-scout .sb-chip .dx::before{content:"";position:absolute;inset:-6px -5px}
+      html.ps-page-scout .sb-chip .dx:hover,html.ps-page-scout .sb-chip .dx:focus-visible{color:var(--red,#c94545);background:color-mix(in srgb,var(--red,#c94545) 12%,transparent)}
+      html.ps-page-scout #sbWrap .sb-chip.tgt{grid-template-columns:minmax(0,1fr) 16px auto 16px}
+      html.ps-page-scout #sbWrap .sb-chip.tgt .mt2{grid-column:1/4}
+      html.ps-page-scout #sbWrap .sb-chip.tgt .dx{grid-column:4;grid-row:1/3;align-self:center}
+      html.ps-page-scout body.sb-meet .sb-chip .dx{display:none}
+      html.ps-page-scout body.sb-meet #sbWrap .sb-chip.tgt{grid-template-columns:78px 26px minmax(56px,1fr) auto auto}
       html.ps-page-scout #playersView #sbWrap .sb-slot:hover,
       html.ps-page-scout #playersView #sbWrap .sb-slot:focus-within{z-index:30}
       html.ps-page-scout #playersView #sbWrap .sb-slot.moving{z-index:50}
@@ -5638,9 +5647,9 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
           <span class="sb-show" id="sbShowSeg" role="group" aria-label="보드 표시">
             <!-- 1.549 — 사용자 지시로 이름·순서 변경: 스카우팅 / 우리팀 / 전체.
                  '후보'는 무엇의 후보인지 모호했고, 넓은 쪽(전체)을 끝에 두는 편이 읽기 쉽다. -->
-            <button type="button" data-show="tgt" aria-pressed="false">스카우팅</button>
+            <button type="button" data-show="tgt" aria-pressed="true">스카우팅</button>
             <button type="button" data-show="ours" aria-pressed="false">우리팀</button>
-            <button type="button" data-show="all" aria-pressed="true">전체</button>
+            <button type="button" data-show="all" aria-pressed="false">전체</button>
           </span>
           <button type="button" class="btn sm" id="sbAdd" title="자리 추가">＋ 자리</button>
           <button type="button" class="btn sm" id="sbClear" title="지금 보이는 선수를 보드에서 내린다 (선수 자료는 그대로)">카드 비우기</button>
@@ -7493,7 +7502,7 @@ function scoutFit(pl,p){
    자리 위치와 커스텀 라벨은 팀 화면과 같은 data.meta.formPos[form] 에 저장한다.
    저장소를 따로 두면 두 화면이 반드시 어긋난다. 선수는 posId 로만 자리에 붙는다. */
 /* 2.848 — 포지션 카드에서 등록한 우리 선수와 스카우트 후보를 함께 비교한다. */
-var sbTab="cands", sbMeet=false, sbAdding=null, sbAddKind="target", sbShow="all";
+var sbTab="cands", sbMeet=false, sbAdding=null, sbAddKind="target", sbShow="tgt";   /* 2.896 — 스카우팅은 후보만 보며 시작(사용자) */
 function sbForm(){ return (data.meta&&data.meta.form)||"433"; }
 function sbFormList(){
   var keys=Object.keys(TM_FORMS);
@@ -7734,6 +7743,7 @@ function sbChip(p,po){
     /* 2.268 — 캡션 줄 = 출신 · 등번호(사용자). 번호 편집(data-sbf=num)은 캡션에서 그대로 */
     +(isT?'<span class="mt2"><span class="mt" data-sbed="1" tabindex="0" data-sbf="club" data-ph="소속팀">'+PSSafe.html(String(p.club||""))+'</span><span class="no" data-sbed="1" tabindex="0" inputmode="numeric" data-sbf="num" data-ph="#">'+PSSafe.html(String(p.num||""))+'</span></span>'
          :'<span class="mt2"><span class="mt">우리 선수'+(meta?' · '+PSSafe.html(meta):'')+'</span>'+(p.num?'<span class="no">'+PSSafe.html(String(p.num))+'</span>':'')+'</span>')
+    +(isT?'<button type="button" class="dx" data-sbrm="'+PSSafe.html(p.id)+'" title="목록에서 지우기 — 보관한 후보에서 되살릴 수 있어요" aria-label="'+PSSafe.html((p.name||"후보")+" 지우기")+'">×</button>':'')   /* 2.896 — 목록에서 바로 지우기(사용자) */
     +'</div>';
 }
 /* 1.556 — 스카우팅 보드의 조 칩. 선수 페이지의 grpChips 와 같은 문법(전체 + 조들),
@@ -8012,6 +8022,11 @@ function sbWire(){
     });
   });
   /* 1.885 — 프로필 아이콘: 끌기와 안 부딪히게 pointerdown 차단, click 으로 openPlayer */
+  /* 2.896 — 후보 칩 × : 끌기와 안 부딪히게 pointerdown 차단, 보관(되살리기 가능) */
+  [wrap,$("sbPoolTgt")].forEach(function(root){ if(root)root.querySelectorAll("[data-sbrm]").forEach(function(b){
+    b.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
+    b.addEventListener("click", function(e){ e.stopPropagation(); e.preventDefault(); scArchiveCandidate(b.dataset.sbrm); });
+  }); });
   wrap.querySelectorAll("[data-sbprof]").forEach(function(b){
     b.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
     b.addEventListener("click", function(e){ e.stopPropagation(); e.preventDefault(); try{ openPlayer(b.dataset.sbprof); }catch(_){} });
@@ -18896,7 +18911,7 @@ function setView(v){
   if(v==="terms"){try{parent.postMessage({source:"scout",type:"openTerms"},"*");}catch(_){}return;}
   var _prevView=document.querySelector(".view.on");
   document.querySelectorAll(".view").forEach(s=>s.classList.toggle("on",s.id===v+"View"||(v==="positions"&&s.id==="formsView")));
-  try{ var _nowView=document.querySelector(".view.on"); if(_prevView&&_nowView&&_prevView!==_nowView){ (document.scrollingElement||document.documentElement).scrollTop=0; } }catch(_){}   /* 2.895 — 한 iframe 안에서 화면을 바꿔도 앞 화면 세로 스크롤이 남아 «오늘»이 214 아래에서 열렸다 */
+  try{ var _nowView=document.querySelector(".view.on"); if(_prevView&&_nowView&&_prevView!==_nowView){ (document.scrollingElement||document.documentElement).scrollTop=0; if(_nowView.id==="playersView")sbShow="tgt"; } }catch(_){}   /* 2.895 — 한 iframe 안에서 화면을 바꿔도 앞 화면 세로 스크롤이 남아 «오늘»이 214 아래에서 열렸다 */
   document.querySelectorAll("#nav button[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
   var more=$("teamMore"),moreBtn=$("teamMoreBtn");
   if(more){more.classList.remove("open");if(moreBtn){moreBtn.setAttribute("aria-expanded","false");moreBtn.classList.toggle("on",["growth","report","positions","attrs","imgnote","gamemodel","terms"].indexOf(v)>=0);moreBtn.textContent="설정";}}
@@ -20033,6 +20048,24 @@ html body .ck .wk-c:not(.off) .t.dim:not(#_):not(#__){color:var(--text-3,#8A9099
 html body .ck .wk:not(#_):not(#__){align-items:flex-start}
 html body .ck .wk-c:not(.m):not(.off):has(.t.dim):not(#_){grid-template-rows:20px 16px 34px 0 0 18px;min-height:0}
 html body .ck .wk-c:not(.m):not(.off):has(.t.dim) .ls:not(#_),html body .ck .wk-c:not(.m):not(.off):has(.t.dim) .bb:not(#_){display:none}
+/* 2.896 — 폰 «오늘» 이번 주 띠 = 7일 한 줄(목업 A, 사용자). 세부(제목·시간·RPE·블록)는 아래 «오늘 세션» 카드가 말한다 */
+@media (max-width:600px){
+html body .ck .wk:not(#_):not(#__){display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;overflow:visible;padding:0;margin:0 0 10px;scroll-snap-type:none}
+html body .ck .wk-c:not(#_):not(#__){display:flex;flex-direction:column;align-items:center;gap:2px;flex:initial;min-width:0;min-height:0;height:auto;padding:6px 0 7px;text-align:center;grid-template-rows:none}
+html body .ck .wk-c .wd:not(#_):not(#__){flex-direction:column;align-items:center;gap:0;height:auto}
+html body .ck .wk-c .wd b:not(#_):not(#__){font-size:12px;line-height:16px}
+html body .ck .wk-c .wd em:not(#_):not(#__){font-size:10px;line-height:13px}
+html body .ck .wk-c .md:not(#_):not(#__){height:auto;line-height:13px;font-size:10px;padding:0;background:none;color:var(--gray);letter-spacing:0;white-space:nowrap}
+html body .ck .wk-c .md:not(#_):not(#__)::after{content:"";display:block;width:6px;height:6px;border-radius:50%;margin:4px auto 0;background:var(--blue,#3a6df0)}
+html body .ck .wk-c.off .md:not(#_):not(#__)::after{background:transparent;box-shadow:inset 0 0 0 1px var(--faint)}
+html body .ck .wk-c.m .md:not(#_):not(#__){color:#C24A46;align-self:center;display:block;border-radius:0}
+html body .ck .wk-c.m .md:not(#_):not(#__)::after{background:#C24A46}
+html body .ck .wk-c .t:not(#_):not(#__),html body .ck .wk-c .ls:not(#_):not(#__),html body .ck .wk-c .bb:not(#_):not(#__),html body .ck .wk-c .mt:not(#_):not(#__){display:none}
+html body .ck .wk-c.today:not(#_):not(#__):after{content:"";top:3px;right:3px;width:5px;height:5px;padding:0;border-radius:50%;background:var(--teamc)}
+html body .ck .wk-c.m:not(#_):not(#__):before{height:2px}
+body.fmdark .ck .wk-c.m .md:not(#_):not(#__){color:#E07470;background:none}
+body.fmdark .ck .wk-c.m .md:not(#_):not(#__)::after{background:#E07470}
+}
 }
 </style>
 <style id="ps-2848-scout-list">

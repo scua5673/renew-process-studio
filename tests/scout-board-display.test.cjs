@@ -36,16 +36,17 @@ function setup(){
     sbWire(){state.wired++;},sbClamp(){state.clamped++;}
   });
   vm.runInContext(implementation,c,{filename:'scout-board-display.js'});
+  const initialShow=c.sbShow;c.sbShow='all';   // 2.896 — 기본은 후보만(tgt). 아래 표시 규칙은 «전체» 보기에서 잰다
   const player=(id,posId,type='ours',extra={})=>({id,name:id,posId,type,...extra});
   const renderedIds=()=>wrap.children.flatMap(el=>[...el.innerHTML.matchAll(/data-pid="([^"]+)"/g)].map(m=>m[1]));
-  return {c,data,state,wrap,pool,count,player,renderedIds};
+  return {c,data,state,wrap,pool,count,player,renderedIds,initialShow};
 }
 
-test('the initial eleven position cards show both registered squad players and scouting candidates',()=>{
+test('scouting opens on candidates only (2.896), and the all view of the eleven position cards shows both registered squad players and scouting candidates',()=>{
   const h=setup();h.data.players=[h.player('ours','pos-0'),h.player('candidate','pos-0','target'),h.player('legacy-ours','pos-1',undefined)];
   delete h.data.players[2].type;
   const before=plain(h.data);
-  assert.equal(h.c.sbShow,'all');h.c.renderScoutBoard();
+  assert.equal(h.initialShow,'tgt');h.c.renderScoutBoard();
   assert.equal(h.wrap.children.length,11);
   assert.deepEqual(h.renderedIds(),['ours','candidate','legacy-ours']);
   assert.equal(h.pool.parentElement.style.display,'');
