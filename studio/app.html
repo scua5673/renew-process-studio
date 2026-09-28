@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.903"></script>
+<script src="autosave-status.js?v=2.904"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.903';</script>
+<script>window.PS_BUILD='2.904';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1813,6 +1813,14 @@ function psShowUpdBand(){
     /* 첫 화면에서는 작전판만 로드한다.
        예전에는 0.6초 뒤 모든 iframe(약 1MB+)을 동시에 읽어 작전판 렌더링과 경쟁했다.
        나머지는 사용자가 해당 탭을 처음 열 때 한 번만 로드한다. */
+    /* 2.904 — 팀 › 일정을 여는 보기. 데스크톱은 받은 값(주간) 그대로, 폰(≤760)은 «마지막에 본 보기»(cs_schedule_view), 기록이 없으면 월간(1.976).
+       미리 로드(2.252)와 탭 열기(sendTeamView)가 같은 답을 쓴다 — 둘이 다르면 주간으로 칠했다가 월간으로 튄다. */
+    function psSchedPhone(){ try{ return !!(window.matchMedia&&window.matchMedia('(max-width:760px)').matches); }catch(_){ return false; } }
+    function psSchedOpenMode(mode){
+      if(mode!=='week'||!psSchedPhone())return mode;
+      var lv=''; try{ lv=localStorage.getItem('cs_schedule_view')||''; }catch(_){}
+      return /^(year|month|week|day)$/.test(lv)?lv:'month';
+    }
     function ensureAppFrame(app){
       if(shellSwitchBlocked)return null;
       var item={
@@ -1820,7 +1828,7 @@ function psShowUpdBand(){
            주간 세그를 '눌러' 주는 방식이라, 그 전까지는 마크업에 박힌 '월간'이 켜진 채로 칠해졌다.
            내용은 이미 주간인데 표시는 월간 — 첫 진입 0.5~1초 동안 어느 화면을 보고 있는지 거짓말을 했다.
            주소로 알려 주면 process.html 이 첫 파싱에서 바로 맞게 칠한다(누르는 경로는 그대로 남겨 둔다). */
-        process:[fProcess,'process.html?v='+PS_BUILD+'&mode=week'],
+        process:[fProcess,'process.html?v='+PS_BUILD+'&mode='+psSchedOpenMode('week')],   /* 2.904 — 폰은 마지막에 본 보기로 첫 페인트(주간으로 칠했다 월간으로 튀지 않게) */
         gamemodel:[fGameModel,'gamemodel.html?v='+PS_BUILD+(currentTeamKey?'':'&scope=personal')],   /* 1.901 — 보관함에서 열면 개인 게임모델 */
         scout:[fScout,'scout.html?v='+PS_BUILD],
         terms:[fTerms,'terms.html?v='+PS_BUILD],
@@ -2131,8 +2139,10 @@ function psShowUpdBand(){
     if(openNoteTool)openNoteTool.addEventListener('click',function(){currentTeamKey='';showApp('note');});
     function sendTeamView(fr,b){
       var view=b.dataset.teamView,mode=b.dataset.processMode;
-      /* 1.976 — 폰에서 팀 › 일정은 월간이 먼저(사용자). 데스크톱은 주간 시트 그대로 */
-      try{ if(mode==='week'&&window.matchMedia&&window.matchMedia('(max-width:760px)').matches)mode='month'; }catch(_){}
+      /* 1.976 — 폰에서 팀 › 일정은 월간이 먼저(사용자). 데스크톱은 주간 시트 그대로
+         2.904 — 폰은 «마지막에 본 보기»로 연다(사용자 2026-09-28, 목업 ③). 일정 화면이 보기를 바꿀 때마다 cs_schedule_view 에 적는다(같은 출처라 셸도 읽는다).
+         기록이 없으면 예전처럼 월간. 이미 그 보기로 떠 있으면 다시 누르지 않는다 — 주·일 보기 클릭은 오늘로 되돌리므로(보던 주를 잃지 않게). */
+      var _phoneLast=(mode==='week'&&psSchedPhone()); mode=psSchedOpenMode(mode);
       var open=function(){try{
         if(view)fr.contentWindow.postMessage({type:'setView',view:view},'*');
         if(mode){
@@ -2144,7 +2154,7 @@ function psShowUpdBand(){
           else{
             var cal=fd&&fd.querySelector('#topNav [data-go="schedule"]');
             if(cal&&!cal.classList.contains('on'))cal.click();
-            var t=fd&&fd.querySelector('#vtoggle [data-v="'+mode+'"]'); if(t)t.click();
+            var t=fd&&fd.querySelector('#vtoggle [data-v="'+mode+'"]'); if(t&&!(_phoneLast&&t.classList.contains('on')&&cal&&cal.classList.contains('on')))t.click();
           }
         }
       }catch(_){}};
@@ -7500,13 +7510,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.903"></script>
-<script src="autosave-merge.js?v=2.903"></script>
-<script src="autosave-runtime.js?v=2.903"></script>
-<script src="autosave-recovery.js?v=2.903"></script>
-<script src="sync.js?v=2.903"></script>
+<script src="autosave-journal.js?v=2.904"></script>
+<script src="autosave-merge.js?v=2.904"></script>
+<script src="autosave-runtime.js?v=2.904"></script>
+<script src="autosave-recovery.js?v=2.904"></script>
+<script src="sync.js?v=2.904"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.903">
+<link rel="stylesheet" href="support.css?v=2.904">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

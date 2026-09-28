@@ -6361,7 +6361,9 @@ document.querySelectorAll('#vtoggle div').forEach(t=>t.onclick=()=>{
   if(v==='day') renderDay();
   if(v==='month'){ syncMonthToFocus(); renderMonth(); }
   if(v==='year'){ yearAnchor=dateOf(wk*7+dayIdx).getFullYear(); renderYear(); }
-  try{localStorage.setItem('cs_schedule_view',v);}catch(_){}
+  /* 2.904 — 부팅 복원(주소의 mode 로 칠한 것)은 «마지막에 본 보기»가 아니다. 셸이 미리 로드할 때 늘 mode=week 로 열어
+     사용자가 고른 적 없는 주간이 기록되던 것 — 그래서 폰이 처음부터 주간으로 열렸다. 사람이 고른 보기만 적는다. */
+  if(!window.__svBoot){ try{localStorage.setItem('cs_schedule_view',v);}catch(_){} }
 });
 function activeScheduleView(){
   const el=document.querySelector('#vtoggle div.on');
@@ -8459,8 +8461,8 @@ try{
      주소로 week 를 받고도 month 로 한 번 튀었다가 셸이 다시 week 로 돌리는 깜빡임이 생긴다. */
   var __sv=(typeof __bootView==='string'&&__bootView)||localStorage.getItem('cs_schedule_view')||'month';
   var __st=document.querySelector('#vtoggle div[data-v="'+__sv+'"]');
-  if(__st)__st.click();
-}catch(_){}
+  if(__st){ window.__svBoot=true; try{ __st.click(); }finally{ window.__svBoot=false; } }
+}catch(_){ window.__svBoot=false; }
 </script>
 <script>/* 2.261 — 일정 동기화 가시화: ps_sync_meta.c['process_coach_v1'] = 이 기기에 적용된 서버 판 시각.
    0/없음 = 서버 일정을 한 번도 못 받음(다른 계정·다른 팀 의심 — 2.256 로그인 방법 연결 안내).
