@@ -5957,6 +5957,13 @@ function enableResize(hg,d,i){
     window.addEventListener("pointermove",move);
     window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);});
 }
+/* 2.902 — 로빙 패스(FmStadio 참고): 조절점이 없으면 «화면 위쪽»으로 휜 곡선을 자동으로 만든다.
+   세로 운동장은 world 가 ∓90° 돌아 있으므로 화면 위쪽을 world 좌표로 되돌려 쓴다. 꼭대기 높이 = 길이의 22%(40~160). */
+function _lobUp(){ if(state.orientation==="v")return state.spFlip?{x:-1,y:0}:{x:1,y:0}; return {x:0,y:-1}; }
+function _lobCtrl(a,b){const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1,up=_lobUp();
+  let nx=-dy/len,ny=dx/len; if(nx*up.x+ny*up.y<0){nx=-nx;ny=-ny;}
+  const h=Math.max(40,Math.min(160,len*.22));
+  return {x:(a.x+b.x)/2+nx*h*2,y:(a.y+b.y)/2+ny*h*2};}
 function wavyPath(a,b){const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
   const ux=dx/len,uy=dy/len,px=-uy,py=ux,amp=6,wl=15,end=Math.max(1,len-13);
   let d=`M ${a.x.toFixed(1)} ${a.y.toFixed(1)}`;
@@ -6076,10 +6083,13 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
   }else{_anchorPt(d,0);_anchorPt(d,1);   /* 2.719 — 토큰에 묶인 끝점은 토큰의 지금 자리 */
     const a=d.pts[0],b=d.pts[1]||d.pts[0],type=d.type;
     const canCurve=(type==="pass"||type==="run"||type==="line"||type==="dashline");
-    const cpt=canCurve?d.pts[2]:null;                                  // 커브 제어점(있으면 곡선)
+    const _lob=(type==="pass"&&!!d.lob);                                // 2.902 — 로빙: 공중 곡선 + 바닥 그림자
+    const cpt=canCurve?(d.pts[2]||(_lob?_lobCtrl(a,b):null)):null;      // 커브 제어점(있으면 곡선)
     const _pd=cpt?`M ${a.x} ${a.y} Q ${cpt.x} ${cpt.y} ${b.x} ${b.y}`:`M ${a.x} ${a.y} L ${b.x} ${b.y}`;
     const _tan=cpt||a;                                                 // 끝 화살표 각도: 곡선이면 제어점→끝점 접선
     if(isSel)g.appendChild(el("path",{d:_pd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linecap":"round","stroke-linejoin":"round"}));
+    if(_lob){ g.appendChild(el("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:"rgba(0,0,0,.58)","stroke-width":(5.5*LW).toFixed(1),"stroke-linecap":"round","class":"lob-shadow"}));
+      g.appendChild(el("ellipse",{cx:b.x,cy:b.y,rx:7,ry:7,fill:"rgba(0,0,0,.32)","class":"lob-shadow"})); }
     if(type==="dribble"){
       g.appendChild(el("path",{d:wavyPath(a,b),fill:"none",stroke:C,"stroke-width":2.8*LW,"stroke-linecap":"round","stroke-linejoin":"round"}));
     }else if(type==="shot"){const dx=b.x-a.x,dy=b.y-a.y,ln=Math.hypot(dx,dy)||1,ox=-dy/ln*3*LW,oy=dx/ln*3*LW;
@@ -6387,7 +6397,8 @@ function linkFinish(closed){
 function linkCancel(){_link=null;try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;}
 function beginDraw(u){
   _draw={type:state.tool,color:state.color,lw:(state.drawLw||1),op:(state.drawOp==null?1:state.drawOp),pts:state.tool==="free"?[u]:[u,{x:u.x,y:u.y}],
-    dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined};   /* 2.681 */
+    dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined,
+    lob:(state.tool==="pass"&&state.drawLob)||undefined};   /* 2.681 · 2.902 로빙 기본값 */
   _drawTmp=drawingEl(_draw);drawLayer.appendChild(_drawTmp);}
 function moveDraw(u){if(!_draw)return;
   if(_draw.type==="rect"||_draw.type==="rectline"||_draw.type==="rectdash"){const o=_draw.pts[0];
@@ -12244,6 +12255,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
         +'<div class="ls-row"><span class="ls-lb">굵기</span><input type="range" id="lsW" min="0.5" max="3" step="0.1" value="'+lw+'"><span class="ls-val" id="lsWv">'+lw.toFixed(1)+'</span></div>'
         +'<div class="ls-row"><span class="ls-lb">투명도</span><input type="range" id="lsO" min="0.2" max="1" step="0.05" value="'+op+'"><span class="ls-val" id="lsOv">'+Math.round(op*100)+'</span></div>'
         +'<div class="ls-row"><span class="ls-lb">모양</span><div class="ls-seg" id="lsShape"><button type="button" data-v="solid">실선</button><button type="button" data-v="dash">점선</button><button type="button" data-v="dot">둥근 점선</button></div><span></span></div>'   /* 2.681 */
+        +'<div class="ls-row"><span class="ls-lb">패스</span><div class="ls-seg" id="lsLob"><button type="button" data-v="ground">땅볼</button><button type="button" data-v="lob">로빙</button></div><span></span></div>'   /* 2.902 */
         +'<div class="ls-row"><span class="ls-lb">채움</span><div class="ls-seg" id="lsFill"><button type="button" data-v="solid">반투명</button><button type="button" data-v="dots">점</button><button type="button" data-v="hatch">빗금</button></div><span></span></div>'
         +'<button class="ls-apply" id="lsAll">그린 선 전체에 적용</button>';
       document.body.appendChild(pop);
@@ -12270,6 +12282,18 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
           mark(); }; });
         fillSeg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var v=b.dataset.v; state.drawFillStyle=v; var sd=selDraws();
           if(sd.length){ pushUndo(); sd.forEach(function(d){ if(v==="solid")delete d.fillStyle; else d.fillStyle=v; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
+          mark(); }; });
+        mark();
+      })();
+      /* 2.902 — 패스: 땅볼 · 로빙. 고른 그림 중 패스 화살표에만 적용하고, 새로 그리는 패스의 기본값으로도 남긴다. */
+      (function(){
+        var seg=pop.querySelector("#lsLob"); if(!seg)return;
+        function mark(){ var sd=selDraws().filter(function(d){return d.type==="pass";}); var v=sd.length?(sd[0].lob?"lob":"ground"):(state.drawLob?"lob":"ground");
+          seg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===v);}); }
+        seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var on=b.dataset.v==="lob"; state.drawLob=on;
+          var sd=selDraws().filter(function(d){return d.type==="pass";});
+          if(sd.length){ pushUndo(); sd.forEach(function(d){ if(on)d.lob=true; else delete d.lob; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
+          else if(selDraws().length){ try{toast("로빙은 패스 화살표에만 적용돼요");}catch(_){} }
           mark(); }; });
         mark();
       })();
