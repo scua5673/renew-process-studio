@@ -10198,6 +10198,7 @@ body{padding:9mm 11mm;}
 .fsx-card.empty .fsx-dia{background:#fff;border:.4px solid #E3E6EA;}   /* 빈 칸은 모눈종이(흰 바탕) */
 body.ink .fsx-dia,body.ink .fsx-scn{background:#fff;}
 /* 2.714 — 2.713 의 오른쪽 글 칸(.fsx-body/.fsx-txt/.fsx-blk)은 걷었다: 세로 운동장이 56% 칸에서 1/4 크기로 줄어 배치를 못 봤다(사용자) */
+.fsx-hc{flex:0 0 auto;font-size:9.5px;font-weight:800;color:#16181c;white-space:nowrap;padding-left:2mm;border-left:.3mm solid #d9dde3;}   /* 2.901 — 훈련 인원 */
 /* ══ 2.900 · 한 장에 3·2·1개(사용자 목업 승인) — 운동장 + «훈련 방법»·«코칭 포인트» 전문 ══ */
 .fsx-grid.fsx-n3,.fsx-grid.fsx-n2,.fsx-grid.fsx-n1{grid-auto-flow:row;grid-template-rows:1fr;}
 .fsx-grid.fsx-n3{grid-template-columns:1fr 1fr 1fr;} .fsx-grid.fsx-n2{grid-template-columns:1fr 1fr;} .fsx-grid.fsx-n1{grid-template-columns:1fr;}
@@ -10247,6 +10248,15 @@ function fsxRoster(sess){
   var brk=hasBrk?('<span class="fsx-brk">GK '+gk+' · 필드 '+fd+((rh||ot)?(' · <span class="o">재활 '+rh+' · 부상 '+ot+'</span>'):'')+'</span>'):"";
   return '<span class="fsx-ppl">훈련 '+able+'<u>명</u></span>'+brk;
 }
+/* 2.901 — 훈련 인원(사용자 "시간 옆으로 필드 몇 명, GK 몇 명"). 그 훈련 작전판의 선수 토큰을 센다 —
+   GK 는 판에서 GK 색으로 그리는 규칙 그대로(번호 1 또는 포지션 GK), 코치는 빼고. 토큰이 없으면 아무것도 안 쓴다. */
+function fsxHeadcount(d){try{
+  var snap=(d&&d.snap)||(d&&Array.isArray(d.scenes)&&d.scenes[0]&&d.scenes[0].snap)||null;
+  var ps=snap&&Array.isArray(snap.players)?snap.players:[];var gk=0,fd=0;
+  ps.forEach(function(p){if(!p||p.coach)return;if(/^(goal|minigoal|ball)/.test(String(p.team||"")))return;if((""+p.num)==="1"||p.pos==="GK")gk++;else fd++;});
+  if(!gk&&!fd)return "";
+  return '<span class="fsx-hc">필드 '+fd+'명'+(gk?(' · GK '+gk+'명'):'')+'</span>';
+}catch(_){return "";}}
 function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
   const _ink=s=>opts.ink?inkifySVG(s||""):(s||"");
   const drills=sess.drills||[];
@@ -10266,7 +10276,7 @@ function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
       :'<div class="fsx-dia">'+_ink((printThumb({snap:d.snap,thumb:d.thumb})||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>';
     const minTxt=(+d.minutes||0)+"분"+((+d.sets>1)?("×"+(+d.sets)):"");
     return `<div class="fsx-card">
-      <div class="fsx-ct"><div class="fsx-no">${i+1}</div><span class="fsx-dot" style="background:${f.c}"></span><div class="fsx-nm">${esc(d.name||("훈련 "+(i+1)))}</div><span class="fsx-tag">${f.label}</span><div class="fsx-min">${minTxt}</div><!-- 1.731 — 희미한 누적 경과(+N′) 제거(사용자 요청) --></div>
+      <div class="fsx-ct"><div class="fsx-no">${i+1}</div><span class="fsx-dot" style="background:${f.c}"></span><div class="fsx-nm">${esc(d.name||("훈련 "+(i+1)))}</div><span class="fsx-tag">${f.label}</span><div class="fsx-min">${minTxt}</div>${fsxHeadcount(d)}<!-- 1.731 — 희미한 누적 경과(+N′) 제거(사용자 요청) --></div>
       ${dia}
       ${(l1||co)?('<div class="fsx-memo">'
         +(l1?('<div class="fsx-ml"><b>방법</b><span>'+esc(l1.replace(/\s*\n+\s*/g," · "))+'</span></div>'):'')
@@ -10308,7 +10318,7 @@ function buildFieldSheetDoc(sess,opts){opts=opts||{}; sess=sess||session;
       +((per===1)?'<div class="fsx-sec"><h5>메모</h5></div><div class="fsx-rule"></div><div class="fsx-rule"></div><div class="fsx-rule"></div>':'')
       +'</div>';};
   const diaOf=(d,big)=>'<div class="fsx-dia">'+_ink((printThumb({snap:d.snap,thumb:d.thumb})||"").replace("xMidYMid slice","xMidYMid meet"))+'</div>';
-  const headOf=(d,i)=>{const f=focusOf(d.focus),minTxt=(+d.minutes||0)+"분"+((+d.sets>1)?("×"+(+d.sets)):"");return '<div class="fsx-ct"><div class="fsx-no">'+(i+1)+'</div><span class="fsx-dot" style="background:'+f.c+'"></span><div class="fsx-nm">'+esc(d.name||("훈련 "+(i+1)))+'</div><span class="fsx-tag">'+f.label+'</span><div class="fsx-min">'+minTxt+'</div></div>';};
+  const headOf=(d,i)=>{const f=focusOf(d.focus),minTxt=(+d.minutes||0)+"분"+((+d.sets>1)?("×"+(+d.sets)):"");return '<div class="fsx-ct"><div class="fsx-no">'+(i+1)+'</div><span class="fsx-dot" style="background:'+f.c+'"></span><div class="fsx-nm">'+esc(d.name||("훈련 "+(i+1)))+'</div><span class="fsx-tag">'+f.label+'</span><div class="fsx-min">'+minTxt+'</div>'+fsxHeadcount(d)+'</div>';};
   const cardFull=(d,i)=>{
     if(per===1){
       const sc=(opts.allScenes!==false&&d.scenes&&d.scenes.length)?drillScenesAll(d).slice(0,4):null;
