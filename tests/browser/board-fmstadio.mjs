@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 2.902 — FmStadio 참고 작전판 기능: 로빙 패스, 역할 링(버튼·H), 구역 이름, 선 끝 모양,
-// 새 장면에서 화살표 모두 지우기, 관중석(광고판 없음), 입체 칩. 합성 팀 fixture 에서만 돈다.
+// 새 장면에서 화살표 모두 지우기, 입체 칩. 관중석·광고판은 넣지 않기로 했다(2026-09-28). 합성 팀 fixture 에서만 돈다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
 const fx=await startFixture(),browsers={};
 try{
@@ -61,17 +61,12 @@ try{
   assert.deepEqual(clear.types,['rect'],'새 장면에는 화살표가 없다');
   assert.ok(clear.prev.includes('pass'),'앞 장면의 화살표는 그대로다');
 
-  // 관중석(광고판 없음) · 입체 칩
+  // 입체 칩
   const look=await f.evaluate(()=>{
-    window.__setRim(true);window.__setChip3d(true);renderTokens();
-    const rim=document.getElementById('stadiumRim');
-    const r={rim:!!rim,rimText:rim?rim.querySelectorAll('text').length:-1,c3:document.querySelectorAll('.ps-c3').length,
-      nextToGrid:rim&&rim.nextElementSibling&&rim.nextElementSibling.id};
-    window.__setRim(false);window.__setChip3d(false);
-    r.offRim=!!document.getElementById('stadiumRim');r.offC3=document.querySelectorAll('.ps-c3').length;return r;});
-  assert.equal(look.rim,true);assert.equal(look.rimText,0,'광고판 글자는 없다');
-  assert.equal(look.c3,2,'칩마다 그림자·광택');assert.equal(look.nextToGrid,'gridLayer','관중석은 그리드·라인 아래');
-  assert.equal(look.offRim,false);assert.equal(look.offC3,0);
+    window.__setChip3d(true);renderTokens();
+    const r={c3:document.querySelectorAll('.ps-c3').length,rim:!!document.getElementById('stadiumRim')};
+    window.__setChip3d(false);r.offC3=document.querySelectorAll('.ps-c3').length;return r;});
+  assert.equal(look.c3,2,'칩마다 그림자·광택');assert.equal(look.offC3,0);assert.equal(look.rim,false,'관중석은 그리지 않는다');
 
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
