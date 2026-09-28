@@ -6656,7 +6656,7 @@ function rosterPersist(main,options){
   var currentBrand=store.get(KEY);
   if(currentBrand&&currentBrand.meta){
     main.meta=Object.assign({},main.meta||{});
-    ['emblem','color','headline'].forEach(function(k){
+    ['emblem','emblemRef','color','headline'].forEach(function(k){   /* 2.903 — 로고와 그 분리 참조는 늘 같은 문서에서 */
       if(Object.prototype.hasOwnProperty.call(currentBrand.meta,k))main.meta[k]=currentBrand.meta[k];else delete main.meta[k];
     });
   }
@@ -17771,6 +17771,9 @@ function teamBrandSave(field,value,owner,expected){
   if(expected!==undefined&&((latest.meta||{})[field]||'')!==expected)return false;
   latest=JSON.parse(JSON.stringify(latest));latest.meta=latest.meta||{};
   if(value)latest.meta[field]=value;else delete latest.meta[field];
+  /* 2.903 — 로고를 바꾸면(넣든 지우든) 옛 분리 참조 emblemRef 를 버린다. 남아 있으면 전송 때 참조가 둘이 되어 어느 기기도 복원하지 못하고
+     다른 기기가 한 번 저장하면 옛 로고로 돌아갔다(제보 9/28 «자꾸 팀 로고가 초기화», 9/18 «팀이름»). */
+  if(field==='emblem')delete latest.meta.emblemRef;
   if(!store.set(KEY,latest)){toast('팀 설정을 저장하지 못했습니다. 다시 시도해 주세요.');return false;}
   data.meta=latest.meta;
   if(!value)delete data.meta[field];

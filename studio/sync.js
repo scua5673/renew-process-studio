@@ -2916,7 +2916,19 @@ function blobHash(s){
 function blobCacheGet(h){ if(!window.storage)return Promise.resolve(null); return window.storage.get(BLOB_PREFIX+h).then(function(r){return r&&typeof r.value==='string'?r.value:null;}).catch(function(){return null;}); }
 function blobCacheSet(h,v){ if(!window.storage)return Promise.resolve(); return window.storage.set(BLOB_PREFIX+h,v).catch(function(){}); }
 /* 문서에서 그림을 떼어 낸다 → {v:떼어 낸 문서, blobs:[{h,v}]}. 떼어 낼 게 없으면 원문 그대로. 두 번 적용해도 같다(멱등). */
+/* 2.903 — 분리 전 정리: 원본 그림(thumb·emblem, 512자 이상 = 이번에 떼어 낼 값) 옆에 옛 *Ref 가 남아 있으면 그 Ref 를 지운다.
+   남기면 떼어 낸 뒤 한 객체에 Ref 가 둘이 되어(schedRefParts 가 거부) 모든 기기에서 빈 그림이 된다. 그런 객체가 있을 때만 다시 직렬화한다(평소 문서는 바이트 그대로). */
+function schedDropStaleRefs(raw){
+  raw=String(raw); if(raw.indexOf('Ref"')<0)return raw;
+  var doc; try{ doc=JSON.parse(raw); }catch(_){ return raw; }
+  var hit=false;
+  (function walk(o){ if(!o||typeof o!=='object')return; if(Array.isArray(o)){ o.forEach(walk); return; }
+    ['thumb','emblem'].forEach(function(k){ var v=o[k]; if(typeof v==='string'&&JSON.stringify(v).length-2>=BLOB_MIN&&Object.prototype.hasOwnProperty.call(o,k+'Ref')){ delete o[k+'Ref']; hit=true; } });
+    Object.keys(o).forEach(function(k){ walk(o[k]); }); })(doc);
+  return hit?JSON.stringify(doc):raw;
+}
 function schedStrip(raw){
+  raw=schedDropStaleRefs(raw);
   var segs={}; String(raw).replace(BLOB_RE_STRIP,function(all,key,ws,seg){ segs[seg]=1; return all; });
   var keys=Object.keys(segs); if(!keys.length)return Promise.resolve({v:raw,blobs:[]});
   return Promise.all(keys.map(blobHash)).then(function(hs){
@@ -2939,8 +2951,12 @@ function schedRefParts(raw){
       }
       end=t.index+1;next();
       fields.forEach(function(f,i){if(f.name==='thumb'||f.name==='emblem'||f.name==='thumbRef'||f.name==='emblemRef'){if(seen[f.name]===undefined)seen[f.name]=i;else seen[f.name]=-1;}});
-      ['thumb','emblem'].forEach(function(name){var a=seen[name],b=seen[name+'Ref'];if(a===undefined||b===undefined||a<0||b<0)return;var h=fields[b].value.text;
-        if(fields[a].value.text===''&&typeof h==='string'&&/^[0-9a-f]{16,64}$/.test(h))parts.push({fields:fields,value:a,ref:b,h:h});});
+      ['thumb','emblem'].forEach(function(name){var a=seen[name],b=seen[name+'Ref'],extra=[];if(a===undefined||b===undefined||a<0)return;
+        /* 2.903 — Ref 가 겹쳐도 빈 값 «바로 다음» Ref(schedStrip 이 만드는 모양)는 믿는다. 서버 jsonb 는 중복 키를 못 가지므로 겹침은 이 모양으로만 생긴다.
+           나머지(옛) Ref 는 복원 때 함께 지워, 이미 오염된 문서가 받는 순간 스스로 고쳐진다. 값 필드가 겹친 경우는 여전히 거부. */
+        if(b<0){ if(!(fields[a+1]&&fields[a+1].name===name+'Ref'))return; b=a+1; fields.forEach(function(f,i){ if(f.name===name+'Ref'&&i!==b)extra.push(i); }); }
+        var h=fields[b].value.text;
+        if(fields[a].value.text===''&&typeof h==='string'&&/^[0-9a-f]{16,64}$/.test(h))parts.push({fields:fields,value:a,ref:b,h:h,extra:extra});});
       return {start:start,end:end};
     }
     if(token==='['){next();while(t[0]!==']'){walk();if(t[0]!==',')break;next();}end=t.index+1;next();return {start:start,end:end};}
@@ -2954,7 +2970,7 @@ function schedRestore(raw,parts,map){
   parts.forEach(function(p){var seg=map[p.h];if(typeof seg!=='string')return;
     try{if(typeof JSON.parse('"'+seg+'"')!=='string')return;}catch(_){return;}
     var v=p.fields[p.value].value;edits.push({start:v.start,end:v.end,v:'"'+seg+'"'});
-    var g=groups.filter(function(x){return x.fields===p.fields;})[0];if(!g){g={fields:p.fields,removed:{}};groups.push(g);}g.removed[p.ref]=1;
+    var g=groups.filter(function(x){return x.fields===p.fields;})[0];if(!g){g={fields:p.fields,removed:{}};groups.push(g);}g.removed[p.ref]=1;(p.extra||[]).forEach(function(i){g.removed[i]=1;});
   });
   groups.forEach(function(g){var f=g.fields;for(var i=0;i<f.length;i++){if(!g.removed[i])continue;var first=i;while(i+1<f.length&&g.removed[i+1])i++;
     edits.push({start:first?f[first-1].comma:f[first].start,end:first?f[i].value.end:f[i].comma+1,v:''});
