@@ -18688,7 +18688,7 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
   h+='</div>';
   /* 2.570 — 14일 스트립은 위 «이번 주» 7칸이 대신한다(ckWeekCells·.strip CSS 는 남김) */
   host.innerHTML=h;
-  try{ if(window.innerWidth<=600){ var _tc=host.querySelector('.wk-c.sel')||host.querySelector('.wk-c.today'); if(_tc&&_tc.scrollIntoView)_tc.scrollIntoView({block:'nearest',inline:'center'}); } }catch(_){}   /* 2.570 */
+  try{ if(window.innerWidth<=600){ var _tc=host.querySelector('.wk-c.sel')||host.querySelector('.wk-c.today'); var _sc=_tc&&_tc.parentElement; while(_sc&&_sc!==host&&_sc.scrollWidth<=_sc.clientWidth+1)_sc=_sc.parentElement; if(_tc&&_sc&&_sc!==host){ var _a=_tc.getBoundingClientRect(),_b=_sc.getBoundingClientRect(); _sc.scrollLeft+=(_a.left+_a.width/2)-(_b.left+_b.width/2); } } }catch(_){}   /* 2.570 · 2.895 — 띠만 가로로 가운데(scrollIntoView 는 세로 페이지도 움직였다) */
   try{ ntcBind(host); }catch(e){ console.warn("공지 붙이기 실패",e); }
   try{ host.querySelectorAll("[data-ck-rp]").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); plSheetOpen(b.dataset.ckRp); }; }); }catch(_){ }
   host.onclick=function(e){
@@ -18894,7 +18894,9 @@ function setView(v){
   if(v==="schedule"){try{parent.postMessage({source:"scout",type:"openSchedule"},"*");}catch(_){}return;}
   if(v==="gamemodel"){try{parent.postMessage({source:"scout",type:"openGameModel"},"*");}catch(_){}return;}
   if(v==="terms"){try{parent.postMessage({source:"scout",type:"openTerms"},"*");}catch(_){}return;}
+  var _prevView=document.querySelector(".view.on");
   document.querySelectorAll(".view").forEach(s=>s.classList.toggle("on",s.id===v+"View"||(v==="positions"&&s.id==="formsView")));
+  try{ var _nowView=document.querySelector(".view.on"); if(_prevView&&_nowView&&_prevView!==_nowView){ (document.scrollingElement||document.documentElement).scrollTop=0; } }catch(_){}   /* 2.895 — 한 iframe 안에서 화면을 바꿔도 앞 화면 세로 스크롤이 남아 «오늘»이 214 아래에서 열렸다 */
   document.querySelectorAll("#nav button[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
   var more=$("teamMore"),moreBtn=$("teamMoreBtn");
   if(more){more.classList.remove("open");if(moreBtn){moreBtn.setAttribute("aria-expanded","false");moreBtn.classList.toggle("on",["growth","report","positions","attrs","imgnote","gamemodel","terms"].indexOf(v)>=0);moreBtn.textContent="설정";}}
