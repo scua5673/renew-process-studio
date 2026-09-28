@@ -29,6 +29,10 @@ try{
     assert.equal(edited.text,'변경됨 · 저장 안 함');
     const svgBottom=await f.evaluate(()=>document.querySelector('svg#board').getBoundingClientRect().bottom);
     assert.ok(fresh.top>=svgBottom-1,'띠가 운동장을 가리지 않는다');
+    // 애니메이션 쪽이 무대 여백을 지워도(훈련→작전판 복귀 등) 띠가 운동장을 가리지 않는다
+    await f.evaluate(()=>{window.__animFitPad();});await page.waitForTimeout(300);
+    const afterFit=await f.evaluate(()=>({svg:document.querySelector('svg#board').getBoundingClientRect().bottom,bar:document.getElementById('psSaveBar').getBoundingClientRect().top}));
+    assert.ok(afterFit.bar>=afterFit.svg-1,'여백 초기화 뒤에도 가리지 않는다 '+JSON.stringify(afterFit));
     await f.evaluate(()=>{selectItem('player',state.players[state.players.length-1]);try{positionSelCtl();}catch(_){}});
     await page.waitForTimeout(200);
     assert.equal((await st()).shown,false,'선택 시트가 열리면 숨는다');
@@ -43,9 +47,17 @@ try{
       const lines=document.getElementById('lineLayer')||document.getElementById('world');const lr=lines.getBoundingClientRect();return {barTop:b.top,barBottom:b.bottom,animTop:a.top,pitchBottom:lr.bottom};});
     assert.ok(anim.barBottom<=anim.animTop+1,'띠는 애니메이션 막대 위');
     assert.ok(anim.pitchBottom<=anim.barTop+2,'운동장 선이 띠에 가리지 않는다 '+JSON.stringify(anim));
+    // 재생 중에는 숨는다
+    await f.evaluate(()=>{document.getElementById('animAdd').click();state.players[0].x+=80;renderTokens();playAnim();});await page.waitForTimeout(300);
+    assert.equal((await st()).shown,false,'재생 중에는 숨는다');
+    await f.evaluate(()=>stopAnim());await page.waitForTimeout(300);
+    assert.equal((await st()).shown,true,'재생이 끝나면 돌아온다');
     await f.evaluate(()=>document.getElementById('animBar').classList.remove('on'));await page.waitForTimeout(200);
     // 배치: 포메이션 카드가 열리고 띠는 숨고 «배치» 버튼이 카드 안에 보인다
-    await f.evaluate(()=>document.querySelector('#psSaveBar .sb-form').click());await page.waitForTimeout(500);
+    await f.evaluate(()=>document.querySelector('#psSaveBar .sb-form').click());await page.waitForTimeout(300);
+    // 선수가 있으면 먼저 확인 창(폰에는 되돌리기 버튼이 없다) — «확인»을 눌러야 카드가 열린다
+    const asked=await f.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.textContent==='확인'&&x.getBoundingClientRect().width>0);if(b){b.click();return true;}return false;});
+    assert.equal(asked,true,'선수가 있으면 배치 전에 묻는다');await page.waitForTimeout(500);
     assert.equal((await st()).shown,false,'포메이션 카드가 열리면 숨는다');
     const go=await f.evaluate(()=>{const g=document.getElementById('ehGo').getBoundingClientRect(),h=document.getElementById('emptyHint').getBoundingClientRect();return {gb:g.bottom,hb:h.bottom,gh:g.height};});
     assert.ok(go.gh>0&&go.gb<=go.hb+1,'«배치»가 카드 아래에 보인다 '+JSON.stringify(go));

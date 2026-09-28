@@ -13,7 +13,8 @@ for(const emptyLibraryInsert of [true,false]){
     const f=await (await page.waitForSelector('#fBoard')).contentFrame();await f.waitForSelector('#ehDoor');
     await f.locator('#ehDoor').click();await f.locator('.eh-f',{hasText:'4-3-3'}).first().click();
     const go=f.locator('#ehGo');await go.scrollIntoViewIfNeeded();await go.click();await page.waitForTimeout(1500);
-    await f.locator('#vaultSave').click();await f.getByRole('button',{name:'보관함에 저장',exact:true}).last().click();
+    /* 2.903 — 폰은 떠 있던 #vaultSave 대신 저장 띠의 «보관함» */
+    await f.locator(await f.evaluate(()=>{const b=document.querySelector('#psSaveBar');return b&&getComputedStyle(b).display!=='none'?'#psSaveBar .sb-vault':'#vaultSave';})).click();await f.getByRole('button',{name:'보관함에 저장',exact:true}).last().click();
     await page.waitForFunction(fx=>true,null);await page.waitForTimeout(3000);
     await page.evaluate(()=>PSSync.syncNow('test')).catch(()=>{});await page.waitForTimeout(6000);
     const local=await page.evaluate(async()=>{const r=await storage.get('cs_drill_lib_v1');return {items:JSON.parse((r&&r.value)||'[]').length,tombs:JSON.parse(localStorage.getItem('ps_tomb_v1')||'[]').length};});

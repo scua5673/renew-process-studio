@@ -4661,7 +4661,10 @@ function fitBoardAspect(){try{applyView();}catch(_){}}
 /* 애니메이션 바가 열리면 운동장을 그 위로 올려 겹침 제거 — svg 높이를 직접 줄이고 상단 정렬(레이아웃 방식 무관) */
 function _animBarPad(){try{var ab=document.getElementById("animBar"),st=document.getElementById("boardStage");if(ab&&st&&ab.classList.contains("on")){var abR=ab.getBoundingClientRect(),stR=st.getBoundingClientRect();var stPadBottom=parseFloat(getComputedStyle(st).paddingBottom)||0;var stContentH=stR.height-stPadBottom;var abTopInStage=abR.top-stR.top;var pad=stContentH-abTopInStage;return Math.max(0,pad+2);}}catch(_){}return 0;}
 function _animFitPad(){try{if(document.body.classList.contains("comm-viewing"))return;   /* 2.575 — 뷰어는 자리를 한 번 잡으면 끝 */
-  var st=document.getElementById("boardStage");if(st)st.style.paddingBottom="";try{fitBoardAspect();}catch(_){}}catch(_){}}
+  var st=document.getElementById("boardStage");if(st)st.style.paddingBottom="";
+  /* 2.903 — 폰 저장 띠는 psSelBarLayout 의 늘-비움 68px 에 선다. 여기서 지운 채 두면 세로 운동장 골라인이 띠 밑으로 간다(훈련→작전판 복귀 등) */
+  try{ if(document.body.classList.contains("ps-savebar")&&window.matchMedia&&matchMedia("(max-width:639px)").matches&&typeof psSelBarLayout==="function")psSelBarLayout(); }catch(_){}
+  try{fitBoardAspect();}catch(_){}}catch(_){}}
 window.__animFitPad=_animFitPad;
 function __syncAnimBarHeight(){try{var ab=document.getElementById("animBar");if(!ab)return 0;var h=Math.ceil(ab.getBoundingClientRect().height||ab.offsetHeight||0);if(h>0)document.documentElement.style.setProperty("--ps-animbar-h",h+"px");return h;}catch(_){return 0;}}
 function __measureAnimReserve(){try{var ab=document.getElementById("animBar");if(!ab)return;
@@ -18435,7 +18438,9 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
     var saving=(typeof _boardManualSaving!=="undefined"&&_boardManualSaving);
     if(chg===undefined){ try{ chg=boardManualChanged(); }catch(_){ chg=false; } }
     bar.classList.toggle("chg",!!chg&&!saving);
-    tx.textContent=ro()?"보기 전용":(saving?"저장 중…":(chg?"변경됨 · 저장 안 함":"저장됨"));
+    var owner=null,loaded=true,pend=false; try{ owner=boardPrivateOwner(); loaded=!!_boardPrivateLoaded; pend=!!(_boardPrivateRecord&&_boardPrivateRecord.pending&&_boardPrivateDurableToken!==_boardPrivateRecord.token); }catch(_){}
+    var t=ro()?"보기 전용":(!owner?"로그인하면 저장돼요":(!loaded?"불러오는 중…":(saving?"저장 중…":(chg?"변경됨 · 저장 안 함":(pend?"기기에 저장됨 · 서버 대기":"저장됨")))));
+    if(tx.textContent!==t)tx.textContent=t;   /* aria-live 가 같은 말을 되풀이하지 않게 */
     bSave.disabled=!!saving; bSave.hidden=ro(); bVault.hidden=ro();
   }catch(_){} }
   window.__psSaveBarSync=function(chg){ status(chg); vis(); };
@@ -18450,12 +18455,17 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   window.__psSaveBarVis=vis;
   bSave.addEventListener("click",function(e){ e.stopPropagation(); var o=document.getElementById("boardManualSave"); if(o)o.click(); else if(window.__boardSaveExplicit)window.__boardSaveExplicit(); });
   bVault.addEventListener("click",function(e){ e.stopPropagation(); var o=document.getElementById("vaultSave"); if(o)o.click(); });
-  bForm.addEventListener("click",function(e){ e.stopPropagation(); try{ if(window.__psOpenFormation)window.__psOpenFormation(); }catch(_){} setTimeout(vis,0); });
+  bForm.addEventListener("click",function(e){ e.stopPropagation();
+    function open(){ try{ if(window.__psOpenFormation)window.__psOpenFormation(); }catch(_){} setTimeout(vis,0); }
+    var has=false; try{ has=(state.players||[]).length>0; }catch(_){}
+    if(has&&typeof psConfirm==="function")psConfirm("포메이션을 고르고 «배치»를 누르면 지금 선수 자리가 새로 바뀝니다. 계속할까요?",open); else open(); });
   try{ new MutationObserver(vis).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){}
   try{ var ab=document.getElementById("animBar"); if(ab)new MutationObserver(vis).observe(ab,{attributes:true,attributeFilter:["class"]}); }catch(_){}
   try{ var sc=document.querySelector(".sel-ctl"); if(sc)new MutationObserver(vis).observe(sc,{attributes:true,attributeFilter:["style","class"]}); }catch(_){}
   try{ new MutationObserver(function(ms){ for(var i=0;i<ms.length;i++){ var m=ms[i]; for(var j=0;j<m.addedNodes.length;j++){ if(m.addedNodes[j].id==="lsPop"||m.addedNodes[j].id==="psRoHide"){ status(); vis(); return; } } for(var k=0;k<m.removedNodes.length;k++){ if(m.removedNodes[k].id==="lsPop"){ vis(); return; } } } }).observe(document.body,{childList:true}); }catch(_){}
   try{ new MutationObserver(function(){ status(); }).observe(document.head,{childList:true}); }catch(_){}
+  try{ if(typeof playAnim==="function"){ var _pa=playAnim; playAnim=function(){ var r=_pa.apply(this,arguments); vis(); var iv=setInterval(function(){ if(typeof animPlaying==="undefined"||!animPlaying){ clearInterval(iv); vis(); } },400); return r; }; } }catch(_){}
+  try{ if(typeof stopAnim==="function"){ var _sa=stopAnim; stopAnim=function(){ var r=_sa.apply(this,arguments); vis(); return r; }; } }catch(_){}
   status(); vis();
 }catch(_){} })();
 </script>
