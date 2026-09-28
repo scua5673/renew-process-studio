@@ -18,8 +18,18 @@ try{
  assert.deepEqual(await day(),{slots:['오전@09:00'],sched:'훈련',off:false,opp:undefined,bopp:undefined});
  assert.equal(await page.locator('.mpop .mp-slots button[data-slot="오전"]').getAttribute('aria-pressed'),'true','existing slot shows as on');
  await page.locator('.mpop').getByRole('button',{name:'저녁',exact:true}).click();
+ // 2.899 — 켜진 시간대를 다시 누르면 빈 세션은 꺼진다(사용자 제보 «한번 선택하면 취소가 안 됩니다»)
  await page.locator('.mpop').getByRole('button',{name:'오전',exact:true}).click();
- assert.deepEqual((await day()).slots,['오전@09:00','저녁@19:30'],'same slot is not created twice');
+ assert.deepEqual((await day()).slots,['저녁@19:30'],'tapping an on slot removes the empty session');
+ assert.equal(await page.locator('.mpop .mp-slots button[data-slot="오전"]').getAttribute('aria-pressed'),'false','removed slot shows as off');
+ await page.locator('.mpop').getByRole('button',{name:'오전',exact:true}).click();
+ assert.deepEqual([...(await day()).slots].sort(),['오전@09:00','저녁@19:30'],'same slot is created once again, never twice');
+ // 내용을 적은 세션은 월간에서 지우지 않는다
+ await page.evaluate(C1=>{const t=weeksMap[0][C1].trainings.find(x=>x.slot==='저녁');t.aims='가상 목표';save();},C1);
+ await page.locator('.mpop').getByRole('button',{name:'저녁',exact:true}).click();
+ assert.deepEqual([...(await day()).slots].sort(),['오전@09:00','저녁@19:30'],'a session with content is kept');
+ await page.evaluate(C1=>{const t=weeksMap[0][C1].trainings.find(x=>x.slot==='저녁');t.aims='';save();},C1);
+ await page.evaluate(C1=>{const d=weeksMap[0][C1];d.trainings.sort((a,b)=>a.time<b.time?-1:1);save();},C1);
  assert.match(await page.locator('.mpop .mp-sum').textContent(),/훈련 2회/);
  // 2.892 — 조 선택: 기본 A, B 를 고르면 같은 시간대라도 B 세션이 따로, 여러 조 동시, 전부 끄면 A 로 돌아간다
  const grps=()=>page.evaluate(C1=>(weeksMap[0][C1].trainings||[]).map(t=>t.slot+':'+(t.grp||[]).join('+')),C1);
@@ -68,5 +78,5 @@ try{
  await page.setViewportSize({width:375,height:812});await page.locator(cellSel).click();await page.locator('.mpop .mp-opp').waitFor();
  assert.ok(await page.locator('.mpop').evaluate(el=>el.scrollWidth<=el.clientWidth+1&&el.getBoundingClientRect().right<=window.innerWidth));
  assert.deepEqual(errors,[]);
- console.log(JSON.stringify({engine,passed:true,cases:['slot-from-month','no-duplicate-slot','off-to-training','opponent-while-typing','enter-closes','close-commits','reload','phone-width']}));await context.close();
+ console.log(JSON.stringify({engine,passed:true,cases:['slot-from-month','slot-toggle-off','content-kept','no-duplicate-slot','off-to-training','opponent-while-typing','enter-closes','close-commits','reload','phone-width']}));await context.close();
 }finally{await browser.close();}
