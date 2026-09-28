@@ -4948,9 +4948,9 @@ function enableDrag(g,p,removable,kind){
     const _isDrawStart=(kind!=="ball"&&!selected&&isDraw());
     const engage=()=>{
     if(_isDrawStart){
-      mode="draw";try{g.setPointerCapture(e.pointerId)}catch(_){};beginDraw(toUnit(e));
+      mode="draw";try{g.setPointerCapture(e.pointerId)}catch(_){};_winOn(e.pointerId);beginDraw(toUnit(e));
     }else{
-      mode="move";try{g.setPointerCapture(e.pointerId)}catch(_){};g.style.cursor="grabbing";document.body.classList.add("token-drag");
+      mode="move";try{g.setPointerCapture(e.pointerId)}catch(_){};_winOn(e.pointerId);g.style.cursor="grabbing";document.body.classList.add("token-drag");
       const c=g.querySelector("circle,path,rect");if(c)c.setAttribute("opacity",".8");
       /* 2.030 — ⌥+드래그 = 끌면서 복제(놓는 순간 원자리에 사본이 남는다) · Shift+드래그 = 수평/수직 고정 */
       _mvAlt=!!e.altKey&&kind!=="ball"; _mvP0={x:p.x,y:p.y}; _mvAxis=null;
@@ -5006,7 +5006,7 @@ function enableDrag(g,p,removable,kind){
       if(_snapOn&&(s.gx!=null||s.gy!=null))drawSnapGuides(s.gx,s.gy); else drawSnapGuides(null,null);
       if(e.shiftKey&&_mvP0){ if(!_mvAxis&&(Math.abs(s.x-_mvP0.x)>6||Math.abs(s.y-_mvP0.y)>6))_mvAxis=Math.abs(s.x-_mvP0.x)>=Math.abs(s.y-_mvP0.y)?"x":"y"; if(_mvAxis==="x")s.y=_mvP0.y; else if(_mvAxis==="y")s.x=_mvP0.x; } else _mvAxis=null;
       p.x=s.x;p.y=s.y;if(kind==="ball"){state.ball.x=s.x;state.ball.y=s.y;}g.setAttribute("transform",tokenTransform(p));try{if(window.psMeasDrag)psMeasDrag(p);}catch(_){}if(kind==="player"&&(p.vis||p.shaper||tokShape==="shaper")){renderVisionRAF();}}}
-  g.addEventListener("pointermove",e=>{
+  const onMove=e=>{
     if(!mode)return;
     if(Math.hypot(e.clientX-sx,e.clientY-sy)>4)moved=true;
     if(mode==="move"){
@@ -5015,8 +5015,18 @@ function enableDrag(g,p,removable,kind){
       pendingMove={clientX:e.clientX,clientY:e.clientY,shiftKey:e.shiftKey,metaKey:e.metaKey,ctrlKey:e.ctrlKey};
       if(!moveFrame)moveFrame=requestAnimationFrame(flushDragMove);
     }else{flushDragMove();applyDragMove(e);}
-  });
-  const end=e=>{if(!mode)return;flushDragMove();clearGuides();try{if(window.psMeasDragEnd)psMeasDragEnd();}catch(_){}document.body.classList.remove("token-drag");const m=mode,wasGrp=!!grp;mode=null;grp=null;_mvGrab=null;   /* 2.375 — 잡은 지점은 드래그마다 새로 잰다(남겨 두면 다음 드래그가 그만큼 밀린다) */try{if(moved)autoSaveAnimFrame();}catch(_){}
+  };
+  g.addEventListener("pointermove",onMove);
+  /* ══ 2.900 · 잡은 토큰이 포인터를 놓쳐도 따라오게(사용자 «아이패드 펜슬로 하면 토큰이 잘 안 따라와») ══
+     끌기는 g.setPointerCapture 에만 기대고 있었다 — 붙잡기가 안 되거나 풀리면(펜슬·빠른 손놀림) 토큰의
+     작은 원을 벗어나는 순간 pointermove 가 끊겨 토큰이 멈췄다. 끄는 동안만 window 에서도 같은 포인터를 받는다.
+     g 안에서 온 것(붙잡기가 살아 있을 때)은 g 가 이미 처리하니 건너뛴다 — 두 번 옮기지 않는다. */
+  let _winPid=null;
+  const _winMove=e=>{ if(e.pointerId!==_winPid||!mode)return; if(e.target===g||(g.contains&&g.contains(e.target)))return; onMove(e); };
+  const _winEnd=e=>{ if(e.pointerId!==_winPid)return; if(e.target===g||(g.contains&&g.contains(e.target))){_winOff();return;} end(e); };
+  const _winOn=pid=>{ _winOff(); _winPid=pid; window.addEventListener("pointermove",_winMove,true); window.addEventListener("pointerup",_winEnd,true); window.addEventListener("pointercancel",_winEnd,true); };
+  function _winOff(){ if(_winPid==null)return; _winPid=null; window.removeEventListener("pointermove",_winMove,true); window.removeEventListener("pointerup",_winEnd,true); window.removeEventListener("pointercancel",_winEnd,true); }
+  const end=e=>{_winOff();if(!mode)return;flushDragMove();clearGuides();try{if(window.psMeasDragEnd)psMeasDragEnd();}catch(_){}document.body.classList.remove("token-drag");const m=mode,wasGrp=!!grp;mode=null;grp=null;_mvGrab=null;   /* 2.375 — 잡은 지점은 드래그마다 새로 잰다(남겨 두면 다음 드래그가 그만큼 밀린다) */try{if(moved)autoSaveAnimFrame();}catch(_){}
     try{g.releasePointerCapture(e.pointerId);}catch(_){}
     if(m==="move"&&kind!=="ball"&&document.body.classList.contains("match-mode")){try{var _rp=document.getElementById("msRoster");if(_rp){var rr=_rp.getBoundingClientRect();if(rr.width&&e.clientX>=rr.left&&e.clientX<=rr.right&&e.clientY>=rr.top&&e.clientY<=rr.bottom){eraseToken(p);try{renderMsRoster();}catch(_){}return;}}}catch(_){}}
     if(m==="move"&&_mvAlt&&moved){ try{ /* 2.030 — ⌥ 복제: 원래 자리에 사본 */
