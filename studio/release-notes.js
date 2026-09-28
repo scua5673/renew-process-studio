@@ -419,7 +419,9 @@
     '.ps-release-notes ul{margin:6px 0 0;padding-left:18px;font-size:12px;line-height:1.65}',
     '.ps-release-notes li{overflow-wrap:anywhere}',
     '.ps-release-notes .psrn-notice{margin:0;padding:0 16px 10px;font-size:12px;line-height:1.5;color:var(--dim,#646a73)}',
-    '@media(max-width:480px){.ps-release-notes .psrn-row{padding:8px 12px;gap:7px}.ps-release-notes .psrn-summary{flex-basis:100%}.ps-release-notes .psrn-details{padding:0 12px 10px}.ps-release-notes .psrn-notice{padding:0 12px 9px}}'
+    '.ps-release-notes .psrn-close{display:none}',
+    /* 2.902 — 폰은 한 줄: «v2.9xx · 제목» + ✕. 줄을 누르면 내용이 열린다(머리 94pt → 약 40pt). */
+    '@media(max-width:767px){.ps-release-notes .psrn-row{flex-wrap:nowrap;gap:6px;padding:2px 2px 2px 12px}.ps-release-notes .psrn-summary{flex:1 1 auto;cursor:pointer}.ps-release-notes .psrn-heading{display:none}.ps-release-notes .psrn-title{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}.ps-release-notes .psrn-actions button{display:none}.ps-release-notes .psrn-actions .psrn-close{display:inline-grid;place-items:center;width:36px;height:36px;min-height:36px;padding:0;border:0;font-size:15px;color:var(--dim,#646a73)}.ps-release-notes .psrn-details{padding:0 12px 10px}.ps-release-notes .psrn-notice{padding:0 12px 9px}}'
   ].join('\n');
   function mount(options){
     options=options||{};
@@ -436,9 +438,9 @@
     var row=el('div','psrn-row'),summary=el('div','psrn-summary'),heading=el('div','psrn-heading');
     var label=el('span','psrn-label','최근 업데이트'),meta=el('span','psrn-meta'),title=el('div','psrn-title');
     heading.appendChild(label);heading.appendChild(meta);summary.appendChild(heading);summary.appendChild(title);row.appendChild(summary);
-    var actions=el('div','psrn-actions'),toggle=el('button','','내용 보기'),hide=el('button','','일주일간 안 보기');
-    toggle.type=hide.type='button';toggle.setAttribute('aria-expanded','false');
-    actions.appendChild(toggle);actions.appendChild(hide);row.appendChild(actions);
+    var actions=el('div','psrn-actions'),toggle=el('button','','내용 보기'),hide=el('button','','일주일간 안 보기'),close=el('button','psrn-close','✕');
+    toggle.type=hide.type=close.type='button';toggle.setAttribute('aria-expanded','false');close.setAttribute('aria-label','업데이트 안내 닫기');
+    actions.appendChild(toggle);actions.appendChild(hide);actions.appendChild(close);row.appendChild(actions);
     var detail=el('div','psrn-details'),notice=el('p','psrn-notice');detail.hidden=true;notice.hidden=true;notice.setAttribute('role','status');
     if(host.id){detail.id=host.id+'Details';toggle.setAttribute('aria-controls',detail.id);}
     host.replaceChildren(row,detail,notice);
@@ -476,11 +478,13 @@
     }
     function onStorage(event){if(!event||event.key===null||event.key===STORAGE_KEY)refresh();}
     function onVisible(){if(!doc.hidden)refresh();}
-    toggle.addEventListener('click',showDetails);hide.addEventListener('click',hideWeek);
+    function phone(){try{return !!(win.matchMedia&&win.matchMedia('(max-width:767px)').matches);}catch(_){return false;}}
+    function onSummary(){if(phone())showDetails();}
+    toggle.addEventListener('click',showDetails);hide.addEventListener('click',hideWeek);close.addEventListener('click',hideWeek);summary.addEventListener('click',onSummary);
     win.addEventListener('storage',onStorage);win.addEventListener('focus',onVisible);doc.addEventListener('visibilitychange',onVisible);
     var controller={refresh:refresh,destroy:function(){
       if(disposed)return;disposed=true;clearTimer();
-      toggle.removeEventListener('click',showDetails);hide.removeEventListener('click',hideWeek);
+      toggle.removeEventListener('click',showDetails);hide.removeEventListener('click',hideWeek);close.removeEventListener('click',hideWeek);summary.removeEventListener('click',onSummary);
       win.removeEventListener('storage',onStorage);win.removeEventListener('focus',onVisible);doc.removeEventListener('visibilitychange',onVisible);
       host.replaceChildren();host.hidden=true;if(host.__psReleaseNotes===controller)delete host.__psReleaseNotes;
     }};

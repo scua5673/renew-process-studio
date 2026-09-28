@@ -122,6 +122,10 @@
   html.ps-page-app #teamNav .teamname.only-emblem.with-name .tn-emblem,
   html.ps-page-app #teamNav .teamname.only-emblem.with-motto .tn-emblem{width:40px!important;height:40px!important}
   nav.teamnav.tn-colored{border-bottom-color:transparent!important}
+  /* 2.902 — 폰 머리 줄이기(목업 ①): 팀 줄 51pt → 40pt. 엠블럼·이름·문구·팀 색은 그대로 두고 크기만 */
+  @media (max-width:767px){html.ps-page-app #teamNav:not(#_){padding-top:3px!important;padding-bottom:3px!important;min-height:40px!important;height:auto!important}
+    html.ps-page-app #teamNav:not(#_) .teamname.only-emblem .tn-emblem{width:32px!important;height:32px!important;padding:4px!important}
+    html.ps-page-app #teamNav:not(#_) .teamname .tn-name{font-size:15px}}
   nav.teamnav.tn-dark .teamname .tn-name,nav.teamnav.tn-dark .teamname b,nav.teamnav.tn-dark .teamname small{color:#fff}
   nav.teamnav.tn-dark{--txt:#fff;--dim:rgba(255,255,255,.72)}
   /* 버튼 묶음을 위 .seg 와 같은 '홈' 안에 넣는다 */
