@@ -81,16 +81,21 @@
       return current||(assumeTraining===true&&state(currentStatus)&&dateNumber(today)!==null?{s:'ok',kind:kind(k)?k:'none',source:'default',note:''}:none(k));
     };
   }
+  // 2.901 — A team OFF day is a rest day for everyone (user rule). An inferred
+  // "available" (status run, today's availability, default) becomes rest; injury,
+  // rehab and absence keep their own state. A coach's explicit record for that
+  // date (e.g. a personal session) is an observation and is kept.
+  function offRest(r,k){return k==='off'&&r&&r.s==='ok'&&r.source!=='record'?{s:'rest',kind:'off',source:r.source,note:r.note}:r;}
   function resolve(meta,pid,day,k,currentStatus,today,assumeTraining){
     if(!player(pid))return none(k);
-    return model(meta,pid,currentStatus,today,assumeTraining)(day,k);
+    return offRest(model(meta,pid,currentStatus,today,assumeTraining)(day,k),k);
   }
   function totals(meta,pid,from,to,kindOf,currentStatus,today,assumeTraining){
     var out={training:0,match:0,exercise:0,rest:0,injury:0,rehab:0,out:0,unknown:0,recorded:0,statusDays:0,currentDays:0,days:0,first:null,last:null};
     var start=dateNumber(from),end=dateNumber(to),limit=today===undefined?null:dateNumber(today);
     if(!player(pid)||start===null||end===null||(today!==undefined&&limit===null))return out;
     if(limit!==null)end=Math.min(end,limit);
-    var read=model(meta,pid,currentStatus,today,assumeTraining);
+    var read0=model(meta,pid,currentStatus,today,assumeTraining),read=function(day,k){return offRest(read0(day,k),k);};
     for(var d=start;d<=end;d++){
       var day=dateString(d),k=typeof kindOf==='function'?kindOf(day,pid):kindOf,result=read(day,k);
       var scheduled=result.kind==='train'||result.kind==='match';out.days++;

@@ -149,7 +149,8 @@ test('injury continues across unopened days and weekends only with a matching cu
   for (const day of ['2026-09-12', '2026-09-13', today]) {
     assert.deepEqual(P.resolve(meta, pid, day, 'off', 'injury', today), { s: 'injury', kind: 'off', source: 'status', note: 'ankle' });
   }
-  assert.deepEqual(P.resolve(meta, pid, today, 'off', 'ok', today), { s: 'ok', kind: 'off', source: 'current', note: '' });
+  // 2.901 — 팀 OFF 날은 모두 휴식: 오늘 상태가 가능이어도 휴식으로 읽는다
+  assert.deepEqual(P.resolve(meta, pid, today, 'off', 'ok', today), { s: 'rest', kind: 'off', source: 'current', note: '' });
   assert.equal(P.resolve(meta, pid, today, 'off', undefined, today).source, 'none');
   assert.equal(P.resolve(meta, pid, today, 'off', 'injury').source, 'none');
   assert.equal(meta.statusRuns[pid][0].to, '2026-09-11');
@@ -431,4 +432,21 @@ test('independent edits merge at the exact date/player field without losing eith
   assert.equal(value.meta.participationDays['2026-09-12'][pid].s, 'rest');
   assert.equal(value.meta.participationDays['2026-09-12']['player-b'].s, 'ok');
   assert.deepEqual(value.meta.statusRuns, base.meta.statusRuns);
+});
+
+test('2.901 team OFF day reads everyone as rest, keeps injuries and explicit records', () => {
+  const day = '2026-09-13';
+  // default (assumeTraining) and status runs of "ok" become rest on an OFF day
+  assert.deepEqual(P.resolve({}, pid, day, 'off', 'ok', today, true), { s: 'rest', kind: 'off', source: 'default', note: '' });
+  assert.equal(P.resolve(metaOf([run('ok', '2026-09-10', '2026-09-14')]), pid, day, 'off', 'ok', today).s, 'rest');
+  // a training day stays available
+  assert.equal(P.resolve({}, pid, day, 'train', 'ok', today, true).s, 'ok');
+  // injury on an OFF day stays injury
+  assert.equal(P.resolve(metaOf([run('injury', '2026-09-10', '2026-09-14')]), pid, day, 'off', 'injury', today).s, 'injury');
+  // a coach's explicit record for that date is kept
+  const rec = P.record({}, pid, day, 'ok', 'off', 1, today, 'personal session');
+  assert.equal(P.resolve(rec, pid, day, 'off', 'ok', today).s, 'ok');
+  // totals: OFF-day "ok" never counts as training
+  const t = P.totals({}, pid, day, day, 'off', 'ok', today, true);
+  assert.equal(t.training, 0);
 });
