@@ -189,10 +189,11 @@ async function adminScenario(page, spec, result) {
   await openCreate(page); await fillCreate(page);
   result.createLayout = await sheetLayout(page, spec, 'create');
   if(spec.mobile){
-    const shifted=await page.evaluate(()=>{const app=document.getElementById('scrim').parentElement;const before={x:scrollX,y:scrollY,left:app.scrollLeft};app.scrollLeft=34;window.scrollTo(0,78);return {before,left:app.scrollLeft,y:scrollY};});
+    // 2.903 — 예전엔 폰 일정 막대(.schedule-tools 안)가 .phone 을 가로로 넘쳐서 scrollLeft 가 먹혔다. 막대가 #schedule 로 옮겨 넘침이 없어졌으니 넘침을 일부러 만든다
+    const shifted=await page.evaluate(()=>{const app=document.getElementById('scrim').parentElement;if(app.scrollWidth<=app.clientWidth+1){const sp=document.createElement('div');sp.id='rtOverflowProbe';sp.style.cssText='flex:0 0 1px;width:calc(100% + 80px);height:1px';app.appendChild(sp);}const before={x:scrollX,y:scrollY,left:app.scrollLeft};app.scrollLeft=34;window.scrollTo(0,78);return {before,left:app.scrollLeft,y:scrollY};});
     assert.ok(shifted.left>0&&shifted.y>0,'fixture reproduces focus-driven ancestor scrolling');
     result.scrolledLayout=await sheetLayout(page,spec,'scrolled-ancestors');
-    await page.evaluate(before=>{document.getElementById('scrim').parentElement.scrollLeft=before.left;window.scrollTo(before.x,before.y);},shifted.before);
+    await page.evaluate(before=>{document.getElementById('scrim').parentElement.scrollLeft=before.left;window.scrollTo(before.x,before.y);document.getElementById('rtOverflowProbe')?.remove();},shifted.before);
     result.cases.push('sheet-stays-visible-with-scrolled-ancestors');
   }
   await page.locator('[data-rt-close]').click();

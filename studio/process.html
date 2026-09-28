@@ -8489,16 +8489,19 @@ try{
     return {lb:'내 작업', personalWithTeam:!!team, teamName:team?essc(team.name||''):''}; }catch(_){ return {lb:''}; } }
   function grpNote(){ try{ var gp=window.__schedGrp||''; return gp?' · <b class="ss-warn">'+essc(gp)+' 조 일정만 보는 중</b>':''; }catch(_){ return ''; } }
   var busy=false,notice='';
+  /* 2.903 — 폰(≤600): «서버 일정 · {ago} 받음» + ⟳(이름은 aria-label·title). 팀 이름만 뺀다 — 경고(워크스페이스·저장 공간·조·안 올라간 변경)는 사고 진단이라 그대로 */
+  var phMq=null; try{ phMq=window.matchMedia&&window.matchMedia('(max-width:600px)'); }catch(_){}
   function draw(btnTx){
-    var c=srvAt(), up=unpushed(), wi=wsInfo();
+    var c=srvAt(), up=unpushed(), wi=wsInfo(), ph=!!(phMq&&phMq.matches);
     box.hidden=false;
-    var head=wi.lb?('<b>'+wi.lb+'</b> · '):'';
+    var head=(wi.lb&&!ph)?('<b>'+wi.lb+'</b> · '):'';
     var wsWarn=wi.personalWithTeam?' · <b class="ss-warn">지금 개인 일정을 보는 중 — 팀 '+wi.teamName+' 일정은 워크스페이스를 팀으로 전환해야 보여요</b>':'';
     if(window.__schedMirrorFull)wsWarn+=' · <b class="ss-warn">저장 공간이 부족해 사본을 못 바꿔요 — 앱 설정 › 기기 › 안전 정리</b>';   /* 2.264 */
     box.innerHTML='<span>'+(notice?notice
-        :(c?(head+'서버 일정 · '+ago(c)+' 판 받음'+wsWarn+grpNote()+(up?' · <b class="ss-warn">이 기기에 서버로 안 올라간 변경 있음</b>':''))
+        :(c?(head+'서버 일정 · '+ago(c)+(ph?' 받음':' 판 받음')+wsWarn+grpNote()+(up?' · <b class="ss-warn">이 기기에 서버로 안 올라간 변경 있음</b>':''))
            :head+'아직 서버 일정을 받지 못했어요 — 컴퓨터와 같은 계정·같은 팀인지 확인해요'+wsWarn))+'</span>'
-      +'<button type="button" id="schedSyncNow"'+(busy?' disabled':'')+'>'+(btnTx||(up?'지금 주고받기':'지금 받아오기'))+'</button>';
+      +(function(){ var bt=btnTx||(up?'지금 주고받기':'지금 받아오기');
+          return '<button type="button" id="schedSyncNow"'+(busy?' disabled':'')+(ph?' aria-label="'+bt+'" title="'+bt+'">⟳':'>'+bt)+'</button>'; })();
     var b=document.getElementById('schedSyncNow');
     b.onclick=function(){ if(busy)return; busy=true; notice=''; draw('주고받는 중…');
       var before=srvAt(), upBefore=unpushed(), p=null;
@@ -8520,6 +8523,7 @@ try{
       },function(){ busy=false; notice='실패했어요 — 연결을 확인하고 다시'; draw(); setTimeout(function(){ if(!busy){ notice=''; draw(); } },6000); }); };
   }
   draw();
+  try{ if(phMq){ var _re=function(){ if(!busy)draw(); }; if(phMq.addEventListener)phMq.addEventListener('change',_re); else if(phMq.addListener)phMq.addListener(_re); } }catch(_){}   /* 2.903 — 폭이 바뀌면 문구도 */
   window.addEventListener('storage',function(e){ if(e&&e.key==='ps_sync_meta'&&!busy&&!notice)draw(); });
   setInterval(function(){ if(!busy&&!notice)draw(); },60e3);
 })();</script>
@@ -9820,11 +9824,36 @@ html body #psPhBar.rv .nv,html body #psPhBar.rv .lb,html body #psPhBar.rv .gp,ht
 html body #psPhBar.rv .vw:not(#_){margin-left:auto}
 }
 </style>
+<style id="ps-2903-phsched">/* 2.903 — 목업 ③ 폰 일정 보기 전환. 셸이 iframe 안 .apphd 를 통째로 숨겨서(app.html ps-team-shell-style) .schedule-tools 에 달린 #psPhBar 가 앱에서는 한 번도 안 보였다 — 폰 = 보기 전환·‹ ›·달 제목 없이 쓸어넘기기뿐.
+   막대를 #schedule 맨 앞으로 옮기고 두 줄: «‹ 제목 › · 조▾ · 오늘» / «년 · 월 · 주 · 일». 위에 붙는다(sticky, 불투명 바탕). .vw 고르개는 DOM 에 두고 숨김(훈련 분석은 폰에서 안 내놓음 — 셸에서도 닿지 않던 길).
+   동기화 줄은 «서버 일정 · {ago} 받음» + ⟳(팀 이름은 폰에서 뺌, 경고는 전부 그대로). 601+ 는 그대로.
+   위로 -8px 바탕 그림자 = 붙었을 때 .stage 윗 여백(4px) 틈으로 달력이 비치던 것 가림. 제목은 flex-basis 0 — 긴 일간 제목이 «오늘» 을 둘째 줄로 밀지 않게(넘치면 …).
+   좌우: 막대 -16px 여백 + 16px 안쪽 = #schedule 안쪽 여백 몫만 덮고 글자는 달력과 같은 줄(.stage 16 + #schedule 16 = 32 그대로, 더 들이지 않음).
+   다크: --act-soft·--c-act 는 이 문서에 없다 → body.fmdark 에서 --accent-soft·--accent 로 명시. 새 칸은 .toggle·.weeknav·.sched-grp 를 쓰지 않는다(폰에서 !important 로 숨는 이름).
+   단독 폰(셸 밖)에서 막대가 빠진 .schedule-tools 가 빈 띠로 남지 않게 — .apphd-act 에 칩(잠금·기록)이 없으면 접는다. */
+#psPhBar .sg{display:none}
+@media (max-width:600px){
+html body:not(.ps-player-schedule) #schedule>#psPhBar:not(#_):not(#__){flex:0 0 auto;flex-wrap:wrap;row-gap:8px;position:sticky;top:0;z-index:22;margin:0 -16px 6px;padding:8px 16px;background:var(--bg);box-shadow:0 1px 0 var(--line),0 -8px 0 var(--bg)}
+html body #schedule>#psPhBar .nv:not(#_):not(#__){width:40px}
+html body #schedule>#psPhBar .lb:not(#_){flex:1 1 0;font-size:16px;font-weight:700}
+html body #schedule>#psPhBar .vw:not(#_):not(#__){display:none!important}
+html body #psPhBar .td:not(#_):not(#__){padding:0 14px;border-radius:999px;background:var(--act-soft,var(--accent-soft,#EEF3FF));color:var(--c-act,var(--accent,#3A6DF0))}
+html body #schedule>#psPhBar .sg:not(#_){flex:1 1 100%;display:flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-sizing:border-box}
+html body #psPhBar .sg button:not(#_):not(#__){flex:1 1 0;min-width:0;height:40px;min-height:40px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--text-2,#646A73);font:inherit;font-size:14px;font-weight:600;cursor:pointer;box-sizing:border-box}
+html body #psPhBar .sg button.on:not(#_):not(#__){background:var(--act-soft,var(--accent-soft,#EEF3FF));color:var(--c-act,var(--accent,#3A6DF0));font-weight:700}
+html body #schedSync.sched-syncline:not(#_){margin:0 0 8px;gap:8px;flex-wrap:nowrap}
+html body #schedSync>span{flex:1 1 auto;min-width:0}
+html body.fmdark #psPhBar .td:not(#_):not(#__),html body.fmdark #psPhBar .sg button.on:not(#_):not(#__){background:var(--accent-soft,rgba(111,148,245,.16));color:var(--accent,#6F94F5)}
+html body:not(.ps-player-schedule) .schedule-tools:not(:has(.apphd-act>*)):not(#_):not(#__){display:none!important}
+html body #schedSync #schedSyncNow:not(#_):not(#__){flex:0 0 auto;width:40px;height:40px;min-height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:var(--surface);color:var(--text-2);font-size:26px;font-weight:400;line-height:1;box-sizing:border-box}
+}
+</style>
 <script>
-/* 2.594 — 일정 폰 머리줄 한 줄 */
+/* 2.594 — 일정 폰 머리줄 한 줄 · 2.903 — 두 줄(세그)·#schedule 안으로 */
 (function(){
   var tools=document.querySelector('.schedule-tools'), topNav=document.getElementById('topNav'), vt=document.getElementById('vtoggle');
-  if(!tools||!topNav||!vt||document.getElementById('psPhBar'))return;
+  var host=document.getElementById('schedule');   /* 2.903 — 막대 자리 = #schedule 맨 앞. .schedule-tools 는 셸이 .apphd 째 숨겨 앱에서 한 번도 안 보였다 */
+  if(!(host||tools)||!topNav||!vt||document.getElementById('psPhBar'))return;
   function esc(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
   var bar=document.createElement('div'); bar.id='psPhBar';
   bar.innerHTML='<button type="button" class="nv" data-d="-1" aria-label="이전"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>'+
@@ -9832,20 +9861,26 @@ html body #psPhBar.rv .vw:not(#_){margin-left:auto}
     '<button type="button" class="nv" data-d="1" aria-label="다음"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>'+
     '<select class="vw" id="psPhView" aria-label="보기"><option value="year">년간</option><option value="month">월간</option><option value="week">주간</option><option value="day">일간</option><option value="review">훈련 분석</option></select>'+
     '<select class="gp" id="psPhGrp" aria-label="조 고르기" hidden></select>'+
-    '<button type="button" class="td" aria-label="오늘로">오늘</button>';
-  tools.appendChild(bar);
-  var lb=bar.querySelector('.lb'), sel=bar.querySelector('.vw'), gp=bar.querySelector('.gp');
+    '<button type="button" class="td" aria-label="오늘로">오늘</button>'+
+    /* 2.903 — 둘째 줄 «년 · 월 · 주 · 일» 세그. 누르면 .vw 고르개의 change 와 똑같이(원래 #vtoggle 대리 클릭). 훈련 분석은 폰에서 안 내놓는다 */
+    '<div class="sg" id="psPhSeg" role="group" aria-label="보기">'+[['year','년'],['month','월'],['week','주'],['day','일']].map(function(x){ return '<button type="button" data-sv="'+x[0]+'" aria-pressed="false">'+x[1]+'</button>'; }).join('')+'</div>';
+  if(host)host.insertBefore(bar,host.firstChild);   /* 2.903 — 맨 앞: 조를 고르면 #schedGrp 뒤에 #schedGrpNote 가 끼므로 #vtoggle 앞이면 그 줄 밑으로 내려간다 */
+  else tools.appendChild(bar);
+  var lb=bar.querySelector('.lb'), sel=bar.querySelector('.vw'), gp=bar.querySelector('.gp'), sg=bar.querySelector('.sg');
   var LBL={week:'weekLabel',day:'dayLabel',month:'monthRangeLabel',year:'yearLabel'};
   function view(){ var b=topNav.querySelector('button.on'); if(b&&b.dataset.go==='review')return 'review'; var d=vt.querySelector('div.on'); return d?d.dataset.v:'week'; }
   function syncGrp(){ var box=document.getElementById('schedGrp'); var bs=box?box.querySelectorAll('button[data-g]'):[]; var h='',cur='';
     [].forEach.call(bs,function(b){ h+='<option value="'+esc(b.dataset.g)+'">'+esc(b.textContent)+'</option>'; if(b.classList.contains('on'))cur=b.dataset.g; });
     if(h!==gp.__h){gp.innerHTML=h;gp.__h=h;} gp.value=cur; gp.hidden=bs.length<=1; }
-  function sync(){ var v=view(); bar.classList.toggle('rv',v==='review'); sel.value=v; var l=document.getElementById(LBL[v]||'weekLabel'); lb.textContent=l?String(l.textContent).replace(/(\d+)월\s*(\d+)일/g,'$1/$2').replace(/(\d+)일/g,'$1').replace(/\s*[–\-~]\s*/g,'–').replace(/\s+/g,' ').trim():''; syncGrp(); }
+  function sync(){ var v=view(); bar.classList.toggle('rv',v==='review'); sel.value=v;
+    [].forEach.call(sg.querySelectorAll('button'),function(b){ var on=b.dataset.sv===v; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false'); });   /* 2.903 */
+    var l=document.getElementById(LBL[v]||'weekLabel'); lb.textContent=l?String(l.textContent).replace(/(\d+)월\s*(\d+)일/g,'$1/$2').replace(/(\d+)일/g,'$1').replace(/\s*[–\-~]\s*/g,'–').replace(/\s+/g,' ').trim():''; syncGrp(); }
   [].forEach.call(bar.querySelectorAll('.nv'),function(b){ b.onclick=function(){ var v=view(); var l=document.getElementById(LBL[v]||'weekLabel'); var nav=l&&l.closest('.weeknav'); var bt=nav?nav.querySelectorAll('button'):null; if(bt&&bt.length>=2)bt[b.dataset.d==='-1'?0:bt.length-1].click(); setTimeout(sync,0); }; });
   sel.onchange=function(){ var v=sel.value;
     if(v==='review'){ var r=topNav.querySelector('button[data-go="review"]'); if(r)r.click(); }
     else{ var s0=topNav.querySelector('button[data-go="schedule"]'); if(s0&&!s0.classList.contains('on'))s0.click(); var d=vt.querySelector('div[data-v="'+v+'"]'); if(d)d.click(); }
     setTimeout(sync,0); };
+  [].forEach.call(sg.querySelectorAll('button'),function(b){ b.onclick=function(){ sel.value=b.dataset.sv; sel.onchange(); }; });   /* 2.903 — 세그 = 고르개와 같은 길 */
   gp.onchange=function(){ if(typeof schedSetGrp==='function')schedSetGrp(gp.value); setTimeout(sync,0); };
   bar.querySelector('.td').onclick=function(){ if(typeof scheduleGoToday==='function')scheduleGoToday(); setTimeout(sync,0); };
   var mo=new MutationObserver(function(){ clearTimeout(bar.__t); bar.__t=setTimeout(sync,30); });
