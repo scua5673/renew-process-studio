@@ -98,6 +98,13 @@ try{
       const r=document.getElementById('psPhBar').getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.bottom-10);const y=st.scrollTop;st.scrollTop=0;
       return {top:r.top,y,hitInBar:!!(hit&&hit.closest('#psPhBar'))};});
     if(stuck.y>0){assert.ok(stuck.top>=-1&&stuck.top<=8,'스크롤해도 막대가 위에 '+JSON.stringify(stuck));assert.equal(stuck.hitInBar,true,'달력이 막대를 덮지 않는다');}
+    // 2.904 — 폰은 마지막에 본 보기로 연다: 주간을 보고 다른 탭에 갔다 오면 주간(처음은 월간 — 위에서 확인)
+    await f.locator('#psPhBar .sg button[data-sv="week"]').click();
+    await f.waitForFunction(()=>document.querySelector('#vtoggle div[data-v="week"]').classList.contains('on'));
+    const tabTo=t=>page.evaluate(t=>{const b=[...document.querySelectorAll('button,a')].find(b=>(b.innerText||'').trim()===t&&b.getBoundingClientRect().width>0);if(b)b.click();return !!b;},t);
+    assert.ok(await tabTo('오늘'),'오늘 탭');await page.waitForTimeout(800);
+    assert.ok(await tabTo('일정'),'일정 탭');await page.waitForTimeout(1500);
+    assert.equal(await f.evaluate(()=>document.querySelector('#vtoggle div.on').dataset.v),'week','마지막에 본 주간으로 돌아온다');
     // 다크: 막대 바탕·켜진 칸이 어둡다
     const d=await openSchedule('phone',{dark:true});
     const dk=await look(d.f);
