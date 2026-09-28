@@ -761,7 +761,7 @@
   /* 2.902 — 역할 링 버튼: 색 동그라미가 지금 링 색 */
   .sel-ctl #ringBtn{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border:0;background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
   .sel-ctl #ringBtn .ring-sw{flex:0 0 14px;width:14px;height:14px;border-radius:50%;box-sizing:border-box;border:3px solid var(--ring-c,#9aa0ad);background:transparent}
-  .sel-ctl #ringBtn:not(.on) .ring-sw{border-style:dashed;border-color:#9aa0ad}
+  .sel-ctl #ringBtn:not(.on) .ring-sw{border-color:#8a90a0}
   .sel-ctl #ringBtn:focus-visible{outline:2px solid #3a6df0;outline-offset:2px;border-radius:6px}
   #rosterPanel{display:none;flex:0 0 232px;align-self:stretch;background:var(--panel);border-left:1px solid var(--line);
     overflow:auto;padding:11px 12px;flex-direction:column;gap:7px;}
@@ -4569,7 +4569,7 @@ function applyView(){
      미니골 하프코트는 하프라인 뒤 14m를 선수 대기·서버 공간으로 보여준다. */
   const hh=pitchViewSpan(a);
   let bx,by,bw,bh;
-  var _abH=0;
+  var _abH=0,_sbExtra=0;   /* 2.903 — _sbExtra: 폰 저장 띠 몫(아래쪽에만 붙인다) */
   /* Command Dock v5는 #boardStage의 실제 겹침을 CSS padding으로 이미 예약한다.
      그 안으로 이동한 애니메이션 바를 viewBox에서도 다시 예약하면, 특히 iPad에서
      라인·토큰·그림이 함께 약 62%까지 축소된다. 통합 도크에서는 stage의 content box
@@ -4589,6 +4589,8 @@ function applyView(){
   /* 레거시 레이아웃은 보관함 열람 바(vCreateBar) 자리도 미리 예약한다. Command Dock v5는
      실측된 stage content box를 그대로 써야 중복 예약 없이 최대 크기가 되므로 이 보정을 건너뛴다. */
   try{ if(!_dockOwnsStageReserve&&psBoardDevice()!=="phone"&&!document.body.classList.contains("vcreating") && !document.body.classList.contains("meet-mode") && !document.body.classList.contains("editing")) _abH+=56; }catch(_){}   /* 2.800 — 폰은 도크·열람 바가 없는데 56px 을 늘 예약해 운동장을 세로로 눌렀다(폭 375 에 여유가 있는데도 좌우로 퍼짐). 폰은 예약하지 않는다. */
+  /* 2.903 — 폰 저장 띠(#psSaveBar)는 평소 운동장 밑 빈 칸에 선다. 애니메이션 막대가 그 칸을 쓰면 띠가 운동장을 가리므로 그때만 띠 높이만큼 더 비운다. */
+  try{ var __abx=document.getElementById("animBar"); if(__abx&&__abx.classList.contains("on")&&document.body.classList.contains("ps-savebar")&&!document.body.classList.contains("meet-mode")&&!document.body.classList.contains("editing")&&window.matchMedia&&window.matchMedia("(max-width:639px)").matches){ _abH+=58; _sbExtra=58; } }catch(_){}
   const _spSmall=(pitchSpec()!==PITCH_SPECS.fifa)&&a==="full"&&(state.fieldMode||"standard")==="standard"&&(state.pitchN||1)<=1,_pr=PR();   /* 2.233 — 작은 규격은 규격 경계+런오프로 맞춤 */
   if(o==="h"){world.removeAttribute("transform");
     if(a!=="full"){bx=(state.halfSide==="R")?(W-hh):0;by=0;bw=hh;bh=H;}else if(_spSmall){bx=_pr.L-M;by=_pr.T-M;bw=_pr.PW+2*M;bh=_pr.PH+2*M;}else{bx=0;by=0;bw=W;bh=H;}}
@@ -4629,8 +4631,8 @@ function applyView(){
      아래쪽으로만 늘리면 축구 라인·선수·그림 전체가 카드 위로 치우쳐 보인다. */
   var _vbExt=false;
   if(_abH>0&&_ahExp>0&&!document.body.classList.contains("editing")){
-    var _dockExt=_abH*(fh/_ahExp);
-    fy-=_dockExt/2;
+    var _dockExt=_abH*(fh/_ahExp),_sbExt=_sbExtra*(fh/_ahExp);
+    fy-=(_dockExt-_sbExt)/2;   /* 2.903 — 저장 띠 몫은 아래에만 */
     fh+=_dockExt;
     _vbExt=true;
   }
@@ -4659,7 +4661,10 @@ function fitBoardAspect(){try{applyView();}catch(_){}}
 /* 애니메이션 바가 열리면 운동장을 그 위로 올려 겹침 제거 — svg 높이를 직접 줄이고 상단 정렬(레이아웃 방식 무관) */
 function _animBarPad(){try{var ab=document.getElementById("animBar"),st=document.getElementById("boardStage");if(ab&&st&&ab.classList.contains("on")){var abR=ab.getBoundingClientRect(),stR=st.getBoundingClientRect();var stPadBottom=parseFloat(getComputedStyle(st).paddingBottom)||0;var stContentH=stR.height-stPadBottom;var abTopInStage=abR.top-stR.top;var pad=stContentH-abTopInStage;return Math.max(0,pad+2);}}catch(_){}return 0;}
 function _animFitPad(){try{if(document.body.classList.contains("comm-viewing"))return;   /* 2.575 — 뷰어는 자리를 한 번 잡으면 끝 */
-  var st=document.getElementById("boardStage");if(st)st.style.paddingBottom="";try{fitBoardAspect();}catch(_){}}catch(_){}}
+  var st=document.getElementById("boardStage");if(st)st.style.paddingBottom="";
+  /* 2.903 — 폰 저장 띠는 psSelBarLayout 의 늘-비움 68px 에 선다. 여기서 지운 채 두면 세로 운동장 골라인이 띠 밑으로 간다(훈련→작전판 복귀 등) */
+  try{ if(document.body.classList.contains("ps-savebar")&&window.matchMedia&&matchMedia("(max-width:639px)").matches&&typeof psSelBarLayout==="function")psSelBarLayout(); }catch(_){}
+  try{fitBoardAspect();}catch(_){}}catch(_){}}
 window.__animFitPad=_animFitPad;
 function __syncAnimBarHeight(){try{var ab=document.getElementById("animBar");if(!ab)return 0;var h=Math.ceil(ab.getBoundingClientRect().height||ab.offsetHeight||0);if(h>0)document.documentElement.style.setProperty("--ps-animbar-h",h+"px");return h;}catch(_){return 0;}}
 function __measureAnimReserve(){try{var ab=document.getElementById("animBar");if(!ab)return;
@@ -7144,7 +7149,8 @@ let undoStack=[],redoStack=[];
 function _animSnapForUndo(){ try{ return {frames:(anim.frames||[]).map(function(f){ var c=Object.assign({},f); if(f.hl)c.hl=f.hl.slice(); if(f.blink)c.blink=JSON.parse(JSON.stringify(f.blink)); if(f.curves)c.curves=JSON.parse(JSON.stringify(f.curves)); return c; }),active:animActive}; }catch(_){ return null; } }
 function _animApplyUndo(a){ if(!a||!Array.isArray(a.frames))return; anim.frames=a.frames; animActive=Math.max(-1,Math.min(+a.active,anim.frames.length-1)); try{renderAnimFrames();}catch(_){} try{renderOnion();}catch(_){} try{_animFitPad();}catch(_){} }
 function _undoEntry(e){ if(e&&e.board){ loadSnap(e.board); _animApplyUndo(e.anim); } else loadSnap(e); }
-function pushUndo(){try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();redoStack.length=0;}catch(_){}}
+function pushUndo(){try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();redoStack.length=0;}catch(_){} try{_boardUserTouched=true;}catch(_){}}   /* 2.903 — 사용자가 손댐 */
+try{document.addEventListener("input",function(e){ try{ var t=e.target; if(t&&e.isTrusted!==false&&t.closest&&t.closest(".sel-ctl,#lsPop"))_boardUserTouched=true; }catch(_){} },true);}catch(_){}
 function undoLast(){if(!undoStack.length){toast("되돌릴 작업이 없어요");return;}try{redoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(redoStack.length>50)redoStack.shift();_undoEntry(undoStack.pop());}catch(_){}toast("되돌렸습니다 ↩");}
 function redoLast(){if(!redoStack.length){toast("다시 실행할 작업이 없어요");return;}try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();_undoEntry(redoStack.pop());}catch(_){}toast("다시 실행 ↪");}
 function clearBoardHistory(){undoStack.length=0;redoStack.length=0;}
@@ -7200,6 +7206,10 @@ let _bliveT=null;
 let _bliveSaveSeq=0,_bliveToastAt=0,_bliveDirty=false,_bliveApplying=false;
 var _boardPrivateOwner=null,_boardPrivateRecord=null,_boardPrivateBase=null;
 var _boardManualDirty=false,_boardManualSaving=false;
+/* 2.903 — «변경됨» 글자는 사용자가 실제로 손댔을 때만(목업 ⑤ «새 보드는 저장됨»).
+   _boardManualDirty 는 화면을 다시 그릴 때마다 켜지고, 서버 덮어쓰기 보류(boardApplyServerLive)·초안 보존·닫기 경고가 그 값을 쓴다.
+   그 뜻은 건드리지 않고 버튼 글자만 _boardUserTouched(되돌리기 기록이 쌓였거나 선택 패널 입력칸을 고침)와 함께 본다. */
+var _boardUserTouched=false;
 var _boardPrivateLoaded=false,_boardPrivateGeneration=0,_boardPrivateEditSeq=0;
 var _boardPrivateFlight=null,_boardPrivateLocal=Promise.resolve(),_boardPrivateHead=null,_boardPrivateIdbHead=null;
 var _boardPrivateDurableToken=null;
@@ -7492,8 +7502,10 @@ function boardSchedulePreview(){
     }catch(_){}finally{window.__psPreviewRefreshing=false;}
   },350);
 }
+function boardManualChanged(){ if(!_boardManualDirty)_boardUserTouched=false; return !!(_boardManualDirty&&_boardUserTouched); }
 function boardManualStatus(){
-  try{var b=document.getElementById('boardManualSave');if(b){b.textContent=_boardManualSaving?'저장 중…':(_boardManualDirty?'저장 · 변경됨':'저장');b.disabled=_boardManualSaving;b.title='현재 보드를 저장합니다';}}catch(_){}
+  var _chg=boardManualChanged(); try{ if(typeof window.__psSaveBarSync==='function')window.__psSaveBarSync(_chg); }catch(_){}
+  try{var b=document.getElementById('boardManualSave');if(b){b.textContent=_boardManualSaving?'저장 중…':(_chg?'저장 · 변경됨':'저장');b.disabled=_boardManualSaving;b.title='현재 보드를 저장합니다';}}catch(_){}
 }
 async function boardSaveExplicit(){
   if((_boardManualSaving&&boardPrivateCurrent(_boardManualSaving))||_vaultBoardContext||window.__vaultEdit)return false;
@@ -7560,6 +7572,7 @@ try{window.addEventListener("pagehide",boardFlushLive);window.addEventListener("
 try{document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")boardFlushLive();});}catch(_){}
 async function restoreLiveBoard(){
   try{if(new URLSearchParams(location.search).get("community_view")==="1"||document.body.classList.contains("comm-viewing"))return false;}catch(_){}
+  if(!_boardManualDirty)_boardUserTouched=false;   /* 2.903 — 깨끗한 상태에서 불러오면 불러오기 렌더는 «변경»이 아니다 */
   var owner=boardPrivateOwner();if(!owner)return false;
   var generation=++_boardPrivateGeneration,edit=_boardPrivateEditSeq,api=boardPrivateAPI();
   if(_boardPrivateOwner&&!boardPrivateSameAccount(_boardPrivateOwner,owner))boardPrivateResetCanvas();
@@ -9736,14 +9749,14 @@ async function openAnalysisTeamLibrary(){
   try{teams=await teamStore.read(teamOwner);}catch(_){toast('저장 명단을 확인하지 못했습니다. 기존 자료는 유지됩니다. 잠시 후 다시 열어 주세요.');return;}
   if(window.__vaultReadOnly||communityBoardReadOnly())return;
   var mask=document.createElement('div');mask.style.cssText='position:fixed;inset:0;z-index:100000;background:#0007;display:grid;place-items:center;padding:16px';
-  mask.innerHTML='<section role="dialog" aria-label="저장 팀 불러오기" style="background:var(--panel,#fff);color:var(--txt,#172235);border-radius:14px;padding:20px;width:440px;max-width:100%;max-height:85vh;overflow:auto"><h3>저장 팀 불러오기</h3><p>보관함 › 팀 등록에 저장한 명단입니다. 불러올 선수를 선택하세요.</p><select id="alTeam" aria-label="저장 팀" style="width:100%;padding:8px"></select><select id="alSide" aria-label="배치할 팀" style="width:100%;padding:8px;margin:8px 0"><option value="blue">팀 1</option><option value="red">팀 2</option></select><img id="alEmblem" alt="팀 엠블럼" width="56" height="56" style="object-fit:contain" hidden><div id="alPlayers"></div><p id="alError" role="status"></p><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="alManage">팀·선수 관리</button><button class="btn" id="alCancel">취소</button><button class="btn primary" id="alLoad">불러오기</button></div></section>';
+  mask.innerHTML='<section role="dialog" aria-label="저장 팀 불러오기" style="background:var(--panel,#fff);color:var(--txt,#172235);border-radius:14px;padding:20px;width:440px;max-width:100%;max-height:85vh;overflow:auto"><h3>저장 팀 불러오기</h3><p>보관함 › 팀 등록에 저장한 명단입니다. 불러올 선수를 선택하세요. 11명이 넘으면 나머지는 운동장 아래 대기 줄에 놓입니다.</p><select id="alTeam" aria-label="저장 팀" style="width:100%;padding:8px"></select><select id="alSide" aria-label="배치할 팀" style="width:100%;padding:8px;margin:8px 0"><option value="blue">팀 1</option><option value="red">팀 2</option></select><img id="alEmblem" alt="팀 엠블럼" width="56" height="56" style="object-fit:contain" hidden><div id="alPlayers"></div><p id="alError" role="status"></p><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="alManage">팀·선수 관리</button><button class="btn" id="alCancel">취소</button><button class="btn primary" id="alLoad">불러오기</button></div></section>';
   document.body.appendChild(mask);var select=mask.querySelector('#alTeam');teams.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.name;select.appendChild(o);});
-  function roster(){var t=teams.find(function(t){return t.id===select.value;}),box=mask.querySelector('#alPlayers');box.innerHTML='';var emblem=mask.querySelector('#alEmblem');emblem.hidden=!(t&&typeof t.emblem==='string'&&t.emblem.length<250000&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(t.emblem));if(!emblem.hidden)emblem.src=t.emblem;(t&&t.players||[]).forEach(function(p,i){var label=document.createElement('label');label.style.cssText='display:flex;gap:8px;padding:7px;border-bottom:1px solid #ddd';var c=document.createElement('input');c.type='checkbox';c.value=String(i);c.checked=i<11;label.appendChild(c);label.appendChild(document.createTextNode([p.no,p.name,p.pos].filter(Boolean).join(' · ')));box.appendChild(label);});mask.querySelector('#alError').textContent=t?'선택한 쪽의 기존 선수만 바뀝니다.':'저장된 팀이 없습니다. 팀·선수 관리에서 등록하세요.';}
+  function roster(){var t=teams.find(function(t){return t.id===select.value;}),box=mask.querySelector('#alPlayers');box.innerHTML='';var emblem=mask.querySelector('#alEmblem');emblem.hidden=!(t&&typeof t.emblem==='string'&&t.emblem.length<250000&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(t.emblem));if(!emblem.hidden)emblem.src=t.emblem;(t&&t.players||[]).forEach(function(p,i){var label=document.createElement('label');label.style.cssText='display:flex;gap:8px;padding:7px;border-bottom:1px solid #ddd';var c=document.createElement('input');c.type='checkbox';c.value=String(i);c.checked=true;label.appendChild(c);label.appendChild(document.createTextNode([p.no,p.name,p.pos].filter(Boolean).join(' · ')));box.appendChild(label);});mask.querySelector('#alError').textContent=t?'선택한 쪽의 기존 선수만 바뀝니다.':'저장된 팀이 없습니다. 팀·선수 관리에서 등록하세요.';}
   select.onchange=roster;roster();mask.querySelector('#alCancel').onclick=function(){mask.remove();};mask.querySelector('#alManage').onclick=function(){mask.remove();parent.postMessage({source:'board',type:'goApp',app:'analysis'},location.origin);};
-  mask.querySelector('#alLoad').onclick=function(){if(teamOwner===null||teamStore.owner()!==teamOwner){mask.querySelector('#alError').textContent='계정 또는 팀이 바뀌었습니다. 명단을 다시 열어 주세요.';return;}var t=teams.find(function(t){return t.id===select.value;}),side=mask.querySelector('#alSide').value,list=Array.from(mask.querySelectorAll('#alPlayers input:checked')).map(function(c){return t.players[Number(c.value)];});if(!list.length||list.length>11){mask.querySelector('#alError').textContent='선수를 1~11명 선택하세요.';return;}if(state.players.some(function(p){return p.team===side;})&&!confirm('선택한 쪽의 기존 선수를 저장 명단으로 바꿀까요?'))return;
+  mask.querySelector('#alLoad').onclick=function(){if(teamOwner===null||teamStore.owner()!==teamOwner){mask.querySelector('#alError').textContent='계정 또는 팀이 바뀌었습니다. 명단을 다시 열어 주세요.';return;}var t=teams.find(function(t){return t.id===select.value;}),side=mask.querySelector('#alSide').value,list=Array.from(mask.querySelectorAll('#alPlayers input:checked')).map(function(c){return t.players[Number(c.value)];});if(!list.length){mask.querySelector('#alError').textContent='선수를 1명 이상 선택하세요.';return;}   /* 2.903 — 11명 제한 해제(제보 «11명만 불러오게 되어있음») */if(state.players.some(function(p){return p.team===side;})&&!confirm('선택한 쪽의 기존 선수를 저장 명단으로 바꿀까요?'))return;
     var slots=(FORM['433']||[]).slice(0,11),free=slots.slice(),assigned=[];
-    list.forEach(function(p){var at=free.findIndex(function(slot){return posCode(slot[3])===posCode(p.pos);});assigned.push({p:p,slot:at>=0?free.splice(at,1)[0]:null});});assigned.forEach(function(x){if(!x.slot)x.slot=free.shift()||[.25,.5];});
-    pushUndo();if(t.kit){var mapping={main:'teamColors',accent:'teamColor2',stroke:'teamStrokeC',text:'teamTxtC',gkMain:'gkColors',gkAccent:'gkColor2',gkStroke:'gkStrokeC',gkText:'gkTxtC'};Object.keys(mapping).forEach(function(k){if(/^#[0-9a-f]{6}$/i.test(t.kit[k]||'')){state[mapping[k]]=state[mapping[k]]||{};state[mapping[k]][side]=t.kit[k];}});[['pattern','teamPattern'],['gkPattern','gkPattern']].forEach(function(pair){if(KIT_PATS.indexOf(t.kit[pair[0]])>=0){state[pair[1]]=state[pair[1]]||{};state[pair[1]][side]=t.kit[pair[0]];}});}state.players=state.players.filter(function(p){return p.team!==side;});assigned.forEach(function(x){var nx=x.slot[0],ny=x.slot[1];if(side==='red'){nx=1-nx;ny=1-ny;}var at=n2u(nx,ny);state.players.push({id:uid++,team:side,num:x.p.no||'',name:x.p.name||'',pos:x.p.pos||'',x:at.x,y:at.y});});sel=null;multiSel=[];renderTokens();renderDrawings();try{if(window.boardSaveLive)window.boardSaveLive();}catch(_){}mask.remove();toast(t.name+' · '+list.length+'명 불러옴');
+    list.forEach(function(p){var at=free.findIndex(function(slot){return posCode(slot[3])===posCode(p.pos);});assigned.push({p:p,slot:at>=0?free.splice(at,1)[0]:null});});var bench=0;assigned.forEach(function(x){if(!x.slot)x.slot=free.shift()||null;if(!x.slot){var r=Math.floor(bench/16);x.slot=[0.955-(bench%16)*0.058,0.965-r*0.05];bench++;}});   /* 2.903 — 12번째부터는 아래 대기 줄(16명마다 한 줄 위) */
+    pushUndo();if(t.kit){var mapping={main:'teamColors',accent:'teamColor2',stroke:'teamStrokeC',text:'teamTxtC',gkMain:'gkColors',gkAccent:'gkColor2',gkStroke:'gkStrokeC',gkText:'gkTxtC'};Object.keys(mapping).forEach(function(k){if(/^#[0-9a-f]{6}$/i.test(t.kit[k]||'')){state[mapping[k]]=state[mapping[k]]||{};state[mapping[k]][side]=t.kit[k];}});[['pattern','teamPattern'],['gkPattern','gkPattern']].forEach(function(pair){if(KIT_PATS.indexOf(t.kit[pair[0]])>=0){state[pair[1]]=state[pair[1]]||{};state[pair[1]][side]=t.kit[pair[0]];}});}state.players=state.players.filter(function(p){return p.team!==side;});assigned.forEach(function(x){var nx=x.slot[0],ny=x.slot[1];if(side==='red'){nx=1-nx;ny=1-ny;}var at=n2u(nx,ny);state.players.push({id:uid++,team:side,num:x.p.no||'',name:x.p.name||'',pos:x.p.pos||'',x:at.x,y:at.y});});sel=null;multiSel=[];renderTokens();renderDrawings();try{if(window.boardSaveLive)window.boardSaveLive();}catch(_){}mask.remove();toast(t.name+' · '+list.length+'명 불러옴'+(bench?(' · 대기 '+bench+'명'):''));
   };
 }
 function loadTeamToBoard(startersOnly){try{var ls=localStorage.getItem("cs_squad_v1");if(ls){var o=JSON.parse(ls);if(o&&Array.isArray(o.players))squad=o;}}catch(_){}applySquadToBoard({startersOnly:!!startersOnly});}
@@ -13524,7 +13537,7 @@ try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전�
 </script>
 <script>
 (function(){var bar=null,__saved=null,__savedAnim=null,_meta=null;
-  function makeBar(){bar=document.createElement('div');
+  function makeBar(){try{document.body.classList.add('ps-capturing');}catch(_){}bar=document.createElement('div');
      if(_meta){
        bar.style.cssText='position:fixed;right:12px;top:12px;z-index:99999;display:flex;flex-direction:column;gap:7px;width:210px;padding:14px;background:#fff;color:#14161A;border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.42);font-family:-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Roboto,sans-serif';
        bar.innerHTML='<div style="font-size:14px;font-weight:800;margin-bottom:2px">훈련 드릴 만들기</div><label style="font-size:11px;font-weight:600;color:#8A9099">드릴 이름</label><input id="capName" type="text" maxlength="40" placeholder="예: 4v4 론도" style="font-size:14px;padding:8px 10px;border:1px solid #d2d6dd;border-radius:8px;outline:none;font-family:inherit"><label style="font-size:11px;font-weight:600;color:#8A9099">시간 (분)</label><input id="capMin" type="number" min="0" max="120" placeholder="15" style="font-size:14px;padding:8px 10px;border:1px solid #d2d6dd;border-radius:8px;outline:none;font-family:inherit"><div style="font-size:11px;color:#8A9099;line-height:1.4;margin:2px 0">캔버스에 배치·화살표를 그린 뒤 완료</div>';
@@ -13547,7 +13560,7 @@ try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전�
     /* 캡처 중 만든 애니메이션 장면도 함께 돌려준다 — 매치 데스크 장면집의 패턴 애니메이션 (#v292) */
     var frames=null;try{frames=window.__animFrames?window.__animFrames():null;}catch(_){}
     try{parent.postMessage({source:'board',type:'capture',thumb:thumb,snap:snap,name:nm,minutes:mn,frames:frames},'*');}catch(_){}restore();end();}
-  function end(){if(bar){bar.remove();bar=null;document.body.style.paddingTop='';}}
+  function end(){try{document.body.classList.remove('ps-capturing');}catch(_){}if(bar){bar.remove();bar=null;document.body.style.paddingTop='';}}
   function restore(){window.__capLock=0;if(__saved!==null){try{loadSnap(__saved);}catch(_){}__saved=null;try{if(typeof renderTokens==='function')renderTokens();}catch(_){}
     /* 캡처 전에 작업하던 애니메이션 복원 — 캡처용 프레임이 원본 작업을 덮지 않게 */
     try{if(__savedAnim&&__savedAnim.length>1&&window.__animLoad)window.__animLoad(__savedAnim);else if(window.__animReset)window.__animReset();}catch(_){}__savedAnim=null;
@@ -18391,5 +18404,72 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
  html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl #colorPop:not(#_):not(#__):not(#___){position:static!important;transform:none!important;margin:4px 0 0!important;width:224px!important;max-width:100%!important;box-sizing:border-box!important}
 }
 </style>
+<!-- 2.903 — 폰 저장 띠(목업 ⑤): 운동장 밑 한 줄에 «상태 · 배치 · 보관함 · 저장». 떠 있던 저장·보관함 버튼(선택 시트를 가리던)은 폰에서 숨긴다.
+     버튼은 원래 버튼(#boardManualSave · #vaultSave)을 대신 누른다 — 저장 경로·권한 게이트(psRoHide)·편집 중 숨김 규칙을 그대로 쓴다. -->
+<style id="ps-2903-savebar">
+#psSaveBar{display:none}
+/* 첨부 모드(게임모델·일정·분석이 작전판을 빌려 쓸 때)에는 «✓ 첨부 완료»만 반영된다 — 아무 일도 하지 않던 저장 버튼들을 숨긴다 */
+body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturing #psSaveBar{display:none!important}
+@media (max-width:639px){
+  body.board-view.ps-savebar #boardManualSave,body.board-view.ps-savebar #vaultSave{display:none!important}
+  body.board-view.ps-savebar:not(.sb-hide) #psSaveBar{display:flex}
+  #psSaveBar{position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:150;align-items:center;gap:6px;
+    padding:5px 5px 5px 12px;border-radius:14px;background:rgba(18,22,30,.9);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 22px rgba(0,0,0,.35);color:#fff;font-family:inherit;box-sizing:border-box}
+  body.sb-anim #psSaveBar{bottom:calc(var(--ps-animbar-h,48px) + 10px + env(safe-area-inset-bottom,0px))}
+  #psSaveBar .sb-st{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:rgba(255,255,255,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #psSaveBar .sb-dot{flex:0 0 7px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45)}
+  #psSaveBar.chg .sb-st{color:#ffd24a}#psSaveBar.chg .sb-dot{background:#ffd24a}
+  #psSaveBar button{flex:0 0 auto;min-height:38px;padding:0 12px;border:0;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+  #psSaveBar button.sb-save{background:#3a6df0}
+  #psSaveBar button:disabled{opacity:.55}
+  #psSaveBar button:focus-visible{outline:2px solid #8fb0ff;outline-offset:2px}
+  /* 포메이션 카드의 «배치»가 스크롤 아래로 잘리던 것 — 카드(#emptyHint, 스크롤 상자) 아래에 붙인다 */
+  #emptyHint>#ehGo{position:sticky;bottom:0;z-index:2}
+}
+</style>
+<script>
+(function(){ try{
+  var bar=document.createElement("div"); bar.id="psSaveBar"; bar.setAttribute("role","group"); bar.setAttribute("aria-label","보드 저장");
+  bar.innerHTML='<span class="sb-st" aria-live="polite"><span class="sb-dot" aria-hidden="true"></span><span class="sb-tx">저장됨</span></span>'
+    +'<button type="button" class="sb-form">배치</button><button type="button" class="sb-vault">보관함</button><button type="button" class="sb-save">저장</button>';
+  document.body.appendChild(bar); document.body.classList.add("ps-savebar");
+  var tx=bar.querySelector(".sb-tx"), bSave=bar.querySelector(".sb-save"), bVault=bar.querySelector(".sb-vault"), bForm=bar.querySelector(".sb-form");
+  function ro(){ return !!document.getElementById("psRoHide"); }
+  function status(chg){ try{
+    var saving=(typeof _boardManualSaving!=="undefined"&&_boardManualSaving);
+    if(chg===undefined){ try{ chg=boardManualChanged(); }catch(_){ chg=false; } }
+    bar.classList.toggle("chg",!!chg&&!saving);
+    var owner=null,loaded=true,pend=false; try{ owner=boardPrivateOwner(); loaded=!!_boardPrivateLoaded; pend=!!(_boardPrivateRecord&&_boardPrivateRecord.pending&&_boardPrivateDurableToken!==_boardPrivateRecord.token); }catch(_){}
+    var t=ro()?"보기 전용":(!owner?"로그인하면 저장돼요":(!loaded?"불러오는 중…":(saving?"저장 중…":(chg?"변경됨 · 저장 안 함":(pend?"기기에 저장됨 · 서버 대기":"저장됨")))));
+    if(tx.textContent!==t)tx.textContent=t;   /* aria-live 가 같은 말을 되풀이하지 않게 */
+    bSave.disabled=!!saving; bSave.hidden=ro(); bVault.hidden=ro();
+  }catch(_){} }
+  window.__psSaveBarSync=function(chg){ status(chg); vis(); };
+  function vis(){ try{
+    var b=document.body, sc=document.querySelector(".sel-ctl"), selOn=!!(sc&&sc.style.display!=="none"&&(typeof sel!=="undefined"&&sel||typeof multiSel!=="undefined"&&multiSel&&multiSel.length));
+    var ab=document.getElementById("animBar"), animOn=!!(ab&&ab.classList.contains("on"));
+    var hide=selOn||b.classList.contains("eh-open")||b.classList.contains("editing")||b.classList.contains("meet-mode")||b.classList.contains("vault-full")
+      ||!!document.getElementById("lsPop")||!!window.__vaultEdit||!!window.__vaultViewOnly||!!window.__animExport||(typeof animPlaying!=="undefined"&&animPlaying);
+    b.classList.toggle("sb-hide",hide); var _wasAnim=b.classList.contains("sb-anim"); b.classList.toggle("sb-anim",animOn);
+    if(_wasAnim!==animOn){ try{ requestAnimationFrame(function(){ try{ fitBoardAspect(); }catch(_){} }); }catch(_){} }
+  }catch(_){} }
+  window.__psSaveBarVis=vis;
+  bSave.addEventListener("click",function(e){ e.stopPropagation(); var o=document.getElementById("boardManualSave"); if(o)o.click(); else if(window.__boardSaveExplicit)window.__boardSaveExplicit(); });
+  bVault.addEventListener("click",function(e){ e.stopPropagation(); var o=document.getElementById("vaultSave"); if(o)o.click(); });
+  bForm.addEventListener("click",function(e){ e.stopPropagation();
+    function open(){ try{ if(window.__psOpenFormation)window.__psOpenFormation(); }catch(_){} setTimeout(vis,0); }
+    var has=false; try{ has=(state.players||[]).length>0; }catch(_){}
+    if(has&&typeof psConfirm==="function")psConfirm("포메이션을 고르고 «배치»를 누르면 지금 선수 자리가 새로 바뀝니다. 계속할까요?",open); else open(); });
+  try{ new MutationObserver(vis).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){}
+  try{ var ab=document.getElementById("animBar"); if(ab)new MutationObserver(vis).observe(ab,{attributes:true,attributeFilter:["class"]}); }catch(_){}
+  try{ var sc=document.querySelector(".sel-ctl"); if(sc)new MutationObserver(vis).observe(sc,{attributes:true,attributeFilter:["style","class"]}); }catch(_){}
+  try{ new MutationObserver(function(ms){ for(var i=0;i<ms.length;i++){ var m=ms[i]; for(var j=0;j<m.addedNodes.length;j++){ if(m.addedNodes[j].id==="lsPop"||m.addedNodes[j].id==="psRoHide"){ status(); vis(); return; } } for(var k=0;k<m.removedNodes.length;k++){ if(m.removedNodes[k].id==="lsPop"){ vis(); return; } } } }).observe(document.body,{childList:true}); }catch(_){}
+  try{ new MutationObserver(function(){ status(); }).observe(document.head,{childList:true}); }catch(_){}
+  try{ if(typeof playAnim==="function"){ var _pa=playAnim; playAnim=function(){ var r=_pa.apply(this,arguments); vis(); var iv=setInterval(function(){ if(typeof animPlaying==="undefined"||!animPlaying){ clearInterval(iv); vis(); } },400); return r; }; } }catch(_){}
+  try{ if(typeof stopAnim==="function"){ var _sa=stopAnim; stopAnim=function(){ var r=_sa.apply(this,arguments); vis(); return r; }; } }catch(_){}
+  status(); vis();
+}catch(_){} })();
+</script>
 </body>
 </html>

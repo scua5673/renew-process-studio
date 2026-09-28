@@ -120,7 +120,9 @@ try{
       const token=frame.locator('.token[data-id="synthetic-A-PRIVATE"]');const rect=await token.boundingBox();
       await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.mouse.down();await page.mouse.move(rect.x+rect.width/2+35,rect.y+rect.height/2+20,{steps:8});await page.mouse.up();
       await page.waitForTimeout(2300);assert.equal(await boardRecord(page,A),null,'actual drag must not save');
-      await frame.locator('#boardManualSave').click();
+      /* 2.903 — 폰은 떠 있던 #boardManualSave 대신 저장 띠의 «저장». 선택 시트가 열려 있으면 띠가 숨으므로 먼저 운동장 빈 곳처럼 선택을 푼다 */
+      await frame.evaluate(()=>{try{if(document.body.classList.contains('sb-hide')&&typeof deselect==='function')deselect();}catch(_){}});await page.waitForTimeout(150);
+      await frame.locator(await frame.evaluate(()=>{const b=document.querySelector('#psSaveBar');return b&&getComputedStyle(b).display!=='none'?'#psSaveBar .sb-save':'#boardManualSave';})).click();
       await frame.waitForFunction(()=>_boardPrivateRecord&&!_boardPrivateRecord.pending&&!_boardManualSaving);
       const ackA=await boardRecord(page,A);assert.equal(ackA.pending,false);assert.equal(JSON.parse(ackA.base.raw).snap.players[0].name,'A-EDIT');
       await page.screenshot({path:path.join(out,spec.name+'-coach-a.png')});

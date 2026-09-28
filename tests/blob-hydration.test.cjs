@@ -54,7 +54,7 @@ test('unavailable or invalid blob data preserves its exact reference while indep
 test('malformed documents, ambiguous duplicate fields and apparent refs inside text remain untouched',async()=>{
   const h=harness([[H,segment('image')]]),raws=['{"thumb":"","thumbRef":"'+H+'",}',
     '{"thumb":"","thumb":"","thumbRef":"'+H+'"}',
-    '{"emblem":"","emblemRef":"'+H+'","emblemRef":"'+G+'"}',
+    '{"emblemRef":"'+H+'","emblem":"","other":1,"emblemRef":"'+G+'"}',
     JSON.stringify({memo:'{"thumb":"","thumbRef":"'+H+'"}'}),'{"thumb":"","thumbRef":"not-a-hash"}'];
   for(const raw of raws){assert.deepEqual(Array.from(h.c.schedRefs(raw)),[]);assert.equal(await h.c.schedHydrate('token','team-a',raw),raw);}assert.equal(h.reads.length,0);assert.equal(h.calls.length,0);
 });
@@ -62,4 +62,24 @@ test('repeated references fetch once, missing server rows stay intact, and unrel
   const h=harness([],[[H,segment('image')]]),raw=JSON.stringify([{thumb:'',thumbRef:H},{thumbRef:H,thumb:''},{emblem:'',emblemRef:G}]);
   const got=JSON.parse(await h.c.schedHydrate('token','team-a',raw));assert.equal(got[0].thumb,'image');assert.equal(got[1].thumb,'image');assert.equal(got[2].emblemRef,G);assert.equal(h.calls.length,1);assert.equal(h.reads.length,2);
   h.rows.push({k:'unrelated',v:raw,cupd:1});const rows=await h.c.kvPullValues('token','team-a',['unrelated']);assert.equal(rows[0].v,raw);
+});
+
+/* 2.903 — 제보 «자꾸 팀 로고가 초기화»: 옛 emblemRef 가 남은 채 새 로고를 올리면 전송 문서에 Ref 가 둘 생겼다. */
+test('a duplicated reference right after its empty value (the schedStrip shape) hydrates and drops the stale reference',async()=>{
+  const h=harness([[H,segment('new-emblem')]]),raw='{"meta":{"emblem":"","emblemRef":"'+H+'","teamName":"S","emblemRef":"'+G+'"},"players":[]}';
+  assert.deepEqual(Array.from(h.c.schedRefs(raw)),[H]);
+  const got=await h.c.schedHydrate('token','team-a',raw);const o=JSON.parse(got);
+  assert.equal(o.meta.emblem,'new-emblem');assert.equal(o.meta.emblemRef,undefined);assert.equal((got.match(/emblemRef/g)||[]).length,0);assert.equal(o.meta.teamName,'S');
+});
+test('strip drops a stale reference beside a raw image so the sent document has exactly one reference',async()=>{
+  const picture='data:image/png;base64,'+'b'.repeat(900),h=harness();
+  const raw=JSON.stringify({meta:{emblem:picture,emblemRef:G,color:'#123456'},players:[]});
+  const s=await h.c.schedStrip(raw);assert.equal((s.v.match(/emblemRef/g)||[]).length,1);assert.ok(!s.v.includes(G),'stale hash is gone');
+  assert.equal(s.blobs.length,1);const h2=harness([[s.blobs[0].h,s.blobs[0].v]]);
+  const back=JSON.parse(await h2.c.schedHydrate('token','team-a',s.v));assert.equal(back.meta.emblem,picture);assert.equal(back.meta.emblemRef,undefined);assert.equal(back.meta.color,'#123456');
+});
+test('strip leaves ordinary documents byte-identical',async()=>{
+  const h=harness(),plain='{ "meta" : { "emblem":"", "emblemRef":"'+H+'" }, "note":"x" }';
+  assert.equal((await h.c.schedStrip(plain)).v,plain);
+  const small=JSON.stringify({meta:{emblem:'tiny',emblemRef:H}});assert.equal((await h.c.schedStrip(small)).v,small,'short values are not stripped, so their refs stay');
 });

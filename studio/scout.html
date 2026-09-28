@@ -4705,6 +4705,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
             <span class="tm-viewseg" id="tmViewSeg"><button type="button" data-tmv="pitch" class="on">작전판</button><button type="button" data-tmv="table">표</button></span>
             <!-- 1.558 — 조 칩을 도구 줄과 같은 행으로(사용자 지시). 줄 하나가 통째로 줄어든다. -->
             <div id="grpChips" style="display:none;gap:6px;flex-wrap:wrap"></div>
+            <p class="tm-nowline" id="tmNowLine"></p><!-- 2.903 — 폰: 숨긴 포메이션·편집 권한의 지금 값 -->
             <div class="tm-head-set"><button type="button" class="btn sm" id="tbMeetBtn" title="운동장과 선수 카드만 전체화면으로">회의 모드</button><span class="tm-shape" id="tbShape"></span><label class="tm-set-it tm-form-lab">포메이션<select class="inp" id="tmForm" style="width:auto;min-width:104px;height:34px;font-weight:600;font-size:13px"><optgroup label="백4"><option value="442">4-4-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option><option value="4312">4-3-1-2</option><option value="4321">4-3-2-1</option></optgroup><optgroup label="백3"><option value="3142">3-1-4-2</option><option value="3412">3-4-1-2</option><option value="3421">3-4-2-1</option></optgroup></select></label><!-- 2.098 — ＋ 자리 제거(사용자 지시). 핸들러(init 의 tbAddPos)는 id 가드가 있어 조용히 건너뛴다 --><label class="tm-set-it tm-set-kit">유니폼<span class="kit-sw"><input type="color" id="kitMain" title="유니폼 색"></span></label><label class="tm-set-it tm-set-kit">GK<span class="kit-sw"><input type="color" id="kitGk" title="GK 색"></span></label></div>
           </div>
         </div>
@@ -5786,6 +5787,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
           </div>
         </div>
         <div id="plLevels" style="margin-top:6px"></div>
+        <div class="pl-delfoot" id="plDelFoot"></div><!-- 2.903 — 폰: «선수 삭제»를 «닫기»와 떼어 여기로(주발 select#plFoot 과 다른 id) -->
       </div>
       </div>
     </section>
@@ -6654,7 +6656,7 @@ function rosterPersist(main,options){
   var currentBrand=store.get(KEY);
   if(currentBrand&&currentBrand.meta){
     main.meta=Object.assign({},main.meta||{});
-    ['emblem','color','headline'].forEach(function(k){
+    ['emblem','emblemRef','color','headline'].forEach(function(k){   /* 2.903 — 로고와 그 분리 참조는 늘 같은 문서에서 */
       if(Object.prototype.hasOwnProperty.call(currentBrand.meta,k))main.meta[k]=currentBrand.meta[k];else delete main.meta[k];
     });
   }
@@ -9178,6 +9180,7 @@ function renderPlayers(){
 function openPlayer(id,opts){
   editingPlayer=id;const pl=player(id);if(!pl)return;
   if($("plDelete"))$("plDelete").textContent=pl.type==="target"?"후보 보관":"선수 삭제";
+  try{ var _pd=$("plDelete"),_pf=$("plDelFoot"),_pc=$("plClose"); if(_pd&&_pf&&_pc){ if(tmPhoneRows()){ if(_pd.parentNode!==_pf)_pf.appendChild(_pd); } else if(_pd.parentNode===_pf){ _pc.parentNode.insertBefore(_pd,_pc); } } }catch(_){}   /* 2.903 */
   if(pl.type==="target"){try{scStore().check();scProject(pl);}catch(e){scWarn(e);return;}}
   var _m=$("plEditModal"); if(_m&&_m.parentNode!==document.body)document.body.appendChild(_m);   // 숨겨진 뷰 밖(body)으로 옮겨 어느 탭에서든 표시
   _m.style.display="flex";$("plEditTitle").textContent=pl.name||"선수 편집";
@@ -10476,6 +10479,13 @@ function tmGrpBarEl(){
   mk("전체",""); gs.forEach(function(g){ mk(g,g); });
   return bar;
 }
+/* 2.903 — 폰 선수단(목업 ②)은 행 규칙과 같은 ≤600 에서만 바뀐다(601~767 은 옛 모양 그대로). */
+/* 2.903 — 폰 «지금 값» 한 줄: 숨긴 포메이션·편집 권한 칩의 지금 값. 권한 칩은 늦게 붙고(400ms 재시도) 눌러도 renderTeam 을 안 부르므로 따로 지켜본다. */
+function tmNowLineSync(){ var _nl=$("tmNowLine"); if(!_nl)return; var fsel=$("tmForm"), _fo=fsel&&fsel.options[fsel.selectedIndex], _lk=$("rosterLockChip"), _lt=_lk?String(_lk.textContent||"").replace(/^[^가-힣A-Za-z0-9]*선수단 편집\s*:?\s*/,"").trim():"";
+  var tx=[_fo?("포메이션 "+_fo.textContent):"",_lt?(_lt+(/편집/.test(_lt)?"":" 편집")):""].filter(Boolean).join(" · "); if(_nl.textContent!==tx)_nl.textContent=tx; }
+try{ (function(){ function arm(){ var wb=document.querySelector(".tm-workbar"); if(!wb)return false; new MutationObserver(function(ms){ for(var i=0;i<ms.length;i++){ var n=ms[i].target; if(n&&(n.id==="tmNowLine"||(n.parentNode&&n.parentNode.id==="tmNowLine")))return; } tmNowLineSync(); }).observe(wb,{childList:true,subtree:true,characterData:true}); return true; }
+  if(!arm())document.addEventListener("DOMContentLoaded",arm); })(); }catch(_){}
+function tmPhoneRows(){ try{ return !!(window.matchMedia&&matchMedia("(max-width:600px)").matches); }catch(_){ return false; } }
 function renderGrpChips(){
   const box=$("grpChips");if(!box)return;box.innerHTML="";
   /* 1.566 — 조를 아직 아무에게도 안 줬으면 칩이 통째로 사라져 'A팀·B팀 나누기'로 가는 길이 없었다.
@@ -10487,10 +10497,13 @@ function renderGrpChips(){
   if(!tmOurs().length){box.style.display="none";tmGrpFilter="";return;}
   box.style.display="flex";
   if(tmGrpFilter&&gs.indexOf(tmGrpFilter)<0)tmGrpFilter="";
+  /* 2.903 — 조별 인원 수(폰에서만 보인다). 머리 «N명»과 같은 규칙: 이름이 있거나 직접 추가한 선수 */
+  var _gc={},_gcTot=0; try{ tmOurs().filter(function(p){return p.manual===true||String(p.name||"").trim();}).forEach(function(p){ var g=String(p.grp||"").trim(); _gc[g]=(_gc[g]||0)+1; _gcTot++; }); }catch(_){}
   const mk=(label,val)=>{const b2=document.createElement("button");
     b2.className="btn sm"+(tmGrpFilter===val?" primary":"");
     b2.style.cssText="height:34px;padding:0 12px;font-size:13px;";
     b2.textContent=label;
+    try{ var _n=val===""?_gcTot:(_gc[val]||0), _ns=document.createElement("span"); _ns.className="grp-n"; _ns.textContent=String(_n); b2.appendChild(_ns); }catch(_){}
     b2.onclick=()=>{tmGrpFilter=val;renderTeam();};
     box.appendChild(b2);};
   mk("전체","");gs.forEach(g=>mk(g,g));
@@ -10504,6 +10517,19 @@ function renderGrpChips(){
     tmGrpFilter=v; renderTeam(); try{renderScoutBoard();}catch(_){}
     try{toast(v+" 조 추가됨 — 선수의 팀 버튼(A·B…)을 눌러 배정하세요. 일정 탭에도 이 조가 생겼어요");}catch(_){}
   }; box.appendChild(e); })();
+  /* 2.903 — 폰 ⋯: 조 이름 · 조 추가 · 포메이션 · 편집 권한. 숨겨 둔 원래 버튼·select 를 그대로 눌러 권한 확인·저장 경로를 공유한다. */
+  (function(){ var e=document.createElement("button"); e.type="button"; e.className="btn sm grp-more"; e.id="tmGrpMore"; e.textContent="⋯"; e.setAttribute("aria-label","조·포메이션·편집 권한"); e.setAttribute("aria-haspopup","menu");
+    e.onclick=function(ev){ ev.stopPropagation(); var items=[{v:"rename",lb:"조 이름 바꾸기"},{v:"add",lb:"＋ 조 추가"},{v:"form",lb:"포메이션"}];
+      if($("rosterLockChip"))items.push({v:"lock",lb:"선수단 편집 권한"});
+      psPickOpen(e,items,"",function(v){
+        if(v==="rename"){ var b=box.querySelector(".grp-edit"); if(b)b.click(); }
+        else if(v==="add"){ var b2=box.querySelector(".grp-add"); if(b2)b2.click(); }
+        else if(v==="lock"){ var c=$("rosterLockChip"); if(c)c.click(); setTimeout(tmNowLineSync,700); }
+        else if(v==="form"){ var fs=$("tmForm"); if(!fs)return;
+          if(document.body.classList.contains("ps-roster-locked")||(typeof teEditable==="function"&&!teEditable())){ try{toast("운영진만 바꿀 수 있어요");}catch(_){} return; }   /* 데스크톱은 잠긴 스태프에게 .tm-head-set 을 숨겨 막는다 — 같은 경계 */ var opts=[].map.call(fs.options,function(o){return {v:o.value,lb:o.textContent};});
+          psPickOpen(e,opts,fs.value,function(fv){ if(fs.value===fv)return; fs.value=fv; if(typeof fs.onchange==="function")fs.onchange(); },"포메이션"); }
+      },"선수단 설정"); };
+    box.appendChild(e); })();
   const dl=$("grpList");if(dl){dl.innerHTML="";gs.forEach(g=>{const o=document.createElement("option");o.value=g;dl.appendChild(o);});}}
 var __tmpop=null;
 function tmPopOutside(e){ if(__tmpop && !__tmpop.contains(e.target)) closeTmPop(); }
@@ -11095,6 +11121,7 @@ function renderTeam(){
   if(fsel){
     fsel.innerHTML=tmFormOptsHTML();
     fsel.value=(TM_FORMS[sq.form]||tmCustomForms().some(f=>f.id===sq.form))?sq.form:"433";}
+  try{ tmNowLineSync(); }catch(_){}
   /* 2.528 — 헤더가 **48명**인데 바로 밑은 **47/47** 이었다(사용자 실화면). 헤더는 날것을 세고,
      아래 숫자는 `oursAll`(이름이 있거나 손으로 만든 선수)만 셌다 → 같은 규칙으로 통일한다.
      차이를 만든 건 이름·번호·자리가 전부 빈 행 하나였다(＋선수 추가를 누르고 안 채운 흔적). */
@@ -11223,12 +11250,15 @@ function renderTeam(){
       box.querySelectorAll(".tm-row.is-active").forEach(function(x){if(x!==row)x.classList.remove("is-active");});
       row.classList.add("is-active");
     };
-    row.addEventListener("click",function(e){if(!e.target.closest("button,input,select"))activateRow();});
+    row.addEventListener("click",function(e){if(e.target.closest("button,input,select"))return;
+      if(tmPhoneRows()){ try{ openPlayer(pl.id); }catch(_){} return; }   /* 2.903 — 폰: 행 전체가 선수 시트 */
+      activateRow();});
     /* 상태 버튼은 접힌 행에서도 바로 누르는 빠른 조작이다.
        이 버튼이 포커스를 받을 때 행을 먼저 펼치면 레이아웃이 움직여,
        같은 탭 동작이 새로 나타난 삭제 버튼에 닿을 수 있으므로 펼치지 않는다. */
     row.addEventListener("focusin",function(e){
       if(e.target&&e.target.closest&&e.target.closest(".t-injury"))return;
+      if(tmPhoneRows())return;
       activateRow();
     });
     const num=document.createElement("input");num.className="inp t-num";num.value=pl.num??"";num.placeholder="#";
@@ -17741,6 +17771,9 @@ function teamBrandSave(field,value,owner,expected){
   if(expected!==undefined&&((latest.meta||{})[field]||'')!==expected)return false;
   latest=JSON.parse(JSON.stringify(latest));latest.meta=latest.meta||{};
   if(value)latest.meta[field]=value;else delete latest.meta[field];
+  /* 2.903 — 로고를 바꾸면(넣든 지우든) 옛 분리 참조 emblemRef 를 버린다. 남아 있으면 전송 때 참조가 둘이 되어 어느 기기도 복원하지 못하고
+     다른 기기가 한 번 저장하면 옛 로고로 돌아갔다(제보 9/28 «자꾸 팀 로고가 초기화», 9/18 «팀이름»). */
+  if(field==='emblem')delete latest.meta.emblemRef;
   if(!store.set(KEY,latest)){toast('팀 설정을 저장하지 못했습니다. 다시 시도해 주세요.');return false;}
   data.meta=latest.meta;
   if(!value)delete data.meta[field];
@@ -20162,6 +20195,39 @@ dialog.sc-identity-dialog .sc-identity-actions{display:flex;justify-content:flex
 dialog.sc-identity-dialog .sc-identity-actions button{min-width:72px;min-height:40px;padding:8px 16px;border:1px solid var(--line,#e3e6ea);border-radius:8px;background:var(--surface,#fff);color:var(--txt,#14161a);font-family:inherit;font-size:13px;font-weight:600}
 dialog.sc-identity-dialog .sc-identity-actions button[type="submit"]{border-color:var(--blue,#3a6df0);background:var(--blue,#3a6df0);color:#fff}
 @media(max-width:600px){html.ps-page-scout #playersView #scList#scList button.sc-identity{min-height:42px!important}}
+</style>
+<!-- 2.903 — 폰 선수단(목업 ②, ≤600 = 기존 폰 행 규칙과 같은 경계). 필터 한 줄 + ⋯ · 지금 값 한 줄 · 행 두 줄(이름 / 포지션·조·상태) · 행 탭 = 선수 시트 · 선수 삭제는 시트 맨 아래.
+     조·상태·포지션 버튼은 지우지 않고 둘째 줄 글자 버튼으로만 바꾼다 — 폰에서 조·상태를 바꾸는 길이 이것뿐이다. 2.671 (3,3,1)!important 를 id 4개로 이긴다. -->
+<style id="ps-2903-phone-squad">
+#grpChips .grp-n,#grpChips .grp-more,#tmNowLine{display:none}
+#plDelFoot:empty{display:none}
+@media (max-width:600px){
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-grpbar{display:none!important}
+  html.ps-page-scout #grpChips#grpChips#grpChips .grp-edit,html.ps-page-scout #grpChips#grpChips#grpChips .grp-add{display:none!important}
+  html.ps-page-scout #teamView#teamView#teamView .tm-workbar .tm-head-set,html.ps-page-scout #rosterLockChip#rosterLockChip#rosterLockChip{display:none!important}
+  #grpChips .grp-n{display:inline;margin-left:5px;font-weight:600;opacity:.72;font-variant-numeric:tabular-nums}
+  html.ps-page-scout #grpChips#grpChips .grp-more{display:inline-flex;align-items:center;justify-content:center;min-width:40px;margin-left:auto;font-size:16px;letter-spacing:1px}
+  #tmNowLine{display:block;flex:1 1 100%;margin:6px 2px 0;font-size:12px;color:var(--dim,#646a73);line-height:1.4}
+  #tmNowLine:empty{display:none}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row{display:grid!important;grid-template-columns:30px auto auto auto minmax(0,1fr) auto auto!important;grid-template-rows:auto auto!important;
+    column-gap:8px!important;row-gap:0!important;align-items:center!important;min-height:58px!important;padding-top:7px!important;padding-bottom:7px!important;cursor:pointer;flex-wrap:initial!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-num{grid-column:1!important;grid-row:1 / span 2!important;align-self:center!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-name{grid-column:2 / 6!important;grid-row:1!important;min-width:0!important;width:100%!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-weight:700!important;font-size:15px!important;line-height:1.3!important;height:auto!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-num,html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-name{pointer-events:none!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-posb{grid-column:2!important;grid-row:2!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-grp{grid-column:3!important;grid-row:2!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-injury{grid-column:4!important;grid-row:2!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row :is(.t-posb,.t-grp,.t-injury){height:auto!important;min-height:28px!important;min-width:0!important;padding:0 2px!important;margin:0!important;border:0!important;background:none!important;box-shadow:none!important;
+    font-size:12px!important;font-weight:600!important;color:var(--dim,#646a73)!important;justify-self:start!important;border-radius:6px!important;width:auto!important;opacity:1!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row :is(.t-grp,.t-injury)::after{content:none!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-grp::before{content:"·"!important;margin-right:6px;color:var(--dim,#646a73);display:inline!important;width:auto!important;height:auto!important;background:none!important;border-radius:0!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-injury::before{content:"·"!important;margin-right:6px;display:inline!important;width:auto!important;height:auto!important;background:none!important;border-radius:0!important;color:var(--dim,#646a73)!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row:is([data-status="injury"],[data-status="rehab"],[data-status="out"]) .t-injury{color:#c2410c!important;font-weight:800!important}
+  html.ps-page-scout body.fmdark #teamList#teamList#teamList#teamList .tm-row:is([data-status="injury"],[data-status="rehab"],[data-status="out"]) .t-injury{color:#f0a36b!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-idp{grid-column:6!important;grid-row:1 / span 2!important;height:30px!important;min-height:30px!important;padding:0 10px!important;font-size:12px!important}
+  html.ps-page-scout #teamList#teamList#teamList#teamList .tm-row .t-profq{grid-column:7!important;grid-row:1 / span 2!important;width:28px!important;height:44px!important;font-size:0!important}
+  #plDelFoot{display:flex;justify-content:flex-start;margin-top:22px;padding-top:14px;border-top:1px solid var(--line,#e3e6ea)}
+}
 </style>
 </body>
 </html>
