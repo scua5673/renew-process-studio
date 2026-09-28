@@ -9843,17 +9843,32 @@ async function _ppbSendToNote(){
   catch(e){toast("개인 노트용 PDF를 만들지 못했어요");}
   finally{if(btn){btn.disabled=false;btn.textContent="개인 노트로";}}
 }
+/* 2.898 — «다른 이름으로 저장» 창(사용자 «원하는 곳에 저장»). 크롬·엣지 데스크톱만 된다.
+   ⚠ 창은 누른 그 순간(사용자 동작)에만 열리니 PDF 를 만들기 **전에** 먼저 연다.
+   반환: 파일 손잡이 · false(사용자가 취소) · null(안 되는 브라우저·막힘 → 예전처럼 내려받기) */
+async function _ppbPickSaveTarget(name){
+  if(typeof window.showSaveFilePicker!=="function")return null;
+  try{ return await window.showSaveFilePicker({suggestedName:name,types:[{description:"PDF 문서",accept:{"application/pdf":[".pdf"]}}]}); }
+  catch(e){ return (e&&e.name==="AbortError")?false:null; }
+}
 async function _ppbSavePdf(){
   var f=$("ppbFrame"),doc=f&&f.contentDocument;
   if(!doc||!doc.body){toast("미리보기가 아직 준비되지 않았어요");return;}
-  var land=f.classList.contains("land");
+  var land=f.classList.contains("land"),fname=_pdfSafeName(_ppbFname)+".pdf";
+  var target=await _ppbPickSaveTarget(fname);
+  if(target===false)return;   /* 취소 — 아무것도 저장하지 않는다 */
   var btn=$("ppbSave");if(btn){btn.disabled=true;btn.textContent="만드는 중…";}
   try{
     var blob=await _ppbPdfBlobFromDocument(doc,land);
+    if(target){
+      var w=await target.createWritable();await w.write(blob);await w.close();
+      toast("PDF 저장됨 ✓ — "+(target.name||fname));
+      return;
+    }
     var a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);a.download=_pdfSafeName(_ppbFname)+".pdf";a.click();
+    a.href=URL.createObjectURL(blob);a.download=fname;a.click();
     setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
-    toast("PDF 저장됨 ✓ — "+_pdfSafeName(_ppbFname)+".pdf");
+    toast("PDF 저장됨 ✓ — "+fname);
   }catch(e){
     toast("이 브라우저에선 바로 저장이 안 돼요 — [인쇄]에서 'PDF로 저장'을 사용하세요");
   }finally{
