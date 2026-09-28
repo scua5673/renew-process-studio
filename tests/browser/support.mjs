@@ -67,7 +67,8 @@ try{
     const page=await context.newPage(),errors=[];page.setDefaultTimeout(12000);page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base+'/studio/app.html?token=PRIVATE_URL_TOKEN#PRIVATE_URL_HASH',{waitUntil:'load'});
     const dialog=page.locator('#psSupportDialog');
-    await page.getByRole('button',{name:'일주일간 안 보기',exact:true}).click();
+    /* 2.902 — 폰 폭(<768)은 안내가 한 줄이고 «일주일간 안 보기» 대신 ✕(업데이트 안내 닫기)가 같은 일을 한다 */
+    await page.getByRole('button',{name:width<768?'업데이트 안내 닫기':'일주일간 안 보기',exact:true}).click();
     assert.equal(await page.locator('#psReleaseNotes').isVisible(),false);
     const hidden=await page.evaluate(()=>JSON.parse(localStorage.getItem(PSReleaseNotes.STORAGE_KEY)));
     assert.equal(hidden.until-hidden.from,7*24*60*60*1000);

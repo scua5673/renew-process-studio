@@ -8,6 +8,9 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-09-28-v2-902-board-lob-rings',date:'2026-09-28',title:'v2.902 · 작전판에 로빙 패스, 역할 링, 구역 이름',
+    changes:['패스 화살표를 «로빙»으로 바꾸면 공중으로 휘는 곡선과 바닥 그림자가 함께 그려집니다. 선 스타일(굵기 버튼)의 «패스: 땅볼 · 로빙»에서 고릅니다.','선수를 고르고 «링»(단축키 H)을 누를 때마다 압박(빨강) · 목표(초록) · 주목(노랑) 링이 둘러집니다. 장면마다 따로 저장되고 영상에도 나옵니다.','구역을 고르면 선 스타일에 «이름» 칸이 생깁니다. 적은 이름이 구역 위쪽에 붙습니다.','화살표 끝 모양을 화살 · 막기(T자) · 원 · 없음 중에서 고릅니다. «새 장면에서 화살표 모두 지우기»를 누르면 다음 장면을 만들고 화살표만 뺍니다. 재생하면 서서히 사라집니다.','보드 설정 › 피치에 «칩: 평면 · 입체»를 더했습니다. 입체로 두면 칩에 광택과 바닥 그림자가 생기고 영상에도 나옵니다.','폰에서 화면 위쪽이 얇아졌습니다. 업데이트 안내는 한 줄로 줄이고 ✕로 닫습니다.']
+  },{
     id:'2026-09-28-v2-901-headcount-off',date:'2026-09-28',title:'v2.901 · PDF에 훈련 인원, 쉬는 날은 모두 휴식',
     changes:['훈련 PDF의 각 훈련 시간 옆에 «필드 N명 · GK N명»을 적습니다. 그 훈련 작전판의 선수 토큰을 세고, 번호 1 또는 포지션 GK는 GK로 셉니다.','가용인원에서 팀 일정이 OFF인 날은 모두 «휴식»으로 봅니다. 부상·재활·불참은 그대로이고, 코치가 그날 따로 적은 기록(개인 훈련 등)은 남깁니다.']
   },{
@@ -419,7 +422,9 @@
     '.ps-release-notes ul{margin:6px 0 0;padding-left:18px;font-size:12px;line-height:1.65}',
     '.ps-release-notes li{overflow-wrap:anywhere}',
     '.ps-release-notes .psrn-notice{margin:0;padding:0 16px 10px;font-size:12px;line-height:1.5;color:var(--dim,#646a73)}',
-    '@media(max-width:480px){.ps-release-notes .psrn-row{padding:8px 12px;gap:7px}.ps-release-notes .psrn-summary{flex-basis:100%}.ps-release-notes .psrn-details{padding:0 12px 10px}.ps-release-notes .psrn-notice{padding:0 12px 9px}}'
+    '.ps-release-notes .psrn-close{display:none}',
+    /* 2.902 — 폰은 한 줄: «v2.9xx · 제목» + ✕. 줄을 누르면 내용이 열린다(머리 94pt → 약 40pt). */
+    '@media(max-width:767px){.ps-release-notes .psrn-row{flex-wrap:nowrap;gap:6px;padding:2px 2px 2px 12px}.ps-release-notes .psrn-summary{flex:1 1 auto;cursor:pointer}.ps-release-notes .psrn-heading{display:none}.ps-release-notes .psrn-title{margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}.ps-release-notes .psrn-actions button{display:none}.ps-release-notes .psrn-actions .psrn-close{display:inline-grid;place-items:center;width:36px;height:36px;min-height:36px;padding:0;border:0;font-size:15px;color:var(--dim,#646a73)}.ps-release-notes .psrn-details{padding:0 12px 10px}.ps-release-notes .psrn-notice{padding:0 12px 9px}}'
   ].join('\n');
   function mount(options){
     options=options||{};
@@ -436,9 +441,9 @@
     var row=el('div','psrn-row'),summary=el('div','psrn-summary'),heading=el('div','psrn-heading');
     var label=el('span','psrn-label','최근 업데이트'),meta=el('span','psrn-meta'),title=el('div','psrn-title');
     heading.appendChild(label);heading.appendChild(meta);summary.appendChild(heading);summary.appendChild(title);row.appendChild(summary);
-    var actions=el('div','psrn-actions'),toggle=el('button','','내용 보기'),hide=el('button','','일주일간 안 보기');
-    toggle.type=hide.type='button';toggle.setAttribute('aria-expanded','false');
-    actions.appendChild(toggle);actions.appendChild(hide);row.appendChild(actions);
+    var actions=el('div','psrn-actions'),toggle=el('button','','내용 보기'),hide=el('button','','일주일간 안 보기'),close=el('button','psrn-close','✕');
+    toggle.type=hide.type=close.type='button';toggle.setAttribute('aria-expanded','false');close.setAttribute('aria-label','업데이트 안내 닫기');
+    actions.appendChild(toggle);actions.appendChild(hide);actions.appendChild(close);row.appendChild(actions);
     var detail=el('div','psrn-details'),notice=el('p','psrn-notice');detail.hidden=true;notice.hidden=true;notice.setAttribute('role','status');
     if(host.id){detail.id=host.id+'Details';toggle.setAttribute('aria-controls',detail.id);}
     host.replaceChildren(row,detail,notice);
@@ -476,11 +481,13 @@
     }
     function onStorage(event){if(!event||event.key===null||event.key===STORAGE_KEY)refresh();}
     function onVisible(){if(!doc.hidden)refresh();}
-    toggle.addEventListener('click',showDetails);hide.addEventListener('click',hideWeek);
+    function phone(){try{return !!(win.matchMedia&&win.matchMedia('(max-width:767px)').matches);}catch(_){return false;}}
+    function onSummary(){if(phone())showDetails();}
+    toggle.addEventListener('click',showDetails);hide.addEventListener('click',hideWeek);close.addEventListener('click',hideWeek);summary.addEventListener('click',onSummary);
     win.addEventListener('storage',onStorage);win.addEventListener('focus',onVisible);doc.addEventListener('visibilitychange',onVisible);
     var controller={refresh:refresh,destroy:function(){
       if(disposed)return;disposed=true;clearTimer();
-      toggle.removeEventListener('click',showDetails);hide.removeEventListener('click',hideWeek);
+      toggle.removeEventListener('click',showDetails);hide.removeEventListener('click',hideWeek);close.removeEventListener('click',hideWeek);summary.removeEventListener('click',onSummary);
       win.removeEventListener('storage',onStorage);win.removeEventListener('focus',onVisible);doc.removeEventListener('visibilitychange',onVisible);
       host.replaceChildren();host.hidden=true;if(host.__psReleaseNotes===controller)delete host.__psReleaseNotes;
     }};
