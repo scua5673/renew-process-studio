@@ -3134,7 +3134,15 @@ window.PSTouchSort=function(box,sel,onMove,opt){
   .ps-sort-drag{opacity:.5;transform:scale(.97);}
   .ps-sort-over{outline:2px solid var(--blue,#3a6df0);outline-offset:1px;}
 </style>
-<link rel="stylesheet" href="figma-premium.css">
+<script>/* 2.897 — figma-premium.css 가 가끔 못 들어오면(네트워크·업데이트 중 캐시) 내보내기 메뉴가 운동장 아래 펼쳐지고
+   «보관함 저장»이 폰 모양으로 떴다(합성 팀에서 이 파일만 막아 재현). 실패하거나 규칙이 비면 새 주소로 두 번까지 다시 부른다. */
+window.__psCssRetry=function(el){var n=+(el.getAttribute('data-retry')||0);if(n>=2)return;setTimeout(function(){try{var l=document.createElement('link');l.rel='stylesheet';l.id=el.id;l.setAttribute('data-retry',String(n+1));l.onerror=function(){window.__psCssRetry(l);};l.onload=function(){window.__psCssCheck(l);};l.href='figma-premium.css?r='+Date.now();el.parentNode.replaceChild(l,el);}catch(_){}},500*(n+1));};
+window.__psCssCheck=function(el){try{var sh=el.sheet;if(!sh||!sh.cssRules||!sh.cssRules.length)window.__psCssRetry(el);}catch(_){}};
+</script>
+<link rel="stylesheet" href="figma-premium.css" id="psFigmaCss" onerror="window.__psCssRetry(this)" onload="window.__psCssCheck(this)">
+<style>/* 2.897 — 마지막 안전망: 닫힌 도크 메뉴(내보내기·장비 색·보드 설정)는 디자인 파일이 없어도 흐름에 펼쳐지지 않는다 */
+.cmd-popover:not(.on){display:none!important}
+</style>
 </head>
 <body data-tool="move">
 <script>
