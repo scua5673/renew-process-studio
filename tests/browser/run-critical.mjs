@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites={
-  board:['gamemodel-sync','board-depth','board-drag-performance','board-color-palette','vault-board-isolation','board-fmstadio'],
+  board:['gamemodel-sync','board-depth','board-drag-performance','board-color-palette','vault-board-isolation','board-fmstadio','board-savebar'],
   identity:['session-team-picker','month-quick-detail','admin-content-play','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery'],
   storage:['storage-safety','library-insert-ack','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery'],
   idp:['match-board-tools','availability','idp-recovery','idp-story-dedup','support']
