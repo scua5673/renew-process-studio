@@ -76,7 +76,8 @@ async function contextFor(browser, spec, role = 'admin') {
       localStorage.setItem('cs_wkmode', 'ses');
     }
     window.PSSync = { session: () => JSON.parse(localStorage.getItem('ps_sync_session') || 'null'), dataUnlocked: () => true,
-      keyReady: new Function(readinessSource)() };
+      // 2.904 — scout.html 부팅은 명단 확인(rosterReady) 뒤에 열린다(9/14 첫 로드 가드). 합성 팀은 확인된 것으로 둔다.
+      rosterReady: () => true, keyReady: new Function(readinessSource)() };
   }, { uid: UID, wid: WID, role, readinessSource });
   return context;
 }
@@ -146,9 +147,22 @@ try{
   const scoredSize=await frame.evaluate(()=>{const c=scStore().state.doc.scoutRegistry.candidates['db:qa-db'];return {count:(c.sourceHistory||[]).length,size:JSON.stringify(c).length};});
   assert.equal(scoredSize.count,sourceSize.count,'scoring never copies source photos into history');assert.ok(scoredSize.size-sourceSize.size<5000,'score history growth remains small');
   await frame.locator('#plScoutPoints').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(out,`${width}-candidate-points.png`)});
+  // 2.904 — 부팅 확인 전에는 save()가 아무것도 쓰지 않는다. 내리기는 막히고 성공이라 말하지 않는다.
+  const unplaceBefore=await frame.evaluate(()=>({main:localStorage.getItem('scout_tool_v1'),targets:localStorage.getItem('cs_scout_targets_v1')}));
+  await frame.evaluate(()=>{scoutBootPending=true;});
+  await frame.locator('[data-sc-unplace]').click();
+  assert.equal(await frame.evaluate(()=>data.players.find(p=>p.id==='qa-candidate').posId),'pos_GK','boot-pending unplace keeps placement');
+  assert.equal(await frame.locator('#toast').innerText(),'팀 자료를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.','boot-pending unplace does not claim success');
+  assert.deepEqual(await frame.evaluate(()=>({main:localStorage.getItem('scout_tool_v1'),targets:localStorage.getItem('cs_scout_targets_v1')})),unplaceBefore,'boot-pending unplace writes nothing');
+  await frame.evaluate(()=>{scoutBootPending=false;});
   await frame.locator('[data-sc-unplace]').click();
   assert.equal(await frame.evaluate(()=>data.players.find(p=>p.id==='qa-candidate').posId),'');
   assert.equal(await frame.evaluate(()=>data.players.find(p=>p.id==='qa-candidate').memo),'반드시 남길 관찰 기록');
+  assert.equal(await frame.locator('#toast').innerText(),'보드에서 내렸어요. 후보와 평가 기록은 남아 있어요.');
+  const unplaced=await frame.evaluate(async()=>{await store.ready();const t=JSON.parse(localStorage.getItem('cs_scout_targets_v1')),c=t.players.find(p=>p.id==='qa-candidate'),m=JSON.parse(localStorage.getItem('scout_tool_v1'));
+    return {posId:c.posId,memo:c.memo,levels:c.levels,other:t.players.find(p=>p.id==='qa-other-placement').posId,points:t.scoutRegistry.candidates['db:qa-db'].points['가상 공격|공간을 먼저 찾는가?'],mainTargets:m.players.filter(p=>p.type==='target').length,mainPlayers:JSON.stringify(m.players)};});
+  assert.deepEqual({posId:unplaced.posId,memo:unplaced.memo,levels:unplaced.levels,other:unplaced.other,points:unplaced.points,mainTargets:unplaced.mainTargets},{posId:'',memo:'반드시 남길 관찰 기록',levels:{fifa_scan:4},other:'pos_LW',points:4,mainTargets:0},'unplace keeps candidate record and other placement');
+  assert.equal(unplaced.mainPlayers,JSON.stringify(JSON.parse(unplaceBefore.main).players),'unplace keeps main roster players');
   await frame.locator('#plDelete').click();
   assert.equal(await frame.locator('[data-sccard="qa-candidate"]').count(),0);
   assert.equal(await frame.locator('[data-dbattach="db:qa-db"]').count(),0,'archived candidate does not resurface in search');
