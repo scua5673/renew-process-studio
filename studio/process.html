@@ -6602,7 +6602,18 @@ function monthAddSlot(r,col,slot,grps){
   var gs=(Array.isArray(grps)&&grps.length)?grps.slice():null;
   if(!gs){ var g=''; try{ g=String(__schedGrp||''); }catch(_){} if(!g)g=schedDefGrp(); gs=g?[g]:null; }
   var key=monthGrpKey(gs);
-  var hit=day.trainings.some(function(t){ return String((t&&t.slot)||'')===slot&&monthGrpKey(t&&t.grp)===key; });
+  var hitAt=day.trainings.findIndex(function(t){ return String((t&&t.slot)||'')===slot&&monthGrpKey(t&&t.grp)===key; }),hit=hitAt>=0;
+  /* 2.899 — 켜진 시간대를 다시 누르면 끈다(사용자 제보 «한번 선택하면 취소가 안 됩니다»).
+     ⚠ 조용히 지우지 않는다: 아직 아무것도 안 적은 세션(월간에서 막 만든 모양)만 지우고,
+        블록·목표·메모·인원·강도를 적은 세션은 주간에서 지우도록 알린다. */
+  if(hit){
+    if(!monthSlotEmpty(day.trainings[hitAt])){ try{ if(typeof toast==='function')toast(slot+' 세션에 적은 내용이 있어요 — 주간에서 지워 주세요'); }catch(_){} _mpGrpKeep={r:r,col:col,grps:gs}; _mpReopen(r,col); return; }
+    day.trainings.splice(hitAt,1);
+    try{save();}catch(_){} syncViews();
+    _mpGrpKeep={r:r,col:col,grps:gs};
+    _mpReopen(r,col);
+    return;
+  }
   if(!hit){
     var tr={time:SLOT_TIME[slot]||'18:00',players:'',aims:'',note:'',load:{rpe:5},slot:slot,blocks:[]};
     if(gs)tr.grp=gs;
@@ -6615,6 +6626,16 @@ function monthAddSlot(r,col,slot,grps){
   _mpReopen(r,col);
 }
 var _mpGrpKeep=null;   /* 다시 열린 팝업이 방금 고른 조를 그대로 보이게 */
+/* 2.899 — 월간에서 만든 그대로인가(시간·조·시간대 말고는 비어 있음). 모르는 칸이 하나라도 차 있으면 «내용 있음» */
+function monthSlotEmpty(t){
+  if(!t||typeof t!=='object')return false;
+  var known={time:1,players:1,aims:1,note:1,load:1,slot:1,blocks:1,grp:1};
+  for(var k in t){ if(!Object.prototype.hasOwnProperty.call(t,k)||known[k])continue; var v=t[k]; if(v==null||v===''||(Array.isArray(v)&&!v.length)||(typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length))continue; return false; }
+  if(String(t.players||'').trim()||String(t.aims||'').trim()||String(t.note||'').trim())return false;
+  if(Array.isArray(t.blocks)&&t.blocks.length)return false;
+  var l=t.load||{}; for(var lk in l){ if(lk==='rpe'){ if(l.rpe!=null&&+l.rpe!==5)return false; } else if(l[lk]!=null&&l[lk]!=='')return false; }
+  return true;
+}
 function monthSetOpp(r,col,v){
   if(schedEditBlocked()){ schedBlockNotice(); return false; }
   var W=weeksMap[r], day=W&&W[col]; if(!day||!day.match)return false;
