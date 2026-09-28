@@ -7919,18 +7919,29 @@ function updatePlayUI(){const b=$("animPlay");if(b){
 function syncLoopUI(){var b=$("animLoopBtn");if(!b)return;var label=animLoop?"반복 재생 끄기":"반복 켜고 재생";
   b.classList.toggle("on",animLoop);b.title=label;b.setAttribute("aria-label",label);b.setAttribute("aria-pressed",animLoop?"true":"false");}
 let animRestore=null;
+let animPaused=null,animPauseState=null;
 function highlightFrame(i){var box=document.getElementById("animFrames");if(!box)return;var k=box.children;for(var n=0;n<k.length;n++){var on=n===i;k[n].classList.toggle("on",on);k[n].setAttribute("aria-selected",on?"true":"false");k[n].tabIndex=on?0:-1;}var el=k[i];if(el&&el.scrollIntoView){try{el.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});}catch(e){try{el.scrollIntoView();}catch(_){}}}}
 function playAnim(){
   if(animPlaying){stopAnim();return;}
   if(anim.frames.length<2){toast("장면을 2개 이상 만들어주세요");return;}
-  animRestore=captureSnap();animPlaying=true;updatePlayUI();clearOnion();_mpClear();try{trailReset();window.__animSeg=0;}catch(_){}
+  var resume=animPaused;animPaused=null;
+  animRestore=resume&&resume.restore?resume.restore:captureSnap();animPlaying=true;updatePlayUI();clearOnion();_mpClear();try{trailReset();window.__animSeg=0;}catch(_){}
   /* 아이콘 이동 속도와 장면 유지 시간을 분리한다.
      moveSpeed는 출발 장면별, animHold는 전체 공통이라 재생 리듬이 일정하다. */
-  let s=(animActive>=0&&animActive<anim.frames.length-1)?animActive:0,t0=performance.now(),lastHi=-1,phase="hold";   /* 2.682 — 선택한 장면부터 재생(사용자) */
+  let s=(resume&&resume.s>=0&&resume.s<anim.frames.length?resume.s:((animActive>=0&&animActive<anim.frames.length-1)?animActive:0)),
+      t0=performance.now()-((resume&&resume.elapsed)||0),lastHi=-1,phase=(resume&&resume.phase)||"hold";   /* 2.682 — 선택한 장면부터 재생(사용자) */
   const holdMs=()=>Math.max(.2,animHold||.6)*1000;
-  renderInterp(anim.frames[s].snap,anim.frames[s].snap,0);
-  _animCapShow(anim.frames[s]&&anim.frames[s].cap,s);highlightFrame(s);lastHi=s;
+  if(phase==="move"&&s<anim.frames.length-1){
+    const a=anim.frames[s].snap,b=anim.frames[s+1].snap,dur=Math.max(.3,(anim.frames[s].dur||1))*1000/animMoveSpeed(anim.frames[s]);
+    renderInterp(a,b,easeInOut(Math.max(0,Math.min(1,(performance.now()-t0)/dur))),anim.frames[s].curves);
+    _animCapShow(anim.frames[s+1]&&anim.frames[s+1].cap,s+1);highlightFrame(s);lastHi=s;
+  }else{
+    if(s>=anim.frames.length-1)phase="hold";
+    renderInterp(anim.frames[s].snap,anim.frames[s].snap,0);
+    _animCapShow(anim.frames[s]&&anim.frames[s].cap,s);highlightFrame(s);lastHi=s;
+  }
   const step=now=>{if(!animPlaying)return;
+    animPauseState={s:s,phase:phase,elapsed:Math.max(0,now-t0),restore:animRestore};
     if(phase==="hold"){
       if(now-t0>=holdMs()){
         if(s>=anim.frames.length-1){                      /* 마지막 장면 홀드 종료 */
@@ -7943,7 +7954,7 @@ function playAnim(){
                끝났다고 마지막 장면을 보드에 눌러 담으면, 그 화면이 곧 **보드의 현재 장면**이 되고
                자동 저장(boardSaveLive·autoSaveAnimFrame)까지 타서 원래 1번 장면 내용이 사라졌다.
                정지 단추(stopAnim)와 똑같이 **재생 전 화면으로 되돌린다** — 장면 목록은 그대로다. */
-            if(animRestore){ try{loadSnap(animRestore);}catch(_){} animRestore=null; }
+            if(animRestore){ try{loadSnap(animRestore);}catch(_){} animRestore=null; }animPaused=null;animPauseState=null;
             try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}
             renderAnimFrames();updatePlayUI();try{renderOnion();}catch(_){}return; }
         }else{ phase="move";t0=now;
@@ -7961,7 +7972,7 @@ function playAnim(){
   animRaf=requestAnimationFrame(step);}
 function stopAnim(){animPlaying=false;if(animRaf)cancelAnimationFrame(animRaf);animRaf=null;try{trailReset();}catch(_){}
   try{_animCapShow(null);}catch(_){}
-  if(animRestore){loadSnap(animRestore);animRestore=null;}updatePlayUI();renderOnion();try{renderAnimFrames();}catch(e){}}
+  if(animRestore){loadSnap(animRestore);animRestore=null;}animPaused=null;animPauseState=null;updatePlayUI();renderOnion();try{renderAnimFrames();}catch(e){}}
 /* ===== 장면 깜박임(강조) — 프레임별 blink:[토큰 id]. 재생·영상·GIF에서 선택 토큰이 펄스로 깜박인다 ===== */
 function _blinkOpacity(t){ return 0.15+0.85*(0.5+0.5*Math.cos((t||0)/620*2*Math.PI)); }   /* t=0 → 1(완전 표시), 약 1.6Hz */
 function _applyBlink(ids,t){ try{ if(!tokenLayer||!ids||!ids.length)return; var set={}; ids.forEach(function(i){set[String(i)]=1;});
@@ -11175,6 +11186,7 @@ window.__commView=function(post, editMode){
             }
             function _pauseAtCurrent(){
               try{ if(typeof animPlaying==="undefined"||!animPlaying)return;
+                if(typeof animPauseState!=="undefined"&&animPauseState)animPaused=animPauseState;
                 animPlaying=false;if(animRaf)cancelAnimationFrame(animRaf);animRaf=null;
                 try{trailReset();}catch(_){}try{_animCapShow(null);}catch(_){}
                 try{updatePlayUI();}catch(_){}try{renderAnimFrames();}catch(_){}
