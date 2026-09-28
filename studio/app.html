@@ -2467,7 +2467,7 @@ function psShowUpdBand(){
       } else if(d.source==='gamemodel' && d.type==='openBoard'){
         captureReq='gamemodel';
         showApp('board');
-        try{ fBoard.contentWindow.postMessage({type:'enterCapture',snap:d.snap,meta:d.meta,name:d.name,minutes:d.minutes},'*'); }catch(_){}
+        try{ fBoard.contentWindow.postMessage({type:'enterCapture',snap:d.snap,frames:d.frames,meta:d.meta,name:d.name,minutes:d.minutes},'*'); }catch(_){}   /* 2.903 — 게임모델 첨부도 장면을 싣는다(분석과 같은 길) */
       } else if(d.source==='analysis' && d.type==='openBoard' && d.snap){
         /* 매치 데스크 국면 형태·장면집 — 배치(와 애니메이션)를 실어 보내고, 그린 장면은 boardResult로 분석에 돌아간다 */
         captureReq='analysis';

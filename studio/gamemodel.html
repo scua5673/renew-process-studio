@@ -2523,7 +2523,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
         t.innerHTML=ph.snap.thumb+'<button class="rm" title="첨부 제거" aria-label="첨부 제거"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" style="display:block;pointer-events:none" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
         t.querySelector('.rm').addEventListener('click',function(){ ph.snap=null; save(); paintSnap(); });
         snapwrap.appendChild(t);
-        if(ph.snap && ph.snap.snap){ var vb=document.createElement('button'); vb.className='attachbtn'; vb.innerHTML='▶ 보기'; vb.title='첨부한 작전판 열기'; vb.addEventListener('click',function(){ try{ parent.postMessage({source:'gamemodel',type:'openBoard',snap:ph.snap.snap,view:true},'*'); }catch(e){} }); snapwrap.appendChild(vb); }
+        if(ph.snap && ph.snap.snap){ var vb=document.createElement('button'); vb.className='attachbtn'; vb.innerHTML='▶ 보기'; vb.title='첨부한 작전판 열기'; vb.addEventListener('click',function(){ try{ parent.postMessage({source:'gamemodel',type:'openBoard',snap:ph.snap.snap,frames:ph.snap.frames||null,view:true},'*'); }catch(e){} }); snapwrap.appendChild(vb); }
       }
       var ab=document.createElement('button'); ab.className='attachbtn';
       ab.innerHTML=(ph.snap&&ph.snap.thumb)?'⟳ 작전판 다시 첨부':'＋ 작전판 첨부';
@@ -2789,7 +2789,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
   try{ window.addEventListener('storage',function(e){ if(e&&e.key===TERMS_LS){ try{renderTerms();}catch(_){} } }); }catch(_){}
   function requestSnap(m,ph){
     pending={momentKey:m.key,phaseId:ph.id};
-    try{ parent.postMessage({source:'gamemodel',type:'openBoard',snap:(ph.snap&&ph.snap.snap)||null},'*'); }catch(e){}
+    try{ parent.postMessage({source:'gamemodel',type:'openBoard',snap:(ph.snap&&ph.snap.snap)||null,frames:(ph.snap&&ph.snap.frames)||null},'*'); }catch(e){}
   }
   window.addEventListener('message',function(e){
     var d=e.data||{};
@@ -2804,7 +2804,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
       var m=model.moments.filter(function(x){return x.key===pending.momentKey;})[0];
       if(m){
         var ph=m.phases.filter(function(x){return x.id===pending.phaseId;})[0];
-        if(ph){ ph.snap={thumb:d.thumb,snap:d.snap}; save(); if(ph._paintSnap)ph._paintSnap(); }
+        if(ph){ ph.snap={thumb:d.thumb,snap:d.snap}; if(Array.isArray(d.frames)&&d.frames.length>1)ph.snap.frames=d.frames; save(); if(ph._paintSnap)ph._paintSnap(); }   /* 2.903 — 작전판 장면(애니메이션)도 함께(9/23 제보: 정지 그림 한 장만 남았다) */
       }
       pending=null;
     } else if(d.type==='boardCancel'){ pending=null; }

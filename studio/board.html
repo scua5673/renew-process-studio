@@ -13537,7 +13537,7 @@ try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전�
 </script>
 <script>
 (function(){var bar=null,__saved=null,__savedAnim=null,_meta=null;
-  function makeBar(){bar=document.createElement('div');
+  function makeBar(){try{document.body.classList.add('ps-capturing');}catch(_){}bar=document.createElement('div');
      if(_meta){
        bar.style.cssText='position:fixed;right:12px;top:12px;z-index:99999;display:flex;flex-direction:column;gap:7px;width:210px;padding:14px;background:#fff;color:#14161A;border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.42);font-family:-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Roboto,sans-serif';
        bar.innerHTML='<div style="font-size:14px;font-weight:800;margin-bottom:2px">훈련 드릴 만들기</div><label style="font-size:11px;font-weight:600;color:#8A9099">드릴 이름</label><input id="capName" type="text" maxlength="40" placeholder="예: 4v4 론도" style="font-size:14px;padding:8px 10px;border:1px solid #d2d6dd;border-radius:8px;outline:none;font-family:inherit"><label style="font-size:11px;font-weight:600;color:#8A9099">시간 (분)</label><input id="capMin" type="number" min="0" max="120" placeholder="15" style="font-size:14px;padding:8px 10px;border:1px solid #d2d6dd;border-radius:8px;outline:none;font-family:inherit"><div style="font-size:11px;color:#8A9099;line-height:1.4;margin:2px 0">캔버스에 배치·화살표를 그린 뒤 완료</div>';
@@ -13560,7 +13560,7 @@ try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전�
     /* 캡처 중 만든 애니메이션 장면도 함께 돌려준다 — 매치 데스크 장면집의 패턴 애니메이션 (#v292) */
     var frames=null;try{frames=window.__animFrames?window.__animFrames():null;}catch(_){}
     try{parent.postMessage({source:'board',type:'capture',thumb:thumb,snap:snap,name:nm,minutes:mn,frames:frames},'*');}catch(_){}restore();end();}
-  function end(){if(bar){bar.remove();bar=null;document.body.style.paddingTop='';}}
+  function end(){try{document.body.classList.remove('ps-capturing');}catch(_){}if(bar){bar.remove();bar=null;document.body.style.paddingTop='';}}
   function restore(){window.__capLock=0;if(__saved!==null){try{loadSnap(__saved);}catch(_){}__saved=null;try{if(typeof renderTokens==='function')renderTokens();}catch(_){}
     /* 캡처 전에 작업하던 애니메이션 복원 — 캡처용 프레임이 원본 작업을 덮지 않게 */
     try{if(__savedAnim&&__savedAnim.length>1&&window.__animLoad)window.__animLoad(__savedAnim);else if(window.__animReset)window.__animReset();}catch(_){}__savedAnim=null;
@@ -18408,6 +18408,8 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
      버튼은 원래 버튼(#boardManualSave · #vaultSave)을 대신 누른다 — 저장 경로·권한 게이트(psRoHide)·편집 중 숨김 규칙을 그대로 쓴다. -->
 <style id="ps-2903-savebar">
 #psSaveBar{display:none}
+/* 첨부 모드(게임모델·일정·분석이 작전판을 빌려 쓸 때)에는 «✓ 첨부 완료»만 반영된다 — 아무 일도 하지 않던 저장 버튼들을 숨긴다 */
+body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturing #psSaveBar{display:none!important}
 @media (max-width:639px){
   body.board-view.ps-savebar #boardManualSave,body.board-view.ps-savebar #vaultSave{display:none!important}
   body.board-view.ps-savebar:not(.sb-hide) #psSaveBar{display:flex}
