@@ -2133,7 +2133,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sqst-m b{color:var(--text-2);font-weight:800}
   .sqst-rows div{display:flex;gap:9px;align-items:baseline;padding:3px 0;font-size:13px;line-height:1.55}
   .sqst-rows div i{font-style:normal;flex:0 0 60px;font-size:10px;font-weight:800;color:var(--text-3)}
-  .sqst-rows div i.good{color:#12854E} .sqst-rows div i.grow{color:#C2690A}
+  .sqst-rows div i.good{color:#12854E} .sqst-rows div i.grow{color:#C2690A} .sqst-rows div i.rt{color:var(--text-2)}
   .sqst-rows div span{min-width:0;overflow-wrap:anywhere}
   .sqst-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
   .sqst-chip{font-size:12px;font-weight:600;background:var(--surface-2,#f4f5f7);color:var(--text-2);border-radius:999px;padding:4px 10px}
@@ -5096,7 +5096,7 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
       for(var i=0;i<ids.length;i++) sig=((sig*31)+ids.charCodeAt(i))>>>0;
       var mode=(td.meta&&td.meta.evalMode)||td.evalMode||'team';
       /* 2.026 — 기본 평가표(fifa) 팀인데 팀 자료에 아직 새 표준 항목(20→24)이 없으면 여기서 채워 보여 준다(scout 이 열리면 팀 자료도 채워진다) */
-      try{ if(mode==='fifa'&&window.PS_EVAL_STD){ var _have={}; td.attrs.forEach(function(a){_have[a.id]=1;}); PS_EVAL_STD.items.forEach(function(it){ if(_have[it.id])return; var c=cm[it.cat]||CAT_LB[it.cat]||it.cat; if(!groups[c]){groups[c]=[];order.push(c);} groups[c].push([it.id,it.name]); }); } }catch(_){}
+      try{ if(mode==='fifa'&&window.PS_EVAL_STD){ var _have={}; td.attrs.forEach(function(a){_have[a.id]=1;}); (((td.meta&&td.meta.removedStd)?Object.keys(td.meta.removedStd):td.removedStd)||[]).forEach(function(id){_have[id]=1;});   /* 2.908 — 팀이 지운 표준 항목 */ PS_EVAL_STD.items.forEach(function(it){ if(_have[it.id])return; var c=cm[it.cat]||CAT_LB[it.cat]||it.cat; if(!groups[c]){groups[c]=[];order.push(c);} groups[c].push([it.id,it.name]); }); } }catch(_){}
       var sid=(td.meta&&td.meta.activeEvalSetId)||td.setId||(mode==='fifa'?STD_ID:'team:'+sig.toString(36));
       return {id:sid,source:mode==='fifa'?'fifa':'team',groups:order.map(function(c){return {cat:c,items:groups[c]};})};
     }
@@ -8028,7 +8028,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var pick=function(k){ return String(dr[k]||'').trim(); };
     if(!pick('promise')&&!pick('strengths')&&!pick('nextArea')&&!pick('outside')){ gToast('한 칸은 적어 주세요 — 약속 또는 선수의 답'); return; }
     var obj={id:'qm'+Date.now().toString(36),ts:Date.now(),at:ymd(t0),by:lrCoachName(),q:qmSeason(ev.st||ymd(t0)),start:ev.st,
-      focuses:ev.fcs.map(function(f){return f.t;}).filter(function(t,i,a){ return t&&t!==a[i-1]; }),hearts:ev.hearts.slice(-6),gaps:ev.gaps,mid:(ev.mid&&ev.mid.c)||'',   /* 같은 초점이 이어진 주는 하나로 */
+      focuses:ev.fcs.map(function(f){return f.t;}).filter(function(t,i,a){ return t&&t!==a[i-1]; }),hearts:ev.hearts.slice(-6),gaps:(ev.gaps||[]).map(function(g){return {name:g.name};}),mid:(ev.mid&&ev.mid.c)||'',   /* 같은 초점이 이어진 주는 하나로 */
       outside:pick('outside').slice(0,140),strengths:pick('strengths').slice(0,140),nextArea:pick('nextArea').slice(0,140),promise:pick('promise').slice(0,60),firstFocus:pick('firstFocus').slice(0,60)};
     if(!pubPushAt(kk,'qmeet',obj)){ gToast('저장하지 못했어요'); return; }
     sqQmDraft={}; sqQmOpen=false; psAct('a_qmeet'); gToast('면담을 저장했어요 — 선수 «이야기»에 카드로'); render();
@@ -8043,7 +8043,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     linked.forEach(function(r){
       var uid=r.x.ln.uid, ap=r.ap||{a:'',ra:'',b:'',rb:'',k:0,y:0,n:0}, pr=r.pr;
       _sqwAuto[uid]={a:ap.a,ra:ap.ra,b:ap.b,rb:ap.rb};
-      var va=pr?String(pr.a||''):ap.a, vb=pr?String(pr.b||''):ap.b, sa=pr?String(pr.ra||''):ap.ra, sb=pr?String(pr.rb||''):ap.rb;
+      var va=pr?String(pr.a||''):ap.a, vb=pr?String(pr.b||''):ap.b, sa=pr?String(pr.ra||''):ap.ra, sb=pr?String(pr.rb||''):(ap.rbx||ap.rb);   /* 2.908 — 코치 표는 숫자까지(rbx), 저장은 숫자 없이 */
       if(!pr&&ap.a)wait++;
       var wkCell='<span class="sqg-wk" title="이번 주 · 계속=진파랑 · 1~2번=연파랑 · 아직=회색">'+r.wkCells.map(function(c){ return '<i class="'+(c.v===2?'k':(c.v===1?'y':(c.v===0?'n':'')))+(c.fut?' f':'')+'"></i>'; }).join('')+'</span>'
         +'<div class="sqw-cnt">계속 '+ap.k+' · 1~2번 '+ap.y+' · 아직 '+ap.n+'</div>';
@@ -8739,6 +8739,12 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
             meta:(gl?('내 방향 · '+esc(gl.text)+' · '):'')+(cur?('이번 주 <b>'+cur+'/5단계</b>'):'이번 주 단계는 아직')+(q2.theme?(' · 시즌 테마 “'+esc(q2.theme)+'”'):'')});
         });
       } }catch(_){}
+    /* ⑥ 2.908 — 루틴(요청 «선수가 루틴 썼을 때 코치에게 보이게»). 요일 기본 줄 + 그 요일의 개인 훈련. 읽기만 */
+    try{ var rows2=[];
+      for(var ri=0;ri<7;ri++){ var its=((d.rtDay&&d.rtDay[ri])||[]).map(function(r){ return ((String(r&&r.t||'').trim())?String(r.t).trim()+' ':'')+String((r&&r.s)||'').trim(); }).filter(function(x){ return String(x).trim(); });
+        (d.trainings||[]).forEach(function(t){ if(t&&(t.days||[]).indexOf(DAYS[ri])>=0&&String(t.title||'').trim())its.push((t.time?String(t.time).trim()+' ':'')+String(t.title).trim()+' · 개인 훈련'); });
+        if(its.length)rows2.push(['rt',DAYS[ri],its.join(' · ')]); }
+      if(rows2.length)out.push({k:'rt',id:'rt',kn:'루틴',ts:+d.rtAt||0,rows:rows2}); }catch(_){}
     out.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
     return out;
   }
@@ -8850,7 +8856,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(e.k==='ev'){e.kn='현재 셀프평가';if(sameEval)e.snapshot=sameEval;}
       var id=e.k==='log'?e.day:(e.id||e.k);
       items.push({k:'record',key:'record:'+e.k+':'+id,who:'me',ts:e.ts||0,d:e.day||(e.ts?ymd(new Date(e.ts)):''),record:e,src:e.kn,
-        go:e.k==='log'?'cal:'+e.day:(e.k==='qa'?'qa:'+e.id:(e.k==='goal'||e.k==='sw'?'goal':'profile'))});
+        go:e.k==='log'?'cal:'+e.day:(e.k==='qa'?'qa:'+e.id:(e.k==='rt'?'routine':(e.k==='goal'||e.k==='sw'?'goal':'profile')))});
     });
     var seen=Object.create(null);
     return items.filter(function(it,i){var k=storyItemKey(it,i);if(seen[k])return false;seen[k]=true;it.key=k;return true;})
@@ -8892,7 +8898,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       items.forEach(function(it){var k=sqStoryKind(it);cnt[k]=(cnt[k]||0)+1;});
       if(sqStFilt!=='all'&&!cnt[sqStFilt])sqStFilt='all';
       var filtered=items.filter(function(it){return sqStFilt==='all'||sqStoryKind(it)===sqStFilt;});
-      var kinds=[['all','전체'],['log','일지'],['qa','답변'],['match','경기'],['sw','장점·단점'],['ev','셀프평가'],['goal','목표'],['vision','내 방향'],['talk','소통']];
+      var kinds=[['all','전체'],['log','일지'],['qa','답변'],['match','경기'],['sw','장점·단점'],['ev','셀프평가'],['goal','목표'],['rt','루틴'],['vision','내 방향'],['talk','소통']];
       var filter='<div class="sqst-tools"><div class="sqst-filt">'+kinds.map(function(k){var n=k[0]==='all'?items.length:cnt[k[0]];return n?'<button type="button" class="'+(sqStFilt===k[0]?'on':'')+'" data-sqst-f="'+k[0]+'">'+k[1]+'<span class="n">'+n+'</span></button>':'';}).join('')+'</div></div>';
       if(visionHas(v))h+=rSqVision(d,ctx.uid,reacts,true);
       var likeN=0,replyN=0;Object.keys(reacts).forEach(function(k){if((/^day:/.test(k)&&d.log&&d.log[k.slice(4)])||k===visionReactKey(v)){var r=reacts[k]||{};if(r.h)likeN++;if(String(r.t||'').trim())replyN++;}});
@@ -10309,6 +10315,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           같은 두께의 카드 셋이 나란히 서면 무엇이 주인공인지 사라진다. 주인공은 12주 문장.
        ⚠ 코치 피드백은 **온 소식**이라 그보다도 위(새것일 때만 스스로 뜬다). */
     h+=rCoachFeedback();
+    try{ h+=rCoachGoals(); }catch(e){ try{console.warn('코치 목표 그리기 실패',e);}catch(_){} }   /* 2.908 */
     /* 2.747 — 아직 목표 내용이 없으면 시작 문장에 집중한다. 이름·포지션·일지는 첫 목표를 막지 않는다. */
     var startEmpty=false;
     try{ var sv=visionOf(doc), se=doc.selfEval||{};
@@ -10955,7 +10962,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var kind=String(tr.sched||'훈련').trim()||'훈련';
       return (aim&&aim!==kind&&aim!=='팀 훈련')?(kind+' · '+aim):kind;
     }
-    return (tr.time?String(tr.time).trim()+' · ':'')+aim;
+    return (tr.time?String(tr.time).trim()+' · ':'')+aim+(String(tr.place||'').trim()?(' · '+String(tr.place).trim()):'');   /* 2.908 — 훈련 장소 */
   }
   function teamScheduleDayView(dt){
     var info=teamScheduleInfo(teamScheduleDay(dt));if(!info)return null;
@@ -11060,15 +11067,79 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       else if(n>=3){ a=fcT+' — 먼저 작은 조건부터'; ra='아직 '+n+'일 · 조건 낮추기'; }
       else { a=fcT; ra=(y?'1~2번 '+y+'일 · ':'')+'유지'; }
       if(memo)ra+=' · «'+memo.slice(0,24)+(memo.length>24?'…':'')+'»'; }
-    if(gap&&gap.name){ b=gap.name; rb='셀프 '+gap.s+' · 코치 '+gap.c+' · 갭'; }
+    /* 2.908 — 근거 문구는 선수에게 간다(props → 일요일 카드). 코치 점수를 싣지 않는다(요청 «선수한테는 코치의 평가표가 보이지 않게»).
+       숫자는 코치 표에만(rbx — 저장하지 않는다) */
+    if(gap&&gap.name){ b=gap.name; rb='내 평가와 코치 평가가 다른 항목'; var rbx='셀프 '+gap.s+' · 코치 '+gap.c+' · 갭'; }
     else if(bad>=3){ b='몸 상태부터 — 다음 주는 회복'; rb='몸 나쁨 '+bad+'일'; }
-    return {a:a.slice(0,60),ra:ra,b:b.slice(0,60),rb:rb,k:k,y:y,n:n,bad:bad}; }
+    return {a:a.slice(0,60),ra:ra,b:b.slice(0,60),rb:rb,rbx:(typeof rbx==='string'?rbx:''),k:k,y:y,n:n,bad:bad}; }
+  /* 2.908 — 서버에 이미 저장된 옛 근거(«셀프 2 · 코치 4 · 갭»)도 선수 화면에서는 숫자를 지운다 */
+  function propRbSafe(s){ return String(s||'').replace(/셀프\s*[\d.]+\s*·\s*코치\s*[\d.]+\s*·\s*갭/g,'내 평가와 코치 평가가 다른 항목'); }
   /* ══ 2.619 · 한 줄 왕복 4·5단계 — 6주 점검 · 분기 면담 ═══════════════════════════════
      6주 점검: cs_idp_pub_v1_<uid>.mid[분기 시작 ymd]={c:'keep'|'step'|'change',t,by,at} — 답은 셋, 기본 «계속».
        선수에게는 한 줄(t)이 있을 때만 reacts['mid:시작']={t,c} 로 오늘 카드 맨 위(«6주째 점검»)에 도착한다. «바꾸기»만 분기 면담 안건.
      분기 면담: cs_idp_pub_v1_<uid>.qmeet[]={id,ts,at,by,q(계절),start,focuses[],hearts[],gaps[],mid,outside,strengths,nextArea,promise,firstFocus}
        — KNVB 5단계(도입·축구 밖·강점/개선점 함께·약속·서면). 서면 = 저장 그대로 선수 «이야기» 카드. 약속은 선수가 «다음 분기 시작»을 눌러 doc.qgoal 이 된다(선수 소유).
      근거: 영국 PL Rules 6주 리뷰·«상호 합의된 목표» · J리그 IDP 6주 · FIFA 나선형(«수정·반복») · KNVB voortgangsgesprek · FIFA 시드니 FC 질문 둘. */
+  /* ══ 2.908 · 코치도 목표를 적는다(요청 «IDP 목표를 코치도 선수도 써줄 수 있게») ══════════════════
+     ⚠ 선수 문서(cs_idp_v1_<uid>)는 **선수만 쓴다** — 서버 RLS·동기화 둘 다 막고, 코치 기기의 사본은
+        사진·이미지노트를 뺀 투영이라 올리면 선수 자료를 덮는다(AGENTS «선수 문서는 선수만 쓴다»).
+     그래서 코치가 적은 목표는 코치 공개 문서 cs_idp_pub_v1_<uid>.goals[]={id,t,due?,by,at} 에 두고,
+     선수가 «내 목표로»를 누르면 **선수 손으로** 12주 목표(doc.qgoal.goals, fromCoach·owner 'both')에 들어간다
+     — 면담 약속(2.619)과 같은 길. 저장은 reactSetAt 과 같은 원문 대조(다른 기기가 먼저 바꿨으면 멈춘다). */
+  function cgList(key){ try{ var r=rvRec(key||viewing); return (Array.isArray(r.goals)?r.goals:[]).filter(function(g){ return g&&g.id&&String(g.t||'').trim(); }); }catch(_){ return []; } }
+  function cgSetAt(kk,fn){ if(!kk)return false;
+    var raw=null,r=null;
+    try{ raw=localStorage.getItem(kk); }catch(_){ return false; }
+    if(raw===null)r={}; else try{ r=JSON.parse(raw); }catch(_){ r=null; }
+    if(!r||typeof r!=='object'||Array.isArray(r)){ try{gToast('기존 소통 자료가 손상되지 않도록 저장을 멈췄어요.');}catch(_){} return false; }
+    if(r.goals!=null&&!Array.isArray(r.goals))return false;
+    r.goals=(r.goals||[]).slice(); if(fn(r.goals)===false)return false;
+    try{ var nr=JSON.stringify(r); if(!nr||nr.length>1500000)return false;
+      if(localStorage.getItem(kk)!==raw)return false;
+      localStorage.setItem(kk,nr); if(localStorage.getItem(kk)!==nr)return false; }catch(_){ return false; }
+    try{ var api=parent&&parent.PSSync; if(api&&api.syncNow)api.syncNow('idp-goal'); }catch(_){}
+    psAct('a_prop'); return true; }
+  function cgCanWrite(){ try{ return ro()&&isCoach()&&storyCoachTarget(viewing); }catch(_){ return false; } }
+  function cgAdopted(id){ try{ var hit=function(q){ return !!(q&&(q.goals||[]).some(function(g){ return g&&g.fromCoach===id; })); };
+    return hit(doc.qgoal)||(doc.qgoalHist||[]).some(hit); }catch(_){ return false; } }
+  function cgDue(d){ var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d||'')); return m?((+m[2])+'/'+(+m[3])+'까지'):''; }
+  function rCoachGoals(){
+    var list=cgList(), coach=cgCanWrite(), mine=!ro();
+    if(!coach&&!(mine&&list.length))return '';
+    var h='<section class="card cg-card"><div class="td-q">'+(coach?'코치가 제안하는 목표':'코치가 적은 목표')
+      +' <small>'+(coach?'선수가 «내 목표로»를 누르면 12주 목표가 돼요':'골라서 내 12주 목표로 가져와요')+'</small></div>';
+    if(list.length)h+='<div class="cg-list">'+list.map(function(g){ var ad=cgAdopted(g.id), due=cgDue(g.due);
+        return '<div class="cg-row"><div class="cg-t"><b>'+esc(g.t)+'</b><small>'+esc((g.by||'코치')+' · '+rvFmt(g.at))+(due?' · '+esc(due):'')+'</small></div>'
+          +(ad?'<span class="cg-ok">'+(coach?'선수가 가져감 ✓':'내 목표 ✓')+'</span>'
+              :(mine?'<button type="button" class="btn primary cg-adopt" data-cg-adopt="'+esc(g.id)+'">내 목표로</button>':''))
+          +(coach?'<button type="button" class="cg-x" data-cg-del="'+esc(g.id)+'" title="지우기" aria-label="지우기">×</button>':'')+'</div>'; }).join('')+'</div>';
+    else if(coach)h+='<div class="td-q-empty" style="margin:6px 0 4px">아직 제안한 목표가 없어요 — 행동 문장 하나(예: 볼 받기 전 어깨 너머 두 번 보기).</div>';
+    if(coach)h+='<div class="cg-add"><input type="text" data-cg-in maxlength="80" placeholder="목표 문장 — 내가 통제할 수 있는 행동으로">'
+      +'<input type="date" data-cg-due title="기한(선택)" aria-label="기한(선택)"><button type="button" class="btn primary" data-cg-add>제안</button></div>';
+    return h+'</section>';
+  }
+  function bindCoachGoals(){
+    var add=wrap.querySelector('[data-cg-add]'), inp=wrap.querySelector('[data-cg-in]'), due=wrap.querySelector('[data-cg-due]');
+    var go=function(){ if(!cgCanWrite())return; var t=String((inp&&inp.value)||'').replace(/\s+/g,' ').trim().slice(0,80); if(!t){ try{inp.focus();}catch(_){} return; }
+      var dv=String((due&&due.value)||''), g={id:'cg'+Date.now().toString(36),t:t,by:lrCoachName(),at:Date.now()}; if(/^\d{4}-\d{2}-\d{2}$/.test(dv))g.due=dv;
+      if(cgSetAt(coachFeedbackKey(viewing),function(a){ a.push(g); if(a.length>20)a.splice(0,a.length-20); })){ gToast('목표를 제안했어요 — 선수 목표 탭에 보여요'); render(); }
+      else gToast('다른 기기에서 먼저 바뀌어 저장을 멈췄어요 — 다시 눌러 주세요'); };
+    if(add)add.onclick=go;
+    if(inp)inp.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); go(); } });
+    [].forEach.call(wrap.querySelectorAll('[data-cg-del]'),function(b){ b.onclick=function(){ if(!cgCanWrite())return; var id=b.dataset.cgDel;
+      psConfirm('이 목표 제안을 지울까요?\n선수가 이미 가져간 목표는 선수 쪽에 그대로 남아요.',function(){
+        if(cgSetAt(coachFeedbackKey(viewing),function(a){ var i=a.findIndex(function(x){return x&&x.id===id;}); if(i<0)return false; a.splice(i,1); }))render(); }); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-cg-adopt]'),function(b){ b.onclick=function(){ var id=b.dataset.cgAdopt;
+      if(!idpOwnActionAllowed(viewing))return;
+      var g=cgList().filter(function(x){return x.id===id;})[0]; if(!g||cgAdopted(id))return;
+      var q=doc.qgoal; if(!q||!q.start){ doc.qgoal=qgNew(); q=doc.qgoal; }
+      q.goals=q.goals||[];
+      var free=q.goals.filter(function(x){ return x&&!String(x.t||'').trim(); })[0];
+      if(!free&&q.goals.length>=3){ gToast('12주 목표는 셋까지예요 — 하나를 정리한 뒤 다시 가져와요'); return; }
+      var ng=free||{id:uid(),t:'',ifthen:'',sc:{}}; ng.t=g.t; ng.fromCoach=id; ng.owner='both'; if(g.due)ng.due=g.due;
+      if(!free)q.goals.push(ng);
+      if(!persistMyIdpNow())return; psAct('a_qgoal'); gToast('내 12주 목표에 넣었어요'); render(); }; });
+  }
   function pubSetAt(kk,field,key,patch){ if(!kk||!field||!key)return false;
     var r=null; try{ r=JSON.parse(localStorage.getItem(kk)||'null')||{}; }catch(_){ r={}; }
     if(!r[field]||typeof r[field]!=='object'||Array.isArray(r[field]))r[field]={};
@@ -11664,7 +11735,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       case 'memo': case 'qa': return (it.q?q(it.q):'')+E(it.text);
       case 'react': return (it.text?E(it.text):'')+(it.h?(it.text?' ':'')+'<em class="st-hrt">♥'+(it.text?'':' 좋아요')+'</em>':'');
       case 'props': { var p=it.p, pk=it.pick, on=function(w){ return pk&&pk.from==='pick-'+w; };
-        return '이번 주는 둘 중 하나<div class="pk">'+(p.a?'<span class="'+(on('a')?'on':'')+'">'+E(p.a)+(p.ra?' <small>'+E(p.ra)+'</small>':'')+'</span>':'')+(p.b?'<span class="'+(on('b')?'on':'')+'">'+E(p.b)+(p.rb?' <small>'+E(p.rb)+'</small>':'')+'</span>':'')+'</div>'+(pk?'<small class="st-pick">내가 고름 · '+E(pk.text||'')+'</small>':''); }
+        return '이번 주는 둘 중 하나<div class="pk">'+(p.a?'<span class="'+(on('a')?'on':'')+'">'+E(p.a)+(p.ra?' <small>'+E(p.ra)+'</small>':'')+'</span>':'')+(p.b?'<span class="'+(on('b')?'on':'')+'">'+E(p.b)+(p.rb?' <small>'+E(propRbSafe(p.rb))+'</small>':'')+'</span>':'')+'</div>'+(pk?'<small class="st-pick">내가 고름 · '+E(pk.text||'')+'</small>':''); }
       case 'prep': return (it.text?E(it.text):'')+(it.mark?(it.text?'<br>':'')+'담당 <b>'+E(it.mark)+'</b>':'');
       default: return E(it.text||'');
     }
@@ -12780,6 +12851,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     doc.rtDay=doc.rtDay||{};
     if(plan&&plan.length)doc.rtDay[dayIdx(dt)]=plan.map(function(r){return {t:r.t,s:r.s};});
     else delete doc.rtDay[dayIdx(dt)];
+    doc.rtAt=Date.now();   /* 2.908 — 코치 «이야기»에 루틴이 언제 바뀌었는지 */
     save();
   }
   /* ══ 1.595 · 루틴 탭 — 요일별 기본을 한 화면에서 ══════════════════════════
@@ -12975,6 +13047,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       a=a.filter(function(r){ return String(r.t||'').trim()||String(r.s||'').trim(); });
       doc.rtDay=doc.rtDay||{};
       if(a.length)doc.rtDay[pick]=a; else delete doc.rtDay[pick];
+      doc.rtAt=Date.now();   /* 2.908 */
       save(); render();
     };
     /* 1.993 — 빈 시간 줄에 적으면 그 시간으로 새 항목 */
@@ -13642,7 +13715,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var w=(doc.weekly||{})[wk]||{}, pr=propsAll(viewing)[nx]||null, chosen=focusOf(nx);
     var opts=[];
     if(pr&&String(pr.a||'').trim())opts.push({k:'a',t:String(pr.a).trim(),sub:'코치 제안 1'+(pr.ra?' · '+pr.ra:'')});
-    if(pr&&String(pr.b||'').trim())opts.push({k:'b',t:String(pr.b).trim(),sub:'코치 제안 2'+(pr.rb?' · '+pr.rb:'')});
+    if(pr&&String(pr.b||'').trim())opts.push({k:'b',t:String(pr.b).trim(),sub:'코치 제안 2'+(pr.rb?' · '+propRbSafe(pr.rb):'')});
     if(fcT&&!opts.some(function(o){return o.t===fcT;}))opts.push({k:'keep',t:fcT,sub:'계속 · 이번 주 그대로'});
     var own=(chosen&&!opts.some(function(o){return o.t===chosen.text;}))?chosen.text:'';
     var cells=''; for(var i=0;i<7;i++){ var d=addDays(mon,i), l=(doc.log||{})[ymd(d)]||{}, cls=(l.try===2?'k':(l.try===1?'y':(l.try===0?'n':''))); if(d>today)cls+=' f'; cells+='<i class="'+cls.trim()+'">'+DAYS[dayIdx(d)]+'</i>'; }
@@ -14015,6 +14088,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     try{ if(curL==='story'){bindStory();bindStoryActions();bindReacts();} }catch(_){}   /* 2.766 */
     try{ bindGoalFamSeg(); }catch(_){}   /* 2.321 — 목표 · 루틴 · 이미지노트 세그 */
     try{ if(curL==='goal')bindVisionCard(); }catch(e){ try{console.warn('내 방향 연결 실패',e);}catch(_){} }
+    try{ if(curL==='goal')bindCoachGoals(); }catch(e){ try{console.warn('코치 목표 연결 실패',e);}catch(_){} }   /* 2.908 */
     try{ bindQgLadder(); }catch(_){}    /* 2.403 — 사다리 층을 누르면 그 편집기로 내려간다 */
     try{ bindGoalTwo(); }catch(_){}     /* 2.412 — 장점·단점 자유 서술 */
     try{ bindPrompts(); }catch(_){}     /* 2.408 — 팀 공통 질문·답 */
@@ -15265,6 +15339,20 @@ html.ps-page-idp body.ps-player-role .td-top{margin-bottom:10px!important;gap:7p
 html.ps-page-idp body.ps-player-role .td-top b{font-size:14px!important;font-weight:800!important;letter-spacing:-.02em!important}
 html.ps-page-idp body.ps-player-role .td-top span:not(.sp):not(.td-pill){font-size:11px!important;font-weight:600!important;color:var(--text-3)!important}
 html.ps-page-idp body.ps-player-role .td-pill{font-size:10px!important;font-weight:600!important;padding:2px 8px!important}
+</style>
+<style id="ps-2908-idp">/* 2.908 — 코치가 적은 목표 카드 */
+  .cg-list{display:flex;flex-direction:column;gap:8px;margin:10px 0 2px}
+  .cg-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+  .cg-row .cg-t{flex:1 1 auto;min-width:0}
+  .cg-row .cg-t b{display:block;font-size:14px;font-weight:700;color:var(--text);line-height:1.4;overflow-wrap:anywhere}
+  .cg-row .cg-t small{display:block;margin-top:2px;font-size:11.5px;font-weight:600;color:var(--text-3)}
+  .cg-row .cg-ok{flex:0 0 auto;font-size:11.5px;font-weight:700;color:#1f8a4c;white-space:nowrap}
+  .cg-row .cg-adopt{flex:0 0 auto;white-space:nowrap}
+  .cg-row .cg-x{flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text-3);font-size:15px;line-height:1;cursor:pointer}
+  .cg-add{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .cg-add input{min-width:0;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13.5px}
+  .cg-add input[type=text]{flex:1 1 220px}
+  .cg-add input[type=date]{flex:0 0 auto}
 </style>
 <style id="ps-2501-idp-one">/* ══ 2.501 · IDP 여섯 화면 한 문법 — 일지·목표·경기·리포트·프로필·학습 ═══════════════
    사용자: "IDP 디자인 신경써보자 이질감 없게" — 여섯 탭을 전부 지목했다.

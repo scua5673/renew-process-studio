@@ -788,6 +788,8 @@
   #printDoc.pl-weekboard .pws-slot{font-size:10px;font-weight:800;letter-spacing:.03em;color:#5A6068;background:#EEF0F4;
     border-radius:3px;padding:1px 4px;margin:2px 0 1px;display:inline-block;line-height:1.35}
   #printDoc.pl-weekboard .pws-slot.nos{background:#F5F6F8;color:#8A9099}
+  #printDoc.pl-weekboard .pws-when{font-size:9.5px;font-weight:700;color:#3F454D;line-height:1.3;padding:1px 2px;overflow-wrap:anywhere}   /* 2.908 — 세션 언제·조·장소 */
+  #printDoc.pl-weekboard .pws-note{font-size:10px;font-weight:500;color:#2A2F36;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;padding:2px 2px 1px}   /* 2.908 — 세션 메모 */
   #printDoc.pl-weekboard .pws-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 0 3mm;border-bottom:2px solid #14171A;margin-bottom:3mm}
   #printDoc.pl-weekboard .pws-title{display:flex;flex-direction:column;gap:2px;min-width:0}
   #printDoc.pl-weekboard .pws-title b{font-size:22px;font-weight:800;letter-spacing:-.02em;color:#14171A;line-height:1.1}
@@ -4382,6 +4384,18 @@ function wksFillRender(keep,focus){
         return '<button class="fp'+(rpe===n?' on':'')+'" onclick="wksFillRpe('+n+')">'+n+'</button>';
       }).join('')+(rpe?'<button class="fp" onclick="wksFillRpe(0)">지우기</button>':'')+'</div></div>';
 
+  /* ══ 2.908 · 훈련 장소(요청 «일정에 훈련장소 추가») ═══════════════════════════════════
+     세션마다 한 칸(`tr.place`). 저장은 칸을 벗어날 때(change) — 다시 그리지 않아 한글 조합이 끊기지 않는다(2.316).
+     자주 쓴 장소는 칩으로 한 번에(많이 쓴 순 6). 다시 누르면 지운다. */
+  (function(){
+    var pl=String((tr&&tr.place)||''), used=[]; try{ used=wksUsedPlaces(); }catch(_){}
+    h+='<div class="wf-sec" id="wfSec-place"><div class="pksub sm">장소'+(pl?(' <span class="cnt">'+wkbdEsc(pl)+'</span>'):'')+'</div>'
+      +'<div class="freerow"><input id="wfPlace" type="text" maxlength="40" value="'+wkbdEsc(pl)+'" placeholder="훈련 장소 — 예: 보조구장 A"'
+      +' onchange="wksFillPlace(this.value)" onkeydown="if(event.key===&quot;Enter&quot;&amp;&amp;!event.isComposing&amp;&amp;event.keyCode!==229){event.preventDefault();this.blur()}"></div>'
+      +(used.length?('<div class="fmtpick">'+used.map(function(p,pi){
+          return '<button class="fp'+(p===pl?' on':'')+'" onclick="wksFillPlacePick('+pi+')">'+wkbdEsc(p)+'</button>'; }).join('')+'</div>'):'')
+      +'</div>';
+  })();
   h+=sessFocusHTML({date:wkDayYmd(wk,di),session:tr,day:day});
 
   /* ③ 미팅 */
@@ -4491,6 +4505,12 @@ function wksFillRender(keep,focus){
     +'<button type="button" class="btn" style="width:100%;justify-content:center" onclick="wksFillLib()">보관함에서 가져오기</button>'
     +'</div>';
 
+  /* ══ 2.908 · 메모(요청 «메모도 적을 수 있는 칸») ═══════════════════════════════════════
+     새 자리를 만들지 않는다 — 세션마다 있던 `tr.note`(옛 세션 편집기에서만 적을 수 있었다)를 여기서 적는다.
+     목록·하루 PDF 는 원래 이 글을 찍었고, 이제 주간 보드 PDF 의 메모 줄도 찍는다. 저장은 칸을 벗어날 때. */
+  h+='<div class="wf-sec" id="wfSec-memo"><div class="pksub sm">메모</div>'
+    +'<textarea id="wfNote" class="wf-note" rows="3" maxlength="500" placeholder="준비물 · 주의할 점 · 코치 메모" onchange="wksFillNote(this.value)">'+wkbdEsc(String((tr&&tr.note)||''))+'</textarea></div>';
+
   h+='<div class="actionbar" style="padding:12px 0 0"><button class="btn solid" style="flex:1" onclick="closeSheet()">완료</button></div>';
 
   }   /* 2.390 — OFF 갈래 닫기 */
@@ -4500,6 +4520,46 @@ function wksFillRender(keep,focus){
   else if(focus){ try{ var t=document.getElementById('wfSec-'+focus);
     if(t&&focus!=='topic')t.scrollIntoView({block:'start'}); }catch(_){} }
   if(__fillFocusEl){ try{ var el=document.getElementById(__fillFocusEl); if(el)el.focus(); }catch(_){} __fillFocusEl=''; }
+}
+/* ── 2.908 · 장소·메모 쓰기 — 다시 그리지 않고 저장만(입력 중 포커스·조합을 부수지 않게) ── */
+function wksPlaceClean(v){ return String(v==null?'':v).replace(/["'<>\\`]/g,'').replace(/\s+/g,' ').trim().slice(0,40); }
+function wksUsedPlaces(){
+  var c={}; try{ Object.keys(weeksMap||{}).forEach(function(r){ (weeksMap[r]||[]).forEach(function(d){
+    ((d&&d.trainings)||[]).forEach(function(t){ var p=wksPlaceClean(t&&t.place); if(p)c[p]=(c[p]||0)+1; }); }); }); }catch(_){}
+  return Object.keys(c).sort(function(a,b){ return (c[b]-c[a])||(a<b?-1:1); }).slice(0,6);
+}
+window.wksFillPlace=function(v){
+  try{ if(schedEditBlocked()||__fillNoSes)return;
+    var tr=ensureSlotSession(__fillDi,__fillSlot); if(!tr)return;
+    var c=wksPlaceClean(v); if(c===String(tr.place||''))return;
+    if(c)tr.place=c; else delete tr.place;
+    try{save();}catch(_){} try{syncViews();}catch(_){}
+  }catch(_){}
+};
+window.wksFillPlacePick=function(i){
+  if(schedEditBlocked()){schedBlockNotice();return;}
+  var p=wksUsedPlaces()[i]; if(!p)return;
+  var tr=ensureSlotSession(__fillDi,__fillSlot); if(!tr)return;
+  if(tr.place===p)delete tr.place; else tr.place=p;
+  _fillSave();
+};
+window.wksFillNote=function(v){
+  try{ if(schedEditBlocked()||__fillNoSes)return;
+    var tr=ensureSlotSession(__fillDi,__fillSlot); if(!tr)return;
+    var c=String(v==null?'':v).replace(/\r/g,'').slice(0,500); if(!c.trim())c='';
+    if(c===String(tr.note||''))return;
+    tr.note=c;
+    try{save();}catch(_){} try{syncViews();}catch(_){}
+  }catch(_){}
+};
+/* 닫기 전에 칸에 남은 글을 담는다(Esc·완료 — change 가 안 올 수 있는 길) */
+function wksFillFlushText(){
+  try{
+    var p=document.getElementById('wfPlace'), n=document.getElementById('wfNote'); if(!p&&!n)return;
+    if(__fillNoSes)return; var tr=_fillTr(); if(!tr)return;
+    if(p&&wksPlaceClean(p.value)!==String(tr.place||''))wksFillPlace(p.value);
+    if(n&&String(n.value).replace(/\r/g,'')!==String(tr.note||''))wksFillNote(n.value);
+  }catch(_){}
 }
 /* ── 쓰기 — 전부 기존 저장 자리로 ── */
 window.wksFillTopic=function(v){
@@ -4841,6 +4901,8 @@ function wksCard(di,slot){
   var _mins=0; try{ _mins=wksSesMinutes(di,slot); }catch(_){}
   if(_mins){ var _end=wksEndTime(time,_mins);
     h+='<div class="wks-tot">총 '+_mins+'분'+(_end?(' · ~'+wkbdEsc(_end)):'')+'</div>'; }
+  /* 2.908 — 장소(있을 때만). 누르면 채우기 모달의 장소 칸으로 */
+  if(tr&&tr.place)h+='<div class="wks-place" title="장소 — 눌러서 고치기" onclick="event.stopPropagation();wksFill('+di+',\''+String(slot||'').replace(/'/g,'')+'\',\'place\')">'+wkbdEsc(tr.place)+'</div>';
   /* 2.133 — 주제·강도는 **비어 있어도 줄을 둔다**(사용자: "누르면 주제 강도 미팅 웜업 훈련 뜨게").
      빈 줄은 소음이라 지금까지 숨겨 왔지만, 여기서는 **채울 자리를 보여 주는 것**이 일이다 —
      시간대를 고른 코치가 다음에 무엇을 정해야 하는지가 카드에 그대로 있다.
@@ -4876,6 +4938,8 @@ function wksCard(di,slot){
       +'<button type="button" class="wkbd-libmore" onclick="event.stopPropagation();wkbdLibTap('+di+','+li+')">⋯</button></div>';
   });
   h+=wksRow('보관함', _lch, '세션 채우기 — 주제·강도·미팅·훈련·보관함', "wksFill("+di+",'"+slot+"','lib')");
+  /* 2.908 — 메모(있을 때만 — 빈 줄을 늘 두면 카드가 길어진다. 적는 문은 ＋ 모달의 메모 칸) */
+  if(tr&&String(tr.note||'').trim())h+='<div class="wks-row"><i>메모</i><div class="wks-aims wks-note" onclick="'+_fp('memo')+'">'+wkbdEsc(String(tr.note).trim())+'</div></div>';
   return h+'</div>';
 }
 /* 2.634 — 지난 경기 리뷰의 «다음 훈련 행동»이 이번 주 주간 카드 위에 그대로 비친다(거울 — 제안이 아니라 코치가 쓴 문장). 지난 7일 경기 중 있는 것만 */
@@ -7370,10 +7434,18 @@ function pHeader(sub,title){
     return `<div class="phd"><div class="pwm"><b>${TT}</b></div>
     <div class="pmeta">${sub}<strong style="letter-spacing:1px">상대 _______ · D-___</strong></div></div>`;
   }
-  const dday=parseInt(document.getElementById('dayN').value)||28;
-  const m=week.map(schedViewDay).find(d=>d&&d.match); const opp=(m&&m.match.opp)?m.match.opp:'경기';   /* 2.878 — 머리의 상대도 지금 보기(조)의 경기 */
+  /* 2.908 — D-day 는 오늘부터 **실제 다음 경기**까지(화면 상단 배지 updateTopMini 와 같은 셈).
+     옛 판은 손 입력칸(#dayN, 기본 28)을 찍어 경기가 없어도 «경기 · D-28» 이라고 말했다. 다음 경기가 없으면 안 찍는다. */
+  const nx=pNextMatch();
+  const nxs=nx?(`다음 경기${nx.opp?' · '+pdfEsc(nx.opp):''} · ${nx.days<=0?'오늘':'D-'+nx.days}`):'';
   return `<div class="phd"><div class="pwm"><b>${TT}</b></div>
-    <div class="pmeta">${sub}<strong>${opp} · D-${dday}</strong></div></div>`;
+    <div class="pmeta">${sub}${nxs?`<strong>${nxs}</strong>`:''}</div></div>`;
+}
+function pNextMatch(){
+  try{ const today=new Date(); today.setHours(0,0,0,0); let best=null, opp='';
+    Object.keys(weeksMap).forEach(r=>{ const W=weeksMap[r]; if(!W)return; W.forEach((d,di)=>{ if(d&&d.match){ const dt=dateOf((+r)*7+di); if(dt>=today&&(best===null||dt<best)){ best=dt; opp=String(d.match.opp||'').trim(); } } }); });
+    return best?{days:Math.round((best-today)/86400000),opp:opp}:null;
+  }catch(_){ return null; }
 }
 function pFooter(){
   const d=new Date();
@@ -7403,7 +7475,24 @@ function pdfCoachOf(ref,name){ try{ var lib=libDrills()||[]; if(!lib.length)retu
   return pdfCoachLine(co); }catch(_){ return ''; } }
 function pdfCoachLine(txt){ txt=String(txt||'').replace(/\s+/g,' ').trim(); if(!txt)return ''; var m=txt.match(/^.*?[.!?。](\s|$)/); var first=(m?m[0]:txt).trim(); if(first.length>70)first=first.slice(0,69)+'…'; return first; }
 function pdfEsc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];}); }
-function pSessionBlock(tr){
+/* 2.908 — 세션 모드(2.304~)의 훈련은 블록이 아니라 보드 칩(b.trains·b.meets·b.libs, 세션 슬롯으로 묶임)에 있다.
+   옛 목록·하루 PDF 는 블록만 찍어 세션이 머리 한 줄로만 나왔다 — 이 슬롯의 칩을 찍는다. orphanOf 가 있으면 어느 세션에도 안 붙은 칩 */
+function pBoardItems(day,slot,orphanOf){
+  let b=null; try{ b=dayBoard(day); }catch(_){ return ''; } if(!b)return '';
+  const out=[];
+  const pick=(arr,slots,data,kind,themes)=>{ (arr||[]).forEach((v,i)=>{ if(!String(v==null?'':v).trim())return; const sl=String(((slots||[])[i])||'');
+    if(orphanOf?!orphanOf(sl):sl!==String(slot||''))return; out.push({v:v,kind:kind,d:(data||[])[i]||null,th:(themes||[])[i]||''}); }); };
+  pick(b.meets,b.meetSlot,b.meetsData,'미팅');
+  pick(b.warms,b.warmSlot,b.warmsData,'준비');
+  pick(b.trains,b.trainSlot,b.trainData,'훈련',b.trainThemes);
+  pick(b.libs,b.libSlot,b.libData,'보관함');
+  return out.map(o=>{ let col='#C2C7CF'; try{ if(o.th)col=bColor('theme',o.th)||col; }catch(_){}
+    let lab=''; try{ lab=psDurLab(o.d)||''; }catch(_){}
+    let h=`<div class="pblk"><span class="pph">${o.kind}</span><span class="pdot" style="background:${col}"></span><span class="pth">${pdfEsc(o.v)}</span>${lab?` <span class="pld">${pdfEsc(lab)}</span>`:''}</div>`;
+    if(o.kind==='훈련'||o.kind==='보관함'){ const co=pdfCoachOf((o.d&&(o.d.fromLib||o.d.libId))||'',o.v); if(co)h+=`<div class="pblk pco">☞ ${pdfEsc(co)}</div>`; }
+    return h; }).join('');
+}
+function pSessionBlock(tr,day){
   const L=getLoad(tr);
   const fitPill=L?`<span class="pfit" style="color:${loadColor(L)};border-color:${loadColor(L)}">${loadShort(L)}</span>`:'';
   let blk='';
@@ -7414,9 +7503,13 @@ function pSessionBlock(tr){
     blk+=`<div class="pblk"><span class="pph">${circNum(bi)} ${PHASE_SHORT[b.phase]||b.phase}</span><span class="pdot" style="background:${col}"></span><span class="pth">${b.theme}${b.fmt?` <em>${b.fmt}</em>`:''}${ds}</span>${dd}</div>`;
     const _co=pdfCoachOf(b.libId||b.fromLib||'',b.theme); if(_co)blk+=`<div class="pblk pco">☞ ${pdfEsc(_co)}</div>`;   /* 2.586 */
   });
-  const slotPfx=tr.slot?`<span class="pslot">${tr.slot}</span> `:'';
-  const head=`${slotPfx}훈련 · ${tr.time}${endTime(tr)&&trMinutes(tr)?'–'+endTime(tr):''}${tr.players?` · ${tr.players}명`:''}${tr.aims?` · ${tr.aims}`:''}`;
-  const note=tr.note?`<div style="font-size:10px;color:#838A91;font-style:italic;margin:1px 0 5px">“${tr.note}”</div>`:'';
+  if(!(tr.blocks||[]).length&&day&&!__pBlank)blk+=pBoardItems(day,tr.slot);   /* 2.908 */
+  /* 2.908 — 시간대는 시각에서(2.310). 세션 저장 키(S…)를 종이에 찍지 않는다 */
+  const slotLab=todOfTime(tr.time)||(TOD.indexOf(tr.slot)>=0?tr.slot:'');
+  const slotPfx=slotLab?`<span class="pslot">${slotLab}</span> `:'';
+  let aims=String(tr.aims||''); try{ const tp=wksTopicsOf(tr)||[]; if(tp.length)aims=tp.map(v=>wksTopicName(v)).join(' · '); }catch(_){}
+  const head=`${slotPfx}훈련${tr.time?' · '+pdfEsc(tr.time):''}${tr.time&&endTime(tr)&&trMinutes(tr)?'–'+endTime(tr):''}${tr.place?` · ${pdfEsc(tr.place)}`:''}${tr.players?` · ${pdfEsc(tr.players)}명`:''}${aims?` · ${pdfEsc(aims)}`:''}`;
+  const note=String(tr.note||'').trim()?`<div style="font-size:10px;color:#5F666E;margin:1px 0 5px;white-space:pre-wrap">메모 · ${pdfEsc(String(tr.note).trim())}</div>`:'';
   const tot=trMinutes(tr)?`<span style="color:#8A9099;font-weight:600;font-size:10px"> · 총 ${trMinutes(tr)}분</span>`:'';
   return `<div class="ptrain"><div class="pthd">${head} ${fitPill}${tot}</div>${note}${blk}</div>`;
 }
@@ -7425,9 +7518,14 @@ function pDayBody(day,ruled){
   if(day.match) inner+=`<div class="pmatch">경기 · ${day.match.time}${day.match.opp?' · '+day.match.opp:''}</div>`+mxExtraHtml(day,'pmatch mx');   /* 2.620 */
   const pmeet=__pBlank?'':(''+(day.meeting||'')).trim();
   if(pmeet) inner+=`<div class="pmeet">미팅 · ${pmeet.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>`;
-  (day.trainings||[]).forEach(tr=>{ inner+=pSessionBlock(tr); });
-  const empty=!day.match && (!day.trainings||day.trainings.length===0) && !pmeet;
-  if(empty && !__pBlank) inner+=`<div class="prest">휴식</div>`;   // 빈 양식엔 '휴식' 라벨 없이 필기줄만
+  (day.trainings||[]).forEach(tr=>{ inner+=pSessionBlock(tr,day); });
+  /* 2.908 — 어느 세션에도 안 붙은 보드 칩(연간 빠른 추가·옛 저장본)도 찍는다. 예전엔 이런 날이 «휴식»으로 나왔다 */
+  let orphan='', bsched='';
+  if(!__pBlank){ const keys=(day.trainings||[]).map(t=>String((t&&t.slot)||'')); orphan=pBoardItems(day,'',sl=>keys.indexOf(sl)<0);
+    if(orphan) inner+=`<div class="ptrain"><div class="pthd">훈련</div>${orphan}</div>`;
+    try{ bsched=String(dayBoard(day).sched||''); }catch(_){} }
+  const empty=!day.match && (!day.trainings||day.trainings.length===0) && !pmeet && !orphan;
+  if(empty && !__pBlank) inner+=(bsched==='훈련'?`<div class="prest">훈련 · 세부 미정</div>`:`<div class="prest">휴식</div>`);   // 빈 양식엔 '휴식' 라벨 없이 필기줄만
   if(ruled) inner+=`<div class="pfill"></div>`;   // 남는 높이만큼 자동으로 필기줄 채움 (빈 날=가득, 바쁜 날=남는 만큼)
   return inner;
 }
@@ -7456,6 +7554,16 @@ function weekBoardDocHTML(){
   const B=[]; for(let i=0;i<7;i++)B.push(dayBoard(VW[i]));
   const some=(f)=>B.some((b,i)=>b.sched!=='경기'&&b.sched!=='OFF'&&f(b));
   const nz=arr=>(arr||[]).some(x=>String(x==null?'':x).trim());
+  /* ══ 2.908 · 세션 이름표 ═════════════════════════════════════════════════════════════
+     2.310 부터 세션 슬롯은 **저장 키**(S…)다 — 옛 판은 그 키를 그대로 찍어 종이에 «Smtatsfe062» 같은 글이 나왔다.
+     이름표는 화면(wksSlotLabel)처럼 시각에서: «오후 17:00». 정렬도 시각 순. */
+  const sesAt=(day,sl)=>((day&&day.trainings)||[]).filter(t=>String((t&&t.slot)||'')===String(sl||''))[0]||null;
+  const sesName=(day,sl)=>{ const tr=sesAt(day,sl); const lab=todOfTime(tr&&tr.time)||(TOD.indexOf(sl)>=0?sl:''); const tm=String((tr&&tr.time)||'');
+    return [lab,tm].filter(Boolean).join(' ')||(sl?'세션':'시간대 없음'); };
+  const sesKey=(day,sl)=>{ const tr=sesAt(day,sl); if(tr&&tr.time)return String(tr.time).padStart(5,'0'); const i=TOD.indexOf(sl); return i>=0?['05:00','09:00','15:00','19:00'][i]:'99'; };
+  const byKey=day=>(x,y)=>{ const a=sesKey(day,x), c=sesKey(day,y); return a<c?-1:(a>c?1:0); };
+  const sesSorted=day=>((day&&day.trainings)||[]).filter(Boolean).slice().sort((a,c)=>byKey(day)(a.slot,c.slot));
+  const multi=day=>((day&&day.trainings)||[]).length>1;
   const rows=[{k:'sched',L:'일정'},{k:'load',L:'강도'},{k:'theme',L:'주제'}];
   if(some(b=>nz(b.meets)))rows.push({k:'meet',L:'미팅'});
   /* 2.309 — 웜업 행을 걷고 훈련 한 행으로(화면 2.305 와 같게). 종이와 화면이 같은 주를 두 가지로 말하면 안 된다 */
@@ -7478,7 +7586,7 @@ function weekBoardDocHTML(){
      ⚠ 시트 배치(라벨 열 + 7열, A4 한 장)는 **그대로 둔다** — 1.962 가 종이용으로 맞춰 놓은 것이고,
         한 주가 한 장에 들어가는 것이 이 인쇄물의 값이다. 바꾸는 것은 **칸 안**뿐이다:
         이름 있는 시간대가 있으면 칩 앞에 작은 슬롯 머리를 넣어 묶는다. */
-  const slotGroups=(items,slots,dataArr)=>{
+  const slotGroups=(items,slots,dataArr,day)=>{
     var g=[], idx={};
     (items||[]).forEach(function(v,i){
       if(!String(v==null?'':v).trim())return;
@@ -7486,44 +7594,59 @@ function weekBoardDocHTML(){
       if(idx[sl]==null){ idx[sl]=g.length; g.push({slot:sl,items:[]}); }
       g[idx[sl]].items.push({v:v,i:i,d:(dataArr&&dataArr[i])||null});
     });
-    g.sort(function(x,y){ return todOrder(x.slot)-todOrder(y.slot); });
+    g.sort(function(x,y){ return byKey(day)(x.slot,y.slot); });
     return g;
   };
-  const slotHead=(sl,named)=>{
+  const slotHead=(sl,named,day)=>{
     if(!named)return '';
-    return '<div class="pws-slot'+(sl?'':' nos')+'">'+esc(sl||'시간대 없음')+'</div>';
+    return '<div class="pws-slot'+(sl?'':' nos')+'">'+esc(sesName(day,sl))+'</div>';
   };
   const cellOf=(k,b,day)=>{
-    if(k==='sched') return b.sched?chip(bColor('sched',b.sched),b.sched):'';
-    if(k==='load'){ if(!b.load)return ''; const v=(''+b.load).trim(), n=parseInt(v,10); const c=bColor('load',v);
+    /* 2.908 — 일정 칸에 세션마다 «언제 · 조 · 어디»(장소는 요청 «훈련장소 추가») */
+    if(k==='sched'){ let h0=b.sched?chip(bColor('sched',b.sched),b.sched):'';
+      const fg=(typeof __schedGrp==='string'&&__schedGrp)?__schedGrp:'';
+      sesSorted(day).forEach(t=>{ const g=(!fg&&t.grp)?(Array.isArray(t.grp)?t.grp.join('·'):String(t.grp)):'';
+        const parts=[(t.time||t.place||g)?sesName(day,t.slot):'',g,t.place].filter(x=>String(x||'').trim());
+        if(parts.length)h0+='<div class="pws-when">'+esc(parts.join(' · '))+'</div>'; });
+      return h0; }
+    /* 2.908 — 강도는 **세션의 RPE**(세션 채우기 모달이 tr.load.rpe 에 적는다). 옛 판은 하루 칸(b.load)만 읽어 늘 비었다 */
+    if(k==='load'){ const ses=sesSorted(day).filter(t=>t.load&&parseInt(t.load.rpe,10)>0);
+      if(ses.length){ const nm=ses.length>1; return ses.map(t=>{ const n=parseInt(t.load.rpe,10);
+        return (nm?slotHead(t.slot,true,day):'')+`<div class="pws-chip load" style="border-left-color:transparent"><span class="dot" style="background:${loadColorN(n)}"></span><b>${n}</b><i>RPE</i></div>`; }).join(''); }
+      if(!b.load)return ''; const v=(''+b.load).trim(), n=parseInt(v,10); const c=bColor('load',v);
       if(n&&String(n)===v) return `<div class="pws-chip load" style="border-left-color:transparent"><span class="dot" style="background:${loadColorN(n)}"></span><b>${n}</b><i>RPE</i></div>`;
       return dotchip(c,v); }
     /* 2.309 — 주제는 **세션마다**(2.306 에서 세션이 주제를 갖는다). 하루 두 세션이면 둘 다 적힌다.
        세션에 없는 옛 저장본만 보드 주제로 폴백 */
     if(k==='theme'){
       const ts=((day&&day.trainings)||[]).filter(t=>t&&String(t.aims||'').trim());
-      if(ts.length){ const named=ts.some(t=>t.slot);
-        return ts.map(t=>slotHead(t.slot,named)+dotchip(topicCol(t),t.aims)).join(''); }
+      if(ts.length){ const named=ts.length>1||multi(day);
+        return ts.slice().sort((a,c)=>byKey(day)(a.slot,c.slot)).map(t=>{ let nm=t.aims; try{ const tp=wksTopicsOf(t)||[]; if(tp.length)nm=tp.map(v=>wksTopicName(v)).join(' · '); }catch(_){}
+          return slotHead(t.slot,named,day)+dotchip(topicCol(t),nm); }).join(''); }
       return b.theme?dotchip(bColor('theme',b.theme),b.theme):'';
     }
-    if(k==='meet'){ const g=slotGroups(b.meets,b.meetSlot,b.meetsData), named=g.some(x=>x.slot);
-      return g.map(x=>slotHead(x.slot,named)+x.items.map(it=>chip('',it.v,mn(it.d),'plain')).join('')).join(''); }
+    if(k==='meet'){ const g=slotGroups(b.meets,b.meetSlot,b.meetsData,day), named=g.length>1||multi(day);
+      return g.map(x=>slotHead(x.slot,named,day)+x.items.map(it=>chip('',it.v,mn(it.d),'plain')).join('')).join(''); }
     if(k==='train'){
       /* 2.309 — 옛 저장본의 웜업도 여기서 함께(화면과 같은 규칙). 시간대가 같으면 한 묶음으로 */
-      const gw=slotGroups(b.warms,b.warmSlot,b.warmsData);
-      const gt=slotGroups(b.trains,b.trainSlot,b.trainData);
+      const gw=slotGroups(b.warms,b.warmSlot,b.warmsData,day);
+      const gt=slotGroups(b.trains,b.trainSlot,b.trainData,day);
       const bySlot={}, order=[];
       const push=(arr,warm)=>arr.forEach(x=>{ if(bySlot[x.slot]==null){bySlot[x.slot]={slot:x.slot,items:[]};order.push(x.slot);} 
         x.items.forEach(it=>bySlot[x.slot].items.push({it:it,warm:warm})); });
       push(gw,true); push(gt,false);
-      order.sort((a,c)=>todOrder(a)-todOrder(c));
-      const named=order.some(sl=>sl);
-      return order.map(sl=>slotHead(sl,named)+bySlot[sl].items.map(o=>
+      order.sort(byKey(day));
+      const named=order.length>1||multi(day);
+      return order.map(sl=>slotHead(sl,named,day)+bySlot[sl].items.map(o=>
         chip(o.warm?'':((b.trainThemes&&b.trainThemes[o.it.i])?bColor('theme',b.trainThemes[o.it.i]):''), o.it.v, mn(o.it.d), o.warm?'plain':'')
         +(function(){ if(o.warm)return ''; var _co=pdfCoachOf((o.it.d&&(o.it.d.fromLib||o.it.d.libId))||'',o.it.v); return _co?('<div class="pws-co">☞ '+esc(_co)+'</div>'):''; })()   /* 2.586 — 칩 밑 코칭 포인트 한 줄 */
       ).join('')).join(''); }
-    if(k==='memo') return '<div class="pws-rule"></div>';
-    if(k==='lib') return (b.libs||[]).map((v,i)=>String(v||'').trim()?chip('',v,mn(b.libData&&b.libData[i]),'plain'):'').join('');
+    /* 2.908 — 메모 줄에 세션 메모(tr.note)를 먼저 찍고, 남는 자리는 펜으로 적는 줄 */
+    if(k==='memo'){ const ns=sesSorted(day).filter(t=>String(t.note||'').trim()); const nm=ns.length>1||multi(day);
+      return ns.map(t=>(nm?slotHead(t.slot,true,day):'')+'<div class="pws-note">'+esc(String(t.note).trim())+'</div>').join('')+'<div class="pws-rule"></div>'; }
+    if(k==='lib'){ const g=slotGroups(b.libs,b.libSlot,b.libData,day), named=g.length>1||multi(day);
+      return g.map(x=>slotHead(x.slot,named,day)+x.items.map(it=>chip('',it.v,mn(it.d),'plain')
+        +(function(){ var _co=pdfCoachOf((it.d&&(it.d.fromLib||it.d.libId))||'',it.v); return _co?('<div class="pws-co">☞ '+esc(_co)+'</div>'):''; })()).join('')).join(''); }
     return '';
   };
   const dayMin=b=>{ let s=0; [b.trainData,b.warmsData,b.meetsData,b.libData].forEach(a=>(a||[]).forEach(x=>{ s+=psMin(x); })); return s; };   /* 2.308 — 분×세트 */
@@ -7537,7 +7660,9 @@ function weekBoardDocHTML(){
     const dm=(!isM&&!isOff)?dayMin(b):0; if(dm)totMin+=dm;
     /* 2.309 — 훈련 수는 **세션 수**(2.304 '세는 단위 = 세션'). 옛 셈은 훈련 칩 개수라 화면·월간·'지금까지'와 어긋났다 */
     if(!isM&&!isOff){ try{ nTrain+=monthSesCount(day); }catch(_){ nTrain+=(b.trains||[]).filter(x=>String(x||'').trim()).length; }
-      const ln=parseInt(b.load,10); if(ln)loads.push(ln); }
+      /* 2.908 — 평균 강도도 세션 RPE 로(없으면 옛 하루 칸) */
+      const _sr=((day&&day.trainings)||[]).map(t=>parseInt(t&&t.load&&t.load.rpe,10)).filter(n=>n>0);
+      if(_sr.length)_sr.forEach(n=>loads.push(n)); else { const ln=parseInt(b.load,10); if(ln)loads.push(ln); } }
     g+=`<div class="pws-h${isM?' m':''}${isOff?' off':''}${di===6?' sun':''}" style="grid-column:${col};grid-row:1"><b>${day.d}</b><span class="dt">${dt.getMonth()+1}/${dt.getDate()}</span>${md}${dm?`<span class="min">${dm}′</span>`:''}</div>`;
     if(isM){
       const opp=(day.match&&day.match.opp)||b.opp||''; const tm=(day.match&&day.match.time)||''; const lg=__psImgSrc((day.match&&day.match.logo)||''); const fr=(mMatchKind(day)==='friendly');
@@ -7723,6 +7848,7 @@ function __buildPrintDoc(kind, blank){
   // 고정 1페이지 안전망: 높이를 잠시 풀어 자연 높이(need)를 정확히 잰 뒤, 넘치면 높이를 풀고 zoom으로 1장에 맞춤
   const zoomJs="window.addEventListener('load',function(){try{var p=document.querySelector('.ponepage');if(!p)return;var pd=document.getElementById('printDoc');var availH=p.clientHeight;p.style.height='auto';var needH=p.scrollHeight;var zw="+pageWpx+"/"+baseWpx+";var zh=availH/needH;var z=Math.min(zw,zh,1.6);p.style.height=needH+'px';if(z&&isFinite(z)&&Math.abs(z-1)>0.02){pd.style.zoom=(z*100).toFixed(1)+'%';}else{p.style.height='';}}catch(e){}});";
   return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+fname+'</title>'
+    +'<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b">'   /* 2.908 — Pretendard(화면과 같은 글꼴) */
     +'<style>'+allCss+'</style><style>'+pageCss+'</style></head>'
     +'<body><div id="printDoc" class="pl-'+cls+'">'+html+'</div>'
     +'<script>'+zoomJs+'<\/script></body></html>';
@@ -7734,9 +7860,12 @@ function __pvFit(){
   const W=+ov.dataset.w||1100, H=+ov.dataset.h||780;
   const mob=window.innerWidth<600;
   const s=mob?(window.innerWidth*.94)/W:Math.min((window.innerWidth*.94)/W,(window.innerHeight*.80)/H,1);
-  ov.querySelector('#pvSheet').style.transform='scale('+s+')';
+  /* 2.908 — 시트는 늘 W×H 로 두고 줄이기만 한다. 옛 판은 시트 폭이 틀 폭(W×s)을 따라가 한 번 더 줄어 오른쪽 ≈20% 가 잘렸다.
+     줄어든 크기는 pvSizer 가 잡는다(transform 은 레이아웃 크기를 안 바꾼다). */
+  const sh=ov.querySelector('#pvSheet'); sh.style.width=W+'px'; sh.style.height=H+'px'; sh.style.transform='scale('+s+')';
+  const sz=ov.querySelector('#pvSizer'); if(sz){ sz.style.width=(W*s)+'px'; sz.style.height=(H*s)+'px'; }
   const wrap=ov.querySelector('#pvWrap');
-  wrap.style.width=(W*s)+'px';
+  wrap.style.width=(W*s)+'px'; wrap.style.overflowX='hidden';
   if(mob){wrap.style.height=Math.min(H*s,window.innerHeight*.72)+'px';wrap.style.overflowY='auto';wrap.style.webkitOverflowScrolling='touch';}
   else{wrap.style.height=(H*s)+'px';wrap.style.overflowY='';}
   ov.querySelector('#pvBar').style.width=mob?'100%':Math.max(W*s,300)+'px';
@@ -7759,7 +7888,7 @@ function exportPDF(kind){
       +'<button id="pvClose" style="background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">닫기</button>'
       +'</div>'
       +'<div id="pvMobHint" style="display:none;color:#FFD78A;font-size:11px;font-weight:600;max-width:94vw;text-align:center">폰에서는 위아래로 스크롤해 확인하세요 — 인쇄·PDF 저장은 PC·태블릿 브라우저에서 가장 안정적입니다</div>'
-      +'<div id="pvWrap" style="margin:0 auto"><div id="pvSheet" style="background:#fff;border-radius:8px;box-shadow:0 18px 50px rgba(0,0,0,.35);overflow:hidden;transform-origin:top left"><iframe id="pvIfr" title="출력 미리보기" style="border:0;display:block;background:#fff"></iframe></div></div>';
+      +'<div id="pvWrap" style="margin:0 auto"><div id="pvSizer" style="background:#fff;border-radius:8px;box-shadow:0 18px 50px rgba(0,0,0,.35);overflow:hidden"><div id="pvSheet" style="background:#fff;transform-origin:top left"><iframe id="pvIfr" title="출력 미리보기" style="border:0;display:block;background:#fff"></iframe></div></div></div>';
     document.body.appendChild(ov);
     ov.addEventListener('mousedown',e=>{ if(e.target===ov) closePv(); });         // 배경 클릭 → 닫기
     ov.querySelector('#pvClose').onclick=closePv;
@@ -8371,7 +8500,7 @@ function applyTemplate(mode){
   closeSheet(); syncViews();
 }
 
-function closeSheet(){__sessionTeamPick=null;if(document.getElementById('sheet').dataset.reviewTraining==='1'&&window.PSReviewSchedule){PSReviewSchedule.close();return;}const sc=document.getElementById('scrim'),sheet=document.getElementById('sheet');var yq=(typeof __yearQuick!=='undefined')?__yearQuick:null;sc.classList.remove('show');if(sheet){delete sheet.dataset.psLibraryFlow;sheet.removeAttribute('role');sheet.removeAttribute('aria-modal');sheet.removeAttribute('aria-labelledby');}try{__themePanel=null;}catch(_){}sc.classList.remove('qpmode');if(typeof __qp!=='undefined')__qp=null;if(typeof __hub!=='undefined')__hub=null;if(typeof __yearQuick!=='undefined')__yearQuick=null;if(yq&&yq.trigger)setTimeout(function(){try{yq.trigger.focus();}catch(_){}},0);}
+function closeSheet(){try{wksFillFlushText();}catch(_){}__sessionTeamPick=null;if(document.getElementById('sheet').dataset.reviewTraining==='1'&&window.PSReviewSchedule){PSReviewSchedule.close();return;}const sc=document.getElementById('scrim'),sheet=document.getElementById('sheet');var yq=(typeof __yearQuick!=='undefined')?__yearQuick:null;sc.classList.remove('show');if(sheet){delete sheet.dataset.psLibraryFlow;sheet.removeAttribute('role');sheet.removeAttribute('aria-modal');sheet.removeAttribute('aria-labelledby');}try{__themePanel=null;}catch(_){}sc.classList.remove('qpmode');if(typeof __qp!=='undefined')__qp=null;if(typeof __hub!=='undefined')__hub=null;if(typeof __yearQuick!=='undefined')__yearQuick=null;if(yq&&yq.trigger)setTimeout(function(){try{yq.trigger.focus();}catch(_){}},0);}
 document.getElementById('scrim').onclick=(e)=>{ if(e.target.id!=='scrim') return; if(curSession){ cancelSession(); } else { closeSheet(); } };
 document.addEventListener('keydown',(e)=>{ if(e.key!=='Escape') return; try{ if(curSession){cancelSession();} else {closeSheet();} window.__importDraft=null; }catch(_){} });
 
@@ -8723,6 +8852,13 @@ button.wks-slot.nos:hover{background:#d7dbe3;color:#2f3542}
 .wks-add.one{grid-template-columns:1fr}
 /* 2.313 — 세션 총 시간 */
 .wks-tot{font-size:10px;font-weight:600;color:var(--dim,#646A73);padding:1px 8px 3px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 2.908 — 세션 장소 · 메모 */
+.wks-place{font-size:10px;font-weight:700;color:var(--text-2,#3F454D);padding:0 8px 3px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.wks-place::before{content:'장소 ';font-weight:600;color:var(--dim,#8A9099)}
+.wks-place:hover{color:var(--accent,#3A6DF0)}
+.wks-note{font-weight:500;color:var(--text-2,#3F454D);white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#sheet .wf-note{width:100%;box-sizing:border-box;min-height:72px;resize:vertical;padding:9px 11px;border:1px solid var(--line);border-radius:10px;font-size:var(--fs-body);font-family:var(--f);line-height:1.5;background:var(--surface);color:var(--text);outline:none;margin:0 0 4px}
+#sheet .wf-note:focus{border-color:var(--accent)}
 /* 2.311 — 프리셋 묶음 머리·검색·더 보기 */
 #sheet .pksub.sm{margin-top:12px;display:flex;align-items:center;gap:6px}
 #sheet .pksub.sm .cnt{font-size:10px;font-weight:600;color:var(--text-3,#8A9099);background:var(--fill,#F1F3F5);border-radius:999px;padding:1px 7px}

@@ -140,6 +140,11 @@ h3{font-size:var(--fs-title);font-weight:var(--fw-head);letter-spacing:-.3px;mar
   .pl-anch{flex:1 1 100%;margin:2px 0 0;font-size:var(--fs-caption);line-height:1.45;color:var(--dim)}
   .pl-anch b{color:var(--txt);font-weight:600}
   .pl-anch:empty{display:none}
+  /* 2.908 — 선수 셀프 점수: 보라 밑줄(IDP 의 셀프 = 보라 어휘) + 한 줄 */
+  .pl-scale button.self{box-shadow:inset 0 -3px 0 #8A63D2}
+  .pl-self{flex:1 1 100%;margin:1px 0 0;font-size:var(--fs-caption);line-height:1.4;color:#6E4FC0}
+  .pl-self b{font-weight:700}
+  .pl-self:empty{display:none}
   @media(max-width:640px){ .pl-scale{flex:1 1 100%} }
   .lvl{display:inline-flex;gap:3px;flex:0 0 auto;}
   .lvl button{width:26px;height:28px;border-radius:50%;border:1.5px solid var(--line);background:var(--bar2);color:var(--dim);
@@ -4037,6 +4042,8 @@ body.ps-viewonly .tge-seg button{pointer-events:none}
         .ck .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:4px}
         .ck .hero h4{font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.2;margin:0}
         .ck .hero .sub{color:var(--gray);margin-top:2px;font-size:13px}
+        .ck .hero .sub.ck-place{color:var(--ink);font-weight:600;font-size:12.5px}   /* 2.908 — 세션 장소 */
+        .ck .hero .sub.ck-note{font-size:12.5px;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}   /* 2.908 — 세션 메모 */
         .ck .drill{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px;align-items:baseline}
         .ck .drill .t{color:var(--gray);font-variant-numeric:tabular-nums}
         .ck .drill.open{cursor:pointer}
@@ -6200,6 +6207,9 @@ function load(){
   if(d&&Array.isArray(d.attrs)&&Array.isArray(d.positions)){
     data=d;data.players=data.players||[];data.meta=data.meta||{};
     /* 이전 버전에서 만든 팀 평가표는 팀표로 간주해 그대로 보존한다. */
+    /* 2.908 — 이미 표준으로 옮긴 팀(evalStdForcedAt)인데 모드 표시만 빠진 문서(옛 판·복원)는 모드만 되돌린다.
+       옛 판은 여기서 «team» 으로 보고 아래 2.407 강제 이관을 다시 돌려 팀이 고친 평가표를 통째로 표준으로 덮었다 */
+    if(data.meta.evalStdForcedAt&&data.meta.evalMode!=="fifa"){ data.meta.evalMode="fifa"; }
     if(!data.meta.evalMode){
       data.meta.evalMode="team";
       data.meta.teamAttrs=cloneAttrs(data.attrs);
@@ -6213,7 +6223,7 @@ function load(){
           선수 점수(`players[].levels`)의 옛 키도 그대로 둔다 — 새 키만 대응표 평균으로 채운다.
           되돌릴 일이 생기면 그 값이 필요하고, 지워서 얻는 것이 없다.
        ⚠ 한 번만 돈다(`evalStdForcedAt`). 매번 돌면 코치가 고친 것을 되돌려 버린다. */
-    try{ if(window.PS_EVAL_STD&&data.meta.evalMode!=="fifa"){
+    try{ if(window.PS_EVAL_STD&&data.meta.evalMode!=="fifa"&&!data.meta.evalStdForcedAt){
       setEvalMode("fifa");                                   /* 안에서 rememberTeamSet() 이 백업한다 */
       (data.players||[]).forEach(function(pl){ if(pl&&pl.levels){ var nl=PS_EVAL_STD.migrateLevels(pl.levels);
         Object.keys(nl).forEach(function(k){ if(pl.levels[k]==null)pl.levels[k]=nl[k]; }); } });
@@ -6221,6 +6231,9 @@ function load(){
         Object.keys(nt).forEach(function(k){ if(po.targets[k]==null)po.targets[k]=nt[k]; }); } });
       data.meta.evalStdForcedAt=Date.now(); if(!scoutReadOnlyLoad)store.set(KEY,data);
     } }catch(_){}
+    /* 2.908 — 2.407 전부터 표준(fifa)을 쓰던 팀은 표식이 없다. 표식을 남겨 두어, 나중에 모드가 빠진 문서(옛 판·복원)가 와도
+       위 강제 이관이 팀이 고친 평가표를 다시 덮지 않게 한다(다음 저장 때 함께 올라간다) */
+    try{ if(data.meta.evalMode==="fifa"&&!data.meta.evalStdForcedAt)data.meta.evalStdForcedAt=1; }catch(_){}
     /* 1.974 — 기본 평가표(evalMode fifa)를 쓰던 팀이 옛 44(b_*)를 들고 있으면 표준 v1 20항목으로 올린다.
        선수 점수는 옛 키를 그대로 두고(스냅샷·이력 보존) 새 키 초기값을 대응표 평균으로 채운다. 포지션 기준(targets)도 같은 방식.
        팀표(evalMode team)는 팀이 직접 만든 것이라 건드리지 않는다. */
@@ -6231,7 +6244,7 @@ function load(){
       data.meta.evalStdMigratedAt=Date.now(); if(!scoutReadOnlyLoad)store.set(KEY,data);
     } }catch(_){}
     /* 2.026 — 표준 항목이 늘면(20→24) 기본 평가표(fifa 모드) 팀에 빠진 항목을 채운다. 점수·기준은 건드리지 않는다 */
-    try{ if(window.PS_EVAL_STD&&data.meta.evalMode==="fifa"&&Array.isArray(data.attrs)){ var _have={}; data.attrs.forEach(function(a){ if(a&&a.id)_have[a.id]=1; }); var _add=PS_EVAL_STD.items.filter(function(it){return !_have[it.id];}); if(_add.length){ _add.forEach(function(it){ data.attrs.push({id:it.id,cat:it.cat,name:it.name,source:"process-fifa"}); }); if(!scoutReadOnlyLoad)store.set(KEY,data); } } }catch(_){}
+    try{ if(window.PS_EVAL_STD&&data.meta.evalMode==="fifa"&&Array.isArray(data.attrs)){ var _have={}; data.attrs.forEach(function(a){ if(a&&a.id)_have[a.id]=1; }); Object.keys(data.meta.removedStd||{}).forEach(function(id){ _have[id]=1; });   /* 2.908 — 팀이 지운 표준 항목은 채우지 않는다 */ var _add=PS_EVAL_STD.items.filter(function(it){return !_have[it.id];}); if(_add.length){ _add.forEach(function(it){ data.attrs.push({id:it.id,cat:it.cat,name:it.name,source:"process-fifa"}); }); if(!scoutReadOnlyLoad)store.set(KEY,data); } } }catch(_){}
   }
   else{
     data.attrs=fifaAttrs();
@@ -6639,7 +6652,8 @@ function rosterSaveMirrors(main){
     /* 2.215 — 선수→조 · 조 이름(공개): 선수 기기가 자기 조의 일정(grpWeeks)을 읽기 위해. 이름·평가는 안 넣는다 */
     grpBy:(function(){ var m={}; (main.players||[]).forEach(function(p){ if(p&&p.type!=="target"&&String(p.grp||"").trim())m[p.id]=String(p.grp).trim(); }); return m; })(),
     grpBase:(main.meta.grpBase||[]).slice(),
-    evalMode:main.meta.evalMode,setId:main.meta.activeEvalSetId
+    evalMode:main.meta.evalMode,setId:main.meta.activeEvalSetId,
+    removedStd:Object.keys(main.meta.removedStd||{})   /* 2.908 — 팀이 지운 표준 항목(IDP 가 채우지 않게) */
   }))accepted=false;}catch(e){teamSaves.track("cs_team_attrs_v1",Promise.reject(e));accepted=false;}
   try{
   const ours=main.players.filter(p2=>p2.type!=="target"&&String(p2.name||"").trim());
@@ -6768,8 +6782,9 @@ function __psShrinkImg(dataURL,maxSide,q,cb){try{const im=new Image();im.onload=
    ⚠ 표준 밖 항목(팀이 새로 만든 것)은 사전이 답을 못 한다 → 그때는 **숫자만**. 없는 말을 지어내지 않는다.
    ⚠ 앵커는 2~5 만 있다(1은 '아직'이라 관찰 문장이 없다) — 없으면 줄째로 비운다.
    ⚠ 저장 값(1~5)·저장 자리(pl.levels)는 **하나도 안 바뀐다** — 묻는 방식만 바꾼다. */
-function levelSelector(value,onPick,sid){
-  var cur=Math.min(5,Math.max(0,+value||0));
+function levelSelector(value,onPick,sid,self){
+  var cur=Math.min(5,Math.max(0,+value||0)), selfV=Math.min(5,Math.max(0,+self||0));
+  var selfLn=document.createElement("div");selfLn.className="pl-self";
   var wrap=document.createElement("div");wrap.className="pl-scale";
   wrap.setAttribute("role","radiogroup");
   var anch=document.createElement("div");anch.className="pl-anch";
@@ -6791,14 +6806,18 @@ function levelSelector(value,onPick,sid){
   })(i);}
   function paint(){
     btns.forEach(function(b,k){ var i=k+1;
-      b.className=(i===cur)?"on":((cur&&i<cur)?"lt":"");
+      b.className=((i===cur)?"on":((cur&&i<cur)?"lt":""))+(selfV&&i===selfV?" self":"");
       b.setAttribute("aria-checked",String(i===cur)); });
     paintAnch();
+    /* 2.908 — 선수 셀프 점수(보라 밑줄 + 한 줄). IDP 선수단 평가 카드와 같은 말: «선수 X · 코치와 N단계 차이» */
+    if(selfV){ var d=cur?Math.abs(cur-selfV):-1;
+      selfLn.innerHTML='선수 <b>'+esc(lab(selfV)||String(selfV))+'</b>'+(d<0?'':(d===0?' · 코치와 같음':' · 코치와 '+d+'단계 차이')); }
+    else selfLn.innerHTML="";
   }
   paint();
   /* 버튼줄과 문장줄은 **행의 형제**여야 한다(display:contents) — 감싸면 attr-row 의 flex 가 둘을 한 칸으로 본다 */
   var box=document.createElement("div");box.style.cssText="display:contents";
-  box.append(wrap,anch);
+  box.append(wrap,anch,selfLn);
   return box;
 }
 function attrsByCat(){const m={};data.attrs.forEach(a=>{(m[a.cat]=m[a.cat]||[]).push(a);});return m;}
@@ -6979,6 +6998,8 @@ function renderAttrs(){
         const del=document.createElement("button");del.className="ed-del";del.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';del.title="삭제";
         del.onclick=()=>{psConfirm(`"${a.name}" 속성을 삭제할까요? 포지션·선수 데이터에서도 제거됩니다.`,()=>{
           data.attrs=data.attrs.filter(x=>x.id!==a.id);
+          /* 2.908 — 표준 항목을 지웠으면 기억한다. 안 그러면 다음 불러오기(2.026 채우기)가 빈 점수로 되살렸다 */
+          try{ if(window.PS_EVAL_STD&&PS_EVAL_STD.items.some(function(it){return it.id===a.id;})){ data.meta.removedStd=data.meta.removedStd||{}; data.meta.removedStd[a.id]=Date.now(); } }catch(_){}
           data.positions.forEach(p=>delete p.targets[a.id]);
           data.players.forEach(p=>{if(p.levels)delete p.levels[a.id];});
           save();renderAttrs();});};
@@ -7447,7 +7468,7 @@ function renderPosEditor(){
 
 // ===================== 선수 =====================
 let editingPlayer=null;
-let plCoreOnly=true;
+let plCoreOnly=false;   /* 2.908 — 기본은 전체(요청 «선수단 프로필과 평가표가 잘 연동»). 옛 «핵심만» 목록은 옛 44항목 이름이라 표준 24에서 1~3개만 맞았다 */
 /* 선수 상태 — 오늘 누가 훈련 가능한지. 가이드 의미색(초록=완료·상승 / 빨강=경고 / 주황=강도 / 회색=휴식)에 맞춤 */
 const PL_STATUS=[{k:"ok",label:"훈련 가능",c:"#2E7D63"},{k:"injury",label:"부상",c:"#C24A46"},{k:"rehab",label:"회복 중",c:"#B5762B"},{k:"out",label:"불참",c:"#646A73"},{k:"rest",label:"휴식",c:"#8A9099"}];
 /* ══ 2.123 · 선수를 추가하면 점수를 전부 1(아직)로 깔아 둔다 ═══════════════════════
@@ -9257,6 +9278,9 @@ function openPlayer(id,opts){
   tgl.querySelectorAll('[data-m]').forEach(btn=>btn.onclick=()=>{ plCoreOnly = btn.dataset.m==='core'; openPlayer(pl.id); });
   const inSet = a => !(plCoreOnly && coreIds) || coreIds.indexOf(a.id)>=0;
   const byCat=attrsByCat();
+  /* 2.908 — 선수가 IDP 에서 매긴 셀프 점수를 같은 줄에(요청 «선수도 코치도 평가했을 때 두 개 다 보이게»). 코치 기기에만 있는 선수 문서를 읽기만 한다 */
+  let _selfLv=null; try{ const _lk=idpLinkForPlayer(pl); _selfLv=(_lk&&_lk.doc&&_lk.doc.selfEval&&_lk.doc.selfEval.levels)||null; }catch(_){}
+  const selfOf=id=>{ const v=_selfLv?+(_selfLv[id]||0):0; return v>0?v:0; };
   CATS.forEach(([cat,label])=>{
     const arr=(byCat[cat]||[]).filter(inSet); if(!arr.length)return;
     const cl=document.createElement("div");cl.className="catlabel";cl.textContent=label;box.appendChild(cl);
@@ -9264,9 +9288,9 @@ function openPlayer(id,opts){
       const row=document.createElement("div");row.className="attr-row";
       const nm=document.createElement("span");nm.className="attr-name";nm.textContent=a.name;
       /* 1.974 — 표준 항목이면 코치 관찰 문장을 라벨 아래 작게(무엇을 보고 매기는지) */
-      try{ var _st=stdAttr(a), _cs=(_st&&_st.coach)||"";   /* 2.126 — 팀 평가표에도 관찰 문장이 뜬다 */ if(_cs){ nm.classList.add("has-sent"); var _sd=document.createElement("small"); _sd.className="attr-sent"; _sd.textContent=_cs; nm.appendChild(_sd); } }catch(_){}
+      try{ var _cs=attrW(a)||attrQ(a)||"";   /* 2.126 — 팀 평가표에도 관찰 문장이 뜬다 · 2.908 — 평가표에서 팀이 고쳐 쓴 문장 그대로(attrW·attrQ) */ if(_cs){ nm.classList.add("has-sent"); var _sd=document.createElement("small"); _sd.className="attr-sent"; _sd.textContent=_cs; nm.appendChild(_sd); } }catch(_){}
       var _sid=a.id; try{ if(window.PS_EVAL_STD&&PS_EVAL_STD.resolveId)_sid=PS_EVAL_STD.resolveId(a.id,a.name)||a.id; }catch(_){}   /* 2.452 — 팀 항목이라도 이름이 표준과 같으면 표준 말을 빌린다(IDP 10902 와 같은 규칙) */
-      const sel=levelSelector(lvl(pl,a.id),v=>{pl.levels[a.id]=v;capturePlayerEval(pl);save();},_sid);
+      const sel=levelSelector((pl.levels||{})[a.id]||0,v=>{pl.levels[a.id]=v;capturePlayerEval(pl);save();},_sid,selfOf(a.id));   /* 2.908 — 안 매긴 칸은 빈 칸(옛 판은 3이 골라진 것처럼 보였다) */
       row.append(nm,sel);box.appendChild(row);
     });
   });
@@ -9280,7 +9304,7 @@ function openPlayer(id,opts){
         var row=document.createElement("div");row.className="attr-row";
         var nm=document.createElement("span");nm.className="attr-name has-sent";nm.textContent=it.name;
         var sd=document.createElement("small");sd.className="attr-sent";sd.textContent=it.coach;nm.appendChild(sd);
-        var sel=levelSelector(lvl(pl,it.id),function(v){pl.levels[it.id]=v;capturePlayerEval(pl);save();},it.id);   /* 2.452 — 포지션 문항은 id 가 곧 표준 id */
+        var sel=levelSelector((pl.levels||{})[it.id]||0,function(v){pl.levels[it.id]=v;capturePlayerEval(pl);save();},it.id,selfOf(it.id));   /* 2.452 — 포지션 문항은 id 가 곧 표준 id */
         row.append(nm,sel);box.appendChild(row);
       });
     } else if(!pl.posId){ var hint=document.createElement("div");hint.className="lvlmode-hint";hint.style.marginTop="8px";hint.textContent="주 포지션을 정하면 포지션별 문항 4개가 아래에 붙어요";box.appendChild(hint); }
@@ -9337,7 +9361,13 @@ function esPageHTML(pl, lang, pageLb){
     +order.map(c=>{var av=avgs.find(x=>x.c===c);
       return '<div class="es-card"><div class="es-ct">'+esc(c)+' <em'+(av&&av.n?' class="v"':'')+'>'+(av&&av.n?(Math.round(av.avg*10)/10).toFixed(1):'—')+'</em></div>'
       +groups[c].map(a=>'<div class="es-row"><span>'+esc(a.name)+'</span>'+dots(+lv[a.id]||0)+'</div>').join('')+'</div>';}).join('')
-    +'<div class="es-card"><div class="es-ct" style="color:#9aa0aa">memo</div>'+Array(11).fill('<div class="es-ml"></div>').join('')+'</div></div>';
+    /* 2.908 — 포지션 문항도 싣는다(프로필 평가 화면과 같은 목록). 문항이 있으면 손글씨 메모 칸 자리를 쓴다 — 한 장이 넘치지 않게 */
+    +(function(){ var pi=[],pg='',po=null; try{ if(window.PS_EVAL_STD&&PS_EVAL_STD.posItems){ po=(data.positions||[]).find(function(x){return x.id===pl.posId;}); pg=PS_EVAL_STD.posGroupOf(po?po.name:''); pi=pg?PS_EVAL_STD.posItems(pg):[]; } }catch(_){}
+      if(pi.length){ var sm=0,n=0; pi.forEach(function(it){ var v=+lv[it.id]||0; if(v){sm+=v;n++;} });
+        return '<div class="es-card"><div class="es-ct">'+esc('포지션 · '+(PS_EVAL_STD.posGroupName(pg)||''))+' <em'+(n?' class="v"':'')+'>'+(n?(Math.round(sm/n*10)/10).toFixed(1):'—')+'</em></div>'
+          +pi.map(function(it){ return '<div class="es-row"><span>'+esc(it.name)+'</span>'+dots(+lv[it.id]||0)+'</div>'; }).join('')+'</div>'; }
+      return '<div class="es-card"><div class="es-ct" style="color:#9aa0aa">memo</div>'+Array(11).fill('<div class="es-ml"></div>').join('')+'</div>'; })()
+    +'</div>';
   return '<div class="es-wrap">'+side+main+'</div>'
     +'<div class="es-ft"><span><b>PRO</b>FILE · '+LB.evalTitle+'</span><span>'+(pageLb?pageLb+' · ':'')+today+'</span></div>';
 }
@@ -9448,8 +9478,8 @@ const POS_CORE_NAMES={
  RW:['스피드','가속','민첩성','1대1 돌파','크로스','박스 안 마무리','퍼스트 터치','볼 컨트롤','오프 더 볼','공격 전환','약발 사용','결정 자신감','반복 스프린트','용기/투지','자기 발전 의지'],
  CF:['박스 안 마무리','공격 헤더','중장거리 슈팅','1대1 돌파','오프 더 볼','퍼스트 터치','몸싸움','스피드','가속','점프','결정 자신감','침착함','압박','공격 전환','자기 발전 의지']
 };
-function presetCoreIds(name){ const ns=POS_CORE_NAMES[(name||'').trim().toUpperCase()]; if(!ns)return null; const ids=data.attrs.filter(a=>ns.indexOf(a.name)>=0).map(a=>a.id); return ids.length?ids:null; }
-function coreIdsFor(p){ if(!p)return null; if(Array.isArray(p.core))return p.core.filter(id=>attr(id)); return presetCoreIds(p.name); }
+function presetCoreIds(name){ const ns=POS_CORE_NAMES[(name||'').trim().toUpperCase()]; if(!ns)return null; const ids=data.attrs.filter(a=>ns.indexOf(a.name)>=0).map(a=>a.id); return ids.length>=4?ids:null; }   /* 2.908 — 서너 개도 안 맞으면 «핵심»이 아니다 */
+function coreIdsFor(p){ if(!p)return null; if(Array.isArray(p.core)){ const c=p.core.filter(id=>attr(id)); return c.length?c:null; } return presetCoreIds(p.name); }   /* 2.908 — 빈 목록이면 «핵심만»에 아무것도 안 뜨던 것 */
 function ensureCore(p){ if(!Array.isArray(p.core)){ p.core = coreIdsFor(p) || data.attrs.map(a=>a.id); } return p.core; }
 function isCore(p,aid){ const c=coreIdsFor(p); return c? c.indexOf(aid)>=0 : true; }
 function toggleCore(p,aid){ const c=ensureCore(p); const i=c.indexOf(aid); if(i>=0)c.splice(i,1); else c.push(aid); save(); }
@@ -11543,6 +11573,15 @@ function plsRender(){
       '<ol class="pls-goals">'+qg.slice(0,3).map(function(g){
         return '<li>'+esc(String(g.t))+(g.ifthen?'<small>'+esc(String(g.ifthen))+'</small>':'')+'</li>';
       }).join("")+'</ol>');
+  }
+  /* ── 루틴(2.908 — 요청 «선수가 루틴 썼을 때 코치에게 보이게») · 요일 기본 줄 + 그 요일 개인 훈련 ── */
+  var rtRows=[]; try{ var RDN=["월","화","수","목","금","토","일"];
+    for(var ri=0;ri<7;ri++){ var its=((((doc&&doc.rtDay)||{})[ri])||[]).map(function(r){ return ((String((r&&r.t)||"").trim())?String(r.t).trim()+" ":"")+String((r&&r.s)||"").trim(); }).filter(function(x){ return String(x).trim(); });
+      ((doc&&doc.trainings)||[]).forEach(function(t){ if(t&&(t.days||[]).indexOf(RDN[ri])>=0&&String(t.title||"").trim())its.push((t.time?String(t.time).trim()+" ":"")+String(t.title).trim()+" · 개인 훈련"); });
+      if(its.length)rtRows.push([RDN[ri],its.join(" · ")]); } }catch(_){}
+  if(rtRows.length){
+    h+=plsSection("루틴","선수가 짠 요일별 루틴"+((doc&&doc.rtAt)?" · "+plsWhen(doc.rtAt)+" 고침":""),
+      rtRows.map(function(r){ return '<div class="pls-lg"><em>'+esc(r[0])+'</em><p>'+esc(r[1])+'</p></div>'; }).join(""));
   }
   /* ── 주간 회고 ── */
   var wk=(doc&&doc.weekly)||{};
@@ -17834,6 +17873,9 @@ try{ window.addEventListener("message",function(e){
   var d=e.data||{}; if(!d||d.source!=="app"||!/^team(Eval|Prompt)/.test(String(d.type||"")))return;
   function reply(o){ try{ var t=e.source||window.parent; t.postMessage(Object.assign({source:"scout",requestId:d.requestId},o),"*"); }catch(_){} }
   if(d.type==="teamEvalList"){
+    /* 2.908 — 선수 역할에는 전 선수 점수·면담을 주지 않는다(요청 «선수한테는 코치의 평가표가 보이지 않게»).
+       지금은 선수 기기에 팀 문서가 없어 안전했지만, 선수에게 팀 권한이 생기면 그대로 샜다 */
+    try{ if(window.PSPerms&&PSPerms.role&&PSPerms.role()==="player"){ reply({type:"teamEvalListAck",ok:false,err:"player"}); return; } }catch(_){}
     try{
       reply({type:"teamEvalListAck",ok:true,editable:teEditable(),
         mode:evalMode(),setId:evalSetId(),
@@ -18205,7 +18247,7 @@ function ckSession(o){
   var isOff=!!(day&&(day.off||b.sched==="OFF"));
   var load=""; try{ load=teamSessionPlannedLoad(training,b)||""; }catch(_){}
   var DOW=["일","월","화","수","목","금","토"], when=(o===0)?"오늘":(DOW[date.getDay()]+" "+date.getDate()+"일");
-  var r={when:when,title:"",sub:"",blocks:[],kind:"none",time:(training&&training.time)||""};
+  var r={when:when,title:"",sub:"",blocks:[],kind:"none",time:(training&&training.time)||"",place:String((training&&training.place)||"").trim(),note:String((training&&training.note)||"").trim()};   /* 2.908 — 세션 장소·메모(일정 세션 채우기) */
   if(isMatch){ var tm=(day&&day.match)||{}, opp=tm.opponent||tm.opp||b.opp||ctx.opp||"상대 미정"; r.kind="m"; r.title="경기 · vs "+opp; r.sub="경기 계획과 출전 인원을 최종 확인"; r.time=tm.time||""; }
   else if(!isOff&&training){ r.kind="tr"; r.title=training.aims||training.title||"팀 훈련"; var mins=0; try{ mins=teamHomeMinutes(training)||0; }catch(_){}
     r.sub=[load?"강도 "+load:"",mins?"총 "+mins+"분":""].filter(Boolean).join(" · "); r.load=load; r.mins=mins;   /* 2.584 — 머리줄 알약용 */   /* 아래에서 블록으로 다시 센다 */
@@ -18602,7 +18644,7 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
        ⚠ 헤더의 것과 **같은 문장**을 쓴다 — 두 곳에 두더라도 말이 달라지면 그때부터 둘이 된다. */
     +'<div class="hero"><div class="k">'+ckEsc(ckCtx.today)
       +(o===0&&ckCtx.wx?' · '+ckEsc(String(ckCtx.wx).replace(/\s*·\s*/g,' ')):'')
-      +(o===0&&ckCtx.line?' · '+ckEsc(ckCtx.line):'')+'</div><h4>'+ckEsc(ss.title)+'</h4>'+(ss.kind==="tr"?'':'<div class="sub">'+ckEsc(ss.sub)+'</div>')+''   /* 2.584 — 훈련일의 강도·총분은 머리줄 알약으로 올라갔다 */   /* 2.267 — 날씨는 날짜 옆(사용자), 칩 줄에서 제거 */
+      +(o===0&&ckCtx.line?' · '+ckEsc(ckCtx.line):'')+'</div><h4>'+ckEsc(ss.title)+'</h4>'+(ss.kind==="tr"?'':'<div class="sub">'+ckEsc(ss.sub)+'</div>')+(ss.kind==="tr"&&ss.place?'<div class="sub ck-place">장소 · '+ckEsc(ss.place)+'</div>':'')+(ss.kind==="tr"&&ss.note?'<div class="sub ck-note">메모 · '+ckEsc(ss.note)+'</div>':'')+''   /* 2.584 — 훈련일의 강도·총분은 머리줄 알약으로 올라갔다 */   /* 2.267 — 날씨는 날짜 옆(사용자), 칩 줄에서 제거 */
     +'<div class="ctxchips">'+[ckCtx.md,ckCtx.week,'올해 '+ckCtx.yl+'일 남음'].filter(Boolean).map(function(x){return '<span>'+ckEsc(x)+'</span>';}).join('')+'</div></div><div class="bd" style="padding-top:4px">'
     /* 2.312 — 왼쪽 시간 열을 뺐다(사용자). 그리고 보관함에서 온 것은 **눌러서 바로 본다** */
     +(ss.blocks.length?ss.blocks.map(function(bl){ var op=bl.libId?(' data-ck="drill" data-lib="'+ckEsc(bl.libId)+'" role="button" tabindex="0"'):'';
@@ -18950,6 +18992,8 @@ function setView(v){
   var more=$("teamMore"),moreBtn=$("teamMoreBtn");
   if(more){more.classList.remove("open");if(moreBtn){moreBtn.setAttribute("aria-expanded","false");moreBtn.classList.toggle("on",["growth","report","positions","attrs","imgnote","gamemodel","terms"].indexOf(v)>=0);moreBtn.textContent="설정";}}
   try{ tmShareLine(); }catch(_){}   /* 2.353 — 화면을 바꿀 때마다 그 화면의 마지막 수정 줄을 다시 그린다 */
+  /* 2.908 — 화면 안 문(오늘 카드 «선수단 열기» 등)으로 옮겨도 셸 메뉴 불빛이 따라가게 */
+  try{ if(parent&&parent!==window)parent.postMessage({source:"scout",type:"teamViewNow",view:v},"*"); }catch(_){}
   if(v==="players")renderPlayers();
   if(v==="match"){renderMatch();syncMatchFromCloud();}
   if(v==="growth"){renderGrowth();syncGrowthFromCloud();}

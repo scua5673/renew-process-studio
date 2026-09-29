@@ -60,20 +60,22 @@ try{
       await page.locator('body.ps-team-open').waitFor();
       const width=await page.evaluate(()=>innerWidth);result.logicalWidth=width;
       assert.equal(await page.locator('html').getAttribute('data-ps-device'),spec.ipad?'ipad':'phone');
-      const direct=page.locator(width>600?'#teamNav [data-team-key="idp"]':'#teamBottom .tb-ipad-idp');
+      /* 2.908 — IDP 는 모든 기기에서 하단 탭 자리(오늘·경기·일정·선수단·IDP·더보기) */
+      const direct=page.locator(width>600?'#teamNav [data-team-key="idp"]':'#teamBottom [data-tb="idp"]');
       if(spec.ipad){
         await direct.waitFor({state:'visible'});
         const geometry=await direct.evaluate(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,width:innerWidth,hit:el.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2))};});
         assert.ok(geometry.hit&&geometry.left>=0&&geometry.right<=geometry.width,'IDP is visible and tappable without opening more');
         await direct.tap();result.cases.push('team-IDP-directly-visible-and-tappable');
         if(width<=600){
-          assert.equal(await page.locator('#teamBottom .tb-ipad-idp.on').count(),1);
+          assert.equal(await page.locator('#teamBottom [data-tb="idp"].on').count(),1);
           assert.equal(await page.locator('#teamBottom [data-tb="more"].on').count(),0);
         }
       }else{
-        assert.equal(await page.locator('#teamBottom button:visible').count(),6,'phone keeps its existing six tabs');
-        await page.locator('#teamBottom [data-tb="more"]').tap();await page.locator('#teamMoreSheet [data-tb="idp"]').tap();
-        result.cases.push('phone-existing-more-route-kept');
+        assert.equal(await page.locator('#teamBottom button:visible').count(),6,'phone keeps six tabs');
+        assert.deepEqual(await page.locator('#teamBottom button:visible').allTextContents(),['오늘','경기','일정','선수단','IDP','더보기'],'2.908 order');
+        await page.locator('#teamBottom [data-tb="idp"]').tap();
+        result.cases.push('phone-idp-direct');
       }
       const frame=await page.locator('#fIdp').elementHandle().then(e=>e.contentFrame());
       await frame.locator('body.idp-squad').waitFor({state:'visible'});
@@ -85,7 +87,7 @@ try{
       await page.evaluate(()=>{const p=JSON.parse(localStorage.getItem('cs_perms_v1'));p.members['11111111-1111-4111-8111-111111111111'].role='player';localStorage.setItem('cs_perms_v1',JSON.stringify(p));dispatchEvent(new CustomEvent('ps-sync-state'));});
       await page.locator('body.ps-player-idp-only').waitFor();
       assert.equal(await page.locator('#teamNav [data-team-key="idp"]').isVisible(),false,'actual player role keeps team IDP hidden');
-      assert.equal(await page.locator('#teamBottom .tb-ipad-idp').isVisible(),false,'iPad shortcut does not override player restriction');
+      assert.equal(await page.locator('#teamBottom [data-tb="idp"]').isVisible(),false,'bottom IDP shortcut does not override player restriction');
       await page.evaluate(()=>{const p=JSON.parse(localStorage.getItem('cs_perms_v1'));p.members['11111111-1111-4111-8111-111111111111'].role='staff';localStorage.setItem('cs_perms_v1',JSON.stringify(p));dispatchEvent(new CustomEvent('ps-auth-state'));});
       await page.waitForFunction(()=>!document.body.classList.contains('ps-player-idp-only'));
       await page.locator('#appSeg [data-team-hub]').tap();

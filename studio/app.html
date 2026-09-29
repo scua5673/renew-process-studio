@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.907"></script>
+<script src="autosave-status.js?v=2.908"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.907';</script>
+<script>window.PS_BUILD='2.908';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1332,31 +1332,32 @@ function psShowUpdBand(){
            «기준» 묶음은 없앴다(사용자 "플레이북과 기준을 합치자"): 게임모델·공용어는 플레이북 아래 서브탭(#teamSub)으로, 평가표는 선수 쪽(선수단 줄)으로.
            data-team-key 는 그대로(settings·terms·attrs·playbook) — 다른 코드가 이 키로 탭을 찾는다(teamKeyBtn 이 서브바까지 뒤진다). -->
       <!-- 2.698 — 줄 순서(사용자 "오늘, 일정, 출석, IDP, 선수단, 스카우팅, 평가표, 플레이북"): 경기는 말씀에 없었지만 시간 묶음이라 일정 옆에 그대로 뒀다. 2.581 의 시간→사람→책 틀은 유지. -->
+      <!-- 2.908 — 요청 «팀운영 메뉴를 오늘 · 경기 · 일정 · 선수단(선수단·스카우팅·가용인원) · IDP · 설정(평가표·플레이북)».
+           묶음 둘(data-tn-grp)은 누르면 첫 서브탭을 열고, 서브탭은 아래 #teamSub 줄에 묶음별로 선다.
+           게임모델·공용어도 설정 묶음 안에 둔다(빼면 게임모델을 고칠 길이 없어진다 — 플레이북 «게임모델 편집 →» 은 셸에서 숨는다).
+           data-team-key 는 그대로 — 다른 코드가 이 키로 탭을 찾는다(teamKeyBtn 이 서브바까지 뒤진다). -->
       <button data-team-key="today" data-app="scout" data-team-view="home">오늘</button>
-      <button data-team-key="training" data-app="process" data-process-mode="week">일정</button>
       <button data-team-key="match" data-app="scout" data-team-view="match">경기</button>
-      <button data-team-key="avail" data-app="scout" data-team-view="avail">가용인원</button>
+      <button data-team-key="training" data-app="process" data-process-mode="week">일정</button>
+      <button data-team-key="players" data-app="scout" data-team-view="team" data-tn-grp="squad">선수단</button>
       <button data-team-key="idp" data-app="idp" data-idp-squad="1">IDP</button>
-      <button data-team-key="players" data-app="scout" data-team-view="team">선수단</button>
-      <button data-team-key="scouting" data-app="scout" data-team-view="players">스카우팅</button>
-      <button data-team-key="attrs" data-app="scout" data-team-view="attrs">평가표</button>
-      <button data-team-key="playbook" data-app="playbook" data-tn-std="1">플레이북</button>
+      <button data-team-key="attrs" data-app="scout" data-team-view="attrs" data-tn-grp="setup">설정</button>
     </span>
   </nav>
   <!-- 2.171 — 서브탭은 팀 운영 메뉴 줄에 안 보이게(사용자). 메뉴 줄엔 '기준'만, 게임모델·평가표는 그 아래 페이지 서브헤더 -->
   <!-- 2.179 — 폰 하단 탭(콕핏 §05): 팀 안에서는 오늘·경기·일정·선수단·더보기. 더보기 = 스카우팅·IDP·기준 + 다른 앱 -->
   <nav class="team-bottom" id="teamBottom" aria-label="팀 하단 탭" hidden>
+    <!-- 2.908 — 위 줄과 같은 순서: 오늘 · 경기 · 일정 · 선수단 · IDP · 더보기(설정 묶음과 다른 앱). 스카우팅·가용인원은 선수단 서브탭 줄에 -->
     <button type="button" data-tb="today">오늘</button>
-    <button type="button" data-tb="training">일정</button><!-- 2.581 — 위 줄과 같은 순서(오늘·일정·경기) -->
     <button type="button" data-tb="match">경기</button>
-    <button type="button" data-tb="idp" class="tb-ipad-idp">IDP</button>
+    <button type="button" data-tb="training">일정</button>
     <button type="button" data-tb="players">선수단</button>
-    <button type="button" data-tb="scouting">스카우팅</button><!-- 2.240 사용자: 하단에 스카우팅, 더보기까지 6개 -->
+    <button type="button" data-tb="idp">IDP</button>
     <button type="button" data-tb="more">더보기</button>
   </nav>
   <div class="team-more" id="teamMoreSheet" hidden>
     <div class="tms-h"><b>더보기</b><button type="button" data-tb="close" aria-label="닫기">×</button></div>
-    <div class="tms-g"><i>팀</i><button type="button" data-tb="avail">가용인원</button><button type="button" data-tb="idp">IDP</button><button type="button" data-tb="attrs">평가표</button><button type="button" data-tb="playbook">플레이북</button></div><!-- 2.581 — 기준 → 평가표·플레이북(게임모델·공용어는 플레이북 서브탭) -->
+    <div class="tms-g"><i>설정</i><button type="button" data-tb="attrs">평가표</button><button type="button" data-tb="playbook">플레이북</button><button type="button" data-tb="settings">게임모델</button><button type="button" data-tb="terms">공용어</button></div><!-- 2.908 — 설정 묶음 -->
     <div class="tms-g"><i>앱</i><button type="button" data-tb-app="board">보드</button><button type="button" data-tb-app="design">보관함</button><button type="button" data-tb-app="idp">내 IDP</button><button type="button" data-tb-app="learning">학습</button><button type="button" data-tb-app="community">커뮤니티</button></div>
   </div>
   <style id="ps-2180-nav">/* 2.180 — 보관함 버튼 숨김(사용자: 훈련과 겹침). 보관함 화면은 '훈련' 버튼이 연다 */
@@ -1381,14 +1382,19 @@ function psShowUpdBand(){
     .team-more .tms-g{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line,#e6e8ee)}
     .team-more .tms-g i{font-style:normal;font-size:11px;color:var(--dim,#6f7580);width:28px}
     .team-more .tms-g button{border:1px solid var(--line,#e6e8ee);background:var(--surface);border-radius:999px;font:inherit;font-size:13px;font-weight:600;padding:6px 11px}
-    /* iPad 분할 창에서도 팀 IDP를 바로 연다. 폰의 기존 여섯 탭은 유지한다. */
-    html[data-ps-device="ipad"] body.ps-team-open:not(.ps-player-idp-only) .team-bottom{grid-template-columns:repeat(7,minmax(0,1fr))}
-    html[data-ps-device="ipad"] body.ps-team-open:not(.ps-player-idp-only) .team-bottom .tb-ipad-idp{display:block}
+    /* 2.908 — IDP 는 이제 모든 기기에서 하단 탭 자리(여섯 칸 그대로). 선수 계정에는 팀 IDP 를 보이지 않는다(옛 .tb-ipad-idp 규칙과 같은 제한) */
+    body.ps-player-idp-only .team-bottom [data-tb="idp"]{display:none!important}
   }
   </style>
-  <div class="tn-subbar" id="teamSub" hidden aria-label="플레이북 하위">
-    <!-- 2.209 — 묶음 이름 글자는 안 쓴다(탭 이름과 중복). 2.581 — «기준» 묶음 → «플레이북» 묶음: 플레이북 · 게임모델 · 공용어. 평가표는 선수단 줄로 -->
-    <span class="tn-sub">
+  <div class="tn-subbar" id="teamSub" hidden aria-label="팀 운영 하위">
+    <!-- 2.209 — 묶음 이름 글자는 안 쓴다(탭 이름과 중복). 2.908 — 묶음 둘: 선수단(선수단·스카우팅·가용인원) / 설정(평가표·플레이북·게임모델·공용어). 지금 묶음 줄만 보인다 -->
+    <span class="tn-sub" data-sub-grp="squad">
+      <button data-team-key="players" data-app="scout" data-team-view="team">선수단</button>
+      <button data-team-key="scouting" data-app="scout" data-team-view="players">스카우팅</button>
+      <button data-team-key="avail" data-app="scout" data-team-view="avail">가용인원</button>
+    </span>
+    <span class="tn-sub" data-sub-grp="setup">
+      <button data-team-key="attrs" data-app="scout" data-team-view="attrs">평가표</button>
       <button data-team-key="playbook" data-app="playbook">플레이북</button>
       <button data-team-key="settings" data-app="gamemodel">게임모델</button>
       <!-- 2.211 — 공용어: 기본 세트 불러오기 + 팀 용어 추가·수정은 terms.html 그대로 -->
@@ -1645,6 +1651,9 @@ function psShowUpdBand(){
     var teamNav=document.getElementById('teamNav');
     /* 2.581 — 팀 키로 버튼 찾기: 메뉴 줄에 없으면 서브바(#teamSub: 플레이북·게임모델·공용어)에서 */
     function teamKeyBtn(key){ var b=teamNav&&teamNav.querySelector('[data-team-key="'+key+'"]'); if(!b){ var s=document.getElementById('teamSub'); b=s&&s.querySelector('[data-team-key="'+key+'"]'); } return b||null; }
+    /* 2.908 — 팀 메뉴 묶음(선수단 · 설정). 키 → 묶음 */
+    var TEAM_GRP={squad:{players:1,scouting:1,avail:1},setup:{attrs:1,playbook:1,settings:1,terms:1}};
+    function teamGrpOf(k){ var g=''; Object.keys(TEAM_GRP).forEach(function(x){ if(TEAM_GRP[x][k])g=x; }); return g; }
     var currentTeamKey='';
     function syncGameModelShell(){
       try{fGameModel.contentWindow.postMessage({source:'app',type:'gameModelShell',context:currentTeamKey?'team':'vault'},location.origin);}
@@ -2070,8 +2079,9 @@ function psShowUpdBand(){
       if(teamNav)[].forEach.call(teamNav.querySelectorAll('button'),function(x){var on=x.dataset.teamKey===currentTeamKey;x.classList.toggle('on',on);if(on)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current');});
       try{ if(window.__teamBottomSync)window.__teamBottomSync(); }catch(_){}   /* 2.179 */
       /* 2.170 — '기준' 탭: settings(게임모델)·attrs(평가표) 둘 다 이 탭 안이다. 서브탭은 그 안에 있을 때만 보인다 */
-      try{ var _std=(currentTeamKey==='playbook'||currentTeamKey==='settings'||currentTeamKey==='terms');   /* 2.581 — 플레이북 묶음(플레이북·게임모델·공용어). 평가표(attrs)는 이제 제 탭 */ var _sb=teamNav&&teamNav.querySelector('[data-tn-std]'); if(_sb){ _sb.classList.toggle('on',_std); if(_std)_sb.setAttribute('aria-current','page'); }
-        var _sub=document.getElementById('teamSub'); if(_sub){ _sub.hidden=!_std; [].forEach.call(_sub.querySelectorAll('.tn-sub button'),function(x){ x.classList.toggle('on',x.dataset.teamKey===currentTeamKey); }); try{ var _gn=document.getElementById('psGmLearnNote'); if(_gn)_gn.hidden=(currentTeamKey!=='settings'); }catch(_){} try{ fGameModel&&fGameModel.contentWindow&&fGameModel.contentWindow.postMessage({type:'psTeamCtx',on:currentTeamKey==='settings'},'*'); }catch(_){}   /* 2.481 — iframe 이 미리 로드돼 부팅 1회 마커(827)가 늘 false 였다 — 셸이 밀어준다 */ } }catch(_){}   /* 2.480 — 안내는 게임모델 서브에서만 */
+      try{ var _grp=teamGrpOf(currentTeamKey), _std=!!_grp;   /* 2.908 — 묶음 둘(선수단·설정). 지금 키가 든 묶음 버튼을 켜고 그 묶음의 서브탭 줄만 보인다 */
+        if(teamNav)[].forEach.call(teamNav.querySelectorAll('[data-tn-grp]'),function(x){ var on=(x.dataset.tnGrp===_grp); x.classList.toggle('on',on); if(on)x.setAttribute('aria-current','page'); else x.removeAttribute('aria-current'); });
+        var _sub=document.getElementById('teamSub'); if(_sub){ _sub.hidden=!_std; [].forEach.call(_sub.querySelectorAll('.tn-sub[data-sub-grp]'),function(x){ x.style.display=(x.dataset.subGrp===_grp)?'':'none'; }); [].forEach.call(_sub.querySelectorAll('.tn-sub button'),function(x){ x.classList.toggle('on',x.dataset.teamKey===currentTeamKey); }); try{ var _gn=document.getElementById('psGmLearnNote'); if(_gn)_gn.hidden=(currentTeamKey!=='settings'); }catch(_){} try{ fGameModel&&fGameModel.contentWindow&&fGameModel.contentWindow.postMessage({type:'psTeamCtx',on:currentTeamKey==='settings'},'*'); }catch(_){}   /* 2.481 — iframe 이 미리 로드돼 부팅 1회 마커(827)가 늘 false 였다 — 셸이 밀어준다 */ } }catch(_){}   /* 2.480 — 안내는 게임모델 서브에서만 */
       /* 2.359 — 아래에서 display 를 바꾸기 **전에** 지금 보이는 프레임을 적어 둔다.
          작전판(board)과 보관함(design)은 같은 fBoard 를 쓰므로, 그대로 두면 이미 보이던 프레임에
          페이드를 opacity 0 부터 다시 재생해 '깜빡'인다. 아래 페이드 갈래에서 이 값을 쓴다. */
@@ -2218,9 +2228,8 @@ function psShowUpdBand(){
         if(b.dataset.tb==='close'){ sheet.hidden=true; return; }
         if(b.dataset.tb){ go(b.dataset.tb); return; }
         if(b.dataset.tbApp){ sheet.hidden=true; currentTeamKey=''; showApp(b.dataset.tbApp); } });
-      window.__teamBottomSync=function(){ var k=currentTeamKey||''; var moreKeys={avail:1,idp:1,settings:1,attrs:1,playbook:1,terms:1};   /* 2.576 · 2.581 공용어도 더보기 안 */   /* 2.240 — 스카우팅은 제 탭 */
-        var directIdp=tb.querySelector('.tb-ipad-idp');if(directIdp&&directIdp.offsetWidth>0)delete moreKeys.idp;
-        [].forEach.call(tb.querySelectorAll('button'),function(x){ var on=(x.dataset.tb===k)||(x.dataset.tb==='more'&&!!moreKeys[k]); x.classList.toggle('on',on); }); };
+      window.__teamBottomSync=function(){ var k=currentTeamKey||''; var g=teamGrpOf(k);   /* 2.908 — 선수단 묶음은 «선수단», 설정 묶음은 «더보기»가 켜진다 */
+        [].forEach.call(tb.querySelectorAll('button'),function(x){ var on=(x.dataset.tb===k)||(x.dataset.tb==='players'&&g==='squad')||(x.dataset.tb==='more'&&g==='setup'); x.classList.toggle('on',on); }); };
     })();
     if(teamNav)teamNav.addEventListener('click',function(e){
       var b=e.target.closest('button');if(!b)return;
@@ -2366,14 +2375,32 @@ function psShowUpdBand(){
         var ae=bd.activeElement;
         if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||ae.isContentEditable))return;
         /* 저장된 표에 있는 키일 때만 넘긴다 */
-        var m=null; try{ m=JSON.parse(bw.localStorage.getItem('cs_tool_shortcuts_v1')||'null'); }catch(_){}
+        /* 2.908 — 보드가 쓰는 표(기본값 + 저장값)를 그대로 읽는다. 옛 판은 저장값이 없을 때 도구 12개만 알아서
+           애니메이션 기본 키(P 재생·N 추가·U 갱신·, . 이전·다음·K 강조·J 잔상·O 시선)가 셸에서 안 먹었다 */
+        var m=null; try{ if(bw.__psToolKeys)m=bw.__psToolKeys(); }catch(_){}
+        if(!m||typeof m!=='object'){ try{ m=JSON.parse(bw.localStorage.getItem('cs_tool_shortcuts_v1')||'null'); }catch(_){} }
         if(!m||typeof m!=='object'){
-          m={move:'1',run:'2',pass:'3',dribble:'4',line:'5',dashline:'6',free:'7',rect:'8',rectline:'9',rectdash:'',text:'',eraser:'0'};
+          m={move:'1',run:'2',pass:'3',dribble:'4',line:'5',dashline:'6',free:'7',rect:'8',rectline:'9',rectdash:'',text:'',eraser:'0',animPlay:'p',animAdd:'n',animUpdate:'u',animPrev:',',animNext:'.',animHl:'k',tokTrail:'j',tokLook:'o'};
         }
         var lk=k.toLocaleLowerCase(), hit=Object.keys(m).some(function(x){ return m[x]===lk; });
         if(!hit)return;
         e.preventDefault();
         bw.dispatchEvent(new bw.KeyboardEvent('keydown',{key:k,bubbles:true}));
+      }catch(_){}
+    }); }catch(e){}
+    /* ══ 2.908 · ⌘Z / ⇧⌘Z / ⌘Y 도 셸에서 보드로(요청 «단축키 체크») ═════════════════════════════
+       보드 설정·사이드바를 누른 직후엔 포커스가 셸에 있어 되돌리기가 안 먹었다(2.552 와 같은 원인 — 한 글자 키만 넘기고 있었다).
+       작전판 화면일 때만, 입력칸이 아닐 때만 넘긴다(보관함 목록에서는 넘기지 않는다 — 보이지 않는 판을 되돌리지 않게). */
+    try{ window.addEventListener('keydown',function(e){
+      if(!(e.metaKey||e.ctrlKey)||e.altKey||e.isComposing)return;
+      var k=(e.key||'').toLowerCase(); if(k!=='z'&&k!=='y')return;
+      var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable))return;
+      if(fBoard.style.display==='none'||document.body.getAttribute('data-ps-app')!=='board')return;
+      if(document.activeElement===fBoard)return;
+      try{ var bw=fBoard.contentWindow, bd=fBoard.contentDocument; if(!bw||!bd)return;
+        var ae=bd.activeElement; if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||ae.isContentEditable))return;
+        e.preventDefault();
+        bw.dispatchEvent(new bw.KeyboardEvent('keydown',{key:e.key,metaKey:e.metaKey,ctrlKey:e.ctrlKey,shiftKey:e.shiftKey,bubbles:true}));
       }catch(_){}
     }); }catch(e){}
     var hb=document.getElementById('hintbar');if(hb)hb.textContent=hints.board;
@@ -2521,13 +2548,13 @@ function psShowUpdBand(){
       } else if(d.source==='board' && d.type==='capture'){
         var tgt = captureReq==='gamemodel'?fGameModel:(captureReq==='idp'?fIdp:(captureReq==='analysis'?fAnalysis:(captureReq==='playbook'?fPlaybook:fProcess)));
         try{ tgt.contentWindow.postMessage({type:'boardResult',thumb:d.thumb,snap:d.snap,name:d.name,minutes:d.minutes,frames:d.frames,gmPhases:d.gmPhases,focus:d.focus},'*'); }catch(_){}   /* 1.958 — 국면·초점도 릴레이 */
-        if(captureReq==='playbook'){ var _pbB=teamNav&&teamNav.querySelector('[data-team-key="playbook"]'); if(_pbB)openTeamButton(_pbB); else showApp('playbook'); }   /* 2.580 */
+        if(captureReq==='playbook'){ var _pbB=teamKeyBtn('playbook'); if(_pbB)openTeamButton(_pbB); else showApp('playbook'); }   /* 2.580 */
         else showApp(captureReq);
       } else if(d.source==='board' && d.type==='captureCancel'){
         if(captureReq==='gamemodel'){ try{ fGameModel.contentWindow.postMessage({type:'boardCancel'},'*'); }catch(_){} }
         else if(captureReq==='idp'){ try{ fIdp.contentWindow.postMessage({type:'boardCancel'},'*'); }catch(_){} }
         else if(captureReq==='analysis'){ try{ fAnalysis.contentWindow.postMessage({type:'boardCancel'},'*'); }catch(_){} }
-        else if(captureReq==='playbook'){ try{ fPlaybook.contentWindow.postMessage({type:'boardCancel'},'*'); }catch(_){} var _pbC=teamNav&&teamNav.querySelector('[data-team-key="playbook"]'); if(_pbC){ openTeamButton(_pbC); return; } }   /* 2.580 */
+        else if(captureReq==='playbook'){ try{ fPlaybook.contentWindow.postMessage({type:'boardCancel'},'*'); }catch(_){} var _pbC=teamKeyBtn('playbook'); if(_pbC){ openTeamButton(_pbC); return; } }   /* 2.580 */
         else { try{ fProcess.contentWindow.postMessage({type:'boardCancel'},'*'); }catch(_){} }
         showApp(captureReq);
 
@@ -2567,6 +2594,10 @@ function psShowUpdBand(){
           if(!ok&&bw.toast)bw.toast('"'+_src+'" 페이지를 찾지 못했어요 — 준비 장면의 페이지 이름을 확인해 주세요');
           else if(ok&&bw.toast)bw.toast('"'+_new+'" 리뷰 사본을 만들었어요');
         }catch(_){}},150);})(d.sourceName,d.newName);
+      } else if(d.source==='scout' && d.type==='teamViewNow'){
+        /* 2.908 — scout 안의 문으로 화면이 바뀌면 메뉴 불빛만 따라간다(프레임·보기는 이미 그 자리) */
+        var _vk={home:'today',match:'match',team:'players',players:'scouting',avail:'avail',attrs:'attrs'}[d.view];
+        if(_vk&&currentTeamKey&&_vk!==currentTeamKey&&document.body.dataset.psApp==='scout'){ currentTeamKey=_vk; showApp('scout'); }
       } else if(d.source==='scout' && d.type==='openGameModel'){
         currentTeamKey='settings';          /* 1.572 — 게임모델은 설정 탭 안의 한 갈래다 */
         showApp('gamemodel');
@@ -2579,7 +2610,7 @@ function psShowUpdBand(){
       } else if(d.source==='idp' && d.type==='openTeamView'){
         /* 1.684 — IDP 한눈에(코치)에서 팀 평가표(평가 항목)로 — 팀마다 평가표가 다르니 만드는 곳으로 다리.
            scout이 아직 로딩 중이면 메시지가 유실되므로 sendTeamView처럼 load를 기다렸다 보낸다. */
-        if(d.view==='attrs') currentTeamKey='settings';
+        if(d.view==='attrs') currentTeamKey='attrs';   /* 2.908 — 옛 판은 'settings'(게임모델)로 켜 평가표를 보면서 게임모델 탭이 켜졌다 */
         showApp('scout');
         (function(_v){
           var open=function(){try{fScout.contentWindow.postMessage({type:'setView',view:_v},'*');}catch(_){}};
@@ -7510,13 +7541,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.907"></script>
-<script src="autosave-merge.js?v=2.907"></script>
-<script src="autosave-runtime.js?v=2.907"></script>
-<script src="autosave-recovery.js?v=2.907"></script>
-<script src="sync.js?v=2.907"></script>
+<script src="autosave-journal.js?v=2.908"></script>
+<script src="autosave-merge.js?v=2.908"></script>
+<script src="autosave-runtime.js?v=2.908"></script>
+<script src="autosave-recovery.js?v=2.908"></script>
+<script src="sync.js?v=2.908"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.907">
+<link rel="stylesheet" href="support.css?v=2.908">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
@@ -7598,7 +7629,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     +'body.ps-player-idp-only #teamNav button[data-team-key="training"]{display:inline-flex!important}'
     /* 1.572 — 스카우팅은 임원 전용. 편집 권한은 원래도 임원만이었지만(perms.js staffIds가 scout 제외)
        탭은 모두에게 보여서 코칭스태프가 후보 명단을 들여다볼 수 있었다. */
-    +'body.ps-no-scout #teamNav button[data-team-key="scouting"]{display:none!important}';
+    +'body.ps-no-scout #teamNav button[data-team-key="scouting"],body.ps-no-scout #teamSub button[data-team-key="scouting"]{display:none!important}';   /* 2.908 — 스카우팅은 선수단 서브탭 줄로 옮겼다 */
   (document.head||document.documentElement).appendChild(st);
   /* 2.044 — 선수 폰에서 '전체 일정 열기'로 팀 일정(process)을 열면 돌아올 길이 없었다 → 왼쪽 위 '‹ 내 IDP' 알약 */
   try{ if(!document.getElementById('psBackIdp')){ var bk=document.createElement('button'); bk.type='button'; bk.id='psBackIdp'; bk.textContent='‹ 내 IDP'; bk.setAttribute('style','display:none;position:fixed;left:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:900;align-items:center;height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line,#E3E6EA);background:var(--surface,#fff);color:#7C4DFF;font:800 13px/1 inherit;box-shadow:0 8px 24px -10px var(--sh35,rgba(16,24,40,.35));cursor:pointer'); bk.onclick=function(){ try{ currentTeamKey=''; showApp('idp'); }catch(_){ var b=document.querySelector('#appSeg button[data-app="idp"]'); if(b)b.click(); } }; document.body.appendChild(bk); } }catch(_){}
@@ -7619,7 +7650,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
       if(!hide)return;
       /* 이미 스카우팅 화면을 보고 있었다면 팀 첫 화면(오늘)으로 돌려보낸다 */
       try{
-        var cur=document.querySelector('#teamNav button[data-team-key="scouting"].on');
+        var cur=document.querySelector('#teamNav button[data-team-key="scouting"].on')||document.querySelector('#teamSub button[data-team-key="scouting"].on');   /* 2.908 — 스카우팅은 서브탭 줄에도 */
         if(cur){ var t=document.querySelector('#teamNav button[data-team-key="today"]'); if(t)t.click(); }
       }catch(_){}
     })();
