@@ -2305,6 +2305,8 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sqrep-act b{display:block;font-size:14px;font-weight:800;letter-spacing:-.01em}
   .sqrep-act span{display:block;font-size:11px;color:var(--text-2);font-weight:600;margin-top:2px}
   .sqrep-act .btn{margin-left:auto}
+  .sqrep-act .sqrep-btns{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}   /* 2.909 */
+  .sqrep-act .sqrep-btns .btn{margin-left:0}
   .sqrep-sec{border-radius:13px;background:var(--surface);box-shadow:var(--paper-shadow);padding:14px 16px 13px;margin-bottom:10px}
   .sqrep-sec>b{display:block;font-size:13px;font-weight:800;letter-spacing:-.01em;margin-bottom:9px}
   .sqrep-str{display:flex;gap:7px;flex-wrap:wrap}
@@ -3527,6 +3529,53 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   #report .rp2-thit b i{font-style:normal;font-weight:600;color:var(--g1);font-size:8pt;margin-left:1mm}
   #report .rp2-thit .bd{font-size:8.5pt;color:var(--g1);line-height:1.5;font-weight:600}
   #report .rp2-reply{margin-top:.8mm;padding-left:2mm;border-left:1pt solid var(--acc);font-size:8.5pt;color:var(--ink);font-weight:600}
+  /* 2.909 — 면담 자료: 코치용 표시 · 선수·학부모용 한 장(rpp-) */
+  #report .rp2-brand .rp2-coachonly{display:inline-block;font-style:normal;font-size:8pt;font-weight:800;color:#9A3A15;background:#FCEBDD;border-radius:99px;padding:.6mm 2.6mm;margin-bottom:1.2mm;letter-spacing:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #report .rpp{font-size:10pt}
+  #report .rpp-hd{display:flex;align-items:center;gap:5mm;border-bottom:1.6pt solid var(--ink);padding-bottom:3.2mm;margin-bottom:4mm}
+  #report .rpp-av{width:15mm;height:15mm;border-radius:50%;background:#EEE9FC;color:#6A45E0;display:flex;align-items:center;justify-content:center;font-size:17pt;font-weight:800;flex:0 0 auto}
+  #report .rpp-nm{font-size:21pt;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+  #report .rpp-sub{font-size:9pt;color:var(--g1);font-weight:600;margin-top:1mm}
+  #report .rpp-tag{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1.4mm}
+  #report .rpp-pill{font-size:8.5pt;font-weight:800;color:#5B3FD6;background:#EEE9FC;border-radius:99px;padding:.8mm 3mm}
+  #report .rpp-brand{font-size:7.5pt;letter-spacing:.14em;color:var(--g2);font-weight:800}
+  #report .rpp-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2.5mm;margin-bottom:3.2mm}
+  #report .rpp-facts>div{background:#F4F5F7;border-radius:2.5mm;padding:2.2mm 3mm;display:flex;flex-direction:column;gap:.6mm;min-width:0}
+  #report .rpp-facts i{font-style:normal;font-size:7.5pt;color:var(--g1);font-weight:700}
+  #report .rpp-facts b{font-size:10.5pt;font-weight:700;overflow-wrap:anywhere}
+  #report .rpp-box{border:.6pt solid #E3E6EA;border-radius:3mm;padding:3.2mm 3.8mm;margin-bottom:3mm;break-inside:avoid;page-break-inside:avoid;min-width:0}
+  #report .rpp-row{margin-bottom:0}
+  #report .rpp-row>.rpp-box{margin-bottom:3mm}
+  #report .rpp-h{display:flex;align-items:baseline;justify-content:space-between;gap:3mm;margin-bottom:2mm}
+  #report .rpp-h b{font-size:11pt;font-weight:800;letter-spacing:-.01em}
+  #report .rpp-h span{font-size:8.5pt;color:var(--g1);font-weight:500}
+  #report .rpp-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4mm}
+  #report .rpp-k{font-size:7.5pt;font-weight:700;color:var(--g1);margin:0 0 1mm}
+  #report .rpp-li{font-size:10pt;font-weight:500;line-height:1.5;overflow-wrap:anywhere}
+  #report .rpp-dim{color:var(--g2);font-size:9pt}
+  #report .rpp-g{display:flex;align-items:center;gap:3mm;padding:1.2mm 0}
+  #report .rpp-no{width:5.5mm;height:5.5mm;border-radius:50%;background:var(--ink);color:#fff;font-size:8pt;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  #report .rpp-gt{flex:1 1 auto;min-width:0}
+  #report .rpp-gt b{display:block;font-size:10pt;font-weight:700;overflow-wrap:anywhere}
+  #report .rpp-gt small{font-size:8pt;color:var(--g1);font-weight:500}
+  #report .rpp-gt small em{font-style:normal;font-weight:800;color:#5B3FD6}
+  #report .rpp-own{font-size:7.5pt;font-weight:700;color:var(--g1);background:#F1F3F5;border-radius:99px;padding:.2mm 2mm;margin-left:1.4mm;white-space:nowrap}
+  #report .rpp-wk{display:flex;gap:.8mm;flex:0 0 auto}
+  #report .rpp-wk i{width:3.4mm;height:3.4mm;border-radius:.7mm;box-sizing:border-box}
+  #report .rpp-wk i.fut{border:.5pt solid #E3E6EA}
+  #report .rpp-wk i.now{outline:.8pt solid var(--ink);outline-offset:.3mm}
+  #report .rpp-note{font-size:7.5pt;color:var(--g2);font-weight:500;margin-top:1.2mm}
+  #report .rpp-bar{display:flex;align-items:center;gap:2.5mm;padding:.9mm 0}
+  #report .rpp-bar>b{width:10mm;font-size:9pt;font-weight:700;flex:0 0 auto}
+  #report .rpp-bar>span{flex:1 1 auto;height:2mm;border-radius:99px;background:#F1F3F5;display:flex;overflow:hidden}
+  #report .rpp-bar>span>i{display:block;height:100%;border-radius:99px;background:#8A9099}
+  #report .rpp-bar>em{width:18mm;font-style:normal;font-size:8pt;color:var(--g1);font-weight:600;text-align:right;flex:0 0 auto}
+  #report .rpp-msg{font-size:9.5pt;line-height:1.6;font-weight:500;color:#2A2F36;margin-bottom:1.8mm;white-space:pre-wrap;overflow-wrap:anywhere}
+  #report .rpp-today{border:1.2pt dashed #C9CDD3;border-radius:3mm;padding:3.2mm 3.8mm;display:flex;flex-direction:column;gap:2mm;flex:1 1 auto;min-height:44mm;break-inside:avoid;page-break-inside:avoid}
+  #report .rpp-lines{flex:1 1 auto;min-height:24mm;background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(8mm - .6pt),#DDE1E5 calc(8mm - .6pt),#DDE1E5 8mm)}
+  #report .rpp-sign{display:grid;grid-template-columns:1fr 1fr;gap:4mm;font-size:8.5pt;color:var(--g1);font-weight:600}
+  #report .rpp-ft{display:flex;justify-content:space-between;gap:4mm;margin-top:3mm;padding-top:2.5mm;border-top:.5pt solid var(--g3);font-size:7.5pt;color:var(--g2);font-weight:600}
+  #report .rpp-av,#report .rpp-pill,#report .rpp-facts>div,#report .rpp-no,#report .rpp-wk i,#report .rpp-bar>span,#report .rpp-bar>span>i,#report .rpp-own,#report .rpp-lines{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   /* 꼬리 */
   #report .rp2-ft{display:flex;justify-content:space-between;margin-top:auto;padding-top:2.5mm;border-top:.5pt solid var(--g3);font-size:7pt;color:var(--g2);font-weight:600;letter-spacing:.02em}
   @media print{
@@ -9024,11 +9073,14 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var th=sqThreads(p), rvA=[]; try{ if(th.linked)rvA=rvList(PREFIX+th.uid); }catch(_){}
     var _nx=rvNextAt(rvA), _dd=rvDaysTo(_nx);
     var h='<div class="sqrep">';
-    h+='<div class="sqrep-act"><div><b>면담 자료 한 장</b><span>이 화면 그대로 A4 로 나갑니다 — 선수·학부모와 마주 앉을 때</span></div>'
+    /* 2.909 — 종이를 둘로(사용자 목업 승인): 선수·학부모에게 건네는 판에는 코치 점수·미달 항목이 없다.
+       화면(코치가 보는 이 탭)은 그대로 두고 **나가는 종이만** 가른다. */
+    h+='<div class="sqrep-act"><div><b>면담 자료 한 장</b><span>선수·학부모에게는 선수용을 — 코치 점수·미달 항목이 빠집니다</span></div>'
       +'<span class="sqrep-stats">'
       +((d.fit&&d.fit.req)?'<i class="ok">충족 '+d.fit.met+'</i><i class="no">미달 '+d.fit.short+'</i>':'')
       +(_dd!=null?'<i class="nx">다음 확인 D'+(_dd>=0?'-'+_dd:'+'+(-_dd))+'</i>':'')+'</span>'
-      +'<button type="button" class="btn primary" data-sqrep-print>PDF로 저장</button></div>';
+      +'<span class="sqrep-btns"><button type="button" class="btn" data-sqrep-print>코치용 PDF</button>'
+      +'<button type="button" class="btn primary" data-sqrep-print-pl>선수·학부모용 PDF</button></span></div>';
     h+='<div class="sqrep-body">';
     /* ══ 2.456 · 프로필 카드 — 이 종이가 **누구 것인지** ═══════════════════════════════
        사용자: "리포트에 프로필카드 넣어주고".
@@ -9121,7 +9173,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var h='<section class="rp2 rp2-page">'
       +'<header class="rp2-hd"><div><div class="rp2-name">'+esc2(p.name||'선수')+'</div><div class="rp2-meta">'+esc2(meta)+'</div>'
       +(_fx.length?'<div class="rp2-meta">'+esc2(_fx.join(' · '))+'</div>':'')+'</div>'
-      +'<div class="rp2-brand"><b>PLAYER REPORT</b><span>'+esc2(rpDate())+' · <i>PROCESS</i></span></div></header>';
+      +'<div class="rp2-brand"><em class="rp2-coachonly">코치용 · 선수에게 건네지 않음</em><b>PLAYER REPORT</b><span>'+esc2(rpDate())+' · <i>PROCESS</i></span></div></header>';
     /* 영역 요약 — 개수 그대로(평균 없음) */
     h+=rpSec('영역 요약','레이더 = 답한 항목만 평균 · 오른쪽 = 상태 개수');
     var _rows=sqRadarRows(p), _radar=sqChartRadar(_rows,{size:200});
@@ -9157,12 +9209,105 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         +(d.meet.nextPlan?'<div>다음 확인 — '+esc2(d.meet.nextPlan)+'</div>':'')+'</div>'
       :rpEmpty('면담 기록 없음');
     h+=rpFoot('','')+'</section>';
+    sqRepDoPrint(h,(p.name||'선수')+'_면담자료_코치용_'+ymd(new Date()));
+  }
+  function sqRepDoPrint(h,fname){
     document.getElementById('report').innerHTML=h;
     var ls=document.getElementById('rep-land'); if(ls)ls.remove();   /* 세로 A4 */
     document.body.classList.add('rep');
-    _repTitleSet('all',(p.name||'선수')+'_리포트_'+ymd(new Date()));
+    _repTitleSet('all',fname);
     setTimeout(function(){ try{window.print();}catch(_){}
       setTimeout(function(){ document.body.classList.remove('rep'); _repTitleRestore(); },800); },60);
+  }
+  /* ══ 2.909 · 면담 자료 — 선수·학부모용 한 장 ═══════════════════════════════════════
+     사용자 목업 승인(«추천 대로»). 코치 판(sqRepPrint)은 코치의 평가 점수·요구 대비 미달·레이더를 담는다 —
+     그 종이를 선수·학부모에게 건네면 앱이 선수에게 **안 보여 주기로 한 것**(코치 평가)이 종이로 새어 나간다.
+     이 판에 들어가는 것은 **이미 선수가 볼 수 있는 것**뿐이다:
+       · 신원(포지션·나이·키·주발·유형) · 코치 성장 리뷰(공개본 cs_idp_pub — 선수 화면에도 뜬다)의 강점·전한 말
+       · 선수가 고른 무기 · 선수의 12주 목표와 **선수가 스스로 매긴** 주간 단계 · 선수의 셀프 평가
+       · 지난 면담에서 **함께 정한 것**(합의 한 줄만 — 면담 기록의 나머지 칸은 코칭스태프 전용)
+     ⚠ 코치 점수(p.levels)·요구(req)·미달·적합 개수는 **읽지도 않는다**(sqRepData 를 쓰지 않는 이유 —
+       거기 강점 폴백이 «코치 평가 4단 이상»이다). 맨 아래 «오늘 함께 정한 것»은 펜으로 적는 칸. */
+  var RPP_WK=['#F1F3F5','#E9E4FB','#D6CBF8','#B39DF2','#8E6CEB','#6A45E0'];
+  function rppMD(v){ v=String(v||''); var m=v.match(/^(\d{4})-(\d{2})-(\d{2})/); return m?((+m[2])+'/'+(+m[3])):v; }
+  function sqRepPlayerHTML(p){
+    function e2(v){ return esc(v==null?'':String(v)); }
+    var th={linked:false,list:[]}; try{ th=sqThreads(p)||th; }catch(_){}
+    var d2=th.doc||null;
+    var pf=(p&&p.profile)||{}, sf=null; try{ sf=selfProfileOfPlayer(p&&p.id); }catch(_){}
+    var age=null; try{ age=sqpAgeOf(pf.dob||(sf&&sf.dob)||''); }catch(_){}
+    var team=''; try{ team=(teamWsObj()&&teamWsObj().name)||''; }catch(_){}
+    var arc=''; try{ var k=sqEvalArchOf(p); arc=(k&&PS_ARCH.get(k))?PS_ARCH.get(k).name:''; }catch(_){}
+    var posNm=''; try{ posNm=sqEvalPosName(p.posId)||''; }catch(_){}
+    var ht=String(pf.height||(sf&&sf.height)||'').trim();
+    var nm=String((p&&p.name)||'선수');
+    var h='<section class="rp2 rp2-page rpp">';
+    h+='<header class="rpp-hd"><div class="rpp-av">'+e2(nm.charAt(0))+'</div><div>'
+      +'<div class="rpp-nm">'+e2(nm)+'</div>'
+      +'<div class="rpp-sub">'+e2([team,'면담 자료',rpDate()].filter(Boolean).join(' · '))+'</div></div>'
+      +'<div class="rpp-tag"><span class="rpp-pill">선수 · 학부모용</span><span class="rpp-brand">PROCESS</span></div></header>';
+    var facts=[['포지션',[posNm,(p&&p.num)?p.num+'번':''].filter(Boolean).join(' · ')],['나이',age!=null?age+'세':''],
+      ['키 · 주발',[ht?ht+' cm':'',SQP_FOOT[p&&p.foot]||''].filter(Boolean).join(' · ')],['유형',arc]];
+    h+='<div class="rpp-facts">'+facts.map(function(f){ return '<div><i>'+e2(f[0])+'</i><b>'+e2(f[1]||'—')+'</b></div>'; }).join('')+'</div>';
+    /* 코치 성장 리뷰 — 공개본(선수 화면에도 이미 뜨는 것) */
+    var rvA=[]; try{ if(th.linked&&th.uid)rvA=rvList(PREFIX+th.uid)||[]; }catch(_){}
+    var rv=rvA.length?rvA[rvA.length-1]:null;
+    var rvS=((rv&&rv.strengths)||[]).map(function(x){ return String((x&&x.t)||x||'').trim(); }).filter(Boolean).slice(0,4);
+    var wp=[]; try{ wp=((d2&&d2.weapon&&d2.weapon.picks)||[]).map(function(x){ return String((x&&x.t)||'').trim(); }).filter(Boolean).slice(0,4); }catch(_){}
+    function lis(a,empty){ return a.length?a.map(function(t){ return '<div class="rpp-li">· '+e2(t)+'</div>'; }).join(''):'<div class="rpp-li rpp-dim">'+e2(empty)+'</div>'; }
+    h+='<div class="rpp-box"><div class="rpp-h"><b>잘하고 있는 것</b></div><div class="rpp-2">'
+      +'<div><div class="rpp-k">코치가 본 강점'+(rv&&rv.at?' · '+e2(rppMD(rv.at))+' 성장 리뷰':'')+'</div>'+lis(rvS,'아직 성장 리뷰 전이에요')+'</div>'
+      +'<div><div class="rpp-k">내가 고른 무기</div>'+lis(wp,d2?'아직 고르지 않았어요':'계정 연결 전이에요')+'</div></div></div>';
+    /* 12주 목표 — 선수가 스스로 매긴 주간 단계 */
+    var q=th.q||null, goals=(th.list||[]).slice(0,3);
+    var gh='';
+    if(q&&goals.length){
+      var st=null; try{ if(q.start)st=new Date(q.start+'T00:00:00'); }catch(_){}
+      var wkNow=ymd(mondayOf(new Date()));
+      var per=st?(rppMD(ymd(st))+' ~ '+rppMD(ymd(addDays(st,83)))+(th.wk?' · '+Math.min(th.wk,12)+'주째':'')):'';
+      gh+='<div class="rpp-h"><b>지금 키우는 것 · 12주</b>'+(per?'<span>'+e2(per)+'</span>':'')+'</div>';
+      goals.forEach(function(x,i){ var g=x.g||{}, sc=g.sc||{}, cur=Math.min(5,+(sc[wkNow]||0));
+        var own=g.owner==='coach'?'코치 제안':(g.owner==='both'?'코치와 함께':'');
+        var sq='';
+        if(st){ for(var w=0;w<12;w++){ var kk=ymd(addDays(st,w*7)), v=Math.min(5,+(sc[kk]||0)), fut=kk>wkNow;
+          sq+='<i class="'+(kk===wkNow?'now':'')+(fut?' fut':'')+'" style="background:'+(fut?'#fff':RPP_WK[v])+'"></i>'; } }
+        gh+='<div class="rpp-g"><span class="rpp-no">'+(i+1)+'</span><div class="rpp-gt"><b>'+e2(g.t)+(own?'<span class="rpp-own">'+own+'</span>':'')+'</b>'
+          +'<small>'+(cur?'이번 주 내가 매긴 단계 — <em>'+e2(SQ_SL5[cur])+'</em>':'이번 주는 아직 안 매겼어요')+'</small></div>'
+          +(sq?'<div class="rpp-wk">'+sq+'</div>':'')+'</div>'; });
+      gh+='<div class="rpp-note">칸 하나 = 한 주 · 선수가 스스로 매긴 단계(진할수록 높음)</div>';
+    } else {
+      gh+='<div class="rpp-h"><b>지금 키우는 것 · 12주</b></div>'
+        +'<div class="rpp-li rpp-dim">'+(th.linked?'아직 12주 목표가 없어요 — 오늘 함께 정해 봐요':'계정 연결 전이에요 — 연결하면 선수가 적은 12주 목표가 붙습니다')+'</div>';
+    }
+    h+='<div class="rpp-box">'+gh+'</div>';
+    /* 셀프 평가 — 선수 본인 점수만 */
+    var rows=[]; try{ rows=sqRadarRows(p)||[]; }catch(_){}
+    var selfRows=rows.filter(function(r){ return r.self!=null; });
+    var sh='<div class="rpp-h"><b>내가 매긴 나 · 셀프 평가</b></div>';
+    if(selfRows.length){ sh+=rows.map(function(r){ if(r.self==null)return '<div class="rpp-bar"><b>'+e2(r.lb)+'</b><span></span><em>안 매김</em></div>';
+        var lv=Math.max(1,Math.min(5,Math.round(r.self)));
+        return '<div class="rpp-bar"><b>'+e2(r.lb)+'</b><span><i style="width:'+Math.round(r.self/5*100)+'%"></i></span><em>'+e2(SQ_SL5[lv])+'</em></div>'; }).join('');
+      sh+='<div class="rpp-note">선수 본인이 매긴 점수만 — 코치 점수는 이 종이에 없습니다</div>'; }
+    else sh+='<div class="rpp-li rpp-dim">'+(d2?'아직 셀프 평가 전이에요':'계정 연결 전이에요')+'</div>';
+    /* 코치가 전한 말 — 리뷰 공개본의 한마디 + 지난 면담의 합의 한 줄 */
+    var ch='<div class="rpp-h"><b>코치가 전한 말</b></div>', any=false;
+    var note=String((rv&&rv.note)||'').trim(), dev=((rv&&rv.develop)||[]).map(function(x){ return String((x&&x.t)||x||'').trim(); }).filter(Boolean).slice(0,3);
+    if(note||dev.length){ any=true;
+      ch+='<div class="rpp-k">'+e2([(rv.at?rppMD(rv.at)+' 성장 리뷰':'성장 리뷰'),(rv.by?rv.by:'')].filter(Boolean).join(' · '))+'</div>'
+        +(note?'<div class="rpp-msg">'+e2(note)+'</div>':'')
+        +(dev.length?'<div class="rpp-msg">다음에 키울 것 — '+e2(dev.join(' · '))+'</div>':''); }
+    var mt=null; try{ mt=sqMeetList(p)[0]||null; }catch(_){}
+    var agr=String((mt&&mt.agreement)||'').trim();
+    if(agr){ any=true; ch+='<div class="rpp-k">지난 면담에서 함께 정한 것'+(mt.at?' · '+e2(rppMD(mt.at)):'')+'</div><div class="rpp-msg">'+e2(agr)+'</div>'; }
+    if(!any)ch+='<div class="rpp-li rpp-dim">아직 전한 말이 없어요</div>';
+    h+='<div class="rpp-2 rpp-row"><div class="rpp-box">'+sh+'</div><div class="rpp-box">'+ch+'</div></div>';
+    h+='<div class="rpp-today"><div class="rpp-h"><b>오늘 함께 정한 것</b><span>다음 확인 ____월 ____일</span></div>'
+      +'<div class="rpp-lines"></div><div class="rpp-sign"><span>선수 ____________________</span><span>코치 ____________________</span></div></div>';
+    h+='<footer class="rpp-ft"><span>척도: 아직 → 훈련에서 → 경기에서 → 압박에서도 → 내 무기 · 이 종이에는 코치 평가 점수가 들어가지 않습니다</span><span>PROCESS · '+e2(rpDate())+'</span></footer>';
+    return h+'</section>';
+  }
+  function sqRepPrintPlayer(p){
+    sqRepDoPrint(sqRepPlayerHTML(p),(p.name||'선수')+'_면담자료_'+ymd(new Date()));
   }
   function sqMeetList(p){ return (p&&Array.isArray(p.meetings))?p.meetings:[]; }
   function rSqMeet(p,can){
@@ -9371,6 +9516,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       gToast(n?n+'명 «계속»으로':'남은 사람이 없어요'); render(); };
     var _rp=wrap.querySelector('[data-sqrep-print]'); if(_rp)_rp.onclick=function(){
       var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0]; if(p)try{ sqRepPrint(p); }catch(e){ gToast('리포트를 만들지 못했어요'); try{console.warn('sqRep',e);}catch(_){}} };
+    var _rpp=wrap.querySelector('[data-sqrep-print-pl]'); if(_rpp)_rpp.onclick=function(){   /* 2.909 — 선수·학부모용 */
+      var p=sqEvalPlayers().filter(function(x){return x.id===sqEvalSel;})[0]; if(p)try{ sqRepPrintPlayer(p); }catch(e){ gToast('선수용 면담 자료를 만들지 못했어요'); try{console.warn('sqRepPl',e);}catch(_){}} };
     /* 2.155 — 선수 띠 실제 높이를 재서 모드 탭 sticky top 으로 넘긴다(고정값이면 이름 줄바꿈에 겹친다) */
     try{ var _sb=wrap.querySelector('.sqb-card>.sqb'); if(_sb&&_sb.parentNode)_sb.parentNode.style.setProperty('--sqbH',_sb.offsetHeight+'px'); }catch(_){}
     /* 2.423 — 선수가 적은 것: 갈래 거르개 · 긴 답 펼치기 */
