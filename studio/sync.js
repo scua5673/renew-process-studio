@@ -7373,6 +7373,11 @@ function syncNowCore(reason){
           /* 1.621 — 담당 배정도 운영진만. 담당자가 스스로를 다른 경기에 배정할 수 있으면
              '자료마다 주인 한 명'이 무너진다 — 그래서 경기 문서와 갈라 놓은 것이다. */
           if(k==='cs_assign_v1')return false;
+          /* 2.912 — 코치 피드백(cs_idp_pub_v1_<uid>: 리뷰·♥·코치 목표·경기 전달사항)은 팀 자료 편집권이 아니라
+             **IDP 열람 규칙**으로 쓴다: 선수가 아니면 쓴다. 서버 RLS(kv_*_pub = ps_idp_can_view)와 쓰기 가드
+             (migrations/20260930_idp_pub_write — ps_can_write_key 첫머리)가 같은 판정이다. 예전엔 여기서 'team' 구역으로
+             걸러 보기 전용 코칭스태프의 코치 목표·반응이 서버에 아예 안 올라갔다. */
+          if(isIdpPubKey(k))return role!=='player';
           var sc=keyScope(k); if(!sc)return true;
           if(scopes)return scopes.indexOf(sc)>=0;   /* 개별 지정이 먼저 — 잠금보다 앞선다 */
           /* 1.634 — 코칭스태프 기본은 **보기 전용**이다(사용자 확정: 임원이 전부 입력하고

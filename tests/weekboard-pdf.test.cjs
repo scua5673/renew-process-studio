@@ -30,7 +30,8 @@ function build(opt){
     wksTopicName:v=>String(v).slice(2),
     daysTopicCount:()=>({order:['회복','수비 조직'],b:{'회복':1,'수비 조직':1},colOf:{'회복':'#2E9D6A','수비 조직':'#3A6DF0'}}),
     weekDateLabel:()=>'9월 28일 – 10월 4일',pGrpTag:()=>opt.grp?' · '+opt.grp+' 일정':'',pFooter:()=>'<footer></footer>',
-    pNextMatch:()=>{throw new Error('주간 보드는 다음 경기를 묻지 않는다');}
+    pNextMatch:()=>{throw new Error('주간 보드는 다음 경기를 묻지 않는다');},
+    wkbdMatchPlace:(ymd,opp)=>(ymd==='2026-10-03'&&opp==='광주FC U15')?'원정 · 광주 월드컵 보조구장':''
   });
   vm.runInContext([
     part('function psMin(','\n'),part('function psSesMin(','function trOwnerDay('),part('function trMinutes(','function endTime('),
@@ -71,7 +72,7 @@ test('old saved blocks, orphan chips and undecided days still print',()=>{
 test('match is a red block with opponent, time and kind; OFF is hatched; no red Sunday',()=>{
   const c=cols(build());
   assert.ok(c[5].includes('pwb-match grow')&&c[5].includes('경기 · 컵')&&c[5].includes('vs 광주FC U15')&&c[5].includes('<span>15:00</span>'));
-  assert.ok(c[5].includes('<span class="pwb-md m">MD</span>'));assert.equal(c[5].includes('pwb-fill'),false);
+  assert.ok(c[5].includes('<span class="pwb-md m">MD</span>'));assert.ok(c[5].includes('<em>원정 · 광주 월드컵 보조구장</em>'),'경기장·홈/원정(2.912)');assert.equal(c[5].includes('pwb-fill'),false);
   assert.ok(c[6].includes('<div class="pwb-off"><b>OFF</b>'));assert.equal(c[6].includes('pwb-h m'),false);
 });
 
