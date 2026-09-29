@@ -4,6 +4,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
 
 // Full application with isolated fake accounts and a per-workspace fixture server.
 // No provider login, production database, or user browser profile is contacted.
@@ -20,6 +21,7 @@ const WA='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',WB='bbbbbbbb-bbbb-4bbb-8bbb-bbbb
 const teams=[{id:WA,kind:'team',name:'가상 빨강 팀',role:'owner',owner_id:A},{id:WB,kind:'personal',name:'가상 파랑 공간',role:'owner',owner_id:A}];
 const bTeams=[{id:WC,kind:'personal',name:'가상 초록 계정',role:'owner',owner_id:B}];
 const players=(wid)=>[{id:wid+'-player',name:wid===WA?'가상 빨강 선수':wid===WB?'가상 파랑 선수':'가상 초록 선수',grp:'A',type:'ours',posId:'pos_CB',levels:{},profile:{}}];
+let navAborts=null;const errorAt=[];
 const db=new Map(),writes=[],errors=[],results=[],calls=[],diagnostics=[],unauthorized=[],telemetry=[];
 // All authenticated API calls use real loopback HTTP. On Linux, WebKit can
 // report intercepted fetch cancellation during navigation as a native CORS
@@ -138,7 +140,8 @@ try{
     }
 
   });
-  page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>{errors.push(e.message);diagnostics.push({at:Date.now(),type:'pageerror',text:e.message,stack:e.stack});});
+  page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>{errors.push(e.message);errorAt.push(Date.now());diagnostics.push({at:Date.now(),type:'pageerror',text:e.message,stack:e.stack});});
+  navAborts=trackNavigationAborts(page,null);   /* 2.912 */
   page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')diagnostics.push({at:Date.now(),type:m.type(),text:m.text()});});
   async function ready(wid,uid){
     await bounded(page.waitForFunction(({wid,uid})=>window.PSSync&&PSSync.dataUnlocked()&&PSSync.activeWs()===wid&&PSSync.session()?.uid===uid&&PSSync.rosterReady(wid),{wid,uid}),'account ready '+wid,35000);
@@ -222,7 +225,8 @@ try{
   }
   assert.ok(reports.length>0,'background reports reached the authenticated loopback server');
   assert.deepEqual(unauthorized,[],'all data and auth requests use an exact known synthetic bearer');
-  assert.deepEqual(errors.filter(e=>!e.startsWith('ResizeObserver loop')),[]);
+  /* 2.912 — 새로고침이 끊은 요청의 WebKit 흔적(navigation-abort.mjs 조건 셋)만 뺀다. 진짜 CORS 거부·다른 오류는 그대로 실패 */
+  assert.deepEqual(errors.filter((e,i)=>!e.startsWith('ResizeObserver loop')&&!navAborts.isAbort(e,errorAt[i])),[]);
   // A failed book asset must expose recovery without discarding saved progress.
   const learning=await context.newPage(),learningErrors=[];
   learning.on('pageerror',e=>learningErrors.push(e.message));

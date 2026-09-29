@@ -93,11 +93,14 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
           for(let i=1;i<=120;i++)fire('pointermove',x+i/4,y+i/6);
           const stage=document.getElementById('boardStage'),stageTransform=stage.style.transform;
           if(finish==='frame-layout')stage.style.transform='translateX(6px)';
-          if(finish.startsWith('frame'))await new Promise(requestAnimationFrame);
+          /* 2.912 — CI 한 번(9/29 chromium board)에 rAF 대기가 «promise was garbage collected» 로 끝났다. 원인 미확정 —
+             대기를 타이머가 붙잡게 해 5초 안에 프레임이 안 오면 그 사실을 말하고 실패한다(가리지 않는다) */
+          const nextFrame=label=>new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error('requestAnimationFrame did not fire within 5s ('+label+', visibility='+document.visibilityState+')')),5000);requestAnimationFrame(()=>{clearTimeout(t);res();});});
+          if(finish.startsWith('frame'))await nextFrame('before-end');
           // A release/cancel in the same task must flush the latest sample before undo/save.
           const beforeEnd={transforms,solves,reads};fire(finish==='cancel'?'pointercancel':'pointerup',x+30,y+20);
           const afterEnd=transforms;
-          await new Promise(requestAnimationFrame);
+          await nextFrame('after-end');
           const a=samples[0],z=samples.at(-1),expected={x:start.x+z.x-a.x,y:start.y+z.y-a.y};
           const result={moves:120,beforeEnd,transforms,solves,reads,ctmReads,afterEnd,expected,samples,lastInput:{x:x+30,y:y+20},actual:{x:p.x,y:p.y},undo:undoStack.length,sameFace:face===g.querySelector('.ps-depth-face'),sameMesh:mesh===g.querySelector('.ps-equipment-mesh'),dragging:document.body.classList.contains('token-drag')};
           clientToUnit=toUnitOriginal;drawLayer.getScreenCTM=ctm;stage.style.transform=stageTransform;

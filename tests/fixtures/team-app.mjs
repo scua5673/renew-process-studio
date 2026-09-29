@@ -3,6 +3,7 @@ import http from 'node:http';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {trackNavigationAborts} from './navigation-abort.mjs';
 
 // Synthetic team app fixture for browser regressions (ported from the 2026-09-27 walkthrough). Synthetic team workspace, loopback
 // Supabase-shaped API, every external request and websocket blocked. Never touches production.
@@ -130,7 +131,8 @@ export async function openApp(fx,sizeName,{dark=false,browsers={}}={}){
   const logs=[];
   const tag=()=>fx.curStep||'';
   page.on('console',m=>{const t=m.type();if(t==='error'||t==='warning'||/PSSync|\[ps/i.test(m.text()))logs.push({step:tag(),type:t,text:m.text().slice(0,500),url:(m.location()||{}).url?.replace(base,'')});});
-  page.on('pageerror',e=>logs.push({step:tag(),type:'pageerror',text:String(e.message).slice(0,500),stack:String(e.stack||'').slice(0,400)}));
+  page.on('pageerror',e=>{logs.push({step:tag(),type:'pageerror',at:Date.now(),text:String(e.message).slice(0,500),stack:String(e.stack||'').slice(0,400)});navAborts.reclassify();});
+  const navAborts=trackNavigationAborts(page,logs);   /* 2.912 — 이동이 끊은 fetch 의 WebKit 흔적은 'pageerror-navabort' 로 */
   page.on('dialog',d=>{logs.push({step:tag(),type:'dialog',text:d.type()+': '+d.message().slice(0,300)});(d.type()==='beforeunload'?d.accept():d.dismiss()).catch(()=>{});});
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
   await ready(page);
