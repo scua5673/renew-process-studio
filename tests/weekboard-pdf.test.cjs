@@ -21,7 +21,7 @@ function build(opt){
     {d:'일',md:'MD+1',off:true,trainings:[],board:{sched:'OFF'}},
   ];
   const c=vm.createContext({
-    week:W,wk:0,__schedGrp:opt.grp||'',LEGACY_LOAD:{},recomputeMD:()=>{},schedViewDay:d=>d,
+    week:W,wk:0,__pBlank:false,__schedGrp:opt.grp||'',LEGACY_LOAD:{},recomputeMD:()=>{},schedViewDay:d=>d,
     teamGet:()=>({name:'FC 예시 U15'}),__psImgSrc:x=>x,
     wkbdEsc:s=>String(s==null?'':s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x])),
     dayBoard:d=>d.board||{},dateOf:n=>new Date(2026,8,28+n),
@@ -89,6 +89,22 @@ test('group view drops the group label from each session and tags the header',()
 
 test('print document refits the block scale before the zoom safety net',()=>{
   const src=part('function __buildPrintDoc(','/* ---------- 출력 미리보기 모달');
-  assert.ok(src.includes("const fitJs=(kind==='weekboard')"));
+  assert.ok(src.includes("const fitJs=(cls==='weekboard'&&!blank)"));
   assert.ok(src.indexOf("'<script>'+fitJs")<src.indexOf("'<script>'+zoomJs"),'블록 배율 맞춤이 zoom 보다 먼저');
+});
+
+test('list-view weekly PDF and the blank weekly form use the same block layout',()=>{
+  const src=part('function __buildPrintDoc(','/* ---------- 출력 미리보기 모달');
+  assert.ok(src.includes("else { html=weekBoardDocHTML(); fname='process_주간'; cls='weekboard'; }"));
+  assert.equal(S.includes('function scheduleDocHTML('),false,'옛 목록형 주간 PDF 는 없다');
+});
+
+test('blank weekly form: seven ruled columns, no data read, no MD recompute',()=>{
+  const c=vm.createContext({__pBlank:true,pFooter:()=>'<footer></footer>',
+    recomputeMD:()=>{throw new Error('빈 양식은 상태를 건드리지 않는다');},get week(){throw new Error('빈 양식은 일정을 읽지 않는다');}});
+  vm.runInContext(part('function weekBoardBlankHTML(','/* ══ 2.910 · 주간 보드 PDF')+part('function weekBoardDocHTML(){','\n  try{recomputeMD();}catch(_){}')+'}',c);
+  const h=c.weekBoardDocHTML();
+  assert.equal((h.match(/class="pwb-col"/g)||[]).length,7);assert.equal((h.match(/class="pwb-fill"/g)||[]).length,7);
+  for(const w of ['월','화','수','목','금','토','일'])assert.ok(h.includes('<b>'+w+'</b>'));
+  assert.ok(h.includes('____월 ____주'));assert.equal(h.includes('pwb-b'),false);assert.equal(h.includes('다음 경기'),false);
 });
