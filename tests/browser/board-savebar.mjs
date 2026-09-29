@@ -16,10 +16,10 @@ try{
     return {shown:getComputedStyle(b).display!=='none',top:r.top,text:b.querySelector('.sb-tx').textContent,manual:d('boardManualSave'),vault:d('vaultSave'),
       label:(document.getElementById('boardManualSave')||{}).textContent};});
   const fresh=await st();
-  assert.equal(fresh.label,'저장','손대지 않은 보드는 «변경됨»이 아니다');
+  assert.equal(fresh.label,'보드 저장','손대지 않은 보드는 «변경됨»이 아니다 (2.907 — «저장» → «보드 저장»)');
   await f.evaluate(()=>{pushUndo();state.players.push({id:'sb1',team:'red',num:'9',x:400,y:300});renderTokens();});
   const edited=await st();
-  assert.equal(edited.label,'저장 · 변경됨','손대면 «변경됨»');
+  assert.equal(edited.label,'보드 저장 ●','손대면 변경 점');
   if(size==='desktop'){
     assert.equal(fresh.shown,false,'데스크톱에는 띠가 없다');
     assert.notEqual(fresh.manual,'none');assert.notEqual(fresh.vault,'none');

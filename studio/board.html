@@ -7505,7 +7505,7 @@ function boardSchedulePreview(){
 function boardManualChanged(){ if(!_boardManualDirty)_boardUserTouched=false; return !!(_boardManualDirty&&_boardUserTouched); }
 function boardManualStatus(){
   var _chg=boardManualChanged(); try{ if(typeof window.__psSaveBarSync==='function')window.__psSaveBarSync(_chg); }catch(_){}
-  try{var b=document.getElementById('boardManualSave');if(b){b.textContent=_boardManualSaving?'저장 중…':(_chg?'저장 · 변경됨':'저장');b.disabled=_boardManualSaving;b.title='현재 보드를 저장합니다';}}catch(_){}
+  try{var b=document.getElementById('boardManualSave');if(b){/* 2.907 — «보드 저장»: 보관함의 «저장하기»와 이름이 같아 보관함에 들어간 줄 알았다(오류 제보). 바뀐 표시는 점 하나 — 768px 띠에 «· 변경됨»까지 들어가지 않는다. */b.textContent=_boardManualSaving?'저장 중…':(_chg?'보드 저장 ●':'보드 저장');b.disabled=_boardManualSaving;b.title=(_chg?'저장하지 않은 변경이 있어요 — ':'')+'작업 보드를 저장합니다. 보관함 항목은 «보관함 저장»으로 넣어요';b.setAttribute('aria-label',_chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장');}}catch(_){}
 }
 async function boardSaveExplicit(){
   if((_boardManualSaving&&boardPrivateCurrent(_boardManualSaving))||_vaultBoardContext||window.__vaultEdit)return false;
@@ -7517,7 +7517,7 @@ async function boardSaveExplicit(){
     var ok=await _boardLiveWriteNow(false);
     if(boardPrivateCurrent(owner)&&seq===_boardPrivateEditSeq){
       var durable=_boardPrivateRecord&&_boardPrivateDurableToken===_boardPrivateRecord.token;
-      if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;if(!ok)toast("이 기기에 저장됨 · 서버 저장은 아직 완료되지 않았습니다");}
+      if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;if(!ok)toast("이 기기에 저장됨 · 서버 저장은 아직 완료되지 않았습니다");else toast("보드에 저장됨 ✓ · 보관함에는 «보관함 저장»으로 넣어요");}
     }
     return !!ok;
   }finally{if(_boardManualSaving===owner)_boardManualSaving=false;boardManualStatus();}
@@ -14546,7 +14546,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(_nvt==="board"){try{parent.postMessage({source:'board',type:'vaultViewTab'},'*');}catch(_){}}   // 빈 작전판을 작전판 탭에 바로 표시(작업 보드 복원 안 함)
     try{toast(type==="meeting"?"빈 미팅 노트 — 슬라이드를 추가하세요":"배치를 그린 뒤 상단 ‘저장’을 누르세요");}catch(_){}
   }
-  function openSaveSheet(defName, defFolder, defTags, cb){
+  function openSaveSheet(defName, defFolder, defTags, cb, opts){
+    /* 2.907 — opts.board: 작업 보드에서 연 확인창(목록으로 가지 않는다) · opts.linked{name}: 이 보드가 전에 저장된 보관함 항목.
+       덮어쓰기는 고르는 사람만 — 기본(Enter)은 새 항목이다. */
+    opts=opts||{};
     try{var ex=document.getElementById('psSaveOv');if(ex)ex.remove();}catch(_){}
     var ov=document.createElement('div');ov.id='psSaveOv';
     ov.style.cssText='position:fixed;inset:0;z-index:700;background:rgba(8,12,18,.52);display:flex;align-items:center;justify-content:center;padding:18px;';
@@ -14556,11 +14559,12 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var lst='display:block;font-size:12px;font-weight:600;color:#8A9099;margin:0 0 5px;';
     var folders=[];try{folders=(vaultFolders||[]).slice().sort();}catch(_){}
     var fopts='<option value="">루트 (폴더 없음)</option>'+folders.map(function(f){return '<option value="'+esc(f)+'"'+(f===defFolder?' selected':'')+'>'+esc(f)+'</option>';}).join('')+'<option value="__new">＋ 새 폴더…</option>';
-    card.innerHTML='<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px"><div><div style="font-size:16px;font-weight:800;margin-bottom:3px">저장 정보 확인</div><div style="font-size:11px;line-height:1.45;color:#8A9099">이름과 위치를 확인하면 보관함에 저장되고 목록으로 돌아갑니다.</div></div><span style="margin-left:auto;flex:0 0 auto;font-size:11px;font-weight:800;color:#3a6df0;background:rgba(58,109,240,.1);padding:4px 8px;border-radius:999px">2 / 3</span></div>'
+    card.innerHTML='<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px"><div><div style="font-size:16px;font-weight:800;margin-bottom:3px">저장 정보 확인</div><div style="font-size:11px;line-height:1.45;color:#8A9099">'+(opts.board?'이 보드를 보관함에 저장합니다 — 작업 보드는 그대로 남아요.':'이름과 위치를 확인하면 보관함에 저장되고 목록으로 돌아갑니다.')+'</div></div>'+(opts.board?'':'<span style="margin-left:auto;flex:0 0 auto;font-size:11px;font-weight:800;color:#3a6df0;background:rgba(58,109,240,.1);padding:4px 8px;border-radius:999px">2 / 3</span>')+'</div>'
       +'<label style="'+lst+'">이름</label><input id="pssName" type="text" maxlength="40" style="'+ist+'">'
       +'<label style="'+lst+'">폴더</label><select id="pssFolder" style="'+ist+'cursor:pointer;">'+fopts+'</select>'
       +'<label style="'+lst+'">태그 (쉼표로 구분)</label><input id="pssTags" type="text" placeholder="예: 빌드업, 4-3-3" style="'+ist+'"><div id="pssSugg" style="display:flex;flex-wrap:wrap;gap:5px;margin:-6px 0 12px"></div>'
-      +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px"><button id="pssCancel" style="padding:11px 18px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;border:1px solid var(--line,#d2d6dd);background:var(--panel2,#F1F2F4);color:inherit">계속 편집</button><button id="pssOk" style="padding:11px 22px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;border:0;background:#3a6df0;color:#fff">보관함에 저장</button></div>';
+      +(opts.linked?'<div id="pssLinked" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;background:var(--panel2,#F1F2F4);font-size:12px;line-height:1.45">이 보드는 보관함의 <b>‘'+esc(opts.linked.name)+'’</b>에 저장된 적이 있어요.<button id="pssOver" type="button" style="display:block;width:100%;box-sizing:border-box;margin-top:8px;padding:10px 12px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;border:1px solid #3a6df0;background:transparent;color:#3a6df0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">‘'+esc(opts.linked.name)+'’에 덮어쓰기</button></div>':'')
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px"><button id="pssCancel" style="padding:11px 18px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;border:1px solid var(--line,#d2d6dd);background:var(--panel2,#F1F2F4);color:inherit">계속 편집</button><button id="pssOk" style="padding:11px 22px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;border:0;background:#3a6df0;color:#fff">'+(opts.linked?'새 항목으로 저장':'보관함에 저장')+'</button></div>';
     ov.appendChild(card);document.body.appendChild(ov);
     var nm=card.querySelector('#pssName');nm.value=defName||'';
     var fl=card.querySelector('#pssFolder');
@@ -14571,6 +14575,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     function done(res){ try{ov.remove();}catch(_){} try{cb(res);}catch(_){} }
     card.querySelector('#pssCancel').onclick=function(e){e.stopPropagation();done(null);};
     card.querySelector('#pssOk').onclick=function(e){e.stopPropagation();var name=(nm.value||'').trim()||defName;var folder=(fl.value==='__new')?(_newFolder||''):fl.value;var tags=(tg.value||'').split(',').map(function(x){return x.trim();}).filter(Boolean);done({name:name,folder:folder,tags:tags});};
+    var _ob=card.querySelector('#pssOver');if(_ob)_ob.onclick=function(e){e.stopPropagation();done({overwrite:true});};
     ov.addEventListener('click',function(e){if(e.target===ov)done(null);});
     card.addEventListener('pointerdown',function(e){e.stopPropagation();});
     nm.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tg.focus();}});
@@ -14581,7 +14586,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   try{window.__vaultOpenSaveSheet=openSaveSheet;}catch(_){}
   function vaultSaveCurrent(_o){
     _o=_o||{};
-    function failed(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");if(_o.onerror)_o.onerror(e);}
+    /* 2.907 — 작업 보드에서는 _vaultAutoStatus 줄이 없어 실패가 말없이 사라졌다. 오류가 있을 때만 알린다(로그인 안내·권한 안내는 각자 말한다). */
+    function failToast(){if(!_o.silent&&!window.__vaultEdit)try{toast("보관함에 저장하지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){}}
+    function failed(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");if(e)failToast();if(_o.onerror)_o.onerror(e);}
     if(!psVaultRequireLogin()){failed();return Promise.resolve(false);}
     if(window.__vaultReadOnly){
       if(!_o.silent)try{toast("보기 전용입니다 — 편집하려면 보관함에서 ‘편집’ 또는 ‘복사’를 선택하세요");}catch(_){}
@@ -14603,13 +14610,32 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     }
     var pend=window.__vaultPending||{};
     var curId=window.__curVaultId||null;
+    var onBoard=!window.__vaultEdit;
+    /* 2.907 — 작업 보드(보관함 편집 밖)에서 한 번 «보관함 저장»하면 그 항목이 __curVaultId 로 남아,
+       다음 저장은 확인창 없이 그 항목을 덮어썼다(보드를 비우고 새 전술을 그려도). 새 항목은 영영 안 생기고 옛 항목은 사라졌다.
+       이제 작업 보드에서는 매번 확인창을 거치고, 덮어쓰기는 사람이 고를 때만. 보관함 편집(__vaultEdit)은 그대로 제 항목에 저장한다. */
+    if(curId && onBoard && !_o.skipSheet){
+      libGet().then(function(lib){
+        var it=null;for(var _q=0;_q<lib.length;_q++){if(lib[_q]&&lib[_q].libId===curId){it=lib[_q];break;}}
+        if(!it||!canEditItem(it)){it=null;window.__curVaultId=null;}
+        openSaveSheet(def,(pend.folder||(it&&it.folder)||curFolder()||""),[],function(res){
+          if(!res){ if(_o.oncancel)try{_o.oncancel();}catch(_){} return; }
+          if(res.overwrite&&it){ window.__curVaultId=it.libId; vaultSaveCurrent({skipSheet:true,after:_o.after,oncancel:_o.oncancel}); return; }
+          window.__curVaultId=null;
+          window.__vaultPending=window.__vaultPending||{};
+          window.__vaultPending.name=res.name; window.__vaultPending.folder=res.folder; window.__vaultPending.tags=res.tags;
+          vaultSaveCurrent({skipSheet:true,after:_o.after,oncancel:_o.oncancel});
+        },{board:true,linked:it?{name:it.name||typeLabel(type)}:null});
+      }).catch(failed);
+      return;
+    }
     if(!curId && !_o.skipSheet){
       openSaveSheet((pend.name||def),(pend.folder||curFolder()||""),(pend.tags||[]),function(res){
         if(!res){ if(_o.oncancel)try{_o.oncancel();}catch(_){} return; }
         window.__vaultPending=window.__vaultPending||{};
         window.__vaultPending.name=res.name; window.__vaultPending.folder=res.folder; window.__vaultPending.tags=res.tags;
         vaultSaveCurrent({skipSheet:true,after:_o.after,oncancel:_o.oncancel});
-      });
+      },{board:onBoard});
       return;
     }
     var folder=pend.folder||curFolder()||"";
@@ -14627,8 +14653,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       }   /* 팀: 남의 항목은 자동 저장·자동 복사 모두 금지. 복사는 사용자가 보관함에서 명시적으로 선택 */
       if(idx>=0){
         lib[idx].thumb=thumb; lib[idx].snap=snap; if(slides)lib[idx].slides=slides; if(frames)lib[idx].frames=frames; else delete lib[idx].frames; if(pages)lib[idx].pages=pages; else delete lib[idx].pages; lib[idx].savedAt=Date.now();
-        libSet(lib).then(function(){if(!_o.silent){try{toast(pages?("저장됨 ✓ · 페이지 "+pages.length+"개"):(frames?("저장됨 ✓ · 애니메이션 "+frames.length+"장면"):"저장됨 ✓"));}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
-          function(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");if(_o.onerror)try{_o.onerror(e);}catch(_){}});
+        var _upName=lib[idx].name||"";
+        libSet(lib).then(function(){if(!_o.silent){try{toast(onBoard&&_upName?("보관함 ‘"+_upName+"’에 덮어썼어요 ✓"):(pages?("저장됨 ✓ · 페이지 "+pages.length+"개"):(frames?("저장됨 ✓ · 애니메이션 "+frames.length+"장면"):"저장됨 ✓")));}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
+          function(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");failToast();if(_o.onerror)try{_o.onerror(e);}catch(_){}});
       } else {
         var name=(pend.name||def);
         var item={libId:"V"+Date.now().toString(36),type:type,name:((""+name).trim()||def),folder:folder,thumb:thumb,snap:snap,tags:(pend.tags||[]),savedAt:Date.now()};
@@ -14637,8 +14664,8 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         if(pages)item.pages=pages;
         stampCreator(item);
         lib.unshift(item); window.__curVaultId=item.libId; window.__vaultPending=null;
-        libSet(lib).then(function(){if(!_o.silent){try{toast("보관함에 저장됨 ✓");}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
-          function(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");if(_o.onerror)try{_o.onerror(e);}catch(_){}});
+        libSet(lib).then(function(){if(!_o.silent){try{toast(onBoard?("보관함에 저장됨 ✓ · ‘"+item.name+"’"):"보관함에 저장됨 ✓");}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
+          function(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");failToast();if(_o.onerror)try{_o.onerror(e);}catch(_){}});
       }
     }).catch(failed);
   }
@@ -18433,7 +18460,7 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
 (function(){ try{
   var bar=document.createElement("div"); bar.id="psSaveBar"; bar.setAttribute("role","group"); bar.setAttribute("aria-label","보드 저장");
   bar.innerHTML='<span class="sb-st" aria-live="polite"><span class="sb-dot" aria-hidden="true"></span><span class="sb-tx">저장됨</span></span>'
-    +'<button type="button" class="sb-form">배치</button><button type="button" class="sb-vault">보관함</button><button type="button" class="sb-save">저장</button>';
+    +'<button type="button" class="sb-form">배치</button><button type="button" class="sb-vault" title="보관함에 항목으로 저장">보관함</button><button type="button" class="sb-save" title="작업 보드를 저장">보드 저장</button>';
   document.body.appendChild(bar); document.body.classList.add("ps-savebar");
   var tx=bar.querySelector(".sb-tx"), bSave=bar.querySelector(".sb-save"), bVault=bar.querySelector(".sb-vault"), bForm=bar.querySelector(".sb-form");
   function ro(){ return !!document.getElementById("psRoHide"); }
