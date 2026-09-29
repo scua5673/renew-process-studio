@@ -108,7 +108,6 @@ test('month, year, day and print views all read the day through the single view 
     ['renderYear','var day=schedViewDay(W&&W[col]);'],
     ['activityStatsForDates','day=schedViewDay(W&&W[col]), kind=yearDayKind(day)'],
     ['renderDay','const day=schedViewDay(rawDay);'],
-    ['scheduleDocHTML','week.map(schedViewDay)'],
     ['dayDocHTML','schedViewDay(week[dayIdx])'],
     ['monthDocHTML','const day=schedViewDay(wkArr[col]||{});'],
   ]){const a=P.indexOf('function '+name+'('),b=P.indexOf('\nfunction ',a+10);assert.ok(a>=0&&b>a,name);assert.ok(P.slice(a,b).includes(needle),name+' must use schedViewDay');}

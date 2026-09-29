@@ -8519,7 +8519,7 @@ function uiRenameWs(wa){
   if(!current())return;
   modal({title:'팀 이름 바꾸기',
     body:'팀원 모두에게 이 이름으로 보입니다. 자료·일정·권한은 그대로예요.',
-    input:(wa&&wa.name)||'',placeholder:'예: 풋볼A U15',maxlength:40,ok:'저장',
+    input:(wa&&wa.name)||'',placeholder:'예: 프로세스FC U15',maxlength:40,ok:'저장',
     onOk:function(v){
       renameWorkspace(wa.id,v).then(function(nm){
         if(!current())return;
