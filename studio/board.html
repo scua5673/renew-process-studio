@@ -5832,7 +5832,15 @@ function cycleRoleRing(){ var t=_ringTargets(); if(!t.length){ try{toast("선수
   document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest("#ringBtn"); if(!b)return; e.stopPropagation(); cycleRoleRing(); },true);
   window.addEventListener("keydown",function(e){ if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.altKey)return; if((e.key||"").toLowerCase()!=="h")return;
     var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable))return;
-    if(!_ringTargets().length)return; e.preventDefault(); e.stopImmediatePropagation(); cycleRoleRing(); },true);
+    if(!_ringTargets().length)return;
+    /* 2.908 — H 가 두 기능에 걸려 있었다(역할 링 2.902 · «선택 토큰 계속 강조» 2.686 기본 키). 링이 capture 로 먼저 가져가
+       선수를 고른 채로는 강조(animHl)를 H 로 쓸 수 없었다. 규칙: 단축키 표에서 H 를 다른 동작에 줬으면 그 동작,
+       강조에 걸린 채 **애니메이션 막대가 열려 있으면 강조**, 그 밖(평소 작전판)에는 역할 링. */
+    try{ var km=window.__psToolKeys?window.__psToolKeys():null;
+      if(km){ var own=Object.keys(km).filter(function(x){ return km[x]==="h"; })[0];
+        if(own&&own!=="animHl")return;
+        if(own==="animHl"){ var ab=document.getElementById("animBar"); if(ab&&ab.classList.contains("on"))return; } } }catch(_){}
+    e.preventDefault(); e.stopImmediatePropagation(); cycleRoleRing(); },true);
 }catch(_){} })();
 var _rvRAF=0;
 function renderVisionRAF(){ if(_rvRAF)return; try{_rvRAF=(window.requestAnimationFrame||function(f){return setTimeout(f,16);})(function(){_rvRAF=0;try{renderVision();}catch(_){}});}catch(_){_rvRAF=0;try{renderVision();}catch(__){}} }
@@ -12698,6 +12706,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     let toolKeyOpen=false;
     function toolKeyDefaults(){return {move:"1",run:"2",pass:"3",dribble:"4",line:"5",dashline:"6",link:"",free:"7",rect:"8",ellipse:"",rectline:"9",rectdash:"",text:"",eraser:"0",animBar:"",animPlay:"p",animLoop:"",animAdd:"n",animUpdate:"u",animDup:"",animDel:"",animPrev:",",animNext:".",animOnion:"",animBlink:"",animHl:"h",animExport:"",animGif:"",tokTrail:"j",tokLook:"o"};}
     function loadToolKeys(){var d=toolKeyDefaults(),v=null;try{v=JSON.parse(localStorage.getItem(TOOL_KEY)||"null");}catch(_){}if(v&&typeof v==="object")KEY_IDS.forEach(function(t){if(typeof v[t]==="string")d[t]=v[t];});return d;}
+    window.__psToolKeys=loadToolKeys;   /* 2.908 — 셸의 키 전달과 역할 링(H)이 같은 표(기본값 포함)를 읽게 */
     function saveToolKeys(v){try{localStorage.setItem(TOOL_KEY,JSON.stringify(v));}catch(_){}}
     function normToolKey(e){if(e.metaKey||e.ctrlKey||e.altKey)return "";var k=e.key||"";if(k.length!==1||k===" ")return "";return k.toLocaleLowerCase();}
     function toolKeyName(k){return k?(k.length===1?k.toUpperCase():k):"키 선택";}
