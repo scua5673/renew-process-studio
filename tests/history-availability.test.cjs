@@ -20,7 +20,11 @@ function harness() {
     setMeta() { confirmations++; },
     hash(raw) { return raw; },
     syncBaseSet() { confirmations++; },
-    localStorage: { setItem() { confirmations++; } }
+    localStorage: { getItem() { return null; }, setItem() { confirmations++; } },
+    OWNERKEY: 'ps_cache_owner_v1',
+    activeWs() { return 'team-a'; },
+    workspaceSwitchGuardRead() { return null; },
+    histHydrate(key, raw) { return Promise.resolve(raw); }
   });
   vm.runInContext(source.slice(start, end), context);
   return { context, current, confirmations: () => confirmations };

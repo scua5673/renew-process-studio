@@ -93,8 +93,10 @@ async function contextFor(browser, spec, role = 'admin') {
       localStorage.setItem('cs_lang', 'ko');
       localStorage.setItem('cs_wkmode', 'ses');
     }
+    // 2.905 — scout.html 부팅은 명단 확인(rosterReady) 뒤에 열린다(9/14 첫 로드 가드 7a9a979). 없으면 init()·matchWire() 가
+    // 돌지 않아 경기 단계 버튼에 동작이 안 붙고 #matchTrainingCard 가 숨은 패널에 남았다. 합성 팀은 확인된 것으로 둔다.
     window.PSSync = { session: () => JSON.parse(localStorage.getItem('ps_sync_session') || 'null'), dataUnlocked: () => true,
-      keyReady: new Function(readinessSource)() };
+      rosterReady: () => true, keyReady: new Function(readinessSource)() };
   }, { uid: UID, wid: WID, role, readinessSource });
   return context;
 }

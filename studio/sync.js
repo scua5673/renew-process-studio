@@ -3025,6 +3025,23 @@ function schedHydrate(at,wid,raw){
     return schedRestore(raw,parts,map);
   });
 }
+/* 2.904 — 서버 이력(ps_kv_history) 원문은 전송 모양(그림이 "emblem":"","emblemRef":"<해시>" 로 빠진 문서)이다.
+   되돌리기로 로컬에 쓰기 전에 그림을 되돌린다 — 안 그러면 로고가 빈 채로 보이고 옛 Ref 가 기기 문서에 들어온다.
+   서버에서 못 받으면(오프라인·권한·오류) 이 기기 캐시로만 되돌리고, 그래도 없으면 원문 그대로(예전과 같은 동작). 거부하지 않는다.
+   BLOB_KEYS 가 아닌 키·참조 없는 문서는 바이트 그대로 돌려준다. */
+function histHydrate(k,raw,wid){
+  if(!BLOB_KEYS[k]||typeof raw!=='string')return Promise.resolve(raw);
+  var parts=[]; try{ parts=schedRefParts(raw); }catch(_){}
+  if(!parts.length)return Promise.resolve(raw);
+  function cacheOnly(e){ try{ syncDiagnostic('hist-hydrate',e); }catch(_){} return schedHydrate(null,wid,raw); }
+  return Promise.resolve().then(function(){ return ensureToken(); }).catch(function(){ return null; }).then(function(at){
+    return at?schedHydrate(at,wid,raw).catch(cacheOnly):schedHydrate(null,wid,raw);
+  }).then(function(out){
+    if(typeof out!=='string'||!out||out===raw)return raw;
+    try{ JSON.parse(out); }catch(_){ return raw; }   /* 되돌린 문서가 JSON 이 아니면 원문 */
+    return out;
+  },function(){ return raw; });
+}
 /* ══ 2.727 · 보관함 사진 분리(사용자 «갑시다», 백엔드 점검 2026-09-09) ═══════════════════════════════════════
    실측: ps_library 1,284행 317MB 중 data:image 든 행 687개가 349MB(보드 카드 평균 454KB) — DB 의 절반이고, 기기마다 library_body 로 통째로 받는다.
    일정 그림(2.622)과 같은 방식: 올리기 직전 항목 JSON 안의 «값 전체가 data:image…base64» 인 문자열(512자 이상, 1.9MB 이하)을 ps_blob(내용 주소)로
@@ -4341,16 +4358,25 @@ function histRosterShow(host,snapshot,view,bcss){
 function histRestore(k,v){
   /* 2.745 — 변경 이력만 남고 본문이 만료된 판본을 빈 자료로 복원하지 않는다. */
   if(typeof v!=='string'||!v.trim())return Promise.resolve(false);
-  var writes=[];
-  var ok=kvWrite(k,v,writes);
-  return Promise.all(writes).then(function(){
-    var m=meta();
-    /* 되돌린 값이 지금보다 훨씬 작으면 출고 검사(pushHold)가 막는다 — 사고를 막는 장치라 옳지만,
-       이건 사용자가 **직접 고른** 복구다. 승인 도장을 미리 찍어 한 번에 올라가게 한다. */
-    try{ localStorage.setItem('ps_push_ok_'+k, hash(v)); }catch(_){}
-    try{ delete m.h[k]; setMeta(m); }catch(_){}   /* dirty 로 만들어 팀에도 올린다 */
-    try{ syncBaseSet(k,v); }catch(_){}
-    return ok!==false;
+  /* 2.904 — 이력 원문의 그림 참조를 되돌린 뒤 쓴다(histHydrate). 받는 사이 팀·계정이 바뀌었으면 쓰지 않는다 */
+  var wid=String(activeWs()||''),seal='';
+  try{ seal=String(localStorage.getItem(OWNERKEY)||''); }catch(_){}
+  function same(){ var s=''; try{ s=String(localStorage.getItem(OWNERKEY)||''); }catch(_){ return false; }
+    return !workspaceSwitchGuardRead()&&String(activeWs()||'')===wid&&s===seal; }
+  return histHydrate(k,v,wid).then(function(hv){
+    if(!same())return false;
+    v=hv;
+    var writes=[];
+    var ok=kvWrite(k,v,writes);
+    return Promise.all(writes).then(function(){
+      var m=meta();
+      /* 되돌린 값이 지금보다 훨씬 작으면 출고 검사(pushHold)가 막는다 — 사고를 막는 장치라 옳지만,
+         이건 사용자가 **직접 고른** 복구다. 승인 도장을 미리 찍어 한 번에 올라가게 한다. */
+      try{ localStorage.setItem('ps_push_ok_'+k, hash(v)); }catch(_){}
+      try{ delete m.h[k]; setMeta(m); }catch(_){}   /* dirty 로 만들어 팀에도 올린다 */
+      try{ syncBaseSet(k,v); }catch(_){}
+      return ok!==false;
+    });
   });
 }
 function dataReviewOpen(){
@@ -10322,7 +10348,11 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
       });
     }
     var raw=String(v);
-    return currentValueForKey(k).then(function(expected){
+    /* 2.904 — 이력 원문의 그림 참조(emblemRef·thumbRef)를 되돌린 뒤 쓴다. 못 되돌리면 원문 그대로(histHydrate) */
+    return histHydrate(k,raw,restoreWid).then(function(hv){
+      assertRestoreWid(); raw=hv;
+      return currentValueForKey(k);
+    }).then(function(expected){
       assertRestoreWid();
       var writes=[],writeGuard={stale:false};
       var ok=kvWrite(k,raw,writes,expected,writeGuard,restoreCurrent);

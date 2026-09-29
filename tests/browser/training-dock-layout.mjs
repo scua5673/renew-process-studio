@@ -20,12 +20,13 @@ async function inspect(frame){return frame.evaluate(()=>{
   const box=e=>{if(!e)return null;const r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {id:e.id,label:e.getAttribute('aria-label')||e.title||e.textContent.trim(),visible:visible(e),x:r.x,y:r.y,w:r.width,h:r.height,hit:hit?.closest('button')?.id||hit?.id||hit?.tagName||'',centerOwned:!!hit&&(e===hit||e.contains(hit)),display:getComputedStyle(e).display,parent:e.parentElement?.id};};
   const controls=[...document.querySelectorAll('#ps-command-dock button,#ps-command-dock select,#railEquip .chip')].filter(visible).map(box);
   const collisions=[];for(let i=0;i<controls.length;i++)for(let j=i+1;j<controls.length;j++){const a=controls[i],b=controls[j],x=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x),y=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);if(x>.5&&y>.5)collisions.push({a:a.id||a.label,b:b.id||b.label,w:x,h:y});}
-  return {body:document.body.className,view:window.__csView,viewport:{width:innerWidth,height:innerHeight},save:box(document.getElementById('vaultSave')),editorSave:box(document.getElementById('editorDone')),settings:box(document.getElementById('viewBtn')),undo:box(document.getElementById('undoBtn')),redo:box(document.getElementById('redoBtn')),dock:box(document.getElementById('ps-command-dock')),controls,collisions};
+  return {body:document.body.className,view:window.__csView,viewport:{width:innerWidth,height:innerHeight},save:box(document.getElementById('vaultSave')),manual:box(document.getElementById('boardManualSave')),editorSave:box(document.getElementById('editorDone')),settings:box(document.getElementById('viewBtn')),undo:box(document.getElementById('undoBtn')),redo:box(document.getElementById('redoBtn')),dock:box(document.getElementById('ps-command-dock')),controls,collisions};
 });}
 function check(g,editing){
   for(const c of [g.settings,g.undo,g.redo])assert.ok(c?.visible&&c.w>0&&c.h>0,c?.id+' visible');
   assert.deepEqual(g.collisions,[],'dock controls do not overlap');
-  if(editing){assert.equal(g.save.visible,false,'working-board save hidden in training editor');assert.ok(g.editorSave.visible&&g.editorSave.centerOwned,'training save remains actionable');}
+  // 2.904 — «저장»(#boardManualSave)은 도크로 옮겨져도 훈련 편집기에선 숨는다(도크 버튼 규칙이 덮지 않게).
+  if(editing){assert.equal(g.save.visible,false,'working-board save hidden in training editor');assert.equal(g.manual.visible,false,'board manual save hidden in training editor');assert.ok(g.editorSave.visible&&g.editorSave.centerOwned,'training save remains actionable');}
   else assert.ok(g.save.visible&&g.save.centerOwned,'working-board save restored');
 }
 async function enter(page,frame){
@@ -63,7 +64,9 @@ try{
    if(!baseline){
     check(edit,true);await history(frame);
     await frame.locator('#viewBtn').click();assert.ok(await frame.locator('#cmd-board-settings-pop').isVisible());await frame.locator('#cmd-board-settings-close').click();
-    await frame.locator('#editorCancel').click();await frame.locator('#editorModal').waitFor({state:'hidden'});
+    // 2.904 — 나가기는 부모에 goApp(보관함)을 보낸다. 부모가 그걸 받은 뒤에 보드로 가야 늦게 온 goApp 이 보드 클릭을 덮지 않는다.
+    await page.evaluate(()=>{window.__fxGoApp=0;addEventListener('message',e=>{if(e.data&&e.data.type==='goApp')window.__fxGoApp++;});});
+    await frame.locator('#editorCancel').click();await frame.locator('#editorModal').waitFor({state:'hidden'});await page.waitForFunction(()=>window.__fxGoApp>0);
     await page.evaluate(()=>document.querySelector('#appSeg [data-app=board]').click());await settle(page);
     const returned=await inspect(frame);result.states.push({stage:'returned',...returned});check(returned,false);await history(frame);
     await frame.locator('#viewBtn').click();assert.ok(await frame.locator('#cmd-board-settings-pop').isVisible());await frame.locator('#cmd-board-settings-close').click();

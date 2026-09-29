@@ -6053,7 +6053,8 @@ function scArchiveCandidate(pid){
     if(!store.set(TKEY,d))return;scRefreshCandidates();toast('후보를 보관했어요. 보관한 후보에서 복원할 수 있어요.');
   }catch(e){scWarn(e);}
 }
-function scUnplace(pid){try{scStore().check();var p=player(pid);if(!p)return;p.posId='';delete p.sbSeat;save();scRefreshCandidates();openPlayer(pid);toast('보드에서 내렸어요. 후보와 평가 기록은 남아 있어요.');}catch(e){scWarn(e);}}
+/* 2.904 — 부팅 확인 전·원문 이전 중엔 save()가 아무것도 안 쓴다. 먼저 막고, 거절된 저장을 «내렸어요»라 하지 않는다. */
+function scUnplace(pid){try{scStore().check();if((typeof scoutBootPending!=='undefined'&&scoutBootPending)||scMainMigrationPending)throw new Error('팀 자료를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');var p=player(pid);if(!p)return;p.posId='';delete p.sbSeat;var ok=save();scRefreshCandidates();openPlayer(pid);toast(ok?'보드에서 내렸어요. 후보와 평가 기록은 남아 있어요.':'보드에서 내리지 못했어요. 저장 상태를 확인한 뒤 다시 시도해 주세요.');}catch(e){scWarn(e);}}
 function scRenderTools(){
   var host=$('scDbHits');if(!host)return;var box=$('scCandidateTools');if(!box){box=document.createElement('div');box.id='scCandidateTools';box.className='sc-candidate-tools';host.parentNode.insertBefore(box,host);}
   try{scStore().check();var d=scStore().state.doc,hidden=Object.keys(d.scoutRegistry.candidates).filter(function(id){var ps=d.players.filter(function(p){return PSScoutStore.idOf(p)===id;}),t=plTombs();return !!d.scoutRegistry.candidates[id].archivedAt||ps.length&&ps.every(function(p){return p._scoutHidden||t[p.id]&&!(p._scoutMove&&p._scoutMove.at>t[p.id]);});});
