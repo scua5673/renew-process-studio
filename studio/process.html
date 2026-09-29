@@ -824,6 +824,7 @@
   #printDoc.pl-weekboard .pwb-match small{font-size:10px;font-weight:800;letter-spacing:.08em;opacity:.88}
   #printDoc.pl-weekboard .pwb-match b{font-size:15px;font-weight:800;line-height:1.3;overflow-wrap:anywhere}
   #printDoc.pl-weekboard .pwb-match span{font-size:12px;font-weight:700}
+  #printDoc.pl-weekboard .pwb-match em{font-style:normal;font-size:10.5px;font-weight:500;opacity:.88;overflow-wrap:anywhere}
   #printDoc.pl-weekboard .pwb-match img{height:14mm;max-width:70%;object-fit:contain;align-self:flex-start;background:#fff;border-radius:4px;padding:2px}
   #printDoc.pl-weekboard .pwb-match.x{padding:6px 9px;background:#E38D89}
   #printDoc.pl-weekboard .pwb-match.x b{font-size:12px}
@@ -1577,7 +1578,8 @@ function mxExtraLabel(x){ var t=String((x&&x.time)||'').trim(), o=String((x&&x.o
 function mxExtraHtml(day,cls,di,mymd){
   var e=wkbdEsc;
   return mxExtraList(day).map(function(x,xi){ var L=mxExtraLabel(x);
-    return '<div class="'+cls+(L.friendly?' friendly':'')+'">'+(L.friendly?'친선':'경기')+(L.t?' · '+e(L.t):'')+' · '+e(L.o)+(L.g?' <i>'+e(L.g)+'</i>':'')
+    var pl=(mymd&&typeof wkbdMatchPlace==='function')?wkbdMatchPlace(mymd,x.opp||''):'';   /* 2.912 — 경기장 */
+    return '<div class="'+cls+(L.friendly?' friendly':'')+'">'+(L.friendly?'친선':'경기')+(L.t?' · '+e(L.t):'')+' · '+e(L.o)+(L.g?' <i>'+e(L.g)+'</i>':'')+(pl?' <i>'+e(pl)+'</i>':'')
       +((di!=null&&mymd)?' <button type="button" class="mx-go" onclick="event.stopPropagation();wkbdGoMatchX(\''+e(mymd)+'\','+di+','+xi+')">'+e(wkbdMatchDoor(mymd,x.opp||'').short)+'</button>':'')+'</div>'; }).join('');
 }
 /* ══ 2.449 · 첫 경기에도 × 와 조 ═════════════════════════════════════════════════
@@ -3969,6 +3971,7 @@ function renderWeekBoard(el){
         +'<button class="wkbd-mlabel" onclick="wkbdPick('+di+',\'sched\')">'+(_mk==='friendly'?'친선경기 ▾':'경기일 ▾')+'</button>'
         +'<div class="wkbd-tx wkbd-opp" contenteditable="true" data-di="'+di+'" data-f="opp" data-ph="상대팀" onblur="wkbdSave(this)">'+wkbdEsc(opp)+'</div>'
         +(_mTime?'<div class="wkbd-mko">'+wkbdEsc(_mTime)+'</div>':'')
+        +(function(){ var pl=wkbdMatchPlace(mymd,opp); return pl?'<div class="wkbd-mko wkbd-venue">'+wkbdEsc(pl)+'</div>':''; })()   /* 2.912 */
         +mxExtraHtml(day,'wkbd-mx',di,mymd)   /* 2.620 */
         +'<label class="wkbd-mlogo-up">'+(mlogo?'로고 변경':'＋ 로고')+'<input type="file" accept="image/*" style="display:none" onchange="matchLogoUpload('+di+',event)"></label>'
         +'<button class="wkbd-gomatch" onclick="wkbdGoMatch(\''+mymd+'\','+di+')">'+wkbdEsc(wkbdMatchDoor(mymd,opp).label)+'</button>'
@@ -4008,6 +4011,7 @@ function renderWeekBoard(el){
         +'<button class="wkbd-mlabel" onclick="event.stopPropagation();wkbdPick('+ci+',\'sched\')">'+(mkC==='friendly'?'친선경기 ▾':'경기일 ▾')+'</button>'
         +'<div class="wkbd-tx wkbd-opp" contenteditable="true" data-di="'+ci+'" data-f="opp" data-ph="상대팀" onblur="wkbdSave(this)">'+wkbdEsc(oppC)+'</div>'
         +(mTimeC?'<div class="wkbd-mko">'+wkbdEsc(mTimeC)+'</div>':'')
+        +(function(){ var pl=wkbdMatchPlace(mymdC,oppC); return pl?'<div class="wkbd-mko wkbd-venue">'+wkbdEsc(pl)+'</div>':''; })()   /* 2.912 */
         +mxExtraHtml(dayC,'wkbd-mx',ci,mymdC)   /* 2.620 */
         +'<button class="wkbd-gomatch" onclick="event.stopPropagation();wkbdGoMatch(\''+mymdC+'\','+ci+')">'+wkbdEsc(wkbdMatchDoor(mymdC,oppC).label)+'</button>'+'<div class="wkbd-mergetr">'+wkbdTrainInner(ci,bC.trains,bC.trainThemes,bC.trainSlot)+'</div>'+'</div>';
     } else if(bC.sched==='OFF'){
@@ -5016,6 +5020,7 @@ function renderWeekSessions(el){
           +'<div class="wkbd-tx wks-opp" contenteditable="true" data-di="'+di+'" data-f="opp" data-ph="상대팀" title="'+wkbdEsc(opp||'상대팀')+'" onblur="wkbdSave(this)">'+wkbdEsc(opp)+'</div>'
           +'<button type="button" class="wks-go" onclick="wkbdGoMatch(\''+mymd+'\','+di+')">'+wkbdEsc(wkbdMatchDoor(mymd,opp).label)+'</button>'
         +'</div>')
+        +(!mxFirstVis?'':(function(){ var pl=wkbdMatchPlace(mymd,opp); return pl?'<div class="wks-venue" title="'+wkbdEsc(pl)+' — 경기장은 팀 › 경기의 경기 정보에서 고칩니다">'+wkbdEsc(pl)+'</div>':''; })())   /* 2.912 */
         /* ══ 2.436 · 추가 경기(A팀·B팀…) ═══════════════════════════════════════════
            첫 경기 아래로 쌓인다. 조 칩은 훈련 세션과 **같은 `wks-grp`** — 눌러서 고른다.
            ⚠ '경기 준비 →' 는 **상대팀 이름으로** 그 경기를 연다(`openMatchAt` 이 날짜+상대로 찾는다).
@@ -5471,14 +5476,29 @@ window.wkbdAddMeet=function(di,slot){if(schedEditBlocked()){schedBlockNotice();r
 /* ══ 2.758 · 경기 카드의 문 하나가 **지금 비어 있는 첫 걸음**을 가리킨다(설계 목업 «상대 분석에서 경기 준비까지»).
    상대 분석이 비었으면 «상대 분석 →», 채워졌으면 «경기 준비 →», 경기가 지났으면 «경기 리뷰 →». 제안이 아니라 상태다.
    경기 문서는 cs_team_matches_v1(로컬 사본)에서 날짜(+상대)로 찾는다 — 없으면 예전처럼 «경기 준비 →». 선수는 상대 분석을 못 보니 준비. */
-function wkbdMatchDoor(ymd,opp){
-  var out={label:'경기 준비 →',short:'준비 →',step:'prep'};
+/* 2.912 — 일정의 경기 칸이 가리키는 경기 문서(cs_team_matches_v1 로컬 사본). 찾는 규칙은 하나 — 날짜 + 상대
+   (같은 날 경기가 둘 이상이면 상대 이름이 맞아야 한다). «경기 준비 →» 문과 경기장 표시가 같은 규칙을 쓴다. */
+function wkbdMatchDoc(ymd,opp){
   try{
-    var st=JSON.parse(localStorage.getItem('cs_team_matches_v1')||'null'); var L=(st&&st.matches)||[]; if(!L.length)return out;
+    var st=JSON.parse(localStorage.getItem('cs_team_matches_v1')||'null'); var L=(st&&st.matches)||[]; if(!L.length)return null;
     var norm=function(v){ var t=String(v==null?'':v).replace(/\s+/g,' ').trim(); return (t==='상대 미정'||t==='새 경기')?'':t; };
     var o=norm(opp), same=L.filter(function(m){return String(m.date||'')===String(ymd||'');});
     var m=o?(same.filter(function(x){return norm(x.opponent)===o;})[0]||null):null;
     if(!m&&(!o||same.length<2))m=same[0]||null;
+    return m;
+  }catch(_){ return null; }
+}
+/* 2.912 — 경기장·홈/원정(2.908 «남긴 것» ⑤). 일정의 경기는 경기장 칸을 따로 갖지 않는다 — **경기 문서가 원본**이라
+   거기서 읽기만 한다(두 곳에 적게 하면 둘이 어긋난다). 고치는 곳은 팀 › 경기의 경기 정보. 없으면 빈 문자열(줄을 안 그린다). */
+function wkbdMatchPlace(ymd,opp){
+  var m=wkbdMatchDoc(ymd,opp); if(!m)return '';
+  var ha=String(m.homeAway||'').trim(); ha=({home:'홈',away:'원정',neutral:'중립'})[ha]||ha;
+  return [ha,String(m.venue||'').trim()].filter(Boolean).join(' · ');
+}
+function wkbdMatchDoor(ymd,opp){
+  var out={label:'경기 준비 →',short:'준비 →',step:'prep'};
+  try{
+    var m=wkbdMatchDoc(ymd,opp);
     if(!m)return out;
     var player=false; try{ player=!!(window.PSPerms&&PSPerms.role&&PSPerms.role()==='player'); }catch(_){}
     var now=new Date(), today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
@@ -5863,7 +5883,7 @@ function renderDay(){
   document.getElementById('dayLabel').textContent=`${dt.getMonth()+1}월 ${dt.getDate()}일 (${day.d})${day.md?' · '+day.md:''}${(typeof __schedGrp==='string'&&__schedGrp)?' · '+__schedGrp:''}`;
   const wrap=document.getElementById('dayView'); let html='';
   if(day.match){
-    html+=`<div class="matchcell" ${firstShown?`onclick="openMatch(${dayIdx})"`:(shownExtra>=0?`onclick="wkbdGoMatchX('${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}',${dayIdx},${shownExtra})"`:'')}><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7l3.5 2.5-1.3 4h-4.4l-1.3-4z"/></svg>경기 · ${day.match.time}</div><div class="o">${day.match.opp||'상대 미정'} ›</div></div>`;
+    html+=`<div class="matchcell" ${firstShown?`onclick="openMatch(${dayIdx})"`:(shownExtra>=0?`onclick="wkbdGoMatchX('${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}',${dayIdx},${shownExtra})"`:'')}><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7l3.5 2.5-1.3 4h-4.4l-1.3-4z"/></svg>경기 · ${day.match.time}</div><div class="o">${day.match.opp||'상대 미정'} ›</div>${(()=>{ const pl=wkbdMatchPlace(dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'),day.match.opp||''); return pl?`<div class="s">${wkbdEsc(pl)}</div>`:''; })()}</div>`;   /* 2.912 — 경기장 */
     html+=mxExtraHtml(day,'mxcell');   /* 2.620 */
   }
   const bd=dayBoard(day);
@@ -7626,7 +7646,8 @@ function weekBoardDocHTML(){
       const opp=String((day.match&&day.match.opp)||d.b.opp||'').trim(), tm=String((day.match&&day.match.time)||'').trim();
       let kind=''; try{ kind=M_KIND_LB[mMatchKind(day)]||''; }catch(_){}
       const lg=__psImgSrc((day.match&&day.match.logo)||'');
-      h+=`<div class="pwb-match${d.ses.length?'':' grow'}"><small>경기${kind?' · '+esc(kind):''}</small>${lg?`<img src="${lg}">`:''}<b>${opp?'vs '+esc(opp):'상대 미정'}</b>${tm?`<span>${esc(tm)}</span>`:''}</div>`;
+      let pl=''; try{ pl=wkbdMatchPlace(d.dt.getFullYear()+'-'+String(d.dt.getMonth()+1).padStart(2,'0')+'-'+String(d.dt.getDate()).padStart(2,'0'),opp); }catch(_){}   /* 2.912 — 경기장·홈/원정(경기 문서) */
+      h+=`<div class="pwb-match${d.ses.length?'':' grow'}"><small>경기${kind?' · '+esc(kind):''}</small>${lg?`<img src="${lg}">`:''}<b>${opp?'vs '+esc(opp):'상대 미정'}</b>${tm?`<span>${esc(tm)}</span>`:''}${pl?`<em>${esc(pl)}</em>`:''}</div>`;
       mxExtraList(day).forEach(x=>{ const L=mxExtraLabel(x);   /* 2.620 — 하루 두 경기 */
         h+=`<div class="pwb-match x"><small>${L.friendly?'친선':'경기'}${L.t?' · '+esc(L.t):''}${L.g?' · '+esc(L.g):''}</small><b>vs ${esc(L.o)}</b></div>`; });
     } else if(d.isOff){
@@ -10058,6 +10079,11 @@ html body .wks-day:not(.is-match):not(.is-off):not(:has(.wks-ses))>.wks-kind .wk
 .wkbd-mx .mx-go{margin-left:4px;font:inherit;font-size:10px;font-weight:700;color:var(--act,#3A6DF0);background:none;border:0;padding:0;cursor:pointer}
 .mxcell{margin-top:3px;padding:4px 8px;border-radius:6px;background:var(--match-soft,#FBECEC);color:var(--match,#C24A46);font-size:11px;font-weight:700;line-height:1.35}
 .pmatch.mx{margin-top:2px}
+/* 2.912 — 경기장·홈/원정(경기 문서에서 읽기만). 경기 이름보다 한 단 조용하게 */
+.wks-venue{margin-top:5px;font-size:11.5px;font-weight:600;color:var(--text-2,#646A73);line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wkbd-venue{font-weight:600;letter-spacing:0;overflow-wrap:anywhere}
+.matchcell{flex-wrap:wrap}
+.matchcell .s{flex:1 0 100%;margin-top:4px;font-size:var(--fs-caption,12px);font-weight:600;color:var(--text-2,#646A73)}
 </style>
 
 <script>
