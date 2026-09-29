@@ -70,8 +70,8 @@ async function run(){
     equal(await sees(db,who.roleless,W1,'cs_idp_pub_v1_'+who.player),true,'before: roleless reads another player coach feedback');
     equal(await role(db,who.member2,W2),'admin','before: non-owner in a team without perms doc is admin');
     equal(await canView(db,who.member2,W2),true,'before: and can view every IDP');
-    equal(await writesPub(db,who.staffView),false,'before: view-only coaching staff cannot save coach feedback (guard reverts)');
-    equal(await writesPub(db,who.staffTeam),false,'before: staff with team scope also blocked (server says board)');
+    equal(await writesPub(db,who.staffView),true,'before: staff without scopes already writes coach feedback on the live server (staff → true)');
+    equal(await writesPub(db,who.staffTeam),false,'before: staff with team scope is blocked (server says board — the 13 live denials)');
 
     // ── 1) 역할 기본값 ─────────────────────────────────────────
     await db.exec(roleSql);await db.exec(roleSql);   // 두 번 실행해도 안전
@@ -109,7 +109,7 @@ async function run(){
     equal(await writesPub(db,who.roleless),false,'roleless (now player) cannot write coach feedback');
     // 다른 키의 쓰기 판정은 그대로(보기 전용 스태프는 팀 자료를 못 쓴다)
     const writesRoster=uid=>as(db,uid,async()=>{ await db.query("UPDATE public.ps_kv SET v='{\"players\":9}' WHERE workspace_id=$1 AND k='scout_tool_v1'",[W1]); await db.exec('RESET ROLE'); return (await db.query("SELECT v FROM public.ps_kv WHERE workspace_id=$1 AND k='scout_tool_v1'",[W1])).rows[0].v==='{"players":9}'; });
-    equal(await writesRoster(who.staffView),false,'view-only staff still cannot write team data');
+    equal(await writesRoster(who.staffView),true,'live rule unchanged: staff without scopes writes team data (view-only is enforced by the app)');
     equal(await writesRoster(who.staffTeam),true,'team-scoped staff still writes team data');
     equal((await defs(db)).filter(x=>x.proname!=='ps_can_write_key'),afterRole.filter(x=>x.proname!=='ps_can_write_key'),'idp_pub_write changes only ps_can_write_key');
     equal(await acl(db),origAcl,'grants unchanged after idp_pub_write');

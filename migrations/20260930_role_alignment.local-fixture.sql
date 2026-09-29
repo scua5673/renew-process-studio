@@ -1,5 +1,5 @@
 -- LOCAL IN-MEMORY FIXTURE ONLY. NEVER run this file against an existing database.
--- 20260930 role_default_player · idp_pub_write 시험용. 운영 카탈로그(2026-09-13)와 저장소 SQL 의 해당 함수·정책 모양을 재현한다.
+-- 20260930 role_default_player · idp_pub_write 시험용. 세 함수는 운영 정의 원문(2026-09-30 적용 직전), 정책은 저장소 SQL 모양을 재현한다.
 -- 가드는 판정 뼈대만(일정·권한표 분기 없음) — 운영 트리거 전체를 복제했다고 주장하지 않는다.
 CREATE SCHEMA auth;
 CREATE ROLE authenticated NOLOGIN NOSUPERUSER NOBYPASSRLS;
@@ -48,59 +48,69 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO public AS $$
   SELECT EXISTS(SELECT 1 FROM public.ps_members m
     WHERE m.workspace_id=wid AND m.user_id=auth.uid() AND m.role='owner')
 $$;
--- 운영 카탈로그(2026-09-13 읽기) 모양 그대로 — 대문자·붙여 쓴 쉼표
-CREATE FUNCTION public.ps_team_role(wid uuid) RETURNS text
-LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO public AS $$
-DECLARE pj jsonb; knd text;
-BEGIN
-  IF auth.uid() IS NULL THEN RETURN 'none'; END IF;
-  SELECT kind INTO knd FROM public.ps_workspaces WHERE id=wid;
-  IF knd IS NULL OR knd='personal' THEN RETURN 'admin'; END IF;
-  IF public.ps_is_owner(wid) THEN RETURN 'admin'; END IF;
-  BEGIN
-    SELECT v::jsonb INTO pj FROM public.ps_kv WHERE workspace_id=wid AND k='cs_perms_v1' LIMIT 1;
-  EXCEPTION WHEN OTHERS THEN pj:=NULL; END;
-  IF pj IS NULL THEN RETURN 'admin'; END IF;
-  RETURN coalesce(pj->'members'->(auth.uid()::text)->>'role',pj->>'defaultRole','staff');
-END
-$$;
--- supabase-idp-share.sql 모양 그대로 — 소문자·띄어 쓴 쉼표(정규식이 두 모양을 다 잡는지 본다)
-create function public.ps_idp_can_view(wid uuid)
-returns boolean
-language plpgsql stable security definer set search_path = public as $$
+-- 운영 정의 원문(2026-09-30 적용 직전 pg_get_functiondef)
+CREATE FUNCTION public.ps_team_role(wid uuid)
+ RETURNS text
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare pj jsonb; knd text;
+begin
+ if auth.uid() is null then return 'none'; end if;
+ select kind into knd from public.ps_workspaces where id = wid;
+ if knd is null or knd = 'personal' then return 'admin'; end if;
+ if public.ps_is_owner(wid) then return 'admin'; end if;
+ begin
+ select v::jsonb into pj from public.ps_kv where workspace_id = wid and k = 'cs_perms_v1' limit 1;
+ exception when others then pj := null; end;
+ if pj is null then return 'admin'; end if;
+ return coalesce(pj->'members'->(auth.uid()::text)->>'role', pj->>'defaultRole', 'staff');
+end $function$;
+-- 운영 정의 원문(2026-09-30 적용 직전)
+CREATE FUNCTION public.ps_idp_can_view(wid uuid)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 declare pj jsonb; r text;
 begin
-  if public.ps_is_owner(wid) then return true; end if;
-  begin
-    select v::jsonb into pj from public.ps_kv where workspace_id = wid and k = 'cs_perms_v1' limit 1;
-  exception when others then pj := null; end;
-  if pj is null then return true; end if;   -- 권한표 미설정 팀 → 기존 동작 유지(전원 스태프 취급)
-  r := coalesce(pj->'members'->(auth.uid()::text)->>'role', pj->>'defaultRole', 'staff');
-  return r <> 'player';
-end $$;
+ if public.ps_is_owner(wid) then return true; end if;
+ begin
+ select v::jsonb into pj from public.ps_kv where workspace_id = wid and k = 'cs_perms_v1' limit 1;
+ exception when others then pj := null; end;
+ if pj is null then return true; end if;
+ r := coalesce(pj->'members'->(auth.uid()::text)->>'role', pj->>'defaultRole', 'staff');
+ return r <> 'player';
+end $function$;
 CREATE FUNCTION public.ps_key_scope(key text) RETURNS text LANGUAGE sql STABLE AS $$
   SELECT CASE WHEN key IN ('scout_tool_v1','cs_idp_pub_v1','cs_team_notice_v1') THEN 'team'
               WHEN key='cs_scout_targets_v1' THEN 'scout' ELSE 'board' END
 $$;
--- supabase-staff-readonly.sql + 임원 핫픽스 모양
-create function public.ps_can_write_key(wid uuid, key text) returns boolean
-language plpgsql stable security definer set search_path = public as $$
+-- 운영 정의 원문(2026-09-30 적용 직전) — ⚠ 개별 구역이 없는 스태프는 쓰기 허용(«보기 전용»은 앱에서만 지킨다)
+CREATE FUNCTION public.ps_can_write_key(wid uuid, key text)
+ RETURNS boolean
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
 declare pj jsonb; r text; sc text; scl jsonb;
 begin
-  if not public.ps_is_member(wid) then return false; end if;
-  r := public.ps_team_role(wid);
-  if r = 'admin' or r = 'executive' then return true; end if;
-  if key = 'cs_perms_v1' then return false; end if;
-  sc := public.ps_key_scope(key);
-  if sc is null then return true; end if;
-  begin
-    select v::jsonb into pj from public.ps_kv where workspace_id = wid and k = 'cs_perms_v1' limit 1;
-  exception when others then pj := null; end;
-  scl := pj->'members'->(auth.uid()::text)->'scopes';
-  if scl is not null and jsonb_typeof(scl) = 'array' then return scl ? sc; end if;
-  if r = 'staff' then return coalesce(pj->>'staffEdit','view') = 'edit'; end if;
-  return false;
-end $$;
+ if not public.ps_is_member(wid) then return false; end if;
+ r := public.ps_team_role(wid);
+ if r = 'admin' or r = 'executive' then return true; end if;
+ if key = 'cs_perms_v1' then return false; end if;
+ sc := public.ps_key_scope(key);
+ if sc is null then return true; end if;
+ begin
+ select v::jsonb into pj from public.ps_kv where workspace_id = wid and k = 'cs_perms_v1' limit 1;
+ exception when others then pj := null; end;
+ scl := pj->'members'->(auth.uid()::text)->'scopes';
+ if scl is not null and jsonb_typeof(scl) = 'array' then return scl ? sc; end if;
+ if r = 'staff' then return true; end if;
+ return false;
+end $function$;
 CREATE FUNCTION public.ps_can_read_key(wid uuid,key text) RETURNS boolean
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO public AS $$
 BEGIN
