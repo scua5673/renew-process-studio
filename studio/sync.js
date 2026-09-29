@@ -7385,7 +7385,9 @@ function syncNowCore(reason){
              perms.js myScopes() · SQL ps_can_write_key 와 **같은 규칙이어야 한다** —
              앱이 느슨하면 잠금이 아니고, 엄격하면 "저장했는데 안 올라감"이 된다. */
           if(role==='staff'){
-            try{ var sp2=JSON.parse(permsRaw()||'null'); return !!(sp2&&sp2.staffEdit==='edit'); }catch(_){ return false; }
+            /* 2.913 — 스카우팅(scout)은 편집 열림이어도 뺀다(perms.js staffIds 와 같게). 서버 ps_can_write_key 도
+               migrations/20260930_staff_view_only 부터 같은 규칙을 강제한다 — 둘이 어긋나면 403 이 회차마다 반복된다. */
+            try{ var sp2=JSON.parse(permsRaw()||'null'); return !!(sp2&&sp2.staffEdit==='edit')&&sc!=='scout'; }catch(_){ return false; }
           }
           return false;
         }
