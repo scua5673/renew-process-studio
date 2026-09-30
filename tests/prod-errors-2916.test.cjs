@@ -113,7 +113,7 @@ test('연속 편집 경합(storage_source_changed)은 늘 조용히 다시 맞�
   const c=helpers();
   assert.equal(c.api.syncQuietFailure(Object.assign(new Error('shared source or owner changed'),{name:'StorageOwnerChangedError'}),
     {code:'sync_local_changed',stage:'storage_source_changed'},c.api.syncRoundContext('edit',0,1e12,0)),true);
-  assert.equal(c.api.syncQuietFailure(new Error('x'),{code:'sync_local_changed',stage:'schedule_ready_exact'},c.api.syncRoundContext('edit',0,1e12,0)),false,'일정 확인 불일치는 아직 보고(2.917)');
+  assert.equal(c.api.syncQuietFailure(new Error('x'),{code:'sync_local_changed',stage:'schedule_ready_exact'},c.api.syncRoundContext('edit',0,1e12,0)),false,'일정 확인 불일치는 새 입력 표식이 없으면 보고');
 });
 test('기록에 회차 이유·숨김·잠자기·깨어난 뒤 초·직전 진단 단계를 싣고 토큰은 가린다',()=>{
   const c=helpers({now:1e12,wake:1e12-42000,log:[{stage:'idb-set-schedule',at:1e12-3000},{stage:'kv_meta',at:1e12-1000}]});
@@ -215,4 +215,21 @@ test('시간 초과·오프라인·숨김이면 다시 보내지 않는다',asyn
 test('ensureToken 은 forceStaleAt 과 같은 토큰이면 만료 시각을 믿지 않는다',()=>{
   const body=slice(S,'function ensureToken(){','/* ── 동기화 ── */');
   assert.match(body,/if\(Date\.now\(\)<s\.exp-60000&&!\(forceStaleAt&&s\.at===forceStaleAt\)\) return Promise\.resolve\(s\.at\);/);
+});
+
+/* 2.917 — 일정 준비표 불일치 중 «회차 중 새 입력»(IDB·거울이 서로 같음)만 조용히 다시 맞춘다 */
+test('일정 확인 불일치: 새 입력(psNewerLocal)이면 조용히, 거울·IDB 불일치는 보고',()=>{
+  const c=helpers(),ctx=c.api.syncRoundContext('edit',0,1e12,0),info={code:'sync_local_changed',stage:'schedule_ready_exact'};
+  assert.equal(c.api.syncQuietFailure(Object.assign(new Error('x'),{psNewerLocal:true}),info,ctx),true);
+  assert.equal(c.api.syncQuietFailure(new Error('x'),info,ctx),false);
+});
+test('일정 확인 불일치는 어느 사본이 다른지 말한다',()=>{
+  const body=slice(S,'function scheduleReadyCommit(','/* 경기 준비표는');
+  assert.match(body,/var which=idb===mirror\?'새 입력':/);
+  assert.match(body,/if\(idb!==null&&idb===mirror\)ie\.psNewerLocal=true;/);
+});
+test('오프라인 회차 실패는 서버 오류 기록을 남기지 않는다 · 정보 없는 Script error. 는 셸이 무시한다',()=>{
+  assert.match(S,/if\(!quiet&&info\.code!=='sync_offline'\)\{try\{eventTrack\('sync_failed',/);
+  const A=fs.readFileSync(path.join(__dirname,'../studio/app.html'),'utf8');
+  assert.match(A,/if\(\/\^Script error\\\.\?\$\/i\.test\(_m\)&&!\(e&&e\.filename\)\)return;/);
 });
