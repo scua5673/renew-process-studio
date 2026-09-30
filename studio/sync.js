@@ -1541,6 +1541,9 @@ function mergeByIdDoc(baseStr,locStr,srvStr,listKey,idKey){
    직접 읽지 않으므로 IDB에 두고, 동기 호출부에는 미리 채운 메모리 값을 돌려준다. */
 var syncBaseMem={};
 var IDP_BASE_TAG='PSIDPBASE1:';
+/* 2.921 — «기준본은 있지만 어느 판인지 모름». 봉투는 맞지만 항목이 없어 어떤 확정 hash 와도 맞지 않는다
+   (syncBaseHas 는 참, syncBaseGet 은 null) — IDP 는 그 키만 건너뛰고 일지에서 정확한 기준본을 찾는다. */
+var SYNC_BASE_UNTRUSTED=IDP_BASE_TAG+'{"v":1}',syncBaseConflictSeen={};
 function syncBaseKey(k,widArg){var wid='';if(arguments.length>1)wid=String(widArg||'');else try{wid=localStorage.getItem('ps_active_ws')||'';}catch(_){}return 'ps_sync_base_'+(wid?(wid+'_'):'')+k;}
 function syncBaseOldKey(k){return 'ps_sync_base_'+k;}
 function syncBaseCacheClear(){syncBaseMem={};}
@@ -1685,6 +1688,20 @@ function syncBasePrimeAll(widArg,m0){
       var current=(key===active||key.indexOf(currentPrefix)===0);
       if(!current){syncDiagnostic('sync-base-prime-old-workspace',e);return false;}
       if(legacy!=null&&e&&e.name!=='StorageConflictError'&&e.name!=='StorageOwnerChangedError'){syncBaseMem[key]=legacy;return true;}
+      /* 2.921 — 두 사본(localStorage·IDB)이 다르고 어느 쪽도 확정 hash 로 증명되지 않으면 예전엔 회차 전체를 막았다.
+         현재 팀 기준본은 매 회차 다시 읽으므로 한 번 어긋나면 그 기기는 영구히 동기화가 멈췄다(sync_conflict·storage_copies_differ).
+         이제 어느 쪽도 고르지 않고(누가 새것인지 추측하지 않는다) 두 사본은 디스크에 그대로 둔 채 이 키의 기준본만 «모름»으로 둔다.
+         · 확정 meta 가 있으면 «있지만 믿을 수 없음» — 일정은 병합 대신 둘 다 보관(자료 확인), IDP 는 그 키만 건너뛰고
+           일지(journal)에서 같은 hash·판본의 정확한 기준본을 찾는다(syncIdpJournalPrime).
+         · meta 가 없으면(처음 여는 팀) 기준본 없음 — 기준본 없는 규칙(항목 합치기)으로.
+         다음에 검증된 기준본을 쓰면(auxSet) legacy 사본이 지워져 저절로 풀린다. */
+      if(e&&e.name==='StorageConflictError'){
+        var ck=key.slice(currentPrefix.length),snap=m0||meta();
+        var known=!!(snap&&((snap.h&&Object.prototype.hasOwnProperty.call(snap.h,ck))||(snap.c&&Object.prototype.hasOwnProperty.call(snap.c,ck))));
+        syncBaseMem[key]=(known&&(isIdpPrivateKey(ck)||isIdpPubKey(ck)))?SYNC_BASE_UNTRUSTED:null;
+        if(!syncBaseConflictSeen[key]){syncBaseConflictSeen[key]=1;syncDiagnostic('sync-base-copies-differ',e);}
+        return true;
+      }
       throw e;
     });
   })).then(function(){return syncIdpJournalPrime(currentWid,m0||meta());}).then(function(){return true;});
