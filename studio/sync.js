@@ -1406,7 +1406,14 @@ function scheduleReadyCommit(m,raw,uid,wid,seal,current){
     return window.storage.get(SCHEDULE_KEY);
   }).then(function(rec){
     guard();var idb=rec&&rec.value!=null?String(rec.value):null,mirror=localStorage.getItem(SCHEDULE_KEY);
-    if(idb!==raw||mirror!==raw)throw syncIssue('sync_local_changed','schedule_ready_exact','일정 서버 확인 원문·기기 저장소·화면 사본이 다릅니다');
+    if(idb!==raw||mirror!==raw){
+      /* 2.917 — 어느 사본이 다른지 말한다. IDB·거울이 서로 같고 서버 확인 원문만 다르면 회차 중 새 입력(곧 다시 맞춤),
+         거울만 다르면 거울 쓰기 실패(대개 저장 공간 부족) — 7일 한 기기가 한 시간마다 되풀이했던 쪽. */
+      var which=idb===mirror?'새 입력':mirror!==raw&&idb===raw?'거울':idb!==raw&&mirror===raw?'IDB':'IDB·거울';
+      var ie=syncIssue('sync_local_changed','schedule_ready_exact','일정 서버 확인 원문·기기 저장소·화면 사본이 다릅니다('+which+')');
+      if(idb!==null&&idb===mirror)ie.psNewerLocal=true;
+      throw ie;
+    }
     var marker={w:String(wid),u:String(uid),o:seal,present:raw!==null,h:hash(raw)},latest=meta();
     latest.r=latest.r||{};latest.r[SCHEDULE_KEY]=marker;
     var next=JSON.stringify(latest);localStorage.setItem(MKEY,next);
@@ -6589,7 +6596,7 @@ function syncNowCore(reason){
          서버로부터 받았거나 서버에 올렸는지까지 포함한다. undefined는 미해결,
          null은 서버에 행이 없음을 확인한 상태, string은 확인할 exact raw다. */
       var matchMetaBefore={h:m.h[MATCH_KEY],c:m.c[MATCH_KEY],n:m.n[MATCH_KEY],base:syncBaseGet(MATCH_KEY)};
-      var matchResolutionPlanned=false,matchResolved=false,matchExpectedRaw,matchPushPlanned=false,matchTouched=false,matchWriteGuards=[];
+      var matchResolutionPlanned=false,matchResolved=false,matchExpectedRaw,matchPushPlanned=false,matchTouched=false,matchWriteGuards=[],matchNewerRetry=false;
       var scheduleGuard={stale:false},schedulePushExpected=null,scheduleMetaBefore=null,scheduleAppliedPlanned=0,scheduleDeferred=false,scheduleMetaRestored=false,schedulePushHeld=false,scheduleDependencyBlocked=false,scheduleDependencyRetry=false;
       var scheduleExpectedRaw,scheduleObserved=false,schedulePushConfirmed=false,schedulePushRow=null;
       var scoutStage=null;
@@ -7591,6 +7598,19 @@ function syncNowCore(reason){
           else if(typeof matchExpectedRaw==='string'&&idb===matchExpectedRaw&&mirror===matchExpectedRaw)
             marker={w:String(wid),present:true,h:hash(matchExpectedRaw)};
           if(marker)return matchReadyCommit(m,marker);
+          /* 2.917 — 서버가 이번 회차에 올린 원문을 받은 **뒤** 사용자가 또 입력했다(IDB·거울이 새 입력으로 서로 같다).
+             서버는 방금 올린 판을 가졌으니 meta(h·c·기준본)는 그 판에 두고 준비표만 닫는다.
+             예전엔 여기서 회차를 실패시키며 meta 를 회차 전으로 되돌렸다 → 다음 회차가 «내 로컬이 바뀌었고 서버도 바뀌었다»로 읽어
+             **자기 저장끼리 «자료 확인» 충돌**을 만들었다(9/30 재현, 7일 match_not_ready 4명). 새 입력은 곧 한 번 더 보낸다. */
+          if(matchPushPlanned&&matchResolved&&typeof matchExpectedRaw==='string'&&idb!==null&&idb===mirror&&idb!==matchExpectedRaw){
+            matchReadyBlocked=true;matchTouched=true;
+            m.r=m.r||{};delete m.r[MATCH_KEY];
+            if(roundWorkspaceCurrent())matchReadyInvalidate();
+            if(dependencyDeferredKeys.indexOf(MATCH_KEY)<0)dependencyDeferredKeys.push(MATCH_KEY);
+            matchNewerRetry=true;
+            syncDiagnostic('match-local-newer',new Error('경기 저장 확인 뒤 새 입력 — 곧 이어서 올립니다'));
+            return true;
+          }
           blockMatchReady('match-exact-mismatch',new Error('경기 서버 확인 원문·IDB·거울이 다릅니다'));
           var e=new Error('경기 서버 확인 원문·IDB·거울 확인이 끝나지 않았습니다');e.psCode='match_not_ready';throw e;
         });
@@ -7715,6 +7735,7 @@ function syncNowCore(reason){
         try{ if(window.parent&&window.parent.__psRefreshPullState) window.parent.__psRefreshPullState(); }catch(_){}
         if(scheduleDeferred&&!scheduleHeld())setTimeout(function(){syncNow('schedule-stale-retry');},1100);
         else if(scheduleDependencyRetry&&!scheduleHeld())setTimeout(function(){syncNow('schedule-dependency-retry');},350);
+        else if(matchNewerRetry)setTimeout(function(){syncNow('match-newer-retry');},350);   /* 2.917 */
         var result={pushed:Object.keys(confirmedPushKeys).length+((lr&&lr.pushed)||0),applied:applied,skipped:curKeys,personalError:personalError,
           held:heldKeys.slice(),deferred:dependencyDeferredKeys.slice(),pending:remain.count,scheduleDeferred:scheduleDeferred};
         try{syncObservationRoundDone(observationOwner,result);}catch(_){}
@@ -7772,7 +7793,8 @@ function syncNowCore(reason){
       +(pi.count?(' · 이 기기에 '+pi.count+'건 안전하게 있어요'):'')+(info.code==='sync_offline'?'':' · 곧 다시 시도해요'));   /* 2.625 말 바꾸기 */
     /* 2.631 — 원인 문장을 남긴다(내용·토큰 없음, 120자). 실측: sync_unexpected 11건·sync_storage 8건이 meta {stage,code} 뿐이라 서버에서 무엇인지 알 수 없었다
        2.916 — 이름·메시지 없는 값(null·Event)도 무엇인지 남기고, 회차 이유·숨김·잠자기·직전 진단 단계를 같이 싣는다. */
-    if(!quiet){try{eventTrack('sync_failed',{status:'error',feature:'sync',error_code:info.code,meta:syncFailMeta(e,info,ctx)});}catch(_){}}
+    /* 2.917 — 오프라인은 앱 오류가 아니다(기기 상태). 상태 줄은 «오프라인이에요»로 말하고 서버 오류 기록은 남기지 않는다(7일 11명·39건) */
+    if(!quiet&&info.code!=='sync_offline'){try{eventTrack('sync_failed',{status:'error',feature:'sync',error_code:info.code,meta:syncFailMeta(e,info,ctx)});}catch(_){}}
     try{ renderUI(); }catch(_){}
     syncDiagnostic(info.stage,e);
     return outboxFail(wid,info).then(function(){if(info.code!=='sync_offline')scheduleSyncRetry();return {error:String(e),code:info.code,pending:pi.count,rejectedKeys:(e&&Array.isArray(e.psRejectedKeys))?e.psRejectedKeys.slice(0,20):null};});   /* 2.586 — 거부된 키를 전환 출구가 쓴다 */
@@ -7798,6 +7820,7 @@ function syncRoundContext(reason,hid0,t0,p0){
 }
 function syncQuietFailure(e,info,ctx){
   if(info.code==='sync_local_changed'&&info.stage==='storage_source_changed')return true;   /* 연속 편집 경합 — 다음 회차가 새 값으로 맞춘다 */
+  if(info.code==='sync_local_changed'&&info.stage==='schedule_ready_exact'&&e&&e.psNewerLocal)return true;   /* 2.917 — 회차 중 일정 새 입력: 3-way 병합이 다음 회차에 맞춘다 */
   var transientIdbErr=info.code==='sync_storage'&&/^(AbortError|TimeoutError|UnknownError|TransactionInactiveError)$/.test(String(e&&e.name||''));
   if(info.code!=='sync_network'&&info.code!=='sync_timeout'&&!transientIdbErr)return false;
   return ctx.hiddenNow||ctx.hid||ctx.slept||ctx.reason==='hide'||ctx.reason==='interval-bg'||(ctx.wakeMs>=0&&ctx.wakeMs<15000);
