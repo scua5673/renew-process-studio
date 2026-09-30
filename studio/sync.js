@@ -6450,6 +6450,7 @@ function syncNowCore(reason){
   }
   busy=true; rosterSyncMark=null; setStatus('올리는 중…');
   var roundHid0=syncHiddenSeq,roundT0=Date.now(),roundP0=0;try{roundP0=performance.now();}catch(_){}   /* 2.916 — 숨김·잠자기 판정 */
+  lastRoundStartAt=roundT0;   /* 2.918 — 주기 회차가 최근 회차(편집·실시간·보기)를 보고 건너뛴다 */
   try{ clearTimeout(busyDog); }catch(_){} busyDog=setTimeout(function(){ busy=false; }, 25000);   /* 워치독: fetch가 응답 없이 멈춰도 25초 뒤 busy 해제(전체 동기화 영구 정지 방지) */
   /* iframe storage 이벤트를 받아 parent IDB에 미러링하던 쓰기가 끝난 뒤 preload한다. */
   var sharedReady=(window.PSStorage&&PSStorage.sharedReady)?PSStorage.sharedReady():Promise.resolve(true);
@@ -7806,7 +7807,8 @@ var lastServerKeys=null;   /* 2.916 — 마지막 회차 kv_meta 가 말한 키 
    메타 조회(kv_meta) 한 번 끊김이었다 — 사파리는 숨길 때 요청을 끊고(Load failed), 맥은 잠에서 깬 직후 망이 안 붙어 있다. */
 var syncHiddenSeq=0,syncWakeAt=0;
 try{
-  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden')syncHiddenSeq++; else syncWakeAt=Date.now(); });
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden')syncHiddenSeq++; else {syncWakeAt=Date.now();syncActivityAt=Date.now();} });
+  window.addEventListener('focus',function(){ syncActivityAt=Date.now(); });   /* 2.918 */
   window.addEventListener('pagehide',function(){ syncHiddenSeq++; });
   window.addEventListener('pageshow',function(){ syncWakeAt=Date.now(); });
   window.addEventListener('online',function(){ syncWakeAt=Date.now(); });
@@ -7844,6 +7846,31 @@ function syncFailMeta(e,info,ctx){
   if(src)out.source=src.slice(0,48);
   return out;
 }
+/* 2.918 — 주기 동기화 간격. 올릴 것이 있으면 예전 그대로(보일 때 45초·숨김 3분).
+   ② 실시간(ps_kv_ping)이 붙어 있으면 팀 자료 변경은 바로 알려 오므로 3분(보관함 변경은 최대 3분 늦게 보인다 — 사용자 승인한 대가)
+   ③ 보이지만 방치된 창(포커스 없음·15분 입력 없음)은 5분, 숨긴 창은 10분 — 돌아오는 순간 'show' 회차가 곧바로 맞춘다. */
+var lastRoundStartAt=0,syncActivityAt=Date.now();
+function syncMarkActivity(){ syncActivityAt=Date.now(); }
+function syncWatchInput(w){
+  try{ if(!w||w.__psActWatch)return; w.__psActWatch=1;
+    ['pointerdown','keydown','wheel','touchstart'].forEach(function(ev){ w.addEventListener(ev,syncMarkActivity,{capture:true,passive:true}); });
+  }catch(_){}
+}
+/* 입력은 대부분 같은 출처 iframe 안에서 일어나 셸로 올라오지 않는다 — 프레임마다(새로 열리거나 다시 불러오면 다시) 붙인다 */
+function syncWatchFrames(){
+  syncWatchInput(window);
+  try{ var fs=document.querySelectorAll('iframe'); for(var i=0;i<fs.length;i++){ try{ syncWatchInput(fs[i].contentWindow); }catch(_){} } }catch(_){}
+}
+function syncIntervalGap(hidden){
+  var pending=0; try{ pending=visiblePendingInfo(activeWs()).count||0; }catch(_){}
+  if(pending)return hidden?180000:45000;
+  if(hidden)return 600000;
+  var focused=true; try{ focused=document.hasFocus(); }catch(_){}
+  if(!focused||Date.now()-syncActivityAt>900000)return 300000;
+  try{ if(rtConnected())return 180000; }catch(_){}
+  return 45000;
+}
+function syncIntervalDue(hidden){ return Date.now()-lastRoundStartAt>=syncIntervalGap(hidden)-3000; }
 /* 서버 변경을 로컬에 반영한 뒤: 부팅 직후면 1회 새로고침으로 각 탭에 반영, 사용 중이면 안내 칩 */
 function onApplied(reason,n){
   if(reason==='boot'){
@@ -9761,13 +9788,18 @@ function boot(){
      전에는 늘 3분이라 팀원이 올린 걸 최대 3분 뒤에야 봤다. 화면을 보고 있는 동안에는
      45초마다 맞추고, 탭이 숨겨져 있으면 3분 그대로 둔다(배터리·요청 수).
      숨은 동안 쌓인 것은 어차피 돌아오는 순간 visibilitychange('show')가 즉시 당겨온다. */
+  /* 2.918 — 틱은 그대로 두고, 틱마다 «지금 회차가 필요한가»를 본다(syncIntervalGap). 최근에 다른 이유로 돈 회차가 있으면 건너뛴다. */
+  syncWatchFrames();
   setInterval(function(){
     if(!dataUnlocked()||navigator.onLine===false) return;
-    if(document.visibilityState==='visible') syncNow('interval');
+    if(document.visibilityState!=='visible') return;
+    syncWatchFrames();
+    if(syncIntervalDue(false)) syncNow('interval');
   },45000);
   setInterval(function(){
     if(!dataUnlocked()||navigator.onLine===false) return;
-    if(document.visibilityState!=='visible') syncNow('interval-bg');
+    if(document.visibilityState==='visible') return;
+    if(syncIntervalDue(true)) syncNow('interval-bg');
   },180000);
   /* 1.592 — 자동 스냅샷. 로그인과 무관하게(로컬만 쓰는 사람도 사고는 난다) 하루 한 번.
      앱을 여는 순간 몰아치면 첫 화면이 느려지므로 8초 뒤에 조용히 뜬다. */

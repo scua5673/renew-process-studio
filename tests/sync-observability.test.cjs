@@ -71,8 +71,29 @@ test('hidden/offline/locked views do not send; visible heartbeat samples current
 test('report storage events cannot make tabs ping-pong; application state changes debounce',async()=>{
   const h=harness();h.c.start();await h.c.flush();const initial=h.timers.size;
   h.listeners.storage({key:'ps_sync_report_seq_v1:'+A});h.listeners.storage({key:'ps_event_queue_v2'});assert.equal(h.timers.size,initial);
+  h.snapshot.pending_team=3;   // 2.918 — 실제로 바뀐 상태만 다시 보낸다
   for(let i=0;i<100;i++)h.listeners.storage({key:'ps_sync_pending_summary_v1'});
   assert.equal([...h.timers.values()].filter(x=>x.ms===1200).length,1);await h.fire(1200);assert.equal(h.requests.length,2);h.c.stop();
+});
+
+test('2.918 — 같은 상태는 되풀이해 보내지 않고, 마지막 확인 시각·회차 중 표시만 바뀐 것도 같은 상태로 본다',async()=>{
+  const h=harness();h.c.start();await h.fire(1200);assert.equal(h.requests.length,1);
+  h.c.poke();await h.fire(1200);assert.equal(h.requests.length,1,'같은 상태');
+  h.snapshot.last_round_ack_at=1800000001000;h.snapshot.busy=true;h.c.poke();await h.fire(1200);assert.equal(h.requests.length,1,'시각·회차 중만 바뀜');
+  h.snapshot.error_code='sync_network';h.c.poke();await h.fire(1200);assert.equal(h.requests.length,2,'오류가 생기면 보낸다');
+  h.snapshot.error_code=null;h.c.poke();await h.fire(1200);assert.equal(h.requests.length,3,'오류가 풀리면 보낸다');h.c.stop();
+});
+test('2.918 — 바뀐 것이 없어도 8분이 지나면 다음 심장박동에 한 번 보낸다(관리자 «현재» 기준 10분 안)',async()=>{
+  const h=harness();h.c.start();await h.fire(1200);assert.equal(h.requests.length,1);
+  h.time(1800000000000+7*60000);h.snapshot.last_round_ack_at=1800000000000+7*60000;await h.fire(120000);await h.fire(1200);assert.equal(h.requests.length,1);
+  h.time(1800000000000+9*60000);h.snapshot.last_round_ack_at=1800000000000+9*60000;await h.fire(120000);await h.fire(1200);assert.equal(h.requests.length,2);
+  assert.equal(h.requests[1].body.p_fields.last_round_ack_at,new Date(1800000000000+9*60000).toISOString());h.c.stop();
+});
+test('2.918 — 계정·공간이 바뀌면 같은 숫자여도 보낸다 · 실패한 보고는 보낸 것으로 치지 않는다',async()=>{
+  const h=harness();h.c.start();await h.fire(1200);assert.equal(h.requests.length,1);
+  h.identity.wid=P;h.c.poke();await h.fire(1200);assert.equal(h.requests.length,2);
+  const q=harness();q.hooks.send=()=>Promise.reject(Error('offline'));q.c.start();await q.fire(1200);assert.equal(q.requests.length,1);
+  delete q.hooks.send;await q.fire(30000);assert.equal(q.requests.length,2,'실패 뒤 같은 상태도 다시 보낸다');q.c.stop();
 });
 
 // Execute the actual sync adapter with synthetic auth, stores and HTTP.

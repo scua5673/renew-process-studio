@@ -33,6 +33,11 @@
     var storage=o.storage||(w&&w.localStorage),crypto=o.crypto||(w&&w.crypto),now=o.now||Date.now;
     var later=o.setTimeout||setTimeout,cancel=o.clearTimeout||clearTimeout;
     var active=false,disabled=false,inFlight=false,dirty=false,timer=null,heartbeat=null,suspended=false;
+    /* 2.918 — 같은 상태를 되풀이해 보내지 않는다. 회차마다 바뀌는 «마지막 확인 시각»·«회차 중»은 비교에서 빼고,
+       대신 8분이 지나면 다음 심장박동(2분)에 한 번 보낸다 — 관리자 화면은 10분 안의 보고만 «현재»로 본다(admin-operations.js). 전엔 45초 회차마다 1~2번 +
+       2분 심장박동마다 RPC 를 불렀다(서버 요청·로그 대부분). 사람이 부르는 flush() 는 늘 보낸다. */
+    var lastSentPrint='',lastSentAt=0,REFRESH_MS=Number.isFinite(o.refreshMs)?o.refreshMs:480000;
+    function fingerprint(c,f){var x={};Object.keys(f).forEach(function(k){if(k!=='last_round_ack_at'&&k!=='busy')x[k]=f[k];});return identity(c)+'|'+JSON.stringify(x);}
     function visible(){return !suspended&&(!doc||doc.visibilityState==='visible');}
     function pageHide(){suspended=true;if(timer!=null)cancel(timer);timer=null;}
     function pageShow(){suspended=false;poke();}
@@ -72,7 +77,7 @@
       if(!e||['ps_sync_pending_summary_v1','ps_cache_owner_v1','ps_active_ws','ps_hold_list_v1','ps_personal_review_v1','ps_sync_session'].indexOf(e.key)<0)return;
       poke();
     }
-    function flush(){
+    function flush(force){
       if(timer!=null){cancel(timer);timer=null;}
       if(!active||disabled||!visible())return Promise.resolve(false);
       if(inFlight){dirty=true;return Promise.resolve(false);}
@@ -81,8 +86,10 @@
       return Promise.resolve().then(function(){return o.snapshot(c);}).then(function(value){
         if(!active||disabled||!visible()||!same(c))return false;
         var f=fields(value);if(!f||!f.online)return false;
+        var print=fingerprint(c,f);
+        if(force!==true&&print===lastSentPrint&&now()-lastSentAt<REFRESH_MS)return false;
         var body=envelope(c,f);if(!body||!same(c))return false;
-        return Promise.resolve(o.send(c,body)).then(function(){return active&&!disabled&&same(c);});
+        return Promise.resolve(o.send(c,body)).then(function(){var ok=active&&!disabled&&same(c);if(ok){lastSentPrint=print;lastSentAt=now();}return ok;});
       }).catch(function(e){
         if(missingRpc(e))disabled=true;
         else retry=true;
@@ -111,7 +118,7 @@
       if(w&&w.removeEventListener){w.removeEventListener('ps-sync-state',poke);w.removeEventListener('online',poke);w.removeEventListener('storage',storageChanged);w.removeEventListener('pagehide',pageHide);w.removeEventListener('pageshow',pageShow);}
       if(doc&&doc.removeEventListener)doc.removeEventListener('visibilitychange',poke);
     }
-    return {start:start,stop:stop,poke:poke,flush:flush,disabled:function(){return disabled;}};
+    return {start:start,stop:stop,poke:poke,flush:function(){return flush(true);},disabled:function(){return disabled;}};
   }
   return {createClient:createClient,fields:fields,identity:identity,missingRpc:missingRpc};
 });
