@@ -29,11 +29,11 @@ try{
  });
  const app=await context.newPage();await app.goto(base+'/studio/app.html?account=logout&fixture=handoff',{waitUntil:'domcontentloaded'});
  await app.waitForFunction(()=>window.PSSync&&document.querySelector('#psAcctWrap .acct-pop.on'));
- await app.waitForFunction(()=>!document.body.classList.contains('ps-booting')&&!document.querySelector('#loading:not(.ps-boot-done)'));
+ await app.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting')&&!document.querySelector('#loading:not(.ps-boot-done)'));
  await app.locator('#psAcctWrap .acct-pop.on').waitFor({state:'visible'});
  assert.match(await app.locator('#psAcctWrap .acct-pop').innerText(),/로그아웃/);assert.equal(new URL(app.url()).searchParams.has('account'),false);
+ await app.waitForFunction(()=>window.PSSync&&PSSync.dataUnlocked()&&localStorage.getItem('ps_last_pull_at'));
  assert.equal(await app.evaluate(()=>PSSync.session().uid),UID);assert.equal(calls.some(c=>c.path==='/auth/v1/logout'),false);
- await app.waitForFunction(()=>PSSync.dataUnlocked()&&localStorage.getItem('ps_last_pull_at'));
  // Background sync replaces account-menu nodes; scroll the currently resolved
  // node synchronously instead of holding it across an animation-frame wait.
  await app.locator('#psAcctWrap .acct-pop').getByRole('button',{name:'로그아웃',exact:true}).evaluate(el=>el.scrollIntoView({block:'nearest'}));

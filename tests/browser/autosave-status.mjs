@@ -89,7 +89,7 @@ try{
     try{
       await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
       await page.waitForFunction(()=>window.PSSync&&PSSync.dataUnlocked()&&localStorage.getItem('ps_last_pull_at'));
-      await page.waitForFunction(()=>!document.body.classList.contains('ps-booting')&&!document.querySelector('#loading:not(.ps-boot-done)'));
+      await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting')&&!document.querySelector('#loading:not(.ps-boot-done)'));
       await page.waitForTimeout(2800); // Allow the real entry splash animation to finish.
       const bootEvents=[];for(const frame of page.frames())bootEvents.push(...await frame.evaluate(()=>window.__quietEntryEvents||[]));
       assert.deepEqual(bootEvents,[],'Real initial boot shows no transient modal, account menu or legacy notice');

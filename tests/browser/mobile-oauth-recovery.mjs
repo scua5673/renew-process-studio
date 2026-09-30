@@ -72,7 +72,7 @@ try{
       try{
         await page.goto(base+'/studio/app.html'+(scenario.surface==='recovery'?'?error_code=flow_state_not_found&error_description=OAuth+state+expired':'?fixtureExpired=1'),{waitUntil:'domcontentloaded'});
         await page.waitForFunction(()=>window.PSSync&&document.querySelector('#psAcctWrap .acct-btn'));
-        await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
+        await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting'));
         await page.locator('#loading').waitFor({state:'hidden'});
         assert.equal(await page.evaluate(()=>PSSync.session()),null,'fixture remains signed out');
         let button;

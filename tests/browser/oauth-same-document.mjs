@@ -109,10 +109,10 @@ try{
   page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')diagnostics.push({at:Date.now(),type:m.type(),text:m.text()});});
   async function ready(wid,uid){
     await bounded(page.waitForFunction(({wid,uid})=>window.PSSync&&PSSync.dataUnlocked()&&PSSync.activeWs()===wid&&PSSync.session()?.uid===uid&&PSSync.rosterReady(wid),{wid,uid}),'account ready '+wid,35000);
-    await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
+    await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting'));
     await page.waitForFunction(()=>{try{const frame=document.querySelector('#fScout');return frame?.contentWindow?.scoutBootPending===false;}catch(_){return false;}});
     // Initialization may normalize positions and enqueue a main save. Confirm that final version too.
-    await page.waitForFunction(({wid,uid})=>PSSync.session()?.uid===uid&&PSSync.activeWs()===wid&&PSSync.rosterReady(wid),{wid,uid});
+    await page.waitForFunction(({wid,uid})=>window.PSSync&&PSSync.session()?.uid===uid&&PSSync.activeWs()===wid&&PSSync.rosterReady(wid),{wid,uid});
     const state=await page.evaluate(async({privateAKey})=>{
       await PSStorage.sharedReady();
       const raw=localStorage.getItem('scout_tool_v1'),stored=await storage.get('scout_tool_v1'),keys=await storage.keys();

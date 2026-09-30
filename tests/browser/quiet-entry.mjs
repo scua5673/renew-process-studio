@@ -91,7 +91,7 @@ try{
         const previousPull=phase==='reload'?await page.evaluate(()=>localStorage.getItem('ps_last_pull_at')):null;
         if(phase==='open')await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});else await page.reload({waitUntil:'domcontentloaded'});
         await page.waitForFunction(previous=>window.PSSync&&PSSync.dataUnlocked()&&localStorage.getItem('ps_last_pull_at')&&localStorage.getItem('ps_last_pull_at')!==previous,previousPull);
-        await page.waitForFunction(()=>!document.body.classList.contains('ps-booting')&&!document.querySelector('#loading:not(.ps-boot-done)'));
+        await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting')&&!document.querySelector('#loading:not(.ps-boot-done)'));
         await page.waitForFunction(()=>{try{return document.querySelector('#fBoard')?.contentDocument?.querySelector('#hint');}catch{return false;}});
         // renderUI schedules name hydration after 600 ms. Observe beyond that
         // timer and the board's boot hint without clicking or hiding anything.
