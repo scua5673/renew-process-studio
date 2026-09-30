@@ -136,7 +136,9 @@ try{
 
     for(const failure of ['unavailable','forbidden','not-admin','malformed']){
       mode=failure;await view.locator('[data-adm-support=back]').click();await view.locator('[data-adm-support=refresh]').click();
-      await page.waitForFunction(()=>!document.querySelector('#viewSupport [data-adm-report]')&&document.querySelector('#viewSupport')?.textContent.match(/사용|불러|설치|권한|관리자/));
+      /* 2.919 — «불러오는 중» 글자에 걸려 끝나던 대기(크로미움은 운 좋게 통과, 웹킷은 로딩이 빨라 오류 문구를 기다리다 멈춤)를
+         목록 오류 알림(role=alert) 자체로 기다린다 */
+      await page.waitForFunction(()=>!document.querySelector('#viewSupport [data-adm-report]')&&document.querySelector('#viewSupport .admSupportInbox [role=alert]'));
       assert.equal(await view.locator('[data-adm-report]').count(),0);assert.equal(await view.locator('textarea[name=reply]').count(),0);
       assert.doesNotMatch(await view.innerText(),/아직[^.]*없습니다|등록된 제보가 없습니다|접수된 제보가 없습니다/,'A failed or unauthorized list is not an empty successful list');
       await page.screenshot({path:path.join(out,width+'-'+failure+'.png')});mode='normal';await view.locator('[data-adm-support=refresh]').click();await view.locator('[data-adm-report="'+reportId+'"]').click();await input.waitFor();

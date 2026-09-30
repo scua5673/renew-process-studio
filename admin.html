@@ -247,8 +247,12 @@
     opacity:0;transition:opacity .2s;pointer-events:none;}
   .toast.on{opacity:1;}
   .loading{padding:40px;text-align:center;color:var(--dim);}
+/* 2.919 사람 알아보기 — 소속 팀 칸 */
+.ut-team{font-size:12.5px;line-height:1.45;white-space:nowrap}
+.ut-team+.ut-team{margin-top:2px}
+.ut-role{display:inline-block;padding:0 6px;border-radius:999px;background:var(--line,#E3E6EA);font-size:11px;font-weight:700}
 </style>
-<link rel="stylesheet" href="studio/admin-user-detail.css?v=2.792">
+<link rel="stylesheet" href="studio/admin-user-detail.css?v=2.919">
 <link rel="stylesheet" href="studio/admin-operations.css?v=2.816">
 <link rel="stylesheet" href="studio/admin-support.css?v=2.816">
 <link rel="stylesheet" href="studio/admin-content.css?v=2.890">
@@ -549,7 +553,7 @@
   <!-- 유저 뷰 -->
   <div class="wrap hide" id="viewUsers" style="grid-template-columns:1fr">
     <div class="col">
-      <div class="searchrow"><input id="uSearch" placeholder="이름 · 이메일 · 소속 팀 · UID 검색" oninput="renderUsers()"></div>
+      <div class="searchrow"><input id="uSearch" placeholder="이름 · 이메일 · 팀 · 선수 · 카카오/구글 · UID 검색" oninput="renderUsers()"></div>
       <div class="panel ps-scroll">
         <div class="tablewrap ps-flow"><table id="usersTable"><tbody><tr><td class="loading">불러오는 중…</td></tr></tbody></table></div>
       </div>
@@ -578,11 +582,11 @@
 <div id="modalRoot"></div>
 <div class="toast" id="toast"></div>
 
-<script src="studio/admin-user-detail.js?v=2.792"></script>
+<script src="studio/admin-user-detail.js?v=2.919"></script>
 <script src="studio/admin-operations.js?v=2.792"></script>
 <script src="studio/support-diagnostics.js?v=2.816"></script>
 <script src="studio/support.js?v=2.816"></script>
-<script src="studio/admin-support.js?v=2.816"></script>
+<script src="studio/admin-support.js?v=2.919"></script>
 <script src="studio/admin-content-data.js?v=2.854"></script>
 <script src="studio/admin-content.js?v=2.890"></script>
 <script>
@@ -852,10 +856,13 @@ function reloadAll(){
        적용 전까지는 있는 함수만 부른다. 적용하면 이 줄을 v2 → v1 폴백으로 되돌린다. */
     safe(rpc('ps_admin_users')),
     safe(rpc('ps_admin_library',{p_wid:null,p_include_deleted:true})),
-    safe(rpc('ps_admin_content_owners',{p_wid:null,p_include_deleted:true}))
+    safe(rpc('ps_admin_content_owners',{p_wid:null,p_include_deleted:true})),
+    /* 2.919 — 사람 알아보기(migrations/20260930_admin_people): 이름·로그인 방식·팀별 역할·연결 선수. 없으면 위 v1 그대로 */
+    safe(rpc('ps_admin_people'))
   ]).then(function(res){
     if(adminSessionLocked||epoch!==adminAuthEpoch||reloadTicket!==adminReloadTicket)return;
     WS=res[0].v; USERS=res[1].v;
+    if(res[4].ok&&Array.isArray(res[4].v)&&res[4].v.length){ try{ USERS=peopleToUsers(res[4].v); }catch(_){} }
     if(libTicket===adminLibraryTicket){
       ADMIN_CONTENT_OWNERS=res[3].ok&&Array.isArray(res[3].v)?res[3].v:[];adminOwnersReady=res[3].ok&&Array.isArray(res[3].v);
       ALL_LIB=normalizeLibRows(res[2].v);
@@ -934,7 +941,7 @@ function loadBack(){
     ];
     var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:4px 0 14px">'+kpi.map(function(k){return '<div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px"><div style="font-size:10px;color:var(--dim2);font-weight:700">'+k[0]+'</div><div style="font-size:14px;font-weight:800;margin-top:2px">'+k[1]+'</div></div>';}).join('')+'</div>';
     html+='<div class="sec-t" style="margin-top:6px">24시간 동기화 실패</div>'+tbl(['원인','건','사람'],(h.fails24||[]).map(function(f){return [f.code||'?',n(f.n),n(f.users)];}));
-    html+='<div class="sec-t" style="margin-top:14px">막힌 기기 후보 (48시간 실패 뒤 쓰기 없음)</div>'+tbl(['이름','실패','마지막 원인','판','마지막 실패','마지막 쓰기'],(h.stuck||[]).map(function(x){return [x.name||('…'+String(x.user_id||'').slice(0,8)),n(x.fails),x.last_code||'',x.app_version||'',ko(x.last_fail),x.last_write?ko(x.last_write):'없음'];}));
+    html+='<div class="sec-t" style="margin-top:14px">막힌 기기 후보 (48시간 실패 뒤 쓰기 없음)</div>'+tbl(['이름','실패','마지막 원인','판','마지막 실패','마지막 쓰기'],(h.stuck||[]).map(function(x){return [x.name||adminPersonName(x.user_id),n(x.fails),x.last_code||'',x.app_version||'',ko(x.last_fail),x.last_write?ko(x.last_write):'없음'];}));
     html+='<div class="sec-t" style="margin-top:14px">7일 판 분포</div>'+tbl(['판','사람','이벤트','마지막'],(h.versions||[]).map(function(v){return [v.ver,n(v.users),n(v.events),ko(v.last_at)];}));
     html+='<div class="sec-t" style="margin-top:14px">큰 문서 8</div>'+tbl(['팀','키','길이','고침'],(h.bigdocs||[]).map(function(b){return [b.ws,b.k,mb(b.len),ko(b.upd)];}));
     html+='<div class="sec-t" style="margin-top:14px">7일 서버 거부</div>'+tbl(['사유','키','건'],(h.denied7||[]).map(function(d){return [d.reason,d.k,n(d.n)];}));
@@ -946,16 +953,58 @@ function loadBack(){
 /* ===== 오류 분석 ===== */
 var ERR=null, ERR_BUSY=false, ERR_LIMIT=5000, ERR_TICKET=0;
 function errDaysVal(){ var e=$('errDays'); return Math.max(1,Math.min(90,+((e&&e.value)||7)||7)); }
+/* ===== 2.919 사람 알아보기 =====
+   사용자: «관리자 페이지에 사용자에 대해서 누군지 더 잘 볼 수 있게». 카카오 가입자는 이메일이 없어
+   «(이름·이메일 없음)»·«(이름 없음 · b4df6561)» 로만 보였다. ps_admin_people 이 주는
+   팀에 적은 이름 → 로그인 계정 이름 → 이메일 → 연결된 선수 순으로 이름표를 만들고,
+   팀별 역할·연결 선수·로그인 방식을 한 줄로 붙인다. 모든 화면이 같은 이름표를 쓴다. */
+var ADMIN_PROVIDER={kakao:'카카오',google:'구글',email:'이메일',apple:'애플',github:'깃허브'};
+var ADMIN_ROLE={owner:'소유자',executive:'임원',admin:'관리자',staff:'스태프',player:'선수',member:'구성원'};
+function personTeam(t){
+  var role=t.owner?'소유자':(ADMIN_ROLE[t.role]||ADMIN_ROLE[t.member_role]||'');
+  var pl=t.player&&t.player.name?(t.player.name+(t.player.num?' #'+t.player.num:'')+(t.player.pos?' '+t.player.pos:'')):'';
+  return {wid:t.workspace_id||'',name:String(t.name||'(이름 없는 팀)'),role:role,player:pl};
+}
+function peopleToUsers(list){
+  return list.filter(function(p){return p&&p.user_id;}).map(function(p){
+    var teams=(Array.isArray(p.teams)?p.teams:[]).filter(function(t){return t&&t.kind==='team';}).map(personTeam);
+    var name=String(p.member_name||'').trim()||String(p.account_name||'').trim();
+    return {user_id:p.user_id,email:p.email||'',name:name,account_name:p.account_name||'',member_name:p.member_name||'',
+      provider:p.provider||'',created_at:p.created_at,last_sign_in_at:p.last_sign_in_at,made_count:+p.made_count||0,
+      ws_count:Array.isArray(p.teams)?p.teams.length:0,teams:teams,
+      players:teams.filter(function(t){return t.player;}).map(function(t){return t.player;}).join(', '),
+      team_names:teams.map(function(t){var x=[t.role,t.player].filter(Boolean).join(' · ');return t.name+(x?' ('+x+')':'');}).join(', ')};
+  });
+}
+function adminUserRow(uid){ if(!uid)return null; for(var i=0;i<(USERS||[]).length;i++){var x=USERS[i];if(x&&(x.user_id===uid||x.uid===uid||x.id===uid))return x;} return null; }
+/* 이름표: 이름 → 이메일 → 연결 선수(«선수 이선수») → UID 앞 8자리 */
+function adminPersonName(uid,fallback){
+  var u=adminUserRow(uid)||{};
+  var nm=String(u.name||u.display_name||'').trim();
+  if(nm)return nm;
+  if(u.email)return u.email;
+  if(fallback)return fallback;
+  if(u.players)return '선수 '+String(u.players).split(', ')[0];
+  return uid?('(이름 없음 · '+String(uid).slice(0,8)+')'):'—';
+}
+/* 알아보는 한 줄: 팀·역할·선수 → 이메일 → 로그인 방식 → UID */
+function adminPersonSub(uid,label){
+  var u=adminUserRow(uid)||{},parts=[];
+  if(Array.isArray(u.teams)&&u.teams.length){var t=u.teams[0];parts.push(t.name+(t.role?' '+t.role:'')+(t.player?' · '+t.player:'')+(u.teams.length>1?' 외 '+(u.teams.length-1)+'팀':''));}
+  else if(u.team_names)parts.push(u.team_names);
+  if(u.email&&u.email!==label)parts.push(u.email);
+  if(u.provider)parts.push((ADMIN_PROVIDER[u.provider]||u.provider)+' 로그인');
+  if(uid)parts.push('UID '+String(uid).slice(0,8));
+  return parts.join(' · ');
+}
 function errUserName(uid){
   if(!uid)return '—';
-  var u=(USERS||[]).filter(function(x){return x.uid===uid||x.id===uid||x.user_id===uid;})[0];
-  return (u&&(u.email||u.name||u.display_name))||('…'+String(uid).slice(0,8));
+  return adminPersonName(uid);
 }
 function errUserInfo(uid){
-  var u=(USERS||[]).filter(function(x){return x.uid===uid||x.id===uid||x.user_id===uid;})[0]||{};
-  var label=(u.name||u.display_name||u.email||'').trim()||('…'+String(uid||'').slice(0,8));
-  var sub=(u.email&&u.email!==label?u.email:'')||(u.team_names||'')||(uid?('UID '+String(uid).slice(0,8)):'');
-  return {uid:uid||'',label:label,sub:sub,team:u.team_names||'',email:u.email||''};
+  var u=adminUserRow(uid)||{};
+  var label=adminPersonName(uid);
+  return {uid:uid||'',label:label,sub:adminPersonSub(uid,label),team:u.team_names||'',email:u.email||''};
 }
 function errUserCell(uid){
   var u=errUserInfo(uid);
@@ -1633,8 +1682,7 @@ var WHOLOG_VERB={insert:'만들었습니다', update:'고쳤습니다', delete:'
 function actorName(r){
   var nm=(r.name||'').trim();
   if(nm) return nm;
-  if(r.email) return r.email;
-  return '(이름 없음 · '+String(r.user_id||'').slice(0,8)+')';
+  return adminPersonName(r.user_id,r.email||'');
 }
 function loadWhoLog(){
   return rpc('ps_admin_recent_activity',{p_days:WHOLOG_DAYS,p_limit:120})
@@ -1885,7 +1933,7 @@ function wsIdpPane(rows){
   h+='<div class="tablewrap"><table><thead><tr><th>선수 계정</th><th>연결</th><th>IDP</th><th>평가표</th><th>상태</th></tr></thead><tbody>';
   h+=players.map(function(r){
     var evalState=!r.idp_updated_at?'미시작':r.needs_reval?'재평가 필요':(+r.eval_level_count||0)+'개 완료';
-    return '<tr><td class="nm">'+esc(r.email||String(r.user_id||'').slice(0,8))+'</td>'
+    return '<tr><td class="nm">'+esc(adminPersonName(r.user_id,r.email||''))+'</td>'
       +'<td>'+(r.player_id?'<span class="rolebadge staff">연결됨</span>':'<span class="rolebadge">미연결</span>')+'</td>'
       +'<td class="muted">'+(r.idp_updated_at?fmtAgo(r.idp_updated_at):'없음')+'</td>'
       +'<td class="muted">'+esc(r.eval_set_id||'—')+'</td>'
@@ -1904,7 +1952,7 @@ function membersTable(w,members){
   var rows=members.map(function(m){
     var canRemove=(w.kind==='team' && m.role!=='owner');
     var role=m.role||'member',label={owner:'임원',admin:'임원',executive:'임원',staff:'코칭스태프',player:'선수',member:'멤버'}[role]||role;
-    return '<tr><td class="nm"><button type="button" class="admin-user-open" data-admin-user="'+esc(m.user_id)+'">'+esc(m.auth_email||m.email||m.user_id.slice(0,8))+'</button></td>'
+    return '<tr><td class="nm"><button type="button" class="admin-user-open" data-admin-user="'+esc(m.user_id)+'">'+esc((typeof adminPersonName==='function'&&adminUserRow(m.user_id)?adminPersonName(m.user_id,m.auth_email||m.email||''):'')||m.auth_email||m.email||m.user_id.slice(0,8))+'</button></td>'
       +'<td><span class="rolebadge '+esc(role)+'">'+esc(label)+'</span></td>'
       +'<td class="muted">'+fmtDate(m.joined_at)+'</td>'
       +'<td class="muted">'+fmtDateT(m.last_sign_in_at)+'</td>'
@@ -1942,16 +1990,37 @@ function userLabel(u){
   var nm=(u.name||'').trim();
   if(nm) return nm;
   if(u.email) return u.email;
+  /* 2.919 — 이름·이메일이 둘 다 없으면 연결된 선수 이름으로 알아본다 */
+  if(u.players) return '선수 '+String(u.players).split(', ')[0];
   return '(이름·이메일 없음)';
+}
+/* 2.919 — 소속 팀 칸: 팀마다 «팀 · 역할 · 선수 이름 #번호 자리» 한 줄 */
+function userTeamsCell(u){
+  if(!Array.isArray(u.teams)) return '<span class="muted">'+esc(u.team_names||'—')+'</span>';
+  if(!u.teams.length) return '<span class="muted">팀 없음 · 개인 공간만</span>';
+  return u.teams.map(function(t){
+    return '<div class="ut-team"><b>'+esc(t.name)+'</b>'+(t.role?' <span class="ut-role">'+esc(t.role)+'</span>':'')
+      +(t.player?' <span class="muted">· '+esc(t.player)+'</span>':'')+'</div>';
+  }).join('');
+}
+/* 2.919 — 이름 아래 한 줄: 이메일(없으면 «이메일 없음») · 로그인 방식 · 계정 이름(팀에 적은 이름과 다를 때) · UID */
+function userSubLine(u){
+  var parts=[];
+  var nm=(u.name||'').trim();
+  if(u.email){ if(u.email!==nm)parts.push(u.email); }
+  else if(Array.isArray(u.teams)) parts.push('이메일 없음');
+  if(u.provider) parts.push((ADMIN_PROVIDER[u.provider]||u.provider)+' 로그인');
+  if(u.account_name&&u.member_name&&u.account_name!==u.member_name) parts.push('계정 이름 '+u.account_name);
+  parts.push('UID '+(u.user_id||'').slice(0,8));
+  return parts.join(' · ');
 }
 function renderUsers(){
   var q=($('uSearch')?$('uSearch').value:'').trim().toLowerCase();
   var list=USERS.slice();
   if(q) list=list.filter(function(u){
-    return (u.email||'').toLowerCase().indexOf(q)>=0
-        || (u.name||'').toLowerCase().indexOf(q)>=0
-        || (u.team_names||'').toLowerCase().indexOf(q)>=0
-        || (u.user_id||'').toLowerCase().indexOf(q)>=0;
+    return [u.email,u.name,u.account_name,u.member_name,u.team_names,u.players,u.user_id,
+      u.provider?(ADMIN_PROVIDER[u.provider]||u.provider):'']
+      .some(function(x){ return String(x||'').toLowerCase().indexOf(q)>=0; });
   });
   var tb=$('usersTable').querySelector('tbody');
   if(!list.length){ tb.innerHTML='<tr><td class="empty">유저가 없습니다.</td></tr>'; return; }
@@ -1959,11 +2028,9 @@ function renderUsers(){
   var head='<tr><th>사람</th><th>소속 팀</th><th>가입</th><th>최근접속</th>'
     +(hasV2?'<th>만든 수</th>':'<th>워크스페이스</th><th>훈련</th>')+'</tr>';
   var rows=list.map(function(u){
-    var nm=(u.name||'').trim();
-    var sub=nm?(u.email||('UID '+(u.user_id||'').slice(0,8))):('UID '+(u.user_id||'').slice(0,8));
     return '<tr><td class="nm"><button type="button" class="admin-user-open" data-admin-user="'+esc(u.user_id)+'">'+esc(userLabel(u))+'</button>'
-      +'<div class="muted" style="font:600 11px ui-monospace,Menlo,monospace">'+esc(sub)+'</div></td>'
-      +'<td class="muted">'+esc(u.team_names||'—')+'</td>'
+      +'<div class="muted" style="font:600 11px ui-monospace,Menlo,monospace">'+esc(userSubLine(u))+'</div></td>'
+      +'<td>'+userTeamsCell(u)+'</td>'
       +'<td class="muted">'+fmtDate(u.created_at)+'</td>'
       +'<td class="muted">'+fmtDateT(u.last_sign_in_at)+'</td>'
       +(hasV2
