@@ -30,3 +30,14 @@ test('설정 행은 기기 탭에 있고 아이패드가 아니면 숨는다',()
   assert.match(html,/html:not\(\[data-ps-device="ipad"\]\) #gearPop #psPadScaleRow\{display:none!important\}/);
   assert.match(html,/vp\.setAttribute\('content','width='\+psPadViewportWidth\(dev\.pad\?psPadScale\(\):'l'/,'아이패드가 아니면 늘 예전 1100');
 });
+test('아이패드 도크 = 컴퓨터와 같은 치수(줄 36 · 버튼 30 · 아이콘 17 · 글자 숨김), 기기 표식으로만',()=>{
+  const board=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
+  const i=board.indexOf('<style id="ps-2922-ipad-dock">');assert.ok(i>0);
+  const blk=board.slice(i,board.indexOf('</style>',i)).replace(/\/\*[\s\S]*?\*\//g,'');   /* 주석은 빼고 규칙만 */
+  const D='html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock';
+  assert.ok(blk.includes(D+':not(#_)'.repeat(9)),'기기 표식(ps-iPad-work)만 보고 폰 도크·접힌 도크는 뺀다');
+  assert.doesNotMatch(blk,/pointer|hover/,'포인터 미디어에 기대지 않는다');
+  for(const need of ['min-height:36px','grid-template-rows:auto auto','height:30px','width:30px','width:17px','#viewBtn,#cmd-export-btn)>span{display:none','padding:0!important;margin:0!important'])
+    assert.ok(blk.includes(need),need);
+  assert.ok(board.indexOf('<style id="ps-2751-dock-alignment">')<i,'컴퓨터 배치 블록 뒤에 온다');
+});
