@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.921"></script>
+<script src="autosave-status.js?v=2.922"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.921';</script>
+<script>window.PS_BUILD='2.922';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1169,6 +1169,14 @@ function psShowUpdBand(){
           <span style="font-size:11px;font-weight:600;color:#646A73;line-height:1.45;min-width:0">누가 언제 무엇을 고쳤는지 · 판 되돌리기</span>
           <button type="button" id="psHistOpen" style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font:800 11px Pretendard,system-ui;cursor:pointer;white-space:nowrap">기록 보기</button>
         </div>
+        <!-- 2.922 — 아이패드 화면 크기(사용자 «아이패드로 쓸 때 폰트도 아이콘도 하단 도크도 전부 조금 커»). 가로일 때 화면 폭 한 곳만 바꿔 전부 같은 비율로 -->
+        <div class="gp-row" id="psPadScaleRow"><span class="gp-lb">화면 크기</span>
+          <div class="themesw" id="psPadScaleSw" role="group" aria-label="아이패드 화면 크기">
+            <button type="button" data-pad-scale="l">크게</button>
+            <button type="button" data-pad-scale="m">보통</button>
+            <button type="button" data-pad-scale="s">작게</button>
+          </div>
+        </div>
         <div class="gp-row"><span class="gp-lb">저장 공간</span>
           <span id="psStorageUsage" style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4">확인 중…</span>
           <button type="button" id="psStorageOptimize" style="border:1px solid var(--line);background:var(--bar2);color:var(--txt);border-radius:8px;padding:6px 9px;font:800 11px Pretendard,system-ui;cursor:pointer">안전 정리</button>
@@ -1248,6 +1256,7 @@ function psShowUpdBand(){
       #gearPop .gp-help-link:hover{border-color:var(--dim)}
       #gearPop .gp-help-link:focus-visible,#gearPop .gp-tabs>button:focus-visible{outline:2px solid #5275e8;outline-offset:3px}
       #gearPop.gp-tabbed[data-gp-on="device"] #psBuildTag[data-gp-tab]{display:block!important}
+      html:not([data-ps-device="ipad"]) #gearPop #psPadScaleRow{display:none!important}
       #gearPop .gp-grp{font:600 10px/1 Pretendard,system-ui;letter-spacing:.08em;color:var(--dim,#8A9099);padding:12px 2px 2px;text-transform:uppercase}
       #gearPop .gp-grp-adv{cursor:pointer;user-select:none}#gearPop .gp-grp-adv:hover{color:var(--txt,#14161A)}
       #gearPop.gp-tabbed[data-gp-on="data"]:not(.gp-adv-open) [data-gp-tab="data"][data-gp-adv]{display:none!important}
@@ -1257,7 +1266,7 @@ function psShowUpdBand(){
     (function(){
       var p=document.getElementById('gearPop');if(!p||p.classList.contains('gp-tabbed'))return;
       var rowOf=function(id){var e=document.getElementById(id);return e?(e.closest('.gp-row')||e):null;};
-      var map={general:['langSw','themeSw','psSupportSettingsOpen'],help:['psHelpIntro','guideOpen','fullGuideOpen','teamGuideOpen','idpGuideOpen','loginGuideOpen','installGuideOpen'],data:['psPushNow','psBulkPull','psSnapOpen','bkup'],device:['psPwaStatus','psStorageOptimize','psHardReload','psBuildTag']};   /* 2.732 — 화면 판은 기기가 정하므로 laySw 행은 사용자 설정 탭에서 제외 */
+      var map={general:['langSw','themeSw','psSupportSettingsOpen'],help:['psHelpIntro','guideOpen','fullGuideOpen','teamGuideOpen','idpGuideOpen','loginGuideOpen','installGuideOpen'],data:['psPushNow','psBulkPull','psSnapOpen','bkup'],device:['psPwaStatus','psPadScaleSw','psStorageOptimize','psHardReload','psBuildTag']};   /* 2.732 — 화면 판은 기기가 정하므로 laySw 행은 사용자 설정 탭에서 제외 */
       Object.keys(map).forEach(function(t){map[t].forEach(function(id){var r=rowOf(id);if(r)r.setAttribute('data-gp-tab',t);});});
       /* 순서: 데이터 탭은 동기화 → 자동 백업 → 파일 (파일은 가끔 쓰는 것) */
       try{var fileRow=rowOf('bkup'),snapRow=rowOf('psSnapOpen');if(fileRow&&snapRow&&snapRow.parentNode===fileRow.parentNode)snapRow.after(fileRow);}catch(_){}
@@ -5209,6 +5218,32 @@ window.__buildScoutForm=function(k){
     if(bootDevice==='phone'){dev.phone=true;dev.pad=false;}else if(bootDevice==='ipad'&&!dev.phone)dev.pad=true;
     return {phone:!!dev.phone, pad:!dev.phone&&!!dev.pad};
   }
+  /* 2.922 — 아이패드 화면 크기. 폭을 1100 으로 고정하면 기기 폭에 맞춰 늘려 그려 11인치 가로는 1.07배,
+     13인치 가로는 1.24배로 글자·아이콘·도크가 전부 커졌다(그 위에 터치 보정 36~44px 도 얹힌다).
+     가로일 때만 폭을 «기기 폭 ÷ 배율»로 — «보통» = 1배(맥 화면과 같은 크기), «작게» = 0.9배, «크게» = 예전(1100 고정).
+     세로는 이미 0.75~0.93배라 그대로 1100. 폭이 1100 보다 좁아지는 일은 없다(아이패드 가로 최소 1133). */
+  function psPadViewportWidth(size,landscapeW,landscape){
+    if(!landscape||size==='l'||!(landscapeW>0))return 1100;
+    return Math.max(1100,Math.round(landscapeW/(size==='s'?0.9:1)));
+  }
+  function psPadScale(){var v='m';try{v=localStorage.getItem('ps_pad_scale_v1')||'m';}catch(_){}return v==='l'||v==='s'?v:'m';}
+  function psPadLandscapeW(){var w=Number(screen&&screen.width)||0,h=Number(screen&&screen.height)||0;return Math.max(w,h);}
+  function psPadLandscape(){
+    try{var t=screen.orientation&&screen.orientation.type;if(t)return t.indexOf('landscape')===0;}catch(_){}
+    try{if(typeof window.orientation==='number')return Math.abs(window.orientation)===90;}catch(_){}
+    try{return matchMedia('(orientation: landscape)').matches;}catch(_){return false;}
+  }
+  window.__psPadViewportWidth=psPadViewportWidth;
+  (function(){
+    var box=document.getElementById('psPadScaleSw');if(!box)return;
+    function paint(){var v=psPadScale();[].forEach.call(box.querySelectorAll('[data-pad-scale]'),function(b){var on=b.getAttribute('data-pad-scale')===v;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});}
+    box.addEventListener('click',function(e){
+      var b=e.target.closest('[data-pad-scale]');if(!b)return;e.stopPropagation();
+      try{localStorage.setItem('ps_pad_scale_v1',b.getAttribute('data-pad-scale'));}catch(_){}
+      paint();apply(saved,true);
+    });
+    paint();
+  })();
   function apply(m,init){
     var dev=devNow();
     if(m!=='mobile'&&m!=='desktop')m=dev.phone?'mobile':'desktop';   /* 옛 값(auto·ipad)이 들어와도 여기서 정리된다 */
@@ -5217,7 +5252,7 @@ window.__buildScoutForm=function(k){
       /* 폰이 아닌 기기에서 '모바일'을 고르면 폰 폭(392px)으로 가둬 실제 폰 화면을 보여 준다 */
       document.body.classList.toggle('force-phone',!dev.phone);
     }else{
-      if(vp)vp.setAttribute('content','width=1100');
+      if(vp)vp.setAttribute('content','width='+psPadViewportWidth(dev.pad?psPadScale():'l',psPadLandscapeW(),psPadLandscape()));
       document.body.classList.remove('force-phone');
     }
     /* 터치 보정은 **판과 무관하게** 기기로만 정한다 */
@@ -7544,13 +7579,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.921"></script>
-<script src="autosave-merge.js?v=2.921"></script>
-<script src="autosave-runtime.js?v=2.921"></script>
-<script src="autosave-recovery.js?v=2.921"></script>
-<script src="sync.js?v=2.921"></script>
+<script src="autosave-journal.js?v=2.922"></script>
+<script src="autosave-merge.js?v=2.922"></script>
+<script src="autosave-runtime.js?v=2.922"></script>
+<script src="autosave-recovery.js?v=2.922"></script>
+<script src="sync.js?v=2.922"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.921">
+<link rel="stylesheet" href="support.css?v=2.922">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
