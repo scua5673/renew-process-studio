@@ -33,7 +33,7 @@ try{
  assert.equal(await page.locator('#psBootRetry').isEnabled(),true);
  assert.equal(mainNavigations,1);assert.equal(await page.frameLocator('#board').locator('#draft').inputValue(),'보존할 작성 내용');
  await page.frameLocator('#board').locator('#ready').evaluate(el=>el.click());
- await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
+ await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting'));
  assert.equal(await page.locator('#board').isVisible(),true);
  assert.equal(await page.locator('#loading').isVisible(),false);
  console.log(JSON.stringify({engine,passed:true,cases:['slow-frame-hidden-after-five-seconds','loaded-frame-waits-for-restore','failed-save-prevents-reload','draft-preserved','ready-flag-recovers-lost-message']}));await context.close();

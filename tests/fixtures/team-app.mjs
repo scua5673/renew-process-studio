@@ -141,8 +141,8 @@ export async function openApp(fx,sizeName,{dark=false,browsers={}}={}){
 
 export async function ready(page){
   await page.waitForFunction(({WT,A})=>window.PSSync&&PSSync.dataUnlocked()&&PSSync.activeWs()===WT&&PSSync.session()?.uid===A,{WT,A},{timeout:45000});
-  await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'),null,{timeout:45000}).catch(()=>{});
-  await page.waitForFunction(()=>PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:30000}).catch(()=>{});
+  await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting'),null,{timeout:45000}).catch(()=>{});
+  await page.waitForFunction(()=>window.PSSync&&PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:30000}).catch(()=>{});
   await page.waitForTimeout(1500);
 }
 
@@ -182,7 +182,7 @@ export async function measure(page,{phone}){
     }
     res.top=scan(document,window,0);res.top.text=res.top.text.slice(0,200);
     res.syncText=[...document.querySelectorAll('#syncStatus,#psSyncChip,.ps-sync-chip,[id*="SyncChip"],[class*="sync-state"]')].map(e=>(e.id||e.className)+':'+(e.innerText||'').replace(/\s+/g,' ').trim()).filter(Boolean).slice(0,5);
-    res.sync={state:PSSync.state(),pending:PSSync.pending()};
+    res.sync=window.PSSync?{state:PSSync.state(),pending:PSSync.pending()}:null;
     for(const f of document.querySelectorAll('iframe')){
       if(!vis(f,window))continue;const r=f.getBoundingClientRect();
       try{const d=f.contentDocument;if(!d||!d.body)continue;const s=scan(d,f.contentWindow,r.left);s.id=f.id;s.src=(f.getAttribute('src')||'').slice(0,80);s.rect=[Math.round(r.left),Math.round(r.top),Math.round(r.width),Math.round(r.height)];

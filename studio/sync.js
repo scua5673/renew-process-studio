@@ -25,7 +25,6 @@ function syncDiagnostic(stage,error){
   try{ window.dispatchEvent(new CustomEvent('ps-sync-diagnostic',{detail:info})); }catch(_){}
 }
 var SYNC_DIAG_LOG=[];
-
 var SKEY='ps_sync_session', MKEY='ps_sync_meta', RLKEY='ps_sync_rl', SKIPKEY='ps_sync_skipped';
 var MATCH_KEY='cs_team_matches_v1', MATCH_DEL_KEY='cs_match_del_v1';
 var OWNERKEY='ps_cache_owner_v1';
@@ -1174,10 +1173,13 @@ function resumeOAuthCallback(){
   }
   return true;
 }
+var forceStaleAt='', tokenSwap={from:'',to:''};   /* 2.916 — 401 한 번 갱신·재시도(syncFetch) */
 function ensureToken(){
   var s=getSess();
   if(!s) return Promise.resolve(null);
-  if(Date.now()<s.exp-60000) return Promise.resolve(s.at);
+  /* 2.916 — 서버가 401 로 거부한 토큰(forceStaleAt)은 로컬 만료 시각이 남아 있어도 갱신한다.
+     예전엔 만료 시각만 믿어서 한 회차 안에서 만료된 토큰이 뒤 단계(보관함 받기 등)를 401 로 떨어뜨렸다(7일 ~20명). */
+  if(Date.now()<s.exp-60000&&!(forceStaleAt&&s.at===forceStaleAt)) return Promise.resolve(s.at);
   /* 같은 세션의 회전형 토큰만 한 번 갱신한다. 이전 계정의 느린 요청은
      새 로그인의 갱신을 막거나 새 요청의 대기 상태를 지우지 않는다. */
   if(refreshPromise&&sessionIdentityCurrent(refreshOwner)) return refreshPromise;
@@ -2400,13 +2402,37 @@ function logoutBlockingPendingKeys(uid,wid){
 function syncIssue(code,stage,msg,status){
   var e=new Error(msg||code);e.psCode=code;e.psStage=stage||'sync';e.psStatus=status||0;return e;
 }
-function syncFetch(stage,url,opts){
+/* 2.916 — 서버가 401 로 거부한 토큰을 한 번만 갱신한다. 이미 다른 흐름이 갱신했으면 그 토큰을 쓴다. */
+function refreshRejectedToken(stale){
+  var s=getSess(); if(!s)return Promise.resolve(null);
+  if(s.at&&s.at!==stale)return Promise.resolve(s.at);
+  forceStaleAt=stale;
+  return ensureToken();
+}
+function authOf(h){ var a=h&&(h.Authorization||h.authorization); return (typeof a==='string'&&a.indexOf('Bearer ')===0)?a.slice(7):''; }
+function syncFetch(stage,url,opts,retried){
   if(navigator.onLine===false)return Promise.reject(syncIssue('sync_offline',stage,'offline'));
   var ctl=null,to=null,o=opts||{};
+  /* 같은 회차의 뒤 단계는 회차 첫머리에 받은 옛 토큰을 들고 온다 — 이미 갱신됐으면 새 것으로 바꿔 401 을 한 번 덜 받는다(같은 계정일 때만). */
+  try{var _a=authOf(o.headers),_s=getSess();if(_a&&tokenSwap.from===_a&&_s&&_s.at===tokenSwap.to){o=Object.assign({},o,{headers:Object.assign({},o.headers,{Authorization:'Bearer '+tokenSwap.to})});}}catch(_){}
+  var sent=o;
   /* 2.600 — 본문을 나르는 단계(kv_pull·kv_push·personal_pull·library_body)는 45초, 메타·프로브는 20초. 실측 30일 sync_timeout 752건·72명 — 일정 문서 1~3MB 를 20초 안에 못 받는 기기가 있다 */
   var _ms=/^(kv_pull|kv_push|personal_push|personal_pull|library_body|library_push|bulk)/.test(String(stage||''))?45000:20000;
   try{if(typeof AbortController!=='undefined'){ctl=new AbortController();o=Object.assign({},o,{signal:ctl.signal});to=setTimeout(function(){ctl.abort();},_ms);}}catch(_){}
-  return fetch(url,o).then(function(r){if(to)clearTimeout(to);return r;},function(e){
+  return fetch(url,o).then(function(r){if(to)clearTimeout(to);
+    /* 2.916 — 401 이면 토큰을 한 번 갱신해 같은 요청을 한 번만 다시 보낸다. 401 은 서버가 쿼리를 실행하기 전에
+       JWT 에서 거부한 것이라 쓰기도 다시 보내도 안전하다. 본문은 전부 JSON 문자열이다. 계정이 바뀌었으면 다시 보내지 않는다. */
+    var stale=authOf(sent.headers);
+    if(r.status!==401||retried||!stale)return r;
+    var s0=getSess(),uid0=String(s0&&s0.uid||'');
+    return refreshRejectedToken(stale).then(function(at){
+      var s1=getSess();
+      if(!at||at===stale||!s1||String(s1.uid||'')!==uid0)return r;
+      tokenSwap={from:stale,to:at};
+      var retryOpts=Object.assign({},opts||{},{headers:Object.assign({},(opts&&opts.headers)||{},{Authorization:'Bearer '+at})});
+      return syncFetch(stage,url,retryOpts,true);
+    },function(){return r;});
+  },function(e){
     if(to)clearTimeout(to);
     if(e&&e.name==='AbortError')throw syncIssue('sync_timeout',stage,'timeout');
     try{e.psStage=stage;}catch(_){}
@@ -3170,7 +3196,17 @@ function kvPullValues(at,wid,keys){
 var kvWho=true;
 function kvMetaFetch(at,wid){
   var cols=kvWho?'k,cupd,updated_by':'k,cupd';
-  return syncFetch('kv_meta',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+wid+'&select='+cols,{headers:hj(at)})
+  var url=BASE+'/rest/v1/ps_kv?workspace_id=eq.'+wid+'&select='+cols;
+  /* 2.916 — 회차 첫 요청이 한 번 끊겼을 때(Failed to fetch / Load failed)만 1.5초 뒤 한 번 더. 몇 KB 짜리 GET 이라 이그레스 부담이 없다.
+     시간 초과는 다시 보내지 않는다(20초+20초가 회차 워치독 25초를 넘는다). 화면이 보이고 온라인일 때만. */
+  return syncFetch('kv_meta',url,{headers:hj(at)})
+    .catch(function(e){
+      var net=e&&e.name==='TypeError'&&!e.psCode;
+      var visible=true;try{visible=document.visibilityState==='visible';}catch(_){}
+      if(!net||!visible||navigator.onLine===false)throw e;
+      syncDiagnostic('kv-meta-retry',e);
+      return new Promise(function(res){setTimeout(res,1500);}).then(function(){return syncFetch('kv_meta',url,{headers:hj(at)});});
+    })
     .then(function(r){
       if(!r.ok&&kvWho&&(r.status===400||r.status===404)){
         kvWho=false;                                   /* 옛 서버 — 이름 없이 계속 간다 */
@@ -3589,7 +3625,7 @@ function undoGet(k){
 }
 function undoDismiss(k){
   undoSetList(undoList().filter(function(x){ return x.k!==k; }));
-  try{ if(window.storage)window.storage.del(undoKey(k)); else localStorage.removeItem(undoKey(k)); }catch(_){}
+  try{ if(window.storage)Promise.resolve(window.storage.del(undoKey(k))).catch(function(e){syncDiagnostic('undo-dismiss',e);}); else localStorage.removeItem(undoKey(k)); }catch(_){}   /* 2.916 — 처리 안 된 거부 막기 */
   try{ window.dispatchEvent(new CustomEvent('ps-sync-state')); }catch(_){}
 }
 /* 직전 팀 판본을 이 기기에 다시 쓰고(로컬 승으로 잡혀 다음 회차에 올라간다) 바로 한 회차 돈다 */
@@ -4661,7 +4697,7 @@ function autoSnapshot(force){
         /* 오래된 것은 인덱스에서 빼고 실제 값도 지운다 — 안 지우면 저장 공간을 계속 먹는다 */
         var drop=a.slice(0,Math.max(0,a.length-SNAP_KEEP));
         snapSetList(a);
-        drop.forEach(function(x){ try{ window.storage.del&&window.storage.del(x.key); }catch(_){} });
+        drop.forEach(function(x){ try{ if(window.storage.del)Promise.resolve(window.storage.del(x.key)).catch(function(){}); }catch(_){} });
         return {at:at,keys:n};
       });
     });
@@ -6406,6 +6442,7 @@ function syncNowCore(reason){
     return Promise.resolve({offline:1,pending:po.count});
   }
   busy=true; rosterSyncMark=null; setStatus('올리는 중…');
+  var roundHid0=syncHiddenSeq,roundT0=Date.now(),roundP0=0;try{roundP0=performance.now();}catch(_){}   /* 2.916 — 숨김·잠자기 판정 */
   try{ clearTimeout(busyDog); }catch(_){} busyDog=setTimeout(function(){ busy=false; }, 25000);   /* 워치독: fetch가 응답 없이 멈춰도 25초 뒤 busy 해제(전체 동기화 영구 정지 방지) */
   /* iframe storage 이벤트를 받아 parent IDB에 미러링하던 쓰기가 끝난 뒤 preload한다. */
   var sharedReady=(window.PSStorage&&PSStorage.sharedReady)?PSStorage.sharedReady():Promise.resolve(true);
@@ -6431,6 +6468,7 @@ function syncNowCore(reason){
       var metaRows=pre[0], idbVals=pre[1];
       var m0=meta(), needV=[],metaKeys={};
       metaRows.forEach(function(r0){if(r0&&r0.k)metaKeys[r0.k]=1;});
+      lastServerKeys={wid:wid,at:Date.now(),keys:metaKeys};   /* 2.916 — «서버에 아예 없는 문서»와 «못 받은 문서»를 가르려고(IDP 선수 문서) */
       /* 2.750 — 전체 메타 목록에 없는 일정도 키를 직접 조회한다.
          목록 조회와 원문 조회 사이에 생긴 행은 받아들이고, 명시 조회가 빈 경우에만
          서버 부재로 확정한다(아직 조회하지 않음/목록 밖을 빈 일정으로 오해하지 않는다). */
@@ -7723,17 +7761,65 @@ function syncNowCore(reason){
       return rejectedRetry;
     }
     var info=classifySyncError(e),pi=pendingInfo(wid);
-    syncErr=info.code!=='sync_offline';
-    lastIssue={code:info.code,stage:info.stage,at:Date.now()};   /* 2.625 */
+    /* 2.916 — 숨김·잠자기·깨어난 직후의 일시 끊김과, 연속 편집이 앞선 저장을 밀어낸 경합은 오류가 아니다.
+       빨간 상태·오류 기록 없이 곧 다시 맞춘다(대기 항목·재시도는 그대로). */
+    var ctx=syncRoundContext(reason,roundHid0,roundT0,roundP0),quiet=syncQuietFailure(e,info,ctx);
+    syncErr=info.code!=='sync_offline'&&!quiet;
+    if(!quiet)lastIssue={code:info.code,stage:info.stage,at:Date.now()};   /* 2.625 */
     try{syncObservationRoundDone(observationOwner,{error:info.code});}catch(_){}
-    setStatus((info.code==='sync_offline'?'오프라인이에요':'못 올렸어요 · '+syncReasonText(info.code))
+    if(quiet)setStatus('다시 맞추는 중…'+(pi.count?(' · 이 기기에 '+pi.count+'건 안전하게 있어요'):''));
+    else setStatus((info.code==='sync_offline'?'오프라인이에요':'못 올렸어요 · '+syncReasonText(info.code))
       +(pi.count?(' · 이 기기에 '+pi.count+'건 안전하게 있어요'):'')+(info.code==='sync_offline'?'':' · 곧 다시 시도해요'));   /* 2.625 말 바꾸기 */
-    /* 2.631 — 원인 문장을 남긴다(내용·토큰 없음, 120자). 실측: sync_unexpected 11건·sync_storage 8건이 meta {stage,code} 뿐이라 서버에서 무엇인지 알 수 없었다 */
-    try{eventTrack('sync_failed',{status:'error',feature:'sync',error_code:info.code,meta:{stage:info.stage,code:info.code,name:String(e&&e.name||'').slice(0,40),msg:String(e&&e.message||e||'').replace(/eyJ[A-Za-z0-9._-]{20,}/g,'<tok>').slice(0,120)}});}catch(_){}
+    /* 2.631 — 원인 문장을 남긴다(내용·토큰 없음, 120자). 실측: sync_unexpected 11건·sync_storage 8건이 meta {stage,code} 뿐이라 서버에서 무엇인지 알 수 없었다
+       2.916 — 이름·메시지 없는 값(null·Event)도 무엇인지 남기고, 회차 이유·숨김·잠자기·직전 진단 단계를 같이 싣는다. */
+    if(!quiet){try{eventTrack('sync_failed',{status:'error',feature:'sync',error_code:info.code,meta:syncFailMeta(e,info,ctx)});}catch(_){}}
     try{ renderUI(); }catch(_){}
     syncDiagnostic(info.stage,e);
     return outboxFail(wid,info).then(function(){if(info.code!=='sync_offline')scheduleSyncRetry();return {error:String(e),code:info.code,pending:pi.count,rejectedKeys:(e&&Array.isArray(e.psRejectedKeys))?e.psRejectedKeys.slice(0,20):null};});   /* 2.586 — 거부된 키를 전환 출구가 쓴다 */
   });
+}
+/* ── 2.916 · 회차 실패 판정·기록 ── (syncNowCore 와 같은 구간에 둔다: 시험 하네스가 이 구간을 통째로 읽는다) */
+var lastServerKeys=null;   /* 2.916 — 마지막 회차 kv_meta 가 말한 키 목록(내용 없음) */
+/* 2.916 — 회차가 숨김·잠자기·깨어남 순간에 걸렸는지 알기 위한 표식. 7일 실측 네트워크·시간 초과 ~60명의 대부분이
+   메타 조회(kv_meta) 한 번 끊김이었다 — 사파리는 숨길 때 요청을 끊고(Load failed), 맥은 잠에서 깬 직후 망이 안 붙어 있다. */
+var syncHiddenSeq=0,syncWakeAt=0;
+try{
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='hidden')syncHiddenSeq++; else syncWakeAt=Date.now(); });
+  window.addEventListener('pagehide',function(){ syncHiddenSeq++; });
+  window.addEventListener('pageshow',function(){ syncWakeAt=Date.now(); });
+  window.addEventListener('online',function(){ syncWakeAt=Date.now(); });
+}catch(_){}
+
+/* 2.916 — 회차 실패 기록 도우미 */
+function syncRoundContext(reason,hid0,t0,p0){
+  var hiddenNow=false;try{hiddenNow=document.visibilityState==='hidden';}catch(_){}
+  var slept=false;try{if(p0)slept=(Date.now()-t0)-(performance.now()-p0)>5000;}catch(_){}
+  return {reason:String(reason||''),hiddenNow:hiddenNow,hid:syncHiddenSeq!==hid0,slept:slept,wakeMs:syncWakeAt?Date.now()-syncWakeAt:-1};
+}
+function syncQuietFailure(e,info,ctx){
+  if(info.code==='sync_local_changed'&&info.stage==='storage_source_changed')return true;   /* 연속 편집 경합 — 다음 회차가 새 값으로 맞춘다 */
+  var transientIdbErr=info.code==='sync_storage'&&/^(AbortError|TimeoutError|UnknownError|TransactionInactiveError)$/.test(String(e&&e.name||''));
+  if(info.code!=='sync_network'&&info.code!=='sync_timeout'&&!transientIdbErr)return false;
+  return ctx.hiddenNow||ctx.hid||ctx.slept||ctx.reason==='hide'||ctx.reason==='interval-bg'||(ctx.wakeMs>=0&&ctx.wakeMs<15000);
+}
+function errText(e){
+  if(e==null)return '';
+  if(typeof e!=='object')return String(e);
+  var m=String(e.message||'');
+  if(!m){try{if(typeof Event!=='undefined'&&e instanceof Event)m='event:'+e.type;else{m=String(e);if(/^\[object /.test(m))m='';}}catch(_){m='';}}
+  return m;
+}
+function errNameOf(e){
+  if(e==null)return '<'+e+'>';
+  if(typeof e!=='object')return typeof e;
+  return String(e.name||(e.constructor&&e.constructor.name)||'Object');
+}
+function syncFailMeta(e,info,ctx){
+  var src='';try{for(var i=SYNC_DIAG_LOG.length-1;i>=0;i--){var d=SYNC_DIAG_LOG[i];if(Date.now()-d.at>10000)break;if(d.stage&&d.stage!==info.stage){src=d.stage;break;}}}catch(_){}
+  var out={stage:info.stage,code:info.code,name:errNameOf(e).slice(0,40),msg:errText(e).replace(/eyJ[A-Za-z0-9._-]{20,}/g,'<tok>').slice(0,120),
+    reason:ctx.reason.slice(0,40),hid:ctx.hid?1:0,slept:ctx.slept?1:0,wake:ctx.wakeMs>=0?Math.min(86400,Math.round(ctx.wakeMs/1000)):-1};
+  if(src)out.source=src.slice(0,48);
+  return out;
 }
 /* 서버 변경을 로컬에 반영한 뒤: 부팅 직후면 1회 새로고침으로 각 탭에 반영, 사용 중이면 안내 칩 */
 function onApplied(reason,n){
@@ -9662,7 +9748,7 @@ function boot(){
   },180000);
   /* 1.592 — 자동 스냅샷. 로그인과 무관하게(로컬만 쓰는 사람도 사고는 난다) 하루 한 번.
      앱을 여는 순간 몰아치면 첫 화면이 느려지므로 8초 뒤에 조용히 뜬다. */
-  setTimeout(function(){ try{ if(dataUnlocked())autoSnapshot(); }catch(_){} }, 8000);
+  setTimeout(function(){ try{ if(dataUnlocked())Promise.resolve(autoSnapshot()).catch(function(e){syncDiagnostic('auto-snapshot',e);}); }catch(_){} }, 8000);   /* 2.916 — 폰이 이 몇 MB 쓰기 중에 숨으면 IDB 가 끊겨 처리 안 된 거부(app_error)가 됐다 */
   /* 1.593 — psCount 의 잣대가 바뀌었다(중첩 포함). m.n 에 기억된 '전 회차 개수'는 옛 잣대로 적힌 값이라
      그대로 두면 예: 옛 9(칸 수) → 새 3(배열 합) 을 급감으로 오해해 **가짜 보류**가 뜬다.
      한 번만 비워서 다음 회차에 새 잣대로 다시 기억하게 한다. 값 자체는 건드리지 않는다. */
@@ -10338,6 +10424,8 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
      이 기기가 **왜** 못 올리는지/언제 받았는지를 한 장으로. 2.445 가 대기 항목에 적어 두는
      이유(lastError·roundError)를 처음으로 사람 앞에 꺼낸다 — 추측 대신 증거. */
   diagLog:function(){ return SYNC_DIAG_LOG.slice(); },   /* 2.798 */
+  /* 2.916 — 지난 회차 서버 목록에 그 키가 있었나. 모르면 null(같은 워크스페이스·10분 안의 목록만 믿는다) */
+  serverHasKey:function(k){ var L=lastServerKeys; if(!L||L.wid!==activeWs()||Date.now()-L.at>600000)return null; return !!L.keys[String(k||'')]; },
   diag:function(){
     var wid=activeWs();
     return outboxRead().then(function(q){

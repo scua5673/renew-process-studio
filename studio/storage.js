@@ -118,14 +118,29 @@
       return new Promise(function(res,rej){
         var s=t.objectStore(STORE),req;
         t.oncomplete=function(){ res(req?req.result:undefined); };
-        t.onerror=function(){ rej(t.error); };
-        t.onabort=function(){var e=t.error||new Error('IndexedDB transaction aborted');if(!t.error)e.name='AbortError';rej(e);};
+        /* 2.916 — 요청 실패는 transaction 보다 먼저 onerror 로 올라오는데 그 순간 t.error 는 아직 null 이다(명세).
+           null 로 reject 하면 동기화가 이름도 메시지도 없는 sync_unexpected 로 기록했다(7일 6명). 요청의 오류를 쓴다. */
+        t.onerror=function(ev){ rej(idbErr(ev,t)); };
+        t.onabort=function(ev){ rej(idbErr(ev,t,'abort')); };
         try{req=fn(s);}catch(e){try{t.abort();}catch(_){}rej(e);}
       });
     });}
     return run(false);
   }
-  function idbGet(k){ return tx('readonly',function(s){ return s.get(k); }); }
+  /* 2.916 — IDB 가 돌려주는 오류를 늘 이름 있는 Error 로. 요청 오류 → transaction 오류 → 이름 붙인 새 오류 순. */
+  function idbErr(ev,t,kind){
+    var e=(ev&&ev.target&&ev.target.error)||(t&&t.error)||null;
+    if(e)return e;
+    e=new Error(kind==='abort'?'IndexedDB transaction aborted':'IndexedDB request failed');
+    e.name=kind==='abort'?'AbortError':'UnknownError';
+    return e;
+  }
+  /* 페이지가 숨겨지거나(사파리) 연결이 끊기면(UnknownError) 한 번 끊기는 종류. 용량 초과는 아니다. */
+  function transientIdb(e){return !!(e&&/^(AbortError|TimeoutError|UnknownError|TransactionInactiveError)$/.test(e.name||'')&&!isQuotaErr(e));}
+  /* 2.916 — 읽기는 되풀이해도 안전하다. 일시적으로 끊긴 읽기만 연결을 새로 열어 한 번 더 한다.
+     쓰기는 다시 보내지 않는다(더 새 편집을 덮을 수 있다 — tx 의 규칙 그대로). */
+  function readRetry(run){return run().catch(function(e){if(!transientIdb(e))throw e;if(e.name==='UnknownError')dbp=null;return run();});}
+  function idbGet(k){ return readRetry(function(){return tx('readonly',function(s){ return s.get(k); });}); }
   function idbSet(k,v,current){
     /* Read our write in the SAME transaction. A later writer may commit before
        a separate verification transaction and must not make this commit fail.
@@ -151,7 +166,7 @@
     return open().then(function(db){if(current)current();return new Promise(function(res,rej){
       var removed=false,t=db.transaction(STORE,'readwrite'),s=t.objectStore(STORE),r=s.get(k);
       r.onsuccess=function(){try{if(current)current();if(r.result===expected){s.delete(k);removed=true;}}catch(e){try{t.abort();}catch(_){}rej(e);}};
-      t.oncomplete=function(){res(removed);};t.onerror=function(){rej(t.error);};t.onabort=function(){rej(t.error);};
+      t.oncomplete=function(){res(removed);};t.onerror=function(ev){rej((ev&&ev.target&&ev.target.error)||t.error||Object.assign(new Error('IndexedDB request failed'),{name:'UnknownError'}));};t.onabort=function(){rej(t.error||Object.assign(new Error('IndexedDB transaction aborted'),{name:'AbortError'}));};   /* 2.916 — null 로 reject 하지 않는다 */
     });});
   }
   /* 늦게 끝난 이전 워크스페이스 쓰기를 되돌릴 때 쓰는 exact 교체.
@@ -174,12 +189,12 @@
         changed=true;
         }catch(e){try{t.abort();}catch(_){}rej(e);}
       };
-      t.oncomplete=function(){res(changed);};t.onerror=function(){rej(t.error);};t.onabort=function(){rej(t.error);};
+      t.oncomplete=function(){res(changed);};t.onerror=function(ev){rej((ev&&ev.target&&ev.target.error)||t.error||Object.assign(new Error('IndexedDB request failed'),{name:'UnknownError'}));};t.onabort=function(){rej(t.error||Object.assign(new Error('IndexedDB transaction aborted'),{name:'AbortError'}));};   /* 2.916 */
     });});
   }
   function idbKeys(prefix){
     prefix=String(prefix||'');
-    return tx('readonly',function(s){ return s.getAllKeys(); }).then(function(keys){
+    return readRetry(function(){return tx('readonly',function(s){ return s.getAllKeys(); });}).then(function(keys){
       return (keys||[]).map(String).filter(function(k){return !prefix||k.indexOf(prefix)===0;});
     });
   }

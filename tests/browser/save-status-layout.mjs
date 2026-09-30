@@ -77,7 +77,7 @@ try{
     try{
       await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
       await page.waitForFunction(()=>window.PSSync&&PSSync.dataUnlocked()&&localStorage.getItem('ps_last_pull_at'));
-      await page.waitForFunction(()=>!document.body.classList.contains('ps-booting')&&!document.querySelector('#loading:not(.ps-boot-done)'));
+      await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting')&&!document.querySelector('#loading:not(.ps-boot-done)'));
       const frame=await page.locator('#fBoard').contentFrame();
       await frame.locator('#sessionView').waitFor({state:'attached'});
       await page.waitForTimeout(2800);
