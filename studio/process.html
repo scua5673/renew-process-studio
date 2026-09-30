@@ -5151,17 +5151,20 @@ window.wkbdSetLibItem=function(di,li,d){
     if(!drills.length&&Array.isArray(d.pages)&&d.pages.length>1){
       drills=d.pages.map(function(pg,i){ return {name:(pg&&String(pg.name||'').trim())||('페이지 '+(i+1)),thumb:(pg&&pg.thumb)||'',snap:(pg&&pg.snap)||null,focus:d.focus,_card:1}; });
     }
-    if(!drills.length&&d.name)drills=[{name:d.name,minutes:d.minutes,thumb:d.thumb,focus:d.focus,_card:1}];
+    if(!drills.length&&d.name)drills=[{name:d.name,minutes:d.minutes,sets:d.sets,thumb:d.thumb,focus:d.focus,_card:1}];
     if(!b.trains)b.trains=[]; if(!b.trainThemes)b.trainThemes=[]; if(!b.trainData)b.trainData=[]; if(!b.trainSlot)b.trainSlot=[];
-    var added=0;
+    var added=0,timed=0;
     drills.forEach(function(x){ var nm=String(x.name||'').trim(); if(!nm||b.trains.indexOf(nm)>=0)return;
       /* 2.135 — 딱려 오는 훈련 칩도 **가져온 세션**에 붙인다.
          전에는 슬롯을 안 적어서 '시간대 없음' 카드로 톡 떨어졌다 */
-      /* 2.303 — minutes 는 **0 으로 비워서** 들어온다(위와 같은 이유). 보관함 원본의 분은 시트에서 참고로만 보여준다.
+      /* 2.915 — 훈련마다 보관함에 적힌 **분 × 세트를 복사**해 온다(사용자 «시간도 가져오게»). 가져오는 순간의 사본이라
+         나중에 보관함 원본을 고쳐도 이 날 일정은 흔들리지 않고(2.303 의 걱정), 일정에서 그대로 고칠 수 있다.
+         보관함 줄(libData)은 여전히 0 — 합계를 거기에도 담으면 dayMin() 이 두 번 센다(2.303 실측 67+67=134).
+         (옛 2.303: minutes 는 0 으로 비워서 들어왔다.)
          국면은 훈련의 것만 쓴다. 카드 합집합(2.182)은 **카드가 곧 훈련 하나일 때(_card)** 만 폴백으로 —
          훈련 여러 개로 펼쳐질 때 합집합을 얹으면 국면을 비워 둔 웜업까지 수비 조직으로 잡혀 배분이 부풀려진다(실측). */
-      var ti=b.trains.length; b.trains[ti]=nm; b.trainSlot[ti]=(__pendSlot||''); b.trainThemes[ti]=FOCUS2THEME[x.focus||d.focus]||''; b.trainData[ti]={minutes:0,thumb:x.thumb||'',snap:x.snap||null,focus:x.focus||d.focus||'',gmPhases:(Array.isArray(x.gmPhases)&&x.gmPhases.length?x.gmPhases:((x._card&&Array.isArray(d.gmPhases))?d.gmPhases:[])),gmPhaseNames:(Array.isArray(x.gmPhaseNames)&&x.gmPhaseNames.length?x.gmPhaseNames:((x._card&&Array.isArray(d.gmPhaseNames))?d.gmPhaseNames:[])),fromLib:d.libId||''}; added++; });
-    if(added){ try{toast('훈련 '+added+'개를 넣었어요 — 시간을 정해 주세요');}catch(_){} }
+      var ti=b.trains.length; b.trains[ti]=nm; b.trainSlot[ti]=(__pendSlot||''); b.trainThemes[ti]=FOCUS2THEME[x.focus||d.focus]||''; b.trainData[ti]={minutes:Math.min(600,Math.max(0,parseInt(x.minutes,10)||0)),thumb:x.thumb||'',snap:x.snap||null,focus:x.focus||d.focus||'',gmPhases:(Array.isArray(x.gmPhases)&&x.gmPhases.length?x.gmPhases:((x._card&&Array.isArray(d.gmPhases))?d.gmPhases:[])),gmPhaseNames:(Array.isArray(x.gmPhaseNames)&&x.gmPhaseNames.length?x.gmPhaseNames:((x._card&&Array.isArray(d.gmPhaseNames))?d.gmPhaseNames:[])),fromLib:d.libId||''}; var _ls=parseInt(x.sets,10)||1; if(b.trainData[ti].minutes&&_ls>1)b.trainData[ti].sets=Math.min(20,_ls); if(b.trainData[ti].minutes)timed++; added++; });
+    if(added){ try{toast('훈련 '+added+'개를 넣었어요'+(timed===added?' — 보관함에 적힌 시간도 함께':timed?' — '+(added-timed)+'개는 시간을 정해 주세요':' — 시간을 정해 주세요'));}catch(_){} }
   }catch(_){}
   try{ if(wkbdAutoTheme(b)){ try{toast('주제를 국면에서 자동으로 골랐어요 — '+b.theme);}catch(_){} } }catch(_){}
   try{save();}catch(_){} syncViews(); closeSheet();
@@ -5209,7 +5212,7 @@ window.wkbdLibChoose=function(di,li,idx){
      게임모델이 없어도 칩에 국면을 사람 말로 보여줄 수 있게 한다. */
   var _drills=(Array.isArray(d.trainings)&&d.trainings.length)?d.trainings
             :((Array.isArray(d.drills)&&d.drills.length)?d.drills:null);
-  wkbdSetLibItem(di,li,{name:d.name,libId:d.libId||d.id||'',minutes:d.minutes,thumb:d.thumb,focus:d.focus,
+  wkbdSetLibItem(di,li,{name:d.name,libId:d.libId||d.id||'',minutes:d.minutes,sets:d.sets,thumb:d.thumb,focus:d.focus,
     gmPhases:d.gmPhases,gmPhaseNames:d.gmPhaseNames,drills:_drills,pages:d.pages});   /* 1.884 — 드릴 목록도 넘긴다 · 1.900 페이지 목록도 */
 };
 window.wkbdAddTrain=function(di,slot){
