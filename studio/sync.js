@@ -3308,8 +3308,12 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
     }
     function finish(bad){
       ready(label+'_finish');
-      if(bad.length){var e=syncIssue('sync_server_rejected',label,'server rejected');e.psRejectedKeys=bad.map(function(x){return x.k;});throw e;}
-      ch.forEach(function(req){if(exactBody(req.k))req.cupd=versions.get(req);try{holdClear(req.k);importApprovalClear(req.k);}catch(_){}});
+      if(bad.length){
+        /* 2.914 — 판본을 알고 보낸(CAS) 행의 거부만 적는다 — 같은 원문이 같은 판본에서 거듭 거부되면 queuePush 가 멈춘다. */
+        bad.forEach(function(req){ try{ if(req._casCupd!=null&&typeof rejectNote==='function')rejectNote(req.k,req._rh||(typeof hash==='function'?hash(req.v):''),Number(req._casCupd)); }catch(_){} });
+        var e=syncIssue('sync_server_rejected',label,'server rejected');e.psRejectedKeys=bad.map(function(x){return x.k;});throw e;
+      }
+      ch.forEach(function(req){if(exactBody(req.k))req.cupd=versions.get(req);try{holdClear(req.k);importApprovalClear(req.k);}catch(_){}try{if(typeof rejectClear==='function')rejectClear(req.k);}catch(_){}});
       if(onOk)onOk(ch);return got;
     }
     var doubt=ch.filter(function(req){if(exactBody(req.k))return !exactMatch(req,got);return !got.some(function(row){
@@ -3333,7 +3337,8 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
     ready(label+'_post');
     return syncFetch(label,BASE+'/rest/v1/ps_kv?select='+columns(ch),{method:'POST',
         headers:(function(){var h=hj(at);h['Prefer']=prefBuild('resolution=merge-duplicates,return=representation');return h;})(),
-        body:JSON.stringify(ch)});
+        /* 2.914 — 기기 안에서만 쓰는 표식(_rh·_cas… 등 밑줄로 시작)은 서버에 보내지 않는다. */
+        body:JSON.stringify(ch.map(function(r1){var o1={};Object.keys(r1).forEach(function(f){if(f.charAt(0)!=='_')o1[f]=r1[f];});return o1;}))});
   }
   function isolate403(ch){
     return ch.reduce(function(p,row){ return p.then(function(acc){
@@ -3391,8 +3396,13 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
         req.cupd=version;
         return confirmed([req],rows);
       }
-      if(!req._casMissing&&version===Number(req._casCupd))
-        throw syncIssue('sync_server_rejected',stage,'서버 판본은 같지만 저장이 반영되지 않았습니다');
+      if(!req._casMissing&&version===Number(req._casCupd)){
+        /* 2.914 — 어느 키인지 붙인다. 없으면 rejectedMatchRetry(서버 원문 다시 받기·병합)가 돌지 않아
+           같은 원문을 45초마다 영원히 다시 보냈다(2026-09-30 실측: 한 기기 20시간 88번). */
+        try{ if(typeof rejectNote==='function')rejectNote(req.k,req._rh||(typeof hash==='function'?hash(req.v):''),version); }catch(_){}
+        var rejected=syncIssue('sync_server_rejected',stage,'서버 판본은 같지만 저장이 반영되지 않았습니다');
+        rejected.psRejectedKeys=[req.k];throw rejected;
+      }
       throw syncIssue('sync_conflict',stage,'조건부 저장 중 다른 서버 판본을 확인했습니다');
     });
   }
@@ -3683,10 +3693,11 @@ function holdConflictWrite(rows){
   if(localStorage.getItem(HOLD_LIST)!==raw)throw syncIssue('sync_storage','team_review_write','팀 자료 확인 목록을 저장하지 못했습니다');
   try{window.dispatchEvent(new CustomEvent('ps-sync-state'));}catch(_){}
 }
-function holdConflictRecord(k,loc,row){
+function holdConflictRecord(k,loc,row,reason){
   var ctx=holdConflictContext();if(!ctx)throw syncIssue('sync_workspace_changed','team_review_owner','팀 자료 확인 중 계정이나 팀이 바뀌었습니다');
   if(typeof loc!=='string'||!row||typeof row.v!=='string'||!Number.isFinite(row.cupd))throw syncIssue('sync_confirm_missing','team_review_version','팀 자료 원문과 판본을 확인하지 못했습니다');
   var rec={kind:'conflict',uid:ctx.uid,wid:ctx.wid,k:k,h:hash(loc),c:row.cupd,sh:hash(row.v),at:Date.now(),before:psCount(row.v),after:psCount(loc)},old=null;
+  if(reason)rec.reason=reason;   /* 2.914 — 'rejected': 서버가 같은 판본에서 거듭 받지 않은 변경 */
   var rows=holdList().filter(function(x){if(x.k===k){old=x;return false;}return true;});
   if(holdConflictSame(old,rec))return old;
   rows.push(rec);holdConflictWrite(rows);return rec;
@@ -3708,6 +3719,44 @@ function holdConflictClearConfirmed(m,guard){
     var all=holdList(),next=all.filter(function(x){return !found.some(function(f){return f.clear&&holdConflictSame(f.row,x);});});
     if(all.length!==next.length)holdConflictWrite(next);return true;
   });
+}
+/* ── 2.914 · 서버가 같은 내용을 거듭 받지 않으면 되풀이를 멈춘다 ─────────────────────
+   2026-09-30 관리자 오류 실측: 7일 854건 중 약 58%가 기기 5대의 되풀이였다. 서버 보호 규칙
+   (일정·경기 계보 가드, 앱 판 정책)이 저장을 조용히 건너뛰면 기기는 45초마다 같은 원문을 다시 보냈다.
+   같은 원문(h)이 같은 서버 판본(c)에서 REJECT_STOP 번 거부되면 올리기를 멈추고, 두 원문을
+   «자료 확인»(kind:'conflict', reason:'rejected')에 맡긴다. 새로 고치면 h 가 바뀌어 다시 시도한다.
+   기록은 계정·팀별(uid|wid|k), 7일 지나면 버린다. 내용은 저장하지 않는다(해시·판본·횟수만). */
+var REJECT_KEY='ps_sync_reject_v1', REJECT_STOP=3, REJECT_TTL=7*864e5;
+function rejectCtx(){ try{ var s=getSess(),wid=String(activeWs()||''); return (s&&s.uid&&wid)?String(s.uid)+'|'+wid:null; }catch(_){ return null; } }
+function rejectRead(){ try{ var o=JSON.parse(localStorage.getItem(REJECT_KEY)||'{}'); return (o&&typeof o==='object'&&!Array.isArray(o))?o:{}; }catch(_){ return {}; } }
+function rejectWrite(o){ try{ var now=Date.now(); Object.keys(o).forEach(function(id){ if(!o[id]||now-(o[id].at||0)>REJECT_TTL)delete o[id]; }); localStorage.setItem(REJECT_KEY,JSON.stringify(o)); }catch(_){} }
+/* 거부를 적는다. 사람이 «이 기기 것»을 골라 한 번 더 보낸 것이 또 거부되면 그 선택을 풀어 다시 묻는다. */
+function rejectNote(k,h,c){
+  var ctx=rejectCtx();if(!ctx||!k||!h)return;
+  c=(c==null||c==='')?null:Number(c);
+  var o=rejectRead(),id=ctx+'|'+k,r=o[id];
+  if(r&&r.h===h&&r.c===c)r.n=(r.n||0)+1; else r={h:h,c:c,n:1};
+  r.at=Date.now();o[id]=r;rejectWrite(o);
+  try{ var ch=false,rows=holdList().map(function(x){ if(x&&x.kind==='conflict'&&x.k===k&&x.choice==='local'){ ch=true; var y=Object.assign({},x); delete y.choice; y.reason='rejected'; return y; } return x; }); if(ch)holdConflictWrite(rows); }catch(_){}
+  rejectSwUpdate();
+}
+function rejectClear(k){ var ctx=rejectCtx();if(!ctx)return; var o=rejectRead(),id=ctx+'|'+k; if(o[id]){ delete o[id]; rejectWrite(o); } }
+/* true = 이번 회차에는 이 키를 올리지 않는다. c 는 이번 회차에 읽은 서버 판본. */
+function rejectHoldCheck(k,raw,c){
+  var ctx=rejectCtx();if(!ctx||typeof raw!=='string')return false;
+  c=(c==null||c==='')?null:Number(c);if(c==null||!Number.isFinite(c))return false;
+  var h=hash(raw),held=null;
+  try{ held=holdList().filter(function(x){return x&&x.kind==='conflict'&&x.k===k&&x.h===h;})[0]||null; }catch(_){}
+  if(held&&held.choice==='local')return false;                       /* 사람이 «이 기기 것»을 골랐다 — 한 번 더 보낸다 */
+  if(held&&held.reason==='rejected'&&!held.choice&&Number(held.c)===c)return true;
+  var r=rejectRead()[ctx+'|'+k];
+  return !!r&&r.h===h&&r.c===c&&(r.n||0)>=REJECT_STOP;
+}
+/* 거부가 옛 앱 판 때문일 수 있다 — 서비스워커에 새 판을 바로 확인시킨다(10분에 한 번).
+   새 판이 있으면 app.html 의 기존 흐름(controllerchange → 안전할 때 새로고침)이 이어받는다. */
+function rejectSwUpdate(){
+  try{ var now=Date.now(); if(now-(rejectSwUpdate.at||0)<600000)return; rejectSwUpdate.at=now;
+    if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(function(reg){ if(reg&&reg.update)return reg.update(); }).catch(function(){}); }catch(_){}
 }
 /* 올리기 직전 검사. true 를 주면 이번 회차에는 올리지 않는다
    (m.h/m.c 를 갱신하지 않으므로 로컬은 계속 dirty → 확인 뒤 다음 회차에 올라간다). */
@@ -4109,7 +4158,7 @@ function workspaceHoldReviewOpen(opts){
   var body='<div style="margin-bottom:10px">팀에 아직 반영하지 못한 변경을 이 기기에 보관하고 있습니다. 두 기기에서 바뀐 자료는 선택한 문서 전체가 남습니다. '
     +'아래에서 남길 쪽을 고르면 <b>'+esc(target)+'</b>(으)로 이어서 이동합니다.</div>';
   body+=left.map(function(x){return '<div style="padding:10px 0;border-top:1px solid rgba(128,128,128,.22)">'
-    +'<div><b>'+esc(keyLabel(x.k))+'</b><span style="margin-left:7px;font-size:11px;font-weight:800;color:#c24a46">'+esc(x.kind==='conflict'?'두 기기에서 바뀜':x.before+' → '+x.after)+'</span></div>'
+    +'<div><b>'+esc(keyLabel(x.k))+'</b><span style="margin-left:7px;font-size:11px;font-weight:800;color:#c24a46">'+esc(x.kind==='conflict'?(x.reason==='rejected'?'서버가 받지 않음':'두 기기에서 바뀜'):x.before+' → '+x.after)+'</span></div>'
     +'<div style="font-size:11px;opacity:.7;margin-top:2px">'+new Date(x.at).toLocaleString()+'</div>'
     +'<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">'
     +'<button type="button" data-holdup="'+esc(x.k)+'" style="'+bcss+'">이 기기 것 남기기</button>'
@@ -4216,7 +4265,7 @@ function dataReviewList(){
   try{ holdList().forEach(function(x){
     if(x.kind==='item-delete'){var view=itemsDeleteReviewView(x);if(view)out.push(Object.assign(view,{src:'item-delete',mine:null,theirs:null,why:'삭제를 확인한 뒤 선수 원문이 바뀌어 자동 삭제를 멈췄습니다. 변경된 원문과 이전 삭제 요청을 보관했습니다. 원문을 확인하고 삭제를 다시 선택하거나 추가 삭제를 취소하세요.'}));return;}
     if(x.kind==='conflict'){out.push(Object.assign(holdConflictView(x),{src:'team',mine:x.after,theirs:x.before,
-      why:x.choice?'선택한 두 판본을 다시 확인한 뒤 반영합니다':String(x.k).indexOf('sq:')===0?'한 선수의 정보가 두 기기에서 바뀌었습니다. 이 기기와 팀의 원문을 유지하고 있으며, 선택하면 그 선수 정보 전체를 반영합니다.':'양쪽 변경을 보관 중입니다. 선택한 자료의 문서 전체를 반영하므로, 다른 경기·선수의 변경도 함께 바뀔 수 있습니다. 필요한 내용을 먼저 확인해 주세요.'}));return;}
+      why:x.choice?'선택한 두 판본을 다시 확인한 뒤 반영합니다':x.reason==='rejected'?'서버가 이 변경을 받지 않았습니다(예: 최신 일정과 맞지 않는 경기, 오래된 일정 판, 오래된 앱 판). 같은 내용을 계속 다시 보내지 않도록 멈추고 두 원문을 그대로 보관 중입니다. 팀 것으로 맞추거나, 이 기기 것을 남겨 한 번 더 보낼 수 있습니다.':String(x.k).indexOf('sq:')===0?'한 선수의 정보가 두 기기에서 바뀌었습니다. 이 기기와 팀의 원문을 유지하고 있으며, 선택하면 그 선수 정보 전체를 반영합니다.':'양쪽 변경을 보관 중입니다. 선택한 자료의 문서 전체를 반영하므로, 다른 경기·선수의 변경도 함께 바뀔 수 있습니다. 필요한 내용을 먼저 확인해 주세요.'}));return;}
     out.push({src:'hold',k:x.k,at:x.at,mine:x.after,theirs:x.before,
       why:'이 기기에서 크게 줄어 아직 안 올렸습니다'}); }); }catch(_){}
   try{ if(!COPIES_OFF)rescueList().forEach(function(x){
@@ -6654,6 +6703,21 @@ function syncNowCore(reason){
         return held;
       }
       function queuePush(k,raw,confirmedRaw,expectedLoc,casCupd,casMissing){
+        /* 2.914 — 같은 원문이 같은 서버 판본에서 거듭 거부됐으면 이번 회차에 올리지 않고 두 원문을 «자료 확인»에 맡긴다.
+           서버 원문이 이번 회차에 없으면(메타만 받은 회차) 다음 회차가 원문을 받게 c 를 0 으로 둔다. */
+        var rjRow=srv[k],rjC=(casCupd!=null)?casCupd:(rjRow?rjRow.cupd:null);
+        if(!casMissing&&rejectHoldCheck(k,raw,rjC)){
+          var rjHad=false;try{rjHad=holdList().some(function(x){return x&&x.kind==='conflict'&&x.k===k&&x.reason==='rejected';});}catch(_){}
+          if(rjRow&&typeof rjRow.v==='string')resolveTeamConflict(k,raw,rjRow,true,'rejected');
+          else m.c[k]=0;
+          if(k===SCHEDULE_KEY){scheduleDeferred=true;schedulePushHeld=true;}
+          if(k===MATCH_KEY)blockMatchReady('match-server-refused',new Error('서버가 경기 변경을 받지 않았습니다'));
+          if(!rjHad&&rjRow&&typeof rjRow.v==='string'){
+            try{eventTrack('sync_failed',{status:'error',feature:'sync',error_code:'sync_reject_hold',meta:{stage:'reject_hold',code:'sync_reject_hold',k:String(k).slice(0,40)}});}catch(_){}
+            try{chip('⏸ '+keyLabel(k)+' — 서버가 이 변경을 받지 않아 되풀이를 멈췄어요 · 눌러서 확인',dataReviewOpen);}catch(_){}
+          }
+          return null;
+        }
         var send=raw,scheduleImportRec=null,scheduleImportMoved=false;
         if(k===SCHEDULE_KEY){
           invalidateScheduleReadyLocal();
@@ -6684,7 +6748,7 @@ function syncNowCore(reason){
         if(casCupd==null&&!casMissing){var observed=srv[k];if(observed)casCupd=observed.cupd;else casMissing=true;}
         if(!casMissing&&(typeof casCupd!=='number'||!Number.isFinite(casCupd)||casCupd<0))
           throw syncIssue('sync_confirm_missing','team_version','팀 자료의 서버 판본을 확인하지 못했습니다');
-        var pushRow={workspace_id:wid,k:k,v:send,cupd:now};if(casCupd!=null)pushRow._casCupd=casCupd;if(casMissing)pushRow._casMissing=true;pushRows.push(pushRow);
+        var pushRow={workspace_id:wid,k:k,v:send,cupd:now,_rh:hash(raw)};if(casCupd!=null)pushRow._casCupd=casCupd;if(casMissing)pushRow._casMissing=true;pushRows.push(pushRow);
         teamPushCandidates[k]={row:pushRow,confirmed:false};
         if(k===SCHEDULE_KEY)schedulePushRow=pushRow;
         m.h[k]=hash(send);m.c[k]=now;nSet(m,k,send);syncBaseSet(k,send);
@@ -6695,12 +6759,12 @@ function syncNowCore(reason){
         ['h','c','n'].forEach(function(part){var old=idpMetaBefore[part][k];if(old===undefined)delete m[part][k];else m[part][k]=old;});
         if(dependencyDeferredKeys.indexOf(k)<0)dependencyDeferredKeys.push(k);
       }
-      function resolveTeamConflict(k,loc,row,forceReview){
+      function resolveTeamConflict(k,loc,row,forceReview,reason){
         if(typeof row.v!=='string')throw syncIssue('sync_confirm_missing','team_conflict_raw','다른 기기의 팀 자료 원문을 확인하지 못했습니다');
         /* A newer cupd with the same confirmed body is not a competing edit. */
         if(row.v===loc){m.h[k]=hash(loc);m.c[k]=row.cupd;nSet(m,k,loc);return;}
         if(!forceReview&&hash(row.v)===(idpMetaBefore.h[k]||'')){queuePush(k,loc,row.v,loc,row.cupd,false);return;}
-        var held=holdConflictRecord(k,loc,row);
+        var held=holdConflictRecord(k,loc,row,reason);
         if(held.choice==='local'){queuePush(k,loc,row.v,loc,row.cupd,false);return;}
         if(held.choice==='server'){
           if(roundKvWrite(k,row.v,writes,loc,k===SCHEDULE_KEY?scheduleGuard:null)){

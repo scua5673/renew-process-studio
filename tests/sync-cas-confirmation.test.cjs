@@ -34,7 +34,8 @@ for(const label of ['kv_push','personal_push'])for(const missing of [false,true]
 });
 test('an unchanged server version with different content is a refusal, not a new competing edit',async()=>{
   const h=harness({rows:[row({cupd:5,v:'another body'})]});
-  await assert.rejects(h.run(),e=>e.psCode==='sync_server_rejected'&&e.psStage==='kv_push_cas_verify'&&!e.psRejectedKeys);
+  /* 2.914 — 거부는 어느 키인지 알려야 rejectedMatchRetry(서버 원문 다시 받기)가 돈다. */
+  await assert.rejects(h.run(),e=>e.psCode==='sync_server_rejected'&&e.psStage==='kv_push_cas_verify'&&Array.isArray(e.psRejectedKeys)&&e.psRejectedKeys.length===1&&e.psRejectedKeys[0]===KEY);
   assert.equal(h.acks.length,0);assert.equal(h.cleared.length,0);assert.equal(h.calls.filter(x=>x.method!=='GET').length,1);
 });
 test('a real newer competing body remains unacknowledged and is never force-written',async()=>{
@@ -53,4 +54,19 @@ test('an invalid mutation response is not converted into a conflict or an acknow
 });
 test('player-row CAS keeps the existing soft conflict review path',async()=>{
   const h=harness();await h.run({k:'sq:synthetic',_casSoft:true});assert.equal(h.ctx._itemConflicts.length,1);assert.equal(h.calls.length,1);assert.equal(h.acks.length,0);
+});
+test('2.914 — a refusal is recorded with the local fingerprint and the unchanged server version',async()=>{
+  const h=harness({rows:[row({cupd:5,v:'another body'})]});const notes=[];h.ctx.rejectNote=(k,hh,c)=>notes.push([k,hh,c]);
+  await assert.rejects(h.run({_rh:'local-hash'}));
+  assert.deepEqual(notes,[[KEY,'local-hash',5]]);
+});
+test('2.914 — a confirmed save clears the refusal record for that key',async()=>{
+  const h=harness();const cleared=[];h.ctx.rejectClear=k=>cleared.push(k);
+  await h.run();assert.deepEqual(cleared,[KEY]);
+});
+test('2.914 — device-only fields never reach the server body on the plain path',async()=>{
+  const h=harness();
+  await h.ctx.kvPushRows('synthetic',[{workspace_id:'workspace-a',k:KEY,v:RAW,cupd:9,_rh:'x'}],null,'kv_push',()=>true).catch(()=>{});
+  const post=h.calls.find(x=>x.method==='POST');assert.ok(post,'plain POST');
+  assert.equal(JSON.parse(post.body)[0]._rh,undefined);assert.equal(JSON.parse(post.body)[0].k,KEY);
 });
