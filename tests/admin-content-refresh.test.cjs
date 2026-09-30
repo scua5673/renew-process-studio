@@ -43,6 +43,7 @@ function harness(){
       }else if(q.name==='ps_admin_content_owners'){
         if(ownersFail)q.reject(new Error('owners failed'));
         else q.resolve([{workspace_id:W,lib_id:tag+'-content',owner_id:OWNER,owner_name:tag+' author',owner_email:null}]);
+      }else if(q.name==='ps_admin_people'){q.resolve([]); /* 2.919 — 비어 있으면 v1 목록 그대로 */
       }else throw Error('Unexpected RPC '+q.name);
     });
   }
