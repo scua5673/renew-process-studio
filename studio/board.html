@@ -18223,6 +18223,40 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
   }
 }
 </style>
+<style id="ps-2922-ipad-dock">
+/* ══ 2.922 — 아이패드 하단 도크를 컴퓨터 도크와 한 벌로(사용자 «하단 도크 아이콘들만 조금 더 작게 · 열과 행 정렬 · 넘치지 않게»).
+   컴퓨터(마우스)는 2.751 B 배치(세 줄 · 줄 36px · 버튼 30px · 아이콘 17px · 설명 글자 숨김)로 정리돼 있는데,
+   그 규칙들은 (pointer:fine) 과 :not(.ps-ipad-work) 로 아이패드를 빼 두었다. 그래서 아이패드는 줄 32px 에 버튼 30·32·36px,
+   아이콘 11~22px 가 섞이고 «보드 설정»·«내보내기»에만 글자가 붙어 줄마다 폭·시작점이 어긋났다(실측).
+   기기 표식(body.ps-ipad-work — 셸이 기기로 정한다)만 보고 같은 치수를 준다(포인터 미디어에 기대지 않는다 — 트랙패드를 붙여도 같다).
+   ⚠ 줄이 모자라면 잘리지 않고 접힌다(2.461·2.476 의 wrap·높이 풀기 그대로). 이 블록은 치수만 정한다.
+   특이도: 2.216/2.245(6~7 id)·2.476(4 id)·figma-premium(3 id) 위 — :not(#_) 아홉 + #ps-command-dock. */
+@media (min-width:768px){
+  /* 세 줄: 같은 높이·같은 좌우 여백·같은 간격 → 줄마다 시작점이 맞는다 */
+  /* 틀이 줄 높이를 32px 로 못 박아(도크 32px 64px · 가운데 32px 32px) 36px 줄끼리 4px 씩 겹쳤다 — 줄이 제 높이를 갖게(접혀도 자란다) */
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){grid-template-rows:auto auto!important;height:auto!important;min-height:0!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #floatBar{grid-template-rows:auto auto!important;height:auto!important;min-height:0!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_)>#animBar,html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #drawPanel,html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #cmd-tool-row{max-height:none!important;height:auto!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_)>#animBar,html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #drawPanel,html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #cmd-tool-row{min-height:36px!important;padding:2px 16px!important;align-items:center!important;column-gap:8px!important;row-gap:4px!important;box-sizing:border-box!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #railL2{column-gap:8px!important;row-gap:4px!important;align-items:center!important;padding:0!important}
+  /* 묶음 안에 묶음(팀 묶음 안 #benchCat)이라 안쪽 여백이 두 번 쌓여 묶음 38px · 첫 버튼 4px 밀림 — 묶음은 여백 없이, 간격은 줄이 준다 */
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) :is(.cmd-cluster,#benchCat,#railEquip,#toolSeg){column-gap:3px!important;row-gap:3px!important;align-items:center!important;min-height:30px!important;height:auto!important;padding:0!important;margin:0!important}
+  /* 버튼은 모두 30px 높이, 동그라미(팀·역할·기본색·칩)는 30px 원 */
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) button{height:30px!important;min-height:30px!important;max-height:30px!important;box-sizing:border-box!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) :is(.catpill.tpill,.cpreset,.cmd-stamp-token,.chip){width:30px!important;min-width:30px!important;max-width:30px!important;height:30px!important;min-height:30px!important;flex:0 0 30px!important;font-size:12px!important;padding:0!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) select{height:30px!important;min-height:30px!important;font-size:12px!important}
+  /* 아이콘 17px 한 크기(칩·색 버튼은 제 모양 그대로) */
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) button:not(.catpill):not(.cmd-stamp-token):not(.chip):not(#colorBtn):not(#cmd-equip-color) svg{width:17px!important;height:17px!important;max-width:17px!important;max-height:17px!important;flex:0 0 17px!important}
+  /* «보드 설정»·«내보내기»는 컴퓨터처럼 아이콘만(이름은 길게 누르면 뜬다 — 2.248) */
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) :is(#viewBtn,#cmd-export-btn){width:30px!important;min-width:30px!important;max-width:30px!important;flex:0 0 30px!important;padding:0!important;gap:0!important;justify-content:center!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) :is(#viewBtn,#cmd-export-btn)>span{display:none!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) :is(#cmd-tool-end,#cmd-scene-export,#cmd-tool-end .menuwrap){width:30px!important;min-width:30px!important;max-width:30px!important;flex:0 0 30px!important;padding:0!important}
+  /* 줄 안에서 32px 로 남던 셋(가운데 틀 #railL2 · 색 버튼 틀 · «보드 설정» 버튼 — 더 센 옛 규칙이 32 를 준다) → 30px, 세 줄 모두 36px */
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #railL2{min-height:30px!important;height:auto!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) :is(#colorWrap,#cmd-tool-end,#cmd-style,#cmd-tool-end .menuwrap){min-height:30px!important;height:30px!important;max-height:30px!important}
+  html.ps-page-board body.ps-ipad-work:not(.ps-dock):not(.cmd-dock-folded) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #viewBtn{height:30px!important;min-height:30px!important;max-height:30px!important}
+}
+</style>
 
 <style id="ps-ipad-desktop-dock">
 /* iPad shares the desktop's three-row dock and surfaces. Keep its 32px touch
