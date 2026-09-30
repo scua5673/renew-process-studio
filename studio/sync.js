@@ -1410,6 +1410,9 @@ function scheduleReadyCommit(m,raw,uid,wid,seal,current){
       /* 2.917 — 어느 사본이 다른지 말한다. IDB·거울이 서로 같고 서버 확인 원문만 다르면 회차 중 새 입력(곧 다시 맞춤),
          거울만 다르면 거울 쓰기 실패(대개 저장 공간 부족) — 7일 한 기기가 한 시간마다 되풀이했던 쪽. */
       var which=idb===mirror?'새 입력':mirror!==raw&&idb===raw?'거울':idb!==raw&&mirror===raw?'IDB':'IDB·거울';
+      /* 2.920 — 거울만 다르고 방금 거울 쓰기가 실패했으면 원인은 저장 공간이다 — 그렇게 말한다(저장소 오류·안전 정리 안내). */
+      var mirrorFull=false;try{mirrorFull=!!scheduleMirrorFull;}catch(_){}
+      if(which==='거울'&&mirrorFull)throw syncIssue('sync_storage','schedule_mirror_quota','저장 공간이 부족해 일정 화면 사본을 바꾸지 못했어요 — 앱 설정 › 기기 › 안전 정리');
       var ie=syncIssue('sync_local_changed','schedule_ready_exact','일정 서버 확인 원문·기기 저장소·화면 사본이 다릅니다('+which+')');
       if(idb!==null&&idb===mirror)ie.psNewerLocal=true;
       throw ie;
@@ -5455,8 +5458,16 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
           }
           if(k===MATCH_KEY){
             try{matchMirrorWriteExact(v);}catch(e){syncDiagnostic('match-mirror-write',e);throw e;}
-          }else try{localStorage.setItem(k,v);}catch(_){}
-          return {stale:false};
+            return {stale:false};
+          }
+          /* 2.920 — 일정 거울 쓰기를 확인한다(예전엔 실패를 삼켰다). 못 쓰면 안전 정리 한 번 뒤 다시.
+             그래도 안 되면 표시만 남기고 이 쓰기는 끝낸다 — 여기서 던지면 stale 로 바뀌어 1.1초 재시도가 되풀이된다.
+             준비표 확인(scheduleReadyCommit)이 «저장 공간 부족»으로 회차를 실패시키고 보통의 재시도 간격을 탄다. */
+          var mirrorBefore=null;try{mirrorBefore=localStorage.getItem(k);}catch(_){}
+          return scheduleMirrorWrite(v,function(){
+            var now=null;try{now=localStorage.getItem(k);}catch(_){return false;}
+            return ownerCurrent()&&!scheduleHeld()&&now===mirrorBefore;
+          }).then(function(){return {stale:false};});
         });
       }).catch(function(e){
         writeGuard.stale=true;syncDiagnostic(k===MATCH_KEY?'match-cas-write':'schedule-cas-write',e);
@@ -5549,6 +5560,23 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
     if(__ok&&!(writeGuard&&writeGuard.skipIdpStrip))try{ if(window.PSImg&&PSImg.stripIdp)PSImg.stripIdp(k); }catch(_){}
     if(__ok&&k==='cs_board_live_v1')boardLivePulled(v);
     return __ok; }catch(_){ return false; }
+}
+/* 2.920 — 일정 화면 사본(localStorage 거울) 쓰기. 9/25~26 한 기기는 저장 공간이 차서 거울 쓰기가 조용히 실패했고,
+   준비표 확인이 매 회차 «세 사본이 다르다»로 실패하며 일정 전체(2MB)를 매번 다시 받았다. */
+var scheduleMirrorFull=false,scheduleMirrorTidyAt=0;
+function scheduleMirrorTry(v){ try{ localStorage.setItem(SCHEDULE_KEY,v); return localStorage.getItem(SCHEDULE_KEY)===v; }catch(_){ return false; } }
+function scheduleMirrorWrite(v,stillSafe){
+  if(scheduleMirrorTry(v)){ scheduleMirrorFull=false; return Promise.resolve(true); }
+  syncDiagnostic('schedule-mirror-write',Object.assign(new Error('일정 화면 사본을 쓰지 못했습니다'),{name:'QuotaExceededError'}));
+  if(!(window.PSStorage&&PSStorage.optimize)||Date.now()-scheduleMirrorTidyAt<600000){ scheduleMirrorFull=true; return Promise.resolve(false); }
+  scheduleMirrorTidyAt=Date.now();
+  /* 안전 정리는 IDB 에 같은 값이 확인된 중복 사본만 지운다(일정 거울은 건드리지 않는다). 정리하는 동안 사용자가
+     새로 적었으면(거울이 바뀌었으면) 그 편집을 덮지 않도록 다시 쓰지 않는다. */
+  return Promise.resolve().then(function(){ return PSStorage.optimize(); }).catch(function(e){ syncDiagnostic('schedule-mirror-tidy',e); })
+    .then(function(){
+      if(typeof stillSafe==='function'&&!stillSafe()){ scheduleMirrorFull=false; return false; }
+      var ok=scheduleMirrorTry(v); scheduleMirrorFull=!ok; return ok;
+    });
 }
 function libLoad(){
   function snapshot(raw){
