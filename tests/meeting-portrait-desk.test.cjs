@@ -99,3 +99,47 @@ test('ksPop can open above its button and clamps to the screen',()=>{
   c.ksPop(10,100,[['a',()=>{}]]);
   assert.equal(made[1].style.top,'100px','default: opens below as before');
 });
+
+/* 2.932 — 사용자 «미팅 만들기 첫 장면이 자동으로 가로로 변해»: 세로형을 골라도 뒤의 작전판이 가로라
+   «새 슬라이드»·넘기기가 첫 장면에 가로 판을 덮어썼다(실측 portrait/v → portrait/h). */
+test('choosing an orientation also turns the live board, redraws thumbnails and remembers it',()=>{
+  const a=src.indexOf('  window.__meetingPageChoose=function(orientation){');
+  const code=src.slice(a,src.indexOf('  };',a)+4);
+  const store={};let applied=0;
+  const c=vm.createContext({window:{__ksRender(){},__snapToThumb:s=>'<svg o="'+s.orientation+'"/>'},communityBoardReadOnly:()=>false,
+    anim:{slides:[{snap:{orientation:'h'},thumb:'old'},{snap:{orientation:'h'},thumb:'old'},{title:'그림 없음'}]},
+    state:{orientation:'h',spFlip:true},autoOrient:true,applyView(){applied++;},renderTokens(){},renderDrawings(){},
+    localStorage:{setItem(k,v){store[k]=v;},getItem(k){return k in store?store[k]:null;}}});
+  c.window.__vaultReadOnly=false;
+  vm.runInContext(code,c);
+  c.window.__meetingPageChoose('portrait');
+  assert.equal(c.state.orientation,'v','the board behind the page turns too');
+  assert.equal(c.state.spFlip,false);assert.equal(c.autoOrient,false,'screen-ratio auto rotation is off');assert.ok(applied>0);
+  assert.deepEqual(c.anim.slides.filter(s=>s.snap).map(s=>s.thumb),['<svg o="v"/>','<svg o="v"/>'],'thumbnails are redrawn in the new direction');
+  assert.equal(store.ps_meet_orient_v1,'portrait','the next new meeting starts this way');
+});
+
+test('every place that stores the live board into a slide stores it in the meeting direction',()=>{
+  const cap=src.slice(src.indexOf('  function meetCap(){'),src.indexOf('\n',src.indexOf('  function meetCap(){')));
+  assert.match(cap,/var s=captureSnap\(\);try\{s\.orientation=meetingPdfOrientation\(anim\.slides\)==='landscape'\?'h':'v';\}/);
+  const m=src.slice(src.indexOf('  window.__meet={'),src.indexOf('  window.__meetReset='));
+  assert.equal((m.match(/\.snap=meetCap\(\)/g)||[]).length,3,'add · saveCur · dup');
+  assert.match(m,/var from=meetCap\(\);/);
+  assert.match(m,/snap:meetCap\(\)/);
+  assert.equal(/snap=captureSnap\(\)|snap:captureSnap\(\)|var from=captureSnap\(\)/.test(m),false,'no raw capture left in the meeting object');
+  assert.match(src,/if\(window\.__meetBlank\)\{try\{loadSnap\(\{players:\[\],equipment:\[\],ball:\{x:CX,y:CY\},drawings:\[\],orientation:\(meetingPdfOrientation\(anim\.slides\)==="landscape"\?"h":"v"\),/);
+  /* 미팅 동안 자동 방향 끔 · 나가면 되돌림 */
+  assert.match(line('  var oldEnter=window.__ksEnter;'),/window\.__meetAOprev=autoOrient;autoOrient=false;/);
+  assert.match(line('  var oldExit=window.__ksExit;'),/autoOrient=window\.__meetAOprev;window\.__meetAOprev=undefined;/);
+});
+
+test('a new meeting starts in the direction last chosen on this device, landscape otherwise',()=>{
+  const a=src.indexOf('  window.__meetReset=function(){');
+  const code=src.slice(a,src.indexOf('};\n',a)+3);
+  for(const [saved,want] of [[null,'landscape'],['portrait','portrait'],['landscape','landscape'],['sideways','landscape']]){
+    const c=vm.createContext({window:{},anim:{slides:[1]},meetIdx:0,localStorage:{getItem:()=>saved}});
+    vm.runInContext(code,c);c.window.__meetReset();
+    assert.equal(c.window.__meetingPdfOrientation,want,String(saved));
+    assert.equal(c.anim.slides.length,0);assert.equal(c.window.__meetBlank,true);
+  }
+});
