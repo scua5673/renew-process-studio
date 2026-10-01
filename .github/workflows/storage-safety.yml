@@ -32,6 +32,12 @@ jobs:
   browser:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # 브라우저와 시스템 라이브러리가 미리 든 Playwright 공식 이미지 — 매번 `playwright install --with-deps` 를 하던 단계가
+    # 1~13분(들쭉날쭉)이라 main CI 가 15분을 넘겨, 12분만 기다리는 Netlify 게시(scripts/verify-release.mjs)가 번번이 멈췄다.
+    # ⚠ package.json 의 playwright 버전을 바꾸면 이 태그도 같이 바꾼다(아래 확인 단계가 어긋나면 바로 실패한다).
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
@@ -44,7 +50,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Playwright version matches the container image
+        run: test "$(node -p "require('playwright/package.json').version")" = "1.62.1"
       - name: Exercise critical user flows with isolated synthetic accounts
         env:
           PS_BROWSER_ENGINE: ${{ matrix.engine }}
