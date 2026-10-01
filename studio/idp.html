@@ -2968,6 +2968,45 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .rt-day.on.today::before{background:var(--accent)}
   .rt-day u{display:block;text-decoration:none;font-size:12px;font-weight:500;opacity:.55;margin-top:1px;
     font-variant-numeric:tabular-nums}
+  /* ══ 2.923 · 루틴 = 투두리스트 — 요일 칩(.rt-day) + 카드 한 장(머리 · 얇은 막대 · 목록 · 한 줄 추가).
+     체크는 동그라미 하나(44px 누르는 자리), 한 일은 회색으로 — 시간 순서는 그대로 둔다(루틴은 하루의 순서다). */
+  .rtd-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .rtd-ttl{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .rtd-ttl b{font-size:16px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+  .rtd-ttl span{font-size:12.5px;font-weight:500;color:var(--text-2)}
+  .rtd-edit{flex:0 0 auto;min-height:36px;padding:0 13px;border:1px solid var(--line);background:transparent;border-radius:10px;
+    color:var(--text);font-family:var(--f);font-size:13px;font-weight:600;cursor:pointer}
+  .rtd-edit[aria-pressed="true"]{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+  .rtd-prog{height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden;margin:0 0 4px}
+  .rtd-prog>i{display:block;height:100%;background:var(--accent);border-radius:2px;transition:width .2s}
+  .rtd-list{display:flex;flex-direction:column}
+  .rtd-row{display:flex;align-items:center;gap:8px;min-height:50px;border-top:1px solid var(--line-soft)}
+  .rtd-list>.rtd-row:first-child{border-top:0}
+  .rtd-row.nock{padding-left:2px}
+  .rtd-ck{position:relative;flex:0 0 44px;width:44px;height:44px;margin-left:-8px;border:0;background:transparent;padding:0;cursor:pointer;border-radius:50%}
+  .rtd-ck::before{content:"";position:absolute;left:10px;top:10px;width:24px;height:24px;box-sizing:border-box;border-radius:50%;border:1.6px solid var(--text-3)}
+  .rtd-ck.on::before{background:var(--accent);border-color:var(--accent)}
+  .rtd-ck.on::after{content:"";position:absolute;left:17px;top:16px;width:10px;height:6px;border-left:2.2px solid #fff;border-bottom:2.2px solid #fff;transform:rotate(-45deg)}
+  .rtd-ck:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
+  .rtd-tm{flex:0 0 42px;font-size:12.5px;font-weight:600;color:var(--text-2);font-variant-numeric:tabular-nums}
+  .rtd-tx{flex:1 1 auto;min-width:0;font-size:14.5px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rtd-row.on .rtd-tx,.rtd-row.on .rtd-tm{color:var(--text-3)}
+  .rtd-tag{flex:0 0 auto;min-height:32px;padding:0 9px;border:0;border-radius:8px;background:rgba(124,77,255,.1);color:#5B34D6;
+    font-family:var(--f);font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+  body.fmdark .rtd-tag{background:rgba(124,77,255,.22);color:#C9B6FF}
+  .rtd-add{display:flex;align-items:center;gap:8px;margin-top:4px;padding-top:4px;border-top:1px solid var(--line-soft)}
+  .rtd-add input{flex:1 1 auto;width:0;min-width:0;min-height:44px;border:0;background:transparent;padding:0 2px;
+    font-family:var(--f);font-size:16px;color:var(--text);outline:none}   /* 16px — iOS 가 입력 때 화면을 키우지 않게 */
+  .rtd-add input::placeholder{color:var(--text-3);font-size:14px}
+  .rtd-add button{flex:0 0 auto;min-height:36px;padding:0 14px;border:0;border-radius:10px;background:var(--accent-soft);color:var(--accent);
+    font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer}
+  .rtd-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .rtd-empty{padding:12px 2px;font-size:13px;font-weight:500;color:var(--text-2);line-height:1.5}
+  .rtd-foot{margin:8px 4px 0;font-size:12px;font-weight:500;color:var(--text-2);line-height:1.5}
+  .rtd-extra .rtd-ttl{margin-bottom:6px}
+  .rtd-editlist{margin-top:2px}
+  .rtd-sub{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line-soft);font-size:12.5px;font-weight:600;color:var(--text-2)}
+  .rtd-today .rtd-foot{margin:6px 0 0}
   .rt-carry{align-self:flex-start;min-height:40px;padding:0 12px;margin-top:2px;border:1px solid var(--accent);
     background:var(--accent-soft);color:var(--accent);font-family:var(--f);font-size:12px;font-weight:600;
     border-radius:10px;cursor:pointer}
@@ -4054,6 +4093,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
     .ps-page-idp body .in-hd,.ps-page-idp body .lr-choice{min-height:56px}
     .ps-page-idp body .rt-days{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
     .ps-page-idp body .rt-days::-webkit-scrollbar{display:none}
+    .ps-page-idp body .rt-days>.rt-day{flex:1 1 0;min-width:40px}   /* 2.923 — 일곱 칩이 폭을 고르게 */
     .ps-page-idp body .rt-day{flex:0 0 44px;min-height:52px}
     .ps-page-idp body .it-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:7px}
     .ps-page-idp body .it-row .i-n{grid-column:1/-1;width:100%}
@@ -12791,6 +12831,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           h+='<div class="dc-sec"><div class="td-q">한 줄 <small>선택 · 잘 된 장면 / 다음엔 이렇게</small></div>'
           +'<textarea id="dayMemo" rows="3" placeholder="예: 압박 오는데 몸을 미리 열어서 앞을 봤다"'+(ro()?' disabled':'')+'>'+esc(lg.memo||'')+'</textarea>'+_pastRx+'</div>'; }   /* 2.615 — 오늘(선수)은 첫 층의 한 마디가 같은 log.memo */
         h+='</section>';   /* 2.362 — daycard 닫기. 아래 측정 카드는 별개의 일이라 밖에 둔다 */
+        if(_todaySimple){ try{ h+=rTodayRoutine(calAnchor); }catch(e){ console.warn('오늘 루틴 그리기 실패',e); } }   /* 2.923 — 오늘 할 일 체크는 여기 */
         h+=_wsCard+_below;   /* 2.780 — 순서: 오늘 카드 → 이번 주 나는 → 오늘 팀 일정 → 공지 */
         /* 2.489 — 일요일엔 주간 회고가 이 자리에(doc.weekly — 읽는 곳(9539 내 말 아카이브)만 있고
            쓰는 문이 어느 판에선가 사라져 고아였던 필드를 되살린다) */
@@ -12826,7 +12867,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       }
       /* 2.320 — 오늘의 하루 시간표는 **루틴 탭**이 맡는다(사용자: 오늘은 셋만). 다른 날짜에선 여기 그대로 */
       if(!_todaySimple)h+=rDayHours(calAnchor);
-      /* 2.320 — 오늘의 예정 훈련·내가 만든 훈련 체크는 **루틴 탭**으로(사용자: 오늘은 셋만) */
+      /* 2.320 — 오늘의 예정 훈련·내가 만든 훈련 체크는 오늘 카드에서 뺐다(사용자: 오늘은 셋만).
+         2.923 — 그 체크는 오늘 카드 아래 «오늘 루틴»(rTodayRoutine)이 맡는다 */
       if(_todaySimple)pl3=[];
       if(pl3.length) pl3.forEach(function(t){
         var on=isDone(calAnchor,t.id);
@@ -12852,6 +12894,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return h;
   }
   function bindCal(){
+    try{ bindTodayRoutine(); }catch(e){ console.warn('오늘 루틴 손잡이 실패',e); }   /* 2.923 */
     var ts=document.getElementById('teamScheduleOpen');
     if(ts)ts.onclick=function(){try{parent.postMessage({source:'idp',type:'openSchedule'},'*');}catch(_){}};
     var seg=document.getElementById('calSeg');
@@ -13046,59 +13089,92 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rtHourLabel(hh){ return (hh<10?'0':'')+hh+':00'; }
   function rtHourOf(t){ var m=String(t==null?'':t).match(/^(\d{1,2})/); if(!m)return null;
     var hh=+m[1]; if(hh===0)hh=24; return (hh>=1&&hh<=24)?hh:null; }
+  /* ══ 2.923 · 루틴 = 투두리스트(사용자 «IDP 루틴을 투두리스트 처럼 만드는건 어때?» → 목업 → «추천대로 해줘») ══════
+     지금까지 루틴은 «적어 두는 시간표»라 «했다»가 남지 않았다 — 루틴 항목은 체크할 곳이 없었다.
+     · 틀(매주 반복)과 기록(그날 했나)을 가른다. 틀 = doc.rtDay[요일] = [{t,s}] 그대로,
+       체크 = doc.rtDone[ymd] = ['시간|내용',…](문자열 배열 — IDP 병합이 집합처럼 합친다).
+       ⚠ doc.done 에 넣지 않는다 — 월간 요약·PDF·부모 리포트가 그 배열을 «개인 훈련을 한 날»로 센다.
+       키가 내용이라 틀에서 고친 항목은 그날 체크가 풀린다(고친 할 일은 새 할 일이다). 개인 훈련은 예전 doc.done(id) 그대로.
+     · 오늘 요일에만 체크. 못 한 일을 넘기거나 빨갛게 세지 않는다 — 내일은 새로 시작(놓친 날을 벌하지 않는다).
+     · 코치(ro)는 체크 없이 목록만(사용자 결정 — 감시가 되지 않게). 일지 «오늘»에는 넣지 않는다(2.320 «오늘은 셋만»).
+     · 2.412 의 7열 판·2.415 의 시간 줄 24개를 걷고 요일 칩 + 목록으로(목업 승인). 시간은 항목마다 선택이다.
+       ⚠ rDayHours()·RT_HOURS 는 지우지 않는다 — 일지의 다른 날짜 화면이 아직 쓴다. */
+  var _rtEdit=false;
+  function rtKey(r){ return String((r&&r.t)||'').trim()+'|'+String((r&&r.s)||'').trim(); }
+  function rtChecked(dt,key){ var a=doc.rtDone&&doc.rtDone[ymd(dt)]; return !!(a&&a.indexOf(key)>=0); }
+  function rtToggle(dt,key){ if(ro())return;
+    doc.rtDone=doc.rtDone||{}; var k=ymd(dt), a=(doc.rtDone[k]||[]).slice(), i=a.indexOf(key);
+    if(i>=0)a.splice(i,1); else a.push(key);
+    if(a.length)doc.rtDone[k]=a; else delete doc.rtDone[k];
+    /* 체크는 그날만 쓴다 — 120일 지난 기록은 정리(문서가 끝없이 자라지 않게) */
+    var cut=ymd(addDays(dt,-120)); Object.keys(doc.rtDone).forEach(function(d){ if(d<cut)delete doc.rtDone[d]; });
+    save(); }
+  /* «21:00 슈팅 50개» → {t:'21:00', s:'슈팅 50개'} · 시간이 없으면 내용만 */
+  function rtParseAdd(v){ v=String(v||'').trim(); if(!v)return null;
+    var m=v.match(/^(\d{1,2}):(\d{2})\s+(.+)$/);
+    if(m&&+m[1]<=24&&+m[2]<60)return {t:(m[1].length<2?'0':'')+m[1]+':'+m[2],s:m[3].trim().slice(0,40)};
+    return {t:'',s:v.slice(0,40)}; }
+  /* ══ 2.923 · 일지 «오늘 루틴» — 체크하는 곳은 여기 하나(사용자 «일지에 루틴…» → 목업 ③ → «진행해줘»).
+     선수가 매일 여는 화면이 일지라, 오늘 할 일 체크도 여기 있어야 실제로 쓰인다. 틀은 목표 › 루틴(«편집 ›»).
+     · 오늘 요일의 루틴 + 그 요일 개인 훈련(rtMerged) · 예정에 없던 개인 훈련은 아래 작은 줄에서.
+     · 오늘 루틴도 개인 훈련도 없으면 카드를 그리지 않는다(빈 카드로 일지를 늘리지 않는다).
+     · 코치(ro)에게는 그리지 않는다 — 체크는 선수만 본다(사용자 결정). 코치는 목표 › 루틴에서 틀만 본다.
+     ⚠ 2.320 «오늘은 셋만»은 오늘 카드(daycard) 안의 입력 얘기다 — 이 카드는 그 밖, 오늘 카드 바로 아래에 선다. */
+  function rTodayRoutine(dt){
+    if(ro())return '';
+    var rows=rtMerged(dayIdx(dt));
+    var inRows=rows.filter(function(r){return r.k==='t';}).map(function(r){return r.tr.id;});
+    var extra=(doc.trainings||[]).filter(function(t){ return inRows.indexOf(t.id)<0; });
+    if(!rows.length&&!extra.length)return '';
+    var done=0; rows.forEach(function(r){ if(r.k==='t'?isDone(dt,r.tr.id):rtChecked(dt,rtKey(r)))done++; });
+    var row=function(on,attr,tm,tx,trId,tagLb){
+      return '<div class="rtd-row'+(on?' on':'')+'"><button type="button" class="rtd-ck'+(on?' on':'')+'" '+attr
+        +' aria-pressed="'+(on?'true':'false')+'" aria-label="'+(on?'완료 취소: ':'완료: ')+esc(tx)+'"></button>'
+        +'<span class="rtd-tm">'+(tm?esc(tm):'—')+'</span><span class="rtd-tx">'+esc(tx)+'</span>'
+        +(trId?'<button type="button" class="rtd-tag" data-trtr="'+esc(trId)+'">'+tagLb+'</button>':'')+'</div>'; };
+    var h='<section class="card rtd-card rtd-today"><div class="rtd-head"><div class="rtd-ttl"><b>오늘 루틴</b><span>'
+      +(rows.length?(done+' / '+rows.length+' 했어요'):'오늘 루틴은 비어 있어요')+'</span></div>'
+      +'<button type="button" class="rtd-edit" data-trgo>편집 ›</button></div>';
+    if(rows.length)h+='<div class="rtd-prog" aria-hidden="true"><i style="width:'+Math.round(done/rows.length*100)+'%"></i></div>';
+    if(rows.length)h+='<div class="rtd-list">'+rows.map(function(r){
+      if(r.k==='t')return row(isDone(dt,r.tr.id),'data-trtk="'+esc(r.tr.id)+'"',String(r.t||'').trim(),String(r.tr.title||'훈련'),r.tr.id,'개인 훈련 ›');
+      var key=rtKey(r); return row(rtChecked(dt,key),'data-trck="'+esc(key)+'"',String(r.t||'').trim(),String(r.s||''),'',''); }).join('')+'</div>';
+    if(extra.length)h+='<div class="rtd-sub">예정에 없던 개인 훈련 — 했으면 체크</div><div class="rtd-list">'+extra.map(function(t){
+      return row(isDone(dt,t.id),'data-trtk="'+esc(t.id)+'"',String(t.time||'').trim(),String(t.title||'훈련'),t.id,'열기 ›'); }).join('')+'</div>';
+    h+='<div class="rtd-foot">체크는 그날만 남아요 — 내일은 새로 시작합니다.</div></section>';
+    return h;
+  }
+  function bindTodayRoutine(){
+    if(ro())return;
+    var t0=new Date();t0.setHours(0,0,0,0);
+    [].forEach.call(wrap.querySelectorAll('[data-trck]'),function(b){ b.onclick=function(){ rtToggle(t0,b.dataset.trck); render(); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-trtk]'),function(b){ b.onclick=function(){ toggleDone(t0,b.dataset.trtk); render(); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-trtr]'),function(b){
+      b.onclick=function(){ var t=(doc.trainings||[]).filter(function(x){return x.id===b.dataset.trtr;})[0]; if(t)openEditor(t); }; });
+    var go=wrap.querySelector('[data-trgo]');
+    if(go)go.onclick=function(){ _rtPick=null; _rtEdit=false; curL='routine'; render(); try{ window.scrollTo(0,0); }catch(_){} };
+  }
   function rRoutine(){
     var t0=new Date();t0.setHours(0,0,0,0);
-    /* 2.320 — 오늘의 하루 시간표가 여기로(사용자: 오늘 화면은 셋만). 루틴 편집기와 같은 05:00~24:00 줄이라 한집이다 */
-    /* ⚠ 2.412 — '하루 시간표'는 루틴 탭에서 **뺐다**(사용자 "하루 시간표는 지우고 요일별 루틴만").
-       같은 05:00~24:00 줄을 하루용·요일용으로 두 벌 두고 있었다 — 요일 루틴이 그 일을 한다.
-       ⚠ `rDayHours()` 는 지우지 않는다 — 일지의 다른 날짜 화면이 아직 부른다(11074행대). */
     var _gfSeg=''; try{ _gfSeg=rGoalFamSeg(); }catch(_){}   /* 2.321 */
-    var pick=(_rtPick==null)?dayIdx(t0):_rtPick;
+    var tIdx=dayIdx(t0), pick=(_rtPick==null)?tIdx:_rtPick, isToday=pick===tIdx;
+    /* 2.923 — 체크는 **일지 «오늘»** 한 곳에서(사용자 «진행해줘» — 체크하는 곳을 하나로). 이 탭은 틀을 정하는 곳이다 */
+    var edit=!ro()&&_rtEdit, canCk=false;
     var plan=(doc.rtDay&&doc.rtDay[pick])||[];
     var rows=rtMerged(pick);
-    /* 2.320 — 오늘 할 훈련 체크도 여기로. '오늘' 화면에서 뺐으니 **어디선가는 오늘 체크가 돼야** 한다 */
     var h=_gfSeg;
-    if(!ro()){
-      var _plT=[]; try{ _plT=plannedOn(t0); }catch(_){}
-      var _otT=(doc.trainings||[]).filter(function(t){ return _plT.indexOf(t)<0; });
-      if(_plT.length||_otT.length){
-        h+='<div class="card"><div class="rt-head"><b>오늘 할 훈련</b><span>'+DAYS[dayIdx(t0)]+'요일 · 눌러서 완료</span></div>';
-        _plT.concat(_otT).forEach(function(t){
-          h+='<div class="tr-line"><button type="button" class="chk'+(isDone(t0,t.id)?' on':'')+'" data-d="'+ymd(t0)+'" data-t="'+esc(t.id)+'" aria-pressed="'+(isDone(t0,t.id)?'true':'false')+'">✓</button>'
-            +'<span class="t">'+esc(t.title||'훈련')+'</span>'+(_plT.indexOf(t)<0?'<span class="m">예정 아님</span>':'')+'</div>';
-        });
-        h+='</div>';
-      }
-    }
-    h+='<div class="card"><div class="rt-head"><b>요일별 루틴</b>'
-      +'<span>한 번 정해 두면 그 요일마다 자동으로 떠요 ·<br>개인 훈련도 여기에 놓입니다</span></div>';
-    /* ══ 2.412 · 요일 밑에 쌓는 7열 판 ═══════════════════════════════════════════
-       사용자: "요일별 루틴 시간에 적으면 요일 밑에 쌓이게 · 아주 작은 폰트로 열과 행 잘 맞춰서".
-       ⚠ 칩 한 줄은 **개수만** 말했다(월 3, 화 2). 무엇이 들었는지는 그 요일을 눌러야 보였다.
-          일곱 열을 세우고 그 아래에 실제 줄을 쌓으면 **한 화면에 일주일이 다 보인다.**
-       ⚠ 열 폭을 고정한다(`repeat(7,minmax(0,1fr))`) — 내용 길이로 폭이 정해지면 요일선이 어긋난다. */
-    h+='<div class="rt-board">'+DAYS.map(function(nm,i){
-      var items=rtMerged(i)||[];
-      var n=items.length;
-      return '<div class="rtb-col'+(i===pick?' on':'')+(i===dayIdx(t0)?' today':'')+'">'
-        +'<button type="button" class="rtb-h" data-rtd="'+i+'">'+nm+(n?'<u>'+n+'</u>':'')+'</button>'
-        +'<div class="rtb-list">'
-        +(n?items.map(function(r){
-            var tm=String((r&&(r.t||r.time))||'').trim();
-            /* ⚠ rtMerged 는 두 갈래를 섞는다: 루틴 줄은 `s`, 팀/개인 훈련 줄은 `tr.title` 이다.
-               한쪽만 읽으면 훈련이 이름 없이 '—' 로 쌓인다. */
-            var tx=String((r&&(r.s||(r.tr&&r.tr.title)))||'').trim();
-            if(!tm&&!tx)return '';
-            return '<div class="rtb-it"'+(tx?' title="'+esc((tm?tm+' ':'')+tx)+'"':'')+'>'
-              +(tm?'<i>'+esc(tm)+'</i>':'<i class="no">·</i>')+'<span>'+esc(tx||'—')+'</span></div>';
-          }).join('')
-          :'<div class="rtb-none">—</div>')
-        +'</div></div>';
-    }).join('')+'</div>';
-    /* 요일이 없는 훈련은 어느 요일에도 안 떠서 '사라진 것'처럼 보인다 — 아래에 따로 모은다 */
+    /* 요일 칩 — 오늘은 점, 고른 요일은 틴트(예전 .rt-day 문법) · 숫자 = 그 요일 할 일 수 */
+    h+='<div class="rt-days" role="group" aria-label="요일">'+DAYS.map(function(nm,i){ var n=rtMerged(i).length;
+      return '<button type="button" class="rt-day'+(i===pick?' on':'')+(i===tIdx?' today':'')+'" data-rtd="'+i+'" aria-pressed="'+(i===pick?'true':'false')+'" aria-label="'+nm+'요일 '+n+'개'+(i===tIdx?' · 오늘':'')+'">'+nm+'<u>'+(n||'·')+'</u></button>'; }).join('')+'</div>';
+    var done=0; if(canCk)rows.forEach(function(r){ if(r.k==='t'?isDone(t0,r.tr.id):rtChecked(t0,rtKey(r)))done++; });
+    var sub=ro()?('선수가 정한 '+DAYS[pick]+'요일 루틴'):rows.length?('매주 '+DAYS[pick]+'요일에 떠요 · 오늘 체크는 일지에서'):'아직 비어 있어요';
+    h+='<div class="card rtd-card"><div class="rtd-head"><div class="rtd-ttl"><b>'+DAYS[pick]+'요일'+(isToday?' · 오늘':'')+'</b><span>'+sub+'</span></div>'
+      +(!ro()?'<button type="button" class="rtd-edit" data-rtedit aria-pressed="'+(edit?'true':'false')+'">'+(edit?'완료':'편집')+'</button>':'')+'</div>';
+    if(canCk&&rows.length)h+='<div class="rtd-prog" aria-hidden="true"><i style="width:'+Math.round(done/rows.length*100)+'%"></i></div>';
+    /* 요일이 없는 훈련은 어느 요일에도 안 떠서 '사라진 것'처럼 보인다 — 따로 모은다 */
     var orph=(doc.trainings||[]).filter(function(t){ return !(t.days&&t.days.length); });
     if(ro()){
-      /* 코치는 읽으러 온다 — 제목만으론 뭘 하는 훈련인지 모르니 목표·운동까지 펼쳐 둔다.
+      /* 코치는 읽으러 온다 — 체크 없이 목록만. 제목만으론 뭘 하는 훈련인지 모르니 목표·운동까지 펼쳐 둔다.
          속살이 딸린 줄은 아래 줄금을 지운다: 안 그러면 속살이 '아랫줄의 것'처럼 붙어 보인다. */
       var roRow=function(t){ var d=trDetail(t);
         return trLine(t,function(m){
@@ -13110,65 +13186,54 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
               ? '<div class="rt-row rov"><b>'+esc(r.t)+'</b><span>'+esc(r.s)+'</span></div>'
               : roRow(r.tr);
           }).join('')+'</div>'
-        : '<div class="rt-note">비어 있어요</div>';
+        : '<div class="rtd-empty">비어 있어요</div>';
       if(orph.length){
         h+='<div class="rt-orph"><i>요일이 없는 훈련</i><div class="rt-list">'
           +orph.map(roRow).join('')+'</div></div>';
       }
       return h+'</div>';
     }
-    /* 1.993 — 하루 시간표(사용자): 시간 줄이 미리 있고, 적은 것은 그 시간 줄에, 빈 시간은 바로 적을 수 있는 자리로.
-       시간을 못 읽는 항목만 맨 아래 '시간 미정'. 2.415 — 줄은 `RT_HOURS`(05→24→01→04) 한 바퀴. */
-    var rowHtml=function(r){
-      if(r.k==='t')return trLine(r.tr,function(m){
-        return '<button type="button" class="rt-trn" data-rttr="'+esc(r.tr.id)+'">'
-          +'<span class="nm">'+esc(r.tr.title||'훈련')+'</span>'
-          +(m?'<span class="mt">'+esc(m)+'</span>':'')+'<span class="go">›</span></button>'; });
-      return '<div class="rt-row">'
-        +'<input class="rt-t" data-rtd2="'+r.i+'" data-rtf="t" value="'+esc(r.t)+'" placeholder="07:00" maxlength="5">'
-        +'<input class="rt-s" data-rtd2="'+r.i+'" data-rtf="s" value="'+esc(r.s)+'" placeholder="무엇을 하나요" maxlength="40">'
-        +'<button type="button" class="rt-x" data-rtd2del="'+r.i+'" aria-label="지우기">×</button></div>';
-    };
-    var buckets={}, etc=[]; rows.forEach(function(r){ var hh=rtHourOf(r.t); if(hh==null)etc.push(r); else (buckets[hh]=buckets[hh]||[]).push(r); });
-    h+='<div class="rt-list rt-timeline">';
-    RT_HOURS.forEach(function(hh){ var lb=rtHourLabel(hh), arr=buckets[hh];
-      if(arr&&arr.length){ h+=arr.map(rowHtml).join(''); }
-      else { h+='<div class="rt-row rt-slot"><b>'+lb+'</b><input class="rt-s" data-rtslot="'+lb+'" placeholder="무엇을 하나요" maxlength="40"><span></span></div>'; }
-    });
-    if(etc.length){ h+='<div class="rt-slot-h">시간 미정</div>'+etc.map(rowHtml).join(''); }
-    h+='</div>';
-    /* ⚠⚠ 2.415 — '＋ 시간 추가'·'＋ 개인 훈련' 을 **둘 다 뺐다**(사용자).
-       · 시간 추가: 시간 줄 24개가 **모두 빈 칸**이라 거기 바로 적으면 그 시각으로 만들어진다
-         (`data-rtslot`) — 빈 줄을 하나 더 만드는 버튼은 같은 일을 하는 두 번째 문이었다.
-         정각이 아닌 시각은 만들어진 줄의 시간 칸을 고쳐 쓴다(07:00 → 07:30).
-       · ⚠⚠ 개인 훈련: 여기가 **새 개인 훈련을 만드는 유일한 문**이었다(`openEditor(null,pick)`).
-         빼면 새로 만들 길이 없어진다고 알린 뒤 사용자가 "그냥 둘 다 지우기"로 정했다.
-         **이미 만들어 둔 훈련은 그대로** 요일 판·시간 줄에 뜨고(`rtMerged`), 눌러서 여는 문
-         (`[data-rttr]` → `openEditor(t)`)도 살아 있다 — 그래서 부제의 '개인 훈련도 여기에
-         놓입니다' 는 여전히 맞는 말이다.
-         ⚠ `openEditor` 의 **새로 만들기 갈래**(`t` 가 null)는 이제 닿지 않는다. 지우지 않는다 —
-           되살릴 때 필요하고 지워서 얻을 것이 없다(2.405 와 같은 판단).
-       ⚠ 버튼이 하나도 없으면 `.rt-acts` 를 **아예 그리지 않는다** — 빈 줄이 margin 만 남긴다. */
-    var others=DAYS.map(function(nm,i){return {i:i,nm:nm,n:((doc.rtDay&&doc.rtDay[i])||[]).length};})
-                   .filter(function(x){return x.i!==pick&&x.n;});
-    if(others.length)h+='<div class="rt-acts"><button type="button" class="rt-d-copy">다른 요일에서 가져오기</button></div>';
-    /* 비우기는 되돌리기 어려운 동작이라 더하는 버튼들과 같은 줄에 두지 않는다 —
-       실수로 옆 버튼을 누르는 일을 줄이고, 위계상으로도 한 단 아래에 둔다.
-       1.597 — 훈련은 건드리지 않는다. 훈련은 다른 요일에도 걸려 있어서, 여기서 지우면
-       모르는 사이에 그 요일들에서도 사라진다. 지우려면 훈련을 눌러 편집기에서. */
-    if(plan.length)h+='<button type="button" class="rt-d-clear">이 요일 시간표 비우기</button>';
-    /* ⚠ 2.415 — 옛 문구는 '시간이나 개인 훈련을 추가해 보세요' 로 **없어진 버튼을 가리키고** 있었다.
-       안내는 지금 화면에 있는 것을 가리켜야 한다 — 지금은 시간 줄에 바로 적는다. */
-    if(!rows.length)h+='<div class="rt-note">'+DAYS[pick]+'요일은 아직 비어 있어요 — 시간 줄에 바로 적으면 됩니다</div>';
-    if(orph.length){
-      h+='<div class="rt-orph"><i>요일이 없는 훈련 — 요일을 정하면 그 요일 루틴에 놓여요</i><div class="rt-list">'
-        +orph.map(function(t){ return trLine(t,function(m){
-            return '<button type="button" class="rt-trn" data-rttr="'+esc(t.id)+'">'
-              +'<span class="nm">'+esc(t.title||'훈련')+'</span>'
-              +(m?'<span class="mt">'+esc(m)+'</span>':'')+'<span class="go">›</span></button>'; }); }).join('')
-        +'</div></div>';
+    var trOpen=function(t){ return trLine(t,function(m){
+        return '<button type="button" class="rt-trn" data-rttr="'+esc(t.id)+'">'
+          +'<span class="nm">'+esc(t.title||'훈련')+'</span>'
+          +(m?'<span class="mt">'+esc(m)+'</span>':'')+'<span class="go">›</span></button>'; }); };
+    if(edit){
+      /* 편집 = 예전 시간표 줄 그대로(시간·내용 칸 · ×). 훈련 줄은 눌러서 훈련 편집기로 */
+      var rowHtml=function(r){
+        if(r.k==='t')return trOpen(r.tr);
+        return '<div class="rt-row">'
+          +'<input class="rt-t" data-rtd2="'+r.i+'" data-rtf="t" value="'+esc(r.t)+'" placeholder="시간" maxlength="5" aria-label="시간">'
+          +'<input class="rt-s" data-rtd2="'+r.i+'" data-rtf="s" value="'+esc(r.s)+'" placeholder="무엇을 하나요" maxlength="40" aria-label="할 일">'
+          +'<button type="button" class="rt-x" data-rtd2del="'+r.i+'" aria-label="지우기">×</button></div>';
+      };
+      h+=rows.length?'<div class="rt-list rtd-editlist">'+rows.map(rowHtml).join('')+'</div>':'';
+    }else if(rows.length){
+      h+='<div class="rtd-list">'+rows.map(function(r){
+        var isT=r.k==='t', key=isT?'':rtKey(r), on=canCk&&(isT?isDone(t0,r.tr.id):rtChecked(t0,key));
+        var tm=String(r.t||'').trim(), tx=isT?String(r.tr.title||'훈련'):String(r.s||'');
+        var ck=canCk?'<button type="button" class="rtd-ck'+(on?' on':'')+'" '+(isT?'data-rttk="'+esc(r.tr.id)+'"':'data-rtck="'+esc(key)+'"')
+            +' aria-pressed="'+(on?'true':'false')+'" aria-label="'+(on?'완료 취소: ':'완료: ')+esc(tx)+'"></button>':'';
+        return '<div class="rtd-row'+(on?' on':'')+(canCk?'':' nock')+'">'+ck+'<span class="rtd-tm">'+(tm?esc(tm):'—')+'</span><span class="rtd-tx">'+esc(tx)+'</span>'
+          +(isT?'<button type="button" class="rtd-tag" data-rttr="'+esc(r.tr.id)+'">개인 훈련 ›</button>':'')+'</div>';
+      }).join('')+'</div>';
     }
-    return h+'</div>';
+    if(!rows.length)h+='<div class="rtd-empty">'+DAYS[pick]+'요일은 아직 비어 있어요 — 아래에 적으면 매주 '+DAYS[pick]+'요일에 떠요</div>';
+    h+='<div class="rtd-add"><label class="rtd-sr" for="rtAddIn">'+DAYS[pick]+'요일에 할 일 추가</label>'
+      +'<input id="rtAddIn" data-rtadd maxlength="46" autocomplete="off" enterkeyhint="done" placeholder="예) 21:00 슈팅 50개 · 시간은 빼도 돼요">'
+      +'<button type="button" data-rtaddgo>추가</button></div>';
+    if(edit){
+      var others=DAYS.map(function(nm,i){return {i:i,nm:nm,n:((doc.rtDay&&doc.rtDay[i])||[]).length};})
+                     .filter(function(x){return x.i!==pick&&x.n;});
+      if(others.length)h+='<div class="rt-acts"><button type="button" class="rt-d-copy">다른 요일에서 가져오기</button></div>';
+      /* 비우기는 되돌리기 어려운 동작이라 더하는 버튼과 같은 줄에 두지 않는다. 1.597 — 훈련은 건드리지 않는다 */
+      if(plan.length)h+='<button type="button" class="rt-d-clear">이 요일 비우기</button>';
+      if(orph.length){
+        h+='<div class="rt-orph"><i>요일이 없는 훈련 — 요일을 정하면 그 요일 루틴에 놓여요</i><div class="rt-list">'
+          +orph.map(trOpen).join('')+'</div></div>';
+      }
+    }
+    h+='</div>';
+    return h;
   }
   /* 훈련 속살 — 목표·운동·작전판 그림. 읽기(코치) 화면에서만 펼친다 */
   function trDetail(t){
@@ -13193,6 +13258,17 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var t0=new Date();t0.setHours(0,0,0,0);
     var pick=(_rtPick==null)?dayIdx(t0):_rtPick;
     var cur=function(){ return ((doc.rtDay&&doc.rtDay[pick])||[]).map(function(r){return {t:r.t,s:r.s};}); };
+    /* 2.923 — 편집 켜고 끄기 · 한 줄 추가(오늘 체크는 일지 «오늘 루틴» 카드 — bindTodayRoutine) */
+    var ed=wrap.querySelector('[data-rtedit]');
+    if(ed)ed.onclick=function(){ _rtEdit=!_rtEdit; render(); };
+    var addIn=wrap.querySelector('[data-rtadd]'),addGo=wrap.querySelector('[data-rtaddgo]');
+    var addNow=function(){ if(!addIn)return; var it=rtParseAdd(addIn.value); if(!it)return;
+      var a=cur(); a.push(it); window.__rtAddFocus=1; put(a); };
+    if(addIn)addIn.addEventListener('keydown',function(e){
+      if(e.key!=='Enter'||e.isComposing||e.keyCode===229)return;   /* 한글 조합 확정 Enter 는 흘려보낸다(2.296) */
+      e.preventDefault(); addNow(); });
+    if(addGo)addGo.onclick=addNow;
+    if(addIn&&window.__rtAddFocus){ window.__rtAddFocus=0; try{ addIn.focus({preventScroll:true}); }catch(_){ addIn.focus(); } }
     var put=function(a){
       a=a.filter(function(r){ return String(r.t||'').trim()||String(r.s||'').trim(); });
       doc.rtDay=doc.rtDay||{};
@@ -13200,10 +13276,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       doc.rtAt=Date.now();   /* 2.908 */
       save(); render();
     };
-    /* 1.993 — 빈 시간 줄에 적으면 그 시간으로 새 항목 */
-    [].forEach.call(wrap.querySelectorAll('[data-rtslot]'),function(inp){
-      inp.onchange=function(){ var v=inp.value.trim(); if(!v)return; var a=cur(); a.push({t:inp.dataset.rtslot,s:v}); put(a); };
-    });
     [].forEach.call(wrap.querySelectorAll('[data-rtd2del]'),function(b){
       b.onclick=function(){ var a=cur(); a.splice(+b.dataset.rtd2del,1); put(a); };
     });
@@ -13224,7 +13296,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       put((doc.rtDay[sel.i]||[]).map(function(r){return {t:r.t,s:r.s};}));
     };
     var cl=wrap.querySelector('.rt-d-clear');
-    if(cl)cl.onclick=function(){ if(confirm(DAYS[pick]+'요일 시간표를 비울까요?\n개인 훈련은 지워지지 않습니다 — 훈련은 눌러서 요일을 바꿔 주세요.\n이미 지난 날에 적어 둔 기록도 그대로 남습니다.'))put([]); };
+    if(cl)cl.onclick=function(){ if(confirm(DAYS[pick]+'요일 루틴을 비울까요?\n개인 훈련은 지워지지 않습니다 — 훈련은 눌러서 요일을 바꿔 주세요.\n이미 지난 날에 적어 둔 기록도 그대로 남습니다.'))put([]); };
   }
   function tlKind(s){ s=String(s||'');
     if(/경기|매치|match/i.test(s))return 'match';
