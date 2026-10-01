@@ -7906,7 +7906,7 @@ function renderInterp(a,b,u,curves){
     return Object.assign({},u>=1?q:p,{x:pt.x,y:pt.y,scale:lerp(p.scale||1,q.scale||1,u)});});
   (b.equipment||[]).forEach(q=>{if(!(a.equipment||[]).some(p=>p.id===q.id))state.equipment.push(Object.assign({},q));});
   if(u>=1){state.players=dc(b.players||[]);state.equipment=dc(b.equipment||[]);}
-  if(a.ball||b.ball){const ba=a.ball||b.ball,bb=b.ball||a.ball;const cbl=curves&&curves.ball;const bpt=_curvePt(ba.x,ba.y,bb.x,bb.y,cbl,u);try{ballRollTrack("ball",bpt.x,bpt.y);}catch(_){}if(cbl&&cbl.air&&u<1)__ballAirS["ball"]=_airS(cbl.air);state.ball={x:bpt.x,y:bpt.y};}
+  if(a.ball||b.ball){const ba=a.ball||b.ball,bb=b.ball||a.ball;const cbl=curves&&curves.ball;const bpt=_curvePt(ba.x,ba.y,bb.x,bb.y,cbl,u);try{ballRollTrack("ball",bpt.x,bpt.y);}catch(_){}if(cbl&&cbl.air&&u<1)__ballAirS["ball"]=_airS(cbl.air);state.ball=Object.assign({},u>=1?bb:ba,{x:bpt.x,y:bpt.y,scale:lerp(ba.scale||1,bb.scale||1,u)});}   /* 2.924 — 이동 중에도 공 크기(scale)·잔상 등 속성을 지킨다(전엔 {x,y}만 남아 움직이는 동안 기본 크기로 돌아갔다) — 선수·장비 공과 같은 규칙 */
   else{state.ball=null;}
   if(u>=1)state.ball=b.ball?dc(b.ball):null;
   state.drawings=_interpDrawings(a.drawings||[],b.drawings||[],u);   /* 2.719 — 장면 사이 그림 서서히 */
@@ -9247,7 +9247,7 @@ try{
 async function saveToLib(d){if(!psVaultRequireLogin())return false;const lib=await libGet();const copy=dc(d);
   copy.libId="L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);copy.savedAt=Date.now();
   stampCreator(copy);
-  lib.unshift(copy);await libWrite(lib);libTouch();renderLibDock();toast("라이브러리에 저장됨");}
+  lib.unshift(copy);await libWrite(lib);libTouch();renderLibDock();toast("라이브러리에 저장됨");return copy.libId;}   /* 2.924 — 새 항목 번호를 돌려준다(커뮤니티 «새로 만들기»가 저장 뒤 그 항목을 바로 고른다) */
 async function delFromLib(libId){if(!psVaultRequireLogin())return false;let lib=await libGet();lib=lib.filter(x=>x.libId!==libId);await libWrite(lib);libTouch();
   try{var _tb=JSON.parse(localStorage.getItem("ps_tomb_v1")||"[]");_tb.push({id:libId,at:Date.now()});var _cut=Date.now()-7776e6;_tb=_tb.filter(function(t){return t.at>_cut;});localStorage.setItem("ps_tomb_v1",JSON.stringify(_tb));}catch(_){}   /* 삭제 무덤돌(90일) — 기기 간 동기화 병합 시 삭제가 부활하지 않게 */
   renderLib();renderLibDock();}
@@ -11499,7 +11499,7 @@ function closeEditor(save){
   /* 저장/닫기 버튼은 명시적 의사이므로 재생을 먼저 멈춰 편집 전 화면을 복원한 뒤 캡처한다. */
   restoreAnimBeforeCapture();
   const wasLib=editorLibId;
-  var _schedND=null;
+  var _schedND=null,_schedSavePr=null;   /* 2.924 — 새 훈련의 보관함 저장(약속) — 끝나면 번호를 셸에 알린다 */
   if(save){captureActiveTraining();   // 활성 훈련의 편집 중 장면·애니메이션 먼저 캡처
     /* 각 훈련을 드릴 형태로 직렬화 (장면 1 = 기본 snap/thumb, 추가 장면만 scenes 에, 2.613 — 애니메이션은 훈련마다 frames 에) */
     var trs=editorTrainings.map(function(t){
@@ -11550,7 +11550,7 @@ function closeEditor(save){
           clearEditorWork(lid);
         }})();}
     else if(editorDrillId!=null){const d=session.drills.find(x=>x.id===editorDrillId);if(d){applyToCard(d);}}
-    else{var _nd=applyToCard({});if(window.__editorSchedLink!=='edit')saveToLib(_nd);_schedND=_nd;}}
+    else{var _nd=applyToCard({});if(window.__editorSchedLink!=='edit')_schedSavePr=saveToLib(_nd);_schedND=_nd;}}
   if(save){try{clearEditorDraft();}catch(_){}}   /* 저장 완료 → 자동 유지 초안 삭제 */
   if(!save&&editorLibId!=null){try{clearEditorWork(editorLibId);}catch(_){}}
   stopTrainingWizard();window.__trainingSessionMeta=null;
@@ -11579,7 +11579,9 @@ function closeEditor(save){
   if(window.__editorSchedLink){window.__editorSchedLink=false;
     /* 1.958 — 일정으로 돌아갈 때 게임모델 국면(gmPhases)·초점도 함께 — 작전판에서 그린 훈련도 주간 국면 배분·보강 추천에 잡히게 */
     if(save){ var _gp=[]; try{ ((_schedND&&_schedND.trainings)||[]).forEach(function(t){ (t&&t.gmPhases||[]).forEach(function(x){ if(_gp.indexOf(x)<0)_gp.push(x); }); }); }catch(_){}
-      try{parent.postMessage({source:'board',type:'capture',thumb:(_schedND&&_schedND.thumb)||'',snap:(_schedND&&_schedND.snap)||null,name:(_schedND&&_schedND.name)||'',minutes:(_schedND&&_schedND.minutes)||'',gmPhases:_gp,focus:(_schedND&&_schedND.focus)||''},'*');}catch(_){}}
+      try{parent.postMessage({source:'board',type:'capture',thumb:(_schedND&&_schedND.thumb)||'',snap:(_schedND&&_schedND.snap)||null,name:(_schedND&&_schedND.name)||'',minutes:(_schedND&&_schedND.minutes)||'',gmPhases:_gp,focus:(_schedND&&_schedND.focus)||''},'*');}catch(_){}
+      /* 2.924 — 보관함 쓰기가 끝난 뒤 새 항목 번호를 따로 알린다(커뮤니티는 이것을 받아 올리기 창에서 그 항목을 고른다 · 다른 화면은 무시) */
+      if(_schedSavePr){ Promise.resolve(_schedSavePr).then(function(lid){ if(lid){ try{parent.postMessage({source:'board',type:'captureSaved',libId:lid},'*');}catch(_){} } }).catch(function(){}); } }
     else{try{parent.postMessage({source:'board',type:'captureCancel'},'*');}catch(_){}}
   }
 }

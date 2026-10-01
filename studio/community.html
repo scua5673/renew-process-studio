@@ -129,6 +129,20 @@
   .fab svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
   .fab:hover{box-shadow:0 8px 20px var(--sh22,rgba(16,24,40,.22))}
   .fab:active{transform:translateY(1px) scale(.98)}
+  /* 2.924 — 올리기 두 갈래: 보관함에서 고르기 / 새로 만들기(FAB 바로 위에 뜨는 작은 메뉴) */
+  .up-menu{position:fixed;z-index:510;width:264px;max-width:calc(100vw - 16px);box-sizing:border-box;background:var(--surface,#fff);border:1px solid var(--line,#E3E6EA);border-radius:12px;
+    box-shadow:0 10px 28px var(--sh22,rgba(16,24,40,.22));padding:6px;display:flex;flex-direction:column;gap:2px}
+  .up-menu[hidden]{display:none}
+  .up-menu button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;background:none;border-radius:8px;padding:10px;min-height:56px;cursor:pointer;font-family:inherit;color:var(--ink,#14161A)}
+  .up-menu button:hover,.up-menu button:focus-visible{background:var(--surface-2,#F4F5F7);outline:none}
+  .up-menu .umi{width:34px;height:34px;border-radius:9px;background:var(--accent-soft,#EDF2FE);color:var(--accent,#3A6DF0);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .up-menu .umi svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .up-menu .umt{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .up-menu .umt b{font-size:14px;font-weight:700;line-height:1.3}
+  .up-menu .umt small{font-size:12px;font-weight:500;color:var(--text-3,#8A9099);line-height:1.35}
+  .up-lblrow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:var(--fs-caption);font-weight:var(--fw-head);color:var(--text-3);margin-bottom:5px}
+  .up-newlink{border:0;background:none;color:var(--accent,#3A6DF0);font-family:inherit;font-size:var(--fs-caption);font-weight:700;cursor:pointer;padding:4px 2px;white-space:nowrap}
+  .up-newlink:hover{text-decoration:underline}
   /* 데스크톱: 한 줄 최대 3개 수준으로 크게 보여 작전판 안 선수·선이 카드에서도 읽히게 */
   @media (min-width:900px){ .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px} #wrap{padding:12px 20px 100px} .card .tt{font-size:var(--fs-input)} .meta{font-size:var(--fs-caption)} }   /* 좌우 20px — 6개 탭 제목 왼쪽 정렬 통일 */
   @media (max-width:560px){.grid{grid-template-columns:1fr}.card .th{aspect-ratio:16/9}.card .tt{font-size:var(--fs-input)}.card .bd{padding:11px 13px 13px}}
@@ -414,6 +428,10 @@
   </div>
 </div>
 <button class="fab" id="upBtn" title="훈련 올리기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>올리기</button>
+<div class="up-menu" id="upMenu" role="menu" aria-label="올리기" hidden>
+  <button type="button" role="menuitem" id="upFromLib"><span class="umi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v13H3z"/><path d="M3 7l2-3h14l2 3"/><path d="M9 12h6"/></svg></span><span class="umt"><b>보관함에서 고르기</b><small>저장해 둔 훈련을 올려요</small></span></button>
+  <button type="button" role="menuitem" id="upNew"><span class="umi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><span class="umt"><b>새로 만들기</b><small>그려서 저장하면 바로 올려요</small></span></button>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -1011,7 +1029,7 @@ window.addEventListener('message',function(e){
     if(e.origin&&e.origin!==location.origin)return;
     communityLibraryAuthChanged(d.unlocked===true);return;
   }
-  if(d.source==='app'&&d.type==='closeTransientUI'){closeCommunityViewer();communityLibraryCloseFlow();mask.classList.remove('on');return;}
+  if(d.source==='app'&&d.type==='closeTransientUI'){try{upMenuClose();}catch(_){}closeCommunityViewer();communityLibraryCloseFlow();mask.classList.remove('on');return;}
   if(d.type==='openUpload'){window.__upPreselect=d.libId||null;try{openUpload();}catch(_){}return;}
   if(e.source!==cvFrame.contentWindow)return;
   if(d.source==='board'&&d.type==='commClosed')closeCommunityViewer();
@@ -1293,7 +1311,29 @@ function copyToLib(p,btn){
 }
 
 /* ── 올리기 ── */
-$('upBtn').onclick=openUpload;
+/* 2.924 — 올리기 = 두 갈래(사용자 «올리기와 바로 만들 수도 있게»). 앱(셸) 안에서만 «새로 만들기»가 있다 —
+   일정·플레이북과 같은 훈련 편집기(작전판 __openScheduleDrill)를 열고, 저장하면 셸이 커뮤니티로 돌려보내
+   방금 만든 훈련을 고른 채 올리기 창을 연다(openUpload + libId, 보관함 미리보기 «커뮤니티에 올리기»와 같은 길).
+   커뮤니티 페이지를 단독으로 열면 편집기가 없어서 예전처럼 바로 올리기 창. */
+var IN_SHELL=(window.parent!==window);
+function upMenuClose(){var m=$('upMenu');if(m&&!m.hidden){m.hidden=true;$('upBtn').setAttribute('aria-expanded','false');}}
+function upMenuOpen(){var m=$('upMenu'),b=$('upBtn');if(!m||!b)return;var r=b.getBoundingClientRect();
+  m.style.right=Math.max(8,Math.round(window.innerWidth-r.right))+'px';m.style.bottom=Math.max(8,Math.round(window.innerHeight-r.top+10))+'px';
+  m.hidden=false;b.setAttribute('aria-expanded','true');}
+function communityCreateNew(){
+  upMenuClose();
+  if(!IN_SHELL){toast('앱 안에서 열면 여기서 바로 만들 수 있어요');return;}
+  if(!communityLibraryRequireUnlocked(true))return;
+  communityLibraryCloseFlow();
+  try{window.parent.postMessage({source:'community',type:'openDrillEditor'},'*');}catch(_){}
+}
+$('upBtn').setAttribute('aria-haspopup',IN_SHELL?'menu':'dialog');$('upBtn').setAttribute('aria-expanded','false');
+$('upBtn').onclick=function(e){ if(!IN_SHELL){openUpload();return;} e.stopPropagation(); if($('upMenu').hidden)upMenuOpen(); else upMenuClose(); };
+$('upFromLib').onclick=function(){upMenuClose();openUpload();};
+$('upNew').onclick=communityCreateNew;
+document.addEventListener('click',function(e){var m=$('upMenu');if(!m||m.hidden)return;if(m.contains(e.target)||(e.target.closest&&e.target.closest('#upBtn')))return;upMenuClose();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')upMenuClose();});
+window.addEventListener('resize',upMenuClose);
 /* 2.668 — 커뮤니티는 공개다. 선수 **이름**은 사진과 같은 개인정보(유소년이면 더). 실측: 발행 코드가 사진만 떼고 이름은 그대로 실었다
    (서버 21건 중 실명 0 — 아직 사고는 없었지만 «9월 4일 훈련»처럼 명단 19명이 붙은 판을 올리면 그대로 공개된다). 번호·포지션은 남기고 이름만 비운다.
    썸네일(SVG)에도 이름이 <text> 로 박혀 있어 같은 이름을 지운다(stripThumbNames). */
@@ -1356,11 +1396,12 @@ function buildUpload(me,handle,flowEpoch){
     lib=(Array.isArray(lib)?lib:[]).filter(function(d){var t=d.type||'train';return t==='train'||t==='setpiece'||t==='board';});
     var h='<h2>커뮤니티에 올리기</h2><div class="hint" style="margin-top:2px">내 보관함에서 훈련을 골라 모든 코치에게 공유합니다. 사진은 자동으로 빠져요. 아이디 <b>@'+esc(handle)+'</b> 로 올라갑니다.</div>';
     if(!lib.length){
-      h+='<div class="empty" style="padding:40px 10px"><b>보관함이 비어 있어요</b>작전판에서 훈련을 만들어 보관함에 저장한 뒤 올릴 수 있어요.</div>'
-        +'<div class="drow"><button class="btn" id="upClose">닫기</button></div>';
-      modal.innerHTML=h;mask.classList.add('on');$('upClose').onclick=function(){communityLibraryCloseFlow();};return;
+      h+='<div class="empty" style="padding:40px 10px"><b>보관함이 비어 있어요</b>'+(IN_SHELL?'여기서 바로 훈련을 만들 수 있어요 — 저장하면 이 창으로 돌아와요.':'작전판에서 훈련을 만들어 보관함에 저장한 뒤 올릴 수 있어요.')+'</div>'
+        +'<div class="drow"><button class="btn" id="upClose">닫기</button>'+(IN_SHELL?'<button class="btn primary" id="upNewEmpty">＋ 새로 만들기</button>':'')+'</div>';   /* 2.924 — 막다른 길 대신 만들기 문 */
+      modal.innerHTML=h;mask.classList.add('on');$('upClose').onclick=function(){communityLibraryCloseFlow();};
+      if($('upNewEmpty'))$('upNewEmpty').onclick=communityCreateNew;return;
     }
-    h+='<div class="fld"><label>훈련 선택</label><div class="pick" id="upPick"></div></div>'
+    h+='<div class="fld"><div class="up-lblrow"><span>훈련 선택</span>'+(IN_SHELL?'<button type="button" class="up-newlink" id="upNewInline">＋ 새로 만들기</button>':'')+'</div><div class="pick" id="upPick"></div></div>'   /* 2.924 */
       +'<div class="fld"><label>분류 (여러 개 선택 가능)</label><div class="agechips" id="upCats"></div></div>'
       +'<div class="fld"><label>제목</label><input type="text" id="upTitle" maxlength="60" placeholder="예: 4v2 론도 — 탈압박 기본"></div>'
       +'<div class="fld"><label>연령대 (여러 개 선택 가능)</label><div class="agechips" id="upAges"></div></div>'
@@ -1399,6 +1440,7 @@ function buildUpload(me,handle,flowEpoch){
       $('upAges').appendChild(b);
     });
     $('upCancel').onclick=function(){communityLibraryCloseFlow();};
+    if($('upNewInline'))$('upNewInline').onclick=communityCreateNew;   /* 2.924 — 목록에 찾는 훈련이 없으면 여기서 바로 */
     $('upGo').onclick=function(){
       try{communityLibraryContinuation(flowEpoch,me.uid);}catch(_){return;}
       var title=($('upTitle').value||'').trim();
