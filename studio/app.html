@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.924"></script>
+<script src="autosave-status.js?v=2.925"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.924';</script>
+<script>window.PS_BUILD='2.925';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -494,28 +494,30 @@ function psReloadWorkspaceBusy(){
     return !!(g&&g.token&&g.from&&Date.now()-(+g.at||0)<=90000);
   }catch(_){return true;}
 }
-function psSafeToReload(){
-  if(psReloadWorkspaceBusy())return false;
-  if(window.__psSupportController&&window.__psSupportController.pendingUnsafe())return false;
+function psSafeToReload(why){
+  /* 2.925 — why(선택)에 «왜 아직 안 되나»를 적는다(update_deferred 진단용). 판정·반환값은 그대로. */
+  why=why||{};
+  if(psReloadWorkspaceBusy()){why.r='ws_busy';return false;}
+  if(window.__psSupportController&&window.__psSupportController.pendingUnsafe()){why.r='support_pending';return false;}
   function busyDoc(d){
     try{
       var a=d.activeElement;
-      if(a&&(/^(input|textarea|select)$/i.test(a.tagName)||a.isContentEditable))return true;
-      if(d.querySelector('#scrim.show,.gw-ov,.sheet.show,[data-ps-open="1"]'))return true;
-      if(d.body&&(d.body.classList.contains('token-drag')||d.body.classList.contains('ps-modal-open')))return true;
+      if(a&&(/^(input|textarea|select)$/i.test(a.tagName)||a.isContentEditable))return 'focus_'+(a.isContentEditable?'editable':String(a.tagName).toLowerCase());
+      if(d.querySelector('#scrim.show,.gw-ov,.sheet.show,[data-ps-open="1"]'))return 'overlay';
+      if(d.body&&(d.body.classList.contains('token-drag')||d.body.classList.contains('ps-modal-open')))return 'drag_or_modal';
     }catch(_){}
-    return false;
+    return '';
   }
   try{
-    if(busyDoc(document))return false;
+    var b0=busyDoc(document); if(b0){why.r=b0+':shell';return false;}
     var fr=document.querySelectorAll('iframe');
     for(var i=0;i<fr.length;i++){
       try{
         if(getComputedStyle(fr[i]).display==='none')continue;
-        var d2=fr[i].contentDocument; if(d2&&busyDoc(d2))return false;
+        var d2=fr[i].contentDocument,b2=d2?busyDoc(d2):''; if(b2){why.r=b2+':'+(fr[i].id||('frame'+i));return false;}
       }catch(_){}
     }
-  }catch(_){ return false; }
+  }catch(_){ why.r='check_error'; return false; }
   return true;
 }
 /* ⚠ 2.395 — 새로고침 **전에 반드시** 각 화면의 지연 저장을 밀어낸다(사용자: 업데이트되면 입력이 사라짐).
@@ -584,7 +586,31 @@ function psUpdateStatus(message,busy){
     if(button){button.disabled=!!busy;button.textContent=busy?'저장 확인 중…':'다시 열기';}
   }catch(_){}
 }
+/* 2.925 — 새 판이 받아졌는데 10분 넘게 새로고침을 못 하면 «어디서 막혔나»를 운영 기록(update_deferred)에 남긴다.
+   실측(10/1): 옛 판 컴퓨터 몇 대가 탭을 하루 넘게 연 채 새 판을 못 받았다(2.875·2.885·2.913) — 저장 확인 단계에서
+   계속 미뤄진 것으로 보이지만 어느 화면이 막았는지 기록이 없어 알 수 없었다.
+   처음 10분 뒤 한 번, 그 뒤엔 한 시간에 한 번. 내용·입력값은 담지 않는다(단계 이름·화면 id·분·횟수뿐). */
+function psUpdNote(reason){
+  try{
+    var st=window.__psUpdState||(window.__psUpdState={since:Date.now(),tries:0,reported:0,last:''});
+    st.tries++; st.last=String(reason||'unknown').replace(/[^a-zA-Z0-9_.:+-]/g,'').slice(0,80)||'unknown';
+    var mins=Math.floor((Date.now()-st.since)/60000);
+    if(mins<10||(st.reported&&Date.now()-st.reported<3600000))return false;
+    st.reported=Date.now();
+    if(window.PSSync&&PSSync.event)PSSync.event('update_deferred',{status:'error',feature:'app',error_code:st.last,meta:{stage:st.last,mins:mins,tries:st.tries,hidden:!!(document&&document.hidden)}});
+    return true;
+  }catch(_){return false;}
+}
+/* 2.925 — 새 서비스워커 설치가 실패(redundant)하면 새 판이 아예 활성화되지 않는다 — 6시간에 한 번 남긴다. */
+function psUpdSwFailed(){
+  try{
+    var k='ps_upd_swfail_at',t=+(localStorage.getItem(k)||0); if(t&&Date.now()-t<21600000)return;
+    localStorage.setItem(k,String(Date.now()));
+    if(window.PSSync&&PSSync.event)PSSync.event('update_sw_failed',{status:'error',feature:'app',error_code:'sw_redundant'});
+  }catch(_){}
+}
 function psAutoReloadWhenSafe(manualOnly){
+  if(!manualOnly&&!window.__psUpdState)window.__psUpdState={since:Date.now(),tries:0,reported:0,last:''};   /* 2.925 — 새 판을 처음 안 시각 */
   if(window.__psReloading)return;
   var go=function(manual){
     if(window.__psReloading){
@@ -593,21 +619,23 @@ function psAutoReloadWhenSafe(manualOnly){
     }
     if(manual){window.__psUpdateLater=false;psShowUpdBand();}
     if(psReloadWorkspaceBusy()){
+      psUpdNote('ws_busy');
       if(manual)psUpdateStatus('팀·계정 전환 중입니다. 전환이 끝난 뒤 다시 열기를 눌러 주세요.',false);
       return;
     }
     window.__psReloading=1;
     if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.',true);
-    var active=true,timer;
-    function finish(message){
+    var active=true,timer,track={};   /* 2.925 — track.pending = 아직 저장 확인이 안 끝난 화면 */
+    function finish(message,reason){
       if(!active)return;active=false;clearTimeout(timer);window.__psReloading=0;
+      psUpdNote(reason);
       psUpdateStatus(message,false);psShowUpdBand();
     }
-    timer=setTimeout(function(){finish('저장 확인이 지연되어 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.');},20000);
+    timer=setTimeout(function(){finish('저장 확인이 지연되어 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.','flush_timeout:'+(Object.keys(track.pending||{}).join('+')||'none'));},20000);
     function commit(){
       if(!active)return false;
       var seal=psReloadWorkspaceSeal();if(seal===null||psReloadWorkspaceBusy())return false;
-      return Promise.resolve(psFlushAllPendingReady()).then(function(){
+      return Promise.resolve(psFlushAllPendingReady(track)).then(function(){
         // A timed-out attempt or changed owner must never reload later.
         if(!active||psReloadWorkspaceBusy()||psReloadWorkspaceSeal()!==seal)return false;
         active=false;clearTimeout(timer);location.reload();return true;
@@ -617,9 +645,9 @@ function psAutoReloadWhenSafe(manualOnly){
       if(navigator.locks&&navigator.locks.request)return navigator.locks.request('process-studio-workspace-transition-v1',{mode:'exclusive',ifAvailable:true},function(lock){return lock?commit():false;});
       return commit();
     }).then(function(done){
-      if(!done)finish('팀·계정의 저장 작업이 진행 중입니다. 잠시 후 다시 열기를 눌러 주세요.');
-    }).catch(function(){
-      finish('작성 내용의 기기 저장을 확인하지 못해 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.');
+      if(!done)finish('팀·계정의 저장 작업이 진행 중입니다. 잠시 후 다시 열기를 눌러 주세요.','tx_busy');
+    }).catch(function(e){
+      finish('작성 내용의 기기 저장을 확인하지 못해 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.','flush_fail:'+((e&&e.psFrame)||'?')+':'+((e&&(e.psCode||e.name))||'?'));
     });
   };
   window.__psForceReload=go;
@@ -627,9 +655,9 @@ function psAutoReloadWhenSafe(manualOnly){
   if(!window.__psWaitReload){
     window.__psWaitReload=1;setTimeout(psShowUpdBand,60000);
     document.addEventListener('visibilitychange',function(){if(document.hidden)window.__psForceReload();});
-    setInterval(function(){if(document.hidden||psSafeToReload())window.__psForceReload();},15000);
+    setInterval(function(){var w={};if(document.hidden||psSafeToReload(w))window.__psForceReload();else psUpdNote('unsafe:'+(w.r||'?'));},15000);
   }
-  if(document.hidden||psSafeToReload())go();
+  var w0={};if(document.hidden||psSafeToReload(w0))go();else psUpdNote('unsafe:'+(w0.r||'?'));
 }
 /* 2.627 — 새 판 띠. 2.903: 나중에는 현재 문서에서 다시 표시하지 않는다.
    자동 저장 확인·안전한 업데이트는 계속하되, 실패할 때 닫은 알림을 되살리지 않는다. */
@@ -644,7 +672,7 @@ function psShowUpdBand(){
   var later=document.getElementById('updLater'); if(later&&!later.__wired){ later.__wired=1; later.addEventListener('click',function(){window.__psUpdateLater=true;b.style.display='none';}); }
 }
 </script>
-<script>var __swT0=Date.now();if("serviceWorker" in navigator){window.addEventListener("load",function(){var hadCtrl=!!navigator.serviceWorker.controller,refreshing=false;function safeSwUpdate(reg){try{var p=reg&&reg.update&&reg.update();if(p&&p.catch)p.catch(function(){});}catch(_){}}navigator.serviceWorker.register("/sw.js").then(function(reg){safeSwUpdate(reg);setInterval(function(){safeSwUpdate(reg);} ,1800000);document.addEventListener("visibilitychange",function(){if(!document.hidden)safeSwUpdate(reg);});window.addEventListener("focus",function(){safeSwUpdate(reg);});reg.addEventListener("updatefound",function(){var nw=reg.installing;if(!nw)return;nw.addEventListener("statechange",function(){if(nw.state==="installed"&&navigator.serviceWorker.controller){try{if(window.toast)toast("\uc0c8 \ubc84\uc804 \uc801\uc6a9 \uc911\u2026");}catch(_){}}});});}).catch(function(){});navigator.serviceWorker.addEventListener("controllerchange",function(){if(refreshing)return;refreshing=true;
+<script>var __swT0=Date.now();if("serviceWorker" in navigator){window.addEventListener("load",function(){var hadCtrl=!!navigator.serviceWorker.controller,refreshing=false;function safeSwUpdate(reg){try{var p=reg&&reg.update&&reg.update();if(p&&p.catch)p.catch(function(){});}catch(_){}}navigator.serviceWorker.register("/sw.js").then(function(reg){safeSwUpdate(reg);setInterval(function(){safeSwUpdate(reg);} ,1800000);document.addEventListener("visibilitychange",function(){if(!document.hidden)safeSwUpdate(reg);});window.addEventListener("focus",function(){safeSwUpdate(reg);});reg.addEventListener("updatefound",function(){var nw=reg.installing;if(!nw)return;nw.addEventListener("statechange",function(){if(nw.state==="installed"&&navigator.serviceWorker.controller){try{if(window.toast)toast("\uc0c8 \ubc84\uc804 \uc801\uc6a9 \uc911\u2026");}catch(_){}}else if(nw.state==="redundant"&&navigator.serviceWorker.controller){try{psUpdSwFailed();}catch(_){}}});});}).catch(function(){});navigator.serviceWorker.addEventListener("controllerchange",function(){if(refreshing)return;refreshing=true;
   /* ══ 2.388 · 업데이트를 **안 눌러도** 적용된다(사용자) ═══════════════════════════════
      예전엔 새 판이 올라와도 화면 구석의 '업데이트' 버튼을 눌러야 반영됐다. 서비스워커는 이미
      `skipWaiting`+`clients.claim` 이라 **새 판은 벌써 활성**인데, 지금 열려 있는 문서만 옛것이었다.
@@ -7604,13 +7632,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.924"></script>
-<script src="autosave-merge.js?v=2.924"></script>
-<script src="autosave-runtime.js?v=2.924"></script>
-<script src="autosave-recovery.js?v=2.924"></script>
-<script src="sync.js?v=2.924"></script>
+<script src="autosave-journal.js?v=2.925"></script>
+<script src="autosave-merge.js?v=2.925"></script>
+<script src="autosave-runtime.js?v=2.925"></script>
+<script src="autosave-recovery.js?v=2.925"></script>
+<script src="sync.js?v=2.925"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.924">
+<link rel="stylesheet" href="support.css?v=2.925">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
