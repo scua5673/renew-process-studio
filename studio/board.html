@@ -6787,8 +6787,29 @@ function thumbFitVB(sn,vb){
     return [nx,ny,w,h].map(function(v){return Math.round(v*10)/10;});
   }catch(_){return null;}
 }
+/* 2.926 — 썸네일의 공. 실사 공은 data: 사진이라 2.601 썸네일 다이어트에 지워져 빈 <svg/> 만 남았다(보관함 미리보기 재생에서 공이 안 보이던 것).
+   ballVecInner: 그 공 사진과 같은 무늬의 벡터 공(없으면 지금 고른 공) — id 에 접미사를 붙여 여러 썸네일이 한 화면에 있어도 겹치지 않게. */
+function isBallImgHref(h){ try{ if(!h||!window.BALL_IMG)return false; for(var k in window.BALL_IMG){ if(window.BALL_IMG[k]===h)return true; } }catch(_){} return false; }
+function ballVecInner(href,suf){
+  try{
+    var k=null; if(href&&window.BALL_IMG){ for(var x in window.BALL_IMG){ if(window.BALL_IMG[x]===href){k=x;break;} } }
+    var inner=(k&&BALL_SVG_INNER[k])||BALL_SVG_INNER[curBallStyle]||BALL_SVG_INNER["1970"]||''; if(!inner)return '';
+    suf=String(suf||'');
+    return inner.replace(/id="([\w-]+)"/g,function(m,id){return 'id="'+id+suf+'"';}).replace(/url\(#([\w-]+)\)/g,function(m,id){return 'url(#'+id+suf+')';}).replace(/href="#([\w-]+)"/g,function(m,id){return 'href="#'+id+suf+'"';});
+  }catch(_){ return ''; }
+}
+/* 이미 저장된 썸네일(공이 빈 <svg/>)은 보여 줄 때 채운다 — 저장본은 고쳐 쓰지 않는다. */
+var THUMB_BALL_EMPTY=/<svg x="-14" y="-14" width="28" height="28" viewBox="0 0 240 240" style="overflow:visible"((?: xmlns="[^"]*")?)(?:\s*\/>|>((?:<g [^>]*\/>|<g [^>]*><\/g>)?)<\/svg>)/g;
+function thumbBallRepair(t){
+  if(!t||typeof t!=='string'||t.indexOf('viewBox="0 0 240 240"')<0)return t;
+  return t.replace(THUMB_BALL_EMPTY,function(m,ns,g){
+    var vec=ballVecInner(null,'_tb'+(window.__thumbBallSeq=(window.__thumbBallSeq||0)+1)); if(!vec)return m;
+    var rot=(g&&/transform="([^"]*)"/.exec(g)||[])[1];
+    return '<svg x="-14" y="-14" width="28" height="28" viewBox="0 0 240 240" style="overflow:visible"'+(ns||'')+'>'+(rot?'<g transform="'+rot+'">'+vec+'</g>':vec)+'</svg>';
+  });
+}
 function thumbView(d){
-  var t=d&&d.thumb; if(!t||typeof t!=='string'||!d.snap)return t||"";
+  var t=d&&d.thumb; if(!t||typeof t!=='string')return t||""; t=thumbBallRepair(t); if(!d.snap)return t;   /* 2.926 */
   if(t.indexOf('data-psfit')>=0)return t;
   var m=/viewBox="([^"]+)"/.exec(t); if(!m)return t;
   var vb=m[1].trim().split(/[\s,]+/).map(Number); if(vb.length!==4)return t;
@@ -6864,7 +6885,13 @@ function _boardThumbSVGRaw(){
   /* 2.601 — 썸네일 다이어트(실측: 빈 판 썸네일 27,630자 중 13,011자가 루트 바로 밑 <image data:image/avif>(잔디 텍스처 타일) — 2.519 의 pattern#psRealGrass 경로가 아니라 안 걸렸다.
      일정 문서의 thumb 평균 61KB·최대 75KB, 팀에 따라 한 주 200KB). 목록 34×22px 썸네일에서 사진은 구분되지 않는다:
      ① data: 로 시작하는 <image> 는 전부 뗀다(잔디·선수 사진 — 토큰 원은 그대로 남는다) ② 좌표 소수점은 둘째 자리까지. 원본 작전판·내보내기는 그대로. */
-  try{ [].forEach.call(c.querySelectorAll('image'),function(n){ var h=n.getAttribute('href')||n.getAttribute('xlink:href')||''; if(/^data:/.test(h))n.parentNode&&n.parentNode.removeChild(n); }); }catch(_){}
+  /* 2.926 — 단, 실사 공(balls.js 의 AVIF data:)도 data: 라서 함께 지워졌다 → 보관함 카드·미리보기 재생·PDF 에서 공이 사라짐(빈 <svg/> 만 남음).
+     공 사진은 지우지 않고 같은 무늬의 벡터 공(BALL_SVG_INNER, 1~4KB)으로 바꿔 넣는다. id 는 이 썸네일 접미사로. */
+  var _bi=0;
+  try{ [].forEach.call(c.querySelectorAll('image'),function(n){ var h=n.getAttribute('href')||n.getAttribute('xlink:href')||''; if(!/^data:/.test(h))return;
+    if(isBallImgHref(h)){ try{ var _vec=ballVecInner(h,suf+'b'+(++_bi)),_doc=_vec?new DOMParser().parseFromString('<svg xmlns="http://www.w3.org/2000/svg">'+_vec+'</svg>','image/svg+xml'):null,_root=_doc&&_doc.documentElement;
+      if(_root&&!_doc.getElementsByTagName('parsererror').length)Array.prototype.slice.call(_root.childNodes).forEach(function(ch){n.parentNode.insertBefore(document.importNode(ch,true),n);}); }catch(_){} }
+    n.parentNode&&n.parentNode.removeChild(n); }); }catch(_){}
   var _out=new XMLSerializer().serializeToString(c);
   try{ _out=_out.replace(/(\d+\.\d{2})\d+/g,'$1'); }catch(_){}
   return _out;}
