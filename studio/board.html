@@ -3921,6 +3921,8 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
       <span id="editorSaveState" role="status" aria-live="polite" style="display:none;font-size:11px;color:var(--txt-dim);white-space:nowrap">임시 저장 준비</span>
       <div class="sep"></div>
       <span id="twRosterTop" class="tw-rtop" title="오늘 훈련 가능 인원 (GK+필드). 총인원 칸에서 자동."></span>
+      <!-- 2.928 — 편집 중인 내용 그대로 PDF(사용자 «여기에 PDF로 바로 내보내기»). 저장하지 않아도 된다 — 보관함 카드의 «PDF 내보내기»와 같은 종이 -->
+      <button class="btn ghost" id="editorPdf" type="button" title="지금 편집 중인 내용 그대로 PDF — 저장하지 않아도 됩니다" aria-label="PDF로 내보내기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v6M9 15l3 3 3-3"/></svg><span class="ep-pdf-lb">PDF</span></button>
       <button class="btn ghost" id="editorCancel">나가기</button>
       <button class="btn ghost" id="editorCopy" style="display:none">복사본 저장</button>
       <button class="btn primary" id="editorDone">보관함에 저장</button>
@@ -4101,6 +4103,33 @@ function teamStroke(h){return _lum(h)>0.62?"#2a3140":"#ffffff";}     // 밝은 �
 function tokStroke(t,col){var ov=state&&state.teamStrokeC&&state.teamStrokeC[t];return (ov&&ov!=="auto")?ov:teamStroke(col);}   // 팀별 테두리 색 오버라이드(없으면 자동)
 function tokTxtC(t,isGK,fallback){var m=isGK?(state&&state.gkTxtC):(state&&state.teamTxtC);var ov=m&&m[t];return (ov&&ov!=="auto")?ov:fallback;}   /* 2.474 — 등번호·포지션 글자색 오버라이드(사용자 "폰트 색상도") — 없으면 자동 대비 */
 function teamHex(t){return (state&&state.teamColors&&state.teamColors[t])||TEAMCOL[t]||TEAMCOL.blue;}
+/* ══ 2.928 · 코치 토큰 색 = 유니폼과 늘 대비(사용자 «코치토큰은 유니폼 색상과 다른색상으로 항상 … 대비되게») ══
+   예전엔 코치가 그 팀 유니폼 색을 그대로 입어 선수와 구분이 안 됐다(남색 팀이면 남색 C). 이제 후보(검정·흰색·주황·분홍) 중
+   판 위 유니폼 — 팀 메인색·무늬 보조색·GK 색 — 과 피치 색에서 가장 멀리 떨어진 색을 고른다(Lab 거리).
+   앞 후보일수록 먼저(충분히 멀면 그대로) — 유니폼을 조금 바꿨다고 코치 색이 이리저리 바뀌지 않게. 토큰마다 고른 색(p.color)은 그대로 이긴다. */
+const COACH_CANDS=["#16181d","#ffffff","#ff7a1a","#ff4fa3"];
+function _lab(h){var c=_hex2rgb(h).map(function(v){v/=255;return v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4);});
+  var x=(c[0]*0.4124+c[1]*0.3576+c[2]*0.1805)/0.95047,y=c[0]*0.2126+c[1]*0.7152+c[2]*0.0722,z=(c[0]*0.0193+c[1]*0.1192+c[2]*0.9505)/1.08883;
+  var f=function(t){return t>0.008856?Math.cbrt(t):7.787*t+16/116;};var fx=f(x),fy=f(y),fz=f(z);return [116*fy-16,500*(fx-fy),200*(fy-fz)];}
+function _labDist(a,b){var p=_lab(a),q=_lab(b);return Math.sqrt(Math.pow(p[0]-q[0],2)+Math.pow(p[1]-q[1],2)+Math.pow(p[2]-q[2],2));}
+function coachPick(uniforms,pitch){
+  var us=(uniforms||[]).filter(function(c){return /^#?[0-9a-f]{6}$/i.test(String(c||""));});
+  var best=COACH_CANDS[0],bestScore=-1;
+  for(var i=0;i<COACH_CANDS.length;i++){var c=COACH_CANDS[i],m=Infinity;
+    us.forEach(function(u){m=Math.min(m,_labDist(c,u));});
+    var pd=pitch?_labDist(c,pitch):100;
+    if(m>=40&&pd>=30)return c;                     /* 충분히 멀면 앞 후보를 그대로 */
+    var sc=Math.min(m,pd*1.2);if(sc>bestScore){bestScore=sc;best=c;}}
+  return best;
+}
+function coachUniforms(){
+  var teams={};try{(state.players||[]).forEach(function(p){if(p&&!p.coach&&p.team&&!equipKey(p.team))teams[p.team]=1;});}catch(_){}
+  if(!Object.keys(teams).length){teams.blue=1;teams.red=1;}
+  var out=[];Object.keys(teams).forEach(function(t){out.push(teamHex(t));try{if(teamPat(t)!=="solid")out.push(teamAccent(t));}catch(_){}try{out.push(gkColFor(t));}catch(_){}});
+  return out;
+}
+function coachPitchHex(){try{var v=getComputedStyle(document.documentElement).getPropertyValue("--pitchbg").trim();if(/^#[0-9a-f]{6}$/i.test(v))return v;if(/^#[0-9a-f]{3}$/i.test(v))return v;}catch(_){}return "#1b8044";}
+function coachColor(){try{return coachPick(coachUniforms(),coachPitchHex());}catch(_){return COACH_CANDS[0];}}
 /* ===== 팀 유니폼: 메인색 + 보조색 + 무늬(단색/세로/가로/반반/사선) ===== */
 function teamMain(t){return teamHex(t);}
 function teamAccent(t){return (state&&state.teamColor2&&state.teamColor2[t])||"#ffffff";}
@@ -4875,11 +4904,12 @@ function makeToken(p,kind){
     let col=ov||TEAMCOL[p.team]||TEAMCOL.blue, txtc=ov?autoTxt(col):(TEAMTXT[p.team]||"#fff");
     const isGK=(!p.coach&&((""+(p.num))==="1"||p.pos==="GK"));
     if(isGK){col=gkColFor(p.team);txtc=autoTxt(col);}
+    if(p.coach&&!p.color){col=coachColor();txtc=autoTxt(col);}   /* 2.928 — 코치는 유니폼과 대비되는 색 */
     if(p.color){col=p.color;txtc=autoTxt(p.color);}   // 이 토큰만 색 지정(팀색 위에 우선) — colorCtl
     if(!p.coach&&!p.color)txtc=tokTxtC(p.team,isGK,txtc);   /* 2.474 — 유니폼 설정의 글자색 */
     const striped=(!p.coach&&!p.color&&(isGK?gkPat(p.team)!=="solid":teamPat(p.team)!=="solid"));
     const fillC=p.color?p.color:(p.coach?col:(isGK?gkFill(p.team):teamFill(p.team)));   /* 1.989 — GK 도 무늬 */
-    const strokeC=(isGK&&!p.color)?gkStrokeOf(p.team,col):tokStroke(p.team,col);
+    const strokeC=(isGK&&!p.color)?gkStrokeOf(p.team,col):((p.coach&&!p.color)?teamStroke(col):tokStroke(p.team,col));
     if(p.img){
       /* 얼굴 사진 토큰 — 원형 클립 사진과 팀색 링. 이름·번호·포지션은 숨긴다. */
       const cid="pimg_"+p.id;
@@ -4935,6 +4965,7 @@ function playerTeamCol(p){   // p.color 없을 때의 유효 팀색 — 렌더 �
   const ov=state.teamColors&&state.teamColors[p.team];
   const isGK=(!p.coach&&((""+(p.num))==="1"||p.pos==="GK"));
   if(isGK)return gkColFor(p.team);
+  if(p.coach)return coachColor();   /* 2.928 */
   return ov||TEAMCOL[p.team]||TEAMCOL.blue;
 }
 function eraseToken(p){if(p.id==="ball"){pushUndo();state.ball=null;sel=null;renderTokens();updateDelUI();toast("공 제거됨");return;}
@@ -6742,6 +6773,7 @@ function renderBench(){const box=$("benchItems");if(!box)return;box.innerHTML=""
       c.title=isPosLabel()?("포지션 "+v):("선수 "+v);
       attachChipDrag(c,benchCat,v);box.appendChild(c);});
     const cc=document.createElement("div");cc.className="chip "+benchCat+" chip-cap";cc.textContent="C";cc.title="코치";
+    try{const _cc=coachColor();cc.style.background=_cc;cc.style.color=autoTxt(_cc);cc.style.borderColor=teamStroke(_cc);}catch(_){}   /* 2.928 — 판의 코치 토큰과 같은 색 */
     attachChipDrag(cc,"coach",benchCat);box.appendChild(cc);
     [["N","중립(뉴트럴)"],["T","타깃"],["S","서버"]].forEach(function(rz){const rc=document.createElement("div"),_rc=roleColor(rz[0]);rc.className="chip "+benchCat+" chip-cap";rc.dataset.role=rz[0];rc.textContent=rz[0];rc.title=rz[1]+" · 선택 후 색을 바꾸면 다음에도 기억";rc.style.background=_rc;rc.style.color=autoTxt(_rc);rc.style.borderColor=teamStroke(_rc);attachChipDrag(rc,benchCat,rz[0],_rc);box.appendChild(rc);});
     if(typeof teamStyleCustom==="function"&&teamStyleCustom(benchCat)){const _mainC=teamHex(benchCat),_bg=teamChipBG(benchCat),_strokeC=tokStroke(benchCat,_mainC);   /* 1.844: 테두리만 바꿔도·보조색만 바꿔도 벤치 칩에 즉시 반영 */
@@ -11568,6 +11600,35 @@ function openEditor(id,type){
   if(id==null&&type!=="setpiece"&&!window.__editorSchedLink)startTrainingWizard();
 }
 let editorSaveAsCopy=false;
+/* 2.928 — 편집 중인 훈련들을 카드에 담길 모양으로(저장과 PDF 가 같은 것을 쓴다). 부르기 전에 captureActiveTraining() */
+function editorSerializeTrainings(){
+  return (editorTrainings||[]).map(function(t){
+    var scAll=(t.scenes&&t.scenes.length)?t.scenes:[{snap:null,thumb:""}];
+    var _extra=scAll.slice(1).map(function(s){return {snap:s.snap,thumb:s.thumb};});
+    var o=Object.assign({},t.draft,{snap:scAll[0].snap,thumb:scAll[0].thumb});
+    if(_extra.length)o.scenes=_extra;else delete o.scenes;
+    if(t.frames&&t.frames.length>1){o.frames=dc(t.frames);o.animIdx=t.animIdx||0;}else{delete o.frames;delete o.animIdx;}
+    return o;});
+}
+/* 2.928 — 편집기 머리줄 «PDF»: 저장하지 않고 지금 화면의 내용 그대로 보관함 카드와 같은 종이로(printDrill).
+   훈련이 하나면 상세 한 장, 둘 이상이면 현장 시트(한 장에 넷) — vaultPrintSpec 규칙 그대로. 보관함·임시본은 건드리지 않는다. */
+function editorCardForPdf(){
+  var trs=editorSerializeTrainings();
+  if(!trs.length)return null;
+  var nm=((($("epNameTop")&&$("epNameTop").value)||editorFileName||trs[0].name||"훈련")+"").trim()||"훈련";
+  var d={name:nm,type:trs[0].type||"train",snap:trs[0].snap,thumb:trs[0].thumb,trainings:trs,minutes:trs.reduce(function(a,t){return a+(+t.minutes||0);},0)};
+  if(trs[0].scenes&&trs[0].scenes.length)d.scenes=trs[0].scenes;
+  try{ var _rs=syncEpRosterUI({}); if(_rs&&(_rs.able||_rs.excluded)){ d.pGk=_rs.gk; d.pField=_rs.field; d.pRehab=_rs.rehab; d.pOut=_rs.out; } }catch(_){}
+  return d;
+}
+function editorExportPdf(){
+  if(!editorTrainings||!editorTrainings.length){ try{toast("내보낼 훈련이 없어요");}catch(_){} return; }
+  try{ restoreAnimBeforeCapture(); }catch(_){}   /* 재생 중이면 편집 화면으로 되돌린 뒤 캡처 */
+  try{ captureActiveTraining(); }catch(_){}
+  var d=null; try{ d=editorCardForPdf(); }catch(_){ d=null; }
+  if(!d){ try{toast("PDF를 만들지 못했어요 — 다시 눌러 주세요");}catch(_){} return; }
+  try{ printDrill(d,d.name); }catch(e){ try{toast("PDF를 만들지 못했어요 — 다시 눌러 주세요");}catch(_){} }
+}
 function closeEditor(save){
   if(editorReadOnly)save=false;   /* 보기 전용 — 저장 차단(남의 훈련은 수정 불가) */
   try{document.body.classList.remove("ep-sp","ep-sp-more");}catch(_){}   /* 2.278 — 편집기를 닫으면 세트피스 양식 스위치도 내린다 */
@@ -11577,13 +11638,7 @@ function closeEditor(save){
   var _schedND=null,_schedSavePr=null;   /* 2.924 — 새 훈련의 보관함 저장(약속) — 끝나면 번호를 셸에 알린다 */
   if(save){captureActiveTraining();   // 활성 훈련의 편집 중 장면·애니메이션 먼저 캡처
     /* 각 훈련을 드릴 형태로 직렬화 (장면 1 = 기본 snap/thumb, 추가 장면만 scenes 에, 2.613 — 애니메이션은 훈련마다 frames 에) */
-    var trs=editorTrainings.map(function(t){
-      var scAll=(t.scenes&&t.scenes.length)?t.scenes:[{snap:null,thumb:""}];
-      var _extra=scAll.slice(1).map(function(s){return {snap:s.snap,thumb:s.thumb};});
-      var o=Object.assign({},t.draft,{snap:scAll[0].snap,thumb:scAll[0].thumb});
-      if(_extra.length)o.scenes=_extra;else delete o.scenes;
-      if(t.frames&&t.frames.length>1){o.frames=dc(t.frames);o.animIdx=t.animIdx||0;}else{delete o.frames;delete o.animIdx;}
-      return o;});
+    var trs=editorSerializeTrainings();   /* 2.928 — PDF 내보내기와 같은 직렬화 */
     /* 카드 대표 애니메이션(보관함 재생·커뮤니티·하위호환): 애니메이션이 있는 첫 훈련의 것 */
     var _cardFrames=null;try{for(var _ti=0;_ti<trs.length;_ti++){if(trs[_ti].frames&&trs[_ti].frames.length>1){_cardFrames=trs[_ti].frames;break;}}}catch(_){}
     var _multi=trs.length>1;
@@ -13492,6 +13547,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
       window.__editorSaveMeta=null;
     });
   };
+  if($("editorPdf"))$("editorPdf").onclick=function(e){ if(e)e.stopPropagation(); editorExportPdf(); };   /* 2.928 */
   if($("editorCopy"))$("editorCopy").onclick=function(){
     if(editorReadOnly||editorLibId==null)return;
     editorSaveAsCopy=true;
@@ -14569,6 +14625,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{window.__createPrev={snap:captureSnap(),view:(window.__csView||"board")};}catch(_){window.__createPrev=null;}
     try{window.__vaultPending=null;}catch(_){}
     if(ty==="meeting"){
+      window.__curMeetRef=d.matchRef||null;   /* 2.928 — 미팅 띠의 «⚽ 경기 연결» */
       try{ if(window.__meetLoad) window.__meetLoad(d.slides || (d.snap?[{snap:d.snap,thumb:d.thumb||"",title:d.name||"",points:[]}]:[])); }catch(_){}
       try{setView("meeting");}catch(_){}
       try{showCreateBar("meeting",true);}catch(_){}
@@ -14612,7 +14669,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     else if(_vaultBoardContext)window.__vaultBoardLeave();
     try{var _pvs;if(window.__vaultEdit){_pvs=(window.__viewSnaps&&window.__viewSnaps.board)?JSON.parse(JSON.stringify(window.__viewSnaps.board)):{players:[],equipment:[],drawings:[],pitchN:1};}else{_pvs=captureSnap();}window.__createPrev={snap:_pvs,view:"board"};}catch(_){window.__createPrev=null;}   /* 보관함 항목을 보던 중이어도 취소 시 '원래 작업 보드'로 복귀(없으면 빈 보드) — 항목 내용이 작전판에 새지 않게 */
     try{window.__curVaultId=null;window.__vaultReadOnly=false;}catch(_){}
-    window.__vaultPending={type:type,folder:curFolder()};
+    window.__vaultPending={type:type,folder:curFolder()};window.__curMeetRef=null;   /* 2.928 */
     try{window.__vaultEdit=true;}catch(_){}
     window.__viewSnaps=window.__viewSnaps||{};
     var _nvt=(type==="setpiece"?"board":type);
@@ -14761,6 +14818,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         var name=(pend.name||def);
         var item={libId:"V"+Date.now().toString(36),type:type,name:((""+name).trim()||def),folder:folder,thumb:thumb,snap:snap,tags:(pend.tags||[]),savedAt:Date.now()};
         if(slides)item.slides=slides;
+        if(type==="meeting"&&pend.matchRef)item.matchRef=pend.matchRef;   /* 2.928 — 저장 전 고른 경기 */
         if(frames)item.frames=frames;
         if(pages)item.pages=pages;
         stampCreator(item);
@@ -15187,6 +15245,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       if(!_tm)_tm=(+d.minutes||0)*Math.max(1,+d.sets||1);
       meta=f.label+" · "+_tm+"분";}
     else{meta=typeLabel(ty)+(d.savedAt?(" · "+new Date(d.savedAt).toLocaleDateString()):"");}
+    if(ty==="meeting"&&d.matchRef){ try{ meta+=" · ⚽ "+meetMatchShort(d.matchRef,meetLiveMatch(d.matchRef)); }catch(_){} }   /* 2.928 */
     if(d.folder)meta+=" · "+folderLeaf(d.folder);
     var canEdit=canEditItem(d), team=psIsTeamWs();
     var ownerHtml=(team&&d.createdBy)?('<div class="vc-owner"'+(canEdit?' style="color:var(--blue,#3a6df0)"':'')+'><svg style=\"width:12px;height:12px;vertical-align:-2px\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"7\" r=\"4\"/><path d=\"M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2\"/></svg> '+esc(itemCreatorLabel(d))+'</div>'):"";
@@ -15310,6 +15369,185 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           });
         });
     }
+  }
+  /* ══ 2.928 · 미팅 ↔ 경기 연결 ══════════════════════════════════════════════
+     사용자 «보관함에서 미팅 만들기 했을 때와 팀운영 경기와 연결» → 목업 안 C(사용자 승인 — 양쪽 문, 기본 팀 공유).
+     연결은 **미팅 쪽에 한 줄**(item.matchRef={mid,date,opp,time,ha,kind,at}) — 팀 자료(cs_team_matches_v1)에는 쓰지 않는다:
+     경기 문서는 선수 기기에도 내려가고(미팅 이름이 새면 안 된다), 쓰려면 팀 편집권이 있어야 한다.
+     다른 코치에게 보이는지는 보관함 공유 규칙(폴더) 그대로. 경기 화면(scout)은 보관함을 **읽기만** 하고,
+     쓰기(연결·만들기)는 여기 한 곳에서 자동 저장과 같은 잠금으로 한다 — 둘이 목록을 통째로 다시 쓰면 한쪽이 지워진다. */
+  var MEET_WD=["일","월","화","수","목","금","토"];
+  function meetYmd(dt){dt=dt||new Date();return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
+  function meetRefOf(m){ if(!m||!m.id)return null; return {mid:String(m.id),date:String(m.date||""),opp:String(m.opponent||""),time:String(m.time||""),ha:String(m.homeAway||""),kind:String(m.kind||""),at:Date.now()}; }
+  function meetRefClean(r){ if(!r||typeof r!=="object"||!r.mid)return null;
+    return {mid:String(r.mid).slice(0,80),date:String(r.date||"").slice(0,10),opp:String(r.opp||"").slice(0,60),time:String(r.time||"").slice(0,5),ha:String(r.ha||"").slice(0,4),kind:String(r.kind||"").slice(0,20),at:+r.at||Date.now()}; }
+  function meetMatchesAll(){ try{ var st=JSON.parse(localStorage.getItem("cs_team_matches_v1")||"null"); return (st&&Array.isArray(st.matches))?st.matches.filter(function(m){return m&&m.id;}):[]; }catch(_){ return []; } }
+  function meetLiveMatch(ref){ if(!ref||!ref.mid)return null; var all=meetMatchesAll(); for(var i=0;i<all.length;i++){ if(String(all[i].id)===String(ref.mid))return all[i]; } return null; }
+  function meetDateLabel(ymd){ var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd||"")); if(!m)return ""; var dt=new Date(+m[1],+m[2]-1,+m[3]); return (+m[2])+"/"+(+m[3])+" "+MEET_WD[dt.getDay()]; }
+  /* 살아 있는 경기 문서가 있으면 그 이름·날짜(경기 화면에서 바뀌었을 수 있다), 없으면 연결 때 적어 둔 값 */
+  function meetMatchView(ref,live){ var o=live?{opp:live.opponent||"",date:live.date||"",time:live.time||"",ha:live.homeAway||""}:{opp:(ref&&ref.opp)||"",date:(ref&&ref.date)||"",time:(ref&&ref.time)||"",ha:(ref&&ref.ha)||""}; o.opp=String(o.opp||"").trim()||"상대 미정"; return o; }
+  function meetMatchShort(ref,live){ var v=meetMatchView(ref,live),dl=meetDateLabel(v.date); return v.opp+(dl?(" "+dl.split(" ")[0]):""); }
+  function meetMatchLong(ref,live){ var v=meetMatchView(ref,live); return "vs "+v.opp+" · "+[meetDateLabel(v.date),v.time].filter(Boolean).join(" ")+(v.ha?(" · "+v.ha):""); }
+  /* 고르기 목록 — 다가오는 경기(가까운 순) · 지난 경기(최근 순) */
+  function meetPickLists(matches,today){ var up=[],past=[]; (matches||[]).forEach(function(m){ if(!m||!m.id||!m.date)return; (String(m.date)>=today?up:past).push(m); });
+    up.sort(function(a,b){return String(a.date+(a.time||"")).localeCompare(String(b.date+(b.time||"")));}); past.sort(function(a,b){return String(b.date+(b.time||"")).localeCompare(String(a.date+(a.time||"")));});
+    return {up:up.slice(0,8),past:past.slice(0,6)}; }
+  /* 경기 준비 보드 좌표(가로 105×68 상자의 %, 선은 1~104·1~67) → 작전판 세계 좌표(11인제) */
+  function meetPctPt(x,y){ var fx=((+x||0)/100*105-1)/103, fy=((+y||0)/100*68-1)/66;
+    var wx=Math.max(L-M*.8,Math.min(R+M*.8,L+fx*PW)), wy=Math.max(T-M*.8,Math.min(B+M*.8,T+fy*PH));
+    return {x:Math.round(wx*10)/10,y:Math.round(wy*10)/10}; }
+  /* 슬라이드 재료 {us,opp,draw}(경기 보드 형식) → 작전판 스냅. 옮기지 못한 그림 수를 함께 돌려준다(말없이 빠지지 않게) */
+  function meetSnapFromPct(base,sp){
+    var snap=JSON.parse(JSON.stringify(base||{})); snap.players=[];snap.equipment=[];snap.drawings=[];snap.ball=null;
+    var id=1001,skipped=0; sp=sp||{};
+    function tok(t,team){ if(!t||!isFinite(+t.x)||!isFinite(+t.y)){skipped++;return;} var q=meetPctPt(t.x,t.y),pos=String(t.pos||"").trim(),num=String(t.num==null?"":t.num).trim(); if(num==="·")num="";
+      if(t.gk===true)pos="GK"; else if(t.gk===false&&pos.toUpperCase()==="GK")pos="";
+      snap.players.push({id:id++,team:team,num:num,pos:pos,name:(String(t.name||"").trim()||null),x:q.x,y:q.y}); }
+    (sp.us||[]).forEach(function(t){tok(t,"blue");}); (sp.opp||[]).forEach(function(t){tok(t,"red");});
+    var EQ={cone:"cone",marker:"marker",goal:"minigoal",pole:"pole",ladder:"ladder",hurdle:"hurdle",mannequin:"dummy"};
+    var LN={arrow:"pass",dashed:"run",line:"line",pen:"free",rect:"rectline",ellipse:"ellipse",text:"text"};
+    (sp.draw||[]).forEach(function(d){
+      if(!d||!isFinite(+d.x)||!isFinite(+d.y)){skipped++;return;}
+      var col=/^#[0-9a-f]{6}$/i.test(d.color||"")?d.color:"#ffffff";
+      var a=meetPctPt(d.x,d.y),b=meetPctPt(d.x2==null?d.x:d.x2,d.y2==null?d.y:d.y2);
+      if(d.type==="ball"){ if(!snap.ball)snap.ball={x:a.x,y:a.y}; else snap.equipment.push({id:id++,team:"ball",x:a.x,y:a.y}); return; }
+      if(EQ[d.type]){ snap.equipment.push({id:id++,team:EQ[d.type],x:a.x,y:a.y}); return; }
+      var ty=LN[d.type]; if(!ty){skipped++;return;}
+      if(ty==="free"){ var pts=(Array.isArray(d.points)?d.points:[]).filter(function(q){return q&&isFinite(+q.x)&&isFinite(+q.y);}).slice(0,2000).map(function(q){return meetPctPt(q.x,q.y);}); if(pts.length<2){skipped++;return;} snap.drawings.push({type:"free",pts:pts,color:col}); return; }
+      if(ty==="text"){ var tx=String(d.text||"").trim(); if(!tx){skipped++;return;} snap.drawings.push({type:"text",pts:[a],text:tx.slice(0,120),color:col,size:30}); return; }
+      snap.drawings.push({type:ty,pts:[a,b],color:col});
+    });
+    return {snap:snap,skipped:skipped};
+  }
+  /* 슬라이드 바탕 — 지금 판의 겉모습(팀 색·피치·토큰 크기)만 빌리고 판의 상태(반쪽 보기·압박선·멀티피치·그리드)는 깨끗하게 */
+  function meetBaseSnap(){ var b={}; try{b=captureSnap();}catch(_){b={};}
+    return Object.assign(b,{pitchSpec:"fifa",players:[],equipment:[],drawings:[],ball:null,orientation:"h",area:"full",pitchView:"full",fieldMode:"standard",halfSide:"L",pitchN:1,press:null,spMarks:null,spFlip:false,boardLocked:false,gridType:"off"}); }
+  /* 보관함 목록 쓰기 — 자동 저장과 같은 잠금(_vaultAutoWriting). 자동 저장이 그 사이에 오면 _vaultAutoAgain 으로 미뤄졌다가 끝나고 돈다 */
+  var _meetLibBusy=false;
+  function meetLibMutate(fn,_n){
+    _n=_n||0;
+    if((_vaultAutoWriting||_meetLibBusy)&&_n<50)return new Promise(function(r){setTimeout(r,120);}).then(function(){return meetLibMutate(fn,_n+1);});
+    _meetLibBusy=true;_vaultAutoWriting=true;
+    function fin(){_meetLibBusy=false;_vaultAutoWriting=false;if(_vaultAutoAgain){_vaultAutoAgain=false;try{window.__vaultAutoSaveSchedule();}catch(_){}}}
+    return libGet().then(function(lib){ var r=fn(lib)||{}; if(r.write===false)return r; return libSet(lib).then(function(){return r;}); })
+      .then(function(r){fin();return r;},function(e){fin();throw e;});
+  }
+  function meetSetMatch(libId,ref){
+    ref=ref?meetRefClean(ref):null;
+    return meetLibMutate(function(lib){
+      var it=null;for(var i=0;i<lib.length;i++){if(lib[i]&&lib[i].libId===libId){it=lib[i];break;}}
+      if(!it)return {ok:false,reason:"gone",write:false};
+      if((it.type||"")!=="meeting")return {ok:false,reason:"type",write:false};
+      if(!canEditItem(it))return {ok:false,reason:"denied",write:false};
+      if(ref)it.matchRef=ref;else delete it.matchRef;
+      return {ok:true,name:it.name||"미팅"};
+    }).then(function(r){
+      if(r.ok){ if(window.__curVaultId===libId)window.__curMeetRef=ref; try{renderDrillFiles();}catch(_){} try{if(window.__ksRender)window.__ksRender();}catch(_){} }
+      return r;
+    });
+  }
+  function meetSetMatchSay(r,ref){ try{ if(!r||!r.ok){toast(r&&r.reason==="denied"?"만든 사람만 경기와 이을 수 있어요":(r&&r.reason==="gone"?"이 미팅을 보관함에서 찾지 못했어요":"경기와 잇지 못했어요 — 다시 눌러 주세요"));return;}
+    toast(ref?("‘"+r.name+"’ — "+meetMatchLong(ref,meetLiveMatch(ref))+"에 연결했어요 ✓"):("‘"+r.name+"’ 경기 연결을 끊었어요 · 미팅은 그대로")); }catch(_){} }
+  window.__meetingSetMatch=function(libId,ref){ return meetSetMatch(String(libId||""),ref).then(function(r){meetSetMatchSay(r,ref?meetRefClean(ref):null);return r;},function(e){try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"경기와 잇지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return {ok:false};}); };
+  /* 경기 화면 «경기 자료로 미팅 만들기» — 경기 쪽이 슬라이드 재료(경기 보드 형식)를 보내면 여기서 작전판 스냅·썸네일로 바꿔 새 미팅을 만든다.
+     사본이다 — 나중에 경기 보드를 고쳐도 이 미팅은 그대로. 저장은 팀 공유(기본, 사용자 승인) 또는 내 자료. */
+  window.__meetingFromMatch=function(p){
+    if(!psVaultRequireLogin())return Promise.resolve(false);
+    p=p||{}; var src=(Array.isArray(p.slides)?p.slides:[]).slice(0,30);
+    if(!src.length){try{toast("옮길 경기 자료가 없어요");}catch(_){} return Promise.resolve(false);}
+    var team=psIsTeamWs(),shared=!!p.shared&&team,ref=meetRefClean(p.ref),base=meetBaseSnap(),skipped=0,slides=[];
+    src.forEach(function(sp){ var r=meetSnapFromPct(base,sp); skipped+=r.skipped; var th=""; try{th=window.__snapToThumb?window.__snapToThumb(r.snap):"";}catch(_){}
+      slides.push({pdfOrientation:"landscape",snap:r.snap,thumb:th||"",title:String(sp.title||"").trim().slice(0,80),points:(Array.isArray(sp.points)?sp.points:[]).map(function(x){return String(x==null?"":x).trim().slice(0,160);}).filter(Boolean).slice(0,10)}); });
+    var name=String(p.name||"").trim().slice(0,40)||((ref&&ref.opp?(ref.opp+"전 "):"")+"미팅");
+    var item={libId:"V"+Date.now().toString(36),type:"meeting",name:name,folder:shared?VAULT_SHARE_FOLDER:"",thumb:slides[0].thumb,snap:slides[0].snap,slides:slides,tags:[],savedAt:Date.now()};
+    if(ref)item.matchRef=ref;
+    stampCreator(item);
+    if(shared){ try{ addFolder(VAULT_SHARE_FOLDER); if(!fmetaOf(VAULT_SHARE_FOLDER).shared)setFolderMeta(VAULT_SHARE_FOLDER,"shared",true); }catch(_){} }
+    return meetLibMutate(function(lib){ lib.unshift(item); return {ok:true}; }).then(function(){
+      try{toast("슬라이드 "+slides.length+"장으로 미팅을 만들었어요 ✓"+(shared?" · ☁ 팀 공유":"")+(skipped?(" · 그림 "+skipped+"개는 옮기지 못했어요"):""));}catch(_){}
+      try{renderDrillFiles();}catch(_){}
+      try{openItem(item,false);}catch(_){}
+      return true;
+    },function(e){ try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"미팅을 만들지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return false; });
+  };
+  /* 경기 화면 «편집 ›»·«▶ 슬라이드쇼» — 보관함의 그 미팅을 연다(남의 것은 보기 전용) */
+  window.__vaultOpenMeeting=function(libId,opts){
+    opts=opts||{};
+    if(!psVaultRequireLogin())return;
+    libGet().then(function(lib){
+      var d=null;for(var i=0;i<lib.length;i++){if(lib[i]&&lib[i].libId===libId){d=lib[i];break;}}
+      if(!d||(d.type||"")!=="meeting"){try{toast("이 미팅을 보관함에서 찾지 못했어요 — 지워졌거나 아직 이 기기에 오지 않았어요");}catch(_){} return;}
+      if(canEditItem(d))openItemEdit(d);else openItemView(d);
+      if(opts.show)setTimeout(function(){try{if(window.__meet&&window.__meet.show)window.__meet.show(true);}catch(_){}},320);
+    }).catch(function(e){try{toast((e&&e.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요":"보관함을 열지 못했어요");}catch(_){}});
+  };
+  function meetOpenTeamMatch(ref){
+    if(!ref||!ref.mid)return;
+    try{if(window.__vaultAutoSaveFlush)window.__vaultAutoSaveFlush();}catch(_){}
+    try{parent.postMessage({source:"board",type:"openTeamMatch",mid:ref.mid,date:ref.date||"",opp:ref.opp||"",step:"prep"},"*");}catch(_){}
+  }
+  /* 경기 고르기 시트 — 한 번 누르면 바로 연결(확인 단계 없음, 연결은 언제든 바꾸거나 끊을 수 있다) */
+  function meetPickSheet(o){
+    o=o||{};
+    try{var ex=document.getElementById("mmPickOv");if(ex)ex.remove();}catch(_){}
+    var cur=o.cur||null,live=cur?meetLiveMatch(cur):null,lists=meetPickLists(meetMatchesAll(),meetYmd());
+    var ov=document.createElement("div");ov.id="mmPickOv";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-label","경기 연결");
+    var KD={official:"정식",friendly:"친선"};
+    function row(m,past){ var on=cur&&String(cur.mid)===String(m.id);
+      var meta=[m.competition||KD[m.kind]||"",m.homeAway||""].filter(Boolean).join(" · ");
+      var tail=""; if(past){ var su=String(m.scoreUs==null?"":m.scoreUs).trim(),st=String(m.scoreThem==null?"":m.scoreThem).trim(); if(su!==""&&st!=="")tail=su+":"+st; }
+      else{ var dd=Math.round((new Date(String(m.date)+"T00:00:00")-new Date(meetYmd()+"T00:00:00"))/864e5); tail=dd===0?"오늘":("D-"+dd); }
+      return '<button type="button" class="mm-row'+(on?" on":"")+'" data-mid="'+esc(String(m.id))+'"'+(o.ro?' disabled':'')+'><b>'+esc(meetDateLabel(m.date))+'</b><span class="o">vs '+esc(String(m.opponent||"상대 미정"))+'</span><span class="m">'+esc([meta,tail].filter(Boolean).join(" · "))+'</span></button>'; }
+    var body='';
+    if(cur)body+='<div class="mm-cur"><span>지금 연결<b>'+esc(meetMatchLong(cur,live))+'</b></span><button type="button" data-mm-open>경기 열기 ›</button></div>';
+    if(!o.ro){
+      if(lists.up.length)body+='<div class="mm-h">다가오는 경기</div>'+lists.up.map(function(m){return row(m,false);}).join("");
+      if(lists.past.length)body+='<div class="mm-h">지난 경기</div>'+lists.past.map(function(m){return row(m,true);}).join("");
+      if(!lists.up.length&&!lists.past.length)body+='<div class="mm-empty">팀 운영 › 경기에 경기가 아직 없어요 — 일정에 경기를 넣으면 여기에 떠요</div>';
+    }
+    ov.innerHTML='<div class="mm-card"><div class="mm-title">'+(o.ro?"연결된 경기":"이 미팅을 어느 경기와 이을까요?")+'</div>'
+      +'<div class="mm-sub">'+(o.ro?"만든 사람만 연결을 바꿀 수 있어요":"고르면 그 경기의 «경기 준비»에 이 미팅이 떠요 · 선수에게는 보이지 않아요")+'</div>'
+      +'<div class="mm-list">'+body+'</div>'
+      +'<div class="mm-foot">'+((cur&&!o.ro)?'<button type="button" data-mm-unlink>연결 끊기</button>':'')+'<button type="button" class="mm-close" data-mm-close>닫기</button></div></div>';
+    document.body.appendChild(ov);
+    function close(){try{ov.remove();}catch(_){} document.removeEventListener("keydown",onKey,true);}
+    function onKey(e){if(e.key==="Escape"){e.stopPropagation();close();}}
+    document.addEventListener("keydown",onKey,true);
+    ov.addEventListener("click",function(e){ if(e.target===ov){close();return;}
+      var b=e.target.closest&&e.target.closest("button"); if(!b)return; e.stopPropagation();
+      if(b.hasAttribute("data-mm-close")){close();return;}
+      if(b.hasAttribute("data-mm-open")){close();meetOpenTeamMatch(cur);return;}
+      if(b.hasAttribute("data-mm-unlink")){close();if(o.onPick)o.onPick(null);return;}
+      if(b.dataset.mid){ var m=null,all=meetMatchesAll();for(var i=0;i<all.length;i++){if(String(all[i].id)===b.dataset.mid){m=all[i];break;}} close(); if(m&&o.onPick)o.onPick(meetRefOf(m)); }
+    });
+    ov.addEventListener("pointerdown",function(e){e.stopPropagation();});
+    setTimeout(function(){try{var f=ov.querySelector(".mm-row.on")||ov.querySelector(".mm-row")||ov.querySelector(".mm-close");if(f)f.focus();}catch(_){}},40);
+  }
+  /* 미팅 편집 띠의 «⚽ 경기 연결» — 보관함 미팅(저장된 것·새로 만드는 중)에서만 */
+  window.__meetMatchBtn=function(){
+    var pend=window.__vaultPending&&window.__vaultPending.type==="meeting"?window.__vaultPending:null;
+    if(!window.__curVaultId&&!pend)return null;
+    var ref=pend?(pend.matchRef||null):(window.__curMeetRef||null),ro=!!window.__vaultReadOnly;
+    if(ro&&!ref)return null;
+    var b=document.createElement("button");b.type="button";b.className="ksmatch"+(ref?" on":"");
+    b.textContent=ref?("⚽ "+meetMatchShort(ref,meetLiveMatch(ref))):"⚽ 경기 연결";
+    b.title=ref?(meetMatchLong(ref,meetLiveMatch(ref))+" — 눌러서 경기 열기·바꾸기"):"이 미팅을 팀 운영의 경기와 잇기";
+    b.onclick=function(){ meetPickSheet({cur:ref,ro:ro,onPick:function(nr){
+      if(pend){ pend.matchRef=nr||null; window.__curMeetRef=nr||null; try{if(window.__ksRender)window.__ksRender();}catch(_){} try{toast(nr?("저장하면 "+meetMatchLong(nr,meetLiveMatch(nr))+"에 연결돼요"):"경기 연결을 뺐어요");}catch(_){} return; }
+      window.__meetingSetMatch(window.__curVaultId,nr);
+    }}); };
+    return b;
+  };
+  /* 보관함 미리보기의 «연결된 경기» 줄(미팅만) */
+  function vxMatchRow(d){
+    if((d&&d.type)!=="meeting")return "";
+    var ref=d.matchRef||null,mine=canEditItem(d);
+    if(!ref){ if(!mine)return ""; return '<div class="vx-matchrow empty"><span class="t">경기와 잇기<small>팀 운영 › 경기 준비에 이 미팅이 떠요</small></span><button type="button" data-vx-mpick>경기 고르기</button></div>'; }
+    return '<div class="vx-matchrow"><span class="t">연결된 경기<b>'+esc(meetMatchLong(ref,meetLiveMatch(ref)))+'</b></span><button type="button" data-vx-mopen>경기 열기 ›</button>'+(mine?'<button type="button" data-vx-mpick>바꾸기</button>':'')+'</div>';
+  }
+  function vxMatchBind(el,d){
+    var mo=el.querySelector("[data-vx-mopen]");if(mo)mo.onclick=function(e){e.stopPropagation();meetOpenTeamMatch(d.matchRef);};
+    var mp=el.querySelector("[data-vx-mpick]");if(mp)mp.onclick=function(e){e.stopPropagation();meetPickSheet({cur:d.matchRef||null,onPick:function(nr){window.__meetingSetMatch(d.libId,nr);}});};
   }
   function vaultItemMenu(ev,d){
     if(!psVaultRequireLogin())return;
@@ -15873,6 +16111,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       +(desc?'<div class="vx-desc">'+desc+'</div>':'')
       +((d.tags&&d.tags.length)?'<div class="vx-preview-tags">'+d.tags.map(function(t){return "<span>#"+esc(t)+"</span>";}).join("")+"</div>":"")
       +vxShareRow(d)
+      +vxMatchRow(d)   /* 2.928 */
       +'<div class="vx-preview-actions v2">'
       +'<button class="primary" data-vx-view>큰 화면으로 보기</button>'
       +(isDrill?'<button class="vx-note" data-vx-note>개인 노트에서 쓰기</button>':'')
@@ -15880,6 +16119,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       +'<span class="vx-act-row">'+(canEdit?'<button data-vx-edit>편집</button>':'')+'<button data-vx-copy>복사</button><button data-vx-more>⋯ 더보기</button></span></div>';
     var _sw=el.querySelector("[data-vx-share]");
     if(_sw)_sw.onclick=function(e){ e.stopPropagation(); itemShareToggle(d); };
+    try{ vxMatchBind(el,d); }catch(_){}   /* 2.928 */
     el.querySelector("[data-vx-view]").onclick=function(){openItemView(d);};
     var nb=el.querySelector("[data-vx-note]");if(nb)nb.onclick=function(){sendVaultItemToNote(d);};
     var pb=el.querySelector("[data-vx-play]");
@@ -16065,7 +16305,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
             렌더마다 헤더가 두 모양을 오갔다. 구출은 진짜로 비우기 직전에만. 서명에 보기 3종(__vaultView)도 넣어
             카드↔크게 전환이 같은 서명으로 삼켜지던 것도 고침. */
       try{var _sig=JSON.stringify([libFilter.folder,libFilter.sort||"",libFilter.cats||[],libFilter.tag||"",qTok,ft,_fcs,window.__vaultView||"",
-          arr.map(function(d){return d.libId+":"+(d.savedAt||0)+":"+(d.name||"")+":"+((d.tags||[]).join(","))+":"+(d.folder||"")+":"+(d.fav?1:0);})]);
+          arr.map(function(d){return d.libId+":"+(d.savedAt||0)+":"+(d.name||"")+":"+((d.tags||[]).join(","))+":"+(d.folder||"")+":"+(d.fav?1:0)+":"+((d.matchRef&&d.matchRef.mid)||"");})]);   /* 2.928 — 경기 연결도 */
         if(box.__vxSig===_sig&&box.querySelector(".vx-items")){
           var _pid=window.__vaultPreviewId;
           box.querySelectorAll(".vcard.selected").forEach(function(x){x.classList.remove("selected");});
@@ -16543,7 +16783,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var bsave=document.createElement("button");bsave.className="kssave";bsave.textContent="⤓ 보관함 저장";bsave.onclick=function(){try{if(window.__vaultSave)window.__vaultSave();}catch(_){}};
     var bppt=document.createElement("button");bppt.className="kspptx";bppt.textContent="⤓ PPT 내보내기";bppt.onclick=function(){try{exportPPTX();}catch(_){}};
     var bpdf=document.createElement("button");bpdf.className="kspdf";bpdf.textContent="⤓ PDF 내보내기";bpdf.onclick=function(){exportMeetingPDF();};
-    bar.appendChild(bn);bar.appendChild(bt);bar.appendChild(bs);bar.appendChild(bpdf);bar.appendChild(bppt);bar.appendChild(bsave);strip.appendChild(bar);
+    bar.appendChild(bn);bar.appendChild(bt);
+    try{ var bmm=window.__meetMatchBtn&&window.__meetMatchBtn(); if(bmm)bar.appendChild(bmm); }catch(_){}   /* 2.928 — 경기 연결 */
+    bar.appendChild(bs);bar.appendChild(bpdf);bar.appendChild(bppt);bar.appendChild(bsave);strip.appendChild(bar);
     fr.forEach(function(f,i){
       var c=document.createElement("div");c.className="ksc"+(i===ci?" on":"");c.setAttribute("draggable","true");
       c.innerHTML='<div class="ktb">'+(f.thumb||'')+'</div><div class="kn">'+esc(f.title||("슬라이드 "+(i+1)))+'</div><span class="knum">'+(i+1)+'</span><button class="kx" title="삭제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button><button class="kdup" title="복제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" style="vertical-align:-1px"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button>';
@@ -16654,6 +16896,40 @@ body.meeting-page-mode #board,body.meeting-page-mode #ksHead,body.meeting-page-m
 @media(max-width:600px){body.meeting-page-mode #ksStrip{width:108px;padding:6px 4px;}body.meeting-page-mode #ksPagePreview{left:108px;width:calc(100% - 108px);}body.meeting-page-mode #ksEd{left:112px;width:calc(100% - 120px);}}
 </style>
 
+<style id="ps-2928-meetmatch">
+/* 2.928 — 미팅 ↔ 경기 연결: 미팅 띠 버튼 · 보관함 미리보기 줄 · 경기 고르기 시트 */
+.ksbar .ksmatch{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ksbar .ksmatch.on{background:var(--accent-soft,#EDF2FE);border-color:var(--blue,#3a6df0);color:var(--blue,#2A55C8);}
+body.fmdark .ksbar .ksmatch.on{background:rgba(111,148,245,.16);color:#9DB6F8;}
+#drillFiles:not(#_) .vx-matchrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 2px;padding:9px 11px;border:1px solid var(--line,#E3E6EA);border-radius:11px;background:var(--panel,#fff);}
+#drillFiles:not(#_) .vx-matchrow .t{flex:1 1 160px;min-width:0;font-size:11px;font-weight:600;color:var(--txt-dim,#646A73);}
+#drillFiles:not(#_) .vx-matchrow .t b,#drillFiles:not(#_) .vx-matchrow .t small{display:block;margin-top:2px;}
+#drillFiles:not(#_) .vx-matchrow .t b{font-size:13px;font-weight:700;color:var(--txt,#14161A);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#drillFiles:not(#_) .vx-matchrow .t small{font-size:11px;font-weight:500;}
+#drillFiles:not(#_) .vx-matchrow button{min-height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--line,#E3E6EA);background:var(--panel2,#F1F3F5);color:var(--txt,#14161A);font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-stamp-group .cmd-stamp-token:hover{filter:brightness(.88);}   /* 2.928 — 칩 색은 그대로, 올리면 살짝 어둡게 */
+#mmPickOv{position:fixed;inset:0;z-index:720;background:rgba(8,12,18,.52);display:flex;align-items:center;justify-content:center;padding:16px;}
+#mmPickOv .mm-card{width:100%;max-width:400px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:var(--panel,#fff);color:var(--txt,#14161A);border-radius:16px;box-shadow:0 22px 64px rgba(0,0,0,.42);padding:16px;box-sizing:border-box;font-family:inherit;}
+#mmPickOv .mm-title{font-size:15px;font-weight:800;}
+#mmPickOv .mm-sub{font-size:12px;line-height:1.45;color:var(--txt-dim,#646A73);margin:3px 0 10px;}
+#mmPickOv .mm-list{display:flex;flex-direction:column;gap:6px;overflow-y:auto;min-height:0;}
+#mmPickOv .mm-h{font-size:11px;font-weight:700;color:var(--txt-dim,#646A73);margin:6px 0 0;}
+#mmPickOv .mm-row{display:grid;grid-template-columns:58px minmax(0,1fr);grid-template-rows:auto auto;column-gap:8px;align-items:center;text-align:left;min-height:46px;padding:6px 10px;border-radius:10px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:inherit;font:inherit;cursor:pointer;}
+#mmPickOv .mm-row b{grid-row:1/3;font-size:13px;}
+#mmPickOv .mm-row .o{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#mmPickOv .mm-row .m{font-size:11px;color:var(--txt-dim,#646A73);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#mmPickOv .mm-row.on{border:1.5px solid var(--blue,#3a6df0);background:var(--accent-soft,#EDF2FE);}
+#mmPickOv .mm-row[disabled]{cursor:default;opacity:.6;}
+#mmPickOv .mm-cur{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--panel2,#F1F3F5);font-size:11px;font-weight:600;color:var(--txt-dim,#646A73);}
+#mmPickOv .mm-cur span{flex:1;min-width:0;}
+#mmPickOv .mm-cur b{display:block;font-size:13px;color:var(--txt,#14161A);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#mmPickOv .mm-cur button,#mmPickOv .mm-foot button{min-height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:inherit;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+#mmPickOv .mm-empty{font-size:13px;line-height:1.5;color:var(--txt-dim,#646A73);padding:14px 4px;}
+#mmPickOv .mm-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;}
+#mmPickOv .mm-foot .mm-close{background:var(--panel2,#F1F3F5);}
+body.fmdark #mmPickOv .mm-row.on{background:rgba(111,148,245,.16);}
+@media (max-width:600px){ #editorModal .modal-head #editorPdf .ep-pdf-lb{display:none;} #editorModal .modal-head #editorPdf svg{margin-right:0!important;} }
+</style>
 <script>
 /* 양식(출력 폼) — 상단 탭에서 보관함 헤더로 이동. printView는 셸에 있으므로 셸 내장일 때만 노출 */
 try{ if(window.parent!==window){ var _fb=document.getElementById('dfForms');
@@ -17245,12 +17521,16 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     if(!kind||!u)return false;var s=stampSpec(kind);dropToken(s.cat,s.val,u,s.color,s.extra);return true;
   }
   function syncStamps(){
+    try{[].forEach.call(document.querySelectorAll("#cmd-stamp-group .cmd-stamp-token"),function(b){b.style.removeProperty("background");});}catch(_){}   /* 2.928 — 아래 !important 를 걷어야 새 색이 들어간다 */
     var team=stampTeam(),main=teamHex(team),auto=id("cmd-player-stamp"),n=nextAutoNumber(team);
     if(auto){auto.textContent=String(n);auto.title="선수 "+n+" 연속 배치";auto.setAttribute("aria-label","선수 "+n+" 연속 배치");auto.style.background=main;auto.style.color=autoTxt(main);auto.style.borderColor=teamStroke(main);}
-    var coach=id("cmd-role-c");if(coach){coach.style.background=main;coach.style.color=autoTxt(main);coach.style.borderColor=teamStroke(main);}
+    var coach=id("cmd-role-c");if(coach){var cc=coachColor();coach.style.background=cc;coach.style.color=autoTxt(cc);coach.style.borderColor=teamStroke(cc);}   /* 2.928 — 유니폼과 대비되는 코치 색(판 토큰과 같은 함수) */
     var gkb=id("cmd-role-gk");if(gkb){var gc=gkColFor(team);gkb.style.background=(typeof gkChipBG==="function")?gkChipBG(team):gc;gkb.style.color=autoTxt(gc);gkb.style.borderColor=(typeof gkStrokeOf==="function")?gkStrokeOf(team,gc):teamStroke(gc);}
     ["N","T","S"].forEach(function(k){var b=id("cmd-role-"+k.toLowerCase()),c=roleColor(k);if(b&&c){b.style.background=c;b.style.color=autoTxt(c);b.style.borderColor=teamStroke(c);}});
     [].forEach.call(document.querySelectorAll("#cmd-stamp-group [data-stamp-kind]"),function(b){var on=stampKind===b.dataset.stampKind;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on?"true":"false");});
+    /* 2.928 — 도크의 «button:hover{background:var(--cmd-hover)!important}»(figma-premium)가 칩 색을 덮어, 마우스를 올리면
+       연한 바탕에 흰 글자가 되어 C(코치)·번호 칩이 사라졌다(사용자 화면). 칩 바탕은 인라인 !important 로 박고 올렸을 때는 살짝 어둡게만 */
+    [].forEach.call(document.querySelectorAll("#cmd-stamp-group .cmd-stamp-token"),function(b){var bg=b.style.getPropertyValue("background");if(bg&&b.style.getPropertyPriority("background")!=="important")b.style.setProperty("background",bg,"important");});
     window.__psTokenStampActive=!!stampKind;document.body.classList.toggle("token-stamp",!!stampKind||!!window.__psEquipStampActive);   /* 2.246 — 장비 도장도 같은 클래스(drawCatch pointer-events, figma-premium 2203) */
   }
   function cancelStamp(){stampKind=null;syncStamps();}
