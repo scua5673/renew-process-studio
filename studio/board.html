@@ -7186,7 +7186,9 @@ function _animApplyUndo(a){ if(!a||!Array.isArray(a.frames))return; anim.frames=
 function _undoEntry(e){ if(e&&e.board){ loadSnap(e.board); _animApplyUndo(e.anim); } else loadSnap(e); }
 function pushUndo(){try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();redoStack.length=0;}catch(_){} try{_boardUserTouched=true;}catch(_){}}   /* 2.903 — 사용자가 손댐 */
 try{document.addEventListener("input",function(e){ try{ var t=e.target; if(t&&e.isTrusted!==false&&t.closest&&t.closest(".sel-ctl,#lsPop"))_boardUserTouched=true; }catch(_){} },true);}catch(_){}
-function undoLast(){if(!undoStack.length){toast("되돌릴 작업이 없어요");return;}try{redoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(redoStack.length>50)redoStack.shift();_undoEntry(undoStack.pop());}catch(_){}toast("되돌렸습니다 ↩");}
+function undoLast(){if(!undoStack.length){toast("되돌릴 작업이 없어요");return;}var _ue=null;try{redoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(redoStack.length>50)redoStack.shift();_ue=undoStack.pop();_undoEntry(_ue);}catch(_){}toast("되돌렸습니다 ↩");  /* 2.927 — «보드 가져오기»를 되돌리면 그 연결도 끊는다(안 그러면 «보드 저장» 때 예전 보드가 보관함 자료를 덮는다) */
+  try{ if(_ue&&_ue.__linkMark&&window.__psPages&&window.__psPages.linkClear){ window.__psPages.linkClear(_ue.__linkMark); toast("가져오기를 되돌렸어요 · 보관함 연결도 끊었어요"); } }catch(_){}
+}
 function redoLast(){if(!redoStack.length){toast("다시 실행할 작업이 없어요");return;}try{undoStack.push({board:captureSnap(),anim:_animSnapForUndo()});if(undoStack.length>50)undoStack.shift();_undoEntry(redoStack.pop());}catch(_){}toast("다시 실행 ↪");}
 function clearBoardHistory(){undoStack.length=0;redoStack.length=0;}
 try{window.__clearBoardHistory=clearBoardHistory;}catch(_){}
@@ -7488,7 +7490,7 @@ function _boardLiveWriteNow(recovery){
     _bp=window.__psPages?window.__psPages.liveVal():null;
     _af=window.__animFrames?window.__animFrames(true):null;
     if(_af)_ai=Math.max(0,Math.min(animActive,_af.length-1));
-    payload={snap:_bs,view:_bv,matchActive:matchActive,meetSlides:anim.slides,animFrames:_af,animActive:_ai,boardPages:_bp,_savedAt:Date.now()};
+    payload={snap:_bs,view:_bv,matchActive:matchActive,meetSlides:anim.slides,animFrames:_af,animActive:_ai,boardPages:_bp,boardLink:(window.__psPages&&window.__psPages.singleLinkVal?window.__psPages.singleLinkVal():null),_savedAt:Date.now()};   /* 2.927 */
     raw=JSON.stringify(payload);
   }catch(error){
     _bliveDirty=true;
@@ -7542,6 +7544,43 @@ function boardManualStatus(){
   var _chg=boardManualChanged(); try{ if(typeof window.__psSaveBarSync==='function')window.__psSaveBarSync(_chg); }catch(_){}
   try{var b=document.getElementById('boardManualSave');if(b){/* 2.907 — «보드 저장»: 보관함의 «저장하기»와 이름이 같아 보관함에 들어간 줄 알았다(오류 제보). 바뀐 표시는 점 하나 — 768px 띠에 «· 변경됨»까지 들어가지 않는다. */b.textContent=_boardManualSaving?'저장 중…':(_chg?'보드 저장 ●':'보드 저장');b.disabled=_boardManualSaving;b.title=(_chg?'저장하지 않은 변경이 있어요 — ':'')+'작업 보드를 저장합니다. 보관함 항목은 «보관함 저장»으로 넣어요';b.setAttribute('aria-label',_chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장');}}catch(_){}
 }
+/* 2.927 — «보드 가져오기»로 이어진 보관함 자료에 지금 보드를 같은 내용으로 저장한다(사용자 «가져와서 토큰 움직이고 저장하면 보관함 것도 똑같이»).
+   ⚠ 보관함(ps_library)엔 판 역사가 없다(2.907) — 그래서 확실히 같은 자료일 때만 쓴다:
+     · 연결은 가져온 페이지에만(페이지 객체), ⌘Z 로 가져오기를 되돌리면 끊김(undoLast), × 로 끊기
+     · 보드가 비었으면(선수·장비·그림 0) 쓰지 않고 연결을 끊는다 — 비우고 새로 그린 판이 옛 전술을 덮지 않게
+     · 남이 만든 자료(canEditItem 아님)·지워진 자료는 쓰지 않는다
+   여러 페이지 자료는 가져온 그 페이지(srcPage)만 바꾸고 나머지 페이지는 그대로 둔다. */
+function _boardSnapEmpty(sn){ try{ return !((sn&&sn.players&&sn.players.length)||(sn&&sn.equipment&&sn.equipment.length)||(sn&&sn.drawings&&sn.drawings.length)); }catch(_){ return false; } }
+function _animToFrames(a){ try{ if(!a||!Array.isArray(a.frames)||a.frames.length<2)return null; var arr=JSON.parse(JSON.stringify(a.frames)); for(var k=1;k<arr.length;k++){ if(arr[k])delete arr[k].thumb; } if(arr[0]){ arr[0].__t=a.title||""; arr[0].__tc=a.titleColor||"#e23b3b"; arr[0].__hold=a.hold||.6; } return arr; }catch(_){ return null; } }
+async function boardLinkWriteBack(onlyCurrent){
+  var P=window.__psPages; if(!P||!P.linkAll)return [];
+  var links=P.linkAll().filter(function(l){ return l&&l.tag&&l.tag.libId&&(!onlyCurrent||l.isCurrent); }); if(!links.length)return [];
+  var lib=await libGet(), changed=false, out=[];
+  for(var i=0;i<links.length;i++){
+    var L=links[i], tag=L.tag, it=null;
+    for(var k=0;k<lib.length;k++){ if(lib[k]&&lib[k].libId===tag.libId){ it=lib[k]; break; } }
+    if(!it){ P.linkClear(tag.libId); out.push({name:tag.name,gone:true}); continue; }
+    if(!canEditItem(it)){ P.linkClear(tag.libId); out.push({name:it.name||tag.name,denied:true}); continue; }
+    var snap,thumb="",frames=null,anim=null;
+    if(L.isCurrent){ snap=captureSnap(); try{ thumb=boardThumbSVG(); }catch(_){} frames=window.__animFrames?window.__animFrames(true):null; anim=window.__animGet?window.__animGet(true):null; }
+    else { snap=L.snap; thumb=L.thumb||""; anim=L.anim||null; frames=_animToFrames(anim); }
+    if(!snap||_boardSnapEmpty(snap)){ P.linkClear(tag.libId); out.push({name:it.name||tag.name,empty:true}); continue; }
+    var sp=+tag.srcPage||0;
+    if(Array.isArray(it.pages)&&it.pages.length>1&&it.pages[sp]){
+      it.pages[sp].snap=snap; it.pages[sp].thumb=thumb; it.pages[sp].anim=anim;
+      if(sp===0){ it.snap=snap; it.thumb=thumb; if(frames)it.frames=frames; else delete it.frames; }
+    } else { it.snap=snap; it.thumb=thumb; if(frames)it.frames=frames; else delete it.frames; }
+    it.savedAt=Date.now(); changed=true; out.push({name:it.name||tag.name,ok:true});
+  }
+  if(changed){ await libWrite(lib); try{ libTouch(); }catch(_){} try{ renderDrillFiles(); }catch(_){} }
+  try{ P.refresh&&P.refresh(); }catch(_){}
+  return out;
+}
+function boardLinkSaveText(r){
+  var ok=[],no=[]; (r||[]).forEach(function(x){ if(x.ok)ok.push("‘"+x.name+"’"); else if(x.denied)no.push("보관함 ‘"+x.name+"’: 만든 사람만 바꿀 수 있어 그대로 두고 연결을 끊었어요"); else if(x.empty)no.push("보드가 비어 있어 보관함 ‘"+x.name+"’ 연결을 끊었어요(자료는 그대로)"); else if(x.gone)no.push("보관함에 ‘"+x.name+"’ 자료가 없어 연결을 끊었어요"); else if(x.err)no.push("보관함 저장 실패 — 다시 «보드 저장»을 눌러 주세요"); });
+  return (ok.length?(" · 보관함 "+ok.join("·")+"에도 저장됨"):"")+(no.length?(" · "+no.join(" · ")):"");
+}
+window.__boardLinkWriteBack=boardLinkWriteBack;
 async function boardSaveExplicit(){
   if((_boardManualSaving&&boardPrivateCurrent(_boardManualSaving))||_vaultBoardContext||window.__vaultEdit)return false;
   if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner)){toast("로그인과 보드 연결을 확인한 뒤 다시 저장해 주세요");return false;}
@@ -7552,7 +7591,10 @@ async function boardSaveExplicit(){
     var ok=await _boardLiveWriteNow(false);
     if(boardPrivateCurrent(owner)&&seq===_boardPrivateEditSeq){
       var durable=_boardPrivateRecord&&_boardPrivateDurableToken===_boardPrivateRecord.token;
-      if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;if(!ok)toast("이 기기에 저장됨 · 서버 저장은 아직 완료되지 않았습니다");else toast("보드에 저장됨 ✓ · 보관함에는 «보관함 저장»으로 넣어요");}
+      if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;
+        var _wb=[]; try{ _wb=await boardLinkWriteBack(false); }catch(e){ _wb=[{err:true}]; }   /* 2.927 — 가져온 보관함 자료에도 */
+        var _wbt=boardLinkSaveText(_wb);
+        if(!ok)toast("이 기기에 저장됨 · 서버 저장은 아직 완료되지 않았습니다"+_wbt);else toast(_wbt?("보드에 저장됨 ✓"+_wbt):"보드에 저장됨 ✓ · 보관함에는 «보관함 저장»으로 넣어요");}
     }
     return !!ok;
   }finally{if(_boardManualSaving===owner)_boardManualSaving=false;boardManualStatus();}
@@ -7658,6 +7700,7 @@ async function restoreLiveBoard(){
       if(Array.isArray(live.animFrames)&&live.animFrames.length&&window.__animRestore)window.__animRestore(live.animFrames,live.animActive);
       window.__pendingBoardPages=live.boardPages||null;
       try{if(window.__psPages&&window.__psPages.restoreContext)window.__psPages.restoreContext(live.boardPages?{pages:live.boardPages.pages,idx:live.boardPages.idx}:null);}catch(_){}
+      try{if(window.__psPages&&window.__psPages.setSingleLink)window.__psPages.setSingleLink(live.boardLink||null);}catch(_){}   /* 2.927 — 한 페이지 보드의 보관함 연결 */
       var snap=sm||sb;if(snap){loadSnap(snap);autoOrient=false;}else boardPrivateResetCanvas();
       if(sm)try{window.__svSkip=1;setView('match');}finally{window.__svSkip=0;}
       try{renderTokens();renderDrawings();updateDelUI();window.__syncCommandStamps&&window.__syncCommandStamps();}catch(_){}
@@ -10670,7 +10713,7 @@ async function openBoardImport(){
   ov.style.cssText="position:fixed;inset:0;z-index:10030;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;padding:18px";
   var sh=document.createElement("div"); sh.style.cssText="width:min(560px,100%);max-height:min(680px,86vh);overflow:auto;background:var(--panel,#fff);color:var(--txt,#172033);border:1px solid var(--line,#dfe4ec);border-radius:18px;box-shadow:0 24px 60px rgba(15,23,42,.28);padding:18px";
   var hd=document.createElement("div"); hd.style.cssText="display:flex;align-items:center;gap:12px;margin-bottom:14px";
-  hd.innerHTML='<div style="min-width:0;flex:1"><b style="font-size:17px">보드 가져오기</b><div style="font-size:12px;color:var(--txt-dim,#718096);margin-top:4px">보관함의 작전판만 보입니다 · 지금 페이지에 올리고, 원본은 바뀌지 않아요 · ⌘Z 로 되돌리기</div></div>';
+  hd.innerHTML='<div style="min-width:0;flex:1"><b style="font-size:17px">보드 가져오기</b><div style="font-size:12px;color:var(--txt-dim,#718096);margin-top:4px">보관함의 작전판만 보입니다 · 지금 페이지에 올리고, «보드 저장»하면 이 자료도 같은 내용으로 저장돼요(연결 표시의 ×로 끊기) · ⌘Z 로 되돌리기</div></div>';
   var close=document.createElement("button"); close.type="button"; close.className="btn"; close.textContent="닫기"; close.onclick=function(){ov.remove();}; hd.appendChild(close); sh.appendChild(hd);
   var list=document.createElement("div"); list.style.cssText="display:grid;gap:8px";
   if(!items.length){ var empty=document.createElement("div"); empty.style.cssText="padding:28px 12px;text-align:center;color:var(--txt-dim,#718096)"; empty.textContent="보관함에 저장한 작전판이 없어요 — 보드에서 «보관함 저장»으로 만들 수 있어요."; list.appendChild(empty); }
@@ -10686,13 +10729,18 @@ async function openBoardImport(){
     b.appendChild(left); b.appendChild(go);
     b.onclick=function(){
       try{ pushUndo(); }catch(_){}
+      var _canLink=false; try{ _canLink=!!(d.libId&&canEditItem(d)); }catch(_){}
+      try{ if(_canLink&&undoStack.length)undoStack[undoStack.length-1].__linkMark=d.libId; }catch(_){}   /* 2.927 — 이 가져오기를 ⌘Z 하면 연결도 끊는다 */
       var snap=(Array.isArray(d.pages)&&d.pages.length&&d.pages[0].snap)?d.pages[0].snap:d.snap;
       try{ loadSnap(snap); }catch(_){}
       try{ if(nf&&window.__animLoad){ __animLoad(d.frames); } else if(window.__animReset){ __animReset(); } }catch(_){}
       try{ renderTokens(); renderDrawings(); updateDelUI(); }catch(_){}
+      /* 2.927 — 지금 페이지를 이 보관함 자료와 잇는다. «보드 저장» 때 boardLinkWriteBack 이 이 자료(여러 페이지면 그 1페이지)를 같은 내용으로 저장한다.
+         남이 만든 자료(팀)는 고칠 수 없으니 잇지 않는다 — 원래대로 복사만. */
+      try{ if(window.__psPages&&window.__psPages.linkTag)window.__psPages.linkTag(_canLink?{libId:d.libId,name:d.name||"작전판",srcPage:0,multi:np>1}:null); }catch(_){}
       try{ if(window.__psPages&&window.__psPages.refresh)window.__psPages.refresh(); }catch(_){}
       ov.remove();
-      try{ toast("«"+(d.name||"작전판")+"» 가져옴"+(np>1?(" · 첫 페이지(전체 "+np+"페이지)"):"")+" · ⌘Z 되돌리기"); }catch(_){}
+      try{ toast("«"+(d.name||"작전판")+"» 가져옴"+(np>1?(" · 첫 페이지(전체 "+np+"페이지)"):"")+(_canLink?" · «보드 저장»하면 보관함에도 저장돼요":" · 남이 만든 자료라 보관함엔 저장되지 않아요")+" · ⌘Z 되돌리기"); }catch(_){}
     };
     list.appendChild(b);
   });
@@ -14652,6 +14700,21 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     /* 2.907 — 작업 보드(보관함 편집 밖)에서 한 번 «보관함 저장»하면 그 항목이 __curVaultId 로 남아,
        다음 저장은 확인창 없이 그 항목을 덮어썼다(보드를 비우고 새 전술을 그려도). 새 항목은 영영 안 생기고 옛 항목은 사라졌다.
        이제 작업 보드에서는 매번 확인창을 거치고, 덮어쓰기는 사람이 고를 때만. 보관함 편집(__vaultEdit)은 그대로 제 항목에 저장한다. */
+    /* 2.927 — 지금 페이지가 «보드 가져오기»로 이어져 있으면 그 자료가 덮어쓰기 후보다. 덮어쓰기는 boardLinkWriteBack 으로
+       (그 자료의 가져온 페이지만 — vaultSaveCurrent 의 덮어쓰기는 라이브 페이지 전체로 바꿔 여러 페이지 자료의 나머지를 지운다).
+       새 항목으로 저장하면 보드가 그 새 항목이 되므로 옛 연결은 끊는다. */
+    var _lk=null; try{ if(onBoard&&!_o.skipSheet&&!curId&&window.__psPages&&window.__psPages.linkAll)_lk=window.__psPages.linkAll().filter(function(l){return l.isCurrent;})[0]||null; }catch(_){}
+    if(_lk){
+      openSaveSheet(def,(pend.folder||curFolder()||""),[],function(res){
+        if(!res){ if(_o.oncancel)try{_o.oncancel();}catch(_){} return; }
+        if(res.overwrite){ boardLinkWriteBack(true).then(function(r){ var okOne=(r||[]).filter(function(x){return x.ok;})[0]; try{ toast(okOne?("보관함 ‘"+okOne.name+"’에 저장했어요 ✓"):(boardLinkSaveText(r).replace(/^ · /,"")||"저장할 연결이 없어요")); }catch(_){} if(_o.after)try{_o.after();}catch(_){} },function(e){failed(e);}); return; }
+        try{ window.__psPages.linkClear(_lk.tag.libId); }catch(_){}
+        window.__vaultPending=window.__vaultPending||{};
+        window.__vaultPending.name=res.name; window.__vaultPending.folder=res.folder; window.__vaultPending.tags=res.tags;
+        vaultSaveCurrent({skipSheet:true,after:_o.after,oncancel:_o.oncancel});
+      },{board:true,linked:{name:_lk.tag.name||typeLabel(type)}});
+      return;
+    }
     if(curId && onBoard && !_o.skipSheet){
       libGet().then(function(lib){
         var it=null;for(var _q=0;_q<lib.length;_q++){if(lib[_q]&&lib[_q].libId===curId){it=lib[_q];break;}}
@@ -16612,6 +16675,24 @@ try{ var _nb=document.getElementById('dfNew');
   var MAXP=99;   /* 2.682 — 사실상 무한(사용자) */
   var pages=null, idx=0;   /* pages: [{snap,thumb,name}] | null(단일 페이지 = 기존 동작) */
   var _livePages=null, _inVault=false;   /* 보관함 열람 중엔 라이브 보드의 페이지를 보관했다가 닫을 때 복원 */
+  /* 2.927 — «보드 가져오기» 연결(사용자 «가져와서 토큰 움직이고 저장하면 보관함 것도 똑같이»).
+     연결은 **페이지 객체**에 붙인다(page.vlink={libId,name,srcPage,multi}) — 순서를 바꿔도 따라가고, 지우면 함께 사라지고,
+     복제(dup)·미팅 세트는 필드를 골라 복사하므로 따라가지 않는다. 한 페이지 보드는 페이지 기록이 없어 _singleLink 에 두고
+     보드 기록(payload.boardLink)으로 새로고침을 건넌다. 보관함 열람 중(_inVault)에는 연결이 없는 것으로 본다. */
+  var _singleLink=null;
+  function _linkTag(tag){
+    if(pages&&pages[idx]){ pages.forEach(function(p){ if(p&&p.vlink&&tag&&p.vlink.libId===tag.libId)delete p.vlink; }); if(tag)pages[idx].vlink=tag; else delete pages[idx].vlink; }
+    else _singleLink=tag||null;
+  }
+  function _linkAll(){
+    if(_inVault)return [];
+    if(!pages)return _singleLink?[{tag:_singleLink,isCurrent:true,page:0}]:[];
+    var out=[]; pages.forEach(function(p,i){ if(p&&p.vlink)out.push({tag:p.vlink,isCurrent:i===idx,page:i,snap:p.snap,thumb:p.thumb,anim:p.anim}); }); return out;
+  }
+  function _linkClear(libId){
+    if(pages)pages.forEach(function(p){ if(p&&p.vlink&&(!libId||p.vlink.libId===libId))delete p.vlink; });
+    if(_singleLink&&(!libId||_singleLink.libId===libId))_singleLink=null;
+  }
   var _drag=-1;   /* 드래그 순서 변경 중인 페이지 인덱스 */
 
   function _snap(){ try{ return window.captureSnap(); }catch(_){ return {}; } }
@@ -16627,7 +16708,7 @@ try{ var _nb=document.getElementById('dfNew');
     var thumb=strict?pages[idx].thumb:_thumb();
     pages[idx].snap=snap;pages[idx].thumb=thumb;pages[idx].anim=animation;
   } }   /* 2.682 — 페이지마다 장면 목록 */
-  function ensure(){ if(!pages){ pages=[{snap:_snap(),thumb:_thumb(),name:"",anim:_animNow()}]; idx=0; } }
+  function ensure(){ if(!pages){ pages=[{snap:_snap(),thumb:_thumb(),name:"",anim:_animNow()}]; if(_singleLink){ pages[0].vlink=_singleLink; _singleLink=null; } idx=0; } }   /* 2.927 — 연결은 첫 페이지로 */
   function blankSnap(){
     /* 현재 페이지의 피치/방향/개수 설정은 유지하고 선수·장비·그림만 비운 새 페이지 */
     var s=_snap()||{};
@@ -16750,6 +16831,18 @@ try{ var _nb=document.getElementById('dfNew');
       add3.textContent="보드 가져오기"; add3.title="보관함에 저장한 작전판을 골라 지금 페이지에 올립니다 (⌘Z 로 되돌리기)";
       add3.onclick=function(e){ e.stopPropagation(); try{ openBoardImport(); }catch(_){ } }; box.appendChild(add3);
     }
+    /* 2.927 — 연결 표시: 지금 페이지가 보관함 자료와 연결돼 있으면 «보드 저장» 때 그 자료도 같이 저장된다. × 로 끊기. */
+    try{ var _lk=_linkAll().filter(function(l){return l.isCurrent;})[0];
+      if(_lk&&_lk.tag){ var ch=document.createElement("span"); ch.id="bpLinkChip"; ch.className="bp-link";
+        ch.title="«보드 저장»하면 보관함 ‘"+(_lk.tag.name||"작전판")+"’에도 같은 내용이 저장됩니다"+(_lk.tag.multi?" (그 자료의 "+((+_lk.tag.srcPage||0)+1)+"페이지)":"");
+        ch.style.cssText="display:inline-flex;align-items:center;gap:4px;height:28px;max-width:240px;padding:0 4px 0 8px;border:1px dashed var(--blue,#3a6df0);border-radius:999px;color:var(--blue,#3a6df0);font-size:12px;font-weight:600;white-space:nowrap;flex:0 1 auto;min-width:120px;box-sizing:border-box";
+        var ic=document.createElement("span"); ic.setAttribute("aria-hidden","true"); ic.style.cssText="display:inline-flex;flex:0 0 auto"; ic.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>'; ch.appendChild(ic);
+        var tx=document.createElement("span"); tx.style.cssText="overflow:hidden;text-overflow:ellipsis;min-width:0"; tx.textContent=(_lk.tag.name||"작전판"); ch.appendChild(tx);
+        ch.setAttribute("aria-label","보관함 연결: "+(_lk.tag.name||"작전판"));
+        var cx=document.createElement("button"); cx.type="button"; cx.textContent="×"; cx.title="연결 끊기 — 이제 보드에만 저장"; cx.setAttribute("aria-label","보관함 연결 끊기");
+        cx.style.cssText="width:22px;height:22px;min-height:0;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;font-size:15px;line-height:1;cursor:pointer;flex:0 0 auto";
+        cx.onclick=function(e){ e.stopPropagation(); _linkClear(_lk.tag.libId); persist(); render(); _toast("연결을 끊었어요 — 이제 «보드 저장»은 보드에만 저장해요"); };
+        ch.appendChild(cx); box.appendChild(ch); } }catch(_){}
     if(manualSave&&(window.innerWidth||0)>=640)box.appendChild(manualSave);
     if(vaultSave&&(window.innerWidth||0)>=640)box.appendChild(vaultSave);
     /* 1.814 — 상단 '내보내기' 버튼 제거(사용자 지시). PNG·GIF·MP4 내보내기는 하단 도크에 있다 */
@@ -16783,7 +16876,7 @@ try{ var _nb=document.getElementById('dfNew');
       _inVault=false;_livePages=null;clearHistory();try{render();}catch(_){}
     },
     /* 저장용: 현재 페이지 캡처 후, 2개 이상이면 깊은 복제 배열 반환(아니면 null) */
-    forSave:function(){ if(pages && pages.length>1){ capture(); return _clone(pages); } return null; },
+    forSave:function(){ if(pages && pages.length>1){ capture(); var _fp=_clone(pages); _fp.forEach(function(p){ if(p)delete p.vlink; }); return _fp; } return null; },   /* 2.927 — 연결은 라이브 보드만의 것 */
     /* 복원: 항목/라이브에 저장된 pages 배열을 상태로 반영(현재 페이지는 이미 로드돼 있다고 가정) */
     restore:function(arr,reloadFirst,atIdx){
       if(!_inVault){ _livePages={pages:pages, idx:idx}; _inVault=true; }   /* 라이브 보드 페이지를 보관 */
@@ -16827,7 +16920,15 @@ try{ var _nb=document.getElementById('dfNew');
       if(ch) persist();
       return {pages:pages.length,changed:ch}; },
     /* 라이브 저장 페이로드에 실을 값 (보관함 열람 중엔 라이브 보드를 덮지 않도록 제외) */
-    liveVal:function(){ if(window.__vaultEdit) return null; if(pages && pages.length>1){ capture(true); return {pages:JSON.parse(JSON.stringify(pages)), idx:idx}; } return null; }
+    liveVal:function(){ if(window.__vaultEdit) return null; if(pages && pages.length>1){ capture(true); return {pages:JSON.parse(JSON.stringify(pages)), idx:idx}; } return null; },
+    /* 2.927 — 보드 가져오기 연결 */
+    linkTag:function(tag){ _linkTag(tag); persist(); try{ render(); }catch(_){} },
+    linkAll:function(){ return _linkAll(); },
+    linkClear:function(libId){ _linkClear(libId); persist(); try{ render(); }catch(_){} },
+    /* 한 페이지 보드(또는 페이지가 하나 남은 보드)는 페이지 기록이 저장되지 않으니 연결을 따로 싣는다 */
+    singleLinkVal:function(){ if(window.__vaultEdit||_inVault) return null; if(!pages) return _singleLink; if(pages.length===1) return pages[0].vlink||null; return null; },
+    setSingleLink:function(v){ if(_inVault)return; var t=(v&&typeof v==="object"&&v.libId)?{libId:String(v.libId),name:String(v.name||""),srcPage:+v.srcPage||0,multi:!!v.multi}:null; if(!pages)_singleLink=t; else if(pages.length===1&&t&&!pages[0].vlink)pages[0].vlink=t; try{ render(); }catch(_){} },
+    refresh:function(){ try{ render(); }catch(_){} }
   };
 })();
 </script>
