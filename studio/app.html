@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.923"></script>
+<script src="autosave-status.js?v=2.924"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.923';</script>
+<script>window.PS_BUILD='2.924';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -2422,6 +2422,20 @@ function psShowUpdBand(){
     }catch(_){} })();
     // ---- bridge relay between the apps ----
     var captureReq='process'; // who asked the board to capture
+    /* 2.924 — 커뮤니티 «＋ 새로 만들기»: 편집기에서 저장하면 커뮤니티로 돌아와, 보관함 쓰기가 끝났다는 신호(captureSaved)를 받은 뒤
+       그 훈련을 고른 채 올리기 창을 연다. 신호가 오지 않으면(로그인 끊김·저장 실패) 8초 뒤 고르지 않은 올리기 창으로. */
+    var commCreatePending=false,commCreateT=null;
+    function commSendUpload(libId){
+      var send=function(){try{ fComm.contentWindow.postMessage({type:'openUpload',libId:libId||null},'*'); }catch(_){}};
+      if(fComm.contentDocument&&fComm.contentDocument.readyState==='complete')setTimeout(send,120);
+      else fComm.addEventListener('load',function(){setTimeout(send,180);},{once:true});
+    }
+    function commCreateBack(saved){
+      currentTeamKey=''; showApp('community');
+      if(commCreateT){clearTimeout(commCreateT);commCreateT=null;}
+      commCreatePending=!!saved;
+      if(saved)commCreateT=setTimeout(function(){commCreateT=null;if(commCreatePending){commCreatePending=false;commSendUpload(null);}},8000);
+    }
     /* 2.746 — 새 훈련 연결은 출처 iframe·계정·팀을 모두 확인하고 한 요청 ID로 전달한다. */
     function reviewTrainingOwner(d){
       try{var s=window.PSSync&&PSSync.session();return !!(s&&s.uid===d.uid&&localStorage.getItem('ps_active_ws')===d.wid&&PSSync.dataUnlocked());}catch(_){return false;}
@@ -2525,6 +2539,15 @@ function psShowUpdBand(){
         var _omSend=function(){try{fScout.contentWindow.postMessage({type:'openMatchAt',date:d.date||'',opp:d.opp||'',step:d.step||''},'*');}catch(_){}};
         setTimeout(_omSend,250);setTimeout(_omSend,1000);
         return;
+      } else if(d.source==='community' && d.type==='openDrillEditor' && fComm && e.source===fComm.contentWindow){
+        /* 2.924 — 커뮤니티 «＋ 새로 만들기»: 일정과 같은 새 훈련 편집기(보관함에 저장) → 저장·취소하면 커뮤니티로 */
+        captureReq='community'; commCreatePending=false; if(commCreateT){clearTimeout(commCreateT);commCreateT=null;}
+        showApp('design');
+        setTimeout(function(){try{ fBoard.contentWindow.__psPreselectPhases=null; fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); }catch(_){}},80);
+        return;
+      } else if(d.source==='board' && d.type==='captureSaved'){
+        if(commCreatePending){ commCreatePending=false; if(commCreateT){clearTimeout(commCreateT);commCreateT=null;} commSendUpload(d.libId||null); }
+        return;
       } else if(d.source==='board' && d.type==='openCommunityUpload'){
         /* 보관함 미리보기 '커뮤니티에 올리기' — 커뮤니티 탭으로 가서 올리기 시트를 해당 항목으로 연다 */
         currentTeamKey=''; showApp('community');
@@ -2558,11 +2581,13 @@ function psShowUpdBand(){
           else { fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); }
         }catch(_){}},80); return;
       } else if(d.source==='board' && d.type==='capture'){
+        if(captureReq==='community'){ commCreateBack(true); return; }   /* 2.924 */
         var tgt = captureReq==='gamemodel'?fGameModel:(captureReq==='idp'?fIdp:(captureReq==='analysis'?fAnalysis:(captureReq==='playbook'?fPlaybook:fProcess)));
         try{ tgt.contentWindow.postMessage({type:'boardResult',thumb:d.thumb,snap:d.snap,name:d.name,minutes:d.minutes,frames:d.frames,gmPhases:d.gmPhases,focus:d.focus},'*'); }catch(_){}   /* 1.958 — 국면·초점도 릴레이 */
         if(captureReq==='playbook'){ var _pbB=teamKeyBtn('playbook'); if(_pbB)openTeamButton(_pbB); else showApp('playbook'); }   /* 2.580 */
         else showApp(captureReq);
       } else if(d.source==='board' && d.type==='captureCancel'){
+        if(captureReq==='community'){ commCreateBack(false); return; }   /* 2.924 */
         if(captureReq==='gamemodel'){ try{ fGameModel.contentWindow.postMessage({type:'boardCancel'},'*'); }catch(_){} }
         else if(captureReq==='idp'){ try{ fIdp.contentWindow.postMessage({type:'boardCancel'},'*'); }catch(_){} }
         else if(captureReq==='analysis'){ try{ fAnalysis.contentWindow.postMessage({type:'boardCancel'},'*'); }catch(_){} }
@@ -7579,13 +7604,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.923"></script>
-<script src="autosave-merge.js?v=2.923"></script>
-<script src="autosave-runtime.js?v=2.923"></script>
-<script src="autosave-recovery.js?v=2.923"></script>
-<script src="sync.js?v=2.923"></script>
+<script src="autosave-journal.js?v=2.924"></script>
+<script src="autosave-merge.js?v=2.924"></script>
+<script src="autosave-runtime.js?v=2.924"></script>
+<script src="autosave-recovery.js?v=2.924"></script>
+<script src="sync.js?v=2.924"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.923">
+<link rel="stylesheet" href="support.css?v=2.924">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
