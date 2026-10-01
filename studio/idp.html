@@ -3005,6 +3005,8 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .rtd-foot{margin:8px 4px 0;font-size:12px;font-weight:500;color:var(--text-2);line-height:1.5}
   .rtd-extra .rtd-ttl{margin-bottom:6px}
   .rtd-editlist{margin-top:2px}
+  .rtd-sub{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line-soft);font-size:12.5px;font-weight:600;color:var(--text-2)}
+  .rtd-today .rtd-foot{margin:6px 0 0}
   .rt-carry{align-self:flex-start;min-height:40px;padding:0 12px;margin-top:2px;border:1px solid var(--accent);
     background:var(--accent-soft);color:var(--accent);font-family:var(--f);font-size:12px;font-weight:600;
     border-radius:10px;cursor:pointer}
@@ -12829,6 +12831,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           h+='<div class="dc-sec"><div class="td-q">한 줄 <small>선택 · 잘 된 장면 / 다음엔 이렇게</small></div>'
           +'<textarea id="dayMemo" rows="3" placeholder="예: 압박 오는데 몸을 미리 열어서 앞을 봤다"'+(ro()?' disabled':'')+'>'+esc(lg.memo||'')+'</textarea>'+_pastRx+'</div>'; }   /* 2.615 — 오늘(선수)은 첫 층의 한 마디가 같은 log.memo */
         h+='</section>';   /* 2.362 — daycard 닫기. 아래 측정 카드는 별개의 일이라 밖에 둔다 */
+        if(_todaySimple){ try{ h+=rTodayRoutine(calAnchor); }catch(e){ console.warn('오늘 루틴 그리기 실패',e); } }   /* 2.923 — 오늘 할 일 체크는 여기 */
         h+=_wsCard+_below;   /* 2.780 — 순서: 오늘 카드 → 이번 주 나는 → 오늘 팀 일정 → 공지 */
         /* 2.489 — 일요일엔 주간 회고가 이 자리에(doc.weekly — 읽는 곳(9539 내 말 아카이브)만 있고
            쓰는 문이 어느 판에선가 사라져 고아였던 필드를 되살린다) */
@@ -12864,7 +12867,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       }
       /* 2.320 — 오늘의 하루 시간표는 **루틴 탭**이 맡는다(사용자: 오늘은 셋만). 다른 날짜에선 여기 그대로 */
       if(!_todaySimple)h+=rDayHours(calAnchor);
-      /* 2.320 — 오늘의 예정 훈련·내가 만든 훈련 체크는 **루틴 탭**으로(사용자: 오늘은 셋만) */
+      /* 2.320 — 오늘의 예정 훈련·내가 만든 훈련 체크는 오늘 카드에서 뺐다(사용자: 오늘은 셋만).
+         2.923 — 그 체크는 오늘 카드 아래 «오늘 루틴»(rTodayRoutine)이 맡는다 */
       if(_todaySimple)pl3=[];
       if(pl3.length) pl3.forEach(function(t){
         var on=isDone(calAnchor,t.id);
@@ -12890,6 +12894,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     return h;
   }
   function bindCal(){
+    try{ bindTodayRoutine(); }catch(e){ console.warn('오늘 루틴 손잡이 실패',e); }   /* 2.923 */
     var ts=document.getElementById('teamScheduleOpen');
     if(ts)ts.onclick=function(){try{parent.postMessage({source:'idp',type:'openSchedule'},'*');}catch(_){}};
     var seg=document.getElementById('calSeg');
@@ -13109,11 +13114,52 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var m=v.match(/^(\d{1,2}):(\d{2})\s+(.+)$/);
     if(m&&+m[1]<=24&&+m[2]<60)return {t:(m[1].length<2?'0':'')+m[1]+':'+m[2],s:m[3].trim().slice(0,40)};
     return {t:'',s:v.slice(0,40)}; }
+  /* ══ 2.923 · 일지 «오늘 루틴» — 체크하는 곳은 여기 하나(사용자 «일지에 루틴…» → 목업 ③ → «진행해줘»).
+     선수가 매일 여는 화면이 일지라, 오늘 할 일 체크도 여기 있어야 실제로 쓰인다. 틀은 목표 › 루틴(«편집 ›»).
+     · 오늘 요일의 루틴 + 그 요일 개인 훈련(rtMerged) · 예정에 없던 개인 훈련은 아래 작은 줄에서.
+     · 오늘 루틴도 개인 훈련도 없으면 카드를 그리지 않는다(빈 카드로 일지를 늘리지 않는다).
+     · 코치(ro)에게는 그리지 않는다 — 체크는 선수만 본다(사용자 결정). 코치는 목표 › 루틴에서 틀만 본다.
+     ⚠ 2.320 «오늘은 셋만»은 오늘 카드(daycard) 안의 입력 얘기다 — 이 카드는 그 밖, 오늘 카드 바로 아래에 선다. */
+  function rTodayRoutine(dt){
+    if(ro())return '';
+    var rows=rtMerged(dayIdx(dt));
+    var inRows=rows.filter(function(r){return r.k==='t';}).map(function(r){return r.tr.id;});
+    var extra=(doc.trainings||[]).filter(function(t){ return inRows.indexOf(t.id)<0; });
+    if(!rows.length&&!extra.length)return '';
+    var done=0; rows.forEach(function(r){ if(r.k==='t'?isDone(dt,r.tr.id):rtChecked(dt,rtKey(r)))done++; });
+    var row=function(on,attr,tm,tx,trId,tagLb){
+      return '<div class="rtd-row'+(on?' on':'')+'"><button type="button" class="rtd-ck'+(on?' on':'')+'" '+attr
+        +' aria-pressed="'+(on?'true':'false')+'" aria-label="'+(on?'완료 취소: ':'완료: ')+esc(tx)+'"></button>'
+        +'<span class="rtd-tm">'+(tm?esc(tm):'—')+'</span><span class="rtd-tx">'+esc(tx)+'</span>'
+        +(trId?'<button type="button" class="rtd-tag" data-trtr="'+esc(trId)+'">'+tagLb+'</button>':'')+'</div>'; };
+    var h='<section class="card rtd-card rtd-today"><div class="rtd-head"><div class="rtd-ttl"><b>오늘 루틴</b><span>'
+      +(rows.length?(done+' / '+rows.length+' 했어요'):'오늘 루틴은 비어 있어요')+'</span></div>'
+      +'<button type="button" class="rtd-edit" data-trgo>편집 ›</button></div>';
+    if(rows.length)h+='<div class="rtd-prog" aria-hidden="true"><i style="width:'+Math.round(done/rows.length*100)+'%"></i></div>';
+    if(rows.length)h+='<div class="rtd-list">'+rows.map(function(r){
+      if(r.k==='t')return row(isDone(dt,r.tr.id),'data-trtk="'+esc(r.tr.id)+'"',String(r.t||'').trim(),String(r.tr.title||'훈련'),r.tr.id,'개인 훈련 ›');
+      var key=rtKey(r); return row(rtChecked(dt,key),'data-trck="'+esc(key)+'"',String(r.t||'').trim(),String(r.s||''),'',''); }).join('')+'</div>';
+    if(extra.length)h+='<div class="rtd-sub">예정에 없던 개인 훈련 — 했으면 체크</div><div class="rtd-list">'+extra.map(function(t){
+      return row(isDone(dt,t.id),'data-trtk="'+esc(t.id)+'"',String(t.time||'').trim(),String(t.title||'훈련'),t.id,'열기 ›'); }).join('')+'</div>';
+    h+='<div class="rtd-foot">체크는 그날만 남아요 — 내일은 새로 시작합니다.</div></section>';
+    return h;
+  }
+  function bindTodayRoutine(){
+    if(ro())return;
+    var t0=new Date();t0.setHours(0,0,0,0);
+    [].forEach.call(wrap.querySelectorAll('[data-trck]'),function(b){ b.onclick=function(){ rtToggle(t0,b.dataset.trck); render(); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-trtk]'),function(b){ b.onclick=function(){ toggleDone(t0,b.dataset.trtk); render(); }; });
+    [].forEach.call(wrap.querySelectorAll('[data-trtr]'),function(b){
+      b.onclick=function(){ var t=(doc.trainings||[]).filter(function(x){return x.id===b.dataset.trtr;})[0]; if(t)openEditor(t); }; });
+    var go=wrap.querySelector('[data-trgo]');
+    if(go)go.onclick=function(){ _rtPick=null; _rtEdit=false; curL='routine'; render(); try{ window.scrollTo(0,0); }catch(_){} };
+  }
   function rRoutine(){
     var t0=new Date();t0.setHours(0,0,0,0);
     var _gfSeg=''; try{ _gfSeg=rGoalFamSeg(); }catch(_){}   /* 2.321 */
     var tIdx=dayIdx(t0), pick=(_rtPick==null)?tIdx:_rtPick, isToday=pick===tIdx;
-    var edit=!ro()&&_rtEdit, canCk=isToday&&!ro();
+    /* 2.923 — 체크는 **일지 «오늘»** 한 곳에서(사용자 «진행해줘» — 체크하는 곳을 하나로). 이 탭은 틀을 정하는 곳이다 */
+    var edit=!ro()&&_rtEdit, canCk=false;
     var plan=(doc.rtDay&&doc.rtDay[pick])||[];
     var rows=rtMerged(pick);
     var h=_gfSeg;
@@ -13121,7 +13167,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     h+='<div class="rt-days" role="group" aria-label="요일">'+DAYS.map(function(nm,i){ var n=rtMerged(i).length;
       return '<button type="button" class="rt-day'+(i===pick?' on':'')+(i===tIdx?' today':'')+'" data-rtd="'+i+'" aria-pressed="'+(i===pick?'true':'false')+'" aria-label="'+nm+'요일 '+n+'개'+(i===tIdx?' · 오늘':'')+'">'+nm+'<u>'+(n||'·')+'</u></button>'; }).join('')+'</div>';
     var done=0; if(canCk)rows.forEach(function(r){ if(r.k==='t'?isDone(t0,r.tr.id):rtChecked(t0,rtKey(r)))done++; });
-    var sub=ro()?('선수가 정한 '+DAYS[pick]+'요일 루틴'):canCk?(rows.length?(done+' / '+rows.length+' 했어요'):'아직 비어 있어요'):'체크는 그 요일에 — 지금은 목록만 봐요';
+    var sub=ro()?('선수가 정한 '+DAYS[pick]+'요일 루틴'):rows.length?('매주 '+DAYS[pick]+'요일에 떠요 · 오늘 체크는 일지에서'):'아직 비어 있어요';
     h+='<div class="card rtd-card"><div class="rtd-head"><div class="rtd-ttl"><b>'+DAYS[pick]+'요일'+(isToday?' · 오늘':'')+'</b><span>'+sub+'</span></div>'
       +(!ro()?'<button type="button" class="rtd-edit" data-rtedit aria-pressed="'+(edit?'true':'false')+'">'+(edit?'완료':'편집')+'</button>':'')+'</div>';
     if(canCk&&rows.length)h+='<div class="rtd-prog" aria-hidden="true"><i style="width:'+Math.round(done/rows.length*100)+'%"></i></div>';
@@ -13187,19 +13233,6 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       }
     }
     h+='</div>';
-    if(canCk&&!edit){
-      /* 오늘 요일에 없는 개인 훈련도 했으면 체크할 수 있어야 한다(예전 «오늘 할 훈련»의 «예정 아님» 줄) */
-      var inRows=rows.filter(function(r){return r.k==='t';}).map(function(r){return r.tr.id;});
-      var extra=(doc.trainings||[]).filter(function(t){ return inRows.indexOf(t.id)<0; });
-      if(extra.length){
-        h+='<div class="card rtd-card rtd-extra"><div class="rtd-ttl"><b>다른 개인 훈련</b><span>오늘 예정은 아니지만 했으면 체크</span></div><div class="rtd-list">'
-          +extra.map(function(t){ var on=isDone(t0,t.id);
-            return '<div class="rtd-row'+(on?' on':'')+'"><button type="button" class="rtd-ck'+(on?' on':'')+'" data-rttk="'+esc(t.id)+'" aria-pressed="'+(on?'true':'false')+'" aria-label="'+(on?'완료 취소: ':'완료: ')+esc(t.title||'훈련')+'"></button>'
-              +'<span class="rtd-tm">'+(t.time?esc(t.time):'—')+'</span><span class="rtd-tx">'+esc(t.title||'훈련')+'</span><button type="button" class="rtd-tag" data-rttr="'+esc(t.id)+'">열기 ›</button></div>'; }).join('')
-          +'</div></div>';
-      }
-      h+='<div class="rtd-foot">체크는 그날만 남아요 — 내일은 새로 시작합니다.</div>';
-    }
     return h;
   }
   /* 훈련 속살 — 목표·운동·작전판 그림. 읽기(코치) 화면에서만 펼친다 */
@@ -13225,15 +13258,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var t0=new Date();t0.setHours(0,0,0,0);
     var pick=(_rtPick==null)?dayIdx(t0):_rtPick;
     var cur=function(){ return ((doc.rtDay&&doc.rtDay[pick])||[]).map(function(r){return {t:r.t,s:r.s};}); };
-    /* 2.923 — 편집 켜고 끄기 · 오늘 체크(루틴=rtDone, 개인 훈련=doc.done) · 한 줄 추가 */
+    /* 2.923 — 편집 켜고 끄기 · 한 줄 추가(오늘 체크는 일지 «오늘 루틴» 카드 — bindTodayRoutine) */
     var ed=wrap.querySelector('[data-rtedit]');
     if(ed)ed.onclick=function(){ _rtEdit=!_rtEdit; render(); };
-    [].forEach.call(wrap.querySelectorAll('[data-rtck]'),function(b){
-      b.onclick=function(){ rtToggle(t0,b.dataset.rtck); render(); };
-    });
-    [].forEach.call(wrap.querySelectorAll('[data-rttk]'),function(b){
-      b.onclick=function(){ toggleDone(t0,b.dataset.rttk); render(); };
-    });
     var addIn=wrap.querySelector('[data-rtadd]'),addGo=wrap.querySelector('[data-rtaddgo]');
     var addNow=function(){ if(!addIn)return; var it=rtParseAdd(addIn.value); if(!it)return;
       var a=cur(); a.push(it); window.__rtAddFocus=1; put(a); };

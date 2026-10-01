@@ -41,10 +41,13 @@ test('한 줄 추가: «9:00 패스 100개» → 09:00 / 시간 없으면 내용
   assert.deepEqual(a.rtParseAdd('25:00 이상한 시간'),{t:'',s:'25:00 이상한 시간'});
   assert.equal(a.rtParseAdd('   '),null);
 });
-test('화면: 오늘 요일에만 체크, 코치는 목록만, 체크 문구에 재촉 없음',()=>{
-  const r=fn('rRoutine');
-  assert.match(r,/canCk=isToday&&!ro\(\)/);
-  assert.match(r,/체크는 그날만 남아요 — 내일은 새로 시작합니다/);
-  assert.doesNotMatch(r,/못 했|놓쳤|연속/);
-  assert.match(src,/\.rtd-ck\{/);
+test('체크하는 곳은 일지 «오늘 루틴» 하나 — 루틴 탭은 틀만, 코치에겐 카드 없음, 재촉 문구 없음',()=>{
+  const card=fn('rTodayRoutine'),tab=fn('rRoutine');
+  assert.match(card,/if\(ro\(\)\)return '';/,'코치(읽기 전용)에게는 그리지 않는다');
+  assert.match(card,/if\(!rows\.length&&!extra\.length\)return '';/,'오늘 할 것이 없으면 빈 카드를 그리지 않는다');
+  assert.match(card,/체크는 그날만 남아요 — 내일은 새로 시작합니다/);
+  assert.doesNotMatch(card,/못 했|놓쳤|연속/);
+  assert.match(tab,/canCk=false/,'루틴 탭은 틀을 정하는 곳');
+  assert.match(src,/if\(_todaySimple\)\{ try\{ h\+=rTodayRoutine\(calAnchor\);/,'일지 오늘 카드 바로 아래');
+  assert.match(src,/function bindCal\(\)\{\n    try\{ bindTodayRoutine\(\);/);
 });
