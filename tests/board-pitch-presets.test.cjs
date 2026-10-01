@@ -12,6 +12,7 @@ const implementation=[
   part('/* Personal board appearance is restored only after its account is verified.','</script>'),
   part('const state={orientation:','function normPitchView('),
   'globalThis.state=state;',
+  part('/* ══ 2.929 · 보드 설정은 보드마다','const EQUIP_TYPES='),
   part('function captureSnap(){','function renderPitchImg(){'),
   part('window.__setPitchImg=function(u){','window.__getPitchN=function(){'),
   part('function loadSnap(s,opts){','/* 저장 무결성 자가점검:'),
@@ -210,4 +211,65 @@ test('clearing board defaults restores the previous blank-new-board behavior',()
   const created=h.c.captureSnap();
   assert.deepEqual(created.players,[]);assert.deepEqual(created.equipment,[]);assert.deepEqual(created.drawings,[]);
   assert.equal(created.pitchTheme,'train');assert.equal(created.label,'num');
+});
+
+/* ── 2.929 · 보드 설정은 보드마다(사용자 «쉐이퍼·등번호를 한 보드에서 바꿔도 다른 저장분엔 안 번지게») ── */
+test('2.929 each saved board keeps its own look and missing settings use defaults, not the previous board',()=>{
+  const h=setup();
+  h.c.loadSnap({players:[],tokShape:'shaper',label:'pos',lines:false,gridType:'thirds',tokenScale:0.8,chip3d:true,grassM:10,trainGridM:'3',ballStyle:'1970'});
+  let lk=h.c.__lookNow();
+  assert.equal(lk.tokShape,'shaper');assert.equal(lk.label,'pos');assert.equal(lk.lines,false);assert.equal(lk.chip3d,true);assert.equal(lk.grassM,10);assert.equal(lk.trainGridM,'3');
+  const cap=h.c.captureSnap();
+  assert.equal(cap.tokShape,'shaper');assert.equal(cap.chip3d,true);assert.equal(cap.grassM,10);assert.equal(cap.trainGridM,'3');assert.equal(cap.label,'pos');
+  /* 옛 저장분(설정 칸 없음)은 앞서 연 보드의 쉐이퍼·포지션 표시를 물려받지 않는다 */
+  h.c.loadSnap({players:[{id:5,x:1,y:1}]});
+  lk=h.c.__lookNow();
+  assert.equal(lk.tokShape,'circle');assert.equal(lk.label,'num');assert.equal(lk.lines,true);assert.equal(lk.gridType,'grid15');
+  assert.equal(lk.chip3d,false);assert.equal(lk.grassM,0);assert.equal(lk.trainGridM,'def');
+  /* 표시 «없음»으로 저장한 보드는 그대로 */
+  h.c.loadSnap({players:[],label:'none',tokShape:'shirt'});
+  assert.equal(h.c.__lookNow().label,'none');assert.equal(h.c.__lookNow().tokShape,'shirt');
+});
+
+test('2.929 changing a board setting never writes the old device keys and freezes the legacy default once',()=>{
+  const stored={cs_tokshape:'shirt',cs_chip3d:'1'};
+  const h=setup({stored});
+  h.c.loadSnap({players:[]});
+  assert.equal(h.c.__lookNow().tokShape,'shirt','old boards keep the look this device used before');
+  assert.equal(h.c.__lookNow().chip3d,true);
+  assert.equal(h.values.has('cs_board_lookdef_v1'),false,'reading must not write');
+  h.c.setTokShape('shaper');
+  assert.equal(h.c.__lookNow().tokShape,'shaper');
+  assert.equal(h.values.get('cs_tokshape'),'shirt','the shared device key is no longer written');
+  assert.equal(JSON.parse(h.values.get('cs_board_lookdef_v1')).tokShape,'shirt');
+  /* 선수단 화면이 자기 운동장 때문에 cs_tokshape 를 바꿔도 작전판의 옛 기본값은 움직이지 않는다 */
+  h.values.set('cs_tokshape','circle');
+  h.c.loadSnap({players:[]});
+  assert.equal(h.c.__lookNow().tokShape,'shirt');
+  h.c.setTokShape('bogus');assert.equal(h.c.__lookNow().tokShape,'shirt','unknown shapes are ignored');
+});
+
+test('2.929 saved board defaults carry the look into new boards; blank pages keep the current page look',()=>{
+  const h=setup();
+  h.c.loadSnap({players:[],tokShape:'shirt',label:'pos',chip3d:true});
+  assert.equal(h.c.__psSaveBoardDefault(),true);
+  h.c.loadSnap({players:[],tokShape:'shaper',label:'none',chip3d:false});
+  h.c.newBoardItem('board');
+  let lk=h.c.__lookNow();
+  assert.equal(lk.tokShape,'shirt');assert.equal(lk.label,'pos');assert.equal(lk.chip3d,true);
+  h.c.loadSnap({players:[{id:1,x:1,y:1}],tokShape:'shaper',label:'fpos',grassM:5});
+  const page=h.c.blankSnap();
+  assert.equal(page.tokShape,'shaper');assert.equal(page.label,'fpos');assert.equal(page.grassM,5);assert.deepEqual(copy(page.players),[]);
+});
+
+test('2.929 scenes of one board share its settings while their players stay untouched',()=>{
+  const h=setup();
+  h.c.loadSnap({players:[],tokShape:'shaper',label:'num'});
+  h.c.anim={frames:[{snap:{players:[{id:1,x:10,y:10}],tokShape:'circle',label:'none'}},{snap:{players:[{id:1,x:90,y:90}],tokShape:'shirt',label:'pos'}}]};
+  h.c.lookStampScenes();
+  h.c.anim.frames.forEach(f=>{assert.equal(f.snap.tokShape,'shaper');assert.equal(f.snap.label,'num');});
+  assert.equal(h.c.anim.frames[1].snap.players[0].x,90);
+  /* 장면을 열 때 keepLook — 설정은 지금 보드 것 */
+  h.c.loadSnap({players:[],tokShape:'circle',label:'none'},{keepLook:true});
+  assert.equal(h.c.__lookNow().tokShape,'shaper');assert.equal(h.c.__lookNow().label,'num');
 });
