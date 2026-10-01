@@ -5606,6 +5606,8 @@ function psSelBarLayout(){
   try{ var fb=document.getElementById("ps-command-dock")||document.getElementById("floatBar");
        if(fb && getComputedStyle(fb).display!=="none"){ var fr=fb.getBoundingClientRect();
          if(fr.height>0) below=Math.max(0, Math.round(sr.bottom-fr.top)); } }catch(_){ }
+  /* 2.931 — 폰 미팅의 아래 줄(#ksBot)도 무대 아래를 먹는다. 안 세면 운동장 아래 52px 이 그 줄 밑에 깔린다(실측) */
+  try{ var kbt=document.getElementById("ksBot"); if(kbt&&getComputedStyle(kbt).display!=="none"){ var kr=kbt.getBoundingClientRect(); if(kr.height>0) below=Math.max(below, Math.round(sr.bottom-kr.top)); } }catch(_){ }
   /* ══ 2.563 · 띠 자리를 **늘 비워 둔다** ═════════════════════════════════════════
      사용자: "이거 뜨면 보드가 작아지는데 이게 최선일까? 보드위로 그냥 뜨게 하는게 나을까?"
      실측으로 셋을 견줬다(판 698 · 운동장 641 · 위아래 빈 잔디 28씩 · 띠 50):
@@ -16789,7 +16791,8 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 (function(){
   if(window.__ksInit)return; window.__ksInit=1;
   window.__ksTransition="slide";
-  var built=false,strip,ov,ed,prog,zL,zR,trSel,hd,top,edOpen=false;   /* 2.930 — top = 위 한 줄 도구줄 */
+  var built=false,strip,ov,ed,prog,zL,zR,trSel,hd,top,bot,edOpen=false;   /* 2.930 — top = 위 한 줄 도구줄 · 2.931 — bot = 폰 아래 줄(자주 쓰는 넷) */
+  function ksPhone(){try{return window.matchMedia("(max-width:600px)").matches;}catch(_){return false;}}   /* 2.931 — 폰 판(가로 썸네일 줄·아래 줄)과 같은 경계 */
   function M(){return window.__meet;}
   function idx(){return M()?M().idx():-1;}
   function frames(){try{return anim.slides;}catch(e){return M()?M().frames():[];}}
@@ -16852,7 +16855,8 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 
   function build(){
     if(built)return; var stg=document.getElementById("boardStage")||document.body;
-    prog=D("ksProg"); ov=D("ksOv"); strip=D("ksStrip"); ed=D("ksEd"); zL=D("ksZoneL"); zR=D("ksZoneR"); trSel=D("ksTr"); hd=D("ksHead"); top=D("ksTop");
+    prog=D("ksProg"); ov=D("ksOv"); strip=D("ksStrip"); ed=D("ksEd"); zL=D("ksZoneL"); zR=D("ksZoneR"); trSel=D("ksTr"); hd=D("ksHead"); top=D("ksTop"); bot=D("ksBot");
+    bot.setAttribute("role","toolbar"); bot.setAttribute("aria-label","미팅 — 자주 쓰는 것");
     top.setAttribute("role","toolbar"); top.setAttribute("aria-label","미팅 도구");
     hd.innerHTML='<input id="ksHeadIn" maxlength="80" placeholder="슬라이드 제목">';
     hd.querySelector("#ksHeadIn").addEventListener("input",function(e){var f=frames()[idx()];if(f){f.title=e.target.value;ovRender();stripRender();edSync();}});
@@ -16860,7 +16864,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     /* 2.930 — 페이지 보기(넓은 화면)에서는 이 칸이 오른쪽에 늘 서는 «이 슬라이드» 칸이 된다(맨 위 문구·운동장 편집 줄은 그때만) */
     ed.innerHTML='<div class="kl">이 슬라이드</div><label class="ks-fl" for="ksTitle">제목</label><input id="ksTitle" placeholder="제목 (예: 후방 빌드업)"><label class="ks-fl" for="ksPoints">메모 <span>한 줄에 하나</span></label><textarea id="ksPoints" placeholder="포인트 — 한 줄에 하나"></textarea>'
       +'<div class="ks-pgonly"><label class="ks-fl" for="ksBrand">맨 위 문구</label><input id="ksBrand" maxlength="80" placeholder="PROCESS"><p class="ks-tip">글자 크기·굵기·색은 종이에서 그 글을 누르면 바꿀 수 있어요.</p><div class="ks-sep"></div><div class="ks-fl">운동장</div><button type="button" id="ksEditPitch">운동장 편집 ›</button><p class="ks-tip" id="ksOrientTip"></p></div>';
-    [prog,ov,strip,ed,trSel,zL,zR,hd,top].forEach(function(e){stg.appendChild(e);});
+    [prog,ov,strip,ed,trSel,zL,zR,hd,top,bot].forEach(function(e){stg.appendChild(e);});
     ed.querySelector("#ksBrand").addEventListener("input",function(e){var f=frames()[idx()];if(f){f.pageBrand=e.target.value;ovRender();}});
     ed.querySelector("#ksEditPitch").onclick=function(){try{window.__meetingPageEdit();}catch(_){}};
     zL.onclick=function(){if(M())M().go(idx()-1);};
@@ -16870,13 +16874,14 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     ed.querySelector("#ksPoints").addEventListener("input",function(e){var f=frames()[idx()];if(f){f.points=e.target.value.split("\n").map(function(s){return s.trim();}).filter(Boolean);ovRender();}});
     built=true;
   }
-  function ksPop(x,y,items){var ex=document.getElementById("ksPop");if(ex)ex.remove();var m=document.createElement("div");m.className="kspop";m.id="ksPop";items.forEach(function(it){var b=document.createElement("button");b.textContent=it[0];b.onclick=function(ev){ev.stopPropagation();try{it[1]();}catch(_){}m.remove();};m.appendChild(b);});document.body.appendChild(m);var w=m.offsetWidth,hh=m.offsetHeight;m.style.left=Math.max(8,Math.min(x,window.innerWidth-w-8))+"px";m.style.top=Math.max(8,Math.min(y,window.innerHeight-hh-8))+"px";setTimeout(function(){document.addEventListener("click",function cl(){m.remove();document.removeEventListener("click",cl);},{once:true});},0);}
+  function ksPop(x,y,items,above){   /* 2.931 — above: 아래 줄에서 연 메뉴는 버튼 위로 */
+    var ex=document.getElementById("ksPop");if(ex)ex.remove();var m=document.createElement("div");m.className="kspop";m.id="ksPop";items.forEach(function(it){var b=document.createElement("button");b.textContent=it[0];b.onclick=function(ev){ev.stopPropagation();try{it[1]();}catch(_){}m.remove();};m.appendChild(b);});document.body.appendChild(m);var w=m.offsetWidth,hh=m.offsetHeight;m.style.left=Math.max(8,Math.min(x,window.innerWidth-w-8))+"px";m.style.top=Math.max(8,Math.min(above?y-hh-4:y,window.innerHeight-hh-8))+"px";setTimeout(function(){document.addEventListener("click",function cl(){m.remove();document.removeEventListener("click",cl);},{once:true});},0);}
   var LAYOUTS=[["빈 작전판","",[]],["공격 국면","공격 국면",[]],["수비 국면","수비 국면",[]],["전환 (공↔수)","전환",[]],["세트피스","세트피스",[]],["상대 분석","상대 분석",["강점 — ","약점 — ","세트피스 — ","키 플레이어 — "]]];
   function ksLayoutMenu(a){var r=a.getBoundingClientRect();ksPop(r.left,r.bottom+4,LAYOUTS.map(function(L){return [L[0],function(){if(M())M().newSlide(L[1],L[2]);}];}));}
-  function ksShowMenu(a){var r=a.getBoundingClientRect();ksPop(r.left,r.bottom+4,[["처음부터",function(){if(M())M().show(true);}],["현재 슬라이드부터",function(){if(M())M().show(false);}]]);}
-  function ksCtxMenu(e,i){ksPop(e.clientX,e.clientY,[["새 슬라이드",function(){if(M()){M().go(i);M().newSlide("",[]);}}],["복제",function(){if(M())M().dup(i);}],["삭제",function(){if(M())M().del(i);}],["위로 이동",function(){if(M())M().move(i,i-1);}],["아래로 이동",function(){if(M())M().move(i,i+1);}]]);}
+  function ksShowMenu(a,above){var r=a.getBoundingClientRect();ksPop(r.left,above?r.top:r.bottom+4,[["처음부터",function(){if(M())M().show(true);}],["현재 슬라이드부터",function(){if(M())M().show(false);}]],above);}
+  function ksCtxMenu(e,i){ksPop(e.clientX,e.clientY,[["새 슬라이드",function(){if(M()){M().go(i);M().newSlide("",[]);}}],["복제",function(){if(M())M().dup(i);}],["삭제",function(){if(M())M().del(i);}],[ksPhone()?"앞으로 이동":"위로 이동",function(){if(M())M().move(i,i-1);}],[ksPhone()?"뒤로 이동":"아래로 이동",function(){if(M())M().move(i,i+1);}]]);}
   function stripRender(){
-    if(!strip)return; var fr=frames(),ci=idx(); strip.innerHTML="";
+    if(!strip)return; var fr=frames(),ci=idx(),_sl=strip.scrollLeft,_st=strip.scrollTop; strip.innerHTML="";   /* 2.931 — 다시 그려도 스크롤 자리 유지(폰 가로 줄은 넘길 때마다 맨 앞으로 튀었다) */
     var bar=document.createElement("div");bar.className="ksbar";
     var direction=document.createElement("div");direction.className="ks-direction";direction.setAttribute("role","group");direction.setAttribute("aria-label","미팅 페이지 방향");
     [["landscape","가로형"],["portrait","세로형"]].forEach(function(x){var b=document.createElement("button");b.type="button";b.textContent=x[1];b.setAttribute("aria-pressed",String(meetingPdfOrientation(fr)===x[0]));b.onclick=function(){window.__meetingPageChoose(x[0]);};direction.appendChild(b);});bar.appendChild(direction);
@@ -16890,19 +16895,38 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     bexp.onclick=function(e){var r=e.currentTarget.getBoundingClientRect();ksPop(r.left,r.bottom+4,[["PDF로 내보내기",function(){exportMeetingPDF();}],["PPT로 내보내기",function(){try{exportPPTX();}catch(_){}}]]);};
     var gap=document.createElement("span");gap.className="ks-gap";
     bar.appendChild(bn);bar.appendChild(bt);
-    try{ var bmm=window.__meetMatchBtn&&window.__meetMatchBtn(); if(bmm)bar.appendChild(bmm); }catch(_){}   /* 2.928 — 경기 연결 */
+    var bmm=null; try{ bmm=window.__meetMatchBtn&&window.__meetMatchBtn(); if(bmm)bar.appendChild(bmm); }catch(_){}   /* 2.928 — 경기 연결 */
     bar.appendChild(gap);bar.appendChild(bs);bar.appendChild(bexp);bar.appendChild(bsave);
     if(top){top.innerHTML="";top.appendChild(bar);}else strip.appendChild(bar);   /* 2.930 — 위 한 줄 */
+    /* 2.931 — 폰 아래 줄(목업 안 A · 폰): 자주 쓰는 넷을 엄지 자리에. 같은 일을 하는 위 줄 버튼을 그대로 부른다(동작을 두 벌 두지 않는다).
+       위 줄에서는 이 넷·새 슬라이드(썸네일 줄 끝 ＋)를 폰에서만 숨긴다 → 위에는 방향 · 보관함 저장만 */
+    if(bot){ bot.innerHTML="";
+      var kb=function(label,cls,fn,menu){var b=document.createElement("button");b.type="button";b.className=cls;b.textContent=label;if(menu)b.setAttribute("aria-haspopup","menu");b.onclick=fn;bot.appendChild(b);return b;};
+      kb("제목·메모","kb-txt"+(edOpen?" on":""),function(){bt.onclick();}).setAttribute("aria-pressed",String(!!edOpen));
+      kb(window.__meetingPageActive?"운동장 편집":"페이지 보기","kb-mode",function(){editBoard.onclick();});
+      kb("슬라이드쇼","kb-show",function(e){ksShowMenu(e.currentTarget,true);},true);
+      kb("더보기","kb-more",function(e){var r=e.currentTarget.getBoundingClientRect(),it=[];
+        if(bmm)it.push([(bmm.textContent||"").trim()||"경기 연결",function(){bmm.click();}]);
+        it.push(["PDF로 내보내기",function(){exportMeetingPDF();}],["PPT로 내보내기",function(){try{exportPPTX();}catch(_){}}]);
+        /* 슬라이드 전환도 여기(폰에서 #ksTr 은 운동장 귀퉁이를 덮어 숨긴다) — 같은 값·같은 고르개 */
+        [["slide","슬라이드"],["fade","페이드"],["none","없음"]].forEach(function(t){it.push(["전환: "+t[1]+(window.__ksTransition===t[0]?" ✓":""),function(){window.__ksTransition=t[0];try{var sel=document.getElementById("ksTrSel");if(sel)sel.value=t[0];}catch(_){}}]);});
+        ksPop(Math.max(8,r.right-180),r.top,it,true);},true);
+    }
     fr.forEach(function(f,i){
       var c=document.createElement("div");c.className="ksc"+(i===ci?" on":"");c.setAttribute("draggable","true");
       c.innerHTML='<div class="ktb">'+(f.thumb||'')+'</div><div class="kn">'+esc(f.title||("슬라이드 "+(i+1)))+'</div><span class="knum">'+(i+1)+'</span><button class="kx" title="삭제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button><button class="kdup" title="복제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" style="vertical-align:-1px"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button>';
-      c.onclick=function(e){ if(e.target.closest(".kx")){if(M())M().del(i);return;} if(e.target.closest(".kdup")){if(M())M().dup(i);return;} if(M())M().go(i); };
+      c.onclick=function(e){ if(e.target.closest(".kx")){if(M())M().del(i);return;} if(e.target.closest(".kdup")){if(M())M().dup(i);return;} if(i===ci&&ksPhone()){ksCtxMenu(e,i);return;}   /* 2.931 — 폰: 지금 슬라이드를 한 번 더 누르면 복제·삭제·이동(2.458 팀 칩 재탭과 같은 문법) */ if(M())M().go(i); };
       c.oncontextmenu=function(e){e.preventDefault();ksCtxMenu(e,i);};
       c.addEventListener("dragstart",function(e){window.__ksDrag=i;try{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","x");}catch(_){}});
       c.addEventListener("dragover",function(e){e.preventDefault();});
       c.addEventListener("drop",function(e){e.preventDefault();var from=window.__ksDrag;window.__ksDrag=null;if(from!=null&&M())M().move(from,i);});
       strip.appendChild(c);
     });
+    /* 2.931 — 폰 가로 줄 끝의 ＋(목업 안 A · 폰). 넓은 화면은 위 줄 «＋ 새 슬라이드»가 맡아 CSS 로 숨긴다 */
+    var kadd=document.createElement("button");kadd.type="button";kadd.className="ksadd ksadd-ph";kadd.setAttribute("aria-label","새 슬라이드");kadd.textContent="＋";kadd.onclick=function(e){ksLayoutMenu(e.currentTarget);};strip.appendChild(kadd);
+    strip.scrollLeft=_sl;strip.scrollTop=_st;
+    try{ var _on=strip.querySelector(".ksc.on"); if(_on){ if(ksPhone()){var a0=_on.offsetLeft,a1=a0+_on.offsetWidth; if(a0<strip.scrollLeft+8)strip.scrollLeft=a0-12; else if(a1>strip.scrollLeft+strip.clientWidth-8)strip.scrollLeft=a1-strip.clientWidth+12;}
+      else {var t0=_on.offsetTop,t1=t0+_on.offsetHeight; if(t0<strip.scrollTop)strip.scrollTop=t0-8; else if(t1>strip.scrollTop+strip.clientHeight)strip.scrollTop=t1-strip.clientHeight+8;} } }catch(_){}   /* 지금 슬라이드는 늘 보이게 — 줄만 움직인다(화면은 안 움직인다) */
     /* 1.541 — 손가락 순서 바꾸기(아이패드에서 장면이 안 끌리던 문제). 첫 줄의 도구 바(.ksbar)는 제외된다. */
     try{ PSTouchSort(strip,".ksc",function(a,b){ if(M())M().move(a,b); },{ctl:".kx,.kdup"}); }catch(_){}
   }
@@ -17055,7 +17079,35 @@ body.meet-portrait #ksStrip .ksc .ktb{height:auto;aspect-ratio:210/297;backgroun
   body.meeting-page-mode #ksTop .ksbar .kstxt{display:none;}
 }
 @media(max-width:600px){#ksTop .ksbar button{height:40px;}#ksTop .ksbar .ks-direction button{height:36px;}}   /* 2.930 — 폰 손가락 */
-@media(max-width:600px){body.meeting-page-mode #ksStrip{width:108px;padding:6px 4px;}body.meeting-page-mode #ksPagePreview{left:108px;width:calc(100% - 108px);}body.meeting-page-mode #ksEd{left:112px;width:calc(100% - 120px);}}
+#ksBot{display:none;}
+#ksStrip .ksadd-ph{display:none;}
+#ksHead.empty{padding:0;font-size:inherit;line-height:inherit;}   /* 2.931 — 제목이 비면 붙는 .empty 가 전역 «.empty{padding:46px 0}»(빈 상태 문구용)에 걸려 제목 칸이 46px 아래로 밀려 운동장을 덮었다 */
+/* 2.931 · 폰 판(목업 안 A · 폰) — 왼쪽 108px 세로 띠가 375 폭의 ⅓ 을 먹고 종이를 좁혔다.
+   위 도구줄(52) → 가로 썸네일 줄(82) → 종이 → 아래 줄(64, 제목·메모 · 운동장 · 슬라이드쇼 · 더보기).
+   경계는 JS ksPhone() 과 같은 600px. 운동장 편집 화면도 같은 줄 사이에 앉는다. */
+@media(max-width:600px){
+  body.meet-mode:not(.focus-board) #ksStrip{top:52px;bottom:auto;left:0;right:0;width:auto;height:82px;box-sizing:border-box;flex-direction:row;align-items:center;gap:8px;padding:9px 12px;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line,#E3E6EA);scrollbar-width:none;}
+  body.meet-mode:not(.focus-board) #ksStrip::-webkit-scrollbar{display:none}
+  body.fmdark.meet-mode:not(.focus-board) #ksStrip{background:var(--panel,#1B1E23);}   /* 세로 띠용 가로 그라데이션이 가로 줄에선 얼룩이 된다 — 위·아래 줄과 같은 면 */
+  #ksStrip .ksc{flex:0 0 auto;width:90px;height:64px;box-sizing:border-box;border-radius:6px;}
+  body.meet-portrait #ksStrip .ksc{width:46px;}
+  #ksStrip .ksc .ktb,body.meet-portrait #ksStrip .ksc .ktb{height:100%;aspect-ratio:auto;}
+  #ksStrip .ksc .kn,#ksStrip .ksc .kx,#ksStrip .ksc .kdup{display:none;}
+  #ksStrip .ksc .knum{left:2px;top:2px;font-size:9px;padding:0 4px;border-radius:4px;}
+  #ksStrip .ksadd-ph{display:block;flex:0 0 auto;width:46px;height:64px;padding:0;border-radius:6px;font-size:18px;color:var(--txt-dim,#646A73);border-color:var(--line-2,#C9CDD3);}
+  #ksTop .ksbar .ksmode,#ksTop .ksbar .ksnew,#ksTop .ksbar .kstxt,#ksTop .ksbar .ksmatch,#ksTop .ksbar .ksshow,#ksTop .ksbar .ksexp{display:none;}
+  body.meet-mode:not(.focus-board) #ksBot{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;position:absolute;left:0;right:0;bottom:0;height:64px;box-sizing:border-box;padding:10px 12px;z-index:58;background:var(--panel,#fff);border-top:1px solid var(--line,#E3E6EA);}
+  #ksBot button{min-width:0;height:44px;padding:0 4px;border-radius:10px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--txt,#14161A);font-family:inherit;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+  #ksBot .kb-txt.on{background:var(--accent-soft,#EDF2FE);border-color:var(--blue,#3a6df0);color:var(--blue,#2A55C8);}
+  #ksBot .kb-show{background:#14161A;border-color:#14161A;color:#fff;font-weight:700;}
+  body.fmdark #ksBot .kb-show{background:#F2F3F5;border-color:#F2F3F5;color:#14161A;}
+  body.meeting-page-mode #ksPagePreview{left:0;width:100%;top:134px;height:calc(100% - 198px);}
+  body.meet-mode:not(.focus-board) #ksEd.on{left:8px;right:8px;width:auto;bottom:72px;max-height:calc(100% - 214px);overflow-y:auto;box-sizing:border-box;}
+  html body.meet-mode:not(.focus-board):not(#_):not(#__):not(#___) #boardStage{padding-top:140px!important;padding-left:0!important;}   /* ⚠ 옛 «meet-mode #boardStage{padding-left:162px}»(세로 띠 몫)가 폰에서는 이겨 운동장을 오른쪽 213px 에 몰았다. 아래 여백은 psSelBarLayout·2.607 이 #ksBot 까지 재서 인라인으로 넣는다 */
+  body.meet-mode:not(.focus-board) #ksProg{top:134px;}
+  body.meet-mode:not(.focus-board) #ksHead{top:144px;width:calc(100% - 24px);}
+  body.meet-mode:not(.focus-board) #ksTr{display:none;}   /* 운동장 귀퉁이를 덮는다 — 폰은 «더보기»의 전환 줄이 맡는다 */
+}
 </style>
 
 <style id="ps-2928-meetmatch">
@@ -18573,6 +18625,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
       var sr=st.getBoundingClientRect(); if(!(sr.width>0&&sr.height>0))return;
       /* 예약 = 도크가 무대 아래를 먹는 만큼(+12)만. 띠 한 줄(50px) 몫은 뺀다. 인라인을 지우면 mobile-polish 의 140px 이 되살아나 오히려 커진다(실측). */
       var below=0; try{ var fb=document.getElementById('ps-command-dock')||document.getElementById('floatBar'); if(fb&&getComputedStyle(fb).display!=='none'){ var fr=fb.getBoundingClientRect(); if(fr.width>0&&fr.height>0)below=Math.max(0,Math.round(sr.bottom-fr.top)); } }catch(_){}
+      try{ var kb=document.getElementById('ksBot'); if(kb&&getComputedStyle(kb).display!=='none'){ var kr=kb.getBoundingClientRect(); if(kr.width>0&&kr.height>0)below=Math.max(below,Math.round(sr.bottom-kr.top)); } }catch(_){}   /* 2.931 — 폰 미팅 아래 줄도 무대 아래를 먹는다 */
       var want=(below+12)+'px'; if(st.style.getPropertyValue('padding-bottom')!==want){ st.style.setProperty('padding-bottom',want,'important'); try{ if(window.applyView)applyView(); }catch(_){} }
       var c=document.querySelector('.sel-ctl'); if(c&&(c.style.top||c.style.bottom||c.style.maxHeight)){ c.style.top=''; c.style.bottom=''; c.style.maxHeight=''; } } }catch(_){} finally{busy=false;} }
   try{ new MutationObserver(fix).observe(st,{attributes:true,attributeFilter:['style']}); }catch(_){}
