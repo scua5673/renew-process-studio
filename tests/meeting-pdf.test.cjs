@@ -45,13 +45,18 @@ test('landscape PDF renders horizontal pitch without changing the saved or activ
  loaded.length=0;c.meetingPdfPicture(slide,false);assert.equal(loaded[0].orientation,'v');
 });
 
-test('PDF pitch fills its entire box even when the board aspect ratio differs',()=>{
+/* 2.930 — 늘여 채우면(2.858) 센터서클이 타원이 됐다. 비율은 지키고, 남는 자리는 그 판의 바탕색으로 채운다(여백 채우기는 유지) */
+test('PDF pitch keeps its aspect ratio and fills the leftover box with the board background',()=>{
  const c=fixture();
  for(const orientation of ['portrait','landscape']){
-  const html=c.buildMeetingPrintDoc([{title:'확대',thumb:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet"><rect width="1000" height="600"/></svg>'}],'미팅',{orientation});
+  const html=c.buildMeetingPrintDoc([{title:'확대',thumb:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" preserveAspectRatio="none"><rect x="0" y="0" width="1000" height="600" fill="#15172b"/></svg>'}],'미팅',{orientation});
   const image=decodeURIComponent(html.match(/src="data:image\/svg\+xml;charset=utf-8,([^"]+)/)[1]);
-  assert.ok(image.includes('preserveAspectRatio="none"'));assert.equal(image.includes('xMidYMid meet'),false);assert.ok(html.includes('object-fit:fill'));
+  assert.ok(image.includes('preserveAspectRatio="xMidYMid meet"'));assert.equal(image.includes('preserveAspectRatio="none"'),false);
+  assert.ok(html.includes('object-fit:contain'));assert.equal(html.includes('object-fit:fill'),false);
+  assert.match(html,/<img alt="슬라이드 1 운동장" style="background:#15172b"/);
  }
+ const plain=c.buildMeetingPrintDoc([{title:'바탕 없음',thumb:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 6"><circle r="1"/></svg>'}],'미팅',{orientation:'portrait'});
+ assert.equal(/<img[^>]*style="background:/.test(plain),false,'no background guessed when the board has none');
 });
 test('saved page orientation survives serialization and does not inherit a different meeting',()=>{
  const c=fixture();c.window.__meetingPdfOrientation='landscape';
