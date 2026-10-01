@@ -10368,7 +10368,9 @@ function buildMeetingPrintDoc(slides,title,opts){
     var svg="";try{svg=meetingPdfPicture(slide,land);}catch(_){}
     svg=svg||slide.thumb||"";if(opts.ink)svg=inkifySVG(svg);
     // Saved thumbnail markup stays an image, so it cannot add active HTML to the print document.
-    var picture=svg?'<img alt="슬라이드 '+(i+1)+' 운동장" src="data:image/svg+xml;charset=utf-8,'+esc(encodeURIComponent(svg.replace(/<svg\b([^>]*)>/i,function(tag){return tag.replace(/\s+preserveAspectRatio\s*=\s*(["']).*?\1/i,"").replace(/>$/,' preserveAspectRatio="none">');})))+'">':'<span>운동장 그림 없음</span>';
+    /* 2.930 — 운동장은 비율을 지키고(늘이면 센터서클이 타원이 된다), 남는 자리는 그 판의 바탕색으로 채운다(2.858 «보드는 여백을 채우고»를 지킨다) */
+    var pitchBg=(function(){var m=/<rect\b[^>]*\bfill="(#[0-9a-fA-F]{3,8}|rgba?\([^"]*\))"/.exec(svg||"");return m?m[1]:"";})();
+    var picture=svg?'<img alt="슬라이드 '+(i+1)+' 운동장"'+(pitchBg?' style="background:'+esc(pitchBg)+'"':'')+' src="data:image/svg+xml;charset=utf-8,'+esc(encodeURIComponent(svg.replace(/<svg\b([^>]*)>/i,function(tag){return tag.replace(/\s+preserveAspectRatio\s*=\s*(["']).*?\1/i,"").replace(/>$/,' preserveAspectRatio="xMidYMid meet">');})))+'">':'<span>운동장 그림 없음</span>';
     for(var start=0;start<rows.length;){
       var end=start,used=0,maxHeight=land?Math.max(100,714-headerHeight):900;while(end<rows.length&&(land||end-start<4)&&used+rows[end].style.height<=maxHeight){used+=rows[end].style.height;end++;}if(end===start)end++;
       if(end<rows.length&&rows[end-1].group===rows[end].group){var boundary=end-1;while(boundary>start&&rows[boundary-1].group===rows[end].group)boundary--;if(boundary>start)end=boundary;}
@@ -10378,7 +10380,7 @@ function buildMeetingPrintDoc(slides,title,opts){
     }
   });
   if(!pages.length)pages.push('<section class="page mp-page"><p>미팅 슬라이드가 없습니다.</p></section>');
-  var css='@page{size:A4 '+(land?'landscape':'portrait')+';margin:6mm;}*{box-sizing:border-box}body{margin:0;color:#172235;background:#fff;font-family:system-ui,sans-serif}.mp-page{width:'+(land?'285':'198')+'mm;height:'+(land?'196':'283')+'mm;page-break-after:always;display:flex;flex-direction:column}.mp-page:last-child{page-break-after:auto}.mp-page header{height:22px;flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-start;font-size:11px;color:#64748b;margin-bottom:4px}.mp-page header b{letter-spacing:2px;color:#172235}.mp-page main{display:flex;flex:1;min-height:0;gap:'+(land?'16':'8')+'px;flex-direction:'+(land?'row':'column')+'}.mp-pitch{display:flex;align-items:center;justify-content:center;overflow:hidden;'+(land?'width:0;height:100%;':'width:100%;')+'flex:1;min-width:0;min-height:0}.mp-pitch img{display:block;width:100%;height:100%;object-fit:fill}.mp-notes{width:'+(land?'320px':'100%')+';order:'+(land?'0':'-1')+';padding:0 8px;min-width:0;flex-shrink:0}.mp-line{font-size:'+size+'px;line-height:'+leading+'px;height:'+leading+'px;white-space:pre;letter-spacing:0}.mp-line.title{font-weight:700}.mp-line.name{color:#64748b}.mp-page footer{padding-top:4px;height:18px;flex-shrink:0;text-align:right;color:#64748b;font-size:10px}@media screen{body{width:'+(land?'297':'210')+'mm;padding:6mm}.mp-page{margin-bottom:12mm;border-bottom:1px solid #e2e8f0}}';
+  var css='@page{size:A4 '+(land?'landscape':'portrait')+';margin:6mm;}*{box-sizing:border-box}body{margin:0;color:#172235;background:#fff;font-family:system-ui,sans-serif}.mp-page{width:'+(land?'285':'198')+'mm;height:'+(land?'196':'283')+'mm;page-break-after:always;display:flex;flex-direction:column}.mp-page:last-child{page-break-after:auto}.mp-page header{height:22px;flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-start;font-size:11px;color:#64748b;margin-bottom:4px}.mp-page header b{letter-spacing:2px;color:#172235}.mp-page main{display:flex;flex:1;min-height:0;gap:'+(land?'16':'8')+'px;flex-direction:'+(land?'row':'column')+'}.mp-pitch{display:flex;align-items:center;justify-content:center;overflow:hidden;'+(land?'width:0;height:100%;':'width:100%;')+'flex:1;min-width:0;min-height:0}.mp-pitch img{display:block;width:100%;height:100%;object-fit:contain}.mp-notes{width:'+(land?'320px':'100%')+';order:'+(land?'0':'-1')+';padding:0 8px;min-width:0;flex-shrink:0}.mp-line{font-size:'+size+'px;line-height:'+leading+'px;height:'+leading+'px;white-space:pre;letter-spacing:0}.mp-line.title{font-weight:700}.mp-line.name{color:#64748b}.mp-page footer{padding-top:4px;height:18px;flex-shrink:0;text-align:right;color:#64748b;font-size:10px}@media screen{body{width:'+(land?'297':'210')+'mm;padding:6mm}.mp-page{margin-bottom:12mm;border-bottom:1px solid #e2e8f0}}';
   return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(title||"미팅")+'</title><style>'+css+'</style></head><body>'+pages.join("")+'</body></html>';
 }
 function exportMeetingPDF(){
@@ -16787,7 +16789,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 (function(){
   if(window.__ksInit)return; window.__ksInit=1;
   window.__ksTransition="slide";
-  var built=false,strip,ov,ed,prog,zL,zR,trSel,hd,edOpen=false;
+  var built=false,strip,ov,ed,prog,zL,zR,trSel,hd,top,edOpen=false;   /* 2.930 — top = 위 한 줄 도구줄 */
   function M(){return window.__meet;}
   function idx(){return M()?M().idx():-1;}
   function frames(){try{return anim.slides;}catch(e){return M()?M().frames():[];}}
@@ -16850,12 +16852,17 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 
   function build(){
     if(built)return; var stg=document.getElementById("boardStage")||document.body;
-    prog=D("ksProg"); ov=D("ksOv"); strip=D("ksStrip"); ed=D("ksEd"); zL=D("ksZoneL"); zR=D("ksZoneR"); trSel=D("ksTr"); hd=D("ksHead");
+    prog=D("ksProg"); ov=D("ksOv"); strip=D("ksStrip"); ed=D("ksEd"); zL=D("ksZoneL"); zR=D("ksZoneR"); trSel=D("ksTr"); hd=D("ksHead"); top=D("ksTop");
+    top.setAttribute("role","toolbar"); top.setAttribute("aria-label","미팅 도구");
     hd.innerHTML='<input id="ksHeadIn" maxlength="80" placeholder="슬라이드 제목">';
     hd.querySelector("#ksHeadIn").addEventListener("input",function(e){var f=frames()[idx()];if(f){f.title=e.target.value;ovRender();stripRender();edSync();}});
     trSel.innerHTML='<select id="ksTrSel"><option value="slide">전환: 슬라이드</option><option value="fade">전환: 페이드</option><option value="none">전환: 없음</option></select>';
-    ed.innerHTML='<div class="kl">이 슬라이드</div><input id="ksTitle" placeholder="제목 (예: 후방 빌드업)"><textarea id="ksPoints" placeholder="포인트 — 한 줄에 하나"></textarea>';
-    [prog,ov,strip,ed,trSel,zL,zR,hd].forEach(function(e){stg.appendChild(e);});
+    /* 2.930 — 페이지 보기(넓은 화면)에서는 이 칸이 오른쪽에 늘 서는 «이 슬라이드» 칸이 된다(맨 위 문구·운동장 편집 줄은 그때만) */
+    ed.innerHTML='<div class="kl">이 슬라이드</div><label class="ks-fl" for="ksTitle">제목</label><input id="ksTitle" placeholder="제목 (예: 후방 빌드업)"><label class="ks-fl" for="ksPoints">메모 <span>한 줄에 하나</span></label><textarea id="ksPoints" placeholder="포인트 — 한 줄에 하나"></textarea>'
+      +'<div class="ks-pgonly"><label class="ks-fl" for="ksBrand">맨 위 문구</label><input id="ksBrand" maxlength="80" placeholder="PROCESS"><p class="ks-tip">글자 크기·굵기·색은 종이에서 그 글을 누르면 바꿀 수 있어요.</p><div class="ks-sep"></div><div class="ks-fl">운동장</div><button type="button" id="ksEditPitch">운동장 편집 ›</button><p class="ks-tip" id="ksOrientTip"></p></div>';
+    [prog,ov,strip,ed,trSel,zL,zR,hd,top].forEach(function(e){stg.appendChild(e);});
+    ed.querySelector("#ksBrand").addEventListener("input",function(e){var f=frames()[idx()];if(f){f.pageBrand=e.target.value;ovRender();}});
+    ed.querySelector("#ksEditPitch").onclick=function(){try{window.__meetingPageEdit();}catch(_){}};
     zL.onclick=function(){if(M())M().go(idx()-1);};
     zR.onclick=function(){if(M())M().go(idx()+1);};
     trSel.querySelector("#ksTrSel").onchange=function(e){window.__ksTransition=e.target.value;};
@@ -16865,24 +16872,27 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   function ksPop(x,y,items){var ex=document.getElementById("ksPop");if(ex)ex.remove();var m=document.createElement("div");m.className="kspop";m.id="ksPop";items.forEach(function(it){var b=document.createElement("button");b.textContent=it[0];b.onclick=function(ev){ev.stopPropagation();try{it[1]();}catch(_){}m.remove();};m.appendChild(b);});document.body.appendChild(m);var w=m.offsetWidth,hh=m.offsetHeight;m.style.left=Math.max(8,Math.min(x,window.innerWidth-w-8))+"px";m.style.top=Math.max(8,Math.min(y,window.innerHeight-hh-8))+"px";setTimeout(function(){document.addEventListener("click",function cl(){m.remove();document.removeEventListener("click",cl);},{once:true});},0);}
   var LAYOUTS=[["빈 작전판","",[]],["공격 국면","공격 국면",[]],["수비 국면","수비 국면",[]],["전환 (공↔수)","전환",[]],["세트피스","세트피스",[]],["상대 분석","상대 분석",["강점 — ","약점 — ","세트피스 — ","키 플레이어 — "]]];
-  function ksLayoutMenu(a){var r=a.getBoundingClientRect();ksPop(r.right+4,r.top,LAYOUTS.map(function(L){return [L[0],function(){if(M())M().newSlide(L[1],L[2]);}];}));}
-  function ksShowMenu(a){var r=a.getBoundingClientRect();ksPop(r.right+4,r.top,[["처음부터",function(){if(M())M().show(true);}],["현재 슬라이드부터",function(){if(M())M().show(false);}]]);}
+  function ksLayoutMenu(a){var r=a.getBoundingClientRect();ksPop(r.left,r.bottom+4,LAYOUTS.map(function(L){return [L[0],function(){if(M())M().newSlide(L[1],L[2]);}];}));}
+  function ksShowMenu(a){var r=a.getBoundingClientRect();ksPop(r.left,r.bottom+4,[["처음부터",function(){if(M())M().show(true);}],["현재 슬라이드부터",function(){if(M())M().show(false);}]]);}
   function ksCtxMenu(e,i){ksPop(e.clientX,e.clientY,[["새 슬라이드",function(){if(M()){M().go(i);M().newSlide("",[]);}}],["복제",function(){if(M())M().dup(i);}],["삭제",function(){if(M())M().del(i);}],["위로 이동",function(){if(M())M().move(i,i-1);}],["아래로 이동",function(){if(M())M().move(i,i+1);}]]);}
   function stripRender(){
     if(!strip)return; var fr=frames(),ci=idx(); strip.innerHTML="";
     var bar=document.createElement("div");bar.className="ksbar";
     var direction=document.createElement("div");direction.className="ks-direction";direction.setAttribute("role","group");direction.setAttribute("aria-label","미팅 페이지 방향");
     [["landscape","가로형"],["portrait","세로형"]].forEach(function(x){var b=document.createElement("button");b.type="button";b.textContent=x[1];b.setAttribute("aria-pressed",String(meetingPdfOrientation(fr)===x[0]));b.onclick=function(){window.__meetingPageChoose(x[0]);};direction.appendChild(b);});bar.appendChild(direction);
-    var editBoard=document.createElement("button");editBoard.textContent=window.__meetingPageActive?"보드 편집":"페이지 보기";editBoard.onclick=function(){if(window.__meetingPageActive)window.__meetingPageEdit();else{window.__meetingPageActive=true;window.__ksRender();}};bar.appendChild(editBoard);
+    var editBoard=document.createElement("button");editBoard.className="ksmode";editBoard.textContent=window.__meetingPageActive?"운동장 편집":"페이지 보기";editBoard.onclick=function(){if(window.__meetingPageActive)window.__meetingPageEdit();else{window.__meetingPageActive=true;window.__ksRender();}};bar.appendChild(editBoard);
     var bn=document.createElement("button");bn.className="ksnew";bn.textContent="＋ 새 슬라이드";bn.onclick=function(e){ksLayoutMenu(e.currentTarget);};
-    var bs=document.createElement("button");bs.className="ksshow";bs.textContent="▶ 슬라이드쇼";bs.onclick=function(e){ksShowMenu(e.currentTarget);};
+    var bs=document.createElement("button");bs.className="ksshow";bs.innerHTML="<svg width='11' height='11' viewBox='0 0 24 24' fill='currentColor' style='vertical-align:-1px'><path d='M7 4l13 8-13 8z'/></svg> 슬라이드쇼";bs.onclick=function(e){ksShowMenu(e.currentTarget);};
     var bt=document.createElement("button");bt.className="kstxt"+(edOpen?" on":"");bt.innerHTML="<svg width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px'><path d='M4 20l1-4L16 5l3 3L8 19z'/><path d='M14 7l3 3'/></svg> 제목·메모";bt.onclick=function(){edOpen=!edOpen;edSync();stripRender();if(edOpen){try{var ti=ed.querySelector("#ksTitle");if(ti)setTimeout(function(){ti.focus();},0);}catch(_){}}};
-    var bsave=document.createElement("button");bsave.className="kssave";bsave.textContent="⤓ 보관함 저장";bsave.onclick=function(){try{if(window.__vaultSave)window.__vaultSave();}catch(_){}};
-    var bppt=document.createElement("button");bppt.className="kspptx";bppt.textContent="⤓ PPT 내보내기";bppt.onclick=function(){try{exportPPTX();}catch(_){}};
-    var bpdf=document.createElement("button");bpdf.className="kspdf";bpdf.textContent="⤓ PDF 내보내기";bpdf.onclick=function(){exportMeetingPDF();};
+    var bsave=document.createElement("button");bsave.className="kssave";bsave.textContent="보관함 저장";bsave.onclick=function(){try{if(window.__vaultSave)window.__vaultSave();}catch(_){}};
+    /* 2.930 — PDF·PPT 두 버튼 → «내보내기 ⌄» 하나(위 한 줄에 들어가게) */
+    var bexp=document.createElement("button");bexp.className="ksexp";bexp.setAttribute("aria-haspopup","menu");bexp.innerHTML="내보내기 <svg width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-1px'><path d='M6 9l6 6 6-6'/></svg>";
+    bexp.onclick=function(e){var r=e.currentTarget.getBoundingClientRect();ksPop(r.left,r.bottom+4,[["PDF로 내보내기",function(){exportMeetingPDF();}],["PPT로 내보내기",function(){try{exportPPTX();}catch(_){}}]]);};
+    var gap=document.createElement("span");gap.className="ks-gap";
     bar.appendChild(bn);bar.appendChild(bt);
     try{ var bmm=window.__meetMatchBtn&&window.__meetMatchBtn(); if(bmm)bar.appendChild(bmm); }catch(_){}   /* 2.928 — 경기 연결 */
-    bar.appendChild(bs);bar.appendChild(bpdf);bar.appendChild(bppt);bar.appendChild(bsave);strip.appendChild(bar);
+    bar.appendChild(gap);bar.appendChild(bs);bar.appendChild(bexp);bar.appendChild(bsave);
+    if(top){top.innerHTML="";top.appendChild(bar);}else strip.appendChild(bar);   /* 2.930 — 위 한 줄 */
     fr.forEach(function(f,i){
       var c=document.createElement("div");c.className="ksc"+(i===ci?" on":"");c.setAttribute("draggable","true");
       c.innerHTML='<div class="ktb">'+(f.thumb||'')+'</div><div class="kn">'+esc(f.title||("슬라이드 "+(i+1)))+'</div><span class="knum">'+(i+1)+'</span><button class="kx" title="삭제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button><button class="kdup" title="복제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" style="vertical-align:-1px"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button>';
@@ -16907,7 +16917,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     hd.classList.toggle("empty",!((f&&f.title)||"").trim());
   }catch(_){} }
   function progRender(){ if(!prog)return; var n=frames().length,ci=idx(); prog.style.width=(n?((ci+1)/n*100):0)+"%"; }
-  function edSync(){ if(!ed)return; var f=frames()[idx()]; ed.classList.toggle("on",edOpen&&!!f); if(f){ var ti=ed.querySelector("#ksTitle"),pi=ed.querySelector("#ksPoints"); if(ti&&document.activeElement!==ti)ti.value=f.title||""; if(pi&&document.activeElement!==pi)pi.value=(f.points||[]).join("\n"); } }
+  function edSync(){ if(!ed)return; var f=frames()[idx()]; ed.classList.toggle("on",edOpen&&!!f); if(f){ var ti=ed.querySelector("#ksTitle"),pi=ed.querySelector("#ksPoints"),bi=ed.querySelector("#ksBrand"),ot=ed.querySelector("#ksOrientTip"); if(ti&&document.activeElement!==ti)ti.value=f.title||""; if(pi&&document.activeElement!==pi)pi.value=(f.points||[]).join("\n"); if(bi&&document.activeElement!==bi)bi.value=(f.pageBrand==null?"PROCESS":f.pageBrand); if(ot){var _land=meetingPdfOrientation(frames())==="landscape";ot.textContent=(_land?"가로형은 화면·발표에 맞는 모양입니다.":"세로형은 PDF·폰에서 읽기 좋은 모양입니다.")+" 방향은 모든 슬라이드에 같이 적용됩니다.";} } }
   document.addEventListener("keydown",function(e){ if(!document.body.classList.contains("meet-mode"))return; var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return; var mk=e.metaKey||e.ctrlKey; if(mk&&(e.key==="m"||e.key==="M")){e.preventDefault();if(M())M().newSlide("",[]);} else if(mk&&(e.key==="d"||e.key==="D")){e.preventDefault();if(M())M().dup(M().idx());} });
   window.__ksRender=function(){ if(!inMeet())return; build(); stripRender(); ovRender(); progRender(); edSync(); };
   window.__ksThumb=function(i){ if(!strip)return; var c=strip.querySelectorAll(".ksc")[i]; if(c){var f=frames()[i];var t=c.querySelector(".ktb");if(t&&f)t.innerHTML=f.thumb||"";} };
@@ -16922,18 +16932,28 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 (function(){
   var frame=null,timer=0;
   function active(){return document.body.classList.contains('meet-mode')&&!document.body.classList.contains('focus-board')&&window.__meetingPageActive;}
+  /* 2.930 — 종이(A4 한 장, 여백 6mm 포함)를 회색 책상 가운데에 세운다. 예전엔 인쇄 문서를 그대로 띄워 왼쪽 위에 붙고 오른쪽이 비었다 */
+  function deskCss(land){return 'html{background:#E6E9ED;min-height:100%}body{width:'+(land?'297':'210')+'mm!important;padding:0!important;margin-left:auto!important;margin-right:auto!important;background:transparent!important}'
+    +'.mp-page{width:'+(land?'297':'210')+'mm!important;height:'+(land?'210':'297')+'mm!important;padding:6mm;margin:0!important;border-bottom:0!important;background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.08),0 12px 32px rgba(16,24,40,.16);border-radius:2px}'
+    +'.mp-line.title,.mp-line.point,.mp-brand{cursor:text;border-radius:3px}.mp-line.title:hover,.mp-line.point:hover,.mp-brand:hover{background:#EDF2FE}.mp-pitch{cursor:pointer}';}
   function fit(){if(!frame||!frame.contentDocument)return;var doc=frame.contentDocument;
-    var land=meetingPdfOrientation(anim.slides)==='landscape';
-    doc.body.style.zoom=Math.min(1,(doc.documentElement.clientWidth||frame.clientWidth)/(land?1123:794),Math.max(120,frame.clientHeight-12)/(land?794:1123));
+    var land=meetingPdfOrientation(anim.slides)==='landscape',pw=land?1123:794,ph=land?794:1123;
+    var W=doc.documentElement.clientWidth||frame.clientWidth,H=frame.clientHeight||doc.documentElement.clientHeight,G=W<520?16:48;   /* 폰은 여백을 줄여 종이를 크게 */
+    var z=Math.min(1,Math.max(.1,(W-G)/pw),Math.max(.1,(H-G)/ph));
+    doc.body.style.zoom=z;
+    doc.body.style.marginTop=Math.max(G/2,(H-ph*z)/2)/z+'px';doc.body.style.marginBottom=(G/2)/z+'px';
   }
   function render(){
     document.body.classList.toggle('meeting-page-mode',!!active());
+    try{document.body.classList.toggle('meet-portrait',meetingPdfOrientation(anim.slides)==='portrait');}catch(_){}   /* 2.930 — 썸네일도 세로 */
     if(!active())return;
     if(frame&&frame.contentDocument&&frame.contentDocument.querySelector('.mp-inline-editor'))return;
     if(!frame){frame=document.createElement('iframe');frame.id='ksPagePreview';frame.title='미팅 A4 페이지';document.getElementById('boardStage').appendChild(frame);
       frame.addEventListener('load',function(){var doc=frame.contentDocument;if(!doc)return;
         var index=window.__meet?window.__meet.idx():0;
-        doc.querySelectorAll('.mp-page').forEach(function(p){if(+p.dataset.slideIndex!==index)p.remove();});fit();
+        doc.querySelectorAll('.mp-page').forEach(function(p){if(+p.dataset.slideIndex!==index)p.remove();});
+        try{var _ds=doc.createElement('style');_ds.textContent=deskCss(meetingPdfOrientation(anim.slides)==='landscape');doc.head.appendChild(_ds);}catch(_){}
+        fit();
         if(!window.__vaultReadOnly&&!communityBoardReadOnly()&&!(anim.slides[index].points||[]).some(function(p){return String(p||'').trim();})){var notes=doc.querySelector('.mp-notes');if(notes){var blank=doc.createElement('div');blank.className='mp-line point';blank.dataset.pointIndex='0';blank.textContent='메모 입력';blank.style.color='#94a3b8';notes.appendChild(blank);}}
         doc.addEventListener('click',function(e){
           if(window.__vaultReadOnly||communityBoardReadOnly()||e.target.closest('.mp-inline-editor,.mp-inline-tools'))return;
@@ -16968,17 +16988,17 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     }
     frame.srcdoc=buildMeetingPrintDoc(meetingPdfSlides(),'미팅',{orientation:meetingPdfOrientation(anim.slides)});
   }
-  window.__meetingPageRefresh=function(){clearTimeout(timer);timer=setTimeout(render,100);};
+  window.__meetingPageRefresh=function(){clearTimeout(timer);var _typing=false;try{var _ae=document.activeElement;_typing=!!(_ae&&_ae.closest&&_ae.closest('#ksEd'));}catch(_){}timer=setTimeout(render,_typing?350:100);};   /* 2.930 — 오른쪽 칸에 쓰는 동안은 덜 자주 다시 그린다 */
   window.__meetingPageChoose=function(orientation){
     if(window.__vaultReadOnly||communityBoardReadOnly())return;
     window.__meetingPdfOrientation=orientation==='landscape'?'landscape':'portrait';
-    (anim.slides||[]).forEach(function(s){s.pdfOrientation=window.__meetingPdfOrientation;});
+    (anim.slides||[]).forEach(function(s){s.pdfOrientation=window.__meetingPdfOrientation;if(s.snap){s.snap.orientation=window.__meetingPdfOrientation==='landscape'?'h':'v';s.snap.spFlip=false;}});   /* 2.930 — 방향은 모든 슬라이드의 운동장에도(넘길 때 옛 가로로 돌아가지 않게) */
     window.__meetingPageActive=true;window.__ksRender();
   };
-  window.__meetingPageEdit=function(){if(window.__vaultReadOnly||communityBoardReadOnly())return;loadSnap(Object.assign({},captureSnap(),{orientation:meetingPdfOrientation(anim.slides)==='landscape'?'h':'v',spFlip:false}));window.__meetingPageActive=false;document.body.classList.remove('meeting-page-mode');window.__ksRender();window.dispatchEvent(new Event('resize'));};
+  window.__meetingPageEdit=function(){if(window.__vaultReadOnly||communityBoardReadOnly())return;try{autoOrient=false;}catch(_){}/* 2.930 — 미팅 방향은 사람이 고른 것: 넓은 화면이라고 세로를 가로로 되돌리지 않는다(썸네일도 그래서 가로였다) */loadSnap(Object.assign({},captureSnap(),{orientation:meetingPdfOrientation(anim.slides)==='landscape'?'h':'v',spFlip:false}));window.__meetingPageActive=false;document.body.classList.remove('meeting-page-mode');window.__ksRender();window.dispatchEvent(new Event('resize'));};
   var oldRender=window.__ksRender;window.__ksRender=function(){oldRender();window.__meetingPageRefresh();};
   var oldEnter=window.__ksEnter;window.__ksEnter=function(){window.__meetingPageActive=true;oldEnter();window.__meetingPageRefresh();};
-  var oldExit=window.__ksExit;window.__ksExit=function(){window.__meetingPageActive=false;document.body.classList.remove('meeting-page-mode');if(oldExit)oldExit();};
+  var oldExit=window.__ksExit;window.__ksExit=function(){window.__meetingPageActive=false;document.body.classList.remove('meeting-page-mode');document.body.classList.remove('meet-portrait');if(oldExit)oldExit();};
   window.addEventListener('resize',fit);
 })();
 </script>
@@ -16990,6 +17010,51 @@ body.meeting-page-mode #board,body.meeting-page-mode #ksHead,body.meeting-page-m
 .ksbar .ks-direction{display:flex;gap:4px;}
 .ksbar .ks-direction button{flex:1;min-width:0;}
 .ksbar .ks-direction button[aria-pressed="true"]{background:var(--blue,#3a6df0);color:#fff;}
+/* ══ 2.930 · 미팅 편집 — 위 한 줄 도구줄 · 책상 위 종이 · 오른쪽 «이 슬라이드» ══
+   사용자 «미팅 수정에서 세로형으로 하면 어색» → 목업 안 A. 어색했던 것: 종이가 왼쪽 위에 붙고 오른쪽이 비었다 ·
+   흰 바탕 위 흰 종이 · 운동장이 칸에 맞춰 늘어나 센터서클이 타원 · 썸네일은 가로인데 페이지는 세로 · 버튼 9개가 띠를 340px 먹음. */
+#ksTop{position:absolute;left:0;right:0;top:0;height:52px;z-index:58;display:none;box-sizing:border-box;padding:0 14px;align-items:center;background:var(--panel,#fff);border-bottom:1px solid var(--line,#E3E6EA);overflow-x:auto;overflow-y:hidden;scrollbar-width:none;}
+#ksTop::-webkit-scrollbar{display:none}
+body.meet-mode:not(.focus-board) #ksTop{display:flex;}
+#ksTop .ksbar{flex-direction:row;align-items:center;gap:8px;margin:0;width:100%;min-width:max-content;}
+#ksTop .ksbar button{width:auto;height:34px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:600;white-space:nowrap;flex:0 0 auto;}
+#ksTop .ksbar .ks-direction{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--panel2,#F1F3F5);flex:0 0 auto;}
+#ksTop .ksbar .ks-direction button{height:30px;border:0;border-radius:7px;background:transparent;color:var(--txt-dim,#646A73);padding:0 12px;}
+#ksTop .ksbar .ks-direction button[aria-pressed="true"]{background:var(--panel,#fff);color:var(--txt,#14161A);font-weight:700;box-shadow:0 1px 2px rgba(16,24,40,.14);}
+#ksTop .ksbar .ks-gap{flex:1 1 auto;min-width:8px;}
+#ksTop .ksbar .ksshow{background:#14161A;border-color:#14161A;color:#fff;font-weight:700;}
+#ksTop .ksbar .kssave{background:var(--blue,#3a6df0);border-color:var(--blue,#3a6df0);color:#fff;font-weight:700;}
+body.fmdark #ksTop .ksbar .ksshow{background:#F2F3F5;border-color:#F2F3F5;color:#14161A;}
+body.meet-mode:not(.focus-board) #ksStrip{top:52px;}
+body:not(.fmdark) #ksStrip{background:var(--panel,#fff);border-right:1px solid var(--line,#E3E6EA);}   /* 2.930 — 밝은 화면에서 짙은 그라데이션 띠가 흰 종이 옆에 겉돌았다 */
+body:not(.fmdark) #ksStrip .ksc{background:var(--panel,#fff);border-color:var(--line,#E3E6EA);}
+body:not(.fmdark) #ksStrip .ksc.on{border-color:var(--blue,#3a6df0);}
+body.meet-mode:not(.focus-board) #ksProg{top:52px;}
+body.meet-mode:not(.focus-board) #ksHead{top:62px;}
+body.meet-mode:not(.focus-board) #ksSit{top:64px;}
+/* 운동장 편집(보드) 쪽도 도구줄·왼쪽 띠만큼 비켜 앉는다. ⚠ 예전 padding-left:162px 는 도크 규칙(figma-premium 1676 등, !important)에 져서
+   띠가 보드 왼쪽을 덮고 있었다 — id 부스트로 이긴다(폰은 띠가 판을 너무 좁혀 위만) */
+html body.meet-mode:not(.focus-board):not(#_):not(#__):not(#___) #boardStage{padding-top:58px!important;}
+@media(min-width:768px){html body.meet-mode:not(.focus-board):not(#_):not(#__):not(#___) #boardStage{padding-left:166px!important;}}
+#ksPagePreview{top:52px;height:calc(100% - 52px);background:#E6E9ED;}
+body.meet-portrait #ksStrip .ksc .ktb{height:auto;aspect-ratio:210/297;background:#E6E9ED;}
+#ksEd .ks-fl{display:none;font-size:12px;font-weight:700;color:var(--txt-dim,#646A73);margin:12px 0 6px;}
+#ksEd .ks-fl span{font-weight:500;color:var(--txt-faint,#8A9099);}
+#ksEd .ks-pgonly{display:none;}
+#ksEd .ks-tip{margin:8px 0 0;font-size:12px;line-height:1.5;color:var(--txt-faint,#8A9099);}
+#ksEd .ks-sep{height:1px;background:var(--line,#E3E6EA);margin:16px 0 4px;}
+#ksEd #ksEditPitch{width:100%;height:38px;border-radius:8px;border:1px solid var(--line,#E3E6EA);background:var(--panel2,#F1F3F5);color:var(--txt,#14161A);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+@media(min-width:980px){
+  body.meeting-page-mode #ksPagePreview{width:calc(100% - 162px - 300px);}
+  body.meeting-page-mode #ksEd{display:block!important;left:auto;right:0;top:52px;bottom:0;width:300px;box-sizing:border-box;border-radius:0;border:0;border-left:1px solid var(--line,#E3E6EA);box-shadow:none;padding:18px;overflow-y:auto;background:var(--panel,#fff);}
+  body.meeting-page-mode #ksEd .kl{font-size:14px;font-weight:700;color:var(--txt,#14161A);letter-spacing:0;margin:0;}
+  body.meeting-page-mode #ksEd .ks-fl,body.meeting-page-mode #ksEd .ks-pgonly{display:block;}
+  body.meeting-page-mode #ksEd input{height:38px;font-size:14px;background:var(--panel,#fff);border-color:var(--line-2,#D2D6DD);}
+  body.meeting-page-mode #ksEd #ksTitle{font-weight:700;}
+  body.meeting-page-mode #ksEd textarea{margin-top:0;height:150px;font-size:13px;background:var(--panel,#fff);border-color:var(--line-2,#D2D6DD);}
+  body.meeting-page-mode #ksTop .ksbar .kstxt{display:none;}
+}
+@media(max-width:600px){#ksTop .ksbar button{height:40px;}#ksTop .ksbar .ks-direction button{height:36px;}}   /* 2.930 — 폰 손가락 */
 @media(max-width:600px){body.meeting-page-mode #ksStrip{width:108px;padding:6px 4px;}body.meeting-page-mode #ksPagePreview{left:108px;width:calc(100% - 108px);}body.meeting-page-mode #ksEd{left:112px;width:calc(100% - 120px);}}
 </style>
 
