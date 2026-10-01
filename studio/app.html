@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.927"></script>
+<script src="autosave-status.js?v=2.928"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.927';</script>
+<script>window.PS_BUILD='2.928';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -2561,10 +2561,11 @@ function psShowUpdBand(){
         captureReq='analysis';
         showApp('board');
         try{ fBoard.contentWindow.postMessage({type:'enterCapture',snap:d.snap,frames:d.frames,meta:d.meta,name:d.name,minutes:d.minutes},'*'); }catch(_){}
-      } else if(d.source==='process' && d.type==='openTeamMatch'){
-        /* 일정 주간 보드 '경기 준비 →' — 팀 허브의 경기 화면에서 그 날짜 경기를 연다(1.522) */
+      } else if((d.source==='process'||(d.source==='board'&&fBoard&&e.source===fBoard.contentWindow)) && d.type==='openTeamMatch'){
+        /* 일정 주간 보드 '경기 준비 →' — 팀 허브의 경기 화면에서 그 날짜 경기를 연다(1.522)
+           2.928 — 보관함 미팅의 «경기 열기 ›»도 같은 길. 경기 id(mid)가 있으면 그 경기를 바로 연다 */
         try{var hub=document.querySelector('#appSeg button[data-team-hub]');if(hub)hub.click();}catch(_){}
-        var _omSend=function(){try{fScout.contentWindow.postMessage({type:'openMatchAt',date:d.date||'',opp:d.opp||'',step:d.step||''},'*');}catch(_){}};
+        var _omSend=function(){try{fScout.contentWindow.postMessage({type:'openMatchAt',mid:d.mid||'',date:d.date||'',opp:d.opp||'',step:d.step||''},'*');}catch(_){}};
         setTimeout(_omSend,250);setTimeout(_omSend,1000);
         return;
       } else if(d.source==='community' && d.type==='openDrillEditor' && fComm && e.source===fComm.contentWindow){
@@ -2651,6 +2652,23 @@ function psShowUpdBand(){
           var ok=bw.__psPages&&bw.__psPages.openByName&&bw.__psPages.openByName(_nm);
           if(!ok&&bw.toast)bw.toast('"'+_nm+'" 페이지가 없어요 — 페이지 바의 [미팅 세트]로 한 번에 만들 수 있어요');
         }catch(_){}},150); })(d.name);
+      } else if(d.source==='scout' && fScout && e.source===fScout.contentWindow && (d.type==='openMeeting'||d.type==='meetingFromMatch')){
+        /* 2.928 — 경기 준비의 «이 경기 미팅»: 보관함 미팅 열기(▶ 슬라이드쇼)·«경기 자료로 만들기». 보관함 쓰기·열기는 작전판(보관함) 한 곳에서 */
+        currentTeamKey=''; showApp('design');
+        (function(_d){ setTimeout(function(){ try{
+          var bw=fBoard.contentWindow;
+          if(_d.type==='openMeeting'){ if(bw.__vaultOpenMeeting)bw.__vaultOpenMeeting(String(_d.libId||''),{show:!!_d.show}); }
+          else if(bw.__meetingFromMatch)bw.__meetingFromMatch(_d.payload||{});
+        }catch(_){} },140); })(d);
+        return;
+      } else if(d.source==='scout' && fScout && e.source===fScout.contentWindow && d.type==='meetingLink'){
+        /* 2.928 — 경기에서 «보관함에서 연결»·«떼기»: 화면은 그대로 두고 보관함 항목의 연결만 바꾼다. 결과는 경기 화면이 말한다 */
+        (function(_d){ var bw=null; try{ bw=fBoard.contentWindow; }catch(_){}
+          var send=function(r){ try{ fScout.contentWindow.postMessage({source:'app',type:'meetingLinkResult',libId:String(_d.libId||''),linked:!!_d.ref,ok:!!(r&&r.ok),reason:(r&&r.reason)||''},'*'); }catch(_){} };
+          if(!bw||!bw.__meetingSetMatch){ send({ok:false,reason:'notready'}); return; }
+          try{ Promise.resolve(bw.__meetingSetMatch(String(_d.libId||''),_d.ref||null)).then(send,function(){send({ok:false});}); }catch(_){ send({ok:false}); }
+        })(d);
+        return;
       } else if(d.source==='scout' && d.type==='duplicateBoardPage'){
         /* 경기 준비 페이지를 리뷰용 독립 사본으로 만든다 — 준비 원본은 보존 */
         showApp('board');
@@ -7632,13 +7650,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.927"></script>
-<script src="autosave-merge.js?v=2.927"></script>
-<script src="autosave-runtime.js?v=2.927"></script>
-<script src="autosave-recovery.js?v=2.927"></script>
-<script src="sync.js?v=2.927"></script>
+<script src="autosave-journal.js?v=2.928"></script>
+<script src="autosave-merge.js?v=2.928"></script>
+<script src="autosave-runtime.js?v=2.928"></script>
+<script src="autosave-recovery.js?v=2.928"></script>
+<script src="sync.js?v=2.928"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.927">
+<link rel="stylesheet" href="support.css?v=2.928">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

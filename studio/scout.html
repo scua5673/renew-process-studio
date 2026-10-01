@@ -5229,6 +5229,65 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
           </div>
           <div class="match-panel on" id="matchPrepPanel">
             <div class="match-grid">
+              <!-- 2.928 — 이 경기 미팅(보관함 미팅 중 이 경기에 연결된 것). 연결은 미팅 쪽에 있다 — 여기는 보관함을 읽기만 하고, 만들기·연결은 보관함이 한다. 선수에게는 그리지 않는다 -->
+              <section class="match-card match-card-wide mm-card" id="matchMeetCard" hidden>
+                <div class="match-card-head"><div><b>이 경기 미팅</b><small>선수들 앞에서 띄울 슬라이드 · 보관함에 저장돼요</small></div><div class="mm-acts" id="matchMeetActs"></div></div>
+                <div class="mm-body" id="matchMeetBody"></div>
+              </section>
+<style id="ps-2928-meet">
+/* 2.928 — 경기 준비의 «이 경기 미팅» 카드 · 만들기·연결 시트 */
+#matchMeetCard .match-card-head>.mm-acts{display:flex;flex-direction:row!important;align-items:center;gap:6px;flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-end;margin-left:auto;width:auto;height:auto;min-width:0;padding:0;border:0;background:none;border-radius:0}
+#matchMeetCard .match-card-head>.mm-acts:empty{display:none}
+#matchMeetCard .mm-acts button{min-height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+#matchMeetCard .mm-acts .mm-new,#matchMeetCard .mm-empty .mm-new{background:var(--accent-soft,#EDF2FE);border-color:transparent;color:#2A55C8;font-weight:700}
+#matchMeetCard .mm-body{display:flex;flex-direction:column;gap:10px}
+#matchMeetCard .mm-empty{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1.5px dashed var(--line2,#D2D6DD);border-radius:10px;padding:14px 16px}
+#matchMeetCard .mm-empty .t{flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:3px}
+#matchMeetCard .mm-empty .t b{font-size:14px}
+#matchMeetCard .mm-empty .t span{font-size:13px;color:var(--dim,#646A73)}
+#matchMeetCard .mm-empty button{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+#matchMeetCard .mm-item{border:1px solid var(--line,#E3E6EA);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:10px}
+#matchMeetCard .mm-th{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+#matchMeetCard .mm-th>div{aspect-ratio:105/68;border-radius:6px;overflow:hidden;background:#1E8C4C;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800}
+#matchMeetCard .mm-th>div svg{width:100%;height:100%;display:block}
+#matchMeetCard .mm-th>div.more{background:var(--panel2,#F1F3F5);color:var(--dim,#646A73)}
+#matchMeetCard .mm-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#matchMeetCard .mm-info{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:2px}
+#matchMeetCard .mm-info b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#matchMeetCard .mm-info small{font-size:12px;color:var(--dim,#646A73)}
+#matchMeetCard .mm-row button{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+#matchMeetCard .mm-row .mm-show{background:#14161A;border-color:#14161A;color:#fff;font-weight:700}
+#matchMeetCard .mm-row .mm-x{width:40px;padding:0;color:var(--dim,#646A73)}
+@media (max-width:600px){#matchMeetCard .mm-th{grid-template-columns:repeat(4,minmax(0,1fr))}#matchMeetCard .mm-th>div:nth-child(5){display:none}#matchMeetCard .mm-row .mm-show{flex:1 1 100%;min-height:44px}#matchMeetCard .mm-row .mm-open{flex:1 1 auto;min-height:44px}#matchMeetCard .match-card-head{flex-wrap:wrap}#matchMeetCard .match-card-head>.mm-acts{width:100%;flex-wrap:wrap;justify-content:stretch}#matchMeetCard .mm-acts button{flex:1 1 0;min-height:44px}#matchMeetCard .mm-empty button{flex:1 1 100%;min-height:44px}#matchMeetCard .mm-row .mm-x{width:44px;min-height:44px}}
+body.fmdark #matchMeetCard .mm-row .mm-show{background:#F2F3F5;border-color:#F2F3F5;color:#14161A}
+body.fmdark #matchMeetCard .mm-acts .mm-new,body.fmdark #matchMeetCard .mm-empty .mm-new{background:rgba(111,148,245,.16);color:#9DB6F8}
+#mmSheetOv{position:fixed;inset:0;z-index:950;background:rgba(8,12,18,.52);display:flex;align-items:center;justify-content:center;padding:16px}
+#mmSheetOv .mm-sheet{width:100%;max-width:460px;max-height:calc(100vh - 32px);overflow-y:auto;box-sizing:border-box;background:var(--panel,#fff);color:var(--ink,#14161A);border-radius:16px;box-shadow:0 22px 64px rgba(0,0,0,.42);padding:18px;display:flex;flex-direction:column;gap:10px;font-family:inherit}
+#mmSheetOv .mm-t{font-size:17px;font-weight:800}
+#mmSheetOv .mm-p{margin:0;font-size:12px;line-height:1.5;color:var(--dim,#646A73)}
+#mmSheetOv .mm-lab{font-size:12px;font-weight:700;color:var(--dim,#646A73)}
+#mmSheetOv .mm-parts{display:flex;flex-direction:column;border:1px solid var(--line,#E3E6EA);border-radius:10px;overflow:hidden}
+#mmSheetOv .mm-parts label{display:flex;align-items:center;gap:10px;min-height:46px;padding:4px 12px;border-bottom:1px solid var(--line,#E3E6EA);font-size:13px;cursor:pointer}
+#mmSheetOv .mm-parts label:last-child{border-bottom:0}
+#mmSheetOv .mm-parts label.off{color:var(--faint,#8A9099);cursor:default}
+#mmSheetOv .mm-parts input{width:18px;height:18px;margin:0;flex:0 0 auto}
+#mmSheetOv .mm-parts b{flex:0 0 auto}
+#mmSheetOv .mm-parts span{margin-left:auto;min-width:0;font-size:12px;color:var(--dim,#646A73);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+#mmSheetOv .mm-name{height:42px;box-sizing:border-box;padding:0 12px;border:1.5px solid var(--line2,#D2D6DD);border-radius:10px;font:inherit;font-size:14px;font-weight:600;color:inherit;background:var(--panel2,#F1F2F4);width:100%}
+#mmSheetOv .mm-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;background:var(--panel2,#F1F3F5);border-radius:10px;padding:3px}
+#mmSheetOv .mm-seg button{min-height:48px;border:0;border-radius:8px;background:transparent;color:var(--dim,#646A73);font:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+#mmSheetOv .mm-seg button small{font-size:11px;font-weight:500}
+#mmSheetOv .mm-seg button[aria-pressed="true"]{background:var(--panel,#fff);color:var(--ink,#14161A);font-weight:700;box-shadow:0 1px 2px rgba(16,24,40,.1)}
+#mmSheetOv .mm-list{display:flex;flex-direction:column;gap:6px}
+#mmSheetOv .mm-pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:48px;padding:7px 12px;border-radius:10px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:inherit;font:inherit;cursor:pointer}
+#mmSheetOv .mm-pick b{font-size:13px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mmSheetOv .mm-pick small{font-size:11px;color:var(--dim,#646A73)}
+#mmSheetOv .mm-pick[disabled]{cursor:default;opacity:.55}
+#mmSheetOv .mm-foot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px}
+#mmSheetOv .mm-foot button{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line2,#D2D6DD);background:var(--panel2,#F1F2F4);color:inherit;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+#mmSheetOv .mm-foot .go{border:0;background:#3A6DF0;color:#fff;font-weight:800}
+#mmSheetOv .mm-foot .go[disabled]{opacity:.45;cursor:default}
+</style>
               <!-- 2.755 — 상대 분석에 적은 것이 여기 비친다(읽기만). 앱은 거울이라 대신 쓰지 않고, 누르면 상대 분석으로 간다 -->
               <section class="match-card match-card-wide match-carry" id="matchCarryCard">
                 <div class="match-card-head"><div><b>상대에서 넘어온 것</b><small>상대 분석에 적은 그대로 — 읽기만</small></div><button type="button" class="btn sm" id="matchCarryGo">상대 분석 ›</button></div>
@@ -12106,13 +12165,15 @@ function matchOpenAtRequest(d){
     /* 2.733 — 일정에서 누른 직후 경기 문서가 아직 오는 중이면 요청을 버리지 않는다.
        준비 표가 열린 뒤 같은 한 번의 탭을 이어서 실행한다. */
     if(matchDocPending()){
-      matchPendingOpen={date:String(d.date||""),opp:String(d.opp||""),step:String(d.step||"")};   /* 2.758 — 문(첫 빈 걸음)도 같이 */
+      matchPendingOpen={mid:String(d.mid||""),date:String(d.date||""),opp:String(d.opp||""),step:String(d.step||"")};   /* 2.758 — 문(첫 빈 걸음)도 같이 · 2.928 경기 id */
       matchNav="list";setView("match");renderMatch();return;
     }
     matchPendingOpen=null;
     var st=matchLoad(),dt=String(d.date||""),oppN=scheduleText(d.opp||"");
     var same=(st.matches||[]).filter(function(x){return String(x.date||"")===dt;});
-    var mm=oppN?(same.find(function(x){return scheduleText(x.opponent)===oppN;})||null):null;
+    /* 2.928 — 보관함 미팅의 «경기 열기 ›»는 경기 id 를 실어 온다(날짜·상대가 바뀌었어도 그 경기) */
+    var mm=d.mid?((st.matches||[]).find(function(x){return String(x.id)===String(d.mid);})||null):null;
+    if(!mm)mm=oppN?(same.find(function(x){return scheduleText(x.opponent)===oppN;})||null):null;
     /* 2.620 — 그날 경기가 둘 이상인데 상대가 안 맞으면 엉뚱한 첫 경기를 열지 않는다(추가 경기가 아직 목록에 없으면 목록 + 불러오기 안내) */
     if(!mm&&(!oppN||same.length<2))mm=same[0]||null;
     /* 2.139 — 딥링크는 **경기 안**으로 들어간다. 목록 층에 떨어뜨리면 '경기 준비 →' 를 누른 뜻이 사라진다.
@@ -12124,6 +12185,188 @@ function matchOpenAtRequest(d){
     else{matchNav="list";setView("match");renderMatch();try{toast("일정의 이 경기를 아직 안 가져왔어요 — '일정에서 경기 불러오기'를 눌러주세요");}catch(_){}}
   }catch(_){}
 }
+/* ══ 2.928 · 이 경기 미팅 — 보관함 미팅 ↔ 경기 연결(목업 안 C, 사용자 승인) ════════════════════════════
+   연결은 보관함 미팅 쪽(item.matchRef.mid)에 있다. 경기 문서(cs_team_matches_v1)에는 아무것도 쓰지 않는다 —
+   경기 문서는 선수 기기에도 내려가고, 쓰려면 팀 편집권이 필요하다. 여기는 보관함(cs_drill_lib_v1, IDB)을 **읽기만** 하고
+   만들기·연결·떼기는 셸을 거쳐 보관함(작전판)이 한다(같은 목록을 둘이 통째로 쓰면 한쪽이 지워진다).
+   다른 코치에게 보이는지는 보관함 공유 규칙 그대로(팀 공유 폴더). 선수에게는 카드를 그리지 않는다. */
+var MM_LIB_KEY="cs_drill_lib_v1", mmLib=null, mmLibP=null;
+var MM_WD=["일","월","화","수","목","금","토"];
+function mmDateLabel(ymd){ var x=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd||"")); if(!x)return ""; return (+x[2])+"/"+(+x[3])+" "+MM_WD[new Date(+x[1],+x[2]-1,+x[3]).getDay()]; }
+function mmMyUid(){ try{ var s=JSON.parse(localStorage.getItem("ps_sync_session")||"null"); return (s&&s.uid)||""; }catch(_){ return ""; } }
+function mmIsTeamWs(){ try{ var id=localStorage.getItem("ps_active_ws")||"", l=JSON.parse(localStorage.getItem("ps_ws_list")||"[]"); return !!(Array.isArray(l)&&l.some(function(w){return w&&w.id===id&&w.kind==="team";})); }catch(_){ return false; } }
+function mmCanLib(){ if(matchRole()==="player")return false; try{ return !window.PSPerms||!PSPerms.canEdit||!!PSPerms.canEdit("board"); }catch(_){ return true; } }
+function mmMine(d,uid,team){ return !team||!d||!d.createdBy||d.createdBy===uid; }
+function mmFolderShared(folder,meta){ var f=String(folder==null?"":folder).trim(); meta=meta||{}; while(f){ if(meta[f]&&meta[f].shared)return true; var i=f.lastIndexOf("/"); if(i<0)break; f=f.slice(0,i); } return false; }
+function mmRefOf(m){ return {mid:String(m.id),date:String(m.date||""),opp:String(m.opponent||""),time:String(m.time||""),ha:String(m.homeAway||""),kind:String(m.kind||""),at:Date.now()}; }
+function matchMeetsFor(lib,mid){
+  return (Array.isArray(lib)?lib:[]).filter(function(d){ return d&&(d.type||"")==="meeting"&&d.matchRef&&String(d.matchRef.mid)===String(mid)&&!d.deletedAt&&!d._deleted; })
+    .sort(function(a,b){ return (+(b.editedAt||b.savedAt)||0)-(+(a.editedAt||a.savedAt)||0); });
+}
+function mmLoadLib(){
+  if(mmLibP)return mmLibP;
+  var st=window.storage;
+  mmLibP=Promise.resolve(st&&st.get?st.get(MM_LIB_KEY):null).then(function(r){
+    var v=(r&&typeof r==="object"&&"value" in r)?r.value:r, a=[]; try{ a=typeof v==="string"?JSON.parse(v||"[]"):(v||[]); }catch(_){ a=[]; }
+    mmLib=Array.isArray(a)?a:[]; return mmLib;
+  },function(){ mmLib=mmLib||[]; return mmLib; }).then(function(x){ mmLibP=null; return x; },function(){ mmLibP=null; return mmLib||[]; });
+  return mmLibP;
+}
+/* 경기 자료 → 미팅 슬라이드 재료(경기 보드 형식 % 좌표 그대로 — 작전판 좌표로는 보관함이 바꾼다) */
+function mmTok(t){ var o={x:+t.x,y:+t.y,num:String(t.num==null?"":t.num),name:String(t.name||""),pos:String(t.pos||"")}; if(typeof t.gk==="boolean")o.gk=t.gk; return o; }
+function mmBoardHas(b){ return !!(b&&((Array.isArray(b.us)&&b.us.length)||(Array.isArray(b.opp)&&b.opp.length)||(Array.isArray(b.drawings)&&b.drawings.length))); }
+function mmOppBoard(m){
+  var pb=m&&m.oppPB; if(!pb||!pb.boards)return null;
+  var keys=(Array.isArray(pb.list)?pb.list.map(function(x){return x[0];}):[]); if(pb.cur){ keys=[pb.cur].concat(keys.filter(function(k){return k!==pb.cur;})); }
+  for(var i=0;i<keys.length;i++){ var b=pb.boards[keys[i]]; if(!b)continue;
+    var fr=Array.isArray(b.frames)&&b.frames.length?b.frames[(b.cur!=null&&b.cur<b.frames.length&&b.cur>=0)?b.cur:b.frames.length-1]:null;
+    if(fr&&mmBoardHas(fr))return {us:(fr.us||[]).map(mmTok),opp:(fr.opp||[]).map(mmTok),draw:JSON.parse(JSON.stringify(fr.drawings||[]))}; }
+  return null;
+}
+function mmPrepPages(m){
+  var pb=m&&m.phaseBoards; if(!pb||!pb.boards||!Array.isArray(pb.list))return [];
+  var one=pb.list.length===1;
+  return pb.list.map(function(ph){ var b=pb.boards[ph[0]]; if(!mmBoardHas(b))return null; var nm=String(ph[1]||"").trim();
+    return {title:(one&&(!nm||/^페이지\s*\d+$/.test(nm)))?"경기 준비 보드":(nm||"경기 준비 보드"),us:(b.us||[]).map(mmTok),opp:(b.opp||[]).map(mmTok),draw:JSON.parse(JSON.stringify(b.drawings||[]))}; }).filter(Boolean);
+}
+function mmStartXI(m){
+  try{ var r=matchStartersToSlots(m); if(!r||!r.ok)return null;
+    var toks=r.slots.map(function(a,i){return r.picked[i]?matchLineupToken(m,r.picked[i],a[0],a[1]):null;}).filter(Boolean).map(mmTok);
+    if(!toks.length)return null;
+    var P=(data&&data.players)||[], byId=function(id){return P.find(function(p){return p&&p.id===id;});}, nm=function(p){return p?[(p.num!=null&&p.num!=="")?String(p.num):"",String(p.name||"").trim()].filter(Boolean).join(" "):"";};
+    var pts=[]; var cap=m.captainId&&byId(m.captainId); if(cap)pts.push("주장 — "+nm(cap));
+    var start=(m.startingIds||[]).map(String), bench=(m.squadIds||[]).filter(function(id){return start.indexOf(String(id))<0;}).map(byId).filter(Boolean).map(nm).filter(Boolean);
+    if(bench.length)pts.push("교체 — "+bench.slice(0,12).join(" · ")+(bench.length>12?(" 외 "+(bench.length-12)+"명"):""));
+    return {tokens:toks,label:String(r.formLabel||""),points:pts};
+  }catch(_){ return null; }
+}
+function matchMeetParts(m){
+  var Ls=matchCarryLines, opp=String(m.opponent||"").trim()||"상대", KD={official:"정식",friendly:"친선"};
+  var when=[mmDateLabel(m.date),m.time].filter(Boolean).join(" ");
+  var cov=[[when,m.homeAway,m.competition||KD[m.kind]||""].filter(Boolean).join(" · ")]; if(String(m.venue||"").trim())cov.push("장소 — "+String(m.venue).trim());
+  var brief=Ls(m.briefing); brief.slice(0,6).forEach(function(x){cov.push(x);});
+  var parts=[{key:"cover",label:"표지",ok:true,detail:[when,m.homeAway].filter(Boolean).join(" · ")+(brief.length?" · 브리핑":""),slides:[{title:"vs "+opp,points:cov.filter(Boolean),us:[],opp:[],draw:[]}]}];
+  var op=[],cnt=[]; function add(lab,v,c){var ls=Ls(v); if(ls.length){op.push(lab+" — "+ls.join(" · ")); if(c)cnt.push(lab+(ls.length>1?(" "+ls.length):""));}}
+  add("결론",m.oppConclusion,1); add("강점",m.oppStrengths,1); add("약점",m.oppWeaknesses,1); add("키 플레이어",m.oppKeyPlayers,1);
+  add("공격 시",m.oppAttack); add("수비 시",m.oppDefense); add("수비→공격",m.oppAttackTransition); add("공격→수비",m.oppDefenseTransition); add("세트피스",m.oppSetPlay);
+  var ob=mmOppBoard(m), od=cnt.slice(); if(op.length>cnt.length)od.push("국면 "+(op.length-cnt.length)); if(ob)od.push("보드 1장");
+  parts.push({key:"opp",label:"상대 분석",ok:!!(op.length||ob),detail:od.length?od.join(" · "):"비어 있음",slides:(op.length||ob)?[{title:"상대 분석 — "+opp,points:op.slice(0,8),us:ob?ob.us:[],opp:ob?ob.opp:[],draw:ob?ob.draw:[]}]:[]});
+  var xi=mmStartXI(m);
+  parts.push({key:"xi",label:"선발 11",ok:!!xi,detail:xi?([xi.label,xi.tokens.length+"명"].filter(Boolean).join(" · ")):"선발 명단이 아직 없어요",slides:xi?[{title:"선발 11"+(xi.label?(" · "+xi.label):""),points:xi.points,us:xi.tokens,opp:[],draw:[]}]:[]});
+  var pl=[],pn=[]; (typeof MB2_RV!=="undefined"?MB2_RV:[]).forEach(function(r){ var ls=Ls(m[r[0]]); if(ls.length){pl.push(r[1]+" — "+ls.join(" · ")); pn.push(r[1]);} });
+  parts.push({key:"plan",label:"게임플랜",ok:!!pl.length,detail:pl.length?pn.join(" · "):"비어 있음",slides:pl.length?[{title:"게임플랜",points:pl.slice(0,8),us:xi?xi.tokens:[],opp:[],draw:[]}]:[]});
+  var pg=mmPrepPages(m);
+  parts.push({key:"pages",label:"경기 준비 보드",ok:!!pg.length,detail:pg.length?(pg.length+"페이지 · "+pg.map(function(x){return x.title;}).join(" · ")):"비어 있음",slides:pg.map(function(x){return {title:x.title,points:[],us:x.us,opp:x.opp,draw:x.draw};})});
+  return parts;
+}
+function mmPost(msg){ try{ parent.postMessage(Object.assign({source:"scout"},msg),"*"); }catch(_){} }
+function mmOpen(libId,show){ if(!matchCanLeaveWork())return; mmPost({type:"openMeeting",libId:libId,show:!!show}); }
+function matchRenderMeetings(m){
+  var card=$("matchMeetCard"); if(!card)return;
+  if(!m||matchRole()==="player"){ card.hidden=true; return; }
+  var paint=function(lib){ var cur=matchGet(); if(!cur||cur.id!==m.id)return; mmPaint(card,cur,lib||[]); };
+  if(mmLib)paint(mmLib);
+  mmLoadLib().then(paint);
+}
+function mmPaint(card,m,lib){
+  var list=matchMeetsFor(lib,m.id), can=mmCanLib(), uid=mmMyUid(), team=mmIsTeamWs(), fm={};
+  try{ fm=JSON.parse(localStorage.getItem("cs_vault_folder_meta_v1")||"{}")||{}; }catch(_){ fm={}; }
+  if(!list.length&&!can){ card.hidden=true; card.__sig=""; return; }
+  var sig=JSON.stringify([m.id,can,uid,team,list.map(function(d){return [d.libId,d.savedAt||0,d.editedAt||0,d.name||"",d.folder||"",(d.slides||[]).length,mmFolderShared(d.folder,fm)];})]);
+  card.hidden=false; if(card.__sig===sig)return; card.__sig=sig;
+  var acts=$("matchMeetActs"), body=$("matchMeetBody");
+  if(acts)acts.innerHTML=(can&&list.length)?'<button type="button" data-mm-link>보관함에서 연결</button><button type="button" class="mm-new" data-mm-new>＋ 경기 자료로 만들기</button>':"";
+  if(!body)return;
+  if(!list.length){
+    body.innerHTML='<div class="mm-empty"><div class="t"><b>아직 이 경기 미팅이 없어요</b><span>상대 분석 · 선발 11 · 경기 준비 보드를 슬라이드로 옮겨서 시작해요</span></div>'
+      +'<button type="button" class="mm-new" data-mm-new>＋ 경기 자료로 미팅 만들기</button><button type="button" data-mm-link>보관함에서 연결</button></div>';
+  }else{
+    body.innerHTML=list.map(function(d){
+      var sl=Array.isArray(d.slides)?d.slides:[], th=sl.slice(0,4).map(function(x,i){ var t=x&&x.thumb||(i===0?d.thumb:""); return t?'<div aria-hidden="true">'+t+'</div>':'<div aria-hidden="true">'+esc(String((x&&x.title)||"").slice(0,10))+'</div>'; }).join("");
+      if(sl.length>4)th+='<div class="more" aria-hidden="true">＋'+(sl.length-4)+'</div>';
+      var mine=mmMine(d,uid,team), who=team?((d.createdBy&&d.createdBy===uid)||!d.createdBy?"나":(d.createdByName||"다른 코치")):"";
+      var dt=+(d.editedAt||d.savedAt)||0, dl=dt?((new Date(dt).getMonth()+1)+"/"+new Date(dt).getDate()+" 수정"):"";
+      var share=team?(mmFolderShared(d.folder,fm)?"☁ 팀 공유":"내 자료(다른 코치에게 안 보여요)"):"";
+      var meta=["슬라이드 "+sl.length,who,dl,share].filter(Boolean).join(" · ");
+      return '<article class="mm-item">'+(th?'<div class="mm-th">'+th+'</div>':'')
+        +'<div class="mm-row"><div class="mm-info"><b>'+esc(d.name||"미팅")+'</b><small>'+esc(meta)+'</small></div>'
+        +'<button type="button" class="mm-show" data-mm-show="'+esc(d.libId)+'">▶ 슬라이드쇼</button>'
+        +'<button type="button" class="mm-open" data-mm-open="'+esc(d.libId)+'">'+(mine?"편집 ›":"보기 ›")+'</button>'
+        +((mine&&can)?'<button type="button" class="mm-x" data-mm-unlink="'+esc(d.libId)+'" aria-label="이 경기에서 떼기" title="이 경기에서 떼기 — 미팅은 보관함에 그대로">×</button>':'')
+        +'</div></article>';
+    }).join("");
+  }
+  if(!card.__mmBound){ card.__mmBound=1;
+    card.addEventListener("click",function(e){
+      var b=e.target.closest&&e.target.closest("button"); if(!b||!card.contains(b))return;
+      var cur=matchGet(); if(!cur)return;
+      if(b.hasAttribute("data-mm-show")){ mmOpen(b.getAttribute("data-mm-show"),true); return; }
+      if(b.hasAttribute("data-mm-open")){ mmOpen(b.getAttribute("data-mm-open"),false); return; }
+      if(b.hasAttribute("data-mm-new")){ mmCreateSheet(cur); return; }
+      if(b.hasAttribute("data-mm-link")){ mmLinkSheet(cur); return; }
+      if(b.hasAttribute("data-mm-unlink")){ var id=b.getAttribute("data-mm-unlink"), d=(mmLib||[]).find(function(x){return x&&x.libId===id;});
+        psConfirm("‘"+((d&&d.name)||"이 미팅")+"’을 이 경기에서 뗄까요?\n미팅은 보관함에 그대로 남아요.",function(){ mmPost({type:"meetingLink",libId:id,ref:null}); }); return; }
+    });
+  }
+}
+function mmSheet(html){
+  var ex=$("mmSheetOv"); if(ex)ex.remove();
+  var ov=document.createElement("div"); ov.id="mmSheetOv"; ov.innerHTML='<div class="mm-sheet" role="dialog" aria-modal="true" aria-labelledby="mmSheetT">'+html+'</div>';
+  document.body.appendChild(ov);
+  var close=function(){ try{ov.remove();}catch(_){} document.removeEventListener("keydown",onKey,true); };
+  var onKey=function(e){ if(e.key==="Escape"){ e.stopPropagation(); close(); } };
+  document.addEventListener("keydown",onKey,true);
+  ov.addEventListener("click",function(e){ if(e.target===ov||(e.target.closest&&e.target.closest("[data-mm-x]")))close(); });
+  return {ov:ov,close:close};
+}
+function mmCreateSheet(m){
+  if(!mmCanLib()){ toast("보관함 편집 권한이 있어야 미팅을 만들 수 있어요"); return; }
+  var parts=matchMeetParts(m), team=mmIsTeamWs(), opp=String(m.opponent||"").trim()||"상대";
+  var rows=parts.map(function(p){ return '<label class="'+(p.ok?"":"off")+'"><input type="checkbox" data-mm-part="'+p.key+'"'+(p.ok?" checked":" disabled")+'><b>'+esc(p.label)+'</b><span title="'+esc(p.detail)+'">'+esc(p.detail)+'</span></label>'; }).join("");
+  var sh=mmSheet('<div class="mm-t" id="mmSheetT">'+esc(opp)+'전 미팅 만들기</div>'
+    +'<p class="mm-p">경기 자료를 슬라이드로 옮겨요. 사본이라 나중에 경기 보드를 고쳐도 미팅은 그대로예요.</p>'
+    +'<div class="mm-lab">가져올 것</div><div class="mm-parts">'+rows+'</div>'
+    +'<label class="mm-lab" for="mmName">이름</label><input class="mm-name" id="mmName" maxlength="40" value="'+esc(opp+"전 미팅")+'">'
+    +(team?'<div class="mm-lab">저장 위치</div><div class="mm-seg" role="group" aria-label="저장 위치"><button type="button" data-mm-sh="1" aria-pressed="true">☁ 팀 공유<small>코치진 모두 볼 수 있어요</small></button><button type="button" data-mm-sh="0" aria-pressed="false">내 자료<small>나만</small></button></div>':'')
+    +'<p class="mm-p">선수에게는 보이지 않아요 — 보관함은 코칭스태프 전용이에요.</p>'
+    +'<div class="mm-foot"><button type="button" data-mm-x>취소</button><button type="button" class="go" data-mm-go></button></div>');
+  var ov=sh.ov, shared=team;
+  function picked(){ var keys=[].slice.call(ov.querySelectorAll("[data-mm-part]:checked")).map(function(x){return x.getAttribute("data-mm-part");}); var sl=[]; parts.forEach(function(p){ if(keys.indexOf(p.key)>=0)sl=sl.concat(p.slides); }); return sl; }
+  function upd(){ var n=picked().length, g=ov.querySelector("[data-mm-go]"); g.textContent=n?("슬라이드 "+n+"장으로 만들기"):"고른 것이 없어요"; g.disabled=!n; }
+  ov.addEventListener("change",function(e){ if(e.target&&e.target.hasAttribute&&e.target.hasAttribute("data-mm-part"))upd(); });
+  ov.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest("button"); if(!b)return;
+    if(b.hasAttribute("data-mm-sh")){ shared=b.getAttribute("data-mm-sh")==="1"; ov.querySelectorAll("[data-mm-sh]").forEach(function(x){x.setAttribute("aria-pressed",String(x===b));}); return; }
+    if(b.hasAttribute("data-mm-go")){ var sl=picked(); if(!sl.length)return; var nm=String(($("mmName")&&$("mmName").value)||"").trim()||(opp+"전 미팅");
+      if(!matchCanLeaveWork())return; sh.close();
+      mmPost({type:"meetingFromMatch",payload:{name:nm,shared:!!shared,ref:mmRefOf(m),slides:sl}}); }
+  });
+  upd();
+  setTimeout(function(){ try{ var g=ov.querySelector("[data-mm-go]"); if(g&&!g.disabled)g.focus(); }catch(_){} },40);
+}
+function mmLinkSheet(m){
+  if(!mmCanLib()){ toast("보관함 편집 권한이 있어야 연결할 수 있어요"); return; }
+  mmLoadLib().then(function(lib){
+    var uid=mmMyUid(), team=mmIsTeamWs(), all=(lib||[]).filter(function(d){return d&&(d.type||"")==="meeting"&&!d.deletedAt&&!d._deleted;})
+      .sort(function(a,b){return (+(b.editedAt||b.savedAt)||0)-(+(a.editedAt||a.savedAt)||0);}).slice(0,40);
+    var opp=String(m.opponent||"").trim()||"상대";
+    var rows=all.map(function(d){ var here=d.matchRef&&String(d.matchRef.mid)===String(m.id), mine=mmMine(d,uid,team), sl=Array.isArray(d.slides)?d.slides.length:0;
+      var why=here?"이 경기에 연결됨":(!mine?"만든 사람만 연결할 수 있어요":(d.matchRef?("지금 "+(String(d.matchRef.opp||"").trim()||"다른 경기")+" "+String(mmDateLabel(d.matchRef.date)).split(" ")[0]+"에서 옮겨 와요"):""));
+      return '<button type="button" class="mm-pick" data-mm-lib="'+esc(d.libId)+'"'+((here||!mine)?" disabled":"")+'><b>'+esc(d.name||"미팅")+'</b><small>'+esc(["슬라이드 "+sl,why].filter(Boolean).join(" · "))+'</small></button>'; }).join("");
+    var sh=mmSheet('<div class="mm-t" id="mmSheetT">'+esc(opp)+'전에 미팅 연결</div>'
+      +'<p class="mm-p">보관함의 미팅을 이 경기와 이어요 — 미팅은 그대로, 이 경기 준비에 떠요.</p>'
+      +(rows?'<div class="mm-list">'+rows+'</div>':'<p class="mm-p">보관함에 미팅이 아직 없어요 — «＋ 경기 자료로 만들기»로 시작해요.</p>')
+      +'<div class="mm-foot"><button type="button" data-mm-x>닫기</button></div>');
+    sh.ov.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-mm-lib]"); if(!b||b.disabled)return; sh.close(); mmPost({type:"meetingLink",libId:b.getAttribute("data-mm-lib"),ref:mmRefOf(m)}); });
+  });
+}
+window.addEventListener("message",function(e){
+  var d=e.data||{}; if(e.source!==parent||d.source!=="app"||d.type!=="meetingLinkResult")return;
+  if(d.ok)toast(d.linked?"이 경기에 미팅을 연결했어요 ✓":"이 경기에서 뗐어요 · 미팅은 보관함에 그대로");
+  else toast(d.reason==="denied"?"만든 사람만 경기와 이을 수 있어요":(d.reason==="gone"?"그 미팅을 보관함에서 찾지 못했어요":"연결하지 못했어요 — 다시 눌러 주세요"));
+  var m=matchGet(); if(m)matchRenderMeetings(m);
+});
+window.addEventListener("storage",function(e){ if(!e||e.key!=="cs_lib_rev")return; try{ var m=matchGet(); if(m&&matchNav==="one")matchRenderMeetings(m); }catch(_){} });
 window.addEventListener("message",e=>{const d=e.data||{};
   if(d.type==="setView"&&d.view){try{setView(d.view);}catch(_){}}
   if(d.source==="app"&&d.type==="reviewTrainingBack")matchReviewTrainingBack(e);
@@ -14591,6 +14834,7 @@ function renderMatch(){
   try{ var _st=$("matchStatus"), _sum=document.querySelector("#matchView .match-summary"); if(_st&&_sum&&_st.parentElement&&_st.parentElement.classList.contains("match-picker")){ _sum.appendChild(_st); } }catch(_){}
   try{ paintMatchOwner(m.id,readonly); }catch(_){}          /* 1.621 — 담당 칩 */
   matchRenderPlayers(m,readonly);matchSetFields(m,readonly);matchRenderRating(m,readonly);matchRenderFifa(m,readonly);matchRenderBoards(m,"prep",readonly);matchRenderBoards(m,"review",readonly);
+  try{ matchRenderMeetings(m); }catch(_){}   /* 2.928 — 이 경기 미팅 */
   document.querySelectorAll(".match-tabs button").forEach(function(b){b.classList.toggle("on",b.dataset.matchTab===matchTab);});
   document.querySelectorAll("[data-match-step]").forEach(function(b){
     var current=b.dataset.matchStep===matchStage;b.classList.toggle("on",current);
