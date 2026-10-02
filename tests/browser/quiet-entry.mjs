@@ -4,7 +4,6 @@ import http from 'node:http';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
-import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
 
 // Real app/board/sync entry in isolated synthetic team accounts. Every external
 // request is fulfilled with a fixture or blocked, including realtime sockets.
@@ -86,7 +85,7 @@ try{
       }
       await route.fulfill({status:200,headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*'},body:JSON.stringify(body)});
     });
-    const page=await context.newPage();page.setDefaultTimeout(25000);const errorAt=[];page.on('pageerror',e=>{errors.push(e.message);errorAt.push(Date.now());});const navAborts=trackNavigationAborts(page,null); /* 2026-10-02 — 이동이 끊거나 시작을 거부한 fetch 의 WebKit 흔적은 오류로 세지 않는다(tests/fixtures/navigation-abort.mjs) */
+    const page=await context.newPage();page.setDefaultTimeout(25000);page.on('pageerror',e=>errors.push(e.message));
     try{
       for(const phase of ['open','reload']){
         const previousPull=phase==='reload'?await page.evaluate(()=>localStorage.getItem('ps_last_pull_at')):null;
@@ -106,7 +105,9 @@ try{
         await page.screenshot({path:path.join(out,label+'-'+phase+'.png')});
       }
       const release=page.locator('#psReleaseNotes');await release.waitFor({state:'visible'});
-      assert.match(await release.innerText(),/최근 업데이트/);
+      /* 2.902 부터 폰(≤767px) 띠는 «v2.9xx · 제목» + ✕ 한 줄 — «최근 업데이트» 머리와 «일주일간 안 보기» 버튼은 숨는다. 이름은 aria-label 로 본다. */
+      assert.equal(await release.getAttribute('aria-label'),'최근 업데이트');
+      assert.match(await release.innerText(),spec.mobile?/v\d+\.\d+/:/최근 업데이트/);
       const releaseStatusOverlap=await page.evaluate(()=>{
         const status=document.querySelector('#psSyncStrip');if(!status||!status.checkVisibility())return false;
         const a=status.getBoundingClientRect();return Array.from(document.querySelectorAll('#psReleaseNotes button')).some(button=>{
@@ -127,7 +128,7 @@ try{
       assert.equal(await supportDialog.evaluate(el=>el.open),true);assert.match(await supportDialog.innerText(),/제보 작성/);
       await page.screenshot({path:path.join(out,label+'-support-dialog.png')});
       await supportDialog.getByRole('button',{name:'오류 제보 닫기',exact:true}).click();assert.equal(await supportDialog.evaluate(el=>el.open),false);
-      await release.getByRole('button',{name:'일주일간 안 보기',exact:true}).click();assert.equal(await release.isVisible(),false);
+      await release.getByRole('button',{name:spec.mobile?'업데이트 안내 닫기':'일주일간 안 보기',exact:true}).click();assert.equal(await release.isVisible(),false);   // 폰의 ✕ 도 같은 «일주일 숨김»
       const releaseHide=await page.evaluate(()=>JSON.parse(localStorage.getItem(PSReleaseNotes.STORAGE_KEY)));
       assert.equal(releaseHide.until-releaseHide.from,7*24*60*60*1000,'Real shell saves a seven-day release notice hide');
       const acct=page.locator('#psAcctWrap .acct-btn');if(spec.mobile)await acct.tap();else await acct.click();
@@ -136,7 +137,7 @@ try{
       assert.equal(await page.locator('#psWsModal input').inputValue(),serverName,'manual name editor retains hydrated name');
       await page.screenshot({path:path.join(out,label+'-manual-name.png')});
       assert.ok(calls.some(c=>c.path.endsWith('/ps_members_of_v2')),'real server-name hydration path ran');
-      const runtimeErrors=errors.filter((e,i)=>!navAborts.isAbort(e,errorAt[i])).filter(e=>!/^ResizeObserver loop (completed with undelivered notifications\.|limit exceeded)$/.test(e));
+      const runtimeErrors=errors.filter(e=>!/^ResizeObserver loop (completed with undelivered notifications\.|limit exceeded)$/.test(e));
       assert.deepEqual(runtimeErrors,[],'no JavaScript runtime errors');
       results.push({viewport:spec,serverName:!!serverName,open:true,reload:true,manualNameEditor:true,silentHydration:!!serverName,releaseBanner:true,releaseNoStatusOverlap:true,releaseSevenDayHide:true,supportEntry:true,passed:true});
       console.log(JSON.stringify({label,passed:true}));
