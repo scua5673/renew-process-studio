@@ -5204,6 +5204,8 @@ window.wkbdSetLibItem=function(di,li,d){
 /* 보관함 전체에서 고르기 — 검색 + 폴더 구분(사용자 확정) */
 window.wkbdLibPick=function(di,li){
   if(!psLibraryRequireUnlocked(true))return;
+  /* 2.934 — 보관함을 새로 읽는 중이면 끝난 뒤 연다(방금 저장한 훈련이 목록에 있게) */
+  if(__psLibPending){ var __pp=__psLibPending; __pp.then(function(){ wkbdLibPick(di,li); }); return; }
   var all=libDrills();
   var sheet=document.getElementById('sheet');
   sheet.dataset.psLibraryFlow='1';
@@ -8349,6 +8351,28 @@ function psLibraryReload(){
     }).catch(function(){});
   }catch(_){}
 }
+/* ══ 2.934 · 보관함에 새로 저장한 훈련이 «보관함에서 가져오기»에 안 보이던 것(오류 제보 10/1 «보관함에 저장해 놓고 오늘 훈련 세션 › 보관함에서
+   선택하려고 하면 없음 · 껐다 켜면 바로 생김») ═════════════════════════════════════════════════
+   libDrills() 는 처음 한 번 읽은 목록(__psLibCache)을 계속 썼고, 다시 읽는 것은 로그인 상태가 바뀔 때뿐이었다.
+   작전판 저장·다른 기기 동기화는 둘 다 `cs_lib_rev` 를 찍는다 — 그 신호에 목록을 새로 읽는다.
+   ⚠ 읽는 동안에는 **옛 목록을 비우지 않는다**(비우면 그 사이 연 창이 «보관함이 비어 있어요»라고 거짓말한다).
+   고르는 창은 새로 읽기가 진행 중이면 끝난 뒤에 연다. */
+var __psLibRefreshSeq=0, __psLibPending=null;
+function psLibraryRefresh(){
+  if(!psLibraryDataUnlocked()||!window.storage||!window.storage.get)return Promise.resolve(false);
+  var epoch=__psLibEpoch, seq=++__psLibRefreshSeq;
+  var p=Promise.resolve().then(function(){ return window.storage.get('cs_drill_lib_v1'); }).then(function(r){
+    if(epoch!==__psLibEpoch||seq!==__psLibRefreshSeq||!psLibraryDataUnlocked())return false;
+    var a=null; try{ a=r&&r.value?JSON.parse(r.value):[]; }catch(_){ return false; }
+    if(!Array.isArray(a))return false;
+    __psLibCache=a;
+    try{ renderDrillShelf(); }catch(_){}
+    return true;
+  }).catch(function(){ return false; }).then(function(ok){ if(__psLibPending===p)__psLibPending=null; return ok; });
+  __psLibPending=p;
+  return p;
+}
+window.addEventListener('storage',function(e){ if(e&&e.key==='cs_lib_rev'&&psLibraryDataUnlocked())psLibraryRefresh(); });
 function psLibraryAuthChanged(forced){
   var raw=psLibraryRawDataUnlocked();
   if(forced===false||!raw)__psLibForcedLock=true;
