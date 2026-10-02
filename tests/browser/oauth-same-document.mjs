@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import net from 'node:net';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
 
 // Full application with isolated fake accounts and a per-workspace fixture server.
 // No provider login, production database, or user browser profile is contacted.
@@ -41,7 +42,7 @@ if(engine==='webkit'){
   await new Promise((resolve,reject)=>{rejectProxy.once('error',reject);rejectProxy.listen(0,'127.0.0.1',resolve);});
 }
 const browser=await pw[engine].launch({headless:true,...(engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{}),...(rejectProxy?{proxy:{server:'http://127.0.0.1:'+rejectProxy.address().port}}:{})});
-let context,page,profiler;
+let context,page,profiler,navAborts=null;
 try{
   context=await browser.newContext({viewport:{width:1280,height:900},serviceWorkers:'block',timezoneId:'Asia/Seoul',offline:!rejectProxy});
   // The app sees online because its fixture responses are fulfilled locally.
@@ -105,7 +106,7 @@ try{
     }
     await route.fulfill({status:200,headers,body:JSON.stringify(body)});
   });
-  page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>{errors.push(e.message);errorDetails.push({at:Date.now(),message:e.message,stack:e.stack});});
+  page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>{errors.push(e.message);errorDetails.push({at:Date.now(),message:e.message,stack:e.stack});});navAborts=trackNavigationAborts(page,null); /* 2026-10-02 — 이동이 끊거나 시작을 거부한 fetch 의 WebKit 흔적은 오류로 세지 않는다(tests/fixtures/navigation-abort.mjs) */
   page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')diagnostics.push({at:Date.now(),type:m.type(),text:m.text()});});
   async function ready(wid,uid){
     await bounded(page.waitForFunction(({wid,uid})=>window.PSSync&&PSSync.dataUnlocked()&&PSSync.activeWs()===wid&&PSSync.session()?.uid===uid&&PSSync.rosterReady(wid),{wid,uid}),'account ready '+wid,35000);
@@ -183,7 +184,7 @@ try{
   }
   await page.screenshot({path:path.join(out,'same-document-callback-fixed.png')});
   assert.deepEqual(unauthorized,[]);
-  assert.deepEqual(errors.filter(e=>!e.startsWith('ResizeObserver loop')),[]);
+  assert.deepEqual(errors.filter((e,i)=>!e.startsWith('ResizeObserver loop')&&!navAborts.isAbort(e,errorDetails[i].at)),[]);
   const authDataRequests=attemptedRequests.filter(r=>/^\/(rest|auth)\/v1\//.test(r.path));
   assert.ok(authDataRequests.length>0);assert.ok(authDataRequests.every(r=>r.origin===fixtureAuth),'auth/data requests never target a production origin');
   assert.ok(attemptedRequests.every(r=>r.origin!==configuredAuth),'the production auth origin is never requested');

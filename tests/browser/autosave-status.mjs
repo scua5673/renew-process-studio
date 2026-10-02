@@ -4,6 +4,7 @@ import http from 'node:http';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
 
 // Real shell and status renderer with synthetic state fixtures. Every external
 // request is mocked or blocked. No production data is read or modified.
@@ -85,7 +86,7 @@ try{
       }
       await route.fulfill({status:200,headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*'},body:JSON.stringify(body)});
     });
-    const page=await context.newPage();page.setDefaultTimeout(25000);page.on('pageerror',e=>errors.push(e.message));
+    const page=await context.newPage();page.setDefaultTimeout(25000);const errorAt=[];page.on('pageerror',e=>{errors.push(e.message);errorAt.push(Date.now());});const navAborts=trackNavigationAborts(page,null); /* 2026-10-02 — 이동이 끊거나 시작을 거부한 fetch 의 WebKit 흔적은 오류로 세지 않는다(tests/fixtures/navigation-abort.mjs) */
     try{
       await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
       await page.waitForFunction(()=>window.PSSync&&PSSync.dataUnlocked()&&localStorage.getItem('ps_last_pull_at'));
@@ -188,7 +189,7 @@ try{
       await page.screenshot({path:path.join(out,spec.width+'-real-bridge-recovery.png')});
       await page.evaluate(()=>{localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:'changed-synthetic-owner',wid:'changed-synthetic-team'}));window.dispatchEvent(new Event('ps-sync-state'));});
       assert.equal(await page.locator('#psAutosaveRecoveryDialog').count(),0,'The real ownership fence revokes the open recovery view');
-      const runtimeErrors=errors.filter(e=>!/^ResizeObserver loop (completed with undelivered notifications\.|limit exceeded)$/.test(e));
+      const runtimeErrors=errors.filter((e,i)=>!navAborts.isAbort(e,errorAt[i])).filter(e=>!/^ResizeObserver loop (completed with undelivered notifications\.|limit exceeded)$/.test(e));
       assert.deepEqual(runtimeErrors,[],'No runtime errors');
       results.push({width:spec.width,compactStates:cases.length,noBootPopup:true,noAutomaticDialog:true,advancedRecovery:true,noDocumentChoices:true,exactOriginalExport:true,recoveryOwnerGuard:true,realRecoveryBridge:true,passed:true});
       console.log(JSON.stringify(results.at(-1)));
