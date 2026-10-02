@@ -11064,6 +11064,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function teamScheduleRead(){
     try{
       var ps=window.PSSchedule;
+      if(ps&&typeof ps.view==='function')return ps.view(myGrp())||null;   /* 2.933 — 읽기 전용 공유 사본: 하루마다 문서 전체를 새로 파싱하지 않는다(여기서 받은 것은 읽기만 한다) */
       if(ps&&typeof ps.readFor==='function')return ps.readFor(myGrp())||null;
       if(ps&&typeof ps.read==='function')return ps.read()||null;
       return JSON.parse(localStorage.getItem('process_coach_v1')||'null');
@@ -15329,12 +15330,33 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   window.addEventListener('message',function(e){if(window.parent===window||e.source!==window.parent||e.origin!==location.origin)return;var data=e.data||{};if(data.source==='process-studio'&&data.type==='ps-auth-state')idpRecoverySessionChanged(data.unlocked);});
   window.addEventListener('storage',function(e){if(!e||e.key===null||/^(ps_sync_session|ps_active_ws|ps_ws_list|cs_perms_v1|ps_cache_owner_v1)$/.test(e.key||''))idpRecoverySessionChanged();});
   setInterval(function(){idpRecoverySessionChanged();},800);
+  /* 2.933 — 숨은 iframe 판정·미룬 그리기. 보이게 되면 셸이 보통 openPersonal/openSquad 로 다시 그리게 하지만,
+     그 길이 아닌 경우를 위해 창 크기 바뀜(0 → 실제 폭)과 1초 확인을 둔다(숨어 있는 동안만 돈다). */
+  function idpFrameHidden(){ try{ return window.parent!==window&&window.innerWidth===0&&window.innerHeight===0; }catch(_){ return false; } }
+  var _idpRenderPoll=0,_idpRenderStale=false;
+  function idpRenderLater(){
+    _idpRenderStale=true; if(_idpRenderPoll)return;
+    var stop=function(){ clearInterval(_idpRenderPoll); _idpRenderPoll=0; window.removeEventListener('resize',flush); };
+    var flush=function(){
+      if(!_idpRenderStale){stop();return;}
+      if(idpFrameHidden())return;
+      stop(); _idpRenderStale=false;
+      var typing=visionEdit||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+      if(!typing&&!_idpRecoverySuspended){ try{render();}catch(_){} }
+    };
+    _idpRenderPoll=setInterval(flush,1000); window.addEventListener('resize',flush);
+  }
   window.addEventListener('storage',function(e){
     if(_idpRecoverySuspended)return;
     var typing=visionEdit||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
     /* 일정 iframe·다른 기기 동기화가 최신 팀 일정을 넣으면, IDP를 다시 열지 않아도
        읽기 전용 카드와 오늘 루틴 후보를 즉시 다시 계산한다. 입력 중인 개인 기록은 지키기. */
-    if(e.key==='process_coach_v1'){if(!typing)render();return;}
+    if(e.key==='process_coach_v1'){
+      /* 2.933 — 숨어 있으면(셸이 일정 탭을 보여 주는 중 — display:none 이라 폭 0) 보일 때 한 번만 그린다.
+         일정 시트에서 누를 때마다 안 보이는 IDP 를 통째로 다시 그리던 것이 같은 스레드를 붙잡았다. */
+      if(idpFrameHidden()){idpRenderLater();return;}
+      if(!typing)render();return;
+    }
     if(squadView&&sqPanel==='matches'&&(e.key==='cs_team_matches_v1'||e.key==='cs_match_del_v1'||e.key==='cs_perms_v1')){if(!typing)render();return;}
     if(e.key&&e.key.indexOf(PUBP)===0){if(!typing)render();return;}
     if(!e.key||e.key.indexOf(PREFIX)!==0)return;

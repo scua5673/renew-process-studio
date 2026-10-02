@@ -1346,10 +1346,41 @@
   var seq=0;
   function newId(){ seq++; return 'm'+Date.now().toString(36)+seq.toString(36)+Math.random().toString(36).slice(2,7); }
 
-  /* 저장된 주차 인덱스가 기준 삼는 월요일. 기록이 없으면 이번 주 월요일. */
+  /* 저장된 주차 인덱스가 기준 삼는 월요일. 기록이 없으면 이번 주 월요일.
+     ⚠ 2.933 — cellOf() 가 날짜 칸마다 이걸 부른다. 예전에는 부를 때마다 일정 문서 **전체**(수백 KB~2MB)를
+       JSON.parse 했다 — 실측: 콕핏 한 번 그리는 데 729번, 1.7MB 문서에서 이 맥 1.4초(아이패드는 몇 배).
+       일정을 한 번 저장할 때마다 숨어 있는 «오늘» 화면이 그만큼 메인 스레드를 붙잡아 세션 시트가 굳었다.
+       같은 원문이면 한 번만 읽는다. 비교는 `===` — 크롬은 getItem 이 같은 문자열 객체를 돌려줘 즉시 끝나고,
+       아니어도 memcmp 라 파싱보다 수십 배 싸다. 돌려주는 Date 는 매번 새 사본(호출부가 고쳐도 안전). */
+  var anchorMemo={raw:null,d:null};
   function anchor(){
-    var data=readJSON(SCHED_KEY);
-    return parseYmd(data&&data.anchorMonday)||mondayOf();
+    var raw=null;try{raw=localStorage.getItem(SCHED_KEY);}catch(_){}
+    var d=null;
+    if(raw){
+      if(raw===anchorMemo.raw)d=anchorMemo.d;
+      else{
+        var data=null;try{data=JSON.parse(raw);}catch(_){}
+        d=parseYmd(data&&data.anchorMonday);
+        anchorMemo={raw:raw,d:d};
+      }
+    }
+    return d?new Date(d.getTime()):mondayOf();
+  }
+  /* 2.933 — 화면이 **읽기만** 하는 일정 사본(같은 원문·같은 조면 한 번만 만든다).
+     read()/readFor() 는 부를 때마다 새로 파싱한다(조를 고르면 모든 날을 깊은 복사까지 — 이 맥 9ms/회).
+     콕핏·출석·IDP 는 한 번 그리는 데 이걸 수십 번 불렀다. 여기서 받은 객체는 **고치지 말 것** —
+     다음 호출자도 같은 객체를 받는다. 고쳐야 하면 read()/readFor() 로 새 사본을 받는다. */
+  var viewMemo={raw:null,by:{}};
+  function view(grp){
+    var raw=null;try{raw=localStorage.getItem(SCHED_KEY);}catch(_){}
+    if(!raw)return null;
+    if(raw!==viewMemo.raw)viewMemo={raw:raw,by:{}};
+    var key=String(grp||'');
+    if(!Object.prototype.hasOwnProperty.call(viewMemo.by,key)){
+      var d=null;try{d=JSON.parse(raw);}catch(_){}
+      viewMemo.by[key]=(d&&key)?readForData(d,key):d;
+    }
+    return viewMemo.by[key];
   }
   function cellOf(date,base){
     var a=new Date(base||anchor()), d=date instanceof Date?new Date(date):parseYmd(date);
@@ -1513,6 +1544,7 @@
     }
     return o;
   }
+  function readForData(d,grp){ var o=Object.assign({},d);o.weeks={};var weeks=d.grpWeeks&&d.grpWeeks[grp]||d.weeks||{};Object.keys(weeks).forEach(function(k){o.weeks[k]=(weeks[k]||[]).map(function(day){return groupDay(day,grp);});});o.grpScope=grp;return o; }
   window.PSSchedule={
     /* 2.475 — 죽은 export 정리(전수조사: 외부 사용은 anchor·hasMatch·mondayOf·newId·stampIds·cellOf·read·readFor 뿐).
        ymd·parseYmd·sourceId·normalize 본체는 내부 호출로 산다 — export 표면만 걷음 */
@@ -1522,7 +1554,9 @@
     anchor:anchor, cellOf:cellOf,
     read:function(){ return readJSON(SCHED_KEY); },
     /* 2.215 — 조별 일정: grpWeeks[조] 가 있으면 그것을 weeks 로 돌려준다(없으면 전체). 원본은 건드리지 않는다 */
-    readFor:function(grp){ var d=readJSON(SCHED_KEY); if(!d||!grp)return d; var o=Object.assign({},d);o.weeks={};var weeks=d.grpWeeks&&d.grpWeeks[grp]||d.weeks||{};Object.keys(weeks).forEach(function(k){o.weeks[k]=(weeks[k]||[]).map(function(day){return groupDay(day,grp);});});o.grpScope=grp;return o; },
+    readFor:function(grp){ var d=readJSON(SCHED_KEY); if(!d||!grp)return d; return readForData(d,grp); },
+    /* 2.933 — 읽기 전용 공유 사본(위 view 주석). 화면 그리기용 */
+    view:view,
   };
 
   /* 페이지의 인라인 코드가 일정을 읽기 전에 기준선을 맞춘다. */

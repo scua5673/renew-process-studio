@@ -2828,11 +2828,13 @@ function __schedQueueIncoming(raw){
   try{var n=Date.now();if(!window.__schedRemoteToast||n-window.__schedRemoteToast>5000){window.__schedRemoteToast=n;toast('팀 일정 변경이 도착했어요 — 편집을 끝낸 뒤 반영합니다');}}catch(_){}
   __schedUpdateSignal();
 }
+var __histRawNext=null;   /* 2.933 — save 가 방금 만든 weeks 원문(같은 replacer). pushHist 가 다시 직렬화하지 않게 */
 function __snap(){ try{ return JSON.stringify(weeksMap,(k,v)=> k==='_open'?undefined:v); }catch(_){ return null; } }
 function __undoBtnSync(){ try{ var b=document.getElementById('undoBtn'); if(b) b.disabled=(__hist.length<2); }catch(_){} }
 function pushHist(){
+  var pre=__histRawNext; __histRawNext=null;
   if(__undoing) return;
-  var s=__snap(); if(s===null) return;
+  var s=(typeof pre==='string')?pre:__snap(); if(s===null) return;
   if(__hist.length && __hist[__hist.length-1]===s) return;
   __hist.push(s); if(__hist.length>60) __hist.shift();
   __undoBtnSync();
@@ -2842,7 +2844,7 @@ function doUndo(){
   __hist.pop();
   var prev=__hist[__hist.length-1];
   __undoing=true;
-  try{ weeksMap=JSON.parse(prev); if(!weeksMap[wk]) weeksMap[wk]=blankWeek(); week=weeksMap[wk]; recomputeMD(); }catch(_){}
+  try{ weeksMap=JSON.parse(prev); __schedBase=weeksMap; if(!weeksMap[wk]) weeksMap[wk]=blankWeek(); week=weeksMap[wk]; recomputeMD(); }catch(_){}   /* 2.933 — __schedBase 도 같이: 안 바꾸면 저장이 옛 객체를 써서 되돌리기와 그 뒤 모든 편집이 저장되지 않았다(실측) */
   __undoing=false;
   try{save();}catch(_){}
   syncViews(); try{renderMix();}catch(_){}
@@ -2911,8 +2913,28 @@ function schedThumbDiet(root){
   return {seen:seen,saved:saved};
 }
 window.schedThumbDiet=schedThumbDiet;
+/* ══ 2.933 · 한 번 누르면 저장도 한 번 ═══════════════════════════════════════════════
+   여러 처리기가 `save(); syncViews();` 로 끝나는데 syncViews 가 또 save() 한다 — 세션 시트에서 한 번 누를 때마다
+   일정 문서 **전체**(수백 KB~2MB)를 두 번 직렬화·저장했고, 세션 추가는 세 번이었다. 저장마다 다른 화면들이
+   storage 이벤트를 받아 다시 계산하므로 비용이 그만큼 곱해졌다(사용자: «만들다 보면 딜레이 · 아이패드는 더»).
+   이제 save() 는 **지금 하는 일이 끝나는 순간(마이크로태스크) 한 번** 쓴다. 다른 이벤트·타이머·화면 닫힘은
+   그 사이에 끼어들 수 없으므로(같은 태스크의 끝) 잃는 것은 없고, 쓰는 내용은 늘 그 순간의 최신 상태다.
+   같은 태스크 안에서 저장된 원문을 곧바로 읽어야 하는 곳은 saveFlush() 로 먼저 쓴다. */
+var __saveQueued=false;
 function save(){
+  if(__saveQueued)return true;
+  __saveQueued=true;
+  try{ (window.queueMicrotask||function(f){Promise.resolve().then(f);})(function(){ if(!__saveQueued)return; __saveQueued=false; saveNow(); }); }
+  catch(_){ __saveQueued=false; return saveNow(); }
+  return true;
+}
+function saveFlush(){ if(!__saveQueued)return true; __saveQueued=false; return saveNow(); }
+window.saveFlush=saveFlush;
+function saveNow(){
   try{
+    /* 2.933 — 2.380 부터 조는 보기일 뿐이라 __schedBase 는 늘 weeksMap 이어야 한다. 둘이 갈라지면(옛 ⌘Z 경로)
+       저장이 화면과 다른 옛 객체를 써서 편집이 조용히 사라졌다 — 갈라져 있으면 화면 쪽(weeksMap)을 정본으로 */
+    if(__schedBase&&__schedBase!==weeksMap)__schedBase=weeksMap;
     const dn=document.getElementById('dayN');
     /* 경기 칸에 안정 ID를 채운 뒤, 지금 메모리의 주차 키가 기준 삼는 월요일을 함께 저장한다.
        "오늘의 월요일"이 아니라 __ANCHOR를 쓰는 이유: 앱을 켜 둔 채 월요일을 넘겨도
@@ -2938,7 +2960,14 @@ function save(){
       /* 누가 마지막으로 만졌는지 — 팀 일정 화면의 '마지막 수정' 표시용(1.482) */
       editedBy:(function(){try{return localStorage.getItem('ps_display_name')||'';}catch(_){return '';}})(), editedAt:Date.now()};
     /* 1.618 — localStorage 에만 쓰면 팀에 안 올라간다(동기화는 IndexedDB 를 읽는다). */
-    const raw=JSON.stringify(data, (k,v)=> k==='_open'?undefined:v);
+    /* 2.933 — 주차(weeks)는 한 번만 직렬화해 저장 원문과 되돌리기 기록(pushHist)이 같이 쓴다.
+       예전엔 같은 1~2MB 를 저장용·기록용으로 두 번 직렬화했다. 결과 원문은 JSON.stringify(data, 같은 replacer) 와 같다
+       (weeks 가 첫 키이고 replacer 는 '_open' 만 거른다). */
+    const __rep=(k,v)=> k==='_open'?undefined:v;
+    const __wkRaw=JSON.stringify(data.weeks, __rep);
+    const __head=JSON.stringify(Object.assign({},data,{weeks:0}), __rep);
+    const raw=(__wkRaw!==undefined&&__head.indexOf('{"weeks":0')===0)?('{"weeks":'+__wkRaw+__head.slice(10)):JSON.stringify(data, __rep);
+    __histRawNext=(data.weeks===weeksMap)?__wkRaw:null;
     (function(raw2){
       try{window.PSSaveState.begin('schedule');}catch(_){}
       if(window.psSaveShared){ if(!window.psSaveShared(STORE_KEY, raw2)) throw new Error('일정 저장 실패'); }
@@ -4250,8 +4279,11 @@ window.wksFill=function(di,slot,focus){
   psAct('a_week');
   __fillDi=di; __fillSlot=String(slot||''); __fillFocusEl=''; __fillNoSes=false; __fillPickOpen=false; __fillTimeOpen=-1; __fillDraft=-1; __fillNameOpen=-1;
   try{ window.__fillReturn=null; }catch(_){}
+  /* 2.933 — 시트를 **열기만** 해도 문서 전체를 저장했다. 세션이 새로 생겼을 때만 저장한다
+     (편집 중 표시는 시트가 열리는 순간 scrim 관찰자가 셸에 알린다). */
+  var __nb=((week[di]||{}).trainings||[]).length;
   ensureSlotSession(di,__fillSlot);
-  try{save();}catch(_){}
+  if(((week[di]||{}).trainings||[]).length!==__nb){ try{save();}catch(_){} }
   wksFillRender(false,focus);
 };
 /* ══ 2.391 · 일정 ＋ 는 **고르는 문**이지 만드는 문이 아니다(사용자) ═══════════════════
@@ -5775,6 +5807,11 @@ function hubEditMatch(){ if(!__hub) return; const col=__hub.col; hubGotoWeek(); 
    **DOM 을 통째로 다시 만들면** IME 조합이 끊겨 낱자(ㄴㅏㄴㅣ)로 떨어진다.
    조합이 끝날 때까지 미뤘다가 한 번 그린다 — 2.296(Enter 조합 가드)과 같은 뿌리의 문제다. */
 var __imeOn=false, __syncPendOn=false, __syncPendSave=undefined;
+var __viewsStale=false;   /* 2.933 — 시트 뒤라 미뤄 둔 다시 그리기(syncViews 주석) */
+function __sheetCovering(){ try{ var sc=document.getElementById('scrim'); return !!(sc&&sc.classList.contains('show')); }catch(_){ return false; } }
+try{ (function(){ var sc=document.getElementById('scrim'); if(!sc||!window.MutationObserver)return;
+  new MutationObserver(function(){ if(__viewsStale&&!sc.classList.contains('show')){ __viewsStale=false; try{syncViews(false);}catch(_){} } })
+    .observe(sc,{attributes:true,attributeFilter:['class']}); })(); }catch(_){}
 document.addEventListener('compositionstart',function(){ __imeOn=true; },true);
 document.addEventListener('compositionend',function(){ __imeOn=false;
   if(__syncPendOn){ var v=__syncPendSave; __syncPendOn=false; __syncPendSave=undefined;
@@ -5785,6 +5822,11 @@ function syncViews(shouldSave){            // 모든 변경 후 단일 호출 �
   if(__imeOn){ if(shouldSave===false)__syncPendSave=false; __syncPendOn=true; return; }
   try{recomputeMD();}catch(_){}
   if(shouldSave!==false)try{save();}catch(_){}
+  /* 2.933 — 시트(세션 채우기 등)가 열려 있는 동안 내 편집으로는 뒤의 주간 보드·달력을 다시 그리지 않는다.
+     어두운 막 뒤라 보이지도 않는데, 누를 때마다 보드 전체를 새로 짜고 배치하느라 아이패드에서 손이 굳었다.
+     닫히는 순간(scrim 관찰자) 한 번 그린다. 다른 기기에서 온 변경(shouldSave===false)은 예전처럼 바로 그린다. */
+  if(shouldSave!==false&&__sheetCovering()){ __viewsStale=true; return; }
+  __viewsStale=false;
   try{renderWeek();}catch(_){}
   try{const m=document.getElementById('monthViewWrap'); if(m&&m.style.display!=='none') renderMonth();}catch(_){}
   try{const d=document.getElementById('dayViewWrap'); if(d&&d.style.display!=='none') renderDay();}catch(_){}
