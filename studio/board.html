@@ -9272,7 +9272,7 @@ async function seedTemplates(){
     d.libId="T"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     d.savedAt=Date.now();normalizeDrill(d);return d;});
   if(!add.length){toast("기본 템플릿이 이미 있어요");return;}
-  await libWrite(add.concat(lib));renderLib();renderLibDock();toast("기본 템플릿 "+add.length+"개 추가됨 ✓");
+  await libWrite(add.concat(lib));libTouch();renderLib();renderLibDock();toast("기본 템플릿 "+add.length+"개 추가됨 ✓");   /* 2.934 — 보관함이 바뀌었다는 신호(cs_lib_rev): 일정·플레이북이 목록을 새로 읽는다 */
 }
 /* ===== 드릴 라이브러리(은행) ===== */
 const LIB_KEY="cs_drill_lib_v1";
@@ -9684,7 +9684,7 @@ async function importDrillPack(file){
     d.savedAt=Date.now();delete d.id;delete d.tpl;
     try{if(d.snap)__sanitizeSnap(d.snap);if(Array.isArray(d.scenes))d.scenes.forEach(sc=>{if(sc&&sc.snap)__sanitizeSnap(sc.snap);});if(Array.isArray(d.frames))d.frames.forEach(fr=>{if(fr&&fr.snap)__sanitizeSnap(fr.snap);});}catch(_){}
     normalizeDrill(d);fresh.push(d);});
-  if(fresh.length)await libWrite(fresh.concat(lib));
+  if(fresh.length){await libWrite(fresh.concat(lib));libTouch();}   /* 2.934 — 신호(cs_lib_rev) */
   renderLib();renderLibDock();
   toast(fresh.length+"개 드릴 가져옴 ✓"+(skipped?(" (중복 "+skipped+"개 건너뜀)"):""));
 }
