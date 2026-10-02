@@ -32,3 +32,56 @@ test('same message with no failed request, another URL, or no navigation stays a
   assert.equal(n2.isAbort(MSG(U),Date.now()),false,'이동과 무관한 실패');
   assert.equal(n2.isAbort('TypeError: x is undefined',Date.now()),false,'다른 오류');
 });
+
+/* 2026-10-02 — 길 B: 내려가는 문서가 새로 시작해 네트워크에 나가지 않은 요청(request·requestfailed 0).
+   main CI 를 멈춘 gamemodel-anim(ps_sync_report_put, 잘린 모양)이 이것이었다. */
+const B='http://127.0.0.1:33535',RU=B+'/rest/v1/rpc/ps_sync_report_put';
+const TRUNC=u=>u.replace(/^https?:\//,'')+' due to access control checks.';   // Playwright 가 첫 콜론에서 자른 모양
+const navReq=(url,frame)=>({url:()=>url,isNavigationRequest:()=>true,frame:()=>frame,failure:()=>null});
+const subReq=url=>({url:()=>url,isNavigationRequest:()=>false,frame:()=>null,failure:()=>null});
+function reloadStarted(p,frame){p.emit('request',navReq(B+'/studio/app.html',frame));}
+test('B: a same-origin fetch refused while the document unloads is marked (truncated form)',()=>{
+  const p=fakePage(),logs=[],main={};const n=track(p,logs);
+  reloadStarted(p,main);
+  logs.push({type:'pageerror',at:Date.now(),text:TRUNC(RU)});n.reclassify();
+  assert.equal(logs[0].type,'pageerror-navabort');assert.equal(logs[0].navabortPath,'B');
+  p.emit('framenavigated',main);
+  assert.equal(logs[0].type,'pageerror-navabort','커밋 뒤에도 그대로');
+  assert.equal(n.isAbort(MSG(RU),Date.now()),true,'온전한 모양도');
+});
+test('B: the error may arrive just after the commit, but not long after',()=>{
+  const p=fakePage(),main={};const n=track(p,null);
+  reloadStarted(p,main);p.emit('framenavigated',main);
+  assert.equal(n.isAbort(TRUNC(RU),Date.now()+1000),true,'커밋 1초 뒤');
+  assert.equal(n.isAbort(TRUNC(RU),Date.now()+5000),false,'커밋 5초 뒤는 이동과 무관');
+});
+test('B: outside any navigation window it stays an error',()=>{
+  const p=fakePage(),main={};const n=track(p,null);
+  const before=Date.now()-1;reloadStarted(p,main);
+  assert.equal(n.isAbort(TRUNC(RU),before-3000),false,'이동 전');
+  const p2=fakePage(),n2=track(p2,null);p2.emit('request',subReq(B+'/studio/app.html'));
+  assert.equal(n2.isAbort(TRUNC(RU),Date.now()),false,'이동 요청이 아니면 구간이 없다');
+  assert.equal(typeof n2.judge(TRUNC(RU),Date.now()).why,'string','남는 오류에는 이유가 붙는다');
+});
+test('B: a cross-origin URL is never treated as a navigation trace',()=>{
+  const p=fakePage(),main={};const n=track(p,null);reloadStarted(p,main);
+  assert.equal(n.isAbort(MSG('http://localhost:9/rest/v1/rpc/ps_sync_report_put'),Date.now()),false,'다른 출처는 CORS 일 수 있다');
+  assert.equal(n.isAbort(TRUNC('https://api.example.invalid/x'),Date.now()),false);
+});
+test('B: a request that actually went out is judged by path A only',()=>{
+  const p=fakePage(),main={};const n=track(p,null);reloadStarted(p,main);
+  const r=subReq(RU);p.emit('request',r);
+  assert.equal(n.isAbort(TRUNC(RU),Date.now()),false,'나가 있던 요청은 B 로 안 본다');
+  p.emit('requestfailed',{...r,failure:()=>({errorText:'Load request cancelled'})});
+  assert.equal(n.isAbort(TRUNC(RU),Date.now()),true,'취소로 끝나면 A');
+});
+test('a real CORS failure is never hidden, by either path, even mid-navigation',()=>{
+  for(const text of ['Preflight response is not successful. Status code: 403','Request header field Content-Type is not allowed by Access-Control-Allow-Headers.','Origin http://127.0.0.1:1 is not allowed by Access-Control-Allow-Origin. Status code: 200']){
+    const p=fakePage(),logs=[],main={};const n=track(p,logs);reloadStarted(p,main);
+    logs.push({type:'pageerror',at:Date.now(),text:TRUNC(RU)});n.reclassify();
+    assert.equal(logs[0].type,'pageerror-navabort','실패 문장이 오기 전에는 B');
+    p.emit('requestfailed',req(RU,text));p.emit('framenavigated',main);
+    assert.equal(logs[0].type,'pageerror',text+' — 뒤에 온 CORS 실패가 판정을 되돌린다');
+    assert.match(logs[0].navabortWhy,/CORS/);
+  }
+});

@@ -5,6 +5,7 @@ import {execFileSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
 
 // Real shell and status renderer with synthetic state fixtures. Every external
 // request is mocked or blocked. No production data is read or modified.
@@ -72,7 +73,7 @@ try{
       }
       await route.fulfill({status:200,headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*'},body:JSON.stringify(body)});
     });
-    const page=await context.newPage();page.setDefaultTimeout(25000);page.on('pageerror',e=>errors.push(e.message));
+    const page=await context.newPage();page.setDefaultTimeout(25000);const errorAt=[];page.on('pageerror',e=>{errors.push(e.message);errorAt.push(Date.now());});const navAborts=trackNavigationAborts(page,null); /* 2026-10-02 — 이동이 끊거나 시작을 거부한 fetch 의 WebKit 흔적은 오류로 세지 않는다(tests/fixtures/navigation-abort.mjs) */
     const report={width:spec.width,phases:[],errors};results.push(report);
     try{
       await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
@@ -229,7 +230,7 @@ try{
         report.teamNavigation={before,after};
         await page.screenshot({path:path.join(out,spec.width+'-team-nav-bad.png')});
       }
-      assert.deepEqual(errors.filter(e=>!/^ResizeObserver loop/.test(e)),[]);
+      assert.deepEqual(errors.filter((e,i)=>!/^ResizeObserver loop/.test(e)&&!navAborts.isAbort(e,errorAt[i])),[]);
       report.passed=true;console.log(JSON.stringify({width:report.width,phases:report.phases.map(p=>({bannerShown:p.bannerShown,editorMarker:p.editorMarker,transitions:p.transitions.map(t=>({name:t.name,stripHeight:t.geometry.strip.height,moved:t.moved}))}))}));
     }catch(e){report.passed=false;report.error=e.stack;await page.screenshot({path:path.join(out,spec.width+'-failure.png')}).catch(()=>{});}
     finally{fs.writeFileSync(path.join(out,spec.width+'-network.json'),JSON.stringify({calls,blocked,errors},null,2));await context.close();}

@@ -4,6 +4,7 @@ import http from 'node:http';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
+import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
 
 // Real app/board/sync entry in isolated synthetic team accounts. Every external
 // request is fulfilled with a fixture or blocked, including realtime sockets.
@@ -85,7 +86,7 @@ try{
       }
       await route.fulfill({status:200,headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*'},body:JSON.stringify(body)});
     });
-    const page=await context.newPage();page.setDefaultTimeout(25000);page.on('pageerror',e=>errors.push(e.message));
+    const page=await context.newPage();page.setDefaultTimeout(25000);const errorAt=[];page.on('pageerror',e=>{errors.push(e.message);errorAt.push(Date.now());});const navAborts=trackNavigationAborts(page,null); /* 2026-10-02 — 이동이 끊거나 시작을 거부한 fetch 의 WebKit 흔적은 오류로 세지 않는다(tests/fixtures/navigation-abort.mjs) */
     try{
       for(const phase of ['open','reload']){
         const previousPull=phase==='reload'?await page.evaluate(()=>localStorage.getItem('ps_last_pull_at')):null;
@@ -135,7 +136,7 @@ try{
       assert.equal(await page.locator('#psWsModal input').inputValue(),serverName,'manual name editor retains hydrated name');
       await page.screenshot({path:path.join(out,label+'-manual-name.png')});
       assert.ok(calls.some(c=>c.path.endsWith('/ps_members_of_v2')),'real server-name hydration path ran');
-      const runtimeErrors=errors.filter(e=>!/^ResizeObserver loop (completed with undelivered notifications\.|limit exceeded)$/.test(e));
+      const runtimeErrors=errors.filter((e,i)=>!navAborts.isAbort(e,errorAt[i])).filter(e=>!/^ResizeObserver loop (completed with undelivered notifications\.|limit exceeded)$/.test(e));
       assert.deepEqual(runtimeErrors,[],'no JavaScript runtime errors');
       results.push({viewport:spec,serverName:!!serverName,open:true,reload:true,manualNameEditor:true,silentHydration:!!serverName,releaseBanner:true,releaseNoStatusOverlap:true,releaseSevenDayHide:true,supportEntry:true,passed:true});
       console.log(JSON.stringify({label,passed:true}));
