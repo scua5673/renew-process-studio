@@ -18841,7 +18841,12 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
 (function(){
   var st=document.getElementById('boardStage'); if(!st)return;
   var busy=false;
-  function fix(){ if(busy)return; busy=true; try{ if(!document.body.classList.contains('ps-dock')){
+  /* 2.936 — 폰 저장 띠(2.903 — ps-savebar · 폭 ≤639px)가 켜진 화면은 건드리지 않는다. 이 감시자는 데스크톱용인데 조건이
+     «ps-dock 아님» 뿐이라, 폰에서도 도크가 붙기 전까지 psSelBarLayout 의 띠 자리(68px)를 12px 로 되돌렸다. 마지막에 누가 쓰느냐로
+     갈려 Linux WebKit 에서 운동장이 띠 밑으로 들어갔다(board-savebar CI 2회 · 진단 4번 중 3번). 예전엔 보드 메시지 'sync' 가 보기 메뉴를
+     여닫으며 생긴 재계산이 우연히 68px 을 마지막에 남겼다(2.936 에서 그 토글을 고치며 드러남). 조건은 _animFitPad 와 같다. */
+  function phoneSaveBar(){ try{ return document.body.classList.contains('ps-savebar')&&!!(window.matchMedia&&matchMedia('(max-width:639px)').matches); }catch(_){ return false; } }
+  function fix(){ if(busy)return; busy=true; try{ if(!document.body.classList.contains('ps-dock')&&!phoneSaveBar()){
       /* 숨은 iframe의 폭은 0이어도 WebKit은 padding만큼 높이를 돌려준다.
          그 높이를 도크 겹침으로 쓰면 여백이 매번 12px씩 늘어 observer가 끝나지 않는다. */
       var sr=st.getBoundingClientRect(); if(!(sr.width>0&&sr.height>0))return;
