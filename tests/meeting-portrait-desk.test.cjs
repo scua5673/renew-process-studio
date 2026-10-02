@@ -123,7 +123,10 @@ test('every place that stores the live board into a slide stores it in the meeti
   const cap=src.slice(src.indexOf('  function meetCap(){'),src.indexOf('\n',src.indexOf('  function meetCap(){')));
   assert.match(cap,/var s=captureSnap\(\);try\{s\.orientation=meetingPdfOrientation\(anim\.slides\)==='landscape'\?'h':'v';\}/);
   const m=src.slice(src.indexOf('  window.__meet={'),src.indexOf('  window.__meetReset='));
-  assert.equal((m.match(/\.snap=meetCap\(\)/g)||[]).length,3,'add · saveCur · dup');
+  /* 2.935 — 슬라이드에 담는 곳은 전부 meetStore 하나(장면 슬라이드면 지금 장면에) — 그 안이 meetCap 이다 */
+  assert.equal((m.match(/meetStore\(meetIdx,true\)/g)||[]).length,5,'go · add · saveCur · del · dup');
+  const store=src.slice(src.indexOf('  function meetStore(i,thumb){'),src.indexOf('  window.__meetSyncCur='));
+  assert.equal((store.match(/\.snap=meetCap\(\)/g)||[]).length,2,'scene and plain slide');
   assert.match(m,/var from=meetCap\(\);/);
   assert.match(m,/snap:meetCap\(\)/);
   assert.equal(/snap=captureSnap\(\)|snap:captureSnap\(\)|var from=captureSnap\(\)/.test(m),false,'no raw capture left in the meeting object');
@@ -137,7 +140,7 @@ test('a new meeting starts in the direction last chosen on this device, landscap
   const a=src.indexOf('  window.__meetReset=function(){');
   const code=src.slice(a,src.indexOf('};\n',a)+3);
   for(const [saved,want] of [[null,'landscape'],['portrait','portrait'],['landscape','landscape'],['sideways','landscape']]){
-    const c=vm.createContext({window:{},anim:{slides:[1]},meetIdx:0,localStorage:{getItem:()=>saved}});
+    const c=vm.createContext({window:{},anim:{slides:[1]},meetIdx:0,meetUnbindNew(){},localStorage:{getItem:()=>saved}});
     vm.runInContext(code,c);c.window.__meetReset();
     assert.equal(c.window.__meetingPdfOrientation,want,String(saved));
     assert.equal(c.anim.slides.length,0);assert.equal(c.window.__meetBlank,true);
