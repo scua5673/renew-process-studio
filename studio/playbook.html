@@ -185,7 +185,7 @@ button:focus-visible{outline:2px solid var(--c-act,#3A6DF0);outline-offset:2px}
     try{
       var PS=window.PSSchedule; if(!PS||!PS.readFor)return out;
       var grp=''; try{ grp=localStorage.getItem('ps_sched_grp')||''; }catch(_){}
-      var data=PS.readFor(grp)||PS.read()||{}, weeks=data.weeks||{};
+      var data=(PS.view?PS.view(grp):(PS.readFor(grp)||PS.read()))||{}, weeks=data.weeks||{};   /* 2.933 — 읽기 전용 공유 사본 */
       var today=new Date(); today.setHours(0,0,0,0);
       var mon=new Date(today); mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
       var DOW=['일','월','화','수','목','금','토'];
@@ -385,9 +385,24 @@ button:focus-visible{outline:2px solid var(--c-act,#3A6DF0);outline-offset:2px}
     var dl=e.target.closest('[data-lib]'); if(dl){ try{ parent.postMessage({source:'playbook',type:'openDrillEditor',edit:true,libId:dl.getAttribute('data-lib')},'*'); }catch(_){} return; }
   });
   /* 게임모델·일정이 바뀌면(다른 프레임에서) 다시 그린다 */
-  window.addEventListener('storage',function(e){ if(!e||!e.key||/cs_gamemodel_v1|cs_terms_v1|process_coach_v1|ps_sched_grp|cs_lib_rev/.test(e.key)){ if(document.activeElement&&(document.activeElement.tagName==='TEXTAREA'||document.activeElement.isContentEditable))return; refreshPlaybook(); } });
+  /* 2.933 — 일정(process_coach_v1)이 바뀔 때마다 **보관함 전체를 IDB 에서 다시 읽고** 다시 그렸다(팀에 따라 수십 MB).
+     일정 시트에서 누를 때마다 숨어 있는 이 화면이 그 일을 했다. 이제 ① 보관함은 보관함 신호(cs_lib_rev)일 때만 다시 읽고
+     ② 숨어 있으면(display:none — 폭 0) 보일 때 한 번만 한다. */
+  function pbHidden(){ try{ return window.parent!==window&&window.innerWidth===0&&window.innerHeight===0; }catch(_){ return false; } }
+  var pbStale='',pbPoll=0;
+  function pbRenderSoft(){ var a=document.activeElement; if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable))return; render(); }
+  function pbLater(kind){
+    if(kind==='lib'||!pbStale)pbStale=kind; if(pbPoll)return;
+    var stop=function(){ clearInterval(pbPoll); pbPoll=0; window.removeEventListener('resize',flush); };
+    var flush=function(){ if(!pbStale){stop();return;} if(pbHidden())return; stop(); var k=pbStale; pbStale=''; if(k==='lib')refreshPlaybook(); else pbRenderSoft(); };
+    pbPoll=setInterval(flush,1000); window.addEventListener('resize',flush);
+  }
+  window.addEventListener('storage',function(e){ if(!e||!e.key||/cs_gamemodel_v1|cs_terms_v1|process_coach_v1|ps_sched_grp|cs_lib_rev/.test(e.key)){ if(document.activeElement&&(document.activeElement.tagName==='TEXTAREA'||document.activeElement.isContentEditable))return;
+    var kind=(!e||!e.key||e.key==='cs_lib_rev')?'lib':'render';
+    if(pbHidden()){ pbLater(kind); return; }
+    if(kind==='lib')refreshPlaybook(); else pbRenderSoft(); } });
   function refreshPlaybook(){ var a=document.activeElement; if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable)){return;} readLib(function(l){ lib=l; var active=document.activeElement; if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.isContentEditable))return; render(); }); }
-  window.addEventListener('message',function(e){ var d=e&&e.data||{}; if(d.type==='refresh'||d.type==='setView'){ refreshPlaybook(); }
+  window.addEventListener('message',function(e){ var d=e&&e.data||{}; if(d.type==='refresh'||d.type==='setView'){ pbStale=''; refreshPlaybook(); }
     /* 2.580 · 작전판 편집기에서 돌아옴(저장·취소) — IDB 쓰기가 끝난 뒤 읽도록 한 박자 늦춘다(cs_lib_rev storage 이벤트도 따로 온다) */
     if(d.type==='boardResult'||d.type==='boardCancel'){ setTimeout(refreshPlaybook,350); } });
   document.addEventListener('visibilitychange',function(){ if(!document.hidden){ refreshPlaybook(); } });

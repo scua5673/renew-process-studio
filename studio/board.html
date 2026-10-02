@@ -17118,6 +17118,22 @@ body.meet-portrait #ksStrip .ksc .ktb{height:auto;aspect-ratio:210/297;backgroun
   body.meet-mode:not(.focus-board) #ksHead{top:144px;width:calc(100% - 24px);}
   body.meet-mode:not(.focus-board) #ksTr{display:none;}   /* 운동장 귀퉁이를 덮는다 — 폰은 «더보기»의 전환 줄이 맡는다 */
 }
+/* ══ 2.933 · 운동장 편집에서 슬라이드 제목 칸이 운동장을 덮지 않게(사용자 «이거 때문에 토큰 옮기기가 어려워 · 겹치지 않게») ══
+   제목 칸(#ksHead, 46px)이 도구줄 바로 아래(62px)에 떠서 운동장 위쪽(골대·페널티 박스)을 덮었다 —
+   그 자리의 토큰을 잡으려 하면 제목 칸이 눌렸다. 편집 화면에서는 제목을 **한 줄 낮게(34px)** 줄이고
+   그만큼 운동장을 아래로 비켜 앉힌다(겹침 0). 슬라이드쇼(focus-board)·페이지 보기는 예전 그대로. */
+html body.meet-mode:not(.focus-board):not(.meeting-page-mode):not(#_):not(#__):not(#___) #boardStage{padding-top:102px!important;}
+body.meet-mode:not(.focus-board):not(.meeting-page-mode) #ksHead{top:60px;}
+body.meet-mode:not(.focus-board):not(.meeting-page-mode) #ksHead input{font-size:16px;padding:6px 12px;height:34px;}
+body.meet-mode:not(.focus-board):not(.meeting-page-mode) #ksHead input::placeholder{font-size:13px;}
+/* 운동장 위가 아니라 밝은 책상 위에 놓이므로 밝은 화면에서는 입력칸 모양으로(슬라이드쇼의 짙은 띠는 그대로) */
+body:not(.fmdark).meet-mode:not(.focus-board):not(.meeting-page-mode) #ksHead input{background:var(--panel,#fff);border-color:var(--line,#E3E6EA);color:var(--txt,#14161A);}
+body:not(.fmdark).meet-mode:not(.focus-board):not(.meeting-page-mode) #ksHead input::placeholder{color:var(--txt-faint,#8A9099);}
+body:not(.fmdark).meet-mode:not(.focus-board):not(.meeting-page-mode) #ksHead input:focus{border-color:var(--blue,#3a6df0);}
+@media(max-width:600px){
+  html body.meet-mode:not(.focus-board):not(.meeting-page-mode):not(#_):not(#__):not(#___) #boardStage{padding-top:182px!important;}
+  body.meet-mode:not(.focus-board):not(.meeting-page-mode) #ksHead{top:142px;}
+}
 </style>
 
 <style id="ps-2928-meetmatch">
