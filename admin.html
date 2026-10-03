@@ -1421,10 +1421,13 @@ function renderHome(){
     }).join('')+(any?'':'<div class="empty" style="margin-top:6px">아직 없음 — 2.022 배포 뒤 유저가 그 행동을 하는 날부터 쌓입니다.</div>');
   })();
   /* ── 기능 방문(핑) — 어떤 탭에 실제로 들어오는가. kv 저장과 달리 열람만 해도 잡힌다 ── */
-  if(HOME.feat&&HOME.feat.length){
-    HOME.feat=HOME.feat.filter(function(x){return !/^a_/.test(x.feature);});   /* 2.022 — 행동 핑은 위 '핵심 행동'에서 */
-    var fmx=Math.max.apply(null,HOME.feat.map(function(x){return x.users;}).concat([1]));
-    $('hmFeat').innerHTML=HOME.feat.map(function(x){
+  /* 2.937 — 행동 핑(a_*)은 위 '핵심 행동'이 그린다. 예전엔 여기서 HOME.feat 자체를 걸러 덮어써서,
+     홈을 두 번째 그릴 때(다른 탭에 갔다 오면 캐시된 HOME 으로 다시 그린다) 핵심 행동 21개가 전부 0명이 됐다.
+     받아 둔 HOME 은 건드리지 않고 이 칸에서 쓸 사본만 거른다. */
+  var visits=(HOME.feat||[]).filter(function(x){return !/^a_/.test(x.feature);});
+  if(visits.length){
+    var fmx=Math.max.apply(null,visits.map(function(x){return x.users;}).concat([1]));
+    $('hmFeat').innerHTML=visits.map(function(x){
       var d=x.users-(x.prev_users||0);
       var dTxt=d>0?'<span style="color:var(--green)">▲'+d+'</span>':d<0?'<span style="color:var(--red)">▼'+(-d)+'</span>':'<span class="muted">—</span>';
       return '<div style="display:flex;align-items:center;gap:9px;margin:7px 0">'
