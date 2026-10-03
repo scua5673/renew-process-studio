@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.937"></script>
+<script src="autosave-status.js?v=2.938"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.937';</script>
+<script>window.PS_BUILD='2.938';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1114,6 +1114,8 @@ function psShowUpdBand(){
       <!-- 1.661 — IDP 안에 있던 경기 읽기·용어 학습을 최상위 메뉴로 승격한다.
            화면만 따로 보이고 저장은 기존 IDP 문서의 learning 필드를 그대로 쓴다. -->
       <button data-scope="global" data-app="learning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c-1.6-1.3-3.6-2-6-2H3v13h3c2.4 0 4.4.7 6 2 1.6-1.3 3.6-2 6-2h3v-13h-3c-2.4 0-4.4.7-6 2z"/><path d="M12 6.5v13"/></svg><span>학습</span></button>
+      <!-- 2.938 — 폰 하단 메뉴 «더보기»(사용자). 폰은 보관함 버튼을 숨기므로(1.929) 그 문과 앱 설정·도움을 시트에 모은다. 데스크톱 사이드바에는 안 보인다 -->
+      <button type="button" id="psMoreBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="appMoreSheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></svg><span>더보기</span></button>
       <!-- 1.769 — 개인 노트는 보관함 자료와 저장·공유 범위가 다르므로 독립 메뉴로 복귀한다.
            기존 fNote 한 장을 재사용해 메뉴를 오가도 필기·페이지·메모 상태는 그대로 보존한다. -->
       <!-- 1.976 — '개인 노트' 사이드바 항목 제거: 보관함 세그(자료·분석·게임모델·개인 노트)의 한 영역으로(사용자). showApp('note') 경로는 그대로 -->
@@ -1397,6 +1399,28 @@ function psShowUpdBand(){
     <div class="tms-g"><i>설정</i><button type="button" data-tb="attrs">평가표</button><button type="button" data-tb="playbook">플레이북</button><button type="button" data-tb="settings">게임모델</button><button type="button" data-tb="terms">공용어</button></div><!-- 2.908 — 설정 묶음 -->
     <div class="tms-g"><i>앱</i><button type="button" data-tb-app="board">보드</button><button type="button" data-tb-app="design">보관함</button><button type="button" data-tb-app="idp">내 IDP</button><button type="button" data-tb-app="learning">학습</button><button type="button" data-tb-app="community">커뮤니티</button></div>
   </div>
+  <!-- 2.938 — 앱 하단 메뉴 «더보기» 시트. 모양은 팀 더보기(#teamMoreSheet)와 같다 -->
+  <div class="app-more" id="appMoreSheet" role="dialog" aria-label="더보기" hidden>
+    <div class="tms-h"><b>더보기</b><button type="button" data-am="close" aria-label="닫기">×</button></div>
+    <div class="tms-g"><i>앱</i><button type="button" data-am-app="design">보관함</button></div>
+    <div class="tms-g"><i>도움</i><button type="button" data-am="settings">앱 설정</button><button type="button" data-am="support">오류 제보</button><button type="button" data-am="guide">사용법</button></div>
+  </div>
+  <style id="ps-2938-more">
+  /* 2.938 — 더보기는 폰(보관함 버튼을 숨기는 폭, ≤767px)에서만. 사이드바 규칙(#appSeg#appSeg button{display:flex!important})보다 세게 */
+  html body #appSeg#appSeg #psMoreBtn{display:none!important}
+  .app-more{display:none}
+  @media (max-width:767px){
+    html body #appSeg#appSeg #psMoreBtn{display:flex!important}
+    body .app-more{display:block;position:fixed;left:8px;right:8px;bottom:calc(var(--ps-seg-h,64px) + 8px);z-index:171;max-width:520px;margin:0 auto;background:var(--surface);border:1px solid var(--line,#e6e8ee);border-radius:14px;box-shadow:0 16px 40px var(--sh18,rgba(16,24,40,.18));padding:10px 12px 12px}
+    body .app-more[hidden],body.ps-team-open .app-more,body.ps-player-idp-only .app-more{display:none}
+    .app-more .tms-h{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;margin-bottom:6px}
+    html body .app-more .tms-h button:not(#_){border:0;background:none;font-size:18px;line-height:1;color:var(--dim,#6f7580);min-width:40px;height:auto;min-height:40px}
+    .app-more .tms-g{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line,#e6e8ee)}
+    .app-more .tms-g i{font-style:normal;font-size:11px;color:var(--dim,#6f7580);width:28px}
+    html body .app-more .tms-g button:not(#_){border:1px solid var(--line,#e6e8ee);background:var(--surface);color:var(--txt,#14161A);border-radius:999px;font:inherit;font-size:13px;font-weight:600;padding:0 14px;height:auto;min-height:40px}   /* 누르는 자리 40px — 다른 버튼 높이 규칙(32px)을 이겨야 해서 id 부스트 */
+    body.fmdark .app-more .tms-g button{color:#e7ebf1}
+  }
+  </style>
   <style id="ps-2180-nav">/* 2.180 — 보관함 버튼 숨김(사용자: 훈련과 겹침). 보관함 화면은 '훈련' 버튼이 연다 */
   html #appSeg#appSeg button[data-app="design"]:not([data-train]),html.ps-page-app #appSeg#appSeg button[data-app="design"]:not([data-train]){display:none!important}
   </style>
@@ -2109,7 +2133,8 @@ function psShowUpdBand(){
            메모 모드는 같은 노트 프레임 안의 보기이므로 개인 노트를 켠다. */
         var on=currentTeamKey?!!x.dataset.teamHub
           :(x.dataset.app===navApp||((app==='print'||app==='analysis'||app==='gamemodel')&&x.dataset.app==='design'));   /* 1.856 — 분석은 다시 보관함 버튼을 켠다 */
-        if(x.dataset.train)on=!currentTeamKey&&(navApp==='design'||app==='print'||app==='analysis'||app==='gamemodel');   /* 2.180 — 보관함 버튼을 숨기고 '훈련'이 보관함의 자리를 맡는다(사용자: 둘이 겹침) */
+        if(x.dataset.train)on=!currentTeamKey&&(navApp==='design'||app==='print'||app==='analysis'||app==='gamemodel');
+        if(x.id==='psMoreBtn')on=!currentTeamKey&&(navApp==='design'||app==='print'||app==='analysis'||app==='gamemodel');   /* 2.938 — 폰은 보관함이 더보기 안에 있다 */   /* 2.180 — 보관함 버튼을 숨기고 '훈련'이 보관함의 자리를 맡는다(사용자: 둘이 겹침) */
         x.classList.toggle('on',!!on);
         if(on)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current');
       });
@@ -2240,6 +2265,8 @@ function psShowUpdBand(){
       }
     }
     seg.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+      if(b.id==='psMoreBtn'){ if(window.__psAppMore)window.__psAppMore(); return; }   /* 2.938 */
+      if(window.__psAppMoreClose)window.__psAppMoreClose();
       if(b.dataset.teamHub){
         /* 1.572 — 일정 버튼의 실제 키는 'training'이다. 'schedule'로 찾으면 null 이라
            선수가 '팀 일정'을 눌러도 아무 화면도 열리지 않았다(1.527에서 CSS 쪽만 고쳤던 같은 오타). */
@@ -2254,6 +2281,25 @@ function psShowUpdBand(){
     });
     (function(){ var sb=document.getElementById('teamSub'); if(sb)sb.addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b)return; if(b.id==='psGmLearnBtn'){ e.stopPropagation(); try{ window.postMessage({source:'learning',type:'openLearnArea',area:'gmhow',owner:'learn'},'*'); }catch(_){} return; } openTeamButton(b); }); })();   /* 2.171 */   /* 2.480 — 학습에서 보기: gmToLearn 과 같은 통로 */
 
+    /* 2.938 — 앱 하단 메뉴 «더보기» 시트 */
+    (function(){
+      var sheet=document.getElementById('appMoreSheet'), btn=document.getElementById('psMoreBtn'); if(!sheet||!btn)return;
+      function set(open){ sheet.hidden=!open; btn.setAttribute('aria-expanded',open?'true':'false'); }
+      window.__psAppMore=function(){ set(sheet.hidden); };
+      window.__psAppMoreClose=function(){ set(false); };
+      /* 앱 설정은 바깥 클릭으로 닫힌다 — 이 클릭이 문서까지 올라가지 않게 막고, 연 뒤에 다시 누르지 않는다 */
+      function openGear(then){ setTimeout(function(){ var g=document.getElementById('gearBtn'),pop=document.getElementById('gearPop'); if(g&&!(pop&&pop.classList.contains('on')))g.click(); if(then)setTimeout(then,60); },0); }
+      sheet.addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b)return; e.stopPropagation(); var k=b.dataset.am;
+        if(k==='close'){ set(false); return; }
+        set(false);
+        if(b.dataset.amApp){ currentTeamKey=''; showApp(b.dataset.amApp); return; }
+        if(k==='settings'){ openGear(); return; }
+        if(k==='support'){ openGear(function(){ var s2=document.getElementById('psSupportSettingsOpen'); if(s2)s2.click(); }); return; }
+        if(k==='guide'){ var a=document.getElementById('guideOpen'); if(a)window.open(a.href,'_blank','noopener'); return; }
+      });
+      document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!sheet.hidden)set(false); });
+      document.addEventListener('pointerdown',function(e){ if(sheet.hidden)return; if(e.target.closest('#appMoreSheet')||e.target.closest('#psMoreBtn'))return; set(false); },true);
+    })();
     /* 2.179 — 폰 하단 팀 탭: 같은 키의 팀 내비 버튼을 누른 것과 같다 */
     (function(){
       var tb=document.getElementById('teamBottom'), sheet=document.getElementById('teamMoreSheet'); if(!tb)return;
@@ -7650,13 +7696,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.937"></script>
-<script src="autosave-merge.js?v=2.937"></script>
-<script src="autosave-runtime.js?v=2.937"></script>
-<script src="autosave-recovery.js?v=2.937"></script>
-<script src="sync.js?v=2.937"></script>
+<script src="autosave-journal.js?v=2.938"></script>
+<script src="autosave-merge.js?v=2.938"></script>
+<script src="autosave-runtime.js?v=2.938"></script>
+<script src="autosave-recovery.js?v=2.938"></script>
+<script src="sync.js?v=2.938"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.937">
+<link rel="stylesheet" href="support.css?v=2.938">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
