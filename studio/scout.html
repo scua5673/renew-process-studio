@@ -20081,7 +20081,7 @@ document.addEventListener('beforeinput',function(e){if(!editingPlayer||!e.target
   }
   var _mqBtn=el("mqAdd"); if(_mqBtn)_mqBtn.addEventListener("click",mqAdd);
   var _mqFab=el("mqFab"),_mqBox=el("scMobileQuick");
-  function mqOpen(){ try{scStore().check();}catch(e){scWarn(e);return;} if(!_mqBox)return; try{ mqRenderPos(); }catch(_){} _mqBox.classList.add("on"); setTimeout(function(){ try{ el("mqName").focus(); }catch(_){} },60); }
+  function mqOpen(){ try{scStore().check();}catch(e){scWarn(e);return;} if(!_mqBox)return; try{ mqRenderPos(); }catch(_){} _mqBox.classList.add("on"); setTimeout(function(){ try{ var a=document.activeElement; /* 2.939 — 60ms 사이에 이미 시트 안 다른 칸(메모·소속)에 있으면 포커스를 빼앗지 않는다. 빼앗으면 치던 글자가 이름 칸에 붙는다(scouting-integration 흔들림의 원인 — 이름이 «…후보새 후보 메모») */ if(a&&a!==document.body&&_mqBox.contains(a))return; el("mqName").focus(); }catch(_){} },60); }
   function mqCloseFn(){ if(_mqBox)_mqBox.classList.remove("on"); }
   if(_mqFab)_mqFab.addEventListener("click",mqOpen);window.scOpenQuick=mqOpen;
   var _mqC=el("mqClose"); if(_mqC)_mqC.addEventListener("click",mqCloseFn);
