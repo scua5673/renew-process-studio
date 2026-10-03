@@ -184,6 +184,8 @@ try{
   const detailPage=await context.newPage();detailPage.on('pageerror',e=>errors.push(e.message));await detailPage.goto(base+'/studio/scouting.html');await detailPage.locator('#scStoreState').waitFor({state:'hidden'});await detailPage.locator('[data-id="db:qa-db"]').first().click();
   assert.equal(await detailPage.locator('#dPhoto img').count(),0,'source photo cannot restore deleted canonical photo');await detailPage.locator('#fOne').fill('수정한 관찰 한줄평');await detailPage.evaluate(()=>psFlushPendingReady());await detailPage.reload();await detailPage.locator('#scStoreState').waitFor({state:'hidden'});await detailPage.locator('[data-id="db:qa-db"]').first().click();assert.equal(await detailPage.locator('#fOne').inputValue(),'수정한 관찰 한줄평');assert.equal(await detailPage.locator('#dPhoto img').count(),0);await detailPage.close();await frame.evaluate(async()=>{await scPrepare();});
   // The registration handler itself receives two immediate click events, including while IDB is pending.
+  // 2.939 — 시트가 열린 뒤 60ms 늦게 오는 이름 칸 포커스가, 이미 옮겨 간 메모 칸을 빼앗지 않는다(빼앗으면 메모가 이름에 붙었다 — 이 테스트의 흔들림 원인)
+  assert.equal(await frame.evaluate(async()=>{closePlayer();scOpenQuick();document.getElementById('mqMemo').focus();await new Promise(r=>setTimeout(r,150));return document.activeElement&&document.activeElement.id;}),'mqMemo','late autofocus keeps the field the user moved to');
   await frame.evaluate(()=>{closePlayer();scOpenQuick();});await frame.locator('#mqName').fill('한 번만 등록할 후보');await frame.locator('#mqMemo').fill('새 후보 메모');
   await frame.evaluate(()=>{document.getElementById('mqAdd').click();document.getElementById('mqAdd').click();});
   await frame.waitForFunction(()=>!document.getElementById('scMobileQuick').classList.contains('on'));

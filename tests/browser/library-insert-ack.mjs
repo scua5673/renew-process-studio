@@ -13,8 +13,9 @@ for(const emptyLibraryInsert of [true,false]){
     const f=await (await page.waitForSelector('#fBoard')).contentFrame();await f.waitForSelector('#ehDoor');
     await f.locator('#ehDoor').click();await f.locator('.eh-f',{hasText:'4-3-3'}).first().click();
     const go=f.locator('#ehGo');await go.scrollIntoViewIfNeeded();await go.click();await page.waitForTimeout(1500);
-    /* 2.903 — 폰은 떠 있던 #vaultSave 대신 저장 띠의 «보관함» */
-    await f.locator(await f.evaluate(()=>{const b=document.querySelector('#psSaveBar');return b&&getComputedStyle(b).display!=='none'?'#psSaveBar .sb-vault':'#vaultSave';})).click();await f.getByRole('button',{name:'보관함에 저장',exact:true}).last().click();
+    /* 2.939 — 폰에는 «보관함» 저장 버튼이 보이지 않는다. 보관함 저장 경로는 같으므로 숨은 원래 버튼을 코드로 눌러 확인한다 */
+    if(await f.evaluate(()=>{const e=document.getElementById('vaultSave');return !!e&&getComputedStyle(e).display!=='none';}))await f.locator('#vaultSave').click();
+    else await f.evaluate(()=>document.getElementById('vaultSave').click());await f.getByRole('button',{name:'보관함에 저장',exact:true}).last().click();
     await page.waitForFunction(fx=>true,null);await page.waitForTimeout(3000);
     await page.evaluate(()=>PSSync.syncNow('test')).catch(()=>{});await page.waitForTimeout(6000);
     const local=await page.evaluate(async()=>{const r=await storage.get('cs_drill_lib_v1');return {items:JSON.parse((r&&r.value)||'[]').length,tombs:JSON.parse(localStorage.getItem('ps_tomb_v1')||'[]').length};});
