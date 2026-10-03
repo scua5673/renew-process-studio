@@ -7,7 +7,7 @@ const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGH
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites={
   board:['gamemodel-sync','board-depth','board-drag-performance','board-color-palette','vault-board-isolation','board-fmstadio','board-savebar','board-vault-save','team-library-load','gamemodel-anim'],
-  identity:['session-team-picker','month-quick-detail','admin-content-play','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery','schedule-phone'],
+  identity:['session-team-picker','month-quick-detail','admin-content-play','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery','schedule-phone','phone-app-more'],
   storage:['storage-safety','library-insert-ack','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery'],
   idp:['match-board-tools','availability','idp-recovery','idp-story-dedup','support','squad-phone','scouting-integration','review-training','idp-coach-goals']
 };
