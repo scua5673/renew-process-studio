@@ -103,6 +103,13 @@ try{
     });assert.ok(perf.reads<=3,'a render reads common/A/B schedules at most once: '+JSON.stringify(perf));
     const initialRuns=await frame.evaluate(()=>JSON.stringify(data.meta.statusRuns.p2));
     await page.screenshot({path:path.join(out,width+'-days.png')});
+    // 2.939 — 폰은 «운동» / «참여 못 함» 두 덩어리(조별), 데스크톱은 조마다 쉼 상자 그대로
+    const split=await frame.evaluate(()=>{const ok=document.querySelector('#avDailyCard .av-split-ok'),rest=document.querySelector('#avDailyCard .av-split-rest');
+      const ids=el=>el?[...el.querySelectorAll('[data-av-st]')].map(b=>b.dataset.avSt).sort():null;
+      return {ok:ids(ok),rest:ids(rest),okHead:ok&&ok.querySelector('.av-sec-h').textContent.replace(/\s+/g,' ').trim(),restHead:rest&&rest.querySelector('.rh').textContent.replace(/\s+/g,' ').trim(),
+        groupBoxes:document.querySelectorAll('#avDailyCard .av-grp>.rows>.av-restbox').length,buttons:document.querySelectorAll('#avDailyCard [data-av-st]').length};});
+    if(width<600)assert.deepEqual(split,{ok:['p1','p4','p5'],rest:['p2','p3'],okHead:'운동 3명',restHead:'참여 못 함 2명',groupBoxes:0,buttons:5},'phone separates training and absent players');
+    else assert.deepEqual(split,{ok:null,rest:null,okHead:null,restHead:null,groupBoxes:2,buttons:5},'desktop keeps the per-group rest boxes');
     const dateButton=frame.locator('[data-av-date="2026-09-11"]');await dateButton.focus();await dateButton.press('Enter');await frame.locator('#avDailyCard').waitFor();
     assert.match(await frame.locator('#avDailyCard').innerText(),/9월\s*11일|9\/11/);
     const untouched=await frame.evaluate(()=>localStorage.getItem('scout_tool_v1'));
