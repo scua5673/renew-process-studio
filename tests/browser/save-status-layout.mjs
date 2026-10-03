@@ -12,6 +12,7 @@ import {trackNavigationAborts} from '../fixtures/navigation-abort.mjs';
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=process.env.PS_TEST_REPO||path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
+const apiOrigin=new URL(fs.readFileSync(path.join(root,'studio/app.html'),'utf8').match(/window\.PS_SYNC=\{url:"([^"]+)"/)[1]).origin;   // route 로 이 테스트가 직접 응답하는 API 출처
 const out=process.env.PS_TEST_OUTPUT||'/private/tmp/process-save-status-layout';
 const measureOnly=process.env.PS_LAYOUT_MEASURE_ONLY==='1',baseline=process.env.PS_LAYOUT_BASELINE;
 const frozen=new Map(['studio/app.html','studio/support.css'].map(p=>[path.join(root,p),baseline?execFileSync('git',['show',baseline+':'+p],{cwd:root}):fs.readFileSync(path.join(root,p))]));
@@ -73,7 +74,7 @@ try{
       }
       await route.fulfill({status:200,headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*'},body:JSON.stringify(body)});
     });
-    const page=await context.newPage();page.setDefaultTimeout(25000);const errorAt=[];page.on('pageerror',e=>{errors.push(e.message);errorAt.push(Date.now());});const navAborts=trackNavigationAborts(page,null); /* 2026-10-02 — 이동이 끊거나 시작을 거부한 fetch 의 WebKit 흔적은 오류로 세지 않는다(tests/fixtures/navigation-abort.mjs) */
+    const page=await context.newPage();page.setDefaultTimeout(25000);const errorAt=[];page.on('pageerror',e=>{errors.push(e.message);errorAt.push(Date.now());});const navAborts=trackNavigationAborts(page,null,{apiOrigins:[apiOrigin]}); /* 2026-10-02 — 이동이 끊거나 시작을 거부한 fetch 의 WebKit 흔적은 오류로 세지 않는다(tests/fixtures/navigation-abort.mjs) */
     const report={width:spec.width,phases:[],errors};results.push(report);
     try{
       await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});

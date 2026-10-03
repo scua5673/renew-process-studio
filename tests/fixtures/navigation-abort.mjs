@@ -9,6 +9,8 @@
    B. (2026-10-02 · 테스트만) 내려가는 문서가 새로 시작한 요청 — 넷 다:
      ① 문장이 바로 그 모양이고
      ② 주소가 이 페이지 문서와 같은 출처다(같은 출처 요청에는 CORS 가 걸리지 않는다 — 진짜 CORS 거부일 수 없다)
+        또는 테스트가 «내가 직접 응답하는 API 출처»로 밝힌 출처다(opts.apiOrigins — 픽스처가 맞는 CORS 헤더로 응답하므로 역시 CORS 거부일 수 없다).
+        밝히지 않은 다른 출처는 일부러 흔적으로 보지 않는다.
      ③ 그 주소로 나가 있던 요청이 없다 — 요청이 네트워크에 아예 나가지 않았다(request·requestfailed 둘 다 없음)
      ④ 오류가 «문서가 내려가는 구간» 안이다: 어떤 프레임의 이동 요청(문서 request)부터 그 프레임 커밋(framenavigated)
         1.5초 뒤까지, 또는 프레임 분리(framedetached) 앞뒤 1.5초.
@@ -31,8 +33,9 @@ const CORS=/Access-Control|not allowed|preflight|\bCORS\b/i;
 const NAV_TAIL=1500,DETACH_PAD=1500,OPEN_NAV=15000;
 const noScheme=u=>String(u||'').replace(/^[a-z][a-z0-9+.-]*:\/\//i,'');
 const originOf=u=>{try{const o=new URL(String(u)).origin;return o&&o!=='null'?o:'';}catch(_){return '';}};
-export function trackNavigationAborts(page,entries){
+export function trackNavigationAborts(page,entries,opts){
   const fails=[],navs=[],reqs=[],windows=[],origins=new Set(),byReq=new Map();
+  for(const u of (opts&&opts.apiOrigins)||[]){const o=originOf(u);if(o)origins.add(o);}   // 테스트가 직접 응답하는 API 출처
   const parse=message=>{
     const txt=String(message||'').trim(),m=RE.exec(txt),ms=m?null:RE_SPLIT.exec(txt);if(!m&&!ms)return null;
     return m?{url:m[1],same:u=>u===m[1],sameOrigin:o=>originOf(m[1])===o}

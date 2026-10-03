@@ -106,7 +106,7 @@ try{
     }
     await route.fulfill({status:200,headers,body:JSON.stringify(body)});
   });
-  page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>{errors.push(e.message);errorDetails.push({at:Date.now(),message:e.message,stack:e.stack});});navAborts=trackNavigationAborts(page,null); /* 2026-10-02 — 이동이 끊거나 시작을 거부한 fetch 의 WebKit 흔적은 오류로 세지 않는다(tests/fixtures/navigation-abort.mjs) */
+  page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>{errors.push(e.message);errorDetails.push({at:Date.now(),message:e.message,stack:e.stack});});navAborts=trackNavigationAborts(page,null,{apiOrigins:[fixtureAuth]}); /* 2026-10-02 — 이동이 끊거나 시작을 거부한 fetch 의 WebKit 흔적은 오류로 세지 않는다(tests/fixtures/navigation-abort.mjs) */
   page.on('console',m=>{if(m.type()==='warning'||m.type()==='error')diagnostics.push({at:Date.now(),type:m.type(),text:m.text()});});
   async function ready(wid,uid){
     await bounded(page.waitForFunction(({wid,uid})=>window.PSSync&&PSSync.dataUnlocked()&&PSSync.activeWs()===wid&&PSSync.session()?.uid===uid&&PSSync.rosterReady(wid),{wid,uid}),'account ready '+wid,35000);

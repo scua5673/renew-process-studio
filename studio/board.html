@@ -13726,6 +13726,16 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
   $("animClose").onclick=()=>{try{autoSaveAnimFrame();}catch(_){}   /* 2.560 — 닫기 전에 확정(위 참고) */
     stopAnim();$("animBar").classList.remove("on");$("hint").style.display="";clearOnion();_mpClear();try{_animFitPad();}catch(_){}};
   if($("rosterBtn"))$("rosterBtn").onclick=toggleRoster;
+  /* 2.936 — 셸의 boardPopover 메시지 동작 판정(순수 함수 — tests/board-popover-action.test.cjs 가 잘라 실행한다).
+     'close'·'force-close' = 닫기 · 'sync' = 없음(옛 메뉴엔 고정이 없다) · 'open' = 열기(이미 열려 있으면 그대로) ·
+     'toggle'(또는 비어 있음) = 토글 · 모르는 동작 = 없음(닫기 요청이 여는 일이 다시 생기지 않게). id 는 view·more 만. */
+  window.__psBoardPopoverAction=function(action,id){
+    if(action==="close"||action==="force-close")return "close";   // 예전 'close' 와 같이 늘 정리(메뉴를 제자리로)
+    if(id!=="view"&&id!=="more")return null;
+    if(action==="open")return "open";
+    if(action==="toggle"||action==null||action==="")return "toggle";
+    return null;
+  };
   (function(){
     var menuIds=["viewMenu","moreMenu"];
     function targetOrigin(){return location.origin&&location.origin!=="null"?location.origin:"*";}
@@ -13758,7 +13768,15 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     bind("viewBtn","viewMenu");bind("moreBtn","moreMenu");
     window.__psBoardPopover={toggle:function(id,proxy){toggleMenu(id==="more"?"moreMenu":"viewMenu",!!proxy);},close:function(){closeMenus();},place:function(id){placeMenu(id==="more"?"moreMenu":id==="view"?"viewMenu":id);}};
     window.addEventListener("message",function(e){var d=e.data||{};if(e.source!==parent)return;if(location.protocol!=="file:"&&e.origin!==location.origin)return;
-      if(d.source!=="app"||d.type!=="boardPopover")return;if(d.action==="close")closeMenus();else if(d.id==="more"||d.id==="view")toggleMenu(d.id==="more"?"moreMenu":"viewMenu",d.id==="more");});
+      if(d.source!=="app"||d.type!=="boardPopover")return;
+      /* 2.936 — 동작을 가른다. 예전엔 'close' 말고는 전부 «토글»이라, 셸이 v5 설정 패널이 없을 때(폰·패널 조립 전)
+         이 길로 보내는 'sync'(보드로 올 때마다 고정 패널 동기화, app.html _bmSync — 부팅 직후·1.5초·4초)와
+         'force-close'(셸을 누를 때마다)가 **닫힌 보기 메뉴를 열었다**. 부팅 정리(readyPaint) 뒤에 도착하면
+         메뉴가 그대로 남았다(quiet-entry 폰 실측: 보드 문서 ~310ms 에 #viewMenu.on · opacity 1 — 8번 중 3번).
+         2.365 «폰에서 업데이트하면 보드설정이 갑자기 튀어나오고»의 같은 계열. 옛 메뉴에는 «고정» 개념이 없어 'sync' 는 아무것도 안 한다. */
+      var act=window.__psBoardPopoverAction(d.action,d.id);
+      if(act==="close")closeMenus();else if(act==="open"){var mid=d.id==="more"?"moreMenu":"viewMenu",mm=$(mid);if(mm&&!mm.classList.contains("on"))openMenu(mid,d.id==="more");}
+      else if(act==="toggle")toggleMenu(d.id==="more"?"moreMenu":"viewMenu",d.id==="more");});
     document.addEventListener("click",function(){closeMenus();});document.addEventListener("keydown",function(e){if(e.key==="Escape")closeMenus();});
     window.addEventListener("resize",function(){menuIds.forEach(placeMenu);});
     // close after one-shot actions inside 더보기
@@ -18823,7 +18841,12 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):no
 (function(){
   var st=document.getElementById('boardStage'); if(!st)return;
   var busy=false;
-  function fix(){ if(busy)return; busy=true; try{ if(!document.body.classList.contains('ps-dock')){
+  /* 2.936 — 폰 저장 띠(2.903 — ps-savebar · 폭 ≤639px)가 켜진 화면은 건드리지 않는다. 이 감시자는 데스크톱용인데 조건이
+     «ps-dock 아님» 뿐이라, 폰에서도 도크가 붙기 전까지 psSelBarLayout 의 띠 자리(68px)를 12px 로 되돌렸다. 마지막에 누가 쓰느냐로
+     갈려 Linux WebKit 에서 운동장이 띠 밑으로 들어갔다(board-savebar CI 2회 · 진단 4번 중 3번). 예전엔 보드 메시지 'sync' 가 보기 메뉴를
+     여닫으며 생긴 재계산이 우연히 68px 을 마지막에 남겼다(2.936 에서 그 토글을 고치며 드러남). 조건은 _animFitPad 와 같다. */
+  function phoneSaveBar(){ try{ return document.body.classList.contains('ps-savebar')&&!!(window.matchMedia&&matchMedia('(max-width:639px)').matches); }catch(_){ return false; } }
+  function fix(){ if(busy)return; busy=true; try{ if(!document.body.classList.contains('ps-dock')&&!phoneSaveBar()){
       /* 숨은 iframe의 폭은 0이어도 WebKit은 padding만큼 높이를 돌려준다.
          그 높이를 도크 겹침으로 쓰면 여백이 매번 12px씩 늘어 observer가 끝나지 않는다. */
       var sr=st.getBoundingClientRect(); if(!(sr.width>0&&sr.height>0))return;

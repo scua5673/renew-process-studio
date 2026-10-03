@@ -85,3 +85,14 @@ test('a real CORS failure is never hidden, by either path, even mid-navigation',
     assert.match(logs[0].navabortWhy,/CORS/);
   }
 });
+test('B: a cross-origin API the test itself fulfils counts only when declared (apiOrigins)',()=>{
+  const API='https://synthetic-auth.invalid',AU=API+'/auth/v1/user',main={};
+  const p=fakePage(),n=track(p,null,{apiOrigins:[API]});reloadStarted(p,main);
+  assert.equal(n.isAbort(TRUNC(AU),Date.now()),true,'밝힌 출처(잘린 모양)');
+  assert.equal(n.isAbort(MSG(AU),Date.now()),true,'밝힌 출처(온전한 모양)');
+  assert.equal(n.isAbort(MSG('https://other.invalid/auth/v1/user'),Date.now()),false,'밝히지 않은 출처');
+  const p2=fakePage(),n2=track(p2,null);reloadStarted(p2,main);
+  assert.equal(n2.isAbort(TRUNC(AU),Date.now()),false,'선언이 없으면 다른 출처는 오류');
+  p.emit('requestfailed',req(AU,'Preflight response is not successful. Status code: 403'));
+  assert.equal(n.isAbort(TRUNC(AU),Date.now()),false,'밝힌 출처라도 CORS 실패가 있으면 오류');
+});
