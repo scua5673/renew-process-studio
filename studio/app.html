@@ -1402,6 +1402,8 @@ function psShowUpdBand(){
   <!-- 2.938 — 앱 하단 메뉴 «더보기» 시트. 모양은 팀 더보기(#teamMoreSheet)와 같다 -->
   <div class="app-more" id="appMoreSheet" role="dialog" aria-label="더보기" hidden>
     <div class="tms-h"><b>더보기</b><button type="button" data-am="close" aria-label="닫기">×</button></div>
+    <!-- 2.940 — 폰 작전판엔 저장 띠가 없다(2.939). 계정에 올리는 길을 여기 하나 둔다 — 작전판을 보고 있을 때만 보인다 -->
+    <div class="tms-g" data-am-row="board" hidden><i>보드</i><button type="button" data-am="boardsave" title="작업 보드를 계정에 저장">보드 저장</button></div>
     <div class="tms-g"><i>앱</i><button type="button" data-am-app="design">보관함</button></div>
     <div class="tms-g"><i>도움</i><button type="button" data-am="settings">앱 설정</button><button type="button" data-am="support">오류 제보</button><button type="button" data-am="guide">사용법</button></div>
   </div>
@@ -1417,6 +1419,7 @@ function psShowUpdBand(){
     html body .app-more .tms-h button:not(#_){border:0;background:none;font-size:18px;line-height:1;color:var(--dim,#6f7580);min-width:40px;height:auto;min-height:40px}
     .app-more .tms-g{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line,#e6e8ee)}
     .app-more .tms-g i{font-style:normal;font-size:11px;color:var(--dim,#6f7580);width:28px}
+    body .app-more .tms-g[hidden]{display:none}
     html body .app-more .tms-g button:not(#_){border:1px solid var(--line,#e6e8ee);background:var(--surface);color:var(--txt,#14161A);border-radius:999px;font:inherit;font-size:13px;font-weight:600;padding:0 14px;height:auto;min-height:40px}   /* 누르는 자리 40px — 다른 버튼 높이 규칙(32px)을 이겨야 해서 id 부스트 */
     body.fmdark .app-more .tms-g button{color:#e7ebf1}
   }
@@ -2284,7 +2287,14 @@ function psShowUpdBand(){
     /* 2.938 — 앱 하단 메뉴 «더보기» 시트 */
     (function(){
       var sheet=document.getElementById('appMoreSheet'), btn=document.getElementById('psMoreBtn'); if(!sheet||!btn)return;
-      function set(open){ sheet.hidden=!open; btn.setAttribute('aria-expanded',open?'true':'false'); }
+      /* 2.940 — «보드 저장» 줄: 작전판 화면이고, 보드의 원래 저장 버튼(#boardManualSave)이 쓰일 수 있는 때만(보기 전용·훈련 편집·미팅·첨부·보관함 편집이면 숨김).
+         바뀐 것이 있으면 보드와 같은 표시(«보드 저장 ●», 2.907). */
+      function fbWin(){ try{ var f=document.getElementById('fBoard'); return f&&f.contentWindow; }catch(_){ return null; } }
+      function boardSaveRow(){ var row=sheet.querySelector('[data-am-row="board"]'); if(!row)return; var show=false,chg=false;
+        try{ if(document.body.getAttribute('data-ps-app')==='board'){ var w=fbWin(), d=w&&w.document, bb=d&&d.body, mb=d&&d.getElementById('boardManualSave');
+          if(mb&&bb&&!d.getElementById('psRoHide')&&!w.__vaultEdit&&!/(^|\s)(editing|meet-mode|ps-capturing)(\s|$)/.test(bb.className)){ show=true; try{ chg=!!(w.boardManualChanged&&w.boardManualChanged()); }catch(_){} } } }catch(_){}
+        row.hidden=!show; var b=row.querySelector('button'); if(b){ b.textContent=chg?'보드 저장 ●':'보드 저장'; b.setAttribute('aria-label',chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장'); } }
+      function set(open){ if(open)boardSaveRow(); sheet.hidden=!open; btn.setAttribute('aria-expanded',open?'true':'false'); }
       window.__psAppMore=function(){ set(sheet.hidden); };
       window.__psAppMoreClose=function(){ set(false); };
       /* 앱 설정은 바깥 클릭으로 닫힌다 — 이 클릭이 문서까지 올라가지 않게 막고, 연 뒤에 다시 누르지 않는다 */
@@ -2293,6 +2303,7 @@ function psShowUpdBand(){
         if(k==='close'){ set(false); return; }
         set(false);
         if(b.dataset.amApp){ currentTeamKey=''; showApp(b.dataset.amApp); return; }
+        if(k==='boardsave'){ try{ var w=fbWin(), o=w&&w.document.getElementById('boardManualSave'); if(o&&!o.disabled)o.click(); else if(w&&w.__boardSaveExplicit)w.__boardSaveExplicit(); }catch(_){} return; }   /* 2.940 — 원래 버튼을 대신 누른다(저장 경로·알림 그대로) */
         if(k==='settings'){ openGear(); return; }
         if(k==='support'){ openGear(function(){ var s2=document.getElementById('psSupportSettingsOpen'); if(s2)s2.click(); }); return; }
         if(k==='guide'){ var a=document.getElementById('guideOpen'); if(a)window.open(a.href,'_blank','noopener'); return; }

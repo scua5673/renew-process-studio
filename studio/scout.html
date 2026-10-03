@@ -4260,6 +4260,19 @@ body.ps-viewonly .tge-seg button{pointer-events:none}
         .ck .oklist>.okg2:first-child>.okg-h{border-top:0;margin-top:calc(-1 * var(--g-pad-s,14px))}   /* 머리줄 밑선과 겹치지 않게 — 카드 머리줄 바로 아래에 붙는다 */
         .ck .okg2>.okg-h u{margin-left:auto}
         .ck .okg>.okx .nms.inj,.ck .okg>.okx .nms.re{color:var(--txt,#14161A)}   /* 이름은 검정 — 상태는 «부상 2» 이름표가 말한다 */
+        /* 2.940 — 폰 두 덩어리(운동 / 참여 못 함). 출석 탭(2.939 .av-sec-h·.av-restbox)과 같은 색 — 초록 머리 · 주황 상자 */
+        .ck .ck-sec-h{display:flex;align-items:baseline;gap:6px;font-size:13px;font-weight:800;color:#1f7a45;margin:0 0 8px}
+        .ck .ck-sec-h span{font-weight:700;font-variant-numeric:tabular-nums}
+        .ck .ck-split-ok .okg2>.okg-h{margin:0 0 8px;padding:6px 10px;border:0;border-radius:8px;background:var(--panel2,#F4F5F7)}
+        .ck .ck-split-ok .okg2.solo{padding-bottom:4px}
+        .ck .ck-split-out{margin-top:12px;padding:10px 12px 8px;border:1px solid rgba(199,125,0,.32);background:rgba(199,125,0,.07);border-radius:10px}
+        .ck .ck-split-out .ck-sec-h{color:#9a6100}
+        .ck .ck-split-out .okg2{padding-bottom:6px}
+        .ck .ck-split-out .okg2>.okg-h{margin:0 0 4px;padding:0;border:0;background:transparent;color:#9a6100}
+        .ck .ck-split-out .okg2>.okg-h u{color:#9a6100}
+        .ck .ck-split-out .okg>.okx:first-of-type{margin-top:3px;padding-top:0;border-top:0}
+        .ck .ck-none{font-size:12px;color:var(--faint,#8A9099);padding:2px 0 4px}
+        body.fmdark .ck .ck-sec-h{color:#4cc27a} body.fmdark .ck .ck-split-out .ck-sec-h,body.fmdark .ck .ck-split-out .okg2>.okg-h,body.fmdark .ck .ck-split-out .okg2>.okg-h u{color:#e0a85a}
         .ck .okg>div>.nms:first-child{grid-column:1/-1}   /* 자리 묶음이 하나라 이름표가 없는 줄(2.550) — 이름이 70px 첫 칸에 갇혀 «선수4 ·/선수6» 으로 꺾이던 것 */
         .ck .wkph .hd{white-space:nowrap} .ck .wkph .hd small{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}   /* 실측 1035px: 제목이 «이번 주 국/면» 으로 꺾였다(73px) — 설명이 대신 줄어든다 */
         .ck .wkph .wp-row{display:grid;grid-template-columns:92px minmax(0,1fr) 44px;align-items:center;gap:8px;margin-bottom:6px}
@@ -15306,6 +15319,9 @@ function avRetroPanel(){
 /* 2.939 — 폰 두 덩어리는 폭으로 고르므로, 폭이 600px 경계를 넘으면(회전·창 크기) 보고 있는 명단을 다시 그린다 */
 try{ var _avMq=window.matchMedia&&matchMedia("(max-width:600px)"),_avMqOn=function(){ try{ var v=$("availView"); if(v&&v.offsetParent!==null&&!avPickerState)renderAvail(); }catch(_){} };
   if(_avMq){ if(_avMq.addEventListener)_avMq.addEventListener("change",_avMqOn); else if(_avMq.addListener)_avMq.addListener(_avMqOn); } }catch(_){}
+/* 2.940 — «오늘» 가용인원 카드도 폭으로 두 덩어리를 고른다 — 600px 경계를 넘으면 오늘 화면을 다시 그린다 */
+try{ var _ckMq=window.matchMedia&&matchMedia("(max-width:600px)"),_ckMqOn=function(){ try{ var v=$("ckHome"); if(v&&v.offsetParent!==null)renderCkHome(); }catch(_){} };
+  if(_ckMq){ if(_ckMq.addEventListener)_ckMq.addEventListener("change",_ckMqOn); else if(_ckMq.addListener)_ckMq.addListener(_ckMqOn); } }catch(_){}
 function renderAvail(){
   var root=$('availRoot');if(!root)return;
   if(['grp','pos','name'].indexOf(availView)<0)availView='grp';
@@ -18980,6 +18996,11 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
       gord.sort(function(a,b){ if(a==="__none")return 1; if(b==="__none")return -1; return a.localeCompare(b,"ko"); });
       var totG={}; ours.forEach(function(p){ var k=GKEY(p); totG[k]=(totG[k]||0)+1; });
       var OUTLB=[["injury","부상","inj"],["rehab","재활","re"],["out","불참",""],["rest","조절",""]];
+      /* 2.940 — 폰(≤600px)은 출석 탭(2.939)과 같은 두 덩어리 — 위 «운동 n명»(조별) / 아래 «참여 못 함 n명»(조별).
+         사용자: 2.939 «폰으로 가용인원 볼 때 운동하는 선수와 참여하지 못하는 선수 분리» → «오늘» 카드도 «진행해주세요».
+         ⚠ 덩어리 머리·조 머리가 숫자를 말하므로 색 타일 다섯(필드·GK·재활·부상·불참)은 이 모드에서 그리지 않는다(같은 수를 두 번 말하지 않는다, 2.550).
+         필드·GK 나눔(2.576)은 «운동» 쪽 조 머리에 남는다. 데스크톱·아이패드는 조 상자 그대로. */
+      var ckSplit=tmPhoneRows(), ckOkSec="", ckOutSec="", ckOkTot=0, ckOutTot=0;
       okNames=gord.map(function(g){
         var lab=(g==="__none")?(gord.length>1?"조 없음":"가능"):tmGroupLabel(g);
         var n=0; Object.keys(byG[g]).forEach(function(k){ n+=byG[g][k].length; });
@@ -19000,10 +19021,20 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
         var _gi=(outG[g].injury||[]).length, _gr=(outG[g].rehab||[]).length, _go=(outG[g].out||[]).length+(outG[g].rest||[]).length;
         /* 2.576 — 가능을 **필드 | GK** 로 나눈다(사용자 "필드와 GK 숫자도 분리해줘"). 22 는 «뛸 수 있는 사람» 이지 «필드 22» 가 아니다. */
         var _gk=(byG[g].GK||[]).length, _fd=n-_gk;
+        if(ckSplit){
+          /* 조가 하나뿐(조 없음)이면 조 머리를 달지 않는다 — 덩어리 머리가 이미 같은 수를 말한다 */
+          var _solo=(g==="__none"&&gord.length===1), _sl=(g==="__none")?"조 없음":tmGroupLabel(g), _on=_gi+_gr+_go;
+          if(okRows){ ckOkTot+=n; ckOkSec+='<div class="okg okg2 cks'+(_solo?' solo':'')+'">'+(_solo?'':'<div class="okg-h"><b>'+ckEsc(_sl)+'</b><u>'+(_gk&&_fd?('필드 '+_fd+' · GK '+_gk):(n+'명'))+'</u></div>')+okRows+'</div>'; }
+          if(outRows){ ckOutTot+=_on; ckOutSec+='<div class="okg okg2 cks'+(_solo?' solo':'')+'">'+(_solo?'':'<div class="okg-h"><b>'+ckEsc(_sl)+'</b><u>'+_on+'명</u></div>')+outRows+'</div>'; }
+          return "";
+        }
         return '<div class="okg okg2"><div class="okg-h"><b>'+ckEsc(lab)+'</b><u>'+n+'/'+(totG[g]||n)+'</u></div>'
           +'<div class="avail g g5"><span class="ok"><b>'+_fd+'</b><i>필드</i></span><span class="ok gk"><b>'+_gk+'</b><i>GK</i></span><span class="re"><b>'+_gr+'</b><i>재활</i></span><span class="inj"><b>'+_gi+'</b><i>부상</i></span><span class="out"><b>'+_go+'</b><i>불참·조절</i></span></div>'
           +okRows+outRows+'</div>';
-      }).join(""); }catch(_){} }
+      }).join("");
+      if(ckSplit&&(ckOkSec||ckOutSec))okNames='<div class="ck-split-ok"><div class="ck-sec-h">운동 <span>'+ckOkTot+'명</span></div>'+(ckOkSec||'<div class="ck-none">오늘 운동하는 선수가 없어요</div>')+'</div>'
+        +'<div class="ck-split-out"><div class="ck-sec-h">참여 못 함 <span>'+ckOutTot+'명</span></div>'+(ckOutSec||'<div class="ck-none">참여 못 하는 선수가 없어요</div>')+'</div>';
+      }catch(_){} }
   /* 2.571 — 가용 인원이 **맨 왼쪽**(사용자). 세션 카드(hs)는 그 다음에 붙인다. 2.570 의 «이번 주 국면» 패널은 «지금까지» 카드로 합쳤다 */
   h+=hs;   /* 2.583 — 세션 왼쪽 · 가용 인원 가운데 · 지금까지 오른쪽(사용자 "오늘 세션이 왼쪽 가용인원이 가운데") */
   h+='<div class="pn avail-pn"><div class="hd">가용인원<small>'+ours.length+'명 · 가능 '+(cnt.ok||0)+'</small><button type="button" class="r" data-ck="avail">전체 보기 →</button></div><div class="bd">'
