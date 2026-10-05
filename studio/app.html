@@ -499,12 +499,28 @@ function psSafeToReload(why){
   why=why||{};
   if(psReloadWorkspaceBusy()){why.r='ws_busy';return false;}
   if(window.__psSupportController&&window.__psSupportController.pendingUnsafe()){why.r='support_pending';return false;}
+  /* 2.941 — 운영 기록(update_deferred, 10/1~10/5)에서 새 판을 하루 넘게 막은 것들:
+     ① 선택 상자(select)에 포커스가 남은 채 36시간(focus_select:fBoard) — 고르는 순간 저장되므로 «입력 중»이 아니다.
+     ② 손대지 않은 입력칸에 포커스만 남은 경우(focus_input:fBoard 26시간) — 지금 값이 그려진 값과 같으면 잃을 글자가 없다.
+        글자를 고친 칸(값 ≠ 처음 값)·글 편집 칸(contenteditable)은 예전처럼 기다린다.
+     ③ 보드의 «끄는 중» 표시(token-drag)가 끌기가 끝난 뒤에도 남은 경우(drag_or_modal:fBoard 23시간) —
+        보드의 psDragging()(손가락이 실제로 눌려 있나, 15초 상한)이 아니라고 하면 남은 표시로 본다. */
+  function typingIn(a){
+    if(a.isContentEditable)return true;
+    var tag=String(a.tagName||'').toLowerCase();
+    if(tag==='select')return false;
+    if(tag==='input'&&/^(checkbox|radio|range|color|button|submit|reset|file|image|hidden)$/i.test(String(a.type||'')))return false;
+    if(tag!=='input'&&tag!=='textarea')return false;
+    if(typeof a.value==='string'&&typeof a.defaultValue==='string'&&a.value===a.defaultValue)return false;
+    return true;
+  }
   function busyDoc(d){
     try{
       var a=d.activeElement;
-      if(a&&(/^(input|textarea|select)$/i.test(a.tagName)||a.isContentEditable))return 'focus_'+(a.isContentEditable?'editable':String(a.tagName).toLowerCase());
+      if(a&&typingIn(a))return 'focus_'+(a.isContentEditable?'editable':String(a.tagName).toLowerCase());
       if(d.querySelector('#scrim.show,.gw-ov,.sheet.show,[data-ps-open="1"]'))return 'overlay';
-      if(d.body&&(d.body.classList.contains('token-drag')||d.body.classList.contains('ps-modal-open')))return 'drag_or_modal';
+      if(d.body&&d.body.classList.contains('ps-modal-open'))return 'drag_or_modal';
+      if(d.body&&d.body.classList.contains('token-drag')){ var dw=d.defaultView; if(!(dw&&typeof dw.psDragging==='function')||dw.psDragging())return 'drag_or_modal'; }
     }catch(_){}
     return '';
   }
@@ -559,6 +575,9 @@ function psFlushAllPendingReady(track){
     var fr=document.querySelectorAll('iframe');
     for(var i=0;i<fr.length;i++)(function(frame,n){
       var w=frame.contentWindow;if(!w)return;
+      /* 2.941 — 다른 출처 iframe(확장 프로그램이 끼워 넣은 것 등)은 우리 자료를 담지 않는다. 손대면 SecurityError 로
+         저장 확인 전체가 실패해 새 판이 5시간 막혔다(flush_fail:frame12:SecurityError, 10/4). 건너뛴다. */
+      try{ void w.document; }catch(_){ return; }
       jobs.push(psFlushWatch(track,frame.id||('frame'+n),Promise.resolve().then(function(){
         if(typeof w.psFlushPendingReady==='function')return w.psFlushPendingReady();
         if(typeof w.psFlushPending==='function')w.psFlushPending();

@@ -2535,6 +2535,7 @@ function syncState(){
 
   };
   var state=readState();
+  try{ if(state&&state.n)state.oldest=visiblePendingInfo(activeWs()).oldest||0; }catch(_){}   /* 2.941 — 며칠째 못 올렸나(autosave-status 가 말한다) */
   if(typeof autosaveEnabled==='function'&&autosaveEnabled()){
     var c=autosaveContext();state.archivedCount=c&&autosaveArchiveState.owner===c.uid+':'+c.seal?autosaveArchiveState.count:0;
     if(autosaveRunner&&autosaveRunner.busy()&&state.kind!=='off'&&state.kind!=='bad'){state.kind='busy';state.text='저장 중…';}
