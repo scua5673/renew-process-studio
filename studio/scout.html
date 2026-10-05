@@ -4589,6 +4589,64 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       #stInjOv textarea{display:block;box-sizing:border-box;width:100%;min-height:64px;font-size:13px;line-height:1.5;padding:10px}
       #stInjOv .inj-ft{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
       #stInjOv [data-inj-ok]:disabled{opacity:.5;cursor:not-allowed}
+      /* ══ 2.945 · IDP 연결 — 명단 칩 시트 · «오늘» 확인 카드 (연결된 사람은 ✓) ══ */
+      #ilOv .il-card{width:min(460px,94vw);max-height:calc(100dvh - 32px);overflow:auto;padding:16px 14px 14px}
+      #ilOv .ts-hd{margin-bottom:6px}
+      #ilOv .il-k{display:block;font-size:12px;font-weight:700;color:var(--accent,#3a6df0);margin-bottom:2px}
+      #ilOv h3{margin:0;font-size:18px;font-weight:800}
+      #ilOv .il-sub{margin:3px 0 0;font-size:12.5px;line-height:1.5;color:var(--dim)}
+      #ilOv .il-gh{display:flex;align-items:center;gap:6px;margin:12px 4px 6px;font-size:12px;font-weight:800;color:var(--dim)}
+      #ilOv .il-gh.hl{color:var(--accent,#3a6df0)}
+      #ilOv .il-gh.ok{color:#1F6B3E}
+      #ilOv .il-row{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;box-sizing:border-box;min-height:54px;padding:8px 10px;margin:0 0 4px;border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff);color:var(--txt);font:inherit;text-align:left;cursor:pointer}
+      #ilOv button.il-row:hover{border-color:color-mix(in srgb,var(--accent,#3a6df0) 45%,var(--line))}
+      #ilOv .il-row.hl{border:2px solid var(--accent,#3a6df0);background:color-mix(in srgb,var(--accent,#3a6df0) 8%,var(--surface,#fff))}
+      #ilOv .il-row.dis{cursor:default;background:var(--fill,#F4F5F7);border-color:transparent;min-height:46px}
+      #ilOv .il-av{width:36px;height:36px;border-radius:999px;background:var(--fill,#F1F3F5);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--dim)}
+      #ilOv .il-row.hl .il-av{background:var(--accent,#3a6df0);color:#fff}
+      #ilOv .il-av.ok{background:#E8F4EC;color:#1F7A45}
+      #ilOv .il-tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+      #ilOv .il-tx b{font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      #ilOv .il-tx small{font-size:12px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      #ilOv .il-row.dis .il-tx b{color:var(--dim)}
+      #ilOv .il-go{font-size:12.5px;font-weight:800;color:var(--accent,#3a6df0)}
+      #ilOv .il-go.ok{color:#1F6B3E}
+      #ilOv .il-empty{padding:14px 6px;font-size:13px;line-height:1.55;color:var(--dim)}
+      #ilOv .il-foot{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--fill,#F4F5F7);font-size:12.5px;color:var(--dim)}
+      #ilOv .il-foot span{flex:1 1 auto}
+      #ilOv .il-q{display:block;box-sizing:border-box;width:100%;min-height:42px;margin:6px 0 10px;font-size:15px}
+      body.fmdark #ilOv .il-av.ok{background:rgba(76,194,122,.16);color:#7ED3A8}
+      body.fmdark #ilOv .il-gh.ok,body.fmdark #ilOv .il-go.ok{color:#7ED3A8}
+      .ck .il-claims{background:var(--surface,#fff);border:1px solid #F1E2C4;border-radius:12px;overflow:hidden;margin-bottom:12px}
+      .ck .il-ch{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:11px 14px;background:#FFF8EC}
+      .ck .il-ch b{font-size:14px;font-weight:800;color:#8A5300}
+      .ck .il-ch span{font-size:12px;color:#7A5A20}
+      .ck .il-c{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:11px 14px;border-top:1px solid #F3E8D2}
+      .ck .il-who{display:flex;align-items:baseline;gap:6px;min-width:0;font-size:14px}
+      .ck .il-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .ck .il-who small{font-size:12px;color:var(--dim);white-space:nowrap}
+      .ck .il-to{grid-column:1;font-size:13.5px;color:var(--txt);min-width:0}
+      .ck .il-to.warn{color:#8A5300}
+      .ck .il-btns{grid-column:2;grid-row:1/3;display:flex;gap:6px}
+      html.ps-page-scout .ck .il-btns .btn:not(#_){min-height:36px!important;white-space:nowrap}
+      .ck .il-btns .il-ok{background:#1F7A45;border-color:#1F7A45;color:#fff}
+      .ck .il-more{padding:8px 14px;border-top:1px solid #F3E8D2;font-size:12px;color:var(--dim)}
+      body.fmdark .ck .il-claims{border-color:rgba(217,161,90,.35)}
+      body.fmdark .ck .il-ch{background:rgba(217,161,90,.14)}
+      body.fmdark .ck .il-ch b,body.fmdark .ck .il-to.warn{color:#E5B96A}
+      body.fmdark .ck .il-ch span{color:#D9C08F}
+      body.fmdark .ck .il-c,body.fmdark .ck .il-more{border-top-color:rgba(217,161,90,.2)}
+      @media(max-width:600px){
+        .ck .il-c{grid-template-columns:minmax(0,1fr)}
+        .ck .il-btns{grid-column:1;grid-row:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+        html.ps-page-scout .ck .il-btns .btn:not(#_){min-height:44px!important}
+        #ilOv{align-items:end;padding:0}
+        #ilOv .il-card{width:100%;max-width:none;border-radius:18px 18px 0 0;max-height:88dvh}
+      }
+      /* 명단 칩 — 연결됨은 점 대신 ✓, 선수가 «이게 나예요»를 골라 둔 칩은 호박색 */
+      html.ps-page-scout #teamList .tm-row .t-idp.linked:not(#_)::before{content:"✓";width:auto;height:auto;border-radius:0;background:none!important;font-size:11px;font-weight:900;line-height:1;color:currentColor}
+      html.ps-page-scout #teamList .tm-row .t-idp.claimed:not(#_){border-color:rgba(181,118,43,.55)!important;background:#FFF4E2!important;color:#8A5300!important;opacity:1!important}
+      html.ps-page-scout #teamList .tm-row .t-idp.claimed:not(#_)::before{background:#B5762B!important}
       @media(max-width:600px){
         #availRoot .av-total-9 th:first-child{width:28%;padding-left:8px}
         #availRoot .av-total-9 .av-c-now{display:none}
@@ -6814,6 +6872,14 @@ function rosterSaveRows(players,options,receipt){
   touched.forEach(function(id){teamSaves.track('sq:'+id,work,retry);});
   return accepted;
 }
+/* 2.945 — 공개 미러의 명단(번호·이름·자리·조). 선수단 저장 구간 안에 둔다(저장 시험 하네스가 이 구간을 잘라 쓴다). */
+function idpRosterMirror(main){
+  var pos=(main&&main.positions)||[];
+  return ((main&&main.players)||[]).filter(function(p){return p&&p.type!=="target"&&String(p.name||"").trim();})
+    .map(function(p){var po=pos.find(function(x){return x.id===p.posId;});
+      var ab=po?posAbbr(po.name):"";try{if(ab&&typeof tmNorm==="function")ab=tmNorm(ab);}catch(_){}   /* 명단 칩과 같은 이름(ST→CF 등) */
+      return {id:String(p.id),num:String(p.num||""),name:String(p.name).trim(),pos:ab,grp:String(p.grp||"").trim()};});
+}
 function rosterSaveMirrors(main){
   /* 속성 목록만 공개 미러(cs_team_attrs_v1) — 선수는 scout_tool_v1(전체 평가)을 서버에서 못 받지만
      IDP 팀 기준 셀프평가에 속성 이름은 필요하다. 평가 값은 미러에 넣지 않는다. */
@@ -6835,6 +6901,9 @@ function rosterSaveMirrors(main){
     /* 2.215 — 선수→조 · 조 이름(공개): 선수 기기가 자기 조의 일정(grpWeeks)을 읽기 위해. 이름·평가는 안 넣는다 */
     grpBy:(function(){ var m={}; (main.players||[]).forEach(function(p){ if(p&&p.type!=="target"&&String(p.grp||"").trim())m[p.id]=String(p.grp).trim(); }); return m; })(),
     grpBase:(main.meta.grpBase||[]).slice(),
+    /* 2.945 — 선수가 합류할 때 «명단에서 나를 고르기»(사용자 승인 · 설계 목업 ③). 선수는 scout_tool_v1·cs_squad_v1 을
+       못 읽으므로 **고를 수 있는 최소**(번호·이름·자리·조)만 여기에 둔다. 평가·상태·부상·연락처·메모는 넣지 않는다. */
+    roster:idpRosterMirror(main),
     evalMode:main.meta.evalMode,setId:main.meta.activeEvalSetId,
     removedStd:Object.keys(main.meta.removedStd||{})   /* 2.908 — 팀이 지운 표준 항목(IDP 가 채우지 않게) */
   }))accepted=false;}catch(e){teamSaves.track("cs_team_attrs_v1",Promise.reject(e));accepted=false;}
@@ -11479,6 +11548,7 @@ try{ window.addEventListener("storage", function(e){
 function renderTeam(){
   tmMigrate();
   try{ tmShareLine(); }catch(_){}
+  try{ setTimeout(idpRosterMirrorRefresh,0); }catch(_){}   /* 2.945 — 선수가 «나를 고르기»에 쓸 공개 명단 */
   /* 구버전이 자동 생성한 이름 없는 11명은 실제 선수가 아니다. 슬롯은 포메이션이 담당한다. */
   if(data.meta&&data.meta.seeded===1){
     data.players=data.players.filter(function(p){
@@ -11676,9 +11746,16 @@ function renderTeam(){
       if(link){idpB.classList.add("linked");idpB.title=(P.name||"선수")+" IDP 보기 — 계정 연결됨";
         idpB.onclick=function(e){e.stopPropagation();
           try{parent.postMessage({source:"scout",type:"goApp",app:"idp",idpKey:"cs_idp_v1_"+link.uid,idpName:P.name||""},"*");}catch(_){}};}
-      else{idpB.title="IDP 미연결 — 선수가 팀에 합류해 계정이 연결되면 셀프 평가·기록을 볼 수 있어요";
+      else{
+        /* 2.945 ② — 임원은 이 칩에서 바로 계정을 고른다(권한 관리까지 가지 않는다). 선수가 «이게 나예요»를 골라 두었으면 칩이 알린다 */
+        var _can=ilCan(),_cl=null;
+        if(_can){try{_cl=idpClaims(true).filter(function(c){return c.claim&&!c.claim.none&&String(c.claim.pid||"")===String(P.id);})[0]||null;}catch(_){}}
+        if(_cl)idpB.classList.add("claimed");
+        idpB.title=_can?(_cl?(ilJ(_cl.name||"한 계정","이가")+" 이 선수라고 골랐어요 — 눌러서 연결"):"IDP 연결 — 눌러서 계정 고르기")
+          :"IDP 미연결 — 임원이 이 칩에서 선수 계정을 연결해요";
         idpB.onclick=function(e){e.stopPropagation();
-          try{toast((P.name||"이 선수")+"는 아직 계정이 연결되지 않았어요 — 팀 설정에서 초대·연결");}catch(_){}};}
+          if(ilCan()){ilPickAccount(P);return;}
+          try{toast((P.name||"이 선수")+"는 아직 계정이 연결되지 않았어요 — 임원이 명단의 IDP 칩에서 연결해요");}catch(_){}};}
     })(pl);
 /* ══ 2.548 · 자리는 칩으로 · 그 자리에 메모 ════════════════════════════════
        ⚠ 셀렉트를 지운 게 아니라 **같은 일을 더 좁게** 한다 — 명단은 이미 자리로 묶여 있어
@@ -13478,6 +13555,193 @@ function matchPublicRootByUid(uid0){
 function matchPublicRoot(pid){
   var link=matchAccountForPlayer(pid);return link?matchPublicRootByUid(link.uid):null;
 }
+/* ══ 2.945 · IDP 연결 쉽게 — ②명단 칩에서 바로 · ④«오늘» 확인 카드 (설계 목업 «IDP 연결 쉽게», 사용자 «추천대로») ════
+   규칙은 하나: **연결된 사람은 ✓**(2.943 권한 관리와 같은 표시). 쓰는 곳도 하나 — 부모의 PSSync.idpLink.set
+   (= 권한 관리와 같은 칸 cs_perms_v1.members[uid].playerId · 같은 병합 · 임원만).
+   ③ 선수가 «나는 누구»를 고르면 **자기 IDP 문서**에 doc.claim 을 남긴다 — 선수는 권한 문서를 못 쓴다(서버 가드가
+      본인 옛 항목만 남긴다). 코치 기기는 이미 받아 둔 팀원 IDP 문서(cs_idp_v1_<uid>)에서 그 claim 을 읽는다.
+   ⚠ 확인 카드의 «아니에요»·«닫기»는 **이 기기에만** 기억한다(ps_idp_claim_seen_v1) — 선수 문서는 코치가 못 쓴다.
+      선수가 다시 고르면(claim.at 이 바뀌면) 다시 뜬다. */
+/* 미러는 선수단을 저장할 때 같이 쓰인다(rosterSaveMirrors). 배포 직후엔 아무도 저장하지 않았을 수 있으니
+   편집권 있는 기기가 명단·오늘을 그릴 때 **바뀐 경우에만** 명단 한 칸을 맞춘다. */
+var _ilRosterSig="";
+function idpRosterMirrorRefresh(){
+  try{
+    if(!data||!Array.isArray(data.players)||!scoutAutomaticWriteAllowed())return;
+    var r=idpRosterMirror(data),sig=JSON.stringify(r);if(sig===_ilRosterSig)return;
+    var m=store.get("cs_team_attrs_v1");if(!m||!Array.isArray(m.attrs))return;
+    if(JSON.stringify(m.roster||null)!==sig){m.roster=r;if(!store.set("cs_team_attrs_v1",m))return;}
+    _ilRosterSig=sig;
+  }catch(_){}
+}
+/* 조사는 받침으로 고른다(한글이 아니면 괄호). 2.447 이 걱정한 것은 고정 조사였다 — 받침을 보면 틀리지 않는다. */
+function ilJ(w,t){var s=String(w||"").trim(),c=s.charCodeAt(s.length-1),j=(c>=0xAC00&&c<=0xD7A3)?(c-0xAC00)%28:-1;if(t==="으로")return s+(j<0?"(으)로":(j===0||j===8)?"로":"으로");var A=t==="은는"?["은","는"]:["이","가"];return s+(j<0?"("+A[0]+")"+A[1]:j?A[0]:A[1]);}
+function ilApi(){try{var S=(window.parent&&window.parent!==window&&window.parent.PSSync)||window.PSSync;return (S&&S.idpLink)||null;}catch(_){return null;}}
+function ilCan(){var A=ilApi();try{return !!(A&&A.can());}catch(_){return false;}}
+function ilPlayers(){return ((data&&data.players)||[]).filter(function(p){return p&&p.type!=="target"&&String(p.name||"").trim();});}
+function ilPlayerById(pid){pid=String(pid||"");return ilPlayers().filter(function(p){return String(p.id)===pid;})[0]||null;}
+function ilLabel(p){return p?((p.num?"#"+p.num+" ":"")+String(p.name||"").trim()):"";}
+function ilMeta(p){if(!p)return "";var ab="";try{ab=tmAbbrOf(p)||"";}catch(_){}return [ab,String(p.grp||"").trim()].filter(Boolean).join(" · ");}
+function ilHolders(){var ms=matchPerms().members||{},o={};Object.keys(ms).forEach(function(u){var pid=String((ms[u]||{}).playerId||"");if(pid&&!o[pid])o[pid]=u;});return o;}
+function ilNames(){try{return JSON.parse(localStorage.getItem("ps_member_names_v1")||"{}")||{};}catch(_){return {};}}
+function ilNorm(s){return String(s||"").replace(/\s+/g,"").toLowerCase();}
+var IL_SEEN="ps_idp_claim_seen_v1";
+function ilSeen(){try{return JSON.parse(localStorage.getItem(IL_SEEN)||"{}")||{};}catch(_){return {};}}
+function ilSeenSet(uid,at){var m=ilSeen();m[uid]=String(at||"");try{localStorage.setItem(IL_SEEN,JSON.stringify(m));}catch(_){}}
+/* 연결 안 된 팀원의 claim — 큰 문서를 다 풀지 않게 "claim" 글자가 있는 문서만 연다. */
+function idpClaims(withSeen){
+  var out=[],ms=matchPerms().members||{},me=(matchSession()||{}).uid||"",seen=ilSeen(),names=ilNames();
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);if(!k||k.indexOf("cs_idp_v1_")!==0||k==="cs_idp_v1_local")continue;
+      var uid=k.slice(10);if(!uid||uid===me||(ms[uid]&&ms[uid].playerId))continue;
+      var raw=localStorage.getItem(k)||"";if(raw.indexOf('"claim"')<0)continue;
+      var d=null;try{d=JSON.parse(raw);}catch(_){continue;}
+      var c=d&&d.claim;if(!c||typeof c!=="object"||!c.at)continue;
+      if(!withSeen&&seen[uid]&&seen[uid]===String(c.at))continue;
+      out.push({uid:uid,claim:c,name:String((d.profile&&d.profile.name)||names[uid]||"").trim()});
+    }
+  }catch(_){}
+  out.sort(function(a,b){return (+b.claim.at||0)-(+a.claim.at||0);});
+  return out;
+}
+function ilWhen(at){var d=new Date(+at||0);if(!(+at))return "";var t=new Date(),same=d.toDateString()===t.toDateString();
+  return same?(String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")):((d.getMonth()+1)+"/"+d.getDate());}
+function ilRerender(){
+  try{var tv=$("teamView");if(tv&&tv.classList.contains("on"))renderTeam();}catch(_){}
+  try{var hv=$("homeView");if(hv&&hv.classList.contains("on"))renderCkHome();}catch(_){}
+}
+function ilDoLink(uid,pid,done){
+  var A=ilApi(),p=ilPlayerById(pid);if(!A){toast("연결 모듈을 불러오지 못했어요 — 새로고침해 주세요");return false;}
+  try{A.set(uid,pid);}catch(e){toast((e&&e.message)||"연결하지 못했어요");return false;}
+  toast(ilLabel(p)+" — IDP 연결됨 ✓");
+  try{done&&done();}catch(_){}
+  ilRerender();return true;
+}
+function ilSheet(title,sub,kicker){
+  var old=document.getElementById("ilOv");if(old)old.remove();
+  var ov=document.createElement("div");ov.className="ts-ov";ov.id="ilOv";
+  ov.innerHTML='<div class="ts-card il-card" role="dialog" aria-modal="true" aria-labelledby="ilT">'
+    +'<div class="ts-hd"><div style="flex:1 1 auto;min-width:0"><small class="il-k">'+esc(kicker||"")+'</small><h3 id="ilT">'+esc(title)+'</h3><p class="il-sub">'+esc(sub||"")+'</p></div><button class="ts-x" type="button" aria-label="닫기">×</button></div>'
+    +'<div class="il-body"><div class="il-empty">불러오는 중…</div></div></div>';
+  document.body.appendChild(ov);
+  function close(){ov.remove();}
+  ov.querySelector(".ts-x").onclick=close;
+  ov.addEventListener("click",function(e){if(e.target===ov)close();});
+  ov.addEventListener("keydown",function(e){if(e.key==="Escape")close();});
+  return {ov:ov,body:ov.querySelector(".il-body"),close:close};
+}
+var IL_CHECK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>';
+/* ② 명단 칩 → «어느 계정인가요?» — 이 선수라고 고른 계정 · 이름이 같은 계정 · 연결 안 된 계정 · (흐리게) 다른 선수에 연결됨 */
+function ilPickAccount(pl){
+  if(!pl)return;
+  var A=ilApi();if(!A||!ilCan()){toast("선수 계정 연결은 임원이 해요");return;}
+  var S=ilSheet("어느 계정인가요?","우리 팀에 합류한 계정 중에서 고르세요.",[ilLabel(pl),ilMeta(pl)].filter(Boolean).join(" · "));
+  A.members().then(function(rows){
+    if(!S.ov.isConnected)return;
+    var ms=matchPerms().members||{},claims={},pid=String(pl.id);
+    idpClaims(true).forEach(function(c){claims[c.uid]=c;});
+    var picked=[],same=[],free=[],taken=[];
+    (rows||[]).forEach(function(r){
+      var hold=String((ms[r.uid]||{}).playerId||"");
+      if(hold){taken.push({r:r,hold:hold});return;}
+      var c=claims[r.uid];
+      if(c&&String(c.claim.pid||"")===pid)picked.push(r);
+      else if(ilNorm(r.name)&&ilNorm(r.name)===ilNorm(pl.name))same.push(r);
+      else free.push(r);
+    });
+    free.sort(function(a,b){return (a.role==="owner")-(b.role==="owner");});
+    function nm(r){return r.name||r.email||(r.uid.slice(0,8)+"…");}
+    function sub(r){var c=claims[r.uid],bits=[];
+      if(c&&c.claim){if(c.claim.none)bits.push("명단에 이름이 없다고 함");else if(String(c.claim.pid||"")!==pid){var cp=ilPlayerById(c.claim.pid);bits.push("고른 선수: "+(cp?ilLabel(cp):"명단에 없음"));}}
+      if(r.name&&r.email)bits.push(r.email);else if(!r.name)bits.push("이름 없음");
+      if(r.role==="owner")bits.push("관리자");
+      if(r.joinedAt){var j=new Date(r.joinedAt);if(!isNaN(j))bits.push((j.getMonth()+1)+"/"+j.getDate()+" 합류");}
+      return bits.join(" · ");}
+    function row(r,hl){return '<button type="button" class="il-row'+(hl?" hl":"")+'" data-il-acc="'+esc(r.uid)+'"><span class="il-av">'+esc(nm(r).slice(0,1))+'</span><span class="il-tx"><b>'+esc(nm(r))+'</b><small>'+esc(sub(r))+'</small></span><span class="il-go">연결</span></button>';}
+    var h="";
+    if(picked.length)h+='<div class="il-gh hl">이 선수라고 골랐어요</div>'+picked.map(function(r){return row(r,true);}).join("");
+    if(same.length)h+='<div class="il-gh hl">이름이 같아요</div>'+same.map(function(r){return row(r,!picked.length);}).join("");
+    if(free.length)h+='<div class="il-gh">합류했지만 연결 안 된 계정 '+free.length+'</div>'+free.map(function(r){return row(r,false);}).join("");
+    if(!picked.length&&!same.length&&!free.length)h+='<div class="il-empty">연결 안 된 계정이 없어요 — 선수가 아직 팀에 합류하지 않았다면 초대 코드를 보내 주세요.</div>';
+    if(taken.length)h+='<div class="il-gh ok">'+IL_CHECK+'다른 선수에 연결됨 — 고를 수 없어요</div>'+taken.map(function(t){var p2=ilPlayerById(t.hold);
+      return '<div class="il-row dis"><span class="il-av ok">'+IL_CHECK+'</span><span class="il-tx"><b>'+esc(nm(t.r))+'</b><small>→ '+esc(p2?ilLabel(p2):"명단에 없는 선수")+'</small></span><span class="il-go ok">연결됨</span></div>';}).join("");
+    h+='<div class="il-foot"><span>아직 합류 안 했나요?</span><button type="button" class="btn sm" data-il-invite>초대 코드 보내기</button></div>';
+    S.body.innerHTML=h;
+    [].forEach.call(S.body.querySelectorAll("[data-il-acc]"),function(b){b.onclick=function(){
+      var uid=b.dataset.ilAcc,c=claims[uid],r=(rows||[]).filter(function(x){return x.uid===uid;})[0];
+      function go(){if(ilDoLink(uid,pid,function(){if(c)ilSeenSet(uid,c.claim.at);}))S.close();}
+      if(c&&c.claim&&!c.claim.none&&String(c.claim.pid||"")!==pid){var cp=ilPlayerById(c.claim.pid);
+        psConfirm("이 계정이 고른 선수는 "+(cp?ilLabel(cp):"다른 선수")+"예요. 그래도 "+ilLabel(pl)+"에 연결할까요?",go);return;}
+      go();};});
+    var inv=S.body.querySelector("[data-il-invite]");if(inv)inv.onclick=function(){S.close();try{A.invite();}catch(_){}};
+  }).catch(function(){if(S.ov.isConnected)S.body.innerHTML='<div class="il-empty">팀원을 불러오지 못했어요 — 연결을 확인하고 다시 열어 주세요.</div>';});
+}
+/* ④의 «아니에요»·«명단에서 고르기» → «이 계정은 누구인가요?» — 연결 안 된 선수가 위, 연결된 선수는 ✓ 흐리게 */
+function ilPickPlayer(uid,who,claim){
+  if(!ilCan()){toast("선수 계정 연결은 임원이 해요");return;}
+  var S=ilSheet("이 계정은 누구인가요?","명단에서 맞는 선수를 고르면 바로 연결돼요.",who||"");
+  var holders=ilHolders(),names=ilNames(),q="";
+  S.body.innerHTML='<input type="search" class="inp il-q" placeholder="이름·번호" aria-label="이름·번호로 찾기"><div class="il-list"></div>';
+  var list=S.body.querySelector(".il-list"),inp=S.body.querySelector(".il-q");
+  function draw(){
+    var nq=ilNorm(q),L=ilPlayers().filter(function(p){return !nq||ilNorm(p.name).indexOf(nq)>=0||String(p.num||"")===q.trim();});
+    var cp=claim&&!claim.none?String(claim.pid||""):"";
+    L.sort(function(a,b){var la=holders[String(a.id)]?1:0,lb=holders[String(b.id)]?1:0;if(la!==lb)return la-lb;var na=parseInt(a.num,10),nb=parseInt(b.num,10);return (isNaN(na)?999:na)-(isNaN(nb)?999:nb)||String(a.name).localeCompare(String(b.name),"ko");});
+    list.innerHTML=L.length?L.map(function(p){var hold=holders[String(p.id)];
+      if(hold)return '<div class="il-row dis"><span class="il-av ok">'+IL_CHECK+'</span><span class="il-tx"><b>'+esc(ilLabel(p))+'</b><small>'+esc([ilMeta(p),(names[hold]||"다른 계정")+" 계정"].filter(Boolean).join(" · "))+'</small></span><span class="il-go ok">연결됨</span></div>';
+      return '<button type="button" class="il-row'+(String(p.id)===cp?" hl":"")+'" data-il-pid="'+esc(p.id)+'"><span class="il-av">'+esc(String(p.num||"").slice(0,3)||"–")+'</span><span class="il-tx"><b>'+esc(String(p.name).trim())+'</b><small>'+esc(ilMeta(p)||" ")+'</small></span><span class="il-go">연결</span></button>';}).join("")
+      :'<div class="il-empty">맞는 선수가 없어요 — 선수단에 먼저 등록해 주세요.</div>';
+    [].forEach.call(list.querySelectorAll("[data-il-pid]"),function(b){b.onclick=function(){
+      if(ilDoLink(uid,b.dataset.ilPid,function(){if(claim)ilSeenSet(uid,claim.at);}))S.close();};});
+  }
+  inp.oninput=function(){q=inp.value;draw();};
+  draw();
+}
+/* ④ «오늘» 맨 위 — 선수가 고른 이름을 코치가 한 번 확인한다. 임원에게만, 확인할 것이 있을 때만. */
+function ilClaimCard(){
+  if(!ilCan())return "";
+  var L=idpClaims(false);if(!L.length)return "";
+  var holders=ilHolders(),names=ilNames();
+  return '<section class="il-claims" aria-label="IDP 연결 확인"><div class="il-ch"><b>IDP 연결 확인 '+L.length+'</b><span>선수가 고른 이름 — 맞으면 연결</span></div>'
+    +L.slice(0,6).map(function(x){
+      var c=x.claim,p=c.none?null:ilPlayerById(c.pid),hold=p?holders[String(p.id)]:"",who=x.name||names[x.uid]||"이름 없는 계정",line,btns;
+      if(c.none){line='<span class="il-to warn">명단에 내 이름이 없다고 했어요</span>';
+        btns='<button type="button" class="btn" data-il-dismiss="'+esc(x.uid)+'">닫기</button><button type="button" class="btn primary" data-il-pick="'+esc(x.uid)+'">명단에서 고르기</button>';}
+      else if(!p){line='<span class="il-to warn">고른 선수('+esc((c.num?"#"+c.num+" ":"")+(c.name||""))+')가 지금 명단에 없어요</span>';
+        btns='<button type="button" class="btn" data-il-dismiss="'+esc(x.uid)+'">닫기</button><button type="button" class="btn primary" data-il-pick="'+esc(x.uid)+'">명단에서 고르기</button>';}
+      else if(hold){line='<span class="il-to warn">'+esc(ilJ(ilLabel(p),"은는"))+' 이미 '+esc(names[hold]||"다른")+' 계정에 연결돼 있어요</span>';
+        btns='<button type="button" class="btn" data-il-dismiss="'+esc(x.uid)+'">닫기</button><button type="button" class="btn primary" data-il-pick="'+esc(x.uid)+'">다른 선수 고르기</button>';}
+      else{line='<span class="il-to">→ <b>'+esc(ilLabel(p))+'</b>'+(ilMeta(p)?' · '+esc(ilMeta(p)):'')+'</span>';
+        btns='<button type="button" class="btn" data-il-no="'+esc(x.uid)+'">아니에요</button><button type="button" class="btn primary il-ok" data-il-yes="'+esc(x.uid)+'" data-pid="'+esc(p.id)+'">연결</button>';}
+      return '<div class="il-c"><span class="il-who"><b>'+esc(who)+'</b><small>'+esc(ilWhen(c.at))+' 고름</small></span>'+line+'<div class="il-btns">'+btns+'</div></div>';
+    }).join("")+(L.length>6?'<div class="il-more">외 '+(L.length-6)+'명 — 하나씩 확인하면 다음 사람이 올라와요</div>':'')+'</section>';
+}
+/* 선수 문서(claim)·권한 문서가 다른 기기에서 오면 확인 카드를 다시 그린다 — 확인할 목록이 실제로 바뀐 때만
+   (코치 기기는 45초마다 팀원 IDP 문서를 받는다. 그때마다 오늘 화면을 다시 그리면 안 된다). */
+var _ilSig=null,_ilSigT=0;
+window.addEventListener("storage",function(e){
+  if(!e||!e.key||(e.key.indexOf("cs_idp_v1_")!==0&&e.key!=="cs_perms_v1"))return;
+  clearTimeout(_ilSigT);_ilSigT=setTimeout(function(){
+    try{
+      if(!ilCan())return;
+      var sig=idpClaims(false).map(function(c){return c.uid+":"+c.claim.at;}).join("|")+"#"+JSON.stringify(ilHolders());
+      if(sig===_ilSig)return;_ilSig=sig;
+      ilRerender();
+    }catch(_){}
+  },700);
+});
+document.addEventListener("click",function(e){
+  var t=e.target&&e.target.closest&&e.target.closest("[data-il-yes],[data-il-no],[data-il-pick],[data-il-dismiss]");
+  if(!t||!t.closest(".il-claims"))return;
+  e.preventDefault();e.stopPropagation();
+  var uid=t.dataset.ilYes||t.dataset.ilNo||t.dataset.ilPick||t.dataset.ilDismiss,x=idpClaims(true).filter(function(c){return c.uid===uid;})[0];
+  if(!x){ilRerender();return;}
+  var who=x.name||ilNames()[uid]||"이름 없는 계정";
+  if(t.dataset.ilYes)ilDoLink(uid,t.dataset.pid,function(){ilSeenSet(uid,x.claim.at);});
+  else if(t.dataset.ilDismiss){ilSeenSet(uid,x.claim.at);ilRerender();}
+  else{ilSeenSet(uid,x.claim.at);ilRerender();ilPickPlayer(uid,who+" 계정",x.claim);}
+},true);
 function matchPublicEntry(m,kind,pid,uid0){
   var root=uid0?matchPublicRootByUid(uid0):matchPublicRoot(pid);
   var row=root&&root.matchMessages&&root.matchMessages[m.id];
@@ -13774,9 +14038,13 @@ function matchRenderIndividual(m,kind,readonly,keepCurrent){
       var n=document.createElement("div"); n.className="mi-nolink";
       n.innerHTML='<b>'+esc(who)+'</b> 님은 계정이 연결되지 않아 <b>전달되지 않습니다</b>'
         +'<small>적어 두면 코치 초안으로 남고, 계정을 연결하면 그때 공개할 수 있어요 · 지금 팀에서 '+nOk+'/'+all.length+'명 연결됨</small>';
-      var go=document.createElement("button"); go.type="button"; go.textContent="선수단에서 연결하기";
-      go.onclick=function(){ try{ setView("team"); }catch(_){} try{ toast("선수 행의 IDP 배지로 계정을 연결하세요"); }catch(_){} };
-      n.appendChild(go);
+      /* 2.945 — 예전엔 «선수단에서 연결하기»가 명단으로 보내고, 명단의 IDP 칩은 안내만 띄워 **막다른 길**이었다.
+         이제 임원은 여기서 바로 계정을 고른다(명단 칩과 같은 시트). 임원이 아니면 누가 하는지만 말한다. */
+      if(ilCan()){
+        var go=document.createElement("button"); go.type="button"; go.textContent="계정 연결하기";
+        go.onclick=function(){ var p=(players.filter(function(x){return x.id===pid;})[0])||ilPlayerById(pid); if(p)ilPickAccount(p); };
+        n.appendChild(go);
+      }else{ var sm=document.createElement("small"); sm.textContent="계정 연결은 임원이 선수단의 IDP 칩에서 해요"; n.appendChild(sm); }
       host.insertBefore(n,host.firstChild);
     }
   }
@@ -19249,6 +19517,9 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
      앱은 거울이다: 이미 있는 자료(지난 경기 리뷰 유무 · 주 마무리 제안 유무 · 다음 경기 준비 체크 · 오늘 세션)에서
      지금 박자에 해당하는 것 **하나**만 맨 위에 보인다. 제안·재촉 없음, 누르면 그 서랍이 열린다. */
   try{ h=ckNextTask({m:m,diff:diff,todo:todo,ss:ss,today:today})+h; }catch(e){ console.warn("다음 할 일",e); }
+  /* 2.945 ④ — 선수가 고른 «나는 누구»를 코치가 한 번 확인(임원·확인할 것이 있을 때만). 맨 위 — 지금 할 일 */
+  try{ h=ilClaimCard()+h; }catch(e){ console.warn("IDP 연결 확인",e); }
+  try{ setTimeout(idpRosterMirrorRefresh,0); }catch(_){}
   /* ══ 2.570 · «이번 주» 머리줄 + 월~일 7칸 — 그리드 **위**(공지 띠 아래) ═══════════════
      다음 경기는 머리줄의 D-n 칩 하나로(2.299 의 세션 카드 아래 줄은 여기로 옮겼다 — 지운 게 아니라 옮긴 것).
      칸: 요일·날짜 / MD / 첫 줄 제목(주제·상대·OFF) / 블록 분 비율 막대 / 시간·총분·강도. 지난 날도 그린다(주는 주다). */

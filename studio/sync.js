@@ -9612,6 +9612,50 @@ function uiPerms(wa){
     ov.addEventListener('click',function(e){ if(e.target===ov)ov.remove(); });
   }).catch(function(){mm.close();if(!current())return;psModal({current:current,title:'실패',body:'팀원을 불러오지 못했어요.',hideCancel:true,ok:'확인'}); });
 }
+/* ══ 2.945 · IDP 연결 — 명단 칩·오늘 확인 카드가 같이 쓰는 한 길 ═══════════════════════════════
+   사용자 «IDP 연결 더 쉽게 · 연결된 사람은 체크 표시»(설계 목업 ②명단 칩에서 바로 · ③선수가 «나는 누구» · ④코치 확인 한 번).
+   쓰는 자리는 권한 관리 화면과 **같은 한 칸**(cs_perms_v1.members[uid].playerId)이고, 병합도 같은 permsEditApply 다
+   (그 칸 하나만 바꾸고 다른 팀원·역할·구역은 최신 문서 그대로).
+   ⚠ 임원(소유자 포함)만 쓴다 — 서버 가드는 그 밖의 계정이 권한 문서를 쓰면 «본인 옛 항목»만 남기고 되돌린다.
+   ⚠ 한 선수에 두 계정을 붙이지 않는다 — 이미 다른 계정이 가진 선수면 멈추고 이유를 말한다(권한 관리에서 먼저 풀기). */
+var _ilMembers=null,_ilMembersAt=0,_ilMembersWs='';
+function idpLinkCan(){
+  try{
+    var w=activeWsObj();if(!w||w.kind==='personal'||!isTeamWs())return false;
+    if(w.role==='owner')return true;
+    var P=window.PSPerms,r=P&&P.role?P.role():'';return r==='executive'||r==='admin';
+  }catch(_){return false;}
+}
+function idpLinkMembers(force){
+  var w=activeWsObj();if(!w||!w.id)return Promise.reject(new Error('팀을 확인하지 못했어요'));
+  if(!force&&_ilMembers&&_ilMembersWs===w.id&&Date.now()-_ilMembersAt<60000)return Promise.resolve(_ilMembers.slice());
+  var wid=w.id;
+  return membersOf(wid).then(function(rows){
+    var out=(rows||[]).map(function(r){return {uid:String(r&&r.user_id||''),name:String(r&&r.name||'').trim(),email:String(r&&r.email||'').trim(),role:String(r&&r.role||''),joinedAt:r&&r.joined_at||null};})
+      .filter(function(r){return !!r.uid;});
+    if(activeWs()===wid){_ilMembers=out;_ilMembersAt=Date.now();_ilMembersWs=wid;}
+    return out.slice();
+  });
+}
+function idpLinkSet(uid,pid){
+  uid=String(uid||'');pid=pid==null?'':String(pid);
+  if(!uid)throw new Error('계정을 확인하지 못했어요');
+  if(!idpLinkCan())throw new Error('선수 연결은 임원만 할 수 있어요');
+  var P=window.PSPerms;if(!P||!P.get||!P.set)throw new Error('권한 모듈을 불러오지 못했어요 — 새로고침해 주세요');
+  var latest=P.get();if(latest==null)latest={v:1,defaultRole:'player',members:{}};
+  var members=(latest&&latest.members)||{};
+  if(pid){
+    var holder=Object.keys(members).filter(function(u){return u!==uid&&String((members[u]||{}).playerId||'')===pid;})[0];
+    if(holder)throw new Error('이 선수는 이미 다른 계정에 연결돼 있어요 — 권한 관리에서 먼저 풀어 주세요');
+  }
+  if(String((members[uid]||{}).playerId||'')===pid)return false;
+  var out=permsEditApply(latest,latest,[{uid:uid,field:'playerId',value:pid||null,remove:!pid}]);
+  if(!out)return false;
+  P.set(out);
+  try{ forceSync('perms'); }catch(_){}
+  try{ actTrack('a_idp_link','team'); }catch(_){}
+  return true;
+}
 function uiLeave(wa){
   var current=accountActionCurrent();
   function modal(opts){opts.current=current;return psModal(opts);}
@@ -10543,6 +10587,7 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
   boardLive:{version:2,scope:'personal',owner:boardLiveContext,get:boardLiveGet,save:boardLiveSave},
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */
   rosterReady:function(wid){return rosterReady(wid||activeWs());},
+  idpLink:{can:idpLinkCan,members:idpLinkMembers,set:idpLinkSet,invite:function(){ var w=activeWsObj(); if(w&&w.id)uiInvite(w.id); }},   /* 2.945 — 명단 칩·오늘 확인 카드 */
   scheduleEdit:{set:scheduleEditSet,touch:scheduleEditTouch,active:scheduleHeld},
   ping:function(f){ usagePing(null,f); },
   act:function(f,feat){ actTrack(f,feat); },   /* 2.516 — 하루 한 줄 핑 + 횟수·시각·기기 이벤트 */

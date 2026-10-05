@@ -10171,6 +10171,89 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +((more>0||all)?'<button type="button" class="pntc-more" data-pntc="more">'+(all?'접기':(more+'개 더 보기'))+'</button>':'')
       +'</section>';
   }
+  /* ══ 2.945 ③ · 합류한 선수가 «명단에서 나를 고르기» (설계 목업 «IDP 연결 쉽게», 사용자 «추천대로») ══════════════
+     선수는 권한 문서(cs_perms_v1)를 못 쓴다 — 서버 가드가 본인 옛 항목만 남기고 되돌린다. 그래서 고른 것은
+     **내 IDP 문서**에 doc.claim={pid,num,name,at}(또는 {none:1,at})로 남기고, 코치가 «오늘»에서 한 번 확인해 잇는다.
+     명단은 공개 미러(cs_team_attrs_v1.roster — 번호·이름·자리·조만)에서 읽는다(선수는 scout_tool_v1 을 못 받는다).
+     ⚠ 코치가 확인하기 전에도 IDP는 그대로 쓸 수 있다 — 막지 않는다.
+     ⚠ 연결되면 claim 은 지운다(다른 선수로 연결됐으면 그렇다고만 말한다 — 거절했다는 말은 하지 않는다). */
+  var ilcSel='';
+  function ilcState(){
+    try{
+      if(ro()||personalOnly||squadView)return null;
+      var s=sess(),w=teamWsObj();if(!s||!w||w.kind!=='team'||w.role==='owner')return null;
+      if(myTeamRole()!=='player')return null;
+      var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null')||{},ms=pm.members||{};
+      var mine=String((ms[s.uid]||{}).playerId||'');
+      var at=JSON.parse(localStorage.getItem('cs_team_attrs_v1')||'null'),roster=(at&&Array.isArray(at.roster))?at.roster:null;
+      var taken={};Object.keys(ms).forEach(function(u){var p=String((ms[u]||{}).playerId||'');if(p&&u!==s.uid)taken[p]=1;});
+      return {uid:s.uid,mine:mine,roster:roster,taken:taken};
+    }catch(_){return null;}
+  }
+  function ilcJ(w,t){var s=String(w||"").trim(),c=s.charCodeAt(s.length-1),j=(c>=0xAC00&&c<=0xD7A3)?(c-0xAC00)%28:-1;if(t==="으로")return s+(j<0?"(으)로":(j===0||j===8)?"로":"으로");var A=t==="은는"?["은","는"]:["이","가"];return s+(j<0?"("+A[0]+")"+A[1]:j?A[0]:A[1]);}
+  function ilcLabel(p){return p?((p.num?'#'+p.num+' ':'')+String(p.name||'')):'';}
+  function rIdpClaim(){
+    var st=ilcState();if(!st)return '';
+    var c=doc.claim&&typeof doc.claim==='object'?doc.claim:null;
+    if(st.mine){
+      /* 연결 완료 — claim 은 정리한다(그릴 때 바로 쓰지 않고 한 박자 뒤에, 다시 그리지 않고) */
+      if(c){var same=!c.none&&String(c.pid||'')===st.mine,lbl='';
+        try{var lp=(st.roster||[]).filter(function(p){return String(p.id)===st.mine;})[0];lbl=ilcLabel(lp);}catch(_){}
+        setTimeout(function(){try{if(doc.claim){delete doc.claim;save();}
+          gToast(same?'코치가 확인했어요 — 내 IDP가 팀과 이어졌어요 ✓':('코치가 '+ilcJ(lbl||'명단의 선수','으로')+' 연결했어요'));}catch(_){}},0);}
+      return '';
+    }
+    if(!st.roster||!st.roster.length)return '';
+    if(c){
+      var cp=c.none?null:st.roster.filter(function(p){return String(p.id)===String(c.pid||'');})[0];
+      return '<section class="card ilc-card ilc-wait"><div class="ilc-k">팀 명단과 연결</div>'
+        +'<div class="ilc-w"><b>'+(c.none?'명단에 이름이 없다고 코치에게 알렸어요':esc(ilcJ(ilcLabel(cp)||((c.num?'#'+c.num+' ':'')+(c.name||'')),'으로'))+' 골랐어요')+'</b>'
+        +'<span>코치가 확인하면 내 IDP가 팀과 이어져요. 그동안에도 IDP는 그대로 쓸 수 있어요.</span></div>'
+        +'<button type="button" class="ilc-redo" data-ilc-redo>다시 고르기</button></section>';
+    }
+    var L=st.roster.slice().sort(function(a,b){var ta=st.taken[String(a.id)]?1:0,tb=st.taken[String(b.id)]?1:0;if(ta!==tb)return ta-tb;
+      var na=parseInt(a.num,10),nb=parseInt(b.num,10);return (isNaN(na)?999:na)-(isNaN(nb)?999:nb)||String(a.name).localeCompare(String(b.name),'ko');});
+    var sel=L.filter(function(p){return String(p.id)===ilcSel&&!st.taken[String(p.id)];})[0]||null;if(!sel)ilcSel='';
+    var tick='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>';
+    return '<section class="card ilc-card"><div class="ilc-k">팀 명단과 연결</div><h3 class="ilc-t">명단에서 나를 골라 주세요</h3>'
+      +'<p class="ilc-sub">고르면 코치에게 «이 선수가 나예요»가 가고, 코치가 확인하면 내 IDP가 팀과 이어져요.</p>'
+      +'<input type="search" class="ilc-q" placeholder="이름·번호" aria-label="이름·번호로 찾기">'
+      +'<div class="ilc-list">'+L.map(function(p){var tk=!!st.taken[String(p.id)],meta=[p.pos,p.grp].filter(Boolean).join(' · ');
+        var key=esc(String(p.name||'').replace(/\s+/g,'').toLowerCase()+' '+String(p.num||''));
+        if(tk)return '<div class="ilc-row tk" data-ilc-key="'+key+'"><span class="ilc-av ok">'+tick+'</span><span class="ilc-tx"><b>'+esc(ilcLabel(p))+'</b><small>'+esc(meta||' ')+'</small></span><em>이미 연결됨</em></div>';
+        var on=sel&&String(sel.id)===String(p.id);
+        return '<button type="button" class="ilc-row'+(on?' on':'')+'" data-ilc-pick="'+esc(p.id)+'" data-ilc-key="'+key+'" aria-pressed="'+on+'"><span class="ilc-av">'+esc(String(p.num||'').slice(0,3)||'–')+'</span><span class="ilc-tx"><b>'+esc(String(p.name||''))+'</b><small>'+esc(meta||' ')+'</small></span><span class="ilc-dot"></span></button>';
+      }).join('')+'</div>'
+      +'<div class="ilc-none">명단에 내 이름이 없나요? <button type="button" data-ilc-none>코치에게 알리고 건너뛰기</button></div>'
+      +'<button type="button" class="ilc-go" data-ilc-go'+(sel?'':' disabled')+'>'+(sel?esc(ilcJ(ilcLabel(sel),'이가'))+' 나예요':'명단에서 나를 골라 주세요')+'</button>'
+      +'<div class="ilc-foot">코치가 확인하기 전에도 내 IDP는 바로 쓸 수 있어요.</div></section>';
+  }
+  document.addEventListener('click',function(e){
+    var t=e.target&&e.target.closest&&e.target.closest('[data-ilc-pick],[data-ilc-go],[data-ilc-none],[data-ilc-redo]');if(!t)return;
+    var card=t.closest('.ilc-card');if(!card)return;
+    e.preventDefault();
+    if(t.hasAttribute('data-ilc-pick')){
+      ilcSel=t.getAttribute('data-ilc-pick');
+      [].forEach.call(card.querySelectorAll('[data-ilc-pick]'),function(b){var on=b===t;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
+      var go=card.querySelector('[data-ilc-go]');if(go){go.disabled=false;var nb=t.querySelector('.ilc-tx b'),av=t.querySelector('.ilc-av');var num=av&&av.textContent!=='–'?'#'+av.textContent+' ':'';go.textContent=ilcJ(num+(nb?nb.textContent:''),'이가')+' 나예요';}
+      return;
+    }
+    var st=ilcState();if(!st)return;
+    if(t.hasAttribute('data-ilc-redo')){delete doc.claim;ilcSel='';save();render();return;}
+    if(t.hasAttribute('data-ilc-none')){doc.claim={none:1,at:Date.now()};save();render();gToast('코치에게 알렸어요 — 코치가 명단에 올리고 연결해 줘요');return;}
+    if(t.hasAttribute('data-ilc-go')){
+      var p=(st.roster||[]).filter(function(x){return String(x.id)===ilcSel;})[0];
+      if(!p||st.taken[String(p.id)]){gToast('다른 선수를 골라 주세요');return;}
+      doc.claim={pid:String(p.id),num:String(p.num||''),name:String(p.name||''),at:Date.now()};ilcSel='';
+      save();render();gToast('코치에게 보냈어요 — 확인되면 내 IDP가 팀과 이어져요');
+    }
+  });
+  document.addEventListener('input',function(e){
+    var q=e.target&&e.target.classList&&e.target.classList.contains('ilc-q')?e.target:null;if(!q)return;
+    var v=String(q.value||'').replace(/\s+/g,'').toLowerCase(),card=q.closest('.ilc-card');if(!card)return;
+    [].forEach.call(card.querySelectorAll('[data-ilc-key]'),function(r){var k=r.getAttribute('data-ilc-key')||'';var parts=k.split(' ');
+      r.style.display=(!v||parts[0].indexOf(v)>=0||parts[1]===v)?'':'none';});
+  });
   function rWelcome(){
     /* 2.377 — 환영 카드는 **그리지 않는다**(사용자 "이카드는 그냥 안나오게 해줘").
        2.315 는 처음 온 선수의 당황을 줄이려 넣었는데, 정작 오늘 화면의 첫 자리를 차지해
@@ -12743,6 +12826,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
             에서만 그려지는데, 선수 폰의 랜딩은 2.260 부터 `cal`(오늘)이다. "처음 들어가면 당황한다"를
             고치려고 만든 카드가 정작 첫 화면에 없었다. 오늘 탭 맨 위에 그린다. */
       window.__wcOn=false;
+      /* 2.945 ③ — 팀 명단과 아직 안 이어진 선수에게만, 오늘 맨 위에 «명단에서 나를 고르기» */
+      if(_isTodayDay&&!ro()){ try{ h+=rIdpClaim(); }catch(_){} }
       if(_isTodayDay&&!ro()){ try{ var _wc=rWelcome(); if(_wc){ h+=_wc; window.__wcOn=true; } }catch(_){} }
       /* 2.475 — 코치 피드백 도착 알림줄(옛 홈 rHomeDash 에서 이식). 2.320 이후 rHomeDash('aux')가 항상 빈
          문자열이라 이 줄이 실제로는 어디에도 안 그려지고 있었다(전수조사 적발). 재촉이 아니라 온 소식이라
@@ -15968,6 +16053,40 @@ html.ps-page-idp .sqvision-goal small{display:block;margin-top:2px;color:var(--a
   html.ps-page-idp .sqvision{padding:13px 12px}.sqvision-head{display:block}.sqvision-head time{display:block;margin-top:5px}.sqvision-head h3{font-size:17px}.sqvision-beh ol{grid-template-columns:1fr}
   html.ps-page-idp .sqvision-goal{grid-template-columns:1fr;gap:3px}
 }
+</style>
+<style id="ps-2945-claim">/* 2.945 ③ — 합류한 선수가 «명단에서 나를 고르기» · 연결된 사람은 ✓ */
+html.ps-page-idp .ilc-card{padding:16px 14px;margin-bottom:12px;border-left:3px solid var(--accent)}
+html.ps-page-idp .ilc-k{font-size:11.5px;font-weight:700;color:var(--accent);margin-bottom:3px}
+html.ps-page-idp .ilc-t{margin:0;font-size:18px;font-weight:800;color:var(--ink)}
+html.ps-page-idp .ilc-sub{margin:4px 0 10px;font-size:12.5px;line-height:1.55;color:var(--dim)}
+html.ps-page-idp .ilc-q{display:block;box-sizing:border-box;width:100%;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:15px;color:var(--ink);background:var(--surface,#fff);margin-bottom:8px}
+html.ps-page-idp .ilc-list{max-height:min(46vh,340px);overflow-y:auto;margin:0 -4px;padding:0 4px}
+html.ps-page-idp .ilc-row{display:grid;grid-template-columns:38px minmax(0,1fr) 22px;gap:10px;align-items:center;width:100%;box-sizing:border-box;min-height:56px;padding:8px 8px;margin:0 0 4px;border:1px solid transparent;border-bottom-color:var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+html.ps-page-idp .ilc-row.on{border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface,#fff))}
+html.ps-page-idp .ilc-row.tk{cursor:default;grid-template-columns:38px minmax(0,1fr) auto;background:var(--surface-2,#F4F5F7);border-color:transparent}
+html.ps-page-idp .ilc-av{width:38px;height:38px;border-radius:999px;background:var(--surface-2,#F1F3F5);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--dim)}
+html.ps-page-idp .ilc-row.on .ilc-av{background:var(--accent);color:#fff}
+html.ps-page-idp .ilc-av.ok{background:#E8F4EC;color:#1F7A45}
+html.ps-page-idp .ilc-tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+html.ps-page-idp .ilc-tx b{font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.ps-page-idp .ilc-tx small{font-size:12px;color:var(--dim)}
+html.ps-page-idp .ilc-row.tk .ilc-tx b{color:var(--dim)}
+html.ps-page-idp .ilc-row em{font-style:normal;font-size:12px;font-weight:800;color:#1F6B3E;white-space:nowrap}
+html.ps-page-idp .ilc-dot{width:22px;height:22px;box-sizing:border-box;border-radius:999px;border:2px solid var(--line2,#C9CED5)}
+html.ps-page-idp .ilc-row.on .ilc-dot{border:6px solid var(--accent)}
+html.ps-page-idp .ilc-none{margin:10px 2px 0;font-size:12.5px;line-height:1.55;color:var(--dim)}
+html.ps-page-idp .ilc-none button{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--accent);text-decoration:underline;cursor:pointer}
+html.ps-page-idp .ilc-card .ilc-go:not(#_){display:block;width:100%;min-height:50px;margin-top:12px;border:0;border-radius:12px;background:var(--accent);color:#fff;font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+html.ps-page-idp .ilc-card .ilc-go:not(#_):disabled{background:var(--surface-2,#F1F3F5);color:var(--faint,#8A9099);cursor:default}
+html.ps-page-idp .ilc-foot{margin-top:8px;font-size:12px;text-align:center;color:var(--dim)}
+html.ps-page-idp .ilc-wait{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+html.ps-page-idp .ilc-wait .ilc-k{grid-column:1/-1}
+html.ps-page-idp .ilc-w{display:flex;flex-direction:column;gap:3px;min-width:0}
+html.ps-page-idp .ilc-w b{font-size:14.5px;font-weight:750;color:var(--ink)}
+html.ps-page-idp .ilc-w span{font-size:12.5px;line-height:1.5;color:var(--dim)}
+html.ps-page-idp .ilc-redo{min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface,#fff);font:inherit;font-size:12.5px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap}
+body.fmdark .ilc-av.ok{background:rgba(76,194,122,.16);color:#7ED3A8}
+body.fmdark .ilc-row em{color:#7ED3A8}
 </style>
 </body>
 </html>
