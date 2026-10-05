@@ -37,3 +37,15 @@ test('a conflict and a server refusal have distinct truthful failure states',()=
     assert.doesNotMatch(shown.text+shown.detail,/인터넷|저장됨|안전하게|더 새로/);
   }
 });
+
+test('2.941 — 기기 대기열이 하루를 넘으면 며칠째인지 말한다',()=>{
+  const day=86400000,now=Date.UTC(2026,9,5,3,0,0);
+  const stuck=view({kind:'pending',n:3,oldest:now-2*day-5,now});
+  assert.equal(stuck.kind,'bad');assert.equal(stuck.text,'2일째 저장 대기 · 3건');assert.equal(stuck.action,'retry');assert.equal(stuck.attention,true);
+  assert.match(stuck.detail,/동기화 진단/);
+  assert.equal(view({kind:'pending',n:3,oldest:now-23*3600000,now}).text,'저장 대기','하루 안이면 그대로');
+  assert.equal(view({kind:'bad',reason:'sync_permission',n:1,oldest:now-3*day,now}).text,'3일째 저장 대기 · 1건');
+  assert.equal(view({kind:'bad',reason:'sync_auth',n:1,oldest:now-3*day,now}).action,'login','로그인 필요는 그대로');
+  assert.equal(view({kind:'busy',n:1,oldest:now-3*day,now}).text,'저장 중…','저장 중엔 그대로');
+  assert.equal(view({kind:'ok',at:100,n:0,oldest:now-3*day,now}).text,'저장됨','대기열이 비면 날짜는 무관');
+});
