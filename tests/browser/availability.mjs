@@ -131,11 +131,11 @@ try{
     for(const day of ['2026-09-10','2026-09-12',TODAY])assert.equal((await resolved(frame,'p2',day)).s,'injury');
     assert.equal(await frame.evaluate(()=>data.players.find(p=>p.id==='p2').status),'injury');assert.equal(await frame.evaluate(()=>JSON.stringify(data.meta.statusRuns.p2)),initialRuns,'A past correction does not rewrite the current injury run');
     await frame.locator('[data-av-mode=players]').click();await frame.locator('[data-av-player-total=p1]').waitFor();
-    for(const [pid,name,expected] of [['p1','training',2],['p1','match',1],['p1','exercise',3],['p2','training',1],['p2','injury',13],['p3','rehab',14],['p4','training',2],['p4','match',0],['p5','unknown',0],['p5','training',2]])assert.equal(await metric(frame,pid,name),expected,pid+' '+name);
+    for(const [pid,name,expected] of /* 2.943 — 칸은 일정일만 센다(부상·재활도 빠진 일정일). 한 줄을 더하면 그 선수의 일정일 */[['p1','training',2],['p1','match',1],['p1','pct',100],['p2','training',1],['p2','injury',2],['p2','pct',33],['p3','rehab',2],['p4','training',2],['p4','match',0],['p5','training',2]])assert.equal(await metric(frame,pid,name),expected,pid+' '+name);
     assert.equal(await frame.locator('#availRoot img[onerror],#availRoot script').count(),0);assert.equal(await frame.evaluate(()=>fixtureXss),0);
     await page.screenshot({path:path.join(out,width+'-player-totals.png')});
     if(width<600){
-      for(const metric of ['exercise','rest','injury','rehab','unknown']){
+      for(const metric of ['training','match','rest','out','rehab','injury','pct']){
         const bounds=await frame.locator('[data-av-player-total=p1]').locator('xpath=ancestor::tr').locator('[data-av-stat="'+metric+'"]').boundingBox();
         assert.ok(bounds&&bounds.x>=0&&bounds.x+bounds.width<=width,metric+' must be visible without horizontal scrolling');
       }
@@ -147,6 +147,18 @@ try{
     assert.equal((await resolved(frame,'p2','2026-09-11')).s,'ok');assert.equal((await resolved(frame,'p2','2026-09-11')).note,note);
     await frame.locator('[data-av-mode=days]').click();await frame.locator('[data-av-day="0"]').count().then(async n=>{if(n)await frame.locator('[data-av-day="0"]').click();});
     await choose(frame,'p1','injury','오늘 부상 시작');assert.equal(await frame.evaluate(()=>data.players.find(p=>p.id==='p1').status),'injury');
+    // 2.943 — 새 부상은 부상 기록 창: 부위를 고르기 전에는 «기록하기»가 잠겨 있고, 고르면 그 부상의 첫날에 붙는다
+    await frame.locator('#stInjOv').waitFor();assert.equal(await frame.locator('#stInjOv [data-inj-ok]').isDisabled(),true);
+    assert.equal(await frame.locator('#stInjOv .inj-c[data-f=ret]').count(),0,'복귀 예상은 기록 창에서 이미 물었다');
+    await frame.locator('#stInjOv .inj-c[data-f=part] [data-v="햄스트링"]').click();await frame.locator('#stInjOv .inj-c[data-f=side] [data-v=L]').click();
+    await page.screenshot({path:path.join(out,width+'-injury-sheet.png')});
+    await frame.locator('#stInjOv [data-inj-ok]').click();await frame.locator('#stInjOv').waitFor({state:'detached'});
+    assert.deepEqual(await frame.evaluate(()=>{const e=PSParticipation.episodes(data.meta,'p1',plStatusOf(data.players.find(p=>p.id==='p1')),stYmd()).pop();return [e.from,e.part,e.side,e.open];}),['2026-09-15','햄스트링','L',true]);
+    await frame.evaluate(()=>{availMode='players';availPlayer='p1';renderAvail();});
+    assert.match(await frame.locator('#avPlayerHistory .av-eps').innerText(),/햄스트링 · 왼쪽[\s\S]*진행 중/);
+    assert.match(await frame.locator('#availRoot .av-inj').innerText(),/햄스트링\s*1건/);
+    await page.screenshot({path:path.join(out,width+'-player-card.png'),fullPage:true});
+    await frame.evaluate(()=>{availMode='days';availPlayer=null;renderAvail();});
     await frame.evaluate(()=>{localStorage.setItem('fixture-attendance-now','2026-09-20T12:00:00+09:00');availDay=null;renderAvail();});await flush(frame);
     for(const day of ['2026-09-18','2026-09-19','2026-09-20'])assert.equal((await resolved(frame,'p1',day)).s,'injury');
     await frame.evaluate(()=>{localStorage.setItem('fixture-attendance-now','2026-09-21T12:00:00+09:00');availDay=null;renderAvail();});await choose(frame,'p1','ok','정상 복귀');

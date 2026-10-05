@@ -91,14 +91,14 @@
     return offRest(model(meta,pid,currentStatus,today,assumeTraining)(day,k),k);
   }
   function totals(meta,pid,from,to,kindOf,currentStatus,today,assumeTraining){
-    var out={training:0,match:0,exercise:0,rest:0,injury:0,rehab:0,out:0,unknown:0,recorded:0,statusDays:0,currentDays:0,days:0,first:null,last:null};
+    var out={training:0,match:0,exercise:0,rest:0,injury:0,rehab:0,out:0,unknown:0,recorded:0,statusDays:0,currentDays:0,days:0,first:null,last:null,scheduled:0,missed:{rest:0,out:0,rehab:0,injury:0}};
     var start=dateNumber(from),end=dateNumber(to),limit=today===undefined?null:dateNumber(today);
     if(!player(pid)||start===null||end===null||(today!==undefined&&limit===null))return out;
     if(limit!==null)end=Math.min(end,limit);
     var read0=model(meta,pid,currentStatus,today,assumeTraining),read=function(day,k){return offRest(read0(day,k),k);};
     for(var d=start;d<=end;d++){
       var day=dateString(d),k=typeof kindOf==='function'?kindOf(day,pid):kindOf,result=read(day,k);
-      var scheduled=result.kind==='train'||result.kind==='match';out.days++;
+      var scheduled=result.kind==='train'||result.kind==='match';out.days++;if(scheduled)out.scheduled++;
       if(result.source==='none'){if(scheduled)out.unknown++;continue;}
       if(out.first===null)out.first=day;out.last=day;
       if(result.source==='record')out.recorded++;
@@ -108,7 +108,7 @@
         if(result.kind==='train')out.training++;
         else if(result.kind==='match')out.match++;
       }else{
-        if(scheduled)out.rest++;
+        if(scheduled){out.rest++;if(own(out.missed,result.s))out.missed[result.s]++;}
         if(result.s==='injury')out.injury++;
         else if(result.s==='rehab')out.rehab++;
         else if(result.s==='out')out.out++;
@@ -116,5 +116,45 @@
     }
     out.exercise=out.training+out.match;return out;
   }
-  return {record:record,resolve:resolve,totals:totals};
+  // 2.943 — Injury episodes. Consecutive injury/rehab status runs form one
+  // episode (an injury that moves into rehab is still the same injury). Length
+  // is counted in calendar days from the first day to the return (or today if
+  // still open) — the international injury-epidemiology convention. Details
+  // (part, side, when) live beside the runs in meta.injuryInfo[pid][from].
+  function span(v){return v==='injury'||v==='rehab';}
+  function episodes(meta,pid,currentStatus,today){
+    if(!player(pid))return [];
+    var runsRoot=has(meta,'statusRuns')?meta.statusRuns:null;
+    var arr=has(runsRoot,pid)&&Array.isArray(runsRoot[pid])?runsRoot[pid]:[];
+    var t=dateNumber(today);
+    var runs=arr.filter(function(r){return object(r)&&state(r.s)&&dateNumber(r.from)!==null&&dateNumber(r.to)!==null&&r.from<=r.to;})
+      .map(function(r){var a=dateNumber(r.from),b=dateNumber(r.to);if(t!==null&&b>t)b=t;return {s:r.s,a:a,b:b,n:note(r)};})
+      .filter(function(r){return r.a<=r.b;})
+      .sort(function(x,y){return x.a-y.a;});
+    var last=runs.length?runs[runs.length-1]:null;
+    // A status that is still current extends its run to today (same rule as model()).
+    if(last&&t!==null&&span(last.s)&&span(currentStatus)&&last.b<t)last.b=t;
+    var infoRoot=has(meta,'injuryInfo')?meta.injuryInfo:null,info=has(infoRoot,pid)&&object(infoRoot[pid])?infoRoot[pid]:{};
+    var out=[],cur=null;
+    function close(){
+      if(!cur)return;
+      var from=dateString(cur.a),to=dateString(cur.b),hit=null;
+      if(has(info,from)&&object(info[from]))hit=info[from];
+      else Object.keys(info).sort().forEach(function(k){var d=dateNumber(k);if(!hit&&d!==null&&d>=cur.a&&d<=cur.b&&object(info[k]))hit=info[k];});
+      var open=t!==null&&cur.b===t&&span(currentStatus);
+      var e={from:from,to:to,open:open,days:cur.b-cur.a+1,injury:cur.injury,rehab:cur.rehab,notes:cur.notes,part:'',side:'',when:'',memo:''};
+      if(hit){['part','side','when'].forEach(function(k){if(typeof hit[k]==='string')e[k]=hit[k];});if(typeof hit.n==='string')e.memo=hit.n;}
+      out.push(e);cur=null;
+    }
+    runs.forEach(function(r){
+      if(!span(r.s)){close();return;}
+      if(cur&&r.a<=cur.b+1){if(r.b>cur.b)cur.b=r.b;}
+      else{close();cur={a:r.a,b:r.b,injury:0,rehab:0,notes:[]};}
+      cur[r.s]+=r.b-r.a+1;
+      if(r.n&&cur.notes.indexOf(r.n)<0)cur.notes.push(r.n);
+    });
+    close();
+    return out;
+  }
+  return {record:record,resolve:resolve,totals:totals,episodes:episodes};
 });
