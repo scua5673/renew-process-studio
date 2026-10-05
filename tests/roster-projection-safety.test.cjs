@@ -140,3 +140,29 @@ test('stale explicit deletion holds only its player while unrelated changes comp
   h.c.data.players[0].memo='unrelated saved edit';h.c.save();for(let i=0;i<3;i++)await h.round();
   assert.equal(JSON.parse(h.server.get('sq:a').v).memo,'unrelated saved edit');assert.equal(h.idb.get(key),changed);assert.equal(h.server.get(key).v,before);assert.equal(h.c.itemsDeleteReviews().length,1);assert.equal(h.c.itemsWriteBusy(),false);
 });
+/* 2.944 — 운영 실측(10/5): 본문에는 있는데 선수 행(sq:)이 서버에도 기기에도 없던 선수. 불러오기·반영이 그 선수를
+   «이미 저장된 기준»에 넣어 다음 save 가 행을 만들지 않았다. 이제 반영할 때 그런 선수를 찾아 한 번 저장한다. */
+test('a named main-only player without any row gets its server row on the next open, once',async()=>{
+  const h=fixture([p('a','Kept')]),orphan=p('orphan','Main only','B');
+  const main=h.main();main.players.push(orphan);main._items={build:'2.942',n:2};h.local.set(MAIN,raw(main));h.server.set(MAIN,{workspace_id:'team-a',k:MAIN,v:raw(main),cupd:12});
+  const m=h.c.meta();m.h[MAIN]=h.c.hash(raw(main));m.c[MAIN]=12;h.c.setMeta(m);
+  h.c.data=JSON.parse(raw(main));h.c.rosterRemember(h.c.data.players);   /* 다시 열 때 load 가 하는 일 — 기준에 이미 들어간다 */
+  assert.deepEqual(h.c.rosterChangedIds(h.c.data.players),[],'before the fix the orphan is never a change');
+  h.c.rosterHealTried=Object.create(null);if(typeof h.c.setTimeout!=='function')h.c.setTimeout=setTimeout;
+  vm.runInContext(fn(scout,'rosterHealRows'),h.c);
+  assert.equal(await h.c.itemsApply('boot'),false,'nothing to project — the orphan is already visible');
+  await new Promise(r=>setTimeout(r,5));
+  await h.round();await h.round();
+  assert.equal(h.server.has('sq:orphan'),true,'the missing row now exists on the server');assert.deepEqual(JSON.parse(h.server.get('sq:orphan').v),orphan);
+  assert.equal(h.server.get('sq:a').v,raw(p('a','Kept')),'other rows untouched');assert.equal(h.c.holdList().length,0);
+  const writes=h.saves.length;assert.equal(await h.c.itemsApply('sync'),false);await new Promise(r=>setTimeout(r,5));assert.equal(h.saves.length,writes,'no repeated heal save once the row exists');
+});
+test('a main-only player with a remote row already present is not overwritten by the heal',async()=>{
+  const h=fixture([p('a','Kept')]),orphan=p('orphan','Main only','B'),remote=p('orphan','Remote newer','A');
+  const main=h.main();main.players.push(orphan);main._items={build:'2.942',n:2};h.local.set(MAIN,raw(main));
+  h.server.set('sq:orphan',{workspace_id:'team-a',k:'sq:orphan',v:raw(remote),cupd:13});   /* 서버에는 있는데 이 기기는 아직 못 받음 */
+  h.c.data=JSON.parse(raw(main));h.c.rosterRemember(h.c.data.players);h.c.rosterHealTried=Object.create(null);if(typeof h.c.setTimeout!=='function')h.c.setTimeout=setTimeout;
+  vm.runInContext(fn(scout,'rosterHealRows'),h.c);
+  await h.c.itemsApply('boot');await new Promise(r=>setTimeout(r,5));await h.round();await h.round();
+  assert.equal(h.server.get('sq:orphan').v,raw(remote),'the newer remote row wins — the heal never blindly inserts');
+});

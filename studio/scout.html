@@ -6303,6 +6303,34 @@ let data={attrs:[],positions:[],players:[],meta:{}};
    두 삭제 기록을 모두 적용하고, 바뀌면 통짜·거울만 다시 만든다. 이 투영 저장은 선수별 원문에 다시 쓰지 않는다.
    되돌리기: localStorage ps_items_write='0' → PSItems.active() 가 false → 이 함수는 아무것도 안 한다. */
 function itemsPI(){ try{ return (window.parent&&window.parent.PSItems)||window.PSItems||null; }catch(_){ return null; } }
+/* ══ 2.944 · 선수 행(sq:) 없이 명단 본문에만 있는 선수에게 행을 만들어 준다 ═══════════════════════
+   사용자 «선수단에서 선수 등록하면 저장이 잘 안 돼». 운영 실측(10/5, 풋볼A): 20:54 에 등록한 선수가 본문(scout_tool_v1)에는
+   있는데 선수 행(sq:<id>)은 서버에도 이 기기에도 없었다 · 올릴 대기(ps_roster_pending_v1)도 비었고 오류 기록도 없었다.
+   itemsApply 는 그런 선수를 «행이 아직 안 써진 방금 추가한 선수 — 다음 save 가 행을 만든다»며 남겨 두지만, 바로 아래
+   rosterProject → rosterRemember(그리고 다시 열 때 load → rosterRemember)가 그 선수를 «이미 저장된 기준»에 넣어
+   **다음 save 의 변경 목록(rosterChangedIds)에 영영 안 잡혔다.** 행이 없으니 그 선수를 고칠 때마다 저장이 어긋났다.
+   → 행 없는 선수를 기준에서 빼고 한 번 저장한다. 쓰기 쪽(itemsWriteNow)은 행이 없으면 서버에 정말 없는지 확인한 뒤
+      새로 만든다(있으면 덮지 않고 «최신 명단 확인»으로 멈춘다). 편집 권한이 있는 기기만 · 같은 선수는 10분에 한 번. */
+var rosterHealTried=Object.create(null);
+function rosterHealRows(ids){
+  try{
+    if(!ids||!ids.length||!scoutAutomaticWriteAllowed()||!rosterOutboxOwner())return false;
+    var PI=itemsPI();if(!PI||!(PI.active&&PI.active()))return false;
+    var now=Date.now(),todo=ids.filter(function(id){var t=rosterHealTried[id];return !t||now-t>600000;});
+    if(!todo.length)return false;
+    todo.forEach(function(id){rosterHealTried[id]=now;});
+    Promise.resolve().then(function(){   /* 반영을 마친 뒤 — 이 회차의 기준 기록(rosterRemember)보다 나중에 */
+      try{
+        var drop=Object.create(null);todo.forEach(function(id){drop[id]=1;});
+        var base=rosterEditBase&&rosterEditBase.owner===teamSaveOwner()?rosterEditBase:{owner:teamSaveOwner(),players:rosterSnapshot((store.get(KEY)||{}).players||[])};
+        rosterEditBase={owner:base.owner,players:base.players.filter(function(p){return !drop[String(p.id)];})};
+        save({skipTargets:true});
+        try{ psAct&&psAct("a_roster_heal"); }catch(_){}
+      }catch(_){}
+    });
+    return true;
+  }catch(_){return false;}
+}
 function itemsApply(reason){
   var PI=itemsPI(); if(!PI||!PI.readAll||!(PI.active&&PI.active()))return Promise.resolve(false);
   var owner=teamSaveOwner(),draft=JSON.stringify(data),raw=localStorage.getItem(KEY),deleted=localStorage.getItem(PDKEY);
@@ -6323,16 +6351,18 @@ function itemsApply(reason){
     /* 통짜에만 있고 묘비도 없는 선수: 새 판이 쓴 통짜(도장 ≥2.73)면 «행이 아직 안 써진 방금 추가한 선수»라 그대로 둔다(잃지 않는다 — 다음 save 가 행을 만든다).
        옛 판이 쓴 통짜면 5명까지만 흡수한다(옛 tmMigrate 가 거울에서 수십 명을 새 id 로 만든 경우를 걸러 «2배»를 막는다). */
     if(absorb.length&&(!oldDoc||absorb.length<=5)) absorb.forEach(function(p){ out.push(p); });
+    var healIds=(absorb.length&&(!oldDoc||absorb.length<=5))?absorb.filter(function(p){return String(p.name||"").trim();}).map(function(p){return String(p.id);}):[];   /* 2.944 */
     /* Both deletion channels apply after assembling rows. A retained conflict
        original is recovery material, not permission to reactivate a player. */
     out=plTombApply(out);
     if(rosterOutboxOwner())out=plTombApply(rosterOutbox().overlay(out));
     var before=JSON.stringify(doc), after=JSON.stringify(out);
-    if(before===after)return false;
+    if(before===after){ if(typeof rosterHealRows==="function")rosterHealRows(healIds); return false; }
     data.players=out;
     if(scoutAutomaticWriteAllowed())rosterProject(out);
     else rosterRemember(out); /* 보기 전용은 최신 행을 화면에만 적용한다. */
     try{ psAct&&psAct("a_items_apply"); }catch(_){}
+    if(typeof rosterHealRows==="function")rosterHealRows(healIds);
     return true;
   }).catch(function(){ return false; });
 }
@@ -11342,8 +11372,8 @@ function tbWire(){
         var nm=String(v==null?"":v).trim(); if(!nm)return;
         var nid=uid("pl");
         data.players.push({id:nid,name:nm,num:"",foot:"",type:"ours",posId:posId,levels:{},memo:"",manual:true});
-        save();renderTeam();
-        try{toast(nm+" 를 "+(ab||"이 자리")+" 에 넣었어요");}catch(_){}
+        var ok=save();renderTeam();
+        try{toast(ok===false?TM_ADD_FAIL:nm+" 를 "+(ab||"이 자리")+" 에 넣었어요");}catch(_){}
       });
     };
   });
@@ -11351,6 +11381,8 @@ function tbWire(){
 /* ── 선수 상태 제안→승인 — 스태프가 바꾸면 감독(운영진) 승인 후 적용된다.
    동시 편집이 서로를 덮지 않고, 상태 변경이 '보고'가 되는 흐름. 개인 공간에선 role이 admin이라 그대로 즉시 적용. ── */
 function tmRole(){ try{ if(window.PSPerms&&PSPerms.role)return PSPerms.role(); }catch(_){} return "admin"; }
+/* 2.944 — 추가한 선수를 기기에 저장하지 못했을 때(불러오기 중·보기 전용·후보 정리 중 등 save() 가 false) 예전엔 그래도 «추가됨»이라 말했다 */
+var TM_ADD_FAIL="선수를 저장하지 못했어요 — 잠시 뒤 다시 추가하거나 화면을 새로고침해 주세요";
 function tmCanApprove(){ var r=tmRole(); return r==="admin"||r==="executive"; }
 function tmProposalOf(pid){ return (data.statusProposals||[]).find(function(x){return x.pid===pid;}); }
 function tmMyName(){
@@ -20003,10 +20035,10 @@ function init(){
       fields:[{key:"name",label:"이름",type:"text",placeholder:"예: 김민재",required:true,maxlength:20},
               {key:"num",label:"등번호",type:"number",placeholder:"예: 10",maxlength:3},
               {key:"posId",label:"포지션",type:"select",options:posOpts,value:""}],
-      onOk:function(v){data.players.push({id:uid("pl"),name:v.name,num:v.num||"",foot:"",type:"ours",posId:v.posId||"",levels:{},memo:"",manual:true});save();renderTeam();try{toast(v.name+" 추가됨");}catch(_){}}});
+      onOk:function(v){data.players.push({id:uid("pl"),name:v.name,num:v.num||"",foot:"",type:"ours",posId:v.posId||"",levels:{},memo:"",manual:true});var ok=save();renderTeam();try{toast(ok===false?TM_ADD_FAIL:v.name+" 추가됨");}catch(_){}}});
   };
   if($("tmAdd"))$("tmAdd").onclick=()=>{window.__tmAddSheet();};
-  if($("tmQuickAdd"))$("tmQuickAdd").addEventListener("keydown",e=>{if(e.key!=="Enter"||e.isComposing||e.keyCode===229)return;e.preventDefault();const inp=$("tmQuickAdd"),nm=inp.value.trim();if(!nm)return;data.players.push({id:uid("pl"),name:nm,num:"",foot:"",type:"ours",posId:"",levels:{},memo:""});save();renderTeam();inp.value="";inp.focus();});
+  if($("tmQuickAdd"))$("tmQuickAdd").addEventListener("keydown",e=>{if(e.key!=="Enter"||e.isComposing||e.keyCode===229)return;e.preventDefault();const inp=$("tmQuickAdd"),nm=inp.value.trim();if(!nm)return;data.players.push({id:uid("pl"),name:nm,num:"",foot:"",type:"ours",posId:"",levels:{},memo:""});if(save()===false)try{toast(TM_ADD_FAIL);}catch(_){}renderTeam();inp.value="";inp.focus();});
   if($("tmAdd10"))$("tmAdd10").onclick=()=>{const base=tmOurs().length;
     for(let i=0;i<5;i++)data.players.push({id:uid("pl"),name:"",num:"",foot:"",type:"ours",posId:"",levels:{},memo:""});
     save();renderTeam();toast&&toast("5명 추가됨 — 이름과 포지션을 채워주세요");};
