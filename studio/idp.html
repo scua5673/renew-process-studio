@@ -8263,7 +8263,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         o+=sqUnlinkedNote(rws);
         return o+'</div>';
       }
-      o+='<div class="sqg-scroll"><table class="sqg-t sqg-ol"><thead><tr><th class="l">선수</th>'+(can?'<th>출석</th>':'')+'<th class="l">이번 주 초점</th><th class="l">한 마디</th>'+(can?'<th class="l c-in" colspan="2">내 답 <i class="sqg-rule">❤ 또는 제안·격려 한 줄</i></th>':'')+'<th></th></tr></thead><tbody>';
+      o+='<div class="sqg-scroll"><table class="sqg-t sqg-ol"><thead><tr><th class="l">선수</th>'+'<th class="l">이번 주 초점</th><th class="l">한 마디</th>'+(can?'<th class="l c-in" colspan="2">내 답 <i class="sqg-rule">❤ 또는 제안·격려 한 줄</i></th>':'')+'<th></th></tr></thead><tbody>';
       linked.forEach(function(r){
         /* 2.492 — 표의 옷(사용자 "디자인도 전부 신경써줘야지"): 원형 번호 배지(.no)·단계칩(em.sN)·
            알약(sqg-pill) — 전부 이 화면(sqtd·sqd)이 이미 쓰는 문법. 빈 값은 대시 대신 조용한 비움 */
@@ -8295,7 +8295,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         o+='<tr class="'+(r.hot?'sqg-hot ':'')+(r.wrote?'':'sqg-quiet')+'"'+(why.length?' title="먼저 볼 이유 · '+esc(why.join(' · '))+'"':'')+'>'
           +'<td class="l"><span class="plr"><span class="no">'+esc(r.x.p.num||'')+'</span><b>'+esc(r.x.p.name||'')+'</b></span></td>'
           /* 2.635 — 출석을 같은 표에(워크플로우 둘째 판: «같은 선수 목록을 두 화면에서 두 번 만지지 않는다»). 선수단 «몸 상태» 표의 코치 확인(cs_idp_daily_v1)과 같은 칩·같은 핸들러(bindSquad 의 .phys-state) */
-          +(can?(function(){ var ps=''; try{ ps=(dailyRec(day,uid)||{}).status||''; }catch(_){ } return '<td><button type="button" class="phys-state sqg-phys'+(ps?' '+ps:'')+'" data-phys-d="'+esc(day)+'" data-phys-u="'+esc(uid)+'" title="누를 때마다 훈련→휴식→회복→재활→부상→열외→불참→코칭">'+(ps?PHYS_LB[ps]:'＋')+'</button></td>'; })():'')
+          /* 2.942 — 출석 칸을 걷었다. 누르면 아무 일도 안 하는 칩이었고(핸들러 bindSquad 는 2.426 부터 닿지 않는다),
+             저장하더라도 팀 운영의 가용인원과 다른 곳(cs_idp_daily_v1)에 다른 이름 여덟 가지로 남았다. 가용인원은 팀 운영 한 곳에서 코치가 적는다. */
+          +''
           +'<td class="l"><span class="sqg-focus"'+(r.fcT?' title="'+esc(r.fcT)+'"':'')+'>'+(r.fcT?esc(r.fcT):'<span class="sqg-nulla">초점 없음</span>')+'</span></td>'
           /* 2.684 — 그날·이번 주·몸 세 칸은 뺐다(사용자 "제거 항목: 그날·몸·이번주") */
           +'<td class="l sqg-memo"'+(r.memoT?' title="'+esc(r.memoT)+'"':'')+'>'+memoCell+'</td>'
