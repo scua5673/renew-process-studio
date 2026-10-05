@@ -1,7 +1,16 @@
 /* Shared presentation for the sync engine's confirmed state. No storage writes. */
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSAutosaveStatus=api;})(typeof window!=='undefined'?window:null,function(){
   'use strict';
+  /* 2.941 — 운영 기준 «24시간 넘는 미해결 저장 문제 0건»(외부 검토 피드백). 기기 안 대기열의 가장 오래된 항목이 하루를 넘으면
+     «저장 대기»로 조용히 두지 않고 며칠째인지 말한다. 저장 중·로그인 필요는 그대로(다음 할 일이 이미 분명하다). */
   function view(state){
+    var r=baseView(state),s=state||{},n=Math.max(0,Number(s.n)||0),oldest=Number(s.oldest)||0,now=Number(s.now)||Date.now();
+    var days=(n&&oldest>0&&now>oldest)?Math.floor((now-oldest)/86400000):0;
+    if(days>=1&&r.kind!=='off'&&r.kind!=='busy'&&r.action!=='login')
+      return {kind:'bad',text:days+'일째 저장 대기 · '+n+'건',detail:'변경사항은 이 기기에 남아 있지만 '+days+'일 넘게 서버에 올라가지 못했어요. «다시 시도»로도 안 되면 앱 설정 › 기기 › 동기화 진단에서 이유를 보거나 오류 제보로 알려 주세요.',action:r.action||'retry',attention:true,complete:false};
+    return r;
+  }
+  function baseView(state){
     var s=state||{},kind=s.kind,n=Math.max(0,Number(s.n)||0),review=Math.max(0,Number(s.review)||0),archived=Math.max(0,Number(s.archivedCount)||0);
     function result(k,text,detail,action,attention,complete){return {kind:k,text:text,detail:detail,action:action||'',attention:!!attention,complete:!!complete};}
     if(!state||kind==='off')return result('off','로그인하면 자동으로 저장됩니다','로그인 후 저장 상태를 확인할 수 있습니다.');

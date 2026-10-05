@@ -6951,7 +6951,7 @@ window.__psPtrDown=0;
 function psDragging(){ var t=window.__psPtrDown; return !!t&&(Date.now()-t<15000); }   /* 15초 상한 — pointerup 을 못 받은 채 남는 일이 없게 */
 (function(){ function bind(){ var sv=document.getElementById("board"); if(!sv||sv.__psPtrBound)return; sv.__psPtrBound=1;
     sv.addEventListener("pointerdown",function(e){ if(e.isPrimary!==false)window.__psPtrDown=Date.now(); },true);
-    function up(){ window.__psPtrDown=0; }
+    function up(){ window.__psPtrDown=0; setTimeout(function(){ try{ if(!window.__psPtrDown)document.body.classList.remove("token-drag"); }catch(_){} },0); }   /* 2.941 — 끌기가 끝났는데 «끄는 중» 표시가 남으면 셸이 새 판 적용을 하루 넘게 미뤘다(update_deferred drag_or_modal:fBoard). 손을 떼면(토큰 핸들러가 다 돈 뒤) 남은 표시를 지운다 */
     window.addEventListener("pointerup",up,true); window.addEventListener("pointercancel",up,true); window.addEventListener("blur",up);
     document.addEventListener("visibilitychange",function(){ if(document.hidden)up(); }); }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind); else bind(); })();
