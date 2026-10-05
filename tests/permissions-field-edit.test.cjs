@@ -82,3 +82,21 @@ test('already-rendered permissions details are removed after the owner or worksp
 test('permissions loading modal is bound to the same owner as the editor',()=>{
  const h=fixture(base());h.c.uiPerms({id:'team'});assert.equal(h.modals.length,1);assert.equal(h.modals[0].current(),true);h.switch();assert.equal(h.modals[0].current(),false);
 });
+/* 2.943 — 선수 연결 고르개: 연결된 선수는 ✓ 와 «누구 계정», 고를 수 없음 · 전체 문서 기준 · 한 칸을 바꾸면 다른 칸도 */
+function linkSelect(h,uid){const card=all(h.body).find(n=>n.innerHTML===uid&&n.children.some(x=>x.tagName==='select'))?.parent;return card.children[1].children.find(x=>x.tagName==='select');}
+test('linked players carry a check and their account, and cannot be picked again',async()=>{
+ const h=fixture(base());await h.open();
+ const staff=linkSelect(h,'staff').innerHTML;
+ assert.match(staff,/<optgroup label="✓ 이미 연결됨 2 — 고를 수 없어요"><option value="legacy-player" disabled>✓ Same name — a<\/option><option value="kept-player" disabled>✓ Same name — exec<\/option><\/optgroup>/);
+ assert.doesNotMatch(staff,/연결 안 된 선수/,'every roster player is already linked');
+ assert.match(linkSelect(h,'a').innerHTML,/<option value="legacy-player" selected>✓ Same name — 이 계정 \(⚠ b에도 연결됨\)<\/option>/,'an existing double link is called out');
+ assert.match(linkSelect(h,'exec').innerHTML,/<option value="kept-player" selected>✓ Same name — 이 계정<\/option>/);
+});
+test('clearing a link frees that player in every other card at once',async()=>{
+ const h=fixture(base());await h.open();h.link('a','');h.link('b','');
+ const staff=linkSelect(h,'staff').innerHTML;
+ assert.match(staff,/<optgroup label="연결 안 된 선수 1"><option value="legacy-player">Same name<\/option><\/optgroup>/);
+ assert.match(staff,/<option value="kept-player" disabled>✓ Same name — exec<\/option>/);
+ h.link('staff','legacy-player');
+ assert.match(linkSelect(h,'a').innerHTML,/<option value="legacy-player" disabled>✓ Same name — staff<\/option>/,'a choice made lower down is seen by cards above it');
+});

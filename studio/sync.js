@@ -9471,6 +9471,24 @@ function uiPerms(wa){
       return la-lb;
     });
     if(permsOnlyUnlinked) editable=editable.filter(function(r){ return !((cur.members[r.user_id]||{}).playerId); });
+    /* 2.943 — 선수 연결 고르개: 이미 연결된 선수는 «✓ 이미 연결됨 — 누구 계정»으로 묶고 고를 수 없게(사용자 «연결된 사람은 체크 표시»).
+       예전엔 «다른 계정에 연결됨»을 위에 그린 카드만 보고 계산했다(state 를 한 장씩 채우며) — 아래 카드가 가진 선수,
+       «연결 안 된 사람만»으로 빠진 사람, 관리자의 연결은 보지 못해 **같은 선수에 두 계정이 붙을 수 있었다.**
+       이제 저장된 권한 문서 전체 + 이 화면에서 고친 값을 함께 보고, 한 칸을 바꾸면 다른 칸도 다시 그린다.
+       지운 선수(cs_player_del_v1)·이름도 번호도 없는 줄은 빼고, 번호 → 이름 순. */
+    var nameOfUid={}; rows.forEach(function(r){ nameOfUid[r.user_id]=String(r.name||'').trim()||String(r.email||'').trim()||'이름 없는 계정'; });
+    var spAll=(function(){ var sp=[],del={};
+      try{ del=JSON.parse(localStorage.getItem('cs_player_del_v1')||'{}')||{}; }catch(_){ del={}; }
+      try{ var sd=JSON.parse(localStorage.getItem('scout_tool_v1')||'null');
+        sp=((sd&&sd.players)||[]).filter(function(p){ return p&&p.type!=='target'&&!Object.prototype.hasOwnProperty.call(del,p.id)&&(String(p.name||'').trim()||String(p.num||'').trim()); }); }catch(_){}
+      sp.sort(function(a,b){ var na=parseInt(a.num,10),nb=parseInt(b.num,10); if(isNaN(na))na=9999; if(isNaN(nb))nb=9999; return na-nb||String(a.name||'').localeCompare(String(b.name||''),'ko'); });
+      return sp; })();
+    function linkHolders(){   /* pid → [uid…] (저장본 위에 이 화면에서 고친 값) */
+      var m={},add=function(u2,pid){ if(!pid)return; (m[pid]=m[pid]||[]); if(m[pid].indexOf(u2)<0)m[pid].push(u2); };
+      Object.keys(cur.members||{}).forEach(function(u2){ add(u2,state[u2]?state[u2].playerId:(cur.members[u2]||{}).playerId); });
+      Object.keys(state).forEach(function(u2){ add(u2,state[u2].playerId); });
+      return m; }
+    var linkRedraws=[];
     var pLastGrp=null;
     editable.forEach(function(r){
       var _pk=pRole(r);
@@ -9500,8 +9518,7 @@ function uiPerms(wa){
       top.appendChild(sel); d.appendChild(top);
       /* 선수 연결 — IDP의 '셀프 vs 코치 평가' 비교에 사용 (scout_tool_v1 선수 id) */
       (function(){
-        var sp=[]; try{ var sd=JSON.parse(localStorage.getItem('scout_tool_v1')||'null');
-          sp=((sd&&sd.players)||[]).filter(function(p){ return p&&p.type!=='target'; }); }catch(_){}
+        var sp=spAll;
         var lrow=document.createElement('div');
         lrow.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:9px;';
         var lb=document.createElement('span'); lb.textContent='선수 연결';
@@ -9514,18 +9531,28 @@ function uiPerms(wa){
         }else{
           var lsel=document.createElement('select');
           lsel.style.cssText='flex:1;height:30px;border:1px solid '+(dark?'#2C3744':'#d2d6dd')+';background:'+(dark?'#222c39':'#f7f8fa')+';color:inherit;border-radius:8px;font-family:inherit;font-weight:600;font-size:12px;padding:0 8px;min-width:0;';
-          var oh='<option value="">연결 안 함</option>';
-          /* 1.534 — 다른 멤버가 이미 가져간 선수는 표시해 둔다. 같은 선수에 두 계정이 붙으면
-             IDP 평가가 어느 쪽 것인지 알 수 없어진다. */
-          var usedBy={}; Object.keys(state).forEach(function(u2){ var pid=state[u2].playerId; if(pid&&u2!==uid)usedBy[pid]=1; });
-          sp.forEach(function(p){
-            var dup=!!usedBy[p.id];
-            oh+='<option value="'+esc(p.id)+'"'+(state[uid].playerId===p.id?' selected':'')+(dup?' disabled':'')+'>'
-              +esc((p.num?p.num+' · ':'')+(p.name||'이름 없음')+(dup?' (다른 계정에 연결됨)':''))+'</option>';
-          });
-          lsel.innerHTML=oh;
-          lsel.onchange=function(){ state[uid].playerId=lsel.value; };
-          lrow.appendChild(lsel);
+          /* 1.534 — 다른 멤버가 이미 가져간 선수는 고를 수 없다. 같은 선수에 두 계정이 붙으면
+             IDP 평가가 어느 쪽 것인지 알 수 없어진다. (2.943 — 전체 문서 기준으로 다시 셈, 위 주석) */
+          var badge=document.createElement('span');
+          var drawLink=function(){
+            var holders=linkHolders(),mine=state[uid].playerId,lb2=function(p){ return (p.num?p.num+' · ':'')+(p.name||'이름 없음'); };
+            var mineP=null,free=[],taken=[];
+            sp.forEach(function(p){ var hs=(holders[p.id]||[]).filter(function(u2){ return u2!==uid; });
+              if(p.id===mine)mineP={p:p,also:hs}; else if(hs.length)taken.push({p:p,by:hs[0]}); else free.push(p); });
+            var oh='<option value="">연결 안 함</option>';
+            if(mineP)oh+='<option value="'+esc(mineP.p.id)+'" selected>'+esc('✓ '+lb2(mineP.p)+' — 이 계정'+(mineP.also.length?' (⚠ '+(nameOfUid[mineP.also[0]]||'다른 계정')+'에도 연결됨)':''))+'</option>';
+            else if(mine)oh+='<option value="'+esc(mine)+'" selected>'+esc('✓ 명단에 없는 선수 — 이 계정')+'</option>';
+            if(free.length){ oh+='<optgroup label="'+esc('연결 안 된 선수 '+free.length)+'">'; free.forEach(function(p){ oh+='<option value="'+esc(p.id)+'">'+esc(lb2(p))+'</option>'; }); oh+='</optgroup>'; }
+            if(taken.length){ oh+='<optgroup label="'+esc('✓ 이미 연결됨 '+taken.length+' — 고를 수 없어요')+'">'; taken.forEach(function(t){ oh+='<option value="'+esc(t.p.id)+'" disabled>'+esc('✓ '+lb2(t.p)+' — '+(nameOfUid[t.by]||'팀에 없는 계정'))+'</option>'; }); oh+='</optgroup>'; }
+            lsel.innerHTML=oh; lsel.value=mine||'';
+            badge.textContent=mine?(mineP&&mineP.also.length?'⚠ 두 계정':'✓ 연결됨'):'연결 안 됨';
+            badge.style.cssText='flex:0 0 auto;font-size:11px;font-weight:800;padding:3px 7px;border-radius:7px;'
+              +(mine?(mineP&&mineP.also.length?'color:#8A5300;background:'+(dark?'rgba(224,168,90,.16)':'#FFF3DD'):'color:'+(dark?'#7FD3A0':'#1F6B3E')+';background:'+(dark?'rgba(76,194,122,.14)':'#E8F4EC'))
+                   :'color:'+(dark?'#F0A8A4':'#A3302B')+';background:'+(dark?'rgba(224,116,112,.14)':'#FDECEB'));
+          };
+          linkRedraws.push(drawLink);drawLink();
+          lsel.onchange=function(){ state[uid].playerId=lsel.value; linkRedraws.forEach(function(fn){ try{ fn(); }catch(_){} }); };
+          lrow.appendChild(lsel);lrow.appendChild(badge);
         }
         d.appendChild(lrow);
       })();
