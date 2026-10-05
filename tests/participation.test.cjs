@@ -403,7 +403,7 @@ for (const entry of ['stSet', 'tmStatusApply']) {
       plStatusOf: p => p.status, tmCanApprove: () => true, tmProposalOf: () => null,
       save: () => { writes++; }, renderTeam() {}, renderTeamHome() {}, renderStatusView() {}, toast() {}
     });
-    vm.runInContext(block('function stRuns(){', 'function stStampToday(') + '\n' + block('function avUpdateTodayRecord(', 'function avCurrentStatus(') + '\n' +
+    vm.runInContext('var ST_DAILY={rest:1,out:1},ST_SPAN={injury:1,rehab:1};' + block('function stApplyUntil(', 'function stMD(') + '\n' + block('function stRuns(){', 'function stStampToday(') + '\n' + block('function avUpdateTodayRecord(', 'function avCurrentStatus(') + '\n' +
       (entry === 'stSet' ? block('function stSet(pid,k)', 'function stMedToggle(') : block('function tmStatusApply(', 'function posPickOpen(')), c);
     if (entry === 'stSet') c.stSet(pid, 'ok'); else c.tmStatusApply(c.data.players[0], 'ok');
     assert.equal(writes, 1);

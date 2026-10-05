@@ -1795,6 +1795,23 @@ html.ps-page-scout #availView .av-split-rest>.rh{font-size:13px;margin:0 0 2px}
 html.ps-page-scout #availView .av-split-rest .av-grp{margin-top:6px}
 html.ps-page-scout #availView .av-split-rest .av-grp .gh{color:#9a6100}
 html.ps-page-scout #availView .av-rest-none{font-size:12px;color:var(--gray,#646A73);padding:4px 0 2px}
+/* 2.942 — 복귀 확인(복귀 예정일이 된 부상·재활) · 사유 창의 복귀 예상 */
+.st-due{margin:0 0 12px;padding:10px 12px 6px;border:1px solid rgba(199,125,0,.32);background:rgba(199,125,0,.07);border-radius:10px}
+.st-due-h{font-size:12.5px;font-weight:800;color:#8a5600;margin:0 0 6px}
+.st-due-r{display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid rgba(199,125,0,.18)}
+.st-due-h+.st-due-r{border-top:0}
+.st-due-t{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px;font-size:13px}
+.st-due-t em{font-style:normal;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;background:#FDECEA;color:#A8302A}
+.st-due-t em.rehab{background:#FFF1D6;color:#8a5600}
+.st-due-t small{flex-basis:100%;font-size:11.5px;color:#8a5600}
+.st-due button{flex:0 0 auto;min-height:36px;padding:0 12px;border-radius:9px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--ink,#14161A)}
+.st-due button.st-due-ok{background:#1F7A45;border-color:transparent;color:#fff}
+@media (pointer:coarse){.st-due button{min-height:44px}}
+.ck .avail-pn .bd>.st-due{margin:0 0 10px}
+.ck .avail-pn .bd>.st-due+.who .oklist>.okg2:first-child>.okg-h{margin-top:0;border-top:1px solid var(--line,#E3E6EA)}   /* 첫 조 띠가 카드 머리에 붙으려고 위로 끌어올려져 복귀 확인 상자를 덮던 것 */
+body.fmdark .st-due{background:rgba(224,168,90,.08);border-color:rgba(224,168,90,.3)} body.fmdark .st-due-h,body.fmdark .st-due-t small{color:#e0a85a}
+.st-ret{margin:0 0 10px} .st-ret b{display:block;font-size:12px;font-weight:700;margin:0 0 6px}
+.st-retb{display:flex;flex-wrap:wrap;gap:6px}
 /* 2.696 — 폰(≤560): 날짜·오늘·보기 세그먼트가 한 줄에 못 들어가 글자가 세로로 깨지던 것 → 세그먼트를 둘째 줄로 */
 @media (max-width:560px){
   html.ps-page-scout #availView .av-dnav{flex-wrap:wrap}
@@ -4493,6 +4510,9 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       dialog.av-pick .av-pick-states{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
       dialog.av-pick button{min-height:36px;font-size:13px}
       dialog.av-pick .av-pick-note{display:block;font-size:12px;font-weight:650}
+      dialog.av-pick .av-pick-ret{margin:-4px 0 14px}dialog.av-pick .av-pick-ret[hidden]{display:none}
+      dialog.av-pick .av-pick-ret b{display:block;font-size:12px;font-weight:650;margin-bottom:6px}
+      dialog.av-pick .av-pick-retb{display:flex;gap:6px;flex-wrap:wrap}
       dialog.av-pick textarea{display:block;box-sizing:border-box;width:100%;margin-top:6px;border:1px solid var(--line,#e3e6ea);border-radius:8px;padding:10px;color:var(--txt,#14161a);background:var(--surface,#fff);font:inherit;font-size:14px;resize:vertical}
       dialog.av-pick .av-pick-feedback{min-height:18px;font-size:12px;line-height:1.5;color:var(--dim,#646a73);margin:12px 0}
       dialog.av-pick .av-pick-feedback.is-error{color:#b42318}
@@ -7569,7 +7589,85 @@ function plSeedLv(posId,into){
   }catch(_){}
   return lv;
 }
-function plStatusOf(pl){var s=(pl&&pl.status)||"ok";return PL_STATUS.some(function(x){return x.k===s;})?s:"ok";}
+/* ══ 2.942 · 가용인원 — 코치가 «빠지는 선수만» 적는다(사용자 «가용인원을 어떻게 체크하는 방법이 가장 이상적일까?» → 목업 ①② → «일단 코치만 등록»).
+   상태는 두 종류다. ⓐ 오늘만(휴식·불참): 적은 날만 — 다음 날 저절로 «정상»으로 돌아간다.
+   ⓑ 기간(부상·재활): 복귀 예상일(pl.statusUntil)을 함께 둔다. 그날이 되면 «복귀 / 연장»을 묻는다(stReturnDue).
+   예전엔 모든 상태가 «바꿀 때까지 유지»라 되돌리기를 잊은 값이 쌓였다(2.530 — 19명이 3주 동안 부상).
+   ⚠ pl.statusUntil 이 없는 옛 기록(2.941 이전)은 예전처럼 바꿀 때까지 유지된다 — 배포만으로 남의 상태를 바꾸지 않는다. */
+var ST_DAILY={rest:1,out:1},ST_SPAN={injury:1,rehab:1};
+function plStatusOf(pl){var s=(pl&&pl.status)||"ok";if(!PL_STATUS.some(function(x){return x.k===s;}))return "ok";
+  if(ST_DAILY[s]&&pl.statusUntil&&String(pl.statusUntil)<stYmd())return "ok";   /* 오늘만이 지났다 — 저장은 stExpireDaily 가 맞춘다 */
+  return s;}
+/* 상태를 바꾼 뒤 부른다. until: undefined = 규칙대로(기간은 같은 기간 상태끼리면 유지), "" = 모름, "YYYY-MM-DD" */
+function stApplyUntil(pl,prev,st,until){
+  if(!pl)return;
+  if(ST_DAILY[st]){pl.statusUntil=stYmd();return;}
+  if(ST_SPAN[st]){
+    if(until!==undefined){if(until)pl.statusUntil=String(until);else delete pl.statusUntil;}
+    else if(!ST_SPAN[prev])delete pl.statusUntil;
+    return;
+  }
+  delete pl.statusUntil;
+}
+function stMD(ymd){var m=String(ymd||"").split("-");return m.length===3?(+m[1])+"/"+(+m[2]):"";}
+function stDailyExpired(p){return !!(p&&ST_DAILY[p.status]&&p.statusUntil&&String(p.statusUntil)<stYmd());}
+/* 오늘만이 지난 선수를 «정상»으로 — 기록(run)은 그 날까지만 두고 다음 날부터 정상(빈 날을 쉼으로 메우지 않는다) */
+function stExpireDaily(list){
+  var today=stYmd(),n=0;
+  (list||tmOurs()).forEach(function(p){
+    if(!stDailyExpired(p))return;
+    var until=String(p.statusUntil),back=stAddDays(until,1);
+    try{
+      var arr=stRuns()[p.id]||[],last=arr[arr.length-1];
+      if(last&&last.s===p.status&&last.from<=until&&last.to>until)last.to=until;
+      stRunStamp(p.id,"ok",back);if(back<today)stRunStamp(p.id,"ok",today);
+    }catch(_){}
+    p.status="ok";delete p.statusUntil;n++;
+  });
+  return n;
+}
+function stExpireDailySave(){
+  try{
+    var L=tmOurs().filter(stDailyExpired);if(!L.length)return false;
+    if(typeof scoutAutomaticWriteAllowed==="function"&&!scoutAutomaticWriteAllowed())return false;
+    if(!(tmCanApprove()||tmCanEditStatus()))return false;
+    stExpireDaily(L);save();return true;
+  }catch(_){return false;}
+}
+/* 복귀 예정일이 된(지난) 기간 상태 */
+function stReturnDue(){var t=stYmd();return tmOurs().filter(function(p){var s2=plStatusOf(p);return ST_SPAN[s2]&&p.statusUntil&&String(p.statusUntil)<=t;});}
+function stReturnDueHTML(){
+  var L=stReturnDue();if(!L.length)return "";
+  var t=stYmd(),can=tmCanApprove()||tmCanEditStatus();
+  return '<div class="st-due" role="group" aria-label="복귀 확인"><div class="st-due-h">복귀 예정일이 된 선수 '+L.length+'</div>'
+    +L.map(function(p){var s2=plStatusOf(p);
+      return '<div class="st-due-r"><span class="st-due-t"><b>'+esc(p.name||"선수")+'</b> <em class="'+s2+'">'+(TM_ST_LB[s2]||s2)+'</em><small>'+(String(p.statusUntil)===t?'오늘 복귀 예정':(stMD(p.statusUntil)+' 복귀 예정이었어요'))+'</small></span>'
+        +(can?'<button type="button" class="st-due-ok" data-st-ret="ok" data-pid="'+esc(p.id)+'">복귀</button><button type="button" class="st-due-more" data-st-ret="more" data-pid="'+esc(p.id)+'">연장</button>':'')+'</div>';
+    }).join("")+'</div>';
+}
+/* 복귀 예상 고르개 — 3일·1주·2주·한 달·모름(목업 ②). anchor 는 다시 그려져도 자리가 남게 위치만 잡아 둔다 */
+function stReturnPick(anchor,pl){
+  if(!pl||!anchor)return;
+  var t=stYmd(),cur=pl.statusUntil?String(pl.statusUntil):"",opts=[[3,"3일"],[7,"1주"],[14,"2주"],[30,"한 달"]].map(function(x){var d=stAddDays(t,x[0]);return {v:d,lb:x[1]+" · "+stMD(d),col:null};});
+  if(cur&&!opts.some(function(o){return o.v===cur;}))opts.unshift({v:cur,lb:"지금 · "+stMD(cur),col:null});
+  opts.push({v:"",lb:"모름",col:null});
+  var r=anchor.getBoundingClientRect(),fake={getBoundingClientRect:function(){return r;}};
+  psPickOpen(fake,opts,cur,function(v){stSetReturn(pl.id,v);},"복귀 예상",{title:(pl.name||"선수")+" · 복귀 예상"});
+}
+function stSetReturn(pid,until){
+  var pl=data.players.find(function(x){return x.id===pid;});if(!pl||!ST_SPAN[plStatusOf(pl)])return;
+  if(!(tmCanApprove()||tmCanEditStatus())){try{toast("선수 상태는 팀 편집 권한이 있는 코치가 바꿔요");}catch(_){}return;}
+  if(until)pl.statusUntil=String(until);else delete pl.statusUntil;
+  save();try{renderTeam();}catch(_){}try{renderTeamHome();}catch(_){}try{if(document.getElementById("availView")&&document.getElementById("availView").offsetParent!==null)renderAvail();}catch(_){}
+  try{toast((pl.name||"선수")+" — "+(until?("복귀 예상 "+stMD(until)):"복귀 예상 모름"));}catch(_){}
+}
+document.addEventListener("click",function(e){
+  var b=e.target&&e.target.closest&&e.target.closest("[data-st-ret]");if(!b)return;
+  e.stopPropagation();e.preventDefault();
+  var pl=(data.players||[]).find(function(x){return String(x.id)===String(b.dataset.pid);});if(!pl)return;
+  if(b.dataset.stRet==="ok"){tmStatusApply(pl,"ok");try{renderTeamHome();}catch(_){}try{if(document.getElementById("availView").offsetParent!==null)renderAvail();}catch(_){}}
+  else stReturnPick(b,pl);
+},true);
 /* 2.094 — 명단 행 상태를 네 단계로(사용자: "정상, 재활, 부상, 불참"). 'out'(불참)이 새 값이다.
    그 전엔 부상 하나가 "부상·불참"을 겸했다 — 다치지 않았는데 안 온 날까지 부상으로 쌓여 참여 집계가 틀어졌다.
    'rest'(조절·휴식)는 상태 페이지에서만 쓰던 값이라 그대로 둔다 — 순환에는 안 들어가고,
@@ -7735,12 +7833,13 @@ function psPickClose(){ try{ var o=document.getElementById("psPickPop"); if(o)o.
   try{ document.removeEventListener("keydown",psPickKey,true); }catch(_){} }
 function psPickAway(e){ var o=document.getElementById("psPickPop"); if(o&&!o.contains(e.target))psPickClose(); }
 function psPickKey(e){ if(e.key==="Escape"){ e.preventDefault(); psPickClose(); } }
-function psPickOpen(anchor,items,cur,onPick,aria){
+function psPickOpen(anchor,items,cur,onPick,aria,opts){
   psPickClose();
   var pop=document.createElement("div"); pop.id="psPickPop";
   pop.style.cssText="position:fixed;z-index:1400;display:flex;flex-wrap:wrap;gap:5px;padding:6px;max-width:min(300px,calc(100vw - 16px));border:1px solid var(--line,#E3E6EA);border-radius:12px;background:var(--panel,#fff);box-shadow:0 10px 30px var(--sh16,rgba(16,24,40,.16))";
   pop.setAttribute("role","menu"); pop.setAttribute("aria-label",aria||"고르기");
   var now=String(cur==null?"":cur);
+  if(opts&&opts.title){ var tt=document.createElement("div"); tt.textContent=opts.title; tt.style.cssText="flex-basis:100%;font:700 11px/1.4 inherit;color:var(--dim,#646A73);padding:2px 4px 2px"; pop.appendChild(tt); }   /* 2.942 — 무엇을 고르는지(복귀 예상) */
   (items||[]).forEach(function(it){
     var on=(String(it.v==null?"":it.v)===now);
     var b=document.createElement("button"); b.type="button"; b.setAttribute("role","menuitemradio");
@@ -7780,16 +7879,22 @@ function stPickOpen(anchor,cur,onPick){
 }
 /* 고른 상태를 적용한다 — 두 자리(명단 행·운동장 알약)가 같은 규칙을 쓰도록 한 곳에 모은다.
    승인 권한이 없으면 순환 때와 똑같이 **제안**으로 남는다(감독 승인 후 적용). */
-function tmStatusApply(pl,to){
+/* 2.942 — «코치만 등록»: 팀 편집 권한이 있는 코치는 바로 적용한다(예전 «스태프는 제안 → 감독 승인»은 걷었다 —
+   제안은 팀 편집 권한이 있어야 저장됐는데, 그 권한이면 다른 선수단 자료는 이미 바로 고친다). 권한이 없으면 막는다. */
+function tmCanEditStatus(){try{var pm=window.PSPerms||(window.parent&&window.parent.PSPerms);if(pm&&pm.canEdit)return pm.canEdit("team")===true&&tmRole()!=="player";}catch(_){}return true;}
+function tmStatusApply(pl,to,anchor){
   if(!pl||!to)return;
-  if(!tmCanApprove()){ try{ tmProposeStatus(pl,to); }catch(_){} return; }
+  if(!tmCanApprove()&&!tmCanEditStatus()){ try{ toast("선수 상태는 팀 편집 권한이 있는 코치가 바꿔요"); }catch(_){} return; }
   var had=null; try{ had=tmProposalOf(pl.id); }catch(_){}
-  if(plStatusOf(pl)===to&&!had)return;            /* 같은 값 = 아무 일도 안 한다 */
-  pl.status=to;
+  var prev=plStatusOf(pl),rect=null; try{ if(anchor)rect=anchor.getBoundingClientRect(); }catch(_){}
+  var pickAt=rect?{getBoundingClientRect:function(){return rect;}}:null;
+  if(prev===to&&!had){ if(ST_SPAN[to]&&pickAt)stReturnPick(pickAt,pl); return; }   /* 같은 값 — 기간 상태면 복귀 예상만 고친다 */
+  pl.status=to; stApplyUntil(pl,prev,to);
   data.statusProposals=(data.statusProposals||[]).filter(function(x){ return x.pid!==pl.id; });
   try{ stRuns();stRunStamp(pl.id,pl.status,stYmd());avUpdateTodayRecord(pl.id,pl.status); }catch(_){}   /* 14일 기록·집계에도 남게 */
   save();renderTeam();
-  try{ toast((pl.name||"선수")+" → "+(TM_ST_LB[to]||to)); }catch(_){}
+  try{ toast((pl.name||"선수")+" → "+(TM_ST_LB[to]||to)+(ST_DAILY[to]?" · 오늘만":"")); }catch(_){}
+  if(ST_SPAN[to]&&!ST_SPAN[prev]&&pickAt)setTimeout(function(){ try{ stReturnPick(pickAt,pl); }catch(_){} },0);   /* 2.942 — 부상·재활은 복귀 예상을 바로 묻는다(모름도 된다) */
 }
 /* 조 고르개 — 순환 목록(tmGrpCycle: 기본 조 + 팀이 실제로 쓰는 조 + 없음)을 그대로 편다.
    조 이름 자체를 바꾸는 곳은 따로 있다(명단 위 조 줄의 ✎). */
@@ -9227,7 +9332,7 @@ function renderPlayers(){
       st.innerHTML=PL_STATUS.map(function(s){return '<option value="'+s.k+'">'+s.label+'</option>';}).join("");
       st.value=plStatusOf(pl);st.setAttribute("data-st",st.value);
       st.onclick=function(ev){ev.stopPropagation();};
-      st.onchange=function(){pl.status=st.value;stRuns();stRunStamp(pl.id,pl.status,stYmd());avUpdateTodayRecord(pl.id,pl.status);save();renderPlayers();};
+      st.onchange=function(){var _pv=plStatusOf(pl);pl.status=st.value;stApplyUntil(pl,_pv,pl.status);stRuns();stRunStamp(pl.id,pl.status,stYmd());avUpdateTodayRecord(pl.id,pl.status);save();renderPlayers();};
       row.append(st);
     }
     row.append(edit,pdf,del);return row;};
@@ -11056,7 +11161,7 @@ function tbWire(){
       if(!pl)return;
       /* 2.517 — 순환 대신 고르기. 제안이 걸려 있으면 그 제안값을 현재로 보여 준다(순환 때와 같은 기준) */
       var cur0=null; try{ cur0=tmProposalOf(pl.id); }catch(_){}
-      stPickOpen(btn,cur0?cur0.to:plStatusOf(pl),function(to){ tmStatusApply(pl,to); });
+      stPickOpen(btn,cur0?cur0.to:plStatusOf(pl),function(to){ tmStatusApply(pl,to,btn); });
     });
   });
   document.querySelectorAll("#tbPitch .tb-pill,#tbOff .tb-pill,#tbTray .tb-pill").forEach(function(pill){
@@ -11143,7 +11248,7 @@ function renderTmApprovals(){
   var ps=(data.statusProposals||[]).filter(function(p){return data.players.some(function(x){return x.id===p.pid;});});
   data.statusProposals=ps;
   if(!ps.length||!tmCanApprove()){box.style.display="none";box.innerHTML="";return;}
-  var LB={ok:"정상",injury:"부상",rehab:"재활"};
+  var LB={ok:"정상",injury:"부상",rehab:"재활",rest:"휴식",out:"불참"};   /* 2.942 — 휴식·불참 제안이 «undefined» 로 보이던 것 */
   box.style.display="";
   box.innerHTML='<div class="tmap-hd">상태 변경 승인 대기<u>'+ps.length+'</u></div>'
     +ps.map(function(p,i){
@@ -11155,7 +11260,7 @@ function renderTmApprovals(){
     }).join('');
   [].forEach.call(box.querySelectorAll("[data-ap]"),function(b){b.onclick=function(){
     var p=ps[+b.dataset.ap],pl=data.players.find(function(x){return x.id===p.pid;});
-    if(pl){pl.status=p.to;stRuns();stRunStamp(pl.id,pl.status,stYmd());avUpdateTodayRecord(pl.id,pl.status);}
+    if(pl){var _pv=plStatusOf(pl);pl.status=p.to;stApplyUntil(pl,_pv,p.to);stRuns();stRunStamp(pl.id,pl.status,stYmd());avUpdateTodayRecord(pl.id,pl.status);}
     data.statusProposals=ps.filter(function(x){return x!==p;});
     save();renderTeam();try{toast("적용했어요 ✓");}catch(_){}};});
   [].forEach.call(box.querySelectorAll("[data-rj]"),function(b){b.onclick=function(){
@@ -11386,6 +11491,9 @@ function renderTeam(){
         var _dd=stRunDays(pl.id);
         if(_dd>3){ injury.textContent=(TM_ST_LB[statusNow]||"")+" "+_dd+"일째"; injury.classList.add("st-long"); }
       }
+      /* 2.942 — 복귀 예상이 있으면 «며칠째» 대신 그 날짜(지났으면 «복귀 확인»), 오늘만이면 «오늘만» */
+      if(ST_SPAN[statusNow]&&pl.statusUntil){ var _u=String(pl.statusUntil); injury.classList.remove("st-long"); injury.textContent=(TM_ST_LB[statusNow]||"")+(_u<=stYmd()?" · 복귀 확인":" ~"+stMD(_u)); if(_u<=stYmd())injury.classList.add("st-long"); }
+      else if(ST_DAILY[statusNow]&&pl.statusUntil){ injury.classList.remove("st-long"); injury.textContent=(TM_ST_LB[statusNow]||"")+" · 오늘만"; }
     }catch(_){}
     injury.title="눌러서 상태 고르기 — 정상 · 휴식 · 재활 · 부상 · 불참";
     injury.setAttribute("aria-haspopup","menu");
@@ -11400,7 +11508,7 @@ function renderTeam(){
       if(e&&e.stopPropagation)e.stopPropagation();
       /* 2.517 — 순환 대신 고르기(적용·제안 규칙은 tmStatusApply 한 곳) */
       var cur=null; try{ cur=tmProposalOf(pl.id); }catch(_){}
-      stPickOpen(injury,cur?cur.to:plStatusOf(pl),function(to){ tmStatusApply(pl,to); });};
+      stPickOpen(injury,cur?cur.to:plStatusOf(pl),function(to){ tmStatusApply(pl,to,injury); });};
     /* IDP 연결 배지 — 선수 계정 연결(cs_perms_v1 playerId) 여부. 연결 시 클릭 → 그 선수 IDP */
     const idpB=document.createElement("button");idpB.type="button";idpB.className="t-idp";idpB.textContent="IDP";
     (function(P){
@@ -15008,7 +15116,7 @@ var AV_ST_LB={ok:"가능",rest:"휴식",rehab:"재활",injury:"부상",out:"불�
 var avSaving=false;
 function avOwnerContext(){
   var pm=window.PSPerms||(window.parent&&window.parent.PSPerms),role=pm&&pm.role&&pm.role();
-  if(!pm||!pm.canEdit||pm.canEdit("team")!==true||["admin","executive"].indexOf(role)<0||!scoutAutomaticWriteAllowed())throw new Error("가용인원 기록을 편집할 권한이 없습니다.");
+  if(!pm||!pm.canEdit||pm.canEdit("team")!==true||["admin","executive","staff"].indexOf(role)<0||!scoutAutomaticWriteAllowed())throw new Error("가용인원 기록을 편집할 권한이 없습니다.");   /* 2.942 — 팀 편집 권한이 있는 코치(스태프 포함) */
   if(scoutBootPending||scMainMigrationPending)throw new Error("팀 자료를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
   var ss=JSON.parse(localStorage.getItem("ps_sync_session")||"null"),wid=localStorage.getItem("ps_active_ws")||"",seal=localStorage.getItem("ps_cache_owner_v1")||"";
   var switchGuard=localStorage.getItem("ps_ws_switch_guard_v1")||"",epoch=localStorage.getItem("ps_ws_switch_epoch_v1")||"";
@@ -15052,7 +15160,7 @@ function avCurrentStatus(meta,pid,st,today,note){
   if(last.from===today){last.s=st;if(note!==undefined){if(note)last.n=note;else delete last.n;}return;}
   last.to=stAddDays(today,-1);arr.push(next);
 }
-async function stSetAt(pid,st,ymd,captured,note){
+async function stSetAt(pid,st,ymd,captured,note,until){
   var day=ymd||stYmd(),ctx=captured||avEditContext(pid,day);
   if(avSaving)throw new Error("앞선 기록을 저장 중입니다. 잠시 후 다시 시도해 주세요.");
   if(ctx.pid!==String(pid)||ctx.day!==day||!avEditCurrent(ctx))throw new Error("계정이나 팀이 바뀌었습니다. 기록을 다시 열어 주세요.");
@@ -15066,7 +15174,7 @@ async function stSetAt(pid,st,ymd,captured,note){
     var p=latest.players.find(function(x){return x.id===pid&&!isTargetPl(x);});
     var kind=avDayKind(new Date(day+"T00:00:00"),plGrpOf(p)),today=stYmd();
     latest.meta=PSParticipation.record(latest.meta||{},pid,day,st,kind,Date.now(),today,note);
-    if(day===today){p.status=st;avCurrentStatus(latest.meta,pid,st,today,note);}
+    if(day===today){var _pv=plStatusOf(p);p.status=st;stApplyUntil(p,_pv,st,until);avCurrentStatus(latest.meta,pid,st,today,note);}
     if(!avEditCurrent(ctx)||localStorage.getItem(KEY)!==raw)throw new Error("자료가 바뀌었습니다. 다시 열어 확인해 주세요.");
     var targets=(data.players||[]).filter(isTargetPl),ids=new Set(latest.players.map(function(x){return x.id;}));
     latest.players=latest.players.concat(targets.filter(function(x){return !ids.has(x.id);}));
@@ -15182,8 +15290,19 @@ function avOpenPicker(button){
   var current=avResolve(p,day),selected=current.s||'ok',isToday=day===stYmd(),returning=isToday&&(plStatusOf(p)==='injury'||plStatusOf(p)==='rehab');
   avClosePicker();
   var pk=document.createElement('dialog');pk.className='av-pick';pk.setAttribute('aria-labelledby','avPickerTitle');
-  pk.innerHTML='<div class="av-pick-title"><b id="avPickerTitle">'+esc(p.name||'선수')+' · '+esc(avDayLabel(day))+'</b><button type="button" data-av-cancel aria-label="닫기">×</button></div><p class="av-pick-help">'+(isToday?'오늘부터 다시 수정할 때까지 이 상태가 유지됩니다.':'선택한 날짜만 수정합니다.')+'</p><div class="av-pick-states" role="group" aria-label="가용 상태">'+AV_ST_ORDER.map(function(k){return '<button type="button" data-k="'+k+'" aria-pressed="'+(k===selected)+'"'+(k===selected?' class="on"':'')+'>'+(k==='ok'&&returning?'복귀 · 가능':AV_ST_LB[k])+'</button>';}).join('')+'</div><label class="av-pick-note">사유·메모<textarea data-av-note maxlength="2000" rows="3" placeholder="예: 오른쪽 발목 부상"></textarea></label><p class="av-pick-feedback" data-av-save-error role="status" aria-live="polite"></p><div class="av-pick-actions"><button type="button" data-av-cancel>닫기</button><button type="button" data-av-save>기록하기</button></div>';
+  pk.innerHTML='<div class="av-pick-title"><b id="avPickerTitle">'+esc(p.name||'선수')+' · '+esc(avDayLabel(day))+'</b><button type="button" data-av-cancel aria-label="닫기">×</button></div><p class="av-pick-help">'+(isToday?'휴식·불참은 오늘만 — 내일은 정상으로 돌아가요. 재활·부상은 복귀 예상일에 다시 물어요.':'선택한 날짜만 수정합니다.')+'</p><div class="av-pick-states" role="group" aria-label="가용 상태">'+AV_ST_ORDER.map(function(k){return '<button type="button" data-k="'+k+'" aria-pressed="'+(k===selected)+'"'+(k===selected?' class="on"':'')+'>'+(k==='ok'&&returning?'복귀 · 가능':AV_ST_LB[k])+'</button>';}).join('')+'</div>'+(isToday?'<div class="av-pick-ret" data-av-ret hidden><b>복귀 예상</b><div class="av-pick-retb" role="group" aria-label="복귀 예상"></div></div>':'')+'<label class="av-pick-note">사유·메모<textarea data-av-note maxlength="2000" rows="3" placeholder="예: 오른쪽 발목 부상"></textarea></label><p class="av-pick-feedback" data-av-save-error role="status" aria-live="polite"></p><div class="av-pick-actions"><button type="button" data-av-cancel>닫기</button><button type="button" data-av-save>기록하기</button></div>';
   document.body.appendChild(pk);var note=pk.querySelector('[data-av-note]');note.value=current.note||'';
+  /* 2.942 — 오늘 기록이고 재활·부상을 고르면 «복귀 예상»(3일·1주·2주·한 달·모름). 기존 예상일은 그대로 골라 둔다 */
+  var retBox=pk.querySelector('[data-av-ret]'),retSel=(ST_SPAN[plStatusOf(p)]&&p.statusUntil)?String(p.statusUntil):'';
+  function retDraw(){
+    if(!retBox)return;retBox.hidden=!ST_SPAN[selected];
+    var t=stYmd(),opts=[[3,'3일'],[7,'1주'],[14,'2주'],[30,'한 달']].map(function(x){var d=stAddDays(t,x[0]);return [d,x[1]+' · '+stMD(d)];});
+    if(retSel&&!opts.some(function(o){return o[0]===retSel;}))opts.unshift([retSel,'지금 · '+stMD(retSel)]);
+    opts.push(['','모름']);
+    var box=retBox.querySelector('.av-pick-retb');box.innerHTML=opts.map(function(o){var on=o[0]===retSel;return '<button type="button" data-ret="'+o[0]+'" aria-pressed="'+on+'"'+(on?' class="on"':'')+'>'+esc(o[1])+'</button>';}).join('');
+    [].forEach.call(box.querySelectorAll('[data-ret]'),function(b){b.onclick=function(){retSel=b.dataset.ret;retDraw();};});
+  }
+  retDraw();
   var closed=false,busy=false,timer=null;
   var state={ctx:ctx,close:function(){if(closed)return;closed=true;clearInterval(timer);window.removeEventListener('storage',check);window.removeEventListener('focus',check);pk.removeEventListener('cancel',cancel);pk.removeEventListener('close',closeEvent);note.value='';pk.textContent='';try{pk.close();}catch(_){}pk.remove();if(avPickerState===state)avPickerState=null;if(button.isConnected&&avEditCurrent(ctx))try{button.focus();}catch(_){}}};
   avPickerState=state;
@@ -15193,19 +15312,19 @@ function avOpenPicker(button){
   function closeEvent(){state.close();}
   pk.addEventListener('cancel',cancel);pk.addEventListener('close',closeEvent);
   pk.querySelectorAll('[data-av-cancel]').forEach(function(b){b.onclick=state.close;});
-  pk.querySelectorAll('[data-k]').forEach(function(b){b.onclick=function(){if(!valid()||busy){check();return;}selected=b.dataset.k;pk.querySelectorAll('[data-k]').forEach(function(x){x.classList.toggle('on',x.dataset.k===selected);x.setAttribute('aria-pressed',String(x.dataset.k===selected));});};});
+  pk.querySelectorAll('[data-k]').forEach(function(b){b.onclick=function(){if(!valid()||busy){check();return;}selected=b.dataset.k;pk.querySelectorAll('[data-k]').forEach(function(x){x.classList.toggle('on',x.dataset.k===selected);x.setAttribute('aria-pressed',String(x.dataset.k===selected));});retDraw();};});
   pk.querySelector('[data-av-save]').onclick=async function(){
     if(!valid()||busy){check();return;}busy=true;
     var feedback=pk.querySelector('[data-av-save-error]');feedback.textContent='기기에 기록하는 중…';feedback.classList.remove('is-error');
-    pk.querySelectorAll('[data-k],[data-av-save],textarea').forEach(function(x){x.disabled=true;});
+    pk.querySelectorAll('[data-k],[data-ret],[data-av-save],textarea').forEach(function(x){x.disabled=true;});
     try{
-      await stSetAt(pid,selected,day,ctx,note.value);
+      await stSetAt(pid,selected,day,ctx,note.value,(isToday&&ST_SPAN[selected])?retSel:undefined);
       if(!valid()){state.close();return;}
       avUiNotice={context:ctx,text:'기기에 기록했습니다. 자동 저장 상태는 상단에서 확인하세요.'};state.close();renderAvail();
     }catch(error){
       if(!valid()){state.close();return;}
       feedback.textContent='기록하지 못했습니다. 입력은 남아 있습니다. 다시 시도하거나 창을 닫고 최신 기록을 확인해 주세요.';feedback.classList.add('is-error');
-      pk.querySelectorAll('[data-k],[data-av-save],textarea').forEach(function(x){x.disabled=false;});
+      pk.querySelectorAll('[data-k],[data-ret],[data-av-save],textarea').forEach(function(x){x.disabled=false;});
       busy=false;
     }
   };
@@ -15333,6 +15452,7 @@ function renderAvail(){
   var h='<div class="av-head"><h3>가용인원</h3><span class="n">최근 '+N+'일</span><span class="av-seg" role="group" aria-label="조회 기간">'+[[14,'2주'],[28,'4주'],[90,'90일']].map(function(x){return '<button type="button" data-av-range="'+x[0]+'" aria-pressed="'+(N===x[0])+'"'+(N===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join('')+'</span></div><div class="av-subnav" role="group" aria-label="가용인원 보기">'+[['days','날짜별'],['players','선수별 누적']].map(function(x){return '<button type="button" data-av-mode="'+x[0]+'" aria-pressed="'+(availMode===x[0])+'"'+(availMode===x[0]?' class="on"':'')+'>'+x[1]+'</button>';}).join('')+'</div>';
   if(avUiNotice)h+='<p class="av-feedback" role="status">'+esc(avUiNotice.text)+'</p>';
   if(typeof avCanEdit==='function'&&!avCanEdit())h+='<p class="av-note av-readonly">조회만 가능한 상태입니다. 가용인원 기록은 수정할 수 없습니다.</p>';
+  try{ stExpireDailySave(); h+=stReturnDueHTML(); }catch(_){}   /* 2.942 */
   try{
     avRenderCache={schedules:new Map(),canEdit:typeof avCanEdit==='function'&&avCanEdit()};
     if(!window.PSParticipation)throw new Error('model unavailable');
@@ -15910,6 +16030,7 @@ function stRunStamp(pid,st,day){
 }
 function stStampToday(ours){
   var runs=stRuns(),today=stYmd(),changed=false;
+  try{ if((typeof scoutAutomaticWriteAllowed!=="function"||scoutAutomaticWriteAllowed())&&stExpireDaily(ours))changed=true; }catch(_){}   /* 2.942 — 오늘만이 지난 것 먼저(아래 줄이 그 run 을 어제까지 늘리지 않게) */
   ours.forEach(function(p){
     var arr=runs[p.id],last=arr&&arr[arr.length-1];
     if(!last||last.to<today||last.s!==plStatusOf(p)){ stRunStamp(p.id,plStatusOf(p),today); changed=true; }
@@ -15958,14 +16079,14 @@ function stTotalsOf(pid,fromYmd){
 }
 function stSet(pid,k){
   var pl=data.players.find(function(x){return x.id===pid;}); if(!pl)return;
-  pl.status=k;
+  var _pv=plStatusOf(pl); pl.status=k; stApplyUntil(pl,_pv,k);
   stRuns(); stRunStamp(pid,k,stYmd());avUpdateTodayRecord(pid,k);
   save();
   renderStatusView();
   try{renderTeam();}catch(_){}   /* 같은 화면 상단 히어로(출전 가능·부상 수) 즉시 갱신 — 상태 관리가 선수 탭 안으로 들어옴 */
   try{renderTeamHome();}catch(_){}
   /* AT 흐름: 부상·불참 표시 직후 사유를 바로 묻는다 (조절·재활은 행의 버튼으로) */
-  if(k==="injury")try{stNoteModal(pid);}catch(_){}
+  if(ST_SPAN[k])try{stNoteModal(pid);}catch(_){}   /* 2.942 — 재활도: 사유와 복귀 예상을 같이 */
 }
 function stMedToggle(){
   var m=teamHomeNextMatch();
@@ -17569,7 +17690,8 @@ function stNoteModal(pid){
   ov.innerHTML='<div class="ts-card" style="width:min(440px,94vw)" role="dialog" aria-modal="true">'
     +'<div class="ts-hd"><div><small>'+(lab[run?run.s:"ok"]||"")+'</small><h3>'+esc(pl.name||"선수")+' · 사유 기록</h3></div><button class="ts-x" aria-label="닫기">×</button></div>'
     +(canEdit
-      ?'<textarea class="inp" id="stNoteInp" maxlength="200" placeholder="예: 햄스트링 염좌 — 2주 예상 / 가족 행사 불참" style="width:100%;min-height:74px;font-size:13px;line-height:1.5;padding:10px">'+esc(run.n||"")+'</textarea>'
+      ?((ST_SPAN[run.s]&&ctx.day===stYmd())?'<div class="st-ret" role="group" aria-label="복귀 예상"><b>복귀 예상</b><div class="st-retb"></div></div>':'')   /* 2.942 */
+       +'<textarea class="inp" id="stNoteInp" maxlength="200" placeholder="예: 햄스트링 염좌 / 가족 행사 불참" style="width:100%;min-height:74px;font-size:13px;line-height:1.5;padding:10px">'+esc(run.n||"")+'</textarea>'
        +'<p id="stNoteError" role="status"></p><div class="ts-ft" style="margin-top:10px"><button class="btn primary" id="stNoteOk" type="button">저장</button></div>'
       :'<div class="st-empty" style="padding:10px;margin-bottom:4px">현재 사유를 수정할 수 없습니다. 가용인원에서 상태와 수정 권한을 확인해 주세요.</div>')
     +'<div class="st-sec" style="margin:12px 6px 4px">지난 기록</div>'
@@ -17579,6 +17701,12 @@ function stNoteModal(pid){
   ov.querySelector(".ts-x").onclick=x;
   ov.addEventListener("click",function(e){if(e.target===ov)x();});
   var ok=ov.querySelector("#stNoteOk");
+  var retSel=pl.statusUntil?String(pl.statusUntil):"",retB=ov.querySelector(".st-retb");
+  function retDraw(){ if(!retB)return; var t=stYmd(),opts=[[3,"3일"],[7,"1주"],[14,"2주"],[30,"한 달"]].map(function(x){var d=stAddDays(t,x[0]);return [d,x[1]+" · "+stMD(d)];});
+    if(retSel&&!opts.some(function(o){return o[0]===retSel;}))opts.unshift([retSel,"지금 · "+stMD(retSel)]); opts.push(["","모름"]);
+    retB.innerHTML=opts.map(function(o){var on=o[0]===retSel;return '<button type="button" class="btn sm'+(on?' primary':'')+'" data-ret="'+o[0]+'" aria-pressed="'+on+'">'+esc(o[1])+'</button>';}).join("");
+    [].forEach.call(retB.querySelectorAll("[data-ret]"),function(b){b.onclick=function(){retSel=b.dataset.ret;retDraw();};}); }
+  retDraw();
   if(ok)ok.onclick=async function(){
     var v=(ov.querySelector("#stNoteInp").value||"").trim();
     if(!run||!ctx||ok.disabled)return;
@@ -17586,7 +17714,7 @@ function stNoteModal(pid){
     try{
       // The same guarded save updates today's status, direct record and memo.
       // Changing today's reason does not rewrite notes on earlier days.
-      await stSetAt(pid,plStatusOf(pl),ctx.day,ctx,v);
+      await stSetAt(pid,plStatusOf(pl),ctx.day,ctx,v,retB?retSel:undefined);
       x();renderStatusView();itemsRerender();
     }catch(error){
       if(!avEditCurrent(ctx)){x();return;}
@@ -18883,6 +19011,7 @@ function ckNextTask(c){
 }
 function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
   var host=$("ckHome"); if(!host)return;
+  try{ stExpireDailySave(); }catch(_){}   /* 2.942 — 오늘만이 지난 상태를 정상으로 */
   var today=new Date(); today.setHours(0,0,0,0);
   /* 인원 */
   var ours=tmOurs().filter(function(p){return p.manual===true||String(p.name||"").trim();});
@@ -18991,11 +19120,11 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
         var g=GKEY(p), st=plStatusOf(p), nm2=String(p.name||"").trim();
         touch(g);
         if(st==="ok"){ var pg=tmPosGrpOf(p)||"ETC"; if(!PLB[pg])pg="ETC"; (byG[g][pg]=byG[g][pg]||[]).push(nm2); }
-        else if(outG[g][st])outG[g][st].push(nm2);
+        else if(outG[g][st])outG[g][st].push(ST_SPAN[st]&&p.statusUntil?(nm2+" ~"+stMD(p.statusUntil)):nm2);   /* 2.942 — 복귀 예상 */
       });
       gord.sort(function(a,b){ if(a==="__none")return 1; if(b==="__none")return -1; return a.localeCompare(b,"ko"); });
       var totG={}; ours.forEach(function(p){ var k=GKEY(p); totG[k]=(totG[k]||0)+1; });
-      var OUTLB=[["injury","부상","inj"],["rehab","재활","re"],["out","불참",""],["rest","조절",""]];
+      var OUTLB=[["injury","부상","inj"],["rehab","재활","re"],["out","불참",""],["rest","휴식",""]];   /* 2.942 — 조절 → 휴식(다른 화면과 같은 이름) */
       /* 2.940 — 폰(≤600px)은 출석 탭(2.939)과 같은 두 덩어리 — 위 «운동 n명»(조별) / 아래 «참여 못 함 n명»(조별).
          사용자: 2.939 «폰으로 가용인원 볼 때 운동하는 선수와 참여하지 못하는 선수 분리» → «오늘» 카드도 «진행해주세요».
          ⚠ 덩어리 머리·조 머리가 숫자를 말하므로 색 타일 다섯(필드·GK·재활·부상·불참)은 이 모드에서 그리지 않는다(같은 수를 두 번 말하지 않는다, 2.550).
@@ -19029,7 +19158,7 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
           return "";
         }
         return '<div class="okg okg2"><div class="okg-h"><b>'+ckEsc(lab)+'</b><u>'+n+'/'+(totG[g]||n)+'</u></div>'
-          +'<div class="avail g g5"><span class="ok"><b>'+_fd+'</b><i>필드</i></span><span class="ok gk"><b>'+_gk+'</b><i>GK</i></span><span class="re"><b>'+_gr+'</b><i>재활</i></span><span class="inj"><b>'+_gi+'</b><i>부상</i></span><span class="out"><b>'+_go+'</b><i>불참·조절</i></span></div>'
+          +'<div class="avail g g5"><span class="ok"><b>'+_fd+'</b><i>필드</i></span><span class="ok gk"><b>'+_gk+'</b><i>GK</i></span><span class="re"><b>'+_gr+'</b><i>재활</i></span><span class="inj"><b>'+_gi+'</b><i>부상</i></span><span class="out"><b>'+_go+'</b><i>불참·휴식</i></span></div>'
           +okRows+outRows+'</div>';
       }).join("");
       if(ckSplit&&(ckOkSec||ckOutSec))okNames='<div class="ck-split-ok"><div class="ck-sec-h">운동 <span>'+ckOkTot+'명</span></div>'+(ckOkSec||'<div class="ck-none">오늘 운동하는 선수가 없어요</div>')+'</div>'
@@ -19037,7 +19166,7 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
       }catch(_){} }
   /* 2.571 — 가용 인원이 **맨 왼쪽**(사용자). 세션 카드(hs)는 그 다음에 붙인다. 2.570 의 «이번 주 국면» 패널은 «지금까지» 카드로 합쳤다 */
   h+=hs;   /* 2.583 — 세션 왼쪽 · 가용 인원 가운데 · 지금까지 오른쪽(사용자 "오늘 세션이 왼쪽 가용인원이 가운데") */
-  h+='<div class="pn avail-pn"><div class="hd">가용인원<small>'+ours.length+'명 · 가능 '+(cnt.ok||0)+'</small><button type="button" class="r" data-ck="avail">전체 보기 →</button></div><div class="bd">'
+  h+='<div class="pn avail-pn"><div class="hd">가용인원<small>'+ours.length+'명 · 가능 '+(cnt.ok||0)+'</small><button type="button" class="r" data-ck="avail">전체 보기 →</button></div><div class="bd">'+stReturnDueHTML()
     /* 2.571 — 팀 전체 4칸(가능·재활·부상·불참)은 조 상자 안으로 내려갔다(사용자 "팀별로 완전히 분리"). 총원·가능은 머리줄에 */
     /* 2.551 — 부상·재활·불참 줄을 **조 안으로 옮겼다**(사용자 "부상 재활도 팀별로").
        위아래로 나뉘어 있으면 «A팀은 지금 어떤가» 를 알려고 두 곳을 번갈아 봐야 한다.

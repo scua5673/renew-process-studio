@@ -16,6 +16,8 @@ function harness(){
     store:{owner:()=>ls.get('ps_active_ws'),ready:async()=>{calls++;if(readyHook)await readyHook(calls);if(failReady&&calls===2)throw Error('IDB failed');}},
     save:opts=>{writes++;if(failSave)return false;ls.set('scout_tool_v1',JSON.stringify({...c.data,players:c.data.players.filter(p=>p.type!=='target')}));return true;}
   });
+  /* 2.942 — 상태를 바꾸면 복귀 예상(statusUntil)도 같이 정한다: 그 도우미를 같은 화면 코드에서 가져온다 */
+  vm.runInContext('var ST_DAILY={rest:1,out:1},ST_SPAN={injury:1,rehab:1};'+src.slice(src.indexOf('function stApplyUntil('),src.indexOf('function stMD(')),c);
   vm.runInContext(code,c);return {c,ls,doc,get:()=>JSON.parse(ls.get('scout_tool_v1')),writes:()=>writes,today:d=>{today=d;},hook:f=>{readyHook=f;},deny:()=>{can=false;role='player';},failSave:()=>{failSave=true;},failReady:()=>{failReady=true;}};
 }
 test('past record preserves all status runs, notes, other player and current state',async()=>{
