@@ -21,7 +21,8 @@ function ctx(players,opt={}){
     setTimeout:fn=>fn()});
   vm.runInContext(block('function stRuns(){','function stStampToday(')+'\n'+block('var ST_DAILY=','/* 복귀 예상 고르개')+'\n'+block('function tmCanApprove(','function tmProposalOf(')+'\n'+block('function tmCanEditStatus(','function posPickOpen('),c);
   c.stReturnPick=(anchor,pl)=>picks.push(pl.id);
-  return {c,toasts,picks,get saves(){return saves;},day:d=>{today=d;}};
+  const sheets=[];c.stInjurySheet=(pl)=>sheets.push(pl.id);   /* 2.943 — 새 부상은 부상 기록 시트(복귀 예상 포함) */
+  return {c,toasts,picks,sheets,get saves(){return saves;},day:d=>{today=d;}};
 }
 
 test('오늘만(휴식·불참)은 적은 날만 — 다음 날 읽으면 정상, 기간은 날짜가 지나도 그대로',()=>{
@@ -81,12 +82,13 @@ test('코치만 등록 — 팀 편집 권한이 있는 스태프는 바로 적�
   assert.equal(p.c.data.players[0].status,'ok','선수는 못 바꾼다');assert.match(p.toasts.pop(),/코치가 바꿔요/);
 });
 test('부상·재활을 고르면 복귀 예상을 바로 묻고, 같은 상태를 다시 고르면 예상만 고친다',()=>{
-  const ps=[{id:'a',status:'ok'}],t=ctx(ps),anchor={getBoundingClientRect:()=>({left:0,top:0,width:10,height:10,bottom:10})};
+  const ps=[{id:'a',status:'ok'},{id:'b',status:'ok'}],t=ctx(ps),anchor={getBoundingClientRect:()=>({left:0,top:0,width:10,height:10,bottom:10})};
   t.c.tmStatusApply(ps[0],'injury',anchor);
-  assert.equal(ps[0].status,'injury');assert.deepEqual(t.picks,['a']);
+  assert.equal(ps[0].status,'injury');assert.deepEqual(t.sheets,['a'],'2.943 — 새 부상은 부상 기록 시트(부위·복귀 예상)');assert.deepEqual(t.picks,[]);
   t.c.tmStatusApply(ps[0],'injury',anchor);
-  assert.deepEqual(t.picks,['a','a']);assert.equal(t.saves,1,'같은 상태는 다시 저장하지 않는다');
-  t.c.tmStatusApply(ps[0],'rehab',anchor);assert.deepEqual(t.picks,['a','a'],'부상 → 재활은 예상일을 그대로 쓰고 다시 묻지 않는다');
+  assert.deepEqual(t.picks,['a']);assert.deepEqual(t.sheets,['a']);assert.equal(t.saves,1,'같은 상태는 다시 저장하지 않는다');
+  t.c.tmStatusApply(ps[0],'rehab',anchor);assert.deepEqual(t.picks,['a'],'부상 → 재활은 예상일을 그대로 쓰고 다시 묻지 않는다');assert.deepEqual(t.sheets,['a']);
+  t.c.tmStatusApply(ps[1],'rehab',anchor);assert.deepEqual(t.picks,['a','b'],'재활로 바로 가면 복귀 예상만 묻는다');assert.deepEqual(t.sheets,['a']);
 });
 test('가용인원 기록 창·사유 창·명단 칩·콕핏이 같은 규칙을 쓴다',()=>{
   assert.match(scout,/\["admin","executive","staff"\]\.indexOf\(role\)<0/);

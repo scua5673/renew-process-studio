@@ -16,7 +16,7 @@ function freeze(o) {
 test('UMD publishes the same pure API without browser storage or a clock', () => {
   const context = { window: {} };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../studio/participation.js'), 'utf8'), context);
-  assert.deepEqual(Object.keys(context.window.PSParticipation), ['record', 'resolve', 'totals']);
+  assert.deepEqual(Object.keys(context.window.PSParticipation), ['record', 'resolve', 'totals', 'episodes']);
 });
 
 test('past-day edit is immutable and preserves every other date, player, run note, and unknown field', () => {
@@ -287,12 +287,12 @@ test('multiple injury episodes count cumulatively with recovery and rehab in bet
     run('ok', '2026-09-12', today)
   ]);
   const total = P.totals(meta, pid, '2026-09-01', today, day => day.endsWith('05') ? 'match' : ['2026-09-06', '2026-09-07', '2026-09-10'].includes(day) ? 'off' : 'train', 'ok', today);
-  assert.deepEqual(total, { training: 5, match: 1, exercise: 6, rest: 6, injury: 6, rehab: 2, out: 0, unknown: 0, recorded: 0, statusDays: 15, currentDays: 0, days: 15, first: '2026-09-01', last: today });
+  assert.deepEqual(total, { training: 5, match: 1, exercise: 6, rest: 6, injury: 6, rehab: 2, out: 0, unknown: 0, recorded: 0, statusDays: 15, currentDays: 0, days: 15, first: '2026-09-01', last: today, scheduled: 12, missed: { rest: 0, out: 0, rehab: 1, injury: 5 } });
 });
 
 test('unknown counts scheduled dates only, and all empty states contribute no activity', () => {
   const total = P.totals({}, pid, '2026-09-12', today, day => ({ '2026-09-12': 'off', '2026-09-13': 'none', '2026-09-14': 'match', [today]: 'train' }[day]), undefined, today);
-  assert.deepEqual(total, { training: 0, match: 0, exercise: 0, rest: 0, injury: 0, rehab: 0, out: 0, unknown: 2, recorded: 0, statusDays: 0, currentDays: 0, days: 4, first: null, last: null });
+  assert.deepEqual(total, { training: 0, match: 0, exercise: 0, rest: 0, injury: 0, rehab: 0, out: 0, unknown: 2, recorded: 0, statusDays: 0, currentDays: 0, days: 4, first: null, last: null, scheduled: 2, missed: { rest: 0, out: 0, rehab: 0, injury: 0 } });
 });
 
 test('rest counts every known non-ok scheduled day; injury rehab and out retain calendar counts', () => {
