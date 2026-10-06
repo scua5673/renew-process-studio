@@ -6355,6 +6355,19 @@ function loadTargets(){
 }
 
 let data={attrs:[],positions:[],players:[],meta:{}};
+/* ══ 2.948 · 부팅 전 빈 뼈대를 저장하지 않는다 ═════════════════════════════════════════════
+   사용자 «가용인원 지난 날 적용이 안 돼 · 선수별 누적이 체크가 안 돼». 운영 실측(풋볼A, 서버 판 기록 ps_kv_history):
+   10/2 23:27 · 10/5 22:10(KST) 두 번, scout_tool_v1 의 meta 가 **로고 두 칸(emblem·emblemRef)만 남고** 통째로 비었다 —
+   상태 기록(statusRuns 16명분 · 9/22~)·날짜별 출석 정정(participationDays 9/21~)·대기 중인 상태 제안·작전판 카드 배치(tbXY·tbCards)가
+   한꺼번에 사라졌다. 그래서 지난 날은 전부 «기본 참여»로 다시 세어졌다.
+   경로: 셸이 이 화면을 부팅 확인(scoutBootAllowed) 전에 띄워 두는 사이 동기화가 선수 행(sq:)을 내려 «ps_items_rev» 신호가 오면
+   storage 리스너가 load()(부팅 중이라 아무것도 안 함) → itemsApply("sync") 를 불렀다. itemsApply 는 **아직 불러오지 않은 기본 문서**
+   {attrs:[],positions:[],meta:{}} 에 선수 행만 얹고 rosterProject 로 통째 저장했다(rosterPersist 가 로고만 최신에서 가져온다 — 그래서 로고만 살았다).
+   다음 load() 가 그 뼈대를 정규화(평가표 표준 이관·포지션 보충)해 다시 올렸다.
+   → ① 실제로 불러오기 전(scoutDataLoaded=false)·부팅 중·후보 이관 중에는 itemsApply 가 아무것도 안 한다(부팅 init 이 끝에서 한 번 돈다)
+     ② rosterPersist 는 저장본에 평가표·포지션이 있는데 빈 뼈대로 덮으려 하면 멈춘다 ③ 기록 칸(statusRuns·participationDays·injuryInfo)이
+     저장본에만 있으면 그대로 옮겨 담는다 — 이 칸들은 지우는 경로가 없다(없어지는 것은 늘 사고다). */
+var scoutDataLoaded=false;
 /* ══ 2.730 · 선수 행(sq:<id>) 읽기 — 백엔드 계획 1단계 ═══════════════════════════════════════════
    서버가 각 팀의 scout_tool_v1.players 를 sq: 행으로 옮겨 두면, 동기화가 그 행들을 이 기기 IDB 에 내려준다(sync.js 항목 블록).
    현재 명단을 유지하면서 이 계정·팀에서 서버 판본까지 확인한 행만 반영한다. 기기에만 남은 옛 행이나 충돌 검토 원문은 새 현역으로 추가하지 않는다.
@@ -6390,9 +6403,13 @@ function rosterHealRows(ids){
   }catch(_){return false;}
 }
 function itemsApply(reason){
+  /* 2.948 — 불러오기 전(기본 문서)·부팅 중·후보 이관 중에는 선수만 얹어 저장하지 않는다(부팅 init 이 끝에서 한 번 돈다) */
+  var notReady=function(){return (typeof scoutDataLoaded!=='undefined'&&!scoutDataLoaded)||(typeof scoutBootPending!=='undefined'&&scoutBootPending)||(typeof scMainMigrationPending!=='undefined'&&scMainMigrationPending);};
+  if(notReady())return Promise.resolve(false);
   var PI=itemsPI(); if(!PI||!PI.readAll||!(PI.active&&PI.active()))return Promise.resolve(false);
   var owner=teamSaveOwner(),draft=JSON.stringify(data),raw=localStorage.getItem(KEY),deleted=localStorage.getItem(PDKEY);
   return PI.readAll().then(function(r){
+    if(notReady())return false;
     if(owner!==teamSaveOwner()||draft!==JSON.stringify(data)||raw!==localStorage.getItem(KEY)||deleted!==localStorage.getItem(PDKEY))return false;
     if(!r||!r.rows||r.pending)return false;
     var doc=(data.players||[]), byId={},held=r.held||{},confirmed=r.confirmed||{}; r.players.forEach(function(p){ if(p&&p.id)byId[p.id]=p; });
@@ -6493,6 +6510,7 @@ function load(){
     data.players=[];data.meta={evalMode:"fifa",cats:fifaCats()};
     if(!scoutReadOnlyLoad)store.set(KEY,data); // first run: persist scout data only — do NOT mirror empty roster to cs_squad_v1 (tmMigrate must read it first)
   }
+  scoutDataLoaded=true;   /* 2.948 — 이 뒤로만 선수 행 반영(itemsApply)이 통짜를 다시 쓴다 */
   refreshCats();
   // 표준 12 포지션 보충 (기존 데이터에 CB 등 누락 시 자동 추가)
   try{TM_POS.forEach(k=>{
@@ -6921,8 +6939,21 @@ function rosterPersist(main,options){
   options=options||{};
   // Branding has its own field-level writer; roster edits retain its latest values.
   var currentBrand=store.get(KEY);
+  /* 2.948 — 저장본에는 평가표·포지션이 있는데 빈 뼈대로 덮으려 하면 멈춘다(부팅 전 기본 문서가 새는 길 — 위 2.948 머리글) */
+  if(currentBrand&&Array.isArray(currentBrand.attrs)&&currentBrand.attrs.length&&Array.isArray(currentBrand.positions)&&currentBrand.positions.length
+    &&(!Array.isArray(main.attrs)||!main.attrs.length||!Array.isArray(main.positions)||!main.positions.length)){
+    try{console.warn('[scout] 2.948 빈 뼈대 저장을 막음');var _ps=(parent&&parent!==window)?parent.PSSync:window.PSSync;if(_ps&&_ps.event)_ps.event('scout_skeleton_blocked',{status:'error',error_code:'roster_persist'});}catch(_){}
+    return false;
+  }
   if(currentBrand&&currentBrand.meta){
     main.meta=Object.assign({},main.meta||{});
+    /* 2.948 — 기록 칸은 저장본에만 있으면 옮겨 담는다(지우는 경로가 없는 칸 — 빠졌다면 낡은 문서가 덮으려는 것) */
+    ['statusRuns','participationDays','injuryInfo'].forEach(function(k){
+      if(!Object.prototype.hasOwnProperty.call(main.meta,k)&&Object.prototype.hasOwnProperty.call(currentBrand.meta,k)){
+        main.meta[k]=JSON.parse(JSON.stringify(currentBrand.meta[k]));
+        try{if(data&&data.meta&&!Object.prototype.hasOwnProperty.call(data.meta,k))data.meta[k]=JSON.parse(JSON.stringify(currentBrand.meta[k]));}catch(_){}   /* 화면 계산도 같은 기록으로 */
+      }
+    });
     ['emblem','emblemRef','color','headline'].forEach(function(k){   /* 2.903 — 로고와 그 분리 참조는 늘 같은 문서에서 */
       if(Object.prototype.hasOwnProperty.call(currentBrand.meta,k))main.meta[k]=currentBrand.meta[k];else delete main.meta[k];
     });
