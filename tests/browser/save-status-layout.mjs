@@ -156,15 +156,10 @@ try{
         }
       }
       async function banner(shown){
-        if(shown){
-          await page.evaluate(()=>{localStorage.removeItem('ps_release_notes_hidden_v1');document.getElementById('psReleaseNotes').__psReleaseNotes.refresh();});
-          assert.equal(await page.locator('#psReleaseNotes').isVisible(),true);
-        }else{
-          // 2.904 — 폰(≤767)은 2.902부터 한 줄 머리라 «일주일간 안 보기» 대신 같은 hideWeek 를 부르는 ✕ 만 보인다.
-          const week=page.locator('#psReleaseNotes').getByRole('button',{name:'일주일간 안 보기',exact:true});
-          await (await week.isVisible()?week:page.locator('#psReleaseNotes').getByRole('button',{name:'업데이트 안내 닫기',exact:true})).click();
-          assert.equal(await page.locator('#psReleaseNotes').isVisible(),false);
-        }
+        /* 2.947 — 화면 위 «최근 업데이트» 띠는 선수 전용 폰에서만 뜬다(그 밖은 앱 설정 위 «새 기능» · 더보기 줄).
+           이 화면(셸·보관함)에서는 숨김을 풀어도 늘 숨어 있어야 하고, 상태 줄 배치는 두 경우가 같아야 한다. */
+        if(shown)await page.evaluate(()=>{localStorage.removeItem('ps_release_notes_hidden_v1');document.getElementById('psReleaseNotes').__psReleaseNotes.refresh();});
+        assert.equal(await page.locator('#psReleaseNotes').isVisible(),false);
       }
       for(const editor of [false,true])for(const shown of [true,false]){
         // This is the shell's existing editor-mode class, intentionally applied

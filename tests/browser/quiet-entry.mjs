@@ -104,10 +104,15 @@ try{
         assert.deepEqual(automatic,[],'no transient automatic name/account/legacy notice UI');
         await page.screenshot({path:path.join(out,label+'-'+phase+'.png')});
       }
-      const release=page.locator('#psReleaseNotes');await release.waitFor({state:'visible'});
-      /* 2.902 부터 폰(≤767px) 띠는 «v2.9xx · 제목» + ✕ 한 줄 — «최근 업데이트» 머리와 «일주일간 안 보기» 버튼은 숨는다. 이름은 aria-label 로 본다. */
-      assert.equal(await release.getAttribute('aria-label'),'최근 업데이트');
-      assert.match(await release.innerText(),spec.mobile?/v\d+\.\d+/:/최근 업데이트/);
+      /* 2.947 — 화면 위 «최근 업데이트» 띠는 선수 전용 폰에서만 뜬다. 그 밖은 앱 설정 위 «새 기능»(데스크톱) · 더보기 맨 위 줄(폰).
+         «새 기능»은 안내 날짜로 7일만 보이므로 기대값을 앱의 판정(__psUpdSurface.state)에서 가져온다. */
+      const upd=await page.evaluate(()=>({st:window.__psUpdSurface?__psUpdSurface.state():null,band:getComputedStyle(document.getElementById('psReleaseNotes')).display}));
+      assert.ok(upd.st,'update surface is mounted');
+      assert.equal(upd.band,'none','top release band stays hidden outside the player-only phone');
+      if(upd.st.mode==='news'){
+        if(spec.mobile)assert.equal(await page.locator('#appMoreSheet [data-upd-row]').getAttribute('hidden'),null,'phone «더보기» carries the news row');
+        else{await page.locator('#psUpdRail').waitFor({state:'visible'});assert.match(await page.locator('#psUpdRail').innerText(),/새 기능/);}
+      }
       const releaseStatusOverlap=await page.evaluate(()=>{
         const status=document.querySelector('#psSyncStrip');if(!status||!status.checkVisibility())return false;
         const a=status.getBoundingClientRect();return Array.from(document.querySelectorAll('#psReleaseNotes button')).some(button=>{
