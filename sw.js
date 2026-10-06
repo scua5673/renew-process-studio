@@ -1546,7 +1546,8 @@
 // 1.762: RAIL 상시 애니메이션 바의 기준 장면 초기화 복구 + 반복 아이콘 즉시 재생 + 재생 중 장면 변경 안전화.
 // 1.761: 작전판 제작 도구 아이콘 통일 + 보기·펜 색 팝업 portal 수리 + 더보기를 사이드바 환경 설정 아래로 이동.
 // 2.788: 오늘·출석의 반복 표시, 노트 중복 버튼, 학습 미구현 안내 정리.
-const CACHE = 'process-2.948';   // 2.948 부팅 전 빈 기본 문서가 선수단 본문을 덮어 가용인원 기록(상태·날짜별 정정)이 지워지던 것
+const CACHE = 'process-2.949';   // 2.949 오래 숨은 옛 판 앱 탭은 서비스워커가 새로 연다 — 옛 판 문서·숨김·포커스 없음·10분 넘게 숨김으로만 관찰(관찰 사이 25분 넘으면 다시 잼)일 때만, 보이는 탭은 절대 건드리지 않는다(10/1 보류 → 10/6 사용자). 옛 판 문서의 자기 새로고침이 옛 버그로 막혀 하루 넘게 갇힌 기기(2.875·2.885·2.913)와 옛 판 부팅의 가용인원 기록 소실(2.948) 때문. 새로 열린 문서가 update_forced 를 한 번 남긴다. 끄려면 STUCK_RELOAD_ON=false
+// 2.948 부팅 전 빈 기본 문서가 선수단 본문을 덮어 가용인원 기록(상태·날짜별 정정)이 지워지던 것
 // 2.946 일정 훈련 줄마다 그 훈련의 애니메이션 — 보관함 카드에서 가져온 줄(워밍업·패스…)에 장면이 있으면 줄 끝 ▶ → 그 훈련을 보기 모드로 열고 첫 장면부터 재생(오류 제보 10/5) · «보관함에서 열기»도 그 훈련으로 · 경기 화면 저장 확인 실패에 남은 코드(store_ready·child_scouting·shared_ready + 키)
 // 2.945 IDP 연결 쉽게 — 명단 IDP 칩에서 바로 계정 고르기(임원) · 선수가 합류 뒤 IDP 일지에서 «명단에서 나를 고르기»(자기 IDP 문서 doc.claim, 공개 미러에 번호·이름·자리·조) · «오늘» 맨 위 코치 확인 카드(연결/아니에요) · 연결된 사람은 ✓
 // 2.944 등록한 선수의 선수 행(sq:)이 안 만들어지던 것 — 불러오기·반영(rosterRemember)이 본문에만 있는 선수를 «이미 저장된 기준»에 넣어 다음 save 가 행을 안 만들었다(운영 10/5 풋볼A 실측) → 반영 때 행 없는 선수를 기준에서 빼고 한 번 저장(rosterHealRows, 쓰기 쪽이 서버 부재를 확인한 뒤 만든다) · 선수 추가 저장 실패를 «추가됨»으로 말하지 않는다
@@ -1697,6 +1698,8 @@ self.addEventListener('activate', (event) => {
     }
     await Promise.all(keys.filter(key => !keep.has(key)).map(key => caches.delete(key)));
     await self.clients.claim();
+    // 2.949 — 활성화 순간 이미 숨어 있던 옛 탭의 «숨김 시작»을 적어 둔다(새로 열지는 않는다 — 문서 자신에게 먼저 기회를).
+    stuckLast = 0; try { await stuckCheck(); } catch (_) {}
   })());
 });
 
@@ -1711,6 +1714,53 @@ async function clientRelease(id) {
 }
 async function bindClient(id, release) {
   if (id) await (await caches.open(CLIENT_CACHE)).put(clientKey(id), new Response(release));
+}
+/* 2.949 — 오래 숨은 옛 판 앱 탭은 서비스워커가 새로 연다(10/1 보류 → 10/6 사용자 «순서대로 해줘»).
+   옛 문서는 자기 안전 새로고침(2.388)에 기대는데, 그 옛 코드의 버그(2.941 이전: 선택 상자 포커스·다른 출처 iframe 등)로
+   하루 넘게 옛 판에 갇힌 컴퓨터가 있었고(2.875·2.885·2.913), 10/5~10/6 에는 옛 판 부팅이 가용인원 기록을 지웠다(2.948).
+   새 서비스워커 코드는 옛 문서에도 돈다 — 그래서 옛 판 기기는 여기서만 고칠 수 있다.
+   셋 다일 때만 새로 연다: ① 이 판보다 앞선 앱 셸 문서(바인딩된 release ≠ CACHE, /studio/app.html)
+   ② 맨 위 창·포커스 없음 ③ 10분 넘게 «숨김»으로만 관찰됨(관찰 사이가 25분을 넘으면 그 사이를 모르므로 다시 잰다).
+   ⚠ 보이는 탭은 절대 건드리지 않는다 — 쓰는 중일 수 있다. 그건 문서 자신의 안전 새로고침 몫이다.
+   숨은 지 10분이면 화면의 지연 저장(최대 수 초)은 오래전에 끝났고, 새로 열 때 pagehide 저장도 돈다.
+   관찰은 그 탭의 요청(동기화·보고 — 다른 출처 요청도 fetch 이벤트는 온다)이 서비스워커를 깨울 때 한다.
+   끄려면 STUCK_RELOAD_ON=false 로 배포(서비스워커는 30분·탭을 볼 때마다 새 판을 확인한다). */
+const STUCK_RELOAD_ON = true;
+const STUCK_HIDDEN_MS = 10 * 60 * 1000;
+const STUCK_GAP_MS = 25 * 60 * 1000;
+const STUCK_CHECK_MS = 60 * 1000;
+const STUCK_PATHS = new Set(['/studio/app.html']);
+let stuckLast = 0;
+function hiddenKey(id) { return new URL('/__ps_client_hidden__/' + encodeURIComponent(id), self.location.origin).href; }
+const FORCED_KEY = new URL('/__ps_sw_forced__', self.location.origin).href;
+async function stuckCheck(now = Date.now()) {
+  if (!STUCK_RELOAD_ON || now - stuckLast < STUCK_CHECK_MS) return 0;
+  stuckLast = now;
+  const meta = await caches.open(CLIENT_CACHE);
+  const list = await self.clients.matchAll({ type: 'window' });
+  let moved = 0;
+  for (const client of list) {
+    try {
+      if (client.frameType && client.frameType !== 'top-level') continue;
+      const url = new URL(client.url);
+      if (url.origin !== self.location.origin || !STUCK_PATHS.has(url.pathname)) continue;
+      const key = hiddenKey(client.id);
+      const release = await clientRelease(client.id);
+      if (!release || release === CACHE || client.visibilityState !== 'hidden' || client.focused) { await meta.delete(key); continue; }
+      const hit = await meta.match(key);
+      let st = null; try { st = hit ? JSON.parse(await hit.text()) : null; } catch (_) { st = null; }
+      if (!st || !(st.seen > 0) || now - st.seen > STUCK_GAP_MS || now < st.since) st = { since: now, seen: now };
+      else st.seen = now;
+      const due = now - st.since >= STUCK_HIDDEN_MS && !(st.tried && now - st.tried < STUCK_GAP_MS);
+      if (due) st.tried = now;
+      await meta.put(key, new Response(JSON.stringify(st)));
+      if (!due || typeof client.navigate !== 'function') continue;
+      await meta.put(FORCED_KEY, new Response(JSON.stringify({ at: now, from: release, to: CACHE, mins: Math.round((now - st.since) / 60000) })));
+      await client.navigate(client.url);
+      moved++;
+    } catch (_) {}
+  }
+  return moved;
 }
 function htmlRelease(url) {
   const v = url.searchParams.get('v');
@@ -1769,6 +1819,8 @@ function isVersionedStatic(url) {
 }
 
 self.addEventListener('fetch', (event) => {
+  // 2.949 — 옛 판 탭 관찰은 모든 요청(다른 출처·POST 포함)에서 1분에 한 번. 응답에는 손대지 않는다.
+  if (STUCK_RELOAD_ON) { try { event.waitUntil(stuckCheck().catch(() => 0)); } catch (_) {} }
   const request = event.request;
   if (request.method !== 'GET') return;
 

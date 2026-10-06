@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.948"></script>
+<script src="autosave-status.js?v=2.949"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.948';</script>
+<script>window.PS_BUILD='2.949';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -631,6 +631,27 @@ function psUpdSwFailed(){
     if(window.PSSync&&PSSync.event)PSSync.event('update_sw_failed',{status:'error',feature:'app',error_code:'sw_redundant'});
   }catch(_){}
 }
+/* 2.949 — 서비스워커가 오래 숨은 옛 판 탭을 새로 열었으면(sw.js stuckCheck) 새 문서가 한 번 남긴다 — 몇 대가 갇혀 있었나를 운영 기록으로 본다.
+   표식은 서비스워커의 판 묶음 캐시에 있다(내용 없음: 시각·옛 판·새 판·숨은 분). 10분 안의 것만, 읽으면 지운다. */
+function psUpdForcedReport(){
+  try{
+    if(!window.caches||!caches.open)return;
+    caches.open('process-client-releases-v1').then(function(c){
+      var key=new URL('/__ps_sw_forced__',location.origin).href;
+      return c.match(key).then(function(hit){
+        if(!hit)return;
+        return hit.text().then(function(t){
+          var d={};try{d=JSON.parse(t)||{};}catch(_){}
+          return c.delete(key).then(function(){
+            if(!(Date.now()-(+d.at||0)<600000))return;
+            if(window.PSSync&&PSSync.event)PSSync.event('update_forced',{status:'ok',feature:'app',error_code:String(d.from||'').replace('process-','').slice(0,16),meta:{from:String(d.from||''),to:String(d.to||''),mins:+d.mins||0}});
+          });
+        });
+      });
+    }).catch(function(){});
+  }catch(_){}
+}
+try{ if(typeof window.addEventListener==='function')window.addEventListener('load',function(){setTimeout(psUpdForcedReport,8000);}); }catch(_){}
 function psAutoReloadWhenSafe(manualOnly){
   if(!manualOnly&&!window.__psUpdState)window.__psUpdState={since:Date.now(),tries:0,reported:0,last:''};   /* 2.925 — 새 판을 처음 안 시각 */
   if(window.__psReloading)return;
@@ -7797,13 +7818,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.948"></script>
-<script src="autosave-merge.js?v=2.948"></script>
-<script src="autosave-runtime.js?v=2.948"></script>
-<script src="autosave-recovery.js?v=2.948"></script>
-<script src="sync.js?v=2.948"></script>
+<script src="autosave-journal.js?v=2.949"></script>
+<script src="autosave-merge.js?v=2.949"></script>
+<script src="autosave-runtime.js?v=2.949"></script>
+<script src="autosave-recovery.js?v=2.949"></script>
+<script src="sync.js?v=2.949"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.948">
+<link rel="stylesheet" href="support.css?v=2.949">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
