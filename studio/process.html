@@ -4198,7 +4198,8 @@ function wksChips(di,arr,slots,slot,tapFn,data,askMin,kind,themes){
        확인 없이 바로 지우는 것도 시트와 같은 결이다. 이름 탭(시트)·분 탭(시간)과 겹치지 않게 stopPropagation */
     var col=''; try{ var th=(themes&&themes[i])||''; if(th)col=themeColor(th); }catch(_){}
     var _tapCall=(kind==='train')?("wksFillEdit("+di+",'"+wkbdEsc(slot||'')+"',"+i+",'name')"):(tapFn+'('+di+','+i+')');   /* 2.764 — 훈련은 채우기 시트에서 바로 고친다 */
-    h+='<div class="wks-li" onclick="event.stopPropagation();'+_tapCall+'" title="'+wkbdEsc(v)+'"><span class="wks-bar"'+(col?' style="background:'+col+'"':'')+'></span><b>'+wkbdEsc(v)+'</b>'+tail+'</div>';
+    var _pl=(kind==='train')?wksPlayBtn(di,i,_d,v):'';   /* 2.946 — 보관함 훈련에 장면이 있으면 ▶ */
+    h+='<div class="wks-li'+(_pl?' has-play':'')+'" onclick="event.stopPropagation();'+_tapCall+'" title="'+wkbdEsc(v)+'"><span class="wks-bar"'+(col?' style="background:'+col+'"':'')+'></span><b>'+wkbdEsc(v)+'</b>'+(_pl?('<span class="wks-rt">'+_pl+tail+'</span>'):tail)+'</div>';
   });
   return h;
 }
@@ -4500,7 +4501,7 @@ function wksFillRender(keep,focus){
                +'else if(event.key===&quot;Escape&quot;){event.preventDefault();wksFillNameCancel()}">'
                +'<b class="ok" onclick="wksFillNameApply('+x.i+')">✓</b>'
                +'<b class="cfg" onclick="wksFillDraftOpen('+x.i+')">구성</b></span>')
-            : ('<span class="wft-nm" role="button" title="눌러서 이름 고치기" onclick="wksFillNameTgl('+x.i+')">'+wkbdEsc(x.v)+'</span>'))
+            : ('<span class="wft-nmw"><span class="wft-nm" role="button" title="눌러서 이름 고치기" onclick="wksFillNameTgl('+x.i+')">'+wkbdEsc(x.v)+'</span>'+wksPlayBtn(di,x.i,d,x.v,'wks-play wft-play')+'</span>'))   /* 2.946 */
           +tCell
           +'<span class="wft-x" onclick="wksFillDelTrain('+x.i+')">×</span>'
           +'</div>';
@@ -5186,7 +5187,7 @@ window.wkbdSetLibItem=function(di,li,d){
     if(!drills.length&&d.name)drills=[{name:d.name,minutes:d.minutes,sets:d.sets,thumb:d.thumb,focus:d.focus,_card:1}];
     if(!b.trains)b.trains=[]; if(!b.trainThemes)b.trainThemes=[]; if(!b.trainData)b.trainData=[]; if(!b.trainSlot)b.trainSlot=[];
     var added=0,timed=0;
-    drills.forEach(function(x){ var nm=String(x.name||'').trim(); if(!nm||b.trains.indexOf(nm)>=0)return;
+    drills.forEach(function(x,xi){ var nm=String(x.name||'').trim(); if(!nm||b.trains.indexOf(nm)>=0)return;
       /* 2.135 — 딱려 오는 훈련 칩도 **가져온 세션**에 붙인다.
          전에는 슬롯을 안 적어서 '시간대 없음' 카드로 톡 떨어졌다 */
       /* 2.915 — 훈련마다 보관함에 적힌 **분 × 세트를 복사**해 온다(사용자 «시간도 가져오게»). 가져오는 순간의 사본이라
@@ -5195,7 +5196,7 @@ window.wkbdSetLibItem=function(di,li,d){
          (옛 2.303: minutes 는 0 으로 비워서 들어왔다.)
          국면은 훈련의 것만 쓴다. 카드 합집합(2.182)은 **카드가 곧 훈련 하나일 때(_card)** 만 폴백으로 —
          훈련 여러 개로 펼쳐질 때 합집합을 얹으면 국면을 비워 둔 웜업까지 수비 조직으로 잡혀 배분이 부풀려진다(실측). */
-      var ti=b.trains.length; b.trains[ti]=nm; b.trainSlot[ti]=(__pendSlot||''); b.trainThemes[ti]=FOCUS2THEME[x.focus||d.focus]||''; b.trainData[ti]={minutes:Math.min(600,Math.max(0,parseInt(x.minutes,10)||0)),thumb:x.thumb||'',snap:x.snap||null,focus:x.focus||d.focus||'',gmPhases:(Array.isArray(x.gmPhases)&&x.gmPhases.length?x.gmPhases:((x._card&&Array.isArray(d.gmPhases))?d.gmPhases:[])),gmPhaseNames:(Array.isArray(x.gmPhaseNames)&&x.gmPhaseNames.length?x.gmPhaseNames:((x._card&&Array.isArray(d.gmPhaseNames))?d.gmPhaseNames:[])),fromLib:d.libId||''}; var _ls=parseInt(x.sets,10)||1; if(b.trainData[ti].minutes&&_ls>1)b.trainData[ti].sets=Math.min(20,_ls); if(b.trainData[ti].minutes)timed++; added++; });
+      var ti=b.trains.length; b.trains[ti]=nm; b.trainSlot[ti]=(__pendSlot||''); b.trainThemes[ti]=FOCUS2THEME[x.focus||d.focus]||''; b.trainData[ti]={minutes:Math.min(600,Math.max(0,parseInt(x.minutes,10)||0)),thumb:x.thumb||'',snap:x.snap||null,focus:x.focus||d.focus||'',gmPhases:(Array.isArray(x.gmPhases)&&x.gmPhases.length?x.gmPhases:((x._card&&Array.isArray(d.gmPhases))?d.gmPhases:[])),gmPhaseNames:(Array.isArray(x.gmPhaseNames)&&x.gmPhaseNames.length?x.gmPhaseNames:((x._card&&Array.isArray(d.gmPhaseNames))?d.gmPhaseNames:[])),fromLib:d.libId||''}; if(d.drillsFrom==='trainings')b.trainData[ti].libIdx=xi; else if(x._card)b.trainData[ti].libIdx=0;   /* 2.946 — 카드의 몇 번째 훈련인지(그 훈련의 애니메이션을 바로 열려고) */ var _ls=parseInt(x.sets,10)||1; if(b.trainData[ti].minutes&&_ls>1)b.trainData[ti].sets=Math.min(20,_ls); if(b.trainData[ti].minutes)timed++; added++; });
     if(added){ try{toast('훈련 '+added+'개를 넣었어요'+(timed===added?' — 보관함에 적힌 시간도 함께':timed?' — '+(added-timed)+'개는 시간을 정해 주세요':' — 시간을 정해 주세요'));}catch(_){} }
   }catch(_){}
   try{ if(wkbdAutoTheme(b)){ try{toast('주제를 국면에서 자동으로 골랐어요 — '+b.theme);}catch(_){} } }catch(_){}
@@ -5247,7 +5248,8 @@ window.wkbdLibChoose=function(di,li,idx){
   var _drills=(Array.isArray(d.trainings)&&d.trainings.length)?d.trainings
             :((Array.isArray(d.drills)&&d.drills.length)?d.drills:null);
   wkbdSetLibItem(di,li,{name:d.name,libId:d.libId||d.id||'',minutes:d.minutes,sets:d.sets,thumb:d.thumb,focus:d.focus,
-    gmPhases:d.gmPhases,gmPhaseNames:d.gmPhaseNames,drills:_drills,pages:d.pages});   /* 1.884 — 드릴 목록도 넘긴다 · 1.900 페이지 목록도 */
+    gmPhases:d.gmPhases,gmPhaseNames:d.gmPhaseNames,drills:_drills,pages:d.pages,
+    drillsFrom:(Array.isArray(d.trainings)&&d.trainings.length)?'trainings':'drills'});   /* 2.946 */   /* 1.884 — 드릴 목록도 넘긴다 · 1.900 페이지 목록도 */
 };
 window.wkbdAddTrain=function(di,slot){
   if(schedEditBlocked()){schedBlockNotice();return;}
@@ -5283,6 +5285,48 @@ function wkbdSetTrainItem(di,ti,d){var b=dayBoard(week[di]);if(!b.trains)b.train
    그래서 보관함에서 온 칩은 이름·국면·그림이 **보기 전용**이고, 고치려면 보관함으로 간다.
    ⚠ '보기 전용'은 "일정에서 못 고친다"는 뜻이지 원본과 실시간으로 이어져 있다는 뜻이 아니다 —
      보관함(libGet)은 비동기라 칩은 가져온 순간의 사본을 들고 있다. 새 내용이 필요하면 빼고 다시 가져온다. */
+/* ══ 2.946 · 훈련 줄마다 그 훈련의 애니메이션 ═══════════════════════════════════════════════
+   오류 제보(10/5) «워밍업을 누르면 워밍업 애니메이션, 패스를 누르면 패스 애니메이션» → 사용자 «추천대로 A».
+   그림·애니메이션의 집은 여전히 보관함이다(2.304·2.764 — 일정 줄은 이름·시간). 다만 보관함 카드에서 가져온 줄은
+   카드의 **몇 번째 훈련**인지 알고 있으니(가져올 때 libIdx · 옛 줄은 이름으로 맞춤) 그 훈련에 장면이 있으면 줄 끝 ▶ 로
+   그 훈련을 보기 모드로 열어 첫 장면부터 재생한다. 일정 문서에는 번호 하나만 더한다 — 장면을 복사하지 않는다(문서 크기). */
+var __wksLibMemo={src:null,map:null};
+function wksLibCard(id){
+  var all=[]; try{ all=libDrills()||[]; }catch(_){ return null; }
+  if(__wksLibMemo.src!==all){ var m={}; all.forEach(function(x){ var k=x&&(x.libId||x.id); if(k)m[k]=x; }); __wksLibMemo={src:all,map:m}; }
+  return __wksLibMemo.map[id]||null;
+}
+function wksLibTrainOf(td,name){
+  if(!td||!td.fromLib)return null;
+  var card=wksLibCard(td.fromLib); if(!card)return null;
+  var ty=card.type||'train'; if(ty!=='train'&&ty!=='setpiece')return null;   /* 여러 페이지 작전판(pages)은 이 길이 아니다 */
+  var trs=Array.isArray(card.trainings)?card.trainings:[], nm=String(name||'').trim(), idx=-1;
+  function tn(t){ return String((t&&t.name)||'').trim(); }
+  var li=(td.libIdx!=null)?(parseInt(td.libIdx,10)):NaN;
+  if(!isNaN(li)&&trs[li]&&tn(trs[li])===nm)idx=li;                           /* 번호와 이름이 같으면 그대로 */
+  if(idx<0&&nm)for(var i=0;i<trs.length;i++){ if(tn(trs[i])===nm){ idx=i; break; } }   /* 옛 줄·순서가 바뀐 카드 — 이름으로 */
+  if(idx<0&&!isNaN(li)&&trs[li])idx=li;                                       /* 일정에서 이름을 고친 줄 — 번호로 */
+  var frames=null;
+  if(idx>=0)frames=trs[idx].frames;
+  else if(trs.length<=1){ idx=0; frames=(trs[0]&&trs[0].frames)||card.frames; }  /* 훈련 하나짜리(옛) 카드 */
+  else return null;
+  return {libId:td.fromLib,idx:idx,scenes:Array.isArray(frames)?frames.length:0};
+}
+window.wksAnimPlay=function(di,ti){
+  if(!psLibraryRequireUnlocked(true))return;
+  var b=dayBoard(week[di]), td=(b.trainData&&b.trainData[ti])||null, nm=(b.trains&&b.trains[ti])||'';
+  var r=wksLibTrainOf(td,nm);
+  if(!r){ try{toast('보관함에서 이 훈련을 찾지 못했어요 — 보관함에서 지워졌을 수 있어요');}catch(_){} return; }
+  closeSheet();
+  try{ parent.postMessage({source:'process',type:'openDrillEditor',readonly:true,play:true,reason:'anim',libId:r.libId,libIdx:r.idx,name:nm},'*'); }catch(_){}
+};
+function wksPlayBtn(di,ti,td,name,cls){
+  var r=null; try{ r=wksLibTrainOf(td,name); }catch(_){}
+  if(!r||r.scenes<2)return '';
+  return '<span class="'+(cls||'wks-play')+'" role="button" tabindex="0" title="애니메이션 보기 · '+r.scenes+'장면" aria-label="'+wkbdEsc(name)+' 애니메이션 보기"'
+    +' onclick="event.stopPropagation();wksAnimPlay('+di+','+ti+')" onkeydown="if(event.key===&quot;Enter&quot;||event.key===&quot; &quot;){event.preventDefault();event.stopPropagation();wksAnimPlay('+di+','+ti+')}">'
+    +'<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"/></svg></span>';
+}
 window.wkbdTrainTap=function(di,ti){
   var b=dayBoard(week[di]);
   var nm=(b.trains&&b.trains[ti])||'드릴';
@@ -5304,7 +5348,8 @@ window.wkbdTrainTap=function(di,ti){
     +'<div class="trd-btns">'
       +'<button class="btn solid" onclick="wkbdTrainMin('+di+','+ti+')">시간 저장</button>'
       +(fromLib
-         ? '<button class="btn" id="wkTrainSrc">보관함에서 열기 →</button>'
+         ? ((function(){ var _r=null; try{_r=wksLibTrainOf(td,nm);}catch(_){} return (_r&&_r.scenes>1)?('<button class="btn solid" onclick="wksAnimPlay('+di+','+ti+')">▶ 애니메이션 보기 · '+_r.scenes+'장면</button>'):''; })())   /* 2.946 */
+           +'<button class="btn" id="wkTrainSrc">보관함에서 열기 →</button>'
          : '<button class="btn" onclick="boardDrawForCell('+di+','+ti+')">작전판에서 '+(td.snap?'열기·수정':'그리기')+'</button>'
            +'<button class="btn" onclick="wkbdPick('+di+',\'train\','+ti+')">이름·드릴 교체</button>')
       +'<button class="btn" onclick="wkbdTrainDel('+di+','+ti+')">삭제</button>'
@@ -5325,7 +5370,7 @@ window.wkbdTrainTap=function(di,ti){
       if(!td.minutes)setTimeout(function(){try{_mi.focus();}catch(_){}},60);
     }
     var _sb=document.getElementById('wkTrainSrc');
-    if(_sb)_sb.onclick=function(){ wkbdLibOpenSrc(td.fromLib); };
+    if(_sb)_sb.onclick=function(){ var _r=null; try{_r=wksLibTrainOf(td,nm);}catch(_){} wkbdLibOpenSrc(td.fromLib,_r?_r.idx:0); };   /* 2.946 — 그 훈련으로 */
   }catch(_){}
 };
 /* 시간만 저장한다 — 이름·국면·그림은 건드리지 않는다 */
@@ -5343,9 +5388,9 @@ window.wkbdTrainMin=function(di,ti){
   try{save();}catch(_){} syncViews(); closeSheet();
 };
 /* 보관함 카드를 그대로 연다 — 1.696 의 '전체 항목 열기'(페이지·장면 유지) 경로를 쓴다 */
-window.wkbdLibOpenSrc=function(libId){
+window.wkbdLibOpenSrc=function(libId,idx){
   closeSheet();
-  try{parent.postMessage({source:'process',type:'openDrillEditor',edit:true,libId:String(libId||'')},'*');}catch(_){}
+  try{parent.postMessage({source:'process',type:'openDrillEditor',edit:true,libId:String(libId||''),libIdx:(idx|0)},'*');}catch(_){}
 };
 /* ══ 2.307 · 시간만 넣는 시트 ═══════════════════════════════════════════════════
    칩의 '분 ＋'(또는 '25분')을 누르면 여기로 온다. 큰 시트(그림·국면·삭제)를 거치지 않는다.
@@ -8939,6 +8984,19 @@ button.wks-slot.nos:hover{background:#d7dbe3;color:#2f3542}
 .wks-li i{font-style:normal;font-size:11px;color:var(--text-3,#6f7580);font-variant-numeric:tabular-nums;white-space:nowrap;padding:2px 2px;border-radius:5px}
 .wks-li i:hover{background:var(--surface,#fff)}
 .wks-li i.ask{color:var(--blue,#3a6df0);font-weight:800}
+/* 2.946 — 훈련 줄의 ▶(그 훈련 애니메이션). 이름 누르기(고치기)와 떨어진 작은 원 — 줄 높이는 그대로 */
+/* 주간 칸은 좁다(1280 에서 줄 폭 120px) — ▶ 와 분을 한 덩이(.wks-rt)로 두고, 이름과 한 줄에 안 들어가면 그 덩이만 아래 줄로 내린다.
+   이름이 먼저다(▶ 때문에 «패스»가 0px 로 눌리던 것 실측). 띠는 줄 높이 전체를 덮게 절대 위치 — 이름 시작점은 다른 줄과 같은 10px */
+.wks-li.has-play{display:flex;flex-wrap:wrap;align-items:center;column-gap:7px;row-gap:3px;position:relative;padding-left:10px}
+.wks-li.has-play .wks-bar{position:absolute;left:0;top:4px;bottom:4px}
+.wks-li.has-play b{flex:1 1 auto}
+.wks-rt{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex:0 0 auto}
+.wks-play{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--surface,#fff);color:var(--blue,#3a6df0);box-shadow:inset 0 0 0 1px var(--line,#E3E6EA);cursor:pointer;flex:0 0 auto}
+.wks-play svg{margin-left:1px}
+.wks-play:hover,.wks-play:focus-visible{background:var(--blue,#3a6df0);color:#fff;box-shadow:none;outline:none}
+.wft-nmw{display:flex;align-items:center;gap:6px;min-width:0}
+.wft-nmw .wft-nm{min-width:0}
+body.fmdark .wks-play{background:var(--surface-2,#23272D)}
 .wks-chips .wks-plus{margin-top:1px}
 .wks-chip.hasx{position:relative;padding-right:24px}
 .wks-chip .wks-x{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:var(--fill,#F1F3F5);border:1px solid var(--line2,#D3D7DD);color:var(--txt-3,#8A9099);font-size:11px;line-height:14px;text-align:center;cursor:pointer;font-style:normal}
