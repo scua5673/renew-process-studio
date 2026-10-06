@@ -1275,7 +1275,7 @@
           var row=snapshot[k];
           return row.promise.catch(function(error){
             if(current()!==expected)throw new Error('storage owner changed');
-            if(entries[k]===row)throw error; /* 이미 대체된 쓰기의 실패는 최신 꼬리가 결정한다. */
+            if(entries[k]===row){ try{ if(error&&typeof error==='object'&&!error.psKey)error.psKey=k; }catch(_){} throw error; } /* 이미 대체된 쓰기의 실패는 최신 꼬리가 결정한다. · 2.946 어느 키인지(진단) */
           });
         })).then(function(){
           if(current()!==expected)throw new Error('storage owner changed');

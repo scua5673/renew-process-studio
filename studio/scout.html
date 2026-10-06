@@ -14499,7 +14499,18 @@ window.psFlushPendingReady=function(){
   /* matchSaveNow() 는 경기 문서 뿐 아니라 일정(process_coach_v1)도 같은
      iframe 저장 큐에 넣을 수 있다. 경기 키만 기다리면 팀 전환 stash가
      새 경기와 예전 일정을 섞어 읽는다 — 이 프레임의 전체 큐를 확정한다. */
-  var p=Promise.all([store.ready(true)].concat(scChildWindows().map(function(w){return w.psFlushPendingReady?w.psFlushPendingReady():true;}))).then(function(){return window.PSStorage&&PSStorage.sharedReady?PSStorage.sharedReady():true;});
+  /* 2.946 — 2.941 의 코드 셋 밖에서도 실패가 났다(10/5 운영: 2.944 기기의 «flush_fail:fScout:Error»). 남은 세 길 —
+     이 화면 저장 큐(store_ready) · 안에 든 스카우팅 화면(child_scouting) · 공유 저장 확인(shared_ready) — 에도 코드와
+     (있으면) 키를 단다. 판정·순서는 그대로, 진단만. */
+  function tag(e,code){
+    if(!e||typeof e!=='object')e=new Error(String(e||code));
+    try{ var why=e.psCode?('.'+e.psCode):(/바뀌어 다시 확인/.test(String(e.message||''))?'.raw_changed':(/owner changed/.test(String(e.message||''))?'.owner_changed':''));
+      e.psCode=code+why+(e.psKey?(':'+String(e.psKey).slice(0,32)):''); }catch(_){}
+    return e;
+  }
+  var p=Promise.all([Promise.resolve().then(function(){return store.ready(true);}).catch(function(e){throw tag(e,'store_ready');})]
+    .concat(scChildWindows().map(function(w){return Promise.resolve().then(function(){return w.psFlushPendingReady?w.psFlushPendingReady():true;}).catch(function(e){throw tag(e,'child_scouting');});})))
+    .then(function(){return Promise.resolve().then(function(){return window.PSStorage&&PSStorage.sharedReady?PSStorage.sharedReady():true;}).catch(function(e){throw tag(e,'shared_ready');});});
   return Promise.resolve(p).then(function(){
     if(window.psHasPending())throw fail('경기 지연 저장이 남아 있습니다','match_pending_left');
     return true;
