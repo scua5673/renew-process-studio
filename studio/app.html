@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.946"></script>
+<script src="autosave-status.js?v=2.947"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.946';</script>
+<script>window.PS_BUILD='2.947';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -594,6 +594,9 @@ function psFlushAllPendingReady(track){
 }
 window.psFlushAllPendingReady=psFlushAllPendingReady;
 function psUpdateStatus(message,busy){
+  /* 2.947 — 같은 상태를 사이드바 팝오버·폰 더보기 줄에도 */
+  try{ var _ms=document.querySelectorAll?document.querySelectorAll('[data-upd-msg]'):[]; for(var _i=0;_i<_ms.length;_i++){_ms[_i].textContent=message||'';_ms[_i].hidden=!message;}
+    var _bs=document.querySelectorAll?document.querySelectorAll('[data-upd-now]'):[]; for(var _j=0;_j<_bs.length;_j++){_bs[_j].disabled=!!busy; if(busy)_bs[_j].textContent='저장 확인 중…'; else if(_bs[_j].getAttribute('data-upd-label'))_bs[_j].textContent=_bs[_j].getAttribute('data-upd-label');} }catch(_){}
   try{
     var text=document.getElementById('updMessage'),button=document.getElementById('updNow');
     if(text)text.textContent=message;
@@ -681,6 +684,7 @@ function psAutoReloadWhenSafe(manualOnly){
 /* 2.627 — 새 판 띠. 2.903: 나중에는 현재 문서에서 다시 표시하지 않는다.
    자동 저장 확인·안전한 업데이트는 계속하되, 실패할 때 닫은 알림을 되살리지 않는다. */
 function psShowUpdBand(){
+  try{ if(window.__psUpdSurface)window.__psUpdSurface.ready(); }catch(_){}   /* 2.947 — 앱 설정 위 «업데이트» 칸(띠는 선수 전용 폰에서만) */
   if(window.__psReloading||window.__psUpdateLater)return;
   var b=document.getElementById('updBanner'); if(!b)return;
   b.style.display='flex';
@@ -1147,6 +1151,9 @@ function psShowUpdBand(){
              자리를 둘로 두면 같은 일을 두 곳이 말한다 — 앱 설정 › 기기 › 앱·오프라인 한 곳으로 모은다.
              ⚠ 대신 그 줄이 **무엇인지·왜 하는지**를 스스로 말하게 했다(아래 guide). -->
     <!-- 2.732 — 보드 설정은 작전판·훈련 편집기의 도크가 맡는다. 다른 앱에서 작전판으로 이동시키던 사이드바 문은 제거. -->
+    <!-- 2.947 — 업데이트 알림은 위쪽 띠가 아니라 앱 설정 바로 위 한 칸(사용자 «업데이트가 되면 왼쪽 앱설정 위에» → 목업 «추천대로 둘 다»).
+         새 판이 준비되면 «업데이트 ●», 적용된 뒤 7일은 «새 기능». 폰은 더보기 시트 맨 위 줄 + 더보기 점. 선수 전용 폰만 예전 띠 -->
+    <div class="ps-updwrap" id="psUpdWrap" hidden><button type="button" class="gearbtn" id="psUpdRail" aria-haspopup="dialog" aria-expanded="false" aria-controls="psUpdPop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg><span class="gear-label" id="psUpdRailLb">업데이트</span><i class="ps-updot" aria-hidden="true"></i></button></div>
     <div class="gear" id="gearWrap">
       <button class="gearbtn" id="gearBtn" title="설정" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
       <div class="gearpop" id="gearPop">
@@ -1415,17 +1422,77 @@ function psShowUpdBand(){
   </nav>
   <div class="team-more" id="teamMoreSheet" hidden>
     <div class="tms-h"><b>더보기</b><button type="button" data-tb="close" aria-label="닫기">×</button></div>
+    <div class="ps-upd-row" data-upd-row hidden><span class="pur-t"><span data-upd-rowtext></span><small data-upd-msg hidden></small></span><button type="button" data-upd="row" data-upd-now>적용</button></div><!-- 2.947 -->
     <div class="tms-g"><i>설정</i><button type="button" data-tb="attrs">평가표</button><button type="button" data-tb="playbook">플레이북</button><button type="button" data-tb="settings">게임모델</button><button type="button" data-tb="terms">공용어</button></div><!-- 2.908 — 설정 묶음 -->
     <div class="tms-g"><i>앱</i><button type="button" data-tb-app="board">보드</button><button type="button" data-tb-app="design">보관함</button><button type="button" data-tb-app="idp">내 IDP</button><button type="button" data-tb-app="learning">학습</button><button type="button" data-tb-app="community">커뮤니티</button></div>
   </div>
   <!-- 2.938 — 앱 하단 메뉴 «더보기» 시트. 모양은 팀 더보기(#teamMoreSheet)와 같다 -->
   <div class="app-more" id="appMoreSheet" role="dialog" aria-label="더보기" hidden>
     <div class="tms-h"><b>더보기</b><button type="button" data-am="close" aria-label="닫기">×</button></div>
+    <div class="ps-upd-row" data-upd-row hidden><span class="pur-t"><span data-upd-rowtext></span><small data-upd-msg hidden></small></span><button type="button" data-upd="row" data-upd-now>적용</button></div><!-- 2.947 -->
     <!-- 2.940 — 폰 작전판엔 저장 띠가 없다(2.939). 계정에 올리는 길을 여기 하나 둔다 — 작전판을 보고 있을 때만 보인다 -->
     <div class="tms-g" data-am-row="board" hidden><i>보드</i><button type="button" data-am="boardsave" title="작업 보드를 계정에 저장">보드 저장</button></div>
     <div class="tms-g"><i>앱</i><button type="button" data-am-app="design">보관함</button></div>
     <div class="tms-g"><i>도움</i><button type="button" data-am="settings">앱 설정</button><button type="button" data-am="support">오류 제보</button><button type="button" data-am="guide">사용법</button></div>
   </div>
+  <div class="ps-updpop" id="psUpdPop" role="dialog" aria-labelledby="psUpdPopT" hidden>
+    <div class="pup-h"><b id="psUpdPopT">새 판이 준비됐어요</b><span class="pup-v" id="psUpdPopV"></span><button type="button" class="pup-x" data-upd="close" aria-label="닫기">×</button></div>
+    <div class="pup-body" id="psUpdPopBody"></div>
+    <p class="pup-msg" id="psUpdPopMsg" data-upd-msg hidden></p>
+    <p class="pup-note" id="psUpdPopNote"></p>
+    <div class="pup-btns" id="psUpdPopBtns"><button type="button" class="pup-go" data-upd="apply" data-upd-now>지금 적용</button><button type="button" class="pup-later" data-upd="close">나중에</button></div>
+  </div>
+  <style id="ps-2947-upd">
+  /* 2.947 — 업데이트 알림 자리. 위쪽 띠(#updBanner·#psReleaseNotes)는 «선수 전용 폰»(사이드바·더보기가 없는 화면)에서만 */
+  body:not(.ps-upd-band) #updBanner{display:none!important}
+  body:not(.ps-upd-band) #psReleaseNotes{display:none!important}
+  .ps-updwrap{display:none}
+  @media (min-width:768px){
+    .appbar>.ps-updwrap{display:block;order:9;width:100%}
+    .appbar>.ps-updwrap[hidden]{display:none!important}
+  }
+  html body .appbar #psUpdRail:not(#_){position:relative}
+  html body .appbar #psUpdRail.is-ready:not(#_){background:var(--accent-soft,#EDF2FE)!important;color:#2F5BD3!important;box-shadow:inset 0 0 0 1px #C9D6FB!important;font-weight:800!important}
+  body.fmdark .appbar #psUpdRail.is-ready:not(#_){background:rgba(111,148,245,.16)!important;color:#9DB5FF!important;box-shadow:inset 0 0 0 1px rgba(111,148,245,.35)!important}
+  .ps-updot{display:none;position:absolute;top:6px;right:calc(50% - 17px);width:8px;height:8px;border-radius:50%;background:var(--accent,#3A6DF0);box-shadow:0 0 0 2px var(--surface,#fff);pointer-events:none}
+  #psUpdRail.has-dot .ps-updot{display:block}
+  #psMoreBtn,#teamBottom [data-tb="more"]{position:relative}
+  body.ps-upd-dot #psMoreBtn .ps-updot,body.ps-upd-dot #teamBottom [data-tb="more"] .ps-updot{display:block;top:8px;right:calc(50% - 18px)}
+  .ps-updpop{position:fixed;z-index:360;width:320px;max-width:calc(100vw - 24px);box-sizing:border-box;background:var(--surface,#fff);color:var(--ink,#14161A);border:1px solid var(--line,#E3E6EA);border-radius:14px;box-shadow:0 12px 32px var(--sh16,rgba(16,24,40,.16));padding:14px 16px 14px;display:flex;flex-direction:column;gap:10px;font-family:inherit}
+  .ps-updpop[hidden]{display:none}
+  .ps-updpop .pup-h{display:flex;align-items:baseline;gap:8px}
+  .ps-updpop .pup-h b{font-size:15px;font-weight:800;flex:0 1 auto}
+  .ps-updpop .pup-v{font-size:12px;font-weight:600;color:var(--dim,#646A73);flex:1 1 auto}
+  html body .ps-updpop .pup-x:not(#_){border:0;background:none;width:32px;height:32px;min-height:32px;padding:0;font-size:18px;line-height:1;color:var(--dim,#646A73);cursor:pointer;align-self:center}
+  .ps-updpop .pup-body{display:flex;flex-direction:column;gap:10px;max-height:min(46vh,340px);overflow:auto}
+  .ps-updpop .pup-body:empty{display:none}
+  .ps-updpop .pup-ent+.pup-ent{border-top:1px solid var(--line,#E3E6EA);padding-top:10px}
+  .ps-updpop .pup-d{font-size:12px;font-weight:700;color:var(--dim,#646A73)}
+  .ps-updpop .pup-ent.new .pup-d{color:var(--accent,#3A6DF0)}
+  .ps-updpop .pup-t{font-size:13px;font-weight:700;margin-top:2px}
+  .ps-updpop ul{margin:4px 0 0;padding-left:18px;font-size:13px;line-height:1.55}
+  .ps-updpop .pup-msg,.ps-updpop .pup-note{margin:0;font-size:12px;line-height:1.5;color:var(--dim,#646A73)}
+  .ps-updpop .pup-msg{color:var(--ink,#14161A);font-weight:600}
+  .ps-updpop .pup-note:empty{display:none}
+  .ps-updpop .pup-btns{display:flex;gap:8px}
+  .ps-updpop [hidden]{display:none!important}   /* 뒤에 와야 .pup-btns{display:flex} 를 이긴다(실측: «새 기능»에 적용 버튼이 남았다) */
+  html body .ps-updpop .pup-go:not(#_){flex:1 1 auto;height:40px;min-height:40px;border:0;border-radius:10px;background:var(--accent,#3A6DF0);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+  html body .ps-updpop .pup-go:disabled:not(#_){opacity:.6;cursor:default}
+  html body .ps-updpop .pup-later:not(#_){height:40px;min-height:40px;padding:0 14px;border:1px solid var(--line2,#D3D7DD);border-radius:10px;background:var(--surface,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  .ps-upd-row{display:flex;align-items:center;gap:10px;border:1px solid #C9D6FB;background:#EDF2FE;border-radius:12px;padding:8px 8px 8px 12px;margin:2px 0 6px}
+  .ps-upd-row.news{background:var(--surface-2,#F4F5F7);border-color:var(--line,#E3E6EA)}
+  .ps-upd-row[hidden]{display:none!important}
+  .ps-upd-row .pur-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;font-size:13px;line-height:1.4}
+  .ps-upd-row .pur-t b{font-weight:800;color:#2F5BD3}
+  .ps-upd-row.news .pur-t b{color:var(--ink,#14161A)}
+  .ps-upd-row .pur-t small{font-size:12px;color:var(--dim,#646A73)}
+  html body .ps-upd-row button:not(#_){flex:0 0 auto;height:40px;min-height:40px;padding:0 14px;border:0;border-radius:10px;background:var(--accent,#3A6DF0);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+  html body .ps-upd-row.news button:not(#_){background:var(--surface,#fff);color:var(--ink,#14161A);border:1px solid var(--line2,#D3D7DD)}
+  body.fmdark .ps-upd-row{background:rgba(111,148,245,.14);border-color:rgba(111,148,245,.32)}
+  body.fmdark .ps-upd-row .pur-t b{color:#9DB5FF}
+  body.fmdark .ps-upd-row.news{background:var(--surface-2,#23272D);border-color:var(--line,#2E333A)}
+  body.fmdark .ps-upd-row.news .pur-t b{color:var(--ink,#F2F3F5)}
+  </style>
   <style id="ps-2938-more">
   /* 2.938 — 더보기는 폰(보관함 버튼을 숨기는 폭, ≤767px)에서만. 사이드바 규칙(#appSeg#appSeg button{display:flex!important})보다 세게 */
   html body #appSeg#appSeg #psMoreBtn{display:none!important}
@@ -7730,18 +7797,142 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.946"></script>
-<script src="autosave-merge.js?v=2.946"></script>
-<script src="autosave-runtime.js?v=2.946"></script>
-<script src="autosave-recovery.js?v=2.946"></script>
-<script src="sync.js?v=2.946"></script>
+<script src="autosave-journal.js?v=2.947"></script>
+<script src="autosave-merge.js?v=2.947"></script>
+<script src="autosave-runtime.js?v=2.947"></script>
+<script src="autosave-recovery.js?v=2.947"></script>
+<script src="sync.js?v=2.947"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.946">
+<link rel="stylesheet" href="support.css?v=2.947">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
 if(window.PSSupport)PSSupport.mount({window:window});
 if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getElementById('psReleaseNotes')});
+</script>
+<script>
+/* ══ 2.947 · 업데이트 알림 자리 — 위쪽 띠 둘 → 앱 설정 바로 위 한 칸 ═══════════════════════════════
+   사용자 «업데이트가 되면 사용자에게 업데이트 왼쪽 앱설정위에 뜨게» → 목업 [업데이트 알림 자리] → «추천대로 둘 다».
+   ① 새 판 준비됨(입력 중이라 1분 넘게 못 바뀜 — 예전 검은 띠가 뜨던 바로 그때, psShowUpdBand) → «업데이트 ●»,
+      누르면 팝오버: 새 판의 바뀐 것(새 release-notes.js 첫 항목) · 지금 적용 / 나중에. «나중에»를 눌러도 칸은 남는다(조용히).
+   ② 적용된 뒤 7일(release-notes 항목 날짜 기준) → «새 기능», 안 본 것이 있으면 ●. 누르면 이번 주에 바뀐 것.
+   폰(≤767): 사이드바가 없으니 더보기에 ● + 시트 맨 위 줄. 사이드바도 더보기도 없는 «선수 전용 폰»만 예전 띠(body.ps-upd-band).
+   ⚠ 띠·상태 문구 로직(psAutoReloadWhenSafe·psUpdateStatus·release-notes mount)은 그대로 두고 **보이는 자리만** 바꾼다.
+      상태 문구는 psUpdateStatus 가 [data-upd-msg]·[data-upd-now] 에도 같이 쓴다. */
+(function(){
+  var SEEN='ps_release_notes_seen_v1',DAY=86400000;
+  var st={ready:false,next:null,fetching:false,open:'',from:null,raf:0};
+  function $(id){return document.getElementById(id);}
+  function mq(q){try{return !!(window.matchMedia&&window.matchMedia(q).matches);}catch(_){return false;}}
+  function rail(){return mq('(min-width:768px)');}
+  function band(){return !rail()&&document.body.classList.contains('ps-player-idp-only');}
+  function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function all(){try{return window.PSReleaseNotes?PSReleaseNotes.entries():[];}catch(_){return [];}}
+  function dayOf(e){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec((e&&e.date)||'');return m?new Date(+m[1],+m[2]-1,+m[3]).getTime():NaN;}
+  /* 오늘 포함 7일 — 날짜만 본다(시계가 틀려도 영영 남거나 영영 안 뜨지 않게 미래 하루까지만) */
+  function news(){var t0=new Date();t0.setHours(0,0,0,0);var from=t0.getTime()-6*DAY,to=t0.getTime()+DAY;
+    return all().filter(function(e){var t=dayOf(e);return t>=from&&t<=to;}).slice(0,3);}
+  function seen(){try{return localStorage.getItem(SEEN)||'';}catch(_){return '';}}
+  function markSeen(id){try{if(id&&seen()!==id)localStorage.setItem(SEEN,id);}catch(_){}}
+  function verOf(e){var m=/^v([\d.]+)/.exec((e&&e.title)||'');return m?'v'+m[1]:'';}
+  function titleOf(e){return String((e&&e.title)||'').replace(/^v[\d.]+\s*·\s*/,'');}
+  function mode(){if(st.ready)return 'ready';return news().length?'news':'';}
+  /* 새 판의 바뀐 것 — 활성 서비스워커가 주는 새 release-notes.js 의 첫 항목을 글자로만 읽는다(실행하지 않는다).
+     지금 문서의 첫 항목과 같으면(안내 없는 판) 바뀐 것 줄은 비운다. */
+  function parseFirst(txt){
+    var m=/DEFAULT_ENTRIES=\[\{\s*id:'([^']+)',\s*date:'([^']*)',\s*title:'((?:\\'|[^'])*)',\s*changes:\[([\s\S]*?)\]\s*\}/.exec(txt||'');if(!m)return null;
+    var ch=[],re=/'((?:\\'|[^'])*)'/g,x;while((x=re.exec(m[4])))ch.push(x[1].replace(/\\'/g,"'"));
+    return {id:m[1],date:m[2],title:m[3].replace(/\\'/g,"'"),changes:ch};
+  }
+  function fetchNext(){
+    if(st.fetching||st.next||!window.fetch)return;st.fetching=true;
+    fetch('/studio/release-notes.js',{cache:'no-store'}).then(function(r){return r.ok?r.text():'';}).then(function(txt){
+      var e=parseFirst(txt),cur=all()[0];st.next={entry:(e&&(!cur||e.id!==cur.id))?e:null};
+    }).catch(function(){st.next={entry:null};}).then(function(){st.fetching=false;render();});
+  }
+  function entHtml(e,isNew,brief){
+    var d=(e.date||'').replace(/^\d{4}-0?(\d+)-0?(\d+)$/,'$1. $2.'),ch=(e.changes||[]).slice(0,brief?2:3);
+    return '<div class="pup-ent'+(isNew?' new':'')+'">'
+      +(brief?'':'<div class="pup-d">'+esc([d,verOf(e)].filter(Boolean).join(' · ')+(isNew?' · 새로':''))+'</div>')
+      +'<div class="pup-t">'+esc(titleOf(e))+'</div>'
+      +(ch.length?'<ul>'+ch.map(function(c){return '<li>'+esc(c)+'</li>';}).join('')+'</ul>':'')+'</div>';
+  }
+  function fill(){
+    var md=st.open,T=$('psUpdPopT'),V=$('psUpdPopV'),B=$('psUpdPopBody'),N=$('psUpdPopNote'),BT=$('psUpdPopBtns');if(!T)return;
+    if(md==='ready'){var e=st.next&&st.next.entry;T.textContent='새 판이 준비됐어요';V.textContent=e?verOf(e):'';B.innerHTML=e?entHtml(e,true,true):'';
+      N.textContent='하던 일은 저장한 뒤 같은 화면으로 다시 열려요. 입력을 멈추면 저절로도 바뀝니다.';BT.hidden=false;}
+    else{var n=news();T.textContent='이번 주에 바뀐 것';V.textContent='';B.innerHTML=n.map(function(x,i){return entHtml(x,i===0,false);}).join('');
+      N.textContent='이 표시는 7일 뒤 저절로 사라져요.';BT.hidden=true;}
+  }
+  function bottomNav(){var t=document.body.classList.contains('ps-team-open')?$('teamBottom'):$('appSeg');
+    try{var r=t&&t.getBoundingClientRect();if(r&&r.height>0&&r.top>innerHeight/2)return r.top;}catch(_){}return innerHeight-64;}
+  function place(){
+    var p=$('psUpdPop');if(!p)return;['left','right','top','bottom','width','maxWidth','margin'].forEach(function(k){p.style[k]='';});
+    var f=st.from;
+    if(rail()&&f&&f.isConnected&&f.getBoundingClientRect){var r=f.getBoundingClientRect();p.style.left=Math.round(r.right+10)+'px';p.style.bottom=Math.max(8,Math.round(innerHeight-r.bottom))+'px';}
+    else{p.style.left='8px';p.style.right='8px';p.style.width='auto';p.style.maxWidth='520px';p.style.margin='0 auto';p.style.bottom=Math.max(8,Math.round(innerHeight-bottomNav()+8))+'px';}
+  }
+  function closeSheets(){
+    try{var a=$('appMoreSheet');if(a&&!a.hidden){var x=a.querySelector('[data-am="close"]');if(x)x.click();}}catch(_){}
+    try{var t=$('teamMoreSheet');if(t&&!t.hidden){var y=t.querySelector('[data-tb="close"]');if(y)y.click();}}catch(_){}
+  }
+  function openPop(md,from){
+    if(!md)return;closeSheets();
+    try{if(window.__psCloseAppSettings)window.__psCloseAppSettings();}catch(_){}
+    try{if(window.__psCloseAcctPop)window.__psCloseAcctPop();}catch(_){}
+    st.open=md;st.from=(from&&from.id==='psUpdRail')?from:null;fill();
+    var p=$('psUpdPop');p.hidden=false;place();
+    var b=$('psUpdRail');if(b)b.setAttribute('aria-expanded','true');
+    if(md==='news'){var n=news();if(n[0])markSeen(n[0].id);render();}else fetchNext();
+    try{(md==='ready'?p.querySelector('.pup-go'):p.querySelector('.pup-x')).focus({preventScroll:true});}catch(_){}
+  }
+  function closePop(){var p=$('psUpdPop');if(p)p.hidden=true;st.open='';var b=$('psUpdRail');if(b)b.setAttribute('aria-expanded','false');}
+  function apply(){try{if(!window.__psForceReload&&typeof psAutoReloadWhenSafe==='function')psAutoReloadWhenSafe(true);if(window.__psForceReload)window.__psForceReload(true);}catch(_){}}
+  function render(){
+    st.raf=0;
+    var md=mode(),n=news(),first=n[0],dot=md==='ready'||(md==='news'&&!!first&&seen()!==first.id),B=document.body;if(!B)return;
+    B.classList.toggle('ps-upd-band',band());
+    B.classList.toggle('ps-upd-dot',!!(dot&&md&&!rail()));
+    var w=$('psUpdWrap'),b=$('psUpdRail'),lb=$('psUpdRailLb');
+    if(w)w.hidden=!md;
+    if(b){b.classList.toggle('is-ready',md==='ready');b.classList.toggle('has-dot',!!dot);
+      if(lb)lb.textContent=md==='ready'?'업데이트':'새 기능';
+      b.title=md==='ready'?'새 판이 준비됐어요':'이번 주에 바뀐 것';b.setAttribute('aria-label',b.title);}
+    var v=st.next&&st.next.entry?verOf(st.next.entry):'';
+    [].forEach.call(document.querySelectorAll('[data-upd-row]'),function(r){
+      r.hidden=!md;r.classList.toggle('news',md==='news');
+      var tx=r.querySelector('[data-upd-rowtext]'),bt=r.querySelector('[data-upd="row"]');if(!tx||!bt)return;
+      if(md==='ready'){tx.innerHTML='<b>새 판이 준비됐어요</b>'+(v?' · '+esc(v):'');bt.setAttribute('data-upd-now','');bt.setAttribute('data-upd-label','적용');if(!bt.disabled)bt.textContent='적용';}
+      else if(md==='news'){tx.innerHTML='<b>새 기능</b> · '+esc(titleOf(first));bt.removeAttribute('data-upd-now');bt.removeAttribute('data-upd-label');bt.disabled=false;bt.textContent='보기';}
+    });
+    if(st.open){if(st.open==='news'&&!md)closePop();else{fill();place();}}
+  }
+  function soon(){if(!st.raf)st.raf=setTimeout(render,0);}   /* rAF 는 숨은 탭에서 멈춘다 — 선수 전용 전환 같은 class 변화가 화면에 늦게 붙었다(실측) */
+  function init(){
+    var go=document.querySelector('#psUpdPop .pup-go');if(go)go.setAttribute('data-upd-label','지금 적용');
+    [$('psMoreBtn'),document.querySelector('#teamBottom [data-tb="more"]')].forEach(function(btn){
+      if(btn&&!btn.querySelector('.ps-updot')){var i=document.createElement('i');i.className='ps-updot';i.setAttribute('aria-hidden','true');btn.appendChild(i);}
+    });
+    document.addEventListener('click',function(e){
+      var t=e.target&&e.target.closest?e.target.closest('[data-upd],#psUpdRail'):null;
+      if(!t){if(st.open){var p=$('psUpdPop');if(p&&!p.contains(e.target))closePop();}return;}
+      if(t.id==='psUpdRail'){if(st.open)closePop();else openPop(mode(),t);return;}
+      var a=t.getAttribute('data-upd');
+      if(a==='close')closePop();
+      else if(a==='apply')apply();
+      else if(a==='row'){if(mode()==='ready')apply();else openPop('news',t);}
+    },true);
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&st.open){var fromRail=!!st.from;closePop();if(fromRail)try{$('psUpdRail').focus();}catch(_){}}});
+    window.addEventListener('resize',soon);
+    document.addEventListener('visibilitychange',function(){if(!document.hidden)soon();});
+    window.addEventListener('storage',function(e){if(!e||e.key===null||e.key===SEEN)soon();});
+    try{new MutationObserver(soon).observe(document.body,{attributes:true,attributeFilter:['class']});}catch(_){}
+    render();
+  }
+  window.__psUpdSurface={ready:function(){if(!st.ready){st.ready=true;render();}fetchNext();},render:render,open:function(m){openPop(m||mode(),$('psUpdRail'));},close:closePop,
+    state:function(){return {mode:mode(),open:st.open,news:news().map(function(e){return e.id;}),next:st.next&&st.next.entry?st.next.entry.id:null,band:band()};},_parseFirst:parseFirst};
+  if(document.body)init();else document.addEventListener('DOMContentLoaded',init);
+})();
 </script>
 <script>
 /* OAuth 콜백이 만료되거나 다른 탭에서 이미 사용된 경우 Supabase 오류 문구를
