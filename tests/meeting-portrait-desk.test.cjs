@@ -130,7 +130,8 @@ test('every place that stores the live board into a slide stores it in the meeti
   assert.match(m,/var from=meetCap\(\);/);
   assert.match(m,/snap:meetCap\(\)/);
   assert.equal(/snap=captureSnap\(\)|snap:captureSnap\(\)|var from=captureSnap\(\)/.test(m),false,'no raw capture left in the meeting object');
-  assert.match(src,/if\(window\.__meetBlank\)\{try\{loadSnap\(\{players:\[\],equipment:\[\],ball:\{x:CX,y:CY\},drawings:\[\],orientation:\(meetingPdfOrientation\(anim\.slides\)==="landscape"\?"h":"v"\),/);
+  /* 2.959 — 빈 새 미팅은 기본 9장으로 시작하고(실패하면 예전처럼 빈 한 장) — 바탕 판은 여전히 미팅 방향이다 */
+  assert.match(src,/if\(window\.__meetBlank\)\{var _mb=\{players:\[\],equipment:\[\],ball:\{x:CX,y:CY\},drawings:\[\],orientation:\(meetingPdfOrientation\(anim\.slides\)==="landscape"\?"h":"v"\),/);
   /* 미팅 동안 자동 방향 끔 · 나가면 되돌림 */
   assert.match(line('  var oldEnter=window.__ksEnter;'),/window\.__meetAOprev=autoOrient;autoOrient=false;/);
   assert.match(line('  var oldExit=window.__ksExit;'),/autoOrient=window\.__meetAOprev;window\.__meetAOprev=undefined;/);
