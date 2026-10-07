@@ -220,6 +220,9 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line2);border-radius:
 }
 /* 2.641 — 다크(앱 전체 다크 셋째 판). 이 페이지는 ui-grammar 를 안 쓰고 제 토큰만 있어 다크에서도 흰 바탕이었다(실측) */
 body.fmdark{--bg:#121417;--panel:#1B1E23;--surface:#1B1E23;--surface-2:#23272D;--ink:#F2F3F5;--gray:#A9AFB8;--faint:#7C838D;--line:#2E333A;--line2:#3A4048;--acc:#B9A6F2;--acc-soft:rgba(185,166,242,.16);--acc-ink:#C9BAF6;--ok:#4CC27A;--ok-soft:rgba(76,194,122,.16);--no:#E07470;--no-soft:rgba(224,116,112,.16);--due:#D9A15A;--due-soft:rgba(217,161,90,.16);background:var(--bg);color:var(--ink)}
+/* 2.957 — 다크에서 페이지 끝 아래와 서가 가로 스크롤 막대가 흰 띠로 남았다: html 의 var(--bg) 는 html 에서 풀려 라이트 값이고(토큰은 body 에만), color-scheme 도 라이트였다 */
+html:has(body.fmdark){background:#121417}
+body.fmdark{color-scheme:dark}
 </style>
 </head>
 <body>
