@@ -69,6 +69,12 @@ test('a known-deleted live row cannot PATCH its already-confirmed server tombsto
   await h.round();await h.round();assert.equal(h.server.get(key).v,tomb);assert.equal(h.idb.get(key),mine);assert.equal(h.c.holdList().some(x=>x.k===key),true);assert.equal(h.main().players.length,1);
   const shown=h.c.holdConflictView(h.c.holdList().find(x=>x.k===key));assert.ok(await h.c.holdConflictChoose(key,false,shown));await h.round();assert.equal(h.idb.get(key),tomb);assert.equal(h.c.holdList().some(x=>x.k===key),false);
 });
+test('2.954 — an unchanged deleted-player copy takes the later server tombstone instead of looping in review',async()=>{
+  const h=fixture([p('a')]),key='sq:gone',mine=raw(p('gone','Gone player','A')),tomb=raw({_del:30});h.idb.set(key,mine);h.server.set(key,{workspace_id:'team-a',k:key,v:tomb,cupd:30});h.local.set(PD,raw({gone:29}));
+  const m=h.c.meta();m.h[key]=h.c.hash(mine);m.c[key]=10;h.c.setMeta(m);
+  await h.round();assert.equal(h.idb.get(key),tomb,'서버의 지움을 받는다');assert.equal(h.c.holdList().some(x=>x.k===key),false,'검토 기록이 남지 않는다');assert.equal(h.c.meta().h[key],h.c.hash(tomb));assert.equal(h.c.meta().c[key],30);
+  await h.round();assert.equal(h.server.get(key).v,tomb);assert.equal(h.requests.some(r=>r.stage.startsWith('kv_push')&&r.url.includes('sq%3Agone')),false,'다시 올리지 않는다');assert.equal(h.main().players.length,1);
+});
 test('first observation of an already-cached confirmed remote player signals projection after exact metadata',async()=>{
   const h=fixture([p('a')]),extra=p('remote','Remote player','B'),key='sq:remote',v=raw(extra);h.idb.set(key,v);h.server.set(key,{workspace_id:'team-a',k:key,v,cupd:10});const m=h.c.meta();m.h[key]=h.c.hash(v);m.c[key]=10;h.c.setMeta(m);
   assert.equal(await h.c.itemsApply('boot'),false);const revisions=[];h.hooks.localWrite=k=>{if(k==='ps_items_rev')revisions.push(h.c.meta().c[key]);};

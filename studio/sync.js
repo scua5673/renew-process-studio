@@ -4946,6 +4946,11 @@ function itemsObserveServer(srv){
 function itemsDeletedLive(k,raw){
   try{var p=JSON.parse(raw),deleted=JSON.parse(localStorage.getItem('cs_player_del_v1')||'{}');return !!(p&&!p._del&&deleted&&deleted[k.slice(ITEMP.length)]);}catch(_){return false;}
 }
+/* 2.954 — 서버 행이 이미 «지움»(_del)인가. 지운 선수의 기기 사본(live)이 남은 채로 서버만 지움으로 바뀌면
+   예전엔 «충돌 검토»로 보냈는데, 기기 사본이 확인된 옛 판(바뀐 것 없음)이라 그 검토 기록은 회차마다 «이미 확인됨»으로
+   지워지고 다시 생겨 «N일째 저장 대기»로 맴돌았다(코치 점검 10/7 — 방성환, 9/28 지움). 지움끼리는 다툴 것이 없다 —
+   기기 사본이 확인된 판 그대로일 때만(안 올린 변경이 없을 때만) 서버의 지움을 받는다 — 바뀐 사본은 예전처럼 검토로 보관한다(roster-projection-safety). */
+function itemsServerDeleted(row){ try{var r=JSON.parse(row&&row.v);return !!(r&&typeof r==='object'&&!Array.isArray(r)&&r._del);}catch(_){return false;} }
 function itemsCreateAllowed(k,raw){
   var p,doc,deleted,id=k.slice(ITEMP.length);
   try{p=JSON.parse(raw);if(p&&p._del)return true;
@@ -7459,6 +7464,10 @@ function syncNowCore(reason){
             /* A known deletion is never undone by an automatic insert/PATCH,
                even when the server tombstone is our previously confirmed base. */
             if(row&&typeof row.v==='string'){
+              if(!dirty&&typeof itemsServerDeleted==='function'&&itemsServerDeleted(row)){   /* 2.954 — 기기 사본이 확인된 옛 판 그대로(!dirty)이고 서버가 지움이면 그 지움을 받는다(위 주석). 안 올린 변경이 있으면 예전처럼 검토로 보관 */
+                if(roundKvWrite(k,row.v,writes,loc)){ applied++; m.h[k]=hash(row.v); m.c[k]=row.cupd; }
+                return;
+              }
               resolveTeamConflict(k,loc,row,true);
               if(heldKeys.indexOf(k)>=0)writes.push(outboxMarkForOwner(s.uid,wid,k,lh,'roster-deleted-conflict'));
             }

@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.953"></script>
+<script src="autosave-status.js?v=2.954"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.953';</script>
+<script>window.PS_BUILD='2.954';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1426,6 +1426,8 @@ function psShowUpdBand(){
       <button data-team-key="match" data-app="scout" data-team-view="match">경기</button>
       <button data-team-key="training" data-app="process" data-process-mode="week">일정</button>
       <button data-team-key="players" data-app="scout" data-team-view="team" data-tn-grp="squad">선수단</button>
+      <!-- 2.954 — 스카우팅을 위 줄 탭으로(사용자 B안 — 후보까지 5단 → 2단). 2.908 의 위 줄 순서가 바뀐다(탭 7개) -->
+      <button data-team-key="scouting" data-app="scout" data-team-view="players">스카우팅</button>
       <button data-team-key="idp" data-app="idp" data-idp-squad="1">IDP</button>
       <button data-team-key="attrs" data-app="scout" data-team-view="attrs" data-tn-grp="setup">설정</button>
     </span>
@@ -1444,6 +1446,7 @@ function psShowUpdBand(){
   <div class="team-more" id="teamMoreSheet" hidden>
     <div class="tms-h"><b>더보기</b><button type="button" data-tb="close" aria-label="닫기">×</button></div>
     <div class="ps-upd-row" data-upd-row hidden><span class="pur-t"><span data-upd-rowtext></span><small data-upd-msg hidden></small></span><button type="button" data-upd="row" data-upd-now>적용</button></div><!-- 2.947 -->
+    <div class="tms-g"><i>팀</i><button type="button" data-tb="scouting">스카우팅</button></div><!-- 2.954 — 위 줄 탭이 됐지만 폰 하단은 여섯 칸 그대로라 여기 -->
     <div class="tms-g"><i>설정</i><button type="button" data-tb="attrs">평가표</button><button type="button" data-tb="playbook">플레이북</button><button type="button" data-tb="settings">게임모델</button><button type="button" data-tb="terms">공용어</button></div><!-- 2.908 — 설정 묶음 -->
     <div class="tms-g"><i>앱</i><button type="button" data-tb-app="board">보드</button><button type="button" data-tb-app="design">보관함</button><button type="button" data-tb-app="idp">내 IDP</button><button type="button" data-tb-app="learning">학습</button><button type="button" data-tb-app="community">커뮤니티</button></div>
   </div>
@@ -1534,6 +1537,32 @@ function psShowUpdBand(){
   <style id="ps-2180-nav">/* 2.180 — 보관함 버튼 숨김(사용자: 훈련과 겹침). 보관함 화면은 '훈련' 버튼이 연다 */
   html #appSeg#appSeg button[data-app="design"]:not([data-train]),html.ps-page-app #appSeg#appSeg button[data-app="design"]:not([data-train]){display:none!important}
   </style>
+  <style id="ps-2954-phonehead">
+  /* ══ 2.954 · 폰 팀 화면 = 머리 한 줄(사용자 A안) ══════════════════════════════════════
+     폰에서 팀 운영을 열면 앱 머리(PROCESS STUDIO · 풋볼A · ⚙, 61px)와 팀 머리(엠블럼 · 풋볼A · 문구, 40px)가
+     겹쳐 위 100px 를 썼고 팀 이름이 두 번 나왔다. 팀 화면(≤600 = 하단 팀 탭이 서는 경계)에서는
+     앱 머리의 로고를 접고 계정 버튼(⇄ 팀 바꾸기)·설정(⚙)만 팀 머리 줄 오른쪽 위에 얹는다.
+     ⚠ 앱 머리를 display:none 으로 지우면 안 된다 — 계정 팝업·설정 팝업이 그 안에 산다. 자리만 옮긴다.
+     ⚠ 선수 전용 폰(ps-player-idp-only)은 머리 문법이 달라(405) 손대지 않는다. 다른 화면(보드·학습)도 그대로. */
+  @media (max-width:600px){
+    html body.ps-team-open:not(.ps-player-idp-only) header.appbar:not(#_){position:fixed!important;top:0!important;right:0!important;left:auto!important;width:auto!important;min-height:0!important;height:auto!important;
+      padding:max(6px,env(safe-area-inset-top)) 6px 0 0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important;z-index:160!important;gap:2px!important;flex-wrap:nowrap!important;align-items:center!important}
+    html body.ps-team-open:not(.ps-player-idp-only) header.appbar:not(#_) #psBrand,
+    html body.ps-team-open:not(.ps-player-idp-only) header.appbar:not(#_) .hintbar{display:none!important}
+    html body.ps-team-open:not(.ps-player-idp-only) #teamNav:not(#_){min-height:52px!important;padding-top:max(6px,env(safe-area-inset-top))!important;padding-right:96px!important;align-items:center!important}
+    html body.ps-team-open:not(.ps-player-idp-only) header.appbar:not(#_)>#psAcctWrap{order:1!important;margin:0!important;max-width:none!important}
+    html body.ps-team-open:not(.ps-player-idp-only) header.appbar:not(#_)>#gearWrap{order:2!important;margin:0!important}
+    html body.ps-team-open:not(.ps-player-idp-only) header.appbar:not(#_) #psAcctWrap .acct-btn{width:40px!important;height:40px!important;min-width:0!important;padding:0!important;justify-content:center!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--dim,#646A73)!important}
+    html body.ps-team-open:not(.ps-player-idp-only) header.appbar:not(#_) #psAcctWrap .acct-btn>*{display:none!important}
+    html body.ps-team-open:not(.ps-player-idp-only) header.appbar:not(#_) #psAcctWrap .acct-btn::before{content:"";display:block;width:20px;height:20px;background:currentColor;
+      -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4L3 8l4 4'/%3E%3Cpath d='M3 8h14'/%3E%3Cpath d='M17 20l4-4-4-4'/%3E%3Cpath d='M21 16H7'/%3E%3C/svg%3E") center/contain no-repeat;
+      mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4L3 8l4 4'/%3E%3Cpath d='M3 8h14'/%3E%3Cpath d='M17 20l4-4-4-4'/%3E%3Cpath d='M21 16H7'/%3E%3C/svg%3E") center/contain no-repeat}
+    html body.ps-team-open:not(.ps-player-idp-only) header.appbar:not(#_) #gearBtn{width:40px!important;height:40px!important;border:0!important;background:transparent!important;color:var(--dim,#646A73)!important}
+    /* 팀 색이 어두운 머리 위에서는 글자처럼 밝게(psTeamTint 가 body 에 ps-tn-dark 를 단다) */
+    html body.ps-team-open.ps-tn-dark:not(.ps-player-idp-only) header.appbar:not(#_) #psAcctWrap .acct-btn,
+    html body.ps-team-open.ps-tn-dark:not(.ps-player-idp-only) header.appbar:not(#_) #gearBtn{color:rgba(255,255,255,.86)!important}
+  }
+  </style>
   <style id="ps-2179-bottom">
   .team-bottom,.team-more{display:none}
   .team-bottom .tb-ipad-idp{display:none}
@@ -1561,7 +1590,6 @@ function psShowUpdBand(){
     <!-- 2.209 — 묶음 이름 글자는 안 쓴다(탭 이름과 중복). 2.908 — 묶음 둘: 선수단(선수단·스카우팅·가용인원) / 설정(평가표·플레이북·게임모델·공용어). 지금 묶음 줄만 보인다 -->
     <span class="tn-sub" data-sub-grp="squad">
       <button data-team-key="players" data-app="scout" data-team-view="team">선수단</button>
-      <button data-team-key="scouting" data-app="scout" data-team-view="players">스카우팅</button>
       <button data-team-key="avail" data-app="scout" data-team-view="avail">가용인원</button>
     </span>
     <span class="tn-sub" data-sub-grp="setup">
@@ -1823,7 +1851,7 @@ function psShowUpdBand(){
     /* 2.581 — 팀 키로 버튼 찾기: 메뉴 줄에 없으면 서브바(#teamSub: 플레이북·게임모델·공용어)에서 */
     function teamKeyBtn(key){ var b=teamNav&&teamNav.querySelector('[data-team-key="'+key+'"]'); if(!b){ var s=document.getElementById('teamSub'); b=s&&s.querySelector('[data-team-key="'+key+'"]'); } return b||null; }
     /* 2.908 — 팀 메뉴 묶음(선수단 · 설정). 키 → 묶음 */
-    var TEAM_GRP={squad:{players:1,scouting:1,avail:1},setup:{attrs:1,playbook:1,settings:1,terms:1}};
+    var TEAM_GRP={squad:{players:1,avail:1},setup:{attrs:1,playbook:1,settings:1,terms:1}};
     function teamGrpOf(k){ var g=''; Object.keys(TEAM_GRP).forEach(function(x){ if(TEAM_GRP[x][k])g=x; }); return g; }
     var currentTeamKey='';
     function syncGameModelShell(){
@@ -2434,7 +2462,7 @@ function psShowUpdBand(){
         if(b.dataset.tb){ go(b.dataset.tb); return; }
         if(b.dataset.tbApp){ sheet.hidden=true; currentTeamKey=''; showApp(b.dataset.tbApp); } });
       window.__teamBottomSync=function(){ var k=currentTeamKey||''; var g=teamGrpOf(k);   /* 2.908 — 선수단 묶음은 «선수단», 설정 묶음은 «더보기»가 켜진다 */
-        [].forEach.call(tb.querySelectorAll('button'),function(x){ var on=(x.dataset.tb===k)||(x.dataset.tb==='players'&&g==='squad')||(x.dataset.tb==='more'&&g==='setup'); x.classList.toggle('on',on); }); };
+        [].forEach.call(tb.querySelectorAll('button'),function(x){ var on=(x.dataset.tb===k)||(x.dataset.tb==='players'&&g==='squad')||(x.dataset.tb==='more'&&(g==='setup'||k==='scouting')); x.classList.toggle('on',on); }); };
     })();
     if(teamNav)teamNav.addEventListener('click',function(e){
       var b=e.target.closest('button');if(!b)return;
@@ -2481,6 +2509,7 @@ function psShowUpdBand(){
         if(document.body.classList.contains('fmdark')){ tn.style.setProperty('background','color-mix(in srgb, '+color+' 22%, #1B1E23)','important'); tn.classList.add('tn-colored','tn-dark'); }
         else { tn.style.setProperty('background',color,'important'); tn.classList.add('tn-colored'); tn.classList.toggle('tn-dark',(0.2126*r+0.7152*g+0.0722*b)/255<0.55); }
       } else { tn.style.removeProperty('background'); tn.style.background=''; tn.classList.remove('tn-colored','tn-dark'); }
+      document.body.classList.toggle('ps-tn-dark',tn.classList.contains('tn-dark'));   /* 2.954 — 폰 팀 머리에 얹힌 ⇄·⚙ 글자색 */
     }
     window.psTeamTint=psTeamTint;   /* 2.640 — 테마 토글이 다시 부른다 */
     /* 2.277 — 문구만 갈아 끼우기(머리 전체를 다시 그리면 엠블럼 이미지가 깜빡인다) */
@@ -7819,13 +7848,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.953"></script>
-<script src="autosave-merge.js?v=2.953"></script>
-<script src="autosave-runtime.js?v=2.953"></script>
-<script src="autosave-recovery.js?v=2.953"></script>
-<script src="sync.js?v=2.953"></script>
+<script src="autosave-journal.js?v=2.954"></script>
+<script src="autosave-merge.js?v=2.954"></script>
+<script src="autosave-runtime.js?v=2.954"></script>
+<script src="autosave-recovery.js?v=2.954"></script>
+<script src="sync.js?v=2.954"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.953">
+<link rel="stylesheet" href="support.css?v=2.954">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
