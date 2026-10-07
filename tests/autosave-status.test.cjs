@@ -38,6 +38,13 @@ test('a conflict and a server refusal have distinct truthful failure states',()=
   }
 });
 
+test('2.952 — 고를 것이 있으면 며칠째 대기로 덮지 않고 고르는 곳을 말한다',()=>{
+  const day=86400000,now=Date.UTC(2026,9,7,3,0,0);
+  const held=view({kind:'pending',n:2,review:1,oldest:now-8*day,now});
+  assert.equal(held.text,'일부 변경 보관');assert.doesNotMatch(held.text,/일째/);
+  assert.match(held.detail,/앱 설정 › 데이터 › 자료 확인/);
+});
+
 test('2.941 — 기기 대기열이 하루를 넘으면 며칠째인지 말한다',()=>{
   const day=86400000,now=Date.UTC(2026,9,5,3,0,0);
   const stuck=view({kind:'pending',n:3,oldest:now-2*day-5,now});

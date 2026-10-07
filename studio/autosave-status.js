@@ -6,6 +6,9 @@
   function view(state){
     var r=baseView(state),s=state||{},n=Math.max(0,Number(s.n)||0),oldest=Number(s.oldest)||0,now=Number(s.now)||Date.now();
     var days=(n&&oldest>0&&now>oldest)?Math.floor((now-oldest)/86400000):0;
+    /* 2.952 — 보관한 변경(고를 것)이 있으면 «N일째 저장 대기»로 덮지 않는다 — 기다려서 풀리는 일이 아니다(코치 점검 10/7).
+       ⚠ 띠에서 문서 선택창을 열지는 않는다(조용한 저장 표시 원칙 — 아래 테스트). 고르는 곳은 앱 설정 › 데이터 › 자료 확인. */
+    if(r.kind==='held'&&(Number(s.review)>0||s.kind==='ask'||s.kind==='held'))return r;
     if(days>=1&&r.kind!=='off'&&r.kind!=='busy'&&r.action!=='login')
       return {kind:'bad',text:days+'일째 저장 대기 · '+n+'건',detail:'변경사항은 이 기기에 남아 있지만 '+days+'일 넘게 서버에 올라가지 못했어요. «다시 시도»로도 안 되면 앱 설정 › 기기 › 동기화 진단에서 이유를 보거나 오류 제보로 알려 주세요.',action:r.action||'retry',attention:true,complete:false};
     return r;
@@ -26,7 +29,8 @@
       return result('bad','저장을 확인하지 못했어요','변경사항의 서버 저장 여부를 확인하지 못했습니다. 다시 시도해 주세요.','retry',true);
     }
     if(kind==='busy')return result('busy','저장 중…','변경사항의 서버 저장을 확인하고 있습니다.');
-    if(review||kind==='ask'||kind==='held')return result('held','일부 변경 보관','자동으로 맞추지 못한 변경을 이 기기에 보관했습니다.','retry',true);
+    /* 2.952 — 보관한 변경은 기다려서 풀리지 않는다 — 고르는 곳(앱 설정 › 데이터 › 자료 확인)을 말한다. 숫자·«문서 전체»는 여전히 띠에 적지 않는다. */
+    if(review||kind==='ask'||kind==='held')return result('held','일부 변경 보관','자동으로 맞추지 못한 변경을 이 기기에 보관했습니다. 앱 설정 › 데이터 › 자료 확인에서 남길 쪽을 고르면 이어서 저장합니다.','retry',true);
     if(n||kind==='pending')return result('pending','저장 대기','변경사항을 서버에 저장할 차례를 기다리고 있습니다.','retry');
     if(archived)return result('held','일부 변경 별도 보관','다른 변경과 겹친 내용은 별도로 보관했습니다. 고급 복구에서 확인할 수 있습니다.','recovery',true,kind==='ok'&&Number(s.at)>0);
     if(kind==='ok'&&Number(s.at)>0)return result('ok','저장됨','서버에 저장된 내용을 확인했습니다.','',false,true);
