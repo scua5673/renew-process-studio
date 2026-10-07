@@ -23,15 +23,17 @@ test('nine pages in the order the coach asked for',()=>{
   assert.deepEqual(J(c.MEET_TPL.map(t=>t.t)),TITLES);
 });
 
-test('every page has 11 + 11 players, one keeper each, a ball, and stays on the pitch (runoff allowed)',()=>{
+test('BEST 11 is our eleven only (2.960) · every other page has 11 + 11 and a ball · all on the pitch (runoff allowed)',()=>{
   const c=tplContext();
   assert.equal(c.US.length,11);assert.equal(c.OP.length,11);
   assert.equal(new Set(c.US.map(r=>r[0])).size,11,'our numbers unique');
   assert.equal(new Set(c.OP.map(r=>r[0])).size,11,'their numbers unique');
+  const best=c.MEET_TPL[0];
+  assert.equal(best.t,'BEST 11');assert.equal(best.us.length,11);assert.equal(best.op.length,0,'no opponents on BEST 11');assert.equal(best.ball,null,'no ball on BEST 11');
   for(const tp of c.MEET_TPL){
-    assert.equal(tp.us.length,11,tp.t);assert.equal(tp.op.length,11,tp.t);
-    assert.ok(Array.isArray(tp.ball)&&tp.ball.length===2,tp.t);
-    for(const m of tp.us.concat(tp.op,[tp.ball])){
+    assert.equal(tp.us.length,11,tp.t);
+    if(tp!==best){assert.equal(tp.op.length,11,tp.t);assert.ok(Array.isArray(tp.ball)&&tp.ball.length===2,tp.t);}
+    for(const m of tp.us.concat(tp.op,tp.ball?[tp.ball]:[])){
       assert.ok(m[0]>=-2.5&&m[0]<=107.5&&m[1]>=-2.5&&m[1]<=70.5,tp.t+' '+m);   /* 런오프 3m 안 */
     }
     /* 토큰이 서로 덮지 않게 — 선수끼리 3m 이상(대인 마크도 3m) */
@@ -46,7 +48,11 @@ test('every page has 11 + 11 players, one keeper each, a ball, and stays on the 
 test('a page becomes an 11-a-side full-pitch snap in world units, keepers marked GK, colours from the base',()=>{
   const c=tplContext();
   const base={players:[{id:1}],equipment:[{id:2}],drawings:[{type:'line'}],tokenScale:.2,teamColors:{blue:'#123456'},area:'half',pitchView:'half',pitchSpec:'futsal',pitchN:4};
-  const s=c.snap(base,c.MEET_TPL[0]);
+  const b11=c.snap(base,c.MEET_TPL[0]);
+  assert.equal(b11.players.length,11);assert.equal(b11.players.filter(p=>p.team==='blue').length,11);assert.equal(b11.ball,null);
+  const bgk=b11.players.find(p=>p.pos==='GK');
+  assert.deepEqual(J([bgk.x,bgk.y]),[30+5*10,30+34*10]);   /* 미터 → 세계 좌표(1m = 10단위, 라인 밖 30) */
+  const s=c.snap(base,c.MEET_TPL[1]);
   assert.equal(s.players.length,22);
   assert.equal(s.players.filter(p=>p.team==='blue').length,11);
   assert.equal(s.players.filter(p=>p.team==='red').length,11);
@@ -57,8 +63,8 @@ test('a page becomes an 11-a-side full-pitch snap in world units, keepers marked
   assert.equal(s.teamColors.blue,'#123456','team colours of the board are kept');
   assert.equal(s.tokenScale,.4,'tokens not smaller than the default XI floor');
   const gk=s.players.find(p=>p.team==='blue'&&p.pos==='GK');
-  assert.deepEqual(J([gk.x,gk.y]),[30+5*10,30+34*10]);   /* 미터 → 세계 좌표(1m = 10단위, 라인 밖 30) */
-  assert.deepEqual(J([s.ball.x,s.ball.y]),[30+52.5*10,30+34*10]);
+  assert.deepEqual(J([gk.x,gk.y]),[30+38*10,30+34*10]);   /* 하이블록 — GK 는 뒤 공간 정리(38m) */
+  assert.deepEqual(J([s.ball.x,s.ball.y]),[30+98.7*10,30+35*10]);
   assert.equal(base.players.length,1,'base untouched');
 });
 
@@ -96,8 +102,9 @@ test('the seed runs end to end on a stub board',()=>{
   assert.equal(c.window.__meetSeed({players:[],teamColors:{}}),true);
   assert.equal(c.anim.slides.length,9);
   assert.deepEqual(J(c.anim.slides.map(s=>s.title)),TITLES);
-  for(const s of c.anim.slides){assert.equal(s.pdfOrientation,'portrait');assert.equal(s.snap.orientation,'v');assert.equal(s.snap.players.length,22);assert.ok(s.snap.ball);assert.equal(s.thumb,'<svg/>');}
-  assert.equal(bound,0);assert.equal(loaded.players.length,22);
+  c.anim.slides.forEach((s,k)=>{assert.equal(s.pdfOrientation,'portrait');assert.equal(s.snap.orientation,'v');assert.equal(s.thumb,'<svg/>');
+    if(k===0){assert.equal(s.snap.players.length,11);assert.equal(s.snap.ball,null);}else{assert.equal(s.snap.players.length,22);assert.ok(s.snap.ball);}});
+  assert.equal(bound,0);assert.equal(loaded.players.length,11,'the meeting opens on BEST 11');
   assert.equal(c.window.__meetSeed({}),false,'never on a meeting that already has slides');
   assert.equal(c.anim.slides.length,9);
 });
