@@ -41,3 +41,17 @@ test('phone team screen has one header row: app header folds its logo, ⇄·⚙ 
   assert.ok(/#teamNav:not\(#_\)\{min-height:52px!important;[^}]*padding-right:96px!important/.test(css));
   assert.ok(/document\.body\.classList\.toggle\('ps-tn-dark',tn\.classList\.contains\('tn-dark'\)\)/.test(A),'어두운 팀 색 위에서 ⇄·⚙ 를 밝게');
 });
+
+test('a deleted player copy takes the server deletion instead of looping in review (방성환, 9/28)',()=>{
+  const SY=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
+  const vm=require('node:vm');const a=SY.indexOf('function itemsServerDeleted('),b=SY.indexOf('\nfunction ',a+10);
+  const c=vm.createContext({});vm.runInContext(SY.slice(a,b),c);
+  assert.equal(c.itemsServerDeleted({v:'{"_del":1790564322535}'}),true);
+  assert.equal(c.itemsServerDeleted({v:'{"id":"p1","name":"live"}'}),false);
+  assert.equal(c.itemsServerDeleted({v:'not json'}),false);
+  assert.equal(c.itemsServerDeleted(null),false);
+  const br=SY.slice(SY.indexOf('if(itemsDeletedLive(k,loc)){'),SY.indexOf("'roster-deleted-conflict'"));
+  assert.ok(/if\(!dirty&&typeof itemsServerDeleted==='function'&&itemsServerDeleted\(row\)\)/.test(br),'안 올린 변경이 없을 때만');
+  assert.ok(br.indexOf('itemsServerDeleted(row)')>=0&&br.indexOf('itemsServerDeleted(row)')<br.indexOf('resolveTeamConflict(k,loc,row,true)'),'지움을 받는 길이 충돌 검토보다 먼저');
+  assert.ok(/if\(roundKvWrite\(k,row\.v,writes,loc\)\)\{ applied\+\+; m\.h\[k\]=hash\(row\.v\); m\.c\[k\]=row\.cupd; \}\n\s+return;/.test(br));
+});
