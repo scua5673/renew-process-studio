@@ -7673,7 +7673,7 @@ function boardSchedulePreview(){
 function boardManualChanged(){ if(!_boardManualDirty)_boardUserTouched=false; return !!(_boardManualDirty&&_boardUserTouched); }
 function boardManualStatus(){
   var _chg=boardManualChanged(); try{ if(typeof window.__psSaveBarSync==='function')window.__psSaveBarSync(_chg); }catch(_){}
-  try{var b=document.getElementById('boardManualSave');if(b){/* 2.907 — «보드 저장»: 보관함의 «저장하기»와 이름이 같아 보관함에 들어간 줄 알았다(오류 제보). 바뀐 표시는 점 하나 — 768px 띠에 «· 변경됨»까지 들어가지 않는다. */b.textContent=_boardManualSaving?'저장 중…':(_chg?'보드 저장 ●':'보드 저장');b.disabled=_boardManualSaving;b.title=(_chg?'저장하지 않은 변경이 있어요 — ':'')+'작업 보드를 저장합니다. 보관함 항목은 «보관함 저장»으로 넣어요';b.setAttribute('aria-label',_chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장');}}catch(_){}
+  try{var b=document.getElementById('boardManualSave');if(b){/* 2.907 — «보드 저장»: 보관함의 «저장하기»와 이름이 같아 보관함에 들어간 줄 알았다(오류 제보). 바뀐 표시는 점 하나 — 768px 띠에 «· 변경됨»까지 들어가지 않는다. */b.textContent=_boardManualSaving?'저장 중…':(_chg?'보드 저장 ●':'보드 저장');b.disabled=_boardManualSaving;b.title=(_chg?'저장하지 않은 변경이 있어요 — ':'')+'작업 보드를 저장합니다. 보관함 항목은 «보관함 저장»으로 넣어요';b.setAttribute('aria-label',_chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장');b.classList.toggle('dirty',!!_chg);}}catch(_){}
 }
 /* 2.927 — «보드 가져오기»로 이어진 보관함 자료에 지금 보드를 같은 내용으로 저장한다(사용자 «가져와서 토큰 움직이고 저장하면 보관함 것도 똑같이»).
    ⚠ 보관함(ps_library)엔 판 역사가 없다(2.907) — 그래서 확실히 같은 자료일 때만 쓴다:
@@ -14643,6 +14643,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   +".vcard .vc-act.edit{background:var(--blue-soft,#EEF2FF);color:var(--blue,#3a6df0);border-color:rgba(58,109,240,.35);}"
   +".vcard .vc-act.view:hover,.vcard .vc-act.edit:hover{filter:brightness(.96);color:inherit;}"
   +".vcard .vc-act.view:hover{color:#fff;}"
+  +"#drillFiles .vx-items.vx-list .vcard .vc-act.view,#drillFiles .vx-items.vx-list .vcard .vc-act.edit{background:transparent;color:var(--txt,#14161A);border-color:var(--line,#E3E6EA);font-weight:600;}#drillFiles .vx-items.vx-list .vcard .vc-act.view:hover,#drillFiles .vx-items.vx-list .vcard .vc-act.edit:hover{color:var(--blue,#3a6df0);border-color:var(--blue,#3a6df0);filter:none;}"   /* 2.953 — 목록 줄마다 파란 «보기»·«편집»(한 화면 50개) → 조용한 테두리 버튼. 파랑은 오른쪽 미리보기의 «큰 화면으로 보기» 하나(코치 점검 10/7) */
   +"#drillFiles:not(.vlist) .vcard .vc-acts{justify-content:flex-end;}"
   +"#drillFiles.vlist .vcard .vc-bd{display:flex;align-items:center;gap:10px;}"
   +"#drillFiles.vlist .vcard .vc-txt{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}"
@@ -16733,9 +16734,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   saveBtn.innerHTML='<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v13H4z"/><path d="M3 4h18v3H3z"/><path d="M12 10v6M9.5 13.5 12 16l2.5-2.5"/></svg><span class="cmd-save-label">보관함 저장</span>';
   saveBtn.onclick=function(e){e.stopPropagation();vaultSaveCurrent();};
   var manualSaveBtn=document.createElement('button');manualSaveBtn.id='boardManualSave';manualSaveBtn.type='button';
-  manualSaveBtn.className='primary';manualSaveBtn.style.cssText='flex:0 0 auto;white-space:nowrap;padding:8px 12px;border:1px solid var(--blue,#3a6df0);border-radius:9px;background:var(--blue,#3a6df0);color:#fff;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer';
+  manualSaveBtn.className='primary';manualSaveBtn.style.cssText='flex:0 0 auto;white-space:nowrap;padding:8px 12px;border:1px solid var(--line,#E3E6EA);border-radius:9px;background:var(--panel,#fff);color:var(--ink,#14161A);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer';   /* 2.953 — 파랑은 «보관함 저장» 하나. 보드 저장은 바뀐 게 있을 때만 파랗게(.dirty) */
   manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveExplicit();};
-  var manualStyle=document.createElement('style');manualStyle.textContent='@media(max-width:639px){#boardManualSave{position:fixed!important;left:14px!important;right:auto!important;bottom:calc(102px + var(--ps-animbar-h,48px) + 8px)!important;z-index:171!important;min-height:42px;max-width:150px}}';document.head.appendChild(manualStyle);
+  var manualStyle=document.createElement('style');manualStyle.textContent='#boardManualSave.dirty{background:var(--blue,#3a6df0)!important;border-color:var(--blue,#3a6df0)!important;color:#fff!important}@media(max-width:639px){#boardManualSave{position:fixed!important;left:14px!important;right:auto!important;bottom:calc(102px + var(--ps-animbar-h,48px) + 8px)!important;z-index:171!important;min-height:42px;max-width:150px}}';document.head.appendChild(manualStyle);
   boardManualStatus();
   function mountSave(){
     var strip=$id("boardPageStrip"),end=$id("cmd-tool-end"),stg=$id("boardStage"),cur=$id("vaultSave");
@@ -19404,5 +19405,8 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
   status(); vis();
 }catch(_){} })();
 </script>
+<style id="ps-2953-board">/* 2.953 — 폰은 작전판 편집 도구가 없는 화면(2.086)인데 «포메이션으로 시작 ＋» 문이 떠 있었다 — 눌러도 편집이 이어지지 않는다(코치 점검 10/7) */
+body.ps-phone-work #ehDoor{display:none!important}
+</style>
 </body>
 </html>

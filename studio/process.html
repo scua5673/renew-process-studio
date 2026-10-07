@@ -5018,10 +5018,12 @@ function renderWeekSessions(el){
       if(!mxAnyVis){ var _nm={}; [day.match].concat(_mxL).forEach(function(m2){ schedGrpList(m2||{},null,day).forEach(function(g){ _nm[g]=1; }); }); mxOtherNames=Object.keys(_nm).join(' · '); }
     }
     var md=day.md?('<span class="wkbd-md'+(day.match&&mxAnyVis?' m':'')+'">'+day.md+'</span>'):'';
-    var cls='wks-day'+(di===6?' sun':'')+(b.sched==='경기'&&mxAnyVis?' is-match':'')+(b.sched==='OFF'?' is-off':'');
+    /* 2.953 — 주간에 «오늘»이 없었다(오늘 화면·월간엔 있다 — 코치 점검 10/7). 오늘 칸에 테두리와 «오늘» 표 */
+    var _t0=new Date(); var isTd=dt.getFullYear()===_t0.getFullYear()&&dt.getMonth()===_t0.getMonth()&&dt.getDate()===_t0.getDate();
+    var cls='wks-day'+(di===6?' sun':'')+(b.sched==='경기'&&mxAnyVis?' is-match':'')+(b.sched==='OFF'?' is-off':'')+(isTd?' is-today':'');
     h+='<div class="'+cls+'">'
       +'<div class="wks-h" onclick="openDayMD('+di+')"><b>'+wkbdEsc(day.d)+'</b>'
-        +'<span>'+(dt.getMonth()+1)+'/'+dt.getDate()+'</span>'+md+'</div>';
+        +'<span>'+(dt.getMonth()+1)+'/'+dt.getDate()+'</span>'+(isTd?'<i class="wks-today">오늘</i>':'')+md+'</div>';
     /* 일정 한 줄 — 하루의 성격. 편집 경로는 옛 보드와 같다(wkbdPick 의 sched) */
     if(b.sched==='경기'&&!mxAnyVis){
       h+='<div class="wks-kind"><span class="wks-othermatch">'+wkbdEsc(mxOtherNames||'다른 조')+' 경기 — '+wkbdEsc(__schedGrp)+' 일정은 일정 메뉴에서</span></div>';
@@ -5107,6 +5109,8 @@ function renderWeekSessions(el){
     h+='</div>';
   }
   el.innerHTML='<div class="wks-scroll"><div class="wks">'+h+'</div></div>';
+  /* 2.953 — 폰 주간은 세로 목록이라 월요일부터 열려 오늘(수)까지 내려가야 했다. 이 주를 처음 그릴 때 한 번만 오늘로 — 편집할 때마다 끌어올리지 않는다 */
+  try{ if(window.innerWidth<=640&&window.__wksTodayScrolled!==wk){ var _te=el.querySelector('.wks-day.is-today'); if(_te){ window.__wksTodayScrolled=wk; setTimeout(function(){ try{ var r=_te.getBoundingClientRect(); window.scrollBy(0,r.top-72); }catch(_){} },60); } } }catch(_){}
 }
 function wkbdTrainStack(col,row,di,trains,themes,data,slots){
   return '<div class="wkbd-cell wkbd-tcell" style="grid-column:'+col+';grid-row:'+row+'">'+wkbdTrainInner(di,trains,themes,slots)+'</div>';
@@ -8916,6 +8920,9 @@ try{
 @media (min-width:768px) and (max-width:1199px){ .wks{grid-template-columns:repeat(7,minmax(112px,1fr));gap:5px} }
 .wks-day{border:1px solid var(--line);border-radius:12px;background:var(--surface,#fff);overflow:hidden;display:flex;flex-direction:column;min-width:0}
 .wks-day.is-match{border-color:#eccfcd}
+/* 2.953 — 오늘 칸 */
+.wks-day.is-today{border-color:var(--accent,#3A6DF0);box-shadow:inset 0 0 0 1px var(--accent,#3A6DF0)}
+.wks-h .wks-today{font-style:normal;font-size:10px;font-weight:700;color:#fff;background:var(--accent,#3A6DF0);border-radius:999px;padding:1px 6px;margin-left:4px;line-height:1.5}
 .wks-day.is-off{background:var(--surface-2)}
 .wks-h{display:flex;align-items:baseline;gap:5px;padding:8px 10px;border-bottom:1px solid var(--line-soft,#eef0f4);cursor:pointer}
 .wks-h>b{font-size:13px;font-weight:800}
