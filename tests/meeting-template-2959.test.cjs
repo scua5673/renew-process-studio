@@ -59,6 +59,7 @@ test('a page becomes an 11-a-side full-pitch snap in world units, keepers marked
   assert.equal(s.players.filter(p=>p.pos==='GK').length,2);
   assert.equal(new Set(s.players.map(p=>p.id)).size,22,'ids unique');
   assert.deepEqual(J(s.equipment),[]);assert.deepEqual(J(s.drawings),[]);
+  assert.equal(s.pitchTheme,'white','2.961 — meeting pitch starts white');assert.equal(s.pitchImg,null);assert.equal(s.pitchCustom,null);assert.equal(b11.pitchTheme,'white');
   assert.equal(s.pitchSpec,'fifa');assert.equal(s.area,'full');assert.equal(s.pitchView,'full');assert.equal(s.pitchN,1);
   assert.equal(s.teamColors.blue,'#123456','team colours of the board are kept');
   assert.equal(s.tokenScale,.4,'tokens not smaller than the default XI floor');
