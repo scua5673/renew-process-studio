@@ -3,7 +3,8 @@ name: Storage safety
 on:
   pull_request:
   push:
-    branches: [main]
+    # 2.958 — staging 은 testprocess(점검용 사이트)가 배포하는 가지다. 그 사이트도 이 커밋의 release-gate 를 기다린다(scripts/verify-release.mjs).
+    branches: [main, staging]
 
 permissions:
   contents: read
