@@ -8,3 +8,17 @@
 /* 2.919 사람 알아보기 — 팀별 역할·연결 선수 */
 .aud-team{font-size:13px;line-height:1.55;margin:2px 0;overflow-wrap:anywhere}
 .aud-team .aud-dim{color:var(--dim,#9aa4b3);font-weight:600}
+/* 2.964 — «만든 것» · «요즘 하는 일» (목록·종류·날짜만 — 본문은 콘텐츠 탭에서) */
+.aud-week{margin:12px 0 14px}
+.aud-chiprow{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin:8px 0}
+.aud-chiprow-t{flex:0 0 auto;font-size:11px;font-weight:650;color:var(--dim,#9aa4b3);min-width:84px}
+.aud-chips{display:flex;flex-wrap:wrap;gap:6px;min-width:0;flex:1 1 220px}
+.aud-chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border:1px solid var(--line,#2c3744);border-radius:13px;background:var(--panel,#1a212b);font-size:11.5px;color:var(--txt,#e7ebf1);max-width:100%}
+.aud-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aud-chip b{font-weight:700;font-variant-numeric:tabular-nums;color:var(--dim,#9aa4b3)}
+.aud-made{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.aud-made-row{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"type name" "type meta";column-gap:10px;row-gap:2px;align-items:center;text-align:left;padding:9px 12px;border:1px solid var(--line,#2c3744);border-radius:9px;background:var(--panel,#1a212b);color:var(--txt,#e7ebf1);font:inherit;cursor:pointer;min-height:44px}
+.aud-made-row:hover{border-color:var(--blue2,#5b86ff)}
+.aud-made-type{grid-area:type;font-size:10.5px;font-weight:700;color:var(--dim,#9aa4b3);padding:3px 7px;border:1px solid var(--line2,#39434f);border-radius:5px;white-space:nowrap}
+.aud-made-row strong{grid-area:name;font-size:12.5px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.aud-made-meta{grid-area:meta;font-size:11px;color:var(--dim,#9aa4b3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
