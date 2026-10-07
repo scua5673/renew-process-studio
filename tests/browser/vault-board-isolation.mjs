@@ -93,7 +93,10 @@ async function stateOf(frame){
 }
 async function library(page,frame){await page.locator('#library').click();await frame.locator('.vcard').filter({hasText:'가상 보관함 A'}).waitFor({state:'visible'});}
 async function view(frame,name='A',edit=false){
-  await frame.locator('.vcard').filter({hasText:'가상 보관함 '+name}).locator(edit?'.vc-act.edit':'.vc-act.view').click();
+  /* 2.963 — 넓은 화면(≥901)은 고른 줄에만 «보기·편집» 이 보인다. 손이 하듯 먼저 그 줄을 고른다(폰은 단추가 늘 보여 바로 누른다) */
+  const card=frame.locator('.vcard').filter({hasText:'가상 보관함 '+name}),btn=card.locator(edit?'.vc-act.edit':'.vc-act.view');
+  if(!(await btn.isVisible()))await card.click({position:{x:60,y:12}});
+  await btn.click();
   await frame.locator('#vCreateBar.on').waitFor({state:'visible'});
 }
 async function assertLive(frame,before,label){
