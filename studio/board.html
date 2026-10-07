@@ -1435,7 +1435,8 @@
   .match-hud .mh-len input{background:var(--panel2,#F1F2F4);color:var(--txt,#14161A);}
   .match-hud .mh-bar{background:var(--line,#E3E6EA);}
   .tipbox.on{opacity:1;}
-  .tipbox::after{content:"";position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  .tipbox{width:max-content;max-width:min(320px,calc(100vw - 16px));white-space:normal;word-break:keep-all;text-align:center;line-height:1.4}   /* 2.955 — 긴 설명이 화면 오른쪽 끝에서 잘렸다 */
+  .tipbox::after{content:"";position:absolute;bottom:100%;left:var(--ax,50%);transform:translateX(-50%);
     border:5px solid transparent;border-bottom-color:var(--ink);}
   .tipbox.up::after{bottom:auto;top:100%;border-bottom-color:transparent;border-top-color:var(--ink);}
 
@@ -13951,7 +13952,10 @@ try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전�
   /* 1.896 — 터치 전용 기기(hover:none)에서는 마우스오버 에뮬레이션으로 뜬 툴팁이 지워지지 않고 남는다(보관함 '닫기' 말풍선). hover 경로만 끈다 — 2.248 부터 터치는 '길게 누르기'로 뜬다(아래) */
   const _noHover=(function(){try{return window.matchMedia&&window.matchMedia('(hover:none)').matches;}catch(_){return false;}})();
   function show(el){const t=el.getAttribute('data-tip');if(!t){hide();return;}tip.textContent=t;
-    const r=el.getBoundingClientRect();let x=r.left+r.width/2;x=Math.max(46,Math.min(window.innerWidth-46,x));
+    const r=el.getBoundingClientRect();let x=r.left+r.width/2;
+    /* 2.955 — 가운데만 46px 안쪽으로 묶어서는 긴 설명이 화면 끝에서 잘렸다(«전체 선수» 설명). 실제 폭을 재서 상자가 화면 안에 들어오게 밀고, 꼬리(--ax)는 버튼 가운데를 계속 가리킨다 */
+    const _hw=Math.min((tip.offsetWidth||120),window.innerWidth-16)/2;const _cx=x;x=Math.max(8+_hw,Math.min(window.innerWidth-8-_hw,x));
+    tip.style.setProperty('--ax',Math.max(10,Math.min(_hw*2-10,_cx-(x-_hw)))+'px');
     tip.classList.remove('up');tip.style.left=x+'px';tip.style.top=(r.bottom+9)+'px';tip.classList.add('on');
     var _th=tip.offsetHeight||30;if(r.bottom+9+_th>window.innerHeight-6){tip.classList.add('up');tip.style.top=Math.max(6,r.top-9-_th)+'px';}}
   function hide(){tip.classList.remove('on');cur=null;}
@@ -18697,6 +18701,13 @@ html body #editorPanel .ep-flabel:not(#_):not(#__){font-size:12px;font-weight:80
 html body #editorPanel .inp:not(textarea):not(#_):not(#__){min-height:32px;height:32px;padding:0 10px;font-size:13px;box-sizing:border-box}
 html body #editorPanel .btn:not(#_):not(#__){min-height:32px;height:32px;padding:0 12px;font-size:12px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center}
 html body #editorPanel .ep-sq-btn:not(#_):not(#__){height:32px;min-height:32px;padding:0 8px;font-size:12px;box-sizing:border-box}
+/* 2.955 — «전체 선수»가 «전체 선»으로 잘렸다(사용자). 1.934 의 [이름표 | 버튼 넷] 한 줄에서 버튼이 같은 폭 네 칸(45px)으로 나뉘는데
+   위 규칙이 여백 8px·12px 로 키워 «전체 선수»는 60px 이 필요했다. 버튼은 글자 폭 아래로 줄지 않게(min-width:max-content) 두고,
+   네 개가 이름표 옆에 안 들어가면 묶음째 이름표 아래 줄로 내려간다(flex-wrap). 들어가는 폭에서는 예전처럼 한 줄. */
+html body #editorPanel #epSquadRow.ep-squad-row:not(#_):not(#__){display:flex!important;flex-wrap:wrap;align-items:center;column-gap:8px;row-gap:6px}
+html body #editorPanel #epSquadRow .ep-sq-lb:not(#_){flex:0 0 auto}
+html body #editorPanel #epSquadRow .ep-sq-btns:not(#_):not(#__){display:flex!important;flex-wrap:wrap;gap:5px;flex:1 1 200px;min-width:0;width:auto}
+html body #editorPanel #epSquadRow .ep-sq-btn:not(#_):not(#__){flex:1 1 auto;width:auto;min-width:max-content;padding:0 7px;overflow:visible}
 html body #editorPanel .ep-roster-row:not(#_):not(#__){min-height:32px}
 html body #editorPanel .ep-check:not(#_):not(#__){min-height:28px;padding:0 10px;font-size:12px;display:inline-flex;align-items:center;border-radius:999px;box-sizing:border-box}
 html body #editorPanel .rpe10-btns button:not(#_):not(#__){width:28px;height:28px}
