@@ -66,7 +66,7 @@
   .card .foot .n{margin-left:auto;display:inline-flex;align-items:center;gap:9px;flex:0 0 auto}
   .card .open-cue{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;padding:9px 0 0;border:0;border-top:1px solid var(--line-soft);background:none;font-family:inherit;font-size:var(--fs-caption);font-weight:var(--fw-head);color:var(--accent);cursor:pointer;text-align:left}
   .card .open-cue small{font-size:var(--fs-micro);font-weight:var(--fw-body);color:var(--text-3)}
-  .cat{display:inline-block;font-size:var(--fs-micro);font-weight:var(--fw-head);padding:2px 7px;border-radius:6px;color:#fff}
+  .cat{display:inline-block;font-size:var(--fs-micro);font-weight:var(--fw-head);padding:2px 7px;border-radius:6px;color:var(--text-2,#646A73);background:var(--surface-2,#F1F3F5)}   /* 2.963 — 주제마다 다른 색(보라·빨강·초록·파랑…)이 «색 = 뜻» 규칙을 깼다(디자인 점검). 태그는 회색 하나 — 무엇인지는 글자가 말한다 */
   .meta .n{margin-left:auto;display:inline-flex;align-items:center;gap:9px}
   .stat{display:inline-flex;align-items:center;gap:3px;color:var(--text-3);font-weight:var(--fw-body);font-size:var(--fs-caption);font-variant-numeric:tabular-nums}
   .stat svg,.likebtn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
@@ -671,8 +671,9 @@ function catChipsRender(){
 
 function catBadges(catStr){
   var ks=catKeys(catStr); if(!ks.length)ks=[catStr];
-  var show=ks.slice(0,2).map(function(k){var f=catOf(k);return '<span class="cat" style="background:'+f[2]+'">'+esc(f[1])+'</span>';}).join('');   /* 태그는 앞의 2개만 — 카드가 조용해진다 */
-  if(ks.length>2)show+='<span class="cat" style="background:#8B93A3">+'+(ks.length-2)+'</span>';
+  /* 2.963 — 색을 입히지 않는다(CATS 의 색 값은 남긴다 — 필터 칩·옛 자료가 읽을 수 있다) */
+  var show=ks.slice(0,2).map(function(k){var f=catOf(k);return '<span class="cat">'+esc(f[1])+'</span>';}).join('');   /* 태그는 앞의 2개만 — 카드가 조용해진다 */
+  if(ks.length>2)show+='<span class="cat">+'+(ks.length-2)+'</span>';
   return show;
 }
 function render(){

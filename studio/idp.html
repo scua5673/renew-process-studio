@@ -3911,6 +3911,14 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sqg-nulla{font-size:11px;font-weight:600;color:var(--text-3)}
   .sqg-quiet .plr b{color:var(--text-3);font-weight:600}
   .sqg-t .sqd-in{min-width:150px;width:100%;box-sizing:border-box}
+  /* 2.963 — «내 답» 칸: 쓴 글은 조용한 글자(누르면 고치기), 안 쓴 줄은 «＋ 한 줄». 마우스 기기는 줄에 손을 올릴 때만 ＋ 가 보인다(손가락 기기는 옅게 늘) */
+  .sqg-t .sqd-tt,.sqg-t .sqd-add{display:inline-block;max-width:260px;border:0;background:transparent;font:600 12px var(--f);padding:6px 8px;margin:0 -8px;border-radius:8px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;vertical-align:middle;cursor:pointer;min-height:0}
+  .sqg-t .sqd-tt{color:var(--text-2);cursor:text}
+  .sqg-t .sqd-add{color:var(--text-3)}
+  .sqg-t .sqd-tt:hover,.sqg-t .sqd-add:hover,.sqg-t .sqd-tt:focus-visible,.sqg-t .sqd-add:focus-visible{background:var(--surface-2);color:var(--accent)}
+  @media (hover:hover) and (pointer:fine){ .sqg-t tr:not(:hover) .sqd-add:not(:focus-visible){opacity:0} }
+  .sqg-t tr[data-sqd-row]{cursor:pointer}
   .sqg-un{margin-top:10px;font-size:11px;color:var(--text-3)}
   .sqg-un.sqg-nodoc{color:var(--accent,#5b47d6)}   /* 2.798 */
   @media (max-width:767px){ .sqg-t .c-in{display:none} .sqg-t{min-width:600px} .sqg{padding:12px 10px 10px} }
@@ -7025,6 +7033,16 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
      (평가 세트 스냅샷·항목 동기화·선수단 미러가 거기 묶여 있어 복제하면 조용히 어긋난다).
      idp.html → postMessage → app.html 중계 → scout.html save() → 되돌아오는 ack 로 화면 갱신. */
   var sqTdDay='', sqTdAuto=false;
+  /* ══ 2.963 · «내 답» 칸: 입력칸을 줄마다 깔지 않는다(디자인 점검 2026-10-07 — 47줄에 같은 입력칸 47개) ══
+     쓴 줄은 그 글을, 안 쓴 줄은 조용한 «＋ 한 줄», **누른 줄에만** 입력칸. 저장은 예전 그대로(손 뗄 때·엔터, 2.397).
+     `sqdOpenUid` — 열린 줄. ♥ 같은 다른 손잡이가 다시 그려도 쓰던 칸이 닫히지 않게 기억한다. */
+  var sqdOpenUid='';
+  function sqdCellHTML(uid,t,name){
+    var n=' data-sqd-name="'+esc(name||'')+'"';
+    if(sqdOpenUid===uid)return '<input class="sqd-in" data-sqd-in="'+esc(uid)+'"'+n+' maxlength="300" placeholder="❤ 또는 제안·격려 한 줄" value="'+esc(t||'')+'">';
+    return t?'<button type="button" class="sqd-tt" data-sqd-open="'+esc(uid)+'"'+n+' title="눌러서 고치기">'+esc(t)+'</button>'
+      :'<button type="button" class="sqd-add" data-sqd-open="'+esc(uid)+'"'+n+' aria-label="'+esc((name||'선수')+'에게 한 줄 쓰기')+'">＋ 한 줄</button>';
+  }
   var sqWkMode=null, _sqwAuto={};
   var sqQmOpen=false, sqQmDraft={};   /* 2.619 — 분기 면담(5단계) 펼침·초안 */   /* 2.618 — «이번 주» 표: null=자동(토 12시~일요일) · 0/1 코치가 고름 · _sqwAuto[uid]=자동 제안(승인 버튼이 읽는다) */   /* 2.616 — sqTdAuto: 오늘 아무도 안 적었으면 최근 적은 날(≤3일 전)로 스스로 물러난 상태 */
   var sqReqWantOpen=false;   /* 2.492 — 이상형 카드는 접힌 한 줄이 기본(사용자 "기준 페이지도 너무 복잡해") */   /* 2.397 — '오늘 한 장' 판이 보고 있는 날(''=오늘). 코치가 ‹ › 로 옮긴다 */
@@ -8295,7 +8313,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
         var tryCell=(r.tryV>=0)?('<em class="sqg-try t'+r.tryV+'">'+TRY_LB[r.tryV]+'</em>'):(r.wrote?'<em class="sqg-try tx">칩 없음</em>':'<em class="sqg-try tx">안 적음</em>');
         var wkCell='<span class="sqg-wk" title="이번 주 · 계속=진파랑 · 1~2번=연파랑 · 아직=회색">'+r.wkCells.map(function(c){ return '<i class="'+(c.v===2?'k':(c.v===1?'y':(c.v===0?'n':'')))+(c.cur?' c':'')+(c.fut?' f':'')+'"></i>'; }).join('')+'</span>';
         var why=[]; if(r.memoT)why.push('한 마디'); if(r.bodyBad)why.push('몸 나쁨'); if(r.ajN>=3)why.push('아직 '+r.ajN+'일째');
-        o+='<tr class="'+(r.hot?'sqg-hot ':'')+(r.wrote?'':'sqg-quiet')+'"'+(why.length?' title="먼저 볼 이유 · '+esc(why.join(' · '))+'"':'')+'>'
+        o+='<tr class="'+(r.hot?'sqg-hot ':'')+(r.wrote?'':'sqg-quiet')+'"'+(can?' data-sqd-row="'+esc(uid)+'"':'')+(why.length?' title="먼저 볼 이유 · '+esc(why.join(' · '))+'"':'')+'>'
           +'<td class="l"><span class="plr"><span class="no">'+esc(r.x.p.num||'')+'</span><b>'+esc(r.x.p.name||'')+'</b></span></td>'
           /* 2.635 — 출석을 같은 표에(워크플로우 둘째 판: «같은 선수 목록을 두 화면에서 두 번 만지지 않는다»). 선수단 «몸 상태» 표의 코치 확인(cs_idp_daily_v1)과 같은 칩·같은 핸들러(bindSquad 의 .phys-state) */
           /* 2.942 — 출석 칸을 걷었다. 누르면 아무 일도 안 하는 칩이었고(핸들러 bindSquad 는 2.426 부터 닿지 않는다),
@@ -8305,7 +8323,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           /* 2.684 — 그날·이번 주·몸 세 칸은 뺐다(사용자 "제거 항목: 그날·몸·이번주") */
           +'<td class="l sqg-memo"'+(r.memoT?' title="'+esc(r.memoT)+'"':'')+'>'+memoCell+'</td>'
           +(can?('<td><button type="button" class="sqd-h'+(r.rc&&r.rc.h?' on':'')+'" data-sqd-h="'+esc(uid)+'" title="봤어요">'+(r.rc&&r.rc.h?'❤':'♡')+'</button></td>'
-            +'<td class="l c-in"><input class="sqd-in" data-sqd-in="'+esc(uid)+'" maxlength="300" placeholder="❤ 또는 제안·격려 한 줄" value="'+esc((r.rc&&r.rc.t)||'')+'"></td>'):'')
+            +'<td class="l c-in">'+sqdCellHTML(uid,(r.rc&&r.rc.t)||'',r.x.p.name||'')+'</td>'):'')   /* 2.963 — 누른 줄에만 입력칸 */
           +'<td><button type="button" class="sqd-open" data-sqd-doc="'+esc(PREFIX+uid)+'" aria-label="'+esc(r.x.p.name||'')+' IDP 열기">›</button></td>'
           +'</tr>';
       });
@@ -9526,12 +9544,31 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var uid=b.dataset.sqdH, k='day:'+_sqdDay(), rc=null;
       try{ rc=((rvRec(PREFIX+uid)||{}).reacts||{})[k]||null; }catch(_){}
       reactSetAt(coachFeedbackKey(PREFIX+uid),k,{h:(rc&&rc.h)?0:1}); render(); }; });
-    [].forEach.call(wrap.querySelectorAll('[data-sqd-in]'),function(i){
+    var _sqdBindIn=function(i){
       /* ⚠ 글자를 칠 때마다 저장하고 다시 그리면 **칸이 날아간다**. 손을 뗄 때와 엔터에서만 쓴다. */
       var sv=function(){ try{ reactSetAt(coachFeedbackKey(PREFIX+i.dataset.sqdIn),'day:'+_sqdDay(),
         {t:String(i.value||'').trim().slice(0,300)}); }catch(_){} };   /* 2.513 — 한마디 한도 300자 */
-      i.onblur=sv;
-      i.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); sv(); try{i.blur();}catch(_){} } }; });
+      /* 2.963 — 손을 떼면 저장하고 그 칸만 글(또는 «＋ 한 줄»)로 되돌린다. 표 전체를 다시 그리지 않는다 */
+      i.onblur=function(){ sv(); if(sqdOpenUid===i.dataset.sqdIn)sqdOpenUid='';
+        try{ var td=i.closest('td'); if(td&&td.contains(i)){ td.innerHTML=sqdCellHTML(i.dataset.sqdIn,String(i.value||'').trim().slice(0,300),i.dataset.sqdName||''); _sqdBindOpen(td); } }catch(_){} };
+      /* ⚠ 한글은 엔터로 조합을 확정한다 — 조합 중 엔터는 흘려보낸다(2.296 과 같은 함정) */
+      i.onkeydown=function(e){ if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); try{i.blur();}catch(_){} }
+        else if(e.key==='Escape'){ e.preventDefault(); i.value=i.defaultValue; try{i.blur();}catch(_){} } };
+    };
+    var _sqdOpen=function(b){ var uid=b.dataset.sqdOpen,td=b.closest('td'); if(!uid||!td)return;
+      sqdOpenUid=uid; var t=b.classList.contains('sqd-tt')?(b.textContent||''):'';
+      td.innerHTML=sqdCellHTML(uid,t,b.dataset.sqdName||''); var i=td.querySelector('[data-sqd-in]'); if(!i)return;
+      _sqdBindIn(i); try{ i.focus(); var L=i.value.length; i.setSelectionRange(L,L); }catch(_){} };
+    var _sqdBindOpen=function(scope){ [].forEach.call(scope.querySelectorAll('[data-sqd-open]'),function(b){ b.onclick=function(e){ if(e)e.stopPropagation(); _sqdOpen(b); }; }); };
+    [].forEach.call(wrap.querySelectorAll('[data-sqd-in]'),_sqdBindIn);
+    _sqdBindOpen(wrap);
+    /* 줄 아무 데나 눌러도 그 줄의 칸이 열린다 — 단추·입력·링크는 제 일을 한다. 칸이 숨은 폭(폰)에서는 열지 않는다 */
+    [].forEach.call(wrap.querySelectorAll('tr[data-sqd-row]'),function(tr){ tr.addEventListener('click',function(e){
+      if(e.target.closest('button,input,a,select,textarea'))return;
+      var b=tr.querySelector('[data-sqd-open]'); if(!b)return;
+      var td=b.closest('td'); try{ if(td&&getComputedStyle(td).display==='none')return; }catch(_){}
+      _sqdOpen(b); }); });
+    try{ if(sqdOpenUid){ var _oi=wrap.querySelector('[data-sqd-in="'+sqdOpenUid+'"]'); if(_oi)_oi.focus(); } }catch(_){}
     /* ── 2.618 · 이번 주 표: 세그먼트 · 제안 둘 · 이번 주 한 줄 · 모두 승인 ── */
     [].forEach.call(wrap.querySelectorAll('[data-sqw]'),function(b){ b.onclick=function(){ sqWkMode=+b.dataset.sqw; if(!sqWkMode){ sqTdDay=''; sqTdAuto=false; } render(); }; });
     var _sqwNextM=(function(){ var m=mondayOf(new Date()); return ymd(addDays(m,7)); })();

@@ -19484,5 +19484,28 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
 <style id="ps-2953-board">/* 2.953 — 폰은 작전판 편집 도구가 없는 화면(2.086)인데 «포메이션으로 시작 ＋» 문이 떠 있었다 — 눌러도 편집이 이어지지 않는다(코치 점검 10/7) */
 body.ps-phone-work #ehDoor{display:none!important}
 </style>
+<style id="ps-2963-vault">/* ══ 2.963 · 보관함 소음 줄이기(전체 디자인 점검 2판, 2026-10-07) ══
+   ⚠ 보관함 옷(14600~14950행)은 런타임에 문서에 붙는 <style> 이라 이 블록보다 **뒤에** 올 수 있다 — 순서가 아니라 특이도(:not(#_))로 이긴다.
+   ① 목록 줄마다 «보기 · 편집 · ⋯» (한 화면 50쌍) — 오른쪽 미리보기에 같은 버튼이 이미 있다. 넓은 화면(세 칸, ≥901)에서는 **고른 줄에만**.
+      마우스 기기는 손을 올린 줄에도 보인다. 손가락 기기(아이패드)는 줄을 누르면 그 줄이 골라지며 나타난다.
+      폰(미리보기 칸 없음)은 그대로 — 거기선 줄의 버튼이 유일한 문이다(1.927).
+      visibility 로 감춘다 — 자리는 남겨 줄 폭이 고를 때마다 흔들리지 않게. */
+@media (min-width:901px){
+  html.ps-page-board #drillFiles .vx-items.vx-list .vcard:not(.selected):not(#_) .vc-acts{visibility:hidden}
+}
+@media (min-width:901px) and (hover:hover) and (pointer:fine){
+  html.ps-page-board #drillFiles .vx-items.vx-list .vcard:not(.selected):not(#_):hover .vc-acts{visibility:visible}
+}
+/* ② 미리보기의 주 버튼은 «큰 화면으로 보기» 하나 — «커뮤니티에 올리기»(파란 테두리)·«개인 노트에서 쓰기»는 편집·복사·더보기와 같은 무게로 */
+html.ps-page-board .vx-preview-actions.v2:not(#_) .vx-pub,html.ps-page-board .vx-preview-actions.v2:not(#_) .vx-note{
+  background:var(--panel2,#F1F3F5);color:var(--txt,#14161A);border:1px solid var(--line,#E3E6EA);font-weight:600}
+html.ps-page-board .vx-preview-actions.v2:not(#_) .vx-pub:hover,html.ps-page-board .vx-preview-actions.v2:not(#_) .vx-note:hover{border-color:var(--blue,#3a6df0);color:var(--blue,#3a6df0)}
+/* ③ «＋ 만들기» — 넓은 화면에서는 오른쪽 아래 떠 있는 단추가 미리보기 칸 아래 버튼을 가렸다. 머리줄 오른쪽 끝(원래 자리, .df-head)에 앉힌다. ⚠ 셸 안 보관함 화면에는 body.vault-full 이 붙지 않는다(실측) — #sessionView 로 가른다.
+      폰·좁은 화면(≤900)은 지금처럼 떠 있는 단추(엄지 자리). 단추 하나를 옮길 뿐 — 만드는 문은 여전히 하나다(2.298). */
+@media (min-width:901px){
+  html.ps-page-board #sessionView .df-head #dfNew:not(#_){position:static!important;margin-left:auto!important;right:auto!important;bottom:auto!important;
+    min-height:34px!important;padding:7px 14px!important;font-size:13px!important;border-radius:9px!important;box-shadow:none!important;z-index:auto!important;flex:0 0 auto}
+}
+</style>
 </body>
 </html>
