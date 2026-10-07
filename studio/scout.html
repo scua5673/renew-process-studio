@@ -492,6 +492,13 @@ body.fmdark .tb-pill.s1{border-color:#C9CFD8}   /* 2.641 — 남색 테두리가
 #teamList.tm-4col{display:grid;grid-template-columns:minmax(0,1fr);gap:0 20px;align-items:start}   /* 2.249 — 1열(사용자): 조 구획이 위아래로. 전체 보기=모든 조, 조 칩=그 조만(tmGrpFlt) */
 .tm-grpbar{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 0 6px}   /* 2.250 — 명단 위 조 필터 줄 */
 .tm-grpbar .btn{height:32px;padding:0 12px;font-size:13px}
+/* 2.954 — 따라오는 조 줄 */
+.tm-grpfloat{position:fixed;top:10px;right:16px;z-index:70;   /* 오른쪽 위 — 명단 첫 줄의 번호·이름을 가리지 않게(메모 칸 위) */
+  max-width:calc(100% - 24px);overflow-x:auto;scrollbar-width:none;
+  background:var(--panel,#fff);border:1px solid var(--line,#E3E6EA);border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,.14);padding:4px}
+.tm-grpfloat[hidden]{display:none}
+.tm-grpfloat .tm-grpbar{padding:0;flex-wrap:nowrap;gap:4px}
+.tm-grpfloat .tm-grpbar .btn{white-space:nowrap}
 #teamList.tm-4col .tm-col{min-width:0}
 .tm-col-h{font-size:12px;font-weight:800;letter-spacing:.05em;padding:10px 2px 7px;border-bottom:2px solid #16213a}
 .tm-col-h u{text-decoration:none;color:var(--dim);margin-left:6px;font-weight:800;font-variant-numeric:tabular-nums}
@@ -819,6 +826,10 @@ body.fmdark #plEditCard .pl-chips button.on{background:#F2F3F5;border-color:#F2F
 .sb-tabs button{font:inherit;font-size:var(--fs-sub);font-weight:var(--fw-strong);border:0;background:transparent;
   color:var(--dim);padding:8px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
 .sb-tabs button[aria-selected="true"]{color:var(--txt);border-bottom-color:var(--blue);}
+/* 2.954 — 포인트 오가기 버튼: 탭이 아니라 조용한 글자 버튼(밑줄 없음) */
+.sb-tabs .sb-ptsbtn{border:1px solid var(--line);border-radius:8px;margin:0 0 6px;padding:0 12px;height:32px;color:var(--dim);font-size:12.5px;font-weight:700;background:var(--panel,#fff)}
+.sb-tabs .sb-ptsbtn:hover{color:var(--txt);border-color:var(--line-2,#cfd4dc)}
+.sb-tabs .sb-ptsbtn[aria-pressed="true"]{color:var(--blue,#3a6df0);border-color:var(--blue,#3a6df0)}
 .sb-pane[hidden]{display:none;}
 .sb-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
 .sb-bar .lb{font-size:var(--fs-caption);color:var(--dim);font-weight:var(--fw-strong);}
@@ -1112,7 +1123,7 @@ body.sb-meet .sb-chip .pf{width:20px;height:20px}body.sb-meet .sb-chip .pf svg{w
 .sb-none{font-size:11px;color:var(--dim);padding:2px;}
 /* 회의 모드 — 작전판처럼 띄운다. 세부는 PDF가 맡으므로 모양과 빈자리만 크게 보여준다. */
 body.sb-meet .top,body.sb-meet .growth-head,body.sb-meet .sb-pool,
-body.sb-meet .sb-tabs button[data-sbtab],body.sb-meet .sb-title,
+body.sb-meet .sb-tabs button[data-sbtab],body.sb-meet #sbPtsToggle,body.sb-meet .sb-title,
 body.sb-meet .sb-bar .lb,body.sb-meet #sbForms,body.sb-meet #sbAdd,body.sb-meet #sbClear,body.sb-meet #sbMeetIn{display:none!important;}
 body.sb-meet #playersView .card{border:0;background:transparent;padding:0;}
 /* 1.812 — 회의모드 카드가 이상하게 뜨던 원인: 슬롯을 150px 로 좁히면서 글자는 키워
@@ -5859,9 +5870,10 @@ body.fmdark #matchMeetCard .mm-acts .mm-new,body.fmdark #matchMeetCard .mm-empty
         <h2 class="sb-title ps-pagetitle">스카우팅</h2>
         <span class="sb-desc ps-pagedesc">후보 선수를 관찰하고 우리 선수단의 포지션 기준과 비교합니다.</span>
         <!-- 1.811 — 탭 2개(사용자 지시): 후보 DB · 스카우팅 포인트. '후보' 화면이 곧 후보 DB(보드 + 붙인 후보 + 검색으로 찾기·붙이기). 임베드 탭은 제거 -->
-        <button type="button" role="tab" data-sbtab="cands" aria-selected="true">후보 DB</button>
-        <button type="button" role="tab" data-sbtab="crit" aria-selected="false">스카우팅 포인트</button>
+        <!-- 2.954 — 스카우팅이 팀 운영 위 줄 탭이 됐다(사용자 B안). «후보 DB · 스카우팅 포인트» 탭 줄을 걷고
+             포인트는 이 줄 오른쪽 끝 버튼 하나가 오간다(후보 DB 가 기본 화면). 폰에서도 이 줄은 보인다(보드 카드는 폰에서 접힘, 2.087) -->
         <span class="sb-sp"></span>
+        <button type="button" class="sb-ptsbtn" id="sbPtsToggle" aria-pressed="false" title="포지션별로 무엇을 볼지 — 체크 질문 세트">스카우팅 포인트 ›</button>
 
       </div>
 
@@ -8890,9 +8902,11 @@ function sbSetTab(t){
   if(t==="board")t="cands";   /* 보드는 후보 화면에 통합(1.495) */
   if(t==="list")t="cands";    /* 1.522 — '비교' 탭 제거(사용자 지시). 후보 화면 보드의 '전체' 모드가 같은 일을 한다 */
   sbTab=t;
-  document.querySelectorAll(".sb-tabs button").forEach(function(b){
+  document.querySelectorAll(".sb-tabs button[data-sbtab]").forEach(function(b){
     b.setAttribute("aria-selected", String(b.dataset.sbtab===t));
   });
+  /* 2.954 — 탭 둘 대신 버튼 하나가 오간다 */
+  var ptb=$("sbPtsToggle"); if(ptb){ var _cr=(t==="crit"); ptb.setAttribute("aria-pressed",String(_cr)); ptb.textContent=_cr?"‹ 후보 DB":"스카우팅 포인트 ›"; ptb.title=_cr?"후보 DB 와 보드로 돌아가기":"포지션별로 무엇을 볼지 — 체크 질문 세트"; }
   /* 1.809 — 'crit'(스카우팅 포인트) 탭은 포지션 매트릭스 대신 포인트 질문지 편집기를 연다.
      매트릭스(positionsView)는 게임모델 > 포지션·기준 갈래에서 그대로 쓴다 */
   sbUnmountCrit();
@@ -9365,6 +9379,7 @@ function sbInit(){
   var tabs=document.querySelector(".sb-tabs");
   if(tabs&&!tabs.__sb){ tabs.__sb=1; tabs.addEventListener("click",function(e){
     var b=e.target.closest("button[data-sbtab]"); if(b) sbSetTab(b.dataset.sbtab);
+    if(e.target.closest("#sbPtsToggle")) sbSetTab(sbTab==="crit"?"cands":"crit");   /* 2.954 */
   }); }
   var ssg=$("sbShowSeg");
   if(ssg&&!ssg.__sb){ ssg.__sb=1; ssg.addEventListener("click",function(e){
@@ -10984,6 +10999,25 @@ function tmGrpCycle(){
 }
 function tmGroups(){const set=new Set();tmOurs().forEach(pl=>{const g=(pl.grp||"").trim();if(g)set.add(g);});return [...set];}
 /* 2.250 — 명단 위 조 필터 줄(머리 #grpChips 와 같은 동작) — 목록으로 스크롤한 뒤에도 조를 바꿀 수 있게 */
+/* ══ 2.954 · 조 필터는 머리 하나(사용자 A안) ══════════════════════════════════════
+   작전판 위 #grpChips 와 명단 위 .tm-grpbar 가 같은 필터를 두 번 보였다. 명단 위 줄을 걷고,
+   머리의 조 칩이 화면 위로 지나가면 같은 동작의 작은 줄이 화면 위에 붙어 따라온다(#tmGrpFloat).
+   ⚠ position:sticky 로는 안 된다 — 칩은 .tm-head 안에 있고 sticky 는 부모 밖으로 못 나간다.
+   스크롤은 창이 아닐 수 있어 document 에 capture 로 듣는다. */
+function tmGrpFloatSync(){
+  var tv=$("teamView"); if(!tv)return;
+  var f=$("tmGrpFloat"); if(!f){ f=document.createElement("div"); f.id="tmGrpFloat"; f.className="tm-grpfloat"; f.setAttribute("role","group"); f.setAttribute("aria-label","조 보기"); f.hidden=true; tv.appendChild(f); }
+  f.innerHTML=""; var chips=$("grpChips");
+  if(chips&&chips.style.display!=="none"){ var bar=tmGrpBarEl(); f.appendChild(bar); }
+  tmGrpFloatVis();
+}
+function tmGrpFloatVis(){
+  var f=$("tmGrpFloat"), chips=$("grpChips"), tv=$("teamView"); if(!f)return;
+  var show=false;
+  try{ if(f.firstChild&&chips&&chips.style.display!=="none"&&tv&&tv.classList.contains("on")&&!document.body.classList.contains("tb-meet")){ show=chips.getBoundingClientRect().bottom<0; } }catch(_){}
+  if(f.hidden===show)f.hidden=!show;
+}
+try{ document.addEventListener("scroll",function(){ tmGrpFloatVis(); },{capture:true,passive:true}); window.addEventListener("resize",function(){ tmGrpFloatVis(); }); }catch(_){}
 function tmGrpBarEl(){
   var bar=document.createElement("div"); bar.className="tm-grpbar";
   var gs=tmGroups(); var base=tmGrpBase();
@@ -11715,7 +11749,7 @@ function renderTeam(){
   try{var _et=$("tmEvalTodo");if(_et)_et.style.display=(evalN>0&&oursAll.length-evalN>0)?"":"none";}catch(_){}
   try{renderTmApprovals();}catch(_){}
   if(!oursRaw.length&&tmGrpFilter){   /* 2.250 — 필터로 비어 보일 때: '선수 없음' 빈 카드가 필터 줄까지 지워 되돌아갈 길이 없었다 */
-    box.classList.add("tm-4col"); box.appendChild(tmGrpBarEl());
+    box.classList.add("tm-4col"); setTimeout(tmGrpFloatSync,0);   /* 2.954 — 명단 위 조 줄은 걷었다(머리 하나 + 따라오는 줄) */
     var _fe=document.createElement("div"); _fe.className="tm-empty"; _fe.style.cssText="grid-column:1/-1;padding:20px 4px;color:var(--dim,#646A73);font-size:13px";
     _fe.textContent=tmGrpFilter+" 조에 아직 선수가 없어요 — 선수 행의 팀 버튼(A·B…)으로 배정하세요";
     box.appendChild(_fe); return;
@@ -11727,7 +11761,7 @@ function renderTeam(){
   const posOrd=pl=>{const i2=data.positions.findIndex(p2=>p2.id===pl.posId);return i2<0?9999:i2;};
   const ours=oursRaw.slice().sort((a,b2)=>posOrd(a)-posOrd(b2));
   box.classList.add("tm-4col");
-  box.appendChild(tmGrpBarEl());   /* 2.250 — 명단 바로 위에도 조 필터(사용자): 머리 #grpChips 와 같은 동작 */
+  setTimeout(tmGrpFloatSync,0);   /* 2.954 — 2.250 의 명단 위 조 줄을 걷었다(사용자 A안 — 같은 필터 두 벌). 대신 머리 줄이 화면 밖으로 나가면 위에 붙어 따라온다 */
   /* 1.687 — 후보 카드와 같은 열 머리글 */
   /* ══ 2.531 · 팀이 **아직 안 쓰는 열은 접는다**(2.528 점검) ═══════════════════════
      사용자 팀은 48명 전원 평가 0 · 주발 0 인데, 평가 열(244px)과 주발 열(40px)이 48행 전부에
