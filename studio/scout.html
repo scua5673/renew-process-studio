@@ -18626,6 +18626,10 @@ function ckSeasonStats(){
        이제 저장본에 있는 **모든 주**를 훑는다. 미래는 그대로 제외(아직 오지 않은 훈련을 실적으로 세지 않는다). */
     var _wks=Object.keys(weeks).map(function(k){return parseInt(k,10);})
       .filter(function(n){return !isNaN(n)&&n<=cur;}).sort(function(a,b){return a-b;});
+    /* 2.951 — 머리에 «43주»(기록이 있는 주 수)를 적었더니 바로 옆 카드의 «41주차»(달력 주)와 부딪혔다(코치 점검 10/7).
+       주 수 대신 **언제부터** 센 것인지를 말한다. */
+    try{ if(am&&!isNaN(am)&&_wks.length){ var _s0=new Date(am); _s0.setDate(_s0.getDate()+_wks[0]*7);
+      out.since=(_s0.getFullYear()!==new Date().getFullYear()?(_s0.getFullYear()+"."):"")+(_s0.getMonth()+1)+"/"+_s0.getDate(); } }catch(_){}
     _wks.forEach(function(w){
       var arr=weeks[String(w)]; if(!Array.isArray(arr))return;
       out.weeks++;
@@ -18642,15 +18646,18 @@ function ckSeasonStats(){
         if(hasTr)out.train++; else if(day.off||bd.sched==="OFF"){ out.off++; return; }
         else return;
         /* 국면 — 원천은 **세션(tr.gmMoment)** 하나. 세션에 없으면 옛 자리(보드 주제·trainData)를 폴백으로 본다 */
-        var got=false, _dayTagged=false;
-        trs.forEach(function(tr){ var mk=tr&&tr.gmMoment; if(!mk)return;
-          out.byMoment[mk]=(out.byMoment[mk]||0)+1; out.any=true; got=true; _dayTagged=true; });
-        if(!got&&bd.gmMoment){ out.byMoment[bd.gmMoment]=(out.byMoment[bd.gmMoment]||0)+1; out.any=true; got=true; _dayTagged=true; }
-        if(!got&&Array.isArray(bd.trainData))bd.trainData.forEach(function(td){
+        /* 2.951 — 국면은 세션의 주제 **전부**(PSSchedule.sesMoments — «이번 주 · 분»과 같은 함수)를 날 단위로 센다.
+           옛 코드는 tr.gmMoment(첫 주제 하나)만 셌다 — 같은 줄이 «수비→공격 전환 이번 주 85분 · 시즌 0일»이라 말했다(코치 점검 10/7).
+           열 이름이 «시즌 · 일»이므로 한 날에 세션이 둘이어도 그 국면은 하루. */
+        var _dm={}, _PSS=window.PSSchedule;
+        trs.forEach(function(tr){ ((_PSS&&_PSS.sesMoments)?_PSS.sesMoments(tr,pm):(tr&&tr.gmMoment?[tr.gmMoment]:[])).forEach(function(mk){ _dm[mk]=1; }); });
+        if(!Object.keys(_dm).length&&bd.gmMoment)_dm[bd.gmMoment]=1;
+        if(!Object.keys(_dm).length&&Array.isArray(bd.trainData))bd.trainData.forEach(function(td){
           if(!td||!Array.isArray(td.gmPhases))return;
-          td.gmPhases.forEach(function(id){ var mk=pm[id]; if(!mk)return;
-            out.byMoment[mk]=(out.byMoment[mk]||0)+1; out.any=true; _dayTagged=true; }); });
-        if(_dayTagged)out.tagged++;   /* 2.533 — 하루에 여러 국면을 붙여도 '붙인 날'은 하루 */
+          td.gmPhases.forEach(function(id){ var mk=pm[id]; if(mk)_dm[mk]=1; }); });
+        var _dmk=Object.keys(_dm);
+        _dmk.forEach(function(mk){ out.byMoment[mk]=(out.byMoment[mk]||0)+1; out.any=true; });
+        if(_dmk.length)out.tagged++;   /* 2.533 — 하루에 여러 국면을 붙여도 '붙인 날'은 하루 */
         /* 2.482 — 상세(사용자 "국면별로 지금 어디까지 왔는지 자세하게"): 그 날 다룬 국면·세부 국면을
            하루 한 번씩(중복 제거) 모아 마지막 날짜와 날수를 쌓는다. 날짜는 anchorMonday 기준. */
         try{ if(am&&!isNaN(am)){
@@ -18659,6 +18666,7 @@ function ckSeasonStats(){
           var _dd2=String(_d.getDate()); if(_dd2.length<2)_dd2="0"+_dd2;
           var _ymd=_d.getFullYear()+"-"+_mm+"-"+_dd2;
           var _mos={}, _phs={};
+          _dmk.forEach(function(mk){ _mos[mk]=1; });   /* 2.951 — 주제의 국면 전부 */
           trs.forEach(function(tr){ if(tr&&tr.gmMoment)_mos[tr.gmMoment]=1;
             if(tr&&Array.isArray(tr.gmPhases))tr.gmPhases.forEach(function(id){ if(pm[id]){_phs[id]=1;_mos[pm[id]]=1;} }); });
           if(bd.gmMoment)_mos[bd.gmMoment]=1;
@@ -19445,10 +19453,14 @@ function ckWeekPhase(wk){
   wk.forEach(function(c){ if(c.kind!=="tr")return;
     var at=teamHomeDayAt(c.o)||{}, day=at.day||{}, b=day.board||{};
     var trs=(day.trainings&&day.trainings.length)?day.trainings:[teamBoardSession(b)].filter(Boolean);
-    trs.forEach(function(tr,i){ var mins=ckBlocksMin(tr.blocks); if(!mins&&i===0){ try{ var bs=teamBoardSession(b); if(bs)mins=ckBlocksMin(bs.blocks); }catch(_){} } if(!mins)return;
-      var keys=[]; (Array.isArray(tr.topics)?tr.topics:[]).forEach(function(v){ v=String(v); if(v.indexOf("m:")===0)keys.push(v.slice(2)); });
-      if(!keys.length&&tr.gmMoment)keys.push(tr.gmMoment);
-      if(!keys.length&&Array.isArray(tr.gmPhases))tr.gmPhases.forEach(function(id){ if(pm[id]&&keys.indexOf(pm[id])<0)keys.push(pm[id]); });
+    /* 2.951 — 분·국면은 PSSchedule.sesMin/sesMoments(일정·플레이북과 같은 함수). 옛 코드는 블록이 없으면
+       보드 칩 **전부**를 첫 세션에 몰아 셌다(하루 두 세션이면 둘째 세션이 0분). 세션 객체가 없는 옛 날은 예전처럼 보드 블록. */
+    var PSS=window.PSSchedule;
+    trs.forEach(function(tr,i){ var mins=0;
+      if(day.trainings&&day.trainings.length&&PSS&&PSS.sesMin)mins=PSS.sesMin(day,tr);
+      else{ mins=ckBlocksMin(tr.blocks); if(!mins&&i===0){ try{ var bs=teamBoardSession(b); if(bs)mins=ckBlocksMin(bs.blocks); }catch(_){} } }
+      if(!mins)return;
+      var keys=(PSS&&PSS.sesMoments)?PSS.sesMoments(tr,pm):[];
       if(!keys.length&&b.gmMoment)keys.push(b.gmMoment);
       total+=mins; if(!keys.length){ untagged+=mins; return; }
       keys.forEach(function(k){ by[k]=(by[k]||0)+mins/keys.length; }); }); });
@@ -19717,7 +19729,7 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
   var _wcol=function(n){ return /공격 →|공→수|수비 →|수→공/.test(n)?"#c77d00":/공격/.test(n)?"#1f8a4c":/수비/.test(n)?"#d4403a":/세트/.test(n)?"#7C5CC4":"#3a6df0"; };
   var _STDN={ao:"공격 조직",do:"수비 조직",dt:"공격 → 수비 전환",at:"수비 → 공격 전환",set:"세트피스",ic:"경합 · 세컨드 볼"};   /* 게임모델 저장본이 없을 때 키를 이름으로(gamemodel.html 기본 키) */
   var _rows=_st.moments.slice(); Object.keys(_wp.by).forEach(function(k){ if(!_rows.some(function(r){return r.key===k;}))_rows.push({key:k,name:_STDN[k]||k,phases:[]}); });
-  h+='<div class="pn sofar"><div class="hd">지금까지<small>'+(_st.weeks?("올 시즌 · "+_st.weeks+"주"):"")+'</small><button type="button" class="r" data-ck="session">일정 열기 →</button></div><div class="bd">'
+  h+='<div class="pn sofar"><div class="hd">지금까지<small>'+(_st.since?("올 시즌 · "+_st.since+"부터"):"")+'</small><button type="button" class="r" data-ck="session">일정 열기 →</button></div><div class="bd">'
     +'<div class="sf-n">'
       +'<div><b>'+_st.train+'</b><span>훈련</span></div>'
       +'<div><b>'+_st.off+'</b><span>OFF</span></div>'   /* 2.301 — '쉼'→'OFF'(사용자): 같은 화면 14일 스트립이 이미 OFF 라 말을 하나로 */
