@@ -1545,6 +1545,34 @@
     return o;
   }
   function readForData(d,grp){ var o=Object.assign({},d);o.weeks={};var weeks=d.grpWeeks&&d.grpWeeks[grp]||d.weeks||{};Object.keys(weeks).forEach(function(k){o.weeks[k]=(weeks[k]||[]).map(function(day){return groupDay(day,grp);});});o.grpScope=grp;return o; }
+  /* ══ 2.951 · 세션의 분·국면은 **한 곳에서** 센다 ══════════════════════════════
+     코치 점검(10/7): 같은 주를 «오늘»은 공-수 85분·수-공 85분, «플레이북»은 0분이라 말했다.
+     ⚠ 셈이 셋이었다 — 일정(process psSesMin: 보드 칩의 분×세트), 콕핏(블록 → 없으면 보드 칩 전부를 첫 세션에),
+        플레이북(블록만 — 2.304 이후 세션엔 블록이 없어 늘 0). 시즌 국면은 세션의 **첫 주제 하나만** 셌다.
+     → 분 = 블록이 있으면 블록(옛 저장본), 없으면 그 세션 슬롯에 붙은 보드 칩의 분×세트(2.336 규칙 그대로).
+       국면 = 주제의 'm:키' 전부 → 없으면 gmMoment → 없으면 세부 국면(gmPhases)의 국면. */
+  function sesMin(day,tr,board){
+    var blk=0;(((tr||{}).blocks)||[]).forEach(function(x){var m=parseInt(x&&(x.dur!=null?x.dur:(x.minutes!=null?x.minutes:(x.min!=null?x.min:x.duration))),10);if(!isNaN(m)&&m>0)blk+=m;});
+    if(blk)return blk;
+    var b=board||(day&&day.board);if(!b)return 0;
+    var sl=String((tr&&tr.slot)||''),s=0;
+    [['meets','meetSlot','meetsData'],['warms','warmSlot','warmsData'],['trains','trainSlot','trainData'],['libs','libSlot','libData']].forEach(function(k){
+      (b[k[0]]||[]).forEach(function(v,i){
+        if(!String(v==null?'':v).trim())return;
+        if(String((((b[k[1]]||[])[i])||''))!==sl)return;
+        var d=(b[k[2]]||[])[i];if(!d)return;
+        s+=(parseInt(d.minutes,10)||0)*Math.max(1,parseInt(d.sets,10)||1);
+      });
+    });
+    return s;
+  }
+  function sesMoments(tr,phaseMoment){
+    var keys=[];if(!tr)return keys;
+    (Array.isArray(tr.topics)?tr.topics:[]).forEach(function(v){v=String(v);if(v.indexOf('m:')===0&&keys.indexOf(v.slice(2))<0)keys.push(v.slice(2));});
+    if(!keys.length&&tr.gmMoment)keys.push(String(tr.gmMoment));
+    if(!keys.length&&Array.isArray(tr.gmPhases)&&phaseMoment)tr.gmPhases.forEach(function(id){var mk=phaseMoment[id];if(mk&&keys.indexOf(mk)<0)keys.push(mk);});
+    return keys;
+  }
   window.PSSchedule={
     /* 2.475 — 죽은 export 정리(전수조사: 외부 사용은 anchor·hasMatch·mondayOf·newId·stampIds·cellOf·read·readFor 뿐).
        ymd·parseYmd·sourceId·normalize 본체는 내부 호출로 산다 — export 표면만 걷음 */
@@ -1557,6 +1585,7 @@
     readFor:function(grp){ var d=readJSON(SCHED_KEY); if(!d||!grp)return d; return readForData(d,grp); },
     /* 2.933 — 읽기 전용 공유 사본(위 view 주석). 화면 그리기용 */
     view:view,
+    sesMin:sesMin, sesMoments:sesMoments,   /* 2.951 — 세션의 분·국면(일정·콕핏·플레이북이 같은 함수) */
   };
 
   /* 페이지의 인라인 코드가 일정을 읽기 전에 기준선을 맞춘다. */
