@@ -33,7 +33,7 @@
     gap:2px!important;
     border:0!important;
     border-right:1px solid #e6e8ee!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:none!important;
   }
   html.ps-page-app .brand{
@@ -163,8 +163,8 @@
     background:#edf2ff!important;border-color:#b9c9f6!important;color:#2c54c4!important;
   }
   html.ps-page-app #gearPop .btn{
-    background:#fff!important;border:1px solid #e1e5eb!important;border-radius:6px!important;
-    color:#344054!important;font-size:11px!important;font-weight:600!important;box-shadow:none!important;
+    background:var(--ps-wbtn,#fff)!important;border:1px solid #e1e5eb!important;border-radius:6px!important;
+    color:var(--ps-wink,#344054)!important;font-size:11px!important;font-weight:600!important;box-shadow:none!important;
   }
   html.ps-page-app #gearPop .btn:hover{background:#f5f6f8!important;}
   html.ps-page-app body.fmdark #gearPop{border-color:#394351!important;}
@@ -210,7 +210,7 @@
     gap:0 16px!important;
     border:0!important;
     border-bottom:1px solid var(--fig-line)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-sizing:border-box!important;
   }
   html.ps-page-app #teamNav .teamname{
@@ -338,7 +338,7 @@
     gap:5px!important;
     border:0!important;
     border-bottom:1px solid var(--fig-line)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
   }
   html.ps-page-board #boardPageStrip .bp-head{
     margin-right:8px!important;gap:6px!important;
@@ -360,7 +360,7 @@
     gap:4px!important;
     border:1px solid #e2e6ec!important;
     border-radius:6px!important;
-    background:#fff!important;
+    background:var(--ps-wbtn,#fff)!important;
   }
   html.ps-page-board #boardPageStrip .bp-tab .bpx svg{width:10px!important;height:10px!important;}
   html.ps-page-board #boardPageStrip .bp-tab.on{
@@ -373,8 +373,8 @@
     padding:3px 8px!important;
     font-size:11px!important;
     border:1px dashed #bdc6d5!important;
-    color:#646A73!important;
-    background:#fff!important;
+    color:var(--ps-wink,#646A73)!important;
+    background:var(--ps-wbtn,#fff)!important;
   }
   html.ps-page-board #boardPageStrip .bp-export{
     flex:0 0 auto;
@@ -423,7 +423,7 @@
     overflow:visible!important;
     border:1px solid #E3E6EA!important;
     border-radius:12px!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:0 6px 18px rgba(15,23,42,.12)!important;
     z-index:190!important;
   }
@@ -466,7 +466,7 @@
     border:0!important;
     border-bottom:1px solid #eceef2!important;
     border-radius:0!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:none!important;
     overflow:hidden!important;
   }
@@ -477,7 +477,7 @@
     border:1px solid #e3e6eb!important;
     border-radius:18px!important;
     overflow:hidden!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:0 12px 30px rgba(16,23,37,.12)!important;
   }
 }
@@ -550,7 +550,7 @@ html.ps-page-scout .team-premium-metrics em{
     height:64px!important;
     padding:0 20px!important;
     border-bottom:1px solid var(--fig-line)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     font-size:20px!important;
   }
   html.ps-page-scout .wrap{
@@ -695,7 +695,7 @@ html.ps-page-scout .team-premium-metrics em{
     padding:12px!important;
     border:1px solid var(--fig-line)!important;
     border-radius:var(--fig-radius)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:none!important;
   }
   html.ps-page-scout #homeView .team-home-duo{
@@ -908,7 +908,7 @@ html.ps-page-idp .ipj-step small{
     min-height:64px!important;
     padding:0 20px!important;
     border-bottom:1px solid var(--fig-line)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
   }
   html.ps-page-idp .idp-title .ps-pagetitle{
     color:var(--fig-ink)!important;
@@ -919,7 +919,7 @@ html.ps-page-idp .ipj-step small{
     min-height:48px!important;
     padding:0 20px!important;
     border-bottom:1px solid var(--fig-line)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
   }
   html.ps-page-idp #layers button.on{color:var(--fig-violet)!important}
   html.ps-page-idp #layers button.on::after{background:var(--fig-violet)!important}
@@ -987,7 +987,7 @@ html.ps-page-idp .ipj-step small{
     gap:10px!important;
     border:0!important;
     border-bottom:1px solid var(--fig-line)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-sizing:border-box!important;
   }
   html.ps-page-board body.vault-full .df-head .df-ttl{
@@ -1019,7 +1019,7 @@ html.ps-page-idp .ipj-step small{
     gap:8px!important;
     border:0!important;
     border-bottom:1px solid var(--fig-line)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-sizing:border-box!important;
   }
   html.ps-page-board body.vault-full #vaultBar #dfSearch{
@@ -1036,7 +1036,7 @@ html.ps-page-idp .ipj-step small{
     min-height:34px!important;
     border-color:#dfe3e9!important;
     border-radius:9px!important;
-    background:#fff!important;
+    background:var(--ps-wbtn,#fff)!important;
   }
   html.ps-page-board body.vault-full #drillFiles.vault-shell{
     height:calc(100dvh - 128px)!important;
@@ -1054,7 +1054,7 @@ html.ps-page-idp .ipj-step small{
     margin:0!important;
     border:0!important;
     border-radius:0!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:none!important;
     overflow:hidden!important;
   }
@@ -1070,7 +1070,7 @@ html.ps-page-idp .ipj-step small{
     min-width:0!important;
     border:0!important;
     border-right:1px solid var(--fig-line)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     overflow:auto!important;
   }
   html.ps-page-board body.vault-full .vault-explorer>.vx-preview{
@@ -1163,7 +1163,7 @@ html.ps-page-idp .ipj-step small{
     grid-template-rows:38px 64px!important;
     border-color:#dde1e7!important;
     border-radius:12px!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:0 6px 18px rgba(15,23,42,.12)!important;
   }
   html.ps-page-board body.rail-full #ps-command-dock>#animBar{
@@ -1186,7 +1186,7 @@ html.ps-page-idp .ipj-step small{
     gap:3px!important;
     padding:2px 8px!important;
     border-radius:0 0 12px 12px!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     overflow:visible!important;
   }
   html.ps-page-board body.rail-full #ps-command-dock .cmd-row-label{
@@ -1697,8 +1697,8 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     overflow:hidden!important;
     border:1px solid var(--cmd-line,#dfe3ea)!important;
     border-radius:16px!important;
-    background:#fff!important;
-    color:var(--cmd-text,#1f2937)!important;
+    background:var(--ps-wsurf,#fff)!important;
+    color:var(--ps-wink,var(--cmd-text,#1f2937))!important;
     box-shadow:0 20px 50px rgba(15,23,42,.22)!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop.on{display:flex!important;}
@@ -1710,7 +1710,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     min-height:50px!important;
     padding:9px 12px 8px 16px!important;
     border-bottom:1px solid var(--cmd-line,#e4e7ec)!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-titlebox{
     display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;
@@ -1738,7 +1738,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     background:transparent!important;color:#646A73!important;box-shadow:none!important;font:800 12px/1 Pretendard,sans-serif!important;cursor:pointer!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button.on{
-    background:#fff!important;color:#2c54c4!important;box-shadow:0 1px 3px rgba(15,23,42,.12)!important;
+    background:var(--ps-wpill,#fff)!important;color:var(--ps-wacc,#2c54c4)!important;box-shadow:0 1px 3px rgba(15,23,42,.12)!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-content{
     flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;
@@ -1769,7 +1769,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     flex:1 1 auto!important;display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:3px!important;min-width:0!important;padding:2px!important;border-radius:8px!important;background:#f5f6f8!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop :is(.seg>button,.btn,select.btn){
-    min-height:28px!important;margin:0!important;border:1px solid #e1e5eb!important;border-radius:7px!important;background:#fff!important;color:#344054!important;box-shadow:none!important;font:700 11px/1 Pretendard,sans-serif!important;
+    min-height:28px!important;margin:0!important;border:1px solid #e1e5eb!important;border-radius:7px!important;background:var(--ps-wbtn,#fff)!important;color:var(--ps-wink,#344054)!important;box-shadow:none!important;font:700 11px/1 Pretendard,sans-serif!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .seg>button{padding:0 8px!important;}
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .seg>button.on{border-color:#b9c9f6!important;background:#edf2ff!important;color:#2c54c4!important;}
@@ -1787,7 +1787,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger>summary::after{content:"＋";position:absolute;right:12px;font-size:15px;}
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger[open]>summary::after{content:"−";}
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger-body{display:flex!important;flex-direction:column!important;gap:6px!important;padding:0 10px 10px!important;}
-  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger .btn{border-color:#ecc9c6!important;background:#fff!important;color:#a84440!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger .btn{border-color:#ecc9c6!important;background:var(--ps-wbtn,#fff)!important;color:var(--ps-wbad,#a84440)!important;}
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop,
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-head{background:#1f2631!important;color:#F2F3F5!important;border-color:#394351!important;}
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-title{color:#f4f6f8!important;}
@@ -1836,7 +1836,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     grid-template-rows:40px 72px!important;
     border:0!important;
     border-radius:14px!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:inset 0 0 0 1px var(--cmd-line),0 8px 24px rgba(15,23,42,.12)!important;
     overflow:visible!important;
   }
@@ -1856,7 +1856,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     padding:4px 8px!important;
     border-bottom:1px solid var(--cmd-line)!important;
     border-radius:14px 14px 0 0!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:none!important;
     overflow:hidden!important;
   }
@@ -1866,7 +1866,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     height:72px!important;
     min-height:72px!important;
     border-radius:0 0 14px 14px!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     overflow:visible!important;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #floatBar>#drawPanel,
@@ -1885,7 +1885,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     gap:6px!important;
     border:0!important;
     border-radius:0!important;
-    background:#fff!important;
+    background:var(--ps-wsurf,#fff)!important;
     box-shadow:none!important;
     overflow:visible!important;
   }
@@ -2019,8 +2019,8 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
   html.ps-page-board body.command-dock-v5 #animSpeedSel,
   html.ps-page-board body.command-dock-v5 #animHoldSel{
     flex:0 0 auto!important;width:50px!important;min-width:50px!important;height:28px!important;min-height:28px!important;
-    padding:0 15px 0 6px!important;border:0!important;border-radius:7px!important;background:#fff!important;
-    color:var(--cmd-text)!important;font-size:10px!important;
+    padding:0 15px 0 6px!important;border:0!important;border-radius:7px!important;background:var(--ps-wbtn,#fff)!important;
+    color:var(--ps-wink,var(--cmd-text))!important;font-size:10px!important;
   }
   html.ps-page-board body.command-dock-v5 #animHoldSel{width:58px!important;min-width:58px!important;}
 
@@ -2048,12 +2048,12 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     margin:0!important;padding:0!important;border:1px solid rgba(15,23,42,.16)!important;border-radius:7px!important;
     font:800 9px/1 Pretendard,sans-serif!important;cursor:pointer!important;
   }
-  html.ps-page-board body.command-dock-v5 #benchCat #teamReset{display:grid!important;background:#fff!important;color:var(--cmd-muted)!important;}
+  html.ps-page-board body.command-dock-v5 #benchCat #teamReset{display:grid!important;background:var(--ps-wbtn,#fff)!important;color:var(--ps-wink,var(--cmd-muted))!important;}
   html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn svg,
   html.ps-page-board body.command-dock-v5 #benchCat #teamReset svg,
   html.ps-page-board body.command-dock-v5 #cmd-equip-color svg{width:16px!important;height:16px!important;}
   /* 1.997 — '유니폼 설정'은 글자 알약(도구 색상 선택 알약과 같은 결): 위 토큰 규칙(정사각 26px)에서 빼낸다 */
-  html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn{width:auto!important;min-width:0!important;flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;gap:5px!important;padding:0 10px 0 8px!important;border-radius:999px!important;font:700 11px/1 Pretendard,sans-serif!important;white-space:nowrap!important;background:#fff!important;color:var(--cmd-muted,#646A73)!important;}
+  html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn{width:auto!important;min-width:0!important;flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;gap:5px!important;padding:0 10px 0 8px!important;border-radius:999px!important;font:700 11px/1 Pretendard,sans-serif!important;white-space:nowrap!important;background:var(--ps-wbtn,#fff)!important;color:var(--ps-wink,var(--cmd-muted,#646A73))!important;}
   html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn:hover,html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn.on{color:var(--blue,#3a6df0)!important;border-color:rgba(58,109,240,.5)!important;background:var(--blue-soft,#EEF2FF)!important;}
   html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn svg{width:14px!important;height:14px!important;}
   /* rail-full 토큰 규칙(1454·1693)보다 특이도 높게 — 유니폼 설정 알약 폭 자유 */
@@ -2084,7 +2084,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
   html.ps-page-board body.command-dock-v5 #cmd-equipment-group #railEquip .chip img{width:16px!important;height:16px!important;object-fit:contain!important;}
   html.ps-page-board body.command-dock-v5 #cmd-equip-colors-pop{
     min-width:240px!important;padding:10px!important;border:1px solid var(--cmd-line)!important;border-radius:12px!important;
-    background:#fff!important;box-shadow:0 14px 36px rgba(15,23,42,.18)!important;
+    background:var(--ps-wsurf,#fff)!important;box-shadow:0 14px 36px rgba(15,23,42,.18)!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-equip-colors-pop #eqColCtl{
     display:flex!important;align-items:center!important;flex-direction:row!important;width:auto!important;height:auto!important;gap:6px!important;margin:0!important;
@@ -2319,8 +2319,8 @@ html.ps-page-board body.ps-dock.eh-open #emptyHint{
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave{
     border:1px solid #c8d6fa!important;
-    background:#fff!important;
-    color:#2c54c4!important;
+    background:var(--ps-wbtn,#fff)!important;
+    color:var(--ps-wacc,#2c54c4)!important;
     box-shadow:none!important;
     gap:4px!important;
   }
@@ -2774,7 +2774,7 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
     display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;
     flex:0 0 82px!important;width:82px!important;min-width:82px!important;height:28px!important;min-height:28px!important;
     margin:0!important;padding:0 7px!important;border:1px solid var(--cmd-divider,#dfe3ea)!important;border-radius:7px!important;
-    background:#fff!important;color:var(--cmd-text,#1f2937)!important;font:800 10px/1 Pretendard,sans-serif!important;white-space:nowrap!important;
+    background:var(--ps-wbtn,#fff)!important;color:var(--ps-wink,var(--cmd-text,#1f2937))!important;font:800 10px/1 Pretendard,sans-serif!important;white-space:nowrap!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn:hover{background:var(--cmd-hover,#f2f4f7)!important;border-color:#cfd5df!important;}
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn.on{background:var(--cmd-soft,#eef4ff)!important;border-color:#bfd0fb!important;color:#2c54c4!important;}
@@ -2926,14 +2926,14 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-equip-color,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #benchCat .team-style-btn{
     border-color:#d7dee9!important;
-    background:#fff!important;
+    background:var(--ps-wbtn,#fff)!important;
     box-shadow:none!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{
     height:30px!important;
     min-height:30px!important;
     border-color:var(--cmd-line)!important;
-    background:#fff!important;
+    background:var(--ps-wbtn,#fff)!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock button:hover{
     background:var(--cmd-hover)!important;
@@ -3040,10 +3040,10 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
     padding:9px 16px!important;
     border:1px solid var(--fig-line,#e6e8ee)!important;border-left:4px solid var(--team-c,#1b3157)!important;
     border-radius:12px!important;
-    background:#fff!important;color:var(--fig-ink,#0f1420)!important;
+    background:var(--ps-wsurf,#fff)!important;color:var(--fig-ink,#0f1420)!important;
     gap:14px!important;
   }
-  html.ps-page-scout #homeView .team-topbar.has-color{background:#fff!important;}
+  html.ps-page-scout #homeView .team-topbar.has-color{background:var(--ps-wsurf,#fff)!important;}
   html.ps-page-scout #homeView .team-topbar .team-emblem{width:32px!important;height:32px!important;min-width:32px!important;}
   html.ps-page-scout #homeView .team-topbar .team-hero-copy{flex-direction:row!important;align-items:center!important;gap:12px!important;flex:1 1 auto!important;min-width:0!important;}
   html.ps-page-scout #homeView .team-topbar .team-hero-copy h1{font-size:14px!important;letter-spacing:-.02em!important;color:var(--fig-ink,#0f1420)!important;order:-1;}
@@ -3058,7 +3058,7 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
   html.ps-page-scout #homeView .team-topbar .ttb-match>b{color:var(--fig-ink,#0f1420)!important;font-size:13px!important;}
   html.ps-page-scout #homeView .team-topbar .ttb-md{height:32px!important;min-width:48px!important;border-radius:9px!important;}
   html.ps-page-scout #homeView .team-topbar .ttb-md strong{font-size:12px!important;}
-  html.ps-page-scout #homeView .ttb-colorbtn{top:50%!important;transform:translateY(-50%);right:12px!important;border-color:var(--fig-line,#e6e8ee)!important;background:#fff!important;}
+  html.ps-page-scout #homeView .ttb-colorbtn{top:50%!important;transform:translateY(-50%);right:12px!important;border-color:var(--fig-line,#e6e8ee)!important;background:var(--ps-wbtn,#fff)!important;}
 }
 
 /* 2.018 — 폰 히어로: 제목 '오늘'은 숨기고 인사말만 */
@@ -3087,7 +3087,7 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
   html.ps-page-scout #homeView .team-topbar .ttb-md strong{font-size:12px!important;}
   html.ps-page-scout #homeView .team-topbar .ttb-md em{margin-left:2px!important;}
   /* 색 버튼: 겹치지 않게 흐름 안 마지막 자리(작은 점) */
-  html.ps-page-scout #homeView .ttb-colorbtn{position:static!important;transform:none!important;order:99;width:20px!important;height:20px!important;margin-left:6px;border:1px solid var(--fig-line,#e6e8ee)!important;background:#fff!important;opacity:1!important;flex:0 0 auto;}
+  html.ps-page-scout #homeView .ttb-colorbtn{position:static!important;transform:none!important;order:99;width:20px!important;height:20px!important;margin-left:6px;border:1px solid var(--fig-line,#e6e8ee)!important;background:var(--ps-wbtn,#fff)!important;opacity:1!important;flex:0 0 auto;}
   html.ps-page-scout #homeView .ttb-colorbtn span{width:8px!important;height:8px!important;box-shadow:none!important;}
   html.ps-page-scout #homeView .team-topbar .team-emblem-pop{z-index:60;}
 }

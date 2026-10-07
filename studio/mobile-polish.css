@@ -1379,7 +1379,7 @@
   html.ps-page-board body.ps-dock #ps-dock{
     left:8px!important;right:8px!important;bottom:calc(8px + env(safe-area-inset-bottom))!important;
     border:1px solid #dde1e7!important;border-top:1px solid #dde1e7!important;border-radius:12px!important;
-    background:#fff!important;box-shadow:0 6px 18px rgba(15,23,42,.12)!important;overflow:hidden!important;
+    background:var(--ps-wsurf,#fff)!important;box-shadow:0 6px 18px rgba(15,23,42,.12)!important;overflow:hidden!important;
   }
   html.ps-page-board body.ps-dock #ps-dock .ps-drow{border-top:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
   html.ps-page-board body.ps-dock #ps-dock .ps-drow+.ps-drow{border-top:1px solid #eef0f3!important;}
@@ -1422,7 +1422,7 @@
   html.ps-page-board body.ps-dock #ps-drow-team .catdot:not(.on){opacity:.58!important;}
   /* 보관함 저장 FAB — 글자 세로 줄바꿈 방지 */
   html.ps-page-board body.ps-dock:not(.command-dock-v5) #vaultSave{white-space:nowrap!important;width:auto!important;min-width:0!important;}
-  html.ps-page-board body.ps-dock #ps-drow-team #benchCat .team-style-btn{background:#fff!important;color:#646A73!important;}
+  html.ps-page-board body.ps-dock #ps-drow-team #benchCat .team-style-btn{background:var(--ps-wbtn,#fff)!important;color:var(--ps-wink,#646A73)!important;}
   html.ps-page-board body.ps-dock #ps-drow-team #benchCat .team-style-btn svg{width:15px!important;height:15px!important;}
   html.ps-page-board body.ps-dock #ps-drow-team .chip{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;font-size:12px!important;}
   html.ps-page-board body.ps-dock #ps-drow-team #benchItems{gap:4px!important;padding:2px 1px!important;}

@@ -3168,6 +3168,7 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     .cat-avg i{font-style:normal;font-size:var(--fs-micro);color:var(--dim);font-weight:var(--fw-strong)}
     .cat-avg b{font-size:var(--fs-sub);font-weight:var(--fw-head);font-variant-numeric:tabular-nums;color:var(--txt)}
     .cat-avg.zero b{color:var(--dim);font-weight:var(--fw-body)}
+    .cat-none{font-size:var(--fs-micro,11px);font-weight:600;color:var(--dim);white-space:nowrap}   /* 2.957 — 다섯 범주가 다 비었을 때 한 마디 */
     .sc-cats{display:flex;align-items:center;flex-wrap:wrap;gap:2px 0;min-width:0}
     #teamList .t-fit{display:flex;align-items:center;flex-wrap:wrap;gap:2px 0}
     .sc-eval u{text-decoration:none;font-weight:var(--fw-head);font-size:var(--fs-title);line-height:1;font-variant-numeric:tabular-nums;color:var(--blue);min-width:26px}
@@ -7162,16 +7163,22 @@ function levelSelector(value,onPick,sid,self){
   return box;
 }
 function attrsByCat(){const m={};data.attrs.forEach(a=>{(m[a.cat]=m[a.cat]||[]).push(a);});return m;}
-/* 1.690 — 목록의 평가 열: 범주별 평균(사용자: 전술·기술·체력·심리·태도, 미평가는 0). 선수단·후보 공용. */
+/* 1.690 — 목록의 평가 열: 범주별 평균(사용자: 전술·기술·체력·심리·태도). 선수단·후보 공용.
+   2.957 — 안 매긴 범주는 «0» 대신 «—», 다섯 범주가 다 비면 «아직 평가 전» 한 마디(전체 디자인 점검).
+   척도는 1~5 라 0 은 그 안에 없고 «아주 못함»으로 읽혔다 — 2026-10-07 에 «전부 1점»(출처 불명)을 비운 43명이
+   명단에서 일제히 «전술 0 · 기술 0 …» 으로 보였다. 1.690 의 «미평가는 0» 을 이 판에서 바꾼다. */
 function catAvgCellsHTML(levels){
-  var by=attrsByCat();
-  return CATS.map(function(c){
+  var by=attrsByCat(),rated=false;
+  var cells=CATS.map(function(c){
     var as=by[c[0]]||[]; if(!as.length)return "";
     var sum=0,n=0; as.forEach(function(a){var v=+((levels||{})[a.id]||0); if(v){sum+=v;n++;}});
+    if(n)rated=true;
     var avg=n?Math.round(sum/n*10)/10:0;
     var pct=n?Math.round(avg/5*100):0; var hi=(n&&avg>=4)?' hi':'';   /* 1.718 — 미니 게이지(바에만 색·4.0↑ 초록; 숫자는 잉크 유지) */
-    return '<span class="cat-avg'+(n?'':' zero')+hi+'" style="--p:'+pct+'" title="'+esc(c[1])+(n?' 평균 '+avg.toFixed(1)+' ('+n+'개 항목)':' — 아직 평가 없음')+'"><i>'+esc(String(c[1]||"").slice(0,2))+'</i><b>'+(n?avg.toFixed(1):'0')+'</b><span class="cav-g"></span></span>';
-  }).join("");
+    return '<span class="cat-avg'+(n?'':' zero')+hi+'" style="--p:'+pct+'" title="'+esc(c[1])+(n?' 평균 '+avg.toFixed(1)+' ('+n+'개 항목)':' — 아직 평가 없음')+'"><i>'+esc(String(c[1]||"").slice(0,2))+'</i><b>'+(n?avg.toFixed(1):'—')+'</b><span class="cav-g"></span></span>';
+  });
+  if(!rated&&cells.some(Boolean))return '<span class="cat-none" title="아직 평가 전 — 프로필에서 매기면 범주별 평균이 보입니다">아직 평가 전</span>';
+  return cells.join("");
 }
 
 // ===================== 속성 =====================
@@ -21008,6 +21015,7 @@ html.ps-page-scout .sb-cnt{margin-left:auto;font-size:10px;font-weight:800;color
 /* 스카우팅 행 — 2.268(사용자): 첫 줄 = 이름 | 등급 | 프로필, 둘째 줄 캡션 = 출신 · 등번호. 번호 열이 빠져 카드가 좁아진다 */
 #sbWrap .sb-chip{display:grid;grid-template-columns:minmax(0,1fr) 16px 14px;align-items:center;gap:0 7px;border:1px solid #dfe4ec;border-style:solid;background:#f6f8fb;border-radius:6px;padding:3px 7px;color:inherit}   /* 2.269 — 열 고정(등급 원 정원 보장)·패딩 축소 */
 #sbWrap .sb-chip.tgt{border-style:solid;background:#f6f8fb}   /* 옛 점선(외부 후보) 제거 — 내부/외부는 캡션이 말한다 */
+body.fmdark #sbWrap .sb-chip{background:var(--surface-2,#23272D);border-color:#3A4048}   /* 2.957 — 다크: 칩이 라이트 #f6f8fb 그대로라 밝은 이름 글자가 대비 1.0(후보 이름이 안 보였다) */
 #sbWrap .sb-chip .nm{grid-column:1;grid-row:1}
 #sbWrap .sb-chip .gr{grid-column:2;grid-row:1;margin-left:0;width:16px;height:16px;min-width:16px;min-height:16px;max-height:16px;line-height:16px;padding:0;border-radius:50%;font-size:10px}   /* min/max — ui-grammar 터치 타깃 32px 가 원을 타원으로 만들던 것 · 2.269 16px */
 #sbWrap .sb-chip .pf{grid-column:3;grid-row:1}
@@ -21040,7 +21048,9 @@ html.ps-page-scout .sb-add{border:1.5px dashed #c9d1dd;border-radius:8px;color:#
    행은 '정상·프로필 ›·⋯' 를 각각 재서 **서로 다른 폭**이 나오고, 그 차이를 2열(1fr)이 흡수해
    세로줄이 통째로 어긋난다(실측: 머리글 2열 615px vs 행 2열 558px).
    → 두 격자가 **같은 값으로 풀리도록** 고정 폭으로 바꾼다. 이제 한 줄만 고치면 둘 다 따라온다. */
-html.ps-page-scout #teamList.tm-4col .tm-row{grid-template-columns:20px 46px 30px minmax(110px,156px) 52px 40px 244px 30px 56px 44px 280px 32px!important;   /* 2.511 조 첫 열 · 2.512 — 상태를 주발 왼쪽으로 + 이름 상한 190px 로 평가 카테고리를 이름 쪽에 붙인다(남는 폭은 포지션 열이 먹는다) */gap:0 8px!important;min-height:32px!important;padding:3px 6px!important}
+/* 2.957 — 메모 열 280px 고정 → minmax(0,280px). 고정 열 합이 아이패드 세로(1100, 목록 903px)보다 넓어 선수단 화면 전체가
+   옆으로 밀렸다(문서 폭 1082 / 1004, 전체 디자인 점검 실측). 넓은 화면은 그대로 280, 좁으면 메모 칸만 줄어든다. 행·머리글 다섯 격자 모두. */
+html.ps-page-scout #teamList.tm-4col .tm-row{grid-template-columns:20px 46px 30px minmax(110px,156px) 52px 40px 244px 30px 56px 44px minmax(0,280px) 32px!important;   /* 2.511 조 첫 열 · 2.512 — 상태를 주발 왼쪽으로 + 이름 상한 190px 로 평가 카테고리를 이름 쪽에 붙인다(남는 폭은 포지션 열이 먹는다) */gap:0 8px!important;min-height:32px!important;padding:3px 6px!important}
 html.ps-page-scout #teamList.tm-4col .tm-row .t-num{grid-column:3!important;grid-row:1!important;order:0!important}
 html.ps-page-scout #teamList.tm-4col .tm-row .t-name{grid-column:4!important;grid-row:1!important;order:0!important;font-size:13px!important}
 html.ps-page-scout #teamList.tm-4col .tm-row .t-foot{grid-column:6!important;grid-row:1!important;order:0!important;display:inline-flex!important;justify-content:center!important;font-size:10px!important;font-weight:600!important;color:var(--dim)!important}
@@ -21090,13 +21100,13 @@ html.ps-page-scout #teamList.tm-4col .tm-row .tm-acts{grid-column:12!important;g
       이름은 상한 230px 로 묶고, 남는 폭은 **마지막 유연 열(포지션)** 이 가져간다. */
 html.ps-page-scout #teamList.tm-4col.tm-no-eval .tm-row,
 html.ps-page-scout #teamList.tm-4col.tm-no-eval .tm-lhead{
-  grid-template-columns:20px 46px 30px minmax(110px,230px) 52px 40px 0px 30px 56px 44px 280px 32px!important;}
+  grid-template-columns:20px 46px 30px minmax(110px,230px) 52px 40px 0px 30px 56px 44px minmax(0,280px) 32px!important;}
 html.ps-page-scout #teamList.tm-4col.tm-no-foot .tm-row,
 html.ps-page-scout #teamList.tm-4col.tm-no-foot .tm-lhead{
-  grid-template-columns:20px 46px 30px minmax(110px,230px) 52px 0px 244px 30px 56px 44px 280px 32px!important;}
+  grid-template-columns:20px 46px 30px minmax(110px,230px) 52px 0px 244px 30px 56px 44px minmax(0,280px) 32px!important;}
 html.ps-page-scout #teamList.tm-4col.tm-no-eval.tm-no-foot .tm-row,
 html.ps-page-scout #teamList.tm-4col.tm-no-eval.tm-no-foot .tm-lhead{
-  grid-template-columns:20px 46px 30px minmax(110px,230px) 52px 0px 0px 30px 56px 44px 280px 32px!important;}
+  grid-template-columns:20px 46px 30px minmax(110px,230px) 52px 0px 0px 30px 56px 44px minmax(0,280px) 32px!important;}
 /* ══ 2.544 · 머리글 이름표도 칸을 못박는다 ═════════════════════════════════
    ⚠ **원래 있던 어긋남**이다(이번에 칸을 넣다가 드러났다). 접는 열은 `display:none`
       인데, 그러면 그 격자 항목은 **배치 자체가 빠져** 뒤 이름표가 통째로 앞으로 밀린다.
@@ -21120,7 +21130,7 @@ html.ps-page-scout #teamList.tm-4col.tm-no-eval .tm-row .t-fit,
 html.ps-page-scout #teamList.tm-4col.tm-no-eval .tm-lhead i:nth-child(7){display:none!important}
 html.ps-page-scout #teamList.tm-4col.tm-no-foot .tm-row .t-foot,
 html.ps-page-scout #teamList.tm-4col.tm-no-foot .tm-lhead i:nth-child(6){display:none!important}
-html.ps-page-scout #teamList.tm-4col .tm-lhead{display:grid!important;grid-template-columns:20px 46px 30px minmax(110px,156px) 52px 40px 244px 30px 56px 44px 280px 32px!important;   /* 2.512 — 행과 같은 격자 */gap:0 8px!important;padding:0 6px 6px!important;
+html.ps-page-scout #teamList.tm-4col .tm-lhead{display:grid!important;grid-template-columns:20px 46px 30px minmax(110px,156px) 52px 40px 244px 30px 56px 44px minmax(0,280px) 32px!important;   /* 2.512 — 행과 같은 격자 */gap:0 8px!important;padding:0 6px 6px!important;
   /* ⚠ 행에는 좌우 1px 테두리가 있고 머리글에는 없어서 **안쪽 폭이 2px 달랐다** → 1fr 열이 2px 어긋났다.
      같은 테두리를 투명으로 둬서 두 격자가 같은 폭에서 풀리게 한다. */
   border-left:1px solid transparent!important;border-right:1px solid transparent!important;box-sizing:border-box!important}
@@ -21175,7 +21185,7 @@ html.ps-page-scout #scList .sc-row .sc-name,html.ps-page-scout #scList .sc-row .
 html.ps-page-scout #scList .sc-row .sc-memos{grid-column:8!important;grid-row:1!important}
 }
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=2.642"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=2.957"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
   <!-- 2.541 — 선수 한 명 한눈에(코치). 선수가 쓴 것을 한 장으로 모은다. -->
   <div class="pl-sheet" id="plSheet" hidden>
     <div class="pls-back" data-pls-close></div>

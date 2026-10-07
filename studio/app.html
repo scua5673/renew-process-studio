@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.956"></script>
+<script src="autosave-status.js?v=2.957"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.956';</script>
+<script>window.PS_BUILD='2.957';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -7848,13 +7848,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.956"></script>
-<script src="autosave-merge.js?v=2.956"></script>
-<script src="autosave-runtime.js?v=2.956"></script>
-<script src="autosave-recovery.js?v=2.956"></script>
-<script src="sync.js?v=2.956"></script>
+<script src="autosave-journal.js?v=2.957"></script>
+<script src="autosave-merge.js?v=2.957"></script>
+<script src="autosave-runtime.js?v=2.957"></script>
+<script src="autosave-recovery.js?v=2.957"></script>
+<script src="sync.js?v=2.957"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.956">
+<link rel="stylesheet" href="support.css?v=2.957">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
@@ -8104,7 +8104,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
 })();
 </script>
 
-<link rel="stylesheet" href="ui-grammar.css?v=2.642"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=2.957"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2598-rail">/* 2.598 — 셸 레일 마무리: 활성 필 모서리 6 → 10, 레일 아이콘 19 → 16 stroke 2(위 다섯 + 아래 로그인·앱 설정·보드 설정), 팀 내비 버튼은 팀 열림 상태에서도 32(design-v2:489 가 30 으로 내리던 것). 레일 폭은 실측 96~104(figma-premium)라 제안의 «64→72» 는 해당 없음. «보드 설정» 은 셸 안에서 유일한 문(도크 사본은 셸에서 숨김)이라 남긴다. */
 @media (min-width:768px){
 html.ps-page-app #appSeg#appSeg button:not(#_):not(#__){border-radius:10px!important}

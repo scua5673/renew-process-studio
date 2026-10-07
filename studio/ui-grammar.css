@@ -44,6 +44,12 @@
   --accent:#6F94F5;--blue:#6F94F5;--act:#6F94F5;--cmd-blue:#6F94F5;--accent-dim:#8FA9F7;--accent-soft:#1E2A47;--blue-soft:#1E2A47;
   --green:#4CC27A;--ok:#4CC27A;--red:#E07470;--bad:#E07470;--match:#E07470;--match-soft:#3D2222;--match-line:#5A2E2C;--warm:#D9A15A;--re:#D9A15A;
   --idp:#B9A6F2;--team-c-dark:#9FB3D6;
+  /* 2.957 — 흰색을 !important 로 박은 규칙 54곳(figma-premium·design-v2·mobile-polish)이 다크 색을 이겨 흰 면이 남았다
+     (팀 탭 선택 = 흰 알약 위 흰 글자, 커뮤니티 머리, 보드 페이지 띠). 그 규칙들은 이제 var(--ps-w*,#fff) 를 쓴다.
+     ⚠ 이 변수들은 **다크에서만** 정의한다 — 라이트는 폴백 #fff·원래 글자색 그대로라 한 픽셀도 안 바뀐다.
+     surf = 면(머리·띠·팝오버) · btn = 면 위 버튼 · pill = 트랙 위 «선택됨» 알약(어떤 어두운 트랙에서도 한 단 밝게) ·
+     ink/acc/bad = 같은 규칙에 박힌 어두운 글자색(#344054·#646A73·--cmd-text / #2c54c4 / #a84440)의 다크 값. */
+  --ps-wsurf:#1B1E23;--ps-wbtn:#23272D;--ps-wpill:rgba(255,255,255,.13);--ps-wink:#C9CED6;--ps-wacc:#8FA9F7;--ps-wbad:#E07470;
 }
 body.fmdark{color:var(--ink)}
 /* 다크에서 흰 면 하드코딩이 남은 곳(2.637에서 282곳을 토큰으로 바꿨지만 인라인 style 은 남는다)을 위한 마지막 그물 */
