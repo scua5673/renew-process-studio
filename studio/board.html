@@ -13404,14 +13404,14 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
   /* 2.959 — 새 미팅의 기본 9장. 사용자 «보관함 › 만들기 › 미팅 만들기 하면 BEST 11·하이블록·미드블록·로우블록·빌드업·전진,전개·침투,마무리·
      코너킥 수비·코너킥 공격 페이지를 미리 만들어 주고 토큰도 22개 미리 올려놓고».
      좌표는 미터(가로 105 × 세로 68). 우리 팀(파랑)은 왼쪽 골대를 지키고 오른쪽으로 공격한다 — 작전판 기본 배치(applyDefaultXI)와 같은 쪽.
-     우리 번호·자리는 작전판 4-3-3(FORM["433"])과 같고, 상대(빨강)는 4-4-2. 방향(가로형·세로형)은 보기 깃발이라 좌표는 그대로 두고 meetCap 이 미팅 방향을 붙인다.
+     우리 번호·자리는 작전판 4-3-3(FORM["433"])과 같고, 상대(빨강)는 4-4-2(BEST 11 장은 우리 팀만). 방향(가로형·세로형)은 보기 깃발이라 좌표는 그대로 두고 meetCap 이 미팅 방향을 붙인다.
      22명이 다 보이게 9장 모두 전체 운동장(절반 보기는 반대편 골키퍼·후방 대기 선수를 자른다). 글(points)은 비워 둔다 — 코치가 채운다. */
   var MEET_TPL_US=[[1,"GK"],[3,"LB"],[4,"LCB"],[5,"RCB"],[2,"RB"],[6,"DM"],[8,"LCM"],[10,"RCM"],[7,"LW"],[9,"ST"],[11,"RW"]];
   var MEET_TPL_OPP=[[1,"GK"],[2,"RB"],[4,"RCB"],[5,"LCB"],[3,"LB"],[7,"RM"],[8,"RCM"],[6,"LCM"],[11,"LM"],[9,"ST"],[10,"ST"]];
   var MEET_TPL=[
-    {t:"BEST 11",   /* 기본 대형 — 양 팀 자기 진영 */
+    {t:"BEST 11",   /* 우리 팀 기본 대형만 — 2.960 사용자 «맨 첫 페이지 베스트 11 은 우리 팀 토큰 11개만»(상대·공 없음) */
      us:[[5,34],[19,9],[16,25],[16,43],[19,59],[28,34],[36,22],[36,46],[47,10],[49,34],[47,58]],
-     op:[[100,34],[86,9],[89,25],[89,43],[86,59],[71,10],[74,27],[74,41],[71,58],[57,29],[57,39]],ball:[52.5,34]},
+     op:[],ball:null},
     {t:"하이블록",   /* 상대 골키퍼부터 압박 — 수비 라인은 하프라인 */
      us:[[38,34],[64,12],[54,27],[54,41],[64,56],[70,32],[80,24],[75,41],[89,15],[92,32],[89,53]],
      op:[[100,34],[82,6],[94,19],[94,49],[82,62],[67,9],[84,29],[80,41],[67,59],[61,28],[60,41]],ball:[98.7,35]},
@@ -13444,7 +13444,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     Object.assign(snap,{pitchSpec:"fifa",area:"full",pitchView:"full",fieldMode:"standard",halfSide:"L",spFlip:false,pitchN:1,press:null,spMarks:null,spMark:null,boardLocked:false});
     tp.us.forEach(function(m,i){var q=meetTplPt(m),r=MEET_TPL_US[i];snap.players.push({id:id++,team:"blue",num:String(r[0]),pos:r[1],x:q.x,y:q.y});});
     tp.op.forEach(function(m,i){var q=meetTplPt(m),r=MEET_TPL_OPP[i];snap.players.push({id:id++,team:"red",num:String(r[0]),pos:r[1],x:q.x,y:q.y});});
-    snap.ball=meetTplPt(tp.ball);
+    snap.ball=tp.ball?meetTplPt(tp.ball):null;
     if(!(+snap.tokenScale>=.4))snap.tokenScale=.4;   /* applyDefaultXI 와 같은 바닥 — 22명이 점처럼 보이지 않게 */
     return snap;
   }
@@ -13466,7 +13466,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     frames:function(){return anim.slides;},
     idx:function(){return meetIdx;},
     go:function(i,which){var n=anim.slides.length;if(!n)return;if(i<0)i=0;if(i>n-1)i=n-1;meetAutoTok++;var from=meetCap();if(meetIdx>=0&&meetIdx<n&&anim.slides[meetIdx]){meetStore(meetIdx,true);if(window.__ksThumb)window.__ksThumb(meetIdx);}meetIdx=i;var to=meetBind(i,which)||anim.slides[i].snap;   /* 2.935 — 장면 슬라이드는 지금 장면을 담고, 갈 슬라이드의 장면을 올린다 */window.__ksNav=true;setTimeout(function(){window.__ksNav=false;},700);var tr=(window.__meetingPageActive&&!document.body.classList.contains("focus-board"))?"none":(window.__ksTransition||"slide");if(tr==="none"){loadSnap(to);}else{if(meetRaf)cancelAnimationFrame(meetRaf);var t0=performance.now(),DUR=(tr==="fade"?240:450);var stp=function(now){var u=(now-t0)/DUR;if(u>1)u=1;try{renderInterp(from,to,easeInOut(u));}catch(_){}if(u<1){meetRaf=requestAnimationFrame(stp);}else{meetRaf=null;loadSnap(to);}};meetRaf=requestAnimationFrame(stp);}meetCntSync();setTimeout(function(){try{if(!anim.slides[i].thumb&&!(meetBound===anim.slides[i]&&animActive>0)){anim.slides[i].thumb=boardThumbSVG();if(window.__ksRender)window.__ksRender();}}catch(_){}},tr==="none"?40:520);if(window.__ksRender)window.__ksRender();},
-    add:function(){if(meetIdx>=0&&meetIdx<anim.slides.length&&anim.slides[meetIdx]){meetStore(meetIdx,true);}var f={pdfOrientation:meetingPdfOrientation(anim.slides),snap:meetCap(),thumb:(function(){try{return boardThumbSVG();}catch(_){return "";}})(),title:"",points:[]};var at=(meetIdx>=0?meetIdx+1:anim.slides.length);anim.slides.splice(at,0,f);meetIdx=at;meetBind(at,"first");if(window.__ksRender)window.__ksRender();},   /* 2.935 — 새 슬라이드는 지금 판(장면 슬라이드면 지금 장면)에서 이어서, 장면 없이 시작 */
+    add:function(){if(meetIdx>=0&&meetIdx<anim.slides.length&&anim.slides[meetIdx]){meetStore(meetIdx,true);}var f={pdfOrientation:meetingPdfOrientation(anim.slides),snap:meetCap(),thumb:(function(){try{return boardThumbSVG();}catch(_){return "";}})(),title:"",points:[]};var _bsrc=anim.slides[meetIdx]||anim.slides[0];if(_bsrc){if(_bsrc.pageBrand!=null)f.pageBrand=_bsrc.pageBrand;if(_bsrc.textStyles&&_bsrc.textStyles.brand)f.textStyles={brand:JSON.parse(JSON.stringify(_bsrc.textStyles.brand))};}   /* 2.960 — 새 장도 같은 머리글 */var at=(meetIdx>=0?meetIdx+1:anim.slides.length);anim.slides.splice(at,0,f);meetIdx=at;meetBind(at,"first");if(window.__ksRender)window.__ksRender();},   /* 2.935 — 새 슬라이드는 지금 판(장면 슬라이드면 지금 장면)에서 이어서, 장면 없이 시작 */
     newSlide:function(title,points){this.add();var f=anim.slides[meetIdx];if(f){f.title=title||"";f.points=(points||[]).slice();}if(window.__ksRender)window.__ksRender();},
     show:function(fromStart){var _st=fromStart?0:(meetIdx>=0?meetIdx:0);try{window.__meetSyncCur&&window.__meetSyncCur({thumb:true});}catch(_){}try{enterFocus();}catch(_){}if(anim.slides.length){var self=this;setTimeout(function(){self.go(_st,"first");},40);}},
     saveCur:function(){if(meetIdx<0||!anim.slides[meetIdx])return this.add();meetStore(meetIdx,true);if(window.__ksRender)window.__ksRender();},
@@ -17134,9 +17134,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     trSel.innerHTML='<select id="ksTrSel"><option value="slide">전환: 슬라이드</option><option value="fade">전환: 페이드</option><option value="none">전환: 없음</option></select>';
     /* 2.930 — 페이지 보기(넓은 화면)에서는 이 칸이 오른쪽에 늘 서는 «이 슬라이드» 칸이 된다(맨 위 문구·운동장 편집 줄은 그때만) */
     ed.innerHTML='<div class="kl">이 슬라이드</div><label class="ks-fl" for="ksTitle">제목</label><input id="ksTitle" placeholder="제목 (예: 후방 빌드업)"><label class="ks-fl" for="ksPoints">메모 <span>한 줄에 하나</span></label><textarea id="ksPoints" placeholder="포인트 — 한 줄에 하나"></textarea>'
-      +'<div class="ks-pgonly"><label class="ks-fl" for="ksBrand">맨 위 문구</label><input id="ksBrand" maxlength="80" placeholder="PROCESS"><p class="ks-tip">글자 크기·굵기·색은 종이에서 그 글을 누르면 바꿀 수 있어요.</p><div class="ks-sep"></div><div class="ks-fl">운동장</div><button type="button" id="ksEditPitch">운동장 편집 ›</button><p class="ks-tip" id="ksOrientTip"></p></div>';
+      +'<div class="ks-pgonly"><label class="ks-fl" for="ksBrand">맨 위 문구</label><input id="ksBrand" maxlength="80" placeholder="PROCESS"><p class="ks-tip">모든 슬라이드에 같이 적용돼요. 글자 크기·굵기·색은 종이에서 그 글을 누르면 바꿀 수 있어요.</p><div class="ks-sep"></div><div class="ks-fl">운동장</div><button type="button" id="ksEditPitch">운동장 편집 ›</button><p class="ks-tip" id="ksOrientTip"></p></div>';
     [prog,ov,strip,ed,trSel,zL,zR,hd,top,bot].forEach(function(e){stg.appendChild(e);});
-    ed.querySelector("#ksBrand").addEventListener("input",function(e){var f=frames()[idx()];if(f){f.pageBrand=e.target.value;ovRender();}});
+    ed.querySelector("#ksBrand").addEventListener("input",function(e){var f=frames()[idx()];if(f){var _bv=e.target.value;frames().forEach(function(s){s.pageBrand=_bv;});ovRender();}   /* 2.960 — 맨 위 문구는 미팅 전체의 머리글(사용자 «쓰면 다른 페이지도 전부 적용») */});
     ed.querySelector("#ksEditPitch").onclick=function(){try{window.__meetingPageEdit();}catch(_){}};
     zL.onclick=function(){if(window.__meetStep)window.__meetStep(-1);else if(M())M().go(idx()-1);};   /* 2.935 — 장면부터(키보드 ←→ 와 같은 길) */
     zR.onclick=function(){if(window.__meetStep)window.__meetStep(1);else if(M())M().go(idx()+1);};
@@ -17270,12 +17270,13 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           var controls=doc.createElement('div');controls.className='mp-inline-tools';controls.style.cssText='display:flex;flex-wrap:wrap;gap:4px;background:#eef2ff;padding:4px;font:12px system-ui;letter-spacing:0;line-height:24px';
           controls.innerHTML='<label>크기 <input aria-label="글자 크기" type="number" min="10" max="48" style="width:48px" value="'+style.size+'"></label><label>굵기 <select aria-label="글자 굵기"><option value="400">보통</option><option value="500">중간</option><option value="600">약간 굵게</option><option value="700">굵게</option><option value="800">아주 굵게</option></select></label><label>색상 <input aria-label="글자 색상" type="color" value="'+style.color+'" style="width:30px;height:24px;vertical-align:middle"></label>';
           controls.querySelector('select').value=String(style.weight);
-          function updateStyle(){var inputs=controls.querySelectorAll('input');slide.textStyles=slide.textStyles||{};slide.textStyles[kind]={size:Math.max(10,Math.min(48,Number(inputs[0].value)||style.size)),weight:Number(controls.querySelector('select').value),color:inputs[1].value};var next=meetingTextStyle(slide,kind,meetingPdfOrientation(anim.slides)==='landscape');editor.style.fontSize=next.size+'px';editor.style.fontWeight=next.weight;editor.style.color=next.color;editor.style.lineHeight=next.height+'px';editor.style.height='auto';editor.style.height=editor.scrollHeight+'px';}
+          function updateStyle(){var inputs=controls.querySelectorAll('input');slide.textStyles=slide.textStyles||{};slide.textStyles[kind]={size:Math.max(10,Math.min(48,Number(inputs[0].value)||style.size)),weight:Number(controls.querySelector('select').value),color:inputs[1].value};if(kind==='brand'){var _bs=slide.textStyles.brand;anim.slides.forEach(function(s){if(s===slide)return;s.textStyles=s.textStyles||{};s.textStyles.brand={size:_bs.size,weight:_bs.weight,color:_bs.color};});}   /* 2.960 — 머리글 모양도 미팅 전체 */var next=meetingTextStyle(slide,kind,meetingPdfOrientation(anim.slides)==='landscape');editor.style.fontSize=next.size+'px';editor.style.fontWeight=next.weight;editor.style.color=next.color;editor.style.lineHeight=next.height+'px';editor.style.height='auto';editor.style.height=editor.scrollHeight+'px';}
           controls.addEventListener('input',updateStyle);controls.addEventListener('change',updateStyle);
           if(isBrand){line.textContent=original||'상단 문구';line.style.position='relative';var popup=doc.createElement('div');popup.style.cssText='position:absolute;left:0;top:calc(100% + 8px);width:340px;max-width:80vw;padding:10px;border:1px solid #dce2ee;border-radius:10px;background:#fff;box-shadow:0 8px 28px #17223526;z-index:100;font:14px system-ui;letter-spacing:0;white-space:normal';var caption=doc.createElement('div');caption.textContent='상단 문구';caption.style.cssText='font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px';popup.appendChild(caption);popup.appendChild(editor);popup.appendChild(controls);var done=doc.createElement('button');done.textContent='완료';done.style.cssText='display:block;margin:8px 0 0 auto;border:0;border-radius:6px;background:#3a6df0;color:#fff;padding:6px 14px;font:13px system-ui';done.onclick=function(ev){ev.stopPropagation();editor.classList.remove('mp-inline-editor');window.__ksRender();};popup.appendChild(done);popup.className='mp-inline-tools';line.appendChild(popup);}else{line.appendChild(controls);line.appendChild(editor);}
-          function write(value){if(isBrand)slide.pageBrand=value;else if(isTitle)slide.title=value;else if(continuous)slide.points=value.split('\n');else{if(!slide.points)slide.points=[];slide.points[pointIndex]=value;}}
+          var brandBefore=isBrand?anim.slides.map(function(s){return s.pageBrand;}):null;   /* 2.960 — Esc 는 장마다 원래 문구로 */
+          function write(value){if(isBrand)anim.slides.forEach(function(s){s.pageBrand=value;});else if(isTitle)slide.title=value;else if(continuous)slide.points=value.split('\n');else{if(!slide.points)slide.points=[];slide.points[pointIndex]=value;}}
           editor.addEventListener('input',function(){write(editor.value);editor.style.height='auto';editor.style.height=editor.scrollHeight+'px';});
-          editor.addEventListener('keydown',function(ev){ev.stopPropagation();if(ev.isComposing)return;if(ev.key==='Escape'){write(original);editor.blur();}else if(ev.key==='Enter'&&(isTitle||isBrand||ev.metaKey||ev.ctrlKey)){ev.preventDefault();editor.blur();}});
+          editor.addEventListener('keydown',function(ev){ev.stopPropagation();if(ev.isComposing)return;if(ev.key==='Escape'){if(brandBefore)anim.slides.forEach(function(s,k){s.pageBrand=brandBefore[k];});else write(original);editor.blur();}else if(ev.key==='Enter'&&(isTitle||isBrand||ev.metaKey||ev.ctrlKey)){ev.preventDefault();editor.blur();}});
           line.addEventListener('focusout',function(){setTimeout(function(){if(line.contains(doc.activeElement))return;editor.classList.remove('mp-inline-editor');window.__ksRender();},0);});
           editor.focus();editor.style.height=editor.scrollHeight+'px';
         });
