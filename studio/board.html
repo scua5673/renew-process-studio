@@ -13441,7 +13441,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
   function meetTplSnap(base,tp){
     var snap=JSON.parse(JSON.stringify(base||{})),id=1001;
     snap.players=[];snap.equipment=[];snap.drawings=[];
-    Object.assign(snap,{pitchSpec:"fifa",area:"full",pitchView:"full",fieldMode:"standard",halfSide:"L",spFlip:false,pitchN:1,press:null,spMarks:null,spMark:null,boardLocked:false});
+    Object.assign(snap,{pitchSpec:"fifa",area:"full",pitchView:"full",fieldMode:"standard",halfSide:"L",spFlip:false,pitchN:1,press:null,spMarks:null,spMark:null,boardLocked:false,pitchTheme:"white",pitchCustom:null,pitchImg:null});   /* 2.961 — 미팅 운동장은 흰색으로 시작(사용자 «운동장을 기본 흰색으로») — 종이·PDF·화면 발표에서 읽기 쉽다. 작업 보드의 기본(네이비)은 그대로 */
     tp.us.forEach(function(m,i){var q=meetTplPt(m),r=MEET_TPL_US[i];snap.players.push({id:id++,team:"blue",num:String(r[0]),pos:r[1],x:q.x,y:q.y});});
     tp.op.forEach(function(m,i){var q=meetTplPt(m),r=MEET_TPL_OPP[i];snap.players.push({id:id++,team:"red",num:String(r[0]),pos:r[1],x:q.x,y:q.y});});
     snap.ball=tp.ball?meetTplPt(tp.ball):null;
