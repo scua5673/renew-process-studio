@@ -4734,7 +4734,10 @@ function toUnit(evt){return clientToUnit(evt.clientX,evt.clientY);}
 
 var PHONE_PLAYER_TOK=0.754;   /* 2.801 — 폰 선수 토큰: 2.800 전 크기(345/366)로 되돌리고 크기 사다리 한 단계(÷1.25) 더 작게(사용자). 공·장비·그림은 그대로 */
 function phoneTokFactor(p){try{return (psBoardDevice()==="phone"&&p&&!equipKey(p.team)&&p.team!=="img")?PHONE_PLAYER_TOK:1;}catch(_){return 1;}}
-function tokenTransform(p){const _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;const _eq=(equipKey(p.team)&&p.team!=="ball")?1.8:(p.team==="img"?0.82:1);const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p);
+/* 2.962 — 공의 기본 크기를 «크기 ＋» 두 칸(×1.18²) 키운다(사용자 «기본적으로 공 크기를 두칸 더 키워줘»). 본 공·장비 공 모두.
+   개별 크기(p.scale)는 이 기본 위의 배수라 저장된 값은 그대로 두고, 화면·썸네일·PDF·GIF/MP4 가 이 한 곳(tokenTransform)을 따른다. */
+function ballBaseScale(){return 1.18*1.18;}   /* 함수 선언 — 스크립트가 이 줄에 닿기 전에 그려도 안전(const 는 그 전엔 못 읽는다) */
+function tokenTransform(p){const _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p);
   /* 세로 피치의 부모 world 회전과 반대 방향으로 토큰을 보정해 숫자·유니폼을 항상 정방향 유지.
      spFlip=true(골대 위)는 부모가 +90°이므로 -90°, 골대 아래는 부모가 -90°이므로 +90°. */
   const _upright=(state.orientation==="v")?(state.spFlip?-90:90):0;
@@ -8032,7 +8035,7 @@ function renderOnion(){
     const r=21*(p.scale||1)*sc;
     g.appendChild(el("circle",{cx:p.x,cy:p.y,r:r,fill:"#5d6470"}));
   });
-  if(snap.ball)g.appendChild(el("circle",{cx:snap.ball.x,cy:snap.ball.y,r:13,fill:"#3c424d"}));
+  if(snap.ball)g.appendChild(el("circle",{cx:snap.ball.x,cy:snap.ball.y,r:13*ballBaseScale()*(snap.ball.scale||1),fill:"#3c424d"}));   /* 2.962 — 잔상 공도 같은 크기 */
   if(typeof world!=="undefined"&&world&&tokenLayer)world.insertBefore(g,tokenLayer);
 }
 /* ===== 애니메이션 (키프레임 장면) ===== */
