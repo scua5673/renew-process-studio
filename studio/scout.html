@@ -1784,6 +1784,8 @@ html.ps-page-scout #availView .av-dsched .sum{margin-left:auto}
 html.ps-page-scout #availView .av-grp{margin-top:10px}
 html.ps-page-scout #availView .av-grp .gh{display:flex;align-items:baseline;gap:8px;font-size:12px;font-weight:800;margin:0 0 4px}
 html.ps-page-scout #availView .av-grp .gh .n{font-weight:600;color:var(--gray,#646A73)}
+html.ps-page-scout #availView .av-grp .gh .fgk{font-weight:600;color:var(--gray,#646A73);padding-left:8px;border-left:1px solid var(--line,#E3E6EA)}   /* 2.956 */
+html.ps-page-scout #availView .av-grp .gh .fgk b{font-weight:800;color:var(--ink,#14161A)}
 html.ps-page-scout #availView .av-grp .rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0 14px}   /* 2.692 — 열을 늘려 한눈에 */
 html.ps-page-scout #availView .av-pl{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 4px;border-top:1px solid var(--line);font-size:13px;min-width:0}
 html.ps-page-scout #availView .av-pl .nm{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
@@ -15777,6 +15779,10 @@ function avEditButton(p,day,r){
   return '<button type="button" class="av-chip '+esc(r.s||"")+'" data-av-st="'+esc(p.id)+'" data-av-edit-day="'+esc(day)+'" aria-label="'+esc((p.name||"선수")+' '+avDayLabel(day)+' '+avStateLabel(r)+(can?' 기록 수정':' 기록 조회'))+'"'+(can?'':' disabled')+'>'+esc(avStateLabel(r))+(can?' <span aria-hidden="true">⌄</span>':'')+'</button>';
 }
 function avPlayerLink(p){return '<button type="button" class="av-player-link" data-av-player-total="'+esc(p.id)+'">'+esc(p.name||"이름 없음")+'</button>';}
+/* 2.956 — 조 머리에 «필드 n · GK n»(사용자 «필드와 GK 구별해줘 · 조별로 전부»). 오늘 콕핏(2.575)과 같은 판정·같은 말.
+   셀 대상은 그 머리의 «가능» 숫자와 같은 선수다(데스크톱 = 참여로 기록한 선수, 폰 «운동» = 쉼이 아닌 선수). 포지션별 보기는 묶음이 곧 포지션이라 안 붙인다. */
+function avIsGk(p){ return /GK|GOALKEEPER|골키퍼|키퍼/.test(String(avPosition(p)||'').toUpperCase()); }
+function avFieldGk(n,gk){ if(availView==='pos'||!n)return ''; return '<span class="fgk">필드 <b>'+(n-gk)+'</b> · GK <b>'+gk+'</b></span>'; }
 function renderAvailDaily(ours){
   var today=stYmd(),day=availDay||today,total={ok:0,rest:0,scheduled:0},rc={gk:0,field:0,rehab:0,out:0};
   var h='<section class="av-daily" id="avDailyCard" tabindex="-1" aria-label="'+esc(avDayLabel(day)+' 가용인원 명단')+'"><div class="av-dnav"><button type="button" data-av-day="-1" aria-label="전날">‹</button><b>'+avDayLabel(day)+'</b>'+(day===today?'<span class="av-today">오늘</span>':'')+'<button type="button" data-av-day="1" aria-label="다음 날"'+(day>=today?' disabled':'')+'>›</button>'+(day!==today?'<button type="button" data-av-day="0">오늘</button>':'')+'<span class="av-spacer"></span>'+avGrouping()+'</div>';
@@ -15787,22 +15793,23 @@ function renderAvailDaily(ours){
      ⚠ 행(data-av-st·이름 링크)은 한 번만 그린다 — 두 벌을 그려 CSS 로 고르면 같은 버튼이 둘이 된다. */
   var split=tmPhoneRows(),okSec='',restSec='',okTot=0,restTot=0;
   var body=avGroups(ours,day).map(function(group){
-    var okRows='',restRows='',restN=0,participating=0,scheduled=0;
+    var okRows='',restRows='',restN=0,participating=0,scheduled=0,okGk=0,splitGk=0;
     group.players.forEach(function(p){
       var r=avResolve(p,day),isScheduled=avScheduled(r.kind);
+      var _gk=avIsGk(p); if(_gk&&r.s==='ok')okGk++; if(_gk&&!(r.s&&r.s!=='ok'))splitGk++;   /* 2.956 — 조 머리의 필드 · GK */
       if(isScheduled){scheduled++;total.scheduled++;}
       if(r.s==='ok'){participating++;total.ok++;}else if(r.s)total.rest++;
-      if(r.s==='rehab')rc.rehab++;else if(r.s&&r.s!=='ok')rc.out++;else if(r.s==='ok'){if(/GK|GOALKEEPER|골키퍼|키퍼/.test(String(avPosition(p)).toUpperCase()))rc.gk++;else rc.field++;}
+      if(r.s==='rehab')rc.rehab++;else if(r.s&&r.s!=='ok')rc.out++;else if(r.s==='ok'){if(_gk)rc.gk++;else rc.field++;}
       var row='<div class="av-pl"><span class="no">'+esc(p.num||'–')+'</span><span class="nm">'+avPlayerLink(p)+'<small>'+esc(avPosition(p))+'</small>'+(r.note?'<small class="av-player-note">'+esc(r.note)+'</small>':'')+'</span>'+avEditButton(p,day,r)+'</div>';
       if((split||availView!=='name')&&r.s&&r.s!=='ok'){restRows+=row;restN++;}else okRows+=row;
     });
     if(split){
       var gname=availView==='name'?'':esc(group.name)+' ',okN=group.players.length-restN;okTot+=okN;restTot+=restN;
-      if(okRows)okSec+='<div class="av-grp">'+(gname?'<div class="gh">'+gname+'<span class="n">'+okN+' / '+group.players.length+'명</span></div>':'')+'<div class="rows">'+okRows+'</div></div>';
+      if(okRows)okSec+='<div class="av-grp">'+(gname?'<div class="gh">'+gname+'<span class="n">'+okN+' / '+group.players.length+'명</span>'+avFieldGk(okN,splitGk)+'</div>':'')+'<div class="rows">'+okRows+'</div></div>';
       if(restRows)restSec+='<div class="av-grp">'+(gname?'<div class="gh">'+gname+'<span class="n">'+restN+'명</span></div>':'')+'<div class="rows">'+restRows+'</div></div>';
       return '';
     }
-    return '<div class="av-grp"><div class="gh">'+esc(group.name)+' <span class="n">가능 '+participating+' / '+group.players.length+'명</span></div><div class="rows">'+okRows+(restN?'<div class="av-restbox"><div class="rh">쉼 <span class="n">'+restN+'명</span></div><div class="rows">'+restRows+'</div></div>':'')+'</div></div>';
+    return '<div class="av-grp"><div class="gh">'+esc(group.name)+' <span class="n">가능 '+participating+' / '+group.players.length+'명</span>'+avFieldGk(participating,okGk)+'</div><div class="rows">'+okRows+(restN?'<div class="av-restbox"><div class="rh">쉼 <span class="n">'+restN+'명</span></div><div class="rows">'+restRows+'</div></div>':'')+'</div></div>';
   }).join('');
   if(split&&(okSec||restSec))body='<div class="av-split-ok"><div class="av-sec-h">운동 <span class="n">'+okTot+'명</span></div>'+(okSec||'<div class="av-empty">이 날 운동하는 선수가 없어요</div>')+'</div>'
     +'<div class="av-restbox av-split-rest"><div class="rh">참여 못 함 <span class="n">'+restTot+'명</span></div>'+(restSec||'<div class="av-rest-none">참여 못 하는 선수가 없어요</div>')+'</div>';
