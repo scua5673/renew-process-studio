@@ -140,6 +140,10 @@
 
   /* ── 상세 패널 ── */
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;}
+  /* 2.958 데이터 사고 기록 줄 — 좁으면 한 줄씩 */
+  #incAdd{display:grid;grid-template-columns:150px 170px minmax(0,1fr) auto;gap:6px;margin:10px 0 16px;align-items:start}
+  @media (max-width:700px){#incAdd{grid-template-columns:minmax(0,1fr)}}
+  #incBody td{white-space:nowrap;vertical-align:top} #incBody .inc-long{white-space:normal;min-width:220px}
   .panel h2{margin:0 0 3px;font-size:16px;font-weight:800;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
   .panel .sub{color:var(--dim);font-size:12px;margin-bottom:14px;}
   .sec-t{font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--dim2);text-transform:uppercase;margin:4px 0 9px;}
@@ -330,8 +334,13 @@
   <section class="wrap hide" id="viewSupport" style="grid-template-columns:1fr" aria-label="오류 제보 접수함"></section>
 
   <!-- 2.630 — 백엔드 건강 한 장(ps_admin_health): 코치가 제보하기 전에 본다 -->
-  <div class="wrap hide" id="viewBack">
+  <div class="wrap hide" id="viewBack" style="grid-template-columns:1fr"><!-- 2.958 — 한 칸(전엔 기본 2칸 격자의 왼쪽 322px 에 끼고 오른쪽이 비어 있었다) -->
     <div class="col">
+      <!-- 2.958 — 데이터 사고 기록장(ps_admin_incidents): 유료 전환 문턱 «8주 연속 사고 0건»을 세는 곳 -->
+      <div class="panel" id="incPanel">
+        <div class="sec-t">데이터 사고 <span style="font-weight:600;color:var(--dim2);font-size:11px;text-transform:none;letter-spacing:0">· 자료가 사라지거나 덮인 일 · 복구 · 가드가 막은 것</span> <button type="button" onclick="loadIncidents()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
+        <div id="incBody"><div class="loading">불러오는 중…</div></div>
+      </div>
       <div class="panel">
         <div class="sec-t">백엔드 건강 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 크기 · 실패 · 막힌 기기 · 판 분포 · 큰 문서 · 야간 작업</span> <button type="button" onclick="loadBack()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
         <div id="backBody"><div class="loading">불러오는 중…</div></div>
@@ -926,8 +935,79 @@ function setTab(t){
   if(t==='all')renderAllLib();
 }
 
+/* ===== 2.958 · 데이터 사고 기록장 =====
+   유료 전환 문턱 1번 «8주(56일) 연속 데이터 사고 0건»을 세는 곳. 사고는 사람이 확인해 적는다(기록장),
+   서버는 «크게 줄어든 저장»(자동 감지 후보)과 «가드가 막은 것»을 보여 줄 뿐이다 — 후보를 사고로 세지 않는다.
+   마지막 사고 = loss(사라짐·덮임)·restore(복구 작업)만. near_miss 는 카운터를 움직이지 않는다.
+   서버 함수가 아직 없으면(마이그레이션 전) 안내 한 줄만 — 백엔드 건강은 그대로 뜬다. */
+var INC_KIND={loss:'사고(사라짐·덮임)',restore:'복구 작업',near_miss:'가드가 막음'};
+var INC_GUARD={record:'선수단 기록 칸',shape:'통째 비움(모양)',lineage:'옛 판본(계보)',permission:'권한',build:'옛 앱 판',other:'기타'};
+var INC_LAST=null;
+function incWhen(t){ try{ var d=new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }catch(_){ return String(t||''); } }
+function loadIncidents(){
+  var el=$('incBody'); if(!el)return; el.innerHTML='<div class="loading">불러오는 중…</div>';
+  rpc('ps_admin_incidents',{p_days:56}).then(function(r){ INC_LAST=r; renderIncidents(); }).catch(function(e){
+    var m=String(e&&e.message||e);
+    el.innerHTML=/ps_admin_incidents|PGRST202|404/.test(m)
+      ?'<div class="loading">아직 서버에 설치되지 않았어요 — migrations/20261007_incident_ledger.sql 을 SQL 편집기에서 실행하면 여기에 뜹니다.</div>'
+      :'<div class="loading">불러오지 못했어요 — '+esc(m)+'</div>';
+  });
+}
+function renderIncidents(){
+  var el=$('incBody'), r=INC_LAST; if(!el||!r)return;
+  var since=r.since_days, goal=+r.goal_days||56;
+  var pct=since==null?0:Math.max(0,Math.min(100,Math.round(since/goal*100)));
+  var ok=since!=null&&since>=goal;
+  var head='<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 8px">'
+    +'<div style="font-size:30px;font-weight:800;line-height:1">'+(since==null?'—':since)+'<span style="font-size:13px;font-weight:700;color:var(--dim2)"> 일 / '+goal+'일</span></div>'
+    +'<div style="font-size:12px;color:var(--dim)">'+(since==null?'기록된 사고가 없어요':'마지막 사고 '+esc(incWhen(r.last_loss_at))+' 뒤')+(ok?' · <b style="color:#4CC27A">문턱 통과</b>':' · 유료 전환 문턱까지 '+Math.max(0,goal-(since||0))+'일')+'</div></div>'
+    +'<div style="height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:14px"><div style="height:100%;width:'+pct+'%;background:'+(ok?'#4CC27A':'var(--blue)')+'"></div></div>';
+  function tbl(headRow,rows){ if(!rows.length)return '<div style="font-size:11px;color:var(--dim2);padding:6px 0">없음</div>'; return '<div style="overflow:auto"><table><thead><tr>'+headRow.map(function(x){return '<th>'+x+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(c){return '<tr>'+c.map(function(x){return '<td>'+x+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>'; }
+  var html=head;
+  html+='<div class="sec-t" style="margin-top:4px">기록장 (최근 '+(+r.days||56)+'일)</div>'+tbl(['언제','종류','팀','무엇',''],(r.log||[]).map(function(x){
+    return [esc(incWhen(x.at)),esc(INC_KIND[x.kind]||x.kind),esc(x.ws||'—'),'<div class="inc-long"><b>'+esc(x.title)+'</b>'+(x.detail?'<div style="font-size:11px;color:var(--dim2);margin-top:2px">'+esc(x.detail)+'</div>':'')+'</div>',
+      '<button type="button" data-inc-del="'+esc(x.id)+'" style="font:700 10px inherit;border:1px solid var(--line);background:transparent;color:var(--dim2);border-radius:6px;padding:2px 6px;cursor:pointer">지우기</button>'];
+  }));
+  var wsOpts='<option value="">(팀 없음)</option>'+(WS||[]).filter(function(w){return w&&w.kind==='team';}).map(function(w){return '<option value="'+esc(w.id)+'">'+esc(w.name||w.id)+'</option>';}).join('');
+  html+='<form id="incAdd">'
+    +'<select name="kind" style="font:600 12px inherit;padding:6px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit"><option value="loss">사고(사라짐·덮임)</option><option value="restore">복구 작업</option><option value="near_miss">가드가 막음</option></select>'
+    +'<select name="ws" style="font:600 12px inherit;padding:6px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit">'+wsOpts+'</select>'
+    +'<div style="display:grid;gap:4px"><input name="title" maxlength="200" placeholder="무엇이 (예: 경기 점수 12개가 지워짐)" style="font:600 12px inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit"><input name="detail" maxlength="2000" placeholder="원인·복구 (선택)" style="font:500 11px inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit"></div>'
+    +'<button type="submit" style="font:700 12px inherit;border:0;background:var(--blue);color:#fff;border-radius:8px;padding:7px 12px;cursor:pointer">기록</button></form>';
+  html+='<div class="sec-t">자동 감지 — 크게 줄어든 저장 (최근 '+(+r.scan_days||14)+'일 · 후보)</div>'
+    +'<div style="font-size:11px;color:var(--dim2);margin:-4px 0 6px">선수 수·상태 기록·출석 날·경기 점수가 30% 넘게, 일정 길이가 절반 넘게 줄어든 저장. 정상 정리도 걸린다 — 확인한 것만 «사고로»를 누른다.</div>'
+    +tbl(['언제','팀','문서','줄어든 것','쓴 사람',''],(r.drops||[]).map(function(x){
+      var who=x.by?(typeof adminPersonName==='function'?adminPersonName(x.by):String(x.by).slice(0,8)):'서버 작업';
+      return [esc(incWhen(x.at)),esc(x.ws||'—'),esc(x.k),esc((x.dropped||[]).join(' · ')),esc(who),
+        '<button type="button" data-inc-from="'+esc(x.history_id)+'" style="font:700 10px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:6px;padding:2px 6px;cursor:pointer">사고로</button>'];
+    }));
+  var g=r.guards||{}, gk=Object.keys(g);
+  html+='<div class="sec-t" style="margin-top:14px">가드가 막은 것 (최근 '+(+r.days||56)+'일 · 사람·문서별 마지막 1건)</div>'
+    +(gk.length?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'+gk.map(function(k){return '<span style="border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:11px">'+esc(INC_GUARD[k]||k)+' <b>'+(+g[k]||0)+'</b></span>';}).join('')+'</div>':'')
+    +tbl(['언제','종류','팀','문서','사유'],(r.denied||[]).map(function(x){return [esc(incWhen(x.at)),esc(INC_GUARD[x.cat]||x.cat),esc(x.ws||'—'),esc(x.k),'<div class="inc-long">'+esc(x.reason)+'</div>'];}));
+  el.innerHTML=html;
+  var f=$('incAdd'), fe=function(n){return f.elements.namedItem(n);};
+  if(f)f.onsubmit=function(ev){
+    ev.preventDefault();
+    var title=String(fe('title').value||'').trim(); if(!title){ toast('무엇이 일어났는지 한 줄 적어 주세요'); return; }
+    rpc('ps_admin_incident_add',{p_kind:fe('kind').value,p_title:title,p_detail:String(fe('detail').value||'').trim()||null,p_workspace:fe('ws').value||null,p_at:f.dataset.at||null})
+      .then(function(){ toast('기록했어요'); loadIncidents(); })
+      .catch(function(e){ toast('기록하지 못했어요 — '+String(e&&e.message||e)); });
+  };
+  el.querySelectorAll('[data-inc-del]').forEach(function(b){ b.onclick=function(){
+    if(!confirm('이 기록을 지울까요? (처음 심어 둔 지난 사고는 지워지지 않아요)'))return;
+    rpc('ps_admin_incident_del',{p_id:+b.getAttribute('data-inc-del')}).then(function(ok){ toast(ok?'지웠어요':'지울 수 없는 기록이에요'); loadIncidents(); }).catch(function(e){ toast(String(e&&e.message||e)); });
+  }; });
+  el.querySelectorAll('[data-inc-from]').forEach(function(b){ b.onclick=function(){
+    var hid=b.getAttribute('data-inc-from'), x=(r.drops||[]).filter(function(d){return String(d.history_id)===hid;})[0]; if(!x||!f)return;
+    fe('kind').value='loss'; if(x.workspace_id)fe('ws').value=x.workspace_id;
+    fe('title').value=(x.ws?x.ws+' ':'')+x.k+' 크게 줄어듦 — '+(x.dropped||[]).join(' · ');
+    fe('detail').value='자동 감지 · 판 이력 '+hid; f.dataset.at=x.at; fe('title').focus();
+  }; });
+}
 /* ===== 2.630 · 백엔드 건강 ===== */
 function loadBack(){
+  loadIncidents();
   var el=$('backBody'); if(!el)return; el.innerHTML='<div class="loading">불러오는 중…</div>';
   rpc('ps_admin_health').then(function(h){
     if(!h){ el.innerHTML='<div class="loading">자료 없음</div>'; return; }
