@@ -2356,7 +2356,15 @@ function outboxAckSynced(wid,m,skipped,libraryAckHash,guard){
           var confirmed=libraryAckHash==null?it.hash:libraryAckHash;
           return hash(v)!==confirmed;
         }
-        return !m.h||hash(v)!==m.h[it.key];              /* 현재 로컬과 확인된 해시가 다르면 유지 */
+        /* 2.952 — 지운 선수(cs_player_del_v1)의 기기 사본은 **절대 자동으로 올리지 않는다**(7439 itemsDeletedLive).
+           서버에 그 행이 없으면 충돌 보관도 안 생기므로, 대기함에만 영원히 남아 «8일째 저장 대기»가 됐다(코치 점검 10/7 — 방성환).
+           올릴 일이 없는 항목이니 대기에서 뺀다. 기기 사본 자체는 지우지 않는다. 서버 행이 있으면 heldKeys(skip)로 위에서 이미 유지된다. */
+        if(typeof ITEMP==='string'&&typeof itemsDeletedLive==='function'&&String(it.key).indexOf(ITEMP)===0&&typeof v==='string'&&itemsDeletedLive(it.key,v))return false;   /* typeof — 구간을 잘라 쓰는 시험 하네스에도 안전 */
+        var keep=!m.h||hash(v)!==m.h[it.key];              /* 현재 로컬과 확인된 해시가 다르면 유지 */
+        /* 2.952 — 이 회차는 첫 pull 을 지나 확인까지 왔다 = 회차 실패가 아니다. 예전 회차 실패(«오프라인이에요»)를 남겨 두면
+           온라인·실시간 연결 중인데도 이유가 «오프라인»으로 8일 내내 보였다. 회차 오류는 지우고 남은 이유는 항목이 말한다. */
+        if(keep&&it.roundError){it.roundError='';it.roundStage='';}
+        return keep;
       }).catch(function(){return true;});
     })).then(function(keep){requireCurrent();return q.filter(function(_,i){return keep[i];});});
   });
@@ -4222,7 +4230,7 @@ function workspaceHoldReviewOpen(opts){
   var body='<div style="margin-bottom:10px">팀에 아직 반영하지 못한 변경을 이 기기에 보관하고 있습니다. 두 기기에서 바뀐 자료는 선택한 문서 전체가 남습니다. '
     +'아래에서 남길 쪽을 고르면 <b>'+esc(target)+'</b>(으)로 이어서 이동합니다.</div>';
   body+=left.map(function(x){return '<div style="padding:10px 0;border-top:1px solid rgba(128,128,128,.22)">'
-    +'<div><b>'+esc(keyLabel(x.k))+'</b><span style="margin-left:7px;font-size:11px;font-weight:800;color:#c24a46">'+esc(x.kind==='conflict'?(x.reason==='rejected'?'서버가 받지 않음':'두 기기에서 바뀜'):x.before+' → '+x.after)+'</span></div>'
+    +'<div><b>'+esc(keyLabel(x.k))+'</b><span style="margin-left:7px;font-size:11px;font-weight:800;color:#c24a46">'+esc(x.kind==='conflict'?(x.reason==='rejected'?'서버가 받지 않음':x.reason==='merge'?'자동으로 못 합침':'두 기기에서 바뀜'):x.before+' → '+x.after)+'</span></div>'
     +'<div style="font-size:11px;opacity:.7;margin-top:2px">'+new Date(x.at).toLocaleString()+'</div>'
     +'<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">'
     +'<button type="button" data-holdup="'+esc(x.k)+'" style="'+bcss+'">이 기기 것 남기기</button>'
@@ -4329,7 +4337,7 @@ function dataReviewList(){
   try{ holdList().forEach(function(x){
     if(x.kind==='item-delete'){var view=itemsDeleteReviewView(x);if(view)out.push(Object.assign(view,{src:'item-delete',mine:null,theirs:null,why:'삭제를 확인한 뒤 선수 원문이 바뀌어 자동 삭제를 멈췄습니다. 변경된 원문과 이전 삭제 요청을 보관했습니다. 원문을 확인하고 삭제를 다시 선택하거나 추가 삭제를 취소하세요.'}));return;}
     if(x.kind==='conflict'){out.push(Object.assign(holdConflictView(x),{src:'team',mine:x.after,theirs:x.before,
-      why:x.choice?'선택한 두 판본을 다시 확인한 뒤 반영합니다':x.reason==='rejected'?'서버가 이 변경을 받지 않았습니다(예: 최신 일정과 맞지 않는 경기, 오래된 일정 판, 오래된 앱 판). 같은 내용을 계속 다시 보내지 않도록 멈추고 두 원문을 그대로 보관 중입니다. 팀 것으로 맞추거나, 이 기기 것을 남겨 한 번 더 보낼 수 있습니다.':String(x.k).indexOf('sq:')===0?'한 선수의 정보가 두 기기에서 바뀌었습니다. 이 기기와 팀의 원문을 유지하고 있으며, 선택하면 그 선수 정보 전체를 반영합니다.':'양쪽 변경을 보관 중입니다. 선택한 자료의 문서 전체를 반영하므로, 다른 경기·선수의 변경도 함께 바뀔 수 있습니다. 필요한 내용을 먼저 확인해 주세요.'}));return;}
+      why:x.choice?'선택한 두 판본을 다시 확인한 뒤 반영합니다':x.reason==='merge'?'이 기기와 다른 기기에서 같은 목록을 함께 고쳐 자동으로 합치지 못했습니다. 어느 쪽도 덮지 않고 두 원문을 그대로 보관 중입니다. 남길 쪽을 고르면 그 문서 전체로 이어 저장합니다.':x.reason==='rejected'?'서버가 이 변경을 받지 않았습니다(예: 최신 일정과 맞지 않는 경기, 오래된 일정 판, 오래된 앱 판). 같은 내용을 계속 다시 보내지 않도록 멈추고 두 원문을 그대로 보관 중입니다. 팀 것으로 맞추거나, 이 기기 것을 남겨 한 번 더 보낼 수 있습니다.':String(x.k).indexOf('sq:')===0?'한 선수의 정보가 두 기기에서 바뀌었습니다. 이 기기와 팀의 원문을 유지하고 있으며, 선택하면 그 선수 정보 전체를 반영합니다.':'양쪽 변경을 보관 중입니다. 선택한 자료의 문서 전체를 반영하므로, 다른 경기·선수의 변경도 함께 바뀔 수 있습니다. 필요한 내용을 먼저 확인해 주세요.'}));return;}
     out.push({src:'hold',k:x.k,at:x.at,mine:x.after,theirs:x.before,
       why:'이 기기에서 크게 줄어 아직 안 올렸습니다'}); }); }catch(_){}
   try{ if(!COPIES_OFF)rescueList().forEach(function(x){
@@ -7260,7 +7268,18 @@ function syncNowCore(reason){
               var merged=mineBaseTrusted?idpMergeRaw(k,mineBase,loc,row.v,teamW):idpMergeInitialRaw(k,loc,row.v,teamW);
               if(!merged){
                 /* malformed/v2는 어느 쪽도 덮지 않는다. 로컬 dirty/outbox를 남겨 새 판이 처리하게 한다. */
-                syncDiagnostic('idp-private-merge-shape',new Error('내 IDP 병합 형식을 확인할 수 없음'));return;
+                /* 2.952 — 두 원문이 모두 v1 인데도 못 합친 경우(안정 키 없는 배열을 양쪽이 고침 — 2.744)는 «새 판»이 와도 풀리지 않는다.
+                   코치 점검(10/7): 내 IDP 가 9/28부터 매 회차 여기서 조용히 멈춰 «8일째 저장 대기»가 되었고, 출구가 없었다.
+                   → 어느 쪽도 덮지 않고 **자료 확인**에 두 원문을 맡긴다(holdConflictRecord — 다른 팀 자료와 같은 문).
+                   고르면(local/server) 그 문서 전체로 다음 회차가 이어 간다. 형식이 깨진 원문은 예전처럼 멈추기만 한다. */
+                if(idpRawMergeable(k,loc)&&idpRawMergeable(k,row.v)){
+                  var mergeHeld=holdConflictRecord(k,loc,row,'merge');
+                  if(mergeHeld&&mergeHeld.choice==='local')merged={local:loc,cloud:pushVal(loc)};
+                  else if(mergeHeld&&mergeHeld.choice==='server'){var mvS=keepMyImg(row.v,loc);if(typeof mvS==='string')merged={local:mvS,cloud:pushVal(row.v)};}
+                  if(!merged){if(heldKeys.indexOf(k)<0)heldKeys.push(k);syncDiagnostic('idp-private-merge-held',new Error('내 IDP 를 자동으로 합치지 못해 자료 확인에 맡김'));return;}
+                }else{
+                  syncDiagnostic('idp-private-merge-shape',new Error('내 IDP 병합 형식을 확인할 수 없음'));return;
+                }
               }
               var mineChoice=idpConflictChoice(k,loc,row,merged);if(mineChoice==='pending')return;
               if(mineChoice==='local')merged={local:loc,cloud:pushVal(loc)};
@@ -10603,10 +10622,12 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
     var wid=activeWs();
     return outboxRead().then(function(q){
       var sc=outboxScope(outboxOwner(),wid);
+      var heldK={};try{holdList().forEach(function(x){if(x&&x.kind==='conflict'&&!x.choice)heldK[x.k]=1;});}catch(_){}
       var rows=(q||[]).filter(function(it){return it&&outboxScope(it.uid,it.wid)===sc;})
         .map(function(it){
           var code=it.lastError||it.roundError||'';
-          return {key:it.key,label:keyLabel(it.key),code:code,text:code?syncCodeText(code):'아직 보낼 차례를 기다리는 중',
+          /* 2.952 — 자료 확인에 맡긴 항목은 «기다리는 중»이 아니라 고를 차례다 */
+          return {key:it.key,label:keyLabel(it.key),code:code,text:heldK[it.key]?'두 판을 자동으로 못 합쳐 «자료 확인»에서 고를 차례':(code?syncCodeText(code):'아직 보낼 차례를 기다리는 중'),
             stage:it.lastStage||it.roundStage||'',attempts:+it.attempts||0,rounds:+it.roundFails||0,
             at:+it.updatedAt||+it.at||0};
         });
