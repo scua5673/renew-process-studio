@@ -13401,6 +13401,67 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
      그 가로 판을 첫 장면에 덮어썼다(실측 portrait/v → portrait/h). 방향은 보기 깃발이라 좌표는 그대로다. */
   function meetCap(){var s=captureSnap();try{s.orientation=meetingPdfOrientation(anim.slides)==='landscape'?'h':'v';}catch(_){}return s;}
   window.__meetCap=meetCap;
+  /* 2.959 — 새 미팅의 기본 9장. 사용자 «보관함 › 만들기 › 미팅 만들기 하면 BEST 11·하이블록·미드블록·로우블록·빌드업·전진,전개·침투,마무리·
+     코너킥 수비·코너킥 공격 페이지를 미리 만들어 주고 토큰도 22개 미리 올려놓고».
+     좌표는 미터(가로 105 × 세로 68). 우리 팀(파랑)은 왼쪽 골대를 지키고 오른쪽으로 공격한다 — 작전판 기본 배치(applyDefaultXI)와 같은 쪽.
+     우리 번호·자리는 작전판 4-3-3(FORM["433"])과 같고, 상대(빨강)는 4-4-2. 방향(가로형·세로형)은 보기 깃발이라 좌표는 그대로 두고 meetCap 이 미팅 방향을 붙인다.
+     22명이 다 보이게 9장 모두 전체 운동장(절반 보기는 반대편 골키퍼·후방 대기 선수를 자른다). 글(points)은 비워 둔다 — 코치가 채운다. */
+  var MEET_TPL_US=[[1,"GK"],[3,"LB"],[4,"LCB"],[5,"RCB"],[2,"RB"],[6,"DM"],[8,"LCM"],[10,"RCM"],[7,"LW"],[9,"ST"],[11,"RW"]];
+  var MEET_TPL_OPP=[[1,"GK"],[2,"RB"],[4,"RCB"],[5,"LCB"],[3,"LB"],[7,"RM"],[8,"RCM"],[6,"LCM"],[11,"LM"],[9,"ST"],[10,"ST"]];
+  var MEET_TPL=[
+    {t:"BEST 11",   /* 기본 대형 — 양 팀 자기 진영 */
+     us:[[5,34],[19,9],[16,25],[16,43],[19,59],[28,34],[36,22],[36,46],[47,10],[49,34],[47,58]],
+     op:[[100,34],[86,9],[89,25],[89,43],[86,59],[71,10],[74,27],[74,41],[71,58],[57,29],[57,39]],ball:[52.5,34]},
+    {t:"하이블록",   /* 상대 골키퍼부터 압박 — 수비 라인은 하프라인 */
+     us:[[38,34],[64,12],[54,27],[54,41],[64,56],[70,32],[80,24],[75,41],[89,15],[92,32],[89,53]],
+     op:[[100,34],[82,6],[94,19],[94,49],[82,62],[67,9],[84,29],[80,41],[67,59],[61,28],[60,41]],ball:[98.7,35]},
+    {t:"미드블록",   /* 가운데 1/3 에서 블록 — 상대 센터백이 공 */
+     us:[[8,34],[31,13],[29,27],[29,41],[31,55],[37,34],[44,24],[44,44],[47,9],[53,32],[47,59]],
+     op:[[97,34],[57,5],[70,20],[68,46],[55,63],[41,6],[61,28],[57,39],[39,62],[35,21],[36,46]],ball:[66.3,46.8]},
+    {t:"로우블록",   /* 우리 진영 깊이 — 상대가 우리 진영에서 공 */
+     us:[[3,34],[13,15],[12,28],[12,40],[13,53],[19,34],[23,24],[23,44],[26,10],[37,33],[26,58]],
+     op:[[96,34],[33,5],[56,24],[56,44],[35,63],[19,6],[41,27],[45,41],[20,62],[17,22],[17,45]],ball:[39.6,28.2]},
+    {t:"빌드업",   /* 골키퍼부터 — 센터백 벌리고 풀백 높이, 상대 4-4-2 압박 */
+     us:[[4,34],[25,5],[10,17],[10,51],[25,63],[19,34],[33,22],[33,46],[47,6],[50,34],[47,62]],
+     op:[[97,34],[45,14],[55,28],[55,40],[45,54],[29,11],[28,28],[28,40],[29,57],[17,25],[17,43]],ball:[5.8,35.2]},
+    {t:"전진·전개",   /* 가운데 1/3 — 상대 미드블록 사이로 */
+     us:[[22,34],[57,6],[36,21],[36,47],[57,62],[46,34],[61,24],[61,44],[73,12],[81,34],[73,56]],
+     op:[[102,34],[83,14],[85,28],[85,40],[83,54],[67,15],[69,28],[69,40],[67,53],[55,27],[55,41]],ball:[47.6,35.3]},
+    {t:"침투·마무리",   /* 마지막 1/3 — 상대 로우블록 */
+     us:[[38,34],[81,6],[52,23],[52,45],[76,61],[64,34],[83,22],[81,45],[94,11],[94,33],[92,46]],
+     op:[[103,34],[97,19],[98,29],[98,39],[97,51],[88,13],[89,27],[89,39],[88,55],[72,27],[72,42]],ball:[84.6,23.2]},
+    {t:"코너킥 수비",   /* 상대 코너(우리 골대 왼쪽 위) — 니어 포스트·6야드 지역 셋·대인 둘·박스 끝 둘·짧은 코너 견제·역습 대기 */
+     us:[[2,33],[9,28],[5.5,30],[5.5,36],[9,37],[5.5,42],[17,25],[17,43],[1.5,27],[36,37],[7,8]],
+     op:[[100,34],[40,32],[12,27],[12,37],[46,44],[-1,-1],[5,3],[20,34],[15,51],[9,46],[3,39]],ball:[0.8,0.8]},
+    {t:"코너킥 공격",   /* 우리 코너(상대 골대 오른쪽 위) — 수비와 같은 그림을 뒤집은 것 */
+     us:[[25,34],[64,26],[93,27],[93,37],[64,44],[72,34],[85,34],[100,3],[106,-1],[96,46],[102,39]],
+     op:[[103,33],[96,28],[99.5,30],[99.5,36],[96,37],[103.5,27],[88,26],[99.5,42],[88,42],[68,32],[98,8]],ball:[104.2,0.8]}
+  ];
+  function meetTplPt(m){return {x:Math.round((L+(+m[0])*MPP)*10)/10,y:Math.round((T+(+m[1])*MPP)*10)/10};}
+  function meetTplSnap(base,tp){
+    var snap=JSON.parse(JSON.stringify(base||{})),id=1001;
+    snap.players=[];snap.equipment=[];snap.drawings=[];
+    Object.assign(snap,{pitchSpec:"fifa",area:"full",pitchView:"full",fieldMode:"standard",halfSide:"L",spFlip:false,pitchN:1,press:null,spMarks:null,spMark:null,boardLocked:false});
+    tp.us.forEach(function(m,i){var q=meetTplPt(m),r=MEET_TPL_US[i];snap.players.push({id:id++,team:"blue",num:String(r[0]),pos:r[1],x:q.x,y:q.y});});
+    tp.op.forEach(function(m,i){var q=meetTplPt(m),r=MEET_TPL_OPP[i];snap.players.push({id:id++,team:"red",num:String(r[0]),pos:r[1],x:q.x,y:q.y});});
+    snap.ball=meetTplPt(tp.ball);
+    if(!(+snap.tokenScale>=.4))snap.tokenScale=.4;   /* applyDefaultXI 와 같은 바닥 — 22명이 점처럼 보이지 않게 */
+    return snap;
+  }
+  window.__meetTpl=function(){return MEET_TPL.map(function(t){return t.t;});};
+  /* 빈 새 미팅을 9장으로 채운다. 슬라이드는 «새 슬라이드»(add)와 같은 모양 — 판은 meetCap(미팅 방향), 썸네일은 boardThumbSVG.
+     add() 를 아홉 번 부르지 않는 이유: add 는 먼저 지금 판을 앞 슬라이드에 담는다(meetStore) — 다음 장의 판이 앞 장에 덮인다. */
+  window.__meetSeed=function(base){
+    if(anim.slides.length)return false;
+    var po=meetingPdfOrientation(anim.slides),out=[];
+    MEET_TPL.forEach(function(tp){ try{loadSnap(meetTplSnap(base,tp));}catch(_){return;} var th="";try{th=boardThumbSVG();}catch(_){}
+      out.push({pdfOrientation:po,snap:meetCap(),thumb:th,title:tp.t,points:[]}); });
+    if(!out.length)return false;
+    meetAutoTok++;out.forEach(function(f){anim.slides.push(f);});
+    meetIdx=0;var to=meetBind(0,"first");try{loadSnap(to||anim.slides[0].snap);}catch(_){}
+    if(window.__ksRender)window.__ksRender();
+    return true;
+  };
   window.__meet={
     frames:function(){return anim.slides;},
     idx:function(){return meetIdx;},
@@ -17155,7 +17216,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   document.addEventListener("keydown",function(e){ if(!document.body.classList.contains("meet-mode"))return; var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable))return; var mk=e.metaKey||e.ctrlKey; if(mk&&(e.key==="m"||e.key==="M")){e.preventDefault();if(M())M().newSlide("",[]);} else if(mk&&(e.key==="d"||e.key==="D")){e.preventDefault();if(M())M().dup(M().idx());} });
   window.__ksRender=function(){ if(!inMeet())return; build(); stripRender(); ovRender(); progRender(); edSync(); };
   window.__ksThumb=function(i){ if(!strip)return; var c=strip.querySelectorAll(".ksc")[i]; if(c){var f=frames()[i];var t=c.querySelector(".ktb");if(t&&f)t.innerHTML=(f.thumb||"")+kAnim(f);} };
-  window.__ksEnter=function(){ build(); try{ if(M()){ if(frames().length===0){ if(window.__meetBlank){try{loadSnap({players:[],equipment:[],ball:{x:CX,y:CY},drawings:[],orientation:(meetingPdfOrientation(anim.slides)==="landscape"?"h":"v"),area:state.area,pitchView:pitchViewKey(),tokenScale:state.tokenScale,teamColors:dc(state.teamColors||{}),gkColors:dc(state.gkColors||{}),teamColor2:dc(state.teamColor2||{}),teamPattern:dc(state.teamPattern||{}),teamStrokeC:dc(state.teamStrokeC||{}),customImages:dc(state.customImages||[])});}catch(_){} window.__meetBlank=false;} M().add(); } else { M().go(0); } } }catch(_){} window.__ksRender(); try{setTimeout(function(){window.dispatchEvent(new Event("resize"));},70);setTimeout(function(){window.dispatchEvent(new Event("resize"));},320);}catch(_){} };
+  window.__ksEnter=function(){ build(); try{ if(M()){ if(frames().length===0){ if(window.__meetBlank){var _mb={players:[],equipment:[],ball:{x:CX,y:CY},drawings:[],orientation:(meetingPdfOrientation(anim.slides)==="landscape"?"h":"v"),area:state.area,pitchView:pitchViewKey(),tokenScale:state.tokenScale,teamColors:dc(state.teamColors||{}),gkColors:dc(state.gkColors||{}),teamColor2:dc(state.teamColor2||{}),teamPattern:dc(state.teamPattern||{}),teamStrokeC:dc(state.teamStrokeC||{}),customImages:dc(state.customImages||[])}; window.__meetBlank=false; var _seeded=false; try{_seeded=!!(window.__meetSeed&&window.__meetSeed(_mb));}catch(_){}   /* 2.959 — 빈 새 미팅은 기본 9장(22명씩)으로 시작. 실패하면 예전처럼 빈 한 장 */ if(!_seeded){try{loadSnap(_mb);}catch(_){} M().add();} } else { M().add(); } } else { M().go(0); } } }catch(_){} window.__ksRender(); try{setTimeout(function(){window.dispatchEvent(new Event("resize"));},70);setTimeout(function(){window.dispatchEvent(new Event("resize"));},320);}catch(_){} };
   window.__ksExit=function(){ if(ov)ov.classList.remove("on"); try{setTimeout(function(){window.dispatchEvent(new Event("resize"));},70);}catch(_){} };
 })();
 </script>
