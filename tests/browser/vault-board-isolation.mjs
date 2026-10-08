@@ -182,10 +182,13 @@ try{
       await frame.evaluate(()=>{state.players[0].name='가상 그냥 저장';renderTokens();boardSaveLive();});
       await frame.locator('#vCreateSaveOnly').click();
       await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 그냥 저장');
+      await frame.waitForFunction(()=>!window.__vaultManualDirty&&!document.getElementById('vCreateSaveOnly').disabled&&/저장됨/.test(document.getElementById('vCreateSub').textContent||''),null,{timeout:8000});   /* 저장이 끝날 때까지(저장 표시·변경 없음) */
       assert.equal(await frame.locator('#vCreateBar.on').count(),1,'«저장»은 편집을 닫지 않는다');
       await frame.evaluate(()=>{state.players[0].name='가상 단축키 저장';renderTokens();boardSaveLive();window.focus();document.activeElement&&document.activeElement.blur&&document.activeElement.blur();});
+      await frame.evaluate(()=>{const sb=document.getElementById('vCreateSub');if(sb)sb.textContent='';});
       await page.keyboard.press((process.platform==='darwin'?'Meta':'Control')+'+KeyS');
       await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 단축키 저장',null,{timeout:5000});
+      await frame.waitForFunction(()=>!window.__vaultManualDirty&&/저장됨/.test(document.getElementById('vCreateSub').textContent||''),null,{timeout:8000});
       assert.equal(await frame.locator('#vCreateBar.on').count(),1,'⌘S 도 편집을 닫지 않는다');
       await frame.locator('#vCreateCancel').click().catch(()=>{});
       await page.locator('#live').click();await page.waitForTimeout(500);await assertLive(frame,before,'plain save keeps working board intact');

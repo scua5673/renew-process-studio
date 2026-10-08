@@ -9037,6 +9037,8 @@ window.__export169=_export169;
    이제 장면 한 장마다 «정확히 1/fps 초» 시각표를 붙여 인코더에 넣고 MP4 상자로 묶는다 — 그리는 데 오래 걸려도 영상은 고르다.
    H.264 Baseline(B 프레임 없음 — 재생 순서 = 저장 순서)만 쓴다. 지원 안 되는 브라우저·설정이면 예전 길로 간다. */
 async function _wcPickConfig(w,h,fps,br){ try{ if(typeof VideoEncoder!=="function"||typeof VideoFrame!=="function"||!VideoEncoder.isConfigSupported)return null;
+  /* 애플 밖 WebKit(리눅스 GTK·WPE)은 isConfigSupported 를 묻는 순간 탭이 죽었다(CI 리눅스 웹킷 실측 2026-10-08) — 거기선 옛 녹화 길로. 맥·아이폰·아이패드 사파리와 크롬·엣지는 그대로 */
+  try{ if(/^Apple/.test(String(navigator.vendor||""))&&!/Mac|iPhone|iPad|iPod/.test(String(navigator.platform||"")))return null; }catch(_){}
   for(const c of ["avc1.42E028","avc1.42E02A","avc1.42E01F","avc1.42001F"]){ const cfg={codec:c,width:w,height:h,bitrate:br,framerate:fps,avc:{format:"avc"}};
     try{ const r=await VideoEncoder.isConfigSupported(cfg); if(r&&r.supported)return cfg; }catch(_){} } }catch(_){} return null; }
 function _mp4Mux(samples,avcC,w,h,fps){

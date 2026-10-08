@@ -116,7 +116,7 @@ try{
   // 6·7·8) 단축키 조합: 편집기가 ⌘+문자·Shift 톡·방향키를 받고, 실행도 된다
   step('shortcuts');
   await f.evaluate(()=>{localStorage.removeItem('cs_tool_shortcuts_v1');const h=document.createElement('div');h.id='kTest';h.style.cssText='position:fixed;left:0;top:0;width:600px;z-index:99999;background:#fff';document.body.appendChild(h);localStorage.setItem('cs_tool_shortcuts_tab_v1','board');window.__mountToolKeyEditor(h);});
-  assert.equal(await f.evaluate(()=>window.__psShortcutFor(window.__psComboOf({metaKey:/Mac/.test(navigator.platform),ctrlKey:!/Mac/.test(navigator.platform),key:'s',code:'KeyS'}))),'save','저장 기본 단축키 ⌘S');
+  assert.equal(await f.evaluate(()=>(()=>{const mac=/Mac|iPhone|iPad|iPod/.test((navigator.platform||'')+' '+(navigator.userAgent||''));return window.__psShortcutFor(window.__psComboOf({metaKey:mac,ctrlKey:!mac,key:'s',code:'KeyS'}));})()),'save','저장 기본 단축키 ⌘S');
   const cap=async(tool,down,up)=>{await f.evaluate(t=>document.querySelector('#kTest button[data-tool="'+t+'"]').click(),tool);await f.focus('#kTest button[data-tool="'+tool+'"]');for(const k of down)await page.keyboard.down(k);for(const k of (up||down).slice().reverse())await page.keyboard.up(k);await page.waitForTimeout(80);return f.evaluate(t=>document.querySelector('#kTest button[data-tool="'+t+'"]').dataset.key,tool);};
   const MOD=process.platform==='darwin'?'Meta':'Control';
   assert.equal(await cap('pen1',[MOD,'KeyK']),(MOD==='Meta'?'cmd':'ctrl')+'+k','⌘+문자를 받는다');
