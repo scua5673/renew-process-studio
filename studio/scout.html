@@ -12848,7 +12848,7 @@ function matchMeetParts(m){
   var ob=mmOppBoard(m), od=cnt.slice(); if(op.length>cnt.length)od.push("국면 "+(op.length-cnt.length)); if(ob)od.push("보드 1장");
   parts.push({key:"opp",label:"상대 분석",ok:!!(op.length||ob),detail:od.length?od.join(" · "):"비어 있음",slides:(op.length||ob)?[{title:"상대 분석 — "+opp,points:op.slice(0,8),us:ob?ob.us:[],opp:ob?ob.opp:[],draw:ob?ob.draw:[]}]:[]});
   var xi=mmStartXI(m);
-  parts.push({key:"xi",label:"선발 11",ok:!!xi,detail:xi?([xi.label,xi.tokens.length+"명"].filter(Boolean).join(" · ")):"선발 명단이 아직 없어요",slides:xi?[{title:"선발 11"+(xi.label?(" · "+xi.label):""),points:xi.points,us:xi.tokens,opp:[],draw:[]}]:[]});
+  parts.push({key:"xi",label:"선발 11",ok:!!xi,detail:xi?([xi.label,xi.tokens.length+"명"].filter(Boolean).join(" · ")):"선발 명단이 아직 없어요",slides:xi?[{title:"선발 11"+(xi.label?(" · "+xi.label):""),points:xi.points,us:xi.tokens,opp:[],draw:[],lineup:1}]:[]});   /* 2.970 — 미팅에선 운동장 전체로 편다(board meetSpreadLineup) */
   var pl=[],pn=[]; (typeof MB2_RV!=="undefined"?MB2_RV:[]).forEach(function(r){ var ls=Ls(m[r[0]]); if(ls.length){pl.push(r[1]+" — "+ls.join(" · ")); pn.push(r[1]);} });
   parts.push({key:"plan",label:"게임플랜",ok:!!pl.length,detail:pl.length?pn.join(" · "):"비어 있음",slides:pl.length?[{title:"게임플랜",points:pl.slice(0,8),us:xi?xi.tokens:[],opp:[],draw:[]}]:[]});
   var pg=mmPrepPages(m);

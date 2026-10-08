@@ -116,7 +116,7 @@ test('choosing an orientation also turns the live board, redraws thumbnails and 
   assert.equal(c.state.orientation,'v','the board behind the page turns too');
   assert.equal(c.state.spFlip,false);assert.equal(c.autoOrient,false,'screen-ratio auto rotation is off');assert.ok(applied>0);
   assert.deepEqual(c.anim.slides.filter(s=>s.snap).map(s=>s.thumb),['<svg o="v"/>','<svg o="v"/>'],'thumbnails are redrawn in the new direction');
-  assert.equal(store.ps_meet_orient_v1,'portrait','the next new meeting starts this way');
+  assert.equal(store.ps_meet_orient_v2,'portrait','the next new meeting starts this way');   /* 2.970 — v2 */
 });
 
 test('every place that stores the live board into a slide stores it in the meeting direction',()=>{
@@ -137,10 +137,10 @@ test('every place that stores the live board into a slide stores it in the meeti
   assert.match(line('  var oldExit=window.__ksExit;'),/autoOrient=window\.__meetAOprev;window\.__meetAOprev=undefined;/);
 });
 
-test('a new meeting starts in the direction last chosen on this device, landscape otherwise',()=>{
-  const a=src.indexOf('  window.__meetReset=function(){');
-  const code=src.slice(a,src.indexOf('};\n',a)+3);
-  for(const [saved,want] of [[null,'landscape'],['portrait','portrait'],['landscape','landscape'],['sideways','landscape']]){
+test('a new meeting starts in the direction last chosen on this device, portrait otherwise (2.970)',()=>{
+  const a=src.indexOf('  window.__meetDefaultOrient=function(){');
+  const code=src.slice(a,src.indexOf('};\n',src.indexOf('  window.__meetReset=function(){'))+3);
+  for(const [saved,want] of [[null,'portrait'],['portrait','portrait'],['landscape','landscape'],['sideways','portrait']]){
     const c=vm.createContext({window:{},anim:{slides:[1]},meetIdx:0,meetUnbindNew(){},localStorage:{getItem:()=>saved}});
     vm.runInContext(code,c);c.window.__meetReset();
     assert.equal(c.window.__meetingPdfOrientation,want,String(saved));
