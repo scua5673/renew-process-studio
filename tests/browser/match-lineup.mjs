@@ -43,6 +43,7 @@ try{
     data=roster;store.set('scout_tool_v1',roster);store.set('process_coach_v1',{version:1,anchorMonday:'2026-09-14',weeks:{'0':[{}, {},{mid:'qa-schedule',match:{opp:'가상 상대'},board:{sched:'경기'}},{},{},{},{}]}});store.set('cs_team_matches_v1',{version:1,matches:[m]});await store.ready();
     await scPrepare();load();data=roster;matchState=null;matchLoad();setView('match');matchOpen('qa-match');matchTab='prep';matchStage='prep';renderMatch();
    });
+   await f.evaluate(()=>{mmOldOpen['qa-match']=true;mmOldApply(matchGet());});   /* 2.965 — 옛 경기 준비 보드는 접혀 있다 — 이 시험은 그 보드의 끌기를 본다 */
    await f.locator('#mb2Pitch').waitFor({state:'visible'});await page.waitForTimeout(400);
    async function coords(){return f.evaluate(()=>JSON.parse(JSON.stringify(mb2Cur(matchGet()).us)));}
    async function signal(){await page.evaluate(()=>localStorage.setItem('ps_sync_meta',JSON.stringify({qaAck:Date.now()})));await page.waitForTimeout(140);}

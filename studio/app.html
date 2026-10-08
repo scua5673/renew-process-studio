@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.962"></script>
+<script src="autosave-status.js?v=2.966"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.962';</script>
+<script>window.PS_BUILD='2.966';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1563,6 +1563,17 @@ function psShowUpdBand(){
     html body.ps-team-open.ps-tn-dark:not(.ps-player-idp-only) header.appbar:not(#_) #gearBtn{color:rgba(255,255,255,.86)!important}
   }
   </style>
+  <style id="ps-2966-matchedit">
+  /* 2.966 — 경기 준비 안에서 미팅 편집: 팀 머리·팀 탭은 그대로, 그 아래에 보관함 편집기(fBoard).
+     편집기가 자료를 열 때까지(보관함 읽기·쓰기 한 박자) 작업 보드가 비치지 않게 가린다 */
+  body.ps-me-wait #fBoard{visibility:hidden}
+  body.ps-me-wait .frames::after{content:"미팅 여는 중…";position:absolute;left:0;right:0;top:40%;text-align:center;font-size:13px;font-weight:600;color:var(--dim,#8A9099);pointer-events:none}
+  @media (max-width:600px){
+    /* 폰은 팀 하단 탭 자리를 편집기 아래 줄(#ksBot)이 쓴다 — 탭을 접고 그 몫의 여백도 걷는다 */
+    body.ps-match-edit .team-bottom,body.ps-match-edit .team-more{display:none!important}
+    body.ps-match-edit .frames{margin-bottom:0!important}
+  }
+  </style>
   <style id="ps-2179-bottom">
   .team-bottom,.team-more{display:none}
   .team-bottom .tb-ipad-idp{display:none}
@@ -2233,11 +2244,16 @@ function psShowUpdBand(){
     /* sync.js 가 잠금을 다시 그릴 때(로그아웃·세션 만료) 클래스가 살아 있어야 한다 */
     try{ window.addEventListener('ps-auth-state',function(){ try{ psGuestOpenSync(); }catch(_){} }); }catch(_){}
     function showApp(app){
+      /* 2.966 — 경기 준비 안 편집(ps-match-edit)은 그 문(psMatchEditEnter)으로 들어올 때만 산다. 다른 곳으로 가면 내려놓고 편집기에 알린다 */
+      if(!window.__psMatchEditing&&document.body.classList.contains('ps-match-edit')){
+        document.body.classList.remove('ps-match-edit','ps-me-wait');
+        if(!window.__psMatchEditDoneNow){ try{ fBoard.contentWindow.postMessage({source:'app',type:'matchEditEnd'},'*'); }catch(_){} }
+      }
       closeTransientUI(app);
       document.body.dataset.psApp=app;
       /* 1.623 — 게임모델은 이제 최상단 탭(개인 도구)이기도 하다. 팀 내비를 타고 들어왔을 때만
          팀 화면으로 취급한다 — 안 그러면 최상단에서 열어도 팀 줄이 따라 붙는다. */
-      document.body.classList.toggle('ps-team-open',app==='scout'||app==='process'||app==='terms'||app==='playbook'||(!!currentTeamKey&&(app==='gamemodel'||app==='idp')));   /* 2.576 — 플레이북은 팀 줄 안 */
+      document.body.classList.toggle('ps-team-open',app==='scout'||app==='process'||app==='terms'||app==='playbook'||(!!currentTeamKey&&(app==='gamemodel'||app==='idp'))||(app==='design'&&document.body.classList.contains('ps-match-edit')));   /* 2.966 — 경기 준비 안 편집도 팀 화면 */   /* 2.576 — 플레이북은 팀 줄 안 */
       /* 2.316 — IDP 는 폰 앱처럼 한 열로. 진짜 폰이면 그대로 꽉 채운다 */
       /* ⚠ devNow() 는 다른 스크립트 블록에 있어 여기서 못 볼 수 있다 — 부트가 심어 둔 속성과 폭으로 직접 본다 */
       try{ var _rp=(document.documentElement.getAttribute('data-ps-device')==='phone')||matchMedia('(max-width:767px)').matches;
@@ -2295,7 +2311,7 @@ function psShowUpdBand(){
          그린 채로 나타났다가 다음 프레임에 보관함으로 바뀐다 — 그 한 프레임이 '깜빡'이었다.
          작전판(board)으로 갈 때는 boardShowDefault() 가 보이는 크기를 재서 캔버스를 맞추므로
          숨은 상태에서 부르면 0 으로 맞춰진다. 그래서 board 는 예전 자리에 그대로 둔다. */
-      if(app==='design'){try{var _vw0=fBoard.contentWindow;if(_vw0.__vaultEnterReset)_vw0.__vaultEnterReset();_vw0.setView('session');}catch(_){}}
+      if(app==='design'&&!document.body.classList.contains('ps-match-edit')){try{var _vw0=fBoard.contentWindow;if(_vw0.__vaultEnterReset)_vw0.__vaultEnterReset();_vw0.setView('session');}catch(_){}}
       fBoard.style.display = (app==='board'||app==='design')?'block':'none';
       try{ var _bm=document.getElementById('psBoardMoreBtn'); if(_bm)_bm.hidden=(app!=='board'); }catch(_){}   /* 2.216 */
       fProcess.style.display = app==='process'?'block':'none';
@@ -2384,6 +2400,24 @@ function psShowUpdBand(){
     /* 기준(gamemodel)은 src 가 scope 로 갈린다(개인/팀 — 아래 showApp 의 _want 재검사) — 주 진입로인 '기준' 탭(팀 판)을 미리.
        보관함›게임모델(개인)으로 열면 그때 한 번 src 교체(오늘과 동일 비용). */
     setTimeout(function(){try{var _pk=currentTeamKey;currentTeamKey='settings';ensureAppFrame('gamemodel');currentTeamKey=_pk;}catch(_){}} ,6400);
+    /* 2.966 — 경기 준비 안에서 미팅 편집. 들어갈 때 팀 키(경기)를 지키고, 끝나면 경기 화면을 **그대로**(스크롤·열린 경기) 다시 보인다 */
+    function psMatchEditEnter(){
+      currentTeamKey=currentTeamKey||'match';
+      /* 숨긴 iframe 은 스크롤이 0 으로 접힌다(보이는 높이가 0 이 되므로) — 돌아올 때 되살리려고 지금 자리를 적어 둔다 */
+      try{ var _sw=fScout.contentWindow; window.__psMeScroll=Math.round(_sw.scrollY||(_sw.document.scrollingElement||{}).scrollTop||0); }catch(_){ window.__psMeScroll=0; }
+      document.body.classList.add('ps-match-edit','ps-me-wait');
+      window.__psMatchEditing=true; try{ showApp('design'); }finally{ window.__psMatchEditing=false; }
+      clearTimeout(window.__psMeWaitT); window.__psMeWaitT=setTimeout(function(){ document.body.classList.remove('ps-me-wait'); },4000);   /* 신호를 놓쳐도 가림막은 걷힌다 */
+    }
+    function psMatchEditDone(d){
+      d=d||{}; var was=document.body.classList.contains('ps-match-edit');
+      document.body.classList.remove('ps-me-wait');
+      if(!was&&!d.force)return;   /* 이미 다른 화면으로 갔다 — 끌고 오지 않는다 */
+      currentTeamKey=currentTeamKey||'match';
+      window.__psMatchEditDoneNow=true; try{ showApp('scout'); }finally{ window.__psMatchEditDoneNow=false; }
+      var _y=window.__psMeScroll|0; if(_y>0){ [0,80,260].forEach(function(t){ setTimeout(function(){ try{ fScout.contentWindow.scrollTo(0,_y); }catch(_){} },t); }); }
+      try{ fScout.contentWindow.postMessage({source:'app',type:'matchEditDone',libId:String(d.libId||''),mid:String(d.mid||'')},'*'); }catch(_){}
+    }
     function openTeamButton(b){
       currentTeamKey=b.dataset.teamKey||'today';
       var _idpWasHidden=false; try{ _idpWasHidden=!(fIdp.offsetWidth>0&&fIdp.offsetHeight>0); }catch(_){ _idpWasHidden=true; }   /* 2.777 */
@@ -2852,12 +2886,20 @@ function psShowUpdBand(){
         }catch(_){}},150); })(d.name);
       } else if(d.source==='scout' && fScout && e.source===fScout.contentWindow && (d.type==='openMeeting'||d.type==='meetingFromMatch')){
         /* 2.928 — 경기 준비의 «이 경기 미팅»: 보관함 미팅 열기(▶ 슬라이드쇼)·«경기 자료로 만들기». 보관함 쓰기·열기는 작전판(보관함) 한 곳에서 */
-        currentTeamKey=''; showApp('design');
+        /* 2.966 — 경기 준비에서 온 것(inplace)은 팀 화면을 떠나지 않는다: 팀 머리·경기 탭 그대로, 그 아래에 보관함 편집기 */
+        var _inp=!!d.inplace;
+        if(_inp)psMatchEditEnter(); else { currentTeamKey=''; showApp('design'); }
         (function(_d){ setTimeout(function(){ try{
           var bw=fBoard.contentWindow;
-          if(_d.type==='openMeeting'){ if(bw.__vaultOpenMeeting)bw.__vaultOpenMeeting(String(_d.libId||''),{show:!!_d.show}); }
-          else if(bw.__meetingFromMatch)bw.__meetingFromMatch(_d.payload||{});
-        }catch(_){} },140); })(d);
+          if(_d.type==='openMeeting'){ if(bw.__vaultOpenMeeting)bw.__vaultOpenMeeting(String(_d.libId||''),{show:!!_d.show,inplace:_inp,parts:_d.parts||null}); }
+          else if(bw.__meetingFromMatch)bw.__meetingFromMatch(Object.assign({},_d.payload||{},{inplace:_inp}));
+        }catch(_){ if(_inp)psMatchEditDone({}); } },_inp?20:140); })(d);
+        return;
+      } else if(d.source==='board' && fBoard && e.source===fBoard.contentWindow && d.type==='matchEditReady'){
+        document.body.classList.remove('ps-me-wait');   /* 2.966 — 편집기가 자료를 열었다 */
+        return;
+      } else if(d.source==='board' && fBoard && e.source===fBoard.contentWindow && d.type==='matchEditDone'){
+        psMatchEditDone(d);   /* 2.966 — «완료» · «‹ 경기 준비» · 열기 실패 */
         return;
       } else if(d.source==='scout' && fScout && e.source===fScout.contentWindow && d.type==='meetingLink'){
         /* 2.928 — 경기에서 «보관함에서 연결»·«떼기»: 화면은 그대로 두고 보관함 항목의 연결만 바꾼다. 결과는 경기 화면이 말한다 */
@@ -7848,13 +7890,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.962"></script>
-<script src="autosave-merge.js?v=2.962"></script>
-<script src="autosave-runtime.js?v=2.962"></script>
-<script src="autosave-recovery.js?v=2.962"></script>
-<script src="sync.js?v=2.962"></script>
+<script src="autosave-journal.js?v=2.966"></script>
+<script src="autosave-merge.js?v=2.966"></script>
+<script src="autosave-runtime.js?v=2.966"></script>
+<script src="autosave-recovery.js?v=2.966"></script>
+<script src="sync.js?v=2.966"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.962">
+<link rel="stylesheet" href="support.css?v=2.966">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

@@ -17,7 +17,8 @@ test('scouting is a top-row team tab (B안): between 선수단 and IDP, not in t
 test('scouting inner tab row is gone; one toggle goes to points and back',()=>{
   assert.ok(!/role="tab" data-sbtab=/.test(SC),'후보 DB · 스카우팅 포인트 탭 줄을 걷었다');
   assert.ok(/id="sbPtsToggle"/.test(SC));
-  assert.ok(/if\(e\.target\.closest\("#sbPtsToggle"\)\) sbSetTab\(sbTab==="crit"\?"cands":"crit"\)/.test(SC));
+  /* 2.963 — 버튼이 카드 도구 줄로 옮겨 다니므로 탭 줄 위임 대신 버튼에 직접 단다(같은 토글) */
+  assert.ok(/ptb0\.addEventListener\("click",function\(\)\{ sbSetTab\(sbTab==="crit"\?"cands":"crit"\); \}\)/.test(SC));
   assert.ok(/ptb\.textContent=_cr\?"‹ 후보 DB":"스카우팅 포인트 ›"/.test(SC));
   assert.ok(/body\.sb-meet #sbPtsToggle/.test(SC),'회의 모드에서는 숨는다');
 });

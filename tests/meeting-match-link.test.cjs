@@ -70,12 +70,12 @@ function linkCtx(lib,editable){
   let store=J(lib),writes=0;
   const ctx=vm.createContext({JSON,Math,Date,Promise,setTimeout,window:{},
     libGet:async()=>J(store),libSet:async l=>{writes++;store=J(l);},canEditItem:d=>editable(d),renderDrillFiles(){}});
-  vm.runInContext('var _vaultAutoWriting=false,_vaultAutoAgain=false;'+[fnAt(board,'function meetRefClean(r)'),'var _meetLibBusy=false;',fnAt(board,'function meetLibMutate(fn,_n)'),fnAt(board,'function meetSetMatch(libId,ref)')].join('\n')
+  vm.runInContext('var _vaultAutoWriting=false,_vaultAutoAgain=false;'+[fnAt(board,'function meetLinkable(d)'),fnAt(board,'function meetKindWord(d)'),fnAt(board,'function meetRefClean(r)'),'var _meetLibBusy=false;',fnAt(board,'function meetLibMutate(fn,_n)'),fnAt(board,'function meetSetMatch(libId,ref)')].join('\n')
     +';this.set=meetSetMatch;this.lock=function(v){_vaultAutoWriting=v;};this.again=function(){return _vaultAutoAgain;};',ctx);
   return {ctx,get store(){return store;},get writes(){return writes;}};
 }
-test('미팅 연결·끊기 — 만든 사람만, 미팅만, 다른 필드는 그대로',async()=>{
-  const lib=[{libId:'A',type:'meeting',name:'전술 미팅',slides:[{title:'1'}],createdBy:'me'},{libId:'B',type:'meeting',name:'남의 것',createdBy:'you'},{libId:'C',type:'train',name:'훈련',createdBy:'me'}];
+test('미팅·작전판 연결·끊기 — 만든 사람만, 미팅·작전판만(2.965), 다른 필드는 그대로',async()=>{
+  const lib=[{libId:'A',type:'meeting',name:'전술 미팅',slides:[{title:'1'}],createdBy:'me'},{libId:'B',type:'meeting',name:'남의 것',createdBy:'you'},{libId:'C',type:'train',name:'훈련',createdBy:'me'},{libId:'D',type:'board',name:'빌드업 작전판',pages:[{name:'p1'}],createdBy:'me'}];
   const t=linkCtx(lib,d=>d.createdBy==='me');
   let r=await t.ctx.set('A',{mid:'mt1',date:'2026-10-04',opp:'한빛FC'});
   assert.equal(r.ok,true);assert.equal(t.store[0].matchRef.mid,'mt1');assert.equal(t.store[0].slides.length,1,'슬라이드는 건드리지 않는다');
@@ -83,6 +83,7 @@ test('미팅 연결·끊기 — 만든 사람만, 미팅만, 다른 필드는 �
   r=await t.ctx.set('C',{mid:'mt1'});assert.equal(r.reason,'type');
   r=await t.ctx.set('Z',{mid:'mt1'});assert.equal(r.reason,'gone');
   assert.equal(t.writes,1,'거부는 쓰지 않는다');
+  r=await t.ctx.set('D',{mid:'mt1'});assert.equal(r.ok,true,'2.965 — 작전판도 잇는다');assert.equal(t.store[3].matchRef.mid,'mt1');assert.equal(t.store[3].pages.length,1,'페이지는 그대로');assert.equal(r.name,'빌드업 작전판');
   r=await t.ctx.set('A',null);assert.equal(r.ok,true);assert.equal(t.store[0].matchRef,undefined,'끊기');
 });
 test('연결 쓰기는 보관함 자동 저장이 쓰는 동안 기다린다 — 둘이 목록을 통째로 써서 한쪽이 지워지지 않게',async()=>{
@@ -134,16 +135,17 @@ function scoutCtx(over){
     data:{players:[{id:'p1',num:1,name:'골키'},{id:'p2',num:7,name:'윙'},{id:'p3',num:12,name:'교체'}]},
     matchStartersToSlots:()=>({ok:true,formLabel:'4-3-3',slots:[[8,50],[40,30]],picked:[{id:'p1'},{id:'p2'}],pool:[]}),
     matchLineupToken:(m,p,x,y)=>({pid:p.id,num:p.id==='p1'?'1':'7',name:p.id,pos:p.id==='p1'?'GK':'RW',x,y,gk:p.id==='p1',extra:'x'})},over||{}));
-  vm.runInContext(['var MM_WD=["일","월","화","수","목","금","토"];',fnAt(scout,'function mmDateLabel(ymd)'),fnAt(scout,'function mmFolderShared(folder,meta)'),fnAt(scout,'function matchMeetsFor(lib,mid)'),
+  vm.runInContext(['var MM_WD=["일","월","화","수","목","금","토"];',fnAt(scout,'function mmLinkable(d)'),fnAt(scout,'function mmDateLabel(ymd)'),fnAt(scout,'function mmFolderShared(folder,meta)'),fnAt(scout,'function matchMeetsFor(lib,mid)'),
     fnAt(scout,'function mmTok(t)'),fnAt(scout,'function mmBoardHas(b)'),fnAt(scout,'function mmOppBoard(m)'),fnAt(scout,'function mmPrepPages(m)'),fnAt(scout,'function mmStartXI(m)'),fnAt(scout,'function matchMeetParts(m)')].join('\n')
     +';this.meets=matchMeetsFor;this.shared=mmFolderShared;this.parts=matchMeetParts;this.dl=mmDateLabel;',ctx);
   return ctx;
 }
-test('경기 화면 — 그 경기에 연결된 미팅만, 최근 고친 순',()=>{
+test('경기 화면 — 그 경기에 이은 미팅·작전판(2.965)만, 최근 고친 순, 지운 것·다른 경기·안 이은 것 빼고',()=>{
   const c=scoutCtx();
   const lib=[{libId:'1',type:'meeting',matchRef:{mid:'m1'},savedAt:1},{libId:'2',type:'meeting',matchRef:{mid:'m2'},savedAt:9},{libId:'3',type:'board',matchRef:{mid:'m1'}},
     {libId:'4',type:'meeting',matchRef:{mid:'m1'},savedAt:5},{libId:'5',type:'meeting',savedAt:7},{libId:'6',type:'meeting',matchRef:{mid:'m1'},deletedAt:3}];
-  assert.deepEqual(J(c.meets(lib,'m1').map(d=>d.libId)),['4','1']);
+  assert.deepEqual(J(c.meets(lib,'m1').map(d=>d.libId)),['4','1','3']);
+  assert.deepEqual(J(c.meets([{libId:'7',type:'train',matchRef:{mid:'m1'}}],'m1')),[],'훈련은 경기 보드에 안 뜬다');
   assert.deepEqual(J(c.meets(null,'m1')),[]);
   assert.equal(c.shared('팀 공유/세트피스',{'팀 공유':{shared:true}}),true,'상위 폴더 공유를 물려받는다');
   assert.equal(c.shared('내 폴더',{'팀 공유':{shared:true}}),false);assert.equal(c.shared('',{'':{shared:true}}),false);

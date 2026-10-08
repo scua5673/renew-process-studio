@@ -3197,7 +3197,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
     function close(){ if(done)return; done=true; document.removeEventListener('keydown',onKey,true); try{ov.remove();}catch(_){} }
     function ok(){ var v=inp?inp.value:true; close(); onOk&&onOk(v); }
     function cancel(){ close(); onCancel&&onCancel(); }
-    function onKey(e){ if(e.key==='Escape'){e.stopPropagation();cancel();} else if(e.key==='Enter'){e.stopPropagation();ok();} }
+    function onKey(e){ if(e.key==='Escape'){e.stopPropagation();cancel();} else if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.stopPropagation();ok();} }   /* 2.966 — 한글 조합을 확정하는 Enter 는 흘려보낸다(2.296 과 같은 함정 — 이름 끝 글자가 잘렸다) */
     bo.onclick=ok; bc.onclick=cancel;
     ov.addEventListener('pointerdown',function(e){ if(e.target===ov) cancel(); });
     document.addEventListener('keydown',onKey,true);
@@ -6982,7 +6982,7 @@ function _boardThumbSVGRaw(){
   c.setAttribute("preserveAspectRatio","xMidYMid meet");
   // 라이브 viewBox(기기 화면비 확장·애니 예약공간 포함)를 그대로 쓰면 썸네일·PDF에 빈 띠가 생김 → 내보내기와 동일한 경계로 통일
   try{c.setAttribute("viewBox",__exportVB().join(" "));}catch(_){}
-  try{var _fv=thumbFitVB(state,c.getAttribute("viewBox").split(/[\s,]+/).map(Number));if(_fv){c.setAttribute("viewBox",_fv.join(" "));c.setAttribute("data-psfit","1");}}catch(_){}   /* 2.643 */
+  try{var _ovb=c.getAttribute("viewBox"),_fv=thumbFitVB(state,_ovb.split(/[\s,]+/).map(Number));if(_fv){c.setAttribute("viewBox",_fv.join(" "));c.setAttribute("data-psfit","1");c.setAttribute("data-psvb",_ovb);}}catch(_){}   /* 2.643 · 2.965 — 원래 판(전체 운동장) viewBox 도 남긴다(data-psvb). 작은 칸은 내용에 맞춘 그대로, 경기 준비의 큰 화면은 그리던 판 그대로 */
   const bg=c.querySelector('rect[fill="url(#grass)"]');if(bg)bg.setAttribute("fill","#1e8c4c");
   /* ══ 2.519 · 썸네일에 **잔디 사진을 박지 않는다**(사용자 "일정·주간 훈련 4.1MB 왜 이렇게 커?") ══
      실측: 썸네일 한 장 164KB 중 **129KB 가 실사 잔디 텍스처**(pattern#psRealGrass 안의 avif data URI)였다.
@@ -13452,6 +13452,8 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     return snap;
   }
   window.__meetTpl=function(){return MEET_TPL.map(function(t){return t.t;});};
+  /* 2.965 — 경기 화면 «경기 자료로 만들기»의 «기본 9장». 판(snap)만 만든다 — 지금 작전판·편집 중인 미팅은 건드리지 않는다(썸네일은 부르는 쪽이 __snapToThumb) */
+  window.__meetTplSlides=function(base,skipFirst){ var out=[]; MEET_TPL.forEach(function(tp,i){ if(skipFirst&&i===0)return; var sn=meetTplSnap(base,tp); sn.orientation="h"; out.push({title:tp.t,snap:sn}); }); return out; };
   /* 빈 새 미팅을 9장으로 채운다. 슬라이드는 «새 슬라이드»(add)와 같은 모양 — 판은 meetCap(미팅 방향), 썸네일은 boardThumbSVG.
      add() 를 아홉 번 부르지 않는 이유: add 는 먼저 지금 판을 앞 슬라이드에 담는다(meetStore) — 다음 장의 판이 앞 장에 덮인다. */
   window.__meetSeed=function(base){
@@ -15306,6 +15308,29 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       +"#vCreateBar .vcb-flow{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--txt-dim,#646A73);white-space:nowrap;}"
       +"#vCreateBar .vcb-flow i{font-style:normal;padding:3px 7px;border-radius:999px;background:var(--panel2,#F1F2F4);}"
       +"#vCreateBar .vcb-flow i.on{background:color-mix(in srgb,var(--blue,#3a6df0) 14%,transparent);color:var(--blue,#3a6df0);font-weight:800;}"
+      /* 2.966 — 경기 준비 안 편집: «‹ ○○전 경기 준비»가 맨 앞, 이름은 눌러서 고친다 */
+      +"body.vc-match #vCreateBackMatch{order:-1;background:none;border-color:transparent;padding-left:4px;padding-right:8px;color:var(--txt-dim,#646A73);}"
+      +"body.vc-match #vCreateBackMatch:hover{color:var(--txt,#14161A);}"
+      +"body.vc-match #vCreateTitle{cursor:pointer;border-bottom:1px dashed transparent;}"
+      +"body.vc-match #vCreateTitle:hover{border-bottom-color:var(--txt-dim,#8A9099);}"
+      +"#mpPartsOv{position:fixed;inset:0;z-index:10030;background:rgba(8,12,18,.5);display:flex;align-items:center;justify-content:center;padding:18px;font-family:inherit;}"
+      +"#mpPartsOv .mp-card{width:min(460px,100%);max-height:88dvh;overflow:auto;background:var(--panel,#fff);color:var(--txt,#14161A);border-radius:16px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.28);}"
+      +"#mpPartsOv .mp-t{font-size:16px;font-weight:800;margin-bottom:6px;}"
+      +"#mpPartsOv .mp-p{font-size:12px;line-height:1.5;color:var(--txt-dim,#646A73);margin:0 0 12px;}"
+      +"#mpPartsOv .mp-parts{border:1px solid var(--line,#E3E6EA);border-radius:12px;overflow:hidden;}"
+      +"#mpPartsOv .mp-parts label{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 12px;border-top:1px solid var(--line,#E3E6EA);cursor:pointer;}"
+      +"#mpPartsOv .mp-parts label:first-child{border-top:0;}"
+      +"#mpPartsOv .mp-parts label.off{opacity:.5;cursor:default;}"
+      +"#mpPartsOv .mp-parts b{font-size:13px;font-weight:700;white-space:nowrap;}"
+      +"#mpPartsOv .mp-parts span{flex:1;min-width:0;text-align:right;font-size:12px;color:var(--txt-dim,#646A73);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}"
+      +"#mpPartsOv .mp-parts input{width:18px;height:18px;margin:0;flex:0 0 auto;}"
+      +"#mpPartsOv .mp-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}"
+      +"#mpPartsOv .btn{padding:9px 16px;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;border:1px solid var(--line,#E3E6EA);font-family:inherit;}"
+      +"#mpPartsOv .btn.ghost{background:var(--panel2,#F1F2F4);color:var(--txt,#14161A);}"
+      +"#mpPartsOv .btn.primary{background:var(--blue,#3a6df0);color:#fff;border-color:var(--blue,#3a6df0);}"
+      +"#mpPartsOv .btn.primary:disabled{opacity:.45;cursor:default;}"
+      +"body.vc-match #ksTop .kssave{display:none!important;}"   /* 자동 저장이고 «완료»가 마무리한다 — 파란 버튼 둘이 다투지 않게 */
+      +"@media(max-width:600px){body.vc-match #vCreateBar{flex-wrap:nowrap;gap:6px;}body.vc-match #vCreateBar .btn{padding:7px 10px;flex:0 0 auto;}body.vc-match #vCreateTitle{flex:1 1 auto;min-width:0;font-size:13px;}body.vc-match #vCreateBar .vcb-sp{display:none;}#mpPartsOv{align-items:flex-end;padding:0;}#mpPartsOv .mp-card{border-radius:18px 18px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom));}}"
       +"body.vcreating #boardView{padding-top:56px;box-sizing:border-box;}"
       +"#vCreateChooser{position:fixed;inset:0;z-index:10020;background:rgba(8,12,18,.58);display:flex;align-items:center;justify-content:center;padding:18px;font-family:inherit;}"
       +"#vCreateChooser .vcc-card{width:min(720px,96vw);max-height:min(760px,92dvh);overflow:auto;box-sizing:border-box;background:var(--panel,#fff);color:var(--txt,#14161A);border:1px solid var(--line,#E3E6EA);border-radius:20px;box-shadow:0 28px 80px rgba(0,0,0,.4);padding:22px;}"
@@ -15327,11 +15352,15 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     document.head.appendChild(st); }
   function ensureCreateBar(){ ensureCreateBarCss(); var bar=$id("vCreateBar"); if(bar)return bar;
     bar=document.createElement("div"); bar.id="vCreateBar";
-    bar.innerHTML='<b id="vCreateTitle"></b><span class="vcb-sub" id="vCreateSub"></span><span class="vcb-flow" id="vCreateFlow"><i class="on">1 만들기</i><span>›</span><i>2 이름·폴더</i><span>›</span><i>3 저장</i></span><span class="vcb-sp"></span><button class="btn ghost" id="vCreateEdit" style="display:none">편집</button><button class="btn ghost" id="vCreateFull" style="display:none">전체화면</button><button class="btn ghost" id="vCreateCancel">나가기</button><button class="btn primary" id="vCreateSave">저장하기</button>';
+    bar.innerHTML='<b id="vCreateTitle"></b><span class="vcb-sub" id="vCreateSub"></span><span class="vcb-flow" id="vCreateFlow"><i class="on">1 만들기</i><span>›</span><i>2 이름·폴더</i><span>›</span><i>3 저장</i></span><span class="vcb-sp"></span><button class="btn ghost" id="vCreateBackMatch" type="button" style="display:none">‹ 경기 준비로</button><button class="btn ghost" id="vCreateParts" type="button" style="display:none">경기 자료 넣기</button><button class="btn ghost" id="vCreateEdit" style="display:none">편집</button><button class="btn ghost" id="vCreateFull" style="display:none">전체화면</button><button class="btn ghost" id="vCreateCancel">나가기</button><button class="btn primary" id="vCreateSave">저장하기</button>';
     document.body.appendChild(bar);
     $id("vCreateSave").onclick=function(e){e.stopPropagation();doCreateSave();};
     $id("vCreateCancel").onclick=function(e){e.stopPropagation();doCreateCancel();};
     $id("vCreateFull").onclick=function(e){e.stopPropagation();enterVaultFull(window.__vvName||"");};
+    /* 2.965 — 경기 준비에서 열거나 만든 자료는 한 번에 그 경기로 돌아간다(예전엔 사이드바 › 팀 운영 › 경기 › 그 경기를 다시 찾아야 했다) */
+    $id("vCreateBackMatch").onclick=function(e){e.stopPropagation();var fm=window.__vaultFromMatch;if(fm&&fm.inplace){doViewClose();return;}if(fm&&fm.ref)window.__vaultBackToMatch(fm.ref);};   /* 2.966 — 경기 준비 안 편집이면 닫고 그 자리로 */
+    $id("vCreateParts").onclick=function(e){e.stopPropagation();meetPartsSheet();};
+    $id("vCreateTitle").onclick=function(e){ if(!document.body.classList.contains("vc-match"))return; e.stopPropagation(); meetRenameCur(); };
     /* 2.276 — 보기 전용에서 바로 편집(사용자): 닫고 같은 항목을 편집 모드로 다시 연다(보관함 편집 버튼과 같은 경로) */
     $id("vCreateEdit").onclick=function(e){e.stopPropagation();var it=window.__vvItem;if(!it)return;
       var owner=vaultBoardOwner();
@@ -15346,7 +15375,82 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     $id("vCreateTitle").textContent=(names[type]||"항목")+(editing?" 수정":" 만들기");
     $id("vCreateSub").textContent=(type==="meeting")?"· 슬라이드를 추가한 뒤 저장":"· 배치를 그린 뒤 저장";
     try{window.__vaultEdit=true;}catch(_){}bar.classList.add("on"); document.body.classList.add("vcreating");
-    try{var sv=$id("vaultSave"); if(sv)sv.style.display="none";}catch(_){} }
+    try{var sv=$id("vaultSave"); if(sv)sv.style.display="none";}catch(_){} syncBackMatch(); }
+  /* 2.965 — «‹ 경기 준비로»: 경기에서 연(만든) 그 자료일 때만 */
+  function syncBackMatch(){ setTimeout(function(){ try{ var b=$id("vCreateBackMatch"); if(!b)return; var fm=window.__vaultFromMatch,cur=window.__curVaultId||((window.__vvItem&&window.__vvItem.libId)||"");
+    var on=!!(fm&&fm.ref&&fm.libId&&cur&&fm.libId===cur); b.style.display=on?"":"none"; if(on){ var o=String(fm.ref.opp||"").trim(); b.textContent="‹ "+(o?(o+"전 "):"")+"경기 준비"+(fm.inplace?"":"로"); }
+    /* 2.966 — 셸이 이미 경기 준비 안 편집을 내려놓았으면(자료가 열리기 전에 다른 탭을 누름) 보통 보관함 띠로 */
+    if(fm&&fm.inplace){ try{ if(parent!==window&&!parent.document.body.classList.contains("ps-match-edit"))fm.inplace=false; }catch(_){} }
+    matchBarSync(!!(on&&fm&&fm.inplace),fm); }catch(_){} },0); }
+  /* ══ 2.966 · 경기 준비 안에서 편집할 때의 띠 ═════════════════════════════════════════════════
+     사용자(10/8) «경기 준비에서 미팅 자료 바로 만들 수 있게 · 보관함에 저장도 되고» → 경기 준비 안에서 편집 · 한 번에 열기.
+     셸은 팀 머리·팀 탭을 그대로 두고 그 아래에 이 편집기를 띄운다(app.html psMatchEditEnter). 띠는:
+       ‹ ○○전 경기 준비 | 자료 이름(눌러서 고치기) · 편집 중 · 자동 저장 | 경기 자료 넣기 | 완료
+     «완료»·«‹ …경기 준비»·«저장하고 나가기»는 모두 **경기 준비의 같은 자리**로 돌아간다(doViewClose 가 matchEditDone 을 보낸다).
+     보관함 목록으로 가는 길(«나가기»)은 여기선 없다 — 고르러 온 게 아니라 고치러 왔다. */
+  function matchBarSync(inp,fm){
+    document.body.classList.toggle("vc-match",inp);
+    var t=$id("vCreateTitle"), cb=$id("vCreateCancel"), pb=$id("vCreateParts"), fl=$id("vCreateFlow"), fb=$id("vCreateFull");
+    if(pb)pb.style.display=(inp&&!window.__vaultReadOnly&&curType()==="meeting"&&fm&&Array.isArray(fm.parts)&&fm.parts.some(function(p){return p&&p.ok;}))?"":"none";
+    if(!inp){ if(cb)cb.classList.remove("primary"),cb.classList.add("ghost"); if(t)t.removeAttribute("title"); return; }
+    if(fl)fl.style.display="none"; if(fb)fb.style.display="none";
+    var ph=false; try{ ph=matchMedia("(max-width:600px)").matches; }catch(_){}   /* 폰은 한 줄에 들게 짧게 — 두 줄로 접히면 편집기 도구줄을 덮는다 */
+    var bk=$id("vCreateBackMatch"); if(bk&&ph)bk.textContent="‹ 경기 준비"; if(pb)pb.textContent=ph?"＋ 자료":"경기 자료 넣기"; if(pb)pb.title="경기 자료 넣기 — 표지·상대 분석·게임플랜·예전 경기 준비 보드";
+    if(t){ t.textContent=(fm&&fm.name)||t.textContent; t.title=window.__vaultReadOnly?"":"눌러서 이름 바꾸기"; }
+    if(cb){ var manual=(curType()==="board")&&!window.__vaultReadOnly;   /* 작전판은 «저장하고 나가기»가 따로 있다 */
+      cb.textContent=window.__vaultReadOnly?"닫기":(manual?"나가기":"완료"); cb.classList.toggle("primary",!manual); cb.classList.toggle("ghost",!!manual); }
+  }
+  function meetMatchReadyPost(){ try{parent.postMessage({source:"board",type:"matchEditReady"},"*");}catch(_){} }
+  /* 이름 — 보관함 항목의 이름만 바꾼다(자동 저장은 이름을 건드리지 않는다: vaultSaveCurrent 는 썸네일·슬라이드만 고쳐 쓴다) */
+  function meetRenameCur(){
+    var fm=window.__vaultFromMatch, id=window.__curVaultId; if(!fm||!id||window.__vaultReadOnly)return;
+    psPrompt("미팅 이름",fm.name||"",function(v){ v=String(v||"").trim().slice(0,40); if(!v||v===fm.name)return;
+      meetLibMutate(function(lib){ for(var i=0;i<lib.length;i++){ if(lib[i]&&lib[i].libId===id){ if(!canEditItem(lib[i]))return {ok:false,write:false}; lib[i].name=v; lib[i].savedAt=Date.now(); return {ok:true}; } } return {ok:false,write:false}; })
+        .then(function(r){ if(r&&r.ok){ fm.name=v; var t=$id("vCreateTitle"); if(t)t.textContent=v; try{toast("이름을 바꿨어요 ✓");}catch(_){} } else { try{toast("이름을 바꾸지 못했어요");}catch(_){} } },function(){ try{toast("이름을 바꾸지 못했어요 — 연결을 확인해 주세요");}catch(_){} });
+    });
+  }
+  /* «경기 자료 넣기» — 경기 쪽이 보낸 재료(표지·상대 분석·선발 11·게임플랜·옛 경기 준비 보드)를 골라 지금 미팅 뒤에 붙인다 */
+  function meetPartsSheet(){
+    var fm=window.__vaultFromMatch; if(!fm||!Array.isArray(fm.parts))return;
+    var ex=$id("mpPartsOv"); if(ex)ex.remove();
+    var ov=document.createElement("div"); ov.id="mpPartsOv";
+    var rows=fm.parts.map(function(p,k){ return '<label class="'+(p.ok?"":"off")+'"><input type="checkbox" data-k="'+k+'"'+(p.ok?"":" disabled")+'><b>'+escH(p.label)+'</b><span title="'+escH(p.detail)+'">'+escH(p.detail)+'</span></label>'; }).join("");
+    ov.innerHTML='<div class="mp-card" role="dialog" aria-modal="true" aria-labelledby="mpPartsT"><div class="mp-t" id="mpPartsT">경기 자료 넣기</div><p class="mp-p">고른 것을 지금 미팅 뒤에 슬라이드로 붙여요 — 사본이라 경기 자료를 나중에 고쳐도 이 슬라이드는 그대로예요.</p><div class="mp-parts">'+rows+'</div><div class="mp-foot"><button type="button" class="btn ghost" data-mp-x>취소</button><button type="button" class="btn primary" data-mp-go disabled>고른 것이 없어요</button></div></div>';
+    document.body.appendChild(ov);
+    function picked(){ var sl=[]; [].forEach.call(ov.querySelectorAll("input[data-k]:checked"),function(x){ var p=fm.parts[+x.getAttribute("data-k")]; if(p&&p.ok)sl=sl.concat(p.slides||[]); }); return sl; }
+    function upd(){ var n=picked().length, g=ov.querySelector("[data-mp-go]"); g.disabled=!n; g.textContent=n?("슬라이드 "+n+"장 넣기"):"고른 것이 없어요"; }
+    function close(){ try{ov.remove();}catch(_){} document.removeEventListener("keydown",onKey,true); }
+    function onKey(e){ if(e.key==="Escape"){ e.stopPropagation(); close(); } }
+    document.addEventListener("keydown",onKey,true);
+    ov.addEventListener("change",upd);
+    ov.addEventListener("click",function(e){ if(e.target===ov||(e.target.closest&&e.target.closest("[data-mp-x]"))){close();return;}
+      if(e.target.closest&&e.target.closest("[data-mp-go]")){ var sl=picked(); if(!sl.length)return; close(); meetInsertSlides(sl); } });
+  }
+  function escH(v){ return String(v==null?"":v).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function meetInsertSlides(src){
+    if(!window.__meet||curType()!=="meeting")return;
+    var arr=window.__meet.frames(); if(!Array.isArray(arr))return;
+    var base=meetBaseSnap(); try{ var mc=window.__meetCap&&window.__meetCap(); if(mc&&mc.orientation)base.orientation=mc.orientation; }catch(_){}
+    var first=arr[0]||null, skipped=0, add=[];
+    src.slice(0,30).forEach(function(sp){ var r=meetSnapFromPct(base,sp); skipped+=r.skipped; var th=""; try{th=window.__snapToThumb?window.__snapToThumb(r.snap):"";}catch(_){}
+      var f={pdfOrientation:(first&&first.pdfOrientation)||"landscape",snap:r.snap,thumb:th||"",title:String(sp.title||"").trim().slice(0,80),points:(Array.isArray(sp.points)?sp.points:[]).map(function(x){return String(x==null?"":x).trim().slice(0,160);}).filter(Boolean).slice(0,10)};
+      if(first){ if(first.pageBrand!=null)f.pageBrand=first.pageBrand; if(first.textStyles&&first.textStyles.brand)f.textStyles={brand:JSON.parse(JSON.stringify(first.textStyles.brand))}; }   /* 2.960 — 맨 위 문구는 모든 장에 */
+      add.push(f); });
+    if(!add.length)return;
+    var at=arr.length; Array.prototype.push.apply(arr,add);
+    try{ window.__meet.go(at,"first"); }catch(_){}
+    try{ if(window.__ksRender)window.__ksRender(); }catch(_){}
+    try{ window.__vaultAutoSaveSchedule(); }catch(_){}
+    try{toast("슬라이드 "+add.length+"장을 넣었어요 ✓"+(skipped?(" · 그림 "+skipped+"개는 옮기지 못했어요"):""));}catch(_){}
+  }
+  /* 셸이 경기 준비 안 편집을 내려놓았다(다른 화면으로 감) — 띠를 보관함의 보통 모양으로 */
+  window.addEventListener("message",function(e){ var d=e.data||{}; if(e.source!==parent||d.source!=="app"||d.type!=="matchEditEnd")return;
+    try{ if(window.__vaultAutoSaveFlush&&!window.__vaultReadOnly)window.__vaultAutoSaveFlush(); }catch(_){}
+    var fm=window.__vaultFromMatch; if(fm)fm.inplace=false; try{ var x=$id("mpPartsOv"); if(x)x.remove(); }catch(_){} syncBackMatch(); });
+  /* ▶ 슬라이드쇼로 연 것은 쇼가 끝나면 경기 준비로 돌아간다 */
+  (function(){ try{ new MutationObserver(function(){ var fm=window.__vaultFromMatch; if(!fm||!fm.showReturn)return;
+      if(document.body.classList.contains("focus-board")){ fm.showSeen=true; return; }
+      if(fm.showSeen&&meetMatchInplaceNow()){ fm.showReturn=false; doViewClose(); } }).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){} })();
   function showViewBar(name,readOnly){ window.__vaultManualDirty=false;var bar=ensureCreateBar();   /* 보관함 항목 열기 — 보기와 편집을 분리하고 작업 보드는 보존 */
     var ro=!!readOnly;
     try{window.__vaultViewMode=true;window.__vaultReadOnly=ro;var _sb=$id("vCreateSave");if(_sb){_sb.style.display=ro?"none":"";_sb.textContent="저장하고 나가기";}var _cb=$id("vCreateCancel");if(_cb)_cb.textContent=ro?"닫기":"나가기";var _fl=$id("vCreateFlow");if(_fl)_fl.style.display="none";}catch(_){}
@@ -15357,7 +15461,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{window.__vvName=name||""; var _fb=$id("vCreateFull"); if(_fb)_fb.style.display="";}catch(_){}
     /* 2.276 — 편집 버튼: openItemView 가 담아 둔 항목(원샷)이 있고 편집 권한이 있을 때만 */
     try{ window.__vvItem=window.__vvNextItem||null; window.__vvNextItem=null;
-      var _eb=$id("vCreateEdit"); if(_eb)_eb.style.display=(ro&&window.__vvItem&&canEditItem(window.__vvItem))?"":"none"; }catch(_){} }   /* 기본은 도구 있는 화면 — [전체화면] 버튼으로 전환 */
+      var _eb=$id("vCreateEdit"); if(_eb)_eb.style.display=(ro&&window.__vvItem&&canEditItem(window.__vvItem))?"":"none"; }catch(_){} syncBackMatch(); }   /* 기본은 도구 있는 화면 — [전체화면] 버튼으로 전환 */
   /* ── 보관함 전체보기: 헤더·도구 숨김, 우상단 [편집][닫기], 멀티 페이지면 하단 ◀ n/N ▶ ── */
   function updateVvPg(){ try{ var pg=$id("vvPg"); if(!pg)return;
     var inf=window.__psPages&&window.__psPages.pageInfo&&window.__psPages.pageInfo();
@@ -15407,9 +15511,20 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{exitVaultFull();}catch(_){}
     window.__vaultManualDirty=false;vaultBoardRestore();hideCreateBar();return true;
   };
+  /* 2.966 — 경기 준비 안 편집인가 · 경기 준비로 돌려보내기(셸 psMatchEditDone). doViewClose 곁에 둔다(시험 하네스가 이 구간을 잘라 쓴다) */
+  function meetMatchInplaceNow(){ var fm=window.__vaultFromMatch; return !!(fm&&fm.inplace&&document.body.classList.contains("vc-match")); }
+  function meetMatchDonePost(fm,fail){ try{parent.postMessage({source:"board",type:"matchEditDone",libId:(fm&&fm.libId)||"",mid:(fm&&fm.ref&&fm.ref.mid)||"",fail:!!fail},"*");}catch(_){} }
   function doViewClose(){
     if(window.__vaultManualDirty){psConfirm("저장하지 않은 변경 사항을 버리고 나갈까요?",function(){window.__vaultManualDirty=false;doViewClose();});return;}
-    if(_vaultBoardContext){window.__vaultBoardLeave();try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){}return;}
+    /* 2.966 — 경기 준비 안 편집: 저장(자동 저장 마무리)하고 닫은 뒤 경기 준비의 같은 자리로 */
+    var _toMatch=meetMatchInplaceNow(), _fm=window.__vaultFromMatch;
+    if(_toMatch){ document.body.classList.remove("vc-match"); try{ var _px=$id("mpPartsOv"); if(_px)_px.remove(); }catch(_){} }
+    if(_vaultBoardContext){window.__vaultBoardLeave();try{parent.postMessage(_toMatch?{source:"board",type:"matchEditDone",libId:(_fm&&_fm.libId)||"",mid:(_fm&&_fm.ref&&_fm.ref.mid)||""}:{source:'board',type:'goApp',app:'design'},'*');}catch(_){}return;}
+    if(_toMatch){ try{exitVaultFull();}catch(_){} try{ if(document.body.classList.contains("focus-board")){ if(typeof exitFocus==="function")exitFocus(); else { var _fx=document.getElementById("focusExit"); if(_fx)_fx.click(); } } }catch(_){}
+      try{if(window.__vaultReadOnly){window.__vaultAutoSaveCancel&&window.__vaultAutoSaveCancel();}else{window.__vaultAutoSaveFlush&&window.__vaultAutoSaveFlush();}}catch(_){}
+      try{window.__vaultViewMode=false;window.__vaultFromMatch=null;}catch(_){} var _bar=$id("vCreateBar"); if(_bar)_bar.classList.remove("on"); document.body.classList.remove("vcreating");
+      try{window.__createPrev=null;window.__curVaultId=null;window.__vaultReadOnly=false;}catch(_){} try{if(window.boardShowDefault)window.boardShowDefault();}catch(_){}
+      meetMatchDonePost(_fm,false); return; }
     try{exitVaultFull();}catch(_){} try{if(window.__vaultReadOnly){window.__vaultAutoSaveCancel&&window.__vaultAutoSaveCancel();}else{window.__vaultAutoSaveFlush&&window.__vaultAutoSaveFlush();}}catch(_){} try{window.__vaultViewMode=false;}catch(_){} var bar=$id("vCreateBar"); if(bar)bar.classList.remove("on"); document.body.classList.remove("vcreating"); try{window.__createPrev=null;window.__curVaultId=null;window.__vaultReadOnly=false;}catch(_){} try{if(window.boardShowDefault)window.boardShowDefault();}catch(_){} try{parent.postMessage({source:'board',type:'goApp',app:'design'},'*');}catch(_){}
   }
   function doViewSaveBack(){
@@ -15421,7 +15536,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       window.__vaultManualDirty=false;doViewClose();
     },onerror:function(){if(button)button.disabled=false;}});
   }
-  function hideCreateBar(){ window.__vaultManualDirty=false;try{window.__vaultEdit=false;window.__vaultReadOnly=false;}catch(_){} var bar=$id("vCreateBar"); if(bar)bar.classList.remove("on"); document.body.classList.remove("vcreating"); }
+  function hideCreateBar(){ window.__vaultManualDirty=false;try{window.__vaultEdit=false;window.__vaultReadOnly=false;window.__vaultFromMatch=null;}catch(_){} document.body.classList.remove("vc-match"); var bar=$id("vCreateBar"); if(bar)bar.classList.remove("on"); document.body.classList.remove("vcreating"); }
   function doCreateSave(){
     if(window.__vaultViewMode){ doViewSaveBack(); return; }   // 보관함에서 연 항목 수정 저장
     var type=(window.__vaultPending&&window.__vaultPending.type)||curType();
@@ -15618,7 +15733,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       if(!_tm)_tm=(+d.minutes||0)*Math.max(1,+d.sets||1);
       meta=f.label+" · "+_tm+"분";}
     else{meta=typeLabel(ty)+(d.savedAt?(" · "+new Date(d.savedAt).toLocaleDateString()):"");}
-    if(ty==="meeting"&&d.matchRef){ try{ meta+=" · ⚽ "+meetMatchShort(d.matchRef,meetLiveMatch(d.matchRef)); }catch(_){} }   /* 2.928 */
+    if((ty==="meeting"||ty==="board")&&d.matchRef){ try{ meta+=" · ⚽ "+meetMatchShort(d.matchRef,meetLiveMatch(d.matchRef)); }catch(_){} }   /* 2.928 · 2.965 작전판도 */
     if(d.folder)meta+=" · "+folderLeaf(d.folder);
     var canEdit=canEditItem(d), team=psIsTeamWs();
     var ownerHtml=(team&&d.createdBy)?('<div class="vc-owner"'+(canEdit?' style="color:var(--blue,#3a6df0)"':'')+'><svg style=\"width:12px;height:12px;vertical-align:-2px\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"7\" r=\"4\"/><path d=\"M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2\"/></svg> '+esc(itemCreatorLabel(d))+'</div>'):"";
@@ -15750,6 +15865,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
      다른 코치에게 보이는지는 보관함 공유 규칙(폴더) 그대로. 경기 화면(scout)은 보관함을 **읽기만** 하고,
      쓰기(연결·만들기)는 여기 한 곳에서 자동 저장과 같은 잠금으로 한다 — 둘이 목록을 통째로 다시 쓰면 한쪽이 지워진다. */
   var MEET_WD=["일","월","화","수","목","금","토"];
+  /* 2.965 — 사용자 «경기 준비에 보드가 따로 있는 게 아니고 보관함에 있는 거 가져와서 바로 보일 수 있게».
+     경기와 이을 수 있는 보관함 자료 = 미팅(슬라이드) + 작전판(페이지). 경기 준비의 «경기 보드»가 이것을 그 자리에서 띄운다 */
+  function meetLinkable(d){ var t=(d&&d.type)||""; return t==="meeting"||t==="board"; }
+  function meetKindWord(d){ return ((d&&d.type)||"")==="board"?"작전판":"미팅"; }
   function meetYmd(dt){dt=dt||new Date();return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");}
   function meetRefOf(m){ if(!m||!m.id)return null; return {mid:String(m.id),date:String(m.date||""),opp:String(m.opponent||""),time:String(m.time||""),ha:String(m.homeAway||""),kind:String(m.kind||""),at:Date.now()}; }
   function meetRefClean(r){ if(!r||typeof r!=="object"||!r.mid)return null;
@@ -15810,27 +15929,33 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     return meetLibMutate(function(lib){
       var it=null;for(var i=0;i<lib.length;i++){if(lib[i]&&lib[i].libId===libId){it=lib[i];break;}}
       if(!it)return {ok:false,reason:"gone",write:false};
-      if((it.type||"")!=="meeting")return {ok:false,reason:"type",write:false};
+      if(!meetLinkable(it))return {ok:false,reason:"type",write:false};   /* 2.965 — 작전판도 경기와 잇는다 */
       if(!canEditItem(it))return {ok:false,reason:"denied",write:false};
       if(ref)it.matchRef=ref;else delete it.matchRef;
-      return {ok:true,name:it.name||"미팅"};
+      return {ok:true,name:it.name||meetKindWord(it)};
     }).then(function(r){
       if(r.ok){ if(window.__curVaultId===libId)window.__curMeetRef=ref; try{renderDrillFiles();}catch(_){} try{if(window.__ksRender)window.__ksRender();}catch(_){} }
       return r;
     });
   }
-  function meetSetMatchSay(r,ref){ try{ if(!r||!r.ok){toast(r&&r.reason==="denied"?"만든 사람만 경기와 이을 수 있어요":(r&&r.reason==="gone"?"이 미팅을 보관함에서 찾지 못했어요":"경기와 잇지 못했어요 — 다시 눌러 주세요"));return;}
-    toast(ref?("‘"+r.name+"’ — "+meetMatchLong(ref,meetLiveMatch(ref))+"에 연결했어요 ✓"):("‘"+r.name+"’ 경기 연결을 끊었어요 · 미팅은 그대로")); }catch(_){} }
+  function meetSetMatchSay(r,ref){ try{ if(!r||!r.ok){toast(r&&r.reason==="denied"?"만든 사람만 경기와 이을 수 있어요":(r&&r.reason==="gone"?"이 자료를 보관함에서 찾지 못했어요":(r&&r.reason==="type"?"미팅·작전판만 경기와 이을 수 있어요":"경기와 잇지 못했어요 — 다시 눌러 주세요")));return;}
+    toast(ref?("‘"+r.name+"’ — "+meetMatchLong(ref,meetLiveMatch(ref))+"에 연결했어요 ✓ · 경기 준비에서 바로 보여요"):("‘"+r.name+"’ 경기 연결을 끊었어요 · 자료는 보관함에 그대로")); }catch(_){} }
   window.__meetingSetMatch=function(libId,ref){ return meetSetMatch(String(libId||""),ref).then(function(r){meetSetMatchSay(r,ref?meetRefClean(ref):null);return r;},function(e){try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"경기와 잇지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return {ok:false};}); };
   /* 경기 화면 «경기 자료로 미팅 만들기» — 경기 쪽이 슬라이드 재료(경기 보드 형식)를 보내면 여기서 작전판 스냅·썸네일로 바꿔 새 미팅을 만든다.
      사본이다 — 나중에 경기 보드를 고쳐도 이 미팅은 그대로. 저장은 팀 공유(기본, 사용자 승인) 또는 내 자료. */
   window.__meetingFromMatch=function(p){
-    if(!psVaultRequireLogin())return Promise.resolve(false);
-    p=p||{}; var src=(Array.isArray(p.slides)?p.slides:[]).slice(0,30);
-    if(!src.length){try{toast("옮길 경기 자료가 없어요");}catch(_){} return Promise.resolve(false);}
+    p=p||{}; var _inp=!!p.inplace, _fail=function(){ if(_inp)meetMatchDonePost({ref:meetRefClean(p.ref)},true); return false; };
+    if(!psVaultRequireLogin())return Promise.resolve(_fail());
+    var src=(Array.isArray(p.slides)?p.slides:[]).slice(0,30);
+    if(!src.length&&!p.template){try{toast("옮길 경기 자료가 없어요");}catch(_){} return Promise.resolve(_fail());}
     var team=psIsTeamWs(),shared=!!p.shared&&team,ref=meetRefClean(p.ref),base=meetBaseSnap(),skipped=0,slides=[];
+    /* 2.965 — «기본 9장»(보관함 › 만들기 › 미팅과 같은 BEST 11·블록·빌드업·코너킥)을 뒤에 붙인다. 경기 준비 보드가 빠진 자리를
+       새 미팅이 맡으니, 경기에서 만들어도 보관함에서 만든 것과 같은 판으로 시작한다. 선발 11 을 가져왔으면 BEST 11 은 뺀다(같은 장이 둘이 된다) */
+    var tpl=[]; if(p.template&&window.__meetTplSlides){ try{ tpl=window.__meetTplSlides(base,!!p.skipBest)||[]; }catch(_){ tpl=[]; } }
     src.forEach(function(sp){ var r=meetSnapFromPct(base,sp); skipped+=r.skipped; var th=""; try{th=window.__snapToThumb?window.__snapToThumb(r.snap):"";}catch(_){}
       slides.push({pdfOrientation:"landscape",snap:r.snap,thumb:th||"",title:String(sp.title||"").trim().slice(0,80),points:(Array.isArray(sp.points)?sp.points:[]).map(function(x){return String(x==null?"":x).trim().slice(0,160);}).filter(Boolean).slice(0,10)}); });
+    tpl.forEach(function(t){ var th=""; try{th=window.__snapToThumb?window.__snapToThumb(t.snap):"";}catch(_){} slides.push({pdfOrientation:"landscape",snap:t.snap,thumb:th||"",title:t.title,points:[]}); });
+    if(!slides.length){try{toast("옮길 경기 자료가 없어요");}catch(_){} return Promise.resolve(_fail());}
     var name=String(p.name||"").trim().slice(0,40)||((ref&&ref.opp?(ref.opp+"전 "):"")+"미팅");
     var item={libId:"V"+Date.now().toString(36),type:"meeting",name:name,folder:shared?VAULT_SHARE_FOLDER:"",thumb:slides[0].thumb,snap:slides[0].snap,slides:slides,tags:[],savedAt:Date.now()};
     if(ref)item.matchRef=ref;
@@ -15839,21 +15964,27 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     return meetLibMutate(function(lib){ lib.unshift(item); return {ok:true}; }).then(function(){
       try{toast("슬라이드 "+slides.length+"장으로 미팅을 만들었어요 ✓"+(shared?" · ☁ 팀 공유":"")+(skipped?(" · 그림 "+skipped+"개는 옮기지 못했어요"):""));}catch(_){}
       try{renderDrillFiles();}catch(_){}
+      window.__vaultFromMatch={libId:item.libId,ref:ref,inplace:_inp,parts:Array.isArray(p.parts)?p.parts:null,name:item.name};   /* 2.965 — 만든 뒤 «‹ 경기 준비로» 한 번에 · 2.966 경기 준비 안 편집 */
       try{openItem(item,false);}catch(_){}
+      if(_inp)setTimeout(meetMatchReadyPost,60);
       return true;
-    },function(e){ try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"미팅을 만들지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return false; });
+    },function(e){ try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"미팅을 만들지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return _fail(); });
   };
   /* 경기 화면 «편집 ›»·«▶ 슬라이드쇼» — 보관함의 그 미팅을 연다(남의 것은 보기 전용) */
   window.__vaultOpenMeeting=function(libId,opts){
-    opts=opts||{};
-    if(!psVaultRequireLogin())return;
+    opts=opts||{}; var _inp=!!opts.inplace;
+    if(!psVaultRequireLogin()){ if(_inp)meetMatchDonePost(null,true); return; }
     libGet().then(function(lib){
       var d=null;for(var i=0;i<lib.length;i++){if(lib[i]&&lib[i].libId===libId){d=lib[i];break;}}
-      if(!d||(d.type||"")!=="meeting"){try{toast("이 미팅을 보관함에서 찾지 못했어요 — 지워졌거나 아직 이 기기에 오지 않았어요");}catch(_){} return;}
+      if(!d||!meetLinkable(d)){try{toast("이 자료를 보관함에서 찾지 못했어요 — 지워졌거나 아직 이 기기에 오지 않았어요");}catch(_){} if(_inp)meetMatchDonePost(null,true); return;}   /* 2.965 — 작전판도 */
+      var _show=!!(opts.show&&(d.type||"")==="meeting");
+      window.__vaultFromMatch={libId:d.libId,ref:d.matchRef||null,inplace:_inp&&!!d.matchRef,parts:Array.isArray(opts.parts)?opts.parts:null,name:d.name||"",showReturn:_inp&&_show};   /* 2.965 — «‹ 경기 준비로» · 2.966 경기 준비 안 편집 */
       if(canEditItem(d))openItemEdit(d);else openItemView(d);
-      if(opts.show)setTimeout(function(){try{if(window.__meet&&window.__meet.show)window.__meet.show(true);}catch(_){}},320);
-    }).catch(function(e){try{toast((e&&e.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요":"보관함을 열지 못했어요");}catch(_){}});
+      if(_inp)setTimeout(meetMatchReadyPost,60);
+      if(_show)setTimeout(function(){try{if(window.__meet&&window.__meet.show)window.__meet.show(true);}catch(_){}},320);
+    }).catch(function(e){try{toast((e&&e.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요":"보관함을 열지 못했어요");}catch(_){} if(_inp)meetMatchDonePost(null,true);});
   };
+  window.__vaultBackToMatch=function(ref){ meetOpenTeamMatch(ref); };
   function meetOpenTeamMatch(ref){
     if(!ref||!ref.mid)return;
     try{if(window.__vaultAutoSaveFlush)window.__vaultAutoSaveFlush();}catch(_){}
@@ -15878,8 +16009,8 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       if(lists.past.length)body+='<div class="mm-h">지난 경기</div>'+lists.past.map(function(m){return row(m,true);}).join("");
       if(!lists.up.length&&!lists.past.length)body+='<div class="mm-empty">팀 운영 › 경기에 경기가 아직 없어요 — 일정에 경기를 넣으면 여기에 떠요</div>';
     }
-    ov.innerHTML='<div class="mm-card"><div class="mm-title">'+(o.ro?"연결된 경기":"이 미팅을 어느 경기와 이을까요?")+'</div>'
-      +'<div class="mm-sub">'+(o.ro?"만든 사람만 연결을 바꿀 수 있어요":"고르면 그 경기의 «경기 준비»에 이 미팅이 떠요 · 선수에게는 보이지 않아요")+'</div>'
+    ov.innerHTML='<div class="mm-card"><div class="mm-title">'+(o.ro?"연결된 경기":("이 "+(o.kind||"미팅")+"을 어느 경기와 이을까요?"))+'</div>'
+      +'<div class="mm-sub">'+(o.ro?"만든 사람만 연결을 바꿀 수 있어요":("고르면 그 경기의 «경기 준비»에서 이 "+(o.kind||"미팅")+"이 바로 보여요 · 선수에게는 보이지 않아요"))+'</div>'
       +'<div class="mm-list">'+body+'</div>'
       +'<div class="mm-foot">'+((cur&&!o.ro)?'<button type="button" data-mm-unlink>연결 끊기</button>':'')+'<button type="button" class="mm-close" data-mm-close>닫기</button></div></div>';
     document.body.appendChild(ov);
@@ -15913,14 +16044,14 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   };
   /* 보관함 미리보기의 «연결된 경기» 줄(미팅만) */
   function vxMatchRow(d){
-    if((d&&d.type)!=="meeting")return "";
+    if(!meetLinkable(d))return "";   /* 2.965 — 작전판도 */
     var ref=d.matchRef||null,mine=canEditItem(d);
-    if(!ref){ if(!mine)return ""; return '<div class="vx-matchrow empty"><span class="t">경기와 잇기<small>팀 운영 › 경기 준비에 이 미팅이 떠요</small></span><button type="button" data-vx-mpick>경기 고르기</button></div>'; }
+    if(!ref){ if(!mine)return ""; return '<div class="vx-matchrow empty"><span class="t">경기와 잇기<small>팀 운영 › 경기 준비에 이 '+meetKindWord(d)+'이 바로 보여요</small></span><button type="button" data-vx-mpick>경기 고르기</button></div>'; }
     return '<div class="vx-matchrow"><span class="t">연결된 경기<b>'+esc(meetMatchLong(ref,meetLiveMatch(ref)))+'</b></span><button type="button" data-vx-mopen>경기 열기 ›</button>'+(mine?'<button type="button" data-vx-mpick>바꾸기</button>':'')+'</div>';
   }
   function vxMatchBind(el,d){
     var mo=el.querySelector("[data-vx-mopen]");if(mo)mo.onclick=function(e){e.stopPropagation();meetOpenTeamMatch(d.matchRef);};
-    var mp=el.querySelector("[data-vx-mpick]");if(mp)mp.onclick=function(e){e.stopPropagation();meetPickSheet({cur:d.matchRef||null,onPick:function(nr){window.__meetingSetMatch(d.libId,nr);}});};
+    var mp=el.querySelector("[data-vx-mpick]");if(mp)mp.onclick=function(e){e.stopPropagation();meetPickSheet({cur:d.matchRef||null,kind:meetKindWord(d),onPick:function(nr){window.__meetingSetMatch(d.libId,nr);}});};
   }
   function vaultItemMenu(ev,d){
     if(!psVaultRequireLogin())return;
@@ -19483,6 +19614,29 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
 </script>
 <style id="ps-2953-board">/* 2.953 — 폰은 작전판 편집 도구가 없는 화면(2.086)인데 «포메이션으로 시작 ＋» 문이 떠 있었다 — 눌러도 편집이 이어지지 않는다(코치 점검 10/7) */
 body.ps-phone-work #ehDoor{display:none!important}
+</style>
+<style id="ps-2963-vault">/* ══ 2.963 · 보관함 소음 줄이기(전체 디자인 점검 2판, 2026-10-07) ══
+   ⚠ 보관함 옷(14600~14950행)은 런타임에 문서에 붙는 <style> 이라 이 블록보다 **뒤에** 올 수 있다 — 순서가 아니라 특이도(:not(#_))로 이긴다.
+   ① 목록 줄마다 «보기 · 편집 · ⋯» (한 화면 50쌍) — 오른쪽 미리보기에 같은 버튼이 이미 있다. 넓은 화면(세 칸, ≥901)에서는 **고른 줄에만**.
+      마우스 기기는 손을 올린 줄에도 보인다. 손가락 기기(아이패드)는 줄을 누르면 그 줄이 골라지며 나타난다.
+      폰(미리보기 칸 없음)은 그대로 — 거기선 줄의 버튼이 유일한 문이다(1.927).
+      visibility 로 감춘다 — 자리는 남겨 줄 폭이 고를 때마다 흔들리지 않게. */
+@media (min-width:901px){
+  html.ps-page-board #drillFiles .vx-items.vx-list .vcard:not(.selected):not(#_) .vc-acts{visibility:hidden}
+}
+@media (min-width:901px) and (hover:hover) and (pointer:fine){
+  html.ps-page-board #drillFiles .vx-items.vx-list .vcard:not(.selected):not(#_):hover .vc-acts{visibility:visible}
+}
+/* ② 미리보기의 주 버튼은 «큰 화면으로 보기» 하나 — «커뮤니티에 올리기»(파란 테두리)·«개인 노트에서 쓰기»는 편집·복사·더보기와 같은 무게로 */
+html.ps-page-board .vx-preview-actions.v2:not(#_) .vx-pub,html.ps-page-board .vx-preview-actions.v2:not(#_) .vx-note{
+  background:var(--panel2,#F1F3F5);color:var(--txt,#14161A);border:1px solid var(--line,#E3E6EA);font-weight:600}
+html.ps-page-board .vx-preview-actions.v2:not(#_) .vx-pub:hover,html.ps-page-board .vx-preview-actions.v2:not(#_) .vx-note:hover{border-color:var(--blue,#3a6df0);color:var(--blue,#3a6df0)}
+/* ③ «＋ 만들기» — 넓은 화면에서는 오른쪽 아래 떠 있는 단추가 미리보기 칸 아래 버튼을 가렸다. 머리줄 오른쪽 끝(원래 자리, .df-head)에 앉힌다. ⚠ 셸 안 보관함 화면에는 body.vault-full 이 붙지 않는다(실측) — #sessionView 로 가른다.
+      폰·좁은 화면(≤900)은 지금처럼 떠 있는 단추(엄지 자리). 단추 하나를 옮길 뿐 — 만드는 문은 여전히 하나다(2.298). */
+@media (min-width:901px){
+  html.ps-page-board #sessionView .df-head #dfNew:not(#_){position:static!important;margin-left:auto!important;right:auto!important;bottom:auto!important;
+    min-height:34px!important;padding:7px 14px!important;font-size:13px!important;border-radius:9px!important;box-shadow:none!important;z-index:auto!important;flex:0 0 auto}
+}
 </style>
 </body>
 </html>
