@@ -71,7 +71,7 @@ test('경기에서 «＋ 새 미팅» — «기본 9장»을 붙이고, 선발 1
   const fm=fnAt(board,'window.__meetingFromMatch=function(p)');
   assert.match(fm,/if\(!src\.length&&!p\.template\)/,'경기 자료가 없어도 기본 9장만으로 만든다');
   assert.match(fm,/window\.__meetTplSlides\(base,!!p\.skipBest\)/);
-  assert.match(fm,/window\.__vaultFromMatch=\{libId:item\.libId,ref:ref\};/,'만든 뒤 «‹ 경기 준비로»');
+  assert.match(fm,/window\.__vaultFromMatch=\{libId:item\.libId,ref:ref,/,'만든 뒤 «‹ 경기 준비로»(2.966 — 경기 준비 안 편집 표식이 같이 붙는다)');
   const cs=fnAt(scout,'function mmCreateSheet(m,opts)');
   assert.match(cs,/template:tplOn\(\),skipBest:xiOn\(\)/);assert.match(cs,/count\(\)\{ return picked\(\)\.length\+\(tplOn\(\)\?\(xiOn\(\)\?8:9\):0\); \}/,'버튼의 장 수가 실제로 만들 장 수');
 });
@@ -80,8 +80,8 @@ test('보관함 → «‹ 경기 준비로»: 경기에서 연(만든) 그 자�
   assert.match(board,/<button class="btn ghost" id="vCreateBackMatch" type="button" style="display:none">‹ 경기 준비로<\/button>/);
   const sync=fnAt(board,'function syncBackMatch()');assert.match(sync,/fm\.libId===cur/);
   assert.match(board,/function hideCreateBar\(\)\{ window\.__vaultManualDirty=false;try\{window\.__vaultEdit=false;window\.__vaultReadOnly=false;window\.__vaultFromMatch=null;\}/);
-  assert.match(fnAt(board,'window.__vaultOpenMeeting=function(libId,opts)'),/window\.__vaultFromMatch=\{libId:d\.libId,ref:d\.matchRef\|\|null\};/);
-  assert.match(fnAt(board,'window.__vaultOpenMeeting=function(libId,opts)'),/if\(opts\.show&&\(d\.type\|\|""\)==="meeting"\)/,'슬라이드쇼는 미팅만');
+  assert.match(fnAt(board,'window.__vaultOpenMeeting=function(libId,opts)'),/window\.__vaultFromMatch=\{libId:d\.libId,ref:d\.matchRef\|\|null,/);
+  assert.match(fnAt(board,'window.__vaultOpenMeeting=function(libId,opts)'),/_show=!!\(opts\.show&&\(d\.type\|\|""\)==="meeting"\)/,'슬라이드쇼는 미팅만');
 });
 
 test('방금 가져오거나 만든 자료를 띄운다 — 옛 목록으로 먼저 그려도 고른 것을 잃지 않는다',()=>{

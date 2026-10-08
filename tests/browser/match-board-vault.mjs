@@ -5,7 +5,7 @@ import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 // 합성 팀(셸 전체)에서: 경기 준비의 «경기 보드»가 보관함 미팅·작전판을 가져와 그 자리에서 띄우고(넘기기·크게 보기),
 // «편집 ›»은 보관함으로, 보관함의 «‹ 경기 준비로»는 그 경기로 돌아오며, «＋ 새 미팅»은 기본 9장을 붙여 경기에 이은 채 만든다.
 // 옛 경기 준비 보드(운동장)는 접혀 있고 명단(선발·리저브)은 남는다. 실제 서버는 건드리지 않는다.
-const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
+const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'phone':'desktop');   // PS_SIZE=ipad 로 아이패드 폭도
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
@@ -64,43 +64,89 @@ try{
   await page.screenshot({path:path.join(SHOTS,'match-board-vault-big-'+size+'.png')});
   await sf.click('#mmBig .mb-x');await sf.waitForFunction(()=>!document.getElementById('mmBig'));
   assert.equal((await view()).count,'2 / 3','크게 보기에서 넘긴 자리를 이어 간다');
-  // 6) «편집 ›» → 보관함 → «‹ 경기 준비로» 한 번에
+  // 6) 2.966 — «편집 ›»은 경기 준비 안에서: 팀 머리·경기 탭은 그대로, 그 아래 보관함 편집기. «완료»는 경기 준비의 같은 자리로
+  const inMatchEdit=()=>page.evaluate(()=>({app:document.body.getAttribute('data-ps-app'),me:document.body.classList.contains('ps-match-edit'),team:document.body.classList.contains('ps-team-open'),
+    tab:(document.querySelector('#teamNav [data-team-key="match"]')||{classList:{contains:()=>false}}).classList.contains('on'),wait:document.body.classList.contains('ps-me-wait'),
+    bottom:(()=>{const b=document.getElementById('teamBottom');return !!b&&getComputedStyle(b).display!=='none';})()}));
+  const scrollY0=await sf.evaluate(()=>{const c=document.getElementById('matchMeetCard');c.scrollIntoView({block:'center'});return Math.round(window.scrollY||document.scrollingElement.scrollTop||0);});
   await sf.click('#matchMeetCard .mmv-acts [data-mm-open]');
-  await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='design',null,{timeout:15000});
+  await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='design'&&!document.body.classList.contains('ps-me-wait'),null,{timeout:15000});
+  let me=await inMatchEdit();
+  assert.ok(me.me&&me.team&&me.tab,'경기 준비 안 편집 — 팀 화면·경기 탭 그대로 '+JSON.stringify(me));
+  if(size==='phone')assert.equal(me.bottom,false,'폰은 팀 하단 탭을 접는다(편집기 아래 줄 자리)');
   bf=await board();
-  await bf.waitForFunction(()=>{const b=document.getElementById('vCreateBackMatch');return b&&b.style.display!=='none'&&/경기 준비로/.test(b.textContent);},null,{timeout:15000});
-  assert.match(await bf.evaluate(()=>document.getElementById('vCreateBackMatch').textContent),/가상 상대 FC전 경기 준비로/);
-  await bf.click('#vCreateBackMatch');
-  await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')!=='design',null,{timeout:15000});
-  await sf.waitForFunction(id=>typeof matchCurrent!=='undefined'&&matchCurrent===id,mid,{timeout:15000});
-  // 작전판도 같은 길 — 슬라이드쇼 없이 «편집 ›», 보관함에서 «‹ 경기 준비로»
+  await bf.waitForFunction(()=>document.body.classList.contains('vc-match')&&document.getElementById('vCreateBar').classList.contains('on'),null,{timeout:15000});
+  const bar=await bf.evaluate(()=>({back:document.getElementById('vCreateBackMatch').textContent,title:document.getElementById('vCreateTitle').textContent,done:document.getElementById('vCreateCancel').textContent,
+    parts:getComputedStyle(document.getElementById('vCreateParts')).display!=='none',flow:getComputedStyle(document.getElementById('vCreateFlow')).display,view:window.__csView,top:Math.round(document.getElementById('vCreateBar').getBoundingClientRect().top),barH:Math.round(document.getElementById('vCreateBar').getBoundingClientRect().height),
+    ksTop:(()=>{const k=document.getElementById('ksTop');return k?Math.round(k.getBoundingClientRect().top):null;})(),kssave:(()=>{const k=document.querySelector('#ksTop .kssave');return !!k&&getComputedStyle(k).display!=='none';})()}));
+  assert.equal(bar.back,size==='phone'?'‹ 경기 준비':'‹ 가상 상대 FC전 경기 준비');assert.equal(bar.kssave,false,'편집기 위 «보관함 저장»은 숨긴다(자동 저장 · «완료»)');
+  assert.ok(bar.barH<=60,'띠는 한 줄 '+JSON.stringify(bar));if(bar.ksTop!=null)assert.ok(bar.ksTop>=bar.top+bar.barH-1,'띠가 편집기 도구줄을 덮지 않는다 '+JSON.stringify(bar));assert.equal(bar.title,'가상 미팅','띠 = 자료 이름');assert.equal(bar.done,'완료');
+  assert.ok(bar.parts,'«경기 자료 넣기»');assert.equal(bar.flow,'none','만들기 단계 줄은 없다');assert.equal(bar.view,'meeting');
+  const frameTop=await page.evaluate(()=>Math.round(document.getElementById('fBoard').getBoundingClientRect().top));
+  assert.ok(frameTop>=40,'편집기가 팀 머리 아래에 선다 '+frameTop);
+  await page.screenshot({path:path.join(SHOTS,'match-meeting-inplace-open-'+size+'.png')});
+  await bf.click('#vCreateCancel');
+  await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='scout'&&!document.body.classList.contains('ps-match-edit'),null,{timeout:15000});
+  assert.equal(await sf.evaluate(()=>matchCurrent),mid,'같은 경기');
+  const scrollY1=await sf.evaluate(()=>Math.round(window.scrollY||document.scrollingElement.scrollTop||0));
+  assert.ok(Math.abs(scrollY1-scrollY0)<=4,'보던 자리 그대로 '+scrollY0+'→'+scrollY1);
+  assert.equal(await bf.evaluate(()=>document.body.classList.contains('vc-match')||document.getElementById('vCreateBar').classList.contains('on')),false,'편집기는 닫혔다');
+  // 작전판도 같은 자리에서 — 저장은 «저장하고 나가기»가 따로, «‹ 경기 준비»로 돌아온다
   await sf.waitForSelector('#matchMeetCard .mmv-tabs [data-mmv-lib="Vqa_board"]');await sf.click('#matchMeetCard .mmv-tabs [data-mmv-lib="Vqa_board"]');
   await sf.waitForSelector('#matchMeetCard .mmv[data-mmv="Vqa_board"]');
   assert.equal(await sf.evaluate(()=>!!document.querySelector('#matchMeetCard .mmv-acts [data-mm-show]')),false,'작전판은 슬라이드쇼 버튼이 없다');
-  assert.equal(await sf.evaluate(()=>document.querySelector('#matchMeetCard .mmv-count').textContent),'1 / 1');
   await sf.click('#matchMeetCard .mmv-acts [data-mm-open]');
-  await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='design',null,{timeout:15000});
-  bf=await board();await bf.waitForFunction(()=>{const b=document.getElementById('vCreateBackMatch');return b&&b.style.display!=='none';},null,{timeout:15000});
-  await bf.click('#vCreateBackMatch');await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')!=='design',null,{timeout:15000});
-  // 7) «＋ 새 미팅» — 기본 9장을 붙여, 경기에 이은 채
+  await page.waitForFunction(()=>document.body.classList.contains('ps-match-edit'),null,{timeout:15000});
+  bf=await board();await bf.waitForFunction(()=>document.body.classList.contains('vc-match'),null,{timeout:15000});
+  assert.equal(await bf.evaluate(()=>getComputedStyle(document.getElementById('vCreateParts')).display),'none','작전판엔 «경기 자료 넣기»가 없다');
+  await bf.click('#vCreateBackMatch');await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='scout',null,{timeout:15000});
+  // 다른 탭으로 가면 경기 준비 안 편집을 내려놓는다
+  await sf.waitForSelector('#matchMeetCard .mmv-tabs [data-mmv-lib="Vqa_meet"]');await sf.click('#matchMeetCard .mmv-tabs [data-mmv-lib="Vqa_meet"]');
+  await sf.click('#matchMeetCard .mmv-acts [data-mm-open]');
+  await page.waitForFunction(()=>document.body.classList.contains('ps-match-edit'),null,{timeout:15000});
+  await page.evaluate(()=>{const b=document.querySelector('#teamNav [data-team-key="today"]')||document.querySelector('#teamBottom [data-tb="today"]');if(b)b.click();});
+  await page.waitForFunction(()=>!document.body.classList.contains('ps-match-edit')&&document.body.getAttribute('data-ps-app')==='scout',null,{timeout:15000});
+  bf=await board();await bf.waitForFunction(()=>!document.body.classList.contains('vc-match'),null,{timeout:15000});
+  await page.evaluate(()=>{const b=document.querySelector('[data-team-key="match"]');if(b)b.click();});
+  await sf.evaluate(id=>{setView('match');matchOpen(id);matchTab='prep';matchStage='prep';renderMatch();},mid);
+  // 7) «＋ 새 미팅» — 시트 없이 바로 만들고 그 자리에서 연다(기본 9장 + 선발 11)
   await sf.waitForSelector('#matchMeetActs [data-mm-new]');await sf.click('#matchMeetActs [data-mm-new]');
-  await sf.waitForSelector('#mmSheetOv [data-mm-part="tpl"]');
-  const mk=await sf.evaluate(()=>({tpl:document.querySelector('#mmSheetOv [data-mm-part="tpl"]').checked,go:document.querySelector('#mmSheetOv [data-mm-go]').textContent}));
-  assert.ok(mk.tpl,'기본 9장은 처음부터 골라져 있다');
-  const n=+(/슬라이드 (\d+)장/.exec(mk.go)||[])[1];assert.ok(n>=9,mk.go);
-  await sf.click('#mmSheetOv [data-mm-go]');
-  await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='design',null,{timeout:15000});
+  assert.equal(await sf.evaluate(()=>!!document.getElementById('mmSheetOv')),false,'시트를 거치지 않는다');
+  await page.waitForFunction(()=>document.body.classList.contains('ps-match-edit')&&document.body.getAttribute('data-ps-app')==='design',null,{timeout:15000});
   bf=await board();
-  /* waitForFunction 은 Promise 를 참으로 본다 — 보관함 읽기는 직접 되풀이 */
-  for(let t=0;t<60;t++){ if(await bf.evaluate(async id=>((await store.get('cs_drill_lib_v1'))||[]).some(d=>d.type==='meeting'&&d.libId!=='Vqa_meet'&&d.matchRef&&d.matchRef.mid===id),mid))break; await page.waitForTimeout(250); }
-  const made=await bf.evaluate(async id=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.type==='meeting'&&d.libId!=='Vqa_meet'&&d.matchRef&&d.matchRef.mid===id);return {n:d.slides.length,titles:d.slides.map(s=>s.title),thumbs:d.slides.filter(s=>/<svg/.test(s.thumb||'')).length};},mid);
-  assert.equal(made.n,n,'고른 만큼 '+JSON.stringify(made));
-  assert.ok(made.titles.includes('하이블록')&&made.titles.includes('코너킥 공격'),'기본 9장이 붙는다 '+JSON.stringify(made.titles));
-  assert.equal(made.thumbs,made.n,'장마다 그림');
-  await bf.waitForFunction(()=>{const b=document.getElementById('vCreateBackMatch');return b&&b.style.display!=='none';},null,{timeout:15000});
+  let newId=null;
+  for(let t=0;t<60;t++){ newId=await bf.evaluate(async id=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.type==='meeting'&&d.libId!=='Vqa_meet'&&d.matchRef&&d.matchRef.mid===id);return d?d.libId:null;},mid); if(newId)break; await page.waitForTimeout(250); }
+  assert.ok(newId,'보관함에 저장됐다');
+  const lib=()=>bf.evaluate(async id=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x.libId===id);return {name:d.name,folder:d.folder,n:d.slides.length,titles:d.slides.map(s=>s.title),thumbs:d.slides.filter(s=>/<svg/.test(s.thumb||'')).length};},newId);
+  const made=await lib();
+  assert.equal(made.name,'가상 상대 FC전 미팅');assert.ok(made.n===9,'기본 9장(선발 11 이 있으면 그것이 BEST 11 자리) '+JSON.stringify(made));
+  assert.ok(made.titles.includes('하이블록')&&made.titles.includes('코너킥 공격'),JSON.stringify(made.titles));assert.equal(made.thumbs,made.n,'장마다 그림');
+  await bf.waitForFunction(id=>window.__curVaultId===id&&document.body.classList.contains('vc-match')&&window.__csView==='meeting',newId,{timeout:15000});
+  // «경기 자료 넣기» — 표지를 골라 뒤에 붙인다 → 보관함에 자동 저장
+  await bf.click('#vCreateParts');await bf.waitForSelector('#mpPartsOv input[data-k]');
+  const rows=await bf.evaluate(()=>[...document.querySelectorAll('#mpPartsOv label')].map(l=>({b:l.querySelector('b').textContent,dis:l.querySelector('input').disabled})));
+  assert.ok(rows.some(r=>r.b==='표지'&&!r.dis),JSON.stringify(rows));
+  await bf.evaluate(()=>{const l=[...document.querySelectorAll('#mpPartsOv label')].find(l=>l.querySelector('b').textContent==='표지');l.querySelector('input').click();});
+  assert.match(await bf.evaluate(()=>document.querySelector('#mpPartsOv [data-mp-go]').textContent),/슬라이드 1장 넣기/);
+  await bf.click('#mpPartsOv [data-mp-go]');
+  let after=made;for(let t=0;t<40;t++){ after=await lib(); if(after.n===made.n+1)break; await page.waitForTimeout(250); }
+  assert.equal(after.n,made.n+1,'넣은 장이 보관함에 저장됐다');assert.match(after.titles[after.n-1],/^vs 가상 상대 FC/);
+  // 이름 — 띠의 이름을 눌러 바꾼다(한글 조합 Enter 가 끝 글자를 자르지 않게 확인 버튼으로)
+  await bf.click('#vCreateTitle');await bf.waitForFunction(()=>{const i=[...document.querySelectorAll('input[type=text]')].pop();return !!i&&i.offsetParent!==null&&i.value==='가상 상대 FC전 미팅';},null,{timeout:15000});
+  await bf.evaluate(()=>{const i=[...document.querySelectorAll('input[type=text]')].pop();i.value='송도전 미팅 최종';});
+  await bf.evaluate(()=>{[...document.querySelectorAll('button')].filter(b=>b.textContent==='확인').pop().click();});
+  for(let t=0;t<40;t++){ after=await lib(); if(after.name==='송도전 미팅 최종')break; await page.waitForTimeout(150); }
+  assert.equal(after.name,'송도전 미팅 최종');assert.equal(await bf.evaluate(()=>document.getElementById('vCreateTitle').textContent),'송도전 미팅 최종');
+  await page.screenshot({path:path.join(SHOTS,'match-meeting-inplace-new-'+size+'.png')});
+  // «완료» → 경기 준비, 방금 만든 미팅이 경기 보드에
+  await bf.click('#vCreateCancel');
+  await page.waitForFunction(()=>document.body.getAttribute('data-ps-app')==='scout',null,{timeout:15000});
+  await sf.waitForFunction(id=>!!document.querySelector('#matchMeetCard .mmv[data-mmv="'+id+'"]'),newId,{timeout:15000});
+  assert.match(await sf.evaluate(()=>document.querySelector('#matchMeetCard .mmv-meta').textContent),/송도전 미팅 최종/);
+  assert.equal(await sf.evaluate(()=>document.querySelector('#matchMeetCard .mmv-count').textContent),'1 / '+(made.n+1));
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log(JSON.stringify({engine,size,passed:true,made}));
+  console.log(JSON.stringify({engine,size,passed:true,made:made.n}));
 }finally{
   for(const b of Object.values(browsers))await b.close().catch(()=>{});
   await fx.close();
