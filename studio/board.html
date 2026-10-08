@@ -8805,6 +8805,7 @@ var PEP=(function(){
       +'#psExpProg .pep-bar i{display:block;height:100%;width:0;border-radius:99px;background-color:var(--accent,#3A6DF0);transition:width .25s linear}'
       +'#psExpProg.make .pep-bar i,#psExpProg.save .pep-bar i{background-image:linear-gradient(45deg,rgba(255,255,255,.28) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.28) 50%,rgba(255,255,255,.28) 75%,transparent 75%);background-size:18px 18px;animation:pepStripe .7s linear infinite}'
       +'#psExpProg.done .pep-bar i{background-color:#1f8a4c}'
+      +'#psExpProg.warn .pep-ic{background:#FDF3E7;color:#B5762B}#psExpProg.warn .pep-bar i{background-color:#B5762B}'
       +'#psExpProg .pep-sub{font-size:12.5px;line-height:1.45;color:var(--dim,#646A73);min-height:18px;overflow-wrap:anywhere}'
       +'#psExpProg .pep-acts{display:flex;gap:8px;margin-top:14px}#psExpProg .pep-acts[hidden]{display:none}'
       +'#psExpProg .pep-acts button{flex:1 1 0;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line,#E3E6EA);background:var(--surface,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}'
@@ -8840,6 +8841,9 @@ var PEP=(function(){
       if(file&&navigator.canShare&&navigator.canShare({files:[file]}))list.push(["파일에 저장",function(){ navigator.share({files:[file],title:name}).then(function(){ api.done("저장했어요 ✓",name); },function(e){ if(e&&e.name==="AbortError")return; dl(blob,name); api.done("내려받았어요 ✓","«"+name+"» — 다운로드에 있어요"); }); },"pep-go"]);
       list.push(["내려받기",function(){ dl(blob,name); api.done("내려받았어요 ✓","«"+name+"» — 다운로드에 있어요"); }]);
       list.push(["닫기",close]); acts(list); },
+    /* 2.974 — 고른 폴더에 쓰지 못했을 때: 말없이 내려받으면 크롬 «다운로드 전 저장 위치 묻기»가 저장 창을 한 번 더 띄웠다(사용자 «맥에서 저장 창이 두 번»). 이유를 말하고 누를 때만 받는다 */
+    retry:function(blob,name){ ensure(); clearTimeout(hideT); ov.className="warn"; pct(1); q(".pep-t").textContent="고른 폴더에 저장하지 못했어요"; q(".pep-sub").textContent="«"+name+"» — «내려받기»를 누르면 다운로드 폴더에 받아요";
+      acts([["내려받기",function(){ dl(blob,name); api.done("내려받았어요 ✓","«"+name+"» — 다운로드에 있어요"); },"pep-go"],["닫기",close]]); },
     busy:function(){ return !!(ov&&(ov.className==="make"||ov.className==="save")); },
     close:close, cancelled:function(){ return stop; }
   };
@@ -8849,15 +8853,22 @@ window.__psExpProg=PEP;
 function _pepCancelErr(){ var e=new Error("내보내기를 멈췄어요"); e.psCancel=1; return e; }
 /* 저장 창이 없는 애플 터치 기기(아이폰·아이패드 사파리) — 끝난 뒤 공유 시트로 폴더를 고르게 한다 */
 function _animAskSaveIOS(){ try{ return typeof window.showSaveFilePicker!=="function"&&(navigator.maxTouchPoints||0)>1&&/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent||"")&&typeof navigator.share==="function"; }catch(_){ return false; } }
+/* 2.974 — 저장 창은 한 번에 하나(사용자 «맥에서 저장 창이 두 번»): «영상 만들기»를 빠르게 두 번 누르면 두 번째 요청을 크롬이 거절했고,
+   그 거절을 «저장 창이 없는 브라우저»로 읽어 영상을 한 번 더 만들어 내려받았다(→ «다운로드 전 저장 위치 묻기»가 켜진 맥은 두 번째 창). */
+var _animPicking=false;
+function _animExportBusy(){ try{ return !!(_animPicking||window.__animExport||PEP.busy()); }catch(_){ return !!_animPicking; } }
 async function _animPickSaveTarget(name,ext){
+  if(_animExportBusy())return false;
   if(typeof window.showSaveFilePicker!=="function")return null;
   var T={mp4:{description:"MP4 영상",accept:{"video/mp4":[".mp4"]}},webm:{description:"WebM 영상",accept:{"video/webm":[".webm"]}},gif:{description:"GIF 애니메이션",accept:{"image/gif":[".gif"]}}}[ext];
+  _animPicking=true;
   try{ return await window.showSaveFilePicker({suggestedName:name,id:"ps-anim-export",startIn:"downloads",types:T?[T]:undefined}); }
-  catch(e){ return (e&&e.name==="AbortError")?false:null; }
+  catch(e){ return (e&&(e.name==="AbortError"||(e.name==="NotAllowedError"&&/activ/i.test(String(e.message||"")))))?false:null; }   /* 취소·«이미 열린 창» = 만들지 않는다. 그 밖(다른 출처 등)은 예전처럼 내려받기 */
+  finally{ _animPicking=false; }
 }
 /* 고른 파일에 쓴다 — 실패하면(권한·디스크) 예전처럼 내려받는다. 반환: 저장한 파일 이름(고른 곳) · null(내려받기) */
 async function _animSaveBlob(blob,name,target){
-  if(target){ try{ var w=await target.createWritable(); await w.write(blob); await w.close(); return target.name||name; }catch(_){ await _animDropTarget(target); } }
+  if(target){ try{ var w=await target.createWritable(); await w.write(blob); await w.close(); return target.name||name; }catch(_){ await _animDropTarget(target); try{ PEP.retry(blob,name); return "offer"; }catch(__){} } }   /* 2.974 — 말없이 내려받지 않는다 */
   if(!target&&_animAskSaveIOS()){ try{ PEP.offer(blob,name,blob.type); return "offer"; }catch(_){} }   /* 2.972 — 아이폰·아이패드: 끝난 뒤 «파일에 저장»(폴더 고르기) */
   var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(function(){try{URL.revokeObjectURL(a.href);}catch(_){}},8000);   /* 2.559 — blob 이 탭 끝까지 남지 않게 */
   return null;
@@ -8872,6 +8883,7 @@ async function _animExportGuard(run){
   finally{ window.__animExport=0; try{ if(restore)loadSnap(restore); }catch(_){} try{renderOnion();updateMotionPaths();}catch(_){} try{renderAnimFrames();}catch(_){} try{boardSaveLive();}catch(_){} }
 }
 async function exportVideo(opts){ opts=opts||{};
+  if(window.__animExport||PEP.busy()){ try{toast("영상을 만드는 중이에요 — 끝난 뒤 다시 눌러 주세요");}catch(_){} return; }   /* 2.974 — 두 번 돌지 않게 */
   try{ PEP.open(opts.capN?"미팅 영상 만드는 중":"영상 만드는 중"); }catch(_){}   /* 2.972 — 진행 카드 */
   try{ return await _animExportGuard(function(){ return _exportVideoRun(opts); }); }
   catch(e){ if(e&&e.psCancel){ try{PEP.close();}catch(_){} toast("내보내기를 멈췄어요"); return; } try{PEP.close();}catch(_){} try{console.warn("[exportVideo]",e);}catch(_){} toast("영상을 만들지 못했어요 — 다시 해 주세요"); }
@@ -9044,8 +9056,9 @@ function exportVideoSheet(mode){
   ov.addEventListener("click",function(e){ if(e.target===ov)close(); });
   ov.querySelector("#evGo").onclick=async function(){
     /* 2.969 — 저장 위치를 먼저 고른다(창은 누른 순간에만 열린다). 취소하면 시트는 그대로 */
+    var _go=this; if(_go.__busy)return; _go.__busy=1; _go.disabled=true; _go.style.opacity=".55";   /* 2.974 — 두 번 눌러도 한 번만 */
     var _mime=pickVideoMime(),_ext=_mime.indexOf("mp4")>=0?"mp4":"webm";
-    var _t=await _animPickSaveTarget(_animExportName(_ext,meeting?"미팅_슬라이드":null),_ext); if(_t===false)return;
+    var _t=await _animPickSaveTarget(_animExportName(_ext,meeting?"미팅_슬라이드":null),_ext); if(_t===false){ _go.__busy=0; _go.disabled=false; _go.style.opacity=""; return; }
     close(); setTimeout(function(){ if(meeting)exportMeetingVideo({height:opt.height,fps:opt.fps,hold:opt.hold,target:_t}); else exportVideo({height:opt.height,fps:opt.fps,reel:!!opt.reel,target:_t}); },30); };
 }
 /* 2.970 — 미팅 슬라이드 → 영상. 발표(슬라이드쇼)와 같은 순서: 슬라이드마다 opts.hold 초 머물고, 다음 장으로는 같은 선수가 움직여 넘어간다.
@@ -9141,6 +9154,7 @@ function _gifBakeOverlay(ctx,W,H,cap,idx,N,title,titleColor){
 }
 async function exportGif(){
   if(!psVaultRequireLogin())return;
+  if(_animExportBusy()){ try{toast("만드는 중이에요 — 끝난 뒤 다시 눌러 주세요");}catch(_){} return; }   /* 2.974 */
   if(anim.frames.length<2){toast("장면을 2개 이상 만들어주세요");return;}
   var t=await _animPickSaveTarget(_animExportName("gif"),"gif"); if(t===false)return;   /* 2.969 — 저장 위치 먼저(취소면 만들지 않는다) */
   return _animExportGuard(function(){ return _exportGifRun(t); });
@@ -13638,6 +13652,56 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     if(n){ try{if(window.__ksRender)window.__ksRender();}catch(_){} try{boardSaveLive();}catch(_){} try{toast("‘"+(nm||"이름 지움")+"’ — 다른 "+n+"장에도 함께 적용했어요");}catch(_){} }
     return n;
   };
+  /* 2.974 — 예전에 만든 미팅도 새 규칙으로(사용자 «이미 만든 미팅도 새 규칙으로»). 보관함에서 고칠 수 있게 열 때 한 번 돈다.
+     코치가 한 일은 건드리지 않는 것만 바꾼다 — 그래서 몇 번을 다시 열어도 같은 결과다(두 번째부터는 바꿀 것이 없다).
+     ① 이름(2.970): 같은 선수(팀·등번호)에 붙은 이름이 하나뿐이면 이름이 빈 다른 장의 그 선수에 채운다. 장마다 이름이 다르면 그대로.
+        경기에서 가져온 «선발 11» 장은 실제 등번호라 기본 장의 번호와 같은 사람이 아니다 — 거기서 가져오지도, 거기에 넣지도 않는다.
+     ② 맨 위 문구(2.960): 따로 적은 문구가 한 가지뿐이면 비어 있는 장(«PROCESS»)에도 같은 문구를.
+     ③ BEST 11(2.960·2.970): 기본 배치(2.959~2.969) 그대로인 장만 우리 11명·운동장 전체 배치로. 한 명이라도 옮겼거나
+        그림·장비·장면이 있거나 상대·공을 옮겼으면 그 장은 그대로다. 방향(가로·세로)·운동장 색은 코치가 고른 것이라 안 바꾼다. */
+  var MEET_BEST_OLD_US=[[5,34],[19,9],[16,25],[16,43],[19,59],[28,34],[36,22],[36,46],[47,10],[49,34],[47,58]];
+  var MEET_BEST_OLD_OP=[[100,34],[86,9],[89,25],[89,43],[86,59],[71,10],[74,27],[74,41],[71,58],[57,29],[57,39]];
+  function meetAt(q,m){var p=meetTplPt(m);return !!q&&Math.abs((+q.x)-p.x)<=0.6&&Math.abs((+q.y)-p.y)<=0.6;}
+  function meetNum(q){return String(q&&q.num!=null?q.num:"").trim();}
+  function meetBestUpgrade(sl){
+    var sn=sl&&sl.snap; if(!sn||!Array.isArray(sn.players)||!sn.players.length)return false;
+    if(Array.isArray(sl.frames)&&sl.frames.length>1)return false;
+    if((sn.drawings||[]).length||(sn.equipment||[]).length)return false;
+    var blue=sn.players.filter(function(q){return q&&!q.coach&&q.team==="blue";}),red=sn.players.filter(function(q){return q&&!q.coach&&q.team==="red";});
+    if(blue.length!==11||blue.length+red.length!==sn.players.length)return false;
+    var byNum=function(list,num){return list.filter(function(q){return meetNum(q)===String(num);});};
+    var usOk=MEET_TPL_US.every(function(r,i){var h=byNum(blue,r[0]);return h.length===1&&meetAt(h[0],MEET_BEST_OLD_US[i]);});
+    if(!usOk)return false;
+    var dropOp=false;
+    if(red.length){
+      var opOk=red.length===11&&MEET_TPL_OPP.every(function(r,i){var h=byNum(red,r[0]);return h.length===1&&meetAt(h[0],MEET_BEST_OLD_OP[i]);});
+      if(!opOk||!(sn.ball==null||meetAt(sn.ball,[52.5,34])))return false;   /* 2.959 판: 상대·공도 기본 자리일 때만 */
+      dropOp=true;
+    }
+    var nu=MEET_TPL[0].us;
+    MEET_TPL_US.forEach(function(r,i){var q=byNum(blue,r[0])[0],p=meetTplPt(nu[i]);q.x=p.x;q.y=p.y;});
+    if(dropOp){sn.players=blue;sn.ball=null;}
+    return true;
+  }
+  window.__meetUpgrade=function(){
+    var sls=anim.slides; if(!Array.isArray(sls)||!sls.length)return null;
+    var isLine=function(sl){return !!sl&&(sl.lineup||/^선발 11/.test(String(sl.title||"")));};
+    var touched={},res={best:0,names:0,brand:0};
+    sls.forEach(function(sl,i){try{if(meetBestUpgrade(sl)){touched[i]=1;res.best++;}}catch(_){}});
+    /* 이름 */
+    var snaps=[]; sls.forEach(function(sl,i){ if(!sl||isLine(sl))return; if(sl.snap)snaps.push({i:i,k:0,sn:sl.snap}); if(Array.isArray(sl.frames))sl.frames.forEach(function(fr,k){ if(fr&&fr.snap&&fr.snap!==sl.snap)snaps.push({i:i,k:k,sn:fr.snap}); }); });
+    var seen={};
+    snaps.forEach(function(o){(o.sn.players||[]).forEach(function(q){ if(!q||q.coach)return; var n=meetNum(q),nm=String(q.name||"").trim(); if(!n||!nm)return; var key=q.team+"|"+n; (seen[key]=seen[key]||{})[nm]=1; });});
+    snaps.forEach(function(o){(o.sn.players||[]).forEach(function(q){ if(!q||q.coach)return; var n=meetNum(q); if(!n||String(q.name||"").trim())return; var nn=Object.keys(seen[q.team+"|"+n]||{}); if(nn.length!==1)return;
+      q.name=nn[0]; res.names++; touched[o.i]=1; if(o.k>0&&sls[o.i].frames&&sls[o.i].frames[o.k])delete sls[o.i].frames[o.k].thumb; });});
+    /* 맨 위 문구 */
+    var brands={},src=null; sls.forEach(function(sl){ if(sl&&sl.pageBrand!=null){brands[String(sl.pageBrand)]=1; if(!src)src=sl;} });
+    if(src&&Object.keys(brands).length===1){ sls.forEach(function(sl){ if(!sl||sl.pageBrand!=null)return; sl.pageBrand=src.pageBrand; if(src.textStyles&&src.textStyles.brand&&!(sl.textStyles&&sl.textStyles.brand)){sl.textStyles=sl.textStyles||{};sl.textStyles.brand=JSON.parse(JSON.stringify(src.textStyles.brand));} res.brand++; }); }
+    Object.keys(touched).forEach(function(i){ var sl=sls[+i]; try{ if(window.__snapToThumb){ var th=window.__snapToThumb(sl.snap); if(th)sl.thumb=th; } }catch(_){} });
+    res.changed=!!(res.best||res.names||res.brand);
+    return res;
+  };
+  window.__meetUpgradeText=function(r){ if(!r||!r.changed)return ""; var a=[]; if(r.best)a.push("BEST 11 배치"); if(r.names)a.push("이름 "+r.names+"곳"); if(r.brand)a.push("맨 위 문구 "+r.brand+"장"); return "예전에 만든 미팅을 새 규칙으로 맞췄어요 — "+a.join(" · "); };
   window.__meet={
     frames:function(){return anim.slides;},
     idx:function(){return meetIdx;},
@@ -15252,10 +15316,12 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(ty==="meeting"){
       window.__curMeetRef=d.matchRef||null;   /* 2.928 — 미팅 띠의 «⚽ 경기 연결» */
       try{ if(window.__meetLoad) window.__meetLoad(d.slides || (d.snap?[{snap:d.snap,thumb:d.thumb||"",title:d.name||"",points:[]}]:[])); }catch(_){}
+      var _mup=null; if(!ro){ try{ _mup=window.__meetUpgrade?window.__meetUpgrade():null; }catch(_){ _mup=null; } }   /* 2.974 — 예전 미팅도 새 규칙으로(고칠 수 있을 때만 — 보기 전용은 저장본 그대로 보인다) */
       try{setView("meeting");}catch(_){}
       try{showCreateBar("meeting",true);}catch(_){}
       try{window.__vaultViewMode=true;window.__vaultReadOnly=ro;var _ms=$id("vCreateSave");if(_ms)_ms.style.display="none";var _mss=$id("vCreateSub");if(_mss)_mss.textContent=ro?"· 보기 전용 · 저장 안 함":"· 편집 중 · 자동 저장";var _mc=$id("vCreateCancel");if(_mc)_mc.textContent="닫기";}catch(_){}
       window.__vaultHydrating=false;
+      if(_mup&&_mup.changed){ try{toast(window.__meetUpgradeText(_mup));}catch(_){} try{if(window.__vaultAutoSaveSchedule)window.__vaultAutoSaveSchedule();}catch(_){} }   /* 2.974 — 바꾼 것은 말하고 저장한다 */
       return;
     }
     try{showViewBar(d.name||"작전판",ro);}catch(_){}   // 뷰 전환 전에 바를 먼저 붙여 스테이지 높이를 확정 — 바 때문에 viewBox가 한 번 더 출렁이는 중간 단계 제거(멀티피치 깜빡임 완화)

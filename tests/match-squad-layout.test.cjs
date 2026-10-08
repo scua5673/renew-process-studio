@@ -64,7 +64,7 @@ function setup(){
   return {c,els,players,m,state};
 }
 
-for(const [target,side,top,count] of [['prep','mb2Tray','mb2SquadTray','mb2TrayN'],['ob','obTray','obSquadTray','obTrayN']]){
+for(const [target,side,top,count] of [['prep','mb2Tray','mb2SquadTray','mb2TrayN']]){
   test(target+': starters and reserves render only above the pitch; all remaining players appear once in the sidebar',()=>{
     const {c,els,m}=setup();c.mb2RenderTray(m,target);
     assert.deepEqual(rows(els[top]).map(r=>r.kind),['start','res']);
@@ -100,24 +100,50 @@ for(const [target,side,top,count] of [['prep','mb2Tray','mb2SquadTray','mb2TrayN
   });
 }
 
+/* 2.974 — 상대 분석 트레이는 «끌어다 놓는 선수 목록»만: 선발·리저브 줄이 없고 선발 명단(m.squad)을 읽지도 바꾸지도 않는다 */
+test('analysis tray (2.974): one player list grouped by team group, no starter/reserve rows, top tray emptied and hidden',()=>{
+  const {c,els,m}=setup();c.mb2RenderTray(m,'ob');
+  assert.equal(els.obSquadTray.innerHTML,'');assert.equal(els.obSquadTray.hidden,true);
+  assert.deepEqual(rows(els.obTray).map(r=>[r.kind,r.group]),[['none','B팀'],['none','A팀'],['none','']]);
+  assert.deepEqual(ids(els.obTray),['p2','p5','p4','p1','p3','p6'],'starters and reserves sit in their own group like everyone else');
+  assert.doesNotMatch(els.obTray.innerHTML,/mb2-dropdock|선발로|리저브로/);
+  assert.doesNotMatch(els.obTray.innerHTML,/mb2-chip (st|rs)/);
+  assert.equal(els.obTrayN.textContent,6);
+  assert.equal(c.mb2TrayChips(c.MB2_TARGETS.ob).length,6);
+});
+test('analysis tray (2.974): the squad selection mode and an empty squad change nothing; handlers bind once',()=>{
+  const {c,els,m,state}=setup();c.mb2SqModeV='start';c.mb2RenderTray(m,'ob');
+  assert.equal(els.obTray.classList.contains('sqmode'),false);
+  const before=ids(els.obTray);m.squad={start:[],res:[]};c.mb2RenderTray(m,'ob');
+  assert.deepEqual(ids(els.obTray),before);
+  assert.equal(state.paint.filter(p=>p.kit==='analysis').length,12);
+  for(const player of c.mb2TrayChips(c.MB2_TARGETS.ob))assert.equal(player.listeners.pointerdown.length,1);
+  const tray=part('function mb2RenderTray(m,target){','function mb2FillUs(m){');
+  assert.match(tray,/if\(!pal\)try\{ var sq=mb2Squad\(m\); if\(sq\.start\.indexOf/,'dropping on the pitch does not add a starter');
+  assert.match(tray,/var rowHit=null; if\(!pal\)try\{/,'no row drop targets');
+  assert.match(tray,/if\(!pp\.inside&&groupEl&&!pal\)/,'no reordering of the team roster from here');
+});
+
 test('each board updates used markers on both of its trays without affecting the other board',()=>{
   const {c,els,m}=setup();c.mb2RenderTrays(m);
   assert.deepEqual(used(els.mb2SquadTray),['p1']);assert.deepEqual(used(els.mb2Tray),['p3']);
-  assert.deepEqual(used(els.obSquadTray),['p2']);assert.deepEqual(used(els.obTray),['p4']);
+  assert.deepEqual(used(els.obSquadTray),[]);assert.deepEqual(used(els.obTray),['p2','p4']);
   m.prep.us=[{pid:'p2'},{pid:'p5'}];c.mb2SyncTray(m,'prep');
   assert.deepEqual(used(els.mb2SquadTray),['p2']);assert.deepEqual(used(els.mb2Tray),['p5']);
-  assert.deepEqual(used(els.obSquadTray),['p2']);assert.deepEqual(used(els.obTray),['p4']);
+  assert.deepEqual(used(els.obTray),['p2','p4']);
   m.analysis.us=[];c.obSyncTray(m);
-  assert.deepEqual(used(els.obSquadTray),[]);assert.deepEqual(used(els.obTray),[]);
+  assert.deepEqual(used(els.obTray),[]);
   assert.deepEqual(used(els.mb2SquadTray),['p2']);assert.deepEqual(used(els.mb2Tray),['p5']);
 });
 
 test('changing squad membership moves a player between trays without duplicating or dropping its used state',()=>{
   const {c,els,m}=setup();c.mb2RenderTrays(m);m.squad.res.push('p3');c.mb2RenderTrays(m);
-  for(const [target,side,top] of [['prep','mb2Tray','mb2SquadTray'],['ob','obTray','obSquadTray']]){
+  for(const [target,side,top] of [['prep','mb2Tray','mb2SquadTray']]){
     assert.equal(ids(els[side]).includes('p3'),false);assert.equal(ids(els[top]).filter(id=>id==='p3').length,1);
     assert.equal(c.mb2TrayChips(c.MB2_TARGETS[target]).length,6);
   }
+  assert.equal(ids(els.obTray).filter(id=>id==='p3').length,1,'the analysis list does not move with the squad');
+  assert.equal(c.mb2TrayChips(c.MB2_TARGETS.ob).length,6);
   assert.deepEqual(used(els.mb2SquadTray),['p1','p3']);
 });
 
