@@ -13,7 +13,8 @@ test('match prep: the toolbar sits above the pitch and clear buttons are small a
 
 test('match prep: empty meeting and carry cards fold to one line; exits say what they do',()=>{
   assert.ok(/_cc\.classList\.toggle\("is-empty",!h\)/.test(SC),'상대에서 넘어온 것');
-  assert.ok(/card\.classList\.toggle\("is-empty",!list\.length\)/.test(SC),'이 경기 미팅');
+  /* 2.965 — «이 경기 미팅»은 «경기 보드»가 됐다(옛 경기 준비 보드 자리). 비어도 한 줄로 접지 않고 «가져오기·새 미팅» 문을 보인다 — 운동장이 접혀 라인업은 이미 가깝다 */
+  assert.ok(/card\.classList\.toggle\("mmv-none",!list\.length\)/.test(SC),'경기 보드 빈 상태');
   assert.ok(/id="matchCancelBtn" title="[^"]+">되돌리기<\/button>/.test(SC),'취소 → 되돌리기');
   assert.ok(/id="matchBackBtn" title="고친 것은 자동으로 저장돼 있어요/.test(SC));
 });
