@@ -161,7 +161,7 @@ test('PPT gives animated slides a moving GIF and guards the board while drawing'
   assert.match(ppt,/"image\/gif;base64,"\+_bytesB64\(g\.bytes\)/);
   assert.match(ppt,/\.catch\(function\(\)\{ __sceneToPng\(sc\.snap,cb\); \}\); return; \}\n      __sceneToPng\(sc\.snap,cb\);/,'falls back to a still picture');
   const gif=part('async function _exportGifRun(target){','let toastT;')   /* 2.969 — 저장 위치(target)를 받는다 */;
-  assert.match(gif,/await _gifEncode\(anim\.frames,\{hold:animHold\|\|\.6,fps:25,title:anim\.title,titleColor:anim\.titleColor\}\)/,'board GIF keeps 25fps and its title');
+  assert.match(gif,/await _gifEncode\(anim\.frames,\{hold:animHold\|\|\.6,fps:25,title:anim\.title,titleColor:anim\.titleColor,isCancelled:PEP\.cancelled,onProgress:/,'board GIF keeps 25fps and its title (2.972 — 진행 카드·멈추기)');
   const c=vm.createContext({btoa:s=>Buffer.from(s,'binary').toString('base64'),String,Math});
   vm.runInContext(part('function _bytesB64(u8){','\nfunction exportPPTX(){'),c);
   const bytes=new Uint8Array(70000).map((_,i)=>i*7%256);
