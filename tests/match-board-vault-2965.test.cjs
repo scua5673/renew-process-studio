@@ -70,7 +70,7 @@ test('경기에서 «＋ 새 미팅» — «기본 9장»을 붙이고, 선발 1
   assert.equal(all[0].snap.teamColors.blue,'#123456','겉모습(팀 색)은 바탕에서');
   const fm=fnAt(board,'window.__meetingFromMatch=function(p)');
   assert.match(fm,/if\(!src\.length&&!p\.template\)/,'경기 자료가 없어도 기본 9장만으로 만든다');
-  assert.match(fm,/window\.__meetTplSlides\(base,!!p\.skipBest\)/);
+  assert.match(fm,/window\.__meetTplSlides\(base,!!p\.skipBest,_oh\)/);
   assert.match(fm,/window\.__vaultFromMatch=\{libId:item\.libId,ref:ref,/,'만든 뒤 «‹ 경기 준비로»(2.966 — 경기 준비 안 편집 표식이 같이 붙는다)');
   const cs=fnAt(scout,'function mmCreateSheet(m,opts)');
   assert.match(cs,/template:tplOn\(\),skipBest:xiOn\(\)/);assert.match(cs,/count\(\)\{ return picked\(\)\.length\+\(tplOn\(\)\?\(xiOn\(\)\?8:9\):0\); \}/,'버튼의 장 수가 실제로 만들 장 수');

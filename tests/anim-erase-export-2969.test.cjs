@@ -18,7 +18,7 @@ test('the current scene is committed before switching scenes or adding one',()=>
 });
 
 function helpers(win){
-  const code=slice('function _animExportName(ext){','/* 2.752 —');
+  const code=slice('function _animExportName(ext,base){','/* 2.752 —');
   const writes=[],clicks=[];
   const c={window:win,document:{createElement:()=>({click(){clicks.push(this.download);}})},URL:{createObjectURL:()=>'blob:x',revokeObjectURL(){}},setTimeout:()=>0};
   vm.createContext(c);vm.runInContext(code,c);return {c,writes,clicks};
@@ -52,6 +52,6 @@ test('both exports ask for the place first, inside the click',()=>{
   const go=slice('  ov.querySelector("#evGo").onclick=async function(){','\n}');
   assert.ok(go.indexOf('_animPickSaveTarget(')<go.indexOf('close();'),'video: pick before the sheet closes');
   assert.match(go,/target:_t/);
-  assert.match(slice('async function _exportVideoRun(opts){','function exportVideoSheet(){'),/_animSaveBlob\(blob,_animExportName\(ext\),opts\.target\|\|null\)/);
+  assert.match(slice('async function _exportVideoRun(opts){','function exportVideoSheet(mode){'),/_animSaveBlob\(blob,_animExportName\(ext,opts\.fileBase\),opts\.target\|\|null\)/);
   assert.match(slice('async function _exportGifRun(target){','let toastT;'),/_animSaveBlob\(blob,_animExportName\("gif"\),target\|\|null\)/);
 });
