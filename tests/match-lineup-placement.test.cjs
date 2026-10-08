@@ -22,7 +22,10 @@ function setup(codes=['GK','RB','RCB','LCB','LB','RDM','LDM','RW','AM','LW','ST'
     tmOurs:()=>players,tmAbbrOf:p=>data.positions.find(x=>x.id===p.posId)?.name||'',matchFormLabel:key=>key,tbShape:()=>'',
     matchCanEditOne:()=>state.edit,mb2Cur:m=>m.phaseBoards.boards[m.phaseBoards.cur],obFrame:m=>m.oppPB.boards[m.oppPB.cur].frames[m.oppPB.boards[m.oppPB.cur].cur],
     mb2Draw:()=>state.draws++,obDraw:()=>state.draws++,mb2Counts(){},mb2SyncTray(){},
-    mb2Save:()=>state.saves++,obSave:()=>state.saves++,toast:message=>state.messages.push(message)
+    mb2Save:()=>state.saves++,obSave:()=>state.saves++,toast:message=>state.messages.push(message),
+    /* 2.974 — 상대 분석 «우리 11»은 선수단 작전판(카드 11장)에서 */
+    tbGroups:()=>state.groups||[],tbXYStore:()=>state.xy||{},tbDefaultMap:()=>state.def||{},
+    plStatusOf:p=>p.status||'ok',plOut:s=>s==='injury'||s==='rehab'||s==='out'
   });vm.runInContext(code,c);return {c,m,data,players,state};
 }
 function assignments(c,m){const r=c.matchStartersToSlots(m);return Object.fromEntries(r.picked.map((p,i)=>p?[p.id,{label:r.labels[i],x:r.slots[i][0],y:r.slots[i][1]}]:null).filter(Boolean));}
@@ -84,49 +87,42 @@ test('invalid team card coordinates fall back to finite formation slots',()=>{
 test('no compatible positions leave existing preparation and analysis drawings unchanged',()=>{
   const {c,m,state}=setup(['']);m.phaseBoards.boards.atk.us=[{pid:'manual-old',x:25,y:45}];m.oppPB.boards.atk.frames[0].us=[{pid:'analysis-old',x:40,y:35}];
   const before=plain(m);c.mb2FillUs(m);c.obFillUs(m);assert.deepEqual(plain(m),before);assert.equal(state.saves,0);assert.match(state.messages.join(' '),/명단에서 직접 배치/);
+  assert.match(state.messages.at(-1),/선수단 작전판에 선수가 아직 없어요/,'analysis: no squad-board players, nothing replaced');
 });
 test('preparation fill preserves opponent tokens and names unmatched starters in its notice',()=>{
   const {c,m,state,players}=setup(['GK','RB','']);players[0].num='';m.phaseBoards.boards.atk.opp=[{num:'9',x:60,y:40}];
   c.mb2FillUs(m);const board=m.phaseBoards.boards.atk;assert.equal(board.us.length,2);assert.equal(board.us[0].num,'');assert.equal(board.opp[0].num,'9');assert.equal(state.saves,1);assert.match(state.messages.at(-1),/나머지 1명/);
 });
-test('analysis fill copies corresponding preparation page coordinates without rerunning formation assignment',()=>{
-  const {c,m,state}=setup(['','RB']);m.phaseBoards.cur='def';
-  m.phaseBoards.boards.atk.us=[{pid:'p0',num:'77',name:'직접 배치',x:82.3,y:14.7,gk:false,extra:{arrow:1}}];
-  m.phaseBoards.boards.def.us=[{pid:'p0',num:'88',x:10,y:20}];
-  c.obFillUs(m);const copied=m.oppPB.boards.atk.frames[0].us[0];
-  assert.equal(copied.x,82.3);assert.equal(copied.y,14.7);assert.equal(copied.num,'77');assert.equal(copied.gk,false);
-  copied.extra.arrow=3;assert.equal(m.phaseBoards.boards.atk.us[0].extra.arrow,1);assert.match(state.messages.at(-1),/준비 A/);assert.match(state.messages.at(-1),/나머지 1명/);
+/* 2.974 — 상대 분석 «우리 11» = 선수단 작전판: 카드마다 오늘 뛸 수 있는 맨 위 선수. 숨은 선발 명단·접은 경기 준비 보드는 읽지 않는다 */
+function squadBoard(h){
+  const P=h.players;P[0].posId='pos0';
+  h.state.groups=[{id:'pos0',ab:'GK',players:[P[0]]},{id:'pos1',ab:'RB',players:[P[1],P[2]]},{id:'pos3',ab:'LCB',players:[P[3]]},{id:'pos9',ab:'LW',players:[P[9]]}];
+  h.state.xy={pos0:{x:14,y:50},pos1:{x:29,y:80}};h.state.def={LCB:{x:44,y:35}};
+}
+test('analysis fill takes the top available player of each squad-board card at that card position',()=>{
+  const h=setup();squadBoard(h);const {c,m,state,players}=h;players[1].status='injury';
+  m.squad.start=['p9'];m.phaseBoards.boards.atk.us=[{pid:'p0',x:80,y:10}];
+  c.obFillUs(m);const us=plain(m.oppPB.boards.atk.frames[0].us);
+  assert.deepEqual(us.map(t=>[t.pid,t.x,t.y]),[['p0',6,50],['p2',18.4,80],['p3',30.8,35],['p9',6,90]],'xy store, then formation default, then the bottom-row fallback like the squad board');
+  assert.equal(us[1].name,'선수 2','an injured first choice is skipped for the next player of the same card');
+  assert.deepEqual(m.squad.start,['p9'],'the hidden starter list is neither read nor written');
+  assert.equal(state.saves,1);assert.match(state.messages.at(-1),/선수단 작전판에서 4명을 놓았어요/);
 });
-test('analysis fill falls back to the current free preparation page when no matching key exists',()=>{
-  const {c,m}=setup(['']);m.phaseBoards={cur:'p-free',list:[['p-free','후반 자유 배치']],boards:{'p-free':{us:[{pid:'p0',x:73,y:31,gk:false}],opp:[]}}};
-  c.obFillUs(m);assert.deepEqual(plain(m.oppPB.boards.atk.frames[0].us).map(t=>[t.pid,t.x,t.y]),[['p0',73,31]]);
-});
-test('prepared copying excludes reserves, duplicates, removed players and invalid coordinates',()=>{
-  const {c,m}=setup(['','RB','LB']);m.squad.start=['p0','p2'];m.squad.res=['p1'];
-  m.phaseBoards.boards.atk.us=[{pid:'p0',x:0,y:100},{pid:'p0',x:10,y:20},{pid:'p1',x:30,y:40},{pid:'gone',x:40,y:50},{pid:'p2',x:'broken',y:60}];
-  const r=c.matchPreparedStarters(m);assert.equal(r.tokens.length,1);assert.equal(r.tokens[0].x,0);assert.equal(r.tokens[0].y,100);assert.deepEqual(Array.from(r.pool,p=>p.id),['p2']);
-});
-test('copied preparation tokens respect a newer match-role override without changing the source',()=>{
-  const {c,m}=setup(['CM']);m.boardPlayerRolesV1={p0:'gk'};m.phaseBoards.boards.atk.us=[{pid:'p0',x:25,y:30,gk:false}];
-  c.obFillUs(m);const token=m.oppPB.boards.atk.frames[0].us[0];
-  assert.equal(token.gk,false);assert.equal(c.matchKitIsGK(token,m,false),true);assert.equal(m.phaseBoards.boards.atk.us[0].gk,false);
-  c.matchPlayerRoleSet(m,'p0','');assert.equal(c.matchKitIsGK(token,m,false),false);
+test('analysis fill leaves a card empty when everyone on it is unavailable, and says so',()=>{
+  const h=setup();squadBoard(h);const {c,m,state,players}=h;players[3].status='rehab';
+  c.obFillUs(m);assert.equal(m.oppPB.boards.atk.frames[0].us.length,3);
+  assert.match(state.messages.at(-1),/오늘 못 뛰는 선수뿐인 자리 1곳은 비웠어요/);
 });
 for(const mode of ['preparation','analysis'])test(mode+' automatic placement keeps the base field role when a goalkeeper override is later reset',()=>{
-  const {c,m}=setup(['CM']);c.matchPlayerRoleSet(m,'p0','gk');
+  const {c,m,state,players}=setup(['CM']);c.matchPlayerRoleSet(m,'p0','gk');
+  state.groups=[{id:'pos0',ab:'CM',players:[players[0]]}];state.xy={pos0:{x:14,y:50}};
   if(mode==='preparation')c.mb2FillUs(m);else c.obFillUs(m);
   const token=mode==='preparation'?m.phaseBoards.boards.atk.us[0]:m.oppPB.boards.atk.frames[0].us[0];
   assert.ok(token);assert.equal(token.x,6);assert.equal(token.y,50);
   assert.equal(token.gk,false);assert.equal(c.matchKitIsGK(token,m,false),true);
   c.matchPlayerRoleSet(m,'p0','');assert.equal(c.matchKitIsGK(token,m,false),false);
 });
-test('copying under a field override also preserves the source goalkeeper base role for reset',()=>{
-  const {c,m}=setup(['GK']);c.matchPlayerRoleSet(m,'p0','field');m.phaseBoards.boards.atk.us=[{pid:'p0',x:31,y:48,gk:true}];
-  c.obFillUs(m);const token=m.oppPB.boards.atk.frames[0].us[0];
-  assert.equal(token.gk,true);assert.equal(c.matchKitIsGK(token,m,false),false);
-  c.matchPlayerRoleSet(m,'p0','');assert.equal(c.matchKitIsGK(token,m,false),true);
-});
 test('readonly and empty selection cannot replace either board',()=>{
   const {c,m,state}=setup();state.edit=false;const before=plain(m);c.mb2FillUs(m);c.obFillUs(m);assert.deepEqual(plain(m),before);assert.equal(state.saves,0);
-  state.edit=true;m.squad.start=[];c.mb2FillUs(m);c.obFillUs(m);assert.equal(state.saves,0);
+  state.edit=true;m.squad.start=[];state.groups=[];c.mb2FillUs(m);c.obFillUs(m);assert.equal(state.saves,0);
 });

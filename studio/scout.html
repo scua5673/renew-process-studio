@@ -4986,6 +4986,7 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       }
       /* 2.846 — 선발·리저브는 운동장 위, 미배정 선수는 좁은 왼쪽 명단에 둔다. */
       html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray{grid-area:squad;min-width:0;padding:0!important;margin:0 0 6px}
+      html.ps-page-scout body #obCard #obSquadTray[hidden]{display:none!important}   /* 2.974 — 상대 분석은 선발·리저브 줄을 안 그린다(.mb2-tray 의 display:flex 가 hidden 을 이긴다) */
       html.ps-page-scout body :is(#mb2Card,#obCard) .mb2-squad-tray.mb2-tray .mb2-trow{
         flex-direction:row!important;align-items:flex-start!important;gap:8px!important;padding:5px 0!important
       }
@@ -5048,6 +5049,11 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
   html.ps-page-scout body:not(.mb2-meet) #mb2Card{grid-template-areas:"tray phases" "tray squad" "tray bar" "tray pitch"!important}
   html.ps-page-scout body:not(.mb2-meet) #obCard{grid-template-areas:"tray phases" "tray squad" "tray bar" "tray pitch" "tray fbar"!important}
   html.ps-page-scout body:not(.mb2-meet) :is(#mb2Card,#obCard)>.mb2-bar{margin-top:0!important}
+}
+/* 2.974 — 상대 분석은 선발·리저브 줄(squad)을 그리지 않는다 — 빈 줄 자리가 간격 하나를 더 먹지 않게 격자에서 뺀다 */
+@media (min-width:768px){
+  html.ps-page-scout body:not(.mb2-meet) #obCard:not(#_){grid-template-areas:"tray phases" "tray bar" "tray pitch" "tray fbar"!important}
+  html.ps-page-scout body.mb2-meet #obCard:not(#_){grid-template-areas:"tray pitch"!important;grid-template-rows:minmax(0,1fr)!important}
 }
 html.ps-page-scout .mb2-bar .mb2-clear-lite{font-size:12px!important;font-weight:600!important;line-height:1!important;color:var(--faint,#8A9099)!important}
 html.ps-page-scout .mb2-bar .mb2-clear-lite:hover{color:var(--red,#C24A46)!important}
@@ -5404,7 +5410,8 @@ html.ps-page-scout #matchMeetCard.is-empty .mm-empty .t span{display:none}
               </details>
               <!-- 2.756 — 보드·트레이·프레임은 «장면» 으로 맨 아래: 국면 5줄이 문이고 보드는 근거(설계 목업 «상대 분석에서 경기 준비까지») -->
               <section class="match-card match-card-wide" id="obCard">
-                <!-- 2.754 — 경기 준비와 같은 우리 팀 트레이(선발·리저브·조별). 같은 m.squad 라 한쪽에서 바꾸면 다른 쪽도 바뀐다. 칩을 끌어 이 운동장에 놓으면 현재 국면·프레임에 토큰이 선다 -->
+                <!-- 2.754 — 경기 준비와 같은 우리 팀 트레이. 칩을 끌어 이 운동장에 놓으면 현재 국면·프레임에 토큰이 선다.
+                     2.974 — 선수 목록만(조별·포지션 순). 선발·리저브 줄과 그 버튼은 그리지 않는다 — 여기서 숨은 선발 명단이 바뀌지 않게 -->
                 <div class="mb2-tray-row"><span class="mb2-lbl">우리 팀 <u id="obTrayN">0</u></span><span class="mb2-sqmode" id="obSqMode"><button type="button" data-sq="start">선발</button><button type="button" data-sq="res">리저브</button></span><div class="mb2-tray" id="obTray"></div></div>
                 <div class="mb2-phead"><div class="ob-head"><b>장면</b><small>국면마다 상대 패턴 · ＋프레임 · ▶재생 — 위 줄의 근거</small></div><div class="mb2-phases" id="obPhases"></div></div>
                 <div class="mb2-tray mb2-squad-tray" id="obSquadTray" aria-label="선발과 리저브"></div>
@@ -5416,7 +5423,7 @@ html.ps-page-scout #matchMeetCard.is-empty .mm-empty .t span{display:none}
                 <div class="mb2-bar">
                   <button class="mb2-clear-lite" type="button" id="obClear" title="우리·상대 토큰 모두 지우기">전체 비우기</button>
                   <span class="mb2-cnt">배치 <b id="obCntUs">0</b>/11 · 상대 <b id="obCntOp">0</b></span>
-                  <button class="btn sm" type="button" id="obFillUs" title="경기 준비 배치 우선 · 포지션에 맞는 선발만 배치">우리 11</button>
+                  <button class="btn sm" type="button" id="obFillUs" title="선수단 작전판의 자리마다 맨 위 선수를 놓습니다 · 오늘 못 뛰는 선수는 건너뜀">우리 11</button>
                   <span class="mb2-opp-tools">
                     <button class="match-kit-open" type="button" id="obKitOpen" title="우리 팀과 상대 팀의 필드·GK 유니폼 설정">유니폼 설정</button>
                     <select class="inp mb2-sel" id="obFormOp" title="상대 포메이션"><option value="gk4">GK + 수비 4</option><option value="442" selected>4-4-2</option><option value="4231">4-2-3-1</option><option value="433">4-3-3</option><option value="343">3-4-3</option><option value="352">3-5-2</option></select>
@@ -17598,7 +17605,9 @@ function mb2Counts(m){
 var MB2_TARGETS={
   prep:{tray:"mb2Tray",squad:"mb2SquadTray",n:"mb2TrayN",sqmode:"mb2SqMode",guest:"mb2GuestAdd",pitch:"mb2Pitch",kit:"prep",
     us:function(m){return mb2Cur(m).us;},addTok:function(m,t){return mb2AddTok(m,t,false);},after:function(m){mb2Counts(m);mb2SyncTray(m,"prep");},save:function(){mb2Save();}},
-  ob:{tray:"obTray",squad:"obSquadTray",n:"obTrayN",sqmode:"obSqMode",guest:null,pitch:"obPitch",kit:"analysis",
+  /* 2.974 — 상대 분석 트레이는 «끌어다 놓는 선수 목록»(palette)만. 선발·리저브를 바꾸지 않는다(사용자 «상대 분석 우리 팀 트레이 정리» —
+     2.971 에 경기 준비 «우리 팀» 카드를 뺀 뒤 여기만 숨은 선발 명단 m.squad 를 고치고 있었다) */
+  ob:{palette:true,tray:"obTray",squad:"obSquadTray",n:"obTrayN",sqmode:"obSqMode",guest:null,pitch:"obPitch",kit:"analysis",
     us:function(m){return obFrame(m).us;},addTok:function(m,t){return obTok(m,t,false);},after:function(m){obCounts(m);mb2SyncTray(m,"ob");},save:function(){obSave();}}
 };
 function mb2TrayChips(T){
@@ -17800,7 +17809,9 @@ function mb2Draw(m){
 }
 function mb2RenderTray(m,target){
   var T=MB2_TARGETS[target||"prep"]; target=target||"prep";
+  var pal=!!T.palette;   /* 2.974 — 선수 목록만: 선발·리저브 줄·표시 모드·놓을 자리·순서 바꾸기 없음 */
   var tray=$(T.tray),squadTray=$(T.squad); if(!tray)return;
+  if(pal&&squadTray){ squadTray.innerHTML=""; squadTray.hidden=true; squadTray=null; }
   var ours=tmOurs().filter(function(p){return p.manual===true||String(p.name||"").trim();});
   if($(T.n))$(T.n).textContent=ours.length;
   var isHurt=function(p){return plOut(plStatusOf(p));};
@@ -17827,7 +17838,7 @@ function mb2RenderTray(m,target){
   /* 2.013 — 선발(START)·리저브(RES) 그룹을 맨 위에. m.squad={start:[pid],res:[pid]} (경기별) */
   var sq=mb2Squad(m), inSt={}, inRs={}; sq.start.forEach(function(id){inSt[id]=1;}); sq.res.forEach(function(id){if(!inSt[id])inRs[id]=1;});
   var G={START:[],RES:[],GK:[],DEF:[],MID:[],ATT:[],ETC:[]};
-  ours.forEach(function(p){ if(inSt[p.id]){G.START.push(p);return;} if(inRs[p.id]){G.RES.push(p);return;} var ps=(data.positions||[]).filter(function(x){return x.id===p.posId;})[0];(G[posGroupOf(ps?ps.name:"")]||G.ETC).push(p);});
+  ours.forEach(function(p){ if(!pal&&inSt[p.id]){G.START.push(p);return;} if(!pal&&inRs[p.id]){G.RES.push(p);return;} var ps=(data.positions||[]).filter(function(x){return x.id===p.posId;})[0];(G[posGroupOf(ps?ps.name:"")]||G.ETC).push(p);});
   /* 2.014 — 선발·리저브는 포지션 순(GK→수비→미드필더→공격)으로(사용자). 같은 그룹 안에서는 명단 순서 유지 */
   (function(){ var RK={GK:0,DEF:1,MID:2,ATT:3,ETC:4}; function rk(p){ var ps=(data.positions||[]).filter(function(x){return x.id===p.posId;})[0]; return RK[posGroupOf(ps?ps.name:"")]!=null?RK[posGroupOf(ps?ps.name:"")]:4; }
     ["START","RES"].forEach(function(k){ G[k]=G[k].map(function(p,i){return {p:p,i:i,r:rk(p)};}).sort(function(a,b){return a.r-b.r||a.i-b.i;}).map(function(x){return x.p;}); }); })();
@@ -17835,13 +17846,13 @@ function mb2RenderTray(m,target){
      포지션 순(GK→수비→미드→공격)은 각 조 안에서 그대로 유지한다. */
   var rest=[].concat(G.GK,G.DEF,G.MID,G.ATT,G.ETC);
   var L={START:"선발",RES:"리저브",GK:"GK",DEF:"수비",MID:"미드필더",ATT:"공격",ETC:"미지정"};
-  var chipSq=function(p){ return chip(p).replace('class="mb2-chip',inSt[p.id]?'class="mb2-chip st':(inRs[p.id]?'class="mb2-chip rs':'class="mb2-chip')); };
-  var sqm=$(T.sqmode); if(sqm){ sqm.style.display=matchCanEdit()?"":"none"; sqm.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",mb2SqModeV===b.dataset.sq);}); if(!sqm.__w){sqm.__w=1; sqm.addEventListener("click",function(e){var b=e.target.closest("button[data-sq]");if(!b)return; mb2SqModeV=(mb2SqModeV===b.dataset.sq)?null:b.dataset.sq; var m2=matchGet(); if(m2)mb2RenderTrays(m2); if(mb2SqModeV)toast(mb2SqModeV==="start"?"선수를 눌러 선발로 표시":"선수를 눌러 리저브로 표시"); });} }
-  tray.classList.toggle("sqmode",!!mb2SqModeV);
+  var chipSq=function(p){ if(pal)return chip(p); return chip(p).replace('class="mb2-chip',inSt[p.id]?'class="mb2-chip st':(inRs[p.id]?'class="mb2-chip rs':'class="mb2-chip')); };
+  var sqm=$(T.sqmode); if(sqm){ sqm.style.display=(matchCanEdit()&&!pal)?"":"none"; sqm.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",mb2SqModeV===b.dataset.sq);}); if(!sqm.__w){sqm.__w=1; sqm.addEventListener("click",function(e){var b=e.target.closest("button[data-sq]");if(!b)return; mb2SqModeV=(mb2SqModeV===b.dataset.sq)?null:b.dataset.sq; var m2=matchGet(); if(m2)mb2RenderTrays(m2); if(mb2SqModeV)toast(mb2SqModeV==="start"?"선수를 눌러 선발로 표시":"선수를 눌러 리저브로 표시"); });} }
+  tray.classList.toggle("sqmode",!!mb2SqModeV&&!pal);
   if(squadTray)squadTray.classList.toggle("sqmode",!!mb2SqModeV);
   /* 선발·리저브는 빈 행도 놓을 자리로 남긴다. 아래 행은 실제 선수단 조만 만들며,
      조가 하나도 없는 팀은 종전처럼 '미지정' 한 행을 쓴다. */
-  var rows=[
+  var rows=pal?[]:[
     {kind:"start",label:L.START,list:G.START,cls:" st",lockGrp:false},
     {kind:"res",label:L.RES,list:G.RES,cls:" rs",lockGrp:false}
   ];
@@ -17859,11 +17870,11 @@ function mb2RenderTray(m,target){
     rows.push({kind:"none",grp:"",label:L.ETC,list:rest,cls:"",lockGrp:false});
   }
   function availableFirst(list){return list.filter(function(p){return !isHurt(p);}).concat(list.filter(isHurt));}
-  var dropDock='<div class="mb2-dropdock" aria-hidden="true"><span data-squad-drop data-row="start">선발로</span><span data-squad-drop data-row="res">리저브로</span><span data-squad-drop data-row="none">명단 외</span></div>';
+  var dropDock=pal?'':'<div class="mb2-dropdock" aria-hidden="true"><span data-squad-drop data-row="start">선발로</span><span data-squad-drop data-row="res">리저브로</span><span data-squad-drop data-row="none">명단 외</span></div>';
   function rowHTML(r){
     var list=r.kind==="none"?availableFirst(r.list):r.list;
     var grpAttr=r.lockGrp?' data-grp="'+esc(r.grp)+'"':'';
-    var empty=r.kind==="none"?"모두 배정됨":"여기로 끌어오기";
+    var empty=r.kind==="none"?(pal?"선수 없음":"모두 배정됨"):"여기로 끌어오기";
     return '<div class="mb2-trow'+r.cls+'" data-row="'+r.kind+'"'+grpAttr+' role="group" aria-label="'+esc(r.label+' '+list.length+'명')+'"><span class="mb2-grp">'+esc(r.label)+'<b>'+list.length+'</b></span><div class="mb2-tchips">'+(list.length?list.map(chipSq).join(""):'<i class="mb2-drop">'+empty+'</i>')+'</div></div>';
   }
   tray.innerHTML=dropDock+rows.filter(function(r){return !squadTray||r.kind==="none";}).map(rowHTML).join("");
@@ -17873,7 +17884,7 @@ function mb2RenderTray(m,target){
     if(kitPl){var kitPos=(data.positions||[]).find(function(x){return x.id===kitPl.posId;});matchKitPaint(m,T.kit,c.querySelector("i"),{pid:kitPl.id,num:kitPl.num,gk:posGroupOf(kitPos?kitPos.name:"")==="GK"},false);}
     c.addEventListener("pointerdown",function(e){
       if(!matchCanEdit())return;
-      if(mb2SqModeV){ e.preventDefault(); mb2SquadToggle(m,c.dataset.pid,mb2SqModeV); return; }   /* 2.013 — 표시 모드: 탭 = 선발/리저브 토글 */
+      if(mb2SqModeV&&!pal){ e.preventDefault(); mb2SquadToggle(m,c.dataset.pid,mb2SqModeV); return; }   /* 2.013 — 표시 모드: 탭 = 선발/리저브 토글 */
       /* 2.734 — 터치에서는 이름을 밀어 명단을 스크롤하고, 원형 등번호를 잡을 때만 드래그한다. */
       if(e.pointerType==="touch"&&!(e.target.closest&&e.target.closest(".mb2-chip i")))return;
       var isUsed=c.classList.contains("used");   /* 2.000 — 배치된 선수: 순서만 바꿀 수 있음 */
@@ -17913,13 +17924,13 @@ function mb2RenderTray(m,target){
         if(pit)pit.classList.toggle("hot",!!pp.inside);
         if(fly)fly.classList.toggle("over",!!pp.inside);
         /* 가로로 줄바꿈한 선발·리저브도 칩의 좌·우로, 세로 명단은 위·아래로 삽입한다. */
-        if(!pp.inside&&groupEl){ var hit=null; try{ var els=document.elementsFromPoint(ev.clientX,ev.clientY); for(var i=0;i<els.length;i++){ var ce=els[i].closest?els[i].closest(".mb2-chip"):null; if(ce&&ce!==c&&ce.parentNode===groupEl){hit=ce;break;} } }catch(_){}
+        if(!pp.inside&&groupEl&&!pal){ var hit=null; try{ var els=document.elementsFromPoint(ev.clientX,ev.clientY); for(var i=0;i<els.length;i++){ var ce=els[i].closest?els[i].closest(".mb2-chip"):null; if(ce&&ce!==c&&ce.parentNode===groupEl){hit=ce;break;} } }catch(_){}
           if(hit){ var before=mb2ReorderBefore(groupEl,hit,ev); if(!reord||reord.el!==hit||reord.before!==before){ clearReord(); reord={el:hit,before:before,pid:hit.dataset.pid}; hit.classList.add(before?"reord-before":"reord-after"); } }
           else clearReord(); }
         else clearReord();
         /* 다른 행 위면 그 행을 놓을 자리로 표시한다. 조 행은 그 선수의 원래 조만 받는다 —
            여기서 조를 바꾸면 출석·일정까지 바뀌므로 조 변경은 선수단에서만 한다. */
-        var rowHit=null; try{ var els2=document.elementsFromPoint(ev.clientX,ev.clientY); for(var q2=0;q2<els2.length;q2++){ var rr=els2[q2].closest?els2[q2].closest(".mb2-trow,[data-squad-drop]"):null; if(!rr)continue; if(rr.dataset.row==="none"&&rr.hasAttribute("data-grp")&&String(rr.dataset.grp||"")!==plGrpOf(pl))continue; rowHit=rr;break; } }catch(_){}
+        var rowHit=null; if(!pal)try{ var els2=document.elementsFromPoint(ev.clientX,ev.clientY); for(var q2=0;q2<els2.length;q2++){ var rr=els2[q2].closest?els2[q2].closest(".mb2-trow,[data-squad-drop]"):null; if(!rr)continue; if(rr.dataset.row==="none"&&rr.hasAttribute("data-grp")&&String(rr.dataset.grp||"")!==plGrpOf(pl))continue; rowHit=rr;break; } }catch(_){}
         if(rowHit&&rowHit!==c.closest(".mb2-trow")&&!pp.inside){ if(dropRow!==rowHit){ if(dropRow)dropRow.classList.remove("drop-hot"); dropRow=rowHit; dropRow.classList.add("drop-hot"); } }
         else if(dropRow){ dropRow.classList.remove("drop-hot"); dropRow=null; }
         if(pp.inside){
@@ -17948,7 +17959,7 @@ function mb2RenderTray(m,target){
           try{ if(navigator.vibrate)navigator.vibrate(14); }catch(_){}
           var m=matchGet();T.us(m).push(st2);
           /* 2.013 — 운동장에 놓이면 선발로(리저브가 아니면). 명단이 선발 그룹으로 재정렬된다 */
-          try{ var sq=mb2Squad(m); if(sq.start.indexOf(pl.id)<0&&sq.res.indexOf(pl.id)<0){ sq.start.push(pl.id);matchSquadMirrorLegacy(m);mb2RenderTrays(m); } }catch(_){}
+          if(!pal)try{ var sq=mb2Squad(m); if(sq.start.indexOf(pl.id)<0&&sq.res.indexOf(pl.id)<0){ sq.start.push(pl.id);matchSquadMirrorLegacy(m);mb2RenderTrays(m); } }catch(_){}
           T.after(m);T.save();
           /* 부상·재활 선수를 보드에 놓으면 능동 경고 — 실수 배치 방지(1.428 합의 잔여) */
           try{var st3=plStatusOf(pl);if(plOut(st3))toast("⚠ "+(pl.name||"선수")+" — "+(TM_ST_LB[st3]||"")+" 상태입니다");}catch(_){}
@@ -18174,28 +18185,26 @@ function matchStartersToSlots(m){
   var picked=win.picked,pool=starters.filter(function(p){return picked.indexOf(p)<0;});
   return {ok:!!starters.length,formKey:formKey,formLabel:formLabel,slots:slots,labels:labels,picked:picked,pool:pool,norm:norm};
 }
-function matchPreparedStarters(m){
-  var pb=m.phaseBoards,ob=m.oppPB,starters=matchLineupStarters(m),tokens=[],seen={};
-  if(!pb||!pb.boards)return {tokens:tokens,pool:starters};
-  var key=ob&&ob.cur&&pb.boards[ob.cur]?ob.cur:pb.cur,board=pb.boards[key];
-  (board&&Array.isArray(board.us)?board.us:[]).forEach(function(t){
-    var p=t&&starters.find(function(p){return p.id===t.pid;});
-    if(!p||seen[p.id]||t.x==null||t.y==null||!isFinite(+t.x)||!isFinite(+t.y)||+t.x<0||+t.x>100||+t.y<0||+t.y>100)return;
-    seen[p.id]=1;tokens.push(matchLineupToken(m,p,+t.x,+t.y,t));
-  });
-  return {tokens:tokens,pool:starters.filter(function(p){return !seen[p.id];}),name:((pb.list||[]).find(function(ph){return ph[0]===key;})||[])[1]||"현재 페이지"};
-}
 function obFillUs(m){
   if(!m||!matchCanEditOne(m.id))return;
-  var prepared=matchPreparedStarters(m),tokens=prepared.tokens,pool=prepared.pool,from="";
-  if(tokens.length)from="경기 준비 «"+prepared.name+"» 배치";
-  else{
-    var r=matchStartersToSlots(m);if(!r.ok){toast("선발이 아직 없어요 — 위 «우리 팀»에서 선수를 운동장에 끌어다 놓으세요");return;}
-    tokens=r.slots.map(function(a,i){return r.picked[i]?matchLineupToken(m,r.picked[i],a[0],a[1]):null;}).filter(Boolean);pool=r.pool;from=r.formLabel+" 자리";
-  }
-  if(!tokens.length){toast("포지션에 맞는 자리를 찾지 못했어요 — 선발 "+pool.length+"명은 명단에서 직접 배치해 주세요");return;}
+  /* 2.974 — «우리 11»은 선수단 작전판(선수단 탭 카드 11장)을 그대로: 카드마다 오늘 뛸 수 있는 맨 위 선수를 그 자리에.
+     예전엔 숨은 선발 명단(m.squad)과 접어 둔 경기 준비 보드를 읽었다 — 둘 다 2.971 부터 화면에서 고칠 수 없다.
+     좌표는 matchStartersToSlots 의 카드 변환과 같다(우리 골대 왼쪽, 가로 6~68%). */
+  var groups=[]; try{groups=tbGroups()||[];}catch(_){groups=[];}
+  var xy=tbXYStore(),def=tbDefaultMap(),seenAb={},used={},tokens=[],skipped=0,fb=0;
+  groups.forEach(function(gr){
+    if(!gr)return;
+    var pos=xy[gr.id]||(!seenAb[gr.ab]&&def[gr.ab])||{x:14+(fb++)*15,y:90}; seenAb[gr.ab]=1;   /* tbRender 와 같은 자리 */
+    var list=(gr.players||[]).filter(function(q){return q&&!used[q.id];});
+    var p=list.filter(function(q){return !plOut(plStatusOf(q));})[0];
+    if(!p){ if(list.length)skipped++; return; }
+    used[p.id]=1;
+    var x=Math.max(4,Math.min(96,Math.round((6+((+pos.x)-14)/75*62)*10)/10)),y=Math.max(4,Math.min(96,Math.round((+pos.y)*10)/10));
+    tokens.push(matchLineupToken(m,p,x,y));
+  });
+  if(!tokens.length){toast("선수단 작전판에 선수가 아직 없어요 — 선수단 탭에서 자리마다 선수를 놓으면 «우리 11»이 그대로 가져와요");return;}
   obFrame(m).us=tokens;obDraw(m);obSave();
-  toast(from+"로 선발 "+tokens.length+"명을 놓았어요"+(pool.length?(" · 나머지 "+pool.length+"명은 명단에서 직접 배치해 주세요"):""));
+  toast("선수단 작전판에서 "+tokens.length+"명을 놓았어요"+(skipped?(" · 오늘 못 뛰는 선수뿐인 자리 "+skipped+"곳은 비웠어요"):""));
 }
 /* ══ 2.757 · 경기 준비 ← 상대 분석 «장면 가져오기» ═════════════════════════════════════
    기존 국면 페이지는 같은 국면을, 자유 페이지는 현재 상대 분석에서 보고 있는 국면의 상대 토큰을 복사한다.

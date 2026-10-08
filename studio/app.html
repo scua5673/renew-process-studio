@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.973"></script>
+<script src="autosave-status.js?v=2.975"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -482,7 +482,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.973';</script>
+<script>window.PS_BUILD='2.975';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -2628,11 +2628,32 @@ function psShowUpdBand(){
        ⚠ 위 Delete·Backspace 전달과 **같은 길**이다 — 이미 있던 다리에 도구 키를 얹는다.
        ⚠ 좁게 연다: 수정키 없는 **한 글자** 키만, 입력칸 아닐 때만, 보드가 보일 때만,
           그리고 **저장된 단축키 표에 실제로 있는 키만**(없으면 셸의 다른 처리에 그대로 맡긴다). */
+    /* ══ 2.975 · 조합 단축키도(⌘S·⌘+문자·스페이스·방향키·수정키 «톡») — 보드가 쓰는 표·판정(__psComboOf·__psShortcutFor)을 그대로 빌린다 ══
+       보드가 새 판이면 이 길로 끝, 옛 보드(함수 없음)면 아래 옛 한 글자 길로 떨어진다. 입력칸에서는 «저장»만. */
+    try{ (function(){ var pend=null;
+      function bwin(){ try{ if(fBoard.style.display==='none')return null; var _a=document.body.getAttribute('data-ps-app'); if(_a!=='board'&&_a!=='design')return null; if(document.activeElement===fBoard)return null;
+        var bw=fBoard.contentWindow,bd=fBoard.contentDocument; if(!bw||!bd||!bw.__psComboOf||!bw.__psShortcutFor||!bw.__psRunShortcutId)return null;
+        var ae=bd.activeElement; if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT'||ae.isContentEditable))return null; return bw; }catch(_){ return null; } }
+      var MODK={Shift:'shift',Meta:'cmd',OS:'cmd',Control:'ctrl',Alt:'alt'};
+      window.addEventListener('keydown',function(e){
+        if(MODK[e.key]&&!e.repeat){ var n=(e.metaKey?1:0)+(e.ctrlKey?1:0)+(e.altKey?1:0)+(e.shiftKey?1:0); pend=(n===1)?{k:MODK[e.key],t:Date.now()}:null; return; } pend=null;
+        if(e.isComposing||e.defaultPrevented)return;
+        var t=e.target,fld=!!(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable));
+        var bw=bwin(); if(!bw)return; var c=bw.__psComboOf(e); if(!c)return; var id=bw.__psShortcutFor(c); if(!id)return;
+        if(fld&&id!=='save')return;
+        e.preventDefault(); e.stopImmediatePropagation(); if(!e.repeat)bw.__psRunShortcutId(id);
+      });
+      window.addEventListener('pointerdown',function(){ pend=null; },true);
+      window.addEventListener('keyup',function(e){ if(!pend||MODK[e.key]!==pend.k)return; var p=pend; pend=null; if(Date.now()-p.t>700)return;
+        var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable))return;
+        var bw=bwin(); if(!bw)return; var id=bw.__psShortcutFor(p.k); if(id){ e.preventDefault(); bw.__psRunShortcutId(id); } });
+    })(); }catch(e){}
     try{ window.addEventListener('keydown',function(e){
-      if(e.metaKey||e.ctrlKey||e.altKey||e.repeat||e.isComposing)return;
+      if(e.metaKey||e.ctrlKey||e.altKey||e.repeat||e.isComposing||e.defaultPrevented)return;
       var k=e.key||''; if(k.length!==1||k===' ')return;
       var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable))return;
       if(fBoard.style.display==='none')return;
+      try{ if(fBoard.contentWindow&&fBoard.contentWindow.__psComboOf)return; }catch(_){}   /* 2.975 — 새 보드는 위 조합 길이 맡는다 */
       var _a=document.body.getAttribute('data-ps-app'); if(_a!=='board'&&_a!=='design')return;
       try{
         var bw=fBoard.contentWindow, bd=fBoard.contentDocument;
@@ -2660,7 +2681,7 @@ function psShowUpdBand(){
        보드 설정·사이드바를 누른 직후엔 포커스가 셸에 있어 되돌리기가 안 먹었다(2.552 와 같은 원인 — 한 글자 키만 넘기고 있었다).
        작전판 화면일 때만, 입력칸이 아닐 때만 넘긴다(보관함 목록에서는 넘기지 않는다 — 보이지 않는 판을 되돌리지 않게). */
     try{ window.addEventListener('keydown',function(e){
-      if(!(e.metaKey||e.ctrlKey)||e.altKey||e.isComposing)return;
+      if(!(e.metaKey||e.ctrlKey)||e.altKey||e.isComposing||e.defaultPrevented)return;   /* 2.975 — 위 조합 길이 먼저 처리했으면 넘기지 않는다 */
       var k=(e.key||'').toLowerCase(); if(k!=='z'&&k!=='y')return;
       var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable))return;
       if(fBoard.style.display==='none'||document.body.getAttribute('data-ps-app')!=='board')return;
@@ -7890,13 +7911,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.973"></script>
-<script src="autosave-merge.js?v=2.973"></script>
-<script src="autosave-runtime.js?v=2.973"></script>
-<script src="autosave-recovery.js?v=2.973"></script>
-<script src="sync.js?v=2.973"></script>
+<script src="autosave-journal.js?v=2.975"></script>
+<script src="autosave-merge.js?v=2.975"></script>
+<script src="autosave-runtime.js?v=2.975"></script>
+<script src="autosave-recovery.js?v=2.975"></script>
+<script src="sync.js?v=2.975"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.973">
+<link rel="stylesheet" href="support.css?v=2.975">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
