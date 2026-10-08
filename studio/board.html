@@ -15973,7 +15973,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           var fx2=folderForeign(lib2,full,itemMine); if(fx2.length){folderForeignToast(full,fx2.length,"지울");return;}
           folderItemsTo(lib2,full,parent,Date.now());
           vaultFolders=folderListMove(vaultFolders,full,null);
-          try{saveVaultFolders();}catch(_){}
+          /* 2.973 — 하위 폴더째 지우면 목록이 한 번에 크게 준다(5→2). 사람이 확인창에서 고른 그 값만 «승인»해 두어
+             급감 보호(sync.js pushHold)가 «n개가 빠진 채 올라갔어요» 바를 띄우지 않게 한다. 다른 길로 줄어든 목록은 그대로 보호된다. */
+          var _delRaw=JSON.stringify(vaultFolders);
+          try{Promise.resolve(saveVaultFolders()).then(function(ok){if(ok===false)return;try{var H=window.parent&&window.parent!==window&&window.parent.PSSync&&window.parent.PSSync.hold;if(H&&H.approveExact)H.approveExact(VFOLD_KEY,_delRaw);}catch(_){}});}catch(_){}
           folderSettingsMove(full,null);
           /* 2.968 — «나에게 숨김»을 남긴다: 옛 판·다른 기기가 목록을 통째로 올려 이 폴더를 다시 넣어도 내 화면엔 안 나온다 */
           if(_me){folderSettingsLoad();folderSettingsSave(folderHideMark(folderMeta,full,_me,Date.now()),null);}

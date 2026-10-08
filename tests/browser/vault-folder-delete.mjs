@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {startFixture,openApp,SHOTS,A} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,SHOTS,A,WT} from '../fixtures/team-app.mjs';
 // 2.967 — 오류 제보(10/8) «팀공유 폴더 생성/삭제 과정에서 잘 안됩니다! 삭제가 되지 않습니다».
 // 서버에서 본 그대로를 합성 팀(셸 전체, 가짜 서버)에 심는다: 폴더 목록에 «팀 공유/공격 /공격-수비»(공격 뒤 띄어쓰기)와
 // «팀 공유/공격 · 팀 공유/공격/공격-수비»가 함께 있고, 자료 2개는 띄어쓰기 있는 쪽에 있다.
@@ -68,11 +68,19 @@ try{
   await page.waitForTimeout(800);
   assert.equal((await named('공격')).length,0,'지운 «공격»은 다시 그려도 없다 '+JSON.stringify(await rows()));
   st=await stored();
-  /* 2.968 — 지운 자리에 «나에게 숨김»이 남는다. 저장된 팀 목록 자체는 동기화·자동 저장 재조정이 서버 사본으로
-     되돌리는 경로가 있어(엔진 문제 — 별도 과제) 여기서는 화면과 숨김 표시를 확인한다 */
+  /* 2.968 — 지운 자리에 «나에게 숨김»이 남는다 */
   assert.ok(st.meta['팀 공유/공격']?.hid?.[A]>0,'나에게 숨김 '+JSON.stringify(st.meta));
   await page.waitForTimeout(2500);
   assert.equal((await named('공격')).length,0,'몇 초 뒤에도 지운 «공격»은 없다 '+JSON.stringify(await rows()));
+  /* 2.973 — 하위 폴더째 지우면 목록이 5→2 로 크게 줄어 급감 보호에 걸렸고, 직전 판본이 없어 보류 → 자동 저장 재조정이
+     1초 뒤 서버 옛 판으로 되돌렸다. 이제 저장된 목록·서버 목록 모두 지운 채이고, 확인창에서 고른 삭제라 되돌리기 바도 없다. */
+  await settle();
+  st=await stored();
+  assert.ok(!st.list.some(x=>x==='팀 공유/공격'||x.indexOf('팀 공유/공격/')===0),'저장된 목록에서 지운 폴더가 빠진 채 '+JSON.stringify(st.list));
+  const srvList=JSON.parse((fx.db.get(WT+'|cs_vault_folders_v1')||{v:'[]'}).v);
+  assert.ok(!srvList.some(x=>x==='팀 공유/공격'||x.indexOf('팀 공유/공격/')===0),'서버 목록에서도 빠진다 '+JSON.stringify(srvList));
+  const undoHold=await page.evaluate(()=>({undo:JSON.parse(localStorage.getItem('ps_undo_list_v1')||'[]').map(x=>x.k),hold:JSON.parse(localStorage.getItem('ps_hold_list_v1')||'[]').map(x=>x.k)}));
+  assert.ok(!undoHold.undo.includes('cs_vault_folders_v1')&&!undoHold.hold.includes('cs_vault_folders_v1'),'확인한 삭제는 보류도 되돌리기 바도 없다 '+JSON.stringify(undoHold));
   // 3) 공유 폴더 이름 바꾸기 — 공유가 새 이름을 따라간다
   await menuOn('팀 공유','이름 변경');
   await okDialog('우리 팀 공유');
