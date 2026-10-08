@@ -33,10 +33,9 @@ test('옛 경기 준비 보드 — 그린 페이지만 센다(빈 기본 페이�
   assert.equal(c.old({phaseBoards:{list:[['a','공격']],boards:{}}}),0);assert.equal(c.old({}),0);assert.equal(c.old(null),0);
 });
 
-test('경기 준비 화면 — 운동장·국면 탭·도구줄은 접고(펼치기 전까지) 명단 칸만, 카드 이름은 «경기 보드»',()=>{
-  assert.match(scout,/#mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\) \.mb2-phead,\s*html\.ps-page-scout #mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\) \.mb2-bar,\s*html\.ps-page-scout #mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\) #mb2Pitch\{display:none!important\}/);
-  assert.match(scout,/#mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\)\{grid-template-areas:"tray squad"!important/,'남은 두 칸(우리 팀 · 선발/리저브)만 격자');
-  assert.ok(!/#mb2SquadTray[^{]*\{display:none/.test(scout.slice(scout.indexOf('<style id="ps-2965-board">'))),'명단은 접지 않는다');
+test('경기 준비 화면 — 옛 경기 준비 보드는 카드째 접고(펼치기 전까지), 카드 이름은 «경기 보드» · 2.971 명단 카드도 함께 접힌다',()=>{
+  assert.match(scout,/html\.ps-page-scout #mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\)\{display:none!important\}/,'2.971 — 우리 팀(선발/리저브) 칸까지 카드째 접는다');
+  assert.doesNotMatch(scout,/grid-template-areas:"tray squad"!important/,'남은 두 칸 격자 규칙은 더 없다');
   assert.match(scout,/<b>경기 보드<\/b><small>보관함의 미팅·작전판을 여기서 바로 봐요/);
   const fn=fnAt(scout,'function mmOldApply(m)');assert.match(fn,/classList\.toggle\("mb2-old-open",!!\(m&&mmOldOpen\[m\.id\]\)\)/);
   assert.match(fnAt(scout,'function matchRenderMeetings(m)'),/mmOldApply\(m\);\s*if\(!m\|\|matchRole\(\)==="player"\)/,'선수 화면에서도 같은 접기');
@@ -70,7 +69,7 @@ test('경기에서 «＋ 새 미팅» — «기본 9장»을 붙이고, 선발 1
   assert.equal(all[0].snap.teamColors.blue,'#123456','겉모습(팀 색)은 바탕에서');
   const fm=fnAt(board,'window.__meetingFromMatch=function(p)');
   assert.match(fm,/if\(!src\.length&&!p\.template\)/,'경기 자료가 없어도 기본 9장만으로 만든다');
-  assert.match(fm,/window\.__meetTplSlides\(base,!!p\.skipBest\)/);
+  assert.match(fm,/window\.__meetTplSlides\(base,!!p\.skipBest,_oh\)/);
   assert.match(fm,/window\.__vaultFromMatch=\{libId:item\.libId,ref:ref,/,'만든 뒤 «‹ 경기 준비로»(2.966 — 경기 준비 안 편집 표식이 같이 붙는다)');
   const cs=fnAt(scout,'function mmCreateSheet(m,opts)');
   assert.match(cs,/template:tplOn\(\),skipBest:xiOn\(\)/);assert.match(cs,/count\(\)\{ return picked\(\)\.length\+\(tplOn\(\)\?\(xiOn\(\)\?8:9\):0\); \}/,'버튼의 장 수가 실제로 만들 장 수');

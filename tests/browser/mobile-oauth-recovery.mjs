@@ -67,10 +67,13 @@ try{
       blocked.push({origin:url.origin,path:url.pathname,resource:request.resourceType()});return route.abort('blockedbyclient');
     });
     const page=await context.newPage();page.setDefaultTimeout(20000);page.on('pageerror',e=>errors.push(e.message));
+    /* 2.972 — CI 리눅스 웹킷이 앞 시나리오(가짜 OAuth 화면) 뒤의 page.goto 를 «WebKit encountered an internal error» 로 가끔 끊는다(10/8 staging 두 번 연속 · PR·로컬 맥은 통과).
+       앱이 뜨기도 전의 엔진 오류만 빈 페이지를 거쳐 최대 두 번 다시 연다 — 다른 오류는 그대로 실패한다(앱 버그를 가리지 않는다). */
+    const gotoApp=async url=>{ for(let t=0;;t++){ try{ return await page.goto(url,{waitUntil:'domcontentloaded'}); }catch(e){ if(t>=2||!/WebKit encountered an internal error/.test(String(e&&e.message)))throw e; console.warn('[mobile-oauth-recovery] retry goto after WebKit internal error'); await page.goto('about:blank').catch(()=>{}); await page.waitForTimeout(400); } } };
     for(const scenario of [{surface:'recovery',provider:'google'},{surface:'recovery',provider:'kakao'},{surface:'expired',provider:'google'}]){
       const label=spec.width+'-'+scenario.surface+'-'+scenario.provider;
       try{
-        await page.goto(base+'/studio/app.html'+(scenario.surface==='recovery'?'?error_code=flow_state_not_found&error_description=OAuth+state+expired':'?fixtureExpired=1'),{waitUntil:'domcontentloaded'});
+        await gotoApp(base+'/studio/app.html'+(scenario.surface==='recovery'?'?error_code=flow_state_not_found&error_description=OAuth+state+expired':'?fixtureExpired=1'));
         await page.waitForFunction(()=>window.PSSync&&document.querySelector('#psAcctWrap .acct-btn'));
         await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting'));
         await page.locator('#loading').waitFor({state:'hidden'});

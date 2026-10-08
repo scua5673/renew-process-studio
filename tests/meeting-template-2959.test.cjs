@@ -51,7 +51,7 @@ test('a page becomes an 11-a-side full-pitch snap in world units, keepers marked
   const b11=c.snap(base,c.MEET_TPL[0]);
   assert.equal(b11.players.length,11);assert.equal(b11.players.filter(p=>p.team==='blue').length,11);assert.equal(b11.ball,null);
   const bgk=b11.players.find(p=>p.pos==='GK');
-  assert.deepEqual(J([bgk.x,bgk.y]),[30+5*10,30+34*10]);   /* 미터 → 세계 좌표(1m = 10단위, 라인 밖 30) */
+  assert.deepEqual(J([bgk.x,bgk.y]),[30+6*10,30+34*10]);   /* 2.970 — BEST 11 은 운동장 전체(골키퍼 6m) */   /* 미터 → 세계 좌표(1m = 10단위, 라인 밖 30) */
   const s=c.snap(base,c.MEET_TPL[1]);
   assert.equal(s.players.length,22);
   assert.equal(s.players.filter(p=>p.team==='blue').length,11);

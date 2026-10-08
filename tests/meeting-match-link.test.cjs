@@ -151,7 +151,7 @@ test('경기 화면 — 그 경기에 이은 미팅·작전판(2.965)만, 최근
   assert.equal(c.shared('내 폴더',{'팀 공유':{shared:true}}),false);assert.equal(c.shared('',{'':{shared:true}}),false);
   assert.equal(c.dl('2026-10-04'),'10/4 일');
 });
-test('경기 자료로 미팅 — 표지·상대 분석·선발 11·게임플랜·경기 준비 보드, 빈 것은 고를 수 없다',()=>{
+test('경기 자료로 미팅 — 표지·상대 분석·게임플랜·경기 준비 보드, 빈 것은 고를 수 없다(2.971 — 선발 11 갈래 없음)',()=>{
   const c=scoutCtx();
   const m={id:'m1',opponent:'한빛FC',date:'2026-10-04',time:'15:00',homeAway:'홈',kind:'official',venue:'프로세스 구장',briefing:'압박은 GK 빌드업에서\n세트피스 지역+맨',
     oppConclusion:'왼쪽 뒷공간',oppStrengths:'오버래핑\n제공권',oppKeyPlayers:'10번',oppAttack:'측면 크로스',
@@ -160,19 +160,15 @@ test('경기 자료로 미팅 — 표지·상대 분석·선발 11·게임플랜
     phaseBoards:{list:[['p1','페이지 1']],cur:'p1',boards:{p1:{us:[{x:30,y:30,num:'7'}],opp:[],drawings:[{type:'arrow',x:1,y:1,x2:2,y2:2}]}}}};
   const before=JSON.stringify(m);
   const P=c.parts(m),by=k=>P.find(p=>p.key===k);
-  assert.deepEqual(J(P.map(p=>p.key)),['cover','opp','xi','plan','pages']);
+  assert.deepEqual(J(P.map(p=>p.key)),['cover','opp','plan','pages'],'2.971 — 선발 명단이 저장돼 있어도 «선발 11» 갈래는 만들지 않는다(정하는 칸이 경기 준비에서 빠졌다)');
   assert.equal(JSON.stringify(m),before,'경기 문서는 바꾸지 않는다(읽기만)');
   const cov=by('cover').slides[0];assert.equal(cov.title,'vs 한빛FC');assert.equal(cov.points[0],'10/4 일 15:00 · 홈 · 정식');assert.ok(cov.points.includes('장소 — 프로세스 구장'));assert.ok(cov.points.includes('압박은 GK 빌드업에서'));
   const op=by('opp');assert.equal(op.ok,true);assert.equal(op.slides[0].points[0],'결론 — 왼쪽 뒷공간');assert.equal(op.slides[0].points[1],'강점 — 오버래핑 · 제공권');
   assert.equal(op.slides[0].opp.length,1,'빈 «수비 시» 대신 내용 있는 «공격 시» 장면');assert.equal(op.slides[0].opp[0].secret,undefined,'토큰은 필요한 칸만');
-  const xi=by('xi');assert.equal(xi.ok,true);assert.equal(xi.slides[0].title,'선발 11 · 4-3-3');assert.equal(xi.slides[0].us.length,2);assert.equal(xi.slides[0].us[0].gk,true);
-  assert.deepEqual(J(xi.slides[0].points),['주장 — 7 윙','교체 — 12 교체']);
-  const pl=by('plan');assert.deepEqual(J(pl.slides[0].points),['공격 시 — 짧게 빌드업']);
+  const pl=by('plan');assert.deepEqual(J(pl.slides[0].points),['공격 시 — 짧게 빌드업']);assert.equal(pl.slides[0].us.length,0,'게임플랜 장에도 숨은 선발을 얹지 않는다');
   const pg=by('pages');assert.equal(pg.slides.length,1);assert.equal(pg.slides[0].title,'경기 준비 보드','기본 이름 «페이지 1» 하나면 쉬운 이름');assert.equal(pg.slides[0].draw.length,1);
   const empty=c.parts({id:'m2',opponent:'',date:''});
-  assert.deepEqual(J(empty.map(p=>p.ok)),[true,false,true,false,false].map((v,i)=>i===2?true:v),'표지는 늘, 나머지는 내용이 있을 때만');
-  const noXi=scoutCtx({matchStartersToSlots:()=>({ok:false})}).parts({id:'m3'});
-  assert.equal(noXi.find(p=>p.key==='xi').ok,false);
+  assert.deepEqual(J(empty.map(p=>p.ok)),[true,false,false,false],'표지는 늘, 나머지는 내용이 있을 때만');
 });
 test('경기 화면은 경기 문서·보관함에 직접 쓰지 않는다 — 만들기·연결은 셸을 거쳐 보관함이',()=>{
   const a=scout.indexOf('/* ══ 2.928 · 이 경기 미팅'),b=scout.indexOf('window.addEventListener("message",e=>{const d=e.data||{};',a);
