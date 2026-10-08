@@ -14538,7 +14538,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 (function(){
   if(window.__vaultInit)return; window.__vaultInit=1;
   var VFOLD_KEY="cs_vault_folders_v1";
-  var vaultFolders=[],vaultFolderReads=0,vaultFolderWrites=0;
+  var vaultFolders=[],vaultFolderReads=0,vaultFolderWrites=0,vaultFoldersReady=false;   /* 2.968 — 저장된 목록을 한 번이라도 읽었나 */
   function vaultFolderScope(){
     try{if(!psVaultUnlocked()||localStorage.getItem('ps_ws_switch_guard_v1'))return null;
       return JSON.stringify([psMyUid(),(psActiveWs()||{}).id,localStorage.getItem('ps_cache_owner_v1')]);
@@ -14561,7 +14561,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(!scope||vaultFolderWrites)return Promise.resolve(false);
     return store.get(VFOLD_KEY).then(function(a){
       if(generation!==vaultFolderReads||vaultFolderWrites||scope!==vaultFolderScope()||before!==JSON.stringify(vaultFolders))return false;
+      if(a==null){vaultFoldersReady=true;return false;}   /* 2.968 — 아직 저장된 목록이 없다 = 빈 목록이 정본 */
       if(!Array.isArray(a)||!a.every(function(name){return typeof name==='string';}))return false;
+      vaultFoldersReady=true;
       if(JSON.stringify(a)===before)return false;
       vaultFolders=a;try{renderDrillFiles();}catch(_){}try{toggleSave();}catch(_){}return true;
     }).catch(function(){return false;});
@@ -14609,7 +14611,15 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function vcatOf(k){for(var i=0;i<VCATS.length;i++)if(VCATS[i][0]===k)return {label:VCATS[i][1],c:VCATS[i][2]};return {label:'기타',c:'#8B93A3'};}
   function itemCat(d){return (d&&d.cat)||focusToCat(d&&d.focus);}
   function libSet(lib){return libWrite(lib).then(function(){libTouch();});}
-  function addFolder(name){name=folderNorm(name);if(!name||name.indexOf("__")===0)return;if(vaultFolders.indexOf(name)<0){vaultFolders.push(name);try{saveVaultFolders();}catch(_){}}}
+  function addFolder(name){name=folderNorm(name);if(!name||name.indexOf("__")===0)return;
+    folderClaim(name);   /* 2.968 */
+    if(vaultFolders.indexOf(name)<0){vaultFolders.push(name);try{saveVaultFolders();}catch(_){}}}
+  /* 2.968 — 사용자가 이 폴더를 만들거나 옮겨 놓았다: 만든 사람(by)을 남기고, 예전에 내가 지운 같은 이름이면 숨김을 푼다 */
+  function folderClaim(p){
+    try{folderSettingsLoad();var me=folderMe(),mm=folderUnhide(folderMeta,p,me)||folderMeta,cur=mm[p]||{};
+      if(me&&psIsTeamWs()&&!cur.by){mm=Object.assign({},mm);mm[p]=Object.assign({},cur,{by:me});}
+      if(mm!==folderMeta)folderSettingsSave(mm,null);}catch(_){}
+  }
   /* ══ 2.967 · 폴더 경로는 한 모양으로 ══════════════════════════════════════════
      오류 제보(10/8 «팀공유 폴더 생성/삭제 과정에서 잘 안됩니다! 삭제가 되지 않습니다»), 서버 실측:
      팀 폴더 목록에 «팀 공유/공격 /공격-수비»(공격 뒤 띄어쓰기)와 «팀 공유/공격/공격-수비»가 함께 있었다.
@@ -14637,7 +14647,34 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function folderTagMerge(a,b){var u=(a||[]).slice();(b||[]).forEach(function(x){if(u.indexOf(x)<0)u.push(x);});return u;}
   /* 이미 저장된 자료의 경로 정리 — 내 자료만 시각을 올려 서버로 보낸다(남의 자료는 이 기기 화면만 맞춘다) */
   function folderLibNorm(lib,now,isMine){var n=0;(lib||[]).forEach(function(it){if(!it)return;var f=String(it.folder||"");if(!f||f.indexOf("__")===0)return;var nf=folderNorm(f);if(nf===f)return;it.folder=nf;if(isMine(it))it.editedAt=now;n++;});return n;}
+  /* ══ 2.968 · 팀 공간에서 «내게 보일 폴더»만 ══════════════════════════════════════
+     폴더 목록(cs_vault_folders_v1)과 폴더 정보는 팀 전체가 같이 쓰는 문서 한 벌이다. 그래서
+     ① 다른 코치의 비공개 폴더 이름이 내 보관함에 빈 폴더로 보이고(10/8 제보 팀: 다른 코치의 «세트피스 수비»),
+        지워도 그 코치 기기의 자가 치유가 다시 넣었다 ② 옛 판·다른 기기가 목록 통째로 올리면 지운 폴더가 되살아났다.
+     구조(한 벌)는 그대로 두고 보이는 규칙을 둔다 — 문서를 사람마다 쪼개는 건 동기화 구조를 바꾸는 일이라 위험에 비해 얻는 게 적다:
+       · 내가 볼 수 있는 자료가 (하위까지) 들어 있으면 늘 보인다 — 자료를 숨기는 일은 없다
+       · 내가 지운 폴더(정보의 hid[내 uid])는 안 보인다 — 누가 목록에 다시 넣어도
+       · 팀 공유 중이면 보인다
+       · 만든 사람(정보의 by)이 다른 코치인 빈 폴더는 안 보인다. 만든 사람을 모르는 옛 폴더는 예전처럼 보인다 */
+  function folderShownList(list,lib,meta,me,team){
+    var has={};(lib||[]).forEach(function(it){var f=String(it&&it.folder||"");if(!f||f.indexOf("__")===0)return;var acc="";f.split("/").forEach(function(x){acc=acc?acc+"/"+x:x;has[acc]=1;});});
+    function m(p){return (meta&&meta[p])||{};}
+    function up(p,fn){for(var cur=String(p);;){if(fn(m(cur)))return true;var i=cur.lastIndexOf("/");if(i<0)return false;cur=cur.slice(0,i);}}
+    return (list||[]).filter(function(p){
+      if(has[p])return true;
+      if(me&&up(p,function(x){return !!(x.hid&&x.hid[me]);}))return false;
+      if(!team)return true;
+      if(up(p,function(x){return !!x.shared;}))return true;
+      var by=m(p).by;return !by||by===me;
+    });
+  }
+  /* 지운 폴더 표시 — 정보에서 그 폴더를 지운 뒤 «나에게 숨김»만 남긴다 */
+  function folderHideMark(meta,p,me,now){var out=Object.assign({},meta||{});var cur=Object.assign({},out[p]||{});cur.hid=Object.assign({},cur.hid||{});cur.hid[me]=now;out[p]=cur;return out;}
+  function folderUnhide(meta,p,me){var cur=(meta||{})[p];if(!cur||!cur.hid||!cur.hid[me])return null;var out=Object.assign({},meta);var c=Object.assign({},cur);c.hid=Object.assign({},cur.hid);delete c.hid[me];if(!Object.keys(c.hid).length)delete c.hid;if(Object.keys(c).length)out[p]=c;else delete out[p];return out;}
   /* ══ 2.967 · 순수 함수 끝 ══ */
+  var folderLibSeen=null;   /* 2.968 — 마지막으로 그린 보관함(보일 폴더 판단용) */
+  function folderMe(){try{return psMyUid()||"";}catch(_){return "";}}
+  function foldersShown(){var team=false;try{team=psIsTeamWs();}catch(_){}return folderShownList(vaultFolders,folderLibSeen||[],folderMeta,folderMe(),team);}
   function folderSettingsLoad(){
     try{folderMeta=JSON.parse(localStorage.getItem(FMETA_KEY)||"{}")||{};}catch(_){}
     try{folderTags=JSON.parse(localStorage.getItem(FTAG_KEY)||"{}")||{};}catch(_){}
@@ -15114,7 +15151,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     card.style.cssText='width:100%;max-width:380px;background:var(--panel,#fff);border-radius:16px;box-shadow:0 22px 64px rgba(0,0,0,.42);padding:18px;font-family:inherit;color:var(--txt,#14161A);box-sizing:border-box;';
     var ist='width:100%;box-sizing:border-box;font-size:15px;font-weight:600;padding:11px 13px;border:1.5px solid var(--line,#d2d6dd);border-radius:10px;outline:none;margin-bottom:13px;font-family:inherit;background:var(--panel2,#F1F2F4);color:inherit;';
     var lst='display:block;font-size:12px;font-weight:600;color:#8A9099;margin:0 0 5px;';
-    var folders=[];try{folders=(vaultFolders||[]).slice().sort();}catch(_){}
+    var folders=[];try{folders=foldersShown().slice().sort();}catch(_){}   /* 2.968 — 보일 폴더만 */
     var fopts='<option value="">루트 (폴더 없음)</option>'+folders.map(function(f){return '<option value="'+esc(f)+'"'+(f===defFolder?' selected':'')+'>'+esc(f)+'</option>';}).join('')+'<option value="__new">＋ 새 폴더…</option>';
     card.innerHTML='<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px"><div><div style="font-size:16px;font-weight:800;margin-bottom:3px">저장 정보 확인</div><div style="font-size:11px;line-height:1.45;color:#8A9099">'+(opts.board?'이 보드를 보관함에 저장합니다 — 작업 보드는 그대로 남아요.':'이름과 위치를 확인하면 보관함에 저장되고 목록으로 돌아갑니다.')+'</div></div>'+(opts.board?'':'<span style="margin-left:auto;flex:0 0 auto;font-size:11px;font-weight:800;color:#3a6df0;background:rgba(58,109,240,.1);padding:4px 8px;border-radius:999px">2 / 3</span>')+'</div>'
       +'<label style="'+lst+'">이름</label><input id="pssName" type="text" maxlength="40" style="'+ist+'">'
@@ -15639,7 +15676,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 
   function folderLeaf(p){p=p||"";var i=p.lastIndexOf("/");var lf=i<0?p:p.slice(i+1);
     return lf==="__mine"?"내 자료":lf;}   /* 1.758 — 내부 키가 그대로 보이던 것(사용자 신고) */
-  function folderChildren(path){path=path||"";var pre=path?path+"/":"";var set={};vaultFolders.forEach(function(f){if(path){if(f.indexOf(pre)!==0)return;}var rest=path?f.slice(pre.length):f;if(!rest)return;var leaf=rest.split("/")[0];if(leaf)set[leaf]=1;});return Object.keys(set).sort();}
+  function folderChildren(path){path=path||"";var pre=path?path+"/":"";var set={};foldersShown().forEach(function(f){if(path){if(f.indexOf(pre)!==0)return;}var rest=path?f.slice(pre.length):f;if(!rest)return;var leaf=rest.split("/")[0];if(leaf)set[leaf]=1;});return Object.keys(set).sort();}
   
   var vaultDrag=null, dropZones=[], dragGhost=null, _dgStart=null, _dgTimer=null;
   /* ⚠ 2.364 — 이름이 `vaultMoveItem` 이었다. 그런데 12818 근처에 **같은 이름의 다른 함수**가 있다
@@ -15656,7 +15693,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var fx=folderForeign(lib,src,itemMine); if(fx.length){folderForeignToast(src,fx.length,"옮길");return;}
       vaultFolders=folderListMove(vaultFolders,src,ndest);
       try{saveVaultFolders();}catch(_){}
-      folderSettingsMove(src,ndest);
+      folderSettingsMove(src,ndest);folderClaim(ndest);   /* 2.968 */
       folderItemsMove(lib,src,ndest,Date.now());
       libSet(lib).then(function(){var c=libFilter.folder||"";if(folderIn(c,src))libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});
     });
@@ -15681,7 +15718,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var fx=folderForeign(lib,src,itemMine); if(fx.length){folderForeignToast(src,fx.length,"이름을 바꿀");return;}
       vaultFolders=folderListMove(vaultFolders,src,ndest);
       try{saveVaultFolders();}catch(_){}
-      folderSettingsMove(src,ndest);
+      folderSettingsMove(src,ndest);folderClaim(ndest);   /* 2.968 */
       var now=Date.now(); lib.forEach(function(it){if(it&&folderIn(it.folder,src))it.savedAt=Math.max(+it.savedAt||0,now);});
       folderItemsMove(lib,src,ndest,now);
       libSet(lib).then(function(){var c=libFilter.folder||"";if(folderIn(c,src))libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});
@@ -15733,6 +15770,24 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
        확인을 누른 뒤 보관함을 다시 읽어 그 사이 바뀐 것을 덮지 않는다 */
     var subs=folderChildren(full).length;
     var parent=full.indexOf("/")>=0?full.slice(0,full.lastIndexOf("/")):"";
+    /* 2.968 — 다른 코치가 만든 폴더는 팀 목록·공유를 건드리지 않고 내 보관함에서만 숨긴다 */
+    folderSettingsLoad();
+    var _me=folderMe(),_by=(folderMeta[full]||{}).by,_others=psIsTeamWs()&&!!_by&&!!_me&&_by!==_me;
+    if(_others){
+      libGet().then(function(lib){
+        var mineIn=lib.filter(function(it){return !!it&&folderIn(it.folder,full)&&itemMine(it);}).length;
+        var fx=folderForeign(lib,full,itemMine); if(fx.length){folderForeignToast(full,fx.length,"숨길");return;}
+        psConfirm("‘"+folderLeaf(full)+"’는 다른 코치가 만든 폴더예요 — 내 보관함에서만 숨길까요?"+(mineIn?("\n\n안에 있는 내 자료 "+mineIn+"개는 "+(parent?("‘"+folderLeaf(parent)+"’"):"폴더 밖")+"으로 옮깁니다."):"")+"\n\n팀 목록과 공유는 그대로입니다.",function(){
+          libGet().then(function(lib2){
+            if(folderForeign(lib2,full,itemMine).length){folderForeignToast(full,1,"숨길");return;}
+            var n=folderItemsTo(lib2,full,parent,Date.now());
+            folderSettingsLoad();folderSettingsSave(folderHideMark(folderMeta,full,_me,Date.now()),null);
+            (n?libSet(lib2):Promise.resolve()).then(function(){var c=libFilter.folder||"";if(folderIn(c,full))libFilter.folder=parent;renderDrillFiles();});
+          });
+        });
+      });
+      return;
+    }
     libGet().then(function(lib){
       var fx=folderForeign(lib,full,itemMine); if(fx.length){folderForeignToast(full,fx.length,"지울");return;}
       var inside=lib.filter(function(it){return !!it&&folderIn(it.folder,full);}), cnt=inside.length;
@@ -15746,6 +15801,8 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           vaultFolders=folderListMove(vaultFolders,full,null);
           try{saveVaultFolders();}catch(_){}
           folderSettingsMove(full,null);
+          /* 2.968 — «나에게 숨김»을 남긴다: 옛 판·다른 기기가 목록을 통째로 올려 이 폴더를 다시 넣어도 내 화면엔 안 나온다 */
+          if(_me){folderSettingsLoad();folderSettingsSave(folderHideMark(folderMeta,full,_me,Date.now()),null);}
           libSet(lib2).then(function(){var c=libFilter.folder||"";if(folderIn(c,full))libFilter.folder=parent;renderDrillFiles();});
         });
       });
@@ -16203,7 +16260,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         list.appendChild(b);
       }
       frow("","보관함 (폴더 없음)",0,rootCount);
-      vaultFolders.slice().sort().forEach(function(f){frow(f,folderLeaf(f),f.split("/").length-1,subtreeCount(f));});
+      foldersShown().slice().sort().forEach(function(f){frow(f,folderLeaf(f),f.split("/").length-1,subtreeCount(f));});   /* 2.968 */
       card.appendChild(list);
       var cancel=document.createElement("button");
       cancel.style.cssText="margin-top:12px;border:0;background:var(--panel2,#F1F2F4);color:var(--txt-dim,#9aa4b3);font-family:inherit;font-weight:800;font-size:14px;padding:12px;border-radius:12px;cursor:pointer;flex:0 0 auto;";
@@ -16456,7 +16513,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       });
     }
     walkFolders("",0);
-    if(!vaultFolders.length){var empty=document.createElement("div");empty.style.cssText="padding:8px 9px;color:var(--txt-dim,#8a9099);font-size:12px";empty.textContent="새 폴더를 만들어 자료를 정리하세요";list.appendChild(empty);}
+    if(!foldersShown().length){var empty=document.createElement("div");empty.style.cssText="padding:8px 9px;color:var(--txt-dim,#8a9099);font-size:12px";empty.textContent="새 폴더를 만들어 자료를 정리하세요";list.appendChild(empty);}
     el.appendChild(list);
     try{ el.appendChild(vaultChipRow(lib)); }catch(_){}   /* 1.859 — 분류·주제는 사이드바 세로(커뮤니티 콘텐츠 유형·훈련 주제와 같은 자리). 1.853 칩 줄 철회 */
     return el;
@@ -16805,7 +16862,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       try{
         if(folderLibNorm(lib,Date.now(),itemMine))libSet(lib);
         var _nl=folderListNorm(vaultFolders);
-        if(JSON.stringify(_nl)!==JSON.stringify(vaultFolders)){vaultFolders=_nl;try{saveVaultFolders();}catch(_){}}
+        if(vaultFoldersReady&&JSON.stringify(_nl)!==JSON.stringify(vaultFolders)){vaultFolders=_nl;try{saveVaultFolders();}catch(_){}}
         folderSettingsNorm();
         if(libFilter.folder&&String(libFilter.folder).indexOf("__")!==0)libFilter.folder=folderNorm(libFilter.folder);
       }catch(_){}
@@ -16822,19 +16879,26 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           try{toast("폴더가 아닌 자리에 있던 자료 "+_ghost.length+"개를 미분류로 옮겼어요");}catch(_){}
         }
         var _gf=vaultFolders.filter(function(p){ return String(p||"").indexOf("__")===0; });
-        if(_gf.length){
+        if(_gf.length&&vaultFoldersReady){
           vaultFolders=vaultFolders.filter(function(p){ return String(p||"").indexOf("__")!==0; });
           try{saveVaultFolders();}catch(_){}
         }
       }catch(_){}
       try{
         var _healed=false;
-        lib.forEach(function(d){var f=String(d.folder||"").trim();if(!f)return;
+        /* 2.968 — 저장된 폴더 목록을 읽기 전에 자가 치유가 돌면, 자료가 든 폴더만으로 목록을 저장해
+           빈 폴더들을 지운다(브라우저 시험에서 웹킷이 잡음). 먼저 읽고, 읽고 나면 다시 그린다. */
+        if(!vaultFoldersReady){ reloadVaultFolders().then(function(){ if(vaultFoldersReady){ try{var _b=$id("drillFiles"); if(_b)_b.__vxSig=null;}catch(_){} try{renderDrillFiles();}catch(_){} } }); }
+        else lib.forEach(function(d){var f=String(d.folder||"").trim();if(!f)return;
           if(f.indexOf("__")===0)return;   /* 2.519 — 유령은 다시 만들지 않는다 */
           var acc="";f.split("/").forEach(function(s){s=s.trim();if(!s)return;acc=acc?acc+"/"+s:s;
             if(vaultFolders.indexOf(acc)<0){vaultFolders.push(acc);_healed=true;}});});
         if(_healed){try{saveVaultFolders();}catch(_){}}
       }catch(_){}
+      /* 2.968 — 보일 폴더 판단에 쓸 보관함. 만든 사람 도장은 사용자가 폴더를 만들고·옮기고·이름을 바꿀 때만 남긴다
+         (보관함을 열 때마다 자동으로 찍으면 모든 팀 사용자가 팀 공용 정보 문서를 쓰게 되고,
+          그 업로드 도중의 다른 폴더 편집이 동기화 충돌로 갈 수 있다 — 브라우저 시험에서 확인) */
+      try{ folderLibSeen=lib; }catch(_){}
       var q=((libFilter&&libFilter.q)||"").toLowerCase();
       var ft=libFilter.type||"";
       var qTok=q.split(/\s+/).filter(Boolean);   /* 다중 단어 AND + #태그 문법 */
