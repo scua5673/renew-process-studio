@@ -175,6 +175,23 @@ try{
       await page.locator('#live').click();await page.waitForTimeout(500);await assertLive(frame,before,'saving edited library item leaves working board intact');
       result.cases.push('library-edit-saves-only-library-item');
 
+      // 2.975 — «저장»(나가지 않고 저장)과 ⌘S. 편집을 이어 가면서 보관함 항목만 바뀐다.
+      if(spec.name!=='phone'){   /* 폰은 띠가 좁아 «저장»을 숨긴다(저장하고 나가기만) */
+      await library(page,frame);await view(frame,'A',true);await page.waitForTimeout(500);
+      assert.equal(await frame.locator('#vCreateSaveOnly').isVisible(),true,'편집 중에는 «저장» 단추가 보인다');
+      await frame.evaluate(()=>{state.players[0].name='가상 그냥 저장';renderTokens();boardSaveLive();});
+      await frame.locator('#vCreateSaveOnly').click();
+      await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 그냥 저장');
+      assert.equal(await frame.locator('#vCreateBar.on').count(),1,'«저장»은 편집을 닫지 않는다');
+      await frame.evaluate(()=>{state.players[0].name='가상 단축키 저장';renderTokens();boardSaveLive();window.focus();document.activeElement&&document.activeElement.blur&&document.activeElement.blur();});
+      await page.keyboard.press((process.platform==='darwin'?'Meta':'Control')+'+KeyS');
+      await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 단축키 저장',null,{timeout:5000});
+      assert.equal(await frame.locator('#vCreateBar.on').count(),1,'⌘S 도 편집을 닫지 않는다');
+      await frame.locator('#vCreateCancel').click().catch(()=>{});
+      await page.locator('#live').click();await page.waitForTimeout(500);await assertLive(frame,before,'plain save keeps working board intact');
+      result.cases.push('library-plain-save-and-shortcut');
+      }
+
       await library(page,frame);await view(frame,'B');await page.waitForTimeout(500);
       await frame.evaluate(()=>window.__boardFlushLive());
       await page.reload();

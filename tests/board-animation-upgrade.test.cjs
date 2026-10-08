@@ -10,8 +10,8 @@ test('reset at scene 3 preserves earlier scenes and notes while deep-copying tok
  for(let i=3;i<10;i++){assert.deepEqual(frames[i].snap.players,snap.players);assert.deepEqual(frames[i].snap.ball,snap.ball);assert.equal(frames[i].cap,'caption '+i);assert.equal(frames[i].snap.drawings[0].text,'note '+i);assert.equal(frames[i].dur,i+1);assert.equal(frames[i].curves,undefined);}
  frames[3].snap.players[0].x=99;assert.equal(frames[4].snap.players[0].x,700);assert.equal(snap.players[0].x,700);
 });
-test('ordinary name edit touches only the current scene',()=>{
- const c=vm.createContext({anim:{frames:[{snap:{players:[{id:1,name:'Before'}]}},{snap:{players:[{id:1,name:'Before'}]}}]},animActive:1,_nmKey:p=>p.id,_nmApplySnap:(s,by)=>s.players.forEach(p=>{if(by[p.id])p.name=by[p.id].name})});vm.runInContext(section('function syncNameToScenes(','function applyNamesAllScenes'),c);c.syncNameToScenes({id:1,name:'After'});assert.equal(c.anim.frames[0].snap.players[0].name,'Before');assert.equal(c.anim.frames[1].snap.players[0].name,'After');
+test('name edit reaches every scene (2.975 — 사용자 «선수의 정보를 수정했을 때 모든 페이지에 적용»)',()=>{
+ const c=vm.createContext({anim:{frames:[{snap:{players:[{id:1,name:'Before'}]}},{snap:{players:[{id:1,name:'Before'}]}}]},animActive:1,_nmKey:p=>p.id,_nmApplySnap:(s,by)=>s.players.forEach(p=>{if(by[p.id])p.name=by[p.id].name})});vm.runInContext(section('function syncNameToScenes(','function applyNamesAllScenes'),c);c.syncNameToScenes({id:1,name:'After'});assert.equal(c.anim.frames[0].snap.players[0].name,'After');assert.equal(c.anim.frames[1].snap.players[0].name,'After');
 });
 test('page duplication includes full independent animation and captures pending edits',()=>{
  let captures=0,loaded;const original={snap:{players:[]},name:'Original',anim:{frames:[{snap:{players:[{id:1,x:22}]},curves:{1:{mx:7}},moveSpeed:4}],active:0,hold:2,title:'Demo',titleColor:'#123456'}};

@@ -114,7 +114,7 @@ try{
       await frame.evaluate(()=>{window.__boardFlushLive();dispatchEvent(new PageTransitionEvent('pagehide'));});
       assert.equal(await boardRecord(page,A),null,'lifecycle flush must not save edits');
       // Exercise a real selected-token edit, including mobile input events.
-      await frame.locator('.token[data-id="synthetic-A-PRIVATE"]').click();
+      await frame.locator('.token[data-id="synthetic-A-PRIVATE"]').click({button:'right'});   /* 2.975 — 마우스는 정보 창을 오른쪽 클릭으로 연다 */
       await frame.locator('#nameInput').fill('A-EDIT');await frame.locator('#nameInput').press('Tab');
       assert.deepEqual(await ids(frame),['A-EDIT']);
       const token=frame.locator('.token[data-id="synthetic-A-PRIVATE"]');const rect=await token.boundingBox();
