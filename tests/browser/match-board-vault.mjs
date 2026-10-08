@@ -4,7 +4,7 @@ import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 // 2.965 — 사용자 «경기 준비에 보드가 따로 있는 게 아니고 보관함에 있는 거 가져와서 바로 보일 수 있게».
 // 합성 팀(셸 전체)에서: 경기 준비의 «경기 보드»가 보관함 미팅·작전판을 가져와 그 자리에서 띄우고(넘기기·크게 보기),
 // «편집 ›»은 보관함으로, 보관함의 «‹ 경기 준비로»는 그 경기로 돌아오며, «＋ 새 미팅»은 기본 9장을 붙여 경기에 이은 채 만든다.
-// 옛 경기 준비 보드(운동장)는 접혀 있고 명단(선발·리저브)은 남는다. 실제 서버는 건드리지 않는다.
+// 옛 경기 준비 보드(운동장)는 접혀 있고 2.971 부터는 명단(우리 팀 · 선발/리저브) 카드도 함께 접힌다. 실제 서버는 건드리지 않는다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'phone':'desktop');   // PS_SIZE=ipad 로 아이패드 폭도
 const fx=await startFixture(),browsers={};
 try{
@@ -28,9 +28,11 @@ try{
   await sf.waitForFunction(()=>typeof matchLoad==='function'&&(matchLoad().matches||[]).some(m=>/가상 상대 FC/.test(m.opponent||'')),null,{timeout:30000});
   const mid=await sf.evaluate(()=>{const m=matchLoad().matches.find(x=>/가상 상대 FC/.test(x.opponent||''));setView('match');matchOpen(m.id);matchTab='prep';matchStage='prep';renderMatch();return m.id;});
   await sf.waitForSelector('#matchMeetCard:not([hidden]) .mmv-empty',{timeout:15000});
-  const pitchShown=()=>sf.evaluate(()=>{const p=document.getElementById('mb2Pitch');return !!p&&getComputedStyle(p).display!=='none';});
+  const pitchShown=()=>sf.evaluate(()=>{const p=document.getElementById('mb2Pitch');return !!p&&(p.checkVisibility?p.checkVisibility():p.offsetParent!==null);});   /* 2.971 — 카드째 접히므로 «화면에 보이는가»로 */
   assert.equal(await pitchShown(),false,'옛 경기 준비 보드(운동장)는 접혀 있다');
-  assert.ok(await sf.evaluate(()=>document.querySelectorAll('#mb2SquadTray .mb2-chip,#mb2Tray .mb2-chip').length>0),'명단(우리 팀 · 선발/리저브)은 남는다');
+  /* 2.971 — 명단 카드(우리 팀 · 선발/리저브)도 접었다(사용자 «완전히 빼기») — 옛 보드를 펼치기 전까지 카드째 안 보인다 */
+  assert.equal(await sf.evaluate(()=>{const c=document.getElementById('mb2Card');return !!c&&getComputedStyle(c).display!=='none';}),false,'우리 팀 카드는 안 보인다');
+  assert.equal(await sf.evaluate(()=>!!document.querySelector('.match-person-strip [data-mpf="start"]')),false,'선수별 준비에 선발|리저브 필터가 없다');
   assert.equal(await sf.evaluate(()=>document.querySelector('#matchMeetCard .match-card-head b').textContent),'경기 보드');
   // 3) 보관함에서 가져오기 — 미팅·작전판 둘 다, 작은 그림과 함께
   await sf.click('#matchMeetCard .mmv-empty [data-mm-link]');
@@ -109,7 +111,7 @@ try{
   bf=await board();await bf.waitForFunction(()=>!document.body.classList.contains('vc-match'),null,{timeout:15000});
   await page.evaluate(()=>{const b=document.querySelector('[data-team-key="match"]');if(b)b.click();});
   await sf.evaluate(id=>{setView('match');matchOpen(id);matchTab='prep';matchStage='prep';renderMatch();},mid);
-  // 7) «＋ 새 미팅» — 시트 없이 바로 만들고 그 자리에서 연다(기본 9장 + 선발 11)
+  // 7) «＋ 새 미팅» — 시트 없이 바로 만들고 그 자리에서 연다(기본 9장 — 2.971 부터 선발 11 없음)
   await sf.waitForSelector('#matchMeetActs [data-mm-new]');await sf.click('#matchMeetActs [data-mm-new]');
   assert.equal(await sf.evaluate(()=>!!document.getElementById('mmSheetOv')),false,'시트를 거치지 않는다');
   await page.waitForFunction(()=>document.body.classList.contains('ps-match-edit')&&document.body.getAttribute('data-ps-app')==='design',null,{timeout:15000});

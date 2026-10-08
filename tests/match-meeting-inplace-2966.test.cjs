@@ -6,7 +6,7 @@ const read=f=>fs.readFileSync(path.join(__dirname,'../studio',f),'utf8');
 const board=read('board.html'),scout=read('scout.html'),app=read('app.html');
 function fnAt(src,start){ const i=src.indexOf(start);assert.ok(i>=0,start);let j=src.indexOf('{',i),d=0;for(;j<src.length;j++){if(src[j]==='{')d++;else if(src[j]==='}'&&--d===0)break;}return src.slice(i,j+1); }
 
-test('«＋ 새 미팅»은 시트를 거치지 않고 바로 만든다 — 선발 명단이 있으면 선발 11 이 BEST 11 자리', ()=>{
+test('«＋ 새 미팅»은 시트를 거치지 않고 바로 만든다 — 2.971 부터는 선발 갈래가 와도 늘 기본 9장', ()=>{
   const sent=[];
   const ctx=vm.createContext({JSON,Math,Date,sent,toast:m=>sent.push({toast:m}),mmVS:{}});
   vm.runInContext([
@@ -28,7 +28,7 @@ test('«＋ 새 미팅»은 시트를 거치지 않고 바로 만든다 — 선�
   assert.ok(ctx.mmVS.m1.wantAfter>0,'돌아오면 새 미팅을 띄운다');
   ctx.set('xi',{title:'선발 11 · 4-3-3',us:[{x:1,y:2}]});
   ctx.go({id:'m1',opponent:''});p=sent.pop();
-  assert.equal(p.payload.skipBest,true,'선발 11 을 넣으면 BEST 11 은 뺀다');assert.equal(p.payload.slides.length,1);assert.equal(p.payload.name,'상대전 미팅');
+  assert.equal(p.payload.skipBest,false,'2.971 — 선발 갈래가 있어도 BEST 11 을 빼지 않는다(늘 기본 9장)');assert.equal(p.payload.slides.length,0);assert.equal(p.payload.name,'상대전 미팅');
   ctx.goRaw({id:'m1',opponent:'B'});assert.equal(sent.length,0,'2.5초 안에 다시 눌러도 둘이 생기지 않는다');
   ctx.set('can',false);ctx.go({id:'m1'});assert.ok(sent.pop().toast,'권한이 없으면 말한다');
   assert.match(scout,/if\(b\.hasAttribute\("data-mm-new"\)\)\{ mmCreateNow\(cur\); return; \}/,'«＋ 새 미팅» 버튼이 시트 대신 바로 만들기');

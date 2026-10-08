@@ -5550,13 +5550,12 @@ body.fmdark #matchMeetCard .mm-acts .mm-new,body.fmdark #matchMeetCard .mm-empty
 #matchMeetCard .mmv-old span{flex:1 1 240px;min-width:0}
 #matchMeetCard .mmv-old b{color:var(--ink,#14161A)}
 #matchMeetCard .mmv-old button{min-height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--ink,#14161A);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
-/* 옛 경기 준비 보드 — 국면 탭·도구줄·운동장을 접는다(펼치기 전까지). 명단 칸(우리 팀 · 선발/리저브)은 그대로 */
-html.ps-page-scout #mb2Card:not(.mb2-old-open):not(#_):not(#__) .mb2-phead,
-html.ps-page-scout #mb2Card:not(.mb2-old-open):not(#_):not(#__) .mb2-bar,
-html.ps-page-scout #mb2Card:not(.mb2-old-open):not(#_):not(#__) #mb2Pitch{display:none!important}
-@media (min-width:768px){
-  html.ps-page-scout body:not(.mb2-meet) #mb2Card:not(.mb2-old-open):not(#_):not(#__){grid-template-areas:"tray squad"!important;grid-template-rows:auto!important}
-}
+/* 옛 경기 준비 보드 — 펼치기 전까지 카드째 접는다.
+   2.971 — 명단 칸(«우리 팀 47 · 선발 0 · 리저브 0»)도 함께 접는다(사용자 «우리팀은 없애도 되지 않을까?» → «완전히 빼기»).
+   경기 보드(보관함 미팅·작전판)가 이 자리의 주인이고, 선발·리저브를 읽던 곳(새 미팅의 선발 11 · 선수별 선발|리저브 필터 ·
+   오늘 «준비» 체크)도 이 판에서 같이 걷었다. 옛 보드를 «펼쳐 보기» 하면 트레이가 돌아온다 — 그 운동장에 선수를 놓는 도구라서.
+   이미 저장된 m.squad 는 지우지 않는다(선수별 준비·리뷰 대상은 그대로 그 명단 — 없으면 전원). */
+html.ps-page-scout #mb2Card:not(.mb2-old-open):not(#_):not(#__){display:none!important}
 /* 크게 보기 */
 #mmBig{position:fixed;inset:0;z-index:960;background:#0d0f12;color:#fff;display:grid;grid-template-rows:auto minmax(0,1fr) auto;font-family:inherit}
 #mmBig .mb-top{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px}
@@ -12847,8 +12846,8 @@ function matchMeetParts(m){
   add("공격 시",m.oppAttack); add("수비 시",m.oppDefense); add("수비→공격",m.oppAttackTransition); add("공격→수비",m.oppDefenseTransition); add("세트피스",m.oppSetPlay);
   var ob=mmOppBoard(m), od=cnt.slice(); if(op.length>cnt.length)od.push("국면 "+(op.length-cnt.length)); if(ob)od.push("보드 1장");
   parts.push({key:"opp",label:"상대 분석",ok:!!(op.length||ob),detail:od.length?od.join(" · "):"비어 있음",slides:(op.length||ob)?[{title:"상대 분석 — "+opp,points:op.slice(0,8),us:ob?ob.us:[],opp:ob?ob.opp:[],draw:ob?ob.draw:[]}]:[]});
-  var xi=mmStartXI(m);
-  parts.push({key:"xi",label:"선발 11",ok:!!xi,detail:xi?([xi.label,xi.tokens.length+"명"].filter(Boolean).join(" · ")):"선발 명단이 아직 없어요",slides:xi?[{title:"선발 11"+(xi.label?(" · "+xi.label):""),points:xi.points,us:xi.tokens,opp:[],draw:[],lineup:1}]:[]});   /* 2.970 — 미팅에선 운동장 전체로 편다(board meetSpreadLineup) */
+  var xi=null;   /* 2.971 — 선발을 정하는 칸이 경기 준비에서 빠졌다(우리 팀 카드). 숨은 옛 명단이 새 미팅에 몰래 들어가지 않게 «선발 11» 갈래를 만들지 않는다 — 되살리려면 mmStartXI(m) 과 아래 줄 */
+  if(false)parts.push({key:"xi",label:"선발 11",ok:!!xi,detail:xi?([xi.label,xi.tokens.length+"명"].filter(Boolean).join(" · ")):"선발 명단이 아직 없어요",slides:xi?[{title:"선발 11"+(xi.label?(" · "+xi.label):""),points:xi.points,us:xi.tokens,opp:[],draw:[],lineup:1}]:[]});   /* 2.970 — 미팅에선 운동장 전체로 편다(board meetSpreadLineup) */
   var pl=[],pn=[]; (typeof MB2_RV!=="undefined"?MB2_RV:[]).forEach(function(r){ var ls=Ls(m[r[0]]); if(ls.length){pl.push(r[1]+" — "+ls.join(" · ")); pn.push(r[1]);} });
   parts.push({key:"plan",label:"게임플랜",ok:!!pl.length,detail:pl.length?pn.join(" · "):"비어 있음",slides:pl.length?[{title:"게임플랜",points:pl.slice(0,8),us:xi?xi.tokens:[],opp:[],draw:[]}]:[]});
   var pg=mmPrepPages(m);
@@ -12859,7 +12858,7 @@ function mmPost(msg){ try{ parent.postMessage(Object.assign({source:"scout"},msg
 function mmOpen(libId,show){ if(!matchCanLeaveWork())return; var m=matchGet(); mmPost({type:"openMeeting",libId:libId,show:!!show,inplace:true,parts:m?mmPartsLite(matchMeetParts(m)):[]}); }
 /* ══ 2.966 · 경기 준비 안에서 바로 만들고 고친다 ═════════════════════════════════════════════
    사용자(10/8) «경기 준비에서 미팅 자료 바로 만들 수 있게 · 보관함에 저장도 되고» → 고른 안: **경기 준비 안에서 편집 · 한 번에 열기**.
-   ① «＋ 새 미팅»은 시트를 거치지 않는다 — 누르면 «상대전 미팅»(기본 9장 + 선발 명단이 있으면 선발 11)이 보관함에 저장되고
+   ① «＋ 새 미팅»은 시트를 거치지 않는다 — 누르면 «상대전 미팅»(기본 9장 + 선발 명단이 있으면 선발 11 — 2.971 부터는 늘 기본 9장)이 보관함에 저장되고
       편집기가 **팀 탭·경기 머리를 그대로 둔 채** 열린다(셸 body.ps-match-edit). 편집기는 보관함 것 하나뿐 — 두 벌 만들지 않는다.
    ② 표지·상대 분석·게임플랜·옛 경기 준비 보드는 편집기 띠의 «경기 자료 넣기»로 나중에 넣는다 — 그래서 경기 자료(parts)를 같이 보낸다.
       parts 는 **보낼 때의 사본**이다(편집하는 동안 경기 화면은 숨어 있어 바뀌지 않는다).
@@ -12871,16 +12870,17 @@ function mmCreateNow(m){
   if(Date.now()-mmCreateAt<2500)return;   /* 두 번 눌러 둘이 생기지 않게 */
   if(!matchCanLeaveWork())return;
   mmCreateAt=Date.now();
-  var parts=matchMeetParts(m), xi=parts.find(function(p){return p.key==="xi";}), opp=String(m.opponent||"").trim()||"상대", hasXI=!!(xi&&xi.ok);
+  var parts=matchMeetParts(m), opp=String(m.opponent||"").trim()||"상대";   /* 2.971 — 선발 11 갈래 없음: 늘 기본 9장(BEST 11 포함) */
   (mmVS[m.id]||(mmVS[m.id]={lib:"",i:0})).wantAfter=Date.now()-3000;   /* 돌아오면 새 미팅을 띄운다 */
-  mmPost({type:"meetingFromMatch",inplace:true,payload:{name:opp+"전 미팅",shared:mmIsTeamWs(),ref:mmRefOf(m),slides:hasXI?xi.slides:[],template:true,skipBest:hasXI,inplace:true,parts:mmPartsLite(parts)}});
+  mmPost({type:"meetingFromMatch",inplace:true,payload:{name:opp+"전 미팅",shared:mmIsTeamWs(),ref:mmRefOf(m),slides:[],template:true,skipBest:false,inplace:true,parts:mmPartsLite(parts)}});
 }
 /* ══ 2.965 · «경기 보드» — 경기 준비에 보드를 따로 두지 않고, 보관함 자료를 그 자리에서 띄운다 ═════════════════════
    사용자(10/8) «경기 준비에 보드가 따로 있는 게 아니고 보관함에 있는 거 가져와서 바로 보일 수 있게».
    이 경기에 이은 보관함 자료(미팅 슬라이드 · 작전판 페이지)를 **저장된 그림(썸네일) 그대로** 크게 띄운다 — 화면을 떠나지 않는다.
    그리고 고치는 곳은 보관함 하나(«편집 ›»)다. 경기 문서에는 여전히 아무것도 쓰지 않는다(연결은 자료 쪽 matchRef — 2.928).
    옛 «경기 준비 보드»(m.phaseBoards)는 **지우지 않고 접는다** — 그린 것이 있으면 한 줄로 알리고, 펼치거나 미팅으로 옮긴다.
-   명단(선발·리저브)은 그대로 둔다 — 명단은 보드가 아니다(선수별 준비·선발 11·IDP·리뷰가 읽는다). */
+   명단(선발·리저브)은 그대로 둔다 — 명단은 보드가 아니다(선수별 준비·선발 11·IDP·리뷰가 읽는다).
+   ⚠ 2.971 — 명단 카드도 접었다(사용자 «완전히 빼기»). 선발 11 갈래·선발|리저브 필터·«준비» 체크의 명단 조건도 함께 걷었다. */
 function mmLinkable(d){ var t=(d&&d.type)||""; return (t==="meeting"||t==="board")&&!d.deletedAt&&!d._deleted; }
 function mmKindWord(d){ return ((d&&d.type)||"")==="board"?"작전판":"미팅"; }
 function matchMeetsFor(lib,mid){
@@ -14384,7 +14384,7 @@ function matchRenderIndividual(m,kind,readonly,keepCurrent){
   if(!playerMode&&strip){
     /* 2.735 — 준비와 리뷰의 필터를 분리하고 리뷰에는 미작성 큐를 더한다. */
     var buckets=matchIndividualBuckets(m,players),filters=matchIndividualFilters();
-    if(!filters[kind])filters[kind]=buckets.nS?"start":"all";
+    if(!filters[kind]||filters[kind]==="start"||filters[kind]==="res")filters[kind]="all";   /* 2.971 — 선발|리저브 필터는 뺐다(명단 카드가 없다) */
     var filt=filters[kind],todoN=players.filter(function(p){return !matchHasIndividual(kind,snapshot[p.id]&&snapshot[p.id].value);}).length;
     var shown=matchIndividualFiltered(m,kind,players,filt,buckets,snapshot);
     if(!shown.length&&filt!=="todo"){shown=players;filt=filters[kind]="all";}
@@ -14398,9 +14398,9 @@ function matchRenderIndividual(m,kind,readonly,keepCurrent){
       pid=shown[0].id; if(kind==="prep")matchPrepPlayer=pid;else matchReviewPlayer=pid;
       if(select)select.value=pid;
     }
-    var tabs=[["start","선발",buckets.nS],["res","리저브",buckets.nR],["all","전체",players.length]];
+    var tabs=[["all","전체",players.length]];
     if(kind==="review")tabs.push(["todo","미작성",todoN]);
-    strip.innerHTML='<span class="mp-seg">'+tabs.map(function(x){ return '<button type="button" data-mpf="'+x[0]+'" class="'+(filt===x[0]?"on":"")+'" aria-pressed="'+(filt===x[0])+"\">"+x[1]+'<b>'+x[2]+'</b></button>'; }).join("")+'</span>'
+    strip.innerHTML=(tabs.length<2?'':'<span class="mp-seg">'+tabs.map(function(x){ return '<button type="button" data-mpf="'+x[0]+'" class="'+(filt===x[0]?"on":"")+'" aria-pressed="'+(filt===x[0])+"\">"+x[1]+'<b>'+x[2]+'</b></button>'; }).join("")+'</span>')
       +shown.map(function(p){
       var row=snapshot[p.id]||{},pub=row.pub,draft=row.draft,st=pub?"ready":(matchHasIndividual(kind,draft)?"draft":"");
       /* 2.529 — 개인 전달사항은 **계정이 연결된 선수에게만** 간다(matchToggleIndividual 의 규칙).
@@ -17411,10 +17411,9 @@ function matchStepFill(m,step){
   ks.forEach(function(k){ if(String((m&&m[k])||"").trim())n++; });
   /* 준비는 명단·보드도 '채운 것'이다 — 글만 세면 보드를 그려 둔 코치에게 거짓말이 된다 */
   if(step==="prep"){
-    try{ var sq=(m&&m.squad)||{}; if((sq.start||[]).length)n++; }catch(_){}
     try{ var pb=(m&&m.phaseBoards&&m.phaseBoards.boards)||{};
       if(Object.keys(pb).some(function(k){var b=pb[k]||{};return (b.us||[]).length||(b.opp||[]).length;})||(mmLib&&m&&matchMeetsFor(mmLib,m.id).length))n++; }catch(_){}   /* 2.965 — 경기 보드(보관함 자료)도 */
-    return {n:n,t:ks.length+2};
+    return {n:n,t:ks.length+1};   /* 2.971 — 명단 칸이 빠져 '보드' 하나만 더한다 */
   }
   if(step==="opp"){
     try{ var ob=(m&&m.oppPB&&m.oppPB.boards)||{};
@@ -18191,7 +18190,7 @@ function obFillUs(m){
   var prepared=matchPreparedStarters(m),tokens=prepared.tokens,pool=prepared.pool,from="";
   if(tokens.length)from="경기 준비 «"+prepared.name+"» 배치";
   else{
-    var r=matchStartersToSlots(m);if(!r.ok){toast("선발 명단이 아직 없어요 — 경기 준비에서 선발을 정해 주세요");return;}
+    var r=matchStartersToSlots(m);if(!r.ok){toast("선발이 아직 없어요 — 위 «우리 팀»에서 선수를 운동장에 끌어다 놓으세요");return;}
     tokens=r.slots.map(function(a,i){return r.picked[i]?matchLineupToken(m,r.picked[i],a[0],a[1]):null;}).filter(Boolean);pool=r.pool;from=r.formLabel+" 자리";
   }
   if(!tokens.length){toast("포지션에 맞는 자리를 찾지 못했어요 — 선발 "+pool.length+"명은 명단에서 직접 배치해 주세요");return;}
@@ -19929,7 +19928,7 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
   if(m){ /* 2.181 — 경기 탭의 세 단계 그대로(사용자): 01 상대 분석 · 02 경기 준비 · 03 경기 리뷰. 완료는 그 단계의 필드에서 파생 */
     var has=function(v){ return !!(v&&String(typeof v==="object"?JSON.stringify(v):v).replace(/[\[\]{}"\s]/g,"")); };
     var aDone=["oppAttack","oppDefense","oppAttackTransition","oppDefenseTransition","oppSetPlay","oppConclusion","oppNote"].some(function(k){return has(m[k]);})||has(m.oppPB);
-    var pDone=has(m.briefing)||(m.startingIds||[]).length>=11||(m.squadIds||[]).length>=11||(m.fifaPlans||[]).length>0||!!m.prepPublished;
+    var pDone=has(m.briefing)||(m.fifaPlans||[]).length>0||!!m.prepPublished;   /* 2.971 — 명단(선발 11)은 더 정하지 않는다 */
     var st=matchStatusOf(m), rDone=(st==="review");
     /* 2.193 — 체크는 코치가 직접 누른다(m.ckDone, 경기별 저장). 자동 판정은 처음 값일 뿐. MD 라벨은 뺀다(사용자) */
     var ck=(m.ckDone&&typeof m.ckDone==="object")?m.ckDone:{};

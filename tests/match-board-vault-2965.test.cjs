@@ -33,10 +33,9 @@ test('옛 경기 준비 보드 — 그린 페이지만 센다(빈 기본 페이�
   assert.equal(c.old({phaseBoards:{list:[['a','공격']],boards:{}}}),0);assert.equal(c.old({}),0);assert.equal(c.old(null),0);
 });
 
-test('경기 준비 화면 — 운동장·국면 탭·도구줄은 접고(펼치기 전까지) 명단 칸만, 카드 이름은 «경기 보드»',()=>{
-  assert.match(scout,/#mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\) \.mb2-phead,\s*html\.ps-page-scout #mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\) \.mb2-bar,\s*html\.ps-page-scout #mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\) #mb2Pitch\{display:none!important\}/);
-  assert.match(scout,/#mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\)\{grid-template-areas:"tray squad"!important/,'남은 두 칸(우리 팀 · 선발/리저브)만 격자');
-  assert.ok(!/#mb2SquadTray[^{]*\{display:none/.test(scout.slice(scout.indexOf('<style id="ps-2965-board">'))),'명단은 접지 않는다');
+test('경기 준비 화면 — 옛 경기 준비 보드는 카드째 접고(펼치기 전까지), 카드 이름은 «경기 보드» · 2.971 명단 카드도 함께 접힌다',()=>{
+  assert.match(scout,/html\.ps-page-scout #mb2Card:not\(\.mb2-old-open\):not\(#_\):not\(#__\)\{display:none!important\}/,'2.971 — 우리 팀(선발/리저브) 칸까지 카드째 접는다');
+  assert.doesNotMatch(scout,/grid-template-areas:"tray squad"!important/,'남은 두 칸 격자 규칙은 더 없다');
   assert.match(scout,/<b>경기 보드<\/b><small>보관함의 미팅·작전판을 여기서 바로 봐요/);
   const fn=fnAt(scout,'function mmOldApply(m)');assert.match(fn,/classList\.toggle\("mb2-old-open",!!\(m&&mmOldOpen\[m\.id\]\)\)/);
   assert.match(fnAt(scout,'function matchRenderMeetings(m)'),/mmOldApply\(m\);\s*if\(!m\|\|matchRole\(\)==="player"\)/,'선수 화면에서도 같은 접기');
