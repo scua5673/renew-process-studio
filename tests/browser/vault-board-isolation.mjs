@@ -188,7 +188,9 @@ try{
       assert.equal(await frame.evaluate(()=>{state.players[0].x+=40;renderTokens();window.__vaultAutoSaveSchedule();const d=window.__vaultManualDirty;state.players[0].x-=40;renderTokens();return d;}),true,'정말 바뀌면 «변경 있음»');
       await frame.evaluate(()=>{state.players[0].name='가상 단축키 저장';renderTokens();boardSaveLive();window.focus();document.activeElement&&document.activeElement.blur&&document.activeElement.blur();});
       await frame.evaluate(()=>{const sb=document.getElementById('vCreateSub');if(sb)sb.textContent='';});
-      await page.keyboard.press((process.platform==='darwin'?'Meta':'Control')+'+KeyS');
+      /* 리눅스 웹킷(CI)은 Control+S 를 보드 문서에 넘기지 않는다(진단 2026-10-09 — 같은 시험이 리눅스 크롬·맥 웹킷에선 키로 통과). 거기선 같은 저장 단축키 함수를 직접 부른다 */
+      if(engine==='webkit'&&process.platform!=='darwin')await frame.evaluate(()=>window.__psSaveShortcut());
+      else await page.keyboard.press((process.platform==='darwin'?'Meta':'Control')+'+KeyS');
       await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 단축키 저장',null,{timeout:5000});
       await frame.waitForFunction(()=>!window.__vaultManualDirty&&/저장됨/.test(document.getElementById('vCreateSub').textContent||''),null,{timeout:8000});
       assert.equal(await frame.locator('#vCreateBar.on').count(),1,'⌘S 도 편집을 닫지 않는다');
