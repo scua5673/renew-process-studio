@@ -117,7 +117,8 @@ try{
       await frame.locator('.token[data-id="synthetic-A-PRIVATE"]').click({button:'right'});   /* 2.975 — 마우스는 정보 창을 오른쪽 클릭으로 연다 */
       await frame.locator('#nameInput').fill('A-EDIT');await frame.locator('#nameInput').press('Tab');
       assert.deepEqual(await ids(frame),['A-EDIT']);
-      const token=frame.locator('.token[data-id="synthetic-A-PRIVATE"]');const rect=await token.boundingBox();
+      const token=frame.locator('.token[data-id="synthetic-A-PRIVATE"]');await page.waitForTimeout(200);   /* 2.975 — 이름은 치는 대로 판에 다시 그린다(40ms 뒤) — 다시 그린 뒤에 잰다 */
+      let rect=null;for(let k=0;k<20&&!rect;k++){rect=await token.boundingBox();if(!rect)await page.waitForTimeout(100);}
       await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.mouse.down();await page.mouse.move(rect.x+rect.width/2+35,rect.y+rect.height/2+20,{steps:8});await page.mouse.up();
       await page.waitForTimeout(2300);assert.equal(await boardRecord(page,A),null,'actual drag must not save');
       /* 2.903 — (2.939 부터 폰은 띠가 없다) 선택 시트가 열려 있으면 띠가 숨으므로 먼저 운동장 빈 곳처럼 선택을 푼다 */
