@@ -15938,9 +15938,13 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     _vaultAutoWriting=true;_vaultAutoAgain=false;_vaultAutoStatus("저장 중…");
     vaultSaveCurrent({skipSheet:true,silent:true,after:function(){_vaultAutoWriting=false;_vaultAutoStatus("이 기기에 저장됨 ✓");if(_vaultAutoAgain){_vaultAutoAgain=false;window.__vaultAutoSaveSchedule();}}});
   }
+  /* 2.975 — «저장»(나가지 않고) 뒤에 늦게 도는 기록·키 떼기가 «변경 있음»을 다시 켜, 나갈 때 «버리고 나갈까요?»가 뜨던 것.
+     저장한 그 모습(판·장면)을 지문으로 들고 있다가, 정말 달라졌을 때만 «변경 있음». 처음 달라지면 지문은 버린다(그 뒤는 예전처럼). */
+  window.__vaultEditSig=function(){ try{ var fr=(anim&&anim.frames||[]).map(function(f){ var q=(f&&f.snap)||{}; return JSON.stringify([q.players,q.equipment,q.drawings,q.ball,f&&f.dur,f&&f.hold,f&&f.cap]); }).join("|"); return JSON.stringify(captureSnap())+"#"+fr+"#"+animActive; }catch(_){ return null; } };
   window.__vaultAutoSaveSchedule=function(){
     if(window.__vaultHydrating)return;
     if(!window.__vaultEdit||window.__vaultReadOnly||!window.__curVaultId||window.__vaultPending)return;
+    if(curType()==="board"&&window.__vaultSavedSig){ var _cs=window.__vaultEditSig(); if(_cs&&_cs===window.__vaultSavedSig)return; window.__vaultSavedSig=null; }
     if(curType()==="board"){window.__vaultManualDirty=true;_vaultAutoStatus("변경 사항 있음 · 저장 버튼을 눌러 주세요");return;}
     if(_vaultAutoWriting){_vaultAutoAgain=true;return;}
     _vaultAutoStatus("저장 준비 중…");try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=setTimeout(_vaultAutoRun,850);
@@ -16210,8 +16214,12 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(window.__vaultReadOnly||!window.__vaultViewMode)return false;
     var b=$id('vCreateSaveOnly');if(b&&b.disabled)return false;
     if(b)b.disabled=true;
+    var _sig0=(window.__vaultEditSig&&window.__vaultEditSig())||null;
     vaultSaveCurrent({after:function(){
-      if(b)b.disabled=false; window.__vaultManualDirty=false;
+      if(b)b.disabled=false;
+      var _sig1=(window.__vaultEditSig&&window.__vaultEditSig())||null;
+      if(_sig0&&_sig1&&_sig0!==_sig1){ window.__vaultSavedSig=null; window.__vaultManualDirty=true; return; }   /* 저장하는 동안 또 고쳤다 — 그건 아직 저장 전 */
+      window.__vaultSavedSig=_sig0; window.__vaultManualDirty=false;
       try{ var sb=$id("vCreateSub"),d=new Date(); if(sb)sb.textContent="· 저장됨 "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }catch(_){}
     },onerror:function(){if(b)b.disabled=false;}});
     return true;

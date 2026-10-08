@@ -209,12 +209,15 @@ try{
     const meta=await new Promise(r=>{v.onloadedmetadata=()=>r({w:v.videoWidth,h:v.videoHeight,d:v.duration});v.onerror=()=>r({err:String(v.error&&v.error.code)});setTimeout(()=>r({timeout:1}),8000);});
     return {name:got.name,type:got.type,size:got.size,meta,box:window.__export169&&window.__export169(null)};
   });
+  const canVideo=await f.evaluate(()=>typeof MediaRecorder!=='undefined'||(typeof VideoEncoder==='function'&&!(/^Apple/.test(navigator.vendor||'')&&!/Mac|iPhone|iPad|iPod/.test(navigator.platform||''))));
+  if(canVideo){
   assert.ok(vid&&vid.size>1000,'영상이 만들어졌다 '+JSON.stringify(vid&&{n:vid.name,t:vid.type,s:vid.size}));
   assert.match(vid.name,/^작전판.*\.(mp4|webm)$/,'파일 이름 '+vid.name);
   if(vid.meta&&vid.meta.w){ assert.equal(vid.meta.w,1280);assert.equal(vid.meta.h,720,'16:9'); }
   const bx=vid.box; assert.ok(Math.abs(bx[2]/bx[3]-16/9)<0.01,'16:9 상자');
   const cx=bx[0]+bx[2]/2; assert.ok(Math.abs(cx-555)<1,'운동장 가운데 '+cx);
   console.log(JSON.stringify({vid:{name:vid.name,type:vid.type,size:vid.size,meta:vid.meta}}));
+  } else { const bx=await f.evaluate(()=>window.__export169(null)); assert.ok(Math.abs(bx[2]/bx[3]-16/9)<0.01&&Math.abs(bx[0]+bx[2]/2-555)<1,'16:9 상자 '+bx); console.log('영상 파일 단계 건너뜀(이 브라우저는 영상을 만들 수 없다)'); }
 
   const errs=logs.filter(l=>l.type==='pageerror');
   assert.deepEqual(errs,[],'페이지 오류 없음');

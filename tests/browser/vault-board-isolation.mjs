@@ -184,6 +184,8 @@ try{
       await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 그냥 저장');
       await frame.waitForFunction(()=>!window.__vaultManualDirty&&!document.getElementById('vCreateSaveOnly').disabled&&/저장됨/.test(document.getElementById('vCreateSub').textContent||''),null,{timeout:8000});   /* 저장이 끝날 때까지(저장 표시·변경 없음) */
       assert.equal(await frame.locator('#vCreateBar.on').count(),1,'«저장»은 편집을 닫지 않는다');
+      assert.equal(await frame.evaluate(()=>{window.__vaultAutoSaveSchedule();return window.__vaultManualDirty;}),false,'바뀐 게 없으면 늦게 도는 기록이 «변경 있음»을 켜지 않는다');
+      assert.equal(await frame.evaluate(()=>{state.players[0].x+=40;renderTokens();window.__vaultAutoSaveSchedule();const d=window.__vaultManualDirty;state.players[0].x-=40;renderTokens();return d;}),true,'정말 바뀌면 «변경 있음»');
       await frame.evaluate(()=>{state.players[0].name='가상 단축키 저장';renderTokens();boardSaveLive();window.focus();document.activeElement&&document.activeElement.blur&&document.activeElement.blur();});
       await frame.evaluate(()=>{const sb=document.getElementById('vCreateSub');if(sb)sb.textContent='';});
       await page.keyboard.press((process.platform==='darwin'?'Meta':'Control')+'+KeyS');

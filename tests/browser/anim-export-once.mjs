@@ -33,13 +33,17 @@ try{
     await bf.waitForSelector('#evSheet #evGo');
     await bf.evaluate(()=>{const pick=t=>[...document.querySelectorAll('#evSheet .ev-b')].find(b=>b.textContent===t).click();pick('720p');pick('15fps');}); };
 
+  // 영상을 만들 수 없는 브라우저(CI 의 리눅스 웹킷 — MediaRecorder 없음, 웹코덱은 앱이 끈다)에선 ①② 를 건너뛰고 GIF ③ 만 본다
+  const canVideo=await bf.evaluate(()=>typeof MediaRecorder!=='undefined'||(typeof VideoEncoder==='function'&&!(/^Apple/.test(navigator.vendor||'')&&!/Mac|iPhone|iPad|iPod/.test(navigator.platform||''))));
+  let ev;
+  if(canVideo){
   // ① «영상 만들기» 더블클릭 — 저장 창 1번 · 만들기 1번 · 내려받기 0번
   await sheet();
   await bf.locator('#evSheet #evGo').dblclick();
   await bf.evaluate(()=>{const g=document.querySelector('#evSheet #evGo');if(g)g.click();});   /* 세 번째도 */
   await bf.waitForFunction(()=>{const o=document.getElementById('psExpProg');return o&&o.className==='done';},null,{timeout:60000});
   await page.waitForTimeout(800);
-  let ev=await bf.evaluate(()=>({...window.__ev}));
+  ev=await bf.evaluate(()=>({...window.__ev}));
   assert.deepEqual({pick:ev.pick,reject:ev.reject,write:ev.write,anchor:ev.anchor,makes:ev.makes},{pick:1,reject:0,write:1,anchor:0,makes:1},JSON.stringify(ev));
   assert.match((await card()).t,/MP4 저장됨 ✓|WebM 저장됨 ✓/);
   await bf.evaluate(()=>{const b=[...document.querySelectorAll('#psExpProg .pep-acts button')].find(x=>x.textContent==='닫기');if(b)b.click();});
@@ -57,6 +61,7 @@ try{
   assert.equal((await card()).t,'내려받았어요 ✓');
   await bf.evaluate(()=>{const b=[...document.querySelectorAll('#psExpProg .pep-acts button')].find(x=>x.textContent==='닫기');if(b)b.click();});
 
+  } else console.log('영상 단계 건너뜀 — 이 브라우저는 영상을 만들 수 없다',engine);
   // ③ GIF 를 빠르게 두 번 — 저장 창 1번
   await bf.evaluate(()=>{Object.assign(window.__ev,{pick:0,reject:0,write:0,anchor:0,makes:0,mode:'ok'});});
   await bf.evaluate(()=>{const g=document.getElementById('animGif');g.click();g.click();});
