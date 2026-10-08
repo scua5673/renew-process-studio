@@ -5441,7 +5441,7 @@ html.ps-page-scout #matchMeetCard.is-empty .mm-empty .t span{display:none}
             <div class="match-grid">
               <!-- 2.928 — 이 경기 미팅(보관함 미팅 중 이 경기에 연결된 것). 연결은 미팅 쪽에 있다 — 여기는 보관함을 읽기만 하고, 만들기·연결은 보관함이 한다. 선수에게는 그리지 않는다 -->
               <section class="match-card match-card-wide mm-card" id="matchMeetCard" hidden>
-                <div class="match-card-head"><div><b>이 경기 미팅</b><small>선수들 앞에서 띄울 슬라이드 · 보관함에 저장돼요</small></div><div class="mm-acts" id="matchMeetActs"></div></div>
+                <div class="match-card-head"><div><b>경기 보드</b><small>보관함의 미팅·작전판을 여기서 바로 봐요 · 고치는 건 보관함에서 · 선수에게는 안 보여요</small></div><div class="mm-acts" id="matchMeetActs"></div></div>
                 <div class="mm-body" id="matchMeetBody"></div>
               </section>
 <style id="ps-2928-meet">
@@ -5497,6 +5497,104 @@ body.fmdark #matchMeetCard .mm-acts .mm-new,body.fmdark #matchMeetCard .mm-empty
 #mmSheetOv .mm-foot button{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line2,#D2D6DD);background:var(--panel2,#F1F2F4);color:inherit;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 #mmSheetOv .mm-foot .go{border:0;background:#3A6DF0;color:#fff;font-weight:800}
 #mmSheetOv .mm-foot .go[disabled]{opacity:.45;cursor:default}
+</style>
+<style id="ps-2965-board">
+/* 2.965 — «경기 보드»: 보관함 자료를 경기 준비에서 바로 · 옛 경기 준비 보드는 접는다(명단은 그대로) */
+#matchMeetCard .mmv{display:flex;flex-direction:column;gap:10px}
+#matchMeetCard .mmv-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+#matchMeetCard .mmv-tabs::-webkit-scrollbar{display:none}
+#matchMeetCard .mmv-tabs button{flex:0 0 auto;display:flex;align-items:baseline;gap:6px;min-height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--dim,#646A73);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+#matchMeetCard .mmv-tabs button small{font-size:11px;font-weight:500;opacity:.8}
+#matchMeetCard .mmv-tabs button.on{background:var(--ink,#14161A);border-color:var(--ink,#14161A);color:#fff}
+#matchMeetCard .mmv-stage{position:relative;width:min(100%,calc(min(58vh,600px) * var(--ar,1.544)));aspect-ratio:var(--ar,1.544);margin:0 auto;border-radius:12px;overflow:hidden;background:var(--panel2,#F1F3F5);outline:none;touch-action:pan-y}
+#matchMeetCard .mmv-stage:focus-visible{box-shadow:0 0 0 3px rgba(58,109,240,.45)}
+#matchMeetCard .mmv-svg{position:absolute;inset:0;cursor:zoom-in}
+#matchMeetCard .mmv-svg>svg{display:block;width:100%;height:100%}
+#matchMeetCard .mmv-nothumb,#mmBig .mmv-nothumb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;font-size:14px;font-weight:600;color:var(--faint,#8A9099)}
+#matchMeetCard .mmv-nav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:56px;padding:0;border:0;border-radius:10px;background:rgba(20,22,26,.46);color:#fff;font:inherit;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#matchMeetCard .mmv-nav.prev{left:8px}
+#matchMeetCard .mmv-nav.next{right:8px}
+#matchMeetCard .mmv-nav:disabled{opacity:.2;cursor:default}
+#matchMeetCard .mmv-nav[hidden],#mmBig .mb-nav[hidden]{display:none}
+#matchMeetCard .mmv-count{position:absolute;left:10px;top:10px;padding:3px 9px;border-radius:999px;background:rgba(20,22,26,.62);color:#fff;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;pointer-events:none}
+#matchMeetCard .mmv-scn{position:absolute;left:10px;bottom:10px;padding:3px 9px;border-radius:999px;background:rgba(20,22,26,.62);color:#fff;font-size:11.5px;font-weight:600;pointer-events:none}
+#matchMeetCard .mmv-scn[hidden]{display:none}
+#matchMeetCard .mmv-big{position:absolute;right:10px;top:10px;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:9px;background:rgba(20,22,26,.62);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#matchMeetCard .mmv-info{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+#matchMeetCard .mmv-txt{flex:1 1 260px;min-width:0}
+#matchMeetCard .mmv-title{display:block;font-size:16px;font-weight:700;color:var(--ink,#14161A);overflow-wrap:anywhere}
+#matchMeetCard .mmv-pts{margin:4px 0 0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--dim,#646A73)}
+#matchMeetCard .mmv-pts[hidden]{display:none}
+#matchMeetCard .mmv-acts{display:flex;align-items:center;gap:6px;flex:0 0 auto;margin-left:auto;flex-wrap:wrap}
+#matchMeetCard .mmv-acts button{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+#matchMeetCard .mmv-acts .mm-show{background:#14161A;border-color:#14161A;color:#fff;font-weight:700}
+#matchMeetCard .mmv-acts .mm-x{width:40px;padding:0;color:var(--dim,#646A73)}
+#matchMeetCard .mmv-strip{position:relative;display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:thin}
+#matchMeetCard .mmv-th{position:relative;flex:0 0 auto;width:118px;display:flex;flex-direction:column;gap:4px;min-height:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+#matchMeetCard .mmv-th .s{display:block;width:100%;aspect-ratio:105/68;border-radius:7px;overflow:hidden;border:2px solid var(--line,#E3E6EA);background:var(--panel2,#F1F3F5);box-sizing:border-box}
+#matchMeetCard .mmv-th .s>svg{display:block;width:100%;height:100%}
+#matchMeetCard .mmv-th.on .s{border-color:#3A6DF0}
+#matchMeetCard .mmv-th i{position:absolute;left:5px;top:5px;padding:0 5px;border-radius:5px;background:rgba(20,22,26,.62);color:#fff;font-style:normal;font-size:10px;font-weight:800;line-height:16px}
+#matchMeetCard .mmv-th em{font-style:normal;font-size:11.5px;font-weight:500;color:var(--dim,#646A73);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#matchMeetCard .mmv-th.on em{color:var(--ink,#14161A);font-weight:700}
+#matchMeetCard .mmv-meta{font-size:12px;color:var(--faint,#8A9099)}
+#matchMeetCard .mmv-empty{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border:1.5px dashed var(--line2,#D2D6DD);border-radius:12px;padding:16px 18px}
+#matchMeetCard .mmv-pi{flex:0 0 auto;width:96px;height:62px;fill:none;stroke:var(--line2,#D2D6DD);stroke-width:1.2}
+#matchMeetCard .mmv-empty .t{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:3px}
+#matchMeetCard .mmv-empty .t b{font-size:15px;font-weight:700}
+#matchMeetCard .mmv-empty .t span{font-size:13px;color:var(--dim,#646A73)}
+#matchMeetCard .mmv-empty .b{display:flex;gap:8px;flex-wrap:wrap}
+#matchMeetCard .mmv-empty .b button{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+#matchMeetCard .mmv-empty .b .mm-new{background:var(--accent-soft,#EDF2FE);border-color:transparent;color:#2A55C8;font-weight:700}
+#matchMeetCard .mmv-old{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:9px 12px;border-radius:10px;background:var(--panel2,#F1F3F5);font-size:13px;color:var(--dim,#646A73)}
+#matchMeetCard .mmv-old span{flex:1 1 240px;min-width:0}
+#matchMeetCard .mmv-old b{color:var(--ink,#14161A)}
+#matchMeetCard .mmv-old button{min-height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--ink,#14161A);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+/* 옛 경기 준비 보드 — 국면 탭·도구줄·운동장을 접는다(펼치기 전까지). 명단 칸(우리 팀 · 선발/리저브)은 그대로 */
+html.ps-page-scout #mb2Card:not(.mb2-old-open):not(#_):not(#__) .mb2-phead,
+html.ps-page-scout #mb2Card:not(.mb2-old-open):not(#_):not(#__) .mb2-bar,
+html.ps-page-scout #mb2Card:not(.mb2-old-open):not(#_):not(#__) #mb2Pitch{display:none!important}
+@media (min-width:768px){
+  html.ps-page-scout body:not(.mb2-meet) #mb2Card:not(.mb2-old-open):not(#_):not(#__){grid-template-areas:"tray squad"!important;grid-template-rows:auto!important}
+}
+/* 크게 보기 */
+#mmBig{position:fixed;inset:0;z-index:960;background:#0d0f12;color:#fff;display:grid;grid-template-rows:auto minmax(0,1fr) auto;font-family:inherit}
+#mmBig .mb-top{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px}
+#mmBig .mb-top b{flex:1 1 auto;min-width:0;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mmBig .mb-cnt{font-size:13px;font-weight:700;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums}
+#mmBig .mb-x{width:44px;height:44px;border:0;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-size:24px;line-height:1;cursor:pointer}
+#mmBig .mb-stage{position:relative;min-height:0;margin:0 12px;touch-action:pan-y}
+#mmBig .mb-svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;border-radius:6px}
+#mmBig .mb-svg>svg{display:block;width:100%;height:100%}
+#mmBig .mb-nav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:72px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(20,22,26,.62);color:#fff;font-size:32px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#mmBig .mb-nav.prev{left:4px}
+#mmBig .mb-nav.next{right:4px}
+#mmBig .mb-nav:disabled{opacity:.18;cursor:default}
+#mmBig .mb-cap{padding:10px 16px calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center}
+#mmBig .mb-cap .t{font-size:17px;font-weight:700}
+#mmBig .mb-cap .p{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;font-size:13.5px;color:rgba(255,255,255,.78)}
+#mmBig .mb-cap .mb-rot{flex:1 1 100%;font-size:12px;color:rgba(255,255,255,.5)}
+/* 가져오기 시트 — 작은 그림 */
+#mmSheetOv .mm-pick{flex-direction:row;align-items:center;gap:10px}
+#mmSheetOv .mm-pt{flex:0 0 66px;height:43px;border-radius:6px;overflow:hidden;background:var(--panel2,#F1F3F5)}
+#mmSheetOv .mm-pt>svg{display:block;width:100%;height:100%}
+#mmSheetOv .mm-pw{display:flex;flex-direction:column;gap:2px;min-width:0}
+@media (max-width:600px){
+  #matchMeetCard .mmv-stage{width:100%;max-height:none}
+  #matchMeetCard .mmv-nav{width:34px;height:46px;font-size:22px}
+  #matchMeetCard .mmv-th{width:92px}
+  #matchMeetCard .mmv-acts{width:100%;margin-left:0}
+  #matchMeetCard .mmv-acts .mm-show{flex:1 1 100%;min-height:44px}
+  #matchMeetCard .mmv-acts .mm-open{flex:1 1 auto;min-height:44px}
+  #matchMeetCard .mmv-acts .mm-x{width:44px;min-height:44px}
+  #matchMeetCard .mmv-empty .b{width:100%}
+  #matchMeetCard .mmv-empty .b button{flex:1 1 100%;min-height:44px}
+  #matchMeetCard .mmv-pi{display:none}
+  #mmBig .mb-nav{width:38px;height:56px;font-size:26px}
+}
+body.fmdark #matchMeetCard .mmv-tabs button.on{background:#F2F3F5;border-color:#F2F3F5;color:#14161A}
+body.fmdark #matchMeetCard .mmv-acts .mm-show{background:#F2F3F5;border-color:#F2F3F5;color:#14161A}
+body.fmdark #matchMeetCard .mmv-empty .b .mm-new{background:rgba(111,148,245,.16);color:#9DB6F8}
 </style>
               <!-- 2.755 — 상대 분석에 적은 것이 여기 비친다(읽기만). 앱은 거울이라 대신 쓰지 않고, 누르면 상대 분석으로 간다 -->
               <section class="match-card match-card-wide match-carry" id="matchCarryCard">
@@ -12701,10 +12799,6 @@ function mmCanLib(){ if(matchRole()==="player")return false; try{ return !window
 function mmMine(d,uid,team){ return !team||!d||!d.createdBy||d.createdBy===uid; }
 function mmFolderShared(folder,meta){ var f=String(folder==null?"":folder).trim(); meta=meta||{}; while(f){ if(meta[f]&&meta[f].shared)return true; var i=f.lastIndexOf("/"); if(i<0)break; f=f.slice(0,i); } return false; }
 function mmRefOf(m){ return {mid:String(m.id),date:String(m.date||""),opp:String(m.opponent||""),time:String(m.time||""),ha:String(m.homeAway||""),kind:String(m.kind||""),at:Date.now()}; }
-function matchMeetsFor(lib,mid){
-  return (Array.isArray(lib)?lib:[]).filter(function(d){ return d&&(d.type||"")==="meeting"&&d.matchRef&&String(d.matchRef.mid)===String(mid)&&!d.deletedAt&&!d._deleted; })
-    .sort(function(a,b){ return (+(b.editedAt||b.savedAt)||0)-(+(a.editedAt||a.savedAt)||0); });
-}
 function mmLoadLib(){
   if(mmLibP)return mmLibP;
   var st=window.storage;
@@ -12763,54 +12857,186 @@ function matchMeetParts(m){
 }
 function mmPost(msg){ try{ parent.postMessage(Object.assign({source:"scout"},msg),"*"); }catch(_){} }
 function mmOpen(libId,show){ if(!matchCanLeaveWork())return; mmPost({type:"openMeeting",libId:libId,show:!!show}); }
+/* ══ 2.965 · «경기 보드» — 경기 준비에 보드를 따로 두지 않고, 보관함 자료를 그 자리에서 띄운다 ═════════════════════
+   사용자(10/8) «경기 준비에 보드가 따로 있는 게 아니고 보관함에 있는 거 가져와서 바로 보일 수 있게».
+   이 경기에 이은 보관함 자료(미팅 슬라이드 · 작전판 페이지)를 **저장된 그림(썸네일) 그대로** 크게 띄운다 — 화면을 떠나지 않는다.
+   그리고 고치는 곳은 보관함 하나(«편집 ›»)다. 경기 문서에는 여전히 아무것도 쓰지 않는다(연결은 자료 쪽 matchRef — 2.928).
+   옛 «경기 준비 보드»(m.phaseBoards)는 **지우지 않고 접는다** — 그린 것이 있으면 한 줄로 알리고, 펼치거나 미팅으로 옮긴다.
+   명단(선발·리저브)은 그대로 둔다 — 명단은 보드가 아니다(선수별 준비·선발 11·IDP·리뷰가 읽는다). */
+function mmLinkable(d){ var t=(d&&d.type)||""; return (t==="meeting"||t==="board")&&!d.deletedAt&&!d._deleted; }
+function mmKindWord(d){ return ((d&&d.type)||"")==="board"?"작전판":"미팅"; }
+function matchMeetsFor(lib,mid){
+  return (Array.isArray(lib)?lib:[]).filter(function(d){ return mmLinkable(d)&&d.matchRef&&String(d.matchRef.mid)===String(mid); })
+    .sort(function(a,b){ return (+(b.editedAt||b.savedAt)||0)-(+(a.editedAt||a.savedAt)||0); });
+}
+/* 자료 → 장(미팅 슬라이드 · 작전판 페이지). 그림은 보관함에 저장된 썸네일 그대로 — 여기서 다시 그리지 않는다 */
+function mmSlidesOf(d){
+  if(!d)return [];
+  if((d.type||"")==="meeting"){
+    var sl=Array.isArray(d.slides)?d.slides:[];
+    if(!sl.length)return d.thumb?[{thumb:d.thumb,title:String(d.name||""),points:[],scenes:0}]:[];
+    return sl.map(function(s,i){ s=s||{}; return {thumb:s.thumb||(i===0?(d.thumb||""):""),title:String(s.title||"").trim(),
+      points:(Array.isArray(s.points)?s.points:[]).map(function(x){return String(x==null?"":x).trim();}).filter(Boolean),scenes:Array.isArray(s.frames)?s.frames.length:0}; });
+  }
+  var pg=Array.isArray(d.pages)&&d.pages.length?d.pages:null;
+  if(pg)return pg.map(function(p,i){ p=p||{}; var an=p.anim, sc=Array.isArray(an)?an.length:((an&&Array.isArray(an.frames))?an.frames.length:0);
+    return {thumb:p.thumb||(i===0?(d.thumb||""):""),title:String(p.name||"").trim(),points:[],scenes:sc}; });
+  return [{thumb:d.thumb||"",title:"",points:[],scenes:Array.isArray(d.frames)?d.frames.length:0}];
+}
+/* 썸네일 SVG 를 칸에 넣는다. full 이면 그리던 판 그대로(data-psvb — 작은 칸용으로 내용에 맞춰 잘라 둔 viewBox 를 되돌린다). 가로/세로 비율을 돌려준다 */
+function mmSvgFit(host,thumb,full){
+  host.innerHTML=thumb||"";
+  var sv=host.querySelector("svg"); if(!sv)return null;
+  if(full){ var ovb=sv.getAttribute("data-psvb"); if(ovb)sv.setAttribute("viewBox",ovb); }
+  sv.setAttribute("width","100%");sv.setAttribute("height","100%");sv.setAttribute("preserveAspectRatio","xMidYMid meet");sv.removeAttribute("style");
+  var vb=String(sv.getAttribute("viewBox")||"").split(/[\s,]+/).map(Number);
+  return (vb.length===4&&vb[2]>0&&vb[3]>0)?vb[2]/vb[3]:null;
+}
+var MMV_PITCH='<svg class="mmv-pi" viewBox="0 0 105 68" aria-hidden="true"><rect x="1" y="1" width="103" height="66" rx="1"/><line x1="52.5" y1="1" x2="52.5" y2="67"/><circle cx="52.5" cy="34" r="9.15"/><rect x="1" y="13.84" width="16.5" height="40.32"/><rect x="87.5" y="13.84" width="16.5" height="40.32"/></svg>';
+var MMV_BIG='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+var mmVS={}, mmOldOpen={};
+function mmOldCount(m){ var pb=m&&m.phaseBoards,n=0; try{ if(pb&&pb.boards&&Array.isArray(pb.list))pb.list.forEach(function(ph){ if(mmBoardHas(pb.boards[ph&&ph[0]]))n++; }); }catch(_){} return n; }
+function mmOldApply(m){ var c=$("mb2Card"); if(c)c.classList.toggle("mb2-old-open",!!(m&&mmOldOpen[m.id])); }
+function mmCurItem(mid){ var vs=mmVS[mid]; if(!vs||!vs.lib)return null; return (mmLib||[]).find(function(x){return x&&x.libId===vs.lib;})||null; }
 function matchRenderMeetings(m){
   var card=$("matchMeetCard"); if(!card)return;
+  mmOldApply(m);
   if(!m||matchRole()==="player"){ card.hidden=true; return; }
   var paint=function(lib){ var cur=matchGet(); if(!cur||cur.id!==m.id)return; mmPaint(card,cur,lib||[]); };
   if(mmLib)paint(mmLib);
   mmLoadLib().then(paint);
 }
 function mmPaint(card,m,lib){
-  var list=matchMeetsFor(lib,m.id), can=mmCanLib(), uid=mmMyUid(), team=mmIsTeamWs(), fm={};
+  var list=matchMeetsFor(lib,m.id), can=mmCanLib(), uid=mmMyUid(), team=mmIsTeamWs(), fm={}, old=mmOldCount(m), oldOn=!!mmOldOpen[m.id];
   try{ fm=JSON.parse(localStorage.getItem("cs_vault_folder_meta_v1")||"{}")||{}; }catch(_){ fm={}; }
-  if(!list.length&&!can){ card.hidden=true; card.__sig=""; return; }
-  var sig=JSON.stringify([m.id,can,uid,team,list.map(function(d){return [d.libId,d.savedAt||0,d.editedAt||0,d.name||"",d.folder||"",(d.slides||[]).length,mmFolderShared(d.folder,fm)];})]);
-  card.hidden=false; if(card.__sig===sig)return; card.__sig=sig;
+  if(!list.length&&!can&&!old){ card.hidden=true; card.__sig=""; return; }
+  var vs=mmVS[m.id]||(mmVS[m.id]={lib:"",i:0});
+  /* 방금 가져오거나 만든 자료는 목록에 들어오는 순간 띄운다(보관함 읽기는 한 박자 늦게 온다 — 그 사이 옛 목록으로 그려도 고른 것을 잃지 않게) */
+  if(vs.want&&list.some(function(x){return x.libId===vs.want;})){ vs.lib=vs.want; vs.i=0; delete vs.want; }
+  else if(vs.wantAfter){ var nw=list.filter(function(x){return (+x.savedAt||0)>=vs.wantAfter;})[0]; if(nw){ vs.lib=nw.libId; vs.i=0; delete vs.wantAfter; } else if(Date.now()-vs.wantAfter>600000)delete vs.wantAfter; }
+  if(!list.some(function(x){return x.libId===vs.lib;})){ vs.lib=list.length?list[0].libId:""; vs.i=0; }
+  var d=list.find(function(x){return x.libId===vs.lib;})||null, sl=d?mmSlidesOf(d):[];
+  var sig=JSON.stringify([m.id,can,uid,team,vs.lib,old,oldOn,list.map(function(x){return [x.libId,x.type,x.savedAt||0,x.editedAt||0,x.name||"",x.folder||"",mmSlidesOf(x).length,mmFolderShared(x.folder,fm)];})]);
+  card.hidden=false; card.__mmM=m.id;
+  if(card.__sig===sig){ mmViewShow(card); return; }
+  card.__sig=sig;
   var acts=$("matchMeetActs"), body=$("matchMeetBody");
-  if(acts)acts.innerHTML=(can&&list.length)?'<button type="button" data-mm-link>보관함에서 연결</button><button type="button" class="mm-new" data-mm-new>＋ 경기 자료로 만들기</button>':"";
+  if(acts)acts.innerHTML=(can&&list.length)?'<button type="button" data-mm-link>보관함에서 가져오기</button><button type="button" class="mm-new" data-mm-new>＋ 새 미팅</button>':"";
   if(!body)return;
-  card.classList.toggle("is-empty",!list.length);   /* 2.953 — 비면 한 줄 */
+  card.classList.toggle("mmv-none",!list.length);
+  var h="";
   if(!list.length){
-    body.innerHTML='<div class="mm-empty"><div class="t"><b>이 경기 미팅 — 아직 없어요</b><span>상대 분석 · 선발 11 · 경기 준비 보드를 슬라이드로 옮겨서 시작해요</span></div>'
-      +'<button type="button" class="mm-new" data-mm-new>＋ 경기 자료로 미팅 만들기</button><button type="button" data-mm-link>보관함에서 연결</button></div>';
+    h+='<div class="mmv-empty">'+MMV_PITCH+'<div class="t"><b>이 경기 보드가 아직 없어요</b><span>보관함의 미팅이나 작전판을 가져오면 여기서 바로 보여요</span></div>'
+      +(can?'<div class="b"><button type="button" class="mm-new" data-mm-link>보관함에서 가져오기</button><button type="button" data-mm-new>＋ 경기 자료로 새 미팅</button></div>':'')+'</div>';
   }else{
-    body.innerHTML=list.map(function(d){
-      var sl=Array.isArray(d.slides)?d.slides:[], th=sl.slice(0,4).map(function(x,i){ var t=x&&x.thumb||(i===0?d.thumb:""); return t?'<div aria-hidden="true">'+t+'</div>':'<div aria-hidden="true">'+esc(String((x&&x.title)||"").slice(0,10))+'</div>'; }).join("");
-      if(sl.length>4)th+='<div class="more" aria-hidden="true">＋'+(sl.length-4)+'</div>';
-      var mine=mmMine(d,uid,team), who=team?((d.createdBy&&d.createdBy===uid)||!d.createdBy?"나":(d.createdByName||"다른 코치")):"";
-      var dt=+(d.editedAt||d.savedAt)||0, dl=dt?((new Date(dt).getMonth()+1)+"/"+new Date(dt).getDate()+" 수정"):"";
-      var share=team?(mmFolderShared(d.folder,fm)?"☁ 팀 공유":"내 자료(다른 코치에게 안 보여요)"):"";
-      var meta=["슬라이드 "+sl.length,who,dl,share].filter(Boolean).join(" · ");
-      return '<article class="mm-item">'+(th?'<div class="mm-th">'+th+'</div>':'')
-        +'<div class="mm-row"><div class="mm-info"><b>'+esc(d.name||"미팅")+'</b><small>'+esc(meta)+'</small></div>'
-        +'<button type="button" class="mm-show" data-mm-show="'+esc(d.libId)+'">▶ 슬라이드쇼</button>'
-        +'<button type="button" class="mm-open" data-mm-open="'+esc(d.libId)+'">'+(mine?"편집 ›":"보기 ›")+'</button>'
-        +((mine&&can)?'<button type="button" class="mm-x" data-mm-unlink="'+esc(d.libId)+'" aria-label="이 경기에서 떼기" title="이 경기에서 떼기 — 미팅은 보관함에 그대로">×</button>':'')
-        +'</div></article>';
-    }).join("");
+    if(list.length>1)h+='<div class="mmv-tabs" role="tablist" aria-label="이 경기에 이은 자료">'+list.map(function(x){ var on=x.libId===vs.lib; return '<button type="button" role="tab" aria-selected="'+on+'" class="'+(on?"on":"")+'" data-mmv-lib="'+esc(x.libId)+'"><b>'+esc(x.name||mmKindWord(x))+'</b><small>'+mmKindWord(x)+' '+mmSlidesOf(x).length+'</small></button>'; }).join("")+'</div>';
+    var mine=mmMine(d,uid,team), who=team?((d.createdBy&&d.createdBy===uid)||!d.createdBy?"나":(d.createdByName||"다른 코치")):"";
+    var dt=+(d.editedAt||d.savedAt)||0, dl=dt?((new Date(dt).getMonth()+1)+"/"+new Date(dt).getDate()+" 수정"):"";
+    var share=team?(mmFolderShared(d.folder,fm)?"☁ 팀 공유":"내 자료 · 다른 코치에게 안 보여요"):"";
+    var isB=(d.type==="board"), unit=isB?"페이지":"장";
+    var meta=[(d.name||mmKindWord(d)),mmKindWord(d)+" "+sl.length+unit,who,dl,share].filter(Boolean).join(" · ");
+    h+='<div class="mmv" data-mmv="'+esc(d.libId)+'">'
+      +'<div class="mmv-stage" tabindex="0" role="group" aria-roledescription="'+(isB?"작전판":"슬라이드")+'" aria-label="'+esc(d.name||mmKindWord(d))+' — 좌우로 넘기기"><div class="mmv-svg"></div>'
+      +'<button type="button" class="mmv-nav prev" data-mmv-go="-1" aria-label="이전 '+unit+'">‹</button><button type="button" class="mmv-nav next" data-mmv-go="1" aria-label="다음 '+unit+'">›</button>'
+      +'<span class="mmv-count" aria-live="polite"></span><span class="mmv-scn" hidden></span>'
+      +'<button type="button" class="mmv-big" data-mmv-big aria-label="크게 보기" title="크게 보기">'+MMV_BIG+'</button></div>'
+      +'<div class="mmv-info"><div class="mmv-txt"><b class="mmv-title"></b><ul class="mmv-pts"></ul></div>'
+      +'<div class="mmv-acts">'+(!isB?'<button type="button" class="mm-show" data-mm-show="'+esc(d.libId)+'">▶ 슬라이드쇼</button>':'')
+      +'<button type="button" class="mm-open" data-mm-open="'+esc(d.libId)+'">'+(mine?"편집 ›":"보기 ›")+'</button>'
+      +((mine&&can)?'<button type="button" class="mm-x" data-mm-unlink="'+esc(d.libId)+'" aria-label="이 경기에서 떼기" title="이 경기에서 떼기 — 자료는 보관함에 그대로">×</button>':'')+'</div></div>'
+      +(sl.length>1?'<div class="mmv-strip" role="tablist" aria-label="'+unit+' 고르기">'+sl.map(function(s,k){ return '<button type="button" role="tab" class="mmv-th" data-mmv-i="'+k+'" aria-label="'+(k+1)+'. '+esc(s.title||((isB?"페이지 ":"슬라이드 ")+(k+1)))+'"><span class="s">'+(s.thumb||'')+'</span><i>'+(k+1)+'</i><em>'+esc(s.title||((isB?"페이지 ":"슬라이드 ")+(k+1)))+'</em></button>'; }).join("")+'</div>':'')
+      +'<div class="mmv-meta">'+esc(meta)+'</div></div>';
   }
-  if(!card.__mmBound){ card.__mmBound=1;
-    card.addEventListener("click",function(e){
-      var b=e.target.closest&&e.target.closest("button"); if(!b||!card.contains(b))return;
-      var cur=matchGet(); if(!cur)return;
-      if(b.hasAttribute("data-mm-show")){ mmOpen(b.getAttribute("data-mm-show"),true); return; }
-      if(b.hasAttribute("data-mm-open")){ mmOpen(b.getAttribute("data-mm-open"),false); return; }
-      if(b.hasAttribute("data-mm-new")){ mmCreateSheet(cur); return; }
-      if(b.hasAttribute("data-mm-link")){ mmLinkSheet(cur); return; }
-      if(b.hasAttribute("data-mm-unlink")){ var id=b.getAttribute("data-mm-unlink"), d=(mmLib||[]).find(function(x){return x&&x.libId===id;});
-        psConfirm("‘"+((d&&d.name)||"이 미팅")+"’을 이 경기에서 뗄까요?\n미팅은 보관함에 그대로 남아요.",function(){ mmPost({type:"meetingLink",libId:id,ref:null}); }); return; }
-    });
-  }
+  if(old)h+='<div class="mmv-old"><span>예전 «경기 준비 보드»에 그린 것이 <b>'+old+'페이지</b> 있어요 — 미팅으로 옮기면 여기서 바로 보여요</span>'
+    +(can?'<button type="button" data-mm-oldmove>미팅으로 옮기기</button>':'')+'<button type="button" data-mm-oldopen aria-expanded="'+oldOn+'">'+(oldOn?"접기":"펼쳐 보기")+'</button></div>';
+  body.innerHTML=h;
+  mmViewShow(card);
+  mmBind(card);
+}
+/* 지금 장만 바꾼다 — 넘길 때마다 카드를 통째로 다시 그리지 않는다 */
+function mmViewShow(card){
+  var vs=mmVS[card.__mmM], v=card.querySelector(".mmv"); if(!vs||!v)return;
+  var d=mmCurItem(card.__mmM); if(!d)return;
+  var sl=mmSlidesOf(d), n=sl.length; if(!n)return;
+  vs.i=Math.max(0,Math.min(vs.i|0,n-1)); var s=sl[vs.i], isB=(d.type==="board");
+  var host=v.querySelector(".mmv-svg"), stage=v.querySelector(".mmv-stage"), key=d.libId+"#"+vs.i+"#"+(d.savedAt||0)+"#"+(d.editedAt||0);
+  if(host.__k!==key){ host.__k=key; var ar=s.thumb?mmSvgFit(host,s.thumb,true):null; if(!s.thumb)host.innerHTML='<div class="mmv-nothumb">'+esc(s.title||"그림이 아직 없어요")+'</div>'; stage.style.setProperty("--ar",String(ar||105/68)); }
+  var c=v.querySelector(".mmv-count"); if(c)c.textContent=(vs.i+1)+" / "+n;
+  var sc=v.querySelector(".mmv-scn"); if(sc){ sc.hidden=!(s.scenes>1); sc.textContent="장면 "+s.scenes+(isB?"":" · 슬라이드쇼에서 재생"); }
+  var t=v.querySelector(".mmv-title"); if(t)t.textContent=s.title||((isB?"페이지 ":"슬라이드 ")+(vs.i+1));
+  var p=v.querySelector(".mmv-pts"); if(p){ p.innerHTML=s.points.map(function(x){return '<li>'+esc(x)+'</li>';}).join(""); p.hidden=!s.points.length; }
+  var pv=v.querySelector(".mmv-nav.prev"), nx=v.querySelector(".mmv-nav.next"); if(pv)pv.disabled=vs.i<=0; if(nx)nx.disabled=vs.i>=n-1;
+  if(pv)pv.hidden=n<2; if(nx)nx.hidden=n<2;
+  var strip=v.querySelector(".mmv-strip");
+  if(strip){ [].forEach.call(strip.querySelectorAll(".mmv-th"),function(b){ var on=(+b.getAttribute("data-mmv-i"))===vs.i; b.classList.toggle("on",on); b.setAttribute("aria-selected",String(on)); });
+    var on=strip.querySelector(".mmv-th.on"); if(on){ var l=on.offsetLeft-strip.clientWidth/2+on.offsetWidth/2; if(Math.abs(strip.scrollLeft-l)>4){ try{strip.scrollTo({left:Math.max(0,l),behavior:"smooth"});}catch(_){strip.scrollLeft=Math.max(0,l);} } } }
+}
+function mmStep(card,dlt){ var vs=mmVS[card.__mmM]; if(!vs)return; vs.i=(vs.i|0)+dlt; mmViewShow(card); }
+function mmBind(card){
+  if(card.__mmBound2)return; card.__mmBound2=1;
+  card.addEventListener("click",function(e){
+    var cur=matchGet(); if(!cur)return;
+    var vs=mmVS[cur.id]||(mmVS[cur.id]={lib:"",i:0});
+    var b=e.target.closest&&e.target.closest("button");
+    if(!b){ var sv=e.target.closest&&e.target.closest(".mmv-svg"); if(sv&&card.contains(sv)&&!(card.__swiped&&Date.now()-card.__swiped<450))mmBigOpen(cur); return; }
+    if(!card.contains(b))return;
+    if(b.hasAttribute("data-mmv-lib")){ vs.lib=b.getAttribute("data-mmv-lib"); vs.i=0; card.__sig=""; mmPaint(card,cur,mmLib||[]); return; }
+    if(b.hasAttribute("data-mmv-go")){ mmStep(card,+b.getAttribute("data-mmv-go")); return; }
+    if(b.hasAttribute("data-mmv-i")){ vs.i=+b.getAttribute("data-mmv-i"); mmViewShow(card); return; }
+    if(b.hasAttribute("data-mmv-big")){ mmBigOpen(cur); return; }
+    if(b.hasAttribute("data-mm-show")){ mmOpen(b.getAttribute("data-mm-show"),true); return; }
+    if(b.hasAttribute("data-mm-open")){ mmOpen(b.getAttribute("data-mm-open"),false); return; }
+    if(b.hasAttribute("data-mm-new")){ mmCreateSheet(cur); return; }
+    if(b.hasAttribute("data-mm-link")){ mmLinkSheet(cur); return; }
+    if(b.hasAttribute("data-mm-oldmove")){ mmCreateSheet(cur,{only:["pages"]}); return; }
+    if(b.hasAttribute("data-mm-oldopen")){ mmOldOpen[cur.id]=!mmOldOpen[cur.id]; mmOldApply(cur); try{ mb2Draw(cur); }catch(_){} card.__sig=""; mmPaint(card,cur,mmLib||[]);
+      if(mmOldOpen[cur.id]){ var mc=$("mb2Card"); if(mc)setTimeout(function(){ try{mc.scrollIntoView({behavior:"smooth",block:"start"});}catch(_){} },60); } return; }
+    if(b.hasAttribute("data-mm-unlink")){ var id=b.getAttribute("data-mm-unlink"), d=(mmLib||[]).find(function(x){return x&&x.libId===id;});
+      psConfirm("‘"+((d&&d.name)||"이 자료")+"’을 이 경기에서 뗄까요?\n자료는 보관함에 그대로 남아요.",function(){ mmPost({type:"meetingLink",libId:id,ref:null}); }); return; }
+  });
+  card.addEventListener("keydown",function(e){
+    var st=e.target&&e.target.classList&&e.target.classList.contains("mmv-stage")?e.target:null; if(!st)return;
+    if(e.key==="ArrowLeft"||e.key==="ArrowRight"){ e.preventDefault(); mmStep(card,e.key==="ArrowLeft"?-1:1); }
+    else if(e.key==="Enter"||e.key===" "){ e.preventDefault(); var cur=matchGet(); if(cur)mmBigOpen(cur); }
+  });
+  /* 손가락으로 넘기기 — 운동장을 옆으로 쓸면 다음 장 */
+  var sx=null,sy=null;
+  card.addEventListener("pointerdown",function(e){ var st=e.target.closest&&e.target.closest(".mmv-stage"); if(!st||e.target.closest("button")){sx=null;return;} sx=e.clientX;sy=e.clientY; });
+  card.addEventListener("pointerup",function(e){ if(sx==null)return; var dx=e.clientX-sx,dy=e.clientY-sy; sx=null; if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3){ card.__swiped=Date.now(); mmStep(card,dx<0?1:-1); } });
+  card.addEventListener("pointercancel",function(){ sx=null; });
+}
+/* 크게 보기 — 화면(팀 운영)을 떠나지 않고 이 자리에서 전체로. 장면 재생은 «▶ 슬라이드쇼»(보관함)가 맡는다 */
+function mmBigOpen(m){
+  var vs=mmVS[m.id], d=mmCurItem(m.id); if(!vs||!d)return;
+  var sl=mmSlidesOf(d); if(!sl.length)return;
+  var ex=$("mmBig"); if(ex)ex.remove();
+  var ov=document.createElement("div"); ov.id="mmBig"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true"); ov.setAttribute("aria-label",(d.name||mmKindWord(d))+" — 크게 보기");
+  ov.innerHTML='<div class="mb-top"><b>'+esc(d.name||mmKindWord(d))+'</b><span class="mb-cnt"></span><button type="button" class="mb-x" aria-label="닫기">×</button></div>'
+    +'<div class="mb-stage"><div class="mb-svg"></div><button type="button" class="mb-nav prev" data-d="-1" aria-label="이전">‹</button><button type="button" class="mb-nav next" data-d="1" aria-label="다음">›</button></div>'
+    +'<div class="mb-cap"><b class="t"></b><div class="p"></div></div>';
+  document.body.appendChild(ov);
+  var isB=(d.type==="board");
+  var ar=105/68;
+  /* 그림 칸을 그림 비율 그대로 — 판의 배경이 viewBox 밖까지 칠해져 있어 칸이 크면 흰 면이 화면을 채운다 */
+  function fit(){ var st=ov.querySelector(".mb-stage"), host=ov.querySelector(".mb-svg"); if(!st||!host)return; var W=st.clientWidth, H=st.clientHeight; if(!(W>0&&H>0))return;
+    var w=W, h=W/ar; if(h>H){ h=H; w=H*ar; } host.style.width=Math.round(w)+"px"; host.style.height=Math.round(h)+"px"; host.style.left=Math.round((W-w)/2)+"px"; host.style.top=Math.round((H-h)/2)+"px"; }
+  function show(){ vs.i=Math.max(0,Math.min(vs.i|0,sl.length-1)); var s=sl[vs.i], host=ov.querySelector(".mb-svg");
+    if(s.thumb)ar=mmSvgFit(host,s.thumb,true)||105/68; else { ar=105/68; host.innerHTML='<div class="mmv-nothumb">'+esc(s.title||"그림이 아직 없어요")+'</div>'; } fit();
+    ov.querySelector(".mb-cnt").textContent=(vs.i+1)+" / "+sl.length;
+    ov.querySelector(".mb-cap .t").textContent=s.title||((isB?"페이지 ":"슬라이드 ")+(vs.i+1));
+    ov.querySelector(".mb-cap .p").innerHTML=s.points.map(function(x){return '<span>'+esc(x)+'</span>';}).join("")+((ar>1.2&&window.innerHeight>window.innerWidth*1.2)?'<span class="mb-rot">휴대폰을 가로로 돌리면 더 크게 보여요</span>':'');
+    var pv=ov.querySelector(".mb-nav.prev"),nx=ov.querySelector(".mb-nav.next"); pv.disabled=vs.i<=0; nx.disabled=vs.i>=sl.length-1; pv.hidden=nx.hidden=sl.length<2; }
+  function close(){ try{ov.remove();}catch(_){} document.removeEventListener("keydown",onKey,true); window.removeEventListener("resize",fit); var card=$("matchMeetCard"); if(card){ mmViewShow(card); try{ var st=card.querySelector(".mmv-stage"); if(st)st.focus({preventScroll:true}); }catch(_){} } }
+  function onKey(e){ if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); close(); } else if(e.key==="ArrowLeft"||e.key==="ArrowRight"){ e.preventDefault(); e.stopPropagation(); vs.i+=(e.key==="ArrowLeft"?-1:1); show(); } }
+  document.addEventListener("keydown",onKey,true); window.addEventListener("resize",fit);
+  var sx=null,sy=null,swiped=0;
+  ov.addEventListener("pointerdown",function(e){ if(e.target.closest("button")){sx=null;return;} sx=e.clientX;sy=e.clientY; });
+  ov.addEventListener("pointerup",function(e){ if(sx==null)return; var dx=e.clientX-sx,dy=e.clientY-sy; sx=null; if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.3){ swiped=Date.now(); vs.i+=(dx<0?1:-1); show(); } });
+  ov.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("button");
+    if(b){ if(b.classList.contains("mb-x")){close();return;} if(b.hasAttribute("data-d")){ vs.i+=+b.getAttribute("data-d"); show(); } return; }
+    if(Date.now()-swiped<450)return;
+    if(e.target===ov||(e.target.classList&&e.target.classList.contains("mb-stage")))close(); });
+  show(); setTimeout(function(){ try{ov.querySelector(".mb-x").focus();}catch(_){} },30);
 }
 function mmSheet(html){
   var ex=$("mmSheetOv"); if(ex)ex.remove();
@@ -12822,52 +13048,67 @@ function mmSheet(html){
   ov.addEventListener("click",function(e){ if(e.target===ov||(e.target.closest&&e.target.closest("[data-mm-x]")))close(); });
   return {ov:ov,close:close};
 }
-function mmCreateSheet(m){
+function mmCreateSheet(m,opts){
+  opts=opts||{};
   if(!mmCanLib()){ toast("보관함 편집 권한이 있어야 미팅을 만들 수 있어요"); return; }
   var parts=matchMeetParts(m), team=mmIsTeamWs(), opp=String(m.opponent||"").trim()||"상대";
-  var rows=parts.map(function(p){ return '<label class="'+(p.ok?"":"off")+'"><input type="checkbox" data-mm-part="'+p.key+'"'+(p.ok?" checked":" disabled")+'><b>'+esc(p.label)+'</b><span title="'+esc(p.detail)+'">'+esc(p.detail)+'</span></label>'; }).join("");
-  var sh=mmSheet('<div class="mm-t" id="mmSheetT">'+esc(opp)+'전 미팅 만들기</div>'
-    +'<p class="mm-p">경기 자료를 슬라이드로 옮겨요. 사본이라 나중에 경기 보드를 고쳐도 미팅은 그대로예요.</p>'
+  /* 2.965 — «기본 9장»: 보관함 › 만들기 › 미팅과 같은 판(BEST 11 · 하이·미드·로우블록 · 빌드업 · 전진·전개 · 침투·마무리 · 코너킥). 판은 보관함이 만든다 */
+  parts.push({key:"tpl",label:"기본 9장",ok:true,detail:"BEST 11 · 하이·미드·로우블록 · 빌드업 · 전진·전개 · 침투·마무리 · 코너킥",slides:[]});
+  var only=Array.isArray(opts.only)?opts.only:null;
+  var rows=parts.map(function(p){ var on=p.ok&&(!only||only.indexOf(p.key)>=0); return '<label class="'+(p.ok?"":"off")+'"><input type="checkbox" data-mm-part="'+p.key+'"'+(p.ok?(on?" checked":""):" disabled")+'><b>'+esc(p.label)+'</b><span title="'+esc(p.detail)+'">'+esc(p.detail)+'</span></label>'; }).join("");
+  var nm0=only?(opp+"전 경기 준비 보드"):(opp+"전 미팅");
+  var sh=mmSheet('<div class="mm-t" id="mmSheetT">'+esc(opp)+'전 '+(only?"경기 준비 보드를 미팅으로":"미팅 만들기")+'</div>'
+    +'<p class="mm-p">'+(only?"예전 경기 준비 보드에 그린 페이지를 보관함 미팅으로 옮겨요. 원래 보드는 지우지 않아요.":"경기 자료를 슬라이드로 옮겨요 — 사본이라 나중에 경기 자료를 고쳐도 미팅은 그대로예요.")+' 만든 미팅은 이 경기 «경기 보드»에 바로 떠요.</p>'
     +'<div class="mm-lab">가져올 것</div><div class="mm-parts">'+rows+'</div>'
-    +'<label class="mm-lab" for="mmName">이름</label><input class="mm-name" id="mmName" maxlength="40" value="'+esc(opp+"전 미팅")+'">'
+    +'<label class="mm-lab" for="mmName">이름</label><input class="mm-name" id="mmName" maxlength="40" value="'+esc(nm0)+'">'
     +(team?'<div class="mm-lab">저장 위치</div><div class="mm-seg" role="group" aria-label="저장 위치"><button type="button" data-mm-sh="1" aria-pressed="true">☁ 팀 공유<small>코치진 모두 볼 수 있어요</small></button><button type="button" data-mm-sh="0" aria-pressed="false">내 자료<small>나만</small></button></div>':'')
     +'<p class="mm-p">선수에게는 보이지 않아요 — 보관함은 코칭스태프 전용이에요.</p>'
     +'<div class="mm-foot"><button type="button" data-mm-x>취소</button><button type="button" class="go" data-mm-go></button></div>');
   var ov=sh.ov, shared=team;
-  function picked(){ var keys=[].slice.call(ov.querySelectorAll("[data-mm-part]:checked")).map(function(x){return x.getAttribute("data-mm-part");}); var sl=[]; parts.forEach(function(p){ if(keys.indexOf(p.key)>=0)sl=sl.concat(p.slides); }); return sl; }
-  function upd(){ var n=picked().length, g=ov.querySelector("[data-mm-go]"); g.textContent=n?("슬라이드 "+n+"장으로 만들기"):"고른 것이 없어요"; g.disabled=!n; }
+  function keys(){ return [].slice.call(ov.querySelectorAll("[data-mm-part]:checked")).map(function(x){return x.getAttribute("data-mm-part");}); }
+  function picked(){ var ks=keys(), sl=[]; parts.forEach(function(p){ if(p.key!=="tpl"&&ks.indexOf(p.key)>=0)sl=sl.concat(p.slides); }); return sl; }
+  function tplOn(){ return keys().indexOf("tpl")>=0; }
+  function xiOn(){ var xi=parts.find(function(p){return p.key==="xi";}); return !!(xi&&xi.ok&&keys().indexOf("xi")>=0); }
+  function count(){ return picked().length+(tplOn()?(xiOn()?8:9):0); }
+  function upd(){ var n=count(), g=ov.querySelector("[data-mm-go]"); g.textContent=n?("슬라이드 "+n+"장으로 만들기"):"고른 것이 없어요"; g.disabled=!n; }
   ov.addEventListener("change",function(e){ if(e.target&&e.target.hasAttribute&&e.target.hasAttribute("data-mm-part"))upd(); });
   ov.addEventListener("click",function(e){
     var b=e.target.closest&&e.target.closest("button"); if(!b)return;
     if(b.hasAttribute("data-mm-sh")){ shared=b.getAttribute("data-mm-sh")==="1"; ov.querySelectorAll("[data-mm-sh]").forEach(function(x){x.setAttribute("aria-pressed",String(x===b));}); return; }
-    if(b.hasAttribute("data-mm-go")){ var sl=picked(); if(!sl.length)return; var nm=String(($("mmName")&&$("mmName").value)||"").trim()||(opp+"전 미팅");
+    if(b.hasAttribute("data-mm-go")){ if(!count())return; var sl=picked(), nm=String(($("mmName")&&$("mmName").value)||"").trim()||nm0;
       if(!matchCanLeaveWork())return; sh.close();
-      mmPost({type:"meetingFromMatch",payload:{name:nm,shared:!!shared,ref:mmRefOf(m),slides:sl}}); }
+      (mmVS[m.id]||(mmVS[m.id]={lib:"",i:0})).wantAfter=Date.now()-3000;   /* 돌아오면 새 미팅을 띄운다 */
+      mmPost({type:"meetingFromMatch",payload:{name:nm,shared:!!shared,ref:mmRefOf(m),slides:sl,template:tplOn(),skipBest:xiOn()}}); }
   });
   upd();
   setTimeout(function(){ try{ var g=ov.querySelector("[data-mm-go]"); if(g&&!g.disabled)g.focus(); }catch(_){} },40);
 }
+/* 2.965 — 보관함에서 가져오기: 미팅과 작전판 둘 다. 작은 그림으로 고른다 */
 function mmLinkSheet(m){
-  if(!mmCanLib()){ toast("보관함 편집 권한이 있어야 연결할 수 있어요"); return; }
+  if(!mmCanLib()){ toast("보관함 편집 권한이 있어야 가져올 수 있어요"); return; }
   mmLoadLib().then(function(lib){
-    var uid=mmMyUid(), team=mmIsTeamWs(), all=(lib||[]).filter(function(d){return d&&(d.type||"")==="meeting"&&!d.deletedAt&&!d._deleted;})
+    var uid=mmMyUid(), team=mmIsTeamWs(), all=(lib||[]).filter(mmLinkable)
       .sort(function(a,b){return (+(b.editedAt||b.savedAt)||0)-(+(a.editedAt||a.savedAt)||0);}).slice(0,40);
     var opp=String(m.opponent||"").trim()||"상대";
-    var rows=all.map(function(d){ var here=d.matchRef&&String(d.matchRef.mid)===String(m.id), mine=mmMine(d,uid,team), sl=Array.isArray(d.slides)?d.slides.length:0;
-      var why=here?"이 경기에 연결됨":(!mine?"만든 사람만 연결할 수 있어요":(d.matchRef?("지금 "+(String(d.matchRef.opp||"").trim()||"다른 경기")+" "+String(mmDateLabel(d.matchRef.date)).split(" ")[0]+"에서 옮겨 와요"):""));
-      return '<button type="button" class="mm-pick" data-mm-lib="'+esc(d.libId)+'"'+((here||!mine)?" disabled":"")+'><b>'+esc(d.name||"미팅")+'</b><small>'+esc(["슬라이드 "+sl,why].filter(Boolean).join(" · "))+'</small></button>'; }).join("");
-    var sh=mmSheet('<div class="mm-t" id="mmSheetT">'+esc(opp)+'전에 미팅 연결</div>'
-      +'<p class="mm-p">보관함의 미팅을 이 경기와 이어요 — 미팅은 그대로, 이 경기 준비에 떠요.</p>'
-      +(rows?'<div class="mm-list">'+rows+'</div>':'<p class="mm-p">보관함에 미팅이 아직 없어요 — «＋ 경기 자료로 만들기»로 시작해요.</p>')
+    function row(d){ var here=d.matchRef&&String(d.matchRef.mid)===String(m.id), mine=mmMine(d,uid,team), sl=mmSlidesOf(d), unit=(d.type==="board")?"페이지":"장";
+      var why=here?"이 경기에 이어져 있어요":(!mine?"만든 사람만 이을 수 있어요":(d.matchRef?("지금 "+(String(d.matchRef.opp||"").trim()||"다른 경기")+" "+String(mmDateLabel(d.matchRef.date)).split(" ")[0]+"에서 옮겨 와요"):""));
+      var th=(sl[0]&&sl[0].thumb)||d.thumb||"";
+      return '<button type="button" class="mm-pick" data-mm-lib="'+esc(d.libId)+'"'+((here||!mine)?" disabled":"")+'><span class="mm-pt" aria-hidden="true">'+th+'</span><span class="mm-pw"><b>'+esc(d.name||mmKindWord(d))+'</b><small>'+esc([sl.length+unit,why].filter(Boolean).join(" · "))+'</small></span></button>'; }
+    var meets=all.filter(function(d){return d.type==="meeting";}), boards=all.filter(function(d){return d.type==="board";});
+    var body=(meets.length?'<div class="mm-lab">미팅</div><div class="mm-list">'+meets.map(row).join("")+'</div>':'')+(boards.length?'<div class="mm-lab">작전판</div><div class="mm-list">'+boards.map(row).join("")+'</div>':'');
+    var sh=mmSheet('<div class="mm-t" id="mmSheetT">'+esc(opp)+'전 경기 보드 — 보관함에서 가져오기</div>'
+      +'<p class="mm-p">보관함의 미팅·작전판을 이 경기와 이어요 — 자료는 보관함에 그대로 있고, 이 경기 준비에서 바로 보여요.</p>'
+      +(body||'<p class="mm-p">보관함에 미팅·작전판이 아직 없어요 — «＋ 경기 자료로 새 미팅»으로 시작해요.</p>')
       +'<div class="mm-foot"><button type="button" data-mm-x>닫기</button></div>');
     sh.ov.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-mm-lib]"); if(!b||b.disabled)return; sh.close(); mmPost({type:"meetingLink",libId:b.getAttribute("data-mm-lib"),ref:mmRefOf(m)}); });
   });
 }
 window.addEventListener("message",function(e){
   var d=e.data||{}; if(e.source!==parent||d.source!=="app"||d.type!=="meetingLinkResult")return;
-  if(d.ok)toast(d.linked?"이 경기에 미팅을 연결했어요 ✓":"이 경기에서 뗐어요 · 미팅은 보관함에 그대로");
-  else toast(d.reason==="denied"?"만든 사람만 경기와 이을 수 있어요":(d.reason==="gone"?"그 미팅을 보관함에서 찾지 못했어요":"연결하지 못했어요 — 다시 눌러 주세요"));
-  var m=matchGet(); if(m)matchRenderMeetings(m);
+  if(d.ok)toast(d.linked?"가져왔어요 ✓ · 경기 보드에서 바로 보여요":"이 경기에서 뗐어요 · 자료는 보관함에 그대로");
+  else toast(d.reason==="denied"?"만든 사람만 경기와 이을 수 있어요":(d.reason==="gone"?"그 자료를 보관함에서 찾지 못했어요":(d.reason==="type"?"미팅·작전판만 가져올 수 있어요":"연결하지 못했어요 — 다시 눌러 주세요")));
+  var m=matchGet(); if(m){ if(d.ok&&d.linked&&d.libId){ (mmVS[m.id]||(mmVS[m.id]={lib:"",i:0})).want=String(d.libId); var mc=$("matchMeetCard"); if(mc)mc.__sig=""; }   /* 2.965 — 방금 가져온 자료를 띄운다 */
+    matchRenderMeetings(m); }
 });
 window.addEventListener("storage",function(e){ if(!e||e.key!=="cs_lib_rev")return; try{ var m=matchGet(); if(m&&matchNav==="one")matchRenderMeetings(m); }catch(_){} });
 window.addEventListener("message",e=>{const d=e.data||{};
@@ -17150,7 +17391,7 @@ function matchStepFill(m,step){
   if(step==="prep"){
     try{ var sq=(m&&m.squad)||{}; if((sq.start||[]).length)n++; }catch(_){}
     try{ var pb=(m&&m.phaseBoards&&m.phaseBoards.boards)||{};
-      if(Object.keys(pb).some(function(k){var b=pb[k]||{};return (b.us||[]).length||(b.opp||[]).length;}))n++; }catch(_){}
+      if(Object.keys(pb).some(function(k){var b=pb[k]||{};return (b.us||[]).length||(b.opp||[]).length;})||(mmLib&&m&&matchMeetsFor(mmLib,m.id).length))n++; }catch(_){}   /* 2.965 — 경기 보드(보관함 자료)도 */
     return {n:n,t:ks.length+2};
   }
   if(step==="opp"){
