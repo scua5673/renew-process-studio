@@ -14569,10 +14569,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   var FTAG_KEY="cs_vault_folder_tags_v1";
   var folderTags={};try{folderTags=JSON.parse(localStorage.getItem(FTAG_KEY)||"{}")||{};}catch(_){folderTags={};}
   function folderTagsOf(p){return folderTags[p]||[];}
-  function setFolderTags(p,arr){if(arr&&arr.length)folderTags[p]=arr;else{delete folderTags[p];}try{localStorage.setItem(FTAG_KEY,JSON.stringify(folderTags));}catch(_){}}
+  function setFolderTags(p,arr){folderSettingsLoad();if(arr&&arr.length)folderTags[p]=arr;else{delete folderTags[p];}try{localStorage.setItem(FTAG_KEY,JSON.stringify(folderTags));}catch(_){}}
   var FMETA_KEY="cs_vault_folder_meta_v1";var folderMeta={};try{folderMeta=JSON.parse(localStorage.getItem(FMETA_KEY)||"{}")||{};}catch(_){folderMeta={};}
   function fmetaOf(p){return folderMeta[p]||{};}
-  function setFolderMeta(p,k,v){folderMeta[p]=folderMeta[p]||{};if(v)folderMeta[p][k]=v;else delete folderMeta[p][k];try{localStorage.setItem(FMETA_KEY,JSON.stringify(folderMeta));}catch(_){}}
+  function setFolderMeta(p,k,v){folderSettingsLoad();folderMeta[p]=folderMeta[p]||{};if(v)folderMeta[p][k]=v;else delete folderMeta[p][k];try{localStorage.setItem(FMETA_KEY,JSON.stringify(folderMeta));}catch(_){}}
   /* 1.532 — 공유는 폴더가 정한다. 하위 폴더는 상위의 공유를 물려받는다(sync.js libFolderShared 와 같은 규칙). */
   function folderSharedPath(p){                       /* 공유를 켠 조상 폴더 경로(자기 자신 포함), 없으면 "" */
     var f=String(p==null?"":p).trim(); if(!f)return "";
@@ -14609,7 +14609,47 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function vcatOf(k){for(var i=0;i<VCATS.length;i++)if(VCATS[i][0]===k)return {label:VCATS[i][1],c:VCATS[i][2]};return {label:'기타',c:'#8B93A3'};}
   function itemCat(d){return (d&&d.cat)||focusToCat(d&&d.focus);}
   function libSet(lib){return libWrite(lib).then(function(){libTouch();});}
-  function addFolder(name){if(vaultFolders.indexOf(name)<0){vaultFolders.push(name);try{saveVaultFolders();}catch(_){}}}
+  function addFolder(name){name=folderNorm(name);if(!name||name.indexOf("__")===0)return;if(vaultFolders.indexOf(name)<0){vaultFolders.push(name);try{saveVaultFolders();}catch(_){}}}
+  /* ══ 2.967 · 폴더 경로는 한 모양으로 ══════════════════════════════════════════
+     오류 제보(10/8 «팀공유 폴더 생성/삭제 과정에서 잘 안됩니다! 삭제가 되지 않습니다»), 서버 실측:
+     팀 폴더 목록에 «팀 공유/공격 /공격-수비»(공격 뒤 띄어쓰기)와 «팀 공유/공격/공격-수비»가 함께 있었다.
+     새 폴더 이름의 «/» 는 경로 구분자라 «공격 /공격-수비» 가 «공격 »(끝 공백) 폴더가 되고,
+     자가 치유는 칸마다 공백을 지워 «공격»을 따로 만든다 → 똑같아 보이는 «공격»이 둘.
+     삭제는 글자 그대로 비교해서, 빈 쪽을 지우면 자료가 안 옮겨지고 다음 그리기에서 자가 치유가 되살렸다.
+     이제 경로는 이 함수들 한 곳에서 만든다: 칸마다 공백 정리 · 빈 칸 제거. 이름 칸에 친 «/» 는 경로로 쪼개지 않는다(／).
+     아래 묶음은 화면·저장을 모르는 순수 함수다(tests/vault-folder-path-2967.test.cjs 가 잘라 쓴다). */
+  function folderNorm(p){var s=String(p==null?"":p);if(s.indexOf("__")===0)return s;return s.split("/").map(function(x){return x.trim();}).filter(Boolean).join("/");}
+  function folderJoin(parent,name){var leaf=String(name==null?"":name).replace(/\//g,"\uFF0F").trim();if(!leaf)return "";return folderNorm(parent?parent+"/"+leaf:leaf);}
+  function folderIn(f,full){f=String(f||"");return !!full&&(f===full||f.indexOf(full+"/")===0);}
+  /* 폴더 목록: src 아래를 ndest 로 옮긴다(ndest==null 이면 지운다) · 중복은 하나로 */
+  function folderListMove(list,src,ndest){var seen={},out=[];(list||[]).forEach(function(fp){var np=fp;if(folderIn(fp,src)){if(ndest==null)return;np=ndest+String(fp).slice(src.length);}if(!np||seen[np])return;seen[np]=1;out.push(np);});return out;}
+  function folderListNorm(list){var seen={},out=[];(list||[]).forEach(function(p){var np=folderNorm(p);if(!np||seen[np])return;seen[np]=1;out.push(np);});return out;}
+  /* 자료: 옮긴 자료는 수정 시각을 올린다 — 안 올리면 같은 사람의 다른 기기가 그사이 저장한 서버 판이
+     «더 새로운 쪽이 이긴다»(sync.js _syncLibrary)에서 이겨, 옮긴 자료가 옛 폴더로 되돌아갔다 */
+  function folderItemsMove(lib,src,ndest,now){var n=0;(lib||[]).forEach(function(it){if(!it||!folderIn(it.folder,src))return;it.folder=ndest+String(it.folder).slice(src.length);it.editedAt=now;n++;});return n;}
+  function folderItemsTo(lib,full,dest,now){var n=0;(lib||[]).forEach(function(it){if(!it||!folderIn(it.folder,full))return;it.folder=dest||"";it.editedAt=now;n++;});return n;}
+  /* 남(다른 코치)의 자료 — 주인만 옮길 수 있다. 내 기기에서만 옮기면 서버에는 그대로라 폴더가 되살아난다 */
+  function folderForeign(lib,full,isMine){return (lib||[]).filter(function(it){return !!it&&folderIn(it.folder,full)&&!isMine(it);});}
+  /* 폴더 정보(공유·색·고정)와 태그가 폴더를 따라간다. 합쳐질 때는 이미 있던 쪽을 살리고 빈 칸만 채운다 */
+  function folderMapMove(map,src,ndest,merge){var out={},moved=[],ch=false;Object.keys(map||{}).forEach(function(k){if(folderIn(k,src)){ch=true;if(ndest!=null)moved.push([ndest+k.slice(src.length),map[k]]);}else out[k]=map[k];});moved.forEach(function(kv){out[kv[0]]=Object.prototype.hasOwnProperty.call(out,kv[0])?merge(out[kv[0]],kv[1]):kv[1];});return ch?out:null;}
+  function folderMapNorm(map,merge){var out={},ch=false;Object.keys(map||{}).forEach(function(k){var nk=folderNorm(k);if(nk!==k)ch=true;if(!nk)return;out[nk]=Object.prototype.hasOwnProperty.call(out,nk)?merge(out[nk],map[k]):map[k];});return ch?out:null;}
+  function folderMetaMerge(a,b){return Object.assign({},b||{},a||{});}
+  function folderTagMerge(a,b){var u=(a||[]).slice();(b||[]).forEach(function(x){if(u.indexOf(x)<0)u.push(x);});return u;}
+  /* 이미 저장된 자료의 경로 정리 — 내 자료만 시각을 올려 서버로 보낸다(남의 자료는 이 기기 화면만 맞춘다) */
+  function folderLibNorm(lib,now,isMine){var n=0;(lib||[]).forEach(function(it){if(!it)return;var f=String(it.folder||"");if(!f||f.indexOf("__")===0)return;var nf=folderNorm(f);if(nf===f)return;it.folder=nf;if(isMine(it))it.editedAt=now;n++;});return n;}
+  /* ══ 2.967 · 순수 함수 끝 ══ */
+  function folderSettingsLoad(){
+    try{folderMeta=JSON.parse(localStorage.getItem(FMETA_KEY)||"{}")||{};}catch(_){}
+    try{folderTags=JSON.parse(localStorage.getItem(FTAG_KEY)||"{}")||{};}catch(_){}
+  }
+  function folderSettingsSave(m,t){
+    if(m){folderMeta=m;try{localStorage.setItem(FMETA_KEY,JSON.stringify(folderMeta));}catch(_){}}
+    if(t){folderTags=t;try{localStorage.setItem(FTAG_KEY,JSON.stringify(folderTags));}catch(_){}}
+    return !!(m||t);
+  }
+  function folderSettingsMove(src,ndest){folderSettingsLoad();return folderSettingsSave(folderMapMove(folderMeta,src,ndest,folderMetaMerge),folderMapMove(folderTags,src,ndest,folderTagMerge));}
+  function folderSettingsNorm(){folderSettingsLoad();return folderSettingsSave(folderMapNorm(folderMeta,folderMetaMerge),folderMapNorm(folderTags,folderTagMerge));}
+  function folderForeignToast(full,n,verb){try{toast("‘"+folderLeaf(full)+"’에 다른 코치의 자료 "+n+"개가 있어 "+verb+" 수 없어요 — 그 자료는 만든 코치만 옮길 수 있어요");}catch(_){}}
   // 스타일
   var st=document.createElement("style");
   st.textContent=
@@ -15088,7 +15128,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var tg=card.querySelector('#pssTags');tg.value=(defTags||[]).join(", ");
     try{var _sg=card.querySelector('#pssSugg');var _all=(window.__vaultAllTags||[]);if(_sg&&_all.length){var _hl=document.createElement('span');_hl.textContent='추천:';_hl.style.cssText='font-size:11px;color:#8A9099;align-self:center';_sg.appendChild(_hl);_all.slice(0,8).forEach(function(t){var b=document.createElement('button');b.type='button';b.textContent='+ #'+t;b.style.cssText='font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--line,#d2d6dd);background:var(--panel2,#F1F2F4);color:inherit;cursor:pointer;font-family:inherit';b.onclick=function(e){e.stopPropagation();var cur=(tg.value||'').split(',').map(function(x){return x.trim();}).filter(Boolean);if(cur.indexOf(t)<0){cur.push(t);tg.value=cur.join(', ');}};_sg.appendChild(b);});}}catch(_){}
     var _newFolder=null;
-    fl.onchange=function(){ if(fl.value==='__new'){ psPrompt('새 폴더 이름','',function(nn){ if(nn&&nn.trim()){ _newFolder=nn.trim(); try{addFolder(_newFolder);}catch(_){} var o=document.createElement('option');o.value=_newFolder;o.textContent=_newFolder; fl.insertBefore(o, fl.options[fl.options.length-1]); fl.value=_newFolder; } else { fl.value=defFolder||''; } },function(){ fl.value=defFolder||''; }); } };
+    fl.onchange=function(){ if(fl.value==='__new'){ psPrompt('새 폴더 이름','',function(nn){ if(folderJoin("",nn)){ _newFolder=folderJoin("",nn); try{addFolder(_newFolder);}catch(_){} var o=document.createElement('option');o.value=_newFolder;o.textContent=_newFolder; fl.insertBefore(o, fl.options[fl.options.length-1]); fl.value=_newFolder; } else { fl.value=defFolder||''; } },function(){ fl.value=defFolder||''; }); } };
     function done(res){ try{ov.remove();}catch(_){} try{cb(res);}catch(_){} }
     card.querySelector('#pssCancel').onclick=function(e){e.stopPropagation();done(null);};
     card.querySelector('#pssOk').onclick=function(e){e.stopPropagation();var name=(nm.value||'').trim()||defName;var folder=(fl.value==='__new')?(_newFolder||''):fl.value;var tags=(tg.value||'').split(',').map(function(x){return x.trim();}).filter(Boolean);done({name:name,folder:folder,tags:tags});};
@@ -15607,13 +15647,19 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
      끌어다 놓기 마무리(fin)가 부르던 이 2-인자 이동이 그 시트로 들어갔다 →
      `d` 에 libId 문자열이 들어가 `d.libId` 가 undefined → 시트에서 폴더를 골라도 **아무 것도 안 옮겨졌다**.
      이름을 나눠 둔다(2.363 의 svgGrowth 와 같은 사고). 새 이름 지을 땐 먼저 grep 할 것. */
-  function vaultMoveItemTo(libId,dest){libGet().then(function(lib){var it=lib.find(function(x){return x.libId===libId;});if(it){it.folder=dest||"";libSet(lib).then(function(){renderDrillFiles();});}});}
+  function vaultMoveItemTo(libId,dest){dest=folderNorm(dest);libGet().then(function(lib){var it=lib.find(function(x){return x.libId===libId;});if(it){if(!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있어요");}catch(_){}return;}it.folder=dest||"";it.editedAt=Date.now();libSet(lib).then(function(){renderDrillFiles();});}});}   /* 2.967 — 경로 정리·시각 올림·남의 자료 막음 */
   function vaultMoveFolder(src,dest){
-    if(src==null)return; dest=dest||""; var leaf=folderLeaf(src); var ndest=dest?dest+"/"+leaf:leaf;
-    if(ndest===src)return; if(ndest===src)return; if(ndest.indexOf(src+"/")===0||dest===src){try{toast&&toast("그 폴더 안으로는 못 옮겨요");}catch(_){}return;}
-    var seen={}; vaultFolders=vaultFolders.map(function(fp){if(fp===src)return ndest;if(fp.indexOf(src+"/")===0)return ndest+fp.slice(src.length);return fp;}).filter(function(fp){if(seen[fp])return false;seen[fp]=1;return true;});
-    try{saveVaultFolders();}catch(_){}
-    libGet().then(function(lib){lib.forEach(function(it){var f=it.folder||"";if(f===src)it.folder=ndest;else if(f.indexOf(src+"/")===0)it.folder=ndest+f.slice(src.length);});libSet(lib).then(function(){var c=libFilter.folder||"";if(c===src)libFilter.folder=ndest;else if(c.indexOf(src+"/")===0)libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});});
+    /* 2.967 — 경로 정리 · 남의 자료가 있으면 막음 · 옮긴 자료 시각 올림 · 공유·색·태그가 따라감 */
+    if(src==null)return; dest=folderNorm(dest); var leaf=String(src).slice(String(src).lastIndexOf("/")+1); var ndest=folderNorm(dest?dest+"/"+leaf:leaf);
+    if(!ndest||ndest===src)return; if(ndest.indexOf(src+"/")===0||dest===src){try{toast&&toast("그 폴더 안으로는 못 옮겨요");}catch(_){}return;}
+    libGet().then(function(lib){
+      var fx=folderForeign(lib,src,itemMine); if(fx.length){folderForeignToast(src,fx.length,"옮길");return;}
+      vaultFolders=folderListMove(vaultFolders,src,ndest);
+      try{saveVaultFolders();}catch(_){}
+      folderSettingsMove(src,ndest);
+      folderItemsMove(lib,src,ndest,Date.now());
+      libSet(lib).then(function(){var c=libFilter.folder||"";if(folderIn(c,src))libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});
+    });
   }
   function _zoneAt(x,y){var best=null,ba=1e15;for(var i=0;i<dropZones.length;i++){var z=dropZones[i];if(!z.el||!z.el.getBoundingClientRect)continue;var r=z.el.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom){var ar=r.width*r.height;if(ar<ba){ba=ar;best=z;}}}return best;}
   function _clearZoneHi(){dropZones.forEach(function(z){try{z.el.classList.remove("vdrop");}catch(_){}});}
@@ -15629,10 +15675,17 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function dropTarget(el,dest){dropZones.push({el:el,dest:dest});}
   /* 팀 공유 — 메뉴·미리보기 버튼·'☁ 팀 공유' 드롭이 전부 이 한 함수를 쓴다(1.490) */
       function _renameFolder(src,ndest){
-    if(!ndest||ndest===src)return;
-    var seen={};vaultFolders=vaultFolders.map(function(fp){if(fp===src)return ndest;if(fp.indexOf(src+"/")===0)return ndest+fp.slice(src.length);return fp;}).filter(function(fp){if(seen[fp])return false;seen[fp]=1;return true;});
-    try{saveVaultFolders();}catch(_){}
-    libGet().then(function(lib){var now=Date.now();lib.forEach(function(it){var f=it.folder||"",changed=false;if(f===src){it.folder=ndest;changed=true;}else if(f.indexOf(src+"/")===0){it.folder=ndest+f.slice(src.length);changed=true;}if(changed){it.editedAt=now;it.savedAt=Math.max(+it.savedAt||0,now);}});libSet(lib).then(function(){var c=libFilter.folder||"";if(c===src)libFilter.folder=ndest;else if(c.indexOf(src+"/")===0)libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});});
+    /* 2.967 — 공유 표시가 옛 이름에 남아 «공유 폴더 이름을 바꾸면 공유가 꺼지던» 것: 정보·태그가 새 이름을 따라간다 */
+    ndest=folderNorm(ndest); if(!ndest||ndest===src)return;
+    libGet().then(function(lib){
+      var fx=folderForeign(lib,src,itemMine); if(fx.length){folderForeignToast(src,fx.length,"이름을 바꿀");return;}
+      vaultFolders=folderListMove(vaultFolders,src,ndest);
+      try{saveVaultFolders();}catch(_){}
+      folderSettingsMove(src,ndest);
+      var now=Date.now(); lib.forEach(function(it){if(it&&folderIn(it.folder,src))it.savedAt=Math.max(+it.savedAt||0,now);});
+      folderItemsMove(lib,src,ndest,now);
+      libSet(lib).then(function(){var c=libFilter.folder||"";if(folderIn(c,src))libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});
+    });
   }
   /* ══ 2.518 · 폴더 공유 토글 한 곳(사용자 "폴더별 공유를 쉽게") ══════════════════
      전에는 이 규칙이 우클릭 메뉴 안에만 있었다 — 아이패드에서는 ⋯ 를 찾아 들어가야 했다.
@@ -15657,7 +15710,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     closeVMenu();var m=document.createElement("div");m.className="vmenu";m.id="vMenu";
     function mi(l,fn){var b=document.createElement("button");b.textContent=l;b.onclick=function(e){e.stopPropagation();closeVMenu();fn();};m.appendChild(b);}
     mi("열기",function(){libFilter.folder=full;renderDrillFiles();});
-    mi("이름 변경",function(){psPrompt("폴더 이름",folderLeaf(full),function(nn){if(nn&&nn.trim()){_renameFolder(full,(parent?parent+"/":"")+nn.trim());}});});
+    mi("이름 변경",function(){psPrompt("폴더 이름",folderLeaf(full),function(nn){if(nn&&nn.trim()){_renameFolder(full,folderJoin(parent,nn));}});});
     mi("태그",function(){var cur=folderTagsOf(full).join(", ");psPrompt("폴더 태그 (쉼표로 구분)",cur,function(v){setFolderTags(full,v.split(",").map(function(x){return x.trim();}).filter(Boolean));try{toast("태그 저장됨 \u2713");}catch(_){}renderDrillFiles();});});
     mi(fmetaOf(full).pin?"고정 해제":"즐겨찾기 고정",function(){setFolderMeta(full,"pin",!fmetaOf(full).pin);renderDrillFiles();});
     /* 1.532 — 공유는 폴더 단위. 이 스위치가 곧 '팀에 공개'다(자료를 옮길 필요 없음).
@@ -15675,16 +15728,26 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     setTimeout(function(){document.addEventListener("click",closeVMenu,{once:true});},0);
   }
   function vaultDelFolder(full){
+    /* 2.967 — 남의 자료가 있으면 막고 이유를 말한다(예전엔 내 기기에서만 옮겨 놓아 폴더가 되살아났다) ·
+       옮긴 자료 시각 올림 · 지운 폴더의 공유·색·태그도 지운다(같은 이름으로 다시 만들면 묻지 않고 공유되던 것) ·
+       확인을 누른 뒤 보관함을 다시 읽어 그 사이 바뀐 것을 덮지 않는다 */
     var subs=folderChildren(full).length;
+    var parent=full.indexOf("/")>=0?full.slice(0,full.lastIndexOf("/")):"";
     libGet().then(function(lib){
-      var cnt=lib.filter(function(it){var f=it.folder||"";return f===full||f.indexOf(full+"/")===0;}).length;
-      var msg=(cnt||subs)?("‘"+folderLeaf(full)+"’ 폴더와 하위폴더를 지우고, 항목 "+cnt+"개는 상위 폴더로 옮길까요?"):("‘"+folderLeaf(full)+"’ 폴더를 삭제할까요?");
+      var fx=folderForeign(lib,full,itemMine); if(fx.length){folderForeignToast(full,fx.length,"지울");return;}
+      var inside=lib.filter(function(it){return !!it&&folderIn(it.folder,full);}), cnt=inside.length;
+      var unshare=cnt>0&&!isFolderShared(parent)&&inside.some(function(it){return itemShared(it);});
+      var msg=(cnt||subs)?("‘"+folderLeaf(full)+"’ 폴더와 하위폴더를 지우고, 항목 "+cnt+"개는 "+(parent?("‘"+folderLeaf(parent)+"’"):"폴더 밖")+"으로 옮길까요?"):("‘"+folderLeaf(full)+"’ 폴더를 삭제할까요?");
+      if(unshare)msg+="\n\n공유 중인 자료라, 옮기면 팀에서는 보이지 않게 됩니다.";
       psConfirm(msg,function(){
-      var parent=full.indexOf("/")>=0?full.slice(0,full.lastIndexOf("/")):"";
-      lib.forEach(function(it){var f=it.folder||"";if(f===full||f.indexOf(full+"/")===0)it.folder=parent;});
-      vaultFolders=vaultFolders.filter(function(fp){return !(fp===full||fp.indexOf(full+"/")===0);});
-      try{saveVaultFolders();}catch(_){}
-      libSet(lib).then(function(){var c=libFilter.folder||"";if(c===full||c.indexOf(full+"/")===0)libFilter.folder=parent;renderDrillFiles();});
+        libGet().then(function(lib2){
+          var fx2=folderForeign(lib2,full,itemMine); if(fx2.length){folderForeignToast(full,fx2.length,"지울");return;}
+          folderItemsTo(lib2,full,parent,Date.now());
+          vaultFolders=folderListMove(vaultFolders,full,null);
+          try{saveVaultFolders();}catch(_){}
+          folderSettingsMove(full,null);
+          libSet(lib2).then(function(){var c=libFilter.folder||"";if(folderIn(c,full))libFilter.folder=parent;renderDrillFiles();});
+        });
       });
     });
   }
@@ -15841,7 +15904,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         +"\n\n※ 「"+folderLeaf(src||d.folder||"")+"」 폴더 자체의 공유는 그대로입니다.",
         function(){ libGet().then(function(lib){
           var it=lib.filter(function(x){return x.libId===d.libId;})[0]; if(!it)return;
-          it.folder=back; delete it._shareBack;
+          it.folder=folderNorm(back); delete it._shareBack; it.editedAt=Date.now();   /* 2.967 — 다른 기기 옛 판에 지지 않게 */
           libSet(lib).then(function(){ done((d.name||"자료")+" 공유를 껐어요"); });
         }); });
     }else{
@@ -15852,7 +15915,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           if(!fmetaOf(VAULT_SHARE_FOLDER).shared)setFolderMeta(VAULT_SHARE_FOLDER,"shared",true);
           libGet().then(function(lib){
             var it=lib.filter(function(x){return x.libId===d.libId;})[0]; if(!it)return;
-            it._shareBack=String(it.folder||""); it.folder=VAULT_SHARE_FOLDER;
+            it._shareBack=String(it.folder||""); it.folder=VAULT_SHARE_FOLDER; it.editedAt=Date.now();   /* 2.967 */
             libSet(lib).then(function(){ done((d.name||"자료")+" 팀과 공유 시작 ☁"); });
           });
         });
@@ -16123,11 +16186,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var sub=document.createElement("div");sub.style.cssText="font-size:12px;color:var(--txt-dim,#9aa4b3);margin:3px 0 13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";sub.textContent=(d.name||"항목");
       card.appendChild(head);card.appendChild(sub);
       function close(){try{ov.remove();}catch(_){}}
-      function moveTo(path){libGet().then(function(l2){var it=l2.find(function(x){return x.libId===d.libId;});if(it){it.folder=path||"";libSet(l2).then(function(){try{toast(path?("‘"+folderLeaf(path)+"’로 이동됨"):"보관함으로 이동됨");}catch(_){}renderDrillFiles();});}close();});}
+      function moveTo(path){path=folderNorm(path);libGet().then(function(l2){var it=l2.find(function(x){return x.libId===d.libId;});if(it&&!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있어요");}catch(_){}close();return;}if(it){it.folder=path||"";it.editedAt=Date.now();libSet(l2).then(function(){try{toast(path?("‘"+folderLeaf(path)+"’로 이동됨"):"보관함으로 이동됨");}catch(_){}renderDrillFiles();});}close();});}
       var nb=document.createElement("button");
       nb.style.cssText="display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1.5px dashed var(--blue,#3a6df0);background:rgba(58,109,240,.08);color:var(--blue,#3a6df0);font-family:inherit;font-size:14px;font-weight:800;padding:13px;border-radius:12px;cursor:pointer;margin-bottom:10px;flex:0 0 auto;";
       nb.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>새 폴더 만들어 이동';
-      nb.onclick=function(){var base=(libFilter.folder&&libFilter.folder.indexOf("__")!==0)?libFilter.folder:"";psPrompt(base?("‘"+folderLeaf(base)+"’ 안에 새 폴더 이름"):"새 폴더 이름","",function(nm){nm=(nm||"").trim();if(!nm)return;var np=base?base+"/"+nm:nm;addFolder(np);moveTo(np);});};
+      nb.onclick=function(){var base=(libFilter.folder&&libFilter.folder.indexOf("__")!==0)?libFilter.folder:"";psPrompt(base?("‘"+folderLeaf(base)+"’ 안에 새 폴더 이름"):"새 폴더 이름","",function(nm){var np=folderJoin(base,nm);if(!np)return;addFolder(np);moveTo(np);});};
       card.appendChild(nb);
       var list=document.createElement("div");list.style.cssText="overflow-y:auto;display:flex;flex-direction:column;gap:5px;flex:1;-webkit-overflow-scrolling:touch;";
       function frow(path,label,depth,cnt){
@@ -16262,7 +16325,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         vv.appendChild(b); });
       bar.appendChild(vv);}
     {var addf=document.createElement("button");addf.className="vchip add";addf.textContent="＋ 새 폴더";
-      addf.onclick=function(){psPrompt(path?("‘"+folderLeaf(path)+"’ 안에 새 폴더 이름"):"새 폴더 이름","",function(nm){if(nm&&nm.trim()){var np=path?path+"/"+nm.trim():nm.trim();addFolder(np);renderDrillFiles();}});};bar.appendChild(addf);}
+      addf.onclick=function(){psPrompt(path?("‘"+folderLeaf(path)+"’ 안에 새 폴더 이름"):"새 폴더 이름","",function(nm){var np=folderJoin(path,nm);if(np){addFolder(np);renderDrillFiles();}});};bar.appendChild(addf);}
   }
 
   /* ══ 2.518 · 뒤로 · 앞으로 — 파인더처럼 옮겨 다닌 자취를 되짚는다 ═══════════════ */
@@ -16736,6 +16799,16 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         }
       }catch(_){}
       try{ paintLocalOnlyNotice(lib); }catch(_){}
+      /* 2.967 — 이미 저장된 경로를 한 모양으로(«팀 공유/공격 /공격-수비» → «팀 공유/공격/공격-수비»).
+         바뀐 게 있을 때만 쓰므로 한 번 정리되면 다음부터는 아무 일도 하지 않는다. 폴더 정보도 여기서 다시 읽는다
+         (예전엔 앱을 열 때 한 번만 읽어, 다른 기기가 켠 공유를 이 기기 화면이 몰랐다) */
+      try{
+        if(folderLibNorm(lib,Date.now(),itemMine))libSet(lib);
+        var _nl=folderListNorm(vaultFolders);
+        if(JSON.stringify(_nl)!==JSON.stringify(vaultFolders)){vaultFolders=_nl;try{saveVaultFolders();}catch(_){}}
+        folderSettingsNorm();
+        if(libFilter.folder&&String(libFilter.folder).indexOf("__")!==0)libFilter.folder=folderNorm(libFilter.folder);
+      }catch(_){}
       /* 폴더 자가 치유 — 폴더 목록(cs_vault_folders_v1)이 항목과 별도 키라, 이 키만 유실되면
          폴더 안 항목이 전부 고아가 된다(실제 제보: "전체 자료 27개라는데 훈련·폴더가 안 나와").
          항목의 folder 경로(조상 포함)에서 목록을 재구성해 어떤 경우에도 폴더가 보이게 한다. */
@@ -16808,7 +16881,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
             밖(sess-wrap)으로 빼고 나서 같은 내용이면 조기 return — 바가 제자리(vx-main-head)로 못 돌아가
             렌더마다 헤더가 두 모양을 오갔다. 구출은 진짜로 비우기 직전에만. 서명에 보기 3종(__vaultView)도 넣어
             카드↔크게 전환이 같은 서명으로 삼켜지던 것도 고침. */
-      try{var _sig=JSON.stringify([libFilter.folder,libFilter.sort||"",libFilter.cats||[],libFilter.tag||"",qTok,ft,_fcs,window.__vaultView||"",
+      /* 2.967 — 서명에 폴더 목록·폴더 정보(공유·색·고정)·태그도 넣는다. 빠져 있어서 자료가 안 바뀌는 폴더 일 — 빈 폴더 만들기·지우기, ☁ 공유 켜기·끄기 —
+         은 «같은 내용»으로 보고 조기 return 해 화면이 그대로였다(오류 제보 «팀공유 폴더 생성/삭제가 잘 안 됨», 브라우저 시험으로 재현). */
+      try{var _sig=JSON.stringify([libFilter.folder,libFilter.sort||"",libFilter.cats||[],libFilter.tag||"",qTok,ft,_fcs,window.__vaultView||"",vaultFolders,folderMeta,folderTags,
           arr.map(function(d){return d.libId+":"+(d.savedAt||0)+":"+(d.name||"")+":"+((d.tags||[]).join(","))+":"+(d.folder||"")+":"+(d.fav?1:0)+":"+((d.matchRef&&d.matchRef.mid)||"");})]);   /* 2.928 — 경기 연결도 */
         if(box.__vxSig===_sig&&box.querySelector(".vx-items")){
           var _pid=window.__vaultPreviewId;
