@@ -6,10 +6,10 @@ import {fileURLToPath} from 'node:url';
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const suites={
-  board:['gamemodel-sync','board-depth','board-drag-performance','board-color-palette','vault-board-isolation','board-fmstadio','board-savebar','board-vault-save','vault-folder-delete','vault-folder-visibility','anim-erase-export','meeting-names-video','team-library-load','gamemodel-anim'],
+  board:['gamemodel-sync','board-depth','board-drag-performance','board-color-palette','vault-board-isolation','board-fmstadio','board-savebar','board-vault-save','vault-folder-delete','vault-folder-visibility','anim-erase-export','anim-export-once','meeting-names-video','meeting-upgrade','team-library-load','gamemodel-anim','board-feedback-2975'],
   identity:['session-team-picker','month-quick-detail','admin-content-play','admin-user-made','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery','schedule-phone','phone-app-more'],
   storage:['storage-safety','library-insert-ack','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery'],
-  idp:['match-board-tools','match-board-vault','availability','idp-recovery','idp-story-dedup','support','squad-phone','scouting-integration','review-training','idp-coach-goals']
+  idp:['match-board-tools','match-ob-tray','match-board-vault','availability','idp-recovery','idp-story-dedup','support','squad-phone','scouting-integration','review-training','idp-coach-goals']
 };
 const group=process.env.PS_TEST_GROUP||'all',engines=(process.env.PS_BROWSER_ENGINE||'chromium,webkit').split(',');
 if(group!=='all'&&!suites[group])throw Error('Unknown browser test group: '+group);

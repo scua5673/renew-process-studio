@@ -71,7 +71,7 @@ try{
     assert.deepEqual([c.cls,c.t,c.pct],['done','GIF 저장됨 ✓','100%']);assert.match(c.sub,/코너킥 수비\.gif/);
     await pepClose(); }
   const pick=await bf.evaluate(()=>({n:window.__pick.suggestedName,id:window.__pick.id,acc:Object.keys(window.__pick.types[0].accept),wrote:window.__wrote,dl:window.__dl.length}));
-  assert.deepEqual([pick.n,pick.id,pick.acc[0]],['작전판_애니메이션.gif','ps-anim-export','image/gif']);
+  assert.deepEqual([pick.n,pick.id,pick.acc[0]],['작전판.gif','ps-anim-export','image/gif']);
   assert.ok(pick.wrote>1000,'GIF 바이트를 고른 파일에 썼다 '+pick.wrote);assert.equal(pick.dl,0,'내려받기는 하지 않는다');
   // 취소
   await bf.evaluate(()=>{window.__closed=0;window.showSaveFilePicker=async()=>{const e=new Error('c');e.name='AbortError';throw e;};});
@@ -81,7 +81,7 @@ try{
   await bf.evaluate(()=>{window.showSaveFilePicker=undefined;Object.defineProperty(navigator,'maxTouchPoints',{configurable:true,get:()=>0});});
   await bf.evaluate(()=>document.getElementById('animGif').click());
   await bf.waitForFunction(()=>window.__dl.length>0,null,{timeout:60000});
-  assert.deepEqual(await bf.evaluate(()=>window.__dl),['작전판_애니메이션.gif']);
+  assert.deepEqual(await bf.evaluate(()=>window.__dl),['작전판.gif']);
   await bf.waitForFunction(()=>/저장됨/.test((document.querySelector('#psExpProg .pep-t')||{}).textContent||''),null,{timeout:15000});
   assert.match((await pepCard()).sub,/다운로드 폴더/);await pepClose();
   // 2.972 — 아이폰·아이패드(저장 창 없음): 다 만든 뒤 «파일에 저장»(공유 시트 → 폴더 고르기) · «내려받기» · «닫기»
@@ -93,7 +93,7 @@ try{
   assert.deepEqual((await pepCard()).btn,['파일에 저장','내려받기','닫기']);assert.equal(await bf.evaluate(()=>window.__dl.length),0,'묻기 전엔 내려받지 않는다');
   await bf.evaluate(()=>[...document.querySelectorAll('#psExpProg .pep-acts button')].find(b=>b.textContent==='파일에 저장').click());
   await bf.waitForFunction(()=>window.__shared,null,{timeout:10000});
-  assert.deepEqual(await bf.evaluate(()=>window.__shared),['작전판_애니메이션.gif:image/gif']);
+  assert.deepEqual(await bf.evaluate(()=>window.__shared),['작전판.gif:image/gif']);
   await bf.waitForFunction(()=>/저장했어요/.test((document.querySelector('#psExpProg .pep-t')||{}).textContent||''),null,{timeout:10000});
   await pepClose();
   await bf.evaluate(()=>{delete navigator.maxTouchPoints;delete navigator.userAgent;delete navigator.canShare;delete navigator.share;});
@@ -110,11 +110,13 @@ try{
       document.querySelector('#evSheet #evGo').click();});
     await bf.waitForFunction(()=>window.__closed===1,null,{timeout:90000});
     const v=await bf.evaluate(()=>({acc:Object.keys(window.__pick.types[0].accept)[0],n:window.__pick.suggestedName,wrote:window.__wrote,sheet:!!document.getElementById('evSheet')}));
-    assert.ok(/^video\//.test(v.acc)&&/^작전판_애니메이션\.(mp4|webm)$/.test(v.n),JSON.stringify(v));
+    assert.ok(/^video\//.test(v.acc)&&/^작전판\.(mp4|webm)$/.test(v.n),JSON.stringify(v));
     assert.ok(v.wrote>1000&&!v.sheet,JSON.stringify(v));
     await bf.waitForFunction(()=>/MP4 저장됨|WebM 저장됨/.test((document.querySelector('#psExpProg .pep-t')||{}).textContent||''),null,{timeout:15000});
     assert.match((await pepCard()).sub,/빌드업\.mp4/);await pepClose();
     /* 2.972 — «멈추기»: 녹화를 끊고, 고른 자리에 쓰지 않고 빈 파일을 치우고, 판을 되돌린다 */
+    /* 2.975 — 웹코덱은 0.3초 만에 끝나 «멈추기»를 누를 틈이 없다 → 이 단계만 옛 실시간 녹화 길로(멈추기 흐름은 두 길이 같다) */
+    await bf.evaluate(()=>{window.__VE=window.VideoEncoder;window.VideoEncoder=undefined;});
     await bf.evaluate(()=>{window.__closed=0;window.__removed=0;window.showSaveFilePicker=async()=>({name:'멈춤.mp4',createWritable:async()=>({write:async()=>{},close:async()=>{window.__closed=1;}}),remove:async()=>{window.__removed=1;}});});
     await bf.evaluate(()=>document.getElementById('animExport').click());
     await bf.waitForSelector('#evSheet #evGo');
@@ -123,6 +125,7 @@ try{
     await page.screenshot({path:path.join(SHOTS,'anim-export-progress-'+size+'.png')});
     await bf.evaluate(()=>[...document.querySelectorAll('#psExpProg .pep-acts button')].find(b=>b.textContent==='멈추기').click());
     await bf.waitForFunction(()=>!document.getElementById('psExpProg')&&!window.__animExport,null,{timeout:30000});
+    await bf.evaluate(()=>{window.VideoEncoder=window.__VE;});
     assert.deepEqual(await bf.evaluate(()=>[window.__closed,window.__removed]),[0,1],'멈추면 쓰지 않고 고른 자리의 빈 파일을 치운다');
   }
   await page.screenshot({path:path.join(SHOTS,'anim-erase-export-'+size+'.png')});

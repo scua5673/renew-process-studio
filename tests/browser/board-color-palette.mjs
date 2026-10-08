@@ -39,9 +39,11 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
   await page.goto(base+'/fixture.html');await ready();
   await frame.evaluate(()=>{boardShowDefault();const snap=captureSnap();snap.players=[{id:'color-a',team:'blue',num:8,name:'Synthetic A',x:450,y:300},{id:'color-b',team:'red',num:9,name:'Synthetic B',x:700,y:300}];snap.ball=null;snap.equipment=[];snap.drawings=[];loadSnap(snap);undoStack=[];redoStack=[];});
   const press=locator=>spec.touch?locator.tap():locator.click();
-  async function open(id='color-a'){await press(frame.locator('.token[data-id="'+id+'"]'));if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await frame.locator('#colorPop').waitFor({state:'visible'});}
+  // 2.975 — 마우스는 토큰 정보 창을 오른쪽 클릭으로 연다(왼쪽 클릭은 고르기만). 손가락은 탭 그대로.
+  const pressTok=locator=>spec.touch?locator.tap():locator.click({button:'right'});
+  async function open(id='color-a'){await pressTok(frame.locator('.token[data-id="'+id+'"]'));if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await frame.locator('#colorPop').waitFor({state:'visible'});}
   // Replay browser composition events against the real controls. This does not emulate a native OS IME.
-  await press(frame.locator('.token[data-id="color-a"]'));
+  await pressTok(frame.locator('.token[data-id="color-a"]'));
   for(const [id,value] of [['nameInput','이슬기'],['numInput','김']]){
     const input=frame.locator('#'+id);await input.focus();
     const during=await input.evaluate((el,value)=>{
@@ -110,7 +112,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
     await page.mouse.move(stamp.x+stamp.width/2,stamp.y+stamp.height/2);await page.mouse.down();await page.mouse.move(pitch.x+pitch.width*.4,pitch.y+pitch.height*.4,{steps:10});await page.mouse.up();
     assert.equal(await frame.evaluate(()=>state.players.length),countBefore+1,'training editor accepts a palette drag');
     const trainingPlayer=await frame.evaluate(()=>state.players.at(-1).id);
-    await press(frame.locator('.token[data-id="'+trainingPlayer+'"]'));await press(frame.locator('#colorTrig'));await press(frame.getByRole('button',{name:'회색',exact:true}));
+    await pressTok(frame.locator('.token[data-id="'+trainingPlayer+'"]'));await press(frame.locator('#colorTrig'));await press(frame.getByRole('button',{name:'회색',exact:true}));
     await press(frame.locator('#colorTrig'));await press(frame.locator('#delSelBtn'));assert.equal(await frame.evaluate(()=>state.players.length),countBefore,'training editor delete is reachable in landscape');
     await page.screenshot({path:path.join(out,spec.name+'-training.png')});
 
