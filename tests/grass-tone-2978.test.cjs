@@ -4,7 +4,7 @@ const fs=require('fs');
 const path=require('path');
 const vm=require('vm');
 
-/* 2.977 — 실사 잔디 톤(사용자 «실사 잔디 색상이 여러가지 — 더 밝거나 더 연하거나», 10월 8일 미팅 21번).
+/* 2.978 — 실사 잔디 톤(사용자 «실사 잔디 색상이 여러가지 — 더 밝거나 더 연하거나», 10월 8일 미팅 21번).
    잔디 사진은 그대로, 밝기 4 × 연하기 4 를 색 행렬 하나로 입힌다. 보드마다(LOOK) 저장된다. */
 const src=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf8');
 
@@ -53,7 +53,8 @@ test('pale grass stays green — the green channel leads (it must not wash out t
 test('the tone is a per-board look setting, saved in board defaults, with the two rows under the pitch row',()=>{
   assert.match(src,/function lookKeys\(\)\{return \[[^\]]*"grassTone"\]/,'LOOK key');
   assert.match(src,/case "grassTone":return "0\|0";/,'code default');
-  assert.match(src,/grassTone:src\.grassTone\};/,'기본 세팅 snapshot carries it');
+  assert.match(src,/tokV:src\.tokV,grassTone:src\.grassTone\};/,'기본 세팅 snapshot carries it');
+  assert.match(src,/tokV:s\.tokV,grassTone:s\.grassTone,/,'a new page keeps the current tone');
   assert.match(src,/id="grassToneBSeg"[\s\S]{0,400}data-gb="ll">아주 밝게/,'brightness row');
   assert.match(src,/id="grassTonePSeg"[\s\S]{0,400}data-gp="pp">아주 연하게/,'paleness row');
   assert.match(src,/"밝기":1,"연하기":1\}/,'rows belong to the pitch tab');
