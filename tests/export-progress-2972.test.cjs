@@ -15,7 +15,7 @@ test('video export reports progress per frame, keeps the last few percent for sa
   assert.ok(run.indexOf('PEP.saving()')>run.indexOf('rec.stop();await stopped'),'만들기가 끝난 뒤 «저장하는 중»');
   assert.match(run,/PEP\.done\(_K\+" 저장됨 ✓","고른 폴더에 «"\+_saved\+"»"\)/);
   const wrap=slice('async function exportVideo(opts){','async function _exportVideoRun(opts){');
-  assert.match(wrap,/PEP\.open\(opts\.capN\?"미팅 영상 만드는 중":"영상 만드는 중"\)/);
+  assert.match(wrap,/PEP\.open\(opts\.capN\?"미팅 영상 만드는 중":\(opts\.pageMode\?"모든 페이지 영상 만드는 중":"영상 만드는 중"\)\)/);   /* 2.976 — 모든 페이지 */
   assert.match(wrap,/e&&e\.psCancel/,'멈추기는 실패가 아니다');
   assert.match(wrap,/if\(opts\.target&&!opts\.__saved\)await _animDropTarget\(opts\.target\)/,'멈추면 고른 자리의 빈 파일을 치운다');
   assert.match(wrap,/if\(PEP\.busy\(\)\)PEP\.close\(\)/,'앞에서 돌아가도 카드가 남지 않는다');
