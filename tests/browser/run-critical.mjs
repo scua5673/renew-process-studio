@@ -10,7 +10,7 @@ const suites={
      staging 마다 멈췄다. 같은 테스트를 시간(WebKit 실측)으로 둘에 나눠 CI 가 나란히 돌린다 — board: 판·보관함 / board2: 애니메이션·내보내기·미팅·패턴북 등. */
   board:['gamemodel-sync','board-depth','board-drag-performance','board-color-palette','vault-board-isolation','board-fmstadio','board-fmstadio2','board-savebar','board-vault-save','vault-folder-delete','vault-folder-visibility','team-library-load'],
   board2:['anim-erase-export','anim-export-once','meeting-names-video','meeting-upgrade','gamemodel-anim','board-feedback-2975','anim-all-pages','anim-export-fit','anim-orient','patternbook','shaper-ball','phone-page-strip','rondo-grid'],
-  identity:['session-team-picker','month-quick-detail','admin-content-play','admin-user-made','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery','schedule-phone','phone-app-more'],
+  identity:['session-team-picker','month-quick-detail','admin-content-play','admin-user-made','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery','schedule-phone','phone-app-more','board-settings-manual'],
   storage:['storage-safety','library-insert-ack','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery'],
   idp:['match-board-tools','match-ob-tray','match-board-vault','availability','idp-recovery','idp-story-dedup','support','squad-phone','scouting-integration','review-training','idp-coach-goals','team-heads']
 };
