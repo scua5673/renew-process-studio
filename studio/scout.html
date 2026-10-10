@@ -5306,16 +5306,15 @@ html.ps-page-scout #matchMeetCard.is-empty .mm-empty .t span{display:none}
                 <button type="button" class="btn primary" id="matchAdd">＋ 경기 추가</button>
               </span>
             </div>
-            <!-- 1.634 — 보기 전용인 코치가 "지금 보는 게 최신인가"를 알 수 있어야
-                 이미 고쳐진 걸 두고 임원에게 연락하는 일이 안 생긴다. -->
-            <div class="ps-share-line" id="mtShareLine" style="display:none"></div>
             <div class="tm-workbar">
               <input class="mvb-q" id="matchListQ" type="search" placeholder="상대·대회 검색" aria-label="경기 검색">
               <!-- 2.387 — 조 보기(전체 · A팀 · …). 일정의 조 필터와 같은 자리·같은 문법 -->
               <span class="mgrp-seg" id="matchGrpSeg" role="group" aria-label="조 보기"></span>
             </div>
             <!-- 2.144 — 전적. 머리 안의 제 줄을 쓴다(선수단의 #tmApprovals·#tmShareLine 과 같은 자리 문법) -->
-            <div class="mrec" id="matchRecord"></div>
+            <!-- 2.981 — 전적(왼쪽)과 기록 줄(오른쪽 끝)이 한 줄을 나눠 쓴다. 예전엔 전적 카드 줄 + 공유 안내 줄, 두 줄이었다.
+                 1.634 — 보기 전용인 코치가 "지금 보는 게 최신인가"를 알 수 있어야 이미 고쳐진 걸 두고 임원에게 연락하는 일이 안 생긴다. -->
+            <div class="mrec-row"><div class="mrec" id="matchRecord"></div><div class="ps-share-line" id="mtShareLine" style="display:none"></div></div>
           </div>
         </header>
         <div class="mlist" id="matchList" hidden></div>
@@ -11754,6 +11753,13 @@ function psShareLine(hostId,key){
      옛 `editLine` 은 폴백으로 남긴다(옛 판·부모 셸이 아직 그것만 줄 수 있다). */
   var st=(S&&S.editStamp)?S.editStamp(key):null;
   var who=st?'':((S&&S.editLine)?S.editLine(key):'');
+  /* 2.981 — «편집은 팀 권한에 따릅니다 · 팀 전원이 봅니다» 는 어느 날 열어도 같은 말이다. 화면마다 한 줄을 늘 차지했고
+     (디자인 판정 05: 시스템 문장은 손쓸 일이 있을 때만), 폰에서는 두 줄이었다. 줄에는 **기록(누가 · 언제)** 만 남기고
+     공유 안내는 그 줄의 말풍선(title)으로 옮긴다. 기록이 아직 없으면 줄을 그리지 않는다.
+     ⚠ 2.353 의 «마지막 수정 이름 날짜 시각»(사용자: 로그처럼)은 그대로다.
+     ⚠ 팀보다 좁게 보이는 자료(스카우트 대상 = 임원만)는 알아야 하는 사실이라 예전처럼 줄에 적는다. */
+  var keepNote=(key==="cs_scout_targets_v1");
+  if(!keepNote){ try{ host.title=note||""; }catch(_){ } note=""; }
   if(!note&&!who&&!st){ host.style.display="none"; host.innerHTML=""; return; }
   var h="";
   if(note) h+='<span>'+PSSafe.html(note)+'</span>';
@@ -11813,6 +11819,7 @@ function renderTeam(){
   const _tcL=(sq.players||[]).filter(function(p){return p.manual===true||String(p.name||"").trim();});
   const _tcN=_tcL.length;
   const tc=$("teamCount");if(tc)tc.textContent=tmCountText(_tcL,_tcN);   /* 2.540 — «48명 · 계정 연결 26» */
+  try{ var _tvw=$("teamView"); if(_tvw)_tvw.classList.remove("tm-waiting"); }catch(_){}   /* 2.981 — 아래 빈 명단 갈래가 다시 켠다 */
   const tn=$("teamName");if(tn&&document.activeElement!==tn)tn.value=sq.name;
   try{tbRender();}catch(_e){console.warn("tbRender",_e);}
   const box=$("teamList");if(!box)return;box.innerHTML="";
@@ -11830,6 +11837,9 @@ function renderTeam(){
        합류한 팀원이 한 명이라도 있을 때만 띄운다. 전원 연결됐을 때도 띄울 이유가 없다. */
     var memberN=0; try{ memberN=Object.keys((matchPerms().members)||{}).length; }catch(_){}
     var show=memberN>0&&unlinkedN>0;
+    /* 2.981 — 머리 한 줄에 «계정 연결 0»(인원 옆)과 «IDP 미연결 18»(숫자 띠)이 나란히 섰다 — 같은 사실을 두 번.
+       거르는 버튼이 서 있는 동안에는 인원 옆 꼬리를 접는다(버튼이 없을 때는 2.540 대로 꼬리가 말한다). */
+    tmHeroUnlinkShown=show; try{ if(tc)tc.textContent=tmCountText(_tcL,_tcN); }catch(_){}
     b.style.display=show?"":"none";
     if(!show)tmUnlinkedOnly=false;
     b.classList.toggle("on",!!tmUnlinkedOnly);
@@ -11873,7 +11883,8 @@ function renderTeam(){
   if(statAll)statAll.textContent=String(oursAll.length);
   const unavailableN=oursAll.filter(function(p){return plOut(plStatusOf(p));}).length;
   if(statProfile)statProfile.textContent=String(Math.max(0,oursAll.length-unavailableN));
-  if(statUnavailable)statUnavailable.textContent=String(unavailableN);
+  if(statUnavailable){ statUnavailable.textContent=String(unavailableN);
+    try{ statUnavailable.parentNode.classList.toggle("zero",unavailableN===0); }catch(_){} }   /* 2.981 — 0 은 색으로 말하지 않는다 */
   if(statNeed)statNeed.textContent=String(Math.max(0,oursAll.length-evalN));
   /* 평가를 한 번도 안 쓴 팀에겐 '평가 미완료 N명' 배너가 영구 잔소리 — 한 명이라도 평가했을 때만 노출.
      평가 진입로는 ⋯ 메뉴 '프로필·평가'와 스카우팅 탭에 그대로 있다. */
@@ -11885,6 +11896,12 @@ function renderTeam(){
     _fe.textContent=tmGrpFilter+" 조에 아직 선수가 없어요 — 선수 행의 팀 버튼(A·B…)으로 배정하세요";
     box.appendChild(_fe); return;
   }
+  /* 2.981 — 새 기기에서 명단이 서버에서 오는 몇 초 동안 «아직 선수가 없어요 · ＋ 첫 선수 추가» 가 섰다(47명 팀에서도).
+     오는 중이면 줄 뼈대를 두고 숫자 띠를 가린다. 판정·시간 제한은 오늘 화면과 같은 ckDataWait(15초 뒤엔 있는 그대로). */
+  if(!oursRaw.length){ var _tw=false; try{ _tw=ckDataWait().r; }catch(_){}
+    if(_tw){ try{ $("teamView").classList.add("tm-waiting"); }catch(_){}
+      box.innerHTML='<div class="tm-wait" aria-busy="true" aria-label="명단을 불러오는 중"><i></i><i></i><i></i><i></i><i></i><i></i></div>';
+      clearTimeout(window.__tmWaitT); window.__tmWaitT=setTimeout(function(){ try{ renderTeam(); }catch(_){} },400); return; } }
   if(!oursRaw.length){box.innerHTML='<div class="tm-empty tm-empty-card"><b>아직 선수가 없어요</b><span>이름·등번호·포지션만 넣으면 바로 선수단이 시작됩니다. 일정·경기·IDP 가 이 명단을 씁니다.</span><button type="button" class="btn primary" id="tmEmptyAdd">＋ 첫 선수 추가</button></div>';
     try{var _ea=$("tmEmptyAdd");if(_ea)_ea.onclick=function(){if(window.__tmAddSheet)window.__tmAddSheet();};}catch(_){}return;}   /* 1.851 — 빈 상태를 안내 카드로 */
   // 포지션순(기준 설정의 포지션 배열 순서) 정렬 — 같은 포지션 안에서는 기존 순서(=순위) 유지
@@ -12321,10 +12338,11 @@ function tmLinkedCount(list){
   }catch(_){ }
   return n;
 }
+var tmHeroUnlinkShown=false;   /* 2.981 — 숫자 띠의 «IDP 미연결 n» 버튼이 서 있으면 인원 옆 «계정 연결 n» 꼬리는 접는다 */
 function tmCountText(list,n){
   if(!n)return "";
   var lk=tmLinkedCount(list);
-  return n+"명"+(tmGrpFilter?" · "+tmGrpFilter:"")+(lk<n?" · 계정 연결 "+lk:"");
+  return n+"명"+(tmGrpFilter?" · "+tmGrpFilter:"")+((lk<n&&!tmHeroUnlinkShown)?" · 계정 연결 "+lk:"");
 }
 function redrawTeamPitch(){
   const _l=tmOurs().filter(tmGrpFlt).filter(function(p){return p.manual===true||String(p.name||"").trim();});   /* 2.528 — 위와 같은 규칙 */
@@ -17087,6 +17105,7 @@ var matchListQ="";
 function matchRenderRecord(){
   var el=$("matchRecord"); if(!el)return;
   var _all=matchLoad().matches||[];
+  if(!_all.length){ var _rw=false; try{ _rw=!store.get(MATCH_KEY)&&matchDocPending(); }catch(_){} if(_rw){ el.innerHTML=''; return; } }   /* 2.981 — 불러오는 중에는 «등록된 경기 없음»을 적지 않는다 */
   var rec=matchRecord(_all);
   /* 2.528 — 같은 화면에서 '경기'가 두 뜻이었다(사용자): 위는 «47경기»(예정), 아래 카드는 «기록된 경기 없음»(결과).
      결과가 없을 때 예정이 몇 개인지 말해 주면 모순이 사라진다 — 적을 것이 남았다는 뜻도 함께 전한다. */
@@ -17094,23 +17113,18 @@ function matchRenderRecord(){
   _all.forEach(function(m){ var k=matchKindOf(m); if(_sched[k]!=null)_sched[k]++; });
   /* 2.346 — 막대를 걷었다(사용자 "차트같은거 빼고 그냥 숫자가 돋보이게" — 2.344 의 비율 막대 폐기).
      승·무·패 **숫자**가 주인공: 크게, 결과 배지와 같은 세 색(승 초록·무 회색·패 빨강). 승률·득실차는 작은 꼬리로. */
+  /* 2.981 — 카드 두 장(2.360)을 한 줄로(디자인 판정 07: 폭의 40%만 쓰고 오른쪽은 빈칸, 목록을 한 칸 밀어냈다).
+     숫자가 주인공이라는 2.346 의 뜻은 그대로 — 승·무·패 수만 크게, 결과 배지와 같은 세 색. 승률·득실은 흐린 꼬리.
+     결과가 없으면 경기 수를 말한다(2.528 — 위 «n경기»와 같은 뜻의 말로). */
   var box=function(k){
-    var r=rec[k], any=r.n>0;
-    if(!any){
-      var sc=_sched[k]||0;
-      return '<div class="mrec-b '+k+' zero"><span class="mrec-head"><b>'+MATCH_KIND_LABEL[k]+'</b>'
-        +(sc?('<span class="cnt">'+sc+'경기 예정</span>'):'')+'</span>'
-        +'<u class="none">'+(sc?'점수를 아직 안 적었어요':'등록된 경기 없음')+'</u></div>';
-    }
+    var r=rec[k], any=r.n>0, sc=_sched[k]||0;
+    var hd='<b class="k">'+MATCH_KIND_LABEL[k]+'</b>';
+    if(!any)return '<span class="mrec-ln '+k+' zero">'+hd+'<em>'+(sc?(sc+'경기 · 점수 기록 전'):'등록된 경기 없음')+'</em></span>';
     var rate=Math.round(r.w/r.n*100), gd=r.gf-r.ga;
-    /* 2.360 — 카드 한 장(사용자 "카드로 만들어줘 깔끔하게"). 숫자와 단위를 나눠 쌓는다:
-       숫자가 주인공이라는 2.346 의 뜻은 그대로 두고, '11승' 한 덩어리이던 것을 11 위 · 승 아래로. */
-    var n=function(c,v,u){return '<i class="'+c+'"><span class="v">'+v+'</span><span class="k">'+u+'</span></i>';};
-    return '<div class="mrec-b '+k+'">'
-      +'<span class="mrec-head"><b>'+MATCH_KIND_LABEL[k]+'</b><span class="cnt">'+r.n+'경기</span></span>'
+    var n=function(c,v,u){return '<i class="'+c+(v?'':' z')+'"><span class="v">'+v+'</span>'+u+'</i>';};   /* 0 은 색으로 말하지 않는다 */
+    return '<span class="mrec-ln '+k+'">'+hd
       +'<u>'+n('w',r.w,'승')+n('d',r.d,'무')+n('l',r.l,'패')+'</u>'
-      +'<em>승률 '+rate+'% · '+r.gf+'득 '+r.ga+'실 · '+(gd>0?'+':'')+gd+'</em>'
-      +'</div>';
+      +'<em>승률 '+rate+'% · '+r.gf+'득 '+r.ga+'실 · '+(gd>0?'+':'')+gd+'</em></span>';
   };
   el.innerHTML=box("official")+box("friendly");
 }
@@ -17270,8 +17284,11 @@ function matchRowHTML(m,alive){
       /* 2.145 — 승부차기는 승패를 바꾸지 않는다(정규 결과가 기록이다) — 스코어 옆에 따로 붙는다 */
       +(pk?'<span class="mr-pk">PK '+esc(pk)+'</span>':'')
     +'</span>'
-    +(can?'<span class="mr-act"><button type="button" data-medit="'+esc(m.id)+'">편집</button>'
-      +'<button type="button" class="danger" data-mdel="'+esc(m.id)+'">삭제</button></span>':'')
+    /* 2.981 — 줄마다 «편집 · 삭제»가 늘 서 있었다(디자인 판정 07). 줄을 누르면 그 경기가 열리므로 «편집»은 같은 문이고,
+       «삭제»는 거의 안 쓰는 버튼이 모든 줄에서 눈에 걸렸다 → 더보기(⋯) 하나로 접는다.
+       ⚠ 지우는 길은 그대로 matchDelete(확인창·묘비 1.488). hover 에 숨기지 않는다 — 손가락에는 hover 가 없다(2.401). */
+    +(can?'<span class="mr-act"><button type="button" class="mr-more" data-mmore="'+esc(m.id)+'" aria-haspopup="menu"'
+      +' aria-label="'+esc((m.opponent||"이 경기")+" 더보기")+'" title="열기 · 삭제">⋯</button></span>':'')
     +'</div>';
 }
 function renderMatchList(){
@@ -17279,7 +17296,8 @@ function renderMatchList(){
   var _mlBad=[];
   var rows=matchListRows(), alive=matchAliveSched(), now=new Date(), h="", curMon=null;
   if(!rows.length){
-    box.innerHTML='<div class="ml-none">'+(String(matchListQ||"").trim()?"찾는 경기가 없어요":"아직 경기가 없어요 — ＋ 경기 추가나 ‘일정에서 경기 불러오기’로 시작하세요")+'</div>';
+    var _mlw=false; try{ _mlw=!store.get(MATCH_KEY)&&matchDocPending(); }catch(_){}   /* 2.981 — 불러오는 중: 아래 #matchEmpty 가 그렇게 말한다. 여기서 «없어요»를 겹쳐 적지 않는다 */
+    box.innerHTML=_mlw?'':'<div class="ml-none">'+(String(matchListQ||"").trim()?"찾는 경기가 없어요":"아직 경기가 없어요 — ＋ 경기 추가나 ‘일정에서 경기 불러오기’로 시작하세요")+'</div>';
   }else{
     /* 월별 묶음 — 시즌 흐름이 보이고, 경기가 쌓일수록 찾기 쉬워진다 */
     var byMon={},order=[];
@@ -17323,6 +17341,10 @@ function renderMatchList(){
       if(e.target.closest&&e.target.closest("[data-msc]")){ e.stopPropagation(); return; }
       /* 2.139 — 편집은 **그 경기 안으로 데려간다**(사용자). 상대·날짜만 고치는 시트는
          안에서 '정보 수정' 으로 남는다 — 목록에서 곧장 시트를 열면 보드까지 가는 길이 한 번 끊긴다. */
+      var mo=e.target.closest("[data-mmore]");   /* 2.981 — 줄의 더보기: 열기 · 삭제 */
+      if(mo){ e.stopPropagation(); var _mmid=mo.dataset.mmore;
+        psPickOpen(mo,[{v:"open",lb:"열기"},{v:"del",lb:"삭제"}],"-",function(v){ if(v==="del")matchDelete(_mmid); else matchOpen(_mmid); },"경기 더보기");
+        return; }
       var ed=e.target.closest("[data-medit]"); if(ed){ matchOpen(ed.dataset.medit); return; }
       var dl=e.target.closest("[data-mdel]"); if(dl){ matchDelete(dl.dataset.mdel); return; }
       var hit=e.target.closest("[data-mid]"); if(!hit)return;
@@ -19923,6 +19945,33 @@ function ckNextTask(c){
 }
 /* 2.979 — 그 날짜(YYYY-MM-DD)의 경기 기록. 없으면 null(부르는 쪽이 다음 경기로 물러난다) */
 function ckMatchOn(iso){ if(!iso)return null; try{ return ((matchLoad()||{}).matches||[]).filter(function(x){ return String(x.date||"")===String(iso); })[0]||null; }catch(_){ return null; } }
+/* ══ 2.981 · 자료가 오기 전에는 «없다»고 말하지 않는다(디자인 판정 06·08 «빈 화면 대신 뼈대») ══
+   새 기기·새 브라우저로 처음 열면 일정·명단이 서버에서 오기까지 몇 초가 걸린다. 그 사이 오늘 화면은
+   «세션 없음 · 다음 경기 없음 · 0명 · 가능 인원이 없어요 · 0 훈련 0 OFF 0 경기» 를 사실처럼 적었다가 뒤집었다(실측).
+   오지 않은 것은 뼈대로 둔다 — 글자를 가리고(자리는 그대로라 뒤집힐 때 화면이 안 튄다) 회색 막대를 보인다.
+   판정: 일정은 이 기기 사본이 **아예 없고**(null) 서버 확인도 아직일 때, 명단은 서버 확인을 기다리는 동안만. 확인된 사본이 있으면 예전처럼 바로 그린다.
+   ⚠ 15초가 지나면 있는 그대로 말한다 — 서버가 끝내 답하지 않는데 뼈대가 남으면 그쪽이 더 나쁜 거짓말이다.
+   ⚠ 로그인 없이 쓰는 로컬 명단·오프라인·잠긴 자료는 기다리지 않는다(잠금 안내가 따로 말한다). */
+var CK_T0=Date.now(),_ckWaitT=0;
+function ckDataWait(){
+  var o={s:false,r:false};
+  try{
+    if(Date.now()-CK_T0>15000||navigator.onLine===false)return o;
+    var S=psSync(); if(!S||!S.session||!S.session()||!S.dataUnlocked||!S.dataUnlocked())return o;
+    if(!localStorage.getItem("ps_active_ws"))return o;
+    /* 명단: 서버 확인 전(scoutBootPending)에는 메모리의 명단이 빈 기본값이다. 사본이 확인된 기기는 문서를 읽는 순간 이미 false 다(scoutBoot 가 먼저 돈다) */
+    o.r=(typeof scoutBootPending!=="undefined"&&scoutBootPending===true);
+    o.s=localStorage.getItem("process_coach_v1")===null&&!(S.keyReady&&S.keyReady("process_coach_v1"));
+  }catch(_){}
+  return o;
+}
+function ckWaitMark(host){
+  var w=ckDataWait(),on=w.s||w.r;
+  host.classList.toggle("ck-wait-s",w.s); host.classList.toggle("ck-wait-r",w.r);
+  if(on)host.setAttribute("aria-busy","true"); else host.removeAttribute("aria-busy");
+  clearTimeout(_ckWaitT);
+  if(on)_ckWaitT=setTimeout(function(){ try{ renderCkHome(); }catch(_){} },400);   /* 자료가 오면(또는 15초 뒤) 스스로 걷는다 */
+}
 function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
   var host=$("ckHome"); if(!host)return;
   try{ stExpireDailySave(); }catch(_){}   /* 2.942 — 오늘만이 지난 상태를 정상으로 */
@@ -20162,6 +20211,7 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
   h+='</div>';
   /* 2.570 — 14일 스트립은 위 «이번 주» 7칸이 대신한다(ckWeekCells·.strip CSS 는 남김) */
   host.innerHTML=h;
+  try{ ckWaitMark(host); }catch(_){}   /* 2.981 — 아직 안 온 자료는 뼈대로 */
   try{ if(window.innerWidth<=600){ var _tc=host.querySelector('.wk-c.sel')||host.querySelector('.wk-c.today'); var _sc=_tc&&_tc.parentElement; while(_sc&&_sc!==host&&_sc.scrollWidth<=_sc.clientWidth+1)_sc=_sc.parentElement; if(_tc&&_sc&&_sc!==host){ var _a=_tc.getBoundingClientRect(),_b=_sc.getBoundingClientRect(); _sc.scrollLeft+=(_a.left+_a.width/2)-(_b.left+_b.width/2); } } }catch(_){}   /* 2.570 · 2.895 — 띠만 가로로 가운데(scrollIntoView 는 세로 페이지도 움직였다) */
   try{ ntcBind(host); }catch(e){ console.warn("공지 붙이기 실패",e); }
   try{ host.querySelectorAll("[data-ck-rp]").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); plSheetOpen(b.dataset.ckRp); }; }); }catch(_){ }
@@ -21485,7 +21535,7 @@ html.ps-page-scout #scList .sc-row .sc-name,html.ps-page-scout #scList .sc-row .
 html.ps-page-scout #scList .sc-row .sc-memos{grid-column:8!important;grid-row:1!important}
 }
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=2.957"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=2.981"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
   <!-- 2.541 — 선수 한 명 한눈에(코치). 선수가 쓴 것을 한 장으로 모은다. -->
   <div class="pl-sheet" id="plSheet" hidden>
     <div class="pls-back" data-pls-close></div>
@@ -21851,6 +21901,84 @@ html.ps-page-scout #ckHome .sofar .sf-dp .bar u{background:var(--ck-bar)}
   html.ps-page-scout #ckHome .wk-c.m .md:not(#_):not(#__)::after{background:var(--ink)}
   html.ps-page-scout #ckHome .wk-c.today:not(#_):not(#__):after{background:var(--ink)}
 }
+</style>
+<style id="ps-2981-team">/* ══ 2.981 · 디자인 판정 이어서 — 선수단 머리 · 경기 목록 머리(보드 제외) ══
+   기준은 2.979 와 같다(tests/design-verdict-2979 가 이 블록도 본다):
+     글자 12·14·16·20·28 / 굵기 500·600·700 / 모서리 6·10·999 / 누르는 것만 파랑 / 색은 뜻으로만.
+   ① 선수단(≥901): 머리 세 줄(제목 → 숫자 띠 → 컨트롤) → 두 줄. 숫자 띠가 제목 줄 안으로 들어간다.
+      2.186 «고정 격자 3줄» 번복 — 다만 그 약속(조 칩을 눌러도 줄 높이가 안 움직인다)은 지킨다: 두 줄 다 40px 고정.
+   ② 경기 목록: 전적 카드 두 장 → 한 줄(.mrec-ln) · 줄마다 서 있던 «편집 · 삭제» → 더보기 하나 · 공유 안내 줄은 기록만.
+   ⚠ 이 블록은 문서 맨 끝. 앞 층(2.186·2.187·2.963·2.177·2.953·design-v2 2.020)은 :not(#_) 로 넘는다. 폰(≤900)의 선수단 머리는 그대로. */
+@media (min-width:901px){
+  html.ps-page-scout #teamView .tm-head:not(#_):not(#__){grid-template-columns:auto minmax(0,1fr) auto!important;column-gap:24px!important;row-gap:10px!important;align-items:center!important}
+  html.ps-page-scout #teamView .tm-head>.tm-head-top:not(#_):not(#__){display:contents!important}
+  html.ps-page-scout #teamView .tm-head .tm-titlebox:not(#_):not(#__){grid-column:1;grid-row:1;display:flex!important;align-items:center;min-height:40px;min-width:0}
+  html.ps-page-scout #teamView .tm-head .tm-head-actions:not(#_):not(#__){grid-column:3;grid-row:1;margin-left:0!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero:not(#_):not(#__){grid-column:2;grid-row:1;order:0!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:20px!important;min-height:40px!important;min-width:0;padding:0!important;border:0!important;overflow:hidden}
+  html.ps-page-scout #teamView .tm-head>#tmApprovals:not(#_),html.ps-page-scout #teamView .tm-head>#tmShareLine:not(#_),html.ps-page-scout #teamView .tm-head>.tm-workbar:not(#_){grid-column:1/-1}
+  html.ps-page-scout #teamView .tm-titleline .t:not(#_):not(#__){font-size:20px!important;font-weight:700!important}
+  html.ps-page-scout #teamView .tm-titleline #teamCount:not(#_):not(#__){font-size:12px!important;font-weight:500!important;height:auto!important;color:var(--dim)!important;white-space:nowrap}
+  /* 숫자 띠 — «이름표 숫자» 를 옆으로. 숫자만 굵게(16), 이름표는 12 */
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-big:not(#_):not(#__){display:inline-flex!important;align-items:baseline!important;gap:4px!important;min-width:0!important;flex:none!important;white-space:nowrap}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-big small:not(#_):not(#__){order:-1;display:inline!important;margin:0 2px 0 0!important;font-size:12px!important;font-weight:500!important;color:var(--dim)!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-big b:not(#_):not(#__){font-size:16px!important;font-weight:700!important;line-height:1.2!important;color:var(--c-ok,#1F7A4C)!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-big span:not(#_):not(#__),html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-big span em:not(#_):not(#__){font-size:12px!important;font-weight:500!important;color:var(--faint)!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-sub:not(#_):not(#__){flex-direction:row!important;align-items:baseline!important;gap:6px!important;min-width:0!important;height:auto!important;flex:none!important;font-size:12px!important;font-weight:500!important;color:var(--dim)!important;white-space:nowrap}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-sub b:not(#_):not(#__){font-size:16px!important;font-weight:700!important;line-height:1.2!important;color:var(--txt)!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-sub:not(.tm-unlinked):not(.zero) b:not(#_):not(#__){color:var(--c-warn,#B5762B)!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-sub.zero b:not(#_):not(#__),html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-sub.tm-unlinked b:not(#_):not(#__){color:var(--faint)!important;font-weight:500!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-sub.tm-unlinked.on:not(#_):not(#__){color:var(--c-act,#3A6DF0)!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-sub.tm-unlinked.on b:not(#_):not(#__){color:var(--c-act,#3A6DF0)!important;font-weight:700!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-todo:not(#_):not(#__){margin-left:auto!important;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12px!important;font-weight:500!important;color:var(--dim)!important}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-todo b:not(#_):not(#__){font-weight:600;color:var(--txt)}
+  html.ps-page-scout #teamView .tm-head>.tm-hero .tm-hero-todo u:not(#_):not(#__){color:var(--c-act,#3A6DF0);font-weight:600}
+}
+
+/* 오늘 — 자료가 오기 전(새 기기): «없음·0» 대신 뼈대. 글자는 가리기만 한다(자리 유지) */
+html.ps-page-scout #ckHome.ck-wait-s .ck-top>.pn.sess>.hero>*,html.ps-page-scout #ckHome.ck-wait-s .ck-top>.pn.sess>.bd>*,
+html.ps-page-scout #ckHome.ck-wait-s .wk-hd .wk-md,html.ps-page-scout #ckHome.ck-wait-s .wk-c>*:not(.wd),
+html.ps-page-scout #ckHome.ck-wait-s .pn.sofar>.bd>*,html.ps-page-scout #ckHome.ck-wait-s .pn.sofar>.hd small,
+html.ps-page-scout #ckHome.ck-wait-r .pn.avail-pn>.bd>*,html.ps-page-scout #ckHome.ck-wait-r .pn.avail-pn>.hd small{visibility:hidden}
+html.ps-page-scout #ckHome.ck-wait-s .ck-top>.pn.sess>.hero,html.ps-page-scout #ckHome.ck-wait-s .pn.sofar>.bd,html.ps-page-scout #ckHome.ck-wait-r .pn.avail-pn>.bd{position:relative;min-height:76px}
+html.ps-page-scout #ckHome.ck-wait-s .ck-top>.pn.sess>.hero::before,html.ps-page-scout #ckHome.ck-wait-s .pn.sofar>.bd::before,html.ps-page-scout #ckHome.ck-wait-r .pn.avail-pn>.bd::before{content:"";position:absolute;left:18px;right:18px;top:14px;height:48px;pointer-events:none;
+  background:linear-gradient(var(--outs,#F1F3F5),var(--outs,#F1F3F5)) 0 0/44% 20px no-repeat,linear-gradient(var(--outs,#F1F3F5),var(--outs,#F1F3F5)) 0 34px/68% 12px no-repeat;animation:ckSkel 1s ease-in-out infinite alternate}
+@keyframes ckSkel{from{opacity:1}to{opacity:.55}}
+/* 선수단 — 명단이 오는 중: 줄 뼈대 · 숫자 띠와 인원은 가린다 */
+html.ps-page-scout #teamView.tm-waiting .tm-hero,html.ps-page-scout #teamView.tm-waiting #teamCount{visibility:hidden}
+html.ps-page-scout #teamList .tm-wait{grid-column:1/-1;display:grid;gap:10px;padding:14px 2px}
+html.ps-page-scout #teamList .tm-wait i{display:block;height:20px;border-radius:6px;background:var(--fill,#F1F3F5);animation:ckSkel 1s ease-in-out infinite alternate}
+html.ps-page-scout #teamList .tm-wait i:nth-child(odd){width:62%}
+html.ps-page-scout #teamList .tm-wait i:nth-child(even){width:44%}
+@media (prefers-reduced-motion:reduce){ html.ps-page-scout #ckHome[aria-busy]::before,html.ps-page-scout #ckHome[aria-busy] *::before{animation:none!important} }
+
+/* 경기 목록 — 전적 한 줄 */
+html.ps-page-scout #matchView .tm-head>.mrec-row{order:4;flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 24px;min-width:0;margin:0 0 4px}
+html.ps-page-scout #matchView .mrec-row>.mrec:not(#_):not(#__){display:flex!important;flex-wrap:wrap!important;align-items:baseline!important;grid-template-columns:none!important;gap:4px 28px!important;margin:0!important;min-height:24px;min-width:0;flex:1 1 auto!important}
+html.ps-page-scout .match-shell .mrec-ln{display:inline-flex;align-items:baseline;gap:8px;min-width:0;font-size:12px;font-weight:500;color:var(--dim);white-space:nowrap}
+html.ps-page-scout .match-shell .mrec-ln .k{font-size:12px;font-weight:600;color:var(--txt)}
+html.ps-page-scout .match-shell .mrec-ln u{text-decoration:none;display:inline-flex;align-items:baseline;gap:8px}
+html.ps-page-scout .match-shell .mrec-ln u i{font-style:normal;font-size:12px;font-weight:500;color:var(--dim)}
+html.ps-page-scout .match-shell .mrec-ln u i .v{margin-right:1px;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--txt)}
+html.ps-page-scout .match-shell .mrec-ln u i.w .v{color:var(--c-ok,#1F7A4C)}
+html.ps-page-scout .match-shell .mrec-ln u i.d .v{color:var(--faint)}
+html.ps-page-scout .match-shell .mrec-ln u i.l .v{color:var(--c-bad,#C24A46)}
+html.ps-page-scout .match-shell .mrec-ln u i.z .v{color:var(--faint);font-weight:500}
+html.ps-page-scout .match-shell .mrec-ln em{font-style:normal;font-size:12px;font-weight:500;color:var(--faint);overflow:hidden;text-overflow:ellipsis}
+/* 기록 줄(마지막 수정)은 전적과 같은 줄 오른쪽 끝 — 제 줄을 따로 쓰지 않는다 */
+html.ps-page-scout #matchView .mrec-row>#mtShareLine:not(#_):not(#__){flex:0 1 auto!important;margin:0 0 0 auto!important;padding:0!important;font-size:12px!important;font-weight:500;color:var(--faint)!important;opacity:1;white-space:nowrap}
+/* 줄의 더보기 — 조용한 점 셋, 누르면 열기·삭제 */
+html.ps-page-scout .match-shell .mr-act .mr-more:not(#_):not(#__){width:32px;height:32px;min-height:32px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--faint);font-family:inherit;font-size:16px;font-weight:700;line-height:1;cursor:pointer}
+html.ps-page-scout .match-shell .mr-act .mr-more:not(#_):not(#__):hover,html.ps-page-scout .match-shell .mr-act .mr-more:not(#_):not(#__):focus-visible{background:var(--fill,#F1F3F5);color:var(--txt)}
+@media (max-width:600px){
+  html.ps-page-scout .match-shell .mr-act .mr-more:not(#_):not(#__){width:40px;height:40px}
+  html.ps-page-scout #matchView .mrec-row>.mrec:not(#_):not(#__){gap:2px 20px!important}
+  html.ps-page-scout .match-shell .mrec-ln em{white-space:normal}
+  /* 폰 검색칸이 머리보다 18px 넓었다(width:100% + 안쪽 여백, 상자 계산이 content-box) */
+  html.ps-page-scout #matchView #matchListQ:not(#_){box-sizing:border-box;width:100%;max-width:100%;min-width:0}
+}
+/* 다크 — 열어 본 경기 줄(.mrow.on)이 흰 바탕(color-mix(…,#fff), 5259)에 밝은 글자라 통째로 안 보였다.
+   면은 어두운 면에 팀 색을 얹고, 띠·테두리는 다크용 팀 색(--team-c-dark)으로. */
+html.ps-page-scout body.fmdark .match-shell .mrow.on{background:color-mix(in srgb,var(--team-c-dark,#9FB3D6) 10%,var(--surface,#1B1E23));border-color:var(--team-c-dark,#9FB3D6)!important;box-shadow:inset 3px 0 0 var(--team-c-dark,#9FB3D6)!important}
 </style>
 </body>
 </html>
