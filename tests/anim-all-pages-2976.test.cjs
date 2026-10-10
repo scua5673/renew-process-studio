@@ -66,7 +66,7 @@ test('the video sheet offers «이 페이지 | 여러 페이지» with a page pi
   assert.doesNotMatch(slice('  function buildPicker(){','  function paintScope(){'),/innerHTML/,'page names are user text — textContent, never innerHTML');
   const go=slice('  ov.querySelector("#evGo").onclick=async function(){','\n}');
   assert.ok(go.indexOf('_animPickSaveTarget(')<go.indexOf('close();'),'pick before the sheet closes');
-  assert.match(go,/else if\(_all\)exportPagesVideo\(\{height:opt\.height,fps:opt\.fps,reel:!!opt\.reel,target:_t,fileBase:_base,pick:_sel\.map\(function\(p\)\{return p\.i;\}\)\}\)/);
+  assert.match(go,/else if\(_all\)exportPagesVideo\(\{height:opt\.height,fps:opt\.fps,reel:!!opt\.reel,fit:!!opt\.fit,target:_t,fileBase:_base,pick:_sel\.map\(function\(p\)\{return p\.i;\}\)\}\)/);
   assert.match(go,/if\(_all&&!_sel\.length\)\{/,'nothing picked → nothing made');
 });
 
