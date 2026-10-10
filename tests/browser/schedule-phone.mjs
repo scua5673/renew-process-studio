@@ -39,7 +39,11 @@ try{
   const a=await look(f);
   if(size==='desktop'){
     assert.equal(a.bar,false,'데스크톱에는 폰 막대가 없다');assert.equal(a.vtoggle,true,'데스크톱 #vtoggle 그대로');
-    if(a.sync){assert.match(a.sync.btn,/^지금 (받아오기|주고받기)$/,'데스크톱 버튼 글자 그대로');assert.match(a.sync.text,/판 받음/,'데스크톱 문구 그대로');}
+    // 2.979 — 손쓸 일이 없으면 데스크톱도 짧은 꼴(«서버 일정 · … 받음» + ⟳, 이름은 aria-label)로 보기 전환 줄 끝에 붙는다. 손쓸 일이 있으면 예전 긴 꼴.
+    if(a.sync){
+      if(a.sync.btn==='⟳'){assert.match(a.sync.aria,/받아오기|주고받기/,'데스크톱 짧은 꼴 — 버튼 이름은 aria-label');assert.equal(a.sync.title,a.sync.aria);assert.match(a.sync.text,/^서버 일정 · .+ 받음/,'데스크톱 짧은 꼴 문구 '+a.sync.text);}
+      else{assert.match(a.sync.btn,/^지금 (받아오기|주고받기)$/,'데스크톱 긴 꼴 버튼 글자');assert.ok(a.sync.text.length>0);}
+    }
     await page.screenshot({path:path.join(SHOTS,'desktop.png')});
   }else{
     assert.equal(a.bar,true,'폰 막대가 앱 안에서 보인다');assert.equal(a.inSchedule,true,'막대는 #schedule 맨 앞');

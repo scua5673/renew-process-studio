@@ -110,16 +110,16 @@ try{
         groupBoxes:document.querySelectorAll('#avDailyCard .av-grp>.rows>.av-restbox').length,buttons:document.querySelectorAll('#avDailyCard [data-av-st]').length};});
     if(width<600)assert.deepEqual(split,{ok:['p1','p4','p5'],rest:['p2','p3'],okHead:'운동 3명',restHead:'참여 못 함 2명',groupBoxes:0,buttons:5},'phone separates training and absent players');
     else assert.deepEqual(split,{ok:null,rest:null,okHead:null,restHead:null,groupBoxes:2,buttons:5},'desktop keeps the per-group rest boxes');
-    // 2.940 — «오늘» 가용인원 카드도 폰은 두 덩어리(색 타일 없음), 데스크톱은 조 상자 + 타일 그대로
+    // 2.940 — «오늘» 가용인원 카드도 폰은 두 덩어리(색 타일 없음) · 2.979 — 데스크톱은 조 상자 + 막대 하나(색 타일 다섯은 걷었다)
     const ck=await frame.evaluate(()=>{setView('home');try{renderCkHome();}catch(_){}
       const card=document.querySelector('#ckHome .avail-pn'),t=el=>el?el.textContent.replace(/\s+/g,' ').trim():null;
       const ok=card&&card.querySelector('.ck-split-ok'),out=card&&card.querySelector('.ck-split-out');
-      const r={ok:t(ok&&ok.querySelector('.ck-sec-h')),out:t(out&&out.querySelector('.ck-sec-h')),okGroups:ok?[...ok.querySelectorAll('.okg-h')].map(h=>[...h.children].map(t).join(' ')):null,outText:out?out.innerText.replace(/\s+/g,' '):null,tiles:card?card.querySelectorAll('.avail.g5').length:-1};
+      const r={ok:t(ok&&ok.querySelector('.ck-sec-h')),out:t(out&&out.querySelector('.ck-sec-h')),okGroups:ok?[...ok.querySelectorAll('.okg-h')].map(h=>[...h.children].map(t).join(' ')):null,outText:out?out.innerText.replace(/\s+/g,' '):null,tiles:card?card.querySelectorAll('.avail.g5').length:-1,bars:card?card.querySelectorAll('.ck-avbar').length:-1};
       setView('avail');return r;});
     if(width<600){assert.equal(ck.ok,'운동 3명','cockpit phone: training block');assert.equal(ck.out,'참여 못 함 2명','cockpit phone: absent block');
       assert.deepEqual(ck.okGroups,['A팀 필드 1 · GK 1','B팀 1명'],'cockpit phone: training groups keep the field/GK split');
-      assert.match(ck.outText,/A팀 1명.*부상 1.*B팀 1명.*재활 1/,'cockpit phone: absent groups with status');assert.equal(ck.tiles,0,'cockpit phone: no colour tiles');}
-    else assert.deepEqual({ok:ck.ok,out:ck.out,tiles:ck.tiles},{ok:null,out:null,tiles:2},'cockpit desktop keeps the per-group boxes and tiles');
+      assert.match(ck.outText,/A팀 1명.*부상 1.*B팀 1명.*재활 1/,'cockpit phone: absent groups with status');assert.equal(ck.tiles,0,'cockpit phone: no colour tiles');assert.equal(ck.bars,0,'cockpit phone: no bar either — the two blocks already count');}
+    else assert.deepEqual({ok:ck.ok,out:ck.out,tiles:ck.tiles,bars:ck.bars},{ok:null,out:null,tiles:0,bars:2},'cockpit desktop keeps the per-group boxes — one bar per group instead of five colour tiles (2.979)');
     await frame.locator('[data-av-date="2026-09-11"]').waitFor();
     const dateButton=frame.locator('[data-av-date="2026-09-11"]');await dateButton.focus();await dateButton.press('Enter');await frame.locator('#avDailyCard').waitFor();
     assert.match(await frame.locator('#avDailyCard').innerText(),/9월\s*11일|9\/11/);
