@@ -4207,6 +4207,11 @@ function wksChips(di,arr,slots,slot,tapFn,data,askMin,kind,themes){
   });
   return h;
 }
+/* 2.979 — 채워진 줄만 그린다(＋ 없음). 채우는 문은 카드 아래 «＋ 채우기» 하나 */
+function wksRowQ(lab,inner,sub){
+  if(!inner)return '';
+  return '<div class="wks-row"><i>'+lab+(sub?('<small>'+wkbdEsc(sub)+'</small>'):'')+'</i><div class="wks-chips">'+inner+'</div></div>';
+}
 function wksRow(lab,inner,addTitle,addCall,sub){
   return '<div class="wks-row"><i>'+lab+(sub?('<small>'+wkbdEsc(sub)+'</small>'):'')+'</i><div class="wks-chips">'+inner
     +'<button type="button" class="wks-plus" title="'+addTitle+'" onclick="event.stopPropagation();'+addCall+'">＋</button></div></div>';
@@ -4955,25 +4960,25 @@ function wksCard(di,slot){
   var _ps=function(k){ return "event.stopPropagation();wksPickSes("+di+",'"+(slot||'')+"','"+k+"')"; };
   /* 2.339 — ＋ 는 세션을 통째로 채우는 문 하나. 담긴 값(칩·주제·강도)을 누르면 예전처럼 그 하나만 고친다 */
   var _fp=function(k){ return "event.stopPropagation();wksFill("+di+",'"+(slot||'')+"','"+k+"')"; };
-  h+='<div class="wks-row"><i>주제</i>'+(aims
-      ? '<div class="wks-aims" onclick="'+_ps('topic')+'">'+wkbdEsc(aims)+'</div>'
-      : '<div class="wks-chips"><button type="button" class="wks-plus" title="세션 채우기 — 주제·강도·미팅·훈련·보관함" onclick="'+_fp('topic')+'">＋</button></div>')+'</div>';
+  /* ══ 2.979 · 빈 줄 다섯(주제·강도·미팅·훈련·보관함 + ＋ 다섯)을 걷는다 ══
+     2.133 은 «채울 자리를 보여 주려고» 빈 줄을 늘 세웠다. 그런데 한 주에 세션이 일곱이면 빈 ＋ 가 서른다섯 — 채워진 내용이 그 사이에 묻혔다.
+     ＋ 다섯은 2.339 부터 전부 같은 모달(wksFill)을 여는 같은 문이었다. 채워진 줄만 보이고, 문은 카드 아래 하나(첫 빈 칸으로 연다). */
+  if(aims)h+='<div class="wks-row"><i>주제</i><div class="wks-aims" onclick="'+_ps('topic')+'">'+wkbdEsc(aims)+'</div></div>';
   /* 2.306 — 국면 줄은 위 '주제' 한 줄로 합쳤다(사용자). 2.300 이 만든 tr.gmMoment 는 그대로 쓰인다 —
      화면만 하나가 되고 저장은 예전 자리에 그대로 간다(집계·'지금까지'가 안 흔들린다). */
-  h+='<div class="wks-row"><i>강도</i>'+(rpe
-      ? '<div class="wks-aims" onclick="'+_ps('rpe')+'">RPE '+rpe+'</div>'
-      : '<div class="wks-chips"><button type="button" class="wks-plus" title="세션 채우기 — 주제·강도·미팅·훈련·보관함" onclick="'+_fp('rpe')+'">＋</button></div>')+'</div>';
+  if(rpe)h+='<div class="wks-row"><i>강도</i><div class="wks-aims" onclick="'+_ps('rpe')+'">RPE '+rpe+'</div></div>';
   var _ms=wksSecSum(b.meets,b.meetSlot,slot,b.meetsData);
-  h+=wksRow('미팅', wksChips(di,b.meets,b.meetSlot,slot,'wkbdMeetTap',b.meetsData,true,'meet'), '세션 채우기 — 주제·강도·미팅·훈련·보관함', "wksFill("+di+",'"+slot+"','meet')", _ms.sec?psDurFmt(_ms.sec):'');
+  var _mch=wksChips(di,b.meets,b.meetSlot,slot,'wkbdMeetTap',b.meetsData,true,'meet');
+  h+=wksRowQ('미팅', _mch, _ms.sec?psDurFmt(_ms.sec):'');
   /* 2.305 — **웜업 줄을 걷고 훈련 한 줄로**(사용자 "웜업을 따로 분리하지 말고 훈련만 넣자").
      웜업도 훈련의 하나다 — 준비 이름(Activation·Mobility…)은 훈련 ＋ 의 프리셋으로 들어왔다.
      ⚠ **데이터는 옮기지 않는다.** 옛 저장본의 `b.warms` 를 여기서 **함께 그려** 사라지지 않게 하고,
        탭하면 제 시트(wkbdWarmTap)로 간다 — 보드 보기·일간·인쇄가 아직 웜업 줄을 읽기 때문이다.
        한 줄에 두 배열을 그리지만 인덱스는 배열마다 따로라 탭이 어긋나지 않는다. */
   var _ws=wksSecSum(b.warms,b.warmSlot,slot,b.warmsData), _ts=wksSecSum(b.trains,b.trainSlot,slot,b.trainData), _tn=_ws.n+_ts.n, _tsec=_ws.sec+_ts.sec;
-  h+=wksRow('훈련', wksChips(di,b.warms,b.warmSlot,slot,'wkbdWarmTap',b.warmsData,true,'warm')
-                   +wksChips(di,b.trains,b.trainSlot,slot,'wkbdTrainTap',b.trainData,true,'train',b.trainThemes),
-       '세션 채우기 — 주제·강도·미팅·훈련·보관함', "wksFill("+di+",'"+slot+"','train')", _tsec?psDurFmt(_tsec):'');
+  var _tch=wksChips(di,b.warms,b.warmSlot,slot,'wkbdWarmTap',b.warmsData,true,'warm')
+          +wksChips(di,b.trains,b.trainSlot,slot,'wkbdTrainTap',b.trainData,true,'train',b.trainThemes);
+  h+=wksRowQ('훈련', _tch, _tsec?psDurFmt(_tsec):'');
   /* 2.135 — 보관함은 **세션마다**(사용자). 하루 아래 한 줄이던 것을 옥겼다 —
      어느 세션에 쓰는 드릴인지가 곹 정보다. 예전 저장본(slot 없는 것)은 '시간대 없음' 카드로 간다 */
   var _lch='';
@@ -4982,9 +4987,12 @@ function wksCard(di,slot){
     _lch+='<div class="wkbd-chip wks-chip lib" onclick="event.stopPropagation();wkbdLibOpen('+di+','+li+')">'+wkbdEsc(v)
       +'<button type="button" class="wkbd-libmore" onclick="event.stopPropagation();wkbdLibTap('+di+','+li+')">⋯</button></div>';
   });
-  h+=wksRow('보관함', _lch, '세션 채우기 — 주제·강도·미팅·훈련·보관함', "wksFill("+di+",'"+slot+"','lib')");
+  h+=wksRowQ('보관함', _lch, '');
   /* 2.908 — 메모(있을 때만 — 빈 줄을 늘 두면 카드가 길어진다. 적는 문은 ＋ 모달의 메모 칸) */
   if(tr&&String(tr.note||'').trim())h+='<div class="wks-row"><i>메모</i><div class="wks-aims wks-note" onclick="'+_fp('memo')+'">'+wkbdEsc(String(tr.note).trim())+'</div></div>';
+  /* 2.979 — 채우는 문 하나. 첫 빈 칸으로 연다(다 찼으면 훈련) */
+  var _any=!!(aims||rpe||_mch||_tch||_lch), _fk=!aims?'topic':!rpe?'rpe':!_tch?'train':!_mch?'meet':!_lch?'lib':'train';
+  h+='<button type="button" class="wks-fill'+(_any?'':' empty')+'" title="세션 채우기 — 주제·강도·미팅·훈련·보관함" onclick="'+_fp(_fk)+'">＋ '+(_any?'채우기':'세션 채우기')+'</button>';
   return h+'</div>';
 }
 /* 2.634 — 지난 경기 리뷰의 «다음 훈련 행동»이 이번 주 주간 카드 위에 그대로 비친다(거울 — 제안이 아니라 코치가 쓴 문장). 지난 7일 경기 중 있는 것만 */
@@ -8785,14 +8793,20 @@ try{
   function draw(btnTx){
     var c=srvAt(), up=unpushed(), wi=wsInfo(), ph=!!(phMq&&phMq.matches);
     box.hidden=false;
-    var head=(wi.lb&&!ph)?('<b>'+wi.lb+'</b> · '):'';
+    /* ══ 2.979 · 손쓸 일이 있을 때만 제 줄을 차지한다 ══
+       att = 받은 판이 없음 · 안 올라간 변경 · 개인 공간인데 팀이 있음 · 저장 공간 부족 · 주고받는 중 · 방금 결과.
+       그 밖(전부 정상)에는 데스크톱에서도 폰과 같은 짧은 꼴(«서버 일정 · 3분 전 받음» + ⟳)로 보기 전환 줄 오른쪽 끝에 붙는다.
+       ⚠ 지우지 않는다 — «언제 받은 판인가»는 기기가 뒤처졌을 때 알아채는 유일한 표시다(2.261~2.264). 줄만 안 차지한다. */
+    var att=!c||up||!!wi.personalWithTeam||!!window.__schedMirrorFull||busy||!!notice, compact=ph||!att;
+    try{ box.classList.toggle('att',att); }catch(_){}
+    var head=(wi.lb&&!compact)?('<b>'+wi.lb+'</b> · '):'';
     var wsWarn=wi.personalWithTeam?' · <b class="ss-warn">지금 개인 일정을 보는 중 — 팀 '+wi.teamName+' 일정은 워크스페이스를 팀으로 전환해야 보여요</b>':'';
     if(window.__schedMirrorFull)wsWarn+=' · <b class="ss-warn">저장 공간이 부족해 사본을 못 바꿔요 — 앱 설정 › 기기 › 안전 정리</b>';   /* 2.264 */
     box.innerHTML='<span>'+(notice?notice
-        :(c?(head+'서버 일정 · '+ago(c)+(ph?' 받음':' 판 받음')+wsWarn+grpNote()+(up?' · <b class="ss-warn">이 기기에 서버로 안 올라간 변경 있음</b>':''))
+        :(c?(head+'서버 일정 · '+ago(c)+(compact?' 받음':' 판 받음')+wsWarn+((compact&&!ph)?'':grpNote())+(up?' · <b class="ss-warn">이 기기에 서버로 안 올라간 변경 있음</b>':''))
            :head+'아직 서버 일정을 받지 못했어요 — 컴퓨터와 같은 계정·같은 팀인지 확인해요'+wsWarn))+'</span>'
       +(function(){ var bt=btnTx||(up?'지금 주고받기':'지금 받아오기');
-          return '<button type="button" id="schedSyncNow"'+(busy?' disabled':'')+(ph?' aria-label="'+bt+'" title="'+bt+'">⟳':'>'+bt)+'</button>'; })();
+          return '<button type="button" id="schedSyncNow"'+(busy?' disabled':'')+(compact?' aria-label="'+bt+'" title="'+bt+'">⟳':'>'+bt)+'</button>'; })();
     var b=document.getElementById('schedSyncNow');
     b.onclick=function(){ if(busy)return; busy=true; notice=''; draw('주고받는 중…');
       var before=srvAt(), upBefore=unpushed(), p=null;
@@ -10267,3 +10281,53 @@ html body .wks-day:not(.is-match):not(.is-off):not(:has(.wks-ses))>.wks-kind .wk
   f.onclick=function(){ try{ if(typeof scheduleGoToday==='function')scheduleGoToday(); }catch(_){} setTimeout(function(){ try{ openSelectedDayQuick(); }catch(_){} },80); };
 })();
 </script>
+<style id="ps-2979-wks">/* ══ 2.979 · 일정 주간 — 디자인 판정 반영(사용자 «보드 빼고 다 고쳐보자») ══
+   기준(이 블록 안): 글자 12·14·16 / 굵기 500·600·700 / 모서리 6·10·999 / 누르는 것만 파랑 / 경기·오늘은 잉크(색 없음).
+   ① 머리줄 여섯 층(조 · 보기 전환 · 서버 일정 줄 · 주 넘기기 · 세션|목록 · 내용) → 두 줄. 데스크톱(≥901)만 — 폰은 2.594·2.903 의 한 줄 바 그대로.
+      서버 일정 줄은 손쓸 일이 있을 때(.att)만 제 줄, 아니면 첫 줄 오른쪽 끝의 작은 글씨.
+   ② 세션 카드: 빈 줄을 세우지 않는다(채워진 줄 + «＋ 채우기» 하나). 훈련 줄 띠는 한 색, 오늘·경기는 잉크 테두리.
+   ⚠ process.html 은 문서 끝 </body> 가 인쇄 템플릿 문자열 안에만 있다 — 이 블록은 파일 맨 끝에 붙는다. */
+@media (min-width:901px){
+  html body #schedule.active:not(#_){display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;align-content:flex-start;column-gap:10px}   /* ⚠ 원래 세로 플렉스(column)다 — row 를 못 박지 않으면 가운데로 한 줄씩 쌓인다(실측) */
+  html body #schedule.active:not(#_)>*{flex:0 0 100%;min-width:0}
+  html body #schedule.active:not(#_)>#vtoggle{flex:0 0 auto;order:-3;width:auto;margin:0 0 12px 14px;position:static;box-shadow:none}   /* 14px — 아래 주간 카드(.wks)의 안쪽 여백과 같은 선 */
+  html body #schedule.active:not(#_)>#vtoggle>div{flex:0 0 auto;padding:0 14px;height:32px;line-height:32px;border-radius:6px;font-size:14px;font-weight:600}
+  html body #schedule.active:not(#_)>#vtoggle>.schedule-today{height:32px;padding:0 12px;font-size:12px;font-weight:600}
+  html body #schedule.active:not(#_)>#schedGrp{flex:0 0 auto;order:-2;margin:0 14px 12px auto}
+  html body #schedule.active:not(#_)>#schedSync:not(.att){flex:0 1 auto;order:-1;margin:0 14px 12px 0;gap:6px;flex-wrap:nowrap;font-size:12px;font-weight:500;white-space:nowrap}
+  html body #schedule.active:not(#_):has(>#schedGrp:empty)>#schedSync:not(.att){margin-left:auto}
+  html body #schedule.active:not(#_)>#schedSync.att{margin:0 14px 12px}
+  html body #schedule.active:not(#_)>#schedSync button{font-size:12px;font-weight:600;border-radius:999px}
+  html body #weekView:not(#_){position:relative}
+  html body #weekView:not(#_)>.weeknav{justify-content:flex-start;gap:6px;padding:0 180px 12px 10px;min-height:32px}
+  html body #weekView:not(#_)>.weeknav span{font-size:16px;font-weight:600;min-width:132px;text-align:center}
+  html body #weekView:not(#_)>.wkbtnrow{position:absolute;top:0;right:14px;margin:0}
+}
+html body .wks .wks-day:not(#_){border-radius:10px}
+html body .wks .wks-day.is-match:not(#_){border-color:var(--line,#E3E6EA);box-shadow:inset 0 3px 0 var(--text,#14161A)}
+html body .wks .wks-day.is-today:not(#_){border-color:var(--text,#14161A);box-shadow:inset 0 0 0 1px var(--text,#14161A)}
+html body .wks .wks-day.is-today.is-match:not(#_){box-shadow:inset 0 0 0 1px var(--text,#14161A),inset 0 3px 0 var(--text,#14161A)}
+html body .wks .wks-h>b:not(#_){font-size:14px;font-weight:700}
+html body .wks .wks-day.sun .wks-h>b:not(#_){color:inherit}
+html body .wks .wks-h>span:not(#_){font-size:12px;font-weight:500}
+html body .wks .wks-h .wkbd-md.m:not(#_){color:var(--text,#14161A);font-weight:700}
+html body .wks .wks-h .wks-today:not(#_){background:var(--text,#14161A);color:var(--surface,#fff);font-size:12px;font-weight:600;padding:0 6px}
+html body .wks .wks-kind.m:not(#_){background:var(--surface-2,#F4F5F7)}
+html body .wks .wks-kind.m .wks-kbtn:not(#_){border-color:var(--line,#E3E6EA);color:var(--text,#14161A)}
+html body .wks .wks-mx:not(#_){border-top-color:var(--line,#E3E6EA)}
+html body .wks .wks-sh>b:not(#_),html body .wks .wks-slot:not(#_),html body .wks .wks-grp:not(#_){font-size:12px;font-weight:600;letter-spacing:0}
+html body .wks .wks-slot:not(#_){border-radius:6px}
+html body .wks .wks-tot:not(#_),html body .wks .wks-place:not(#_){font-size:12px;font-weight:500}
+html body .wks .wks-row:not(#_){grid-template-columns:32px minmax(0,1fr)}
+html body .wks .wks-row>i:not(#_){font-size:12px;font-weight:600;letter-spacing:0;padding-top:4px}
+html body .wks .wks-row>i small:not(#_){font-size:12px;font-weight:500}
+html body .wks .wks-aims:not(#_){font-size:12px;font-weight:600}
+html body .wks .wks-li:not(#_){border-radius:6px}
+html body .wks .wks-li b:not(#_){font-size:12px;font-weight:600}
+html body .wks .wks-li i:not(#_){font-size:12px}
+html body .wks .wks-li .wks-bar:not(#_){background:var(--line,#D3D7DD)!important;border-radius:999px}
+html body .wks .wks-fill:not(#_){display:block;width:100%;height:28px;margin-top:6px;border:1px dashed var(--line,#E3E6EA);border-radius:6px;background:transparent;font-family:inherit;font-size:12px;font-weight:600;color:var(--text-3,#8A9099);cursor:pointer}
+html body .wks .wks-fill.empty:not(#_){color:var(--c-act,#3A6DF0)}
+html body .wks .wks-fill:not(#_):hover{border-color:var(--c-act,#3A6DF0);color:var(--c-act,#3A6DF0)}
+@media (max-width:600px){ html body .wks .wks-fill:not(#_){height:40px} }
+</style>
