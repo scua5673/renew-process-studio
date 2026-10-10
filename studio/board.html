@@ -1330,6 +1330,35 @@
   /* 2.282 — 세트피스 = 경기 국면 아래 독립 블록. 문법(.ep-phases)은 경기 국면과 같고, 머리를 눌러 접는다 */
   #editorPanel #epSetPiece{margin-top:6px}
   #editorPanel #epSetPiece:empty{display:none}
+  /* 2.989 — «바탕» 줄(운동장 | 그리드)과 그리드 고치기. 칩·세그는 경기 국면과 같은 치수(30px·모서리 8) */
+  #editorPanel #epSurface{display:block;margin-top:2px}
+  body.ep-sp #editorPanel #epSurface{display:none!important}
+  #editorPanel #epSurface .sf-row{display:flex;align-items:center;gap:10px}
+  #editorPanel #epSurface .sf-l{flex:none;font-size:12px;font-weight:800;color:var(--txt,#14161A)}
+  #editorPanel #epSurface .sf-seg{flex:1;min-width:0;display:flex;gap:3px;padding:3px;border-radius:10px;background:var(--fill,#F1F3F5)}
+  #editorPanel #epSurface .sf-seg.sm{background:#E7EAEE}
+  #editorPanel #epSurface .sf-seg>button{flex:1 1 0;min-width:0;width:auto!important;height:30px;padding:0 6px!important;border:0!important;border-radius:8px;background:transparent;color:var(--txt-dim,#646A73);font:inherit;font-size:12.5px;font-weight:600;line-height:1;white-space:nowrap;cursor:pointer}
+  #editorPanel #epSurface .sf-seg>button.on{background:var(--surface,#fff);color:var(--txt,#14161A);font-weight:800;box-shadow:0 1px 2px rgba(20,22,26,.14)}
+  #editorPanel #epSurface .sf-box{margin-top:8px;display:flex;flex-direction:column;gap:8px;padding:9px 10px 10px;border:1px solid var(--line,#E3E6EA);border-radius:8px;background:var(--fill,#F1F3F5)}
+  #editorPanel #epSurface .sf-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  #editorPanel #epSurface .sf-k{flex:none;font-size:11px;font-weight:700;color:var(--txt-dim,#646A73);white-space:nowrap}
+  #editorPanel #epSurface .sf-cnt{font-size:11px;font-weight:700;color:#2c54c4;white-space:nowrap}
+  #editorPanel #epSurface .sf-chips{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+  #editorPanel #epSurface .sf-c{flex:0 0 auto;width:auto!important;height:30px;padding:0 10px!important;border:1px solid var(--line,#E3E6EA);border-radius:8px;background:var(--surface,#fff);color:var(--txt,#14161A);font:inherit;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;cursor:pointer}
+  #editorPanel #epSurface .sf-c.on{background:#EEF2FF;border-color:#c9d7fb;color:#2c54c4;font-weight:800}
+  #editorPanel #epSurface .sf-size{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+  #editorPanel #epSurface .sf-st{flex:none;width:30px!important;height:30px;padding:0!important;border:1px solid var(--line,#E3E6EA);border-radius:8px;background:var(--surface,#fff);color:var(--txt,#14161A);font:inherit;font-size:15px;font-weight:700;line-height:1;cursor:pointer}
+  #editorPanel #epSurface .sf-v{flex:none;min-width:26px;text-align:center;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+  #editorPanel #epSurface .sf-sp{flex:none;width:6px}
+  #editorPanel #epSurface .sf-line{display:flex;align-items:center;gap:8px;min-width:0}
+  #editorPanel #epSurface .sf-act{display:flex;gap:6px}
+  #editorPanel #epSurface .sf-add{flex:1;min-width:0;width:auto!important;height:32px;padding:0 8px!important;border:1px dashed #9aa6b5;border-radius:8px;background:var(--surface,#fff);color:var(--txt,#14161A);font:inherit;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer}
+  #editorPanel #epSurface .sf-del{flex:none;width:auto!important;height:32px;padding:0 12px!important;border:1px solid var(--line,#E3E6EA);border-radius:8px;background:var(--surface,#fff);color:var(--txt,#14161A);font:inherit;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer}
+  #editorPanel #epSurface button:disabled{opacity:.45;cursor:default}
+  #editorPanel #epSurface .sf-hint{font-size:11px;line-height:1.45;color:var(--txt-dim,#646A73)}
+  body.fmdark #editorPanel #epSurface .sf-seg.sm{background:rgba(255,255,255,.08)}
+  body.fmdark #editorPanel #epSurface .sf-c.on{background:rgba(111,148,245,.18);border-color:rgba(111,148,245,.4);color:#9db6f8}
+  body.fmdark #editorPanel #epSurface .sf-cnt{color:#9db6f8}
   #editorPanel .ep-set-h{cursor:pointer;user-select:none}
   #editorPanel .ep-set-h:hover b{color:var(--blue,#3a6df0)}
   #editorPanel .ep-set-caret{font-size:10px;opacity:.75;margin-left:2px}
@@ -3316,7 +3345,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
           <!-- 2.978 — 실사 잔디 톤(사용자 «실사 잔디 색상이 여러가지 — 더 밝거나 더 연하거나», 목업 A안). 피치가 «잔디»(실사)일 때만 보인다(.ps-tone-off) -->
           <div class="menurow ps-tone-row ps-tone-off" data-bs-tab="pitch" id="grassToneBRow"><span class="menulbl">밝기</span><div class="seg" id="grassToneBSeg" role="group" aria-label="실사 잔디 밝기"><button type="button" data-gb="d">진하게</button><button type="button" data-gb="0" class="on">기본</button><button type="button" data-gb="l">밝게</button><button type="button" data-gb="ll">아주 밝게</button></div></div>
           <div class="menurow ps-tone-row ps-tone-off" data-bs-tab="pitch" id="grassTonePRow"><span class="menulbl">연하기</span><div class="seg" id="grassTonePSeg" role="group" aria-label="실사 잔디 연하기"><button type="button" data-gp="v">선명하게</button><button type="button" data-gp="0" class="on">기본</button><button type="button" data-gp="p">연하게</button><button type="button" data-gp="pp">아주 연하게</button></div></div>
-          <div class="menurow" data-bs-tab="pitch" id="pitchSpecRow"><span class="menulbl">규격</span><div class="seg" id="pitchSpecSeg" role="group" aria-label="운동장 규격"><button data-spec="fifa" class="on" title="FIFA 105×68m · 골 7.32×2.44">11인제</button><button data-spec="u12" title="KFA 8인제 경기규칙 — 65×48m · 골 5.7×2.15 · PA 12.5 · GA 4.5 · PK 8.5 · 센터서클 7">8인제</button><button data-spec="futsal" title="FIFA 풋살 — 40×20m · 골 3×2 · PA r6 사분원 · PK 6 · 제2 PK 10 · 센터서클 3">풋살</button></div></div>
+          <div class="menurow" data-bs-tab="pitch" id="pitchSpecRow"><span class="menulbl">규격</span><div class="seg" id="pitchSpecSeg" role="group" aria-label="운동장 규격"><button data-spec="fifa" class="on" title="FIFA 105×68m · 골 7.32×2.44">11인제</button><button data-spec="u12" title="KFA 8인제 경기규칙 — 65×48m · 골 5.7×2.15 · PA 12.5 · GA 4.5 · PK 8.5 · 센터서클 7">8인제</button><button data-spec="futsal" title="FIFA 풋살 — 40×20m · 골 3×2 · PA r6 사분원 · PK 6 · 제2 PK 10 · 센터서클 3">풋살</button><button data-spec="grid30" title="운동장 라인 없는 빈 판 — 론도·포지션 게임 그리드">그리드</button></div></div>
           <!-- 2.272 — 잔디 줄무늬(있던 엔진 __setGrassM 에 UI만) · 원근 뷰(보기 전용, fmstadio 레퍼런스 C안) -->
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">잔디 줄무늬</span><div class="seg" id="grassSeg" role="group" aria-label="잔디 줄무늬"><button data-g="0">없음</button><button data-g="5" title="5m 폭 모잉 스트라이프">기본</button><button data-g="10" title="10m 폭">넓게</button></div></div>
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">칩</span><div class="seg" id="chip3dSeg" role="group" aria-label="선수 칩 모양"><button type="button" data-c3="0">평면</button><button type="button" data-c3="1" title="광택과 바닥 그림자 — 영상·사진 내보내기에도 들어갑니다">입체</button></div></div><!-- 2.902 -->
@@ -4337,22 +4366,41 @@ const PITCH_SPECS={
   u12:{name:"8인제",len:65,wid:48,goal:5.7,gaD:4.5,gaOff:4.5,paD:12.5,paOff:12.5,pk:8.5,cc:7,arc:7,corner:1,goalD:1.5},
   futsal:{name:"풋살",len:40,wid:20,goal:3,futsal:true,paR:6,pk:6,pk2:10,cc:3,corner:0.25,goalD:1,subZone:5,subGap:5}
 };
+/* ══ 2.989 · 그리드 판(라인 없는 빈 판) — 사용자 «운동장 말고 라인 없이 보드에 그릴 수 있게 · 론도 그리드».
+   규격 키 grid20·grid30·grid45 = «판 가로가 몇 m 인가». 화면(viewBox)과 세계 좌표는 11인제와 똑같이 두고 **1m 가 몇 단위인가만** 바꾼다(mppNow).
+   그래서 운동장 ↔ 그리드를 오가도 선수·그림은 제자리고 토큰·선 굵기·손잡이도 그대로다(풋살처럼 화면을 확대하면 그림 굵기가 3~4배가 된다).
+   판 넓이를 바꿀 때만 내용을 판 가운데 기준으로 줄이고 늘린다(_gridScaleOf) — 10×10m 그리드가 10×10m 로 남게. ══ */
+["20","30","45"].forEach(function(m){ PITCH_SPECS["grid"+m]=Object.assign({},PITCH_SPECS.fifa,{name:"그리드",blank:true,m:+m}); });
 function pitchSpec(){return PITCH_SPECS[state.pitchSpec]||PITCH_SPECS.fifa;}
+function isBlankSpec(){ try{ return !!pitchSpec().blank; }catch(_){ return false; } }
+function mppNow(){ try{ var sp=pitchSpec(); return (sp&&sp.blank&&sp.m>0)?(FL*MPP/sp.m):MPP; }catch(_){ return MPP; } }   /* 1m = 몇 단위 — 운동장 10, 그리드 판은 판 가로(m)로 나눈 값 */
+function _mNum(u){ var m=u/mppNow(); return isBlankSpec()?(Math.round(m*2)/2):Math.round(m); }   /* 화면에 적는 미터 — 운동장은 정수(옛 그대로), 그리드 판은 0.5 단위 */
 function isPosLabel(){return state.label==="pos"||state.label==="fpos";}   /* 2.237 — '포지션'·'풋살 포지션' 둘 다 포지션 표시 */
-function PR(){const sp=pitchSpec();if(sp===PITCH_SPECS.fifa)return {L,R,T,B,PW,PH,CX,CY};
+function PR(){const sp=pitchSpec();if(sp===PITCH_SPECS.fifa||sp.blank)return {L,R,T,B,PW,PH,CX,CY};   /* 2.989 — 그리드 판도 판 전체 */
   const pw=M2U(sp.len),ph=M2U(sp.wid),l=CX-pw/2,t=CY-ph/2;return {L:l,R:l+pw,T:t,B:t+ph,PW:pw,PH:ph,CX,CY};}
 window.__pitchSpec=function(){return state.pitchSpec||"fifa";};
-window.__syncPitchSpecUI=function(){try{var k=state.pitchSpec||"fifa";document.querySelectorAll("#pitchSpecSeg button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-spec")===k);});}catch(_){}};
-window.__setPitchSpec=function(k){if(!PITCH_SPECS[k])k="fifa";if((state.pitchSpec||"fifa")===k)return;try{pushUndo();}catch(_){}
+window.__syncPitchSpecUI=function(){try{var k=state.pitchSpec||"fifa",_bl=!!(PITCH_SPECS[k]&&PITCH_SPECS[k].blank);document.querySelectorAll("#pitchSpecSeg button").forEach(function(b){var s=b.getAttribute("data-spec");b.classList.toggle("on",s===k||(_bl&&!!(PITCH_SPECS[s]&&PITCH_SPECS[s].blank)));});}catch(_){}
+  try{window.__renderEpSurface&&window.__renderEpSurface();}catch(_){}};   /* 2.989 — 그리드 판(어느 넓이든)이면 «그리드» 단추가 켜지고, 편집기 «바탕» 줄도 따라온다 */
+window.__setPitchSpec=function(k){if(!PITCH_SPECS[k])k="fifa";if((state.pitchSpec||"fifa")===k)return;
+  var _wasBl=isBlankSpec(),_bl=!!PITCH_SPECS[k].blank; if(_wasBl&&_bl)return;   /* 2.989 — 그리드 판끼리(판 넓이)는 __setGridArea 가 내용을 함께 줄이고 늘린다 */
+  if(_bl&&(state.pitchN||1)>1){try{window.__setPitchN(1);}catch(_){}}   /* 그리드 판은 한 판 */
+  try{pushUndo();}catch(_){}
+  if(_wasBl)state.gridM=pitchSpec().m;   /* 2.989 — 떠나는 그리드 판의 넓이를 적어 둔다 */
   state.pitchSpec=k;
   if(k!=="fifa"){state.pitchView="full";state.area="full";state.fieldMode="standard";}   /* 작은 규격은 '전체' 보기만(범위·세트피스는 11인제) */
   if(k==="futsal"){state.gridType="off";}   /* 2.243 — 풋살 선택 시 전술 그리드 없음(사용자): 코트가 작아 그리드가 라인을 덮는다 */
+  /* 2.989 — 그리드 판은 선수가 적고 크게 본다: 토큰을 «크기 ＋» 사다리의 [4] 까지 올린다(이미 더 크면 그대로).
+     운동장으로 돌아올 때 그 크기를 손대지 않았으면 원래 크기로 되돌린다 — 바탕을 눌러 본 것만으로 운동장 토큰이 커진 채 남지 않게. */
+  if(_bl){ try{ var _tl=tokScaleLevels(),_tw=Math.round(_tl[4]*100)/100,_tc=(state.tokenScale||_tl[0]);
+      if(_tc<_tw-0.001){ try{_lookFreeze();}catch(_){} window.__gridTokPrev={from:_tc,to:_tw}; state.tokenScale=_tw; } else window.__gridTokPrev=null; }catch(_){} }
+  else if(_wasBl){ try{ var _gp=window.__gridTokPrev; if(_gp&&Math.abs((state.tokenScale||0)-_gp.to)<0.001)state.tokenScale=_gp.from; window.__gridTokPrev=null; }catch(_){} }
   try{window.__syncPitchSpecUI();}catch(_){}try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){}
   try{window.__syncPreset&&window.__syncPreset();}catch(_){}
   try{document.querySelectorAll("#gridSeg button").forEach(function(b){b.classList.toggle("on",b.dataset.g===(state.gridType||"off"));});}catch(_){}
+  try{buildTrainGrid();}catch(_){}   /* 2.989 — 모눈 한 칸의 크기가 달라진다 */
   try{buildLines();}catch(_){}try{buildGrid();}catch(_){}try{applyView();}catch(_){}try{renderTokens();renderDrawings();}catch(_){}
   var _vr=null;try{_vr=_viewScenesMatch("spec");}catch(_){}   /* 2.982 — 규격(과 그에 딸린 범위)은 모든 장면에 */
-  try{boardSaveLive();}catch(_){}try{toast(PITCH_SPECS[k].name+" 규격 · "+PITCH_SPECS[k].len+"×"+PITCH_SPECS[k].wid+"m"+_viewScenesNote(_vr));}catch(_){}};
+  try{boardSaveLive();}catch(_){}try{toast((_bl?("그리드 판 · 긴 쪽 "+PITCH_SPECS[k].m+"m"):(PITCH_SPECS[k].name+" 규격 · "+PITCH_SPECS[k].len+"×"+PITCH_SPECS[k].wid+"m"))+_viewScenesNote(_vr));}catch(_){}};
 document.addEventListener("click",function(e){var b=e.target&&e.target.closest&&e.target.closest("#pitchSpecSeg button[data-spec]");if(b){e.stopPropagation();window.__setPitchSpec(b.getAttribute("data-spec"));}},true);
 document.addEventListener("click",function(e){var b=e.target&&e.target.closest&&e.target.closest("#grassSeg button[data-g]");if(b){e.stopPropagation();window.__setGrassM(parseFloat(b.getAttribute("data-g"))||0);}},true);   /* 2.272 */
 document.addEventListener("click",function(e){var b=e.target&&e.target.closest&&e.target.closest("#tiltSeg button[data-t]");if(b){e.stopPropagation();window.__setTilt(b.getAttribute("data-t")==="1");}},true);   /* 2.272 */
@@ -4372,7 +4420,7 @@ function buildGrid(){
   var __oldG=world.querySelector("#gridLayer");
   const grid=el("g",{id:"gridLayer"});
   try{if(pitchViewKey()!=="full")grid.setAttribute("clip-path","url(#psHalfClip)");}catch(_){}
-  const gt=state.gridType||"lanes";
+  const gt=isBlankSpec()?"off":(state.gridType||"lanes");   /* 2.989 — 전술 그리드는 운동장 것(값은 남겨 두어 운동장으로 돌아오면 그대로) */
   if(gt!=="off"){
     const SP=pitchSpec(),_pr=PR(),L=_pr.L,R=_pr.R,T=_pr.T,B=_pr.B;   /* 2.233 — 규격 사각형 기준 */
     const paH2=SP.futsal?_pr.PH*0.3:(M2U(SP.goal)+2*M2U(SP.paOff))/2,gaH2=SP.futsal?_pr.PH*0.1:(M2U(SP.goal)+2*M2U(SP.gaOff))/2,_paW=SP.futsal?M2U(SP.paR):M2U(SP.paD);
@@ -4514,6 +4562,7 @@ function buildLines(){
   world.__lineSig=__lsig;
   var __oldL=world.querySelector("#lineLayer");
   if(state.lines===false){ if(__oldL)__oldL.remove(); return; }
+  if(isBlankSpec()){ if(__oldL)__oldL.remove(); return; }   /* 2.989 — 그리드 판에는 운동장 라인이 없다 */
   var PLN=getCss("--pline")||"#eef0f6";
   /* 2.243 — 작은 규격(풋살)은 applyView가 코트를 105/len 배 확대하므로 선도 같은 비율로 얇게(사용자 "풋살 라인이 너무 두껍다").
      LSF=len/105 → 화면상 굵기가 11인제와 같아지고, 미터로는 12cm ≈ 실제 풋살 라인(8cm)에 근접 */
@@ -4578,6 +4627,31 @@ function buildLines(){
   else{ try{ if(world.querySelector("#ps-multipitch")){P.style.display="none";P.setAttribute("data-ps-hidden","1");} }catch(_){} }   /* 2.706 — state.pitchN 이 아직 1 이어도 멀티피치 카드가 살아 있으면 숨긴다(loadSnap 은 pitchN 을 넣기 전에 buildLines 를 먼저 부른다) */
   try{if(typeof renderPitchImg==="function")renderPitchImg();}catch(_){}   /* 가로↔세로 전환 시 실사 잔디결 방향 갱신 */
 }
+/* 훈련 피치의 모눈. 2.470 — 격자 크기를 미터로(기기 설정). '기본'은 종전 2.1×2.0, 숫자는 정방 N×N — 자석과 합쳐
+   콘을 놓기만 해도 정확한 N m 행·열이 된다(격자선이 곧 줄자).
+   2.989 — buildPitch 안에 있던 것을 제 함수로 뺐다: 그리드 판은 1m 가 몇 단위인지가 달라(mppNow) 규격·판 넓이가 바뀔 때 모눈만 다시 그린다
+   (buildPitch 는 판 전체를 비우고 다시 짠다). 그리드 판의 한 칸 = 1m(훈련 격자를 2·3·5m 로 골랐으면 그 값). */
+function buildTrainGrid(){
+  if(!world)return;
+  var old=world.querySelector("#trainGrid");
+  if(document.documentElement.dataset.pitch!=="train"){ if(old)old.remove(); world.__tgSig=null; return; }
+  var _tgm=window.__trainGridM||"def";   /* 2.929 — 보드마다 */
+  var _bl=isBlankSpec(), _mp=mppNow();
+  var _tsX=_bl?(_mp*((_tgm==="def")?1:(+_tgm||1))):((_tgm==="def")?M2U(2.1):M2U(+_tgm||2.1)),
+      _tsY=_bl?_tsX:((_tgm==="def")?M2U(2.0):M2U(+_tgm||2.0));
+  var sig=_tsX+"|"+_tsY;
+  if(old&&world.__tgSig===sig)return;
+  world.__tgSig=sig;
+  var _tg=el("g",{id:"trainGrid"});
+  var _ext=1000;   /* 피치 밖 여백(흰 표면)까지 모눈 연장 — L/T 위상 유지해 필드 안 격자 위치 불변 */
+  var _gx0=L-Math.ceil(_ext/_tsX)*_tsX, _gx1=R+_ext, _gy0=T-Math.ceil(_ext/_tsY)*_tsY, _gy1=B+_ext;
+  for(var _gx=_gx0; _gx<=_gx1+0.5; _gx+=_tsX){_tg.appendChild(el("line",{x1:_gx,y1:_gy0,x2:_gx,y2:_gy1,stroke:"#e6ebf0","stroke-width":0.6}));}
+  for(var _gy=_gy0; _gy<=_gy1+0.5; _gy+=_tsY){_tg.appendChild(el("line",{x1:_gx0,y1:_gy,x2:_gx1,y2:_gy,stroke:"#e6ebf0","stroke-width":0.6}));}
+  window.__trainGridSpec={x0:L,y0:T,sx:_tsX,sy:_tsY};   /* 2.469 — 격자 자석용: 교차점 위상(snapDrag가 읽는다) */
+  if(old){ old.parentNode.replaceChild(_tg,old); }
+  else{ var ref=world.querySelector("#gridLayer")||world.querySelector("#lineLayer")||world.querySelector("#drawLayer");
+    if(ref&&ref.parentNode===world)world.insertBefore(_tg,ref); else world.appendChild(_tg); }
+}
 function buildPitch(){
   svg=$("board");svg.innerHTML="";
   const PBG=getCss("--pitchbg")||"#15172b",PLN=getCss("--pline")||"#eef0f6",
@@ -4606,17 +4680,7 @@ function buildPitch(){
     }
     if(document.documentElement.dataset.pitch!=="white"&&document.documentElement.dataset.pitch!=="train")world.appendChild(el("rect",{x:-SX,y:-SX,width:W+2*SX,height:H+2*SX,fill:"url(#grassVig)","clip-path":"url(#pitchClip)"}));
   }
-  if(document.documentElement.dataset.pitch==="train"){try{var _tg=el("g",{id:"trainGrid"});
-    /* 2.470 — 격자 크기를 미터로(기기 설정). '기본'은 종전 2.1×2.0, 숫자는 정방 N×N — 자석과 합쳐
-       콘을 놓기만 해도 정확한 N m 행·열이 된다(격자선이 곧 줄자). */
-    var _tgm=window.__trainGridM||"def";   /* 2.929 — 보드마다 */
-    var _tsX=(_tgm==="def")?M2U(2.1):M2U(+_tgm||2.1),_tsY=(_tgm==="def")?M2U(2.0):M2U(+_tgm||2.0);
-    var _ext=1000;   /* 피치 밖 여백(흰 표면)까지 모눈 연장 — L/T 위상 유지해 필드 안 격자 위치 불변 */
-    var _gx0=L-Math.ceil(_ext/_tsX)*_tsX, _gx1=R+_ext, _gy0=T-Math.ceil(_ext/_tsY)*_tsY, _gy1=B+_ext;
-    for(var _gx=_gx0; _gx<=_gx1+0.5; _gx+=_tsX){_tg.appendChild(el("line",{x1:_gx,y1:_gy0,x2:_gx,y2:_gy1,stroke:"#e6ebf0","stroke-width":0.6}));}
-    for(var _gy=_gy0; _gy<=_gy1+0.5; _gy+=_tsY){_tg.appendChild(el("line",{x1:_gx0,y1:_gy,x2:_gx1,y2:_gy,stroke:"#e6ebf0","stroke-width":0.6}));}
-    window.__trainGridSpec={x0:L,y0:T,sx:_tsX,sy:_tsY};   /* 2.469 — 격자 자석용: 교차점 위상(snapDrag가 읽는다) */
-    world.appendChild(_tg);}catch(_){}}
+  try{ world.__tgSig=null; buildTrainGrid(); }catch(_){}   /* 2.989 — 모눈을 제 함수로 뺐다(규격이 바뀌면 모눈만 다시) */
 buildGrid();
 
   buildLines();
@@ -4656,7 +4720,7 @@ function applyView(){
   try{ if(!_dockOwnsStageReserve&&psBoardDevice()!=="phone"&&!document.body.classList.contains("vcreating") && !document.body.classList.contains("meet-mode") && !document.body.classList.contains("editing")) _abH+=56; }catch(_){}   /* 2.800 — 폰은 도크·열람 바가 없는데 56px 을 늘 예약해 운동장을 세로로 눌렀다(폭 375 에 여유가 있는데도 좌우로 퍼짐). 폰은 예약하지 않는다. */
   /* 2.903 — 폰 저장 띠(#psSaveBar)는 평소 운동장 밑 빈 칸에 선다. 애니메이션 막대가 그 칸을 쓰면 띠가 운동장을 가리므로 그때만 띠 높이만큼 더 비운다. */
   try{ var __abx=document.getElementById("animBar"); if(__abx&&__abx.classList.contains("on")&&document.body.classList.contains("ps-savebar")&&(function(){var b=document.getElementById("psSaveBar");return !!b&&getComputedStyle(b).display!=="none";})()&&!document.body.classList.contains("meet-mode")&&!document.body.classList.contains("editing")&&window.matchMedia&&window.matchMedia("(max-width:639px)").matches){ _abH+=58; _sbExtra=58; } }catch(_){}
-  const _spSmall=(pitchSpec()!==PITCH_SPECS.fifa)&&a==="full"&&(state.fieldMode||"standard")==="standard"&&(state.pitchN||1)<=1,_pr=PR();   /* 2.233 — 작은 규격은 규격 경계+런오프로 맞춤 */
+  const _spSmall=(pitchSpec()!==PITCH_SPECS.fifa)&&!pitchSpec().blank&&a==="full"&&(state.fieldMode||"standard")==="standard"&&(state.pitchN||1)<=1,_pr=PR();   /* 2.233 — 작은 규격은 규격 경계+런오프로 맞춤 */
   if(o==="h"){world.removeAttribute("transform");
     if(a!=="full"){bx=pvWorldRight()?(W-hh):0;by=0;bw=hh;bh=H;}   /* 2.975 */else if(_spSmall){bx=_pr.L-M;by=_pr.T-M;bw=_pr.PW+2*M;bh=_pr.PH+2*M;}else{bx=0;by=0;bw=W;bh=H;}}
   else{world.setAttribute("transform",state.spFlip?`matrix(0 1 -1 0 ${H} 0)`:`matrix(0 -1 1 0 0 ${W})`);
@@ -5489,7 +5553,7 @@ function duplicateSelected(){if(typeof multiSel!=="undefined"&&multiSel.length){
   else if(sel.type==="ball"){const c={team:"ball",id:uid++,x:sel.ref.x+dx,y:sel.ref.y+dy};state.equipment.push(c);selectItem("equip",c);}
   else if(sel.type==="drawing"){const c=Object.assign({},sel.ref,{pts:(sel.ref.pts||[]).map(p=>({x:p.x+dx,y:p.y+dy}))});state.drawings.push(c);renderDrawings();selectItem("drawing",c);}
   renderTokens();try{_setSelRings();}catch(_){}positionSelCtl();}
-function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&sel.ref.type==="text");
+function updateDelUI(){try{window.__renderEpSurface&&window.__renderEpSurface();}catch(_){}   /* 2.989 — 고른 그리드가 바뀌면 패널의 모양·크기도 따라온다 */const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&sel.ref.type==="text");
   const _multiOn=!!(!sel&&typeof multiSel!=="undefined"&&multiSel.length>=2);
   const _players=_multiOn?selectedPlayers(true):(sel&&sel.type==="player"?[sel.ref]:[]);
   const _fieldPlayers=_players.filter(function(p){return !p.coach;});
@@ -6340,15 +6404,20 @@ function enableResize(hg,d,i){
     const a=d.pts[0],b=d.pts[1];
     const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
     const corners=[[x,y],[x+w,y],[x,y+h],[x+w,y+h]],fx=corners[3-i];
-    let gRef=hg.parentNode;
+    let gRef=hg.parentNode,_rzU=false;
     const move=ev=>{const u=toUnit(ev);
+      if(!_rzU){_rzU=true;try{pushUndo();}catch(_){}}   /* 2.989 — 크기 바꾸기도 ⌘Z 한 걸음 */
       let nx=u.x,ny=u.y;   /* 1m 스냅 제거 — 부드럽게, 미터 라벨은 반올림 표시 */
       if(Math.abs(nx-fx[0])<4)nx=fx[0]+(nx<=fx[0]?-4:4);
       if(Math.abs(ny-fx[1])<4)ny=fx[1]+(ny<=fx[1]?-4:4);
+      if(d.grid){const _mp=mppNow();   /* 2.989 — 그리드는 1m 단위로(적힌 크기와 그림이 늘 같게) */
+        nx=fx[0]+(Math.round((nx-fx[0])/_mp)||(nx<fx[0]?-1:1))*_mp;
+        ny=fx[1]+(Math.round((ny-fx[1])/_mp)||(ny<fx[1]?-1:1))*_mp;}
       d.pts=[{x:fx[0],y:fx[1]},{x:nx,y:ny}];
       const f2=redrawOne(d,gRef);if(f2)gRef=f2;};
     const up=()=>{window.removeEventListener("pointermove",move);
-      window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);renderDrawings();};
+      window.removeEventListener("pointerup",up);window.removeEventListener("pointercancel",up);renderDrawings();
+      try{ if(_rzU)autoSaveAnimFrame(); }catch(_){} try{window.__renderEpSurface&&window.__renderEpSurface();}catch(_){} };   /* 2.989 — 패널의 가로·세로 숫자도 따라온다 */
     window.addEventListener("pointermove",move);
     window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up);});
 }
@@ -6365,6 +6434,44 @@ function wavyPath(a,b){const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
   for(let t=3;t<=end;t+=3){const o=amp*Math.sin(t/wl*2*Math.PI);
     d+=` L ${(a.x+ux*t+px*o).toFixed(1)} ${(a.y+uy*t+py*o).toFixed(1)}`;}
   return d;}
+/* ══ 2.989 · 그리드 순수 함수 ══ (tests/rondo-grid-2989 가 이 표식 사이를 잘라 쓴다)
+   그리드 = 테두리 구역(rectline) + shape·split·grid 표식. 자리는 구역과 똑같이 맞모서리 두 점(pts)이라
+   끌기·모서리 손잡이·선택·지우개·되돌리기·썸네일을 구역 것 그대로 쓴다. 옛 판은 같은 자리의 사각형으로 읽는다. */
+var GRID_SHAPES=[["rect","사각형"],["circle","원"],["tri","삼각형"],["diamond","마름모"],["penta","오각형"],["hexa","육각형"],["octa","팔각형"]];
+var GRID_SIDES={tri:3,diamond:4,penta:5,hexa:6,octa:8};
+var GRID_SPLITS=[["1","없음"],["2","2칸"],["3","3칸"],["2x2","2×2"]];
+function _gridF(n){ return Math.round(n*10)/10; }
+/* 모양의 테두리 — 상자(x,y,w,h)를 꽉 채운다. 다각형은 꼭짓점이 위를 보게(팔각형만 윗변이 평평하게) 놓고 상자에 맞춰 편다. */
+function gridShapePath(shape,x,y,w,h){
+  var f=_gridF;
+  if(shape==="circle"){ var rx=Math.max(1,w/2),ry=Math.max(1,h/2),cx=x+w/2,cy=y+h/2;
+    return "M "+f(cx-rx)+" "+f(cy)+" A "+f(rx)+" "+f(ry)+" 0 1 0 "+f(cx+rx)+" "+f(cy)+" A "+f(rx)+" "+f(ry)+" 0 1 0 "+f(cx-rx)+" "+f(cy)+" Z"; }
+  var n=GRID_SIDES[shape]; if(!n)return "";
+  var raw=[],x0=9,x1=-9,y0=9,y1=-9,a0=-Math.PI/2+(shape==="octa"?Math.PI/8:0);
+  for(var i=0;i<n;i++){ var a=a0+i*2*Math.PI/n,px=Math.cos(a),py=Math.sin(a); raw.push([px,py]); x0=Math.min(x0,px);x1=Math.max(x1,px);y0=Math.min(y0,py);y1=Math.max(y1,py); }
+  return "M "+raw.map(function(p){ return f(x+(p[0]-x0)/(x1-x0)*w)+" "+f(y+(p[1]-y0)/(y1-y0)*h); }).join(" L ")+" Z";
+}
+/* 칸 나누기(사각형만) — 2칸·3칸은 세로선, 2×2 는 십자 */
+function gridSplitPath(split,x,y,w,h){
+  var f=_gridF, v=function(px){ return "M "+f(px)+" "+f(y)+" V "+f(y+h); }, hz=function(py){ return "M "+f(x)+" "+f(py)+" H "+f(x+w); };
+  if(split==="2")return v(x+w/2);
+  if(split==="3")return v(x+w/3)+" "+v(x+2*w/3);
+  if(split==="2x2")return v(x+w/2)+" "+hz(y+h/2);
+  return "";
+}
+/* 판 넓이를 바꿀 때 — 판 가운데(cx,cy)를 기준으로 자리만 r 배(토큰·글자 크기는 그대로). 지금 판(state)과 장면 스냅 사본에 같은 식으로 쓴다. */
+function _gridScaleOf(o,r,cx,cy){
+  if(!o||!(r>0)||r===1)return;
+  var f=function(pt){ if(pt&&typeof pt.x==="number")pt.x=_gridF(cx+(pt.x-cx)*r); if(pt&&typeof pt.y==="number")pt.y=_gridF(cy+(pt.y-cy)*r); };
+  (o.players||[]).forEach(f); (o.equipment||[]).forEach(f); if(o.ball)f(o.ball);
+  (o.drawings||[]).forEach(function(d){ if(d&&Array.isArray(d.pts))d.pts.forEach(f); });
+  if(o.spMarks&&Array.isArray(o.spMarks.pts))o.spMarks.pts.forEach(f);
+}
+/* 곡선 동선(frame.curves 의 mx·my)은 가운데 점에서의 치우침이라 같은 비율로 */
+function _gridScaleCurves(cv,r){ if(!cv||typeof cv!=="object")return cv; var o={};
+  Object.keys(cv).forEach(function(k){ var c=cv[k]; if(c&&typeof c==="object"){ var n=Object.assign({},c); if(typeof n.mx==="number")n.mx=_gridF(n.mx*r); if(typeof n.my==="number")n.my=_gridF(n.my*r); o[k]=n; } else o[k]=c; });
+  return o; }
+/* ══ 2.989 · 그리드 순수 함수 끝 ══ */
 function inkColor(c){return c;}                  // 코치가 고른 색 그대로 그린다
 function needCase(c){var lc=(""+c).toLowerCase(); // 밝은 잉크는 흰 피치에서 안 보이므로 어두운 외곽선으로 살린다
   return (lc==="#ffffff"||lc==="#fff"||lc==="#f2f4f7")&&document.documentElement.dataset.pitch==="white";}
@@ -6429,7 +6536,13 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       else g.appendChild(el("rect",{x,y,width:w,height:h,rx:4,fill:_fillV,stroke:"none","pointer-events":"none"}));
     }else{
       const dash=d.type==="rectdash"?"11 8":null;
+      const _gsh=(d.shape&&d.shape!=="rect")?gridShapePath(d.shape,x,y,w,h):"";   /* 2.989 — 그리드 모양(원·삼각형·…·팔각형) */
+      if(_gsh){const ps={d:_gsh,fill:"none",stroke:C,"stroke-width":4.5*LW,"stroke-linejoin":"round","pointer-events":"none","class":"grid-shape"};if(dash)ps["stroke-dasharray"]=dash;g.appendChild(el("path",ps));}
+      else{
       const os={x,y,width:w,height:h,rx:4,fill:"none",stroke:C,"stroke-width":4.5*LW,"pointer-events":"none"};if(dash)os["stroke-dasharray"]=dash;g.appendChild(el("rect",os));
+        const _gsp=d.split?gridSplitPath(d.split,x,y,w,h):"";   /* 2.989 — 칸 나누기(사각형만) */
+        if(_gsp)g.appendChild(el("path",{d:_gsp,fill:"none",stroke:C,"stroke-width":3*LW,"stroke-dasharray":"10 9",opacity:".9","pointer-events":"none","class":"grid-split"}));
+      }
     }
     /* 내부 빈 공간도 구역 자체를 끌 수 있다. tokenLayer가 drawLayer 위에 있어 구역 안 선수/장비는 그대로 먼저 잡힌다. */
     (function(){
@@ -6453,8 +6566,14 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       lt.textContent=lb; lg.appendChild(lt);
       if(state.orientation==="v")lg.setAttribute("transform","rotate("+(state.spFlip?-90:90)+" "+cx+" "+cy+")");
       g.appendChild(lg); }catch(_){} }
+    if(d.grid&&!isSel&&!d._tmp){ try{   /* 2.989 — 그리드는 크기를 늘 적는다(인쇄·썸네일에도 «10 × 10 m»). 고르면 아래 검은 알약이 대신한다 */
+      const _gp=document.documentElement.dataset.pitch,_gcx=x+w/2,_gcy=y-16;
+      const _gt=el("text",{x:_gcx,y:_gcy,"text-anchor":"middle","dominant-baseline":"central",fill:(_gp==="white"||_gp==="train")?"#5b6675":"rgba(255,255,255,.88)","font-size":15,"font-weight":"700","font-family":"Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif","pointer-events":"none","class":"grid-cap"});
+      _gt.textContent=_mNum(w)+" × "+_mNum(h)+" m";
+      if(state.orientation==="v")_gt.setAttribute("transform","rotate("+(state.spFlip?-90:90)+" "+_gcx+" "+_gcy+")");
+      g.appendChild(_gt); }catch(_){} }
     if(isSel){
-      const _lab=`${Math.round(w/MPP)} × ${Math.round(h/MPP)} m`,_fs=18,_pw=_lab.length*_fs*0.6+16,_ph=_fs+12,_cx=x+w/2,_cy=y;
+      const _lab=`${_mNum(w)} × ${_mNum(h)} m`,_fs=18,_pw=_lab.length*_fs*0.6+16,_ph=_fs+12,_cx=x+w/2,_cy=y;
       const _pg=el("g");
       _pg.appendChild(el("rect",{x:_cx-_pw/2,y:_cy-_ph/2,width:_pw,height:_ph,rx:8,fill:"rgba(18,22,30,.92)"}));
       const _tt=el("text",{x:_cx,y:_cy,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":_fs,"font-weight":"800","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif",style:"pointer-events:none"});
@@ -6772,15 +6891,15 @@ function addText(u,existing){
 let _draw=null,_drawTmp=null;
 let _measEl=null;
 function _drawMeters(d){
-  if(d.type==="free"||d.type==="poly"){let L=0;const p=d.pts||[];for(let i=1;i<p.length;i++)L+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);if(d.type==="poly"&&d.closed&&p.length>2)L+=Math.hypot(p[0].x-p[p.length-1].x,p[0].y-p[p.length-1].y);return L/MPP;}   /* 2.980 — 다각형은 둘레 */
-  const a=d.pts[0],b=d.pts[1]||d.pts[0];return Math.hypot(b.x-a.x,b.y-a.y)/MPP;}
+  if(d.type==="free"||d.type==="poly"){let L=0;const p=d.pts||[];for(let i=1;i<p.length;i++)L+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);if(d.type==="poly"&&d.closed&&p.length>2)L+=Math.hypot(p[0].x-p[p.length-1].x,p[0].y-p[p.length-1].y);return L/mppNow();}   /* 2.980 — 다각형은 둘레 */
+  const a=d.pts[0],b=d.pts[1]||d.pts[0];return Math.hypot(b.x-a.x,b.y-a.y)/mppNow();}
 function _fmtM(m){return (m<10?(Math.round(m*10)/10).toFixed(1):""+Math.round(m))+"m";}
 function showMeas(d,pt){if(!world||!pt)return;
   if(!_measEl){_measEl=el("g",{id:"measLabel"});_measEl.style.pointerEvents="none";world.appendChild(_measEl);}
   if(world.lastChild!==_measEl)world.appendChild(_measEl);
   _measEl.innerHTML="";_measEl.style.display="";
   let text;
-  if(d.type==="rect"||d.type==="rectline"||d.type==="rectdash"||d.type==="ellipse"){const a=d.pts[0],b=d.pts[1]||a;text=(Math.round(Math.abs(b.x-a.x)/MPP))+"×"+(Math.round(Math.abs(b.y-a.y)/MPP))+"m";}
+  if(d.type==="rect"||d.type==="rectline"||d.type==="rectdash"||d.type==="ellipse"){const a=d.pts[0],b=d.pts[1]||a;text=_mNum(Math.abs(b.x-a.x))+"×"+_mNum(Math.abs(b.y-a.y))+"m";}
   else text=_fmtM(_drawMeters(d));
   const fs=26,padX=13,padY=7,w=text.length*fs*0.6+padX*2,h=fs+padY*2,x=pt.x,y=pt.y-40;
   _measEl.appendChild(el("rect",{x:x-w/2,y:y-h/2,width:w,height:h,rx:9,fill:"rgba(18,22,30,.92)"}));
@@ -6896,7 +7015,7 @@ function beginDraw(u){
   _drawTmp=drawingEl(_draw);drawLayer.appendChild(_drawTmp);}
 function moveDraw(u){if(!_draw)return;
   if(_draw.type==="rect"||_draw.type==="rectline"||_draw.type==="rectdash"){const o=_draw.pts[0];
-    let dx=Math.round((u.x-o.x)/MPP)*MPP,dy=Math.round((u.y-o.y)/MPP)*MPP;
+    const _mp=mppNow();let dx=Math.round((u.x-o.x)/_mp)*_mp,dy=Math.round((u.y-o.y)/_mp)*_mp;   /* 2.989 — 그리드 판은 1m 가 다르다 */
     _draw.pts[1]={x:o.x+dx,y:o.y+dy};}
   else if(_draw.type==="free")_draw.pts.push(u);else _draw.pts[1]=u;
   const fresh=drawingEl(_draw);drawLayer.replaceChild(fresh,_drawTmp);_drawTmp=fresh;
@@ -7321,6 +7440,7 @@ function captureSnap(){var __cs={pitchSpec:state.pitchSpec||"fifa",players:dc(st
   pitchTheme:(function(){try{return document.documentElement.dataset.pitch||"";}catch(_){return "";}})(),
   pitchCustom:(function(){try{return (document.documentElement.dataset.pitch==="custom")?((document.documentElement.style.getPropertyValue("--pitchbg")||"").trim()||null):null;}catch(_){return null;}})()};
   try{var __lk=lookNow();for(var __k in __lk)__cs[__k]=__lk[__k];}catch(_){}   /* 2.929 — 보드 설정은 그 보드에 */
+  if(state.gridM>0)__cs.gridM=state.gridM;   /* 2.989 — 이 판이 그리드였을 때의 넓이(m). 운동장으로 갔다 돌아와도 같은 넓이로 */
   return __cs;}
 const BOARD_DEFAULT_KEY="cs_board_default_v1";
 function boardDefaultSnap(src){
@@ -7461,7 +7581,7 @@ function __rescaleGrass(){ try{
   for(var x=L-64*sw,i=0; x<W+64*sw; x+=sw,i++) sg.appendChild(el("rect",{x:x,y:-SX,width:sw+0.6,height:H+2*SX,fill:i%2?ga:gb}));
   old.parentNode.replaceChild(sg,old);
 }catch(_){}}
-window.__setPitchN=function(n){var _nn=(+n>0?+n:1);if((state.pitchN||1)!==_nn){try{pushUndo();}catch(_){}}   /* 2.983 — 개수도 ⌘Z 한 걸음(범위·규격·방향과 같게) */state.pitchN=_nn;try{__rescaleGrass();}catch(_){}try{_viewScenesToast(_viewScenesMatch("count"),"운동장 개수를");}catch(_){}   /* 2.982 */try{boardSaveLive();}catch(_){}};
+window.__setPitchN=function(n){var _nn=(+n>0?+n:1);try{if(_nn>1&&isBlankSpec())window.__setPitchSpec("fifa");}catch(_){}   /* 2.989 — 운동장 여러 개는 운동장 바탕에서(그리드 판은 한 판) */if((state.pitchN||1)!==_nn){try{pushUndo();}catch(_){}}   /* 2.983 — 개수도 ⌘Z 한 걸음(범위·규격·방향과 같게) */state.pitchN=_nn;try{__rescaleGrass();}catch(_){}try{_viewScenesToast(_viewScenesMatch("count"),"운동장 개수를");}catch(_){}   /* 2.982 */try{boardSaveLive();}catch(_){}};
 /* 운동장 범위: 전체 / 1·2·3분기. 2/4는 기존 하프와 호환하고, 옛 스냅의 area=half도 그대로 읽는다. */
 window.__getPitchView=function(){return pitchViewKey();};
 window.__setPitchSide=function(side){ var cur=state.pvSide==="opp"?"opp":"own", nx=(side==="toggle")?(cur==="opp"?"own":"opp"):(side==="opp"?"opp":"own"); if(nx===cur)return;
@@ -7635,8 +7755,8 @@ window.__setBoardOrient=function(o){ o=(o==="v")?"v":"h";
 function loadSnap(s,opts){s=s||{};opts=opts||{};sel=null;multiSel=[];state.players=dc(s.players||[]);state.equipment=dc(s.equipment||[]);
   state.ball=(s.ball===null)?null:{...(s.ball||{x:CX,y:CY})};state.drawings=dc(s.drawings||[]);
   var __lkc={};try{__lkc=lookApply(opts.keepLook?lookNow():lookOf(s));}catch(_){}   /* 2.929 — 보드 설정: 이 스냅의 것, 없으면 기본값(앞서 연 보드 값 아님) */
-  state.pitchSpec=(s.pitchSpec&&PITCH_SPECS[s.pitchSpec])?s.pitchSpec:"fifa";try{window.__syncPitchSpecUI&&window.__syncPitchSpecUI();}catch(_){}   /* 2.233 */
-  try{if(world){buildLines();buildGrid();}}catch(_){}   /* 2.235 — 복원된 규격으로 라인·그리드 즉시 재생성(서명에 규격 포함) */
+  state.pitchSpec=(s.pitchSpec&&PITCH_SPECS[s.pitchSpec])?s.pitchSpec:"fifa";state.gridM=(+s.gridM>0)?+s.gridM:0;   /* 2.989 */try{window.__syncPitchSpecUI&&window.__syncPitchSpecUI();}catch(_){}   /* 2.233 */
+  try{if(world){buildTrainGrid();buildLines();buildGrid();}}catch(_){}   /* 2.235 — 복원된 규격으로 라인·그리드 즉시 재생성(서명에 규격 포함) · 2.989 모눈도 */
   state.orientation=s.orientation||"h";state.area=s.area||"full";state.pitchView=normPitchView(s.pitchView||((state.area||"full")==="half"?"half":"full"));state.fieldMode=s.fieldMode||"standard";state.spFlip=!!s.spFlip;state.halfSide=s.halfSide||"L";state.pvSide=(s.pvSide==="opp")?"opp":"own";
 	  /* 2.929 — gridType·label·lines·tokenScale 은 위 lookApply 가 맡는다 */state.boardLocked=false;   /* 2.459 — '배치 고정' 문이 사라졌다: 켠 채 저장된 보드가 열리지 않는 자물쇠가 되지 않게 항상 풀고 연다 */
   state.pitchN=s.pitchN||1;   /* 새 보드도 사용자 저장 토큰 크기 우선 */
@@ -12217,6 +12337,135 @@ function renderEpSetPiece(){
       renderEpSetPiece(); return; }
   };
 }
+/* ══ 2.989 · 그리드 판 — 편집기 패널의 «바탕» 줄과 그리드 넣기·고치기 ══
+   사용자 «훈련 편집기에서 론도 그리드도 · 운동장 말고 라인 없이 보드에 · 보드 안에서 수정 · 사각형뿐 아니라 다양하게(팔각형도)».
+   · 바탕 = 운동장 | 그리드(라인 없는 빈 판). 판만 바뀌고 선수·그림은 제자리다.
+   · 그리드 = 테두리 구역(rectline) + grid 표식. 보드에서 끌어 옮기고 모서리 손잡이로 크기를 바꾸는 것은 구역이 원래 하던 일이다.
+     여기서는 넣기·모양·1m 단위 크기·칸 나누기·삭제만 맡는다. 색·선 모양·이름은 선 스타일 그대로.
+   · 대상 = 고른 그리드, 고른 것이 없으면 마지막에 넣은 그리드. */
+function _gridList(){ return (state.drawings||[]).filter(function(d){ return d&&d.grid&&Array.isArray(d.pts)&&d.pts.length>=2; }); }
+function _gridTarget(){ try{ if(sel&&sel.type==="drawing"&&sel.ref&&sel.ref.grid)return sel.ref; }catch(_){} var g=_gridList(); return g.length?g[g.length-1]:null; }
+function _gridBox(d){ var a=d.pts[0],b=d.pts[1]||a; return {x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.abs(b.x-a.x),h:Math.abs(b.y-a.y)}; }
+function _gridInk(){ var p=document.documentElement.dataset.pitch; return (p==="white"||p==="train")?"#3d4654":"#ffffff"; }
+function _gridNext(){ var n=window.__gridNext; if(!n||typeof n!=="object")n=window.__gridNext={shape:"rect",w:10,h:10}; return n; }
+function _gridAfter(){ try{autoSaveAnimFrame();}catch(_){} try{boardSaveLive();}catch(_){} try{renderEpSurface();}catch(_){} }
+/* 새 그리드의 자리 — 첫 그리드는 판 가운데, 다음부터는 있는 그리드들 옆(오른쪽 → 왼쪽 → 아래, 3m 띄워서). 자리가 없으면 null */
+function _gridSpot(w,h){ var mp=mppNow(),list=_gridList();
+  var sx=function(v){ return L+Math.round((v-L)/mp)*mp; }, sy=function(v){ return T+Math.round((v-T)/mp)*mp; };
+  if(!list.length)return {x:sx(CX-w/2),y:sy(CY-h/2)};
+  var x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity; list.forEach(function(g){ var b=_gridBox(g); x0=Math.min(x0,b.x);x1=Math.max(x1,b.x+b.w);y0=Math.min(y0,b.y);y1=Math.max(y1,b.y+b.h); });
+  var gap=3*mp,last=_gridBox(list[list.length-1]),my=sy(last.y+last.h/2-h/2);
+  if(x1+gap+w<=W-4)return {x:sx(x1+gap),y:my};
+  if(x0-gap-w>=4)return {x:sx(x0-gap-w),y:my};
+  if(y1+gap+h<=H-4)return {x:sx(last.x),y:sy(y1+gap)};
+  return null; }
+function gridAdd(opts){ opts=opts||{}; if(!isBlankSpec())return null;
+  var t=_gridTarget(),nx=_gridNext(),mp=mppNow();
+  var shape=opts.shape||(t?(t.shape||"rect"):nx.shape)||"rect";
+  var wm=+opts.w||(t?Math.max(1,Math.round(_gridBox(t).w/mp)):+nx.w)||10, hm=+opts.h||(t?Math.max(1,Math.round(_gridBox(t).h/mp)):+nx.h)||10;
+  var spot=_gridSpot(wm*mp,hm*mp),undone=!!opts.noUndo;
+  if(!spot){   /* 자리가 없으면 판을 한 단계 넓힌다(내용이 함께 줄어 옆자리가 생긴다) */
+    var cur=pitchSpec().m,nxt=(cur<30)?30:((cur<45)?45:0);
+    if(nxt){ try{window.__setGridArea(nxt,{quiet:true});}catch(_){} undone=true; mp=mppNow(); spot=_gridSpot(wm*mp,hm*mp);
+      if(spot){ try{toast("그리드가 다 보이게 판을 "+nxt+"m 로 넓혔어요");}catch(_){} } }
+    if(!spot){ var lb=_gridBox(_gridList().slice(-1)[0]); spot={x:lb.x+2*mp,y:lb.y+2*mp}; } }
+  var w=wm*mp,h=hm*mp,d={type:"rectline",grid:1,color:_gridInk(),lw:1,pts:[{x:_gridF(spot.x),y:_gridF(spot.y)},{x:_gridF(spot.x+w),y:_gridF(spot.y+h)}]};
+  if(shape!=="rect")d.shape=shape;
+  if(!undone){ try{pushUndo();}catch(_){} }
+  state.drawings.push(d); window.__lastDrawn=d;
+  renderDrawings();
+  /* 폰(≤700)에서는 고르지 않는다 — 고르면 선택 시트(2.711)가 올라와 방금 누른 패널을 덮는다. 패널은 마지막 그리드를 가리킨다(_gridTarget). */
+  if((window.innerWidth||1024)>700){ try{afterDrawZone(d);}catch(_){ try{selectItem("drawing",d);}catch(__){} } }
+  _gridAfter(); return d; }
+function gridSetShape(k){ if(!GRID_SHAPES.some(function(s){ return s[0]===k; }))return; var d=_gridTarget();
+  if(!d){ _gridNext().shape=k; renderEpSurface(); return; }
+  if((d.shape||"rect")===k)return; try{pushUndo();}catch(_){}
+  if(k==="rect")delete d.shape; else{ d.shape=k; delete d.split; }
+  renderDrawings(); _gridAfter(); }
+function gridStep(axis,delta){ var d=_gridTarget(),mp=mppNow(),lim=function(v){ return Math.max(1,Math.min(60,v)); };
+  if(!d){ var n=_gridNext(); n[axis]=lim((+n[axis]||10)+delta); renderEpSurface(); return; }
+  var b=_gridBox(d),wm=Math.max(1,Math.round(b.w/mp)),hm=Math.max(1,Math.round(b.h/mp));
+  if(axis==="w")wm=lim(wm+delta); else hm=lim(hm+delta);
+  var cx=b.x+b.w/2,cy=b.y+b.h/2,w=wm*mp,h=hm*mp; try{pushUndo();}catch(_){}
+  d.pts=[{x:_gridF(cx-w/2),y:_gridF(cy-h/2)},{x:_gridF(cx+w/2),y:_gridF(cy+h/2)}];   /* 가운데는 그대로 두고 */
+  renderDrawings(); _gridAfter(); }
+function gridSetSplit(k){ var d=_gridTarget(); if(!d||(d.shape&&d.shape!=="rect"))return; if((d.split||"1")===k)return; try{pushUndo();}catch(_){}
+  if(k==="1"||!GRID_SPLITS.some(function(s){ return s[0]===k; }))delete d.split; else d.split=k;
+  renderDrawings(); _gridAfter(); }
+function gridRemove(){ var d=_gridTarget(); if(!d)return; try{removeDrawing(d);}catch(_){} try{renderEpSurface();}catch(_){} }
+/* 판 넓이(가로 몇 m) — 내용을 판 가운데 기준으로 함께 줄이고 늘린다. 이 애니메이션의 장면도 전부(스냅은 사본으로 갈아 끼운다 — 2.980·2.982 와 같은 이유) */
+window.__setGridArea=function(m,opts){ opts=opts||{}; var k="grid"+m; if(!PITCH_SPECS[k]||!isBlankSpec()||state.pitchSpec===k)return;
+  var nm=PITCH_SPECS[k].m,r=pitchSpec().m/nm,n=0,total=0;
+  try{pushUndo();}catch(_){}
+  _gridScaleOf(state,r,CX,CY);
+  var one=function(sn){ var sp=sn&&PITCH_SPECS[sn.pitchSpec]; if(!sp||!sp.blank||!(sp.m>0)||sn.pitchSpec===k)return null;
+    var c=Object.assign({},sn); c.players=dc(sn.players||[]); c.equipment=dc(sn.equipment||[]); c.drawings=dc(sn.drawings||[]);
+    if(sn.ball)c.ball=Object.assign({},sn.ball); if(sn.spMarks)c.spMarks=dc(sn.spMarks);
+    _gridScaleOf(c,sp.m/nm,CX,CY); c.pitchSpec=k; return {snap:c,r:sp.m/nm}; };
+  try{ if(_rotBound()){ total=anim.frames.length;
+      anim.frames.forEach(function(f,i){ if(!f)return;
+        if(i===animActive){ if(f.curves)f.curves=_gridScaleCurves(f.curves,r); return; }
+        var o=one(f.snap); if(!o)return; f.snap=o.snap; delete f.thumb; if(f.curves)f.curves=_gridScaleCurves(f.curves,o.r); n++; }); } }catch(_){}
+  try{ if(document.body.classList.contains("editing")&&Array.isArray(editorScenes)&&editorScenes.length>1){ if(!total)total=editorScenes.length;
+      editorScenes.forEach(function(sc,i){ if(!sc||i===editorSceneIdx)return; var o=one(sc.snap); if(!o)return; editorScenes[i]={snap:o.snap,thumb:""}; n++; }); } }catch(_){}
+  state.pitchSpec=k;
+  try{buildTrainGrid();}catch(_){} try{buildLines();}catch(_){} try{buildGrid();}catch(_){} try{applyView();}catch(_){}
+  try{renderTokens();renderDrawings();updateDelUI();}catch(_){}
+  try{_viewScenesMatch("spec");}catch(_){}
+  try{autoSaveAnimFrame();}catch(_){}
+  try{ if(n){ renderAnimFrames(); if(document.body.classList.contains("editing")&&typeof renderSceneStrip==="function")renderSceneStrip(); } }catch(_){}
+  try{window.__syncPitchSpecUI();}catch(_){} try{boardSaveLive();}catch(_){}
+  if(!opts.quiet){ try{toast("판 긴 쪽 "+nm+"m"+((n&&total)?(" · 장면 "+total+"개 모두"):""));}catch(_){} } };
+/* 바탕 고르기 — 편집기 패널의 세그가 부른다. 그리드로 처음 바꾸면 10×10 그리드 하나를 판 가운데에 세운다(한 번 눌러 론도 판). */
+window.__setBoardSurface=function(kind){
+  if(kind==="grid"){ if(isBlankSpec())return;
+    var m=String(state.gridM||30); if(!PITCH_SPECS["grid"+m])m="30";   /* 이 판이 전에 쓰던 넓이, 처음이면 30m */
+    window.__setPitchSpec("grid"+m);
+    if(isBlankSpec()&&!_gridList().length&&document.body.classList.contains("editing")&&!editorReadOnly){ try{gridAdd({noUndo:true});}catch(_){} } }
+  else{ if(!isBlankSpec())return; window.__setPitchSpec("fifa"); }
+  try{renderEpSurface();}catch(_){} };
+window.__gridAdd=gridAdd;
+window.__gridOps={shape:gridSetShape,step:gridStep,split:gridSetSplit,remove:gridRemove,list:_gridList,target:_gridTarget};
+function renderEpSurface(){
+  var panel=$("editorPanel"); if(!panel)return;
+  var host=$("epSurface");
+  var show=!!(document.body.classList.contains("editing")&&typeof editorDraft!=="undefined"&&editorDraft&&editorDraft.type!=="setpiece"&&!editorReadOnly);
+  if(!show){ if(host)host.style.display="none"; return; }   /* 보기 전용·세트피스 편집기에는 세우지 않는다 */
+  if(!host){ host=document.createElement("div"); host.id="epSurface"; host.className="ep-row ep-surface";
+    var ph=$("epPhases"); if(ph&&ph.parentNode===panel)panel.insertBefore(host,ph); else panel.appendChild(host);
+    host.addEventListener("click",function(e){ if(editorReadOnly)return; var b=e.target.closest&&e.target.closest("button"); if(!b||b.disabled||!host.contains(b))return;
+      var v;
+      if((v=b.getAttribute("data-sf"))){ window.__setBoardSurface(v); return; }
+      if((v=b.getAttribute("data-gshape"))){ gridSetShape(v); return; }
+      if((v=b.getAttribute("data-gstep"))){ gridStep(v.charAt(0),v.charAt(1)==="+"?1:-1); return; }
+      if((v=b.getAttribute("data-gsplit"))){ gridSetSplit(v); return; }
+      if((v=b.getAttribute("data-garea"))){ window.__setGridArea(+v); return; }
+      if(b.hasAttribute("data-gadd")){ gridAdd(); return; }
+      if(b.hasAttribute("data-gdel")){ gridRemove(); return; } }); }
+  host.style.removeProperty("display");
+  var blank=isBlankSpec(),list=blank?_gridList():[],t=blank?_gridTarget():null,mp=mppNow(),nx=_gridNext();
+  var shape=t?(t.shape||"rect"):(nx.shape||"rect"), bx=t?_gridBox(t):null;
+  var wm=bx?_mNum(bx.w):(+nx.w||10), hm=bx?_mNum(bx.h):(+nx.h||10), split=t?(t.split||"1"):"1";
+  var sig=[blank?state.pitchSpec:"pitch",list.length,t?list.indexOf(t):-1,shape,wm,hm,split].join("|");
+  if(host.__sig===sig&&host.firstChild)return; host.__sig=sig;
+  var seg=function(attr,val,label,on){ return '<button type="button" '+attr+'="'+val+'" class="'+(on?"on":"")+'" aria-pressed="'+(on?"true":"false")+'">'+label+'</button>'; };
+  var h='<div class="sf-row"><b class="sf-l">바탕</b><span class="sf-seg" role="group" aria-label="보드 바탕">'+seg("data-sf","pitch","운동장",!blank)+seg("data-sf","grid","그리드",blank)+'</span></div>';
+  if(blank){
+    var chip=function(attr,val,label,on){ return '<button type="button" class="sf-c'+(on?" on":"")+'" '+attr+'="'+val+'" aria-pressed="'+(on?"true":"false")+'">'+label+'</button>'; };
+    h+='<div class="sf-box">'
+      +'<div class="sf-h"><span class="sf-k">그리드 모양</span><span class="sf-cnt">'+(t?("그리드 "+(list.indexOf(t)+1)+" / "+list.length):"다음에 넣을 그리드")+'</span></div>'
+      +'<div class="sf-chips">'+GRID_SHAPES.map(function(z){ return chip("data-gshape",z[0],z[1],shape===z[0]); }).join("")+'</div>'
+      +'<div class="sf-size"><span class="sf-k">가로</span><button type="button" class="sf-st" data-gstep="w-" aria-label="가로 1m 줄이기">−</button><b class="sf-v">'+wm+'</b><button type="button" class="sf-st" data-gstep="w+" aria-label="가로 1m 늘리기">＋</button>'
+        +'<span class="sf-sp"></span><span class="sf-k">세로</span><button type="button" class="sf-st" data-gstep="h-" aria-label="세로 1m 줄이기">−</button><b class="sf-v">'+hm+'</b><button type="button" class="sf-st" data-gstep="h+" aria-label="세로 1m 늘리기">＋</button><span class="sf-k">m</span></div>'
+      +((t&&shape==="rect")?('<div class="sf-line"><span class="sf-k">칸 나누기</span><span class="sf-chips">'+GRID_SPLITS.map(function(z){ return chip("data-gsplit",z[0],z[1],split===z[0]); }).join("")+'</span></div>'):"")
+      +'<div class="sf-line"><span class="sf-k">판 넓이</span><span class="sf-seg sm" role="group" aria-label="판 가로 넓이">'+["20","30","45"].map(function(a){ return seg("data-garea",a,a+"m",pitchSpec().m===+a); }).join("")+'</span></div>'
+      +'<div class="sf-act"><button type="button" class="sf-add" data-gadd>＋ 그리드 추가</button><button type="button" class="sf-del" data-gdel'+(t?"":" disabled")+'>삭제</button></div>'
+      +'<div class="sf-hint">보드에서 끌어 옮기고, 모서리 손잡이로 크기를 바꿉니다.</div>'
+      +'</div>';
+  }
+  host.innerHTML=h;
+}
+window.__renderEpSurface=renderEpSurface;
 function renderEpPhases(){
   var host=$("epPhases"); if(!host||!editorDraft)return;
   /* 2.280 — 사용자 "팀의 게임모델과 상관없이 기본폼으로 만들자": 훈련 편집기의 국면은 **항상 같은 기본폼**이다.
@@ -12309,6 +12558,7 @@ function fillEditorPanel(){
   if(fs)fs.value=editorDraft.focus;
   try{ renderEpPhases(); }catch(_){}
   try{ renderEpSetPiece(); }catch(_){}   /* 2.282 */
+  try{ renderEpSurface(); }catch(_){}    /* 2.989 */
   paintRpe5();
   buildEditorFields();
   var _af=$("epAddField");if(_af&&!_af._b){_af._b=1;_af.onclick=function(){psPrompt("새 항목 이름 (예: 준비물, 변형, 안전)","",function(nm){nm=(nm||"").trim();if(!nm)return;SECTIONS.push(["f"+Date.now().toString(36)+SECTIONS.length,nm]);saveSections();buildEditorFields();});};}
@@ -13509,7 +13759,7 @@ function init(){
     turf.style.backgroundImage=texture?'url("'+texture+'")':(state.pitchImg?'url("'+state.pitchImg+'")':'none');
     turf.style.backgroundSize=texture?(M2U(10)*scale)+'px '+(M2U(10)*scale)+'px':(state.pitchImg?'cover':'auto');
     host.replaceChildren();
-    if(state.lines===false)return;
+    if(state.lines===false||pitchSpec().blank)return;   /* 2.989 — 그리드 판에는 골대도 없다 */
     const p=PR(),sp=pitchSpec(),mouth=M2U(sp.goal),height=M2U(sp.futsal?2:(sp.goal<6?2.15:2.44))*scale,depth=M2U(sp.goalD||2)*scale;
     const map=(x,y)=>{let a=state.orientation==='v'?(state.spFlip?[H-y,x]:[y,W-x]):[x,y];return [(a[0]-vb.x)*scale+ox,(a[1]-vb.y)*scale+oy];};
     function face(w,h,origin,u,v,kind){
@@ -20669,7 +20919,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
   function layer(){ if(typeof world==="undefined"||!world)return null; var ml=document.getElementById("measureLayer"); if(!ml||ml.parentNode!==world){ if(ml&&ml.parentNode)ml.parentNode.removeChild(ml); ml=el("g",{id:"measureLayer"}); ml.style.pointerEvents="none"; world.appendChild(ml); } else if(world.lastChild!==ml){ var lab=document.getElementById("measLabel"); if(!(lab&&world.lastChild===lab))world.appendChild(ml); } return ml; }
   function rad(o){ var r=24; try{ var m=/scale\(([\d.]+)/.exec(tokenTransform(o)); if(m)r=22*parseFloat(m[1]); }catch(_){} return r; }
   function upright(){ return (state.orientation==="v")?(state.spFlip?-90:90):0; }
-  function fmt(u){ var m=u/MPP; return (m>=100?Math.round(m):(Math.round(m*10)/10).toFixed(1))+"m"; }
+  function fmt(u){ var m=u/mppNow(); return (m>=100?Math.round(m):(Math.round(m*10)/10).toFixed(1))+"m"; }
   function edge(ml,a,b,strong){
     var dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy); if(L<1)return;
     var ra=rad(a),rb=rad(b),ux=dx/L,uy=dy/L;
@@ -20693,8 +20943,8 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
     var x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
     P.forEach(function(o){ if(o.x<x0)x0=o.x; if(o.x>x1)x1=o.x; if(o.y<y0)y0=o.y; if(o.y>y1)y1=o.y; });
     var w=x1-x0,h=y1-y0,vert=(state.orientation==="v"),sw=vert?h:w,sh=vert?w:h;   /* 화면 기준 가로·세로 */
-    var m=function(u){ return (Math.round(u/MPP*10)/10).toFixed(1); };
-    var t=(Math.min(w,h)<1.5*MPP)?fmt(Math.max(w,h)):(m(sw)+" × "+m(sh)+"m");
+    var m=function(u){ return (Math.round(u/mppNow()*10)/10).toFixed(1); };
+    var t=(Math.min(w,h)<1.5*mppNow())?fmt(Math.max(w,h)):(m(sw)+" × "+m(sh)+"m");
     if(w>2&&h>2) ml.appendChild(el("rect",{x:x0,y:y0,width:w,height:h,fill:"none",stroke:"rgba(255,255,255,.85)","stroke-width":2.2,"stroke-dasharray":"7 6","stroke-linejoin":"round"}));
     else ml.appendChild(el("line",{x1:x0,y1:y0,x2:x1,y2:y1,stroke:"rgba(255,255,255,.85)","stroke-width":2.2,"stroke-dasharray":"7 6","stroke-linecap":"round"}));
     /* 알약은 위쪽 변 가운데 위(세로 피치는 world 가 돌아 있어 x 가 화면 세로 — 왼쪽 변 바깥) */
@@ -20717,7 +20967,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
     if(!dragDistOn())return;
     if(!p||typeof p.x!=="number"||typeOfItem(p)!=="equip")return; if(typeof multiSel!=="undefined"&&multiSel.length>=2)return;
     var ml=layer(); if(!ml)return; _dragOn=true; ml.innerHTML="";
-    var best=null,bd=25*MPP; (state.equipment||[]).forEach(function(o){ if(o===p||!o||typeof o.x!=="number")return; var d=Math.hypot(o.x-p.x,o.y-p.y); if(d<bd){bd=d;best=o;} });
+    var best=null,bd=25*mppNow(); (state.equipment||[]).forEach(function(o){ if(o===p||!o||typeof o.x!=="number")return; var d=Math.hypot(o.x-p.x,o.y-p.y); if(d<bd){bd=d;best=o;} });
     if(best)edge(ml,p,best,true);
   };
   window.psMeasDragEnd=function(){ if(!_dragOn)return; _dragOn=false; try{ renderMultiGuides(); }catch(_){} };
