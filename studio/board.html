@@ -7424,7 +7424,7 @@ function __rescaleGrass(){ try{
   for(var x=L-64*sw,i=0; x<W+64*sw; x+=sw,i++) sg.appendChild(el("rect",{x:x,y:-SX,width:sw+0.6,height:H+2*SX,fill:i%2?ga:gb}));
   old.parentNode.replaceChild(sg,old);
 }catch(_){}}
-window.__setPitchN=function(n){state.pitchN=(+n>0?+n:1);try{__rescaleGrass();}catch(_){}try{_viewScenesToast(_viewScenesMatch("count"),"운동장 개수를");}catch(_){}   /* 2.982 */try{boardSaveLive();}catch(_){}};
+window.__setPitchN=function(n){var _nn=(+n>0?+n:1);if((state.pitchN||1)!==_nn){try{pushUndo();}catch(_){}}   /* 2.983 — 개수도 ⌘Z 한 걸음(범위·규격·방향과 같게) */state.pitchN=_nn;try{__rescaleGrass();}catch(_){}try{_viewScenesToast(_viewScenesMatch("count"),"운동장 개수를");}catch(_){}   /* 2.982 */try{boardSaveLive();}catch(_){}};
 /* 운동장 범위: 전체 / 1·2·3분기. 2/4는 기존 하프와 호환하고, 옛 스냅의 area=half도 그대로 읽는다. */
 window.__getPitchView=function(){return pitchViewKey();};
 window.__setPitchSide=function(side){ var cur=state.pvSide==="opp"?"opp":"own", nx=(side==="toggle")?(cur==="opp"?"own":"opp"):(side==="opp"?"opp":"own"); if(nx===cur)return;
@@ -7556,6 +7556,9 @@ function _viewScenesMatch(kind){ var keys=_VIEW_KEYS[kind]||[], n=0, total=0, cu
   return {n:n,total:total}; }
 function _viewScenesNote(r){ return (r&&r.n)?(" · 장면 "+r.total+"개 모두"):""; }
 function _viewScenesToast(r,what){ try{ if(r&&r.n)toast(what+" 장면 "+r.total+"개에 모두 적용했어요"); }catch(_){} return r; }
+/* 2.983 — 개수·피치도 ⌘Z 한 걸음. 색상 고르개는 끄는 동안 input 이 줄줄이 오므로 «한 번 끌기»(입력 사이 0.9초 안)를 한 걸음으로 묶는다 */
+var _viewUndoT=null;
+function _viewUndoOnce(){ if(!_viewUndoT){ try{pushUndo();}catch(_){} } try{clearTimeout(_viewUndoT);}catch(_){} _viewUndoT=setTimeout(function(){ _viewUndoT=null; },900); }
 /* 색상 고르개는 끄는 동안 input 이 줄줄이 온다 — 멈춘 뒤 한 번만 맞춘다 */
 var _viewSoonT=null;
 function _viewScenesSoon(kind,what){ try{clearTimeout(_viewSoonT);}catch(_){} _viewSoonT=setTimeout(function(){ _viewSoonT=null; var r=_viewScenesToast(_viewScenesMatch(kind),what); if(r&&r.n){ try{boardSaveLive();}catch(_){} } },350); }
@@ -13606,6 +13609,8 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
   window.__setSpField=function(){setSpField(true);};
   /* 영역(전체/하프) UI 제거 — seg 연결 불필요(가드로 무해) */
   (function(){var _sg=$("pitchSeg");if(!_sg)return;_sg.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    /* 2.983 — 사람이 다른 피치를 고르면 ⌘Z 한 걸음. 프로그램이 누른 클릭(부팅·복원)은 되돌리기 기록을 만들지 않는다(«변경됨» 표시도 안 켠다) */
+    if((e.isTrusted||window.__psUserClick)&&!b.classList.contains("on")){try{pushUndo();}catch(_){}}
     [..._sg.children].forEach(x=>x.classList.remove("on"));b.classList.add("on");
     /* 선택 이력은 진짜 사용자 클릭에만 — 셸 부트 시퀀스의 프로그램 클릭(기본값 적용)은 이력이 아니다 */
     if(e.isTrusted){try{localStorage.setItem('cs_pitch_set','1');}catch(_){}}
@@ -15393,6 +15398,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 
   // ---------- custom pitch color ----------
   function applyCustom(color, _silent){
+    if(!_silent){try{_viewUndoOnce();}catch(_){}}   /* 2.983 — 색을 끄는 한 번 = ⌘Z 한 걸음 */
     try{ if(!_silent&&state.pitchImg)window.__clearPitchImg(); }catch(_){}   /* 직접 색 선택 시 이전 배경 이미지 해제 */
     var L2=lum(color);
     var line=L2>0.62?"#39414f":"#ffffff";

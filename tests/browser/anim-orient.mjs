@@ -131,6 +131,11 @@ try{
   if(await f.locator('#cmdPitchNSeg button[data-n="2"]').isVisible()){
     await f.locator('#cmdPitchNSeg button[data-n="2"]').click();await page.waitForTimeout(300);
     ks=await keysOf();assert.deepEqual(ks.n,[2,2,2]);assert.equal(ks.last,'운동장 개수를 장면 3개에 모두 적용했어요');
+    // 2.983 — 개수도 ⌘Z 한 걸음: 모든 장면이 함께 돌아오고, 그 앞에 고른 범위(전체)는 그대로다
+    await f.evaluate(()=>undoLast());await page.waitForTimeout(350);
+    ks=await keysOf();assert.deepEqual(ks.n,[1,1,1],'one undo takes the count back in every scene');assert.equal(ks.board.n,1);assert.deepEqual(ks.view,['full','full','full'],'and nothing before it');
+    await f.locator('#cmdPitchNSeg button[data-n="2"]').click();await page.waitForTimeout(300);
+    assert.deepEqual((await keysOf()).n,[2,2,2]);
     await f.locator('#cmdPitchNSeg button[data-n="1"]').click();await page.waitForTimeout(300);
     assert.deepEqual((await keysOf()).n,[1,1,1]);
   }
@@ -138,11 +143,31 @@ try{
   ks=await keysOf();assert.deepEqual(ks.spec,['u12','u12','u12']);assert.match(ks.last,/8인제 규격 · .* · 장면 3개 모두$/);
   await f.locator('#pitchSpecSeg button[data-spec="fifa"]').click();await page.waitForTimeout(300);
   assert.deepEqual((await keysOf()).spec,['fifa','fifa','fifa']);
+  const pitch0=await keysOf(),u0=await f.evaluate(()=>undoStack.length);
   await f.locator('#pitchSeg button[data-p="white"]').click();await page.waitForTimeout(300);
   ks=await keysOf();assert.deepEqual(ks.theme,['white','white','white'],'the pitch a person picks reaches every scene');assert.deepEqual(ks.img,[null,null,null]);assert.equal(ks.last,'피치를 장면 3개에 모두 적용했어요');
-  // 프로그램이 누른 클릭은 지금 판만 바꾼다(부팅·복원이 장면을 덮지 않게)
+  // 2.983 — 피치도 ⌘Z 한 걸음: 모든 장면이 함께 돌아오고 규격(11인제)은 그대로다
+  assert.equal(await f.evaluate(()=>undoStack.length),Math.min(50,u0+1),'picking a pitch is one undo step');
+  await f.locator('#pitchSeg button[data-p="white"]').click();await page.waitForTimeout(200);
+  assert.equal(await f.evaluate(()=>undoStack.length),Math.min(50,u0+1),'pressing the pitch that is already on adds nothing');
+  await f.evaluate(()=>undoLast());await page.waitForTimeout(350);
+  ks=await keysOf();assert.deepEqual(ks.theme,pitch0.theme,'one undo takes the pitch back in every scene');assert.equal(ks.board.theme,pitch0.board.theme);assert.deepEqual(ks.spec,['fifa','fifa','fifa']);
+  await f.locator('#pitchSeg button[data-p="white"]').click();await page.waitForTimeout(300);
+  assert.deepEqual((await keysOf()).theme,['white','white','white']);
+  // 색상 고르개: 끄는 동안 input 이 줄줄이 와도 ⌘Z 한 걸음 · 멈춘 뒤 모든 장면에
+  const u1=await f.evaluate(()=>undoStack.length);
+  await f.evaluate(async()=>{const p=document.getElementById('pitchColPick');for(const c of ['#225533','#226644','#2a7755']){p.value=c;p.dispatchEvent(new Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,60));}});
+  await page.waitForTimeout(700);
+  const col=await f.evaluate(()=>({custom:anim.frames.map(x=>x.snap.pitchCustom||null),theme:anim.frames.map(x=>x.snap.pitchTheme||''),undo:undoStack.length}));
+  assert.deepEqual(col.custom,['#2a7755','#2a7755','#2a7755'],'the colour that was settled on reaches every scene');assert.deepEqual(col.theme,['custom','custom','custom']);
+  assert.equal(col.undo,Math.min(50,u1+1),'one drag of the colour picker is one undo step');
+  await f.evaluate(()=>undoLast());await page.waitForTimeout(350);
+  ks=await keysOf();assert.deepEqual(ks.theme,['white','white','white'],'undo brings white back in every scene');assert.equal(ks.board.theme,'white');
+  // 프로그램이 누른 클릭은 지금 판만 바꾸고(부팅·복원이 장면을 덮지 않게) 되돌리기 기록도 만들지 않는다
+  const u2=await f.evaluate(()=>undoStack.length);
   await f.evaluate(()=>document.querySelector('#pitchSeg button[data-p="calm"]').click());await page.waitForTimeout(500);
   ks=await keysOf();assert.equal(ks.board.theme,'calm');assert.deepEqual([ks.theme[0],ks.theme[2]],['white','white'],'scenes other than the open one keep the pitch');
+  assert.equal(await f.evaluate(()=>undoStack.length),u2,'a click made by the program is not an undo step');
   await f.locator('#pitchSeg button[data-p="real"]').click();await page.waitForTimeout(300);
   ks=await keysOf();assert.deepEqual(ks.theme,['grass','grass','grass']);assert.deepEqual(ks.img,['@real','@real','@real']);
   await f.locator('#pitchSeg button[data-p="navy"]').click();await page.waitForTimeout(300);
