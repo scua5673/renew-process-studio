@@ -1,0 +1,41 @@
+# 임시 진단 — meeting-upgrade 가 리눅스 CI 에서만 흔들리는 원인을 값으로 확정한다. 확인이 끝나면 이 가지째 지운다.
+name: Diag meeting-upgrade
+
+on:
+  push:
+    branches: ['diag/**']
+
+permissions:
+  contents: read
+
+jobs:
+  repeat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      options: --user 1001
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Repeat meeting-upgrade
+        env:
+          PS_BROWSER_ENGINE: ${{ matrix.engine }}
+        run: |
+          pass=0; fail=0
+          for i in $(seq 1 15); do
+            if node tests/browser/meeting-upgrade.mjs > out.log 2>&1; then pass=$((pass+1)); else
+              fail=$((fail+1)); echo "=== run $i FAILED ==="; grep -E "AssertionError|clientWidth|Error:" out.log | head -4 | cut -c1-7000
+            fi
+          done
+          echo "RESULT engine=${{ matrix.engine }} shard=${{ matrix.shard }} pass=$pass fail=$fail"
+          test "$fail" -eq 0
