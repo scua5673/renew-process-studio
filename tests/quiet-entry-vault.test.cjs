@@ -48,15 +48,16 @@ test('confirmed ownership permits normal library rendering without any login not
 
 test('library lock during an awaited read stops rendering without an unhandled rejection',async()=>{
   const h=harness({unlocked:true,view:'session'});h.run(renders[0][2]);
-  let reject;h.c.libGet=()=>new Promise((_,r)=>{reject=r;});
-  const pending=h.c.renderLib();h.state.unlocked=false;reject(h.c.psVaultLockedError());
+  /* 2.995 — 그리기용 읽기가 차례(libTurn)를 한 번 거치므로 libGet 이 불린 뒤에 결과를 돌려준다 */
+  let reject;const called=new Promise(ok=>{h.c.libGet=()=>new Promise((_,r)=>{reject=r;ok();});});
+  const pending=h.c.renderLib();await called;h.state.unlocked=false;reject(h.c.psVaultLockedError());
   await pending;assert.ok(h.nodes.psVaultAuthLock);assert.equal(h.nodes.libGrid.innerHTML,'');assert.equal(h.calls.writes,0);
 });
 test('late library reads from another account or workspace never render',async()=>{
   for(const key of ['uid','wid']){
     const h=harness({unlocked:true});h.run(renders[0][2]);let resolve;
-    h.c.libGet=()=>new Promise(r=>{resolve=r;});
-    const pending=h.c.renderLib();h.state[key]='synthetic-other';resolve([{name:'old private item'}]);
+    const called=new Promise(ok=>{h.c.libGet=()=>new Promise(r=>{resolve=r;ok();});});
+    const pending=h.c.renderLib();await called;h.state[key]='synthetic-other';resolve([{name:'old private item'}]);
     await pending;assert.equal(h.nodes.libGrid.innerHTML,'');assert.equal(h.calls.writes,0);
   }
 });
@@ -67,7 +68,7 @@ test('unrelated library read failures remain visible to callers',async()=>{
 
 test('a late lock rejection cannot cover a newly unlocked account',async()=>{
   const h=harness({unlocked:true,view:'session'});let reject;
-  h.c.libGet=()=>new Promise((_,r)=>{reject=r;});
-  const pending=h.c.psVaultReadForRender();h.state.uid='synthetic-b';reject(h.c.psVaultLockedError());
+  const called=new Promise(ok=>{h.c.libGet=()=>new Promise((_,r)=>{reject=r;ok();});});
+  const pending=h.c.psVaultReadForRender();await called;h.state.uid='synthetic-b';reject(h.c.psVaultLockedError());
   assert.equal(await pending,null);assert.equal(h.nodes.psVaultAuthLock,undefined);
 });
