@@ -3114,6 +3114,7 @@ window.PSTouchSort=function(box,sel,onMove,opt){
 
   box.addEventListener("pointerdown",function(e){
     if(e.pointerType==="mouse")return;                                  /* 마우스는 기존 방식 그대로 */
+    if(typeof opt.off==="function"&&opt.off())return;                 /* 2.987 — 부르는 쪽이 끈다(폰의 페이지 고르개는 순서를 바꾸지 않는다) */
     var el=e.target.closest(sel); if(!el||!box.contains(el))return;
     /* ×·복제·이름변경처럼 **항목 안에 든** 컨트롤은 제외한다(꾹 눌러 삭제하려다 순서가 바뀌면 안 되니까).
        ① 항목 자체가 <button>인 스트립(훈련 탭·페이지 탭)도 있으므로 el 자신은 걸러내면 안 되고,
@@ -19054,6 +19055,10 @@ try{ var _nb=document.getElementById('dfNew');
   }
   function _icon(){ return '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>'; }
   function _penIcon(){ return '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14.5 6.5l3 3"/></svg>'; }
+  /* 2.987 — 세로 폰의 페이지 고르개인가(패턴북은 2.985 가 따로 맡는다). 폰은 편집 도구가 없는 화면(2.086)이라 띠도 고르기만 한다.
+     ⚠ 셸이 ps-phone-work 를 붙이는 때가 첫 렌더보다 늦을 수 있다 — 그릴 때가 아니라 **누를 때** 묻는다. 모양은 CSS 가 body 클래스로 정한다.
+     ⚠ 640 미만만: 그 위 폭에서는 «보드 저장»·«보관함 저장»이 이 띠 안에 산다(render 끝) */
+  function _phoneNav(){ try{ return !window.__vaultBook&&document.body.classList.contains("ps-phone-work")&&(window.innerWidth||0)<640; }catch(_){ return false; } }
   function _bkTouch(){ try{ if(window.__vaultBook&&window.__vaultAutoSaveSchedule)window.__vaultAutoSaveSchedule(); }catch(_){} }   /* 2.985 — 패턴북을 고쳤다(«변경 있음») */
   function _bkBlank(p){ try{ var s=(p&&p.snap)||{}, fr=(p&&p.anim&&p.anim.frames)||[]; return !bkText(p&&p.name,40)&&fr.length<2&&!(s.equipment&&s.equipment.length)&&!(s.drawings&&s.drawings.length); }catch(_){ return false; } }
   function render(){
@@ -19062,9 +19067,10 @@ try{ var _nb=document.getElementById('dfNew');
     var box=stripEl(); if(!box) return;
     var show=isBoardView() && !window.__vaultViewOnly;
     box.classList.toggle("on", !!show);
+    box.classList.toggle("bp-multi", (pages?pages.length:1)>1);   /* 2.987 — 폰은 고를 페이지가 있을 때만 띠를 올린다(CSS) */
     if(!show){ return; }
     /* 1.541 — 손가락으로도 페이지 순서를 바꾼다(아이패드는 HTML5 드래그가 안 먹는다) */
-    try{ PSTouchSort(box,".bp-tab",function(a,b){ reorder(a,b); },{dragClass:"bp-dragging",overClass:"bp-over",ctl:".bpx"}); }catch(_){}
+    try{ PSTouchSort(box,".bp-tab",function(a,b){ reorder(a,b); },{dragClass:"bp-dragging",overClass:"bp-over",ctl:".bpx",off:_phoneNav}); }catch(_){}
     /* 2.737 — 태블릿·데스크톱의 보관함 저장을 «보드 가져오기» 바로 옆에 둔다.
        innerHTML 초기화 전에 원본 버튼 참조를 잡아 이벤트·권한 게이트를 보존한다. */
     var vaultSave=document.getElementById("vaultSave"),manualSave=document.getElementById("boardManualSave");
@@ -19094,7 +19100,7 @@ try{ var _nb=document.getElementById('dfNew');
         b.addEventListener("dragover",function(e){ if(_drag<0)return; e.preventDefault(); try{e.dataTransfer.dropEffect="move";}catch(_){} if(_drag!==i)b.classList.add("bp-over"); });
         b.addEventListener("dragleave",function(){ b.classList.remove("bp-over"); });
         b.addEventListener("drop",function(e){ e.preventDefault(); b.classList.remove("bp-over"); if(_drag>=0&&_drag!==i)reorder(_drag,i); });
-        b.ondblclick=function(e){ e.preventDefault(); e.stopPropagation(); rename(i); };
+        b.ondblclick=function(e){ e.preventDefault(); e.stopPropagation(); if(_phoneNav())return; rename(i); };
         if(i===idx&&!_bkRo){ var pe=document.createElement("span"); pe.className="bpx"; pe.title="페이지 이름 변경"; pe.innerHTML=_penIcon();
           pe.onclick=function(e){ e.stopPropagation(); rename(i); }; b.appendChild(pe);
           var dp=document.createElement("span"); dp.className="bpx"; dp.title="이 페이지 복제"; dp.innerHTML=_icon();
@@ -19139,6 +19145,8 @@ try{ var _nb=document.getElementById('dfNew');
         ch.appendChild(cx); box.appendChild(ch); } }catch(_){}
     if(manualSave&&(window.innerWidth||0)>=640)box.appendChild(manualSave);
     if(vaultSave&&(window.innerWidth||0)>=640)box.appendChild(vaultSave);
+    /* 2.987 — 폰의 고르개: 다시 그릴 때마다 띠가 맨 앞으로 돌아가 지금 페이지가 화면 밖에 남는다 → 지금 탭을 가운데로(띠만 움직인다) */
+    try{ if(_phoneNav()||_bkNarrow){ var _on=box.querySelector(".bp-tab.on"); if(_on)box.scrollLeft=Math.max(0,_on.offsetLeft-(box.clientWidth-_on.offsetWidth)/2); } }catch(_){}
     /* 1.814 — 상단 '내보내기' 버튼 제거(사용자 지시). PNG·GIF·MP4 내보내기는 하단 도크에 있다 */
   }
 
@@ -21384,6 +21392,18 @@ html.ps-page-board #animFrames .anim-frame.sg-start:not(#_):not(#__):not(#___):n
    ⚠ 패턴북에서만 — 보드 탭의 폰 화면(띠가 덮인 채 운동장만 보이는 지금 모습)은 건드리지 않는다 */
 html.ps-page-board body.book-mode.ps-phone-work #boardPageStrip.on:not(#_),html.ps-page-board body.book-mode.ps-dock #boardPageStrip.on:not(#_){position:relative!important;z-index:6!important}
 @media (max-width:767.98px){html.ps-page-board body.book-mode #boardPageStrip.on:not(#_){position:relative!important;z-index:6!important}}
+/* 2.987 — 세로 폰의 보드 탭 · 폰에서 여는 보관함 작전판: 페이지가 둘 이상이면 이 띠가 페이지 고르개다.
+   띠는 원래 이 자리(52px)에 있었는데 번진 운동장 배경에 덮여 다른 페이지로 넘어갈 길이 없었다(2.985 는 패턴북에서만 올렸다).
+   · 페이지가 하나면 지금 모습 그대로(고를 것이 없다) · 폰은 편집 도구가 없는 화면(2.086) — 이름·복제·삭제·＋·가져오기·연결 표시는 그리지 않는다
+   · 띠 높이는 그대로라 운동장 크기가 변하지 않는다 · 세로 폰만(ps-phone-work + 640 미만). 눕힌 폰·아이패드·데스크톱은 그대로 */
+@media (max-width:639.98px){
+  html.ps-page-board body.ps-phone-work:not(.book-mode) #boardPageStrip.on.bp-multi:not(#_){position:relative!important;z-index:6!important;gap:4px!important;padding:0 12px!important}
+  html.ps-page-board body.ps-phone-work:not(.book-mode) #boardPageStrip .bp-head:not(#_),
+  html.ps-page-board body.ps-phone-work:not(.book-mode) #boardPageStrip .bp-tab .bpx:not(#_),
+  html.ps-page-board body.ps-phone-work:not(.book-mode) #boardPageStrip .bp-add:not(#_),
+  html.ps-page-board body.ps-phone-work:not(.book-mode) #boardPageStrip #bpLinkChip:not(#_){display:none!important}
+  html.ps-page-board body.ps-phone-work:not(.book-mode) #boardPageStrip .bp-tab:not(#_){min-height:40px!important;padding:0 14px!important;font-size:14px!important;font-weight:600!important;border-radius:10px!important}
+}
 #boardPageStrip .bk-pplay{flex:0 0 auto;height:36px;min-height:36px;padding:0 12px;margin-right:6px;border:0;border-radius:6px;background:var(--accent,#3A6DF0);color:#fff;font:inherit;font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer}
 #boardPageStrip .bk-pplay[aria-pressed="true"]{background:var(--txt,#14161A)}
 #boardPageStrip .bk-pplay:disabled{opacity:.45;cursor:default}
