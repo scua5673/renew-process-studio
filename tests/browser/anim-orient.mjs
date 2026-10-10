@@ -111,6 +111,23 @@ try{
   const saved=await f.evaluate(()=>(window.__animFrames()||[]).map(x=>x.snap.orientation));
   assert.deepEqual(saved,['h','h','h']);
 
+  // 훈련 편집기 안의 애니메이션도 같은 규칙 · 편집기를 닫으면 작업 보드의 장면은 그대로 돌아온다
+  step('editor');
+  await f.evaluate(()=>{try{window.__psToggleBoardSettings('force-close');}catch(_){}try{setView('session');}catch(_){}openEditor(null,'train');});
+  await f.waitForFunction(()=>document.body.classList.contains('editing'));await page.waitForTimeout(500);
+  await f.evaluate(()=>{anim.frames=[];animActive=-1;renderAnimFrames();autoOrient=false;state.orientation='h';state.spFlip=false;state.halfSide='L';
+    state.players=[{id:9201,team:'blue',num:5,x:300,y:300}];applyView();renderTokens();document.getElementById('animAdd').click();});
+  await page.waitForTimeout(250);
+  await f.evaluate(()=>{state.players[0].x+=200;renderTokens();autoSaveAnimFrame();});
+  const ed=await f.evaluate(()=>{const r={n:anim.frames.length,bound:_rotBound()};const out=window.__setBoardOrient('v');
+    r.out=out&&{n:out.n,total:out.total};r.dirs=anim.frames.map(x=>x.snap.orientation);r.board=state.orientation;return r;});
+  assert.equal(ed.bound,true,'the editor board is tied to its scene strip');assert.equal(ed.board,'v');
+  assert.deepEqual(ed.dirs,Array(ed.n).fill('v'),'every scene of the training turns');assert.deepEqual(ed.out,{n:ed.n-1,total:ed.n});
+  await f.evaluate(()=>{try{closeEditor(false);}catch(_){}});await page.waitForTimeout(500);
+  await page.evaluate(()=>{const b=document.querySelector('#appSeg [data-app="board"]:not([data-train])');if(b)b.click();});await page.waitForTimeout(800);
+  const wb=await f.evaluate(()=>({dirs:anim.frames.map(x=>x.snap.orientation),xs:anim.frames.map(x=>Math.round(x.snap.players[0].x)),board:state.orientation}));
+  assert.deepEqual(wb.dirs,['h','h','h'],'the work board’s scenes are untouched by what happened in the editor');assert.deepEqual(wb.xs,base.xs);assert.equal(wb.board,'h');
+
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log(JSON.stringify({engine,size,passed:true,row:row.bs.map(b=>b.t+' '+b.w+'×'+b.h),rowH:row.h,v:v.dirs,r180:r180.xs}));
