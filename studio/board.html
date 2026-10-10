@@ -7545,6 +7545,8 @@ function _viewSnapTo(sn,cur,keys){ if(!sn||typeof sn!=="object")return null;
   if(!keys.some(function(k){ return _viewVal(sn,k)!==_viewVal(cur,k); }))return null;
   var c=Object.assign({},sn); keys.forEach(function(k){ c[k]=cur[k]; }); return c; }
 function _viewScenesMatch(kind){ var keys=_VIEW_KEYS[kind]||[], n=0, total=0, cur;
+  /* 재생 중에 바꾼 설정은 미리보기다 — 재생이 끝나면 판이 재생 전으로 돌아오므로(2.525) 장면에도 넣지 않는다(넣으면 활성 장면만 옛 값으로 남는다) */
+  try{ if(typeof animPlaying!=="undefined"&&animPlaying)return {n:0,total:0}; }catch(_){}
   try{ cur=captureSnap(); }catch(_){ return {n:0,total:0}; }
   try{ if(_rotBound()){ total=anim.frames.length;
       anim.frames.forEach(function(f,k){ if(!f||k===animActive)return; var c=_viewSnapTo(f.snap,cur,keys); if(!c)return; f.snap=c; delete f.thumb; n++; }); } }catch(_){}

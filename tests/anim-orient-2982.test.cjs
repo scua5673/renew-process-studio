@@ -190,6 +190,8 @@ test('range · side · count · size · pitch go to every scene of the animation
   assert.deepEqual(clone(k.api._viewScenesMatch('pitch')),{n:2,total:3});assert.deepEqual(of('pitchTheme'),['white','white','white']);assert.deepEqual(of('pitchImg'),[null,null,null]);
   assert.deepEqual(dirs(k),['hL','hL','hL'],'the direction is a separate matter');
   assert.equal(k.api._viewScenesNote({n:2,total:3}),' · 장면 3개 모두');assert.equal(k.api._viewScenesNote({n:0,total:3}),'');
+  const pl=ctx();setup(pl,0);pl.api.play(true);pl.state.pitchN=5;
+  assert.deepEqual(clone(pl.api._viewScenesMatch('count')),{n:0,total:0},'a setting changed during playback is a preview — the board goes back when playback ends');
   const off=ctx({live:false});setup(off,0);off.state.pitchN=3;
   assert.deepEqual(clone(off.api._viewScenesMatch('count')),{n:0,total:0},'a board that is not tied to the scene strip leaves the scenes alone');
 });
