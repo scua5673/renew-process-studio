@@ -81,3 +81,81 @@ test('every board writer that runs on its own (no click) and can meet an open it
   assert.match(slice('  function meetLibMutate(fn,_n){','  function meetSetMatch('),/libTurn\(/);
   assert.match(slice('function maybeBackfillCreators(){','\n}\n'),/libFix\(fill\)/);
 });
+
+/* 2.992 — 사람이 누르는 보관함 조작(고정·옮기기·이름·태그·분류·공유·복사·폴더·템플릿·saveToLib…)도 같은 차례를 탄다.
+   전에는 차례 밖에서 libGet→libSet 을 돌려, 썸네일 차례가 쓰는 사이 읽은 옛 목록으로 그 썸네일을 지우거나 거꾸로 조작이 지워졌다. */
+const userCode=['  function vaultMoveItemTo(','  function vaultTogglePin('].map(a=>slice(a,'\n')).join('\n');
+const saveCode=slice('async function saveToLib(d){','async function addLibToSession(');
+/* 겹침이 또렷하게 — 읽기 20ms, 쓰기 60ms(읽기는 부른 순간의 사본) */
+function lagStore(lib){
+  const st={raw:JSON.stringify(lib),writes:0};
+  st.libGet=async()=>{const snap=st.raw;await sleep(20);return JSON.parse(snap);};
+  st.libWrite=async l=>{const raw=JSON.stringify(l);await sleep(60);st.raw=raw;st.writes++;return true;};
+  st.read=()=>JSON.parse(st.raw);
+  return st;
+}
+function userCtx(st){
+  const c=ctxWith(st,{renderDrillFiles(){},renderLibDock(){},renderLib(){},toast(){},folderNorm:s=>String(s||''),itemMine:()=>true,
+    psVaultRequireLogin:()=>true,dc:J,stampCreator(){},localStorage:{getItem:()=>null,setItem(){}}});
+  vm.runInContext(keepCode+userCode+saveCode+';this.keep=vxThumbKeep;this.pin=vaultTogglePin;this.move=vaultMoveItemTo;this.save=saveToLib;this.del=delFromLib;',c);
+  return c;
+}
+test('a person’s vault action and the thumbnail turn overlap — both survive',async()=>{
+  const st=lagStore([{libId:'A',savedAt:1},{libId:'V',savedAt:1},{libId:'W',savedAt:1,folder:''}]),c=userCtx(st);
+  c.keep('V','svgV');
+  await sleep(310);   /* 썸네일 차례(300ms 뒤)가 목록을 읽고 쓰는 사이에 사람이 누른다 */
+  c.pin({libId:'A'});c.move('W','rondo');
+  await c.save({name:'새 훈련'});
+  const out=st.read();
+  assert.equal(out.find(x=>x.libId==='V').thumb,'svgV','the thumbnail is kept');
+  assert.equal(out.find(x=>x.libId==='A').pin,true,'pin kept');
+  assert.equal(out.find(x=>x.libId==='W').folder,'rondo','move kept');
+  assert.equal(out.filter(x=>x.name==='새 훈련').length,1,'saveToLib kept');
+});
+test('the thumbnail turn arriving while a person’s action is writing does not bring the old list back',async()=>{
+  const st=lagStore([{libId:'A',savedAt:1},{libId:'W',savedAt:1}]),c=userCtx(st);
+  c.keep('W','svgW');
+  await sleep(270);   /* 삭제가 쓰는 중(270~350ms)에 썸네일 차례(300ms)가 온다 */
+  await c.del('A');await c.libTurn(()=>null);   /* 그 뒤에 줄 선 썸네일 차례까지 끝난 뒤 */
+  const out=st.read();
+  assert.equal(out.some(x=>x.libId==='A'),false,'the delete is kept');
+  assert.equal(out.find(x=>x.libId==='W').thumb,'svgW','the thumbnail is kept');
+});
+test('every vault action a person starts reads and writes inside one libTurn and returns the write',()=>{
+  const sites=[['  function vaultMoveItemTo(','\n'],['  function vaultMoveFolder(src,dest){','  function _zoneAt('],['      function _renameFolder(src,ndest){','  /* ══ 2.518'],
+    ['  function vaultDelFolder(full){','  function vaultTogglePin('],['  function vaultTogglePin(','\n'],['  function vaultRenameItem(d){','  /* 2.725'],
+    ['  function vaultDupItem(d){','  /* ══ 2.518'],['  function itemShareToggle(d,after){','  /* ══ 2.928'],['    if(canEdit)mi("태그"','\n'],
+    ['    function pick(k){','\n'],['      function moveTo(path){','\n'],['  function applyVaultTemplate(t){','    function vaultStarter(){']];
+  for(const [a,b] of sites){
+    const code=slice(a,b),writes=(code.match(/libSet\(/g)||[]).length;
+    assert.ok(writes>0,a);
+    assert.equal((code.match(/return (?:\(n\?)?libSet\(/g)||[]).length,writes,'the turn waits for every write: '+a.trim());
+    assert.equal((code.match(/libTurn\(function\(\)\{return libGet\(\)\.then\(function\((?:lib|lib2|l2)\)\{/g)||[]).length,writes,'one turn per write: '+a.trim());
+  }
+  /* 확인 창 뒤에 차례 안에서 다시 읽는다 — 확인 전에 읽은 목록(안내 문구용)으로는 쓰지 않는다 */
+  const del=slice('  function vaultDelFolder(full){','  function vaultTogglePin(');
+  assert.match(del,/psConfirm\(msg,function\(\)\{\s*libTurn\(function\(\)\{return libGet\(\)\.then\(function\(lib2\)\{/);
+  /* async 길: 읽기와 쓰기가 한 차례 안, 차례 앞에서는 읽지 않는다 */
+  const asyncSites=[['async function seedTemplates(){','\n}'],['async function saveToLib(d){','async function delFromLib('],['async function delFromLib(libId){','\n'],
+    ['async function importDrillPack(file){','\n}'],['async function boardLinkWriteBack(onlyCurrent){','\n}'],['    else if(editorLibId!=null){','    else if(editorDrillId!=null){'],
+    ['window.__importSessionDrills=function(drills){','\n};']];
+  for(const [a,b] of asyncSites){
+    const code=slice(a,b);
+    assert.match(code,/libTurn\(async(?:\(\)=>| function\(\))\{[\s\S]*?(?:const|let|var) lib=await libGet\(\)[;,][\s\S]*?await libWrite\(/,a);
+    assert.doesNotMatch(code.slice(0,code.indexOf('libTurn(')),/libGet\(/,'no read before the turn: '+a);
+  }
+  /* 교착 막기: 훈련 편집기 «복사본으로 저장»은 차례에서 원본만 꺼내고 saveToLib(저도 차례를 탄다)는 차례가 끝난 뒤 */
+  const ed=slice('    else if(editorLibId!=null){','    else if(editorDrillId!=null){');
+  assert.match(ed,/if\(asCopy\)return \{src:dc\(d\)\};[\s\S]*?return \{saved:true\};\}\);\s*if\(r\)\{\s*if\(r\.src\)\{[^\n]*await saveToLib\(cp\)/);
+});
+test('awaiting saveToLib inside a turn would deadlock — reading in the turn and saving after it does not',async()=>{
+  const lib=[{libId:'E',name:'훈련',savedAt:1}];
+  const stuck=userCtx(lagStore(lib));
+  const inside=stuck.libTurn(()=>stuck.libGet().then(l=>stuck.save(Object.assign(J(l[0]),{name:'훈련 복사본'}))));
+  assert.equal(await Promise.race([inside.then(()=>'done'),sleep(400).then(()=>'stuck')]),'stuck','the hazard this guards against');
+  const st=lagStore(lib),c=userCtx(st);
+  const r=await c.libTurn(()=>c.libGet().then(l=>({src:J(l[0])})));
+  const id=await c.save(Object.assign(r.src,{name:'훈련 복사본'}));
+  assert.match(String(id),/^L/);
+  assert.deepEqual(st.read().map(x=>x.name),['훈련 복사본','훈련']);
+});
