@@ -22,7 +22,7 @@ const implementation=[
   part('  // ---------- init: restore saved ----------','  if(document.readyState!=="loading") init();'),
   part('  (function(){var _sg=$("pitchSeg");','  seg("labelSeg"'),
   part('  function blankSnap(){','  function loadIdx(i){'),
-  part('  function newBoardItem(type){','  function openSaveSheet('),
+  part('  function newBoardItem(type,opt){','  function openSaveSheet('),
   'hookPresets();'
 ].join('\n');
 const copy=value=>JSON.parse(JSON.stringify(value));

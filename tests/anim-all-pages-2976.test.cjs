@@ -57,7 +57,8 @@ test('the video sheet offers «이 페이지 | 여러 페이지» with a page pi
   const sh=slice('function exportVideoSheet(mode){','/* 2.970 — 미팅 슬라이드 → 영상.');
   assert.match(sh,/var showScope=!meeting&&allN>0&&!\(allN===1&&curOK\);/);
   assert.match(sh,/else if\(!curOK&&!allN\)\{/,'a page without scenes can still export the other pages');
-  assert.match(sh,/seg\("범위",\[\["이 페이지",0\],\["여러 페이지",1\]\],"scope"\)/);
+  assert.match(sh,/var _pw=window\.__vaultBook\?"시퀀스":"페이지";/,'2.985 — a pattern book calls its pages sequences; a board keeps «페이지»');
+  assert.match(sh,/seg\("범위",\[\["이 "\+_pw,0\],\["여러 "\+_pw,1\]\],"scope"\)/);
   assert.match(sh,/cb\.disabled=!ok;/,'a page with one scene cannot be picked');
   assert.match(sh,/nm\.textContent=p\.name;/);
   assert.match(sh,/ps_anim_export_scope_v1/);
@@ -75,7 +76,7 @@ test('page module: an export list with copies (no thumbnails), and nothing is ca
   const el=slice('    exportList:function(){','    /* 2.975 — 내보내기 파일 이름용');
   assert.match(el,/capture\(\);/,'the current page is taken first');
   assert.match(el,/_clone\(a\.frames\)/);assert.match(el,/delete f\.thumb/);
-  assert.match(el,/\|\|\("페이지 "\+\(i\+1\)\)/,'an unnamed page is «페이지 n»');
+  assert.match(el,/\|\|\(\(window\.__vaultBook\?"시퀀스 ":"페이지 "\)\+\(i\+1\)\)/,'an unnamed page is «페이지 n» (2.985 — «시퀀스 n» in a pattern book)');
 });
 
 test('file name: the board name and the picked pages',()=>{

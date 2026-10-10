@@ -104,7 +104,7 @@ test('trails are drawn while exporting and while stepping scenes in a presentati
   assert.match(src,/return function\(\)\{ window\.__animSeg=Math\.max\(0,i-1\); if\(k2===0&&\(i===0\|\|f\.cut\)\)\{ try\{trailReset\(\);\}catch\(_\)\{\} \}/,'MP4 hold frames know their segment; a new page starts a new trail');
   assert.match(src,/return function\(\)\{ window\.__animSeg=s; renderInterp\(a,b,easeInOut\(i2\/steps\),cv\);/,'MP4 move frames');
   assert.match(src,/window\.__animSeg=s;   \/\* 2\.980 \*\/\n\s*renderInterp\(a,bb,0,cv\);await addFrame\(/,'GIF');
-  assert.match(src,/else\{ animPlaying=false;animRaf=null;_animCapShow\(null\);try\{trailReset\(\);\}catch\(_\)\{\}/,'natural end of playback');
+  assert.match(src,/else\{ animPlaying=false;animRaf=null;animRangeEnd=-1;_animCapShow\(null\);try\{trailReset\(\);\}catch\(_\)\{\}/,'natural end of playback (2.985 — the play range is cleared with it)');
   assert.match(src,/window\.__trailLive=1;window\.__animSeg=k;/,'presentation scene step');
   assert.match(src,/function meetSceneFinish\(\)\{window\.__trailLive=0;/);
 });
