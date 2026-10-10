@@ -4,7 +4,7 @@ const source=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8')
 function part(a,b){const i=source.indexOf(a),j=source.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return source.slice(i,j);}
 const contextSource=part('var _vaultBoardContext=null,','function autoSaveAnimFrame()');
 const pagesSource=part('  window.__psPages={','\n})();\n</script>');
-const openSource=part('  function openItem(d, readOnly){','  function newBoardItem(type){');
+const openSource=part('  function openItem(d, readOnly){','  function newBoardItem(type,opt){');
 const closeSource=part('  window.__vaultBoardLeave=function(){','  function doViewSaveBack(){');
 const defaultSource=part('window.boardShowDefault=function(){','\n/* 1.693');
 const wrapperSource=part('  var _osetView=setView;','  // 신규 드릴에 현재 폴더 자동 지정');
