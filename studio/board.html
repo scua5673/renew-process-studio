@@ -8266,24 +8266,28 @@ function _animToFrames(a){ try{ if(!a||!Array.isArray(a.frames)||a.frames.length
 async function boardLinkWriteBack(onlyCurrent){
   var P=window.__psPages; if(!P||!P.linkAll)return [];
   var links=P.linkAll().filter(function(l){ return l&&l.tag&&l.tag.libId&&(!onlyCurrent||l.isCurrent); }); if(!links.length)return [];
-  var lib=await libGet(), changed=false, out=[];
-  for(var i=0;i<links.length;i++){
-    var L=links[i], tag=L.tag, it=null;
-    for(var k=0;k<lib.length;k++){ if(lib[k]&&lib[k].libId===tag.libId){ it=lib[k]; break; } }
-    if(!it){ P.linkClear(tag.libId); out.push({name:tag.name,gone:true}); continue; }
-    if(!canEditItem(it)){ P.linkClear(tag.libId); out.push({name:it.name||tag.name,denied:true}); continue; }
-    var snap,thumb="",frames=null,anim=null;
-    if(L.isCurrent){ snap=captureSnap(); try{ thumb=boardThumbSVG(); }catch(_){} frames=window.__animFrames?window.__animFrames(true):null; anim=window.__animGet?window.__animGet(true):null; }
-    else { snap=L.snap; thumb=L.thumb||""; anim=L.anim||null; frames=_animToFrames(anim); }
-    if(!snap||_boardSnapEmpty(snap)){ P.linkClear(tag.libId); out.push({name:it.name||tag.name,empty:true}); continue; }
-    var sp=+tag.srcPage||0;
-    if(Array.isArray(it.pages)&&it.pages.length>1&&it.pages[sp]){
-      it.pages[sp].snap=snap; it.pages[sp].thumb=thumb; it.pages[sp].anim=anim;
-      if(sp===0){ it.snap=snap; it.thumb=thumb; if(frames)it.frames=frames; else delete it.frames; }
-    } else { it.snap=snap; it.thumb=thumb; if(frames)it.frames=frames; else delete it.frames; }
-    it.savedAt=Date.now(); changed=true; out.push({name:it.name||tag.name,ok:true});
-  }
-  if(changed){ await libWrite(lib); try{ libTouch(); }catch(_){} try{ renderDrillFiles(); }catch(_){} }
+  /* 2.994 — 읽고-쓰기를 libTurn 한 차례로(썸네일 채우기 등 차례 안 쓰기와 서로 덮지 않게) */
+  var out=await libTurn(async function(){
+    var lib=await libGet(), changed=false, out=[];
+    for(var i=0;i<links.length;i++){
+      var L=links[i], tag=L.tag, it=null;
+      for(var k=0;k<lib.length;k++){ if(lib[k]&&lib[k].libId===tag.libId){ it=lib[k]; break; } }
+      if(!it){ P.linkClear(tag.libId); out.push({name:tag.name,gone:true}); continue; }
+      if(!canEditItem(it)){ P.linkClear(tag.libId); out.push({name:it.name||tag.name,denied:true}); continue; }
+      var snap,thumb="",frames=null,anim=null;
+      if(L.isCurrent){ snap=captureSnap(); try{ thumb=boardThumbSVG(); }catch(_){} frames=window.__animFrames?window.__animFrames(true):null; anim=window.__animGet?window.__animGet(true):null; }
+      else { snap=L.snap; thumb=L.thumb||""; anim=L.anim||null; frames=_animToFrames(anim); }
+      if(!snap||_boardSnapEmpty(snap)){ P.linkClear(tag.libId); out.push({name:it.name||tag.name,empty:true}); continue; }
+      var sp=+tag.srcPage||0;
+      if(Array.isArray(it.pages)&&it.pages.length>1&&it.pages[sp]){
+        it.pages[sp].snap=snap; it.pages[sp].thumb=thumb; it.pages[sp].anim=anim;
+        if(sp===0){ it.snap=snap; it.thumb=thumb; if(frames)it.frames=frames; else delete it.frames; }
+      } else { it.snap=snap; it.thumb=thumb; if(frames)it.frames=frames; else delete it.frames; }
+      it.savedAt=Date.now(); changed=true; out.push({name:it.name||tag.name,ok:true});
+    }
+    if(changed){ await libWrite(lib); try{ libTouch(); }catch(_){} try{ renderDrillFiles(); }catch(_){} }
+    return out;
+  });
   try{ P.refresh&&P.refresh(); }catch(_){}
   return out;
 }
@@ -10455,14 +10459,18 @@ const DRILL_TPL=[
 ];
 async function seedTemplates(){
   if(!psVaultRequireLogin())return;
-  const lib=await libGet();
-  const have=new Set(lib.map(d=>d.name));
-  const add=DRILL_TPL.filter(t=>!have.has(t.name)).map(t=>{
-    const d=Object.assign({snap:null,thumb:"",tpl:true},t);
-    d.libId="T"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-    d.savedAt=Date.now();normalizeDrill(d);return d;});
-  if(!add.length){toast("기본 템플릿이 이미 있어요");return;}
-  await libWrite(add.concat(lib));libTouch();renderLib();renderLibDock();toast("기본 템플릿 "+add.length+"개 추가됨 ✓");   /* 2.934 — 보관함이 바뀌었다는 신호(cs_lib_rev): 일정·플레이북이 목록을 새로 읽는다 */
+  /* 2.994 — 읽고-쓰기를 libTurn 한 차례로 */
+  const n=await libTurn(async()=>{
+    const lib=await libGet();
+    const have=new Set(lib.map(d=>d.name));
+    const add=DRILL_TPL.filter(t=>!have.has(t.name)).map(t=>{
+      const d=Object.assign({snap:null,thumb:"",tpl:true},t);
+      d.libId="T"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      d.savedAt=Date.now();normalizeDrill(d);return d;});
+    if(!add.length)return 0;
+    await libWrite(add.concat(lib));libTouch();return add.length;});   /* 2.934 — 보관함이 바뀌었다는 신호(cs_lib_rev): 일정·플레이북이 목록을 새로 읽는다 */
+  if(!n){toast("기본 템플릿이 이미 있어요");return;}
+  renderLib();renderLibDock();toast("기본 템플릿 "+n+"개 추가됨 ✓");
 }
 /* ===== 드릴 라이브러리(은행) ===== */
 const LIB_KEY="cs_drill_lib_v1";
@@ -10529,6 +10537,8 @@ function libTurn(task){var run=_libTurnTail.then(function(){return task();});_li
 /* 그린 목록을 보고 정리할 것을 찾은 자동 정리(작성자 채우기·폴더 경로·유령 폴더 등)는, 그린 목록이 아니라 자기 차례에 새로 읽은
    목록에 같은 정리를 다시 적용해 쓴다. fix 가 참(바뀐 것 있음)을 돌려줄 때만 쓴다. */
 function libFix(fix){return libTurn(function(){return libGet().then(function(lib){if(!fix(lib))return false;return libWrite(lib).then(function(){libTouch();return true;});});});}
+/* 2.994 — 사람이 누르는 보관함 조작도 모두 이 차례를 탄다(확인 창 뒤에는 차례 안에서 다시 읽는다).
+   ⚠ 차례 안(task)에서 차례를 타는 함수(libTurn·libFix·saveToLib·delFromLib·boardLinkWriteBack …)를 return·await 로 기다리면 교착 — 차례 밖에서 부른다 */
 function psVaultOpenLogin(){
   try{var b=window.parent&&window.parent.document&&window.parent.document.querySelector("#psAcctWrap .acct-btn");if(b){b.click();return true;}}catch(_){}
   try{if(window.parent===window)location.href="app.html";}catch(_){}
@@ -10641,11 +10651,13 @@ try{
   window.addEventListener("pageshow",psVaultAuthChanged);window.addEventListener("focus",psVaultAuthChanged);
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",psVaultAuthChanged);else setTimeout(psVaultAuthChanged,0);
 }catch(_){}   /* 로그인/로그아웃 시 보관함을 즉시 잠그거나 다시 연다 */
-async function saveToLib(d){if(!psVaultRequireLogin())return false;const lib=await libGet();const copy=dc(d);
+/* 2.994 — saveToLib·delFromLib 는 libTurn 한 차례로 읽고 쓴다. 차례 안(libTurn 의 task)에서 이 둘을 기다리면 교착 — 차례 밖에서 부른다 */
+async function saveToLib(d){if(!psVaultRequireLogin())return false;const copy=dc(d);
   copy.libId="L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);copy.savedAt=Date.now();
   stampCreator(copy);
-  lib.unshift(copy);await libWrite(lib);libTouch();renderLibDock();toast("라이브러리에 저장됨");return copy.libId;}   /* 2.924 — 새 항목 번호를 돌려준다(커뮤니티 «새로 만들기»가 저장 뒤 그 항목을 바로 고른다) */
-async function delFromLib(libId){if(!psVaultRequireLogin())return false;let lib=await libGet();lib=lib.filter(x=>x.libId!==libId);await libWrite(lib);libTouch();
+  await libTurn(async()=>{const lib=await libGet();lib.unshift(copy);await libWrite(lib);libTouch();});
+  renderLibDock();toast("라이브러리에 저장됨");return copy.libId;}   /* 2.924 — 새 항목 번호를 돌려준다(커뮤니티 «새로 만들기»가 저장 뒤 그 항목을 바로 고른다) */
+async function delFromLib(libId){if(!psVaultRequireLogin())return false;await libTurn(async()=>{let lib=await libGet();lib=lib.filter(x=>x.libId!==libId);await libWrite(lib);libTouch();});
   try{var _tb=JSON.parse(localStorage.getItem("ps_tomb_v1")||"[]");_tb.push({id:libId,at:Date.now()});var _cut=Date.now()-7776e6;_tb=_tb.filter(function(t){return t.at>_cut;});localStorage.setItem("ps_tomb_v1",JSON.stringify(_tb));}catch(_){}   /* 삭제 무덤돌(90일) — 기기 간 동기화 병합 시 삭제가 부활하지 않게 */
   renderLib();renderLibDock();}
 async function addLibToSession(libId){if(!psVaultRequireLogin())return false;const lib=await libGet();const d=lib.find(x=>x.libId===libId);if(!d)return;
@@ -10872,22 +10884,25 @@ async function importDrillPack(file){
   let pack;
   try{pack=JSON.parse(await file.text());}catch(_){toast("파일을 읽을 수 없어요");return;}
   if(!pack||pack.type!=="process-studio-drillpack"||!Array.isArray(pack.drills)){toast("드릴 팩 파일이 아니에요");return;}
-  const lib=await libGet();
-  const have=new Set(lib.map(drillpackKey));
-  const fresh=[];let skipped=0;
-  pack.drills.forEach(raw=>{
-    if(!raw||typeof raw!=="object")return;
-    const d=dc(raw);
-    const key=drillpackKey(d);
-    if(have.has(key)){skipped++;return;}
-    have.add(key);
-    d.libId="L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+Math.random().toString(36).slice(2,4);
-    d.savedAt=Date.now();delete d.id;delete d.tpl;
-    try{if(d.snap)__sanitizeSnap(d.snap);if(Array.isArray(d.scenes))d.scenes.forEach(sc=>{if(sc&&sc.snap)__sanitizeSnap(sc.snap);});if(Array.isArray(d.frames))d.frames.forEach(fr=>{if(fr&&fr.snap)__sanitizeSnap(fr.snap);});}catch(_){}
-    normalizeDrill(d);fresh.push(d);});
-  if(fresh.length){await libWrite(fresh.concat(lib));libTouch();}   /* 2.934 — 신호(cs_lib_rev) */
+  /* 2.994 — 읽고-쓰기를 libTurn 한 차례로(중복 판정도 그 차례에 읽은 목록으로) */
+  const r=await libTurn(async()=>{
+    const lib=await libGet();
+    const have=new Set(lib.map(drillpackKey));
+    const fresh=[];let skipped=0;
+    pack.drills.forEach(raw=>{
+      if(!raw||typeof raw!=="object")return;
+      const d=dc(raw);
+      const key=drillpackKey(d);
+      if(have.has(key)){skipped++;return;}
+      have.add(key);
+      d.libId="L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+Math.random().toString(36).slice(2,4);
+      d.savedAt=Date.now();delete d.id;delete d.tpl;
+      try{if(d.snap)__sanitizeSnap(d.snap);if(Array.isArray(d.scenes))d.scenes.forEach(sc=>{if(sc&&sc.snap)__sanitizeSnap(sc.snap);});if(Array.isArray(d.frames))d.frames.forEach(fr=>{if(fr&&fr.snap)__sanitizeSnap(fr.snap);});}catch(_){}
+      normalizeDrill(d);fresh.push(d);});
+    if(fresh.length){await libWrite(fresh.concat(lib));libTouch();}   /* 2.934 — 신호(cs_lib_rev) */
+    return {n:fresh.length,skipped:skipped};});
   renderLib();renderLibDock();
-  toast(fresh.length+"개 드릴 가져옴 ✓"+(skipped?(" (중복 "+skipped+"개 건너뜀)"):""));
+  toast(r.n+"개 드릴 가져옴 ✓"+(r.skipped?(" (중복 "+r.skipped+"개 건너뜀)"):""));
 }
 async function libSelAddToSession(){
   if(!libSel||!libSel.length){toast("선택된 드릴이 없어요");return;}
@@ -13167,10 +13182,14 @@ function closeEditor(save){
       try{parent.postMessage({source:"board",type:"commAct",act:"update",id:__commPost.id,item:_cd,thumb:(_cd.thumb||""),title:_fname},"*");}catch(_){}
     }
     else if(editorLibId!=null){const lid=editorLibId;const fromOvl=editorLibFromOvl;const asCopy=editorSaveAsCopy;
-      (async()=>{const lib=await libGet();const d=lib.find(x=>x.libId===lid);
-        if(d){
-          if(asCopy){var cp=applyToCard(dc(d));delete cp.libId;delete cp.savedAt;delete cp.editedAt;delete cp.createdBy;delete cp.createdByEmail;delete cp.createdByName;cp.name=_fname+" 복사본";await saveToLib(cp);toast("복사본으로 저장됨 ✓");}
-          else{applyToCard(d);await libWrite(lib);libTouch();if(fromOvl)openLib();renderLibDock();toast(_multi?("저장됨 ✓ · 훈련 "+trs.length+"개"):"변경사항 저장됨 ✓");}
+      /* 2.994 — 덮어쓰기는 libTurn 한 차례로 읽고 쓴다. 복사본은 그 차례에서 원본만 읽고, 저장(saveToLib — 저도 차례를 탄다)은 차례 밖에서(안에서 기다리면 교착) */
+      (async()=>{const r=await libTurn(async()=>{const lib=await libGet();const d=lib.find(x=>x.libId===lid);
+          if(!d)return null;
+          if(asCopy)return {src:dc(d)};
+          applyToCard(d);await libWrite(lib);libTouch();return {saved:true};});
+        if(r){
+          if(r.src){var cp=applyToCard(r.src);delete cp.libId;delete cp.savedAt;delete cp.editedAt;delete cp.createdBy;delete cp.createdByEmail;delete cp.createdByName;cp.name=_fname+" 복사본";await saveToLib(cp);toast("복사본으로 저장됨 ✓");}
+          else{if(fromOvl)openLib();renderLibDock();toast(_multi?("저장됨 ✓ · 훈련 "+trs.length+"개"):"변경사항 저장됨 ✓");}
           clearEditorWork(lid);
         }})();}
     else if(editorDrillId!=null){const d=session.drills.find(x=>x.id===editorDrillId);if(d){applyToCard(d);}}
@@ -15623,9 +15642,10 @@ window.__importShare=function(snap){if(!psVaultRequireLogin())return false;loadS
 window.__importSessionDrills=function(drills){
   if(!psVaultRequireLogin())return false;
   if(!drills||!drills.length)return 0;
-  (async function(){var lib=await libGet();
-    drills.forEach(function(d){var th=d.thumb||"";try{if(!th&&d.snap&&window.__snapToThumb)th=window.__snapToThumb(d.snap);}catch(_){}var it={libId:"L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),type:"train",name:d.name||"드릴",minutes:(+d.per||+d.minutes||0),sets:(+d.sets||1),rpe:(+d.rpe||5),overview:d.overview||"",coaching:d.coaching||"",snap:d.snap||null,thumb:th,savedAt:Date.now()};lib.unshift(it);});
-    await libWrite(lib);libTouch();
+  (async function(){var items=[];
+    drills.forEach(function(d){var th=d.thumb||"";try{if(!th&&d.snap&&window.__snapToThumb)th=window.__snapToThumb(d.snap);}catch(_){}var it={libId:"L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),type:"train",name:d.name||"드릴",minutes:(+d.per||+d.minutes||0),sets:(+d.sets||1),rpe:(+d.rpe||5),overview:d.overview||"",coaching:d.coaching||"",snap:d.snap||null,thumb:th,savedAt:Date.now()};items.push(it);});
+    /* 2.994 — 썸네일은 먼저 그려 두고, 읽고-쓰기만 libTurn 한 차례로 */
+    await libTurn(async function(){var lib=await libGet();items.forEach(function(it){lib.unshift(it);});await libWrite(lib);libTouch();});
     try{renderDrillFiles();}catch(_){}try{renderLibDock();}catch(_){}
     try{toast(drills.length+"개 드릴을 보관함에 담았어요 ✓");}catch(_){}
   })();
@@ -17263,19 +17283,19 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
      끌어다 놓기 마무리(fin)가 부르던 이 2-인자 이동이 그 시트로 들어갔다 →
      `d` 에 libId 문자열이 들어가 `d.libId` 가 undefined → 시트에서 폴더를 골라도 **아무 것도 안 옮겨졌다**.
      이름을 나눠 둔다(2.363 의 svgGrowth 와 같은 사고). 새 이름 지을 땐 먼저 grep 할 것. */
-  function vaultMoveItemTo(libId,dest){dest=folderNorm(dest);libGet().then(function(lib){var it=lib.find(function(x){return x.libId===libId;});if(it){if(!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있어요");}catch(_){}return;}it.folder=dest||"";it.editedAt=Date.now();libSet(lib).then(function(){renderDrillFiles();});}});}   /* 2.967 — 경로 정리·시각 올림·남의 자료 막음 */
+  function vaultMoveItemTo(libId,dest){dest=folderNorm(dest);libTurn(function(){return libGet().then(function(lib){var it=lib.find(function(x){return x.libId===libId;});if(it){if(!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있어요");}catch(_){}return;}it.folder=dest||"";it.editedAt=Date.now();return libSet(lib).then(function(){renderDrillFiles();});}});});}   /* 2.967 — 경로 정리·시각 올림·남의 자료 막음 · 2.994 — 읽고-쓰기는 libTurn 한 차례로 */
   function vaultMoveFolder(src,dest){
     /* 2.967 — 경로 정리 · 남의 자료가 있으면 막음 · 옮긴 자료 시각 올림 · 공유·색·태그가 따라감 */
     if(src==null)return; dest=folderNorm(dest); var leaf=String(src).slice(String(src).lastIndexOf("/")+1); var ndest=folderNorm(dest?dest+"/"+leaf:leaf);
     if(!ndest||ndest===src)return; if(ndest.indexOf(src+"/")===0||dest===src){try{toast&&toast("그 폴더 안으로는 못 옮겨요");}catch(_){}return;}
-    libGet().then(function(lib){
+    libTurn(function(){return libGet().then(function(lib){   /* 2.994 — 읽고-쓰기는 libTurn 한 차례로 */
       var fx=folderForeign(lib,src,itemMine); if(fx.length){folderForeignToast(src,fx.length,"옮길");return;}
       vaultFolders=folderListMove(vaultFolders,src,ndest);
       try{saveVaultFolders();}catch(_){}
       folderSettingsMove(src,ndest);folderClaim(ndest);   /* 2.968 */
       folderItemsMove(lib,src,ndest,Date.now());
-      libSet(lib).then(function(){var c=libFilter.folder||"";if(folderIn(c,src))libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});
-    });
+      return libSet(lib).then(function(){var c=libFilter.folder||"";if(folderIn(c,src))libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});
+    });});
   }
   function _zoneAt(x,y){var best=null,ba=1e15;for(var i=0;i<dropZones.length;i++){var z=dropZones[i];if(!z.el||!z.el.getBoundingClientRect)continue;var r=z.el.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom){var ar=r.width*r.height;if(ar<ba){ba=ar;best=z;}}}return best;}
   function _clearZoneHi(){dropZones.forEach(function(z){try{z.el.classList.remove("vdrop");}catch(_){}});}
@@ -17293,15 +17313,15 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       function _renameFolder(src,ndest){
     /* 2.967 — 공유 표시가 옛 이름에 남아 «공유 폴더 이름을 바꾸면 공유가 꺼지던» 것: 정보·태그가 새 이름을 따라간다 */
     ndest=folderNorm(ndest); if(!ndest||ndest===src)return;
-    libGet().then(function(lib){
+    libTurn(function(){return libGet().then(function(lib){   /* 2.994 — 이름 확인(psPrompt) 뒤 차례 안에서 다시 읽고 쓴다 */
       var fx=folderForeign(lib,src,itemMine); if(fx.length){folderForeignToast(src,fx.length,"이름을 바꿀");return;}
       vaultFolders=folderListMove(vaultFolders,src,ndest);
       try{saveVaultFolders();}catch(_){}
       folderSettingsMove(src,ndest);folderClaim(ndest);   /* 2.968 */
       var now=Date.now(); lib.forEach(function(it){if(it&&folderIn(it.folder,src))it.savedAt=Math.max(+it.savedAt||0,now);});
       folderItemsMove(lib,src,ndest,now);
-      libSet(lib).then(function(){var c=libFilter.folder||"";if(folderIn(c,src))libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});
-    });
+      return libSet(lib).then(function(){var c=libFilter.folder||"";if(folderIn(c,src))libFilter.folder=ndest+c.slice(src.length);renderDrillFiles();});
+    });});
   }
   /* ══ 2.518 · 폴더 공유 토글 한 곳(사용자 "폴더별 공유를 쉽게") ══════════════════
      전에는 이 규칙이 우클릭 메뉴 안에만 있었다 — 아이패드에서는 ⋯ 를 찾아 들어가야 했다.
@@ -17357,12 +17377,12 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         var mineIn=lib.filter(function(it){return !!it&&folderIn(it.folder,full)&&itemMine(it);}).length;
         var fx=folderForeign(lib,full,itemMine); if(fx.length){folderForeignToast(full,fx.length,"숨길");return;}
         psConfirm("‘"+folderLeaf(full)+"’는 다른 코치가 만든 폴더예요 — 내 보관함에서만 숨길까요?"+(mineIn?("\n\n안에 있는 내 자료 "+mineIn+"개는 "+(parent?("‘"+folderLeaf(parent)+"’"):"폴더 밖")+"으로 옮깁니다."):"")+"\n\n팀 목록과 공유는 그대로입니다.",function(){
-          libGet().then(function(lib2){
+          libTurn(function(){return libGet().then(function(lib2){   /* 2.994 — 확인 뒤 차례 안에서 다시 읽고 쓴다 */
             if(folderForeign(lib2,full,itemMine).length){folderForeignToast(full,1,"숨길");return;}
             var n=folderItemsTo(lib2,full,parent,Date.now());
             folderSettingsLoad();folderSettingsSave(folderHideMark(folderMeta,full,_me,Date.now()),null);
-            (n?libSet(lib2):Promise.resolve()).then(function(){var c=libFilter.folder||"";if(folderIn(c,full))libFilter.folder=parent;renderDrillFiles();});
-          });
+            return (n?libSet(lib2):Promise.resolve()).then(function(){var c=libFilter.folder||"";if(folderIn(c,full))libFilter.folder=parent;renderDrillFiles();});
+          });});
         });
       });
       return;
@@ -17374,7 +17394,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var msg=(cnt||subs)?("‘"+folderLeaf(full)+"’ 폴더와 하위폴더를 지우고, 항목 "+cnt+"개는 "+(parent?("‘"+folderLeaf(parent)+"’"):"폴더 밖")+"으로 옮길까요?"):("‘"+folderLeaf(full)+"’ 폴더를 삭제할까요?");
       if(unshare)msg+="\n\n공유 중인 자료라, 옮기면 팀에서는 보이지 않게 됩니다.";
       psConfirm(msg,function(){
-        libGet().then(function(lib2){
+        libTurn(function(){return libGet().then(function(lib2){   /* 2.994 — 확인 뒤 차례 안에서 다시 읽고 쓴다 */
           var fx2=folderForeign(lib2,full,itemMine); if(fx2.length){folderForeignToast(full,fx2.length,"지울");return;}
           folderItemsTo(lib2,full,parent,Date.now());
           vaultFolders=folderListMove(vaultFolders,full,null);
@@ -17385,12 +17405,12 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           folderSettingsMove(full,null);
           /* 2.968 — «나에게 숨김»을 남긴다: 옛 판·다른 기기가 목록을 통째로 올려 이 폴더를 다시 넣어도 내 화면엔 안 나온다 */
           if(_me){folderSettingsLoad();folderSettingsSave(folderHideMark(folderMeta,full,_me,Date.now()),null);}
-          libSet(lib2).then(function(){var c=libFilter.folder||"";if(folderIn(c,full))libFilter.folder=parent;renderDrillFiles();});
-        });
+          return libSet(lib2).then(function(){var c=libFilter.folder||"";if(folderIn(c,full))libFilter.folder=parent;renderDrillFiles();});
+        });});
       });
     });
   }
-  function vaultTogglePin(d){libGet().then(function(lib){var it=lib.find(function(x){return x.libId===d.libId;});if(it){it.pin=!it.pin;libSet(lib).then(function(){renderDrillFiles();});}});}
+  function vaultTogglePin(d){libTurn(function(){return libGet().then(function(lib){var it=lib.find(function(x){return x.libId===d.libId;});if(it){it.pin=!it.pin;return libSet(lib).then(function(){renderDrillFiles();});}});});}   /* 2.994 — libTurn */
   /* 폴더 발표(startPack) 제거 — 발표는 미팅 모드로 일원화 */
   function _expEsc(x){return String(x==null?"":x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
   function buildFolderPrint(path,items){
@@ -17505,7 +17525,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var inp=card.querySelector("#psRenIn"); inp.value=d.name||"";
     function close(){try{ov.remove();}catch(_){}}
     function ok(){var v=(inp.value||"").trim(); close(); if(!v)return;
-      libGet().then(function(lib){var it=lib.find(function(x){return x.libId===d.libId;});if(it){it.name=v;it.editedAt=it.savedAt=Date.now();libSet(lib).then(function(){try{toast("제목 변경됨 ✓");}catch(_){}renderDrillFiles();});}});}
+      libTurn(function(){return libGet().then(function(lib){var it=lib.find(function(x){return x.libId===d.libId;});if(it){it.name=v;it.editedAt=it.savedAt=Date.now();return libSet(lib).then(function(){try{toast("제목 변경됨 ✓");}catch(_){}renderDrillFiles();});}});});}   /* 2.994 — 확인 뒤 차례 안에서 읽고 쓴다 */
     card.querySelector("#psRenOk").onclick=ok;
     card.querySelector("#psRenCancel").onclick=close;
     ov.addEventListener("click",function(e){if(e.target===ov)close();});
@@ -17520,7 +17540,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     return ok; }
   function vaultDupItem(d){if(!psVaultRequireLogin())return;var ty=d.type||"train";
     if(ty==="train"||ty==="setpiece"){var cp=dc(d);delete cp.libId;delete cp.savedAt;delete cp.editedAt;delete cp.createdBy;delete cp.createdByEmail;delete cp.createdByName;cp.pin=false;cp.name=(d.name||"드릴")+" 복사";var _p=saveToLib(cp);try{_p&&_p.then&&_p.then(function(){try{renderDrillFiles();}catch(_){}});}catch(_){}}
-    else{libGet().then(function(lib){var cp=JSON.parse(JSON.stringify(d));cp.libId="V"+Date.now().toString(36);cp.name=(d.name||"항목")+" 복사";cp.savedAt=Date.now();cp.pin=false;delete cp.createdBy;delete cp.createdByEmail;delete cp.createdByName;stampCreator(cp);lib.unshift(cp);libSet(lib).then(function(){renderDrillFiles();try{toast("복사됨 ✓ — 내 훈련");}catch(_){}});});}}
+    else{libTurn(function(){return libGet().then(function(lib){var cp=JSON.parse(JSON.stringify(d));cp.libId="V"+Date.now().toString(36);cp.name=(d.name||"항목")+" 복사";cp.savedAt=Date.now();cp.pin=false;delete cp.createdBy;delete cp.createdByEmail;delete cp.createdByName;stampCreator(cp);lib.unshift(cp);return libSet(lib).then(function(){renderDrillFiles();try{toast("복사됨 ✓ — 내 훈련");}catch(_){}});});});}}   /* 2.994 — libTurn */
   /* ══ 2.518 · 자료 하나를 팀과 공유(사용자 "파일별 공유를 쉽게") ═══════════════
      규칙은 1.532 그대로 — **공유는 폴더가 정한다**. 자료마다 따로 공유 표식을 두면 폴더 밖에
      공유된 자료가 생겨 규칙이 두 개가 된다(그때 실제로 겪었다).
@@ -17541,22 +17561,22 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       psConfirm2("「"+(d.name||"이 자료")+"」 공유를 끌까요?",
         "팀에서 보이지 않게 되고, "+(back?("「"+folderLeaf(back)+"」 폴더로 돌아갑니다."):"폴더 밖(미분류)으로 나옵니다.")
         +"\n\n※ 「"+folderLeaf(src||d.folder||"")+"」 폴더 자체의 공유는 그대로입니다.",
-        function(){ libGet().then(function(lib){
+        function(){ libTurn(function(){return libGet().then(function(lib){   /* 2.994 — 확인 뒤 차례 안에서 읽고 쓴다 */
           var it=lib.filter(function(x){return x.libId===d.libId;})[0]; if(!it)return;
           it.folder=folderNorm(back); delete it._shareBack; it.editedAt=Date.now();   /* 2.967 — 다른 기기 옛 판에 지지 않게 */
-          libSet(lib).then(function(){ done((d.name||"자료")+" 공유를 껐어요"); });
-        }); });
+          return libSet(lib).then(function(){ done((d.name||"자료")+" 공유를 껐어요"); });
+        });}); });
     }else{
       psConfirm2("「"+(d.name||"이 자료")+"」를 팀과 공유할까요?",
         "「"+VAULT_SHARE_FOLDER+"」 폴더로 옮겨 코칭스태프에게 공개됩니다. 끄면 지금 자리로 돌아옵니다.",
         function(){
           addFolder(VAULT_SHARE_FOLDER);
           if(!fmetaOf(VAULT_SHARE_FOLDER).shared)setFolderMeta(VAULT_SHARE_FOLDER,"shared",true);
-          libGet().then(function(lib){
+          libTurn(function(){return libGet().then(function(lib){   /* 2.994 — 확인 뒤 차례 안에서 읽고 쓴다 */
             var it=lib.filter(function(x){return x.libId===d.libId;})[0]; if(!it)return;
             it._shareBack=String(it.folder||""); it.folder=VAULT_SHARE_FOLDER; it.editedAt=Date.now();   /* 2.967 */
-            libSet(lib).then(function(){ done((d.name||"자료")+" 팀과 공유 시작 ☁"); });
-          });
+            return libSet(lib).then(function(){ done((d.name||"자료")+" 팀과 공유 시작 ☁"); });
+          });});
         });
     }
   }
@@ -17779,7 +17799,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     mi("복사",function(){vaultDupItem(d);});
     mi("PDF 내보내기",function(){psPrompt("PDF 파일 이름",(d.name||"훈련"),function(v){var nm=(v||"").trim()||d.name||"훈련";try{printDrill(d,nm);}catch(_){}});});
     if(ty==="train"||ty==="setpiece")mi("개인 노트에서 쓰기",function(){sendVaultItemToNote(d);});
-    if(canEdit)mi("태그",function(){var cur=(d.tags||[]).join(", ");psPrompt("태그 (쉼표로 구분)",cur,function(v){var tags=v.split(",").map(function(x){return x.trim();}).filter(Boolean);libGet().then(function(lib){var it=lib.find(function(x){return x.libId===d.libId;});if(it){it.tags=tags;libSet(lib).then(function(){try{toast("태그 저장됨 \u2713");}catch(_){}renderDrillFiles();});}});});});
+    if(canEdit)mi("태그",function(){var cur=(d.tags||[]).join(", ");psPrompt("태그 (쉼표로 구분)",cur,function(v){var tags=v.split(",").map(function(x){return x.trim();}).filter(Boolean);libTurn(function(){return libGet().then(function(lib){var it=lib.find(function(x){return x.libId===d.libId;});if(it){it.tags=tags;return libSet(lib).then(function(){try{toast("태그 저장됨 \u2713");}catch(_){}renderDrillFiles();});}});});});});   /* 2.994 — 확인 뒤 차례 안에서 읽고 쓴다 */
     if(canEdit&&(ty==="train"||ty==="setpiece"))mi("분류",function(){vaultSetCat(d);});
     mi(d.pin?"즐겨찾기 해제":"즐겨찾기",function(){vaultTogglePin(d);});
     if(canEdit)mi("폴더 이동\u2026",function(){vaultMoveItem(d);});
@@ -17807,7 +17827,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     card.innerHTML='<div style="font-size:15px;font-weight:800">분류 선택</div><div style="font-size:12px;color:var(--txt-dim,#9aa4b3);margin:3px 0 13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(d.name||"항목")+'</div>';
     var wrap=document.createElement("div");wrap.style.cssText="display:flex;flex-wrap:wrap;gap:8px;overflow-y:auto;flex:1;";
     function close(){try{ov.remove();}catch(_){}}
-    function pick(k){ libGet().then(function(lib){var it=lib.find(function(x){return x.libId===d.libId;});if(it){it.cat=k;libSet(lib).then(function(){try{toast(k?("‘"+vcatOf(k).label+"’로 분류됨"):"분류 해제됨");}catch(_){}renderDrillFiles();});}close();}); }
+    function pick(k){ libTurn(function(){return libGet().then(function(lib){var it=lib.find(function(x){return x.libId===d.libId;});close();if(it){it.cat=k;return libSet(lib).then(function(){try{toast(k?("‘"+vcatOf(k).label+"’로 분류됨"):"분류 해제됨");}catch(_){}renderDrillFiles();});}});}); }   /* 2.994 — libTurn */
     VCATS.forEach(function(cd){
       var on=(cur===cd[0]);
       var b=document.createElement("button");b.type="button";
@@ -17837,7 +17857,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var sub=document.createElement("div");sub.style.cssText="font-size:12px;color:var(--txt-dim,#9aa4b3);margin:3px 0 13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";sub.textContent=(d.name||"항목");
       card.appendChild(head);card.appendChild(sub);
       function close(){try{ov.remove();}catch(_){}}
-      function moveTo(path){path=folderNorm(path);libGet().then(function(l2){var it=l2.find(function(x){return x.libId===d.libId;});if(it&&!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있어요");}catch(_){}close();return;}if(it){it.folder=path||"";it.editedAt=Date.now();libSet(l2).then(function(){try{toast(path?("‘"+folderLeaf(path)+"’로 이동됨"):"보관함으로 이동됨");}catch(_){}renderDrillFiles();});}close();});}
+      function moveTo(path){path=folderNorm(path);libTurn(function(){return libGet().then(function(l2){var it=l2.find(function(x){return x.libId===d.libId;});if(it&&!itemMine(it)){try{toast("다른 코치의 자료는 만든 코치만 옮길 수 있어요");}catch(_){}close();return;}close();if(it){it.folder=path||"";it.editedAt=Date.now();return libSet(l2).then(function(){try{toast(path?("‘"+folderLeaf(path)+"’로 이동됨"):"보관함으로 이동됨");}catch(_){}renderDrillFiles();});}});});}   /* 2.994 — libTurn */
       var nb=document.createElement("button");
       nb.style.cssText="display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1.5px dashed var(--blue,#3a6df0);background:rgba(58,109,240,.08);color:var(--blue,#3a6df0);font-family:inherit;font-size:14px;font-weight:800;padding:13px;border-radius:12px;cursor:pointer;margin-bottom:10px;flex:0 0 auto;";
       nb.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>새 폴더 만들어 이동';
@@ -18637,14 +18657,14 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function applyVaultTemplate(t){
     if(!psVaultRequireLogin())return;
     if(!t)return;
-    libGet().then(function(lib){
+    libTurn(function(){return libGet().then(function(lib){   /* 2.994 — 읽고-쓰기는 libTurn 한 차례로 */
       var it={libId:'T'+Date.now().toString(36)+Math.floor(Math.random()*1e3),type:t.type,name:t.name,folder:'',tags:['템플릿'],savedAt:Date.now(),snap:JSON.parse(JSON.stringify(t.snap))};
       stampCreator(it);lib.unshift(it);
-      libSet(lib).then(function(){
+      return libSet(lib).then(function(){
         renderDrillFiles();openItem(it,false);
         setTimeout(function(){try{var th=boardThumbSVG();libTurn(function(){return libGet().then(function(l2){var f2=null;l2.forEach(function(x){if(x.libId===it.libId)f2=x;});if(f2){f2.thumb=th;return libSet(l2).then(function(){renderDrillFiles();});}});}).catch(function(){});}catch(_){}},700);   /* 2.991 — 열린 항목의 자동 저장과 겹치지 않게(libTurn) */
       });
-    });
+    });});
   }
     function vaultStarter(){
     var el=document.createElement('div');el.className='vault-start';
