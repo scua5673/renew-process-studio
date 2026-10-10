@@ -10591,7 +10591,11 @@ function psVaultRenderReady(){
 async function psVaultReadForRender(){
   var uid=psMyUid(),wid=(psActiveWs()||{}).id;
   try{
-    var lib=await libGet();
+    /* 2.995 — 그리기용 읽기도 보관함 차례(libTurn)를 기다린다. 그린 목록으로 고쳐 쓰는 곳(폴더 자가 치유 등)이 있어서다.
+       실측(staging CI 웹킷 vault-folder-delete): 폴더 지우기 차례가 폴더 목록에서 빼 저장한 뒤 항목 이동(libSet)이 디스크에 닿기 전에
+       다시 그리면, 아직 옛 폴더에 있는 항목을 보고 자가 치유가 지운 폴더를 목록에 되살려 저장했다. 차례가 끝난 뒤에 읽으면 항목도 이미 옮겨져 있다.
+       ⚠ 차례 안에서 이 함수(또는 이를 부르는 render*)를 return·await 하지 말 것 — 자기 차례를 기다리며 멈춘다(지금은 모두 부르기만 한다). */
+    var lib=await libTurn(function(){return libGet();});
     if(!psVaultUnlocked()||uid!==psMyUid()||wid!==(psActiveWs()||{}).id)return null;
     return lib;
   }catch(e){
