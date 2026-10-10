@@ -4349,7 +4349,8 @@ window.__setPitchSpec=function(k){if(!PITCH_SPECS[k])k="fifa";if((state.pitchSpe
   try{window.__syncPreset&&window.__syncPreset();}catch(_){}
   try{document.querySelectorAll("#gridSeg button").forEach(function(b){b.classList.toggle("on",b.dataset.g===(state.gridType||"off"));});}catch(_){}
   try{buildLines();}catch(_){}try{buildGrid();}catch(_){}try{applyView();}catch(_){}try{renderTokens();renderDrawings();}catch(_){}
-  try{boardSaveLive();}catch(_){}try{toast(PITCH_SPECS[k].name+" 규격 · "+PITCH_SPECS[k].len+"×"+PITCH_SPECS[k].wid+"m");}catch(_){}};
+  var _vr=null;try{_vr=_viewScenesMatch("spec");}catch(_){}   /* 2.982 — 규격(과 그에 딸린 범위)은 모든 장면에 */
+  try{boardSaveLive();}catch(_){}try{toast(PITCH_SPECS[k].name+" 규격 · "+PITCH_SPECS[k].len+"×"+PITCH_SPECS[k].wid+"m"+_viewScenesNote(_vr));}catch(_){}};
 document.addEventListener("click",function(e){var b=e.target&&e.target.closest&&e.target.closest("#pitchSpecSeg button[data-spec]");if(b){e.stopPropagation();window.__setPitchSpec(b.getAttribute("data-spec"));}},true);
 document.addEventListener("click",function(e){var b=e.target&&e.target.closest&&e.target.closest("#grassSeg button[data-g]");if(b){e.stopPropagation();window.__setGrassM(parseFloat(b.getAttribute("data-g"))||0);}},true);   /* 2.272 */
 document.addEventListener("click",function(e){var b=e.target&&e.target.closest&&e.target.closest("#tiltSeg button[data-t]");if(b){e.stopPropagation();window.__setTilt(b.getAttribute("data-t")==="1");}},true);   /* 2.272 */
@@ -7346,7 +7347,7 @@ window.__syncGrassToneUI=function(){ try{
 }catch(_){} };
 window.__setGrassTone=function(k){ k=grassToneKey(k); _lookFreeze();
   /* 피치가 실사가 아니면(단축키로 바꾼 경우) 실사 잔디로 — 톤은 실사 잔디에만 보인다 */
-  try{ if(state.pitchImg!=="@real"){ var rb=document.querySelector('#pitchSeg button[data-p="real"]'); if(rb)rb.click(); } }catch(_){}
+  try{ if(state.pitchImg!=="@real"){ var rb=document.querySelector('#pitchSeg button[data-p="real"]'); if(rb){ window.__psUserClick=1; try{rb.click();}finally{window.__psUserClick=0;} } } }catch(_){}   /* 2.982 — 사람이 톤을 고른 것 */
   window.__grassTone=k; grassToneRender(); try{window.__syncGrassToneUI();}catch(_){} try{boardSaveLive();}catch(_){} };
 try{ document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest("#grassToneBSeg button[data-gb],#grassTonePSeg button[data-gp]"); if(!b)return; e.stopPropagation();
   var a=grassToneKey().split("|"); if(b.hasAttribute("data-gb"))a[0]=b.getAttribute("data-gb"); else a[1]=b.getAttribute("data-gp"); window.__setGrassTone(a[0]+"|"+a[1]); },true); }catch(_){}   /* board-pitch-presets 시험 하네스가 이 구간을 가짜 문서로 돌린다 */
@@ -7423,26 +7424,30 @@ function __rescaleGrass(){ try{
   for(var x=L-64*sw,i=0; x<W+64*sw; x+=sw,i++) sg.appendChild(el("rect",{x:x,y:-SX,width:sw+0.6,height:H+2*SX,fill:i%2?ga:gb}));
   old.parentNode.replaceChild(sg,old);
 }catch(_){}}
-window.__setPitchN=function(n){state.pitchN=(+n>0?+n:1);try{__rescaleGrass();}catch(_){}try{boardSaveLive();}catch(_){}};
+window.__setPitchN=function(n){state.pitchN=(+n>0?+n:1);try{__rescaleGrass();}catch(_){}try{_viewScenesToast(_viewScenesMatch("count"),"운동장 개수를");}catch(_){}   /* 2.982 */try{boardSaveLive();}catch(_){}};
 /* 운동장 범위: 전체 / 1·2·3분기. 2/4는 기존 하프와 호환하고, 옛 스냅의 area=half도 그대로 읽는다. */
 window.__getPitchView=function(){return pitchViewKey();};
 window.__setPitchSide=function(side){ var cur=state.pvSide==="opp"?"opp":"own", nx=(side==="toggle")?(cur==="opp"?"own":"opp"):(side==="opp"?"opp":"own"); if(nx===cur)return;
-  if(pitchViewKey()==="full"){ state.pvSide=nx; try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){} toast("범위를 1/4·2/4·3/4 로 고르면 "+(nx==="opp"?"상대 쪽":"우리 쪽")+"을 확대해요"); try{boardSaveLive();}catch(_){} return; }
+  if(pitchViewKey()==="full"){ state.pvSide=nx; try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){} toast("범위를 1/4·2/4·3/4 로 고르면 "+(nx==="opp"?"상대 쪽":"우리 쪽")+"을 확대해요"); try{_viewScenesMatch("side");}catch(_){} try{boardSaveLive();}catch(_){} return; }
   try{pushUndo();}catch(_){} state.pvSide=nx; if(state.fieldMode!=="standard")state.fieldMode="standard";
   var _r=function(){try{applyView();}catch(_){}try{buildPitch();}catch(_){}try{buildLines();}catch(_){}try{buildGrid();}catch(_){}try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}};
-  _r();try{setTimeout(_r,60);}catch(_){}try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){} toast(nx==="opp"?"상대 쪽 확대":"우리 쪽 확대"); try{boardSaveLive();}catch(_){} };
+  _r();try{setTimeout(_r,60);}catch(_){}try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){} var _vr=null;try{_vr=_viewScenesMatch("side");}catch(_){} toast((nx==="opp"?"상대 쪽 확대":"우리 쪽 확대")+((_vr&&_vr.n)?_viewScenesNote(_vr):"")); try{boardSaveLive();}catch(_){} };   /* 2.982 */
 window.__getPitchSide=function(){ return state.pvSide==="opp"?"opp":"own"; };
 window.__setPitchView=function(v){v=normPitchView(v);if(pitchViewKey()===v&&state.fieldMode==="standard")return;
   try{pushUndo();}catch(_){}state.pitchView=v;state.fieldMode="standard";state.area=(v==="half")?"half":"full";
   var _r=function(){try{buildPitch();}catch(_){}try{buildLines();}catch(_){}try{buildGrid();}catch(_){}try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}try{updateDelUI();}catch(_){}};
-  _r();try{setTimeout(_r,60);}catch(_){}try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){}try{boardSaveLive();}catch(_){} };
+  _r();try{setTimeout(_r,60);}catch(_){}try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){}
+  try{_viewScenesToast(_viewScenesMatch("range"),"운동장 범위를");}catch(_){}   /* 2.982 */
+  try{boardSaveLive();}catch(_){} };
 /* 코트 영역: 전체(full) / 하프(half) — 설정 도크의 '코트' 토글이 호출 */
 window.__getArea=function(){return state.area||"full";};
 window.__setArea=function(a){ a=(a==="half")?"half":"full"; if((state.area||"full")===a&&pitchViewKey()===a)return;
   try{pushUndo();}catch(_){} state.area=a;state.pitchView=a;if(a==="full")state.fieldMode="standard";
   var _r=function(){try{buildPitch();}catch(_){}try{buildLines();}catch(_){}try{buildGrid();}catch(_){}try{renderTokens();}catch(_){}try{renderDrawings();}catch(_){}};
   _r(); try{setTimeout(_r,60);}catch(_){}   /* 뷰박스가 한 번에 안 잡히는 경우 대비 재적용(__applyPitchN 패턴) */
-  try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){}try{boardSaveLive();}catch(_){} };
+  try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){}
+  try{_viewScenesToast(_viewScenesMatch("range"),"운동장 범위를");}catch(_){}   /* 2.982 */
+  try{boardSaveLive();}catch(_){} };
 window.__getFieldMode=function(){return state.fieldMode||"standard";};
 window.__setFieldMode=function(m){
   m=(m==="setpiece"||m==="halfmini")?m:"standard";
@@ -7458,6 +7463,7 @@ window.__setFieldMode=function(m){
   _r();try{setTimeout(_r,60);}catch(_){}
   try{document.querySelectorAll("#areaSeg button").forEach(function(b){b.classList.toggle("on",b.dataset.a===state.area);});}catch(_){}
   try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){}
+  try{_viewScenesToast(_viewScenesMatch("range"),"운동장 범위를");}catch(_){}   /* 2.982 — 미니골 같은 장비는 지금 장면에만(내용이다) */
   try{boardSaveLive();}catch(_){}
 };
 /* 하프코트 회전 — 90°씩 시계방향: 골대 왼쪽 → 위 → 오른쪽 → 아래.
@@ -7521,6 +7527,36 @@ function _rotFinish(activeMir,word){ var r=_rotScenesMatch(activeMir,false);
   try{window.__syncPitchViewSettings&&window.__syncPitchViewSettings();}catch(_){}
   try{ if(r.n)toast("장면 "+r.total+"개를 모두 "+(word?(word+"로 맞췄어요"):"함께 돌렸어요")); }catch(_){}
   return r; }
+/* ══ 2.982 · 운동장 설정(범위·확대 쪽·개수·규격·피치)도 누르면 이 애니메이션의 모든 장면에 ══
+   방향과 같은 병이었다: 이 값들은 장면 스냅마다 따로 저장돼, 누르면 지금 장면만 바뀌고 다른 장면을 누르면 되돌아갔다(사용자 «네 전부 해줘요»).
+   ⚠ 사람이 누른 순간에만 맞춘다. 장면을 바꿀 때 조용히 맞추면(lookStampScenes 처럼) 장면마다 범위를 달리 둔 옛 애니메이션이 말없이 바뀐다.
+   ⚠ 값은 captureSnap() 에서 읽는다 — 저장되는 값과 같은 것을 장면에 넣어야 두 벌이 안 생긴다. 견줄 때만 loadSnap 이 읽는 기본값으로 편다(_viewVal). */
+var _VIEW_KEYS={range:["area","pitchView","fieldMode","pvSide"],side:["pvSide","fieldMode"],count:["pitchN"],spec:["pitchSpec","area","pitchView","fieldMode"],pitch:["pitchTheme","pitchCustom","pitchImg"]};
+function _viewVal(sn,k){ var v=sn?sn[k]:undefined;
+  if(k==="area")return v||"full";
+  if(k==="pitchView")return normPitchView(v||((((sn&&sn.area)||"full")==="half")?"half":"full"));
+  if(k==="fieldMode")return v||"standard";
+  if(k==="pvSide")return v==="opp"?"opp":"own";
+  if(k==="pitchN")return +v>0?+v:1;
+  if(k==="pitchSpec")return (v&&PITCH_SPECS[v])?v:"fifa";
+  if(k==="pitchTheme")return (v===undefined||v===null)?null:(v==="navy"?"":String(v));
+  return (v===undefined||v===null||v==="")?null:v; }
+function _viewSnapTo(sn,cur,keys){ if(!sn||typeof sn!=="object")return null;
+  if(!keys.some(function(k){ return _viewVal(sn,k)!==_viewVal(cur,k); }))return null;
+  var c=Object.assign({},sn); keys.forEach(function(k){ c[k]=cur[k]; }); return c; }
+function _viewScenesMatch(kind){ var keys=_VIEW_KEYS[kind]||[], n=0, total=0, cur;
+  try{ cur=captureSnap(); }catch(_){ return {n:0,total:0}; }
+  try{ if(_rotBound()){ total=anim.frames.length;
+      anim.frames.forEach(function(f,k){ if(!f||k===animActive)return; var c=_viewSnapTo(f.snap,cur,keys); if(!c)return; f.snap=c; delete f.thumb; n++; }); } }catch(_){}
+  try{ if(document.body.classList.contains("editing")&&Array.isArray(editorScenes)&&editorScenes.length>1){ if(!total)total=editorScenes.length;
+      editorScenes.forEach(function(sc,i){ if(!sc||i===editorSceneIdx)return; var c=_viewSnapTo(sc.snap,cur,keys); if(!c)return; editorScenes[i]={snap:c,thumb:""}; n++; }); } }catch(_){}
+  if(n){ try{autoSaveAnimFrame();}catch(_){} try{renderAnimFrames();}catch(_){} }
+  return {n:n,total:total}; }
+function _viewScenesNote(r){ return (r&&r.n)?(" · 장면 "+r.total+"개 모두"):""; }
+function _viewScenesToast(r,what){ try{ if(r&&r.n)toast(what+" 장면 "+r.total+"개에 모두 적용했어요"); }catch(_){} return r; }
+/* 색상 고르개는 끄는 동안 input 이 줄줄이 온다 — 멈춘 뒤 한 번만 맞춘다 */
+var _viewSoonT=null;
+function _viewScenesSoon(kind,what){ try{clearTimeout(_viewSoonT);}catch(_){} _viewSoonT=setTimeout(function(){ _viewSoonT=null; var r=_viewScenesToast(_viewScenesMatch(kind),what); if(r&&r.n){ try{boardSaveLive();}catch(_){} } },350); }
 window.__getRotDeg=function(){ try{ var o=state.orientation,f=!!state.spFlip,s=state.halfSide||"L";
   if(o==="h") return (s==="R")?180:0; return f?90:270; }catch(_){ return 0; } };
 window.__rotateHalf=function(){   /* 전체·하프 공통 — 90°씩 회전(전체는 180°에서 공격 방향이 뒤집힌다) */
@@ -13576,7 +13612,10 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     if(p==="real"){ document.documentElement.dataset.pitch="grass"; try{window.__setPitchImg('@real');}catch(_){} }
     else { try{ if(state.pitchImg)window.__clearPitchImg(); }catch(_){} document.documentElement.dataset.pitch=(p==="navy"?"":p); }
     try{window.__syncPitchSeg();}catch(_){}
-    buildPitch();renderTokens();renderDrawings();updateDelUI();try{boardSaveLive();}catch(_){}});})();
+    buildPitch();renderTokens();renderDrawings();updateDelUI();
+    /* 2.982 — 사람이 고른 피치는 모든 장면에. 프로그램이 누른 클릭(부팅·복원)은 장면을 건드리지 않는다 — 단축키·잔디 톤은 __psUserClick 으로 사람 것임을 알린다 */
+    if(e.isTrusted||window.__psUserClick){ try{_viewScenesToast(_viewScenesMatch("pitch"),"피치를");}catch(_){} }
+    try{boardSaveLive();}catch(_){}});})();
   seg("labelSeg","data-l",l=>{var prev=state.label;state.label=l;try{convertPosVocab(prev,l);}catch(_){}renderBench();renderTokens();try{boardSaveLive();}catch(_){}});
   /* 2.239 — 포지션 어휘 변환(사용자 "포지션 눌러도 풋살 포지션이 나와"): '포지션'↔'풋살' 전환 때 선수 pos 를 축구/풋살 이름으로 바꾼다.
      축구→풋살: GK 유지 · 수비(LB RB CB LCB RCB DM WB)→FIX · 중원/측면(CM AM LM RM LW RW)→ALA · 공격(ST CF SS)→PIV.
@@ -13850,7 +13889,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
       if(hit&&/^(shift\+)?(left|right|up|down)$/.test(c)&&_hasSelNow())return "";
       return hit||""; }
     function cycleSegBtn(sel0,dir){ var seg=document.querySelector(sel0); if(!seg)return false; var bs=[].filter.call(seg.querySelectorAll("button"),function(b){ return !b.disabled&&b.offsetParent!==null||seg.offsetParent===null; }); if(!bs.length)bs=[].slice.call(seg.querySelectorAll("button"));
-      if(!bs.length)return false; var i=bs.findIndex(function(b){ return b.classList.contains("on")||b.getAttribute("aria-pressed")==="true"; }); var nx=bs[((i<0?-1:i)+(dir||1)+bs.length)%bs.length]; nx.click(); return nx.textContent.replace(/\s+/g," ").trim(); }
+      if(!bs.length)return false; var i=bs.findIndex(function(b){ return b.classList.contains("on")||b.getAttribute("aria-pressed")==="true"; }); var nx=bs[((i<0?-1:i)+(dir||1)+bs.length)%bs.length]; window.__psUserClick=1; try{nx.click();}finally{window.__psUserClick=0;}   /* 2.982 — 단축키로 누른 것도 사람이 고른 것(피치 → 모든 장면) */ return nx.textContent.replace(/\s+/g," ").trim(); }
     function runBoardAct(id){ var lb="";
       if(id==="save"){ try{ window.__psSaveShortcut&&window.__psSaveShortcut(); }catch(_){} return; }
       if(id==="boardSettings"){ try{ if(window.__psToggleBoardSettings)window.__psToggleBoardSettings("toggle"); else { var vb=document.getElementById("viewBtn"); if(vb)vb.click(); } }catch(_){} return; }
@@ -15364,7 +15403,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     s.setProperty("--zone",grid);
     try{window.__syncPitchSeg();}catch(_){}
     try{buildPitch();renderTokens();renderDrawings();updateDelUI();}catch(e){}
-    if(!_silent){try{boardSaveLive();}catch(_){}}   // 현재 보드에만 저장(전역 X)
+    if(!_silent){try{boardSaveLive();}catch(_){}try{_viewScenesSoon("pitch","피치 색을");}catch(_){}}   // 현재 보드에만 저장(전역 X) · 2.982 — 이 애니메이션의 장면들에도(끌기를 멈춘 뒤 한 번)
   }
   function clearCustom(){
     var s=document.documentElement.style;

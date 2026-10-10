@@ -111,6 +111,43 @@ try{
   const saved=await f.evaluate(()=>(window.__animFrames()||[]).map(x=>x.snap.orientation));
   assert.deepEqual(saved,['h','h','h']);
 
+  // 운동장 설정(범위·확대 쪽·개수·규격·피치)도 누르면 모든 장면에 — 실제 클릭으로
+  step('pitch settings');
+  await f.evaluate(()=>{selectAnimFrame(1,false);const p=document.getElementById('cmd-board-settings-pop');if(p&&getComputedStyle(p).display==='none')window.__psToggleBoardSettings('toggle');});
+  await f.locator('#cmd-board-settings-pitch-tab').click();
+  const keysOf=()=>f.evaluate(()=>({view:anim.frames.map(x=>x.snap.pitchView||'full'),side:anim.frames.map(x=>x.snap.pvSide||'own'),n:anim.frames.map(x=>x.snap.pitchN||1),
+    spec:anim.frames.map(x=>x.snap.pitchSpec||'fifa'),theme:anim.frames.map(x=>x.snap.pitchTheme||''),img:anim.frames.map(x=>x.snap.pitchImg||null),xs:anim.frames.map(x=>Math.round(x.snap.players[0].x)),
+    board:{view:window.__getPitchView(),side:window.__getPitchSide(),n:state.pitchN||1,spec:state.pitchSpec||'fifa',theme:document.documentElement.dataset.pitch||''},last:window.__tl[window.__tl.length-1]}));
+  await f.locator('#cmdPitchViewSeg button[data-v="half"]').click();await page.waitForTimeout(250);
+  let ks=await keysOf();
+  assert.deepEqual(ks.view,['half','half','half'],'the range reaches every scene');assert.equal(ks.last,'운동장 범위를 장면 3개에 모두 적용했어요');assert.deepEqual(ks.xs,base.xs);
+  await f.locator('#cmdPitchSideSeg button[data-side="opp"]').click();await page.waitForTimeout(250);
+  ks=await keysOf();assert.deepEqual(ks.side,['opp','opp','opp']);assert.equal(ks.last,'상대 쪽 확대 · 장면 3개 모두');
+  assert.deepEqual(await f.evaluate(()=>{const o=[];[0,2,1].forEach(i=>{selectAnimFrame(i,false);o.push(window.__getPitchView()+'/'+window.__getPitchSide());});return o;}),['half/opp','half/opp','half/opp'],'switching scenes keeps the range');
+  await f.evaluate(()=>undoLast());await page.waitForTimeout(200);
+  ks=await keysOf();assert.deepEqual(ks.side,['own','own','own'],'one undo takes the side back in every scene');assert.deepEqual(ks.view,['half','half','half']);
+  await f.locator('#cmdPitchViewSeg button[data-v="full"]').click();await page.waitForTimeout(250);
+  assert.deepEqual((await keysOf()).view,['full','full','full']);
+  if(await f.locator('#cmdPitchNSeg button[data-n="2"]').isVisible()){
+    await f.locator('#cmdPitchNSeg button[data-n="2"]').click();await page.waitForTimeout(300);
+    ks=await keysOf();assert.deepEqual(ks.n,[2,2,2]);assert.equal(ks.last,'운동장 개수를 장면 3개에 모두 적용했어요');
+    await f.locator('#cmdPitchNSeg button[data-n="1"]').click();await page.waitForTimeout(300);
+    assert.deepEqual((await keysOf()).n,[1,1,1]);
+  }
+  await f.locator('#pitchSpecSeg button[data-spec="u12"]').click();await page.waitForTimeout(300);
+  ks=await keysOf();assert.deepEqual(ks.spec,['u12','u12','u12']);assert.match(ks.last,/8인제 규격 · .* · 장면 3개 모두$/);
+  await f.locator('#pitchSpecSeg button[data-spec="fifa"]').click();await page.waitForTimeout(300);
+  assert.deepEqual((await keysOf()).spec,['fifa','fifa','fifa']);
+  await f.locator('#pitchSeg button[data-p="white"]').click();await page.waitForTimeout(300);
+  ks=await keysOf();assert.deepEqual(ks.theme,['white','white','white'],'the pitch a person picks reaches every scene');assert.deepEqual(ks.img,[null,null,null]);assert.equal(ks.last,'피치를 장면 3개에 모두 적용했어요');
+  // 프로그램이 누른 클릭은 지금 판만 바꾼다(부팅·복원이 장면을 덮지 않게)
+  await f.evaluate(()=>document.querySelector('#pitchSeg button[data-p="calm"]').click());await page.waitForTimeout(500);
+  ks=await keysOf();assert.equal(ks.board.theme,'calm');assert.deepEqual([ks.theme[0],ks.theme[2]],['white','white'],'scenes other than the open one keep the pitch');
+  await f.locator('#pitchSeg button[data-p="real"]').click();await page.waitForTimeout(300);
+  ks=await keysOf();assert.deepEqual(ks.theme,['grass','grass','grass']);assert.deepEqual(ks.img,['@real','@real','@real']);
+  await f.locator('#pitchSeg button[data-p="navy"]').click();await page.waitForTimeout(300);
+  ks=await keysOf();assert.deepEqual(ks.theme,['','','']);assert.deepEqual(ks.img,[null,null,null]);assert.deepEqual(ks.xs,base.xs,'none of this moves anyone');
+
   // 훈련 편집기 안의 애니메이션도 같은 규칙 · 편집기를 닫으면 작업 보드의 장면은 그대로 돌아온다
   step('editor');
   await f.evaluate(()=>{try{window.__psToggleBoardSettings('force-close');}catch(_){}try{setView('session');}catch(_){}openEditor(null,'train');});

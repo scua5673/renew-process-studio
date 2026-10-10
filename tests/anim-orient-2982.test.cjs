@@ -16,7 +16,7 @@ function ctx(opts){ opts=opts||{};
   const log={undo:0,stop:0,toast:[],saved:0};
   const state={orientation:'h',spFlip:false,halfSide:'L',players:[],equipment:[],drawings:[],ball:null,press:null,spMarks:null};
   const c=vm.createContext({Object,Array,JSON,Number,Math,W,H,state,log,
-    dc:clone,window:{},document:{body:{classList:{contains:k=>!!(opts.cls&&opts.cls[k])}}},
+    dc:clone,normPitchView:v=>(v==='q1'||v==='half'||v==='q3')?v:'full',PITCH_SPECS:{fifa:{},u12:{},futsal:{}},captureSnap:()=>clone(state),renderAnimFrames:()=>{},window:{},document:{body:{classList:{contains:k=>!!(opts.cls&&opts.cls[k])}}},
     anim:{frames:[]},animActive:-1,animPlaying:false,editorScenes:null,editorSceneIdx:0,
     _animLive:()=>opts.live!==false,
     pushUndo:()=>{log.undo++;},
@@ -26,7 +26,7 @@ function ctx(opts){ opts=opts||{};
     +'function autoSaveAnimFrame(){ if(_rotBound())anim.frames[animActive].snap=dc(state); }\n'
     +cut('function _mir180Of(','window.__getRotDeg=')
     +cut('window.__rotateHalf=function(){','function loadSnap(')
-    +';this.api={_rotIsMir,_rotCurvesMir,_rotSnapTo,_rotScenesMatch,_rotBound,set:function(f,a){anim.frames=f;animActive=a;},get:function(){return {frames:anim.frames,active:animActive,auto:(typeof autoOrient==="undefined"?null:autoOrient)};},play:function(v){animPlaying=v;},editor:function(s,i){editorScenes=s;editorSceneIdx=i;},editorGet:function(){return editorScenes;}};',c);
+    +';this.api={_viewVal,_viewSnapTo,_viewScenesMatch,_viewScenesNote,_VIEW_KEYS,_rotIsMir,_rotCurvesMir,_rotSnapTo,_rotScenesMatch,_rotBound,set:function(f,a){anim.frames=f;animActive=a;},get:function(){return {frames:anim.frames,active:animActive,auto:(typeof autoOrient==="undefined"?null:autoOrient)};},play:function(v){animPlaying=v;},editor:function(s,i){editorScenes=s;editorSceneIdx=i;},editorGet:function(){return editorScenes;}};',c);
   return {c,state,log,api:c.api,win:c.window};
 }
 const scene=(x,extra)=>Object.assign({orientation:'h',spFlip:false,halfSide:'L',
@@ -151,6 +151,59 @@ test('old multi-scene training cards (editor scene strip) follow too',()=>{
   const r=k.win.__setBoardOrient('v');
   assert.deepEqual(clone(r),{n:1,total:2});
   assert.equal(k.api.editorGet()[1].snap.orientation,'v');assert.equal(k.api.editorGet()[0].snap.orientation,'h','the active one is captured from the board by the editor itself');
+});
+
+/* ── 운동장 설정(범위·확대 쪽·개수·규격·피치)도 누르면 모든 장면에 ── */
+test('a scene that never stored a setting counts as the default — only real differences are changed',()=>{
+  const {api}=ctx();
+  const old={players:[{id:1,x:1,y:1}]};   /* 옛 스냅: 범위·개수·규격 칸이 아예 없다 */
+  const cur={area:'full',pitchView:'full',fieldMode:'standard',pvSide:'own',pitchN:1,pitchSpec:'fifa',pitchTheme:'',pitchCustom:null,pitchImg:null};
+  assert.equal(api._viewSnapTo(old,cur,api._VIEW_KEYS.range),null);
+  assert.equal(api._viewSnapTo(old,cur,api._VIEW_KEYS.count),null);
+  assert.equal(api._viewSnapTo(old,cur,api._VIEW_KEYS.spec),null);
+  assert.equal(api._viewSnapTo({area:'half'},cur,['pitchView']).pitchView,'full','an old «half» scene reads as the 2/4 view');
+  assert.equal(api._viewSnapTo({pitchTheme:'navy',pitchCustom:null,pitchImg:null},cur,api._VIEW_KEYS.pitch),null,'navy is stored as an empty theme');
+  assert.notEqual(api._viewSnapTo(old,cur,api._VIEW_KEYS.pitch),null,'a scene without a stored pitch follows whatever board is open — writing the pitch in is a change');
+  const c=api._viewSnapTo(old,Object.assign({},cur,{pitchView:'q1',pvSide:'opp'}),api._VIEW_KEYS.range);
+  assert.deepEqual([c.pitchView,c.pvSide,c.area,c.fieldMode],['q1','opp','full','standard']);
+  assert.equal(c.players,old.players,'people are not touched');assert.notEqual(c,old,'a copy — the undo record keeps the old snapshot');
+});
+
+test('range · side · count · size · pitch go to every scene of the animation, and only those keys',()=>{
+  const k=ctx();setup(k,1);
+  const f=k.api.get().frames,old=f.map(x=>x.snap);
+  const of=key=>k.api.get().frames.map(x=>x.snap[key]===undefined?'-':x.snap[key]);
+  Object.assign(k.state,{pitchView:'half',area:'half',fieldMode:'standard',pvSide:'opp'});
+  assert.deepEqual(clone(k.api._viewScenesMatch('range')),{n:2,total:3});
+  assert.deepEqual(of('pitchView'),['half','half','half']);assert.deepEqual(of('pvSide'),['opp','opp','opp']);assert.deepEqual(of('area'),['half','half','half']);
+  assert.deepEqual(xs(k),[200,400,600],'positions stay');
+  assert.equal(old[0].pitchView,undefined,'snapshots are replaced by copies');
+  assert.equal(k.api.get().frames[0].thumb,undefined);
+  assert.deepEqual(clone(k.api._viewScenesMatch('range')),{n:0,total:3},'a second call has nothing to do');
+  k.state.pitchN=4;
+  assert.deepEqual(clone(k.api._viewScenesMatch('count')),{n:2,total:3});assert.deepEqual(of('pitchN'),[4,4,4]);
+  Object.assign(k.state,{pitchSpec:'u12',pitchView:'full',area:'full'});
+  assert.deepEqual(clone(k.api._viewScenesMatch('spec')),{n:2,total:3});assert.deepEqual(of('pitchSpec'),['u12','u12','u12']);assert.deepEqual(of('pitchView'),['full','full','full']);
+  assert.deepEqual(of('pvSide'),['opp','opp','opp'],'size does not reset the side');
+  Object.assign(k.state,{pitchTheme:'white',pitchCustom:null,pitchImg:null});
+  f[0].snap=Object.assign({},f[0].snap,{pitchTheme:'grass',pitchImg:'@real'});
+  assert.deepEqual(clone(k.api._viewScenesMatch('pitch')),{n:2,total:3});assert.deepEqual(of('pitchTheme'),['white','white','white']);assert.deepEqual(of('pitchImg'),[null,null,null]);
+  assert.deepEqual(dirs(k),['hL','hL','hL'],'the direction is a separate matter');
+  assert.equal(k.api._viewScenesNote({n:2,total:3}),' · 장면 3개 모두');assert.equal(k.api._viewScenesNote({n:0,total:3}),'');
+  const off=ctx({live:false});setup(off,0);off.state.pitchN=3;
+  assert.deepEqual(clone(off.api._viewScenesMatch('count')),{n:0,total:0},'a board that is not tied to the scene strip leaves the scenes alone');
+});
+
+test('the setters call it at the moment a person presses — loading a scene or switching scenes never spreads these settings',()=>{
+  assert.match(src,/try\{_vr=_viewScenesMatch\("spec"\);\}catch\(_\)\{\}/);
+  assert.match(src,/window\.__setPitchN=function\(n\)\{[^\n]*_viewScenesMatch\("count"\)/);
+  assert.equal(src.split('_viewScenesMatch("side")').length-1,2,'both branches of the side setter');
+  assert.equal(src.split('_viewScenesToast(_viewScenesMatch("range"),"운동장 범위를")').length-1,3,'range · area · field mode');
+  assert.match(src,/if\(e\.isTrusted\|\|window\.__psUserClick\)\{ try\{_viewScenesToast\(_viewScenesMatch\("pitch"\),"피치를"\);\}catch\(_\)\{\} \}/,'a click made by the program (boot · restore) does not reach the scenes');
+  assert.match(src,/window\.__psUserClick=1; try\{nx\.click\(\);\}finally\{window\.__psUserClick=0;\}/,'a shortcut is a person');
+  assert.match(src,/if\(!_silent\)\{try\{boardSaveLive\(\);\}catch\(_\)\{\}try\{_viewScenesSoon\("pitch","피치 색을"\);\}catch\(_\)\{\}\}/,'the colour picker waits until the dragging stops');
+  const load=cut('function loadSnap(','window.__psSnapTest=')+cut('function lookStampScenes(','window.__lookNow=')+cut('function selectAnimFrame(','function reorderAnimFrame(');
+  assert.equal(/_viewScenesMatch|_viewSnapTo|_rotScenesMatch/.test(load),false);
 });
 
 test('board settings offer 가로 | 세로 next to the 90° turn, and a scene selection survives using them',()=>{
