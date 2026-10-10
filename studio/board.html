@@ -8903,7 +8903,7 @@ function bkSeqsFromBoard(d){
     var n=d.pages.filter(function(p){return p&&p.snap;}).length;
     d.pages.forEach(function(p,i){ if(!p||!p.snap)return;
       var q={snap:cl(p.snap),thumb:String(p.thumb||""),name:bkText(p.name,40)||(base?(n>1?base+" "+(i+1):base):""),anim:(p.anim&&Array.isArray(p.anim.frames)&&p.anim.frames.length>1)?cl(p.anim):null};
-      ["grp","when","call"].forEach(function(k){ if(typeof p[k]==="string"&&p[k])q[k]=p[k]; }); out.push(q); });
+      ["grp","when","call","mo","ph"].forEach(function(k){ if(typeof p[k]==="string"&&p[k])q[k]=p[k]; }); out.push(q); });
   }else if(d.snap){
     var fr=(Array.isArray(d.frames)&&d.frames.length>1)?cl(d.frames):null,f0=fr&&fr[0]||{};
     out.push({snap:cl(d.snap),thumb:String(d.thumb||""),name:base,anim:fr?{frames:fr,active:0,hold:+f0.__hold||.6,title:String(f0.__t||""),titleColor:String(f0.__tc||"")}:null});
@@ -8911,6 +8911,36 @@ function bkSeqsFromBoard(d){
   return out;
 }
 /* ══ 2.985 · 패턴북 순수 함수 끝 ══ */
+/* ══ 2.990 · 패턴북 국면 순수 함수 ══ */
+/* 시퀀스(페이지)의 자리 — mo = 국면 키(고정 여섯: 훈련 카드와 같은 EP_STD_MOMENTS · 팀 게임모델을 읽지 않는다), ph = 세부 국면 id(꼬리표 — 없어도 된다).
+   옛 판(2.985~2.989)은 grp(묶음 글자)로 목록 머리를 그리므로 국면 이름을 grp 에도 적어 둔다. mo 가 없는 옛 패턴북은 grp 글자가 국면 이름과 같으면 그 국면으로 읽는다.
+   국면 표(MO)는 인자로 받는다 — 표를 두 곳에 두지 않는다. (tests/patternbook-phases-2990 이 2.985 구간과 함께 잘라 쓴다) */
+function bkMoFind(MO,key){ for(var i=0;i<(MO||[]).length;i++){ if(MO[i]&&MO[i].key===key)return MO[i]; } return null; }
+function bkMoKeyOf(p,MO){ if(!p)return ""; if(typeof p.mo==="string"&&bkMoFind(MO,p.mo))return p.mo;
+  var g=bkText(p.grp,20).replace(/\s+/g,""); if(!g)return ""; for(var i=0;i<(MO||[]).length;i++){ if(String(MO[i].name||"").replace(/\s+/g,"")===g)return MO[i].key; } return ""; }
+function bkPhOf(p,MO){ var m=bkMoFind(MO,bkMoKeyOf(p,MO)); if(!m||!p||typeof p.ph!=="string")return null; var a=m.phases||[]; for(var i=0;i<a.length;i++){ if(a[i].id===p.ph)return a[i]; } return null; }
+/* 자리 키 — "m:ao"(국면) · "g:글자"(옛 묶음 글자) · ""(미정) */
+function bkSlotOf(p,MO){ var k=bkMoKeyOf(p,MO); if(k)return "m:"+k; var g=bkText(p&&p.grp,20); return g?("g:"+g):""; }
+/* 줄 서는 차례 — 국면 여섯(표의 순서) → 옛 묶음 글자(처음 나온 순서) → 미정 */
+function bkSlotRanks(list,MO){ var r={},n=0; (MO||[]).forEach(function(m){ r["m:"+m.key]=n++; }); (list||[]).forEach(function(p){ var q=bkSlotOf(p,MO); if(q&&r[q]==null)r[q]=n++; }); r[""]=n; return r; }
+function bkOrder(list,MO){ var r=bkSlotRanks(list,MO),a=(list||[]).map(function(p,i){ return {i:i,r:r[bkSlotOf(p,MO)]}; }); a.sort(function(x,y){ return (x.r-y.r)||(x.i-y.i); }); return a.map(function(x){ return x.i; }); }
+/* 나무 — 자리마다 시퀀스 번호. 국면 여섯은 비어 있어도 서고, 옛 묶음·미정은 있을 때만 선다 */
+function bkTree(list,MO){ var out=[],by={}; (MO||[]).forEach(function(m){ var g={kind:"mo",key:m.key,slot:"m:"+m.key,name:m.name,phases:m.phases||[],items:[]}; by[g.slot]=g; out.push(g); });
+  var none={kind:"none",key:"",slot:"",name:"국면 미정",phases:[],items:[]};
+  (list||[]).forEach(function(p,i){ var q=bkSlotOf(p,MO); if(!q){ none.items.push(i); return; } if(!by[q]){ by[q]={kind:"grp",key:"",slot:q,name:q.slice(2),phases:[],items:[]}; out.push(by[q]); } by[q].items.push(i); });
+  if(none.items.length)out.push(none); return out; }
+/* 지도 — 국면마다 세부 국면 칸. 세부를 안 정한 시퀀스는 rest */
+function bkMapOf(list,MO){ return bkTree(list,MO).map(function(g){ var cells=(g.phases||[]).map(function(ph){ return {id:ph.id,name:ph.name,items:[]}; }),rest=[];
+    g.items.forEach(function(i){ var ph=g.kind==="mo"?bkPhOf(list[i],MO):null,c=null; if(ph){ for(var k=0;k<cells.length;k++){ if(cells[k].id===ph.id)c=cells[k]; } } if(c)c.items.push(i); else rest.push(i); });
+    return {kind:g.kind,key:g.key,slot:g.slot,name:g.name,n:g.items.length,cells:cells,rest:rest}; }); }
+/* 새 시퀀스가 설 자리 — 그 국면의 마지막 뒤(비어 있으면 표에서 앞선 자리들의 뒤) */
+function bkInsertAt(list,MO,key){ var r=bkSlotRanks(list,MO),mine=r["m:"+key],at=0; if(mine==null)return (list||[]).length; (list||[]).forEach(function(p,i){ if(r[bkSlotOf(p,MO)]<=mine)at=i+1; }); return at; }
+/* 자리 정하기 — key "" 는 미정으로(묶음 글자도 걷는다). 세부 국면은 그 국면의 것일 때만 남는다 */
+function bkSetSlot(p,MO,key,phId){ if(!p)return false; if(!key){ delete p.mo; delete p.ph; delete p.grp; return true; }
+  var m=bkMoFind(MO,key); if(!m)return false; p.mo=m.key; p.grp=bkText(m.name,20); var ok=false; (m.phases||[]).forEach(function(x){ if(x.id===phId)ok=true; }); if(ok)p.ph=phId; else delete p.ph; return true; }
+/* ══ 2.990 · 패턴북 국면 순수 함수 끝 ══ */
+/* 국면 표의 주인은 훈련 카드의 EP_STD_MOMENTS 하나다(아직 그 줄에 닿기 전이면 빈 표) */
+function bkMO(){ try{ return Array.isArray(EP_STD_MOMENTS)?EP_STD_MOMENTS:[]; }catch(_){ return []; } }
 /* 2.985 — 구간 재생: 단계 하나만 틀 때 [animRangeFrom, animRangeEnd] 를 잡는다. 평소(-1)에는 처음~끝 그대로다. */
 var animRangeFrom=0,animRangeEnd=-1;
 function _animLastIdx(){ var n=anim.frames.length-1; return (animRangeEnd>=0&&animRangeEnd<n)?animRangeEnd:n; }
@@ -19371,9 +19401,9 @@ try{ var _nb=document.getElementById('dfNew');
     pages.splice(idx+1,0,{snap:blankSnap(),thumb:"",name:""}); idx++; loadIdx(idx);clearHistory();render(); persist(); _toast("페이지 "+pages.length); }
   function dup(i){ ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
     var src=pages[i]; if(!src)return; var _cp={snap:_clone(src.snap),anim:src.anim?_clone(src.anim):null,thumb:src.thumb,name:(src.name||((window.__vaultBook?"시퀀스 ":"페이지 ")+(i+1)))+" 복사"};
-    ["grp","when","call"].forEach(function(k){ if(typeof src[k]==="string"&&src[k])_cp[k]=src[k]; });   /* 2.985 */
+    ["grp","when","call","mo","ph"].forEach(function(k){ if(typeof src[k]==="string"&&src[k])_cp[k]=src[k]; });   /* 2.985 · 2.990 국면 자리도 */
     pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx);clearHistory();render(); persist(); }
-  function switchTo(i){ if(!pages||i===idx||!pages[i])return; capture(); idx=i; loadIdx(idx);clearHistory();render(); persist(); }
+  function switchTo(i){ if(!pages||i===idx||!pages[i])return; try{ if(window.__bkMap)window.__bkMap.close(); }catch(_){} capture();   /* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */ idx=i; loadIdx(idx);clearHistory();render(); persist(); }
   function del(i){ if(!pages||pages.length<=1)return;
     var go=function(){ if(i!==idx)capture(); pages.splice(i,1); if(idx>i)idx--; else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx);clearHistory();render();persist(); _bkTouch(); };
     var _q=window.__vaultBook?("«"+bkSeqName(pages[i],i)+"» 시퀀스를 삭제할까요? 장면도 함께 지워집니다."):"이 페이지를 삭제할까요?";   /* 2.985 */
@@ -19423,6 +19453,9 @@ try{ var _nb=document.getElementById('dfNew');
   function _phoneNav(){ try{ return !window.__vaultBook&&document.body.classList.contains("ps-phone-work")&&(window.innerWidth||0)<640; }catch(_){ return false; } }
   function _bkTouch(){ try{ if(window.__vaultBook&&window.__vaultAutoSaveSchedule)window.__vaultAutoSaveSchedule(); }catch(_){} }   /* 2.985 — 패턴북을 고쳤다(«변경 있음») */
   function _bkBlank(p){ try{ var s=(p&&p.snap)||{}, fr=(p&&p.anim&&p.anim.frames)||[]; return !bkText(p&&p.name,40)&&fr.length<2&&!(s.equipment&&s.equipment.length)&&!(s.drawings&&s.drawings.length); }catch(_){ return false; } }
+  /* 2.990 — 시퀀스를 국면 순서로(같은 국면 안의 차례는 그대로). 페이지 객체는 그대로 두고 줄만 바꾼다 — 지금 판은 제 페이지를 따라간다 */
+  function _bkResort(){ try{ var o=bkOrder(pages,bkMO()),same=true; for(var k=0;k<o.length;k++){ if(o[k]!==k){ same=false; break; } } if(same)return false;
+    var cur=pages[idx],np=o.map(function(k){ return pages[k]; }); pages.length=0; Array.prototype.push.apply(pages,np); idx=Math.max(0,pages.indexOf(cur)); return true; }catch(_){ return false; } }
   function render(){
     try{ if(window.__bkSync)window.__bkSync("pages"); }catch(_){}   /* 2.985 — 패턴북 목록이 페이지를 따라간다(띠가 숨어 있어도) */
     var _bk=!!window.__vaultBook, _pw=_bk?"시퀀스":"페이지";
@@ -19444,6 +19477,8 @@ try{ var _nb=document.getElementById('dfNew');
     var hd=document.createElement("div"); hd.className="bp-head";
     hd.innerHTML=_bk?'<span class="bp-t">패턴북</span><span class="bp-s">시퀀스마다 애니메이션</span>':'<span class="bp-t">보드</span><span class="bp-s">선수·그림으로 전술 그리기</span>';   /* 1.926 — 사이드바 이름(보드)과 통일 */
     if(_bkNarrow){ var pp=document.createElement("button"); pp.type="button"; pp.className="bk-pplay"; pp.id="bkPhonePlay"; pp.textContent="▶ 재생"; pp.title="이 시퀀스를 처음부터 재생";
+      var mp=document.createElement("button"); mp.type="button"; mp.className="bk-pplay bk-pmap"; mp.id="bkPhoneMap"; mp.textContent="지도"; mp.title="국면 지도 — 국면마다 시퀀스를 봅니다";   /* 2.990 */
+      mp.onclick=function(){ try{ window.__bkMap&&window.__bkMap.open(); }catch(_){} }; box.appendChild(mp);
       pp.onclick=function(){ try{ window.__bkPhonePlay&&window.__bkPhonePlay(); }catch(_){} }; box.appendChild(pp); try{ window.__bkPhoneSync&&window.__bkPhoneSync(); }catch(_){} }
     else box.appendChild(hd);
     var n=pages?pages.length:1;
@@ -19559,16 +19594,20 @@ try{ var _nb=document.getElementById('dfNew');
       count:function(){ return pages?pages.length:1; },
       /* 목록 — 지금 시퀀스의 장면은 판(anim.frames)이 말한다(아직 페이지에 안 담겼다). 무거운 사본을 만들지 않는다 */
       list:function(){ if(window.__vaultBook)ensure(); var live=null; try{ live=window.__bkStage?window.__bkStage.list():null; }catch(_){}
+        var _MO=bkMO(),_bare=true; try{ _bare=!(state.equipment&&state.equipment.length)&&!(state.drawings&&state.drawings.length); }catch(_){}   /* 2.990 — 지금 판은 아직 페이지에 안 담겼다 */
         return (pages||[]).map(function(p,i){ var fr=(p&&p.anim&&Array.isArray(p.anim.frames))?p.anim.frames:[], cur=i===idx;
-          var nSc=cur&&live?live.n:fr.length, nSt=cur&&live?live.stages.length:bkStagesOf(fr).length;
-          return {i:i,cur:cur,name:bkText(p&&p.name,40),label:bkSeqName(p,i),grp:bkText(p&&p.grp,20),when:String((p&&p.when)||""),call:String((p&&p.call)||""),scenes:nSc||1,stages:Math.max(1,nSt)}; }); },
+          var nSc=cur&&live?live.n:fr.length, nSt=cur&&live?live.stages.length:bkStagesOf(fr).length; var _mk=bkMoKeyOf(p,_MO),_mm=_mk?bkMoFind(_MO,_mk):null,_ph=bkPhOf(p,_MO);
+          return {i:i,cur:cur,name:bkText(p&&p.name,40),label:bkSeqName(p,i),grp:bkText(p&&p.grp,20),mo:_mk,moName:_mm?_mm.name:"",ph:_ph?_ph.id:"",phName:_ph?_ph.name:"",slot:bkSlotOf(p,_MO),blank:!!(_bkBlank(p)&&(!cur||(_bare&&(!live||live.n<2)))),when:String((p&&p.when)||""),call:String((p&&p.call)||""),scenes:nSc||1,stages:Math.max(1,nSt)}; }); },
       go:function(i){ switchTo(i); },
-      add:function(o){ ensure(); if(pages.length>=MAXP){ _toast("시퀀스는 최대 "+MAXP+"개까지"); return false; } capture();
-        var p={snap:blankSnap(),thumb:"",name:bkText(o&&o.name,40)}; var g=bkText(o&&o.grp,20)||bkText(pages[idx]&&pages[idx].grp,20); if(g)p.grp=g;   /* 새 시퀀스는 지금 묶음에 */
+      add:function(o){ ensure(); capture(); var _MO=bkMO(),_mo=(o&&typeof o.mo==="string"&&bkMoFind(_MO,o.mo))?o.mo:"",_mp=(o&&o.ph)||"";
+        /* 2.990 — 빈 첫 시퀀스 하나뿐인 패턴북에서 국면을 고르면(지도의 ＋) 새로 만들지 않고 그 빈 칸이 그 자리에 선다 */
+        if(_mo&&pages.length===1&&_bkBlank(pages[0])&&!bkSlotOf(pages[0],_MO)){ bkSetSlot(pages[0],_MO,_mo,_mp); render(); _bkTouch(); return true; }
+        if(pages.length>=MAXP){ _toast("시퀀스는 최대 "+MAXP+"개까지"); return false; }
+        var p={snap:blankSnap(),thumb:"",name:bkText(o&&o.name,40)}; /* 새 시퀀스의 자리 — 고른 국면(＋), 없으면 지금 시퀀스와 같은 자리 */ var _c=pages[idx]||{},_ck=_mo||bkMoKeyOf(_c,_MO); if(_ck)bkSetSlot(p,_MO,_ck,_mo?_mp:(_c.ph||"")); else { var g=bkText(o&&o.grp,20)||bkText(_c.grp,20); if(g)p.grp=g; }
         /* 선수 배치는 지금 시퀀스의 첫 장면에서 이어받는다(같은 팀·같은 대형에서 다른 플레이를 그리는 일이 대부분). 장비·그림·장면은 비운다 */
         try{ var _src=pages[idx], _f0=(_src&&_src.anim&&Array.isArray(_src.anim.frames)&&_src.anim.frames.length>1&&_src.anim.frames[0]&&_src.anim.frames[0].snap)||(_src&&_src.snap);
           if(_f0&&Array.isArray(_f0.players)){ p.snap.players=_clone(_f0.players); if(_f0.ball)p.snap.ball=_clone(_f0.ball); } }catch(_){}
-        pages.splice(idx+1,0,p); idx++; loadIdx(idx);clearHistory();render(); _bkTouch(); _toast("시퀀스 "+pages.length+"개"); return true; },
+        var _at=_mo?bkInsertAt(pages,_MO,_mo):(idx+1); pages.splice(_at,0,p); idx=_at; loadIdx(idx);clearHistory();render(); _bkTouch(); _toast("시퀀스 "+pages.length+"개"); return true; },
       dup:function(i){ dup(i); _bkTouch(); },
       del:function(i){ del(i); },
       move:function(from,to){ reorder(from,to); _bkTouch(); },
@@ -19576,14 +19615,20 @@ try{ var _nb=document.getElementById('dfNew');
       set:function(i,key,val){ ensure(); var p=pages[i]; if(!p||["name","grp","when","call"].indexOf(key)<0)return false;
         var v=key==="name"?bkText(val,40):(key==="grp"?bkText(val,20):String(val==null?"":val).replace(/\s+\n/g,"\n").slice(0,key==="when"?200:60));
         if(v)p[key]=v; else if(key==="name")p.name=""; else delete p[key]; _bkTouch(); return true; },
+      /* 2.990 — 국면 자리(mo · 세부 국면 ph). 줄을 국면 순서로 다시 세운다 — 띠·전체 재생·여러 시퀀스 영상·옛 판의 묶음 머리가 같은 차례를 본다 */
+      setSlot:function(i,key,phId){ ensure(); var p=pages[i],_MO=bkMO(); if(!p)return false; var _was=bkSlotOf(p,_MO); if(!bkSetSlot(p,_MO,key,phId))return false;
+        /* 국면이 바뀌면 새 국면의 맨 뒤에 선다(꼬리표만 바꾸면 제자리) */
+        if(bkSlotOf(p,_MO)!==_was){ var _cur=pages[idx]; pages.splice(i,1); pages.splice(key?bkInsertAt(pages,_MO,key):pages.length,0,p); idx=Math.max(0,pages.indexOf(_cur)); }
+        _bkResort(); render(); _bkTouch(); return true; },
       /* 작전판에서 가져오기 — bkSeqsFromBoard 가 만든 시퀀스들을 끝에 붙이고 첫 것으로 간다. 원본은 그대로다 */
       append:function(arr){ arr=(Array.isArray(arr)?arr:[]).filter(function(p){return p&&p.snap;}); if(!arr.length)return 0; ensure();
         var room=MAXP-pages.length; if(room<=0){ _toast("시퀀스는 최대 "+MAXP+"개까지"); return 0; } arr=arr.slice(0,room); capture();
         var at=pages.length; arr.forEach(function(p){ var q=_clone(p); delete q.vlink; pages.push(q); });
         /* 빈 첫 시퀀스 하나뿐이던 패턴북이면 그 빈 칸을 걷는다 — 가져온 것이 1번이 된다 */
         if(at===1&&_bkBlank(pages[0])){ pages.splice(0,1); at=0; }
+        var _first=pages[at]; if(arr.some(function(q){ return !!bkMoKeyOf(q,bkMO()); })){ _bkResort(); at=Math.max(0,pages.indexOf(_first)); }   /* 2.990 — 국면을 달고 온 시퀀스는 제 국면 자리로 */
         idx=at; loadIdx(idx);clearHistory();render(); _bkTouch(); return arr.length; },
-      sig:function(){ try{ return (pages||[]).map(function(p){ return [p&&p.name||"",p&&p.grp||"",p&&p.when||"",p&&p.call||""].join("~"); }).join("|")+"@"+(pages?pages.length:0); }catch(_){ return ""; } }
+      sig:function(){ try{ return (pages||[]).map(function(p){ return [p&&p.name||"",p&&p.grp||"",p&&p.when||"",p&&p.call||"",p&&p.mo||"",p&&p.ph||""].join("~"); }).join("|")+"@"+(pages?pages.length:0); }catch(_){ return ""; } }
     },
     exitToLive:function(){ if(_inVault){ pages=(_livePages&&_livePages.pages)||null; idx=(_livePages&&_livePages.idx)||0; _inVault=false; _livePages=null;clearHistory();try{render();}catch(_){} } },
     hasMulti:function(){ return !!(pages && pages.length>1); },
@@ -19662,18 +19707,19 @@ try{ var _nb=document.getElementById('dfNew');
   function on(){ try{ return !!(window.__vaultBook&&window.__vaultEdit&&(window.__csView||"board")==="board"); }catch(_){ return false; } }
   function wide(){ try{ var b=document.body.classList; return window.innerWidth>=768&&!b.contains("ps-phone-work")&&!b.contains("ps-dock"); }catch(_){ return false; } }
   function ro(){ return !!window.__vaultReadOnly; }
-  var W=248,rail=null,was=false,inSync=false,listSig="",stgSig="",seqSig="",allRun=0,allSeq=0,busy=0,menu=null,obs=null;
+  var W=248,rail=null,was=false,inSync=false,listSig="",stgSig="",seqSig="",allRun=0,allSeq=0,busy=0,menu=null,obs=null,openG={},bookWas=false,mapWant=false,mapEl=null,mapSig="";
 
   function build(){
     rail=mk("aside"); rail.id="bkRail"; rail.setAttribute("aria-label","패턴북 시퀀스"); rail.hidden=true;
-    rail.innerHTML='<div class="bk-h"><b>시퀀스</b><span class="bk-n" id="bkN"></span><span class="bk-sp"></span>'
+    rail.innerHTML='<div class="bk-h"><button type="button" class="bk-btn" id="bkMapBtn" title="국면 지도 — 국면마다 채운 시퀀스를 한눈에 봅니다">지도</button><span class="bk-n" id="bkN"></span><span class="bk-sp"></span>'
       +'<button type="button" class="bk-btn" id="bkImp" title="보관함의 작전판이나 보드에 그려 둔 판을 시퀀스로 가져옵니다 — 원본은 그대로 둡니다">가져오기</button>'
-      +'<button type="button" class="bk-btn pri" id="bkAdd" title="새 시퀀스 — 선수 배치는 지금 시퀀스의 첫 장면에서 이어받습니다">＋ 시퀀스</button></div>'
+      +'<button type="button" class="bk-btn pri" id="bkAdd" aria-label="새 시퀀스" title="새 시퀀스 — 지금 국면에 만들고, 선수 배치는 지금 시퀀스의 첫 장면에서 이어받습니다">＋</button></div>'
       +'<div class="bk-list" id="bkList"></div>'
       +'<div class="bk-det" id="bkDet"><div class="bk-sec" id="bkSeqF"></div><div class="bk-sec" id="bkStg"></div><div class="bk-sec" id="bkSeqX"></div></div>';   /* 이름 → 단계(자주 만지는 것) → 설명(한 번 적는 것) */
     document.body.appendChild(rail);
     $id("bkAdd").onclick=function(){ stopAll(); var p=P(); if(p&&p.add()){ setTimeout(function(){ var n=$id("bkName"); if(n){ try{n.focus();}catch(_){} } },80); } };
     $id("bkImp").onclick=function(){ stopAll(); openImport(); };
+    $id("bkMapBtn").onclick=function(){ stopAll(); if(mapEl)closeMap(); else openMap(); };
     document.addEventListener("pointerdown",function(e){ if(menu&&!menu.contains(e.target)&&!(e.target.closest&&e.target.closest(".bk-more")))closeMenu(); },true);
     try{ if(window.ResizeObserver){ obs=new ResizeObserver(function(){ place(); }); var st=$id("boardStage"),dk=$id("ps-command-dock"); if(st)obs.observe(st); if(dk)obs.observe(dk); } }catch(_){}
   }
@@ -19688,30 +19734,42 @@ try{ var _nb=document.getElementById('dfNew');
   }
   function refit(){ [0,90,340].forEach(function(t){ setTimeout(function(){ try{ window.dispatchEvent(new Event("resize")); }catch(_){} place(); },t); }); }
 
-  /* ── 시퀀스 목록 ── */
+  /* ── 시퀀스 목록 — 2.990: 국면 나무. 채운 국면만 머리가 서고(빈 국면은 지도가 보여 준다), 여섯 개까지는 다 펼친다 ── */
+  function grpOpen(g,L){ if(openG[g.slot]!=null)return !!openG[g.slot]; if(L.length<=6)return true; return g.items.some(function(i){ return !!(L[i]&&L[i].cur); }); }
   function renderList(){
-    var p=P(); if(!p)return; var L=p.list(),sig=JSON.stringify(L)+"|"+(ro()?1:0);
+    var p=P(); if(!p)return; var L=p.list(),sig=JSON.stringify(L)+"|"+(ro()?1:0)+"|"+JSON.stringify(openG);
     if(sig===listSig)return; listSig=sig;
-    var box=$id("bkList"),keep=box.scrollTop; box.textContent=""; $id("bkN").textContent=String(L.length);
-    var anyG=L.some(function(x){ return !!x.grp; }),last=null;
-    L.forEach(function(x){
-      if(anyG&&x.grp!==last){ box.appendChild(mk("div","bk-g",x.grp||"묶음 없음")); last=x.grp; }
-      var b=mk("div","bk-row"+(x.cur?" on":"")); b.setAttribute("role","button"); b.tabIndex=0; if(x.cur)b.setAttribute("aria-current","true");
-      b.appendChild(mk("span","no",String(x.i+1)));
-      var w=mk("span","tx"); w.appendChild(mk("span","nm",x.label)); w.appendChild(mk("span","mt",x.stages+"단계 · "+x.scenes+"장면")); b.appendChild(w);
-      if(!ro()){ var m=mk("button","bk-ic bk-more","⋯"); m.type="button"; m.title="시퀀스 메뉴"; m.setAttribute("aria-label",x.label+" 메뉴");
-        m.onclick=function(e){ e.stopPropagation(); if(menu&&menu.__for===x.i){ closeMenu(); return; } openMenu(m,x,L.length); }; b.appendChild(m); }
-      b.onclick=function(){ if(!x.cur){ stopAll(); try{ var s=S(); if(s)s.stop(); }catch(_){} p.go(x.i); } };
-      b.onkeydown=function(e){ if(e.target===b&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); b.click(); } };
-      box.appendChild(b);
+    var box=$id("bkList"),keep=box.scrollTop; box.textContent=""; $id("bkN").textContent="시퀀스 "+L.length;
+    bkTree(L,bkMO()).forEach(function(g){
+      if(!g.items.length)return;
+      var open=grpOpen(g,L),h=mk("div","bk-gh"+(g.kind==="mo"?"":" etc")+((!ro()&&g.kind==="mo")?"":" noadd")); h.setAttribute("role","button"); h.tabIndex=0; h.setAttribute("aria-expanded",open?"true":"false"); h.setAttribute("data-slot",g.slot);
+      h.appendChild(mk("span","car",open?"▾":"▸")); h.appendChild(mk("span","gn",g.kind==="grp"?("묶음 · "+g.name):g.name)); h.appendChild(mk("span","gc",String(g.items.length)));
+      if(!ro()&&g.kind==="mo"){ var a=mk("button","bk-ic bk-gadd","＋"); a.type="button"; a.title=g.name+"에 새 시퀀스"; a.setAttribute("aria-label",g.name+"에 새 시퀀스"); a.onclick=function(e){ e.stopPropagation(); addTo(g.key,""); }; h.appendChild(a); }
+      h.onclick=function(){ openG[g.slot]=!open; renderList(); };
+      h.onkeydown=function(e){ if(e.target===h&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); h.click(); } };
+      box.appendChild(h);
+      if(!open)return;
+      g.items.forEach(function(i,k){ var x=L[i];
+        var b=mk("div","bk-row in"+(x.cur?" on":"")); b.setAttribute("role","button"); b.tabIndex=0; if(x.cur)b.setAttribute("aria-current","true");
+        b.appendChild(mk("span","no",String(x.i+1)));
+        var w=mk("span","tx"),mt=mk("span","mt"); w.appendChild(mk("span","nm",x.label));
+        if(x.phName){ mt.appendChild(mk("u","",x.phName)); mt.appendChild(document.createTextNode(" · ")); }   /* 세부 국면 꼬리표 */
+        mt.appendChild(document.createTextNode(x.stages+"단계 · "+x.scenes+"장면")); w.appendChild(mt); b.appendChild(w);
+        if(!ro()){ var m=mk("button","bk-ic bk-more","⋯"); m.type="button"; m.title="시퀀스 메뉴"; m.setAttribute("aria-label",x.label+" 메뉴");
+          m.onclick=function(e){ e.stopPropagation(); if(menu&&menu.__for===x.i){ closeMenu(); return; } openMenu(m,x,L.length,k>0?g.items[k-1]:-1,k<g.items.length-1?g.items[k+1]:-1); }; b.appendChild(m); }
+        b.onclick=function(){ if(!x.cur){ stopAll(); try{ var s=S(); if(s)s.stop(); }catch(_){} p.go(x.i); } };
+        b.onkeydown=function(e){ if(e.target===b&&(e.key==="Enter"||e.key===" ")){ e.preventDefault(); b.click(); } };
+        box.appendChild(b);
+      });
     });
+    if(!ro()){ var more=mk("button","bk-gmore","＋ 다른 국면에 만들기"); more.type="button"; more.id="bkOther"; more.title="국면 지도에서 자리를 골라 시퀀스를 만듭니다"; more.onclick=function(){ stopAll(); openMap(); }; box.appendChild(more); }
     box.scrollTop=keep;
     $id("bkAdd").hidden=ro(); $id("bkImp").hidden=ro();
   }
   function closeMenu(){ if(menu){ try{menu.remove();}catch(_){} menu=null; } }
-  function openMenu(anchor,x,n){
+  function openMenu(anchor,x,n,up,down){   /* 2.990 — up·down = 같은 국면 안의 이웃 번호(없으면 -1) */
     closeMenu(); var p=P(); if(!p)return; menu=mk("div","bk-menu"); menu.__for=x.i; menu.setAttribute("role","menu");
-    [["복제",function(){ p.dup(x.i); },true],["위로 옮기기",function(){ p.move(x.i,x.i-1); },x.i>0],["아래로 옮기기",function(){ p.move(x.i,x.i+1); },x.i<n-1],["삭제",function(){ p.del(x.i); },n>1,"del"]]
+    [["복제",function(){ p.dup(x.i); },true],["위로 옮기기",function(){ p.move(x.i,up); },up>=0],["아래로 옮기기",function(){ p.move(x.i,down); },down>=0],["삭제",function(){ p.del(x.i); },n>1,"del"]]
       .forEach(function(it){ if(!it[2])return; var b=mk("button",it[3]||"",it[0]); b.type="button"; b.setAttribute("role","menuitem"); b.onclick=function(e){ e.stopPropagation(); closeMenu(); stopAll(); it[1](); }; menu.appendChild(b); });
     rail.appendChild(menu);
     var rr=rail.getBoundingClientRect(),ar=anchor.getBoundingClientRect(),top=ar.bottom-rr.top+2; if(top+menu.offsetHeight>rr.height-6)top=Math.max(6,ar.top-rr.top-menu.offsetHeight-2);
@@ -19728,13 +19786,22 @@ try{ var _nb=document.getElementById('dfNew');
     if(!force&&sig===seqSig&&top.firstChild&&(top.contains(ae)||host.contains(ae)))return;   /* 치는 중 — 건드리지 않는다 */
     seqSig=sig; top.textContent=""; host.textContent="";
     if(ro()){ top.appendChild(mk("div","bk-ttl",x.label));
-      [["묶음",x.grp],["신호",x.call],["언제 쓰나",x.when]].forEach(function(r){ if(!r[1])return; var f=mk("div","bk-f"); f.appendChild(mk("span","",r[0])); f.appendChild(mk("div","bk-v",r[1])); host.appendChild(f); });
+      [[x.mo?"국면":"묶음",x.mo?(x.moName+(x.phName?(" › "+x.phName):"")):x.grp],["신호",x.call],["언제 쓰나",x.when]].forEach(function(r){ if(!r[1])return; var f=mk("div","bk-f"); f.appendChild(mk("span","",r[0])); f.appendChild(mk("div","bk-v",r[1])); host.appendChild(f); });
       return; }
     top.appendChild(fld("시퀀스 이름",inp("bkName",x.name,"시퀀스 "+(x.i+1),40,function(v){ p.set(x.i,"name",v); renderList(); })));
-    var g=inp("bkGrp",x.grp,"예: 공격 조직",20,function(v){ p.set(x.i,"grp",v); renderList(); }); g.setAttribute("list","bkGrpL");
-    var dl=mk("datalist"); dl.id="bkGrpL"; var seen={}; (window.BK_GROUPS||[]).concat(L.map(function(y){return y.grp;})).forEach(function(n){ if(!n||seen[n])return; seen[n]=1; var o=mk("option"); o.value=n; dl.appendChild(o); });
-    var two=mk("div","bk-two"); two.appendChild(fld("묶음",g)); two.appendChild(fld("신호",inp("bkCall",x.call,"팀이 외치는 말",60,function(v){ p.set(x.i,"call",v); })));
-    host.appendChild(two); host.appendChild(dl);
+    /* 2.990 — 국면(고정 여섯) + 세부 국면 꼬리표. 옛 «묶음» 글자 칸을 대신한다(옛 글자는 고를 때까지 그대로 남는다) */
+    var MO=bkMO(),sel=document.createElement("select"); sel.id="bkMo"; sel.className="bk-in"; sel.setAttribute("aria-label","국면");
+    function opt(v,t){ var o=mk("option","",t); o.value=v; sel.appendChild(o); }
+    opt("","국면 미정"); MO.forEach(function(m){ opt(m.key,m.name); });
+    if(!x.mo&&x.grp){ opt("__g","묶음 · "+x.grp); sel.value="__g"; } else sel.value=x.mo||"";
+    sel.addEventListener("change",function(){ if(sel.value==="__g")return; stopAll(); p.setSlot(x.i,sel.value,""); });
+    host.appendChild(fld("국면",sel));
+    var mm=bkMoFind(MO,x.mo);
+    if(mm&&(mm.phases||[]).length>1){ var chips=mk("div","bk-chips"); chips.id="bkPh"; chips.setAttribute("role","group"); chips.setAttribute("aria-label","세부 국면");
+      mm.phases.forEach(function(ph){ var c=mk("button","bk-chip"+(x.ph===ph.id?" on":""),ph.name); c.type="button"; c.setAttribute("data-ph",ph.id); c.setAttribute("aria-pressed",x.ph===ph.id?"true":"false");
+        c.onclick=function(){ stopAll(); p.setSlot(x.i,x.mo,x.ph===ph.id?"":ph.id); }; chips.appendChild(c); });
+      var pf=mk("div","bk-f"); pf.appendChild(mk("span","","세부 국면")); pf.appendChild(chips); host.appendChild(pf); }
+    host.appendChild(fld("신호",inp("bkCall",x.call,"팀이 외치는 말",60,function(v){ p.set(x.i,"call",v); })));
     host.appendChild(fld("언제 쓰나",inp("bkWhen",x.when,"예: 상대가 4-4-2 미드블록으로 기다릴 때",200,function(v){ p.set(x.i,"when",v); },true)));
   }
 
@@ -19797,12 +19864,12 @@ try{ var _nb=document.getElementById('dfNew');
   }
   /* 사용자가 재생을 멈추면 전체 재생도 멈춘다(내가 건 정지 — busy — 는 세지 않는다). 재생 단추 상태도 따라간다 */
   try{ var _sa=window.stopAnim; if(typeof _sa==="function"){ window.stopAnim=function(){ if(allRun&&!busy)allRun=0; return _sa.apply(this,arguments); }; } }catch(_){}
-  try{ var _up=window.updatePlayUI; if(typeof _up==="function"){ window.updatePlayUI=function(){ var r=_up.apply(this,arguments); try{ if(was&&!inSync)renderStg(); }catch(_){} try{ phoneSync(); }catch(_){} return r; }; } }catch(_){}
+  try{ var _up=window.updatePlayUI; if(typeof _up==="function"){ window.updatePlayUI=function(){ var r=_up.apply(this,arguments); try{ if(was&&!inSync)renderStg(); }catch(_){} try{ phoneSync(); }catch(_){} try{ if(mapEl&&S()&&S().playing())closeMap(); }catch(_){} return r; }; } }catch(_){}
   /* 폰 — 페이지 띠 머리의 재생 단추(#bkPhonePlay). 폰에는 장면 줄도 도크도 없어 이 단추가 재생의 유일한 문이다 */
   function phoneSync(){ var b=$id("bkPhonePlay"); if(!b)return; var s=S(),pl=!!(s&&s.playing())||!!allRun,d=null; try{ d=s?s.list():null; }catch(_){}
     b.textContent=pl?"■ 멈춤":"▶ 재생"; b.setAttribute("aria-pressed",pl?"true":"false"); b.disabled=!pl&&!(d&&d.n>1); b.title=b.disabled?"이 시퀀스에는 장면이 하나뿐이에요":"이 시퀀스를 처음부터 재생"; }
   window.__bkPhoneSync=phoneSync;
-  window.__bkPhonePlay=function(){ var s=S(); if(!s)return; if(s.playing()||allRun){ stopAll(); s.stop(); } else s.playSeq(); phoneSync(); };
+  window.__bkPhonePlay=function(){ var s=S(); if(!s)return; closeMap(); if(s.playing()||allRun){ stopAll(); s.stop(); } else s.playSeq(); phoneSync(); };
 
   /* ── 가져오기: 보관함 작전판 · 보드에 그려 둔 판 → 시퀀스(사본) ── */
   function hasStuff(seqs){ return (seqs||[]).some(function(q){ var s=(q&&q.snap)||{}; return (s.players&&s.players.length)||(s.equipment&&s.equipment.length)||(s.drawings&&s.drawings.length); }); }
@@ -19834,6 +19901,46 @@ try{ var _nb=document.getElementById('dfNew');
   }
   window.__bkImportOpen=openImport;
 
+  /* ── 2.990 · 국면 지도(#bkMap) — 패턴북을 열면 먼저 뜨는 차례표. 국면 여섯 × 세부 국면 칸에 시퀀스가 선다.
+     판 위를 덮는다(도크 포함) — 시퀀스를 고르거나 «보드로» 를 누르면 걷힌다. 만드는 손잡이(＋)는 넓은 화면의 편집에만, 폰·보기는 채운 국면만 읽는다 ── */
+  function addTo(key,ph){ var p=P(); if(!p)return; stopAll(); closeMap(); if(p.add({mo:key,ph:ph||""})){ setTimeout(function(){ var n=$id("bkName"); if(n){ try{n.focus();}catch(_){} } },80); } }
+  function closeMap(){ if(!mapEl)return; try{ mapEl.remove(); }catch(_){} mapEl=null; mapSig=""; document.body.classList.remove("bk-map-on"); }
+  function placeMap(){
+    if(!mapEl)return; var st=$id("boardStage"); if(!st)return; var r=st.getBoundingClientRect(); if(!r.height)return;
+    var w=wide(),left=w?((rail&&!rail.hidden&&parseFloat(rail.style.left))||8):0;
+    mapEl.style.left=left+"px"; mapEl.style.top=Math.max(0,Math.round(r.top+(w?6:0)))+"px"; mapEl.style.right=(w?12:0)+"px"; mapEl.style.bottom=(w?12:0)+"px";
+  }
+  function renderMap(){
+    if(!mapEl)return; var p=P(); if(!p)return; var L=p.list(),edit=!ro()&&wide(),sig=JSON.stringify(L)+"|"+(edit?1:0);
+    if(sig===mapSig)return; mapSig=sig;
+    var old=mapEl.querySelector(".bkm-g"),keep=old?old.scrollTop:0; mapEl.textContent="";
+    var hd=mk("div","bkm-h"),tx=mk("div","bkm-t"); tx.appendChild(mk("b","","국면 지도")); tx.appendChild(mk("span","",edit?"칸의 ＋ 로 그 국면에 시퀀스를 만들고, 시퀀스를 누르면 그 판으로 갑니다":"시퀀스를 누르면 그 판으로 갑니다")); hd.appendChild(tx);
+    var cl=mk("button","bk-btn","보드로"); cl.type="button"; cl.id="bkMapClose"; cl.title="지도를 걷고 지금 시퀀스로 돌아갑니다"; cl.onclick=function(){ closeMap(); }; hd.appendChild(cl); mapEl.appendChild(hd);
+    var grid=mk("div","bkm-g"),fresh=(L.length===1&&!L[0].slot&&L[0].blank);   /* 새 패턴북의 빈 첫 칸 — ＋ 가 그 칸을 데려가므로 «국면 미정» 기둥으로 세우지 않는다 */
+    function seqBtn(i){ var x=L[i],b=mk("button","bkm-s"+(x.cur?" on":"")); b.type="button"; b.setAttribute("data-i",String(x.i)); b.appendChild(mk("span","nm",x.label)); b.appendChild(mk("span","mt",x.stages+"단계 · "+x.scenes+"장면"));
+      b.onclick=function(){ stopAll(); closeMap(); if(!x.cur){ try{ var s=S(); if(s)s.stop(); }catch(_){} p.go(x.i); } }; return b; }
+    bkMapOf(L,bkMO()).forEach(function(c){
+      if(c.kind!=="mo"&&fresh)return; if(!edit&&!c.n)return;
+      var col=mk("div","bkm-c"+(c.kind==="mo"?"":" etc")),h=mk("h3","",c.kind==="grp"?("묶음 · "+c.name):c.name); col.setAttribute("data-slot",c.slot); h.appendChild(mk("em","",String(c.n))); col.appendChild(h);
+      function cell(label,items,phId,canAdd){ if(!canAdd&&!items.length)return; var ce=mk("div","bkm-cell"); if(phId)ce.setAttribute("data-ph",phId); if(label)ce.appendChild(mk("span","bkm-ph",label)); items.forEach(function(i){ ce.appendChild(seqBtn(i)); });
+        if(canAdd){ var a=mk("button","bkm-add",items.length?"＋ 시퀀스":"＋ 첫 시퀀스"); a.type="button"; a.setAttribute("aria-label",c.name+(label?(" "+label):"")+"에 새 시퀀스"); a.onclick=function(){ addTo(c.key,phId); }; ce.appendChild(a); } col.appendChild(ce); }
+      if(c.kind==="mo"){ c.cells.forEach(function(k){ cell(k.name,k.items,k.id,edit); }); if(c.rest.length)cell((edit||c.rest.length<c.n)?"세부 국면 미정":"",c.rest,"",false); }   /* 꼬리표를 하나도 안 단 국면(보기)은 이름표 없이 */
+      else cell("",c.rest,"",false);
+      grid.appendChild(col);
+    });
+    if(!grid.firstChild)grid.appendChild(mk("div","bkm-e","아직 국면에 선 시퀀스가 없어요."));
+    mapEl.appendChild(grid); grid.scrollTop=keep;
+  }
+  function openMap(){
+    if(!on())return; closeMenu();
+    if(!mapEl){ mapEl=mk("section"); mapEl.id="bkMap"; mapEl.setAttribute("role","region"); mapEl.setAttribute("aria-label","국면 지도"); mapEl.tabIndex=-1;
+      mapEl.addEventListener("keydown",function(e){ if(e.key==="Escape")closeMap(); e.stopPropagation(); });   /* 지도가 떠 있는 동안 판의 단축키는 쉰다 */
+      document.body.appendChild(mapEl); document.body.classList.add("bk-map-on"); }
+    mapSig=""; renderMap(); placeMap(); try{ mapEl.focus({preventScroll:true}); }catch(_){}
+  }
+  function mapSync(){ if(mapWant&&on()){ mapWant=false; openMap(); return; } if(mapEl){ renderMap(); placeMap(); } }
+  window.__bkMap={open:function(){ openMap(); },close:function(){ closeMap(); },on:function(){ return !!mapEl; }};
+
   /* ── 맞추기: 페이지가 바뀔 때(pages) · 장면 줄이 다시 그려질 때(scene) · 창 크기(resize) ── */
   window.__bkSync=function(why){
     if(inSync)return; inSync=true;
@@ -19841,10 +19948,13 @@ try{ var _nb=document.getElementById('dfNew');
       var want=on(),show=want&&wide(),b=document.body;
       if(b.classList.contains("book-mode")!==want)b.classList.toggle("book-mode",want);
       if(want)try{ phoneSync(); }catch(_){}
+      if(want&&!bookWas){ bookWas=true; openG={}; mapWant=true; }   /* 2.990 — 패턴북을 열면 국면 지도가 먼저 */
+      else if(!want&&bookWas){ bookWas=false; mapWant=false; closeMap(); }
       if(!show){
         if(rail&&!rail.hidden){ rail.hidden=true; closeMenu(); }
         if(!want){ listSig="";stgSig="";seqSig="";allRun=0; var o=$id("bkImpOv"); if(o)o.remove(); }
         if(was){ was=false; refit(); }
+        mapSync();
         return;
       }
       if(!rail)build();
@@ -19853,6 +19963,7 @@ try{ var _nb=document.getElementById('dfNew');
       renderStg();
       place();
       if(!was){ was=true; refit(); }
+      mapSync();
     }catch(_){ }finally{ inSync=false; }
   };
   window.addEventListener("resize",function(){ try{ window.__bkSync("resize"); }catch(_){} });
@@ -21786,6 +21897,64 @@ html.ps-page-board body.book-mode.ps-phone-work #boardPageStrip.on:not(#_),html.
 #bkImpOv .bk-ix small{font-size:12px;color:var(--txt-dim,#646A73)}
 #bkImpOv .bk-igo{font-size:12px;font-weight:700;color:var(--accent,#3A6DF0);white-space:nowrap}
 #bkImpOv .bk-ie{padding:24px 8px;text-align:center;font-size:14px;color:var(--txt-dim,#646A73)}
+/* 2.990 — 패턴북 국면 층. 기둥 = 국면 나무(채운 국면만) · 국면 지도(#bkMap) = 국면 여섯 × 세부 국면 칸. 글자 12·14·16 / 굵기 500·600·700 / 모서리 6·10·999 */
+#bkRail .bk-n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#bkRail #bkAdd{flex:0 0 30px;width:30px;padding:0;font-size:14px}
+#bkRail .bk-gh{display:grid;grid-template-columns:14px minmax(0,1fr) auto 28px;gap:4px;align-items:center;min-height:30px;padding:0 2px 0 4px;border-radius:6px;cursor:pointer;color:var(--txt-dim,#646A73);font-weight:700}
+#bkRail .bk-gh.noadd{grid-template-columns:14px minmax(0,1fr) auto;padding-right:8px}
+#bkRail .bk-gh:hover{background:var(--panel2,#F1F3F5)}
+#bkRail .bk-gh:focus-visible,#bkRail .bk-gmore:focus-visible,#bkRail .bk-chip:focus-visible{outline:2px solid var(--accent,#3A6DF0);outline-offset:-2px}
+#bkRail .bk-gh .car{color:var(--faint,#8A9099);text-align:center}
+#bkRail .bk-gh .gn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#bkRail .bk-gh .gc{color:var(--faint,#8A9099);font-weight:600;font-variant-numeric:tabular-nums}
+#bkRail .bk-gh.etc .gn{font-weight:600}
+#bkRail .bk-gh .bk-gadd{color:var(--accent,#3A6DF0);font-weight:700}
+#bkRail .bk-row.in{margin-left:10px}
+#bkRail .bk-row .mt u{text-decoration:none;font-weight:600;color:var(--txt,#14161A)}
+#bkRail .bk-gmore{display:block;box-sizing:border-box;width:100%;margin-top:6px;min-height:28px;padding:0 8px;border:1px dashed var(--line,#E3E6EA);border-radius:6px;background:transparent;color:var(--txt-dim,#646A73);font:inherit;font-size:12px;font-weight:600;text-align:left;cursor:pointer}
+#bkRail .bk-gmore:hover{color:var(--accent,#3A6DF0);border-color:var(--accent,#3A6DF0)}
+#bkRail select.bk-in{padding:0 4px;cursor:pointer}
+#bkRail .bk-chips{display:flex;flex-wrap:wrap;gap:4px}
+#bkRail .bk-chip{height:28px;min-height:28px;padding:0 10px;border:1px solid var(--line,#E3E6EA);border-radius:999px;background:var(--panel,#fff);color:var(--txt-dim,#646A73);font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+#bkRail .bk-chip.on{background:var(--accent-soft,#EDF2FE);border-color:transparent;color:var(--accent,#3A6DF0);font-weight:700}
+#bkMap{position:fixed;z-index:195;left:12px;top:64px;right:12px;bottom:12px;box-sizing:border-box;display:flex;flex-direction:column;background:var(--panel2,#F1F3F5);border:1px solid var(--line,#E3E6EA);border-radius:10px;overflow:hidden;color:var(--txt,#14161A);font-size:12px;font-weight:500;outline:0}
+body.focus-board #bkMap,body.vault-full #bkMap,body.editing #bkMap,body.meet-mode #bkMap{display:none!important}
+#bkMap:focus,#bkMap:focus-visible{outline:0!important}
+/* 지도가 떠 있는 동안 도크는 그리지 않는다 — 웹킷은 유리 면(backdrop-filter)을 위에 덮인 것보다 앞에 칠한다(자리는 그대로 둔다) */
+body.bk-map-on #ps-command-dock{visibility:hidden!important}
+#bkRail .bk-list{max-height:50%}
+#bkMap .bkm-h{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--panel,#fff);border-bottom:1px solid var(--line,#E3E6EA);flex:0 0 auto}
+#bkMap .bkm-t{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 auto}
+#bkMap .bkm-t b{font-size:16px;font-weight:700}
+#bkMap .bkm-t span{color:var(--txt-dim,#646A73)}
+#bkMap .bk-btn{flex:0 0 auto;height:32px;min-height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--txt,#14161A);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+#bkMap .bkm-g{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px;align-content:start}
+#bkMap .bkm-c{display:flex;flex-direction:column;gap:8px;min-width:0;padding:12px;background:var(--panel,#fff);border:1px solid var(--line,#E3E6EA);border-radius:10px}
+#bkMap .bkm-c h3{margin:0;display:flex;align-items:baseline;gap:8px;font-size:14px;font-weight:700}
+#bkMap .bkm-c h3 em{margin-left:auto;font-style:normal;font-size:12px;font-weight:600;color:var(--faint,#8A9099);font-variant-numeric:tabular-nums}
+#bkMap .bkm-cell{display:flex;flex-direction:column;gap:4px;padding-top:8px;border-top:1px solid var(--line,#E3E6EA)}
+#bkMap .bkm-ph{font-weight:600;color:var(--txt-dim,#646A73)}
+#bkMap .bkm-s{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;min-height:36px;padding:0 10px;border:0;border-radius:6px;background:var(--panel2,#F1F3F5);color:var(--txt,#14161A);font:inherit;font-size:14px;font-weight:600;text-align:left;cursor:pointer}
+#bkMap .bkm-s .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#bkMap .bkm-s .mt{font-size:12px;font-weight:500;color:var(--txt-dim,#646A73);font-variant-numeric:tabular-nums;white-space:nowrap}
+#bkMap .bkm-s.on,#bkMap .bkm-s:hover{background:var(--accent-soft,#EDF2FE)}
+#bkMap .bkm-s.on .nm{font-weight:700}
+#bkMap .bkm-add{min-height:32px;padding:0 10px;border:1px dashed var(--line,#E3E6EA);border-radius:6px;background:transparent;color:var(--accent,#3A6DF0);font:inherit;font-size:12px;font-weight:600;text-align:left;cursor:pointer}
+#bkMap .bkm-add:hover{border-color:var(--accent,#3A6DF0)}
+#bkMap .bkm-s:focus-visible,#bkMap .bkm-add:focus-visible,#bkMap .bk-btn:focus-visible{outline:2px solid var(--accent,#3A6DF0);outline-offset:-2px}
+#bkMap .bkm-e{grid-column:1/-1;padding:24px 8px;text-align:center;font-size:14px;color:var(--txt-dim,#646A73)}
+@media (pointer:coarse){
+  #bkRail .bk-gh{min-height:36px;grid-template-columns:14px minmax(0,1fr) auto 36px}
+  #bkRail .bk-gh.noadd{grid-template-columns:14px minmax(0,1fr) auto}
+  #bkRail .bk-chip,#bkRail .bk-gmore{height:auto;min-height:36px}
+  #bkMap .bkm-s{min-height:44px} #bkMap .bkm-add,#bkMap .bk-btn{min-height:36px;height:auto}
+}
+@media (max-width:767.98px){
+  #bkMap{border-radius:0;border-width:1px 0 0}
+  #bkMap .bkm-g{grid-template-columns:minmax(0,1fr)}
+  #bkMap .bkm-s{min-height:44px}
+}
+#boardPageStrip .bk-pplay.bk-pmap{background:var(--panel2,#F1F3F5);color:var(--txt,#14161A)}
 @media (max-width:520px){#bkImpOv .bk-irow{grid-template-columns:56px minmax(0,1fr)}#bkImpOv .bk-igo{grid-column:2}}
 </style>
 </body>
