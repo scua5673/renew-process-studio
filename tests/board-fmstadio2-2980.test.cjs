@@ -57,7 +57,7 @@ test('one function serves ⌘] ⌘[, the panel button and the overlap picker, an
   assert.match(body,/__psPages\.eachOther\(/,'other pages');
   assert.match(body,/pushUndo\(\);/);
   assert.match(src,/id="frontSelBtn" class="dup-sel"[^>]*style="display:none"/,'the button exists, hidden until something is selected');
-  assert.equal(src.split('#shaperBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn)').length-1,3,'on the phone sheet it lives in the «⋯» row (three rules)');
+  assert.equal(src.split('#shaperBtn,#ballLookBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn)').length-1,3,'on the phone sheet it lives in the «⋯» row (three rules; 2.986 — «볼 보기» sits next to 쉐이퍼)');
 });
 
 /* ── 잔상·시선을 모든 장면에 ── */
@@ -89,7 +89,7 @@ test('turning it off removes the value everywhere, and a token that is not in th
 
 test('trail, look-at off and look-at on all go through the all-scenes helper; a ball in the selection gets the trail and is the look target',()=>{
   assert.match(src,/ps\.forEach\(function\(p\)\{ if\(next\)p\.trail=next; else delete p\.trail; \}\); _tokPropAll\(ps,\["trail"\]\);/);
-  assert.match(src,/ps\.forEach\(function\(p\)\{delete p\.lookAt;\}\); _tokPropAll\(ps,\["lookAt"\]\);/);
+  assert.match(src,/ps\.forEach\(function\(p\)\{delete p\.lookAt; if\(!p\.dirFix\)p\.dirBall=1;\}\); _tokPropAll\(ps,\["lookAt","dirBall"\]\);/,'2.986 — a shaper goes back to the ball when its look-at is turned off');
   assert.match(src,/_tokPropAll\(ps\.filter\(function\(p\)\{return p\.id!==id;\}\),\["lookAt","vis","visW","visR"\]\);/);
   assert.match(src,/if\(_ballInMulti\(\)\)ps=ps\.concat\(\[state\.ball\]\);/,'trail targets include the ball of a mixed selection');
   assert.match(src,/if\(_ballInMulti\(\)\)\{ _lookPick=ps\.slice\(\); lookPickTarget\(\{id:"ball"\}\);/,'look-at goes straight to the ball');
@@ -104,7 +104,7 @@ test('trails are drawn while exporting and while stepping scenes in a presentati
   assert.match(src,/return function\(\)\{ window\.__animSeg=Math\.max\(0,i-1\); if\(k2===0&&\(i===0\|\|f\.cut\)\)\{ try\{trailReset\(\);\}catch\(_\)\{\} \}/,'MP4 hold frames know their segment; a new page starts a new trail');
   assert.match(src,/return function\(\)\{ window\.__animSeg=s; renderInterp\(a,b,easeInOut\(i2\/steps\),cv\);/,'MP4 move frames');
   assert.match(src,/window\.__animSeg=s;   \/\* 2\.980 \*\/\n\s*renderInterp\(a,bb,0,cv\);await addFrame\(/,'GIF');
-  assert.match(src,/else\{ animPlaying=false;animRaf=null;_animCapShow\(null\);try\{trailReset\(\);\}catch\(_\)\{\}/,'natural end of playback');
+  assert.match(src,/else\{ animPlaying=false;animRaf=null;animRangeEnd=-1;_animCapShow\(null\);try\{trailReset\(\);\}catch\(_\)\{\}/,'natural end of playback (2.985 — the play range is cleared with it)');
   assert.match(src,/window\.__trailLive=1;window\.__animSeg=k;/,'presentation scene step');
   assert.match(src,/function meetSceneFinish\(\)\{window\.__trailLive=0;/);
 });
