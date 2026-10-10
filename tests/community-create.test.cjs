@@ -49,7 +49,7 @@ test('작전판: 새 훈련 저장이 보관함 번호를 돌려주고, 쓰기�
   const lib=[];let writes=0;
   const ctx=vm.createContext({psVaultRequireLogin:()=>true,libGet:async()=>lib,dc:x=>JSON.parse(JSON.stringify(x)),stampCreator(){},
     libWrite:async()=>{writes++;},libTouch(){},renderLibDock(){},toast(){},Date,Math});
-  const turnCode=board.slice(board.indexOf('var _libTurnTail=Promise.resolve();'),board.indexOf('function psVaultOpenLogin(){'));   /* 2.992 — saveToLib 는 libTurn 한 차례로 */
+  const turnCode=board.slice(board.indexOf('var _libTurnTail=Promise.resolve();'),board.indexOf('function psVaultOpenLogin(){'));   /* 2.994 — saveToLib 는 libTurn 한 차례로 */
   vm.runInContext(turnCode+board.slice(i,j)+';this.saveToLib=saveToLib;',ctx);
   const id=await ctx.saveToLib({name:'4v2 론도'});
   assert.match(id,/^L/);assert.equal(lib[0].libId,id);assert.equal(writes,1);

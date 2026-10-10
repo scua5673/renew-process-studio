@@ -5,7 +5,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const src=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
 function fnAt(start){ const i=src.indexOf(start);assert.ok(i>=0,start);let j=src.indexOf('{',i),d=0;for(;j<src.length;j++){if(src[j]==='{')d++;else if(src[j]==='}'&&--d===0)break;}return src.slice(i,j+1); }
 const J=x=>JSON.parse(JSON.stringify(x));
-/* 2.992 — 쓰기는 libTurn 한 차례 안에서 — 원본의 libTurn 을 그대로 싣는다 */
+/* 2.994 — 쓰기는 libTurn 한 차례 안에서 — 원본의 libTurn 을 그대로 싣는다 */
 const turnCode=src.slice(src.indexOf('var _libTurnTail=Promise.resolve();'),src.indexOf('function psVaultOpenLogin(){'));
 function writeBack({links,lib,editable=true,live,anim}){
   const cleared=[];let writes=0,store=J(lib);

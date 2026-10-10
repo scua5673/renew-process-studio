@@ -82,7 +82,7 @@ test('every board writer that runs on its own (no click) and can meet an open it
   assert.match(slice('function maybeBackfillCreators(){','\n}\n'),/libFix\(fill\)/);
 });
 
-/* 2.992 — 사람이 누르는 보관함 조작(고정·옮기기·이름·태그·분류·공유·복사·폴더·템플릿·saveToLib…)도 같은 차례를 탄다.
+/* 2.994 — 사람이 누르는 보관함 조작(고정·옮기기·이름·태그·분류·공유·복사·폴더·템플릿·saveToLib…)도 같은 차례를 탄다.
    전에는 차례 밖에서 libGet→libSet 을 돌려, 썸네일 차례가 쓰는 사이 읽은 옛 목록으로 그 썸네일을 지우거나 거꾸로 조작이 지워졌다. */
 const userCode=['  function vaultMoveItemTo(','  function vaultTogglePin('].map(a=>slice(a,'\n')).join('\n');
 const saveCode=slice('async function saveToLib(d){','async function addLibToSession(');
