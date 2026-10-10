@@ -3253,6 +3253,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <button data-tool="line" title="직선"><svg width="26" height="13" viewBox="0 0 26 13" style="vertical-align:middle"><line x1="2" y1="6.5" x2="24" y2="6.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
         <button data-tool="dashline" title="점선"><svg width="26" height="13" viewBox="0 0 26 13" style="vertical-align:middle"><line x1="2" y1="6.5" x2="24" y2="6.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="5 4"/></svg></button>
         <button data-tool="link" title="연결선 (선수를 차례로 눌러 잇기 · 선수를 따라감)"><svg width="20" height="17" viewBox="0 0 26 20" style="vertical-align:middle" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 15 L9 4 L18 6 L22 15 Z"/><circle cx="4" cy="15" r="2.4" fill="currentColor" stroke="none"/><circle cx="9" cy="4" r="2.4" fill="currentColor" stroke="none"/><circle cx="18" cy="6" r="2.4" fill="currentColor" stroke="none"/><circle cx="22" cy="15" r="2.4" fill="currentColor" stroke="none"/></svg></button>
+        <button data-tool="poly" title="다각형 (운동장을 차례로 눌러 구역·꺾은선 그리기)"><svg width="20" height="17" viewBox="0 0 26 20" style="vertical-align:middle"><path d="M5 16 L3 8 L12 3 L23 7 L20 16 Z" fill="currentColor" fill-opacity="0.26" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
         <button data-tool="free" title="자유선"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l3.6-1L19 8.6 15.4 5 3 17.4z"/><path d="M14 6.4l3.6 3.6"/></svg></button>
         <button data-tool="rect" title="구역"><svg width="17" height="17" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2" fill="currentColor" fill-opacity="0.28" stroke="currentColor" stroke-width="1.8"/></svg></button>
         <button data-tool="rectline" title="사각형(실선)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="6" width="16" height="12" rx="1.5"/></svg></button>
@@ -3602,14 +3603,15 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <label id="photoBgCtl" class="gk-btn" title="사진 배경색 — 사진 둘레(줄여 맞춘 자리)·투명 PNG 뒤에 깔린다" style="display:none;gap:6px;align-items:center;cursor:pointer">사진 배경<input type="color" id="photoBgInput" value="#1b1e24" aria-label="사진 배경색" style="width:22px;height:18px;border:0;padding:0;background:none;cursor:pointer"></label>
         <input type="file" id="tokImgInput" accept="image/png,image/jpeg,image/webp" style="display:none">
         <button id="visBtn" class="gk-btn" title="선수 시야 표시·끄기" style="display:none">시야</button>
-        <button id="trailBtn" class="gk-btn" title="잔상 — 재생할 때 지나온 길을 남깁니다 (누를 때마다 1→5단계→끔 · 단축키 J)" style="display:none">잔상</button>
-        <button id="lookBtn" class="gk-btn" title="시선 — 다음에 누르는 선수나 공을 계속 바라봅니다 (단축키 O · 다시 누르면 끔)" style="display:none">시선</button>
+        <button id="trailBtn" class="gk-btn" title="잔상 — 재생·영상에서 지나온 길을 남깁니다. 모든 장면에 적용 (누를 때마다 1→5단계→끔 · 단축키 J)" style="display:none">잔상</button>
+        <button id="lookBtn" class="gk-btn" title="시선 — 다음에 누르는 선수나 공을 계속 바라봅니다. 공을 함께 골랐으면 바로 공을 · 모든 장면에 적용 (단축키 O · 다시 누르면 끔)" style="display:none">시선</button>
         <button id="lockSelBtn" class="gk-btn" title="선택한 항목 위치 고정" style="display:none">고정</button>
         <span class="sizebox" id="visCtl" style="display:none"><button id="visNarrow" title="시야 좁게"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="szlbl">시야폭</span><button id="visWide" title="시야 넓게"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></span>
         <button id="visBlindBtn" class="gk-btn" title="등 뒤 사각지대 표시·끄기" style="display:none">사각</button>
         <button id="shaperBtn" class="gk-btn" title="쉐이퍼(몸 방향) 토큰 디자인" style="display:none">쉐이퍼</button>
         <button id="tokAnimResetBtn" class="gk-btn" title="이 토큰만 리셋 — 지금 위치·이름·번호를 뒤의 모든 장면에 적용하고 이 토큰 동선 곡선을 지웁니다(다른 토큰은 그대로)" style="display:none">↺ 이후 장면 리셋</button>
         <button id="dupSelBtn" class="dup-sel" title="복제"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>복제</button>
+        <button id="frontSelBtn" class="dup-sel" title="맨 앞으로 — 겹친 토큰 위로 올려 번호·이름이 가려지지 않게 (⌘] · 맨 뒤로는 ⌘[)" style="display:none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="11" height="11" rx="2" fill="currentColor" fill-opacity=".22"/><path d="M19 9v9a2 2 0 0 1-2 2H9"/></svg>맨 앞</button>
         <button id="mirHBtn" class="dup-sel" title="좌우 대칭 복제"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2"/><path d="M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>좌우</button>
         <button id="mirVBtn" class="dup-sel" title="상하 대칭 복제"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2"/><path d="M8 8l4-4 4 4M8 16l4 4 4-4"/></svg>상하</button>
         <button id="ballStyleBtn" class="del-sel" onclick="openBallPicker()" style="display:none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7l3.2 2.3-1.2 3.8h-4l-1.2-3.8z"/></svg>공 바꾸기</button>
@@ -4232,7 +4234,7 @@ try{
 }catch(_){}
 const MDS=["MD-5","MD-4","MD-3","MD-2","MD-1","MD","MD+1"];
 
-const DRAW_TOOLS=["run","pass","dribble","line","dashline","link","free","rect","ellipse","rectline","rectdash"];   /* 2.683 — ellipse: 원형 구역 */   /* 2.679 — link: 선수를 차례로 눌러 잇는 연결선·다각형(선수를 따라감) */
+const DRAW_TOOLS=["run","pass","dribble","line","dashline","link","poly","free","rect","ellipse","rectline","rectdash"];   /* 2.683 — ellipse: 원형 구역 */   /* 2.679 — link: 선수를 차례로 눌러 잇는 연결선·다각형(선수를 따라감) */
 const isDraw=()=>DRAW_TOOLS.includes(state.tool);
 /* 처음 사용하는 보드는 네이비 + 15존. 저장된 보드는 loadSnap의 배경·그리드 설정을 복원한다. */
 const state={orientation:"h",area:"full",pitchView:"full",pvSide:"own",fieldMode:"standard",pitchN:1,tool:"move",color:"#1c1c1e",tokenScale:0.46,grid:true,lines:true,gridType:"grid15",pitchImg:null,label:"num",   /* 2.459 — 기본 표시=번호(사용자). 저장본은 제 값(6188)을 그대로 쓴다 */drawLw:1,drawOp:1,boardLocked:false,
@@ -5133,6 +5135,7 @@ function enableDrag(g,p,removable,kind){
 	    if(e.pointerType==="mouse"&&e.button===0&&!(sel&&sel.ref===p)&&!(multiSel.length>=2&&multiSel.indexOf(p)>=0))selPanelOpen=false;
 	    if(state.tool==="eraser"){e.stopPropagation();eraseToken(p);return;}
 	    if(state.tool==="link"){e.stopPropagation();linkTap(p);return;}   /* 2.679 — 연결선: 선수를 차례로 누른다 */
+	    if(state.tool==="poly"){e.stopPropagation();polyTap({x:p.x,y:p.y});return;}   /* 2.980 — 다각형: 선수 자리도 꼭짓점으로(묶이지는 않는다) */
 	    if(_lookPick){e.stopPropagation();lookPickTarget(p);return;}   /* 2.680 — 시선 대상 고르기 */
 	    e.stopPropagation();
 	    if(state.boardLocked&&state.tool==="move"){selectItem(kind,p);toast("배치가 고정되어 있습니다");return;}
@@ -5284,6 +5287,7 @@ function tokenItems(){
 function normalizeTokenLayers(){tokenItems().forEach((it,i)=>{if(!Number.isFinite(+it.o.z))it.o.z=i;});}
 function tokenLayerLabel(it){const o=it.o;if(it.kind==="ball")return"공";if(it.kind==="equip")return EQUIP_LABEL[o.team]||"훈련 도구";if(o.coach)return"코치";return (o.name&&o.name.trim())||(o.pos?o.pos+" · ":"")+((o.num!=null&&o.num!=="")?o.num:"선수");}
 function moveTokenLayer(o,mode){
+  if(mode==="front"||mode==="back"){ if(zOrderItems([o],mode==="front")){ try{selectItem(typeOfItem(o)||"ball",o);}catch(_){} try{save();}catch(_){} } return; }   /* 2.980 — 모든 장면에 같은 순서 */
   normalizeTokenLayers();const a=tokenItems().sort((x,y)=>(+x.o.z)-(+y.o.z));let i=a.findIndex(it=>it.o===o);if(i<0)return;
   let j=i;if(mode==="front")j=a.length-1;else if(mode==="forward")j=Math.min(a.length-1,i+1);else if(mode==="backward")j=Math.max(0,i-1);else if(mode==="back")j=0;
   if(i===j)return;pushUndo();const picked=a.splice(i,1)[0];a.splice(j,0,picked);a.forEach((it,n)=>it.o.z=n);renderTokens();selectItem(typeOfItem(o)||"ball",o);try{save();}catch(_){}try{boardSaveLive();}catch(_){}
@@ -5497,6 +5501,7 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   const _multiResz=(typeof multiSel!=="undefined"&&multiSel.length&&multiSel.some(function(o){var t=typeOfItem(o);return t==="player"||t==="equip"||(t==="drawing"&&o&&o.type!=="text");}));
   const s=document.getElementById("sizeCtl");if(s)s.style.display=((sel&&(sel.type==="player"||sel.type==="equip"||sel.type==="ball"||(sel.type==="drawing"&&sel.ref&&sel.ref.type!=="text")))||_multiResz)?"inline-flex":"none";
   const dup=document.getElementById("dupSelBtn");if(dup)dup.style.display=((sel&&sel.type!=="spball")||_multiOn)?"inline-flex":"none";
+  try{ const _fb=document.getElementById("frontSelBtn"); if(_fb)_fb.style.display=((sel&&sel.type!=="spball")||_multiOn)?"inline-flex":"none"; }catch(_){}   /* 2.980 */
   const _mShow=!!((sel&&sel.type!=="spball")||(typeof multiSel!=="undefined"&&multiSel.length));
   const _mh=document.getElementById("mirHBtn");if(_mh)_mh.style.display=_mShow?"inline-flex":"none";
   const _mv=document.getElementById("mirVBtn");if(_mv)_mv.style.display=_mShow?"inline-flex":"none";
@@ -5578,7 +5583,7 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   /* 2.680 — 잔상·시선 단추(선수 또는 공 선택 때) */
   try{
     const _tb=document.getElementById("trailBtn"),_lb=document.getElementById("lookBtn");
-    const _trailTs=_fieldPlayers.length?_fieldPlayers:((sel&&sel.type==="ball"&&state.ball)?[state.ball]:[]);
+    const _trailTs=trailTargets();   /* 2.980 — 공이 섞인 다중 선택도 */
     if(_tb){_tb.style.display=_trailTs.length?"inline-flex":"none";const _tn=_trailTs.length?(+(_trailTs[0].trail||0)):0;_tb.textContent=_tn?("잔상 "+_tn):"잔상";_tb.classList.toggle("on",_tn>0);}
     if(_lb){_lb.style.display=_fieldPlayers.length?"inline-flex":"none";_lb.classList.toggle("on",!!(_fieldPlayers.length&&_fieldPlayers.every(function(p){return !!p.lookAt;})));}
   }catch(_){}
@@ -5592,6 +5597,44 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   try{ psSelBarLayout(); }catch(e){ console.warn("selbar",e); }
   if(sel||_multiOn)positionSelCtl();
   syncLockButton();}
+/* ══ 2.980 · 맨 앞으로 / 맨 뒤로(FMStadio «bring to front») — 겹친 토큰 위로 올려 번호·이름이 가려지지 않게.
+   ⌘] · ⌘[ · 선택 패널의 «맨 앞» · «겹친 항목» 창의 맨 앞/맨 뒤가 이 함수 하나를 쓴다.
+   토큰(선수·장비·공)이 그려지는 순서는 깊이 값 z 다(renderTokens: z 순, z 없는 것은 그 위에 배열 순서). 2.030 의 ⌘] 는 배열만 옮겨서
+   «겹친 항목» 창을 한 번이라도 쓴 판(z 가 생긴 판)에서는 아무 일도 하지 않았다 → 여기서는 지금 그려지는 순서를 읽어 z 를 0부터 다시 매긴다.
+   ⚠ 순서는 장면(snap)마다 따로라, 한 장면에서만 올리면 재생 중에 장면이 넘어갈 때 위아래가 뒤집혔다 → 같은 id 를 모든 장면·모든 페이지에서 같이 옮긴다.
+   그림(선·구역)은 장면마다 다른 것이라 지금 장면의 배열 순서만 바꾼다. ══ */
+function _zPick(ids,o,k){ return k==="ball"?!!ids.ball:!!(o&&ids[k]&&ids[k][o.id]); }
+/* 한 판(지금 판 또는 장면 snap)의 토큰 깊이를 다시 매긴다. live 면 객체를 그대로 고치고(선택이 그 객체를 가리킨다), 아니면 사본으로 갈아 끼운다(되돌리기 기록과 객체를 나눠 쓰지 않게). */
+function _zOrderTokens(sn,ids,front,live){ if(!sn)return false;
+  var P=Array.isArray(sn.players)?sn.players:[],E=Array.isArray(sn.equipment)?sn.equipment:[],all=[];
+  P.forEach(function(o){ if(o)all.push({o:o,k:"players"}); }); E.forEach(function(o){ if(o)all.push({o:o,k:"equipment"}); }); if(sn.ball)all.push({o:sn.ball,k:"ball"});
+  if(!all.some(function(it){return _zPick(ids,it.o,it.k);}))return false;
+  var zs=all.map(function(it,i){ return {it:it,z:Number.isFinite(+it.o.z)?+it.o.z:1e9,i:i}; }).sort(function(x,y){return (x.z-y.z)||(x.i-y.i);});   /* 지금 그려지는 순서 그대로 */
+  var pick=zs.filter(function(q){return _zPick(ids,q.it.o,q.it.k);}),rest=zs.filter(function(q){return !_zPick(ids,q.it.o,q.it.k);});
+  var next=front?rest.concat(pick):pick.concat(rest);
+  if(!next.some(function(q,n){return q!==zs[n];}))return false;   /* 이미 그 자리 */
+  if(live){ next.forEach(function(q,n){ q.it.o.z=n; }); return true; }
+  var map=new Map(); next.forEach(function(q,n){ map.set(q.it.o,Object.assign({},q.it.o,{z:n})); });
+  sn.players=P.map(function(o){return map.get(o)||o;}); sn.equipment=E.map(function(o){return map.get(o)||o;}); if(sn.ball&&map.has(sn.ball))sn.ball=map.get(sn.ball);
+  return true; }
+function zOrderItems(its,front){
+  its=(its||[]).filter(Boolean); if(!its.length)return false;
+  var ids={players:{},equipment:{},ball:false},tok=false,drw=false;
+  its.forEach(function(o){ var t=typeOfItem(o); if(t==="player"&&o.id!=null){ids.players[o.id]=1;tok=true;} else if(t==="equip"&&o.id!=null){ids.equipment[o.id]=1;tok=true;} else if(t==="ball"){ids.ball=true;tok=true;} else if(t==="drawing")drw=true; });
+  if(!tok&&!drw)return false;
+  pushUndo();
+  if(drw){ var arr=state.drawings,pick=arr.filter(function(o){return its.indexOf(o)>=0;}),rest=arr.filter(function(o){return its.indexOf(o)<0;}); arr.length=0; (front?rest.concat(pick):pick.concat(rest)).forEach(function(o){arr.push(o);}); }
+  if(tok){ _zOrderTokens(state,ids,front,true);
+    try{ var ch=0;
+      /* 지금 페이지의 장면은 snap 을 사본으로 갈아 끼운다 — 되돌리기 기록이 같은 snap 객체를 들고 있어, 제자리에서 고치면 ⌘Z 가 다른 장면을 못 되돌린다(2.975 와 같은 함정) */
+      if(typeof anim!=="undefined"&&anim&&Array.isArray(anim.frames))anim.frames.forEach(function(f,k){ if(!f||!f.snap)return; var c=Object.assign({},f.snap); if(_zOrderTokens(c,ids,front,false)){ f.snap=c; if(k!==animActive)delete f.thumb; ch++; } });
+      if(window.__psPages&&window.__psPages.eachOther)ch+=(window.__psPages.eachOther(function(snap,frames){ var c=0; if(snap&&_zOrderTokens(snap,ids,front,false))c++; (frames||[]).forEach(function(f){ if(f&&f.snap&&_zOrderTokens(f.snap,ids,front,false)){ c++; delete f.thumb; } }); return c; })||0);
+      if(ch)renderAnimFrames(); }catch(_){} }
+  renderTokens(); renderDrawings(); try{updateAlignBar();}catch(_){} try{autoSaveAnimFrame();}catch(_){} try{boardSaveLive();}catch(_){}
+  try{toast(front?"맨 앞으로":"맨 뒤로");}catch(_){} return true; }
+function zOrderSel(front){
+  var its=(typeof multiSel!=="undefined"&&multiSel.length)?multiSel.slice():((sel&&sel.ref&&sel.type!=="spball")?[sel.ref]:[]);
+  return zOrderItems(its,front); }
 function scaleSel(f){
   if(typeof multiSel!=="undefined"&&multiSel.length){   /* 다중 선택 — 토큰·장비 배율, 그림 굵기 함께 조절 */
     var _ch=false;
@@ -5623,23 +5666,47 @@ function _ensureDir(p){ if(typeof p.dir!=="number")p.dir=isRightTeam(p.team)?180
 /* ══ 2.680 · 잔상(trail)·시선(lookAt) — 사용자가 보낸 애니메이션 도구 소개(트레일 1~5단계 · 오리엔테이션 타겟 추적)를 이 판에 맞춰 넣었다.
    잔상: p.trail = 1~5 = 재생 때 남기는 «지난 장면 수». renderInterp 마다 자리를 기록하고 trailLayer 에 옅은 선으로 그린다. 재생이 끝나면 지운다.
    시선: p.lookAt = 토큰 id('ball' 포함). renderTokens 때마다 대상 쪽으로 p.dir 을 다시 계산하므로 재생 중 대상이 움직여도 따라본다(시야 콘이 방향을 보여 준다). ══ */
-function trailTargets(){ var ps=selectedPlayers(false)||[]; ps=ps.filter(function(p){return !p.coach;}); if(!ps.length&&sel&&sel.type==="ball"&&state.ball)ps=[state.ball]; return ps; }
+/* ══ 2.980 · 잔상·시선은 재생 내내 가는 값이다 — 한 장면에서 켜거나 끄면 같은 id 의 토큰(공 포함)에 모든 장면·모든 페이지에서 같이(2.975 이름·번호와 같은 규칙).
+   전엔 지금 장면의 토큰에만 남아, 장면을 먼저 만들어 두고 잔상을 켜면 그 구간에서만 보이고 다음 구간부터 사라졌다(시선은 다음 장면에 닿는 순간 풀렸다).
+   지금 페이지의 장면은 snap·토큰을 사본으로 갈아 끼운다(되돌리기 기록과 객체를 나눠 쓰지 않게 — ⌘Z 가 모든 장면을 되돌린다). ══ */
+function _tokPropSnap(sn,ps,fields){ var out=null; if(!sn)return null;
+  ps.forEach(function(p){ var isBall=(p===state.ball), key=isBall?"ball":((state.players.indexOf(p)>=0)?"players":(((state.equipment||[]).indexOf(p)>=0)?"equipment":"")); if(!key)return;
+    var cur=out||sn, t=null, idx=-1;
+    if(isBall)t=cur.ball; else{ var arr=cur[key]; if(!Array.isArray(arr))return; for(var i=0;i<arr.length;i++){ if(arr[i]&&arr[i].id===p.id){ t=arr[i]; idx=i; break; } } }
+    if(!t||t===p)return;
+    if(!fields.some(function(f){ var v=p[f]; return (v===undefined||v===null)?(t[f]!==undefined&&t[f]!==null):(t[f]!==v); }))return;
+    if(!out)out=Object.assign({},sn);
+    var c=Object.assign({},t); fields.forEach(function(f){ var v=p[f]; if(v===undefined||v===null)delete c[f]; else c[f]=v; });
+    if(isBall)out.ball=c; else{ if(out[key]===sn[key])out[key]=sn[key].slice(); out[key][idx]=c; } });
+  return out; }
+function _tokPropAll(ps,fields){ ps=(ps||[]).filter(Boolean); if(!ps.length)return 0; var n=0;
+  try{ if(typeof anim!=="undefined"&&anim&&Array.isArray(anim.frames))anim.frames.forEach(function(f,k){ if(!f||!f.snap)return; var c=_tokPropSnap(f.snap,ps,fields); if(c){ f.snap=c; if(k!==animActive)delete f.thumb; n++; } }); }catch(_){}
+  try{ if(window.__psPages&&window.__psPages.eachOther)n+=(window.__psPages.eachOther(function(snap,frames){ var cnt=0; var c=snap?_tokPropSnap(snap,ps,fields):null; if(c){ snap.players=c.players; snap.equipment=c.equipment; snap.ball=c.ball; cnt++; }
+      (frames||[]).forEach(function(f){ if(!f||!f.snap)return; var c2=_tokPropSnap(f.snap,ps,fields); if(c2){ f.snap=c2; delete f.thumb; cnt++; } }); return cnt; })||0); }catch(_){}
+  try{ if(n)renderAnimFrames(); }catch(_){} return n; }
+function _ballInMulti(){ try{ return !!(state.ball&&!sel&&typeof multiSel!=="undefined"&&multiSel&&multiSel.length&&multiSel.indexOf(state.ball)>=0); }catch(_){ return false; } }   /* 2.980 */
+function trailTargets(){ var ps=selectedPlayers(false)||[]; ps=ps.filter(function(p){return !p.coach;});
+  if(_ballInMulti())ps=ps.concat([state.ball]);   /* 2.980 — 선수와 공을 함께 골랐으면 공에도(전엔 공만 따로 골라야 했다) */
+  if(!ps.length&&sel&&sel.type==="ball"&&state.ball)ps=[state.ball]; return ps; }
 function cycleTrail(){ var ps=trailTargets(); if(!ps.length)return; var cur=+(ps[0].trail||0),next=cur>=5?0:cur+1; pushUndo();
-  ps.forEach(function(p){ if(next)p.trail=next; else delete p.trail; }); updateDelUI(); try{boardSaveLive();}catch(_){}
-  try{toast(next?("잔상 "+next+"단계 — 재생하면 지난 "+next+"장면의 길이 남아요"):"잔상 끔");}catch(_){} }
+  ps.forEach(function(p){ if(next)p.trail=next; else delete p.trail; }); _tokPropAll(ps,["trail"]); updateDelUI(); try{boardSaveLive();}catch(_){}
+  try{toast(next?("잔상 "+next+"단계 — 재생·영상에서 지난 "+next+"장면의 길이 남아요"):"잔상 끔");}catch(_){} }
 var _lookPick=null;
 function toggleLookAt(){ var ps=(selectedPlayers(false)||[]).filter(function(p){return !p.coach;}); if(!ps.length)return;
-  if(ps.every(function(p){return !!p.lookAt;})){ pushUndo(); ps.forEach(function(p){delete p.lookAt;}); renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 끔");}catch(_){} return; }
+  if(ps.every(function(p){return !!p.lookAt;})){ pushUndo(); ps.forEach(function(p){delete p.lookAt;}); _tokPropAll(ps,["lookAt"]); renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 끔");}catch(_){} return; }
+  /* 2.980 — 선수들과 공을 함께 골랐으면 대상을 다시 묻지 않는다(터치에서 한 번에) */
+  if(_ballInMulti()){ _lookPick=ps.slice(); lookPickTarget({id:"ball"}); try{toast(ps.length+"명이 공을 바라봐요 — 공이 움직여도 따라봐요");}catch(_){} return; }
   _lookPick=ps.slice(); try{toast("바라볼 선수나 공을 누르세요 (Esc 취소)");}catch(_){} }
 function lookPickTarget(t){ if(!_lookPick)return false; var ps=_lookPick; _lookPick=null; var id=t&&t.id; if(id==null)return true; pushUndo();
   ps.forEach(function(p){ if(p.id===id)return; p.lookAt=id; p.vis=true; _ensureDir(p); if(!p.visW)p.visW=52; if(!p.visR)p.visR=M2U(18); });
+  _tokPropAll(ps.filter(function(p){return p.id!==id;}),["lookAt","vis","visW","visR"]);   /* 2.980 — 모든 장면에서 계속 바라본다 */
   renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 고정 — 대상이 움직여도 계속 바라봐요");}catch(_){} return true; }
 function applyLookAt(){ (state.players||[]).forEach(function(p){ if(!p||!p.lookAt)return; var t=_linkPt(p.lookAt); if(!t)return;
   p.dir=Math.round(((Math.atan2(t.y-p.y,t.x-p.x)*180/Math.PI)%360+360)%360); }); }
 var _trail={};
 function trailReset(){ _trail={}; try{ if(window.__trailLayer)window.__trailLayer.innerHTML=""; }catch(_){} }
 function trailTick(){ var L=window.__trailLayer; if(!L)return;
-  if(!animPlaying){ if(L.childNodes.length)L.innerHTML=""; return; }
+  if(!animPlaying&&!window.__animExport&&!window.__trailLive){ if(L.childNodes.length)L.innerHTML=""; _trail={}; return; }   /* 2.980 — 영상·GIF·미팅 발표에도 잔상(전엔 화면 재생에서만 그려져 내보낸 영상에는 없었다) */
   var seg=window.__animSeg||0; var items=(state.players||[]).filter(function(p){return p&&p.trail>0;}); if(state.ball&&state.ball.trail>0)items.push(state.ball);
   L.innerHTML="";
   items.forEach(function(p){ var id=p.id; var h=_trail[id]||(_trail[id]=[]); var last=h[h.length-1];
@@ -5649,6 +5716,8 @@ function trailTick(){ var L=window.__trailLayer; if(!L)return;
     var d="M "+keep.map(function(q){return q.x.toFixed(1)+" "+q.y.toFixed(1);}).join(" L ");
     L.appendChild(el("path",{d:d,fill:"none",stroke:col,"stroke-width":7,"stroke-linecap":"round","stroke-linejoin":"round",opacity:".18"}));
     L.appendChild(el("path",{d:d,fill:"none",stroke:col,"stroke-width":3,"stroke-linecap":"round","stroke-linejoin":"round",opacity:".6"})); }); }
+try{ new MutationObserver(function(){ try{ if(window.__trailLive||animPlaying||window.__animExport)return; if(document.body.classList.contains("focus-board"))return;
+  var L=window.__trailLayer; if(L&&L.childNodes.length)trailReset(); }catch(_){} }).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){}   /* 2.980 — 미팅 발표에서 남겨 둔 잔상은 발표를 나갈 때 지운다 */
 function toggleVision(){ var ps=selectedPlayers(false);if(!ps.length)return;var on=!ps.every(function(p){return !!p.vis;});pushUndo();ps.forEach(function(p){p.vis=on;if(on){_ensureDir(p);if(!p.visW)p.visW=52;if(!p.visR)p.visR=M2U(18);}});
   renderTokens();updateDelUI();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}
   try{toast(ps.length>1?(ps.length+"명 시야 "+(on?"표시":"끔")):(on?"시야 표시 — ↺↻ 방향, ◂▸ 넓이, 사각 토글":"시야 끔"));}catch(_){} }
@@ -6274,6 +6343,18 @@ function appendDrawingLockBadge(g,d){
   lg.appendChild(el("path",{d:"M-3 -1.2v-2.2a3 3 0 0 1 6 0v2.2M-4 -1.2h8v5.2h-8z",fill:"none",stroke:"#fff","stroke-width":1.4,"stroke-linecap":"round","stroke-linejoin":"round"}));
   g.appendChild(lg);
 }
+/* ══ 2.980 · 선 끝 모양을 한 곳에서 그린다(FMStadio «new arrowheads»). tip = 끝점, from = 그 끝으로 들어오는 쪽(곡선이면 제어점).
+   화살(채움) · 열린 화살(V) · 막기(T자) · 원 · 없음. d.head2 면 시작 쪽에도 같은 모양 — 양방향 화살 ↔, 막기와 함께면 간격 표시 ├─┤.
+   옛 판은 모르는 모양(open)을 채운 화살로, head2 는 없는 것으로 읽는다(자료는 그대로 남는다). ══ */
+function _drawHeadAt(g,kind,tip,from,C,LW){ if(!kind||kind==="none"||!tip||!from)return;
+  const ang=Math.atan2(tip.y-from.y,tip.x-from.x),cs=Math.cos(ang),sn=Math.sin(ang);
+  if(kind==="bar"){const bw=11,qx=-sn*bw,qy=cs*bw;
+    g.appendChild(el("line",{x1:tip.x+qx,y1:tip.y+qy,x2:tip.x-qx,y2:tip.y-qy,stroke:C,"stroke-width":(5*LW).toFixed(1),"stroke-linecap":"round"}));}
+  else if(kind==="dot"){g.appendChild(el("circle",{cx:tip.x,cy:tip.y,r:7.5,fill:C}));}
+  else if(kind==="open"){const s=17,hw=9,bx=tip.x-s*cs,by=tip.y-s*sn,px=-sn*hw,py=cs*hw;
+    g.appendChild(el("path",{d:`M ${bx+px} ${by+py} L ${tip.x} ${tip.y} L ${bx-px} ${by-py}`,fill:"none",stroke:C,"stroke-width":(4.5*LW).toFixed(1),"stroke-linecap":"round","stroke-linejoin":"round","class":"head-open"}));}
+  else{const s=15,hw=6.6,bx=tip.x-s*cs,by=tip.y-s*sn,px=-sn*hw,py=cs*hw;
+    g.appendChild(el("path",{d:`M ${tip.x} ${tip.y} L ${bx+px} ${by+py} L ${bx-px} ${by-py} Z`,fill:C}));}}
 function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof multiSel!=="undefined"&&!!multiSel&&multiSel.indexOf(d)>=0);const C=inkColor(d.color);const cap=needCase(d.color);const LW=(d&&d.lw)||1;   /* 선 굵기 배수 — 선택 후 크기 ±로 조절 */
   const CASE=document.documentElement.dataset.pitch!=="white"?"rgba(255,255,255,.92)":"#20242c";  // 배경 대비 외곽선(어느 운동장에서도 잘 보이게)
   if(d.type==="link"){   /* 2.679 — 토큰 id 로 그리는 연결선·다각형(좌표는 매번 토큰에서 읽는다) */
@@ -6350,6 +6431,36 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
         enableResize(hg,d,i);g.appendChild(hg);
       });
     }
+  }else if(d.type==="poly"){   /* 2.980 — 다각형·꺾은선: 운동장 위 자리(pts)를 저장한다. 선수를 따라가는 것은 «연결선»(ids) */
+    const pts=d.pts||[];
+    if(pts.length===1){g.appendChild(el("circle",{cx:pts[0].x,cy:pts[0].y,r:6,fill:C,"pointer-events":"none"}));}
+    else if(pts.length>=2){
+      const dd="M "+pts.map(p=>`${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" L ")+(d.closed?" Z":"");
+      if(isSel)g.appendChild(el("path",{d:dd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linejoin":"round","stroke-linecap":"round"}));
+      if(d.closed){const darkPitch=document.documentElement.dataset.pitch!=="white";
+        g.appendChild(el("path",{d:dd,fill:(d.fillStyle==="dots"||d.fillStyle==="hatch")?_fillPattern(d.fillStyle,C):hexA(C,darkPitch?.3:.22),stroke:"none","pointer-events":"none","class":"poly-fill"}));}
+      const at={d:dd,fill:"none",stroke:C,"stroke-width":4*LW,"stroke-linejoin":"round","stroke-linecap":"round"};
+      if(d.dot)at["stroke-dasharray"]="0.1 "+(12*LW).toFixed(1);
+      else if(d.dash)at["stroke-dasharray"]=(11*LW)+" "+(8*LW);
+      g.appendChild(el("path",at));
+      if(d._tmp)pts.forEach(p=>g.appendChild(el("circle",{cx:p.x,cy:p.y,r:5,fill:C,"pointer-events":"none"})));
+      /* 잡는 면 — 테두리는 넓게, 닫힌 다각형은 안쪽도(구역처럼 안을 잡고 끈다. 토큰 층이 위라 안의 선수는 그대로 먼저 잡힌다) */
+      g.appendChild(el("path",{d:dd,fill:d.closed?"#000":"none",stroke:"#000","stroke-width":22,opacity:"0","pointer-events":d.closed?"all":"stroke"}));
+      if(d.closed&&d.label){ try{ let cx=0,cy=0; pts.forEach(p=>{cx+=p.x;cy+=p.y;}); cx/=pts.length; cy/=pts.length;
+        const fs=17,lb=String(d.label).slice(0,24),tw=_txMeasW(lb,fs)+18,th=fs+10;
+        const lg=el("g",{"class":"zone-label","pointer-events":"none"});
+        lg.appendChild(el("rect",{x:cx-tw/2,y:cy-th/2,width:tw,height:th,rx:5,fill:"#ffffff",opacity:".94"}));
+        const lt=el("text",{x:cx,y:cy,"text-anchor":"middle","dominant-baseline":"central",fill:"#161a22","font-size":fs,"font-weight":"800","font-family":"Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif"});
+        lt.textContent=lb; lg.appendChild(lt);
+        if(state.orientation==="v")lg.setAttribute("transform","rotate("+(state.spFlip?-90:90)+" "+cx+" "+cy+")");
+        g.appendChild(lg); }catch(_){} }
+      if(isSel&&!d._tmp){   /* 꼭짓점 손잡이 — 끌어서 모양을 고친다 */
+        pts.forEach((pt,idx)=>{ const hg=el("g",{"class":"poly-vx"});
+          hg.appendChild(el("circle",{cx:pt.x,cy:pt.y,r:24,fill:"transparent","pointer-events":"all"}));
+          hg.appendChild(el("circle",{cx:pt.x,cy:pt.y,r:9,fill:"#fff",stroke:"#ffd60a","stroke-width":3}));
+          enableEndpointDrag(hg,d,idx); g.appendChild(hg); });
+      }
+    }
   }else if(d.type==="free"){const dd="M "+d.pts.map(p=>`${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" L ");
     if(isSel)g.appendChild(el("path",{d:dd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linecap":"round","stroke-linejoin":"round"}));
     g.appendChild(el("path",{d:dd,fill:"none",stroke:C,"stroke-width":4.5*LW,"stroke-linecap":"round","stroke-linejoin":"round"}));
@@ -6402,12 +6513,8 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
     /* 화살촉 크기·각도를 선 굵기와 분리한다. 굵기를 바꾸거나 길게 그려도 같은 모양을 유지한다. */
     /* 2.902 — 끝 모양(FmStadio 참고): 화살 · 막기(T자) · 원 · 없음. 지정이 없으면 직선·점선은 없음, 나머지는 화살(옛 자료 그대로). */
     const _hd=d.head||((type==="line"||type==="dashline")?"none":"arrow");
-    if(_hd!=="none"){const ang=Math.atan2(b.y-_tan.y,b.x-_tan.x),s=15,hw=6.6;
-      if(_hd==="bar"){const bw=11,qx=-Math.sin(ang)*bw,qy=Math.cos(ang)*bw;
-        g.appendChild(el("line",{x1:b.x+qx,y1:b.y+qy,x2:b.x-qx,y2:b.y-qy,stroke:C,"stroke-width":(5*LW).toFixed(1),"stroke-linecap":"round"}));}
-      else if(_hd==="dot"){g.appendChild(el("circle",{cx:b.x,cy:b.y,r:7.5,fill:C}));}
-      else{const bx=b.x-s*Math.cos(ang),by=b.y-s*Math.sin(ang),px=-Math.sin(ang)*hw,py=Math.cos(ang)*hw;
-      g.appendChild(el("path",{d:`M ${b.x} ${b.y} L ${bx+px} ${by+py} L ${bx-px} ${by-py} Z`,fill:C}));}}
+    _drawHeadAt(g,_hd,b,_tan,C,LW);
+    if(d.head2)_drawHeadAt(g,_hd,a,cpt||b,C,LW);   /* 2.980 — 양쪽: 시작 쪽에도 같은 모양(↔ · ├─┤) */
     g.appendChild(el("path",{d:_pd,fill:"none",stroke:"#000","stroke-width":22,opacity:"0","pointer-events":"stroke"}));
     if(isSel){                                   // 끝점 핸들 — 끌어서 기울기·길이 조절
       [a,b].forEach((pt,idx)=>{
@@ -6627,7 +6734,7 @@ function addText(u,existing){
 let _draw=null,_drawTmp=null;
 let _measEl=null;
 function _drawMeters(d){
-  if(d.type==="free"){let L=0;const p=d.pts||[];for(let i=1;i<p.length;i++)L+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);return L/MPP;}
+  if(d.type==="free"||d.type==="poly"){let L=0;const p=d.pts||[];for(let i=1;i<p.length;i++)L+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);if(d.type==="poly"&&d.closed&&p.length>2)L+=Math.hypot(p[0].x-p[p.length-1].x,p[0].y-p[p.length-1].y);return L/MPP;}   /* 2.980 — 다각형은 둘레 */
   const a=d.pts[0],b=d.pts[1]||d.pts[0];return Math.hypot(b.x-a.x,b.y-a.y)/MPP;}
 function _fmtM(m){return (m<10?(Math.round(m*10)/10).toFixed(1):""+Math.round(m))+"m";}
 function showMeas(d,pt){if(!world||!pt)return;
@@ -6697,10 +6804,57 @@ function linkFinish(closed){
   toast(closed?"다각형 완성 — 선수가 움직이면 같이 움직여요":"연결선 완성 — 선수가 움직이면 같이 움직여요");
 }
 function linkCancel(){_link=null;try{if(_linkTmp)_linkTmp.remove();}catch(_){} _linkTmp=null;}
+/* ══ 2.980 · 다각형(poly) — 운동장 위 자리를 차례로 눌러 그리는 구역·꺾은선(FMStadio «polygons»).
+   «연결선»은 선수 id 를 저장해 선수를 따라가고, 다각형은 좌표를 저장해 그 자리에 남는다(하프스페이스·압박 함정처럼 «땅»을 가리킬 때).
+   처음 점을 다시 누르거나 Enter = 닫힌 다각형(채움) · 마지막 점을 다시 누르면 열린 꺾은선 · Esc 취소.
+   옛 판은 이 종류를 모른다 — 첫 두 점을 잇는 화살표로 보이고 자료는 그대로 남는다. ══ */
+let _poly=null,_polyTmp=null;
+const POLY_SNAP=20;   /* 처음·마지막 점을 «다시 눌렀다»고 보는 거리(보드 단위 = 2m) */
+function polyPreview(hover){
+  try{if(_polyTmp)_polyTmp.remove();}catch(_){} _polyTmp=null;
+  if(!_poly||!_poly.pts.length)return;
+  const pts=_poly.pts.slice(); if(hover&&isFinite(hover.x)&&isFinite(hover.y))pts.push({x:hover.x,y:hover.y});
+  _polyTmp=drawingEl({type:"poly",pts:pts,closed:false,color:_poly.color,lw:_poly.lw,op:1,_tmp:1});
+  if(_poly.pts.length>=3){const f=_poly.pts[0];_polyTmp.appendChild(el("circle",{cx:f.x,cy:f.y,r:13,fill:"none",stroke:"#ffd60a","stroke-width":3,"stroke-dasharray":"4 3","class":"poly-close"}));}   /* 여기를 누르면 닫힌다 */
+  _polyTmp.style.pointerEvents="none";drawLayer.appendChild(_polyTmp);
+}
+function polyTap(u){
+  if(!u||!isFinite(u.x)||!isFinite(u.y))return;
+  if(!_poly)_poly={pts:[],color:state.color,lw:(state.drawLw||1),op:(state.drawOp==null?1:state.drawOp)};
+  const P=_poly.pts,n=P.length;
+  if(n>=3&&Math.hypot(u.x-P[0].x,u.y-P[0].y)<=POLY_SNAP){polyFinish(true);return;}
+  if(n>=2&&Math.hypot(u.x-P[n-1].x,u.y-P[n-1].y)<=POLY_SNAP){polyFinish(false);return;}
+  if(n&&Math.hypot(u.x-P[n-1].x,u.y-P[n-1].y)<=4)return;   /* 같은 자리를 두 번(더블탭의 둘째) */
+  if(n>=40){toast("꼭짓점은 40개까지예요 — Enter 로 마무리하세요");return;}
+  P.push({x:u.x,y:u.y});polyPreview();
+  toast(P.length===1?"다음 꼭짓점을 누르세요 · Esc 취소":P.length===2?"계속 누르세요 · 마지막 점을 다시 누르면 꺾은선":("꼭짓점 "+P.length+"개 · 처음 점(노란 원)을 누르거나 Enter = 다각형"));
+}
+function polyFinish(closed,quiet){   /* quiet = 도구를 바꾸며 마무리(구역 자동 선택을 하지 않는다 — 도구 전환과 엇갈린다) */
+  if(!_poly)return null;
+  const L=_poly,pts=L.pts;_poly=null;
+  try{if(_polyTmp)_polyTmp.remove();}catch(_){} _polyTmp=null;
+  if(pts.length<2){if(pts.length&&!quiet)toast("꼭짓점을 2개 이상 눌러야 선이 돼요");return null;}
+  if(pts.length<3)closed=false;
+  pushUndo();
+  const d={type:"poly",pts:pts,closed:!!closed,color:L.color,lw:L.lw,op:L.op,
+    dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined};
+  state.drawings.push(d);renderDrawings();
+  window.__lastDrawn=d;try{autoSaveAnimFrame();}catch(_){}
+  if(!quiet){toast(closed?"다각형 완성 — 꼭짓점을 끌어 모양을 고쳐요":"꺾은선 완성");if(closed){try{afterDrawZone(d);}catch(_){}}}
+  return d;
+}
+function polyCancel(){_poly=null;try{if(_polyTmp)_polyTmp.remove();}catch(_){} _polyTmp=null;}
+try{ window.addEventListener("keydown",function(e){   /* Enter = 다각형으로 닫기 · Esc = 그리던 것만 버리기(도구는 그대로) — 다른 Esc 처리보다 먼저 */
+  if(!_poly||state.tool!=="poly")return; var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable))return;
+  if(e.isComposing||e.keyCode===229)return;
+  if(e.key==="Enter"){e.preventDefault();e.stopImmediatePropagation();polyFinish(true);}
+  else if(e.key==="Escape"){e.preventDefault();e.stopImmediatePropagation();polyCancel();toast("다각형 취소");}
+},true); }catch(_){}
 function beginDraw(u){
   _draw={type:state.tool,color:state.color,lw:(state.drawLw||1),op:(state.drawOp==null?1:state.drawOp),pts:state.tool==="free"?[u]:[u,{x:u.x,y:u.y}],
     dot:(state.drawLineStyle==="dot")||undefined,dash:(state.drawLineStyle==="dash")||undefined,fillStyle:(state.drawFillStyle&&state.drawFillStyle!=="solid")?state.drawFillStyle:undefined,
-    lob:(state.tool==="pass"&&state.drawLob)||undefined,head:(state.drawHead&&/^(pass|run|dribble|shot|line|dashline)$/.test(state.tool))?state.drawHead:undefined};   /* 2.681 · 2.902 로빙 기본값 */
+    lob:(state.tool==="pass"&&state.drawLob)||undefined,head:(state.drawHead&&/^(pass|run|dribble|shot|line|dashline)$/.test(state.tool))?state.drawHead:undefined,
+    head2:(state.drawHead2&&/^(pass|run|dribble|shot|line|dashline)$/.test(state.tool))||undefined};   /* 2.980 양쪽 */   /* 2.681 · 2.902 로빙 기본값 */
   _drawTmp=drawingEl(_draw);drawLayer.appendChild(_drawTmp);}
 function moveDraw(u){if(!_draw)return;
   if(_draw.type==="rect"||_draw.type==="rectline"||_draw.type==="rectdash"){const o=_draw.pts[0];
@@ -6749,10 +6903,12 @@ function attachDraw(){
     }
     if(state.tool==="text"){e.stopPropagation();const _u=toUnit(e);addText(_u,findTextAt(_u));return;}
     if(state.tool==="link"){e.stopPropagation();linkFinish(false);return;}   /* 2.679 — 빈 곳을 누르면 연결선 완료 */
+    if(state.tool==="poly"){e.stopPropagation();if(e.pointerType==="mouse"&&e.button!==0)return;polyTap(toUnit(e));return;}   /* 2.980 — 다각형: 누를 때마다 꼭짓점 */
     if(!isDraw())return;
     if(sel)deselect();
     try{drawCatch.setPointerCapture(e.pointerId)}catch(_){};beginDraw(toUnit(e));});
-  drawCatch.addEventListener("pointermove",e=>{if(!_draw)return;moveDraw(toUnit(e));});
+  drawCatch.addEventListener("pointermove",e=>{if(_poly&&state.tool==="poly"){if(e.pointerType==="mouse")polyPreview(toUnit(e));return;}   /* 2.980 — 마우스를 따라오는 다음 변 */
+    if(!_draw)return;moveDraw(toUnit(e));});
   const end=e=>{if(!_draw)return;try{drawCatch.releasePointerCapture(e.pointerId);}catch(_){}endDraw();};
   drawCatch.addEventListener("pointerup",end);drawCatch.addEventListener("pointercancel",end);}
 
@@ -8461,7 +8617,7 @@ function playAnim(){
             renderInterp(anim.frames[0].snap,anim.frames[0].snap,0);
             _animCapShow(anim.frames[0]&&anim.frames[0].cap,0);
             if(lastHi!==0){lastHi=0;highlightFrame(0);} }
-          else{ animPlaying=false;animRaf=null;_animCapShow(null);
+          else{ animPlaying=false;animRaf=null;_animCapShow(null);try{trailReset();}catch(_){}   /* 2.980 */
             /* ══ 2.525 · 재생은 **미리보기**다(사용자 "애니메이션 만들고 나면 마지막 장면이 1번 장면으로 나온다") ══
                끝났다고 마지막 장면을 보드에 눌러 담으면, 그 화면이 곧 **보드의 현재 장면**이 되고
                자동 저장(boardSaveLive·autoSaveAnimFrame)까지 타서 원래 1번 장면 내용이 사라졌다.
@@ -9070,9 +9226,9 @@ async function _animDropTarget(target){ try{ if(target&&typeof target.remove==="
 /* 2.752 — 내보내기 동안 __animExport 를 켜고, 어떤 경로로 끝나든(예외 포함) 판을 되돌리고 라이브 저장을 한 번 다시 건다 */
 async function _animExportGuard(run){
   var restore=null; try{ stopAnim(); lookStampScenes(); restore=captureSnap(); }catch(_){}   /* 2.929 — 장면마다 설정이 달라 섞여 나가지 않게 */
-  window.__animExport=1;
+  window.__animExport=1; try{trailReset();window.__animSeg=0;}catch(_){}   /* 2.980 — 영상·GIF 에도 잔상 */
   try{ return await run(); }
-  finally{ window.__animExport=0; try{ if(restore)loadSnap(restore); }catch(_){} try{renderOnion();updateMotionPaths();}catch(_){} try{renderAnimFrames();}catch(_){} try{boardSaveLive();}catch(_){} }
+  finally{ window.__animExport=0; try{trailReset();}catch(_){} try{ if(restore)loadSnap(restore); }catch(_){} try{renderOnion();updateMotionPaths();}catch(_){} try{renderAnimFrames();}catch(_){} try{boardSaveLive();}catch(_){} }
 }
 async function exportVideo(opts){ opts=opts||{};
   if(window.__animExport||PEP.busy()){ try{toast("영상을 만드는 중이에요 — 끝난 뒤 다시 눌러 주세요");}catch(_){} return; }   /* 2.974 — 두 번 돌지 않게 */
@@ -9247,13 +9403,13 @@ async function _exportVideoRun(opts){
   const plan=[];   /* {set:fn, cap, idx} */
   function planHold(i,sec){ const f=FR[i]; const n=Math.max(1,Math.round(sec*fps)), vb=_vbOf(i);
     const ld=!!(opts.pageMode&&(i===0||f.cut));   /* 2.976 — 페이지의 첫 장면: 그 페이지의 운동장·규격·색·보드 설정을 먼저 올린다(renderInterp 는 선수·그림만 옮긴다) */
-    for(let k=0;k<n;k++){ plan.push({set:(function(k2,ld2){ return function(){ if(ld2){ try{loadSnap(f.snap);}catch(_){} } renderInterp(f.snap,f.snap,0); try{_applyBlink(f.blink,k2*1000/fps);}catch(_){} try{_applyHl(f.hl);}catch(_){} }; })(k,ld&&k===0), cap:f.cap, idx:_capNo(i), vb:vb, title:f.title, titleColor:f.titleColor}); } }
+    for(let k=0;k<n;k++){ plan.push({set:(function(k2,ld2){ return function(){ window.__animSeg=Math.max(0,i-1); if(k2===0&&(i===0||f.cut)){ try{trailReset();}catch(_){} }   /* 2.980 — 페이지가 바뀌면 잔상도 새로 */ if(ld2){ try{loadSnap(f.snap);}catch(_){} } renderInterp(f.snap,f.snap,0); try{_applyBlink(f.blink,k2*1000/fps);}catch(_){} try{_applyHl(f.hl);}catch(_){} }; })(k,ld&&k===0), cap:f.cap, idx:_capNo(i), vb:vb, title:f.title, titleColor:f.titleColor}); } }
   planHold(0, _holdOf(0));
   for(let s=0;s<N-1;s++){
     const a=FR[s].snap,b=FR[s+1].snap,cv=FR[s].curves,nf=FR[s+1];
     if(!(nf&&nf.cut)){   /* 2.976 — 다른 페이지로는 움직여 넘기지 않고 끊어 넘긴다(페이지마다 다른 보드 — 같은 번호 선수가 엉뚱하게 날아가지 않게) */
     const dur=(Math.max(.3,FR[s].dur||1)/animMoveSpeed(FR[s])),steps=Math.max(2,Math.round(dur*fps)), vb=_vbOf(s+1);
-    for(let i=0;i<=steps;i++){ plan.push({set:(function(i2){ return function(){ renderInterp(a,b,easeInOut(i2/steps),cv); try{_applyBlink(nf&&nf.blink,i2*1000/fps);}catch(_){} try{_applyHl(nf&&nf.hl);}catch(_){} }; })(i), cap:nf.cap, idx:_capNo(s+1), vb:vb, title:nf.title, titleColor:nf.titleColor}); }
+    for(let i=0;i<=steps;i++){ plan.push({set:(function(i2){ return function(){ window.__animSeg=s; renderInterp(a,b,easeInOut(i2/steps),cv); try{_applyBlink(nf&&nf.blink,i2*1000/fps);}catch(_){} try{_applyHl(nf&&nf.hl);}catch(_){} }; })(i), cap:nf.cap, idx:_capNo(s+1), vb:vb, title:nf.title, titleColor:nf.titleColor}); }
     }
     planHold(s+1, _holdOf(s+1));
   }
@@ -9566,6 +9722,7 @@ async function _gifEncode(frames,o){
   for(let s=0;s<N-1;s++){
     const a=frames[s].snap,bb=frames[s+1].snap,cv=frames[s].curves;
     const dur=(Math.max(.3,frames[s].dur||1)/animMoveSpeed(frames[s])),steps=Math.max(2,Math.round(dur*fps));
+    window.__animSeg=s;   /* 2.980 */
     renderInterp(a,bb,0,cv);await addFrame(Math.max(2,Math.round(hold*100)),frames[s].cap,s);
     for(let i=1;i<=steps;i++){renderInterp(a,bb,easeInOut(i/steps),cv);try{_applyBlink(frames[s+1]&&frames[s+1].blink,i*1000/fps);}catch(_){}try{_applyHl(frames[s+1]&&frames[s+1].hl);}catch(_){}await addFrame(frameCs,frames[s+1].cap,s+1);}
   }
@@ -9597,6 +9754,7 @@ function hintText(){const t=state.tool;
   return t==="move"?"끌어서 이동 · 텍스트는 선택 후 ‘내용 수정’ 또는 더블탭"
   :t==="eraser"?"탭하면 지워집니다"
   :t==="link"?"선수를 차례로 누르세요 · 처음 선수를 다시 누르면 다각형 · 빈 곳을 누르면 완료"
+  :t==="poly"?"운동장을 차례로 눌러 꼭짓점을 찍으세요 · 처음 점을 다시 누르면 다각형 · 마지막 점을 다시 누르면 꺾은선"
   :t==="ellipse"?"끌어서 원형 구역"
   :t==="text"?""
   :t==="run"?"끌어서 런(점선) · 알 더블클릭→선택 후 끌어 이동"
@@ -13213,8 +13371,9 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
         +'<div class="ls-row"><span class="ls-lb">굵기</span><input type="range" id="lsW" min="0.5" max="3" step="0.1" value="'+lw+'"><span class="ls-val" id="lsWv">'+lw.toFixed(1)+'</span></div>'
         +'<div class="ls-row"><span class="ls-lb">투명도</span><input type="range" id="lsO" min="0.2" max="1" step="0.05" value="'+op+'"><span class="ls-val" id="lsOv">'+Math.round(op*100)+'</span></div>'
         +'<div class="ls-row"><span class="ls-lb">모양</span><div class="ls-seg" id="lsShape"><button type="button" data-v="solid">실선</button><button type="button" data-v="dash">점선</button><button type="button" data-v="dot">둥근 점선</button></div><span></span></div>'   /* 2.681 */
-        +((!ds.length||ds.some(function(d){return /^(pass|run|dribble|shot|line|dashline)$/.test(d.type);}))?'<div class="ls-row"><span class="ls-lb">끝</span><div class="ls-seg" id="lsHead"><button type="button" data-v="arrow" title="화살">→</button><button type="button" data-v="bar" title="막기(T자)">⊣</button><button type="button" data-v="dot" title="원">●</button><button type="button" data-v="none" title="없음">─</button></div><span></span></div>':'')   /* 2.902 끝 모양 */
-        +((base&&/^(rect|rectline|rectdash|ellipse)$/.test(base.type))?'<div class="ls-row"><span class="ls-lb">이름</span><input type="text" id="lsZoneName" maxlength="24" placeholder="예: 압박 함정" autocomplete="off" value="'+String(base.label||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];})+'"><span></span></div>':'')   /* 2.902 구역 이름 */
+        +((!ds.length||ds.some(function(d){return /^(pass|run|dribble|shot|line|dashline)$/.test(d.type);}))?'<div class="ls-row"><span class="ls-lb">끝</span><div class="ls-seg" id="lsHead"><button type="button" data-v="arrow" title="화살">→</button><button type="button" data-v="open" title="열린 화살">＞</button><button type="button" data-v="bar" title="막기(T자)">⊣</button><button type="button" data-v="dot" title="원">●</button><button type="button" data-v="none" title="없음">─</button></div><span></span></div>'
+          +'<div class="ls-row"><span class="ls-lb">방향</span><div class="ls-seg" id="lsHead2"><button type="button" data-v="one" title="끝에만">한쪽</button><button type="button" data-v="both" title="시작과 끝 양쪽에 — 양방향 화살 ↔ · 막기와 함께면 간격 표시 ├─┤">양쪽</button></div><span></span></div>':'')   /* 2.980 열린 화살 · 양쪽 */   /* 2.902 끝 모양 */
+        +((base&&(/^(rect|rectline|rectdash|ellipse)$/.test(base.type)||(base.type==="poly"&&base.closed)))?'<div class="ls-row"><span class="ls-lb">이름</span><input type="text" id="lsZoneName" maxlength="24" placeholder="예: 압박 함정" autocomplete="off" value="'+String(base.label||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];})+'"><span></span></div>':'')   /* 2.902 구역 이름 */
         +((!ds.length||ds.some(function(d){return d.type==="pass";}))?'<div class="ls-row"><span class="ls-lb">패스</span><div class="ls-seg" id="lsLob"><button type="button" data-v="ground">땅볼</button><button type="button" data-v="lob">로빙</button></div><span></span></div>':'')   /* 2.902 — 패스를 골랐거나 아무것도 안 골랐을 때(새로 그릴 기본값) */
         +'<div class="ls-row"><span class="ls-lb">채움</span><div class="ls-seg" id="lsFill"><button type="button" data-v="solid">반투명</button><button type="button" data-v="dots">점</button><button type="button" data-v="hatch">빗금</button></div><span></span></div>'
         +'<button class="ls-apply" id="lsAll">그린 선 전체에 적용</button>'
@@ -13254,6 +13413,14 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
           if(sd.length){ pushUndo(); sd.forEach(function(d){ d.head=v; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
           mark(); }; });
         mark(); })();
+      /* 2.980 — 방향: 끝 모양을 시작 쪽에도. 고른 선에 바로, 없으면 새로 그릴 기본값. */
+      (function(){ var seg=pop.querySelector("#lsHead2"); if(!seg)return; var LT=/^(pass|run|dribble|shot|line|dashline)$/;
+        function cur(){ var sd=selDraws().filter(function(d){return LT.test(d.type);}); if(sd.length)return sd[0].head2?"both":"one"; return state.drawHead2?"both":"one"; }
+        function mark(){ var v=cur(); seg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===v);}); }
+        seg.querySelectorAll("button").forEach(function(b){ b.onclick=function(e){ e.stopPropagation(); var both=b.dataset.v==="both"; state.drawHead2=both; var sd=selDraws().filter(function(d){return LT.test(d.type);});
+          if(sd.length){ pushUndo(); sd.forEach(function(d){ if(both)d.head2=true; else delete d.head2; }); renderDrawings(); try{boardSaveLive();}catch(_){} }
+          mark(); }; });
+        mark(); })();
       /* 2.902 — 새 장면에서 화살표 모두 지우기(FmStadio «Animate all arrows out»): 다음 장면을 만들고 선 종류만 뺀다. 구역·글·다각형은 남긴다. */
       (function(){ var bt=pop.querySelector("#lsClearNext"); if(!bt)return; bt.onclick=function(e){ e.stopPropagation();
         var LT=/^(pass|run|dribble|shot|line|dashline|free)$/; if(!(state.drawings||[]).some(function(d){return LT.test(d.type);})){ try{toast("지울 화살표·선이 없어요");}catch(_){} return; }
@@ -13263,7 +13430,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
       /* 2.902 — 구역 이름: 입력하는 대로 선택한 구역(여럿이면 모두)에 붙는다. 비우면 이름 없음. */
       (function(){ var zi=pop.querySelector("#lsZoneName"); if(!zi)return; var pushed=false;
         zi.addEventListener("keydown",function(e){ e.stopPropagation(); if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); zi.blur(); } });
-        zi.addEventListener("input",function(){ var v=zi.value.trim().slice(0,24); var sd=selDraws().filter(function(d){return /^(rect|rectline|rectdash|ellipse)$/.test(d.type);});
+        zi.addEventListener("input",function(){ var v=zi.value.trim().slice(0,24); var sd=selDraws().filter(function(d){return /^(rect|rectline|rectdash|ellipse)$/.test(d.type)||(d.type==="poly"&&d.closed);});
           if(!sd.length)return; if(!pushed){ pushUndo(); pushed=true; }
           sd.forEach(function(d){ if(v)d.label=v; else delete d.label; }); renderDrawings(); try{boardSaveLive();}catch(_){} }); })();
       /* 2.902 — 패스: 땅볼 · 로빙. 고른 그림 중 패스 화살표에만 적용하고, 새로 그리는 패스의 기본값으로도 남긴다. */
@@ -13311,7 +13478,8 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
   document.addEventListener("click",()=>{if(sw){sw.classList.remove("open");positionSwatches();}});
   window.addEventListener("resize",positionSwatches);
 
-  seg("toolSeg","data-tool",t=>{state.tool=t;document.body.dataset.tool=t;
+  seg("toolSeg","data-tool",t=>{try{if(_poly&&t!=="poly")polyFinish(true,true);}catch(_){}   /* 2.980 — 도구 버튼으로 바꿀 때도 만들던 다각형을 마무리 */
+    state.tool=t;document.body.dataset.tool=t;
     document.body.classList.toggle("drawmode",DRAW_TOOLS.includes(t)||t==="text");
     syncColorModeTitle(t);
     if(t!=="move")deselect();
@@ -13557,15 +13725,16 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     function setTool(t){try{if(window.__psCancelTokenStamp)window.__psCancelTokenStamp("tool");}catch(_){}try{if(window.__psCancelEquipStamp)window.__psCancelEquipStamp();}catch(_){}const sg=$("toolSeg");if(!sg)return;const btn=sg.querySelector('[data-tool="'+t+'"]');if(!btn)return;
       [...sg.children].forEach(x=>x.classList.remove("on"));btn.classList.add("on");
       try{if(state.tool==="link"&&t!=="link")linkFinish(false);}catch(_){}   /* 2.679 — 도구를 바꾸면 만들던 연결선을 마무리 */
+      try{if(_poly&&t!=="poly")polyFinish(true,true);}catch(_){}   /* 2.980 — 만들던 다각형도 */
       state.tool=t;document.body.dataset.tool=t;document.body.classList.toggle("drawmode",DRAW_TOOLS.includes(t)||t==="text");
       try{window.__syncColorModeTitle(t);}catch(_){}
       if(t!=="move")deselect();if(t!=="text"&&typeof hintText==="function")toast(hintText());}
-    const TOOLS=["move","run","pass","dribble","line","dashline","link","free","rect","ellipse","rectline","rectdash","text","eraser"];
+    const TOOLS=["move","run","pass","dribble","line","dashline","link","poly","free","rect","ellipse","rectline","rectdash","text","eraser"];
     /* 2.686 — 애니메이션 바의 모든 단추 + 선택 토큰의 잔상·시선까지 단축키로(사용자 "애니메이션에 있는 도구들 전부") */
     const ANIM_ACTS={dockFold:"도구 도크 접기·펼치기",animBar:"애니메이션 바 열기·닫기",animPlay:"애니 재생·정지",animLoop:"반복 재생",animAdd:"장면 추가",animUpdate:"장면 갱신",animDup:"장면 복제",animDel:"장면 삭제",animPrev:"이전 장면",animNext:"다음 장면",animOnion:"이전 장면 겹쳐 보기",animBlink:"선택 토큰 깜박임",animHl:"선택 토큰 계속 강조",animExport:"영상 내보내기",animGif:"GIF 내보내기",tokTrail:"잔상(선택 토큰)",tokLook:"시선(선택 토큰)"};
     const ANIM_BTN={animBar:"animToggle",animPlay:"animPlay",animLoop:"animLoopBtn",animAdd:"animAdd",animUpdate:"animUpdate",animOnion:"animOnionBtn",animBlink:"animBlinkBtn",animHl:"animHlBtn",animExport:"animExport",animGif:"animGif",tokTrail:"trailBtn",tokLook:"lookBtn"};
     const ANIM_IDS=Object.keys(ANIM_ACTS);
-    const TOOL_NAMES={move:"이동·선택",run:"선수 이동",pass:"패스",dribble:"드리블",line:"직선",dashline:"점선",link:"연결선",free:"자유선",rect:"구역",ellipse:"원형 구역",rectline:"사각형(실선)",rectdash:"사각형(점선)",text:"텍스트 라벨",eraser:"지우개"};
+    const TOOL_NAMES={move:"이동·선택",run:"선수 이동",pass:"패스",dribble:"드리블",line:"직선",dashline:"점선",link:"연결선",poly:"다각형",free:"자유선",rect:"구역",ellipse:"원형 구역",rectline:"사각형(실선)",rectdash:"사각형(점선)",text:"텍스트 라벨",eraser:"지우개"};
     /* 2.975 — «보드» 탭(사용자 "작전판에 보드 설정과 펜색상도 전부 단축키로" · "저장하기 단축키도"). 보드 설정 버튼을 그대로 눌러 준다 — 동작이 두 벌이 되지 않게. */
     const PEN_COLS=[["#1c1c1e","검정"],["#ff453a","빨강"],["#ff9f0a","주황"],["#ffd60a","노랑"],["#30d158","초록"],["#0a84ff","파랑"],["#5ac8fa","하늘"],["#5e5ce6","남보라"],["#bf5af2","보라"],["#ff375f","분홍"],["#8e8e93","회색"],["#ffffff","흰색"]];
     const BOARD_ACTS={save:"저장",boardSettings:"보드 설정 열기·닫기",shapeCycle:"선수 모양 바꾸기",labelCycle:"표시(번호·포지션) 바꾸기",lineToggle:"라인 표시·숨김",gridCycle:"전술 그리드 바꾸기",pitchCycle:"피치 색 바꾸기",specCycle:"규격 바꾸기",pitchViewCycle:"운동장 범위 바꾸기",pitchViewSide:"범위 — 우리 쪽·상대 쪽",pitchNCycle:"운동장 개수 바꾸기",rotate:"운동장 90° 회전",sizeUp:"토큰 크게",sizeDown:"토큰 작게",snapToggle:"끌기 자석 켜기·끄기",grassCycle:"잔디 줄무늬 바꾸기",grassBright:"실사 잔디 밝기 바꾸기",grassPale:"실사 잔디 연하기 바꾸기",tiltToggle:"보드 보기 평면·입체",penNext:"펜 색 다음",penPrev:"펜 색 이전"};
@@ -13574,7 +13743,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     Object.assign(TOOL_NAMES,ANIM_ACTS,BOARD_ACTS); const KEY_IDS=TOOLS.concat(ANIM_IDS,BOARD_IDS);
     const TOOL_KEY="cs_tool_shortcuts_v1";
     let toolKeyOpen=false;
-    function toolKeyDefaults(){return {move:"1",run:"2",pass:"3",dribble:"4",line:"5",dashline:"6",link:"",free:"7",rect:"8",ellipse:"",rectline:"9",rectdash:"",text:"",eraser:"0",animBar:"",animPlay:"p",animLoop:"",animAdd:"n",animUpdate:"u",animDup:"",animDel:"",animPrev:",",animNext:".",animOnion:"",animBlink:"",animHl:"k",animExport:"",animGif:"",tokTrail:"j",tokLook:"o",save:"mod+s"};}
+    function toolKeyDefaults(){return {move:"1",run:"2",pass:"3",dribble:"4",line:"5",dashline:"6",link:"",poly:"",free:"7",rect:"8",ellipse:"",rectline:"9",rectdash:"",text:"",eraser:"0",animBar:"",animPlay:"p",animLoop:"",animAdd:"n",animUpdate:"u",animDup:"",animDel:"",animPrev:",",animNext:".",animOnion:"",animBlink:"",animHl:"k",animExport:"",animGif:"",tokTrail:"j",tokLook:"o",save:"mod+s"};}
     function loadToolKeys(){var d=toolKeyDefaults(),v=null;try{v=JSON.parse(localStorage.getItem(TOOL_KEY)||"null");}catch(_){}if(v&&typeof v==="object")KEY_IDS.forEach(function(t){if(typeof v[t]==="string")d[t]=v[t];});KEY_IDS.forEach(function(t){d[t]=comboFix(d[t]);});return d;}
     window.__psToolKeys=loadToolKeys;   /* 2.908 — 셸의 키 전달과 역할 링(H)이 같은 표(기본값 포함)를 읽게 */
     function saveToolKeys(v){try{localStorage.setItem(TOOL_KEY,JSON.stringify(v));}catch(_){}}
@@ -13740,11 +13909,8 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
         if(_k==="x"){ if(tokClipCopy()){ e.preventDefault(); deleteSelected(); toast("잘라냄"); } return; }
         if(_k==="d"){ if(sel||(typeof multiSel!=="undefined"&&multiSel.length)){ e.preventDefault(); duplicateSelected(); } return; }
         if(_k==="a"){ var all=[].concat(state.players||[],state.equipment||[],state.drawings||[]); if(state.ball)all.push(state.ball);   /* 2.687 — ⌘A 에 공도(사용자) */ if(all.length){ e.preventDefault(); sel=null; multiSel=all; renderTokens(); renderDrawings(); updateDelUI(); updateAlignBar(); renderMultiGuides(); toast("전체 선택 "+all.length); } return; }
-        if(e.key==="]"||e.key==="["){ /* 2.030 — 앞으로/뒤로 보내기(겹침 순서): 배열 끝=앞 */
-          var its=(typeof multiSel!=="undefined"&&multiSel.length)?multiSel.slice():((sel&&sel.ref&&sel.type!=="ball"&&sel.type!=="spball")?[sel.ref]:[]); if(!its.length)return;
-          e.preventDefault(); pushUndo(); var front=e.key==="]";
-          [["player",state.players],["equip",state.equipment],["drawing",state.drawings]].forEach(function(pr){ var arr=pr[1]; var pick=arr.filter(function(o){return its.indexOf(o)>=0;}); if(!pick.length)return; var rest=arr.filter(function(o){return its.indexOf(o)<0;}); arr.length=0; (front?rest.concat(pick):pick.concat(rest)).forEach(function(o){arr.push(o);}); });
-          renderTokens(); renderDrawings(); updateAlignBar(); toast(front?"맨 앞으로":"맨 뒤로"); return; }
+        if(e.key==="]"||e.key==="["){ /* 2.030 — 앞으로/뒤로 보내기(겹침 순서) · 2.980 — 패널 «맨 앞»과 같은 함수(모든 장면에 같은 순서) */
+          if(zOrderSel(e.key==="]"))e.preventDefault(); return; }
       }
       if(e.metaKey||e.ctrlKey||e.altKey)return;
       /* 백스페이스·Delete는 그리기 도구 단축키보다 먼저 처리한다.
@@ -13825,6 +13991,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     try{boardSaveLive();}catch(_){}});};
   $("delSelBtn").onclick=deleteSelected;
   if($("dupSelBtn"))$("dupSelBtn").onclick=duplicateSelected;
+  if($("frontSelBtn"))$("frontSelBtn").onclick=function(e){ e.stopPropagation(); zOrderSel(true); try{updateDelUI();}catch(_){} };   /* 2.980 */
   /* 2.975 — 정보 창의 «↺ 이후 장면 리셋»(이 토큰만) · «사진 배경» */
   if($("tokAnimResetBtn"))$("tokAnimResetBtn").onclick=function(e){ e.stopPropagation(); var items=(multiSel&&multiSel.length>=2)?multiSel.slice():((sel&&sel.ref)?[sel.ref]:[]); resetTokensLaterFrames(items); try{updateDelUI();}catch(_){} };
   (function(){ var bi=$("photoBgInput"); if(!bi)return; var undoDone=false;
@@ -14034,7 +14201,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     else if(meetBound)meetFlush();
   }catch(_){}};
   window.__meetSceneGo=function(k){try{if(!meetSceneBound()||!(k>=0&&k<anim.frames.length))return;try{autoSaveAnimFrame();}catch(_){}selectAnimFrame(k);meetCntSync();}catch(_){}};
-  function meetSceneFinish(){if(meetSceneRaf){cancelAnimationFrame(meetSceneRaf);meetSceneRaf=null;try{if(animActive>=0&&anim.frames[animActive])loadSnap(anim.frames[animActive].snap);}catch(_){}}}
+  function meetSceneFinish(){window.__trailLive=0;if(meetSceneRaf){cancelAnimationFrame(meetSceneRaf);meetSceneRaf=null;try{if(animActive>=0&&anim.frames[animActive])loadSnap(anim.frames[animActive].snap);}catch(_){}}}
   function meetSceneStep(dir,done,auto){   /* 발표 중 장면 한 칸. 넘길 장면이 없으면 false(슬라이드를 넘긴다) */
     if(!meetInShow())return false;
     if(!auto)meetAutoTok++;
@@ -14046,10 +14213,11 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     if(meetRaf){cancelAnimationFrame(meetRaf);meetRaf=null;try{loadSnap(anim.frames[k].snap);}catch(_){}}
     animActive=t;meetCntSync();
     try{_animCapShow(anim.frames[t].cap,t);}catch(_){}
-    if(dir<0){try{loadSnap(anim.frames[t].snap);}catch(_){}try{_applyHl(anim.frames[t].hl);}catch(_){}if(done)done();return true;}
+    if(dir<0){try{trailReset();}catch(_){}try{loadSnap(anim.frames[t].snap);}catch(_){}try{_applyHl(anim.frames[t].hl);}catch(_){}if(done)done();return true;}
+    window.__trailLive=1;window.__animSeg=k;   /* 2.980 — 발표에서 장면을 넘길 때도 잔상 */
     var f=anim.frames[k],a=f.snap,b=anim.frames[t].snap,cv=f.curves,dur=Math.max(.3,f.dur||1)*1000/animMoveSpeed(f),t0=performance.now();
     var stp=function(now){var u=(now-t0)/dur;if(u>1)u=1;try{renderInterp(a,b,easeInOut(u),cv);}catch(_){}try{_applyHl(anim.frames[t]&&anim.frames[t].hl);}catch(_){}
-      if(u<1){meetSceneRaf=requestAnimationFrame(stp);}else{meetSceneRaf=null;try{loadSnap(b);}catch(_){}try{_applyHl(anim.frames[t]&&anim.frames[t].hl);}catch(_){}if(done)done();}};
+      if(u<1){meetSceneRaf=requestAnimationFrame(stp);}else{meetSceneRaf=null;window.__trailLive=0;try{loadSnap(b);}catch(_){}try{_applyHl(anim.frames[t]&&anim.frames[t].hl);}catch(_){}if(done)done();}};
     meetSceneRaf=requestAnimationFrame(stp);
     return true;
   }
@@ -14479,7 +14647,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     state.drawings.forEach(o=>{if(!o.pts||!o.pts.length)return;
       /* 2.688 — 구역·사각형·원형 구역은 선택 상자가 **통째로 감쌀 때만** 고른다(사용자: 구역 안의 선수·장비만 끌어 고르고 싶은데 구역이 같이 잡혔다).
          선·화살표·글은 전처럼 가운데 점으로. */
-      if(o.type==="rect"||o.type==="rectline"||o.type==="rectdash"||o.type==="ellipse"){
+      if(o.type==="rect"||o.type==="rectline"||o.type==="rectdash"||o.type==="ellipse"||(o.type==="poly"&&o.closed)){   /* 2.980 — 닫힌 다각형도 구역 */
         const xs=o.pts.map(q=>q.x),ys=o.pts.map(q=>q.y);
         if(Math.min(...xs)>=x1&&Math.max(...xs)<=x2&&Math.min(...ys)>=y1&&Math.max(...ys)<=y2)inside.push(o);
         return;
@@ -19932,6 +20100,13 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl:not(#_):not(#__){overflow
 html.ps-page-board body:not(.ps-dock) #alignBar:not(#_):not(#__),html.ps-page-board body:not(.ps-dock) #alignBar.on:not(#_):not(#__){display:none!important}
 html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl .color-pop:not(#_):not(#__){left:auto!important;right:calc(100% + 10px)!important;top:-4px!important;bottom:auto!important;transform:none!important;padding:8px!important;gap:6px 5px!important}
 </style>
+<style id="ps-2980-selrow">/* 2.980 — 데스크톱·아이패드 선택 패널(1열 124px)에 «맨 앞»이 생겼다. 한 줄을 더 쌓으면 여럿 골랐을 때 패널이 낮은 화면(아이패드 가로)의 판 높이를 넘는다 →
+   격자를 반 칸 둘로 나누고 «복제 | 맨 앞»만 반 칸씩, 나머지는 예전처럼 한 줄 전체. 폰(ps-dock)은 손대지 않는다(거기선 ⋯ 줄에 있다). */
+html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl:not(#_):not(#__):not(#___){grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+html.ps-page-board body:not(.ps-dock) .sel-ctl.sel-ctl:not(#_):not(#__):not(#___)::before{grid-column:1/-1!important}
+html.ps-page-board body:not(.ps-dock) .sel-ctl > #colorCtl:not(#_):not(#__):not(#___){grid-column:1/-1!important}
+html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not(#___):not(#____):not(#_____),html.ps-page-board body:not(.ps-dock) .sel-ctl > #frontSelBtn:not(#_):not(#__):not(#___):not(#____):not(#_____){grid-column:auto!important;padding:0 2px!important;gap:3px!important;min-width:0!important;white-space:nowrap!important}
+</style>
 <script>
 /* 2.609 — 선택한 토큰·장비 사이 거리(m) 표시(사용자 "토큰끼리의 간격, 장비들끼리의 간격 … 몇 미터인지 1.1, 1.2 이런 식으로").
    ① 둘 이상 골라 두면(shift·⌘ 탭, 올가미) 선택 안에서 서로 가장 가까운 짝끼리 점선 + «1.2m» 알약 — 함께 끌어도 따라간다(renderMultiGuides 를 감쌈).
@@ -20388,8 +20563,8 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #dupSelBtn{order:9!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #delSelBtn{order:10!important;margin-left:auto!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textEditBtn,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textSizeCtl,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textColorCtl,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textBgCtl{order:12!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#rotCtl,#ballStyleBtn){order:20!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(.sel-more) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#rotCtl,#ballStyleBtn){display:none!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){order:20!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(.sel-more) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){display:none!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___).sel-more > #selMoreBtn{background:var(--accent,#3A6DF0)!important;color:#fff!important;border-color:var(--accent,#3A6DF0)!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #alignBar{order:30!important;flex:0 0 100%!important;width:100%!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > button,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .sizebox{min-height:30px!important;height:30px!important;font-size:11px!important;padding:0 9px!important;border-radius:9px!important}
@@ -20445,7 +20620,7 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #delSelBtn{flex:1 1 calc(50% - 4px)!important;width:auto!important;min-width:calc(50% - 4px)!important;max-width:calc(50% - 4px)!important;margin-left:0!important;gap:6px!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #delSelBtn{background:rgba(226,75,74,.12)!important;border-color:rgba(226,75,74,.22)!important;color:#FF7B73!important}
   /* ⋯ 펼친 줄(사진·시야·잔상·시선·쉐이퍼·GK·대칭·회전)도 같은 결 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#rotCtl,#ballStyleBtn){flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > #selMoreBtn{background:#EDEFF3!important;color:#14171c!important;border-color:#EDEFF3!important}
 }
 </style>
