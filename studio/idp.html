@@ -12925,6 +12925,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
            처음엔 프로필 첫 화면 맨 위에 뒀는데, 선수가 매일 여는 화면은 프로필이 아니라 **일지**다.
            읽는 것끼리(팀 일정 → 공지) 붙여 두면 "오늘 뭐 하지"와 "코치가 뭐랬지"가 한자리에서 끝난다. */
         _below+=(function(){ try{ return rNotice(); }catch(e){ console.warn('공지 그리기 실패',e); return ''; } })();
+        /* 2.979 — 넓은 화면(≥1000)에서는 두 칸: 왼쪽 = 오늘 적는 것, 오른쪽 = 읽는 것. 좁으면 .dcols/.dcol 이 display:contents 라 예전 그대로 한 열 */
+        if(_todaySimple)h+='<div class="dcols"><div class="dcol dcol-main">';
         h+='<section class="card daycard">';
         /* ══ 2.615 · 한 줄 왕복 — 오늘 카드 첫 층(사용자 "순서대로 가봅시다" 1번) ═══════════════
            코치 반응(있을 때만) → 이번 주 초점 → 칩 셋 → 한 마디(선택·질문 칩) → 이번 주 띠. 그 아래는 참여·강도·몸·잠 그대로.
@@ -12960,6 +12962,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +'<textarea id="dayMemo" rows="3" placeholder="예: 압박 오는데 몸을 미리 열어서 앞을 봤다"'+(ro()?' disabled':'')+'>'+esc(lg.memo||'')+'</textarea>'+_pastRx+'</div>'; }   /* 2.615 — 오늘(선수)은 첫 층의 한 마디가 같은 log.memo */
         h+='</section>';   /* 2.362 — daycard 닫기. 아래 측정 카드는 별개의 일이라 밖에 둔다 */
         if(_todaySimple){ try{ h+=rTodayRoutine(calAnchor); }catch(e){ console.warn('오늘 루틴 그리기 실패',e); } }   /* 2.923 — 오늘 할 일 체크는 여기 */
+        if(_todaySimple)h+='</div><div class="dcol dcol-side">';   /* 2.979 */
         h+=_wsCard+_below;   /* 2.780 — 순서: 오늘 카드 → 이번 주 나는 → 오늘 팀 일정 → 공지 */
         /* 2.489 — 일요일엔 주간 회고가 이 자리에(doc.weekly — 읽는 곳(9539 내 말 아카이브)만 있고
            쓰는 문이 어느 판에선가 사라져 고아였던 필드를 되살린다) */
@@ -12978,6 +12981,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
             if(_wed&&_thisWk)h+=rMeasureCard();
           }catch(_){}
         })();
+        if(_todaySimple)h+='</div></div>';   /* 2.979 — 두 칸 닫기 */
         if(_l1done&&window.__tdOpen&&!ro())
           h+='<div class="td-foot" style="justify-content:flex-end;margin:-4px 0 12px"><button type="button" class="td-skip" data-l1-fold>접기 ›</button></div>';
       } else {
@@ -16127,6 +16131,28 @@ html.ps-page-idp .ilc-w span{font-size:12.5px;line-height:1.5;color:var(--dim)}
 html.ps-page-idp .ilc-redo{min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface,#fff);font:inherit;font-size:12.5px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap}
 body.fmdark .ilc-av.ok{background:rgba(76,194,122,.16);color:#7ED3A8}
 body.fmdark .ilc-row em{color:#7ED3A8}
+</style>
+<style id="ps-2979-desk">/* ══ 2.979 · 내 IDP — 넓은 화면에서는 폭을 쓴다(사용자 «보드 빼고 다 고쳐보자») ══
+   2.316·2.319 는 내 IDP 를 어디서나 392px 폰 액자에 넣었다(1280 화면에서 콘텐츠 폭의 2/3 가 빈 회색). 셸이 액자를 걷었고(app.html),
+   여기서는 일지 › 오늘을 두 칸으로 편다: 왼쪽 = 오늘 적는 것(오늘 카드 · 오늘 루틴), 오른쪽 = 읽는 것(이번 주 나는 · 오늘 팀 일정 · 공지 · 측정).
+   폰·좁은 화면은 .dcols/.dcol 이 display:contents 라 예전 순서 그대로 한 열이다.
+   기준(이 블록 안): 글자 12·14 / 굵기 500·600·700 / 모서리 6·10·999.
+   ⚠ 색(보라)은 이번에 그대로 둔다 — 보라는 «셀프»의 뜻으로 평가 화면(셀프 보라 · 코치 초록 · 요구 파랑)에 걸려 있어 한 번에 바꾸면 요구(파랑)와 겹친다. */
+html.ps-page-idp .dcols,html.ps-page-idp .dcol{display:contents}
+@media (min-width:900px){
+  html.ps-page-idp body.ps-player-role:not(.idp-squad) #wrap:not(#_){max-width:1120px}
+  /* 탭 줄 — 폰용 글자 탭(좌우 여백 2px)이 데스크톱 알약 홈 안에 그대로 들어가 있었다 */
+  html.ps-page-idp body.ps-player-role #layers:not(#_):not(#__){min-height:0!important;padding:3px!important;gap:2px!important}
+  html.ps-page-idp body.ps-player-role #layers:not(#_):not(#__) button{flex:0 0 auto!important;min-height:32px!important;padding:0 14px!important;border-radius:6px!important;font-size:12px!important;font-weight:600!important}
+  html.ps-page-idp body.ps-player-role #layers:not(#_):not(#__) button.on{background:var(--surface,#fff)!important;color:var(--ink,#14161A)!important;font-weight:700!important;box-shadow:0 1px 3px rgba(15,23,42,.14)}
+  html.ps-page-idp body.ps-player-role #layers:not(#_):not(#__) button.on::after{display:none!important}
+  html.ps-page-idp #repBtn:not(#_):not(#__){background:var(--surface,#fff)!important;color:var(--ink,#14161A)!important;border-color:var(--line,#E3E6EA)!important}
+}
+@media (min-width:1000px){
+  html.ps-page-idp body.ps-player-role .dcols{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:16px;align-items:start}
+  html.ps-page-idp body.ps-player-role .dcols:has(>.dcol-side:empty){grid-template-columns:minmax(0,720px)}
+  html.ps-page-idp body.ps-player-role .dcol{display:block;min-width:0}
+}
 </style>
 </body>
 </html>
