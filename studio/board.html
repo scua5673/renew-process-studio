@@ -3609,6 +3609,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <span class="sizebox" id="visCtl" style="display:none"><button id="visNarrow" title="시야 좁게"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="szlbl">시야폭</span><button id="visWide" title="시야 넓게"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></span>
         <button id="visBlindBtn" class="gk-btn" title="등 뒤 사각지대 표시·끄기" style="display:none">사각</button>
         <button id="shaperBtn" class="gk-btn" title="쉐이퍼(몸 방향) 토큰 디자인" style="display:none">쉐이퍼</button>
+        <button id="ballLookBtn" class="gk-btn" title="볼 보기 — 쉐이퍼가 볼 쪽을 향하고 볼이 움직이면 따라 돕니다. 손으로 돌리면 그 방향으로 고정되고, 다시 누르면 볼을 봅니다" style="display:none">볼 보기</button>
         <button id="tokAnimResetBtn" class="gk-btn" title="이 토큰만 리셋 — 지금 위치·이름·번호를 뒤의 모든 장면에 적용하고 이 토큰 동선 곡선을 지웁니다(다른 토큰은 그대로)" style="display:none">↺ 이후 장면 리셋</button>
         <button id="dupSelBtn" class="dup-sel" title="복제"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>복제</button>
         <button id="frontSelBtn" class="dup-sel" title="맨 앞으로 — 겹친 토큰 위로 올려 번호·이름이 가려지지 않게 (⌘] · 맨 뒤로는 ⌘[)" style="display:none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="11" height="11" rx="2" fill="currentColor" fill-opacity=".22"/><path d="M19 9v9a2 2 0 0 1-2 2H9"/></svg>맨 앞</button>
@@ -5089,7 +5090,7 @@ function makeToken(p,kind){
     if(!p.img){t.textContent=lab;g.appendChild(t);}
     if(p.name&&!p.img){
       const nmStr=p.name;let w=16;for(const ch of nmStr){w+=(ch.charCodeAt(0)>0x2000?18.5:11.2);}
-      const h=27,yy=48;
+      const h=27,yy=_shaperOn(p)?60:48;   /* 2.986 — 쉐이퍼 부리(끝 46)가 아래를 볼 때 이름표에 가리지 않게 */
       g.appendChild(el("rect",{x:-w/2,y:yy-h/2,width:w,height:h,rx:9,fill:"rgba(18,22,30,.88)"}));
       const nm=el("text",{x:0,y:yy+0.5,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff",
         "font-size":"18","font-weight":"700","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif"});
@@ -5185,7 +5186,7 @@ function enableDrag(g,p,removable,kind){
     if(mode==="draw"){moveDraw(toUnit(e));}
     else if(grp){if(!grpUndo){pushUndo();grpUndo=true;}const u=toUnit(e);let dx=u.x-gu0.x,dy=u.y-gu0.y;
       if(e.shiftKey){ if(!_mvAxis&&(Math.abs(dx)>6||Math.abs(dy)>6))_mvAxis=Math.abs(dx)>=Math.abs(dy)?"x":"y"; if(_mvAxis==="x")dy=0; else if(_mvAxis==="y")dx=0; } else _mvAxis=null;
-      grp.forEach(it=>{if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(tokShape==="shaper"||grp.some(function(it){return !it.locked&&it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
+      grp.forEach(it=>{if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(_dirLive()||grp.some(function(it){return !it.locked&&it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
     else{if(!mvUndo){pushUndo();mvUndo=true;}
       var _u0=toUnit(e);
       /* 2.375 — 잡은 지점 보정. 스냅(snapDrag)은 보정한 뒤에 걸어야 한다 — 보정 전에 걸면 스냅이
@@ -5203,7 +5204,7 @@ function enableDrag(g,p,removable,kind){
       const s=_snapOn?snapDrag(p,kind,u):u;
       if(_snapOn&&(s.gx!=null||s.gy!=null))drawSnapGuides(s.gx,s.gy); else drawSnapGuides(null,null);
       if(e.shiftKey&&_mvP0){ if(!_mvAxis&&(Math.abs(s.x-_mvP0.x)>6||Math.abs(s.y-_mvP0.y)>6))_mvAxis=Math.abs(s.x-_mvP0.x)>=Math.abs(s.y-_mvP0.y)?"x":"y"; if(_mvAxis==="x")s.y=_mvP0.y; else if(_mvAxis==="y")s.x=_mvP0.x; } else _mvAxis=null;
-      p.x=s.x;p.y=s.y;if(kind==="ball"){state.ball.x=s.x;state.ball.y=s.y;}g.setAttribute("transform",tokenTransform(p));try{if(window.psMeasDrag)psMeasDrag(p);}catch(_){}if(kind==="player"&&(p.vis||p.shaper||tokShape==="shaper")){renderVisionRAF();}}}
+      p.x=s.x;p.y=s.y;if(kind==="ball"){state.ball.x=s.x;state.ball.y=s.y;}g.setAttribute("transform",tokenTransform(p));try{if(window.psMeasDrag)psMeasDrag(p);}catch(_){}if((kind==="player"&&(p.vis||p.shaper||tokShape==="shaper"))||_dirLive()){renderVisionRAF();}}}   /* 2.986 — 볼을 끌면 쉐이퍼가 따라 돈다 */
   const onMove=e=>{
     if(!mode)return;
     if(Math.hypot(e.clientX-sx,e.clientY-sy)>4)moved=true;
@@ -5506,8 +5507,8 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   const _mShow=!!((sel&&sel.type!=="spball")||(typeof multiSel!=="undefined"&&multiSel.length));
   const _mh=document.getElementById("mirHBtn");if(_mh)_mh.style.display=_mShow?"inline-flex":"none";
   const _mv=document.getElementById("mirVBtn");if(_mv)_mv.style.display=_mShow?"inline-flex":"none";
-  const _rotTargets=_multiOn?multiSel.filter(function(o){var t=typeOfItem(o);return t==="equip"||(t==="player"&&!o.coach&&(o.vis||o.shaper));}):[];
-  const rc=document.getElementById("rotCtl");if(rc)rc.style.display=((sel&&(sel.type==="equip"||(sel.type==="player"&&(sel.ref.vis||sel.ref.shaper))))||_rotTargets.length)?"inline-flex":"none";
+  const _rotTargets=_multiOn?multiSel.filter(function(o){var t=typeOfItem(o);return t==="equip"||(t==="player"&&!o.coach&&(o.vis||_shaperOn(o)));}):[];
+  const rc=document.getElementById("rotCtl");if(rc)rc.style.display=((sel&&(sel.type==="equip"||(sel.type==="player"&&!sel.ref.coach&&(sel.ref.vis||_shaperOn(sel.ref)))))||_rotTargets.length)?"inline-flex":"none";
   const _locks=selectedLockables(),_lb=document.getElementById("lockSelBtn");
   if(_lb){var _allLocked=!!(_locks.length&&_locks.every(function(o){return !!o.locked;})),_someLocked=_locks.some(function(o){return !!o.locked;});
     _lb.style.display=_locks.length?"inline-flex":"none";_lb.classList.toggle("on",_allLocked);_lb.textContent=_allLocked?"고정 해제":"고정";_lb.setAttribute("aria-pressed",_allLocked?"true":(_someLocked?"mixed":"false"));
@@ -5594,6 +5595,8 @@ function updateDelUI(){const _isTextSel=!!(sel&&sel.type==="drawing"&&sel.ref&&s
   if(vbl){vbl.style.display=_visPlayers.length?"inline-flex":"none";vbl.classList.toggle("on",!!(_visPlayers.length&&_visPlayers.every(function(p){return p.blind===true;})));}
   const shb=document.getElementById("shaperBtn");
   if(shb){shb.style.display=_fieldPlayers.length?"inline-flex":"none";shb.classList.toggle("on",!!(_fieldPlayers.length&&_fieldPlayers.every(function(p){return !!p.shaper;})));}
+  try{ const _blb=document.getElementById("ballLookBtn"),_shp=_fieldPlayers.filter(_shaperOn);   /* 2.986 — 쉐이퍼일 때만: 켜짐 = 볼을 본다 */
+    if(_blb){ const _bon=!!(_shp.length&&_shp.every(_dirWantsBall)); _blb.style.display=_shp.length?"inline-flex":"none"; _blb.classList.toggle("on",_bon); _blb.setAttribute("aria-pressed",_bon?"true":"false"); } }catch(_){}
   syncLockButton();
   try{ psSelBarLayout(); }catch(e){ console.warn("selbar",e); }
   if(sel||_multiOn)positionSelCtl();
@@ -5651,8 +5654,8 @@ function scaleSel(f){
   if(!(sel.type==="player"||sel.type==="equip"||sel.type==="ball"))return;
   const p=sel.ref;p.scale=Math.round(Math.max(0.5,Math.min(2.6,(p.scale||1)*f))*100)/100;renderTokens();positionSelCtl();}
 function rotateSel(deg){
-  if(!sel&&typeof multiSel!=="undefined"&&multiSel.length){var ts=multiSel.filter(function(o){var t=typeOfItem(o);return t==="equip"||(t==="player"&&!o.coach&&(o.vis||o.shaper));});if(!ts.length)return;pushUndo();
-    ts.forEach(function(p){if(typeOfItem(p)==="equip")p.rot=Math.round(((((p.rot||0)+deg)%360+360)%360)*10)/10;else p.dir=((((p.dir||0)+deg)%360)+360)%360;});
+  if(!sel&&typeof multiSel!=="undefined"&&multiSel.length){var ts=multiSel.filter(function(o){var t=typeOfItem(o);return t==="equip"||(t==="player"&&!o.coach&&(o.vis||_shaperOn(o)));});if(!ts.length)return;pushUndo();
+    ts.forEach(function(p){if(typeOfItem(p)==="equip")p.rot=Math.round(((((p.rot||0)+deg)%360+360)%360)*10)/10;else _dirFixNow(p,_dirOf(p)+deg);});
     renderTokens();updateDelUI();try{boardSaveLive();}catch(_){}return;}
   if(!sel)return;
   if(sel.type==="equip"){const p=sel.ref;
@@ -5662,8 +5665,35 @@ function rotateSel(deg){
     /* 1.579 — 여기 boardSaveLive 가 빠져 있어 장비 회전이 저장되지 않았다(선수 분기에만 있었다). */
     try{boardSaveLive();}catch(_){}
     return;}
-  if(sel.type==="player"&&(sel.ref.vis||sel.ref.shaper)){const p=sel.ref;p.dir=((((p.dir||0)+deg)%360)+360)%360;renderTokens();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}return;}}
+  if(sel.type==="player"&&!sel.ref.coach&&(sel.ref.vis||_shaperOn(sel.ref))){const p=sel.ref;_dirFixNow(p,_dirOf(p)+deg);renderTokens();updateDelUI();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}return;}}
 function _ensureDir(p){ if(typeof p.dir!=="number")p.dir=isRightTeam(p.team)?180:0; }
+/* ══ 2.986 · 쉐이퍼는 볼을 본다 ══
+   사용자: «쉐이퍼 표시를 더 명확하게 · 쉐이퍼는 자동으로 모두 볼을 보게».
+   · 쉐이퍼(선수 모양 «쉐이퍼» 또는 토큰의 «쉐이퍼»)인 선수는 **볼 쪽을 본다** — 볼을 끌어도, 재생·영상에서도 따라 돈다.
+   · 손으로 돌리면(핸들·↺↻·휠) 그 방향으로 **고정**된다(p.dirFix=1). 선택 패널 «볼 보기»로 다시 볼을 보게 한다(p.dirBall=1).
+   · «시선»(p.lookAt)을 다른 선수에게 건 토큰은 그 시선을 따른다(먼저).
+   · 옛 보드: 손으로 돌려 둔 방향(기본값이 아닌 숫자)은 고정으로 읽어 그대로 둔다. 안 돌린 토큰(방향 없음·기본값)만 볼을 본다.
+   ⚠ 볼을 보는 방향은 **그릴 때 계산만** 하고 p.dir 에 적지 않는다 — 적으면 열기만 해도 «변경 있음»이 뜨고, 옛 판이 그 값을 손으로 돌린 것으로 읽는다.
+   (tests/shaper-ball-2986 이 이 구간을 잘라 쓴다) */
+var _dirLast={};   /* 볼이 발밑에 겹쳤을 때 쓸 직전 방향(저장 안 함) */
+function _shaperOn(p){ return !!(p&&!p.coach&&(p.shaper||tokShape==="shaper")); }
+function _dirDef(p){ return isRightTeam(p.team)?180:0; }
+function _dirWantsBall(p){ if(!_shaperOn(p)||p.lookAt||p.dirFix)return false; return !!p.dirBall||typeof p.dir!=="number"||p.dir===_dirDef(p); }
+/* 볼 — 판의 공, 없으면 가장 가까운 장비 공 */
+function _ballFor(p){ if(state.ball&&typeof state.ball.x==="number")return state.ball; var best=null,bd=Infinity;
+  (state.equipment||[]).forEach(function(q){ if(!q||q.team!=="ball")return; var d=(q.x-p.x)*(q.x-p.x)+(q.y-p.y)*(q.y-p.y); if(d<bd){ bd=d; best=q; } }); return best; }
+function _dirOf(p){ var fb=(typeof p.dir==="number")?p.dir:_dirDef(p); if(!_dirWantsBall(p))return fb;
+  var b=_ballFor(p); if(!b)return fb; var dx=b.x-p.x,dy=b.y-p.y,near=12*_tokScaleOf(p);
+  if(dx*dx+dy*dy<near*near)return (typeof _dirLast[p.id]==="number")?_dirLast[p.id]:fb;   /* 볼이 토큰에 겹쳤다 — 방금 보던 쪽 그대로 */
+  var d=((Math.atan2(dy,dx)*180/Math.PI)%360+360)%360; _dirLast[p.id]=d; return d; }
+function _dirFixNow(p,deg){ p.dir=((Math.round(deg)%360)+360)%360; p.dirFix=1; delete p.dirBall; }
+function _dirLive(){ try{ return tokShape==="shaper"||(state.players||[]).some(function(p){ return p&&(p.shaper||p.lookAt); }); }catch(_){ return false; } }
+/* ══ 2.986 · 쉐이퍼는 볼을 본다 — 순수 구간 끝 ══ */
+/* 선택 패널 «볼 보기» — 켜면 볼을 보고, 끄면 지금 방향으로 고정. 이 장면의 토큰만(방향은 장면마다 다르다) */
+function toggleBallLook(){ var ps=(selectedPlayers(false)||[]).filter(_shaperOn); if(!ps.length)return; var on=!ps.every(_dirWantsBall); pushUndo();
+  ps.forEach(function(p){ if(on){ delete p.dirFix; delete p.lookAt; p.dirBall=1; } else _dirFixNow(p,_dirOf(p)); });
+  renderTokens(); updateDelUI(); try{positionSelCtl();}catch(_){} try{boardSaveLive();}catch(_){}
+  try{toast(on?(ps.length>1?(ps.length+"명이 볼을 봐요 — 볼이 움직이면 따라 돌아요"):"볼을 봐요 — 볼이 움직이면 따라 돌아요"):"지금 방향으로 고정 — 핸들이나 ↺↻ 로 돌려요");}catch(_){} }
 /* ══ 2.680 · 잔상(trail)·시선(lookAt) — 사용자가 보낸 애니메이션 도구 소개(트레일 1~5단계 · 오리엔테이션 타겟 추적)를 이 판에 맞춰 넣었다.
    잔상: p.trail = 1~5 = 재생 때 남기는 «지난 장면 수». renderInterp 마다 자리를 기록하고 trailLayer 에 옅은 선으로 그린다. 재생이 끝나면 지운다.
    시선: p.lookAt = 토큰 id('ball' 포함). renderTokens 때마다 대상 쪽으로 p.dir 을 다시 계산하므로 재생 중 대상이 움직여도 따라본다(시야 콘이 방향을 보여 준다). ══ */
@@ -5694,7 +5724,7 @@ function cycleTrail(){ var ps=trailTargets(); if(!ps.length)return; var cur=+(ps
   try{toast(next?("잔상 "+next+"단계 — 재생·영상에서 지난 "+next+"장면의 길이 남아요"):"잔상 끔");}catch(_){} }
 var _lookPick=null;
 function toggleLookAt(){ var ps=(selectedPlayers(false)||[]).filter(function(p){return !p.coach;}); if(!ps.length)return;
-  if(ps.every(function(p){return !!p.lookAt;})){ pushUndo(); ps.forEach(function(p){delete p.lookAt;}); _tokPropAll(ps,["lookAt"]); renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 끔");}catch(_){} return; }
+  if(ps.every(function(p){return !!p.lookAt;})){ pushUndo(); ps.forEach(function(p){delete p.lookAt; if(!p.dirFix)p.dirBall=1;}); _tokPropAll(ps,["lookAt","dirBall"]); renderTokens(); updateDelUI(); try{boardSaveLive();}catch(_){} try{toast("시선 끔");}catch(_){} return; }   /* 2.986 — 시선을 끈 쉐이퍼는 다시 볼을 본다 */
   /* 2.980 — 선수들과 공을 함께 골랐으면 대상을 다시 묻지 않는다(터치에서 한 번에) */
   if(_ballInMulti()){ _lookPick=ps.slice(); lookPickTarget({id:"ball"}); try{toast(ps.length+"명이 공을 바라봐요 — 공이 움직여도 따라봐요");}catch(_){} return; }
   _lookPick=ps.slice(); try{toast("바라볼 선수나 공을 누르세요 (Esc 취소)");}catch(_){} }
@@ -5724,7 +5754,7 @@ function toggleVision(){ var ps=selectedPlayers(false);if(!ps.length)return;var 
   try{toast(ps.length>1?(ps.length+"명 시야 "+(on?"표시":"끔")):(on?"시야 표시 — ↺↻ 방향, ◂▸ 넓이, 사각 토글":"시야 끔"));}catch(_){} }
 function toggleShaper(){ var ps=selectedPlayers(false);if(!ps.length)return;var on=!ps.every(function(p){return !!p.shaper;});pushUndo();ps.forEach(function(p){p.shaper=on;if(on)_ensureDir(p);});
   renderTokens();updateDelUI();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}
-  try{toast(ps.length>1?(ps.length+"명 쉐이퍼 "+(on?"적용":"끔")):(on?"쉐이퍼 디자인 — ↺↻로 몸 방향":"쉐이퍼 끔"));}catch(_){} }
+  try{toast(ps.length>1?(ps.length+"명 쉐이퍼 "+(on?"적용 — 볼을 봐요":"끔")):(on?"쉐이퍼 — 볼을 봐요 · 핸들이나 ↺↻ 로 돌리면 그 방향으로 고정":"쉐이퍼 끔"));}catch(_){} }
 function visWidth(delta){ var ps=selectedPlayers(false).filter(function(p){return !!p.vis;});if(!ps.length)return;pushUndo();ps.forEach(function(p){p.visW=Math.max(22,Math.min(88,(p.visW||52)+delta));});renderTokens();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){} }
 function toggleBlind(){ var ps=selectedPlayers(false).filter(function(p){return !!p.vis;});if(!ps.length)return;var on=!ps.every(function(p){return p.blind===true;});pushUndo();ps.forEach(function(p){p.blind=on;});renderTokens();updateDelUI();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){} }
 /* ══ 2.554 · 선택 바를 **천장에 가로로** ═══════════════════════════════════════
@@ -5934,21 +5964,25 @@ function _visBlindPattern(light){try{ var ex=svg.querySelector("#psBlindHatch");
 function _tokScaleOf(p){var _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor()*phoneTokFactor(p);}
 /* 2.233 — 작은 규격에서는 토큰도 줄인다(완전 비례는 너무 작아 (길이/105)^0.6: 초등 0.75 · 풋살 0.56) */
 function specTokFactor(){try{var sp=pitchSpec();return sp===PITCH_SPECS.fifa?1:Math.pow(sp.len/105,0.6);}catch(_){return 1;}}
-function _shaperBody(g,cx,cy,deg,s,col){
-  /* 2.597 — 토큰 앞에 작은 화살표 하나(사용자: "쉐이퍼 모양을 토큰 앞에 작은 화살표로"). 예전 손 두 개(±42° 원 둘)는 뗐다.
-     토큰 반지름 21·s 바깥 24·s~33·s 에 꼭짓점이 앞을 보는 삼각형, 밑변 반폭 ≈ 6·s. 팀 색 채움 + 토큰과 같은 흰 테두리. */
-  var R1=24*s, R2=33*s, w=15;
-  var a0=deg*Math.PI/180, a1=(deg+w)*Math.PI/180, a2=(deg-w)*Math.PI/180;
-  var d="M"+(cx+R2*Math.cos(a0)).toFixed(1)+" "+(cy+R2*Math.sin(a0)).toFixed(1)
-       +" L"+(cx+R1*Math.cos(a1)).toFixed(1)+" "+(cy+R1*Math.sin(a1)).toFixed(1)
-       +" L"+(cx+R1*Math.cos(a2)).toFixed(1)+" "+(cy+R1*Math.sin(a2)).toFixed(1)+" Z";
-  g.appendChild(el("path",{d:d,fill:col,stroke:"#ffffff","stroke-width":(1.6*s).toFixed(2),"stroke-linejoin":"round"}));
+/* 2.986 — 쉐이퍼 부리의 꼴(순수): 토큰 원(반지름 21·s)에 붙은 부리. 밑변은 원 위 ±34°, 꼭짓점은 원 밖으로 반지름만큼 넘게(작은 토큰에서도 10 단위 이상) */
+function _shaperGeom(cx,cy,deg,s){ var R=21*s,tip=Math.max(46*s,R+10),w=34,a0=deg*Math.PI/180,a1=(deg+w)*Math.PI/180,a2=(deg-w)*Math.PI/180;
+  return {R:R,tip:tip,pts:[[cx+tip*Math.cos(a0),cy+tip*Math.sin(a0)],[cx+R*Math.cos(a1),cy+R*Math.sin(a1)],[cx+R*Math.cos(a2),cy+R*Math.sin(a2)]]}; }
+function _shaperBody(g,cx,cy,deg,s,light,pid){
+  /* 2.597 은 토큰에서 떨어진 작은 삼각형(꼭짓점 33·s)이었다 — 기본 토큰 크기에서 3px 남짓이라 어느 쪽을 보는지 읽히지 않았다(사용자 «더 명확하게»).
+     2.986 — 토큰과 한 덩어리인 부리(물방울 꼴). 이 층은 토큰 아래라 원이 밑변을 덮어 원+부리가 한 실루엣이 된다.
+     부리는 **운동장과 반대되는 색 하나**로 꽉 채운다(어두운 운동장 = 흰색, 화이트 피치 = 짙은 남색) — 팀 색으로 채우면 남색 팀이 남색 운동장에서
+     가는 윤곽선만 남았다. 유니폼이 무슨 색이든 방향 표시는 늘 같은 색이라 한 번 익히면 어느 팀이든 같은 눈으로 읽는다. 가는 반대색 테두리는 실사 잔디의 밝은 줄 위에서도 가장자리가 서게 한다. */
+  var q=_shaperGeom(cx,cy,deg,s),P=q.pts;
+  var d="M"+P[0][0].toFixed(1)+" "+P[0][1].toFixed(1)+" L"+P[1][0].toFixed(1)+" "+P[1][1].toFixed(1)+" L"+P[2][0].toFixed(1)+" "+P[2][1].toFixed(1)+" Z";
+  g.appendChild(el("path",{d:d,fill:light?"#1b2434":"#ffffff",stroke:light?"rgba(255,255,255,.75)":"rgba(10,14,22,.5)","stroke-width":Math.max(1.1*s,.7).toFixed(2),"stroke-linejoin":"round","class":"ps-shaper","data-deg":(Math.round(deg*10)/10),"data-pid":(pid==null?"":pid)}));
 }
 /* ===== 쉐이퍼·시야 방향 — 핸들을 끌어서 돌리기 =====
    ↺↻ 버튼(15°씩)은 그대로 두고, 선택한 토큰의 방향 끝에 핸들을 띄워 마우스·손가락으로 바로 돌린다. */
 var _rotDrag=null;
-/* 1.688 — 장비(골대·사다리 등)도 쉐이퍼처럼 핸들로 돌린다(사용자). 선수는 dir, 장비는 rot. */
-function _rotTarget(){
+/* 1.688 — 장비(골대·사다리 등)도 쉐이퍼처럼 핸들로 돌린다(사용자). 선수는 dir, 장비는 rot.
+   ⚠ 2.986 — 이름을 _rotHandleTarget 으로 갈랐다. 2.982 가 같은 이름(_rotTarget — 운동장 방향의 목표)의 함수를 아래에 하나 더 선언해
+     나중 것이 이 함수를 덮었고(함수 선언은 끌어올려진다), 그때부터 핸들이 조용히 사라져 있었다(쉐이퍼·시야·장비 모두). */
+function _rotHandleTarget(){
   if(sel&&sel.type==="player"&&sel.ref&&!sel.ref.coach&&(sel.ref.vis||sel.ref.shaper||tokShape==="shaper"))return {p:sel.ref,k:"dir"};
   if(sel&&sel.type==="equip"&&sel.ref)return {p:sel.ref,k:"rot"};
   return null;
@@ -5963,11 +5997,11 @@ function _unitNoClamp(cx,cy){
 function _renderRotHandle(){
   if(!world)return;
   var old=world.querySelector("#rotHandle"); if(old)old.remove();
-  var _t=_rotTarget(); if(!_t)return;
+  var _t=_rotHandleTarget(); if(!_t)return;
   var p=_t.p;
   if(_t.k==="dir"){try{_ensureDir(p);}catch(_){}}
   var s=(typeof _tokScaleOf==="function")?_tokScaleOf(p):1;
-  var R=26*s+18, deg=p[_t.k]||0, rad=deg*Math.PI/180;
+  var R=26*s+18, deg=(_t.k==="dir")?_dirOf(p):(p[_t.k]||0), rad=deg*Math.PI/180;   /* 2.986 — 볼을 보는 쉐이퍼는 지금 보는 쪽에 핸들 */
   var hx=p.x+R*Math.cos(rad), hy=p.y+R*Math.sin(rad);
   var g=el("g",{id:"rotHandle"});
   g.appendChild(el("circle",{cx:p.x,cy:p.y,r:R.toFixed(1),fill:"none",stroke:"#ffd60a","stroke-width":1.1,"stroke-dasharray":"3 4",opacity:.5,"pointer-events":"none"}));
@@ -5978,7 +6012,7 @@ function _renderRotHandle(){
   world.appendChild(g);   /* tokenLayer 위 — 아래에 두면 토큰에 클릭이 묻힌다 */
 }
 function _rotDown(e){
-  var _t=_rotTarget(); if(!_t)return;
+  var _t=_rotHandleTarget(); if(!_t)return;
   e.stopPropagation(); e.preventDefault();
   try{pushUndo();}catch(_){}
   _rotDrag={p:_t.p,k:_t.k};
@@ -5994,6 +6028,7 @@ function _rotMove(e){
   var d=Math.atan2(u.y-p.y,u.x-p.x)*180/Math.PI;
   d=e.shiftKey?Math.round(d/45)*45:Math.round(d/5)*5;   /* 기본 5° 스냅(손떨림 제거) · Shift 는 45° */
   p[_rotDrag.k]=((d%360)+360)%360;
+  if(_rotDrag.k==="dir"){ p.dirFix=1; delete p.dirBall; }   /* 2.986 — 손으로 돌리면 그 방향으로 고정 */
   if(_rotDrag.k==="rot"){   /* 장비 — 토큰 변환만 즉시 갱신 */
     try{var _g=tokenLayer.querySelector('[data-id="'+p.id+'"]');if(_g){_g.setAttribute("transform",tokenTransform(p));if(window.PSBoardDepth)PSBoardDepth.update(_g,p);}}catch(_){}
   }else{renderVisionRAF();}
@@ -6009,6 +6044,7 @@ function _rotUp(){
 }
 function renderVision(){
   if(!world)return;
+  try{applyLookAt();}catch(_){}   /* 2.986 — 볼·대상을 끄는 동안에도 시선이 따라오게(이 함수만 다시 그리는 길이 있다) */
   try{_renderRotHandle();}catch(_){}   /* 맨 위 — 아래 early return(시야·쉐이퍼 없음) 때도 낡은 핸들이 지워지게 */
   var old=world.querySelector("#visionLayer"); if(old)old.remove();
   var gShaper=(tokShape==="shaper");
@@ -6020,7 +6056,7 @@ function renderVision(){
   var g=el("g",{id:"visionLayer"});
   state.players.forEach(function(p){ if(!p||p.coach)return; var sh=(p.shaper||gShaper); if(!p.vis&&!sh)return;
     var col=_tokDiscCol(p); var cx=p.x,cy=p.y;
-    var deg=(typeof p.dir==="number")?p.dir:(isRightTeam(p.team)?180:0), half=(p.visW||52), r=(p.visR||M2U(18)), ac=deg*Math.PI/180;
+    var deg=_dirOf(p), half=(p.visW||52), r=(p.visR||M2U(18)), ac=deg*Math.PI/180;   /* 2.986 — 쉐이퍼는 볼 쪽 */
     if(p.vis){
       // 사각지대(등 뒤) — 켰을 때만(빗금)
       if(p.blind===true){ var bHalf=Math.max(28,Math.min(66,180-half-26)); g.appendChild(el("path",{d:_visSector(cx,cy,deg+180,bHalf,r*0.52),fill:"url(#psBlindHatch)",stroke:blindStroke,"stroke-width":1,"stroke-dasharray":"4 4","stroke-linejoin":"round"})); }
@@ -6036,7 +6072,7 @@ function renderVision(){
       g.appendChild(el("path",{d:_visSector(cx,cy,deg,half,r),fill:"url(#"+gid+")",stroke:"none"}));
     }
     // 쉐이퍼 몸통(방향 토큰)
-    if(sh){ _shaperBody(g,cx,cy,deg,_tokScaleOf(p),col); }
+    if(sh){ _shaperBody(g,cx,cy,deg,_tokScaleOf(p),light,p.id); }
   });
   if(tokenLayer&&tokenLayer.parentNode===world){world.insertBefore(g,tokenLayer);}else{world.appendChild(g);}
 }
@@ -7472,7 +7508,10 @@ window.__setFieldMode=function(m){
 function _mir180Of(o){   /* 2.982 — 지금 판(state)과 장면 스냅 사본을 같은 식으로 뒤집는다 */
   if(!o)return;
   var f=function(pt){ if(pt&&typeof pt.x==="number"){pt.x=W-pt.x;} if(pt&&typeof pt.y==="number"){pt.y=H-pt.y;} };
-  (o.players||[]).forEach(function(p){ f(p); if(typeof p.dir==="number")p.dir=(p.dir+180)%360; });
+  (o.players||[]).forEach(function(p){ f(p); if(typeof p.dir==="number"){
+    /* 2.986 — 손대지 않은 방향(기본값)은 뒤집히면 «손으로 돌린 값»으로 읽힌다. 볼을 보던 토큰은 뒤집힌 뒤에도 볼을 보게 표식을 남긴다 */
+    if(!p.dirFix&&!p.lookAt&&p.dir===((p.team==="red"||p.team==="green"||p.team==="away")?180:0))p.dirBall=1;
+    p.dir=(p.dir+180)%360; } });
   (o.equipment||[]).forEach(function(e2){ f(e2); if(typeof e2.rot==="number")e2.rot=(e2.rot+180)%360; });
   if(o.ball)f(o.ball);
   (o.drawings||[]).forEach(function(d){ if(Array.isArray(d.pts))d.pts.forEach(f); });
@@ -14301,6 +14340,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
   if($("visNarrow"))$("visNarrow").onclick=()=>visWidth(-12);
   if($("visBlindBtn"))$("visBlindBtn").onclick=()=>toggleBlind();
   if($("shaperBtn"))$("shaperBtn").onclick=()=>toggleShaper();
+  if($("ballLookBtn"))$("ballLookBtn").onclick=()=>toggleBallLook();
   if($("labelVisBtn"))$("labelVisBtn").onclick=()=>{
     var ps=selectedPlayers(false);if(!ps.length)return;var hide=!ps.every(function(p){return !!p.hideLabel;});
     try{pushUndo();}catch(_){}
@@ -14817,7 +14857,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
   let _whAcc=0;
   svg.addEventListener("wheel",function(e){
     if(!sel||e.ctrlKey)return;
-    const rotatable=(sel.type==="equip")||(sel.type==="player"&&(sel.ref.vis||sel.ref.shaper));
+    const rotatable=(sel.type==="equip")||(sel.type==="player"&&!sel.ref.coach&&(sel.ref.vis||_shaperOn(sel.ref)));
     if(!rotatable)return;
     e.preventDefault();          /* 돌리는 중에 화면이 같이 스크롤되면 쓸 수 없다 */
     let dy=e.deltaY;
@@ -14825,7 +14865,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
     if(e.shiftKey){
       _whAcc+=dy; if(Math.abs(_whAcc)<40)return;
       const dir=_whAcc>0?1:-1; _whAcc=0;
-      const cur=(sel.type==="equip")?(sel.ref.rot||0):(sel.ref.dir||0);
+      const cur=(sel.type==="equip")?(sel.ref.rot||0):_dirOf(sel.ref);
       rotateSel(Math.round((cur+dir*45)/45)*45-cur);
       return;
     }
@@ -21066,8 +21106,8 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #dupSelBtn{order:9!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #delSelBtn{order:10!important;margin-left:auto!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textEditBtn,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textSizeCtl,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textColorCtl,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #textBgCtl{order:12!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){order:20!important}
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(.sel-more) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){display:none!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#ballLookBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){order:20!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(.sel-more) > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#ballLookBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){display:none!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___).sel-more > #selMoreBtn{background:var(--accent,#3A6DF0)!important;color:#fff!important;border-color:var(--accent,#3A6DF0)!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > #alignBar{order:30!important;flex:0 0 100%!important;width:100%!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > button,html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___) > .sizebox{min-height:30px!important;height:30px!important;font-size:11px!important;padding:0 9px!important;border-radius:9px!important}
@@ -21123,7 +21163,7 @@ body.cmd-dock-folded.ps-dock #animBar,body.cmd-dock-folded.ps-dock .anim-bar{dis
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #delSelBtn{flex:1 1 calc(50% - 4px)!important;width:auto!important;min-width:calc(50% - 4px)!important;max-width:calc(50% - 4px)!important;margin-left:0!important;gap:6px!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____) > #delSelBtn{background:rgba(226,75,74,.12)!important;border-color:rgba(226,75,74,.22)!important;color:#FF7B73!important}
   /* ⋯ 펼친 줄(사진·시야·잔상·시선·쉐이퍼·GK·대칭·회전)도 같은 결 */
-  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}
+  html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > :is(#gkBtn,#photoBtn,#photoDelBtn,#visBtn,#trailBtn,#lookBtn,#visCtl,#visBlindBtn,#shaperBtn,#ballLookBtn,#mirHBtn,#mirVBtn,#frontSelBtn,#rotCtl,#ballStyleBtn){flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}
   html body.ps-dock .sel-ctl:not(#_):not(#__):not(#___):not(#____).sel-more > #selMoreBtn{background:#EDEFF3!important;color:#14171c!important;border-color:#EDEFF3!important}
 }
 </style>
