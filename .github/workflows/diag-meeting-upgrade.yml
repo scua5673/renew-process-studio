@@ -39,3 +39,26 @@ jobs:
           done
           echo "RESULT engine=${{ matrix.engine }} shard=${{ matrix.shard }} pass=$pass fail=$fail"
           test "$fail" -eq 0
+
+  board:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      options: --user 1001
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Board group once
+        env:
+          PS_BROWSER_ENGINE: ${{ matrix.engine }}
+          PS_TEST_GROUP: board
+        run: npm run test:browser
