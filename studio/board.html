@@ -10519,6 +10519,16 @@ function psVaultUnlocked(){
 }
 function psVaultLockedError(){ var e=new Error("보관함은 로그인한 뒤 열 수 있습니다");e.name="PSVaultLockedError";e.psVaultLocked=true;return e; }
 function libWrite(lib){if(!psVaultUnlocked())return Promise.reject(psVaultLockedError());return Promise.resolve().then(function(){if(!psVaultUnlocked())throw psVaultLockedError();return store.set(LIB_KEY,lib);});}
+/* 2.991 — 보관함은 목록 한 덩어리(cs_drill_lib_v1)라 «읽고-고치고-쓰기» 둘이 겹치면 늦게 쓰는 쪽이 먼저 쓴 쪽을 지운다.
+   실측(리눅스 CI 웹킷 45회 중 3회): 미팅 자동 저장이 새 내용을 쓴 1~27ms 뒤, 그보다 먼저 목록을 읽어 둔 썸네일 채우기(vxThumbOf)가
+   옛 목록을 통째로 되써 자동 저장이 사라졌다 — 상태 줄은 «이 기기에 저장됨 ✓», 동기화·저장소 경고는 없었다.
+   이 보드 안의 읽고-쓰기는 libTurn 으로 한 줄로 세운다: task 는 libGet 부터 libSet 이 끝날 때까지를 담은 Promise 를 돌려준다.
+   앞 차례의 쓰기가 끝난 뒤에 읽으므로 서로 지우지 않는다. (셸의 동기화는 원문 비교 저장(replaceIfValue)이라 따로 안전하다) */
+var _libTurnTail=Promise.resolve();
+function libTurn(task){var run=_libTurnTail.then(function(){return task();});_libTurnTail=run.then(function(){},function(){});return run;}
+/* 그린 목록을 보고 정리할 것을 찾은 자동 정리(작성자 채우기·폴더 경로·유령 폴더 등)는, 그린 목록이 아니라 자기 차례에 새로 읽은
+   목록에 같은 정리를 다시 적용해 쓴다. fix 가 참(바뀐 것 있음)을 돌려줄 때만 쓴다. */
+function libFix(fix){return libTurn(function(){return libGet().then(function(lib){if(!fix(lib))return false;return libWrite(lib).then(function(){libTouch();return true;});});});}
 function psVaultOpenLogin(){
   try{var b=window.parent&&window.parent.document&&window.parent.document.querySelector("#psAcctWrap .acct-btn");if(b){b.click();return true;}}catch(_){}
   try{if(window.parent===window)location.href="app.html";}catch(_){}
@@ -10611,12 +10621,13 @@ function maybeBackfillCreators(){
       /* 서버에서 받아 둔 남의 공유본은 작성자가 비어 있어도 팀 소유자의 자료가
          아니다. _teamOwner/_teamSource를 무시하고 채우면 다음 동기화가 남의
          lib_id를 내 비공개 백업으로 올리려 한다. */
-      (lib||[]).forEach(function(it){
+      function fill(list){ var n=0; (list||[]).forEach(function(it){
         if(it&&!it.createdBy&&!it._teamOwner&&it._teamSource!=='team'&&!(it._teamSharedAt&&it._teamSource!=='mine')){   /* 1.862 — 주인 미상인 공유본은 채우지 않는다 */
-          it.createdBy=me.uid; it.createdByEmail=me.email||""; if(nm)it.createdByName=nm; changed=true;
+          it.createdBy=me.uid; it.createdByEmail=me.email||""; if(nm)it.createdByName=nm; n++;
         }
-      });
-      if(changed){ libWrite(lib).then(function(){ libTouch(); try{renderDrillFiles();}catch(_){} }).catch(function(){}); }
+      }); return n; }
+      changed=fill(lib)>0;
+      if(changed){ libFix(fill).then(function(w){ if(w)try{renderDrillFiles();}catch(_){} }).catch(function(){}); }   /* 2.991 — 새로 읽은 목록에(libFix) */
     });
   }catch(_){}
 }
@@ -16704,11 +16715,14 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     _o=_o||{};
     /* 2.907 — 작업 보드에서는 _vaultAutoStatus 줄이 없어 실패가 말없이 사라졌다. 오류가 있을 때만 알린다(로그인 안내·권한 안내는 각자 말한다). */
     function failToast(){if(!_o.silent&&!window.__vaultEdit)try{toast("보관함에 저장하지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){}}
-    function failed(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");if(e)failToast();if(_o.onerror)_o.onerror(e);}
-    if(!psVaultRequireLogin()){failed();return Promise.resolve(false);}
+    /* 2.991 — final: 다시 해도 안 되는 실패(로그인 없음·남의 항목). 자동 저장은 이때 다시 시도하지 않는다 */
+    function failed(e,final){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");if(e)failToast();if(_o.onerror)_o.onerror(e,!!final);}
+    /* 2.991 — 저장하지 않고 끝나는 길도 부른 쪽에 알린다. 자동 저장이 «저장 중» 잠금을 쥔 채 남지 않게 */
+    function skipped(){if(_o.onskip)try{_o.onskip();}catch(_){}}
+    if(!psVaultRequireLogin()){failed(null,true);return Promise.resolve(false);}
     if(window.__vaultReadOnly){
       if(!_o.silent)try{toast("보기 전용입니다 — 편집하려면 보관함에서 ‘편집’ 또는 ‘복사’를 선택하세요");}catch(_){}
-      return;
+      skipped();return;
     }
     /* 수동 저장·flush는 보간 화면이 아니라 재생 전 편집 화면을 저장한다.
        자동 저장은 아래 _vaultAutoRun에서 재생 종료까지 기다리므로 사용 중 재생을 끊지 않는다. */
@@ -16721,7 +16735,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(type==="meeting"){
       try{ if(window.__meetSyncCur&&document.body.classList.contains("meet-mode"))window.__meetSyncCur({thumb:true}); else if(window.__meet){var mi=window.__meet.idx(); if(mi>=0&&anim.slides[mi]){anim.slides[mi].snap=captureSnap();try{anim.slides[mi].thumb=boardThumbSVG();}catch(_){}}} }catch(_){}   /* 2.935 */
       try{ slides=JSON.parse(JSON.stringify(anim.slides||[])); }catch(_){ slides=[]; }
-      if(!slides.length){ try{toast("저장할 슬라이드가 없어요 — 슬라이드를 추가하세요");}catch(_){} return; }
+      if(!slides.length){ try{toast("저장할 슬라이드가 없어요 — 슬라이드를 추가하세요");}catch(_){} skipped(); return; }
       try{ var _t0=(anim.slides[0]&&anim.slides[0].title)||""; if(_t0)def=_t0; }catch(_){}
     }
     var pend=window.__vaultPending||{};
@@ -16777,16 +16791,17 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var pages=null; if(type!=="meeting"){ try{ pages=window.__psPages&&window.__psPages.forSave(); }catch(e){failed(e);return;} }   /* 작전판 멀티 페이지 저장 — 여러 페이지를 한 항목에 함께 */
     if(pages&&(pages.length>1||window.__vaultBook)){ try{ snap=pages[0].snap||snap; if(pages[0].thumb)thumb=pages[0].thumb; }catch(_){} }   /* 대표 스냅·썸네일은 첫 페이지 */
     if(window.__vaultBook&&pages&&pages[0]){ try{ frames=_animToFrames(pages[0].anim); }catch(_){ frames=null; } }   /* 2.985 — 패턴북의 대표 장면 = 첫 시퀀스(옛 판·미리보기 ▶ 가 이것을 읽는다) */
-    libGet().then(function(lib){
+    /* 2.991 — 읽고-쓰기를 libTurn 한 차례로: 썸네일 채우기 등 다른 쓰기가 이 저장을 옛 목록으로 덮지 못하게(위 libTurn 주석) */
+    libTurn(function(){return libGet().then(function(lib){
       var idx=-1; if(curId){for(var _k=0;_k<lib.length;_k++){if(lib[_k].libId===curId){idx=_k;break;}}}
       if(idx>=0 && !canEditItem(lib[idx])){
         if(!_o.silent)try{toast("만든 사람만 저장할 수 있어요 — 보관함의 ‘복사’를 사용하세요");}catch(_){}
-        failed();return;
+        failed(null,true);return;
       }   /* 팀: 남의 항목은 자동 저장·자동 복사 모두 금지. 복사는 사용자가 보관함에서 명시적으로 선택 */
       if(idx>=0){
         lib[idx].thumb=thumb; lib[idx].snap=snap; if(slides)lib[idx].slides=slides; if(frames)lib[idx].frames=frames; else delete lib[idx].frames; if(pages)lib[idx].pages=pages; else delete lib[idx].pages; lib[idx].savedAt=Date.now();
         var _upName=lib[idx].name||"";
-        libSet(lib).then(function(){if(!_o.silent){try{toast(onBoard&&_upName?("보관함 ‘"+_upName+"’에 덮어썼어요 ✓"):(pages?("저장됨 ✓ · "+(window.__vaultBook?"시퀀스 ":"페이지 ")+pages.length+"개"):(frames?("저장됨 ✓ · 애니메이션 "+frames.length+"장면"):"저장됨 ✓")));}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
+        return libSet(lib).then(function(){if(!_o.silent){try{toast(onBoard&&_upName?("보관함 ‘"+_upName+"’에 덮어썼어요 ✓"):(pages?("저장됨 ✓ · "+(window.__vaultBook?"시퀀스 ":"페이지 ")+pages.length+"개"):(frames?("저장됨 ✓ · 애니메이션 "+frames.length+"장면"):"저장됨 ✓")));}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
           function(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");failToast();if(_o.onerror)try{_o.onerror(e);}catch(_){}});
       } else {
         var name=(pend.name||def);
@@ -16798,14 +16813,17 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         if(pend.book)item.book=1;   /* 2.985 */
         stampCreator(item);
         lib.unshift(item); window.__curVaultId=item.libId; window.__vaultPending=null;
-        libSet(lib).then(function(){if(!_o.silent){try{toast(onBoard?("보관함에 저장됨 ✓ · ‘"+item.name+"’"):"보관함에 저장됨 ✓");}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
+        return libSet(lib).then(function(){if(!_o.silent){try{toast(onBoard?("보관함에 저장됨 ✓ · ‘"+item.name+"’"):"보관함에 저장됨 ✓");}catch(_){}try{renderDrillFiles();}catch(_){}}if(_o.after)try{_o.after();}catch(_){}},
           function(e){_vaultAutoWriting=false;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");failToast();if(_o.onerror)try{_o.onerror(e);}catch(_){}});
       }
-    }).catch(failed);
+    });}).catch(failed);
   }
   try{window.__vaultSave=vaultSaveCurrent;}catch(_){}
   /* 보드는 명시적 저장만 허용한다. 미팅 등 다른 편집기의 자동 저장은 유지한다. */
   var _vaultAutoT=null,_vaultAutoWriting=false,_vaultAutoAgain=false;
+  /* 2.991 — 자동 저장이 실패하면 사람이 다시 손대기 전까지 영영 저장되지 않았다(«저장 실패 — 다시 시도해 주세요»만 남음).
+     조금씩 간격을 늘려 세 번까지 스스로 다시 시도한다. 다시 해도 안 되는 실패(로그인 없음·남의 항목)는 시도하지 않는다. */
+  var VAULT_AUTO_RETRY_MS=[1500,4000,10000],_vaultAutoTries=0;
   function _vaultAutoStatus(txt){try{var s=$id("vCreateSub");if(s&&window.__vaultEdit&&!window.__vaultReadOnly&&window.__curVaultId)s.textContent="· "+txt;}catch(_){}}
   function _vaultEmergencySnapshot(){
     if(curType()==="board")return false;
@@ -16863,7 +16881,23 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     window.__vltColorT0=0;
     if(_vaultAutoWriting){_vaultAutoAgain=true;return;}
     _vaultAutoWriting=true;_vaultAutoAgain=false;_vaultAutoStatus("저장 중…");
-    vaultSaveCurrent({skipSheet:true,silent:true,after:function(){_vaultAutoWriting=false;_vaultAutoStatus("이 기기에 저장됨 ✓");if(_vaultAutoAgain){_vaultAutoAgain=false;window.__vaultAutoSaveSchedule();}}});
+    /* 2.991 — 어느 길로 끝나든(저장됨·실패·저장 안 함·던짐) 잠금은 꼭 한 번 푼다. 예전엔 보기 전용·빈 슬라이드에서 return 만 해
+       _vaultAutoWriting 이 true 로 남았고, 그 뒤 모든 자동 저장이 «다음에 다시»(_vaultAutoAgain)로만 쌓였다. */
+    var _settled=false;function settle(){if(_settled)return false;_settled=true;_vaultAutoWriting=false;return true;}
+    function again(){if(_vaultAutoAgain){_vaultAutoAgain=false;window.__vaultAutoSaveSchedule();}}
+    try{
+      vaultSaveCurrent({skipSheet:true,silent:true,
+        after:function(){if(!settle())return;_vaultAutoTries=0;_vaultAutoStatus("이 기기에 저장됨 ✓");again();},
+        onerror:function(e,final){if(!settle())return;_vaultAutoRetry(final);},
+        onskip:function(){if(!settle())return;_vaultAutoTries=0;again();}});
+    }catch(_e){if(settle())_vaultAutoRetry(false);}
+  }
+  function _vaultAutoRetry(final){
+    _vaultAutoAgain=false;
+    if(final||_vaultAutoTries>=VAULT_AUTO_RETRY_MS.length){_vaultAutoTries=0;_vaultAutoStatus("저장 실패 — 다시 시도해 주세요");return;}
+    var wait=VAULT_AUTO_RETRY_MS[_vaultAutoTries++];
+    _vaultAutoStatus("저장 실패 — 잠시 뒤 다시 저장해요");
+    try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=setTimeout(_vaultAutoRun,wait);
   }
   /* 2.975 — «저장»(나가지 않고) 뒤에 늦게 도는 기록·키 떼기가 «변경 있음»을 다시 켜, 나갈 때 «버리고 나갈까요?»가 뜨던 것.
      저장한 그 모습(판·장면)을 지문으로 들고 있다가, 정말 달라졌을 때만 «변경 있음». 처음 달라지면 지문은 버린다(그 뒤는 예전처럼). */
@@ -16877,7 +16911,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     _vaultAutoStatus("저장 준비 중…");try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=setTimeout(_vaultAutoRun,850);
   };
   window.__vaultAutoSaveCancel=function(){
-    try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=null;_vaultAutoAgain=false;
+    try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=null;_vaultAutoAgain=false;_vaultAutoTries=0;
   };
   window.__vaultAutoSaveFlush=function(){
     if(curType()==="board"){window.__vaultAutoSaveCancel();return;}
@@ -17602,7 +17636,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if((_vaultAutoWriting||_meetLibBusy)&&_n<50)return new Promise(function(r){setTimeout(r,120);}).then(function(){return meetLibMutate(fn,_n+1);});
     _meetLibBusy=true;_vaultAutoWriting=true;
     function fin(){_meetLibBusy=false;_vaultAutoWriting=false;if(_vaultAutoAgain){_vaultAutoAgain=false;try{window.__vaultAutoSaveSchedule();}catch(_){}}}
-    return libGet().then(function(lib){ var r=fn(lib)||{}; if(r.write===false)return r; return libSet(lib).then(function(){return r;}); })
+    return libTurn(function(){return libGet().then(function(lib){ var r=fn(lib)||{}; if(r.write===false)return r; return libSet(lib).then(function(){return r;}); });})   /* 2.991 — 보관함 읽고-쓰기 차례(libTurn) */
       .then(function(r){fin();return r;},function(e){fin();throw e;});
   }
   function meetSetMatch(libId,ref){
@@ -18135,6 +18169,20 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
      팀에서 받은 자료는 thumb 이 없어 '미리보기 없음'이 떴다. 배치 정보(snap)는 그대로 있으므로
      그때그때 다시 그려서 보여주고, 한 번 그린 건 항목에 남겨 다음부터는 즉시 뜨게 한다. */
   var _vxThumbTried={};
+  /* 2.991 — 다시 그린 썸네일을 보관함에 남기는 쓰기. 예전엔 항목마다 libGet→libSet 을 따로 돌려 (1) 목록 전체를 항목 수만큼 썼고
+     (2) 그 사이에 끝난 자동 저장을 옛 목록으로 덮었다(CI 웹킷 실측 — libTurn 주석). 이제 한 화면에서 그린 것을 모아
+     한 차례(libTurn)에 쓴다. 그 차례에 새로 읽은 목록에서, 아직 썸네일이 없는 항목에만 넣는다. */
+  var _vxThumbPend=null;
+  function vxThumbKeep(libId,svg){
+    if(_vxThumbPend){_vxThumbPend[libId]=svg;return;}
+    _vxThumbPend={};_vxThumbPend[libId]=svg;
+    setTimeout(function(){var pend=_vxThumbPend;_vxThumbPend=null;
+      libTurn(function(){return libGet().then(function(lib){var n=0;
+        (lib||[]).forEach(function(x){if(x&&!x.thumb&&Object.prototype.hasOwnProperty.call(pend,x.libId)){x.thumb=pend[x.libId];n++;}});
+        if(n)return libSet(lib);
+      });}).catch(function(){});
+    },300);
+  }
   function vxThumbOf(d){
     if(!d)return "";
     if(d.thumb)return thumbView(d);   /* 2.643 — 옛 썸네일도 내용 범위로 */
@@ -18148,10 +18196,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(svg){
       d.thumb=svg;
       /* 다시 그리는 값은 보관함에도 남긴다 — 매번 판을 갈아끼우며 그리지 않도록 */
-      try{ libGet().then(function(lib){
-        var it=(lib||[]).find(function(x){return x&&x.libId===d.libId;});
-        if(it&&!it.thumb){ it.thumb=svg; libSet(lib); }
-      }); }catch(_){}
+      try{ vxThumbKeep(d.libId,svg); }catch(_){}
     }
     return svg;
   }
@@ -18415,7 +18460,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
             var _F="팀 공유";
             addFolder(_F); setFolderMeta(_F,"shared",true);
             _old.forEach(function(d){ d.folder=_F; });
-            libSet(lib);
+            libFix(function(l){ var n=0; l.forEach(function(d){ if(d&&d._teamSharedAt&&!isFolderShared(d.folder)){ d.folder=_F; n++; } }); return n; }).catch(function(){});   /* 2.991 — 새로 읽은 목록에(libFix) */
             try{ toast("기존 공유 자료 "+_old.length+"개를 「팀 공유」 폴더로 모았어요"); }catch(_){}
           }
         }
@@ -18425,7 +18470,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
          바뀐 게 있을 때만 쓰므로 한 번 정리되면 다음부터는 아무 일도 하지 않는다. 폴더 정보도 여기서 다시 읽는다
          (예전엔 앱을 열 때 한 번만 읽어, 다른 기기가 켠 공유를 이 기기 화면이 몰랐다) */
       try{
-        if(folderLibNorm(lib,Date.now(),itemMine))libSet(lib);
+        if(folderLibNorm(lib,Date.now(),itemMine))libFix(function(l){ return folderLibNorm(l,Date.now(),itemMine); }).catch(function(){});   /* 2.991 — 새로 읽은 목록에(libFix) */
         var _nl=folderListNorm(vaultFolders);
         if(vaultFoldersReady&&JSON.stringify(_nl)!==JSON.stringify(vaultFolders)){vaultFolders=_nl;try{saveVaultFolders();}catch(_){}}
         folderSettingsNorm();
@@ -18440,7 +18485,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         var _ghost=lib.filter(function(d){ return String(d.folder||"").indexOf("__")===0; });
         if(_ghost.length){
           _ghost.forEach(function(d){ d.folder=""; });
-          libSet(lib);
+          libFix(function(l){ var n=0; l.forEach(function(d){ if(d&&String(d.folder||"").indexOf("__")===0){ d.folder=""; n++; } }); return n; }).catch(function(){});   /* 2.991 — 새로 읽은 목록에(libFix) */
           try{toast("폴더가 아닌 자리에 있던 자료 "+_ghost.length+"개를 미분류로 옮겼어요");}catch(_){}
         }
         var _gf=vaultFolders.filter(function(p){ return String(p||"").indexOf("__")===0; });
@@ -18600,7 +18645,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       stampCreator(it);lib.unshift(it);
       libSet(lib).then(function(){
         renderDrillFiles();openItem(it,false);
-        setTimeout(function(){try{var th=boardThumbSVG();libGet().then(function(l2){var f2=null;l2.forEach(function(x){if(x.libId===it.libId)f2=x;});if(f2){f2.thumb=th;libSet(l2).then(function(){renderDrillFiles();});}});}catch(_){}},700);
+        setTimeout(function(){try{var th=boardThumbSVG();libTurn(function(){return libGet().then(function(l2){var f2=null;l2.forEach(function(x){if(x.libId===it.libId)f2=x;});if(f2){f2.thumb=th;return libSet(l2).then(function(){renderDrillFiles();});}});}).catch(function(){});}catch(_){}},700);   /* 2.991 — 열린 항목의 자동 저장과 겹치지 않게(libTurn) */
       });
     });
   }
@@ -19069,7 +19114,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function deskCss(land){return 'html{background:#E6E9ED;min-height:100%}body{width:'+(land?'297':'210')+'mm!important;padding:0!important;margin-left:auto!important;margin-right:auto!important;background:transparent!important}'
     +'.mp-page{width:'+(land?'297':'210')+'mm!important;height:'+(land?'210':'297')+'mm!important;padding:6mm;margin:0!important;border-bottom:0!important;background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.08),0 12px 32px rgba(16,24,40,.16);border-radius:2px}'
     +'.mp-line.title,.mp-line.point,.mp-brand{cursor:text;border-radius:3px}.mp-line.title:hover,.mp-line.point:hover,.mp-brand:hover{background:#EDF2FE}.mp-pitch{cursor:pointer}';}
+  /* 2.991 — srcdoc 를 갈아 끼우는 사이에 resize 가 오면 문서가 아직 비어 있다(documentElement·body 가 null — CI 크로미움에서 pageerror).
+     그때는 다음 프레임에 다시 잰다(새 문서의 load 도 fit 을 부르므로 몇 번만). */
+  var fitWait=0;
   function fit(){if(!frame||!frame.contentDocument)return;var doc=frame.contentDocument;
+    if(!doc.documentElement||!doc.body){if(fitWait<10){fitWait++;requestAnimationFrame(fit);}return;}fitWait=0;
     var land=meetingPdfOrientation(anim.slides)==='landscape',pw=land?1123:794,ph=land?794:1123;
     var W=doc.documentElement.clientWidth||frame.clientWidth,H=frame.clientHeight||doc.documentElement.clientHeight,G=W<520?16:48;   /* 폰은 여백을 줄여 종이를 크게 */
     var z=Math.min(1,Math.max(.1,(W-G)/pw),Math.max(.1,(H-G)/ph));
