@@ -111,7 +111,8 @@ test('every folder action in the vault goes through the 2.967 rules',()=>{
   assert.equal((share.match(/it\.editedAt=Date\.now\(\)/g)||[]).length,2);
   assert.match(slice('  function setFolderMeta(','\n'),/folderSettingsLoad\(\)/);
   assert.match(slice('  function setFolderTags(','\n'),/folderSettingsLoad\(\)/);
-  assert.match(source,/if\(folderLibNorm\(lib,Date\.now\(\),itemMine\)\)libSet\(lib\);/);
+  /* 2.991 — 쓰기는 그린 목록이 아니라 자기 차례(libFix)에 새로 읽은 목록에 같은 정리를 다시 적용한다 */
+  assert.match(source,/if\(folderLibNorm\(lib,Date\.now\(\),itemMine\)\)libFix\(function\(l\)\{ return folderLibNorm\(l,Date\.now\(\),itemMine\); \}\)/);
   /* 렌더 서명에 폴더 목록·정보·태그 — 빈 폴더 만들기·지우기·☁ 가 화면에 바로 보이게 */
   assert.match(source,/window\.__vaultView\|\|"",vaultFolders,folderMeta,folderTags,/);
   assert.doesNotMatch(source,/_renameFolder\(full,\(parent\?parent\+"\/":""\)\+nn\.trim\(\)\)/);
