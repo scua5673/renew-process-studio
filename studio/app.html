@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.980"></script>
+<script src="autosave-status.js?v=2.981"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -178,6 +178,29 @@
   body.vfull .frames{margin-bottom:0;}
   .frames{flex:1 1 auto;position:relative;min-height:0;}
   .frames iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:var(--bg);}
+  /* ══ 2.981 · 빈 화면 대신 뼈대(디자인 판정 06·08) ══
+     앱을 열자마자 다른 화면을 누르면 그 프레임은 아직 문서를 읽는 중이라 몇 초 동안 빈 면이었다.
+     읽는 동안 제목 한 줄 + 카드 넷의 자리를 먼저 보인다. 문서가 뜨면 걷는다(showApp 의 psFrameSkel).
+     ⚠ ::after 는 «미팅 여는 중…»(ps-me-wait)이 쓴다 — 여기는 ::before. */
+  body.ps-frame-wait .frames::before{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;
+    --sk:#E3E6EA;--skc:#FFFFFF;
+    background:
+      linear-gradient(var(--sk),var(--sk)) 24px 24px/168px 20px no-repeat,
+      linear-gradient(var(--skc),var(--skc)) 24px 64px/calc(62% - 36px) 196px no-repeat,
+      linear-gradient(var(--skc),var(--skc)) calc(100% - 24px) 64px/calc(38% - 24px) 196px no-repeat,
+      linear-gradient(var(--skc),var(--skc)) 24px 276px/calc(100% - 48px) 168px no-repeat,
+      linear-gradient(var(--skc),var(--skc)) 24px 460px/calc(100% - 48px) 240px no-repeat,
+      var(--bg,#F4F5F7);
+    animation:psSkel 1s ease-in-out infinite alternate}
+  body.fmdark.ps-frame-wait .frames::before{--sk:#2E333A;--skc:#1B1E23;background-color:#121417}
+  @keyframes psSkel{from{opacity:1}to{opacity:.7}}
+  @media (max-width:600px){ body.ps-frame-wait .frames::before{background:
+      linear-gradient(var(--sk),var(--sk)) 16px 20px/120px 20px no-repeat,
+      linear-gradient(var(--skc),var(--skc)) 16px 56px/calc(100% - 32px) 168px no-repeat,
+      linear-gradient(var(--skc),var(--skc)) 16px 236px/calc(100% - 32px) 120px no-repeat,
+      linear-gradient(var(--skc),var(--skc)) 16px 368px/calc(100% - 32px) 200px no-repeat,
+      var(--bg,#F4F5F7)} }
+  @media (prefers-reduced-motion:reduce){ body.ps-frame-wait .frames::before{animation:none} }
 /* 프레임은 6개 모두 전체폭 — 제목 띠가 화면 끝까지 닿고 제목 x가 20px로 일치해야 함(프레임을 1100으로 줄이면 팀·IDP·노트만 90px 밀림).
    폭 제한이 필요하면 프레임이 아니라 띠 아래 '내용'에만 건다. */
   .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:var(--fs-title);font-weight:var(--fw-body);}
@@ -482,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.980';</script>
+<script>window.PS_BUILD='2.981';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -681,6 +704,8 @@ function psAutoReloadWhenSafe(manualOnly){
       return Promise.resolve(psFlushAllPendingReady(track)).then(function(){
         // A timed-out attempt or changed owner must never reload later.
         if(!active||psReloadWorkspaceBusy()||psReloadWorkspaceSeal()!==seal)return false;
+        /* 2.981 — 보던 화면을 이 탭에 적어 둔다(다시 열린 뒤 psResumeScreen 이 한 번 읽고 지운다) */
+        try{sessionStorage.setItem('ps_resume_screen',JSON.stringify({app:document.body.getAttribute('data-ps-app')||'',team:(window.__psTeamSection?String(window.__psTeamSection()||''):''),at:Date.now()}));}catch(_){}
         active=false;clearTimeout(timer);location.reload();return true;
       });
     }
@@ -1966,6 +1991,7 @@ function psShowUpdBand(){
         loading.classList.add('ps-boot-done');
         setTimeout(function(){loading.style.display='none';},160);
       }catch(_){}
+      try{ psResumeScreen(); }catch(_){}   /* 2.981 — 새 판으로 다시 열린 것이면 보던 화면으로 */
       /* 2.732 — 지난 핀은 보드의 sync 판정으로 복원한다. 폰 도크·낮은 가로 폰·?layout=mobile 에서
          데스크톱 핀 기억이 팝오버를 저절로 열지 않게 bsPinnedMode()를 우회하지 않는다. */
       try{ if(localStorage.getItem('ps_board_settings_pinned_v1')==='1'&&(window.innerWidth||0)>=768){
@@ -2268,6 +2294,39 @@ function psShowUpdBand(){
     try{ psGuestOpenSync(); }catch(_){}
     /* sync.js 가 잠금을 다시 그릴 때(로그아웃·세션 만료) 클래스가 살아 있어야 한다 */
     try{ window.addEventListener('ps-auth-state',function(){ try{ psGuestOpenSync(); }catch(_){} }); }catch(_){}
+    /* ══ 2.981 · 프레임 뼈대 — 보여 줄 프레임이 아직 문서를 다 읽지 못했을 때만, 읽기가 끝나면 걷는다 ══
+       준비 판정은 sendTeamView(2.174)와 같은 것을 쓴다: 막 만든 프레임의 about:blank 는 준비된 것이 아니다.
+       ⚠ 140ms 안에 뜨는 프레임에는 뼈대를 깔지 않는다(빈 면이 번쩍이는 대신 뼈대가 번쩍이면 같은 병이다).
+       ⚠ 8초 안전망 — 문서가 끝내 안 뜨면 뼈대를 걷어 그 화면의 오류·잠금 안내가 보이게 한다. */
+    var _skelT=0,_skelShowT=0,_skelFr=null;
+    function psFrameSkelOff(){ clearTimeout(_skelT); clearTimeout(_skelShowT); _skelFr=null; try{ document.body.classList.remove('ps-frame-wait'); }catch(_){} }
+    function psFrameReady(fr){ try{ return (fr.__psReady!==false)&&!!fr.contentDocument&&fr.contentDocument.readyState==='complete'&&!/^about:blank/.test(String(fr.contentWindow.location.href||'')); }catch(_){ return false; } }
+    function psFrameSkel(fr){
+      psFrameSkelOff();
+      if(!fr||psFrameReady(fr))return;
+      _skelFr=fr;
+      _skelShowT=setTimeout(function(){ if(_skelFr===fr&&!psFrameReady(fr))document.body.classList.add('ps-frame-wait'); },140);
+      fr.addEventListener('load',function(){ if(_skelFr!==fr)return; setTimeout(function(){ if(_skelFr===fr)psFrameSkelOff(); },fr===fScout?260:120); },{once:true});
+      _skelT=setTimeout(function(){ if(_skelFr===fr)psFrameSkelOff(); },8000);
+    }
+    /* ══ 2.981 · 새 판으로 다시 열려도 보던 화면으로 ══
+       새 판이 준비되면 앱이 «안전한 때» 스스로 다시 연다(2.388). 그런데 다시 열리면 늘 작전판이라,
+       막 «팀 운영»을 누른 사람은 화면이 도로 처음으로 돌아갔다(디자인 판정 06 «첫 클릭이 먹지 않는다 · 준비 화면이 다시 떴다»).
+       다시 열기 직전에 보던 화면(앱 · 팀 탭)을 이 탭에만 적어 두고(sessionStorage), 부팅이 끝나면 그 문을 한 번 연다.
+       ⚠ 사람이 직접 새로고침하거나 로고를 누른 것은 적지 않는다 — 그건 «처음 화면으로»다(2.205).
+       ⚠ 부팅이 이미 다른 화면을 골랐으면(선수 전용 · ?mode=player) 끼어들지 않는다. 2분이 지난 기록은 버린다. */
+    function psResumeScreen(){
+      var raw=null; try{ raw=sessionStorage.getItem('ps_resume_screen'); sessionStorage.removeItem('ps_resume_screen'); }catch(_){}
+      if(!raw)return false; var r=null; try{ r=JSON.parse(raw); }catch(_){ return false; }
+      if(!r||!(Date.now()-Number(r.at||0)<120000))return false;
+      if(document.body.getAttribute('data-ps-app')!=='board')return false;
+      if(r.team){ var tb=teamKeyBtn(String(r.team)); if(!tb)return false; openTeamButton(tb); return true; }
+      var app={design:'design',note:'design',memo:'design',analysis:'design',gamemodel:'design',print:'design',idp:'idp',learning:'learning',community:'community'}[String(r.app||'')];
+      if(!app)return false;
+      var sb=app==='design'?seg.querySelector('button[data-train]'):seg.querySelector('button[data-app="'+app+'"]:not([data-team-hub])');
+      if(!sb)return false; sb.click(); return true;
+    }
+    window.__psResumeScreen=psResumeScreen;
     function showApp(app){
       /* 2.966 — 경기 준비 안 편집(ps-match-edit)은 그 문(psMatchEditEnter)으로 들어올 때만 산다. 다른 곳으로 가면 내려놓고 편집기에 알린다 */
       if(!window.__psMatchEditing&&document.body.classList.contains('ps-match-edit')){
@@ -2296,7 +2355,8 @@ function psShowUpdBand(){
          이제 넓으면 idp.html 이 두 칸(오늘 적는 것 | 이번 주·팀)으로 편다. 진짜 폰은 원래부터 액자가 없었다(ps-real-phone).
          ⚠ 클래스·CSS 는 남긴다(?layout=mobile 미리보기의 force-phone 과 한 벌) — 여기서 더 켜지 않을 뿐이다. */
       document.body.classList.remove('ps-idp-phone');
-      ensureAppFrame(app);
+      var _skFrame=ensureAppFrame(app);
+      try{ psFrameSkel(_skFrame); }catch(_){}   /* 2.981 — 문서를 아직 읽는 프레임이면 빈 면 대신 뼈대 */
       /* 2.247 — 보관함을 열면 개인 노트 프레임을 미리 데워 둔다(사용자 "화면이 부자연스럽게 넘어가").
          첫 클릭 때에야 note.html 을 로드하면 빈 iframe 이 잠깐 보였다. 숨겨진 채 한 번만 로드. */
       if(app==='design'){setTimeout(function(){try{ensureAppFrame('note');}catch(_){}} ,600);}
@@ -5695,7 +5755,8 @@ window.__buildScoutForm=function(k){
   }catch(e){}
   function reveal(){
     if(revealed) return; revealed=true;
-    if(cover){ try{ cover.style.opacity='0'; setTimeout(function(){ if(cover&&cover.parentNode) cover.parentNode.removeChild(cover); },380); }catch(e){} }
+    /* 2.981 — 걷히는 0.4초 동안에도 덮개가 클릭을 받아, 막 보이기 시작한 메뉴를 누르면 아무 일도 없었다(디자인 판정 06 «첫 클릭») */
+    if(cover){ try{ cover.style.opacity='0'; cover.style.pointerEvents='none'; setTimeout(function(){ if(cover&&cover.parentNode) cover.parentNode.removeChild(cover); },380); }catch(e){} }
   }
   setTimeout(reveal, 1800);   /* 안전망: 도크 복구가 실패해도 2.8초 동안 검은 커버에 머물지 않게 단축 */
   function boardDoc(){
@@ -7941,13 +8002,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.980"></script>
-<script src="autosave-merge.js?v=2.980"></script>
-<script src="autosave-runtime.js?v=2.980"></script>
-<script src="autosave-recovery.js?v=2.980"></script>
-<script src="sync.js?v=2.980"></script>
+<script src="autosave-journal.js?v=2.981"></script>
+<script src="autosave-merge.js?v=2.981"></script>
+<script src="autosave-runtime.js?v=2.981"></script>
+<script src="autosave-recovery.js?v=2.981"></script>
+<script src="sync.js?v=2.981"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.980">
+<link rel="stylesheet" href="support.css?v=2.981">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
@@ -8197,7 +8258,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
 })();
 </script>
 
-<link rel="stylesheet" href="ui-grammar.css?v=2.957"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=2.981"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2598-rail">/* 2.598 — 셸 레일 마무리: 활성 필 모서리 6 → 10, 레일 아이콘 19 → 16 stroke 2(위 다섯 + 아래 로그인·앱 설정·보드 설정), 팀 내비 버튼은 팀 열림 상태에서도 32(design-v2:489 가 30 으로 내리던 것). 레일 폭은 실측 96~104(figma-premium)라 제안의 «64→72» 는 해당 없음. «보드 설정» 은 셸 안에서 유일한 문(도크 사본은 셸에서 숨김)이라 남긴다. */
 @media (min-width:768px){
 html.ps-page-app #appSeg#appSeg button:not(#_):not(#__){border-radius:10px!important}
