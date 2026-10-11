@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PROCESS STUDIO Video Frame</title>
+  <link rel="stylesheet" href="carousel.css">
+  <style>
+    /* 영상 틀 — 작전판에서 내보낸 애니메이션이 들어갈 자리(.hole)를 비워 둔 한 장. make-video.mjs 가 이 장을 찍고 그 자리에 영상을 얹는다. */
+    html,body{background:transparent}
+    .hole{display:block;background:#0d1117}
+    .slide .screen{right:auto;height:auto}
+    .slide .screen .hole{width:100%}
+    h2{white-space:pre-line}
+    body.reel,body.reel .slide{width:1080px;height:1920px}
+    .reel .slide{padding:0 72px;color:#fff;background:radial-gradient(circle at 88% 8%,rgba(58,109,240,.26),transparent 30%),radial-gradient(circle at 10% 92%,rgba(201,242,102,.12),transparent 34%),linear-gradient(160deg,#0d1117,#111a22 55%,#102018)}
+    .reel .brand{left:72px;top:262px;font-size:26px}
+    .reel .copy{position:absolute;left:72px;right:72px;top:318px}
+    .reel .eyebrow{margin-top:0;color:#82a2ff}
+    .reel h2{margin-top:22px;font-size:76px;line-height:1.1;color:#fff}
+    .reel .lead{margin-top:20px;font-size:30px;color:#aab4c0}
+    .reel .chips{margin-top:24px}.reel .chips span{color:#dce2e9;border-color:#32404d;background:#1c2630;font-size:19px}
+    .reel .frame{position:absolute;border:1px solid rgba(255,255,255,.16);border-radius:28px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.5)}
+    .reel .url{position:absolute;left:72px;display:inline-flex;padding:16px 24px;border-radius:14px;color:#101b14;background:var(--lime);font-size:22px;font-weight:900;letter-spacing:.01em}
+  </style>
+</head>
+<body>
+  <script>
+    /* 주소로 받는 값: mode=post|reel · ar(영상 가로/세로) · eyebrow · title(줄바꿈 \n) · lead · chips(쉼표) · page · badge · theme=light|dark · url */
+    const q=new URLSearchParams(location.search),mode=q.get("mode")==="reel"?"reel":"post";
+    const ar=Math.max(.3,Math.min(3,Number(q.get("ar"))||16/9));
+    const esc=s=>String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    const text=k=>esc((q.get(k)||"").replace(/\\n/g,"\n"));
+    const chips=(q.get("chips")||"").split(",").map(s=>s.trim()).filter(Boolean).map(s=>`<span>${esc(s)}</span>`).join("");
+    const even=n=>Math.floor(n/2)*2;
+    /* 상자 w×h 안에 영상 비율을 담는 가장 큰 크기 */
+    const fit=(w,h)=>w/h>ar?{w:even(h*ar),h:even(h)}:{w:even(w),h:even(w/ar)};
+    document.body.className=mode;
+    if(mode==="post"){
+      const dark=q.get("theme")==="dark";
+      document.body.innerHTML=`<section class="slide on${dark?" dark":""}">
+        <div class="brand"><b>PROCESS</b> STUDIO</div><div class="page">${text("page")}</div>
+        <div class="eyebrow">${text("eyebrow")||"TRAINING ANIMATION"}</div>
+        <h2>${text("title")}</h2>
+        ${q.get("lead")?`<p class="lead">${text("lead")}</p>`:""}
+        ${chips?`<div class="chips">${chips}</div>`:""}
+        <div class="screen"><span class="hole"></span></div>
+        ${q.get("badge")?`<div class="number-badge">${text("badge")}</div>`:""}
+      </section>`;
+      /* 글 아래부터 바닥 여백(80)까지 — 원래 장의 화면 자리와 같은 폭(916)·같은 바닥 */
+      const top=Math.max(...[...document.querySelectorAll(".slide > :not(.screen):not(.number-badge):not(.brand):not(.page)")].map(e=>e.getBoundingClientRect().bottom))+52;
+      const bar=44,s=fit(916,1350-80-top-bar),scr=document.querySelector(".screen");
+      scr.style.left=(81+(916-s.w)/2)+"px";scr.style.width=(s.w+2)+"px";   /* 테두리 1px 양쪽 — 영상 자리는 정확히 s.w */
+      const hole=document.querySelector(".hole");hole.style.height=s.h+"px";
+    }else{
+      document.documentElement.style.height="1920px";
+      document.body.innerHTML=`<section class="slide on">
+        <div class="brand"><b>PROCESS</b> STUDIO</div>
+        <div class="copy">
+          <div class="eyebrow">${text("eyebrow")||"TRAINING ANIMATION"}</div>
+          <h2>${text("title")}</h2>
+          ${q.get("lead")?`<p class="lead">${text("lead")}</p>`:""}
+          ${chips?`<div class="chips">${chips}</div>`:""}
+        </div>
+        <div class="frame"><span class="hole"></span></div>
+        <div class="url">${text("url")||"processstudio.netlify.app"} ↗</div>
+      </section>`;
+      /* 릴스 화면은 위 ~250px·아래 ~420px 를 앱 버튼·캡션이 덮는다 — 영상은 그 사이에 */
+      const top=document.querySelector(".copy").getBoundingClientRect().bottom+48,s=fit(936,1420-top);
+      const fr=document.querySelector(".frame");
+      fr.style.left=(540-s.w/2)+"px";fr.style.top=(top+(1420-top-s.h)/2)+"px";
+      const hole=document.querySelector(".hole");hole.style.width=s.w+"px";hole.style.height=s.h+"px";
+      document.querySelector(".url").style.top=(fr.getBoundingClientRect().bottom+36)+"px";
+    }
+    /* 영상 자리를 투명하게 뚫는다(둥근 모서리: 아래 둘, 릴스는 넷) — make-video.mjs 가 이 장을 영상 위에 덮는다 */
+    const r=document.querySelector(".hole").getBoundingClientRect(),W=1080,H=mode==="reel"?1920:1350;
+    const x=Math.round(r.left),y=Math.round(r.top),w=Math.round(r.width),h=Math.round(r.height),R=27,t=mode==="reel"?R:0;
+    const cut=`M${x+t} ${y}H${x+w-t}${t?`A${t} ${t} 0 0 1 ${x+w} ${y+t}`:""}V${y+h-R}A${R} ${R} 0 0 1 ${x+w-R} ${y+h}H${x+R}A${R} ${R} 0 0 1 ${x} ${y+h-R}V${y+t}${t?`A${t} ${t} 0 0 1 ${x+t} ${y}`:""}Z`;
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><path fill="#fff" fill-rule="evenodd" d="M0 0H${W}V${H}H0Z${cut}"/></svg>`;
+    if(q.get("cut")!=="0"){const sl=document.querySelector(".slide");sl.style.webkitMaskImage=sl.style.maskImage=`url("data:image/svg+xml,${encodeURIComponent(svg)}")`;sl.style.webkitMaskSize=sl.style.maskSize="100% 100%";}
+    window.__hole={x,y,w,h,W,H};
+  </script>
+</body>
+</html>
