@@ -13093,19 +13093,22 @@ window.__commView=function(post, editMode){
       if(b){
         var who=post.owner_name?("@"+esc(post.owner_name)):"코치";
         b.innerHTML='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-          +'<span style="flex:1 1 auto;min-width:150px"><b>커뮤니티 훈련</b> — '+who+'님이 공유했어요 · 보기 전용</span>'
-          +'<button id="commCopyBtn" type="button" style="border:0;border-radius:10px;background:var(--blue,#3a6df0);color:#fff;font-family:inherit;font-weight:800;font-size:12px;padding:8px 13px;cursor:pointer">내 보관함에 담기</button>'
-          +'<button id="commRepBtn" type="button" style="border:0;background:none;color:var(--txt-dim,#646A73);font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">신고</button>'
+          /* 2.999 — 커뮤니티 «프로세스» 칸의 훈련 세션(post.proc): 신고 없음 · 담기는 레터의 «보관함에 담기»와 같은 길(커뮤니티가 셸에 #pack= 을 건넨다) */
+          +'<span style="flex:1 1 auto;min-width:150px">'+(post.proc?('<b>프로세스 훈련 세션</b> — 훈련 '+(post.procN||(post.item&&post.item.trainings&&post.item.trainings.length)||1)+'개 · 보기 전용'):('<b>커뮤니티 훈련</b> — '+who+'님이 공유했어요 · 보기 전용'))+'</span>'
+          +'<button id="commCopyBtn" type="button" style="border:0;border-radius:10px;background:var(--blue,#3a6df0);color:#fff;font-family:inherit;font-weight:800;font-size:12px;padding:8px 13px;cursor:pointer">'+(post.proc?'보관함에 담기':'내 보관함에 담기')+'</button>'
+          +(post.proc?'':'<button id="commRepBtn" type="button" style="border:0;background:none;color:var(--txt-dim,#646A73);font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">신고</button>')
           +(post.mine?'<button id="commDelBtn" type="button" style="border:0;background:none;color:#C24A46;font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">삭제</button>':'')
           +'</div>';
         var eb2=document.getElementById("commEditBtn");
         if(eb2)eb2.onclick=function(){ try{window.__commView(post,true);}catch(_){} };
         var cb=document.getElementById("commCopyBtn");
-        cb.onclick=function(){ cb.disabled=true; cb.textContent="담는 중…";
+        cb.onclick=function(){
+          if(post.proc){ try{parent.postMessage({source:"board",type:"commAct",act:"copy",id:post.id},"*");}catch(_){} return; }   /* 확인 창은 보관함에서 뜬다 — 여기서 «담겼어요»라고 말하지 않는다 */
+          cb.disabled=true; cb.textContent="담는 중…";
           try{parent.postMessage({source:"board",type:"commAct",act:"copy",id:post.id},"*");}catch(_){}
           setTimeout(function(){cb.textContent="✓ 담겼어요";toast("내 보관함에 담겼어요 — 보관함에서 확인");},450); };
         var rb=document.getElementById("commRepBtn");
-        rb.onclick=function(){ try{parent.postMessage({source:"board",type:"commAct",act:"report",id:post.id},"*");}catch(_){} toast("신고가 접수됐어요"); rb.disabled=true; };
+        if(rb)rb.onclick=function(){ try{parent.postMessage({source:"board",type:"commAct",act:"report",id:post.id},"*");}catch(_){} toast("신고가 접수됐어요"); rb.disabled=true; };
         var db=document.getElementById("commDelBtn");
         if(db)db.onclick=function(){ psConfirm("이 게시물을 커뮤니티에서 삭제할까요?",function(){
           try{parent.postMessage({source:"board",type:"commAct",act:"delete",id:post.id},"*");}catch(_){}

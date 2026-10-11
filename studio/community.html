@@ -365,7 +365,10 @@
 <body>
 <div id="wrap">
   <div class="top">
-    <h1>커뮤니티</h1><span class="sub">작전판·훈련·경기 분석 탐색</span>
+    <h1>커뮤니티</h1>
+    <!-- 2.999 — 커뮤니티 안의 두 칸: 코치들이 올린 자료 | 프로세스가 만든 훈련 세션 -->
+    <div class="pr-seg" id="prSeg" role="group" aria-label="커뮤니티 칸"><button type="button" id="prTabCoach" data-pr-tab="coach" aria-pressed="true">코치 자료<span id="prCoachN"></span></button><button type="button" id="prTabProc" data-pr-tab="proc" aria-pressed="false">프로세스<span id="prProcN"></span></button></div>
+    <span class="sub" id="prSub">작전판·훈련·경기 분석 탐색</span>
   </div>
   <div class="comm-shell">
     <aside class="comm-nav" aria-label="커뮤니티 탐색">
@@ -387,7 +390,7 @@
         </div>
       </div>
       <div class="nav-sec">
-        <div class="nav-lb">훈련 주제</div>
+        <div class="nav-lb" id="prCatLb">훈련 주제</div>
         <div class="nav-items" id="catChips"></div>
       </div>
     </aside>
@@ -424,6 +427,7 @@
 <div class="cv-mask" id="cvMask" aria-hidden="true">
   <div class="cv-shell" role="dialog" aria-modal="true" aria-label="커뮤니티 훈련 상세보기">
     <div class="cv-head"><b>훈련 상세</b><span>읽기 전용 · 보관함에 담은 뒤 편집할 수 있어요</span><i></i><button class="cv-x" id="cvClose" aria-label="상세보기 닫기">×</button></div>
+    <div class="pr-cvtabs" id="prCvTabs" role="group" aria-label="세션의 훈련" hidden></div><!-- 2.999 — 프로세스 훈련 세션: 훈련 고르기 -->
     <iframe class="cv-frame" id="cvFrame" title="커뮤니티 훈련 읽기 전용 보기"></iframe>
   </div>
 </div>
@@ -588,6 +592,7 @@ function thumbImg(svg,cls){
 /* ── 상태 ── */
 var posts=[], catSel=[], ageF='', plF='', sort='new', typeF='all', searchF='', selectedPostId='', ready=false, tableMissing=false;
 var myLikes=new Set();   /* 내가 좋아요한 게시물 id */
+var tabF='coach';   /* 2.999 — 'coach' 코치 자료 | 'proc' 프로세스 훈련 세션(아래 «2.999 · 커뮤니티 안의 프로세스 칸») */
 
 function fetchMyLikes(){
   var me=sess(); if(!me||!me.at||!me.uid){ myLikes=new Set(); return Promise.resolve(); }
@@ -618,7 +623,7 @@ function fetchPosts(force){
     try{sessionStorage.setItem(FEED_CK,JSON.stringify({at:Date.now(),sort:sort,posts:j}))}catch(_){}
     fetchMyLikes().then(render); } }
   /* 2.068 — 응답이 늦을 때 20초 가까이 빈칸이던 것을 없앤다(빈 화면 없음) */
-  grid.innerHTML='<div class="empty loading"><b>커뮤니티를 불러오는 중…</b></div>';
+  if(tabF!=='proc')grid.innerHTML='<div class="empty loading"><b>커뮤니티를 불러오는 중…</b></div>';
   run(full,order).then(function(r){
     if(r.status===404){tableMissing=true;render();return null;}
     if(r.status===400){ /* likes 컬럼 미마이그레이션 — likes 없이 재시도 */
@@ -627,6 +632,7 @@ function fetchPosts(force){
     if(!r.ok)throw r.status; return r.json();
   }).then(done)
   .catch(function(code){
+    if(tabF==='proc')return;   /* 2.999 — 프로세스 칸을 보는 중이면 그 위에 그리지 않는다(코치 자료로 돌아오면 다시 받는다) */
     /* 2.068 — "불러오지 못했어요" 한 줄로는 사용자도 우리도 원인을 알 수 없었다(2026-08-20 백엔드 무응답 사고).
        원인을 이름으로 부르고, 다시 시도를 준다. 브라우저는 CORS 헤더 없는 오류 페이지(예: Cloudflare 522)를
        거절로 돌려줘 상태 코드를 못 읽는다 — 그때는 navigator.onLine 으로 내 인터넷과 서버를 가른다. */
@@ -658,6 +664,7 @@ function toggleLike(p,btn){
 }
 
 function catChipsRender(){
+  if(tabF==='proc'){procChipsRender();return;}
   var box=$('catChips');box.innerHTML='';
   var all=document.createElement('button');all.className='chip'+(catSel.length===0?' on':'');all.textContent='전체 주제';
   all.onclick=function(){catSel=[];catChipsRender();render();};box.appendChild(all);
@@ -677,6 +684,8 @@ function catBadges(catStr){
   return show;
 }
 function render(){
+  prCounts();
+  if(tabF==='proc'){renderProc();return;}
   var grid=$('grid');grid.innerHTML='';
   if(tableMissing){
     grid.innerHTML='<div class="empty"><b>커뮤니티 준비 중이에요</b>곧 코치들의 훈련이 여기 모입니다.</div>';renderPreview(null);return;
@@ -756,7 +765,7 @@ function renderPreview(p){
   if(!p){_cpCur='';box.innerHTML='<div class="cp-empty"><b>자료를 선택하세요</b>목록에서 내용을 고르면 여기서 크게 확인할 수 있어요.</div>';return;}
   _cpCur=p.id;
   /* 원본(item)을 아직 안 받았으면 지연 로드 — 설명과 ▶재생(프레임)이 함께 살아난다 */
-  if(!p.item&&!p.__itemLoading){
+  if(!p.proc&&!p.item&&!p.__itemLoading){
     p.__itemLoading=true;
     fetch(base()+'/rest/v1/ps_community?id=eq.'+encodeURIComponent(p.id)+'&select=item',{headers:hd()})
       .then(function(r){if(!r.ok)throw 0;return r.json();})
@@ -768,9 +777,9 @@ function renderPreview(p){
   box.innerHTML='<div class="cp-head"><div class="cp-head-copy"><h2 class="cp-title">'+esc(p.title)+'</h2>'
     +'<div class="cp-meta">'+catBadges(p.cat)+(p.owner_name?'<span>@'+esc(p.owner_name)+'</span>':'<span>코치</span>')
     +(p.age?'<span>'+esc(catKeys(p.age).join(' · '))+'</span>':'')+(p.players?'<span>'+esc(p.players)+'명</span>':'')+'</div></div></div>'
-    +'<div class="cp-thumb">'+thumbImg(p.thumb)+(cpFramesOf(p)?'<button class="cp-play" type="button" aria-label="애니메이션 재생">▶</button>':'')+'</div>'
-    +'<div class="cp-stats"><span class="stat">'+IC_EYE+(p.views||0)+'</span><span class="stat">'+IC_SAVE+(p.copies||0)+'</span>'
-    +'<button class="likebtn'+(_liked?' on':'')+'" type="button" id="cpLike" title="좋아요">'+IC_HEART+'<span class="lc">'+(p.likes||0)+'</span></button></div>'
+    +'<div class="cp-thumb">'+(p.proc?procThumb(p.s,1):thumbImg(p.thumb))+(cpFramesOf(p)?'<button class="cp-play" type="button" aria-label="애니메이션 재생">▶</button>':'')+'</div>'
+    +(p.proc?'':'<div class="cp-stats"><span class="stat">'+IC_EYE+(p.views||0)+'</span><span class="stat">'+IC_SAVE+(p.copies||0)+'</span>'
+    +'<button class="likebtn'+(_liked?' on':'')+'" type="button" id="cpLike" title="좋아요">'+IC_HEART+'<span class="lc">'+(p.likes||0)+'</span></button></div>')
     +'<div class="cp-summary">'+(cpDescOf(p)||(p.__itemLoading?'내용 불러오는 중…':(isMatch?'장면과 설명을 함께 확인하는 경기 분석입니다.':'큰 작전판과 훈련 내용을 미리 확인한 뒤 보관함에 담아 편집할 수 있습니다.')))+'</div>'
     +'<div class="cp-actions"><button class="btn primary" type="button" id="cpOpen">'+(isMatch?'장면·글 보기':'큰 화면으로 보기')+'</button>'
     +'<button class="btn" type="button" id="cpCopy">내 보관함에 담기</button></div>';
@@ -780,6 +789,7 @@ function renderPreview(p){
   var cp=$('cpCopy');if(cp)cp.onclick=function(){copyPreviewPost(p,cp);};
 }
 function copyPreviewPost(p,btn){
+  if(p&&p.proc){procSave(p);return;}
   if(!communityLibraryRequireUnlocked(true))return;
   var me=sess(),flowEpoch=__communityLibraryEpoch,uid=me&&me.uid;
   if(p.item){copyToLib(p,btn);return;}
@@ -947,8 +957,11 @@ function cpAnimGeneric(box,frames,p){
 }
 function openPost(p){
   /* 조회수 + 전체 페이로드 확보 → 커뮤니티 내부 읽기 전용 상세보기 */
+  if(p.proc){ if(!p.item){procOpen(p,null);return;} }   /* 2.999 — 프로세스 세션: 원본은 팩(procEnsure), 조회수 표 없음 */
+  else{
   try{fetch(base()+'/rest/v1/rpc/ps_comm_view',{method:'POST',headers:hd(),body:JSON.stringify({pid:p.id})});}catch(_){}
   p.views=(p.views||0)+1;
+  }
   function hasBoardData(s){
     return !!(s&&typeof s==='object'&&(
       (Array.isArray(s.players)&&s.players.length)||
@@ -980,7 +993,8 @@ function openPost(p){
     if(!hasUsableItem(p.item)){openDetail(p,{sourceMissing:true});return;}
     var me=sess();
     var post={id:p.id,title:p.title,owner_name:p.owner_name,cat:p.cat,age:p.age,summary:p.summary,
-              thumb:p.thumb,item:p.item||{},mine:!!(me&&me.uid===p.owner)};
+              thumb:p.thumb,item:p.item||{},mine:!!(me&&me.uid===p.owner),proc:!!p.proc};
+    if(p.proc){procViewOpen(p);return;}   /* 2.999 — 훈련 셋을 하나씩 뷰어에 싣는다 */
     openCommunityViewer(post,p);
   }
   if(p.item){ go(); return; }
@@ -994,6 +1008,7 @@ function closeCommunityViewer(){
   cvOpenSeq++;
   cvMask.classList.remove('on');cvMask.setAttribute('aria-hidden','true');document.body.style.overflow='';
   try{cvFrame.onload=null;cvFrame.src='about:blank';}catch(_){}cvPost=null;
+  try{procCv=null;var _pt=$('prCvTabs');if(_pt){_pt.hidden=true;_pt.innerHTML='';}}catch(_){}   /* 2.999 */
 }
 function openCommunityViewer(post,fallback){
   if(!cvMask||!cvFrame){openDetail(fallback);return;}
@@ -1058,7 +1073,9 @@ window.__commAction=function(act,id,extra){
       .catch(function(){ toast('반영하지 못했어요 — 다시 로그인 후 시도'); });
     return;
   }
+  if(!p)p=procFind(id);   /* 2.999 — 프로세스 세션은 posts 밖에 있다 */
   if(!p)return;
+  if(p.proc){ if(act==='copy')procSave(p); return; }   /* 신고·삭제·고치기는 코치 자료만 */
   if(act==='copy'){ copyToLib(p,null); }
   else if(act==='report'){
     var me=sess();
@@ -1280,6 +1297,7 @@ var store={
 };
 var COPY_FIELDS=['name','focus','minutes','sets','rpe','tags','type','snap','scenes','frames','overview','setup','func','coaching','prog','memo','memoQuick','success','fourDs','playerTask','sessionCheck','playerReflection','evidence','summaryLine','coachReflection','nextSession','warmFor'];
 function copyToLib(p,btn){
+  if(p&&p.proc){procSave(p);return;}
   if(!communityLibraryRequireUnlocked(true))return;
   var me=sess(),flowEpoch=__communityLibraryEpoch,uid=me&&me.uid;
   if(btn){btn.disabled=true;btn.textContent='담는 중…';}
@@ -1512,6 +1530,218 @@ $('sortSel').onchange=function(){sort=this.value;fetchPosts();};
     render();
   };
 });
+/* ══ 2.999 · 커뮤니티 안의 «프로세스» 칸 ══
+   사용자 «프로세스 스튜디오 커뮤니티에 훈련레터에 있는 훈련들 자동으로 올라가게» → «만든 훈련들 전부 커뮤니티에 따로 프로세스 페이지 만들어서 올려줘» → 목업 A안
+   (세션 한 장에 훈련 셋). 머리의 두 칸 «코치 자료 | 프로세스». 프로세스 칸은 보는 곳이다 — 올리기·좋아요·조회·담김 숫자는 코치 자료에만 있다.
+   · 서버(ps_community)에 글을 쓰지 않는다. 훈련 세션 사이트의 목록(index.json)을 읽어 그린다 — 거기에 새 세션이 실리면 이 칸에 저절로 생긴다(앱 판 올림 없이).
+   · 주소는 목록에서 받지 않는다. 번호로 팩(NN.json)·그림(thumbs/NN-K.svg) 주소를 스스로 짓는다. 그림은 <img> 로만 그린다.
+   · 카드를 누르면 팩을 받아 커뮤니티 글과 같은 읽기 전용 뷰어(작전판 __commView)로 연다. 훈련 셋은 뷰어의 훈련 탭.
+   · «보관함에 담기»는 레터의 «보관함에 담기»와 같은 길(2.997): 셸의 «#pack=review-NN» → 작전판이 팩을 다시 받아 확인 창 → 카드 한 장(훈련 셋).
+     그래서 PROC_BASE 는 셸(app.html)의 SRC.review 와 같아야 한다(단위 테스트가 본다). ══ */
+/* ── 2.999 · 프로세스 칸 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
+var PROC_BASE='https://process-letter-sessions.netlify.app/packs/',PROC_SRC='review';
+var PROC_GROUPS=[['att','공격 조직'],['def','수비 조직'],['tr','전환'],['set','세트피스'],['plan','훈련 설계'],['phys','피지컬·경기 준비'],['etc','그 밖']];
+var PROC_PACK_MAX=4*1024*1024;
+function _prStr(v,n){ return (typeof v==='string'?v:'').slice(0,n); }
+function _prNum(v,lo,hi,def){ v=+v; return (isFinite(v)&&v>=lo&&v<=hi)?v:def; }
+function procGroupOf(theme){ var h=String(theme||'').split(' › ')[0].trim();
+  if(h==='공격 조직')return 'att'; if(h==='수비 조직')return 'def'; if(h.indexOf('전환')>=0)return 'tr';
+  if(h==='세트피스')return 'set'; if(h==='훈련 설계')return 'plan'; if(h==='피지컬'||h==='경기 준비')return 'phys'; return 'etc'; }
+/* 목록(index.json) → 세션들(호 순서). 모양이 다르면 null, 이상한 줄은 건너뛴다. 번호는 팩 주소와 같은 두 자리(1~99). */
+function procRead(j){
+  if(!j||j.type!=='process-studio-pack-index'||!Array.isArray(j.sessions))return null;
+  var out=[],seen={};
+  for(var i=0;i<j.sessions.length&&out.length<99;i++){ var s=j.sessions[i]; if(!s||typeof s!=='object')continue;
+    var n=_prNum(s.n,1,99,0); if(!n||n!==Math.floor(n)||seen[n])continue;
+    if(!Array.isArray(s.trainings)||s.trainings.length<1||s.trainings.length>6)continue;
+    var session=_prStr(s.session,80).trim(); if(!session)continue;
+    var trs=s.trainings.map(function(t,k){ t=(t&&typeof t==='object')?t:{};
+      return {name:_prStr(t.name,60).trim()||('훈련 '+(k+1)),minutes:Math.floor(_prNum(t.minutes,0,600,0)),scenes:Math.floor(_prNum(t.scenes,0,40,0))}; });
+    var theme=_prStr(s.theme,40).trim(),cut=theme.split(' › '),rev=_prStr(s.rev,12); if(!/^[0-9a-f]{6,12}$/.test(rev))rev='';
+    seen[n]=1;
+    out.push({n:n,nn:(n<10?'0':'')+n,rev:rev,session:session,letter:_prStr(s.letter,80).trim(),theme:theme,head:(cut[0]||'').trim(),tail:(cut[1]||'').trim(),group:procGroupOf(theme),
+      minutes:trs.reduce(function(a,t){return a+t.minutes;},0),scenes:trs.reduce(function(a,t){return a+t.scenes;},0),trainings:trs}); }
+  out.sort(function(a,b){return a.n-b.n;});
+  return out;
+}
+function procUrl(kind,s,k){
+  if(kind==='pack')return PROC_BASE+s.nn+'.json';
+  if(kind==='thumb')return PROC_BASE+'thumbs/'+s.nn+'-'+Math.floor(_prNum(k,1,6,1))+'.svg'+(s.rev?('?v='+s.rev):'');
+  return PROC_BASE+'index.json';
+}
+function procMatch(s,group,q){
+  if(group&&group!=='all'&&s.group!==group)return false;
+  if(q){ var hay=[s.session,s.theme,s.letter].concat(s.trainings.map(function(t){return t.name;})).join(' ').toLowerCase(); if(hay.indexOf(q)<0)return false; }
+  return true;
+}
+/* 팩 → 뷰어가 받는 글(item). 코치가 보관함 카드를 올릴 때와 같은 칸만 고른다. dep = {fields, snap(sn), trainings(d), frames(fr)} — 올리기가 쓰는 함수 그대로.
+   목록의 그 세션이 아니면(호 번호 · 훈련 수) 받지 않는다. 팩 안의 그림(thumb)은 넘기지 않는다. */
+function procItem(pack,s,dep){
+  if(!pack||pack.type!=='process-studio-drillpack'||!Array.isArray(pack.drills)||pack.drills.length!==1)return null;
+  var d=pack.drills[0]; if(!d||typeof d!=='object'||!Array.isArray(d.trainings)||d.trainings.length!==s.trainings.length)return null;
+  var lt=(d.letter&&typeof d.letter==='object')?d.letter:{}; if(_prNum(lt.issue,1,99,0)!==s.n)return null;
+  for(var i=0;i<d.trainings.length;i++){ var t=d.trainings[i]; if(!t||typeof t!=='object'||!t.snap||typeof t.snap!=='object'||!Array.isArray(t.snap.players))return null; }
+  var item={}; dep.fields.forEach(function(k){ if(d[k]!=null)item[k]=d[k]; });
+  item.type='train'; item.name=_prStr(d.name,60)||s.session; delete item.scenes;
+  item.snap=dep.snap(item.snap);
+  var trs=dep.trainings(d); if(!trs||trs.length!==s.trainings.length)return null;
+  trs.forEach(function(t){ t.thumb=''; delete t.scenes;
+    var tf=dep.frames(t.frames); if(tf)t.frames=tf; else{ delete t.frames; delete t.animIdx; } });   /* 훈련마다의 장면도 같은 정리를 거친다(장면 하나뿐이면 애니메이션 없음) */
+  item.trainings=trs;
+  var fr=dep.frames(item.frames); if(fr)item.frames=fr; else delete item.frames;
+  return item;
+}
+/* ── 2.999 · 프로세스 칸 순수 구간 끝 ── */
+var proc={ready:false,loading:false,err:'',at:0,list:[],posts:{}},procG='all',procOpenSeq=0;
+var PROC_CK='ps_comm_proc_index_v1',PROC_TTL=10*60*1000;
+function procFind(id){ return (typeof id==='string'&&Object.prototype.hasOwnProperty.call(proc.posts,id))?proc.posts[id]:null; }
+function procAbort(ms){ var o={signal:undefined,done:function(){}}; try{ var c=new AbortController(),t=setTimeout(function(){ try{c.abort();}catch(_){} },ms); o.signal=c.signal; o.done=function(){ clearTimeout(t); }; }catch(_){} return o; }
+function prCounts(){
+  var a=$('prCoachN'),b=$('prProcN');
+  if(a)a.textContent=(ready&&!tableMissing&&posts.length)?(posts.length>=100?'100+':String(posts.length)):'';
+  if(b)b.textContent=proc.ready?String(proc.list.length):'';
+}
+function procSet(list,at){
+  var keep={};
+  list.forEach(function(s){ var id='proc-'+s.nn,old=proc.posts[id];
+    keep[id]=(old&&old.s.rev===s.rev)?old:{id:id,proc:true,title:s.session,owner_name:'프로세스',cat:'',age:'',players:'',summary:'',thumb:'',item:null};
+    keep[id].s=s; keep[id].title=s.session; });
+  proc.posts=keep; proc.list=list; proc.ready=true; proc.err=''; proc.at=at||Date.now();
+  if(procG!=='all'&&!list.some(function(s){return s.group===procG;}))procG='all';
+  prCounts();
+  if(tabF==='proc'){ catChipsRender(); renderProc(); }
+}
+function procFetch(force){
+  if(proc.loading)return;
+  if(!force&&!proc.ready){ try{ var c=JSON.parse(sessionStorage.getItem(PROC_CK)||'null');
+      if(c&&Date.now()>=c.at&&Date.now()-c.at<PROC_TTL){ var l0=procRead(c.index); if(l0&&l0.length){ procSet(l0,c.at); return; } } }catch(_){} }
+  proc.loading=true; proc.err=''; if(tabF==='proc'&&!proc.ready)renderProc();
+  var ab=procAbort(15000);
+  fetch(procUrl('index'),{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:ab.signal})
+    .then(function(r){ if(!r.ok)throw r.status; return r.json(); })
+    .then(function(j){ var l=procRead(j); if(!l)throw 'shape';
+      try{ sessionStorage.setItem(PROC_CK,JSON.stringify({at:Date.now(),index:j})); }catch(_){}
+      proc.loading=false; procSet(l,Date.now()); })
+    .catch(function(){ proc.loading=false; if(proc.ready)return;   /* 이미 그린 목록이 있으면 그대로 둔다 */
+      proc.err=(navigator.onLine===false)?'offline':'net'; if(tabF==='proc')renderProc(); })
+    .then(function(){ ab.done(); });
+}
+function procChipsRender(){
+  var box=$('catChips'); if(!box)return; box.innerHTML='';
+  var counts={}; proc.list.forEach(function(s){ counts[s.group]=(counts[s.group]||0)+1; });
+  var mk=function(key,label,n){ var on=procG===key,b=document.createElement('button'); b.type='button'; b.className='chip'+(on?' on':''); b.setAttribute('aria-pressed',on?'true':'false');
+    b.appendChild(document.createTextNode(label));
+    if(n!=null){ var c=document.createElement('span'); c.className='pr-cn'; c.textContent=String(n); b.appendChild(c); }
+    b.onclick=function(){ procG=key; procChipsRender(); renderProc(); }; box.appendChild(b); };
+  mk('all','전체 주제',proc.ready?proc.list.length:null);
+  PROC_GROUPS.forEach(function(g){ if(counts[g[0]])mk(g[0],g[1],counts[g[0]]); });
+}
+function procThumb(s,k){ return '<img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(procUrl('thumb',s,k))+'">'; }
+function renderProc(){
+  var grid=$('grid'),cc=$('commCount'); if(!grid)return;
+  try{cpAnimStop();}catch(_){}
+  if(!proc.ready){
+    if(cc)cc.textContent='';
+    if(proc.err){
+      grid.innerHTML='<div class="empty"><b>'+(proc.err==='offline'?'인터넷이 끊겼어요':'프로세스 훈련을 불러오지 못했어요')+'</b>'+(proc.err==='offline'?'연결을 확인하고 다시 시도해 주세요.':'잠시 뒤 다시 시도해 주세요.')
+        +'<div class="empty-act"><button type="button" id="prRetry">다시 시도</button></div></div>';
+      var rb=$('prRetry'); if(rb)rb.onclick=function(){ procFetch(true); };
+    }else grid.innerHTML='<div class="empty loading"><b>프로세스 훈련을 불러오는 중…</b></div>';
+    return;
+  }
+  var list=proc.list.filter(function(s){ return procMatch(s,procG,searchF); });
+  if(cc)cc.textContent='세션 '+list.length+'개 · 훈련 '+list.reduce(function(a,s){return a+s.trainings.length;},0)+'개';
+  if(!list.length){ grid.innerHTML='<div class="empty"><b>이 조건의 세션은 0개예요</b>검색어나 주제를 바꿔 보세요.</div>'; return; }
+  grid.innerHTML='';
+  list.forEach(function(s){ var p=proc.posts['proc-'+s.nn]; if(!p)return;
+    var c=document.createElement('div'); c.className='pr-card'+(p.id===selectedPostId?' on':'');
+    c.setAttribute('role','button'); c.tabIndex=0; c.setAttribute('data-proc',s.nn); c.setAttribute('aria-label',s.session+' · 훈련 '+s.trainings.length+'개');
+    c.innerHTML='<div class="pr-tri">'+s.trainings.slice(0,3).map(function(t,i){ return '<span>'+procThumb(s,i+1)+'</span>'; }).join('')+'</div>'
+      +'<div class="pr-bd"><div class="pr-tt">'+esc(s.session)+'</div>'
+      +'<div class="pr-meta">'+(s.head?'<span class="pr-badge">'+esc(s.head)+'</span>':'')+'<span>'+esc([s.tail,s.minutes?(s.minutes+'분'):''].filter(Boolean).join(' · '))+'</span></div>'
+      +'<ol class="pr-trs">'+s.trainings.map(function(t,i){ return '<li><span class="pr-i">'+(i+1)+'</span><span class="pr-nm">'+esc(t.name)+'</span><span class="pr-mn">'+(t.minutes?(t.minutes+'분'):'')+'</span></li>'; }).join('')+'</ol>'
+      +'<div class="pr-foot"><span>@프로세스 · 레터 '+s.n+'호</span>'+(s.scenes?('<span class="pr-n">장면 '+s.scenes+'</span>'):'')+'</div></div>';
+    c.onclick=function(){ procOpen(p,c); };
+    c.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); procOpen(p,c); } };
+    grid.appendChild(c);
+  });
+}
+function procEnsure(p){
+  if(p.item)return Promise.resolve(p.item);
+  if(p.__load)return p.__load;
+  var ab=procAbort(15000);
+  p.__load=fetch(procUrl('pack',p.s),{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:ab.signal})
+    .then(function(r){ if(!r.ok)throw new Error('http '+r.status); return r.text(); })
+    .then(function(txt){ if(txt.length>PROC_PACK_MAX)throw new Error('big');
+      var it=procItem(JSON.parse(txt),p.s,{fields:COPY_FIELDS,snap:stripSnap,trainings:stripTrainings,frames:stripFrames}); if(!it)throw new Error('shape');
+      ab.done(); p.__load=null; p.item=it; return it; },function(e){ ab.done(); p.__load=null; throw e; });
+  p.__load.catch(function(){ p.__load=null; });
+  return p.__load;
+}
+function procOpen(p,card){
+  var grid=$('grid'),seq=++procOpenSeq;
+  selectedPostId=p.id;
+  if(grid)[].forEach.call(grid.querySelectorAll('.pr-card'),function(x){ x.classList.toggle('on',x.getAttribute('data-proc')===p.s.nn); });
+  if(card)card.setAttribute('aria-busy','true');
+  var free=function(){ if(card)card.removeAttribute('aria-busy'); };
+  procEnsure(p).then(function(){ free(); if(seq!==procOpenSeq||tabF!=='proc')return;
+    renderPreview(p);
+    var hidden=true; try{ var pv=$('commPreview'); hidden=!pv||getComputedStyle(pv).display==='none'; }catch(_){}
+    if(hidden)openPost(p);
+  },function(){ free(); if(seq===procOpenSeq)toast('훈련 세션을 불러오지 못했어요 — 다시 눌러 주세요'); });
+}
+/* 상세 — 세션의 훈련을 하나씩 읽기 전용 뷰어에 싣는다. 뷰어(작전판)는 커뮤니티에서 훈련 탭 줄을 감추므로(body.comm-viewing #trainingStrip)
+   고르는 줄은 뷰어 머리 바로 아래 여기에 둔다. 훈련을 바꾸면 뷰어를 새로 연다 — 글마다 프레임을 새로 만드는 것과 같은 이유(앞 훈련의 애니메이션·판 상태가 남지 않게). */
+var procCv=null;
+function procViewPost(k){
+  var p=procCv.p,it=p.item,t=it.trainings[k],one={};
+  ['type','focus','rpe','sets','tags'].forEach(function(f){ if(it[f]!=null)one[f]=it[f]; });
+  one.name=t.name; one.minutes=t.minutes; one.snap=t.snap; one.trainings=[t];
+  if(Array.isArray(t.frames)&&t.frames.length>1)one.frames=t.frames;
+  return {id:p.id,title:p.title,owner_name:p.owner_name,cat:'',age:'',summary:'',thumb:'',item:one,mine:false,proc:true,procN:it.trainings.length};
+}
+function procViewTabs(){
+  var box=$('prCvTabs'); if(!box||!procCv)return;
+  var trs=procCv.p.s.trainings; box.innerHTML=''; box.hidden=trs.length<2;
+  trs.forEach(function(t,i){ var on=i===procCv.k,b=document.createElement('button'); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
+    b.innerHTML='<span class="pr-i">'+(i+1)+'</span><span class="pr-nm">'+esc(t.name)+'</span>'+(t.minutes?('<span class="pr-mn">'+t.minutes+'분</span>'):'');
+    b.onclick=function(){ if(!procCv||procCv.k===i)return; procCv.k=i; procViewTabs(); openCommunityViewer(procViewPost(i),procCv.p); };
+    box.appendChild(b);
+    if(on)try{ b.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(_){} });
+}
+function procViewOpen(p){ procCv={p:p,k:0}; procViewTabs(); openCommunityViewer(procViewPost(0),p); }
+/* «보관함에 담기» — 레터의 단추와 같은 주소를 셸에 건넨다. 받기 · 확인 창 · 저장은 작전판이 한다(2.997). */
+function procSave(p){
+  var hash='#pack='+PROC_SRC+'-'+p.s.nn;
+  try{closeCommunityViewer();}catch(_){}
+  if(IN_SHELL){ try{ window.parent.location.hash=hash; return; }catch(_){} }
+  try{ location.href='app.html'+hash; }catch(_){}
+}
+function procSetTab(t){
+  t=(t==='proc')?'proc':'coach'; if(t===tabF)return;
+  tabF=t; document.body.classList.toggle('pr-proc',t==='proc');
+  [['prTabCoach','coach'],['prTabProc','proc']].forEach(function(x){ var b=$(x[0]); if(b)b.setAttribute('aria-pressed',x[1]===t?'true':'false'); });
+  var sub=$('prSub'); if(sub)sub.textContent=(t==='proc')?'프로세스가 만든 훈련 세션':'작전판·훈련·경기 분석 탐색';
+  var lb=$('prCatLb'); if(lb)lb.textContent=(t==='proc')?'세션 주제':'훈련 주제';
+  var q=$('commSearch'); if(q)q.placeholder=(t==='proc')?'세션·훈련 이름 검색':'제목·작성자·내용 검색';
+  try{upMenuClose();}catch(_){}
+  try{var fs=$('commFiltSheet'); if(fs)fs.hidden=true;}catch(_){}
+  selectedPostId=''; procOpenSeq++;
+  catChipsRender();
+  if(t==='proc'){ if(!proc.ready)procFetch(); else if(Date.now()-proc.at>PROC_TTL)procFetch(true);   /* 오래 열어 둔 탭 — 새 세션이 실렸는지 다시 본다(받는 동안·실패해도 지금 목록은 그대로) */
+    renderProc(); }
+  else if(!ready&&!tableMissing)fetchPosts(); else render();
+  try{window.scrollTo(0,0);}catch(_){}
+}
+$('prSeg').addEventListener('click',function(e){ var b=e.target.closest('[data-pr-tab]'); if(b)procSetTab(b.getAttribute('data-pr-tab')); });
+/* 칸 이름 옆의 개수 — 목록은 20KB 안팎이고 10분 동안 탭에 적어 둔다. 셸은 탭들을 미리 띄워 두므로(2.252) 이 화면이 실제로 보일 때 처음 받는다. */
+(function(){
+  var done=false;
+  function seen(){ try{ return window.innerWidth>0&&window.innerHeight>0; }catch(_){ return true; } }
+  function go(){ if(done||!seen())return; done=true; try{window.removeEventListener('resize',go);}catch(_){}
+    setTimeout(function(){ if(!proc.ready)procFetch(); },800); }
+  go(); if(!done)window.addEventListener('resize',go);
+})();
 (function(){
   var q=$('commSearch');if(!q)return;var composing=false;
   q.addEventListener('compositionstart',function(){composing=true;});
@@ -1642,5 +1872,63 @@ html body .likebtn:not(#_):not(#__){font-variant-numeric:tabular-nums}
   document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('[data-sort-nav],[data-type-nav]'))setTimeout(function(){a.__sync();b.__sync();},0); },true);
 })();
 </script>
+<style id="ps-2999-proc">/* ══ 2.999 · 커뮤니티 안의 «프로세스» 칸 — 머리의 두 칸 + 세션 카드(세션 한 장에 훈련 셋) ══
+   새 블록 기준(2.979): 글자 12·14·16 · 굵기 500·600·700 · 모서리 6·10·999 · 누르는 것만 파랑.
+   카드는 새 이름(pr-card)을 쓴다 — .card 에는 목록·카드·크게 보기와 다른 시트의 규칙이 겹겹이 걸려 있다.
+   :not(#_) 는 premium-ui·mobile-polish·ui-grammar 와 위 2.574·2.593·2.594·2.598 블록의 !important 를 이기기 위한 부스트. 이 블록은 문서 맨 끝에 둔다. */
+.pr-seg{display:inline-flex;flex:0 0 auto;padding:3px;border-radius:999px;background:var(--surface-2,#F1F3F5)}
+.pr-seg button{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:30px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:var(--text-2,#646A73);font:inherit;font-size:14px;font-weight:600;line-height:1;white-space:nowrap;cursor:pointer}
+.pr-seg button span{font-size:12px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
+.pr-seg button span:empty{display:none}
+.pr-seg button[aria-pressed="true"]{background:var(--surface,#fff);color:var(--c-act,#3A6DF0);font-weight:700}
+.pr-seg button[aria-pressed="true"] span{color:inherit}
+html body .comm-nav .nav-items .chip .pr-cn:not(#_):not(#__){margin-left:5px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums;color:inherit;opacity:.72}
+/* 프로세스 칸에서는 코치 자료의 고르개(연령·인원·정렬·유형·보기 방식)와 «올리기»를 치운다 */
+html.ps-page-community body.pr-proc .comm-list .filters:not(#_):not(#__){display:none!important}
+html body.pr-proc #commFiltBtn:not(#_):not(#__){display:none!important}
+html body.pr-proc .fab:not(#_):not(#__),html body.pr-proc #upMenu:not(#_):not(#__){display:none!important}
+html body.pr-proc .comm-list .grid:not(#_):not(#__){display:grid!important;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))!important;gap:14px!important}
+.pr-card{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line,#E3E6EA);border-radius:10px;overflow:hidden;background:var(--surface,#fff);color:var(--text,#14161A);text-align:left;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.pr-card.on{box-shadow:0 0 0 2px var(--c-act,#3A6DF0)}
+.pr-card[aria-busy="true"]{opacity:.6}
+.pr-tri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;background:var(--surface,#fff)}
+.pr-tri span{display:block;aspect-ratio:4/3;overflow:hidden;background:#15172B}
+.pr-tri img{display:block;width:100%;height:100%;object-fit:cover}
+.pr-bd{display:flex;flex-direction:column;flex:1 1 auto;min-width:0;padding:10px 12px 12px}
+.pr-tt{margin:0 0 6px;font-size:14px;font-weight:700;line-height:1.4;word-break:keep-all;overflow-wrap:anywhere}
+.pr-meta{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin:0 0 8px;font-size:12px;font-weight:500;color:var(--text-2,#646A73)}
+.pr-badge{padding:2px 7px;border-radius:6px;background:var(--surface-2,#F1F3F5);font-size:12px;font-weight:600;color:var(--text-2,#646A73)}
+.pr-trs{display:flex;flex-direction:column;gap:5px;list-style:none;margin:0 0 10px;padding:8px 0 0;border-top:1px solid var(--line,#E3E6EA)}
+.pr-trs li{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:6px;align-items:baseline;font-size:12px;font-weight:500;line-height:1.45;color:var(--text-2,#646A73)}
+.pr-trs .pr-i{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
+.pr-trs .pr-nm{min-width:0;word-break:keep-all;overflow-wrap:anywhere}
+.pr-trs .pr-mn{font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
+.pr-foot{display:flex;gap:6px;align-items:center;margin-top:auto;font-size:12px;font-weight:500;color:var(--text-3,#8A9099)}
+.pr-foot .pr-n{margin-left:auto;font-variant-numeric:tabular-nums}
+/* 상세 뷰어 머리 아래 — 세션의 훈련 고르기 */
+.pr-cvtabs{display:flex;flex:0 0 auto;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line,#E3E6EA);background:var(--surface,#fff);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pr-cvtabs::-webkit-scrollbar{display:none}
+.pr-cvtabs button{display:inline-flex;flex:0 0 auto;align-items:baseline;gap:6px;height:36px;padding:0 12px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff);color:var(--text-2,#646A73);font:inherit;font-size:14px;font-weight:500;line-height:34px;white-space:nowrap;cursor:pointer}
+.pr-cvtabs .pr-i{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
+.pr-cvtabs .pr-mn{font-size:12px;font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
+.pr-cvtabs button[aria-pressed="true"]{border-color:var(--c-act,#3A6DF0);background:var(--act-soft,#EEF3FF);color:var(--c-act,#3A6DF0);font-weight:700}
+.pr-cvtabs button[aria-pressed="true"] .pr-i,.pr-cvtabs button[aria-pressed="true"] .pr-mn{color:inherit}
+@media (pointer:coarse){ .pr-card:active{transform:scale(.985);transition:transform .08s} }
+/* 폰(≤560 — 2.594 «폰 머리줄 한 줄»과 같은 경계): 두 칸은 머리줄 아래 제 줄 */
+@media (max-width:560px){
+html body .top:not(#_):not(#__){flex-wrap:wrap;height:auto;min-height:52px;row-gap:6px;padding-top:6px;padding-bottom:6px}
+html body .top #commSearch:not(#_):not(#__){flex:1 1 0!important;width:0!important;min-width:0!important}   /* 줄바꿈을 켜면 입력 칸의 제 폭이 한 줄을 다 차지한다 — 남는 폭만 쓰게 */
+html body .top .pr-seg:not(#_):not(#__){order:9;flex:1 0 100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+html body .top .pr-seg button:not(#_):not(#__){height:36px}
+html body.pr-proc .comm-list .grid:not(#_):not(#__){grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
+.pr-tt{font-size:16px}
+/* 폰: 훈련 셋이 한눈에 — 같은 폭 칸, 위에 번호·분, 아래에 이름(전체 이름은 바로 아래 뷰어의 제목에 있다) */
+.pr-cvtabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;padding:6px 10px;overflow:visible}
+.pr-cvtabs button{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"i mn" "nm nm";align-content:center;column-gap:5px;row-gap:1px;min-width:0;height:48px;padding:0 9px;line-height:1.3;text-align:left}
+.pr-cvtabs .pr-i{grid-area:i}
+.pr-cvtabs .pr-mn{grid-area:mn}
+.pr-cvtabs .pr-nm{grid-area:nm;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+}
+</style>
 </body>
 </html>
