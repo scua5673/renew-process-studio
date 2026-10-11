@@ -19606,7 +19606,9 @@ try{ var _nb=document.getElementById('dfNew');
     var src=pages[i]; if(!src)return; var _cp={snap:_clone(src.snap),anim:src.anim?_clone(src.anim):null,thumb:src.thumb,name:(src.name||((window.__vaultBook?"시퀀스 ":"페이지 ")+(i+1)))+" 복사"};
     ["grp","when","call","mo","ph"].forEach(function(k){ if(typeof src[k]==="string"&&src[k])_cp[k]=src[k]; });   /* 2.985 · 2.990 국면 자리도 */
     pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx);clearHistory();render(); persist(); }
-  function switchTo(i){ if(!pages||i===idx||!pages[i])return; try{ if(window.__bkMap)window.__bkMap.close(); }catch(_){} capture();   /* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */
+  function switchTo(i){ if(!pages||i===idx||!pages[i])return; try{ if(window.__bkMap)window.__bkMap.close(); }catch(_){} try{ window.restoreAnimBeforeCapture(); }catch(_){} capture();   /* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */
+    /* 3.001 — 재생 중이면 먼저 멈춰 재생 전 판으로 돌린 뒤 담는다. 예전엔 재생 도중 페이지 띠를 누르면 떠나는 페이지에 재생 중간 위치가 담기고,
+       재생이 끝날 때(stopAnim) 그 페이지의 재생 전 판이 옮겨 간 페이지 위에 올라갔다 — 저장하면 그 페이지가 남의 판으로 덮였다. */
     var go=function(){ idx=i; loadIdx(idx);clearHistory();render(); persist(); };
     if(window.__vaultBrowse)window.__vaultBrowse(go); else go(); }   /* 3.001 — 페이지를 옮기기만 한 것은 보관함 항목의 «변경 있음»이 아니다(capture 는 지문이 보지 않는 칸만 고친다) */
   function del(i){ if(!pages||pages.length<=1)return;

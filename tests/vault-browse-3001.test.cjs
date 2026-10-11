@@ -93,9 +93,20 @@ test('wiring: opening takes the fingerprint when hydration ends · page moves go
   assert.match(src,/window\.__vaultHydrating=true;window\.__vaultSavedSig=null;/,'a new item starts without a fingerprint');
   assert.match(src,/setTimeout\(function\(\)\{if\(stillOpen\(\)\)\{window\.__vaultHydrating=false;try\{window\.__vaultEditBaseline\(\);\}catch\(_\)\{\}\}\},420\);/,'the fingerprint is taken when the opening load settles');
   const sw=slice('  function switchTo(i){','\n  function del(i)');
-  assert.match(sw,/^  function switchTo\(i\)\{ if\(!pages\|\|i===idx\|\|!pages\[i\]\)return; try\{ if\(window\.__bkMap\)window\.__bkMap\.close\(\); \}catch\(_\)\{\} capture\(\);/,'2.990 prefix kept');
+  assert.match(sw,/^  function switchTo\(i\)\{ if\(!pages\|\|i===idx\|\|!pages\[i\]\)return; try\{ if\(window\.__bkMap\)window\.__bkMap\.close\(\); \}catch\(_\)\{\} try\{ window\.restoreAnimBeforeCapture\(\); \}catch\(_\)\{\} capture\(\);/,'2.990 map close · a running play is stopped (back to the pre-play board) before the page is captured');
   assert.match(sw,/var go=function\(\)\{ idx=i; loadIdx\(idx\);clearHistory\(\);render\(\); persist\(\); \};\s+if\(window\.__vaultBrowse\)window\.__vaultBrowse\(go\); else go\(\); \}/);
   const th=slice('window.__snapToThumb=function(snap,opts){','\n};');
   assert.match(th,/window\.__psThumbSwap=\(window\.__psThumbSwap\|\|0\)\+1;\s+try\{ loadSnap\(snap\|\|\{\}\); return boardThumbSVG\(\); \}/);
   assert.match(th,/finally\{ try\{ loadSnap\(cur\); \}catch\(_\)\{\} window\.__psThumbSwap=Math\.max\(0,\(window\.__psThumbSwap\|\|1\)-1\); \}/,'released after the board is put back');
+});
+
+test('a page move during a play stops it first: the page is captured as it was before the play, then the move is watched',()=>{
+  const calls=[],sw=slice('  function switchTo(i){','\n  function del(i)');
+  const c={pages:[{name:'A'},{name:'B'}],idx:0,
+    window:{__bkMap:{close(){calls.push('map');}},restoreAnimBeforeCapture(){calls.push('stop');},__vaultBrowse(fn){calls.push('browse');fn();}},
+    capture(){calls.push('capture');},loadIdx(i){calls.push('load '+i);},clearHistory(){},render(){},persist(){calls.push('persist');}};
+  vm.createContext(c);vm.runInContext(sw,c);
+  c.switchTo(1);assert.deepEqual(calls,['map','stop','capture','browse','load 1','persist']);assert.equal(c.idx,1);
+  calls.length=0;c.switchTo(1);assert.deepEqual(calls,[],'the page already shown: nothing');
+  c.window.restoreAnimBeforeCapture=()=>{throw new Error('no anim');};c.switchTo(0);assert.equal(c.idx,0,'a failing stop does not block the move');
 });
