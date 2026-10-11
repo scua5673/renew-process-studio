@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROCESS STUDIO 업데이트 소식</title>
+<meta name="description" content="PROCESS STUDIO에 새로 생긴 기능과 고친 것을 화면과 함께 모아 둡니다.">
+<meta name="theme-color" content="#ECEDF0">
+<meta name="theme-color" content="#0F141B" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PROCESS STUDIO 업데이트 소식">
+<meta property="og:description" content="새로 생긴 기능과 고친 것을 화면과 함께 모아 둡니다.">
+<meta property="og:url" content="https://processstudio.netlify.app/news">
+<!-- 링크 미리보기(카톡 등)의 대표 그림 — 큰 소식이 나가면 그 그림으로 바꾼다 -->
+<meta property="og:image" content="https://processstudio.netlify.app/guide/img/news/v2-999-community.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<style>
+/* 사용 설명서(guide/index.html)와 같은 말씨 — 모노크롬 + 팀 파랑, 무게 600/800, radius 13 */
+:root{
+  --bg:#ECEDF0; --surface:#FFFFFF; --surface-2:#F1F2F4;
+  --line:#E3E5E9; --line-soft:#ECEDF0;
+  --text:#16181C; --text-2:#5C6068; --text-3:#767B85; --sub:#8A9099;
+  --blue:#3a6df0; --blue-deep:#2C54C4; --blue-soft:#edf2fe;
+  --f:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0F141B; --surface:#1A212B; --surface-2:#232C38;
+    --line:#2C3744; --line-soft:#232C38;
+    --text:#E7EBF1; --text-2:#9AA4B3; --text-3:#7C8696; --sub:#9AA4B3;
+    --blue:#4D7DFF; --blue-deep:#9db8ff; --blue-soft:rgba(77,125,255,.12);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:68px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+b,strong{font-weight:800}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+a{color:var(--blue-deep)}
+
+.topbar{position:sticky;top:0;z-index:30;height:52px;display:flex;align-items:center;gap:12px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{font-size:16px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;color:var(--text);text-decoration:none}
+.brand span{font-weight:600;color:var(--sub)}
+.topbar .doc{font-size:12px;font-weight:600;color:var(--sub);white-space:nowrap}
+.topbar .sp{flex:1}
+.topbar .lnk{font-size:13px;font-weight:600;color:var(--text-2);text-decoration:none;white-space:nowrap}
+.appbtn{font-family:var(--f);font-size:13px;font-weight:600;color:#fff;background:var(--blue);border:0;border-radius:9px;padding:8px 14px;text-decoration:none;white-space:nowrap}
+
+main{max-width:760px;margin:0 auto;padding:36px 20px 96px}
+.intro h1{font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1.3;margin:0 0 8px}
+.intro p{margin:0;color:var(--text-2)}
+[hidden]{display:none!important}
+.intro .now{margin-top:14px;font-size:12px;font-weight:600;color:var(--text-3)}
+.intro .now b{color:var(--blue-deep)}
+.intro .note{margin-top:6px;font-size:12px;color:var(--text-3)}
+
+.day{margin:44px 0 0}
+.day>h2{position:sticky;top:52px;z-index:5;margin:0 -20px 12px;padding:10px 20px;font-size:13px;font-weight:800;color:var(--text-3);background:var(--bg)}
+.entry{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:18px 20px;margin:0 0 12px}
+.entry.big{padding:22px 22px 20px}
+.entry .hd{display:flex;align-items:flex-start;gap:10px}
+.entry .ver{flex:0 0 auto;margin-top:2px;font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--blue-deep);background:var(--blue-soft);border-radius:999px;padding:2px 9px}
+.entry h3{flex:1;margin:0;font-size:16px;font-weight:800;letter-spacing:-.2px;line-height:1.45;overflow-wrap:anywhere}
+.entry.big h3{font-size:19px}
+.entry .cp{flex:0 0 auto;font-family:var(--f);font-size:12px;font-weight:600;color:var(--text-3);background:transparent;border:1px solid var(--line);border-radius:8px;padding:4px 9px;cursor:pointer;white-space:nowrap}
+.entry .cp:hover{color:var(--text);background:var(--surface-2)}
+.entry ul{margin:10px 0 0;padding-left:20px;color:var(--text-2)}
+.entry li{margin:5px 0;overflow-wrap:anywhere}
+.shots{display:grid;gap:12px;margin:16px 0 4px}
+.shots figure{margin:0}
+.shots a{display:block}
+.shots img{display:block;width:100%;height:auto;aspect-ratio:16/10;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.shots figcaption{font-size:12px;font-weight:600;color:var(--sub);margin-top:6px;text-align:center}
+.more{display:block;margin:28px auto 0;font-family:var(--f);font-size:14px;font-weight:600;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 18px;cursor:pointer}
+.state{margin-top:32px;padding:16px;border-radius:13px;background:var(--surface);border:1px solid var(--line);color:var(--text-2);font-size:14px}
+.foot{margin-top:56px;font-size:12px;color:var(--text-3);text-align:center}
+.foot a{color:var(--text-2);font-weight:600}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#16181C;color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+
+@media (max-width:640px){
+  .topbar{padding:0 16px}
+  .topbar .doc,.topbar .lnk{display:none}
+  main{padding:24px 16px 80px}
+  .intro h1{font-size:24px}
+  .day>h2{margin:0 -16px 10px;padding:10px 16px}
+  .entry,.entry.big{padding:16px}
+  .entry.big h3{font-size:17px}
+  .entry .cp{display:none}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/landing.html">PRO<span>CESS</span> STUDIO</a>
+  <span class="doc">업데이트 소식</span>
+  <span class="sp"></span>
+  <a class="lnk" href="/guide/">사용 설명서</a>
+  <a class="appbtn" href="/studio/">앱 열기 →</a>
+</header>
+<main>
+  <section class="intro">
+    <h1>업데이트 소식</h1>
+    <p>PROCESS STUDIO에 새로 생긴 것과 고친 것을 모아 둡니다. 앱이 새 판으로 바뀌면 앱 안의 «새 기능» 안내와 같은 내용이 여기에도 올라옵니다.</p>
+    <div class="now" id="nwNow" hidden></div>
+    <div class="note">화면에 보이는 팀·선수·세션 이름은 예시입니다.</div>
+  </section>
+  <div id="nwList"></div>
+  <noscript><div class="state">이 페이지는 자바스크립트를 켜야 소식이 보여요.</div></noscript>
+  <p class="foot"><a href="/studio/">앱 열기</a> · <a href="/guide/">사용 설명서</a> · <a href="/landing.html">소개</a></p>
+</main>
+<div class="toast" id="nwToast" role="status" aria-live="polite"></div>
+<script src="/studio/release-notes.js"></script>
+<script>
+(function(){
+  'use strict';
+  /* 소식의 글은 앱의 «새 기능» 안내(studio/release-notes.js)를 그대로 읽는다 — 판이 나갈 때 안내를 적으면 여기에도 저절로 실린다.
+     그림만 이 표에 단다: 항목 id → guide/img/news/ 의 그림(1600×1000 jpg, 가상 팀 fixture 로 찍는다). */
+  var SHOTS={
+    '2026-10-11-v2-999-community-process':[
+      {src:'v2-999-community.jpg',cap:'커뮤니티 › 프로세스 — 세션 한 장에 훈련 셋'},
+      {src:'v2-999-viewer.jpg',cap:'카드를 누르면 훈련마다 작전판 · 훈련 방법 · 코칭 포인트'}],
+    '2026-10-11-v2-998-patternbook-map-drag':[
+      {src:'v2-998-map-drag.jpg',cap:'시퀀스를 끌어 «수비 조직 › 전방 압박» 칸에 놓는 중'}],
+    '2026-10-11-v2-997-letter-pack':[
+      {src:'v2-997-letter.jpg',cap:'담기 전에 훈련 이름 · 시간 · 장면 수를 한 번 확인'}],
+    '2026-10-11-v2-996-reports':[
+      {src:'v2-996-gamemodel.jpg',cap:'팀 운영 › 게임모델 — 가져온 뒤 바로 «되돌리기»도 된다'}]
+  };
+  var IMG='/guide/img/news/',PAGE=30;
+  var list=document.getElementById('nwList'),now=document.getElementById('nwNow'),toast=document.getElementById('nwToast');
+  function el(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n;}
+  function split(title){var m=/^v(\d+(?:\.\d+)+)\s*·\s*(.+)$/.exec(title);return m?{ver:'v'+m[1],title:m[2]}:{ver:'',title:title};}
+  function dayName(ymd){
+    var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd||'');if(!m)return ymd||'';
+    var d=new Date(+m[1],+m[2]-1,+m[3]);
+    return (+m[2])+'월 '+(+m[3])+'일 '+'일월화수목금토'.charAt(d.getDay())+'요일'+(d.getFullYear()!==new Date().getFullYear()?' · '+m[1]:'');
+  }
+  var timer=null;
+  function say(t){toast.textContent=t;toast.classList.add('on');clearTimeout(timer);timer=setTimeout(function(){toast.classList.remove('on');},1800);}
+  function copy(id){
+    var url=location.origin+'/news#'+id;
+    var done=function(){say('링크를 복사했어요');},fail=function(){window.prompt('이 링크를 복사하세요',url);};
+    try{ if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(url).then(done,fail); else fail(); }catch(_){ fail(); }
+  }
+  function entry(e){
+    var shots=SHOTS[e.id]||[],t=split(e.title),a=el('article','entry'+(shots.length?' big':''));a.id=e.id;
+    var hd=el('div','hd');if(t.ver)hd.appendChild(el('span','ver',t.ver));hd.appendChild(el('h3','',t.title));
+    var cp=el('button','cp','링크 복사');cp.type='button';cp.addEventListener('click',function(){copy(e.id);});hd.appendChild(cp);a.appendChild(hd);
+    if(shots.length){
+      var g=el('div','shots');
+      shots.forEach(function(s){
+        var f=el('figure'),ln=el('a'),im=el('img');ln.href=IMG+s.src;ln.target='_blank';ln.rel='noopener';
+        im.src=IMG+s.src;im.alt=s.cap;im.loading='lazy';im.decoding='async';im.width=1600;im.height=1000;
+        ln.appendChild(im);f.appendChild(ln);f.appendChild(el('figcaption','',s.cap));g.appendChild(f);
+      });
+      a.appendChild(g);
+    }
+    var ul=el('ul');e.changes.forEach(function(c){ul.appendChild(el('li','',c));});a.appendChild(ul);
+    return a;
+  }
+  var all=[],shown=0,lastDay=null,dayBox=null,moreBtn=null;
+  function render(upto){
+    upto=Math.min(upto,all.length);
+    for(;shown<upto;shown++){
+      var e=all[shown];
+      if(e.date!==lastDay){lastDay=e.date;dayBox=el('section','day');dayBox.appendChild(el('h2','',dayName(e.date)));list.appendChild(dayBox);}
+      dayBox.appendChild(entry(e));
+    }
+    if(moreBtn)moreBtn.remove();moreBtn=null;
+    if(shown<all.length){
+      moreBtn=el('button','more','이전 소식 더 보기 ('+(all.length-shown)+')');moreBtn.type='button';
+      moreBtn.addEventListener('click',function(){render(shown+PAGE);});
+      list.after(moreBtn);
+    }
+  }
+  /* 주소의 #항목 이 아직 안 그려진 옛 소식이면 거기까지 그린 뒤 데려간다 */
+  function goHash(){
+    var id=decodeURIComponent(location.hash.slice(1));if(!id)return;
+    var i=all.findIndex(function(e){return e.id===id;});if(i<0)return;
+    if(i>=shown)render(i+1);
+    var n=document.getElementById(id);if(n)n.scrollIntoView();
+  }
+  try{ all=(window.PSReleaseNotes&&window.PSReleaseNotes.entries())||[]; }catch(_){ all=[]; }
+  if(!all.length){list.appendChild(el('div','state','소식을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.'));return;}
+  var latest=split(all[0].title);
+  if(latest.ver){now.textContent='';now.appendChild(document.createTextNode('지금 판 '));now.appendChild(el('b','',latest.ver));now.appendChild(document.createTextNode(' · '+dayName(all[0].date)));now.hidden=false;}
+  render(PAGE);
+  goHash();
+  window.addEventListener('hashchange',goHash);
+})();
+</script>
+</body>
+</html>

@@ -54,6 +54,10 @@
   .hero{position:relative;overflow:hidden;background:radial-gradient(130% 120% at 50% -20%, #1c1e23 0%, #101114 48%, #060708 100%);color:#fff}
   .hero-in{position:relative;z-index:2;padding:74px 0 66px;text-align:center}
   .hero .kicker{color:rgba(255,255,255,.5);margin-bottom:22px}
+  .newsbar{display:inline-flex;align-items:center;gap:9px;max-width:100%;margin-bottom:22px;padding:5px 14px 5px 5px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.86);font-size:13px;font-weight:600;text-decoration:none}
+  .newsbar:hover{background:rgba(255,255,255,.12)}
+  .newsbar b{flex:0 0 auto;background:#3a6df0;color:#fff;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;letter-spacing:.04em}
+  .newsbar span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .hero h1{font-size:clamp(34px,5.6vw,60px);font-weight:800;line-height:1.08;letter-spacing:-.035em}
   .hero .lead{margin:22px auto 0;max-width:600px;font-size:clamp(15px,1.85vw,18px);color:rgba(255,255,255,.72);font-weight:400;letter-spacing:-.01em}
   .cta{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-top:32px}
@@ -222,6 +226,7 @@
       <a href="#board">작전판</a>
       <a href="#features">기능</a>
       <a href="/guide/">사용법</a>
+      <a href="/news">업데이트 소식</a>
       <a class="go" href="https://processstudio.netlify.app/">앱 열기</a>
     </nav>
   </div>
@@ -231,6 +236,7 @@
 <header class="hero" id="top">
   <div class="wrap">
     <div class="hero-in">
+      <a class="newsbar" id="newsBar" href="/news"><b>NEW</b><span id="newsBarT">업데이트 소식 보기</span><span aria-hidden="true">→</span></a>
       <div class="kicker">팀 워크스페이스 · 클라우드 동기화</div>
       <h1>팀이 함께 쓰는<br>전술 스튜디오.</h1>
       <p class="lead">코칭 스태프가 하나의 워크스페이스에서 작전판·훈련·일정을 공유합니다. 로그인 한 번이면 데스크톱과 폰이 이어지고, 초대 코드로 팀원을 부르세요.</p>
@@ -497,8 +503,16 @@
   <div class="brand" style="display:flex;align-items:center;justify-content:center;gap:10px"><img src="icon-any.svg" alt="PROCESS STUDIO" style="width:24px;height:24px;border-radius:6px"><span><b>PRO</b>CESS <b>STUDIO</b></span></div>
   팀이 함께 쓰는 전술 스튜디오 — 작전판 · 훈련 · 일정 · 팀 · 노트 · 양식 · 클라우드 동기화<br>
   <a href="https://processstudio.netlify.app/">processstudio.netlify.app</a><br>
-  <span style="font-size:12px"><a href="/guide/">사용 설명서</a> · <a href="/privacy.html">개인정보처리방침</a> · <a href="/terms.html">이용약관</a></span>
+  <span style="font-size:12px"><a href="/guide/">사용 설명서</a> · <a href="/news">업데이트 소식</a> · <a href="/privacy.html">개인정보처리방침</a> · <a href="/terms.html">이용약관</a></span>
 </footer>
 
+<script>
+/* 첫 줄의 «NEW» 띠 — 앱의 «새 기능» 안내(studio/release-notes.js)의 맨 앞 소식을 화면이 다 뜬 뒤에 읽어 채운다. 못 읽으면 «업데이트 소식 보기» 그대로 */
+window.addEventListener('load',function(){
+  var s=document.createElement('script');s.src='/studio/release-notes.js';
+  s.onload=function(){try{var e=window.PSReleaseNotes.entries()[0];if(!e)return;document.getElementById('newsBarT').textContent=e.title;document.getElementById('newsBar').href='/news#'+e.id;}catch(_){}};
+  document.head.appendChild(s);
+});
+</script>
 </body>
 </html>
