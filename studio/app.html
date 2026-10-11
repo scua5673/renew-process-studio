@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.996"></script>
+<script src="autosave-status.js?v=2.997"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -505,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.996';</script>
+<script>window.PS_BUILD='2.997';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -5145,6 +5145,61 @@ function psShowUpdBand(){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',__shareBoot); else __shareBoot();
 })();
 </script>
+<script>
+/* ══ 2.997 · 프로세스 레터 훈련 세션을 보관함에 — «…/studio/app.html#pack=letter-03» ══
+   사용자 «훈련들을 보관함에 담으면 3가지 훈련이 보관함에 담아지게». 레터의 «보관함에 담기»가 이 주소로 온다.
+   · 받는 곳은 아래 목록의 두 사이트뿐이고 번호는 두 자리 숫자다. 주소를 통째로 받지 않는다(아무 주소나 읽어 오는 문이 되지 않게).
+     ⚠ 작전판(board.html)의 LETTER_PACK_ORIGINS 와 같아야 한다 — 작전판이 한 번 더 본다.
+   · 로그인 전이면 이 탭에만 적어 두고(sessionStorage) 기다린다. 로그인은 주소의 # 을 바꾸므로(sync.js consumeHash) 주소에 두면 사라진다.
+   · 자료가 열리면 보관함으로 가서 작전판에 알린다. 작전판이 «받았다»(letterPackAck)고 할 때까지 다시 보낸다 — 프레임이 아직 안 떴을 수 있다.
+   · 받기 · 확인 창 · 저장은 전부 작전판이 한다(board.html «2.997 · 프로세스 레터 훈련 세션 → 보관함»). ══ */
+(function(){
+  var SRC={letter:'https://process-letter.netlify.app/media/packs/',review:'https://process-letter-sessions.netlify.app/packs/'};
+  var KEY='ps_pack_pending_v1',TTL=30*60*1000,mem=null,timer=null,tries=0,posted=0,opened=false;
+  function parse(h){ var m=/^#pack=([a-z]{3,8})-(\d{2})$/.exec(String(h||'')); if(!m||!Object.prototype.hasOwnProperty.call(SRC,m[1]))return null;
+    return {id:m[1]+'-'+m[2],no:+m[2],url:SRC[m[1]]+m[2]+'.json'}; }
+  window.__psPackParse=parse;
+  function note(text){ try{ var n=document.getElementById('psPackNote');
+      if(!text){ if(n)n.remove(); return; }
+      if(!n){ n=document.createElement('div'); n.id='psPackNote'; n.setAttribute('role','status');
+        n.style.cssText='position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translateX(-50%);z-index:100001;max-width:min(92vw,520px);box-sizing:border-box;padding:10px 16px;border-radius:999px;background:#14161A;color:#fff;font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Pretendard",sans-serif;text-align:center;word-break:keep-all;box-shadow:0 8px 24px rgba(0,0,0,.28);pointer-events:none';
+        document.body.appendChild(n); }
+      if(n.textContent!==text)n.textContent=text; }catch(_){} }
+  function stop(){ if(timer){ clearInterval(timer); timer=null; } }
+  function drop(){ mem=null; try{ sessionStorage.removeItem(KEY); }catch(_){} stop(); note(''); }
+  function put(id){ mem={id:id,at:Date.now()}; try{ sessionStorage.setItem(KEY,JSON.stringify(mem)); }catch(_){} }
+  function get(){ var p=mem; if(!p){ try{ p=JSON.parse(sessionStorage.getItem(KEY)||'null'); }catch(_){ p=null; } }
+    var r=(p&&typeof p.id==='string'&&Date.now()-p.at<TTL&&Date.now()>=p.at)?parse('#pack='+p.id):null;
+    if(!r){ if(p)drop(); return null; } mem=p; return r; }
+  function start(){ tries=0; if(!timer)timer=setInterval(run,600); run(); }
+  function run(){
+    var p=get(); if(!p){ stop(); return; }
+    if(++tries>400){ stop(); note(''); return; }   /* 4분 — 그 뒤 로그인하면(ps-auth-state · 다시 열림) 이어 간다 */
+    if(!document.body||document.body.classList.contains('ps-booting'))return;
+    if(document.body.classList.contains('ps-player-idp-only')){ drop(); note('보관함은 코칭스태프 공간입니다 — 코치 계정으로 열면 담깁니다'); setTimeout(function(){ note(''); },6000); return; }
+    var S=window.PSSync,open=!!(S&&S.dataUnlocked&&S.dataUnlocked()===true);
+    if(!open){
+      if(!opened){ opened=true; try{ window.__psShowApp&&window.__psShowApp('design'); }catch(_){} }   /* 보관함 자리의 로그인 안내가 보이게 */
+      note('로그인하면 프로세스 레터 '+p.no+'호 훈련 세션을 보관함에 담습니다');
+      return; }
+    note('');
+    if(document.body.getAttribute('data-ps-app')!=='design'){ try{ window.__psShowApp&&window.__psShowApp('design'); }catch(_){} }
+    var f=document.getElementById('fBoard');
+    try{ if(f&&f.contentWindow){ f.contentWindow.postMessage({source:'app',type:'letterPack',id:p.id,url:p.url},location.origin); posted++; } }catch(_){}
+    if(posted>60)drop();   /* 작전판이 끝내 답하지 않으면 그만둔다(36초) */
+  }
+  function take(){ var p=parse(location.hash); if(!p)return;
+    put(p.id); posted=0; opened=false;
+    try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){}
+    start(); }
+  window.addEventListener('message',function(e){ var d=e.data||{}; if(e.origin!==location.origin||d.source!=='board'||d.type!=='letterPackAck')return;
+    var f=document.getElementById('fBoard'); if(!f||e.source!==f.contentWindow)return; drop(); });
+  window.addEventListener('hashchange',take);
+  window.addEventListener('ps-auth-state',function(){ if(get())start(); });
+  function boot(){ take(); if(get()&&!timer)start(); }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot); else boot();
+})();
+</script>
 
 
 <script>
@@ -7997,13 +8052,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.996"></script>
-<script src="autosave-merge.js?v=2.996"></script>
-<script src="autosave-runtime.js?v=2.996"></script>
-<script src="autosave-recovery.js?v=2.996"></script>
-<script src="sync.js?v=2.996"></script>
+<script src="autosave-journal.js?v=2.997"></script>
+<script src="autosave-merge.js?v=2.997"></script>
+<script src="autosave-runtime.js?v=2.997"></script>
+<script src="autosave-recovery.js?v=2.997"></script>
+<script src="sync.js?v=2.997"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.996">
+<link rel="stylesheet" href="support.css?v=2.997">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
