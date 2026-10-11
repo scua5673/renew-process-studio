@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=2.998"></script>
+<script src="autosave-status.js?v=2.999"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -505,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='2.998';</script>
+<script>window.PS_BUILD='2.999';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -3355,6 +3355,25 @@ function psShowUpdBand(){
   DICT['개인 노트']=['個人ノート','Personal Notes','个人笔记','Notas personales','Notas pessoais'];
   DICT['앱 설정']=['アプリ設定','App settings','应用设置','Ajustes de la aplicación','Configurações do app'];
   DICT['작전판 설정']=DICT['보드 설정']=['作戦ボード設定','Board settings','战术板设置','Ajustes de la pizarra','Configurações da prancheta'];
+  /* 2.999 — 보관함 예시(빈 보관함 첫 화면 · ＋ 만들기 창) */
+  DICT['작전판·훈련·세트피스·미팅 자료를 저장해 두고 언제든 다시 여는 공간이에요. 먼저 예시를 열어 보세요.']=['作戦ボード・トレーニング・セットプレー・ミーティング資料を保存して、いつでも開ける場所です。まず例を開いてみましょう。','Save boards, training, set pieces and meeting decks here and reopen them any time. Start by opening an example.','在这里保存战术板、训练、定位球和会议资料，随时打开。先打开一个示例看看。','Guarda pizarras, entrenamientos, balón parado y reuniones para abrirlos cuando quieras. Empieza abriendo un ejemplo.','Guarde pranchetas, treinos, bolas paradas e reuniões para abrir quando quiser. Comece abrindo um exemplo.'];
+  DICT['예시로 둘러보기']=['例で見てみる','Explore examples','浏览示例','Ver ejemplos','Ver exemplos'];
+  DICT['종류마다 하나씩 — 누르면 내 보관함 «프로세스» 폴더에 담기고 바로 열려요. 그대로 고쳐 써도 됩니다.']=['種類ごとに一つ — 押すと保管庫の«プロセス»フォルダに入り、すぐ開きます。そのまま編集できます。','One of each kind — tap one to copy it into your «Process» folder and open it. Edit it freely.','每种一个 — 点击即复制到资料库的«Process»文件夹并打开，可直接修改。','Uno de cada tipo: tócalo para copiarlo en tu carpeta «Process» y abrirlo. Puedes editarlo.','Um de cada tipo: toque para copiar para a pasta «Process» e abrir. Pode editar à vontade.'];
+  DICT['«프로세스» 폴더를 준비하는 중이에요']=['«プロセス»フォルダを準備しています','Preparing your «Process» folder','正在准备«Process»文件夹','Preparando tu carpeta «Process»','Preparando sua pasta «Process»'];
+  DICT['패턴북 · 훈련 · 세트피스 · 작전판 · 미팅 자료 예시를 넣고 있어요. 잠시만요.']=['パターンブック · トレーニング · セットプレー · 作戦ボード · ミーティング資料の例を入れています。少々お待ちください。','Adding examples: pattern book · training · set piece · board · meeting deck. One moment.','正在加入示例：套路本 · 训练 · 定位球 · 战术板 · 会议资料。请稍候。','Añadiendo ejemplos: patrones · entrenamiento · balón parado · pizarra · reunión. Un momento.','Adicionando exemplos: padrões · treino · bola parada · prancheta · reunião. Um momento.'];
+  DICT['예시 5개 모두 담기']=['例を5つすべて追加','Add all 5 examples','添加全部 5 个示例','Añadir los 5 ejemplos','Adicionar os 5 exemplos'];
+  DICT['직접 시작하기']=['自分で始める','Start from scratch','自己开始','Empezar desde cero','Começar do zero'];
+  DICT['패턴북']=['パターンブック','Pattern book','战术套路本','Libro de patrones','Livro de padrões'];
+  DICT['훈련 세션']=['トレーニングセッション','Training session','训练课','Sesión de entrenamiento','Sessão de treino'];
+  DICT['미팅 자료']=['ミーティング資料','Meeting deck','会议资料','Material de reunión','Material de reunião'];
+  DICT['국면별 시퀀스 6개']=['局面別シーケンス6つ','6 sequences by phase','按阶段 6 个序列','6 secuencias por fase','6 sequências por fase'];
+  DICT['훈련 3개 · 60분']=['トレーニング3つ · 60分','3 drills · 60 min','3 个训练 · 60 分钟','3 ejercicios · 60 min','3 exercícios · 60 min'];
+  DICT['코너킥 니어 플릭']=['CK ニアでフリック','Corner — near-post flick','角球 · 近门柱摆渡','Córner: peinada al primer palo','Escanteio: desvio no 1º pau'];
+  DICT['공격 형태 · 수비 블록']=['攻撃の形 · 守備ブロック','Attacking shape · defensive block','进攻阵型 · 防守区块','Forma ofensiva · bloque defensivo','Forma ofensiva · bloco defensivo'];
+  DICT['경기 전 미팅 5장']=['試合前ミーティング5枚','Pre-match meeting · 5 slides','赛前会议 5 页','Reunión previa · 5 diapositivas','Reunião pré-jogo · 5 slides'];
+  DICT['처음이세요?']=['初めてですか?','New here?','第一次使用？','¿Eres nuevo?','É novo por aqui?'];
+  DICT['종류별 예시 5개(패턴북 · 훈련 · 세트피스 · 작전판 · 미팅)를 «프로세스» 폴더에 담아 둘러보세요.']=['種類別の例5つ(パターンブック · トレーニング · セットプレー · 作戦ボード · ミーティング)を«プロセス»フォルダに入れて見てみましょう。','Add 5 examples (pattern book · training · set piece · board · meeting) to your «Process» folder and look around.','把 5 个示例（套路本 · 训练 · 定位球 · 战术板 · 会议）加入«Process»文件夹看看。','Añade 5 ejemplos (patrones · entrenamiento · balón parado · pizarra · reunión) a tu carpeta «Process».','Adicione 5 exemplos (padrões · treino · bola parada · prancheta · reunião) à sua pasta «Process».'];
+  DICT['예시 담기']=['例を追加','Add examples','添加示例','Añadir ejemplos','Adicionar exemplos'];
   DICT['앱 전체']=['アプリ全体','Entire app','整个应用','Toda la aplicación','Todo o app'];
   DICT['작전판']=DICT['보드']=['作戦ボード','Board','战术板','Pizarra','Prancheta'];   /* 1.912 — 사이드바 라벨 '작전판'→'보드' */
   DICT['도움말·도구']=['ヘルプ・ツール','Help & tools','帮助与工具','Ayuda y herramientas','Ajuda e ferramentas'];
@@ -8052,13 +8071,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=2.998"></script>
-<script src="autosave-merge.js?v=2.998"></script>
-<script src="autosave-runtime.js?v=2.998"></script>
-<script src="autosave-recovery.js?v=2.998"></script>
-<script src="sync.js?v=2.998"></script>
+<script src="autosave-journal.js?v=2.999"></script>
+<script src="autosave-merge.js?v=2.999"></script>
+<script src="autosave-runtime.js?v=2.999"></script>
+<script src="autosave-recovery.js?v=2.999"></script>
+<script src="sync.js?v=2.999"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=2.998">
+<link rel="stylesheet" href="support.css?v=2.999">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
