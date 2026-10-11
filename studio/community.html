@@ -427,7 +427,7 @@
 <div class="cv-mask" id="cvMask" aria-hidden="true">
   <div class="cv-shell" role="dialog" aria-modal="true" aria-label="커뮤니티 훈련 상세보기">
     <div class="cv-head"><b>훈련 상세</b><span>읽기 전용 · 보관함에 담은 뒤 편집할 수 있어요</span><i></i><button class="cv-x" id="cvClose" aria-label="상세보기 닫기">×</button></div>
-    <div class="pr-cvtabs" id="prCvTabs" role="group" aria-label="세션의 훈련" hidden></div><!-- 2.999 — 프로세스 훈련 세션: 훈련 고르기 -->
+    <div class="pr-cvtabs" id="prCvTabs" role="group" aria-label="이 글의 훈련" hidden></div><!-- 2.999 — 프로세스 훈련 세션 · 3.002 — 훈련이 둘 이상인 코치 글: 훈련 고르기 -->
     <iframe class="cv-frame" id="cvFrame" title="커뮤니티 훈련 읽기 전용 보기"></iframe>
   </div>
 </div>
@@ -994,7 +994,8 @@ function openPost(p){
     var me=sess();
     var post={id:p.id,title:p.title,owner_name:p.owner_name,cat:p.cat,age:p.age,summary:p.summary,
               thumb:p.thumb,item:p.item||{},mine:!!(me&&me.uid===p.owner),proc:!!p.proc};
-    if(p.proc){procViewOpen(p);return;}   /* 2.999 — 훈련 셋을 하나씩 뷰어에 싣는다 */
+    /* 2.999 — 프로세스 세션은 훈련 셋을 하나씩 뷰어에 싣는다 · 3.002 — 훈련이 둘 이상인 코치 글도 같은 줄로 골라 본다(전에는 첫 훈련만 보였다) */
+    if(p.proc||(Array.isArray(p.item.trainings)&&p.item.trainings.length>1)){procViewOpen(p,post);return;}
     openCommunityViewer(post,p);
   }
   if(p.item){ go(); return; }
@@ -1543,6 +1544,9 @@ $('sortSel').onchange=function(){sort=this.value;fetchPosts();};
      그래서 PROC_BASE 는 셸(app.html)의 SRC.review 와 같아야 한다(단위 테스트가 본다). ══ */
 /* ── 2.999 · 프로세스 칸 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
 var PROC_BASE='https://process-letter-sessions.netlify.app/packs/',PROC_SRC='review';
+/* 3.003 — 앱에 실어 둔 사본(studio/packs/ · scripts/proc-snapshot.mjs 가 만든다). 훈련 세션 사이트가 닫혀 있거나 닿지 않으면 여기서 읽는다.
+   셸의 SRC.app · 작전판 letterPackUrlOk 의 «우리 사이트의 packs/» 와 같은 자리다. */
+var PROC_LOCAL='packs/',PROC_LOCAL_SRC='app';
 var PROC_GROUPS=[['att','공격 조직'],['def','수비 조직'],['tr','전환'],['set','세트피스'],['plan','훈련 설계'],['phys','피지컬·경기 준비'],['etc','그 밖']];
 var PROC_PACK_MAX=4*1024*1024;
 function _prStr(v,n){ return (typeof v==='string'?v:'').slice(0,n); }
@@ -1567,10 +1571,11 @@ function procRead(j){
   out.sort(function(a,b){return a.n-b.n;});
   return out;
 }
-function procUrl(kind,s,k){
-  if(kind==='pack')return PROC_BASE+s.nn+'.json';
-  if(kind==='thumb')return PROC_BASE+'thumbs/'+s.nn+'-'+Math.floor(_prNum(k,1,6,1))+'.svg'+(s.rev?('?v='+s.rev):'');
-  return PROC_BASE+'index.json';
+function procUrl(kind,s,k,src){
+  var b=(src===PROC_LOCAL_SRC)?PROC_LOCAL:PROC_BASE;
+  if(kind==='pack')return b+s.nn+'.json';
+  if(kind==='thumb')return b+'thumbs/'+s.nn+'-'+Math.floor(_prNum(k,1,6,1))+'.svg'+(s.rev?('?v='+s.rev):'');
+  return b+'index.json';
 }
 function procMatch(s,group,q){
   if(group&&group!=='all'&&s.group!==group)return false;
@@ -1595,7 +1600,7 @@ function procItem(pack,s,dep){
   return item;
 }
 /* ── 2.999 · 프로세스 칸 순수 구간 끝 ── */
-var proc={ready:false,loading:false,err:'',at:0,list:[],posts:{}},procG='all',procOpenSeq=0;
+var proc={ready:false,loading:false,err:'',at:0,src:PROC_SRC,list:[],posts:{}},procG='all',procOpenSeq=0;
 var PROC_CK='ps_comm_proc_index_v1',PROC_TTL=10*60*1000;
 function procFind(id){ return (typeof id==='string'&&Object.prototype.hasOwnProperty.call(proc.posts,id))?proc.posts[id]:null; }
 function procAbort(ms){ var o={signal:undefined,done:function(){}}; try{ var c=new AbortController(),t=setTimeout(function(){ try{c.abort();}catch(_){} },ms); o.signal=c.signal; o.done=function(){ clearTimeout(t); }; }catch(_){} return o; }
@@ -1604,12 +1609,12 @@ function prCounts(){
   if(a)a.textContent=(ready&&!tableMissing&&posts.length)?(posts.length>=100?'100+':String(posts.length)):'';
   if(b)b.textContent=proc.ready?String(proc.list.length):'';
 }
-function procSet(list,at){
+function procSet(list,at,src){
   var keep={};
   list.forEach(function(s){ var id='proc-'+s.nn,old=proc.posts[id];
     keep[id]=(old&&old.s.rev===s.rev)?old:{id:id,proc:true,title:s.session,owner_name:'프로세스',cat:'',age:'',players:'',summary:'',thumb:'',item:null};
     keep[id].s=s; keep[id].title=s.session; });
-  proc.posts=keep; proc.list=list; proc.ready=true; proc.err=''; proc.at=at||Date.now();
+  proc.posts=keep; proc.list=list; proc.ready=true; proc.err=''; proc.at=at||Date.now(); proc.src=(src===PROC_LOCAL_SRC)?PROC_LOCAL_SRC:PROC_SRC;
   if(procG!=='all'&&!list.some(function(s){return s.group===procG;}))procG='all';
   prCounts();
   if(tabF==='proc'){ catChipsRender(); renderProc(); }
@@ -1617,17 +1622,19 @@ function procSet(list,at){
 function procFetch(force){
   if(proc.loading)return;
   if(!force&&!proc.ready){ try{ var c=JSON.parse(sessionStorage.getItem(PROC_CK)||'null');
-      if(c&&Date.now()>=c.at&&Date.now()-c.at<PROC_TTL){ var l0=procRead(c.index); if(l0&&l0.length){ procSet(l0,c.at); return; } } }catch(_){} }
+      if(c&&Date.now()>=c.at&&Date.now()-c.at<PROC_TTL){ var l0=procRead(c.index); if(l0&&l0.length){ procSet(l0,c.at,c.src); return; } } }catch(_){} }
   proc.loading=true; proc.err=''; if(tabF==='proc'&&!proc.ready)renderProc();
-  var ab=procAbort(15000);
-  fetch(procUrl('index'),{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:ab.signal})
-    .then(function(r){ if(!r.ok)throw r.status; return r.json(); })
-    .then(function(j){ var l=procRead(j); if(!l)throw 'shape';
-      try{ sessionStorage.setItem(PROC_CK,JSON.stringify({at:Date.now(),index:j})); }catch(_){}
-      proc.loading=false; procSet(l,Date.now()); })
+  /* 3.003 — 훈련 세션 사이트에서 먼저 읽고(새 세션이 거기에 먼저 실린다), 닫혀 있거나 닿지 않으면 앱에 실린 사본을 읽는다. */
+  var get=function(src,ms){ var ab=procAbort(ms);
+    return fetch(procUrl('index',null,null,src),{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:ab.signal})
+      .then(function(r){ if(!r.ok)throw r.status; return r.json(); })
+      .then(function(j){ ab.done(); var l=procRead(j); if(!l||!l.length)throw 'shape'; return {l:l,j:j,src:src}; },function(e){ ab.done(); throw e; }); };
+  get(PROC_SRC,8000).catch(function(){ return get(PROC_LOCAL_SRC,8000); })
+    .then(function(o){
+      try{ sessionStorage.setItem(PROC_CK,JSON.stringify({at:Date.now(),index:o.j,src:o.src})); }catch(_){}
+      proc.loading=false; procSet(o.l,Date.now(),o.src); })
     .catch(function(){ proc.loading=false; if(proc.ready)return;   /* 이미 그린 목록이 있으면 그대로 둔다 */
-      proc.err=(navigator.onLine===false)?'offline':'net'; if(tabF==='proc')renderProc(); })
-    .then(function(){ ab.done(); });
+      proc.err=(navigator.onLine===false)?'offline':'net'; if(tabF==='proc')renderProc(); });
 }
 function procChipsRender(){
   var box=$('catChips'); if(!box)return; box.innerHTML='';
@@ -1639,7 +1646,7 @@ function procChipsRender(){
   mk('all','전체 주제',proc.ready?proc.list.length:null);
   PROC_GROUPS.forEach(function(g){ if(counts[g[0]])mk(g[0],g[1],counts[g[0]]); });
 }
-function procThumb(s,k){ return '<img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(procUrl('thumb',s,k))+'">'; }
+function procThumb(s,k){ return '<img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(procUrl('thumb',s,k,proc.src))+'">'; }
 function renderProc(){
   var grid=$('grid'),cc=$('commCount'); if(!grid)return;
   try{cpAnimStop();}catch(_){}
@@ -1672,12 +1679,16 @@ function renderProc(){
 function procEnsure(p){
   if(p.item)return Promise.resolve(p.item);
   if(p.__load)return p.__load;
-  var ab=procAbort(15000);
-  p.__load=fetch(procUrl('pack',p.s),{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:ab.signal})
-    .then(function(r){ if(!r.ok)throw new Error('http '+r.status); return r.text(); })
-    .then(function(txt){ if(txt.length>PROC_PACK_MAX)throw new Error('big');
-      var it=procItem(JSON.parse(txt),p.s,{fields:COPY_FIELDS,snap:stripSnap,trainings:stripTrainings,frames:stripFrames}); if(!it)throw new Error('shape');
-      ab.done(); p.__load=null; p.item=it; return it; },function(e){ ab.done(); p.__load=null; throw e; });
+  /* 3.003 — 목록을 읽은 곳에서 받고, 그 사이트가 그사이 닫혔으면 사본에서 받는다. 어디서 받았는지(p.src)는 «보관함에 담기»가 같은 곳을 읽게 적어 둔다. */
+  var get=function(src){ var ab=procAbort(15000);
+    return fetch(procUrl('pack',p.s,null,src),{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:ab.signal})
+      .then(function(r){ if(!r.ok)throw new Error('http '+r.status); return r.text(); })
+      .then(function(txt){ ab.done(); if(txt.length>PROC_PACK_MAX)throw new Error('big');
+        var it=procItem(JSON.parse(txt),p.s,{fields:COPY_FIELDS,snap:stripSnap,trainings:stripTrainings,frames:stripFrames}); if(!it)throw new Error('shape');
+        return {it:it,src:src}; },function(e){ ab.done(); throw e; }); };
+  var first=proc.src;
+  p.__load=get(first).catch(function(e){ if(first===PROC_LOCAL_SRC)throw e; return get(PROC_LOCAL_SRC); })
+    .then(function(o){ p.__load=null; p.item=o.it; p.src=o.src; return o.it; },function(e){ p.__load=null; throw e; });
   p.__load.catch(function(){ p.__load=null; });
   return p.__load;
 }
@@ -1693,29 +1704,37 @@ function procOpen(p,card){
     if(hidden)openPost(p);
   },function(){ free(); if(seq===procOpenSeq)toast('훈련 세션을 불러오지 못했어요 — 다시 눌러 주세요'); });
 }
-/* 상세 — 세션의 훈련을 하나씩 읽기 전용 뷰어에 싣는다. 뷰어(작전판)는 커뮤니티에서 훈련 탭 줄을 감추므로(body.comm-viewing #trainingStrip)
+/* 상세 — 세션(3.002 부터 훈련이 둘 이상인 코치 글도)의 훈련을 하나씩 읽기 전용 뷰어에 싣는다. 뷰어(작전판)는 커뮤니티에서 훈련 탭 줄을 감추므로(body.comm-viewing #trainingStrip)
    고르는 줄은 뷰어 머리 바로 아래 여기에 둔다. 훈련을 바꾸면 뷰어를 새로 연다 — 글마다 프레임을 새로 만드는 것과 같은 이유(앞 훈련의 애니메이션·판 상태가 남지 않게). */
 var procCv=null;
+/* 3.002 — 코치 글도 쓴다. 훈련 k 하나만 실은 글을 짓는다: 판·글은 그 훈련의 것, 애니메이션은 그 훈련의 장면.
+   옛 카드(애니메이션이 카드에만 있고 훈련에는 없다)는 작전판이 첫 훈련에 얹어 보여 주므로(_trainAdoptCardFrames) 여기서도 첫 훈련에만 준다.
+   담기·신고·삭제는 글 번호(id)로 가므로 어느 훈련을 보고 있든 글 전체에 닿는다. */
 function procViewPost(k){
-  var p=procCv.p,it=p.item,t=it.trainings[k],one={};
+  var p=procCv.p,it=p.item,trs=it.trainings,t=trs[k]||{},one={};
   ['type','focus','rpe','sets','tags'].forEach(function(f){ if(it[f]!=null)one[f]=it[f]; });
-  one.name=t.name; one.minutes=t.minutes; one.snap=t.snap; one.trainings=[t];
-  if(Array.isArray(t.frames)&&t.frames.length>1)one.frames=t.frames;
-  return {id:p.id,title:p.title,owner_name:p.owner_name,cat:'',age:'',summary:'',thumb:'',item:one,mine:false,proc:true,procN:it.trainings.length};
+  one.name=t.name||('훈련 '+(k+1)); if(t.minutes!=null)one.minutes=t.minutes; one.snap=t.snap; one.trainings=[t];
+  var own=function(x){ return !!(x&&Array.isArray(x.frames)&&x.frames.length>1); };
+  if(own(t))one.frames=t.frames;
+  else if(k===0&&Array.isArray(it.frames)&&it.frames.length>1&&!trs.some(own))one.frames=it.frames;
+  if(p.proc)return {id:p.id,title:p.title,owner_name:p.owner_name,cat:'',age:'',summary:'',thumb:'',item:one,mine:false,proc:true,procN:trs.length};
+  var base=procCv.post||{};
+  return {id:p.id,title:p.title,owner_name:p.owner_name,cat:p.cat,age:p.age,summary:p.summary,thumb:p.thumb,item:one,mine:!!base.mine};
 }
 function procViewTabs(){
   var box=$('prCvTabs'); if(!box||!procCv)return;
-  var trs=procCv.p.s.trainings; box.innerHTML=''; box.hidden=trs.length<2;
-  trs.forEach(function(t,i){ var on=i===procCv.k,b=document.createElement('button'); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
-    b.innerHTML='<span class="pr-i">'+(i+1)+'</span><span class="pr-nm">'+esc(t.name)+'</span>'+(t.minutes?('<span class="pr-mn">'+t.minutes+'분</span>'):'');
+  var trs=procCv.p.item.trainings; box.innerHTML=''; box.hidden=trs.length<2;
+  trs.forEach(function(t,i){ t=(t&&typeof t==='object')?t:{};
+    var on=i===procCv.k,b=document.createElement('button'),min=+t.minutes>0?Math.round(+t.minutes):0; b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
+    b.innerHTML='<span class="pr-i">'+(i+1)+'</span><span class="pr-nm">'+esc(String(t.name||'').trim()||('훈련 '+(i+1)))+'</span>'+(min?('<span class="pr-mn">'+min+'분</span>'):'');
     b.onclick=function(){ if(!procCv||procCv.k===i)return; procCv.k=i; procViewTabs(); openCommunityViewer(procViewPost(i),procCv.p); };
     box.appendChild(b);
     if(on)try{ b.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(_){} });
 }
-function procViewOpen(p){ procCv={p:p,k:0}; procViewTabs(); openCommunityViewer(procViewPost(0),p); }
+function procViewOpen(p,post){ procCv={p:p,k:0,post:post||null}; procViewTabs(); openCommunityViewer(procViewPost(0),p); }
 /* «보관함에 담기» — 레터의 단추와 같은 주소를 셸에 건넨다. 받기 · 확인 창 · 저장은 작전판이 한다(2.997). */
 function procSave(p){
-  var hash='#pack='+PROC_SRC+'-'+p.s.nn;
+  var hash='#pack='+((p.src||proc.src)===PROC_LOCAL_SRC?PROC_LOCAL_SRC:PROC_SRC)+'-'+p.s.nn;   /* 사본으로 보고 있으면 담기도 사본에서 */
   try{closeCommunityViewer();}catch(_){}
   if(IN_SHELL){ try{ window.parent.location.hash=hash; return; }catch(_){} }
   try{ location.href='app.html'+hash; }catch(_){}
@@ -1927,7 +1946,7 @@ html body .top .pr-seg button:not(#_):not(#__){height:36px}
 html body.pr-proc .comm-list .grid:not(#_):not(#__){grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
 .pr-tt{font-size:16px}
 /* 폰: 훈련 셋이 한눈에 — 같은 폭 칸, 위에 번호·분, 아래에 이름(전체 이름은 바로 아래 뷰어의 제목에 있다) */
-.pr-cvtabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;padding:6px 10px;overflow:visible}
+.pr-cvtabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(96px,1fr);gap:6px;padding:6px 10px;overflow-x:auto}   /* 3.002 — 훈련이 많은 코치 글은 칸마다 96px 를 지키고 옆으로 민다(셋은 그대로 한 줄) */
 .pr-cvtabs button{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"i mn" "nm nm";align-content:center;column-gap:5px;row-gap:1px;min-width:0;height:48px;padding:0 9px;line-height:1.3;text-align:left}
 .pr-cvtabs .pr-i{grid-area:i}
 .pr-cvtabs .pr-mn{grid-area:mn}

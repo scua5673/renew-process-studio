@@ -10945,13 +10945,18 @@ async function importDrillPack(file){
    사용자 «훈련들을 보관함에 담으면 3가지 훈련이 보관함에 담아지게». 레터의 훈련 세션(연습 셋)이 보관함 **카드 한 장 = 훈련 3개**로 들어온다
    (훈련마다 장면 애니메이션 · 훈련 방법 · 코칭 포인트). 일정의 «보관함에서 가져오기»는 이 카드를 훈련 칩 셋으로 편다(2.304).
    · 셸(app.html)이 «#pack=letter-NN» 주소를 받아 로그인·자료 확인을 기다린 뒤 이 판에 {type:'letterPack',id,url} 을 보낸다.
-   · 받는 곳은 레터 사이트 둘뿐(LETTER_PACK_ORIGINS) — 셸의 목록과 같아야 한다. 여기서 한 번 더 본다.
+   · 받는 곳은 레터 사이트 둘(LETTER_PACK_ORIGINS)과 앱에 실린 사본(3.003)뿐 — 셸의 목록과 같아야 한다. 여기서 한 번 더 본다.
    · 팩에서 **아는 칸만** 골라 새 카드를 짓는다(letterPackCard). 그림(thumb)은 받지 않고 이 판에서 다시 만든다 — 밖에서 온 SVG 글자를 화면에 넣지 않는다.
    · 드릴 팩 파일 가져오기(importDrillPack)와 다른 점: 확인 창 · 훈련마다 스냅 검사 · 만든 사람 도장 · 담은 카드를 바로 보여 준다. ══ */
 /* ── 2.997 · 레터 팩 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
 var LETTER_PACK_ORIGINS=["https://process-letter.netlify.app","https://process-letter-sessions.netlify.app"];
 var LETTER_PACK_MAX=4*1024*1024;
-function letterPackUrlOk(u){ try{ var x=new URL(String(u||"")); return x.protocol==="https:"&&LETTER_PACK_ORIGINS.indexOf(x.origin)>=0&&/\/packs\/\d{2}\.json$/.test(x.pathname)&&!x.search&&!x.hash&&!x.username&&!x.password; }catch(_){ return false; } }
+/* 3.003 — 앱에 실린 사본(이 판 옆의 packs/NN.json)도 받는다. 커뮤니티 «프로세스» 칸이 훈련 세션 사이트에 닿지 못했을 때 셸이 «#pack=app-NN» 으로 보낸다. */
+function letterPackLocalOk(x){ try{ if(typeof location==="undefined"||x.origin!==location.origin)return false;
+    var dir=String(location.pathname||"").replace(/[^\/]*$/,"")+"packs/"; return x.pathname.indexOf(dir)===0&&/^\d{2}\.json$/.test(x.pathname.slice(dir.length)); }catch(_){ return false; } }
+function letterPackUrlOk(u){ try{ var x=new URL(String(u||"")); if(x.search||x.hash||x.username||x.password)return false;
+    if(letterPackLocalOk(x))return true;
+    return x.protocol==="https:"&&LETTER_PACK_ORIGINS.indexOf(x.origin)>=0&&/\/packs\/\d{2}\.json$/.test(x.pathname); }catch(_){ return false; } }
 function _lpStr(v,n){ return (typeof v==="string"?v:"").slice(0,n); }
 function _lpNum(v,lo,hi,def){ v=+v; return (isFinite(v)&&v>=lo&&v<=hi)?v:def; }
 /* 확인 창이 쓰는 요약. 모양이 다르면 null — 카드 한 장 · 훈련 1~6개 · 훈련마다 스냅 */

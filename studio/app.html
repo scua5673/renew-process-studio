@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.001"></script>
+<script src="autosave-status.js?v=3.003"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -505,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.001';</script>
+<script>window.PS_BUILD='3.003';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -5167,13 +5167,15 @@ function psShowUpdBand(){
 <script>
 /* ══ 2.997 · 프로세스 레터 훈련 세션을 보관함에 — «…/studio/app.html#pack=letter-03» ══
    사용자 «훈련들을 보관함에 담으면 3가지 훈련이 보관함에 담아지게». 레터의 «보관함에 담기»가 이 주소로 온다.
-   · 받는 곳은 아래 목록의 두 사이트뿐이고 번호는 두 자리 숫자다. 주소를 통째로 받지 않는다(아무 주소나 읽어 오는 문이 되지 않게).
+   · 받는 곳은 아래 목록의 두 사이트와 앱에 실린 사본(3.003 · app)뿐이고 번호는 두 자리 숫자다. 주소를 통째로 받지 않는다(아무 주소나 읽어 오는 문이 되지 않게).
      ⚠ 작전판(board.html)의 LETTER_PACK_ORIGINS 와 같아야 한다 — 작전판이 한 번 더 본다.
    · 로그인 전이면 이 탭에만 적어 두고(sessionStorage) 기다린다. 로그인은 주소의 # 을 바꾸므로(sync.js consumeHash) 주소에 두면 사라진다.
    · 자료가 열리면 보관함으로 가서 작전판에 알린다. 작전판이 «받았다»(letterPackAck)고 할 때까지 다시 보낸다 — 프레임이 아직 안 떴을 수 있다.
    · 받기 · 확인 창 · 저장은 전부 작전판이 한다(board.html «2.997 · 프로세스 레터 훈련 세션 → 보관함»). ══ */
 (function(){
   var SRC={letter:'https://process-letter.netlify.app/media/packs/',review:'https://process-letter-sessions.netlify.app/packs/'};
+  /* 3.003 — 앱에 실린 사본(studio/packs/). 커뮤니티 «프로세스» 칸이 훈련 세션 사이트에 닿지 못해 사본으로 그렸을 때 «#pack=app-NN» 으로 온다. */
+  SRC.app=location.origin+String(location.pathname||'').replace(/[^\/]*$/,'')+'packs/';
   var KEY='ps_pack_pending_v1',TTL=30*60*1000,mem=null,timer=null,tries=0,posted=0,opened=false;
   function parse(h){ var m=/^#pack=([a-z]{3,8})-(\d{2})$/.exec(String(h||'')); if(!m||!Object.prototype.hasOwnProperty.call(SRC,m[1]))return null;
     return {id:m[1]+'-'+m[2],no:+m[2],url:SRC[m[1]]+m[2]+'.json'}; }
@@ -8071,13 +8073,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.001"></script>
-<script src="autosave-merge.js?v=3.001"></script>
-<script src="autosave-runtime.js?v=3.001"></script>
-<script src="autosave-recovery.js?v=3.001"></script>
-<script src="sync.js?v=3.001"></script>
+<script src="autosave-journal.js?v=3.003"></script>
+<script src="autosave-merge.js?v=3.003"></script>
+<script src="autosave-runtime.js?v=3.003"></script>
+<script src="autosave-recovery.js?v=3.003"></script>
+<script src="sync.js?v=3.003"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.001">
+<link rel="stylesheet" href="support.css?v=3.003">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
