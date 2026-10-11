@@ -5431,6 +5431,15 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
       return subset(arrays[0],arrays[1])&&subset(arrays[1],arrays[2]);
     }catch(_){return false;}
   }
+  /* 2.996 — 노트·노트 용지·매치데스크는 화면이 IndexedDB 만 읽고 쓴다(note.html 은 IDB 에 값이 있으면
+     부팅 때 localStorage 사본을 지우고, 매치데스크 화면은 이제 없다). 그래서 이 키의 localStorage 사본은
+     1.504/v309 이전 판이나 storage.get 폴백(storage.js — IDB 로 옮기고 사본은 남긴다)의 잔여물이지 새 편집이 아니고,
+     누구도 갱신하지 않는다. 거울 우선 비교에 넣으면 IDB 와 한 번 갈라진 뒤로 서버본 받기가 회차마다 실패하고
+     meta 가 영영 안 나아간다(2.989 제보: kv-write-source-mismatch + personal-channel 20쌍 — 다른 개인 키 올리기까지 막힌다).
+     비교 기준은 개인 채널이 읽은 IDB 사본이다 — 그 사이의 새 IDB 편집은 아래 비교·IDB CAS 가 그대로 막는다.
+     잔여 사본은 덮지도 지우지도 않는다(storage.js 의 «두 사본이 다르면 어느 쪽도 덮지 않는다»).
+     ⚠ 화면이 거울을 먼저 읽는 키(등록한 팀·선수 cs_analysis_team_library_v1 등)는 넣지 않는다 — 거기선 다른 거울이 새 편집이다. */
+  var idbOnlyScreen=(k==='cs_notes_v1'||k==='cs_note_papers_v1'||k==='cs_analysis_workspaces_v1');
   function ownerCurrent(){try{return typeof ownerGuard!=='function'||!!ownerGuard();}catch(_){return false;}}
   function ownerStale(){if(writeGuard)writeGuard.stale=true;return false;}
   function replaceStaleIdbWrite(live){
@@ -5514,7 +5523,8 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
           if(!ownerCurrent()){ownerStale();return {stale:true};}
           var mirror=null,mirrorReadable=false;
           if(expectedLoc!==undefined){try{mirror=localStorage.getItem(k);mirrorReadable=true;}catch(_){}
-            var current=mirror!=null?mirror:(r&&r.value!=null?r.value:null);
+            var idbRaw=r&&r.value!=null?r.value:null,mirrorLeftover=idbOnlyScreen&&mirror!=null&&mirror!==idbRaw;
+            var current=mirror!=null&&!mirrorLeftover?mirror:idbRaw;
             /* A previous partial apply can already have put the exact candidate
                in the mirror while IDB still contains expectedLoc. Complete only
                this convergent pair; the IDB CAS below still rejects fresh edits.
@@ -5570,7 +5580,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
           }else if(k==='scout_tool_v1'||k==='cs_scout_targets_v1'){
             localStorage.setItem(k,v);
             if(localStorage.getItem(k)!==v)throw syncIssue('sync_storage','scout_mirror_write','선수 자료의 화면 저장을 확인할 수 없습니다');
-          }else try{ if(k==='cs_perms_v1'||localStorage.getItem(k)!==null) localStorage.setItem(k,v); }catch(_){}
+          }else try{ if(k==='cs_perms_v1'||(!mirrorLeftover&&localStorage.getItem(k)!==null)) localStorage.setItem(k,v); }catch(_){}
           if(k==='cs_perms_v1')permsCacheSet(v,rpcContext());
           if(k==='cs_board_live_v1')boardLivePulled(v);
           return {stale:false};

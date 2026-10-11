@@ -3031,13 +3031,65 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
   function gmExportPptx(){ gmAskPptMeta(function(meta){ buildPlayerPptx(meta); }); }
   var _bpp=document.getElementById('btnPlayerPpt'); if(_bpp)_bpp.addEventListener('click',gmExportPptx);
 
+  /* ══ 2.996 · 보관함 게임모델 → 팀 게임모델(오류 제보 fdc1f3d5 «보관함에 저장한 게임모델을 팀 운영과 연동») ══
+     보관함 › 게임모델은 이 기기의 개인 판(cs_gamemodel_personal_v1, 1.901)이고, 팀 운영 › 게임모델은 팀이 함께 보는 판(cs_gamemodel_v1)이다.
+     팀 화면 상단 «보관함에서 가져오기»가 개인 판의 내용(정체성·국면·원칙·장면·세 문장·조건 요인·카드)을 팀 판으로 옮긴다.
+     덮어쓰기라 먼저 묻고, 팀 판에만 쌓이는 평가 기록(evals)·재검토(review)는 남긴다. 화면을 닫기 전까지 «되돌리기» 한 번. */
+  var GM_TEAM_ONLY=['evals','review'];
+  function gmHasContent(m){ return !!m&&typeof m==='object'&&Array.isArray(m.moments)&&(m.moments.length>0||!!String(m.identity||'').trim()); }
+  function gmVaultMerge(team,vault){
+    var next=JSON.parse(JSON.stringify(vault));
+    GM_TEAM_ONLY.forEach(function(k){ if(team&&team[k]!==undefined)next[k]=JSON.parse(JSON.stringify(team[k])); else delete next[k]; });
+    next.open={}; next.moments.forEach(function(m){ if(m&&m.key)next.open[m.key]=true; });
+    return next;
+  }
+  /* gmVaultMerge 끝 */
+  function gmReadVault(){
+    var raw=null; try{ raw=localStorage.getItem('cs_gamemodel_personal_v1'); }catch(_){}
+    var p=(raw!=null||!window.storage)?Promise.resolve(raw):Promise.resolve(window.storage.get('cs_gamemodel_personal_v1')).then(function(r){ return r&&r.value!=null?(typeof r.value==='string'?r.value:JSON.stringify(r.value)):null; },function(){ return null; });
+    return p.then(function(s){ if(s==null)return null; try{ var m=JSON.parse(s); return gmHasContent(m)?m:null; }catch(_){ return null; } });
+  }
+  function gmVaultUndo(prev){
+    var n=document.getElementById('gmVaultUndo'); if(n)n.remove();
+    n=document.createElement('p'); n.id='gmVaultUndo'; n.setAttribute('role','status');
+    n.style.cssText='display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:10px 20px 0;padding:9px 12px;border:1px solid var(--line,#e5e7eb);border-radius:10px;background:var(--surface-2,#f6f7f9);font-size:13px;color:var(--text,#14161A)';
+    var t=document.createElement('span'); t.textContent='보관함 게임모델을 팀 게임모델로 가져왔습니다.'; t.style.flex='1 1 auto'; n.appendChild(t);
+    [['되돌리기',function(){ try{ model=JSON.parse(prev); }catch(_){ return; } if(save()){ render(); try{renderStylePicker();}catch(_){} } n.remove(); }],['닫기',function(){ n.remove(); }]].forEach(function(a){
+      var b=document.createElement('button'); b.type='button'; b.textContent=a[0]; b.className='gm-vault-undo-btn'; b.addEventListener('click',a[1]); n.appendChild(b); });
+    stage.before(n);
+  }
+  function gmImportVault(){
+    if(GM_PERSONAL||!gsCanEdit())return;
+    gmReadVault().then(function(src){
+      if(!src){ var bb=document.getElementById('btnGmFromVault'); if(bb)bb.remove(); return; }   /* 화면을 연 뒤 보관함 판이 비었으면 문을 걷는다 */
+      var msg=gmHasContent(model)
+        ?'보관함의 내 게임모델로 팀 게임모델을 바꿀까요? 지금 팀 게임모델의 정체성·국면·원칙은 보관함 내용으로 바뀌고, 평가 기록은 그대로 남습니다.'
+        :'보관함의 내 게임모델을 팀 게임모델로 가져올까요? 팀원도 팀 운영 › 게임모델에서 함께 봅니다.';
+      psConfirm(msg,function(){
+        var prev=JSON.stringify(model);
+        model=gmVaultMerge(model,src);
+        if(!save()){ model=JSON.parse(prev); render(); return; }
+        render(); try{renderStylePicker();}catch(_){}
+        gmVaultUndo(prev);
+      });
+    });
+  }
+  if(!GM_PERSONAL&&gsCanEdit()){
+    gmReadVault().then(function(src){
+      var tb=document.querySelector('.gm-topbar'); if(!src||!tb||document.getElementById('btnGmFromVault'))return;
+      var b=document.createElement('button'); b.type='button'; b.id='btnGmFromVault'; b.className='apphd-iconbtn';
+      b.textContent='보관함에서 가져오기'; b.title='보관함 › 게임모델에 만든 내 게임모델을 팀 게임모델로 가져옵니다';
+      b.addEventListener('click',gmImportVault);
+      var ex=document.getElementById('btnPlayerPpt'); if(ex&&ex.parentNode===tb)tb.insertBefore(b,ex); else tb.appendChild(b);
+    });
+  }
 
   render();
   renderStylePicker();
 })();
 </script>
 <script src="perms.js"></script>
-<script>try{ if(window.PSPerms) PSPerms.gate('gamemodel',{hide:'.addphase,.addprinc,.pdel,.prow .x,.attachbtn,.snapthumb .rm,#gmStylePicker'}); }catch(_){}</script>
+<script>try{ if(window.PSPerms) PSPerms.gate('gamemodel',{hide:'.addphase,.addprinc,.pdel,.prow .x,.attachbtn,.snapthumb .rm,#gmStylePicker,#btnGmFromVault'}); }catch(_){}</script>
 <script>
 /* 포지션별 요구(1.497) — scout_tool_v1.positions[].ideal 읽고 쓴다(스카우팅과 같은 데이터).
    다른 기기/스카우팅 쪽 변경은 storage 이벤트로 재렌더. */
@@ -3238,8 +3290,10 @@ html body.ps-gm-empty .gm-work .gm-blank:not(#_):not(#__){display:flex!important
 html body .gm-blank>div>b:not(#_){display:block;font-size:16px;font-weight:800;color:var(--text,#14161A);margin:0 0 6px}
 html body .gm-blank p:not(#_){font-size:13px;color:var(--text-2,#646A73);max-width:360px;line-height:1.6;margin:0 auto}
 html body .gm-blank .ps-door:not(#_):not(#__){height:40px;min-height:40px;padding:0 16px;border:0;border-radius:10px;background:var(--c-act,#3A6DF0);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;box-sizing:border-box}
+html body .gm-topbar #btnGmFromVault:not(#_):not(#__){flex:0 0 auto;height:32px!important;min-height:32px!important;padding:0 12px;border:1px solid var(--line)!important;border-radius:6px;background:var(--surface,#fff)!important;color:var(--text,#14161A)!important;font-size:13px;font-weight:600;box-sizing:border-box!important;white-space:nowrap}
 html body .gm-topbar #btnPlayerPpt:not(#_):not(#__){flex:0 0 auto;margin-left:auto;height:32px!important;min-height:32px!important;padding:0 12px;border:1px solid var(--line)!important;border-radius:6px;background:var(--surface,#fff)!important;color:var(--text,#14161A)!important;font-size:13px;font-weight:600;box-sizing:border-box!important}
-@media (max-width:600px){ html body .gm-topbar #btnPlayerPpt:not(#_):not(#__){height:40px!important;min-height:40px!important} }
+@media (max-width:600px){ html body .gm-topbar #btnPlayerPpt:not(#_):not(#__),html body .gm-topbar #btnGmFromVault:not(#_):not(#__){height:40px!important;min-height:40px!important} }
+#gmVaultUndo .gm-vault-undo-btn{height:32px;padding:0 12px;border:1px solid var(--line,#e5e7eb);border-radius:6px;background:var(--surface,#fff);color:var(--text,#14161A);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 </style>
 <script>
 /* 2.595 — 게임모델 빈 상태 문 하나 · 내보내기 자리 옮김 */
