@@ -134,7 +134,7 @@
   function exBook(){
     var pages=[bookBuildUp(),bookCutback(),bookPress(),bookCounterpress(),bookCounter(),bookCornerDefence()];
     var f0=pages[0].anim.frames.map(function(fr,i){ var c=clone(fr); if(i===0){ c.__t=''; c.__tc='#e23b3b'; c.__hold=0.6; } return c; });
-    return {type:'board',book:1,name:'우리 팀 패턴북 — 4-3-3',tags:['예시','패턴북'],thumb:'',snap:clone(pages[0].snap),frames:f0,pages:pages,
+    return {type:'board',book:1,name:'4-3-3 패턴북',tags:['예시','패턴북'],thumb:'',snap:clone(pages[0].snap),frames:f0,pages:pages,
       overview:'국면마다 시퀀스 하나 — 빌드업 · 컷백 · 전방 압박 · 역압박 · 역습 · 코너킥 수비. 시퀀스를 열어 ▶ 로 단계마다 재생해 보세요.'};
   }
 

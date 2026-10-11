@@ -104,19 +104,20 @@ export const SIZES={
   desktop:{engine:'chromium',ctx:{viewport:{width:1280,height:800},deviceScaleFactor:1}}
 };
 
-export async function openApp(fx,sizeName,{dark=false,browsers={}}={}){
+export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false}={}){
   const S=SIZES[sizeName];
   const browser=browsers[S.engine]||(browsers[S.engine]=await pw[S.engine].launch({headless:true,...(S.engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})}));
   const context=await browser.newContext({...S.ctx,serviceWorkers:'block',timezoneId:'Asia/Seoul',locale:'ko-KR',colorScheme:dark?'dark':'light'});
   const base=fx.base;
-  await context.addInitScript(({A,WT,teams,base,dark})=>{
+  await context.addInitScript(({A,WT,teams,base,dark,examples})=>{
     if(location.origin!==base||window.top!==window)return;
     if(localStorage.getItem('wt_seeded'))return;localStorage.setItem('wt_seeded','1');
     localStorage.setItem('ps_sync_session',JSON.stringify({uid:A,at:'fixture-access-A',rt:'fixture-refresh-A',exp:Date.now()+36000000,email:'a@example.invalid'}));
     localStorage.setItem('ps_active_ws',WT);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:A,wid:WT}));
     localStorage.setItem('ps_ws_list',JSON.stringify(teams));
     if(dark)localStorage.setItem('cs_theme','dark');
-  },{A,WT,teams,base,dark});
+    if(!examples)localStorage.setItem('ps_vault_px_v1',JSON.stringify({[A+'|'+WT]:1}));   /* 3.001 — 보관함 «프로세스» 예시를 이미 받은 사용자(이 판 전과 같은 보관함). 예시 넣기를 보는 시험만 examples:true */
+  },{A,WT,teams,base,dark,examples});
   await context.routeWebSocket('**/*',s=>s.close());
   const blocked=[];
   await context.route(u=>!(u.origin===base&&(u.pathname.startsWith('/rest/v1/')||u.pathname.startsWith('/auth/v1/'))),async route=>{

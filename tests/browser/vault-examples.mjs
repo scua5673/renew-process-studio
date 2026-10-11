@@ -10,7 +10,7 @@ import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'ipad':'desktop');
 const fx=await startFixture(),browsers={};
 try{
-  const {page,logs}=await openApp(fx,size,{browsers});
+  const {page,logs}=await openApp(fx,size,{browsers,examples:true});   /* 처음 받는 사람 — 다른 시험은 이미 받은 사람으로 돈다 */
   await page.waitForTimeout(1500);
   const bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
   await bf.waitForFunction(()=>typeof anim==='object'&&typeof renderTokens==='function');
@@ -49,7 +49,7 @@ try{
   assert.equal(view.folder,'__mine','an existing coach keeps the view they had'); assert.match(view.first,/내 작전판/,'my own work stays on top');
   assert.equal(view.seeded,1,'marked once for this user and workspace'); assert.equal(view.side,true,'the «프로세스» folder is listed');
   // 미리보기 — 패턴북을 고르면 첫 시퀀스 그림. 그림 안의 공(안쪽 svg)이 칸을 덮지 않는다
-  await bf.evaluate(()=>{ const c=[...document.querySelectorAll('#drillFiles .vcard')].find(c=>c.textContent.includes('우리 팀 패턴북')); (c.querySelector('.vc-name,.vc-nm,b')||c).click(); });
+  await bf.evaluate(()=>{ const c=[...document.querySelectorAll('#drillFiles .vcard')].find(c=>c.textContent.includes('4-3-3 패턴북')); (c.querySelector('.vc-name,.vc-nm,b')||c).click(); });
   await bf.waitForFunction(()=>!!document.querySelector('.vx-preview-thumb svg'),null,{timeout:12000}); await page.waitForTimeout(500);
   assert.equal(await bf.evaluate(()=>[...document.querySelectorAll('.vx-preview-thumb svg svg')].filter(e=>e.getBoundingClientRect().width>40).length),0,'no giant ball over the preview');
   await shot('1-seeded');
@@ -57,7 +57,7 @@ try{
   await bf.evaluate(()=>renderDrillFiles()); await page.waitForTimeout(1200); assert.equal((await lib()).length,6);
 
   // ── 2. 패턴북 — 국면 지도로 열리고, 열기만 해서는 «변경 있음»이 아니다 ──
-  await openCard('우리 팀 패턴북 — 4-3-3');
+  await openCard('4-3-3 패턴북');
   await bf.waitForFunction(()=>window.__csView==='board'&&!!window.__vaultBook&&window.__psPages.book.count()===6&&window.__bkMap&&window.__bkMap.on(),null,{timeout:15000});
   await page.waitForTimeout(900);
   const map=await bf.evaluate(()=>({cols:[...document.querySelectorAll('#bkMap .bkm-c h3')].map(h=>h.textContent),
