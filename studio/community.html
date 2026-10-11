@@ -1386,6 +1386,9 @@ function stripTrainings(src){ /* 다중 훈련·텍스트 섹션 보존 — 각 
     var tt={}; try{tt=JSON.parse(JSON.stringify(t||{}));}catch(_){tt={};}
     tt.snap=stripSnap(tt.snap);
     if(tt.scenes)tt.scenes=tt.scenes.map(function(sc){return {snap:stripSnap(sc&&sc.snap),thumb:stripThumbNames((sc&&sc.thumb)||'')};});
+    /* 3.000 — 훈련마다의 애니메이션 장면(2.613 부터 trainings[i].frames)도 같은 정리를 거친다. 전에는 여기만 빠져 있어
+       장면 속 선수 이름·사진 토큰이 그대로 올라갈 수 있었다(2026-10-11 서버 실측: 그런 글 0건). 장면이 하나뿐이면 애니메이션이 아니다. */
+    if(tt.frames!=null){ var tf=stripFrames(tt.frames); if(tf)tt.frames=tf; else{ delete tt.frames; delete tt.animIdx; } }
     if(tt.thumb)tt.thumb=stripThumbNames(tt.thumb);   /* 2.668 */
     return tt;
   });
@@ -1787,7 +1790,7 @@ html body .comm-list .bar:not(#_):not(#__){display:none!important}
 .ps-fsheet .ps-fsheet-lb{font-size:12px;font-weight:600;color:var(--text-3,#8A9099);margin-bottom:8px}
 .ps-fsheet .ps-fsheet-row{display:flex;flex-wrap:wrap;gap:6px}
 .ps-fsheet .ps-fsheet-row button{height:28px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface,#fff);color:var(--text);font:inherit;font-size:12px;font-weight:600;cursor:pointer;box-sizing:border-box}
-.ps-fsheet .ps-fsheet-row button.on{background:var(--act-soft,#EEF3FF);border-color:transparent;color:var(--c-act,#3A6DF0)}
+.ps-fsheet .ps-fsheet-row button.on{background:var(--accent-soft,#EEF3FF);border-color:transparent;color:var(--c-act,#3A6DF0)}
 .ps-fsheet .ps-fsheet-row.sel{display:grid;grid-template-columns:1fr 1fr}
 .ps-fsheet .ps-fsheet-row.sel select{height:40px;min-height:40px;width:100%;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface,#fff);font:inherit;font-size:13px;box-sizing:border-box}
 .ps-fsheet .ps-fsheet-reset{width:100%;height:40px;margin-top:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface,#fff);color:var(--text-2,#646A73);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
@@ -1847,12 +1850,13 @@ html body .comm-list .bar:not(#_):not(#__){display:none!important}
   if(mq.addEventListener)mq.addEventListener('change',place); else if(mq.addListener)mq.addListener(place);
 })();
 </script>
-<style id="ps-2598-desk">/* 2.598 — 커뮤니티 데스크톱: 탐색·콘텐츠 유형 칩 줄 둘은 검색줄의 고르개 둘(«추천·최신 ▾» «전체 자료 ▾»)로, 위 띠에는 «훈련 주제» 줄만. 칩의 알약 테두리는 걷고(채움만), 카드 통계 아이콘 13 → 14 · 좋아요 숫자도 tabular. 원래 버튼을 대리 클릭. */
+<style id="ps-2598-desk">/* 3.000 — 고른 칩의 바탕 토큰을 --act-soft(정의가 없어 어두운 화면에서도 밝은 기본값이 쓰였다) → --accent-soft 로. 폰 필터 시트·프로세스 뷰어의 훈련 칸도 같이.
+   2.598 — 커뮤니티 데스크톱: 탐색·콘텐츠 유형 칩 줄 둘은 검색줄의 고르개 둘(«추천·최신 ▾» «전체 자료 ▾»)로, 위 띠에는 «훈련 주제» 줄만. 칩의 알약 테두리는 걷고(채움만), 카드 통계 아이콘 13 → 14 · 좋아요 숫자도 tabular. 원래 버튼을 대리 클릭. */
 @media (min-width:561px){
 html body .comm-nav .nav-sec.ps-ph-hide:not(#_):not(#__){display:none!important}
 html body .comm-nav:not(#_):not(#__){padding:10px 16px!important;border-radius:16px 16px 0 0!important}
 html body .comm-nav .nav-items button:not(#_):not(#__),html body .comm-nav .nav-items .chip:not(#_):not(#__){border-color:transparent!important;background:var(--panel2,#F4F5F7)!important;color:var(--text-2,#646A73)!important}
-html body .comm-nav .nav-items button.on:not(#_):not(#__),html body .comm-nav .nav-items .chip.on:not(#_):not(#__){background:var(--act-soft,#EEF3FF)!important;color:var(--c-act,#3A6DF0)!important}
+html body .comm-nav .nav-items button.on:not(#_):not(#__),html body .comm-nav .nav-items .chip.on:not(#_):not(#__){background:var(--accent-soft,#EEF3FF)!important;color:var(--c-act,#3A6DF0)!important}
 html body .filters .filt.ps-cf:not(#_):not(#__){max-width:150px}
 }
 html body .stat svg:not(#_):not(#__),html body .likebtn svg:not(#_):not(#__){width:14px!important;height:14px!important;stroke-width:1.8}
@@ -1911,7 +1915,7 @@ html body.pr-proc .comm-list .grid:not(#_):not(#__){display:grid!important;grid-
 .pr-cvtabs button{display:inline-flex;flex:0 0 auto;align-items:baseline;gap:6px;height:36px;padding:0 12px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff);color:var(--text-2,#646A73);font:inherit;font-size:14px;font-weight:500;line-height:34px;white-space:nowrap;cursor:pointer}
 .pr-cvtabs .pr-i{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
 .pr-cvtabs .pr-mn{font-size:12px;font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
-.pr-cvtabs button[aria-pressed="true"]{border-color:var(--c-act,#3A6DF0);background:var(--act-soft,#EEF3FF);color:var(--c-act,#3A6DF0);font-weight:700}
+.pr-cvtabs button[aria-pressed="true"]{border-color:var(--c-act,#3A6DF0);background:var(--accent-soft,#EEF3FF);color:var(--c-act,#3A6DF0);font-weight:700}
 .pr-cvtabs button[aria-pressed="true"] .pr-i,.pr-cvtabs button[aria-pressed="true"] .pr-mn{color:inherit}
 @media (pointer:coarse){ .pr-card:active{transform:scale(.985);transition:transform .08s} }
 /* 폰(≤560 — 2.594 «폰 머리줄 한 줄»과 같은 경계): 두 칸은 머리줄 아래 제 줄 */
