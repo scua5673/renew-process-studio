@@ -5,13 +5,15 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const src=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
 function fnAt(start){ const i=src.indexOf(start);assert.ok(i>=0,start);let j=src.indexOf('{',i),d=0;for(;j<src.length;j++){if(src[j]==='{')d++;else if(src[j]==='}'&&--d===0)break;}return src.slice(i,j+1); }
 const J=x=>JSON.parse(JSON.stringify(x));
+/* 2.994 — 쓰기는 libTurn 한 차례 안에서 — 원본의 libTurn 을 그대로 싣는다 */
+const turnCode=src.slice(src.indexOf('var _libTurnTail=Promise.resolve();'),src.indexOf('function psVaultOpenLogin(){'));
 function writeBack({links,lib,editable=true,live,anim}){
   const cleared=[];let writes=0,store=J(lib);
   const ctx=vm.createContext({JSON,Date,
     window:{__psPages:{linkAll:()=>links,linkClear:id=>cleared.push(id),refresh(){}},__animFrames:()=>anim?anim.frames:null,__animGet:()=>anim||null},
     libGet:async()=>J(store),libWrite:async l=>{writes++;store=J(l);},libTouch(){},renderDrillFiles(){},canEditItem:()=>editable,
     captureSnap:()=>J(live),boardThumbSVG:()=>'<svg data-live/>'});
-  vm.runInContext([fnAt('function _boardSnapEmpty(sn)'),fnAt('function _animToFrames(a)'),fnAt('async function boardLinkWriteBack(onlyCurrent)'),fnAt('function boardLinkSaveText(r)')].join('\n')+';this.wb=boardLinkWriteBack;this.txt=boardLinkSaveText;',ctx);
+  vm.runInContext([turnCode,fnAt('function _boardSnapEmpty(sn)'),fnAt('function _animToFrames(a)'),fnAt('async function boardLinkWriteBack(onlyCurrent)'),fnAt('function boardLinkSaveText(r)')].join('\n')+';this.wb=boardLinkWriteBack;this.txt=boardLinkSaveText;',ctx);
   return {ctx,cleared,get writes(){return writes;},get store(){return store;}};
 }
 const snap=(x,n=1)=>({players:Array.from({length:n},(_,k)=>({id:k+1,x:x+k,y:10})),equipment:[],drawings:[]});

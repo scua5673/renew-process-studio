@@ -70,7 +70,7 @@ function linkCtx(lib,editable){
   let store=J(lib),writes=0;
   const ctx=vm.createContext({JSON,Math,Date,Promise,setTimeout,window:{},
     libGet:async()=>J(store),libSet:async l=>{writes++;store=J(l);},canEditItem:d=>editable(d),renderDrillFiles(){}});
-  vm.runInContext('var _vaultAutoWriting=false,_vaultAutoAgain=false;'+[fnAt(board,'function meetLinkable(d)'),fnAt(board,'function meetKindWord(d)'),fnAt(board,'function meetRefClean(r)'),'var _meetLibBusy=false;',fnAt(board,'function meetLibMutate(fn,_n)'),fnAt(board,'function meetSetMatch(libId,ref)')].join('\n')
+  vm.runInContext('var _vaultAutoWriting=false,_vaultAutoAgain=false,_libTurnTail=Promise.resolve();'+[fnAt(board,'function libTurn(task)'),fnAt(board,'function meetLinkable(d)'),fnAt(board,'function meetKindWord(d)'),fnAt(board,'function meetRefClean(r)'),'var _meetLibBusy=false;',fnAt(board,'function meetLibMutate(fn,_n)'),fnAt(board,'function meetSetMatch(libId,ref)')].join('\n')
     +';this.set=meetSetMatch;this.lock=function(v){_vaultAutoWriting=v;};this.again=function(){return _vaultAutoAgain;};',ctx);
   return {ctx,get store(){return store;},get writes(){return writes;}};
 }

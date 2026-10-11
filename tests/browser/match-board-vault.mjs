@@ -134,11 +134,27 @@ try{
   let after=made;for(let t=0;t<40;t++){ after=await lib(); if(after.n===made.n+1)break; await page.waitForTimeout(250); }
   assert.equal(after.n,made.n+1,'넣은 장이 보관함에 저장됐다');assert.match(after.titles[after.n-1],/^vs 가상 상대 FC/);
   // 이름 — 띠의 이름을 눌러 바꾼다(한글 조합 Enter 가 끝 글자를 자르지 않게 확인 버튼으로)
+  /* 2.995 진단 — 이름이 6초 안에 안 바뀌면(CI 웹킷에서 한 번) 무엇이 막았는지 메시지에 싣는다:
+     토스트(바꿈 성공·실패) · 띠 제목·상태 줄 · 편집 깃발 · 남은 확인 창 · 이 미팅에 닿은 보관함 쓰기(이름·누가) */
+  await bf.evaluate(id=>{
+    const T0=Date.now(),log=window.__libLog=[],toasts=window.__toastLog=[];
+    const t0=window.toast;window.toast=function(m){toasts.push((Date.now()-T0)+' '+String(m||''));return t0.apply(this,arguments);};
+    const peek=v=>{try{const a=typeof v==='string'?JSON.parse(v):v,it=Array.isArray(a)&&a.find(x=>x&&x.libId===id);return it?it.name:'none';}catch(_){return 'err';}};
+    const by=()=>String(new Error().stack||'').split('\n').slice(2,6).map(x=>x.trim().replace(/\(?https?:\/\/[^\s)]*\//g,'').replace(/^at /,'')).filter(Boolean).join(' < ').slice(0,200);
+    const wrap=(w,tag)=>{const st=w.storage;if(!st||st.__nameTrace)return;st.__nameTrace=1;const set=st.set,cas=st.replaceIfValue;
+      st.set=function(k,v){if(k==='cs_drill_lib_v1')log.push({t:Date.now()-T0,tag,op:'set',name:peek(v),by:by()});return set.apply(this,arguments);};
+      if(cas)st.replaceIfValue=function(k,x,v){if(k==='cs_drill_lib_v1')log.push({t:Date.now()-T0,tag,op:'cas',name:peek(v),by:by()});return cas.apply(this,arguments);};};
+    wrap(window,'board');try{wrap(window.parent,'shell');}catch(_){}
+  },newId);
+  const renameDiag=()=>bf.evaluate(id=>({toasts:(window.__toastLog||[]).slice(-6),title:(document.getElementById('vCreateTitle')||{}).textContent,
+    sub:(document.getElementById('vCreateSub')||{}).textContent,cur:window.__curVaultId===id,from:window.__vaultFromMatch&&{libId:window.__vaultFromMatch.libId===id,name:window.__vaultFromMatch.name},
+    ro:!!window.__vaultReadOnly,okButtons:[...document.querySelectorAll('button')].filter(b=>b.textContent==='확인'&&b.offsetParent).length,
+    inputs:[...document.querySelectorAll('input[type=text]')].filter(i=>i.offsetParent).map(i=>i.value).slice(-3),writes:(window.__libLog||[]).slice(-10)}),newId).catch(e=>({diagErr:String(e)}));
   await bf.click('#vCreateTitle');await bf.waitForFunction(()=>{const i=[...document.querySelectorAll('input[type=text]')].pop();return !!i&&i.offsetParent!==null&&i.value==='가상 상대 FC전 미팅';},null,{timeout:15000});
   await bf.evaluate(()=>{const i=[...document.querySelectorAll('input[type=text]')].pop();i.value='송도전 미팅 최종';});
   await bf.evaluate(()=>{[...document.querySelectorAll('button')].filter(b=>b.textContent==='확인').pop().click();});
   for(let t=0;t<40;t++){ after=await lib(); if(after.name==='송도전 미팅 최종')break; await page.waitForTimeout(150); }
-  assert.equal(after.name,'송도전 미팅 최종');assert.equal(await bf.evaluate(()=>document.getElementById('vCreateTitle').textContent),'송도전 미팅 최종');
+  if(after.name!=='송도전 미팅 최종')assert.fail('이름이 6초 안에 바뀌지 않았다 '+JSON.stringify({name:after.name,...await renameDiag()}));assert.equal(await bf.evaluate(()=>document.getElementById('vCreateTitle').textContent),'송도전 미팅 최종');
   await page.screenshot({path:path.join(SHOTS,'match-meeting-inplace-new-'+size+'.png')});
   // «완료» → 경기 준비, 방금 만든 미팅이 경기 보드에
   await bf.click('#vCreateCancel');

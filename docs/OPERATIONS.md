@@ -23,7 +23,7 @@
 
 1. `git fetch origin && git switch -c <가지> origin/staging`. 같은 폴더를 다른 세션이 쓰고 있으면 `git worktree add` 로 따로 연다(브랜치 전환이 서로를 밟는다).
 2. 판 번호를 올린다 — `sw.js` 의 `const CACHE = 'process-2.xxx'`, `studio/app.html` 의 `window.PS_BUILD` 와 `?v=` 일곱 곳. 사용자 화면이 바뀌면 `studio/release-notes.js` 맨 앞에 안내 한 항목(관리자 화면·테스트만 바뀌면 넣지 않는다 — 넣으면 모두에게 «최근 업데이트» 띠가 다시 뜬다). 테스트·문서만이면 판을 올리지 않는다.
-3. `npm ci` → `npm test` · `npm run test:sql` · 필요하면 `node tests/browser/run-critical.mjs`(`PS_TEST_GROUP=board|identity|storage|idp`).
+3. `npm ci` → `npm test` · `npm run test:sql` · 필요하면 `node tests/browser/run-critical.mjs`(`PS_TEST_GROUP=board|board2|identity|storage|idp`).
 4. PR(`gh pr create --repo scua5673/renew-process-studio --base staging`). CI 16개(회귀 1 + 브라우저 4묶음×2엔진 + 배포 미리보기).
 5. 합치면 testprocess 가 빌드하며 **그 커밋의 `release-gate` CI 가 초록이 될 때까지 최대 12분** 기다린다(`scripts/verify-release.mjs`). 빨강이면 게시를 멈춘다(«Build script returned non-zero exit code: 2»).
 6. testprocess(<https://testprocess.netlify.app>)에서 확인한다. 저장·동기화·로그인·셸을 건드렸으면 `docs/device-checklist.md` 를 실기기로 돈다.

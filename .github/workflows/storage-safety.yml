@@ -43,7 +43,8 @@ jobs:
       fail-fast: false
       matrix:
         engine: [chromium, webkit]
-        group: [board, identity, storage, idp]
+        # 2.991 — board 를 board·board2 로 나눴다(WebKit board 한 잡이 14~15분 → Netlify 의 12분 대기를 넘겼다). tests/browser/run-critical.mjs 참고.
+        group: [board, board2, identity, storage, idp]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

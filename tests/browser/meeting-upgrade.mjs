@@ -24,12 +24,38 @@ try{
     const lib=await libGet();const mine=mk('VOLDMINE'),view=mk('VOLDVIEW',psMyUid());
     lib.unshift(mine,view);await libWrite(lib);
     window.__toasts=[];const t0=window.toast;window.toast=function(m){window.__toasts.push(String(m||''));return t0.apply(this,arguments);};
-    return [mine.libId,view.libId];
+    /* 진단 — 보관함(cs_drill_lib_v1)에 누가 언제 무엇을 썼나. 자동 저장이 늦으면 이 기록을 실패 메시지에 싣는다.
+       it: 그 쓰기 안의 «내 미팅» — at(seed=심은 그대로 · new=다시 저장됨) · n7(2장 7번 이름) · thumb */
+    const T0=Date.now(),log=window.__libLog=[];
+    const peek=v=>{try{const a=typeof v==='string'?JSON.parse(v):v,it=Array.isArray(a)&&a.find(x=>x&&x.libId===mine.libId);if(!it)return 'none';
+      const q=it.slides&&it.slides[1]&&it.slides[1].snap.players.find(p=>p.team==='blue'&&String(p.num)==='7');return {at:it.savedAt===mine.savedAt?'seed':'new',n7:(q&&q.name)||'-',thumb:!!it.thumb};}catch(_){return 'err';}};
+    const by=()=>String(new Error().stack||'').split('\n').slice(2,7).map(x=>x.trim().replace(/\(?https?:\/\/[^\s)]*\//g,'').replace(/^at /,'')).filter(Boolean).join(' < ').slice(0,240);
+    const track=(e,p)=>Promise.resolve(p).then(r=>{e.ok=r===undefined?true:r;e.ms=Date.now()-T0-e.t;return r;},err=>{e.err=String((err&&(err.name+': '+err.message))||err).slice(0,120);throw err;});
+    const wrap=(w,tag)=>{const st=w.storage;if(!st||st.__libTrace)return;st.__libTrace=1;const set=st.set,cas=st.replaceIfValue;
+      st.set=function(k,v){if(k!=='cs_drill_lib_v1')return set.apply(this,arguments);const e={t:Date.now()-T0,tag,op:'set',it:peek(v),by:by()};log.push(e);return track(e,set.apply(this,arguments));};
+      if(cas)st.replaceIfValue=function(k,x,v){if(k!=='cs_drill_lib_v1')return cas.apply(this,arguments);const e={t:Date.now()-T0,tag,op:'cas',it:peek(v),by:by()};log.push(e);return track(e,cas.apply(this,arguments));};};
+    wrap(window,'board');try{wrap(window.parent,'shell');}catch(_){}
+    const lw=window.libWrite;window.libWrite=function(l){const e={t:Date.now()-T0,tag:'board',op:'libWrite',it:peek(l),by:by()};log.push(e);return track(e,lw.apply(this,arguments));};
+    return [mine.libId,view.libId,mine.savedAt];
   });
   const shape=()=>bf.evaluate(()=>{const S=anim.slides,blue=S[0].snap.players.filter(p=>p.team==='blue');const xs=blue.map(p=>p.x);
     const nm=(k,n)=>(S[k].snap.players.find(p=>p.team==='blue'&&String(p.num)===n)||{}).name||'-';
     return {n:S.length,span:(Math.max(...xs)-Math.min(...xs))/MPP,red0:S[0].snap.players.filter(p=>p.team==='red').length,
       n7:S.map((_,k)=>nm(k,'7')),n9:S.map((_,k)=>nm(k,'9')),brand:S.map(s=>s.pageBrand==null?'PROCESS':s.pageBrand)};});
+
+  /* 자동 저장이 늦을 때 실패 메시지에 싣는 값 — 가설보다 값을 먼저.
+     sub: 저장 상태 줄이 지나온 글자(저장 준비 중… → 저장 중… → 이 기기에 저장됨 ✓ / 저장 실패…) · 편집 상태 깃발 ·
+     item.at: 보관함 원본이 심은 그대로(seed)인지 다시 저장됐는지(new) · 셸 동기화 상태 · [PSStorage] 경고 · 보관함 쓰기 기록 */
+  const autosaveDiag=async subs=>{
+    const d=await bf.evaluate(async ({id,seedAt})=>{
+      let it=null,libErr=null;try{it=(await libGet()).find(x=>x.libId===id)||null;}catch(e){libErr=String(e&&e.name||e);}
+      let sync=null,pend=null;try{const s=window.parent.PSSync.state();sync={kind:s.kind,reason:s.reason||'',text:s.text,n:s.n};pend=JSON.stringify(window.parent.PSSync.pending()).slice(0,200);}catch(e){sync=String(e);}
+      return {sub:(document.getElementById('vCreateSub')||{}).textContent||null,edit:!!window.__vaultEdit,cur:window.__curVaultId||null,hydrating:!!window.__vaultHydrating,
+        pending:window.__vaultPending||null,ro:!!window.__vaultReadOnly,view:window.__csView,meet:document.body.classList.contains('meet-mode'),
+        item:it?{at:it.savedAt===seedAt?'seed':'new',thumb:!!it.thumb}:'missing',libErr,sync,pend,writes:(window.__libLog||[]).slice(-14)};
+    },{id:ids[0],seedAt:ids[2]}).catch(e=>({diagErr:String(e)}));
+    return {...d,subs,warn:logs.filter(l=>/\[PSStorage\]/.test(l.text)).map(l=>l.text).slice(-6)};
+  };
 
   // ① 내 미팅 — 열면 새 규칙
   await bf.evaluate(id=>window.__vaultOpenMeeting(id),ids[0]);
@@ -45,7 +71,14 @@ try{
   assert.equal(await bf.evaluate(()=>window.__meetUpgrade().changed),false,'다시 돌려도 바꿀 것이 없다');
   // 자동 저장 — 보관함 원본과 서버 행까지
   /* waitForFunction 은 비동기 조건의 Promise 를 참으로 읽는다 — 직접 되묻는다 */
-  for(let k=0;;k++){const ok=await bf.evaluate(async id=>{const it=(await libGet()).find(x=>x.libId===id);if(!it)return false;const q=it.slides[1].snap.players.find(p=>p.team==='blue'&&String(p.num)==='7');return !!(q&&q.name==='김민수');},ids[0]);if(ok)break;assert.ok(k<50,'자동 저장이 15초 안에 끝나지 않았다');await page.waitForTimeout(300);}
+  const subs=[];
+  for(let k=0;;k++){
+    const r=await bf.evaluate(async id=>{const sub=(document.getElementById('vCreateSub')||{}).textContent||'';const it=(await libGet()).find(x=>x.libId===id);if(!it)return {ok:false,sub};const q=it.slides[1].snap.players.find(p=>p.team==='blue'&&String(p.num)==='7');return {ok:!!(q&&q.name==='김민수'),sub};},ids[0]);
+    if(subs[subs.length-1]!==r.sub)subs.push(r.sub);
+    if(r.ok)break;
+    if(k>=50)assert.fail('자동 저장이 15초 안에 끝나지 않았다 '+JSON.stringify(await autosaveDiag(subs)));
+    await page.waitForTimeout(300);
+  }
   const saved=await bf.evaluate(async id=>{const it=(await libGet()).find(x=>x.libId===id);const xs=it.slides[0].snap.players.filter(p=>p.team==='blue').map(p=>p.x);return {span:(Math.max(...xs)-Math.min(...xs))/MPP,brand:it.slides[8].pageBrand};},ids[0]);
   assert.ok(saved.span>=79,JSON.stringify(saved));assert.equal(saved.brand,'프로세스FC 미팅');
   await page.waitForTimeout(1500);
