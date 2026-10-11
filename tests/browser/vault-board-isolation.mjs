@@ -34,6 +34,7 @@ async function newFixture(browser,spec){
       localStorage.setItem('ps_ws_list',JSON.stringify([{id:wid,kind:'team',role:'owner',name:'가상 팀'}]));
       localStorage.setItem('cs_perms_v1',JSON.stringify({v:1,defaultRole:'player',members:{[uid]:{role:'executive'}}}));
       localStorage.setItem('cs_lang','ko');localStorage.setItem('cs_theme','light');
+      localStorage.setItem('ps_vault_px_v1',JSON.stringify({[uid+'|'+wid]:1}));   /* 3.001 — 보관함 «프로세스» 예시를 이미 받은 사용자. 이 시험은 «보기만 해서는 보관함이 바뀌지 않는다»만 본다(예시 넣기는 vault-examples) */
     }
     window.fixtureLocked=false;
     window.PSSync={session:()=>JSON.parse(localStorage.getItem('ps_sync_session')),activeWs:()=>localStorage.getItem('ps_active_ws'),activeWsObj:()=>JSON.parse(localStorage.getItem('ps_ws_list')).find(w=>w.id===localStorage.getItem('ps_active_ws')),dataUnlocked:()=>!window.fixtureLocked,keyReady:()=>true,displayName:()=> '가상 코치',act(){},ping(){},event(){}};
