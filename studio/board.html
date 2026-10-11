@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <script src="storage.js"></script>
 <script src="team-library.js"></script>
+<script src="vault-examples.js" defer></script>   <!-- 3.001 — 빈 보관함 첫 화면의 예시(종류마다 하나). 못 받아도 첫 화면은 옛 모양 그대로 -->
+
 
 <title>코치 보드 · 작전판 & 훈련 설계</title>
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
@@ -2770,6 +2772,24 @@
   body.fmdark .vault-start .vs-new .vs-nm{color:var(--ink);}
   body.fmdark .vault-start .vs-new .vs-tag{color:rgba(22,24,28,.6);}
   body.fmdark .vault-start .vs-new .vs-plus{border-color:rgba(22,24,28,.45);color:var(--ink);}
+  /* 3.001 — 예시로 둘러보기(종류마다 하나). 첫 화면의 맨 위 — 처음 온 사람이 가장 먼저 본다 */
+  .vault-start .vs-ex{margin:0 auto 26px;max-width:860px;padding:18px 16px 16px;border:1px solid var(--line,#e3e5ea);border-radius:16px;background:var(--panel2,#F7F8FA);}
+  .vault-start .vs-ex-h{display:flex;flex-direction:column;gap:3px;margin-bottom:14px;}
+  .vault-start .vs-ex-h b{font-size:var(--fs-body);font-weight:700;color:var(--txt,#0d0e10);}
+  .vault-start .vs-ex-h span{font-size:12px;line-height:1.5;color:var(--txt-dim,#646A73);}
+  .vault-start .vs-exc{width:146px;}
+  .vault-start .vs-ex-all{margin-top:14px;min-height:36px;padding:0 16px;border:1px solid var(--blue,#3a6df0);border-radius:999px;background:var(--blue,#3a6df0);color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+  .vault-start .vs-ex-all:hover{filter:brightness(1.06);}
+  .vault-start .vs-ex-all:disabled,.vault-start .vs-exc:disabled{opacity:.55;cursor:progress;}
+  .vault-start .vs-or{margin:0 auto 12px;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--txt-dim,#8a8f98);}
+  .vault-start .vs-card:focus-visible,.vault-start .vs-ex-all:focus-visible{outline:2px solid var(--blue,#3a6df0);outline-offset:2px;}
+  body.fmdark .vault-start .vs-ex{background:#15181C;border-color:#2E333A;}
+  body.fmdark .vault-start .vs-ex-h b{color:#F2F3F5;}
+  body.fmdark .vault-start .vs-ex-h span,body.fmdark .vault-start .vs-or{color:#A9AFB8;}
+  @media (max-width:520px){ .vault-start .vs-exc{width:calc(50% - 6px);} .vault-start .vs-ex{padding:14px 10px;} }
+  /* 3.001 — 공 토큰은 안쪽 svg(28×28)다. 썸네일 칸들의 «svg{width:100%}»(미리보기 · 슬라이드 줄 · 카드 · 장면 칸 …)가 이 공까지 칸 너비로 키워
+     그림 위에 커다란 공이 덮이던 것 — 속성과 같은 크기로 묶어 둔다(판 위에서는 달라지는 것이 없다) */
+  g.token>svg[width="28"][height="28"]{width:28px!important;height:28px!important}
 .ep-fhd{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
   .ep-flabel{flex:1 1 auto;border:none;background:none;font-weight:var(--fw-head);font-size:var(--fs-sub);color:var(--txt,#14161A);font-family:inherit;padding:2px 0;outline:none;}
   .ep-flabel:focus{border-bottom:1px solid var(--blue,#3a6df0);}
@@ -7758,6 +7778,7 @@ function loadSnap(s,opts){s=s||{};opts=opts||{};sel=null;multiSel=[];state.playe
   state.pitchSpec=(s.pitchSpec&&PITCH_SPECS[s.pitchSpec])?s.pitchSpec:"fifa";state.gridM=(+s.gridM>0)?+s.gridM:0;   /* 2.989 */try{window.__syncPitchSpecUI&&window.__syncPitchSpecUI();}catch(_){}   /* 2.233 */
   try{if(world){buildTrainGrid();buildLines();buildGrid();}}catch(_){}   /* 2.235 — 복원된 규격으로 라인·그리드 즉시 재생성(서명에 규격 포함) · 2.989 모눈도 */
   state.orientation=s.orientation||"h";state.area=s.area||"full";state.pitchView=normPitchView(s.pitchView||((state.area||"full")==="half"?"half":"full"));state.fieldMode=s.fieldMode||"standard";state.spFlip=!!s.spFlip;state.halfSide=s.halfSide||"L";state.pvSide=(s.pvSide==="opp")?"opp":"own";
+  if(state.fieldMode==="setpiece")autoOrient=false;   /* 3.001 — 세트피스 판은 골이 위인 세로 판으로 만든 화면이다(setSpField 도 끈다). 저장된 세트피스를 다시 열 때 자동 방향(창 크기 변화)이 가로로 돌려 좁고 긴 판이 되던 것 */
 	  /* 2.929 — gridType·label·lines·tokenScale 은 위 lookApply 가 맡는다 */state.boardLocked=false;   /* 2.459 — '배치 고정' 문이 사라졌다: 켠 채 저장된 보드가 열리지 않는 자물쇠가 되지 않게 항상 풀고 연다 */
   state.pitchN=s.pitchN||1;   /* 새 보드도 사용자 저장 토큰 크기 우선 */
   state.teamColors=s.teamColors?dc(s.teamColors):{};state.gkColors=s.gkColors?dc(s.gkColors):{};
@@ -11414,6 +11435,7 @@ function inkifySVG(s){           // 썸네일 SVG의 초록/네이비 피치 →
 }
 function sessionHasScenes(){return session.drills.some(d=>d.scenes&&d.scenes.length);}
 const PRINT_B_CSS=`
+g.token>svg[width="28"][height="28"]{width:28px!important;height:28px!important}   /* 3.001 — 공 토큰(안쪽 svg)이 그림 칸만큼 커지지 않게 */
 @page{size:A4;margin:0;}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 html{margin:0;padding:0;background:#fff;}
@@ -11703,6 +11725,7 @@ function buildDrillPage(d,opts){opts=opts||{};
 }
 /* 항목 PDF 전용 오버라이드 — 운동장 최대, 설명 최소 (세션 PDF·현장 시트는 영향 없음) */
 const DRILL_PDF_CSS=`
+g.token>svg[width="28"][height="28"]{width:28px!important;height:28px!important}   /* 3.001 — 공 토큰(안쪽 svg)이 그림 칸만큼 커지지 않게 */
 .pd-one .p-card{height:auto;flex-direction:column;padding:4mm;gap:0;}
 .pd-one .p-diagram{flex:0 0 auto;width:100%;height:168mm;}
 .pd-one .p-secs{margin-top:2.5mm;column-count:2;column-gap:7mm;}
@@ -11879,6 +11902,7 @@ function buildSheetHtml(arr){
 /* 현장 시트 CSS — A4 가로 2×2(최대 4개). 브랜딩 없이, 운동장을 가장 크게, 밑에 메모 2줄.
    1.703 — 사용자 목업 확정: 헤더 한 줄(인원만 작게)·2×2 고정(남으면 빈 운동장)·제목/메모 최소. */
 const FIELD_SHEET_CSS=`
+g.token>svg[width="28"][height="28"]{width:28px!important;height:28px!important}   /* 3.001 — 공 토큰(안쪽 svg)이 그림 칸만큼 커지지 않게 */
 @page{size:A4 landscape;margin:0;}
 body{padding:9mm 11mm;}
 @media print{body{padding:9mm 11mm;}}
@@ -15812,9 +15836,13 @@ window.__snapToThumb=function(snap,opts){
   try{ cur=captureSnap(); }catch(_){ return ""; }
   /* 2.710 — opts.tokenScale: 저장된 스냅의 토큰 크기 대신 지금 크기로 그린다(PDF 가 «지금 보는 크기»를 따르게) */
   try{ if(opts&&opts.tokenScale>0){ snap=Object.assign({},snap||{},{tokenScale:opts.tokenScale}); } }catch(_){}
-  try{ loadSnap(snap||{}); return boardThumbSVG(); }
+  /* 3.001 — 그림만 그린다: 판을 잠깐 바꿨다 되돌리는 동안 boardSaveLive 가 «변경 있음»(보관함 작전판 · 패턴북)과 라이브 저장을 돌리지 않게.
+     장면 줄이 빈 장면 썸네일을 늦게 채우면(__afWindow) 연 지 1초 뒤 아무것도 안 고친 판이 «버리고 나갈까요?»를 물었다(패턴북 — 여는 데 오래 걸려 채우기가 연 뒤에 돈다).
+     표식은 판을 올리고 되돌리는 동안만 — boardThumbSVG 는 표식이 서 있으면 «지난 그림»을 돌려주므로(되들어오기 막이) 그리기 직전에는 원래대로 둔다 */
+  var _cap=window.__psThumbCapturing;
+  try{ window.__psThumbCapturing=true; loadSnap(snap||{}); window.__psThumbCapturing=_cap; return boardThumbSVG(); }
   catch(e){ return ""; }
-  finally{ try{ loadSnap(cur); }catch(_){} }
+  finally{ window.__psThumbCapturing=true; try{ loadSnap(cur); }catch(_){} window.__psThumbCapturing=_cap; }
 };
 window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="snapToThumb"){var svg="";try{svg=window.__snapToThumb(d.snap);}catch(_){}try{parent.postMessage({type:"snapToThumbResult",id:d.id,svg:svg},"*");}catch(_){}}});
 </script>
@@ -17159,6 +17187,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       +"#vCreateChooser .vcc-team{grid-column:1/-1;min-height:78px;}"
       +"#vCreateChooser .vcc-foot{display:flex;align-items:center;gap:8px;margin-top:16px;padding-top:15px;border-top:1px solid var(--line,#E3E6EA);font-size:11px;color:var(--txt-dim,#646A73);line-height:1.45;}"
       +"#vCreateChooser .vcc-step{flex:0 0 auto;padding:4px 8px;border-radius:999px;background:color-mix(in srgb,var(--blue,#3a6df0) 12%,transparent);color:var(--blue,#3a6df0);font-weight:800;}"
+      /* 3.001 — «예시 담기»: 빈 보관함 첫 화면이 사라진 뒤에도 종류별 예시를 담는 길 */
+      +"#vCreateChooser .vcc-ex{display:flex;align-items:center;gap:10px;margin-top:12px;padding:12px 14px;border:1px dashed var(--line,#E3E6EA);border-radius:14px;font-size:12px;line-height:1.5;color:var(--txt-dim,#646A73);}"
+      +"#vCreateChooser .vcc-ex b{color:var(--txt,#14161A);font-weight:800;}"
+      +"#vCreateChooser .vcc-ex-go{margin-left:auto;flex:0 0 auto;min-height:34px;padding:0 14px;border:1px solid var(--blue,#3a6df0);border-radius:999px;background:transparent;color:var(--blue,#3a6df0);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;}"
+      +"#vCreateChooser .vcc-ex-go:hover{background:color-mix(in srgb,var(--blue,#3a6df0) 8%,transparent);}"
       +"@media(max-width:600px){#editorFlow{display:none!important;}#vCreateBar{padding:8px 10px;gap:7px;flex-wrap:wrap;}#vCreateBar .vcb-flow{order:3;width:100%;}#vCreateBar .vcb-sub{display:none;}#vCreateBar .btn{padding:7px 11px;}#vCreateChooser{align-items:flex-end;padding:0;}#vCreateChooser .vcc-card{width:100%;max-height:88dvh;border-radius:20px 20px 0 0;padding:18px 15px calc(18px + env(safe-area-inset-bottom));}#vCreateChooser .vcc-grid{grid-template-columns:1fr;}#vCreateChooser .vcc-team{grid-column:auto;}#vCreateChooser .vcc-item{min-height:78px;padding:12px;}#vCreateChooser .vcc-head h3{font-size:20px;}}";
     document.head.appendChild(st); }
   function ensureCreateBar(){ ensureCreateBarCss(); var bar=$id("vCreateBar"); if(bar)return bar;
@@ -17419,6 +17452,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         else newBoardItem(it.type);};
       grid.appendChild(b);
     });
+    /* 3.001 — 예시 담기: 종류마다 하나를 «프로세스» 폴더에(이미 있는 것은 건너뛴다 — 지운 뒤 다시 담는 길). 보기 전용 · 파일을 못 받았으면 줄을 두지 않는다 */
+    try{ var _vx=vxExList(); if(_vx){ var exRow=document.createElement("div");exRow.className="vcc-ex";
+      exRow.innerHTML='<span><b>처음이세요?</b> 종류별 예시 '+_vx.length+'개(패턴북 · 훈련 · 세트피스 · 작전판 · 미팅)를 «프로세스» 폴더에 담아 둘러보세요.</span><button type="button" class="vcc-ex-go" id="vccEx">예시 담기</button>';
+      exRow.querySelector("button").onclick=function(e){e.stopPropagation();close();vaultAddExamples(_vx.map(function(x){return x.key;}),null);};
+      grid.parentNode.insertBefore(exRow,grid.nextSibling); } }catch(_){}
     card.querySelector(".vcc-x").onclick=function(e){e.stopPropagation();close();};
     ov.onclick=function(e){if(e.target===ov)close();};
     var escClose=function(e){if(e.key==="Escape"&&document.getElementById("vCreateChooser")){close();document.removeEventListener("keydown",escClose);}};
@@ -18618,7 +18656,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       sb.addEventListener("input",function(e){if(sb._ime||e.isComposing)return;libFilter.q=sb.value;renderDrillFiles();});
     }
     buildBar();
-    return psVaultReadForRender().then(function(lib){if(!lib)return;
+    return psVaultReadForRender().then(function(lib){if(!lib)return; try{vxSeedSoon();}catch(_){}   /* 3.001 — «프로세스» 폴더를 한 번(아래 vxSeedSoon) */
       /* 1.532 — 자료 단위로 공유하던 기존 공유본을 「팀 공유」 폴더로 한 번만 모은다.
          폴더 밖에 공유된 자료가 남으면 "공유는 폴더가 정한다"는 규칙이 깨진다. */
       try{
@@ -18788,7 +18826,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         if(_isS){try{_ae.focus({preventScroll:true});_ae.setSelectionRange(_s0,_e0);}catch(_){}} }catch(_){} };
       vxSettleBar(); setTimeout(vxSettleBar,0); setTimeout(vxSettleBar,250); setTimeout(vxSettleBar,600); setTimeout(vxSettleBar,1200);   /* 느린 기기·무거운 재조립도 수렴 */
       if(!kids.length&&!arr.length){
-        if(!q&&!lib.length&&(cf===""||cf==="__all"))items.appendChild(vaultStarter());
+        if(!q&&!lib.length&&(cf===""||cf==="__all"||cf==="__mine"))items.appendChild(vaultStarter());   /* 3.001 — 팀 공간은 «내 자료»로 열린다(13580) — 보관함이 통째로 비었으면 거기서도 첫 화면(예시)을 보인다 */
         else{var empty=document.createElement("div");empty.className="df-empty";empty.textContent=(cf==="__fav"?"즐겨찾기한 항목이 없어요 — ☆를 눌러 추가":(cf==="__recent"?"최근 항목이 없어요":(special?(lib.length?"조건에 맞는 항목이 없어요":"비어 있어요 — ＋ 만들기로 시작하세요"):"이 폴더는 비어 있어요 — ＋ 새 폴더 / ＋ 만들기")));items.appendChild(empty);}
       }
     });
@@ -18820,8 +18858,11 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
     function vaultStarter(){
     var el=document.createElement('div');el.className='vault-start';
-    el.innerHTML='<div class="vs-head">보관함이 비어 있어요</div>'
-      +'<div class="vs-sub">작전판·세트피스를 저장해 두고 언제든 다시 여는 공간이에요. 빈 판에서 시작하거나, 템플릿을 열어 바로 고쳐 쓰세요.</div>'
+    var seeding=!!_vxSeeding,ex=seeding?null:vxExList();   /* 3.001 — 예시(종류마다 하나). 보기 전용이거나 예시 파일을 못 받았으면 옛 첫 화면 그대로 · «프로세스» 폴더를 넣는 중이면 그 안내만 */
+    el.innerHTML='<div class="vs-head">'+(seeding?'«프로세스» 폴더를 준비하는 중이에요':'보관함이 비어 있어요')+'</div>'
+      +(seeding?'<div class="vs-sub">패턴북 · 훈련 · 세트피스 · 작전판 · 미팅 자료 예시를 넣고 있어요. 잠시만요.</div>'
+       :ex?'<div class="vs-sub">작전판·훈련·세트피스·미팅 자료를 저장해 두고 언제든 다시 여는 공간이에요. 먼저 예시를 열어 보세요.</div>'
+          :'<div class="vs-sub">작전판·세트피스를 저장해 두고 언제든 다시 여는 공간이에요. 빈 판에서 시작하거나, 템플릿을 열어 바로 고쳐 쓰세요.</div>')
       /* 1.986 — 팀 공간에서 비어 보일 때 진단 줄(사용자 제보: 다른 코치 보관함이 빔). 받는 쪽이 왜 못 보는지 바로 읽히게 */
       +(function(){ try{ if(!psIsTeamWs())return ''; var P=window.parent||window; var role=(P.PSPerms&&P.PSPerms.role&&P.PSPerms.role())||(window.PSPerms&&PSPerms.role&&PSPerms.role())||'?';
           var meta={}; try{ meta=JSON.parse(localStorage.getItem('cs_vault_folder_meta_v1')||'{}')||{}; }catch(_){}
@@ -18831,11 +18872,17 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           var unlocked=false; try{ unlocked=!!(P.PSSync&&P.PSSync.dataUnlocked&&P.PSSync.dataUnlocked()===true); }catch(_){}
           return '<div class="vs-diag">팀 공간 · 내 권한 <b>'+role+'</b> · 공유 폴더 <b>'+shared.length+'</b>개'+(shared.length?' ('+shared.slice(0,3).join(', ')+(shared.length>3?' …':'')+')':'')+' · 마지막 동기화 <b>'+last+'</b>'+(unlocked?'':' · <b style="color:var(--amber,#8A6A1F)">보관함 잠김(로그인·워크스페이스 확인 전)</b>')
             +'<br>팀원에게 보이는 자료는 <b>공유를 켠 폴더</b> 안의 것뿐이에요. 폴더 ⋯ 메뉴 › 팀에 공유. 받는 쪽은 로그인 뒤 동기화가 한 번 돌아야 보입니다(앱 설정 › 계정 › 지금 받기).</div>'; }catch(_){ return ''; } })()
+      +(ex?vxExSection(ex)+'<div class="vs-or">직접 시작하기</div>':'')
       +'<div class="vs-cards">'
       +'<button type="button" class="vs-card vs-new" data-vs="new"><span class="vs-plus">＋</span><div class="vs-nm">첫 작전판 만들기</div><div class="vs-tag">빈 판에서 시작</div></button>'
       +VAULT_TPL.map(function(t){return '<button type="button" class="vs-card" data-vs="'+t.id+'">'+t.pic+'<div class="vs-nm">'+t.name+'</div><div class="vs-tag">'+t.tag+'</div></button>';}).join('')
       +'</div>';
     el.addEventListener('click',function(e){
+      /* 3.001 — 예시 카드: 그것 하나를 «프로세스» 폴더에 담아 연다 · «모두 담기»: 다섯을 담고 «프로세스» 폴더를 연다. 담는 동안 단추를 잠근다(두 번 눌러 두 벌 담기지 않게) */
+      var x=e.target.closest('[data-vx],[data-vxall]');
+      if(x&&ex){ var all=x.hasAttribute('data-vxall'),keys=all?ex.map(function(i){return i.key;}):[x.getAttribute('data-vx')];
+        var btns=[].slice.call(el.querySelectorAll('[data-vx],[data-vxall]')); btns.forEach(function(b){b.disabled=true;});
+        vaultAddExamples(keys,all?null:keys[0]).then(function(){ btns.forEach(function(b){b.disabled=false;}); }); return; }
       var b=e.target.closest('[data-vs]');if(!b)return;
       var k=b.getAttribute('data-vs');
       if(k==='new'){try{newBoardItem('board');}catch(_){}return;}
@@ -18844,6 +18891,95 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     });
     return el;
   }
+
+  /* ══ 3.001 · 보관함 예시 — 사용자 «보관함에 예시로 전부 하나씩 — 훈련도 미팅도 세트피스도 · 처음 들어온 사람들이 잘 볼 수 있게 · 제대로 만들어줘 조사해서».
+     자료는 vault-examples.js(PSVaultExamples)가 만든다(늘 새 사본). 여기서는 담기만 한다 — 빈 보관함 첫 화면 카드와 ＋ 만들기 창의 «예시 담기»가 부른다.
+     · 사본은 «프로세스» 폴더, ex 표식(어느 예시인가). 같은 예시가 보관함에 있으면 다시 담지 않고 그것을 연다 — 지운 뒤에는 다시 담긴다(새 번호 · 지금 날짜).
+     · 보기 전용(팀의 보기 권한 · 선수 · 권한표가 아직 안 온 팀 공간)은 보관함 쓰기가 메모리에만 남고 사라진다(store.set) — 손잡이를 아예 두지 않는다.
+     · 그림(thumb)은 차례 밖에서 미리 그린다 — 미팅 슬라이드 줄 · 훈련 탭 · 페이지가 처음부터 그림을 갖게. 차례 안에서는 읽고 쓰기만(libTurn). ══ */
+  var _vxList=null;
+  function vxEx(){ return window.PSVaultExamples||null; }
+  function vxExCanWrite(){ try{ return !document.body.classList.contains('ps-viewonly'); }catch(_){ return true; } }
+  function vxExList(){ var X=vxEx(); if(!X||!vxExCanWrite())return null; try{ if(!_vxList)_vxList=X.list(); }catch(_){ _vxList=null; } return (_vxList&&_vxList.length)?_vxList:null; }
+  function vxExSection(ex){
+    return '<div class="vs-ex" role="group" aria-label="예시로 둘러보기"><div class="vs-ex-h"><b>예시로 둘러보기</b><span>종류마다 하나씩 — 누르면 내 보관함 «프로세스» 폴더에 담기고 바로 열려요. 그대로 고쳐 써도 됩니다.</span></div>'
+      +'<div class="vs-cards">'+ex.map(function(x){ return '<button type="button" class="vs-card vs-exc" data-vx="'+esc(x.key)+'" title="'+esc(x.name)+'">'+x.pic+'<div class="vs-nm">'+esc(x.label)+'</div><div class="vs-tag">'+esc(x.tag)+'</div></button>'; }).join('')+'</div>'
+      +'<button type="button" class="vs-ex-all" data-vxall="1">예시 '+ex.length+'개 모두 담기</button></div>';
+  }
+  /* 화면에 나오는 그림만 — 카드 · 훈련 탭(일정 칩) · 미팅 슬라이드 줄. 페이지 그림은 띠·기둥에 안 나오고 미리보기가 스스로 그린다(한 장 ≈ 수십 ms) */
+  function vxExThumbs(it){ var th=window.__snapToThumb; if(typeof th!=='function')return;
+    function t(s){ try{ return s?(th(s)||''):''; }catch(_){ return ''; } }
+    it.thumb=t(it.snap); (it.trainings||[]).forEach(function(x){ x.thumb=t(x.snap); }); (it.slides||[]).forEach(function(x){ x.thumb=t(x.snap); }); }
+  function vaultAddExamples(keys,openKey){
+    if(!psVaultRequireLogin())return Promise.resolve(false);
+    var X=vxEx(); if(!X){ try{toast("예시를 불러오지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return Promise.resolve(false); }
+    if(!vxExCanWrite()){ try{toast("보기 권한이라 보관함에 담을 수 없어요");}catch(_){} return Promise.resolve(false); }
+    try{toast("예시를 담는 중…");}catch(_){}
+    /* 그림을 그리기 전에 한 번 쉰다 — 잠근 단추와 안내가 먼저 화면에 그려지게(다섯 개 ≈ 14장) */
+    return new Promise(function(res){ setTimeout(res,30); }).then(function(){
+      var fresh=[]; (keys||[]).forEach(function(k){ var it=null; try{ it=X.make(k); }catch(_){ it=null; } if(it){ vxExThumbs(it); fresh.push(it); } });
+      if(!fresh.length)return false;
+      try{ addFolder(X.FOLDER); }catch(_){}
+      return libTurn(function(){return libGet().then(function(lib){
+        var have={},add=[],open=null,now=Date.now();
+        lib.forEach(function(d){ if(d&&d.ex&&!have[d.ex])have[d.ex]=d; });
+        fresh.forEach(function(it,i){ if(have[it.ex]){ if(it.ex===openKey)open=have[it.ex]; return; }
+          it.libId="V"+now.toString(36)+i+Math.random().toString(36).slice(2,6); it.savedAt=now-i; stampCreator(it); add.push(it); if(it.ex===openKey)open=it; });
+        if(!add.length)return {n:0,open:open};
+        return libSet(add.concat(lib)).then(function(){ return {n:add.length,open:open}; });
+      });}).then(function(r){
+        if(!openKey){ try{ libFilter.folder=X.FOLDER; }catch(_){} }
+        try{renderDrillFiles();}catch(_){}
+        try{ toast(r.n?("예시 "+r.n+"개를 «"+X.FOLDER+"» 폴더에 담았어요"+(r.open?" — 여는 중":"")):(r.open?"이미 담아 둔 예시를 열어요":"예시는 이미 «"+X.FOLDER+"» 폴더에 있어요")); }catch(_){}
+        if(r.open){ var it=r.open; setTimeout(function(){ try{openItem(it,false);}catch(_){} },0); }
+        return true;
+      },function(e){ try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"예시를 담지 못했어요 — 다시 눌러 주세요");}catch(_){} return false; });
+    });
+  }
+  /* ── 3.001 · «프로세스» 폴더를 모든 사용자에게 한 번 — 사용자 «프로세스 폴더를 따로 만들어서 거기에 다 넣어줘 기본으로 있는것 처럼» · «모든 사용자에게 한 번씩».
+     보관함 화면을 처음 그릴 때(로그인 · 계정 자료 확인 뒤 · 쓸 수 있는 사람) 예시 다섯을 «프로세스» 폴더에 넣는다. 한 번만:
+     · 이 기기 — ps_vault_px_v1 에 «사용자|공간»을 적어 둔다.
+     · 다른 기기 — 예시 번호(libId)가 사용자 · 예시로 정해져 있다(Vpx…). 두 기기에서 넣어도 서버에서 한 줄로 만나고(팀 공간은 사람마다 다른 번호 — 남의 줄을 덮지 않는다),
+       넣은 날(savedAt)을 옛날(2026-01-01)로 두어 다른 기기에서 지운 기록이 늘 이긴다 — 지운 예시는 되살아나지 않는다(sync.js 보관함 병합 «더 최신 시각이 승»).
+       옛날 날짜라 최신순 목록에서도 코치가 만든 자료 뒤에 선다. 고치면 그때부터 제 날짜.
+     · 같은 예시(ex)가 이미 있거나 이 기기에서 지운 기록(ps_tomb_v1)에 그 번호가 있으면 넣지 않는다.
+     · 보관함이 비어 있던 사람(처음 온 사람)은 «프로세스» 폴더를 연 채로 보여 준다. 자료가 있던 사람은 보던 화면 그대로. ── */
+  var VX_SEED_KEY="ps_vault_px_v1",VX_SEED_AT=Date.UTC(2026,0,1),_vxSeeding=false;
+  function vxSeedWho(){ var u=psMyUid(),w=""; try{ w=String((psActiveWs()||{}).id||localStorage.getItem("ps_active_ws")||""); }catch(_){} return (u&&w)?(u+"|"+w):""; }
+  function vxSeedMap(){ try{ var m=JSON.parse(localStorage.getItem(VX_SEED_KEY)||"{}"); return (m&&typeof m==="object")?m:{}; }catch(_){ return {}; } }
+  function vxSeedMark(who){ try{ var m=vxSeedMap(); m[who]=Date.now(); localStorage.setItem(VX_SEED_KEY,JSON.stringify(m)); }catch(_){} }
+  function vxSeedId(key){ return "Vpx"+String(psMyUid()).replace(/[^a-z0-9]/gi,"").slice(0,12)+"-"+key; }
+  function vxSeedSoon(){
+    if(_vxSeeding||window.__csView!=="session")return;   /* 보관함 화면에서만 — 그림을 그리느라 판을 잠깐 바꾸므로 판을 쓰는 중에는 하지 않는다 */
+    try{ if(document.body.classList.contains("editing")||!psVaultUnlocked())return; }catch(_){ return; }
+    var who=vxSeedWho(); if(!who||vxSeedMap()[who]||!vxEx()||!vxExCanWrite())return;
+    _vxSeeding=true; setTimeout(function(){ vxSeedRun(who).then(function(){ _vxSeeding=false; },function(){ _vxSeeding=false; }); },300);
+  }
+  function vxSeedRun(who){
+    var X=vxEx(); if(!X||who!==vxSeedWho()||!vxExCanWrite()||window.__csView!=="session")return Promise.resolve(false);
+    var tomb={}; try{ (JSON.parse(localStorage.getItem("ps_tomb_v1")||"[]")||[]).forEach(function(t){ if(t&&t.id)tomb[t.id]=1; }); }catch(_){}
+    var fresh=[]; X.keys().forEach(function(k,i){ if(tomb[vxSeedId(k)])return; var it=null; try{ it=X.make(k); }catch(_){ it=null; }
+      if(it){ vxExThumbs(it); it.libId=vxSeedId(k); it.savedAt=VX_SEED_AT-i*60000; stampCreator(it); fresh.push(it); } });
+    return libTurn(function(){return libGet().then(function(lib){
+      var have={},was=lib.length; lib.forEach(function(d){ if(d&&d.ex)have[d.ex]=1; if(d&&d.libId)have["#"+d.libId]=1; });
+      var add=fresh.filter(function(it){ return !have[it.ex]&&!have["#"+it.libId]; });
+      if(!add.length)return {n:0,was:was};
+      return libSet(lib.concat(add)).then(function(){ return {n:add.length,was:was}; });   /* 뒤에 붙인다 — 옛 날짜의 예시가 그사이 담긴 자료(레터 카드 등) 앞에 서지 않게 */
+    });}).then(function(r){
+      vxSeedMark(who);
+      if(r.n){ try{ addFolder(X.FOLDER); }catch(_){}
+        if(!r.was){ try{ var cf=libFilter.folder||""; if(cf===""||cf==="__all"||cf==="__mine")libFilter.folder=X.FOLDER; }catch(_){} }
+        try{renderDrillFiles();}catch(_){}
+        vxSeedToast("«"+X.FOLDER+"» 폴더에 예시 "+r.n+"개가 준비되어 있어요 — 패턴북 · 훈련 · 세트피스 · 작전판 · 미팅",0); }
+      return true;
+    },function(){ return false; });   /* 실패하면 표식을 남기지 않는다 — 다음에 보관함을 열 때 다시 */
+  }
+  function vxSeedToast(msg,n){   /* 다른 알림(«훈련 3개를 보관함에 담았어요» 등)이 떠 있으면 그것이 사라진 뒤에 — 덮어쓰지 않는다 */
+    var t=document.getElementById("cs-ftoast");
+    if(t&&t.getAttribute("aria-hidden")==="false"&&n<10){ setTimeout(function(){ vxSeedToast(msg,n+1); },400); return; }
+    try{toast(msg);}catch(_){}
+  }
+  /* ══ 3.001 · 보관함 예시 끝 ══ */
 
   // 보관함 저장 버튼 (작전판/경기/미팅)
   var saveBtn=document.createElement("button");saveBtn.id="vaultSave";saveBtn.type="button";
@@ -19146,7 +19282,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   +"#ksStrip .ksc{flex:0 0 auto;width:100%;border:2px solid transparent;border-radius:10px;overflow:hidden;background:var(--panel,#141a22);cursor:pointer;position:relative;}"
   +"#ksStrip .ksc.on{border-color:var(--blue,#3a6df0);}"
   +"#ksStrip .ksc .ktb{height:80px;background:#0c1a12;display:flex;align-items:center;justify-content:center;overflow:hidden;}"
-  +"#ksStrip .ksc .ktb svg{width:100%;height:100%;}"
+  +"#ksStrip .ksc .ktb>svg{width:100%;height:100%;}"   /* 3.001 — 바로 아래 그림만. 썸네일 안의 공(1970 공은 안쪽 svg)까지 칸을 꽉 채워 슬라이드 줄에 커다란 공이 덮이던 것 */
   +"#ksStrip .ksc .kn{font-size:11px;font-weight:600;color:var(--txt,#e7ebf1);padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}"
   +"#ksStrip .ksc .ktb{position:relative;}#ksStrip .ksc .kanim{position:absolute;right:4px;bottom:4px;background:var(--blue,#3a6df0);color:#fff;font-size:10px;font-weight:800;border-radius:5px;padding:0 6px;line-height:16px;pointer-events:none;}"
   +"#ksStrip .ksc .knum{position:absolute;left:4px;top:4px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:800;border-radius:5px;padding:1px 5px;}"

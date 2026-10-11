@@ -125,7 +125,7 @@ test('every vault action a person starts reads and writes inside one libTurn and
   const sites=[['  function vaultMoveItemTo(','\n'],['  function vaultMoveFolder(src,dest){','  function _zoneAt('],['      function _renameFolder(src,ndest){','  /* ══ 2.518'],
     ['  function vaultDelFolder(full){','  function vaultTogglePin('],['  function vaultTogglePin(','\n'],['  function vaultRenameItem(d){','  /* 2.725'],
     ['  function vaultDupItem(d){','  /* ══ 2.518'],['  function itemShareToggle(d,after){','  /* ══ 2.928'],['    if(canEdit)mi("태그"','\n'],
-    ['    function pick(k){','\n'],['      function moveTo(path){','\n'],['  function applyVaultTemplate(t){','    function vaultStarter(){']];
+    ['    function pick(k){','\n'],['      function moveTo(path){','\n'],['  function applyVaultTemplate(t){','    function vaultStarter(){'],['  function vaultAddExamples(keys,openKey){','  /* ── 3.001 · «프로세스» 폴더를 모든 사용자에게 한 번'],['  function vxSeedRun(who){','  /* ══ 3.001 · 보관함 예시 끝 ══ */']];
   for(const [a,b] of sites){
     const code=slice(a,b),writes=(code.match(/libSet\(/g)||[]).length;
     assert.ok(writes>0,a);
