@@ -2589,6 +2589,29 @@ function libShareCopy(it){
   walk(out,'');return out;
 }
 function libHash(it){return hash(JSON.stringify(libShareCopy(it)));}
+/* ══ 3.005 · 옛 자료의 장면별 썸네일 정리 ══
+   작전판은 2.559 부터 저장할 때 장면 0 의 썸네일만 남긴다(board.html __animFrames — 나머지는 불러올 때 보이는 칸부터 다시 그린다).
+   그 전에 저장되고 다시 저장되지 않은 자료에는 장면마다 썸네일이 그대로 있다.
+   실측(2026-10-12 · ps_library 읽기만): 살아 있는 자료 1,557개 428.5MB 중 **189.6MB(44%)** 가 304개 자료의 frames[1…].thumb(4,116칸) — 마지막 저장은 전부 9/24 이전.
+   보관함은 목록 한 덩어리라 저장 한 번에 이 글자들을 전부 읽고 다시 쓴다(40MB 공간: 쓰기 ~0.2초 · 읽기 ~0.1초).
+   · 하는 일은 저장할 때와 같은 규칙 하나뿐이다: frames[1…] 의 thumb 을 뗀다. 장면 0 · 카드 · 페이지 · 훈련의 그림과 판(snap)은 그대로.
+   · **이 기기의 사본만** 고친다. 서버로 올리지 않고 수정 시각도 그대로다 — 정리 전 내용이 지난 회차에 확인한 것과 같았으면 기준 지문(m.li[id].h)만 새 값으로 옮긴다
+     (올리면 장면 썸네일이 지문에 들어 있어 «고친 자료»가 되고, 시각이 지금으로 찍혀 보관함의 최근순이 뒤섞인다). 정말 고친 자료는 예전대로 올라가고, 그때 가벼운 모습으로 올라간다.
+   · 서버에서 받은 자료도 적용 전에 같은 규칙을 거친다 — 서버의 옛 줄은 그대로라 새 기기는 무거운 줄을 받는다.
+   · 공간마다 한 번은 보관함 단계를 건너뛰지 않는다(m.ld). ══ */
+/* ── 3.005 · 썸네일 정리 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
+var LIB_DIET=1;
+function libDietHas(it){
+  var fr=(it&&typeof it==='object')?it.frames:null; if(!Array.isArray(fr))return false;
+  for(var i=1;i<fr.length;i++){ var f=fr[i]; if(f&&typeof f==='object'&&!Array.isArray(f)&&typeof f.thumb==='string'&&f.thumb)return true; }
+  return false;
+}
+function libDietItem(it){
+  var n=0,fr=(it&&typeof it==='object')?it.frames:null; if(!Array.isArray(fr))return 0;
+  for(var i=1;i<fr.length;i++){ var f=fr[i]; if(f&&typeof f==='object'&&!Array.isArray(f)&&typeof f.thumb==='string'&&f.thumb){ delete f.thumb; n++; } }
+  return n;
+}
+/* ── 3.005 · 썸네일 정리 순수 구간 끝 ── */
 /* ── 비공개 백업(1.523) ───────────────────────────────────────────────
    팀 공간에서 저장한 자료는 '팀에 공유' 전까지 서버에 올라가지 않았다 → 기기를 잃으면 사라졌다.
    이제 ps_library에 private/owner_id를 두고, 팀 공간에서도 내 자료를 **비공개 행**으로 올린다.
@@ -5713,11 +5736,12 @@ function syncLibrary(at,m,now,wid,ownerGuard){
   return probe().catch(function(){ return null; }).then(function(sig){
     requireCurrent('library_probe_done');
     var ls=m.ls||{};
-    if(sig&&ls.sig===sig&&ls.rev===rev&&ls.tomb===tombN) return {applied:0,pushed:0,ackHash:hash(revRaw),libSkipped:true};
+    if(sig&&ls.sig===sig&&ls.rev===rev&&ls.tomb===tombN&&m.ld===LIB_DIET) return {applied:0,pushed:0,ackHash:hash(revRaw),libSkipped:true};   /* 3.005 — 썸네일 정리를 아직 안 한 공간은 한 번 다 본다 */
     return libLoad().then(function(snap){requireCurrent('library_load_done');return _syncLibrary(at,m,now,wid,snap.list,ownerGuard,snap.raw,snap.rev); }).then(function(res){
       requireCurrent('library_done');
       var rev2=rev; try{ rev2=String(localStorage.getItem('cs_lib_rev')||''); }catch(_){}
       if(sig&&res&&!res.pushed&&!res.applied) m.ls={sig:sig,rev:rev2,tomb:tombN}; else m.ls=null;
+      m.ld=LIB_DIET;   /* 3.005 — 이 회차가 이 기기의 목록을 끝까지 보았다(받은 자료는 받을 때마다 정리한다) */
       return res;
     });
   });
@@ -5764,6 +5788,14 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
     lib.forEach(function(it){ if(it&&it.libId&&!locMap[it.libId]){ locMap[it.libId]=it; order.push(it.libId); } });
     var tombMap={}; tombs.forEach(function(t){ if(t&&t.id){ var a=+t.at||0; if(!tombMap[t.id]||a>tombMap[t.id])tombMap[t.id]=a; } });
     var push=[], insertOnly={}, pushedOk=0, pullIds=[], delLocal=[], unTomb=[], applied=0, mutated=false;
+    /* 3.005 — 옛 자료의 장면별 썸네일 정리(위 «옛 자료의 장면별 썸네일 정리»). 판정보다 먼저 — 정리한 모습으로 지문을 잰다. */
+    order.forEach(function(id){
+      var it=locMap[id]; if(!libDietHas(it))return;
+      var rec0=m.li[id], h0=rec0?libHash(it):null;
+      if(!libDietItem(it))return;
+      mutated=true;
+      if(rec0&&rec0.h===h0)rec0.h=libHash(it);   /* 고친 적 없는 자료 — 기준만 옮긴다(올리지 않는다) */
+    });
     function queueLibPush(row,isInsert){
       push.push(row);if(isInsert)insertOnly[row.lib_id]=1;
     }
@@ -5948,6 +5980,7 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
               if(_own&&libUid()&&_own!==libUid()){ it._teamSource='team'; it._teamOwner=_own; }
               else { it._teamSource='mine'; delete it._teamOwner; }
             }
+            libDietItem(it);   /* 3.005 — 서버의 옛 줄에는 장면별 썸네일이 남아 있다 */
             if(!locMap[r0.lib_id])order.push(r0.lib_id);
             locMap[r0.lib_id]=it;
             m.li[r0.lib_id]={h:libHash(it),s:r0.saved_at||0};
