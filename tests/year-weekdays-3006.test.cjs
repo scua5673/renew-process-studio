@@ -26,8 +26,10 @@ test('the weekday row reads as a label, not as a day cell — and keeps to the t
 });
 
 test('the change is announced once, in plain positive words',()=>{
-  const first=require('../studio/release-notes.js').entries()[0];
-  assert.equal(first.id,'2026-10-12-v3-006-year-weekdays');
+  /* 3.007 — 맨 앞 항목이 아니라 id 로 찾는다(다음 판이 항목을 앞에 얹으면 맨 앞이 바뀐다). «한 번»은 같은 id 가 하나라는 뜻 */
+  const mine=require('../studio/release-notes.js').entries().filter(e=>e.id==='2026-10-12-v3-006-year-weekdays');
+  assert.equal(mine.length,1);
+  const first=mine[0];
   assert.match(first.title,/^v3\.006 · /);
   assert.equal(first.changes.length,1);
   assert.equal(/않|없|못/.test(first.changes.join(' ')),false,'하는 일을 긍정형으로 적는다');

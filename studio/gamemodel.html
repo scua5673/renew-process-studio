@@ -2523,7 +2523,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
         t.innerHTML=ph.snap.thumb+'<button class="rm" title="첨부 제거" aria-label="첨부 제거"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" style="display:block;pointer-events:none" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>';
         t.querySelector('.rm').addEventListener('click',function(){ ph.snap=null; save(); paintSnap(); });
         snapwrap.appendChild(t);
-        if(ph.snap && ph.snap.snap){ var vb=document.createElement('button'); vb.className='attachbtn'; vb.innerHTML='▶ 보기'; vb.title='첨부한 작전판 열기'; vb.addEventListener('click',function(){ try{ parent.postMessage({source:'gamemodel',type:'openBoard',snap:ph.snap.snap,frames:ph.snap.frames||null,view:true},'*'); }catch(e){} }); snapwrap.appendChild(vb); }
+        if(ph.snap && ph.snap.snap){ var vb=document.createElement('button'); vb.className='attachbtn'; vb.innerHTML='▶ 보기'; vb.title='첨부한 작전판 열기'; vb.addEventListener('click',function(){ pending=null;   /* 3.007 — 보기는 어디에도 적지 않는다: 완료·취소 없이 돌아온 앞선 첨부의 자리(pending)가 남아 있으면 이 판이 그 국면에 붙었다 */ try{ parent.postMessage({source:'gamemodel',type:'openBoard',snap:ph.snap.snap,frames:ph.snap.frames||null,view:true},'*'); }catch(e){} }); snapwrap.appendChild(vb); }
       }
       var ab=document.createElement('button'); ab.className='attachbtn';
       ab.innerHTML=(ph.snap&&ph.snap.thumb)?'⟳ 작전판 다시 첨부':'＋ 작전판 첨부';
