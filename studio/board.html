@@ -8448,6 +8448,7 @@ function boardApplyServerLive(){
 try{window.addEventListener('message',function(e){
   if(e.source!==parent||e.origin!==location.origin)return;
   var d=e.data||{};
+  if(d.source==='app'&&d.type==='letterPack'){ try{ window.__letterPackOpen(d); }catch(_){} return; }   /* 2.997 — 레터 훈련 세션을 보관함에 */
   if(d.source==='app'&&d.type==='boardLivePulled'){
     var o=boardPrivateOwner();if(!o||(d.uid!=null&&d.uid!==o.uid)||(d.wid!=null&&d.wid!==o.wid))return;
     boardApplyServerLive();
@@ -10908,6 +10909,139 @@ async function importDrillPack(file){
   renderLib();renderLibDock();
   toast(r.n+"개 드릴 가져옴 ✓"+(r.skipped?(" (중복 "+r.skipped+"개 건너뜀)"):""));
 }
+/* ══ 2.997 · 프로세스 레터 훈련 세션 → 보관함 ══
+   사용자 «훈련들을 보관함에 담으면 3가지 훈련이 보관함에 담아지게». 레터의 훈련 세션(연습 셋)이 보관함 **카드 한 장 = 훈련 3개**로 들어온다
+   (훈련마다 장면 애니메이션 · 훈련 방법 · 코칭 포인트). 일정의 «보관함에서 가져오기»는 이 카드를 훈련 칩 셋으로 편다(2.304).
+   · 셸(app.html)이 «#pack=letter-NN» 주소를 받아 로그인·자료 확인을 기다린 뒤 이 판에 {type:'letterPack',id,url} 을 보낸다.
+   · 받는 곳은 레터 사이트 둘뿐(LETTER_PACK_ORIGINS) — 셸의 목록과 같아야 한다. 여기서 한 번 더 본다.
+   · 팩에서 **아는 칸만** 골라 새 카드를 짓는다(letterPackCard). 그림(thumb)은 받지 않고 이 판에서 다시 만든다 — 밖에서 온 SVG 글자를 화면에 넣지 않는다.
+   · 드릴 팩 파일 가져오기(importDrillPack)와 다른 점: 확인 창 · 훈련마다 스냅 검사 · 만든 사람 도장 · 담은 카드를 바로 보여 준다. ══ */
+/* ── 2.997 · 레터 팩 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
+var LETTER_PACK_ORIGINS=["https://process-letter.netlify.app","https://process-letter-sessions.netlify.app"];
+var LETTER_PACK_MAX=4*1024*1024;
+function letterPackUrlOk(u){ try{ var x=new URL(String(u||"")); return x.protocol==="https:"&&LETTER_PACK_ORIGINS.indexOf(x.origin)>=0&&/\/packs\/\d{2}\.json$/.test(x.pathname)&&!x.search&&!x.hash&&!x.username&&!x.password; }catch(_){ return false; } }
+function _lpStr(v,n){ return (typeof v==="string"?v:"").slice(0,n); }
+function _lpNum(v,lo,hi,def){ v=+v; return (isFinite(v)&&v>=lo&&v<=hi)?v:def; }
+/* 확인 창이 쓰는 요약. 모양이 다르면 null — 카드 한 장 · 훈련 1~6개 · 훈련마다 스냅 */
+function letterPackRead(pack){
+  if(!pack||pack.type!=="process-studio-drillpack"||!Array.isArray(pack.drills)||pack.drills.length!==1)return null;
+  var d=pack.drills[0]; if(!d||typeof d!=="object"||!Array.isArray(d.trainings)||d.trainings.length<1||d.trainings.length>6)return null;
+  var trs=[];
+  for(var i=0;i<d.trainings.length;i++){ var t=d.trainings[i];
+    if(!t||typeof t!=="object"||!t.snap||typeof t.snap!=="object"||!Array.isArray(t.snap.players))return null;
+    trs.push({name:_lpStr(t.name,60)||("훈련 "+(i+1)),minutes:_lpNum(t.minutes,0,600,0),scenes:Array.isArray(t.frames)?Math.min(t.frames.length,40):0}); }
+  var lt=(d.letter&&typeof d.letter==="object")?d.letter:{};
+  return {issue:_lpNum(lt.issue,1,999,0),session:_lpStr(lt.session,80)||_lpStr(d.name,80),name:_lpStr(d.name,60)||"프로세스 레터 훈련 세션",trainings:trs,minutes:trs.reduce(function(a,t){return a+t.minutes;},0)};
+}
+/* 팩 → 보관함 카드. dep = {draft(seed)→훈련 초안, snap(sn)→검사한 스냅|null, thumb(sn)→그림, id()→새 번호, now}.
+   앱의 함수를 밖에서 받는 것은 단위 테스트가 이 구간만 잘라 돌리기 때문 — 카드의 모양은 앱이 저장하는 것과 같다(_trainDraftFrom · applyToCard). */
+function letterPackCard(pack,dep){
+  var info=letterPackRead(pack); if(!info)return null;
+  var raw=pack.drills[0],lt=(raw.letter&&typeof raw.letter==="object")?raw.letter:{};
+  var clone=function(o){ return JSON.parse(JSON.stringify(o)); };
+  var snapOf=function(sn){ if(!sn||typeof sn!=="object")return null;
+    var c=dep.snap(clone(sn)); if(!c)return null;
+    c.players.forEach(function(p){ delete p.img; delete p.imgBg; });            /* 사진 · 밖의 그림 주소는 받지 않는다 */
+    c.equipment.forEach(function(q){ q.src=null; });
+    c.drawings.forEach(function(o){ if(typeof o.text==="string")o.text=o.text.slice(0,200); else if("text" in o)delete o.text; });
+    c.pitchImg=null; c.boardLocked=false; c.matchNote="";
+    return c; };
+  var trs=[];
+  for(var i=0;i<raw.trainings.length;i++){ var t=raw.trainings[i],sn=snapOf(t.snap); if(!sn)return null;
+    var tr=dep.draft({type:"train",name:info.trainings[i].name,minutes:info.trainings[i].minutes,sets:_lpNum(t.sets,1,20,1),rpe:_lpNum(t.rpe,1,10,5),focus:_lpStr(t.focus,12)||"bp",method:_lpStr(t.method,4000),coaching:_lpStr(t.coaching,4000),tags:[]});
+    var frames=[];
+    (Array.isArray(t.frames)?t.frames:[]).slice(0,40).forEach(function(f){ var fs=f&&typeof f==="object"?snapOf(f.snap):null; if(!fs)return;
+      frames.push({snap:fs,hold:_lpNum(f.hold,0,20,.6),dur:_lpNum(f.dur,.1,20,1),hl:(Array.isArray(f.hl)?f.hl:[]).filter(function(x){ return typeof x==="number"||typeof x==="string"; }).slice(0,30),cap:_lpStr(f.cap,120)}); });
+    tr.snap=frames.length?clone(frames[0].snap):sn;
+    var th=""; try{ th=String(dep.thumb(tr.snap)||""); }catch(_){}
+    tr.thumb=th;
+    if(frames.length>=2){ frames[0].thumb=th; tr.frames=frames; tr.animIdx=0; }   /* 저장본엔 장면 0 의 썸네일만(2.559) */
+    trs.push(tr); }
+  var anim=null; for(var k=0;k<trs.length;k++){ if(trs[k].frames){ anim=trs[k]; break; } }
+  var url=_lpStr(lt.url,80); if(!/^https:\/\/process-letter\.netlify\.app\/\d{2}\/$/.test(url))url="";
+  var card={libId:dep.id(),savedAt:dep.now,name:info.name,type:"train",snap:clone(trs[0].snap),thumb:trs[0].thumb,trainings:trs,
+    minutes:info.minutes,sets:1,focus:_lpStr(raw.focus,12)||"bp",rpe:_lpNum(raw.rpe,1,10,5),tags:["프로세스 레터"],
+    letter:{issue:info.issue,session:info.session,title:_lpStr(lt.title,80),theme:_lpStr(lt.theme,40),url:url}};
+  if(anim)card.frames=clone(anim.frames);   /* 카드 대표 = 애니메이션이 있는 첫 훈련(2.613) */
+  return card;
+}
+/* ── 2.997 · 레터 팩 순수 구간 끝 ── */
+var _lpBusy=null;
+function letterPackDone(){ _lpBusy=null; try{ var o=document.getElementById("lpOv"); if(o)o.remove(); }catch(_){} }
+/* 담은 카드를 보관함에서 고른 채 보여 준다 — 폴더·분류 거르개를 풀어야 방금 담은 카드가 목록에 있다 */
+function letterPackShow(libId){
+  try{ libFilter.folder=psIsTeamWs()?"__mine":"__all"; libFilter.cats=[]; libFilter.tag=""; }catch(_){}
+  window.__vaultPreviewId=libId;
+  try{ var b=document.getElementById("drillFiles"); if(b)b.__vxSig=null; }catch(_){}
+  try{ if((window.__csView||"board")!=="session")setView("session"); }catch(_){}
+  try{ renderDrillFiles(); }catch(_){}
+  try{ renderLibDock(); }catch(_){}
+  setTimeout(function(){ try{ var el=document.querySelector("#drillFiles .vcard.selected"); if(el&&el.scrollIntoView)el.scrollIntoView({block:"nearest"}); }catch(_){} },160);
+}
+async function letterPackSave(pack){
+  if(!psVaultRequireLogin())return false;
+  var card=letterPackCard(pack,{draft:_trainDraftFrom,snap:__sanitizeSnap,thumb:function(sn){ return window.__snapToThumb(sn); },
+    id:function(){ return "L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+Math.random().toString(36).slice(2,4); },now:Date.now()});
+  if(!card){ toast("이 훈련 세션은 새 판에서 열립니다 — 앱을 새로 고친 뒤 레터에서 다시 눌러 주세요"); return false; }
+  stampCreator(card); normalizeDrill(card);
+  card.trainings.forEach(function(t){ try{ normalizeDrill(t); }catch(_){} });   /* 주제 분류(focus)가 이 판이 아는 값이게 — 수비 세션이 «공격»으로 남지 않는다 */
+  await libTurn(async function(){ var lib=await libGet(); await libWrite([card].concat(lib)); libTouch(); });
+  letterPackShow(card.libId);
+  toast("훈련 "+card.trainings.length+"개를 보관함에 담았어요 ✓");
+  try{ parent.postMessage({source:"board",type:"letterPackSaved",libId:card.libId,issue:card.letter.issue},location.origin); }catch(_){}
+  return card.libId;
+}
+function letterPackSheet(pack,info,lib){
+  var had=null; try{ had=(lib||[]).find(function(d){ return d&&d.letter&&info.issue&&d.letter.issue===info.issue&&!d.tpl&&canEditItem(d); })||null; }catch(_){}
+  try{ var ex=document.getElementById("lpOv"); if(ex)ex.remove(); }catch(_){}
+  var ov=document.createElement("div"); ov.id="lpOv"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true"); ov.setAttribute("aria-label","프로세스 레터 훈련 세션 담기");
+  ov.style.cssText="position:fixed;inset:0;z-index:700;background:rgba(8,12,18,.52);display:flex;align-items:center;justify-content:center;padding:18px;";
+  var card=document.createElement("div");
+  card.style.cssText="width:100%;max-width:420px;max-height:calc(100dvh - 36px);overflow:auto;background:var(--panel,#fff);border-radius:16px;box-shadow:0 22px 64px rgba(0,0,0,.42);padding:18px;font-family:inherit;color:var(--txt,#14161A);box-sizing:border-box;";
+  var bt="padding:11px 16px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;min-height:44px;";
+  var rows=info.trainings.map(function(t,i){ var meta=[t.minutes?(t.minutes+"분"):"",t.scenes>=2?("장면 "+t.scenes):""].filter(Boolean).join(" · ");
+    return '<li style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;padding:9px 0;border-top:1px solid var(--line,#E3E6EA)"><span style="width:22px;height:22px;border-radius:50%;background:var(--panel2,#F1F3F5);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span><span style="min-width:0"><b style="display:block;font-size:14px;font-weight:700;line-height:1.4;word-break:keep-all">'+esc(t.name)+'</b>'+(meta?'<small style="display:block;margin-top:2px;font-size:12px;color:#646A73">'+esc(meta)+'</small>':'')+'</span></li>'; }).join("");
+  card.innerHTML='<div style="font-size:12px;font-weight:700;letter-spacing:.04em;color:#3a6df0">PROCESS LETTER'+(info.issue?(" · "+info.issue+"호"):"")+' · 훈련 세션</div>'
+    +'<div id="lpTitle" style="margin-top:6px;font-size:18px;font-weight:800;line-height:1.35;word-break:keep-all">'+esc(info.session)+'</div>'
+    +'<div style="margin-top:4px;font-size:12px;color:#646A73">훈련 '+info.trainings.length+'개'+(info.minutes?(" · "+info.minutes+"분"):"")+'</div>'
+    +'<ol id="lpList" style="list-style:none;margin:12px 0 0;padding:0;border-bottom:1px solid var(--line,#E3E6EA)">'+rows+'</ol>'
+    +'<p id="lpNote" style="margin:12px 0 0;font-size:12px;line-height:1.55;color:#646A73;word-break:keep-all">'+(had?('이 세션은 보관함에 <b style="color:inherit">‘'+esc(had.name||"")+'’</b> 카드로 담겨 있어요.'):('훈련 '+info.trainings.length+'개가 카드 한 장으로 보관함에 들어갑니다. 담은 뒤에는 내 훈련처럼 고쳐 쓰고, 일정에서 가져다 쓸 수 있어요.'))+'</p>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:14px"><button id="lpCancel" type="button" style="'+bt+'border:1px solid var(--line,#d2d6dd);background:var(--panel2,#F1F2F4);color:inherit">취소</button>'
+    +(had?('<button id="lpAgain" type="button" style="'+bt+'border:1px solid #3a6df0;background:transparent;color:#3a6df0">한 장 더 담기</button><button id="lpShow" type="button" style="'+bt+'border:0;background:#3a6df0;color:#fff;font-weight:800">보관함에서 보기</button>')
+         :('<button id="lpOk" type="button" style="'+bt+'border:0;background:#3a6df0;color:#fff;font-weight:800">보관함에 담기</button>'))+'</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  var busy=false;
+  var save=function(e){ if(e)e.stopPropagation(); if(busy)return; busy=true;
+    card.querySelectorAll("button").forEach(function(b){ b.disabled=true; b.style.opacity=".6"; });
+    letterPackSave(pack).then(function(){ letterPackDone(); },function(er){ letterPackDone(); try{ toast((er&&er.psVaultLocked)?"보관함에 담으려면 먼저 로그인해 주세요":"보관함에 담지 못했어요 — 연결을 확인하고 레터에서 다시 눌러 주세요"); }catch(_){} }); };
+  var q=function(id){ return card.querySelector("#"+id); };
+  q("lpCancel").onclick=function(e){ e.stopPropagation(); letterPackDone(); };
+  if(q("lpOk"))q("lpOk").onclick=save;
+  if(q("lpAgain"))q("lpAgain").onclick=save;
+  if(q("lpShow"))q("lpShow").onclick=function(e){ e.stopPropagation(); letterPackDone(); letterPackShow(had.libId); };
+  ov.addEventListener("click",function(e){ if(e.target===ov&&!busy)letterPackDone(); });
+  ov.addEventListener("keydown",function(e){ if(e.key==="Escape"&&!busy){ e.stopPropagation(); letterPackDone(); } });
+  card.addEventListener("pointerdown",function(e){ e.stopPropagation(); });
+  setTimeout(function(){ try{ (q("lpShow")||q("lpOk")).focus(); }catch(_){} },60);
+}
+window.__letterPackOpen=function(req){
+  req=req||{}; var id=String(req.id||"");
+  try{ parent.postMessage({source:"board",type:"letterPackAck",id:id},location.origin); }catch(_){}   /* 받았다 — 셸은 다시 보내기를 멈춘다 */
+  if(_lpBusy)return;
+  if(!letterPackUrlOk(req.url))return;
+  if(!psVaultRequireLogin())return;
+  if(document.body.classList.contains("editing")||window.__vaultEdit){ try{ toast("편집 중인 자료를 저장하고 닫은 뒤, 레터에서 «보관함에 담기»를 다시 눌러 주세요"); }catch(_){} return; }
+  _lpBusy=id||"1";
+  try{ toast("프로세스 레터에서 훈련 세션을 받는 중…"); }catch(_){}
+  var ctl=null,tm=null; try{ ctl=new AbortController(); tm=setTimeout(function(){ try{ ctl.abort(); }catch(_){} },15000); }catch(_){}
+  fetch(req.url,{credentials:"omit",cache:"no-store",redirect:"error",referrerPolicy:"no-referrer",signal:ctl?ctl.signal:undefined})
+    .then(function(r){ if(!r.ok)throw new Error("http "+r.status); return r.text(); })
+    .then(function(txt){ if(txt.length>LETTER_PACK_MAX)throw new Error("big");
+      var pack=JSON.parse(txt),info=letterPackRead(pack); if(!info)throw new Error("shape");
+      return libGet().then(function(lib){ letterPackSheet(pack,info,lib); }); })
+    .catch(function(e){ letterPackDone(); try{ toast((e&&e.psVaultLocked)?"보관함을 보려면 먼저 로그인해 주세요":"훈련 세션을 받지 못했어요 — 연결을 확인하고 레터에서 다시 눌러 주세요"); }catch(_){} })
+    .then(function(){ try{ clearTimeout(tm); }catch(_){} });
+};
 async function libSelAddToSession(){
   if(!libSel||!libSel.length){toast("선택된 드릴이 없어요");return;}
   const ids=libSel.slice();   // 트레이(클릭) 순서 유지
@@ -16434,7 +16568,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   +".vx-chips{display:flex;gap:5px;flex-wrap:wrap;margin:7px 0 9px}"
   +".vx-chip{border:1px solid var(--line,#E3E6EA);border-radius:6px;padding:3px 8px;font-size:10px;font-weight:800;color:var(--txt-dim,#8a9099);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"
   +".vx-chip.cat{border:0;color:#fff}"
-  +".vx-preview-thumb{position:relative}"
+  +".vx-preview-thumb{position:relative;flex:0 0 auto}"   /* 2.997 — 미리보기 칸은 세로 flex(design-v2 821)라 글이 긴 카드(훈련 셋의 코칭 포인트)에서 그림이 0 높이로 눌렸다. 그림은 제 높이를 지키고 칸이 스크롤한다 */
   +".vx-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;border:0;background:rgba(10,16,28,.6);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}.vx-pg-host{width:100%;height:100%;display:flex;align-items:center;justify-content:center}.vx-pg-btn{position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:0;background:rgba(10,16,28,.55);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 0 2px}.vx-pg-btn.prev{left:8px}.vx-pg-btn.next{right:8px}.vx-pg-btn:hover{background:rgba(10,16,28,.8)}.vx-pg-cap{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);padding:3px 9px;border-radius:999px;background:rgba(10,16,28,.62);color:#fff;font-size:11px;font-weight:700;white-space:nowrap;max-width:80%;overflow:hidden;text-overflow:ellipsis;pointer-events:none}"
   +".vxa{position:absolute;inset:0;background:#1e8c4c;border-radius:inherit}"
   +".vxt{position:absolute;width:20px;height:20px;border-radius:50%;transform:translate(-50%,-50%);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.75);transition:left .8s ease,top .8s ease}"
