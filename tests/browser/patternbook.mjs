@@ -321,6 +321,57 @@ try{
   await tap('#vCreateSave');
   await bf.waitForFunction(()=>window.__csView==='session'&&!document.body.classList.contains('book-mode'),null,{timeout:12000});
 
+  // ── 6b. 3.001 — 둘러보기는 고친 것이 아니다(사용자: 보관함에서 연 패턴북이 시퀀스만 옮겨도 «변경 사항 있음», 나가면 «저장하지 않은 변경 사항을 버리고 나갈까요?»).
+  //      국면 지도·기둥으로 시퀀스를 옮기고, 장면을 고르고, 재생해도 깨끗하다 — 나가기는 묻지 않는다. 2쪽에서 정말 고치면 묻고, 저장하면 그 고침이 남는다.
+  //      누르기는 진짜 마우스로(pointerup 도 «변경 있음»을 묻는 길이다)
+  await bf.waitForFunction(()=>[...document.querySelectorAll('#drillFiles .vcard')].some(c=>/우리 팀 패턴북[\s\S]*시퀀스 5/.test(c.textContent)),null,{timeout:12000});
+  const editBook=async()=>{ await bf.evaluate(()=>{ const c=[...document.querySelectorAll('#drillFiles .vcard')].find(c=>c.textContent.includes('우리 팀 패턴북')); [...c.querySelectorAll('button')].find(b=>b.textContent.trim()==='편집').click(); });
+    await bf.waitForFunction(()=>window.__csView==='board'&&!!window.__vaultBook&&!window.__vaultReadOnly&&document.querySelectorAll('#bkList .bk-row').length===5,null,{timeout:12000});
+    await bf.waitForFunction(()=>!window.__vaultHydrating,null,{timeout:5000}); await page.waitForTimeout(500); };
+  const now=()=>bf.evaluate(()=>({dirty:window.__vaultManualDirty===true,idx:window.__psPages.book.idx(),map:window.__bkMap.on()}));
+  const rowNo=async n=>{ const h=await bf.evaluateHandle(n=>[...document.querySelectorAll('#bkList .bk-row')].find(r=>r.querySelector('.no').textContent===String(n)),n); await h.asElement().click(); await page.waitForTimeout(500); };
+  const asking=()=>bf.evaluate(()=>{ const o=[...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 나갈까요/.test(e.textContent)); return o?o.textContent.replace(/취소|확인/g,'').trim():null; });
+  const answer=label=>bf.evaluate(l=>[...[...document.body.children].find(e=>e.tagName==='DIV'&&/버리고 나갈까요/.test(e.textContent)).querySelectorAll('button')].find(b=>b.textContent===l).click(),label);
+  const stored=()=>bf.evaluate(async()=>{ const d=(await libGet()).find(x=>x.name==='우리 팀 패턴북'),p=d.pages[1]; return {at:d.savedAt,x:p.snap.players[0].x,fx:p.anim.frames.map(f=>f.snap.players[0].x)}; });
+  const left=()=>bf.waitForFunction(()=>window.__csView==='session'&&!document.body.classList.contains('book-mode')&&!window.__vaultBook,null,{timeout:12000});
+  const kept=await stored();
+  await editBook();
+  let st=await now(); assert.deepEqual(st,{dirty:false,idx:0,map:true},'opened, nothing changed yet (scene thumbnails fill in behind the map): '+JSON.stringify(st));
+  await bf.click('#bkMap .bkm-s[data-i="2"]'); await page.waitForTimeout(500);
+  assert.deepEqual(await now(),{dirty:false,idx:2,map:false},'a sequence chosen on the map');
+  await bf.click('#animFrames .anim-frame >> nth=1'); await page.waitForTimeout(400);
+  assert.deepEqual(await bf.evaluate(()=>[animActive,window.__vaultManualDirty]),[1,false],'another scene of the same sequence');
+  await bf.click('#bkPlaySeq'); await bf.waitForFunction(()=>animPlaying===true,null,{timeout:4000});
+  await bf.waitForFunction(()=>animPlaying===false,null,{timeout:20000}); await page.waitForTimeout(300);
+  assert.equal(await bf.evaluate(()=>window.__vaultManualDirty),false,'playing it');
+  await rowNo(2); assert.deepEqual(await now(),{dirty:false,idx:1,map:false},'a sequence from the rail');
+  await rowNo(5); assert.deepEqual(await now(),{dirty:false,idx:4,map:false},'a sequence without scenes');
+  await bf.click('#bkMapBtn'); await page.waitForTimeout(300); assert.equal((await now()).map,true);
+  await bf.click('#bkMap .bkm-s[data-i="0"]'); await page.waitForTimeout(500);
+  assert.deepEqual(await now(),{dirty:false,idx:0,map:false},'back to the first one through the map');
+  await page.waitForTimeout(1200);   // 늦게 도는 그리기(운동장 개수 80ms · 장면 썸네일 채우기)도 «변경 있음»이 아니다
+  assert.deepEqual(await bf.evaluate(()=>[window.__vaultManualDirty,window.__vaultEditSig()===window.__vaultSavedSig]),[false,true],'still the opening fingerprint');
+  assert.equal(await bf.evaluate(()=>{ window.__snapToThumb(anim.frames[anim.frames.length-1].snap); return window.__vaultManualDirty; }),false,'a scene thumbnail swaps the board for a moment (__afWindow) — not an edit');
+  await bf.click('#vCreateCancel'); await page.waitForTimeout(300);
+  assert.equal(await asking(),null,'leaving after browsing asks nothing'); await left();
+  assert.deepEqual(await stored(),kept,'browsing wrote nothing');
+  // 2쪽(코너킥 니어)에서 정말 고친다 → «변경 있음» · 다른 시퀀스로 옮겨도 그대로 · 나가기는 묻는다 → 남아서 «저장» → 고친 것이 보관함에. 저장한 뒤 둘러보기는 다시 깨끗하다
+  await editBook(); await bf.click('#bkMap .bkm-s[data-i="1"]'); await page.waitForTimeout(500);
+  assert.deepEqual(await now(),{dirty:false,idx:1,map:false});
+  const x2=await bf.evaluate(()=>{ state.players[0].x+=50; renderTokens(); return state.players[0].x; });
+  assert.equal(await bf.evaluate(()=>window.__vaultManualDirty),true,'a real edit on page 2');
+  await rowNo(1); assert.deepEqual(await now(),{dirty:true,idx:0,map:false},'moving to another sequence keeps the edit unsaved');
+  await bf.click('#vCreateCancel'); await page.waitForTimeout(300);
+  assert.equal(await asking(),'저장하지 않은 변경 사항을 버리고 나갈까요?');
+  await answer('취소'); await page.waitForTimeout(200);
+  assert.equal(await bf.evaluate(()=>document.body.classList.contains('book-mode')&&window.__vaultManualDirty),true,'cancel stays in the book');
+  await bf.click('#vCreateSaveOnly');
+  await bf.waitForFunction(()=>!window.__vaultManualDirty&&!document.getElementById('vCreateSaveOnly').disabled&&/저장됨/.test(document.getElementById('vCreateSub').textContent||''),null,{timeout:8000});
+  const saved2=await stored(); assert.ok(saved2.fx.includes(x2)||saved2.x===x2,'the page-2 edit is in the library: '+JSON.stringify([x2,saved2]));
+  await rowNo(2); await rowNo(1); assert.deepEqual(await now(),{dirty:false,idx:0,map:false},'after «저장», browsing is clean again');
+  await bf.click('#vCreateCancel'); await page.waitForTimeout(300);
+  assert.equal(await asking(),null,'nothing to ask after saving'); await left();
+
   // ── 7. «보기»(읽기 전용) — 기둥은 읽는 화면: 입력칸·추가·가져오기·메뉴 없이 목록과 단계 ▶ 만 ──
   await bf.waitForFunction(()=>[...document.querySelectorAll('#drillFiles .vcard')].some(c=>/우리 팀 패턴북[\s\S]*시퀀스 5/.test(c.textContent)),null,{timeout:12000});
   await bf.evaluate(()=>{ const c=[...document.querySelectorAll('#drillFiles .vcard')].find(c=>c.textContent.includes('우리 팀 패턴북')); c.querySelector('.vc-act.view').click(); });

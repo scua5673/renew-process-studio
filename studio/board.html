@@ -15812,9 +15812,12 @@ window.__snapToThumb=function(snap,opts){
   try{ cur=captureSnap(); }catch(_){ return ""; }
   /* 2.710 — opts.tokenScale: 저장된 스냅의 토큰 크기 대신 지금 크기로 그린다(PDF 가 «지금 보는 크기»를 따르게) */
   try{ if(opts&&opts.tokenScale>0){ snap=Object.assign({},snap||{},{tokenScale:opts.tokenScale}); } }catch(_){}
+  /* 3.001 — 판을 잠깐 남의 배치로 바꾸는 동안(__psThumbSwap)은 보관함 «변경 있음»을 묻지 않는다. 예전엔 장면 띠가 빈 썸네일을 채우며
+     (__afWindow) 이 loadSnap 이 boardSaveLive 를 불러, 패턴북을 열기만 해도 «변경 사항 있음»이 됐다. */
+  window.__psThumbSwap=(window.__psThumbSwap||0)+1;
   try{ loadSnap(snap||{}); return boardThumbSVG(); }
   catch(e){ return ""; }
-  finally{ try{ loadSnap(cur); }catch(_){} }
+  finally{ try{ loadSnap(cur); }catch(_){} window.__psThumbSwap=Math.max(0,(window.__psThumbSwap||1)-1); }
 };
 window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="snapToThumb"){var svg="";try{svg=window.__snapToThumb(d.snap);}catch(_){}try{parent.postMessage({type:"snapToThumbResult",id:d.id,svg:svg},"*");}catch(_){}}});
 </script>
@@ -16766,7 +16769,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     }catch(_){}
     if(ty==="train"||ty==="setpiece"){try{openLibDrawEditor(d.libId,ro);}catch(_){}return;}
     /* v324 — 복원 전 빈 애니메이션 상태가 원본에 자동 저장되지 않게 잠근다. */
-    window.__vaultHydrating=true;
+    window.__vaultHydrating=true;window.__vaultSavedSig=null;   /* 3.001 — 지문은 이 항목이 다 열린 뒤에 뜬다(아래 420ms) */
     try{if(window.__vaultAutoSaveCancel)window.__vaultAutoSaveCancel();}catch(_){}
     try{window.__createPrev={snap:captureSnap(),view:(window.__csView||"board")};}catch(_){window.__createPrev=null;}
     try{window.__vaultPending=null;}catch(_){}
@@ -16808,7 +16811,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         window.__animLoad(d.frames);
       } }catch(_){}   /* 멀티 페이지는 각 페이지의 anim 을 우선 복원. 예전 단일 페이지 저장본만 전역 frames 를 쓴다. */
     }catch(_){try{loadSnap(d.snap||{});setView(ty==="setpiece"?"board":ty);}catch(e){}}
-    setTimeout(function(){if(stillOpen())window.__vaultHydrating=false;},420);
+    setTimeout(function(){if(stillOpen()){window.__vaultHydrating=false;try{window.__vaultEditBaseline();}catch(_){}}},420);   /* 3.001 — 다 열린 모습이 «저장된 지문» */
     try{parent.postMessage({source:'board',type:'vaultViewTab'},'*');}catch(_){}   // 보관함 탭 유지한 채 캔버스에 표시(작전판 탭·작업 화면은 보존)
   }
   function newBoardItem(type,opt){
@@ -17070,14 +17073,45 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   /* 2.975 — «저장»(나가지 않고) 뒤에 늦게 도는 기록·키 떼기가 «변경 있음»을 다시 켜, 나갈 때 «버리고 나갈까요?»가 뜨던 것.
      저장한 그 모습(판·장면)을 지문으로 들고 있다가, 정말 달라졌을 때만 «변경 있음». 처음 달라지면 지문은 버린다(그 뒤는 예전처럼). */
-  window.__vaultEditSig=function(){ try{ var fr=(anim&&anim.frames||[]).map(function(f,i){ if(i===animActive)return "A";   /* 지금 장면은 판(captureSnap)이 말한다 — 장면 확정 시점에 따라 달라지지 않게 */ var q=(f&&f.snap)||{}; return JSON.stringify([q.players,q.equipment,q.drawings,q.ball,f&&f.dur,f&&f.hold,f&&f.cap]); }).join("|"); return JSON.stringify(captureSnap())+"#"+fr+"#"+animActive+(window.__bkSig?("#"+window.__bkSig()):""); }catch(_){ return null; } };   /* 2.985 — 패턴북 글자도 지문에 */
+  /* 3.001 — 지문은 항목 전체다: 지금 페이지(판 설정 · 장면마다 선수·장비·그림·공과 장면 칸) + 다른 페이지 모두(__psPages.editSig — 이름·국면 칸·판·장면).
+     예전엔 지금 페이지만 봐서, 페이지를 옮기기만 해도 «달라졌다»가 됐다. 지금 장면 자리에는 판(captureSnap)이 선다 — 장면 확정 시점에 따라 달라지지 않게,
+     그리고 어느 장면을 보고 있는지(animActive)는 고친 것이 아니다. 장면의 판은 선수·장비·그림·공만 본다(장면 확정 때 찍히는 보드 설정이 지문을 흔들지 않게). */
+  window.__vaultEditSig=function(){ try{
+    var cs=captureSnap(),C=["players","equipment","drawings","ball"],fs=(anim&&anim.frames)||[],act=(animActive>=0&&animActive<fs.length)?animActive:-1;
+    var board=C.map(function(k){ return cs[k]; }); C.forEach(function(k){ delete cs[k]; });
+    var fr=fs.map(function(f,i){ if(!f)return ""; var o={};
+      Object.keys(f).sort().forEach(function(k){ var v=f[k]; if(k==="thumb"||k==="snap")return;
+        if(v&&typeof v==="object"&&!Array.isArray(v)&&!Object.keys(v).length)return;   /* 빈 칸(동선을 그리면 생기는 curves:{})은 없는 것과 같다 */
+        o[k]=v; });
+      var q=f.snap||{}; o.snap=(i===act)?board:[q.players,q.equipment,q.drawings,q.ball]; return JSON.stringify(o); }).join("|");
+    var pg=""; try{ pg=(window.__psPages&&window.__psPages.editSig)?window.__psPages.editSig():""; }catch(_){ pg=""; }
+    return JSON.stringify(cs)+"#"+fr+(act<0?"#"+JSON.stringify(board):"")+"#"+JSON.stringify([animHold,anim.title||"",anim.titleColor||""])+(window.__bkSig?("#"+window.__bkSig()):"")+"#"+pg; }catch(_){ return null; } };   /* 2.985 — 패턴북 글자도 지문에 */
   window.__vaultAutoSaveSchedule=function(){
     if(window.__vaultHydrating)return;
     if(!window.__vaultEdit||window.__vaultReadOnly||!window.__curVaultId||window.__vaultPending)return;
+    /* 3.001 — 페이지를 옮기는 중(끝나면 __vaultBrowse 가 따진다) · 재생·내보내기·썸네일 뜨기로 판이 잠깐 다른 모습일 때(끝나면 판이 제자리로 돌아오며 다시 묻는다) */
+    if(curType()==="board"&&(_vaultBrowsing||window.__psThumbSwap||window.__animExport||(typeof animPlaying!=="undefined"&&animPlaying)))return;
     if(curType()==="board"&&window.__vaultSavedSig){ var _cs=window.__vaultEditSig(); if(_cs&&_cs===window.__vaultSavedSig)return; window.__vaultSavedSig=null; }
     if(curType()==="board"){window.__vaultManualDirty=true;_vaultAutoStatus("변경 사항 있음 · 저장 버튼을 눌러 주세요");return;}
     if(_vaultAutoWriting){_vaultAutoAgain=true;return;}
     _vaultAutoStatus("저장 준비 중…");try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=setTimeout(_vaultAutoRun,850);
+  };
+  /* 3.001 — 보관함에서 연 작전판(여러 페이지·패턴북)은 열린 그 모습이 «저장된 지문»이다. 열자마자 무엇이든(페이지 넘기기·썸네일 채우기·누르기)
+     «변경 사항 있음»이 되어, 아무것도 안 고치고 나가도 «버리고 나갈까요?»가 떴다. 열기가 가라앉은 뒤(__vaultHydrating 이 풀릴 때) 한 번 뜬다. */
+  function _vaultBoardWatched(){ return curType()==="board"&&!!window.__vaultEdit&&!window.__vaultReadOnly&&!!window.__curVaultId&&!window.__vaultPending&&!window.__vaultHydrating; }
+  window.__vaultEditBaseline=function(){ if(!_vaultBoardWatched()||window.__vaultManualDirty)return; window.__vaultSavedSig=window.__vaultEditSig()||null; };
+  /* 3.001 — 페이지·시퀀스 옮기기(__psPages 의 switchTo)는 둘러보기다. 옮기는 동안 «변경 있음»을 묻지 않고, 옮기기 전에 깨끗했으면
+     옮긴 뒤 모습을 새 지문으로 삼는다(떠난 페이지는 이제 담긴 모양으로 지문에 들어간다). 옮기기 전에 이미 달라져 있었으면 그대로 «변경 있음». */
+  var _vaultBrowsing=0;
+  window.__vaultBrowse=function(fn){
+    if(!_vaultBoardWatched())return fn();
+    var _clean=!window.__vaultManualDirty&&!!window.__vaultSavedSig&&window.__vaultEditSig()===window.__vaultSavedSig;
+    _vaultBrowsing++;
+    try{ return fn(); }
+    finally{ _vaultBrowsing--;
+      if(_clean&&!window.__vaultManualDirty)window.__vaultSavedSig=window.__vaultEditSig()||null;
+      else window.__vaultSavedSig=null;
+      if(!window.__vaultSavedSig)window.__vaultAutoSaveSchedule(); }
   };
   window.__vaultAutoSaveCancel=function(){
     try{clearTimeout(_vaultAutoT);}catch(_){}_vaultAutoT=null;_vaultAutoAgain=false;_vaultAutoTries=0;
@@ -19572,7 +19606,9 @@ try{ var _nb=document.getElementById('dfNew');
     var src=pages[i]; if(!src)return; var _cp={snap:_clone(src.snap),anim:src.anim?_clone(src.anim):null,thumb:src.thumb,name:(src.name||((window.__vaultBook?"시퀀스 ":"페이지 ")+(i+1)))+" 복사"};
     ["grp","when","call","mo","ph"].forEach(function(k){ if(typeof src[k]==="string"&&src[k])_cp[k]=src[k]; });   /* 2.985 · 2.990 국면 자리도 */
     pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx);clearHistory();render(); persist(); }
-  function switchTo(i){ if(!pages||i===idx||!pages[i])return; try{ if(window.__bkMap)window.__bkMap.close(); }catch(_){} capture();   /* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */ idx=i; loadIdx(idx);clearHistory();render(); persist(); }
+  function switchTo(i){ if(!pages||i===idx||!pages[i])return; try{ if(window.__bkMap)window.__bkMap.close(); }catch(_){} capture();   /* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */
+    var go=function(){ idx=i; loadIdx(idx);clearHistory();render(); persist(); };
+    if(window.__vaultBrowse)window.__vaultBrowse(go); else go(); }   /* 3.001 — 페이지를 옮기기만 한 것은 보관함 항목의 «변경 있음»이 아니다(capture 는 지문이 보지 않는 칸만 고친다) */
   function del(i){ if(!pages||pages.length<=1)return;
     var go=function(){ if(i!==idx)capture(); pages.splice(i,1); if(idx>i)idx--; else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx);clearHistory();render();persist(); _bkTouch(); };
     var _q=window.__vaultBook?("«"+bkSeqName(pages[i],i)+"» 시퀀스를 삭제할까요? 장면도 함께 지워집니다."):"이 페이지를 삭제할까요?";   /* 2.985 */
@@ -19803,6 +19839,9 @@ try{ var _nb=document.getElementById('dfNew');
         idx=at; loadIdx(idx);clearHistory();render(); _bkTouch(); return arr.length; },
       sig:function(){ try{ return (pages||[]).map(function(p){ return [p&&p.name||"",p&&p.grp||"",p&&p.when||"",p&&p.call||"",p&&p.mo||"",p&&p.ph||""].join("~"); }).join("|")+"@"+(pages?pages.length:0); }catch(_){ return ""; } }
     },
+    /* 3.001 — 보관함 «변경 있음» 지문의 페이지 몫: 모든 페이지의 이름·국면 칸·판·장면(썸네일 빼고) + 지금 페이지 자리.
+       지금 페이지의 판·장면은 아직 페이지에 안 담겼다 — 그건 판(captureSnap)과 장면 줄이 말한다(__vaultEditSig). */
+    editSig:function(){ if(!pages)return ""; return pages.map(function(p,i){ return JSON.stringify(p,function(k,v){ if(k==="thumb")return undefined; if(this===p&&(k==="vlink"||(i===idx&&(k==="snap"||k==="anim"))))return undefined; return v; }); }).join("|")+"@"+idx; },
     exitToLive:function(){ if(_inVault){ pages=(_livePages&&_livePages.pages)||null; idx=(_livePages&&_livePages.idx)||0; _inVault=false; _livePages=null;clearHistory();try{render();}catch(_){} } },
     hasMulti:function(){ return !!(pages && pages.length>1); },
     /* 보관함 전체보기 — 도구 없이 페이지를 넘길 수 있게 (d=±1, 순환) */
