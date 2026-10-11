@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.003"></script>
+<script src="autosave-status.js?v=3.004"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -505,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.003';</script>
+<script>window.PS_BUILD='3.004';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -2198,12 +2198,12 @@ function psShowUpdBand(){
           if(d.owner==='learn'){ currentTeamKey=''; showApp('learning');
             var _la=d.area, _lt=0, _sendLa=function(){ try{ fLearning.contentWindow.postMessage({type:'openLearnArea',area:_la},'*'); }catch(_){}
               if(++_lt<6)setTimeout(_sendLa,120+_lt*90); };
-            setTimeout(_sendLa,60);
+            psFrameWhenReady(fLearning,_sendLa,60);
           }
           else { currentTeamKey=''; showApp('idp');
             var _ar=d.area, _t=0, _sendAr=function(){ try{ fIdp.contentWindow.postMessage({type:'openLearnArea',area:_ar},'*'); }catch(_){}
               if(++_t<6)setTimeout(_sendAr,120+_t*90); };
-            setTimeout(_sendAr,60);
+            psFrameWhenReady(fIdp,_sendAr,60);
           }
         }catch(_){}
         return;
@@ -2296,6 +2296,11 @@ function psShowUpdBand(){
     var _skelT=0,_skelShowT=0,_skelFr=null;
     function psFrameSkelOff(){ clearTimeout(_skelT); clearTimeout(_skelShowT); _skelFr=null; try{ document.body.classList.remove('ps-frame-wait'); }catch(_){} }
     function psFrameReady(fr){ try{ return (fr.__psReady!==false)&&!!fr.contentDocument&&fr.contentDocument.readyState==='complete'&&!/^about:blank/.test(String(fr.contentWindow.location.href||'')); }catch(_){ return false; } }
+    /* 3.004 — 아직 문서를 읽는 프레임(미리 띄우지 않은 탭을 처음 열 때)에는 뜬 뒤에 건넨다. 떠 있으면 예전 그 시각에. */
+    function psFrameWhenReady(fr,fn,ms){
+      if(psFrameReady(fr))setTimeout(fn,ms||0);
+      else fr.addEventListener('load',function(){ setTimeout(fn,Math.max(ms||0,120)); },{once:true});
+    }
     function psFrameSkel(fr){
       psFrameSkelOff();
       if(!fr||psFrameReady(fr))return;
@@ -2350,6 +2355,7 @@ function psShowUpdBand(){
          이제 넓으면 idp.html 이 두 칸(오늘 적는 것 | 이번 주·팀)으로 편다. 진짜 폰은 원래부터 액자가 없었다(ps-real-phone).
          ⚠ 클래스·CSS 는 남긴다(?layout=mobile 미리보기의 force-phone 과 한 벌) — 여기서 더 켜지 않을 뿐이다. */
       document.body.classList.remove('ps-idp-phone');
+      try{ psWarmNote(app); }catch(_){}   /* 3.004 — 이 기기에서 쓰는 탭을 적어 둔다(폰·아이패드는 쓰던 탭만 미리 띄운다) */
       var _skFrame=ensureAppFrame(app);
       try{ psFrameSkel(_skFrame); }catch(_){}   /* 2.981 — 문서를 아직 읽는 프레임이면 빈 면 대신 뼈대 */
       /* 2.247 — 보관함을 열면 개인 노트 프레임을 미리 데워 둔다(사용자 "화면이 부자연스럽게 넘어가").
@@ -2476,14 +2482,44 @@ function psShowUpdBand(){
     function activeWorkspace(){try{return window.PSSync&&PSSync.activeWsObj&&PSSync.activeWsObj();}catch(_){return null;}}
     /* 2.251 — 팀 운영 첫 진입 깜빡임(사용자): fScout 가 첫 클릭에야 로드를 시작해 빈 iframe 이 먼저 보였다(실측 ~90ms+ 공백 후 페인트).
        부팅이 자리 잡은 뒤 미리 데운다 — ensureAppFrame 은 src 가 있으면 no-op 이라 중복 무해. */
-    setTimeout(function(){try{ensureAppFrame('scout');}catch(_){}} ,1600);
-    /* 2.252 — 나머지 탭도 전부(사용자 "다른 탭 전부 다 살펴봐줘"): IDP·학습·커뮤니티·팀 일정·후보 DB·공용어·분석 —
-       실측 전 탭 첫 진입에 50~70ms(배포는 더 긴) 빈 iframe 공백. 600ms 간격 스태거 — 부팅 직후 CPU 몰림 방지. */
-    [['process',2200],['idp',2800],['learning',3400],['community',4000],['scouting',4600],['terms',5200],['analysis',5800]]
-      .forEach(function(it){ setTimeout(function(){try{ensureAppFrame(it[0]);}catch(_){}} ,it[1]); });
-    /* 기준(gamemodel)은 src 가 scope 로 갈린다(개인/팀 — 아래 showApp 의 _want 재검사) — 주 진입로인 '기준' 탭(팀 판)을 미리.
-       보관함›게임모델(개인)으로 열면 그때 한 번 src 교체(오늘과 동일 비용). */
-    setTimeout(function(){try{var _pk=currentTeamKey;currentTeamKey='settings';ensureAppFrame('gamemodel');currentTeamKey=_pk;}catch(_){}} ,6400);
+    /* ══ 3.004 · 미리 띄우기는 기기를 본다 ══
+       2.252 부터 부팅 6.4초 안에 탭 아홉을 전부 띄우고 내리지 않았다. 탭 전환은 바로지만 그만큼이 늘 메모리에 깔린다
+       (실측 2026-10-11 · 합성 팀 · 크롬: 전부 428MB / 팀 허브·일정만 354MB — 보조 탭 일곱이 약 70MB).
+       데스크톱은 그대로 전부. 폰·아이패드(data-ps-device)는 이 기기에서 최근 14일 안에 연 탭만 — 적힌 것이 없으면(처음) 팀 허브와 일정.
+       미리 띄우지 않은 탭은 누를 때 읽는다(빈 면 대신 뼈대 2.981 · 그 탭에 건네는 말은 뜬 뒤에 psFrameWhenReady).
+       ⚠ 띄우는 시각은 예전 자리 그대로다(600ms 간격 — 부팅 직후 CPU 몰림 방지). 건너뛴 탭의 자리는 비워 둔다. */
+    /* ── 3.004 · 미리 띄우기 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
+    var PS_WARM_KEY='ps_warm_tabs_v1',PS_WARM_MS=14*24*60*60*1000;
+    var PS_WARM_TABS=[['scout',1600],['process',2200],['idp',2800],['learning',3400],['community',4000],['scouting',4600],['terms',5200],['analysis',5800],['gamemodel',6400]];
+    function psWarmParse(raw,now){
+      var o=null,out={}; try{ o=JSON.parse(raw||'null'); }catch(_){ o=null; }
+      if(!o||typeof o!=='object'||Array.isArray(o))return out;
+      PS_WARM_TABS.forEach(function(t){ var at=+o[t[0]]; if(isFinite(at)&&at>0&&at<=now&&now-at<PS_WARM_MS)out[t[0]]=at; });
+      return out;
+    }
+    function psWarmPlan(lean,used){
+      var all=PS_WARM_TABS.map(function(t){ return t[0]; });
+      if(!lean)return all;
+      var mine=all.filter(function(k){ return Object.prototype.hasOwnProperty.call(used,k); });
+      return mine.length?mine:['scout','process'];
+    }
+    /* ── 3.004 · 미리 띄우기 순수 구간 끝 ── */
+    function psWarmLean(){ try{ var dv=document.documentElement.getAttribute('data-ps-device'); return dv==='phone'||dv==='ipad'; }catch(_){ return false; } }
+    function psWarmUsed(){ var raw=''; try{ raw=localStorage.getItem(PS_WARM_KEY)||''; }catch(_){} return psWarmParse(raw,Date.now()); }
+    function psWarmNote(app){
+      try{ if(!PS_WARM_TABS.some(function(t){ return t[0]===app; }))return;
+        var u=psWarmUsed(); u[app]=Date.now(); localStorage.setItem(PS_WARM_KEY,JSON.stringify(u)); }catch(_){}
+    }
+    (function(){
+      var plan=psWarmPlan(psWarmLean(),psWarmUsed());
+      PS_WARM_TABS.forEach(function(t){ if(plan.indexOf(t[0])<0)return;
+        setTimeout(function(){ try{
+          /* 기준(gamemodel)은 src 가 scope 로 갈린다(개인/팀 — showApp 의 _want 재검사) — 주 진입로인 '기준' 탭(팀 판)을 미리.
+             보관함›게임모델(개인)으로 열면 그때 한 번 src 교체(오늘과 동일 비용). */
+          if(t[0]==='gamemodel'){ var _pk=currentTeamKey; currentTeamKey='settings'; ensureAppFrame('gamemodel'); currentTeamKey=_pk; }
+          else ensureAppFrame(t[0]);
+        }catch(_){} },t[1]); });
+    })();
     /* 2.966 — 경기 준비 안에서 미팅 편집. 들어갈 때 팀 키(경기)를 지키고, 끝나면 경기 화면을 **그대로**(스크롤·열린 경기) 다시 보인다 */
     function psMatchEditEnter(){
       currentTeamKey=currentTeamKey||'match';
@@ -2867,7 +2903,7 @@ function psShowUpdBand(){
         if(d.app==='analysis'&&d.action==='newMatch'&&!analysisFresh)setTimeout(function(){
           try{fAnalysis.contentWindow.postMessage({type:'newMatch'},'*');}catch(_){}
         },80);
-        if(d.app==='idp'&&(d.squad||d.idpKey||d.idpName))setTimeout(function(){
+        if(d.app==='idp'&&(d.squad||d.idpKey||d.idpName))psFrameWhenReady(fIdp,function(){
           try{
             fIdp.contentWindow.postMessage(d.squad?{type:'openSquad'}:{type:'openPlayer',key:d.idpKey||'',name:d.idpName||''},'*');
           }catch(_){}
@@ -3048,7 +3084,7 @@ function psShowUpdBand(){
       } else if((d.source==='scout'||d.source==='gamemodel') && d.type==='openTerms'){
         try{ window.__termsFrom=d.source==='gamemodel'?'gamemodel':'scout'; }catch(_){}   /* 1.915 — 공용어 '뒤로'가 돌아갈 곳 */
         showApp('terms');
-        try{ setTimeout(function(){ fTerms.contentWindow.postMessage({source:'app',type:'termsBackLabel',label:(window.__termsFrom==='gamemodel'?'게임모델':'팀 운영')},'*'); },250); }catch(_){}
+        try{ psFrameWhenReady(fTerms,function(){ try{ fTerms.contentWindow.postMessage({source:'app',type:'termsBackLabel',label:(window.__termsFrom==='gamemodel'?'게임모델':'팀 운영')},'*'); }catch(_){} },250); }catch(_){}
       } else if(d.source==='terms' && d.type==='back'){
         showApp(window.__termsFrom==='gamemodel'?'gamemodel':(window.__termsFrom||'scout'));
       } else if(d.source==='terms' && d.type==='backToTeam'){
@@ -3073,7 +3109,7 @@ function psShowUpdBand(){
       } else if(d.source==='process' && d.type==='openTerms'){
         try{ window.__termsFrom='process'; }catch(_){}
         showApp('terms');
-        try{ setTimeout(function(){ fTerms.contentWindow.postMessage({source:'app',type:'termsBackLabel',label:'일정'},'*'); },250); }catch(_){}
+        try{ psFrameWhenReady(fTerms,function(){ try{ fTerms.contentWindow.postMessage({source:'app',type:'termsBackLabel',label:'일정'},'*'); }catch(_){} },250); }catch(_){}
       } else if(d.source==='board' && d.type==='focusBoard'){
         document.body.classList.toggle('focus', !!d.on);
       } else if(d.source==='scout' && d.type==='meetFull'){
@@ -8073,13 +8109,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.003"></script>
-<script src="autosave-merge.js?v=3.003"></script>
-<script src="autosave-runtime.js?v=3.003"></script>
-<script src="autosave-recovery.js?v=3.003"></script>
-<script src="sync.js?v=3.003"></script>
+<script src="autosave-journal.js?v=3.004"></script>
+<script src="autosave-merge.js?v=3.004"></script>
+<script src="autosave-runtime.js?v=3.004"></script>
+<script src="autosave-recovery.js?v=3.004"></script>
+<script src="sync.js?v=3.004"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.003">
+<link rel="stylesheet" href="support.css?v=3.004">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
