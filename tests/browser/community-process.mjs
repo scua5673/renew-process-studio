@@ -17,7 +17,7 @@ const THUMB='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 60"><rect w
 const fx=await startFixture(),browsers={};
 try{
   const {page,context,logs}=await openApp(fx,size,{browsers});
-  const asked=[],writes=[];let indexDown=true;
+  const asked=[],askedLocal=[],writes=[];let indexDown=true,localDown=true;
   // 3.002 — 코치 글 하나(훈련 둘: 첫 훈련은 장면 없음 · 둘째는 장면 셋). 훈련이 둘 이상인 코치 글도 뷰어에서 훈련을 골라 본다.
   const coachTr=(i,n,min)=>{const t=tr(i,n);t.name='코치 훈련 '+'AB'[i];t.method='코치 방법 '+'AB'[i];t.coaching='1. 코치 포인트 '+'AB'[i];if(min)t.minutes=min;else delete t.minutes;if(n<2)delete t.frames;return t;};
   const COACH={id:'Cmulti1',owner:'22222222-2222-4222-8222-222222222222',owner_name:'가상코치',title:'가상 코치 글',summary:'',cat:'rondo',age:'U12',players:'8',thumb:THUMB,views:3,copies:1,likes:0,created_at:'2026-10-01T00:00:00Z'};
@@ -35,6 +35,13 @@ try{
     if(m)return route.fulfill({status:200,contentType:'application/json',headers:cors,body:JSON.stringify(pack(+m[1]))});
     if(/^\/packs\/thumbs\/0[34]-[123]\.svg$/.test(u.pathname))return route.fulfill({status:200,contentType:'image/svg+xml',headers:cors,body:THUMB});
     return route.fulfill({status:404,headers:cors,body:'not found'});});
+  // 3.003 — 앱에 실린 사본(…/studio/packs/) 흉내: 세션 하나(6호). 훈련 세션 사이트가 내려가 있을 때 여기서 읽는다. 처음에는 이것도 내려가 있다.
+  await context.route(u=>u.origin===new URL(page.url()).origin&&u.pathname.startsWith('/studio/packs/'),route=>{const u=new URL(route.request().url()),p=u.pathname.replace(/^\/studio/,'');askedLocal.push(p+u.search);
+    if(localDown)return route.fulfill({status:404,body:'not found'});
+    if(p==='/packs/index.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({type:'process-studio-pack-index',version:1,sessions:[row(6)]})});
+    if(p==='/packs/06.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(pack(6))});
+    if(/^\/packs\/thumbs\/06-[123]\.svg$/.test(p))return route.fulfill({status:200,contentType:'image/svg+xml',body:THUMB});
+    return route.fulfill({status:404,body:'not found'});});
   // 커뮤니티 서버 표에 쓰는 요청(올리기·조회수·담김·신고·좋아요)을 센다
   page.on('request',r=>{const u=r.url();if(/ps_community|ps_comm_/.test(u)&&r.method()!=='GET')writes.push(r.method()+' '+u.replace(/^.*\/rest\/v1\//,''));});
   await page.waitForTimeout(2500);
@@ -107,9 +114,42 @@ try{
   assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.cards.length],[true,['false','true'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색',0]);
   assert.match(await c.evaluate(()=>document.getElementById('grid').textContent),/프로세스 훈련을 불러오지 못했어요/);
   assert.deepEqual([s.fab,s.filters],['none','none'],'프로세스 칸은 보는 곳 — 올리기·코치 자료의 고르개는 치운다');
-  indexDown=false;
+  assert.ok(askedLocal.includes('/packs/index.json'),'사이트가 안 되면 앱에 실린 사본을 본다 '+JSON.stringify(askedLocal));
+
+  // 2-2) 3.003 — 훈련 세션 사이트는 내려가 있고 앱에 실린 사본은 있다: 사본으로 그리고, 열고, 담기까지 간다(사이트를 다시 부르지 않고)
+  localDown=false;
   await c.click('#prRetry');
-  await c.waitForSelector('.pr-card');
+  await c.waitForSelector('.pr-card[data-proc="06"]');
+  s=await state();
+  assert.deepEqual([s.cards,s.label,s.count],[['06'],['코치 자료1','프로세스1'],'세션 1개 · 훈련 3개']);
+  assert.deepEqual(await c.evaluate(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] .pr-tri img')].map(i=>i.getAttribute('src'))),[1,2,3].map(k=>'packs/thumbs/06-'+k+'.svg?v=0a1b2c3d4e'),'그림도 사본에서');
+  await c.waitForFunction(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] img')].every(i=>i.complete&&i.naturalWidth>0));
+  const remoteBefore=asked.length;
+  await c.click('.pr-card[data-proc="06"]');
+  await c.waitForSelector('#cvMask.on');
+  v=await view('가상 연습 1');
+  iv=await inside();
+  assert.deepEqual([iv.banner,iv.frames,iv.ro],['프로세스 훈련 세션 — 훈련 3개 · 보기 전용보관함에 담기',3,true]);
+  await v.click('#commCopyBtn');
+  const f0=await (await page.waitForSelector('#fBoard')).contentFrame();
+  await f0.waitForSelector('#lpOk');
+  assert.match(await f0.evaluate(()=>document.querySelector('#lpOv>div').textContent),/PROCESS LETTER · 6호 · 훈련 세션가상 세션 6훈련 3개 · 60분/,'확인 창까지 사본으로 온다');
+  assert.ok(askedLocal.filter(a=>a==='/packs/06.json').length>=2,'뷰어 · 보관함 둘 다 사본의 팩을 읽었다 '+JSON.stringify(askedLocal));
+  assert.deepEqual(asked.slice(remoteBefore).filter(a=>a!=='/packs/index.json'),[],'내려간 사이트에는 팩·그림을 묻지 않는다');
+  await f0.click('#lpCancel');
+  await f0.waitForFunction(()=>!document.getElementById('lpOv'));
+  await page.waitForFunction(()=>!sessionStorage.getItem('ps_pack_pending_v1'));
+  await page.evaluate(()=>window.__psShowApp('community'));
+  await c.waitForSelector('.pr-card[data-proc="06"]');
+
+  // 사이트가 돌아오면 다음에 목록을 받을 때(탭에 적어 둔 10분이 지나거나 화면을 새로 열 때) 사이트 것으로 바뀐다
+  indexDown=false;
+  await c.evaluate(()=>{ try{sessionStorage.removeItem('ps_comm_proc_index_v1');}catch(_){} location.reload(); });
+  await page.waitForTimeout(400);
+  c=await (await page.waitForSelector('#fComm')).contentFrame();
+  await c.waitForSelector('#grid .card');
+  await c.click('#prTabProc');
+  await c.waitForSelector('.pr-card[data-proc="03"]');
   const indexDone=indexAsked();
 
   // 3) 세션 한 장에 훈련 셋 — 호 순서, 이상한 줄은 건너뛴다
