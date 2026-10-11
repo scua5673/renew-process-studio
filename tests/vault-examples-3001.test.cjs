@@ -4,7 +4,7 @@ const fs=require('fs');
 const path=require('path');
 const vm=require('vm');
 
-/* 2.999 — 보관함 예시(사용자 «보관함에 예시로 전부 하나씩 — 훈련도 미팅도 세트피스도 · 처음 들어온 사람들이 잘 볼 수 있게 · 제대로 만들어줘 조사해서»
+/* 3.001 — 보관함 예시(사용자 «보관함에 예시로 전부 하나씩 — 훈련도 미팅도 세트피스도 · 처음 들어온 사람들이 잘 볼 수 있게 · 제대로 만들어줘 조사해서»
    · «프로세스 폴더를 따로 만들어서 거기에 다 넣어줘 기본으로 있는것 처럼» · «모든 사용자에게 한 번씩»).
    vault-examples.js 가 종류마다 하나를 만든다 — 패턴북 · 훈련 · 세트피스 · 작전판 · 미팅. board.html 은 담기만 한다(«프로세스» 폴더 · ex 표식 · libTurn).
    여기서는 예시가 앱이 여는 모양 그대로인지 본다: 판 좌표 · 장면(같은 토큰 id) · 패턴북 국면 · 세트피스 판 · 미팅 A4 한 장 분량 · 글자 상한. */
@@ -134,7 +134,7 @@ test('the meeting: five portrait slides, one A4 page each, two animated',()=>{
 });
 
 test('board.html: examples are added in one turn into «프로세스», never twice, and never for view-only members',()=>{
-  const add=cut('  function vaultAddExamples(keys,openKey){','  /* ── 2.999 · «프로세스» 폴더를 모든 사용자에게 한 번');
+  const add=cut('  function vaultAddExamples(keys,openKey){','  /* ── 3.001 · «프로세스» 폴더를 모든 사용자에게 한 번');
   assert.match(add,/if\(!psVaultRequireLogin\(\)\)return Promise\.resolve\(false\);/);
   assert.match(add,/if\(!vxExCanWrite\(\)\)\{/,'view-only cannot write the vault');
   assert.match(add,/return libTurn\(function\(\)\{return libGet\(\)\.then\(function\(lib\)\{/,'one turn: read and write together');
@@ -163,14 +163,16 @@ test('board.html: opening is not editing — thumbnails drawn on the side do not
 });
 
 test('board.html: every user gets the «프로세스» folder once — per account and workspace, from the vault screen, never back after a delete',()=>{
-  const seed=cut('  function vxSeedSoon(){','  /* ══ 2.999 · 보관함 예시 끝 ══ */');
+  const seed=cut('  function vxSeedSoon(){','  /* ══ 3.001 · 보관함 예시 끝 ══ */');
   assert.match(seed,/if\(_vxSeeding\|\|window\.__csView!=="session"\)return;/,'only on the vault screen — the thumbnails swap the board for a moment');
   assert.match(seed,/if\(document\.body\.classList\.contains\("editing"\)\|\|!psVaultUnlocked\(\)\)return;/,'only once the account data is open');
   assert.match(seed,/var who=vxSeedWho\(\); if\(!who\|\|vxSeedMap\(\)\[who\]\|\|!vxEx\(\)\|\|!vxExCanWrite\(\)\)return;/,'once per user and workspace on this device, never for view-only');
   assert.match(seed,/if\(tomb\[vxSeedId\(k\)\]\)return;/,'a deleted example (this device) is not added again');
   assert.match(seed,/it\.libId=vxSeedId\(k\); it\.savedAt=VX_SEED_AT-i\*60000; stampCreator\(it\);/,'a fixed number per user and an old date — another device\'s delete wins the merge, two devices meet on one row');
   assert.match(seed,/if\(d&&d\.ex\)have\[d\.ex\]=1; if\(d&&d\.libId\)have\["#"\+d\.libId\]=1;/,'an example already there is not doubled');
-  assert.match(seed,/return libSet\(add\.concat\(lib\)\)/);
+  assert.match(seed,/return libSet\(lib\.concat\(add\)\)/,'appended — old-dated examples never stand in front of a card added meanwhile (letter pack)');
+  assert.match(seed,/vxSeedToast\("«"\+X\.FOLDER\+"» 폴더에 예시 "\+r\.n\+"개가 준비되어 있어요/,'the notice waits for another toast');
+  assert.match(seed,/if\(t&&t\.getAttribute\("aria-hidden"\)==="false"&&n<10\)\{ setTimeout\(function\(\)\{ vxSeedToast\(msg,n\+1\); \},400\); return; \}/,'never overwrites «훈련 3개를 보관함에 담았어요»');
   assert.match(seed,/vxSeedMark\(who\);[\s\S]*if\(!r\.was\)\{ try\{ var cf=libFilter\.folder\|\|""; if\(cf===""\|\|cf==="__all"\|\|cf==="__mine"\)libFilter\.folder=X\.FOLDER; \}catch\(_\)\{\} \}/,'a newcomer lands in the folder; an existing user keeps their view');
   assert.match(seed,/\},function\(\)\{ return false; \}\);   \/\* 실패하면 표식을 남기지 않는다/,'a failed write is retried next time');
   assert.match(src,/function vxSeedId\(key\)\{ return "Vpx"\+String\(psMyUid\(\)\)\.replace\(\/\[\^a-z0-9\]\/gi,""\)\.slice\(0,12\)\+"-"\+key; \}/,'team members never share a number (one row per member)');
