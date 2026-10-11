@@ -198,6 +198,42 @@ try{
     set:[...document.querySelectorAll('#bkMap .bkm-c[data-slot="m:set"] .bkm-cell:not([data-ph]) .bkm-s .nm')].map(e=>e.textContent),cur:(document.querySelector('#bkMap .bkm-s.on .nm')||{}).textContent,saved:window.__psPages.forSave().map(p=>[p.name,p.mo,p.grp,p.ph||''])}));
   assert.deepEqual(m1,{on:true,n:'100001',ao:['빌드업 A'],set:['코너킥 니어'],cur:'코너킥 니어',saved:[['빌드업 A','ao','공격 조직','std_ao_1'],['코너킥 니어','set','세트피스','']]},JSON.stringify(m1));
   await shot('3b-map');
+  // 2.998 — 지도에서 끌어 옮기기(사용자 «패턴북 지도에서 드래그로 이동할 수 있게»): 다른 국면 칸에 놓으면 그 국면·세부 국면으로, 시퀀스 위에 놓으면 그 앞에. 지도는 그대로 떠 있고 판은 제 시퀀스를 따라간다
+  const box=async sel=>{ const h=await bf.$(sel); assert.ok(h,'no '+sel); return h.boundingBox(); };
+  const dragTo=async(fromSel,toSel,fy,snap)=>{ const a=await box(fromSel),b=await box(toSel),ax=a.x+a.width/2,ay=a.y+a.height/2;
+    await page.mouse.move(ax,ay); await page.mouse.down(); await page.mouse.move(ax,ay+12,{steps:3}); await page.mouse.move(b.x+b.width/2,b.y+b.height*(fy==null?.5:fy),{steps:10});
+    const mid=await bf.evaluate(()=>({ghost:document.querySelectorAll('#bkMap .bkm-ghost').length,lift:(document.querySelector('#bkMap .bkm-s.lift .nm')||{}).textContent,
+      drop:(()=>{ const c=document.querySelector('#bkMap .bkm-cell.drop'); return c?c.closest('.bkm-c').getAttribute('data-slot')+'/'+(c.getAttribute('data-ph')||''):null; })(),
+      ins:[...document.querySelectorAll('#bkMap .bkm-s.ins-b,#bkMap .bkm-s.ins-a')].map(e=>(e.classList.contains('ins-b')?'before ':'after ')+e.querySelector('.nm').textContent)}));
+    if(snap)await shot(snap); await page.mouse.up(); await page.waitForTimeout(400); return mid; };
+  const mapNow=()=>bf.evaluate(()=>({on:window.__bkMap.on(),idx:window.__psPages.book.idx(),ttl:document.getElementById('bkName').value,list:window.__psPages.book.list().map(x=>[x.label,x.mo,x.ph]),
+    cells:[...document.querySelectorAll('#bkMap .bkm-cell')].filter(c=>c.querySelector('.bkm-s')).map(c=>c.closest('.bkm-c').getAttribute('data-slot')+'/'+(c.getAttribute('data-ph')||'')+':'+[...c.querySelectorAll('.bkm-s .nm')].map(e=>e.textContent).join(',')),
+    left:document.querySelectorAll('#bkMap .bkm-ghost,#bkMap .bkm-s.lift,#bkMap .bkm-cell.drop,#bkMap .ins-b,#bkMap .ins-a').length,dragging:document.getElementById('bkMap').classList.contains('bkm-drag')}));
+  // ① 코너킥 니어(세트피스) → 수비 조직 › 전방 압박(빈 칸)
+  const d1=await dragTo('#bkMap .bkm-s[data-i="1"]','#bkMap .bkm-c[data-slot="m:do"] .bkm-cell[data-ph="std_do_1"]');
+  assert.deepEqual(d1,{ghost:1,lift:'코너킥 니어',drop:'m:do/std_do_1',ins:[]},'while dragging: '+JSON.stringify(d1));
+  let mm=await mapNow(); console.log('drag1',JSON.stringify(mm));
+  assert.deepEqual(mm,{on:true,idx:1,ttl:'코너킥 니어',list:[['빌드업 A','ao','std_ao_1'],['코너킥 니어','do','std_do_1']],cells:['m:ao/std_ao_1:빌드업 A','m:do/std_do_1:코너킥 니어'],left:0,dragging:false},JSON.stringify(mm));
+  assert.equal(await bf.evaluate(()=>document.getElementById('bkMap').contains(document.activeElement)),true,'focus stays on the map after the redraw (Esc still closes it)');
+  assert.deepEqual(await bf.evaluate(()=>[...document.querySelectorAll('#bkList .bk-gh .gn')].map(e=>e.textContent)),['공격 조직','수비 조직'],'the rail follows');
+  // ② 빌드업 A 의 위쪽 절반에 놓으면 그 앞 — 같은 빌드업 칸, 줄의 첫째. 지금 판(코너킥 니어)은 제 시퀀스를 따라간다
+  const d2=await dragTo('#bkMap .bkm-s[data-i="1"]','#bkMap .bkm-s[data-i="0"]',.25,'3c-map-dragging');
+  assert.deepEqual(d2,{ghost:1,lift:'코너킥 니어',drop:'m:ao/std_ao_1',ins:['before 빌드업 A']},'while dragging: '+JSON.stringify(d2));
+  mm=await mapNow(); console.log('drag2',JSON.stringify(mm));
+  assert.deepEqual(mm,{on:true,idx:0,ttl:'코너킥 니어',list:[['코너킥 니어','ao','std_ao_1'],['빌드업 A','ao','std_ao_1']],cells:['m:ao/std_ao_1:코너킥 니어,빌드업 A'],left:0,dragging:false},JSON.stringify(mm));
+  // ③ 제자리에 놓으면 아무것도 바뀌지 않고, 뒤따른 click 이 그 시퀀스로 데려가지도 않는다
+  const d3=await dragTo('#bkMap .bkm-s[data-i="1"]','#bkMap .bkm-s[data-i="1"]',.6);
+  assert.equal(d3.lift,'빌드업 A'); assert.deepEqual(await mapNow(),mm,'dropped where it stood');
+  // ④ 마우스를 떼기 전에 Esc — 끌기만 거두고 지도는 남는다
+  { const a=await box('#bkMap .bkm-s[data-i="0"]'),b=await box('#bkMap .bkm-c[data-slot="m:set"] .bkm-cell[data-ph="std_set_1"]');
+    await page.mouse.move(a.x+a.width/2,a.y+a.height/2); await page.mouse.down(); await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:10});
+    await page.keyboard.press('Escape'); await page.mouse.up(); await page.waitForTimeout(300);
+    assert.deepEqual(await mapNow(),mm,'Esc while dragging cancels the drag only'); }
+  // 손가락·펜은 꾹 눌러야 잡힌다 — 바로 움직이면 지도 스크롤로 보고 놓아 준다(조각 확인은 tests/patternbook-map-drag-2998)
+  // 제자리로 — 코너킥 니어는 기둥의 «국면»에서 세트피스로(꼬리표 없이). 아래 단계는 처음 줄(빌드업 A · 코너킥 니어)로 이어 간다
+  await pick('#bkMo','set'); await page.waitForTimeout(350);
+  assert.deepEqual((await mapNow()).list,[['빌드업 A','ao','std_ao_1'],['코너킥 니어','set','']]);
+  await shot('3c-map-drag');
   await bf.evaluate(()=>document.querySelector('#bkMap .bkm-s[data-i="0"]').click()); await page.waitForTimeout(600);
   assert.deepEqual(await bf.evaluate(()=>({on:window.__bkMap.on(),idx:window.__psPages.book.idx()})),{on:false,idx:0});
   // 국면을 바꾸면 줄이 국면 순서로 다시 선다 — 빌드업 A 를 세트피스로 보내면 둘째가 되고, 되돌리면 첫째로 온다(지금 판은 제 시퀀스를 따라간다)
