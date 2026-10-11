@@ -108,7 +108,7 @@ test('the process tab stays out of the server — no views, no copies, no report
   assert.match(comm,/function copyPreviewPost\(p,btn\)\{\n  if\(p&&p\.proc\)\{procSave\(p\);return;\}/);
   assert.match(comm,/if\(p\.proc\)\{ if\(act==='copy'\)procSave\(p\); return; \}/,'신고·삭제·고치기는 코치 자료만');
   assert.match(comm,/if\(p\.proc\)\{ if\(!p\.item\)\{procOpen\(p,null\);return;\} \}[^\n]*\n  else\{\n  try\{fetch\(base\(\)\+'\/rest\/v1\/rpc\/ps_comm_view'/,'조회수는 서버 글만');
-  assert.match(body,/var hash='#pack='\+PROC_SRC\+'-'\+p\.s\.nn;/);
+  assert.match(body,/var hash='#pack='\+\(\(p\.src\|\|proc\.src\)===PROC_LOCAL_SRC\?PROC_LOCAL_SRC:PROC_SRC\)\+'-'\+p\.s\.nn;/,'3.003 — 사본으로 보고 있으면 사본에서, 아니면 훈련 세션 사이트에서');
   assert.match(body,/window\.parent\.location\.hash=hash/,'레터의 단추와 같은 주소를 셸에 건넨다');
 });
 
