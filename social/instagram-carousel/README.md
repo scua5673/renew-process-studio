@@ -3,6 +3,7 @@
 - `index.html?slide=1`~`8` — 캐러셀 8장(1080×1350, 4:5). 화면을 그대로 찍어 PNG로 올린다.
 - `caption-ko.txt` — 캐러셀 캡션.
 - `export-pack.mjs` — 커뮤니티 «프로세스» 칸의 훈련 세션 팩(`packs/NN.json`)에서 훈련마다 애니메이션 영상을 뽑는다.
+- `plan.mjs` — 만든 영상을 하루 한 편씩 날짜순으로 모으고 편마다 캡션을 붙인다(예약 게시용).
 - `video.html` + `make-video.mjs` — 작전판에서 내보낸 훈련 애니메이션을 인스타 틀에 담는다.
   - 캐러셀 영상 장(1080×1350): 다른 장과 같은 머리글·제목·칩, 화면 자리에 애니메이션
   - 릴스(1080×1920): 제목·코칭 포인트 + 가운데 애니메이션 + 주소
@@ -64,6 +65,18 @@ node social/instagram-carousel/make-video.mjs --list ig-03/trainings.json
 
 `ig-03/03-1-post.mp4`(캐러셀 장) · `03-1-reel.mp4`(릴스)처럼 훈련마다 둘. 제목은 훈련 이름, 설명은 코칭 포인트 첫 줄,
 칩은 주제 · 분 · 레터 호. 장면이 하나뿐인 훈련은 영상 없이 건너뛴다.
+
+## 하루 한 편 예약
+
+```sh
+node social/instagram-carousel/plan.mjs --start 2026-10-12 --time 19:00 --out 예약 ig-03/trainings.json ig-04/trainings.json
+```
+
+`예약/01_10-12_훈련이름.mp4` + 같은 이름의 `.txt`(캡션) · `schedule.md`(날짜표). 기본은 릴스(`-reel.mp4`), `--format post`면 4:5 피드.
+캡션 = 훈련 이름 · 코칭 포인트(셋까지) · 분 · 주제 · 레터 호 · «프로세스» 칸 안내 · 해시태그 다섯.
+
+예약 게시는 인스타 앱(새 게시물 › 고급 설정 › 이 게시물 예약하기) 또는 Meta Business Suite(플래너)에서 —
+파일 번호 순으로 올리고 `schedule.md`의 날짜·시간, `.txt`의 캡션을 그대로 넣는다. 프로페셔널(크리에이터·비즈니스) 계정이어야 한다.
 
 ## 3. 올리기
 

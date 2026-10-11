@@ -20,8 +20,8 @@ if(!d||!Array.isArray(d.trainings))throw new Error('훈련 세션 팩이 아니�
 const lt=d.letter||{},nn=String(+lt.issue||+args.issue||0).padStart(2,'0');
 fs.mkdirSync(args.out,{recursive:true});
 
-// 코칭 포인트 첫 줄(«1. » 같은 번호는 뗀다)
-const firstPoint=s=>(String(s||'').split('\n').map(l=>l.replace(/^\s*(\d+[.)]|[-•·])\s*/,'').trim()).find(Boolean)||'');
+// 코칭 포인트 줄들(«1. » 같은 번호는 뗀다) — 첫 줄은 영상 설명, 셋까지는 캡션(plan.mjs)
+const points=s=>String(s||'').split('\n').map(l=>l.replace(/^\s*(\d+[.)]|[-•·])\s*/,'').trim()).filter(Boolean);
 const list=[];
 const fx=await startFixture(),browsers={};
 try{
@@ -38,7 +38,7 @@ try{
 
   for(let k=0;k<d.trainings.length;k++){
     const t=d.trainings[k],frames=Array.isArray(t.frames)?t.frames:[];
-    const row={file:null,issue:+nn,session:lt.session||d.name||'',theme:lt.theme||'',name:t.name||('훈련 '+(k+1)),minutes:+t.minutes||0,point:firstPoint(t.coaching),scenes:frames.length};
+    const row={file:null,issue:+nn,session:lt.session||d.name||'',theme:lt.theme||'',name:t.name||('훈련 '+(k+1)),minutes:+t.minutes||0,point:points(t.coaching)[0]||'',points:points(t.coaching).slice(0,3),scenes:frames.length};
     list.push(row);
     if(frames.length<2){console.log(`- ${row.name}: 장면이 ${frames.length}개라 영상이 없어요`);continue;}
     if(!await bf.evaluate(fr=>window.__animLoad(fr),frames))throw new Error(row.name+' — 장면을 열지 못했어요');
