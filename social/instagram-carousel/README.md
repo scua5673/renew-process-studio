@@ -2,6 +2,7 @@
 
 - `index.html?slide=1`~`8` — 캐러셀 8장(1080×1350, 4:5). 화면을 그대로 찍어 PNG로 올린다.
 - `caption-ko.txt` — 캐러셀 캡션.
+- `export-pack.mjs` — 커뮤니티 «프로세스» 칸의 훈련 세션 팩(`packs/NN.json`)에서 훈련마다 애니메이션 영상을 뽑는다.
 - `video.html` + `make-video.mjs` — 작전판에서 내보낸 훈련 애니메이션을 인스타 틀에 담는다.
   - 캐러셀 영상 장(1080×1350): 다른 장과 같은 머리글·제목·칩, 화면 자리에 애니메이션
   - 릴스(1080×1920): 제목·코칭 포인트 + 가운데 애니메이션 + 주소
@@ -49,6 +50,20 @@ node social/instagram-carousel/make-video.mjs --mode reel --in 론도.mp4 --out 
 | `--url` | 릴스 아래 주소(기본 `processstudio.netlify.app`) |
 
 영상 길이는 내보낸 애니메이션 그대로다. 소리는 없다 — 릴스 음악은 인스타 앱에서 고른다.
+
+## 프로세스 훈련 세션을 한꺼번에
+
+커뮤니티 «프로세스» 칸과 같은 자료(`https://process-letter-sessions.netlify.app/packs/NN.json`)를 받아,
+앱의 영상 내보내기(가로 · 훈련 구역 · 1080p · 30fps)로 훈련마다 영상을 만든 뒤 틀에 담는다.
+합성 팀 fixture(`tests/fixtures/team-app.mjs`)에서 돌아 운영 서버에는 닿지 않는다.
+
+```sh
+node social/instagram-carousel/export-pack.mjs --issue 3 --out ig-03      # 받아 둔 파일이면 --pack 03.json
+node social/instagram-carousel/make-video.mjs --list ig-03/trainings.json
+```
+
+`ig-03/03-1-post.mp4`(캐러셀 장) · `03-1-reel.mp4`(릴스)처럼 훈련마다 둘. 제목은 훈련 이름, 설명은 코칭 포인트 첫 줄,
+칩은 주제 · 분 · 레터 호. 장면이 하나뿐인 훈련은 영상 없이 건너뛴다.
 
 ## 3. 올리기
 
