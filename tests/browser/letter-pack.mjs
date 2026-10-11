@@ -7,10 +7,10 @@ const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'p
 const snap=k=>({pitchSpec:k===0?'grid30':'fifa',players:[{id:101,team:'blue',num:'6',pos:'',x:400+k*10,y:300,img:'https://outside.invalid/p.png'},{id:102,team:'red',num:'4',pos:'',x:520,y:330}],
   equipment:[{id:900,team:'cone',x:300,y:300,src:'javascript:void(0)',scale:1,rot:0,color:null}],drawings:[{type:'text',text:'A',pts:[{x:320,y:260}],color:'#ffffff',lw:1,op:1,size:16}],
   ball:{x:410,y:310,scale:.62},lines:k!==0,gridType:'off',tokenScale:.6,label:'num',tokShape:'circle',orientation:'h',area:'full',pitchView:'full',pitchN:1,tokV:2,pitchImg:'https://outside.invalid/pitch.jpg'});
-const tr=(i,n)=>({type:'train',name:'가상 연습 '+(i+1),minutes:[15,20,25][i],sets:1,rpe:5,focus:'bp',method:'가상 방법 '+(i+1)+'\n1. 첫 걸음',coaching:'1. 가상 포인트 '+(i+1),createdBy:'someone-else',
+const tr=(i,n)=>({type:'train',name:'가상 연습 '+(i+1),minutes:[15,20,25][i],sets:1,rpe:5,focus:['bpo','bpo','없는분류'][i],method:'가상 방법 '+(i+1)+'\n1. 첫 걸음',coaching:'1. 가상 포인트 '+(i+1),createdBy:'someone-else',
   thumb:'<svg xmlns="http://www.w3.org/2000/svg" onload="window.__lpHit=1"><text>밖에서 온 그림</text></svg>',snap:snap(i),animIdx:0,
   frames:Array.from({length:n},(_,s)=>({snap:{...snap(i),players:snap(i).players.map(p=>({...p,x:p.x+s*30}))},hold:.6,dur:1.2,hl:[101],cap:s?('가상 움직임 '+s):''}))});
-const pack=issue=>({type:'process-studio-drillpack',version:1,drills:[{name:'레터 '+issue+'호 · 가상 세션',type:'train',libId:'Lold',createdBy:'someone-else',folder:'팀 공유',fav:true,tpl:1,matchRef:{mid:'m1'},
+const pack=issue=>({type:'process-studio-drillpack',version:1,drills:[{name:'레터 '+issue+'호 · 가상 세션',type:'train',focus:'bpo',libId:'Lold',createdBy:'someone-else',folder:'팀 공유',fav:true,tpl:1,matchRef:{mid:'m1'},
   thumb:'<svg onload="window.__lpHit=1"></svg>',snap:snap(0),trainings:[tr(0,3),tr(1,2),tr(2,4)],letter:{issue,title:'가상 호 제목',session:'가상 세션 제목',theme:'가상 주제',url:'https://process-letter.netlify.app/0'+issue+'/'}}]});
 const fx=await startFixture(),browsers={};
 try{
@@ -56,6 +56,7 @@ try{
   assert.deepEqual(c.trainings.map(t=>[t.method,t.coaching]),[['가상 방법 1\n1. 첫 걸음','1. 가상 포인트 1'],['가상 방법 2\n1. 첫 걸음','1. 가상 포인트 2'],['가상 방법 3\n1. 첫 걸음','1. 가상 포인트 3']],'훈련 방법·코칭 포인트가 훈련마다');
   assert.equal(c.trainings[0].frames[2].cap,'가상 움직임 2','장면 자막');
   assert.equal(c.frames.length,3,'카드 대표 장면 = 첫 훈련');
+  assert.deepEqual([c.focus,...c.trainings.map(t=>t.focus)],['bpo','bpo','bpo','bp'],'세션의 주제 분류 그대로 — 모르는 값만 기본값');
   assert.deepEqual([c.createdBy,c.libId!=='Lold',c.folder||'',!!c.fav,!!c.tpl,!!c.matchRef],[A,true,'',false,false,false],'내가 담은 새 카드 — 남의 도장·폴더·표식은 따라오지 않는다');
   assert.ok(c.trainings.every(t=>/^<svg/.test(t.thumb)&&t.thumb.length>500),'그림은 이 판에서 다시 그린다');
   const json=JSON.stringify(c);

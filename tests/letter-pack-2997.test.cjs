@@ -21,7 +21,7 @@ const snap=k=>({pitchSpec:k?'grid30':'fifa',players:[{id:101,team:'blue',num:'6'
 const tr=(i,n)=>({type:'train',name:'연습 '+(i+1),minutes:[15,20,25][i],sets:1,rpe:5,focus:'bp',method:'방법 '+(i+1),coaching:'포인트 '+(i+1),createdBy:'someone-else',libId:'Lx',
   thumb:'<svg onload="hit()"><text>밖에서 온 그림</text></svg>',snap:snap(i),animIdx:7,
   frames:Array.from({length:n},(_,s)=>({snap:snap(i),hold:.6,dur:1.2,hl:[101,{bad:1},'a'],cap:s?('움직임 '+s):'',thumb:'<svg onload="hit()"></svg>',extra:'x'}))});
-const pack=()=>({type:'process-studio-drillpack',version:1,drills:[{name:'레터 3호 · 가상 세션',type:'train',libId:'Lold',savedAt:1,createdBy:'someone-else',createdByName:'남',folder:'팀 공유',fav:true,tpl:1,
+const pack=()=>({type:'process-studio-drillpack',version:1,drills:[{name:'레터 3호 · 가상 세션',type:'train',focus:'bpo',rpe:7,libId:'Lold',savedAt:1,createdBy:'someone-else',createdByName:'남',folder:'팀 공유',fav:true,tpl:1,
   matchRef:{mid:'m1'},thumb:'<svg onload="hit()"></svg>',snap:snap(0),trainings:[tr(0,3),tr(1,1),tr(2,4)],
   letter:{issue:3,title:'가상 호',session:'가상 세션',theme:'가상 주제',url:'https://process-letter.netlify.app/03/',extra:'x'}}]});
 const dep=()=>{ const log={thumb:0};
@@ -61,6 +61,9 @@ test('the card is built from known fields only — three trainings, each with it
   assert.deepEqual(c.trainings.map(t=>t.animIdx),[0,undefined,0]);
   assert.equal(c.frames.length,3,'the card shows the first training that has an animation');
   assert.deepEqual(c.tags,['프로세스 레터']);
+  assert.deepEqual([c.focus,c.rpe],['bpo',7],'the session keeps its own topic — a defending session is not filed under attack');
+  const odd=pack(); odd.drills[0].focus={x:1}; odd.drills[0].rpe=99;
+  assert.deepEqual([g.letterPackCard(odd,dep()).focus,g.letterPackCard(odd,dep()).rpe],['bp',5]);
   assert.deepEqual(c.letter,{issue:3,session:'가상 세션',title:'가상 호',theme:'가상 주제',url:'https://process-letter.netlify.app/03/'});
   for(const k of ['createdBy','createdByName','folder','fav','tpl','matchRef'])assert.equal(k in c,false,'the card does not inherit '+k);
   for(const t of c.trainings)for(const k of ['createdBy','libId'])assert.equal(k in t,false,'a training does not inherit '+k);

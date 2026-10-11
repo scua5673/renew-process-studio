@@ -10960,7 +10960,7 @@ function letterPackCard(pack,dep){
   var anim=null; for(var k=0;k<trs.length;k++){ if(trs[k].frames){ anim=trs[k]; break; } }
   var url=_lpStr(lt.url,80); if(!/^https:\/\/process-letter\.netlify\.app\/\d{2}\/$/.test(url))url="";
   var card={libId:dep.id(),savedAt:dep.now,name:info.name,type:"train",snap:clone(trs[0].snap),thumb:trs[0].thumb,trainings:trs,
-    minutes:info.minutes,sets:1,focus:"bp",rpe:5,tags:["프로세스 레터"],
+    minutes:info.minutes,sets:1,focus:_lpStr(raw.focus,12)||"bp",rpe:_lpNum(raw.rpe,1,10,5),tags:["프로세스 레터"],
     letter:{issue:info.issue,session:info.session,title:_lpStr(lt.title,80),theme:_lpStr(lt.theme,40),url:url}};
   if(anim)card.frames=clone(anim.frames);   /* 카드 대표 = 애니메이션이 있는 첫 훈련(2.613) */
   return card;
@@ -10984,6 +10984,7 @@ async function letterPackSave(pack){
     id:function(){ return "L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)+Math.random().toString(36).slice(2,4); },now:Date.now()});
   if(!card){ toast("이 훈련 세션은 새 판에서 열립니다 — 앱을 새로 고친 뒤 레터에서 다시 눌러 주세요"); return false; }
   stampCreator(card); normalizeDrill(card);
+  card.trainings.forEach(function(t){ try{ normalizeDrill(t); }catch(_){} });   /* 주제 분류(focus)가 이 판이 아는 값이게 — 수비 세션이 «공격»으로 남지 않는다 */
   await libTurn(async function(){ var lib=await libGet(); await libWrite([card].concat(lib)); libTouch(); });
   letterPackShow(card.libId);
   toast("훈련 "+card.trainings.length+"개를 보관함에 담았어요 ✓");
