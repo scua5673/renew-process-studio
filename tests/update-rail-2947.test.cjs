@@ -56,6 +56,18 @@ test('«새 기능»은 안내 날짜로 오늘 포함 7일 — 본 것은 기�
   assert.deepEqual(mk(E,new Date(2026,9,8,9).getTime()),['a'],'10/8 이면 10/1 은 빠진다');
   assert.deepEqual(mk(E,new Date(2026,9,13,9).getTime()),[],'10/13 이면 모두 지났다');
   assert.deepEqual(mk([{id:'z',date:'2026-12-31'}],new Date(2026,9,6).getTime()),[],'먼 미래 날짜(시계 틀림)는 띄우지 않는다');
+  /* 3.008 — 처음 온 기기는 그날 이후의 안내만 */
+  const mkLs=(entries,now,store)=>{const RealDate=Date;class D extends RealDate{constructor(...a){super(...(a.length?a:[now]));}static now(){return now;}}
+    const localStorage={getItem:k=>Object.prototype.hasOwnProperty.call(store,k)?store[k]:null,setItem:(k,v)=>{store[k]=String(v);}};
+    const c=vm.createContext({PSReleaseNotes:{entries:()=>entries},window:{PSReleaseNotes:1},Date:D,DAY:86400000,localStorage});
+    vm.runInContext('function all(){return PSReleaseNotes.entries();}\n'+src+'\nthis.news=news;',c);return c.news().map(e=>e.id);};
+  const fresh={};
+  assert.deepEqual(mkLs(E,new Date(2026,9,6,12).getTime(),fresh),[],'처음 온 날: 그날의 안내도 띄우지 않는다');
+  assert.equal(fresh.ps_first_seen_v1,String(new Date(2026,9,6).getTime()),'처음 온 날을 적어 둔다');
+  assert.deepEqual(mkLs([{id:'n',date:'2026-10-08'},...E],new Date(2026,9,8,9).getTime(),fresh),['n'],'그 뒤에 나온 안내는 띄운다');
+  const used={ps_sync_session:'{}'};
+  assert.deepEqual(mkLs(E,new Date(2026,9,6,12).getTime(),used),['a','b'],'이미 쓰던 기기(로그인 흔적)는 예전 그대로');
+  assert.equal(used.ps_first_seen_v1,'1');
   const body=cut('(function(){\n  var SEEN=','window.__psUpdSurface=');
   assert.match(body,/if\(md==='news'\)\{var n=news\(\);if\(n\[0\]\)markSeen\(n\[0\]\.id\);render\(\);\}/,'열면 본 것으로');
   assert.match(body,/dot=md==='ready'\|\|\(md==='news'&&!!first&&seen\(\)!==first\.id\)/);

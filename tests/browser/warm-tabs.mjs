@@ -1,21 +1,18 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
-// 3.004 — 미리 띄우기는 기기를 본다. 데스크톱은 탭 아홉을 전부(2.252 그대로), 폰·아이패드는 이 기기에서 최근에 연 탭만(처음이면 팀 허브와 일정).
+// 3.004 — 미리 띄우기는 이 기기에서 최근에 연 탭만(처음이면 팀 허브와 일정). 3.008 — 데스크톱은 팀 허브·일정은 늘 + 쓰던 탭(전부 띄우기는 처음 온 사람에게도 탭 아홉을 받게 했다).
 // 미리 띄우지 않은 탭도 누르면 열리고, 그 탭에 건네는 말(공용어의 «뒤로» 이름)은 뜬 뒤에 닿는다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop',lean=size!=='desktop';
-const ALL=['fAnalysis','fBoard','fComm','fGameModel','fIdp','fLearning','fProcess','fScout','fScouting','fTerms'];
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   const loaded=()=>page.evaluate(()=>[...document.querySelectorAll('iframe')].filter(f=>f.getAttribute('src')).map(f=>f.id).sort());
   const settle=async()=>{ await page.waitForFunction(()=>!document.body.classList.contains('ps-booting')); await page.waitForTimeout(7600); };
   await settle();
-  assert.equal(await page.evaluate(()=>document.documentElement.getAttribute('data-ps-device')),lean?'ipad':'desktop');
+  assert.equal(await page.evaluate(()=>document.documentElement.getAttribute('data-ps-device')),size);
   let now=await loaded();
-  if(!lean){
-    assert.deepEqual(now,ALL,'데스크톱은 전부 미리 띄운다');
-  }else{
-    assert.deepEqual(now,['fBoard','fProcess','fScout'],'아이패드 처음: 작전판 + 팀 허브·일정만');
+  {
+    assert.deepEqual(now,['fBoard','fProcess','fScout'],size+' 처음: 작전판 + 팀 허브·일정만');
     // 안 띄운 탭을 누르면 그때 읽는다
     await page.evaluate(()=>window.__psShowApp('community'));
     const c=await (await page.waitForSelector('#fComm')).contentFrame();
@@ -30,7 +27,7 @@ try{
     await page.reload();
     await settle();
     now=await loaded();
-    assert.deepEqual(now,['fBoard','fComm','fTerms'],'다음 부팅: 쓰던 탭만');
+    assert.deepEqual(now,lean?['fBoard','fComm','fTerms']:['fBoard','fComm','fProcess','fScout','fTerms'],lean?'다음 부팅: 쓰던 탭만':'다음 부팅: 팀 허브·일정 + 쓰던 탭');
     // 14일이 지난 기록은 버린다 → 다시 처음과 같다
     await page.evaluate(()=>localStorage.setItem('ps_warm_tabs_v1',JSON.stringify({community:Date.now()-15*24*60*60*1000,terms:Date.now()+60000,evil:Date.now()})));
     await page.reload();

@@ -14,12 +14,13 @@ const PURE=cut(app,'/* ── 3.004 · 미리 띄우기 순수 구간 시작','/
 function pure(){ const c=vm.createContext({}); vm.runInContext(PURE+';this.api={PS_WARM_KEY,PS_WARM_MS,PS_WARM_TABS,psWarmParse,psWarmPlan};',c); return c.api; }
 const DAY=24*60*60*1000,NOW=Date.UTC(2026,9,11);
 
-test('a desk keeps every tab warm; a phone or tablet warms what this device opened lately',()=>{
+test('a desk keeps the team hub and schedule warm plus what it opened lately; a phone or tablet warms only what it opened lately',()=>{
   const g=pure(),all=['scout','process','idp','learning','community','scouting','terms','analysis','gamemodel'];
   assert.deepEqual(plain(g.PS_WARM_TABS.map(t=>t[0])),all);
   assert.deepEqual(plain(g.PS_WARM_TABS.map(t=>t[1])),[1600,2200,2800,3400,4000,4600,5200,5800,6400],'띄우는 시각은 예전 자리 그대로');
-  assert.deepEqual(plain(g.psWarmPlan(false,{})),all,'데스크톱은 기록과 상관없이 전부');
-  assert.deepEqual(plain(g.psWarmPlan(false,{idp:NOW})),all);
+  /* 3.008 — 데스크톱은 팀 허브·일정은 늘, 나머지는 쓰던 탭만(전부 띄우면 처음 온 사람도 탭 아홉을 받았다) */
+  assert.deepEqual(plain(g.psWarmPlan(false,{})),['scout','process'],'데스크톱 처음: 팀 허브·일정');
+  assert.deepEqual(plain(g.psWarmPlan(false,{idp:NOW,community:NOW})),['scout','process','idp','community'],'데스크톱: 팀 허브·일정 + 쓰던 탭, 띄우는 차례는 예전 그대로');
   assert.deepEqual(plain(g.psWarmPlan(true,{})),['scout','process'],'처음 쓰는 기기: 팀 허브와 일정');
   assert.deepEqual(plain(g.psWarmPlan(true,{learning:NOW,idp:NOW})),['idp','learning'],'선수 폰: 쓰는 둘만 — 팀 허브를 깔지 않는다');
   assert.deepEqual(plain(g.psWarmPlan(true,{constructor:NOW,toString:NOW})),['scout','process'],'모르는 이름은 세지 않는다');
