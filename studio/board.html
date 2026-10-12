@@ -12296,7 +12296,8 @@ async function openBoardImport(){
   ov.style.cssText="position:fixed;inset:0;z-index:10030;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;padding:18px";
   var sh=document.createElement("div"); sh.style.cssText="width:min(560px,100%);max-height:min(680px,86vh);overflow:auto;background:var(--panel,#fff);color:var(--txt,#172033);border:1px solid var(--line,#dfe4ec);border-radius:18px;box-shadow:0 24px 60px rgba(15,23,42,.28);padding:18px";
   var hd=document.createElement("div"); hd.style.cssText="display:flex;align-items:center;gap:12px;margin-bottom:14px";
-  hd.innerHTML='<div style="min-width:0;flex:1"><b style="font-size:17px">보드 가져오기</b><div style="font-size:12px;color:var(--txt-dim,#718096);margin-top:4px">보관함의 작전판만 보입니다 · 지금 페이지에 올리고, «보드 저장»하면 이 자료도 같은 내용으로 저장돼요(연결 표시의 ×로 끊기) · ⌘Z 로 되돌리기</div></div>';
+  var _capImp=false; try{ _capImp=document.body.classList.contains("ps-capturing"); }catch(_){}   /* 3.007 */
+  hd.innerHTML='<div style="min-width:0;flex:1"><b style="font-size:17px">보드 가져오기</b><div style="font-size:12px;color:var(--txt-dim,#718096);margin-top:4px">'+(_capImp?'보관함의 작전판만 보입니다 · 지금 첨부하는 판에 올려요 — 보관함 자료는 그대로예요 · ⌘Z 로 되돌리기':'보관함의 작전판만 보입니다 · 지금 페이지에 올리고, «보드 저장»하면 이 자료도 같은 내용으로 저장돼요(연결 표시의 ×로 끊기) · ⌘Z 로 되돌리기')+'</div></div>';
   var close=document.createElement("button"); close.type="button"; close.className="btn"; close.textContent="닫기"; close.onclick=function(){ov.remove();}; hd.appendChild(close); sh.appendChild(hd);
   var list=document.createElement("div"); list.style.cssText="display:grid;gap:8px";
   if(!items.length){ var empty=document.createElement("div"); empty.style.cssText="padding:28px 12px;text-align:center;color:var(--txt-dim,#718096)"; empty.textContent="보관함에 저장한 작전판이 없어요 — 보드에서 «보관함 저장»으로 만들 수 있어요."; list.appendChild(empty); }
@@ -12312,7 +12313,9 @@ async function openBoardImport(){
     b.appendChild(left); b.appendChild(go);
     b.onclick=function(){
       try{ pushUndo(); }catch(_){}
+      var _capNow=false; try{ _capNow=document.body.classList.contains("ps-capturing"); }catch(_){}   /* 3.007 — 첨부 중에 가져온 판은 첨부로만 간다(보관함 자료와 잇지 않는다) */
       var _canLink=false; try{ _canLink=!!(d.libId&&canEditItem(d)); }catch(_){}
+      if(_capNow)_canLink=false;
       try{ if(_canLink&&undoStack.length)undoStack[undoStack.length-1].__linkMark=d.libId; }catch(_){}   /* 2.927 — 이 가져오기를 ⌘Z 하면 연결도 끊는다 */
       var snap=(Array.isArray(d.pages)&&d.pages.length&&d.pages[0].snap)?d.pages[0].snap:d.snap;
       try{ loadSnap(snap); }catch(_){}
@@ -12323,7 +12326,7 @@ async function openBoardImport(){
       try{ if(window.__psPages&&window.__psPages.linkTag)window.__psPages.linkTag(_canLink?{libId:d.libId,name:d.name||"작전판",srcPage:0,multi:np>1}:null); }catch(_){}
       try{ if(window.__psPages&&window.__psPages.refresh)window.__psPages.refresh(); }catch(_){}
       ov.remove();
-      try{ toast("«"+(d.name||"작전판")+"» 가져옴"+(np>1?(" · 첫 페이지(전체 "+np+"페이지)"):"")+(_canLink?" · «보드 저장»하면 보관함에도 저장돼요":" · 남이 만든 자료라 보관함엔 저장되지 않아요")+" · ⌘Z 되돌리기"); }catch(_){}
+      try{ toast("«"+(d.name||"작전판")+"» 가져옴"+(np>1?(" · 첫 페이지(전체 "+np+"페이지)"):"")+(_capNow?" · 보관함 자료는 그대로예요":(_canLink?" · «보드 저장»하면 보관함에도 저장돼요":" · 남이 만든 자료라 보관함엔 저장되지 않아요"))+" · ⌘Z 되돌리기"); }catch(_){}
     };
     list.appendChild(b);
   });
@@ -15769,7 +15772,7 @@ try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전�
 })();
 </script>
 <script>
-(function(){var bar=null,__saved=null,__savedAnim=null,_meta=null;
+(function(){var bar=null,__saved=null,__savedAnim=null,_meta=null,__savedPages=null,__savedHist=null,_view=false;
   function makeBar(){try{document.body.classList.add('ps-capturing');}catch(_){}bar=document.createElement('div');
      if(_meta){
        bar.style.cssText='position:fixed;right:12px;top:12px;z-index:99999;display:flex;flex-direction:column;gap:7px;width:210px;padding:14px;background:#fff;color:#14161A;border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.42);font-family:-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Roboto,sans-serif';
@@ -15781,11 +15784,12 @@ try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전�
        try{var _n=document.getElementById('capName');if(_n){_n.value=_meta.name||'';setTimeout(function(){try{_n.focus();}catch(_){}},40);}var _m=document.getElementById('capMin');if(_m&&_meta.minutes)_m.value=_meta.minutes;}catch(_){}
      } else {
        bar.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 12px;background:#3a6df0;color:#fff;font-weight:600;font-size:13px;font-family:-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Roboto,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.45)';
-       var msg=document.createElement('span');msg.textContent='새 작전판 (원본과 분리) — 배치·화살표를 그린 뒤 완료를 누르세요';
+       /* 3.007 — «▶ 보기»로 연 판은 보는 곳이다: 닫기 하나. 예전엔 «첨부 완료»가 있었고 눌러도 어디에도 저장되지 않았다 */
+       var msg=document.createElement('span');msg.textContent=_view?'첨부한 작전판 보기 — 고칠 때는 «작전판 다시 첨부»로 여세요':'새 작전판 (원본과 분리) — 배치·화살표를 그린 뒤 완료를 누르세요';
        var done=document.createElement('button');done.textContent='✓ 첨부 완료';done.style.cssText='border:0;border-radius:8px;padding:8px 14px;font-weight:800;cursor:pointer;background:#fff;color:#3a6df0;font-family:inherit';done.onclick=finish;
-       var cancel=document.createElement('button');cancel.textContent='취소';cancel.style.cssText='border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-weight:600';
+       var cancel=document.createElement('button');cancel.textContent=_view?'닫기':'취소';cancel.style.cssText=_view?done.style.cssText:'border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-weight:600';
        cancel.onclick=function(){restore();end();try{parent.postMessage({source:'board',type:'captureCancel'},'*');}catch(_){}};
-       bar.appendChild(msg);bar.appendChild(done);bar.appendChild(cancel);document.body.appendChild(bar);
+       bar.appendChild(msg);if(!_view)bar.appendChild(done);bar.appendChild(cancel);document.body.appendChild(bar);
        document.body.style.paddingTop=bar.offsetHeight+'px';
      }
    }
@@ -15794,14 +15798,26 @@ try{console.log("[PROCESS STUDIO] build "+window.__PS_BUILD+" — 경기/작전�
     var frames=null;try{frames=window.__animFrames?window.__animFrames():null;}catch(_){}
     try{parent.postMessage({source:'board',type:'capture',thumb:thumb,snap:snap,name:nm,minutes:mn,frames:frames},'*');}catch(_){}restore();end();}
   function end(){try{document.body.classList.remove('ps-capturing');}catch(_){}if(bar){bar.remove();bar=null;document.body.style.paddingTop='';}}
-  function restore(){window.__capLock=0;if(__saved!==null){try{loadSnap(__saved);}catch(_){}__saved=null;try{if(typeof renderTokens==='function')renderTokens();}catch(_){}
+  function restore(){window.__capLock=0;
+    /* 3.007 — 맡겨 둔 페이지 묶음을 먼저 돌려받는다(아래 boardSaveLive 가 페이지를 함께 적는다). 되돌리기 기록도 첨부 전 것으로 — 첨부하며 쌓인 기록으로 ⌘Z 하면 첨부 그림이 작업 보드에 올라왔다 */
+    try{if(__savedPages&&window.__psPages&&window.__psPages.unstash)window.__psPages.unstash(__savedPages);}catch(_){}__savedPages=null;
+    try{if(__savedHist){undoStack.length=0;redoStack.length=0;Array.prototype.push.apply(undoStack,__savedHist[0]);Array.prototype.push.apply(redoStack,__savedHist[1]);}}catch(_){}__savedHist=null;
+    if(__saved!==null){try{loadSnap(__saved);}catch(_){}__saved=null;try{if(typeof renderTokens==='function')renderTokens();}catch(_){}
     /* 캡처 전에 작업하던 애니메이션 복원 — 캡처용 프레임이 원본 작업을 덮지 않게 */
     try{if(__savedAnim&&__savedAnim.length>1&&window.__animLoad)window.__animLoad(__savedAnim);else if(window.__animReset)window.__animReset();}catch(_){}__savedAnim=null;
     try{boardSaveLive();}catch(_){}}}
   window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='enterCapture'){
-    try{__saved=captureSnap();}catch(_){__saved=null;}
+    /* 3.007 — 이미 첨부 중에 또 들어오면(완료·취소 없이 돌아갔다가 다른 국면에서 다시 연 경우) 원본을 다시 잡지 않는다.
+       그때 판에 있는 것은 앞선 첨부의 그림이라, 다시 잡으면 그것이 작업 보드로 «복원»됐다 */
+    if(!bar){
+     try{__saved=captureSnap();}catch(_){__saved=null;}
      try{__savedAnim=window.__animFrames?window.__animFrames():null;}catch(_){__savedAnim=null;}
+     try{__savedPages=(window.__psPages&&window.__psPages.stash)?window.__psPages.stash():null;}catch(_){__savedPages=null;}
+     try{__savedHist=[undoStack.slice(),redoStack.slice()];}catch(_){__savedHist=null;}
+    }
+     try{undoStack.length=0;redoStack.length=0;}catch(_){}
      window.__capLock=1;
+     _view=!!d.view&&!d.meta;
      _meta=d.meta?{name:d.name||'',minutes:d.minutes||''}:null;
      try{loadSnap(d.snap?d.snap:{});}catch(_){}
      try{if(window.__animReset)window.__animReset();}catch(_){}
@@ -19663,7 +19679,14 @@ try{ var _nb=document.getElementById('dfNew');
      복제(dup)·미팅 세트는 필드를 골라 복사하므로 따라가지 않는다. 한 페이지 보드는 페이지 기록이 없어 _singleLink 에 두고
      보드 기록(payload.boardLink)으로 새로고침을 건넌다. 보관함 열람 중(_inVault)에는 연결이 없는 것으로 본다. */
   var _singleLink=null;
+  /* ══ 3.007 · 첨부(캡처) 동안에는 작업 보드의 페이지 묶음을 맡겨 둔다(_lent) ══
+     게임모델·분석·일정이 «작전판 첨부»로 판을 빌리는 동안에도 페이지 띠는 작업 보드의 것이었다. 첨부 중에 «＋ 페이지»나 다른 탭을 누르면
+     첨부하던 그림이 작업 보드의 페이지로 들어가 남았고 — 다음 국면의 첨부를 열면 그 페이지가 그대로 보였다(오류 제보 0f52fe75
+     «전방압박에 첨부해 놓고 미들블록 작전판을 들어가면 전방압박 것이 그대로 보임») — 붙는 것은 마지막에 보던 한 장뿐이었다.
+     빌리는 동안은 한 장짜리 판이다(첨부 = 판 하나 + 장면들). 끝나면 맡긴 묶음·보관함 연결을 그대로 돌려받는다(__psPages.stash/unstash). */
+  var _lent=false;
   function _linkTag(tag){
+    if(_lent)return;
     if(pages&&pages[idx]){ pages.forEach(function(p){ if(p&&p.vlink&&tag&&p.vlink.libId===tag.libId)delete p.vlink; }); if(tag)pages[idx].vlink=tag; else delete pages[idx].vlink; }
     else _singleLink=tag||null;
   }
@@ -19707,7 +19730,7 @@ try{ var _nb=document.getElementById('dfNew');
     try{ var _a=pages[i].anim; if(_a&&Array.isArray(_a.frames)&&_a.frames.length>1&&window.__animRestore){window.__animRestore(_a.frames,_a.active);if(window.__animRestoreMeta)window.__animRestoreMeta(_a);} else if(window.__animReset)window.__animReset(); }catch(_){} }
 
   function clearHistory(){try{window.__clearBoardHistory&&window.__clearBoardHistory();}catch(_){}}
-  function add(){ ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
+  function add(){ if(_lent)return; ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
     pages.splice(idx+1,0,{snap:blankSnap(),thumb:"",name:""}); idx++; loadIdx(idx);clearHistory();render(); persist(); _toast("페이지 "+pages.length); }
   function dup(i){ ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
     var src=pages[i]; if(!src)return; var _cp={snap:_clone(src.snap),anim:src.anim?_clone(src.anim):null,thumb:src.thumb,name:(src.name||((window.__vaultBook?"시퀀스 ":"페이지 ")+(i+1)))+" 복사"};
@@ -19718,7 +19741,7 @@ try{ var _nb=document.getElementById('dfNew');
     var go=function(){ if(i!==idx)capture(); pages.splice(i,1); if(idx>i)idx--; else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx);clearHistory();render();persist(); _bkTouch(); };
     var _q=window.__vaultBook?("«"+bkSeqName(pages[i],i)+"» 시퀀스를 삭제할까요? 장면도 함께 지워집니다."):"이 페이지를 삭제할까요?";   /* 2.985 */
     if(window.psConfirm)window.psConfirm(_q,go); else if(window.confirm(_q))go(); }
-  function rename(i){ ensure(); if(!pages||!pages[i])return; var cur=pages[i].name||("페이지 "+(i+1));   /* ensure() — 1페이지(가상 탭)에서도 이름을 바꿀 수 있게 */
+  function rename(i){ if(_lent)return; ensure(); if(!pages||!pages[i])return; var cur=pages[i].name||("페이지 "+(i+1));   /* ensure() — 1페이지(가상 탭)에서도 이름을 바꿀 수 있게 */
     if(window.psPrompt)window.psPrompt("페이지 이름",cur,function(v){ pages[i].name=(v||"").trim(); render(); persist(); });
     else { var v=window.prompt("페이지 이름",cur); if(v!=null){ pages[i].name=(v||"").trim(); render(); persist(); } } }
 
@@ -19728,6 +19751,7 @@ try{ var _nb=document.getElementById('dfNew');
   /* ---- 미팅 페이지 세트 — 팀 탭 이미지노트의 Match Scenario 와 1:1 이름 ---- */
   var MEET_SET=["High Block","Mid Block","Low Block","Build-Up","Middle Third","Final Third","Set Piece 수비","Set Piece 공격"];
   function addMeetingSet(){
+    if(_lent)return;
     ensure(); capture();
     var room=MAXP-pages.length;
     if(room<MEET_SET.length){ _toast("페이지 자리가 부족해요 — "+MEET_SET.length+"개 필요 (남은 "+room+"개)"); return; }
@@ -19794,7 +19818,7 @@ try{ var _nb=document.getElementById('dfNew');
     var n=pages?pages.length:1;
     /* 1페이지일 때도 '페이지 1' 탭을 보여준다 — 예전엔 2개 이상일 때만 그려서, 지금 페이지를 복사하려면
        빈 페이지를 먼저 추가해야 했다(복사 버튼이 탭 위에만 있으므로). pages 가 아직 없으면 가상 탭 하나로 그린다. */
-    {
+    if(!_lent){   /* 3.007 — 첨부 중에는 한 장짜리 판: 탭·«＋ 페이지»·«미팅 세트»를 그리지 않는다 */
       (pages||[{name:""}]).forEach(function(p,i){
         var b=document.createElement("button"); b.type="button"; b.className="bp-tab"+(i===idx?" on":"");
         var nm=document.createElement("span"); nm.textContent=(p.name&&p.name.trim())||(_pw+" "+(i+1)); b.appendChild(nm);
@@ -19822,12 +19846,12 @@ try{ var _nb=document.getElementById('dfNew');
         box.appendChild(b);
       });
     }
-    if((!pages || n<MAXP)&&!_bkRo){
+    if((!pages || n<MAXP)&&!_bkRo&&!_lent){
       var add1=document.createElement("button"); add1.type="button"; add1.className="bp-add";
       add1.textContent="＋ "+_pw; add1.title=_bk?"새 시퀀스 추가":("새 빈 페이지 추가 (독립된 작전판, 최대 "+MAXP+"개)");
       add1.onclick=add; box.appendChild(add1);
     }
-    if(!_bk&&(!pages || n+MEET_SET.length<=MAXP)){
+    if(!_bk&&!_lent&&(!pages || n+MEET_SET.length<=MAXP)){
       var add2=document.createElement("button"); add2.type="button"; add2.className="bp-add";
       add2.textContent="미팅 세트"; add2.title="Match Scenario 페이지 "+MEET_SET.length+"개를 한 번에 — 지금 배치(선수·이름)를 복사해 만들고, 그림만 그리면 미팅 자료 완성";
       add2.onclick=addMeetingSet; box.appendChild(add2);
@@ -19944,6 +19968,10 @@ try{ var _nb=document.getElementById('dfNew');
         idx=at; loadIdx(idx);clearHistory();render(); _bkTouch(); return arr.length; },
       sig:function(){ try{ return (pages||[]).map(function(p){ return [p&&p.name||"",p&&p.grp||"",p&&p.when||"",p&&p.call||"",p&&p.mo||"",p&&p.ph||""].join("~"); }).join("|")+"@"+(pages?pages.length:0); }catch(_){ return ""; } }
     },
+    /* 3.007 — 첨부(캡처)에 판을 빌려줄 때: 작업 보드의 페이지 묶음·보관함 연결을 맡기고 한 장짜리 판이 된다. 돌려받을 때 그대로 */
+    stash:function(){ var c={pages:pages,idx:idx,link:_singleLink}; pages=null; idx=0; _singleLink=null; _lent=true; try{render();}catch(_){} return c; },
+    unstash:function(c){ _lent=false; pages=(c&&Array.isArray(c.pages))?c.pages:null; idx=pages?Math.max(0,Math.min(+(c&&c.idx)||0,pages.length-1)):0; _singleLink=(c&&c.link)||null; try{render();}catch(_){} },
+    lent:function(){ return _lent; },
     exitToLive:function(){ if(_inVault){ pages=(_livePages&&_livePages.pages)||null; idx=(_livePages&&_livePages.idx)||0; _inVault=false; _livePages=null;clearHistory();try{render();}catch(_){} } },
     hasMulti:function(){ return !!(pages && pages.length>1); },
     /* 보관함 전체보기 — 도구 없이 페이지를 넘길 수 있게 (d=±1, 순환) */
@@ -19998,7 +20026,7 @@ try{ var _nb=document.getElementById('dfNew');
     linkClear:function(libId){ _linkClear(libId); persist(); try{ render(); }catch(_){} },
     /* 한 페이지 보드(또는 페이지가 하나 남은 보드)는 페이지 기록이 저장되지 않으니 연결을 따로 싣는다 */
     singleLinkVal:function(){ if(window.__vaultEdit||_inVault) return null; if(!pages) return _singleLink; if(pages.length===1) return pages[0].vlink||null; return null; },
-    setSingleLink:function(v){ if(_inVault)return; var t=(v&&typeof v==="object"&&v.libId)?{libId:String(v.libId),name:String(v.name||""),srcPage:+v.srcPage||0,multi:!!v.multi}:null; if(!pages)_singleLink=t; else if(pages.length===1&&t&&!pages[0].vlink)pages[0].vlink=t; try{ render(); }catch(_){} },
+    setSingleLink:function(v){ if(_inVault||_lent)return; var t=(v&&typeof v==="object"&&v.libId)?{libId:String(v.libId),name:String(v.name||""),srcPage:+v.srcPage||0,multi:!!v.multi}:null; if(!pages)_singleLink=t; else if(pages.length===1&&t&&!pages[0].vlink)pages[0].vlink=t; try{ render(); }catch(_){} },
     refresh:function(){ try{ render(); }catch(_){} }
   };
 })();
