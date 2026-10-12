@@ -12,6 +12,16 @@
   "use strict";
   var DB='ps-store', STORE='kv', VER=1, dbp=null;
 
+  /* 3.008 — 다른 사이트에서 온 postMessage 는 이 화면의 어떤 리스너에도 닿지 않게 한다.
+     셸과 화면(iframe)은 모두 같은 사이트라 정상 메시지는 언제나 같은 출처다. 그런데 리스너 스무 개 남짓이 출처를 보지 않았고,
+     다른 사이트가 앱을 새 창으로 열어 두면 그 창과 안쪽 화면(frames[i])에 메시지를 보낼 수 있다(커뮤니티 글 고치기·공유 링크 만들기·일정 쓰기).
+     storage.js 는 각 화면에서 메시지 리스너보다 먼저 읽히므로, 여기 붙인 첫 리스너가 남의 출처를 막는다(같은 대상의 뒤 리스너 차단). */
+  try{
+    if(location.protocol!=='file:')window.addEventListener('message',function(e){
+      if(e.origin!==location.origin)e.stopImmediatePropagation();
+    },true);
+  }catch(_){}
+
   /* HTML 문자열을 DOM에 넣어야 하는 기존 화면의 단일 이스케이프 규칙.
      새 코드는 textContent를 우선하고, 템플릿 문자열이 필요한 곳만 이 함수를 쓴다. */
   window.PSSafe=window.PSSafe||{};
@@ -19,6 +29,99 @@
     return String(value==null?'':value).replace(/[&<>"']/g,function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
     });
+  };
+
+  /* 3.008 — 썸네일 SVG 를 innerHTML 로 넣기 전의 단일 정리 규칙.
+     썸네일은 작전판이 만든 그림이지만 저장된 문자열이라 남의 손을 탈 수 있다(커뮤니티 담기·팀 문서·파일 열기).
+     정규식으로 지우던 옛 방식(community sanSvg)은 <animate/onbegin=…> 처럼 공백 없는 처리기와 엔티티로 쓴 javascript: 를 놓쳤다.
+     그래서 실행되지 않는 template 안에서 DOM 으로 읽고, SVG 이름공간의 그림 요소만 남긴다:
+       · script·foreignObject·style·애니메이션(animate·set …) 요소와 SVG 가 아닌 요소는 통째로 뺀다
+       · on* 속성, javascript:·바깥 주소 url(…) 이 든 속성을 뺀다. 안쪽 참조 url(#…)·href="#…" 는 남는다(그라디언트·클립)
+       · <image> 만 data:image/·blob:·같은 사이트 경로를 쓸 수 있다(공·사진 토큰)
+     정리한 결과를 한 번 더 읽어 모양이 같을 때만 돌려준다(다시 읽으며 모양이 바뀌는 문자열은 버린다). 실패하면 '' — 그림 없음으로 보인다. */
+  var SVG_NS='http://www.w3.org/2000/svg';
+  var SVG_DROP={script:1,foreignobject:1,style:1,animate:1,animatemotion:1,animatetransform:1,animatecolor:1,set:1,discard:1,handler:1,listener:1};
+  function svgFlat(v){ return String(v==null?'':v).replace(/[\u0000- \u007f-\u009f]+/g,'').toLowerCase(); }
+  function svgRefOk(tag,v){
+    var s=svgFlat(v);
+    if(!s||s.charAt(0)==='#')return true;
+    if(tag!=='image'&&tag!=='feimage')return false;
+    if(/^data:image\//.test(s)||/^blob:/.test(s))return true;
+    return !/^[a-z][a-z0-9+.\-]*:/.test(s)&&s.indexOf('//')!==0;
+  }
+  function svgClean(root){
+    var all=[root].concat([].slice.call(root.getElementsByTagName('*')));
+    for(var i=0;i<all.length;i++){
+      var n=all[i],tag=String(n.localName||'').toLowerCase();
+      if(n!==root&&!root.contains(n))continue;
+      if(n!==root&&(n.namespaceURI!==SVG_NS||SVG_DROP[tag])){ n.parentNode.removeChild(n); continue; }
+      for(var j=n.attributes.length-1;j>=0;j--){
+        var a=n.attributes[j],an=String(a.name).toLowerCase(),flat=svgFlat(a.value);
+        if(an.indexOf('on')===0||/javascript:|vbscript:|data:text|expression\(|url\((?!['"]?#)/.test(flat))n.removeAttribute(a.name);
+        else if(/(^|:)href$/.test(an)||an==='src'){ if(!svgRefOk(tag,a.value))n.removeAttribute(a.name); }
+      }
+    }
+  }
+  function svgParse(s){
+    var t=document.createElement('template'); t.innerHTML=s;
+    var root=t.content.firstElementChild;
+    return (root&&root.namespaceURI===SVG_NS&&String(root.localName).toLowerCase()==='svg')?root:null;
+  }
+  /* 빠른 길 — 작전판이 만드는 그림(XMLSerializer 출력)은 대부분 아래 문법 안에 든다: 허용한 그림 요소만, 큰따옴표 속성만,
+     on* 없음, 참조는 #… (image 만 data:image/), 엔티티는 글자를 만들 수 없는 다섯 가지만, 주석·CDATA·역슬래시 없음.
+     이 문법을 끝까지 통과한 문자열은 고칠 것이 없으므로 DOM 으로 읽지 않고 그대로 돌려준다(보관함 300장: DOM 정리 ≈300ms → 이 검사).
+     하나라도 벗어나면 아래 DOM 정리로 간다 — 빠른 길은 «허용 목록 통과»만 보고, 금지 목록으로 거르지 않는다. */
+  var SVG_FAST_TAGS=' svg g defs symbol use rect circle ellipse line polyline polygon path text tspan clippath mask pattern lineargradient radialgradient stop filter fegaussianblur feoffset feblend feflood fecomposite femerge femergenode fecolormatrix fedropshadow femorphology image marker ';
+  var SVG_FAST_TOKEN=/<(\/?)([a-zA-Z][a-zA-Z0-9]*)((?:\s+[a-zA-Z_:][-a-zA-Z0-9_:.]*="[^"<\\]*")*)\s*(\/?)>|[^<&]+|&(?:amp|lt|gt|quot|apos|#39|#34);/g;
+  var SVG_FAST_ATTR=/([a-zA-Z_:][-a-zA-Z0-9_:.]*)="([^"]*)"/g;
+  function svgFastAttrs(tag,a){
+    var m; SVG_FAST_ATTR.lastIndex=0;
+    while((m=SVG_FAST_ATTR.exec(a))){
+      var n=m[1].toLowerCase(),v=m[2],ref=/(^|:)href$/.test(n)||n==='src',flat;
+      if(n.charCodeAt(0)===111&&n.charCodeAt(1)===110)return false;   // on*
+      if(v.indexOf('&')>=0&&/&(?!(?:amp|lt|gt|quot|apos|#39|#34);)/.test(v))return false;
+      if(!ref&&v.indexOf(':')<0&&v.indexOf('(')<0)continue;            // 좌표·색·경로 — 주소가 될 수 없다
+      flat=svgFlat(v);
+      if(/javascript:|vbscript:|data:text|expression\(|url\((?!['"]?#)/.test(flat))return false;
+      if(ref&&!(flat.charAt(0)==='#'||(tag==='image'&&/^data:image\//.test(flat))))return false;
+    }
+    return true;
+  }
+  function svgFast(s){
+    var re=SVG_FAST_TOKEN,pos=0,depth=0,started=false,ended=false,m,tag,close,selfc;
+    re.lastIndex=0;
+    while(pos<s.length){
+      m=re.exec(s); if(!m||m.index!==pos)return false;
+      pos=re.lastIndex;
+      if(!m[2]){ if((ended||!started)&&/\S/.test(m[0]))return false; continue; }
+      if(ended)return false;
+      tag=m[2].toLowerCase(); close=m[1]==='/'; selfc=m[4]==='/';
+      if(SVG_FAST_TAGS.indexOf(' '+tag+' ')<0)return false;
+      if(!started){ if(tag!=='svg'||close)return false; started=true; }
+      if(close){ if(m[3]||selfc)return false; if(tag==='svg'&&--depth===0)ended=true; continue; }
+      if(m[3]&&!svgFastAttrs(tag,m[3]))return false;
+      if(tag==='svg'){ if(!selfc)depth++; else if(depth===0)ended=true; }
+    }
+    return ended;
+  }
+  var svgMemo=new Map(),SVG_MEMO_MAX=400;
+  window.PSSafe.svg=function(value){
+    var s=String(value==null?'':value);
+    if(!/^\s*<svg[\s>\/]/i.test(s)||s.length>6000000)return '';
+    if(svgMemo.has(s))return svgMemo.get(s);
+    var out='';
+    if(svgFast(s))out=s;
+    else try{
+      var root=svgParse(s);
+      if(root){
+        svgClean(root); out=root.outerHTML;
+        var again=svgParse(out);
+        if(!again||again.parentNode.childNodes.length!==1||again.outerHTML!==out)out='';
+      }
+    }catch(_){ out=''; }
+    if(svgMemo.size>=SVG_MEMO_MAX)svgMemo.delete(svgMemo.keys().next().value);
+    svgMemo.set(s,out);
+    return out;
   };
 
   /* 콘텐츠·사용자 식별값은 남기지 않고 실패 단계와 브라우저 오류 코드만 기록한다. */

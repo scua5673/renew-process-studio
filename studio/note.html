@@ -1975,7 +1975,7 @@ async function importPdfBuffer(buf,name,meta){
   let lib;
   try{lib=await ensurePdfjs();}catch(e){window.__pdferr=(e&&e.message)||'스크립트 로드 실패';toast('PDF는 인터넷 연결 상태에서 열 수 있어요'+(window.__pdferr?' · '+window.__pdferr:''));return;}
   try{
-    const doc=await lib.getDocument({data:buf}).promise;
+    const doc=await lib.getDocument({data:buf,isEvalSupported:false}).promise;   /* 3.008 — PDF.js 3.11 의 글꼴 처리 취약점(CVE-2024-4367): 조작한 PDF 를 열면 앱 안에서 코드가 실행된다. eval 경로를 끈다 */
     const total=doc.numPages, MAX=20, cnt=Math.min(total,MAX);
     const pages=[];let bytes=0,firstLand=false;
     /* 첫 페이지 방향을 먼저 알아야 현재 열려 있던 노트 방향과 무관하게 선명도를 계산할 수 있다. */

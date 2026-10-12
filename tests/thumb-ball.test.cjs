@@ -41,5 +41,7 @@ test('이미 저장된 썸네일의 빈 공을 채운다 — 공마다 다른 id
 test('썸네일을 만들 때 공 사진은 벡터로 바꾸고, 다른 data: 그림만 뗀다 · thumbView 가 옛 썸네일을 고친다',()=>{
   assert.match(src,/if\(isBallImgHref\(h\)\)\{ try\{ var _vec=ballVecInner\(h,suf\+'b'\+\(\+\+_bi\)\)/);
   assert.match(src,/n\.parentNode&&n\.parentNode\.removeChild\(n\); \}\); \}catch\(_\)\{\}\n  var _out=new XMLSerializer\(\)/);
-  assert.match(src,/function thumbView\(d\)\{\n  var t=d&&d\.thumb; if\(!t\|\|typeof t!=='string'\)return t\|\|""; t=thumbBallRepair\(t\);/);
+  assert.match(src,/function thumbViewRaw\(d\)\{\n  var t=d&&d\.thumb; if\(!t\|\|typeof t!=='string'\)return t\|\|""; t=thumbBallRepair\(t\);/);
+  /* 3.008 — 고친 썸네일도 화면에 넣기 전 PSSafe.svg 정리를 거친다 */
+  assert.match(src,/function thumbView\(d\)\{ var t=thumbViewRaw\(d\); return \(typeof t==="string"&&t\)\?PSSafe\.svg\(t\):t; \}/);
 });

@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.007"></script>
+<script src="autosave-status.js?v=3.008"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -505,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.007';</script>
+<script>window.PS_BUILD='3.008';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -2679,6 +2679,7 @@ function psShowUpdBand(){
     /* 2.277 — scout.html 팝오버가 색·문구를 고치면 곧바로 알려 온다.
        storage 이벤트만 믿던 2.270 은 같은 창 안에서 안 뜨거나 늦어서 "바꿔도 그대로"였다. */
     try{ window.addEventListener('message',function(e){ var d=(e&&e.data)||{};
+      if(location.protocol!=='file:'&&e.origin!==location.origin)return;   /* 3.008 — 같은 사이트의 화면만 */
       if(d.source!=='scout'||d.type!=='teamMetaChanged')return;
       if(document.body.classList.contains('ps-space-personal'))return;
       try{ psTeamTint(d.color,true); }catch(_){}
@@ -2718,7 +2719,10 @@ function psShowUpdBand(){
       if(shellTry>60)clearInterval(shellTimer);
     },250);
     /* 커뮤니티 ↔ 작전판 편집기 브리지 — 카드 클릭 시 보기 전용 편집기, 닫으면 커뮤니티로 복귀 */
-    window.addEventListener('message',function(e){var d=e.data||{};
+    window.addEventListener('message',function(e){
+      /* 3.008 — 같은 사이트의 화면(iframe)이 보낸 것만. 출처를 보지 않아 다른 사이트가 앱을 열어 두고 «commAct»로 커뮤니티 글을 고치거나 지우게 할 수 있었다 */
+      if(location.protocol!=='file:'&&e.origin!==location.origin)return;
+      var d=e.data||{};
       if(d.source==='comm'&&d.type==='viewDrill'){ try{
           /* 뷰어는 전체를 덮는 모달 — 보드 iframe만 띄우되 상단 내비는 커뮤니티에 유지(작전판으로 안 넘어가게) */
           fBoard.style.display='block'; fComm.style.display='none';
@@ -5040,7 +5044,8 @@ function psShowUpdBand(){
     w.write(u);w.close();
     return new Response(ds.readable).arrayBuffer().then(function(buf){return new TextDecoder().decode(buf);});
   }
-  window.addEventListener('message',function(e){var d=e.data||{}; if(!((d.source==='board'||d.source==='scout')&&d.type==='shareData'&&d.payload))return;
+  window.addEventListener('message',function(e){var d=e.data||{}; if(location.protocol!=='file:'&&e.origin!==location.origin)return;   /* 3.008 — 다른 사이트가 이 계정으로 공유 링크를 만들게 하지 않는다 */
+    if(!((d.source==='board'||d.source==='scout')&&d.type==='shareData'&&d.payload))return;
     if(!shareDataUnlocked())return;
     var pl=d.payload; function cl(o){return JSON.parse(JSON.stringify(o));} var tiers=[];
     if(pl.kind==='drill'){tiers.push({obj:pl});var a2=cl(pl);a2.sceneSnaps=[];tiers.push({obj:a2});var a3=cl(pl);a3.sceneSnaps=[];delete a3.snap;tiers.push({obj:a3,note:'(용량이 커서 다이어그램은 제외했어요)'});}
@@ -8109,13 +8114,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.007"></script>
-<script src="autosave-merge.js?v=3.007"></script>
-<script src="autosave-runtime.js?v=3.007"></script>
-<script src="autosave-recovery.js?v=3.007"></script>
-<script src="sync.js?v=3.007"></script>
+<script src="autosave-journal.js?v=3.008"></script>
+<script src="autosave-merge.js?v=3.008"></script>
+<script src="autosave-runtime.js?v=3.008"></script>
+<script src="autosave-recovery.js?v=3.008"></script>
+<script src="sync.js?v=3.008"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.007">
+<link rel="stylesheet" href="support.css?v=3.008">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
