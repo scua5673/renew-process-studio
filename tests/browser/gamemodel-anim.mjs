@@ -34,7 +34,11 @@ try{
   f=await boardFrame(page);
   const view=await f.evaluate(()=>({n:anim.frames.length,xs:anim.frames.map(fr=>Math.round(fr.snap.players[0].x)),bar:document.getElementById('animBar').classList.contains('on')}));
   assert.equal(view.n,3,'«▶ 보기»로 장면이 돌아온다');assert.deepEqual(view.xs,made);assert.equal(view.bar,true);
-  await f.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(b=>/첨부 완료/.test(b.textContent));[...b.parentElement.querySelectorAll('button')].find(x=>x.textContent.trim()==='취소').click();});await wait(1200);
+  // 3.007 — «▶ 보기»는 보는 곳: «첨부 완료» 없이 «닫기» 하나
+  const viewBar=await f.evaluate(()=>[...document.querySelectorAll('body > div > button')].map(b=>b.textContent.trim()).filter(t=>/첨부 완료|취소|닫기/.test(t)));
+  assert.deepEqual(viewBar,['닫기'],'보기에는 닫기만');
+  await f.evaluate(()=>[...document.querySelectorAll('body > div > button')].find(b=>b.textContent.trim()==='닫기').click());await wait(1200);
+  assert.equal(await f.evaluate(()=>document.body.classList.contains('ps-capturing')),false,'닫으면 보기 표식 해제');
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log(JSON.stringify({engine,size,passed:true,made,stored:stored.frames,view}));
