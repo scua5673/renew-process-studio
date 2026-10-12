@@ -985,6 +985,9 @@
   .ycal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
   .ycal i{display:block;aspect-ratio:1;border-radius:3px;background:var(--surface-2)}
   .ycal i.e{background:transparent}
+  /* 3.006 — 달 카드마다 맨 위에 요일 줄(사용자 «월마다 요일써줘 맨위에»). 칸이 무슨 요일인지 카드만 보고 안다.
+     날짜 칸이 아니다 — data-iso 가 없어 누르면 카드처럼 그 달로 간다. 위 `.ycal i` 의 정사각·바탕을 푼다. */
+  .ycal i.wd{aspect-ratio:auto;height:16px;margin-bottom:2px;border-radius:0;background:transparent;font-style:normal;font-size:12px;font-weight:500;line-height:16px;text-align:center;color:var(--text-3);overflow:hidden}
   .ycal i.t{background:#79b98a}
   .ycal i.g{background:#d0655f}
   /* 1.675 — 휴식(OFF)이 #d4d8e0라 빈 날(--surface-2)과 구분이 안 됐다(사용자 제보).
@@ -7059,6 +7062,7 @@ function renderYear(){
   document.getElementById('yearLabel').textContent=yearAnchor+'년';
   var today=new Date(); today.setHours(0,0,0,0);
   var totG=0,totT=0,h='';
+  var wdRow=WDAYS.map(function(w){ return '<i class="wd" aria-hidden="true">'+w+'</i>'; }).join('');   /* 3.006 — 달마다 맨 위에 요일 줄(월요일 시작 — 아래 lead 와 같은 순서) */
   for(var m=0;m<12;m++){
     var first=new Date(yearAnchor,m,1), dim=new Date(yearAnchor,m+1,0).getDate();
     var lead=(first.getDay()+6)%7;   /* 월요일 시작 */
@@ -7075,7 +7079,7 @@ function renderYear(){
     totG+=g; totT+=t;
     h+='<button type="button" class="ycard" data-ym="'+m+'">'
       +'<div class="yh"><b>'+(m+1)+'월</b><span>'+(g?'경기 '+g:'')+(g&&t?' · ':'')+(t?'훈련 '+t:'')+'</span></div>'
-      +'<div class="ycal">'+cells+'</div></button>';
+      +'<div class="ycal">'+wdRow+cells+'</div></button>';
   }
   grid.innerHTML=h;
   document.getElementById('yearSum').innerHTML=
