@@ -37,6 +37,9 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
       const s=captureSnap();for(let i=2;i<22;i++)s.players.push({id:'depth-'+i,team:i%2?'blue':'red',num:i+1,x:180+(i%8)*100,y:180+Math.floor(i/8)*180});loadSnap(s);
     });
     const targets=await page.evaluate(()=>['depth-a','ball',...state.equipment.map(p=>String(p.id))]);
+    // 3.009 — the perspective fit forces several layouts (~120ms). It ran on every viewBox change, and selection,
+    // panels and the scene bar change the viewBox margin all the time: 422 fits in this test, CI timed out on WebKit.
+    await page.evaluate(()=>{window.__fits=0;const fit=window.__tiltFit;window.__tiltFit=function(){window.__fits++;return fit.apply(this,arguments);};});
     for(const orientation of ['h','v']){
       await page.evaluate(({orientation,view})=>{state.orientation=orientation;buildPitch();__setTilt(view==='depth');if(view==='depth')__tiltFit();},{orientation,view});
       // Rebuilding the pitch while depth stays enabled used to remove all four
@@ -155,6 +158,8 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
       fire('pointerdown',0,0);for(let i=1;i<=40;i++)fire('pointermove',i/2,i/3);const points=_draw.pts.length;fire('pointerup',20,40/3);moveDraw=orig;state.tool='move';return {moves,points};
     });
     assert.deepEqual(drawing,{moves:40,points:41});
+    const fits=await page.evaluate(()=>window.__fits);
+    assert.ok(fits<=24,'the perspective fit runs on layout changes, not on every selection or drag: '+fits);
     assert.deepEqual(errors,[]);
   }finally{await context.close();}
 }}finally{await browser.close();fs.writeFileSync(path.join(out,'drag-metrics.json'),JSON.stringify({engine,results},null,2));}

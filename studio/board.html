@@ -4819,13 +4819,14 @@ function applyView(){
     else{_cr.setAttribute("x",-_EXT);_cr.setAttribute("width",_EXT+_hh2);}
     _cr.setAttribute("y",-_EXT);_cr.setAttribute("height",H+_EXT*2);}}catch(_){}world.removeAttribute("clip-path");}catch(e){}})();   /* 클립은 라인·그리드 레이어에만 — 잔디 표면은 여백까지 자연스럽게 이어진다 */
   FILL_X=fx;FILL_Y=fy;FILL_W=fw;FILL_H=fh;
+  window.__pvBox=[bx,by,bw,bh];   /* 3.009 — 보여 줄 운동장 범위(여백 확장 전). 입체 보기의 틀 맞춤이 이것을 잰다 */
   const _vb=Math.round(fx)+" "+Math.round(fy)+" "+Math.round(fw)+" "+Math.round(fh);
   if(_vb!==_lastVB){svg.setAttribute("viewBox",_vb);_lastVB=_vb;}
   if(svg.style.width)svg.style.width="";
   /* 확장 모드에서는 SVG와 viewBox 모두 가운데 정렬 — 잔디 카드와 축구 라인의 중심을 일치시킨다. */
   try{ var _stg=svg&&svg.parentElement; if(_abH>0){ if(_vbExt){ if(svg.style.height)svg.style.height=""; svg.setAttribute("preserveAspectRatio","xMidYMid meet"); } else { svg.style.height="calc(100% - "+_abH+"px)"; svg.setAttribute("preserveAspectRatio","xMidYMax meet"); } svg.style.background="var(--pitchbg,#1b8044)"; if(_stg){_stg.style.alignItems="flex-start";_stg.style.background="var(--pitchbg,#1b8044)";} } else { if(svg.style.height)svg.style.height=""; if(svg.style.background)svg.style.background=""; var _par=svg.getAttribute("preserveAspectRatio"); if(_par==="xMidYMax meet"||_par==="xMidYMin meet"||_par==="xMidYMid meet")svg.removeAttribute("preserveAspectRatio"); if(_stg){if(_stg.style.alignItems==="flex-start")_stg.style.alignItems="";if(_stg.style.background)_stg.style.background="";} } }catch(_){ if(svg.style.height)svg.style.height=""; }   /* 확장 모드: SVG 전체 높이 + 대칭 viewBox → 위·아래 잔디 여백도 작업 가능 */
   try{if(typeof renderPitchImg==="function")renderPitchImg();}catch(_){}
-  try{if(window.__psWmPlace)window.__psWmPlace();if(document.body.classList.contains("bc-tilt3d")){if(window.tiltGoalsSync)window.tiltGoalsSync();var _tvb=state.orientation+"|"+(svg.getAttribute("viewBox")||"");if(window.__tiltOrientation!==_tvb){window.__tiltOrientation=_tvb;requestAnimationFrame(function(){if(window.__tiltFit)window.__tiltFit();});}}}catch(_){}   /* 3.009 — 틀 맞춤이 viewBox 를 재므로 보기 범위가 바뀌어도 다시 맞춘다 */
+  try{if(window.__psWmPlace)window.__psWmPlace();if(document.body.classList.contains("bc-tilt3d")){if(window.tiltGoalsSync)window.tiltGoalsSync();var _tvb=state.orientation+"|"+(window.__pvBox||[]).map(Math.round).join(",");if(window.__tiltOrientation!==_tvb){window.__tiltOrientation=_tvb;requestAnimationFrame(function(){if(window.__tiltFit)window.__tiltFit();});}}}catch(_){}   /* 3.009 — 운동장 보기 범위(방향·하프 등)가 바뀌면 다시 맞춘다. ⚠ viewBox 문자열로 재면 안 된다 — 장면 줄·편집 패널이 여백(fill)만 바꿔도 달라져 맞춤이 수백 번 돌았다(실측: 끌기 시험 422회 · 회당 120ms) */
 }
 function worldBounds(){
   const fx=FILL_X,fy=FILL_Y,fw=FILL_W,fh=FILL_H;
@@ -14021,31 +14022,38 @@ function init(){
       }
     }catch(_){}
   };
-  /* ══ 3.009 · 틀 맞춤은 **보이는 운동장(viewBox)** 을 잰다 ═══════════════════════════════
+  /* ══ 3.009 · 틀 맞춤은 **보여 줄 운동장 범위(__pvBox)** 를 잰다 ═══════════════════════════
      2.370 은 svg 상자 전체를 쟀다. 그 상자는 가로로 긴 틀에서 좌우 여백(letterbox)까지 품어서, 경기장 둘레(관중석)를
-     둘 자리를 정확히 비울 수 없었다. 이제 viewBox 와 같은 사각형을 잠깐 넣어 **원근이 걸린 화면 상자**를 실측하고,
+     둘 자리를 정확히 비울 수 없었다. 이제 운동장 범위와 같은 사각형을 잠깐 넣어 **원근이 걸린 화면 상자**를 실측하고,
      위(먼 쪽 관중석) 15% · 아래 11% · 옆 5% 를 비운 띠 안에 운동장을 맞춘다(레퍼런스의 관중석 비율).
-     원근은 배율에 정확히 비례하지 않으므로 몇 번 되풀이해 맞춘다(재고 → 고치고 → 다시 잰다). */
+     원근은 배율에 정확히 비례하지 않으므로 되풀이해 맞추되, 맞으면 바로 멈춘다.
+     ⚠ 한 번에 강제 레이아웃이 여러 번이라 싸지 않다(실측 ~120ms) — 같은 틀·같은 범위·이미 맞춘 배율이면 다시 재지 않는다(_fitKey). */
+  var _fitKey="";
   window.__tiltFit=function(){
     try{
       if(!document.body.classList.contains("bc-tilt3d"))return;
       var stage=document.getElementById("boardStage"); if(!stage||!svg)return;
       var vb=svg.viewBox&&svg.viewBox.baseVal; if(!vb||!vb.width||!vb.height)return;
-      var st=document.documentElement.style, prevTr=svg.style.transition; svg.style.transition="none";
-      var probe=el("rect",{x:vb.x,y:vb.y,width:vb.width,height:vb.height,fill:"none","pointer-events":"none"}); svg.appendChild(probe);
+      var pv=(window.__pvBox&&window.__pvBox[2]>0&&window.__pvBox[3]>0)?window.__pvBox:[vb.x,vb.y,vb.width,vb.height];
+      var st=document.documentElement.style, raw=stage.getBoundingClientRect(), cs=getComputedStyle(stage), pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;
+      var top=raw.top+pt, hh=raw.height-pt-pb, ww=raw.width; if(!hh||!ww)return;
+      var key=[Math.round(raw.left),Math.round(top),Math.round(ww),Math.round(hh),pv.map(Math.round).join(","),vb.x,vb.y,vb.width,vb.height,svg.getAttribute("preserveAspectRatio"),st.getPropertyValue("--tilt-k"),st.getPropertyValue("--tilt-ty")].join("|");
+      if(key===_fitKey)return;
+      var prevTr=svg.style.transition; svg.style.transition="none";
+      var probe=el("rect",{x:pv[0],y:pv[1],width:pv[2],height:pv[3],fill:"none","pointer-events":"none"}); svg.appendChild(probe);
       try{
-        var raw=stage.getBoundingClientRect(), cs=getComputedStyle(stage), pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;
-        var top=raw.top+pt, hh=raw.height-pt-pb, ww=raw.width; if(!hh||!ww)return;
         var padT=hh*0.15, padB=hh*0.11, padX=Math.max(12,ww*0.05), availH=hh-padT-padB, availW=ww-2*padX;
-        var k=0.8, ty=0;
+        var k=parseFloat(st.getPropertyValue("--tilt-k"))||0.8, ty=parseFloat(st.getPropertyValue("--tilt-ty"))||0;
         for(var i=0;i<5;i++){
           st.setProperty("--tilt-k",String(Math.round(k*1000)/1000)); st.setProperty("--tilt-ty",Math.round(ty)+"px"); void svg.offsetWidth;
           var b=probe.getBoundingClientRect(); if(!b.width||!b.height)break;
-          k=Math.max(0.3,Math.min(1.4,k*Math.min(availH/b.height,availW/b.width)));
-          ty+=(top+padT+availH/2)-(b.top+b.bottom)/2;
+          var r=Math.min(availH/b.height,availW/b.width), dy=(top+padT+availH/2)-(b.top+b.bottom)/2;
+          if(Math.abs(r-1)<0.004&&Math.abs(dy)<1)break;   /* 맞았다 */
+          k=Math.max(0.3,Math.min(1.4,k*r)); ty+=dy;
         }
-        st.setProperty("--tilt-k",String(Math.round(k*1000)/1000)); st.setProperty("--tilt-ty",Math.round(ty)+"px"); void svg.offsetWidth;
+        st.setProperty("--tilt-k",String(Math.round(k*1000)/1000)); st.setProperty("--tilt-ty",Math.round(ty)+"px");
       }finally{ probe.remove(); svg.style.transition=prevTr; }
+      _fitKey=key.split("|").slice(0,-2).concat([st.getPropertyValue("--tilt-k"),st.getPropertyValue("--tilt-ty")]).join("|");
       try{ tiltGoalsSync(); }catch(_){}   /* 골대 레이어도 같은 배율을 따라와야 한다 */
     }catch(_){}
   };
