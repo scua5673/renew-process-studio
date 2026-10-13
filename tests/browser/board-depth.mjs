@@ -45,7 +45,9 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
           chips:tokenLayer.querySelectorAll('.token[data-depth-chip] .ps-chip').length,names:[...tokenLayer.querySelectorAll('.ps-chip-name')].map(t=>t.textContent).sort().join(','),
           stadium:!!document.querySelector('#tiltSurface .tilt-stadium path[fill="url(#psStGrass)"]'),boards:document.querySelectorAll('#tiltSurface .tilt-stadium text').length,
           stage:getComputedStyle(document.getElementById('boardStage')).backgroundColor,line:getComputedStyle(document.querySelector('#lineLayer [stroke]:not([stroke="none"])')).stroke,
-          exportHasStadium:/psStGrass|ps-chip/.test(exportXML)||/psStGrass|ps-chip/.test(thumb)};
+          exportHasStadium:/psStGrass|ps-chip/.test(exportXML)||/psStGrass|ps-chip/.test(thumb),
+          crowd:!!document.querySelector('#psStCrowd image'),flags:document.querySelectorAll('#tiltGoals .corner-flag').length,dugouts:document.querySelectorAll('#tiltSurface .tilt-stadium path[stroke-dasharray]').length,
+          frame:getComputedStyle(svg).boxShadow};
       });
       assert.equal(r.unchanged,true);assert.equal(r.sameNode,true);assert.equal(r.sameSelection,true);assert.equal(r.saves,0);assert.equal(r.renders,0);
       assert.equal(r.exportHasDepth,false);assert.equal(r.exportHasSelection,false);assert.equal(r.thumbHasDepth,false);assert.equal(r.thumbHasSelection,false);assert.equal(r.tokens,5);assert.equal(r.goalVisible,true);
@@ -54,6 +56,8 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       assert.equal(r.goalColor,'rgb(255, 255, 255)');assert.equal(r.chips,2);assert.equal(r.names,'A,B');
       assert.equal(r.stadium,true);assert.ok(r.boards>=8,'ad boards around the pitch');assert.equal(r.stage,'rgb(5, 8, 6)');
       assert.ok(r.line.match(/\d+/g).slice(0,3).every(v=>+v>=230),'pitch lines are light on the stadium grass: '+r.line);assert.equal(r.exportHasStadium,false);
+      assert.equal(r.crowd,true,'stands carry the crowd texture');assert.equal(r.flags,4,'a corner flag stands at each corner');
+      assert.ok(r.dugouts>=2,'two technical areas by the dugouts');assert.equal(r.frame,'none','no card border line across the tilted board');
       await page.evaluate(()=>{sel=null;multiSel=[];renderTokens();updateDelUI();});
       await page.screenshot({path:path.join(out,`${viewport.width}-${theme}-${orientation}.png`)});
       results.push({width:viewport.width,theme,orientation,...r});

@@ -150,7 +150,11 @@
     var R = CHIP_R, h = CHIP_H;
     // Counter-rotated so the shirt and the name stay upright; elevation is then always straight up.
     var body = node(doc, 'g', { 'class': 'ps-chip', 'data-k': String(size.k), transform: chipTransform(item, size.k) });
-    body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 3, rx: R + 6, ry: R + 4, fill: 'url(#psChipShadow)', 'pointer-events': 'none' }));
+    // Floodlights on four corner masts: four faint shadows in an X plus a contact shadow, as on a lit pitch.
+    [[6, 5], [-6, 5], [6, -3], [-6, -3]].forEach(function (o) {
+      body.appendChild(node(doc, 'ellipse', { cx: o[0], cy: o[1], rx: R + 4, ry: R + 2, fill: 'url(#psChipShadow)', opacity: '.5', 'pointer-events': 'none' }));
+    });
+    body.appendChild(node(doc, 'ellipse', { cx: 1, cy: 1.5, rx: R + 2, ry: R + 1, fill: 'url(#psChipShadow)', 'pointer-events': 'none' }));
     body.appendChild(node(doc, 'path', { d: 'M' + (-R) + ' ' + (-h) + 'V0A' + R + ' ' + R + ' 0 0 0 ' + R + ' 0V' + (-h) + 'Z', fill: 'url(#psChipSide)', stroke: '#6f7a87', 'stroke-width': '.8' }));
     body.appendChild(node(doc, 'circle', { cy: -h, r: R, fill: 'url(#psChipTop)', stroke: '#b9c1cb', 'stroke-width': '1.1' }));
     var kit = node(doc, 'g', { transform: 'translate(0,' + (-h + .6) + ') scale(.64)', 'pointer-events': 'none' });
