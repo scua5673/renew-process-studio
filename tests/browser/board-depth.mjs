@@ -41,28 +41,38 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
         const save=boardSaveLive,render=renderTokens;boardSaveLive=()=>saves++;renderTokens=()=>renders++;
         let thumb,exportXML;try{thumb=boardThumbSVG();exportXML=boardImageXML().xml;}finally{boardSaveLive=save;renderTokens=render;}
         const goal=document.querySelector('#tiltGoals .goal-front');
-        return {unchanged:before===JSON.stringify(captureSnap()),sameNode:target===tokenLayer.querySelector('[data-id="depth-a"]'),sameSelection:sel.ref===selected,saves,renders,thumbHasDepth:thumb.includes('ps-depth-face'),thumbHasSelection:thumb.includes('ps-selring'),exportHasDepth:exportXML.includes('ps-depth-face'),exportHasSelection:exportXML.includes('ps-selring'),tokens:tokenLayer.querySelectorAll('.token[data-depth]').length,goalColor:getComputedStyle(goal).borderTopColor,goalVisible:goal.getBoundingClientRect().width>0};
+        return {unchanged:before===JSON.stringify(captureSnap()),sameNode:target===tokenLayer.querySelector('[data-id="depth-a"]'),sameSelection:sel.ref===selected,saves,renders,thumbHasDepth:thumb.includes('ps-depth-face'),thumbHasSelection:thumb.includes('ps-selring'),exportHasDepth:exportXML.includes('ps-depth-face'),exportHasSelection:exportXML.includes('ps-selring'),tokens:tokenLayer.querySelectorAll('.token[data-depth]').length,goalColor:getComputedStyle(goal).borderTopColor,goalVisible:goal.getBoundingClientRect().width>0,
+          chips:tokenLayer.querySelectorAll('.token[data-depth-chip] .ps-chip').length,names:[...tokenLayer.querySelectorAll('.ps-chip-name')].map(t=>t.textContent).sort().join(','),
+          stadium:!!document.querySelector('#tiltSurface .tilt-stadium path[fill="url(#psStGrass)"]'),boards:document.querySelectorAll('#tiltSurface .tilt-stadium text').length,
+          stage:getComputedStyle(document.getElementById('boardStage')).backgroundColor,line:getComputedStyle(document.querySelector('#lineLayer [stroke]:not([stroke="none"])')).stroke,
+          exportHasStadium:/psStGrass|ps-chip/.test(exportXML)||/psStGrass|ps-chip/.test(thumb)};
       });
       assert.equal(r.unchanged,true);assert.equal(r.sameNode,true);assert.equal(r.sameSelection,true);assert.equal(r.saves,0);assert.equal(r.renders,0);
       assert.equal(r.exportHasDepth,false);assert.equal(r.exportHasSelection,false);assert.equal(r.thumbHasDepth,false);assert.equal(r.thumbHasSelection,false);assert.equal(r.tokens,5);assert.equal(r.goalVisible,true);
-      assert.equal(r.goalColor,theme==='navy'?'rgb(255, 255, 255)':'rgb(48, 60, 76)');
+      // 3.008 — the 3D view is a stadium: grass, boards and stands around the pitch, white goals and lines on every pitch theme,
+      // white chips with the player's name. None of it reaches pictures or exports.
+      assert.equal(r.goalColor,'rgb(255, 255, 255)');assert.equal(r.chips,2);assert.equal(r.names,'A,B');
+      assert.equal(r.stadium,true);assert.ok(r.boards>=8,'ad boards around the pitch');assert.equal(r.stage,'rgb(5, 8, 6)');
+      assert.ok(r.line.match(/\d+/g).slice(0,3).every(v=>+v>=230),'pitch lines are light on the stadium grass: '+r.line);assert.equal(r.exportHasStadium,false);
       await page.evaluate(()=>{sel=null;multiSel=[];renderTokens();updateDelUI();});
       await page.screenshot({path:path.join(out,`${viewport.width}-${theme}-${orientation}.png`)});
       results.push({width:viewport.width,theme,orientation,...r});
     }
     const before=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));
-    const box=await page.locator('.token[data-id="depth-a"] .ps-depth-face').boundingBox();
+    // 3.008 — players are stadium chips: grab the raised top of the puck (its name above is part of the chip too).
+    const box=await page.locator('.token[data-id="depth-a"] .ps-chip circle').boundingBox();
     await page.mouse.move(box.x+box.width/2,box.y+box.height/3);await page.mouse.down();await page.mouse.move(box.x+box.width/2+35,box.y+box.height/3+25,{steps:8});await page.mouse.up();
     const after=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));assert.ok(Math.hypot(after.x-before.x,after.y-before.y)>8,'raised face remains draggable');
     const variants=await page.evaluate(()=>{
       const photo='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="orange"/></svg>');
-      setTokShape('shirt');state.players[0].img=photo;state.players[1].color='#238c71';state.players[1].rot=90;state.players[1].scale=1.4;renderTokens();
+      setTokShape('shirt');state.players[0].img=photo;state.players[0].rot=90;state.players[1].color='#238c71';state.players[1].rot=90;state.players[1].scale=1.4;renderTokens();
       const p=tokenLayer.querySelector('[data-id="depth-a"]'),shirt=tokenLayer.querySelector('[data-id="depth-b"]');
       const before=JSON.stringify(captureSnap()),saved=boardImageXML().xml;
       const cone=state.equipment[0],g=tokenLayer.querySelector('[data-id="cone-a"]'),coneBefore=g.querySelector('.ps-equipment-mesh').innerHTML;cone.rot=90;g.setAttribute('transform',tokenTransform(cone));PSBoardDepth.update(g,cone);
-      return {photo:p.querySelector('image').getAttribute('href')===photo,shirt:shirt.querySelector('.tok-c').tagName==='path',color:shirt.querySelector('.tok-c').getAttribute('fill'),face:shirt.querySelector('.ps-depth-face').getAttribute('transform'),exportPhoto:saved.includes('data:image/svg+xml'),rotatedCone:g.querySelector('.ps-equipment-mesh').innerHTML!==coneBefore};
+      return {photo:p.querySelector('image').getAttribute('href')===photo,shirt:shirt.querySelector('.tok-c').tagName==='path',color:shirt.querySelector('.tok-c').getAttribute('fill'),face:p.querySelector('.ps-depth-face').getAttribute('transform'),chip:shirt.querySelector('.ps-chip').getAttribute('transform'),kit:shirt.querySelector('.ps-chip path:not([fill^="url"])').getAttribute('fill'),exportPhoto:saved.includes('data:image/svg+xml'),rotatedCone:g.querySelector('.ps-equipment-mesh').innerHTML!==coneBefore};
     });
     assert.equal(variants.photo,true);assert.equal(variants.shirt,true);assert.equal(variants.color,'#238c71');assert.equal(variants.exportPhoto,true);assert.match(variants.face,/translate\(-13,/);assert.equal(variants.rotatedCone,true);
+    assert.match(variants.chip,/^rotate\(-90\) scale\(/,'the stadium chip stays upright on a rotated token');assert.equal(variants.kit,'#238c71','the shirt on the chip keeps the token colour');
     for(const theme of ['navy','white','train']){
       const equipment=await page.evaluate(theme=>{
         __setTilt(false);state.players=[];state.ball=null;state.orientation='h';document.documentElement.dataset.pitch=theme;

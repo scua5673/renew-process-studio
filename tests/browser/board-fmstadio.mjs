@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 2.902 — FmStadio 참고 작전판 기능: 로빙 패스, 역할 링(버튼·H), 구역 이름, 선 끝 모양,
-// 새 장면에서 화살표 모두 지우기, 입체 칩. 관중석·광고판은 넣지 않기로 했다(2026-09-28). 합성 팀 fixture 에서만 돈다.
+// 새 장면에서 화살표 모두 지우기, 입체 칩. 평면 판에는 관중석·광고판을 넣지 않는다(2026-09-28) — 3.008 부터 «입체» 보기만 경기장(board-depth). 합성 팀 fixture 에서만 돈다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
 const fx=await startFixture(),browsers={};
 try{
