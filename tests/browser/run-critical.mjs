@@ -17,17 +17,22 @@ const suites={
      자기 묶음으로 떼고, 이 테스트만 한도를 360초로 둔다(PER_TEST_MS) — 묶음이 혼자라 잡은 7분 안쪽, Netlify 의 12분 대기 안이다. */
   boardperf:['board-drag-performance'],
   /* 3.011 — CI 밖에 있던 브라우저 시험 22개(저장·복구·로그인·안내·IDP·선수단·훈련). CI 에 없어서 넷이 조용히 낡아 있었다(dock-white 는 2.614 CSS 사본과
-     비교하는 일회용 점검이라 넣지 않는다). Chromium 실측 합 7분 남짓이라 둘로 나눠 다른 묶음과 나란히 돈다 — entry: 진입·계정·안내 / records: 기록·저장·선수단·훈련. */
-  entry:['admin-logout-handoff','admin-operations','admin-support','autosave-status','first-work','guidance','ipad-team-navigation','mobile-oauth','oauth-same-document','quiet-entry'],
+     비교하는 일회용 점검이라 넣지 않는다). Chromium 실측 합 7분 남짓이라 둘로 나눠 다른 묶음과 나란히 돈다 — entry: 진입·계정·안내 / records: 기록·저장·선수단·훈련.
+     first-work 는 guidance.mjs 를 import 만 하는 옛 이름이라 넣지 않는다(같은 시험이 두 번 돈다). */
+  entry:['admin-logout-handoff','admin-operations','admin-support','autosave-status','guidance','ipad-team-navigation','mobile-oauth','oauth-same-document','quiet-entry'],
   records:['idp-player-matches','idp-start','match-lineup','personal-large-upload','roster-history-review','roster-projection','roster-recovery','save-status-layout','storage-commit','team-position-delete','training-context','training-dock-layout']
 };
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.011 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
+/* 3.011 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나
+   Chromium 을 한 번 더 돌릴 뿐이라, WebKit 잡에서는 건너뛰고 그렇다고 적는다 — Chromium 잡이 그대로 지킨다. */
+const CHROMIUM_ONLY=new Set(['autosave-status','guidance','quiet-entry','training-context']);
 const group=process.env.PS_TEST_GROUP||'all',engines=(process.env.PS_BROWSER_ENGINE||'chromium,webkit').split(',');
 if(group!=='all'&&!suites[group])throw Error('Unknown browser test group: '+group);
 const tests=group==='all'?Object.values(suites).flat():suites[group],results=[];
 for(const engine of engines){
   if(!['chromium','webkit'].includes(engine))throw Error('Unknown browser engine: '+engine);
   for(const test of tests){
+    if(engine!=='chromium'&&CHROMIUM_ONLY.has(test)){console.log(JSON.stringify({engine,test,skipped:'chromium-only'}));continue;}
     const output=path.join(root,'test-results',engine,test);fs.mkdirSync(output,{recursive:true});
     const env={...process.env,PS_BROWSER_ENGINE:engine,PS_TEST_OUTPUT:output};
     if(engine==='chromium'&&!env.PS_CHROME_PATH)env.PS_CHROME_PATH=pw.chromium.executablePath();

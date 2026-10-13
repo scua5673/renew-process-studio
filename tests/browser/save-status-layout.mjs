@@ -228,7 +228,8 @@ try{
       }
       assert.deepEqual(errors.filter((e,i)=>!/^ResizeObserver loop/.test(e)&&!navAborts.isAbort(e,errorAt[i])),[]);
       report.passed=true;console.log(JSON.stringify({width:report.width,phases:report.phases.map(p=>({bannerShown:p.bannerShown,editorMarker:p.editorMarker,transitions:p.transitions.map(t=>({name:t.name,stripHeight:t.geometry.strip.height,moved:t.moved}))}))}));
-    }catch(e){report.passed=false;report.error=e.stack;await page.screenshot({path:path.join(out,spec.width+'-failure.png')}).catch(()=>{});}
+    }catch(e){report.passed=false;report.error=e.stack;console.error(spec.width+'px',e.stack);   /* 3.011 — CI 로그에 실패 까닭이 보이게(전에는 verification.json 에만 남았다) */
+      await page.screenshot({path:path.join(out,spec.width+'-failure.png')}).catch(()=>{});}
     finally{fs.writeFileSync(path.join(out,spec.width+'-network.json'),JSON.stringify({calls,blocked,errors},null,2));await context.close();}
   }
 }finally{await browser?.close();await new Promise(r=>server.close(r));}
