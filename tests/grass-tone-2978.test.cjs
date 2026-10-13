@@ -51,9 +51,9 @@ test('pale grass stays green — the green channel leads (it must not wash out t
 });
 
 test('the tone is a per-board look setting, saved in board defaults, with the two rows under the pitch row',()=>{
-  assert.match(src,/function lookKeys\(\)\{return \[[^\]]*"grassTone"\]/,'LOOK key');
+  assert.match(src,/function lookKeys\(\)\{return \[[^\]]*"grassTone"[^\]]*\]/,'LOOK key');
   assert.match(src,/case "grassTone":return "0\|0";/,'code default');
-  assert.match(src,/tokV:src\.tokV,grassTone:src\.grassTone\};/,'기본 세팅 snapshot carries it');
+  assert.match(src,/tokV:src\.tokV,grassTone:src\.grassTone[,}]/,'기본 세팅 snapshot carries it');
   assert.match(src,/tokV:s\.tokV,grassTone:s\.grassTone,/,'a new page keeps the current tone');
   assert.match(src,/id="grassToneBSeg"[\s\S]{0,400}data-gb="ll">아주 밝게/,'brightness row');
   assert.match(src,/id="grassTonePSeg"[\s\S]{0,400}data-gp="pp">아주 연하게/,'paleness row');
