@@ -1,0 +1,71 @@
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import {startFixture,openApp,ready,SHOTS} from '../fixtures/team-app.mjs';
+// 3.014 — 오류 제보 88a82188 «첫 화면 보드 초기화 하는 게 있으면 좋을 것 같습니다 · 전 작업이 계속 남아 있네요».
+// 위 띠의 «새 보드»: 확인 → 페이지 하나·장면 없음·빈 판 → 바로 «보드 저장»(새로고침해도 새 보드). 1분 동안 «↶ 이전 보드»로 그대로 되살린다.
+// 합성 팀 fixture 에서만 돈다. 폰은 위 띠가 없어(여러 페이지일 때만) 데스크톱 폭으로 본다.
+const engine=process.env.PS_BROWSER_ENGINE||'chromium';
+const fx=await startFixture(),browsers={};
+try{
+  const {page,logs}=await openApp(fx,'desktop',{browsers});
+  await page.waitForTimeout(2500);
+  const openBoard=async()=>{
+    await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
+    const f=await (await page.waitForSelector('#fBoard')).contentFrame();
+    await f.waitForFunction(()=>typeof renderTokens==='function'&&window.__psPages&&typeof window.__psPages.newBoard==='function'&&window.__boardReady!==false&&!!document.getElementById('bpNewBoard'),null,{timeout:30000});
+    await page.waitForTimeout(800);return f;};
+  let f=await openBoard();
+  const st=()=>f.evaluate(()=>({tabs:[...document.querySelectorAll('#boardPageStrip .bp-tab')].map(b=>b.textContent.trim()),players:state.players.length,drawings:state.drawings.length,
+    frames:(window.__animGet&&window.__animGet()||{frames:[]}).frames.length,undo:!!document.getElementById('bpNewBoardUndo'),ready:window.__psPages.newBoardUndoReady(),
+    save:(document.getElementById('boardManualSave')||{}).textContent}));
+  /* 보드의 psConfirm 창 — 클래스가 없어 «확인»·«취소» 단추로 찾는다 */
+  const dlgOpen=()=>f.evaluate(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='확인'&&b.offsetParent!==null));
+  const dlgText=()=>f.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='확인'&&b.offsetParent!==null);return b?b.parentElement.parentElement.textContent:'';});
+  const dlgPress=async(label)=>{await f.evaluate(l=>{[...document.querySelectorAll('button')].filter(b=>b.textContent.trim()===l&&b.offsetParent!==null).pop().click();},label);await f.waitForFunction(()=>![...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='확인'&&b.offsetParent!==null));};
+  const confirm=async(re)=>{ await f.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='확인'&&b.offsetParent!==null));const t=await dlgText();if(re)assert.match(t,re,t);await dlgPress('확인');};
+  // 1) 이전 작업 — 두 페이지, 선수·그림, 장면 둘
+  await f.evaluate(()=>{pushUndo();state.players.push({id:'nb1',team:'blue',num:'9',name:'가상 공격수',x:400,y:300},{id:'nb2',team:'red',num:'4',x:600,y:330});
+    state.drawings.push({type:'line',pts:[{x:300,y:200},{x:500,y:260}],color:'#fff'});renderTokens();renderDrawings();});
+  await f.evaluate(()=>{ensureAnimMode(true);document.getElementById('animAdd').click();state.players[0].x+=80;renderTokens();document.getElementById('animAdd').click();});
+  await f.click('#boardPageStrip .bp-add:not(#bpImportBoard):not(#bpNewBoard)');   /* ＋ 페이지 */
+  await f.evaluate(()=>{pushUndo();state.players.push({id:'nb3',team:'blue',num:'7',x:500,y:400});renderTokens();});
+  await f.evaluate(()=>window.__boardSaveExplicit());
+  let s=await st();
+  assert.equal(s.tabs.length,2,'두 페이지 '+JSON.stringify(s));assert.equal(s.undo,false,'처음엔 «이전 보드» 없음');
+  // 2) «새 보드» — 무엇이 지워지는지 말하고, 비운 뒤 바로 저장한다
+  await f.click('#bpNewBoard');
+  await confirm(/페이지 2개[\s\S]*장면 \d+개[\s\S]*보관함에 저장한 자료는 그대로/);
+  await f.waitForFunction(()=>!!document.getElementById('bpNewBoardUndo'));
+  await page.waitForTimeout(600);
+  s=await st();
+  assert.equal(s.tabs.length,1,'페이지 하나 '+JSON.stringify(s));assert.equal(s.players,0,'선수 없음');assert.equal(s.drawings,0,'그림 없음');assert.equal(s.frames,0,'장면 없음');
+  assert.ok(s.undo&&s.ready,'«↶ 이전 보드» '+JSON.stringify(s));assert.equal(s.save,'보드 저장','새 보드는 바로 저장됐다(변경 점 없음) '+JSON.stringify(s));
+  await page.screenshot({path:path.join(SHOTS,'board-new-board-'+engine+'.png')});
+  // 3) «↶ 이전 보드» — 손대지 않았으면 묻지 않고 그대로 되살린다(페이지·선수·장면)
+  await f.click('#bpNewBoardUndo');
+  await f.waitForFunction(()=>!document.getElementById('bpNewBoardUndo')&&document.querySelectorAll('#boardPageStrip .bp-tab').length===2);
+  await page.waitForTimeout(500);
+  s=await st();
+  assert.equal(s.tabs.length,2);assert.equal(s.players,1,'지금 페이지(2쪽)의 선수 '+JSON.stringify(s));
+  await f.evaluate(()=>window.__psPages&&document.querySelectorAll('#boardPageStrip .bp-tab')[0].click());await page.waitForTimeout(300);
+  s=await st();assert.equal(s.players,2,'1쪽 선수 둘');assert.equal(s.drawings,1,'1쪽 그림');assert.ok(s.frames>=2,'1쪽 장면 '+JSON.stringify(s));
+  // 4) 다시 «새 보드» → 새로 그린 뒤 «이전 보드»는 한 번 더 묻는다(취소) → 새로고침해도 새 보드
+  await f.click('#bpNewBoard');await confirm();
+  await f.waitForFunction(()=>!!document.getElementById('bpNewBoardUndo'));
+  await f.evaluate(()=>{pushUndo();state.players.push({id:'nb9',team:'blue',num:'1',x:200,y:300});renderTokens();});
+  await f.click('#bpNewBoardUndo');await f.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='취소'&&b.offsetParent!==null));
+  assert.match(await dlgText(),/새 보드에 그린 것은 사라져요/);
+  await dlgPress('취소');
+  await f.evaluate(()=>{pushUndo();state.players=[];renderTokens();});await f.evaluate(()=>window.__boardSaveExplicit());
+  await page.reload({waitUntil:'domcontentloaded'});await ready(page);await page.waitForTimeout(1500);
+  f=await openBoard();await page.waitForTimeout(1200);
+  s=await st();
+  assert.equal(s.tabs.length,1,'새로고침해도 페이지 하나 '+JSON.stringify(s));assert.equal(s.players,0,'옛 작업이 돌아오지 않는다');assert.equal(s.drawings,0);assert.equal(s.frames,0);
+  assert.equal(s.undo,false,'새로고침 뒤에는 «이전 보드»가 없다');
+  // 5) 이미 빈 한 장이면 묻지 않는다
+  await f.click('#bpNewBoard');await page.waitForTimeout(400);
+  assert.equal(await dlgOpen(),false,'빈 보드는 확인 창 없이');
+  const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
+  assert.deepEqual(errs,[],'페이지 오류 없음');
+  console.log(JSON.stringify({engine,passed:true}));
+}finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close();}

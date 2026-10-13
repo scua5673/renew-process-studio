@@ -8241,6 +8241,20 @@ function boardPrivateResetCanvas(){
     loadSnap({players:[],equipment:[],drawings:[],ball:null,pitchN:1});try{renderTokens();renderDrawings();updateDelUI();}catch(_){}
   }finally{window.__capLock=lock;}
 }
+/* 3.014 — «새 보드»(오류 제보 88a82188 «첫 화면 보드 초기화 하는 게 있으면 좋겠다 · 전 작업이 계속 남아 있다»).
+   지금 페이지의 판을 «새 보드 기본 세팅»(없으면 빈 판 + 기본 겉모습)으로 바꾸고 장면·선택·되돌리기 기록을 비운다.
+   페이지 묶음과 보관함 연결은 페이지 띠(__psPages.newBoard)가 맡는다. 계정 전환용 boardPrivateResetCanvas 와 달리 미팅·뷰 스냅은 건드리지 않는다. */
+function boardNewCanvas(){
+  try{restoreAnimBeforeCapture();}catch(_){}
+  try{window.__animReset&&window.__animReset();}catch(_){}
+  var d=null;try{d=boardDefaultRead();}catch(_){}
+  sel=null;multiSel=[];matchActive=false;
+  loadSnap(d||{players:[],equipment:[],drawings:[],ball:{x:CX,y:CY},pitchN:1});
+  undoStack.length=0;redoStack.length=0;
+  try{renderTokens();renderDrawings();updateDelUI();}catch(_){}
+  return !!d;
+}
+window.__boardNewCanvas=boardNewCanvas;
 function boardPrivateAuthChanged(){
   try{if(new URLSearchParams(location.search).get('community_view')==='1'||document.body.classList.contains('comm-viewing'))return;}catch(_){}
   var o=boardPrivateOwner();if(_boardPrivateOwner&&boardPrivateCurrent(_boardPrivateOwner))return;
@@ -8461,7 +8475,8 @@ function boardLinkSaveText(r){
   return (ok.length?(" · 보관함 "+ok.join("·")+"에도 저장됨"):"")+(no.length?(" · "+no.join(" · ")):"");
 }
 window.__boardLinkWriteBack=boardLinkWriteBack;
-async function boardSaveExplicit(){
+async function boardSaveExplicit(o){   /* 3.014 — o.noLink: 보관함 연결 되쓰기 없이 · o.quiet: 성공 알림 없이(«새 보드»·«이전 보드»가 제 알림을 띄운다) */
+  o=(o&&typeof o==="object"&&!o.type)?o:{};
   if((_boardManualSaving&&boardPrivateCurrent(_boardManualSaving))||_vaultBoardContext||window.__vaultEdit)return false;
   if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner)){toast("로그인과 보드 연결을 확인한 뒤 다시 저장해 주세요");return false;}
   restoreAnimBeforeCapture();
@@ -8472,9 +8487,9 @@ async function boardSaveExplicit(){
     if(boardPrivateCurrent(owner)&&seq===_boardPrivateEditSeq){
       var durable=_boardPrivateRecord&&_boardPrivateDurableToken===_boardPrivateRecord.token;
       if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;
-        var _wb=[]; try{ _wb=await boardLinkWriteBack(false); }catch(e){ _wb=[{err:true}]; }   /* 2.927 — 가져온 보관함 자료에도 */
+        var _wb=[]; if(!o.noLink){ try{ _wb=await boardLinkWriteBack(false); }catch(e){ _wb=[{err:true}]; } }   /* 2.927 — 가져온 보관함 자료에도 */
         var _wbt=boardLinkSaveText(_wb);
-        if(!ok)toast("이 기기에 저장됨 · 서버 저장은 아직 완료되지 않았습니다"+_wbt);else toast(_wbt?("보드에 저장됨 ✓"+_wbt):"보드에 저장됨 ✓ · 보관함에는 «보관함 저장»으로 넣어요");}
+        if(!ok)toast("이 기기에 저장됨 · 서버 저장은 아직 완료되지 않았습니다"+_wbt);else if(!o.quiet)toast(_wbt?("보드에 저장됨 ✓"+_wbt):"보드에 저장됨 ✓ · 보관함에는 «보관함 저장»으로 넣어요");}
     }
     return !!ok;
   }finally{if(_boardManualSaving===owner)_boardManualSaving=false;boardManualStatus();}
@@ -20118,6 +20133,48 @@ try{ var _nb=document.getElementById('dfNew');
     try{ var _a=pages[i].anim; if(_a&&Array.isArray(_a.frames)&&_a.frames.length>1&&window.__animRestore){window.__animRestore(_a.frames,_a.active);if(window.__animRestoreMeta)window.__animRestoreMeta(_a);} else if(window.__animReset)window.__animReset(); }catch(_){} }
 
   function clearHistory(){try{window.__clearBoardHistory&&window.__clearBoardHistory();}catch(_){}}
+  /* ══ 3.014 · «새 보드» — 작업 보드를 처음부터(오류 제보 88a82188) ══
+     사용자 «첫 화면 보드 초기화 하는 게 있으면 좋을 것 같습니다 · 전 작업이 계속 남아 있네요». 작업 보드는 마지막 «보드 저장»을 다시 열어서
+     예전 페이지·장면이 늘 남았고, 비우는 길은 보드 설정 › 접힌 «초기화 및 삭제» 속 «기본 배치로 초기화»뿐이었다(그것도 페이지·장면은 남긴다).
+     위 띠의 «새 보드»: 확인 → 페이지 하나·장면 없음·«새 보드 기본 세팅»(없으면 빈 판) → 바로 «보드 저장»(새로고침해도 새 보드).
+     보관함 연결은 끊는다(빈 판이 가져온 자료를 덮지 않게). 1분 동안은 띠의 «↶ 이전 보드»로 그대로 되살린다(되살릴 때도 보관함엔 쓰지 않는다). */
+  var _nbUndo=null,_nbT=0,NB_UNDO_MS=60000;
+  function _nbAvailable(){ return !_lent&&!_inVault&&!window.__vaultEdit&&!window.__vaultBook&&!window.__vaultReadOnly&&isBoardView(); }
+  function _nbSave(msg){ var s=window.__boardSaveExplicit; Promise.resolve(s?s({noLink:true,quiet:true}):false).then(function(ok){ _toast(ok?msg:(msg+" · «보드 저장»을 눌러 저장해 주세요")); },function(){ _toast(msg+" · «보드 저장»을 눌러 저장해 주세요"); }); }
+  function _nbCounts(){ var list=pages||[{snap:_snap(),anim:_animNow()}],sc=0,any=false;
+    list.forEach(function(p){ var f=p&&p.anim&&p.anim.frames; if(Array.isArray(f)&&f.length>1)sc+=f.length; try{ if(p&&p.snap&&!(typeof _boardSnapEmpty==="function"&&_boardSnapEmpty(p.snap)))any=true; }catch(_){} });
+    return {n:list.length,sc:sc,any:any}; }
+  function _nbSig(){ var s=_snap()||{},a=null; try{ a=window.__animGet?window.__animGet():null; }catch(_){} return JSON.stringify([pages?pages.length:1,s.players||[],s.equipment||[],s.drawings||[],(a&&Array.isArray(a.frames))?a.frames.length:0]); }
+  function newBoard(){ if(!_nbAvailable())return;
+    capture();
+    var c=_nbCounts();
+    var go=function(){
+      var prev={pages:pages?_clone(pages):null,idx:idx,link:_singleLink?_clone(_singleLink):null,snap:pages?null:_snap(),anim:pages?null:_animNow()};
+      pages=null; idx=0; _singleLink=null;
+      var dflt=false; try{ dflt=!!(window.__boardNewCanvas&&window.__boardNewCanvas()); }catch(_){}
+      clearHistory();
+      clearTimeout(_nbT); _nbUndo=(c.any||c.n>1||c.sc)?{prev:prev,at:Date.now(),fresh:_nbSig()}:null;
+      if(_nbUndo)_nbT=setTimeout(function(){ _nbUndo=null; try{render();}catch(_){} },NB_UNDO_MS);
+      render(); persist();
+      _nbSave("새 보드로 시작했어요"+(dflt?" · 새 보드 기본 세팅으로":"")+" · 보관함 자료는 그대로예요");
+    };
+    if(!c.any&&c.n<=1&&!c.sc){ go(); return; }   /* 이미 빈 한 장이면 묻지 않는다 */
+    psConfirm("지금 보드를 비우고 새 보드로 시작할까요?\n\n· "+(c.n>1?("페이지 "+c.n+"개, "):"")+(c.sc?("장면 "+c.sc+"개, "):"")+"선수·장비·그림을 모두 지워요\n· 보관함에 저장한 자료는 그대로예요\n· 1분 안에는 위 띠의 «↶ 이전 보드»로 되살릴 수 있어요",go);
+  }
+  function newBoardUndo(){ var u=_nbUndo; if(!u||!_nbAvailable())return;
+    var back=function(){
+      _nbUndo=null; clearTimeout(_nbT);
+      var p=u.prev; pages=p.pages?_clone(p.pages):null; idx=pages?Math.max(0,Math.min(+p.idx||0,pages.length-1)):0; _singleLink=p.link?_clone(p.link):null;
+      if(pages)loadIdx(idx);
+      else{ try{ window.loadSnap(p.snap||{}); window.renderTokens&&window.renderTokens(); window.renderDrawings&&window.renderDrawings(); window.updateDelUI&&window.updateDelUI(); }catch(_){}
+        try{ var a=p.anim; if(a&&Array.isArray(a.frames)&&a.frames.length>1&&window.__animRestore){ window.__animRestore(a.frames,a.active); if(window.__animRestoreMeta)window.__animRestoreMeta(a); } else if(window.__animReset)window.__animReset(); }catch(_){} }
+      clearHistory(); render(); persist();
+      _nbSave("이전 보드를 되살렸어요");
+    };
+    /* 새 보드에 이미 그리기 시작했으면 한 번 더 묻는다 — 되살리면 새로 그린 것은 사라진다 */
+    if(_nbSig()!==u.fresh){ psConfirm("이전 보드를 되살릴까요?\n새 보드에 그린 것은 사라져요.",back); return; }
+    back();
+  }
   function add(){ if(_lent)return; ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
     pages.splice(idx+1,0,{snap:blankSnap(),thumb:"",name:""}); idx++; loadIdx(idx);clearHistory();render(); persist(); _toast("페이지 "+pages.length); }
   function dup(i){ ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
@@ -20250,6 +20307,15 @@ try{ var _nb=document.getElementById('dfNew');
       add3.textContent="보드 가져오기"; add3.title="보관함에 저장한 작전판을 골라 지금 페이지에 올립니다 (⌘Z 로 되돌리기)";
       add3.onclick=function(e){ e.stopPropagation(); try{ openBoardImport(); }catch(_){ } }; box.appendChild(add3);
     }
+    /* 3.014 — «새 보드» · 비운 뒤 1분은 «↶ 이전 보드»(위 newBoard) */
+    if(_nbAvailable()){
+      var nb=document.createElement("button"); nb.type="button"; nb.className="bp-add"; nb.id="bpNewBoard";
+      nb.textContent="새 보드"; nb.title="지금 보드를 비우고 새로 시작 — 페이지·장면·그림을 모두 지웁니다 (보관함 자료는 그대로)";
+      nb.onclick=function(e){ e.stopPropagation(); newBoard(); }; box.appendChild(nb);
+      if(_nbUndo){ var nu=document.createElement("button"); nu.type="button"; nu.className="bp-add"; nu.id="bpNewBoardUndo";
+        nu.textContent="↶ 이전 보드"; nu.title="«새 보드» 전으로 되살립니다";
+        nu.onclick=function(e){ e.stopPropagation(); newBoardUndo(); }; box.appendChild(nu); }
+    }
     /* 2.927 — 연결 표시: 지금 페이지가 보관함 자료와 연결돼 있으면 «보드 저장» 때 그 자료도 같이 저장된다. × 로 끊기. */
     try{ var _lk=_linkAll().filter(function(l){return l.isCurrent;})[0];
       if(_lk&&_lk.tag){ var ch=document.createElement("span"); ch.id="bpLinkChip"; ch.className="bp-link";
@@ -20285,6 +20351,7 @@ try{ var _nb=document.getElementById('dfNew');
 
   /* ---- 보관함 저장/열기·라이브 복원용 API ---- */
   window.__psPages={
+    newBoard:function(){ newBoard(); }, newBoardUndo:function(){ newBoardUndo(); }, newBoardUndoReady:function(){ return !!_nbUndo; },   /* 3.014 */
     /* 보관함 작전판의 임시 화면과 별개로, 마지막 작업 페이지·위치를 보관/복원한다. */
     captureContext:function(snap,a){
       var p=pages? _clone(pages):null;
