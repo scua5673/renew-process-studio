@@ -62,9 +62,17 @@ async function tab(page,layer){
   await page.locator(`#layers button[data-l="${layer}"]`).click();
   await page.locator(`#layers button[data-l="${layer}"].on`).waitFor({state:'visible'});
 }
+/* 3.012 — 2.780 부터 일간 보기에서는 «년간 월간 주간 일간 공통» 막대(.cal-bar)가 접히고, 날짜 옆 «달력 ›»(#calSegToggle)으로 편다.
+   사용자와 같은 길로 간다: 이미 그 보기면 그대로, 막대가 접혀 있으면 펴고 누른다. */
+async function calView(page,v){
+  const b=page.locator(`#calSeg [data-v="${v}"]`);
+  if(await b.getAttribute('class')==='on')return;
+  if(!(await b.isVisible()))await page.locator('#calSegToggle').click();
+  await b.click();
+}
 async function today(page){
   await tab(page,'cal');
-  await page.locator('#calSeg [data-v="day"]').click();
+  await calView(page,'day');
   await page.locator('#calToday').click();
 }
 async function read(page){return page.evaluate(key=>JSON.parse(localStorage.getItem(key)||'null'),KEY);}
@@ -183,7 +191,7 @@ async function historyAndWeek(page,spec,result,first){
   assert.equal(await page.locator('#wrap .idp-evidence .ide-action').first().innerText(),ACTION);
   assert.equal(await page.locator('#dayMemo').inputValue(),MEMO);
   result.pastLayout=await capture(page,spec,'past-day-evidence','#wrap .idp-evidence');
-  await page.locator('#calSeg [data-v="week"]').click();
+  await calView(page,'week');
   const row=page.locator(`[data-wkgo="${TODAY}"]`);
   assert.ok((await row.innerText()).includes(ACTION));assert.ok((await row.innerText()).includes(MEMO));
   result.cases.push('past-day-and-calendar-week-show-original-evidence');

@@ -184,7 +184,9 @@ try{
   }
   await page.screenshot({path:path.join(out,'same-document-callback-fixed.png')});
   assert.deepEqual(unauthorized,[]);
-  assert.deepEqual(errors.filter((e,i)=>!e.startsWith('ResizeObserver loop')&&!navAborts.isAbort(e,errorDetails[i].at)),[]);
+  /* 3.012 — 남은 오류마다 판정 이유(why)와 어디서 났는지(stack 첫 줄)를 같이 찍는다 — CI 로그만으로 원인을 볼 수 있게 */
+  const unexplained=errorDetails.filter(d=>!d.message.startsWith('ResizeObserver loop')&&!navAborts.isAbort(d.message,d.at));
+  assert.deepEqual(unexplained.map(d=>d.message),[],JSON.stringify(unexplained.map(d=>({message:d.message,why:navAborts.judge(d.message,d.at).why||'',at:String(d.stack||'').split('\n').slice(0,2).join(' | ')}))));
   const authDataRequests=attemptedRequests.filter(r=>/^\/(rest|auth)\/v1\//.test(r.path));
   assert.ok(authDataRequests.length>0);assert.ok(authDataRequests.every(r=>r.origin===fixtureAuth),'auth/data requests never target a production origin');
   assert.ok(attemptedRequests.every(r=>r.origin!==configuredAuth),'the production auth origin is never requested');

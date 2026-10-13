@@ -96,3 +96,45 @@ test('B: a cross-origin API the test itself fulfils counts only when declared (a
   p.emit('requestfailed',req(AU,'Preflight response is not successful. Status code: 403'));
   assert.equal(n.isAbort(TRUNC(AU),Date.now()),false,'밝힌 출처라도 CORS 실패가 있으면 오류');
 });
+
+/* 3.012 — team-app 은 기록 text 를 500자로 자른다. 선수단 키를 묶은 긴 ps_kv 주소는 «… due to access control checks.» 꼬리가 잘려
+   판정에서 빠졌다(PR #374 WebKit board-settings-manual). 판정은 잘리지 않은 원문(raw)으로 한다. */
+test('a long URL cut in the log text is still judged from the raw message',()=>{
+  const p=fakePage(),logs=[],LU=B+'/rest/v1/ps_kv?workspace_id=eq.a&k=in.('+Array.from({length:16},(_,i)=>'%22sq%3Avp'+String(i+1).padStart(2,'0')+'%22').join('%2C')+')&select=k,v,cupd'+'&pad='+'x'.repeat(300);
+  track(p,logs);p.emit('request',navReq(B+'/studio/app.html',{}));
+  const raw=TRUNC(LU),entry={type:'pageerror',at:Date.now(),text:raw.slice(0,500)};Object.defineProperty(entry,'raw',{value:raw});
+  assert.ok(!/access control checks/.test(entry.text),'the fixture: the log text lost the tail');
+  logs.push(entry);p.emit('framenavigated',{});
+  assert.equal(logs[0].type,'pageerror-navabort');assert.equal(logs[0].navabortPath,'B');
+  assert.ok(!('raw' in JSON.parse(JSON.stringify(logs[0]))),'raw stays out of the JSON log');
+});
+
+/* 3.012 — WebKit «Context is stopped»: 멈춘 문서의 비동기 호출 거절. 이동 구간 안에서만 흔적이다(PR #374 oauth-same-document). */
+test('S: «Context is stopped» inside a navigation window is a teardown trace, outside it stays an error',()=>{
+  const p=fakePage(),logs=[],n=track(p,logs);
+  assert.equal(n.isAbort('Context is stopped',Date.now()),false,'no navigation yet');
+  p.emit('request',navReq(B+'/studio/app.html',{}));
+  assert.equal(n.isAbort('Context is stopped',Date.now()),true);
+  assert.equal(n.isAbort('InvalidStateError: Context is stopped.',Date.now()),true);
+  assert.equal(n.isAbort('Context is stopped because of X',Date.now()),false,'only the exact sentence');
+  logs.push({type:'pageerror',at:Date.now(),text:'Context is stopped'});p.emit('framenavigated',{});
+  assert.equal(logs[0].type,'pageerror-navabort');assert.equal(logs[0].navabortPath,'S');
+  assert.equal(n.isAbort('Context is stopped',Date.now()+60000),false,'long after the commit');
+});
+
+/* 3.012 — 내려가는 프레임에서 스크립트가 못 들어오면 다음 인라인 스크립트가 WebKit «Can't find variable: X» 를 남긴다(oauth-same-document:
+   PSScoutStore · PSTeamLibrary). WebKit 은 끊긴 받기에 requestfailed 를 늘 내지 않아 이동 구간만 본다. 크로미움 문장(«X is not defined»)은
+   받지 않는다 — 진짜 ReferenceError 는 크로미움 잡이 잡는다. */
+test('R: WebKit «Can\'t find variable» counts only inside a navigation window, never the Chromium sentence',()=>{
+  const MSG="Can't find variable: PSTeamLibrary";
+  const p=fakePage(),n=track(p,null);
+  assert.equal(n.isAbort(MSG,Date.now()),false,'outside any navigation it stays an error');
+  assert.match(n.judge(MSG,Date.now()).why,/inNavWindow/,'the reason is reported');
+  p.emit('request',navReq(B+'/studio/app.html',{}));
+  assert.equal(n.isAbort(MSG,Date.now()),true,'during a navigation, even without a reported script failure');
+  assert.equal(n.isAbort('ReferenceError: Can\'t find variable: PSScoutStore',Date.now()),true);
+  assert.equal(n.isAbort("Can't find variable: PSScoutStore.idOf",Date.now()),false,'only the exact sentence');
+  assert.equal(n.isAbort('PSTeamLibrary is not defined',Date.now()),false,'the Chromium sentence is never a trace');
+  assert.equal(n.isAbort('ReferenceError: PSTeamLibrary is not defined',Date.now()),false);
+  assert.equal(n.isAbort(MSG,Date.now()+60000),false,'long after the navigation it stays an error');
+});

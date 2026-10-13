@@ -6940,28 +6940,32 @@ function rosterRecoveryOpen(){
     buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length].focus();
   });box.showModal();box.querySelector('[data-close]').focus();
   function current(){return box.isConnected&&$("rosterRecoveryPanel")===box;}
+  var gen=0;   /* 3.012 — 아래 invalidate 가 올린다 */
   function invalidate(e){
     if(!current())return;
     if(rosterRecoveryBusy&&e&&["ps_sync_session","ps_active_ws","ps_cache_owner_v1","cs_perms_v1"].indexOf(e.key)<0)return;
     if(e&&[KEY,PDKEY,'ps_items_rev','ps_sync_session','ps_active_ws','ps_cache_owner_v1','cs_perms_v1'].indexOf(e.key)<0)return;
-    rosterRecoveryPreview=null;list.textContent='';state.textContent='명단이나 권한이 바뀌었습니다. 다시 확인해 주세요.';
+    gen++;rosterRecoveryPreview=null;list.textContent='';state.textContent='명단이나 권한이 바뀌었습니다. 다시 확인해 주세요.';
   }
+  /* 3.012 — 세대 번호. 확인·복구(run)와 다시 그리기(paint)는 비동기다. 그 사이 권한·팀·명단이 바뀌면(invalidate) 위에서 비우고 «다시 확인»을 띄우는데,
+     늦게 끝난 옛 작업이 바뀌기 전에 읽은 스냅을 다시 그리고 rosterRecoveryPreview 까지 되살렸다(팀을 바꾼 순간이면 앞 팀의 삭제 기록이 새 팀 창에).
+     작업을 시작할 때의 세대와 끝날 때의 세대가 다르면 그리지 않는다. (브라우저 시험 roster-recovery 가 6번 중 4번 이 경쟁에 걸렸다) */
   function authChanged(e){if(e.source===window.parent&&e.origin===location.origin&&e.data&&e.data.source==='process-studio'&&e.data.type==='ps-auth-state'){rosterRecoveryMenu();invalidate({key:'ps_cache_owner_v1'});}}
   window.addEventListener('storage',invalidate);
   window.addEventListener('message',authChanged);
-  function run(work){list.querySelectorAll('button').forEach(function(b){b.disabled=true;});refresh.disabled=true;state.textContent="복구 저장을 확인하고 있습니다…";
-    Promise.resolve().then(work).then(function(n){if(current()){state.textContent=n+"명의 복구 저장을 확인했습니다.";return paint(true);}}).catch(function(e){if(current())state.textContent=e.message||"복구 저장 확인이 끝나지 않았습니다. 다시 확인해 주세요.";}).finally(function(){if(current())refresh.disabled=false;});}
+  function run(work){var g=gen;list.querySelectorAll('button').forEach(function(b){b.disabled=true;});refresh.disabled=true;state.textContent="복구 저장을 확인하고 있습니다…";
+    Promise.resolve().then(work).then(function(n){if(current()&&g===gen){state.textContent=n+"명의 복구 저장을 확인했습니다.";return paint(true);}}).catch(function(e){if(current()&&g===gen)state.textContent=e.message||"복구 저장 확인이 끝나지 않았습니다. 다시 확인해 주세요.";}).finally(function(){if(current())refresh.disabled=false;});}
   function paint(keepMessage){
-    if(!current())return;list.textContent="";refresh.disabled=true;if(!keepMessage)state.textContent="팀의 최신 명단을 확인하고 있습니다…";
+    if(!current())return;var g=gen;list.textContent="";refresh.disabled=true;if(!keepMessage)state.textContent="팀의 최신 명단을 확인하고 있습니다…";
     return Promise.resolve().then(function(){return rosterRecoverySnapshot(false);}).then(function(s){
-      if(!current())return;rosterRecoveryPreview=s;var a=PSRosterRecovery.archive(s.keep,s.context),editable=true;try{rosterRecoveryContext(true);}catch(_){editable=false;}
+      if(!current()||g!==gen)return;rosterRecoveryPreview=s;var a=PSRosterRecovery.archive(s.keep,s.context),editable=true;try{rosterRecoveryContext(true);}catch(_){editable=false;}
       if(!keepMessage)state.textContent=s.rows.length?"현재 명단과 다른 보관 기록 "+s.rows.length+"명":"현재 명단에 없는 보관 기록이 없습니다.";
       if(a.pendingRestore){var notice=document.createElement('p');notice.textContent="끝나지 않은 복구 저장 확인이 있습니다. 보관 원본은 남아 있습니다.";list.appendChild(notice);if(editable){var retry=document.createElement('button');retry.className='btn sm';retry.textContent='복구 저장 다시 확인';retry.onclick=function(){run(function(){return rosterRecoveryRetry(s);});};list.appendChild(retry);}}
       s.rows.forEach(function(r){var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:12px 0';var text=document.createElement('span');text.style.cssText='flex:1;min-width:0;overflow-wrap:anywhere';var title=document.createElement('b');title.textContent=r.p.name;var meta=document.createElement('small');meta.style.cssText='display:block;color:var(--dim)';meta.textContent=new Date(r.at).toLocaleDateString('ko-KR')+' 보관 · '+(r.status==='deleted'?'삭제 기록 있음':r.status==='current-item'?'선수별 명단에 있음':'현재 명단에 없음');text.append(title,meta);row.appendChild(text);
         if(r.status==='missing'&&editable&&!a.pendingRestore){var b=document.createElement('button');b.className='btn sm';b.textContent='이 선수 복구';b.onclick=function(){run(function(){return rosterRestoreMissing([r.id],s);});};row.appendChild(b);}list.appendChild(row);});
       if(!editable){var p=document.createElement('p');p.className='muted';p.textContent='복구는 선수단 편집 권한이 있는 코치가 할 수 있습니다.';list.appendChild(p);}
       if(localStorage.getItem('ps_roster_keep_v1')){var legacy=document.createElement('p');legacy.className='muted';legacy.style.fontSize='12px';legacy.textContent='이전 버전 보관본도 기기에 남아 있습니다. 팀 출처를 확인할 수 없는 자료는 이 명단에 합치지 않습니다.';list.appendChild(legacy);}
-    }).catch(function(e){if(current()){list.textContent='';state.textContent=e.message||'명단을 확인하지 못했습니다.';}}).finally(function(){if(current())refresh.disabled=false;});
+    }).catch(function(e){if(current()&&g===gen){list.textContent='';state.textContent=e.message||'명단을 확인하지 못했습니다.';}}).finally(function(){if(current())refresh.disabled=false;});
   }
   refresh.onclick=function(){if(!rosterRecoveryBusy)paint();};paint();
 }
@@ -13063,13 +13067,18 @@ function mmBigOpen(m){
   /* 그림 칸을 그림 비율 그대로 — 판의 배경이 viewBox 밖까지 칠해져 있어 칸이 크면 흰 면이 화면을 채운다 */
   function fit(){ var st=ov.querySelector(".mb-stage"), host=ov.querySelector(".mb-svg"); if(!st||!host)return; var W=st.clientWidth, H=st.clientHeight; if(!(W>0&&H>0))return;
     var w=W, h=W/ar; if(h>H){ h=H; w=H*ar; } host.style.width=Math.round(w)+"px"; host.style.height=Math.round(h)+"px"; host.style.left=Math.round((W-w)/2)+"px"; host.style.top=Math.round((H-h)/2)+"px"; }
+  /* 3.011 — 그림 칸은 제목·메모를 채운 **뒤에** 잰다(오류 제보 f9cff618 «PC 에서 만든 경기 준비를 아이패드로 보면 글씨·그림 크기가 안 맞는다»).
+     예전엔 아래 글줄이 비어 있을 때 칸을 재서 그림이 글줄 몫(한 줄 46px, 메모가 두 줄이면 더)만큼 커졌고, 그 그림이 슬라이드 제목을 덮고
+     메모를 반쯤 가렸다 — 화면이 좁아 메모가 여러 줄로 접힐수록(아이패드) 더 많이. 칸 크기가 바뀌면(돌리기·글꼴) 다시 잰다. */
   function show(){ vs.i=Math.max(0,Math.min(vs.i|0,sl.length-1)); var s=sl[vs.i], host=ov.querySelector(".mb-svg");
-    if(s.thumb)ar=mmSvgFit(host,s.thumb,true)||105/68; else { ar=105/68; host.innerHTML='<div class="mmv-nothumb">'+esc(s.title||"그림이 아직 없어요")+'</div>'; } fit();
+    if(s.thumb)ar=mmSvgFit(host,s.thumb,true)||105/68; else { ar=105/68; host.innerHTML='<div class="mmv-nothumb">'+esc(s.title||"그림이 아직 없어요")+'</div>'; }
     ov.querySelector(".mb-cnt").textContent=(vs.i+1)+" / "+sl.length;
     ov.querySelector(".mb-cap .t").textContent=s.title||((isB?"페이지 ":"슬라이드 ")+(vs.i+1));
     ov.querySelector(".mb-cap .p").innerHTML=s.points.map(function(x){return '<span>'+esc(x)+'</span>';}).join("")+((ar>1.2&&window.innerHeight>window.innerWidth*1.2)?'<span class="mb-rot">휴대폰을 가로로 돌리면 더 크게 보여요</span>':'');
-    var pv=ov.querySelector(".mb-nav.prev"),nx=ov.querySelector(".mb-nav.next"); pv.disabled=vs.i<=0; nx.disabled=vs.i>=sl.length-1; pv.hidden=nx.hidden=sl.length<2; }
-  function close(){ try{ov.remove();}catch(_){} document.removeEventListener("keydown",onKey,true); window.removeEventListener("resize",fit); var card=$("matchMeetCard"); if(card){ mmViewShow(card); try{ var st=card.querySelector(".mmv-stage"); if(st)st.focus({preventScroll:true}); }catch(_){} } }
+    var pv=ov.querySelector(".mb-nav.prev"),nx=ov.querySelector(".mb-nav.next"); pv.disabled=vs.i<=0; nx.disabled=vs.i>=sl.length-1; pv.hidden=nx.hidden=sl.length<2;
+    fit(); }
+  var ro=null; try{ if(window.ResizeObserver){ ro=new ResizeObserver(function(){ fit(); }); ro.observe(ov.querySelector(".mb-stage")); } }catch(_){}   /* 그림 칸(.mb-svg)은 절대 위치라 칸 크기를 바꾸지 않는다 — 되먹임 없음 */
+  function close(){ try{ov.remove();}catch(_){} try{ if(ro)ro.disconnect(); }catch(_){} document.removeEventListener("keydown",onKey,true); window.removeEventListener("resize",fit); var card=$("matchMeetCard"); if(card){ mmViewShow(card); try{ var st=card.querySelector(".mmv-stage"); if(st)st.focus({preventScroll:true}); }catch(_){} } }
   function onKey(e){ if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); close(); } else if(e.key==="ArrowLeft"||e.key==="ArrowRight"){ e.preventDefault(); e.stopPropagation(); vs.i+=(e.key==="ArrowLeft"?-1:1); show(); } }
   document.addEventListener("keydown",onKey,true); window.addEventListener("resize",fit);
   var sx=null,sy=null,swiped=0;

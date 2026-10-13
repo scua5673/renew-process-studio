@@ -62,7 +62,16 @@ try{
   // 5) 크게 보기 — 화면을 떠나지 않는다
   await sf.click('#matchMeetCard .mmv-big');await sf.waitForSelector('#mmBig .mb-svg svg');
   assert.equal(await sf.evaluate(()=>document.querySelector('#mmBig .mb-cnt').textContent),'3 / 3');
+  /* 3.011 오류 제보 — 그림 칸을 제목·메모를 채우기 전에 재서 그림이 글줄 몫만큼 커져 제목을 덮고 메모를 가렸다(여는 순간). 칸 안 · 제목은 그림 아래 */
+  const bigBox=()=>sf.evaluate(()=>{const r=s=>document.querySelector(s).getBoundingClientRect(),st=r('#mmBig .mb-stage'),h=r('#mmBig .mb-svg'),t=r('#mmBig .mb-cap .t'),p=r('#mmBig .mb-cap .p');
+    return {stT:Math.round(st.top),stB:Math.round(st.bottom),hT:Math.round(h.top),hB:Math.round(h.bottom),tT:Math.round(t.top),tH:Math.round(t.height),pB:Math.round(p.bottom),ih:innerHeight};});
+  const bigOk=async(at)=>{const b=await bigBox();
+    assert.ok(b.hT>=b.stT-1&&b.hB<=b.stB+1,'크게 보기 그림은 칸 안('+at+') '+JSON.stringify(b));
+    assert.ok(b.tH>0&&b.tT>=b.hB-1,'슬라이드 제목이 그림 아래에 보인다('+at+') '+JSON.stringify(b));
+    assert.ok(b.pB<=b.ih+1,'메모가 화면 안('+at+') '+JSON.stringify(b));};
+  await bigOk('열자마자');
   await sf.click('#mmBig .mb-nav.prev');assert.equal(await sf.evaluate(()=>document.querySelector('#mmBig .mb-cnt').textContent),'2 / 3');
+  await page.waitForTimeout(80);await bigOk('메모 두 줄 장');
   await page.screenshot({path:path.join(SHOTS,'match-board-vault-big-'+size+'.png')});
   await sf.click('#mmBig .mb-x');await sf.waitForFunction(()=>!document.getElementById('mmBig'));
   assert.equal((await view()).count,'2 / 3','크게 보기에서 넘긴 자리를 이어 간다');
@@ -162,6 +171,20 @@ try{
   await sf.waitForFunction(id=>!!document.querySelector('#matchMeetCard .mmv[data-mmv="'+id+'"]'),newId,{timeout:15000});
   assert.match(await sf.evaluate(()=>document.querySelector('#matchMeetCard .mmv-meta').textContent),/송도전 미팅 최종/);
   assert.equal(await sf.evaluate(()=>document.querySelector('#matchMeetCard .mmv-count').textContent),'1 / '+(made.n+1));
+  /* 8) 3.011 오류 제보 «PC 에서 만든 경기 준비를 아이패드로 보면 글씨 크기가 안 맞는다» — 슬라이드쇼의 제목 띠는 운동장과 같은 비율.
+     k = 지금 운동장 한 단위 px ÷ PC 무대(1600×840)에서의 값, 0.8~1.4. 폰은 폰 판 그대로(k 없음) */
+  if(size!=='phone'){
+    await sf.click('#matchMeetCard .mmv-acts [data-mm-show]');
+    bf=await board();await bf.waitForFunction(()=>document.body.classList.contains('focus-board')&&!!(window.__meet&&window.__meet.idx()>=0),null,{timeout:15000});
+    let ks=null;
+    for(let t=0;t<20;t++){ ks=await bf.evaluate(()=>{const sv=document.getElementById('board'),r=sv.getBoundingClientRect(),vb=sv.getAttribute('viewBox').split(/[\s,]+/).map(Number),pb=window.__pvBox,hd=document.getElementById('ksHead');
+      const s=Math.min(r.width/vb[2],r.height/vb[3]),want=Math.max(.8,Math.min(1.4,s/Math.min(1600/pb[2],840/pb[3])));
+      return {k:+getComputedStyle(document.body).getPropertyValue('--ks-k'),want:Math.round(want*1000)/1000,h:hd.getBoundingClientRect().height,h0:hd.offsetHeight};});
+      if(Math.abs(ks.k-ks.want)<=0.002)break; await page.waitForTimeout(100); }
+    assert.ok(Math.abs(ks.k-ks.want)<=0.002,'발표 글자 비율 = 운동장 비율 '+JSON.stringify(ks));
+    assert.ok(ks.h0>0&&Math.abs(ks.h-ks.h0*ks.k)<=1.5,'제목 띠가 그 비율로 그려진다 '+JSON.stringify(ks));
+    await page.screenshot({path:path.join(SHOTS,'match-meeting-show-'+size+'.png')});
+  }
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log(JSON.stringify({engine,size,passed:true,made:made.n}));

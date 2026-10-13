@@ -153,3 +153,13 @@ test('a failed recovery keeps its journal until retry completes, including initi
   assert.equal(await h.ctx.rosterRecoveryRetry(next),1);assert.deepEqual(JSON.parse(h.values.get('scout_tool_v1')).players.map(p=>p.id),['current','lost']);
   assert.equal(JSON.parse(h.values.get(R.key(c))).pendingRestore,undefined);
 });
+test('3.012 the recovery panel never repaints a snapshot read before permissions, team or roster changed',()=>{
+  const fs=require('fs'),path=require('path');const src=fs.readFileSync(path.join(__dirname,'..','studio','scout.html'),'utf8');
+  const i=src.indexOf('function invalidate(e){'),block=src.slice(src.lastIndexOf('var gen=0;',i),src.indexOf('function paint(keepMessage){',i)+1200);
+  assert.ok(i>0&&block.includes('var gen=0;'),'a generation counter next to invalidate');
+  assert.match(block,/gen\+\+;rosterRecoveryPreview=null;list\.textContent=''/,'invalidate bumps the generation as it clears');
+  assert.match(block,/function run\(work\)\{var g=gen;/,'run remembers its generation');
+  assert.match(block,/then\(function\(n\)\{if\(current\(\)&&g===gen\)/,'a finished check only paints for the same generation');
+  assert.match(block,/catch\(function\(e\)\{if\(current\(\)&&g===gen\)state\.textContent/,'and only reports its error for the same generation');
+  assert.match(block,/if\(!current\(\)\|\|g!==gen\)return;rosterRecoveryPreview=s;/,'a stale snapshot never becomes the preview again');
+});

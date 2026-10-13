@@ -77,7 +77,9 @@ try{
    await page.waitForTimeout(650);pos=(await coords())[0];assert.ok(Math.abs(pos.x-70)<1&&Math.abs(pos.y-35)<1,JSON.stringify(pos));
    result.cases.push('portrait-redrag-canonical-coordinates');
    // A second roster drop uses the inverse projection too (no duplicate first player).
-   const second=f.locator('#mb2Tray .mb2-chip[data-pid="qa-p2"] i');await second.scrollIntoViewIfNeeded();pitch=await f.locator('#mb2Pitch').boundingBox();
+   /* 3.012 — 820 폭 세로 판에서 scrollIntoViewIfNeeded 는 칩을 화면 맨 위(y≈12, 고정 머리 밑)에 세워 끌기가 칩이 아니라 머리에서 시작했다.
+      사람이 하듯 칩을 화면 가운데로 보이게 한 뒤 끈다(앱 동작은 그대로 — 1280·390 은 같은 단계가 통과). */
+   const second=f.locator('#mb2Tray .mb2-chip[data-pid="qa-p2"] i');await second.evaluate(e=>e.scrollIntoView({block:'center'}));pitch=await f.locator('#mb2Pitch').boundingBox();
    await drag(await center(second),{x:pitch.x+pitch.width*.65,y:pitch.y+pitch.height*.3},true);await page.waitForTimeout(650);
    const added=(await coords()).find(p=>p.pid==='qa-p2');assert.ok(added&&Math.abs(added.x-70)<1&&Math.abs(added.y-65)<1);assert.equal((await coords()).length,2);result.cases.push('portrait-roster-drop');
    if(engine==='chromium'){
