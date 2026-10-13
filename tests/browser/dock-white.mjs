@@ -40,8 +40,9 @@ try{
    return {body:document.body.className,viewport:{width:innerWidth,height:innerHeight},board:geom(document.getElementById('boardStage')),rows:['ps-command-dock','ps-dock','animBar','drawPanel','cmd-tool-row'].map(id=>{const e=document.getElementById(id);return{id,...(e?geom(e):{missing:true})};}),controls:[...document.querySelectorAll('#ps-command-dock button,#ps-command-dock select,#ps-command-dock #railEquip .chip,#ps-dock button')].filter(visible).map(e=>{const s=getComputedStyle(e);return{id:e.id,tool:e.dataset.tool||'',cat:e.dataset.cat||'',label:e.getAttribute('aria-label')||e.title||e.textContent.trim(),tag:e.tagName,...geom(e),paint:[s.color,s.backgroundColor,s.borderRadius,s.fontSize],aria:e.getAttribute('aria-pressed')};}),colors:[...document.querySelectorAll('#ps-command-dock .catpill.tpill,#ps-command-dock .cmd-stamp-token,#ps-command-dock #railEquip .chip.equip,#colorBtn,#colorBtn .cpen,.cmd-equip-color-swatch')].filter(visible).map(e=>({id:e.id,cat:e.dataset.cat||'',color:getComputedStyle(e).color,background:getComputedStyle(e).backgroundColor,pen:e.style.getPropertyValue('--penc'),svg:[...e.querySelectorAll('svg [fill]')].map(n=>n.getAttribute('fill'))}))};
   });
   const identity=s=>s.controls.map(c=>[c.id,c.tool,c.cat,c.tag]);
-  const checkGeometry=current=>{
-   assert.equal(current.controls.length,55,'55 controls remain visible');
+  // The white dock must neither hide nor add controls, so compare with a snapshot instead of a fixed count.
+  const checkGeometry=(current,expected)=>{
+   assert.deepEqual(identity(current),identity(expected),`the same ${expected.controls.length} controls remain visible`);
    const dock=current.rows.find(r=>r.id==='ps-command-dock');assert.equal(dock.h,108,'dock stays 108px');
    for(const id of ['animBar','drawPanel','cmd-tool-row'])assert.equal(current.rows.find(r=>r.id===id).h,36,`${id} stays 36px`);
    for(const c of current.controls){assert.ok(c.x>=dock.x-1&&c.x+c.w<=dock.x+dock.w+1&&c.y>=dock.y-2&&c.y+c.h<=dock.y+dock.h+1,`inside dock: ${c.label}`);assert.ok(c.x>=-1&&c.x+c.w<=current.viewport.width+1,`inside viewport: ${c.label}`);}
@@ -49,17 +50,20 @@ try{
    for(const id of ['viewBtn','cmd-export-btn']){const c=current.controls.find(c=>c.id===id);assert.equal(c.w,30,id+' icon width');assert.equal(c.h,30,id+' height');assert.ok(c.label.trim(),id+' accessible name');}
   };
   const widths=spec.touch?[spec.width]:[1280,1024,1440];
+  let light;
   for(const width of widths){
    await page.setViewportSize({width,height:spec.height});await wait(page);
    await apply(false);const baseline=await inspect();await apply(true);const current=await inspect();
    assert.deepEqual(identity(current),identity(baseline),'control identity/order retained');
    assert.deepEqual(current.colors,baseline.colors,'functional colors unchanged');
    assert.deepEqual(current.board,baseline.board,'board area unchanged');
-   if(spec.touch){assert.deepEqual(current.rows,baseline.rows,'touch geometry unchanged');assert.deepEqual(current.controls,baseline.controls,'touch controls unchanged');
+   assert.ok(!current.controls.some(c=>c.cat==='equip'),'the 장비 palette tab stays hidden in the dock (2.230)');
+   // Since 2.857 the iPad dock shares the desktop surfaces (ps-ipad-desktop-dock sets the --dk-* tokens), so only touch layout must stay put.
+   if(spec.touch){const layout=s=>s.controls.map(({paint,...c})=>c);assert.deepEqual(current.rows,baseline.rows,'touch geometry unchanged');assert.deepEqual(layout(current),layout(baseline),'touch controls unchanged');
     if(spec.mobile){assert.match(current.body,/\bps-phone-work\b/);assert.equal(await frame.evaluate(()=>{const e=document.getElementById('ps-dock');return !e||getComputedStyle(e).display==='none';}),true,'existing phone viewing mode retained');}
    }
    else {
-    checkGeometry(current);
+    checkGeometry(current,baseline);if(width===1280)light=current;
     assert.equal(await frame.locator('#ps-command-dock').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)','white panel applied');
     assert.equal(await frame.locator('#cmd-tools').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)','ghost groups applied');
     assert.deepEqual(await frame.locator('#viewBtn>span,#cmd-export-btn>span').evaluateAll(es=>es.map(e=>getComputedStyle(e).display)),['none','none','none'],'only static captions hidden');
@@ -84,9 +88,9 @@ try{
    await tool.click();assert.equal(await frame.locator('#cmd-role-gk').getAttribute('aria-pressed'),'false','drawing cancels token stamp');
    await frame.locator('#cmd-export-btn').click();assert.equal(await frame.locator('#cmd-export-btn').getAttribute('aria-expanded'),'true');assert.equal(await frame.locator('#cmd-export-pop button:visible').count(),3,'all export options available');await page.keyboard.press('Escape');
    await frame.locator('#viewBtn').click();assert.equal(await frame.locator('#viewBtn').getAttribute('aria-expanded'),'true');assert.ok(await frame.locator('#cmd-board-settings-pop').isVisible());await frame.locator('#cmd-board-settings-close').click();
-   await frame.locator('#cmd-dock-fold').click();assert.ok((await frame.locator('#ps-command-dock').boundingBox()).height<40);await frame.locator('#cmd-dock-handle .open').click();checkGeometry(await inspect());
+   await frame.locator('#cmd-dock-fold').click();assert.ok((await frame.locator('#ps-command-dock').boundingBox()).height<40);await frame.locator('#cmd-dock-handle .open').click();checkGeometry(await inspect(),light);
    // Compare dark mode against the previous palette, then confirm the same geometry and labels.
-   await frame.evaluate(()=>document.body.classList.add('fmdark'));await apply(false);const oldDark=await inspect();await apply(true);const dark=await inspect();assert.deepEqual(dark.colors,oldDark.colors,'dark functional colors retained');checkGeometry(dark);
+   await frame.evaluate(()=>document.body.classList.add('fmdark'));await apply(false);const oldDark=await inspect();await apply(true);const dark=await inspect();assert.deepEqual(dark.colors,oldDark.colors,'dark functional colors retained');checkGeometry(dark,light);
    assert.equal(await frame.locator('#ps-command-dock').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(24, 28, 36, 0.9)','dark panel remains dark');
    await page.screenshot({path:path.join(out,'dark-1280.png'),animations:'disabled'});
    // A disabled action cannot look pressed or acquire motion on hover.
