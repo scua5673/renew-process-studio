@@ -20,3 +20,11 @@ test('3.009 stadium chip keeps a readable size on the 3D view without shrinking 
   // Missing options fall back to the plain chip.
   assert.deepEqual(depth.chipSize(null),{k:1.45,font:15});
 });
+test('3.009 board size steps scale the 3D chip from its default size',()=>{
+  const ref=.355,base=depth.chipSize({unit:ref,ref,pitch:1050});
+  for(const step of [1.25,1.55,2.3]){
+    const s=depth.chipSize({unit:ref*step,ref,pitch:1050});
+    assert.ok(Math.abs((21*ref*step*s.k)/(21*ref*base.k)-step)<1e-9,'chip radius follows the size step '+step);
+    assert.ok(Math.abs((s.font*ref*step*s.k)/(base.font*ref*base.k)-step)<1e-9,'name follows the size step '+step);
+  }
+});

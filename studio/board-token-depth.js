@@ -129,8 +129,6 @@
       [['0', '#fff', '.55'], ['.4', '#fff', '.08'], ['.7', '#000', '0'], ['1', '#000', '.22']]));
     defs.appendChild(gradient(doc, 'linearGradient', 'psChipEdge', { x1: '0', y1: '0', x2: '1', y2: '0' },
       [['0', '#000', '.38'], ['.3', '#fff', '.12'], ['.55', '#fff', '.04'], ['1', '#000', '.42']]));
-    defs.appendChild(gradient(doc, 'radialGradient', 'psChipShadow', { cx: '.5', cy: '.5', r: '.5' },
-      [['0', '#000', '.62'], ['.55', '#000', '.34'], ['1', '#000', '0']]));
     host.appendChild(defs); doc.body.appendChild(host);
   }
   // A darker tone of the team colour for the chip's sides; null when the fill is a pattern (striped kits).
@@ -144,13 +142,15 @@
     var r = Number(item.rot) || 0;
     return (r ? 'rotate(' + (-r) + ') ' : '') + 'scale(' + k + ')';
   }
-  // opts.unit = the token's own scale on the board, opts.pitch = pitch length in board units.
-  // Desktop tokens are small on a flat board; on the stadium view a chip is never smaller than
-  // 1.7% of the pitch length and its name never smaller than 1.35%, so both stay readable.
+  // opts.unit = the token's own scale on the board, opts.pitch = pitch length in board units,
+  // opts.ref = the token scale at the board's default size. Desktop tokens are small on a flat board;
+  // at the default size a 3D chip is 1.7% of the pitch length (radius) and its name 1.35%, so both
+  // stay readable — and the board's size steps (and a player's own size) scale the chip from there.
   function chipSize(opts) {
     var unit = opts && +opts.unit > 0 ? +opts.unit : 1, pitch = opts && +opts.pitch > 0 ? +opts.pitch : 0;
-    var k = Math.min(3.2, Math.max(CHIP_SCALE, pitch * .017 / (CHIP_R * unit)));
-    return { k: Math.round(k * 1000) / 1000, font: Math.max(15, pitch * .0135 / (unit * k)) };
+    var ref = opts && +opts.ref > 0 ? +opts.ref : unit;
+    var k = Math.min(3.2, Math.max(CHIP_SCALE, pitch * .017 / (CHIP_R * ref)));
+    return { k: Math.round(k * 1000) / 1000, font: Math.max(15, pitch * .0135 / (ref * k)) };
   }
   function outline(doc, kind, attrs) {
     return kind === 'circle' ? node(doc, 'circle', Object.assign({ r: CHIP_R }, attrs)) : node(doc, 'path', Object.assign({ d: kind === 'shirt' ? SHIRT : TEAR }, attrs));
@@ -174,10 +174,11 @@
     // Counter-rotated so the shirt and the name stay upright; elevation is then always straight up.
     var body = node(doc, 'g', { 'class': 'ps-chip', 'data-k': String(size.k), 'data-shape': kind, transform: chipTransform(item, size.k) });
     // Floodlights on four corner masts: four faint shadows in an X plus a contact shadow, as on a lit pitch.
+    // Flat fills, not gradients: Safari repaints every chip on each drag frame and radial gradients made that slow.
     [[6, 5], [-6, 5], [6, -3], [-6, -3]].forEach(function (o) {
-      body.appendChild(node(doc, 'ellipse', { cx: o[0], cy: o[1], rx: R + 4, ry: R + 2, fill: 'url(#psChipShadow)', opacity: '.5', 'pointer-events': 'none' }));
+      body.appendChild(node(doc, 'ellipse', { cx: o[0], cy: o[1], rx: R + 2, ry: R, fill: '#000', 'fill-opacity': '.1', 'pointer-events': 'none' }));
     });
-    body.appendChild(node(doc, 'ellipse', { cx: 1, cy: 1.5, rx: R + 2, ry: R + 1, fill: 'url(#psChipShadow)', 'pointer-events': 'none' }));
+    body.appendChild(node(doc, 'ellipse', { cx: 1, cy: 1.5, rx: R + 1.5, ry: R + .5, fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none' }));
     // At height z; a shaper's teardrop turns with its heading (ps-chip-turn), everything else stays upright.
     function at(z, el, turns) {
       var g = node(doc, 'g', { transform: 'translate(0,' + (-z) + ')' });
@@ -193,14 +194,16 @@
     } else {
       for (var y = 0; y < h; y += 2) body.appendChild(at(y, outline(doc, 'shirt', { fill: y ? side : foot, stroke: y ? side : foot, 'stroke-width': '.8', 'stroke-linejoin': 'round' })));
     }
-    // Top: the token's own face, then a gloss over it.
-    if (kind === 'shaper') body.appendChild(at(h, outline(doc, 'shaper', { fill: '#ffffff', stroke: 'rgba(10,14,22,.5)', 'stroke-width': '1.1', 'stroke-linejoin': 'round' }), true));
+    // Top: the token's own face, then a gloss over it — one group at the chip's height (fewer nodes to paint per frame).
+    var lid = node(doc, 'g', { transform: 'translate(0,' + (-h) + ')' });
+    if (kind === 'shaper') { var beak = node(doc, 'g', { 'class': 'ps-chip-turn', transform: turn }); beak.appendChild(outline(doc, 'shaper', { fill: '#ffffff', stroke: 'rgba(10,14,22,.5)', 'stroke-width': '1.1', 'stroke-linejoin': 'round' })); lid.appendChild(beak); }
     var top = kind === 'shirt' ? 'shirt' : 'circle';
-    body.appendChild(at(h, outline(doc, top, { fill: fill, stroke: stroke, 'stroke-width': kind === 'shirt' ? '2.2' : '2.6', 'stroke-linejoin': 'round', 'class': 'ps-chip-top' })));
-    if (kind === 'shirt') { var acc = original.querySelector('path:not(.tok-c)'); if (acc) body.appendChild(at(h, acc.cloneNode(true))); }
-    body.appendChild(at(h, outline(doc, top, { fill: 'url(#psChipGloss)', 'pointer-events': 'none' })));
+    lid.appendChild(outline(doc, top, { fill: fill, stroke: stroke, 'stroke-width': kind === 'shirt' ? '2.2' : '2.6', 'stroke-linejoin': 'round', 'class': 'ps-chip-top' }));
+    if (kind === 'shirt') { var acc = original.querySelector('path:not(.tok-c)'); if (acc) lid.appendChild(acc.cloneNode(true)); }
+    lid.appendChild(outline(doc, top, { fill: 'url(#psChipGloss)', 'pointer-events': 'none' }));
     var text = label && label.textContent;
-    if (text) { var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('pointer-events', 'none'); body.appendChild(at(h, n)); }
+    if (text) { var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('pointer-events', 'none'); lid.appendChild(n); }
+    body.appendChild(lid);
     if (item.name) {
       var name = node(doc, 'text', { x: 0, y: nameY(kind, h, size.font, opts && opts.dir), 'data-font': String(size.font), 'text-anchor': 'middle', 'font-size': String(Math.round(size.font * 10) / 10), 'font-weight': '800', 'letter-spacing': '.4',
         fill: '#fff', stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(size.font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke',

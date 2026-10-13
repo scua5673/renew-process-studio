@@ -93,6 +93,11 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
     assert.equal(shapes.turned,true,'the beak follows the ball');assert.equal(shapes.sameNode,true,'turning does not rebuild the chip');
     assert.equal(shapes.flatBeak,'none','the flat beak hides under the 3D chip');assert.equal(shapes.exportBeak,true,'pictures keep the flat beak');
     assert.equal(shapes.label,'3D');
+    // 3.009 — the board's size steps work on the 3D view too (the readable minimum used to swallow the first three steps).
+    const sizes=await page.evaluate(()=>{const w=()=>tokenLayer.querySelector('[data-id="depth-b"] .ps-chip-top').getBoundingClientRect().width;
+      resetTokenSize();const a=w();scaleAll(1.15);const b=w();scaleAll(1.15);const c=w();resetTokenSize();return {a,b,c};});
+    assert.ok(Math.abs(sizes.b/sizes.a-1.25)<.04,'one step up makes the 3D chip 1.25× '+JSON.stringify(sizes));
+    assert.ok(sizes.c>sizes.b*1.15,'the next step grows it again');
     for(const theme of ['navy','white','train']){
       const equipment=await page.evaluate(theme=>{
         __setTilt(false);state.players=[];state.ball=null;state.orientation='h';document.documentElement.dataset.pitch=theme;
