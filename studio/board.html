@@ -3102,7 +3102,7 @@ html body.bc-tilt3d #boardStage{background:#050806!important;perspective:1150px;
 /* 판 SVG 의 1px 안쪽 테두리(figma-premium.css «html.ps-page-board #boardStage>svg#board» !important)가 기울인 판의 위·아래 끝에
    가로줄로 남는다 — 입체에서는 테두리 없음. 그 규칙이 id 둘이라 여기도 id 둘 + 요소 하나 더 */
 html body.bc-tilt3d #boardStage>svg#board{box-shadow:none!important;border:0!important;outline:0!important}
-#tiltSurface .tilt-stadium{position:absolute;left:0;top:0;width:100%;height:100%;overflow:hidden;display:block;pointer-events:none}   /* 위치·크기는 tiltStadium 이 판 상자보다 넓게 준다 */
+#tiltSurface .tilt-stadium{position:absolute;left:0;top:0;width:100%;height:100%;max-width:none;max-height:none;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}   /* 경기장 그림 한 장 — 위치·크기는 tiltStadium 이 준다 */
 #tiltSurface.ps-stadium .tilt-turf{display:none}
 #tiltSurface.ps-stadium{transform-style:flat}   /* 바닥은 평면 한 장 — preserve-3d 면 크롬이 안쪽 SVG 를 따로 3D 층으로 나눠 가장자리 타일을 비웠다(실측) */
 /* 흰·훈련 피치도 경기장 잔디 위에서는 흰 선(화면만 — 내보내기는 SVG 속성 그대로라 피치 색을 따른다) */
@@ -14143,22 +14143,26 @@ function init(){
     const sp=pitchSpec(),whole=(state.pitchN||1)>1||!!sp.blank,q=whole?{L:0,R:W,T:0,B:H}:PR(),goals=!whole&&state.lines!==false;
     const turf=(window.__ballImgOK&&window.PITCH_IMG&&window.PITCH_IMG.real)||'';
     const L=q.L,R=q.R,T=q.T,B=q.B,PW=R-L,PH=B-T,CX=(L+R)/2,CY=(T+B)/2,f=n=>Math.round(n*10)/10,m=PW/105;   /* m = 11인제에서의 1m */
+    const gx=PW*.068,gy=PH*.095,r0=PW*.075,bt=PW*.0105,tk=PW*.028,sd=PW*.34;
+    const dT=bt+tk,dU=dT+sd*.47,dS=dT+sd,dRi=dS-PW*.10,dRo=dS+PW*.035;
+    /* ⚠ 경기장은 **그림 한 장(<img>, SVG 이미지)** 이다. 처음엔 판 옆에 SVG 를 그대로 두었는데, GPU 없이 그리는 사파리(CI 웹킷)는
+       3D 판이 바뀔 때마다 관중 무늬·관중석 줄·광고판 수백 개를 다시 그려 끌기 시험이 240초를 넘겼다(이 PR 전 120초).
+       이미지는 한 번 그려 두면 옮겨 그리기만 한다. 그래서 그림은 경기장 둘레 상자(world → 판 좌표)를 viewBox 로 한 장에 담고,
+       판 배율·여백(meet 정렬)에 맞춰 위치·크기만 CSS 로 준다 — 틀이 바뀌어도 그림을 다시 만들지 않는다.
+       판 상자 밖으로 넘쳐 그리지도 않는다(넘쳐 그리면 크롬이 기울인 층의 가장자리 타일을 비웠다 — 아이패드 폭 검은 조각). */
     let host=surface.querySelector('.tilt-stadium');
-    if(!host){host=document.createElementNS('http://www.w3.org/2000/svg','svg');host.setAttribute('class','tilt-stadium');host.setAttribute('aria-hidden','true');surface.appendChild(host);}
+    if(host&&host.tagName!=='IMG'){host.remove();host=null;}
+    if(!host){host=document.createElement('img');host.className='tilt-stadium';host.alt='';host.setAttribute('aria-hidden','true');host.decoding='async';host.draggable=false;surface.appendChild(host);}
     surface.classList.add('ps-stadium');
-    /* ⚠ 상자를 경기장 전체만큼 키운다(넘쳐 그리지 않는다). overflow:visible 로 판 상자 밖까지 그리면 크롬이 기울인 층의 가장자리
-       일부를 그리지 않고 비웠다(실측: 아이패드 폭에서 왼쪽 관중석에 검은 조각). 판 SVG 와 같은 배율·여백(meet 정렬)을 그대로 써서
-       판 상자 밖으로 E px 씩 넓힌 viewBox 를 직접 준다 — 좌표는 판과 1:1 로 같다. */
+    const mt=(/matrix\(([^)]*)\)/.exec(wt)||[0,'1 0 0 1 0 0'])[1].split(/[\s,]+/).map(Number),ext=gx+dRo,eyt=gy+dRo;
+    const cs=[[L-ext,T-eyt],[R+ext,T-eyt],[R+ext,B+eyt],[L-ext,B+eyt]].map(([x,y])=>[mt[0]*x+mt[2]*y+mt[4],mt[1]*x+mt[3]*y+mt[5]]);
+    const bx0=Math.min(...cs.map(c=>c[0])),by0=Math.min(...cs.map(c=>c[1])),bx1=Math.max(...cs.map(c=>c[0])),by1=Math.max(...cs.map(c=>c[1]));
     const k=Math.min(bw/vb.width,bh/vb.height),al=/xMin/.test(par)?0:/xMax/.test(par)?1:.5,av=/YMin/.test(par)?0:/YMax/.test(par)?1:.5;
-    const ox=(bw-vb.width*k)*al,oy=(bh-vb.height*k)*av,E=Math.ceil((Math.max(PW,PH)*.62+Math.max(W,H)*.1)*k);
-    host.style.left=host.style.top=(-E)+'px';host.style.width=(bw+2*E)+'px';host.style.height=(bh+2*E)+'px';
-    host.setAttribute('preserveAspectRatio','none');
-    host.setAttribute('viewBox',[vb.x-(ox+E)/k,vb.y-(oy+E)/k,(bw+2*E)/k,(bh+2*E)/k].map(n=>Math.round(n*1000)/1000).join(' '));
+    const ox=(bw-vb.width*k)*al,oy=(bh-vb.height*k)*av;
+    host.style.left=((bx0-vb.x)*k+ox)+'px';host.style.top=((by0-vb.y)*k+oy)+'px';host.style.width=((bx1-bx0)*k)+'px';host.style.height=((by1-by0)*k)+'px';
     const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0].join('|');
     if(host.__sig===sig)return;
     host.__sig=sig;
-    const gx=PW*.068,gy=PH*.095,r0=PW*.075,bt=PW*.0105,tk=PW*.028,sd=PW*.34;
-    const dT=bt+tk,dU=dT+sd*.47,dS=dT+sd,dRi=dS-PW*.10,dRo=dS+PW*.035;
     const rr=d=>{const x0=L-gx-d,x1=R+gx+d,y0=T-gy-d,y1=B+gy+d,r=r0+d,a='A'+f(r)+' '+f(r)+' 0 0 1 ';
       return 'M'+f(x0+r)+' '+f(y0)+'H'+f(x1-r)+a+f(x1)+' '+f(y0+r)+'V'+f(y1-r)+a+f(x1-r)+' '+f(y1)+'H'+f(x0+r)+a+f(x0)+' '+f(y1-r)+'V'+f(y0+r)+a+f(x0+r)+' '+f(y0)+'Z';};
     const ring=(d0,d1,fill,op)=>'<path d="'+rr(d1)+rr(d0)+'" fill-rule="evenodd" fill="'+fill+'"'+(op!=null?' fill-opacity="'+op+'"':'')+'/>';
@@ -14240,7 +14244,7 @@ function init(){
       +line(dRo,'#1c2024',PW*.004)+line(dRi,'#9aa3ab',PW*.0018)
       +'<g fill="url(#psStLamp)">'+lamps+'</g>';
     o+='<path d="'+rr(dRo)+'" fill="url(#psStVig)"/></g>';
-    host.innerHTML=o;
+    host.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+[bx0,by0,bx1-bx0,by1-by0].map(f).join(' ')+'" preserveAspectRatio="none">'+o+'</svg>');
   }
   window.tiltGoalsSync=function(){try{
     const stage=document.getElementById('boardStage');if(!stage||!svg)return;

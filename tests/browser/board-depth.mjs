@@ -43,10 +43,9 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
         const goal=document.querySelector('#tiltGoals .goal-front');
         return {unchanged:before===JSON.stringify(captureSnap()),sameNode:target===tokenLayer.querySelector('[data-id="depth-a"]'),sameSelection:sel.ref===selected,saves,renders,thumbHasDepth:thumb.includes('ps-depth-face'),thumbHasSelection:thumb.includes('ps-selring'),exportHasDepth:exportXML.includes('ps-depth-face'),exportHasSelection:exportXML.includes('ps-selring'),tokens:tokenLayer.querySelectorAll('.token[data-depth]').length,goalColor:getComputedStyle(goal).borderTopColor,goalVisible:goal.getBoundingClientRect().width>0,
           chips:tokenLayer.querySelectorAll('.token[data-depth-chip] .ps-chip').length,names:[...tokenLayer.querySelectorAll('.ps-chip-name')].map(t=>t.textContent).sort().join(','),
-          stadium:!!document.querySelector('#tiltSurface .tilt-stadium path[fill="url(#psStGrass)"]'),boards:document.querySelectorAll('#tiltSurface .tilt-stadium text').length,
           stage:getComputedStyle(document.getElementById('boardStage')).backgroundColor,line:getComputedStyle(document.querySelector('#lineLayer [stroke]:not([stroke="none"])')).stroke,
           exportHasStadium:/psStGrass|ps-chip/.test(exportXML)||/psStGrass|ps-chip/.test(thumb),
-          crowd:!!document.querySelector('#psStCrowd image'),flags:document.querySelectorAll('#tiltGoals .corner-flag').length,dugouts:document.querySelectorAll('#tiltSurface .tilt-stadium path[stroke-dasharray]').length,
+          flags:document.querySelectorAll('#tiltGoals .corner-flag').length,
           frame:getComputedStyle(svg).boxShadow};
       });
       assert.equal(r.unchanged,true);assert.equal(r.sameNode,true);assert.equal(r.sameSelection,true);assert.equal(r.saves,0);assert.equal(r.renders,0);
@@ -54,10 +53,15 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       // 3.009 — the 3D view is a stadium: grass, boards and stands around the pitch, white goals and lines on every pitch theme,
       // white chips with the player's name. None of it reaches pictures or exports.
       assert.equal(r.goalColor,'rgb(255, 255, 255)');assert.equal(r.chips,2);assert.equal(r.names,'A,B');
-      assert.equal(r.stadium,true);assert.ok(r.boards>=8,'ad boards around the pitch');assert.equal(r.stage,'rgb(5, 8, 6)');
+      assert.equal(r.stage,'rgb(5, 8, 6)');
+      // The stadium is one picture (an SVG image): it must decode, and carry the grass, boards, crowd and dugouts.
+      const pic=await page.evaluate(async()=>{const im=document.querySelector('#tiltSurface img.tilt-stadium');if(!im)return null;let ok=false;try{await im.decode();ok=true;}catch(_){}
+        const sv=decodeURIComponent(im.src.slice(im.src.indexOf(',')+1)),b=im.getBoundingClientRect();
+        return {ok,grass:sv.includes('fill="url(#psStGrass)"'),boards:(sv.match(/>PROCESS STUDIO</g)||[]).length,crowd:/id="psStCrowd"[^>]*><image /.test(sv),dugouts:(sv.match(/stroke-dasharray/g)||[]).length,w:b.width,h:b.height};});
+      assert.ok(pic&&pic.ok,'the stadium picture decodes');assert.equal(pic.grass,true);assert.ok(pic.boards>=8,'ad boards around the pitch');
+      assert.equal(pic.crowd,true,'stands carry the crowd texture');assert.ok(pic.dugouts>=2,'two technical areas by the dugouts');assert.ok(pic.w>0&&pic.h>0);
       assert.ok(r.line.match(/\d+/g).slice(0,3).every(v=>+v>=230),'pitch lines are light on the stadium grass: '+r.line);assert.equal(r.exportHasStadium,false);
-      assert.equal(r.crowd,true,'stands carry the crowd texture');assert.equal(r.flags,4,'a corner flag stands at each corner');
-      assert.ok(r.dugouts>=2,'two technical areas by the dugouts');assert.equal(r.frame,'none','no card border line across the tilted board');
+      assert.equal(r.flags,4,'a corner flag stands at each corner');assert.equal(r.frame,'none','no card border line across the tilted board');
       await page.evaluate(()=>{sel=null;multiSel=[];renderTokens();updateDelUI();});
       await page.screenshot({path:path.join(out,`${viewport.width}-${theme}-${orientation}.png`)});
       results.push({width:viewport.width,theme,orientation,...r});
