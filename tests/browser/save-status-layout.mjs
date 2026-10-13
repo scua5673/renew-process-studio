@@ -99,7 +99,7 @@ try{
         libTouch();setView('session');
       },UID);
       await frame.locator('.vcard').nth(30).waitFor({state:'attached'});
-      /* 3.011 — 보관함을 처음 열면 예시 다섯이 한 번 담기고(board.html vxSeedRun · 표식 ps_vault_px_v1) 목록을 다시 그린다. 위 합성 자료의 savedAt(1~60)이
+      /* 3.012 — 보관함을 처음 열면 예시 다섯이 한 번 담기고(board.html vxSeedRun · 표식 ps_vault_px_v1) 목록을 다시 그린다. 위 합성 자료의 savedAt(1~60)이
          예시 날짜(2026-01-01)보다 옛날이라 예시가 맨 위로 들어와 카드가 43.6px 내려간다 — WebKit 에서는 그게 첫 측정 뒤에 와서
          «상태 줄이 목록을 움직였다»로 잘못 잡혔다(PR #374, 393px off). 예시가 담기고 다시 그려진 뒤에 잰다. */
       await page.waitForFunction(uid=>{try{return Object.keys(JSON.parse(localStorage.getItem('ps_vault_px_v1')||'{}')).some(k=>k.startsWith(uid+'|'));}catch(_){return false;}},UID);
@@ -232,7 +232,7 @@ try{
       }
       assert.deepEqual(errors.filter((e,i)=>!/^ResizeObserver loop/.test(e)&&!navAborts.isAbort(e,errorAt[i])),[]);
       report.passed=true;console.log(JSON.stringify({width:report.width,phases:report.phases.map(p=>({bannerShown:p.bannerShown,editorMarker:p.editorMarker,transitions:p.transitions.map(t=>({name:t.name,stripHeight:t.geometry.strip.height,moved:t.moved}))}))}));
-    }catch(e){report.passed=false;report.error=e.stack;console.error(spec.width+'px',e.stack);   /* 3.011 — CI 로그에 실패 까닭이 보이게(전에는 verification.json 에만 남았다) */
+    }catch(e){report.passed=false;report.error=e.stack;console.error(spec.width+'px',e.stack);   /* 3.012 — CI 로그에 실패 까닭이 보이게(전에는 verification.json 에만 남았다) */
       await page.screenshot({path:path.join(out,spec.width+'-failure.png')}).catch(()=>{});}
     finally{fs.writeFileSync(path.join(out,spec.width+'-network.json'),JSON.stringify({calls,blocked,errors},null,2));await context.close();}
   }

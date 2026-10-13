@@ -920,7 +920,7 @@
     try{
       msg=String(msg||'').slice(0,300);
       if(!msg||msg==='Script error.')return;              /* 크로스오리진 무정보 에러 제외 */
-      if(/ResizeObserver loop/i.test(msg))return;          /* 3.011 — 무해한 브라우저 배치 경고(화면 오류 막대는 2.737 부터 거른다). 폰에서 탭을 오갈 때마다 ps_err 로 나가 실제 오류를 덮었다 */
+      if(/ResizeObserver loop/i.test(msg))return;          /* 3.012 — 무해한 브라우저 배치 경고(화면 오류 막대는 2.737 부터 거른다). 폰에서 탭을 오갈 때마다 ps_err 로 나가 실제 오류를 덮었다 */
       var arr=[]; try{ arr=JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(_){}
       var last=arr[arr.length-1];
       if(last&&last.m===msg&&Date.now()-last.t<5000)return; /* 같은 에러 연타 묶기 */

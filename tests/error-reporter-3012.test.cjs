@@ -1,5 +1,5 @@
 'use strict';
-/* 3.011 — 기기 오류 기록기(storage.js «초경량 에러 리포터», cs_errlog_v1 → ps_err)는 무해한 ResizeObserver 경고를 쌓지 않는다.
+/* 3.012 — 기기 오류 기록기(storage.js «초경량 에러 리포터», cs_errlog_v1 → ps_err)는 무해한 ResizeObserver 경고를 쌓지 않는다.
    앱 전체 점검(폰 크기에서 탭 오가기)에서 이 경고만 ps_err 로 세 번 나갔다 — 화면 오류 막대(app.html·board.html)는 2.737 부터 거른다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const ST=fs.readFileSync(path.join(__dirname,'../studio/storage.js'),'utf8');
@@ -22,8 +22,8 @@ test('ResizeObserver loop warnings are not recorded or sent',()=>{
 });
 test('real errors are still recorded',()=>{
   const h=run();
-  h.fire('error',{message:"Cannot read properties of null (reading 'x')",filename:'https://x/studio/board.html?v=3.011',lineno:12});
+  h.fire('error',{message:"Cannot read properties of null (reading 'x')",filename:'https://x/studio/board.html?v=3.012',lineno:12});
   h.fire('unhandledrejection',{reason:new Error('save failed')});
   const log=h.log();
-  assert.equal(log.length,2);assert.equal(log[0].m,"Cannot read properties of null (reading 'x')");assert.equal(log[0].s,'board.html?v=3.011');assert.equal(log[1].k,'rej');
+  assert.equal(log.length,2);assert.equal(log[0].m,"Cannot read properties of null (reading 'x')");assert.equal(log[0].s,'board.html?v=3.012');assert.equal(log[1].k,'rej');
 });

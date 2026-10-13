@@ -133,7 +133,7 @@ try{
       assert.equal(await supportDialog.evaluate(el=>el.open),true);assert.match(await supportDialog.innerText(),/제보 작성/);
       await page.screenshot({path:path.join(out,label+'-support-dialog.png')});
       await supportDialog.getByRole('button',{name:'오류 제보 닫기',exact:true}).click();assert.equal(await supportDialog.evaluate(el=>el.open),false);
-      /* 3.011 — 2.947 이 화면 위 «최근 업데이트» 띠를 선수 전용 폰으로만 옮기면서(위 upd.band==='none') 띠를 닫는 이 단계가 남아
+      /* 3.012 — 2.947 이 화면 위 «최근 업데이트» 띠를 선수 전용 폰으로만 옮기면서(위 upd.band==='none') 띠를 닫는 이 단계가 남아
          `release` 가 정의되지 않은 채 멈췄다. 띠가 없는 화면이므로 닫기 단계는 없다 — 7일 숨김 값은 release-notes 단위 시험(makeHidden)이 본다. */
       const acct=page.locator('#psAcctWrap .acct-btn');if(spec.mobile)await acct.tap();else await acct.click();
       const nameButton=page.locator('#psAcctWrap .acct-pop.on button').filter({hasText:serverName?'표시 이름: '+serverName:'표시 이름 설정'});

@@ -97,7 +97,7 @@ test('B: a cross-origin API the test itself fulfils counts only when declared (a
   assert.equal(n.isAbort(TRUNC(AU),Date.now()),false,'밝힌 출처라도 CORS 실패가 있으면 오류');
 });
 
-/* 3.011 — team-app 은 기록 text 를 500자로 자른다. 선수단 키를 묶은 긴 ps_kv 주소는 «… due to access control checks.» 꼬리가 잘려
+/* 3.012 — team-app 은 기록 text 를 500자로 자른다. 선수단 키를 묶은 긴 ps_kv 주소는 «… due to access control checks.» 꼬리가 잘려
    판정에서 빠졌다(PR #374 WebKit board-settings-manual). 판정은 잘리지 않은 원문(raw)으로 한다. */
 test('a long URL cut in the log text is still judged from the raw message',()=>{
   const p=fakePage(),logs=[],LU=B+'/rest/v1/ps_kv?workspace_id=eq.a&k=in.('+Array.from({length:16},(_,i)=>'%22sq%3Avp'+String(i+1).padStart(2,'0')+'%22').join('%2C')+')&select=k,v,cupd'+'&pad='+'x'.repeat(300);
@@ -109,7 +109,7 @@ test('a long URL cut in the log text is still judged from the raw message',()=>{
   assert.ok(!('raw' in JSON.parse(JSON.stringify(logs[0]))),'raw stays out of the JSON log');
 });
 
-/* 3.011 — WebKit «Context is stopped»: 멈춘 문서의 비동기 호출 거절. 이동 구간 안에서만 흔적이다(PR #374 oauth-same-document). */
+/* 3.012 — WebKit «Context is stopped»: 멈춘 문서의 비동기 호출 거절. 이동 구간 안에서만 흔적이다(PR #374 oauth-same-document). */
 test('S: «Context is stopped» inside a navigation window is a teardown trace, outside it stays an error',()=>{
   const p=fakePage(),logs=[],n=track(p,logs);
   assert.equal(n.isAbort('Context is stopped',Date.now()),false,'no navigation yet');

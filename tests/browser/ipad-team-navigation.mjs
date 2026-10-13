@@ -56,7 +56,7 @@ try{
     try{
       await page.goto(base+'/studio/app.html');
       await page.waitForFunction(()=>window.PSPerms&&document.querySelector('#appSeg [data-team-hub]'));
-      /* 3.011 — 가로 아이패드의 셸 폭은 1100 이 아니라 화면 긴 변(1180)이다(app.html psPadViewportWidth). 창(1100)과 셸 폭이 다르면 WebKit 이
+      /* 3.012 — 가로 아이패드의 셸 폭은 1100 이 아니라 화면 긴 변(1180)이다(app.html psPadViewportWidth). 창(1100)과 셸 폭이 다르면 WebKit 이
          배율을 걸어 터치 좌표가 버튼에서 비껴 «#teamNav intercepts pointer events» 로 멈췄다(PR #374 ipad-desktop-website). 셸이 정한 폭에 창을 맞춘다. */
       if(engine==='webkit'&&spec.ipad&&spec.mobile){
         const padW=await page.evaluate(()=>Number((/width=(\d+)/.exec(document.querySelector('meta[name="viewport"]').content)||[])[1])||0);

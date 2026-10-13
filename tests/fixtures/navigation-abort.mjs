@@ -30,7 +30,7 @@
 const RE=/Fetch API cannot load (\S+?) due to access control checks\.?$/;
 const RE_SPLIT=/^\/([^\s/]\S*?) due to access control checks\.?$/;
 const CORS=/Access-Control|not allowed|preflight|\bCORS\b/i;
-/* 3.011 — WebKit 은 문서가 내려가 스크립트 문맥이 멈춘 뒤 이어진 비동기 호출(예: navigator.locks.request)을 «Context is stopped»
+/* 3.012 — WebKit 은 문서가 내려가 스크립트 문맥이 멈춘 뒤 이어진 비동기 호출(예: navigator.locks.request)을 «Context is stopped»
    (InvalidStateError)로 거절한다. 문맥이 멈춘 문서에서만 나는 문장이라 이동 흔적이다 — 그래도 이동 구간(위 B 의 ④) 안일 때만 그렇게 본다.
    CI PR #374 oauth-same-document: OAuth 콜백 뒤 새로고침 틈에 한 번 났다(앞 실행은 통과). */
 const STOPPED=/^(?:InvalidStateError:\s*)?Context is stopped\.?$/;
@@ -67,7 +67,7 @@ export function trackNavigationAborts(page,entries,opts){
   const isAbort=(message,at)=>judge(message,at).abort===true;
   const reclassify=()=>{ if(!entries)return; for(const e of entries){
     if(!e||(e.type!=='pageerror'&&e.type!=='pageerror-navabort'))continue;
-    const j=judge(e.raw||e.text,e.at);if(!j.match)continue;   /* 3.011 — 기록용 text 는 잘려 있을 수 있다(team-app 500자). 판정은 원문(raw)으로 */
+    const j=judge(e.raw||e.text,e.at);if(!j.match)continue;   /* 3.012 — 기록용 text 는 잘려 있을 수 있다(team-app 500자). 판정은 원문(raw)으로 */
     e.type=j.abort?'pageerror-navabort':'pageerror';
     if(j.abort){e.navabortPath=j.path;delete e.navabortWhy;}else{e.navabortWhy=j.why;delete e.navabortPath;}
   } };
