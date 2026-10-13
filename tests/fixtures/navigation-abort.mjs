@@ -37,7 +37,11 @@ const STOPPED=/^(?:InvalidStateError:\s*)?Context is stopped\.?$/;
 /* 3.012 — 내려가는 프레임에서 스크립트 받기가 끊기면(취소) WebKit 파서는 그 <script> 를 실패로 넘기고 다음 인라인 스크립트를 돌려
    «Can't find variable: PSScoutStore» 같은 ReferenceError 를 남긴다(staging CI oauth-same-document — scout.html 은 scouting-store.js 를
    맨 위에서 동기로 읽고, 다른 사용처 sync.js 는 window.PSScoutStore 로 가드한다. 이 문장은 그 파일이 못 들어온 문서에서만 난다).
-   흔적으로 보는 것은 셋 다일 때뿐: 그 문장 · 이동 구간 안 · 3초 안에 같은 출처의 .js 요청이 실제로 실패. 아니면 오류이고 why 를 붙인다. */
+   흔적으로 보는 것은 둘 다일 때뿐: WebKit 의 그 문장 · 이동 구간 안. 아니면 오류이고 why 를 붙인다.
+   (#378 CI: analysis.html 16 행 «Can't find variable: PSTeamLibrary» — team-library.js 는 머리에서 동기로 읽는데, 끊긴 스크립트에
+   requestfailed 가 오지 않았다. 처음엔 «같은 출처 .js 실패»도 요구했지만 WebKit 은 대기 중인 받기를 소리 없이 버린다.)
+   느슨하지 않은 까닭: 크로미움 잡이 같은 시험을 돌리고, 크로미움은 같은 오류를 «X is not defined» 로 쓴다 — 이 길은 그 문장을 받지
+   않으므로 오타·빠진 <script> 같은 진짜 ReferenceError(매번 난다)는 크로미움에서 그대로 실패한다. */
 const UNDEF=/^(?:ReferenceError:\s*)?Can't find variable: [A-Za-z_$][\w$]*$/;
 const NAV_TAIL=1500,DETACH_PAD=1500,OPEN_NAV=15000;
 const noScheme=u=>String(u||'').replace(/^[a-z][a-z0-9+.-]*:\/\//i,'');
@@ -56,8 +60,8 @@ export function trackNavigationAborts(page,entries,opts){
     return t>=w.start&&t<=end;
   });
   const judge=(message,at)=>{
-    if(UNDEF.test(String(message||'').trim())){const t=at||Date.now(),cut=fails.filter(f=>/\.m?js(?:[?#]|$)/.test(String(f.url))&&Math.abs(f.at-t)<3000&&[...origins].some(o=>originOf(f.url)===o)),win=inWindow(t);
-      return cut.length&&win?{match:true,abort:true,path:'R'}:{match:true,abort:false,why:JSON.stringify({scriptFailed:cut.map(f=>String(f.url).split('/').pop()),inNavWindow:win})};}
+    if(UNDEF.test(String(message||'').trim())){const t=at||Date.now(),win=inWindow(t),cut=fails.filter(f=>/\.m?js(?:[?#]|$)/.test(String(f.url))&&Math.abs(f.at-t)<3000).map(f=>String(f.url).split('/').pop());
+      return win?{match:true,abort:true,path:'R'}:{match:true,abort:false,why:JSON.stringify({inNavWindow:false,scriptFailed:cut})};}
     if(STOPPED.test(String(message||'').trim())){const t=at||Date.now();return inWindow(t)?{match:true,abort:true,path:'S'}:{match:true,abort:false,why:'Context is stopped 이 이동 구간 밖'};}
     const p=parse(message);if(!p)return {match:false};
     const t=at||Date.now(),near=fails.filter(f=>p.same(f.url)&&Math.abs(f.at-t)<6000);

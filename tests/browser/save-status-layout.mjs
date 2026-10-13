@@ -103,6 +103,23 @@ try{
          예시 날짜(2026-01-01)보다 옛날이라 예시가 맨 위로 들어와 카드가 43.6px 내려간다 — WebKit 에서는 그게 첫 측정 뒤에 와서
          «상태 줄이 목록을 움직였다»로 잘못 잡혔다(PR #374, 393px off). 예시가 담기고 다시 그려진 뒤에 잰다. */
       await page.waitForFunction(uid=>{try{return Object.keys(JSON.parse(localStorage.getItem('ps_vault_px_v1')||'{}')).some(k=>k.startsWith(uid+'|'));}catch(_){return false;}},UID);
+      /* 3.012 — 진단 기록(WebKit 768px 에서 한 번 목록 스크롤이 500→0 으로 튀었다 · staging fd3080d). 보관함 잠금 화면 · 보기 전환 ·
+         목록이 비워진 순간 · 스크롤이 크게 줄어든 순간을 시각과 함께 적어 두고, 실패하면 함께 찍는다. 시험의 판정은 그대로다. */
+      await frame.locator('#sessionView').evaluate(()=>{
+        const t0=performance.now(),log=window.__layoutLog=[],sc=document.querySelector('#sessionView .sess-wrap'),box=document.getElementById('drillFiles'),at=()=>Math.round(performance.now()-t0);
+        const unlocked=()=>{try{return parent.PSSync.dataUnlocked();}catch(_){return '?';}};
+        const el=e=>e?(e.tagName||'').toLowerCase()+(e.id?'#'+e.id:'')+(typeof e.className==='string'&&e.className?'.'+e.className.split(' ')[0]:''):'';
+        const where=()=>String(new Error().stack||'').split('\n').slice(2,6).map(x=>x.trim().slice(0,90)).join(' < ');
+        const fe=()=>{try{const f=frameElement,cs=parent.getComputedStyle(f);return {display:cs.display,visibility:cs.visibility,w:f.offsetWidth,h:f.offsetHeight,transform:cs.transform.slice(0,40)};}catch(_){return null;}};
+        let last=sc.scrollTop;sc.addEventListener('scroll',()=>{const now=sc.scrollTop;if(now<last-50)log.push({t:at(),scroll:[last,now],view:window.__csView,unlocked:unlocked(),active:el(document.activeElement),vw:[innerWidth,innerHeight],sc:[sc.clientHeight,sc.scrollHeight,getComputedStyle(sc).display],frame:fe(),body:document.body.className.slice(0,80)});last=now;},{passive:true});
+        /* 프로그램이 스크롤을 움직이는 길 — 누가 불렀는지(stack)를 적는다 */
+        const P=Element.prototype,H=HTMLElement.prototype;
+        for(const [o,k] of [[P,'scrollIntoView'],[P,'scrollTo'],[P,'scroll'],[P,'scrollBy'],[H,'focus']]){const f=o[k];o[k]=function(a){if(!(k==='focus'&&a&&a.preventScroll)&&sc.contains(this))log.push({t:at(),call:k,on:el(this),from:where()});return f.apply(this,arguments);};}
+        const st=Object.getOwnPropertyDescriptor(P,'scrollTop');Object.defineProperty(sc,'scrollTop',{configurable:true,get(){return st.get.call(this);},set(v){if(v<st.get.call(this)-50)log.push({t:at(),call:'scrollTop=',v,from:where()});st.set.call(this,v);}});
+        new MutationObserver(ms=>{for(const m of ms)log.push({t:at(),attr:m.attributeName,on:el(m.target),now:String(m.target.getAttribute(m.attributeName)||'').slice(0,60)});}).observe(document.getElementById('sessionView'),{attributes:true,attributeFilter:['class','style','hidden']});
+        new MutationObserver(ms=>{const removed=ms.reduce((n,m)=>n+m.removedNodes.length,0);if(!box.children.length)log.push({t:at(),drillFilesEmptied:true,lock:!!document.getElementById('psVaultAuthLock'),view:window.__csView,unlocked:unlocked()});else if(removed)log.push({t:at(),rebuilt:removed,scrollTop:sc.scrollTop});}).observe(box,{childList:true});   /* 다시 그리기(비웠다 채움)는 한 번에 끝나 «비워짐»으로 안 보인다 — 따로 적는다 */
+        for(const name of ['psVaultShowLock','setView']){const f=window[name];if(typeof f!=='function')continue;window[name]=function(){log.push({t:at(),call:name,arg:String(arguments[0]==null?'':arguments[0]).slice(0,20),unlocked:unlocked()});return f.apply(this,arguments);};}
+      });
       await page.waitForTimeout(700);
       const states=[
         ['off',{kind:'off'}],['busy',{kind:'busy',n:1}],['ok',{kind:'ok',at:100,n:0}],
@@ -233,6 +250,7 @@ try{
       assert.deepEqual(errors.filter((e,i)=>!/^ResizeObserver loop/.test(e)&&!navAborts.isAbort(e,errorAt[i])),[]);
       report.passed=true;console.log(JSON.stringify({width:report.width,phases:report.phases.map(p=>({bannerShown:p.bannerShown,editorMarker:p.editorMarker,transitions:p.transitions.map(t=>({name:t.name,stripHeight:t.geometry.strip.height,moved:t.moved}))}))}));
     }catch(e){report.passed=false;report.error=e.stack;console.error(spec.width+'px',e.stack);   /* 3.012 — CI 로그에 실패 까닭이 보이게(전에는 verification.json 에만 남았다) */
+      try{report.layoutLog=await page.locator('#fBoard').contentFrame().locator('#sessionView').evaluate(()=>window.__layoutLog||[]);console.error(spec.width+'px layoutLog',JSON.stringify(report.layoutLog));}catch(_){}
       await page.screenshot({path:path.join(out,spec.width+'-failure.png')}).catch(()=>{});}
     finally{fs.writeFileSync(path.join(out,spec.width+'-network.json'),JSON.stringify({calls,blocked,errors},null,2));await context.close();}
   }
