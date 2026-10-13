@@ -103,6 +103,129 @@
     original.querySelectorAll('.tok-hit,.tok-lock').forEach(function(n){face.appendChild(n.cloneNode(true));});
     token.appendChild(face);token.setAttribute('data-depth','1');token.setAttribute('data-depth-equipment',item.team);
   }
+  // 3.009 — 3D chips (stadium view): the token's own shape — shirt, disc or shaper — extruded with
+  // team-colour sides, a glossy top, its number, and the player's name above it. The flat token is
+  // kept hidden inside, so flatten() gives pictures, thumbnails and exports the ordinary token back.
+  var CHIP_R = 21, CHIP_H = 8, CHIP_SCALE = 1, BEAK = 46, BEAK_W = 34;
+  // At the board's default (smallest) size a 3D chip's radius is 1.2% of the pitch length (diameter ≈ 2.5 m on
+  // 11-a-side) and its name 1.35%. 3.009 first used 1.7% — «the smallest size is too big» (user); the name keeps its size.
+  var CHIP_BASE = .012, NAME_BASE = .0135;
+  var SHIRT = 'M -8 -20 C -10.5 -20 -13.8 -19.3 -16.5 -18.2 L -23 -14.3 L -19.3 -4.6 L -14.6 -7.2 L -14.6 16.5 Q -14.6 20.5 -10.6 20.5 L 10.6 20.5 Q 14.6 20.5 14.6 16.5 L 14.6 -7.2 L 19.3 -4.6 L 23 -14.3 L 16.5 -18.2 C 13.8 -19.3 10.5 -20 8 -20 Q 0 -12.6 -8 -20 Z';
+  // Shaper body: the disc and its beak as one teardrop, pointing along +x (the board's _shaperGeom, token units).
+  var TEAR = (function () {
+    var a = BEAK_W * Math.PI / 180, x = Math.round(CHIP_R * Math.cos(a) * 10) / 10, y = Math.round(CHIP_R * Math.sin(a) * 10) / 10;
+    return 'M' + x + ' ' + (-y) + 'L' + BEAK + ' 0L' + x + ' ' + y + 'A' + CHIP_R + ' ' + CHIP_R + ' 0 1 1 ' + x + ' ' + (-y) + 'Z';
+  })();
+  var FONT = "-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif";
+  function gradient(doc, tag, id, attrs, stops) {
+    var g = node(doc, tag, Object.assign({ id: id }, attrs));
+    stops.forEach(function (s) { g.appendChild(node(doc, 'stop', { offset: s[0], 'stop-color': s[1], 'stop-opacity': s[2] == null ? '1' : s[2] })); });
+    return g;
+  }
+  // Shared paints live in one zero-size svg of their own: the board svg is rebuilt on every pitch change.
+  function chipDefs(doc) {
+    if (!doc.body || doc.getElementById('psChipDefs')) return;
+    var host = node(doc, 'svg', { id: 'psChipDefs', width: '0', height: '0', 'aria-hidden': 'true', focusable: 'false' });
+    host.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+    var defs = node(doc, 'defs');
+    defs.appendChild(gradient(doc, 'linearGradient', 'psChipGloss', { x1: '0', y1: '0', x2: '.55', y2: '1' },
+      [['0', '#fff', '.55'], ['.4', '#fff', '.08'], ['.7', '#000', '0'], ['1', '#000', '.22']]));
+    defs.appendChild(gradient(doc, 'linearGradient', 'psChipEdge', { x1: '0', y1: '0', x2: '1', y2: '0' },
+      [['0', '#000', '.38'], ['.3', '#fff', '.12'], ['.55', '#fff', '.04'], ['1', '#000', '.42']]));
+    host.appendChild(defs); doc.body.appendChild(host);
+  }
+  // A darker tone of the team colour for the chip's sides; null when the fill is a pattern (striped kits).
+  function shade(c, f) {
+    var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(c || '').trim());
+    if (!m) return null;
+    var hex = m[1].length === 3 ? m[1].replace(/./g, '$&$&') : m[1], n = parseInt(hex, 16);
+    return 'rgb(' + [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { return Math.round(v * f); }).join(',') + ')';
+  }
+  function chipTransform(item, k) {
+    var r = Number(item.rot) || 0;
+    return (r ? 'rotate(' + (-r) + ') ' : '') + 'scale(' + k + ')';
+  }
+  // opts.unit = the token's own scale on the board, opts.pitch = pitch length in board units,
+  // opts.ref = the token scale at the board's default size. The default size is set against the pitch
+  // (CHIP_BASE, NAME_BASE) so it reads the same on every screen; the board's size steps and a player's own
+  // size scale the chip from there. Never smaller than the flat token (phones already use bigger tokens).
+  function chipSize(opts) {
+    var unit = opts && +opts.unit > 0 ? +opts.unit : 1, pitch = opts && +opts.pitch > 0 ? +opts.pitch : 0;
+    var ref = opts && +opts.ref > 0 ? +opts.ref : unit;
+    var k = Math.min(3.2, Math.max(CHIP_SCALE, pitch * CHIP_BASE / (CHIP_R * ref)));
+    return { k: Math.round(k * 1000) / 1000, font: Math.max(15, pitch * NAME_BASE / (ref * k)) };
+  }
+  function outline(doc, kind, attrs) {
+    return kind === 'circle' ? node(doc, 'circle', Object.assign({ r: CHIP_R }, attrs)) : node(doc, 'path', Object.assign({ d: kind === 'shirt' ? SHIRT : TEAR }, attrs));
+  }
+  // The name sits above the chip — and above a shaper's beak when the beak points up, so it never hides the heading.
+  function nameY(kind, h, font, dir) {
+    var top = kind === 'shirt' ? 20 : CHIP_R;
+    if (kind === 'shaper') top = Math.max(top, -BEAK * Math.sin((+dir || 0) * Math.PI / 180) + 2);
+    return Math.round((-h - top - 4 - font * .4) * 10) / 10;
+  }
+  // opts.shape = 'shirt' | 'circle' | 'shaper' (the board's player shape), opts.dir = shaper heading in chip degrees.
+  function applyChip(token, item, opts) {
+    var doc = token.ownerDocument; chipDefs(doc);
+    var size = chipSize(opts), kind = opts && (opts.shape === 'shirt' || opts.shape === 'shaper') ? opts.shape : 'circle';
+    var face = node(doc, 'g', { 'class': 'ps-depth-face' }), original = node(doc, 'g', { 'class': 'ps-depth-original', display: 'none' });
+    while (token.firstChild) original.appendChild(token.firstChild);
+    var shape = original.querySelector('.tok-c'), label = original.querySelector('text');
+    var fill = (shape && shape.getAttribute('fill')) || '#3a6df0', stroke = (shape && shape.getAttribute('stroke')) || 'rgba(0,0,0,.35)';
+    var side = shade(fill, .6) || shade(stroke, .7) || '#2b3039', foot = shade(fill, .42) || '#1d2128';
+    var R = CHIP_R, h = CHIP_H, turn = 'rotate(' + (Math.round((+(opts && opts.dir) || 0) * 10) / 10) + ')';
+    // Counter-rotated so the shirt and the name stay upright; elevation is then always straight up.
+    var body = node(doc, 'g', { 'class': 'ps-chip', 'data-k': String(size.k), 'data-shape': kind, transform: chipTransform(item, size.k) });
+    // Floodlights on four corner masts: four faint shadows in an X plus a contact shadow, as on a lit pitch.
+    // Flat fills, not gradients: Safari repaints every chip on each drag frame and radial gradients made that slow.
+    [[6, 5], [-6, 5], [6, -3], [-6, -3]].forEach(function (o) {
+      body.appendChild(node(doc, 'ellipse', { cx: o[0], cy: o[1], rx: R + 2, ry: R, fill: '#000', 'fill-opacity': '.1', 'pointer-events': 'none' }));
+    });
+    body.appendChild(node(doc, 'ellipse', { cx: 1, cy: 1.5, rx: R + 1.5, ry: R + .5, fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none' }));
+    // At height z; a shaper's teardrop turns with its heading (ps-chip-turn), everything else stays upright.
+    function at(z, el, turns) {
+      var g = node(doc, 'g', { transform: 'translate(0,' + (-z) + ')' });
+      if (turns) { var t = node(doc, 'g', { 'class': 'ps-chip-turn', transform: turn }); t.appendChild(el); g.appendChild(t); } else g.appendChild(el);
+      return g;
+    }
+    // Sides: a disc has a straight wall; a shirt or a beak is stacked in thin slices.
+    if (kind === 'circle' || kind === 'shaper') {
+      if (kind === 'shaper') for (var z = 0; z < h; z += 2) body.appendChild(at(z, outline(doc, 'shaper', { fill: z ? '#a5adb8' : '#7d8590', stroke: z ? '#a5adb8' : '#7d8590', 'stroke-width': '.6' }), true));
+      var wall = 'M' + (-R) + ' ' + (-h) + 'V0A' + R + ' ' + R + ' 0 0 0 ' + R + ' 0V' + (-h) + 'Z';
+      body.appendChild(node(doc, 'path', { d: wall, fill: side, stroke: foot, 'stroke-width': '.8' }));
+      body.appendChild(node(doc, 'path', { d: wall, fill: 'url(#psChipEdge)', 'pointer-events': 'none' }));
+    } else {
+      for (var y = 0; y < h; y += 2) body.appendChild(at(y, outline(doc, 'shirt', { fill: y ? side : foot, stroke: y ? side : foot, 'stroke-width': '.8', 'stroke-linejoin': 'round' })));
+    }
+    // Top: the token's own face, then a gloss over it — one group at the chip's height (fewer nodes to paint per frame).
+    var lid = node(doc, 'g', { transform: 'translate(0,' + (-h) + ')' });
+    if (kind === 'shaper') { var beak = node(doc, 'g', { 'class': 'ps-chip-turn', transform: turn }); beak.appendChild(outline(doc, 'shaper', { fill: '#ffffff', stroke: 'rgba(10,14,22,.5)', 'stroke-width': '1.1', 'stroke-linejoin': 'round' })); lid.appendChild(beak); }
+    var top = kind === 'shirt' ? 'shirt' : 'circle';
+    lid.appendChild(outline(doc, top, { fill: fill, stroke: stroke, 'stroke-width': kind === 'shirt' ? '2.2' : '2.6', 'stroke-linejoin': 'round', 'class': 'ps-chip-top' }));
+    if (kind === 'shirt') { var acc = original.querySelector('path:not(.tok-c)'); if (acc) lid.appendChild(acc.cloneNode(true)); }
+    lid.appendChild(outline(doc, top, { fill: 'url(#psChipGloss)', 'pointer-events': 'none' }));
+    var text = label && label.textContent;
+    if (text) { var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('pointer-events', 'none'); lid.appendChild(n); }
+    body.appendChild(lid);
+    if (item.name) {
+      var name = node(doc, 'text', { x: 0, y: nameY(kind, h, size.font, opts && opts.dir), 'data-font': String(size.font), 'text-anchor': 'middle', 'font-size': String(Math.round(size.font * 10) / 10), 'font-weight': '800', 'letter-spacing': '.4',
+        fill: '#fff', stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(size.font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke',
+        'font-family': (label && label.getAttribute('font-family')) || FONT, 'class': 'ps-chip-name' });   // the name is part of the chip: pressing it picks the player
+      name.textContent = String(item.name).toUpperCase();
+      body.appendChild(name);
+    }
+    face.appendChild(original); face.appendChild(body);
+    original.querySelectorAll('.tok-hit,.tok-lock').forEach(function (n) { face.appendChild(n.cloneNode(true)); });
+    token.appendChild(face); token.setAttribute('data-depth', String(h)); token.setAttribute('data-depth-chip', String(size.k));
+  }
+  // A shaper turns without a rebuild: its heading follows the ball or the rotate handle.
+  function turnChip(token, deg) {
+    if (!token) return;
+    var t = 'rotate(' + (Math.round((+deg || 0) * 10) / 10) + ')';
+    token.querySelectorAll('.ps-chip-turn').forEach(function (g) { if (g.getAttribute('transform') !== t) g.setAttribute('transform', t); });
+    var name = token.querySelector('.ps-chip-name');
+    if (name) name.setAttribute('y', String(nameY('shaper', CHIP_H, +name.getAttribute('data-font') || 15, deg)));
+  }
   function flatten(token) {
     var face = token.querySelector('.ps-depth-face');
     if (!face) return;
@@ -112,26 +235,29 @@
     token.querySelectorAll('.ps-depth-decoration').forEach(function (n) { n.remove(); });
     token.removeAttribute('data-depth');
     token.removeAttribute('data-depth-equipment');
+    token.removeAttribute('data-depth-chip');
   }
   function flattenAll(svg) {
     svg.querySelectorAll('.token[data-depth]').forEach(flatten);
   }
-  function apply(token, item, kind) {
+  function apply(token, item, kind, opts) {
     if (!token || token.hasAttribute('data-depth')) return;
     if(kind==='equip'&&equipmentTypes.indexOf(item.team)>=0){applyEquipment(token,item);return;}
     var doc = token.ownerDocument, player = kind === 'player', ball = kind === 'ball' || item.team === 'ball';
+    if (player && !item.img && token.querySelector('.tok-c')) { applyChip(token, item, opts); return; }
     var height = player ? 13 : ball ? 9 : 7;
     var delta = elevation(item.rot, height), shape = player && token.querySelector('.tok-c');
     var face = node(doc, 'g', { 'class': 'ps-depth-face', transform: 'translate(' + delta.x + ',' + delta.y + ')' });
     while (token.firstChild) face.appendChild(token.firstChild);
     var body = node(doc, 'g', { 'class': 'ps-depth-decoration', 'pointer-events': 'none', 'aria-hidden': 'true' });
-    body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 4, rx: player ? 26 : 17, ry: player ? 18 : 11, fill: '#000', opacity: '.24' }));
-    for (var z = 0; z <= height; z += 2) {
-      var d = elevation(item.rot, z), side = shape ? shape.cloneNode(false) : node(doc, 'ellipse', { rx: ball ? 13 : 14, ry: ball ? 13 : 10 });
+    body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 4, rx: player ? 26 : 17, ry: player ? 18 : 11, fill: '#000', opacity: ball ? '.34' : '.24' }));
+    // 3.009 — a ball floats over its shadow; photo chips get the same white puck side as the stadium chip.
+    for (var z = 0; !ball && z <= height; z += 2) {
+      var d = elevation(item.rot, z), side = shape ? shape.cloneNode(false) : node(doc, 'ellipse', { rx: 14, ry: 10 });
       side.removeAttribute('id'); side.removeAttribute('class');
       side.setAttribute('data-depth-level', String(z));
-      side.setAttribute('fill', z < height / 2 ? '#17202d' : '#344254');
-      side.setAttribute('stroke', '#16202c'); side.setAttribute('stroke-width', '1');
+      side.setAttribute('fill', player ? (z < height / 2 ? '#9aa3ae' : '#dfe4ea') : (z < height / 2 ? '#17202d' : '#344254'));
+      side.setAttribute('stroke', player ? '#7b8592' : '#16202c'); side.setAttribute('stroke-width', '1');
       side.setAttribute('transform', 'translate(' + d.x + ',' + d.y + ')');
       body.appendChild(side);
     }
@@ -154,6 +280,7 @@
   function update(token, item) {
     if (!token || !token.hasAttribute('data-depth')) return;
     if(token.hasAttribute('data-depth-equipment')){var old=token.querySelector('.ps-equipment-mesh');old.parentNode.replaceChild(equipmentMesh(token.ownerDocument,item),old);return;}
+    if (token.hasAttribute('data-depth-chip')) { var chip = token.querySelector('.ps-chip'); if (chip) chip.setAttribute('transform', chipTransform(item, +chip.getAttribute('data-k') || CHIP_SCALE)); return; }
     var d = elevation(item.rot, Number(token.getAttribute('data-depth')));
     token.querySelector('.ps-depth-face').setAttribute('transform', 'translate(' + d.x + ',' + d.y + ')');
     token.querySelectorAll('[data-depth-level]').forEach(function (side) {
@@ -161,5 +288,5 @@
       side.setAttribute('transform', 'translate(' + offset.x + ',' + offset.y + ')');
     });
   }
-  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, flatten: flatten, flattenAll: flattenAll, elevation: elevation };
+  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, flatten: flatten, flattenAll: flattenAll, elevation: elevation, chipSize: chipSize, turnChip: turnChip };
 });

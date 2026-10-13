@@ -29,15 +29,20 @@ test('airborne levels 1, 2, 3 increase lift, ground and endpoints stay grounded'
  const lifts=[];for(let level=1;level<=3;level++){c.renderInterp(snap,snap,.5,{ball:{air:level},7:{air:level}});lifts.push(c.__ballAirS.ball);assert.equal(c.__ballAirS[7],c.__ballAirS.ball);}assert.ok(lifts[0]<lifts[1]&&lifts[1]<lifts[2]);c.renderInterp(snap,snap,1,{ball:{air:3}});assert.equal(c.__ballAirS.ball,undefined);c.renderInterp(snap,snap,.5,{ball:{air:0}});assert.equal(c.__ballAirS.ball,undefined);
 });
 test('upright goal posts use the pitch meet scale in horizontal and vertical views',()=>{
- const elements={};function node(){return {style:{},children:[],setAttribute(){},appendChild(x){this.children.push(x);if(x.id)elements[x.id]=x;},insertBefore(x){this.appendChild(x);},replaceChildren(){this.children=[];},set innerHTML(x){this.firstElementChild=node();},getBoundingClientRect(){return {left:0,top:0,width:1000,height:600};}};}
+ const elements={};function node(){return {style:{},children:[],setAttribute(){},getAttribute(){return null;},appendChild(x){this.children.push(x);if(x.id)elements[x.id]=x;},insertBefore(x){this.appendChild(x);},replaceChildren(){this.children=[];},set innerHTML(x){this.firstElementChild=node();},getBoundingClientRect(){return {left:0,top:0,width:1000,height:600};}};}
  const stage=node();Object.assign(stage,{scrollLeft:0,scrollTop:0,clientLeft:0,clientTop:0});elements.boardStage=stage;
- const svg=node();svg.querySelector=()=>null;svg.viewBox={baseVal:{x:0,y:0,width:1200,height:800}};
- const c=vm.createContext({window:{},document:{body:{classList:{contains:()=>true}},documentElement:{dataset:{pitch:'navy'}},getElementById:id=>elements[id],createElement:node},svg,state:{orientation:'h'},getCss:()=> '#123456',PR:()=>({L:100,R:1100}),pitchSpec:()=>({goal:73.2,goalD:20}),M2U:x=>x,W:1200,H:800,CY:400,pitchViewKey:()=> 'full'});
+ const svg=node();svg.querySelector=()=>null;svg.viewBox={baseVal:{x:0,y:0,width:1200,height:800}};svg.getAttribute=k=>k==='viewBox'?[0,0,svg.viewBox.baseVal.width,svg.viewBox.baseVal.height].join(' '):null;
+ // 3.009 — goals are drawn larger than life on the stadium view; the projection must still use the meet scale.
+ const K=Function('return '+source.match(/var GOAL_K=(\{[^}]*\})/)[1])();
+ assert.ok(K.mouth>1&&K.mouth<2.5&&K.height>1&&K.depth>1,'goals are exaggerated, the mouth stays inside the goal area');
+ const c=vm.createContext({window:{},document:{body:{classList:{contains:()=>true}},documentElement:{dataset:{pitch:'navy'}},getElementById:id=>elements[id],createElement:node},svg,state:{orientation:'h'},getCss:()=> '#123456',PR:()=>({L:100,R:1100}),pitchSpec:()=>({goal:73.2,goalD:20}),M2U:x=>x,W:1200,H:800,CY:400,pitchViewKey:()=> 'full',GOAL_K:K,tiltStadium(){},world:null});
  vm.runInContext(section('  window.tiltGoalsSync=function(){','  window.__syncStageUI='),c);c.window.tiltGoalsSync();
- const matrix=n=>n.style.transform.slice(9,-1).split(',').map(Number);
+ const matrix=n=>n.style.transform.slice(9,-1).split(',').map(Number),near=(a,b)=>Math.abs(a-b)<.001;
  let fronts=elements.tiltGoals.children.filter(n=>n.className==='goal-plane goal-front');assert.equal(fronts.length,2);
- let m=matrix(fronts[0]);assert.equal(m[12],125);assert.ok(Math.abs(m[13]-272.55)<.001);assert.equal(m[6],-1);assert.equal(m[14],1.83);assert.equal(parseFloat(fronts[0].style.height),1.83);
- c.state.orientation='v';svg.viewBox.baseVal={x:0,y:0,width:800,height:1200};c.window.tiltGoalsSync();fronts=elements.tiltGoals.children.filter(n=>n.className==='goal-plane goal-front');assert.equal(fronts.length,2);m=matrix(fronts[0]);assert.ok(Math.abs(m[12]-481.7)<.001);assert.equal(m[13],550);assert.equal(m[0],1);assert.equal(m[1],0);assert.equal(m[6],-1);
+ let m=matrix(fronts[0]);assert.equal(m[12],125);assert.ok(near(m[13],(400-73.2*K.mouth/2)*.75));assert.equal(m[6],-1);assert.ok(near(m[14],1.83*K.height));assert.ok(near(parseFloat(fronts[0].style.height),1.83*K.height));
+ // 3.009 — nothing changed: no second measurement (the transform toggle is what made Safari repaint the 3D board)
+ let toggles=0;const st=svg.style;svg.style=new Proxy(st,{set(o,k,v){if(k==='transform')toggles++;o[k]=v;return true;}});c.window.tiltGoalsSync();assert.equal(toggles,0,'an unchanged board is not measured again');svg.style=st;
+ c.state.orientation='v';svg.viewBox.baseVal={x:0,y:0,width:800,height:1200};c.window.tiltGoalsSync();fronts=elements.tiltGoals.children.filter(n=>n.className==='goal-plane goal-front');assert.equal(fronts.length,2);m=matrix(fronts[0]);assert.ok(near(m[12],(400-73.2*K.mouth/2)*.5+300));assert.equal(m[13],550);assert.equal(m[0],1);assert.equal(m[1],0);assert.equal(m[6],-1);
 });
 test('perspective fitting coalesces layout changes and stays idle without a resize',()=>{
  let on=true,fits=0,observer,queue=[];

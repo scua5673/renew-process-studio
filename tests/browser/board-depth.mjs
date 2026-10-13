@@ -41,28 +41,67 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
         const save=boardSaveLive,render=renderTokens;boardSaveLive=()=>saves++;renderTokens=()=>renders++;
         let thumb,exportXML;try{thumb=boardThumbSVG();exportXML=boardImageXML().xml;}finally{boardSaveLive=save;renderTokens=render;}
         const goal=document.querySelector('#tiltGoals .goal-front');
-        return {unchanged:before===JSON.stringify(captureSnap()),sameNode:target===tokenLayer.querySelector('[data-id="depth-a"]'),sameSelection:sel.ref===selected,saves,renders,thumbHasDepth:thumb.includes('ps-depth-face'),thumbHasSelection:thumb.includes('ps-selring'),exportHasDepth:exportXML.includes('ps-depth-face'),exportHasSelection:exportXML.includes('ps-selring'),tokens:tokenLayer.querySelectorAll('.token[data-depth]').length,goalColor:getComputedStyle(goal).borderTopColor,goalVisible:goal.getBoundingClientRect().width>0};
+        return {unchanged:before===JSON.stringify(captureSnap()),sameNode:target===tokenLayer.querySelector('[data-id="depth-a"]'),sameSelection:sel.ref===selected,saves,renders,thumbHasDepth:thumb.includes('ps-depth-face'),thumbHasSelection:thumb.includes('ps-selring'),exportHasDepth:exportXML.includes('ps-depth-face'),exportHasSelection:exportXML.includes('ps-selring'),tokens:tokenLayer.querySelectorAll('.token[data-depth]').length,goalColor:getComputedStyle(goal).borderTopColor,goalVisible:goal.getBoundingClientRect().width>0,
+          chips:tokenLayer.querySelectorAll('.token[data-depth-chip] .ps-chip').length,names:[...tokenLayer.querySelectorAll('.ps-chip-name')].map(t=>t.textContent).sort().join(','),
+          stage:getComputedStyle(document.getElementById('boardStage')).backgroundColor,line:getComputedStyle(document.querySelector('#lineLayer [stroke]:not([stroke="none"])')).stroke,
+          exportHasStadium:/psStGrass|ps-chip/.test(exportXML)||/psStGrass|ps-chip/.test(thumb),
+          flags:document.querySelectorAll('#tiltGoals .corner-flag').length,
+          frame:getComputedStyle(svg).boxShadow};
       });
       assert.equal(r.unchanged,true);assert.equal(r.sameNode,true);assert.equal(r.sameSelection,true);assert.equal(r.saves,0);assert.equal(r.renders,0);
       assert.equal(r.exportHasDepth,false);assert.equal(r.exportHasSelection,false);assert.equal(r.thumbHasDepth,false);assert.equal(r.thumbHasSelection,false);assert.equal(r.tokens,5);assert.equal(r.goalVisible,true);
-      assert.equal(r.goalColor,theme==='navy'?'rgb(255, 255, 255)':'rgb(48, 60, 76)');
+      // 3.009 — the 3D view is a stadium: grass, boards and stands around the pitch, white goals and lines on every pitch theme,
+      // white chips with the player's name. None of it reaches pictures or exports.
+      assert.equal(r.goalColor,'rgb(255, 255, 255)');assert.equal(r.chips,2);assert.equal(r.names,'A,B');
+      assert.equal(r.stage,'rgb(5, 8, 6)');
+      // The stadium is one picture (an SVG image): it must decode, and carry the grass, boards, crowd and dugouts.
+      const pic=await page.evaluate(async()=>{const im=document.querySelector('#tiltSurface img.tilt-stadium');if(!im)return null;let ok=false;try{await im.decode();ok=true;}catch(_){}
+        const sv=decodeURIComponent(im.src.slice(im.src.indexOf(',')+1)),b=im.getBoundingClientRect();
+        return {ok,grass:sv.includes('fill="url(#psStGrass)"'),boards:(sv.match(/>PROCESS STUDIO</g)||[]).length,crowd:/id="psStCrowd"[^>]*><image /.test(sv),dugouts:(sv.match(/stroke-dasharray/g)||[]).length,w:b.width,h:b.height};});
+      assert.ok(pic&&pic.ok,'the stadium picture decodes');assert.equal(pic.grass,true);assert.ok(pic.boards>=8,'ad boards around the pitch');
+      assert.equal(pic.crowd,true,'stands carry the crowd texture');assert.ok(pic.dugouts>=2,'two technical areas by the dugouts');assert.ok(pic.w>0&&pic.h>0);
+      assert.ok(r.line.match(/\d+/g).slice(0,3).every(v=>+v>=230),'pitch lines are light on the stadium grass: '+r.line);assert.equal(r.exportHasStadium,false);
+      assert.equal(r.flags,4,'a corner flag stands at each corner');assert.equal(r.frame,'none','no card border line across the tilted board');
       await page.evaluate(()=>{sel=null;multiSel=[];renderTokens();updateDelUI();});
       await page.screenshot({path:path.join(out,`${viewport.width}-${theme}-${orientation}.png`)});
       results.push({width:viewport.width,theme,orientation,...r});
     }
     const before=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));
-    const box=await page.locator('.token[data-id="depth-a"] .ps-depth-face').boundingBox();
+    // 3.009 — players are 3D chips: grab the raised top (its name above is part of the chip too).
+    const box=await page.locator('.token[data-id="depth-a"] .ps-chip .ps-chip-top').boundingBox();
     await page.mouse.move(box.x+box.width/2,box.y+box.height/3);await page.mouse.down();await page.mouse.move(box.x+box.width/2+35,box.y+box.height/3+25,{steps:8});await page.mouse.up();
     const after=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));assert.ok(Math.hypot(after.x-before.x,after.y-before.y)>8,'raised face remains draggable');
     const variants=await page.evaluate(()=>{
       const photo='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="orange"/></svg>');
-      setTokShape('shirt');state.players[0].img=photo;state.players[1].color='#238c71';state.players[1].rot=90;state.players[1].scale=1.4;renderTokens();
+      setTokShape('shirt');state.players[0].img=photo;state.players[0].rot=90;state.players[1].color='#238c71';state.players[1].rot=90;state.players[1].scale=1.4;renderTokens();
       const p=tokenLayer.querySelector('[data-id="depth-a"]'),shirt=tokenLayer.querySelector('[data-id="depth-b"]');
       const before=JSON.stringify(captureSnap()),saved=boardImageXML().xml;
       const cone=state.equipment[0],g=tokenLayer.querySelector('[data-id="cone-a"]'),coneBefore=g.querySelector('.ps-equipment-mesh').innerHTML;cone.rot=90;g.setAttribute('transform',tokenTransform(cone));PSBoardDepth.update(g,cone);
-      return {photo:p.querySelector('image').getAttribute('href')===photo,shirt:shirt.querySelector('.tok-c').tagName==='path',color:shirt.querySelector('.tok-c').getAttribute('fill'),face:shirt.querySelector('.ps-depth-face').getAttribute('transform'),exportPhoto:saved.includes('data:image/svg+xml'),rotatedCone:g.querySelector('.ps-equipment-mesh').innerHTML!==coneBefore};
+      return {photo:p.querySelector('image').getAttribute('href')===photo,shirt:shirt.querySelector('.tok-c').tagName==='path',color:shirt.querySelector('.tok-c').getAttribute('fill'),face:p.querySelector('.ps-depth-face').getAttribute('transform'),chip:shirt.querySelector('.ps-chip').getAttribute('transform'),kit:shirt.querySelector('.ps-chip .ps-chip-top').getAttribute('fill'),kitShape:shirt.querySelector('.ps-chip').getAttribute('data-shape'),exportPhoto:saved.includes('data:image/svg+xml'),rotatedCone:g.querySelector('.ps-equipment-mesh').innerHTML!==coneBefore};
     });
     assert.equal(variants.photo,true);assert.equal(variants.shirt,true);assert.equal(variants.color,'#238c71');assert.equal(variants.exportPhoto,true);assert.match(variants.face,/translate\(-13,/);assert.equal(variants.rotatedCone,true);
+    assert.match(variants.chip,/^rotate\(-90\) scale\(/,'the stadium chip stays upright on a rotated token');assert.equal(variants.kit,'#238c71','the 3D shirt keeps the token colour');assert.equal(variants.kitShape,'shirt','the shirt shape stands as a 3D shirt');
+    // 3.009 — every player shape has its 3D form; a shaper's beak turns with its heading without rebuilding the chip.
+    const shapes=await page.evaluate(()=>{
+      state.players[0].img=null;state.players[0].rot=0;state.players[1].rot=0;const out={};
+      for(const s of ['shirt','circle','shaper']){setTokShape(s);renderTokens();renderVision();
+        const g=tokenLayer.querySelector('[data-id="depth-b"]');out[s]={shape:g.querySelector('.ps-chip').getAttribute('data-shape'),turns:g.querySelectorAll('.ps-chip-turn').length};}
+      const g=tokenLayer.querySelector('[data-id="depth-b"]'),before=g.querySelector('.ps-chip-turn').getAttribute('transform');
+      state.ball.x-=260;state.ball.y+=170;renderVision();
+      out.turned=g.querySelector('.ps-chip-turn').getAttribute('transform')!==before;out.sameNode=g===tokenLayer.querySelector('[data-id="depth-b"]');
+      out.flatBeak=getComputedStyle(document.querySelector('#visionLayer .ps-shaper')).display;
+      out.label=document.querySelector('#tiltSeg [data-t="1"]').textContent;
+      out.exportBeak=boardImageXML().xml.includes('ps-shaper');setTokShape('circle');renderTokens();return out;});
+    assert.deepEqual([shapes.shirt.shape,shapes.circle.shape,shapes.shaper.shape],['shirt','circle','shaper']);
+    assert.equal(shapes.circle.turns,0);assert.ok(shapes.shaper.turns>=2,'the shaper teardrop is stacked and turns');
+    assert.equal(shapes.turned,true,'the beak follows the ball');assert.equal(shapes.sameNode,true,'turning does not rebuild the chip');
+    assert.equal(shapes.flatBeak,'none','the flat beak hides under the 3D chip');assert.equal(shapes.exportBeak,true,'pictures keep the flat beak');
+    assert.equal(shapes.label,'3D');
+    // 3.009 — the board's size steps work on the 3D view too (the readable minimum used to swallow the first three steps).
+    const sizes=await page.evaluate(()=>{const w=()=>tokenLayer.querySelector('[data-id="depth-b"] .ps-chip-top').getBoundingClientRect().width;
+      resetTokenSize();const a=w();scaleAll(1.15);const b=w();scaleAll(1.15);const c=w();resetTokenSize();return {a,b,c};});
+    assert.ok(Math.abs(sizes.b/sizes.a-1.25)<.04,'one step up makes the 3D chip 1.25× '+JSON.stringify(sizes));
+    assert.ok(sizes.c>sizes.b*1.15,'the next step grows it again');
     for(const theme of ['navy','white','train']){
       const equipment=await page.evaluate(theme=>{
         __setTilt(false);state.players=[];state.ball=null;state.orientation='h';document.documentElement.dataset.pitch=theme;

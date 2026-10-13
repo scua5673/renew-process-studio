@@ -71,3 +71,13 @@ test('playback, onion ghosts and the «22명이 점처럼» floors follow the ne
 test('phones shrink the ball with the players, so it stays one step bigger there too',()=>{
   assert.match(slice('function phoneTokFactor(p){','\n'),/\(p\.team==="ball"\|\|!equipKey\(p\.team\)\)&&p\.team!=="img"/);
 });
+
+test('3.009 the name label can sit above the head — a per-board look setting',()=>{
+  const fs=require('fs'),path=require('path');const src=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf8');
+  assert.match(src,/function lookKeys\(\)\{return \[[^\]]*"namePos"[^\]]*\]/,'saved with the board look');
+  assert.match(src,/case "namePos":return "below";/,'below stays the default');
+  assert.match(src,/case "namePos":return v==="below"\|\|v==="above";/);
+  assert.match(src,/id="namePosSeg"[\s\S]{0,300}data-np="below"[^>]*>아래<[\s\S]{0,200}data-np="above"[^>]*>위</,'settings row');
+  assert.match(src,/grassTone:src\.grassTone,namePos:src\.namePos\}/,'기본 세팅 snapshot carries it');
+  assert.match(src,/grassTone:s\.grassTone,namePos:s\.namePos,/,'a new page keeps it');
+});

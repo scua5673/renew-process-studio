@@ -99,7 +99,7 @@ test('wiring — drawing, handle, rotate buttons and the «볼 보기» button a
   assert.match(src,/id="ballLookBtn"/); assert.match(src,/\$\("ballLookBtn"\)\.onclick=\(\)=>toggleBallLook\(\)/);
   assert.match(src,/_blb\.style\.display=_shp\.length\?"inline-flex":"none"/,'shown only for shapers');
   assert.match(src,/\|\|_dirLive\(\)\)\{renderVisionRAF\(\);\}/,'dragging the ball redraws the directions');
-  assert.match(src,/const h=27,yy=_shaperOn\(p\)\?60:48;/,'the name label clears the beak');
+  assert.match(src,/const h=27,_up=\(window\.__namePos==="above"\),yy=\(_up\?-1:1\)\*\(_shaperOn\(p\)\?60:48\);/,'the name label clears the beak (below, or above the head — 3.009)');
   /* 부리 색은 팀이 아니라 운동장과의 대비 */
   const body=cut('function _shaperBody(','/* ===== 쉐이퍼·시야 방향');
   assert.match(body,/fill:light\?"#1b2434":"#ffffff"/);
