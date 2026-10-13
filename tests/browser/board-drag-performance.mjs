@@ -137,7 +137,7 @@ try{for(const view of ['flat','depth'])for(const viewport of [{width:1280,height
     // Actual trusted mouse events still move the raised face through pointer capture.
     const before=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));
     // 3.009 — on the 3D view a player is a stadium chip: grab the raised top of the puck.
-    const box=await page.locator('.token[data-id="depth-a"]'+(view==='depth'?' .ps-chip circle':'')).boundingBox();
+    const box=await page.locator('.token[data-id="depth-a"]'+(view==='depth'?' .ps-chip .ps-chip-top':'')).boundingBox();
     assert.equal(await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.closest('.token')?.getAttribute('data-id'),{x:box.x+box.width/2,y:box.y+box.height/3}),'depth-a');
     await page.mouse.move(box.x+box.width/2,box.y+box.height/3);await page.mouse.down();await page.mouse.move(box.x+box.width/2+35,box.y+box.height/3+25,{steps:10});await page.mouse.up();
     const after=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));assert.ok(Math.hypot(after.x-before.x,after.y-before.y)>8);
