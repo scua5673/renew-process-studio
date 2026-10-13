@@ -108,7 +108,15 @@ try{
       await frame.locator('#sessionView').evaluate(()=>{
         const t0=performance.now(),log=window.__layoutLog=[],sc=document.querySelector('#sessionView .sess-wrap'),box=document.getElementById('drillFiles'),at=()=>Math.round(performance.now()-t0);
         const unlocked=()=>{try{return parent.PSSync.dataUnlocked();}catch(_){return '?';}};
-        let last=sc.scrollTop;sc.addEventListener('scroll',()=>{const now=sc.scrollTop;if(now<last-50)log.push({t:at(),scroll:[last,now],view:window.__csView,unlocked:unlocked()});last=now;},{passive:true});
+        const el=e=>e?(e.tagName||'').toLowerCase()+(e.id?'#'+e.id:'')+(typeof e.className==='string'&&e.className?'.'+e.className.split(' ')[0]:''):'';
+        const where=()=>String(new Error().stack||'').split('\n').slice(2,6).map(x=>x.trim().slice(0,90)).join(' < ');
+        const fe=()=>{try{const f=frameElement,cs=parent.getComputedStyle(f);return {display:cs.display,visibility:cs.visibility,w:f.offsetWidth,h:f.offsetHeight,transform:cs.transform.slice(0,40)};}catch(_){return null;}};
+        let last=sc.scrollTop;sc.addEventListener('scroll',()=>{const now=sc.scrollTop;if(now<last-50)log.push({t:at(),scroll:[last,now],view:window.__csView,unlocked:unlocked(),active:el(document.activeElement),vw:[innerWidth,innerHeight],sc:[sc.clientHeight,sc.scrollHeight,getComputedStyle(sc).display],frame:fe(),body:document.body.className.slice(0,80)});last=now;},{passive:true});
+        /* 프로그램이 스크롤을 움직이는 길 — 누가 불렀는지(stack)를 적는다 */
+        const P=Element.prototype,H=HTMLElement.prototype;
+        for(const [o,k] of [[P,'scrollIntoView'],[P,'scrollTo'],[P,'scroll'],[P,'scrollBy'],[H,'focus']]){const f=o[k];o[k]=function(a){if(!(k==='focus'&&a&&a.preventScroll)&&sc.contains(this))log.push({t:at(),call:k,on:el(this),from:where()});return f.apply(this,arguments);};}
+        const st=Object.getOwnPropertyDescriptor(P,'scrollTop');Object.defineProperty(sc,'scrollTop',{configurable:true,get(){return st.get.call(this);},set(v){if(v<st.get.call(this)-50)log.push({t:at(),call:'scrollTop=',v,from:where()});st.set.call(this,v);}});
+        new MutationObserver(ms=>{for(const m of ms)log.push({t:at(),attr:m.attributeName,on:el(m.target),now:String(m.target.getAttribute(m.attributeName)||'').slice(0,60)});}).observe(document.getElementById('sessionView'),{attributes:true,attributeFilter:['class','style','hidden']});
         new MutationObserver(()=>{if(!box.children.length)log.push({t:at(),drillFilesEmptied:true,lock:!!document.getElementById('psVaultAuthLock'),view:window.__csView,unlocked:unlocked()});}).observe(box,{childList:true});
         for(const name of ['psVaultShowLock','setView']){const f=window[name];if(typeof f!=='function')continue;window[name]=function(){log.push({t:at(),call:name,arg:String(arguments[0]==null?'':arguments[0]).slice(0,20),unlocked:unlocked()});return f.apply(this,arguments);};}
       });
