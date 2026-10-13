@@ -13063,13 +13063,18 @@ function mmBigOpen(m){
   /* 그림 칸을 그림 비율 그대로 — 판의 배경이 viewBox 밖까지 칠해져 있어 칸이 크면 흰 면이 화면을 채운다 */
   function fit(){ var st=ov.querySelector(".mb-stage"), host=ov.querySelector(".mb-svg"); if(!st||!host)return; var W=st.clientWidth, H=st.clientHeight; if(!(W>0&&H>0))return;
     var w=W, h=W/ar; if(h>H){ h=H; w=H*ar; } host.style.width=Math.round(w)+"px"; host.style.height=Math.round(h)+"px"; host.style.left=Math.round((W-w)/2)+"px"; host.style.top=Math.round((H-h)/2)+"px"; }
+  /* 3.011 — 그림 칸은 제목·메모를 채운 **뒤에** 잰다(오류 제보 f9cff618 «PC 에서 만든 경기 준비를 아이패드로 보면 글씨·그림 크기가 안 맞는다»).
+     예전엔 아래 글줄이 비어 있을 때 칸을 재서 그림이 글줄 몫(한 줄 46px, 메모가 두 줄이면 더)만큼 커졌고, 그 그림이 슬라이드 제목을 덮고
+     메모를 반쯤 가렸다 — 화면이 좁아 메모가 여러 줄로 접힐수록(아이패드) 더 많이. 칸 크기가 바뀌면(돌리기·글꼴) 다시 잰다. */
   function show(){ vs.i=Math.max(0,Math.min(vs.i|0,sl.length-1)); var s=sl[vs.i], host=ov.querySelector(".mb-svg");
-    if(s.thumb)ar=mmSvgFit(host,s.thumb,true)||105/68; else { ar=105/68; host.innerHTML='<div class="mmv-nothumb">'+esc(s.title||"그림이 아직 없어요")+'</div>'; } fit();
+    if(s.thumb)ar=mmSvgFit(host,s.thumb,true)||105/68; else { ar=105/68; host.innerHTML='<div class="mmv-nothumb">'+esc(s.title||"그림이 아직 없어요")+'</div>'; }
     ov.querySelector(".mb-cnt").textContent=(vs.i+1)+" / "+sl.length;
     ov.querySelector(".mb-cap .t").textContent=s.title||((isB?"페이지 ":"슬라이드 ")+(vs.i+1));
     ov.querySelector(".mb-cap .p").innerHTML=s.points.map(function(x){return '<span>'+esc(x)+'</span>';}).join("")+((ar>1.2&&window.innerHeight>window.innerWidth*1.2)?'<span class="mb-rot">휴대폰을 가로로 돌리면 더 크게 보여요</span>':'');
-    var pv=ov.querySelector(".mb-nav.prev"),nx=ov.querySelector(".mb-nav.next"); pv.disabled=vs.i<=0; nx.disabled=vs.i>=sl.length-1; pv.hidden=nx.hidden=sl.length<2; }
-  function close(){ try{ov.remove();}catch(_){} document.removeEventListener("keydown",onKey,true); window.removeEventListener("resize",fit); var card=$("matchMeetCard"); if(card){ mmViewShow(card); try{ var st=card.querySelector(".mmv-stage"); if(st)st.focus({preventScroll:true}); }catch(_){} } }
+    var pv=ov.querySelector(".mb-nav.prev"),nx=ov.querySelector(".mb-nav.next"); pv.disabled=vs.i<=0; nx.disabled=vs.i>=sl.length-1; pv.hidden=nx.hidden=sl.length<2;
+    fit(); }
+  var ro=null; try{ if(window.ResizeObserver){ ro=new ResizeObserver(function(){ fit(); }); ro.observe(ov.querySelector(".mb-stage")); } }catch(_){}   /* 그림 칸(.mb-svg)은 절대 위치라 칸 크기를 바꾸지 않는다 — 되먹임 없음 */
+  function close(){ try{ov.remove();}catch(_){} try{ if(ro)ro.disconnect(); }catch(_){} document.removeEventListener("keydown",onKey,true); window.removeEventListener("resize",fit); var card=$("matchMeetCard"); if(card){ mmViewShow(card); try{ var st=card.querySelector(".mmv-stage"); if(st)st.focus({preventScroll:true}); }catch(_){} } }
   function onKey(e){ if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); close(); } else if(e.key==="ArrowLeft"||e.key==="ArrowRight"){ e.preventDefault(); e.stopPropagation(); vs.i+=(e.key==="ArrowLeft"?-1:1); show(); } }
   document.addEventListener("keydown",onKey,true); window.addEventListener("resize",fit);
   var sx=null,sy=null,swiped=0;
