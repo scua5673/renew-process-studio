@@ -122,20 +122,19 @@ test('S: «Context is stopped» inside a navigation window is a teardown trace, 
   assert.equal(n.isAbort('Context is stopped',Date.now()+60000),false,'long after the commit');
 });
 
-/* 3.012 — 내려가는 프레임에서 스크립트 받기가 끊기면 다음 인라인 스크립트가 «Can't find variable: X» 를 남긴다(staging CI oauth-same-document).
-   같은 출처 .js 가 실제로 실패했고 이동 구간 안일 때만 흔적이다. 오타 같은 진짜 ReferenceError 는 가리지 않는다. */
-test('R: «Can\'t find variable» counts only when a same-origin script load was cut during a navigation',()=>{
-  const MSG="Can't find variable: PSScoutStore";
+/* 3.012 — 내려가는 프레임에서 스크립트가 못 들어오면 다음 인라인 스크립트가 WebKit «Can't find variable: X» 를 남긴다(oauth-same-document:
+   PSScoutStore · PSTeamLibrary). WebKit 은 끊긴 받기에 requestfailed 를 늘 내지 않아 이동 구간만 본다. 크로미움 문장(«X is not defined»)은
+   받지 않는다 — 진짜 ReferenceError 는 크로미움 잡이 잡는다. */
+test('R: WebKit «Can\'t find variable» counts only inside a navigation window, never the Chromium sentence',()=>{
+  const MSG="Can't find variable: PSTeamLibrary";
   const p=fakePage(),n=track(p,null);
+  assert.equal(n.isAbort(MSG,Date.now()),false,'outside any navigation it stays an error');
+  assert.match(n.judge(MSG,Date.now()).why,/inNavWindow/,'the reason is reported');
   p.emit('request',navReq(B+'/studio/app.html',{}));
-  assert.equal(n.isAbort(MSG,Date.now()),false,'navigation alone is not enough');
-  assert.match(n.judge(MSG,Date.now()).why,/scriptFailed/,'the reason is reported');
-  p.emit('requestfailed',req(B+'/studio/scouting-store.js','Load request cancelled'));
-  assert.equal(n.isAbort(MSG,Date.now()),true);
+  assert.equal(n.isAbort(MSG,Date.now()),true,'during a navigation, even without a reported script failure');
   assert.equal(n.isAbort('ReferenceError: Can\'t find variable: PSScoutStore',Date.now()),true);
   assert.equal(n.isAbort("Can't find variable: PSScoutStore.idOf",Date.now()),false,'only the exact sentence');
-  const p2=fakePage(),n2=track(p2,null);p2.emit('requestfailed',req(B+'/studio/scouting-store.js','Load request cancelled'));
-  assert.equal(n2.isAbort(MSG,Date.now()),false,'a failed script outside any navigation stays an error');
-  const p3=fakePage(),n3=track(p3,null);p3.emit('request',navReq(B+'/studio/app.html',{}));p3.emit('requestfailed',req('https://cdn.example.invalid/x.js','Load request cancelled'));
-  assert.equal(n3.isAbort(MSG,Date.now()),false,'a cross-origin script does not count');
+  assert.equal(n.isAbort('PSTeamLibrary is not defined',Date.now()),false,'the Chromium sentence is never a trace');
+  assert.equal(n.isAbort('ReferenceError: PSTeamLibrary is not defined',Date.now()),false);
+  assert.equal(n.isAbort(MSG,Date.now()+60000),false,'long after the navigation it stays an error');
 });
