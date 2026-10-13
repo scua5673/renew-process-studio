@@ -30,6 +30,10 @@
 const RE=/Fetch API cannot load (\S+?) due to access control checks\.?$/;
 const RE_SPLIT=/^\/([^\s/]\S*?) due to access control checks\.?$/;
 const CORS=/Access-Control|not allowed|preflight|\bCORS\b/i;
+/* 3.012 — WebKit 은 문서가 내려가 스크립트 문맥이 멈춘 뒤 이어진 비동기 호출(예: navigator.locks.request)을 «Context is stopped»
+   (InvalidStateError)로 거절한다. 문맥이 멈춘 문서에서만 나는 문장이라 이동 흔적이다 — 그래도 이동 구간(위 B 의 ④) 안일 때만 그렇게 본다.
+   CI PR #374 oauth-same-document: OAuth 콜백 뒤 새로고침 틈에 한 번 났다(앞 실행은 통과). */
+const STOPPED=/^(?:InvalidStateError:\s*)?Context is stopped\.?$/;
 const NAV_TAIL=1500,DETACH_PAD=1500,OPEN_NAV=15000;
 const noScheme=u=>String(u||'').replace(/^[a-z][a-z0-9+.-]*:\/\//i,'');
 const originOf=u=>{try{const o=new URL(String(u)).origin;return o&&o!=='null'?o:'';}catch(_){return '';}};
@@ -47,6 +51,7 @@ export function trackNavigationAborts(page,entries,opts){
     return t>=w.start&&t<=end;
   });
   const judge=(message,at)=>{
+    if(STOPPED.test(String(message||'').trim())){const t=at||Date.now();return inWindow(t)?{match:true,abort:true,path:'S'}:{match:true,abort:false,why:'Context is stopped 이 이동 구간 밖'};}
     const p=parse(message);if(!p)return {match:false};
     const t=at||Date.now(),near=fails.filter(f=>p.same(f.url)&&Math.abs(f.at-t)<6000);
     if(near.some(f=>CORS.test(f.text)))return {match:true,abort:false,why:'CORS 실패 문장이 같은 주소에 있음: '+near.find(f=>CORS.test(f.text)).text.slice(0,120)};
@@ -62,7 +67,7 @@ export function trackNavigationAborts(page,entries,opts){
   const isAbort=(message,at)=>judge(message,at).abort===true;
   const reclassify=()=>{ if(!entries)return; for(const e of entries){
     if(!e||(e.type!=='pageerror'&&e.type!=='pageerror-navabort'))continue;
-    const j=judge(e.text,e.at);if(!j.match)continue;
+    const j=judge(e.raw||e.text,e.at);if(!j.match)continue;   /* 3.012 — 기록용 text 는 잘려 있을 수 있다(team-app 500자). 판정은 원문(raw)으로 */
     e.type=j.abort?'pageerror-navabort':'pageerror';
     if(j.abort){e.navabortPath=j.path;delete e.navabortWhy;}else{e.navabortWhy=j.why;delete e.navabortPath;}
   } };

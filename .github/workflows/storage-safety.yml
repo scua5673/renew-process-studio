@@ -44,7 +44,8 @@ jobs:
       matrix:
         engine: [chromium, webkit]
         # 2.991 — board 를 board·board2 로 나눴다(WebKit board 한 잡이 14~15분 → Netlify 의 12분 대기를 넘겼다). tests/browser/run-critical.mjs 참고.
-        group: [board, board2, identity, storage, idp]
+        # 3.012 — boardperf(보드 끌기 성능 혼자) · entry · records(CI 밖에 있던 브라우저 시험 22개)를 더했다. 묶음은 나란히 돌아 배포 대기 시간은 가장 긴 묶음 하나다.
+        group: [board, board2, boardperf, identity, storage, idp, entry, records]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
