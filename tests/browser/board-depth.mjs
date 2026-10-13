@@ -102,6 +102,50 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       resetTokenSize();const a=w();scaleAll(1.15);const b=w();scaleAll(1.15);const c=w();resetTokenSize();return {a,b,c};});
     assert.ok(Math.abs(sizes.b/sizes.a-1.25)<.04,'one step up makes the 3D chip 1.25× '+JSON.stringify(sizes));
     assert.ok(sizes.c>sizes.b*1.15,'the next step grows it again');
+    // 3.010 — name label size/style on the 3D chip · 3D options (camera · stadium · ad text, device settings) · «내 설정» presets.
+    const t3=await page.evaluate(async()=>{const out={},g=()=>tokenLayer.querySelector('[data-id="depth-b"]'),font=()=>+g().querySelector('.ps-chip-name').getAttribute('data-font');
+      __setNameSize('m');__setNameStyle('auto');const f0=font();out.pill0=!!g().querySelector('.ps-chip-namebg');
+      __setNameSize('l');out.fk=font()/f0;__setNameStyle('pill');out.pill=!!g().querySelector('.ps-chip-namebg');
+      __setNameStyle('text');out.pillText=!!g().querySelector('.ps-chip-namebg');__setNameSize('m');__setNameStyle('auto');
+      const img=()=>document.querySelector('#tiltSurface img.tilt-stadium'),xml=()=>decodeURIComponent(img().src.slice(img().src.indexOf(',')+1));
+      const row=()=>getComputedStyle(document.getElementById('tiltCamRow')).display;out.rowOn=row();
+      out.cam={};for(const c of ['low','mid','high']){__setTilt3dOpt('cam',c);out.cam[c]={ax:document.documentElement.style.getPropertyValue('--tilt-ax'),tf:getComputedStyle(svg).transform};}
+      __setTilt3dOpt('cam','mid');
+      out.deco={};for(const d of ['full','simple','grass']){__setTilt3dOpt('deco',d);const x=xml();out.deco[d]={crowd:x.includes('psStCrowd'),boards:x.includes('>PROCESS STUDIO<'),bench:x.includes('#18212a'),k:+getComputedStyle(document.documentElement).getPropertyValue('--tilt-k')};}
+      __setTilt3dOpt('deco','full');__setTilt3dOpt('ad','A<B & "C"');const ax=xml();out.adEsc=ax.includes('>A&lt;B &amp; &quot;C&quot;<')&&!ax.includes('PROCESS STUDIO');
+      try{await img().decode();out.adDecodes=true;}catch(_){out.adDecodes=false;}
+      __setTilt3dOpt('ad','');out.adBack=xml().includes('>PROCESS STUDIO<');
+      out.stored=JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'null');
+      __setTilt(false);out.rowOff=row();__setTilt(true);
+      localStorage.removeItem('ps_board_look_presets_v1');const pos=JSON.stringify(state.players.map(p=>[p.x,p.y]));
+      __setNameSize('l');out.saved=__lookPresets.save('  경기   분석 ');__setNameSize('s');
+      out.applied=__lookPresets.apply('경기 분석')&&window.__nameSize;out.samePlayers=JSON.stringify(state.players.map(p=>[p.x,p.y]))===pos;
+      out.names=__lookPresets.list().map(x=>x.name);out.removed=__lookPresets.remove('경기 분석')&&__lookPresets.list().length;__setNameSize('m');
+      return out;});
+    assert.equal(t3.pill0,false,'3D «기본» name is an outlined name');assert.ok(Math.abs(t3.fk-1.25)<.01,'«크게» = 1.25× '+t3.fk);
+    assert.equal(t3.pill,true,'«알약» puts the 3D name on a pill');assert.equal(t3.pillText,false);
+    assert.notEqual(t3.rowOn,'none','3D rows show in 3D');assert.equal(t3.rowOff,'none','3D rows hide on the flat board');
+    assert.deepEqual([t3.cam.low.ax,t3.cam.mid.ax,t3.cam.high.ax],['36deg','','12deg'],'낮게 = more oblique · 보통 = 3.009 · 높게 = from above');
+    assert.ok(new Set(Object.values(t3.cam).map(c=>c.tf)).size===3,'the camera changes the board transform');
+    assert.deepEqual([t3.deco.full.crowd,t3.deco.simple.crowd,t3.deco.grass.crowd],[true,false,false],'stands only in «전체»');
+    assert.deepEqual([t3.deco.full.boards,t3.deco.simple.boards,t3.deco.grass.boards],[true,true,false],'boards in «전체»·«간단»');
+    assert.deepEqual([t3.deco.simple.bench,t3.deco.grass.bench],[true,false]);
+    assert.ok(t3.deco.grass.k>t3.deco.full.k,'less stadium → bigger pitch '+JSON.stringify(t3.deco));
+    assert.equal(t3.adEsc,true,'ad text is escaped');assert.equal(t3.adDecodes,true,'the stadium picture still decodes');assert.equal(t3.adBack,true,'empty → PROCESS STUDIO');
+    assert.deepEqual(t3.stored,{cam:'mid',deco:'full',ad:''},'device setting');
+    assert.equal(t3.saved,true);assert.deepEqual(t3.names,['경기 분석'],'names are trimmed');assert.equal(t3.applied,'l','applying restores the saved look');
+    assert.equal(t3.samePlayers,true,'a preset never moves players');assert.equal(t3.removed,0);
+    if(viewport.width===1280){   // typing in the ad box never reaches the board's shortcuts (tool keys, delete)
+      await page.evaluate(()=>{__setTilt(true);const p=document.getElementById('cmd-board-settings-pop');if(p&&getComputedStyle(p).display==='none')__psToggleBoardSettings('toggle');p.__psSelectTab('view');});
+      await page.waitForTimeout(400);   // the panel moves focus to its tab when it opens
+      await page.click('#tiltAdInput');
+      const before=await page.evaluate(()=>{selectItem('player',state.players[0]);const i=document.getElementById('tiltAdInput');i.value='';i.focus();return [state.players.length,state.tool,document.activeElement.id];});
+      assert.equal(before[2],'tiltAdInput','the ad box takes focus in 3D');
+      await page.keyboard.type('FC v');await page.keyboard.press('Backspace');await page.keyboard.press('Delete');await page.keyboard.press('Enter');
+      const after=await page.evaluate(()=>{const r=[state.players.length,state.tool,window.__tilt3d.ad,document.activeElement.id];__setTilt3dOpt('ad','');__psToggleBoardSettings('toggle');return r;});
+      assert.deepEqual(after.slice(0,2),before.slice(0,2),'no player deleted, no tool switched '+JSON.stringify(after));
+      assert.equal(after[2],'FC ','Enter saves the text');assert.notEqual(after[3],'tiltAdInput','Enter leaves the box');
+    }
     for(const theme of ['navy','white','train']){
       const equipment=await page.evaluate(theme=>{
         __setTilt(false);state.players=[];state.ball=null;state.orientation='h';document.documentElement.dataset.pitch=theme;

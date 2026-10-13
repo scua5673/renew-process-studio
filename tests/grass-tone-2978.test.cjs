@@ -57,7 +57,7 @@ test('the tone is a per-board look setting, saved in board defaults, with the tw
   assert.match(src,/tokV:s\.tokV,grassTone:s\.grassTone,/,'a new page keeps the current tone');
   assert.match(src,/id="grassToneBSeg"[\s\S]{0,400}data-gb="ll">아주 밝게/,'brightness row');
   assert.match(src,/id="grassTonePSeg"[\s\S]{0,400}data-gp="pp">아주 연하게/,'paleness row');
-  assert.match(src,/"밝기":1,"연하기":1\}/,'rows belong to the pitch tab');
+  assert.match(src,/"밝기":1,"연하기":1[,}]/,'rows belong to the pitch tab');
   assert.match(src,/grassBright:"#grassToneBSeg",grassPale:"#grassTonePSeg"/,'shortcut cycles');
   assert.match(src,/var _pid=_gp\.id, _gfc=grassToneHex\("#1e8c4c"\)/,'thumbnail flat grass follows the tone');
 });
