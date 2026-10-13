@@ -4,14 +4,14 @@ const fs=require('fs');
 const path=require('path');
 const vm=require('vm');
 
-/* 3.013 — 커뮤니티 안의 «엘미하» 칸(사용자 «커뮤니티에 엘미하의 전술노트 넣으려고 해 · 엘미하 페이지를 또 만들어 줘 · 보관함으로 가져오기도 ·
+/* 3.015 — 커뮤니티 안의 «엘미하» 칸(사용자 «커뮤니티에 엘미하의 전술노트 넣으려고 해 · 엘미하 페이지를 또 만들어 줘 · 보관함으로 가져오기도 ·
    엘미하가 애니메이션 만든 거 공유할 수 있게 · 박수빈이라는 이름으로 만들고 있어»).
    · 새 서버 표 · 새 올리기 길이 없다 — 엘미하 계정이 «＋ 올리기»로 올린 ps_community 글을 모은다. 그래서 애니메이션 · 뷰어 · 담기는 코치 자료와 같은 길.
    · 누구의 글인지는 계정 번호(owner — RLS comm_ins 가 auth.uid() 로 지킨다)로 고른다. 표시 이름(owner_name)은 올리는 쪽이 적는 값이다. */
 const comm=fs.readFileSync(path.join(__dirname,'..','studio','community.html'),'utf8');
 function cut(src,from,to){ const a=src.indexOf(from); assert.ok(a>0,'start marker: '+from); const b=src.indexOf(to,a+from.length); assert.ok(b>a,'end marker: '+to); return src.slice(a,b); }
 const plain=o=>JSON.parse(JSON.stringify(o));
-const PURE=cut(comm,'/* ── 3.013 · 엘미하 칸 순수 구간 시작','/* ── 3.013 · 엘미하 칸 순수 구간 끝 ── */');
+const PURE=cut(comm,'/* ── 3.015 · 엘미하 칸 순수 구간 시작','/* ── 3.015 · 엘미하 칸 순수 구간 끝 ── */');
 function pure(){ const c=vm.createContext({}); vm.runInContext(PURE+';this.api={ELM_UID,ELM_MAX,elmPath,elmRead,elmSort};',c); return c.api; }
 const OTHER='22222222-2222-4222-8222-222222222222';
 
@@ -55,9 +55,9 @@ test('the head has three tabs and the elmiha tab carries the YouTube channel lin
 });
 
 test('opening, playing and putting in the vault go the coach-post way — the viewer finds an elmiha post even outside the coach feed',()=>{
-  assert.match(comm,/if\(!p\)p=elmFind\(id\);   \/\* 3\.013/,'뷰어의 «내 보관함에 담기» · 신고가 엘미하 글을 찾는다');
+  assert.match(comm,/if\(!p\)p=elmFind\(id\);   \/\* 3\.015/,'뷰어의 «내 보관함에 담기» · 신고가 엘미하 글을 찾는다');
   assert.ok(comm.indexOf('if(!p)p=elmFind(id);')<comm.indexOf('if(!p)p=procFind(id);'));
-  const body=cut(comm,'/* ── 3.013 · 엘미하 칸 순수 구간 끝 ── */','/* ══ 2.999 · 커뮤니티 안의 «프로세스» 칸 ══');
+  const body=cut(comm,'/* ── 3.015 · 엘미하 칸 순수 구간 끝 ── */','/* ══ 2.999 · 커뮤니티 안의 «프로세스» 칸 ══');
   assert.equal(/method:'(POST|PATCH|DELETE)'/.test(body),false,'엘미하 칸은 읽기만 한다(올리기 · 고치기 · 지우기는 코치 자료의 길)');
   assert.match(comm,/if\(force\)\{try\{sessionStorage\.removeItem\(FEED_CK\)\}catch\(_\)\{\}\n    elmStale\(\);\}/,'올린 · 고친 · 지운 뒤 엘미하 칸도 새로 받는다');
   assert.match(comm,/if\(seq!==elmSeq\)return;   \/\* 그사이 새로 받기 시작했다/,'늦게 온 옛 답은 버린다');
@@ -72,5 +72,5 @@ test('upload stays where it means something — on the elmiha tab only for the e
 });
 
 test('sorting on the elmiha tab re-orders right away — it does not wait for the coach feed to come back',()=>{
-  assert.match(comm,/    fetchPosts\(\);\n    if\(tabF==='elmiha'\)render\(\);   \/\* 3\.013/);
+  assert.match(comm,/    fetchPosts\(\);\n    if\(tabF==='elmiha'\)render\(\);   \/\* 3\.015/);
 });

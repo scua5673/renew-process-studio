@@ -366,7 +366,7 @@
 <div id="wrap">
   <div class="top">
     <h1>커뮤니티</h1>
-    <!-- 2.999 — 커뮤니티 안의 두 칸: 코치들이 올린 자료 | 프로세스가 만든 훈련 세션 · 3.013 — 셋째 칸: 엘미하(유튜브 «엘미하의 전술노트»)가 올린 전술 애니메이션 -->
+    <!-- 2.999 — 커뮤니티 안의 두 칸: 코치들이 올린 자료 | 프로세스가 만든 훈련 세션 · 3.015 — 셋째 칸: 엘미하(유튜브 «엘미하의 전술노트»)가 올린 전술 애니메이션 -->
     <div class="pr-seg" id="prSeg" role="group" aria-label="커뮤니티 칸"><button type="button" id="prTabCoach" data-pr-tab="coach" aria-pressed="true">코치 자료<span id="prCoachN"></span></button><button type="button" id="prTabProc" data-pr-tab="proc" aria-pressed="false">프로세스<span id="prProcN"></span></button><button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">엘미하<span id="prElmN"></span></button></div>
     <span class="sub" id="prSub">작전판·훈련·경기 분석 탐색</span>
   </div>
@@ -414,7 +414,7 @@
           </select>
         </div>
       </div>
-      <!-- 3.013 — 엘미하 칸의 머리: 유튜브 채널로 가는 길 하나 -->
+      <!-- 3.015 — 엘미하 칸의 머리: 유튜브 채널로 가는 길 하나 -->
       <div class="el-hero" id="elHero" hidden>
         <div class="el-hero-tx"><b>엘미하의 전술노트</b><span>프로세스 스튜디오로 만든 전술 애니메이션이에요. 눌러서 움직임을 보고, 내 보관함에 담아 고쳐 쓸 수 있어요.</span></div>
         <a class="el-yt" id="elYt" href="https://www.youtube.com/@ELMIHA_TacticalNote" target="_blank" rel="noopener noreferrer" aria-label="엘미하의 전술노트 유튜브 채널 — 새 탭에서 열기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>유튜브 채널</a>
@@ -597,7 +597,7 @@ function thumbImg(svg,cls){
 /* ── 상태 ── */
 var posts=[], catSel=[], ageF='', plF='', sort='new', typeF='all', searchF='', selectedPostId='', ready=false, tableMissing=false;
 var myLikes=new Set();   /* 내가 좋아요한 게시물 id */
-var tabF='coach';   /* 2.999 — 'coach' 코치 자료 | 'proc' 프로세스 훈련 세션(아래 «2.999 · 커뮤니티 안의 프로세스 칸») · 3.013 — 'elmiha' 엘미하 칸(아래 «3.013 · 엘미하 칸») */
+var tabF='coach';   /* 2.999 — 'coach' 코치 자료 | 'proc' 프로세스 훈련 세션(아래 «2.999 · 커뮤니티 안의 프로세스 칸») · 3.015 — 'elmiha' 엘미하 칸(아래 «3.015 · 엘미하 칸») */
 var COMM_FULL='id,owner,owner_name,title,summary,cat,age,players,thumb,views,copies,likes,created_at';
 var COMM_LEAN='id,owner,owner_name,title,summary,cat,age,thumb,views,copies,created_at';
 
@@ -616,7 +616,7 @@ function fetchPosts(force){
   var grid=$('grid');
   if(!b){grid.innerHTML='<div class="empty"><b>커뮤니티에 연결할 수 없어요</b>네트워크 연결을 확인해 주세요.</div>';return;}
   if(force){try{sessionStorage.removeItem(FEED_CK)}catch(_){}
-    elmStale();}   /* 3.013 — 올리기·고치기·지우기 뒤에는 엘미하 칸도 새로 받는다 */
+    elmStale();}   /* 3.015 — 올리기·고치기·지우기 뒤에는 엘미하 칸도 새로 받는다 */
   else{
     try{var c=JSON.parse(sessionStorage.getItem(FEED_CK)||'null');
       if(c&&c.sort===sort&&Array.isArray(c.posts)&&Date.now()-c.at<FEED_TTL){posts=c.posts;ready=true;fetchMyLikes().then(render);return;}
@@ -638,7 +638,7 @@ function fetchPosts(force){
     if(!r.ok)throw r.status; return r.json();
   }).then(done)
   .catch(function(code){
-    if(tabF!=='coach')return;   /* 2.999 — 프로세스(3.013 · 엘미하) 칸을 보는 중이면 그 위에 그리지 않는다(코치 자료로 돌아오면 다시 받는다) */
+    if(tabF!=='coach')return;   /* 2.999 — 프로세스(3.015 · 엘미하) 칸을 보는 중이면 그 위에 그리지 않는다(코치 자료로 돌아오면 다시 받는다) */
     /* 2.068 — "불러오지 못했어요" 한 줄로는 사용자도 우리도 원인을 알 수 없었다(2026-08-20 백엔드 무응답 사고).
        원인을 이름으로 부르고, 다시 시도를 준다. 브라우저는 CORS 헤더 없는 오류 페이지(예: Cloudflare 522)를
        거절로 돌려줘 상태 코드를 못 읽는다 — 그때는 navigator.onLine 으로 내 인터넷과 서버를 가른다. */
@@ -692,7 +692,7 @@ function catBadges(catStr){
 function render(){
   prCounts();
   if(tabF==='proc'){renderProc();return;}
-  var elmTab=(tabF==='elmiha');   /* 3.013 — 엘미하 칸은 코치 자료와 같은 카드·고르개·미리보기·뷰어를 쓴다. 목록만 엘미하 계정의 글 */
+  var elmTab=(tabF==='elmiha');   /* 3.015 — 엘미하 칸은 코치 자료와 같은 카드·고르개·미리보기·뷰어를 쓴다. 목록만 엘미하 계정의 글 */
   var grid=$('grid');grid.innerHTML='';
   if(elmTab){ elmOwnerMark(); if(!elm.ready||!elm.list.length){elmWait(grid);renderPreview(null);return;} }
   else if(tableMissing){
@@ -1064,7 +1064,7 @@ window.addEventListener('message',function(e){
 window.__commAction=function(act,id,extra){
   extra=extra||{};
   var p=null; for(var i=0;i<posts.length;i++)if(posts[i].id===id){p=posts[i];break;}
-  if(!p)p=elmFind(id);   /* 3.013 — 엘미하 글은 코치 자료 최신 100개 밖에 있을 수 있다 */
+  if(!p)p=elmFind(id);   /* 3.015 — 엘미하 글은 코치 자료 최신 100개 밖에 있을 수 있다 */
   if(act==='update'){
     var meU=sess(); if(!meU||!meU.at){toast('로그인이 필요해요');return;}
     var src=extra.item||{}, item={}; __pubNames=[];   /* 2.668 */
@@ -1534,7 +1534,7 @@ $('sortSel').onchange=function(){sort=this.value;fetchPosts();};
     sort=b.getAttribute('data-sort-nav')||'new';$('sortSel').value=sort;
     [].forEach.call(document.querySelectorAll('[data-sort-nav]'),function(x){x.classList.toggle('on',x===b);});
     fetchPosts();
-    if(tabF==='elmiha')render();   /* 3.013 — 엘미하 칸은 받은 목록을 여기서 바로 다시 줄 세운다(코치 자료를 다시 받는 것과 상관없이) */
+    if(tabF==='elmiha')render();   /* 3.015 — 엘미하 칸은 받은 목록을 여기서 바로 다시 줄 세운다(코치 자료를 다시 받는 것과 상관없이) */
   };
 });
 [].forEach.call(document.querySelectorAll('[data-type-nav]'),function(b){
@@ -1544,7 +1544,7 @@ $('sortSel').onchange=function(){sort=this.value;fetchPosts();};
     render();
   };
 });
-/* ══ 3.013 · 커뮤니티 안의 «엘미하» 칸 ══
+/* ══ 3.015 · 커뮤니티 안의 «엘미하» 칸 ══
    사용자 «프로세스 스튜디오 앱 커뮤니티에 엘미하의 전술노트(유튜브 @ELMIHA_TacticalNote) 넣으려고 해 · 지금 프로세스 스튜디오로 콘텐츠를 만들고 있어»
    → «엘미하 페이지를 또 만들어 줘 · 보관함으로 가져오기도 · 엘미하가 애니메이션 만든 거 공유할 수 있게 · 박수빈이라는 이름으로 만들고 있어».
    · 새 서버 표도 새 올리기 길도 없다. 엘미하 계정(박수빈)이 지금처럼 «＋ 올리기»로 올린 커뮤니티 글(ps_community)을 이 칸에 모은다.
@@ -1552,7 +1552,7 @@ $('sortSel').onchange=function(){sort=this.value;fetchPosts();};
    · 누구의 글인지는 표시 이름(owner_name — 올리는 쪽이 적는 값)이 아니라 계정 번호(owner — 서버 RLS comm_ins 가 auth.uid() 로 지킨다)로 고른다.
      이름으로 고르면 누구든 같은 이름을 적어 이 칸에 글을 끼워 넣을 수 있다.
    · 엘미하 글은 코치 자료 칸에도 그대로 보인다(코치 자료 = 모든 코치의 글). «올리기»는 엘미하 계정으로 볼 때만 이 칸에 있다. ══ */
-/* ── 3.013 · 엘미하 칸 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
+/* ── 3.015 · 엘미하 칸 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
 var ELM_UID='33a9d4e2-1868-40f4-8f82-3ebb4ecf011e',ELM_MAX=200;
 function elmPath(cols){ return '/rest/v1/ps_community?select='+cols+'&owner=eq.'+ELM_UID+'&deleted=eq.false&order=created_at.desc&limit='+ELM_MAX; }
 /* 서버 답 → 엘미하 계정의 글만. 서버가 owner 로 걸러 주지만 받는 쪽에서도 한 번 더 본다(다른 계정 글 · 모양이 다른 줄 · 같은 글 두 번은 버린다). */
@@ -1570,7 +1570,7 @@ function elmSort(list,k){
   if(k==='views'||k==='likes'||k==='copies')a.sort(function(x,y){ return ((+y.p[k]||0)-(+x.p[k]||0))||(x.i-y.i); });
   return a.map(function(o){ return o.p; });
 }
-/* ── 3.013 · 엘미하 칸 순수 구간 끝 ── */
+/* ── 3.015 · 엘미하 칸 순수 구간 끝 ── */
 var elm={ready:false,loading:false,err:'',at:0,list:[]},elmSeq=0;
 var ELM_CK='ps_comm_elmiha_v1',ELM_TTL=60000;   /* 코치 자료 피드와 같은 60초 */
 function elmFind(id){ if(typeof id!=='string')return null; for(var i=0;i<elm.list.length;i++)if(elm.list[i].id===id)return elm.list[i]; return null; }
@@ -1695,7 +1695,7 @@ function prCounts(){
   var a=$('prCoachN'),b=$('prProcN');
   if(a)a.textContent=(ready&&!tableMissing&&posts.length)?(posts.length>=100?'100+':String(posts.length)):'';
   if(b)b.textContent=proc.ready?String(proc.list.length):'';
-  var e=$('prElmN');   /* 3.013 — 엘미하 칸: 글이 있을 때만 */
+  var e=$('prElmN');   /* 3.015 — 엘미하 칸: 글이 있을 때만 */
   if(e)e.textContent=(elm.ready&&elm.list.length)?String(elm.list.length):'';
 }
 function procSet(list,at,src){
@@ -1835,14 +1835,14 @@ function procSetTab(t){
   var sub=$('prSub'); if(sub)sub.textContent=(t==='proc')?'프로세스가 만든 훈련 세션':(t==='elmiha')?'엘미하가 만든 전술 애니메이션':'작전판·훈련·경기 분석 탐색';
   var lb=$('prCatLb'); if(lb)lb.textContent=(t==='proc')?'세션 주제':'훈련 주제';
   var q=$('commSearch'); if(q)q.placeholder=(t==='proc')?'세션·훈련 이름 검색':(t==='elmiha')?'제목·내용 검색':'제목·작성자·내용 검색';
-  var hero=$('elHero'); if(hero)hero.hidden=(t!=='elmiha');   /* 3.013 */
+  var hero=$('elHero'); if(hero)hero.hidden=(t!=='elmiha');   /* 3.015 */
   try{upMenuClose();}catch(_){}
   try{var fs=$('commFiltSheet'); if(fs)fs.hidden=true;}catch(_){}
   selectedPostId=''; procOpenSeq++;
   catChipsRender();
   if(t==='proc'){ if(!proc.ready)procFetch(); else if(Date.now()-proc.at>PROC_TTL)procFetch(true);   /* 오래 열어 둔 탭 — 새 세션이 실렸는지 다시 본다(받는 동안·실패해도 지금 목록은 그대로) */
     renderProc(); }
-  else if(t==='elmiha'){ if(!elm.ready)elmFetch(); else if(Date.now()-elm.at>ELM_TTL)elmFetch(true);   /* 3.013 — 받는 동안 · 실패해도 지금 목록은 그대로 */
+  else if(t==='elmiha'){ if(!elm.ready)elmFetch(); else if(Date.now()-elm.at>ELM_TTL)elmFetch(true);   /* 3.015 — 받는 동안 · 실패해도 지금 목록은 그대로 */
     render(); }
   else if(!ready&&!tableMissing)fetchPosts(); else render();
   try{window.scrollTo(0,0);}catch(_){}
@@ -1853,7 +1853,7 @@ $('prSeg').addEventListener('click',function(e){ var b=e.target.closest('[data-p
   var done=false;
   function seen(){ try{ return window.innerWidth>0&&window.innerHeight>0; }catch(_){ return true; } }
   function go(){ if(done||!seen())return; done=true; try{window.removeEventListener('resize',go);}catch(_){}
-    setTimeout(function(){ if(!proc.ready)procFetch(); if(!elm.ready)elmFetch(); },800); }   /* 3.013 — 엘미하 칸의 개수도 */
+    setTimeout(function(){ if(!proc.ready)procFetch(); if(!elm.ready)elmFetch(); },800); }   /* 3.015 — 엘미하 칸의 개수도 */
   go(); if(!done)window.addEventListener('resize',go);
 })();
 (function(){
@@ -2033,7 +2033,7 @@ html body.pr-proc .comm-list .grid:not(#_):not(#__){display:grid!important;grid-
 @media (max-width:560px){
 html body .top:not(#_):not(#__){flex-wrap:wrap;height:auto;min-height:52px;row-gap:6px;padding-top:6px;padding-bottom:6px}
 html body .top #commSearch:not(#_):not(#__){flex:1 1 0!important;width:0!important;min-width:0!important}   /* 줄바꿈을 켜면 입력 칸의 제 폭이 한 줄을 다 차지한다 — 남는 폭만 쓰게 */
-html body .top .pr-seg:not(#_):not(#__){order:9;flex:1 0 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}   /* 3.013 — 칸 셋 */
+html body .top .pr-seg:not(#_):not(#__){order:9;flex:1 0 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}   /* 3.015 — 칸 셋 */
 html body .top .pr-seg button:not(#_):not(#__){height:36px;padding:0 8px}
 html body.pr-proc .comm-list .grid:not(#_):not(#__){grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
 .pr-tt{font-size:16px}
@@ -2044,7 +2044,7 @@ html body.pr-proc .comm-list .grid:not(#_):not(#__){grid-template-columns:minmax
 .pr-cvtabs .pr-mn{grid-area:mn}
 .pr-cvtabs .pr-nm{grid-area:nm;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
 }
-/* ══ 3.013 · «엘미하» 칸 — 카드·고르개·미리보기는 코치 자료 그대로, 머리에 유튜브 채널로 가는 띠 하나 ══
+/* ══ 3.015 · «엘미하» 칸 — 카드·고르개·미리보기는 코치 자료 그대로, 머리에 유튜브 채널로 가는 띠 하나 ══
    같은 새 블록 기준(2.979). «올리기»는 엘미하 계정으로 볼 때만(다른 코치가 여기서 올리면 코치 자료로 간다 — 헷갈린다). */
 html body.pr-elm:not(.pr-elm-own) .fab:not(#_):not(#__),html body.pr-elm:not(.pr-elm-own) #upMenu:not(#_):not(#__){display:none!important}
 .el-hero{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 14px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff)}

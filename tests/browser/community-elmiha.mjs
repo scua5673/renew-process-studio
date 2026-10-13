@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
-// 3.013 — 커뮤니티 안의 «엘미하» 칸(사용자 «엘미하 페이지를 또 만들어 줘 · 보관함으로 가져오기도 · 엘미하가 애니메이션 만든 거 공유할 수 있게»).
+// 3.015 — 커뮤니티 안의 «엘미하» 칸(사용자 «엘미하 페이지를 또 만들어 줘 · 보관함으로 가져오기도 · 엘미하가 애니메이션 만든 거 공유할 수 있게»).
 // 엘미하 계정이 «＋ 올리기»로 올린 커뮤니티 글을 계정 번호로 모은다. 카드 → 읽기 전용 뷰어(애니메이션 재생) → «내 보관함에 담기»는 코치 글과 같은 길.
 // 합성 팀 fixture 에서만 돈다(서버 답은 아래 route 가 흉내 낸다).
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
