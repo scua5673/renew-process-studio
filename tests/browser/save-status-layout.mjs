@@ -99,6 +99,10 @@ try{
         libTouch();setView('session');
       },UID);
       await frame.locator('.vcard').nth(30).waitFor({state:'attached'});
+      /* 3.011 — 보관함을 처음 열면 예시 다섯이 한 번 담기고(board.html vxSeedRun · 표식 ps_vault_px_v1) 목록을 다시 그린다. 위 합성 자료의 savedAt(1~60)이
+         예시 날짜(2026-01-01)보다 옛날이라 예시가 맨 위로 들어와 카드가 43.6px 내려간다 — WebKit 에서는 그게 첫 측정 뒤에 와서
+         «상태 줄이 목록을 움직였다»로 잘못 잡혔다(PR #374, 393px off). 예시가 담기고 다시 그려진 뒤에 잰다. */
+      await page.waitForFunction(uid=>{try{return Object.keys(JSON.parse(localStorage.getItem('ps_vault_px_v1')||'{}')).some(k=>k.startsWith(uid+'|'));}catch(_){return false;}},UID);
       await page.waitForTimeout(700);
       const states=[
         ['off',{kind:'off'}],['busy',{kind:'busy',n:1}],['ok',{kind:'ok',at:100,n:0}],
