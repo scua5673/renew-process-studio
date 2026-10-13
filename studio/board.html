@@ -3406,6 +3406,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
                ⚠ 다만 UI 를 없애면 **켜 둔 사람이 끌 수가 없다.** 그래서 부팅에서 강제로 끈다(아래 10329 근처). -->
 <!-- 유니폼(팀 색) 행 제거 — 팀 색 문은 팀 칩 재탭 팝오버(2.458). 옛 vmCol* 핸들러는 2.475 에서 철거 -->
           <div class="menurow"><span class="menulbl">표시</span><div class="seg" id="labelSeg"><button data-l="pos">포지션</button><button data-l="fpos" title="풋살 포지션 GK·FIX·ALA·PIV">풋살</button><button data-l="num" class="on">번호</button><button data-l="none">없음</button></div></div>
+          <div class="menurow"><span class="menulbl">이름표</span><div class="seg" id="namePosSeg" role="group" aria-label="선수 이름표 위치"><button type="button" data-np="below" class="on" aria-pressed="true">아래</button><button type="button" data-np="above" aria-pressed="false" title="선수 이름을 토큰 머리 위에">위</button></div></div><!-- 3.009 -->
           <div class="menurow"><span class="menulbl">라인</span><div class="seg" id="lineSeg"><button data-ln="on" class="on">표시</button><button data-ln="off">숨김</button></div></div>
           <div class="menurow"><span class="menulbl">그리드</span><div class="seg" id="gridSeg"><button data-g="off">끄기</button><button data-g="lanes">5레인</button><button data-g="grid">격자</button><button data-g="zone20">20존</button><button data-g="thirds">삼등분</button><button data-g="fthird">파이널 써드</button><button data-g="grid15" class="on">15존</button></div></div>
 <!-- 압박선·세트피스 행 제거 -->
@@ -4906,7 +4907,7 @@ const SHIRT_ACC="M -7.5 -19.6 Q 0 -12.6 7.5 -19.6 M -22.2 -13.6 L -18.9 -5.2 M 2
    ③ 애니메이션 장면·편집기 장면은 한 보드다 — 장면을 바꾸기 전·저장 직전에 지금 설정을 모든 장면에 맞춘다(lookStampScenes).
    ⚠ 기기 설정으로 남는 것: 끌기 자석·보드 보기(평면/3D)·정렬 간격 — 보드가 아니라 «내가 일하는 방식»이다.
    ⚠ 함수 선언만 둔다(호이스팅) — 4327·4740 의 부팅 초기값이 이 블록보다 먼저 실행된다. */
-function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone"];}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» */
+function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos"];}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» */
 function _lookLegacy(){
   if(_lookLegacy._v)return _lookLegacy._v;
   var v=null; try{ v=JSON.parse(localStorage.getItem("cs_board_lookdef_v1")||"null"); }catch(_){ v=null; }
@@ -4928,14 +4929,15 @@ function _lookDefSnap(){ var raw=null; try{ raw=localStorage.getItem("cs_board_d
   if(raw!==_lookDefSnap._raw){ _lookDefSnap._raw=raw; _lookDefSnap._v=null; try{ var d=raw?JSON.parse(raw):null; _lookDefSnap._v=(d&&(d.snap||d))||null; }catch(_){} }
   return _lookDefSnap._v; }
 function _lookCode(k){ switch(k){ case "tokShape":return "circle"; case "label":return "num"; case "lines":return true; case "gridType":return "grid15";
-  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; } return null; }
+  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; case "namePos":return "below"; } return null; }
 function _lookOk(k,v){ if(v===undefined||v===null)return false;
   switch(k){ case "tokShape":return v==="shirt"||v==="circle"||v==="shaper";
     case "label":case "gridType":case "trainGridM":return typeof v==="string";
     case "lines":case "chip3d":return typeof v==="boolean";
     case "tokenScale":return +v>0; case "grassM":return typeof v==="number"&&isFinite(v)&&v>=0;
     case "ballStyle":try{ return !!BALL_SVG_INNER[v]; }catch(_){ return typeof v==="string"; }
-    case "grassTone":return typeof v==="string"&&/^(d|0|l|ll)\|(v|0|p|pp)$/.test(v); }
+    case "grassTone":return typeof v==="string"&&/^(d|0|l|ll)\|(v|0|p|pp)$/.test(v);
+    case "namePos":return v==="below"||v==="above"; }
   return true; }
 /* 2.977 — 예전 기본 크기 그대로인 보드(코치가 크기를 안 바꾼 보드)는 새 기본으로 옮겨 읽는다 — 저장본은 고치지 않는다(다음 저장 때 새 값으로).
    «＋» 로 키운 보드는 그대로. 이 판부터 저장하는 스냅엔 tokV:2 가 붙는다 — 새 기본에서 «＋» 두 번 = 예전 기본 값이라
@@ -4954,6 +4956,7 @@ function lookNow(){ var o={};
   o.trainGridM=window.__trainGridM||"def";
   try{ o.ballStyle=curBallStyle; }catch(_){ o.ballStyle=lookDefault("ballStyle"); }
   o.grassTone=window.__grassTone;   /* 2.978 */
+  o.namePos=window.__namePos;   /* 3.009 — 이름표 위치 */
   var r={}; lookKeys().forEach(function(k){ r[k]=_lookOk(k,o[k])?o[k]:lookDefault(k); }); r.tokV=2; return r; }   /* 2.977 — 이 판부터의 크기(저장·장면 맞추기에 같이 실린다) */
 /* 스냅의 설정 — 없는 칸은 기본값(지금 화면 아님) */
 function lookOf(sn){ var r={}; lookKeys().forEach(function(k){ var v=sn?sn[k]:undefined; if(k==="tokenScale"&&_lookOk(k,v))v=_tokMig(v,sn); r[k]=_lookOk(k,v)?v:lookDefault(k); }); return r; }
@@ -4966,6 +4969,7 @@ function lookApply(o){ var ch={};
   if((window.__trainGridM||"def")!==o.trainGridM){ window.__trainGridM=o.trainGridM; ch.train=true; }
   try{ curBallStyle=o.ballStyle; }catch(_){}
   if((window.__grassTone||"0|0")!==o.grassTone){ window.__grassTone=o.grassTone; ch.tone=true; }
+  window.__namePos=o.namePos;   /* 3.009 */
   return ch; }
 function lookRebuild(ch){ ch=ch||{};
   try{ if(ch.train&&document.documentElement.dataset.pitch==="train"){ buildPitch(); renderTokens(); renderDrawings(); updateDelUI(); }
@@ -4974,6 +4978,7 @@ function lookRebuild(ch){ ch=ch||{};
 function lookSyncUI(){
   try{ window.__syncShapeSeg&&window.__syncShapeSeg(); }catch(_){}
   try{ window.__syncChip3dSeg&&window.__syncChip3dSeg(); }catch(_){}
+  try{ window.__syncNamePosSeg&&window.__syncNamePosSeg(); }catch(_){}   /* 3.009 */
   try{ window.__syncStageUI&&window.__syncStageUI(); }catch(_){}
   try{ window.__syncTrainGridSeg&&window.__syncTrainGridSeg(); }catch(_){}
   try{ window.__syncGrassToneUI&&window.__syncGrassToneUI(); }catch(_){}
@@ -5206,7 +5211,7 @@ function makeToken(p,kind){
     if(!p.img){t.textContent=lab;g.appendChild(t);}
     if(p.name&&!p.img){
       const nmStr=p.name;let w=16;for(const ch of nmStr){w+=(ch.charCodeAt(0)>0x2000?18.5:11.2);}
-      const h=27,yy=_shaperOn(p)?60:48;   /* 2.986 — 쉐이퍼 부리(끝 46)가 아래를 볼 때 이름표에 가리지 않게 */
+      const h=27,_up=(window.__namePos==="above"),yy=(_up?-1:1)*(_shaperOn(p)?60:48);   /* 2.986 — 쉐이퍼 부리(끝 46)가 아래를 볼 때 이름표에 가리지 않게 · 3.009 — 이름표 위치 «위»면 머리 위로(보드마다 · 사용자) */
       g.appendChild(el("rect",{x:-w/2,y:yy-h/2,width:w,height:h,rx:9,fill:"rgba(18,22,30,.88)"}));
       const nm=el("text",{x:0,y:yy+0.5,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff",
         "font-size":"18","font-weight":"700","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif"});
@@ -6243,6 +6248,16 @@ function _setChip3d(){ if(!tokenLayer)return;
   window.__setChip3d=function(on){ _lookFreeze(); window.__chip3d=!!on; try{_setChip3d();}catch(_){} sync(); try{boardSaveLive();}catch(_){} };   /* 2.929 — 이 보드에만 */
   window.__syncChip3dSeg=sync;
   document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest("#chip3dSeg button[data-c3]"); if(!b)return; e.stopPropagation(); window.__setChip3d(b.getAttribute("data-c3")==="1"); },true);
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync); else sync();
+}catch(_){} })();
+/* ══ 3.009 · 이름표 위치(사용자 «선수 이름 넣었을 때 토큰 머리 위로 올릴 수도 있게») — 보드마다(겉모습 설정 namePos).
+   «아래»가 지금까지의 자리. 3D 보기의 칩은 원래 이름이 머리 위라 이 설정과 상관없다. 사진·영상 내보내기도 같은 자리. ══ */
+(function(){ try{
+  try{ window.__namePos=lookDefault("namePos"); }catch(_){ window.__namePos="below"; }
+  function sync(){ document.querySelectorAll("#namePosSeg button").forEach(function(b){ var on=b.getAttribute("data-np")===(window.__namePos||"below"); b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); }); }
+  window.__setNamePos=function(v){ if(v!=="below"&&v!=="above")return; _lookFreeze(); window.__namePos=v; try{renderTokens();}catch(_){} sync(); try{boardSaveLive();}catch(_){} };
+  window.__syncNamePosSeg=sync;
+  document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest("#namePosSeg button[data-np]"); if(!b)return; e.stopPropagation(); window.__setNamePos(b.getAttribute("data-np")); },true);
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",sync); else sync();
 }catch(_){} })();
 function _ringTargets(){ var a=[];
@@ -7516,7 +7531,7 @@ function boardDefaultSnap(src){
     pitchView:src.pitchView||((src.area||"full")==="half"?"half":"full"),pvSide:src.pvSide==="opp"?"opp":"own",fieldMode:src.fieldMode||"standard",halfSide:src.halfSide||"L",
     gridType:src.gridType,label:src.label,lines:src.lines,spFlip:!!src.spFlip,tokenScale:src.tokenScale,pitchN:1,
     pitchImg:src.pitchImg||null,pitchTheme:src.pitchTheme||"",pitchCustom:src.pitchCustom||null,matchNote:"",press:null,spMarks:null,spMark:null,
-    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
+    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone,namePos:src.namePos};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
 }
 function boardDefaultRead(){try{var raw=localStorage.getItem(BOARD_DEFAULT_KEY);if(!raw)return null;var data=JSON.parse(raw);var snap=data&&(data.snap||data);return snap?boardDefaultSnap(snap):null;}catch(_){return null;}}
 function boardDefaultSave(){
@@ -19917,7 +19932,7 @@ try{ var _nb=document.getElementById('dfNew');
     return {pitchSpec:s.pitchSpec,orientation:s.orientation,area:s.area,pitchView:s.pitchView,pvSide:s.pvSide,gridType:s.gridType,label:s.label,lines:s.lines,spFlip:s.spFlip,
       tokenScale:s.tokenScale,pitchN:s.pitchN,teamColors:s.teamColors,teamColor2:s.teamColor2,teamPattern:s.teamPattern,
       teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,pitchTheme:s.pitchTheme,pitchCustom:s.pitchCustom,customImages:s.customImages,
-      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
+      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};
   }
   function loadIdx(i){ try{ window.loadSnap(pages[i].snap||{}); window.renderTokens&&window.renderTokens(); window.renderDrawings&&window.renderDrawings(); window.updateDelUI&&window.updateDelUI(); }catch(_){}

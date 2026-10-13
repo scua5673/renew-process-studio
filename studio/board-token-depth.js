@@ -106,7 +106,10 @@
   // 3.009 — 3D chips (stadium view): the token's own shape — shirt, disc or shaper — extruded with
   // team-colour sides, a glossy top, its number, and the player's name above it. The flat token is
   // kept hidden inside, so flatten() gives pictures, thumbnails and exports the ordinary token back.
-  var CHIP_R = 21, CHIP_H = 8, CHIP_SCALE = 1.45, BEAK = 46, BEAK_W = 34;
+  var CHIP_R = 21, CHIP_H = 8, CHIP_SCALE = 1, BEAK = 46, BEAK_W = 34;
+  // At the board's default (smallest) size a 3D chip's radius is 1.2% of the pitch length (diameter ≈ 2.5 m on
+  // 11-a-side) and its name 1.35%. 3.009 first used 1.7% — «the smallest size is too big» (user); the name keeps its size.
+  var CHIP_BASE = .012, NAME_BASE = .0135;
   var SHIRT = 'M -8 -20 C -10.5 -20 -13.8 -19.3 -16.5 -18.2 L -23 -14.3 L -19.3 -4.6 L -14.6 -7.2 L -14.6 16.5 Q -14.6 20.5 -10.6 20.5 L 10.6 20.5 Q 14.6 20.5 14.6 16.5 L 14.6 -7.2 L 19.3 -4.6 L 23 -14.3 L 16.5 -18.2 C 13.8 -19.3 10.5 -20 8 -20 Q 0 -12.6 -8 -20 Z';
   // Shaper body: the disc and its beak as one teardrop, pointing along +x (the board's _shaperGeom, token units).
   var TEAR = (function () {
@@ -143,14 +146,14 @@
     return (r ? 'rotate(' + (-r) + ') ' : '') + 'scale(' + k + ')';
   }
   // opts.unit = the token's own scale on the board, opts.pitch = pitch length in board units,
-  // opts.ref = the token scale at the board's default size. Desktop tokens are small on a flat board;
-  // at the default size a 3D chip is 1.7% of the pitch length (radius) and its name 1.35%, so both
-  // stay readable — and the board's size steps (and a player's own size) scale the chip from there.
+  // opts.ref = the token scale at the board's default size. The default size is set against the pitch
+  // (CHIP_BASE, NAME_BASE) so it reads the same on every screen; the board's size steps and a player's own
+  // size scale the chip from there. Never smaller than the flat token (phones already use bigger tokens).
   function chipSize(opts) {
     var unit = opts && +opts.unit > 0 ? +opts.unit : 1, pitch = opts && +opts.pitch > 0 ? +opts.pitch : 0;
     var ref = opts && +opts.ref > 0 ? +opts.ref : unit;
-    var k = Math.min(3.2, Math.max(CHIP_SCALE, pitch * .017 / (CHIP_R * ref)));
-    return { k: Math.round(k * 1000) / 1000, font: Math.max(15, pitch * .0135 / (ref * k)) };
+    var k = Math.min(3.2, Math.max(CHIP_SCALE, pitch * CHIP_BASE / (CHIP_R * ref)));
+    return { k: Math.round(k * 1000) / 1000, font: Math.max(15, pitch * NAME_BASE / (ref * k)) };
   }
   function outline(doc, kind, attrs) {
     return kind === 'circle' ? node(doc, 'circle', Object.assign({ r: CHIP_R }, attrs)) : node(doc, 'path', Object.assign({ d: kind === 'shirt' ? SHIRT : TEAR }, attrs));
