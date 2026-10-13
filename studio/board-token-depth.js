@@ -103,7 +103,7 @@
     original.querySelectorAll('.tok-hit,.tok-lock').forEach(function(n){face.appendChild(n.cloneNode(true));});
     token.appendChild(face);token.setAttribute('data-depth','1');token.setAttribute('data-depth-equipment',item.team);
   }
-  // 3.008 — stadium chip (broadcast 3D view): a white puck with the team shirt on top and the
+  // 3.009 — stadium chip (broadcast 3D view): a white puck with the team shirt on top and the
   // player's name above it, like a match-engine replay. The flat token is kept hidden inside, so
   // flatten() gives pictures, thumbnails and exports the ordinary token back.
   var CHIP_R = 21, CHIP_H = 8, CHIP_SCALE = 1.45;
@@ -203,7 +203,7 @@
     while (token.firstChild) face.appendChild(token.firstChild);
     var body = node(doc, 'g', { 'class': 'ps-depth-decoration', 'pointer-events': 'none', 'aria-hidden': 'true' });
     body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 4, rx: player ? 26 : 17, ry: player ? 18 : 11, fill: '#000', opacity: ball ? '.34' : '.24' }));
-    // 3.008 — a ball floats over its shadow; photo chips get the same white puck side as the stadium chip.
+    // 3.009 — a ball floats over its shadow; photo chips get the same white puck side as the stadium chip.
     for (var z = 0; !ball && z <= height; z += 2) {
       var d = elevation(item.rot, z), side = shape ? shape.cloneNode(false) : node(doc, 'ellipse', { rx: 14, ry: 10 });
       side.removeAttribute('id'); side.removeAttribute('class');

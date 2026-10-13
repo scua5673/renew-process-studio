@@ -2978,7 +2978,7 @@ body.bc-tilt3d #boardStage{perspective:1250px;perspective-origin:50% 24%;overflo
    `--tilt-k`(맞춤 배율)·`--tilt-ty`(맞춤 이동)는 기본값이 예전 값이라, JS 가 못 돌아도 예전과 같이 보인다.
    ⚠ translateY 를 **맨 앞**에 두는 이유: transform 은 오른쪽부터 적용되므로 맨 앞이 마지막 —
       그래야 이동량이 화면 px 과 1:1 로 맞아 계산이 단순해진다. 순서를 바꾸지 말 것. */
-body.bc-tilt3d svg#board,body.bc-tilt3d #tiltGoals{transform:var(--tilt-tf);transform-origin:50% 55%;transition:none}   /* 2.275 — 하단 도크 침범 방지(사용자): -30px 들어올림 + 세로 1.52→1.44 · 3.008 — 카메라는 아래 ps-3008-stadium 의 --tilt-tf 한 곳 */
+body.bc-tilt3d svg#board,body.bc-tilt3d #tiltGoals{transform:var(--tilt-tf);transform-origin:50% 55%;transition:none}   /* 2.275 — 하단 도크 침범 방지(사용자): -30px 들어올림 + 세로 1.52→1.44 · 3.009 — 카메라는 아래 ps-3009-stadium 의 --tilt-tf 한 곳 */
 /* ══ 2.372 · 원근 뷰의 여백을 경기장으로(사용자 "관중석이나 전광판으로 채워져") ═══════
    2.370 이 기울인 운동장을 틀 안에 맞추면서 둘레에 여백이 생겼다. 그 여백이 그냥 빈 바닥이면
    운동장이 공중에 떠 있는 것처럼 보인다. 관중석과 전광판으로 채우면 **여백이 배경이 된다.**
@@ -3087,8 +3087,8 @@ body.bc-tilt3d #board #world>rect:not([id]),body.bc-tilt3d #board .grass-stripes
 #tiltGoals .goal-side{clip-path:polygon(0 0,100% 35%,100% 100%,0 100%)}
 #tiltGoals .goal-front{border:2px solid var(--goal-post);border-bottom:0;background:none}
 </style>
-<style id="ps-3008-stadium">
-/* ══ 3.008 · 입체 보기 = 경기장 중계 화면(사용자 FMStadio 레퍼런스 «이런 식으로 만들고 싶어») ══════════
+<style id="ps-3009-stadium">
+/* ══ 3.009 · 입체 보기 = 경기장 중계 화면(사용자 FMStadio 레퍼런스 «이런 식으로 만들고 싶어») ══════════
    ① 카메라를 거의 위에서 내려다보게(38°→24°, 세로 보정 1.44→1.08) — 운동장이 납작하지 않고 실제 비율에 가깝게.
    ② 운동장 둘레를 실제 경기장으로(사용자 «실제 경기장과 가장 비슷하게» — 바둑판 잔디는 뺐다):
       실사 잔디(잔디결 5m) → LED 광고판 → 벤치·테크니컬 에어리어 → 관중이 찬 관중석(계단·층 통로·LED 띠) → 지붕(트러스·조명등).
@@ -4825,7 +4825,7 @@ function applyView(){
   /* 확장 모드에서는 SVG와 viewBox 모두 가운데 정렬 — 잔디 카드와 축구 라인의 중심을 일치시킨다. */
   try{ var _stg=svg&&svg.parentElement; if(_abH>0){ if(_vbExt){ if(svg.style.height)svg.style.height=""; svg.setAttribute("preserveAspectRatio","xMidYMid meet"); } else { svg.style.height="calc(100% - "+_abH+"px)"; svg.setAttribute("preserveAspectRatio","xMidYMax meet"); } svg.style.background="var(--pitchbg,#1b8044)"; if(_stg){_stg.style.alignItems="flex-start";_stg.style.background="var(--pitchbg,#1b8044)";} } else { if(svg.style.height)svg.style.height=""; if(svg.style.background)svg.style.background=""; var _par=svg.getAttribute("preserveAspectRatio"); if(_par==="xMidYMax meet"||_par==="xMidYMin meet"||_par==="xMidYMid meet")svg.removeAttribute("preserveAspectRatio"); if(_stg){if(_stg.style.alignItems==="flex-start")_stg.style.alignItems="";if(_stg.style.background)_stg.style.background="";} } }catch(_){ if(svg.style.height)svg.style.height=""; }   /* 확장 모드: SVG 전체 높이 + 대칭 viewBox → 위·아래 잔디 여백도 작업 가능 */
   try{if(typeof renderPitchImg==="function")renderPitchImg();}catch(_){}
-  try{if(window.__psWmPlace)window.__psWmPlace();if(document.body.classList.contains("bc-tilt3d")){if(window.tiltGoalsSync)window.tiltGoalsSync();var _tvb=state.orientation+"|"+(svg.getAttribute("viewBox")||"");if(window.__tiltOrientation!==_tvb){window.__tiltOrientation=_tvb;requestAnimationFrame(function(){if(window.__tiltFit)window.__tiltFit();});}}}catch(_){}   /* 3.008 — 틀 맞춤이 viewBox 를 재므로 보기 범위가 바뀌어도 다시 맞춘다 */
+  try{if(window.__psWmPlace)window.__psWmPlace();if(document.body.classList.contains("bc-tilt3d")){if(window.tiltGoalsSync)window.tiltGoalsSync();var _tvb=state.orientation+"|"+(svg.getAttribute("viewBox")||"");if(window.__tiltOrientation!==_tvb){window.__tiltOrientation=_tvb;requestAnimationFrame(function(){if(window.__tiltFit)window.__tiltFit();});}}}catch(_){}   /* 3.009 — 틀 맞춤이 viewBox 를 재므로 보기 범위가 바뀌어도 다시 맞춘다 */
 }
 function worldBounds(){
   const fx=FILL_X,fy=FILL_Y,fw=FILL_W,fh=FILL_H;
@@ -5220,7 +5220,7 @@ function makeToken(p,kind){
     lg.appendChild(el("path",{d:"M-3 -1.2v-2.2a3 3 0 0 1 6 0v2.2M-4 -1.2h8v5.2h-8z",fill:"none",stroke:"#fff","stroke-width":1.4,"stroke-linecap":"round","stroke-linejoin":"round"}));
     g.appendChild(lg);
   }
-  if(document.body.classList.contains("bc-tilt3d")&&!window.__animExport&&window.PSBoardDepth)PSBoardDepth.apply(g,p,kind,kind==="player"?{unit:_tokScaleOf(p),pitch:PR().PW}:null);   /* 3.008 — 경기장 칩은 운동장 대비 최소 크기 */
+  if(document.body.classList.contains("bc-tilt3d")&&!window.__animExport&&window.PSBoardDepth)PSBoardDepth.apply(g,p,kind,kind==="player"?{unit:_tokScaleOf(p),pitch:PR().PW}:null);   /* 3.009 — 경기장 칩은 운동장 대비 최소 크기 */
   enableDrag(g,p,removable,kind);return g;
 }
 function playerTeamCol(p){   // p.color 없을 때의 유효 팀색 — 렌더 로직과 동일 규칙(현재색 하이라이트용)
@@ -6194,11 +6194,11 @@ function _setSelRings(){ try{
   var olds=tokenLayer.querySelectorAll(".ps-selring"); for(var i=0;i<olds.length;i++)olds[i].parentNode.removeChild(olds[i]);
   function ring(ref,color,r,sw,dash){ if(!ref||ref.id==null)return; var gg=tokenLayer.querySelector('[data-id="'+ref.id+'"]'); if(!gg)return;
     var isP=(gg.getAttribute("data-kind")==="player"),ck=_chipK(gg); r*=ck; var s=isP?el("circle",{r:r,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"}):el("rect",{x:-r,y:-r,width:2*r,height:2*r,rx:6,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"});
-    if(dash)s.setAttribute("stroke-dasharray",dash); if(ck!==1)gg.insertBefore(s,gg.querySelector(".ps-depth-face")); else gg.appendChild(s); }   /* 3.008 — 경기장 칩은 링이 칩 밑 바닥에 */
+    if(dash)s.setAttribute("stroke-dasharray",dash); if(ck!==1)gg.insertBefore(s,gg.querySelector(".ps-depth-face")); else gg.appendChild(s); }   /* 3.009 — 경기장 칩은 링이 칩 밑 바닥에 */
   if(sel&&sel.ref&&(sel.type==="player"||sel.type==="equip"||sel.type==="ball")) ring(sel.ref,"#ffd60a",28,3,"6 5");
   if(typeof multiSel!=="undefined"&&multiSel.length){ multiSel.forEach(function(o){ ring(o,"#2fa8ff",27,3.5,null); }); }
 }catch(_){} try{_setRoleRings();}catch(_){} try{_setChip3d();}catch(_){} try{_syncRingBtn();}catch(_){}}
-/* 3.008 — 입체 보기의 경기장 칩(PSBoardDepth)은 평면 칩보다 크다(배율은 data-depth-chip). 링이 칩에 가리지 않게 그 배율만큼 키운다 */
+/* 3.009 — 입체 보기의 경기장 칩(PSBoardDepth)은 평면 칩보다 크다(배율은 data-depth-chip). 링이 칩에 가리지 않게 그 배율만큼 키운다 */
 function _chipK(gg){ try{ return (gg&&+gg.getAttribute("data-depth-chip"))||1; }catch(_){ return 1; } }
 /* ══ 2.902 · 역할 링(FmStadio 참고) — 선수 칩 둘레 굵은 링으로 역할을 나눈다: 압박(빨강) · 목표·받는 선수(초록) · 주목(노랑).
    p.ring 은 선수 객체의 값이라 장면(snap)마다 따로 저장되고, 정지 보드·재생·영상·PNG 에 모두 그려진다(SVG 요소). ══ */
@@ -6219,7 +6219,7 @@ function _setChip3d(){ if(!tokenLayer)return;
     gr.appendChild(el("stop",{offset:"45%","stop-color":"#fff","stop-opacity":".08"}));
     gr.appendChild(el("stop",{offset:"100%","stop-color":"#000","stop-opacity":".28"}));
     d.appendChild(gr); } }catch(_){}
-  (state.players||[]).forEach(function(p){ var gg=tokenLayer.querySelector('[data-id="'+p.id+'"]'); if(!gg||gg.hasAttribute("data-depth-chip"))return;   /* 3.008 — 경기장 칩은 제 그림자·광택이 있다 */
+  (state.players||[]).forEach(function(p){ var gg=tokenLayer.querySelector('[data-id="'+p.id+'"]'); if(!gg||gg.hasAttribute("data-depth-chip"))return;   /* 3.009 — 경기장 칩은 제 그림자·광택이 있다 */
     var c=gg.querySelector(".tok-c"); if(!c)return;
     gg.insertBefore(el("ellipse",{cx:3,cy:9,rx:23,ry:18,fill:"rgba(0,0,0,.5)","class":"ps-c3","pointer-events":"none"}),gg.firstChild);
     var gl=el("circle",{r:21,fill:"url(#psChipGloss)","class":"ps-c3","pointer-events":"none"}); if(c.nextSibling)gg.insertBefore(gl,c.nextSibling); else gg.appendChild(gl); }); }
@@ -14021,7 +14021,7 @@ function init(){
       }
     }catch(_){}
   };
-  /* ══ 3.008 · 틀 맞춤은 **보이는 운동장(viewBox)** 을 잰다 ═══════════════════════════════
+  /* ══ 3.009 · 틀 맞춤은 **보이는 운동장(viewBox)** 을 잰다 ═══════════════════════════════
      2.370 은 svg 상자 전체를 쟀다. 그 상자는 가로로 긴 틀에서 좌우 여백(letterbox)까지 품어서, 경기장 둘레(관중석)를
      둘 자리를 정확히 비울 수 없었다. 이제 viewBox 와 같은 사각형을 잠깐 넣어 **원근이 걸린 화면 상자**를 실측하고,
      위(먼 쪽 관중석) 15% · 아래 11% · 옆 5% 를 비운 띠 안에 운동장을 맞춘다(레퍼런스의 관중석 비율).
@@ -14069,9 +14069,9 @@ function init(){
   /* 2.274 — 서 있는 골대(사용자 "TV 중계처럼 · 골대도 서 있게"): SVG 는 한 평면이라 골대만 HTML 3D 레이어에.
      보드와 같은 기울기(preserve-3d) 위에서 rotateY(-90°)로 골라인 평면에 수직으로 선다(포스트=위·아래 테두리, 크로스바=바깥 테두리, 그물=배경 망).
      가로 방향 전용 — 세로 보기는 평면 골대 유지. 위치는 svg 무변환 레이아웃 박스에 정확히 겹침(잠깐 transform 해제 후 실측). */
-  /* 3.008 — 골대는 실제 크기보다 크게(레퍼런스처럼 위에서 내려다봐도 골대가 읽히게). 입구는 조금만 — 골 에어리어(18.32m) 안에 남는다 */
+  /* 3.009 — 골대는 실제 크기보다 크게(레퍼런스처럼 위에서 내려다봐도 골대가 읽히게). 입구는 조금만 — 골 에어리어(18.32m) 안에 남는다 */
   var GOAL_K={mouth:1.3,height:1.9,depth:2.1};
-  /* ══ 3.008 · 경기장 한 장(ps-3008-stadium 설명) ══════════════════════════════════════
+  /* ══ 3.009 · 경기장 한 장(ps-3009-stadium 설명) ══════════════════════════════════════
      사용자 «실제 경기장과 가장 비슷하게»(바둑판 잔디는 별로). #tiltSurface 안의 SVG 한 장에 판 SVG 와 같은
      viewBox·preserveAspectRatio·world 회전을 주고 world 좌표로 그린다. 크기는 운동장 길이(PW)·폭(PH)의 비율이라
      풋살·8인제·그리드 판도 같은 모양으로 감싼다(1m 고정 값이면 작은 판에서 관중석이 운동장보다 커진다).
@@ -14228,7 +14228,7 @@ function init(){
     turf.style.backgroundColor=getCss('--pitchbg')||getCss('--grass-b')||'#252839';
     turf.style.backgroundImage=texture?'url("'+texture+'")':(state.pitchImg?'url("'+state.pitchImg+'")':'none');
     turf.style.backgroundSize=texture?(M2U(10)*scale)+'px '+(M2U(10)*scale)+'px':(state.pitchImg?'cover':'auto');
-    try{ tiltStadium(surface,r.width,r.height); }catch(_){}   /* 3.008 — 경기장(잔디·광고판·관중석) */
+    try{ tiltStadium(surface,r.width,r.height); }catch(_){}   /* 3.009 — 경기장(잔디·광고판·관중석) */
     host.replaceChildren();
     if(state.lines===false||pitchSpec().blank)return;   /* 2.989 — 그리드 판에는 골대도 없다 */
     const p=PR(),sp=pitchSpec(),mouth=M2U(sp.goal)*GOAL_K.mouth,height=M2U(sp.futsal?2:(sp.goal<6?2.15:2.44))*scale*GOAL_K.height,depth=M2U(sp.goalD||2)*scale*GOAL_K.depth;
@@ -14249,7 +14249,7 @@ function init(){
       if(pitchViewKey()!=='full'&&((pvWorldRight()&&side<0)||(!pvWorldRight()&&side>0)))return;   /* 2.975 */
       goals.push({a:map(x,CY-mouth/2),b:map(x,CY+mouth/2),out:map(x+side,CY-mouth/2),height,depth});
     });
-    /* 3.008 — 코너 깃발: 네 모서리에 서 있는 폴과 노란 깃발(골대처럼 크게 — 위에서 내려다봐도 보이게). 깃발은 운동장 안쪽으로 */
+    /* 3.009 — 코너 깃발: 네 모서리에 서 있는 폴과 노란 깃발(골대처럼 크게 — 위에서 내려다봐도 보이게). 깃발은 운동장 안쪽으로 */
     if((state.pitchN||1)<=1){const k=GOAL_K.height*.85,ph=M2U(1.5)*scale*k,pw=Math.max(1.4,M2U(.07)*scale*k),fw=M2U(.55)*scale*k,fh=M2U(.4)*scale*k,mid=map(p.CX,CY);
       [[p.L,p.T],[p.R,p.T],[p.R,p.B],[p.L,p.B]].forEach(([x,y])=>{const c=map(x,y),sx=mid[0]>=c[0]?1:-1;
         face(pw,ph,[c[0]-pw/2,c[1],ph],[1,0,0],[0,0,-1],'corner-pole');face(fw,fh,[c[0],c[1],ph],[sx,0,0],[0,0,-1],'corner-flag');});}

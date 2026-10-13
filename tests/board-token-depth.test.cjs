@@ -7,7 +7,7 @@ test('token elevation compensates rotation without modifying document position',
     assert.ok(Math.abs(d.x*Math.sin(r)+d.y*Math.cos(r)+13)<1e-9);
   }
 });
-test('3.008 stadium chip keeps a readable size on the 3D view without shrinking large tokens',()=>{
+test('3.009 stadium chip keeps a readable size on the 3D view without shrinking large tokens',()=>{
   // Desktop default token (0.355) on an 11-a-side pitch (1050 units): the chip grows to 1.7% of the pitch length.
   const small=depth.chipSize({unit:.355,pitch:1050});
   assert.ok(Math.abs(21*small.k*.355-1050*.017)<.05);

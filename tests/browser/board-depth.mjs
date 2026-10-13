@@ -51,7 +51,7 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       });
       assert.equal(r.unchanged,true);assert.equal(r.sameNode,true);assert.equal(r.sameSelection,true);assert.equal(r.saves,0);assert.equal(r.renders,0);
       assert.equal(r.exportHasDepth,false);assert.equal(r.exportHasSelection,false);assert.equal(r.thumbHasDepth,false);assert.equal(r.thumbHasSelection,false);assert.equal(r.tokens,5);assert.equal(r.goalVisible,true);
-      // 3.008 — the 3D view is a stadium: grass, boards and stands around the pitch, white goals and lines on every pitch theme,
+      // 3.009 — the 3D view is a stadium: grass, boards and stands around the pitch, white goals and lines on every pitch theme,
       // white chips with the player's name. None of it reaches pictures or exports.
       assert.equal(r.goalColor,'rgb(255, 255, 255)');assert.equal(r.chips,2);assert.equal(r.names,'A,B');
       assert.equal(r.stadium,true);assert.ok(r.boards>=8,'ad boards around the pitch');assert.equal(r.stage,'rgb(5, 8, 6)');
@@ -63,7 +63,7 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       results.push({width:viewport.width,theme,orientation,...r});
     }
     const before=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));
-    // 3.008 — players are stadium chips: grab the raised top of the puck (its name above is part of the chip too).
+    // 3.009 — players are stadium chips: grab the raised top of the puck (its name above is part of the chip too).
     const box=await page.locator('.token[data-id="depth-a"] .ps-chip circle').boundingBox();
     await page.mouse.move(box.x+box.width/2,box.y+box.height/3);await page.mouse.down();await page.mouse.move(box.x+box.width/2+35,box.y+box.height/3+25,{steps:8});await page.mouse.up();
     const after=await page.evaluate(()=>({x:state.players[0].x,y:state.players[0].y}));assert.ok(Math.hypot(after.x-before.x,after.y-before.y)>8,'raised face remains draggable');

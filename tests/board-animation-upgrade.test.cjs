@@ -32,7 +32,7 @@ test('upright goal posts use the pitch meet scale in horizontal and vertical vie
  const elements={};function node(){return {style:{},children:[],setAttribute(){},appendChild(x){this.children.push(x);if(x.id)elements[x.id]=x;},insertBefore(x){this.appendChild(x);},replaceChildren(){this.children=[];},set innerHTML(x){this.firstElementChild=node();},getBoundingClientRect(){return {left:0,top:0,width:1000,height:600};}};}
  const stage=node();Object.assign(stage,{scrollLeft:0,scrollTop:0,clientLeft:0,clientTop:0});elements.boardStage=stage;
  const svg=node();svg.querySelector=()=>null;svg.viewBox={baseVal:{x:0,y:0,width:1200,height:800}};
- // 3.008 — goals are drawn larger than life on the stadium view; the projection must still use the meet scale.
+ // 3.009 — goals are drawn larger than life on the stadium view; the projection must still use the meet scale.
  const K=Function('return '+source.match(/var GOAL_K=(\{[^}]*\})/)[1])();
  assert.ok(K.mouth>1&&K.mouth<2.5&&K.height>1&&K.depth>1,'goals are exaggerated, the mouth stays inside the goal area');
  const c=vm.createContext({window:{},document:{body:{classList:{contains:()=>true}},documentElement:{dataset:{pitch:'navy'}},getElementById:id=>elements[id],createElement:node},svg,state:{orientation:'h'},getCss:()=> '#123456',PR:()=>({L:100,R:1100}),pitchSpec:()=>({goal:73.2,goalD:20}),M2U:x=>x,W:1200,H:800,CY:400,pitchViewKey:()=> 'full',GOAL_K:K,tiltStadium(){}});
