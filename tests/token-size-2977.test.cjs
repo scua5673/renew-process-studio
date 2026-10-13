@@ -78,6 +78,19 @@ test('3.009 the name label can sit above the head — a per-board look setting',
   assert.match(src,/case "namePos":return "below";/,'below stays the default');
   assert.match(src,/case "namePos":return v==="below"\|\|v==="above";/);
   assert.match(src,/id="namePosSeg"[\s\S]{0,300}data-np="below"[^>]*>아래<[\s\S]{0,200}data-np="above"[^>]*>위</,'settings row');
-  assert.match(src,/grassTone:src\.grassTone,namePos:src\.namePos\}/,'기본 세팅 snapshot carries it');
+  assert.match(src,/grassTone:src\.grassTone,namePos:src\.namePos[,}]/,'기본 세팅 snapshot carries it');
   assert.match(src,/grassTone:s\.grassTone,namePos:s\.namePos,/,'a new page keeps it');
+});
+test('3.010 name label size and style — per-board look settings, flat and 3D',()=>{
+  const fs=require('fs'),path=require('path');const src=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf8');
+  assert.match(src,/function lookKeys\(\)\{return \[[^\]]*"nameSize","nameStyle"[^\]]*\]/,'saved with the board look');
+  assert.match(src,/case "nameSize":return "m"; case "nameStyle":return "auto";/,'defaults: normal size, the old look');
+  assert.match(src,/case "nameSize":return v==="s"\|\|v==="m"\|\|v==="l"; case "nameStyle":return v==="auto"\|\|v==="pill"\|\|v==="text";/);
+  assert.match(src,/function _nameK\(\)\{ var v=window\.__nameSize; return v==="s"\?0\.8:\(v==="l"\?1\.25:1\); \}/,'0.8 · 1 · 1.25');
+  assert.match(src,/id="nameSizeSeg"[\s\S]{0,200}data-ns="s"[^>]*>작게<[\s\S]{0,200}data-ns="m"[^>]*>보통<[\s\S]{0,200}data-ns="l"[^>]*>크게</,'size row');
+  assert.match(src,/id="nameStyleSeg"[\s\S]{0,200}data-nt="auto"[^>]*>기본<[\s\S]{0,200}data-nt="pill"[^>]*>알약<[\s\S]{0,200}data-nt="text"[^>]*>글자만</,'style row');
+  assert.match(src,/if\(!_nt\)g\.appendChild\(el\("rect"/,'«글자만» draws no pill');
+  assert.match(src,/nameK:_nameK\(\),nameStyle:window\.__nameStyle==="pill"\?"pill":"text"/,'3D: «기본» stays an outlined name, «알약» puts it on a pill');
+  assert.match(src,/namePos:src\.namePos,nameSize:src\.nameSize,nameStyle:src\.nameStyle\}/,'기본 세팅 snapshot carries them');
+  assert.match(src,/namePos:s\.namePos,nameSize:s\.nameSize,nameStyle:s\.nameStyle,/,'a new page keeps them');
 });

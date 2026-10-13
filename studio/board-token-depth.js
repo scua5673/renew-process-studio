@@ -164,6 +164,13 @@
     if (kind === 'shaper') top = Math.max(top, -BEAK * Math.sin((+dir || 0) * Math.PI / 180) + 2);
     return Math.round((-h - top - 4 - font * .4) * 10) / 10;
   }
+  // The pill behind a name: an estimate of the text width (wide CJK glyphs, narrower Latin capitals) around the text's middle.
+  function namePill(str, font, y) {
+    var w = font * .9;
+    for (var i = 0; i < str.length; i++) w += str.charCodeAt(i) > 0x2000 ? font * 1.02 : font * .7;
+    var ph = font * 1.5, r = function (n) { return String(Math.round(n * 10) / 10); };
+    return { x: r(-w / 2), y: r(y - font * .36 - ph / 2), width: r(w), height: r(ph) };
+  }
   // opts.shape = 'shirt' | 'circle' | 'shaper' (the board's player shape), opts.dir = shaper heading in chip degrees.
   function applyChip(token, item, opts) {
     var doc = token.ownerDocument; chipDefs(doc);
@@ -208,10 +215,13 @@
     if (text) { var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('pointer-events', 'none'); lid.appendChild(n); }
     body.appendChild(lid);
     if (item.name) {
-      var name = node(doc, 'text', { x: 0, y: nameY(kind, h, size.font, opts && opts.dir), 'data-font': String(size.font), 'text-anchor': 'middle', 'font-size': String(Math.round(size.font * 10) / 10), 'font-weight': '800', 'letter-spacing': '.4',
-        fill: '#fff', stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(size.font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke',
+      // opts.nameK = the board's name size (0.8 · 1 · 1.25); opts.nameStyle 'pill' puts the name on a dark pill, otherwise an outlined name.
+      var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1), str = String(item.name).toUpperCase(), y0 = nameY(kind, h, font, opts && opts.dir);
+      if (opts && opts.nameStyle === 'pill') body.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
+      var name = node(doc, 'text', { x: 0, y: y0, 'data-font': String(font), 'text-anchor': 'middle', 'font-size': String(Math.round(font * 10) / 10), 'font-weight': '800', 'letter-spacing': '.4',
+        fill: '#fff', stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke',
         'font-family': (label && label.getAttribute('font-family')) || FONT, 'class': 'ps-chip-name' });   // the name is part of the chip: pressing it picks the player
-      name.textContent = String(item.name).toUpperCase();
+      name.textContent = str;
       body.appendChild(name);
     }
     face.appendChild(original); face.appendChild(body);
@@ -224,7 +234,12 @@
     var t = 'rotate(' + (Math.round((+deg || 0) * 10) / 10) + ')';
     token.querySelectorAll('.ps-chip-turn').forEach(function (g) { if (g.getAttribute('transform') !== t) g.setAttribute('transform', t); });
     var name = token.querySelector('.ps-chip-name');
-    if (name) name.setAttribute('y', String(nameY('shaper', CHIP_H, +name.getAttribute('data-font') || 15, deg)));
+    if (!name) return;
+    var font = +name.getAttribute('data-font') || 15, y = nameY('shaper', CHIP_H, font, deg);
+    if (+name.getAttribute('y') === y) return;
+    name.setAttribute('y', String(y));
+    var bg = token.querySelector('.ps-chip-namebg');
+    if (bg) bg.setAttribute('y', namePill(name.textContent || '', font, y).y);
   }
   function flatten(token) {
     var face = token.querySelector('.ps-depth-face');
