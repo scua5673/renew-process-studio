@@ -68,7 +68,7 @@ test('연결 지점 — 가져오기·⌘Z·보관함 저장 시트·새로고�
   assert.match(src,/var _canLink=false; try\{ _canLink=!!\(d\.libId&&canEditItem\(d\)\); \}catch\(_\)\{\}/,'남이 만든 자료는 잇지 않는다');
   assert.match(src,/undoStack\[undoStack\.length-1\]\.__linkMark=d\.libId/);
   assert.match(src,/if\(_ue&&_ue\.__linkMark&&window\.__psPages&&window\.__psPages\.linkClear\)\{ window\.__psPages\.linkClear\(_ue\.__linkMark\);/,'⌘Z 로 가져오기를 되돌리면 연결도 끊긴다');
-  assert.match(src,/var _wb=\[\]; try\{ _wb=await boardLinkWriteBack\(false\); \}/,'«보드 저장» 이 연결된 자료에도');
+  assert.match(src,/var _wb=\[\]; if\(!o\.noLink\)\{ try\{ _wb=await boardLinkWriteBack\(false\); \}/,'«보드 저장» 이 연결된 자료에도(3.014 — «새 보드»만 noLink)');
   assert.match(src,/if\(res\.overwrite\)\{ boardLinkWriteBack\(true\)/,'«보관함 저장» 덮어쓰기는 가져온 페이지만');
   assert.match(src,/try\{ window\.__psPages\.linkClear\(_lk\.tag\.libId\); \}catch\(_\)\{\}\n        window\.__vaultPending=/,'새 항목으로 저장하면 옛 연결은 끊는다');
   assert.match(src,/boardLink:\(window\.__psPages&&window\.__psPages\.singleLinkVal\?window\.__psPages\.singleLinkVal\(\):null\)/);
