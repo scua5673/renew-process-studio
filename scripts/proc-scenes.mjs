@@ -4,7 +4,7 @@
 // 판(운동장 · 장비 · 구역 선 · 선수 명단)은 팩의 훈련 판을 그대로 쓰고, 장면마다 선수·공 자리와 화살표만 바꾼다.
 // 화살표는 장면 i 에서 i+1 로 가는 움직임에서 짓는다(재생은 장면 i 에 머무는 동안 보이고, 움직이며 사라진다):
 //   공 — 같은 선수가 몰고 가면 드리블(물결), 다른 선수에게 가면 패스(실선 · 띄운 공이면 로빙), shot:1 이면 슈팅.
-//   선수 — 우리 팀만, 다음 장면에서 강조하거나 크게 움직인 선수의 이동(노란 점선). 상대는 그리지 않는다.
+//   선수 — 우리 팀만(runs: 팀 이름들 · 없으면 빨강이 아닌 팀), 다음 장면에서 강조하거나 크게 움직인 선수의 이동(노란 점선). 상대는 그리지 않는다.
 // 몇 번을 돌려도 같은 결과다. 사본 만들기(proc-snapshot.mjs)는 own:1 세션을 덮지 않는다.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -53,7 +53,7 @@ export function arrowsFor(base,a,b,opt){
   }
   const hl=new Set((b.sc.hl||[]).map(String));
   for(const id of ids){
-    if(team[id]==='red'||id===carrier)continue;
+    if((opt.runs?!opt.runs.includes(team[id]):team[id]==='red')||id===carrier)continue;
     const p0=a.pos[id],p1=b.pos[id],L=Math.hypot(p1[0]-p0[0],p1[1]-p0[1]);
     if(L<45*ts||!(hl.has(id)||L>90*ts))continue;
     const [q0,q1]=trimmed(p0,p1,20*ts,18*ts),d={type:'run',color:'#ffd23f',lw,op:.95,pts:[{x:r1(q0[0]),y:r1(q0[1])},{x:r1(q1[0]),y:r1(q1[1])}]};
@@ -93,7 +93,7 @@ export async function build(nn,{write=true}={}){
   d.trainings.forEach((t,i)=>{
     const sp=spec.trainings[i];
     if(sp.name!==t.name)throw Error(nn+' 훈련 '+(i+1)+': 이름이 팩과 다릅니다 — '+sp.name);
-    t.frames=buildFrames(t.snap,sp,{scale:sp.scale||1,lw:sp.lw||1,dur:sp.dur||1.2});
+    t.frames=buildFrames(t.snap,sp,{scale:sp.scale||1,lw:sp.lw||1,dur:sp.dur||1.2,runs:sp.runs||null});
     t.snap=clone(t.frames[0].snap);
     t.animIdx=0;
   });
