@@ -55,6 +55,7 @@ node instagram/plan.mjs          # 오늘(한국 시간) 브리프 → instagram
 
 - 한국어, 본문은 해요체. 코치에게 말하듯 짧게. 기능 이름보다 현장의 상황으로 시작한다("말로 세 번 설명할 움직임, 한 번 보여 주세요").
 - 제목은 2~3줄, 줄마다 짧게(표지 `xl` 은 한 줄 8자 안팎). `*강조*` 는 제목에 한 군데.
+- 본문(body)은 한 줄 30자 안팎이다. 넘으면 `\n` 으로 뜻 단위에서 직접 끊는다 — 끝줄에 «남겨요.» 같은 낱말 하나만 남으면 render 가 실패로 알린다.
 - 캡션: 첫 줄이 미리보기에 보이는 훅(30자 안팎) → 빈 줄 → 3~6줄 → `👉 프로필 링크에서 열기`. 이모지는 2~3개까지.
 - 해시태그: `#프로세스스튜디오` + `topics.json` 의 pool 에서 주제에 맞는 4개(용어 게시물은 `#축구용어` 를 넣는다).
 
@@ -82,7 +83,7 @@ node instagram/plan.mjs          # 오늘(한국 시간) 브리프 → instagram
 | `statement` | 큰 문장 하나 | eyebrow · title · body |
 | `cta` | 마지막 장 | title · body · hint |
 
-그림 참조: `shot:<장면>`(capture.mjs — `board-flat`·`board-flat-navy`·`board-flat-white`·`board-3d`·`board-3d-low`·`board-3d-high`·`board-3d-team`), `guide:<guide/img 파일>`, `social:<social/instagram-carousel/assets 파일>`. 옵션: `"fit":"contain"`(잘리지 않게), `"focus":"center"`(잘리는 기준), `"chrome":false`(브라우저 틀 없이).
+그림 참조: `shot:<장면>`(capture.mjs — `board-flat`·`board-flat-navy`·`board-flat-white`·`board-3d`·`board-3d-low`·`board-3d-high`·`board-3d-team`), `guide:<guide/img 파일>`, `social:<social/instagram-carousel/assets 파일>`. 옵션: `"fit":"contain"`(잘리지 않게), `"fit":"auto"`(그림 비율 그대로, 잘라 낸 작은 그림에), `"focus":"center"`(잘리는 기준), `"chrome":false`(브라우저 틀 없이). `out:<파일>` 은 그날 폴더에 직접 만든 그림(예: 앱 화면에서 필요한 부분만 잘라 낸 것).
 
 ## 전달
 

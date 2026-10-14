@@ -1,5 +1,5 @@
 // post.json → 인스타 PNG. 캐러셀(1080×1350) 한 장씩 + 스토리(1080×1920) + caption.txt + preview.png(한눈에 보기).
-// 쓰는 법: node instagram/render.mjs [YYYY-MM-DD] [--recapture]   (instagram/out/<날짜>/post.json 을 읽는다)
+// 쓰는 법: node instagram/render.mjs [YYYY-MM-DD | 이름] [--recapture]   (instagram/out/<날짜 또는 이름>/post.json 을 읽는다)
 // 글이 넘치거나 그림이 없거나 해시태그가 5개를 넘으면 아무것도 지우지 않고 실패로 끝난다 — 메시지대로 post.json 을 고쳐 다시 돌린다.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -113,7 +113,9 @@ export async function render(date=todayKST(),{recapture=false}={}){
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  const args=process.argv.slice(2),date=args.find(a=>/^\d{4}-\d{2}-\d{2}$/.test(a))||todayKST();
+  // 날짜 대신 이름(예: intro)을 주면 instagram/out/<이름>/ 에서 한 번짜리 게시물을 만든다(프로필 고정 소개 등).
+  const args=process.argv.slice(2),date=args.find(a=>!a.startsWith('--'))||todayKST();
+  if(!/^[A-Za-z0-9][\w-]*$/.test(date))throw Error('폴더 이름은 날짜(YYYY-MM-DD)나 영문·숫자·-·_ 로: '+date);
   render(date,{recapture:args.includes('--recapture')}).then(r=>{
     console.log(JSON.stringify({...r,dir:path.relative(root,r.dir),files:r.files.map(f=>path.relative(root,f)),preview:path.relative(root,r.preview),caption:path.relative(root,r.caption)},null,2));
     if(r.problems.length){console.error('\n넘침·배치 문제 — 문구를 줄이거나 장을 나눠 다시 돌리세요:\n- '+r.problems.join('\n- '));process.exitCode=2;}

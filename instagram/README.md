@@ -31,7 +31,7 @@ node instagram/render.mjs [YYYY-MM-DD]                                      # PN
 node instagram/capture.mjs board-3d board-flat --out /tmp/shots            # 앱 화면만 찍기
 ```
 
-결과는 `instagram/out/<날짜>/` 에 생기고 커밋되지 않습니다.
+결과는 `instagram/out/<날짜>/` 에 생기고 커밋되지 않습니다. 날짜와 상관없는 한 번짜리 게시물(예: 프로필 고정 소개)은 `instagram/out/intro/post.json` 처럼 이름 붙인 폴더에 쓰고 `node instagram/render.mjs intro` 로 그립니다.
 
 ## 파일
 
