@@ -66,11 +66,12 @@ try{
   const pick=()=>c.evaluate(()=>{const b=document.getElementById('prCvTabs'),r=b.getBoundingClientRect();return {hidden:b.hidden,head:document.querySelector('.cv-head b').textContent,l:Math.round(r.left),r:Math.round(r.right),vw:innerWidth,
     btn:[...b.querySelectorAll('button')].map(x=>{const q=x.getBoundingClientRect();return [x.querySelector('.pr-i').textContent,x.querySelector('.pr-nm').textContent,(x.querySelector('.pr-mn')||{}).textContent,x.getAttribute('aria-pressed'),Math.round(q.height),Math.round(q.left)>=0&&Math.round(q.right)<=innerWidth];})};});
   const inside=()=>v.evaluate(()=>({banner:document.getElementById('epRoBanner').textContent,copy:document.getElementById('commCopyBtn').textContent,rep:!!document.getElementById('commRepBtn'),del:!!document.getElementById('commDelBtn'),
-    doc:[...document.querySelectorAll('.ep-ro-text')].map(x=>x.textContent),play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,players:state.players.length,hit:window.__prHit,ro:editorReadOnly}));
+    doc:[...document.querySelectorAll('.ep-ro-text')].map(x=>x.textContent),play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,players:state.players.length,hit:window.__prHit,ro:editorReadOnly,
+    hold:animHold,durs:(anim.frames||[]).map(f=>f.dur)}));
 
   // 1) 처음은 코치 자료 — 지금 화면 그대로. 두 칸이 머리에 있다
   let s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.coach],[false,['true','false','false'],'작전판·훈련·경기 분석 탐색','훈련 주제','제목·작성자·내용 검색',1]);   // 3.015 — 칸 셋(엘미하)
+  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.coach],[false,['true','false','false'],'작전판·훈련·경기 분석 탐색','훈련 주제','제목·작성자·내용 검색',1]);   // 3.018 — 칸 셋(엘미하)
   assert.notEqual(s.fab,'none','코치 자료 칸에는 «올리기»가 있다');
   assert.ok(s.chips.includes('론도')&&s.chips[0]==='전체 주제*','코치 자료의 주제 칩 그대로');
   const seg=await rect('#prSeg'),tabs=await c.evaluate(()=>[...document.querySelectorAll('#prSeg button')].map(b=>Math.round(b.getBoundingClientRect().height)));
@@ -105,7 +106,7 @@ try{
   const until=async(fn,what)=>{ for(let i=0;i<100;i++){ if(fn())return; await page.waitForTimeout(100); } throw new Error('기다림 초과: '+what); };
   await until(()=>indexAsked()>=1,'처음 목록 요청');
   await page.waitForTimeout(300);
-  assert.deepEqual([(await state()).label,await c.evaluate(()=>!!document.getElementById('prRetry'))],[['코치 자료1','프로세스','엘미하'],false]);   // 3.015 — 엘미하 칸: 엘미하 계정의 글이 없으면 숫자 없음
+  assert.deepEqual([(await state()).label,await c.evaluate(()=>!!document.getElementById('prRetry'))],[['코치 자료1','프로세스','엘미하'],false]);   // 3.018 — 엘미하 칸: 엘미하 계정의 글이 없으면 숫자 없음
   const before=indexAsked();
   await c.click('#prTabProc');
   await c.waitForSelector('#prRetry');
@@ -202,6 +203,8 @@ try{
   assert.deepEqual([iv.copy,iv.rep,iv.del,iv.ro],['보관함에 담기',false,false,true],'담기 하나 — 신고·삭제는 코치 자료만');
   assert.deepEqual(iv.doc,['가상 방법 1\n1. 첫 걸음','1. 가상 포인트 1'],'훈련 방법 · 코칭 포인트');
   assert.deepEqual([iv.play,iv.frames,iv.players],[true,3,2],'움직임 재생 · 장면 3');
+  // 3.016 — 사용자 «애니메이션들이 너무 짧다 · 더 길게»: 장면 유지 0.6초 → 2초 · 이동 1.2초 → 평균 2.2초(재생은 animHold · 장면마다의 dur 를 쓴다)
+  assert.deepEqual([iv.hold,iv.durs],[2,[2.2,2.2,2.2]],'프로세스 훈련은 느린 박자로');
   await c.click('#prCvTabs button:nth-child(3)');
   v=await view('가상 연습 3');
   iv=await inside();
@@ -227,6 +230,8 @@ try{
     if(!saved.length)await page.waitForTimeout(100);
   }
   assert.deepEqual(saved,[['레터 3호 · 가상 세션',3,3,60]],'카드 한 장 · 훈련 셋');
+  const pace=await f.evaluate(async()=>{ const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x&&x.letter); const fr=d.trainings[0].frames; return [fr[0].__hold,fr.map(x=>[x.hold,x.dur])]; });
+  assert.deepEqual(pace,[2,[[2,2.2],[2,2.2],[2,2.2]]],'3.016 — 담은 카드도 커뮤니티에서 본 박자 그대로');
 
   // 7) 커뮤니티로 돌아오면 프로세스 칸 그대로, 코치 자료로 가면 지금 화면 그대로
   await page.evaluate(()=>window.__psShowApp('community'));
