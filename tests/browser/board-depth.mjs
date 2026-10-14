@@ -133,7 +133,7 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
     assert.deepEqual([t3.deco.simple.bench,t3.deco.grass.bench],[true,false]);
     assert.ok(t3.deco.grass.k>t3.deco.full.k,'less stadium → bigger pitch '+JSON.stringify(t3.deco));
     assert.equal(t3.adEsc,true,'ad text is escaped');assert.equal(t3.adDecodes,true,'the stadium picture still decodes');assert.equal(t3.adBack,true,'empty → PROCESS STUDIO');
-    assert.deepEqual(t3.stored,{cam:'mid',deco:'full',ad:''},'device setting');
+    assert.deepEqual(t3.stored,{cam:'mid',deco:'full',ad:'',mood:'night',brand:false},'device setting');   /* 3.024 — 분위기 · 팀 브랜딩도 같은 기기 설정에 */
     assert.equal(t3.saved,true);assert.deepEqual(t3.names,['경기 분석'],'names are trimmed');assert.equal(t3.applied,'l','applying restores the saved look');
     assert.equal(t3.samePlayers,true,'a preset never moves players');assert.equal(t3.removed,0);
     if(viewport.width===1280){   // typing in the ad box never reaches the board's shortcuts (tool keys, delete)

@@ -46,7 +46,7 @@ function setup({stored={}}={}){
     $:id=>document.getElementById(id),dc:copy,CX:555,CY:370,PITCH_SPECS:{fifa:{}},world:null,
     sel:null,multiSel:[],uid:2,performance:{now:()=>0},setTimeout(fn){timers.push(fn);},hookBuild(){},tryBuildUI(){},
     normPitchView:v=>v||'full',pitchViewKey:()=>c.state.pitchView||'full',defaultTokenScale:()=>0.46,
-    mergeCustomEquip:(items)=>items,loadCustomEquipLib:()=>[],
+    mergeCustomEquip:(items)=>items,loadCustomEquipLib:()=>[],anNorm:a=>(a&&typeof a==='object'&&Object.keys(a).length)?a:null,   /* 3.024 — 분석 그래픽 켬 상태(스냅) */
     buildPitch(){},buildLines(){},buildGrid(){},renderPitchImg(){},applyView(){},renderTokens(){},renderDrawings(){},
     updateDelUI(){},updateAlignBar(){},renderMultiGuides(){},syncBoardLock(){},
     psVaultRequireLogin:()=>true,vaultBoardBegin:()=>({}),curFolder:()=>'',setView(){},showCreateBar(){},toast(){},parent:{postMessage(){}},

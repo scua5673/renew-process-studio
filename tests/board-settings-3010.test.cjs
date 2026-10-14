@@ -4,7 +4,7 @@ const src=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf8'
 
 test('3.010 the settings tabs are grouped under section titles, rows keep their nodes',()=>{
   const plan=/var PLAN=\[([\s\S]*?)\];\n/.exec(src);assert.ok(plan,'one plan for the sections');
-  for(const s of ['["view","내 설정",[presetRow]]','["view","화면",["보드 보기","카메라","경기장","광고판"]]','["view","편집",["끌기 자석"]]',
+  for(const s of ['["view","내 설정",[presetRow]]','["view","화면",["보드 보기","카메라","경기장","광고판","분위기","팀 브랜딩"]]','["view","분석",["분석 그래픽"]]','["view","편집",["끌기 자석"]]',
     '["pitch","운동장",["피치","밝기","연하기","잔디 줄무늬","라인","규격"]]','["pitch","범위·방향",["운동장 개수","운동장 범위","확대 쪽","운동장 방향"]]','["pitch","그리드",["전술 그리드","훈련 격자"]]'])
     assert.ok(plan[1].includes(s),s);
   assert.match(src,/"밝기":1,"연하기":1,"라인":1,"훈련 격자":1\}/,'lines and the training grid live on the pitch tab');
@@ -24,7 +24,7 @@ test('3.010 3D options: camera, stadium detail, ad text — a device setting',()
   assert.match(src,/scale\(var\(--tilt-k,1\),calc\(var\(--tilt-sy,1\.08\)\*var\(--tilt-k,1\)\)\) rotateX\(var\(--tilt-ax,24deg\)\)/,'one transform, defaults = 3.009');
   assert.match(src,/localStorage\.getItem\("ps_tilt3d_opts_v1"\)/);
   assert.match(src,/t3\.cam,deco,st\.getPropertyValue\("--tilt-k"\)/,'the fit key refits on a camera or stadium change (3.022: deco = tiltDecoNow(), a grid board is grass only)');
-  assert.match(src,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad\]\.join\('\|'\);/,'the stadium picture redraws only when it changes');
+  assert.match(src,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad,md\.key,brand\?1:0,tcol\]\.join\('\|'\);/,'the stadium picture redraws only when it changes (3.024: mood and branding too)');
   assert.match(src,/const adX=ad\.replace\(\/&\/g,'&amp;'\)\.replace\(\/<\/g,'&lt;'\)\.replace\(\/>\/g,'&gt;'\)\.replace\(\/"\/g,'&quot;'\);/,'ad text is escaped into the SVG');
   for(const id of ['tiltCamSeg','tiltDecoSeg','tiltAdInput'])assert.ok(src.includes('id="'+id+'"'),id);
   assert.match(src,/id="tiltAdInput"[^>]*maxlength="24"/);
