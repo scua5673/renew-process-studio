@@ -1,5 +1,6 @@
 /* 애니띵 모닝 — 아침 5분, 1년이면 달라진다.
    과정: 좋은 문장(사람을 움직이는 말) · 우리말(잘 안 쓰지만 아름다운 낱말) · 인문학(개념·문장·오늘의 질문) · 일본어(히라가나·가타카나부터, 그다음 생활 회화) · 영어(생활 회화, 1주 1장면).
+   축구 모드: 축구 일본어 · 축구 영어(선수가 팀에서 실제로 쓰는 회화와 포지션 콜, 코치 지시어 듣기). 시작할 때 고른 사람에게만 열린다.
    주간 리듬(기본): 월~금 배우는 날(과정마다 새 항목) · 토 실전의 날(이번 주 것을 실제로 써 보기) · 일 돌아보는 날(복습과 한 주 정리).
    하루 분량 '가볍게'(과정마다 하루 1개)면 1년, '보통'은 6개월, '많이'는 4개월에 완주한다.
    오래 가게 돕는 장치: 7일에 하루 쉼표(연속 유지), 바쁜 날 1분 루틴, 다시 온 날 복습 줄이기, 이정표 축하, 1년 기록.
@@ -48,7 +49,9 @@
     { id: 'uri', name: '우리말', glyph: '가', kind: 'word', lang: 'ko-KR', desc: '잘 안 쓰지만 아름다운 낱말', unitWord: '낱말', data: window.AM_URI },
     { id: 'hum', name: '인문학', glyph: '人', kind: 'idea', lang: 'ko-KR', desc: '생각의 뿌리를 찾는 개념과 문장', unitWord: '개념', data: window.AM_HUM },
     { id: 'ja', name: '일본어', glyph: 'あ', kind: 'phrase', lang: 'ja-JP', desc: '히라가나·가타카나부터, 1주 1장면 회화', unitWord: '표현', data: window.AM_JA },
-    { id: 'en', name: '영어', glyph: 'A', kind: 'phrase', lang: 'en-US', desc: '1주 1장면 생활 회화', unitWord: '표현', data: window.AM_EN }
+    { id: 'en', name: '영어', glyph: 'A', kind: 'phrase', lang: 'en-US', desc: '1주 1장면 생활 회화', unitWord: '표현', data: window.AM_EN },
+    { id: 'sja', name: '축구 일본어', glyph: '蹴', kind: 'phrase', lang: 'ja-JP', desc: '일본 팀에서 쓰는 말 · 회화·포지션 콜·지시어 듣기', unitWord: '표현', soccer: true, fullRecall: true, data: window.AM_SJA },
+    { id: 'sen', name: '축구 영어', glyph: 'F', kind: 'phrase', lang: 'en-US', desc: '해외 팀에서 쓰는 말 · 회화·포지션 콜·지시어 듣기', unitWord: '표현', soccer: true, fullRecall: true, data: window.AM_SEN }
   ].filter(co => co.data && Array.isArray(co.data.cards) && co.data.cards.length);
   const courseById = Object.fromEntries(COURSES.map(co => [co.id, co]));
   const QUICK = { id: 'quick', name: '1분 루틴', glyph: '1', kind: 'quick', lang: 'ko-KR', unitWord: '' };
@@ -121,7 +124,8 @@
     chev: '<path d="m9 6 6 6-6 6"/>',
     undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
     pen: '<path d="M4 20l1.2-4.2L15.5 5.5a2.1 2.1 0 0 1 3 3L8.2 18.8z"/><path d="M13.5 7.5l3 3"/>',
-    trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
+    trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>'
   };
   const icon = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`;
 
@@ -129,7 +133,7 @@
   function fresh() {
     return {
       v: 3,
-      settings: { courses: COURSES.map(co => co.id), contexts: [], load: 1, rhythm: 'week', anchor: '', start: '', time: '07:00', theme: 'system', pron: true, kanaFirst: true, onboarded: false },
+      settings: { courses: COURSES.filter(co => !co.soccer).map(co => co.id), contexts: [], load: 1, rhythm: 'week', anchor: '', start: '', time: '07:00', theme: 'system', pron: true, kanaFirst: true, rate: 'normal', onboarded: false },
       progress: {},   // 카드 id → { box, due, seen, last, reps, lapses }
       days: {},       // 'YYYY-MM-DD' → { done: true, c: { 과정 id 또는 'quick': true } }
       plans: {},      // 과정 id → 오늘의 루틴(날짜가 바뀌면 새로 만든다)
@@ -158,7 +162,8 @@
     settings.kanaFirst = settings.kanaFirst !== false;
     settings.anchor = typeof settings.anchor === 'string' ? settings.anchor.slice(0, 40) : '';
     settings.courses = arr(settings.courses).filter(id => courseById[id]);
-    if (!settings.courses.length) settings.courses = COURSES.map(co => co.id);
+    if (!settings.courses.length) settings.courses = COURSES.filter(co => !co.soccer).map(co => co.id);
+    settings.rate = ['slow', 'normal', 'fast'].includes(settings.rate) ? settings.rate : 'normal';
     const days = obj(s.days);
     if (!settings.start && settings.onboarded) settings.start = Object.keys(days).filter(d => days[d] && days[d].done).sort()[0] || '';
     const plans = obj(s.plans);
@@ -281,6 +286,20 @@
   const unitCards = (co, u) => co.data.cards.filter(c => c.g === u.id);
   const completeUnits = (co, extra) => co.groups.filter(u => (u.dialogue || []).length && unitCards(co, u).every(c => S.progress[c.id] || (extra || []).includes(c.id)));
   const currentUnit = co => co.groups.find(u => unitCards(co, u).some(c => !S.progress[c.id])) || null;
+  /* 장면 묶음(단계): 생활 회화는 13장면씩 4단계, 축구 과정은 데이터에 적힌 단계를 따른다 */
+  function stagesOf(co) {
+    if (!co.stagesCache) {
+      const st = co.data.stages;
+      co.stagesCache = Array.isArray(st) && st.length
+        ? st.map((x, i) => ({ name: x.name, units: co.groups.filter(u => u.stage === i) }))
+        : STAGE_NAMES.map((name, i) => ({ name, units: co.groups.slice(i * UNITS_PER_STAGE, (i + 1) * UNITS_PER_STAGE) })).filter(x => x.units.length);
+    }
+    return co.stagesCache;
+  }
+  // 대화가 있는 장면은 대화 연습까지, 대화가 없는 장면은 표현을 다 배우면 완주
+  const unitDone = (co, u) => ((u.dialogue || []).length ? !!S.dlg[u.id] : unitCards(co, u).every(c => S.progress[c.id]));
+  // 코치 지시어 듣기에 쓰는 표현: 콜·지시어 장면에서 이미 배운 것
+  const listenPool = co => co.data.cards.filter(c => co.groupById[c.g] && co.groupById[c.g].listen && S.progress[c.id]).map(c => c.id);
   const byLastPractice = (a, b) => ((S.dlg[a.id] || {}).last || '').localeCompare((S.dlg[b.id] || {}).last || '');
   /* 배우는 날의 대화: 오늘로 표현을 다 배우게 되는 장면, 없으면 3일 넘게 쉰 장면 하나 */
   function dialoguesFor(co, freshIds) {
@@ -364,6 +383,7 @@
         if (talk.length) steps.push({ t: 'shadow', ids: talk });
         if (kanaWeek.length) steps.push({ t: 'kanaquiz', ids: (co.kana || []).filter(c => S.progress[c.id]).map(c => c.id), focus: kanaWeek, n: 12, label: '글자 실전 퀴즈' });
       }
+      if (co.soccer) { const pool = listenPool(co); if (pool.length >= 4) steps.push({ t: 'listen', ids: pool, n: 8 }); }
     }
     steps.push({ t: 'done' });
     return steps;
@@ -402,10 +422,12 @@
   const defaultWho = () => WHO[S.settings.contexts[0]] || '';
   function resetStepUi() {
     ui.revealed = false; ui.reads = 0; ui.checkNote = false; ui.who = defaultWho(); ui.pick = null;
-    ui.dlgLine = 0; ui.dlgRevealed = false; ui.dlgSwap = false; ui.kanaHide = false; ui.kq = null;
+    ui.dlgLine = 0; ui.dlgRevealed = false; ui.dlgSwap = false; ui.kanaHide = false; ui.kq = null; ui.kanaFocus = null; ui.sr = null;
+    if (ui.lq) clearTimeout(ui.lq.timer);
+    ui.lq = null;
   }
   const intentLabel = it => [it.who && `${it.who}에게`, it.when].filter(Boolean).join(' · ');
-  const STEP_MIN = { check: 0.5, review: 0.4, learn: 1.2, rewrite: 1.5, compose: 1.5, ask: 1.5, weekwrite: 2, weekthink: 2, intent: 0.5, weekpick: 0.5, dialogue: 1.5, shadow: 1.5, kanaquiz: 1.5 };
+  const STEP_MIN = { check: 0.5, review: 0.4, learn: 1.2, rewrite: 1.5, compose: 1.5, ask: 1.5, weekwrite: 2, weekthink: 2, intent: 0.5, weekpick: 0.5, dialogue: 1.5, shadow: 1.5, kanaquiz: 1.5, listen: 1.5 };
   function remainingSteps(p) {
     const steps = p.steps || buildSteps(p);
     return steps.slice(p.steps ? p.pos : 0).filter(s => s.t !== 'done' && stepValid(s, p));
@@ -433,6 +455,7 @@
     steps.filter(s => s.t === 'dialogue').forEach(s => parts.push(`대화 연습 ‘${co.groupById[s.unit].name}’`));
     if (n('shadow')) parts.push('이번 주 표현 따라 말하기');
     steps.filter(s => s.t === 'kanaquiz').forEach(s => parts.push(s.label || '글자 퀴즈'));
+    if (n('listen')) parts.push('코치 지시어 듣기');
     return parts;
   }
 
@@ -454,12 +477,38 @@
   const readingLine = c => (c.r && c.r !== c.t ? `<p class="reading" lang="ja">${esc(c.r)}</p>` : '');  // 가나만으로 된 표현은 읽기가 같아 생략
   const pronLine = c => (S.settings.pron && c.pron ? `<p class="pron">${esc(c.pron)}</p>` : '');
   const maskTerm = (text, term) => (term ? String(text).split(term).join('○○') : text);
+  /* 획순: KanjiVG(CC BY-SA 3.0) 경로를 쓰는 순서대로 그린다. 탁음·반탁음은 기본 글자에 점·동그라미를 더하고, 작은 글자는 줄여 그린다. */
+  const SMALL_KANA = { 'ゃ': 'や', 'ゅ': 'ゆ', 'ょ': 'よ', 'っ': 'つ', 'ャ': 'ヤ', 'ュ': 'ユ', 'ョ': 'ヨ', 'ッ': 'ツ', 'ぁ': 'あ', 'ぃ': 'い', 'ぅ': 'う', 'ぇ': 'え', 'ぉ': 'お', 'ァ': 'ア', 'ィ': 'イ', 'ゥ': 'ウ', 'ェ': 'エ', 'ォ': 'オ' };
+  const MARKS = { '\u3099': ['M80,13c1.8,2.7,3.2,6.2,3.8,9.6', 'M90.5,9.5c1.8,2.7,3.2,6.2,3.8,9.6'], '\u309A': ['M90,10.5c3.9,0,7,3.1,7,7s-3.1,7-7,7s-7-3.1-7-7s3.1-7,7-7'] };
+  function strokesFor(ch) {
+    const all = window.AM_STROKES || {};
+    if (all[ch]) return all[ch];
+    if (ch === 'ー') return { p: ['M18,54.5c12,0.6,52,0.6,73,0'], s: [[18, 54.5]] };
+    if (SMALL_KANA[ch] && all[SMALL_KANA[ch]]) return { ...all[SMALL_KANA[ch]], small: true };
+    const nfd = ch.normalize('NFD'), base = all[nfd[0]], add = nfd.length === 2 && MARKS[nfd[1]];
+    if (base && add) return { p: base.p.concat(add), s: base.s.concat(add.map(a => a.slice(1).split(/[c,]/).slice(0, 2).map(Number))) };
+    return null;
+  }
+  function strokeSvg(ch) {
+    const d = strokesFor(ch);
+    if (!d) return '';
+    const g = d.small ? ' transform="translate(24 32) scale(.6)"' : '';
+    return `<svg class="stroke-svg" viewBox="0 0 109 109" role="img" aria-label="${esc(ch)} 획순 ${d.p.length}획"><path class="stk-grid" d="M54.5,6V103M6,54.5H103"/><g${g}>${d.p.map(x => `<path class="stk-bg" d="${x}"/>`).join('')}${d.p.map((x, i) => `<path class="stk" pathLength="1" style="--i:${i}" d="${x}"/>`).join('')}${d.s.map(([x, y], i) => `<text class="stk-n" x="${x - 5}" y="${y - 3}" style="--i:${i}">${i + 1}</text>`).join('')}</g></svg>`;
+  }
+  function strokePanel(c) {
+    if (c.words || !window.AM_STROKES) return '';
+    const item = c.items.find(x => x.k === ui.kanaFocus) || c.items[0];
+    const glyphs = [...item.k], hint = (window.AM_KANA_HINT || {})[glyphs[0]];
+    return `<div class="stroke-panel"><div class="stroke-row">${glyphs.map(strokeSvg).join('')}</div>
+      <div class="stroke-info"><p class="stroke-ch"><span lang="ja">${esc(item.k)}</span> <small>${esc(item.s)}</small></p>${hint ? `<p class="stroke-hint">${esc(hint)}</p>` : ''}<button class="link" data-act="kana-replay">획순 다시 보기</button><p class="stroke-src">획순: KanjiVG · CC BY-SA 3.0</p></div></div>`;
+  }
   const kanaGridClass = items => (items.some(x => x.ko) ? ' words' : items.some(x => [...x.k].length > 1) ? ' yoon' : '');
-  const kanaCell = (x, hide) => `<button class="kana" data-act="say-kana" data-id="${esc(x.k)}"><span lang="ja">${esc(x.k)}</span><small class="${hide ? 'hid' : ''}">${esc(x.s)}</small>${x.ko ? `<small class="kana-ko">${esc(x.ko)}</small>` : ''}</button>`;
+  const kanaCell = (x, hide, act) => `<button class="kana${act && x.k === ui.kanaFocus ? ' on' : ''}" data-act="${act || 'say-kana'}" data-id="${esc(x.k)}"><span lang="ja">${esc(x.k)}</span><small class="${hide ? 'hid' : ''}">${esc(x.s)}</small>${x.ko ? `<small class="kana-ko">${esc(x.ko)}</small>` : ''}</button>`;
   function cardBlock(c, wordLabel, withAsk) {
     const co = courseOf(c);
     if (c.kana) {
-      return `<div class="kana-grid${kanaGridClass(c.items)}">${c.items.map(x => kanaCell(x, ui.kanaHide)).join('')}</div>
+      return `<div class="kana-grid${kanaGridClass(c.items)}">${c.items.map(x => kanaCell(x, ui.kanaHide, 'kana-focus')).join('')}</div>
+        ${strokePanel(c)}
         ${c.tip ? `<div class="why"><span class="label">알아 두기</span><p>${esc(c.tip)}</p></div>` : ''}`;
     }
     if (co.kind === 'idea') {
@@ -479,7 +528,7 @@
     if (co.kind === 'phrase') {
       return `<div><span class="label">뜻</span><p class="ko-mean">${esc(c.ko)}</p></div>
         <div class="better"><span class="label">${langName(co)}</span><p class="tl"${langAttr(co)}>${marked(c.t, c.blank, 'mark')}</p>${readingLine(c)}${pronLine(c)}</div>
-        <div class="why"><span class="label">알아 두기</span><p>${esc(c.note)}</p></div>`;
+        ${c.note ? `<div class="why"><span class="label">알아 두기</span><p>${esc(c.note)}</p></div>` : ''}`;
     }
     return `${c.situation ? `<p class="situation">${esc(c.situation)}</p>` : ''}
       ${c.avoid ? `<div class="avoid"><span class="label">이렇게 말하는 대신</span><p>${esc(c.avoid)}</p></div>` : ''}
@@ -519,7 +568,7 @@
     const weeks = left / (days * S.settings.load) + kl / (days * kanaPerDay());
     return `이 속도면 ${monthLabel(addDays(today(), Math.ceil(weeks * 7)))}에 완주해요.`;
   }
-  const stageOf = (co, u) => Math.min(STAGE_NAMES.length - 1, Math.floor(co.groups.indexOf(u) / UNITS_PER_STAGE));
+  const stageOf = (co, u) => Math.max(0, stagesOf(co).findIndex(x => x.units.includes(u)));
 
   /* ---------- 화면: 오늘 ---------- */
   function greeting(now) {
@@ -541,8 +590,8 @@
         const n = co.kana.length - kanaLeft(co).length;
         return { label: `글자 ${n} / ${co.kana.length} · ${KANA_SETS[kanaLeft(co)[0].set].name}`, pct: n / co.kana.length };
       }
-      const done = co.groups.filter(u => S.dlg[u.id]).length, u = currentUnit(co);
-      const st = u ? ` · ${stageOf(co, u) + 1}단계 ${STAGE_NAMES[stageOf(co, u)]}` : '';
+      const done = co.groups.filter(u => unitDone(co, u)).length, u = currentUnit(co);
+      const st = u ? ` · ${stageOf(co, u) + 1}단계 ${stagesOf(co)[stageOf(co, u)].name}` : '';
       return { label: `장면 ${done} / ${co.groups.length} 완주${st}`, pct: done / Math.max(1, co.groups.length) };
     }
     const n = learnedIn(co), total = co.data.cards.length;
@@ -556,6 +605,7 @@
       if (co.kind === 'word') return '실전의 날 · 이번 주 낱말로 짧은 글';
       if (co.kind === 'idea') return '실전의 날 · 이번 주 질문으로 사색';
       if (dl) return `실전의 날 · ‘${esc(co.groupById[dl.unit].name)}’ 대화`;
+      if (steps.some(s => s.t === 'listen')) return steps.some(s => s.t === 'shadow') ? '실전의 날 · 따라 말하기와 코치 지시어 듣기' : '실전의 날 · 코치 지시어 듣기';
       return steps.some(s => s.t === 'shadow') ? '실전의 날 · 이번 주 표현 따라 말하기' : '실전의 날 · 지금까지 배운 글자 퀴즈';
     }
     if (p.type === 'review') return '돌아보는 날 · 한 주 복습과 정리';
@@ -686,31 +736,33 @@
       : '';
     if (ui.libSub === 'kana' && sub) return sub + kanaView();
     const cur = currentUnit(co);
-    let html = '', stage = -1;
-    co.groups.forEach((u, i) => {
-      const st = stageOf(co, u);
-      if (st !== stage) {
-        if (stage >= 0) html += '</ol></section>';
-        stage = st;
-        const units = co.groups.slice(st * UNITS_PER_STAGE, (st + 1) * UNITS_PER_STAGE);
-        const done = units.filter(x => S.dlg[x.id]).length;
-        html += `<section class="stage"><h2 class="stage-name"><span>${st + 1}단계 · ${STAGE_NAMES[st]}</span><small>${st * UNITS_PER_STAGE + 1}~${st * UNITS_PER_STAGE + units.length}주 · 완주 ${done}/${units.length}</small></h2><ol class="units">`;
-      }
-      const cards = unitCards(co, u);
-      const n = cards.filter(c => S.progress[c.id]).length;
-      const open = n === cards.length && (u.dialogue || []).length;
-      const d = S.dlg[u.id];
-      const expanded = ui.openUnits[u.id] != null ? ui.openUnits[u.id] : (cur && u.id === cur.id);
-      html += `<li class="unit${expanded ? ' open' : ''}${cur && u.id === cur.id ? ' current' : ''}">
-        <button class="unit-head" data-act="unit-toggle" data-id="${esc(u.id)}" aria-expanded="${!!expanded}"><span class="unit-no${d ? ' done' : ''}">${d ? icon('check') : i + 1}</span><span class="unit-title"><b>${esc(u.name)}</b><small>${esc(u.desc)}</small></span><span class="unit-prog">${n}/${cards.length}</span>${icon('chev')}</button>
-        ${expanded ? `<ul class="list">${cards.map(itemRow).join('')}</ul>
-        <div class="row">${open
-          ? `<button class="btn${d ? '' : ' primary'}" data-act="practice" data-id="${esc(u.id)}">${icon('chat')}대화 연습${d ? ` · ${d.n}번 완주` : ''}</button>`
-          : `<button class="btn" disabled>${icon('chat')}대화 연습</button><span class="hint">표현 ${cards.length}개를 다 배우면 열려요</span>`}</div>` : ''}
-      </li>`;
+    let html = '', i = 0;
+    stagesOf(co).forEach((st, si) => {
+      const done = st.units.filter(x => unitDone(co, x)).length;
+      const range = co.data.stages ? `${st.units.length}장면` : `${i + 1}~${i + st.units.length}주`;
+      html += `<section class="stage"><h2 class="stage-name"><span>${si + 1}단계 · ${esc(st.name)}</span><small>${range} · 완주 ${done}/${st.units.length}</small></h2><ol class="units">`;
+      st.units.forEach(u => {
+        i++;
+        const cards = unitCards(co, u);
+        const n = cards.filter(c => S.progress[c.id]).length;
+        const hasDlg = (u.dialogue || []).length, open = n === cards.length && hasDlg;
+        const d = S.dlg[u.id], fin = unitDone(co, u);
+        const expanded = ui.openUnits[u.id] != null ? ui.openUnits[u.id] : (cur && u.id === cur.id);
+        html += `<li class="unit${expanded ? ' open' : ''}${cur && u.id === cur.id ? ' current' : ''}">
+          <button class="unit-head" data-act="unit-toggle" data-id="${esc(u.id)}" aria-expanded="${!!expanded}"><span class="unit-no${fin ? ' done' : ''}">${fin ? icon('check') : i}</span><span class="unit-title"><b>${esc(u.name)}</b><small>${esc(u.desc)}${u.listen ? ' · 듣기' : ''}${hasDlg ? ' · 역할 대화' : ''}</small></span><span class="unit-prog">${n}/${cards.length}</span>${icon('chev')}</button>
+          ${expanded ? `<ul class="list">${cards.map(itemRow).join('')}</ul>
+          ${hasDlg ? `<div class="row">${open
+            ? `<button class="btn${d ? '' : ' primary'}" data-act="practice" data-id="${esc(u.id)}">${icon('chat')}대화 연습${d ? ` · ${d.n}번 완주` : ''}</button>`
+            : `<button class="btn" disabled>${icon('chat')}대화 연습</button><span class="hint">표현 ${cards.length}개를 다 배우면 열려요</span>`}</div>` : ''}` : ''}
+        </li>`;
+      });
+      html += '</ol></section>';
     });
-    if (stage >= 0) html += '</ol></section>';
-    return `${sub}<p class="hint">한 주에 한 장면. 표현 다섯 개를 배우고, 토요일 실전의 날에 그 장면의 대화를 직접 말해 봐요. ${esc(finishText(co))}</p>${html}`;
+    const intro = co.soccer
+      ? '장면마다 표현을 배우고, 역할 대화가 있는 장면은 대화로, 콜과 지시어는 소리만 듣고 알아듣는 연습을 해요.'
+      : '한 주에 한 장면. 표현 다섯 개를 배우고, 토요일 실전의 날에 그 장면의 대화를 직접 말해 봐요.';
+    const tool = co.soccer ? `<button class="btn" data-act="listen-practice" data-id="${co.id}">${icon('speaker')}코치 지시어 듣기${listenPool(co).length >= 4 ? '' : ' · 콜을 조금 더 배우면 열려요'}</button>` : '';
+    return `${sub}<p class="hint">${intro} ${esc(finishText(co))}</p>${tool}${html}`;
   }
   function kanaView() {
     const K = window.AM_KANA;
@@ -732,7 +784,9 @@
   function viewLibrary() {
     const co = libCourse();
     const title = co.kind === 'sentence' ? '문장 모음' : co.kind === 'word' ? '우리말 모음' : co.kind === 'idea' ? '인문학 모음' : `${co.name} 표현`;
-    const courseChips = `<div class="course-tabs" style="--n:${COURSES.length}" role="group" aria-label="과정">${COURSES.map(x => `<button class="course-tab" data-act="lib-course" data-id="${x.id}" aria-pressed="${x.id === co.id}">${badge(x)}<span>${esc(x.name)}</span></button>`).join('')}</div>`;
+    // 공부하는 과정을 앞에 두어 좁은 화면에서도 바로 보이게 한다
+    const tabs = activeCourses().concat(COURSES.filter(x => !S.settings.courses.includes(x.id)));
+    const courseChips = `<div class="course-tabs" role="group" aria-label="과정">${tabs.map(x => `<button class="course-tab" data-act="lib-course" data-id="${x.id}" aria-pressed="${x.id === co.id}">${badge(x)}<span>${esc(x.name)}</span></button>`).join('')}</div>`;
     const body = co.kind === 'sentence' ? libSentence(co) : co.kind === 'word' || co.kind === 'idea' ? libWords(co) : libPhrases(co);
     return `${head(esc(co.desc), title)}${courseChips}${body}`;
   }
@@ -776,12 +830,12 @@
         return `<i class="rc ${pr ? (pr.box >= MASTERED_BOX ? 'done' : 'half') : c === nextKana ? 'now' : ''}" title="${esc(c.name)}"></i>`;
       }).join('')}</div></div>`).join('')
       : '';
-    const rows = kanaRows + STAGE_NAMES.map((name, si) => {
-      const units = co.groups.slice(si * UNITS_PER_STAGE, (si + 1) * UNITS_PER_STAGE);
+    const rows = kanaRows + stagesOf(co).map((st, si) => {
+      const units = st.units;
       if (!units.length) return '';
-      return `<div class="road-row"><span class="road-name">${si + 1}단계 · ${name}</span><div class="road-cells">${units.map(u => {
+      return `<div class="road-row"><span class="road-name">${si + 1}단계 · ${esc(st.name)}</span><div class="road-cells">${units.map(u => {
         const learned = unitCards(co, u).every(c => S.progress[c.id]);
-        const cls = S.dlg[u.id] ? 'done' : learned ? 'half' : cur && u.id === cur.id ? 'now' : '';
+        const cls = unitDone(co, u) ? 'done' : learned ? 'half' : cur && u.id === cur.id ? 'now' : '';
         return `<i class="rc ${cls}" title="${esc(u.name)}"></i>`;
       }).join('')}</div></div>`;
     }).join('');
@@ -854,11 +908,11 @@
         ${ui.revealed ? `<div class="word-hero"><p class="term-big idea">${esc(c.term)}</p>${c.orig ? `<span class="pill">${esc(c.orig)}</span>` : ''}</div>${c.who ? `<p class="hint">${esc(c.who)}</p>` : ''}` : '<p class="hint">풀이를 읽고 어떤 개념인지, 빈칸에 들어갈 말은 무엇인지 소리 내어 떠올려 본 뒤 확인하세요.</p>'}`;
     } else if (co.kind === 'phrase') {
       const pr = S.progress[c.id] || { box: 0 };
-      const full = pr.box >= FULL_RECALL_BOX;
+      const full = co.fullRecall || pr.box >= FULL_RECALL_BOX;
       const la = langAttr(co), ln = langName(co);
       body = `${eyebrow}<p class="ko-mean big">${esc(c.ko)}</p>
         ${ui.revealed
-          ? `<div class="better"><span class="label">${ln}</span><p class="tl"${la}>${marked(c.t, c.blank, 'mark', true)}</p>${readingLine(c)}${pronLine(c)}</div><p class="hint">${esc(c.note)}</p>`
+          ? `<div class="better"><span class="label">${ln}</span><p class="tl"${la}>${marked(c.t, c.blank, 'mark', true)}</p>${readingLine(c)}${pronLine(c)}</div>${c.note ? `<p class="hint">${esc(c.note)}</p>` : ''}`
           : full
             ? `<p class="hint">이 말을 ${josa(ln, '으로', '로')} 소리 내어 통째로 말해 본 뒤 확인하세요.</p>`
             : `<div class="better"><span class="label">${ln}</span><p class="tl"${la}>${marked(c.t, c.blank, 'blank')}</p></div><p class="hint">빈칸을 채워 문장 전체를 소리 내어 말해 본 뒤 확인하세요.</p>`}`;
@@ -891,15 +945,16 @@
       const list = co.kana.filter(x => x.set === c.set);
       return [`<p class="eyebrow">새 글자${count} · ${KANA_SETS[c.set].name} ${list.indexOf(c) + 1}/${list.length}</p><h2 class="step-title">${esc(c.name)}</h2>${cardBlock(c)}
         <div class="row">${speakBtn(c)}<button class="btn" data-act="kana-hide" aria-pressed="${!!ui.kanaHide}">${ui.kanaHide ? '소리 보이기' : '소리 가리고 읽기'}</button>${padBtn(c)}</div>
-        <p class="hint">${ui.kanaHide ? '소리를 가렸어요. 글자만 보고 소리 내어 읽은 뒤, 헷갈리는 글자를 눌러 들어 보세요.' : '글자를 누르면 소리가 나요. 하나씩 들으며 따라 읽고, 소리를 가린 채 한 번 더 읽어 보세요.'}</p>`,
+        <p class="hint">${ui.kanaHide ? '소리를 가렸어요. 글자만 보고 소리 내어 읽은 뒤, 헷갈리는 글자를 눌러 들어 보세요.' : '글자를 누르면 소리와 획순이 나와요. 하나씩 들으며 따라 읽고, 소리를 가린 채 한 번 더 읽어 보세요.'}</p>`,
         '<button class="btn primary wide" data-act="learned">다음</button>'];
     }
     if (co.kind === 'phrase') {
       const u = co.groupById[c.g], cards = u ? unitCards(co, u) : [];
       const k = cards.indexOf(c) + 1;
       return [`<p class="eyebrow">새 표현${count} · ${esc(groupName(c))}${k ? ` ${k}/${cards.length}` : ''}</p>${cardBlock(c)}
-        <div class="row">${speakBtn(c)}${slowBtn(c)}${readCounter('따라 말하기')}${padBtn(c)}</div>
-        <p class="hint">${ui.reads >= 3 ? '세 번 따라 말했어요. 귀로 듣고 입으로 말한 표현이 대화에서 먼저 나와요.' : '듣기를 누르고, 들은 그대로 세 번 따라 말해 보세요.'}</p>`,
+        <div class="row">${speakBtn(c)}${slowBtn(c)}${readCounter('따라 말하기')}${sayBtn('say-check|' + c.id)}${padBtn(c)}</div>
+        ${srLine()}
+        <p class="hint">${ui.reads >= 3 ? '세 번 따라 말했어요. 귀로 듣고 입으로 말한 표현이 대화에서 먼저 나와요.' : `듣기를 누르고, 들은 그대로 세 번 따라 말해 보세요.${Recog ? ' ‘말해 보기’를 누르면 제대로 들리는지 확인해 줘요.' : ''}`}</p>`,
         '<button class="btn primary wide" data-act="learned">다음</button>'];
     }
     if (co.kind === 'idea') {
@@ -964,6 +1019,46 @@
       <div class="choices">${x.choices.map(ch => `<button class="choice${z.picked ? (ch === x.s ? ' right' : ch === z.picked ? ' wrong' : '') : ''}" data-act="kq-pick" data-id="${esc(ch)}"${z.picked ? ' disabled' : ''}>${esc(ch)}</button>`).join('')}</div>`,
       z.picked ? `<button class="btn primary wide" data-act="kq-next">${z.i >= z.items.length - 1 ? '결과 보기' : '다음 글자'}</button>` : `<p class="hint center">${z.i + 1} / ${z.items.length}</p>`];
   }
+  /* 코치 지시어 듣기: 글자 없이 소리만 듣고, 정해진 시간 안에 뜻을 고른다. 경기 중엔 읽을 시간이 없으니까. */
+  const LISTEN_SEC = 6;
+  function buildListen(key, ids, n) {
+    const cards = shuffle(ids.map(cardById).filter(Boolean)).slice(0, n);
+    const co = cards[0] ? courseOf(cards[0]) : null;
+    const pool = co ? [...new Set(co.data.cards.filter(c => co.groupById[c.g] && co.groupById[c.g].listen).map(c => c.ko))] : [];
+    const items = cards.map(c => ({ id: c.id, choices: shuffle([c.ko].concat(shuffle(pool.filter(k => k !== c.ko)).slice(0, 3))) }));
+    return { key, items, i: 0, picked: null, wrong: [], done: false, asked: -1, timer: 0 };
+  }
+  function listenView(z, eyebrow) {
+    if (!z.items.length) return [`${eyebrow}<p class="hint">들을 지시어가 아직 없어요.</p>`, '<button class="btn primary wide" data-act="ls-done">다음</button>'];
+    if (z.done) {
+      const total = z.items.length, ok = total - z.wrong.length;
+      const missed = z.wrong.map(cardById).filter(Boolean);
+      return [`${eyebrow}<div class="kq-result"><p class="kq-score"><b>${ok}</b> / ${total}</p><p>${ok === total ? '모두 알아들었어요!' : `${total}개 중 ${ok}개 알아들었어요.`}</p></div>
+        ${missed.length ? `<p class="label">놓친 지시어</p><ul class="shadow-list">${missed.map(c => `<li><div><p class="tl"${langAttr(courseOf(c))}>${esc(c.t)}</p>${pronLine(c)}<p class="ko">${esc(c.ko)}</p></div>${canSpeak ? `<button class="say" data-act="speak" data-id="${esc(c.id)}" aria-label="듣기">${icon('speaker')}</button>` : ''}</li>`).join('')}</ul>` : ''}
+        <p class="hint">놓친 것은 눌러서 다시 듣고, 소리 내어 따라 해 보세요.</p>`,
+        '<button class="btn primary wide" data-act="ls-done">다음</button>'];
+    }
+    const x = z.items[z.i], c = cardById(x.id), co = courseOf(c);
+    const right = z.picked === c.ko, late = z.picked === '__late';
+    if (!z.picked && z.asked !== z.i) {
+      // 새 문제: 소리를 들려주고 시간을 잰다
+      z.asked = z.i;
+      const at = z.i;
+      setTimeout(() => speak(c.t, co.lang), 60);
+      clearTimeout(z.timer);
+      z.timer = setTimeout(() => {
+        if (ui.lq !== z || z.i !== at || z.picked || z.done) return;
+        z.picked = '__late'; z.wrong.push(x.id); renderSession();
+      }, LISTEN_SEC * 1000 + 700);
+    }
+    const dots = `<div class="kq-dots" aria-hidden="true">${z.items.map((y, i) => `<i class="${i < z.i || (i === z.i && z.picked) ? (z.wrong.includes(y.id) ? 'bad' : 'ok') : i === z.i ? 'now' : ''}"></i>`).join('')}</div>`;
+    return [`${eyebrow}${dots}
+      <div class="ls-play"><button class="ls-btn" data-act="ls-say" aria-label="다시 듣기">${icon('speaker')}</button>${z.picked ? '' : `<div class="ls-timer" style="--sec:${LISTEN_SEC}s" aria-hidden="true"><span></span></div>`}</div>
+      ${z.picked ? `<div class="better center"><p class="tl"${langAttr(co)}>${esc(c.t)}</p>${readingLine(c)}${pronLine(c)}</div>` : ''}
+      <p class="hint center">${z.picked ? (right ? '맞아요!' : late ? `시간이 지났어요 · 정답은 ‘${esc(c.ko)}’` : `정답은 ‘${esc(c.ko)}’`) : '코치가 외쳤어요. 무슨 뜻일까요?'}</p>
+      <div class="choices">${x.choices.map(ch => `<button class="choice${z.picked ? (ch === c.ko ? ' right' : ch === z.picked ? ' wrong' : '') : ''}" data-act="ls-pick" data-id="${esc(ch)}"${z.picked ? ' disabled' : ''}>${esc(ch)}</button>`).join('')}</div>`,
+      z.picked ? `<button class="btn primary wide" data-act="ls-next">${z.i >= z.items.length - 1 ? '결과 보기' : '다음 지시어'}</button>` : `<p class="hint center">${z.i + 1} / ${z.items.length}</p>`];
+  }
   const writeActions = '<div class="duo"><button class="btn" data-act="next">건너뛰기</button><button class="btn primary" data-act="rewrite-save">저장하고 다음</button></div>';
   function rewriteStep(c) {
     const who = defaultWho();
@@ -1021,17 +1116,18 @@
     const la = langAttr(co), ln = langName(co);
     const bubble = (l, i) => {
       const mine = l.who === me;
-      if (i === at && myTurn) return `<li class="bubble me ask"><span class="who">나</span><p class="ko-mean">${esc(l.ko)}</p><p class="hint">${josa(ln, '으로', '로')} 소리 내어 말해 보세요.</p></li>`;
+      if (i === at && myTurn) return `<li class="bubble me ask"><span class="who">나</span><p class="ko-mean">${esc(l.ko)}</p><p class="hint">${josa(ln, '으로', '로')} 소리 내어 말해 보세요.</p>${srLine()}</li>`;
       return `<li class="bubble ${mine ? 'me' : 'them'}"><span class="who">${mine ? '나' : '상대'}</span>
         <p class="tl"${la}>${esc(l.t)}</p>${readingLine(l)}${pronLine(l)}<p class="ko">${esc(l.ko)}</p>
         ${canSpeak ? `<button class="say" data-act="say-line" data-id="${esc(co.id)}|${esc(u.id)}|${i}" aria-label="이 줄 듣기">${icon('speaker')}</button>` : ''}</li>`;
     };
     const body = `<p class="eyebrow">대화 연습 · ${esc(u.name)}</p>
       <h2 class="step-title">${ui.dlgSwap ? '역할을 바꿨어요. 이번엔 상대 쪽 말을 해 보세요.' : '배운 표현으로 실제 대화를 해 봐요.'}</h2>
+      ${u.scene ? `<p class="situation">${esc(u.scene)}</p>` : ''}
       <p class="hint">상대의 말은 듣고, 내 차례에는 한국어 뜻을 보고 ${josa(ln, '으로', '로')} 먼저 말해 본 뒤 확인하세요.</p>
       <ol class="chat">${lines.slice(0, at + 1).map(bubble).join('')}</ol>`;
     const actions = myTurn
-      ? '<button class="btn primary wide" data-act="dlg-reveal">말해 봤어요 · 확인</button>'
+      ? (Recog ? `<div class="duo">${sayBtn('say-check-line')}<button class="btn primary" data-act="dlg-reveal">말해 봤어요 · 확인</button></div>` : '<button class="btn primary wide" data-act="dlg-reveal">말해 봤어요 · 확인</button>')
       : !last
         ? '<button class="btn primary wide" data-act="dlg-next">다음 줄</button>'
         : '<div class="duo"><button class="btn" data-act="dlg-swap">역할 바꿔 한 번 더</button><button class="btn primary" data-act="dlg-done">대화 완료</button></div>';
@@ -1102,6 +1198,11 @@
       case 'weekpick': return weekpickStep(s);
       case 'weekwrite': return weekwriteStep(s);
       case 'shadow': return shadowStep(s, co);
+      case 'listen': {
+        const key = `${p.course}:${p.date}:${p.pos}`;
+        if (!ui.lq || ui.lq.key !== key) ui.lq = buildListen(key, s.ids, s.n || 8);
+        return listenView(ui.lq, '<p class="eyebrow">실전의 날 · 코치 지시어 듣기</p>');
+      }
       case 'kanaquiz': return kanaQuizView(s, p, { ids: s.ids, focus: s.focus, n: s.n || 10, graded: false, eyebrow: `<p class="eyebrow">${esc(s.label || '글자 퀴즈')}</p>` });
       case 'dialogue': return dialogueView(co, co.groupById[s.unit]);
       default: return doneStep(p);
@@ -1113,6 +1214,7 @@
   function yearTotals() {
     return activeCourses().map(co => co.kind === 'phrase' ? `${co.name} ${kanaOn(co) ? `글자 ${co.kana.length}묶음 + ` : ''}${co.groups.length}장면` : `${co.name} ${co.data.cards.length}${co.unitWord}`).join(' · ');
   }
+  const onbPick = co => `<button class="pick" data-act="onb-course" data-id="${co.id}" aria-pressed="${S.settings.courses.includes(co.id)}">${badge(co)}<span class="pick-body"><b>${esc(co.name)}</b><small>${esc(co.desc)}</small></span><span class="tick">${icon('check')}</span></button>`;
   function onboarding() {
     const steps = onbSteps();
     const step = steps[Math.min(ui.onb, steps.length - 1)];
@@ -1134,7 +1236,9 @@
       actions = '<button class="btn primary wide" data-act="onb-next">시작하기</button>';
     } else if (step === 'courses') {
       body = `<p class="eyebrow">${k} / ${n}</p><h2 class="step-title">무엇을 공부할까요?</h2><p class="hint">여러 개 골라도 돼요. 고른 과정마다 오늘의 루틴이 생겨요. 나중에 설정에서 바꿀 수 있어요.</p>
-        <div class="pick-list" role="group" aria-label="과정">${COURSES.map(co => `<button class="pick" data-act="onb-course" data-id="${co.id}" aria-pressed="${S.settings.courses.includes(co.id)}">${badge(co)}<span class="pick-body"><b>${esc(co.name)}</b><small>${esc(co.desc)}</small></span><span class="tick">${icon('check')}</span></button>`).join('')}</div>
+        <div class="pick-list" role="group" aria-label="과정">${COURSES.filter(co => !co.soccer).map(onbPick).join('')}</div>
+        ${COURSES.some(co => co.soccer) ? `<h3 class="onb-sub">축구 선수라면</h3><p class="hint">일본·영어권 팀에 가는 선수를 위한 과정이에요. 합류 첫날 인사부터 포지션 콜, 코치 지시어 듣기, 인터뷰까지 선수가 실제로 쓰는 말만 모았어요.</p>
+        <div class="pick-list" role="group" aria-label="축구 과정">${COURSES.filter(co => co.soccer).map(onbPick).join('')}</div>` : ''}
         <p class="form-error" id="onb-err" hidden></p>`;
       actions = `<div class="duo">${back}<button class="btn primary" data-act="onb-next">다음</button></div>`;
     } else if (step === 'contexts') {
@@ -1180,6 +1284,7 @@
       ${del}
     </div>`;
   }
+  const courseChip = co => `<button class="chip course-chip" data-act="course-toggle" data-id="${co.id}" aria-pressed="${S.settings.courses.includes(co.id)}">${badge(co)}${esc(co.name)}</button>`;
   function settingsSheet() {
     const s = S.settings;
     const imp = ui.confirm === 'import' && ui.pendingImport
@@ -1189,12 +1294,13 @@
       ? '<div class="confirm"><p>배운 것, 노트, 연속 기록이 모두 지워져요. 되돌릴 수 없어요.</p><div class="row"><button class="btn" data-act="cancel-confirm">취소</button><button class="btn danger solid" data-act="reset">모두 지우기</button></div></div>'
       : '<button class="btn danger" data-act="ask-reset">모든 기록 지우기</button>';
     return `<div class="sheet-body">
-      <section class="group"><h3>공부할 과정</h3><div class="chips">${COURSES.map(co => `<button class="chip course-chip" data-act="course-toggle" data-id="${co.id}" aria-pressed="${s.courses.includes(co.id)}">${badge(co)}${esc(co.name)}</button>`).join('')}</div><p class="hint">고른 과정마다 오늘의 루틴이 생겨요.</p></section>
+      <section class="group"><h3>공부할 과정</h3><div class="chips">${COURSES.filter(co => !co.soccer).map(courseChip).join('')}</div>${COURSES.some(co => co.soccer) ? `<p class="label">축구 모드</p><div class="chips">${COURSES.filter(co => co.soccer).map(courseChip).join('')}</div>` : ''}<p class="hint">고른 과정마다 오늘의 루틴이 생겨요.</p></section>
       <section class="group"><h3>하루 분량</h3><div class="seg" role="group" aria-label="하루 분량">${LOAD_NAMES.map((nm, i) => `<button data-act="load" data-id="${i + 1}" aria-pressed="${s.load === i + 1}">${nm}</button>`).join('')}</div><p class="hint">과정마다 하루 ${s.load}개씩 · ${LOAD_SPAN[s.load - 1]}이면 완주해요.</p></section>
       <section class="group"><h3>주간 리듬</h3><div class="seg" role="group" aria-label="주간 리듬"><button data-act="rhythm" data-id="week" aria-pressed="${s.rhythm === 'week'}">주 5일 배우기</button><button data-act="rhythm" data-id="daily" aria-pressed="${s.rhythm === 'daily'}">매일 배우기</button></div><p class="hint">${s.rhythm === 'week' ? '월~금 배우는 날 · 토 실전의 날 · 일 돌아보는 날' : '주말에도 새로 배워요. 실전과 돌아보기는 따로 없어요.'}</p></section>
       <section class="group"><h3>1년 약속</h3><label class="label" for="set-anchor">언제 할까요?</label><input id="set-anchor" type="text" maxlength="40" value="${esc(s.anchor)}" placeholder="예) 아침 커피를 내린 뒤"><p class="hint">${s.start ? `${shortDate(s.start)}에 시작했어요.` : ''} 매일 이미 하는 일 바로 뒤에 붙이면 이어 가기 쉬워요.</p></section>
       ${s.courses.includes('sentence') && CONTEXTS.length ? `<section class="group"><h3>좋은 문장은 주로 누구에게?</h3><p class="hint">고른 대상에 맞는 문장이 먼저 나와요.</p><div class="chips">${CONTEXTS.map(x => `<button class="chip" data-act="ctx" data-id="${x.id}" aria-pressed="${s.contexts.includes(x.id)}">${esc(x.name)}</button>`).join('')}</div></section>` : ''}
       ${COURSES.some(co => co.kind === 'phrase') ? `<section class="group"><h3>한글 발음</h3><div class="seg" role="group" aria-label="한글 발음"><button data-act="pron" data-id="on" aria-pressed="${!!s.pron}">보이기</button><button data-act="pron" data-id="off" aria-pressed="${!s.pron}">숨기기</button></div><p class="hint">일본어·영어 표현 아래에 한글로 적은 발음을 보여 줘요. 익숙해지면 숨기고 귀로만 들어 보세요.</p></section>` : ''}
+      ${canSpeak ? `<section class="group"><h3>듣기 속도</h3><div class="seg" role="group" aria-label="듣기 속도"><button data-act="rate" data-id="slow" aria-pressed="${s.rate === 'slow'}">느리게</button><button data-act="rate" data-id="normal" aria-pressed="${s.rate === 'normal'}">보통</button><button data-act="rate" data-id="fast" aria-pressed="${s.rate === 'fast'}">빠르게</button></div><p class="hint">일본어·영어·우리말을 읽어 주는 속도예요. ‘천천히’ 버튼은 이 속도보다 한 번 더 느리게 읽어요.</p></section>` : ''}
       ${courseById.ja && (courseById.ja.kana || []).length ? `<section class="group"><h3>일본어 시작</h3><div class="seg" role="group" aria-label="일본어 시작"><button data-act="kana-first" data-id="on" aria-pressed="${s.kanaFirst !== false}">히라가나·가타카나부터</button><button data-act="kana-first" data-id="off" aria-pressed="${s.kanaFirst === false}">회화부터</button></div><p class="hint">글자 ${courseById.ja.kana.length}묶음(히라가나·가타카나)을 하루 ${kanaPerDay()}묶음씩 먼저 익히고 회화 장면으로 넘어가요. 약 ${Math.ceil(courseById.ja.kana.length / kanaPerDay() / (s.rhythm === 'daily' ? 7 : 5))}주 걸려요. 글자를 이미 알면 회화부터 시작하세요.</p></section>` : ''}
       <section class="group"><h3>아침 알림</h3><div class="row"><label class="label" for="set-time">알림 시간</label><input id="set-time" type="time" value="${esc(s.time)}"><button class="btn" data-act="ics">캘린더에 매일 알림 추가</button></div><p class="hint">캘린더 파일을 받아 열면 매일 이 시간에 알림이 와요.</p></section>
       <section class="group"><h3>화면</h3><div class="seg" role="group" aria-label="화면">${[['system', '기기 설정'], ['light', '밝게'], ['dark', '어둡게']].map(([v, n]) => `<button data-act="theme" data-id="${v}" aria-pressed="${(s.theme || 'system') === v}">${n}</button>`).join('')}</div></section>
@@ -1288,7 +1394,9 @@
         reads.push(c.items.slice(i, i + 5).map(x => `${x.k}  ${x.s}${x.ko ? ` · ${x.ko}` : ''}`).join('\n'));
         names.push(`${c.items[i].k}~`);
       }
-      return { title: `${KANA_SETS[c.set].name} ${c.name} · 쓰기 연습`, text: chunks[0], chunks: chunks.length > 1 ? chunks : null, chunkNames: names, reads, sub: '', think: '옅은 글자를 따라 쓰고, 남은 칸에는 보지 않고 소리 내며 써 보세요.', lang: 'ja-JP', grid: true, cols: 8, say: { text: c.items.map(x => x.k).join('、'), lang: 'ja-JP' } };
+      const fadeUnits = [];
+      for (let i = 0; i < c.items.length; i += 5) fadeUnits.push(c.items.slice(i, i + 5).map(x => [...x.k].length));
+      return { title: `${KANA_SETS[c.set].name} ${c.name} · 쓰기 연습`, text: chunks[0], chunks: chunks.length > 1 ? chunks : null, chunkNames: names, reads, fadeUnits, sub: '', think: '점점 옅어지는 글자를 따라 쓰고, 남은 칸에는 보지 않고 소리 내며 써 보세요.', lang: 'ja-JP', grid: true, cols: 8, say: { text: c.items.map(x => x.k).join('、'), lang: 'ja-JP' } };
     }
     if (co.kind === 'phrase') return { title: `${co.name} · 손으로 써 보기`, text: c.t, sub: [c.r && c.r !== c.t ? c.r : '', S.settings.pron ? c.pron : '', c.ko].filter(Boolean).join('\n'), think: '두세 번 따라 쓰고, 마지막에는 보지 않고 써 보세요.', lang: co.lang, grid: co.lang === 'ja-JP', say: { ...say, text: c.t } };
     return { title: '좋은 문장 · 손으로 써 보기', text: c.text, sub: c.situation, think: '쓰는 동안, 이 말을 건네고 싶은 사람을 떠올려 보세요.', lang: co.lang, grid: true, say: { ...say, text: c.text } };
@@ -1375,14 +1483,20 @@
       for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) ctx.strokeRect(GRID_PAD + k * cell, GRID_PAD + r * rowH, cell, cell);
       if (withTrace && text) {
         ctx.fillStyle = pal.trace; ctx.font = `${cell * 0.66}px ${fontFor(m.lang)}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        let r = 0, k = 0;
+        // fadeUnits가 있으면 같은 글자를 되풀이할수록 옅게(진하게 → 옅게 → 더 옅게), 그다음 칸은 보지 않고 쓴다
+        const fu = m.fadeUnits ? m.fadeUnits[m.chunks ? pad.chunk : 0] : null, FADE = [1, 0.55, 0.28];
+        let r = 0, k = 0, line = 0, pos = 0;
         for (const ch of [...text]) {
-          if (ch === '\n') { r++; k = 0; continue; }
+          if (ch === '\n') { r++; k = 0; line++; pos = 0; continue; }
           if (k >= cols) { r++; k = 0; }
           if (r >= rows) break;
-          if (ch.trim()) ctx.fillText(ch, GRID_PAD + k * cell + cell / 2, GRID_PAD + r * rowH + cell * 0.53);
-          k++;
+          if (ch.trim()) {
+            if (fu) ctx.globalAlpha = FADE[Math.min(FADE.length - 1, Math.floor(pos / ((fu && fu[line]) || 1)))];
+            ctx.fillText(ch, GRID_PAD + k * cell + cell / 2, GRID_PAD + r * rowH + cell * 0.53);
+          }
+          k++; pos++;
         }
+        ctx.globalAlpha = 1;
       }
     } else if (pad.bg === 'lines') {
       for (let y = LINE_TOP; y < LH; y += LINE_GAP) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(LW, y); ctx.stroke(); }
@@ -1565,6 +1679,14 @@
   function renderSession() {
     const el = $('session');
     if (!S.settings.onboarded) { el.hidden = false; el.innerHTML = onboarding(); return; }
+    if (ui.practice && ui.practice.type === 'listen') {
+      const co = courseById[ui.practice.course];
+      if (!co || !ui.lq) { ui.practice = null; renderSession(); return; }
+      const [body, actions] = listenView(ui.lq, `<p class="eyebrow">${esc(co.name)} · 코치 지시어 듣기</p>`);
+      el.hidden = false;
+      el.innerHTML = `<div class="session-inner"><div class="session-top"><button class="icon-btn" data-act="close-practice" aria-label="듣기 연습 닫기">${icon('close')}</button>${badge(co)}<span class="step-count">${esc(co.name)}</span></div><div class="session-body">${body}</div><div class="session-actions">${actions}</div></div>`;
+      return;
+    }
     if (ui.practice) {
       const co = courseById[ui.practice.course], u = co && co.groupById[ui.practice.unit];
       if (!u) { ui.practice = null; renderSession(); return; }
@@ -1638,12 +1760,52 @@
   const loadVoices = () => { try { voices = window.speechSynthesis.getVoices() || []; } catch (e) { voices = []; } };
   if (canSpeak) { loadVoices(); try { window.speechSynthesis.addEventListener('voiceschanged', loadVoices); } catch (e) { /* 이벤트가 없어도 기본 목소리로 읽는다 */ } }
   const warnedLang = {};
+  const RATE_MULT = { slow: 0.8, normal: 1, fast: 1.15 };
+  /* 말해 보기: 기기의 음성 인식으로 들은 말을 표현과 견줘 본다(편집 거리 60% 이상이면 통과). 인식이 없는 기기에서는 버튼을 숨긴다. */
+  const Recog = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  const sayNorm = x => String(x || '').toLowerCase().normalize('NFKC').replace(/[\s、。，,.!！?？'’"“”「」・〜~\-–—…]/g, '');
+  function sayScore(a, b) {
+    if (!a || !b) return 0;
+    let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = cur;
+    }
+    return 1 - prev[b.length] / Math.max(a.length, b.length);
+  }
+  function listenTo(t, r, lang) {
+    if (!Recog) { toast('이 브라우저에서는 말하기 확인을 쓸 수 없어요.'); return; }
+    if (ui.sr && ui.sr.state === 'listening') return;
+    let rec;
+    try { rec = new Recog(); } catch (e) { toast('이 브라우저에서는 말하기 확인을 쓸 수 없어요.'); return; }
+    rec.lang = lang; rec.interimResults = false; rec.maxAlternatives = 3;
+    ui.sr = { state: 'listening', heard: '' }; renderSession();
+    rec.onresult = e => {
+      const alts = Array.from((e.results && e.results[0]) || []).map(a => a.transcript).filter(Boolean);
+      const goals = [t, r].filter(Boolean).map(sayNorm);
+      const best = Math.max(0, ...alts.flatMap(a => goals.map(g => sayScore(sayNorm(a), g))));
+      ui.sr = { state: best >= 0.6 ? 'ok' : 'retry', heard: alts[0] || '' };
+      if (best >= 0.6) ui.reads = Math.min(3, ui.reads + 1);
+      renderSession();
+    };
+    rec.onerror = e => {
+      ui.sr = null; renderSession();
+      toast(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? '마이크 사용을 허용하면 말하기를 확인할 수 있어요.' : '잘 들리지 않았어요. 조용한 곳에서 다시 해 보세요.');
+    };
+    rec.onend = () => { if (ui.sr && ui.sr.state === 'listening') { ui.sr = null; renderSession(); } };
+    try { rec.start(); } catch (e) { ui.sr = null; renderSession(); }
+  }
+  const sayBtn = act => (Recog ? `<button class="btn" data-act="${act.split('|')[0]}"${act.includes('|') ? ` data-id="${esc(act.split('|')[1])}"` : ''}>${icon('mic')}${ui.sr && ui.sr.state === 'listening' ? '듣는 중…' : '말해 보기'}</button>` : '');
+  const srLine = () => (!ui.sr ? '' : ui.sr.state === 'listening' ? '<p class="sr-line">듣고 있어요. 소리 내어 말해 보세요.</p>'
+    : ui.sr.state === 'ok' ? `<p class="sr-line ok">${icon('check')}잘 들렸어요 · ‘${esc(ui.sr.heard)}’</p>`
+      : `<p class="sr-line">이렇게 들렸어요 · ‘${esc(ui.sr.heard)}’ 한 번 더 해 볼까요?</p>`);
   function speak(text, lang, rate) {
     if (!canSpeak) { toast('이 기기에서는 듣기를 쓸 수 없어요.'); return; }
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang || 'ko-KR';
-      u.rate = rate || (u.lang === 'ko-KR' ? 0.95 : 0.9);
+      u.rate = (rate || (u.lang === 'ko-KR' ? 0.95 : 0.9)) * (RATE_MULT[S.settings.rate] || 1);
       const norm = v => String(v.lang || '').replace('_', '-');
       const pre = u.lang.slice(0, 2);
       const v = voices.find(x => norm(x) === u.lang) || voices.find(x => norm(x).slice(0, 2) === pre);
@@ -1745,7 +1907,7 @@
     tab(id) { ui.view = id; render(); window.scrollTo(0, 0); },
     settings() { openSheet('settings'); },
     'close-sheet'() { ui.sheet = null; ui.confirm = null; ui.pendingImport = null; render(); },
-    open(id) { openSheet('card', id); },
+    open(id) { ui.kanaFocus = null; openSheet('card', id); },
     find(id) { ui.view = 'library'; ui.libCourse = 'sentence'; ui.libSub = 'items'; ui.libFilter = id; ui.q = ''; ui.libCtx = ''; render(); window.scrollTo(0, 0); },
     'lib-course'(id) { ui.libCourse = id; ui.libSub = inKanaStage(courseById[id]) ? 'kana' : 'items'; ui.libFilter = 'all'; ui.q = ''; ui.libCtx = ''; renderView(); },
     'lib-sub'(id) { ui.libSub = id; renderView(); },
@@ -1860,23 +2022,29 @@
       S.intents.push({ id: uid(), date: p.date, cardId: resolveId(curStep(), p), who: ui.who, when, result: null, note: '' });
       advance();
     },
+    'say-check'(id) { const c = cardById(id); if (c) listenTo(c.t, c.r, courseOf(c).lang); },
+    'say-check-line'() {
+      const { co, id } = dlgUnit(), u = co && co.groupById[id];
+      const l = u && u.dialogue[Math.min(ui.dlgLine, u.dialogue.length - 1)];
+      if (l) listenTo(l.t, l.r, co.lang);
+    },
     'say-line'(id) { const [c, u, i] = id.split('|'); sayLine(c, u, Number(i)); },
     'dlg-next'() {
       const { co, id } = dlgUnit(), u = co.groupById[id];
-      ui.dlgLine = Math.min(ui.dlgLine + 1, u.dialogue.length - 1); ui.dlgRevealed = false; ui.scrollEnd = true;
+      ui.dlgLine = Math.min(ui.dlgLine + 1, u.dialogue.length - 1); ui.dlgRevealed = false; ui.scrollEnd = true; ui.sr = null;
       const l = u.dialogue[ui.dlgLine];
       if (l.who !== (ui.dlgSwap ? 'A' : 'B')) speak(l.t, co.lang);
       renderSession();
     },
     'dlg-reveal'() {
       const { co, id } = dlgUnit(), l = co.groupById[id].dialogue[ui.dlgLine];
-      ui.dlgRevealed = true; ui.scrollEnd = true;
+      ui.dlgRevealed = true; ui.scrollEnd = true; ui.sr = null;
       speak(l.t, co.lang);
       renderSession();
     },
     'dlg-swap'() {
       const { co, id } = dlgUnit(), l = co.groupById[id].dialogue[0];
-      ui.dlgSwap = !ui.dlgSwap; ui.dlgLine = 0; ui.dlgRevealed = false;
+      ui.dlgSwap = !ui.dlgSwap; ui.dlgLine = 0; ui.dlgRevealed = false; ui.sr = null;
       if (l.who !== (ui.dlgSwap ? 'A' : 'B')) speak(l.t, co.lang);
       renderSession();
     },
@@ -1890,7 +2058,36 @@
       ui.practice = { course: libCourse().id, unit: unitId };
       resetStepUi(); render();
     },
-    'close-practice'() { ui.practice = null; render(); },
+    'close-practice'() { if (ui.lq) clearTimeout(ui.lq.timer); ui.lq = null; ui.practice = null; render(); },
+    'listen-practice'(cid) {
+      const co = courseById[cid], pool = co ? listenPool(co) : [];
+      if (pool.length < 4) { toast('콜·지시어 장면의 표현을 4개 이상 배우면 열려요.'); return; }
+      resetStepUi();
+      ui.practice = { type: 'listen', course: cid };
+      ui.lq = buildListen('practice:' + Date.now(), pool, 10);
+      render();
+    },
+    'ls-say'() { const z = ui.lq; if (!z || z.done) return; const c = cardById(z.items[z.i].id); if (c) speak(c.t, courseOf(c).lang); },
+    'ls-pick'(ch) {
+      const z = ui.lq;
+      if (!z || z.picked || z.done) return;
+      const x = z.items[z.i], c = cardById(x.id);
+      z.picked = ch; clearTimeout(z.timer);
+      if (ch !== c.ko) z.wrong.push(x.id);
+      renderSession();
+      if (ch === c.ko) { const at = z.i; setTimeout(() => { if (ui.lq === z && z.i === at && !z.done) ACTIONS['ls-next'](); }, 1000); }
+    },
+    'ls-next'() {
+      const z = ui.lq;
+      if (!z || !z.picked || z.done) return;
+      if (z.i >= z.items.length - 1) z.done = true; else { z.i++; z.picked = null; }
+      renderSession();
+    },
+    'ls-done'() {
+      if (ui.lq) clearTimeout(ui.lq.timer);
+      ui.lq = null;
+      if (ui.practice && ui.practice.type === 'listen') { ui.practice = null; render(); toast('지시어 듣기를 마쳤어요'); } else advance();
+    },
     pad(id) { const c = cardById(id); if (c) openPad({ purpose: 'copy', model: padModelFor(c), cardId: c.id, course: c.course }); },
     'pad-note'() {
       const s = curStep(), c = s && cardById(s.id);
@@ -1969,6 +2166,7 @@
     },
     ctx(id) { S.settings.contexts = toggle(S.settings.contexts, id); refreshFresh(); save(); renderView(); renderSheet(); },
     pron(v) { S.settings.pron = v === 'on'; save(); renderView(); renderSheet(); },
+    rate(v) { S.settings.rate = v; save(); renderSheet(); speak(v === 'slow' ? '천천히 읽어요' : v === 'fast' ? '빠르게 읽어요' : '보통 속도로 읽어요', 'ko-KR'); },
     'kana-first'(v) { S.settings.kanaFirst = v === 'on'; replanJa(); save(); renderView(); renderSheet(); },
     'kana-skip'() {
       S.settings.kanaFirst = false;
@@ -1977,6 +2175,8 @@
       toast(started ? '내일부터 회화 장면으로 시작해요. 글자는 모음 > 일본어 > 글자에서 언제든 볼 수 있어요.' : '회화 장면부터 시작할게요. 글자는 모음 > 일본어 > 글자에서 언제든 볼 수 있어요.');
     },
     'kana-hide'() { ui.kanaHide = !ui.kanaHide; renderSession(); },
+    'kana-focus'(k) { ui.kanaFocus = k; speak(k, 'ja-JP', 0.8); if (ui.sheet === 'card') renderSheet(); else renderSession(); },
+    'kana-replay'() { if (ui.sheet === 'card') renderSheet(); else renderSession(); },
     'kq-pick'(ch) {
       const z = ui.kq;
       if (!z || z.picked || z.done) return;

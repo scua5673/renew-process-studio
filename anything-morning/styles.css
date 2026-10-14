@@ -435,7 +435,8 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--d
 .course-chip { display: inline-flex; align-items: center; gap: 8px; padding-left: 6px; }
 .course-chip .badge { width: 26px; height: 26px; border-radius: 50%; font-size: .85rem; }
 .course-chip[aria-pressed="true"] .badge { background: var(--on-dawn); color: var(--dawn); }
-.course-tabs { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 6px; }
+.course-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(78px, 1fr); gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.course-tabs::-webkit-scrollbar { display: none; }
 .course-tab {
   min-width: 0; padding: 8px 4px;
   display: grid; justify-items: center; gap: 4px;
@@ -656,6 +657,37 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--d
 .rc.done { background: var(--dawn); }
 .rc.now { background: var(--sheet); box-shadow: inset 0 0 0 2px var(--dawn); }
 .road-cells.kana-road { grid-template-columns: repeat(16, minmax(0, 1fr)); }
+
+/* ---------- 획순 · 말해 보기 · 코치 지시어 듣기 ---------- */
+.kana.on { border-color: var(--dawn); box-shadow: inset 0 0 0 1.5px var(--dawn); }
+.stroke-panel { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 14px; background: var(--dawn-soft); }
+.stroke-row { flex: none; display: flex; gap: 6px; }
+.stroke-svg { display: block; width: clamp(92px, 30vw, 136px); aspect-ratio: 1 / 1; border-radius: 12px; background: var(--sheet); box-shadow: inset 0 0 0 1.5px var(--rule); }
+.stroke-row .stroke-svg + .stroke-svg { width: clamp(76px, 24vw, 112px); }
+.stroke-svg path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.stk-grid { stroke: var(--rule); stroke-width: .7; stroke-dasharray: 2.5 2.5; }
+.stk-bg { stroke: var(--trace); stroke-width: 4.2; }
+.stk { stroke: var(--ink); stroke-width: 4.2; stroke-dasharray: 1; stroke-dashoffset: 1; animation: stk-draw .55s ease-in-out forwards; animation-delay: calc(var(--i) * .75s + .25s); }
+.stk-n { font: 700 9px var(--font-body); fill: var(--dawn); opacity: 0; animation: stk-num .2s forwards; animation-delay: calc(var(--i) * .75s + .25s); }
+@keyframes stk-draw { to { stroke-dashoffset: 0; } }
+@keyframes stk-num { to { opacity: 1; } }
+.stroke-info { min-width: 0; display: grid; gap: 4px; }
+.stroke-ch { font-size: 1.4rem; font-weight: 600; }
+.stroke-ch span { font-family: var(--font-ja); }
+.stroke-ch small { font-size: .9rem; color: var(--ink-2); font-weight: 500; }
+.stroke-hint { font-size: .92rem; color: var(--ink-2); }
+.stroke-src { font-size: .7rem; color: var(--ink-3); }
+.sr-line { display: flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--ink-2); }
+.sr-line.ok { color: var(--good); font-weight: 600; }
+.sr-line .ic { width: 18px; height: 18px; }
+.onb-sub { margin-top: 8px; font-size: 1rem; }
+.better.center { text-align: center; justify-items: center; }
+.ls-play { display: grid; justify-items: center; gap: 12px; padding-block: 8px; }
+.ls-btn { width: 96px; height: 96px; border-radius: 50%; border: 0; background: var(--dawn); color: var(--on-dawn); display: grid; place-items: center; box-shadow: var(--shadow); }
+.ls-btn .ic { width: 40px; height: 40px; }
+.ls-timer { width: min(240px, 70%); height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.ls-timer span { display: block; height: 100%; width: 100%; background: var(--dawn); transform-origin: left; animation: ls-shrink var(--sec) linear .7s forwards; }
+@keyframes ls-shrink { to { transform: scaleX(0); } }
 .notes + .seg, .seg + .seg { margin-top: -12px; }
 
 /* ---------- 손글씨 노트 ----------
@@ -716,5 +748,7 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--d
 }
 @media (prefers-reduced-motion: reduce) {
   mark.reveal { animation: none; }
+  .stk { animation: none; stroke-dashoffset: 0; }
+  .stk-n { animation: none; opacity: 1; }
   .progress span { transition: none; }
 }
