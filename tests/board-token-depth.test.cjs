@@ -21,11 +21,21 @@ test('3.009 stadium chip keeps a readable size on the 3D view without shrinking 
   // Missing options fall back to the plain chip.
   assert.deepEqual(depth.chipSize(null),{k:1,font:15});
 });
-test('3.009 board size steps scale the 3D chip from its default size',()=>{
+test('3.009 board size steps scale the 3D chip from its default size — 3.016 by their square root',()=>{
+  // 3.016 — «3D 토큰이 너무 커졌다» (user): one to one, a board at 2.86× the default (a process session on a 30 m grid)
+  // drew 3D chips a fifth of a 12 m square wide. The default size stays; each step still grows the chip.
   const ref=.355,base=depth.chipSize({unit:ref,ref,pitch:1050});
-  for(const step of [1.25,1.55,2.3]){
+  assert.deepEqual(base,depth.chipSize({unit:ref,pitch:1050}),'the default size is what it was');
+  for(const step of [1.25,1.55,2.3,2.86]){
     const s=depth.chipSize({unit:ref*step,ref,pitch:1050});
-    assert.ok(Math.abs((21*ref*step*s.k)/(21*ref*base.k)-step)<1e-9,'chip radius follows the size step '+step);
-    assert.ok(Math.abs((s.font*ref*step*s.k)/(base.font*ref*base.k)-step)<1e-9,'name follows the size step '+step);
+    assert.ok(Math.abs((21*ref*step*s.k)/(21*ref*base.k)-Math.sqrt(step))<1e-2,'chip radius follows √ of the size step '+step);
+    assert.ok(Math.abs((s.font*ref*step*s.k)/(base.font*ref*base.k)-Math.sqrt(step))<1e-2,'name follows √ of the size step '+step);
   }
+  // Inside the editor (and the community viewer) the flat token is drawn at 0.68: ref and unit both carry it, so the chip does not change.
+  const ed=depth.chipSize({unit:1.015*.68,ref:ref*.68,pitch:1110}),bd=depth.chipSize({unit:1.015,ref,pitch:1110});
+  assert.ok(Math.abs(21*1.015*.68*ed.k-21*1.015*bd.k)<.1);
+  // A process session (tokenScale 1.015 on a 30 m grid board 1110 wide): radius ≈ 22 units — no bigger than its flat token (21.3) by much, not 38.
+  assert.ok(Math.abs(21*1.015*bd.k-1110*.012*Math.sqrt(1.015/ref))<.1&&21*1.015*bd.k<23,String(21*1.015*bd.k));
+  // Big enough steps meet the flat token and follow it from there — never smaller than flat.
+  assert.equal(depth.chipSize({unit:ref*4,ref,pitch:1050}).k,1);
 });
