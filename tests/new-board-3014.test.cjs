@@ -41,7 +41,7 @@ test('3.014 the page strip shows «새 보드» only on the live work board',()=
 });
 
 test('3.014 release note explains «새 보드» and «↶ 이전 보드»',()=>{
-  const e=notes.entries()[0];
-  assert.equal(e.id,'2026-10-13-v3-014-new-board');
+  const e=notes.entries().find(x=>x.id==='2026-10-13-v3-014-new-board');   /* 3.016 — 맨 앞이 아니어도 */
+  assert.ok(e,'3.014 entry');
   assert.ok(e.changes.some(c=>/«새 보드»/.test(c))&&e.changes.some(c=>/«↶ 이전 보드»/.test(c))&&e.changes.some(c=>/보관함에 저장한 자료는 그대로/.test(c)));
 });

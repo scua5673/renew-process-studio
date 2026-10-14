@@ -2952,6 +2952,12 @@ body.match-mode:not(.token-drag) #tokenLayer>g{transition:transform .22s cubic-b
   body.fmdark #boardPageStrip{background:#1B1E23;border-bottom-color:#2E333A;}
   body.fmdark #boardPageStrip .bp-tab:hover{background:rgba(255,255,255,.07);}
   body.fmdark #boardPageStrip .bp-add{border-color:#5b86f5;color:#9db8ff;}
+  /* 3.016 — 띠의 «보드 설정»: «보드 저장»과 같은 흰 단추 · 열려 있는 동안은 연파랑(눌린 모양) */
+  #boardPageStrip .bp-set{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;white-space:nowrap;padding:8px 12px;border:1px solid var(--line,#E3E6EA);border-radius:9px;background:var(--panel,#fff);color:var(--ink,#14161A);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;}
+  #boardPageStrip .bp-set svg{flex:0 0 auto;}
+  #boardPageStrip .bp-set:hover{background:var(--panel2,#F1F2F4);}
+  #boardPageStrip .bp-set[aria-expanded="true"]{background:#eef4ff;border-color:#c9dbff;color:#1d4ed8;}
+  body.fmdark #boardPageStrip .bp-set[aria-expanded="true"]{background:rgba(91,134,245,.18);border-color:#5b86f5;color:#9db8ff;}
   #drillList .thumb{position:relative;}
   .scn-badge{position:absolute;right:5px;bottom:5px;background:rgba(12,15,23,.78);color:#fff;font-size:var(--fs-micro);font-weight:var(--fw-head);border-radius:8px;padding:1px 6px;pointer-events:none;z-index:1;}
 
@@ -9572,7 +9578,7 @@ function afCut(){ if(afCopy())afDeleteSel(); }
   box.addEventListener("pointerdown",function(){ _afCtx=true; },true);
   box.addEventListener("focusin",function(){ _afCtx=true; });
   /* 2.982 — 보드 설정(패널·여는 단추)은 «바깥»으로 치지 않는다: 장면을 전부 고르고 보드 설정에서 방향을 누르는 동안 고른 표시가 남는다 */
-  document.addEventListener("pointerdown",function(e){ if(!e.target.closest||!e.target.closest("#animFrames,#animFrameMenu,#cmd-board-settings-pop,.cmd-board-settings-wrap")){ if(_afCtx){ _afCtx=false; if(_afSel.size){ _afSel.clear(); afSelPaint(); } } } },true);
+  document.addEventListener("pointerdown",function(e){ if(!e.target.closest||!e.target.closest("#animFrames,#animFrameMenu,#cmd-board-settings-pop,.cmd-board-settings-wrap,#bpBoardSettings")){ if(_afCtx){ _afCtx=false; if(_afSel.size){ _afSel.clear(); afSelPaint(); } } } },true);
   window.addEventListener("keydown",function(e){
     if(!_afCtx)return; var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable))return;
     if(t&&t.closest&&t.closest(".ps-keycap,#cmd-board-settings-pop,[role=dialog]"))return;   /* 2.975 — 단축키 칸(방향키·Delete 를 키로 받는 중)·설정 창 안의 키는 장면 띠가 가로채지 않는다 — Delete 가 장면을 지울 뻔했다 */
@@ -20230,6 +20236,11 @@ try{ var _nb=document.getElementById('dfNew');
      ⚠ 셸이 ps-phone-work 를 붙이는 때가 첫 렌더보다 늦을 수 있다 — 그릴 때가 아니라 **누를 때** 묻는다. 모양은 CSS 가 body 클래스로 정한다.
      ⚠ 640 미만만: 그 위 폭에서는 «보드 저장»·«보관함 저장»이 이 띠 안에 산다(render 끝) */
   function _phoneNav(){ try{ return !window.__vaultBook&&document.body.classList.contains("ps-phone-work")&&(window.innerWidth||0)<640; }catch(_){ return false; } }
+  /* 3.016 — 띠의 «보드 설정»(render 끝): 도크와 같은 창을 여닫고, 열려 있는 동안 눌린 모양(aria-expanded)으로 둔다 */
+  function _bsOpen(){ try{ var p=document.getElementById("cmd-board-settings-pop"); return !!(p&&p.getAttribute("aria-hidden")==="false"); }catch(_){ return false; } }
+  function _bsToggle(){ try{ if(window.__psToggleBoardSettings)window.__psToggleBoardSettings("toggle"); else { var vb=document.getElementById("viewBtn"); if(vb)vb.click(); } }catch(_){} }
+  function _bsSync(){ var b=document.getElementById("bpBoardSettings"); if(b)b.setAttribute("aria-expanded",_bsOpen()?"true":"false");
+    try{ var p=document.getElementById("cmd-board-settings-pop"); if(p&&!p.__bpObs&&window.MutationObserver){ p.__bpObs=new MutationObserver(_bsSync); p.__bpObs.observe(p,{attributes:true,attributeFilter:["aria-hidden"]}); } }catch(_){} }
   function _bkTouch(){ try{ if(window.__vaultBook&&window.__vaultAutoSaveSchedule)window.__vaultAutoSaveSchedule(); }catch(_){} }   /* 2.985 — 패턴북을 고쳤다(«변경 있음») */
   function _bkBlank(p){ try{ var s=(p&&p.snap)||{}, fr=(p&&p.anim&&p.anim.frames)||[]; return !bkText(p&&p.name,40)&&fr.length<2&&!(s.equipment&&s.equipment.length)&&!(s.drawings&&s.drawings.length); }catch(_){ return false; } }
   /* 2.990 — 시퀀스를 국면 순서로(같은 국면 안의 차례는 그대로). 페이지 객체는 그대로 두고 줄만 바꾼다 — 지금 판은 제 페이지를 따라간다 */
@@ -20329,6 +20340,16 @@ try{ var _nb=document.getElementById('dfNew');
         cx.onclick=function(e){ e.stopPropagation(); _linkClear(_lk.tag.libId); persist(); render(); _toast("연결을 끊었어요 — 이제 «보드 저장»은 보드에만 저장해요"); };
         ch.appendChild(cx); box.appendChild(ch); } }catch(_){}
     if(manualSave&&(window.innerWidth||0)>=640)box.appendChild(manualSave);
+    /* 3.016 — «보드 설정»을 «보드 저장» 옆에(사용자 «보드 설정이 잘 안 보인다» → 1안).
+       여는 단추가 아래 도구줄 왼쪽 끝 30px 아이콘뿐이었다 — 글자 없이 회색, 목록 모양이라 그리기 도구 사이에 묻히고 아이패드는 이름 풍선도 없다.
+       같은 창을 여닫는다(아래 아이콘·단축키는 그대로). 폰(640 미만·도크 없음 — #viewBtn 이 없다)과 패턴북 좁은 띠에는 넣지 않는다. */
+    if((window.innerWidth||0)>=640&&!_bkNarrow&&document.getElementById("viewBtn")){
+      var bs=document.createElement("button"); bs.type="button"; bs.id="bpBoardSettings"; bs.className="bp-set";
+      bs.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>보드 설정</span>';
+      bs.title="보드 설정 — 배치 · 보기 · 운동장 · 선수 · 단축키"; bs.setAttribute("aria-haspopup","dialog"); bs.setAttribute("aria-controls","cmd-board-settings-pop");
+      bs.onclick=function(e){ e.stopPropagation(); _bsToggle(); _bsSync(); };
+      box.appendChild(bs); _bsSync();
+    }
     if(vaultSave&&(window.innerWidth||0)>=640)box.appendChild(vaultSave);
     /* 2.987 — 폰의 고르개: 다시 그릴 때마다 띠가 맨 앞으로 돌아가 지금 페이지가 화면 밖에 남는다 → 지금 탭을 가운데로(띠만 움직인다) */
     try{ if(_phoneNav()||_bkNarrow){ var _on=box.querySelector(".bp-tab.on"); if(_on)box.scrollLeft=Math.max(0,_on.offsetLeft-(box.clientWidth-_on.offsetWidth)/2); } }catch(_){}
@@ -21447,7 +21468,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       if(activePop!==panel)return;
       var t=e.target; if(!t)return;
       try{ if(panel.contains(t)||(view&&view.contains(t)))return;
-           if(t.closest&&t.closest(".cmenu-pop,.popmenu,#colorPop,#animFrameMenu"))return; }catch(_){}
+           if(t.closest&&t.closest(".cmenu-pop,.popmenu,#colorPop,#animFrameMenu,#bpBoardSettings"))return; }catch(_){}   /* 3.016 — 띠의 «보드 설정»도 여는 단추다 */
       toggleSettings("force-close");
     });
     window.__psToggleBoardSettings=toggleSettings;
