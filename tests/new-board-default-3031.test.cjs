@@ -56,9 +56,11 @@ test('3.031 a board slideshow is a read-only meeting built from its pages — no
 });
 
 test('3.031 version and release note',()=>{
-  assert.match(R('sw.js'),/^const CACHE = 'process-3\.031';/m);assert.match(R('studio/app.html'),/window\.PS_BUILD='3\.031'/);
-  assert.equal((R('studio/app.html').match(/\?v=3\.031"/g)||[]).length,7);
+  /* 3.032 — 뒤 판이 올라가도 깨지지 않게: 3.031 이상 · sw.js CACHE = app.html PS_BUILD = ?v= 일곱 곳 · 3.031 은 sw.js 기록에 남는다 */
+  const cache=(R('sw.js').match(/^const CACHE = 'process-(3\.\d{3})';/m)||[])[1],build=(R('studio/app.html').match(/window\.PS_BUILD='(3\.\d{3})'/)||[])[1];
+  assert.ok(cache&&build);assert.equal(cache,build);assert.ok(+build.slice(2)>=31,build);
+  assert.equal((R('studio/app.html').match(new RegExp('\\?v='+build.replace('.','\\.')+'"','g'))||[]).length,7);
+  assert.match(R('sw.js'),/^(const CACHE = 'process-3\.031';|\/\/) 3\.031 오류 제보 둘/m,'3.031 판 기록');
   const e=notes.entries().find(x=>x.id==='2026-10-14-v3-031-reports');assert.ok(e,'3.031 note');
-  assert.equal(notes.entries()[0].id,e.id,'newest first');
   assert.ok(e.changes.some(c=>/«빈 보드로 시작»/.test(c))&&e.changes.some(c=>/«새 보드로 정하기»/.test(c))&&e.changes.some(c=>/«▶ 슬라이드쇼»/.test(c)));
 });

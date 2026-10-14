@@ -3099,6 +3099,7 @@ body.bc-tilt3d #tiltSurface{transform:var(--tilt-tf);transform-origin:50% 55%;tr
 body.bc-tilt3d #boardStage{background:var(--pitchbg,#252839)}
 body.bc-tilt3d svg#board{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 body.bc-tilt3d #board #world>rect:not([id]),body.bc-tilt3d #board .grass-stripes,body.bc-tilt3d #board #ps-pitchtile,body.bc-tilt3d #board #ps-pitchimg,body.bc-tilt3d #board .pitch-goal,body.bc-tilt3d #board .ps-pitch-goal{visibility:hidden}
+/* ⚠ 3.032 — «world 바로 밑 id 없는 rect» = 잔디 바탕. 판 위에 보여야 하는 rect 를 world 에 바로 붙이면 id 를 단다(선택 사각형 #lassoRect 가 여기 걸려 3D 에서 안 보였다) */
 #tiltGoals .goal-plane{position:absolute;left:0;top:0;box-sizing:border-box;transform-origin:0 0;backface-visibility:visible}
 #tiltGoals{--goal-post:#fff;--goal-net:rgba(255,255,255,.48);--goal-edge:rgba(255,255,255,.65)}
 #tiltGoals .goal-net{background:repeating-linear-gradient(45deg,var(--goal-net) 0 .6px,transparent .6px 3px),repeating-linear-gradient(-45deg,var(--goal-net) 0 .6px,transparent .6px 3px);border:1px solid var(--goal-edge)}
@@ -6676,7 +6677,7 @@ function wavyPath(a,b){const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
    끌기·모서리 손잡이·선택·지우개·되돌리기·썸네일을 구역 것 그대로 쓴다. 옛 판은 같은 자리의 사각형으로 읽는다. */
 var GRID_SHAPES=[["rect","사각형"],["circle","원"],["tri","삼각형"],["diamond","마름모"],["penta","오각형"],["hexa","육각형"],["octa","팔각형"]];
 var GRID_SIDES={tri:3,diamond:4,penta:5,hexa:6,octa:8};
-var GRID_SPLITS=[["1","없음"],["2","2칸"],["3","3칸"],["2x2","2×2"]];
+var GRID_SPLITS=[["1","없음"],["2","2칸"],["3","3칸"],["4","4칸"],["5","5칸"],["2x2","2×2"]];   /* 3.032 — 4칸·5칸(오류 제보 fffaeba4) */
 function _gridF(n){ return Math.round(n*10)/10; }
 /* 모양의 테두리 — 상자(x,y,w,h)를 꽉 채운다. 다각형은 꼭짓점이 위를 보게(팔각형만 윗변이 평평하게) 놓고 상자에 맞춰 편다. */
 function gridShapePath(shape,x,y,w,h){
@@ -6688,13 +6689,13 @@ function gridShapePath(shape,x,y,w,h){
   for(var i=0;i<n;i++){ var a=a0+i*2*Math.PI/n,px=Math.cos(a),py=Math.sin(a); raw.push([px,py]); x0=Math.min(x0,px);x1=Math.max(x1,px);y0=Math.min(y0,py);y1=Math.max(y1,py); }
   return "M "+raw.map(function(p){ return f(x+(p[0]-x0)/(x1-x0)*w)+" "+f(y+(p[1]-y0)/(y1-y0)*h); }).join(" L ")+" Z";
 }
-/* 칸 나누기(사각형만) — 2칸·3칸은 세로선, 2×2 는 십자 */
+/* 칸 나누기(사각형만) — 2~5칸은 같은 너비로 세로선, 2×2 는 십자 */
 function gridSplitPath(split,x,y,w,h){
   var f=_gridF, v=function(px){ return "M "+f(px)+" "+f(y)+" V "+f(y+h); }, hz=function(py){ return "M "+f(x)+" "+f(py)+" H "+f(x+w); };
-  if(split==="2")return v(x+w/2);
-  if(split==="3")return v(x+w/3)+" "+v(x+2*w/3);
   if(split==="2x2")return v(x+w/2)+" "+hz(y+h/2);
-  return "";
+  var n=/^[2-5]$/.test(split)?+split:0, out=[];
+  for(var i=1;i<n;i++)out.push(v(x+w*i/n));
+  return out.join(" ");
 }
 /* 판 넓이를 바꿀 때 — 판 가운데(cx,cy)를 기준으로 자리만 r 배(토큰·글자 크기는 그대로). 지금 판(state)과 장면 스냅 사본에 같은 식으로 쓴다. */
 function _gridScaleOf(o,r,cx,cy){
@@ -16081,7 +16082,13 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
        팔레트는 이제 접히지 않으므로 이 가드 자체가 필요 없다. */
     deselect();
     const u=toUnit(e);
-    const rect=el("rect",{x:u.x,y:u.y,width:0,height:0,fill:"rgba(47,168,255,.16)",stroke:"#2fa8ff","stroke-width":2,"stroke-dasharray":"7 5","pointer-events":"none"});
+    /* 3.032 — 3D 보기에서 끄는 동안 선택 사각형이 안 보였다(사용자 «선택은 되는데 네모가 안 보여요»). 3D 는 운동장 그림을
+       경기장 그림(tiltSurface)으로 바꾸려고 «world 바로 밑 id 없는 rect»(잔디 바탕)를 숨기는데(#ps-tilt-continuous), 이 사각형도
+       world 바로 밑 id 없는 rect 라 같이 숨었다. id 를 달아 그 규칙에서 빠진다 — 썸네일·내보내기가 이미 #lassoRect 를 지운다.
+       사각형은 운동장 좌표(world)에 그대로 그린다: 3D 에서는 판과 같은 기울기로 사다리꼴로 보이고, 누른 점과 지금 손끝이 마주 보는
+       두 꼭짓점이며, 고르는 기준(운동장 위치가 상자 안)과 정확히 같은 구역이다. */
+    clearMarquee();   /* 3.032 — 끝나지 않은 앞 사각형(둘째 손가락 등)이 판에 남거나 id 가 겹치지 않게 */
+    const rect=el("rect",{id:"lassoRect",x:u.x,y:u.y,width:0,height:0,fill:"rgba(47,168,255,.16)",stroke:"#2fa8ff","stroke-width":2,"stroke-dasharray":"7 5","pointer-events":"none"});
     (world||svg).appendChild(rect);_mq={x0:u.x,y0:u.y,rect:rect};
     try{svg.setPointerCapture(e.pointerId);}catch(_){}
   });
