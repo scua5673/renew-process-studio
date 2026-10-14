@@ -70,20 +70,56 @@ try{
   assert.equal(palm.added,1,'palm lifting does not end the pencil stroke and a palm after it draws nothing '+JSON.stringify(palm));
   assert.equal(palm.live,25,'1 + 24 pencil points, none from the palm');assert.ok(palm.flat,'every point lies on the pencil line');
 
-  // 3) 펜슬을 쓴 뒤 그리기 도구의 손가락: 빈 곳은 그리지 않고 한 번 안내 · 선수 위는 (길게 눌러) 옮긴다
+  // 3) 펜슬을 쓴 뒤 그리기 도구의 손가락: 빈 곳은 그리지 않고 안내(+«손가락도 그리기» 단추 — 닿는다) · «펜슬 전용» 칩이 켜진 알약으로 보인다
   await page.waitForTimeout(400);
-  const finger=await page.evaluate(async()=>{
+  const finger=await page.evaluate(()=>{
     const n0=state.drawings.length,m=__mid();
     __pt(drawCatch,'pointerdown',31,'touch',m.x,m.y+100);for(let i=1;i<=8;i++)__pt(drawCatch,'pointermove',31,'touch',m.x+i*10,m.y+100);__pt(drawCatch,'pointerup',31,'touch',m.x+80,m.y+100);
-    const hint=(document.getElementById('hint')||{}).textContent||'';
-    const p=state.players[0],start={x:p.x,y:p.y},g=tokenLayer.querySelector('[data-id="pa"]'),b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2;
-    __pt(g,'pointerdown',32,'touch',x,y);await new Promise(r=>setTimeout(r,320));
-    for(let i=1;i<=20;i++)__pt(g,'pointermove',32,'touch',x+i*2,y+i);__pt(g,'pointerup',32,'touch',x+40,y+20);
-    return {added:state.drawings.length-n0,hint,moved:Math.hypot(p.x-start.x,p.y-start.y)};
+    const hint=(document.getElementById('hint')||{}).textContent||'',ft=document.getElementById('cs-ftoast'),act=ft&&ft.querySelector('.ftoast-act');
+    const chip=document.getElementById('penOnlyBtn'),cs=getComputedStyle(chip),r=chip.getBoundingClientRect(),lb=chip.querySelector('.po-lb').getBoundingClientRect();
+    return {added:state.drawings.length-n0,hint,act:act?act.textContent:'',clickable:!!ft&&ft.style.pointerEvents==='auto',
+      chip:{shown:cs.display!=='none',pressed:chip.getAttribute('aria-pressed'),label:chip.textContent.trim(),pill:r.width>60&&Math.round(r.height)===28,labelInside:lb.right<=r.right+1&&lb.left>=r.left-1,bg:cs.backgroundColor,color:cs.color},
+      seen:localStorage.getItem('ps_board_pen_seen_v1')};
   });
   assert.equal(finger.added,0,'a finger draws nothing once the pencil is in use');
   assert.match(finger.hint,/펜슬로 그려요 · 손가락으로는 선수를 옮깁니다/);
-  assert.ok(finger.moved>8,'a finger on a player moves it in a draw tool '+JSON.stringify(finger));
+  assert.equal(finger.act,'손가락도 그리기','the hint carries the way out');assert.ok(finger.clickable,'and can be tapped');
+  assert.ok(finger.chip.shown&&finger.chip.pressed==='true'&&finger.chip.label==='펜슬 전용','the «펜슬 전용» chip is visible and on '+JSON.stringify(finger.chip));
+  assert.ok(finger.chip.pill&&finger.chip.labelInside,'a pill with its label inside — the dock does not squeeze it to an icon '+JSON.stringify(finger.chip));
+  assert.equal(finger.chip.bg,'rgb(20, 33, 61)','on = navy '+JSON.stringify(finger.chip));assert.equal(finger.chip.color,'rgb(255, 255, 255)');
+  assert.equal(finger.seen,'1','the device remembers that a pencil was used');
+
+  // 3b) «손가락도 그리기» → 손가락이 그린다 · 칩으로 다시 펜슬 전용 → 다시 막힌다(안내는 12초에 한 번) · 이동 도구에서는 칩이 숨는다
+  const sw=await page.evaluate(()=>{
+    const m=__mid(),chip=document.getElementById('penOnlyBtn'),lb=()=>chip.querySelector('.po-lb').textContent;
+    document.querySelector('#cs-ftoast .ftoast-act').click();
+    const off={penOnly:_penOnly,stored:localStorage.getItem('ps_board_pen_only_v1'),label:lb(),pressed:chip.getAttribute('aria-pressed'),bg:getComputedStyle(chip).backgroundColor};
+    const n0=state.drawings.length;
+    __pt(drawCatch,'pointerdown',33,'touch',m.x,m.y+120);for(let i=1;i<=8;i++)__pt(drawCatch,'pointermove',33,'touch',m.x+i*10,m.y+120);__pt(drawCatch,'pointerup',33,'touch',m.x+80,m.y+120);
+    const drew=state.drawings.length-n0;
+    chip.click();
+    const on={penOnly:_penOnly,stored:localStorage.getItem('ps_board_pen_only_v1'),label:lb(),pressed:chip.getAttribute('aria-pressed')};
+    const n1=state.drawings.length;
+    __pt(drawCatch,'pointerdown',34,'touch',m.x,m.y+140);for(let i=1;i<=8;i++)__pt(drawCatch,'pointermove',34,'touch',m.x+i*10,m.y+140);__pt(drawCatch,'pointerup',34,'touch',m.x+80,m.y+140);
+    const blocked=state.drawings.length-n1;
+    const was=state.tool;state.tool='move';document.body.classList.remove('drawmode');const hiddenInMove=getComputedStyle(chip).display==='none';
+    state.tool=was;document.body.classList.add('drawmode');
+    return {off,drew,on,blocked,hiddenInMove,shownInDraw:getComputedStyle(chip).display!=='none'};
+  });
+  assert.deepEqual(sw.off,{penOnly:false,stored:'0',label:'손가락도 그리기',pressed:'false',bg:'rgba(0, 0, 0, 0)'},'the hint button turns pencil-only off and the chip says so');
+  assert.equal(sw.drew,1,'a finger draws once pencil-only is off');
+  assert.deepEqual(sw.on,{penOnly:true,stored:'1',label:'펜슬 전용',pressed:'true'},'the chip turns it back on');
+  assert.equal(sw.blocked,0,'and a finger is blocked again');
+  assert.ok(sw.hiddenInMove&&sw.shownInDraw,'the chip only shows with a draw tool '+JSON.stringify(sw));
+
+  // 3c) 펜슬 전용인 채 선수 위의 손가락은 (길게 눌러) 옮긴다
+  const drag=await page.evaluate(async()=>{
+    const p=state.players[0],start={x:p.x,y:p.y},g=tokenLayer.querySelector('[data-id="pa"]'),b=g.getBoundingClientRect(),x=b.x+b.width/2,y=b.y+b.height/2,n0=state.drawings.length;
+    __pt(g,'pointerdown',32,'touch',x,y);await new Promise(r=>setTimeout(r,320));
+    for(let i=1;i<=20;i++)__pt(g,'pointermove',32,'touch',x+i*2,y+i);__pt(g,'pointerup',32,'touch',x+40,y+20);
+    return {moved:Math.hypot(p.x-start.x,p.y-start.y),added:state.drawings.length-n0};
+  });
+  assert.ok(drag.moved>8&&drag.added===0,'a finger on a player moves it in a draw tool '+JSON.stringify(drag));
 
   // 4) 손가락으로 긋는 중 둘째 손가락은 받지 않는다(펜슬을 안 쓴 화면)
   const two=await page.evaluate(()=>{
@@ -158,6 +194,13 @@ try{
     }));
   }));
   assert.deepEqual(hover,{shown:true,at:true,hidden:true,exp:false,thumb:false,moveTool:true});
+  assert.deepEqual(errors,[]);
+
+  // 9) 기기에 남는다 — «손가락도 그리기»로 두고 다시 열어도 그대로 · 펜슬을 쓴 기기라는 것도
+  await page.evaluate(()=>_inkPenOnlySet(false,true));
+  await page.reload();await page.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone);
+  const kept=await page.evaluate(()=>({seen:_penSeen,penOnly:_penOnly,cls:document.body.classList.contains('pen-seen'),label:document.querySelector('#penOnlyBtn .po-lb').textContent,pressed:document.getElementById('penOnlyBtn').getAttribute('aria-pressed')}));
+  assert.deepEqual(kept,{seen:true,penOnly:false,cls:true,label:'손가락도 그리기',pressed:'false'},'remembered across a reload');
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({engine,test:'board-pencil',coalescedEvents:batch.coalescedOk,predictedEvents:batch.predictedOk,passed:true}));
   await context.close();

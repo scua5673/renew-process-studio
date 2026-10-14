@@ -42,7 +42,7 @@ test('3.019 one pointer owns a stroke: palm, second finger and a pencil taking o
 test('3.019 the drawing layer and tokens hand points through the pointer that owns the stroke',()=>{
   assert.match(board,/if\(!_draw\)return;_inkMove\(e\);\}\);/,'drawing layer moves');
   assert.match(board,/const end=e=>\{if\(!_draw\|\|e\.pointerId!==_drawPid\)return;/,'only the owner ends it');
-  assert.match(board,/if\(_inkFingerOnly\(e\)\)\{e\.stopPropagation\(\);if\(!_inkHintShown\)\{_inkHintShown=true;toast\("펜슬로 그려요 · 손가락으로는 선수를 옮깁니다"\);\}return;\}/);
+  assert.match(board,/if\(_inkFingerOnly\(e\)\)\{e\.stopPropagation\(\);_inkFingerHint\(\);return;\}/);
   assert.match(board,/const _isDrawStart=\(kind!=="ball"&&!selected&&isDraw\(\)&&!_inkFingerOnly\(e\)\);/,'a finger moves a player once the pencil is in use');
   assert.match(board,/if\(mode==="draw"\)\{_inkMove\(e\);\}/,'drawing started on a token');
   assert.match(board,/if\(_pid!=null&&e\.pointerId!==_pid\)return;/,'another finger does not drive a dragged token');
@@ -53,8 +53,37 @@ test('3.019 the drawing layer and tokens hand points through the pointer that ow
   assert.match(board,/_inkHoverEl=el\("g",\{"class":"draw-handle",id:"penHover"\}\)/,'the hover ring is a .draw-handle, so exports and thumbnails drop it');
 });
 
+/* 사용자 «어떻게 하는 게 좋을까 냉정하게 피드백» → 펜슬 전용은 기본으로 맞지만 숨은 모드면 안 된다: 보이는 칩 · 안내의 단추 · 기기에 기억 */
+test('3.019 pencil-only is a visible, switchable device setting, not a hidden mode',()=>{
+  assert.match(board,/function _inkFingerOnly\(e\)\{return !!e&&e\.pointerType==="touch"&&_penSeen&&_penOnly&&isDraw\(\);\}/);
+  assert.match(board,/try\{_penSeen=localStorage\.getItem\("ps_board_pen_seen_v1"\)==="1";_penOnly=localStorage\.getItem\("ps_board_pen_only_v1"\)!=="0";\}catch\(_\)\{\}/,'both remembered per device; pencil-only is the default once a pencil was seen');
+  assert.match(board,/function _inkPenSeen\(\)\{if\(_penSeen\)return;_penSeen=true;try\{localStorage\.setItem\("ps_board_pen_seen_v1","1"\);\}catch\(_\)\{\}_inkPenSync\(\);\}/);
+  assert.match(board,/function _inkPenOnlySet\(on,quiet\)\{_penOnly=!!on;try\{localStorage\.setItem\("ps_board_pen_only_v1",on\?"1":"0"\);\}catch\(_\)\{\}_inkPenSync\(\);/);
+  assert.equal((board.match(/if\(e\.pointerType==="pen"&&!_penSeen\)_inkPenSeen\(\);/g)||[]).length,2,'tokens and the drawing layer both notice a pencil');
+  assert.match(board,/if\(_drawPtype==="pen"&&!_penSeen\)_inkPenSeen\(\);/,'so does a stroke that starts');
+  assert.match(board,/<button class="po-chip" id="penOnlyBtn" type="button" aria-pressed="true" title="펜슬로만 그립니다[^"]*"><svg[\s\S]*?<\/svg><span class="po-lb">펜슬 전용<\/span><\/button>/,'the chip sits next to the line-style button and is not a .btn (the dock squeezes those to 30×30)');
+  assert.match(board,/#penOnlyBtn(?::not\(#_+\)){10}\{display:none!important;\}[^\n]*\n  body\.pen-seen\.drawmode:not\(\[data-tool="text"\]\) #penOnlyBtn(?::not\(#_+\)){10}\{display:inline-flex!important;/,'shown only on a device that used a pencil, in a draw tool — eleven ids, above the dock\'s :not(#_)…:not(#________) rules');
+  assert.match(board,/body\.pen-seen\.drawmode #penOnlyBtn(?::not\(#_+\)){10}\[aria-pressed="true"\]\{background:var\(--cmd-blue,var\(--ps-navy,#14213D\)\)!important;/,'on = main colour, dark-safe — eleven ids, one above the dock\'s pressed rule (nine :not(#_) + #ps-command-dock + :not(#animPlay))');
+  assert.match(board,/document\.body\.classList\.toggle\("pen-seen",_penSeen\)/);
+  assert.match(board,/const lb=b\.querySelector\("\.po-lb"\);if\(lb\)lb\.textContent=_penOnly\?"펜슬 전용":"손가락도 그리기";/);
+  assert.match(board,/if\(_po\)_po\.addEventListener\("click",function\(\)\{_inkPenOnlySet\(!_penOnly\);\}\);_inkPenSync\(\);/,'the chip toggles and the saved state is applied at load');
+  /* the chip follows the line-style button into every layout */
+  assert.match(board,/var po=document\.getElementById\('penOnlyBtn'\);if\(po&&po\.parentNode!==L1\)L1\.appendChild\(po\);/,'rail');
+  assert.match(board,/var po2=document\.getElementById\('penOnlyBtn'\);if\(po2&&po2\.parentNode!==fb\)fb\.appendChild\(po2\);/,'floating bar');
+  assert.match(board,/\[color,line,penOnly\]\.forEach\(function\(e\)\{if\(e\)styles\.appendChild\(e\);\}\);/,'command dock');
+  /* the hint carries a way out and does not fire once only */
+  const hint=cut(/function _inkFingerHint\(\)\{[\s\S]*?\n  \}catch\(_\)\{\}\}/,'_inkFingerHint');
+  assert.match(hint,/if\(now-_inkHintAt<12000\)return;/,'rate limited, never once-only');
+  assert.match(hint,/toast\("펜슬로 그려요 · 손가락으로는 선수를 옮깁니다"\);/);
+  assert.match(hint,/b\.textContent="손가락도 그리기";/);assert.match(hint,/_inkPenOnlySet\(false\)/);
+  assert.match(hint,/t\.style\.pointerEvents="auto"/);assert.match(hint,/t\.style\.pointerEvents="none";setTimeout/,'click-through again when it goes');
+  assert.match(board,/t\.textContent=msg;t\.style\.pointerEvents="none";/,'a plain toast is click-through again');
+  assert.doesNotMatch(board,/_inkHintShown/,'the once-only flag is gone');
+});
+
 test('3.019 release note explains the pencil changes in plain words',()=>{
   const e=notes.entries().find(x=>x.id==='2026-10-14-v3-019-pencil');
   assert.ok(e,'3.019 note');
   assert.ok(e.changes.some(c=>/손바닥/.test(c))&&e.changes.some(c=>/손가락으로 선수를 옮길/.test(c))&&e.changes.some(c=>/둥근 곡선/.test(c))&&e.changes.some(c=>/호버/.test(c)));
+  assert.ok(e.changes.some(c=>/«펜슬 전용» 칩/.test(c)&&/«손가락도 그리기»/.test(c)&&/그 기기에 남습니다/.test(c)),'says how to turn pencil-only off and that it is remembered');
 });
