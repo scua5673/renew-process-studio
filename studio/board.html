@@ -14335,6 +14335,7 @@ function init(){
       var st=document.documentElement.style, raw=stage.getBoundingClientRect(), cs=getComputedStyle(stage), pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;
       var top=raw.top+pt, hh=raw.height-pt-pb, ww=raw.width; if(!hh||!ww)return;
       var t3=window.__tilt3d||{},deco=tiltDecoNow(),pads=TILT_PAD[deco]||TILT_PAD.full;   /* 3.010 — 경기장을 줄이면(간단·잔디만) 운동장이 그만큼 크게 · 3.020 그리드 판은 잔디만 */
+      if((state.pitchN||1)>1&&deco!=="grass")pads=[pads[0],pads[1],pads[2]+.03];   /* 3.021 — 운동장 여러 개는 가로로 넓어(2.2:1) 옆 관중석 · 광고판이 잘렸다 — 옆 여백만 조금 더 */
       var key=[Math.round(raw.left),Math.round(top),Math.round(ww),Math.round(hh),pv.map(Math.round).join(","),vb.x,vb.y,vb.width,vb.height,svg.getAttribute("preserveAspectRatio"),t3.cam,deco,st.getPropertyValue("--tilt-k"),st.getPropertyValue("--tilt-ty")].join("|");
       if(key===_fitKey)return;
       var prevTr=svg.style.transition; svg.style.transition="none";
@@ -14410,11 +14411,17 @@ function init(){
   }
   function tiltStadium(surface,bw,bh){
     const vb=svg.viewBox.baseVal,par=svg.getAttribute('preserveAspectRatio')||'xMidYMid meet',wt=world.getAttribute('transform')||'';
-    const sp=pitchSpec(),whole=(state.pitchN||1)>1||!!sp.blank,q=whole?{L:0,R:W,T:0,B:H}:PR(),goals=!whole&&state.lines!==false;
+    const sp=pitchSpec(),multi=(state.pitchN||1)>1,whole=multi||!!sp.blank,goals=!whole&&state.lines!==false;
+    let q=whole?{L:0,R:W,T:0,B:H}:PR();
+    /* 3.021 — 운동장 여러 개: 경기장은 카드 배치 전체를 둘러싼다(사용자 «운동장 5개 했을 때도 잘 구현되게»). 예전엔 운동장 1개 상자(W×H)라
+       화면을 가로로 채우는 카드(BASEVB 2.2:1)의 바깥 판이 관중석 위로 나가고, 광고판이 판 안을 가로질렀다. 카드 자리는 #ps-multipitch 의
+       data-pitch-rect(잔디 좌표 — 워터마크 · 내보내기와 같은 값). 두께 · 간격은 아래 S(운동장 1개 비율)로 재서 넓은 배치에서도 관중석이 두꺼워지지 않는다. */
+    if(multi){ try{ const rs=[...svg.querySelectorAll('#ps-multipitch [data-pitch-rect]')].map(g=>g.getAttribute('data-pitch-rect').split(',').map(Number)).filter(r=>r.length===4&&r.every(isFinite)&&r[2]>0&&r[3]>0);
+      if(rs.length){ const pad=M2U(1.5); q={L:Math.min(...rs.map(r=>r[0]))-pad,T:Math.min(...rs.map(r=>r[1]))-pad,R:Math.max(...rs.map(r=>r[0]+r[2]))+pad,B:Math.max(...rs.map(r=>r[1]+r[3]))+pad}; } }catch(_){} }
     const turf=(window.__ballImgOK&&window.PITCH_IMG&&window.PITCH_IMG.real)||'';
-    const L=q.L,R=q.R,T=q.T,B=q.B,PW=R-L,PH=B-T,CX=(L+R)/2,CY=(T+B)/2,f=n=>Math.round(n*10)/10,m=PW/105;   /* m = 11인제에서의 1m */
-    const gx=PW*.068,gy=PH*.095,r0=PW*.075,bt=PW*.0105,tk=PW*.028,sd=PW*.34;
-    const dT=bt+tk,dU=dT+sd*.47,dS=dT+sd,dRi=dS-PW*.10,dRo=dS+PW*.035;
+    const L=q.L,R=q.R,T=q.T,B=q.B,PW=R-L,PH=B-T,S=multi?Math.min(PW,PH*105/68):PW,CX=(L+R)/2,CY=(T+B)/2,f=n=>Math.round(n*10)/10,m=S/105;   /* m = 11인제에서의 1m · S = 두께 · 간격의 기준(운동장 하나면 PW) */
+    const gx=S*.068,gy=PH*.095,r0=S*.075,bt=S*.0105,tk=S*.028,sd=S*.34;
+    const dT=bt+tk,dU=dT+sd*.47,dS=dT+sd,dRi=dS-S*.10,dRo=dS+S*.035;
     /* ⚠ 경기장은 **그림 한 장(<img>, SVG 이미지)** 이다. 처음엔 판 옆에 SVG 를 그대로 두었는데, GPU 없이 그리는 사파리(CI 웹킷)는
        3D 판이 바뀔 때마다 관중 무늬·관중석 줄·광고판 수백 개를 다시 그려 끌기 시험이 240초를 넘겼다(이 PR 전 120초).
        이미지는 한 번 그려 두면 옮겨 그리기만 한다. 그래서 그림은 경기장 둘레 상자(world → 판 좌표)를 viewBox 로 한 장에 담고,
@@ -14425,7 +14432,7 @@ function init(){
     if(!host){host=document.createElement('img');host.className='tilt-stadium';host.alt='';host.setAttribute('aria-hidden','true');host.decoding='async';host.draggable=false;surface.appendChild(host);}
     surface.classList.add('ps-stadium');
     const t3=window.__tilt3d||{},deco=tiltDecoNow(),ad=String(t3.ad||"").trim()||"PROCESS STUDIO";   /* 3.010 — 경기장 꾸밈 · 광고판 문구 · 3.020 그리드 판은 잔디만 */
-    const dE=deco==="full"?dRo:(deco==="simple"?dT+PW*.03:dT);   /* 그림이 끝나는 바깥 테(줄이면 그림 상자도 작게) */
+    const dE=deco==="full"?dRo:(deco==="simple"?dT+S*.03:dT);   /* 그림이 끝나는 바깥 테(줄이면 그림 상자도 작게) */
     const mt=(/matrix\(([^)]*)\)/.exec(wt)||[0,'1 0 0 1 0 0'])[1].split(/[\s,]+/).map(Number),ext=gx+dE,eyt=gy+dE;
     const cs=[[L-ext,T-eyt],[R+ext,T-eyt],[R+ext,B+eyt],[L-ext,B+eyt]].map(([x,y])=>[mt[0]*x+mt[2]*y+mt[4],mt[1]*x+mt[3]*y+mt[5]]);
     const bx0=Math.min(...cs.map(c=>c[0])),by0=Math.min(...cs.map(c=>c[1])),bx1=Math.max(...cs.map(c=>c[0])),by1=Math.max(...cs.map(c=>c[1]));
@@ -14451,7 +14458,7 @@ function init(){
       for(let j=1;j<nY;j++){const y=T-gy+r0+lenY*j/nY;out.push([L-gx-d,y],[R+gx+d,y]);}
       corners.forEach(([cx,cy,a])=>{for(let i=1;i<cornerN;i++){const t=(a+90*i/cornerN)*Math.PI/180;out.push([cx+Math.cos(t)*(r0+d),cy+Math.sin(t)*(r0+d)]);}});
       return out;};
-    const crowd=deco==="full"?crowdTile():'',ct=PW*.046;
+    const crowd=deco==="full"?crowdTile():'',ct=S*.046;
     let o='<defs>'
       +(turf?'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><image href="'+turf+'" width="'+f(10*m)+'" height="'+f(10*m)+'" preserveAspectRatio="none"/></pattern>'
             :'<pattern id="psStGrass" patternUnits="userSpaceOnUse" x="'+f(L)+'" y="'+f(T)+'" width="'+f(10*m)+'" height="'+f(10*m)+'"><rect width="'+f(10*m)+'" height="'+f(10*m)+'" fill="#2c6a2a"/><rect width="'+f(5*m)+'" height="'+f(10*m)+'" fill="#367a33"/></pattern>')
@@ -14466,20 +14473,20 @@ function init(){
     /* 관중석 — 좌석·관중 무늬 위에 계단 턱(줄), 위층은 조금 어둡게 · 3.010 «전체»일 때만 */
     if(deco==="full"){
     o+=ring(dT,dS,crowd?'url(#psStCrowd)':'#1c252e');
-    const rows=Math.round(sd/(PW*.0086));let rp='';
+    const rows=Math.round(sd/(S*.0086));let rp='';
     for(let i=1;i<rows;i++){const d=dT+sd*i/rows;if(Math.abs(d-dU)<sd/rows*1.2)continue;rp+=rr(d);}
-    o+='<path d="'+rp+'" fill="none" stroke="#06090c" stroke-opacity=".5" stroke-width="'+f(PW*.0016)+'"/>'
+    o+='<path d="'+rp+'" fill="none" stroke="#06090c" stroke-opacity=".5" stroke-width="'+f(S*.0016)+'"/>'
       +ring(dU,dS,'#000',.2)
-      +'<path d="'+spokes(dT,dS,PW*.13,4)+'" fill="none" stroke="#5d646d" stroke-opacity=".75" stroke-width="'+f(PW*.0068)+'"/>';
+      +'<path d="'+spokes(dT,dS,S*.13,4)+'" fill="none" stroke="#5d646d" stroke-opacity=".75" stroke-width="'+f(S*.0068)+'"/>';
     /* 층 사이 통로 + LED 띠(파랑·흰 패널이 번갈아) + 출입구 */
     let vo='';
-    const nX=Math.max(2,Math.round(lenX/(PW*.13))),nY=Math.max(2,Math.round(lenY/(PW*.13))),vw=PW*.022,vh=PW*.012;
+    const nX=Math.max(2,Math.round(lenX/(S*.13))),nY=Math.max(2,Math.round(lenY/(S*.13))),vw=S*.022,vh=S*.012;
     for(let j=0;j<nX;j++){const x=L-gx+r0+lenX*(j+.5)/nX;vo+='<rect x="'+f(x-vw/2)+'" y="'+f(T-gy-dU-vh/2)+'" width="'+f(vw)+'" height="'+f(vh)+'"/><rect x="'+f(x-vw/2)+'" y="'+f(B+gy+dU-vh/2)+'" width="'+f(vw)+'" height="'+f(vh)+'"/>';}
     for(let j=0;j<nY;j++){const y=T-gy+r0+lenY*(j+.5)/nY;vo+='<rect x="'+f(L-gx-dU-vh/2)+'" y="'+f(y-vw/2)+'" width="'+f(vh)+'" height="'+f(vw)+'"/><rect x="'+f(R+gx+dU-vh/2)+'" y="'+f(y-vw/2)+'" width="'+f(vh)+'" height="'+f(vw)+'"/>';}
-    o+=line(dU,'#2b3137',PW*.016)+'<g fill="#030506">'+vo+'</g>'
-      +line(dU-PW*.0095,'#1f4fd8',PW*.0042)+line(dU-PW*.0095,'#eaf1ff',PW*.0042,.92,f(PW*.05)+' '+f(PW*.09))
-      +line(dT+PW*.002,'#3a4249',PW*.0045)+line(dT+PW*.0005,'#d9e1e6',PW*.0012,.6);
-    }else if(deco==="simple")o+=ring(dT,dE,'#11161b')+line(dT+PW*.002,'#3a4249',PW*.0045)+line(dE,'#05080a',PW*.004);   /* 간단: 관중석 대신 어두운 콘크리트 테 */
+    o+=line(dU,'#2b3137',S*.016)+'<g fill="#030506">'+vo+'</g>'
+      +line(dU-S*.0095,'#1f4fd8',S*.0042)+line(dU-S*.0095,'#eaf1ff',S*.0042,.92,f(S*.05)+' '+f(S*.09))
+      +line(dT+S*.002,'#3a4249',S*.0045)+line(dT+S*.0005,'#d9e1e6',S*.0012,.6);
+    }else if(deco==="simple")o+=ring(dT,dE,'#11161b')+line(dT+S*.002,'#3a4249',S*.0045)+line(dE,'#05080a',S*.004);   /* 간단: 관중석 대신 어두운 콘크리트 테 */
     /* 광고판 뒤 띠(인조 잔디) · 잔디 · 닳은 자국 — 잔디만이면 띠도 잔디(광고판이 없다) */
     o+=(deco==="grass"?ring(0,dT,'url(#psStGrass)')+ring(0,dT,'url(#psStMow)')+ring(0,dT,'#0b2410',.18):ring(bt,dT,'#173a20'))
       +'<path d="'+rr(0)+'" fill="url(#psStGrass)"/>'
@@ -14487,14 +14494,14 @@ function init(){
       +'<path d="'+rr(0)+'" fill="url(#psStMow)"/>'   /* 잔디결(5m)을 중계 화면처럼 또렷하게 */
       +'<path d="'+rr(0)+'" fill="url(#psStLight)"/>';
     if(!whole){const wr=(cx,cy,rx,ry)=>'<ellipse cx="'+f(cx)+'" cy="'+f(cy)+'" rx="'+f(rx)+'" ry="'+f(ry)+'" fill="url(#psStWear)"/>';
-      o+=wr(L+PW*.028,CY,PW*.03,PH*.07)+wr(R-PW*.028,CY,PW*.03,PH*.07)+wr(L+PW*.105,CY,PW*.02,PW*.02)+wr(R-PW*.105,CY,PW*.02,PW*.02)+wr(CX,CY,PW*.018,PW*.018);}
+      o+=wr(L+S*.028,CY,S*.03,PH*.07)+wr(R-S*.028,CY,S*.03,PH*.07)+wr(L+S*.105,CY,S*.02,S*.02)+wr(R-S*.105,CY,S*.02,S*.02)+wr(CX,CY,S*.018,S*.018);}
     /* 골대 그림자 — 골대(#tiltGoals)는 판 위 층이라 그림자는 여기 잔디에 깐다(라인 밑) */
     if(goals){const gm=M2U(sp.goal)*GOAL_K.mouth,gd=M2U(sp.goalD||2)*GOAL_K.depth*1.35,pad=gm*.08;
       o+='<rect x="'+f(R)+'" y="'+f(CY-gm/2-pad)+'" width="'+f(gd)+'" height="'+f(gm+2*pad)+'" fill="url(#psStGoalSh)"/>'
         +'<rect transform="rotate(180 '+f(L)+' '+f(CY)+')" x="'+f(L)+'" y="'+f(CY-gm/2-pad)+'" width="'+f(gd)+'" height="'+f(gm+2*pad)+'" fill="url(#psStGoalSh)"/>';}
     /* 벤치 둘 · 테크니컬 에어리어(점선) · 대기심 자리 — world 아래쪽 터치라인 */
-    if(!whole&&deco!=="grass"){const by=B+gy*.5,bd=Math.min(gy*.3,m*1.8),bl=PW*.075,tx=m*1,dash=f(m*.6)+' '+f(m*.45);let bn='';
-      [-1,1].forEach(sd2=>{const x0=sd2<0?CX-PW*.03-bl:CX+PW*.03;
+    if(!whole&&deco!=="grass"){const by=B+gy*.5,bd=Math.min(gy*.3,m*1.8),bl=S*.075,tx=m*1,dash=f(m*.6)+' '+f(m*.45);let bn='';
+      [-1,1].forEach(sd2=>{const x0=sd2<0?CX-S*.03-bl:CX+S*.03;
         bn+='<path d="M'+f(x0-tx)+' '+f(by)+'V'+f(B+tx)+'H'+f(x0+bl+tx)+'V'+f(by)+'" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="'+f(m*.12)+'" stroke-dasharray="'+dash+'"/>'
           +'<rect x="'+f(x0+m*.3)+'" y="'+f(by+m*.35)+'" width="'+f(bl)+'" height="'+f(bd)+'" rx="'+f(m*.3)+'" fill="#000" fill-opacity=".35"/>'
           +'<rect x="'+f(x0)+'" y="'+f(by)+'" width="'+f(bl)+'" height="'+f(bd)+'" rx="'+f(m*.3)+'" fill="#18212a"/>'
@@ -14503,8 +14510,8 @@ function init(){
       o+=bn+'<rect x="'+f(CX-m*.8)+'" y="'+f(by+m*.2)+'" width="'+f(m*1.6)+'" height="'+f(m*.7)+'" rx="'+f(m*.15)+'" fill="#20272e"/><rect x="'+f(CX-m*.55)+'" y="'+f(by+m*.3)+'" width="'+f(m*1.1)+'" height="'+f(m*.25)+'" fill="#3b82f6" fill-opacity=".8"/>';}
     /* 광고판 — 얇고 밝은 LED. 글자의 위쪽이 늘 바깥(운동장을 바라본다) */
     if(deco!=="grass"){
-    o+=ring(0,bt,'#0a1018')+line(0,'#ffffff',PW*.0009,.55);
-    const PANEL=[['#1f4fd8','#ffffff'],['#f3f6fa','#14213d'],['#0b1a2e','#59d6ff']],U=PW*.076,gp=PW*.0018,fs=bt*.6;
+    o+=ring(0,bt,'#0a1018')+line(0,'#ffffff',S*.0009,.55);
+    const PANEL=[['#1f4fd8','#ffffff'],['#f3f6fa','#14213d'],['#0b1a2e','#59d6ff']],U=S*.076,gp=S*.0018,fs=bt*.6;
     /* 3.010 — 광고판 문구: XML 로 이스케이프. 패널보다 길면 패널 폭에 맞춰 줄이고(textLength), 짧으면 늘리지 않는다 */
     const adX=ad.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     let adW=0;for(const ch of ad)adW+=(ch.charCodeAt(0)>0x2000?fs*1.02:fs*.66);
@@ -14519,10 +14526,10 @@ function init(){
     }
     /* 지붕 — 위층 바깥을 덮는다. 트러스와 안쪽 가장자리의 조명등 · 3.010 «전체»일 때만 */
     if(deco==="full"){
-    let lamps='';dots(dRi+PW*.006,PW*.045,5).forEach(([x,y])=>{lamps+='<circle cx="'+f(x)+'" cy="'+f(y)+'" r="'+f(PW*.009)+'"/>';});
-    o+=ring(dRi,dRo,'#3f454b')+ring(dRi,dRi+PW*.012,'#626a72')
-      +'<path d="'+spokes(dRi+PW*.012,dRo,PW*.065,6)+'" fill="none" stroke="#2b3035" stroke-width="'+f(PW*.0035)+'"/>'
-      +line(dRo,'#1c2024',PW*.004)+line(dRi,'#9aa3ab',PW*.0018)
+    let lamps='';dots(dRi+S*.006,S*.045,5).forEach(([x,y])=>{lamps+='<circle cx="'+f(x)+'" cy="'+f(y)+'" r="'+f(S*.009)+'"/>';});
+    o+=ring(dRi,dRo,'#3f454b')+ring(dRi,dRi+S*.012,'#626a72')
+      +'<path d="'+spokes(dRi+S*.012,dRo,S*.065,6)+'" fill="none" stroke="#2b3035" stroke-width="'+f(S*.0035)+'"/>'
+      +line(dRo,'#1c2024',S*.004)+line(dRi,'#9aa3ab',S*.0018)
       +'<g fill="url(#psStLamp)">'+lamps+'</g>';
     }
     o+='<path d="'+rr(dE)+'" fill="url(#psStVig)"/></g>';

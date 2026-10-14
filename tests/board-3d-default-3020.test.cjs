@@ -3,7 +3,7 @@ const fs=require('fs'),path=require('path');
 const R=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 const notes=require('../studio/release-notes.js');
 
-/* 3.020 — 사용자 «프로세스 스튜디오 처음 들어왔을 때 기본이 3D» · «훈련 만들기에서 그리드 누르면 옆에 전광판 관중석 다 사라지게» */
+/* 3.020 · 3.021 — 사용자 «프로세스 스튜디오 처음 들어왔을 때 기본이 3D» · «훈련 만들기에서 그리드 누르면 옆에 전광판 관중석 다 사라지게» */
 test('3.020 a device entering for the first time opens the board in 3D; a device that chose flat stays flat',()=>{
   const app=R('studio/app.html');
   assert.match(app,/try\{if\(localStorage\.getItem\('ps_board_tilt3d'\)===null\)localStorage\.setItem\('ps_board_tilt3d','1'\);\}catch\(_\)\{\}/,'only when nothing was chosen yet');
@@ -27,8 +27,17 @@ test('3.020 first-boot tuning closes the view menu only when it is open (it used
   assert.doesNotMatch(app,/setTimeout\(function\(\)\{ try\{ view\.click\(\); \}catch\(e\)\{\} \}, 150\);/,'no blind toggle at the end');
 });
 
+test('3.021 five pitches: the 3D stadium wraps the whole card layout, thickness stays one-pitch',()=>{
+  const b=R('studio/board.html');
+  assert.match(b,/if\(multi\)\{ try\{ const rs=\[\.\.\.svg\.querySelectorAll\('#ps-multipitch \[data-pitch-rect\]'\)\]/,'cards from #ps-multipitch');
+  assert.match(b,/S=multi\?Math\.min\(PW,PH\*105\/68\):PW,/,'thickness and spacing measured on one pitch');
+  assert.match(b,/const gx=S\*\.068,gy=PH\*\.095,r0=S\*\.075,bt=S\*\.0105,tk=S\*\.028,sd=S\*\.34;/);
+  assert.match(b,/const lenX=PW\+2\*gx-2\*r0,lenY=PH\+2\*gy-2\*r0,/,'edges still run the full layout');
+  assert.match(b,/if\(\(state\.pitchN\|\|1\)>1&&deco!=="grass"\)pads=\[pads\[0\],pads\[1\],pads\[2\]\+\.03\];/,'a little more side room for the wide layout');
+});
+
 test('3.020 release note',()=>{
-  const e=notes.entries()[0];
-  assert.equal(e.id,'2026-10-14-v3-020-3d-default');
+  const e=notes.entries().find(x=>x.id==='2026-10-14-v3-020-3d-default');
+  assert.ok(e,'3.020 note');
   assert.ok(e.changes.some(c=>/3D 보기로 열립니다/.test(c)&&/«평면»/.test(c))&&e.changes.some(c=>/«그리드»/.test(c)&&/잔디만/.test(c)));
 });

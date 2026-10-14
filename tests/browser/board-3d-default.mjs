@@ -34,6 +34,23 @@ try{
   assert.match(deco.back.sig,/\|full\|/);
   assert.equal(await f.evaluate(()=>JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'{}').deco||'full'),'full','설정 값은 바꾸지 않는다');
 
+  // ④ 3.021 — 운동장 5개(사용자 «운동장 5개 했을 때도 잘 구현되게»): 경기장은 카드 배치 전체를 둘러싼다
+  const five=await f.evaluate(async()=>{
+    const wait=ms=>new Promise(r=>setTimeout(r,ms));
+    window.__setPitchN(5);window.__applyPitchN&&window.__applyPitchN(5);await wait(600);
+    try{applyView();}catch(_){} window.__applyPitchN&&window.__applyPitchN(5);await wait(600);   /* 5개로 저장된 보드를 다시 연 것과 같이 — 배치가 가로로 넓다 */
+    const rs=[...document.querySelectorAll('#ps-multipitch [data-pitch-rect]')].map(g=>g.getAttribute('data-pitch-rect').split(',').map(Number));
+    const sig=((document.querySelector('#tiltSurface .tilt-stadium')||{}).__sig||'').split('|');
+    const u={L:Math.min(...rs.map(r=>r[0])),R:Math.max(...rs.map(r=>r[0]+r[2])),T:Math.min(...rs.map(r=>r[1])),B:Math.max(...rs.map(r=>r[1]+r[3]))};
+    const out={cards:rs.length,u,L:+sig[1],R:+sig[2],T:+sig[3],B:+sig[4],W};
+    window.__setPitchN(1);window.__applyPitchN&&window.__applyPitchN(1);await wait(400);
+    return out;
+  });
+  assert.equal(five.cards,5);
+  assert.ok(five.u.L<0||five.u.R>five.W,'the wide five-pitch layout reaches past one pitch '+JSON.stringify(five));
+  assert.ok(five.L<=five.u.L&&five.R>=five.u.R&&five.T<=five.u.T&&five.B>=five.u.B,'the stadium encloses every card '+JSON.stringify(five));
+  assert.ok(five.L>five.u.L-40&&five.R<five.u.R+40,'and hugs the layout (no one-pitch box) '+JSON.stringify(five));
+
   // ② 평면으로 끄면 다시 들어와도 평면
   await f.evaluate(()=>window.__setTilt(false));
   assert.equal(await page.evaluate(()=>localStorage.getItem('ps_board_tilt3d')),'0');
