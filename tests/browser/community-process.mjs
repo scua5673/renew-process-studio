@@ -17,7 +17,10 @@ const THUMB='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 60"><rect w
 const fx=await startFixture(),browsers={};
 try{
   const {page,context,logs}=await openApp(fx,size,{browsers});
-  const asked=[],askedLocal=[],writes=[];let indexDown=true,localDown=true;
+  const asked=[],askedLocal=[],writes=[];let indexDown=true,localDown=true,localOwn=false;
+  // 3.018 — 앱이 장면을 보강한 세션(사본 목록의 own:1): 4호의 첫 훈련을 장면 7개로. 사이트가 열려 있어도 이 세션은 사본에서 읽는다.
+  const OWN4=Object.assign(row(4),{own:1,rev:'bbbbbbbbbb',trainings:[{name:'가상 연습 1',minutes:15,scenes:7},{name:'골문 앞 버티기',minutes:20,scenes:2},{name:'가상 연습 3',minutes:25,scenes:4}]});
+  const ownPack4=()=>{ const p=pack(4); p.drills[0].trainings[0]=tr(0,7); p.drills[0].frames=tr(0,7).frames; return p; };
   // 3.002 — 코치 글 하나(훈련 둘: 첫 훈련은 장면 없음 · 둘째는 장면 셋). 훈련이 둘 이상인 코치 글도 뷰어에서 훈련을 골라 본다.
   const coachTr=(i,n,min)=>{const t=tr(i,n);t.name='코치 훈련 '+'AB'[i];t.method='코치 방법 '+'AB'[i];t.coaching='1. 코치 포인트 '+'AB'[i];if(min)t.minutes=min;else delete t.minutes;if(n<2)delete t.frames;return t;};
   const COACH={id:'Cmulti1',owner:'22222222-2222-4222-8222-222222222222',owner_name:'가상코치',title:'가상 코치 글',summary:'',cat:'rondo',age:'U12',players:'8',thumb:THUMB,views:3,copies:1,likes:0,created_at:'2026-10-01T00:00:00Z'};
@@ -38,9 +41,10 @@ try{
   // 3.003 — 앱에 실린 사본(…/studio/packs/) 흉내: 세션 하나(6호). 훈련 세션 사이트가 내려가 있을 때 여기서 읽는다. 처음에는 이것도 내려가 있다.
   await context.route(u=>u.origin===new URL(page.url()).origin&&u.pathname.startsWith('/studio/packs/'),route=>{const u=new URL(route.request().url()),p=u.pathname.replace(/^\/studio/,'');askedLocal.push(p+u.search);
     if(localDown)return route.fulfill({status:404,body:'not found'});
-    if(p==='/packs/index.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({type:'process-studio-pack-index',version:1,sessions:[row(6)]})});
+    if(p==='/packs/index.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({type:'process-studio-pack-index',version:1,sessions:localOwn?[OWN4,row(6)]:[row(6)]})});
     if(p==='/packs/06.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(pack(6))});
-    if(/^\/packs\/thumbs\/06-[123]\.svg$/.test(p))return route.fulfill({status:200,contentType:'image/svg+xml',body:THUMB});
+    if(localOwn&&p==='/packs/04.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(ownPack4())});
+    if(/^\/packs\/thumbs\/0[46]-[123]\.svg$/.test(p))return route.fulfill({status:200,contentType:'image/svg+xml',body:THUMB});
     return route.fulfill({status:404,body:'not found'});});
   // 커뮤니티 서버 표에 쓰는 요청(올리기·조회수·담김·신고·좋아요)을 센다
   page.on('request',r=>{const u=r.url();if(/ps_community|ps_comm_/.test(u)&&r.method()!=='GET')writes.push(r.method()+' '+u.replace(/^.*\/rest\/v1\//,''));});
@@ -66,8 +70,7 @@ try{
   const pick=()=>c.evaluate(()=>{const b=document.getElementById('prCvTabs'),r=b.getBoundingClientRect();return {hidden:b.hidden,head:document.querySelector('.cv-head b').textContent,l:Math.round(r.left),r:Math.round(r.right),vw:innerWidth,
     btn:[...b.querySelectorAll('button')].map(x=>{const q=x.getBoundingClientRect();return [x.querySelector('.pr-i').textContent,x.querySelector('.pr-nm').textContent,(x.querySelector('.pr-mn')||{}).textContent,x.getAttribute('aria-pressed'),Math.round(q.height),Math.round(q.left)>=0&&Math.round(q.right)<=innerWidth];})};});
   const inside=()=>v.evaluate(()=>({banner:document.getElementById('epRoBanner').textContent,copy:document.getElementById('commCopyBtn').textContent,rep:!!document.getElementById('commRepBtn'),del:!!document.getElementById('commDelBtn'),
-    doc:[...document.querySelectorAll('.ep-ro-text')].map(x=>x.textContent),play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,players:state.players.length,hit:window.__prHit,ro:editorReadOnly,
-    hold:animHold,durs:(anim.frames||[]).map(f=>f.dur)}));
+    doc:[...document.querySelectorAll('.ep-ro-text')].map(x=>x.textContent),play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,players:state.players.length,hit:window.__prHit,ro:editorReadOnly}));
 
   // 1) 처음은 코치 자료 — 지금 화면 그대로. 두 칸이 머리에 있다
   let s=await state();
@@ -144,7 +147,7 @@ try{
   await c.waitForSelector('.pr-card[data-proc="06"]');
 
   // 사이트가 돌아오면 다음에 목록을 받을 때(탭에 적어 둔 10분이 지나거나 화면을 새로 열 때) 사이트 것으로 바뀐다
-  indexDown=false;
+  indexDown=false; localOwn=true;
   await c.evaluate(()=>{ try{sessionStorage.removeItem('ps_comm_proc_index_v1');}catch(_){} location.reload(); });
   await page.waitForTimeout(400);
   c=await (await page.waitForSelector('#fComm')).contentFrame();
@@ -189,6 +192,20 @@ try{
   await c.fill('#commSearch','');
   await c.waitForFunction(()=>document.querySelectorAll('.pr-card').length===2);
 
+  // 4-2) 3.018 — 앱이 보강한 4호(사본 목록의 own:1)는 사이트가 열려 있어도 사본의 줄 · 그림 · 팩이다. 사이트의 4호 팩은 묻지 않는다
+  const own=await c.evaluate(()=>{ const el=document.querySelector('.pr-card[data-proc="04"]'); return {foot:el.querySelector('.pr-foot').textContent,imgs:[...el.querySelectorAll('.pr-tri img')].map(i=>i.getAttribute('src'))}; });
+  assert.equal(own.foot,'@프로세스 · 레터 4호장면 13','장면 수는 사본의 줄');
+  assert.deepEqual(own.imgs,[1,2,3].map(k=>'packs/thumbs/04-'+k+'.svg?v=bbbbbbbbbb'),'그림도 사본에서');
+  await c.click('.pr-card[data-proc="04"]');
+  await c.waitForSelector('#cvMask.on');
+  v=await view('가상 연습 1');
+  iv=await inside();
+  assert.deepEqual([iv.frames,iv.play],[7,true],'보강한 장면 7개가 실린다');
+  assert.ok(askedLocal.includes('/packs/04.json'),'4호 팩은 사본에서 '+JSON.stringify(askedLocal));
+  assert.equal(asked.some(a=>a.startsWith('/packs/04.json')),false,'사이트의 4호 팩은 묻지 않는다');
+  await c.click('#cvClose');
+  await c.waitForFunction(()=>!document.getElementById('cvMask').classList.contains('on'));
+
   // 5) 카드 → 읽기 전용 뷰어. 훈련 고르는 줄이 머리 아래에 있고, 고르면 그 훈련이 실린다
   await c.click('.pr-card[data-proc="03"]');
   await c.waitForSelector('#cvMask.on');
@@ -203,8 +220,6 @@ try{
   assert.deepEqual([iv.copy,iv.rep,iv.del,iv.ro],['보관함에 담기',false,false,true],'담기 하나 — 신고·삭제는 코치 자료만');
   assert.deepEqual(iv.doc,['가상 방법 1\n1. 첫 걸음','1. 가상 포인트 1'],'훈련 방법 · 코칭 포인트');
   assert.deepEqual([iv.play,iv.frames,iv.players],[true,3,2],'움직임 재생 · 장면 3');
-  // 3.016 — 사용자 «애니메이션들이 너무 짧다 · 더 길게»: 장면 유지 0.6초 → 2초 · 이동 1.2초 → 평균 2.2초(재생은 animHold · 장면마다의 dur 를 쓴다)
-  assert.deepEqual([iv.hold,iv.durs],[2,[2.2,2.2,2.2]],'프로세스 훈련은 느린 박자로');
   await c.click('#prCvTabs button:nth-child(3)');
   v=await view('가상 연습 3');
   iv=await inside();
@@ -230,8 +245,6 @@ try{
     if(!saved.length)await page.waitForTimeout(100);
   }
   assert.deepEqual(saved,[['레터 3호 · 가상 세션',3,3,60]],'카드 한 장 · 훈련 셋');
-  const pace=await f.evaluate(async()=>{ const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x&&x.letter); const fr=d.trainings[0].frames; return [fr[0].__hold,fr.map(x=>[x.hold,x.dur])]; });
-  assert.deepEqual(pace,[2,[[2,2.2],[2,2.2],[2,2.2]]],'3.016 — 담은 카드도 커뮤니티에서 본 박자 그대로');
 
   // 7) 커뮤니티로 돌아오면 프로세스 칸 그대로, 코치 자료로 가면 지금 화면 그대로
   await page.evaluate(()=>window.__psShowApp('community'));

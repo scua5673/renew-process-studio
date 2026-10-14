@@ -940,13 +940,9 @@ function cpAnimGeneric(box,frames,p){
     +'</div>';
   var host=box.querySelector('.cpa');
   box.appendChild(cpAnimControls(cpAnimStop,function(){cpAnimStop();renderPreview(p);}));
-  /* 3.016 — 프로세스 세션은 큰 화면과 같은 박자로(procPace 가 늘려 둔 장면마다의 이동 dur · 공통 유지 __hold). 코치 글은 예전 그대로 */
-  var pace=(p&&p.proc)?{hold:Math.max(.2,+frames[0].__hold||2)*1000,move:function(k){ return Math.max(.3,+frames[k].dur||1)*1000; }}:null;
   var i=0;
   function step(){
-    var mv=pace?(i===frames.length-1?850:pace.move(i)):0;   /* 마지막 → 처음은 장면 이동이 아니라 되감기 */
     i=(i+1)%frames.length;
-    if(pace)[].forEach.call(host.querySelectorAll('.cpt,.cpb'),function(t){ t.style.transitionDuration=mv+'ms'; });
     var sn=frames[i].snap,by=null;
     [].forEach.call(host.querySelectorAll('.cpt'),function(t){
       var q=(sn.players||[]).filter(function(x){return String(x.id)===t.dataset.id;})[0];
@@ -955,9 +951,9 @@ function cpAnimGeneric(box,frames,p){
     });
     var b=host.querySelector('.cpb');
     if(b){if(sn.ball){b.style.display='';b.style.left=X(sn.ball.x)+'%';b.style.top=Y(sn.ball.y)+'%';}else b.style.display='none';}
-    _cpaT.push(setTimeout(step,pace?(mv+pace.hold):(i===0?1500:980)));
+    _cpaT.push(setTimeout(step,i===0?1500:980));
   }
-  _cpaT.push(setTimeout(step,pace?pace.hold:700));
+  _cpaT.push(setTimeout(step,700));
 }
 function openPost(p){
   /* 조회수 + 전체 페이로드 확보 → 커뮤니티 내부 읽기 전용 상세보기 */
@@ -1571,10 +1567,22 @@ function procRead(j){
     var theme=_prStr(s.theme,40).trim(),cut=theme.split(' › '),rev=_prStr(s.rev,12); if(!/^[0-9a-f]{6,12}$/.test(rev))rev='';
     seen[n]=1;
     out.push({n:n,nn:(n<10?'0':'')+n,rev:rev,session:session,letter:_prStr(s.letter,80).trim(),theme:theme,head:(cut[0]||'').trim(),tail:(cut[1]||'').trim(),group:procGroupOf(theme),
-      minutes:trs.reduce(function(a,t){return a+t.minutes;},0),scenes:trs.reduce(function(a,t){return a+t.scenes;},0),trainings:trs}); }
+      minutes:trs.reduce(function(a,t){return a+t.minutes;},0),scenes:trs.reduce(function(a,t){return a+t.scenes;},0),trainings:trs,own:s.own===1}); }
   out.sort(function(a,b){return a.n-b.n;});
   return out;
 }
+/* 3.018 — 앱이 장면을 보강한 세션(사본 목록의 own:1 · scripts/proc-scenes)은 앱에 실린 사본이 원본이다.
+   사이트 목록의 같은 호를 사본의 줄로 바꾸고(장면 수 · 지문), 사이트에 없는 보강 세션도 싣는다. 나머지 세션은 사이트 그대로. */
+function procMerge(site,local){
+  var own={},out;
+  (local||[]).forEach(function(s){ if(s&&s.own)own[s.n]=s; });
+  out=(site||[]).map(function(s){ return own[s.n]||s; });
+  Object.keys(own).forEach(function(k){ var s=own[k]; if(out.indexOf(s)<0)out.push(s); });
+  out.sort(function(a,b){return a.n-b.n;});
+  return out;
+}
+/* 세션 하나를 어디서 읽는가 — 보강한 세션은 사본, 나머지는 목록을 읽은 곳 */
+function procSrcOf(s,src){ return (s&&s.own)?PROC_LOCAL_SRC:src; }
 function procUrl(kind,s,k,src){
   var b=(src===PROC_LOCAL_SRC)?PROC_LOCAL:PROC_BASE;
   if(kind==='pack')return b+s.nn+'.json';
@@ -1598,26 +1606,10 @@ function procItem(pack,s,dep){
   item.snap=dep.snap(item.snap);
   var trs=dep.trainings(d); if(!trs||trs.length!==s.trainings.length)return null;
   trs.forEach(function(t){ t.thumb=''; delete t.scenes;
-    var tf=dep.frames(t.frames); if(tf)t.frames=procPace(tf); else{ delete t.frames; delete t.animIdx; } });   /* 훈련마다의 장면도 같은 정리를 거친다(장면 하나뿐이면 애니메이션 없음) */
+    var tf=dep.frames(t.frames); if(tf)t.frames=tf; else{ delete t.frames; delete t.animIdx; } });   /* 훈련마다의 장면도 같은 정리를 거친다(장면 하나뿐이면 애니메이션 없음) */
   item.trainings=trs;
-  var fr=dep.frames(item.frames); if(fr)item.frames=procPace(fr); else delete item.frames;
+  var fr=dep.frames(item.frames); if(fr)item.frames=fr; else delete item.frames;
   return item;
-}
-/* 3.016 — 프로세스 훈련의 박자(사용자 «커뮤니티 프로세스 훈련들 애니메이션이 너무 짧다 · 더 길게»).
-   팩은 장면 이동 1.2~1.45초 · 장면 유지는 작전판 기본 0.6초였다 — 작전판 재생은 장면마다의 hold 가 아니라 장면 0 의 __hold(전체 공통)를 쓰는데 팩에는 그 칸이 없다.
-   그래서 훈련 하나(장면 5~6)가 10초 남짓에 끝나 장면 자막(30자 안팎)을 다 읽기 전에 넘어갔다 → 22초 안팎.
-   · 유지: 2초 이상(작전판 «장면 유지» 고르기의 가장 긴 값) — 장면 0 의 __hold(재생)와 장면마다의 hold(영상 내보내기) 둘 다.
-   · 이동: 장면 사이 이동의 평균이 2.2초가 되게 같은 비율로 늘린다(장면마다의 길고 짧은 차이는 그대로). 이미 그보다 느리면 그대로.
-   · 여러 번 거쳐도 같은 값 — 훈련 세션 사이트가 나중에 박자를 늘려도 두 번 늘어나지 않는다. 받은 배열·장면은 고치지 않는다.
-   작전판의 letterPackPace(«보관함에 담기»)와 몸이 같아야 한다 — 단위 테스트가 본다. */
-function procPace(fr){
-  if(!Array.isArray(fr)||fr.length<2)return fr;
-  var HOLD=2,MOVE=2.2,num=function(v,lo,hi,def){ v=+v; return (isFinite(v)&&v>0)?Math.min(hi,Math.max(lo,v)):def; };
-  var out=fr.map(function(f){ return Object.assign({},(f&&typeof f==='object')?f:{}); });
-  var avg=out.slice(0,-1).reduce(function(a,f){ return a+num(f.dur,.1,20,1); },0)/(out.length-1),k=(avg<MOVE-.01)?MOVE/avg:1;
-  out.forEach(function(f){ f.dur=Math.min(20,Math.round(num(f.dur,.1,20,1)*k*100)/100); f.hold=num(f.hold,HOLD,20,HOLD); });
-  out[0].__hold=num(out[0].__hold,HOLD,20,HOLD);
-  return out;
 }
 /* ── 2.999 · 프로세스 칸 순수 구간 끝 ── */
 var proc={ready:false,loading:false,err:'',at:0,src:PROC_SRC,list:[],posts:{}},procG='all',procOpenSeq=0;
@@ -1642,16 +1634,18 @@ function procSet(list,at,src){
 function procFetch(force){
   if(proc.loading)return;
   if(!force&&!proc.ready){ try{ var c=JSON.parse(sessionStorage.getItem(PROC_CK)||'null');
-      if(c&&Date.now()>=c.at&&Date.now()-c.at<PROC_TTL){ var l0=procRead(c.index); if(l0&&l0.length){ procSet(l0,c.at,c.src); return; } } }catch(_){} }
+      if(c&&Date.now()>=c.at&&Date.now()-c.at<PROC_TTL){ var l0=procRead(c.index); if(l0&&l0.length){ if(c.local)l0=procMerge(l0,procRead(c.local)); procSet(l0,c.at,c.src); return; } } }catch(_){} }
   proc.loading=true; proc.err=''; if(tabF==='proc'&&!proc.ready)renderProc();
-  /* 3.003 — 훈련 세션 사이트에서 먼저 읽고(새 세션이 거기에 먼저 실린다), 닫혀 있거나 닿지 않으면 앱에 실린 사본을 읽는다. */
+  /* 3.003 — 훈련 세션 사이트의 목록을 쓰고(새 세션이 거기에 먼저 실린다), 닫혀 있거나 닿지 않으면 앱에 실린 사본을 쓴다.
+     3.018 — 사본 목록도 함께 받아, 앱이 장면을 보강한 세션(own)은 사본의 줄로 바꾼다(procMerge). */
   var get=function(src,ms){ var ab=procAbort(ms);
     return fetch(procUrl('index',null,null,src),{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:ab.signal})
       .then(function(r){ if(!r.ok)throw r.status; return r.json(); })
       .then(function(j){ ab.done(); var l=procRead(j); if(!l||!l.length)throw 'shape'; return {l:l,j:j,src:src}; },function(e){ ab.done(); throw e; }); };
-  get(PROC_SRC,8000).catch(function(){ return get(PROC_LOCAL_SRC,8000); })
+  var local=get(PROC_LOCAL_SRC,8000); local.catch(function(){});
+  get(PROC_SRC,8000).then(function(o){ return local.then(function(c){ return {l:procMerge(o.l,c.l),j:o.j,lj:c.j,src:o.src}; },function(){ return o; }); },function(){ return local; })
     .then(function(o){
-      try{ sessionStorage.setItem(PROC_CK,JSON.stringify({at:Date.now(),index:o.j,src:o.src})); }catch(_){}
+      try{ sessionStorage.setItem(PROC_CK,JSON.stringify({at:Date.now(),index:o.j,local:o.lj||null,src:o.src})); }catch(_){}
       proc.loading=false; procSet(o.l,Date.now(),o.src); })
     .catch(function(){ proc.loading=false; if(proc.ready)return;   /* 이미 그린 목록이 있으면 그대로 둔다 */
       proc.err=(navigator.onLine===false)?'offline':'net'; if(tabF==='proc')renderProc(); });
@@ -1666,7 +1660,7 @@ function procChipsRender(){
   mk('all','전체 주제',proc.ready?proc.list.length:null);
   PROC_GROUPS.forEach(function(g){ if(counts[g[0]])mk(g[0],g[1],counts[g[0]]); });
 }
-function procThumb(s,k){ return '<img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(procUrl('thumb',s,k,proc.src))+'">'; }
+function procThumb(s,k){ return '<img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(procUrl('thumb',s,k,procSrcOf(s,proc.src)))+'">'; }
 function renderProc(){
   var grid=$('grid'),cc=$('commCount'); if(!grid)return;
   try{cpAnimStop();}catch(_){}
@@ -1706,7 +1700,7 @@ function procEnsure(p){
       .then(function(txt){ ab.done(); if(txt.length>PROC_PACK_MAX)throw new Error('big');
         var it=procItem(JSON.parse(txt),p.s,{fields:COPY_FIELDS,snap:stripSnap,trainings:stripTrainings,frames:stripFrames}); if(!it)throw new Error('shape');
         return {it:it,src:src}; },function(e){ ab.done(); throw e; }); };
-  var first=proc.src;
+  var first=procSrcOf(p.s,proc.src);   /* 3.018 — 앱이 보강한 세션은 사본에서 */
   p.__load=get(first).catch(function(e){ if(first===PROC_LOCAL_SRC)throw e; return get(PROC_LOCAL_SRC); })
     .then(function(o){ p.__load=null; p.item=o.it; p.src=o.src; return o.it; },function(e){ p.__load=null; throw e; });
   p.__load.catch(function(){ p.__load=null; });

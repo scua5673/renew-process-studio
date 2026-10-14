@@ -14,7 +14,7 @@ const app=fs.readFileSync(path.join(__dirname,'..','studio','app.html'),'utf8');
 function cut(src,from,to){ const a=src.indexOf(from); assert.ok(a>0,'start marker: '+from); const b=src.indexOf(to,a+from.length); assert.ok(b>a,'end marker: '+to); return src.slice(a,b); }
 const plain=o=>JSON.parse(JSON.stringify(o));
 const PURE=cut(comm,'/* ── 2.999 · 프로세스 칸 순수 구간 시작','/* ── 2.999 · 프로세스 칸 순수 구간 끝 ── */');
-function pure(){ const c=vm.createContext({}); vm.runInContext(PURE+';this.api={PROC_BASE,PROC_SRC,PROC_GROUPS,procGroupOf,procRead,procUrl,procMatch,procItem};',c); return c.api; }
+function pure(){ const c=vm.createContext({}); vm.runInContext(PURE+';this.api={PROC_BASE,PROC_SRC,PROC_LOCAL_SRC,PROC_GROUPS,procGroupOf,procRead,procUrl,procMatch,procItem,procMerge,procSrcOf};',c); return c.api; }
 const LETTER=cut(board,'/* ── 2.997 · 레터 팩 순수 구간 시작','/* ── 2.997 · 레터 팩 순수 구간 끝 ── */');
 function letter(){ const c=vm.createContext({URL}); vm.runInContext(LETTER+';this.api={LETTER_PACK_ORIGINS,letterPackUrlOk};',c); return c.api; }
 
@@ -55,7 +55,7 @@ test('the list comes from the index — in issue order, and odd rows are skipped
     row(7,{trainings:Array(7).fill({name:'a',minutes:1,scenes:1})}),row(8,{rev:'../../x',theme:7,letter:{a:1},trainings:[{name:'',minutes:-5,scenes:999},null,{name:'x'.repeat(200),minutes:'20',scenes:2.9}]})])));
   assert.deepEqual(list.map(s=>s.n),[3,8,14]);
   assert.deepEqual(list[0],{n:3,nn:'03',rev:'92ac33a65a',session:'가상 세션 3',letter:'가상 호 3',theme:'공격 조직 › 인지',head:'공격 조직',tail:'인지',group:'att',minutes:60,scenes:16,
-    trainings:[{name:'연습 1',minutes:15,scenes:6},{name:'연습 2',minutes:20,scenes:5},{name:'연습 3',minutes:25,scenes:5}]});
+    trainings:[{name:'연습 1',minutes:15,scenes:6},{name:'연습 2',minutes:20,scenes:5},{name:'연습 3',minutes:25,scenes:5}],own:false});
   const odd=list[1];
   assert.deepEqual([odd.rev,odd.theme,odd.letter,odd.group,odd.minutes,odd.scenes],['','','','etc',20,2],'모르는 값은 빈 값·기본값');
   assert.deepEqual(odd.trainings.map(t=>[t.name.length,t.minutes,t.scenes]),[[4,0,0],[4,0,0],[60,20,2]],'이름은 60자 · 빈 이름은 «훈련 N»');
@@ -117,4 +117,20 @@ test('the viewer says whose session it is and offers one thing — putting it in
   assert.match(board,/\+\(post\.proc\?'':'<button id="commRepBtn"/,'신고 단추 없음');
   assert.match(board,/if\(post\.proc\)\{ try\{parent\.postMessage\(\{source:"board",type:"commAct",act:"copy",id:post\.id\},"\*"\);\}catch\(_\)\{\} return; \}/,'«담겼어요»는 보관함의 확인 창이 말한다');
   assert.match(board,/if\(rb\)rb\.onclick=/);
+});
+
+test('3.018 — a session the app has reworked (own:1 in the copy) comes from the copy; every other session stays on the site',()=>{
+  const g=pure();
+  const site=g.procRead(index([row(2),row(3),row(4)]));
+  const local=g.procRead(index([row(2,{own:1,rev:'aaaaaaaaaa',trainings:[{name:'연습 1',minutes:15,scenes:11},{name:'연습 2',minutes:20,scenes:14},{name:'연습 3',minutes:25,scenes:14}]}),row(3),row(9,{own:1})]));
+  assert.deepEqual(plain(local).map(s=>[s.n,s.own]),[[2,true],[3,false],[9,true]],'own 은 1 일 때만');
+  assert.equal(g.procRead(index([row(5,{own:true})]))[0].own,false,'«true» 같은 다른 값은 아니다');
+  const m=plain(g.procMerge(site,local));
+  assert.deepEqual(m.map(s=>[s.n,s.own,s.scenes,s.rev]),[[2,true,39,'aaaaaaaaaa'],[3,false,16,'92ac33a65a'],[4,false,16,'92ac33a65a'],[9,true,16,'92ac33a65a']],
+    '보강한 2호는 사본의 줄(장면 수 · 지문) · 사본의 3호(own 아님)는 사이트 것 그대로 · 사이트에 없는 보강 세션도 싣는다');
+  assert.deepEqual(plain(g.procMerge(site,null)).map(s=>s.n),[2,3,4],'사본을 못 받으면 사이트 그대로');
+  assert.equal(g.procSrcOf(m[0],g.PROC_SRC),g.PROC_LOCAL_SRC,'보강한 세션의 팩·그림은 사본에서');
+  assert.equal(g.procSrcOf(m[1],g.PROC_SRC),g.PROC_SRC);
+  assert.equal(g.procUrl('pack',m[0],null,g.procSrcOf(m[0],g.PROC_SRC)),'packs/02.json');
+  assert.equal(g.procUrl('thumb',m[0],1,g.procSrcOf(m[0],g.PROC_SRC)),'packs/thumbs/02-1.svg?v=aaaaaaaaaa');
 });
