@@ -13,6 +13,7 @@
   --dawn-soft: #e8ecf8;
   --on-dawn: #ffffff;
   --mark: #ffe25a;       /* 형광펜 */
+  --trace: #c8cfe0;      /* 손글씨 노트의 따라 쓰기 글자 */
   --blank: #eef1f8;
   --avoid: #a14343;
   --good: #23704f;
@@ -30,7 +31,7 @@
   :root:not([data-theme="light"]) {
     --paper: #0f1328; --sheet: #181d38; --ink: #e8ebf7; --ink-2: #b3b9d4; --ink-3: #8a92b2;
     --rule: #2a3156; --ring: #4b5379; --dawn: #a9b6ff; --dawn-soft: #222a50; --on-dawn: #0f1328;
-    --mark: rgba(255, 214, 70, .36); --blank: #232a4c; --avoid: #eb9c9c; --good: #78d3a6; --star: #f2c94c;
+    --mark: rgba(255, 214, 70, .36); --blank: #232a4c; --avoid: #eb9c9c; --good: #78d3a6; --star: #f2c94c; --trace: #3a4370;
     --scrim: rgba(0, 0, 0, .6); --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 30px rgba(0, 0, 0, .35);
     color-scheme: dark;
   }
@@ -38,7 +39,7 @@
 :root[data-theme="dark"] {
   --paper: #0f1328; --sheet: #181d38; --ink: #e8ebf7; --ink-2: #b3b9d4; --ink-3: #8a92b2;
   --rule: #2a3156; --ring: #4b5379; --dawn: #a9b6ff; --dawn-soft: #222a50; --on-dawn: #0f1328;
-  --mark: rgba(255, 214, 70, .36); --blank: #232a4c; --avoid: #eb9c9c; --good: #78d3a6; --star: #f2c94c;
+  --mark: rgba(255, 214, 70, .36); --blank: #232a4c; --avoid: #eb9c9c; --good: #78d3a6; --star: #f2c94c; --trace: #3a4370;
   --scrim: rgba(0, 0, 0, .6); --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 30px rgba(0, 0, 0, .35);
   color-scheme: dark;
 }
@@ -614,7 +615,7 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--d
 .mname small { margin-right: 4px; font-weight: 400; color: var(--ink-3); }
 .mgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
 .mc { display: block; aspect-ratio: 1 / 1; border-radius: 3px; background: var(--rule); }
-.mc.pad, .mc.out { background: transparent; }
+.mc.lead, .mc.out { background: transparent; }
 .mc.out { box-shadow: inset 0 0 0 1px var(--rule); opacity: .4; }
 .mc.future { background: var(--blank); }
 .mc.done { background: var(--dawn); }
@@ -638,9 +639,61 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--d
 .rc.now { background: var(--sheet); box-shadow: inset 0 0 0 2px var(--dawn); }
 .notes + .seg, .seg + .seg { margin-top: -12px; }
 
+/* ---------- 손글씨 노트 ----------
+   왼쪽(좁으면 위)은 읽고 생각하는 칸, 오른쪽은 펜슬로 쓰는 종이. 종이는 두 장의 캔버스(바탕·잉크)를 겹친다. */
+.write-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.write-head .label { margin-bottom: 0; }
+.pen-link { padding: 4px 0; font-size: .85rem; }
+.pen-note { color: var(--dawn); font-weight: 600; }
+.pad {
+  position: fixed; inset: 0; z-index: 55;
+  background: var(--paper);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
+}
+.pad-inner { height: 100%; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; }
+.pad-top { display: flex; align-items: center; gap: 6px; min-height: 52px; }
+.pad-title { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pad-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.pad-read { flex: none; max-height: 34%; overflow-y: auto; display: grid; align-content: start; gap: 8px; padding: 2px 2px 4px; }
+.pad-read .label { margin-bottom: -4px; }
+.pad-read .btn { justify-self: start; }
+.pad-text { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; line-height: 1.6; }
+.pad-text:lang(ja), .pad-sub:lang(ja) { font-family: var(--font-ja); }
+.pad-sub { font-size: .92rem; color: var(--ink-2); }
+.pad-think { padding: 10px 14px; border-radius: 12px; border: 1.5px dashed var(--dawn); font-size: .95rem; }
+.pad-write { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.pad-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pad-tools .seg { margin-top: 0; }
+.pad-tools .chip { min-height: 38px; }
+.seg.mini { padding: 3px; gap: 2px; border-radius: 10px; }
+.seg.mini button { min-height: 32px; padding: 0 10px; border-radius: 8px; font-size: .82rem; }
+.pad-wrap { position: relative; flex: 1; min-height: 260px; border-radius: 14px; overflow: hidden; background: var(--sheet); box-shadow: var(--shadow); }
+.pad-wrap canvas { position: absolute; top: 0; left: 0; display: block; }
+#pad-ink { touch-action: none; cursor: crosshair; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.ink-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.ink-item { padding: 0; border: 0; border-radius: 12px; overflow: hidden; background: var(--sheet); box-shadow: var(--shadow); display: grid; text-align: left; }
+.ink-item img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; object-position: top; background: #fff; }
+.ink-item span { padding: 8px 10px; font-size: .8rem; color: var(--ink-3); }
+.ink-view { margin: 0; display: grid; gap: 8px; }
+.ink-view img { display: block; justify-self: center; width: auto; max-width: 100%; max-height: 64vh; border-radius: 12px; box-shadow: var(--shadow); background: #fff; }
+
 @media (min-width: 720px) {
   .view { padding-top: 40px; }
   .quote { font-size: 1.65rem; }
+}
+/* 아이패드 가로·데스크톱: 루틴 두 줄, 손글씨는 읽기와 쓰기를 나란히 */
+@media (min-width: 900px) {
+  .view { max-width: 920px; }
+  .routines { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .year-cal { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .session-inner { max-width: 680px; }
+  .tabs-inner { max-width: 920px; }
+  .pad-body { flex-direction: row; gap: 20px; }
+  .pad-read { flex: 0 0 min(34%, 400px); max-height: none; padding-top: 8px; gap: 10px; }
+  .pad-text { font-size: 1.4rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   mark.reveal { animation: none; }

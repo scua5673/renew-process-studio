@@ -73,8 +73,8 @@
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const pad = n => String(n).padStart(2, '0');
-  const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const two = n => String(n).padStart(2, '0');
+  const ymd = d => d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate());
   const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
   const today = () => { const d = new Date(); d.setHours(d.getHours() - DAY_START_HOUR); return ymd(d); };
   const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return ymd(d); };
@@ -100,7 +100,10 @@
     plus: '<path d="M12 5v14M5 12h14"/>',
     chat: '<path d="M4 5h16v10H9l-5 4z"/>',
     bolt: '<path d="M13 3 5 13h6l-1 8 8-10h-6z"/>',
-    chev: '<path d="m9 6 6 6-6 6"/>'
+    chev: '<path d="m9 6 6 6-6 6"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+    pen: '<path d="M4 20l1.2-4.2L15.5 5.5a2.1 2.1 0 0 1 3 3L8.2 18.8z"/><path d="M13.5 7.5l3 3"/>',
+    trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
   };
   const icon = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`;
 
@@ -659,7 +662,7 @@
     const best = S.kana[ui.kanaSet];
     return `<div class="seg" role="group" aria-label="글자"><button data-act="kana-set" data-id="hira" aria-pressed="${!idx}">히라가나</button><button data-act="kana-set" data-id="kata" aria-pressed="${!!idx}">가타카나</button></div>
       <p class="hint">${idx ? '가타카나는 커피(コーヒー) 같은 외래어에 써요.' : '히라가나는 일본어의 기본 글자예요.'} 글자를 누르면 소리가 나요.</p>
-      <button class="btn primary wide" data-act="quiz">${name} 퀴즈 10문제${best != null ? ` · 최고 ${best}점` : ''}</button>
+      <div class="duo"><button class="btn primary" data-act="quiz">${name} 퀴즈 10문제${best != null ? ` · 최고 ${best}점` : ''}</button><button class="btn" data-act="pad-kana">${icon('pen')}쓰기 연습</button></div>
       <section><h2 class="sec-title">기본 글자</h2>${grid(K.basic)}</section>
       <section><h2 class="sec-title">탁음 · 반탁음</h2>${grid(K.voiced)}</section>`;
   }
@@ -686,7 +689,7 @@
       const first = new Date(y, mo, 1).getDay(), days = new Date(y, mo + 1, 0).getDate();
       const cells = [];
       let n = 0;
-      for (let k = 0; k < first; k++) cells.push('<i class="mc pad"></i>');
+      for (let k = 0; k < first; k++) cells.push('<i class="mc lead"></i>');
       for (let d = 1; d <= days; d++) {
         const s = ymd(new Date(y, mo, d));
         const cls = s < h.start || s > end ? 'out' : isDone(s) ? 'done' : h.rests.has(s) ? 'rest' : s === t ? 'now' : s > t ? 'future' : 'miss';
@@ -735,11 +738,12 @@
     const rw = S.rewrites.slice().reverse(), its = S.intents.slice().reverse();
     let body;
     if (ui.notesMode === 'year') body = viewYear();
+    else if (ui.notesMode === 'ink') body = viewInk();
     else if (ui.notesMode === 'rewrites') {
       body = rw.length
         ? `<ul class="notes">${rw.map(r => {
           const c = cardById(r.cardId), co = c ? courseOf(c) : courseById[r.course || 'sentence'];
-          return `<li><button class="note" data-act="open" data-id="${esc(r.cardId)}"><span class="note-date">${co ? `${esc(co.name)} · ` : ''}${r.kind === 'week' ? (co && co.kind === 'idea' ? '주간 사색 · ' : '주간 글쓰기 · ') : ''}${shortDate(r.date)}</span><span class="note-text">${esc(r.text)}</span>${c && r.kind !== 'week' ? `<span class="note-src">${co.kind === 'word' ? '낱말' : co.kind === 'idea' ? '개념' : '원문'} · ${esc(itemText(c))}</span>` : ''}</button></li>`;
+          return `<li><button class="note" data-act="${r.ink ? 'ink-open' : 'open'}" data-id="${esc(r.ink || r.cardId)}"><span class="note-date">${co ? `${esc(co.name)} · ` : ''}${r.kind === 'week' ? (co && co.kind === 'idea' ? '주간 사색 · ' : '주간 글쓰기 · ') : ''}${shortDate(r.date)}</span>${r.ink ? '<span class="note-text pen-note">손글씨로 썼어요 · 보기</span>' : `<span class="note-text">${esc(r.text)}</span>`}${c && r.kind !== 'week' ? `<span class="note-src">${co.kind === 'word' ? '낱말' : co.kind === 'idea' ? '개념' : '원문'} · ${esc(itemText(c))}</span>` : ''}</button></li>`;
         }).join('')}</ul>`
         : empty('아직 직접 쓴 문장이 없어요. 루틴의 ‘내 말로 바꾸기’, ‘내 문장 만들기’, 토요일 ‘주간 글쓰기’에서 쓴 글이 여기에 모여요.');
     } else {
@@ -748,7 +752,7 @@
         : empty('아직 실천 기록이 없어요. 좋은 문장 루틴 끝에 오늘 누구에게 쓸지 정하면 여기에 남아요.');
     }
     return `${head('하루하루 쌓인', '기록')}
-      <div class="seg" role="group" aria-label="보기"><button data-act="notes-mode" data-id="year" aria-pressed="${ui.notesMode === 'year'}">1년</button><button data-act="notes-mode" data-id="rewrites" aria-pressed="${ui.notesMode === 'rewrites'}">내가 쓴 글 ${rw.length}</button><button data-act="notes-mode" data-id="intents" aria-pressed="${ui.notesMode === 'intents'}">실천 ${its.length}</button></div>
+      <div class="seg" role="group" aria-label="보기"><button data-act="notes-mode" data-id="year" aria-pressed="${ui.notesMode === 'year'}">1년</button><button data-act="notes-mode" data-id="rewrites" aria-pressed="${ui.notesMode === 'rewrites'}">내가 쓴 글 ${rw.length}</button><button data-act="notes-mode" data-id="ink" aria-pressed="${ui.notesMode === 'ink'}">손글씨</button><button data-act="notes-mode" data-id="intents" aria-pressed="${ui.notesMode === 'intents'}">실천 ${its.length}</button></div>
       ${body}`;
   }
 
@@ -817,50 +821,50 @@
       const u = co.groupById[c.g], cards = u ? unitCards(co, u) : [];
       const k = cards.indexOf(c) + 1;
       return [`<p class="eyebrow">새 표현${count} · ${esc(groupName(c))}${k ? ` ${k}/${cards.length}` : ''}</p>${cardBlock(c)}
-        <div class="row">${speakBtn(c)}${slowBtn(c)}${readCounter('따라 말하기')}</div>
+        <div class="row">${speakBtn(c)}${slowBtn(c)}${readCounter('따라 말하기')}${padBtn(c)}</div>
         <p class="hint">${ui.reads >= 3 ? '세 번 따라 말했어요. 귀로 듣고 입으로 말한 표현이 대화에서 먼저 나와요.' : '듣기를 누르고, 들은 그대로 세 번 따라 말해 보세요.'}</p>`,
         '<button class="btn primary wide" data-act="learned">다음</button>'];
     }
     if (co.kind === 'idea') {
       return [`<p class="eyebrow">오늘의 인문학${count} · ${esc(groupName(c))}</p>${cardBlock(c)}
-        <div class="row">${readCounter('소리 내어 읽기')}${speakBtn(c)}</div>
+        <div class="row">${readCounter('소리 내어 읽기')}${speakBtn(c)}${padBtn(c)}</div>
         <p class="hint">${ui.reads >= 3 ? '세 번 읽었어요. 다음은 이 개념을 내 삶에 비춰 보는 질문이에요.' : '핵심 문장을 소리 내어 세 번 읽어 보세요.'}</p>`,
         '<button class="btn primary wide" data-act="learned">다음</button>'];
     }
     if (co.kind === 'word') {
       return [`<p class="eyebrow">오늘의 낱말${count} · ${esc(groupName(c))}</p>${cardBlock(c)}
-        <div class="row">${readCounter('소리 내어 읽기')}${speakBtn(c)}</div>
+        <div class="row">${readCounter('소리 내어 읽기')}${speakBtn(c)}${padBtn(c)}</div>
         <p class="hint">${ui.reads >= 3 ? '세 번 읽었어요. 입에 익은 낱말이 글에서도 자연스럽게 나와요.' : '낱말과 예문을 소리 내어 세 번 읽어 보세요.'}</p>`,
         '<button class="btn primary wide" data-act="learned">다음</button>'];
     }
     return [`<p class="eyebrow">오늘의 문장 · ${esc(groupName(c))}</p>${cardBlock(c, '오늘의 단어')}
-      <div class="row">${readCounter('소리 내어 읽기')}${speakBtn(c)}</div>
+      <div class="row">${readCounter('소리 내어 읽기')}${speakBtn(c)}${padBtn(c)}</div>
       <p class="hint">${ui.reads >= 3 ? '세 번 읽었어요. 입으로 말한 문장이 눈으로만 본 문장보다 오래 남아요.' : '실제로 그 사람 앞에서 말하듯, 천천히 세 번 읽어 보세요.'}</p>`,
       '<button class="btn primary wide" data-act="learned">다음</button>'];
   }
   const writeActions = '<div class="duo"><button class="btn" data-act="next">건너뛰기</button><button class="btn primary" data-act="rewrite-save">저장하고 다음</button></div>';
   function rewriteStep(c) {
     const who = defaultWho();
-    return [`<p class="eyebrow">내 말로 바꾸기</p><h2 class="step-title">${who && who !== '나 자신' ? `내 ${esc(who)}에게` : '내가 실제로 말할 사람에게'} 맞게 바꿔 써 보세요.</h2><blockquote class="quote small">${esc(c.text)}</blockquote><label class="label" for="rewrite">내 문장</label><textarea id="rewrite" placeholder="이름, 상황, 내 말투를 넣어 보세요."></textarea><p class="hint">내 상황으로 다시 만든 문장은 그대로 외운 문장보다 훨씬 쉽게 떠올라요.</p>`, writeActions];
+    return [`<p class="eyebrow">내 말로 바꾸기</p><h2 class="step-title">${who && who !== '나 자신' ? `내 ${esc(who)}에게` : '내가 실제로 말할 사람에게'} 맞게 바꿔 써 보세요.</h2><blockquote class="quote small">${esc(c.text)}</blockquote><div class="write-head"><label class="label" for="rewrite">내 문장</label>${noteLink}</div><textarea id="rewrite" placeholder="이름, 상황, 내 말투를 넣어 보세요."></textarea><p class="hint">내 상황으로 다시 만든 문장은 그대로 외운 문장보다 훨씬 쉽게 떠올라요.</p>`, writeActions];
   }
   function composeStep(c) {
-    return [`<p class="eyebrow">내 문장 만들기</p><h2 class="step-title">‘${esc(c.term)}’${hasBatchim(c.term) ? '을' : '를'} 넣어 내 문장을 하나 만들어 보세요.</h2><p class="meaning">${esc(c.meaning)}</p><label class="label" for="rewrite">내 문장</label><textarea id="rewrite" placeholder="예) ${esc(c.example)}"></textarea><p class="hint">오늘 본 것, 내 사람, 내 하루를 넣어 보세요. 직접 써 본 낱말이 가장 오래 남아요.</p>`, writeActions];
+    return [`<p class="eyebrow">내 문장 만들기</p><h2 class="step-title">‘${esc(c.term)}’${hasBatchim(c.term) ? '을' : '를'} 넣어 내 문장을 하나 만들어 보세요.</h2><p class="meaning">${esc(c.meaning)}</p><div class="write-head"><label class="label" for="rewrite">내 문장</label>${noteLink}</div><textarea id="rewrite" placeholder="예) ${esc(c.example)}"></textarea><p class="hint">오늘 본 것, 내 사람, 내 하루를 넣어 보세요. 직접 써 본 낱말이 가장 오래 남아요.</p>`, writeActions];
   }
   function askStep(c) {
-    return [`<p class="eyebrow">오늘의 질문 · ${esc(c.term)}</p><h2 class="step-title">${esc(c.ask)}</h2><blockquote class="quote small">${esc(c.line)}</blockquote><label class="label" for="rewrite">내 생각</label><textarea id="rewrite" placeholder="정답은 없어요. 떠오르는 대로 두세 줄 적어 보세요."></textarea><p class="hint">개념을 내 삶에 비춰 본 생각이 가장 오래 남아요.</p>`, writeActions];
+    return [`<p class="eyebrow">오늘의 질문 · ${esc(c.term)}</p><h2 class="step-title">${esc(c.ask)}</h2><blockquote class="quote small">${esc(c.line)}</blockquote><div class="write-head"><label class="label" for="rewrite">내 생각</label>${noteLink}</div><textarea id="rewrite" placeholder="정답은 없어요. 떠오르는 대로 두세 줄 적어 보세요."></textarea><p class="hint">개념을 내 삶에 비춰 본 생각이 가장 오래 남아요.</p>`, writeActions];
   }
   function weekthinkStep(s) {
     const cards = s.ids.map(cardById).filter(Boolean);
     return [`<p class="eyebrow">실전의 날 · 주간 사색</p><h2 class="step-title">이번 주 질문 가운데 하나를 골라 조금 길게 생각을 적어 보세요.</h2>
       <ul class="ask-list">${cards.map(c => `<li><b>${esc(c.term)}</b><span>${esc(c.ask)}</span></li>`).join('')}</ul>
-      <label class="label" for="rewrite">내 사색</label><textarea id="rewrite" placeholder="고른 질문을 첫 줄에 적고, 요즘 내 삶과 이어서 생각해 보세요."></textarea>
+      <div class="write-head"><label class="label" for="rewrite">내 사색</label>${noteLink}</div><textarea id="rewrite" placeholder="고른 질문을 첫 줄에 적고, 요즘 내 삶과 이어서 생각해 보세요."></textarea>
       <p class="hint">한 주의 개념을 이어서 생각하면, 따로 외운 지식이 내 관점이 돼요.</p>`, writeActions];
   }
   function weekwriteStep(s) {
     const cards = s.ids.map(cardById).filter(Boolean);
     return [`<p class="eyebrow">실전의 날 · 주간 글쓰기</p><h2 class="step-title">이번 주 낱말을 두 개 이상 넣어 짧은 글을 써 보세요.</h2>
       <ul class="word-chips">${cards.map(c => `<li><b>${esc(c.term)}</b><small>${esc(c.meaning)}</small></li>`).join('')}</ul>
-      <label class="label" for="rewrite">내 글</label><textarea id="rewrite" placeholder="오늘 아침 풍경, 어제 있었던 일, 고마운 사람 이야기, 무엇이든 좋아요."></textarea>
+      <div class="write-head"><label class="label" for="rewrite">내 글</label>${noteLink}</div><textarea id="rewrite" placeholder="오늘 아침 풍경, 어제 있었던 일, 고마운 사람 이야기, 무엇이든 좋아요."></textarea>
       <p class="hint">한 주 동안 배운 낱말을 내 글에 엮으면, 따로 외울 때보다 훨씬 오래 내 말로 남아요.</p>`, writeActions];
   }
   function weekpickStep(s) {
@@ -1044,8 +1048,8 @@
     return `<div class="sheet-body">
       <p class="item-meta">${meta.join('')}</p>
       ${cardBlock(c, '핵심 단어', true)}
-      <div class="row">${speakBtn(c)}${slowBtn(c)}${copyBtn(c)}<button class="btn" data-act="fav" data-id="${esc(c.id)}" aria-pressed="${fav}">${icon('star')}${fav ? '즐겨찾기 해제' : '즐겨찾기'}</button>${pr ? '' : `<button class="btn primary" data-act="enroll" data-id="${esc(c.id)}">학습에 추가</button>`}</div>
-      ${rws.length ? `<section class="group"><h3>내가 쓴 문장</h3>${rws.map(r => `<p class="mine-line">${esc(r.text)} <span class="note-date">${shortDate(r.date)}</span></p>`).join('')}</section>` : ''}
+      <div class="row">${speakBtn(c)}${slowBtn(c)}${padBtn(c)}${copyBtn(c)}<button class="btn" data-act="fav" data-id="${esc(c.id)}" aria-pressed="${fav}">${icon('star')}${fav ? '즐겨찾기 해제' : '즐겨찾기'}</button>${pr ? '' : `<button class="btn primary" data-act="enroll" data-id="${esc(c.id)}">학습에 추가</button>`}</div>
+      ${rws.length ? `<section class="group"><h3>내가 쓴 문장</h3>${rws.map(r => (r.ink ? `<p class="mine-line"><button class="link pen-link" data-act="ink-open" data-id="${esc(r.ink)}">손글씨로 썼어요 · 보기</button> <span class="note-date">${shortDate(r.date)}</span></p>` : `<p class="mine-line">${esc(r.text)} <span class="note-date">${shortDate(r.date)}</span></p>`)).join('')}</section>` : ''}
       <div><label class="label" for="card-note">메모</label><textarea id="card-note" data-id="${esc(c.id)}" placeholder="${co.kind === 'sentence' ? '이 문장을 언제, 누구에게 쓰고 싶은지 적어 두세요.' : '헷갈리는 점이나 떠오르는 장면을 적어 두세요.'}">${esc(S.notes[c.id] || '')}</textarea></div>
       ${del}
     </div>`;
@@ -1112,15 +1116,300 @@
     </div>`;
   }
 
+  /* ---------- 손글씨 노트 ----------
+     아이패드와 애플 펜슬로 읽고, 쓰고, 생각한다. 왼쪽(좁으면 위)은 읽을 글과 생각할 질문, 오른쪽은 쓰는 종이.
+     획은 가로 1000 단위의 논리 좌표로 담아 화면 크기가 바뀌어도 다시 그린다. 펜슬이 한 번 닿으면 손가락·손바닥 터치는 무시한다.
+     저장한 쪽은 JPEG로 IndexedDB('anything-morning' / 'ink')에 둔다. localStorage 백업 파일에는 들어가지 않는다. */
+  const LW = 1000, GRID_PAD = 24, LINE_TOP = 70, LINE_GAP = 84, LINE_MARGIN = 40;
+  const PEN_W = [1.6, 2.6, 4.2];   // CSS 픽셀 기준 펜 굵기(가늘게·보통·굵게)
+  const SAVE_PAL = { paper: '#ffffff', grid: '#d9dfec', trace: 'rgba(0,0,0,0)', ink: '#1a2140', mark: 'rgba(255,214,70,.45)' };
+  const INK = (() => {
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => {
+      try {
+        const r = indexedDB.open('anything-morning', 1);
+        r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('ink')) r.result.createObjectStore('ink', { keyPath: 'id' }); };
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      } catch (e) { rej(e); }
+    }));
+    const run = (mode, fn) => open().then(db => new Promise((res, rej) => {
+      const t = db.transaction('ink', mode), req = fn(t.objectStore('ink'));
+      t.oncomplete = () => res(req ? req.result : undefined);
+      t.onerror = () => rej(t.error);
+    }));
+    return {
+      put: rec => run('readwrite', st => st.put(rec)).then(() => true, () => false),
+      all: () => run('readonly', st => st.getAll()).then(r => r || [], () => []),
+      get: id => run('readonly', st => st.get(id)).then(r => r || null, () => null),
+      del: id => run('readwrite', st => st.delete(id)).then(() => true, () => false)
+    };
+  })();
+  const pad = { open: false, purpose: 'copy', model: null, cardId: null, course: null, bg: 'grid', trace: true, tool: 'pen', size: 1, strokes: [], cur: null, penSeen: false, chunk: 0, chunkStrokes: {}, arm: {}, W: 0, H: 0, scale: 1, LH: 0, cols: 10 };
+  const tok = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const livePal = () => ({ paper: tok('--sheet'), grid: tok('--rule'), trace: tok('--trace'), ink: tok('--ink'), mark: 'rgba(255,214,70,.45)' });
+  const fontFor = lang => (lang === 'ja-JP' ? "'Noto Serif JP','Hiragino Mincho ProN','Yu Mincho',serif" : "'Hahmlet','Noto Serif KR','AppleMyungjo',serif");
+  function padModelFor(c) {
+    const co = courseOf(c), say = { text: '', lang: co.lang };
+    if (co.kind === 'word') return { title: `${c.term} · 손으로 써 보기`, text: `${c.term}\n${c.example}`, sub: c.meaning, think: `‘${c.term}’${hasBatchim(c.term) ? '을' : '를'} 넣어 내 문장도 하나 써 보세요.`, lang: co.lang, grid: true, say: { ...say, text: `${c.term}. ${c.example}` } };
+    if (co.kind === 'idea') return { title: `${c.term} · 손으로 써 보기`, text: c.line, sub: c.who ? `${c.quote ? '— ' : '생각의 출처 · '}${c.who}` : '', think: c.ask, lang: co.lang, grid: true, say: { ...say, text: c.line } };
+    if (co.kind === 'phrase') return { title: `${co.name} · 손으로 써 보기`, text: c.t, sub: [c.r && c.r !== c.t ? c.r : '', S.settings.pron ? c.pron : '', c.ko].filter(Boolean).join('\n'), think: '두세 번 따라 쓰고, 마지막에는 보지 않고 써 보세요.', lang: co.lang, grid: co.lang === 'ja-JP', say: { ...say, text: c.t } };
+    return { title: '좋은 문장 · 손으로 써 보기', text: c.text, sub: c.situation, think: '쓰는 동안, 이 말을 건네고 싶은 사람을 떠올려 보세요.', lang: co.lang, grid: true, say: { ...say, text: c.text } };
+  }
+  function openPad(opts) {
+    Object.assign(pad, { open: true, purpose: opts.purpose || 'copy', model: opts.model, cardId: opts.cardId || null, course: opts.course || null, strokes: [], cur: null, penSeen: false, chunk: 0, chunkStrokes: {}, arm: {}, tool: 'pen' });
+    pad.bg = opts.model.bg || (opts.model.grid ? 'grid' : 'lines');
+    pad.trace = opts.trace != null ? opts.trace : pad.purpose === 'copy';
+    renderPad(); lockBody();
+  }
+  function closePad() { pad.open = false; pad.cur = null; renderPad(); lockBody(); }
+  function padTools() {
+    const m = pad.model;
+    const seg = (act, cur, opts, label) => `<div class="seg mini" role="group" aria-label="${label}">${opts.map(([v, n]) => `<button data-act="${act}" data-id="${v}" aria-pressed="${cur === v}">${n}</button>`).join('')}</div>`;
+    return `${seg('pad-tool', pad.tool, [['pen', '펜'], ['mark', '형광펜'], ['eraser', '지우개']], '도구')}
+      ${seg('pad-size', String(pad.size), [['0', '가늘게'], ['1', '보통'], ['2', '굵게']], '굵기')}
+      ${seg('pad-bg', pad.bg, [['grid', '원고지'], ['lines', '줄 노트'], ['blank', '빈 종이']], '종이')}
+      <button class="chip" data-act="pad-trace" aria-pressed="${pad.trace}">따라 쓰기</button>
+      ${m.chunks ? seg('pad-chunk', String(pad.chunk), m.chunks.map((_, i) => [String(i), m.chunkNames[i]]), '줄') : ''}`;
+  }
+  function renderPad() {
+    const el = $('pad');
+    if (!pad.open) { el.hidden = true; el.innerHTML = ''; return; }
+    const m = pad.model, ja = m.lang === 'ja-JP' ? ' lang="ja"' : '';
+    const br = s => esc(s).replace(/\n/g, '<br>');
+    el.hidden = false;
+    el.innerHTML = `<div class="pad-inner" role="dialog" aria-modal="true" aria-label="손글씨 노트">
+      <div class="pad-top"><button class="icon-btn" data-act="pad-close" aria-label="손글씨 닫기">${icon('close')}</button><p class="pad-title">${esc(m.title)}</p><button class="icon-btn" data-act="pad-undo" aria-label="되돌리기">${icon('undo')}</button><button class="icon-btn" data-act="pad-clear" aria-label="모두 지우기">${icon('trash')}</button><button class="btn primary" data-act="pad-save">${pad.purpose === 'note' ? '저장하고 다음' : '저장'}</button></div>
+      <div class="pad-body">
+        <section class="pad-read" aria-label="읽기">
+          <p class="label">읽기</p><p class="pad-text"${ja}>${br(m.chunks ? m.chunks[pad.chunk] : m.text)}</p>
+          ${m.sub ? `<p class="pad-sub"${ja}>${br(m.sub)}</p>` : ''}
+          ${m.think ? `<p class="label">생각하기</p><p class="pad-think">${esc(m.think)}</p>` : ''}
+          ${canSpeak && m.say && m.say.text ? `<button class="btn" data-act="pad-say">${icon('speaker')}듣기</button>` : ''}
+        </section>
+        <section class="pad-write" aria-label="쓰기">
+          <div class="pad-tools" id="pad-tools">${padTools()}</div>
+          <div class="pad-wrap" id="pad-wrap"><canvas id="pad-paper" aria-hidden="true"></canvas><canvas id="pad-ink" role="img" aria-label="손글씨 쓰는 곳"></canvas></div>
+        </section>
+      </div></div>`;
+    padMount();
+  }
+  function padMount() {
+    const ink = $('pad-ink');
+    ink.addEventListener('pointerdown', padDown);
+    ink.addEventListener('pointermove', padMove);
+    ink.addEventListener('pointerup', padUp);
+    ink.addEventListener('pointercancel', padUp);
+    ink.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') padUp(e); });
+    padResize();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (pad.open) padDrawPaper(); });
+  }
+  function padResize() {
+    const wrap = $('pad-wrap');
+    if (!wrap) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    pad.W = wrap.clientWidth; pad.H = wrap.clientHeight;
+    pad.scale = pad.W / LW; pad.LH = pad.H / pad.scale;
+    pad.cols = pad.model.cols || Math.max(8, Math.min(14, Math.round(pad.W / 56)));
+    ['pad-paper', 'pad-ink'].forEach(id => { const c = $(id); c.width = Math.round(pad.W * dpr); c.height = Math.round(pad.H * dpr); c.style.width = pad.W + 'px'; c.style.height = pad.H + 'px'; c.getContext('2d').setTransform(dpr * pad.scale, 0, 0, dpr * pad.scale, 0, 0); });
+    padDrawPaper(); padDrawInk();
+  }
+  function wrapText(ctx, text, maxW, ja) {
+    const out = [];
+    String(text).split('\n').forEach(par => {
+      const toks = ja ? [...par] : par.split(/(\s+)/);
+      let line = '';
+      toks.forEach(tk => {
+        const next = line + tk;
+        if (ctx.measureText(next).width > maxW && line.trim()) { out.push(line.trimEnd()); line = tk.trimStart(); }
+        else line = next;
+      });
+      out.push(line);
+    });
+    return out;
+  }
+  function drawPaper(ctx, LH, pal, withTrace) {
+    const m = pad.model, text = m.chunks ? m.chunks[pad.chunk] : m.text;
+    ctx.fillStyle = pal.paper; ctx.fillRect(0, 0, LW, LH);
+    ctx.strokeStyle = pal.grid; ctx.lineWidth = 1.4;
+    if (pad.bg === 'grid') {
+      const cols = pad.cols, cell = (LW - 2 * GRID_PAD) / cols, rowH = cell * 1.22;
+      const rows = Math.max(1, Math.floor((LH - GRID_PAD) / rowH));
+      for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) ctx.strokeRect(GRID_PAD + k * cell, GRID_PAD + r * rowH, cell, cell);
+      if (withTrace && text) {
+        ctx.fillStyle = pal.trace; ctx.font = `${cell * 0.66}px ${fontFor(m.lang)}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        let r = 0, k = 0;
+        for (const ch of [...text]) {
+          if (ch === '\n') { r++; k = 0; continue; }
+          if (k >= cols) { r++; k = 0; }
+          if (r >= rows) break;
+          if (ch.trim()) ctx.fillText(ch, GRID_PAD + k * cell + cell / 2, GRID_PAD + r * rowH + cell * 0.53);
+          k++;
+        }
+      }
+    } else if (pad.bg === 'lines') {
+      for (let y = LINE_TOP; y < LH; y += LINE_GAP) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(LW, y); ctx.stroke(); }
+      if (withTrace && text) {
+        ctx.fillStyle = pal.trace; ctx.font = `${LINE_GAP * 0.52}px ${fontFor(m.lang)}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+        wrapText(ctx, text, LW - 2 * LINE_MARGIN, m.lang === 'ja-JP').forEach((ln, i) => { const y = LINE_TOP + LINE_GAP * (i + 1) - LINE_GAP * 0.2; if (y < LH) ctx.fillText(ln, LINE_MARGIN, y); });
+      }
+    }
+  }
+  function padDrawPaper() {
+    const c = $('pad-paper'); if (!c) return;
+    const ctx = c.getContext('2d');
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height); ctx.restore();
+    drawPaper(ctx, pad.LH, livePal(), pad.trace);
+  }
+  const strokeW = (s, p) => (s.tool === 'pen' && s.pen ? s.w * (0.35 + Math.min(1, p) * 1.3) : s.w);
+  function drawSegment(ctx, s, a, b, pal) {
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (s.tool === 'eraser') ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = s.tool === 'mark' ? pal.mark : s.tool === 'eraser' ? '#000' : pal.ink;
+    ctx.lineWidth = strokeW(s, (a[2] + b[2]) / 2);
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0] + (a === b ? 0.01 : 0), b[1]); ctx.stroke();
+    ctx.restore();
+  }
+  function drawStroke(ctx, s, pal) {
+    if (s.tool === 'pen') { for (let i = 0; i < s.pts.length; i++) drawSegment(ctx, s, s.pts[Math.max(0, i - 1)], s.pts[i], pal); return; }
+    // 형광펜과 지우개는 한 획을 한 번에 그려 겹친 자리가 진해지지 않게 한다
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = s.w;
+    if (s.tool === 'eraser') ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = s.tool === 'mark' ? pal.mark : '#000';
+    ctx.beginPath(); s.pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); if (s.pts.length === 1) ctx.lineTo(s.pts[0][0] + 0.01, s.pts[0][1]);
+    ctx.stroke(); ctx.restore();
+  }
+  function padDrawInk() {
+    const c = $('pad-ink'); if (!c) return;
+    const ctx = c.getContext('2d'), pal = livePal();
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height); ctx.restore();
+    pad.strokes.forEach(s => drawStroke(ctx, s, pal));
+    if (pad.cur) drawStroke(ctx, pad.cur, pal);
+  }
+  function padPoint(e, ink) {
+    const r = ink.getBoundingClientRect();
+    return [(e.clientX - r.left) / pad.scale, (e.clientY - r.top) / pad.scale, e.pointerType === 'pen' ? (e.pressure || 0.5) : 0.5];
+  }
+  function padDown(e) {
+    if (e.pointerType === 'pen') pad.penSeen = true;
+    if (pad.penSeen && e.pointerType === 'touch') return;   // 펜슬을 쓰는 중에는 손바닥 터치를 무시한다
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    const ink = e.currentTarget;
+    try { ink.setPointerCapture(e.pointerId); } catch (err) { /* 일부 브라우저는 캡처를 지원하지 않는다 */ }
+    const css = pad.tool === 'eraser' ? 22 : pad.tool === 'mark' ? 16 : PEN_W[pad.size];
+    pad.cur = { tool: pad.tool, pen: e.pointerType === 'pen', w: css / pad.scale, pts: [padPoint(e, ink)], pid: e.pointerId };
+    drawSegment(ink.getContext('2d'), pad.cur, pad.cur.pts[0], pad.cur.pts[0], livePal());
+  }
+  function padMove(e) {
+    const s = pad.cur;
+    if (!s || e.pointerId !== s.pid) return;
+    e.preventDefault();
+    const ink = e.currentTarget, ctx = ink.getContext('2d'), pal = livePal();
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    (evs.length ? evs : [e]).forEach(ev => {
+      const p = padPoint(ev, ink), last = s.pts[s.pts.length - 1];
+      if (Math.abs(p[0] - last[0]) + Math.abs(p[1] - last[1]) < 0.6) return;
+      s.pts.push(p);
+      if (s.tool === 'pen') drawSegment(ctx, s, last, p, pal);
+    });
+    if (s.tool !== 'pen') padDrawInk();
+  }
+  function padUp(e) {
+    const s = pad.cur;
+    if (!s || (e && e.pointerId !== s.pid)) return;
+    pad.strokes.push(s); pad.cur = null;
+    if (s.tool !== 'pen') padDrawInk();
+  }
+  function padImage() {
+    const OUTW = 1200, sc = OUTW / LW, OUTH = Math.max(200, Math.round(pad.LH * sc));
+    const out = document.createElement('canvas'), layer = document.createElement('canvas');
+    out.width = layer.width = OUTW; out.height = layer.height = OUTH;
+    const o = out.getContext('2d'), l = layer.getContext('2d');
+    o.scale(sc, sc); drawPaper(o, pad.LH, SAVE_PAL, false);
+    l.scale(sc, sc); pad.strokes.forEach(s => drawStroke(l, s, SAVE_PAL));
+    o.setTransform(1, 0, 0, 1, 0, 0); o.drawImage(layer, 0, 0);
+    return new Promise(res => out.toBlob(b => res({ blob: b, w: OUTW, h: OUTH }), 'image/jpeg', 0.86));
+  }
+  async function padSave() {
+    if (!pad.strokes.length) { toast('아직 쓴 것이 없어요. 펜슬이나 손가락으로 써 보세요.'); return; }
+    const img = await padImage();
+    if (!img.blob) { toast('이 기기에서는 손글씨를 저장할 수 없어요.'); return; }
+    const m = pad.model;
+    const rec = { id: 'ink-' + uid(), date: today(), course: pad.course, cardId: pad.cardId, kind: pad.purpose, title: m.title, text: m.chunks ? m.chunks[pad.chunk] : m.text, blob: img.blob, w: img.w, h: img.h };
+    const ok = await INK.put(rec);
+    if (!ok) { toast('손글씨를 저장하지 못했어요. 개인 정보 보호 모드라면 꺼 주세요.'); return; }
+    if (pad.purpose === 'note') {
+      const s = curStep();
+      if (s) S.rewrites.push({ id: uid(), date: today(), cardId: s.id, course: ui.session, text: '', ink: rec.id, ...(s.t === 'weekwrite' || s.t === 'weekthink' ? { kind: 'week' } : {}) });
+      closePad(); toast('손글씨를 기록에 저장했어요'); advance();
+    } else { closePad(); toast('손글씨 노트에 저장했어요 · 기록 > 손글씨'); }
+  }
+  function noteModelFor(s, c) {
+    const base = { bg: 'lines', lang: 'ko-KR' };
+    if (s.t === 'rewrite') return { ...base, title: '내 말로 바꾸기 · 손글씨', text: c.text, sub: c.situation, think: '내가 실제로 말할 사람에게 맞게 바꿔 손으로 써 보세요.' };
+    if (s.t === 'compose') return { ...base, title: '내 문장 만들기 · 손글씨', text: `${c.term}\n${c.meaning}`, sub: `예) ${c.example}`, think: `‘${c.term}’${hasBatchim(c.term) ? '을' : '를'} 넣어 내 문장을 손으로 써 보세요.` };
+    if (s.t === 'ask') return { ...base, title: '오늘의 질문 · 손글씨', text: c.line, sub: c.term, think: c.ask };
+    const cards = (s.ids || []).map(cardById).filter(Boolean);
+    if (s.t === 'weekthink') return { ...base, title: '주간 사색 · 손글씨', text: cards.map(x => `${x.term} — ${x.ask}`).join('\n'), think: '하나를 골라 조금 길게 생각을 적어 보세요.' };
+    return { ...base, title: '주간 글쓰기 · 손글씨', text: cards.map(x => `${x.term}: ${x.meaning}`).join('\n'), think: '이번 주 낱말을 두 개 이상 넣어 짧은 글을 써 보세요.' };
+  }
+  function kanaPadModel(set) {
+    const idx = set === 'kata' ? 1 : 0, name = idx ? '가타카나' : '히라가나';
+    const rows = window.AM_KANA.basic.concat(window.AM_KANA.voiced).map(r => r.map(c => (c ? c[idx] : '　')).join(''));
+    const chunks = [], names = [];
+    for (let i = 0; i < rows.length; i += 4) { chunks.push(rows.slice(i, i + 4).join('\n')); names.push(`${rows[i][0]}~`); }
+    return { title: `${name} 쓰기 연습`, text: chunks[0], chunks, chunkNames: names, sub: '왼쪽 다섯 칸은 따라 쓰고, 오른쪽 다섯 칸에는 보지 않고 써 보세요.', think: '', lang: 'ja-JP', grid: true, cols: 10 };
+  }
+  const padBtn = c => `<button class="btn" data-act="pad" data-id="${esc(c.id)}">${icon('pen')}손으로 써 보기</button>`;
+  const noteLink = '<button class="link pen-link" data-act="pad-note">손글씨로 쓰기</button>';
+  let inkUrls = [];
+  function viewInk() {
+    return `<p class="hint">손으로 쓴 쪽들이에요. 기기에만 저장되고 백업 파일에는 들어가지 않아요. 남기고 싶은 쪽은 이미지로 저장해 두세요.</p><div id="ink-gallery" class="ink-grid"><p class="muted">불러오는 중…</p></div>`;
+  }
+  function loadInkGallery() {
+    INK.all().then(list => {
+      const el = $('ink-gallery');
+      if (!el) return;
+      inkUrls.forEach(u => URL.revokeObjectURL(u)); inkUrls = [];
+      if (!list.length) { el.outerHTML = empty('아직 손글씨가 없어요. 오늘의 루틴에서 ‘손으로 써 보기’를 눌러 첫 쪽을 써 보세요.'); return; }
+      list.sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+      el.innerHTML = list.map(r => {
+        const u = URL.createObjectURL(r.blob); inkUrls.push(u);
+        const co = courseById[r.course];
+        return `<button class="ink-item" data-act="ink-open" data-id="${esc(r.id)}"><img src="${u}" alt="${esc(shortDate(r.date))} 손글씨"><span>${shortDate(r.date)}${co ? ` · ${esc(co.name)}` : ''}</span></button>`;
+      }).join('');
+    });
+  }
+  function inkSheet() {
+    const del = ui.confirm === 'ink-del'
+      ? `<div class="confirm"><p>이 손글씨를 지울까요? 되돌릴 수 없어요.</p><div class="row"><button class="btn" data-act="cancel-confirm">취소</button><button class="btn danger solid" data-act="ink-del" data-id="${esc(ui.sheetId)}">지우기</button></div></div>`
+      : `<button class="btn danger" data-act="ink-ask-del">이 손글씨 지우기</button>`;
+    return `<div class="sheet-body"><figure class="ink-view"><img id="ink-big" alt="손글씨"><figcaption id="ink-cap" class="hint"></figcaption></figure><div class="row"><button class="btn" data-act="ink-download" data-id="${esc(ui.sheetId)}">이미지로 저장</button></div>${del}</div>`;
+  }
+  function fillInkSheet() {
+    INK.get(ui.sheetId).then(r => {
+      const img = $('ink-big'), cap = $('ink-cap');
+      if (!img) return;
+      if (!r) { img.hidden = true; cap.textContent = '이 기기에는 이 손글씨 이미지가 없어요. 손글씨는 쓴 기기에만 저장돼요.'; return; }
+      const u = URL.createObjectURL(r.blob); inkUrls.push(u);
+      img.src = u;
+      cap.textContent = `${shortDate(r.date)} · ${r.title || ''}`;
+    });
+  }
+
   /* ---------- 그리기 ---------- */
   const root = $('app');
-  root.innerHTML = '<main id="view" class="view"></main><nav id="tabs" class="tabs" aria-label="메뉴"></nav><div id="session" class="session" hidden></div><div id="sheet" class="sheet" hidden></div><div id="toast" class="toast" role="status" aria-live="polite" hidden></div>';
+  root.innerHTML = '<main id="view" class="view"></main><nav id="tabs" class="tabs" aria-label="메뉴"></nav><div id="session" class="session" hidden></div><div id="sheet" class="sheet" hidden></div><div id="pad" class="pad" hidden></div><div id="toast" class="toast" role="status" aria-live="polite" hidden></div>';
   const TABS = [['today', '오늘', 'sunrise'], ['library', '모음', 'book'], ['notes', '기록', 'cal']];
 
   function renderView() {
     const el = $('view');
     if (!S.settings.onboarded) { el.innerHTML = ''; return; }
     el.innerHTML = ({ today: viewToday, library: viewLibrary, notes: viewNotes }[ui.view] || viewToday)();
+    if (ui.view === 'notes' && ui.notesMode === 'ink') loadInkGallery();
   }
   function renderTabs() {
     const el = $('tabs');
@@ -1179,6 +1468,7 @@
       title = `${courseOf(c).name} · ${groupName(c)}`; body = cardSheet(c);
     } else if (ui.sheet === 'settings') { title = '설정'; body = settingsSheet(); }
     else if (ui.sheet === 'quiz') { title = `${ui.quiz.set === 'kata' ? '가타카나' : '히라가나'} 퀴즈`; body = quizSheet(); }
+    else if (ui.sheet === 'ink') { title = '손글씨'; body = inkSheet(); }
     else { title = '내 문장 추가'; body = addSheet(); }
     const key = ui.sheet + ':' + (ui.sheetId || '');
     const prev = el.querySelector('.sheet-panel');
@@ -1189,10 +1479,12 @@
     panel.scrollTop = top;
     if (ui.sheetKey !== key) panel.focus({ preventScroll: true });
     ui.sheetKey = key;
+    if (ui.sheet === 'ink') fillInkSheet();
   }
+  const lockBody = () => document.body.classList.toggle('locked', !$('session').hidden || !$('sheet').hidden || !$('pad').hidden);
   function render() {
     renderView(); renderTabs(); renderSession(); renderSheet();
-    document.body.classList.toggle('locked', !$('session').hidden || !$('sheet').hidden);
+    lockBody();
   }
   function openSheet(name, id) { ui.sheet = name; ui.sheetId = id || null; ui.confirm = null; ui.pendingImport = null; render(); }
 
@@ -1256,7 +1548,7 @@
     const now = new Date(), start = new Date();
     start.setHours(hh, mm, 0, 0);
     if (start <= now) start.setDate(start.getDate() + 1);
-    const f = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+    const f = d => `${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}T${two(d.getHours())}${two(d.getMinutes())}00`;
     const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
     const url = /^https?:/.test(location.href) && !inFrame ? [`URL:${location.href.split('#')[0]}`] : [];
     const desc = S.settings.anchor ? `${S.settings.anchor}\\, 5분.` : '오늘의 루틴을 시작해요.';
@@ -1455,6 +1747,46 @@
       resetStepUi(); render();
     },
     'close-practice'() { ui.practice = null; render(); },
+    pad(id) { const c = cardById(id); if (c) openPad({ purpose: 'copy', model: padModelFor(c), cardId: c.id, course: c.course }); },
+    'pad-note'() {
+      const s = curStep(), c = s && cardById(s.id);
+      if (!s || !c) return;
+      openPad({ purpose: 'note', model: noteModelFor(s, c), cardId: s.id, course: ui.session, trace: false });
+    },
+    'pad-kana'() { openPad({ purpose: 'copy', model: kanaPadModel(ui.kanaSet), course: 'ja', trace: true }); },
+    'pad-close'() {
+      if (pad.strokes.length && !(pad.arm.close && Date.now() - pad.arm.close < 2500)) { pad.arm.close = Date.now(); toast('저장하지 않고 닫으려면 한 번 더 누르세요.'); return; }
+      closePad();
+    },
+    'pad-undo'() { pad.strokes.pop(); padDrawInk(); },
+    'pad-clear'() {
+      if (!pad.strokes.length) return;
+      if (!(pad.arm.clear && Date.now() - pad.arm.clear < 2500)) { pad.arm.clear = Date.now(); toast('한 번 더 누르면 모두 지워요.'); return; }
+      pad.strokes = []; pad.arm.clear = 0; padDrawInk();
+    },
+    'pad-save'() { padSave(); },
+    'pad-say'() { const m = pad.model; if (m.say) speak(m.say.text, m.say.lang); },
+    'pad-tool'(v) { pad.tool = v; $('pad-tools').innerHTML = padTools(); },
+    'pad-size'(v) { pad.size = Number(v); if (pad.tool !== 'pen') pad.tool = 'pen'; $('pad-tools').innerHTML = padTools(); },
+    'pad-bg'(v) { pad.bg = v; $('pad-tools').innerHTML = padTools(); padDrawPaper(); },
+    'pad-trace'() { pad.trace = !pad.trace; $('pad-tools').innerHTML = padTools(); padDrawPaper(); },
+    'pad-chunk'(v) {
+      pad.chunkStrokes[pad.chunk] = pad.strokes;
+      pad.chunk = Number(v); pad.strokes = pad.chunkStrokes[pad.chunk] || [];
+      renderPad();
+    },
+    'ink-open'(id) { openSheet('ink', id); },
+    'ink-ask-del'() { ui.confirm = 'ink-del'; renderSheet(); },
+    'ink-del'(id) {
+      INK.del(id).then(() => {
+        S.rewrites = S.rewrites.filter(r => r.ink !== id); save();
+        ui.sheet = null; ui.confirm = null; render(); toast('손글씨를 지웠어요');
+      });
+    },
+    'ink-download'(id) {
+      if (inFrame) { toast('미리보기에서는 파일을 받을 수 없어요. 앱에서 이용해 주세요.'); return; }
+      INK.get(id).then(r => { if (r) download(`anything-morning-${r.date}.jpg`, 'image/jpeg', r.blob); });
+    },
     more(cid) {
       const co = courseById[cid];
       const p = plan(co.id);
@@ -1560,7 +1892,8 @@
   document.addEventListener('submit', e => { if (e.target.id === 'add-form') { e.preventDefault(); saveCustom(); } });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    if (ui.sheet) ACTIONS['close-sheet']();
+    if (pad.open) ACTIONS['pad-close']();
+    else if (ui.sheet) ACTIONS['close-sheet']();
     else if (ui.practice) ACTIONS['close-practice']();
     else if (ui.session && S.settings.onboarded) ACTIONS['close-session']();
   });
@@ -1569,6 +1902,9 @@
     const t = today();
     if (Object.values(S.plans).some(p => p.date !== t) || (S.quick && S.quick.date !== t)) { ui.session = null; render(); }
   });
+
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (pad.open) padResize(); }, 120); });
 
   applyTheme();
   render();
