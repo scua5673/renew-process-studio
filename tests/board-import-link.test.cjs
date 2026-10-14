@@ -10,10 +10,11 @@ const turnCode=src.slice(src.indexOf('var _libTurnTail=Promise.resolve();'),src.
 function writeBack({links,lib,editable=true,live,anim}){
   const cleared=[];let writes=0,store=J(lib);
   const ctx=vm.createContext({JSON,Date,
-    window:{__psPages:{linkAll:()=>links,linkClear:id=>cleared.push(id),refresh(){}},__animFrames:()=>anim?anim.frames:null,__animGet:()=>anim||null},
+    window:{__psPages:{linkAll:()=>links,linkClear:id=>cleared.push(id),refresh(){}},__animFrames:()=>anim?anim.frames:null,__animGet:()=>anim||null,__snapToThumb:()=>'<svg data-own/>'},
     libGet:async()=>J(store),libWrite:async l=>{writes++;store=J(l);},libTouch(){},renderDrillFiles(){},canEditItem:()=>editable,
-    captureSnap:()=>J(live),boardThumbSVG:()=>'<svg data-live/>'});
-  vm.runInContext([turnCode,fnAt('function _boardSnapEmpty(sn)'),fnAt('function _animToFrames(a)'),fnAt('async function boardLinkWriteBack(onlyCurrent)'),fnAt('function boardLinkSaveText(r)')].join('\n')+';this.wb=boardLinkWriteBack;this.txt=boardLinkSaveText;',ctx);
+    captureSnap:()=>J(live),boardThumbSVG:()=>'<svg data-live/>',dc:J});
+  /* 3.016 — 되쓰기는 그 자료의 보드 설정을 남긴다: 실제 lookKeys·lookKeepOf 를 싣고, lookOf 는 칸만 읽는 간이판(기본값 채우기는 여기서 볼 것이 아니다) */
+  vm.runInContext([turnCode,fnAt('function lookKeys()'),fnAt('function lookKeepOf(dst,src)'),'function lookOf(sn){var r={};lookKeys().forEach(function(k){r[k]=sn?sn[k]:undefined;});return r;}',fnAt('function _boardSnapEmpty(sn)'),fnAt('function _animToFrames(a)'),fnAt('async function boardLinkWriteBack(onlyCurrent)'),fnAt('function boardLinkSaveText(r)')].join('\n')+';this.wb=boardLinkWriteBack;this.txt=boardLinkSaveText;',ctx);
   return {ctx,cleared,get writes(){return writes;},get store(){return store;}};
 }
 const snap=(x,n=1)=>({players:Array.from({length:n},(_,k)=>({id:k+1,x:x+k,y:10})),equipment:[],drawings:[]});
@@ -23,6 +24,19 @@ test('지금 페이지에 연결된 자료 — 움직인 보드가 그대로 저
   assert.equal(r[0].ok,true);assert.equal(t.writes,1);
   const a=t.store[0];assert.equal(a.snap.players[0].x,99);assert.equal(a.thumb,'<svg data-live/>');assert.equal(a.frames.length,2);assert.ok(a.savedAt>1);
   assert.equal(t.ctx.txt(r),' · 보관함 ‘압박’에도 저장됨');
+});
+test('3.016 되쓰기는 내용만 — 그 자료의 보드 설정(토큰 크기·모양·표시)은 그 자료 것이 남는다',async()=>{
+  const own=Object.assign(snap(10),{tokenScale:0.69,tokV:2,tokShape:'shirt',label:'pos'});
+  const live=Object.assign(snap(99),{tokenScale:0.36,tokV:2,tokShape:'circle',label:'num',namePos:'above'});
+  const t=writeBack({links:[{tag:{libId:'A',name:'압박'},isCurrent:true}],lib:[{libId:'A',name:'압박',snap:own,thumb:'old',savedAt:1}],live,anim:{frames:[{snap:Object.assign(snap(1),{tokenScale:0.36})},{snap:Object.assign(snap(2),{tokenScale:0.36})}]}});
+  const r=await t.ctx.wb(false);assert.equal(r[0].ok,true);
+  const a=t.store[0];
+  assert.equal(a.snap.players[0].x,99,'내용(선수 자리)은 보드 것');
+  assert.equal(a.snap.tokenScale,0.69);assert.equal(a.snap.tokShape,'shirt');assert.equal(a.snap.label,'pos');
+  assert.equal('namePos' in a.snap,false,'그 자료에 없던 칸은 비워 둔다(기본값으로 읽힌다)');
+  assert.deepEqual(a.frames.map(f=>f.snap.tokenScale),[0.69,0.69],'장면도 그 자료의 크기');
+  assert.equal(a.thumb,'<svg data-own/>','설정이 달랐으면 썸네일도 그 자료 설정으로');
+  assert.equal(live.tokenScale,0.36,'보드 쪽 스냅은 건드리지 않는다');
 });
 test('여러 페이지 자료는 가져온 페이지만 바꾸고 나머지는 그대로',async()=>{
   const item={libId:'B',name:'세트',snap:snap(1),thumb:'t0',frames:[{a:1},{a:2}],pages:[{snap:snap(1),name:'p1'},{snap:snap(5),name:'p2'},{snap:snap(6),name:'p3'}]};
