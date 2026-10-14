@@ -69,7 +69,8 @@ test('앱 설정 위 «새 기능»: 묶음을 안내 판 날짜로 7일 · 제�
   assert.match(body,/if\(md==='ready'\)\{var e=st\.next&&st\.next\.entry;T\.textContent='새 판이 준비됐어요';/,'«업데이트»(새 판 준비됨)는 그대로');
 });
 
-test('판 3.024 — app.html · sw.js',()=>{
-  assert.match(A,/window\.PS_BUILD='3\.024'/);assert.doesNotMatch(A,/\?v=3\.019\b/);
-  assert.match(SW,/^const CACHE = 'process-3\.024';/m);
+test('판 3.024 이후 — app.html · sw.js 가 같은 판',()=>{
+  const build=/window\.PS_BUILD='(\d+)\.(\d{3})'/.exec(A),cache=/^const CACHE = 'process-(\d+)\.(\d{3})';/m.exec(SW);
+  assert.ok(build&&cache);assert.equal(build[1]+'.'+build[2],cache[1]+'.'+cache[2],'PS_BUILD 와 CACHE 가 같은 판');
+  assert.ok((+build[1])*1000+(+build[2])>=3024);assert.doesNotMatch(A,/\?v=3\.019\b/);
 });
