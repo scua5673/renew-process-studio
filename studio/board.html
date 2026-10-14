@@ -3099,6 +3099,7 @@ body.bc-tilt3d #tiltSurface{transform:var(--tilt-tf);transform-origin:50% 55%;tr
 body.bc-tilt3d #boardStage{background:var(--pitchbg,#252839)}
 body.bc-tilt3d svg#board{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 body.bc-tilt3d #board #world>rect:not([id]),body.bc-tilt3d #board .grass-stripes,body.bc-tilt3d #board #ps-pitchtile,body.bc-tilt3d #board #ps-pitchimg,body.bc-tilt3d #board .pitch-goal,body.bc-tilt3d #board .ps-pitch-goal{visibility:hidden}
+/* ⚠ 3.032 — «world 바로 밑 id 없는 rect» = 잔디 바탕. 판 위에 보여야 하는 rect 를 world 에 바로 붙이면 id 를 단다(선택 사각형 #lassoRect 가 여기 걸려 3D 에서 안 보였다) */
 #tiltGoals .goal-plane{position:absolute;left:0;top:0;box-sizing:border-box;transform-origin:0 0;backface-visibility:visible}
 #tiltGoals{--goal-post:#fff;--goal-net:rgba(255,255,255,.48);--goal-edge:rgba(255,255,255,.65)}
 #tiltGoals .goal-net{background:repeating-linear-gradient(45deg,var(--goal-net) 0 .6px,transparent .6px 3px),repeating-linear-gradient(-45deg,var(--goal-net) 0 .6px,transparent .6px 3px);border:1px solid var(--goal-edge)}
@@ -16081,7 +16082,13 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
        팔레트는 이제 접히지 않으므로 이 가드 자체가 필요 없다. */
     deselect();
     const u=toUnit(e);
-    const rect=el("rect",{x:u.x,y:u.y,width:0,height:0,fill:"rgba(47,168,255,.16)",stroke:"#2fa8ff","stroke-width":2,"stroke-dasharray":"7 5","pointer-events":"none"});
+    /* 3.032 — 3D 보기에서 끄는 동안 선택 사각형이 안 보였다(사용자 «선택은 되는데 네모가 안 보여요»). 3D 는 운동장 그림을
+       경기장 그림(tiltSurface)으로 바꾸려고 «world 바로 밑 id 없는 rect»(잔디 바탕)를 숨기는데(#ps-tilt-continuous), 이 사각형도
+       world 바로 밑 id 없는 rect 라 같이 숨었다. id 를 달아 그 규칙에서 빠진다 — 썸네일·내보내기가 이미 #lassoRect 를 지운다.
+       사각형은 운동장 좌표(world)에 그대로 그린다: 3D 에서는 판과 같은 기울기로 사다리꼴로 보이고, 누른 점과 지금 손끝이 마주 보는
+       두 꼭짓점이며, 고르는 기준(운동장 위치가 상자 안)과 정확히 같은 구역이다. */
+    clearMarquee();   /* 3.032 — 끝나지 않은 앞 사각형(둘째 손가락 등)이 판에 남거나 id 가 겹치지 않게 */
+    const rect=el("rect",{id:"lassoRect",x:u.x,y:u.y,width:0,height:0,fill:"rgba(47,168,255,.16)",stroke:"#2fa8ff","stroke-width":2,"stroke-dasharray":"7 5","pointer-events":"none"});
     (world||svg).appendChild(rect);_mq={x0:u.x,y0:u.y,rect:rect};
     try{svg.setPointerCapture(e.pointerId);}catch(_){}
   });
