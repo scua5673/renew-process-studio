@@ -21,7 +21,7 @@ const implementation=[
   part('  function hookPresets(){','  // ---------- init: restore saved ----------'),
   part('  // ---------- init: restore saved ----------','  if(document.readyState!=="loading") init();'),
   part('  (function(){var _sg=$("pitchSeg");','  seg("labelSeg"'),
-  part('  function blankSnap(){','  function loadIdx(i){'),
+  part('  function blankSnap(){','  function loadIdx(i,keep){'),   /* 3.017 — keep: 작업물 안에서 옮길 땐 지금 설정 */
   part('  function newBoardItem(type,opt){','  function openSaveSheet('),
   'hookPresets();'
 ].join('\n');

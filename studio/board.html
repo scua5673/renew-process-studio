@@ -2952,6 +2952,12 @@ body.match-mode:not(.token-drag) #tokenLayer>g{transition:transform .22s cubic-b
   body.fmdark #boardPageStrip{background:#1B1E23;border-bottom-color:#2E333A;}
   body.fmdark #boardPageStrip .bp-tab:hover{background:rgba(255,255,255,.07);}
   body.fmdark #boardPageStrip .bp-add{border-color:#5b86f5;color:#9db8ff;}
+  /* 3.017 — 띠의 «보드 설정»: «보드 저장»과 같은 흰 단추 · 열려 있는 동안은 연파랑(눌린 모양) */
+  #boardPageStrip .bp-set{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;white-space:nowrap;padding:8px 12px;border:1px solid var(--line,#E3E6EA);border-radius:9px;background:var(--panel,#fff);color:var(--ink,#14161A);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;}
+  #boardPageStrip .bp-set svg{flex:0 0 auto;}
+  #boardPageStrip .bp-set:hover{background:var(--panel2,#F1F2F4);}
+  #boardPageStrip .bp-set[aria-expanded="true"]{background:#eef4ff;border-color:#c9dbff;color:#1d4ed8;}
+  body.fmdark #boardPageStrip .bp-set[aria-expanded="true"]{background:rgba(91,134,245,.18);border-color:#5b86f5;color:#9db8ff;}
   #drillList .thumb{position:relative;}
   .scn-badge{position:absolute;right:5px;bottom:5px;background:rgba(12,15,23,.78);color:#fff;font-size:var(--fs-micro);font-weight:var(--fw-head);border-radius:8px;padding:1px 6px;pointer-events:none;z-index:1;}
 
@@ -5029,6 +5035,7 @@ function lookStampScenes(){ var lk; try{ lk=lookNow(); }catch(_){ return; }
   try{ if(document.body.classList.contains("editing")&&Array.isArray(editorScenes))editorScenes.forEach(function(sc){ if(sc&&sc.snap)st(sc.snap); }); }catch(_){} }
 window.__lookNow=function(){ return lookNow(); };
 window.__lookOf=function(sn){ return lookOf(sn); };
+window.__lookStampScenes=function(){ lookStampScenes(); };   /* 3.017 — 페이지 띠가 페이지를 옮긴 뒤 그 장면에도 지금 설정을 */
 let tokShape=(function(){try{return lookDefault("tokShape");}catch(_){return "circle";}})();   /* 2.459 기본=원형 · 2.929 — 보드마다(이 값은 부팅 직후의 기본값일 뿐) */
 try{window.__trainGridM=lookDefault("trainGridM");}catch(_){window.__trainGridM="def";}
 try{window.__grassTone=lookDefault("grassTone");}catch(_){window.__grassTone="0|0";}   /* 2.978 */
@@ -8442,6 +8449,8 @@ function boardManualStatus(){
    여러 페이지 자료는 가져온 그 페이지(srcPage)만 바꾸고 나머지 페이지는 그대로 둔다. */
 function _boardSnapEmpty(sn){ try{ return !((sn&&sn.players&&sn.players.length)||(sn&&sn.equipment&&sn.equipment.length)||(sn&&sn.drawings&&sn.drawings.length)); }catch(_){ return false; } }
 function _animToFrames(a){ try{ if(!a||!Array.isArray(a.frames)||a.frames.length<2)return null; var arr=JSON.parse(JSON.stringify(a.frames)); for(var k=1;k<arr.length;k++){ if(arr[k])delete arr[k].thumb; } if(arr[0]){ arr[0].__t=a.title||""; arr[0].__tc=a.titleColor||"#e23b3b"; arr[0].__hold=a.hold||.6; } return arr; }catch(_){ return null; } }
+/* 3.017 — dst 스냅의 보드 설정(겉모습 칸 + 크기 표식)을 src 의 것으로 — src 에 없는 칸은 dst 에서도 지운다 */
+function lookKeepOf(dst,src){ if(!dst||typeof dst!=="object"||!src)return dst; lookKeys().concat(["tokV"]).forEach(function(k){ if(Object.prototype.hasOwnProperty.call(src,k))dst[k]=src[k]; else delete dst[k]; }); return dst; }
 async function boardLinkWriteBack(onlyCurrent){
   var P=window.__psPages; if(!P||!P.linkAll)return [];
   var links=P.linkAll().filter(function(l){ return l&&l.tag&&l.tag.libId&&(!onlyCurrent||l.isCurrent); }); if(!links.length)return [];
@@ -8458,6 +8467,14 @@ async function boardLinkWriteBack(onlyCurrent){
       else { snap=L.snap; thumb=L.thumb||""; anim=L.anim||null; frames=_animToFrames(anim); }
       if(!snap||_boardSnapEmpty(snap)){ P.linkClear(tag.libId); out.push({name:it.name||tag.name,empty:true}); continue; }
       var sp=+tag.srcPage||0;
+      /* 3.017 — 되쓰기는 내용만: 그 자료의 보드 설정(겉모습)은 그 자료 것을 남긴다(작업물마다 각각 — 가져온 보드의 크기가 원본을 덮지 않게).
+         그 자료에 없던 칸은 비워 둔다(전처럼 기본값으로 읽힌다). 설정이 달랐으면 썸네일도 그 자료 설정으로 다시 그린다. */
+      var _own=(Array.isArray(it.pages)&&it.pages.length>1&&it.pages[sp])?it.pages[sp].snap:it.snap;
+      if(_own&&typeof _own==="object"){ var _lb=JSON.stringify(lookOf(snap));
+        snap=lookKeepOf(dc(snap),_own);
+        if(anim&&Array.isArray(anim.frames)){ anim=dc(anim); anim.frames.forEach(function(f){ if(f)lookKeepOf(f.snap,_own); }); }
+        if(Array.isArray(frames)){ frames=dc(frames); frames.forEach(function(f){ if(f)lookKeepOf(f.snap,_own); }); }
+        if(JSON.stringify(lookOf(snap))!==_lb){ try{ var _t=window.__snapToThumb&&window.__snapToThumb(snap); if(_t)thumb=_t; }catch(_){} } }
       if(Array.isArray(it.pages)&&it.pages.length>1&&it.pages[sp]){
         it.pages[sp].snap=snap; it.pages[sp].thumb=thumb; it.pages[sp].anim=anim;
         if(sp===0){ it.snap=snap; it.thumb=thumb; if(frames)it.frames=frames; else delete it.frames; }
@@ -9572,7 +9589,7 @@ function afCut(){ if(afCopy())afDeleteSel(); }
   box.addEventListener("pointerdown",function(){ _afCtx=true; },true);
   box.addEventListener("focusin",function(){ _afCtx=true; });
   /* 2.982 — 보드 설정(패널·여는 단추)은 «바깥»으로 치지 않는다: 장면을 전부 고르고 보드 설정에서 방향을 누르는 동안 고른 표시가 남는다 */
-  document.addEventListener("pointerdown",function(e){ if(!e.target.closest||!e.target.closest("#animFrames,#animFrameMenu,#cmd-board-settings-pop,.cmd-board-settings-wrap")){ if(_afCtx){ _afCtx=false; if(_afSel.size){ _afSel.clear(); afSelPaint(); } } } },true);
+  document.addEventListener("pointerdown",function(e){ if(!e.target.closest||!e.target.closest("#animFrames,#animFrameMenu,#cmd-board-settings-pop,.cmd-board-settings-wrap,#bpBoardSettings")){ if(_afCtx){ _afCtx=false; if(_afSel.size){ _afSel.clear(); afSelPaint(); } } } },true);
   window.addEventListener("keydown",function(e){
     if(!_afCtx)return; var t=e.target; if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable))return;
     if(t&&t.closest&&t.closest(".ps-keycap,#cmd-board-settings-pop,[role=dialog]"))return;   /* 2.975 — 단축키 칸(방향키·Delete 를 키로 받는 중)·설정 창 안의 키는 장면 띠가 가로채지 않는다 — Delete 가 장면을 지울 뻔했다 */
@@ -12489,8 +12506,12 @@ async function openBoardImport(){
       if(_capNow)_canLink=false;
       try{ if(_canLink&&undoStack.length)undoStack[undoStack.length-1].__linkMark=d.libId; }catch(_){}   /* 2.927 — 이 가져오기를 ⌘Z 하면 연결도 끊는다 */
       var snap=(Array.isArray(d.pages)&&d.pages.length&&d.pages[0].snap)?d.pages[0].snap:d.snap;
-      try{ loadSnap(snap); }catch(_){}
+      /* 3.017 — 가져오기는 내용(선수·장비·공·그림·운동장)만: 지금 보드 설정(토큰 크기·모양·표시…)은 그대로 둔다.
+         사용자 «토큰의 크기가 다른 작업물들 불러올 때 막 변경이 되는데 변경되지 않게». 예전엔 가져온 자료의 설정이 지금 보드를 덮었다.
+         가져온 장면에도 지금 설정을 적는다(재생 중 장면 크기가 가져온 자료 것으로 튀지 않게). 그 자료의 설정은 그 자료에 남는다(boardLinkWriteBack). */
+      try{ loadSnap(snap,{keepLook:true}); }catch(_){}
       try{ if(nf&&window.__animLoad){ __animLoad(d.frames); } else if(window.__animReset){ __animReset(); } }catch(_){}
+      try{ lookStampScenes(); }catch(_){}
       try{ renderTokens(); renderDrawings(); updateDelUI(); }catch(_){}
       /* 2.927 — 지금 페이지를 이 보관함 자료와 잇는다. «보드 저장» 때 boardLinkWriteBack 이 이 자료(여러 페이지면 그 1페이지)를 같은 내용으로 저장한다.
          남이 만든 자료(팀)는 고칠 수 없으니 잇지 않는다 — 원래대로 복사만. */
@@ -20129,6 +20150,7 @@ try{ var _nb=document.getElementById('dfNew');
     var animation=strict?(window.__animGet?window.__animGet(true):null):_animNow();
     var thumb=strict?pages[idx].thumb:_thumb();
     pages[idx].snap=snap;pages[idx].thumb=thumb;pages[idx].anim=animation;
+    if(pages.length>1)_lookStampPages();   /* 3.017 — 한 작업물은 설정이 하나 */
   } }   /* 2.682 — 페이지마다 장면 목록 */
   function ensure(){ if(!pages){ pages=[{snap:_snap(),thumb:_thumb(),name:"",anim:_animNow()}]; if(_singleLink){ pages[0].vlink=_singleLink; _singleLink=null; } idx=0; } }   /* 2.927 — 연결은 첫 페이지로 */
   function blankSnap(){
@@ -20140,9 +20162,19 @@ try{ var _nb=document.getElementById('dfNew');
       tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};
   }
-  function loadIdx(i){ try{ window.loadSnap(pages[i].snap||{}); window.renderTokens&&window.renderTokens(); window.renderDrawings&&window.renderDrawings(); window.updateDelUI&&window.updateDelUI(); }catch(_){}
+  /* 3.017 — keep: 한 작업물 안에서 페이지를 옮길 때(고르기·지우기·더하기·복제·미팅 세트·시퀀스)는 지금 보드 설정(겉모습 — 토큰 크기·모양·표시…)을 그대로 둔다.
+     사용자 «토큰 크기가 … 막 변경이 되는데 변경되지 않게 · 작업물마다 보드 설정 했던 것들 전부 각각 저장되게». 2.929 부터 설정은 스냅(페이지)마다라
+     한 페이지에서 크기를 바꾸면 다른 페이지는 옛 크기로 남아, 페이지를 넘길 때마다 크기가 바뀌었다. 이제 한 작업물은 설정이 하나 — 고른 페이지와 그 장면에도 지금 설정을 적는다(_lookStampPages).
+     작업물을 새로 열 때(새로고침 이어받기·«이전 보드»·보관함 페이지 열기)는 keep 없이 그 작업물의 것을 올린다. 운동장(규격·범위·방향)은 설정이 아니라 페이지마다다. */
+  function loadIdx(i,keep){ try{ window.loadSnap(pages[i].snap||{},keep?{keepLook:true}:undefined); window.renderTokens&&window.renderTokens(); window.renderDrawings&&window.renderDrawings(); window.updateDelUI&&window.updateDelUI(); }catch(_){}
     /* 2.682 — 이 페이지의 장면 목록으로 바꾼다(없으면 비움). 바의 열림 여부는 그대로. */
-    try{ var _a=pages[i].anim; if(_a&&Array.isArray(_a.frames)&&_a.frames.length>1&&window.__animRestore){window.__animRestore(_a.frames,_a.active);if(window.__animRestoreMeta)window.__animRestoreMeta(_a);} else if(window.__animReset)window.__animReset(); }catch(_){} }
+    try{ var _a=pages[i].anim; if(_a&&Array.isArray(_a.frames)&&_a.frames.length>1&&window.__animRestore){window.__animRestore(_a.frames,_a.active);if(window.__animRestoreMeta)window.__animRestoreMeta(_a);} else if(window.__animReset)window.__animReset(); }catch(_){}
+    if(keep)_lookStampPages(); }
+  /* 3.017 — 지금 보드 설정을 모든 페이지(와 그 장면)에 적는다 — 저장본·내보내기·썸네일이 페이지마다 다른 크기로 남지 않게. 지금 페이지의 장면은 lookStampScenes 가 */
+  function _lookStampPages(){ var lk=null; try{ lk=window.__lookNow&&window.__lookNow(); }catch(_){} if(!lk||!pages)return;
+    function st(sn){ if(sn&&typeof sn==="object")for(var k in lk)sn[k]=lk[k]; }
+    pages.forEach(function(p){ if(!p)return; st(p.snap); try{ if(p.anim&&Array.isArray(p.anim.frames))p.anim.frames.forEach(function(f){ if(f)st(f.snap); }); }catch(_){} });
+    try{ window.__lookStampScenes&&window.__lookStampScenes(); }catch(_){} }
 
   function clearHistory(){try{window.__clearBoardHistory&&window.__clearBoardHistory();}catch(_){}}
   /* ══ 3.014 · «새 보드» — 작업 보드를 처음부터(오류 제보 88a82188) ══
@@ -20188,14 +20220,14 @@ try{ var _nb=document.getElementById('dfNew');
     back();
   }
   function add(){ if(_lent)return; ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
-    pages.splice(idx+1,0,{snap:blankSnap(),thumb:"",name:""}); idx++; loadIdx(idx);clearHistory();render(); persist(); _toast("페이지 "+pages.length); }
+    pages.splice(idx+1,0,{snap:blankSnap(),thumb:"",name:""}); idx++; loadIdx(idx,true);clearHistory();render(); persist(); _toast("페이지 "+pages.length); }
   function dup(i){ ensure(); if(pages.length>=MAXP){ _toast("페이지는 최대 "+MAXP+"개까지"); return; } capture();
     var src=pages[i]; if(!src)return; var _cp={snap:_clone(src.snap),anim:src.anim?_clone(src.anim):null,thumb:src.thumb,name:(src.name||((window.__vaultBook?"시퀀스 ":"페이지 ")+(i+1)))+" 복사"};
     ["grp","when","call","mo","ph"].forEach(function(k){ if(typeof src[k]==="string"&&src[k])_cp[k]=src[k]; });   /* 2.985 · 2.990 국면 자리도 */
-    pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx);clearHistory();render(); persist(); }
-  function switchTo(i){ if(!pages||i===idx||!pages[i])return; try{ if(window.__bkMap)window.__bkMap.close(); }catch(_){} capture();   /* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */ idx=i; loadIdx(idx);clearHistory();render(); persist(); }
+    pages.splice(i+1,0,_cp); idx=i+1; loadIdx(idx,true);clearHistory();render(); persist(); }
+  function switchTo(i){ if(!pages||i===idx||!pages[i])return; try{ if(window.__bkMap)window.__bkMap.close(); }catch(_){} capture();   /* 2.990 — 시퀀스를 고르면 국면 지도는 걷힌다 */ idx=i; loadIdx(idx,true);clearHistory();render(); persist(); }
   function del(i){ if(!pages||pages.length<=1)return;
-    var go=function(){ if(i!==idx)capture(); pages.splice(i,1); if(idx>i)idx--; else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx);clearHistory();render();persist(); _bkTouch(); };
+    var go=function(){ if(i!==idx)capture(); pages.splice(i,1); if(idx>i)idx--; else if(idx===i)idx=Math.max(0,i-1); loadIdx(idx,true);clearHistory();render();persist(); _bkTouch(); };
     var _q=window.__vaultBook?("«"+bkSeqName(pages[i],i)+"» 시퀀스를 삭제할까요? 장면도 함께 지워집니다."):"이 페이지를 삭제할까요?";   /* 2.985 */
     if(window.psConfirm)window.psConfirm(_q,go); else if(window.confirm(_q))go(); }
   function rename(i){ if(_lent)return; ensure(); if(!pages||!pages[i])return; var cur=pages[i].name||("페이지 "+(i+1));   /* ensure() — 1페이지(가상 탭)에서도 이름을 바꿀 수 있게 */
@@ -20216,7 +20248,7 @@ try{ var _nb=document.getElementById('dfNew');
       var base=_clone(_snap()||{}); base.drawings=[]; base.equipment=[];   /* 지금 배치(선수·이름·포메이션)는 복사, 그림·장비만 비움 */
       var at=idx;
       MEET_SET.forEach(function(nm,k){ pages.splice(at+1+k,0,{snap:_clone(base),thumb:"",name:nm}); });
-      idx=at+1; loadIdx(idx);clearHistory();render();persist();
+      idx=at+1; loadIdx(idx,true);clearHistory();render();persist();
       _toast("미팅 세트 "+MEET_SET.length+"페이지 추가 ✓ 페이지마다 그림만 그리면 미팅 자료 완성");
     };
     if(window.psConfirm)window.psConfirm("지금 배치(선수·이름)를 복사해 미팅 페이지 "+MEET_SET.length+"개를 만들까요?\nHigh/Mid/Low Block · Build-Up · Middle/Final Third · Set Piece 수비/공격",go);
@@ -20242,6 +20274,11 @@ try{ var _nb=document.getElementById('dfNew');
      ⚠ 셸이 ps-phone-work 를 붙이는 때가 첫 렌더보다 늦을 수 있다 — 그릴 때가 아니라 **누를 때** 묻는다. 모양은 CSS 가 body 클래스로 정한다.
      ⚠ 640 미만만: 그 위 폭에서는 «보드 저장»·«보관함 저장»이 이 띠 안에 산다(render 끝) */
   function _phoneNav(){ try{ return !window.__vaultBook&&document.body.classList.contains("ps-phone-work")&&(window.innerWidth||0)<640; }catch(_){ return false; } }
+  /* 3.017 — 띠의 «보드 설정»(render 끝): 도크와 같은 창을 여닫고, 열려 있는 동안 눌린 모양(aria-expanded)으로 둔다 */
+  function _bsOpen(){ try{ var p=document.getElementById("cmd-board-settings-pop"); return !!(p&&p.getAttribute("aria-hidden")==="false"); }catch(_){ return false; } }
+  function _bsToggle(){ try{ if(window.__psToggleBoardSettings)window.__psToggleBoardSettings("toggle"); else { var vb=document.getElementById("viewBtn"); if(vb)vb.click(); } }catch(_){} }
+  function _bsSync(){ var b=document.getElementById("bpBoardSettings"); if(b)b.setAttribute("aria-expanded",_bsOpen()?"true":"false");
+    try{ var p=document.getElementById("cmd-board-settings-pop"); if(p&&!p.__bpObs&&window.MutationObserver){ p.__bpObs=new MutationObserver(_bsSync); p.__bpObs.observe(p,{attributes:true,attributeFilter:["aria-hidden"]}); } }catch(_){} }
   function _bkTouch(){ try{ if(window.__vaultBook&&window.__vaultAutoSaveSchedule)window.__vaultAutoSaveSchedule(); }catch(_){} }   /* 2.985 — 패턴북을 고쳤다(«변경 있음») */
   function _bkBlank(p){ try{ var s=(p&&p.snap)||{}, fr=(p&&p.anim&&p.anim.frames)||[]; return !bkText(p&&p.name,40)&&fr.length<2&&!(s.equipment&&s.equipment.length)&&!(s.drawings&&s.drawings.length); }catch(_){ return false; } }
   /* 2.990 — 시퀀스를 국면 순서로(같은 국면 안의 차례는 그대로). 페이지 객체는 그대로 두고 줄만 바꾼다 — 지금 판은 제 페이지를 따라간다 */
@@ -20341,6 +20378,16 @@ try{ var _nb=document.getElementById('dfNew');
         cx.onclick=function(e){ e.stopPropagation(); _linkClear(_lk.tag.libId); persist(); render(); _toast("연결을 끊었어요 — 이제 «보드 저장»은 보드에만 저장해요"); };
         ch.appendChild(cx); box.appendChild(ch); } }catch(_){}
     if(manualSave&&(window.innerWidth||0)>=640)box.appendChild(manualSave);
+    /* 3.017 — «보드 설정»을 «보드 저장» 옆에(사용자 «보드 설정이 잘 안 보인다» → 1안).
+       여는 단추가 아래 도구줄 왼쪽 끝 30px 아이콘뿐이었다 — 글자 없이 회색, 목록 모양이라 그리기 도구 사이에 묻히고 아이패드는 이름 풍선도 없다.
+       같은 창을 여닫는다(아래 아이콘·단축키는 그대로). 폰(640 미만·도크 없음 — #viewBtn 이 없다)과 패턴북 좁은 띠에는 넣지 않는다. */
+    if((window.innerWidth||0)>=640&&!_bkNarrow&&document.getElementById("viewBtn")){
+      var bs=document.createElement("button"); bs.type="button"; bs.id="bpBoardSettings"; bs.className="bp-set";
+      bs.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg><span>보드 설정</span>';
+      bs.title="보드 설정 — 배치 · 보기 · 운동장 · 선수 · 단축키"; bs.setAttribute("aria-haspopup","dialog"); bs.setAttribute("aria-controls","cmd-board-settings-pop");
+      bs.onclick=function(e){ e.stopPropagation(); _bsToggle(); _bsSync(); };
+      box.appendChild(bs); _bsSync();
+    }
     if(vaultSave&&(window.innerWidth||0)>=640)box.appendChild(vaultSave);
     /* 2.987 — 폰의 고르개: 다시 그릴 때마다 띠가 맨 앞으로 돌아가 지금 페이지가 화면 밖에 남는다 → 지금 탭을 가운데로(띠만 움직인다) */
     try{ if(_phoneNav()||_bkNarrow){ var _on=box.querySelector(".bp-tab.on"); if(_on)box.scrollLeft=Math.max(0,_on.offsetLeft-(box.clientWidth-_on.offsetWidth)/2); } }catch(_){}
@@ -20408,7 +20455,7 @@ try{ var _nb=document.getElementById('dfNew');
         /* 선수 배치는 지금 시퀀스의 첫 장면에서 이어받는다(같은 팀·같은 대형에서 다른 플레이를 그리는 일이 대부분). 장비·그림·장면은 비운다 */
         try{ var _src=pages[idx], _f0=(_src&&_src.anim&&Array.isArray(_src.anim.frames)&&_src.anim.frames.length>1&&_src.anim.frames[0]&&_src.anim.frames[0].snap)||(_src&&_src.snap);
           if(_f0&&Array.isArray(_f0.players)){ p.snap.players=_clone(_f0.players); if(_f0.ball)p.snap.ball=_clone(_f0.ball); } }catch(_){}
-        var _at=_mo?bkInsertAt(pages,_MO,_mo):(idx+1); pages.splice(_at,0,p); idx=_at; loadIdx(idx);clearHistory();render(); _bkTouch(); _toast("시퀀스 "+pages.length+"개"); return true; },
+        var _at=_mo?bkInsertAt(pages,_MO,_mo):(idx+1); pages.splice(_at,0,p); idx=_at; loadIdx(idx,true);clearHistory();render(); _bkTouch(); _toast("시퀀스 "+pages.length+"개"); return true; },
       dup:function(i){ dup(i); _bkTouch(); },
       del:function(i){ del(i); },
       move:function(from,to){ reorder(from,to); _bkTouch(); },
@@ -20432,7 +20479,7 @@ try{ var _nb=document.getElementById('dfNew');
         /* 빈 첫 시퀀스 하나뿐이던 패턴북이면 그 빈 칸을 걷는다 — 가져온 것이 1번이 된다 */
         if(at===1&&_bkBlank(pages[0])){ pages.splice(0,1); at=0; }
         var _first=pages[at]; if(arr.some(function(q){ return !!bkMoKeyOf(q,bkMO()); })){ _bkResort(); at=Math.max(0,pages.indexOf(_first)); }   /* 2.990 — 국면을 달고 온 시퀀스는 제 국면 자리로 */
-        idx=at; loadIdx(idx);clearHistory();render(); _bkTouch(); return arr.length; },
+        idx=at; loadIdx(idx,true);clearHistory();render(); _bkTouch(); return arr.length; },
       sig:function(){ try{ return (pages||[]).map(function(p){ return [p&&p.name||"",p&&p.grp||"",p&&p.when||"",p&&p.call||"",p&&p.mo||"",p&&p.ph||""].join("~"); }).join("|")+"@"+(pages?pages.length:0); }catch(_){ return ""; } }
     },
     /* 3.007 — 첨부(캡처)에 판을 빌려줄 때: 작업 보드의 페이지 묶음·보관함 연결을 맡기고 한 장짜리 판이 된다. 돌려받을 때 그대로 */
@@ -21459,7 +21506,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       if(activePop!==panel)return;
       var t=e.target; if(!t)return;
       try{ if(panel.contains(t)||(view&&view.contains(t)))return;
-           if(t.closest&&t.closest(".cmenu-pop,.popmenu,#colorPop,#animFrameMenu"))return; }catch(_){}
+           if(t.closest&&t.closest(".cmenu-pop,.popmenu,#colorPop,#animFrameMenu,#bpBoardSettings"))return; }catch(_){}   /* 3.017 — 띠의 «보드 설정»도 여는 단추다 */
       toggleSettings("force-close");
     });
     window.__psToggleBoardSettings=toggleSettings;

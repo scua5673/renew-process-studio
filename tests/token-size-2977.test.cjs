@@ -47,7 +47,7 @@ test('every saved look carries tokV:2, so the old-default rule only ever touches
   assert.match(slice('function captureSnap(){','const BOARD_DEFAULT_KEY='),/var __lk=lookNow\(\);for\(var __k in __lk\)__cs\[__k\]=__lk\[__k\];/,'captureSnap takes every look key, tokV too');
   assert.match(slice('function lookStampScenes(){','window.__lookNow='),/for\(var k in lk\)sn\[k\]=lk\[k\];/,'scene stamping writes tokV with the size');
   assert.match(slice('function boardDefaultSnap(src){','function boardDefaultRead(){'),/tokV:src\.tokV/);
-  assert.match(slice('  function blankSnap(){','  function loadIdx(i){'),/tokV:s\.tokV/,'a new page keeps the mark');
+  assert.match(slice('  function blankSnap(){','  function loadIdx(i,keep){'),/tokV:s\.tokV/,'a new page keeps the mark');
 });
 
 test('saved «기본 세팅» and the old device value follow the same rule',()=>{
