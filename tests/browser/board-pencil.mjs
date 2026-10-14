@@ -3,7 +3,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
-// 3.017 — 사용자 «아이패드 펜슬 사용할 때 더 부드럽게 움직이게 · 터치 펜을 잘 활용할 수 있게».
+// 3.018 — 사용자 «아이패드 펜슬 사용할 때 더 부드럽게 움직이게 · 터치 펜을 잘 활용할 수 있게».
 // 펜슬(pointerType 'pen')로 긋는 선: 손바닥 무시 · 손가락이 먼저 시작한 선은 펜슬이 넘겨받음 · 긋는 중 둘째 손가락 무시 ·
 // 펜슬을 쓴 뒤 손가락은 그리지 않고 선수를 옮김 · 중간 점(coalesced) · 프레임당 한 번 그리기 · 예측 점은 저장하지 않음 ·
 // 3D 에서도 같은 투영 · 호버 링(내보내기에는 없음). 합성 PointerEvent 로 돈다(실제 펜슬 없이).

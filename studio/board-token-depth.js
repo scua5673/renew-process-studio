@@ -149,11 +149,15 @@
   // opts.ref = the token scale at the board's default size. The default size is set against the pitch
   // (CHIP_BASE, NAME_BASE) so it reads the same on every screen; the board's size steps and a player's own
   // size scale the chip from there. Never smaller than the flat token (phones already use bigger tokens).
+  // 3.016 — the size steps grow the chip by their square root, not one to one («3D 토큰이 너무 커졌다», user): a board
+  // enlarged for a small grid — the process sessions sit at 2~3.7× the default — drew discs a fifth of a 12 m square
+  // wide. The default size is unchanged and every step still changes the chip (×1.25 step → ×1.12 chip). So the
+  // chip's radius is pitch × CHIP_BASE × √(unit / ref), reached through the geometric mean of unit and ref.
   function chipSize(opts) {
     var unit = opts && +opts.unit > 0 ? +opts.unit : 1, pitch = opts && +opts.pitch > 0 ? +opts.pitch : 0;
-    var ref = opts && +opts.ref > 0 ? +opts.ref : unit;
-    var k = Math.min(3.2, Math.max(CHIP_SCALE, pitch * CHIP_BASE / (CHIP_R * ref)));
-    return { k: Math.round(k * 1000) / 1000, font: Math.max(15, pitch * NAME_BASE / (ref * k)) };
+    var ref = opts && +opts.ref > 0 ? +opts.ref : unit, mid = Math.sqrt(ref * unit);
+    var k = Math.min(3.2, Math.max(CHIP_SCALE, pitch * CHIP_BASE / (CHIP_R * mid)));
+    return { k: Math.round(k * 1000) / 1000, font: Math.max(15, pitch * NAME_BASE / (mid * k)) };
   }
   function outline(doc, kind, attrs) {
     return kind === 'circle' ? node(doc, 'circle', Object.assign({ r: CHIP_R }, attrs)) : node(doc, 'path', Object.assign({ d: kind === 'shirt' ? SHIRT : TEAR }, attrs));

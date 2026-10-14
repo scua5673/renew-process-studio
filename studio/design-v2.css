@@ -89,7 +89,7 @@ body.fmdark {
   --ps-color-action-fill-hover: #3D5C9F;
   --ps-color-action-hover: #C2D0EE;
   --ps-color-action-soft: #1B2640;
-  /* 3.018 — 다크 규칙이 아닌 CSS 에 직접 쓴 메인색(var(--ps-navy,#14213D))의 다크 값 — 흰 글자 4.9:1 · 어두운 면 위 3.3:1(예전 파랑과 같은 결) */
+  /* 3.019 — 다크 규칙이 아닌 CSS 에 직접 쓴 메인색(var(--ps-navy,#14213D))의 다크 값 — 흰 글자 4.9:1 · 어두운 면 위 3.3:1(예전 파랑과 같은 결) */
   --ps-navy: #5070B5;
   --ps-navy-h: #5A77BD;
   --ps-color-violet: #9d7bff;

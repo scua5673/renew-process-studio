@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>커뮤니티 · 훈련 공유</title>
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.018">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.019">
 <script src="storage.js"></script>
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
@@ -940,9 +940,13 @@ function cpAnimGeneric(box,frames,p){
     +'</div>';
   var host=box.querySelector('.cpa');
   box.appendChild(cpAnimControls(cpAnimStop,function(){cpAnimStop();renderPreview(p);}));
+  /* 3.016 — 프로세스 세션은 큰 화면과 같은 박자로(procPace 가 늘려 둔 장면마다의 이동 dur · 공통 유지 __hold). 코치 글은 예전 그대로 */
+  var pace=(p&&p.proc)?{hold:Math.max(.2,+frames[0].__hold||2)*1000,move:function(k){ return Math.max(.3,+frames[k].dur||1)*1000; }}:null;
   var i=0;
   function step(){
+    var mv=pace?(i===frames.length-1?850:pace.move(i)):0;   /* 마지막 → 처음은 장면 이동이 아니라 되감기 */
     i=(i+1)%frames.length;
+    if(pace)[].forEach.call(host.querySelectorAll('.cpt,.cpb'),function(t){ t.style.transitionDuration=mv+'ms'; });
     var sn=frames[i].snap,by=null;
     [].forEach.call(host.querySelectorAll('.cpt'),function(t){
       var q=(sn.players||[]).filter(function(x){return String(x.id)===t.dataset.id;})[0];
@@ -951,9 +955,9 @@ function cpAnimGeneric(box,frames,p){
     });
     var b=host.querySelector('.cpb');
     if(b){if(sn.ball){b.style.display='';b.style.left=X(sn.ball.x)+'%';b.style.top=Y(sn.ball.y)+'%';}else b.style.display='none';}
-    _cpaT.push(setTimeout(step,i===0?1500:980));
+    _cpaT.push(setTimeout(step,pace?(mv+pace.hold):(i===0?1500:980)));
   }
-  _cpaT.push(setTimeout(step,700));
+  _cpaT.push(setTimeout(step,pace?pace.hold:700));
 }
 function openPost(p){
   /* 조회수 + 전체 페이로드 확보 → 커뮤니티 내부 읽기 전용 상세보기 */
@@ -1594,10 +1598,26 @@ function procItem(pack,s,dep){
   item.snap=dep.snap(item.snap);
   var trs=dep.trainings(d); if(!trs||trs.length!==s.trainings.length)return null;
   trs.forEach(function(t){ t.thumb=''; delete t.scenes;
-    var tf=dep.frames(t.frames); if(tf)t.frames=tf; else{ delete t.frames; delete t.animIdx; } });   /* 훈련마다의 장면도 같은 정리를 거친다(장면 하나뿐이면 애니메이션 없음) */
+    var tf=dep.frames(t.frames); if(tf)t.frames=procPace(tf); else{ delete t.frames; delete t.animIdx; } });   /* 훈련마다의 장면도 같은 정리를 거친다(장면 하나뿐이면 애니메이션 없음) */
   item.trainings=trs;
-  var fr=dep.frames(item.frames); if(fr)item.frames=fr; else delete item.frames;
+  var fr=dep.frames(item.frames); if(fr)item.frames=procPace(fr); else delete item.frames;
   return item;
+}
+/* 3.016 — 프로세스 훈련의 박자(사용자 «커뮤니티 프로세스 훈련들 애니메이션이 너무 짧다 · 더 길게»).
+   팩은 장면 이동 1.2~1.45초 · 장면 유지는 작전판 기본 0.6초였다 — 작전판 재생은 장면마다의 hold 가 아니라 장면 0 의 __hold(전체 공통)를 쓰는데 팩에는 그 칸이 없다.
+   그래서 훈련 하나(장면 5~6)가 10초 남짓에 끝나 장면 자막(30자 안팎)을 다 읽기 전에 넘어갔다 → 22초 안팎.
+   · 유지: 2초 이상(작전판 «장면 유지» 고르기의 가장 긴 값) — 장면 0 의 __hold(재생)와 장면마다의 hold(영상 내보내기) 둘 다.
+   · 이동: 장면 사이 이동의 평균이 2.2초가 되게 같은 비율로 늘린다(장면마다의 길고 짧은 차이는 그대로). 이미 그보다 느리면 그대로.
+   · 여러 번 거쳐도 같은 값 — 훈련 세션 사이트가 나중에 박자를 늘려도 두 번 늘어나지 않는다. 받은 배열·장면은 고치지 않는다.
+   작전판의 letterPackPace(«보관함에 담기»)와 몸이 같아야 한다 — 단위 테스트가 본다. */
+function procPace(fr){
+  if(!Array.isArray(fr)||fr.length<2)return fr;
+  var HOLD=2,MOVE=2.2,num=function(v,lo,hi,def){ v=+v; return (isFinite(v)&&v>0)?Math.min(hi,Math.max(lo,v)):def; };
+  var out=fr.map(function(f){ return Object.assign({},(f&&typeof f==='object')?f:{}); });
+  var avg=out.slice(0,-1).reduce(function(a,f){ return a+num(f.dur,.1,20,1); },0)/(out.length-1),k=(avg<MOVE-.01)?MOVE/avg:1;
+  out.forEach(function(f){ f.dur=Math.min(20,Math.round(num(f.dur,.1,20,1)*k*100)/100); f.hold=num(f.hold,HOLD,20,HOLD); });
+  out[0].__hold=num(out[0].__hold,HOLD,20,HOLD);
+  return out;
 }
 /* ── 2.999 · 프로세스 칸 순수 구간 끝 ── */
 var proc={ready:false,loading:false,err:'',at:0,src:PROC_SRC,list:[],posts:{}},procG='all',procOpenSeq=0;
@@ -1775,7 +1795,7 @@ catChipsRender();
 fetchPosts();
 })();
 </script>
-<link rel="stylesheet" href="ui-grammar.css?v=3.018"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.019"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2593-size">/* 2.593 — 조작 높이 28/32/40 마무리 · :not(#_):not(#__) 는 premium/mobile-polish 의 !important 규칙(특이도 0,3,2)을 이기기 위한 id 부스트(패딩으로 높이가 정해지던 것들). 데스크톱 32 · 칩 28 · 폰(≤600) 은 32짜리를 40 으로 */
 html body .nav-items button:not(#_):not(#__),html body .nav-items .chip:not(#_):not(#__){height:28px!important;min-height:28px!important;padding-top:0!important;padding-bottom:0!important;line-height:1!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
 html body .comm-search:not(#_):not(#__),html body .filters .filt:not(#_):not(#__){height:32px!important;min-height:32px!important;padding-top:0!important;padding-bottom:0!important;line-height:1!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
