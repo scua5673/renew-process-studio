@@ -1,5 +1,5 @@
 /* 애니띵 모닝 — 아침 5분, 1년이면 달라진다.
-   과정: 좋은 문장(사람을 움직이는 말) · 우리말(잘 안 쓰지만 아름다운 낱말) · 일본어 · 영어(생활 회화, 1주 1장면).
+   과정: 좋은 문장(사람을 움직이는 말) · 우리말(잘 안 쓰지만 아름다운 낱말) · 인문학(개념·문장·오늘의 질문) · 일본어 · 영어(생활 회화, 1주 1장면).
    주간 리듬(기본): 월~금 배우는 날(과정마다 새 항목) · 토 실전의 날(이번 주 것을 실제로 써 보기) · 일 돌아보는 날(복습과 한 주 정리).
    하루 분량 '가볍게'(과정마다 하루 1개)면 1년, '보통'은 6개월, '많이'는 4개월에 완주한다.
    오래 가게 돕는 장치: 7일에 하루 쉼표(연속 유지), 바쁜 날 1분 루틴, 다시 온 날 복습 줄이기, 이정표 축하, 1년 기록.
@@ -46,6 +46,7 @@
   const COURSES = [
     { id: 'sentence', name: '좋은 문장', glyph: '“', kind: 'sentence', lang: 'ko-KR', desc: '사람을 움직이는 말', unitWord: '문장', data: window.AM_DATA },
     { id: 'uri', name: '우리말', glyph: '가', kind: 'word', lang: 'ko-KR', desc: '잘 안 쓰지만 아름다운 낱말', unitWord: '낱말', data: window.AM_URI },
+    { id: 'hum', name: '인문학', glyph: '人', kind: 'idea', lang: 'ko-KR', desc: '생각의 뿌리를 찾는 개념과 문장', unitWord: '개념', data: window.AM_HUM },
     { id: 'ja', name: '일본어', glyph: 'あ', kind: 'phrase', lang: 'ja-JP', desc: '1주 1장면 생활 회화', unitWord: '표현', data: window.AM_JA },
     { id: 'en', name: '영어', glyph: 'A', kind: 'phrase', lang: 'en-US', desc: '1주 1장면 생활 회화', unitWord: '표현', data: window.AM_EN }
   ].filter(co => co.data && Array.isArray(co.data.cards) && co.data.cards.length);
@@ -313,10 +314,13 @@
         if (p.fresh[0] || p.review[0]) steps.push({ t: 'intent', id: p.fresh[0] || p.review[0] });
       } else if (kind === 'word') {
         if (p.fresh[0]) steps.push({ t: 'compose', id: p.fresh[0] });
+      } else if (kind === 'idea') {
+        if (p.fresh[0]) steps.push({ t: 'ask', id: p.fresh[0] });
       } else (p.dialogues || []).forEach(u => steps.push({ t: 'dialogue', unit: u }));
     } else if (p.type === 'practice') {
       if (kind === 'sentence') { const ids = weekOr(5); if (ids.length) steps.push({ t: 'weekpick', ids }, { t: 'intent', id: '@pick' }); }
       else if (kind === 'word') { const ids = weekOr(5); if (ids.length) steps.push({ t: 'weekwrite', id: ids[0], ids }); }
+      else if (kind === 'idea') { const ids = weekOr(5); if (ids.length) steps.push({ t: 'weekthink', id: ids[0], ids }); }
       else if ((p.dialogues || []).length) p.dialogues.forEach(u => steps.push({ t: 'dialogue', unit: u }));
       else { const ids = weekOr(5); if (ids.length) steps.push({ t: 'shadow', ids }); }
     }
@@ -360,7 +364,7 @@
     ui.dlgLine = 0; ui.dlgRevealed = false; ui.dlgSwap = false;
   }
   const intentLabel = it => [it.who && `${it.who}에게`, it.when].filter(Boolean).join(' · ');
-  const STEP_MIN = { check: 0.5, review: 0.4, learn: 1.2, rewrite: 1.5, compose: 1.5, weekwrite: 2, intent: 0.5, weekpick: 0.5, dialogue: 1.5, shadow: 1.5 };
+  const STEP_MIN = { check: 0.5, review: 0.4, learn: 1.2, rewrite: 1.5, compose: 1.5, ask: 1.5, weekwrite: 2, weekthink: 2, intent: 0.5, weekpick: 0.5, dialogue: 1.5, shadow: 1.5 };
   function remainingSteps(p) {
     const steps = p.steps || buildSteps(p);
     return steps.slice(p.steps ? p.pos : 0).filter(s => s.t !== 'done' && stepValid(s, p));
@@ -379,6 +383,8 @@
     if (n('intent')) parts.push('실천 약속');
     if (n('compose')) parts.push('내 문장 만들기');
     if (n('weekwrite')) parts.push('주간 글쓰기');
+    if (n('ask')) parts.push('오늘의 질문');
+    if (n('weekthink')) parts.push('주간 사색');
     steps.filter(s => s.t === 'dialogue').forEach(s => parts.push(`대화 연습 ‘${co.groupById[s.unit].name}’`));
     if (n('shadow')) parts.push('이번 주 표현 따라 말하기');
     return parts;
@@ -401,8 +407,16 @@
   }
   const readingLine = c => (c.r && c.r !== c.t ? `<p class="reading" lang="ja">${esc(c.r)}</p>` : '');  // 가나만으로 된 표현은 읽기가 같아 생략
   const pronLine = c => (S.settings.pron && c.pron ? `<p class="pron">${esc(c.pron)}</p>` : '');
-  function cardBlock(c, wordLabel) {
+  const maskTerm = (text, term) => (term ? String(text).split(term).join('○○') : text);
+  function cardBlock(c, wordLabel, withAsk) {
     const co = courseOf(c);
+    if (co.kind === 'idea') {
+      return `<div class="word-hero"><p class="term-big idea">${esc(c.term)}</p>${c.orig ? `<span class="pill">${esc(c.orig)}</span>` : ''}</div>
+        <figure class="idea-line"><blockquote class="quote">${marked(c.line, c.blank, 'mark')}</blockquote>${c.who ? `<figcaption>${c.quote ? '— ' : '생각의 출처 · '}${esc(c.who)}</figcaption>` : ''}</figure>
+        <div class="why"><span class="label">무슨 뜻일까</span><p>${esc(c.meaning)}</p></div>
+        <div class="word"><span class="label">이렇게 써요</span><p>${esc(c.use)}</p></div>
+        ${withAsk ? `<div class="ask"><span class="label">생각해 볼 질문</span><p>${esc(c.ask)}</p></div>` : ''}`;
+    }
     if (co.kind === 'word') {
       return `<div class="word-hero"><p class="term-big">${esc(c.term)}</p><span class="pill">${esc(c.pos)}</span></div>
         <p class="meaning">${esc(c.meaning)}</p>
@@ -424,18 +438,19 @@
   function itemPreview(c) {
     const co = courseOf(c);
     if (co.kind === 'word') return `<p class="term-mid">${esc(c.term)}</p><p class="muted">${esc(c.meaning)}</p>`;
+    if (co.kind === 'idea') return `<p class="term-mid">${esc(c.term)}</p><p class="muted">${esc(c.line)}</p>`;
     if (co.kind === 'phrase') return `<p class="tl"${langAttr(co)}>${esc(c.t)}</p><p class="muted">${esc(c.ko)}</p>`;
     return `<blockquote class="quote">${marked(c.text, c.blank, 'mark')}</blockquote>`;
   }
-  const itemText = c => { const k = courseOf(c).kind; return k === 'word' ? c.term : k === 'phrase' ? c.t : c.text; };
-  const itemSub = c => { const k = courseOf(c).kind; return k === 'word' ? c.meaning : k === 'phrase' ? c.ko : c.situation; };
+  const itemText = c => { const k = courseOf(c).kind; return k === 'word' || k === 'idea' ? c.term : k === 'phrase' ? c.t : c.text; };
+  const itemSub = c => { const k = courseOf(c).kind; return k === 'word' ? c.meaning : k === 'idea' ? c.line : k === 'phrase' ? c.ko : c.situation; };
   function speakCard(c, rate) {
     const co = courseOf(c);
-    speak(co.kind === 'word' ? `${c.term}. ${c.example}` : itemText(c), co.lang, rate);
+    speak(co.kind === 'word' ? `${c.term}. ${c.example}` : co.kind === 'idea' ? `${c.term}. ${c.line}` : itemText(c), co.lang, rate);
   }
   function copyCard(c) {
     const co = courseOf(c);
-    const text = co.kind === 'word' ? `${c.term}: ${c.meaning}\n예) ${c.example}` : co.kind === 'phrase' ? [c.t, c.r, c.ko].filter(Boolean).join('\n') : `“${c.text}”`;
+    const text = co.kind === 'word' ? `${c.term}: ${c.meaning}\n예) ${c.example}` : co.kind === 'idea' ? `${c.term}\n“${c.line}”${c.who ? ` — ${c.who}` : ''}` : co.kind === 'phrase' ? [c.t, c.r, c.ko].filter(Boolean).join('\n') : `“${c.text}”`;
     copyText(text);
   }
   const speakBtn = c => (canSpeak ? `<button class="btn" data-act="speak" data-id="${esc(c.id)}">${icon('speaker')}듣기</button>` : '');
@@ -481,12 +496,13 @@
     if (p.type === 'practice') {
       if (co.kind === 'sentence') return '실전의 날 · 이번 주 문장 하나를 실제로';
       if (co.kind === 'word') return '실전의 날 · 이번 주 낱말로 짧은 글';
+      if (co.kind === 'idea') return '실전의 날 · 이번 주 질문으로 사색';
       return dl ? `실전의 날 · ‘${esc(co.groupById[dl.unit].name)}’ 대화` : '실전의 날 · 이번 주 표현 따라 말하기';
     }
     if (p.type === 'review') return '돌아보는 날 · 한 주 복습과 정리';
     if (co.kind === 'phrase') return first ? `‘${esc(groupName(first))}’ 장면` : dl ? '대화로 다시 말해 보는 날' : '오늘은 복습하는 날이에요';
     if (!first) return '오늘은 복습하는 날이에요';
-    return co.kind === 'word' ? `오늘은 ‘${esc(groupName(first))}’의 낱말` : `오늘은 ‘${esc(groupName(first))}’ 문장을 배워요`;
+    return co.kind === 'word' ? `오늘은 ‘${esc(groupName(first))}’의 낱말` : co.kind === 'idea' ? `오늘은 ‘${esc(groupName(first))}’의 개념` : `오늘은 ‘${esc(groupName(first))}’ 문장을 배워요`;
   }
   function routineCard(co) {
     const p = plan(co.id);
@@ -548,7 +564,7 @@
       else if (ui.libFilter !== 'all' && c.g !== ui.libFilter) return false;
       if (ui.libCtx && co.kind === 'sentence' && !(c.ctx || []).includes(ui.libCtx)) return false;
       if (!q) return true;
-      const fields = co.kind === 'word' ? [c.term, c.meaning, c.example, c.note, c.instead] : [c.text, c.situation, c.avoid, c.why, c.word && c.word.term, c.word && c.word.meaning];
+      const fields = co.kind === 'word' ? [c.term, c.meaning, c.example, c.note, c.instead] : co.kind === 'idea' ? [c.term, c.orig, c.who, c.line, c.meaning, c.use, c.ask] : [c.text, c.situation, c.avoid, c.why, c.word && c.word.term, c.word && c.word.meaning];
       return fields.concat(groupName(c)).some(v => v && v.toLowerCase().includes(q));
     });
   }
@@ -556,7 +572,7 @@
     const co = courseOf(c), st = status(c.id), fav = !!S.favs[c.id];
     return `<li><button class="item" data-act="open" data-id="${esc(c.id)}">
         <span class="item-meta"><span>${esc(groupName(c))}</span><span class="pill ${st}">${STATUS_LABEL[st]}</span>${c.custom ? '<span class="pill mine">내 문장</span>' : ''}</span>
-        <span class="item-text${co.kind === 'word' ? ' term-row' : ''}"${langAttr(co)}>${esc(itemText(c))}</span>
+        <span class="item-text${co.kind === 'word' || co.kind === 'idea' ? ' term-row' : ''}"${langAttr(co)}>${esc(itemText(c))}</span>
         ${itemSub(c) ? `<span class="item-sit">${esc(itemSub(c))}</span>` : ''}
       </button><button class="star${fav ? ' on' : ''}" data-act="fav" data-id="${esc(c.id)}" aria-pressed="${fav}" aria-label="즐겨찾기">${icon('star')}</button></li>`;
   }
@@ -596,7 +612,8 @@
       <div id="lib-list" class="sheet-body">${libList()}</div>`;
   }
   function libWords(co) {
-    return `<label class="search">${icon('search')}<input id="lib-q" type="search" placeholder="낱말이나 뜻으로 찾기 (예: 물결, 조금씩)" value="${esc(ui.q)}" aria-label="찾기"></label>
+    const ph = co.kind === 'idea' ? '개념이나 사람으로 찾기 (예: 중용, 소크라테스)' : '낱말이나 뜻으로 찾기 (예: 물결, 조금씩)';
+    return `<label class="search">${icon('search')}<input id="lib-q" type="search" placeholder="${ph}" value="${esc(ui.q)}" aria-label="찾기"></label>
       ${filterChips(co)}
       <div id="lib-list" class="sheet-body">${libList()}</div>`;
   }
@@ -648,9 +665,9 @@
   }
   function viewLibrary() {
     const co = libCourse();
-    const title = co.kind === 'sentence' ? '문장 모음' : co.kind === 'word' ? '우리말 모음' : `${co.name} 표현`;
+    const title = co.kind === 'sentence' ? '문장 모음' : co.kind === 'word' ? '우리말 모음' : co.kind === 'idea' ? '인문학 모음' : `${co.name} 표현`;
     const courseChips = `<div class="course-tabs" style="--n:${COURSES.length}" role="group" aria-label="과정">${COURSES.map(x => `<button class="course-tab" data-act="lib-course" data-id="${x.id}" aria-pressed="${x.id === co.id}">${badge(x)}<span>${esc(x.name)}</span></button>`).join('')}</div>`;
-    const body = co.kind === 'sentence' ? libSentence(co) : co.kind === 'word' ? libWords(co) : libPhrases(co);
+    const body = co.kind === 'sentence' ? libSentence(co) : co.kind === 'word' || co.kind === 'idea' ? libWords(co) : libPhrases(co);
     return `${head(esc(co.desc), title)}${courseChips}${body}`;
   }
 
@@ -722,7 +739,7 @@
       body = rw.length
         ? `<ul class="notes">${rw.map(r => {
           const c = cardById(r.cardId), co = c ? courseOf(c) : courseById[r.course || 'sentence'];
-          return `<li><button class="note" data-act="open" data-id="${esc(r.cardId)}"><span class="note-date">${co ? `${esc(co.name)} · ` : ''}${r.kind === 'week' ? '주간 글쓰기 · ' : ''}${shortDate(r.date)}</span><span class="note-text">${esc(r.text)}</span>${c && r.kind !== 'week' ? `<span class="note-src">${co.kind === 'word' ? '낱말' : '원문'} · ${esc(itemText(c))}</span>` : ''}</button></li>`;
+          return `<li><button class="note" data-act="open" data-id="${esc(r.cardId)}"><span class="note-date">${co ? `${esc(co.name)} · ` : ''}${r.kind === 'week' ? (co && co.kind === 'idea' ? '주간 사색 · ' : '주간 글쓰기 · ') : ''}${shortDate(r.date)}</span><span class="note-text">${esc(r.text)}</span>${c && r.kind !== 'week' ? `<span class="note-src">${co.kind === 'word' ? '낱말' : co.kind === 'idea' ? '개념' : '원문'} · ${esc(itemText(c))}</span>` : ''}</button></li>`;
         }).join('')}</ul>`
         : empty('아직 직접 쓴 문장이 없어요. 루틴의 ‘내 말로 바꾸기’, ‘내 문장 만들기’, 토요일 ‘주간 글쓰기’에서 쓴 글이 여기에 모여요.');
     } else {
@@ -757,6 +774,10 @@
       body = `${eyebrow}<p class="meaning big">${esc(c.meaning)}</p>
         <div class="better"><span class="label">이 뜻의 우리말은?</span><blockquote class="quote">${marked(c.example, c.blank, ui.revealed ? 'mark' : 'blank', ui.revealed)}</blockquote></div>
         ${ui.revealed ? `<div class="word-hero"><p class="term-big">${esc(c.term)}</p><span class="pill">${esc(c.pos)}</span></div><p class="hint">${esc(c.note)}</p>` : '<p class="hint">뜻과 문장을 보고, 빈칸의 낱말을 소리 내어 떠올려 본 뒤 확인하세요.</p>'}`;
+    } else if (co.kind === 'idea') {
+      body = `${eyebrow}<p class="meaning big">${esc(ui.revealed ? c.meaning : maskTerm(c.meaning, c.term))}</p>
+        <div class="better"><span class="label">이 개념의 문장</span><blockquote class="quote">${marked(c.line, c.blank, ui.revealed ? 'mark' : 'blank', ui.revealed)}</blockquote></div>
+        ${ui.revealed ? `<div class="word-hero"><p class="term-big idea">${esc(c.term)}</p>${c.orig ? `<span class="pill">${esc(c.orig)}</span>` : ''}</div>${c.who ? `<p class="hint">${esc(c.who)}</p>` : ''}` : '<p class="hint">풀이를 읽고 어떤 개념인지, 빈칸에 들어갈 말은 무엇인지 소리 내어 떠올려 본 뒤 확인하세요.</p>'}`;
     } else if (co.kind === 'phrase') {
       const pr = S.progress[c.id] || { box: 0 };
       const full = pr.box >= FULL_RECALL_BOX;
@@ -800,6 +821,12 @@
         <p class="hint">${ui.reads >= 3 ? '세 번 따라 말했어요. 귀로 듣고 입으로 말한 표현이 대화에서 먼저 나와요.' : '듣기를 누르고, 들은 그대로 세 번 따라 말해 보세요.'}</p>`,
         '<button class="btn primary wide" data-act="learned">다음</button>'];
     }
+    if (co.kind === 'idea') {
+      return [`<p class="eyebrow">오늘의 인문학${count} · ${esc(groupName(c))}</p>${cardBlock(c)}
+        <div class="row">${readCounter('소리 내어 읽기')}${speakBtn(c)}</div>
+        <p class="hint">${ui.reads >= 3 ? '세 번 읽었어요. 다음은 이 개념을 내 삶에 비춰 보는 질문이에요.' : '핵심 문장을 소리 내어 세 번 읽어 보세요.'}</p>`,
+        '<button class="btn primary wide" data-act="learned">다음</button>'];
+    }
     if (co.kind === 'word') {
       return [`<p class="eyebrow">오늘의 낱말${count} · ${esc(groupName(c))}</p>${cardBlock(c)}
         <div class="row">${readCounter('소리 내어 읽기')}${speakBtn(c)}</div>
@@ -818,6 +845,16 @@
   }
   function composeStep(c) {
     return [`<p class="eyebrow">내 문장 만들기</p><h2 class="step-title">‘${esc(c.term)}’${hasBatchim(c.term) ? '을' : '를'} 넣어 내 문장을 하나 만들어 보세요.</h2><p class="meaning">${esc(c.meaning)}</p><label class="label" for="rewrite">내 문장</label><textarea id="rewrite" placeholder="예) ${esc(c.example)}"></textarea><p class="hint">오늘 본 것, 내 사람, 내 하루를 넣어 보세요. 직접 써 본 낱말이 가장 오래 남아요.</p>`, writeActions];
+  }
+  function askStep(c) {
+    return [`<p class="eyebrow">오늘의 질문 · ${esc(c.term)}</p><h2 class="step-title">${esc(c.ask)}</h2><blockquote class="quote small">${esc(c.line)}</blockquote><label class="label" for="rewrite">내 생각</label><textarea id="rewrite" placeholder="정답은 없어요. 떠오르는 대로 두세 줄 적어 보세요."></textarea><p class="hint">개념을 내 삶에 비춰 본 생각이 가장 오래 남아요.</p>`, writeActions];
+  }
+  function weekthinkStep(s) {
+    const cards = s.ids.map(cardById).filter(Boolean);
+    return [`<p class="eyebrow">실전의 날 · 주간 사색</p><h2 class="step-title">이번 주 질문 가운데 하나를 골라 조금 길게 생각을 적어 보세요.</h2>
+      <ul class="ask-list">${cards.map(c => `<li><b>${esc(c.term)}</b><span>${esc(c.ask)}</span></li>`).join('')}</ul>
+      <label class="label" for="rewrite">내 사색</label><textarea id="rewrite" placeholder="고른 질문을 첫 줄에 적고, 요즘 내 삶과 이어서 생각해 보세요."></textarea>
+      <p class="hint">한 주의 개념을 이어서 생각하면, 따로 외운 지식이 내 관점이 돼요.</p>`, writeActions];
   }
   function weekwriteStep(s) {
     const cards = s.ids.map(cardById).filter(Boolean);
@@ -907,6 +944,7 @@
     if (p.type === 'review') note = '한 주를 잘 마무리했어요. 내일부터 새 한 주가 시작돼요.';
     else if (co.kind === 'sentence') note = it ? `오늘의 약속 · ${esc(intentLabel(it))}. 내일 아침에 어땠는지 물어볼게요.` : '내일 아침, 오늘 배운 문장이 빈칸이 되어 돌아와요.';
     else if (co.kind === 'word') note = p.type === 'practice' ? '이번 주 낱말이 내 글 속에 들어왔어요.' : '내일 아침, 오늘 배운 낱말이 빈칸이 되어 돌아와요.';
+    else if (co.kind === 'idea') note = p.type === 'practice' ? '이번 주 개념이 내 생각 속으로 들어왔어요.' : '내일 아침, 오늘의 개념이 빈칸이 되어 돌아와요.';
     else {
       const u = c && co.groupById[c.g];
       const left = u ? unitCards(co, u).filter(x => !S.progress[x.id]).length : 0;
@@ -929,6 +967,8 @@
       case 'learn': return learnStep(cardById(s.id), p);
       case 'rewrite': return rewriteStep(cardById(s.id));
       case 'compose': return composeStep(cardById(s.id));
+      case 'ask': return askStep(cardById(s.id));
+      case 'weekthink': return weekthinkStep(s);
       case 'intent': return intentStep(cardById(resolveId(s, p)));
       case 'weekpick': return weekpickStep(s);
       case 'weekwrite': return weekwriteStep(s);
@@ -1003,7 +1043,7 @@
       : `<button class="btn danger" data-act="ask-delete" data-id="${esc(c.id)}">이 문장 지우기</button>`;
     return `<div class="sheet-body">
       <p class="item-meta">${meta.join('')}</p>
-      ${cardBlock(c, '핵심 단어')}
+      ${cardBlock(c, '핵심 단어', true)}
       <div class="row">${speakBtn(c)}${slowBtn(c)}${copyBtn(c)}<button class="btn" data-act="fav" data-id="${esc(c.id)}" aria-pressed="${fav}">${icon('star')}${fav ? '즐겨찾기 해제' : '즐겨찾기'}</button>${pr ? '' : `<button class="btn primary" data-act="enroll" data-id="${esc(c.id)}">학습에 추가</button>`}</div>
       ${rws.length ? `<section class="group"><h3>내가 쓴 문장</h3>${rws.map(r => `<p class="mine-line">${esc(r.text)} <span class="note-date">${shortDate(r.date)}</span></p>`).join('')}</section>` : ''}
       <div><label class="label" for="card-note">메모</label><textarea id="card-note" data-id="${esc(c.id)}" placeholder="${co.kind === 'sentence' ? '이 문장을 언제, 누구에게 쓰고 싶은지 적어 두세요.' : '헷갈리는 점이나 떠오르는 장면을 적어 두세요.'}">${esc(S.notes[c.id] || '')}</textarea></div>
@@ -1359,7 +1399,7 @@
       const ta = $('rewrite'), v = ((ta && ta.value) || '').trim();
       if (!v) { if (ta) ta.focus(); toast('한 줄이라도 써 보세요. 건너뛰어도 괜찮아요.'); return; }
       const s = curStep();
-      S.rewrites.push({ id: uid(), date: today(), cardId: s.id, course: ui.session, text: v, ...(s.t === 'weekwrite' ? { kind: 'week' } : {}) });
+      S.rewrites.push({ id: uid(), date: today(), cardId: s.id, course: ui.session, text: v, ...(s.t === 'weekwrite' || s.t === 'weekthink' ? { kind: 'week' } : {}) });
       toast('기록에 저장했어요');
       advance();
     },

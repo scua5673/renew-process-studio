@@ -592,6 +592,17 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--d
 .shadow-list .tl { font-size: 1.15rem; }
 .shadow-list .ko { font-size: .85rem; color: var(--ink-2); }
 
+/* ---------- 인문학 ---------- */
+.term-big.idea { font-size: 2.1rem; line-height: 1.25; text-wrap: balance; }
+.idea-line { margin: 0; display: grid; gap: 6px; }
+.idea-line figcaption { font-size: .85rem; color: var(--ink-3); }
+.ask { padding: 14px 16px; border-radius: 12px; border: 1.5px dashed var(--dawn); display: grid; gap: 4px; }
+.ask .label { margin-bottom: 0; color: var(--dawn); }
+.ask-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ask-list li { display: grid; gap: 2px; padding: 10px 14px; border-radius: 12px; background: var(--dawn-soft); }
+.ask-list b { font-family: var(--font-display); }
+.ask-list span { font-size: .9rem; color: var(--ink-2); }
+
 /* ---------- 1년 장치: 기록 ---------- */
 .year-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .year-stats p { display: grid; gap: 2px; padding: 12px 10px; border-radius: 12px; background: var(--sheet); box-shadow: var(--shadow); text-align: center; }
