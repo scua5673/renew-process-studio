@@ -600,6 +600,9 @@ var myLikes=new Set();   /* 내가 좋아요한 게시물 id */
 var tabF='coach';   /* 2.999 — 'coach' 코치 자료 | 'proc' 프로세스 훈련 세션(아래 «2.999 · 커뮤니티 안의 프로세스 칸») · 3.018 — 'elmiha' 엘미하 칸(아래 «3.018 · 엘미하 칸») */
 var COMM_FULL='id,owner,owner_name,title,summary,cat,age,players,thumb,views,copies,likes,created_at';
 var COMM_LEAN='id,owner,owner_name,title,summary,cat,age,thumb,views,copies,created_at';
+/* 3.019 — 처음 여는 칸은 «프로세스»(사용자 «커뮤니티에 올린 훈련을 더 잘 보이게» → 프로세스를 첫 화면으로). 마지막에 본 칸(코치 자료 · 엘미하도)은 이 기기에 적어 두고 다음에 그 칸으로 연다. */
+var PROC_TAB_KEY='ps_comm_tab_v1';
+function procTabFirst(){ try{ var t=localStorage.getItem(PROC_TAB_KEY); return (t==='coach'||t==='elmiha')?t:'proc'; }catch(_){ return 'proc'; } }
 
 function fetchMyLikes(){
   var me=sess(); if(!me||!me.at||!me.uid){ myLikes=new Set(); return Promise.resolve(); }
@@ -785,7 +788,7 @@ function renderPreview(p){
   box.innerHTML='<div class="cp-head"><div class="cp-head-copy"><h2 class="cp-title">'+esc(p.title)+'</h2>'
     +'<div class="cp-meta">'+catBadges(p.cat)+(p.owner_name?'<span>@'+esc(p.owner_name)+'</span>':'<span>코치</span>')
     +(p.age?'<span>'+esc(catKeys(p.age).join(' · '))+'</span>':'')+(p.players?'<span>'+esc(p.players)+'명</span>':'')+'</div></div></div>'
-    +'<div class="cp-thumb">'+(p.proc?procThumb(p.s,1):thumbImg(p.thumb))+(cpFramesOf(p)?'<button class="cp-play" type="button" aria-label="애니메이션 재생">▶</button>':'')+'</div>'
+    +'<div class="cp-thumb">'+(p.proc?procThumb(p.s,procPickOf(p,p.s)+1):thumbImg(p.thumb))+(cpFramesOf(p)?'<button class="cp-play" type="button" aria-label="애니메이션 재생">▶</button>':'')+'</div>'
     +(p.proc?'':'<div class="cp-stats"><span class="stat">'+IC_EYE+(p.views||0)+'</span><span class="stat">'+IC_SAVE+(p.copies||0)+'</span>'
     +'<button class="likebtn'+(_liked?' on':'')+'" type="button" id="cpLike" title="좋아요">'+IC_HEART+'<span class="lc">'+(p.likes||0)+'</span></button></div>')
     +'<div class="cp-summary">'+(cpDescOf(p)||(p.__itemLoading?'내용 불러오는 중…':(isMatch?'장면과 설명을 함께 확인하는 경기 분석입니다.':'큰 작전판과 훈련 내용을 미리 확인한 뒤 보관함에 담아 편집할 수 있습니다.')))+'</div>'
@@ -948,13 +951,9 @@ function cpAnimGeneric(box,frames,p){
     +'</div>';
   var host=box.querySelector('.cpa');
   box.appendChild(cpAnimControls(cpAnimStop,function(){cpAnimStop();renderPreview(p);}));
-  /* 3.016 — 프로세스 세션은 큰 화면과 같은 박자로(procPace 가 늘려 둔 장면마다의 이동 dur · 공통 유지 __hold). 코치 글은 예전 그대로 */
-  var pace=(p&&p.proc)?{hold:Math.max(.2,+frames[0].__hold||2)*1000,move:function(k){ return Math.max(.3,+frames[k].dur||1)*1000; }}:null;
   var i=0;
   function step(){
-    var mv=pace?(i===frames.length-1?850:pace.move(i)):0;   /* 마지막 → 처음은 장면 이동이 아니라 되감기 */
     i=(i+1)%frames.length;
-    if(pace)[].forEach.call(host.querySelectorAll('.cpt,.cpb'),function(t){ t.style.transitionDuration=mv+'ms'; });
     var sn=frames[i].snap,by=null;
     [].forEach.call(host.querySelectorAll('.cpt'),function(t){
       var q=(sn.players||[]).filter(function(x){return String(x.id)===t.dataset.id;})[0];
@@ -963,9 +962,9 @@ function cpAnimGeneric(box,frames,p){
     });
     var b=host.querySelector('.cpb');
     if(b){if(sn.ball){b.style.display='';b.style.left=X(sn.ball.x)+'%';b.style.top=Y(sn.ball.y)+'%';}else b.style.display='none';}
-    _cpaT.push(setTimeout(step,pace?(mv+pace.hold):(i===0?1500:980)));
+    _cpaT.push(setTimeout(step,i===0?1500:980));
   }
-  _cpaT.push(setTimeout(step,pace?pace.hold:700));
+  _cpaT.push(setTimeout(step,700));
 }
 function openPost(p){
   /* 조회수 + 전체 페이로드 확보 → 커뮤니티 내부 읽기 전용 상세보기 */
@@ -1503,7 +1502,7 @@ function buildUpload(me,handle,flowEpoch){
           if(!r.ok)throw 0;
           communityLibraryContinuation(flowEpoch,me.uid);
           if(__communityLibraryAbort===ctl)__communityLibraryAbort=null;
-          communityLibraryCloseFlow();toast('커뮤니티에 올라갔어요 ✓');sort='new';$('sortSel').value='new';fetchPosts(true);
+          communityLibraryCloseFlow();toast('커뮤니티에 올라갔어요 ✓');sort='new';$('sortSel').value='new';if(tabF==='proc')procSetTab('coach');fetchPosts(true);   /* 3.019 — 프로세스 칸이 첫 화면이 된 뒤에도 방금 올린 글이 보이게 */
         })
         .catch(function(e){
           if(__communityLibraryAbort===ctl)__communityLibraryAbort=null;
@@ -1658,10 +1657,22 @@ function procRead(j){
     var theme=_prStr(s.theme,40).trim(),cut=theme.split(' › '),rev=_prStr(s.rev,12); if(!/^[0-9a-f]{6,12}$/.test(rev))rev='';
     seen[n]=1;
     out.push({n:n,nn:(n<10?'0':'')+n,rev:rev,session:session,letter:_prStr(s.letter,80).trim(),theme:theme,head:(cut[0]||'').trim(),tail:(cut[1]||'').trim(),group:procGroupOf(theme),
-      minutes:trs.reduce(function(a,t){return a+t.minutes;},0),scenes:trs.reduce(function(a,t){return a+t.scenes;},0),trainings:trs}); }
+      minutes:trs.reduce(function(a,t){return a+t.minutes;},0),scenes:trs.reduce(function(a,t){return a+t.scenes;},0),trainings:trs,own:s.own===1}); }
   out.sort(function(a,b){return a.n-b.n;});
   return out;
 }
+/* 3.019 — 앱이 장면을 보강한 세션(사본 목록의 own:1 · scripts/proc-scenes)은 앱에 실린 사본이 원본이다.
+   사이트 목록의 같은 호를 사본의 줄로 바꾸고(장면 수 · 지문), 사이트에 없는 보강 세션도 싣는다. 나머지 세션은 사이트 그대로. */
+function procMerge(site,local){
+  var own={},out;
+  (local||[]).forEach(function(s){ if(s&&s.own)own[s.n]=s; });
+  out=(site||[]).map(function(s){ return own[s.n]||s; });
+  Object.keys(own).forEach(function(k){ var s=own[k]; if(out.indexOf(s)<0)out.push(s); });
+  out.sort(function(a,b){return a.n-b.n;});
+  return out;
+}
+/* 세션 하나를 어디서 읽는가 — 보강한 세션은 사본, 나머지는 목록을 읽은 곳 */
+function procSrcOf(s,src){ return (s&&s.own)?PROC_LOCAL_SRC:src; }
 function procUrl(kind,s,k,src){
   var b=(src===PROC_LOCAL_SRC)?PROC_LOCAL:PROC_BASE;
   if(kind==='pack')return b+s.nn+'.json';
@@ -1685,26 +1696,10 @@ function procItem(pack,s,dep){
   item.snap=dep.snap(item.snap);
   var trs=dep.trainings(d); if(!trs||trs.length!==s.trainings.length)return null;
   trs.forEach(function(t){ t.thumb=''; delete t.scenes;
-    var tf=dep.frames(t.frames); if(tf)t.frames=procPace(tf); else{ delete t.frames; delete t.animIdx; } });   /* 훈련마다의 장면도 같은 정리를 거친다(장면 하나뿐이면 애니메이션 없음) */
+    var tf=dep.frames(t.frames); if(tf)t.frames=tf; else{ delete t.frames; delete t.animIdx; } });   /* 훈련마다의 장면도 같은 정리를 거친다(장면 하나뿐이면 애니메이션 없음) */
   item.trainings=trs;
-  var fr=dep.frames(item.frames); if(fr)item.frames=procPace(fr); else delete item.frames;
+  var fr=dep.frames(item.frames); if(fr)item.frames=fr; else delete item.frames;
   return item;
-}
-/* 3.016 — 프로세스 훈련의 박자(사용자 «커뮤니티 프로세스 훈련들 애니메이션이 너무 짧다 · 더 길게»).
-   팩은 장면 이동 1.2~1.45초 · 장면 유지는 작전판 기본 0.6초였다 — 작전판 재생은 장면마다의 hold 가 아니라 장면 0 의 __hold(전체 공통)를 쓰는데 팩에는 그 칸이 없다.
-   그래서 훈련 하나(장면 5~6)가 10초 남짓에 끝나 장면 자막(30자 안팎)을 다 읽기 전에 넘어갔다 → 22초 안팎.
-   · 유지: 2초 이상(작전판 «장면 유지» 고르기의 가장 긴 값) — 장면 0 의 __hold(재생)와 장면마다의 hold(영상 내보내기) 둘 다.
-   · 이동: 장면 사이 이동의 평균이 2.2초가 되게 같은 비율로 늘린다(장면마다의 길고 짧은 차이는 그대로). 이미 그보다 느리면 그대로.
-   · 여러 번 거쳐도 같은 값 — 훈련 세션 사이트가 나중에 박자를 늘려도 두 번 늘어나지 않는다. 받은 배열·장면은 고치지 않는다.
-   작전판의 letterPackPace(«보관함에 담기»)와 몸이 같아야 한다 — 단위 테스트가 본다. */
-function procPace(fr){
-  if(!Array.isArray(fr)||fr.length<2)return fr;
-  var HOLD=2,MOVE=2.2,num=function(v,lo,hi,def){ v=+v; return (isFinite(v)&&v>0)?Math.min(hi,Math.max(lo,v)):def; };
-  var out=fr.map(function(f){ return Object.assign({},(f&&typeof f==='object')?f:{}); });
-  var avg=out.slice(0,-1).reduce(function(a,f){ return a+num(f.dur,.1,20,1); },0)/(out.length-1),k=(avg<MOVE-.01)?MOVE/avg:1;
-  out.forEach(function(f){ f.dur=Math.min(20,Math.round(num(f.dur,.1,20,1)*k*100)/100); f.hold=num(f.hold,HOLD,20,HOLD); });
-  out[0].__hold=num(out[0].__hold,HOLD,20,HOLD);
-  return out;
 }
 /* ── 2.999 · 프로세스 칸 순수 구간 끝 ── */
 var proc={ready:false,loading:false,err:'',at:0,src:PROC_SRC,list:[],posts:{}},procG='all',procOpenSeq=0;
@@ -1731,16 +1726,18 @@ function procSet(list,at,src){
 function procFetch(force){
   if(proc.loading)return;
   if(!force&&!proc.ready){ try{ var c=JSON.parse(sessionStorage.getItem(PROC_CK)||'null');
-      if(c&&Date.now()>=c.at&&Date.now()-c.at<PROC_TTL){ var l0=procRead(c.index); if(l0&&l0.length){ procSet(l0,c.at,c.src); return; } } }catch(_){} }
+      if(c&&Date.now()>=c.at&&Date.now()-c.at<PROC_TTL){ var l0=procRead(c.index); if(l0&&l0.length){ if(c.local)l0=procMerge(l0,procRead(c.local)); procSet(l0,c.at,c.src); return; } } }catch(_){} }
   proc.loading=true; proc.err=''; if(tabF==='proc'&&!proc.ready)renderProc();
-  /* 3.003 — 훈련 세션 사이트에서 먼저 읽고(새 세션이 거기에 먼저 실린다), 닫혀 있거나 닿지 않으면 앱에 실린 사본을 읽는다. */
+  /* 3.003 — 훈련 세션 사이트의 목록을 쓰고(새 세션이 거기에 먼저 실린다), 닫혀 있거나 닿지 않으면 앱에 실린 사본을 쓴다.
+     3.019 — 사본 목록도 함께 받아, 앱이 장면을 보강한 세션(own)은 사본의 줄로 바꾼다(procMerge). */
   var get=function(src,ms){ var ab=procAbort(ms);
     return fetch(procUrl('index',null,null,src),{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer',signal:ab.signal})
       .then(function(r){ if(!r.ok)throw r.status; return r.json(); })
       .then(function(j){ ab.done(); var l=procRead(j); if(!l||!l.length)throw 'shape'; return {l:l,j:j,src:src}; },function(e){ ab.done(); throw e; }); };
-  get(PROC_SRC,8000).catch(function(){ return get(PROC_LOCAL_SRC,8000); })
+  var local=get(PROC_LOCAL_SRC,8000); local.catch(function(){});
+  get(PROC_SRC,8000).then(function(o){ return local.then(function(c){ return {l:procMerge(o.l,c.l),j:o.j,lj:c.j,src:o.src}; },function(){ return o; }); },function(){ return local; })
     .then(function(o){
-      try{ sessionStorage.setItem(PROC_CK,JSON.stringify({at:Date.now(),index:o.j,src:o.src})); }catch(_){}
+      try{ sessionStorage.setItem(PROC_CK,JSON.stringify({at:Date.now(),index:o.j,local:o.lj||null,src:o.src})); }catch(_){}
       proc.loading=false; procSet(o.l,Date.now(),o.src); })
     .catch(function(){ proc.loading=false; if(proc.ready)return;   /* 이미 그린 목록이 있으면 그대로 둔다 */
       proc.err=(navigator.onLine===false)?'offline':'net'; if(tabF==='proc')renderProc(); });
@@ -1755,7 +1752,7 @@ function procChipsRender(){
   mk('all','전체 주제',proc.ready?proc.list.length:null);
   PROC_GROUPS.forEach(function(g){ if(counts[g[0]])mk(g[0],g[1],counts[g[0]]); });
 }
-function procThumb(s,k){ return '<img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(procUrl('thumb',s,k,proc.src))+'">'; }
+function procThumb(s,k){ return '<img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(procUrl('thumb',s,k,procSrcOf(s,proc.src)))+'">'; }
 function renderProc(){
   var grid=$('grid'),cc=$('commCount'); if(!grid)return;
   try{cpAnimStop();}catch(_){}
@@ -1775,15 +1772,33 @@ function renderProc(){
   list.forEach(function(s){ var p=proc.posts['proc-'+s.nn]; if(!p)return;
     var c=document.createElement('div'); c.className='pr-card'+(p.id===selectedPostId?' on':'');
     c.setAttribute('role','button'); c.tabIndex=0; c.setAttribute('data-proc',s.nn); c.setAttribute('aria-label',s.session+' · 훈련 '+s.trainings.length+'개');
-    c.innerHTML='<div class="pr-tri">'+s.trainings.slice(0,3).map(function(t,i){ return '<span>'+procThumb(s,i+1)+'</span>'; }).join('')+'</div>'
+    /* 3.019 — 그림은 한 장을 크게(사용자 «더 잘 보이게» → 카드 그림 한 장을 크게). 1·2·3 으로 훈련 그림을 바꾸고, 카드를 누르면 보고 있던 훈련부터 연다. */
+    var k=procPickOf(p,s),nt=Math.min(3,s.trainings.length);
+    c.innerHTML='<div class="pr-hero">'+procThumb(s,k+1)+'</div>'
+      +'<div class="pr-bar">'+(nt>1?'<div class="pr-pick" role="group" aria-label="훈련 그림 고르기">'+s.trainings.slice(0,nt).map(function(t,i){ return '<button type="button" data-k="'+i+'" aria-pressed="'+(i===k?'true':'false')+'" aria-label="훈련 '+(i+1)+' 그림 · '+esc(t.name)+'">'+(i+1)+'</button>'; }).join('')+'</div>':'')
+      +'<span class="pr-sc"'+(s.trainings[k].scenes>1?'':' hidden')+'>훈련 '+(k+1)+' · 장면 '+(s.trainings[k].scenes||0)+'</span></div>'
       +'<div class="pr-bd"><div class="pr-tt">'+esc(s.session)+'</div>'
       +'<div class="pr-meta">'+(s.head?'<span class="pr-badge">'+esc(s.head)+'</span>':'')+'<span>'+esc([s.tail,s.minutes?(s.minutes+'분'):''].filter(Boolean).join(' · '))+'</span></div>'
-      +'<ol class="pr-trs">'+s.trainings.map(function(t,i){ return '<li><span class="pr-i">'+(i+1)+'</span><span class="pr-nm">'+esc(t.name)+'</span><span class="pr-mn">'+(t.minutes?(t.minutes+'분'):'')+'</span></li>'; }).join('')+'</ol>'
+      +'<ol class="pr-trs">'+s.trainings.map(function(t,i){ return '<li data-k="'+i+'"'+(i===k?' class="on"':'')+'><span class="pr-i">'+(i+1)+'</span><span class="pr-nm">'+esc(t.name)+'</span><span class="pr-mn">'+(t.minutes?(t.minutes+'분'):'')+'</span></li>'; }).join('')+'</ol>'
       +'<div class="pr-foot"><span>@프로세스 · 레터 '+s.n+'호</span>'+(s.scenes?('<span class="pr-n">장면 '+s.scenes+'</span>'):'')+'</div></div>';
-    c.onclick=function(){ procOpen(p,c); };
-    c.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); procOpen(p,c); } };
+    c.onclick=function(e){ var b=e.target.closest&&e.target.closest('.pr-pick button'); if(b){ e.stopPropagation(); procPick(p,s,c,+b.getAttribute('data-k')); return; }
+      var li=e.target.closest&&e.target.closest('.pr-trs li'); if(li)procPick(p,s,c,+li.getAttribute('data-k'));   /* 훈련 줄을 누르면 그 훈련부터 */
+      procOpen(p,c); };
+    c.onkeydown=function(e){ if(e.target!==c)return; if(e.key==='Enter'||e.key===' '){ e.preventDefault(); procOpen(p,c); } };   /* 1·2·3 단추의 Enter·Space 는 단추 몫 */
+    if(PROC_HOVER)[].forEach.call(c.querySelectorAll('.pr-trs li'),function(li){ li.onmouseenter=function(){ procPick(p,s,c,+li.getAttribute('data-k')); }; });   /* 마우스: 훈련 줄에 올리면 그 그림 */
     grid.appendChild(c);
   });
+}
+/* 카드가 보여 주는 훈련(0부터) — 글에 적어 두어 다시 그려도(주제·검색) 그대로, 뷰어도 그 훈련부터 연다 */
+var PROC_HOVER=false; try{ PROC_HOVER=!!(window.matchMedia&&matchMedia('(hover:hover) and (pointer:fine)').matches); }catch(_){}
+function procPickOf(p,s){ var k=+p.__k; return (k>0&&k<Math.min(3,s.trainings.length))?k:0; }
+function procPick(p,s,c,k){
+  if(!(k>=0&&k<Math.min(3,s.trainings.length))||k===procPickOf(p,s))return;
+  p.__k=k;
+  var img=c.querySelector('.pr-hero img'); if(img)img.src=procUrl('thumb',s,k+1,procSrcOf(s,proc.src));
+  [].forEach.call(c.querySelectorAll('.pr-pick button'),function(b){ b.setAttribute('aria-pressed',+b.getAttribute('data-k')===k?'true':'false'); });
+  [].forEach.call(c.querySelectorAll('.pr-trs li'),function(li){ li.classList.toggle('on',+li.getAttribute('data-k')===k); });
+  var sc=c.querySelector('.pr-sc'),n=s.trainings[k].scenes||0; if(sc){ sc.textContent='훈련 '+(k+1)+' · 장면 '+n; sc.hidden=!(n>1); }
 }
 function procEnsure(p){
   if(p.item)return Promise.resolve(p.item);
@@ -1795,7 +1810,7 @@ function procEnsure(p){
       .then(function(txt){ ab.done(); if(txt.length>PROC_PACK_MAX)throw new Error('big');
         var it=procItem(JSON.parse(txt),p.s,{fields:COPY_FIELDS,snap:stripSnap,trainings:stripTrainings,frames:stripFrames}); if(!it)throw new Error('shape');
         return {it:it,src:src}; },function(e){ ab.done(); throw e; }); };
-  var first=proc.src;
+  var first=procSrcOf(p.s,proc.src);   /* 3.019 — 앱이 보강한 세션은 사본에서 */
   p.__load=get(first).catch(function(e){ if(first===PROC_LOCAL_SRC)throw e; return get(PROC_LOCAL_SRC); })
     .then(function(o){ p.__load=null; p.item=o.it; p.src=o.src; return o.it; },function(e){ p.__load=null; throw e; });
   p.__load.catch(function(){ p.__load=null; });
@@ -1840,7 +1855,8 @@ function procViewTabs(){
     box.appendChild(b);
     if(on)try{ b.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(_){} });
 }
-function procViewOpen(p,post){ procCv={p:p,k:0,post:post||null}; procViewTabs(); openCommunityViewer(procViewPost(0),p); }
+function procViewOpen(p,post){ var n=p.item.trainings.length,k=(p.proc&&+p.__k>0&&+p.__k<n)?+p.__k:0;   /* 3.019 — 프로세스 카드에서 고른 훈련부터 */
+  procCv={p:p,k:k,post:post||null}; procViewTabs(); openCommunityViewer(procViewPost(k),p); }
 /* «보관함에 담기» — 레터의 단추와 같은 주소를 셸에 건넨다. 받기 · 확인 창 · 저장은 작전판이 한다(2.997). */
 function procSave(p){
   var hash='#pack='+((p.src||proc.src)===PROC_LOCAL_SRC?PROC_LOCAL_SRC:PROC_SRC)+'-'+p.s.nn;   /* 사본으로 보고 있으면 담기도 사본에서 */
@@ -1848,9 +1864,10 @@ function procSave(p){
   if(IN_SHELL){ try{ window.parent.location.hash=hash; return; }catch(_){} }
   try{ location.href='app.html'+hash; }catch(_){}
 }
-function procSetTab(t){
-  t=(t==='proc'||t==='elmiha')?t:'coach'; if(t===tabF)return;
+function procSetTab(t,boot){
+  t=(t==='proc'||t==='elmiha')?t:'coach'; if(t===tabF&&!boot)return;
   tabF=t; document.body.classList.toggle('pr-proc',t==='proc'); document.body.classList.toggle('pr-elm',t==='elmiha');
+  if(!boot)try{localStorage.setItem(PROC_TAB_KEY,t);}catch(_){}
   [['prTabCoach','coach'],['prTabProc','proc'],['prTabElm','elmiha']].forEach(function(x){ var b=$(x[0]); if(b)b.setAttribute('aria-pressed',x[1]===t?'true':'false'); });
   var sub=$('prSub'); if(sub)sub.textContent=(t==='proc')?'프로세스가 만든 훈련 세션':(t==='elmiha')?'엘미하가 만든 전술 애니메이션':'작전판·훈련·경기 분석 탐색';
   var lb=$('prCatLb'); if(lb)lb.textContent=(t==='proc')?'세션 주제':'훈련 주제';
@@ -1860,6 +1877,7 @@ function procSetTab(t){
   try{var fs=$('commFiltSheet'); if(fs)fs.hidden=true;}catch(_){}
   selectedPostId=''; procOpenSeq++;
   catChipsRender();
+  if(boot){ if(t!=='coach')render(); return; }   /* 3.019 — 처음 열 때: 목록은 화면이 실제로 보일 때 받는다(아래 «칸 이름 옆의 개수» — 그동안 «불러오는 중»), 코치 자료는 아래 fetchPosts */
   if(t==='proc'){ if(!proc.ready)procFetch(); else if(Date.now()-proc.at>PROC_TTL)procFetch(true);   /* 오래 열어 둔 탭 — 새 세션이 실렸는지 다시 본다(받는 동안·실패해도 지금 목록은 그대로) */
     renderProc(); }
   else if(t==='elmiha'){ if(!elm.ready)elmFetch(); else if(Date.now()-elm.at>ELM_TTL)elmFetch(true);   /* 3.018 — 받는 동안 · 실패해도 지금 목록은 그대로 */
@@ -1873,7 +1891,7 @@ $('prSeg').addEventListener('click',function(e){ var b=e.target.closest('[data-p
   var done=false;
   function seen(){ try{ return window.innerWidth>0&&window.innerHeight>0; }catch(_){ return true; } }
   function go(){ if(done||!seen())return; done=true; try{window.removeEventListener('resize',go);}catch(_){}
-    setTimeout(function(){ if(!proc.ready)procFetch(); if(!elm.ready)elmFetch(); },800); }   /* 3.018 — 엘미하 칸의 개수도 */
+    setTimeout(function(){ if(!proc.ready)procFetch(); if(!elm.ready)elmFetch(); },tabF==='coach'?800:0); }   /* 3.018 — 엘미하 칸의 개수도 · 3.019 — 프로세스(첫 화면)나 엘미하 칸으로 열면 곧바로 */
   go(); if(!done)window.addEventListener('resize',go);
 })();
 (function(){
@@ -1883,7 +1901,7 @@ $('prSeg').addEventListener('click',function(e){ var b=e.target.closest('[data-p
   q.addEventListener('input',function(){if(composing)return;searchF=q.value.trim().toLowerCase();render();});
 })();
 fillFilters();
-catChipsRender();
+procSetTab(procTabFirst(),true);   /* 칩도 여기서 그린다 */
 fetchPosts();
 })();
 </script>
@@ -2026,9 +2044,16 @@ html body.pr-proc .comm-list .grid:not(#_):not(#__){display:grid!important;grid-
 .pr-card{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line,#E3E6EA);border-radius:10px;overflow:hidden;background:var(--surface,#fff);color:var(--text,#14161A);text-align:left;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .pr-card.on{box-shadow:0 0 0 2px var(--c-act,#3A6DF0)}
 .pr-card[aria-busy="true"]{opacity:.6}
-.pr-tri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;background:var(--surface,#fff)}
-.pr-tri span{display:block;aspect-ratio:4/3;overflow:hidden;background:#15172B}
-.pr-tri img{display:block;width:100%;height:100%;object-fit:cover}
+/* 3.019 — 그림 한 장을 크게(판 비율 3:2 — 그림을 가리는 것은 얹지 않는다). 바로 아래 줄에 1·2·3 과 그 훈련의 장면 수 */
+.pr-hero{aspect-ratio:3/2;overflow:hidden;background:#15172B}
+.pr-hero img{display:block;width:100%;height:100%;object-fit:cover}
+.pr-bar{display:flex;align-items:center;gap:8px;padding:10px 12px 0}
+.pr-pick{display:flex;gap:6px}
+.pr-pick button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:1px solid var(--line,#E3E6EA);border-radius:999px;background:var(--surface,#fff);color:var(--text-2,#646A73);font:inherit;font-size:14px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;cursor:pointer}
+.pr-pick button[aria-pressed="true"]{border-color:var(--c-act,#3A6DF0);background:var(--c-act,#3A6DF0);color:#fff}
+.pr-sc{margin-left:auto;font-size:12px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
+.pr-sc[hidden]{display:none}
+@media (pointer:coarse){ .pr-pick{gap:8px} .pr-pick button{width:40px;height:40px} }
 .pr-bd{display:flex;flex-direction:column;flex:1 1 auto;min-width:0;padding:10px 12px 12px}
 .pr-tt{margin:0 0 6px;font-size:14px;font-weight:700;line-height:1.4;word-break:keep-all;overflow-wrap:anywhere}
 .pr-meta{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin:0 0 8px;font-size:12px;font-weight:500;color:var(--text-2,#646A73)}
@@ -2038,6 +2063,8 @@ html body.pr-proc .comm-list .grid:not(#_):not(#__){display:grid!important;grid-
 .pr-trs .pr-i{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
 .pr-trs .pr-nm{min-width:0;word-break:keep-all;overflow-wrap:anywhere}
 .pr-trs .pr-mn{font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
+.pr-trs li.on{color:var(--text,#14161A)}
+.pr-trs li.on .pr-i{color:var(--c-act,#3A6DF0)}
 .pr-foot{display:flex;gap:6px;align-items:center;margin-top:auto;font-size:12px;font-weight:500;color:var(--text-3,#8A9099)}
 .pr-foot .pr-n{margin-left:auto;font-variant-numeric:tabular-nums}
 /* 상세 뷰어 머리 아래 — 세션의 훈련 고르기 */

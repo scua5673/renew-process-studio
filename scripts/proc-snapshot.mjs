@@ -3,6 +3,7 @@
 // 앱은 평소 훈련 세션 사이트에서 읽고, 그 사이트가 닫혀 있으면 이 사본을 읽는다(community.html PROC_LOCAL).
 // 사본에는 목록(index.json) · 팩(NN.json, 그림 칸은 뺀다 — 앱은 팩 안의 그림을 쓰지 않는다) · 카드 그림(thumbs/NN-K.svg)만 둔다.
 // 그림은 우리 사이트에서 열리는 파일이 된다 — 실행되는 것·바깥 주소가 하나라도 있으면 멈춘다.
+// 3.019 — 앱이 장면을 보강한 세션(지금 사본 목록의 own:1 · scripts/proc-scenes.mjs)은 덮지 않는다: 그 줄과 팩·그림을 그대로 둔다.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +26,15 @@ export function stripThumbs(v) {
   return o;
 }
 const nn = n => (n < 10 ? '0' : '') + n;
+/* 사이트 목록에 지금 사본의 보강 세션(own:1)을 얹는다 — 같은 호는 사본의 줄, 사이트에 없는 보강 세션도 남긴다 */
+export function keepOwn(prev, next) {
+  const own = (prev && Array.isArray(prev.sessions) ? prev.sessions : []).filter(s => s && s.own === 1);
+  const byN = new Map(own.map(s => [s.n, s]));
+  const sessions = next.sessions.map(s => byN.get(s.n) || s);
+  for (const s of own) if (!sessions.includes(s)) sessions.push(s);
+  sessions.sort((a, b) => a.n - b.n);
+  return { ...next, sessions };
+}
 
 async function reader(from) {
   if (/^https:\/\//.test(from)) {
@@ -38,10 +48,17 @@ async function main() {
   const from = process.argv[2];
   if (!from) throw Error('어디서 읽을지 적어 주세요 — packs 폴더나 https://…/packs/');
   const read = await reader(from);
-  const index = JSON.parse(await read('index.json'));
-  if (index.type !== 'process-studio-pack-index' || !Array.isArray(index.sessions) || !index.sessions.length) throw Error('index.json 모양이 다릅니다');
+  const site = JSON.parse(await read('index.json'));
+  if (site.type !== 'process-studio-pack-index' || !Array.isArray(site.sessions) || !site.sessions.length) throw Error('index.json 모양이 다릅니다');
+  let prev = null; try { prev = JSON.parse(fs.readFileSync(path.join(out, 'index.json'), 'utf8')); } catch (_) {}
+  const index = keepOwn(prev, site);
   const files = new Map([['index.json', JSON.stringify(index)]]);
   for (const s of index.sessions) {
+    if (s.own === 1) {   /* 보강한 세션 — 지금 사본의 팩·그림을 그대로 */
+      files.set(nn(s.n) + '.json', fs.readFileSync(path.join(out, nn(s.n) + '.json'), 'utf8'));
+      for (let k = 1; k <= s.trainings.length; k++) { const rel = 'thumbs/' + nn(s.n) + '-' + k + '.svg'; files.set(rel, fs.readFileSync(path.join(out, rel), 'utf8')); }
+      continue;
+    }
     if (!Number.isInteger(s.n) || s.n < 1 || s.n > 99 || !Array.isArray(s.trainings) || !s.trainings.length) throw Error('목록의 줄이 이상합니다: ' + JSON.stringify(s).slice(0, 80));
     const pack = JSON.parse(await read(nn(s.n) + '.json'));
     const d = pack && pack.type === 'process-studio-drillpack' && Array.isArray(pack.drills) && pack.drills.length === 1 ? pack.drills[0] : null;
