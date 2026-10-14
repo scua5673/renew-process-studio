@@ -45,17 +45,21 @@ test('상태 문구·버튼은 팝오버·폰 줄([data-upd-msg]·[data-upd-now]
   assert.equal(btns[0].disabled,false);assert.equal(btns[0].textContent,'지금 적용');assert.equal(btns[1].textContent,'적용');
   c.psUpdateStatus('',false);assert.equal(msgs[0].hidden,true);
 });
-test('«새 기능»은 안내 날짜로 오늘 포함 7일 — 본 것은 기기에만 기억해 점을 끈다',()=>{
+test('«새 기능»은 안내 판 묶음(3.024 — 열 판마다 한 번)을 안내 판 날짜로 오늘 포함 7일 — 본 것은 기기에만 기억해 점을 끈다',()=>{
   const src=cut('  function dayOf(e){','  function seen(){');
-  const mk=(entries,now)=>{const RealDate=Date;class D extends RealDate{constructor(...a){super(...(a.length?a:[now]));}static now(){return now;}}
-    const c=vm.createContext({PSReleaseNotes:{entries:()=>entries},window:{PSReleaseNotes:1},Date:D,DAY:86400000});
-    vm.runInContext('function all(){return PSReleaseNotes.entries();}\n'+src+'\nthis.news=news;',c);return c.news().map(e=>e.id);};
-  const E=[{id:'a',date:'2026-10-06'},{id:'b',date:'2026-10-01'},{id:'c',date:'2026-09-29'},{id:'d',date:'2026-09-20'}];
-  assert.deepEqual(mk(E,new Date(2026,9,6,12).getTime()),['a','b'],'10/6 기준 9/30~10/6 — 9/29 는 8일째라 빠진다');
-  assert.deepEqual(mk(E,new Date(2026,9,7,9).getTime()),['a','b'],'10/7 기준 10/1 은 7일째');
-  assert.deepEqual(mk(E,new Date(2026,9,8,9).getTime()),['a'],'10/8 이면 10/1 은 빠진다');
-  assert.deepEqual(mk(E,new Date(2026,9,13,9).getTime()),[],'10/13 이면 모두 지났다');
-  assert.deepEqual(mk([{id:'z',date:'2026-12-31'}],new Date(2026,9,6).getTime()),[],'먼 미래 날짜(시계 틀림)는 띄우지 않는다');
+  const mk=(bundle,now)=>{const RealDate=Date;class D extends RealDate{constructor(...a){super(...(a.length?a:[now]));}static now(){return now;}}
+    const c=vm.createContext({PSReleaseNotes:{announced:()=>bundle},window:{PSReleaseNotes:1},Date:D,DAY:86400000});
+    vm.runInContext('function verOf(e){var m=/^v([\\d.]+)/.exec((e&&e.title)||"");return m?"v"+m[1]:"";}\n'+src+'\nthis.news=news;this.rangeOf=rangeOf;',c);return c;};
+  const B=[{id:'a20',date:'2026-10-14',title:'v3.020 · 하나'},{id:'a19',date:'2026-10-14',title:'v3.019 · 둘'},{id:'a11',date:'2026-10-13',title:'v3.011 · 셋'}];
+  const ids=(b,now)=>Array.from(mk(b,now).news(),e=>e.id);   /* vm 안 배열을 바깥 배열과 견주려면 Array.from */
+  assert.deepEqual(ids(B,new Date(2026,9,14,12).getTime()),['a20','a19','a11'],'안내 판 날짜(10/14) — 묶음 전부, 셋으로 자르지 않는다');
+  assert.deepEqual(ids(B,new Date(2026,9,20,9).getTime()),['a20','a19','a11'],'10/20 은 7일째');
+  assert.deepEqual(ids(B,new Date(2026,9,21,9).getTime()),[],'10/21 이면 지났다 — 묶음 안 항목의 날짜는 보지 않는다');
+  assert.deepEqual(ids(B,new Date(2026,9,13,9).getTime()),['a20','a19','a11'],'안내 판 날짜가 내일이면 띄운다(시계가 하루 틀려도)');
+  assert.deepEqual(ids(B,new Date(2026,9,12,9).getTime()),[],'안내 판 날짜가 모레보다 뒤(시계 틀림)면 띄우지 않는다');
+  assert.deepEqual(ids([],new Date(2026,9,14).getTime()),[],'안내 판이 아직 없으면 조용하다');
+  const c=mk(B,new Date(2026,9,14,12).getTime());
+  assert.equal(c.rangeOf(B),'v3.011 ~ v3.020');assert.equal(c.rangeOf([B[0]]),'v3.020');
   const body=cut('(function(){\n  var SEEN=','window.__psUpdSurface=');
   assert.match(body,/if\(md==='news'\)\{var n=news\(\);if\(n\[0\]\)markSeen\(n\[0\]\.id\);render\(\);\}/,'열면 본 것으로');
   assert.match(body,/dot=md==='ready'\|\|\(md==='news'&&!!first&&seen\(\)!==first\.id\)/);
