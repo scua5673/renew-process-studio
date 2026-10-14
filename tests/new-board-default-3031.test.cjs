@@ -52,6 +52,7 @@ test('3.031 a board slideshow is a read-only meeting built from its pages — no
   assert.match(op,/showReturn:_inp\};/,'back to match prep when the show ends');
   assert.match(board,/window\.__vvMeetLib=\(ty==="meeting"&&ro\)\?\(d\.__showOf\|\|d\.libId\|\|null\):null;/);
   assert.match(board,/cur=window\.__curVaultId\|\|\(\(window\.__vvItem&&window\.__vvItem\.libId\)\|\|""\)\|\|window\.__vvMeetLib\|\|"";/,'a read-only meeting from match prep is recognised (vc-match)');
+  assert.match(board,/if\(ty==="meeting"\)\{ window\.__vvItem=null; window\.__vvNextItem=null; var _veb=document\.getElementById\("vCreateEdit"\); if\(_veb\)_veb\.style\.display="none"; \}/,'a stale board view (__vvItem) must not hide __vvMeetLib or leave «편집» pointing at another item');
 });
 
 test('3.031 version and release note',()=>{

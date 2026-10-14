@@ -47,6 +47,9 @@ try{
   assert.equal(await sf.evaluate(()=>document.querySelector('#matchMeetCard .mmv-scn').textContent),'장면 2 · 슬라이드쇼에서 재생');
   const scrollY0=await sf.evaluate(()=>{const c=document.getElementById('matchMeetCard');c.scrollIntoView({block:'center'});return Math.round(window.scrollY||document.scrollingElement.scrollTop||0);});
   // 2) 누르면 보기 전용 쇼 — 페이지 = 장, 제목 = 페이지 이름, 장면은 → 로
+  /* 리뷰 — 앞서 보관함에서 작전판을 «보기»로 열었다 닫으면 __vvItem 이 남는다(showViewBar 만 바꾼다). 그 옛 항목이 «지금 연 것»으로 잡혀
+     경기 준비 안 띠가 서지 않고, 쇼가 끝나도 경기 준비로 돌아가지 못했다. 그 상태를 만들고 시작한다 */
+  await bf.evaluate(()=>{window.__vvItem={libId:'Vqa_stale',type:'board',name:'가상 앞서 본 작전판'};const e=document.getElementById('vCreateEdit');if(e)e.style.display='';});
   await sf.click('#matchMeetCard .mmv-acts [data-mm-show]');
   await page.waitForFunction(()=>document.body.classList.contains('ps-match-edit'),null,{timeout:15000});
   bf=await board();

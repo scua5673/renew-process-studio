@@ -17458,6 +17458,9 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       /* 3.031 — 보기 전용으로 연 미팅(남의 미팅 · 작전판 슬라이드쇼)도 «경기 준비에서 연 그 자료»로 알아본다(syncBackMatch) —
          __curVaultId 가 없어 경기 준비 안 띠(vc-match)가 서지 않았고, 쇼가 끝나도 경기 준비로 돌아가지 않았다 */
       window.__vvMeetLib=(ty==="meeting"&&ro)?(d.__showOf||d.libId||null):null;
+      /* 3.031 — 미팅은 보기 바(showViewBar)를 거치지 않는다: 앞서 보기로 연 작전판의 __vvItem·«편집» 단추가 남으면 syncBackMatch 가
+         그 옛 항목을 «지금 연 것»으로 봐(경기 준비 안 띠 없음 → 쇼가 끝나도 경기 준비로 못 돌아감), «편집»은 다른 항목을 열었다(리뷰) */
+      if(ty==="meeting"){ window.__vvItem=null; window.__vvNextItem=null; var _veb=document.getElementById("vCreateEdit"); if(_veb)_veb.style.display="none"; }
     }catch(_){}
     if(ty==="train"||ty==="setpiece"){try{openLibDrawEditor(d.libId,ro);}catch(_){}return;}
     /* v324 — 복원 전 빈 애니메이션 상태가 원본에 자동 저장되지 않게 잠근다. */
