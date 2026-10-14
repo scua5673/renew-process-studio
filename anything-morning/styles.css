@@ -524,6 +524,24 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--d
 .kana:hover { border-color: var(--dawn); }
 .kana.empty { border: 0; background: transparent; }
 .kana-q { justify-self: center; font-size: 5rem; line-height: 1.1; padding-block: 8px; }
+.kana-grid.yoon { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.kana-grid.words { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.kana-grid.words .kana, .kana-grid.yoon .kana { aspect-ratio: auto; min-height: 76px; padding: 8px 4px; }
+.kana-grid.words .kana span { font-size: 1.3rem; }
+.kana small.hid { visibility: hidden; }
+.kana .kana-ko { font-size: .68rem; }
+.session .kana-grid:not(.words):not(.yoon) .kana span { font-size: 2.2rem; }
+.session .kana-grid.yoon .kana span { font-size: 1.7rem; }
+.kana-q.word { font-size: 2.8rem; text-align: center; }
+.hint.center { text-align: center; }
+.kq-dots { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+.kq-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--rule); }
+.kq-dots i.now { background: var(--dawn); }
+.kq-dots i.ok { background: var(--good); }
+.kq-dots i.bad { background: var(--avoid); }
+.kq-result { display: grid; justify-items: center; gap: 2px; padding-block: 8px; text-align: center; }
+.kq-score { font-family: var(--font-display); font-size: 1.2rem; color: var(--ink-3); }
+.kq-score b { font-size: 3.2rem; line-height: 1.1; color: var(--ink); }
 .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .choice {
   min-height: 56px; border: 1.5px solid var(--rule); border-radius: 12px;
@@ -637,6 +655,7 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--d
 .rc.half { background: var(--dawn-soft); box-shadow: inset 0 0 0 1.5px var(--dawn); }
 .rc.done { background: var(--dawn); }
 .rc.now { background: var(--sheet); box-shadow: inset 0 0 0 2px var(--dawn); }
+.road-cells.kana-road { grid-template-columns: repeat(16, minmax(0, 1fr)); }
 .notes + .seg, .seg + .seg { margin-top: -12px; }
 
 /* ---------- 손글씨 노트 ----------
