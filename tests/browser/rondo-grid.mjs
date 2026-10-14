@@ -55,7 +55,7 @@ try{
     const bb=await f.evaluate(()=>{ const b=document.querySelector('#drawLayer path.grid-shape').getBBox(); return [Math.round(b.x),Math.round(b.y),Math.round(b.width),Math.round(b.height)]; });
     assert.deepEqual(bb,[380,205,350,350],k+' fills the box'); }
   await tap('#epSurface [data-gshape="rect"]');await page.waitForTimeout(150);
-  // 3.025 — 4칸·5칸(오류 제보 fffaeba4 «3칸 까지 있는데 4칸 5칸까지»): 여섯 칩이 패널 칸 안에, 5칸은 같은 너비 세로선 넷
+  // 3.029 — 4칸·5칸(오류 제보 fffaeba4 «3칸 까지 있는데 4칸 5칸까지»): 여섯 칩이 패널 칸 안에, 5칸은 같은 너비 세로선 넷
   assert.deepEqual(await f.evaluate(()=>[...document.querySelectorAll('#epSurface [data-gsplit]')].map(b=>b.textContent)),['없음','2칸','3칸','4칸','5칸','2×2']);
   await tap('#epSurface [data-gsplit="5"]');await page.waitForTimeout(150);
   s=await st();assert.equal(s.split,'5');assert.ok(s.on.includes('5칸'));assert.equal(s.over,0,'six split chips still fit the panel column');

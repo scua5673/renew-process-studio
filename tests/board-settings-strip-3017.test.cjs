@@ -18,7 +18,7 @@ test('3.017 the strip button opens the same panel and shows when it is open',()=
   assert.match(board,/function _bsToggle\(\)\{ try\{ if\(window\.__psToggleBoardSettings\)window\.__psToggleBoardSettings\("toggle"\); else \{ var vb=document\.getElementById\("viewBtn"\); if\(vb\)vb\.click\(\); \} \}catch\(_\)\{\} \}/);
   assert.match(board,/b\.setAttribute\("aria-expanded",_bsOpen\(\)\?"true":"false"\)/);
   assert.match(board,/p\.__bpObs=new MutationObserver\(_bsSync\); p\.__bpObs\.observe\(p,\{attributes:true,attributeFilter:\["aria-hidden"\]\}\)/,'follows the panel however it is opened or closed');
-  assert.ok(board.includes('#boardPageStrip .bp-set[aria-expanded="true"]{background:#eef4ff;border-color:#c9dbff;color:#1d4ed8;}'));
+  assert.ok(board.includes('#boardPageStrip .bp-set[aria-expanded="true"]{background:#E9EDF5;border-color:#C3CCDD;color:var(--ps-navy-h,#1D2D50);}'),'열린 동안은 눌린 모양(3.026 메인색 네이비)');
 });
 
 test('3.017 clicking the strip button is not an «outside» click for the panel or the scene selection',()=>{

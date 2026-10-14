@@ -93,7 +93,7 @@
   --ps-premium-line: var(--ps-color-border,#E3E6EA);
   --ps-premium-text: var(--ps-color-text,#14161A);
   --ps-premium-dim: var(--ps-color-muted,#646A73);
-  --ps-premium-blue: var(--ps-color-action,#3a6df0);   /* 1.764 — 의미 토큰 한 벌 */
+  --ps-premium-blue: var(--ps-color-action,#14213D);   /* 1.764 — 의미 토큰 한 벌 */
   --ps-premium-violet: var(--ps-color-violet,#7c4dff);
   --ps-premium-shadow: 0 1px 2px rgba(15, 23, 42, .035), 0 10px 30px rgba(15, 23, 42, .045);
   --ps-premium-shadow-float: 0 18px 48px rgba(15, 23, 42, .14);
@@ -251,13 +251,13 @@ button:active,
 
 /* 1.677 — 팀 서브탭 선택 문법 통일(사용자: "탭마다 달라 정신사납다").
    1.596 확정(틴트 필 단일 신호)을 4파일 전부에 적용 — 일정(process)도 이 층에 합류,
-   파일별 밑줄 ::after 는 여기서 일괄 소등한다. 파랑도 --ps-premium-blue(#3a6df0) 하나. */
+   파일별 밑줄 ::after 는 여기서 일괄 소등한다. 파랑도 --ps-premium-blue(#14213D) 하나. */
 .ps-page-scout .apphd-seg button.on,
 .ps-page-gamemodel .apphd-seg button.on,
 .ps-page-terms .apphd-seg button.on,
 .ps-page-process .apphd-seg button.on {
   color: var(--ps-premium-blue);
-  background: rgba(58, 109, 240, .09);
+  background: color-mix(in srgb,var(--ps-navy,#14213D) 9%,transparent);
   font-weight: 800;
 }
 .ps-page-scout .apphd-seg button.on::after,
@@ -335,7 +335,7 @@ button:active,
 .ps-page-scout #teamView .tm-head-actions .primary {
   border-color: var(--ps-premium-blue);
   background: var(--ps-premium-blue);
-  box-shadow: 0 4px 12px rgba(49, 95, 232, .18);
+  box-shadow: 0 4px 12px color-mix(in srgb,var(--ps-navy,#14213D) 18%,transparent);
 }
 
 .ps-page-scout #teamView .tm-summary {
@@ -407,9 +407,9 @@ button:active,
 }
 
 .ps-page-scout #teamView .tm-row .inp:focus {
-  border-color: rgba(49, 95, 232, .50);
+  border-color: color-mix(in srgb,var(--ps-navy,#14213D) 50%,transparent);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(49, 95, 232, .08);
+  box-shadow: 0 0 0 3px color-mix(in srgb,var(--ps-navy,#14213D) 8%,transparent);
 }
 
 .ps-page-scout #teamView .tm-roster > .muted:last-child {
@@ -790,7 +790,7 @@ button:active,
      `.seg button.on`(0,2,1) 을 특이도로 이긴다 — 색을 저쪽에만 두면 활성 탭이 회색으로 죽는다.
      (실제로 위쪽 데스크톱 블록을 미디어쿼리로 가두자마자 그렇게 됐다.) */
   .ps-page-app .seg button.on {
-    color: var(--blue, #3a6df0);
+    color: var(--blue, var(--ps-navy,#14213D));
   }
   .ps-page-app .seg button[data-app="idp"].on,
   .ps-page-app .seg button[data-app="learning"].on {
@@ -798,7 +798,7 @@ button:active,
   }
   html.ps-page-app body.fmdark .seg button.on,
   .ps-page-app body.fmdark .seg button.on {
-    color: #4d7dff;
+    color: #7F98D0;
   }
   html.ps-page-app body.fmdark .seg button[data-app="idp"].on,
   html.ps-page-app body.fmdark .seg button[data-app="learning"].on {
@@ -1171,9 +1171,9 @@ html.ps-page-board body.ps-dock #ps-dock #ps-dock-right #ps-group-set > .popmenu
 }
 
 html.ps-page-board body.ps-dock #ps-dock #ps-dock-right #ps-group-set > .popmenu.ps-settings-modal .ps-set-tabs button.on {
-  background: #edf2ff !important;
-  color: #285ed6 !important;
-  box-shadow: inset 0 0 0 1px rgba(58, 109, 240, .14) !important;
+  background: #E9EDF5 !important;
+  color: var(--ps-navy,#14213D) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb,var(--ps-navy,#14213D) 14%,transparent) !important;
 }
 
 html.ps-page-board body.ps-dock #ps-dock #ps-dock-right #ps-group-set > .popmenu.ps-settings-modal > .menusec {
@@ -1248,15 +1248,15 @@ html.ps-page-board body.ps-dock #ps-dock #ps-dock-right #ps-group-set > .popmenu
   height: 40px !important;
   padding: 0 12px !important;
   border-radius: 10px !important;
-  background: #edf2ff !important;
-  color: #285ed6 !important;
+  background: #E9EDF5 !important;
+  color: var(--ps-navy,#14213D) !important;
   font-size: 12px !important;
   line-height: 20px !important;
   font-weight: 720 !important;
 }
 
 html.ps-page-board body.ps-dock #ps-dock #ps-dock-right #ps-group-set > .popmenu.ps-settings-modal .ps-set-more b {
-  color: #285ed6 !important;
+  color: var(--ps-navy,#14213D) !important;
 }
 
 html.ps-page-board body.ps-dock #ps-dock #ps-dock-right #ps-group-set > .popmenu.ps-settings-modal .ps-danger-details {
@@ -1303,7 +1303,7 @@ html.ps-page-board body.ps-dock #ps-dock #ps-dock-right #ps-group-set > .popmenu
   --ps-set-text: #172033;
   --ps-set-muted: #687386;
   --ps-set-line: #e3e8ef;
-  --ps-set-accent: #2f67df;
+  --ps-set-accent: #14213D;
   position: fixed !important;
   inset: auto 12px calc(var(--ps-dock-h, 100px) + 12px) auto !important;
   display: flex !important;
@@ -1939,7 +1939,7 @@ html.ps-page-board body.fmdark #ps-dock #ps-dock-right #ps-group-set > .popmenu.
   --ps-set-text: #f5f7fa;
   --ps-set-muted: #a9b3c1;
   --ps-set-line: #344253;
-  --ps-set-accent: var(--ps-color-action,#5e88ee);
+  --ps-set-accent: var(--ps-color-action,#7F98D0);
 }
 
 html.ps-page-board body.fmdark #ps-dock #ps-dock-right #ps-group-set > .popmenu.ps-settings-modal .ps-danger-details > .ps-danger {
@@ -2160,8 +2160,8 @@ html.ps-page-idp body.fmdark .lt-count {
   }
 
   html.ps-page-community .comm-list .card.on {
-    background: var(--dv2-accent-soft, #edf2fe);
-    box-shadow: inset 3px 0 0 var(--dv2-accent, #3a6df0);
+    background: var(--dv2-accent-soft, #E9EDF5);
+    box-shadow: inset 3px 0 0 var(--dv2-accent, var(--ps-navy,#14213D));
   }
 
   html.ps-page-community .comm-list .card:hover {
@@ -2175,9 +2175,9 @@ html.ps-page-idp body.fmdark .lt-count {
   }
 
   html.ps-page-community body.fmdark .comm-list .card.on {
-    background: var(--dv2-accent-soft, #182743);
+    background: var(--dv2-accent-soft, #1B2640);
     border-color: var(--dv2-border, #2c3744);
-    box-shadow: inset 3px 0 0 var(--dv2-accent, #5e88ee);
+    box-shadow: inset 3px 0 0 var(--dv2-accent, #7F98D0);
   }
 
   /* 프로세스·용어·IDP·게임모델의 본문 카드는 테두리로만 나눈다. */
