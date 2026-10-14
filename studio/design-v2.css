@@ -18,11 +18,11 @@
   --ps-color-text: #14161A;
   --ps-color-text-2: #646A73;
   --ps-color-muted: #646A73;
-  --ps-color-action: #3a6df0;
-  --ps-color-action-fill: #3a6df0;
-  --ps-color-action-fill-hover: #2c54c4;
-  --ps-color-action-hover: #2c54c4;
-  --ps-color-action-soft: #edf2fe;
+  --ps-color-action: #14213D;
+  --ps-color-action-fill: #14213D;
+  --ps-color-action-fill-hover: #1D2D50;
+  --ps-color-action-hover: #1D2D50;
+  --ps-color-action-soft: #E9EDF5;
   --ps-color-violet: #7c4dff;
   --ps-color-violet-fill: #6d42e8;
   --ps-color-violet-fill-hover: #5b3df0;
@@ -68,7 +68,7 @@
 
   /* Shadow */
   --dv2-sh-float: var(--ps-shadow-float);               /* 팝오버·플로팅 */
-  --dv2-sh-btn-accent: 0 3px 10px rgba(37,99,235,.3);  /* 파란 버튼 */
+  --dv2-sh-btn-accent: 0 3px 10px rgba(20,33,61,.3);  /* 파란 버튼 */
   --dv2-sh-seg: 0 1px 3px rgba(15,23,42,.14);          /* 세그먼트 선택 */
 }
 
@@ -84,11 +84,14 @@ body.fmdark {
   --ps-color-text: #e7ebf1;
   --ps-color-text-2: #b6bfcc;
   --ps-color-muted: #9aa4b3;
-  --ps-color-action: #5e88ee;
-  --ps-color-action-fill: #3a6df0;
-  --ps-color-action-fill-hover: #2c54c4;
-  --ps-color-action-hover: #7da4f5;
-  --ps-color-action-soft: #182743;
+  --ps-color-action: #A9BCE6;
+  --ps-color-action-fill: #34508F;
+  --ps-color-action-fill-hover: #3D5C9F;
+  --ps-color-action-hover: #C2D0EE;
+  --ps-color-action-soft: #1B2640;
+  /* 3.026 — 다크 규칙이 아닌 CSS 에 직접 쓴 메인색(var(--ps-navy,#14213D))의 다크 값 — 흰 글자 4.9:1 · 어두운 면 위 3.3:1(예전 파랑과 같은 결) */
+  --ps-navy: #5070B5;
+  --ps-navy-h: #5A77BD;
   --ps-color-violet: #9d7bff;
   --ps-color-violet-fill: #6d42e8;
   --ps-color-violet-fill-hover: #5b3df0;
@@ -141,15 +144,15 @@ body.fmdark {
   color:var(--dv2-text-2);display:grid;place-items:center;cursor:pointer;
   transition:background var(--dv2-motion) ease,transform var(--dv2-motion) ease;}
 .dv2-tool:hover{background:var(--dv2-chip-bg);}
-.dv2-tool.on{background:var(--ps-color-action-fill,#3a6df0);color:#fff;box-shadow:var(--dv2-sh-btn-accent);}
+.dv2-tool.on{background:var(--ps-color-action-fill,var(--ps-navy,#14213D));color:#fff;box-shadow:var(--dv2-sh-btn-accent);}
 
 /* 버튼 */
 .dv2-btn{border:1px solid var(--dv2-border);background:var(--dv2-surface);border-radius:var(--dv2-r-md);
   padding:7px 12px;font-size:13px;font-weight:600;color:var(--dv2-text);cursor:pointer;
   transition:background var(--dv2-motion) ease,color var(--dv2-motion) ease,transform var(--dv2-motion) ease;}
 .dv2-btn:hover{background:var(--dv2-chip-bg);}
-.dv2-btn--primary{border:0;background:var(--ps-color-action-fill,#3a6df0);color:#fff;font-weight:800;box-shadow:var(--dv2-sh-btn-accent);}
-.dv2-btn--primary:hover{background:var(--ps-color-action-fill-hover,#2c54c4);}
+.dv2-btn--primary{border:0;background:var(--ps-color-action-fill,var(--ps-navy,#14213D));color:#fff;font-weight:800;box-shadow:var(--dv2-sh-btn-accent);}
+.dv2-btn--primary:hover{background:var(--ps-color-action-fill-hover,var(--ps-navy-h,#1D2D50));}
 
 /* 2. 좌측 패널 — 내비 200px / 에디터 240px */
 .dv2-panel-left{width:200px;background:var(--dv2-surface);border-right:1px solid var(--dv2-border);}
@@ -223,20 +226,20 @@ body.fmdark {
 /* 1.764 · 키보드 초점/다크 대비 보강. 위치·크기·DOM은 건드리지 않는다. */
 html.ps-page-analysis :is(button,a[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus-visible,
 html.ps-page-learning :is(button,a[href],input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus-visible{
-  outline:2px solid var(--ps-color-action,#3a6df0);outline-offset:2px;
+  outline:2px solid var(--ps-color-action,var(--ps-navy,#14213D));outline-offset:2px;
 }
 html.ps-page-analysis body.fmdark{
-  --blue:var(--ps-color-action-fill,#3a6df0);
-  --blue2:var(--ps-color-action-soft,#182743);
+  --blue:var(--ps-color-action-fill,#7F98D0);
+  --blue2:var(--ps-color-action-soft,#1B2640);
 }
 html.ps-page-analysis body.fmdark :is(.example-title,.example-match,.detail-btn,.profile-summary,.tag,
   .event .kind,.notice,.field-guide b,.desk-player b,.tv-roster-player b,.tv-rf.no,.tv-add-player,
   .article-guide,.meeting-player b,.meeting-actions b,.library-badge,.formation-summary){
-  color:var(--ps-color-action-hover,#7da4f5);
+  color:var(--ps-color-action-hover,#A9BCE6);
 }
 html.ps-page-analysis body.fmdark :is(.goal-how .gh-label,.lens-player,.pl-head b,.scene-card .btn.on-pl,
   .ta-lb,.ta-types span,.sc-type,.md-guide li i,.rv-goal b,.rv-scene .rv-sctype,.rv-ev b,.sv-type,
-  .cal-st.s-pub,.cal-chip.s-pub){color:var(--ps-color-action-hover,#7da4f5);}
+  .cal-st.s-pub,.cal-chip.s-pub){color:var(--ps-color-action-hover,#A9BCE6);}
 
 /* ── 화면 헤더 공통 문법(1.752) — 어느 화면이든 같은 결:
    제목 17/800 잉크 · 부제 12 페인트 · 세그=알약(활성 흰+그림자) · 카운트 페인트.
@@ -803,7 +806,7 @@ html.ps-page-scout #homeView .team-session .team-home-empty{display:flex!importa
   html.ps-page-community .comm-nav .nav-lb{flex:0 0 76px!important;margin:0!important;font-size:12px!important;font-weight:800!important;color:var(--text-3,#8a9099)!important;}
   html.ps-page-community .comm-nav .nav-items{flex:1 1 auto!important;min-width:0!important;display:flex!important;flex-wrap:wrap!important;gap:4px!important;overflow:visible!important;}
   html.ps-page-community .comm-nav .nav-items>button,html.ps-page-community .comm-nav #catChips .chip{flex:0 0 auto!important;width:auto!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;white-space:nowrap!important;min-height:28px!important;height:28px!important;padding:0 11px!important;margin:0!important;border:1px solid var(--line,#E3E6EA)!important;border-radius:999px!important;background:var(--surface,#fff)!important;font-size:13px!important;}
-  html.ps-page-community .comm-nav .nav-items>button.on,html.ps-page-community .comm-nav #catChips .chip.on{background:#EEF2FF!important;border-color:#c9d7fb!important;color:var(--accent,#3a6df0)!important;}
+  html.ps-page-community .comm-nav .nav-items>button.on,html.ps-page-community .comm-nav #catChips .chip.on{background:#E9EDF5!important;border-color:#C3CCDD!important;color:var(--accent,var(--ps-navy,#14213D))!important;}
   html.ps-page-community .comm-list{border-right:0!important;border-radius:0 0 16px 16px!important;}
 }
 /* ══ 1.945 · 보관함을 가로 칩 줄로 눌렀던 층 — 2.518 에서 **되돌림** ═══════════════
@@ -841,7 +844,7 @@ html.ps-page-scout #homeView .team-session .team-home-empty{display:flex!importa
   html.ps-page-board #drillFiles .vx-tree .vx-nav button.on,
   html.ps-page-board #drillFiles .vx-tree .vx-folder.on,
   html.ps-page-board #drillFiles .vx-tree .vx-cat.on{
-    background:var(--blue-soft,#EEF2FF)!important;color:var(--blue,#3a6df0)!important;
+    background:var(--blue-soft,#E9EDF5)!important;color:var(--blue,var(--ps-navy,#14213D))!important;
   }
   html.ps-page-board #drillFiles .vx-tree .vx-title{
     display:flex!important;justify-content:space-between!important;margin:10px 0 3px!important;padding:0 7px!important;
@@ -855,10 +858,10 @@ html.ps-page-scout #homeView .team-session .team-home-empty{display:flex!importa
    2.018 · 팀 화면 공통 문법 ① — 문서: processstudio-문서/UI-팀메뉴-목업-2.017.html
    파랑 하나(--ps-blue) · 페이지 머리 34px(.ps-ph) · 세그 한 모양(.ps-seg) · 버튼 2종(.ps-btn / .ps-btn.pri) · 카드 12px
    ══════════════════════════════════════════════════════════════════════ */
-:root{--ps-blue:var(--ps-color-action,#3a6df0);--ps-blue-soft:var(--ps-color-action-soft,#edf2fe);--ps-ink:#14213D;--ps-sunken:#EEF0F4;--ps-line:#E4E7EC;--ps-muted:#646A73;}
+:root{--ps-blue:var(--ps-color-action,#14213D);--ps-blue-soft:var(--ps-color-action-soft,#E9EDF5);--ps-ink:#14213D;--ps-sunken:#EEF0F4;--ps-line:#E4E7EC;--ps-muted:#646A73;}
 /* 2.894 — :root 에서 한 번 계산된 값은 body.fmdark 의 --ps-color-* 를 따라가지 않는다. 다크에서 직접 다시 정한다
    (실측: IDP «선수단» 제목이 다크 배경에 #14213D, 대비 1.16). */
-body.fmdark{--ps-blue:var(--ps-color-action,#5e88ee);--ps-blue-soft:var(--ps-color-action-soft,#182743);--ps-ink:var(--ps-color-text,#e7ebf1);--ps-sunken:var(--ps-color-surface-soft,#232c38);--ps-line:var(--ps-color-border,#2c3744);--ps-muted:var(--ps-color-muted,#9aa4b3);}
+body.fmdark{--ps-blue:var(--ps-color-action,#7F98D0);--ps-blue-soft:var(--ps-color-action-soft,#1B2640);--ps-ink:var(--ps-color-text,#e7ebf1);--ps-sunken:var(--ps-color-surface-soft,#232c38);--ps-line:var(--ps-color-border,#2c3744);--ps-muted:var(--ps-color-muted,#9aa4b3);}
 .ps-ph{display:flex;align-items:center;gap:12px;min-height:34px;margin:0 0 12px}
 .ps-ph>b,.ps-ph>h2{font-size:14px;font-weight:800;letter-spacing:-.02em;margin:0;line-height:1.2;color:var(--ps-ink)}
 .ps-ph>small,.ps-ph>p{font-size:12px;color:var(--ps-muted);margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -105,7 +105,7 @@ try{
   // 작전판도 같은 자리에서 — 저장은 «저장하고 나가기»가 따로, «‹ 경기 준비»로 돌아온다
   await sf.waitForSelector('#matchMeetCard .mmv-tabs [data-mmv-lib="Vqa_board"]');await sf.click('#matchMeetCard .mmv-tabs [data-mmv-lib="Vqa_board"]');
   await sf.waitForSelector('#matchMeetCard .mmv[data-mmv="Vqa_board"]');
-  assert.equal(await sf.evaluate(()=>!!document.querySelector('#matchMeetCard .mmv-acts [data-mm-show]')),false,'작전판은 슬라이드쇼 버튼이 없다');
+  assert.equal(await sf.evaluate(()=>!!document.querySelector('#matchMeetCard .mmv-acts [data-mm-show]')),true,'작전판도 슬라이드쇼 버튼(3.031 — 보기 전용 쇼는 match-board-show)');
   await sf.click('#matchMeetCard .mmv-acts [data-mm-open]');
   await page.waitForFunction(()=>document.body.classList.contains('ps-match-edit'),null,{timeout:15000});
   bf=await board();await bf.waitForFunction(()=>document.body.classList.contains('vc-match'),null,{timeout:15000});

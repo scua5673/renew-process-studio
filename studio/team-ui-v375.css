@@ -259,8 +259,8 @@
 }
 .ps-page-scout button.scout-person { cursor: pointer; }
 .ps-page-scout .scout-person.best {
-  border-color: var(--accent, var(--blue, #3a6df0));
-  box-shadow: inset 0 3px 0 var(--accent, var(--blue, #3a6df0));
+  border-color: var(--accent, var(--blue, var(--ps-navy,#14213D)));
+  box-shadow: inset 0 3px 0 var(--accent, var(--blue, var(--ps-navy,#14213D)));
 }
 .ps-page-scout .scout-person.empty { opacity: .62; }
 .ps-page-scout .scout-person-tag {
@@ -297,7 +297,7 @@
 .ps-page-scout .scout-person-action {
   display: block;
   margin-top: 7px;
-  color: var(--accent, var(--blue, #3a6df0));
+  color: var(--accent, var(--blue, var(--ps-navy,#14213D)));
   font-size: 10px;
   font-weight: 800;
   text-align: right;
@@ -345,8 +345,8 @@
   width: 23px;
   height: 23px;
   border-radius: 8px;
-  background: var(--accent-soft, var(--blue-soft, #edf2fe));
-  color: var(--accent, var(--blue, #3a6df0));
+  background: var(--accent-soft, var(--blue-soft, #E9EDF5));
+  color: var(--accent, var(--blue, var(--ps-navy,#14213D)));
   font-size: 10px;
   font-weight: 800;
 }
@@ -362,7 +362,7 @@
   white-space: nowrap;
 }
 .ps-page-scout .scout-short-row em {
-  color: var(--accent, var(--blue, #3a6df0));
+  color: var(--accent, var(--blue, var(--ps-navy,#14213D)));
   font-size: 11px;
   font-style: normal;
   font-weight: 800;
@@ -420,8 +420,8 @@
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  background: var(--accent-soft, var(--blue-soft, #edf2fe));
-  color: var(--accent, var(--blue, #3a6df0));
+  background: var(--accent-soft, var(--blue-soft, #E9EDF5));
+  color: var(--accent, var(--blue, var(--ps-navy,#14213D)));
   font-size: 12px;
   font-weight: 800;
 }
@@ -440,7 +440,7 @@
   font-size: 11px;
 }
 .ps-page-scout .scout-candidate .fit {
-  color: var(--accent, var(--blue, #3a6df0));
+  color: var(--accent, var(--blue, var(--ps-navy,#14213D)));
   font-size: 12px;
   font-weight: 800;
 }

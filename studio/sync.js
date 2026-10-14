@@ -648,7 +648,7 @@ function renderDataLock(unlocked){
       host.appendChild(ov);return;
     }
     if(_sInfo){
-      ov.innerHTML='<div style="width:min(420px,100%);text-align:center;background:var(--bar,#fff);border:1px solid var(--line,#e2e4e8);border-radius:18px;padding:28px 22px;box-shadow:0 18px 48px rgba(20,24,32,.12)"><div style="font-size:20px;font-weight:850;margin-bottom:8px">자료를 불러오지 못했어요</div><div style="font-size:13px;line-height:1.6;color:var(--dim,#6f7580);margin-bottom:8px">'+(_sInfo.email?('<b>'+String(_sInfo.email).replace(/[<>&]/g,'')+'</b> 로 로그인은 됐어요.<br>'):'')+'서버에서 워크스페이스를 불러오는 중 문제가 있었습니다.</div>'+(_lastErr?'<div style="font-size:11px;line-height:1.5;color:#a05b57;background:#fdf3f3;border-radius:8px;padding:7px 10px;margin-bottom:14px;word-break:break-all">'+String(_lastErr).replace(/[<>&]/g,'')+'</div>':'<div style="margin-bottom:10px"></div>')+'<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><button type="button" data-ps-retry style="border:0;background:var(--blue,#3a6df0);color:#fff;border-radius:10px;padding:10px 18px;font:800 13px inherit;cursor:pointer">다시 시도</button><button type="button" data-ps-relogout style="border:1px solid var(--line,#d8dbe1);background:#fff;color:#202124;border-radius:10px;padding:10px 15px;font:800 13px inherit;cursor:pointer">로그아웃</button></div></div>';
+      ov.innerHTML='<div style="width:min(420px,100%);text-align:center;background:var(--bar,#fff);border:1px solid var(--line,#e2e4e8);border-radius:18px;padding:28px 22px;box-shadow:0 18px 48px rgba(20,24,32,.12)"><div style="font-size:20px;font-weight:850;margin-bottom:8px">자료를 불러오지 못했어요</div><div style="font-size:13px;line-height:1.6;color:var(--dim,#6f7580);margin-bottom:8px">'+(_sInfo.email?('<b>'+String(_sInfo.email).replace(/[<>&]/g,'')+'</b> 로 로그인은 됐어요.<br>'):'')+'서버에서 워크스페이스를 불러오는 중 문제가 있었습니다.</div>'+(_lastErr?'<div style="font-size:11px;line-height:1.5;color:#a05b57;background:#fdf3f3;border-radius:8px;padding:7px 10px;margin-bottom:14px;word-break:break-all">'+String(_lastErr).replace(/[<>&]/g,'')+'</div>':'<div style="margin-bottom:10px"></div>')+'<div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><button type="button" data-ps-retry style="border:0;background:var(--blue,var(--ps-navy,#14213D));color:#fff;border-radius:10px;padding:10px 18px;font:800 13px inherit;cursor:pointer">다시 시도</button><button type="button" data-ps-relogout style="border:1px solid var(--line,#d8dbe1);background:#fff;color:#202124;border-radius:10px;padding:10px 15px;font:800 13px inherit;cursor:pointer">로그아웃</button></div></div>';
       var rb=ov.querySelector('[data-ps-retry]'); if(rb)rb.onclick=function(){ rb.disabled=true; rb.textContent='불러오는 중…'; setDataReady(false);
         loadWorkspaces().then(function(){ return syncNow('unlock-retry'); }).catch(function(e){ try{ localStorage.setItem('ps_last_unlock_err',String(e&&e.message||e).slice(0,200)); }catch(_){} try{ var o2=document.getElementById('psDataLock'); if(o2)o2.remove(); }catch(_){} renderDataLock(dataUnlocked()); }); };
       var lb=ov.querySelector('[data-ps-relogout]'); if(lb)lb.onclick=function(){ signOut(); try{ var o3=document.getElementById('psDataLock'); if(o3)o3.remove(); }catch(_){} renderDataLock(dataUnlocked()); };
@@ -8906,7 +8906,7 @@ function ensureCSS(){
   +".acct-pop .ap-ws .wi{width:22px;height:22px;border-radius:6px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;}"
   +".acct-pop .ap-ws .wn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}"
   +".acct-pop .ap-ws .wc{font-size:10px;color:var(--dim,#8a8f98);flex:0 0 auto;}"
-  +".acct-pop .ap-ws .wk{font-size:12px;color:var(--blue,#3a6df0);flex:0 0 auto;}"
+  +".acct-pop .ap-ws .wk{font-size:12px;color:var(--blue,var(--ps-navy,#14213D));flex:0 0 auto;}"
   +".acct-pop .ap-mini{display:flex;gap:6px;}"
   +".acct-pop .ap-mini .ap-b{padding:8px 0;font-size:12px;}"
   +".acct-pop .ap-code{font:800 20px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-align:center;padding:12px;border:1px dashed var(--line);border-radius:9px;color:var(--txt);user-select:all;}"
@@ -9008,7 +9008,7 @@ function psModal(opts){
   if(opts.input!=null)h+='<input id="psWsIn" type="text" '+(opts.maxlength?('maxlength="'+opts.maxlength+'"'):'')+' placeholder="'+esc(opts.placeholder||'')+'" style="width:100%;box-sizing:border-box;font-size:15px;font-weight:600;padding:11px 13px;border:1.5px solid '+(dark?'#2C3744':'#d2d6dd')+';border-radius:10px;outline:none;background:'+(dark?'#222c39':'#f7f8fa')+';color:inherit;text-transform:'+(opts.upper?'uppercase':'none')+'">';
   h+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex:0 0 auto">';
   if(!opts.hideCancel)h+='<button id="psWsX" style="padding:10px 16px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;border:1px solid '+(dark?'#2C3744':'#d2d6dd')+';background:'+(dark?'#222c39':'#f1f3f5')+';color:inherit">'+esc(opts.cancel||'취소')+'</button>';
-  h+='<button id="psWsOk" style="padding:10px 20px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;border:0;background:'+(opts.danger?'#d12f38':'var(--blue,#3a6df0)')+';color:#fff">'+esc(opts.ok||'확인')+'</button></div>';
+  h+='<button id="psWsOk" style="padding:10px 20px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;border:0;background:'+(opts.danger?'#d12f38':'var(--blue,#14213D)')+';color:#fff">'+esc(opts.ok||'확인')+'</button></div>';
   card.innerHTML=h; ov.appendChild(card); document.body.appendChild(ov);
   var stopWatch=opts.current?accountActionWatch(ov,opts.current):null;
   function close(silent){if(stopWatch)stopWatch();try{ov.remove();}catch(_){}if(!silent&&opts.onCancel&&(!opts.current||opts.current())){var f=opts.onCancel;opts.onCancel=null;f();}}
@@ -9356,7 +9356,7 @@ function uiMembers(wa){
         +'<div style="font-size:11px;color:'+dim+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(nm?(mail||'이메일 미확인'):(mail?'':'이름 미입력'))+(r.joined_at?' · '+String(r.joined_at).slice(0,10)+' 합류':'')+'</div>';
       d.appendChild(who);
       if(owner){
-        var ob=document.createElement('span'); ob.style.cssText='font-size:11px;font-weight:800;color:var(--blue,#3a6df0);flex:0 0 auto'; ob.textContent='관리자';
+        var ob=document.createElement('span'); ob.style.cssText='font-size:11px;font-weight:800;color:var(--blue,var(--ps-navy,#14213D));flex:0 0 auto'; ob.textContent='관리자';
         d.appendChild(ob);
       } else {
         /* 1.987 — 역할은 읽기 전용 라벨(사용자 "팀원 보기인데 권한 바꿀 수 없게"). 변경은 팀 설정 › 권한에서 */
@@ -9396,7 +9396,7 @@ function uiMembers(wa){
     foot.appendChild(close);
     if(false&&iAmOwner){   /* 1.987 — 역할 저장 버튼 제거(읽기 전용) */
       var save=document.createElement('button'); save.type='button'; save.textContent='역할 저장';
-      save.style.cssText='height:38px;padding:0 16px;border:0;background:var(--blue,#3a6df0);color:#fff;border-radius:10px;font-family:inherit;font-weight:800;cursor:pointer;';
+      save.style.cssText='height:38px;padding:0 16px;border:0;background:var(--blue,var(--ps-navy,#14213D));color:#fff;border-radius:10px;font-family:inherit;font-weight:800;cursor:pointer;';
       save.onclick=function(){
         Object.keys(changed).forEach(function(uid){
           cur.members[uid]=cur.members[uid]||{}; cur.members[uid].role=changed[uid];
@@ -9481,7 +9481,7 @@ function uiPerms(wa){
     var defWrap=document.createElement('div');
     defWrap.style.cssText='display:flex;align-items:center;gap:9px;padding:11px 12px;margin-bottom:12px;border:1px dashed '+(dark?'#2C3744':'#d2d6dd')+';border-radius:11px;';
     defWrap.innerHTML='<span style="flex:1;font-size:13px;font-weight:700">새로 합류하는 팀원</span>'
-      +'<span style="height:30px;padding:0 10px;display:inline-flex;align-items:center;border-radius:8px;background:'+(dark?'#222c39':'#eef3ff')+';color:'+(dark?'#9fbbff':'#2757d9')+';font-size:12px;font-weight:800">선수로 합류</span>';
+      +'<span style="height:30px;padding:0 10px;display:inline-flex;align-items:center;border-radius:8px;background:'+(dark?'#222c39':'#E9EDF5')+';color:'+(dark?'#9fbbff':'#2757d9')+';font-size:12px;font-weight:800">선수로 합류</span>';
     card.appendChild(defWrap);
     /* ── 1.634 · 코칭스태프 편집 스위치 ────────────────────────────────────────
        기본은 **보기 전용**이다(임원이 전부 입력하고 나머지는 본다).
@@ -9499,7 +9499,7 @@ function uiPerms(wa){
               :'꺼짐 — <b>임원만 편집</b>합니다. 코칭스태프는 보기 전용이고, 고칠 곳이 있으면 임원에게 말합니다.')
         +'</div>';
       seBtn.textContent=seOn?'끄기':'켜기';
-      seBtn.style.cssText='flex:0 0 auto;height:32px;padding:0 14px;border-radius:9px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;border:1px solid '+(dark?'#2C3744':'#d2d6dd')+';background:'+(seOn?(dark?'#222c39':'#fff'):'var(--blue,#3a6df0)')+';color:'+(seOn?'inherit':'#fff')+';';
+      seBtn.style.cssText='flex:0 0 auto;height:32px;padding:0 14px;border-radius:9px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;border:1px solid '+(dark?'#2C3744':'#d2d6dd')+';background:'+(seOn?(dark?'#222c39':'#fff'):'var(--blue,#14213D)')+';color:'+(seOn?'inherit':'#fff')+';';
     }
     sePaint();
     seBtn.onclick=function(){ seOn=!seOn; sePaint(); };
@@ -9510,7 +9510,7 @@ function uiPerms(wa){
     owners.forEach(function(r){
       var d=document.createElement('div');
       d.style.cssText='padding:10px 12px;border:1px solid '+(dark?'#2C3744':'#E3E5E9')+';border-radius:11px;margin-bottom:8px;display:flex;align-items:center;gap:8px;background:'+(dark?'#222c39':'#F7F8FA')+';';
-      d.innerHTML=memberLabel(r,dark)+'<span style="font-size:11px;font-weight:800;color:var(--blue,#3a6df0);flex:0 0 auto">관리자 (전체)</span>';
+      d.innerHTML=memberLabel(r,dark)+'<span style="font-size:11px;font-weight:800;color:var(--blue,var(--ps-navy,#14213D));flex:0 0 auto">관리자 (전체)</span>';
       card.appendChild(d);
     });
     if(!editable.length){
@@ -9524,7 +9524,7 @@ function uiPerms(wa){
       var notLinked=editable.filter(function(r){ return !((cur.members[r.user_id]||{}).playerId); });
       var sum=document.createElement('div');
       sum.style.cssText='display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 12px;margin-bottom:10px;border-radius:11px;'
-        +'background:'+(notLinked.length?(dark?'rgba(201,119,43,.16)':'#FDF6E3'):(dark?'#222c39':'#F1F5FF'))+';'
+        +'background:'+(notLinked.length?(dark?'rgba(201,119,43,.16)':'#FDF6E3'):(dark?'#222c39':'#E9EDF5'))+';'
         +'color:'+(notLinked.length?(dark?'#E5B96A':'#8A6A1F'):(dark?'#9fbbff':'#2757d9'))+';font-size:13px;font-weight:700;';
       sum.innerHTML='<span style="flex:1">합류 '+editable.length+'명 · 선수 연결됨 '+(editable.length-notLinked.length)+' · '
         +(notLinked.length?('<b>연결 안 됨 '+notLinked.length+'</b>'):'모두 연결됨 ✓')+'</span>';
@@ -9638,7 +9638,7 @@ function uiPerms(wa){
       var boxes={};
       secs.forEach(function(s){
         var lab=document.createElement('label'); lab.style.cssText='display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;';
-        var cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!state[uid].scopes[s.id]; cb.style.accentColor='#3a6df0';
+        var cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!state[uid].scopes[s.id]; cb.style.accentColor='#14213D';
         cb.onchange=function(){ state[uid].scopes[s.id]=cb.checked; };
         boxes[s.id]=cb;
         lab.appendChild(cb); lab.appendChild(document.createTextNode(s.label)); grid.appendChild(lab);
@@ -9668,7 +9668,7 @@ function uiPerms(wa){
     var cancel=document.createElement('button'); cancel.textContent='취소';
     cancel.style.cssText='padding:10px 16px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;border:1px solid '+(dark?'#2C3744':'#d2d6dd')+';background:'+(dark?'#222c39':'#f1f3f5')+';color:inherit';
     var save=document.createElement('button'); save.textContent='저장';
-    save.style.cssText='padding:10px 20px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;border:0;background:var(--blue,#3a6df0);color:#fff';
+    save.style.cssText='padding:10px 20px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;border:0;background:var(--blue,var(--ps-navy,#14213D));color:#fff';
     cancel.onclick=function(){ ov.remove(); };
     save.onclick=function(){
       /* Only user-changed fields are applied to the latest document. A link
