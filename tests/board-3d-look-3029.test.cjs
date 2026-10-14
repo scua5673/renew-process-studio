@@ -76,7 +76,7 @@ test('3.029 team branding: the ad text defaults to the team name and the crowd w
 });
 
 test('3.029 version, release note',()=>{
-  assert.match(R('sw.js'),/^const CACHE = 'process-3\.029';/m);assert.match(R('studio/app.html'),/window\.PS_BUILD='3\.029'/);
+  assert.match(R('sw.js'),/^\/\/ 3\.029 3D 연출/m,'3.029 판 기록');   /* 3.031 — 판 번호는 new-board-default-3031 이 지킨다 */
   const e=notes.entries().find(x=>x.id==='2026-10-14-v3-029-3d-look');
   assert.ok(e,'3.029 note');
   assert.ok(e.changes.some(c=>/낮 · 해질녘 · 야간/.test(c)&&/«야간»/.test(c))&&e.changes.some(c=>/팀 형태/.test(c)&&/압박 거리/.test(c)&&/사진 · 영상/.test(c))&&e.changes.some(c=>/«팀 브랜딩»/.test(c)));

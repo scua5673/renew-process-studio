@@ -12,7 +12,7 @@ const suites={
   board2:['anim-erase-export','anim-export-once','meeting-names-video','meeting-upgrade','gamemodel-anim','gamemodel-attach-pages','board-feedback-2975','anim-all-pages','anim-export-fit','anim-orient','patternbook','shaper-ball','phone-page-strip','rondo-grid'],
   identity:['session-team-picker','month-quick-detail','admin-content-play','admin-user-made','admin-safety','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery','schedule-phone','phone-app-more','board-settings-manual','year-weekdays'],
   storage:['storage-safety','library-insert-ack','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery','letter-pack','community-process','community-elmiha','vault-examples','warm-tabs','thumb-diet'],
-  idp:['match-board-tools','match-ob-tray','match-board-vault','availability','idp-recovery','idp-story-dedup','support','squad-phone','scouting-integration','review-training','idp-coach-goals','team-heads'],
+  idp:['match-board-tools','match-ob-tray','match-board-vault','match-board-show','availability','idp-recovery','idp-story-dedup','support','squad-phone','scouting-integration','review-training','idp-coach-goals','team-heads'],
   /* 3.012 — 보드 끌기 성능은 WebKit 에서 혼자 149~223초(테스트 하나 240초 한도)였다. 느린 러너 하나가 board 잡 전체와 배포(release-gate)를 막지 않게
      자기 묶음으로 떼고, 이 테스트만 한도를 360초로 둔다(PER_TEST_MS) — 묶음이 혼자라 잡은 7분 안쪽, Netlify 의 12분 대기 안이다. */
   boardperf:['board-drag-performance','board-pencil'],   /* 3.025 — 펜슬 그리기(손바닥 · 중간 점 · 프레임당 한 번 · 3D 투영 · 호버) */
