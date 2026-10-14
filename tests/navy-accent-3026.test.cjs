@@ -3,8 +3,8 @@ const fs=require('fs'),path=require('path');
 const R=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 const notes=require('../studio/release-notes.js');
 
-/* 3.021 — 사용자 «진한 네이비가 나을 것 같은데» · «추천대로»: 앱 메인색(UI 강조색)만 파랑 → 옥스퍼드 네이비 #14213D */
-test('3.021 the design tokens carry the navy main colour, light and dark',()=>{
+/* 3.026 — 사용자 «진한 네이비가 나을 것 같은데» · «추천대로»: 앱 메인색(UI 강조색)만 파랑 → 옥스퍼드 네이비 #14213D */
+test('3.026 the design tokens carry the navy main colour, light and dark',()=>{
   const dv=R('studio/design-v2.css');
   for(const [k,v] of [['--ps-color-action','#14213D'],['--ps-color-action-fill','#14213D'],['--ps-color-action-fill-hover','#1D2D50'],['--ps-color-action-hover','#1D2D50'],['--ps-color-action-soft','#E9EDF5']])
     assert.ok(dv.includes('  '+k+': '+v+';'),'light '+k);
@@ -15,7 +15,7 @@ test('3.021 the design tokens carry the navy main colour, light and dark',()=>{
   assert.match(R('studio/ui-grammar.css'),/body\.fmdark\{[^}]*--accent:#7F98D0;--blue:#7F98D0;--act:#7F98D0;--cmd-blue:#7F98D0/,'dark one-value accent keeps the old brightness');
 });
 
-test('3.021 page accents follow; team colour, pens and data colours stay',()=>{
+test('3.026 page accents follow; team colour, pens and data colours stay',()=>{
   const b=R('studio/board.html');
   assert.match(b,/--blue:#14213D;--home:#3a6df0;/,'board accent is navy, the home team colour is not');
   assert.match(b,/--blue:#7F98D0!important;--home:#6F94F5!important;/);
@@ -33,11 +33,11 @@ test('3.021 page accents follow; team colour, pens and data colours stay',()=>{
   assert.match(R('studio/idp.html'),/--accent:#7C4DFF/,'IDP keeps its violet accent');
 });
 
-test('3.021 restyled sheets are re-fetched and the change is announced',()=>{
+test('3.026 restyled sheets are re-fetched and the change is announced',()=>{
   for(const f of ['studio/app.html','studio/board.html','studio/scout.html','studio/process.html','studio/community.html'])
-    assert.match(R(f),/ui-grammar\.css\?v=3\.021/,f);
-  assert.match(R('studio/app.html'),/\/vendor\/tokens\.css\?v=3\.021/);
-  const e=notes.entries().find(x=>x.id==='2026-10-14-v3-021-navy');
-  assert.ok(e,'3.021 note');
+    assert.match(R(f),/ui-grammar\.css\?v=3\.026/,f);
+  assert.match(R('studio/app.html'),/\/vendor\/tokens\.css\?v=3\.026/);
+  const e=notes.entries().find(x=>x.id==='2026-10-14-v3-026-navy');
+  assert.ok(e,'3.026 note');
   assert.ok(e.changes.some(c=>/진한 네이비/.test(c))&&e.changes.some(c=>/다크 모드/.test(c))&&e.changes.some(c=>/팀 색 · 펜 색/.test(c)));
 });

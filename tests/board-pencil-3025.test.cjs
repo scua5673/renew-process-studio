@@ -4,8 +4,8 @@ const board=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf
 const notes=require('../studio/release-notes.js');
 const cut=(re,what)=>{const m=re.exec(board);assert.ok(m,what);return m[0];};
 
-/* 3.020 — 사용자 «아이패드 펜슬 사용할 때 더 부드럽게 움직이게 · 터치 펜을 잘 활용할 수 있게» */
-test('3.020 freehand is drawn as a curve from the saved points, which stay as they are',()=>{
+/* 3.025 — 사용자 «아이패드 펜슬 사용할 때 더 부드럽게 움직이게 · 터치 펜을 잘 활용할 수 있게» */
+test('3.025 freehand is drawn as a curve from the saved points, which stay as they are',()=>{
   const src=cut(/function _freePathD\(src\)\{[\s\S]*?\n  return d\+" L "\+f\(s\[n-1\]\.x\)\+" "\+f\(s\[n-1\]\.y\);\}/,'_freePathD');
   const c=vm.createContext({});vm.runInContext(src+'\nthis.P=_freePathD;',c);
   const zig=[];for(let i=0;i<=10;i++)zig.push({x:i*10,y:i%2?5:-5});
@@ -20,7 +20,7 @@ test('3.020 freehand is drawn as a curve from the saved points, which stay as th
   assert.match(board,/\}else if\(d\.type==="free"\)\{const dd=_freePathD\(\(d===_draw&&_inkPred\)\?d\.pts\.concat\(_inkPred\):d\.pts\);/,'drawingEl uses it (screen, export and thumbnails alike); prediction only on the live stroke');
 });
 
-test('3.020 one pointer owns a stroke: palm, second finger and a pencil taking over',()=>{
+test('3.025 one pointer owns a stroke: palm, second finger and a pencil taking over',()=>{
   const src=cut(/function _inkPalm\(e\)\{[^\n]*\n/,'_inkPalm')+cut(/function _inkTakeOver\(e\)\{[\s\S]*?\n  return false;\}/,'_inkTakeOver');
   const log=[];const c=vm.createContext({Date,_draw:null,_drawPtype:'',_inkLastAt:0,_penUpAt:0,_inkAbort(){log.push('abort');c._draw=null;},endDraw(){log.push('end');c._draw=null;}});
   vm.runInContext(src+'\nthis.palm=_inkPalm;this.take=_inkTakeOver;',c);
@@ -39,7 +39,7 @@ test('3.020 one pointer owns a stroke: palm, second finger and a pencil taking o
   assert.equal(c.take({pointerType:'mouse'}),true);assert.equal(log[2],'end');
 });
 
-test('3.020 the drawing layer and tokens hand points through the pointer that owns the stroke',()=>{
+test('3.025 the drawing layer and tokens hand points through the pointer that owns the stroke',()=>{
   assert.match(board,/if\(!_draw\)return;_inkMove\(e\);\}\);/,'drawing layer moves');
   assert.match(board,/const end=e=>\{if\(!_draw\|\|e\.pointerId!==_drawPid\)return;/,'only the owner ends it');
   assert.match(board,/if\(_inkFingerOnly\(e\)\)\{e\.stopPropagation\(\);_inkFingerHint\(\);return;\}/);
@@ -54,7 +54,7 @@ test('3.020 the drawing layer and tokens hand points through the pointer that ow
 });
 
 /* 사용자 «어떻게 하는 게 좋을까 냉정하게 피드백» → 펜슬 전용은 기본으로 맞지만 숨은 모드면 안 된다: 보이는 칩 · 안내의 단추 · 기기에 기억 */
-test('3.020 pencil-only is a visible, switchable device setting, not a hidden mode',()=>{
+test('3.025 pencil-only is a visible, switchable device setting, not a hidden mode',()=>{
   assert.match(board,/function _inkFingerOnly\(e\)\{return !!e&&e\.pointerType==="touch"&&_penSeen&&_penOnly&&isDraw\(\);\}/);
   assert.match(board,/try\{_penSeen=localStorage\.getItem\("ps_board_pen_seen_v1"\)==="1";_penOnly=localStorage\.getItem\("ps_board_pen_only_v1"\)!=="0";\}catch\(_\)\{\}/,'both remembered per device; pencil-only is the default once a pencil was seen');
   assert.match(board,/function _inkPenSeen\(\)\{if\(_penSeen\)return;_penSeen=true;try\{localStorage\.setItem\("ps_board_pen_seen_v1","1"\);\}catch\(_\)\{\}_inkPenSync\(\);\}/);
@@ -81,9 +81,9 @@ test('3.020 pencil-only is a visible, switchable device setting, not a hidden mo
   assert.doesNotMatch(board,/_inkHintShown/,'the once-only flag is gone');
 });
 
-test('3.020 release note explains the pencil changes in plain words',()=>{
-  const e=notes.entries().find(x=>x.id==='2026-10-14-v3-020-pencil');
-  assert.ok(e,'3.020 note');
+test('3.025 release note explains the pencil changes in plain words',()=>{
+  const e=notes.entries().find(x=>x.id==='2026-10-14-v3-025-pencil');
+  assert.ok(e,'3.025 note');
   assert.ok(e.changes.some(c=>/손바닥/.test(c))&&e.changes.some(c=>/손가락으로 선수를 옮길/.test(c))&&e.changes.some(c=>/둥근 곡선/.test(c))&&e.changes.some(c=>/호버/.test(c)));
   assert.ok(e.changes.some(c=>/«펜슬 전용» 칩/.test(c)&&/«손가락도 그리기»/.test(c)&&/그 기기에 남습니다/.test(c)),'says how to turn pencil-only off and that it is remembered');
 });

@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.023"></script>
+<script src="autosave-status.js?v=3.028"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -46,7 +46,7 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta name="author" content="PROCESS STUDIO">
 <meta name="copyright" content="© 2026 PROCESS STUDIO. All rights reserved.">
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.021"><!-- 로컬 폰트 — 완전 오프라인 -->
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.026"><!-- 로컬 폰트 — 완전 오프라인 -->
 <meta name="theme-color" content="#ECEDF0">
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
@@ -505,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.023';</script>
+<script>window.PS_BUILD='3.028';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1112,7 +1112,7 @@ function psShowUpdBand(){
 </head>
 <body class="ps-booting" data-ps-app="board">
 <script>try{if(localStorage.getItem('cs_theme')==='dark')document.body.classList.add('fmdark');}catch(_){}</script>
-<script>/* 3.022 — 처음 들어온 기기는 작전판을 3D 보기로(사용자 «프로세스 스튜디오 처음 들어왔을 때 기본이 3D»). 보드는 «1» 일 때만 3D 로 연다(board.html 부팅 복원).
+<script>/* 3.027 — 처음 들어온 기기는 작전판을 3D 보기로(사용자 «프로세스 스튜디오 처음 들어왔을 때 기본이 3D»). 보드는 «1» 일 때만 3D 로 연다(board.html 부팅 복원).
    기기 설정이라 한 번 정하면 그대로 — 보드 설정 › 보드 보기에서 «평면»으로 끈 기기(«0»)는 다시 켜지 않는다. */
 try{if(localStorage.getItem('ps_board_tilt3d')===null)localStorage.setItem('ps_board_tilt3d','1');}catch(_){}</script>
 <script>
@@ -1201,7 +1201,7 @@ try{if(localStorage.getItem('ps_board_tilt3d')===null)localStorage.setItem('ps_b
              ⚠ 대신 그 줄이 **무엇인지·왜 하는지**를 스스로 말하게 했다(아래 guide). -->
     <!-- 2.732 — 보드 설정은 작전판·훈련 편집기의 도크가 맡는다. 다른 앱에서 작전판으로 이동시키던 사이드바 문은 제거. -->
     <!-- 2.947 — 업데이트 알림은 위쪽 띠가 아니라 앱 설정 바로 위 한 칸(사용자 «업데이트가 되면 왼쪽 앱설정 위에» → 목업 «추천대로 둘 다»).
-         새 판이 준비되면 «업데이트 ●», 적용된 뒤 7일은 «새 기능». 폰은 더보기 시트 맨 위 줄 + 더보기 점. 선수 전용 폰만 예전 띠 -->
+         새 판이 준비되면 «업데이트 ●», 적용된 뒤 7일은 «새 기능»(3.024 — 열 판마다 한 번). 폰은 더보기 시트 맨 위 줄 + 더보기 점. 선수 전용 폰만 예전 띠 -->
     <div class="ps-updwrap" id="psUpdWrap" hidden><button type="button" class="gearbtn" id="psUpdRail" aria-haspopup="dialog" aria-expanded="false" aria-controls="psUpdPop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg><span class="gear-label" id="psUpdRailLb">업데이트</span><i class="ps-updot" aria-hidden="true"></i></button></div>
     <div class="gear" id="gearWrap">
       <button class="gearbtn" id="gearBtn" title="설정" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
@@ -8022,7 +8022,7 @@ window.__buildScoutForm=function(k){
       var si=0;
       (function nextStep(){
         if(si>=steps.length){
-          /* 3.022 — 닫을 때 «다시 누르기»(토글)를 쓰지 않는다. 그 사이 보드가 부팅 정리(readyPaint)로 메뉴를 먼저 닫으면 이 클릭이 메뉴를 **다시 열어**
+          /* 3.027 — 닫을 때 «다시 누르기»(토글)를 쓰지 않는다. 그 사이 보드가 부팅 정리(readyPaint)로 메뉴를 먼저 닫으면 이 클릭이 메뉴를 **다시 열어**
              첫 화면에 보기 메뉴가 떠 있었다(quiet-entry 폰 실측 — 3D 로 시작하면 부팅이 길어져 자주). 열려 있을 때만 닫는다. */
           setTimeout(function(){ try{ var vm=doc.getElementById('viewMenu'),w=doc.defaultView; if(vm&&vm.classList.contains('on')){ if(w&&w.__psBoardPopover&&w.__psBoardPopover.close)w.__psBoardPopover.close(); else view.click(); } }catch(e){} }, 150);
           try{ doc.defaultView.localStorage.setItem('ps_board_defaults_v1','1'); }catch(_){}   /* 2.085 — 다음 부팅부터는 안 연다 */
@@ -8114,13 +8114,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.023"></script>
-<script src="autosave-merge.js?v=3.023"></script>
-<script src="autosave-runtime.js?v=3.023"></script>
-<script src="autosave-recovery.js?v=3.023"></script>
-<script src="sync.js?v=3.023"></script>
+<script src="autosave-journal.js?v=3.028"></script>
+<script src="autosave-merge.js?v=3.028"></script>
+<script src="autosave-runtime.js?v=3.028"></script>
+<script src="autosave-recovery.js?v=3.028"></script>
+<script src="sync.js?v=3.028"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.023">
+<link rel="stylesheet" href="support.css?v=3.028">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
@@ -8133,6 +8133,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
    ① 새 판 준비됨(입력 중이라 1분 넘게 못 바뀜 — 예전 검은 띠가 뜨던 바로 그때, psShowUpdBand) → «업데이트 ●»,
       누르면 팝오버: 새 판의 바뀐 것(새 release-notes.js 첫 항목) · 지금 적용 / 나중에. «나중에»를 눌러도 칸은 남는다(조용히).
    ② 적용된 뒤 7일(release-notes 항목 날짜 기준) → «새 기능», 안 본 것이 있으면 ●. 누르면 이번 주에 바뀐 것.
+      3.024 — 열 판마다 한 번: 안내 판(끝이 0 · 3.020 부터)의 묶음(PSReleaseNotes.announced)만, 안내 판 날짜로 7일. 그 사이 판은 조용하다.
    폰(≤767): 사이드바가 없으니 더보기에 ● + 시트 맨 위 줄. 사이드바도 더보기도 없는 «선수 전용 폰»만 예전 띠(body.ps-upd-band).
    ⚠ 띠·상태 문구 로직(psAutoReloadWhenSafe·psUpdateStatus·release-notes mount)은 그대로 두고 **보이는 자리만** 바꾼다.
       상태 문구는 psUpdateStatus 가 [data-upd-msg]·[data-upd-now] 에도 같이 쓴다. */
@@ -8146,9 +8147,12 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
   function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function all(){try{return window.PSReleaseNotes?PSReleaseNotes.entries():[];}catch(_){return [];}}
   function dayOf(e){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec((e&&e.date)||'');return m?new Date(+m[1],+m[2]-1,+m[3]).getTime():NaN;}
-  /* 오늘 포함 7일 — 날짜만 본다(시계가 틀려도 영영 남거나 영영 안 뜨지 않게 미래 하루까지만) */
+  /* 3.024 — «새 기능»은 열 판마다 한 번: 안내 판(끝이 0)의 묶음(PSReleaseNotes.announced — 바로 앞 안내 판 뒤의 판들까지, 최신이 앞)을
+     안내 판 날짜로 오늘 포함 7일 — 날짜만 본다(시계가 틀려도 영영 남거나 영영 안 뜨지 않게 미래 하루까지만). 그 사이 판은 조용하다. */
+  function bundle(){try{return window.PSReleaseNotes&&PSReleaseNotes.announced?PSReleaseNotes.announced():[];}catch(_){return [];}}
   function news(){var t0=new Date();t0.setHours(0,0,0,0);var from=t0.getTime()-6*DAY,to=t0.getTime()+DAY;
-    return all().filter(function(e){var t=dayOf(e);return t>=from&&t<=to;}).slice(0,3);}
+    var b=bundle(),t=dayOf(b[0]);return (b.length&&t>=from&&t<=to)?b:[];}
+  function rangeOf(n){var a=verOf(n[0]),z=verOf(n[n.length-1]);return (n.length>1&&z&&z!==a)?z+' ~ '+a:a;}   /* «v3.011 ~ v3.020» */
   function seen(){try{return localStorage.getItem(SEEN)||'';}catch(_){return '';}}
   function markSeen(id){try{if(id&&seen()!==id)localStorage.setItem(SEEN,id);}catch(_){}}
   function verOf(e){var m=/^v([\d.]+)/.exec((e&&e.title)||'');return m?'v'+m[1]:'';}
@@ -8178,8 +8182,8 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     var md=st.open,T=$('psUpdPopT'),V=$('psUpdPopV'),B=$('psUpdPopBody'),N=$('psUpdPopNote'),BT=$('psUpdPopBtns');if(!T)return;
     if(md==='ready'){var e=st.next&&st.next.entry;T.textContent='새 판이 준비됐어요';V.textContent=e?verOf(e):'';B.innerHTML=e?entHtml(e,true,true):'';
       N.textContent='하던 일은 저장한 뒤 같은 화면으로 다시 열려요. 입력을 멈추면 저절로도 바뀝니다.';BT.hidden=false;}
-    else{var n=news();T.textContent='이번 주에 바뀐 것';V.textContent='';B.innerHTML=n.map(function(x,i){return entHtml(x,i===0,false);}).join('');
-      N.textContent='이 표시는 7일 뒤 저절로 사라져요.';BT.hidden=true;}
+    else{var n=news();T.textContent='새 기능';V.textContent=rangeOf(n);B.innerHTML=n.map(function(x,i){return entHtml(x,i===0,false);}).join('');
+      N.textContent='열 판마다 한 번 모아서 알려 드려요. 이 표시는 7일 뒤 저절로 사라져요.';BT.hidden=true;}
   }
   function bottomNav(){var t=document.body.classList.contains('ps-team-open')?$('teamBottom'):$('appSeg');
     try{var r=t&&t.getBoundingClientRect();if(r&&r.height>0&&r.top>innerHeight/2)return r.top;}catch(_){}return innerHeight-64;}
@@ -8214,13 +8218,13 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     if(w)w.hidden=!md;
     if(b){b.classList.toggle('is-ready',md==='ready');b.classList.toggle('has-dot',!!dot);
       if(lb)lb.textContent=md==='ready'?'업데이트':'새 기능';
-      b.title=md==='ready'?'새 판이 준비됐어요':'이번 주에 바뀐 것';b.setAttribute('aria-label',b.title);}
+      b.title=md==='ready'?'새 판이 준비됐어요':'최근 열 판에서 바뀐 것';b.setAttribute('aria-label',b.title);}
     var v=st.next&&st.next.entry?verOf(st.next.entry):'';
     [].forEach.call(document.querySelectorAll('[data-upd-row]'),function(r){
       r.hidden=!md;r.classList.toggle('news',md==='news');
       var tx=r.querySelector('[data-upd-rowtext]'),bt=r.querySelector('[data-upd="row"]');if(!tx||!bt)return;
       if(md==='ready'){tx.innerHTML='<b>새 판이 준비됐어요</b>'+(v?' · '+esc(v):'');bt.setAttribute('data-upd-now','');bt.setAttribute('data-upd-label','적용');if(!bt.disabled)bt.textContent='적용';}
-      else if(md==='news'){tx.innerHTML='<b>새 기능</b> · '+esc(titleOf(first));bt.removeAttribute('data-upd-now');bt.removeAttribute('data-upd-label');bt.disabled=false;bt.textContent='보기';}
+      else if(md==='news'){tx.innerHTML='<b>새 기능</b> · '+esc(n.length>1?rangeOf(n)+' · '+n.length+'가지':titleOf(first));bt.removeAttribute('data-upd-now');bt.removeAttribute('data-upd-label');bt.disabled=false;bt.textContent='보기';}
     });
     if(st.open){if(st.open==='news'&&!md)closePop();else{fill();place();}}
   }
@@ -8370,7 +8374,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
 })();
 </script>
 
-<link rel="stylesheet" href="ui-grammar.css?v=3.021"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.026"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2598-rail">/* 2.598 — 셸 레일 마무리: 활성 필 모서리 6 → 10, 레일 아이콘 19 → 16 stroke 2(위 다섯 + 아래 로그인·앱 설정·보드 설정), 팀 내비 버튼은 팀 열림 상태에서도 32(design-v2:489 가 30 으로 내리던 것). 레일 폭은 실측 96~104(figma-premium)라 제안의 «64→72» 는 해당 없음. «보드 설정» 은 셸 안에서 유일한 문(도크 사본은 셸에서 숨김)이라 남긴다. */
 @media (min-width:768px){
 html.ps-page-app #appSeg#appSeg button:not(#_):not(#__){border-radius:10px!important}
