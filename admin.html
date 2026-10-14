@@ -229,6 +229,17 @@
   .rowbtn:hover{color:var(--txt);border-color:var(--dim);}
   .rowbtn.danger:hover{color:var(--red);border-color:var(--red);}
   .tybadge.admActDanger{background:rgba(224,86,102,.13);color:#f08a96;}
+  /* 20261014 — 커뮤니티 신고함 */
+  .commCard{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:var(--panel2);}
+  .commCard .commTitle b{font-size:14px;}
+  .commMeta{font-size:12px;margin-top:4px;overflow-wrap:anywhere;}
+  .commSummary{font-size:13px;margin:8px 0 0;color:var(--txt);white-space:pre-wrap;overflow-wrap:anywhere;}
+  .commReports{font-size:12px;font-weight:700;color:var(--amber);margin-top:8px;}
+  .commReasons{margin:6px 0 0;padding-left:18px;font-size:12px;}
+  .commActions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;}
+  .commActions input{flex:1 1 220px;min-width:0;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--txt);font:inherit;font-size:13px;}
+  .commNotice{font-size:13px;color:var(--blue2);padding:4px 2px 10px;}
+  .commError{font-size:13px;color:var(--red);background:rgba(224,86,102,.1);padding:10px 12px;border-radius:9px;margin-bottom:10px;}
   .empty{color:var(--dim2);font-size:13px;text-align:center;padding:26px 0;}
   .muted{color:var(--dim2);}
 
@@ -309,6 +320,7 @@
       <button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>백엔드</button>
       <button data-admin-tab="errors" onclick="setTab('errors')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 9v4M12 17h.01"/></svg>오류</button>
       <button data-admin-tab="support" onclick="setTab('support')" title="오류 제보" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v12H9l-5 4V4z"/><path d="M8 8h8M8 12h5"/></svg>오류 제보<span class="navBadge" id="supportBadge" hidden></span></button>
+      <button data-admin-tab="comm" onclick="setTab('comm')" title="커뮤니티 신고" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>커뮤니티<span class="navBadge" id="commBadge" hidden></span></button>
     </nav>
     <div class="admin-side-foot">PROCESS STUDIO<br>운영 관리자 전용</div>
   </aside>
@@ -334,9 +346,13 @@
     <button class="tab" id="tabBack" onclick="setTab('back')">백엔드</button>
     <button class="tab" id="tabErrors" onclick="setTab('errors')">오류</button>
     <button class="tab" id="tabSupport" onclick="setTab('support')">오류 제보</button>
+    <button class="tab" id="tabComm" onclick="setTab('comm')">커뮤니티</button>
   </div>
 
   <section class="wrap hide" id="viewSupport" style="grid-template-columns:1fr" aria-label="오류 제보 접수함"></section>
+
+  <!-- 20261014 — 커뮤니티 신고함 · 글 숨기기(ps_admin_comm_queue · ps_admin_comm_hide · ps_admin_comm_resolve) -->
+  <div class="wrap hide" id="viewComm" style="grid-template-columns:1fr"><div class="col" id="commBody"><div class="loading">불러오는 중…</div></div></div>
 
   <!-- 2.630 — 백엔드 건강 한 장(ps_admin_health): 코치가 제보하기 전에 본다 -->
   <div class="wrap hide" id="viewBack" style="grid-template-columns:1fr"><!-- 2.958 — 한 칸(전엔 기본 2칸 격자의 왼쪽 322px 에 끼고 오른쪽이 비어 있었다) -->
@@ -604,6 +620,7 @@
 <script src="studio/admin-user-detail.js?v=2.964"></script>
 <script src="studio/admin-operations.js?v=2.792"></script>
 <script src="studio/admin-actions.js?v=20261014"></script>
+<script src="studio/admin-community.js?v=20261014"></script>
 <script src="studio/support-diagnostics.js?v=2.816"></script>
 <script src="studio/support.js?v=2.816"></script>
 <script src="studio/admin-support.js?v=20261014"></script>
@@ -624,6 +641,7 @@ function adminLockSession(message){
   try{if(adminSupport){adminSupport.destroy();adminSupport=null;}}catch(_){}
   try{if(adminContent){adminContent.destroy();adminContent=null;}ADMIN_CONTENT_OWNERS=[];}catch(_){}
   try{adminActions=null;if($('admActBody'))$('admActBody').innerHTML='';setSupportCounts(null);}catch(_){}
+  try{adminCommunity=null;if($('commBody'))$('commBody').innerHTML='';setCommCounts(null);}catch(_){}
   ['app','modalRoot'].forEach(function(id){var el=document.getElementById(id);if(el){el.classList.add('hide');el.replaceChildren();}});
   try{WS=[];USERS=[];ALL_LIB=[];HOME=null;WHOLOG=null;IDP_CACHE={};ERR=null;USE=null;}catch(_){}
   ['gateLogin','gateDenied'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hide');});
@@ -732,6 +750,22 @@ function setSupportCounts(c){
   var n=c&&Number.isInteger(c.needs)&&c.needs>=0?c.needs:null,b=$('supportBadge'),e=$('supportEntryCount');
   if(b){b.hidden=!n;b.textContent=n?String(n):'';}
   if(e)e.textContent=n==null?'':(n?'· 답변 필요 '+n+'건':'· 답변 필요 없음');
+}
+/* 20261014 — 커뮤니티 열린 신고 수. 서버 함수가 없으면(마이그레이션 전) 아무것도 표시하지 않는다. */
+var adminCommunity=null;
+function setCommCounts(c){
+  var n=c&&Number.isInteger(c.open_reports)&&c.open_reports>=0?c.open_reports:null,b=$('commBadge');
+  if(b){b.hidden=!n;b.textContent=n?String(n):'';}
+}
+function loadComm(){
+  if(!adminSupportContext().ready||!window.PSAdminCommunity||!$('commBody'))return;
+  if(!adminCommunity)adminCommunity=PSAdminCommunity.create({host:$('commBody'),rpc:rpc,confirm:function(m){return window.confirm(m);},onCounts:setCommCounts});
+  return adminCommunity.load();
+}
+function refreshCommBadge(){
+  if(!adminSupportContext().ready)return;
+  var epoch=adminAuthEpoch;
+  rpc('ps_admin_comm_queue',{p_limit:1}).then(function(r){if(!adminSessionLocked&&epoch===adminAuthEpoch&&r)setCommCounts(r.counts);}).catch(function(){});
 }
 function refreshSupportBadge(){
   if(!adminSupportContext().ready)return;
@@ -894,7 +928,8 @@ function showDenied(uid){
 /* ===== 데이터 로드 ===== */
 function reloadAll(){
   if(curTab==='support'){loadAdminSupport();return;}
-  refreshSupportBadge();
+  if(curTab==='comm'){loadComm();return;}
+  refreshSupportBadge();refreshCommBadge();
   var libTicket=++adminLibraryTicket,reloadTicket=++adminReloadTicket,epoch=adminAuthEpoch;
   if(adminContent)adminContent.deactivate();
   $('wsList').innerHTML='<div class="loading">불러오는 중…</div>';
@@ -966,15 +1001,18 @@ function setTab(t){
   if($('viewErrors'))$('viewErrors').classList.toggle('hide',t!=='errors');
   if($('tabSupport'))$('tabSupport').classList.toggle('on',t==='support');
   if($('viewSupport'))$('viewSupport').classList.toggle('hide',t!=='support');
+  if($('tabComm'))$('tabComm').classList.toggle('on',t==='comm');
+  if($('viewComm'))$('viewComm').classList.toggle('hide',t!=='comm');
   $('tabHome').classList.toggle('on',t==='home'); $('tabAct').classList.toggle('on',t==='act'); $('tabAll').classList.toggle('on',t==='all'); $('tabWs').classList.toggle('on',t==='ws'); $('tabUsers').classList.toggle('on',t==='users'); $('tabIdp').classList.toggle('on',t==='idp');
   [].forEach.call(document.querySelectorAll('[data-admin-tab]'),function(b){b.classList.toggle('on',b.dataset.adminTab===t);});
-  var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({support:'오류 제보',back:'백엔드 건강',errors:'오류 분석',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
+  var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({support:'오류 제보',comm:'커뮤니티 신고',back:'백엔드 건강',errors:'오류 분석',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
   $('viewHome').classList.toggle('hide',t!=='home'); $('viewAct').classList.toggle('hide',t!=='act'); $('viewAll').classList.toggle('hide',t!=='all'); $('viewWs').classList.toggle('hide',t!=='ws'); $('viewUsers').classList.toggle('hide',t!=='users'); $('viewIdp').classList.toggle('hide',t!=='idp');
   if(t==='idp') loadIdpList();
   if(t==='home') loadHome();
   if(t==='use') loadUse();
   if(t==='errors') loadErrors();
   if(t==='support') loadAdminSupport();
+  if(t==='comm') loadComm();
   if(t==='all')renderAllLib();
 }
 

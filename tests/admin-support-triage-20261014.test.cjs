@@ -135,7 +135,7 @@ test('admin.html shows the needs count on the nav and home card', () => {
   const a = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
   assert.match(a, /<span class="navBadge" id="supportBadge" hidden><\/span><\/button>/);
   assert.match(a, /onCounts:setSupportCounts/);
-  assert.match(a, /function reloadAll\(\)\{\n  if\(curTab==='support'\)\{loadAdminSupport\(\);return;\}\n  refreshSupportBadge\(\);/);
+  assert.match(a, /function reloadAll\(\)\{\n  if\(curTab==='support'\)\{loadAdminSupport\(\);return;\}\n  if\(curTab==='comm'\)\{loadComm\(\);return;\}\n  refreshSupportBadge\(\);refreshCommBadge\(\);/);
   assert.match(a, /adminRpc\('ps_support_list',\{p_limit:1\}\)/);
   assert.match(a, /studio\/admin-support\.js\?v=20261014/);
 });

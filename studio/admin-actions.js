@@ -4,7 +4,7 @@
 (function(root,factory){var api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.PSAdminActions=api;})(typeof window!=='undefined'?window:null,function(){
   'use strict';
   var LABELS={workspace_delete:'팀 삭제',member_remove:'멤버 내보내기',library_soft_delete:'콘텐츠 삭제',library_restore:'콘텐츠 복구',
-    support_status:'오류 제보 상태',community_hide:'커뮤니티 글 숨김',community_unhide:'커뮤니티 글 되살림'};
+    support_status:'오류 제보 상태',community_hide:'커뮤니티 글 숨김',community_unhide:'커뮤니티 글 되살림',community_resolve:'커뮤니티 신고 닫음'};
   var DANGER={workspace_delete:1,member_remove:1,library_soft_delete:1,community_hide:1};
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function when(v){var d=new Date(v);if(!isFinite(d.getTime()))return '시각 미확인';return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
@@ -14,7 +14,8 @@
     var m=meta(r);
     if(r.action==='support_status')return (m.status==='closed'?'닫음':m.status==='open'?'다시 엶':'')+(m.fixed_in?' · 고침 '+m.fixed_in:'');
     if(r.action==='workspace_delete'){var p=[];if(Number.isInteger(m.members))p.push('멤버 '+m.members);if(Number.isInteger(m.library))p.push('콘텐츠 '+m.library);return p.join(' · ');}
-    if(r.action==='community_hide'&&m.reason)return String(m.reason);
+    if(r.action==='community_hide')return (m.reason?String(m.reason):'')+(Number.isInteger(m.reports_closed)&&m.reports_closed?(m.reason?' · ':'')+'신고 '+m.reports_closed+'건 닫음':'');
+    if(r.action==='community_resolve'&&Number.isInteger(m.reports_closed))return '신고 '+m.reports_closed+'건';
     return '';
   }
   function target(r){
