@@ -18,7 +18,7 @@ const fx=await startFixture(),browsers={};
 try{
   const {page,context,logs}=await openApp(fx,size,{browsers});
   const asked=[],askedLocal=[],writes=[];let indexDown=true,localDown=true,localOwn=false;
-  // 3.018 — 앱이 장면을 보강한 세션(사본 목록의 own:1): 4호의 첫 훈련을 장면 7개로. 사이트가 열려 있어도 이 세션은 사본에서 읽는다.
+  // 3.019 — 앱이 장면을 보강한 세션(사본 목록의 own:1): 4호의 첫 훈련을 장면 7개로. 사이트가 열려 있어도 이 세션은 사본에서 읽는다.
   const OWN4=Object.assign(row(4),{own:1,rev:'bbbbbbbbbb',trainings:[{name:'가상 연습 1',minutes:15,scenes:7},{name:'골문 앞 버티기',minutes:20,scenes:2},{name:'가상 연습 3',minutes:25,scenes:4}]});
   const ownPack4=()=>{ const p=pack(4); p.drills[0].trainings[0]=tr(0,7); p.drills[0].frames=tr(0,7).frames; return p; };
   // 3.002 — 코치 글 하나(훈련 둘: 첫 훈련은 장면 없음 · 둘째는 장면 셋). 훈련이 둘 이상인 코치 글도 뷰어에서 훈련을 골라 본다.
@@ -56,7 +56,7 @@ try{
   await c.evaluate(()=>{ try{sessionStorage.removeItem('ps_comm_feed_cache_v1');}catch(_){} location.reload(); });
   await page.waitForTimeout(400);
   c=await (await page.waitForSelector('#fComm')).contentFrame();
-  await c.waitForSelector('#prRetry');   // 3.018 — 처음 여는 칸은 프로세스(목록은 아직 내려가 있다)
+  await c.waitForSelector('#prRetry');   // 3.019 — 처음 여는 칸은 프로세스(목록은 아직 내려가 있다)
   const rect=sel=>c.evaluate(s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {l:Math.round(r.left),t:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height),d:getComputedStyle(e).display};},sel);
   const state=()=>c.evaluate(()=>({proc:document.body.classList.contains('pr-proc'),pressed:[...document.querySelectorAll('#prSeg button')].map(b=>b.getAttribute('aria-pressed')),label:[...document.querySelectorAll('#prSeg button')].map(b=>b.textContent),
     sub:document.getElementById('prSub').textContent,lb:document.getElementById('prCatLb').textContent,ph:document.getElementById('commSearch').placeholder,count:document.getElementById('commCount').textContent,
@@ -72,22 +72,22 @@ try{
   const inside=()=>v.evaluate(()=>({banner:document.getElementById('epRoBanner').textContent,copy:document.getElementById('commCopyBtn').textContent,rep:!!document.getElementById('commRepBtn'),del:!!document.getElementById('commDelBtn'),
     doc:[...document.querySelectorAll('.ep-ro-text')].map(x=>x.textContent),play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,players:state.players.length,hit:window.__prHit,ro:editorReadOnly}));
 
-  // 0) 3.018 — 처음 여는 칸은 «프로세스»(사용자 «커뮤니티에 올린 훈련을 더 잘 보이게»). 마지막에 본 칸은 이 기기에 적어 두고 다음에 그 칸으로 연다
+  // 0) 3.019 — 처음 여는 칸은 «프로세스»(사용자 «커뮤니티에 올린 훈련을 더 잘 보이게»). 마지막에 본 칸은 이 기기에 적어 두고 다음에 그 칸으로 연다
   let s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph],[true,['false','true'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색'],'처음엔 프로세스 칸');
+  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph],[true,['false','true','false'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색'],'처음엔 프로세스 칸');
   assert.equal(await c.evaluate(()=>localStorage.getItem('ps_comm_tab_v1')),null,'고른 적이 없으면 적지 않는다');
   await c.click('#prTabCoach');
   await c.waitForSelector('#grid .card');
   assert.equal(await c.evaluate(()=>localStorage.getItem('ps_comm_tab_v1')),'coach');
 
-  // 1) 코치 자료 — 지금 화면 그대로. 두 칸이 머리에 있다
+  // 1) 코치 자료 — 지금 화면 그대로. 칸 셋(3.019 엘미하)이 머리에 있다
   s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.coach],[false,['true','false'],'작전판·훈련·경기 분석 탐색','훈련 주제','제목·작성자·내용 검색',1]);
+  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.coach],[false,['true','false','false'],'작전판·훈련·경기 분석 탐색','훈련 주제','제목·작성자·내용 검색',1]);
   assert.notEqual(s.fab,'none','코치 자료 칸에는 «올리기»가 있다');
   assert.ok(s.chips.includes('론도')&&s.chips[0]==='전체 주제*','코치 자료의 주제 칩 그대로');
   const seg=await rect('#prSeg'),tabs=await c.evaluate(()=>[...document.querySelectorAll('#prSeg button')].map(b=>Math.round(b.getBoundingClientRect().height)));
-  assert.ok(seg.l>=0&&seg.l+seg.w<=s.vw,'두 칸이 화면 안 '+JSON.stringify(seg));
-  assert.ok(tabs.every(h=>h>=(phone?36:30)),'두 칸의 높이 '+JSON.stringify(tabs));
+  assert.ok(seg.l>=0&&seg.l+seg.w<=s.vw,'칸들이 화면 안 '+JSON.stringify(seg));
+  assert.ok(tabs.length===3&&tabs.every(h=>h>=(phone?36:30)),'칸 셋의 높이 '+JSON.stringify(tabs));
   assert.equal(s.docW,s.vw,'가로로 넘치지 않는다');
 
   // 1-2) 3.002 — 훈련이 둘인 코치 글: 뷰어 머리 아래에서 훈련을 골라 본다. 띠·담기·신고는 코치 글 그대로
@@ -117,13 +117,13 @@ try{
   const until=async(fn,what)=>{ for(let i=0;i<100;i++){ if(fn())return; await page.waitForTimeout(100); } throw new Error('기다림 초과: '+what); };
   await until(()=>indexAsked()>=1,'처음 목록 요청');
   await page.waitForTimeout(300);
-  assert.deepEqual([(await state()).label,await c.evaluate(()=>!!document.getElementById('prRetry'))],[['코치 자료1','프로세스'],false]);
+  assert.deepEqual([(await state()).label,await c.evaluate(()=>!!document.getElementById('prRetry'))],[['코치 자료1','프로세스','엘미하'],false]);   // 3.018 — 엘미하 칸: 엘미하 계정의 글이 없으면 숫자 없음
   const before=indexAsked();
   await c.click('#prTabProc');
   await c.waitForSelector('#prRetry');
   await until(()=>indexAsked()>before,'칸을 열 때의 목록 요청');
   s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.cards.length],[true,['false','true'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색',0]);
+  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.cards.length],[true,['false','true','false'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색',0]);
   assert.match(await c.evaluate(()=>document.getElementById('grid').textContent),/프로세스 훈련을 불러오지 못했어요/);
   assert.deepEqual([s.fab,s.filters],['none','none'],'프로세스 칸은 보는 곳 — 올리기·코치 자료의 고르개는 치운다');
   assert.ok(askedLocal.includes('/packs/index.json'),'사이트가 안 되면 앱에 실린 사본을 본다 '+JSON.stringify(askedLocal));
@@ -133,7 +133,7 @@ try{
   await c.click('#prRetry');
   await c.waitForSelector('.pr-card[data-proc="06"]');
   s=await state();
-  assert.deepEqual([s.cards,s.label,s.count],[['06'],['코치 자료1','프로세스1'],'세션 1개 · 훈련 3개']);
+  assert.deepEqual([s.cards,s.label,s.count],[['06'],['코치 자료1','프로세스1','엘미하'],'세션 1개 · 훈련 3개']);
   assert.deepEqual(await c.evaluate(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] .pr-hero img')].map(i=>i.getAttribute('src'))),['packs/thumbs/06-1.svg?v=0a1b2c3d4e'],'그림도 사본에서');
   await c.waitForFunction(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] img')].every(i=>i.complete&&i.naturalWidth>0));
   const remoteBefore=asked.length;
@@ -166,7 +166,7 @@ try{
   // 3) 세션 한 장에 훈련 셋 — 호 순서, 이상한 줄은 건너뛴다
   s=await state();
   assert.deepEqual(s.cards,['03','04']);
-  assert.deepEqual(s.label,['코치 자료1','프로세스2'],'칸 이름 옆의 개수는 사실만');
+  assert.deepEqual(s.label,['코치 자료1','프로세스2','엘미하'],'칸 이름 옆의 개수는 사실만');
   assert.equal(s.count,'세션 2개 · 훈련 6개');
   assert.deepEqual(s.chips,['전체 주제2*','공격 조직1','수비 조직1'],'있는 주제만 칩으로');
   const card=await c.evaluate(()=>{const el=document.querySelector('.pr-card[data-proc="03"]'),r=el.getBoundingClientRect();
@@ -239,7 +239,7 @@ try{
   await c.fill('#commSearch','');
   await c.waitForFunction(()=>document.querySelectorAll('.pr-card').length===2);
 
-  // 4-2) 3.018 — 앱이 보강한 4호(사본 목록의 own:1)는 사이트가 열려 있어도 사본의 줄 · 그림 · 팩이다. 사이트의 4호 팩은 묻지 않는다
+  // 4-2) 3.019 — 앱이 보강한 4호(사본 목록의 own:1)는 사이트가 열려 있어도 사본의 줄 · 그림 · 팩이다. 사이트의 4호 팩은 묻지 않는다
   const own=await c.evaluate(()=>{ const el=document.querySelector('.pr-card[data-proc="04"]'); return {foot:el.querySelector('.pr-foot').textContent,sc:el.querySelector('.pr-sc').textContent,imgs:[...el.querySelectorAll('.pr-hero img')].map(i=>i.getAttribute('src'))}; });
   assert.deepEqual([own.foot,own.sc],['@프로세스 · 레터 4호장면 13','훈련 1 · 장면 7'],'장면 수는 사본의 줄');
   assert.deepEqual(own.imgs,['packs/thumbs/04-1.svg?v=bbbbbbbbbb'],'그림도 사본에서');
@@ -300,7 +300,7 @@ try{
   assert.deepEqual([s.proc,s.cards],[true,['03','04']]);
   await c.click('#prTabCoach');
   s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.lb,s.ph,s.cards.length,s.coach],[false,['true','false'],'훈련 주제','제목·작성자·내용 검색',0,1]);
+  assert.deepEqual([s.proc,s.pressed,s.lb,s.ph,s.cards.length,s.coach],[false,['true','false','false'],'훈련 주제','제목·작성자·내용 검색',0,1]);
   assert.notEqual(s.fab,'none');assert.notEqual(s.filters,'none');
   assert.ok(s.chips.includes('론도'));
   // 다음에 열면 마지막에 본 칸(코치 자료)으로
@@ -309,7 +309,7 @@ try{
   c=await (await page.waitForSelector('#fComm')).contentFrame();
   await c.waitForSelector('#grid .card');
   s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.coach],[false,['true','false'],1],'마지막에 본 칸으로 연다');
+  assert.deepEqual([s.proc,s.pressed,s.coach],[false,['true','false','false'],1],'마지막에 본 칸으로 연다');
 
   assert.deepEqual(writes,[],'프로세스 칸은 커뮤니티 서버 표에 아무것도 쓰지 않는다');
   const paths=[...new Set(asked.map(a=>a.replace(/\?.*$/,'')))].sort();

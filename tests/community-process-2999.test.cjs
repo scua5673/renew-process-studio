@@ -119,7 +119,7 @@ test('the viewer says whose session it is and offers one thing — putting it in
   assert.match(board,/if\(rb\)rb\.onclick=/);
 });
 
-test('3.018 — a session the app has reworked (own:1 in the copy) comes from the copy; every other session stays on the site',()=>{
+test('3.019 — a session the app has reworked (own:1 in the copy) comes from the copy; every other session stays on the site',()=>{
   const g=pure();
   const site=g.procRead(index([row(2),row(3),row(4)]));
   const local=g.procRead(index([row(2,{own:1,rev:'aaaaaaaaaa',trainings:[{name:'연습 1',minutes:15,scenes:11},{name:'연습 2',minutes:20,scenes:14},{name:'연습 3',minutes:25,scenes:14}]}),row(3),row(9,{own:1})]));

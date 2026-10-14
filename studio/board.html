@@ -11135,7 +11135,7 @@ function letterPackUrlOk(u){ try{ var x=new URL(String(u||"")); if(x.search||x.h
     return x.protocol==="https:"&&LETTER_PACK_ORIGINS.indexOf(x.origin)>=0&&/\/packs\/\d{2}\.json$/.test(x.pathname); }catch(_){ return false; } }
 function _lpStr(v,n){ return (typeof v==="string"?v:"").slice(0,n); }
 function _lpNum(v,lo,hi,def){ v=+v; return (isFinite(v)&&v>=lo&&v<=hi)?v:def; }
-/* 3.018 — 장면 사이의 곡선(재생 renderInterp 의 curves): {토큰 번호|ball: {mx,my[,air]}} — 휘어 뛰는 길의 가운데 비낌 · 공의 높이(1~3). 아는 칸 · 범위 안의 수만 받는다 */
+/* 3.019 — 장면 사이의 곡선(재생 renderInterp 의 curves): {토큰 번호|ball: {mx,my[,air]}} — 휘어 뛰는 길의 가운데 비낌 · 공의 높이(1~3). 아는 칸 · 범위 안의 수만 받는다 */
 function _lpCurves(c){
   if(!c||typeof c!=="object"||Array.isArray(c))return null;
   var o={},n=0;
@@ -11175,7 +11175,7 @@ function letterPackCard(pack,dep){
     var frames=[];
     (Array.isArray(t.frames)?t.frames:[]).slice(0,40).forEach(function(f){ var fs=f&&typeof f==="object"?snapOf(f.snap):null; if(!fs)return;
       var fo={snap:fs,hold:_lpNum(f.hold,0,20,.6),dur:_lpNum(f.dur,.1,20,1),hl:(Array.isArray(f.hl)?f.hl:[]).filter(function(x){ return typeof x==="number"||typeof x==="string"; }).slice(0,30),cap:_lpStr(f.cap,120)};
-      var cv=_lpCurves(f.curves); if(cv)fo.curves=cv;   /* 3.018 — 휘어 뛰는 길 · 띄운 공 */
+      var cv=_lpCurves(f.curves); if(cv)fo.curves=cv;   /* 3.019 — 휘어 뛰는 길 · 띄운 공 */
       frames.push(fo); });
     tr.snap=frames.length?clone(frames[0].snap):sn;
     var th=""; try{ th=String(dep.thumb(tr.snap)||""); }catch(_){}

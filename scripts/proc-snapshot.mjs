@@ -3,7 +3,7 @@
 // 앱은 평소 훈련 세션 사이트에서 읽고, 그 사이트가 닫혀 있으면 이 사본을 읽는다(community.html PROC_LOCAL).
 // 사본에는 목록(index.json) · 팩(NN.json, 그림 칸은 뺀다 — 앱은 팩 안의 그림을 쓰지 않는다) · 카드 그림(thumbs/NN-K.svg)만 둔다.
 // 그림은 우리 사이트에서 열리는 파일이 된다 — 실행되는 것·바깥 주소가 하나라도 있으면 멈춘다.
-// 3.018 — 앱이 장면을 보강한 세션(지금 사본 목록의 own:1 · scripts/proc-scenes.mjs)은 덮지 않는다: 그 줄과 팩·그림을 그대로 둔다.
+// 3.019 — 앱이 장면을 보강한 세션(지금 사본 목록의 own:1 · scripts/proc-scenes.mjs)은 덮지 않는다: 그 줄과 팩·그림을 그대로 둔다.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
