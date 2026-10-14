@@ -42,7 +42,7 @@ BEGIN
       SELECT CASE
         WHEN a.action IN ('library_soft_delete','library_restore') THEN (SELECT l.name FROM public.ps_library l WHERE l.workspace_id=a.workspace_id AND l.lib_id=a.target_id LIMIT 1)
         WHEN a.action='support_status' THEN (SELECT r.title FROM public.ps_support_reports r WHERE r.id::text=a.target_id LIMIT 1)
-        WHEN a.action IN ('community_hide','community_unhide') THEN (SELECT c.title FROM public.ps_community c WHERE c.id=a.target_id LIMIT 1)
+        WHEN a.action IN ('community_hide','community_unhide','community_resolve') THEN (SELECT c.title FROM public.ps_community c WHERE c.id=a.target_id LIMIT 1)
         WHEN a.action='member_remove' THEN (SELECT x.email::text FROM auth.users x WHERE x.id::text=a.target_id LIMIT 1)
         END name) t ON true;
   n:=jsonb_array_length(rows);
