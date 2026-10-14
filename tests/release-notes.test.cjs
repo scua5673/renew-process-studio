@@ -3,7 +3,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const notes=require('../studio/release-notes.js');
-const entries=[{id:'one',date:'2026-09-15',title:'저장 안내 개선',changes:['선택 화면을 간결하게 정리했습니다.']}];
+const entries=[{id:'one',date:'2026-09-15',title:'v3.020 · 저장 안내 개선',changes:['선택 화면을 간결하게 정리했습니다.']}];   /* 3.024 — 띠는 안내 판(끝이 0) 묶음만 보인다 */
 const START=Date.UTC(2026,8,15);
 
 test('seven-day hiding ends exactly at its deadline',()=>{
@@ -104,7 +104,7 @@ test('confirmed hide survives remount and expires while the tab remains open',()
 test('new release content appears immediately even inside the previous hidden week',()=>{
   const h=harness(),controller=h.mount();h.button.click();h.advance(1000);
   assert.equal(h.host.hidden,true);
-  controller.refresh([{id:'new',date:'2026-09-16',title:'새 문의 기능',changes:['답변 보기']},...entries]);
+  controller.refresh([{id:'new',date:'2026-09-16',title:'v3.030 · 새 문의 기능',changes:['답변 보기']},...entries]);   /* 다음 안내 판 */
   assert.equal(h.host.hidden,false);assert.match(h.host.textContent,/새 문의 기능/);assert.equal(h.timers.size,0);
   assert.equal(h.writes.length,1,'A new revision does not remove the prior record or write user data');
 });
@@ -133,7 +133,7 @@ test('storage events honor another tab hide and clearing it restores visibility'
 });
 
 test('announcement content is literal text and cannot insert markup or event handlers',()=>{
-  const h=harness({entries:[{id:'literal',date:'2026-09-15',title:'<img src=x onerror=alert(1)>',changes:['<script>fetch("secret")</script>']} ]});h.mount();
+  const h=harness({entries:[{id:'literal',date:'2026-09-15',title:'v3.020 · <img src=x onerror=alert(1)>',changes:['<script>fetch("secret")</script>']} ]});h.mount();
   assert.match(h.host.textContent,/<img src=x onerror=alert\(1\)>/);assert.match(h.host.textContent,/<script>fetch\("secret"\)<\/script>/);
   function tags(node){return [node.tagName,...node.children.flatMap(tags)];}
   assert.equal(tags(h.host).includes('IMG'),false);assert.equal(tags(h.host).includes('SCRIPT'),false);

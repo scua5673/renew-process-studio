@@ -7,7 +7,14 @@
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
+  /* 3.024 — «새 기능» 안내는 열 판마다 한 번(사용자 «새 기능 추가 이야기는 10개에 한 번씩 하자»). 판 번호 끝이 0 인 판(3.020 · 3.030 …)이 안내 판이고,
+     그 안내는 바로 앞 안내 판 뒤의 판들(3.011~3.020)을 모아 한 번에 보여 준다. 그 사이 판(3.021~3.029)은 조용하다 — 목록엔 적어 두고 다음 안내 판에 함께 나간다.
+     3.019 까지는 판마다 알렸으므로 3.020 부터 센다(그 전 안내 판 3.010 을 지금 와서 다시 띄우지 않는다). */
+  var ANNOUNCE_EVERY=10,ANNOUNCE_FROM=3020;
   var DEFAULT_ENTRIES=[{
+    id:'2026-10-14-v3-024-release-notes-every-ten',date:'2026-10-14',title:'v3.024 · «새 기능» 안내는 열 판마다 한 번',
+    changes:['왼쪽 «새 기능» 안내가 판마다 뜨지 않고, 판 번호 끝이 0인 판(3.020, 3.030 …)에서만 한 번 뜹니다. 그 안내에는 바로 앞 안내 뒤로 바뀐 것이 모두 모여 있습니다(예: 3.021~3.030).','그 사이 판은 조용히 적용됩니다. 새 판이 준비됐을 때의 «업데이트» 안내는 지금 그대로입니다.','안내를 열면 «v3.021 ~ v3.030»처럼 어느 판들의 변경인지 함께 보이고, 7일 뒤 저절로 사라지는 것은 그대로입니다.']
+  },{
     id:'2026-10-14-v3-019-process-scenes',date:'2026-10-14',title:'v3.019 · 커뮤니티 — 프로세스 훈련 애니메이션 보강 · 프로세스 칸을 첫 화면으로',
     changes:['커뮤니티 «프로세스» 칸의 세션 45개, 훈련 135개 모두에 장면을 더했습니다. 훈련마다 장면이 4~6개에서 11~14개로 늘었습니다(모두 769개 → 1,729개). 원래 장면은 그대로 두고, 그 사이의 움직임 · 득점 뒤의 흐름 · 잘못했을 때 어떻게 되는지를 이어서 보여 줍니다.','장면마다 패스(흰 실선) · 선수 이동(노란 점선) · 드리블(물결선) · 슈팅 화살표가 나오고, 띄우는 패스와 휘어 뛰는 움직임도 그대로 재생됩니다. «보관함에 담기»로 담는 카드에도 똑같이 들어갑니다.','v3.016에서 늦췄던 재생 속도는 원래대로 되돌렸습니다. 장면이 늘어 훈련 하나가 원래 속도로 20초 남짓(19~27초) 재생됩니다.','커뮤니티를 열면 «프로세스» 칸이 먼저 보입니다. «코치 자료»나 «엘미하»를 보다 나가면 다음에도 그 칸으로 열립니다.','세션 카드의 그림이 한 장으로 커졌습니다. 그림 아래 1 · 2 · 3을 누르면 그 훈련의 그림과 장면 수가 나오고, 카드를 누르면 보고 있던 훈련부터 열립니다. 넓은 화면에서는 훈련 이름에 마우스를 올려도 그림이 바뀝니다.']
   },{
@@ -674,6 +681,15 @@
       return {id:text(x.id),date:text(x.date),title:text(x.title),changes:(Array.isArray(x.changes)?x.changes:[]).filter(function(s){return typeof s==='string'&&!!s;})};
     });
   }
+  /* 판 번호: 제목 머리의 «v3.019» → 3019(큰 판 × 1000 + 작은 판). 없으면 NaN */
+  function versionNo(e){var m=/^v(\d+)\.(\d{1,3})(?!\d)/.exec(text(e&&e.title));return m?(+m[1])*1000+(+m[2]):NaN;}
+  /* 지금 보여 줄 안내 묶음: 가장 최근 안내 판(끝이 0 · 3.020 부터)과 그 앞 아홉 판의 항목, 최신 판이 앞. 안내 판이 아직 없으면 빈 목록 */
+  function announced(value){
+    var all=entries(value===undefined?DEFAULT_ENTRIES:value),a=NaN;
+    all.forEach(function(e){var n=versionNo(e);if(n>=ANNOUNCE_FROM&&n%ANNOUNCE_EVERY===0&&!(n<=a))a=n;});
+    if(isNaN(a))return [];
+    return all.filter(function(e){var n=versionNo(e);return n>a-ANNOUNCE_EVERY&&n<=a;}).sort(function(x,y){return versionNo(y)-versionNo(x);});
+  }
   /* 전체 표시 내용을 그대로 비교한다. 해시 충돌이나 버전 번호 재사용으로 새 안내가 숨겨지지 않는다. */
   function revision(value){return 'release-notes-v1:'+JSON.stringify(entries(value));}
   function validTime(value){return typeof value==='number'&&Number.isFinite(value)&&value>=0;}
@@ -725,7 +741,7 @@
     var win=options.window||(typeof window!=='undefined'?window:null),host=options.host;
     if(!win||!win.document||!host)return null;
     if(host.__psReleaseNotes&&host.__psReleaseNotes.destroy)host.__psReleaseNotes.destroy();
-    var doc=win.document,current=entries(options.entries===undefined?DEFAULT_ENTRIES:options.entries),timer=null,disposed=false,expanded=false;
+    var doc=win.document,current=announced(options.entries),timer=null,disposed=false,expanded=false;   /* 3.024 — 띠도 안내 판 묶음만 */
     var now=typeof options.now==='function'?options.now:function(){return Date.now();};
     if(!doc.getElementById('psReleaseNotesStyle')){
       var style=doc.createElement('style');style.id='psReleaseNotesStyle';style.textContent=CSS;(doc.head||doc.documentElement).appendChild(style);
@@ -755,7 +771,7 @@
     }
     function refresh(nextEntries){
       if(disposed)return;
-      if(Array.isArray(nextEntries)){current=entries(nextEntries);render();}
+      if(Array.isArray(nextEntries)){current=announced(nextEntries);render();}
       clearTimer();
       var at=now(),hidden=readHidden(win),visible=shouldShow({entries:current,hidden:hidden,now:at});
       host.hidden=!visible;
@@ -787,5 +803,5 @@
     }};
     host.__psReleaseNotes=controller;render();refresh();return controller;
   }
-  return {STORAGE_KEY:STORAGE_KEY,WEEK_MS:WEEK_MS,entries:function(){return entries(DEFAULT_ENTRIES);},revision:revision,makeHidden:makeHidden,shouldShow:shouldShow,mount:mount};
+  return {STORAGE_KEY:STORAGE_KEY,WEEK_MS:WEEK_MS,ANNOUNCE_EVERY:ANNOUNCE_EVERY,ANNOUNCE_FROM:ANNOUNCE_FROM,entries:function(){return entries(DEFAULT_ENTRIES);},versionNo:versionNo,announced:announced,revision:revision,makeHidden:makeHidden,shouldShow:shouldShow,mount:mount};
 });
