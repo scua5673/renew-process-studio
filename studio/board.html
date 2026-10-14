@@ -7800,8 +7800,8 @@ function boardDefaultSnap(src){
 }
 function boardDefaultRead(){try{var raw=localStorage.getItem(BOARD_DEFAULT_KEY);if(!raw)return null;var data=JSON.parse(raw);var snap=data&&(data.snap||data);return snap?boardDefaultSnap(snap):null;}catch(_){return null;}}
 function boardDefaultSave(){
-  try{localStorage.setItem(BOARD_DEFAULT_KEY,JSON.stringify({v:1,at:Date.now(),snap:boardDefaultSnap(captureSnap())}));
-    try{toast("현재 보드를 기본 세팅으로 저장했어요");}catch(_){}
+  try{var __ds=boardDefaultSnap(captureSnap()),__dn=(__ds.players||[]).length;localStorage.setItem(BOARD_DEFAULT_KEY,JSON.stringify({v:1,at:Date.now(),snap:__ds}));
+    try{toast("지금 보드를 «새 보드» 기본 세팅으로 정했어요"+(__dn?(" · 선수 "+__dn+"명"):"")+" · 이 보드는 «보드 저장»으로 저장해요");}catch(_){}   /* 3.031 — 보드 저장이 아니라는 것을 말한다 */
     try{window.__syncBoardDefaultUI&&window.__syncBoardDefaultUI();}catch(_){}
     return true;}catch(_){try{toast("기본 세팅을 저장하지 못했어요");}catch(__){}return false;}
 }
@@ -8458,15 +8458,16 @@ function boardPrivateResetCanvas(){
 /* 3.014 — «새 보드»(오류 제보 88a82188 «첫 화면 보드 초기화 하는 게 있으면 좋겠다 · 전 작업이 계속 남아 있다»).
    지금 페이지의 판을 «새 보드 기본 세팅»(없으면 빈 판 + 기본 겉모습)으로 바꾸고 장면·선택·되돌리기 기록을 비운다.
    페이지 묶음과 보관함 연결은 페이지 띠(__psPages.newBoard)가 맡는다. 계정 전환용 boardPrivateResetCanvas 와 달리 미팅·뷰 스냅은 건드리지 않는다. */
-function boardNewCanvas(){
+function boardNewCanvas(keep){   /* 3.031 — keep===false: «빈 보드로» — 기본 세팅의 겉모습(운동장·색·토큰)만 쓰고 선수는 올리지 않는다 */
   try{restoreAnimBeforeCapture();}catch(_){}
   try{window.__animReset&&window.__animReset();}catch(_){}
   var d=null;try{d=boardDefaultRead();}catch(_){}
+  if(d&&keep===false){d.players=[];d.ball={x:CX,y:CY};}
   sel=null;multiSel=[];matchActive=false;
   loadSnap(d||{players:[],equipment:[],drawings:[],ball:{x:CX,y:CY},pitchN:1});
   undoStack.length=0;redoStack.length=0;
   try{renderTokens();renderDrawings();updateDelUI();}catch(_){}
-  return !!d;
+  return !!d&&keep!==false;
 }
 window.__boardNewCanvas=boardNewCanvas;
 function boardPrivateAuthChanged(){
@@ -17454,6 +17455,12 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       window.__vaultReadOnly=ro;
       if(ro&&window.__vaultAutoSaveCancel)window.__vaultAutoSaveCancel();
       window.__curVaultId=(ty!=="train"&&!ro)?(d.libId||null):null;
+      /* 3.031 — 보기 전용으로 연 미팅(남의 미팅 · 작전판 슬라이드쇼)도 «경기 준비에서 연 그 자료»로 알아본다(syncBackMatch) —
+         __curVaultId 가 없어 경기 준비 안 띠(vc-match)가 서지 않았고, 쇼가 끝나도 경기 준비로 돌아가지 않았다 */
+      window.__vvMeetLib=(ty==="meeting"&&ro)?(d.__showOf||d.libId||null):null;
+      /* 3.031 — 미팅은 보기 바(showViewBar)를 거치지 않는다: 앞서 보기로 연 작전판의 __vvItem·«편집» 단추가 남으면 syncBackMatch 가
+         그 옛 항목을 «지금 연 것»으로 봐(경기 준비 안 띠 없음 → 쇼가 끝나도 경기 준비로 못 돌아감), «편집»은 다른 항목을 열었다(리뷰) */
+      if(ty==="meeting"){ window.__vvItem=null; window.__vvNextItem=null; var _veb=document.getElementById("vCreateEdit"); if(_veb)_veb.style.display="none"; }
     }catch(_){}
     if(ty==="train"||ty==="setpiece"){try{openLibDrawEditor(d.libId,ro);}catch(_){}return;}
     /* v324 — 복원 전 빈 애니메이션 상태가 원본에 자동 저장되지 않게 잠근다. */
@@ -17885,7 +17892,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{window.__vaultEdit=true;}catch(_){}bar.classList.add("on"); document.body.classList.add("vcreating");
     try{var sv=$id("vaultSave"); if(sv)sv.style.display="none";}catch(_){} syncBackMatch(); }
   /* 2.965 — «‹ 경기 준비로»: 경기에서 연(만든) 그 자료일 때만 */
-  function syncBackMatch(){ setTimeout(function(){ try{ var b=$id("vCreateBackMatch"); if(!b)return; var fm=window.__vaultFromMatch,cur=window.__curVaultId||((window.__vvItem&&window.__vvItem.libId)||"");
+  function syncBackMatch(){ setTimeout(function(){ try{ var b=$id("vCreateBackMatch"); if(!b)return; var fm=window.__vaultFromMatch,cur=window.__curVaultId||((window.__vvItem&&window.__vvItem.libId)||"")||window.__vvMeetLib||"";   /* 3.031 — 보기 전용 미팅 */
     var on=!!(fm&&fm.ref&&fm.libId&&cur&&fm.libId===cur); b.style.display=on?"":"none"; if(on){ var o=String(fm.ref.opp||"").trim(); b.textContent="‹ "+(o?(o+"전 "):"")+"경기 준비"+(fm.inplace?"":"로"); }
     /* 2.966 — 셸이 이미 경기 준비 안 편집을 내려놓았으면(자료가 열리기 전에 다른 탭을 누름) 보통 보관함 띠로 */
     if(fm&&fm.inplace){ try{ if(parent!==window&&!parent.document.body.classList.contains("ps-match-edit"))fm.inplace=false; }catch(_){} }
@@ -18557,6 +18564,24 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       return true;
     },function(e){ try{toast((e&&e.psVaultLocked)?"보관함을 쓰려면 먼저 로그인해 주세요":"미팅을 만들지 못했어요 — 연결을 확인하고 다시 눌러 주세요");}catch(_){} return _fail(); });
   };
+  /* 3.031 — 작전판 → 슬라이드쇼용 장(미팅 슬라이드와 같은 모양). 페이지 하나 = 장 하나, 제목 = 페이지 이름, 장면(2개 이상)은 그대로 장면으로.
+     slide.snap 은 장면 1(미팅 규칙 2.935). 방향은 페이지 것 그대로(가로 h · 세로 v) — 그려 둔 모양으로 보인다. 원본은 건드리지 않는다(사본) */
+  function meetSlidesFromBoard(d){
+    var cl=function(o){ return JSON.parse(JSON.stringify(o)); };
+    var pg=(Array.isArray(d.pages)&&d.pages.length)?d.pages:[{snap:d.snap,anim:{frames:d.frames,hold:d.hold},name:"",thumb:d.thumb}];
+    var out=[];
+    pg.forEach(function(p,i){ if(!p||typeof p!=="object")return;
+      var an=p.anim, fr=Array.isArray(an)?an:((an&&Array.isArray(an.frames))?an.frames:[]);
+      fr=fr.filter(function(f){ return f&&f.snap&&typeof f.snap==="object"; });
+      var sn=(fr.length>=2?fr[0].snap:p.snap); if(!sn||typeof sn!=="object")return;
+      var s={pdfOrientation:sn.orientation==="v"?"portrait":"landscape",snap:cl(sn),thumb:String(p.thumb||(i===0?(d.thumb||""):"")),
+        title:String(p.name||"").trim()||(pg.length>1?"":String(d.name||"").trim()),points:[]};
+      if(fr.length>=2){ s.frames=cl(fr); var h=+(an&&an.hold); if(h>0)s.frames[0].__hold=h; }
+      out.push(s);
+    });
+    return out;
+  }
+  window.__meetSlidesFromBoard=meetSlidesFromBoard;
   /* 경기 화면 «편집 ›»·«▶ 슬라이드쇼» — 보관함의 그 미팅을 연다(남의 것은 보기 전용) */
   window.__vaultOpenMeeting=function(libId,opts){
     opts=opts||{}; var _inp=!!opts.inplace;
@@ -18565,6 +18590,16 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var d=null;for(var i=0;i<lib.length;i++){if(lib[i]&&lib[i].libId===libId){d=lib[i];break;}}
       if(!d||!meetLinkable(d)){try{toast("이 자료를 보관함에서 찾지 못했어요 — 지워졌거나 아직 이 기기에 오지 않았어요");}catch(_){} if(_inp)meetMatchDonePost(null,true); return;}   /* 2.965 — 작전판도 */
       var _show=!!(opts.show&&(d.type||"")==="meeting");
+      /* 3.031 — 작전판도 «▶ 슬라이드쇼»(오류 제보 81e77b91 «보관함에서 가져오면 슬라이드쇼가 없다»): 페이지를 장으로(장면 그대로) 한
+         **보기 전용 미팅**으로 띄운다 — 보관함에는 아무것도 쓰지 않는다(__curVaultId 없음 · 자동 저장 멈춤). 쇼가 끝나면 경기 준비로. */
+      if(opts.show&&(d.type||"")==="board"){ var _bs=meetSlidesFromBoard(d);
+        if(_bs.length){
+          window.__vaultFromMatch={libId:d.libId,ref:d.matchRef||null,inplace:_inp&&!!d.matchRef,parts:null,name:d.name||"",showReturn:_inp};
+          openItem({type:"meeting",name:d.name||"작전판",slides:_bs,__showOf:d.libId},true);
+          if(_inp)setTimeout(meetMatchReadyPost,60);
+          setTimeout(function(){try{if(window.__meet&&window.__meet.show)window.__meet.show(true);}catch(_){}},320);
+          return;
+        } }
       window.__vaultFromMatch={libId:d.libId,ref:d.matchRef||null,inplace:_inp&&!!d.matchRef,parts:Array.isArray(opts.parts)?opts.parts:null,name:d.name||"",showReturn:_inp&&_show};   /* 2.965 — «‹ 경기 준비로» · 2.966 경기 준비 안 편집 */
       if(canEditItem(d))openItemEdit(d);else openItemView(d);
       if(_inp)setTimeout(meetMatchReadyPost,60);
@@ -20431,21 +20466,35 @@ try{ var _nb=document.getElementById('dfNew');
     list.forEach(function(p){ var f=p&&p.anim&&p.anim.frames; if(Array.isArray(f)&&f.length>1)sc+=f.length; try{ if(p&&p.snap&&!(typeof _boardSnapEmpty==="function"&&_boardSnapEmpty(p.snap)))any=true; }catch(_){} });
     return {n:list.length,sc:sc,any:any}; }
   function _nbSig(){ var s=_snap()||{},a=null; try{ a=window.__animGet?window.__animGet():null; }catch(_){} return JSON.stringify([pages?pages.length:1,s.players||[],s.equipment||[],s.drawings||[],(a&&Array.isArray(a.frames))?a.frames.length:0]); }
+  /* 3.031 — 오류 제보 88a82188 후속 «처음엔 새 보드가 초기화됐는데 시간이 좀 지나고 누르니 초기화가 안 되고 선수는 그대로 남아 있다».
+     «새 보드»는 보드 설정 › 배치 › «기본 세팅»이 있으면 그 배치(선수 포함)로 시작한다. 그 줄의 단추가 «현재 보드 저장»이라
+     «보드 저장»과 헷갈려 한 번 누르면, 그 뒤 «새 보드»는 늘 그 선수들로 시작했다 — 확인 창은 «선수를 모두 지워요»라고 말하면서.
+     기본 세팅에 선수가 있으면 묻는다: «빈 보드로 시작»(겉모습만 기본 세팅 · 선수 없음) / «기본 세팅으로 시작 (선수 N명)» / 취소. */
+  function _nbDefaultPlayers(){ try{ var d=window.__psGetBoardDefault&&window.__psGetBoardDefault(); return (d&&Array.isArray(d.players))?d.players.length:0; }catch(_){ return 0; } }
   function newBoard(){ if(!_nbAvailable())return;
     capture();
-    var c=_nbCounts();
-    var go=function(){
-      var prev={pages:pages?_clone(pages):null,idx:idx,link:_singleLink?_clone(_singleLink):null,snap:pages?null:_snap(),anim:pages?null:_animNow()};
+    var c=_nbCounts(),lose=c.any||c.n>1||c.sc,dn=_nbDefaultPlayers();
+    var go=function(keep){   /* keep===false — 기본 세팅의 선수는 올리지 않는다(3.031) */
+      /* 3.031 — 손대지 않은 새 보드에서 다시 «새 보드»(빈 보드 ↔ 기본 세팅으로 바꿔 고르기)를 눌러도 «↶ 이전 보드»는 처음 보드를 되살린다 */
+      var chain=(_nbUndo&&_nbSig()===_nbUndo.fresh)?_nbUndo.prev:null;
+      var prev=chain||{pages:pages?_clone(pages):null,idx:idx,link:_singleLink?_clone(_singleLink):null,snap:pages?null:_snap(),anim:pages?null:_animNow()};
       pages=null; idx=0; _singleLink=null;
-      var dflt=false; try{ dflt=!!(window.__boardNewCanvas&&window.__boardNewCanvas()); }catch(_){}
+      var dflt=false; try{ dflt=!!(window.__boardNewCanvas&&window.__boardNewCanvas(keep)); }catch(_){}
       clearHistory();
-      clearTimeout(_nbT); _nbUndo=(c.any||c.n>1||c.sc)?{prev:prev,at:Date.now(),fresh:_nbSig()}:null;
+      clearTimeout(_nbT); _nbUndo=(chain||lose)?{prev:prev,at:Date.now(),fresh:_nbSig()}:null;
       if(_nbUndo)_nbT=setTimeout(function(){ _nbUndo=null; try{render();}catch(_){} },NB_UNDO_MS);
       render(); persist();
       _nbSave("새 보드로 시작했어요"+(dflt?" · 새 보드 기본 세팅으로":"")+" · 보관함 자료는 그대로예요");
     };
-    if(!c.any&&c.n<=1&&!c.sc){ go(); return; }   /* 이미 빈 한 장이면 묻지 않는다 */
-    psConfirm("지금 보드를 비우고 새 보드로 시작할까요?\n\n· "+(c.n>1?("페이지 "+c.n+"개, "):"")+(c.sc?("장면 "+c.sc+"개, "):"")+"선수·장비·그림을 모두 지워요\n· 보관함에 저장한 자료는 그대로예요\n· 1분 안에는 위 띠의 «↶ 이전 보드»로 되살릴 수 있어요",go);
+    var what=(c.n>1?("페이지 "+c.n+"개, "):"")+(c.sc?("장면 "+c.sc+"개, "):"");
+    if(dn){
+      psChoice("새 보드를 어떻게 시작할까요?\n\n"+(lose?("· 지금 보드의 "+what+"선수·장비·그림은 지워요\n"):"")+"· «새 보드 기본 세팅»에 선수 "+dn+"명 배치가 저장돼 있어요(보드 설정 › 배치 › 기본 세팅)\n· 보관함에 저장한 자료는 그대로예요"+(lose?"\n· 1분 안에는 위 띠의 «↶ 이전 보드»로 되살릴 수 있어요":""),
+        [{label:"빈 보드로 시작",primary:true,value:"empty"},{label:"기본 세팅으로 시작 (선수 "+dn+"명)",value:"default"},{label:"취소",value:null}],
+        function(v){ if(v==="empty")go(false); else if(v==="default")go(true); });
+      return;
+    }
+    if(!lose){ go(); return; }   /* 이미 빈 한 장이면 묻지 않는다 */
+    psConfirm("지금 보드를 비우고 새 보드로 시작할까요?\n\n· "+what+"선수·장비·그림을 모두 지워요\n· 보관함에 저장한 자료는 그대로예요\n· 1분 안에는 위 띠의 «↶ 이전 보드»로 되살릴 수 있어요",go);
   }
   function newBoardUndo(){ var u=_nbUndo; if(!u||!_nbAvailable())return;
     var back=function(){
@@ -21614,7 +21663,8 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     var defaultRow=make("div","cmd-board-default-row","menurow");
     defaultRow.appendChild(make("span",null,"menulbl","기본 세팅"));
     var defaultSeg=make("div",null,"seg");
-    var defaultSave=make("button","cmd-board-default-save",null,"현재 보드 저장");defaultSave.type="button";defaultSave.title="현재 보드를 새 보드 기본 세팅으로 저장";
+    /* 3.031 — «현재 보드 저장» → «새 보드로 정하기»: «보드 저장»(지금 보드 저장)과 헷갈려 눌리면 그 뒤 «새 보드»가 늘 그 선수들로 시작했다(오류 제보 88a82188 후속) */
+    var defaultSave=make("button","cmd-board-default-save",null,"새 보드로 정하기");defaultSave.type="button";defaultSave.title="지금 보드(배치·운동장·색)를 «새 보드»의 기본 세팅으로 — «새 보드»를 누르면 이 배치로 시작할 수 있어요";
     var defaultClear=make("button","cmd-board-default-clear",null,"해제");defaultClear.type="button";defaultClear.title="새 보드 기본 세팅 해제";
     defaultSave.addEventListener("click",function(e){e.stopPropagation();try{if(window.__psSaveBoardDefault)window.__psSaveBoardDefault();}catch(_){}syncDefaultRow();});
     defaultClear.addEventListener("click",function(e){e.stopPropagation();try{if(window.__psClearBoardDefault)window.__psClearBoardDefault();}catch(_){}syncDefaultRow();});

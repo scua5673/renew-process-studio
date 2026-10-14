@@ -65,6 +65,30 @@ try{
   // 5) 이미 빈 한 장이면 묻지 않는다
   await f.click('#bpNewBoard');await page.waitForTimeout(400);
   assert.equal(await dlgOpen(),false,'빈 보드는 확인 창 없이');
+  /* 6) 3.031 — 오류 제보 88a82188 후속 «시간이 좀 지나고 누르니 초기화가 안 되고 선수는 그대로». 보드 설정 › 배치 › 기본 세팅에 선수가 있으면
+     «새 보드»가 그 선수들로 시작했다(확인 창은 «모두 지워요»). 이제 묻는다: 빈 보드로 / 기본 세팅으로(선수 N명) / 취소 */
+  const choice=()=>f.evaluate(()=>[...document.querySelectorAll('button')].filter(b=>b.offsetParent!==null&&/^(빈 보드로 시작|기본 세팅으로 시작|취소)/.test(b.textContent.trim())).map(b=>b.textContent.trim()));
+  const pick=async(label)=>{await f.evaluate(l=>[...document.querySelectorAll('button')].filter(b=>b.offsetParent!==null&&b.textContent.trim().startsWith(l)).pop().click(),label);await page.waitForTimeout(700);};
+  await f.evaluate(()=>{pushUndo();state.players.push({id:'d1',team:'blue',num:'5',x:300,y:300},{id:'d2',team:'blue',num:'6',x:420,y:330},{id:'d3',team:'red',num:'9',x:640,y:300});renderTokens();});
+  await f.click('#bpBoardSettings');await f.waitForSelector('#cmd-board-default-save',{state:'attached'});
+  assert.equal(await f.evaluate(()=>document.getElementById('cmd-board-default-save').textContent.trim()),'새 보드로 정하기','«보드 저장»과 헷갈리지 않는 이름');
+  await f.evaluate(()=>document.getElementById('cmd-board-default-save').click());
+  await f.click('#bpBoardSettings');await page.waitForTimeout(300);
+  await f.evaluate(()=>{pushUndo();state.drawings.push({type:'line',pts:[{x:300,y:200},{x:500,y:260}],color:'#fff'});renderTokens();renderDrawings();});
+  await f.click('#bpNewBoard');await f.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.offsetParent!==null&&b.textContent.trim()==='빈 보드로 시작'));
+  assert.deepEqual(await choice(),['빈 보드로 시작','기본 세팅으로 시작 (선수 3명)','취소']);
+  await pick('취소');s=await st();assert.equal(s.players,3,'취소는 그대로');assert.equal(s.drawings,1);
+  await f.click('#bpNewBoard');await f.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.offsetParent!==null&&b.textContent.trim()==='빈 보드로 시작'));
+  await pick('빈 보드로 시작');s=await st();
+  assert.equal(s.players,0,'빈 보드 — 기본 세팅의 선수도 없다 '+JSON.stringify(s));assert.equal(s.drawings,0);assert.equal(s.tabs.length,1);
+  await f.click('#bpNewBoard');await f.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.offsetParent!==null&&b.textContent.trim()==='빈 보드로 시작'));
+  await pick('기본 세팅으로 시작');s=await st();
+  assert.equal(s.players,3,'기본 세팅으로 — 그 선수 셋 '+JSON.stringify(s));assert.equal(s.drawings,0,'그림은 기본 세팅에 없다');
+  /* 빈 보드 → 바로 기본 세팅으로 바꿔 골라도 «↶ 이전 보드»는 처음 보드(선수 셋 + 그림)를 되살린다 */
+  assert.ok(s.undo&&s.ready,'«↶ 이전 보드»가 남아 있다 '+JSON.stringify(s));
+  await f.click('#bpNewBoardUndo');await f.waitForFunction(()=>!document.getElementById('bpNewBoardUndo'));await page.waitForTimeout(500);
+  s=await st();assert.equal(s.players,3);assert.equal(s.drawings,1,'처음 보드의 그림까지 '+JSON.stringify(s));
+  await f.evaluate(()=>window.__psClearBoardDefault());
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log(JSON.stringify({engine,passed:true}));

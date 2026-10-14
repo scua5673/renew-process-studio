@@ -12988,7 +12988,7 @@ function mmPaint(card,m,lib){
       +'<span class="mmv-count" aria-live="polite"></span><span class="mmv-scn" hidden></span>'
       +'<button type="button" class="mmv-big" data-mmv-big aria-label="크게 보기" title="크게 보기">'+MMV_BIG+'</button></div>'
       +'<div class="mmv-info"><div class="mmv-txt"><b class="mmv-title"></b><ul class="mmv-pts"></ul></div>'
-      +'<div class="mmv-acts">'+(!isB?'<button type="button" class="mm-show" data-mm-show="'+esc(d.libId)+'">▶ 슬라이드쇼</button>':'')
+      +'<div class="mmv-acts"><button type="button" class="mm-show" data-mm-show="'+esc(d.libId)+'"'+(isB?' title="페이지를 한 장씩 — 보기만 해요(작전판은 그대로)"':'')+'>▶ 슬라이드쇼</button>'   /* 3.031 — 작전판도(오류 제보 81e77b91 «보관함에서 가져오면 슬라이드쇼가 없다») — 페이지를 장으로 보기 전용 쇼 */
       +'<button type="button" class="mm-open" data-mm-open="'+esc(d.libId)+'">'+(mine?"편집 ›":"보기 ›")+'</button>'
       +((mine&&can)?'<button type="button" class="mm-x" data-mm-unlink="'+esc(d.libId)+'" aria-label="이 경기에서 떼기" title="이 경기에서 떼기 — 자료는 보관함에 그대로">×</button>':'')+'</div></div>'
       +(sl.length>1?'<div class="mmv-strip" role="tablist" aria-label="'+unit+' 고르기">'+sl.map(function(s,k){ return '<button type="button" role="tab" class="mmv-th" data-mmv-i="'+k+'" aria-label="'+(k+1)+'. '+esc(s.title||((isB?"페이지 ":"슬라이드 ")+(k+1)))+'"><span class="s">'+(s.thumb||'')+'</span><i>'+(k+1)+'</i><em>'+esc(s.title||((isB?"페이지 ":"슬라이드 ")+(k+1)))+'</em></button>'; }).join("")+'</div>':'')
@@ -13009,7 +13009,7 @@ function mmViewShow(card){
   var host=v.querySelector(".mmv-svg"), stage=v.querySelector(".mmv-stage"), key=d.libId+"#"+vs.i+"#"+(d.savedAt||0)+"#"+(d.editedAt||0);
   if(host.__k!==key){ host.__k=key; var ar=s.thumb?mmSvgFit(host,s.thumb,true):null; if(!s.thumb)host.innerHTML='<div class="mmv-nothumb">'+esc(s.title||"그림이 아직 없어요")+'</div>'; stage.style.setProperty("--ar",String(ar||105/68)); }
   var c=v.querySelector(".mmv-count"); if(c)c.textContent=(vs.i+1)+" / "+n;
-  var sc=v.querySelector(".mmv-scn"); if(sc){ sc.hidden=!(s.scenes>1); sc.textContent="장면 "+s.scenes+(isB?"":" · 슬라이드쇼에서 재생"); }
+  var sc=v.querySelector(".mmv-scn"); if(sc){ sc.hidden=!(s.scenes>1); sc.textContent="장면 "+s.scenes+" · 슬라이드쇼에서 재생"; }   /* 3.031 — 작전판도 */
   var t=v.querySelector(".mmv-title"); if(t)t.textContent=s.title||((isB?"페이지 ":"슬라이드 ")+(vs.i+1));
   var p=v.querySelector(".mmv-pts"); if(p){ p.innerHTML=s.points.map(function(x){return '<li>'+esc(x)+'</li>';}).join(""); p.hidden=!s.points.length; }
   var pv=v.querySelector(".mmv-nav.prev"), nx=v.querySelector(".mmv-nav.next"); if(pv)pv.disabled=vs.i<=0; if(nx)nx.disabled=vs.i>=n-1;
