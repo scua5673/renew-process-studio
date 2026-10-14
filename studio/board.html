@@ -11135,6 +11135,16 @@ function letterPackUrlOk(u){ try{ var x=new URL(String(u||"")); if(x.search||x.h
     return x.protocol==="https:"&&LETTER_PACK_ORIGINS.indexOf(x.origin)>=0&&/\/packs\/\d{2}\.json$/.test(x.pathname); }catch(_){ return false; } }
 function _lpStr(v,n){ return (typeof v==="string"?v:"").slice(0,n); }
 function _lpNum(v,lo,hi,def){ v=+v; return (isFinite(v)&&v>=lo&&v<=hi)?v:def; }
+/* 3.019 — 장면 사이의 곡선(재생 renderInterp 의 curves): {토큰 번호|ball: {mx,my[,air]}} — 휘어 뛰는 길의 가운데 비낌 · 공의 높이(1~3). 아는 칸 · 범위 안의 수만 받는다 */
+function _lpCurves(c){
+  if(!c||typeof c!=="object"||Array.isArray(c))return null;
+  var o={},n=0;
+  Object.keys(c).slice(0,40).forEach(function(k){ var v=c[k]; if(!/^(ball|\d{1,6})$/.test(k)||!v||typeof v!=="object")return;
+    var mx=_lpNum(v.mx,-2000,2000,NaN),my=_lpNum(v.my,-2000,2000,NaN); if(!isFinite(mx)||!isFinite(my))return;
+    var q={mx:mx,my:my}; if(k==="ball"){ var air=_lpNum(v.air,1,3,0); if(air)q.air=Math.round(air); }
+    o[k]=q; n++; });
+  return n?o:null;
+}
 /* 확인 창이 쓰는 요약. 모양이 다르면 null — 카드 한 장 · 훈련 1~6개 · 훈련마다 스냅 */
 function letterPackRead(pack){
   if(!pack||pack.type!=="process-studio-drillpack"||!Array.isArray(pack.drills)||pack.drills.length!==1)return null;
@@ -11164,11 +11174,13 @@ function letterPackCard(pack,dep){
     var tr=dep.draft({type:"train",name:info.trainings[i].name,minutes:info.trainings[i].minutes,sets:_lpNum(t.sets,1,20,1),rpe:_lpNum(t.rpe,1,10,5),focus:_lpStr(t.focus,12)||"bp",method:_lpStr(t.method,4000),coaching:_lpStr(t.coaching,4000),tags:[]});
     var frames=[];
     (Array.isArray(t.frames)?t.frames:[]).slice(0,40).forEach(function(f){ var fs=f&&typeof f==="object"?snapOf(f.snap):null; if(!fs)return;
-      frames.push({snap:fs,hold:_lpNum(f.hold,0,20,.6),dur:_lpNum(f.dur,.1,20,1),hl:(Array.isArray(f.hl)?f.hl:[]).filter(function(x){ return typeof x==="number"||typeof x==="string"; }).slice(0,30),cap:_lpStr(f.cap,120)}); });
+      var fo={snap:fs,hold:_lpNum(f.hold,0,20,.6),dur:_lpNum(f.dur,.1,20,1),hl:(Array.isArray(f.hl)?f.hl:[]).filter(function(x){ return typeof x==="number"||typeof x==="string"; }).slice(0,30),cap:_lpStr(f.cap,120)};
+      var cv=_lpCurves(f.curves); if(cv)fo.curves=cv;   /* 3.019 — 휘어 뛰는 길 · 띄운 공 */
+      frames.push(fo); });
     tr.snap=frames.length?clone(frames[0].snap):sn;
     var th=""; try{ th=String(dep.thumb(tr.snap)||""); }catch(_){}
     tr.thumb=th;
-    if(frames.length>=2){ frames=letterPackPace(frames); frames[0].thumb=th; tr.frames=frames; tr.animIdx=0; }   /* 저장본엔 장면 0 의 썸네일만(2.559) · 3.016 박자는 커뮤니티 «프로세스» 칸과 같게 */
+    if(frames.length>=2){ frames[0].thumb=th; tr.frames=frames; tr.animIdx=0; }   /* 저장본엔 장면 0 의 썸네일만(2.559) */
     trs.push(tr); }
   var anim=null; for(var k=0;k<trs.length;k++){ if(trs[k].frames){ anim=trs[k]; break; } }
   var url=_lpStr(lt.url,80); if(!/^https:\/\/process-letter\.netlify\.app\/\d{2}\/$/.test(url))url="";
@@ -11177,18 +11189,6 @@ function letterPackCard(pack,dep){
     letter:{issue:info.issue,session:info.session,title:_lpStr(lt.title,80),theme:_lpStr(lt.theme,40),url:url}};
   if(anim)card.frames=clone(anim.frames);   /* 카드 대표 = 애니메이션이 있는 첫 훈련(2.613) */
   return card;
-}
-/* 3.016 — 프로세스 훈련의 박자(사용자 «커뮤니티 프로세스 훈련들 애니메이션이 너무 짧다 · 더 길게»). 팩은 장면 이동 1.2~1.45초 · 장면 유지는 기본 0.6초(재생은 장면 0 의 __hold 를 쓰는데 팩엔 그 칸이 없다)라
-   훈련 하나가 10초 남짓에 끝났다(→ 22초 안팎) · 유지 2초 이상(재생 __hold · 영상 hold) · 이동 평균 2.2초(같은 비율로 — 장면마다의 차이는 그대로, 이미 느리면 그대로).
-   여러 번 거쳐도 같은 값이다. 커뮤니티의 procPace 와 몸이 같아야 한다 — 단위 테스트가 본다(보는 곳과 담은 곳의 박자가 같게). */
-function letterPackPace(fr){
-  if(!Array.isArray(fr)||fr.length<2)return fr;
-  var HOLD=2,MOVE=2.2,num=function(v,lo,hi,def){ v=+v; return (isFinite(v)&&v>0)?Math.min(hi,Math.max(lo,v)):def; };
-  var out=fr.map(function(f){ return Object.assign({},(f&&typeof f==='object')?f:{}); });
-  var avg=out.slice(0,-1).reduce(function(a,f){ return a+num(f.dur,.1,20,1); },0)/(out.length-1),k=(avg<MOVE-.01)?MOVE/avg:1;
-  out.forEach(function(f){ f.dur=Math.min(20,Math.round(num(f.dur,.1,20,1)*k*100)/100); f.hold=num(f.hold,HOLD,20,HOLD); });
-  out[0].__hold=num(out[0].__hold,HOLD,20,HOLD);
-  return out;
 }
 /* ── 2.997 · 레터 팩 순수 구간 끝 ── */
 var _lpBusy=null;

@@ -17,7 +17,10 @@ const THUMB='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 60"><rect w
 const fx=await startFixture(),browsers={};
 try{
   const {page,context,logs}=await openApp(fx,size,{browsers});
-  const asked=[],askedLocal=[],writes=[];let indexDown=true,localDown=true;
+  const asked=[],askedLocal=[],writes=[];let indexDown=true,localDown=true,localOwn=false;
+  // 3.019 — 앱이 장면을 보강한 세션(사본 목록의 own:1): 4호의 첫 훈련을 장면 7개로. 사이트가 열려 있어도 이 세션은 사본에서 읽는다.
+  const OWN4=Object.assign(row(4),{own:1,rev:'bbbbbbbbbb',trainings:[{name:'가상 연습 1',minutes:15,scenes:7},{name:'골문 앞 버티기',minutes:20,scenes:2},{name:'가상 연습 3',minutes:25,scenes:4}]});
+  const ownPack4=()=>{ const p=pack(4); p.drills[0].trainings[0]=tr(0,7); p.drills[0].frames=tr(0,7).frames; return p; };
   // 3.002 — 코치 글 하나(훈련 둘: 첫 훈련은 장면 없음 · 둘째는 장면 셋). 훈련이 둘 이상인 코치 글도 뷰어에서 훈련을 골라 본다.
   const coachTr=(i,n,min)=>{const t=tr(i,n);t.name='코치 훈련 '+'AB'[i];t.method='코치 방법 '+'AB'[i];t.coaching='1. 코치 포인트 '+'AB'[i];if(min)t.minutes=min;else delete t.minutes;if(n<2)delete t.frames;return t;};
   const COACH={id:'Cmulti1',owner:'22222222-2222-4222-8222-222222222222',owner_name:'가상코치',title:'가상 코치 글',summary:'',cat:'rondo',age:'U12',players:'8',thumb:THUMB,views:3,copies:1,likes:0,created_at:'2026-10-01T00:00:00Z'};
@@ -38,9 +41,10 @@ try{
   // 3.003 — 앱에 실린 사본(…/studio/packs/) 흉내: 세션 하나(6호). 훈련 세션 사이트가 내려가 있을 때 여기서 읽는다. 처음에는 이것도 내려가 있다.
   await context.route(u=>u.origin===new URL(page.url()).origin&&u.pathname.startsWith('/studio/packs/'),route=>{const u=new URL(route.request().url()),p=u.pathname.replace(/^\/studio/,'');askedLocal.push(p+u.search);
     if(localDown)return route.fulfill({status:404,body:'not found'});
-    if(p==='/packs/index.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({type:'process-studio-pack-index',version:1,sessions:[row(6)]})});
+    if(p==='/packs/index.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({type:'process-studio-pack-index',version:1,sessions:localOwn?[OWN4,row(6)]:[row(6)]})});
     if(p==='/packs/06.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(pack(6))});
-    if(/^\/packs\/thumbs\/06-[123]\.svg$/.test(p))return route.fulfill({status:200,contentType:'image/svg+xml',body:THUMB});
+    if(localOwn&&p==='/packs/04.json')return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(ownPack4())});
+    if(/^\/packs\/thumbs\/0[46]-[123]\.svg$/.test(p))return route.fulfill({status:200,contentType:'image/svg+xml',body:THUMB});
     return route.fulfill({status:404,body:'not found'});});
   // 커뮤니티 서버 표에 쓰는 요청(올리기·조회수·담김·신고·좋아요)을 센다
   page.on('request',r=>{const u=r.url();if(/ps_community|ps_comm_/.test(u)&&r.method()!=='GET')writes.push(r.method()+' '+u.replace(/^.*\/rest\/v1\//,''));});
@@ -52,7 +56,7 @@ try{
   await c.evaluate(()=>{ try{sessionStorage.removeItem('ps_comm_feed_cache_v1');}catch(_){} location.reload(); });
   await page.waitForTimeout(400);
   c=await (await page.waitForSelector('#fComm')).contentFrame();
-  await c.waitForSelector('#grid .card');
+  await c.waitForSelector('#prRetry');   // 3.019 — 처음 여는 칸은 프로세스(목록은 아직 내려가 있다)
   const rect=sel=>c.evaluate(s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {l:Math.round(r.left),t:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height),d:getComputedStyle(e).display};},sel);
   const state=()=>c.evaluate(()=>({proc:document.body.classList.contains('pr-proc'),pressed:[...document.querySelectorAll('#prSeg button')].map(b=>b.getAttribute('aria-pressed')),label:[...document.querySelectorAll('#prSeg button')].map(b=>b.textContent),
     sub:document.getElementById('prSub').textContent,lb:document.getElementById('prCatLb').textContent,ph:document.getElementById('commSearch').placeholder,count:document.getElementById('commCount').textContent,
@@ -66,17 +70,24 @@ try{
   const pick=()=>c.evaluate(()=>{const b=document.getElementById('prCvTabs'),r=b.getBoundingClientRect();return {hidden:b.hidden,head:document.querySelector('.cv-head b').textContent,l:Math.round(r.left),r:Math.round(r.right),vw:innerWidth,
     btn:[...b.querySelectorAll('button')].map(x=>{const q=x.getBoundingClientRect();return [x.querySelector('.pr-i').textContent,x.querySelector('.pr-nm').textContent,(x.querySelector('.pr-mn')||{}).textContent,x.getAttribute('aria-pressed'),Math.round(q.height),Math.round(q.left)>=0&&Math.round(q.right)<=innerWidth];})};});
   const inside=()=>v.evaluate(()=>({banner:document.getElementById('epRoBanner').textContent,copy:document.getElementById('commCopyBtn').textContent,rep:!!document.getElementById('commRepBtn'),del:!!document.getElementById('commDelBtn'),
-    doc:[...document.querySelectorAll('.ep-ro-text')].map(x=>x.textContent),play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,players:state.players.length,hit:window.__prHit,ro:editorReadOnly,
-    hold:animHold,durs:(anim.frames||[]).map(f=>f.dur)}));
+    doc:[...document.querySelectorAll('.ep-ro-text')].map(x=>x.textContent),play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,players:state.players.length,hit:window.__prHit,ro:editorReadOnly}));
 
-  // 1) 처음은 코치 자료 — 지금 화면 그대로. 두 칸이 머리에 있다
+  // 0) 3.019 — 처음 여는 칸은 «프로세스»(사용자 «커뮤니티에 올린 훈련을 더 잘 보이게»). 마지막에 본 칸은 이 기기에 적어 두고 다음에 그 칸으로 연다
   let s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.coach],[false,['true','false'],'작전판·훈련·경기 분석 탐색','훈련 주제','제목·작성자·내용 검색',1]);
+  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph],[true,['false','true','false'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색'],'처음엔 프로세스 칸');
+  assert.equal(await c.evaluate(()=>localStorage.getItem('ps_comm_tab_v1')),null,'고른 적이 없으면 적지 않는다');
+  await c.click('#prTabCoach');
+  await c.waitForSelector('#grid .card');
+  assert.equal(await c.evaluate(()=>localStorage.getItem('ps_comm_tab_v1')),'coach');
+
+  // 1) 코치 자료 — 지금 화면 그대로. 칸 셋(3.019 엘미하)이 머리에 있다
+  s=await state();
+  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.coach],[false,['true','false','false'],'작전판·훈련·경기 분석 탐색','훈련 주제','제목·작성자·내용 검색',1]);
   assert.notEqual(s.fab,'none','코치 자료 칸에는 «올리기»가 있다');
   assert.ok(s.chips.includes('론도')&&s.chips[0]==='전체 주제*','코치 자료의 주제 칩 그대로');
   const seg=await rect('#prSeg'),tabs=await c.evaluate(()=>[...document.querySelectorAll('#prSeg button')].map(b=>Math.round(b.getBoundingClientRect().height)));
-  assert.ok(seg.l>=0&&seg.l+seg.w<=s.vw,'두 칸이 화면 안 '+JSON.stringify(seg));
-  assert.ok(tabs.every(h=>h>=(phone?36:30)),'두 칸의 높이 '+JSON.stringify(tabs));
+  assert.ok(seg.l>=0&&seg.l+seg.w<=s.vw,'칸들이 화면 안 '+JSON.stringify(seg));
+  assert.ok(tabs.length===3&&tabs.every(h=>h>=(phone?36:30)),'칸 셋의 높이 '+JSON.stringify(tabs));
   assert.equal(s.docW,s.vw,'가로로 넘치지 않는다');
 
   // 1-2) 3.002 — 훈련이 둘인 코치 글: 뷰어 머리 아래에서 훈련을 골라 본다. 띠·담기·신고는 코치 글 그대로
@@ -101,18 +112,18 @@ try{
   assert.deepEqual(writes,['POST rpc/ps_comm_view'],'코치 글은 열 때 조회수 한 번 — 훈련을 바꿔 봐도 더 세지 않는다');
   writes.length=0;
 
-  // 2) 프로세스 칸 — 목록을 못 받으면 사실대로 말하고 다시 시도를 준다(코치 자료를 보는 동안의 실패는 조용하다)
+  // 2) 프로세스 칸 — 목록을 못 받으면 사실대로 말하고 다시 시도를 준다(코치 자료를 보는 동안의 실패는 조용하다 — 첫 화면에서 한 번 실패했다)
   const indexAsked=()=>asked.filter(a=>a==='/packs/index.json').length;
   const until=async(fn,what)=>{ for(let i=0;i<100;i++){ if(fn())return; await page.waitForTimeout(100); } throw new Error('기다림 초과: '+what); };
   await until(()=>indexAsked()>=1,'처음 목록 요청');
   await page.waitForTimeout(300);
-  assert.deepEqual([(await state()).label,await c.evaluate(()=>!!document.getElementById('prRetry'))],[['코치 자료1','프로세스'],false]);
+  assert.deepEqual([(await state()).label,await c.evaluate(()=>!!document.getElementById('prRetry'))],[['코치 자료1','프로세스','엘미하'],false]);   // 3.018 — 엘미하 칸: 엘미하 계정의 글이 없으면 숫자 없음
   const before=indexAsked();
   await c.click('#prTabProc');
   await c.waitForSelector('#prRetry');
   await until(()=>indexAsked()>before,'칸을 열 때의 목록 요청');
   s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.cards.length],[true,['false','true'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색',0]);
+  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.cards.length],[true,['false','true','false'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색',0]);
   assert.match(await c.evaluate(()=>document.getElementById('grid').textContent),/프로세스 훈련을 불러오지 못했어요/);
   assert.deepEqual([s.fab,s.filters],['none','none'],'프로세스 칸은 보는 곳 — 올리기·코치 자료의 고르개는 치운다');
   assert.ok(askedLocal.includes('/packs/index.json'),'사이트가 안 되면 앱에 실린 사본을 본다 '+JSON.stringify(askedLocal));
@@ -122,11 +133,11 @@ try{
   await c.click('#prRetry');
   await c.waitForSelector('.pr-card[data-proc="06"]');
   s=await state();
-  assert.deepEqual([s.cards,s.label,s.count],[['06'],['코치 자료1','프로세스1'],'세션 1개 · 훈련 3개']);
-  assert.deepEqual(await c.evaluate(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] .pr-tri img')].map(i=>i.getAttribute('src'))),[1,2,3].map(k=>'packs/thumbs/06-'+k+'.svg?v=0a1b2c3d4e'),'그림도 사본에서');
+  assert.deepEqual([s.cards,s.label,s.count],[['06'],['코치 자료1','프로세스1','엘미하'],'세션 1개 · 훈련 3개']);
+  assert.deepEqual(await c.evaluate(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] .pr-hero img')].map(i=>i.getAttribute('src'))),['packs/thumbs/06-1.svg?v=0a1b2c3d4e'],'그림도 사본에서');
   await c.waitForFunction(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] img')].every(i=>i.complete&&i.naturalWidth>0));
   const remoteBefore=asked.length;
-  await c.click('.pr-card[data-proc="06"]');
+  await c.click('.pr-card[data-proc="06"] .pr-tt');
   await c.waitForSelector('#cvMask.on');
   v=await view('가상 연습 1');
   iv=await inside();
@@ -144,36 +155,75 @@ try{
   await c.waitForSelector('.pr-card[data-proc="06"]');
 
   // 사이트가 돌아오면 다음에 목록을 받을 때(탭에 적어 둔 10분이 지나거나 화면을 새로 열 때) 사이트 것으로 바뀐다
-  indexDown=false;
+  indexDown=false; localOwn=true;
   await c.evaluate(()=>{ try{sessionStorage.removeItem('ps_comm_proc_index_v1');}catch(_){} location.reload(); });
   await page.waitForTimeout(400);
   c=await (await page.waitForSelector('#fComm')).contentFrame();
-  await c.waitForSelector('#grid .card');
-  await c.click('#prTabProc');
-  await c.waitForSelector('.pr-card[data-proc="03"]');
+  await c.waitForSelector('.pr-card[data-proc="03"]');   // 마지막에 본 칸(프로세스)으로 연다 — 누르지 않아도
+  assert.equal((await state()).proc,true,'마지막에 본 칸으로 연다');
   const indexDone=indexAsked();
 
   // 3) 세션 한 장에 훈련 셋 — 호 순서, 이상한 줄은 건너뛴다
   s=await state();
   assert.deepEqual(s.cards,['03','04']);
-  assert.deepEqual(s.label,['코치 자료1','프로세스2'],'칸 이름 옆의 개수는 사실만');
+  assert.deepEqual(s.label,['코치 자료1','프로세스2','엘미하'],'칸 이름 옆의 개수는 사실만');
   assert.equal(s.count,'세션 2개 · 훈련 6개');
   assert.deepEqual(s.chips,['전체 주제2*','공격 조직1','수비 조직1'],'있는 주제만 칩으로');
   const card=await c.evaluate(()=>{const el=document.querySelector('.pr-card[data-proc="03"]'),r=el.getBoundingClientRect();
     return {title:el.querySelector('.pr-tt').textContent,meta:el.querySelector('.pr-meta').textContent,rows:[...el.querySelectorAll('.pr-trs li')].map(li=>[...li.children].map(x=>x.textContent)),foot:el.querySelector('.pr-foot').textContent,
-      imgs:[...el.querySelectorAll('.pr-tri img')].map(i=>i.getAttribute('src')),l:Math.round(r.left),r:Math.round(r.right),stats:el.querySelectorAll('.stat,.likebtn').length,
-      mins:[...el.querySelectorAll('.pr-mn')].map(x=>Math.round(x.getBoundingClientRect().right)),font:[...new Set([...el.querySelectorAll('.pr-tt,.pr-meta,.pr-trs li,.pr-foot')].map(x=>getComputedStyle(x).fontSize))]};});
+      imgs:[...el.querySelectorAll('.pr-hero img')].map(i=>i.getAttribute('src')),l:Math.round(r.left),r:Math.round(r.right),stats:el.querySelectorAll('.stat,.likebtn').length,
+      hero:(h=>[Math.round(h.width),Math.round(h.height)])(el.querySelector('.pr-hero').getBoundingClientRect()),
+      pick:[...el.querySelectorAll('.pr-pick button')].map(b=>{const q=b.getBoundingClientRect();return [b.textContent,b.getAttribute('aria-pressed'),Math.round(Math.min(q.width,q.height))];}),sc:el.querySelector('.pr-sc').textContent,
+      on:[...el.querySelectorAll('.pr-trs li.on')].map(li=>li.dataset.k),
+      mins:[...el.querySelectorAll('.pr-mn')].map(x=>Math.round(x.getBoundingClientRect().right)),font:[...new Set([...el.querySelectorAll('.pr-tt,.pr-meta,.pr-trs li,.pr-foot,.pr-sc,.pr-pick button')].map(x=>getComputedStyle(x).fontSize))]};});
   assert.equal(card.title,'가상 세션 3');
   assert.equal(card.meta,'공격 조직인지 · 60분');
   assert.deepEqual(card.rows,[['1','가상 연습 1','15분'],['2','가상 연습 2','20분'],['3','가상 연습 3','25분']]);
   assert.equal(card.foot,'@프로세스 · 레터 3호장면 9');
-  assert.deepEqual(card.imgs,[1,2,3].map(k=>'https://process-letter-sessions.netlify.app/packs/thumbs/03-'+k+'.svg?v=0a1b2c3d4e'),'그림 주소는 번호로 짓는다');
+  assert.deepEqual(card.imgs,['https://process-letter-sessions.netlify.app/packs/thumbs/03-1.svg?v=0a1b2c3d4e'],'그림은 한 장(첫 훈련) — 주소는 번호로 짓는다');
+  assert.ok(Math.abs(card.hero[0]/card.hero[1]-1.5)<.02&&card.hero[0]>=card.r-card.l-2,'그림은 카드 폭 그대로 · 판 비율 3:2 '+JSON.stringify(card.hero));
+  assert.deepEqual(card.pick.map(b=>b.slice(0,2)),[['1','true'],['2','false'],['3','false']],'그림 아래 1·2·3');
+  assert.ok(card.pick.every(b=>b[2]>=(phone?40:32)),'1·2·3 단추 크기 '+JSON.stringify(card.pick));
+  assert.deepEqual([card.sc,card.on],['훈련 1 · 장면 3',['0']],'고른 훈련의 장면 수 · 목록에서도 표시');
   assert.equal(card.stats,0,'좋아요·조회·담김 숫자는 코치 자료에만');
   assert.ok(card.l>=0&&card.r<=s.vw,'카드가 화면 안 '+JSON.stringify(card));
   assert.equal(new Set(card.mins).size,1,'분 숫자는 오른쪽 한 줄에 맞는다 '+JSON.stringify(card.mins));
   assert.ok(card.font.every(f=>['12px','14px','16px'].includes(f)),'글자 크기 '+JSON.stringify(card.font));
   assert.equal(s.docW,s.vw,'가로로 넘치지 않는다');
   await c.waitForFunction(()=>[...document.querySelectorAll('.pr-card[data-proc="03"] img')].every(i=>i.complete&&i.naturalWidth>0));
+
+  // 3-2) 1·2·3 으로 그림을 바꾼다 — 뷰어는 열리지 않는다. 다시 그려도(검색) 고른 그림 그대로
+  const hero=()=>c.evaluate(()=>{const el=document.querySelector('.pr-card[data-proc="03"]');return {src:el.querySelector('.pr-hero img').getAttribute('src').replace(/^.*\/thumbs\//,''),
+    pressed:[...el.querySelectorAll('.pr-pick button')].map(b=>b.getAttribute('aria-pressed')),sc:el.querySelector('.pr-sc').textContent,on:[...el.querySelectorAll('.pr-trs li.on')].map(li=>li.dataset.k),viewer:document.getElementById('cvMask').classList.contains('on')};});
+  await c.click('.pr-card[data-proc="03"] .pr-pick button[data-k="1"]');
+  assert.deepEqual(await hero(),{src:'03-2.svg?v=0a1b2c3d4e',pressed:['false','true','false'],sc:'훈련 2 · 장면 2',on:['1'],viewer:false});
+  await c.click('.pr-card[data-proc="03"] .pr-pick button[data-k="2"]');
+  assert.deepEqual(await hero(),{src:'03-3.svg?v=0a1b2c3d4e',pressed:['false','false','true'],sc:'훈련 3 · 장면 4',on:['2'],viewer:false});
+  await c.waitForFunction(()=>{const i=document.querySelector('.pr-card[data-proc="03"] .pr-hero img');return i.complete&&i.naturalWidth>0;});
+  if(!phone){   // 마우스: 훈련 줄에 올리면 그 그림
+    await c.hover('.pr-card[data-proc="03"] .pr-trs li:nth-child(2)');
+    assert.equal((await hero()).src,'03-2.svg?v=0a1b2c3d4e','줄에 올리면 그 훈련 그림');
+    await c.click('.pr-card[data-proc="03"] .pr-pick button[data-k="2"]');
+    await page.mouse.move(0,0);
+  }
+  await c.focus('.pr-card[data-proc="03"] .pr-pick button[data-k="0"]');
+  await page.keyboard.press('Enter');
+  assert.deepEqual(await hero(),{src:'03-1.svg?v=0a1b2c3d4e',pressed:['true','false','false'],sc:'훈련 1 · 장면 3',on:['0'],viewer:false},'키보드로도 — 단추의 Enter 는 뷰어를 열지 않는다');
+  await c.click('.pr-card[data-proc="03"] .pr-pick button[data-k="2"]');
+  await c.fill('#commSearch','가상');
+  await c.waitForFunction(()=>document.querySelectorAll('.pr-card').length===2);
+  assert.equal((await hero()).src,'03-3.svg?v=0a1b2c3d4e','다시 그려도 고른 그림');
+  await c.fill('#commSearch','');
+  await c.waitForFunction(()=>document.querySelectorAll('.pr-card').length===2);
+
+  // 3-3) 카드를 누르면 보고 있던 훈련(3)부터 연다
+  await c.click('.pr-card[data-proc="03"] .pr-tt');
+  await c.waitForSelector('#cvMask.on');
+  v=await view('가상 연습 3');
+  assert.deepEqual((await pick()).btn.map(b=>b[3]),['false','false','true'],'뷰어도 셋째 훈련부터');
+  await c.click('#cvClose');
+  await c.waitForFunction(()=>!document.getElementById('cvMask').classList.contains('on'));
+  await c.click('.pr-card[data-proc="03"] .pr-pick button[data-k="0"]');
 
   // 4) 주제 · 검색(세션 안의 훈련 이름까지)
   await c.locator('#catChips .chip',{hasText:'수비 조직'}).click();
@@ -189,8 +239,22 @@ try{
   await c.fill('#commSearch','');
   await c.waitForFunction(()=>document.querySelectorAll('.pr-card').length===2);
 
+  // 4-2) 3.019 — 앱이 보강한 4호(사본 목록의 own:1)는 사이트가 열려 있어도 사본의 줄 · 그림 · 팩이다. 사이트의 4호 팩은 묻지 않는다
+  const own=await c.evaluate(()=>{ const el=document.querySelector('.pr-card[data-proc="04"]'); return {foot:el.querySelector('.pr-foot').textContent,sc:el.querySelector('.pr-sc').textContent,imgs:[...el.querySelectorAll('.pr-hero img')].map(i=>i.getAttribute('src'))}; });
+  assert.deepEqual([own.foot,own.sc],['@프로세스 · 레터 4호장면 13','훈련 1 · 장면 7'],'장면 수는 사본의 줄');
+  assert.deepEqual(own.imgs,['packs/thumbs/04-1.svg?v=bbbbbbbbbb'],'그림도 사본에서');
+  await c.click('.pr-card[data-proc="04"] .pr-tt');
+  await c.waitForSelector('#cvMask.on');
+  v=await view('가상 연습 1');
+  iv=await inside();
+  assert.deepEqual([iv.frames,iv.play],[7,true],'보강한 장면 7개가 실린다');
+  assert.ok(askedLocal.includes('/packs/04.json'),'4호 팩은 사본에서 '+JSON.stringify(askedLocal));
+  assert.equal(asked.some(a=>a.startsWith('/packs/04.json')),false,'사이트의 4호 팩은 묻지 않는다');
+  await c.click('#cvClose');
+  await c.waitForFunction(()=>!document.getElementById('cvMask').classList.contains('on'));
+
   // 5) 카드 → 읽기 전용 뷰어. 훈련 고르는 줄이 머리 아래에 있고, 고르면 그 훈련이 실린다
-  await c.click('.pr-card[data-proc="03"]');
+  await c.click('.pr-card[data-proc="03"] .pr-tt');
   await c.waitForSelector('#cvMask.on');
   v=await view('가상 연습 1');
   pk=await pick();
@@ -203,8 +267,6 @@ try{
   assert.deepEqual([iv.copy,iv.rep,iv.del,iv.ro],['보관함에 담기',false,false,true],'담기 하나 — 신고·삭제는 코치 자료만');
   assert.deepEqual(iv.doc,['가상 방법 1\n1. 첫 걸음','1. 가상 포인트 1'],'훈련 방법 · 코칭 포인트');
   assert.deepEqual([iv.play,iv.frames,iv.players],[true,3,2],'움직임 재생 · 장면 3');
-  // 3.016 — 사용자 «애니메이션들이 너무 짧다 · 더 길게»: 장면 유지 0.6초 → 2초 · 이동 1.2초 → 평균 2.2초(재생은 animHold · 장면마다의 dur 를 쓴다)
-  assert.deepEqual([iv.hold,iv.durs],[2,[2.2,2.2,2.2]],'프로세스 훈련은 느린 박자로');
   await c.click('#prCvTabs button:nth-child(3)');
   v=await view('가상 연습 3');
   iv=await inside();
@@ -230,8 +292,6 @@ try{
     if(!saved.length)await page.waitForTimeout(100);
   }
   assert.deepEqual(saved,[['레터 3호 · 가상 세션',3,3,60]],'카드 한 장 · 훈련 셋');
-  const pace=await f.evaluate(async()=>{ const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x&&x.letter); const fr=d.trainings[0].frames; return [fr[0].__hold,fr.map(x=>[x.hold,x.dur])]; });
-  assert.deepEqual(pace,[2,[[2,2.2],[2,2.2],[2,2.2]]],'3.016 — 담은 카드도 커뮤니티에서 본 박자 그대로');
 
   // 7) 커뮤니티로 돌아오면 프로세스 칸 그대로, 코치 자료로 가면 지금 화면 그대로
   await page.evaluate(()=>window.__psShowApp('community'));
@@ -240,9 +300,16 @@ try{
   assert.deepEqual([s.proc,s.cards],[true,['03','04']]);
   await c.click('#prTabCoach');
   s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.lb,s.ph,s.cards.length,s.coach],[false,['true','false'],'훈련 주제','제목·작성자·내용 검색',0,1]);
+  assert.deepEqual([s.proc,s.pressed,s.lb,s.ph,s.cards.length,s.coach],[false,['true','false','false'],'훈련 주제','제목·작성자·내용 검색',0,1]);
   assert.notEqual(s.fab,'none');assert.notEqual(s.filters,'none');
   assert.ok(s.chips.includes('론도'));
+  // 다음에 열면 마지막에 본 칸(코치 자료)으로
+  await c.evaluate(()=>location.reload());
+  await page.waitForTimeout(400);
+  c=await (await page.waitForSelector('#fComm')).contentFrame();
+  await c.waitForSelector('#grid .card');
+  s=await state();
+  assert.deepEqual([s.proc,s.pressed,s.coach],[false,['true','false','false'],1],'마지막에 본 칸으로 연다');
 
   assert.deepEqual(writes,[],'프로세스 칸은 커뮤니티 서버 표에 아무것도 쓰지 않는다');
   const paths=[...new Set(asked.map(a=>a.replace(/\?.*$/,'')))].sort();
