@@ -5281,13 +5281,15 @@ function eraseToken(p){if(p.id==="ball"){pushUndo();state.ball=null;sel=null;ren
 function enableDrag(g,p,removable,kind){
   let mode=null,moved=false,sx=0,sy=0,grp=null,gu0=null,grpUndo=false,mvUndo=false;     // mode: 'move' | 'draw'
   let _mvAlt=false,_mvP0=null,_mvAxis=null,grpStart=null,_mvGrab=null;   /* 2.030 */
-  let moveFrame=0,pendingMove=null;
+  let moveFrame=0,pendingMove=null,_pid=null;   /* 3.017 — _pid: 잡은 포인터(다른 손가락 · 손바닥의 움직임은 받지 않는다) */
   function flushDragMove(){
     if(moveFrame){cancelAnimationFrame(moveFrame);moveFrame=0;}
     const next=pendingMove;pendingMove=null;
     if(next&&mode)applyDragMove(next);
   }
 	  g.addEventListener("pointerdown",e=>{
+	    if(e.pointerType==="pen")_penSeen=true;
+	    if(_inkPalm(e)){e.stopPropagation();return;}   /* 3.017 — 펜슬로 긋는 중 · 뗀 직후의 손바닥 */
 	    /* 2.975 — 오른쪽 클릭(맥은 ⌃클릭도) = 고르고 정보 창. 끌기·지우개·연결선으로 넘어가지 않는다 */
 	    if(e.pointerType==="mouse"&&(e.button===2||(e.button===0&&e.ctrlKey&&!e.metaKey&&_PTR_MAC))){ e.stopPropagation(); e.preventDefault(); openTokenInfo(kind,p); return; }
 	    if(e.pointerType==="mouse"&&e.button===0&&!(sel&&sel.ref===p)&&!(multiSel.length>=2&&multiSel.indexOf(p)>=0))selPanelOpen=false;
@@ -5300,12 +5302,13 @@ function enableDrag(g,p,removable,kind){
 	    if(p.locked&&state.tool==="move"){selectItem(kind,p);try{toast("고정된 항목입니다 · 고정 해제 후 이동하세요");}catch(_){}return;}
     moved=false;mvUndo=false;sx=e.clientX;sy=e.clientY;
     const selected=!!(sel&&sel.ref===p);
-    const _isDrawStart=(kind!=="ball"&&!selected&&isDraw());
+    const _isDrawStart=(kind!=="ball"&&!selected&&isDraw()&&!_inkFingerOnly(e));   /* 3.017 — 펜슬을 쓴 뒤 손가락은 그리지 않고 옮긴다 */
     const engage=()=>{
     if(_isDrawStart){
-      mode="draw";try{g.setPointerCapture(e.pointerId)}catch(_){};_winOn(e.pointerId);beginDraw(toUnit(e));
+      if(!_inkTakeOver(e))return;
+      mode="draw";_pid=e.pointerId;try{g.setPointerCapture(e.pointerId)}catch(_){};_winOn(e.pointerId);_inkBegin(e,toUnit(e));
     }else{
-      mode="move";try{g.setPointerCapture(e.pointerId)}catch(_){};_winOn(e.pointerId);g.style.cursor="grabbing";document.body.classList.add("token-drag");
+      mode="move";_pid=e.pointerId;try{g.setPointerCapture(e.pointerId)}catch(_){};_winOn(e.pointerId);g.style.cursor="grabbing";document.body.classList.add("token-drag");
       const c=g.querySelector("circle,path,rect");if(c)c.setAttribute("opacity",".8");
       /* 2.030 — ⌥+드래그 = 끌면서 복제(놓는 순간 원자리에 사본이 남는다) · Shift+드래그 = 수평/수직 고정 */
       _mvAlt=!!e.altKey&&kind!=="ball"; _mvP0={x:p.x,y:p.y}; _mvAxis=null;
@@ -5339,7 +5342,7 @@ function enableDrag(g,p,removable,kind){
     });
   function applyDragMove(e){if(!mode)return;
     if(Math.hypot(e.clientX-sx,e.clientY-sy)>4)moved=true;
-    if(mode==="draw"){moveDraw(toUnit(e));}
+    if(mode==="draw"){_inkMove(e);}   /* 3.017 — 펜의 중간 점까지 */
     else if(grp){if(!grpUndo){pushUndo();grpUndo=true;}const u=toUnit(e);let dx=u.x-gu0.x,dy=u.y-gu0.y;
       if(e.shiftKey){ if(!_mvAxis&&(Math.abs(dx)>6||Math.abs(dy)>6))_mvAxis=Math.abs(dx)>=Math.abs(dy)?"x":"y"; if(_mvAxis==="x")dy=0; else if(_mvAxis==="y")dx=0; } else _mvAxis=null;
       grp.forEach(it=>{if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(_dirLive()||grp.some(function(it){return !it.locked&&it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
@@ -5363,6 +5366,7 @@ function enableDrag(g,p,removable,kind){
       p.x=s.x;p.y=s.y;if(kind==="ball"){state.ball.x=s.x;state.ball.y=s.y;}g.setAttribute("transform",tokenTransform(p));try{if(window.psMeasDrag)psMeasDrag(p);}catch(_){}if((kind==="player"&&(p.vis||p.shaper||tokShape==="shaper"))||_dirLive()){renderVisionRAF();}}}   /* 2.986 — 볼을 끌면 쉐이퍼가 따라 돈다 */
   const onMove=e=>{
     if(!mode)return;
+    if(_pid!=null&&e.pointerId!==_pid)return;
     if(Math.hypot(e.clientX-sx,e.clientY-sy)>4)moved=true;
     if(mode==="move"){
       // Coalesce input, not the final position: read projection once before the
@@ -5381,7 +5385,7 @@ function enableDrag(g,p,removable,kind){
   const _winEnd=e=>{ if(e.pointerId!==_winPid)return; if(e.target===g||(g.contains&&g.contains(e.target))){_winOff();return;} end(e); };
   const _winOn=pid=>{ _winOff(); _winPid=pid; window.addEventListener("pointermove",_winMove,true); window.addEventListener("pointerup",_winEnd,true); window.addEventListener("pointercancel",_winEnd,true); };
   function _winOff(){ if(_winPid==null)return; _winPid=null; window.removeEventListener("pointermove",_winMove,true); window.removeEventListener("pointerup",_winEnd,true); window.removeEventListener("pointercancel",_winEnd,true); }
-  const end=e=>{_winOff();if(!mode)return;flushDragMove();clearGuides();try{if(window.psMeasDragEnd)psMeasDragEnd();}catch(_){}document.body.classList.remove("token-drag");const m=mode,wasGrp=!!grp;mode=null;grp=null;_mvGrab=null;   /* 2.375 — 잡은 지점은 드래그마다 새로 잰다(남겨 두면 다음 드래그가 그만큼 밀린다) */try{if(moved)autoSaveAnimFrame();}catch(_){}
+  const end=e=>{if(mode&&_pid!=null&&e.pointerId!==_pid)return;_winOff();if(!mode)return;flushDragMove();clearGuides();try{if(window.psMeasDragEnd)psMeasDragEnd();}catch(_){}document.body.classList.remove("token-drag");const m=mode,wasGrp=!!grp;mode=null;grp=null;_mvGrab=null;_pid=null;   /* 2.375 — 잡은 지점은 드래그마다 새로 잰다(남겨 두면 다음 드래그가 그만큼 밀린다) */try{if(moved)autoSaveAnimFrame();}catch(_){}
     try{g.releasePointerCapture(e.pointerId);}catch(_){}
     if(m==="move"&&kind!=="ball"&&document.body.classList.contains("match-mode")){try{var _rp=document.getElementById("msRoster");if(_rp){var rr=_rp.getBoundingClientRect();if(rr.width&&e.clientX>=rr.left&&e.clientX<=rr.right&&e.clientY>=rr.top&&e.clientY<=rr.bottom){eraseToken(p);try{renderMsRoster();}catch(_){}return;}}}catch(_){}}
     if(m==="move"&&_mvAlt&&moved){ try{ /* 2.030 — ⌥ 복제: 원래 자리에 사본 */
@@ -5392,7 +5396,7 @@ function enableDrag(g,p,removable,kind){
         renderTokens(); renderDrawings(); toast("복제됨"); }catch(_){} }
     _mvAlt=false;
     if(m==="move"){g.style.cursor="grab";const c=g.querySelector("circle,path,rect");if(c)c.setAttribute("opacity","1");if(moved&&sel&&sel.ref===p)positionSelCtl();if(moved){try{boardSaveLive();}catch(_){}}if(wasGrp&&moved){try{renderDrawings();}catch(_){}try{save();}catch(_){}}else if(moved&&_hasAnchored(p.id)){try{renderDrawings();}catch(_){}}}   /* 2.719 — 묶인 선이 따라오게 */
-    else{endDraw();}
+    else if(e.pointerId===_drawPid){endDraw();}   /* 3.017 — 펜슬이 넘겨받은 선은 그 펜슬이 끝낸다 */
     if(!moved){const now=Date.now();
       if(g._t&&now-g._t<360){g._t=0;
         if(kind==="player"&&!p.coach){selPanelOpen=true;selectItem(kind,p);try{var _ni=document.getElementById("nameInput");if(_ni){_ni.focus();if(_ni.select)_ni.select();}}catch(_){}return;}   // 더블클릭 = 이름 바로 편집
@@ -6749,7 +6753,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
           enableEndpointDrag(hg,d,idx); g.appendChild(hg); });
       }
     }
-  }else if(d.type==="free"){const dd="M "+d.pts.map(p=>`${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" L ");
+  }else if(d.type==="free"){const dd=_freePathD((d===_draw&&_inkPred)?d.pts.concat(_inkPred):d.pts);   /* 3.017 — 둥근 곡선 · 긋는 중엔 예측 끝 */
     if(isSel)g.appendChild(el("path",{d:dd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linecap":"round","stroke-linejoin":"round"}));
     g.appendChild(el("path",{d:dd,fill:"none",stroke:C,"stroke-width":4.5*LW,"stroke-linecap":"round","stroke-linejoin":"round"}));
     g.appendChild(el("path",{d:dd,fill:"none",stroke:"#000","stroke-width":22,opacity:"0","pointer-events":"stroke"}));
@@ -7020,6 +7024,87 @@ function addText(u,existing){
   setTimeout(()=>{paintPreview();applyFs();ed.focus();try{ed.setSelectionRange(ed.value.length,ed.value.length);}catch(_){}
     if(!outsideBound){outsideBound=true;document.addEventListener("pointerdown",outside,true);}},0);}
 let _draw=null,_drawTmp=null;
+/* ══ 3.017 · 애플 펜슬 그리기(사용자 «아이패드 펜슬 사용할 때 더 부드럽게 · 터치 펜을 잘 활용할 수 있게») ══════════
+   ① 긋는 포인터 하나만 받는다(_drawPid). 예전엔 포인터 id 를 보지 않아, 펜슬로 긋는 중 손바닥이 닿으면 beginDraw 가 한 번 더
+      불리고 두 포인터의 점이 한 선에 섞여 선이 튀었다.
+   ② 손바닥 무시: 펜슬로 긋는 동안 · 뗀 뒤 0.35초는 손가락 터치를 받지 않는다. 손가락이 먼저 닿아 시작된 선은 펜슬이 닿는
+      순간 버리고 펜슬 선으로 바꾼다.
+   ③ 펜슬을 한 번 쓰면(_penSeen — 이 화면 동안) 그리기 도구에서 손가락은 그리지 않는다. 선수 위면 옮기기(아이패드는 기존처럼
+      길게 눌러), 빈 곳이면 한 번 안내. 화이트보드(wbPenSeen)와 같은 규칙.
+   ④ 펜이 보내는 중간 점(getCoalescedEvents)을 모두 받는다. 합성 이벤트(시험)는 빈 목록이라 그 이벤트 하나로.
+   ⑤ 점은 받는 즉시 쌓고(자유선은 모든 입력점을 유지 — 2.873), 화면은 프레임마다 한 번 다시 그린다(_inkFlush).
+      예전엔 pointermove 마다 선 전체를 새로 만들어 바꿔 끼웠다 — 긴 선일수록 무거웠다.
+   ⑥ 화면→잔디 투영은 한 프레임에 한 번 잰다(3D 는 표시점 4개 실측 → 같은 행렬로 그 프레임의 모든 점).
+   ⑦ 다음 위치 예측(getPredictedEvents)을 그리는 중인 자유선 끝에만 잠깐 붙인다 — 저장하지 않는다.
+   ⑧ 펜슬 호버(지원하는 아이패드): 그리기 도구에서 닿기 전 펜 끝 자리를 링으로. 내보내기 · 썸네일은 .draw-handle 로 빠진다. */
+let _drawPid=null,_drawPtype="",_penSeen=false,_penUpAt=0,_inkLastAt=0,_inkRaf=0,_inkMap=null,_inkMapRaf=0,_inkPred=null,_inkHintShown=false;
+let _inkHoverEl=null,_inkHoverRaf=0,_inkHoverPt=null,_inkHoverT=0;
+function _inkPalm(e){return !!e&&e.pointerType==="touch"&&((!!_draw&&_drawPtype==="pen"&&Date.now()-_inkLastAt<2000)||(Date.now()-_penUpAt<350));}
+function _inkFingerOnly(e){return !!e&&e.pointerType==="touch"&&_penSeen&&isDraw();}
+function _inkMapper(){
+  if(_inkMap)return _inkMap;
+  let f=null;
+  try{
+    if(document.body.classList.contains("bc-cam")||document.body.classList.contains("bc-tilt3d")){
+      const u0=bcUnproject(0,0),c=bcProjectionCache;
+      if(u0&&c&&c.matrix){const Hm=c.matrix;f=function(cx,cy){const de=Hm[6]*cx+Hm[7]*cy+1,x=(Hm[0]*cx+Hm[1]*cy+Hm[2])/de,y=(Hm[3]*cx+Hm[4]*cy+Hm[5])/de;return (isFinite(x)&&isFinite(y))?worldClamp(x,y):clientToUnit(cx,cy);};}
+    }else{
+      const ctm=drawLayer&&drawLayer.getScreenCTM&&drawLayer.getScreenCTM();
+      if(ctm){const inv=ctm.inverse(),p=svg.createSVGPoint();f=function(cx,cy){p.x=cx;p.y=cy;const q=p.matrixTransform(inv);return worldClamp(q.x,q.y);};}
+    }
+  }catch(_){f=null;}
+  _inkMap=f||clientToUnit;
+  if(!_inkMapRaf)_inkMapRaf=requestAnimationFrame(function(){_inkMapRaf=0;_inkMap=null;});
+  return _inkMap;}
+function _inkUnitAt(cx,cy){return _inkMapper()(cx,cy);}
+function _inkEvents(e){let l=null;try{l=e.getCoalescedEvents?e.getCoalescedEvents():null;}catch(_){l=null;}return (l&&l.length)?l:[e];}
+function _inkBegin(e,u){_drawPid=e.pointerId;_drawPtype=e.pointerType||"mouse";_inkLastAt=Date.now();if(_drawPtype==="pen")_penSeen=true;_inkPred=null;_inkHoverOff();beginDraw(u);}
+/* 긋는 중에 새 포인터가 닿았을 때. 손가락(손바닥)이 먼저 시작한 선 → 버리고 펜슬 선으로. 마우스 · 펜슬의 새 획, 0.8초 넘게
+   소식이 없던 선(놓친 pointerup) → 그 선을 마무리하고 새로. 손가락으로 긋는 중의 둘째 손가락 → 받지 않는다(false). */
+function _inkTakeOver(e){if(!_draw)return true;
+  if(e.pointerType==="pen"&&_drawPtype!=="pen"){_inkAbort();return true;}
+  if(Date.now()-_inkLastAt>800||e.pointerType!=="touch"||_drawPtype!=="touch"){endDraw();return true;}
+  return false;}
+function _inkMove(e){if(!_draw||e.pointerId!==_drawPid)return false;_inkLastAt=Date.now();
+  const evs=_inkEvents(e);for(let i=0;i<evs.length;i++)moveDraw(_inkUnitAt(evs[i].clientX,evs[i].clientY));
+  if(_draw&&_draw.type==="free"){let pr=null;try{pr=e.getPredictedEvents?e.getPredictedEvents():null;}catch(_){pr=null;}
+    _inkPred=(pr&&pr.length)?pr.slice(-2).map(function(q){return _inkUnitAt(q.clientX,q.clientY);}):null;}
+  return true;}
+function _inkSchedule(){if(!_inkRaf)_inkRaf=requestAnimationFrame(_inkFlush);}
+function _inkFlush(){_inkRaf=0;if(!_draw||!_drawTmp)return;
+  const fresh=drawingEl(_draw);if(_drawTmp.parentNode===drawLayer)drawLayer.replaceChild(fresh,_drawTmp);else drawLayer.appendChild(fresh);_drawTmp=fresh;
+  const lp=_draw.type==="free"?_draw.pts[_draw.pts.length-1]:_draw.pts[1];showMeas(_draw,lp);}
+function _inkEnd(){if(_inkRaf){cancelAnimationFrame(_inkRaf);_inkRaf=0;}_inkPred=null;if(_drawPid!=null&&_drawPtype==="pen")_penUpAt=Date.now();_drawPid=null;}
+function _inkAbort(){_inkEnd();hideMeas();try{if(_drawTmp)_drawTmp.remove();}catch(_){}_draw=null;_drawTmp=null;}
+function _inkHover(e){
+  if(e.pointerType!=="pen"||e.buttons||_draw||!isDraw()){if(_inkHoverPt||(_inkHoverEl&&_inkHoverEl.style.display!=="none"))_inkHoverOff();return;}
+  _inkHoverPt={x:e.clientX,y:e.clientY};
+  if(!_inkHoverRaf)_inkHoverRaf=requestAnimationFrame(_inkHoverPaint);}
+function _inkHoverPaint(){_inkHoverRaf=0;const c=_inkHoverPt;if(!c||!world||_draw)return;
+  const u=_inkUnitAt(c.x,c.y);if(!u||!isFinite(u.x)||!isFinite(u.y))return;
+  if(!_inkHoverEl){_inkHoverEl=el("g",{"class":"draw-handle",id:"penHover"});_inkHoverEl.style.pointerEvents="none";
+    _inkHoverEl.appendChild(el("circle",{r:9,fill:"none","stroke-width":2.5}));_inkHoverEl.appendChild(el("circle",{r:2.6}));}
+  if(_inkHoverEl.parentNode!==world)world.appendChild(_inkHoverEl);
+  const C=inkColor(state.color),ring=_inkHoverEl.firstChild,dot=_inkHoverEl.lastChild;
+  ring.setAttribute("r",Math.max(7,2.25*(state.drawLw||1)+5).toFixed(1));ring.setAttribute("stroke",C);dot.setAttribute("fill",C);
+  _inkHoverEl.setAttribute("transform","translate("+u.x.toFixed(1)+" "+u.y.toFixed(1)+")");_inkHoverEl.style.display="";
+  clearTimeout(_inkHoverT);_inkHoverT=setTimeout(_inkHoverOff,1500);}   /* 펜이 호버 거리 밖으로 나가면 이벤트가 끊긴다 — 잠시 뒤 지운다 */
+function _inkHoverOff(){if(_inkHoverRaf){cancelAnimationFrame(_inkHoverRaf);_inkHoverRaf=0;}_inkHoverPt=null;clearTimeout(_inkHoverT);if(_inkHoverEl)_inkHoverEl.style.display="none";}
+/* 3.017 — 자유선 모양. 저장된 점(d.pts)은 그대로 두고 그릴 때만 다듬는다 — 예전 보드 · 내보내기 · 썸네일이 모두 이 길로 같은 모양.
+   ① 2.5 보드단위(≈0.25m) 안쪽으로 붙은 점은 건너뛴다(손 떨림 · 펜슬 고속 입력의 잔물결). 첫 점 · 끝 점은 언제나.
+   ② 이웃 점과 1:2:1 로 한 번 고른다(끝 점은 그대로 — 선이 펜 끝에 닿아 있게).
+   ③ 점과 점의 가운데를 지나는 2차 곡선(Q)으로 잇는다 — 꺾인 선 대신 둥근 선. */
+function _freePathD(src){
+  const f=v=>v.toFixed(1),pts=[];
+  for(let i=0;i<src.length;i++){const p=src[i];if(!p||!isFinite(p.x)||!isFinite(p.y))continue;
+    if(pts.length&&i<src.length-1){const q=pts[pts.length-1];if(Math.hypot(p.x-q.x,p.y-q.y)<2.5)continue;}
+    pts.push(p);}
+  const n=pts.length;if(!n)return "";
+  if(n<3)return "M "+pts.map(p=>f(p.x)+" "+f(p.y)).join(" L ");
+  const s=[pts[0]];for(let i=1;i<n-1;i++)s.push({x:(pts[i-1].x+2*pts[i].x+pts[i+1].x)/4,y:(pts[i-1].y+2*pts[i].y+pts[i+1].y)/4});s.push(pts[n-1]);
+  let d="M "+f(s[0].x)+" "+f(s[0].y);
+  for(let i=1;i<n-1;i++){const a=s[i],b=s[i+1];d+=" Q "+f(a.x)+" "+f(a.y)+" "+f((a.x+b.x)/2)+" "+f((a.y+b.y)/2);}
+  return d+" L "+f(s[n-1].x)+" "+f(s[n-1].y);}
 let _measEl=null;
 function _drawMeters(d){
   if(d.type==="free"||d.type==="poly"){let L=0;const p=d.pts||[];for(let i=1;i<p.length;i++)L+=Math.hypot(p[i].x-p[i-1].x,p[i].y-p[i-1].y);if(d.type==="poly"&&d.closed&&p.length>2)L+=Math.hypot(p[0].x-p[p.length-1].x,p[0].y-p[p.length-1].y);return L/mppNow();}   /* 2.980 — 다각형은 둘레 */
@@ -7149,9 +7234,8 @@ function moveDraw(u){if(!_draw)return;
     const _mp=mppNow();let dx=Math.round((u.x-o.x)/_mp)*_mp,dy=Math.round((u.y-o.y)/_mp)*_mp;   /* 2.989 — 그리드 판은 1m 가 다르다 */
     _draw.pts[1]={x:o.x+dx,y:o.y+dy};}
   else if(_draw.type==="free")_draw.pts.push(u);else _draw.pts[1]=u;
-  const fresh=drawingEl(_draw);drawLayer.replaceChild(fresh,_drawTmp);_drawTmp=fresh;
-  const lp=_draw.type==="free"?_draw.pts[_draw.pts.length-1]:_draw.pts[1];showMeas(_draw,lp);}
-function endDraw(){hideMeas();if(!_draw)return;const t=_draw.type;let keep;
+  _inkSchedule();}   /* 3.017 — 점은 지금 쌓고, 화면은 프레임마다 한 번(_inkFlush) */
+function endDraw(){hideMeas();_inkEnd();if(!_draw)return;const t=_draw.type;let keep;
   /* 2.559 — 자유선은 pointermove 1회당 점 1개가 **무제한**으로 쌓였다(감사: 씨닝·throttle 0건).
      그 배열이 스냅마다 복제되니(되돌리기 50 · 장면 N) 선 하나가 앱을 무겁게 했다.
      끝날 때 한 번, 1 보드단위(≈1px) 안쪽으로 붙은 점만 솎는다 — 눈으로는 같은 선이다. */
@@ -7181,6 +7265,8 @@ function afterDrawZone(d){
 }
 function attachDraw(){
   drawCatch.addEventListener("pointerdown",e=>{
+    if(e.pointerType==="pen")_penSeen=true;
+    if(_inkPalm(e)){e.stopPropagation();return;}   /* 3.017 — 펜슬로 긋는 중 · 뗀 직후의 손바닥 */
     if(e.button===0&&window.__psTokenStampActive&&window.__psPlaceTokenStampAt){
       e.preventDefault();e.stopPropagation();
       if(window.__psPlaceTokenStampAt(toUnit(e)))return;
@@ -7193,12 +7279,16 @@ function attachDraw(){
     if(state.tool==="link"){e.stopPropagation();linkFinish(false);return;}   /* 2.679 — 빈 곳을 누르면 연결선 완료 */
     if(state.tool==="poly"){e.stopPropagation();if(e.pointerType==="mouse"&&e.button!==0)return;polyTap(toUnit(e));return;}   /* 2.980 — 다각형: 누를 때마다 꼭짓점 */
     if(!isDraw())return;
+    if(_inkFingerOnly(e)){e.stopPropagation();if(!_inkHintShown){_inkHintShown=true;toast("펜슬로 그려요 · 손가락으로는 선수를 옮깁니다");}return;}   /* 3.017 */
+    if(!_inkTakeOver(e))return;   /* 3.017 — 긋는 중 둘째 손가락은 받지 않는다 */
     if(sel)deselect();
-    try{drawCatch.setPointerCapture(e.pointerId)}catch(_){};beginDraw(toUnit(e));});
+    try{drawCatch.setPointerCapture(e.pointerId)}catch(_){};_inkBegin(e,toUnit(e));});
   drawCatch.addEventListener("pointermove",e=>{if(_poly&&state.tool==="poly"){if(e.pointerType==="mouse")polyPreview(toUnit(e));return;}   /* 2.980 — 마우스를 따라오는 다음 변 */
-    if(!_draw)return;moveDraw(toUnit(e));});
-  const end=e=>{if(!_draw)return;try{drawCatch.releasePointerCapture(e.pointerId);}catch(_){}endDraw();};
-  drawCatch.addEventListener("pointerup",end);drawCatch.addEventListener("pointercancel",end);}
+    if(!_draw)return;_inkMove(e);});
+  const end=e=>{if(!_draw||e.pointerId!==_drawPid)return;try{drawCatch.releasePointerCapture(e.pointerId);}catch(_){}endDraw();};
+  drawCatch.addEventListener("pointerup",end);drawCatch.addEventListener("pointercancel",end);
+  try{ if(world&&!world.__psPenHover){ world.__psPenHover=true;   /* 3.017 — 펜슬 호버 링(선수 위에서도) */
+    world.addEventListener("pointermove",_inkHover); world.addEventListener("pointerleave",_inkHoverOff); world.addEventListener("pointerdown",_inkHoverOff,true); } }catch(_){}}
 
 const DEFAULT_XI=[
   {num:1, nx:.045,ny:.50,pos:"GK"},
@@ -9423,7 +9513,7 @@ function selectAnimFrame(i,focus){if(i<0||i>=anim.frames.length)return false;
   /* 2.969 — 자동 저장(작전판 0.35초 · 훈련 편집기 0.6초)이 따라오기 전에 장면을 누르면 방금 그린 것이 그 장면에서 빠졌다 — 옮기기 전에 확정 */
   try{autoSaveAnimFrame();}catch(_){}
   /* 2.975 — 그리다 만 연결선·도형이 다음 장면으로 따라가지 않게 */
-  try{if(typeof linkCancel==="function")linkCancel();}catch(_){} try{if(_draw){_draw=null;if(_drawTmp)_drawTmp.remove();_drawTmp=null;}}catch(_){}
+  try{if(typeof linkCancel==="function")linkCancel();}catch(_){} try{if(_draw)_inkAbort();}catch(_){}
   stopAnim();try{lookStampScenes();}catch(_){}animActive=i;loadSnap(anim.frames[i].snap);renderAnimFrames();renderOnion();if(focus)focusAnimFrame(i);return true;}
 function reorderAnimFrame(from,to,focus){if(animPlaying){try{stopAnim();}catch(_){}}pushUndo();   /* 2.682 · 2.975 */
   
