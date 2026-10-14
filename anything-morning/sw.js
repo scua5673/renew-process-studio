@@ -1,8 +1,8 @@
 /* 애니띵 모닝 — 오프라인 지원.
    앱 파일은 네트워크를 먼저 쓰고(수정이 바로 보이게), 끊기면 저장해 둔 사본을 쓴다.
    글꼴은 한 번 받으면 사본을 쓴다. 파일 목록을 바꾸면 CACHE 이름을 올린다. */
-const CACHE = 'anything-morning-v1';
-const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'data.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+const CACHE = 'anything-morning-v2';
+const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'data.js', 'data-uri.js', 'data-ja.js', 'data-en.js', 'data-kana.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));

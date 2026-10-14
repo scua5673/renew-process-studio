@@ -1,7 +1,7 @@
 {
   "name": "애니띵 모닝",
   "short_name": "애니띵 모닝",
-  "description": "하루 5분, 마음을 움직이는 문장 하나",
+  "description": "아침 5분, 무엇이든 조금씩 — 좋은 문장, 우리말, 일본어, 영어",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",
