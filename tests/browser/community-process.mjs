@@ -66,7 +66,8 @@ try{
   const pick=()=>c.evaluate(()=>{const b=document.getElementById('prCvTabs'),r=b.getBoundingClientRect();return {hidden:b.hidden,head:document.querySelector('.cv-head b').textContent,l:Math.round(r.left),r:Math.round(r.right),vw:innerWidth,
     btn:[...b.querySelectorAll('button')].map(x=>{const q=x.getBoundingClientRect();return [x.querySelector('.pr-i').textContent,x.querySelector('.pr-nm').textContent,(x.querySelector('.pr-mn')||{}).textContent,x.getAttribute('aria-pressed'),Math.round(q.height),Math.round(q.left)>=0&&Math.round(q.right)<=innerWidth];})};});
   const inside=()=>v.evaluate(()=>({banner:document.getElementById('epRoBanner').textContent,copy:document.getElementById('commCopyBtn').textContent,rep:!!document.getElementById('commRepBtn'),del:!!document.getElementById('commDelBtn'),
-    doc:[...document.querySelectorAll('.ep-ro-text')].map(x=>x.textContent),play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,players:state.players.length,hit:window.__prHit,ro:editorReadOnly}));
+    doc:[...document.querySelectorAll('.ep-ro-text')].map(x=>x.textContent),play:!!document.getElementById('commPlayControls'),frames:(anim.frames||[]).length,players:state.players.length,hit:window.__prHit,ro:editorReadOnly,
+    hold:animHold,durs:(anim.frames||[]).map(f=>f.dur)}));
 
   // 1) 처음은 코치 자료 — 지금 화면 그대로. 두 칸이 머리에 있다
   let s=await state();
@@ -202,6 +203,8 @@ try{
   assert.deepEqual([iv.copy,iv.rep,iv.del,iv.ro],['보관함에 담기',false,false,true],'담기 하나 — 신고·삭제는 코치 자료만');
   assert.deepEqual(iv.doc,['가상 방법 1\n1. 첫 걸음','1. 가상 포인트 1'],'훈련 방법 · 코칭 포인트');
   assert.deepEqual([iv.play,iv.frames,iv.players],[true,3,2],'움직임 재생 · 장면 3');
+  // 3.016 — 사용자 «애니메이션들이 너무 짧다 · 더 길게»: 장면 유지 0.6초 → 2초 · 이동 1.2초 → 평균 2.2초(재생은 animHold · 장면마다의 dur 를 쓴다)
+  assert.deepEqual([iv.hold,iv.durs],[2,[2.2,2.2,2.2]],'프로세스 훈련은 느린 박자로');
   await c.click('#prCvTabs button:nth-child(3)');
   v=await view('가상 연습 3');
   iv=await inside();
@@ -227,6 +230,8 @@ try{
     if(!saved.length)await page.waitForTimeout(100);
   }
   assert.deepEqual(saved,[['레터 3호 · 가상 세션',3,3,60]],'카드 한 장 · 훈련 셋');
+  const pace=await f.evaluate(async()=>{ const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x&&x.letter); const fr=d.trainings[0].frames; return [fr[0].__hold,fr.map(x=>[x.hold,x.dur])]; });
+  assert.deepEqual(pace,[2,[[2,2.2],[2,2.2],[2,2.2]]],'3.016 — 담은 카드도 커뮤니티에서 본 박자 그대로');
 
   // 7) 커뮤니티로 돌아오면 프로세스 칸 그대로, 코치 자료로 가면 지금 화면 그대로
   await page.evaluate(()=>window.__psShowApp('community'));

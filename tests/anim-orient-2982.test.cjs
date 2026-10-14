@@ -214,7 +214,7 @@ test('board settings offer 가로 | 세로 next to the 90° turn, and a scene se
   assert.match(src,/window\.__setBoardOrient\)window\.__setBoardOrient\(p\[0\]\);/);
   assert.match(src,/x\.classList\.toggle\("on",x\.getAttribute\("data-o"\)===oo\)/,'the segment shows the direction of the board that is open');
   assert.match(src,/"운동장 회전":1,"운동장 방향":1,/,'the row stays on the «운동장» tab');
-  assert.match(src,/e\.target\.closest\("#animFrames,#animFrameMenu,#cmd-board-settings-pop,\.cmd-board-settings-wrap(,#bpBoardSettings)?"\)/,'the settings panel is not «outside» for the scene selection (3.016 — nor the strip button)');
+  assert.match(src,/e\.target\.closest\("#animFrames,#animFrameMenu,#cmd-board-settings-pop,\.cmd-board-settings-wrap(,#bpBoardSettings)?"\)/,'the settings panel is not «outside» for the scene selection (3.017 — nor the strip button)');
   assert.match(src,/if\(id==="rotate"\)\{ var _rr=null; try\{ _rr=window\.__rotateHalf&&window\.__rotateHalf\(\);[^\n]*if\(!\(_rr&&_rr\.n\)\)toast\("운동장 회전"\); return; \}/,'the shortcut keeps the «all scenes» message');
   const body=cut('window.__rotateHalf=function(){','window.__getBoardOrient=');
   assert.ok(body.indexOf('stopAnim()')<body.indexOf('pushUndo()'),'stop first, then record the undo step');

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
-// 3.016 — 사용자 «보드 설정이 잘 안 보인다» → 1안: 위 띠의 «보드 저장» 옆에 «보드 설정»(톱니 + 글자).
+// 3.017 — 사용자 «보드 설정이 잘 안 보인다» → 1안: 위 띠의 «보드 저장» 옆에 «보드 설정»(톱니 + 글자).
 // 같은 창을 여닫고, 열려 있는 동안 눌린 모양이며, 아래 도구줄 아이콘으로 열어도 띠 단추가 따라간다. 띠 단추는 «바깥» 누르기가 아니다.
 // 합성 팀 fixture 에서만 돈다. WebKit 은 아이패드 폭(셸 1100), Chromium 은 데스크톱 폭.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';

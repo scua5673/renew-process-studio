@@ -100,8 +100,9 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
     // 3.009 — the board's size steps work on the 3D view too (the readable minimum used to swallow the first three steps).
     const sizes=await page.evaluate(()=>{const w=()=>tokenLayer.querySelector('[data-id="depth-b"] .ps-chip-top').getBoundingClientRect().width;
       resetTokenSize();const a=w();scaleAll(1.15);const b=w();scaleAll(1.15);const c=w();resetTokenSize();return {a,b,c};});
-    assert.ok(Math.abs(sizes.b/sizes.a-1.25)<.04,'one step up makes the 3D chip 1.25× '+JSON.stringify(sizes));
-    assert.ok(sizes.c>sizes.b*1.15,'the next step grows it again');
+    // 3.016 — by the square root of the step («3D 토큰이 너무 커졌다»): ×1.25 → ×1.12, ×1.24 → ×1.11
+    assert.ok(Math.abs(sizes.b/sizes.a-Math.sqrt(1.25))<.03,'one step up makes the 3D chip √1.25× '+JSON.stringify(sizes));
+    assert.ok(sizes.c>sizes.b*1.07,'the next step grows it again');
     // 3.010 — name label size/style on the 3D chip · 3D options (camera · stadium · ad text, device settings) · «내 설정» presets.
     const t3=await page.evaluate(async()=>{const out={},g=()=>tokenLayer.querySelector('[data-id="depth-b"]'),font=()=>+g().querySelector('.ps-chip-name').getAttribute('data-font');
       __setNameSize('m');__setNameStyle('auto');const f0=font();out.pill0=!!g().querySelector('.ps-chip-namebg');

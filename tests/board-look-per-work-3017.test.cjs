@@ -2,8 +2,8 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('fs'),path=require('path');
 const board=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf8');
 
-/* 3.016 — 사용자 «토큰 크기가 다른 작업물들 불러올 때 막 변경되는데 변경되지 않게 · 작업물마다 보드 설정 했던 것들 전부 각각 저장되게» */
-test('3.016 moving between pages of one work keeps the board settings; opening a work uses its own',()=>{
+/* 3.017 — 사용자 «토큰 크기가 다른 작업물들 불러올 때 막 변경되는데 변경되지 않게 · 작업물마다 보드 설정 했던 것들 전부 각각 저장되게» */
+test('3.017 moving between pages of one work keeps the board settings; opening a work uses its own',()=>{
   assert.match(board,/function loadIdx\(i,keep\)\{ try\{ window\.loadSnap\(pages\[i\]\.snap\|\|\{\},keep\?\{keepLook:true\}:undefined\);/);
   assert.match(board,/if\(keep\)_lookStampPages\(\); \}/,'the page and its scenes get the current settings');
   for(const s of [
@@ -21,21 +21,21 @@ test('3.016 moving between pages of one work keeps the board settings; opening a
   assert.match(board,/if\(pages\)loadIdx\(idx\);\n/,'«↶ 이전 보드» restores that work as it was');
 });
 
-test('3.016 every page (and its scenes) carries the one setting of the work',()=>{
+test('3.017 every page (and its scenes) carries the one setting of the work',()=>{
   const fn=/function _lookStampPages\(\)\{[\s\S]*?\n    try\{ window\.__lookStampScenes&&window\.__lookStampScenes\(\); \}catch\(_\)\{\} \}/.exec(board);assert.ok(fn,'_lookStampPages');
   assert.match(fn[0],/pages\.forEach\(function\(p\)\{ if\(!p\)return; st\(p\.snap\); try\{ if\(p\.anim&&Array\.isArray\(p\.anim\.frames\)\)p\.anim\.frames\.forEach\(function\(f\)\{ if\(f\)st\(f\.snap\); \}\); \}catch\(_\)\{\} \}\);/);
   assert.match(board,/pages\[idx\]\.snap=snap;pages\[idx\]\.thumb=thumb;pages\[idx\]\.anim=animation;\n    if\(pages\.length>1\)_lookStampPages\(\);/,'stamped whenever the current page is captured (save · export · thumbnails)');
   assert.match(board,/window\.__lookStampScenes=function\(\)\{ lookStampScenes\(\); \};/);
 });
 
-test('3.016 «보드 가져오기» brings the content, not the other work’s settings',()=>{
+test('3.017 «보드 가져오기» brings the content, not the other work’s settings',()=>{
   const fn=/async function openBoardImport\(\)\{[\s\S]*?\n\}\n/.exec(board);assert.ok(fn);
   assert.match(fn[0],/try\{ loadSnap\(snap,\{keepLook:true\}\); \}catch\(_\)\{\}/);
   assert.ok(!/try\{ loadSnap\(snap\); \}catch\(_\)\{\}/.test(fn[0]),'no plain load left');
   assert.match(fn[0],/__animLoad\(d\.frames\); \} else if\(window\.__animReset\)\{ __animReset\(\); \} \}catch\(_\)\{\}\n      try\{ lookStampScenes\(\); \}catch\(_\)\{\}/,'imported scenes play at the board’s size');
 });
 
-test('3.016 the «보드 저장» write-back keeps the linked work’s own settings',()=>{
+test('3.017 the «보드 저장» write-back keeps the linked work’s own settings',()=>{
   assert.match(board,/function lookKeepOf\(dst,src\)\{ if\(!dst\|\|typeof dst!=="object"\|\|!src\)return dst; lookKeys\(\)\.concat\(\["tokV"\]\)\.forEach\(function\(k\)\{ if\(Object\.prototype\.hasOwnProperty\.call\(src,k\)\)dst\[k\]=src\[k\]; else delete dst\[k\]; \}\); return dst; \}/);
   const fn=/async function boardLinkWriteBack\(onlyCurrent\)\{[\s\S]*?\n\}\n/.exec(board);assert.ok(fn);
   assert.match(fn[0],/snap=lookKeepOf\(dc\(snap\),_own\);/,'a copy — the board’s own page is not touched');

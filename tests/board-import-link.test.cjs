@@ -13,7 +13,7 @@ function writeBack({links,lib,editable=true,live,anim}){
     window:{__psPages:{linkAll:()=>links,linkClear:id=>cleared.push(id),refresh(){}},__animFrames:()=>anim?anim.frames:null,__animGet:()=>anim||null,__snapToThumb:()=>'<svg data-own/>'},
     libGet:async()=>J(store),libWrite:async l=>{writes++;store=J(l);},libTouch(){},renderDrillFiles(){},canEditItem:()=>editable,
     captureSnap:()=>J(live),boardThumbSVG:()=>'<svg data-live/>',dc:J});
-  /* 3.016 — 되쓰기는 그 자료의 보드 설정을 남긴다: 실제 lookKeys·lookKeepOf 를 싣고, lookOf 는 칸만 읽는 간이판(기본값 채우기는 여기서 볼 것이 아니다) */
+  /* 3.017 — 되쓰기는 그 자료의 보드 설정을 남긴다: 실제 lookKeys·lookKeepOf 를 싣고, lookOf 는 칸만 읽는 간이판(기본값 채우기는 여기서 볼 것이 아니다) */
   vm.runInContext([turnCode,fnAt('function lookKeys()'),fnAt('function lookKeepOf(dst,src)'),'function lookOf(sn){var r={};lookKeys().forEach(function(k){r[k]=sn?sn[k]:undefined;});return r;}',fnAt('function _boardSnapEmpty(sn)'),fnAt('function _animToFrames(a)'),fnAt('async function boardLinkWriteBack(onlyCurrent)'),fnAt('function boardLinkSaveText(r)')].join('\n')+';this.wb=boardLinkWriteBack;this.txt=boardLinkSaveText;',ctx);
   return {ctx,cleared,get writes(){return writes;},get store(){return store;}};
 }
@@ -25,7 +25,7 @@ test('지금 페이지에 연결된 자료 — 움직인 보드가 그대로 저
   const a=t.store[0];assert.equal(a.snap.players[0].x,99);assert.equal(a.thumb,'<svg data-live/>');assert.equal(a.frames.length,2);assert.ok(a.savedAt>1);
   assert.equal(t.ctx.txt(r),' · 보관함 ‘압박’에도 저장됨');
 });
-test('3.016 되쓰기는 내용만 — 그 자료의 보드 설정(토큰 크기·모양·표시)은 그 자료 것이 남는다',async()=>{
+test('3.017 되쓰기는 내용만 — 그 자료의 보드 설정(토큰 크기·모양·표시)은 그 자료 것이 남는다',async()=>{
   const own=Object.assign(snap(10),{tokenScale:0.69,tokV:2,tokShape:'shirt',label:'pos'});
   const live=Object.assign(snap(99),{tokenScale:0.36,tokV:2,tokShape:'circle',label:'num',namePos:'above'});
   const t=writeBack({links:[{tag:{libId:'A',name:'압박'},isCurrent:true}],lib:[{libId:'A',name:'압박',snap:own,thumb:'old',savedAt:1}],live,anim:{frames:[{snap:Object.assign(snap(1),{tokenScale:0.36})},{snap:Object.assign(snap(2),{tokenScale:0.36})}]}});
