@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PROCESS STUDIO · 인스타 슬라이드 틀</title>
+<!-- render.mjs 가 이 틀을 열고 window.renderSlide(slide, meta) 로 한 장씩 그려 찍는다. 글자 수가 넘치면 render.mjs 가 멈추고 어느 장인지 알려 준다. -->
+<link rel="stylesheet" href="/vendor/fonts.css">
+<style>
+  :root{--ink:#11151b;--paper:#f4f6f8;--line:#dfe4e9;--blue:#3a6df0;--blue2:#82a2ff;--green:#183522;--lime:#c9f266;--muted:#68717d;--W:1080px;--H:1350px}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#111;font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;letter-spacing:-.035em;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,p{margin:0}
+  em{font-style:normal;color:var(--blue)}
+  .slide{position:relative;width:var(--W);height:var(--H);overflow:hidden;padding:150px 82px 80px;display:flex;flex-direction:column;background:var(--paper);color:var(--ink);word-break:keep-all;overflow-wrap:anywhere}
+  .slide.dark{color:#fff;background:radial-gradient(circle at 85% 10%,rgba(58,109,240,.26),transparent 32%),linear-gradient(150deg,#0d1117,#111a22 58%,#102018)}
+  .slide.green{color:#fff;background:radial-gradient(circle at 88% 10%,rgba(201,242,102,.18),transparent 28%),linear-gradient(150deg,#122117,#183522)}
+  .dark em{color:var(--blue2)}.green em{color:var(--lime)}
+  .brand{position:absolute;left:82px;top:62px;font-size:25px;font-weight:400;letter-spacing:.035em}.brand b{font-weight:900;letter-spacing:-.03em}
+  .page{position:absolute;right:82px;top:65px;color:#818a95;font-size:20px;font-weight:800;letter-spacing:.08em}
+  .eyebrow{display:flex;align-items:center;gap:14px;color:var(--blue);font-size:19px;font-weight:900;letter-spacing:.15em;text-transform:uppercase}
+  .eyebrow:before{content:"";width:42px;height:3px;background:currentColor}
+  .eyebrow.hangul{letter-spacing:.02em;font-size:21px}
+  .dark .eyebrow{color:var(--blue2)}.green .eyebrow{color:var(--lime)}
+  .title{margin-top:26px;font-size:68px;line-height:1.14;font-weight:800;letter-spacing:-.065em}
+  .title.xl{font-size:92px;line-height:1.08;letter-spacing:-.07em}
+  .body{margin-top:26px;color:var(--muted);font-size:29px;font-weight:600;line-height:1.55;white-space:pre-line}
+  .dark .body,.green .body{color:#aab4c0}
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .chips span{padding:11px 17px;border:1px solid #d8dee4;border-radius:999px;color:#4b535e;background:#fff;font-size:18px;font-weight:800}
+  .dark .chips span,.green .chips span{color:#dce2e9;border-color:#32404d;background:#1c2630}
+  .grow{flex:1 1 auto;min-height:0}
+  .decos{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .slide>*:not(.decos){position:relative}
+  .slide>.brand,.slide>.page,.slide>.badge,.slide>.swipe,.slide>.foot,.slide>.linkpill{position:absolute}
+  .frame{position:relative;margin-top:44px;flex:1 1 auto;min-height:440px;border:1px solid #d8dee4;border-radius:28px;overflow:hidden;background:#fff;box-shadow:0 32px 80px rgba(19,29,43,.18)}
+  .dark .frame,.green .frame{border-color:rgba(255,255,255,.16);box-shadow:0 40px 100px rgba(0,0,0,.5);background:#0b0f14}
+  .frame.chrome:before{content:"";display:block;height:42px;background:#edf0f3;border-bottom:1px solid #dfe4e9}
+  .frame.chrome:after{content:"";position:absolute;top:16px;left:19px;width:10px;height:10px;border-radius:50%;background:#c7cdd4;box-shadow:18px 0 #c7cdd4,36px 0 #c7cdd4}
+  .frame img{position:absolute;left:0;right:0;bottom:0;top:0;width:100%;height:100%;object-fit:cover;object-position:center top}
+  .frame.chrome img{top:42px;height:calc(100% - 42px)}
+  .frame.contain img{object-fit:contain;background:#0b0f14}
+  .frame .tag{position:absolute;z-index:2;left:22px;bottom:22px;padding:12px 18px;border-radius:14px;color:#fff;background:rgba(17,21,27,.86);font-size:20px;font-weight:800}
+  .badge{position:absolute;z-index:4;right:72px;bottom:62px;width:84px;height:84px;display:grid;place-items:center;border-radius:50%;color:#fff;background:var(--blue);font-size:27px;font-weight:900;box-shadow:0 14px 34px rgba(58,109,240,.35)}
+  /* cover */
+  .cover .title{margin-top:30px}
+  .bleed{flex:1 1 auto;min-height:420px;margin:56px -82px -80px 0;overflow:hidden}
+  .bleed .frame{position:absolute;left:0;top:18px;width:calc(100% + 60px);height:calc(100% + 140px);margin:0;transform:rotate(-3deg);transform-origin:left top;border-radius:30px}
+  .cover .swipe{position:absolute;left:82px;bottom:58px;z-index:5;color:#cfd6df;font-size:17px;font-weight:800;letter-spacing:.08em;padding:10px 14px;border-radius:10px;background:rgba(10,14,19,.72)}
+  .cover.noimg .title{margin-top:auto}.cover.noimg .body{margin-bottom:auto}
+  .ring{position:absolute;left:-190px;bottom:-170px;width:900px;height:900px;border:1px solid rgba(105,145,255,.18);border-radius:50%;pointer-events:none}
+  /* list */
+  .items{margin-top:52px;display:flex;flex-direction:column;gap:22px}
+  .item{display:grid;grid-template-columns:84px 1fr;gap:28px;align-items:center;padding:34px 34px;border:1px solid var(--line);border-radius:26px;background:#fff}
+  .dark .item,.green .item{border-color:#2c3946;background:#18222c}
+  .item i{width:84px;height:84px;display:grid;place-items:center;border-radius:22px;color:var(--blue);background:rgba(58,109,240,.12);font-style:normal;font-size:27px;font-weight:900}
+  .dark .item i{color:#9ab2ff;background:rgba(58,109,240,.18)}.green .item i{color:var(--lime);background:rgba(201,242,102,.12)}
+  .item b{display:block;font-size:37px;line-height:1.25;letter-spacing:-.055em}
+  .item span{display:block;margin-top:10px;color:var(--muted);font-size:26px;font-weight:600;line-height:1.45}
+  .slide:not(.has-img)>.items{flex:1 1 auto;justify-content:center;margin-top:40px;margin-bottom:40px}
+  .has-img .items{margin-top:36px;gap:14px}.has-img .item{padding:22px 26px;grid-template-columns:64px 1fr;gap:22px}.has-img .item i{width:64px;height:64px;font-size:22px}.has-img .item b{font-size:30px}.has-img .item span{font-size:22px}
+  .dark .item span,.green .item span{color:#9aa6b3}
+  .steps .frame{min-height:300px;margin-top:34px}
+  /* term */
+  .term .cat{display:inline-flex;align-self:flex-start;margin-top:40px;padding:12px 20px;border-radius:999px;color:#10180f;background:var(--lime);font-size:20px;font-weight:900}
+  .term .ko{margin-top:34px;font-size:118px;line-height:1.04;font-weight:900;letter-spacing:-.075em}
+  .term .en{margin-top:18px;color:#9fb7a6;font-size:36px;font-weight:600;letter-spacing:-.02em}
+  .term .def{margin-top:52px;font-size:42px;line-height:1.45;font-weight:700;letter-spacing:-.05em;color:#f1f5ef}
+  .term .cue{margin-top:auto;padding:34px 36px;border-radius:26px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12)}
+  .term .cue small{display:block;color:var(--lime);font-size:19px;font-weight:900;letter-spacing:.12em}
+  .term .cue p{margin-top:14px;font-size:38px;line-height:1.4;font-weight:800;letter-spacing:-.05em}
+  .term .note{margin-top:22px;color:#93a69a;font-size:21px;font-weight:600;line-height:1.5}
+  /* statement */
+  .statement .title{margin-top:auto;font-size:84px;line-height:1.12}
+  .statement .body{margin-bottom:auto}
+  /* cta */
+  .cta .title{margin-top:auto}
+  .cta .url{display:inline-flex;align-self:flex-start;margin-top:44px;padding:21px 28px;border-radius:16px;color:#101b14;background:var(--lime);font-size:23px;font-weight:900;letter-spacing:.01em}
+  .cta .hint{margin-top:22px;margin-bottom:auto;color:#9fb3a5;font-size:22px;font-weight:700}
+  .cta .grid{position:absolute;right:-40px;bottom:-110px;width:620px;height:620px;background:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:58px 58px;transform:perspective(520px) rotateX(56deg) rotateZ(-8deg);pointer-events:none}
+  .cta .circle{position:absolute;right:62px;bottom:52px;width:430px;height:430px;border:2px solid rgba(201,242,102,.22);border-radius:50%;pointer-events:none}
+  .foot{position:absolute;left:82px;bottom:60px;color:#75818e;font-size:16px;font-weight:700;letter-spacing:.05em}
+  .green .foot{color:#819487}
+  /* story 1080×1920 — 위 250px·아래 380px 는 인스타 화면 요소에 가린다 */
+  .slide.story{--H:1920px;height:1920px;padding:260px 82px 400px}
+  .story .brand{top:150px}.story .page{display:none}
+  .story .title{font-size:84px;line-height:1.1}
+  .story .frame{margin-top:50px;min-height:640px}
+  .story .linkpill{position:absolute;left:50%;bottom:410px;transform:translateX(-50%);padding:22px 34px;border-radius:999px;color:#101b14;background:var(--lime);font-size:27px;font-weight:900;white-space:nowrap;box-shadow:0 16px 40px rgba(0,0,0,.35)}
+  .story .frame{margin-bottom:120px}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+(function(){
+  'use strict';
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // *강조* → 색 · 줄바꿈 \n → <br>
+  const rich=s=>esc(s).replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
+  const head=(meta,dark)=>'<div class="brand"><b>PROCESS</b> STUDIO</div>'+(meta.total>1?'<div class="page">'+String(meta.index).padStart(2,'0')+' / '+String(meta.total).padStart(2,'0')+'</div>':'');
+  const decos=h=>'<div class="decos">'+h+'</div>';
+  const eyebrow=s=>s?'<div class="eyebrow'+(/[\uac00-\ud7a3]/.test(s)?' hangul':'')+'">'+esc(s)+'</div>':'';
+  const chips=a=>a&&a.length?'<div class="chips">'+a.map(c=>'<span>'+esc(c)+'</span>').join('')+'</div>':'';
+  const frame=(slide,extra)=>{
+    if(!slide.imageUrl)return '';
+    const cls=['frame'];if(slide.chrome)cls.push('chrome');if(slide.fit==='contain')cls.push('contain');
+    const pos=slide.focus?' style="object-position:'+esc(slide.focus)+'"':'';
+    return '<div class="'+cls.join(' ')+'"'+(extra||'')+'><img src="'+esc(slide.imageUrl)+'"'+pos+' alt="">'+(slide.tag?'<div class="tag">'+esc(slide.tag)+'</div>':'')+'</div>';
+  };
+  const L={
+    cover(s,m){const img=frame(s);return {cls:'dark cover'+(img?'':' noimg'),html:decos('<div class="ring"></div>')+head(m)+eyebrow(s.eyebrow)+'<h1 class="title xl">'+rich(s.title)+'</h1>'+(s.body?'<p class="body">'+rich(s.body)+'</p>':'')+(img?'<div class="bleed">'+img.replace('class="frame','class="frame tilted')+'</div>':'')+(m.total>1?'<div class="swipe">SWIPE →</div>':'')};},
+    shot(s,m){return {cls:s.theme||'',html:head(m)+eyebrow(s.eyebrow)+'<h2 class="title">'+rich(s.title)+'</h2>'+(s.body?'<p class="body">'+rich(s.body)+'</p>':'')+chips(s.chips)+(frame(s)||'<div class="grow"></div>')+(s.badge?'<div class="badge">'+esc(s.badge)+'</div>':'')};},
+    list(s,m){return {cls:(s.theme||'')+(s.image?' has-img':''),html:head(m)+eyebrow(s.eyebrow)+'<h2 class="title">'+rich(s.title)+'</h2>'+(s.body?'<p class="body">'+rich(s.body)+'</p>':'')+'<div class="items">'+(s.items||[]).map((it,i)=>'<div class="item"><i>'+esc(it.mark||String(i+1).padStart(2,'0'))+'</i><div><b>'+rich(it.head)+'</b>'+(it.text?'<span>'+rich(it.text)+'</span>':'')+'</div></div>').join('')+'</div>'+frame(s)};},
+    steps(s,m){return {cls:'steps '+(s.theme||'')+(s.image?' has-img':''),html:head(m)+eyebrow(s.eyebrow)+'<h2 class="title">'+rich(s.title)+'</h2>'+'<div class="items">'+(s.steps||[]).map((st,i)=>'<div class="item"><i>'+(i+1)+'</i><div><b>'+rich(st.head)+'</b>'+(st.text?'<span>'+rich(st.text)+'</span>':'')+'</div></div>').join('')+'</div>'+frame(s)};},
+    term(s,m){return {cls:'green term',html:head(m)+eyebrow(s.eyebrow||'축구 용어 · FOOTBALL LANGUAGE')+(s.cat?'<div class="cat">'+esc(s.cat)+'</div>':'')+'<h1 class="ko">'+rich(s.ko)+'</h1>'+(s.en?'<p class="en">'+esc(s.en)+'</p>':'')+'<p class="def">'+rich(s.def)+'</p>'+(s.cue?'<div class="cue"><small>코치 한마디</small><p>'+rich(s.cue)+'</p>'+(s.note?'<div class="note">'+rich(s.note)+'</div>':'')+'</div>':'')};},
+    statement(s,m){return {cls:s.theme||'dark',html:decos('<div class="ring"></div>')+head(m)+eyebrow(s.eyebrow)+'<h2 class="title">'+rich(s.title)+'</h2>'+(s.body?'<p class="body">'+rich(s.body)+'</p>':'')};},
+    cta(s,m){return {cls:'green cta',html:decos('<div class="grid"></div><div class="circle"></div>')+head(m)+eyebrow(s.eyebrow||'PROCESS STUDIO')+'<h1 class="title xl">'+rich(s.title||'지금 바로\n써 보세요.')+'</h1>'+(s.body?'<p class="body">'+rich(s.body)+'</p>':'')+'<div class="url">processstudio.netlify.app ↗</div><div class="hint">'+esc(s.hint||'프로필 링크에서 바로 열 수 있어요')+'</div><div class="foot">DESIGN THE SESSION · READ THE GAME · DEVELOP THE PLAYER</div>'};},
+    story(s,m){return {cls:'dark story',html:decos('<div class="ring"></div>')+head({total:1})+eyebrow(s.eyebrow)+'<h1 class="title">'+rich(s.title)+'</h1>'+(s.body?'<p class="body">'+rich(s.body)+'</p>':'')+(frame(s)||'<div class="grow"></div>')+'<div class="linkpill">'+esc(s.cta||'프로필 링크에서 열기 ↗')+'</div>'};}
+  };
+  window.LAYOUTS=Object.keys(L);
+  window.renderSlide=function(slide,meta){
+    const f=L[slide.layout];if(!f)throw Error('모르는 layout: '+slide.layout);
+    const r=f(slide,meta||{index:1,total:1});
+    const stage=document.getElementById('stage');
+    stage.innerHTML='<section class="slide '+r.cls+'" id="slide">'+r.html+'</section>';
+    const el=document.getElementById('slide');
+    return Promise.all([document.fonts.ready,...[...el.querySelectorAll('img')].map(im=>im.decode().catch(()=>{throw Error('그림을 못 읽음: '+im.getAttribute('src'));}))]).then(()=>{
+      // 넘침 검사: 글이 길어 그림 칸이 최소 높이 밑으로 눌리거나 장 밖으로 밀려나면 실패로 알린다.
+      const H=el.clientHeight,problems=[];
+      if(el.scrollHeight>H+1)problems.push('장 높이를 '+(el.scrollHeight-H)+'px 넘침');
+      const fr=el.querySelector('.frame:not(.tilted)');
+      if(fr){const r=fr.getBoundingClientRect(),min=parseFloat(getComputedStyle(fr).minHeight)||0;if(r.height+1<min)problems.push('그림 칸이 '+Math.round(r.height)+'px 로 눌림(최소 '+min+')');}
+      const box=el.getBoundingClientRect(),pad=40;
+      el.querySelectorAll('.title,.body,.items,.chips,.def,.cue,.ko,.url').forEach(t=>{const r=t.getBoundingClientRect();if(r.bottom>box.bottom-pad+1)problems.push((t.className||t.tagName)+' 가 아래 여백을 침범');});
+      // 제목 한 줄이 장 너비를 넘는 긴 낱말(keep-all 로 안 꺾이는)
+      el.querySelectorAll('.title,.ko').forEach(t=>{if(t.scrollWidth>t.clientWidth+1)problems.push('제목 낱말이 너무 길어 가로로 넘침');});
+      return {problems,height:el.scrollHeight};
+    });
+  };
+})();
+</script>
+</body>
+</html>
