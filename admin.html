@@ -723,6 +723,21 @@ function loadAdminOps(){
   return adminOps.load();
 }
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-admin-user]');if(b)openAdminUser(b.dataset.adminUser);});
+/* 서버·사용자 값(팀 ID·자료 ID·이메일)을 onclick="…('값')" 문자열에 넣지 않는다 — 속성의 엔티티가 풀린 뒤 JS 로 읽혀
+   따옴표 하나로 빠져나갔다. 값은 data-* 에 두고 여기 한 곳에서 읽는다. */
+function adminAction(el){
+  var d=el.dataset,wid=d.wid||'',lid=encodeURIComponent(d.lid||'');
+  switch(d.adminAct){
+    case 'team':setTab('ws');selectWs(wid);break;
+    case 'preview':preview(wid,lid);break;
+    case 'restore':restoreLib(wid,lid);break;
+    case 'soft-del':softDelLib(wid,lid);break;
+    case 'del-ws':delWorkspace(wid);break;
+    case 'remove-member':removeMember(wid,d.uid||'');break;
+    case 'idp':openIdp(d.uid||'',d.email||'');break;
+  }
+}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-admin-act]');if(b&&!b.disabled)adminAction(b);});
 function loadErrorDetails24h(){
   return ensureToken().then(function(at){ if(!at) throw new Error('no token');
     var since=new Date(Date.now()-86400000).toISOString();
@@ -1018,21 +1033,22 @@ function loadBack(){
     function mb(b){ b=+b||0; return b>=1e9?(b/1e9).toFixed(2)+' GB':b>=1e6?(b/1e6).toFixed(1)+' MB':b>=1e3?(b/1e3).toFixed(0)+' KB':b+' B'; }
     function n(x){ return (+x||0).toLocaleString(); }
     function ko(t){ try{ var d=new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }catch(_){ return String(t||''); } }
-    function tbl(head,rows){ if(!rows||!rows.length)return '<div style="font-size:11px;color:var(--dim2);padding:6px 0">없음</div>'; return '<div style="overflow:auto"><table><thead><tr>'+head.map(function(x){return '<th>'+x+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>'; }
+    /* 칸은 모두 글자다 — 팀 이름·사람 이름·오류 코드·앱 버전은 사용자가 정하거나 앱이 직접 올리는 값이라 여기서 한 번에 이스케이프한다 */
+    function tbl(head,rows){ if(!rows||!rows.length)return '<div style="font-size:11px;color:var(--dim2);padding:6px 0">없음</div>'; return '<div style="overflow:auto"><table><thead><tr>'+head.map(function(x){return '<th>'+esc(x)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+esc(c)+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>'; }
     var T=h.tables||{}, kpi=[
       ['DB 전체',mb(h.db_bytes)],['ps_kv',mb(T.ps_kv&&T.ps_kv.bytes)+' · '+n(T.ps_kv&&T.ps_kv.rows)+'행'],['history',mb(T.ps_kv_history&&T.ps_kv_history.bytes)+' · '+n(T.ps_kv_history&&T.ps_kv_history.rows)+'행'],
       ['events',mb(T.ps_events&&T.ps_events.bytes)+' · '+n(T.ps_events&&T.ps_events.rows)+'행'],['그림(blob)',n(h.blob&&h.blob.rows)+'장 · '+mb(h.blob&&h.blob.bytes)],['24h 실시간 신호',n(h.ping24)],['24h 저장 이벤트',n(h.saved24)+' / 전체 '+n(h.events24)],['야간 작업 실패 3일',n(h.cron_fail3d)]
     ];
-    var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:4px 0 14px">'+kpi.map(function(k){return '<div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px"><div style="font-size:10px;color:var(--dim2);font-weight:700">'+k[0]+'</div><div style="font-size:14px;font-weight:800;margin-top:2px">'+k[1]+'</div></div>';}).join('')+'</div>';
+    var html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:4px 0 14px">'+kpi.map(function(k){return '<div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px"><div style="font-size:10px;color:var(--dim2);font-weight:700">'+esc(k[0])+'</div><div style="font-size:14px;font-weight:800;margin-top:2px">'+esc(k[1])+'</div></div>';}).join('')+'</div>';
     html+='<div class="sec-t" style="margin-top:6px">24시간 동기화 실패</div>'+tbl(['원인','건','사람'],(h.fails24||[]).map(function(f){return [f.code||'?',n(f.n),n(f.users)];}));
     html+='<div class="sec-t" style="margin-top:14px">막힌 기기 후보 (48시간 실패 뒤 쓰기 없음)</div>'+tbl(['이름','실패','마지막 원인','판','마지막 실패','마지막 쓰기'],(h.stuck||[]).map(function(x){return [x.name||adminPersonName(x.user_id),n(x.fails),x.last_code||'',x.app_version||'',ko(x.last_fail),x.last_write?ko(x.last_write):'없음'];}));
     html+='<div class="sec-t" style="margin-top:14px">7일 판 분포</div>'+tbl(['판','사람','이벤트','마지막'],(h.versions||[]).map(function(v){return [v.ver,n(v.users),n(v.events),ko(v.last_at)];}));
     html+='<div class="sec-t" style="margin-top:14px">큰 문서 8</div>'+tbl(['팀','키','길이','고침'],(h.bigdocs||[]).map(function(b){return [b.ws,b.k,mb(b.len),ko(b.upd)];}));
     html+='<div class="sec-t" style="margin-top:14px">7일 서버 거부</div>'+tbl(['사유','키','건'],(h.denied7||[]).map(function(d){return [d.reason,d.k,n(d.n)];}));
     html+='<div class="sec-t" style="margin-top:14px">야간 작업</div>'+tbl(['작업','일정(UTC)','켜짐'],(h.cron||[]).map(function(c){return [c.job,c.schedule,c.active?'예':'아니오'];}));
-    var p=h.policy||{}; html+='<div style="font-size:11px;color:var(--dim2);margin-top:12px">앱 판 정책: 최소 '+(p.min_build||'—')+' · 판 없는 앱 차단 '+(p.block_unversioned?'켜짐':'꺼짐')+' · 잰 시각 '+ko(h.at)+'</div>';
+    var p=h.policy||{}; html+='<div style="font-size:11px;color:var(--dim2);margin-top:12px">앱 판 정책: 최소 '+esc(p.min_build||'—')+' · 판 없는 앱 차단 '+(p.block_unversioned?'켜짐':'꺼짐')+' · 잰 시각 '+esc(ko(h.at))+'</div>';
     el.innerHTML=html;
-  }).catch(function(e){ el.innerHTML='<div class="loading">불러오지 못했어요 — '+String(e&&e.message||e).replace(/[<>&]/g,'')+'</div>'; });
+  }).catch(function(e){ el.innerHTML='<div class="loading">불러오지 못했어요 — '+esc(String(e&&e.message||e))+'</div>'; });
 }
 /* ===== 오류 분석 ===== */
 var ERR=null, ERR_BUSY=false, ERR_LIMIT=5000, ERR_TICKET=0;
@@ -1544,7 +1560,7 @@ function renderHome(){
   if(liveReal.length) live=liveReal;
   $('hmTeams').innerHTML=!live.length?'<div class="empty">팀이 없습니다.</div>'
     :live.slice(0,6).map(function(w){
-      return '<div onclick="setTab(\'ws\');selectWs(\''+w.id+'\')" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer">'
+      return '<div data-admin-act="team" data-wid="'+esc(w.id)+'" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);cursor:pointer">'
         +'<span style="color:var(--green)">●</span><span class="nm" style="flex:1;font-size:12px">'+esc(w.name||'(이름 없음)')+'</span>'
         +'<span class="muted" style="font-size:11px">'+(w.member_count||0)+'명 · 7일 키 '+(w.keys_7d||0)+'</span>'
         +'<span class="muted" style="font-size:11px;flex:0 0 64px;text-align:right">'+fmtAgo(w.last_kv)+'</span></div>';
@@ -1555,7 +1571,7 @@ function renderHome(){
   $('hmQuiet').innerHTML=!quiet.length?'<div class="empty">모든 팀이 7일 내 활동했습니다.</div>'
     :('<div class="muted" style="font-size:11px;margin-bottom:4px">'+quiet.length+'팀</div>'
       +quiet.slice(0,8).map(function(w){
-        return '<div onclick="setTab(\'ws\');selectWs(\''+w.id+'\')" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);cursor:pointer">'
+        return '<div data-admin-act="team" data-wid="'+esc(w.id)+'" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);cursor:pointer">'
           +'<span style="color:var(--dim2)">●</span><span class="nm" style="flex:1;font-size:12px">'+esc(w.name||'(이름 없음)')+'</span>'
           +'<span class="muted" style="font-size:11px;flex:0 0 74px;text-align:right">'+fmtAgo(w.last_kv||w.last_lib)+'</span></div>';
       }).join(''));
@@ -1870,6 +1886,13 @@ function adminOwnerInfo(record,fallback){
     search:[email,name,uid].join(' ').toLowerCase()};
 }
 function wsInfo(wid){ return WS.filter(function(w){return w.id===wid;})[0]||{}; }
+/* 콘텐츠 표(전체·팀 상세)의 줄 버튼 — ID 는 data-* 로만 넘긴다(아래 adminAction 이 읽음) */
+function libActions(l){
+  var ids=' data-wid="'+esc(l.workspace_id)+'" data-lid="'+esc(l.lib_id)+'"';
+  return '<button type="button" class="rowbtn" data-admin-act="preview"'+ids+'>미리보기</button>'
+    +(l.deleted_at?'<button type="button" class="rowbtn" data-admin-act="restore"'+ids+'>복구</button>'
+                  :'<button type="button" class="rowbtn danger" data-admin-act="soft-del"'+ids+'>삭제</button>');
+}
 function resetContentFilters(){
   ['alSearch','alType','alWorkspace','alAuthor','alFolder','alFrom','alTo'].forEach(function(id){if($(id))$(id).value='';});
   $('alSort').value='upd';$('alShowDel').checked=false;renderAllLib();
@@ -1898,10 +1921,8 @@ function renderAllLib(){
   $('alCount').textContent='전체 '+live+'개'+(list.length!==live?(' · 표시 '+list.length+'개'):'');
   if(!list.length){ $('alBody').innerHTML='<div class="empty">항목이 없습니다.</div>'; return; }
   var rows=list.map(function(l){
-    var w=wsInfo(l.workspace_id), deleted=!!l.deleted_at, le=encodeURIComponent(l.lib_id);
-    var act='<button class="rowbtn" onclick="preview(\''+l.workspace_id+'\',\''+le+'\')">미리보기</button>'
-      +(deleted?'<button class="rowbtn" onclick="restoreLib(\''+l.workspace_id+'\',\''+le+'\')">복구</button>'
-              :'<button class="rowbtn danger" onclick="softDelLib(\''+l.workspace_id+'\',\''+le+'\')">삭제</button>');
+    var w=wsInfo(l.workspace_id), deleted=!!l.deleted_at;
+    var act=libActions(l);
     return '<tr class="'+(deleted?'del':'')+'"><td class="nm">'+(l.pin?'<span class="pin">★</span> ':'')+esc(l.name||'(제목없음)')
       +(deleted?' <span class="muted">· 삭제됨</span>':'')+'</td>'
       +'<td><span class="tybadge">'+esc(typeName(l.type))+'</span></td>'
@@ -2037,7 +2058,7 @@ function wsSettingsPane(w){
   var base='<div class="kv"><span class="k">워크스페이스 ID</span><span style="font:600 11px ui-monospace,Menlo,monospace">'+esc(w.id||'—')+'</span>'
     +'<span class="k">종류</span><span>'+(w.kind==='personal'?'개인':'팀')+'</span><span class="k">소유자</span><span>'+esc(adminOwnerInfo(w).label)+'</span><span class="k">생성일</span><span>'+fmtDate(w.created_at)+'</span></div>';
   if(w.kind!=='team')return base;
-  return base+'<div class="ws-danger"><b>위험 작업</b><p>워크스페이스 삭제는 소속 훈련·멤버·데이터에 영향을 줍니다. 일반 운영 정보와 분리해 두었습니다.</p><button class="rowbtn danger" onclick="delWorkspace(\''+w.id+'\')">워크스페이스 삭제</button></div>';
+  return base+'<div class="ws-danger"><b>위험 작업</b><p>워크스페이스 삭제는 소속 훈련·멤버·데이터에 영향을 줍니다. 일반 운영 정보와 분리해 두었습니다.</p><button class="rowbtn danger" data-admin-act="del-ws" data-wid="'+esc(w.id)+'">워크스페이스 삭제</button></div>';
 }
 function membersTable(w,members){
   if(!members.length) return '<div class="empty">멤버 없음</div>';
@@ -2048,7 +2069,7 @@ function membersTable(w,members){
       +'<td><span class="rolebadge '+esc(role)+'">'+esc(label)+'</span></td>'
       +'<td class="muted">'+fmtDate(m.joined_at)+'</td>'
       +'<td class="muted">'+fmtDateT(m.last_sign_in_at)+'</td>'
-      +'<td style="text-align:right">'+(canRemove?'<button class="rowbtn danger" onclick="removeMember(\''+w.id+'\',\''+m.user_id+'\')">내보내기</button>':'')+'</td></tr>';
+      +'<td style="text-align:right">'+(canRemove?'<button class="rowbtn danger" data-admin-act="remove-member" data-wid="'+esc(w.id)+'" data-uid="'+esc(m.user_id)+'">내보내기</button>':'')+'</td></tr>';
   }).join('');
   return '<div class="tablewrap"><table><thead><tr><th>이메일</th><th>역할</th><th>합류</th><th>최근접속</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
@@ -2057,9 +2078,7 @@ function libTable(lib){
   if(!list.length) return '<div class="empty">항목이 없습니다.</div>';
   var rows=list.map(function(l){
     var deleted=!!l.deleted_at;
-    var act='<button class="rowbtn" onclick="preview(\''+l.workspace_id+'\',\''+encodeURIComponent(l.lib_id)+'\')">미리보기</button>'
-      +(deleted?'<button class="rowbtn" onclick="restoreLib(\''+l.workspace_id+'\',\''+encodeURIComponent(l.lib_id)+'\')">복구</button>'
-              :'<button class="rowbtn danger" onclick="softDelLib(\''+l.workspace_id+'\',\''+encodeURIComponent(l.lib_id)+'\')">삭제</button>');
+    var act=libActions(l);
     return '<tr class="'+(deleted?'del':'')+'"><td class="nm">'+(l.pin?'<span class="pin">★</span> ':'')+esc(l.name||'(제목없음)')
       +(deleted?' <span class="muted">· 삭제됨</span>':'')+'</td>'
       +'<td><span class="tybadge">'+esc(typeName(l.type))+'</span></td>'
@@ -2159,7 +2178,7 @@ function loadIdpList(){
 }
 function _idpRowHtml(u){
   var on=(u.user_id===curIdpUid);
-  return '<tr onclick="openIdp(\''+u.user_id+'\',\''+esc(u.email||'')+'\')" style="cursor:pointer'+(on?';background:var(--chip)':'')+'">'
+  return '<tr data-admin-act="idp" data-uid="'+esc(u.user_id)+'" data-email="'+esc(u.email||'')+'" style="cursor:pointer'+(on?';background:var(--chip)':'')+'">'
     +'<td class="nm" style="font-size:12px">'+(isFresh(u.idp_last)?'<span style="color:var(--green)">●</span> ':'')+esc(u.email||'(이메일 없음)')+'</td>'
     +'<td class="muted">'+fmtAgo(u.idp_last)+'</td></tr>';
 }
@@ -2232,7 +2251,7 @@ function renderIdpDoc(row){
   var p=d.profile||{};
   h+=_idpSec('프로필');
   h+=_idpRow('이름', esc(p.name||'—'));
-  h+=_idpRow('포지션', esc(p.pos||'—')+(p.subs&&p.subs.length?' <span class="muted">· 서브 '+esc(p.subs.join(', '))+'</span>':''));
+  h+=_idpRow('포지션', esc(p.pos||'—')+(Array.isArray(p.subs)&&p.subs.length?' <span class="muted">· 서브 '+esc(p.subs.join(', '))+'</span>':''));
   Object.keys(p).forEach(function(k){
     if(k==='name'||k==='pos'||k==='subs'||k==='photo')return;
     if(['phone','email','agent','blood','mbti'].indexOf(k)>=0)return; /* 운영 요약에는 민감 프로필을 최소화 */
@@ -2251,8 +2270,8 @@ function renderIdpDoc(row){
     /* 새 평가는 평가 당시 스냅샷 라벨을 우선 사용하고, 구 평가는 기존 기본 라벨로 폴백한다. */
     var known=top.filter(function(k){return snapLb[k]||IDP_LB[k];});
     if(known.length){
-      h+=_idpRow('강점(상위)', known.slice(0,3).map(function(k){return esc(snapLb[k]||IDP_LB[k])+' '+lv[k];}).join(' · '));
-      if(known.length>3) h+=_idpRow('보완(하위)', known.slice(-3).reverse().map(function(k){return esc(snapLb[k]||IDP_LB[k])+' '+lv[k];}).join(' · '));
+      h+=_idpRow('강점(상위)', known.slice(0,3).map(function(k){return esc(snapLb[k]||IDP_LB[k])+' '+esc(lv[k]);}).join(' · '));
+      if(known.length>3) h+=_idpRow('보완(하위)', known.slice(-3).reverse().map(function(k){return esc(snapLb[k]||IDP_LB[k])+' '+esc(lv[k]);}).join(' · '));
     } else {
       var dist=[5,4,3,2,1].map(function(n){var c=ks.filter(function(k){return +lv[k]===n;}).length;return c?(n+'점 '+c+'개'):null;}).filter(Boolean).join(' · ');
       h+=_idpRow('분포', dist+' <span class="muted">(팀 평가 세트 — 항목명은 팀 탭 기준)</span>');
@@ -2265,17 +2284,18 @@ function renderIdpDoc(row){
   var g=(d.goal&&d.goal.cur)||null;
   h+=_idpSec('이번 달 목표');
   if(g){
-    h+=_idpRow('시작', esc(g.start||'—')+' · '+(g.weeks||4)+'주 · 주 '+(g.per||'?')+'회');
-    if(g.focus&&g.focus.length) h+=_idpRow('초점', g.focus.map(function(k){return esc(IDP_LB[k]||k);}).join(' · '));
+    h+=_idpRow('시작', esc(g.start||'—')+' · '+esc(g.weeks||4)+'주 · 주 '+esc(g.per||'?')+'회');
+    if(Array.isArray(g.focus)&&g.focus.length) h+=_idpRow('초점', g.focus.map(function(k){return esc(IDP_LB[k]||k);}).join(' · '));
     if(g.note) h+=_idpRow('메모', esc(g.note));
   } else h+=_idpRow('현재','진행 중인 목표 없음');
   if(d.goal&&d.goal.hist&&d.goal.hist.length) h+=_idpRow('지난 목표', d.goal.hist.length+'개 완료');
   /* 개인 훈련 */
-  var tr=d.trainings||[];
+  var tr=Array.isArray(d.trainings)?d.trainings:[];
   h+=_idpSec('개인 훈련 ('+tr.length+')');
   tr.slice(0,6).forEach(function(t){
+    t=t||{};
     var name=t.name||t.title||t.t||'(이름 없음)';
-    var days=(t.days&&t.days.length)?' <span class="muted">· '+t.days.join('·')+'</span>':'';
+    var days=(Array.isArray(t.days)&&t.days.length)?' <span class="muted">· '+esc(t.days.join('·'))+'</span>':'';
     h+=_idpRow('훈련', esc(name)+days);
   });
   if(tr.length>6) h+=_idpRow('','… 외 '+(tr.length-6)+'개');
@@ -2286,16 +2306,16 @@ function renderIdpDoc(row){
     h+=_idpRow('최근 기록일', esc(dates[dates.length-1]));
     dates.slice(-7).reverse().forEach(function(dt){
       var e=log[dt]||{}; var parts=[];
-      if(e.t)parts.push(IDP_LOGT[e.t]||e.t); if(e.solo)parts.push('개인운동');
-      if(e.rpe!=null&&e.rpe!=='')parts.push('강도 '+e.rpe); if(e.wt)parts.push(e.wt+'kg');
+      if(e.t)parts.push(esc(IDP_LOGT.hasOwnProperty(e.t)?IDP_LOGT[e.t]:e.t)); if(e.solo)parts.push('개인운동');
+      if(e.rpe!=null&&e.rpe!=='')parts.push('강도 '+esc(e.rpe)); if(e.wt)parts.push(esc(e.wt)+'kg');
       if(e.memo)parts.push('“'+esc(String(e.memo).slice(0,40))+'”');
       h+=_idpRow(dt.slice(5), parts.join(' · ')||'—');
     });
   } else h+=_idpRow('기록','아직 없음');
   /* 이미지노트 */
-  var im=d.imgNotes||[];
+  var im=Array.isArray(d.imgNotes)?d.imgNotes:[];
   h+=_idpSec('이미지노트 ('+im.length+')');
-  im.slice(0,4).forEach(function(n){ h+=_idpRow(esc(n.date||n.d||''), esc(n.opp||n.vs||n.title||'노트')); });
+  im.slice(0,4).forEach(function(n){ n=n||{}; h+=_idpRow(n.date||n.d||'', esc(n.opp||n.vs||n.title||'노트')); });
   h+='<div class="ws-alert" style="margin-top:14px"><b>개인정보 최소 표시</b><br>연락처·개인 이메일·에이전트·혈액형·MBTI·원본 JSON은 운영 요약에서 표시하지 않습니다.</div>';
   $('idpBody').innerHTML=h;
 }
@@ -2315,10 +2335,11 @@ function removeMember(wid,uid){
     .catch(function(e){ toast('실패: '+e.message); }); }
 function delWorkspace(wid){
   var w=WS.filter(function(x){return x.id===wid;})[0]||{};
-  var nm=w.name||'';
-  var typed=prompt('워크스페이스를 완전히 삭제합니다. 멤버 '+(w.member_count||0)+'명과 콘텐츠 '+(w.lib_count||0)+'개에 영향을 줍니다.\\n계속하려면 팀 이름을 정확히 입력하세요.\\n\\n'+nm,'');
+  /* 이름이 빈 팀은 빈 답이 «이름과 일치»해 확인 없이 지워졌다 — 그때는 워크스페이스 ID 를 치게 한다 */
+  var nm=String(w.name||'').trim(),want=nm||String(w.id||wid),what=nm?'팀 이름':'워크스페이스 ID(이름이 없는 팀)';
+  var typed=prompt('워크스페이스를 완전히 삭제합니다. 멤버 '+(w.member_count||0)+'명과 콘텐츠 '+(w.lib_count||0)+'개에 영향을 줍니다.\n계속하려면 '+what+'을 정확히 입력하세요.\n\n'+want,'');
   if(typed===null)return;
-  if(typed!==nm){toast('팀 이름이 일치하지 않아 삭제하지 않았습니다.');return;}
+  if(!want||String(typed).trim()!==want){toast(what+'이 일치하지 않아 삭제하지 않았습니다.');return;}
   rpc('ps_admin_delete_workspace',{p_wid:wid}).then(function(){ toast('삭제됨'); curWid=null;
     $('wsDetail').innerHTML='<div class="panel"><div class="empty">삭제되었습니다.</div></div>'; reloadAll(); })
     .catch(function(e){ toast('실패: '+e.message); }); }
