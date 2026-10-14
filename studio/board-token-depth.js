@@ -189,8 +189,12 @@
     var body = node(doc, 'g', { 'class': 'ps-chip', 'data-k': String(size.k), 'data-shape': kind, transform: chipTransform(item, size.k) });
     // Floodlights on four corner masts: four faint shadows in an X plus a contact shadow, as on a lit pitch.
     // Flat fills, not gradients: Safari repaints every chip on each drag frame and radial gradients made that slow.
-    [[6, 5], [-6, 5], [6, -3], [-6, -3]].forEach(function (o) {
-      body.appendChild(node(doc, 'ellipse', { cx: o[0], cy: o[1], rx: R + 2, ry: R, fill: '#000', 'fill-opacity': '.1', 'pointer-events': 'none' }));
+    // 3.029 — the light follows the board's mood (opts.mood): night = the four masts, day = one short shadow under a high sun, dusk = one long shadow.
+    var mood = opts && opts.mood;
+    if (mood === 'day') body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 3, rx: R + 2, ry: R * .8, fill: '#000', 'fill-opacity': '.22', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
+    else if (mood === 'dusk') body.appendChild(node(doc, 'ellipse', { cx: R * 1.1, cy: 3, rx: R * 2.1, ry: R * .62, fill: '#000', 'fill-opacity': '.3', 'pointer-events': 'none', 'class': 'ps-chip-shadow', transform: 'rotate(12)' }));
+    else [[6, 5], [-6, 5], [6, -3], [-6, -3]].forEach(function (o) {
+      body.appendChild(node(doc, 'ellipse', { cx: o[0], cy: o[1], rx: R + 2, ry: R, fill: '#000', 'fill-opacity': '.1', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
     });
     body.appendChild(node(doc, 'ellipse', { cx: 1, cy: 1.5, rx: R + 1.5, ry: R + .5, fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none' }));
     // At height z; a shaper's teardrop turns with its heading (ps-chip-turn), everything else stays upright.

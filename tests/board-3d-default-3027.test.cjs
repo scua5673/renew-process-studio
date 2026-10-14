@@ -15,7 +15,7 @@ test('3.027 a device entering for the first time opens the board in 3D; a device
 test('3.027 a grid board draws the 3D stadium as grass only, without changing the saved setting',()=>{
   const b=R('studio/board.html');
   assert.match(b,/function tiltDecoNow\(\)\{ var t3=window\.__tilt3d\|\|\{\}; try\{ if\(isBlankSpec\(\)\)return "grass"; \}catch\(_\)\{\} return TILT_PAD\[t3\.deco\]\?t3\.deco:"full"; \}/);
-  assert.match(b,/const t3=window\.__tilt3d\|\|\{\},deco=tiltDecoNow\(\),ad=/,'stadium picture');
+  assert.match(b,/const t3=window\.__tilt3d\|\|\{\},deco=tiltDecoNow\(\),md=TILT_MOOD\[t3\.mood\]\|\|TILT_MOOD\.night,/,'stadium picture');   /* 3.029 — 분위기(md)도 같은 줄에서 읽는다 */
   assert.match(b,/var t3=window\.__tilt3d\|\|\{\},deco=tiltDecoNow\(\),pads=TILT_PAD\[deco\]\|\|TILT_PAD\.full;/,'fit margins follow, so the grid board grows');
   assert.match(b,/svg\.getAttribute\("preserveAspectRatio"\),t3\.cam,deco,/,'the fit key changes with the board');
   assert.match(b,/window\.__setBoardSurface=function\(kind\)\{\n  if\(kind==="grid"\)\{ if\(isBlankSpec\(\)\)return;[\s\S]*?window\.__setPitchSpec\("grid"\+m\);/,'훈련 만들기 «바탕 › 그리드» is a grid board');
