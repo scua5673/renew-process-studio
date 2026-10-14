@@ -3099,6 +3099,7 @@ body.bc-tilt3d #tiltSurface{transform:var(--tilt-tf);transform-origin:50% 55%;tr
 body.bc-tilt3d #boardStage{background:var(--pitchbg,#252839)}
 body.bc-tilt3d svg#board{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 body.bc-tilt3d #board #world>rect:not([id]),body.bc-tilt3d #board .grass-stripes,body.bc-tilt3d #board #ps-pitchtile,body.bc-tilt3d #board #ps-pitchimg,body.bc-tilt3d #board .pitch-goal,body.bc-tilt3d #board .ps-pitch-goal{visibility:hidden}
+/* ⚠ 3.032 — «world 바로 밑 id 없는 rect» = 잔디 바탕. 판 위에 보여야 하는 rect 를 world 에 바로 붙이면 id 를 단다(선택 사각형 #lassoRect 가 여기 걸려 3D 에서 안 보였다) */
 #tiltGoals .goal-plane{position:absolute;left:0;top:0;box-sizing:border-box;transform-origin:0 0;backface-visibility:visible}
 #tiltGoals{--goal-post:#fff;--goal-net:rgba(255,255,255,.48);--goal-edge:rgba(255,255,255,.65)}
 #tiltGoals .goal-net{background:repeating-linear-gradient(45deg,var(--goal-net) 0 .6px,transparent .6px 3px),repeating-linear-gradient(-45deg,var(--goal-net) 0 .6px,transparent .6px 3px);border:1px solid var(--goal-edge)}
@@ -3126,6 +3127,9 @@ body.bc-tilt3d #tiltMood{display:block}
 body.bc-tilt3d[data-tilt-mood="night"] #tiltMood{background:radial-gradient(18% 14% at 8% 4%,rgba(255,250,230,.26),transparent 70%),radial-gradient(18% 14% at 92% 4%,rgba(255,250,230,.26),transparent 70%),radial-gradient(90% 80% at 50% 45%,transparent 60%,rgba(0,0,0,.34) 100%)}
 body.bc-tilt3d[data-tilt-mood="dusk"] #tiltMood{background:radial-gradient(60% 50% at 10% 0%,rgba(255,170,90,.32),transparent 70%),linear-gradient(180deg,rgba(255,140,60,.08),rgba(80,40,120,.12))}
 body.bc-tilt3d[data-tilt-mood="day"] #tiltMood{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.07))}
+/* 3.033 — 아이폰 · 아이패드 사파리는 이 층을 그리지 않는다: 3D 판 위에 겹친 무대 크기 층이라 따로 한 장(11인치 약 14MB · 13인치 약 20MB)을 더 잡는다.
+   아이패드에서 3D 경기장을 그리다 페이지가 연달아 강제 종료됐다(3D 판 전체 93~147MB, 평면 19MB). 무대 바탕 · 잔디 톤 · 조명 · 칩 그림자는 분위기를 그대로 따른다 */
+@supports (-webkit-touch-callout:none){ html body.bc-tilt3d #tiltMood{display:none!important} }
 /* 판 SVG 의 1px 안쪽 테두리(figma-premium.css «html.ps-page-board #boardStage>svg#board» !important)가 기울인 판의 위·아래 끝에
    가로줄로 남는다 — 입체에서는 테두리 없음. 그 규칙이 id 둘이라 여기도 id 둘 + 요소 하나 더 */
 html body.bc-tilt3d #boardStage>svg#board{box-shadow:none!important;border:0!important;outline:0!important}
@@ -6676,7 +6680,7 @@ function wavyPath(a,b){const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
    끌기·모서리 손잡이·선택·지우개·되돌리기·썸네일을 구역 것 그대로 쓴다. 옛 판은 같은 자리의 사각형으로 읽는다. */
 var GRID_SHAPES=[["rect","사각형"],["circle","원"],["tri","삼각형"],["diamond","마름모"],["penta","오각형"],["hexa","육각형"],["octa","팔각형"]];
 var GRID_SIDES={tri:3,diamond:4,penta:5,hexa:6,octa:8};
-var GRID_SPLITS=[["1","없음"],["2","2칸"],["3","3칸"],["2x2","2×2"]];
+var GRID_SPLITS=[["1","없음"],["2","2칸"],["3","3칸"],["4","4칸"],["5","5칸"],["2x2","2×2"]];   /* 3.032 — 4칸·5칸(오류 제보 fffaeba4) */
 function _gridF(n){ return Math.round(n*10)/10; }
 /* 모양의 테두리 — 상자(x,y,w,h)를 꽉 채운다. 다각형은 꼭짓점이 위를 보게(팔각형만 윗변이 평평하게) 놓고 상자에 맞춰 편다. */
 function gridShapePath(shape,x,y,w,h){
@@ -6688,13 +6692,13 @@ function gridShapePath(shape,x,y,w,h){
   for(var i=0;i<n;i++){ var a=a0+i*2*Math.PI/n,px=Math.cos(a),py=Math.sin(a); raw.push([px,py]); x0=Math.min(x0,px);x1=Math.max(x1,px);y0=Math.min(y0,py);y1=Math.max(y1,py); }
   return "M "+raw.map(function(p){ return f(x+(p[0]-x0)/(x1-x0)*w)+" "+f(y+(p[1]-y0)/(y1-y0)*h); }).join(" L ")+" Z";
 }
-/* 칸 나누기(사각형만) — 2칸·3칸은 세로선, 2×2 는 십자 */
+/* 칸 나누기(사각형만) — 2~5칸은 같은 너비로 세로선, 2×2 는 십자 */
 function gridSplitPath(split,x,y,w,h){
   var f=_gridF, v=function(px){ return "M "+f(px)+" "+f(y)+" V "+f(y+h); }, hz=function(py){ return "M "+f(x)+" "+f(py)+" H "+f(x+w); };
-  if(split==="2")return v(x+w/2);
-  if(split==="3")return v(x+w/3)+" "+v(x+2*w/3);
   if(split==="2x2")return v(x+w/2)+" "+hz(y+h/2);
-  return "";
+  var n=/^[2-5]$/.test(split)?+split:0, out=[];
+  for(var i=1;i<n;i++)out.push(v(x+w*i/n));
+  return out.join(" ");
 }
 /* 판 넓이를 바꿀 때 — 판 가운데(cx,cy)를 기준으로 자리만 r 배(토큰·글자 크기는 그대로). 지금 판(state)과 장면 스냅 사본에 같은 식으로 쓴다. */
 function _gridScaleOf(o,r,cx,cy){
@@ -14499,8 +14503,9 @@ function init(){
   }
   window.addEventListener('resize',scheduleTiltFit);
   try{if(window.ResizeObserver){var tiltResize=new ResizeObserver(scheduleTiltFit);tiltResize.observe(document.getElementById('boardStage'));tiltResize.observe(svg);}}catch(_){}
-  window.__setTilt=function(on){ on=!!on; document.body.classList.toggle("bc-tilt3d",on);
+  window.__setTilt=function(on){ on=!!on; var _was=document.body.classList.contains("bc-tilt3d"); document.body.classList.toggle("bc-tilt3d",on);
     try{localStorage.setItem("ps_board_tilt3d",on?"1":"0");}catch(_){}
+    try{ if(on&&!_was&&window.__tiltBootArm)window.__tiltBootArm(); else if(!on&&_was&&window.__tiltBootDone)window.__tiltBootDone(); }catch(_){}   /* 3.033 — 켜자마자 죽어도 다음 부팅은 평면(부팅 안전장치와 같은 표시) · 끄면 지운다 */
     try{ if(on)bcAddLight(); else if(!document.body.classList.contains("bc-cam"))bcDelLight(); }catch(_){}
     try{ if(on)window.__tiltStands(); }catch(_){}   /* 2.372 — 켜기 전에 배경을 깔아 둔다 */
     try{ if(on)setTimeout(function(){try{window.__tiltFit();}catch(_){}},30); else { var _s=document.documentElement.style; _s.removeProperty("--tilt-k"); _s.removeProperty("--tilt-ty"); } }catch(_){}   /* 2.370 — 켤 때 맞추고, 끌 때 되돌린다 */
@@ -14747,7 +14752,51 @@ function init(){
   /* ⚠ 2.377 — 원근 뷰 UI 가 없어졌으므로 **끄고 시작한다.** 예전에 켜 둔 사람이 끌 방법 없이
    기울어진 보드에 갇히는 것을 막는다. 되살릴 때는 이 줄을 걷고 아래 옛 복원 갈래를 되돌리면 된다. */
 
-try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.add("bc-tilt3d"); try{window.__tiltStands&&window.__tiltStands();}catch(_){} setTimeout(function(){try{window.__tiltFit&&window.__tiltFit();}catch(_){}},400);   /* 2.370 — 켜진 채로 부팅해도 맞춘다 */ setTimeout(function(){try{bcAddLight();}catch(_){}} ,400); } }catch(_){}   /* 2.274 — 부팅 복원 시 기준점도 */
+/* 3.033 — 3D 부팅 안전장치(아이패드 사파리 «문제가 반복적으로 발생했습니다» — 3D 경기장을 그리다 페이지가 연달아 강제 종료). 터치 기기(아이패드 · 폰)만.
+   3D 로 여는 부팅(과 3D 켜기)은 이 탭의 표시를 적는다: localStorage ps_tilt3d_boot = {탭 id: 시각}, 탭 id 는 sessionStorage(탭마다 · 사파리가 죽은 뒤 다시 열어도 같은 탭).
+   작전판이 실제로 화면에 보인 뒤(셸의 부팅 막 · 다른 화면 뒤 · 숨김이 아님) 20초를 버티거나, 정상으로 떠나거나(pagehide), 보인 뒤 숨겨지면 지운다.
+   다음 부팅에 이 탭의 표시(10분 안)가 남아 있으면 앞 부팅이 3D 를 켠 채 죽은 것 — 이번엔 평면(«0»)으로 열고 작전판이 보일 때 알린다.
+   새 탭(탭 id 가 처음)이 다른 탭의 10분 안 표시를 보면 그 탭이 죽은 뒤 새로 연 것으로 친다(sessionStorage 를 잃었을 때도).
+   데스크톱은 건드리지 않는다 — 창 두 개가 서로의 표시를 «멈춤»으로 읽던 것(검토에서 재현). 표시를 못 적으면(저장 공간 가득) 터치 기기는 3D 대신 평면.
+   커뮤니티 보기(community_view) 같은 곁 보드는 터치 기기에서 평면으로 연다(설정 값은 그대로). */
+window.__tiltBootSafe=false; window.__tiltBootOk=true;
+(function(){
+  var touch=false; try{ var d=window.top.document.documentElement.getAttribute("data-ps-device"); touch=d?d!=="desktop":(navigator.maxTouchPoints||0)>0; }catch(_){ touch=(navigator.maxTouchPoints||0)>0; }
+  var side=/[?&]community_view=1/.test(location.search),K="ps_tilt3d_boot",LIFE=600000;
+  window.__tiltBootArm=function(){ return true; }; window.__tiltBootDone=function(){};
+  if(!touch)return;
+  if(side){ try{ if(localStorage.getItem("ps_board_tilt3d")==="1")window.__tiltBootOk=false; }catch(_){} return; }
+  var me="",fresh=true; try{ me=sessionStorage.getItem("ps_tilt3d_tab")||""; fresh=!me; if(!me){ me=Date.now().toString(36)+Math.random().toString(36).slice(2,8); sessionStorage.setItem("ps_tilt3d_tab",me); } }catch(_){ me=me||"x"; }
+  function recent(t,now){ return typeof t==="number"&&now-t>=0&&now-t<LIFE; }
+  function read(){ try{ var o=JSON.parse(localStorage.getItem(K)||"{}"); return (o&&typeof o==="object"&&!Array.isArray(o))?o:{}; }catch(_){ return {}; } }
+  function write(o){ var now=Date.now(),n={},k; for(k in o)if(recent(o[k],now))n[k]=o[k]; if(Object.keys(n).length)localStorage.setItem(K,JSON.stringify(n)); else localStorage.removeItem(K); }
+  function shown(){ if(document.hidden)return false;
+    try{ var fe=window.frameElement; if(!fe)return true; var pd=fe.ownerDocument,cs=pd.defaultView.getComputedStyle(fe),r=fe.getBoundingClientRect();
+      return cs.display!=="none"&&cs.visibility==="visible"&&r.width>0&&r.height>0&&!(pd.body&&pd.body.classList.contains("ps-booting")); }catch(_){ return true; } }
+  window.__tiltBootShown=shown;
+  var mine=0,tm=0,wt=0,seen=0;
+  function stop(){ clearTimeout(tm); clearInterval(wt); tm=wt=0; seen=0; }
+  function done(){ stop(); try{ var o=read(); if(o[me]===mine)delete o[me]; write(o); }catch(_){} mine=0; }
+  function tick(){ if(seen||!shown())return; seen=Date.now(); clearInterval(wt); wt=0; tm=setTimeout(done,20000); }   /* 보인 때부터 20초 */
+  window.__tiltBootArm=function(){ stop(); try{ var o=read(); mine=Date.now(); o[me]=mine; write(o); }catch(_){ mine=0; return false; } wt=setInterval(tick,500); tick(); return true; };
+  window.__tiltBootDone=done;
+  window.addEventListener("pagehide",function(){ if(mine)done(); });
+  window.addEventListener("pageshow",function(e){ if(e&&e.persisted&&document.body.classList.contains("bc-tilt3d"))window.__tiltBootArm(); });   /* 되살아난 페이지도 다시 그린다 */
+  document.addEventListener("visibilitychange",function(){ if(!document.body.classList.contains("bc-tilt3d"))return;
+    if(document.hidden){ if(mine&&seen)done(); }   /* 보인 채 버티다 숨겨졌다 — 뒤에서 iOS 가 탭을 정리해도 «멈춤»이 아니다 */
+    else if(!mine)window.__tiltBootArm(); });   /* 돌아오면 사파리가 판을 다시 그린다 — 다시 지켜본다 */
+  try{ if(localStorage.getItem("ps_board_tilt3d")!=="1")return;
+    var o=read(),now=Date.now(),died=recent(o[me],now),k;
+    if(!died&&fresh)for(k in o)if(k!==me&&recent(o[k],now)){ died=true; delete o[k]; }
+    if(died){ window.__tiltBootSafe=true; window.__tiltBootOk=false; delete o[me]; try{ write(o); }catch(_){} localStorage.setItem("ps_board_tilt3d","0");
+      var msg="3D 보기를 여는 중에 화면이 멈춰서 이번엔 평면으로 열었어요 · 보드 설정 › 보드 보기에서 다시 켤 수 있어요";
+      var say=function(n){ if(shown()){ window.__tiltBootSafeShown=Date.now(); [0,1500,3000,4500].forEach(function(ms){ setTimeout(function(){ try{ toast(msg); }catch(_){} },ms); }); return; }   /* 짧은 알림(1.7초)을 6초쯤 이어 보인다 */
+        if(n<240)setTimeout(function(){ say(n+1); },500); };   /* 작전판이 실제로 보일 때 — 셸은 부팅 막 뒤나 다른 화면 뒤에서 미리 부팅한다 */
+      setTimeout(function(){ say(0); },1600); return; }
+    if(!window.__tiltBootArm())window.__tiltBootOk=false;   /* 표시를 못 적으면 지킬 수 없다 — 평면 */
+  }catch(_){}
+})();
+try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==false){ document.body.classList.add("bc-tilt3d"); try{window.__tiltStands&&window.__tiltStands();}catch(_){} setTimeout(function(){try{window.__tiltFit&&window.__tiltFit();}catch(_){}},400);   /* 2.370 — 켜진 채로 부팅해도 맞춘다 */ setTimeout(function(){try{bcAddLight();}catch(_){}} ,400); } }catch(_){}   /* 2.274 — 부팅 복원 시 기준점도 */
   try{ __syncStageUI(); }catch(_){}
   if(window.innerWidth<=520){state.orientation="v";}   /* 부팅 기본값(스테이지 높이 확정 전) — 곧바로 아래 자동 방향(__autoOrient)이 화면 비율로 다시 판단한다 */
   buildPitch();renderTokens();renderDrawings();
@@ -16081,7 +16130,13 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.
        팔레트는 이제 접히지 않으므로 이 가드 자체가 필요 없다. */
     deselect();
     const u=toUnit(e);
-    const rect=el("rect",{x:u.x,y:u.y,width:0,height:0,fill:"rgba(47,168,255,.16)",stroke:"#2fa8ff","stroke-width":2,"stroke-dasharray":"7 5","pointer-events":"none"});
+    /* 3.032 — 3D 보기에서 끄는 동안 선택 사각형이 안 보였다(사용자 «선택은 되는데 네모가 안 보여요»). 3D 는 운동장 그림을
+       경기장 그림(tiltSurface)으로 바꾸려고 «world 바로 밑 id 없는 rect»(잔디 바탕)를 숨기는데(#ps-tilt-continuous), 이 사각형도
+       world 바로 밑 id 없는 rect 라 같이 숨었다. id 를 달아 그 규칙에서 빠진다 — 썸네일·내보내기가 이미 #lassoRect 를 지운다.
+       사각형은 운동장 좌표(world)에 그대로 그린다: 3D 에서는 판과 같은 기울기로 사다리꼴로 보이고, 누른 점과 지금 손끝이 마주 보는
+       두 꼭짓점이며, 고르는 기준(운동장 위치가 상자 안)과 정확히 같은 구역이다. */
+    clearMarquee();   /* 3.032 — 끝나지 않은 앞 사각형(둘째 손가락 등)이 판에 남거나 id 가 겹치지 않게 */
+    const rect=el("rect",{id:"lassoRect",x:u.x,y:u.y,width:0,height:0,fill:"rgba(47,168,255,.16)",stroke:"#2fa8ff","stroke-width":2,"stroke-dasharray":"7 5","pointer-events":"none"});
     (world||svg).appendChild(rect);_mq={x0:u.x,y0:u.y,rect:rect};
     try{svg.setPointerCapture(e.pointerId);}catch(_){}
   });

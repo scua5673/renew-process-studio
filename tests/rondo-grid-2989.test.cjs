@@ -46,6 +46,11 @@ test('splitting a rectangle draws only the inner lines',()=>{
   const g=pure();
   assert.equal(g.gridSplitPath('2',0,0,120,60),'M 60 0 V 60');
   assert.equal(g.gridSplitPath('3',0,0,120,60),'M 40 0 V 60 M 80 0 V 60');
+  assert.equal(g.gridSplitPath('4',0,0,120,60),'M 30 0 V 60 M 60 0 V 60 M 90 0 V 60','3.032 — 4칸(오류 제보 fffaeba4)');
+  assert.equal(g.gridSplitPath('5',10,0,100,60),'M 30 0 V 60 M 50 0 V 60 M 70 0 V 60 M 90 0 V 60','5칸 — 상자 왼쪽(x)에서 같은 너비로');
+  assert.equal(g.gridSplitPath('3',0,0,100,60),'M 33.3 0 V 60 M 66.7 0 V 60','나누어 떨어지지 않으면 0.1 단위로');
+  assert.deepEqual(plain(g.GRID_SPLITS.map(s=>s[0])),['1','2','3','4','5','2x2']);
+  assert.equal(g.gridSplitPath('6',0,0,120,60),'');assert.equal(g.gridSplitPath('0',0,0,120,60),'');
   assert.equal(g.gridSplitPath('2x2',0,0,120,60),'M 60 0 V 60 M 0 30 H 120');
   assert.equal(g.gridSplitPath('1',0,0,120,60),'');assert.equal(g.gridSplitPath(undefined,0,0,120,60),'');
 });

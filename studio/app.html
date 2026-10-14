@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.031"></script>
+<script src="autosave-status.js?v=3.033"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -505,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.031';</script>
+<script>window.PS_BUILD='3.033';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1114,7 +1114,13 @@ function psShowUpdBand(){
 <script>try{if(localStorage.getItem('cs_theme')==='dark')document.body.classList.add('fmdark');}catch(_){}</script>
 <script>/* 3.027 — 처음 들어온 기기는 작전판을 3D 보기로(사용자 «프로세스 스튜디오 처음 들어왔을 때 기본이 3D»). 보드는 «1» 일 때만 3D 로 연다(board.html 부팅 복원).
    기기 설정이라 한 번 정하면 그대로 — 보드 설정 › 보드 보기에서 «평면»으로 끈 기기(«0»)는 다시 켜지 않는다. */
-try{if(localStorage.getItem('ps_board_tilt3d')===null)localStorage.setItem('ps_board_tilt3d','1');}catch(_){}</script>
+/* 3.033 — 아이패드 사파리 «…app.html 에서 문제가 반복적으로 발생했습니다»(페이지가 연달아 강제 종료). 3D 경기장은 사파리에서 무겁다(3.009 부터 여러 번 가볍게 했다).
+   3.027 의 «처음엔 3D» 가 3D 를 켠 적 없는 아이패드 · 폰까지 3D 로 열었다 → 처음 3D 는 마우스 데스크톱(data-ps-device=desktop)만.
+   3.027~3.032 가 터치 기기에 저절로 넣은 «1» 은 한 번만 «0» 으로 되돌린다(ps_tilt3d_touch_reset_v1) — 보드 설정 › 보드 보기에서 다시 켤 수 있다.
+   3D 로 열다 죽는 것은 board.html 부팅 안전장치(ps_tilt3d_boot)가 한 번 더 막는다. */
+try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop';
+  if(_psDev!=='desktop'){if(!localStorage.getItem('ps_tilt3d_touch_reset_v1')){localStorage.setItem('ps_tilt3d_touch_reset_v1','1');if(localStorage.getItem('ps_board_tilt3d')==='1')localStorage.setItem('ps_board_tilt3d','0');}}
+  else if(localStorage.getItem('ps_board_tilt3d')===null)localStorage.setItem('ps_board_tilt3d','1');}catch(_){}</script>
 <script>
 /* ==== PWA 안전 다이얼로그: 네이티브 confirm()/prompt() 대체 (설치형 PWA에서 차단됨) ==== */
 (function(){
@@ -8114,13 +8120,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.031"></script>
-<script src="autosave-merge.js?v=3.031"></script>
-<script src="autosave-runtime.js?v=3.031"></script>
-<script src="autosave-recovery.js?v=3.031"></script>
-<script src="sync.js?v=3.031"></script>
+<script src="autosave-journal.js?v=3.033"></script>
+<script src="autosave-merge.js?v=3.033"></script>
+<script src="autosave-runtime.js?v=3.033"></script>
+<script src="autosave-recovery.js?v=3.033"></script>
+<script src="sync.js?v=3.033"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.031">
+<link rel="stylesheet" href="support.css?v=3.033">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

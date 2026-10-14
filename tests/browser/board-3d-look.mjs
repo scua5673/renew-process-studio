@@ -74,10 +74,10 @@ try{
   const night=await page.evaluate(async()=>{
     __setTilt(true);__tiltFit();await __sleep(800);const st=__stadium();
     return {mood:document.body.getAttribute('data-tilt-mood'),sig:st.sig,cone:st.svg.includes('psStCone')&&/clip-path="url\(#psStPitchClip\)"/.test(st.svg),shadows:document.querySelectorAll('#tokenLayer .ps-chip-shadow').length,chips:document.querySelectorAll('#tokenLayer .ps-chip').length,
-      moodLayer:(function(){const m=document.getElementById('tiltMood');return m?getComputedStyle(m).display:'';})(),stored:JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'{}').mood,pressed:[...document.querySelectorAll('#tiltMoodSeg button')].map(b=>b.getAttribute('aria-pressed')).join('')};
+      moodLayer:(function(){const m=document.getElementById('tiltMood');return m?getComputedStyle(m).display:'';})(),iosSafari:CSS.supports('-webkit-touch-callout','none'),stored:JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'{}').mood,pressed:[...document.querySelectorAll('#tiltMoodSeg button')].map(b=>b.getAttribute('aria-pressed')).join('')};
   });
   assert.equal(night.mood,'night','today\'s look is the default');assert.match(night.sig,/\|night\|0\|$/);assert.ok(night.cone,'floodlight cones on the grass');
-  assert.equal(night.chips,22);assert.equal(night.shadows,88,'four shadows per chip under the masts');assert.equal(night.moodLayer,'block');assert.equal(night.stored,undefined,'nothing stored until chosen');
+  assert.equal(night.chips,22);assert.equal(night.shadows,88,'four shadows per chip under the masts');assert.equal(night.moodLayer,night.iosSafari?'none':'block','3.033 — iPhone/iPad Safari skips the stage-sized light layer (memory)');assert.equal(night.stored,undefined,'nothing stored until chosen');
   assert.equal(night.pressed,'falsefalsetrue');
   const day=await page.evaluate(async()=>{
     document.querySelector('#tiltMoodSeg [data-mood="day"]').click();await __sleep(800);const st=__stadium();
