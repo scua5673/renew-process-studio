@@ -10,7 +10,7 @@
 
 
 <title>코치 보드 · 작전판 & 훈련 설계</title>
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.019">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.020">
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
 :focus-visible{outline:2px solid var(--ps-navy,#14213D) !important;outline-offset:2px;border-radius:6px;}
@@ -2100,7 +2100,7 @@
   /* COMMAND-DOCK:v4 — Photoshop형 컴팩트 장면·선수·도구/장비 3행.
      기능 노드는 복제하지 않고 원본을 한 도크 안으로 이동해 이벤트·드래그를 그대로 보존한다. */
   @media (min-width:768px){
-    body.fmdark.rail-full #ps-command-dock{--cmd-blue:#5070B5;--cmd-blue-hover:#5A77BD;--cmd-blue-down:#46649F;}   /* 3.019 — 다크 값(아래 밝은 값보다 구체적) */
+    body.fmdark.rail-full #ps-command-dock{--cmd-blue:#5070B5;--cmd-blue-hover:#5A77BD;--cmd-blue-down:#46649F;}   /* 3.020 — 다크 값(아래 밝은 값보다 구체적) */
     body.rail-full #ps-command-dock{
       --cmd-blue:#14213D;--cmd-blue-hover:#1D2D50;--cmd-blue-down:#0E1830;
       --cmd-soft:#E9EDF5;--cmd-page:#f7f8fa;--cmd-chip:#f2f4f7;
@@ -2957,7 +2957,7 @@ body.match-mode:not(.token-drag) #tokenLayer>g{transition:transform .22s cubic-b
   #boardPageStrip .bp-set{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;white-space:nowrap;padding:8px 12px;border:1px solid var(--line,#E3E6EA);border-radius:9px;background:var(--panel,#fff);color:var(--ink,#14161A);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;}
   #boardPageStrip .bp-set svg{flex:0 0 auto;}
   #boardPageStrip .bp-set:hover{background:var(--panel2,#F1F2F4);}
-  #boardPageStrip .bp-set[aria-expanded="true"]{background:#E9EDF5;border-color:#C3CCDD;color:var(--ps-navy-h,#1D2D50);}   /* 3.019 메인색 네이비 */
+  #boardPageStrip .bp-set[aria-expanded="true"]{background:#E9EDF5;border-color:#C3CCDD;color:var(--ps-navy-h,#1D2D50);}   /* 3.020 메인색 네이비 */
   body.fmdark #boardPageStrip .bp-set[aria-expanded="true"]{background:rgba(127,152,208,.18);border-color:#7F98D0;color:#A9BCE6;}
   #drillList .thumb{position:relative;}
   .scn-badge{position:absolute;right:5px;bottom:5px;background:rgba(12,15,23,.78);color:#fff;font-size:var(--fs-micro);font-weight:var(--fw-head);border-radius:8px;padding:1px 6px;pointer-events:none;z-index:1;}
@@ -5289,7 +5289,7 @@ function eraseToken(p){if(p.id==="ball"){pushUndo();state.ball=null;sel=null;ren
 function enableDrag(g,p,removable,kind){
   let mode=null,moved=false,sx=0,sy=0,grp=null,gu0=null,grpUndo=false,mvUndo=false;     // mode: 'move' | 'draw'
   let _mvAlt=false,_mvP0=null,_mvAxis=null,grpStart=null,_mvGrab=null;   /* 2.030 */
-  let moveFrame=0,pendingMove=null,_pid=null;   /* 3.018 — _pid: 잡은 포인터(다른 손가락 · 손바닥의 움직임은 받지 않는다) */
+  let moveFrame=0,pendingMove=null,_pid=null;   /* 3.019 — _pid: 잡은 포인터(다른 손가락 · 손바닥의 움직임은 받지 않는다) */
   function flushDragMove(){
     if(moveFrame){cancelAnimationFrame(moveFrame);moveFrame=0;}
     const next=pendingMove;pendingMove=null;
@@ -5297,7 +5297,7 @@ function enableDrag(g,p,removable,kind){
   }
 	  g.addEventListener("pointerdown",e=>{
 	    if(e.pointerType==="pen")_penSeen=true;
-	    if(_inkPalm(e)){e.stopPropagation();return;}   /* 3.018 — 펜슬로 긋는 중 · 뗀 직후의 손바닥 */
+	    if(_inkPalm(e)){e.stopPropagation();return;}   /* 3.019 — 펜슬로 긋는 중 · 뗀 직후의 손바닥 */
 	    /* 2.975 — 오른쪽 클릭(맥은 ⌃클릭도) = 고르고 정보 창. 끌기·지우개·연결선으로 넘어가지 않는다 */
 	    if(e.pointerType==="mouse"&&(e.button===2||(e.button===0&&e.ctrlKey&&!e.metaKey&&_PTR_MAC))){ e.stopPropagation(); e.preventDefault(); openTokenInfo(kind,p); return; }
 	    if(e.pointerType==="mouse"&&e.button===0&&!(sel&&sel.ref===p)&&!(multiSel.length>=2&&multiSel.indexOf(p)>=0))selPanelOpen=false;
@@ -5310,7 +5310,7 @@ function enableDrag(g,p,removable,kind){
 	    if(p.locked&&state.tool==="move"){selectItem(kind,p);try{toast("고정된 항목입니다 · 고정 해제 후 이동하세요");}catch(_){}return;}
     moved=false;mvUndo=false;sx=e.clientX;sy=e.clientY;
     const selected=!!(sel&&sel.ref===p);
-    const _isDrawStart=(kind!=="ball"&&!selected&&isDraw()&&!_inkFingerOnly(e));   /* 3.018 — 펜슬을 쓴 뒤 손가락은 그리지 않고 옮긴다 */
+    const _isDrawStart=(kind!=="ball"&&!selected&&isDraw()&&!_inkFingerOnly(e));   /* 3.019 — 펜슬을 쓴 뒤 손가락은 그리지 않고 옮긴다 */
     const engage=()=>{
     if(_isDrawStart){
       if(!_inkTakeOver(e))return;
@@ -5350,7 +5350,7 @@ function enableDrag(g,p,removable,kind){
     });
   function applyDragMove(e){if(!mode)return;
     if(Math.hypot(e.clientX-sx,e.clientY-sy)>4)moved=true;
-    if(mode==="draw"){_inkMove(e);}   /* 3.018 — 펜의 중간 점까지 */
+    if(mode==="draw"){_inkMove(e);}   /* 3.019 — 펜의 중간 점까지 */
     else if(grp){if(!grpUndo){pushUndo();grpUndo=true;}const u=toUnit(e);let dx=u.x-gu0.x,dy=u.y-gu0.y;
       if(e.shiftKey){ if(!_mvAxis&&(Math.abs(dx)>6||Math.abs(dy)>6))_mvAxis=Math.abs(dx)>=Math.abs(dy)?"x":"y"; if(_mvAxis==="x")dy=0; else if(_mvAxis==="y")dx=0; } else _mvAxis=null;
       grp.forEach(it=>{if(it.draw&&!it.locked){it.o.pts=it.pts0.map(q=>({x:q.x+dx,y:q.y+dy}));if(it.o.tk){it.o.tk=it.o.tk.map(function(id){return (id!=null&&grp.some(function(g2){return !g2.draw&&g2.o&&!g2.locked&&((id==="ball"&&g2.o===state.ball)||g2.o.id===id);}))?id:null;});if(it.o.tk[0]==null&&it.o.tk[1]==null)delete it.o.tk;}if(it.g)it.g.setAttribute("transform","translate("+dx+","+dy+")");}else if(!it.draw&&!it.locked){it.o.x=it.x0+dx;it.o.y=it.y0+dy;if(it.g)it.g.setAttribute("transform",tokenTransform(it.o));}});renderMultiGuides();if(_dirLive()||grp.some(function(it){return !it.locked&&it.o&&(it.o.vis||it.o.shaper);})){renderVisionRAF();}}
@@ -5404,7 +5404,7 @@ function enableDrag(g,p,removable,kind){
         renderTokens(); renderDrawings(); toast("복제됨"); }catch(_){} }
     _mvAlt=false;
     if(m==="move"){g.style.cursor="grab";const c=g.querySelector("circle,path,rect");if(c)c.setAttribute("opacity","1");if(moved&&sel&&sel.ref===p)positionSelCtl();if(moved){try{boardSaveLive();}catch(_){}}if(wasGrp&&moved){try{renderDrawings();}catch(_){}try{save();}catch(_){}}else if(moved&&_hasAnchored(p.id)){try{renderDrawings();}catch(_){}}}   /* 2.719 — 묶인 선이 따라오게 */
-    else if(e.pointerId===_drawPid){endDraw();}   /* 3.018 — 펜슬이 넘겨받은 선은 그 펜슬이 끝낸다 */
+    else if(e.pointerId===_drawPid){endDraw();}   /* 3.019 — 펜슬이 넘겨받은 선은 그 펜슬이 끝낸다 */
     if(!moved){const now=Date.now();
       if(g._t&&now-g._t<360){g._t=0;
         if(kind==="player"&&!p.coach){selPanelOpen=true;selectItem(kind,p);try{var _ni=document.getElementById("nameInput");if(_ni){_ni.focus();if(_ni.select)_ni.select();}}catch(_){}return;}   // 더블클릭 = 이름 바로 편집
@@ -6761,7 +6761,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
           enableEndpointDrag(hg,d,idx); g.appendChild(hg); });
       }
     }
-  }else if(d.type==="free"){const dd=_freePathD((d===_draw&&_inkPred)?d.pts.concat(_inkPred):d.pts);   /* 3.018 — 둥근 곡선 · 긋는 중엔 예측 끝 */
+  }else if(d.type==="free"){const dd=_freePathD((d===_draw&&_inkPred)?d.pts.concat(_inkPred):d.pts);   /* 3.019 — 둥근 곡선 · 긋는 중엔 예측 끝 */
     if(isSel)g.appendChild(el("path",{d:dd,fill:"none",stroke:"#ffd60a","stroke-width":9,opacity:".55","stroke-linecap":"round","stroke-linejoin":"round"}));
     g.appendChild(el("path",{d:dd,fill:"none",stroke:C,"stroke-width":4.5*LW,"stroke-linecap":"round","stroke-linejoin":"round"}));
     g.appendChild(el("path",{d:dd,fill:"none",stroke:"#000","stroke-width":22,opacity:"0","pointer-events":"stroke"}));
@@ -7032,7 +7032,7 @@ function addText(u,existing){
   setTimeout(()=>{paintPreview();applyFs();ed.focus();try{ed.setSelectionRange(ed.value.length,ed.value.length);}catch(_){}
     if(!outsideBound){outsideBound=true;document.addEventListener("pointerdown",outside,true);}},0);}
 let _draw=null,_drawTmp=null;
-/* ══ 3.018 · 애플 펜슬 그리기(사용자 «아이패드 펜슬 사용할 때 더 부드럽게 · 터치 펜을 잘 활용할 수 있게») ══════════
+/* ══ 3.019 · 애플 펜슬 그리기(사용자 «아이패드 펜슬 사용할 때 더 부드럽게 · 터치 펜을 잘 활용할 수 있게») ══════════
    ① 긋는 포인터 하나만 받는다(_drawPid). 예전엔 포인터 id 를 보지 않아, 펜슬로 긋는 중 손바닥이 닿으면 beginDraw 가 한 번 더
       불리고 두 포인터의 점이 한 선에 섞여 선이 튀었다.
    ② 손바닥 무시: 펜슬로 긋는 동안 · 뗀 뒤 0.35초는 손가락 터치를 받지 않는다. 손가락이 먼저 닿아 시작된 선은 펜슬이 닿는
@@ -7098,7 +7098,7 @@ function _inkHoverPaint(){_inkHoverRaf=0;const c=_inkHoverPt;if(!c||!world||_dra
   _inkHoverEl.setAttribute("transform","translate("+u.x.toFixed(1)+" "+u.y.toFixed(1)+")");_inkHoverEl.style.display="";
   clearTimeout(_inkHoverT);_inkHoverT=setTimeout(_inkHoverOff,1500);}   /* 펜이 호버 거리 밖으로 나가면 이벤트가 끊긴다 — 잠시 뒤 지운다 */
 function _inkHoverOff(){if(_inkHoverRaf){cancelAnimationFrame(_inkHoverRaf);_inkHoverRaf=0;}_inkHoverPt=null;clearTimeout(_inkHoverT);if(_inkHoverEl)_inkHoverEl.style.display="none";}
-/* 3.018 — 자유선 모양. 저장된 점(d.pts)은 그대로 두고 그릴 때만 다듬는다 — 예전 보드 · 내보내기 · 썸네일이 모두 이 길로 같은 모양.
+/* 3.019 — 자유선 모양. 저장된 점(d.pts)은 그대로 두고 그릴 때만 다듬는다 — 예전 보드 · 내보내기 · 썸네일이 모두 이 길로 같은 모양.
    ① 2.5 보드단위(≈0.25m) 안쪽으로 붙은 점은 건너뛴다(손 떨림 · 펜슬 고속 입력의 잔물결). 첫 점 · 끝 점은 언제나.
    ② 이웃 점과 1:2:1 로 한 번 고른다(끝 점은 그대로 — 선이 펜 끝에 닿아 있게).
    ③ 점과 점의 가운데를 지나는 2차 곡선(Q)으로 잇는다 — 꺾인 선 대신 둥근 선. */
@@ -7242,7 +7242,7 @@ function moveDraw(u){if(!_draw)return;
     const _mp=mppNow();let dx=Math.round((u.x-o.x)/_mp)*_mp,dy=Math.round((u.y-o.y)/_mp)*_mp;   /* 2.989 — 그리드 판은 1m 가 다르다 */
     _draw.pts[1]={x:o.x+dx,y:o.y+dy};}
   else if(_draw.type==="free")_draw.pts.push(u);else _draw.pts[1]=u;
-  _inkSchedule();}   /* 3.018 — 점은 지금 쌓고, 화면은 프레임마다 한 번(_inkFlush) */
+  _inkSchedule();}   /* 3.019 — 점은 지금 쌓고, 화면은 프레임마다 한 번(_inkFlush) */
 function endDraw(){hideMeas();_inkEnd();if(!_draw)return;const t=_draw.type;let keep;
   /* 2.559 — 자유선은 pointermove 1회당 점 1개가 **무제한**으로 쌓였다(감사: 씨닝·throttle 0건).
      그 배열이 스냅마다 복제되니(되돌리기 50 · 장면 N) 선 하나가 앱을 무겁게 했다.
@@ -7274,7 +7274,7 @@ function afterDrawZone(d){
 function attachDraw(){
   drawCatch.addEventListener("pointerdown",e=>{
     if(e.pointerType==="pen")_penSeen=true;
-    if(_inkPalm(e)){e.stopPropagation();return;}   /* 3.018 — 펜슬로 긋는 중 · 뗀 직후의 손바닥 */
+    if(_inkPalm(e)){e.stopPropagation();return;}   /* 3.019 — 펜슬로 긋는 중 · 뗀 직후의 손바닥 */
     if(e.button===0&&window.__psTokenStampActive&&window.__psPlaceTokenStampAt){
       e.preventDefault();e.stopPropagation();
       if(window.__psPlaceTokenStampAt(toUnit(e)))return;
@@ -7287,15 +7287,15 @@ function attachDraw(){
     if(state.tool==="link"){e.stopPropagation();linkFinish(false);return;}   /* 2.679 — 빈 곳을 누르면 연결선 완료 */
     if(state.tool==="poly"){e.stopPropagation();if(e.pointerType==="mouse"&&e.button!==0)return;polyTap(toUnit(e));return;}   /* 2.980 — 다각형: 누를 때마다 꼭짓점 */
     if(!isDraw())return;
-    if(_inkFingerOnly(e)){e.stopPropagation();if(!_inkHintShown){_inkHintShown=true;toast("펜슬로 그려요 · 손가락으로는 선수를 옮깁니다");}return;}   /* 3.018 */
-    if(!_inkTakeOver(e))return;   /* 3.018 — 긋는 중 둘째 손가락은 받지 않는다 */
+    if(_inkFingerOnly(e)){e.stopPropagation();if(!_inkHintShown){_inkHintShown=true;toast("펜슬로 그려요 · 손가락으로는 선수를 옮깁니다");}return;}   /* 3.019 */
+    if(!_inkTakeOver(e))return;   /* 3.019 — 긋는 중 둘째 손가락은 받지 않는다 */
     if(sel)deselect();
     try{drawCatch.setPointerCapture(e.pointerId)}catch(_){};_inkBegin(e,toUnit(e));});
   drawCatch.addEventListener("pointermove",e=>{if(_poly&&state.tool==="poly"){if(e.pointerType==="mouse")polyPreview(toUnit(e));return;}   /* 2.980 — 마우스를 따라오는 다음 변 */
     if(!_draw)return;_inkMove(e);});
   const end=e=>{if(!_draw||e.pointerId!==_drawPid)return;try{drawCatch.releasePointerCapture(e.pointerId);}catch(_){}endDraw();};
   drawCatch.addEventListener("pointerup",end);drawCatch.addEventListener("pointercancel",end);
-  try{ if(world&&!world.__psPenHover){ world.__psPenHover=true;   /* 3.018 — 펜슬 호버 링(선수 위에서도) */
+  try{ if(world&&!world.__psPenHover){ world.__psPenHover=true;   /* 3.019 — 펜슬 호버 링(선수 위에서도) */
     world.addEventListener("pointermove",_inkHover); world.addEventListener("pointerleave",_inkHoverOff); world.addEventListener("pointerdown",_inkHoverOff,true); } }catch(_){}}
 
 const DEFAULT_XI=[
@@ -14287,7 +14287,7 @@ function init(){
      ⚠ 3D 켜기·끄기와 같이 **기기 설정**이다(보드가 아니라 «내가 보는 방식» — 2.929 표의 «보드 보기»와 같은 자리). */
   var TILT_CAM={low:{ax:36,sy:1.3},mid:{ax:24,sy:1.08},high:{ax:12,sy:1}};
   var TILT_PAD={full:[.15,.11,.05],simple:[.09,.08,.035],grass:[.05,.05,.03]};
-  /* 3.020 — 지금 그릴 경기장 꾸밈(사용자 «훈련 만들기에서 그리드 누르면 옆에 전광판 관중석 다 사라지게»).
+  /* 3.021 — 지금 그릴 경기장 꾸밈(사용자 «훈련 만들기에서 그리드 누르면 옆에 전광판 관중석 다 사라지게»).
      그리드 판(라인 없는 빈 판)은 훈련 구역이라 경기장이 없다 — 설정과 상관없이 «잔디만». 설정 값(ps_tilt3d_opts_v1)은 그대로라
      운동장으로 돌아오면 고른 꾸밈이 다시 나온다(관중석 · 광고판 · 지붕 · 조명은 모두 이 경기장 그림 한 장 — 옛 #tiltStands 층은 3D 에서 이미 숨김). */
   function tiltDecoNow(){ var t3=window.__tilt3d||{}; try{ if(isBlankSpec())return "grass"; }catch(_){} return TILT_PAD[t3.deco]?t3.deco:"full"; }
@@ -14334,8 +14334,8 @@ function init(){
       var pv=(window.__pvBox&&window.__pvBox[2]>0&&window.__pvBox[3]>0)?window.__pvBox:[vb.x,vb.y,vb.width,vb.height];
       var st=document.documentElement.style, raw=stage.getBoundingClientRect(), cs=getComputedStyle(stage), pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;
       var top=raw.top+pt, hh=raw.height-pt-pb, ww=raw.width; if(!hh||!ww)return;
-      var t3=window.__tilt3d||{},deco=tiltDecoNow(),pads=TILT_PAD[deco]||TILT_PAD.full;   /* 3.010 — 경기장을 줄이면(간단·잔디만) 운동장이 그만큼 크게 · 3.020 그리드 판은 잔디만 */
-      if((state.pitchN||1)>1&&deco!=="grass")pads=[pads[0],pads[1],pads[2]+.03];   /* 3.021 — 운동장 여러 개는 가로로 넓어(2.2:1) 옆 관중석 · 광고판이 잘렸다 — 옆 여백만 조금 더 */
+      var t3=window.__tilt3d||{},deco=tiltDecoNow(),pads=TILT_PAD[deco]||TILT_PAD.full;   /* 3.010 — 경기장을 줄이면(간단·잔디만) 운동장이 그만큼 크게 · 3.021 그리드 판은 잔디만 */
+      if((state.pitchN||1)>1&&deco!=="grass")pads=[pads[0],pads[1],pads[2]+.03];   /* 3.022 — 운동장 여러 개는 가로로 넓어(2.2:1) 옆 관중석 · 광고판이 잘렸다 — 옆 여백만 조금 더 */
       var key=[Math.round(raw.left),Math.round(top),Math.round(ww),Math.round(hh),pv.map(Math.round).join(","),vb.x,vb.y,vb.width,vb.height,svg.getAttribute("preserveAspectRatio"),t3.cam,deco,st.getPropertyValue("--tilt-k"),st.getPropertyValue("--tilt-ty")].join("|");
       if(key===_fitKey)return;
       var prevTr=svg.style.transition; svg.style.transition="none";
@@ -14413,7 +14413,7 @@ function init(){
     const vb=svg.viewBox.baseVal,par=svg.getAttribute('preserveAspectRatio')||'xMidYMid meet',wt=world.getAttribute('transform')||'';
     const sp=pitchSpec(),multi=(state.pitchN||1)>1,whole=multi||!!sp.blank,goals=!whole&&state.lines!==false;
     let q=whole?{L:0,R:W,T:0,B:H}:PR();
-    /* 3.021 — 운동장 여러 개: 경기장은 카드 배치 전체를 둘러싼다(사용자 «운동장 5개 했을 때도 잘 구현되게»). 예전엔 운동장 1개 상자(W×H)라
+    /* 3.022 — 운동장 여러 개: 경기장은 카드 배치 전체를 둘러싼다(사용자 «운동장 5개 했을 때도 잘 구현되게»). 예전엔 운동장 1개 상자(W×H)라
        화면을 가로로 채우는 카드(BASEVB 2.2:1)의 바깥 판이 관중석 위로 나가고, 광고판이 판 안을 가로질렀다. 카드 자리는 #ps-multipitch 의
        data-pitch-rect(잔디 좌표 — 워터마크 · 내보내기와 같은 값). 두께 · 간격은 아래 S(운동장 1개 비율)로 재서 넓은 배치에서도 관중석이 두꺼워지지 않는다. */
     if(multi){ try{ const rs=[...svg.querySelectorAll('#ps-multipitch [data-pitch-rect]')].map(g=>g.getAttribute('data-pitch-rect').split(',').map(Number)).filter(r=>r.length===4&&r.every(isFinite)&&r[2]>0&&r[3]>0);
@@ -14431,7 +14431,7 @@ function init(){
     if(host&&host.tagName!=='IMG'){host.remove();host=null;}
     if(!host){host=document.createElement('img');host.className='tilt-stadium';host.alt='';host.setAttribute('aria-hidden','true');host.decoding='async';host.draggable=false;surface.appendChild(host);}
     surface.classList.add('ps-stadium');
-    const t3=window.__tilt3d||{},deco=tiltDecoNow(),ad=String(t3.ad||"").trim()||"PROCESS STUDIO";   /* 3.010 — 경기장 꾸밈 · 광고판 문구 · 3.020 그리드 판은 잔디만 */
+    const t3=window.__tilt3d||{},deco=tiltDecoNow(),ad=String(t3.ad||"").trim()||"PROCESS STUDIO";   /* 3.010 — 경기장 꾸밈 · 광고판 문구 · 3.021 그리드 판은 잔디만 */
     const dE=deco==="full"?dRo:(deco==="simple"?dT+S*.03:dT);   /* 그림이 끝나는 바깥 테(줄이면 그림 상자도 작게) */
     const mt=(/matrix\(([^)]*)\)/.exec(wt)||[0,'1 0 0 1 0 0'])[1].split(/[\s,]+/).map(Number),ext=gx+dE,eyt=gy+dE;
     const cs=[[L-ext,T-eyt],[R+ext,T-eyt],[R+ext,B+eyt],[L-ext,B+eyt]].map(([x,y])=>[mt[0]*x+mt[2]*y+mt[4],mt[1]*x+mt[3]*y+mt[5]]);
@@ -22067,7 +22067,7 @@ body:not(.ep-sp) #editorPanel>#epSpMore{display:none!important}
 html.ps-page-board body:not(.ps-dock) #ps-command-dock #cmd-tool-end .menuwrap{width:auto!important;flex:0 0 auto!important}
 html.ps-page-board #ps-command-dock #cmd-tool-end:not(#_):not(#_){min-width:0!important;overflow:visible!important;flex-wrap:nowrap!important}
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=3.019"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.020"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2582-selbar-trim">/* 2.582 — 선택 띠에서 뺀 것(사용자 "이것들은 없어도 될꺼 같아"): 정렬 띠(#alignBar 줄맞춤·균등·간격) · 좌우/상하 대칭 복제.
    코드는 남기고 보이지만 않게 — 되살리려면 이 블록만 지운다. inline style="display:inline-flex" 를 이기려고 !important. */
 html.ps-page-board #alignBar,html.ps-page-board #mirHBtn,html.ps-page-board #mirVBtn,#alignBar,#mirHBtn,#mirVBtn{display:none!important}
@@ -22421,7 +22421,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
   /* ⑥ 다크 */
   html.ps-page-board body.fmdark.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________){
     --dk-ink:#F1F3F7;--dk-text:#D6DAE1;--dk-muted:#9AA3B2;--dk-hover:rgba(255,255,255,.07);--dk-press:rgba(255,255,255,.12);
-    --dk-blue:#5070B5;--dk-blue-2:#5070B5;--dk-blue-3:#5A77BD;   /* 3.019 — 메인색 네이비의 다크 값 */
+    --dk-blue:#5070B5;--dk-blue-2:#5070B5;--dk-blue-3:#5A77BD;   /* 3.020 — 메인색 네이비의 다크 값 */
     --dk-line:rgba(255,255,255,.1);--dk-hair:rgba(255,255,255,.06);--dk-soft:rgba(82,126,255,.2);--dk-soft-ink:#A9C0FF;--dk-soft-line:rgba(120,158,255,.35);
     --dk-card:#242A35;--dk-card-on:#27314A;--dk-tray:rgba(255,255,255,.06);--dk-on:#323A48;
     background:rgba(24,28,36,.9)!important;

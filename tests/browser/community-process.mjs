@@ -71,12 +71,12 @@ try{
 
   // 1) 처음은 코치 자료 — 지금 화면 그대로. 두 칸이 머리에 있다
   let s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.coach],[false,['true','false'],'작전판·훈련·경기 분석 탐색','훈련 주제','제목·작성자·내용 검색',1]);
+  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.coach],[false,['true','false','false'],'작전판·훈련·경기 분석 탐색','훈련 주제','제목·작성자·내용 검색',1]);   // 3.018 — 칸 셋(엘미하)
   assert.notEqual(s.fab,'none','코치 자료 칸에는 «올리기»가 있다');
   assert.ok(s.chips.includes('론도')&&s.chips[0]==='전체 주제*','코치 자료의 주제 칩 그대로');
   const seg=await rect('#prSeg'),tabs=await c.evaluate(()=>[...document.querySelectorAll('#prSeg button')].map(b=>Math.round(b.getBoundingClientRect().height)));
-  assert.ok(seg.l>=0&&seg.l+seg.w<=s.vw,'두 칸이 화면 안 '+JSON.stringify(seg));
-  assert.ok(tabs.every(h=>h>=(phone?36:30)),'두 칸의 높이 '+JSON.stringify(tabs));
+  assert.ok(seg.l>=0&&seg.l+seg.w<=s.vw,'칸들이 화면 안 '+JSON.stringify(seg));
+  assert.ok(tabs.length===3&&tabs.every(h=>h>=(phone?36:30)),'칸 셋의 높이 '+JSON.stringify(tabs));
   assert.equal(s.docW,s.vw,'가로로 넘치지 않는다');
 
   // 1-2) 3.002 — 훈련이 둘인 코치 글: 뷰어 머리 아래에서 훈련을 골라 본다. 띠·담기·신고는 코치 글 그대로
@@ -106,13 +106,13 @@ try{
   const until=async(fn,what)=>{ for(let i=0;i<100;i++){ if(fn())return; await page.waitForTimeout(100); } throw new Error('기다림 초과: '+what); };
   await until(()=>indexAsked()>=1,'처음 목록 요청');
   await page.waitForTimeout(300);
-  assert.deepEqual([(await state()).label,await c.evaluate(()=>!!document.getElementById('prRetry'))],[['코치 자료1','프로세스'],false]);
+  assert.deepEqual([(await state()).label,await c.evaluate(()=>!!document.getElementById('prRetry'))],[['코치 자료1','프로세스','엘미하'],false]);   // 3.018 — 엘미하 칸: 엘미하 계정의 글이 없으면 숫자 없음
   const before=indexAsked();
   await c.click('#prTabProc');
   await c.waitForSelector('#prRetry');
   await until(()=>indexAsked()>before,'칸을 열 때의 목록 요청');
   s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.cards.length],[true,['false','true'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색',0]);
+  assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.cards.length],[true,['false','true','false'],'프로세스가 만든 훈련 세션','세션 주제','세션·훈련 이름 검색',0]);
   assert.match(await c.evaluate(()=>document.getElementById('grid').textContent),/프로세스 훈련을 불러오지 못했어요/);
   assert.deepEqual([s.fab,s.filters],['none','none'],'프로세스 칸은 보는 곳 — 올리기·코치 자료의 고르개는 치운다');
   assert.ok(askedLocal.includes('/packs/index.json'),'사이트가 안 되면 앱에 실린 사본을 본다 '+JSON.stringify(askedLocal));
@@ -122,7 +122,7 @@ try{
   await c.click('#prRetry');
   await c.waitForSelector('.pr-card[data-proc="06"]');
   s=await state();
-  assert.deepEqual([s.cards,s.label,s.count],[['06'],['코치 자료1','프로세스1'],'세션 1개 · 훈련 3개']);
+  assert.deepEqual([s.cards,s.label,s.count],[['06'],['코치 자료1','프로세스1','엘미하'],'세션 1개 · 훈련 3개']);
   assert.deepEqual(await c.evaluate(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] .pr-tri img')].map(i=>i.getAttribute('src'))),[1,2,3].map(k=>'packs/thumbs/06-'+k+'.svg?v=0a1b2c3d4e'),'그림도 사본에서');
   await c.waitForFunction(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] img')].every(i=>i.complete&&i.naturalWidth>0));
   const remoteBefore=asked.length;
@@ -156,7 +156,7 @@ try{
   // 3) 세션 한 장에 훈련 셋 — 호 순서, 이상한 줄은 건너뛴다
   s=await state();
   assert.deepEqual(s.cards,['03','04']);
-  assert.deepEqual(s.label,['코치 자료1','프로세스2'],'칸 이름 옆의 개수는 사실만');
+  assert.deepEqual(s.label,['코치 자료1','프로세스2','엘미하'],'칸 이름 옆의 개수는 사실만');
   assert.equal(s.count,'세션 2개 · 훈련 6개');
   assert.deepEqual(s.chips,['전체 주제2*','공격 조직1','수비 조직1'],'있는 주제만 칩으로');
   const card=await c.evaluate(()=>{const el=document.querySelector('.pr-card[data-proc="03"]'),r=el.getBoundingClientRect();
@@ -240,7 +240,7 @@ try{
   assert.deepEqual([s.proc,s.cards],[true,['03','04']]);
   await c.click('#prTabCoach');
   s=await state();
-  assert.deepEqual([s.proc,s.pressed,s.lb,s.ph,s.cards.length,s.coach],[false,['true','false'],'훈련 주제','제목·작성자·내용 검색',0,1]);
+  assert.deepEqual([s.proc,s.pressed,s.lb,s.ph,s.cards.length,s.coach],[false,['true','false','false'],'훈련 주제','제목·작성자·내용 검색',0,1]);
   assert.notEqual(s.fab,'none');assert.notEqual(s.filters,'none');
   assert.ok(s.chips.includes('론도'));
 

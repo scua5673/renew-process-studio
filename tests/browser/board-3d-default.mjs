@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
-// 3.020 — 사용자 «프로세스 스튜디오 처음 들어왔을 때 기본이 3D» · «훈련 만들기에서 그리드 누르면 옆에 전광판 관중석 다 사라지게».
+// 3.021 — 사용자 «프로세스 스튜디오 처음 들어왔을 때 기본이 3D» · «훈련 만들기에서 그리드 누르면 옆에 전광판 관중석 다 사라지게».
 // ① 처음 들어온 기기(3D 설정 없음)는 작전판이 3D 로 열린다 ② 보드 설정에서 평면으로 끄면 다시 열어도 평면
 // ③ 그리드 판(라인 없는 빈 판)은 3D 에서 경기장 없이 잔디만 — 관중석 · 광고판 · 전광판 · 조명이 없다. 운동장으로 돌아오면 고른 꾸밈 그대로.
 const fx=await startFixture(),browsers={};
@@ -34,7 +34,7 @@ try{
   assert.match(deco.back.sig,/\|full\|/);
   assert.equal(await f.evaluate(()=>JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'{}').deco||'full'),'full','설정 값은 바꾸지 않는다');
 
-  // ④ 3.021 — 운동장 5개(사용자 «운동장 5개 했을 때도 잘 구현되게»): 경기장은 카드 배치 전체를 둘러싼다
+  // ④ 3.022 — 운동장 5개(사용자 «운동장 5개 했을 때도 잘 구현되게»): 경기장은 카드 배치 전체를 둘러싼다
   const five=await f.evaluate(async()=>{
     const wait=ms=>new Promise(r=>setTimeout(r,ms));
     window.__setPitchN(5);window.__applyPitchN&&window.__applyPitchN(5);await wait(600);
