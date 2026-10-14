@@ -1,753 +1,788 @@
-// 애니띵 모닝 — 영어 과정: 왕초보 생활 회화 (12장면 × 5표현)
-// 카드 모양: { id, unit, t(영어), pron(대략적인 한글 발음), ko(뜻), blank(t 안의 핵심 덩어리), note(쓰임 팁) }
-// 대화: A = 상대, B = 나(학습자). B의 대사는 대부분 그 장면의 카드 문장이에요.
+// 애니띵 모닝 — 영어 과정: 1주 1장면 생활 회화 (52장면 × 5표현, 4단계: 첫걸음·일상·여행과 관계·내 이야기)
 window.AM_EN = {
-  version: 1,
+  version: 2,
   units: [
-    {
-      id: 'en-u01',
-      name: '인사',
-      desc: '만나고 헤어질 때, 고맙거나 미안할 때 하는 기본 인사',
-      dialogue: [
-        { who: 'A', t: 'Good morning!', pron: '굿 모닝!', ko: '좋은 아침이에요!' },
-        { who: 'B', t: 'Hi, how are you?', pron: '하이, 하우 아 유?', ko: '안녕하세요, 잘 지내세요?' },
-        { who: 'A', t: "I'm great. How about you?", pron: '아임 그레잇. 하우 어바웃 유?', ko: '아주 좋아요. 당신은요?' },
-        { who: 'B', t: "I'm good, thanks.", pron: '아임 굿, 땡스', ko: '잘 지내요, 고마워요.' },
-        { who: 'A', t: 'Oh, you dropped this.', pron: '오, 유 드랍트 디스', ko: '어, 이거 떨어뜨리셨어요.' },
-        { who: 'B', t: 'Thank you so much.', pron: '땡큐 쏘 머치', ko: '정말 고마워요.' },
-        { who: 'A', t: 'No problem. Have a good day!', pron: '노 프라블럼. 해버 굿 데이!', ko: '별말씀을요. 좋은 하루 보내요!' },
-        { who: 'B', t: 'See you later!', pron: '씨 유 레이러!', ko: '또 봐요!' }
-      ]
-    },
-    {
-      id: 'en-u02',
-      name: '자기소개',
-      desc: '이름·출신·하는 일을 말하고 반갑게 인사하기',
-      dialogue: [
-        { who: 'A', t: "Hi, I'm Tom.", pron: '하이, 아임 탐', ko: '안녕하세요, 저는 톰이에요.' },
-        { who: 'B', t: "Hi, I'm Minji. Nice to meet you.", pron: '하이, 아임 민지. 나이스 터 미츄', ko: '안녕하세요, 저는 민지예요. 만나서 반가워요.' },
-        { who: 'A', t: 'Nice to meet you, too. Where are you from?', pron: '나이스 터 미츄, 투. 웨어 아 유 프럼?', ko: '저도 반가워요. 어디서 오셨어요?' },
-        { who: 'B', t: "I'm from Korea.", pron: '아임 프럼 코리아', ko: '저는 한국에서 왔어요.' },
-        { who: 'A', t: "Cool! I'm from Canada.", pron: '쿨! 아임 프럼 캐나다', ko: '멋지네요! 저는 캐나다에서 왔어요.' },
-        { who: 'B', t: 'What do you do?', pron: '왓 두 유 두?', ko: '무슨 일 하세요?' },
-        { who: 'A', t: "I'm a teacher. How about you?", pron: '아임 어 티처. 하우 어바웃 유?', ko: '저는 선생님이에요. 당신은요?' },
-        { who: 'B', t: 'I work at a bank.', pron: '아이 웍 애러 뱅크', ko: '저는 은행에서 일해요.' }
-      ]
-    },
-    {
-      id: 'en-u03',
-      name: '카페에서',
-      desc: '음료를 주문하고 사이즈와 매장·포장 고르기',
-      dialogue: [
-        { who: 'A', t: 'Hi! What can I get for you?', pron: '하이! 왓 캐나이 겟 포 유?', ko: '안녕하세요! 뭘로 드릴까요?' },
-        { who: 'B', t: 'Can I get an iced latte?', pron: '캐나이 게런 아이스 라테?', ko: '아이스 라테 한 잔 주시겠어요?' },
-        { who: 'A', t: 'Sure. What size?', pron: '슈어. 왓 사이즈?', ko: '네. 사이즈는요?' },
-        { who: 'B', t: 'Medium, please.', pron: '미디엄, 플리즈', ko: '미디엄으로 주세요.' },
-        { who: 'A', t: 'For here or to go?', pron: '포 히어 오어 투 고우?', ko: '드시고 가세요, 가져가세요?' },
-        { who: 'B', t: 'To go, please.', pron: '투 고우, 플리즈', ko: '가져갈게요.' },
-        { who: 'A', t: 'Anything else?', pron: '애니씽 엘스?', ko: '더 필요한 건 없으세요?' },
-        { who: 'B', t: "That's all, thanks.", pron: '댓츠 올, 땡스', ko: '그거면 돼요, 고마워요.' }
-      ]
-    },
-    {
-      id: 'en-u04',
-      name: '식당에서',
-      desc: '인원 말하기부터 메뉴 추천, 주문, 계산까지',
-      dialogue: [
-        { who: 'A', t: 'Hi! How many?', pron: '하이! 하우 메니?', ko: '안녕하세요! 몇 분이세요?' },
-        { who: 'B', t: 'Table for two, please.', pron: '테이블 포 투, 플리즈', ko: '두 명이에요.' },
-        { who: 'A', t: 'Sure. Here are your menus.', pron: '슈어. 히어 아 유어 메뉴즈', ko: '네. 메뉴 여기 있어요.' },
-        { who: 'B', t: 'What do you recommend?', pron: '왓 두 유 레커멘드?', ko: '추천해 주실 메뉴 있어요?' },
-        { who: 'A', t: 'The chicken salad is really good.', pron: '더 치킨 샐러드 이즈 리얼리 굿', ko: '치킨 샐러드가 정말 맛있어요.' },
-        { who: 'B', t: "I'd like the chicken salad.", pron: '아이드 라익 더 치킨 샐러드', ko: '치킨 샐러드로 할게요.' },
-        { who: 'A', t: 'How was everything?', pron: '하우 워즈 에브리씽?', ko: '식사는 어떠셨어요?' },
-        { who: 'B', t: 'Great! Could we get the check?', pron: '그레잇! 쿠드 위 겟 더 첵?', ko: '아주 좋았어요! 계산서 주시겠어요?' }
-      ]
-    },
-    {
-      id: 'en-u05',
-      name: '길 묻기',
-      desc: '가는 길과 거리, 걸리는 시간 묻기',
-      dialogue: [
-        { who: 'B', t: "Excuse me, where's the subway station?", pron: '익스큐즈 미, 웨어즈 더 써브웨이 스테이션?', ko: '실례지만, 지하철역이 어디예요?' },
-        { who: 'A', t: 'Go straight and turn left.', pron: '고우 스트레잇 앤 턴 레프트', ko: '쭉 가다가 왼쪽으로 도세요.' },
-        { who: 'B', t: 'Is it far from here?', pron: '이짓 파 프럼 히어?', ko: '여기서 멀어요?' },
-        { who: 'A', t: "No, it's pretty close.", pron: '노우, 잇츠 프리티 클로우스', ko: '아뇨, 꽤 가까워요.' },
-        { who: 'B', t: 'How long does it take?', pron: '하우 롱 더짓 테익?', ko: '얼마나 걸려요?' },
-        { who: 'A', t: 'About five minutes on foot.', pron: '어바웃 파이브 미닛츠 온 풋', ko: '걸어서 5분쯤이요.' },
-        { who: 'B', t: 'Can you show me on the map?', pron: '캐뉴 쇼우 미 온 더 맵?', ko: '지도에서 보여 주실 수 있어요?' },
-        { who: 'A', t: "Sure. It's right here.", pron: '슈어. 잇츠 라잇 히어', ko: '그럼요. 바로 여기예요.' }
-      ]
-    },
-    {
-      id: 'en-u06',
-      name: '쇼핑과 계산',
-      desc: '가격 묻기, 물건 고르기, 카드로 계산하기',
-      dialogue: [
-        { who: 'A', t: 'Hi! Can I help you?', pron: '하이! 캐나이 헬퓨?', ko: '안녕하세요! 도와드릴까요?' },
-        { who: 'B', t: "I'm just looking, thanks.", pron: '아임 저슷 루킹, 땡스', ko: '그냥 구경하는 중이에요, 감사해요.' },
-        { who: 'A', t: 'Sure. Take your time.', pron: '슈어. 테익 유어 타임', ko: '네, 천천히 보세요.' },
-        { who: 'B', t: 'How much is this?', pron: '하우 머치 이즈 디스?', ko: '이거 얼마예요?' },
-        { who: 'A', t: "It's twenty dollars.", pron: '잇츠 트웨니 달러즈', ko: '20달러예요.' },
-        { who: 'B', t: "I'll take this one.", pron: '아일 테익 디스 원', ko: '이걸로 할게요.' },
-        { who: 'A', t: 'Great! Anything else?', pron: '그레잇! 애니씽 엘스?', ko: '좋아요! 더 필요한 건요?' },
-        { who: 'B', t: 'No, thanks. Can I pay with a card?', pron: '노우, 땡스. 캐나이 페이 위더 카드?', ko: '아뇨, 괜찮아요. 카드로 계산해도 돼요?' }
-      ]
-    },
-    {
-      id: 'en-u07',
-      name: '대중교통과 택시',
-      desc: '버스 확인하기, 요금 묻기, 택시에서 목적지 말하기',
-      dialogue: [
-        { who: 'B', t: 'Hi. Does this bus go downtown?', pron: '하이. 더즈 디스 버스 고우 다운타운?', ko: '안녕하세요. 이 버스 시내 가요?' },
-        { who: 'A', t: 'Yes, it does.', pron: '예스, 잇 더즈', ko: '네, 가요.' },
-        { who: 'B', t: 'How much is the fare?', pron: '하우 머치 이즈 더 페어?', ko: '요금이 얼마예요?' },
-        { who: 'A', t: "It's two fifty.", pron: '잇츠 투 피프티', ko: '2달러 50센트예요.' },
-        { who: 'B', t: 'Could you tell me when to get off?', pron: '쿠쥬 텔 미 웬 투 게로프?', ko: '내릴 때 알려 주시겠어요?' },
-        { who: 'A', t: 'Sure. Where are you going?', pron: '슈어. 웨어 아 유 고잉?', ko: '그럼요. 어디 가세요?' },
-        { who: 'B', t: 'To City Hall, please.', pron: '투 시티 홀, 플리즈', ko: '시청이요.' },
-        { who: 'A', t: "Okay. I'll let you know.", pron: '오케이. 아일 레츄 노우', ko: '네, 알려 드릴게요.' }
-      ]
-    },
-    {
-      id: 'en-u08',
-      name: '호텔에서',
-      desc: '체크인하고 예약 이름 말하기, 짐 맡기기',
-      dialogue: [
-        { who: 'B', t: "Hi. I'd like to check in.", pron: '하이. 아이드 라익 투 체킨', ko: '안녕하세요. 체크인하려고요.' },
-        { who: 'A', t: "Sure. What's the name?", pron: '슈어. 왓츠 더 네임?', ko: '네. 성함이 어떻게 되세요?' },
-        { who: 'B', t: "It's under Kim.", pron: '잇츠 언더 킴', ko: '김 이름으로 예약했어요.' },
-        { who: 'A', t: 'Thanks. Your room will be ready at three.', pron: '땡스. 유어 룸 윌 비 레디 앳 쓰리', ko: '감사합니다. 방은 3시에 준비돼요.' },
-        { who: 'B', t: 'Can I leave my bags here?', pron: '캐나이 리브 마이 백즈 히어?', ko: '여기 짐 좀 맡겨도 될까요?' },
-        { who: 'A', t: 'Of course.', pron: '오브 코스', ko: '물론이죠.' },
-        { who: 'B', t: 'What time is checkout?', pron: '왓 타임 이즈 체카웃?', ko: '체크아웃은 몇 시예요?' },
-        { who: 'A', t: "It's at eleven.", pron: '잇츠 앳 일레븐', ko: '11시예요.' }
-      ]
-    },
-    {
-      id: 'en-u09',
-      name: '취미 이야기',
-      desc: '취미를 묻고 답하고, 같이 하자고 말하기',
-      dialogue: [
-        { who: 'B', t: 'What do you do for fun?', pron: '왓 두 유 두 포 펀?', ko: '취미가 뭐예요?' },
-        { who: 'A', t: 'I play tennis on weekends.', pron: '아이 플레이 테니스 온 위켄즈', ko: '주말마다 테니스 쳐요.' },
-        { who: 'B', t: 'That sounds fun!', pron: '댓 사운즈 펀!', ko: '재밌겠네요!' },
-        { who: 'A', t: 'Yeah, it is! How about you?', pron: '예, 잇 이즈! 하우 어바웃 유?', ko: '네, 재밌어요! 당신은요?' },
-        { who: 'B', t: "I'm really into hiking.", pron: '아임 리얼리 인투 하이킹', ko: '요즘 등산에 푹 빠졌어요.' },
-        { who: 'A', t: 'Oh, I love hiking, too!', pron: '오, 아이 러브 하이킹, 투!', ko: '오, 저도 등산 정말 좋아해요!' },
-        { who: 'B', t: "Let's go hiking together sometime!", pron: '렛츠 고우 하이킹 투게더 썸타임!', ko: '언제 같이 등산 가요!' },
-        { who: 'A', t: 'Sounds great!', pron: '사운즈 그레잇!', ko: '좋아요!' }
-      ]
-    },
-    {
-      id: 'en-u10',
-      name: '약속 잡기',
-      desc: '시간이 되는지 묻고, 시간과 장소 정하기',
-      dialogue: [
-        { who: 'B', t: 'Are you free this Saturday?', pron: '아 유 프리 디스 쌔러데이?', ko: '이번 토요일에 시간 돼요?' },
-        { who: 'A', t: "Yes, I am. Let's get lunch!", pron: '예스, 아이 엠. 렛츠 겟 런치!', ko: '네, 돼요. 점심 같이 먹어요!' },
-        { who: 'B', t: "Great! How about one o'clock?", pron: '그레잇! 하우 어바웃 원 어클락?', ko: '좋아요! 1시 어때요?' },
-        { who: 'A', t: 'Perfect!', pron: '퍼펙트!', ko: '딱 좋아요!' },
-        { who: 'B', t: 'Where should we meet?', pron: '웨어 슈드 위 밋?', ko: '어디서 만날까요?' },
-        { who: 'A', t: 'Anywhere is fine.', pron: '애니웨어 이즈 파인', ko: '어디든 괜찮아요.' },
-        { who: 'B', t: "Let's meet at the station.", pron: '렛츠 밋 앳 더 스테이션', ko: '역에서 만나요.' },
-        { who: 'A', t: 'Okay, see you then!', pron: '오케이, 씨 유 덴!', ko: '좋아요, 그때 봐요!' }
-      ]
-    },
-    {
-      id: 'en-u11',
-      name: '날씨와 안부',
-      desc: '날씨로 말을 걸고, 안부와 주말 이야기 나누기',
-      dialogue: [
-        { who: 'A', t: 'Hey! Long time no see!', pron: '헤이! 롱 타임 노우 씨!', ko: '와! 오랜만이에요!' },
-        { who: 'B', t: 'Hi! How have you been?', pron: '하이! 하우 해뷰 빈?', ko: '안녕하세요! 그동안 잘 지냈어요?' },
-        { who: 'A', t: 'Pretty good, thanks. And you?', pron: '프리티 굿, 땡스. 앤 유?', ko: '잘 지냈어요. 당신은요?' },
-        { who: 'B', t: "Good! It's so hot today.", pron: '굿! 잇츠 쏘 핫 투데이', ko: '잘 지냈죠! 오늘 너무 덥네요.' },
-        { who: 'A', t: 'I know! It feels like summer.', pron: '아이 노우! 잇 필즈 라익 써머', ko: '그러게요! 꼭 여름 같아요.' },
-        { who: 'B', t: 'How was your weekend?', pron: '하우 워즈 유어 위켄드?', ko: '주말 잘 보냈어요?' },
-        { who: 'A', t: 'Great! I went to the beach. And you?', pron: '그레잇! 아이 웬 투 더 비치. 앤 유?', ko: '좋았어요! 바닷가에 다녀왔어요. 당신은요?' },
-        { who: 'B', t: 'I just stayed home and relaxed.', pron: '아이 저슷 스테이드 홈 앤 릴랙스트', ko: '그냥 집에서 쉬었어요.' }
-      ]
-    },
-    {
-      id: 'en-u12',
-      name: '도움이 필요할 때',
-      desc: '못 알아들었을 때 다시 묻고, 도움 요청하기',
-      dialogue: [
-        { who: 'B', t: 'Excuse me, could you help me?', pron: '익스큐즈 미, 쿠쥬 헬프 미?', ko: '실례지만, 좀 도와주시겠어요?' },
-        { who: 'A', t: 'Sure. What do you need?', pron: '슈어. 왓 두 유 니드?', ko: '그럼요. 뭐가 필요하세요?' },
-        { who: 'B', t: 'Does this bus go to the airport?', pron: '더즈 디스 버스 고우 투 디 에어포트?', ko: '이 버스 공항 가요?' },
-        { who: 'A', t: 'No. Take the 42 bus on Main Street.', pron: '노우. 테익 더 포티투 버스 온 메인 스트릿', ko: '아뇨. 메인 스트리트에서 42번 버스를 타세요.' },
-        { who: 'B', t: 'Sorry, could you say that again?', pron: '쏘리, 쿠쥬 쎄이 댓 어겐?', ko: '죄송한데, 다시 한번 말해 주시겠어요?' },
-        { who: 'A', t: 'The 42 bus. On Main Street.', pron: '더 포티투 버스. 온 메인 스트릿', ko: '42번 버스요. 메인 스트리트에서요.' },
-        { who: 'B', t: 'Could you write it down?', pron: '쿠쥬 라이릿 다운?', ko: '적어 주시겠어요?' },
-        { who: 'A', t: 'Sure. Here you go.', pron: '슈어. 히어 유 고우', ko: '그럼요. 여기요.' }
-      ]
-    }
+    {"id":"en-u01","name":"인사","desc":"만나고 헤어질 때, 고맙거나 미안할 때 하는 기본 인사", "dialogue": [
+      {"who":"A","t":"Good morning!","pron":"굿 모닝!","ko":"좋은 아침이에요!"},
+      {"who":"B","t":"Hi, how are you?","pron":"하이, 하우 아 유?","ko":"안녕하세요, 잘 지내세요?"},
+      {"who":"A","t":"I'm great. How about you?","pron":"아임 그레잇. 하우 어바웃 유?","ko":"아주 좋아요. 당신은요?"},
+      {"who":"B","t":"I'm good, thanks.","pron":"아임 굿, 땡스","ko":"잘 지내요, 고마워요."},
+      {"who":"A","t":"Oh, you dropped this.","pron":"오, 유 드랍트 디스","ko":"어, 이거 떨어뜨리셨어요."},
+      {"who":"B","t":"Thank you so much.","pron":"땡큐 쏘 머치","ko":"정말 고마워요."},
+      {"who":"A","t":"No problem. Have a good day!","pron":"노 프라블럼. 해버 굿 데이!","ko":"별말씀을요. 좋은 하루 보내요!"},
+      {"who":"B","t":"See you later!","pron":"씨 유 레이러!","ko":"또 봐요!"}
+    ]},
+    {"id":"en-u02","name":"자기소개","desc":"이름·출신·하는 일을 말하고 반갑게 인사하기", "dialogue": [
+      {"who":"A","t":"Hi, I'm Tom.","pron":"하이, 아임 탐","ko":"안녕하세요, 저는 톰이에요."},
+      {"who":"B","t":"Hi, I'm Minji. Nice to meet you.","pron":"하이, 아임 민지. 나이스 터 미츄","ko":"안녕하세요, 저는 민지예요. 만나서 반가워요."},
+      {"who":"A","t":"Nice to meet you, too. Where are you from?","pron":"나이스 터 미츄, 투. 웨어 아 유 프럼?","ko":"저도 반가워요. 어디서 오셨어요?"},
+      {"who":"B","t":"I'm from Korea.","pron":"아임 프럼 코리아","ko":"저는 한국에서 왔어요."},
+      {"who":"A","t":"Cool! I'm from Canada.","pron":"쿨! 아임 프럼 캐나다","ko":"멋지네요! 저는 캐나다에서 왔어요."},
+      {"who":"B","t":"What do you do?","pron":"왓 두 유 두?","ko":"무슨 일 하세요?"},
+      {"who":"A","t":"I'm a teacher. How about you?","pron":"아임 어 티처. 하우 어바웃 유?","ko":"저는 선생님이에요. 당신은요?"},
+      {"who":"B","t":"I work at a bank.","pron":"아이 웍 애러 뱅크","ko":"저는 은행에서 일해요."}
+    ]},
+    {"id":"en-u03","name":"카페에서","desc":"음료를 주문하고 사이즈와 매장·포장 고르기", "dialogue": [
+      {"who":"A","t":"Hi! What can I get for you?","pron":"하이! 왓 캐나이 겟 포 유?","ko":"안녕하세요! 뭘로 드릴까요?"},
+      {"who":"B","t":"Can I get an iced latte?","pron":"캐나이 게런 아이스 라테?","ko":"아이스 라테 한 잔 주시겠어요?"},
+      {"who":"A","t":"Sure. What size?","pron":"슈어. 왓 사이즈?","ko":"네. 사이즈는요?"},
+      {"who":"B","t":"Medium, please.","pron":"미디엄, 플리즈","ko":"미디엄으로 주세요."},
+      {"who":"A","t":"For here or to go?","pron":"포 히어 오어 투 고우?","ko":"드시고 가세요, 가져가세요?"},
+      {"who":"B","t":"To go, please.","pron":"투 고우, 플리즈","ko":"가져갈게요."},
+      {"who":"A","t":"Anything else?","pron":"애니씽 엘스?","ko":"더 필요한 건 없으세요?"},
+      {"who":"B","t":"That's all, thanks.","pron":"댓츠 올, 땡스","ko":"그거면 돼요, 고마워요."}
+    ]},
+    {"id":"en-u04","name":"식당에서","desc":"인원 말하기부터 메뉴 추천, 주문, 계산까지", "dialogue": [
+      {"who":"A","t":"Hi! How many?","pron":"하이! 하우 메니?","ko":"안녕하세요! 몇 분이세요?"},
+      {"who":"B","t":"Table for two, please.","pron":"테이블 포 투, 플리즈","ko":"두 명이에요."},
+      {"who":"A","t":"Sure. Here are your menus.","pron":"슈어. 히어 아 유어 메뉴즈","ko":"네. 메뉴 여기 있어요."},
+      {"who":"B","t":"What do you recommend?","pron":"왓 두 유 레커멘드?","ko":"추천해 주실 메뉴 있어요?"},
+      {"who":"A","t":"The chicken salad is really good.","pron":"더 치킨 샐러드 이즈 리얼리 굿","ko":"치킨 샐러드가 정말 맛있어요."},
+      {"who":"B","t":"I'd like the chicken salad.","pron":"아이드 라익 더 치킨 샐러드","ko":"치킨 샐러드로 할게요."},
+      {"who":"A","t":"How was everything?","pron":"하우 워즈 에브리씽?","ko":"식사는 어떠셨어요?"},
+      {"who":"B","t":"Great! Could we get the check?","pron":"그레잇! 쿠드 위 겟 더 첵?","ko":"아주 좋았어요! 계산서 주시겠어요?"}
+    ]},
+    {"id":"en-u05","name":"길 묻기","desc":"가는 길과 거리, 걸리는 시간 묻기", "dialogue": [
+      {"who":"B","t":"Excuse me, where's the subway station?","pron":"익스큐즈 미, 웨어즈 더 써브웨이 스테이션?","ko":"실례지만, 지하철역이 어디예요?"},
+      {"who":"A","t":"Go straight and turn left.","pron":"고우 스트레잇 앤 턴 레프트","ko":"쭉 가다가 왼쪽으로 도세요."},
+      {"who":"B","t":"Is it far from here?","pron":"이짓 파 프럼 히어?","ko":"여기서 멀어요?"},
+      {"who":"A","t":"No, it's pretty close.","pron":"노우, 잇츠 프리티 클로우스","ko":"아뇨, 꽤 가까워요."},
+      {"who":"B","t":"How long does it take?","pron":"하우 롱 더짓 테익?","ko":"얼마나 걸려요?"},
+      {"who":"A","t":"About five minutes on foot.","pron":"어바웃 파이브 미닛츠 온 풋","ko":"걸어서 5분쯤이요."},
+      {"who":"B","t":"Can you show me on the map?","pron":"캐뉴 쇼우 미 온 더 맵?","ko":"지도에서 보여 주실 수 있어요?"},
+      {"who":"A","t":"Sure. It's right here.","pron":"슈어. 잇츠 라잇 히어","ko":"그럼요. 바로 여기예요."}
+    ]},
+    {"id":"en-u06","name":"쇼핑과 계산","desc":"가격 묻기, 물건 고르기, 카드로 계산하기", "dialogue": [
+      {"who":"A","t":"Hi! Can I help you?","pron":"하이! 캐나이 헬퓨?","ko":"안녕하세요! 도와드릴까요?"},
+      {"who":"B","t":"I'm just looking, thanks.","pron":"아임 저슷 루킹, 땡스","ko":"그냥 구경하는 중이에요, 감사해요."},
+      {"who":"A","t":"Sure. Take your time.","pron":"슈어. 테익 유어 타임","ko":"네, 천천히 보세요."},
+      {"who":"B","t":"How much is this?","pron":"하우 머치 이즈 디스?","ko":"이거 얼마예요?"},
+      {"who":"A","t":"It's twenty dollars.","pron":"잇츠 트웨니 달러즈","ko":"20달러예요."},
+      {"who":"B","t":"I'll take this one.","pron":"아일 테익 디스 원","ko":"이걸로 할게요."},
+      {"who":"A","t":"Great! Anything else?","pron":"그레잇! 애니씽 엘스?","ko":"좋아요! 더 필요한 건요?"},
+      {"who":"B","t":"No, thanks. Can I pay with a card?","pron":"노우, 땡스. 캐나이 페이 위더 카드?","ko":"아뇨, 괜찮아요. 카드로 계산해도 돼요?"}
+    ]},
+    {"id":"en-u07","name":"대중교통과 택시","desc":"버스 확인하기, 요금 묻기, 택시에서 목적지 말하기", "dialogue": [
+      {"who":"B","t":"Hi. Does this bus go downtown?","pron":"하이. 더즈 디스 버스 고우 다운타운?","ko":"안녕하세요. 이 버스 시내 가요?"},
+      {"who":"A","t":"Yes, it does.","pron":"예스, 잇 더즈","ko":"네, 가요."},
+      {"who":"B","t":"How much is the fare?","pron":"하우 머치 이즈 더 페어?","ko":"요금이 얼마예요?"},
+      {"who":"A","t":"It's two fifty.","pron":"잇츠 투 피프티","ko":"2달러 50센트예요."},
+      {"who":"B","t":"Could you tell me when to get off?","pron":"쿠쥬 텔 미 웬 투 게로프?","ko":"내릴 때 알려 주시겠어요?"},
+      {"who":"A","t":"Sure. Where are you going?","pron":"슈어. 웨어 아 유 고잉?","ko":"그럼요. 어디 가세요?"},
+      {"who":"B","t":"To City Hall, please.","pron":"투 시티 홀, 플리즈","ko":"시청이요."},
+      {"who":"A","t":"Okay. I'll let you know.","pron":"오케이. 아일 레츄 노우","ko":"네, 알려 드릴게요."}
+    ]},
+    {"id":"en-u08","name":"호텔에서","desc":"체크인하고 예약 이름 말하기, 짐 맡기기", "dialogue": [
+      {"who":"B","t":"Hi. I'd like to check in.","pron":"하이. 아이드 라익 투 체킨","ko":"안녕하세요. 체크인하려고요."},
+      {"who":"A","t":"Sure. What's the name?","pron":"슈어. 왓츠 더 네임?","ko":"네. 성함이 어떻게 되세요?"},
+      {"who":"B","t":"It's under Kim.","pron":"잇츠 언더 킴","ko":"김 이름으로 예약했어요."},
+      {"who":"A","t":"Thanks. Your room will be ready at three.","pron":"땡스. 유어 룸 윌 비 레디 앳 쓰리","ko":"감사합니다. 방은 3시에 준비돼요."},
+      {"who":"B","t":"Can I leave my bags here?","pron":"캐나이 리브 마이 백즈 히어?","ko":"여기 짐 좀 맡겨도 될까요?"},
+      {"who":"A","t":"Of course.","pron":"오브 코스","ko":"물론이죠."},
+      {"who":"B","t":"What time is checkout?","pron":"왓 타임 이즈 체카웃?","ko":"체크아웃은 몇 시예요?"},
+      {"who":"A","t":"It's at eleven.","pron":"잇츠 앳 일레븐","ko":"11시예요."}
+    ]},
+    {"id":"en-u09","name":"취미 이야기","desc":"취미를 묻고 답하고, 같이 하자고 말하기", "dialogue": [
+      {"who":"B","t":"What do you do for fun?","pron":"왓 두 유 두 포 펀?","ko":"취미가 뭐예요?"},
+      {"who":"A","t":"I play tennis on weekends.","pron":"아이 플레이 테니스 온 위켄즈","ko":"주말마다 테니스 쳐요."},
+      {"who":"B","t":"That sounds fun!","pron":"댓 사운즈 펀!","ko":"재밌겠네요!"},
+      {"who":"A","t":"Yeah, it is! How about you?","pron":"예, 잇 이즈! 하우 어바웃 유?","ko":"네, 재밌어요! 당신은요?"},
+      {"who":"B","t":"I'm really into hiking.","pron":"아임 리얼리 인투 하이킹","ko":"요즘 등산에 푹 빠졌어요."},
+      {"who":"A","t":"Oh, I love hiking, too!","pron":"오, 아이 러브 하이킹, 투!","ko":"오, 저도 등산 정말 좋아해요!"},
+      {"who":"B","t":"Let's go hiking together sometime!","pron":"렛츠 고우 하이킹 투게더 썸타임!","ko":"언제 같이 등산 가요!"},
+      {"who":"A","t":"Sounds great!","pron":"사운즈 그레잇!","ko":"좋아요!"}
+    ]},
+    {"id":"en-u10","name":"약속 잡기","desc":"시간이 되는지 묻고, 시간과 장소 정하기", "dialogue": [
+      {"who":"B","t":"Are you free this Saturday?","pron":"아 유 프리 디스 쌔러데이?","ko":"이번 토요일에 시간 돼요?"},
+      {"who":"A","t":"Yes, I am. Let's get lunch!","pron":"예스, 아이 엠. 렛츠 겟 런치!","ko":"네, 돼요. 점심 같이 먹어요!"},
+      {"who":"B","t":"Great! How about one o'clock?","pron":"그레잇! 하우 어바웃 원 어클락?","ko":"좋아요! 1시 어때요?"},
+      {"who":"A","t":"Perfect!","pron":"퍼펙트!","ko":"딱 좋아요!"},
+      {"who":"B","t":"Where should we meet?","pron":"웨어 슈드 위 밋?","ko":"어디서 만날까요?"},
+      {"who":"A","t":"Anywhere is fine.","pron":"애니웨어 이즈 파인","ko":"어디든 괜찮아요."},
+      {"who":"B","t":"Let's meet at the station.","pron":"렛츠 밋 앳 더 스테이션","ko":"역에서 만나요."},
+      {"who":"A","t":"Okay, see you then!","pron":"오케이, 씨 유 덴!","ko":"좋아요, 그때 봐요!"}
+    ]},
+    {"id":"en-u11","name":"날씨와 안부","desc":"날씨로 말을 걸고, 안부와 주말 이야기 나누기", "dialogue": [
+      {"who":"A","t":"Hey! Long time no see!","pron":"헤이! 롱 타임 노우 씨!","ko":"와! 오랜만이에요!"},
+      {"who":"B","t":"Hi! How have you been?","pron":"하이! 하우 해뷰 빈?","ko":"안녕하세요! 그동안 잘 지냈어요?"},
+      {"who":"A","t":"Pretty good, thanks. And you?","pron":"프리티 굿, 땡스. 앤 유?","ko":"잘 지냈어요. 당신은요?"},
+      {"who":"B","t":"Good! It's so hot today.","pron":"굿! 잇츠 쏘 핫 투데이","ko":"잘 지냈죠! 오늘 너무 덥네요."},
+      {"who":"A","t":"I know! It feels like summer.","pron":"아이 노우! 잇 필즈 라익 써머","ko":"그러게요! 꼭 여름 같아요."},
+      {"who":"B","t":"How was your weekend?","pron":"하우 워즈 유어 위켄드?","ko":"주말 잘 보냈어요?"},
+      {"who":"A","t":"Great! I went to the beach. And you?","pron":"그레잇! 아이 웬 투 더 비치. 앤 유?","ko":"좋았어요! 바닷가에 다녀왔어요. 당신은요?"},
+      {"who":"B","t":"I just stayed home and relaxed.","pron":"아이 저슷 스테이드 홈 앤 릴랙스트","ko":"그냥 집에서 쉬었어요."}
+    ]},
+    {"id":"en-u12","name":"도움이 필요할 때","desc":"못 알아들었을 때 다시 묻고, 도움 요청하기", "dialogue": [
+      {"who":"B","t":"Excuse me, could you help me?","pron":"익스큐즈 미, 쿠쥬 헬프 미?","ko":"실례지만, 좀 도와주시겠어요?"},
+      {"who":"A","t":"Sure. What do you need?","pron":"슈어. 왓 두 유 니드?","ko":"그럼요. 뭐가 필요하세요?"},
+      {"who":"B","t":"Does this bus go to the airport?","pron":"더즈 디스 버스 고우 투 디 에어포트?","ko":"이 버스 공항 가요?"},
+      {"who":"A","t":"No. Take the 42 bus on Main Street.","pron":"노우. 테익 더 포티투 버스 온 메인 스트릿","ko":"아뇨. 메인 스트리트에서 42번 버스를 타세요."},
+      {"who":"B","t":"Sorry, could you say that again?","pron":"쏘리, 쿠쥬 쎄이 댓 어겐?","ko":"죄송한데, 다시 한번 말해 주시겠어요?"},
+      {"who":"A","t":"The 42 bus. On Main Street.","pron":"더 포티투 버스. 온 메인 스트릿","ko":"42번 버스요. 메인 스트리트에서요."},
+      {"who":"B","t":"Could you write it down?","pron":"쿠쥬 라이릿 다운?","ko":"적어 주시겠어요?"},
+      {"who":"A","t":"Sure. Here you go.","pron":"슈어. 히어 유 고우","ko":"그럼요. 여기요."}
+    ]},
+    {"id":"en-u13","name":"하루 일과","desc":"몇 시에 일어나는지, 평소 하루를 어떻게 보내는지 말하기", "dialogue": [
+      {"who":"B","t":"What time do you get up?","pron":"왓 타임 두 유 게럽?","ko":"몇 시에 일어나요?"},
+      {"who":"A","t":"Around six. I go running every morning.","pron":"어라운드 식스. 아이 고우 러닝 에브리 모닝","ko":"6시쯤이요. 매일 아침 달리기를 해요."},
+      {"who":"B","t":"Wow! I usually get up at seven.","pron":"와우! 아이 유주얼리 게럽 앳 세븐","ko":"와! 저는 보통 7시에 일어나요."},
+      {"who":"A","t":"What time do you start work?","pron":"왓 타임 두 유 스타트 웍?","ko":"일은 몇 시에 시작해요?"},
+      {"who":"B","t":"I work from nine to six.","pron":"아이 웍 프럼 나인 투 식스","ko":"9시부터 6시까지 일해요."},
+      {"who":"A","t":"What do you do after work?","pron":"왓 두 유 두 애프터 웍?","ko":"퇴근하고는 뭐 해요?"},
+      {"who":"B","t":"I go to the gym on Mondays.","pron":"아이 고우 투 더 짐 온 먼데이즈","ko":"월요일마다 헬스장에 가요."},
+      {"who":"A","t":"Nice! That's a good routine.","pron":"나이스! 댓츠 어 굿 루틴","ko":"좋네요! 좋은 생활 습관이에요."}
+    ]},
+    {"id":"en-u14","name":"가족 소개","desc":"가족 수와 형제, 가족이 하는 일 소개하기", "dialogue": [
+      {"who":"B","t":"How many people are in your family?","pron":"하우 메니 피플 아 인 유어 패밀리?","ko":"가족이 몇 명이에요?"},
+      {"who":"A","t":"Five. I have two sisters. How about you?","pron":"파이브. 아이 해브 투 시스터즈. 하우 어바웃 유?","ko":"다섯 명이요. 자매가 둘 있어요. 당신은요?"},
+      {"who":"B","t":"There are four of us.","pron":"데어라 포 어브 어스","ko":"우리 가족은 네 명이에요."},
+      {"who":"A","t":"Do you have any brothers or sisters?","pron":"두 유 해브 애니 브라더즈 오어 시스터즈?","ko":"형제자매 있어요?"},
+      {"who":"B","t":"Yes, I have an older brother.","pron":"예스, 아이 해번 올더 브라더","ko":"네, 오빠(형)가 한 명 있어요."},
+      {"who":"A","t":"Nice. What do your parents do?","pron":"나이스. 왓 두 유어 페어런츠 두?","ko":"그렇군요. 부모님은 무슨 일 하세요?"},
+      {"who":"B","t":"My mom is a nurse.","pron":"마이 맘 이즈 어 너스","ko":"엄마는 간호사예요."},
+      {"who":"A","t":"Oh, that's a great job!","pron":"오, 댓츠 어 그레잇 잡!","ko":"오, 멋진 직업이네요!"}
+    ]},
+    {"id":"en-u15","name":"집과 동네","desc":"사는 곳과 집 근처에 있는 것, 동네 자랑하기", "dialogue": [
+      {"who":"B","t":"Where do you live?","pron":"웨어 두 유 리브?","ko":"어디 살아요?"},
+      {"who":"A","t":"I live downtown. How about you?","pron":"아이 리브 다운타운. 하우 어바웃 유?","ko":"저는 시내에 살아요. 당신은요?"},
+      {"who":"B","t":"I live in Mapo, in Seoul.","pron":"아이 리브 인 마포, 인 서울","ko":"서울 마포에 살아요."},
+      {"who":"A","t":"What's it like there?","pron":"왓츠 잇 라익 데어?","ko":"거기는 어때요?"},
+      {"who":"B","t":"It's a really nice neighborhood.","pron":"잇츠 어 리얼리 나이스 네이버후드","ko":"정말 좋은 동네예요."},
+      {"who":"A","t":"Oh, yeah? What's near your house?","pron":"오, 예? 왓츠 니어 유어 하우스?","ko":"아, 그래요? 집 근처에 뭐가 있어요?"},
+      {"who":"B","t":"There's a park near my house.","pron":"데어즈 어 파크 니어 마이 하우스","ko":"집 근처에 공원이 있어요."},
+      {"who":"A","t":"Sounds lovely! I'd love to visit.","pron":"사운즈 러블리! 아이드 러브 투 비짓","ko":"좋겠네요! 꼭 가 보고 싶어요."}
+    ]},
+    {"id":"en-u16","name":"편의점과 마트","desc":"물건 위치와 할인 묻고, 봉투·데우기 부탁하기", "dialogue": [
+      {"who":"B","t":"Excuse me, where can I find the milk?","pron":"익스큐즈 미, 웨어 캐나이 파인 더 밀크?","ko":"실례지만, 우유는 어디 있어요?"},
+      {"who":"A","t":"It's in aisle five.","pron":"잇츠 인 아일 파이브","ko":"5번 통로에 있어요."},
+      {"who":"B","t":"Thanks! Is this on sale?","pron":"땡스! 이즈 디스 온 세일?","ko":"고마워요! 이거 할인 중이에요?"},
+      {"who":"A","t":"Yes, it's two for five dollars.","pron":"예스, 잇츠 투 포 파이브 달러즈","ko":"네, 두 개에 5달러예요."},
+      {"who":"B","t":"Great. Could you heat this up?","pron":"그레잇. 쿠쥬 힛 디스 업?","ko":"좋네요. 이거 데워 주시겠어요?"},
+      {"who":"A","t":"Sure. Anything else?","pron":"슈어. 애니씽 엘스?","ko":"네. 더 필요한 건요?"},
+      {"who":"B","t":"Can I get a bag, please?","pron":"캐나이 게러 백, 플리즈?","ko":"봉투 하나 주시겠어요?"},
+      {"who":"A","t":"Here you go. Have a nice day!","pron":"히어 유 고우. 해버 나이스 데이!","ko":"여기 있어요. 좋은 하루 보내세요!"}
+    ]},
+    {"id":"en-u17","name":"옷 가게","desc":"옷을 입어 보고, 다른 사이즈와 색 물어보기", "dialogue": [
+      {"who":"B","t":"Excuse me. Can I try this on?","pron":"익스큐즈 미. 캐나이 트라이 디스 온?","ko":"실례지만, 이거 입어 봐도 돼요?"},
+      {"who":"A","t":"Of course. Let me know how it fits.","pron":"오브 코스. 렛 미 노우 하우 잇 핏츠","ko":"물론이죠. 잘 맞는지 알려 주세요."},
+      {"who":"B","t":"It's a little tight.","pron":"잇츠 어 리를 타잇","ko":"조금 껴요."},
+      {"who":"A","t":"Hmm, do you want a different size?","pron":"흠, 두 유 원어 디퍼런트 사이즈?","ko":"음, 다른 사이즈로 드릴까요?"},
+      {"who":"B","t":"Yes. Do you have this in a bigger size?","pron":"예스. 두 유 해브 디스 이너 비거 사이즈?","ko":"네. 이거 더 큰 사이즈 있어요?"},
+      {"who":"A","t":"Sure. Here's a large.","pron":"슈어. 히어즈 어 라지","ko":"네. 여기 라지 사이즈요."},
+      {"who":"B","t":"Thanks! Does it come in other colors?","pron":"땡스! 더짓 컴 인 아더 컬러즈?","ko":"고마워요! 다른 색도 있어요?"},
+      {"who":"A","t":"Yes, it also comes in navy and white.","pron":"예스, 잇 올쏘 컴즈 인 네이비 앤 와잇","ko":"네, 남색이랑 흰색도 있어요."}
+    ]},
+    {"id":"en-u18","name":"병원과 약국","desc":"아픈 곳과 증상을 말하고, 약 먹는 법 묻기", "dialogue": [
+      {"who":"B","t":"Hi. I have a headache.","pron":"하이. 아이 해버 헤데익","ko":"안녕하세요. 머리가 아파요."},
+      {"who":"A","t":"I'm sorry. Any other symptoms?","pron":"아임 쏘리. 애니 아더 씸텀즈?","ko":"저런. 다른 증상도 있어요?"},
+      {"who":"B","t":"I have a fever and a cough.","pron":"아이 해버 피버 앤 어 커프","ko":"열이 나고 기침을 해요."},
+      {"who":"A","t":"When did it start?","pron":"웬 디딧 스타트?","ko":"언제부터 그랬어요?"},
+      {"who":"B","t":"It started yesterday.","pron":"잇 스타리드 예스터데이","ko":"어제부터요."},
+      {"who":"A","t":"Okay. Take this twice a day.","pron":"오케이. 테익 디스 트와이스 어 데이","ko":"네. 이걸 하루 두 번 드세요."},
+      {"who":"B","t":"Should I take it with food?","pron":"슈다이 테이킷 위드 푸드?","ko":"식후에 먹어야 해요?"},
+      {"who":"A","t":"Yes, after breakfast and dinner.","pron":"예스, 애프터 브렉퍼스트 앤 디너","ko":"네, 아침이랑 저녁 식사 후에요."}
+    ]},
+    {"id":"en-u19","name":"전화하기","desc":"전화로 사람을 찾고, 메시지 남기고 다시 걸겠다고 말하기", "dialogue": [
+      {"who":"A","t":"Hello?","pron":"헬로우?","ko":"여보세요?"},
+      {"who":"B","t":"Hello, this is Minji. Can I speak to Sarah?","pron":"헬로우, 디스 이즈 민지. 캐나이 스픽 투 쎄라?","ko":"여보세요, 저 민지인데요. 세라 씨 계세요?"},
+      {"who":"A","t":"Sorry, she's not here right now.","pron":"쏘리, 쉬즈 낫 히어 라잇 나우","ko":"죄송해요, 지금 자리에 없어요."},
+      {"who":"B","t":"Oh, can I leave a message?","pron":"오, 캐나이 리버 메시지?","ko":"아, 메시지 남겨도 될까요?"},
+      {"who":"A","t":"Sure. Go ahead.","pron":"슈어. 고우 어헤드","ko":"그럼요. 말씀하세요."},
+      {"who":"B","t":"Please tell her Minji called.","pron":"플리즈 텔 허 민지 콜드","ko":"민지가 전화했다고 전해 주세요."},
+      {"who":"A","t":"Okay, I'll tell her.","pron":"오케이, 아일 텔 허","ko":"네, 전해 드릴게요."},
+      {"who":"B","t":"Thanks. I'll call back later.","pron":"땡스. 아일 콜 백 레이러","ko":"고마워요. 나중에 다시 걸게요."}
+    ]},
+    {"id":"en-u20","name":"음식 취향","desc":"좋아하는 음식과 못 먹는 음식 말하고, 맛집 추천받기", "dialogue": [
+      {"who":"B","t":"Do you like spicy food?","pron":"두 유 라익 스파이시 푸드?","ko":"매운 음식 좋아해요?"},
+      {"who":"A","t":"I love it! How about you?","pron":"아이 러빗! 하우 어바웃 유?","ko":"완전 좋아해요! 당신은요?"},
+      {"who":"B","t":"Me too! But I can't eat seafood.","pron":"미 투! 벗 아이 캔트 잇 씨푸드","ko":"저도요! 그런데 해산물은 못 먹어요."},
+      {"who":"A","t":"Okay. Let's get dinner somewhere.","pron":"오케이. 렛츠 겟 디너 썸웨어","ko":"알겠어요. 어디서 저녁 먹어요."},
+      {"who":"B","t":"Can you recommend a good restaurant?","pron":"캐뉴 레커멘더 굿 레스토랑?","ko":"괜찮은 식당 추천해 줄래요?"},
+      {"who":"A","t":"Sure! There's a great Thai place nearby.","pron":"슈어! 데어즈 어 그레잇 타이 플레이스 니어바이","ko":"그럼요! 근처에 맛있는 태국 음식점이 있어요."},
+      {"who":"B","t":"What's your favorite dish there?","pron":"왓츠 유어 페이버릿 디쉬 데어?","ko":"거기서 제일 좋아하는 메뉴가 뭐예요?"},
+      {"who":"A","t":"The green curry. It's really spicy!","pron":"더 그린 커리. 잇츠 리얼리 스파이시!","ko":"그린 커리요. 엄청 매워요!"}
+    ]},
+    {"id":"en-u21","name":"주말 이야기","desc":"주말에 한 일을 과거형으로 말하고 느낌 전하기", "dialogue": [
+      {"who":"A","t":"Hey! How was your weekend?","pron":"헤이! 하우 워즈 유어 위켄드?","ko":"안녕하세요! 주말 잘 보냈어요?"},
+      {"who":"B","t":"Great! I went to Busan with my friends.","pron":"그레잇! 아이 웬 투 부산 윗 마이 프렌즈","ko":"좋았어요! 친구들이랑 부산에 갔어요."},
+      {"who":"A","t":"Nice! What did you do there?","pron":"나이스! 왓 디쥬 두 데어?","ko":"좋네요! 거기서 뭐 했어요?"},
+      {"who":"B","t":"We ate a lot of good food.","pron":"위 에잇 어 라러브 굿 푸드","ko":"맛있는 걸 잔뜩 먹었어요."},
+      {"who":"A","t":"Sounds amazing! How was the beach?","pron":"사운즈 어메이징! 하우 워즈 더 비치?","ko":"최고네요! 바다는 어땠어요?"},
+      {"who":"B","t":"It was really fun. What did you do last weekend?","pron":"잇 워즈 리얼리 펀. 왓 디쥬 두 래슷 위켄드?","ko":"정말 재미있었어요. 당신은 지난 주말에 뭐 했어요?"},
+      {"who":"A","t":"Not much. I just watched TV at home.","pron":"낫 머치. 아이 저슷 와치트 티비 앳 홈","ko":"별거 없어요. 그냥 집에서 TV 봤어요."},
+      {"who":"B","t":"That sounds relaxing!","pron":"댓 사운즈 릴랙싱!","ko":"푹 쉬었겠네요!"}
+    ]},
+    {"id":"en-u22","name":"날짜와 생일","desc":"생일과 날짜를 묻고 답하고, 생일 축하하기", "dialogue": [
+      {"who":"B","t":"When is your birthday?","pron":"웬 이즈 유어 버쓰데이?","ko":"생일이 언제예요?"},
+      {"who":"A","t":"It's today, actually!","pron":"잇츠 투데이, 액츄얼리!","ko":"사실 오늘이에요!"},
+      {"who":"B","t":"Really? Happy birthday! Have a great day!","pron":"리얼리? 해피 버쓰데이! 해버 그레잇 데이!","ko":"정말요? 생일 축하해요! 좋은 하루 보내요!"},
+      {"who":"A","t":"Thank you! When's yours?","pron":"땡큐! 웬즈 유어즈?","ko":"고마워요! 당신 생일은 언제예요?"},
+      {"who":"B","t":"My birthday is May fifth.","pron":"마이 버쓰데이 이즈 메이 피프쓰","ko":"제 생일은 5월 5일이에요."},
+      {"who":"A","t":"Oh, that's Children's Day in Korea, right?","pron":"오, 댓츠 칠드런즈 데이 인 코리아, 라잇?","ko":"오, 한국 어린이날이죠?"},
+      {"who":"B","t":"Right! Are you doing anything for your birthday?","pron":"라잇! 아 유 두잉 애니씽 포 유어 버쓰데이?","ko":"맞아요! 생일에 뭐 특별한 거 해요?"},
+      {"who":"A","t":"Just dinner with my family.","pron":"저슷 디너 윗 마이 패밀리","ko":"그냥 가족이랑 저녁 먹어요."}
+    ]},
+    {"id":"en-u23","name":"선물과 감사","desc":"선물을 건네고, 받았을 때 고마운 마음 전하기", "dialogue": [
+      {"who":"A","t":"Minji, this is for you.","pron":"민지, 디스 이즈 포 유","ko":"민지 씨, 이거 선물이에요."},
+      {"who":"B","t":"Wow, you didn't have to do that.","pron":"와우, 유 디든 해브 투 두 댓","ko":"와, 이러지 않아도 되는데요."},
+      {"who":"A","t":"It's nothing. Open it!","pron":"잇츠 낫씽. 오우프닛!","ko":"별거 아니에요. 열어 봐요!"},
+      {"who":"B","t":"I love it! I really appreciate it.","pron":"아이 러빗! 아이 리얼리 어프리시에이릿","ko":"정말 마음에 들어요! 진짜 고마워요."},
+      {"who":"A","t":"I'm glad you like it.","pron":"아임 글래쥬 라이킷","ko":"마음에 든다니 다행이에요."},
+      {"who":"B","t":"Oh, and this is for you.","pron":"오, 앤 디스 이즈 포 유","ko":"아, 그리고 이건 제 선물이에요."},
+      {"who":"A","t":"For me? Thank you!","pron":"포 미? 땡큐!","ko":"저한테요? 고마워요!"},
+      {"who":"B","t":"It's just a small gift.","pron":"잇츠 저슷 어 스몰 기프트","ko":"그냥 작은 선물이에요."}
+    ]},
+    {"id":"en-u24","name":"맞장구와 수다","desc":"요즘 안부를 묻고, 상대 말에 맞장구치며 수다 떨기", "dialogue": [
+      {"who":"B","t":"Hey! How's it going these days?","pron":"헤이! 하우즈 잇 고잉 디즈 데이즈?","ko":"안녕하세요! 요즘 어떻게 지내요?"},
+      {"who":"A","t":"Busy! I started a new job.","pron":"비지! 아이 스타리더 뉴 잡","ko":"바빠요! 새 직장에 다니기 시작했어요."},
+      {"who":"B","t":"Really? That's amazing!","pron":"리얼리? 댓츠 어메이징!","ko":"정말요? 잘됐네요!"},
+      {"who":"A","t":"Thanks! But it's far from my house.","pron":"땡스! 벗 잇츠 파 프럼 마이 하우스","ko":"고마워요! 그런데 집에서 멀어요."},
+      {"who":"B","t":"Oh, that's too bad.","pron":"오, 댓츠 투 배드","ko":"아, 저런."},
+      {"who":"A","t":"It's okay. I listen to podcasts on the subway.","pron":"잇츠 오케이. 아이 리쓴 투 팟캐스츠 온 더 써브웨이","ko":"괜찮아요. 지하철에서 팟캐스트를 들어요."},
+      {"who":"B","t":"Me too! I love podcasts.","pron":"미 투! 아이 러브 팟캐스츠","ko":"저도요! 팟캐스트 정말 좋아해요."},
+      {"who":"A","t":"Let's share our favorites!","pron":"렛츠 쉐어 아워 페이버릿츠!","ko":"좋아하는 거 서로 알려 줘요!"}
+    ]},
+    {"id":"en-u25","name":"사진 부탁","desc":"사진을 부탁하고, 같이 찍고 사진 보내 주기", "dialogue": [
+      {"who":"B","t":"Excuse me. Could you take a picture of us?","pron":"익스큐즈 미. 쿠쥬 테이커 픽처 오브 어스?","ko":"실례지만, 저희 사진 좀 찍어 주시겠어요?"},
+      {"who":"A","t":"Sure! Which button do I press?","pron":"슈어! 위치 버튼 두 아이 프레스?","ko":"그럼요! 어떤 버튼 누르면 돼요?"},
+      {"who":"B","t":"Just press this button.","pron":"저슷 프레스 디스 버튼","ko":"이 버튼만 누르면 돼요."},
+      {"who":"A","t":"Got it. Okay, say cheese!","pron":"갓잇. 오케이, 쎄이 치즈!","ko":"알겠어요. 자, 웃으세요!"},
+      {"who":"B","t":"Thanks! Can we take a picture together?","pron":"땡스! 캔 위 테이커 픽처 투게더?","ko":"고마워요! 우리 같이 사진 찍을래요?"},
+      {"who":"A","t":"Sure! Let's take a selfie.","pron":"슈어! 렛츠 테이커 셀피","ko":"좋아요! 셀카 찍어요."},
+      {"who":"B","t":"Great! I'll send you the pictures.","pron":"그레잇! 아일 센쥬 더 픽처즈","ko":"좋아요! 사진 보내 줄게요."},
+      {"who":"A","t":"Thanks! Here's my number.","pron":"땡스! 히어즈 마이 넘버","ko":"고마워요! 제 번호 여기요."}
+    ]},
+    {"id":"en-u26","name":"은행과 환전","desc":"환전하고 환율·수수료 묻기, 근처 ATM 찾기", "dialogue": [
+      {"who":"A","t":"Hi. How can I help you?","pron":"하이. 하우 캐나이 헬퓨?","ko":"안녕하세요. 무엇을 도와드릴까요?"},
+      {"who":"B","t":"I'd like to exchange some money.","pron":"아이드 라익 투 익스체인지 썸 머니","ko":"환전하고 싶어요."},
+      {"who":"A","t":"Sure. Won to dollars?","pron":"슈어. 원 투 달러즈?","ko":"네. 원화를 달러로요?"},
+      {"who":"B","t":"Yes. What's the exchange rate today?","pron":"예스. 왓츠 디 익스체인지 레잇 투데이?","ko":"네. 오늘 환율이 어떻게 돼요?"},
+      {"who":"A","t":"Here's today's rate.","pron":"히어즈 투데이즈 레잇","ko":"오늘 환율은 여기 있어요."},
+      {"who":"B","t":"Is there a fee?","pron":"이즈 데어러 피?","ko":"수수료가 있어요?"},
+      {"who":"A","t":"Yes, it's five dollars.","pron":"예스, 잇츠 파이브 달러즈","ko":"네, 5달러예요."},
+      {"who":"B","t":"Okay. Could I have small bills, please?","pron":"오케이. 쿠다이 해브 스몰 빌즈, 플리즈?","ko":"알겠어요. 소액권으로 주시겠어요?"}
+    ]},
+    {"id":"en-u27","name":"공항에서","desc":"항공편 체크인하고 좌석 고르기, 짐 부치고 게이트 확인하기", "dialogue": [
+      {"who":"B","t":"Hi. I'd like to check in for my flight.","pron":"하이. 아이드 라익 투 체킨 포 마이 플라잇","ko":"안녕하세요. 비행기 체크인하려고요."},
+      {"who":"A","t":"Sure. Can I see your passport?","pron":"슈어. 캐나이 씨 유어 패스포트?","ko":"네. 여권 보여 주시겠어요?"},
+      {"who":"B","t":"Here you go. Can I get a window seat?","pron":"히어 유 고우. 캐나이 게러 윈도우 씻?","ko":"여기요. 창가 자리로 주시겠어요?"},
+      {"who":"A","t":"No problem. Are you checking any bags?","pron":"노 프라블럼. 아 유 체킹 애니 백즈?","ko":"그럼요. 부치실 짐 있으세요?"},
+      {"who":"B","t":"Yes, I have one bag to check.","pron":"예스, 아이 해브 원 백 투 첵","ko":"네, 부칠 짐이 하나 있어요."},
+      {"who":"A","t":"Okay. Please put it on the scale.","pron":"오케이. 플리즈 푸릿 온 더 스케일","ko":"네. 저울 위에 올려 주세요."},
+      {"who":"B","t":"Which gate should I go to?","pron":"위치 게잇 슈다이 고우 투?","ko":"몇 번 게이트로 가면 돼요?"},
+      {"who":"A","t":"Gate 12. Boarding starts at ten.","pron":"게잇 트웰브. 보딩 스탓츠 앳 텐","ko":"12번 게이트예요. 탑승은 10시에 시작해요."}
+    ]},
+    {"id":"en-u28","name":"기내와 입국","desc":"기내에서 필요한 것 부탁하고, 입국 심사 질문에 답하기", "dialogue": [
+      {"who":"A","t":"Hi. What's the purpose of your visit?","pron":"하이. 왓츠 더 퍼퍼스 오브 유어 비짓?","ko":"안녕하세요. 방문 목적이 뭔가요?"},
+      {"who":"B","t":"I'm here for sightseeing.","pron":"아임 히어 포 싸잇씽","ko":"관광하러 왔어요."},
+      {"who":"A","t":"How long are you staying?","pron":"하우 롱 아 유 스테잉?","ko":"얼마나 머무르실 건가요?"},
+      {"who":"B","t":"I'm staying for a week.","pron":"아임 스테잉 포러 윅","ko":"일주일 머물 거예요."},
+      {"who":"A","t":"And where are you staying?","pron":"앤 웨어 아 유 스테잉?","ko":"어디서 묵으시나요?"},
+      {"who":"B","t":"I'm staying at a hotel downtown.","pron":"아임 스테잉 애러 호텔 다운타운","ko":"시내에 있는 호텔에 묵어요."},
+      {"who":"A","t":"Alright. Enjoy your stay!","pron":"올라잇. 인조이 유어 스테이!","ko":"좋습니다. 즐거운 시간 보내세요!"},
+      {"who":"B","t":"Thank you! I will.","pron":"땡큐! 아이 윌","ko":"감사합니다! 그럴게요."}
+    ]},
+    {"id":"en-u29","name":"관광지에서","desc":"입장료와 운영 시간을 묻고, 꼭 봐야 할 곳 추천받기", "dialogue": [
+      {"who":"B","t":"Hi. How much is admission?","pron":"하이. 하우 머치 이즈 어드미션?","ko":"안녕하세요. 입장료가 얼마예요?"},
+      {"who":"A","t":"It's fifteen dollars for adults.","pron":"잇츠 피프틴 달러즈 포 어덜츠","ko":"어른은 15달러예요."},
+      {"who":"B","t":"Two adults, please.","pron":"투 어덜츠, 플리즈","ko":"어른 두 장 주세요."},
+      {"who":"A","t":"Here you go. That's thirty dollars.","pron":"히어 유 고우. 댓츠 써리 달러즈","ko":"여기 있어요. 30달러입니다."},
+      {"who":"B","t":"What time do you close?","pron":"왓 타임 두 유 클로우즈?","ko":"몇 시까지 해요?"},
+      {"who":"A","t":"We close at six.","pron":"위 클로우즈 앳 씩스","ko":"6시에 닫아요."},
+      {"who":"B","t":"Thanks. What's a must-see here?","pron":"땡스. 왓츠 어 머슷씨 히어?","ko":"고마워요. 여기서 꼭 봐야 할 게 뭐예요?"},
+      {"who":"A","t":"Don't miss the rooftop garden!","pron":"돈 미스 더 루프탑 가든!","ko":"옥상 정원은 꼭 보세요!"}
+    ]},
+    {"id":"en-u30","name":"맛집 찾기","desc":"현지 맛집을 찾고, 대기 시간과 대표 메뉴 묻기", "dialogue": [
+      {"who":"A","t":"Hi there! How many?","pron":"하이 데어! 하우 메니?","ko":"어서 오세요! 몇 분이세요?"},
+      {"who":"B","t":"Two. How long is the wait?","pron":"투. 하우 롱 이즈 더 웨잇?","ko":"두 명이요. 얼마나 기다려야 해요?"},
+      {"who":"A","t":"About twenty minutes.","pron":"어바웃 트웨니 미닛츠","ko":"20분쯤이요."},
+      {"who":"B","t":"Okay. Can I put my name down?","pron":"오케이. 캐나이 풋 마이 네임 다운?","ko":"네. 대기 명단에 이름 올려 주시겠어요?"},
+      {"who":"A","t":"Sure. Can I get a name?","pron":"슈어. 캐나이 게러 네임?","ko":"네. 성함이 어떻게 되세요?"},
+      {"who":"B","t":"Kim. What's your most popular dish?","pron":"킴. 왓츠 유어 모슷 파퓰러 디쉬?","ko":"김이요. 여기 대표 메뉴가 뭐예요?"},
+      {"who":"A","t":"Our clam chowder. Everyone loves it!","pron":"아워 클램 차우더. 에브리원 러브짓!","ko":"클램 차우더요. 다들 정말 좋아해요!"},
+      {"who":"B","t":"Great! I was looking for good local food.","pron":"그레잇! 아이 워즈 루킹 포 굿 로컬 푸드","ko":"좋네요! 현지 맛집을 찾고 있었거든요."}
+    ]},
+    {"id":"en-u31","name":"숙소 문제","desc":"숙소에서 생긴 문제를 알리고 필요한 것 부탁하기", "dialogue": [
+      {"who":"A","t":"Front desk. How can I help you?","pron":"프런트 데스크. 하우 캐나이 헬퓨?","ko":"프런트입니다. 무엇을 도와드릴까요?"},
+      {"who":"B","t":"Hi. The Wi-Fi isn't working.","pron":"하이. 더 와이파이 이즌 워킹","ko":"안녕하세요. 와이파이가 안 돼요."},
+      {"who":"A","t":"Sorry about that. Try restarting the router.","pron":"쏘리 어바웃 댓. 트라이 리스타팅 더 라우러","ko":"죄송합니다. 공유기를 껐다가 다시 켜 보세요."},
+      {"who":"B","t":"Okay. Could I get some extra towels, too?","pron":"오케이. 쿠다이 겟 썸 엑스트라 타월즈, 투?","ko":"네. 수건도 좀 더 주시겠어요?"},
+      {"who":"A","t":"Of course. Anything else?","pron":"오브 코스. 애니씽 엘스?","ko":"물론이죠. 다른 건 없으세요?"},
+      {"who":"B","t":"Yes. It's too noisy at night.","pron":"예스. 잇츠 투 노이지 앳 나잇","ko":"있어요. 밤에 너무 시끄러워요."},
+      {"who":"A","t":"I'm sorry. We have a quieter room.","pron":"아임 쏘리. 위 해버 콰이어러 룸","ko":"죄송합니다. 더 조용한 방이 있어요."},
+      {"who":"B","t":"Great. I'd like to change rooms.","pron":"그레잇. 아이드 라익 투 체인지 룸즈","ko":"좋아요. 방을 바꾸고 싶어요."}
+    ]},
+    {"id":"en-u32","name":"길을 잃었을 때","desc":"길을 잃었을 때 현재 위치를 묻고 역까지 가는 길 찾기", "dialogue": [
+      {"who":"B","t":"Excuse me. I think I'm lost.","pron":"익스큐즈 미. 아이 띵크 아임 로스트","ko":"실례합니다. 길을 잃은 것 같아요."},
+      {"who":"A","t":"Oh no! Can I help?","pron":"오우 노! 캐나이 헬프?","ko":"저런! 도와드릴까요?"},
+      {"who":"B","t":"Yes, please. Where am I right now?","pron":"예스, 플리즈. 웨어 앰 아이 라잇 나우?","ko":"네, 부탁해요. 여기가 지금 어디예요?"},
+      {"who":"A","t":"You're on Pine Street.","pron":"유어 온 파인 스트릿","ko":"여기는 파인 스트리트예요."},
+      {"who":"B","t":"How do I get to the station?","pron":"하우 두 아이 겟 투 더 스테이션?","ko":"역까지 어떻게 가요?"},
+      {"who":"A","t":"Go two blocks and turn right.","pron":"고우 투 블락스 앤 턴 라잇","ko":"두 블록 가서 오른쪽으로 도세요."},
+      {"who":"B","t":"Could you show me where we are on the map?","pron":"쿠쥬 쇼우 미 웨어 위 아 온 더 맵?","ko":"지도에서 지금 위치 좀 보여 주시겠어요?"},
+      {"who":"A","t":"Sure. We're here, and the station is here.","pron":"슈어. 위어 히어, 앤 더 스테이션 이즈 히어","ko":"그럼요. 우리는 여기고, 역은 여기예요."}
+    ]},
+    {"id":"en-u33","name":"분실물","desc":"물건을 잃어버렸을 때 상황을 설명하고 연락처 남기기", "dialogue": [
+      {"who":"B","t":"Excuse me. I lost my wallet.","pron":"익스큐즈 미. 아이 로슷 마이 월릿","ko":"실례합니다. 지갑을 잃어버렸어요."},
+      {"who":"A","t":"Oh no. Where did you lose it?","pron":"오우 노. 웨어 디쥬 루짓?","ko":"저런. 어디서 잃어버리셨어요?"},
+      {"who":"B","t":"I think I left it on the bus.","pron":"아이 띵크 아이 레프팃 온 더 버스","ko":"버스에 두고 내린 것 같아요."},
+      {"who":"A","t":"What does it look like?","pron":"왓 더짓 룩 라익?","ko":"어떻게 생겼어요?"},
+      {"who":"B","t":"It's a small black wallet.","pron":"잇츠 어 스몰 블랙 월릿","ko":"작은 검은색 지갑이에요."},
+      {"who":"A","t":"Nothing yet. Can you leave your number?","pron":"나띵 옛. 캐뉴 리브 유어 넘버?","ko":"아직 들어온 건 없어요. 연락처를 남겨 주시겠어요?"},
+      {"who":"B","t":"Sure. Please call me if you find it.","pron":"슈어. 플리즈 콜 미 이퓨 파인딧","ko":"네. 찾으면 저한테 전화 주세요."},
+      {"who":"A","t":"Of course. I hope it turns up!","pron":"오브 코스. 아이 호웁 잇 턴접!","ko":"물론이죠. 꼭 찾으시면 좋겠네요!"}
+    ]},
+    {"id":"en-u34","name":"친구 사귀기","desc":"여행지에서 처음 만난 사람과 말 트고 친해지기", "dialogue": [
+      {"who":"A","t":"Hi! Is this seat taken?","pron":"하이! 이즈 디스 씻 테이큰?","ko":"안녕하세요! 여기 자리 있어요?"},
+      {"who":"B","t":"No, go ahead. Are you from around here?","pron":"노우, 고우 어헤드. 아 유 프럼 어라운 히어?","ko":"아뇨, 앉으세요. 이 동네 분이세요?"},
+      {"who":"A","t":"Yeah, I live nearby. Where are you from?","pron":"예, 아이 리브 니어바이. 웨어 아 유 프럼?","ko":"네, 근처에 살아요. 어디서 왔어요?"},
+      {"who":"B","t":"I'm from Korea. It's my first time here.","pron":"아임 프럼 코리아. 잇츠 마이 퍼슷 타임 히어","ko":"한국에서 왔어요. 여기 처음 와 봤어요."},
+      {"who":"A","t":"Welcome! How do you like it so far?","pron":"웰컴! 하우 두 유 라이킷 쏘 파?","ko":"환영해요! 지금까지 어때요?"},
+      {"who":"B","t":"I love it! How long have you lived here?","pron":"아이 러빗! 하우 롱 해뷰 리브드 히어?","ko":"정말 좋아요! 여기 산 지 얼마나 됐어요?"},
+      {"who":"A","t":"About five years. I can show you around!","pron":"어바웃 파이브 이어즈. 아이 캔 쇼우 유 어라운드!","ko":"5년쯤이요. 제가 동네 구경시켜 줄게요!"},
+      {"who":"B","t":"Really? Let's hang out sometime!","pron":"리얼리? 렛츠 행 아웃 썸타임!","ko":"정말요? 언제 같이 놀아요!"}
+    ]},
+    {"id":"en-u35","name":"연락처 교환","desc":"번호나 메신저를 주고받고, 계속 연락하자고 말하기", "dialogue": [
+      {"who":"A","t":"I had a great time today!","pron":"아이 해더 그레잇 타임 투데이!","ko":"오늘 정말 즐거웠어요!"},
+      {"who":"B","t":"Me, too! Can I get your number?","pron":"미, 투! 캐나이 겟 유어 넘버?","ko":"저도요! 번호 알려 줄래요?"},
+      {"who":"A","t":"Sure. But I mostly use WhatsApp.","pron":"슈어. 벗 아이 모슷리 유즈 왓츠앱","ko":"그럼요. 근데 저는 주로 왓츠앱을 써요."},
+      {"who":"B","t":"Oh, me too! Here, let me add you.","pron":"오우, 미 투! 히어, 렛 미 애쥬","ko":"아, 저도요! 여기, 제가 추가할게요."},
+      {"who":"A","t":"Got it. Send me the photos from today!","pron":"가릿. 센 미 더 포로우즈 프럼 투데이!","ko":"추가됐어요. 오늘 찍은 사진 보내 줘요!"},
+      {"who":"B","t":"Sure. I'll text you later.","pron":"슈어. 아일 텍스츄 레이러","ko":"그럼요. 이따 문자할게요."},
+      {"who":"A","t":"Great. Have a safe trip!","pron":"그레잇. 해버 세이프 트립!","ko":"좋아요. 여행 조심히 해요!"},
+      {"who":"B","t":"Thanks! Let's keep in touch.","pron":"땡스! 렛츠 킵 인 터치","ko":"고마워요! 계속 연락하고 지내요."}
+    ]},
+    {"id":"en-u36","name":"초대받았을 때","desc":"초대받은 집에서 인사하고, 음식 칭찬하고, 고마움 전하기", "dialogue": [
+      {"who":"A","t":"Hi! Come on in!","pron":"하이! 커먼 인!","ko":"어서 와요! 들어와요!"},
+      {"who":"B","t":"Thanks for having me. I brought you a little something.","pron":"땡스 포 해빙 미. 아이 브롯 유 어 리를 썸씽","ko":"초대해 줘서 고마워요. 작은 선물 하나 가져왔어요."},
+      {"who":"A","t":"Aw, you didn't have to! Let's eat.","pron":"어, 유 디든 해브 투! 렛츠 잇","ko":"어머, 안 그래도 되는데! 어서 먹어요."},
+      {"who":"B","t":"Wow, this is really delicious!","pron":"와우, 디스 이즈 리얼리 딜리셔스!","ko":"와, 이거 정말 맛있어요!"},
+      {"who":"A","t":"Thanks! Would you like some more?","pron":"땡스! 우쥬 라익 썸 모어?","ko":"고마워요! 좀 더 줄까요?"},
+      {"who":"B","t":"No, thanks. I'm so full!","pron":"노우, 땡스. 아임 쏘 풀!","ko":"아뇨, 괜찮아요. 너무 배불러요!"},
+      {"who":"A","t":"Ha! I'm glad you liked it.","pron":"하! 아임 글래쥬 라이킷","ko":"하하! 맛있게 먹었다니 기뻐요."},
+      {"who":"B","t":"Thank you for the wonderful meal.","pron":"땡큐 포 더 원더풀 밀","ko":"정말 잘 먹었어요."}
+    ]},
+    {"id":"en-u37","name":"감정 표현","desc":"기쁨, 긴장, 아쉬움, 감동 같은 기분을 말로 표현하기", "dialogue": [
+      {"who":"A","t":"Guess what? I got the job!","pron":"게스 왓? 아이 갓 더 잡!","ko":"있잖아요, 저 취업했어요!"},
+      {"who":"B","t":"Really? I'm so happy for you!","pron":"리얼리? 아임 쏘 해피 포 유!","ko":"정말요? 정말 잘됐어요, 저도 기뻐요!"},
+      {"who":"A","t":"Thanks! But I have to move to Chicago.","pron":"땡스! 벗 아이 해브 투 무브 투 시카고","ko":"고마워요! 근데 시카고로 이사 가야 해요."},
+      {"who":"B","t":"Oh, that's a shame. I'll miss you.","pron":"오우, 댓츠 어 셰임. 아일 미스 유","ko":"아, 아쉽네요. 보고 싶을 거예요."},
+      {"who":"A","t":"Me, too. Here, I wrote you a letter.","pron":"미, 투. 히어, 아이 로웃 유 어 레러","ko":"저도요. 여기, 편지 썼어요."},
+      {"who":"B","t":"Aw, I'm so touched.","pron":"어, 아임 쏘 터치트","ko":"어머, 정말 감동이에요."},
+      {"who":"A","t":"By the way, is your presentation tomorrow?","pron":"바이 더 웨이, 이즈 유어 프레젠테이션 터마로우?","ko":"그런데 발표가 내일이에요?"},
+      {"who":"B","t":"Yes. I'm really nervous.","pron":"예스. 아임 리얼리 너버스","ko":"네. 너무 긴장돼요."}
+    ]},
+    {"id":"en-u38","name":"경험 이야기","desc":"해 본 일을 묻고 답하며, 처음 해 본 경험과 느낌 나누기", "dialogue": [
+      {"who":"B","t":"Have you ever tried surfing?","pron":"해뷰 에버 트라이드 써핑?","ko":"서핑 해 본 적 있어요?"},
+      {"who":"A","t":"No, never. Have you?","pron":"노우, 네버. 해뷰?","ko":"아뇨, 한 번도요. 당신은요?"},
+      {"who":"B","t":"Yes, last week! It was my first time.","pron":"예스, 래슷 윅! 잇 워즈 마이 퍼슷 타임","ko":"네, 지난주에요! 처음 해 봤어요."},
+      {"who":"A","t":"How was it?","pron":"하우 워짓?","ko":"어땠어요?"},
+      {"who":"B","t":"It was better than I expected!","pron":"잇 워즈 베러 댄 아이 익스펙티드!","ko":"생각보다 훨씬 좋았어요!"},
+      {"who":"A","t":"That's awesome! Would you go again?","pron":"댓츠 어썸! 우쥬 고우 어겐?","ko":"멋지다! 또 갈 거예요?"},
+      {"who":"B","t":"Definitely. I'd love to do it again.","pron":"데피닛리. 아이드 러브 투 두 잇 어겐","ko":"물론이죠. 또 하고 싶어요."},
+      {"who":"A","t":"Then take me with you next time!","pron":"덴 테익 미 위듀 넥슷 타임!","ko":"그럼 다음엔 저도 데려가요!"}
+    ]},
+    {"id":"en-u39","name":"사과와 오해","desc":"실수를 사과하고, 오해를 풀고, 사과를 받아 주기", "dialogue": [
+      {"who":"A","t":"Did you say my idea was boring?","pron":"디쥬 쎄이 마이 아이디어 워즈 보링?","ko":"제 아이디어가 지루하다고 했어요?"},
+      {"who":"B","t":"Oh no! That's not what I meant.","pron":"오우 노! 댓츠 낫 왓 아이 멘트","ko":"어머, 아니에요! 그런 뜻이 아니었어요."},
+      {"who":"A","t":"Really? Then what did you mean?","pron":"리얼리? 덴 왓 디쥬 민?","ko":"정말요? 그럼 무슨 뜻이었어요?"},
+      {"who":"B","t":"I meant it needs a little more work.","pron":"아이 멘팃 니즈 어 리를 모어 웍","ko":"조금만 더 다듬으면 좋겠다는 뜻이었어요."},
+      {"who":"A","t":"Oh, I see. I was a little upset.","pron":"오우, 아이 씨. 아이 워즈 어 리를 업셋","ko":"아, 그렇군요. 좀 속상했어요."},
+      {"who":"B","t":"I didn't mean to upset you. It's my fault.","pron":"아이 디든 민 투 업세츄. 잇츠 마이 폴트","ko":"기분 상하게 하려던 건 아니었어요. 제 잘못이에요."},
+      {"who":"A","t":"It's okay. I'm sorry, too. I overreacted.","pron":"잇츠 오케이. 아임 쏘리, 투. 아이 오버리액티드","ko":"괜찮아요. 저도 미안해요. 제가 너무 예민했어요."},
+      {"who":"B","t":"Don't worry about it.","pron":"돈 워리 어바우릿","ko":"신경 쓰지 마요."}
+    ]},
+    {"id":"en-u40","name":"일 이야기","desc":"하는 일을 소개하고, 요즘 바쁜 이야기와 일의 보람 말하기", "dialogue": [
+      {"who":"A","t":"Hey, how's work these days?","pron":"헤이, 하우즈 웍 디즈 데이즈?","ko":"요즘 일은 어때요?"},
+      {"who":"B","t":"I've been really busy lately.","pron":"아이브 빈 리얼리 비지 레잇리","ko":"요즘 정말 바빴어요."},
+      {"who":"A","t":"Oh, really? What kind of work do you do?","pron":"오, 리얼리? 왓 카인더브 웍 두 유 두?","ko":"아, 그래요? 어떤 일 하세요?"},
+      {"who":"B","t":"I work in marketing.","pron":"아이 워킨 마케팅","ko":"저는 마케팅 분야에서 일해요."},
+      {"who":"A","t":"Nice. Do you like it?","pron":"나이스. 두 유 라이킷?","ko":"좋네요. 일은 마음에 들어요?"},
+      {"who":"B","t":"Yes, I really enjoy what I do.","pron":"예스, 아이 리얼리 인조이 와라이 두","ko":"네, 제 일이 정말 즐거워요."},
+      {"who":"A","t":"What's the best part?","pron":"왓츠 더 베슷 파트?","ko":"제일 좋은 점이 뭐예요?"},
+      {"who":"B","t":"I feel proud when customers are happy.","pron":"아이 필 프라우드 웬 커스터머즈 아 해피","ko":"고객들이 만족할 때 뿌듯해요."}
+    ]},
+    {"id":"en-u41","name":"배움 이야기","desc":"배우고 있는 것과 어려운 점, 조금씩 느는 기쁨 이야기하기", "dialogue": [
+      {"who":"A","t":"What are you up to these days?","pron":"왓 아 유 업 투 디즈 데이즈?","ko":"요즘 뭐 하고 지내요?"},
+      {"who":"B","t":"I'm learning to play the guitar.","pron":"아임 러닝 투 플레이 더 기타","ko":"기타 치는 걸 배우고 있어요."},
+      {"who":"A","t":"Oh, cool! Is it hard?","pron":"오, 쿨! 이짓 하드?","ko":"오, 멋지다! 어려워요?"},
+      {"who":"B","t":"It's difficult, but really fun.","pron":"잇츠 디피컬트, 벗 리얼리 펀","ko":"어렵지만 정말 재미있어요."},
+      {"who":"A","t":"Are you taking lessons?","pron":"아 유 테이킹 레슨즈?","ko":"레슨 받고 있어요?"},
+      {"who":"B","t":"Yes, I take a class on Saturdays.","pron":"예스, 아이 테이커 클래스 온 쌔러데이즈","ko":"네, 토요일마다 수업을 들어요."},
+      {"who":"A","t":"You must be getting good!","pron":"유 머슷 비 게링 굿!","ko":"실력이 많이 늘었겠네요!"},
+      {"who":"B","t":"I'm getting better little by little.","pron":"아임 게링 베러 리를 바이 리를","ko":"조금씩 늘고 있어요."}
+    ]},
+    {"id":"en-u42","name":"건강과 운동","desc":"운동 습관을 묻고 답하고, 달라진 몸 상태 말하기", "dialogue": [
+      {"who":"A","t":"You look great these days!","pron":"유 룩 그레잇 디즈 데이즈!","ko":"요즘 정말 좋아 보여요!"},
+      {"who":"B","t":"Thanks! I feel much lighter now.","pron":"땡스! 아이 필 머치 라이러 나우","ko":"고마워요! 이제 몸이 훨씬 가벼워요."},
+      {"who":"A","t":"What's your secret?","pron":"왓츠 유어 씨크릿?","ko":"비결이 뭐예요?"},
+      {"who":"B","t":"I walk for an hour every day.","pron":"아이 웍 포 어나워 에브리 데이","ko":"매일 한 시간씩 걸어요."},
+      {"who":"A","t":"Just walking?","pron":"저슷 워킹?","ko":"걷기만 해요?"},
+      {"who":"B","t":"I also go to the gym three times a week.","pron":"아이 올쏘 고우 투 더 짐 쓰리 타임즈 어 윅","ko":"일주일에 세 번 헬스장에도 가요."},
+      {"who":"A","t":"Wow! What about food?","pron":"와우! 왓 어바웃 푸드?","ko":"와! 식단은요?"},
+      {"who":"B","t":"I'm trying to eat healthy, too.","pron":"아임 트라잉 투 잇 헬씨, 투","ko":"건강하게 먹으려고 노력도 하고 있어요."}
+    ]},
+    {"id":"en-u43","name":"좋아하는 것 비교","desc":"둘 중 더 좋은 것과 제일 좋아하는 것, 그 이유 말하기", "dialogue": [
+      {"who":"B","t":"What's your favorite season?","pron":"왓츠 유어 페이버릿 씨즌?","ko":"제일 좋아하는 계절이 뭐예요?"},
+      {"who":"A","t":"Summer! I love the beach. How about you?","pron":"써머! 아이 러브 더 비치. 하우 어바웃 유?","ko":"여름이요! 바다를 정말 좋아하거든요. 당신은요?"},
+      {"who":"B","t":"I like fall the best.","pron":"아이 라익 폴 더 베스트","ko":"저는 가을이 제일 좋아요."},
+      {"who":"A","t":"Oh, why fall?","pron":"오, 와이 폴?","ko":"오, 왜 가을이에요?"},
+      {"who":"B","t":"It's not too hot or too cold.","pron":"잇츠 낫 투 핫 오어 투 콜드","ko":"너무 덥지도 춥지도 않거든요."},
+      {"who":"A","t":"True. Do you like winter, too?","pron":"트루. 두 유 라익 윈터, 투?","ko":"맞아요. 겨울도 좋아해요?"},
+      {"who":"B","t":"Not really. I prefer summer to winter.","pron":"낫 리얼리. 아이 프리퍼 써머 투 윈터","ko":"별로요. 겨울보다는 여름이 좋아요."},
+      {"who":"A","t":"Me too! Winter is way too cold.","pron":"미 투! 윈터 이즈 웨이 투 콜드","ko":"저도요! 겨울은 너무 추워요."}
+    ]},
+    {"id":"en-u44","name":"의견 말하기","desc":"내 생각과 그 이유를 말하고 상대 의견 묻기", "dialogue": [
+      {"who":"A","t":"Our company might start working from home.","pron":"아워 컴퍼니 마잇 스타트 워킹 프럼 홈","ko":"우리 회사도 재택근무를 시작할지 몰라요."},
+      {"who":"B","t":"I think working from home is better. What do you think?","pron":"아이 띵크 워킹 프럼 홈 이즈 베러. 왓 두 유 띵크?","ko":"저는 재택근무가 더 낫다고 생각해요. 어떻게 생각해요?"},
+      {"who":"A","t":"Hmm, why do you think so?","pron":"흠, 와이 두 유 띵크 쏘우?","ko":"음, 왜 그렇게 생각해요?"},
+      {"who":"B","t":"Because I can sleep a little more.","pron":"비코즈 아이 캔 슬립 어 리를 모어","ko":"잠을 조금 더 잘 수 있으니까요."},
+      {"who":"A","t":"Ha ha! Any other reasons?","pron":"하하! 애니 아더 리즌즈?","ko":"하하! 다른 이유도 있어요?"},
+      {"who":"B","t":"In my opinion, it saves a lot of time.","pron":"인 마이 어피니언, 잇 세이브즈 어 라러브 타임","ko":"제 생각에는 시간이 많이 절약돼요."},
+      {"who":"A","t":"Maybe. But I like the office.","pron":"메이비. 벗 아이 라익 디 오피스","ko":"그럴 수도요. 그래도 저는 사무실이 좋아요."},
+      {"who":"B","t":"I guess it depends on the person.","pron":"아이 게스 잇 디펜즈 온 더 퍼슨","ko":"사람마다 다른 것 같아요."}
+    ]},
+    {"id":"en-u45","name":"동의와 반대","desc":"맞장구치고, 생각이 다를 땐 부드럽게 말하기", "dialogue": [
+      {"who":"A","t":"Weekends are too short, aren't they?","pron":"위켄즈 아 투 쇼트, 안 데이?","ko":"주말은 너무 짧지 않아요?"},
+      {"who":"B","t":"That's so true.","pron":"댓츠 쏘 트루","ko":"정말 맞는 말이에요."},
+      {"who":"A","t":"I think we need a four-day work week.","pron":"아이 띵크 위 니더 포데이 웍 윅","ko":"주 4일 근무가 필요하다고 봐요."},
+      {"who":"B","t":"Hmm, I see it a little differently.","pron":"흠, 아이 씨 잇 어 리를 디퍼런틀리","ko":"음, 저는 조금 다르게 생각해요."},
+      {"who":"A","t":"Oh? What do you mean?","pron":"오? 왓 두 유 민?","ko":"어? 무슨 뜻이에요?"},
+      {"who":"B","t":"I want longer vacations instead.","pron":"아이 원트 롱거 베케이션즈 인스테드","ko":"저는 대신 휴가가 더 길었으면 해요."},
+      {"who":"A","t":"You have a point. Why not both?","pron":"유 해버 포인트. 와이 낫 보우쓰?","ko":"일리 있네요. 둘 다면 어때요?"},
+      {"who":"B","t":"Ha ha, that's a great idea!","pron":"하하, 댓츠 어 그레잇 아이디어!","ko":"하하, 좋은 생각이에요!"}
+    ]},
+    {"id":"en-u46","name":"부탁과 거절","desc":"공손하게 부탁하고, 미안한 마음을 담아 거절하기", "dialogue": [
+      {"who":"A","t":"Let's have dinner this Sunday!","pron":"렛츠 해브 디너 디스 썬데이!","ko":"이번 일요일에 저녁 같이 먹어요!"},
+      {"who":"B","t":"I'd love to, but I have plans.","pron":"아이드 러브 투, 벗 아이 해브 플랜즈","ko":"정말 그러고 싶은데, 약속이 있어요."},
+      {"who":"A","t":"Oh, that's too bad.","pron":"오, 댓츠 투 배드","ko":"아, 아쉽네요."},
+      {"who":"B","t":"Let's do it next time for sure.","pron":"렛츠 두 잇 넥슷 타임 포 슈어","ko":"다음에 꼭 해요."},
+      {"who":"A","t":"Okay! Are you going somewhere?","pron":"오케이! 아 유 고잉 썸웨어?","ko":"좋아요! 어디 가요?"},
+      {"who":"B","t":"Yes, for a few days. Can I ask you a favor?","pron":"예스, 포 어 퓨 데이즈. 캐나이 애스큐 어 페이버?","ko":"네, 며칠 동안요. 부탁 하나 해도 될까요?"},
+      {"who":"A","t":"Of course. What is it?","pron":"오브 코스. 왓 이즈 잇?","ko":"물론이죠. 뭔데요?"},
+      {"who":"B","t":"Would you mind watering my plants?","pron":"우쥬 마인드 워러링 마이 플랜츠?","ko":"제 화분에 물 좀 줘 주실 수 있을까요?"}
+    ]},
+    {"id":"en-u47","name":"계획과 꿈","desc":"하고 싶은 일과 내년 계획, 꼭 이루고 싶은 꿈 말하기", "dialogue": [
+      {"who":"A","t":"What are your plans for next year?","pron":"왓 아 유어 플랜즈 포 넥슷 이어?","ko":"내년 계획이 뭐예요?"},
+      {"who":"B","t":"Next year, I'm going to run a marathon.","pron":"넥슷 이어, 아임 고잉 투 런 어 매러썬","ko":"내년에는 마라톤을 뛸 거예요."},
+      {"who":"A","t":"Wow! That's a big goal.","pron":"와우! 댓츠 어 빅 고울","ko":"와! 큰 목표네요."},
+      {"who":"B","t":"I know. But I'm definitely going to try it.","pron":"아이 노우. 벗 아임 데피니틀리 고잉 투 트라이 잇","ko":"그러게요. 그래도 꼭 해 볼 거예요."},
+      {"who":"A","t":"Cool! Do you have a dream, too?","pron":"쿨! 두 유 해버 드림, 투?","ko":"멋져요! 꿈도 있어요?"},
+      {"who":"B","t":"My dream is to open a small cafe.","pron":"마이 드림 이즈 투 오쁜 어 스몰 캐페이","ko":"제 꿈은 작은 카페를 여는 거예요."},
+      {"who":"A","t":"That sounds lovely!","pron":"댓 사운즈 러블리!","ko":"멋진 꿈이네요!"},
+      {"who":"B","t":"I'm saving money for it.","pron":"아임 세이빙 머니 포 잇","ko":"그걸 위해 돈을 모으고 있어요."}
+    ]},
+    {"id":"en-u48","name":"추억 이야기","desc":"어린 시절 자주 하던 일과 그리운 기억 나누기", "dialogue": [
+      {"who":"A","t":"Where did you grow up?","pron":"웨어 디쥬 그로우 업?","ko":"어디서 자랐어요?"},
+      {"who":"B","t":"When I was a kid, I lived in Busan.","pron":"웬 아이 워저 키드, 아이 리브드 인 부산","ko":"어렸을 때 부산에 살았어요."},
+      {"who":"A","t":"Oh, near the ocean!","pron":"오, 니어 디 오우션!","ko":"오, 바다 근처네요!"},
+      {"who":"B","t":"Yes. I used to swim at the beach.","pron":"예스. 아이 유스투 스윔 앳 더 비치","ko":"네. 바닷가에서 수영하곤 했어요."},
+      {"who":"A","t":"Sounds fun! What else did you do?","pron":"사운즈 펀! 왓 엘스 디쥬 두?","ko":"재밌었겠네요! 또 뭐 했어요?"},
+      {"who":"B","t":"We often went to my grandma's house.","pron":"위 오픈 웬 투 마이 그랜마즈 하우스","ko":"할머니 댁에 자주 갔어요."},
+      {"who":"A","t":"Aww, that's sweet.","pron":"아우, 댓츠 스윗","ko":"와, 따뜻한 추억이네요."},
+      {"who":"B","t":"I really miss those days.","pron":"아이 리얼리 미스 도우즈 데이즈","ko":"그때가 정말 그리워요."}
+    ]},
+    {"id":"en-u49","name":"불편 말하기","desc":"주문과 다를 때 확인을 부탁하고 교환·환불 요청하기", "dialogue": [
+      {"who":"A","t":"Hi, how can I help you?","pron":"하이, 하우 캐나이 헬퓨?","ko":"안녕하세요, 무엇을 도와드릴까요?"},
+      {"who":"B","t":"Hi. This isn't what I ordered.","pron":"하이. 디스 이즌트 와라이 오더드","ko":"안녕하세요. 이건 제가 주문한 게 아니에요."},
+      {"who":"A","t":"Oh, I'm sorry about that.","pron":"오, 아임 쏘리 어바웃 댓","ko":"아, 죄송합니다."},
+      {"who":"B","t":"Could you check my order, please?","pron":"쿠쥬 첵 마이 오더, 플리즈?","ko":"제 주문 좀 확인해 주시겠어요?"},
+      {"who":"A","t":"Sure. Do you have the receipt?","pron":"슈어. 두 유 해브 더 리씻?","ko":"네. 영수증 있으세요?"},
+      {"who":"B","t":"Yes, I have the receipt right here.","pron":"예스, 아이 해브 더 리씻 라잇 히어","ko":"네, 영수증 여기 있어요."},
+      {"who":"A","t":"Thanks. You're right, it's the wrong item.","pron":"땡스. 유어 라잇, 잇츠 더 롱 아이텀","ko":"감사합니다. 맞네요, 상품이 잘못 갔어요."},
+      {"who":"B","t":"Can I exchange it for the right one?","pron":"캐나이 익스체인지 잇 포 더 라잇 원?","ko":"맞는 걸로 교환할 수 있을까요?"}
+    ]},
+    {"id":"en-u50","name":"축하와 위로","desc":"좋은 일엔 축하를, 힘든 일엔 위로와 응원 건네기", "dialogue": [
+      {"who":"A","t":"Guess what? I got the job!","pron":"게스 왓? 아이 갓 더 잡!","ko":"있잖아요, 저 합격했어요!"},
+      {"who":"B","t":"Congratulations on your new job!","pron":"컨그래츄레이션즈 온 유어 뉴 잡!","ko":"새 직장 축하해요!"},
+      {"who":"A","t":"Thanks! I'm so excited.","pron":"땡스! 아임 쏘 익싸이티드","ko":"고마워요! 너무 신나요."},
+      {"who":"B","t":"I'm so happy for you.","pron":"아임 쏘 해피 포 유","ko":"제 일처럼 기뻐요."},
+      {"who":"A","t":"But the first month will be tough.","pron":"벗 더 퍼슷 먼쓰 윌 비 터프","ko":"그런데 첫 달은 힘들 것 같아요."},
+      {"who":"B","t":"Hang in there. Don't push yourself too hard.","pron":"행 인 데어. 돈 푸쉬 유어셀프 투 하드","ko":"힘내요. 너무 무리하지는 말고요."},
+      {"who":"A","t":"Thanks. That means a lot.","pron":"땡스. 댓 민즈 어 랏","ko":"고마워요. 정말 힘이 돼요."},
+      {"who":"B","t":"Let me know if you need anything.","pron":"렛 미 노우 이퓨 니드 애니씽","ko":"필요한 거 있으면 말해요."}
+    ]},
+    {"id":"en-u51","name":"우리나라 소개","desc":"한국 음식과 가 볼 곳을 소개하고 안내를 제안하기", "dialogue": [
+      {"who":"A","t":"I'm going to Korea next month!","pron":"아임 고잉 투 코리아 넥슷 먼쓰!","ko":"다음 달에 한국에 가요!"},
+      {"who":"B","t":"Really? Have you ever tried Korean food?","pron":"리얼리? 해뷰 에버 트라이드 코리언 푸드?","ko":"정말요? 한국 음식 먹어 본 적 있어요?"},
+      {"who":"A","t":"Not yet. What should I try?","pron":"낫 옛. 왓 슈다이 트라이?","ko":"아직이요. 뭘 먹어 봐야 해요?"},
+      {"who":"B","t":"Try bibimbap. It's rice mixed with vegetables.","pron":"트라이 비빔밥. 잇츠 라이스 믹스트 위드 베지터블즈","ko":"비빔밥 먹어 보세요. 밥에 채소를 넣고 비빈 거예요."},
+      {"who":"A","t":"Sounds healthy! Where should I go?","pron":"사운즈 헬씨! 웨어 슈다이 고우?","ko":"건강해 보이네요! 어디 가 보면 좋아요?"},
+      {"who":"B","t":"You have to visit Jeju Island.","pron":"유 해프 투 비짓 제주 아일랜드","ko":"제주도는 꼭 가 보세요."},
+      {"who":"A","t":"Great! Will you be in Korea then?","pron":"그레잇! 윌 유 비 인 코리아 덴?","ko":"좋아요! 그때 한국에 있어요?"},
+      {"who":"B","t":"Yes! I'll show you around.","pron":"예스! 아일 쇼유 어라운드","ko":"네! 제가 안내해 드릴게요."}
+    ]},
+    {"id":"en-u52","name":"1년 돌아보기","desc":"1년을 돌아보며 고마움을 전하고 다시 만날 날을 약속하기", "dialogue": [
+      {"who":"A","t":"Can you believe it? This is our last lesson.","pron":"캐뉴 빌리브 잇? 디스 이즈 아워 래슷 레슨","ko":"믿어져요? 오늘이 마지막 수업이에요."},
+      {"who":"B","t":"I can't believe it's been a year.","pron":"아이 캔트 빌리브 잇츠 빈 어 이어","ko":"벌써 1년이 지났다니 믿기지 않아요."},
+      {"who":"A","t":"Your English sounds so natural now.","pron":"유어 잉글리시 사운즈 쏘 내추럴 나우","ko":"이제 영어가 정말 자연스러워요."},
+      {"who":"B","t":"Thanks to you, I learned a lot.","pron":"땡스 투 유, 아이 런드 어 랏","ko":"덕분에 많이 배웠어요."},
+      {"who":"A","t":"No, you worked hard every morning.","pron":"노우, 유 웍트 하드 에브리 모닝","ko":"아니에요, 매일 아침 열심히 한 덕분이에요."},
+      {"who":"B","t":"I feel like my English has improved a lot.","pron":"아이 필 라익 마이 잉글리시 해즈 임프루브드 어 랏","ko":"영어가 많이 는 것 같아요."},
+      {"who":"A","t":"I'm so proud of you. Keep it up!","pron":"아임 쏘 프라우드 어뷰. 킵 잇 업!","ko":"정말 자랑스러워요. 앞으로도 힘내요!"},
+      {"who":"B","t":"I'll keep practicing. I hope we meet again soon.","pron":"아일 킵 프랙티싱. 아이 호웁 위 밋 어겐 쑨","ko":"계속 연습할게요. 곧 또 만나요."}
+    ]}
   ],
   cards: [
-    // ───────── 1. 인사 ─────────
-    {
-      id: 'en-u01-01',
-      unit: 'en-u01',
-      t: 'Hi, how are you?',
-      pron: '하이, 하우 아 유?',
-      ko: '안녕하세요, 잘 지내세요?',
-      blank: 'how are you',
-      note: '만나면 가장 먼저 하는 인사예요. 진짜 안부를 묻는다기보다 “안녕하세요”에 가까워서 짧게 답하면 돼요.'
-    },
-    {
-      id: 'en-u01-02',
-      unit: 'en-u01',
-      t: "I'm good, thanks.",
-      pron: '아임 굿, 땡스',
-      ko: '잘 지내요, 고마워요.',
-      blank: "I'm good",
-      note: 'How are you?에 대한 가장 흔한 대답이에요. 뒤에 How about you?(당신은요?)를 붙이면 상대에게도 물어볼 수 있어요.'
-    },
-    {
-      id: 'en-u01-03',
-      unit: 'en-u01',
-      t: 'Thank you so much.',
-      pron: '땡큐 쏘 머치',
-      ko: '정말 고마워요.',
-      blank: 'so much',
-      note: 'Thank you보다 마음이 더 담긴 말이에요. 상대가 고맙다고 하면 You’re welcome.(천만에요)으로 답해요.'
-    },
-    {
-      id: 'en-u01-04',
-      unit: 'en-u01',
-      t: "I'm so sorry.",
-      pron: '아임 쏘 쏘리',
-      ko: '정말 미안해요.',
-      blank: 'so sorry',
-      note: '진심으로 사과할 때 써요. 살짝 부딪힌 정도라면 Sorry! 한마디면 충분해요.'
-    },
-    {
-      id: 'en-u01-05',
-      unit: 'en-u01',
-      t: 'See you later!',
-      pron: '씨 유 레이러!',
-      ko: '또 봐요!',
-      blank: 'See you',
-      note: '아는 사람과 헤어질 때 써요. 내일 또 볼 사이라면 See you tomorrow! 라고 해요.'
-    },
-
-    // ───────── 2. 자기소개 ─────────
-    {
-      id: 'en-u02-01',
-      unit: 'en-u02',
-      t: "Hi, I'm Minji.",
-      pron: '하이, 아임 민지',
-      ko: '안녕하세요, 저는 민지예요.',
-      blank: "Hi, I'm",
-      note: '이름을 말하는 가장 자연스러운 방법이에요. Minji 자리에 내 이름을 넣고, My name is ~ 보다 가볍게 많이 써요.'
-    },
-    {
-      id: 'en-u02-02',
-      unit: 'en-u02',
-      t: 'Nice to meet you.',
-      pron: '나이스 터 미츄',
-      ko: '만나서 반가워요.',
-      blank: 'meet you',
-      note: '처음 만났을 때 써요. 상대가 먼저 말하면 Nice to meet you, too.(저도 반가워요)라고 답해요.'
-    },
-    {
-      id: 'en-u02-03',
-      unit: 'en-u02',
-      t: "I'm from Korea.",
-      pron: '아임 프럼 코리아',
-      ko: '저는 한국에서 왔어요.',
-      blank: "I'm from",
-      note: '“어디서 왔어요?(Where are you from?)”에 대한 대답이에요. 도시 이름을 넣어도 돼요: I’m from Busan.'
-    },
-    {
-      id: 'en-u02-04',
-      unit: 'en-u02',
-      t: 'I work at a bank.',
-      pron: '아이 웍 애러 뱅크',
-      ko: '저는 은행에서 일해요.',
-      blank: 'I work at',
-      note: 'I work at 뒤에 일하는 곳을 넣어요. 학생이면 I’m a student., 은퇴했다면 I’m retired. 라고 해요.'
-    },
-    {
-      id: 'en-u02-05',
-      unit: 'en-u02',
-      t: 'What do you do?',
-      pron: '왓 두 유 두?',
-      ko: '무슨 일 하세요?',
-      blank: 'What do you do',
-      note: '직업을 물을 때 써요. 처음 만난 자리에서 자주 나오는 질문이라 내 대답도 미리 준비해 두면 좋아요.'
-    },
-
-    // ───────── 3. 카페에서 ─────────
-    {
-      id: 'en-u03-01',
-      unit: 'en-u03',
-      t: 'Can I get an iced latte?',
-      pron: '캐나이 게런 아이스 라테?',
-      ko: '아이스 라테 한 잔 주시겠어요?',
-      blank: 'Can I get',
-      note: '주문할 때 가장 많이 쓰는 표현이에요. 뒤에 메뉴만 바꾸면 되고, 더 공손하게는 Could I get ~? 이라고 해요.'
-    },
-    {
-      id: 'en-u03-02',
-      unit: 'en-u03',
-      t: 'Medium, please.',
-      pron: '미디엄, 플리즈',
-      ko: '미디엄으로 주세요.',
-      blank: 'Medium',
-      note: '“사이즈는요?(What size?)”라고 물으면 small, medium, large 중 하나에 please만 붙여 답하면 돼요.'
-    },
-    {
-      id: 'en-u03-03',
-      unit: 'en-u03',
-      t: 'To go, please.',
-      pron: '투 고우, 플리즈',
-      ko: '가져갈게요.',
-      blank: 'To go',
-      note: '“드시고 가세요, 가져가세요?(For here or to go?)”에 대한 대답이에요. 매장에서 마시면 For here, please. 라고 해요.'
-    },
-    {
-      id: 'en-u03-04',
-      unit: 'en-u03',
-      t: 'Do you have decaf?',
-      pron: '두 유 해브 디캐프?',
-      ko: '디카페인 있어요?',
-      blank: 'Do you have',
-      note: '원하는 게 있는지 물을 때 Do you have ~? 를 써요: Do you have oat milk?(귀리 우유 있어요?)'
-    },
-    {
-      id: 'en-u03-05',
-      unit: 'en-u03',
-      t: "That's all, thanks.",
-      pron: '댓츠 올, 땡스',
-      ko: '그거면 돼요, 고마워요.',
-      blank: "That's all",
-      note: '“더 필요한 건 없으세요?(Anything else?)”라고 물을 때 주문을 마무리하는 말이에요. That’s it. 이라고도 해요.'
-    },
-
-    // ───────── 4. 식당에서 ─────────
-    {
-      id: 'en-u04-01',
-      unit: 'en-u04',
-      t: 'Table for two, please.',
-      pron: '테이블 포 투, 플리즈',
-      ko: '두 명이에요.',
-      blank: 'for two',
-      note: '식당에서 “몇 분이세요?(How many?)”라고 물으면 two 자리에 인원수를 넣어 답해요. 짧게 Two, please. 라고 해도 돼요.'
-    },
-    {
-      id: 'en-u04-02',
-      unit: 'en-u04',
-      t: 'What do you recommend?',
-      pron: '왓 두 유 레커멘드?',
-      ko: '추천해 주실 메뉴 있어요?',
-      blank: 'recommend',
-      note: '뭘 먹을지 고민될 때 직원에게 추천을 부탁하는 말이에요. 카페나 가게에서도 똑같이 쓸 수 있어요.'
-    },
-    {
-      id: 'en-u04-03',
-      unit: 'en-u04',
-      t: "I'd like the chicken salad.",
-      pron: '아이드 라익 더 치킨 샐러드',
-      ko: '치킨 샐러드로 할게요.',
-      blank: "I'd like",
-      note: '주문할 때 쓰는 공손한 표현이에요. I’ll have ~ 도 같은 뜻으로 자주 써요.'
-    },
-    {
-      id: 'en-u04-04',
-      unit: 'en-u04',
-      t: 'Can I get some water?',
-      pron: '캐나이 겟 썸 워러?',
-      ko: '물 좀 주시겠어요?',
-      blank: 'some water',
-      note: '카페에서 배운 Can I get ~? 을 식당에서도 그대로 써요. 앞에 Excuse me, 를 붙이면 직원을 부를 때도 자연스러워요.'
-    },
-    {
-      id: 'en-u04-05',
-      unit: 'en-u04',
-      t: 'Could we get the check?',
-      pron: '쿠드 위 겟 더 첵?',
-      ko: '계산서 주시겠어요?',
-      blank: 'the check',
-      note: '미국 식당은 보통 자리에 앉은 채로 계산해요. 짧게 Check, please. 라고 해도 되고, 팁은 따로 남기는 게 일반적이에요.'
-    },
-
-    // ───────── 5. 길 묻기 ─────────
-    {
-      id: 'en-u05-01',
-      unit: 'en-u05',
-      t: "Excuse me, where's the subway station?",
-      pron: '익스큐즈 미, 웨어즈 더 써브웨이 스테이션?',
-      ko: '실례지만, 지하철역이 어디예요?',
-      blank: "where's",
-      note: '모르는 사람에게는 Excuse me로 말을 걸어요. where’s는 where is를 줄인 말이고 뒤에 찾는 곳을 넣어요: Where’s the restroom?'
-    },
-    {
-      id: 'en-u05-02',
-      unit: 'en-u05',
-      t: "I'm looking for this place.",
-      pron: '아임 루킹 포 디스 플레이스',
-      ko: '여기를 찾고 있어요.',
-      blank: 'looking for',
-      note: '지도나 주소를 보여 주며 말하면 영어가 서툴러도 쉽게 통해요. 장소 이름을 넣어도 돼요: I’m looking for a pharmacy.'
-    },
-    {
-      id: 'en-u05-03',
-      unit: 'en-u05',
-      t: 'Is it far from here?',
-      pron: '이짓 파 프럼 히어?',
-      ko: '여기서 멀어요?',
-      blank: 'far from here',
-      note: '거리가 먼지 물어요. 가까운지 물을 땐 Is it close?(가까워요?)라고 해요.'
-    },
-    {
-      id: 'en-u05-04',
-      unit: 'en-u05',
-      t: 'How long does it take?',
-      pron: '하우 롱 더짓 테익?',
-      ko: '얼마나 걸려요?',
-      blank: 'How long',
-      note: '걸리는 시간을 물을 때 써요. 대답은 보통 About ten minutes.(10분쯤이요)처럼 와요.'
-    },
-    {
-      id: 'en-u05-05',
-      unit: 'en-u05',
-      t: 'Can you show me on the map?',
-      pron: '캐뉴 쇼우 미 온 더 맵?',
-      ko: '지도에서 보여 주실 수 있어요?',
-      blank: 'show me',
-      note: '휴대폰 지도를 내밀며 부탁해 보세요. 말로만 듣는 것보다 훨씬 확실해요.'
-    },
-
-    // ───────── 6. 쇼핑과 계산 ─────────
-    {
-      id: 'en-u06-01',
-      unit: 'en-u06',
-      t: "I'm just looking, thanks.",
-      pron: '아임 저슷 루킹, 땡스',
-      ko: '그냥 구경하는 중이에요, 감사해요.',
-      blank: 'just looking',
-      note: '점원이 “도와드릴까요?(Can I help you?)”라고 물을 때, 아직 살 게 없다면 웃으며 이렇게 답하면 돼요.'
-    },
-    {
-      id: 'en-u06-02',
-      unit: 'en-u06',
-      t: 'How much is this?',
-      pron: '하우 머치 이즈 디스?',
-      ko: '이거 얼마예요?',
-      blank: 'How much',
-      note: '가격을 물을 때 써요. 여러 개를 가리킬 땐 How much are these? 라고 해요.'
-    },
-    {
-      id: 'en-u06-03',
-      unit: 'en-u06',
-      t: 'Do you have this in black?',
-      pron: '두 유 해브 디스 인 블랙?',
-      ko: '이거 검은색도 있어요?',
-      blank: 'in black',
-      note: '색이나 사이즈를 바꿔 물을 수 있어요: Do you have this in a large?(이거 라지 있어요?)'
-    },
-    {
-      id: 'en-u06-04',
-      unit: 'en-u06',
-      t: "I'll take this one.",
-      pron: '아일 테익 디스 원',
-      ko: '이걸로 할게요.',
-      blank: "I'll take",
-      note: '살 물건을 정했을 때 쓰는 “이거 주세요”예요. 두 개면 I’ll take two. 라고 해요.'
-    },
-    {
-      id: 'en-u06-05',
-      unit: 'en-u06',
-      t: 'Can I pay with a card?',
-      pron: '캐나이 페이 위더 카드?',
-      ko: '카드로 계산해도 돼요?',
-      blank: 'pay with a card',
-      note: '카드 결제가 되는지 물어요. Do you take cards? 도 같은 뜻이고, 현금은 cash라고 해요.'
-    },
-
-    // ───────── 7. 대중교통과 택시 ─────────
-    {
-      id: 'en-u07-01',
-      unit: 'en-u07',
-      t: 'Does this bus go downtown?',
-      pron: '더즈 디스 버스 고우 다운타운?',
-      ko: '이 버스 시내 가요?',
-      blank: 'Does this bus go',
-      note: '타기 전에 기사님께 확인하는 말이에요. downtown 자리에 목적지를 넣어요: Does this bus go to the airport?'
-    },
-    {
-      id: 'en-u07-02',
-      unit: 'en-u07',
-      t: 'How much is the fare?',
-      pron: '하우 머치 이즈 더 페어?',
-      ko: '요금이 얼마예요?',
-      blank: 'the fare',
-      note: '버스·지하철·택시 요금을 물을 때 써요. 쇼핑에서 배운 How much ~? 패턴 그대로예요.'
-    },
-    {
-      id: 'en-u07-03',
-      unit: 'en-u07',
-      t: 'Could you tell me when to get off?',
-      pron: '쿠쥬 텔 미 웬 투 게로프?',
-      ko: '내릴 때 알려 주시겠어요?',
-      blank: 'get off',
-      note: '처음 가는 길이라 어디서 내릴지 모를 때 기사님께 부탁해요. Could you ~? 는 공손하게 부탁하는 패턴이에요.'
-    },
-    {
-      id: 'en-u07-04',
-      unit: 'en-u07',
-      t: 'To this address, please.',
-      pron: '투 디스 어드레스, 플리즈',
-      ko: '이 주소로 가 주세요.',
-      blank: 'this address',
-      note: '택시 기사님이 “어디로 가세요?(Where to?)”라고 물으면 주소를 보여 주며 말해요. 장소 이름을 넣어도 돼요: To City Hall, please.'
-    },
-    {
-      id: 'en-u07-05',
-      unit: 'en-u07',
-      t: 'Can you stop here, please?',
-      pron: '캐뉴 스탑 히어, 플리즈?',
-      ko: '여기서 세워 주시겠어요?',
-      blank: 'stop here',
-      note: '택시에서 내리고 싶은 곳에 왔을 때 써요. Right here is fine.(여기면 돼요)이라고 해도 자연스러워요.'
-    },
-
-    // ───────── 8. 호텔에서 ─────────
-    {
-      id: 'en-u08-01',
-      unit: 'en-u08',
-      t: "I'd like to check in.",
-      pron: '아이드 라익 투 체킨',
-      ko: '체크인하려고요.',
-      blank: 'check in',
-      note: '호텔 프런트에서 처음 하는 말이에요. 나갈 때는 I’d like to check out. 이라고 해요.'
-    },
-    {
-      id: 'en-u08-02',
-      unit: 'en-u08',
-      t: 'I have a reservation.',
-      pron: '아이 해버 레저베이션',
-      ko: '예약했어요.',
-      blank: 'reservation',
-      note: '예약이 되어 있다고 말할 때 써요. 식당에서도 똑같이 쓸 수 있어요.'
-    },
-    {
-      id: 'en-u08-03',
-      unit: 'en-u08',
-      t: "It's under Kim.",
-      pron: '잇츠 언더 킴',
-      ko: '김 이름으로 예약했어요.',
-      blank: 'under Kim',
-      note: '“성함이 어떻게 되세요?(What’s the name?)”라고 물으면 under 뒤에 예약한 이름을 넣어 답해요.'
-    },
-    {
-      id: 'en-u08-04',
-      unit: 'en-u08',
-      t: 'Can I leave my bags here?',
-      pron: '캐나이 리브 마이 백즈 히어?',
-      ko: '여기 짐 좀 맡겨도 될까요?',
-      blank: 'leave my bags',
-      note: '체크인 전이나 체크아웃 후에 짐을 맡기고 싶을 때 써요. 대부분의 호텔이 무료로 맡아 줘요.'
-    },
-    {
-      id: 'en-u08-05',
-      unit: 'en-u08',
-      t: 'What time is checkout?',
-      pron: '왓 타임 이즈 체카웃?',
-      ko: '체크아웃은 몇 시예요?',
-      blank: 'What time',
-      note: 'What time is ~? 로 시간을 물어요: What time is breakfast?(아침 식사는 몇 시예요?)'
-    },
-
-    // ───────── 9. 취미 이야기 ─────────
-    {
-      id: 'en-u09-01',
-      unit: 'en-u09',
-      t: 'What do you do for fun?',
-      pron: '왓 두 유 두 포 펀?',
-      ko: '취미가 뭐예요?',
-      blank: 'for fun',
-      note: '취미를 물을 때 원어민이 가장 흔히 쓰는 말이에요. What’s your hobby? 보다 훨씬 자연스러워요.'
-    },
-    {
-      id: 'en-u09-02',
-      unit: 'en-u09',
-      t: 'I like watching movies.',
-      pron: '아이 라익 와칭 무비즈',
-      ko: '저는 영화 보는 걸 좋아해요.',
-      blank: 'I like',
-      note: 'I like 뒤에 -ing를 붙여 좋아하는 활동을 말해요: I like cooking.(요리하는 걸 좋아해요)'
-    },
-    {
-      id: 'en-u09-03',
-      unit: 'en-u09',
-      t: "I'm really into hiking.",
-      pron: '아임 리얼리 인투 하이킹',
-      ko: '요즘 등산에 푹 빠졌어요.',
-      blank: 'really into',
-      note: 'be into ~ 는 “~에 빠져 있다”는 뜻으로 일상에서 아주 많이 써요. I like보다 더 좋아한다는 느낌이에요.'
-    },
-    {
-      id: 'en-u09-04',
-      unit: 'en-u09',
-      t: 'That sounds fun!',
-      pron: '댓 사운즈 펀!',
-      ko: '재밌겠네요!',
-      blank: 'sounds fun',
-      note: '상대 이야기에 맞장구칠 때 써요. fun 자리에 great, nice, interesting을 넣어 바꿔 쓸 수 있어요.'
-    },
-    {
-      id: 'en-u09-05',
-      unit: 'en-u09',
-      t: "Let's go hiking together sometime!",
-      pron: '렛츠 고우 하이킹 투게더 썸타임!',
-      ko: '언제 같이 등산 가요!',
-      blank: "Let's go",
-      note: 'Let’s ~ 는 같이 하자고 제안하는 말이에요. 끝에 sometime을 붙이면 “언제 한번” 하는 부담 없는 느낌이 돼요.'
-    },
-
-    // ───────── 10. 약속 잡기 ─────────
-    {
-      id: 'en-u10-01',
-      unit: 'en-u10',
-      t: 'Are you free this Saturday?',
-      pron: '아 유 프리 디스 쌔러데이?',
-      ko: '이번 토요일에 시간 돼요?',
-      blank: 'Are you free',
-      note: '상대가 시간이 되는지 물어요. this Saturday 자리에 tonight, tomorrow 같은 말을 넣어요.'
-    },
-    {
-      id: 'en-u10-02',
-      unit: 'en-u10',
-      t: 'What time works for you?',
-      pron: '왓 타임 웍스 포 유?',
-      ko: '몇 시가 괜찮아요?',
-      blank: 'works for you',
-      note: '상대에게 편한 시간을 묻는 배려 있는 표현이에요. 요일을 물을 땐 What day works for you?'
-    },
-    {
-      id: 'en-u10-03',
-      unit: 'en-u10',
-      t: "How about one o'clock?",
-      pron: '하우 어바웃 원 어클락?',
-      ko: '1시 어때요?',
-      blank: 'How about',
-      note: 'How about ~? 로 시간, 장소, 메뉴 무엇이든 제안할 수 있어요: How about pizza?(피자 어때요?)'
-    },
-    {
-      id: 'en-u10-04',
-      unit: 'en-u10',
-      t: 'Where should we meet?',
-      pron: '웨어 슈드 위 밋?',
-      ko: '어디서 만날까요?',
-      blank: 'Where should we',
-      note: 'should we ~? 는 “우리 ~할까요?”라는 뜻이에요. What should we eat?(뭐 먹을까요?)처럼 바꿔 써요.'
-    },
-    {
-      id: 'en-u10-05',
-      unit: 'en-u10',
-      t: "Let's meet at the station.",
-      pron: '렛츠 밋 앳 더 스테이션',
-      ko: '역에서 만나요.',
-      blank: "Let's meet at",
-      note: 'Let’s meet at 뒤에 장소나 시간을 넣어요: Let’s meet at six.(6시에 만나요)'
-    },
-
-    // ───────── 11. 날씨와 안부 ─────────
-    {
-      id: 'en-u11-01',
-      unit: 'en-u11',
-      t: "It's so hot today.",
-      pron: '잇츠 쏘 핫 투데이',
-      ko: '오늘 너무 덥네요.',
-      blank: 'so hot',
-      note: '날씨 이야기는 누구와도 가볍게 대화를 시작하기 좋아요. 추운 날엔 It’s so cold today.'
-    },
-    {
-      id: 'en-u11-02',
-      unit: 'en-u11',
-      t: 'How have you been?',
-      pron: '하우 해뷰 빈?',
-      ko: '그동안 잘 지냈어요?',
-      blank: 'have you been',
-      note: '오랜만에 만난 사람에게 묻는 안부예요. 대답은 Pretty good!(잘 지냈어요!)처럼 짧게 하면 돼요.'
-    },
-    {
-      id: 'en-u11-03',
-      unit: 'en-u11',
-      t: 'Long time no see!',
-      pron: '롱 타임 노우 씨!',
-      ko: '오랜만이에요!',
-      blank: 'Long time',
-      note: '오랜만에 만나 반가울 때 하는 말이에요. 친구나 편한 사이에서 많이 써요.'
-    },
-    {
-      id: 'en-u11-04',
-      unit: 'en-u11',
-      t: 'How was your weekend?',
-      pron: '하우 워즈 유어 위켄드?',
-      ko: '주말 잘 보냈어요?',
-      blank: 'How was',
-      note: '월요일에 동료나 친구에게 자주 하는 질문이에요. How was ~? 로 지난 일을 물어요: How was your trip?'
-    },
-    {
-      id: 'en-u11-05',
-      unit: 'en-u11',
-      t: 'I just stayed home and relaxed.',
-      pron: '아이 저슷 스테이드 홈 앤 릴랙스트',
-      ko: '그냥 집에서 쉬었어요.',
-      blank: 'stayed home',
-      note: '주말에 뭐 했는지에 대한 쉬운 대답이에요. 지난 일은 stayed, went처럼 과거형으로 말해요: I went hiking.'
-    },
-
-    // ───────── 12. 도움이 필요할 때 ─────────
-    {
-      id: 'en-u12-01',
-      unit: 'en-u12',
-      t: 'Sorry, could you say that again?',
-      pron: '쏘리, 쿠쥬 쎄이 댓 어겐?',
-      ko: '죄송한데, 다시 한번 말해 주시겠어요?',
-      blank: 'say that again',
-      note: '못 알아들었을 때 가장 많이 쓰는 말이에요. 급할 땐 Sorry? 하고 끝을 올려 말해도 통해요.'
-    },
-    {
-      id: 'en-u12-02',
-      unit: 'en-u12',
-      t: 'Could you speak a little slower?',
-      pron: '쿠쥬 스픽 어 리틀 슬로워?',
-      ko: '조금만 천천히 말해 주시겠어요?',
-      blank: 'a little slower',
-      note: '말이 너무 빠를 때 부탁해요. 앞에 Sorry, 를 붙이면 더 부드럽게 들려요.'
-    },
-    {
-      id: 'en-u12-03',
-      unit: 'en-u12',
-      t: "I'm sorry, I don't understand.",
-      pron: '아임 쏘리, 아이 돈 언더스탠드',
-      ko: '죄송해요, 이해를 못 했어요.',
-      blank: "don't understand",
-      note: '모를 땐 솔직하게 말하는 게 가장 좋아요. 이어서 Could you say that again? 이라고 부탁해 보세요.'
-    },
-    {
-      id: 'en-u12-04',
-      unit: 'en-u12',
-      t: 'Excuse me, could you help me?',
-      pron: '익스큐즈 미, 쿠쥬 헬프 미?',
-      ko: '실례지만, 좀 도와주시겠어요?',
-      blank: 'help me',
-      note: '먼저 Excuse me로 말을 걸고 부탁해요. 정말 급한 상황이면 Please help me! 라고 해요.'
-    },
-    {
-      id: 'en-u12-05',
-      unit: 'en-u12',
-      t: 'Could you write it down?',
-      pron: '쿠쥬 라이릿 다운?',
-      ko: '적어 주시겠어요?',
-      blank: 'write it down',
-      note: '숫자, 이름, 주소처럼 알아듣기 어려운 건 적어 달라고 하면 확실해요. 휴대폰 메모장을 내밀며 말해도 좋아요.'
-    }
+    {"id":"en-u01-01","unit":"en-u01","t":"Hi, how are you?","pron":"하이, 하우 아 유?","ko":"안녕하세요, 잘 지내세요?","blank":"how are you","note":"만나면 가장 먼저 하는 인사예요. 진짜 안부를 묻는다기보다 “안녕하세요”에 가까워서 짧게 답하면 돼요."},
+    {"id":"en-u01-02","unit":"en-u01","t":"I'm good, thanks.","pron":"아임 굿, 땡스","ko":"잘 지내요, 고마워요.","blank":"I'm good","note":"How are you?에 대한 가장 흔한 대답이에요. 뒤에 How about you?(당신은요?)를 붙이면 상대에게도 물어볼 수 있어요."},
+    {"id":"en-u01-03","unit":"en-u01","t":"Thank you so much.","pron":"땡큐 쏘 머치","ko":"정말 고마워요.","blank":"so much","note":"Thank you보다 마음이 더 담긴 말이에요. 상대가 고맙다고 하면 You’re welcome.(천만에요)으로 답해요."},
+    {"id":"en-u01-04","unit":"en-u01","t":"I'm so sorry.","pron":"아임 쏘 쏘리","ko":"정말 미안해요.","blank":"so sorry","note":"진심으로 사과할 때 써요. 살짝 부딪힌 정도라면 Sorry! 한마디면 충분해요."},
+    {"id":"en-u01-05","unit":"en-u01","t":"See you later!","pron":"씨 유 레이러!","ko":"또 봐요!","blank":"See you","note":"아는 사람과 헤어질 때 써요. 내일 또 볼 사이라면 See you tomorrow! 라고 해요."},
+    {"id":"en-u02-01","unit":"en-u02","t":"Hi, I'm Minji.","pron":"하이, 아임 민지","ko":"안녕하세요, 저는 민지예요.","blank":"Hi, I'm","note":"이름을 말하는 가장 자연스러운 방법이에요. Minji 자리에 내 이름을 넣고, My name is ~ 보다 가볍게 많이 써요."},
+    {"id":"en-u02-02","unit":"en-u02","t":"Nice to meet you.","pron":"나이스 터 미츄","ko":"만나서 반가워요.","blank":"meet you","note":"처음 만났을 때 써요. 상대가 먼저 말하면 Nice to meet you, too.(저도 반가워요)라고 답해요."},
+    {"id":"en-u02-03","unit":"en-u02","t":"I'm from Korea.","pron":"아임 프럼 코리아","ko":"저는 한국에서 왔어요.","blank":"I'm from","note":"“어디서 왔어요?(Where are you from?)”에 대한 대답이에요. 도시 이름을 넣어도 돼요: I’m from Busan."},
+    {"id":"en-u02-04","unit":"en-u02","t":"I work at a bank.","pron":"아이 웍 애러 뱅크","ko":"저는 은행에서 일해요.","blank":"I work at","note":"I work at 뒤에 일하는 곳을 넣어요. 학생이면 I’m a student., 은퇴했다면 I’m retired. 라고 해요."},
+    {"id":"en-u02-05","unit":"en-u02","t":"What do you do?","pron":"왓 두 유 두?","ko":"무슨 일 하세요?","blank":"What do you do","note":"직업을 물을 때 써요. 처음 만난 자리에서 자주 나오는 질문이라 내 대답도 미리 준비해 두면 좋아요."},
+    {"id":"en-u03-01","unit":"en-u03","t":"Can I get an iced latte?","pron":"캐나이 게런 아이스 라테?","ko":"아이스 라테 한 잔 주시겠어요?","blank":"Can I get","note":"주문할 때 가장 많이 쓰는 표현이에요. 뒤에 메뉴만 바꾸면 되고, 더 공손하게는 Could I get ~? 이라고 해요."},
+    {"id":"en-u03-02","unit":"en-u03","t":"Medium, please.","pron":"미디엄, 플리즈","ko":"미디엄으로 주세요.","blank":"Medium","note":"“사이즈는요?(What size?)”라고 물으면 small, medium, large 중 하나에 please만 붙여 답하면 돼요."},
+    {"id":"en-u03-03","unit":"en-u03","t":"To go, please.","pron":"투 고우, 플리즈","ko":"가져갈게요.","blank":"To go","note":"“드시고 가세요, 가져가세요?(For here or to go?)”에 대한 대답이에요. 매장에서 마시면 For here, please. 라고 해요."},
+    {"id":"en-u03-04","unit":"en-u03","t":"Do you have decaf?","pron":"두 유 해브 디캐프?","ko":"디카페인 있어요?","blank":"Do you have","note":"원하는 게 있는지 물을 때 Do you have ~? 를 써요: Do you have oat milk?(귀리 우유 있어요?)"},
+    {"id":"en-u03-05","unit":"en-u03","t":"That's all, thanks.","pron":"댓츠 올, 땡스","ko":"그거면 돼요, 고마워요.","blank":"That's all","note":"“더 필요한 건 없으세요?(Anything else?)”라고 물을 때 주문을 마무리하는 말이에요. That’s it. 이라고도 해요."},
+    {"id":"en-u04-01","unit":"en-u04","t":"Table for two, please.","pron":"테이블 포 투, 플리즈","ko":"두 명이에요.","blank":"for two","note":"식당에서 “몇 분이세요?(How many?)”라고 물으면 two 자리에 인원수를 넣어 답해요. 짧게 Two, please. 라고 해도 돼요."},
+    {"id":"en-u04-02","unit":"en-u04","t":"What do you recommend?","pron":"왓 두 유 레커멘드?","ko":"추천해 주실 메뉴 있어요?","blank":"recommend","note":"뭘 먹을지 고민될 때 직원에게 추천을 부탁하는 말이에요. 카페나 가게에서도 똑같이 쓸 수 있어요."},
+    {"id":"en-u04-03","unit":"en-u04","t":"I'd like the chicken salad.","pron":"아이드 라익 더 치킨 샐러드","ko":"치킨 샐러드로 할게요.","blank":"I'd like","note":"주문할 때 쓰는 공손한 표현이에요. I’ll have ~ 도 같은 뜻으로 자주 써요."},
+    {"id":"en-u04-04","unit":"en-u04","t":"Can I get some water?","pron":"캐나이 겟 썸 워러?","ko":"물 좀 주시겠어요?","blank":"some water","note":"카페에서 배운 Can I get ~? 을 식당에서도 그대로 써요. 앞에 Excuse me, 를 붙이면 직원을 부를 때도 자연스러워요."},
+    {"id":"en-u04-05","unit":"en-u04","t":"Could we get the check?","pron":"쿠드 위 겟 더 첵?","ko":"계산서 주시겠어요?","blank":"the check","note":"미국 식당은 보통 자리에 앉은 채로 계산해요. 짧게 Check, please. 라고 해도 되고, 팁은 따로 남기는 게 일반적이에요."},
+    {"id":"en-u05-01","unit":"en-u05","t":"Excuse me, where's the subway station?","pron":"익스큐즈 미, 웨어즈 더 써브웨이 스테이션?","ko":"실례지만, 지하철역이 어디예요?","blank":"where's","note":"모르는 사람에게는 Excuse me로 말을 걸어요. where’s는 where is를 줄인 말이고 뒤에 찾는 곳을 넣어요: Where’s the restroom?"},
+    {"id":"en-u05-02","unit":"en-u05","t":"I'm looking for this place.","pron":"아임 루킹 포 디스 플레이스","ko":"여기를 찾고 있어요.","blank":"looking for","note":"지도나 주소를 보여 주며 말하면 영어가 서툴러도 쉽게 통해요. 장소 이름을 넣어도 돼요: I’m looking for a pharmacy."},
+    {"id":"en-u05-03","unit":"en-u05","t":"Is it far from here?","pron":"이짓 파 프럼 히어?","ko":"여기서 멀어요?","blank":"far from here","note":"거리가 먼지 물어요. 가까운지 물을 땐 Is it close?(가까워요?)라고 해요."},
+    {"id":"en-u05-04","unit":"en-u05","t":"How long does it take?","pron":"하우 롱 더짓 테익?","ko":"얼마나 걸려요?","blank":"How long","note":"걸리는 시간을 물을 때 써요. 대답은 보통 About ten minutes.(10분쯤이요)처럼 와요."},
+    {"id":"en-u05-05","unit":"en-u05","t":"Can you show me on the map?","pron":"캐뉴 쇼우 미 온 더 맵?","ko":"지도에서 보여 주실 수 있어요?","blank":"show me","note":"휴대폰 지도를 내밀며 부탁해 보세요. 말로만 듣는 것보다 훨씬 확실해요."},
+    {"id":"en-u06-01","unit":"en-u06","t":"I'm just looking, thanks.","pron":"아임 저슷 루킹, 땡스","ko":"그냥 구경하는 중이에요, 감사해요.","blank":"just looking","note":"점원이 “도와드릴까요?(Can I help you?)”라고 물을 때, 아직 살 게 없다면 웃으며 이렇게 답하면 돼요."},
+    {"id":"en-u06-02","unit":"en-u06","t":"How much is this?","pron":"하우 머치 이즈 디스?","ko":"이거 얼마예요?","blank":"How much","note":"가격을 물을 때 써요. 여러 개를 가리킬 땐 How much are these? 라고 해요."},
+    {"id":"en-u06-03","unit":"en-u06","t":"Do you have this in black?","pron":"두 유 해브 디스 인 블랙?","ko":"이거 검은색도 있어요?","blank":"in black","note":"색이나 사이즈를 바꿔 물을 수 있어요: Do you have this in a large?(이거 라지 있어요?)"},
+    {"id":"en-u06-04","unit":"en-u06","t":"I'll take this one.","pron":"아일 테익 디스 원","ko":"이걸로 할게요.","blank":"I'll take","note":"살 물건을 정했을 때 쓰는 “이거 주세요”예요. 두 개면 I’ll take two. 라고 해요."},
+    {"id":"en-u06-05","unit":"en-u06","t":"Can I pay with a card?","pron":"캐나이 페이 위더 카드?","ko":"카드로 계산해도 돼요?","blank":"pay with a card","note":"카드 결제가 되는지 물어요. Do you take cards? 도 같은 뜻이고, 현금은 cash라고 해요."},
+    {"id":"en-u07-01","unit":"en-u07","t":"Does this bus go downtown?","pron":"더즈 디스 버스 고우 다운타운?","ko":"이 버스 시내 가요?","blank":"Does this bus go","note":"타기 전에 기사님께 확인하는 말이에요. downtown 자리에 목적지를 넣어요: Does this bus go to the airport?"},
+    {"id":"en-u07-02","unit":"en-u07","t":"How much is the fare?","pron":"하우 머치 이즈 더 페어?","ko":"요금이 얼마예요?","blank":"the fare","note":"버스·지하철·택시 요금을 물을 때 써요. 쇼핑에서 배운 How much ~? 패턴 그대로예요."},
+    {"id":"en-u07-03","unit":"en-u07","t":"Could you tell me when to get off?","pron":"쿠쥬 텔 미 웬 투 게로프?","ko":"내릴 때 알려 주시겠어요?","blank":"get off","note":"처음 가는 길이라 어디서 내릴지 모를 때 기사님께 부탁해요. Could you ~? 는 공손하게 부탁하는 패턴이에요."},
+    {"id":"en-u07-04","unit":"en-u07","t":"To this address, please.","pron":"투 디스 어드레스, 플리즈","ko":"이 주소로 가 주세요.","blank":"this address","note":"택시 기사님이 “어디로 가세요?(Where to?)”라고 물으면 주소를 보여 주며 말해요. 장소 이름을 넣어도 돼요: To City Hall, please."},
+    {"id":"en-u07-05","unit":"en-u07","t":"Can you stop here, please?","pron":"캐뉴 스탑 히어, 플리즈?","ko":"여기서 세워 주시겠어요?","blank":"stop here","note":"택시에서 내리고 싶은 곳에 왔을 때 써요. Right here is fine.(여기면 돼요)이라고 해도 자연스러워요."},
+    {"id":"en-u08-01","unit":"en-u08","t":"I'd like to check in.","pron":"아이드 라익 투 체킨","ko":"체크인하려고요.","blank":"check in","note":"호텔 프런트에서 처음 하는 말이에요. 나갈 때는 I’d like to check out. 이라고 해요."},
+    {"id":"en-u08-02","unit":"en-u08","t":"I have a reservation.","pron":"아이 해버 레저베이션","ko":"예약했어요.","blank":"reservation","note":"예약이 되어 있다고 말할 때 써요. 식당에서도 똑같이 쓸 수 있어요."},
+    {"id":"en-u08-03","unit":"en-u08","t":"It's under Kim.","pron":"잇츠 언더 킴","ko":"김 이름으로 예약했어요.","blank":"under Kim","note":"“성함이 어떻게 되세요?(What’s the name?)”라고 물으면 under 뒤에 예약한 이름을 넣어 답해요."},
+    {"id":"en-u08-04","unit":"en-u08","t":"Can I leave my bags here?","pron":"캐나이 리브 마이 백즈 히어?","ko":"여기 짐 좀 맡겨도 될까요?","blank":"leave my bags","note":"체크인 전이나 체크아웃 후에 짐을 맡기고 싶을 때 써요. 대부분의 호텔이 무료로 맡아 줘요."},
+    {"id":"en-u08-05","unit":"en-u08","t":"What time is checkout?","pron":"왓 타임 이즈 체카웃?","ko":"체크아웃은 몇 시예요?","blank":"What time","note":"What time is ~? 로 시간을 물어요: What time is breakfast?(아침 식사는 몇 시예요?)"},
+    {"id":"en-u09-01","unit":"en-u09","t":"What do you do for fun?","pron":"왓 두 유 두 포 펀?","ko":"취미가 뭐예요?","blank":"for fun","note":"취미를 물을 때 원어민이 가장 흔히 쓰는 말이에요. What’s your hobby? 보다 훨씬 자연스러워요."},
+    {"id":"en-u09-02","unit":"en-u09","t":"I like watching movies.","pron":"아이 라익 와칭 무비즈","ko":"저는 영화 보는 걸 좋아해요.","blank":"I like","note":"I like 뒤에 -ing를 붙여 좋아하는 활동을 말해요: I like cooking.(요리하는 걸 좋아해요)"},
+    {"id":"en-u09-03","unit":"en-u09","t":"I'm really into hiking.","pron":"아임 리얼리 인투 하이킹","ko":"요즘 등산에 푹 빠졌어요.","blank":"really into","note":"be into ~ 는 “~에 빠져 있다”는 뜻으로 일상에서 아주 많이 써요. I like보다 더 좋아한다는 느낌이에요."},
+    {"id":"en-u09-04","unit":"en-u09","t":"That sounds fun!","pron":"댓 사운즈 펀!","ko":"재밌겠네요!","blank":"sounds fun","note":"상대 이야기에 맞장구칠 때 써요. fun 자리에 great, nice, interesting을 넣어 바꿔 쓸 수 있어요."},
+    {"id":"en-u09-05","unit":"en-u09","t":"Let's go hiking together sometime!","pron":"렛츠 고우 하이킹 투게더 썸타임!","ko":"언제 같이 등산 가요!","blank":"Let's go","note":"Let’s ~ 는 같이 하자고 제안하는 말이에요. 끝에 sometime을 붙이면 “언제 한번” 하는 부담 없는 느낌이 돼요."},
+    {"id":"en-u10-01","unit":"en-u10","t":"Are you free this Saturday?","pron":"아 유 프리 디스 쌔러데이?","ko":"이번 토요일에 시간 돼요?","blank":"Are you free","note":"상대가 시간이 되는지 물어요. this Saturday 자리에 tonight, tomorrow 같은 말을 넣어요."},
+    {"id":"en-u10-02","unit":"en-u10","t":"What time works for you?","pron":"왓 타임 웍스 포 유?","ko":"몇 시가 괜찮아요?","blank":"works for you","note":"상대에게 편한 시간을 묻는 배려 있는 표현이에요. 요일을 물을 땐 What day works for you?"},
+    {"id":"en-u10-03","unit":"en-u10","t":"How about one o'clock?","pron":"하우 어바웃 원 어클락?","ko":"1시 어때요?","blank":"How about","note":"How about ~? 로 시간, 장소, 메뉴 무엇이든 제안할 수 있어요: How about pizza?(피자 어때요?)"},
+    {"id":"en-u10-04","unit":"en-u10","t":"Where should we meet?","pron":"웨어 슈드 위 밋?","ko":"어디서 만날까요?","blank":"Where should we","note":"should we ~? 는 “우리 ~할까요?”라는 뜻이에요. What should we eat?(뭐 먹을까요?)처럼 바꿔 써요."},
+    {"id":"en-u10-05","unit":"en-u10","t":"Let's meet at the station.","pron":"렛츠 밋 앳 더 스테이션","ko":"역에서 만나요.","blank":"Let's meet at","note":"Let’s meet at 뒤에 장소나 시간을 넣어요: Let’s meet at six.(6시에 만나요)"},
+    {"id":"en-u11-01","unit":"en-u11","t":"It's so hot today.","pron":"잇츠 쏘 핫 투데이","ko":"오늘 너무 덥네요.","blank":"so hot","note":"날씨 이야기는 누구와도 가볍게 대화를 시작하기 좋아요. 추운 날엔 It’s so cold today."},
+    {"id":"en-u11-02","unit":"en-u11","t":"How have you been?","pron":"하우 해뷰 빈?","ko":"그동안 잘 지냈어요?","blank":"have you been","note":"오랜만에 만난 사람에게 묻는 안부예요. 대답은 Pretty good!(잘 지냈어요!)처럼 짧게 하면 돼요."},
+    {"id":"en-u11-03","unit":"en-u11","t":"Long time no see!","pron":"롱 타임 노우 씨!","ko":"오랜만이에요!","blank":"Long time","note":"오랜만에 만나 반가울 때 하는 말이에요. 친구나 편한 사이에서 많이 써요."},
+    {"id":"en-u11-04","unit":"en-u11","t":"How was your weekend?","pron":"하우 워즈 유어 위켄드?","ko":"주말 잘 보냈어요?","blank":"How was","note":"월요일에 동료나 친구에게 자주 하는 질문이에요. How was ~? 로 지난 일을 물어요: How was your trip?"},
+    {"id":"en-u11-05","unit":"en-u11","t":"I just stayed home and relaxed.","pron":"아이 저슷 스테이드 홈 앤 릴랙스트","ko":"그냥 집에서 쉬었어요.","blank":"stayed home","note":"주말에 뭐 했는지에 대한 쉬운 대답이에요. 지난 일은 stayed, went처럼 과거형으로 말해요: I went hiking."},
+    {"id":"en-u12-01","unit":"en-u12","t":"Sorry, could you say that again?","pron":"쏘리, 쿠쥬 쎄이 댓 어겐?","ko":"죄송한데, 다시 한번 말해 주시겠어요?","blank":"say that again","note":"못 알아들었을 때 가장 많이 쓰는 말이에요. 급할 땐 Sorry? 하고 끝을 올려 말해도 통해요."},
+    {"id":"en-u12-02","unit":"en-u12","t":"Could you speak a little slower?","pron":"쿠쥬 스픽 어 리틀 슬로워?","ko":"조금만 천천히 말해 주시겠어요?","blank":"a little slower","note":"말이 너무 빠를 때 부탁해요. 앞에 Sorry, 를 붙이면 더 부드럽게 들려요."},
+    {"id":"en-u12-03","unit":"en-u12","t":"I'm sorry, I don't understand.","pron":"아임 쏘리, 아이 돈 언더스탠드","ko":"죄송해요, 이해를 못 했어요.","blank":"don't understand","note":"모를 땐 솔직하게 말하는 게 가장 좋아요. 이어서 Could you say that again? 이라고 부탁해 보세요."},
+    {"id":"en-u12-04","unit":"en-u12","t":"Excuse me, could you help me?","pron":"익스큐즈 미, 쿠쥬 헬프 미?","ko":"실례지만, 좀 도와주시겠어요?","blank":"help me","note":"먼저 Excuse me로 말을 걸고 부탁해요. 정말 급한 상황이면 Please help me! 라고 해요."},
+    {"id":"en-u12-05","unit":"en-u12","t":"Could you write it down?","pron":"쿠쥬 라이릿 다운?","ko":"적어 주시겠어요?","blank":"write it down","note":"숫자, 이름, 주소처럼 알아듣기 어려운 건 적어 달라고 하면 확실해요. 휴대폰 메모장을 내밀며 말해도 좋아요."},
+    {"id":"en-u13-01","unit":"en-u13","t":"What time do you get up?","pron":"왓 타임 두 유 게럽?","ko":"몇 시에 일어나요?","blank":"get up","note":"아침 일과를 물을 때 써요. 대답은 at 뒤에 시간을 넣어서 I get up at six.처럼 하면 돼요."},
+    {"id":"en-u13-02","unit":"en-u13","t":"I usually get up at seven.","pron":"아이 유주얼리 게럽 앳 세븐","ko":"저는 보통 7시에 일어나요.","blank":"usually","note":"매일 반복하는 일은 현재형으로 말해요. usually(보통) 자리에 always(항상), sometimes(가끔)를 넣어 보세요."},
+    {"id":"en-u13-03","unit":"en-u13","t":"I work from nine to six.","pron":"아이 웍 프럼 나인 투 식스","ko":"9시부터 6시까지 일해요.","blank":"from nine to six","note":"from A to B로 시작과 끝 시간을 말해요. 학생이라면 I have class from nine to three.처럼 바꿔 써요."},
+    {"id":"en-u13-04","unit":"en-u13","t":"I go to the gym on Mondays.","pron":"아이 고우 투 더 짐 온 먼데이즈","ko":"월요일마다 헬스장에 가요.","blank":"on Mondays","note":"요일 뒤에 -s를 붙이면 “~요일마다”라는 뜻이 돼요. 요일 앞에는 on을 써요: on weekends(주말마다)."},
+    {"id":"en-u13-05","unit":"en-u13","t":"I go to bed around eleven.","pron":"아이 고우 투 베드 어라운드 일레븐","ko":"11시쯤 자요.","blank":"go to bed","note":"around는 “~쯤”이라는 뜻이에요. 딱 정해진 시간이 아니면 at 대신 around를 쓰면 자연스러워요."},
+    {"id":"en-u14-01","unit":"en-u14","t":"How many people are in your family?","pron":"하우 메니 피플 아 인 유어 패밀리?","ko":"가족이 몇 명이에요?","blank":"in your family","note":"가족 수를 묻는 기본 질문이에요. 대답은 숫자만 말해도 되고, There are four of us.처럼 해도 돼요."},
+    {"id":"en-u14-02","unit":"en-u14","t":"There are four of us.","pron":"데어라 포 어브 어스","ko":"우리 가족은 네 명이에요.","blank":"four of us","note":"There are + 숫자 + of us는 “우리는 ~명이에요”라는 뜻이에요. 식당에서 일행 수를 말할 때도 그대로 써요."},
+    {"id":"en-u14-03","unit":"en-u14","t":"Do you have any brothers or sisters?","pron":"두 유 해브 애니 브라더즈 오어 시스터즈?","ko":"형제자매 있어요?","blank":"any brothers","note":"형제자매가 있는지 물을 때 써요. 없으면 I’m an only child.(외동이에요)라고 답해요."},
+    {"id":"en-u14-04","unit":"en-u14","t":"I have an older brother.","pron":"아이 해번 올더 브라더","ko":"저는 오빠(형)가 한 명 있어요.","blank":"older brother","note":"영어는 형·오빠를 구분하지 않고 older brother라고 해요. 언니·누나는 older sister, 동생은 younger brother/sister예요."},
+    {"id":"en-u14-05","unit":"en-u14","t":"My mom is a nurse.","pron":"마이 맘 이즈 어 너스","ko":"엄마는 간호사예요.","blank":"is a nurse","note":"가족의 직업은 My ~ is a + 직업으로 말해요. 회사에 다니면 My dad works at a bank.처럼 work at을 써도 돼요."},
+    {"id":"en-u15-01","unit":"en-u15","t":"Where do you live?","pron":"웨어 두 유 리브?","ko":"어디 살아요?","blank":"Where do you live","note":"사는 곳을 묻는 기본 질문이에요. 대답은 I live in ~ 으로 해요."},
+    {"id":"en-u15-02","unit":"en-u15","t":"I live in Mapo, in Seoul.","pron":"아이 리브 인 마포, 인 서울","ko":"서울 마포에 살아요.","blank":"I live in","note":"영어는 작은 곳 → 큰 곳 순서로 말해요. 동네 이름 뒤에 도시 이름을 붙이면 외국인도 쉽게 알아들어요."},
+    {"id":"en-u15-03","unit":"en-u15","t":"There's a park near my house.","pron":"데어즈 어 파크 니어 마이 하우스","ko":"집 근처에 공원이 있어요.","blank":"near my house","note":"There’s a ~ near my house로 집 근처에 있는 걸 말해요. 여러 개면 There are lots of cafes near my house."},
+    {"id":"en-u15-04","unit":"en-u15","t":"It's close to the subway.","pron":"잇츠 클로우스 투 더 써브웨이","ko":"지하철역이랑 가까워요.","blank":"close to","note":"close to ~ 는 “~와 가깝다”는 뜻이에요. 교통이 편하다는 건 동네 자랑에 딱이죠: It’s close to everything!"},
+    {"id":"en-u15-05","unit":"en-u15","t":"It's a really nice neighborhood.","pron":"잇츠 어 리얼리 나이스 네이버후드","ko":"정말 좋은 동네예요.","blank":"neighborhood","note":"neighborhood는 “동네”예요. nice 자리에 quiet(조용한), safe(안전한)를 넣어 우리 동네를 소개해 보세요."},
+    {"id":"en-u16-01","unit":"en-u16","t":"Where can I find the milk?","pron":"웨어 캐나이 파인 더 밀크?","ko":"우유는 어디 있어요?","blank":"Where can I find","note":"마트에서 물건 위치를 물을 때 가장 많이 써요. 대답은 보통 It’s in aisle five.(5번 통로예요)처럼 와요."},
+    {"id":"en-u16-02","unit":"en-u16","t":"Can I get a bag, please?","pron":"캐나이 게러 백, 플리즈?","ko":"봉투 하나 주시겠어요?","blank":"a bag","note":"미국은 봉투값을 따로 받는 곳이 많아요. 점원이 계산할 때 Do you need a bag?(봉투 필요하세요?)라고 먼저 묻기도 해요."},
+    {"id":"en-u16-03","unit":"en-u16","t":"Could you heat this up?","pron":"쿠쥬 힛 디스 업?","ko":"이거 데워 주시겠어요?","blank":"heat this up","note":"도시락이나 빵을 데워 달라고 할 때 써요. 미국 편의점은 손님이 직접 쓰는 전자레인지를 둔 곳도 많아요."},
+    {"id":"en-u16-04","unit":"en-u16","t":"Is this on sale?","pron":"이즈 디스 온 세일?","ko":"이거 할인 중이에요?","blank":"on sale","note":"on sale은 “할인 중”이라는 뜻이에요. 1+1 행사는 영어로 buy one, get one free라고 해요."},
+    {"id":"en-u16-05","unit":"en-u16","t":"I don't need a receipt.","pron":"아이 돈 니더 리씻","ko":"영수증은 안 주셔도 돼요.","blank":"need a receipt","note":"영수증을 안 받을 때 써요. 받고 싶으면 Can I get a receipt? 라고 하면 돼요."},
+    {"id":"en-u17-01","unit":"en-u17","t":"Can I try this on?","pron":"캐나이 트라이 디스 온?","ko":"이거 입어 봐도 돼요?","blank":"try this on","note":"try on은 “입어 보다, 신어 보다”예요. 신발이나 바지처럼 짝으로 된 건 Can I try these on? 이라고 해요."},
+    {"id":"en-u17-02","unit":"en-u17","t":"Where's the fitting room?","pron":"웨어즈 더 피팅 룸?","ko":"탈의실이 어디예요?","blank":"fitting room","note":"탈의실은 fitting room 또는 dressing room이라고 해요. 들고 들어가는 옷이 몇 벌인지 확인하는 매장도 있어요."},
+    {"id":"en-u17-03","unit":"en-u17","t":"Do you have this in a bigger size?","pron":"두 유 해브 디스 이너 비거 사이즈?","ko":"이거 더 큰 사이즈 있어요?","blank":"a bigger size","note":"작으면 bigger, 크면 smaller로 바꿔 말해요. 미국 옷은 한국보다 크게 나오는 편이라 한 치수 작게 입어 보는 것도 좋아요."},
+    {"id":"en-u17-04","unit":"en-u17","t":"Does it come in other colors?","pron":"더짓 컴 인 아더 컬러즈?","ko":"다른 색도 있어요?","blank":"other colors","note":"come in ~ 은 “(색·사이즈가) ~로 나오다”라는 뜻이에요. 원하는 색이 있으면 Does it come in white? 처럼 물어요."},
+    {"id":"en-u17-05","unit":"en-u17","t":"It's a little tight.","pron":"잇츠 어 리를 타잇","ko":"조금 껴요.","blank":"a little tight","note":"입어 본 느낌을 말할 때 써요. 크면 It’s a little big., 딱 맞으면 It fits perfectly! 라고 해요."},
+    {"id":"en-u18-01","unit":"en-u18","t":"I have a headache.","pron":"아이 해버 헤데익","ko":"머리가 아파요.","blank":"a headache","note":"머리가 아프면 headache, 배가 아프면 stomachache예요. 목이 아플 땐 I have a sore throat. 라고 해요."},
+    {"id":"en-u18-02","unit":"en-u18","t":"I have a fever and a cough.","pron":"아이 해버 피버 앤 어 커프","ko":"열이 나고 기침을 해요.","blank":"a fever","note":"증상은 I have a ~ 로 말해요. 콧물은 a runny nose, 감기는 a cold예요."},
+    {"id":"en-u18-03","unit":"en-u18","t":"It started yesterday.","pron":"잇 스타리드 예스터데이","ko":"어제부터 그랬어요.","blank":"started yesterday","note":"“언제부터 그랬어요?(When did it start?)”에 대한 대답이에요. 며칠 됐다면 It started three days ago."},
+    {"id":"en-u18-04","unit":"en-u18","t":"How often should I take this?","pron":"하우 오픈 슈다이 테익 디스?","ko":"이거 얼마나 자주 먹어야 해요?","blank":"How often","note":"약 먹는 횟수를 물을 때 써요. 대답은 Twice a day.(하루 두 번)처럼 와요. 약은 eat이 아니라 take를 써요."},
+    {"id":"en-u18-05","unit":"en-u18","t":"Should I take it with food?","pron":"슈다이 테이킷 위드 푸드?","ko":"식후에 먹어야 해요?","blank":"with food","note":"미국 약국에서는 “식후 복용”을 보통 with food(음식과 함께)라고 해요. 공복에 먹는 약은 on an empty stomach라고 해요."},
+    {"id":"en-u19-01","unit":"en-u19","t":"Hello, this is Minji.","pron":"헬로우, 디스 이즈 민지","ko":"여보세요, 저 민지예요.","blank":"this is","note":"전화로 내 이름을 말할 땐 I’m 대신 This is ~ 를 써요. Minji 자리에 내 이름을 넣어요."},
+    {"id":"en-u19-02","unit":"en-u19","t":"Can I speak to Sarah?","pron":"캐나이 스픽 투 쎄라?","ko":"세라 씨 계세요?","blank":"speak to","note":"전화로 사람을 찾을 때 써요. 더 공손하게는 May I speak to ~? 라고 하고, 상대가 Speaking.이라고 하면 “전데요”라는 뜻이에요."},
+    {"id":"en-u19-03","unit":"en-u19","t":"Can I leave a message?","pron":"캐나이 리버 메시지?","ko":"메시지 남겨도 될까요?","blank":"leave a message","note":"찾는 사람이 없을 때 써요. 반대로 상대가 Can I take a message?(메시지 전해 드릴까요?)라고 먼저 묻기도 해요."},
+    {"id":"en-u19-04","unit":"en-u19","t":"I'll call back later.","pron":"아일 콜 백 레이러","ko":"나중에 다시 걸게요.","blank":"call back","note":"지금 통화가 어렵거나 찾는 사람이 없을 때 써요. 상대에게 다시 걸어 달라고 할 땐 Could you call me back?"},
+    {"id":"en-u19-05","unit":"en-u19","t":"Sorry, I can't hear you very well.","pron":"쏘리, 아이 캔트 히어 유 베리 웰","ko":"죄송해요, 잘 안 들려요.","blank":"can't hear you","note":"소리가 작거나 끊길 때 써요. 이어서 Could you speak up?(좀 크게 말해 주실래요?)이라고 부탁해 보세요."},
+    {"id":"en-u20-01","unit":"en-u20","t":"Do you like spicy food?","pron":"두 유 라익 스파이시 푸드?","ko":"매운 음식 좋아해요?","blank":"spicy food","note":"음식 취향은 Do you like ~? 로 물어요. 대답은 I love it!(완전 좋아해요)이나 Not really.(별로요)로 하면 돼요."},
+    {"id":"en-u20-02","unit":"en-u20","t":"I can't eat seafood.","pron":"아이 캔트 잇 씨푸드","ko":"해산물은 못 먹어요.","blank":"can't eat","note":"못 먹는 음식을 말할 때 써요. 알레르기가 있으면 I’m allergic to peanuts.(땅콩 알레르기가 있어요)처럼 말해요."},
+    {"id":"en-u20-03","unit":"en-u20","t":"It's a little too spicy for me.","pron":"잇츠 어 리를 투 스파이시 포 미","ko":"저한테는 좀 너무 매워요.","blank":"too spicy","note":"too는 “너무 ~해서 좀 힘들다”는 느낌이에요. 짜면 too salty, 달면 too sweet로 바꿔 말해요."},
+    {"id":"en-u20-04","unit":"en-u20","t":"What's your favorite food?","pron":"왓츠 유어 페이버릿 푸드?","ko":"제일 좋아하는 음식이 뭐예요?","blank":"favorite food","note":"favorite은 “가장 좋아하는”이에요. food 자리에 movie, song을 넣으면 다른 취향도 물어볼 수 있어요."},
+    {"id":"en-u20-05","unit":"en-u20","t":"Can you recommend a good restaurant?","pron":"캐뉴 레커멘더 굿 레스토랑?","ko":"괜찮은 식당 추천해 줄래요?","blank":"a good restaurant","note":"현지인에게 맛집을 물을 때 써요. 음식 종류를 넣어도 돼요: a good pizza place(괜찮은 피자집)."},
+    {"id":"en-u21-01","unit":"en-u21","t":"What did you do last weekend?","pron":"왓 디쥬 두 래슷 위켄드?","ko":"지난 주말에 뭐 했어요?","blank":"What did you do","note":"지난 일을 물을 땐 did를 써요. last weekend 자리에 yesterday, last night을 넣어 보세요."},
+    {"id":"en-u21-02","unit":"en-u21","t":"I went to Busan with my friends.","pron":"아이 웬 투 부산 윗 마이 프렌즈","ko":"친구들이랑 부산에 갔어요.","blank":"I went to","note":"go의 과거형은 went예요. 장소 앞에 to를 붙이지만 home 앞에는 안 붙여요: I went home."},
+    {"id":"en-u21-03","unit":"en-u21","t":"We ate a lot of good food.","pron":"위 에잇 어 라러브 굿 푸드","ko":"맛있는 걸 잔뜩 먹었어요.","blank":"ate a lot of","note":"eat의 과거형은 ate예요. a lot of는 “많이, 잔뜩”이라는 뜻으로 음식, 사람 어디에나 붙일 수 있어요."},
+    {"id":"en-u21-04","unit":"en-u21","t":"It was really fun.","pron":"잇 워즈 리얼리 펀","ko":"정말 재미있었어요.","blank":"It was","note":"지난 일의 느낌은 It was ~ 로 말해요: It was amazing!(최고였어요), It was okay.(그냥 그랬어요)"},
+    {"id":"en-u21-05","unit":"en-u21","t":"I didn't do much.","pron":"아이 디든 두 머치","ko":"별거 안 했어요.","blank":"didn't do much","note":"특별한 일 없이 보냈을 때 하는 대답이에요. 뒤에 I just rested.(그냥 쉬었어요)를 붙이면 자연스러워요."},
+    {"id":"en-u22-01","unit":"en-u22","t":"When is your birthday?","pron":"웬 이즈 유어 버쓰데이?","ko":"생일이 언제예요?","blank":"your birthday","note":"생일을 물을 때 써요. 말할 땐 줄여서 When’s your birthday? 라고 많이 해요."},
+    {"id":"en-u22-02","unit":"en-u22","t":"My birthday is May fifth.","pron":"마이 버쓰데이 이즈 메이 피프쓰","ko":"제 생일은 5월 5일이에요.","blank":"May fifth","note":"날짜는 “월 + 서수(first, second, third, fifth…)”로 말해요. 글로 May 5라고 쓰여 있어도 읽을 땐 May fifth예요."},
+    {"id":"en-u22-03","unit":"en-u22","t":"What's the date today?","pron":"왓츠 더 데잇 투데이?","ko":"오늘 며칠이에요?","blank":"the date","note":"날짜를 물을 땐 date, 요일을 물을 땐 What day is it today? 라고 해요. 헷갈리기 쉬우니 같이 외워 두세요."},
+    {"id":"en-u22-04","unit":"en-u22","t":"Happy birthday! Have a great day!","pron":"해피 버쓰데이! 해버 그레잇 데이!","ko":"생일 축하해요! 좋은 하루 보내요!","blank":"Happy birthday","note":"생일인 사람에게 하는 기본 인사예요. 메시지로 보낼 땐 Hope you have a great one!(멋진 하루 보내길!)도 많이 써요."},
+    {"id":"en-u22-05","unit":"en-u22","t":"Are you doing anything for your birthday?","pron":"아 유 두잉 애니씽 포 유어 버쓰데이?","ko":"생일에 뭐 특별한 거 해요?","blank":"doing anything","note":"생일 계획을 물을 때 써요. 대답은 I’m having dinner with my family.(가족이랑 저녁 먹어요)처럼 해요."},
+    {"id":"en-u23-01","unit":"en-u23","t":"This is for you.","pron":"디스 이즈 포 유","ko":"이거 선물이에요.","blank":"for you","note":"선물을 건넬 때 가장 쉽게 쓰는 말이에요. I got you something.(뭐 좀 준비했어요)이라고 해도 좋아요."},
+    {"id":"en-u23-02","unit":"en-u23","t":"It's just a small gift.","pron":"잇츠 저슷 어 스몰 기프트","ko":"그냥 작은 선물이에요.","blank":"small gift","note":"“별거 아니에요” 하고 겸손하게 건넬 때 써요. 뒤에 I hope you like it.(마음에 들었으면 좋겠어요)을 붙여 보세요."},
+    {"id":"en-u23-03","unit":"en-u23","t":"I love it!","pron":"아이 러빗!","ko":"정말 마음에 들어요!","blank":"love it","note":"선물을 받으면 이렇게 반응해요. 영어권에서는 받은 자리에서 열어 보고 기쁨을 표현하는 게 예의예요."},
+    {"id":"en-u23-04","unit":"en-u23","t":"You didn't have to do that.","pron":"유 디든 해브 투 두 댓","ko":"이렇게까지 안 해도 되는데요.","blank":"didn't have to","note":"“뭘 이런 걸 다…”에 딱 맞는 말이에요. 고마운 마음과 살짝 미안한 마음을 함께 전할 수 있어요."},
+    {"id":"en-u23-05","unit":"en-u23","t":"I really appreciate it.","pron":"아이 리얼리 어프리시에이릿","ko":"정말 고마워요.","blank":"appreciate it","note":"Thank you보다 진지하게 고마움을 전하는 말이에요. 선물뿐 아니라 도움을 받았을 때도 자주 써요."},
+    {"id":"en-u24-01","unit":"en-u24","t":"How's it going these days?","pron":"하우즈 잇 고잉 디즈 데이즈?","ko":"요즘 어떻게 지내요?","blank":"these days","note":"these days는 “요즘”이에요. 친한 사이에서는 What’s new?(별일 없어?)라고도 물어요."},
+    {"id":"en-u24-02","unit":"en-u24","t":"Really? That's amazing!","pron":"리얼리? 댓츠 어메이징!","ko":"정말요? 대단하네요!","blank":"That's amazing","note":"좋은 소식에 맞장구칠 때 써요. Really?는 끝을 올려 말하면 관심 있게 듣고 있다는 느낌이 나요."},
+    {"id":"en-u24-03","unit":"en-u24","t":"Oh, I see.","pron":"오, 아이 씨","ko":"아, 그렇군요.","blank":"I see","note":"상대 말을 이해했다는 가장 기본적인 맞장구예요. 조금 더 반응하고 싶으면 That makes sense.(그럴 만하네요)라고 해요."},
+    {"id":"en-u24-04","unit":"en-u24","t":"Me too!","pron":"미 투!","ko":"저도요!","blank":"Me too","note":"나도 같다고 할 때 써요. 상대가 I don’t ~ 처럼 부정문으로 말했다면 Me neither.(저도 아니에요)라고 해요."},
+    {"id":"en-u24-05","unit":"en-u24","t":"That's too bad.","pron":"댓츠 투 배드","ko":"저런, 안됐네요.","blank":"too bad","note":"안 좋은 소식을 들었을 때 하는 맞장구예요. 더 진심을 담으려면 I’m sorry to hear that.이라고 해요."},
+    {"id":"en-u25-01","unit":"en-u25","t":"Could you take a picture of us?","pron":"쿠쥬 테이커 픽처 오브 어스?","ko":"저희 사진 좀 찍어 주시겠어요?","blank":"take a picture","note":"여행지에서 가장 많이 하는 부탁이에요. 혼자라면 of us 대신 of me라고 해요."},
+    {"id":"en-u25-02","unit":"en-u25","t":"Just press this button.","pron":"저슷 프레스 디스 버튼","ko":"이 버튼만 누르면 돼요.","blank":"press this button","note":"휴대폰을 건네며 같이 말해요. 화면을 누르는 거라면 Just tap here.(여기 누르면 돼요)라고 해도 돼요."},
+    {"id":"en-u25-03","unit":"en-u25","t":"Can we take a picture together?","pron":"캔 위 테이커 픽처 투게더?","ko":"우리 같이 사진 찍을래요?","blank":"together","note":"친구나 새로 만난 사람에게 같이 찍자고 할 때 써요. 셀카는 영어로도 selfie예요: Let’s take a selfie!"},
+    {"id":"en-u25-04","unit":"en-u25","t":"One more, please.","pron":"원 모어, 플리즈","ko":"한 장만 더 부탁해요.","blank":"One more","note":"눈을 감았거나 마음에 안 들 때 한 장 더 부탁해요. 세로로 찍어 달라면 Could you take it vertically? 라고 해요."},
+    {"id":"en-u25-05","unit":"en-u25","t":"I'll send you the pictures.","pron":"아일 센쥬 더 픽처즈","ko":"사진 보내 줄게요.","blank":"send you","note":"같이 찍은 사진을 보내 주겠다고 할 때 써요. 연락처를 물을 땐 What’s your number? 라고 해요."},
+    {"id":"en-u26-01","unit":"en-u26","t":"I'd like to exchange some money.","pron":"아이드 라익 투 익스체인지 썸 머니","ko":"환전하고 싶어요.","blank":"exchange","note":"은행이나 환전소에서 처음 하는 말이에요. 원화를 달러로 바꾸려면 won to dollars라고 덧붙여요."},
+    {"id":"en-u26-02","unit":"en-u26","t":"What's the exchange rate today?","pron":"왓츠 디 익스체인지 레잇 투데이?","ko":"오늘 환율이 어떻게 돼요?","blank":"exchange rate","note":"환율은 exchange rate예요. 공항 환전소는 환율이 안 좋은 편이라 필요한 만큼만 바꾸는 게 좋아요."},
+    {"id":"en-u26-03","unit":"en-u26","t":"Is there a fee?","pron":"이즈 데어러 피?","ko":"수수료가 있어요?","blank":"a fee","note":"수수료는 fee라고 해요. 얼마인지 물을 땐 How much is the fee? 라고 해요."},
+    {"id":"en-u26-04","unit":"en-u26","t":"Is there an ATM near here?","pron":"이즈 데어런 에이티엠 니어 히어?","ko":"근처에 ATM 있어요?","blank":"ATM near here","note":"Is there a ~ near here? 로 근처에 있는지 물어요. a restroom(화장실), a pharmacy(약국)를 넣어 바꿔 써 보세요."},
+    {"id":"en-u26-05","unit":"en-u26","t":"Could I have small bills, please?","pron":"쿠다이 해브 스몰 빌즈, 플리즈?","ko":"소액권으로 주시겠어요?","blank":"small bills","note":"미국에서 bill은 “지폐”라는 뜻이에요. 팁을 주거나 작은 가게에서 쓰기 좋게 소액권으로 받아 두면 편해요."},
+    {"id":"en-u27-01","unit":"en-u27","t":"I'd like to check in for my flight.","pron":"아이드 라익 투 체킨 포 마이 플라잇","ko":"비행기 체크인하려고요.","blank":"for my flight","note":"공항 카운터에서 여권을 내밀며 하는 첫마디예요. 호텔에서 배운 I’d like to check in. 뒤에 for my flight만 붙이면 돼요."},
+    {"id":"en-u27-02","unit":"en-u27","t":"Can I get a window seat?","pron":"캐나이 게러 윈도우 씻?","ko":"창가 자리로 주시겠어요?","blank":"window seat","note":"창가 자리는 window seat, 통로 자리는 aisle seat(아일 씻)이에요. 체크인할 때 미리 말하면 원하는 자리를 받기 쉬워요."},
+    {"id":"en-u27-03","unit":"en-u27","t":"I have one bag to check.","pron":"아이 해브 원 백 투 첵","ko":"부칠 짐이 하나 있어요.","blank":"bag to check","note":"여기서 check는 “짐을 부치다”라는 뜻이에요. 들고 타는 작은 가방은 carry-on(캐리온)이라고 해요."},
+    {"id":"en-u27-04","unit":"en-u27","t":"Can I take this on the plane?","pron":"캐나이 테익 디스 온 더 플레인?","ko":"이거 기내에 가지고 타도 돼요?","blank":"on the plane","note":"보조배터리나 액체류처럼 애매한 물건이 있을 때 물어보세요. 보조배터리는 부치지 말고 직접 들고 타야 해요."},
+    {"id":"en-u27-05","unit":"en-u27","t":"Which gate should I go to?","pron":"위치 게잇 슈다이 고우 투?","ko":"몇 번 게이트로 가면 돼요?","blank":"Which gate","note":"탑승권(boarding pass)에 게이트가 적혀 있지만 바뀔 때도 있어요. 탑승 시간은 When do we board?(언제 탑승해요?)로 물어요."},
+    {"id":"en-u28-01","unit":"en-u28","t":"Could I get a blanket, please?","pron":"쿠다이 게러 블랭킷, 플리즈?","ko":"담요 좀 주시겠어요?","blank":"a blanket","note":"승무원에게 부탁할 땐 Could I get ~? 이 공손하고 자연스러워요. 베개는 a pillow, 물은 some water로 바꿔 말해요."},
+    {"id":"en-u28-02","unit":"en-u28","t":"Excuse me, can I get by?","pron":"익스큐즈 미, 캐나이 겟 바이?","ko":"실례지만, 좀 지나갈게요.","blank":"get by","note":"창가 자리에서 화장실에 갈 때 옆 사람에게 하는 말이에요. 짧게 Excuse me. 만 해도 알아듣고 비켜 줘요."},
+    {"id":"en-u28-03","unit":"en-u28","t":"I'm here for sightseeing.","pron":"아임 히어 포 싸잇씽","ko":"관광하러 왔어요.","blank":"for sightseeing","note":"입국 심사에서 방문 목적(purpose of your visit)을 물으면 이렇게 답해요. 휴가면 I’m here on vacation., 출장이면 I’m here on business. 라고 해요."},
+    {"id":"en-u28-04","unit":"en-u28","t":"I'm staying for a week.","pron":"아임 스테잉 포러 윅","ko":"일주일 머물 거예요.","blank":"for a week","note":"“얼마나 머물러요?(How long are you staying?)”에 대한 대답이에요. 며칠이면 for five days처럼 숫자만 바꿔요."},
+    {"id":"en-u28-05","unit":"en-u28","t":"I'm staying at a hotel downtown.","pron":"아임 스테잉 애러 호텔 다운타운","ko":"시내에 있는 호텔에 묵어요.","blank":"staying at","note":"“어디서 묵어요?(Where are you staying?)”라고 물을 때 써요. 호텔 이름이나 예약 화면을 함께 보여 주면 더 확실해요."},
+    {"id":"en-u29-01","unit":"en-u29","t":"How much is admission?","pron":"하우 머치 이즈 어드미션?","ko":"입장료가 얼마예요?","blank":"admission","note":"입장료는 admission 또는 entrance fee라고 해요. 학생이라면 Is there a student discount?(학생 할인 돼요?)도 물어보세요."},
+    {"id":"en-u29-02","unit":"en-u29","t":"Two adults, please.","pron":"투 어덜츠, 플리즈","ko":"어른 두 장 주세요.","blank":"Two adults","note":"매표소에서는 인원수와 종류만 말하면 돼요. 아이 표는 child, 아이가 둘이면 two children이에요."},
+    {"id":"en-u29-03","unit":"en-u29","t":"What time do you close?","pron":"왓 타임 두 유 클로우즈?","ko":"몇 시까지 해요?","blank":"do you close","note":"“몇 시까지 해요?”를 영어로는 “몇 시에 닫아요?”라고 물어요. 여는 시간은 What time do you open? 이에요."},
+    {"id":"en-u29-04","unit":"en-u29","t":"What's a must-see here?","pron":"왓츠 어 머슷씨 히어?","ko":"여기서 꼭 봐야 할 게 뭐예요?","blank":"must-see","note":"must-see는 “꼭 봐야 할 것”이라는 뜻이에요. 직원이나 현지인에게 물으면 가이드북에 없는 곳도 알려 줘요."},
+    {"id":"en-u29-05","unit":"en-u29","t":"Is there a guided tour?","pron":"이즈 데어러 가이디드 투어?","ko":"가이드 투어가 있어요?","blank":"guided tour","note":"가이드와 함께 돌면 짧은 시간에 핵심만 볼 수 있어요. 시작 시간은 When does it start?(언제 시작해요?)로 물어요."},
+    {"id":"en-u30-01","unit":"en-u30","t":"Is there a good restaurant near here?","pron":"이즈 데어러 굿 레스토랑 니어 히어?","ko":"이 근처에 괜찮은 식당 있어요?","blank":"near here","note":"Is there ~ near here? 로 근처에 뭐가 있는지 물어요: Is there a pharmacy near here?(근처에 약국 있어요?)"},
+    {"id":"en-u30-02","unit":"en-u30","t":"I'm looking for good local food.","pron":"아임 루킹 포 굿 로컬 푸드","ko":"현지 맛집을 찾고 있어요.","blank":"good local food","note":"관광객용 식당 말고 현지인이 가는 곳을 찾을 때 써요. Where do locals eat?(현지 사람들은 어디서 먹어요?)라고 물어도 좋아요."},
+    {"id":"en-u30-03","unit":"en-u30","t":"How long is the wait?","pron":"하우 롱 이즈 더 웨잇?","ko":"얼마나 기다려야 해요?","blank":"the wait","note":"줄 서는 식당에서 꼭 필요한 질문이에요. 대답은 About twenty minutes.(20분쯤이요)처럼 와요."},
+    {"id":"en-u30-04","unit":"en-u30","t":"Can I put my name down?","pron":"캐나이 풋 마이 네임 다운?","ko":"대기 명단에 이름 올려 주시겠어요?","blank":"put my name down","note":"미국 식당은 대기 명단(waitlist)에 이름을 올리고 기다리는 곳이 많아요. 자리가 나면 문자로 알려 주는 곳도 있어요."},
+    {"id":"en-u30-05","unit":"en-u30","t":"What's your most popular dish?","pron":"왓츠 유어 모슷 파퓰러 디쉬?","ko":"여기 대표 메뉴가 뭐예요?","blank":"most popular","note":"처음 간 식당에서 실패 없이 고르는 방법이에요. What are you famous for?(여기 뭐가 유명해요?)라고 물어도 돼요."},
+    {"id":"en-u31-01","unit":"en-u31","t":"The Wi-Fi isn't working.","pron":"더 와이파이 이즌 워킹","ko":"와이파이가 안 돼요.","blank":"isn't working","note":"“~가 안 돼요”는 ~ isn’t working으로 말해요. 에어컨이면 The AC isn’t working. 이라고 해요."},
+    {"id":"en-u31-02","unit":"en-u31","t":"Could I get some extra towels?","pron":"쿠다이 겟 썸 엑스트라 타월즈?","ko":"수건 좀 더 주시겠어요?","blank":"extra towels","note":"extra는 “여분의, 추가로”라는 뜻이에요. towels 자리에 pillows(베개), toilet paper(휴지)를 넣어 부탁해요."},
+    {"id":"en-u31-03","unit":"en-u31","t":"I'd like to change rooms.","pron":"아이드 라익 투 체인지 룸즈","ko":"방을 바꾸고 싶어요.","blank":"change rooms","note":"방을 바꿀 땐 rooms처럼 복수로 말해요. 이유를 함께 말하면 더 빨리 해결돼요."},
+    {"id":"en-u31-04","unit":"en-u31","t":"It's too noisy at night.","pron":"잇츠 투 노이지 앳 나잇","ko":"밤에 너무 시끄러워요.","blank":"too noisy","note":"too는 “너무 ~해서 불편하다”는 느낌이에요. too cold(너무 추워요), too small(너무 작아요)처럼 바꿔 써요."},
+    {"id":"en-u31-05","unit":"en-u31","t":"There's no hot water.","pron":"데어즈 노우 핫 워러","ko":"뜨거운 물이 안 나와요.","blank":"no hot water","note":"“~가 없어요, 안 나와요”는 There’s no ~ 로 간단히 말해요. 프런트에 전화할 땐 방 번호부터 말해요: This is room 305."},
+    {"id":"en-u32-01","unit":"en-u32","t":"I think I'm lost.","pron":"아이 띵크 아임 로스트","ko":"길을 잃은 것 같아요.","blank":"I'm lost","note":"먼저 상황을 말하면 상대가 훨씬 적극적으로 도와줘요. Excuse me, 로 말을 걸고 이어서 말해 보세요."},
+    {"id":"en-u32-02","unit":"en-u32","t":"Where am I right now?","pron":"웨어 앰 아이 라잇 나우?","ko":"여기가 지금 어디예요?","blank":"Where am I","note":"“여기가 어디예요?”를 영어로는 “제가 어디에 있어요?”라고 물어요. Where is here? 는 어색한 표현이니 주의하세요."},
+    {"id":"en-u32-03","unit":"en-u32","t":"Could you show me where we are on the map?","pron":"쿠쥬 쇼우 미 웨어 위 아 온 더 맵?","ko":"지도에서 지금 위치 좀 보여 주시겠어요?","blank":"where we are","note":"휴대폰 지도를 내밀며 부탁해 보세요. where we are(우리가 있는 곳) 자리에 where the station is(역이 있는 곳)를 넣어도 돼요."},
+    {"id":"en-u32-04","unit":"en-u32","t":"How do I get to the station?","pron":"하우 두 아이 겟 투 더 스테이션?","ko":"역까지 어떻게 가요?","blank":"How do I get to","note":"목적지까지 가는 방법을 묻는 가장 기본 패턴이에요. the station 자리에 가고 싶은 곳을 넣어요."},
+    {"id":"en-u32-05","unit":"en-u32","t":"Is it this way?","pron":"이짓 디스 웨이?","ko":"이쪽으로 가면 돼요?","blank":"this way","note":"손으로 방향을 가리키며 확인할 때 써요. 반대쪽이면 No, that way.(아뇨, 저쪽이요)라는 대답이 와요."},
+    {"id":"en-u33-01","unit":"en-u33","t":"I lost my wallet.","pron":"아이 로슷 마이 월릿","ko":"지갑을 잃어버렸어요.","blank":"I lost my","note":"I lost my 뒤에 잃어버린 물건을 넣어요: I lost my phone.(휴대폰을 잃어버렸어요) 여권은 passport예요."},
+    {"id":"en-u33-02","unit":"en-u33","t":"I think I left it on the bus.","pron":"아이 띵크 아이 레프팃 온 더 버스","ko":"버스에 두고 내린 것 같아요.","blank":"left it on","note":"left는 leave(두고 오다)의 과거형이에요. 장소만 바꿔 말하면 돼요: I left it at the café.(카페에 두고 왔어요)"},
+    {"id":"en-u33-03","unit":"en-u33","t":"It's a small black wallet.","pron":"잇츠 어 스몰 블랙 월릿","ko":"작은 검은색 지갑이에요.","blank":"small black","note":"물건을 설명할 땐 크기 → 색 → 물건 순서로 말해요. 안에 든 것도 말하면 좋아요: My ID is in it.(신분증이 들어 있어요)"},
+    {"id":"en-u33-04","unit":"en-u33","t":"Has anyone turned in a wallet?","pron":"해즈 애니원 턴딘 어 월릿?","ko":"혹시 지갑 들어온 거 있어요?","blank":"turned in","note":"turn in은 “(주운 물건을) 맡기다”라는 뜻이에요. 분실물 센터는 lost and found라고 하니 역이나 공항에서 찾아가 보세요."},
+    {"id":"en-u33-05","unit":"en-u33","t":"Please call me if you find it.","pron":"플리즈 콜 미 이퓨 파인딧","ko":"찾으면 저한테 전화 주세요.","blank":"if you find it","note":"연락처를 남기며 하는 말이에요. 번호를 적어 줄 땐 Here’s my number.(제 번호예요)라고 함께 말해요."},
+    {"id":"en-u34-01","unit":"en-u34","t":"Are you from around here?","pron":"아 유 프럼 어라운 히어?","ko":"이 동네 분이세요?","blank":"from around here","note":"처음 만난 사람에게 말을 걸기 좋은 질문이에요. Where are you from?(어디서 왔어요?)보다 가볍게 대화를 열 수 있어요."},
+    {"id":"en-u34-02","unit":"en-u34","t":"It's my first time here.","pron":"잇츠 마이 퍼슷 타임 히어","ko":"여기 처음 와 봤어요.","blank":"first time here","note":"처음 왔다고 말하면 현지인이 맛집이나 볼거리를 추천해 주기도 해요. 도시 이름을 넣어도 돼요: It’s my first time in Seattle."},
+    {"id":"en-u34-03","unit":"en-u34","t":"How long have you lived here?","pron":"하우 롱 해뷰 리브드 히어?","ko":"여기 산 지 얼마나 됐어요?","blank":"have you lived","note":"현지인과 대화를 이어 가기 좋은 질문이에요. 대답은 For five years.(5년이요)처럼 for로 와요."},
+    {"id":"en-u34-04","unit":"en-u34","t":"Let's hang out sometime!","pron":"렛츠 행 아웃 썸타임!","ko":"언제 같이 놀아요!","blank":"hang out","note":"hang out은 “같이 어울리다, 놀다”라는 뜻이에요. 친해지고 싶은 사람에게 부담 없이 건네기 좋아요."},
+    {"id":"en-u34-05","unit":"en-u34","t":"It was great talking to you.","pron":"잇 워즈 그레잇 토킹 투 유","ko":"얘기 나눠서 정말 즐거웠어요.","blank":"talking to you","note":"대화를 마무리하며 헤어질 때 하는 말이에요. 처음 만난 사이라면 It was great meeting you. 라고 해도 좋아요."},
+    {"id":"en-u35-01","unit":"en-u35","t":"Can I get your number?","pron":"캐나이 겟 유어 넘버?","ko":"번호 알려 줄래요?","blank":"your number","note":"연락처를 물을 때 가장 자연스러운 말이에요. 휴대폰을 건네며 Can you put it in my phone?(여기 입력해 줄래요?)이라고 해도 돼요."},
+    {"id":"en-u35-02","unit":"en-u35","t":"Are you on WhatsApp?","pron":"아 유 온 왓츠앱?","ko":"왓츠앱 해요?","blank":"Are you on","note":"해외에서는 카카오톡 대신 왓츠앱이나 인스타그램 DM을 많이 써요. Are you on ~? 뒤에 앱 이름만 바꿔 물어보세요."},
+    {"id":"en-u35-03","unit":"en-u35","t":"Here, let me add you.","pron":"히어, 렛 미 애쥬","ko":"여기, 제가 추가할게요.","blank":"let me add you","note":"SNS나 메신저에서 친구 추가하는 것도 add라고 해요. Let me ~ 는 “제가 ~할게요”라는 뜻이에요."},
+    {"id":"en-u35-04","unit":"en-u35","t":"I'll text you later.","pron":"아일 텍스츄 레이러","ko":"이따 문자할게요.","blank":"text you","note":"text는 “문자하다”라는 동사로도 써요. 메신저로 보낼 때도 I’ll text you. 라고 하면 돼요."},
+    {"id":"en-u35-05","unit":"en-u35","t":"Let's keep in touch.","pron":"렛츠 킵 인 터치","ko":"계속 연락하고 지내요.","blank":"keep in touch","note":"헤어지면서 앞으로도 연락하자고 할 때 써요. 짧게 Keep in touch! 라고만 해도 돼요."},
+    {"id":"en-u36-01","unit":"en-u36","t":"Thanks for having me.","pron":"땡스 포 해빙 미","ko":"초대해 줘서 고마워요.","blank":"having me","note":"집이나 모임에 초대받았을 때 도착해서, 또는 떠나면서 하는 말이에요. Thanks for inviting me. 라고 해도 돼요."},
+    {"id":"en-u36-02","unit":"en-u36","t":"I brought you a little something.","pron":"아이 브롯 유 어 리를 썸씽","ko":"작은 선물 하나 가져왔어요.","blank":"a little something","note":"선물을 건넬 때 쓰는 겸손한 표현이에요. 미국에서는 저녁 초대에 와인이나 디저트를 들고 가는 경우가 많아요."},
+    {"id":"en-u36-03","unit":"en-u36","t":"This is really delicious!","pron":"디스 이즈 리얼리 딜리셔스!","ko":"이거 정말 맛있어요!","blank":"really delicious","note":"음식 칭찬은 아무리 해도 지나치지 않아요. 더 편하게는 This is so good! 이라고 해요."},
+    {"id":"en-u36-04","unit":"en-u36","t":"I'm so full!","pron":"아임 쏘 풀!","ko":"너무 배불러요!","blank":"so full","note":"배부르게 잘 먹었다는 뜻이라 요리한 사람에게는 칭찬처럼 들려요. 더 권할 때 거절하려면 앞에 No, thanks. 를 붙여요."},
+    {"id":"en-u36-05","unit":"en-u36","t":"Thank you for the wonderful meal.","pron":"땡큐 포 더 원더풀 밀","ko":"정말 잘 먹었어요.","blank":"wonderful meal","note":"영어에는 “잘 먹었습니다”처럼 정해진 인사가 없어서, 식사가 좋았다고 고마움을 말해요. That was amazing! 이라고 해도 좋아요."},
+    {"id":"en-u37-01","unit":"en-u37","t":"I'm so happy for you!","pron":"아임 쏘 해피 포 유!","ko":"정말 잘됐어요, 저도 기뻐요!","blank":"happy for you","note":"상대에게 좋은 일이 생겼을 때 진심으로 축하하는 말이에요. 내가 기쁠 땐 I’m so happy! 라고만 하면 돼요."},
+    {"id":"en-u37-02","unit":"en-u37","t":"I'm really nervous.","pron":"아임 리얼리 너버스","ko":"너무 긴장돼요.","blank":"really nervous","note":"시험, 발표, 면접 전에 쓰는 말이에요. 상대가 긴장했다면 You’ll do great!(잘할 거예요!)라고 응원해 주세요."},
+    {"id":"en-u37-03","unit":"en-u37","t":"That's a shame.","pron":"댓츠 어 셰임","ko":"아쉽네요.","blank":"a shame","note":"아쉬운 소식을 들었을 때 공감하는 말이에요. That’s too bad. 도 같은 뜻으로 자주 써요."},
+    {"id":"en-u37-04","unit":"en-u37","t":"I wish I could stay longer.","pron":"아이 위시 아이 쿠드 스테이 롱거","ko":"더 있을 수 있으면 좋을 텐데, 아쉬워요.","blank":"I wish I could","note":"내 일이 아쉬울 땐 I wish I could ~(~할 수 있으면 좋을 텐데)로 말해요. 여행 마지막 날이나 모임에서 먼저 일어날 때 딱 맞아요."},
+    {"id":"en-u37-05","unit":"en-u37","t":"I'm so touched.","pron":"아임 쏘 터치트","ko":"정말 감동했어요.","blank":"so touched","note":"누군가의 마음이나 선물에 감동받았을 때 써요. 영화나 공연이 감동적이었다면 It was so moving. 이라고 해요."},
+    {"id":"en-u38-01","unit":"en-u38","t":"Have you ever tried surfing?","pron":"해뷰 에버 트라이드 써핑?","ko":"서핑 해 본 적 있어요?","blank":"Have you ever","note":"Have you ever ~? 는 “~해 본 적 있어요?”예요. tried 뒤에 음식이나 활동을 넣어요: Have you ever tried Korean food?"},
+    {"id":"en-u38-02","unit":"en-u38","t":"It was my first time.","pron":"잇 워즈 마이 퍼슷 타임","ko":"처음 해 봤어요.","blank":"my first time","note":"처음 해 본 경험을 말할 땐 과거형 was를 써요. 지금 처음 하는 중이라면 It’s my first time. 이라고 해요."},
+    {"id":"en-u38-03","unit":"en-u38","t":"It was better than I expected!","pron":"잇 워즈 베러 댄 아이 익스펙티드!","ko":"생각보다 훨씬 좋았어요!","blank":"than I expected","note":"지난 경험이 어땠는지 말할 땐 It was ~ 로 시작해요. 기대만큼은 아니었다면 It wasn’t that great.(그렇게 좋진 않았어요)"},
+    {"id":"en-u38-04","unit":"en-u38","t":"I'd love to do it again.","pron":"아이드 러브 투 두 잇 어겐","ko":"또 하고 싶어요.","blank":"do it again","note":"I’d love to ~ 는 I want to보다 부드럽고 자연스러운 “꼭 ~하고 싶어요”예요. 다시 가고 싶은 곳이면 I’d love to go back."},
+    {"id":"en-u38-05","unit":"en-u38","t":"I've never been there.","pron":"아이브 네버 빈 데어","ko":"거기는 가 본 적 없어요.","blank":"never been","note":"“가 본 적 없어요”는 I’ve never been there. 예요. 이어서 I’d love to go someday.(언젠가 가 보고 싶어요)라고 하면 대화가 이어져요."},
+    {"id":"en-u39-01","unit":"en-u39","t":"It's my fault.","pron":"잇츠 마이 폴트","ko":"제 잘못이에요.","blank":"my fault","note":"내 실수를 인정할 때 써요. 반대로 상대를 안심시킬 땐 It’s not your fault.(당신 잘못이 아니에요)라고 해요."},
+    {"id":"en-u39-02","unit":"en-u39","t":"That's not what I meant.","pron":"댓츠 낫 왓 아이 멘트","ko":"그런 뜻이 아니었어요.","blank":"what I meant","note":"내 말이 오해를 샀을 때 바로 쓰는 말이에요. 이어서 I meant ~(제 말은 ~라는 뜻이었어요)로 다시 설명해요."},
+    {"id":"en-u39-03","unit":"en-u39","t":"I didn't mean to upset you.","pron":"아이 디든 민 투 업세츄","ko":"기분 상하게 하려던 건 아니었어요.","blank":"didn't mean to","note":"I didn’t mean to ~ 는 “일부러 그런 건 아니에요”라는 뜻이에요. 실수로 부딪혔을 땐 Sorry, I didn’t mean to. 라고만 해도 돼요."},
+    {"id":"en-u39-04","unit":"en-u39","t":"Don't worry about it.","pron":"돈 워리 어바우릿","ko":"신경 쓰지 마요.","blank":"worry about it","note":"상대가 사과할 때 “괜찮아요”라고 받아 주는 말이에요. It’s okay. 나 No worries. 도 같은 뜻이에요."},
+    {"id":"en-u39-05","unit":"en-u39","t":"I'm sorry for the misunderstanding.","pron":"아임 쏘리 포 더 미스언더스탠딩","ko":"오해하게 해서 미안해요.","blank":"misunderstanding","note":"I’m sorry for ~ 로 무엇이 미안한지 콕 집어 말해요: I’m sorry for being late.(늦어서 미안해요)"},
+    {"id":"en-u40-01","unit":"en-u40","t":"What kind of work do you do?","pron":"왓 카인더브 웍 두 유 두?","ko":"어떤 일 하세요?","blank":"What kind of work","note":"What do you do?보다 한 걸음 더 들어가 일의 종류를 묻는 말이에요. kind of는 빠르게 “카인더브”처럼 이어서 말해요."},
+    {"id":"en-u40-02","unit":"en-u40","t":"I work in marketing.","pron":"아이 워킨 마케팅","ko":"저는 마케팅 분야에서 일해요.","blank":"I work in","note":"work at 뒤에는 회사나 장소, work in 뒤에는 분야를 넣어요: I work in sales.(영업 일을 해요), I work in IT."},
+    {"id":"en-u40-03","unit":"en-u40","t":"I've been really busy lately.","pron":"아이브 빈 리얼리 비지 레잇리","ko":"요즘 정말 바빴어요.","blank":"busy lately","note":"I’ve been ~ lately는 “요즘 계속 ~해요”라는 뜻이에요. 안부 인사에 답할 때 아주 자주 써요."},
+    {"id":"en-u40-04","unit":"en-u40","t":"I really enjoy what I do.","pron":"아이 리얼리 인조이 와라이 두","ko":"제 일이 정말 즐거워요.","blank":"enjoy what I do","note":"what I do는 “내가 하는 일”이라는 뜻이에요. 직업 이름을 몰라도 이 한마디로 일에 대한 애정을 전할 수 있어요."},
+    {"id":"en-u40-05","unit":"en-u40","t":"I feel proud when customers are happy.","pron":"아이 필 프라우드 웬 커스터머즈 아 해피","ko":"고객들이 만족할 때 뿌듯해요.","blank":"I feel proud","note":"“뿌듯해요”는 I feel proud예요. when 뒤에 보람을 느끼는 순간을 넣어요: when my students pass."},
+    {"id":"en-u41-01","unit":"en-u41","t":"I'm learning to play the guitar.","pron":"아임 러닝 투 플레이 더 기타","ko":"기타 치는 걸 배우고 있어요.","blank":"I'm learning","note":"I’m learning 뒤에 활동은 to+동사로, 과목은 바로 넣어요: I’m learning English.(영어를 배우고 있어요)"},
+    {"id":"en-u41-02","unit":"en-u41","t":"It's difficult, but really fun.","pron":"잇츠 디피컬트, 벗 리얼리 펀","ko":"어렵지만 정말 재미있어요.","blank":"but really fun","note":"힘든 점과 좋은 점을 but으로 이어 말해요. difficult 대신 더 쉬운 hard를 써도 돼요."},
+    {"id":"en-u41-03","unit":"en-u41","t":"I'm getting better little by little.","pron":"아임 게링 베러 리를 바이 리를","ko":"조금씩 늘고 있어요.","blank":"little by little","note":"get better는 “나아지다, 늘다”라는 뜻이에요. little by little(조금씩)을 붙이면 꾸준히 느는 느낌이 살아요."},
+    {"id":"en-u41-04","unit":"en-u41","t":"I take a class on Saturdays.","pron":"아이 테이커 클래스 온 쌔러데이즈","ko":"토요일마다 수업을 들어요.","blank":"take a class","note":"수업을 듣는다고 할 때는 take a class라고 해요. 요일 뒤에 s를 붙이면 “매주 ~요일마다”라는 뜻이 돼요."},
+    {"id":"en-u41-05","unit":"en-u41","t":"I started three months ago.","pron":"아이 스타티드 쓰리 먼쓰 어고우","ko":"석 달 전에 시작했어요.","blank":"months ago","note":"언제 시작했는지는 ~ ago(~ 전에)로 말해요: two weeks ago(2주 전에), a year ago(1년 전에)."},
+    {"id":"en-u42-01","unit":"en-u42","t":"Do you work out?","pron":"두 유 워카웃?","ko":"운동해요?","blank":"work out","note":"운동하냐고 물을 때 exercise보다 work out을 훨씬 많이 써요. work out은 이어서 “워카웃”처럼 말해요."},
+    {"id":"en-u42-02","unit":"en-u42","t":"I walk for an hour every day.","pron":"아이 웍 포 어나워 에브리 데이","ko":"매일 한 시간씩 걸어요.","blank":"every day","note":"walk의 l은 소리 나지 않아서 “웍”처럼 들려요. hour는 h가 묵음이라 a가 아니라 an을 붙여요."},
+    {"id":"en-u42-03","unit":"en-u42","t":"I feel much lighter now.","pron":"아이 필 머치 라이러 나우","ko":"이제 몸이 훨씬 가벼워요.","blank":"much lighter","note":"비교하는 말 앞에 much를 붙이면 “훨씬”이라는 뜻이 돼요: much better(훨씬 나은), much healthier(훨씬 건강한)."},
+    {"id":"en-u42-04","unit":"en-u42","t":"I go to the gym three times a week.","pron":"아이 고우 투 더 짐 쓰리 타임즈 어 윅","ko":"일주일에 세 번 헬스장에 가요.","blank":"three times a week","note":"횟수는 ~ times a week(일주일에 ~번)로 말해요. 한 번은 once, 두 번은 twice라고 해요."},
+    {"id":"en-u42-05","unit":"en-u42","t":"I'm trying to eat healthy.","pron":"아임 트라잉 투 잇 헬씨","ko":"건강하게 먹으려고 노력 중이에요.","blank":"eat healthy","note":"I’m trying to ~ 는 “요즘 ~하려고 노력 중이에요”라는 뜻이에요. eat healthy는 원어민이 일상에서 아주 많이 쓰는 말이에요."},
+    {"id":"en-u43-01","unit":"en-u43","t":"I prefer summer to winter.","pron":"아이 프리퍼 써머 투 윈터","ko":"저는 겨울보다 여름이 좋아요.","blank":"I prefer","note":"prefer A to B는 “B보다 A가 좋아요”라는 뜻이에요. 더 좋아하는 쪽을 먼저 말한다는 것만 기억하세요."},
+    {"id":"en-u43-02","unit":"en-u43","t":"I like tea more than coffee.","pron":"아이 라익 티 모어 댄 커피","ko":"저는 커피보다 차를 더 좋아해요.","blank":"more than","note":"like A more than B는 prefer보다 쉽고 편하게 쓸 수 있는 비교 표현이에요. 음식, 계절, 장소 무엇이든 넣어 보세요."},
+    {"id":"en-u43-03","unit":"en-u43","t":"What's your favorite season?","pron":"왓츠 유어 페이버릿 씨즌?","ko":"제일 좋아하는 계절이 뭐예요?","blank":"favorite","note":"favorite은 “제일 좋아하는”이라는 뜻이에요. season 자리에 food, movie, song을 넣어 물어보세요."},
+    {"id":"en-u43-04","unit":"en-u43","t":"I like fall the best.","pron":"아이 라익 폴 더 베스트","ko":"저는 가을이 제일 좋아요.","blank":"the best","note":"“제일 좋아요”는 like ~ the best라고 해요. 미국에서는 가을을 autumn보다 fall이라고 더 많이 불러요."},
+    {"id":"en-u43-05","unit":"en-u43","t":"It's not too hot or too cold.","pron":"잇츠 낫 투 핫 오어 투 콜드","ko":"너무 덥지도 춥지도 않거든요.","blank":"not too hot","note":"좋아하는 이유를 한마디 덧붙이면 대화가 풍성해져요. too는 “너무”라서 not too ~ 는 “너무 ~하지 않은”이에요."},
+    {"id":"en-u44-01","unit":"en-u44","t":"I think working from home is better.","pron":"아이 띵크 워킹 프럼 홈 이즈 베러","ko":"저는 재택근무가 더 낫다고 생각해요.","blank":"I think","note":"의견 앞에 I think를 붙이면 “제 생각에는”이라는 뜻이 되어 말이 부드러워져요. 영어에서 가장 많이 쓰는 의견 표현이에요."},
+    {"id":"en-u44-02","unit":"en-u44","t":"In my opinion, it saves a lot of time.","pron":"인 마이 어피니언, 잇 세이브즈 어 라러브 타임","ko":"제 생각에는 시간이 많이 절약돼요.","blank":"In my opinion","note":"I think보다 조금 더 또렷하게 “이건 제 의견이에요”라고 밝히는 말이에요. 회의나 토론에서 특히 잘 어울려요."},
+    {"id":"en-u44-03","unit":"en-u44","t":"Because I can sleep a little more.","pron":"비코즈 아이 캔 슬립 어 리를 모어","ko":"잠을 조금 더 잘 수 있으니까요.","blank":"Because I can","note":"“왜요?(Why?)”라고 물으면 Because ~ 로 이유를 말해요. 대화에서는 Because로 바로 문장을 시작해도 자연스러워요."},
+    {"id":"en-u44-04","unit":"en-u44","t":"What do you think?","pron":"왓 두 유 띵크?","ko":"어떻게 생각해요?","blank":"What do you think","note":"내 의견을 말한 뒤 끝에 붙이면 상대도 자연스럽게 대화에 들어와요. 주제를 넣으려면 What do you think about ~? 이라고 해요."},
+    {"id":"en-u44-05","unit":"en-u44","t":"It depends on the person.","pron":"잇 디펜즈 온 더 퍼슨","ko":"사람마다 달라요.","blank":"It depends on","note":"딱 잘라 말하기 어려울 땐 It depends.(상황에 따라 달라요)라고 해요. on 뒤에 기준을 넣어요: It depends on the weather."},
+    {"id":"en-u45-01","unit":"en-u45","t":"I totally agree.","pron":"아이 토를리 어그리","ko":"완전히 동의해요.","blank":"totally agree","note":"상대 말에 힘껏 맞장구칠 때 써요. 짧게 Exactly!(바로 그거예요!)라고 해도 돼요."},
+    {"id":"en-u45-02","unit":"en-u45","t":"That's so true.","pron":"댓츠 쏘 트루","ko":"정말 맞는 말이에요.","blank":"so true","note":"“맞아요, 맞아요” 하고 공감할 때 가볍게 쓰는 말이에요. You’re right.(맞아요)도 함께 알아 두세요."},
+    {"id":"en-u45-03","unit":"en-u45","t":"I see it a little differently.","pron":"아이 씨 잇 어 리를 디퍼런틀리","ko":"저는 조금 다르게 생각해요.","blank":"differently","note":"반대 의견을 부드럽게 꺼내는 말이에요. I don’t agree.보다 훨씬 덜 딱딱하게 들려요."},
+    {"id":"en-u45-04","unit":"en-u45","t":"You have a point.","pron":"유 해버 포인트","ko":"일리가 있네요.","blank":"have a point","note":"생각이 달라도 상대 말의 좋은 점을 인정해 주는 말이에요. 이 한마디로 대화가 훨씬 부드러워져요."},
+    {"id":"en-u45-05","unit":"en-u45","t":"That's a great idea!","pron":"댓츠 어 그레잇 아이디어!","ko":"좋은 생각이에요!","blank":"great idea","note":"상대의 제안이 마음에 들 때 써요. great 대신 good을 써도 되고, 짧게 Great idea! 라고도 해요."},
+    {"id":"en-u46-01","unit":"en-u46","t":"Can I ask you a favor?","pron":"캐나이 애스큐 어 페이버?","ko":"부탁 하나 해도 될까요?","blank":"ask you a favor","note":"본론 전에 이렇게 먼저 물어보면 훨씬 공손해요. 상대는 보통 Sure, what is it?(그럼요, 뭔데요?)이라고 답해요."},
+    {"id":"en-u46-02","unit":"en-u46","t":"Would you mind watering my plants?","pron":"우쥬 마인드 워러링 마이 플랜츠?","ko":"제 화분에 물 좀 줘 주실 수 있을까요?","blank":"Would you mind","note":"Would you mind -ing? 는 아주 공손한 부탁이에요. mind가 “꺼리다”라는 뜻이라 들어줄 때는 No, not at all.(전혀요)이라고 답해요."},
+    {"id":"en-u46-03","unit":"en-u46","t":"I'd love to, but I have plans.","pron":"아이드 러브 투, 벗 아이 해브 플랜즈","ko":"정말 그러고 싶은데, 약속이 있어요.","blank":"I'd love to, but","note":"초대를 거절할 때 I’d love to(정말 그러고 싶어요)로 마음부터 보여 주면 덜 서운하게 들려요."},
+    {"id":"en-u46-04","unit":"en-u46","t":"Sorry, that's a little difficult.","pron":"쏘리, 댓츠 어 리를 디피컬트","ko":"미안하지만, 그건 좀 어려워요.","blank":"a little difficult","note":"부탁을 거절할 때 No 대신 쓰는 부드러운 표현이에요. 이유를 한마디 덧붙이면 더 좋아요: I’m busy this week."},
+    {"id":"en-u46-05","unit":"en-u46","t":"Let's do it next time for sure.","pron":"렛츠 두 잇 넥슷 타임 포 슈어","ko":"다음에 꼭 해요.","blank":"next time","note":"거절한 뒤 이렇게 덧붙이면 관계가 어색해지지 않아요. 원어민은 Can I take a rain check?(다음으로 미뤄도 될까요?)라고도 해요."},
+    {"id":"en-u47-01","unit":"en-u47","t":"I want to travel to Europe someday.","pron":"아이 원투 트래블 투 유럽 썸데이","ko":"언젠가 유럽 여행을 하고 싶어요.","blank":"I want to","note":"하고 싶은 일은 I want to ~ 로 말해요. 끝에 someday(언젠가)를 붙이면 꿈 이야기가 돼요."},
+    {"id":"en-u47-02","unit":"en-u47","t":"My dream is to open a small cafe.","pron":"마이 드림 이즈 투 오쁜 어 스몰 캐페이","ko":"제 꿈은 작은 카페를 여는 거예요.","blank":"My dream is to","note":"꿈을 소개할 때 My dream is to 뒤에 동사를 넣어요. cafe는 “캐페이”처럼 뒤쪽에 힘을 줘서 발음해요."},
+    {"id":"en-u47-03","unit":"en-u47","t":"Next year, I'm going to run a marathon.","pron":"넥슷 이어, 아임 고잉 투 런 어 매러썬","ko":"내년에는 마라톤을 뛸 거예요.","blank":"I'm going to","note":"be going to는 이미 마음먹은 계획을 말할 때 써요. 빠르게 말하면 I’m gonna(아임 거나)처럼 들리기도 해요."},
+    {"id":"en-u47-04","unit":"en-u47","t":"I'm definitely going to try it.","pron":"아임 데피니틀리 고잉 투 트라이 잇","ko":"꼭 해 볼 거예요.","blank":"definitely","note":"definitely는 “꼭, 틀림없이”라는 뜻으로 강한 의지를 보여 줘요. 상대 제안에 Definitely!(당연하죠!) 한마디로 답하기도 해요."},
+    {"id":"en-u47-05","unit":"en-u47","t":"I'm saving money for it.","pron":"아임 세이빙 머니 포 잇","ko":"그걸 위해 돈을 모으고 있어요.","blank":"saving money","note":"save money는 “돈을 모으다”예요. for 뒤에 목표를 넣어요: I’m saving money for a trip."},
+    {"id":"en-u48-01","unit":"en-u48","t":"When I was a kid, I lived in Busan.","pron":"웬 아이 워저 키드, 아이 리브드 인 부산","ko":"어렸을 때 부산에 살았어요.","blank":"When I was a kid","note":"어린 시절 이야기는 When I was a kid(어렸을 때)로 시작해요. 지난 일이니 뒤에도 lived처럼 과거형을 써요."},
+    {"id":"en-u48-02","unit":"en-u48","t":"I used to swim at the beach.","pron":"아이 유스투 스윔 앳 더 비치","ko":"바닷가에서 수영하곤 했어요.","blank":"I used to","note":"used to는 “예전에는 ~하곤 했어요(지금은 안 해요)”라는 뜻이에요. 발음은 “유즈드 투”가 아니라 “유스투”예요."},
+    {"id":"en-u48-03","unit":"en-u48","t":"We often went to my grandma's house.","pron":"위 오픈 웬 투 마이 그랜마즈 하우스","ko":"할머니 댁에 자주 갔어요.","blank":"often went","note":"often(자주)은 보통 동사 앞에 와요. 지난 일이라 go가 아니라 went를 써요."},
+    {"id":"en-u48-04","unit":"en-u48","t":"I really miss those days.","pron":"아이 리얼리 미스 도우즈 데이즈","ko":"그때가 정말 그리워요.","blank":"miss those days","note":"miss는 “그리워하다”라는 뜻이에요. 사람에게도 써요: I miss you.(보고 싶어요)"},
+    {"id":"en-u48-05","unit":"en-u48","t":"It brings back memories.","pron":"잇 브링즈 백 메모리즈","ko":"옛날 생각이 나네요.","blank":"brings back","note":"옛 사진이나 노래 때문에 추억이 떠오를 때 써요: This song brings back memories.(이 노래 들으니 옛날 생각나요)"},
+    {"id":"en-u49-01","unit":"en-u49","t":"This isn't what I ordered.","pron":"디스 이즌트 와라이 오더드","ko":"이건 제가 주문한 게 아니에요.","blank":"what I ordered","note":"받은 물건이 주문과 다를 때 차분하게 이렇게 말해요. 식당에서 음식이 잘못 나왔을 때도 그대로 써요."},
+    {"id":"en-u49-02","unit":"en-u49","t":"Could you check my order, please?","pron":"쿠쥬 첵 마이 오더, 플리즈?","ko":"제 주문 좀 확인해 주시겠어요?","blank":"check my order","note":"문제가 있을 때 바로 따지기보다 확인을 부탁하면 훨씬 부드러워요. order 자리에 bill(계산서)을 넣어도 돼요."},
+    {"id":"en-u49-03","unit":"en-u49","t":"I'd like a refund, please.","pron":"아이드 라이커 리펀드, 플리즈","ko":"환불해 주세요.","blank":"a refund","note":"환불은 refund예요. 가게마다 기간이 정해져 있으니 What’s your return policy?(반품 규정이 어떻게 돼요?)도 알아 두면 좋아요."},
+    {"id":"en-u49-04","unit":"en-u49","t":"Can I exchange it for another one?","pron":"캐나이 익스체인지 잇 포 어나더 원?","ko":"다른 걸로 교환할 수 있을까요?","blank":"exchange it","note":"교환은 exchange예요. another one 자리에 a smaller size(더 작은 사이즈)처럼 원하는 것을 넣어요."},
+    {"id":"en-u49-05","unit":"en-u49","t":"I have the receipt right here.","pron":"아이 해브 더 리씻 라잇 히어","ko":"영수증 여기 있어요.","blank":"the receipt","note":"receipt의 p는 소리 나지 않아서 “리씻”처럼 발음해요. 환불이나 교환할 때는 영수증을 꼭 챙기세요."},
+    {"id":"en-u50-01","unit":"en-u50","t":"Congratulations on your new job!","pron":"컨그래츄레이션즈 온 유어 뉴 잡!","ko":"새 직장 축하해요!","blank":"Congratulations on","note":"축하할 일은 on 뒤에 넣어요: Congratulations on your wedding! 끝의 s를 빼먹지 말고, 친한 사이엔 Congrats!라고 해요."},
+    {"id":"en-u50-02","unit":"en-u50","t":"I'm so happy for you.","pron":"아임 쏘 해피 포 유","ko":"제 일처럼 기뻐요.","blank":"happy for you","note":"상대의 좋은 소식을 함께 기뻐할 때 써요. for you가 붙어서 “당신 일이라 기뻐요”라는 따뜻한 느낌이 돼요."},
+    {"id":"en-u50-03","unit":"en-u50","t":"Hang in there.","pron":"행 인 데어","ko":"힘내요, 조금만 버텨요.","blank":"Hang in there","note":"힘든 시기를 지나는 사람에게 “힘내”라고 할 때 써요. 우리말 “파이팅!”에 가장 가까운 영어 표현이에요."},
+    {"id":"en-u50-04","unit":"en-u50","t":"Don't push yourself too hard.","pron":"돈 푸쉬 유어셀프 투 하드","ko":"너무 무리하지 마세요.","blank":"push yourself","note":"push yourself는 “자신을 몰아붙이다”라는 뜻이에요. 바쁜 친구에게 Take care of yourself.(몸 잘 챙겨요)와 함께 써 보세요."},
+    {"id":"en-u50-05","unit":"en-u50","t":"Let me know if you need anything.","pron":"렛 미 노우 이퓨 니드 애니씽","ko":"필요한 거 있으면 말해요.","blank":"need anything","note":"도와주고 싶은 마음을 전하는 따뜻한 말이에요. 축하할 때도 위로할 때도 마지막에 덧붙이기 좋아요."},
+    {"id":"en-u51-01","unit":"en-u51","t":"Have you ever tried Korean food?","pron":"해뷰 에버 트라이드 코리언 푸드?","ko":"한국 음식 먹어 본 적 있어요?","blank":"ever tried","note":"Have you ever ~? 는 “~해 본 적 있어요?”라는 뜻이에요. 가 본 적을 물을 땐 Have you ever been to Korea? 라고 해요."},
+    {"id":"en-u51-02","unit":"en-u51","t":"Bibimbap is rice mixed with vegetables.","pron":"비빔밥 이즈 라이스 믹스트 위드 베지터블즈","ko":"비빔밥은 밥에 채소를 넣고 비빈 거예요.","blank":"mixed with","note":"한국 음식은 재료로 설명하면 쉽게 통해요. 매운 음식이면 It’s a little spicy.(조금 매워요)라고 덧붙여 주세요."},
+    {"id":"en-u51-03","unit":"en-u51","t":"You have to visit Jeju Island.","pron":"유 해프 투 비짓 제주 아일랜드","ko":"제주도는 꼭 가 보세요.","blank":"You have to","note":"강력히 추천할 때 You have to ~ 를 쓰면 “꼭 ~해 봐야 해요”라는 친근한 추천이 돼요. have to는 “해프 투”처럼 발음해요."},
+    {"id":"en-u51-04","unit":"en-u51","t":"It's famous for its beautiful beaches.","pron":"잇츠 페이머스 포 잇츠 뷰리풀 비치즈","ko":"아름다운 해변으로 유명해요.","blank":"famous for","note":"“~로 유명해요”는 famous for ~ 예요. 서울이라면 Seoul is famous for its night views.(서울은 야경으로 유명해요)"},
+    {"id":"en-u51-05","unit":"en-u51","t":"I'll show you around.","pron":"아일 쇼유 어라운드","ko":"제가 안내해 드릴게요.","blank":"show you around","note":"한국에 오는 친구에게 동네나 도시를 구경시켜 주겠다고 할 때 써요. Come visit me!(놀러 와요!)와 함께 말하면 더 반가워요."},
+    {"id":"en-u52-01","unit":"en-u52","t":"Thanks to you, I learned a lot.","pron":"땡스 투 유, 아이 런드 어 랏","ko":"덕분에 많이 배웠어요.","blank":"Thanks to you","note":"thanks to ~ 는 “~ 덕분에”라는 뜻이에요. 1년 동안 함께해 준 사람에게 꼭 한번 말해 보세요."},
+    {"id":"en-u52-02","unit":"en-u52","t":"My English has improved a lot.","pron":"마이 잉글리시 해즈 임프루브드 어 랏","ko":"제 영어가 많이 늘었어요.","blank":"improved a lot","note":"improve는 “나아지다, 늘다”라는 뜻이에요. 지금까지 쭉 늘어 온 것이라 has improved로 말해요."},
+    {"id":"en-u52-03","unit":"en-u52","t":"I can't believe it's been a year.","pron":"아이 캔트 빌리브 잇츠 빈 어 이어","ko":"벌써 1년이 지났다니 믿기지 않아요.","blank":"it's been a year","note":"I can’t believe ~ 는 “~라니 믿기지 않아요”라는 뜻이에요. 시간이 정말 빨리 지났다는 감탄을 담아 말해요."},
+    {"id":"en-u52-04","unit":"en-u52","t":"I'll keep practicing every day.","pron":"아일 킵 프랙티싱 에브리 데이","ko":"앞으로도 매일 연습할 거예요.","blank":"keep practicing","note":"keep -ing는 “계속 ~하다”라는 뜻이에요. 1년의 끝이 아니라 새로운 시작이라는 마음으로 말해 보세요."},
+    {"id":"en-u52-05","unit":"en-u52","t":"I hope we meet again soon.","pron":"아이 호웁 위 밋 어겐 쑨","ko":"곧 또 만나면 좋겠어요.","blank":"meet again","note":"헤어질 때 다시 만나고 싶은 마음을 전하는 말이에요. 가볍게는 See you again soon! 이라고 해도 돼요."}
   ]
 };
