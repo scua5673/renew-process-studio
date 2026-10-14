@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.018"></script>
+<script src="autosave-status.js?v=3.019"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -505,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.018';</script>
+<script>window.PS_BUILD='3.019';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1112,6 +1112,9 @@ function psShowUpdBand(){
 </head>
 <body class="ps-booting" data-ps-app="board">
 <script>try{if(localStorage.getItem('cs_theme')==='dark')document.body.classList.add('fmdark');}catch(_){}</script>
+<script>/* 3.019 — 처음 들어온 기기는 작전판을 3D 보기로(사용자 «프로세스 스튜디오 처음 들어왔을 때 기본이 3D»). 보드는 «1» 일 때만 3D 로 연다(board.html 부팅 복원).
+   기기 설정이라 한 번 정하면 그대로 — 보드 설정 › 보드 보기에서 «평면»으로 끈 기기(«0»)는 다시 켜지 않는다. */
+try{if(localStorage.getItem('ps_board_tilt3d')===null)localStorage.setItem('ps_board_tilt3d','1');}catch(_){}</script>
 <script>
 /* ==== PWA 안전 다이얼로그: 네이티브 confirm()/prompt() 대체 (설치형 PWA에서 차단됨) ==== */
 (function(){
@@ -8019,7 +8022,9 @@ window.__buildScoutForm=function(k){
       var si=0;
       (function nextStep(){
         if(si>=steps.length){
-          setTimeout(function(){ try{ view.click(); }catch(e){} }, 150);
+          /* 3.019 — 닫을 때 «다시 누르기»(토글)를 쓰지 않는다. 그 사이 보드가 부팅 정리(readyPaint)로 메뉴를 먼저 닫으면 이 클릭이 메뉴를 **다시 열어**
+             첫 화면에 보기 메뉴가 떠 있었다(quiet-entry 폰 실측 — 3D 로 시작하면 부팅이 길어져 자주). 열려 있을 때만 닫는다. */
+          setTimeout(function(){ try{ var vm=doc.getElementById('viewMenu'),w=doc.defaultView; if(vm&&vm.classList.contains('on')){ if(w&&w.__psBoardPopover&&w.__psBoardPopover.close)w.__psBoardPopover.close(); else view.click(); } }catch(e){} }, 150);
           try{ doc.defaultView.localStorage.setItem('ps_board_defaults_v1','1'); }catch(_){}   /* 2.085 — 다음 부팅부터는 안 연다 */
           /* buildGroups 내부는 오래된 브라우저에서도 앱이 멈추지 않도록 예외를 삼킨다.
              따라서 함수 호출 성공이 아니라 실제 도크 생성 여부로 부팅 성공을 판단한다. */
@@ -8109,13 +8114,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.018"></script>
-<script src="autosave-merge.js?v=3.018"></script>
-<script src="autosave-runtime.js?v=3.018"></script>
-<script src="autosave-recovery.js?v=3.018"></script>
-<script src="sync.js?v=3.018"></script>
+<script src="autosave-journal.js?v=3.019"></script>
+<script src="autosave-merge.js?v=3.019"></script>
+<script src="autosave-runtime.js?v=3.019"></script>
+<script src="autosave-recovery.js?v=3.019"></script>
+<script src="sync.js?v=3.019"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.018">
+<link rel="stylesheet" href="support.css?v=3.019">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

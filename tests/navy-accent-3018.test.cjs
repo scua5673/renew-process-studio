@@ -37,7 +37,7 @@ test('3.018 restyled sheets are re-fetched and the change is announced',()=>{
   for(const f of ['studio/app.html','studio/board.html','studio/scout.html','studio/process.html','studio/community.html'])
     assert.match(R(f),/ui-grammar\.css\?v=3\.018/,f);
   assert.match(R('studio/app.html'),/\/vendor\/tokens\.css\?v=3\.018/);
-  const e=notes.entries()[0];
-  assert.equal(e.id,'2026-10-14-v3-018-navy');
+  const e=notes.entries().find(x=>x.id==='2026-10-14-v3-018-navy');
+  assert.ok(e,'3.018 note');
   assert.ok(e.changes.some(c=>/진한 네이비/.test(c))&&e.changes.some(c=>/다크 모드/.test(c))&&e.changes.some(c=>/팀 색 · 펜 색/.test(c)));
 });
