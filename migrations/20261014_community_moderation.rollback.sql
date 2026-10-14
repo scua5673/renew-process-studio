@@ -3,8 +3,7 @@
 -- 칸(hidden_* · resolved_*)과 값은 남긴다. 칸까지 지우려면 맨 아래 주석을 풀 것.
 BEGIN;
 SET LOCAL lock_timeout='5s';
-DROP POLICY IF EXISTS comm_sel ON public.ps_community;
-CREATE POLICY comm_sel ON public.ps_community FOR SELECT TO anon,authenticated USING (NOT deleted);
+ALTER POLICY comm_sel ON public.ps_community USING (NOT deleted);
 DROP TRIGGER IF EXISTS ps_comm_moderation_guard_t ON public.ps_community;
 DROP FUNCTION IF EXISTS public.ps_comm_moderation_guard();
 DROP FUNCTION IF EXISTS public.ps_admin_comm_queue(integer);

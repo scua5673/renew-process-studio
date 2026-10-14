@@ -24,7 +24,7 @@ async function as(db,uid,fn,role='authenticated'){
 const q1=(db,uid,sql,args,role)=>as(db,uid,async()=>(await db.query(sql,args)).rows[0].v,role);
 const create=(db,uid,rid,title)=>q1(db,uid,"select public.ps_support_create($1::uuid,$2,'합성 본문','{}'::jsonb) v",[rid,title]);
 const reply=(db,uid,rid,qid)=>q1(db,uid,"select public.ps_support_reply($1::uuid,$2::uuid,'합성 답') v",[qid,rid]);
-const list=(db,uid,filter=null,limit=20)=>q1(db,uid,'select public.ps_support_list(p_limit=>$1,p_before=>null,p_filter=>$2) v',[limit,filter]);
+const list=(db,uid,filter=null,limit=20)=>q1(db,uid,'select public.ps_support_inbox(p_limit=>$1,p_before=>null,p_filter=>$2) v',[limit,filter]);
 const listOld=(db,uid)=>q1(db,uid,'select public.ps_support_list(p_limit=>20,p_before=>null) v',[]);
 const setStatus=(db,uid,rid,status,fixed=null,role)=>q1(db,uid,'select public.ps_support_set_status($1::uuid,$2,$3) v',[rid,status,fixed],role);
 const stages=rows=>Object.fromEntries(rows.map(r=>[r.title,r.stage]));
@@ -48,7 +48,8 @@ async function run(){
 
   await db.exec(mine('.sql'));await db.exec(mine('.sql'));   // 두 번 — 재실행 안전
   const v=(await db.query(mine('.verify.sql'))).rows[0];
-  equal(v,{cols:2,chk:true,list_new:true,list_old:false,set_status:true,stage:true,auth_list:true,auth_set:true,auth_stage:false,anon_list:false,anon_set:false,secdef:true,marker:4},'verify');
+  equal(v,{cols:2,chk:true,inbox:true,list:true,set_status:true,stage:true,auth_list:true,auth_inbox:true,auth_set:true,auth_stage:false,anon_list:false,anon_set:false,secdef:true,marker:5},'verify');
+  equal(/DROP/.test(mine('.sql')),false,'install never drops anything');
 
   /* 단계 · 개수 */
   let L=await list(db,ADMIN);
@@ -62,7 +63,9 @@ async function run(){
   equal((await list(db,ADMIN,'closed')).reports,[],'filter closed empty');
   await denied(()=>list(db,ADMIN,'bogus'),'22023','unknown filter');
 
-  /* 앱의 옛 호출(p_limit, p_before) */
+  /* 앱의 옛 호출(p_limit, p_before) — 같은 함수 이름 · 인자, 거르기 없는 inbox 와 같은 답 */
+  equal((await listOld(db,ADMIN)).counts,{needs:3,answered:1,closed:0,total:4},'old list gets counts too');
+  equal((await listOld(db,ADMIN)).reports.map(r=>r.stage),L.reports.map(r=>r.stage),'old list carries stages');
   const old=await listOld(db,U);
   equal(old.reports.map(r=>r.title).sort(),['답변함','새 제보','재문의'],'reporter sees own reports via old call');
   equal(old.counts,undefined,'no counts for reporters');equal(old.is_admin,false,'not admin');
@@ -101,7 +104,7 @@ async function run(){
 
   /* 페이지 넘김은 거른 목록 안에서 */
   const p1=await list(db,ADMIN,'needs',2);equal(p1.reports.length,2,'page 1');assert.ok(p1.next_cursor);
-  const p2=await q1(db,ADMIN,'select public.ps_support_list(p_limit=>2,p_before=>$1::jsonb,p_filter=>$2) v',[JSON.stringify(p1.next_cursor),'needs']);
+  const p2=await q1(db,ADMIN,'select public.ps_support_inbox(p_limit=>2,p_before=>$1::jsonb,p_filter=>$2) v',[JSON.stringify(p1.next_cursor),'needs']);
   equal(p2.reports.length+p1.reports.length,(await list(db,ADMIN,'needs')).reports.length,'page 2 completes the filter');
 
   /* 되돌리기 → 옛 함수로, 자료는 그대로 */

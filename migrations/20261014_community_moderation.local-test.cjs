@@ -61,6 +61,8 @@ async function run(){
 
   await db.exec(read('.sql'));await db.exec(read('.sql'));   // 재실행 안전
   equal((await db.query(read('.verify.sql'))).rows[0],{cols:5,trig:true,sel_hides:true,funcs:3,secdef:true,auth_exec:true,anon_exec:false,guard_exec:false},'verify');
+  equal(/DROP/.test(read('.sql')),false,'install never drops anything');
+  equal((await db.query("select array(select rolname from pg_roles where oid=any(polroles) order by 1)::text roles, polcmd from pg_policy where polrelid='public.ps_community'::regclass and polname='comm_sel'")).rows[0],{roles:'{anon,authenticated}',polcmd:'r'},'policy keeps its roles and command');
 
   /* 관리자만 */
   await denied(()=>v(db,READER,'select public.ps_admin_comm_queue() v'),'42501','reader cannot open the queue');

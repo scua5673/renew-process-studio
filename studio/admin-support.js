@@ -140,8 +140,9 @@
       var s=stamp(),ticket=++listTicket;listLoading=true;listError='';
       if(!more){rows=[];cursor=null;adminConfirmed=false;detailTicket++;detailLoading=false;selected='';detail=null;currentDraft=null;detailError='';notice='';}
       render();
-      var args={p_limit:20,p_before:more?cursor:null};if(triage&&filter)args.p_filter=filter;
-      return call(s,'ps_support_list',args).then(function(result){
+      /* 거를 때만 ps_support_inbox(20261014 — 앱이 부르는 ps_support_list 는 이름 · 인자 그대로 두었다) */
+      var args={p_limit:20,p_before:more?cursor:null},fn='ps_support_list';if(triage&&filter){args.p_filter=filter;fn='ps_support_inbox';}
+      return call(s,fn,args).then(function(result){
         if(!safe(s)||ticket!==listTicket)return;
         if(!result||result.is_admin!==true){denied();return;}
         if(!Array.isArray(result.reports)||result.reports.some(function(r){return !r||!UUID.test(r.id||'')||typeof r.title!=='string'||typeof r.is_own!=='boolean'||!Number.isInteger(r.reply_count)||r.reply_count<0

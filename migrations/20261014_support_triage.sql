@@ -5,12 +5,13 @@
 --     찾으려고 SQL 로 뒤져야 했다(2026-10-14).
 -- 무엇:
 --   ① ps_support_reports 에 fixed_in(고친 판, 예 '3.029') · closed_at(닫은 시각) 칸.
---   ② ps_support_list(p_limit, p_before, p_filter) — 줄마다 단계(stage)를 서버가 정한다:
+--   ② ps_support_inbox(p_limit, p_before, p_filter) — 줄마다 단계(stage)를 서버가 정한다:
 --        closed   = 닫힘
 --        answered = 열림 · 마지막 글이 운영자
 --        needs    = 열림 · 글이 없거나 마지막 글이 제보자(답변 필요 — has_admin_reply 면 «재문의»)
 --      p_filter(needs|answered|closed|NULL=전체)로 거르고, 관리자에게는 단계별 개수(counts)를 준다.
---      앱의 옛 호출(p_limit, p_before 이름 인자)은 그대로 된다 — p_filter 기본값 NULL.
+--      ps_support_list(p_limit, p_before)는 이름 · 인자 그대로 두고(앱이 부른다) 몸만 inbox(…, NULL)로 —
+--      줄에 stage 등이 더 붙고 관리자에게 counts 가 붙을 뿐 옛 칸은 그대로다. 기존 함수를 지우는 문장은 없다.
 --   ③ ps_support_set_status(p_report_id, p_status, p_fixed_in) — 관리자만. 열기/닫기 · 고친 판.
 --      관리자 작업 기록(ps_admin_actions)에 남긴다.
 --   ④ ps_support_reply — 제보자가 닫힌 제보에 글을 쓰면 다시 연다(운영자 글은 상태를 바꾸지 않는다).
@@ -33,8 +34,8 @@ BEGIN
   IF to_regclass('public.ps_admin_actions') IS NULL THEN
     RAISE EXCEPTION 'support triage: ps_admin_actions (admin action log) required';
   END IF;
-  IF to_regprocedure('public.ps_support_list(integer,jsonb)') IS NULL AND to_regprocedure('public.ps_support_list(integer,jsonb,text)') IS NULL THEN
-    RAISE EXCEPTION 'support triage: ps_support_list missing';
+  IF to_regprocedure('public.ps_support_list(integer,jsonb)') IS NULL THEN
+    RAISE EXCEPTION 'support triage: ps_support_list(integer,jsonb) missing';
   END IF;
 END $preflight$;
 
@@ -58,8 +59,7 @@ LANGUAGE sql STABLE SET search_path=pg_catalog AS $$
   FROM (SELECT (SELECT q.author_role FROM public.ps_support_replies q WHERE q.report_id=p_report_id ORDER BY q.created_at DESC,q.id DESC LIMIT 1) author_role) last
 $$;
 
-DROP FUNCTION IF EXISTS public.ps_support_list(integer,jsonb);
-CREATE OR REPLACE FUNCTION public.ps_support_list(p_limit integer DEFAULT 20,p_before jsonb DEFAULT NULL,p_filter text DEFAULT NULL) RETURNS jsonb
+CREATE OR REPLACE FUNCTION public.ps_support_inbox(p_limit integer DEFAULT 20,p_before jsonb DEFAULT NULL,p_filter text DEFAULT NULL) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE actor uuid:=auth.uid(); admin boolean; n integer; before_at timestamptz; before_id uuid;
   rows jsonb; cursor_value jsonb:=NULL; entry jsonb; counts jsonb:=NULL;
@@ -93,6 +93,13 @@ BEGIN
   END IF;
   RETURN jsonb_build_object('reports',rows,'next_cursor',cursor_value,'is_admin',admin,'filter',p_filter)
     ||CASE WHEN counts IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('counts',counts) END;
+END $$;
+
+/* 앱(support.js)이 부르는 옛 이름 · 인자 그대로 — 거르기 없이 inbox 와 같은 답 */
+CREATE OR REPLACE FUNCTION public.ps_support_list(p_limit integer DEFAULT 20,p_before jsonb DEFAULT NULL) RETURNS jsonb
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+BEGIN
+  RETURN public.ps_support_inbox(p_limit,p_before,NULL);
 END $$;
 
 CREATE OR REPLACE FUNCTION public.ps_support_set_status(p_report_id uuid,p_status text,p_fixed_in text DEFAULT NULL) RETURNS jsonb
@@ -144,12 +151,12 @@ DO $secure$
 DECLARE x record; marker constant text:='process-studio/support-triage/20261014/v1';
 BEGIN
   FOR x IN SELECT p.oid::regprocedure AS name FROM pg_catalog.pg_proc p
-    WHERE p.oid IN (to_regprocedure('public.ps_support_stage(uuid,text)'),to_regprocedure('public.ps_support_list(integer,jsonb,text)'),
+    WHERE p.oid IN (to_regprocedure('public.ps_support_stage(uuid,text)'),to_regprocedure('public.ps_support_inbox(integer,jsonb,text)'),to_regprocedure('public.ps_support_list(integer,jsonb)'),
                     to_regprocedure('public.ps_support_set_status(uuid,text,text)'),to_regprocedure('public.ps_support_reply(uuid,uuid,text)')) LOOP
     EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC,anon,authenticated',x.name);
     EXECUTE format('COMMENT ON FUNCTION %s IS %L',x.name,marker);
   END LOOP;
 END $secure$;
-GRANT EXECUTE ON FUNCTION public.ps_support_list(integer,jsonb,text),public.ps_support_set_status(uuid,text,text),public.ps_support_reply(uuid,uuid,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.ps_support_list(integer,jsonb),public.ps_support_inbox(integer,jsonb,text),public.ps_support_set_status(uuid,text,text),public.ps_support_reply(uuid,uuid,text) TO authenticated;
 NOTIFY pgrst,'reload schema';
 COMMIT;

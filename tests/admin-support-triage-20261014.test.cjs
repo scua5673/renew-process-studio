@@ -38,7 +38,8 @@ function setup({legacy = false, statusError = null} = {}) {
   const controller = support.create({window, host, context: () => ({uid: UID, epoch: 1, ready: true}), format: () => '', copyText: v => v.body, onCounts: c => counted.push(c),
     rpc: async (name, args) => {
       calls.push({name, args});
-      if (name === 'ps_support_list') {
+      if (name === 'ps_support_list' || name === 'ps_support_inbox') {
+        if (name === 'ps_support_list') assert.equal(args.p_filter, undefined, 'the app-facing list keeps its two arguments');
         if (legacy) return {is_admin: true, reports: reports.map(({stage, has_admin_reply, fixed_in, ...r}) => r), next_cursor: null};
         return {is_admin: true, reports: reports.filter(r => !args.p_filter || r.stage === args.p_filter), next_cursor: null, counts: counts()};
       }
@@ -73,11 +74,11 @@ test('a filter tab reloads only that stage', async t => {
   const f = setup(); t.after(() => f.controller.destroy());
   await f.controller.load();
   click(f.root, {admFilter: 'needs'}); await tick(); await tick();
-  assert.equal(f.calls.at(-1).args.p_filter, 'needs');
+  assert.deepEqual(f.calls.at(-1), {name: 'ps_support_inbox', args: {p_limit: 20, p_before: null, p_filter: 'needs'}});
   assert.doesNotMatch(f.root.innerHTML, /data-adm-report="22222222/);
   assert.match(f.root.innerHTML, /data-adm-filter="needs" aria-pressed="true"|admSupportFilter is-on is-alert" data-adm-filter="needs"/);
   click(f.root, {admFilter: 'all'}); await tick(); await tick();
-  assert.equal(f.calls.at(-1).args.p_filter, undefined);
+  assert.deepEqual(f.calls.at(-1), {name: 'ps_support_list', args: {p_limit: 20, p_before: null}});
   assert.match(f.root.innerHTML, /data-adm-report="22222222/);
 });
 

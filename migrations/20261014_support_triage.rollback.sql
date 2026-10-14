@@ -1,10 +1,9 @@
--- 20261014_support_triage 되돌리기 — 목록·답변 함수를 20260915 판으로, 상태 바꾸기·단계 함수는 지운다.
+-- 20261014_support_triage 되돌리기 — 목록·답변 함수를 20260915 판으로, 거른 목록·상태 바꾸기·단계 함수는 지운다.
 -- 칸(fixed_in · closed_at)과 그 값은 남긴다(옛 함수는 읽지 않을 뿐 — 자료를 지우지 않는다).
 -- 칸까지 지우려면 맨 아래 주석을 풀 것. ⚠ 닫은 표시·고친 판 기록이 사라진다.
 BEGIN;
 SET LOCAL lock_timeout='5s';
 DROP FUNCTION IF EXISTS public.ps_support_set_status(uuid,text,text);
-DROP FUNCTION IF EXISTS public.ps_support_list(integer,jsonb,text);
 CREATE OR REPLACE FUNCTION public.ps_support_list(p_limit integer DEFAULT 20,p_before jsonb DEFAULT NULL) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE actor uuid:=auth.uid(); admin boolean; n integer; before_at timestamptz; before_id uuid;
@@ -49,6 +48,7 @@ BEGIN
   IF inserted THEN UPDATE public.ps_support_reports SET updated_at=clock_timestamp() WHERE id=p_report_id; END IF;
   RETURN (to_jsonb(r)-'actor_id')||jsonb_build_object('is_own',true);
 END $$;
+DROP FUNCTION IF EXISTS public.ps_support_inbox(integer,jsonb,text);
 DROP FUNCTION IF EXISTS public.ps_support_stage(uuid,text);
 DO $secure$
 DECLARE x record; marker constant text:='process-studio/support-reports/20260915/v1';

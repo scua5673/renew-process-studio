@@ -55,12 +55,11 @@ BEGIN
   END IF;
   RETURN NEW;
 END $$;
-DROP TRIGGER IF EXISTS ps_comm_moderation_guard_t ON public.ps_community;
-CREATE TRIGGER ps_comm_moderation_guard_t BEFORE INSERT OR UPDATE ON public.ps_community
+CREATE OR REPLACE TRIGGER ps_comm_moderation_guard_t BEFORE INSERT OR UPDATE ON public.ps_community
   FOR EACH ROW EXECUTE FUNCTION public.ps_comm_moderation_guard();
 
-DROP POLICY IF EXISTS comm_sel ON public.ps_community;
-CREATE POLICY comm_sel ON public.ps_community FOR SELECT TO anon,authenticated USING (NOT deleted AND hidden_at IS NULL);
+/* 같은 정책을 고친다(지우고 다시 만들지 않는다) — 역할(anon · authenticated)과 명령(SELECT)은 그대로 */
+ALTER POLICY comm_sel ON public.ps_community USING (NOT deleted AND hidden_at IS NULL);
 
 CREATE OR REPLACE FUNCTION public.ps_admin_comm_queue(p_limit integer DEFAULT 50) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
