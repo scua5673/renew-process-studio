@@ -42,7 +42,7 @@
   const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
   const STATUS_LABEL = { new: '처음', learning: '학습 중', mastered: '익힘' };
   const LANG_NAME = { ko: '한국어', ja: '일본어', en: '영어' };
-  const HOLE = '<span class="hole" aria-hidden="true"></span>';
+  const HOLE = '';
 
   const COURSES = [
     { id: 'sentence', name: '좋은 문장', glyph: '“', kind: 'sentence', lang: 'ko-KR', desc: '사람을 움직이는 말', unitWord: '문장', data: window.AM_DATA },
@@ -125,7 +125,10 @@
     undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
     pen: '<path d="M4 20l1.2-4.2L15.5 5.5a2.1 2.1 0 0 1 3 3L8.2 18.8z"/><path d="M13.5 7.5l3 3"/>',
     trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
-    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>'
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
+    flame: '<path d="M12 2.8c.6 3.3 5 5.6 5 10.6a5 5 0 0 1-10 0c0-2.2 1-3.8 2.4-5.1.2 1.6 1 2.8 2.4 3.3.6-3.1-.2-5.9.2-8.8z"/>',
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/>',
+    play: '<path d="M8 5.5v13l10.5-6.5z"/>'
   };
   const icon = n => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`;
 
@@ -207,7 +210,7 @@
   const newCount = () => S.settings.load;
   const langAttr = co => (co.lang === 'ja-JP' ? ' lang="ja"' : co.lang === 'en-US' ? ' lang="en"' : '');
   const langName = co => LANG_NAME[co.lang.slice(0, 2)];
-  const badge = co => `<span class="badge"${langAttr(co)} aria-hidden="true">${esc(co.glyph)}</span>`;
+  const badge = co => `<span class="badge" data-c="${co.id}"${langAttr(co)} aria-hidden="true">${esc(co.glyph)}</span>`;
   const isDone = d => !!(S.days[d] && S.days[d].done);
   const allCards = co => co.data.cards.concat(co.kana || []);
   const learnedIn = co => allCards(co).filter(c => S.progress[c.id]).length;
@@ -558,7 +561,10 @@
   const speakBtn = c => (canSpeak ? `<button class="btn" data-act="speak" data-id="${esc(c.id)}">${icon('speaker')}듣기</button>` : '');
   const slowBtn = c => (canSpeak && courseOf(c).kind === 'phrase' ? `<button class="btn" data-act="speak-slow" data-id="${esc(c.id)}">${icon('slow')}천천히</button>` : '');
   const copyBtn = (c, label) => `<button class="btn" data-act="copy" data-id="${esc(c.id)}">${icon('copy')}${label || '복사'}</button>`;
-  const head = (sub, title) => `<header class="top"><div><p class="date">${sub}</p><h1 class="greet">${title}</h1></div><button class="icon-btn" data-act="settings" aria-label="설정">${icon('sliders')}</button></header>`;
+  const head = (sub, title) => {
+    const n = history().current, lit = isDone(today());
+    return `<header class="top"><div><p class="date">${sub}</p><h1 class="greet">${title}</h1></div><div class="top-tools"><span class="streak-chip${lit ? ' lit' : ''}" role="img" aria-label="${n}일 연속${lit ? '' : ' · 오늘은 아직'}">${icon('flame')}<b>${n}</b></span><button class="icon-btn" data-act="settings" aria-label="설정">${icon('sliders')}</button></div></header>`;
+  };
   const empty = (msg, extra) => `<div class="empty"><p>${msg}</p>${extra || ''}</div>`;
   const readCounter = label => `<button class="btn" data-act="read">${label} <span class="reads" aria-label="${ui.reads}번">${[0, 1, 2].map(i => `<i class="${i < ui.reads ? 'on' : ''}"></i>`).join('')}</span></button>`;
   function finishText(co) {
@@ -616,33 +622,39 @@
     if (!first) return '오늘은 복습하는 날이에요';
     return co.kind === 'word' ? `오늘은 ‘${esc(groupName(first))}’의 낱말` : co.kind === 'idea' ? `오늘은 ‘${esc(groupName(first))}’의 개념` : `오늘은 ‘${esc(groupName(first))}’ 문장을 배워요`;
   }
+  // 타일 배지를 감싸는 과정 진도 링
+  const ring = pct => `<svg class="ring" viewBox="0 0 48 48" aria-hidden="true"><circle class="ring-bg" cx="24" cy="24" r="21.5" pathLength="100"/>${pct > 0 ? `<circle class="ring-fg" cx="24" cy="24" r="21.5" pathLength="100" stroke-dasharray="${Math.max(3, Math.round(pct * 100))} 100"/>` : ''}</svg>`;
   function routineCard(co) {
     const p = plan(co.id);
     const prog = courseProgress(co);
     const steps = remainingSteps(p);
-    const top = `<div class="deck-head">${badge(co)}<div><p class="deck-name">${esc(co.name)}</p><p class="deck-sub">${esc(prog.label)}</p></div>${p.done ? '<span class="pill used">오늘 완료</span>' : `<span class="pill">약 ${minutes(steps)}분</span>`}</div>
-      <div class="course-prog" aria-hidden="true"><span style="width:${Math.round(prog.pct * 100)}%"></span></div>`;
+    const lead = `<span class="tile-badge">${ring(prog.pct)}${badge(co)}</span>`;
+    const name = `<span class="tile-name">${esc(co.name)}<small>${esc(prog.label)}</small></span>`;
     if (p.done) {
       const id = p.fresh[p.fresh.length - 1] || p.review[0];
       const c = id && cardById(id);
       const it = co.kind === 'sentence' && S.intents.find(i => i.date === p.date);
-      return `<article class="deck routine">${top}
-        ${c ? `<div class="preview">${itemPreview(c)}</div>` : ''}
-        ${it ? `<p class="intent-line">오늘의 약속 · ${esc(intentLabel(it))}</p>` : ''}
-        <div class="row">${c ? `<button class="btn" data-act="open" data-id="${esc(c.id)}">자세히</button>${speakBtn(c)}` : ''}<button class="link" data-act="more" data-id="${co.id}">하나 더 배우기</button></div>
+      const main = `${lead}<span class="tile-body">${name}<span class="tile-title"${c ? langAttr(co) : ''}>${c ? esc(itemText(c)) : '오늘 완료'}</span>${it ? `<span class="tile-sub">오늘의 약속 · ${esc(intentLabel(it))}</span>` : ''}</span><span class="tile-end ok" role="img" aria-label="오늘 완료">${icon('check')}</span>`;
+      return `<article class="tile done" data-c="${co.id}">
+        ${c ? `<button class="tile-main" data-act="open" data-id="${esc(c.id)}">${main}</button>` : `<div class="tile-main">${main}</div>`}
+        <div class="tile-foot">${c ? speakBtn(c) : ''}<button class="link" data-act="more" data-id="${co.id}">하나 더 배우기</button></div>
       </article>`;
     }
     const parts = stepSummary(co, steps);
     if (!parts.length) {
-      return `<article class="deck routine">${top}<p class="muted">오늘은 복습할 것도, 새로 배울 것도 없어요.</p><div class="row"><button class="btn" data-act="start" data-id="${co.id}">오늘 기록 남기기</button><button class="link" data-act="more" data-id="${co.id}">하나 더 배우기</button></div></article>`;
+      return `<article class="tile" data-c="${co.id}"><button class="tile-main" data-act="start" data-id="${co.id}">${lead}<span class="tile-body">${name}<span class="tile-title">오늘은 쉬어 가는 날</span><span class="tile-sub">복습할 것도, 새로 배울 것도 없어요 · 눌러서 기록 남기기</span></span><span class="tile-end">${icon('chev')}</span></button>
+        <div class="tile-foot"><button class="link" data-act="more" data-id="${co.id}">하나 더 배우기</button></div></article>`;
     }
     const started = p.steps && p.pos > 0;
-    return `<article class="deck routine">${top}
-      <h2 class="deck-title">${routineTitle(co, p, steps)}</h2>
-      <p class="todo-line">${parts.map(esc).join(' · ')}</p>
-      <button class="btn ${started ? '' : 'primary '}wide" data-act="start" data-id="${co.id}">${started ? `이어서 하기 · ${p.pos} / ${p.steps.length - 1}` : '시작하기'}</button>
-      ${!started && inKanaStage(co) && !co.kana.some(c => S.progress[c.id]) ? '<button class="link" data-act="kana-skip">글자는 이미 알아요 · 회화부터 할게요</button>' : ''}
+    return `<article class="tile" data-c="${co.id}">
+      <button class="tile-main" data-act="start" data-id="${co.id}">${lead}<span class="tile-body">${name}<span class="tile-title">${routineTitle(co, p, steps)}</span><span class="tile-sub">${parts.map(esc).join(' · ')}</span></span><span class="tile-end"><span class="tile-min">${started ? `${p.pos}/${p.steps.length - 1}` : `${minutes(steps)}분`}</span>${icon('chev')}</span></button>
+      ${!started && inKanaStage(co) && !co.kana.some(c => S.progress[c.id]) ? '<div class="tile-foot"><button class="link" data-act="kana-skip">글자는 이미 알아요 · 회화부터 할게요</button></div>' : ''}
     </article>`;
+  }
+  // 오늘의 목표 링: 과정 하나가 한 칸, 끝낸 과정은 제 색으로 채운다
+  function goalRing(act) {
+    const n = Math.max(1, act.length), seg = 100 / n, gap = n > 1 ? 2.4 : 0;
+    return `<svg class="goal-ring" viewBox="0 0 120 120" aria-hidden="true">${act.map((co, i) => `<circle data-c="${co.id}" class="${plan(co.id).done ? 'on' : ''}" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="${(seg - gap).toFixed(2)} ${(100 - seg + gap).toFixed(2)}" stroke-dashoffset="${(-(i * seg) - gap / 2).toFixed(2)}"/>`).join('')}</svg>`;
   }
   function viewToday() {
     const now = new Date(), t = today();
@@ -656,15 +668,28 @@
     const back = h.gap >= 3 && !isDone(t)
       ? `<div class="banner"><b>다시 오신 걸 환영해요.</b> ${h.gap}일 쉬었어요. 오늘은 복습을 조금만 준비했어요. 밀린 것은 며칠에 나눠서 천천히 보여 드릴게요.</div>` : '';
     const yesterdayRest = !isDone(t) && h.rests.has(addDays(t, -1));
+    const left = act.filter(co => !plan(co.id).done), next = left[0];
+    const mins = left.reduce((a, co) => a + minutes(remainingSteps(plan(co.id))), 0);
+    const np = next && plan(next.id), started = !!(np && np.steps && np.pos > 0);
+    const doneN = act.length - left.length;
+    const title = !next ? '오늘 목표 완료!' : doneN ? `${left.length}개 남았어요` : `오늘의 루틴 ${act.length}개`;
+    const sub = !next ? '내일 아침에 또 만나요. 더 하고 싶으면 하나 더 배워도 좋아요.' : `${S.settings.anchor ? `${esc(S.settings.anchor)} · ` : ''}약 ${mins}분`;
+    const hero = `<section class="hero" aria-label="오늘의 목표">
+        <div class="hero-top">
+          <div class="goal" role="img" aria-label="오늘 ${act.length}개 중 ${doneN}개 완료">${goalRing(act)}<p class="goal-n" aria-hidden="true"><b>${doneN}</b><span>/ ${act.length}</span></p></div>
+          <div class="hero-text"><span class="day-chip ${type}">${DAY_LABEL[type]}</span><p class="hero-title">${title}</p><p class="hero-sub">${sub}</p></div>
+        </div>
+        ${weekStrip(false, h)}
+        ${next ? `<button class="btn primary wide go" data-c="${next.id}" data-act="start" data-id="${next.id}">${icon('play')}${started ? '이어서 하기' : '시작하기'} · ${esc(next.name)}</button>` : ''}
+      </section>`;
     return `${head(`${now.getMonth() + 1}월 ${now.getDate()}일 ${WEEKDAYS[now.getDay()]}요일`, greeting(now))}
-      <p class="day-line"><span class="day-chip ${type}">${DAY_LABEL[type]}</span>${S.settings.anchor ? `<span>${esc(S.settings.anchor)}, 5분</span>` : ''}</p>
       ${back}
-      ${weekStrip(true, h)}
+      ${hero}
       ${yesterdayRest && !back ? '<p class="hint rest-note">어제는 쉼표로 남겨 뒀어요. 오늘 하면 연속이 그대로 이어져요.</p>' : ''}
-      <section class="routines" aria-label="오늘의 루틴">${act.map(routineCard).join('')}</section>
+      <section class="routines" aria-label="오늘의 루틴"><h2 class="sec-title">과정</h2>${act.map(routineCard).join('')}</section>
       ${!isDone(t) ? `<button class="quick" data-act="quick">${icon('bolt')}<span><b>바쁜 날이라면 1분만</b><small>복습 3개만 해도 오늘의 기록이 이어져요</small></span>${icon('chev')}</button>` : ''}
-      <p class="stats"><span>공부한 날<b>${h.total}</b></span><span>익힌 것<b>${mastered}</b></span>${act.some(co => co.kind === 'phrase') ? `<span>대화 연습<b>${talks}</b>번</span>` : ''}</p>
-      ${sentenceOn ? `<section><h2 class="sec-title">지금 필요한 말 찾기</h2><div class="chips">${courseById.sentence.groups.map(g => `<button class="chip" data-act="find" data-id="${g.id}">${esc(g.name)}</button>`).join('')}</div></section>` : ''}`;
+      <div class="stat-tiles"><p>${icon('flame')}<b>${h.total}</b><span>공부한 날</span></p><p>${icon('star')}<b>${mastered}</b><span>익힌 것</span></p>${act.some(co => co.kind === 'phrase') ? `<p>${icon('chat')}<b>${talks}</b><span>대화 연습</span></p>` : ''}</div>
+      ${sentenceOn ? `<section data-c="sentence"><h2 class="sec-title">지금 필요한 말 찾기</h2><div class="chips">${courseById.sentence.groups.map(g => `<button class="chip" data-act="find" data-id="${g.id}">${esc(g.name)}</button>`).join('')}</div></section>` : ''}`;
   }
 
   /* ---------- 화면: 모음 ---------- */
@@ -786,9 +811,9 @@
     const title = co.kind === 'sentence' ? '문장 모음' : co.kind === 'word' ? '우리말 모음' : co.kind === 'idea' ? '인문학 모음' : `${co.name} 표현`;
     // 공부하는 과정을 앞에 두어 좁은 화면에서도 바로 보이게 한다
     const tabs = activeCourses().concat(COURSES.filter(x => !S.settings.courses.includes(x.id)));
-    const courseChips = `<div class="course-tabs" role="group" aria-label="과정">${tabs.map(x => `<button class="course-tab" data-act="lib-course" data-id="${x.id}" aria-pressed="${x.id === co.id}">${badge(x)}<span>${esc(x.name)}</span></button>`).join('')}</div>`;
+    const courseChips = `<div class="course-tabs" role="group" aria-label="과정">${tabs.map(x => `<button class="course-tab" data-c="${x.id}" data-act="lib-course" data-id="${x.id}" aria-pressed="${x.id === co.id}">${badge(x)}<span>${esc(x.name)}</span></button>`).join('')}</div>`;
     const body = co.kind === 'sentence' ? libSentence(co) : co.kind === 'word' || co.kind === 'idea' ? libWords(co) : libPhrases(co);
-    return `${head(esc(co.desc), title)}${courseChips}${body}`;
+    return `<div class="contents" data-c="${co.id}">${head(esc(co.desc), title)}${courseChips}${body}</div>`;
   }
 
   /* ---------- 화면: 기록 ---------- */
@@ -821,7 +846,7 @@
   function roadmap(co) {
     const prog = courseProgress(co);
     if (co.kind !== 'phrase') {
-      return `<div class="road-course">${badge(co)}<div><p class="deck-name">${esc(co.name)} <span class="muted">${esc(prog.label)}</span></p><div class="course-prog"><span style="width:${Math.round(prog.pct * 100)}%"></span></div><p class="hint">${esc(finishText(co))}</p></div></div>`;
+      return `<div class="road-course" data-c="${co.id}">${badge(co)}<div><p class="deck-name">${esc(co.name)} <span class="muted">${esc(prog.label)}</span></p><div class="course-prog"><span style="width:${Math.round(prog.pct * 100)}%"></span></div><p class="hint">${esc(finishText(co))}</p></div></div>`;
     }
     const nextKana = inKanaStage(co) ? kanaLeft(co)[0] : null, cur = nextKana ? null : currentUnit(co);
     const kanaRows = (co.kana || []).length && (kanaOn(co) || co.kana.some(c => S.progress[c.id]))
@@ -839,7 +864,7 @@
         return `<i class="rc ${cls}" title="${esc(u.name)}"></i>`;
       }).join('')}</div></div>`;
     }).join('');
-    return `<div class="road-course">${badge(co)}<div><p class="deck-name">${esc(co.name)} <span class="muted">${esc(prog.label)}</span></p>${rows}<p class="hint">${nextKana ? `이번 글자 · ‘${esc(nextKana.name)}’. ` : cur ? `이번 장면 · ‘${esc(cur.name)}’. ` : ''}${esc(finishText(co))}</p></div></div>`;
+    return `<div class="road-course" data-c="${co.id}">${badge(co)}<div><p class="deck-name">${esc(co.name)} <span class="muted">${esc(prog.label)}</span></p>${rows}<p class="hint">${nextKana ? `이번 글자 · ‘${esc(nextKana.name)}’. ` : cur ? `이번 장면 · ‘${esc(cur.name)}’. ` : ''}${esc(finishText(co))}</p></div></div>`;
   }
   function viewYear() {
     const h = history(), t = today();
@@ -1154,10 +1179,17 @@
     if (!p.mile || !MILESTONES[p.mile]) return '';
     return `<div class="milestone"><p class="ms-num"><b>${p.mile}</b>일</p><p>${esc(MILESTONES[p.mile])}</p></div>`;
   }
+  // 완료 화면의 색종이(과정 색). 움직임 줄이기를 켜면 보이지 않는다
+  const CONFETTI = `<div class="confetti" aria-hidden="true">${Array.from({ length: 24 }, (_, i) => `<i style="--x:${(i * 41 + 7) % 100}%;--d:${((i * 7) % 10) * 0.05}s;--r:${(i * 67) % 360}deg;--dx:${((i * 29) % 80) - 40}px"></i>`).join('')}</div>`;
+  function doneStats(h, p) {
+    const act = activeCourses(), n = act.filter(co => plan(co.id).done).length;
+    const quick = p.course === 'quick', k = quick ? (p.steps || []).filter(x => x.t === 'review').length : (p.fresh || []).length;
+    return `<div class="done-stats"><p class="ds-streak">${icon('flame')}<b>${h.current}</b><span>일 연속</span></p><p class="ds-goal">${icon('target')}<b>${n}/${act.length}</b><span>오늘 목표</span></p><p class="ds-new">${icon('star')}<b>${k}</b><span>${quick ? '복습' : '새로 배움'}</span></p></div>`;
+  }
   function doneStep(p) {
     const h = history();
     if (p.course === 'quick') {
-      return [`<div class="done-wrap"><p class="eyebrow">1분 루틴 완료 ${icon('check')}</p><p class="big-streak"><strong>${h.current}</strong>일 연속</p>${weekStrip(false, h)}${milestoneBlock(p)}<p class="hint">바쁜 날에도 이어 갔어요. 여유가 생기면 과정별 루틴도 이어서 해 보세요.</p></div>`,
+      return [`<div class="done-wrap">${CONFETTI}<div class="done-hero">${badge(QUICK)}<p class="done-title">1분 루틴 완료!</p><p class="hint">바쁜 날에도 이어 갔어요.</p></div>${doneStats(h, p)}${weekStrip(false, h)}${milestoneBlock(p)}<p class="hint">여유가 생기면 과정별 루틴도 이어서 해 보세요.</p></div>`,
         '<button class="btn primary wide" data-act="close-session">홈으로</button>'];
     }
     const co = courseById[p.course];
@@ -1176,12 +1208,12 @@
       note = (p.dialogues || []).length ? '대화까지 직접 말해 봤어요. 이 장면은 며칠 뒤 다시 대화로 복습해요.'
         : left && u ? `‘${esc(u.name)}’ 장면의 표현 ${left}개를 더 배우면 대화 연습이 열려요.` : '내일 아침, 오늘 배운 표현이 빈칸이 되어 돌아와요.';
     }
-    return [`<div class="done-wrap"><p class="eyebrow">${esc(co.name)} 완료 ${icon('check')}</p><p class="big-streak"><strong>${h.current}</strong>일 연속</p>${weekStrip(false, h)}
+    return [`<div class="done-wrap">${CONFETTI}<div class="done-hero">${badge(co)}<p class="done-title">${esc(co.name)} 완료!</p></div>${doneStats(h, p)}${weekStrip(false, h)}
         ${milestoneBlock(p)}
         ${p.type === 'review' ? weekRecap(co, p) : c ? `<article class="deck">${HOLE}<p class="eyebrow">오늘 배운 ${esc(co.unitWord)}</p>${itemPreview(c)}</article>` : ''}
         <p class="hint">${note}</p></div>`,
       next
-        ? `<div class="duo"><button class="btn" data-act="close-session">홈으로</button><button class="btn primary" data-act="start" data-id="${next.id}">다음: ${esc(next.name)}</button></div><button class="link" data-act="more" data-id="${co.id}">${esc(co.name)} 하나 더 배우기</button>`
+        ? `<div class="duo"><button class="btn" data-act="close-session">홈으로</button><button class="btn primary" data-c="${next.id}" data-act="start" data-id="${next.id}">다음: ${esc(next.name)}</button></div><button class="link" data-act="more" data-id="${co.id}">${esc(co.name)} 하나 더 배우기</button>`
         : `<div class="duo">${c ? copyBtn(c) : '<span></span>'}<button class="btn primary" data-act="close-session">홈으로</button></div><button class="link" data-act="more" data-id="${co.id}">하나 더 배우기</button>`];
   }
   function stepView(s, p) {
@@ -1214,7 +1246,7 @@
   function yearTotals() {
     return activeCourses().map(co => co.kind === 'phrase' ? `${co.name} ${kanaOn(co) ? `글자 ${co.kana.length}묶음 + ` : ''}${co.groups.length}장면` : `${co.name} ${co.data.cards.length}${co.unitWord}`).join(' · ');
   }
-  const onbPick = co => `<button class="pick" data-act="onb-course" data-id="${co.id}" aria-pressed="${S.settings.courses.includes(co.id)}">${badge(co)}<span class="pick-body"><b>${esc(co.name)}</b><small>${esc(co.desc)}</small></span><span class="tick">${icon('check')}</span></button>`;
+  const onbPick = co => `<button class="pick" data-c="${co.id}" data-act="onb-course" data-id="${co.id}" aria-pressed="${S.settings.courses.includes(co.id)}">${badge(co)}<span class="pick-body"><b>${esc(co.name)}</b><small>${esc(co.desc)}</small></span><span class="tick">${icon('check')}</span></button>`;
   function onboarding() {
     const steps = onbSteps();
     const step = steps[Math.min(ui.onb, steps.length - 1)];
@@ -1284,7 +1316,7 @@
       ${del}
     </div>`;
   }
-  const courseChip = co => `<button class="chip course-chip" data-act="course-toggle" data-id="${co.id}" aria-pressed="${S.settings.courses.includes(co.id)}">${badge(co)}${esc(co.name)}</button>`;
+  const courseChip = co => `<button class="chip course-chip" data-c="${co.id}" data-act="course-toggle" data-id="${co.id}" aria-pressed="${S.settings.courses.includes(co.id)}">${badge(co)}${esc(co.name)}</button>`;
   function settingsSheet() {
     const s = S.settings;
     const imp = ui.confirm === 'import' && ui.pendingImport
@@ -1661,6 +1693,9 @@
     if (!S.settings.onboarded) { el.innerHTML = ''; return; }
     el.innerHTML = ({ today: viewToday, library: viewLibrary, notes: viewNotes }[ui.view] || viewToday)();
     if (ui.view === 'notes' && ui.notesMode === 'ink') loadInkGallery();
+    // 고른 과정 탭이 좁은 화면 밖에 있으면 보이는 곳으로 당긴다
+    const tab = ui.view === 'library' && el.querySelector('.course-tab[aria-pressed="true"]');
+    if (tab) { const row = tab.parentElement, l = tab.offsetLeft - row.offsetLeft; if (l < row.scrollLeft || l + tab.offsetWidth > row.scrollLeft + row.clientWidth) row.scrollLeft = l - 8; }
   }
   function renderTabs() {
     const el = $('tabs');
@@ -1678,11 +1713,12 @@
   }
   function renderSession() {
     const el = $('session');
-    if (!S.settings.onboarded) { el.hidden = false; el.innerHTML = onboarding(); return; }
+    if (!S.settings.onboarded) { delete el.dataset.c; el.hidden = false; el.innerHTML = onboarding(); return; }
     if (ui.practice && ui.practice.type === 'listen') {
       const co = courseById[ui.practice.course];
       if (!co || !ui.lq) { ui.practice = null; renderSession(); return; }
       const [body, actions] = listenView(ui.lq, `<p class="eyebrow">${esc(co.name)} · 코치 지시어 듣기</p>`);
+      el.dataset.c = co.id;
       el.hidden = false;
       el.innerHTML = `<div class="session-inner"><div class="session-top"><button class="icon-btn" data-act="close-practice" aria-label="듣기 연습 닫기">${icon('close')}</button>${badge(co)}<span class="step-count">${esc(co.name)}</span></div><div class="session-body">${body}</div><div class="session-actions">${actions}</div></div>`;
       return;
@@ -1691,6 +1727,7 @@
       const co = courseById[ui.practice.course], u = co && co.groupById[ui.practice.unit];
       if (!u) { ui.practice = null; renderSession(); return; }
       const [body, actions] = dialogueView(co, u);
+      el.dataset.c = co.id;
       el.hidden = false;
       el.innerHTML = `<div class="session-inner"><div class="session-top"><button class="icon-btn" data-act="close-practice" aria-label="대화 연습 닫기">${icon('close')}</button>${badge(co)}<span class="step-count">${esc(co.name)}</span></div><div class="session-body">${body}</div><div class="session-actions">${actions}</div></div>`;
       if (ui.scrollEnd) { el.scrollTop = el.scrollHeight; ui.scrollEnd = false; }
@@ -1706,6 +1743,7 @@
     const total = p.steps.length;
     const pct = Math.round((p.pos / Math.max(1, total - 1)) * 100);
     const [body, actions] = stepView(step, p);
+    el.dataset.c = co.id;
     el.hidden = false;
     el.innerHTML = `<div class="session-inner">
       <div class="session-top"><button class="icon-btn" data-act="close-session" aria-label="루틴 닫기">${icon('close')}</button>${badge(co)}<div class="progress" role="progressbar" aria-label="${esc(co.name)} 루틴 진행" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${p.pos + 1}"><span style="width:${pct}%"></span></div><span class="step-count">${p.pos + 1} / ${total}</span></div>
