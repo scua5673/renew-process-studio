@@ -28,7 +28,8 @@ try{
    let f=await openBoard(page);
    assert.equal(await f.evaluate(()=>document.body.classList.contains('bc-tilt3d')),false);
    // ③ 사용자가 다시 켰고, 그 3D 부팅이 끝나지 못한 채 페이지가 죽었다(표시가 5초 전) → 다음 부팅은 평면 + 안내
-   await page.evaluate(()=>{localStorage.setItem('ps_board_tilt3d','1');localStorage.setItem('ps_tilt3d_boot',String(Date.now()-5000));});
+   await page.evaluate(()=>{localStorage.setItem('ps_board_tilt3d','1');const tab=sessionStorage.getItem('ps_tilt3d_tab');if(!tab)throw new Error('board did not keep a tab id');
+     localStorage.setItem('ps_tilt3d_boot',JSON.stringify({[tab]:Date.now()-5000}));});   /* 이 탭의 3D 부팅이 5초 전에 시작해 끝나지 못했다 */
    await page.reload({waitUntil:'domcontentloaded'});await page.waitForTimeout(2500);
    /* 작전판 iframe 은 앱과 함께 미리 부팅되기도 한다 — 그 부팅이 이미 평면으로 열었을 수 있어 셸의 값 대신 작전판을 본다 */
    assert.equal(await page.evaluate(()=>localStorage.getItem('ps_tilt3d_touch_reset_v1')),'1','the reset stays done (a later «1» is the user\'s)');
@@ -39,12 +40,20 @@ try{
    assert.equal(safe.shown,true,'and says so once the board is on screen '+JSON.stringify(safe));
    // 다시 켜면 3D 로 열리고 표시가 생긴다(20초 버티면 지워진다 — 단위 시험) · 정상 새로고침은 표시를 지워 다음 부팅도 3D
    await f.evaluate(()=>window.__setTilt(true));
-   assert.ok(Number(await f.evaluate(()=>localStorage.getItem('ps_tilt3d_boot')))>0,'turning 3D on arms the mark');
+   assert.ok(await f.evaluate(()=>JSON.parse(localStorage.getItem('ps_tilt3d_boot')||'{}')[sessionStorage.getItem('ps_tilt3d_tab')]>0),'turning 3D on arms this tab\'s mark');
    await page.reload({waitUntil:'domcontentloaded'});await page.waitForTimeout(2500);
    f=await openBoard(page);
    const again=await f.evaluate(()=>({tilt:document.body.classList.contains('bc-tilt3d'),safe:window.__tiltBootSafe}));
    assert.deepEqual(again,{tilt:true,safe:false},'a normal reload is not a crash: 3D again '+JSON.stringify(again));
    await page.context().close();}
+  // ④ 데스크톱은 건드리지 않는다 — 창 두 개가 서로의 3D 부팅을 «멈춤»으로 읽던 것(3.033 검토에서 재현)
+  {const {page,context}=await openApp(fx,'desktop',{browsers,tilt3d:true});
+   const a=await openBoard(page);
+   const page2=await context.newPage();await page2.goto(fx.base+'/studio/app.html',{waitUntil:'domcontentloaded'});await page2.waitForTimeout(3000);
+   const b=await openBoard(page2);
+   const two={a:await a.evaluate(()=>({tilt:document.body.classList.contains('bc-tilt3d'),safe:window.__tiltBootSafe})),b:await b.evaluate(()=>({tilt:document.body.classList.contains('bc-tilt3d'),safe:window.__tiltBootSafe,mark:localStorage.getItem('ps_tilt3d_boot'),stored:localStorage.getItem('ps_board_tilt3d')}))};
+   assert.deepEqual(two,{a:{tilt:true,safe:false},b:{tilt:true,safe:false,mark:null,stored:'1'}},'desktop: two windows both 3D, no mark '+JSON.stringify(two));
+   await context.close();}
 }finally{for(const b of Object.values(browsers))await b.close();await fx.close?.();}
 console.log(JSON.stringify({test:'board-3d-ipad-safe',engine,passed:true}));
 process.exit(0);

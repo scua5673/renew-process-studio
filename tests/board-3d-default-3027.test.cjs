@@ -9,7 +9,7 @@ test('3.027 a device entering for the first time opens the board in 3D; a device
   /* 3.033 — 처음 3D 는 마우스 데스크톱만(아이패드 사파리가 3D 경기장을 버티지 못해 반복 강제 종료) — tests/ipad-3d-safe-3033.test.cjs */
   assert.match(app,/else if\(localStorage\.getItem\('ps_board_tilt3d'\)===null\)localStorage\.setItem\('ps_board_tilt3d','1'\);\}catch\(_\)\{\}/,'only when nothing was chosen yet (desktop)');
   assert.ok(app.indexOf("localStorage.getItem('ps_board_tilt3d')===null")<app.indexOf('id="fBoard"'),'set before the board frame loads');
-  assert.match(R('studio/board.html'),/try\{ if\(localStorage\.getItem\("ps_board_tilt3d"\)==="1"\)\{ document\.body\.classList\.add\("bc-tilt3d"\);/,'the board boots in 3D on «1»');
+  assert.match(R('studio/board.html'),/try\{ if\(localStorage\.getItem\("ps_board_tilt3d"\)==="1"&&window\.__tiltBootOk!==false\)\{ document\.body\.classList\.add\("bc-tilt3d"\);/,'the board boots in 3D on «1» (unless the 3.033 boot guard says flat)');
   assert.match(R('tests/fixtures/team-app.mjs'),/if\(tilt3d!==null\)localStorage\.setItem\('ps_board_tilt3d',tilt3d\?'1':'0'\);/,'shared fixture stays flat unless a test asks for a first-time device');
 });
 
