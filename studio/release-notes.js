@@ -8,6 +8,9 @@
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
   var DEFAULT_ENTRIES=[{
+    id:'2026-10-14-v3-018-navy',date:'2026-10-14',title:'v3.018 · 앱 메인색 — 진한 네이비',
+    changes:['앱의 메인색이 파랑에서 진한 네이비로 바뀌었습니다. 저장 버튼 · 선택한 탭 · 스위치 · 도크에서 고른 도구가 네이비로 보입니다.','다크 모드에서는 어두운 바탕에서도 잘 보이도록 같은 계열의 밝은 네이비를 씁니다.','팀 색 · 펜 색 · 등급 · 국면 · 차트 색은 그대로입니다. 운동장 위 선수의 선택 표시도 잘 보이도록 파랑 그대로 둡니다.']
+  },{
     id:'2026-10-14-v3-017-pencil',date:'2026-10-14',title:'v3.017 · 보드 — 애플 펜슬로 더 부드럽게',
     changes:['펜슬로 긋는 동안 손바닥이 화면에 닿아도 선이 꼬이거나 튀지 않습니다. 손가락이 먼저 닿아 시작된 선은 펜슬이 닿는 순간 펜슬 선으로 바뀝니다.','펜슬을 한 번 쓰면, 그리기 도구를 든 채로 손가락으로 선수를 옮길 수 있습니다(아이패드는 지금처럼 길게 눌러서). 손가락으로는 그리지 않습니다.','자유선이 꺾인 선 대신 둥근 곡선으로 그려지고, 펜슬이 보내는 중간 점까지 모두 받아 빠르게 그어도 모양이 그대로 나옵니다. 예전에 그린 선도 같은 점으로 더 매끄럽게 보이고, 사진 · 영상에도 그대로 나옵니다.','긋는 선을 화면 한 장에 한 번만 다시 그려, 긴 선이나 3D 보기에서도 펜 끝을 바짝 따라옵니다.','펜슬 호버를 지원하는 아이패드에서는 화면에 닿기 전부터 펜 끝 자리를 작은 링으로 보여 줍니다.']
   },{
@@ -687,19 +690,19 @@
   }
   var CSS=[
     '.ps-release-notes{flex:0 0 auto;min-width:0;background:var(--bar,#fff);color:var(--txt,#14161a);border-bottom:1px solid var(--line,#e3e6ea);font:inherit}',
-    'body.fmdark .ps-release-notes{--bar:#1b1e23;--bar2:#23272d;--line:#2e333a;--txt:#f2f3f5;--dim:#a9afb8;--blue:#6f94f5}',
+    'body.fmdark .ps-release-notes{--bar:#1b1e23;--bar2:#23272d;--line:#2e333a;--txt:#f2f3f5;--dim:#a9afb8;--blue:#7F98D0}',
     '.ps-release-notes[hidden],.ps-release-notes [hidden]{display:none!important}',
     '.ps-release-notes *{box-sizing:border-box}',
     '.ps-release-notes .psrn-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 16px;padding:9px 16px}',
     '.ps-release-notes .psrn-summary{flex:1 1 250px;min-width:0}',
     '.ps-release-notes .psrn-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;font-size:12px;line-height:1.45}',
-    '.ps-release-notes .psrn-label{color:var(--blue,#3a6df0);font-weight:800}',
+    '.ps-release-notes .psrn-label{color:var(--blue,var(--ps-navy,#14213D));font-weight:800}',
     '.ps-release-notes .psrn-meta{color:var(--dim,#646a73);font-size:11px}',
     '.ps-release-notes .psrn-title{margin-top:2px;font-size:12px;line-height:1.45;overflow-wrap:anywhere}',
     '.ps-release-notes .psrn-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px}',
     '.ps-release-notes button{appearance:none;min-height:32px;padding:5px 9px;border:1px solid var(--line,#e3e6ea);border-radius:7px;background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:600;line-height:1.4;cursor:pointer}',
     '.ps-release-notes button:hover{background:var(--bar2,#f1f2f4)}',
-    '.ps-release-notes button:focus-visible{outline:2px solid var(--blue,#3a6df0);outline-offset:2px}',
+    '.ps-release-notes button:focus-visible{outline:2px solid var(--blue,var(--ps-navy,#14213D));outline-offset:2px}',
     '.ps-release-notes .psrn-details{padding:0 16px 12px;max-height:220px;max-height:min(32dvh,220px);overflow:auto;overscroll-behavior:contain}',
     '.ps-release-notes .psrn-entry{padding-top:10px;border-top:1px solid var(--line,#e3e6ea)}',
     '.ps-release-notes .psrn-entry+.psrn-entry{margin-top:10px}',

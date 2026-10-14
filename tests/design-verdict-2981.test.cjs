@@ -169,10 +169,10 @@ test('shell: an automatic reload returns to the screen the coach was on; a manua
 test('the four meaning colours have dark values, and every page links the stylesheet that carries them',()=>{
   const ug=read('ui-grammar.css');
   const dark=between(ug,'color-scheme:dark;','\n}');
-  for(const [k,v] of [['--c-act','#6F94F5'],['--c-ok','#4CC27A'],['--c-warn','#D9A15A'],['--c-bad','#E07470']])
+  for(const [k,v] of [['--c-act','#7F98D0'],['--c-ok','#4CC27A'],['--c-warn','#D9A15A'],['--c-bad','#E07470']])
     assert.ok(dark.includes(k+':'+v),k+' 다크 값');
   /* 새 색을 만들지 않는다 — 같은 다크 팔레트의 값 */
-  assert.match(dark,/--accent:#6F94F5/);assert.match(dark,/--ok:#4CC27A/);assert.match(dark,/--warm:#D9A15A/);assert.match(dark,/--red:#E07470/);
+  assert.match(dark,/--accent:#7F98D0/);   /* 3.018 — 메인색 네이비의 다크 값 */assert.match(dark,/--ok:#4CC27A/);assert.match(dark,/--warm:#D9A15A/);assert.match(dark,/--red:#E07470/);
   /* 링크 파일은 ?v= 가 안 바뀌면 브라우저 캐시가 옛 값을 문다(2.593) */
   let linked=0;
   for(const f of fs.readdirSync(path.join(__dirname,'..','studio')).filter(x=>x.endsWith('.html'))){

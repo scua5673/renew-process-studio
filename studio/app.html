@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.017"></script>
+<script src="autosave-status.js?v=3.018"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -46,7 +46,7 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta name="author" content="PROCESS STUDIO">
 <meta name="copyright" content="© 2026 PROCESS STUDIO. All rights reserved.">
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b"><!-- 로컬 폰트 — 완전 오프라인 -->
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.018"><!-- 로컬 폰트 — 완전 오프라인 -->
 <meta name="theme-color" content="#ECEDF0">
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
@@ -56,10 +56,10 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
-:focus-visible{outline:2px solid #3a6df0 !important;outline-offset:2px;border-radius:6px;}
+:focus-visible{outline:2px solid var(--ps-navy,#14213D) !important;outline-offset:2px;border-radius:6px;}
 
   /* UI 규칙: 레포 UI-가이드.md — 색은 의미로만(보라=목표·초록=완료·빨강=경고·파랑=코치), 이모지 금지(라인 SVG), 무게 600/800 */
-  :root{--bg:#ECEDF0;--bar:#FFFFFF;--bar2:#F1F2F4;--line:#E3E6EA;--txt:#14161A;--dim:#646A73;--blue:#3a6df0;
+  :root{--bg:#ECEDF0;--bar:#FFFFFF;--bar2:#F1F2F4;--line:#E3E6EA;--txt:#14161A;--dim:#646A73;--blue:#14213D;
     font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);}
@@ -139,7 +139,7 @@
   .teamnav button.on{background:var(--surface);color:var(--txt);font-weight:var(--fw-head,800);
     box-shadow:0 1px 2px var(--sh08,rgba(16,24,40,.08)),0 2px 5px var(--sh06,rgba(16,24,40,.06))}
   /* 위 탭과 같은 밑줄 — 팀 도구는 파랑, 개인 영역(IDP)만 보라 */
-  .teamnav button.on::after{content:"";position:absolute;left:14px;right:14px;bottom:3px;height:2px;border-radius:2px;background:#3a6df0}
+  .teamnav button.on::after{content:"";position:absolute;left:14px;right:14px;bottom:3px;height:2px;border-radius:2px;background:var(--ps-navy,#14213D)}
   .teamnav button[data-team-key="idp"].on::after{background:#7C4DFF}
   .hintbar{margin-left:auto;color:var(--dim);font-size:var(--fs-sub);font-weight:var(--fw-body);white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;}
   .hintbar{display:none;}
@@ -215,7 +215,7 @@
   #loading.ps-boot-screen::before{content:"PROCESS STUDIO";font-family:'Jost',-apple-system,sans-serif;
     font-size:var(--fs-title);font-weight:var(--fw-body);letter-spacing:.075em;color:var(--ink);}
   #loading.ps-boot-screen::after{content:"";width:104px;height:3px;border:0;border-radius:999px;
-    background:linear-gradient(90deg,#DCE2EE 0 30%,#3A6DF0 48%,#DCE2EE 66% 100%);
+    background:linear-gradient(90deg,#DCE2EE 0 30%,var(--ps-navy,#14213D) 48%,#DCE2EE 66% 100%);
     background-size:210% 100%;animation:psBootSlide .8s ease-in-out infinite;}
   #loading.ps-boot-screen span,#loading.ps-boot-screen button{display:none;}
   #loading.ps-boot-screen.ps-boot-slow span{display:block;text-align:center;max-width:32em;padding:0 20px;font-size:14px;}
@@ -224,7 +224,7 @@
   /* 바깥 앱 셸은 밝은 화면이므로 저장된 작전판 테마와 관계없이 같은 시작 화면을 쓴다. */
   body.fmdark #loading.ps-boot-screen{background:var(--surface-2);color:var(--dim);}
   body.fmdark #loading.ps-boot-screen::before{color:var(--ink);}
-  body.fmdark #loading.ps-boot-screen::after{background:linear-gradient(90deg,#D8DCE4 0 30%,#3A6DF0 48%,#D8DCE4 66% 100%);background-size:210% 100%;}
+  body.fmdark #loading.ps-boot-screen::after{background:linear-gradient(90deg,#D8DCE4 0 30%,#7F98D0 48%,#D8DCE4 66% 100%);background-size:210% 100%;}
   @keyframes psBootSlide{0%{background-position:100% 0}100%{background-position:-100% 0}}
   /* ---- device preview toggle (desktop/tablet only) ---- */
   .devtoggle{display:none;margin-left:auto;align-items:center;gap:2px;background:var(--bar2);border:1px solid var(--line);border-radius:10px;padding:3px;}
@@ -271,7 +271,7 @@
 
   .seg button{position:relative;}
   /* 역할 분리(v147): 팀 도구 전부 파랑, 개인 영역(IDP)만 보라 */
-  .seg button.on::after{content:"";position:absolute;left:16px;right:16px;bottom:4px;height:2px;border-radius:2px;background:#3a6df0;}
+  .seg button.on::after{content:"";position:absolute;left:16px;right:16px;bottom:4px;height:2px;border-radius:2px;background:var(--ps-navy,#14213D);}
   .seg button[data-app="idp"].on::after,.seg button[data-app="learning"].on::after{background:#7C4DFF;}
   .seg button svg{display:none;width:18px;height:18px}
   @media(max-width:600px){.seg button svg{display:block}.seg button span{font-size:10px}}
@@ -324,13 +324,13 @@
   .gearpop>*{flex:0 0 auto;}
   .gearpop.on{display:flex;}
   .gp-head{display:flex;align-items:center;justify-content:space-between;padding:1px 1px 10px;border-bottom:1px solid var(--line);font-size:var(--fs-title);font-weight:var(--fw-head);color:var(--txt);letter-spacing:-.02em;}
-  .gp-scope{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border:1px solid #c9d7fb;border-radius:999px;background:#eef4ff;color:#2c54c4;font-size:10px;font-weight:800;letter-spacing:0;white-space:nowrap;}
+  .gp-scope{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border:1px solid #C3CCDD;border-radius:999px;background:#E9EDF5;color:var(--ps-navy-h,#1D2D50);font-size:10px;font-weight:800;letter-spacing:0;white-space:nowrap;}
   .gp-section-title{margin:2px 0 -4px;padding-top:10px;border-top:1px solid var(--line);color:var(--dim);font-size:10px;font-weight:800;letter-spacing:.08em;line-height:1.2;}
   .gp-head+.gp-section-title{padding-top:0;border-top:0;}
   .gp-titlebox{display:flex;align-items:center;gap:8px;min-width:0;}
   .gp-close{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;margin:-4px -3px -4px 0;padding:0;border:0;border-radius:8px;background:transparent;color:var(--dim);font:500 21px/1 Pretendard,sans-serif;cursor:pointer;}
   .gp-close:hover{background:var(--bar2);color:var(--txt);}
-  body.fmdark .gp-scope{border-color:#53678e;background:#25324a;color:#dce6ff;}
+  body.fmdark .gp-scope{border-color:#53678e;background:#25324a;color:#2A3A5E;}
   .gp-row{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;}
   .gp-lb{font-size:var(--fs-caption);font-weight:var(--fw-head);color:var(--dim);letter-spacing:.02em;}
   .gearpop .bkup,.gearpop .langsw{margin-left:0;order:0;}
@@ -401,7 +401,7 @@
     .seg button.on{background:transparent;box-shadow:none;color:var(--blue);}
     .seg button[data-app="idp"].on,.seg button[data-app="learning"].on{color:#7C4DFF;}
     /* 다크: 라이트와 동일하게 박스 없이 색 텍스트/아이콘만 (모드 간 통일) */
-    body.fmdark .seg button.on{background:transparent;box-shadow:none;color:#6F94F5;}
+    body.fmdark .seg button.on{background:transparent;box-shadow:none;color:#7F98D0;}
     body.fmdark .seg button[data-app="idp"].on,body.fmdark .seg button[data-app="learning"].on{color:#9D7BFF;}
     .seg button.on::after{display:none;}
     /* 2.349 — ⚠ 56px 은 **추정치**였고 실제 바는 59px 이라 iframe 이 3px 파고들어, iframe 앱이 제 하단 바를
@@ -451,14 +451,14 @@
   body.fmdark .gd-body section{background:#1B1E23;border-color:#2E333A;color:#F2F3F5;}
   body.fmdark .gd-body h1,body.fmdark .gd-body h2{color:#F2F3F5;}
   body.fmdark .gd-body .sub{color:#A9AFB8;}
-  body.fmdark .gd-body nav.toc a{background:rgba(111,148,245,.16);color:#8FB0FF;}
+  body.fmdark .gd-body nav.toc a{background:rgba(127,152,208,.16);color:#7F98D0;}
   body.fmdark .shview{background:#121417;}
   body.fmdark .seg button.on{background:rgba(255,255,255,.11);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35);}
-  body.fmdark .seg button.on::after{bottom:3px;height:2px;background:#6F94F5;}   /* v147: 팀 도구 전부 파랑 */
+  body.fmdark .seg button.on::after{bottom:3px;height:2px;background:#7F98D0;}   /* v147: 팀 도구 전부 파랑 */
   body.fmdark .seg button[data-app="idp"].on::after,body.fmdark .seg button[data-app="learning"].on::after{background:#9D7BFF;} /* 개인 성장 영역은 보라 */
   /* 폰 하단 탭바(다크): 데스크톱 알약 배경을 끄고 라이트와 동일하게 색 텍스트/아이콘만 — 소스 순서상 위 규칙 뒤에 와야 적용됨 */
   @media (max-width:600px){
-    body.fmdark .seg button.on{background:transparent;box-shadow:none;color:#6F94F5;}
+    body.fmdark .seg button.on{background:transparent;box-shadow:none;color:#7F98D0;}
     body.fmdark .seg button[data-app="idp"].on,body.fmdark .seg button[data-app="learning"].on{color:#9D7BFF;}
   }
   body.fmdark .hintbar{color:#A9AFB8;}
@@ -505,7 +505,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.017';</script>
+<script>window.PS_BUILD='3.018';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -756,7 +756,7 @@ function psShowUpdBand(){
   /* 실행 직후(3초 이내) 감지된 업데이트는 즉시 조용히 재시작 — 시작하자마자 "로드→배너→리로드" 이중 깜빡임 방지. 사용 중 감지된 경우에만 배너+지연 */
   /* 시작 직후에도 강제 새로고침하지 않는다. 현재 작업 화면은 유지하고,
      사용자가 선택할 때만 새 버전으로 다시 시작한다. */
-  try{ if(!document.getElementById("psUpdBtn")){ var b=document.createElement("button");b.id="psUpdBtn";b.type="button";b.title="새 버전으로 업데이트";b.innerHTML="<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' style='margin-right:5px;flex:0 0 auto'><path d='M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4'/><path d='M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4'/></svg><span>업데이트</span>";b.style.cssText="display:inline-flex;align-items:center;height:34px;padding:0 13px;border:0;border-radius:10px;background:#3a6df0;color:#fff;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 9px rgba(58,109,240,.45)";b.onclick=function(){location.reload();};var _g=document.getElementById("gearWrap");if(_g&&_g.parentNode){_g.parentNode.insertBefore(b,_g);}else{b.style.position="fixed";b.style.top="calc(9px + env(safe-area-inset-top))";b.style.right="14px";b.style.zIndex="2147483001";document.body.appendChild(b);}} }catch(_){}}});});}</script>
+  try{ if(!document.getElementById("psUpdBtn")){ var b=document.createElement("button");b.id="psUpdBtn";b.type="button";b.title="새 버전으로 업데이트";b.innerHTML="<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' style='margin-right:5px;flex:0 0 auto'><path d='M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4'/><path d='M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4'/></svg><span>업데이트</span>";b.style.cssText="display:inline-flex;align-items:center;height:34px;padding:0 13px;border:0;border-radius:10px;background:var(--ps-navy,#14213D);color:#fff;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 9px color-mix(in srgb,var(--ps-navy,#14213D) 45%,transparent)";b.onclick=function(){location.reload();};var _g=document.getElementById("gearWrap");if(_g&&_g.parentNode){_g.parentNode.insertBefore(b,_g);}else{b.style.position="fixed";b.style.top="calc(9px + env(safe-area-inset-top))";b.style.right="14px";b.style.zIndex="2147483001";document.body.appendChild(b);}} }catch(_){}}});});}</script>
 <script>
 /* PWA 설치 — 자리는 **한 곳**: 앱 설정 › 기기 › 앱·오프라인 행(#psPwaInstall).
    2.455 — 사이드바 '설치하기'(#psInstallBtn)를 걷었다(사용자 "앱설정에 넣어주고"). 2.437 이 그것을
@@ -937,7 +937,7 @@ function psShowUpdBand(){
   font-size:11px;font-weight:600;line-height:1.6;color:var(--dim,#646A73)}
 #psInstallSheet .psi-note b{color:var(--txt,#0d0e10);font-weight:800}
 #psInstallSheet .psi-go{margin-top:14px;width:100%;min-height:42px;border:0;border-radius:11px;
-  background:var(--blue,#3a6df0);color:#fff;font:800 13px Pretendard,system-ui;cursor:pointer;font-family:inherit}
+  background:var(--blue,var(--ps-navy,#14213D));color:#fff;font:800 13px Pretendard,system-ui;cursor:pointer;font-family:inherit}
 #psInstallSheet .psi-go:hover{filter:brightness(1.06)}
 /* 2.462 — 동기화 진단 시트(설치 시트와 같은 결) */
 #psDiagSheet{position:fixed;inset:0;z-index:2147483200;display:flex;align-items:center;justify-content:center;padding:18px}
@@ -954,7 +954,7 @@ function psShowUpdBand(){
 #psDiagSheet .pd-note{margin-top:12px;font-size:11px;font-weight:600;line-height:1.6;color:var(--dim,#646A73)}
 #psDiagSheet .pd-acts{display:flex;gap:8px;margin-top:14px}
 #psDiagSheet .pd-acts button{flex:1;min-height:40px;border-radius:10px;cursor:pointer;font:800 13px Pretendard,system-ui;font-family:inherit}
-#psDiagSheet .pd-sync{border:0;background:var(--blue,#3a6df0);color:#fff}
+#psDiagSheet .pd-sync{border:0;background:var(--blue,var(--ps-navy,#14213D));color:#fff}
 #psDiagSheet .pd-clean{border:1px solid var(--line,#e3e6ea);background:var(--bar2,#f6f7f9);color:var(--txt,#0d0e10)}
 #psDiagSheet .pd-x:not(#_){position:absolute;top:9px;right:9px;width:30px;height:30px;min-height:0;padding:0;border:0;background:transparent;color:var(--dim,#646A73);font-size:20px;line-height:1;cursor:pointer;border-radius:8px}
 /* 2.465 — 팀 기록 시트: 진단 시트와 같은 문법 */
@@ -972,12 +972,12 @@ function psShowUpdBand(){
 #psHistSheet .pd-note{margin-top:12px;font-size:11px;font-weight:600;line-height:1.6;color:var(--dim,#646A73)}
 #psHistSheet .pd-acts{display:flex;gap:8px;margin-top:14px}
 #psHistSheet .pd-acts button{flex:1;min-height:40px;border-radius:10px;cursor:pointer;font:800 13px Pretendard,system-ui;font-family:inherit}
-#psHistSheet .pd-sync{border:0;background:var(--blue,#3a6df0);color:#fff}
+#psHistSheet .pd-sync{border:0;background:var(--blue,var(--ps-navy,#14213D));color:#fff}
 #psHistSheet .pd-clean{border:1px solid var(--line,#e3e6ea);background:var(--bar2,#f6f7f9);color:var(--txt,#0d0e10)}
 #psHistSheet .pd-x:not(#_){position:absolute;top:9px;right:9px;width:30px;height:30px;min-height:0;padding:0;border:0;background:transparent;color:var(--dim,#646A73);font-size:20px;line-height:1;cursor:pointer;border-radius:8px}
 #psHistSheet .ph-row{display:flex;align-items:baseline;gap:8px;width:100%;text-align:left;border:0;background:none;border-bottom:1px dashed var(--line-soft,#edeff4);padding:9px 2px;cursor:pointer;color:inherit;font-family:inherit}
 #psHistSheet .ph-row b{font-size:13px;font-weight:800;white-space:nowrap}
-#psHistSheet .ph-who{font-size:12px;font-weight:800;color:var(--blue,#3a6df0);white-space:nowrap}
+#psHistSheet .ph-who{font-size:12px;font-weight:800;color:var(--blue,var(--ps-navy,#14213D));white-space:nowrap}
 #psHistSheet .ph-what{font-size:12px;font-weight:600;color:var(--txt,#0d0e10);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #psHistSheet .ph-sz{margin-left:auto;font-size:10px;font-weight:600;color:var(--dim,#646A73);white-space:nowrap}
 </style>
@@ -992,7 +992,7 @@ function psShowUpdBand(){
   /* 2.709 — 너무 크고 튄다(사용자) → 14×40, 흰 바탕·가는 테두리·흐린 화살표. 둘(‹ ›) 같은 문법 */
   #psSideFold{display:none;position:fixed;top:50%;left:calc(var(--ps-side-w) - 7px);transform:translateY(-50%);width:14px;height:40px;border:1px solid var(--line,#E3E6EA);border-radius:7px;background:var(--panel,#fff);color:var(--dim,#8A9099);font:700 12px/1 inherit;cursor:pointer;z-index:400;padding:0;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(15,23,42,.10)}   /* 앱 바(overflow:hidden) 안에 두면 바깥 반이 잘려 body 에 고정으로 */
   body.ps-side-folded #psSideFold{display:none!important}
-  #psSideFold:hover,#psSideTab:hover{color:var(--accent,#3A6DF0);border-color:var(--accent,#3A6DF0)}
+  #psSideFold:hover,#psSideTab:hover{color:var(--accent,var(--ps-navy,#14213D));border-color:var(--accent,var(--ps-navy,#14213D))}
   /* 2.707 — 접힌 뒤 다시 펼치는 › 탭이 너무 작고 흐려 «펼칠 수 없다»고 읽혔다(사용자). 강조색·22×64·z 400 + 접을 때 2.5초 안내 말풍선 */
   #psSideTab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);width:14px;height:40px;border:1px solid var(--line,#E3E6EA);border-left:0;border-radius:0 7px 7px 0;background:var(--panel,#fff);color:var(--dim,#8A9099);font:700 12px/1 inherit;z-index:400;align-items:center;justify-content:center;cursor:pointer;padding:0;box-shadow:0 2px 6px rgba(15,23,42,.10)}
   #psSideHint{display:none;position:fixed;left:22px;top:50%;transform:translateY(-50%);z-index:400;background:#14161A;color:#fff;font:700 12px/1.3 inherit;padding:8px 11px;border-radius:9px;white-space:nowrap;box-shadow:0 6px 18px rgba(15,23,42,.25);pointer-events:none}
@@ -1028,8 +1028,8 @@ function psShowUpdBand(){
   #appSeg#appSeg button svg{display:block!important;width:16px!important;height:16px!important;margin:0!important;flex:0 0 auto;}
   #appSeg#appSeg button span{display:block!important;font-size:12px!important;line-height:1.2!important;overflow:hidden;text-overflow:ellipsis;}
   #appSeg#appSeg button:hover{background:var(--dv2-chip-bg,#f2f4f7);}
-  #appSeg#appSeg button.on, .ps-page-app .seg button.on{background:var(--dv2-accent-soft,#eef4ff)!important;
-    color:var(--dv2-accent-text,#1d4ed8)!important;font-weight:800!important;border:0!important;box-shadow:none!important;}
+  #appSeg#appSeg button.on, .ps-page-app .seg button.on{background:var(--dv2-accent-soft,#E9EDF5)!important;
+    color:var(--dv2-accent-text,var(--ps-navy-h,#1D2D50))!important;font-weight:800!important;border:0!important;box-shadow:none!important;}
   #appSeg#appSeg button[data-app="idp"].on,#appSeg#appSeg button[data-app="learning"].on{
     background:var(--dv2-violet-soft,#f5f2ff)!important;color:var(--dv2-violet-text,#5b3df0)!important;}
   #appSeg#appSeg button::after{display:none!important;}   /* 구 상단바 활성 밑줄 제거 */
@@ -1068,7 +1068,7 @@ function psShowUpdBand(){
     font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:left;}
   .appbar>#psBoardMoreBtn:not([hidden]){display:flex;}
   .appbar>#psBoardMoreBtn svg{width:16px;height:16px;flex:0 0 auto;}
-  .appbar>#psBoardMoreBtn:hover,.appbar>#psBoardMoreBtn.on{background:var(--dv2-chip-bg,#f2f4f7);color:var(--dv2-accent-text,#1d4ed8);}
+  .appbar>#psBoardMoreBtn:hover,.appbar>#psBoardMoreBtn.on{background:var(--dv2-chip-bg,#f2f4f7);color:var(--dv2-accent-text,var(--ps-navy-h,#1D2D50));}
   .brand{padding-left:12px;}
   .gearpop{position:fixed!important;left:calc(var(--ps-side-w) + 10px)!important;bottom:12px!important;top:auto!important;right:auto!important;
     max-height:calc(100vh - 24px);overflow-y:auto;}
@@ -1133,7 +1133,7 @@ function psShowUpdBand(){
     var bc=document.createElement('button');bc.type='button';bc.textContent='취소';
     bc.style.cssText='font:inherit;font-size:13px;padding:8px 14px;border-radius:10px;border:1px solid rgba(128,140,160,.35);background:transparent;color:inherit;cursor:pointer';
     var bo=document.createElement('button');bo.type='button';bo.textContent='확인';
-    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:#3A6DF0;color:#fff;cursor:pointer';
+    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:var(--ps-navy,#14213D);color:#fff;cursor:pointer';
     row.appendChild(bc);row.appendChild(bo);bx.appendChild(row);ov.appendChild(bx);
     var done=false;
     function close(){ if(done)return; done=true; document.removeEventListener('keydown',onKey,true); try{ov.remove();}catch(_){} }
@@ -1345,7 +1345,7 @@ function psShowUpdBand(){
       #gearPop .gp-tabs{display:flex;gap:4px;background:var(--bar2,#F1F3F5);padding:3px;border-radius:6px;margin:10px 0 4px}
       #gearPop .gp-tabs>button{flex:1;min-width:0;padding:0 3px;position:relative;height:32px;border:0;border-radius:6px;background:transparent;color:var(--dim,#646A73);font:600 12px/1 Pretendard,system-ui;cursor:pointer}
       #gearPop .gp-tabs>button.on{background:var(--surface);color:var(--txt,#14161A);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-      body.fmdark #gearPop .gp-tabs{background:#23272D}body.fmdark #gearPop .gp-tabs>button.on{background:#303a48;color:#dce6ff}
+      body.fmdark #gearPop .gp-tabs{background:#23272D}body.fmdark #gearPop .gp-tabs>button.on{background:#303a48;color:#2A3A5E}
       #gearPop .gp-tabs>button[data-dot="1"]::after{content:"";position:absolute;top:7px;right:9px;width:6px;height:6px;border-radius:50%;background:#E0532F}
       #gearPop.gp-tabbed .gp-section-title{display:none!important}
       #gearPop.gp-tabbed [data-gp-tab]{display:none!important}
@@ -1501,9 +1501,9 @@ function psShowUpdBand(){
     .appbar>.ps-updwrap[hidden]{display:none!important}
   }
   html body .appbar #psUpdRail:not(#_){position:relative}
-  html body .appbar #psUpdRail.is-ready:not(#_){background:var(--accent-soft,#EDF2FE)!important;color:#2F5BD3!important;box-shadow:inset 0 0 0 1px #C9D6FB!important;font-weight:800!important}
-  body.fmdark .appbar #psUpdRail.is-ready:not(#_){background:rgba(111,148,245,.16)!important;color:#9DB5FF!important;box-shadow:inset 0 0 0 1px rgba(111,148,245,.35)!important}
-  .ps-updot{display:none;position:absolute;top:6px;right:calc(50% - 17px);width:8px;height:8px;border-radius:50%;background:var(--accent,#3A6DF0);box-shadow:0 0 0 2px var(--surface,#fff);pointer-events:none}
+  html body .appbar #psUpdRail.is-ready:not(#_){background:var(--accent-soft,#E9EDF5)!important;color:var(--ps-navy-h,#1D2D50)!important;box-shadow:inset 0 0 0 1px #C3CCDD!important;font-weight:800!important}
+  body.fmdark .appbar #psUpdRail.is-ready:not(#_){background:rgba(127,152,208,.16)!important;color:#7F98D0!important;box-shadow:inset 0 0 0 1px rgba(127,152,208,.35)!important}
+  .ps-updot{display:none;position:absolute;top:6px;right:calc(50% - 17px);width:8px;height:8px;border-radius:50%;background:var(--accent,var(--ps-navy,#14213D));box-shadow:0 0 0 2px var(--surface,#fff);pointer-events:none}
   #psUpdRail.has-dot .ps-updot{display:block}
   #psMoreBtn,#teamBottom [data-tb="more"]{position:relative}
   body.ps-upd-dot #psMoreBtn .ps-updot,body.ps-upd-dot #teamBottom [data-tb="more"] .ps-updot{display:block;top:8px;right:calc(50% - 18px)}
@@ -1517,7 +1517,7 @@ function psShowUpdBand(){
   .ps-updpop .pup-body:empty{display:none}
   .ps-updpop .pup-ent+.pup-ent{border-top:1px solid var(--line,#E3E6EA);padding-top:10px}
   .ps-updpop .pup-d{font-size:12px;font-weight:700;color:var(--dim,#646A73)}
-  .ps-updpop .pup-ent.new .pup-d{color:var(--accent,#3A6DF0)}
+  .ps-updpop .pup-ent.new .pup-d{color:var(--accent,var(--ps-navy,#14213D))}
   .ps-updpop .pup-t{font-size:13px;font-weight:700;margin-top:2px}
   .ps-updpop ul{margin:4px 0 0;padding-left:18px;font-size:13px;line-height:1.55}
   .ps-updpop .pup-msg,.ps-updpop .pup-note{margin:0;font-size:12px;line-height:1.5;color:var(--dim,#646A73)}
@@ -1525,20 +1525,20 @@ function psShowUpdBand(){
   .ps-updpop .pup-note:empty{display:none}
   .ps-updpop .pup-btns{display:flex;gap:8px}
   .ps-updpop [hidden]{display:none!important}   /* 뒤에 와야 .pup-btns{display:flex} 를 이긴다(실측: «새 기능»에 적용 버튼이 남았다) */
-  html body .ps-updpop .pup-go:not(#_){flex:1 1 auto;height:40px;min-height:40px;border:0;border-radius:10px;background:var(--accent,#3A6DF0);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+  html body .ps-updpop .pup-go:not(#_){flex:1 1 auto;height:40px;min-height:40px;border:0;border-radius:10px;background:var(--accent,var(--ps-navy,#14213D));color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
   html body .ps-updpop .pup-go:disabled:not(#_){opacity:.6;cursor:default}
   html body .ps-updpop .pup-later:not(#_){height:40px;min-height:40px;padding:0 14px;border:1px solid var(--line2,#D3D7DD);border-radius:10px;background:var(--surface,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-  .ps-upd-row{display:flex;align-items:center;gap:10px;border:1px solid #C9D6FB;background:#EDF2FE;border-radius:12px;padding:8px 8px 8px 12px;margin:2px 0 6px}
+  .ps-upd-row{display:flex;align-items:center;gap:10px;border:1px solid #C3CCDD;background:#E9EDF5;border-radius:12px;padding:8px 8px 8px 12px;margin:2px 0 6px}
   .ps-upd-row.news{background:var(--surface-2,#F4F5F7);border-color:var(--line,#E3E6EA)}
   .ps-upd-row[hidden]{display:none!important}
   .ps-upd-row .pur-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;font-size:13px;line-height:1.4}
-  .ps-upd-row .pur-t b{font-weight:800;color:#2F5BD3}
+  .ps-upd-row .pur-t b{font-weight:800;color:var(--ps-navy-h,#1D2D50)}
   .ps-upd-row.news .pur-t b{color:var(--ink,#14161A)}
   .ps-upd-row .pur-t small{font-size:12px;color:var(--dim,#646A73)}
-  html body .ps-upd-row button:not(#_){flex:0 0 auto;height:40px;min-height:40px;padding:0 14px;border:0;border-radius:10px;background:var(--accent,#3A6DF0);color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+  html body .ps-upd-row button:not(#_){flex:0 0 auto;height:40px;min-height:40px;padding:0 14px;border:0;border-radius:10px;background:var(--accent,var(--ps-navy,#14213D));color:#fff;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
   html body .ps-upd-row.news button:not(#_){background:var(--surface,#fff);color:var(--ink,#14161A);border:1px solid var(--line2,#D3D7DD)}
-  body.fmdark .ps-upd-row{background:rgba(111,148,245,.14);border-color:rgba(111,148,245,.32)}
-  body.fmdark .ps-upd-row .pur-t b{color:#9DB5FF}
+  body.fmdark .ps-upd-row{background:rgba(127,152,208,.14);border-color:rgba(127,152,208,.32)}
+  body.fmdark .ps-upd-row .pur-t b{color:#7F98D0}
   body.fmdark .ps-upd-row.news{background:var(--surface-2,#23272D);border-color:var(--line,#2E333A)}
   body.fmdark .ps-upd-row.news .pur-t b{color:var(--ink,#F2F3F5)}
   </style>
@@ -1674,7 +1674,7 @@ function psShowUpdBand(){
     #teamSub .tn-subnote{margin-left:auto;display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:600;color:var(--dim,#646A73);white-space:nowrap}
     #teamSub .tn-subnote[hidden]{display:none!important}   /* 2.581 — display:inline-flex 가 [hidden] 을 이겨 플레이북·공용어 서브에서도 게임모델 안내가 새던 것 */
     #teamSub .tn-subnote b{color:var(--txt,#14161A);font-weight:800}
-    #teamSub .tn-subnote button{border:0;background:transparent;color:var(--accent,#3a6df0);font:800 12px inherit;cursor:pointer;padding:4px 2px}
+    #teamSub .tn-subnote button{border:0;background:transparent;color:var(--accent,var(--ps-navy,#14213D));font:800 12px inherit;cursor:pointer;padding:4px 2px}
     @media (max-width:760px){ #teamSub .tn-subnote{display:none} }
     /* 2.894 — 폰에서 안내가 다른 규칙에 이겨 보이면 서브탭이 한 글자씩 세로로 접혔다. 안내는 iframe 쪽에 이미 있다 */
     @media (max-width:760px){ #teamSub .tn-subnote:not(#_){display:none!important} #teamSub .tn-sub button{white-space:nowrap} }   /* 폰 서브바는 좁다 — iframe 쪽 원줄이 접히지 않으니 그대로 안내 */
@@ -1742,7 +1742,7 @@ function psShowUpdBand(){
     #psSyncStripAgo{display:none}
     #psSyncStripBtn{height:24px;padding:0 5px;border:0;border-radius:5px;background:transparent;color:inherit;font:500 11px Pretendard,system-ui,sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer;flex:none}
     #psSyncStripBtn:disabled{opacity:.5;cursor:default}
-    #psSyncStripBtn:focus-visible{outline:2px solid var(--blue,#3a6df0);outline-offset:-2px}
+    #psSyncStripBtn:focus-visible{outline:2px solid var(--blue,var(--ps-navy,#14213D));outline-offset:-2px}
     body.ps-editor-open[data-ps-app="design"] #psSyncStrip:not(.bad):not(.held),body.ps-editor-open[data-ps-app="board"] #psSyncStrip:not(.bad):not(.held){visibility:hidden!important;pointer-events:none}
     /* Reserve mobile navigation once, below the footer instead of the frame. */
     @media(max-width:600px){
@@ -1751,10 +1751,10 @@ function psShowUpdBand(){
     @media print{#psSyncStrip{display:none}}
     #psUndoBar{display:flex;align-items:center;gap:10px;padding:8px 14px;font:600 12px Pretendard,system-ui,sans-serif;background:rgba(181,118,43,.12);color:var(--ink);border-bottom:1px solid var(--line);flex:0 0 auto;margin-left:var(--ps-side-w)}
     body.focus #psUndoBar,body.vfull #psUndoBar{margin-left:0}
-    #psMergeBar{display:flex;align-items:center;gap:10px;padding:8px 14px;font:600 12px Pretendard,system-ui,sans-serif;background:rgba(58,109,240,.10);color:var(--ink);border-bottom:1px solid var(--line);flex:0 0 auto;margin-left:var(--ps-side-w)}
+    #psMergeBar{display:flex;align-items:center;gap:10px;padding:8px 14px;font:600 12px Pretendard,system-ui,sans-serif;background:color-mix(in srgb,var(--ps-navy,#14213D) 10%,transparent);color:var(--ink);border-bottom:1px solid var(--line);flex:0 0 auto;margin-left:var(--ps-side-w)}
     body.focus #psMergeBar,body.vfull #psMergeBar{margin-left:0}
     #psMergeTx{flex:1;min-width:0;line-height:1.35}#psMergeTx b{display:block;font-weight:800}#psMergeTx span{color:var(--dim);font-weight:500}
-    #psMergeMine{height:28px;padding:0 12px;border-radius:999px;border:1px solid #3A6DF0;background:var(--surface);color:#3A6DF0;font:600 12px Pretendard,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+    #psMergeMine{height:28px;padding:0 12px;border-radius:999px;border:1px solid var(--ps-navy,#14213D);background:var(--surface);color:var(--ps-navy,#14213D);font:600 12px Pretendard,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
     #psMergeOk{height:28px;padding:0 8px;border:0;background:transparent;color:var(--faint);font:600 12px Pretendard,system-ui,sans-serif;cursor:pointer}
     #psUndoBar.done{background:rgba(31,138,76,.10)}
     #psUndoTx{flex:1;min-width:0;line-height:1.35}#psUndoTx b{display:block;font-weight:800}#psUndoTx span{color:var(--dim);font-weight:500}
@@ -5312,7 +5312,7 @@ function psShowUpdBand(){
     if(!ov){
       ov=document.createElement('div');ov.id='shPv';
       ov.style.cssText='position:fixed;inset:0;z-index:600;background:rgba(16,24,40,.55);backdrop-filter:blur(3px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px';
-      ov.innerHTML='<div style="display:flex;align-items:center;gap:8px;width:100%;max-width:960px;justify-content:space-between"><b style="color:#fff;font-size:14px">출력 미리보기</b><label id="shPvInk" style="display:none;color:#fff;font-size:12px;font-weight:600;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="shPvInkCb" style="accent-color:#3a6df0">잉크 절약</label><span style="display:flex;gap:8px"><button id="shPvGo" style="border:0;background:#3a6df0;color:#fff;font-weight:800;font-size:13px;border-radius:10px;padding:9px 16px;cursor:pointer;font-family:inherit">인쇄 / PDF 저장</button><button id="shPvX" style="border:0;background:#fff;color:#14161A;font-weight:600;font-size:13px;border-radius:10px;padding:9px 14px;cursor:pointer;font-family:inherit">닫기</button></span></div><div id="shPvHint" style="display:none;color:#FFD78A;font-size:11px;font-weight:600;max-width:94vw;text-align:center">폰에서는 위아래로 스크롤해 확인하세요 — 인쇄·PDF 저장은 PC·태블릿 브라우저에서 가장 안정적입니다</div><div id="shPvWrap" style="background:#fff;border-radius:6px;box-shadow:0 24px 70px var(--sh45,rgba(16,24,40,.45));overflow:hidden"><iframe id="shPvIfr" style="border:0;transform-origin:top left;display:block"></iframe></div>';
+      ov.innerHTML='<div style="display:flex;align-items:center;gap:8px;width:100%;max-width:960px;justify-content:space-between"><b style="color:#fff;font-size:14px">출력 미리보기</b><label id="shPvInk" style="display:none;color:#fff;font-size:12px;font-weight:600;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="shPvInkCb" style="accent-color:var(--ps-navy,#14213D)">잉크 절약</label><span style="display:flex;gap:8px"><button id="shPvGo" style="border:0;background:var(--ps-navy,#14213D);color:#fff;font-weight:800;font-size:13px;border-radius:10px;padding:9px 16px;cursor:pointer;font-family:inherit">인쇄 / PDF 저장</button><button id="shPvX" style="border:0;background:#fff;color:#14161A;font-weight:600;font-size:13px;border-radius:10px;padding:9px 14px;cursor:pointer;font-family:inherit">닫기</button></span></div><div id="shPvHint" style="display:none;color:#FFD78A;font-size:11px;font-weight:600;max-width:94vw;text-align:center">폰에서는 위아래로 스크롤해 확인하세요 — 인쇄·PDF 저장은 PC·태블릿 브라우저에서 가장 안정적입니다</div><div id="shPvWrap" style="background:#fff;border-radius:6px;box-shadow:0 24px 70px var(--sh45,rgba(16,24,40,.45));overflow:hidden"><iframe id="shPvIfr" style="border:0;transform-origin:top left;display:block"></iframe></div>';
       document.body.appendChild(ov);
       document.getElementById('shPvX').onclick=function(){ov.style.display='none';document.getElementById('shPvIfr').removeAttribute('srcdoc');};
       ov.addEventListener('mousedown',function(e){if(e.target===ov)ov.style.display='none';});
@@ -6620,7 +6620,7 @@ window.__buildScoutForm=function(k){
          +"#ps-group-set .popmenu #ps-group-pitch>.popmenu{display:flex!important;position:static!important;transform:none!important;box-shadow:none!important;border:0!important;padding:0!important;margin:0!important;background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;inset:auto!important;min-width:0!important;max-height:none!important;flex-wrap:wrap;gap:6px;}"
          +"#ps-group-set .popmenu .menusec{flex:0 0 100%!important;width:100%!important;margin:5px 0 3px;font-size:11px;font-weight:800;color:var(--txt);opacity:.95;padding-top:5px;border-top:1px solid var(--line);display:flex!important;align-items:center;letter-spacing:.02em;}"
          +"#ps-group-set .popmenu>.menusec:first-child{border-top:0;margin-top:0;padding-top:0;}"
-         +"#ps-group-set .popmenu .menusec .ms-ic{width:14px;height:14px;margin-right:6px;color:var(--blue,#3a6df0);flex:0 0 auto;}"
+         +"#ps-group-set .popmenu .menusec .ms-ic{width:14px;height:14px;margin-right:6px;color:var(--blue,var(--ps-navy,#14213D));flex:0 0 auto;}"
          +"#ps-group-set .popmenu .menudiv{display:none;}"
          +"#ps-set-x{position:absolute!important;top:7px;right:8px;width:26px;height:26px;display:flex!important;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:var(--txt-dim);cursor:pointer;z-index:5;padding:0;margin:0;}"
          +"#ps-set-x:hover{background:color-mix(in srgb,var(--txt) 13%,transparent);color:var(--txt);}"
@@ -6655,10 +6655,10 @@ window.__buildScoutForm=function(k){
          +"body.ps-dock #ps-team-ctl{display:none!important;}"
          +"body.ps-dock.ps-teamset #ps-team-ctl{display:flex!important;position:fixed;z-index:80;flex-direction:column!important;align-items:stretch!important;flex-wrap:nowrap!important;gap:9px;background:color-mix(in srgb,var(--panel,#1a2230) 96%,transparent);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;box-shadow:0 14px 44px rgba(0,0,0,.5);min-width:240px;max-width:300px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}"
          +"#ps-teamset-tog{flex:0 0 auto;font-size:12px;font-weight:600;}"
-         +"body.ps-teamset #ps-teamset-tog{color:var(--blue,#3a6df0);border-color:var(--blue,#3a6df0);}"
+         +"body.ps-teamset #ps-teamset-tog{color:var(--blue,var(--ps-navy,#14213D));border-color:var(--blue,var(--ps-navy,#14213D));}"
          +"#ps-dock .ps-sep{flex:0 0 auto;width:1px;height:24px;background:var(--line);margin:0 5px;}"
          +"#ps-dock .ps-side-mini-b{padding:5px 12px;font-weight:800;font-size:12px;}"
-         +"#ps-dock .ps-side-mini-b.on{background:var(--blue,#3a6df0)!important;border-color:var(--blue,#3a6df0)!important;color:#fff!important;}"
+         +"#ps-dock .ps-side-mini-b.on{background:var(--blue,var(--ps-navy,#14213D))!important;border-color:var(--blue,var(--ps-navy,#14213D))!important;color:#fff!important;}"
          +"body.ps-dock #colorWrap{position:relative;}"
          +"body.ps-dock #colorBtn{position:relative;border-radius:50%;}"
          +"body.ps-dock #colorBtn::after{content:'';position:absolute;inset:-4px;border-radius:50%;z-index:-1;background:conic-gradient(#ff3b30,#ff9500,#ffcc00,#34c759,#5ac8fa,#007aff,#af52de,#ff2d55,#ff3b30);}"
@@ -6910,7 +6910,7 @@ window.__buildScoutForm=function(k){
             function syncHd(){ try{ var s=_uniStyle(t); tbM.style.background=s.main; tbA.style.background=s.accent;
               var au=(!s.stroke||s.stroke==='auto'); tbS.style.background=au?'':(s.stroke); if(au){tbS.style.backgroundImage='linear-gradient(135deg,#E3E6EA 45%,#9aa4b3 45% 55%,#E3E6EA 55%)';}else{tbS.style.backgroundImage='none';}
               var tAu=(!s.txt||s.txt==='auto'); tbT.style.background=tAu?'':(s.txt); if(tAu){tbT.style.backgroundImage='linear-gradient(135deg,#E3E6EA 45%,#111418 45% 55%,#E3E6EA 55%)';}else{tbT.style.backgroundImage='none';}
-              tbM.style.boxShadow=(target==='main')?'0 0 0 2px var(--blue,#3a6df0)':'none'; tbA.style.boxShadow=(target==='accent')?'0 0 0 2px var(--blue,#3a6df0)':'none'; tbS.style.boxShadow=(target==='stroke')?'0 0 0 2px var(--blue,#3a6df0)':'none'; tbT.style.boxShadow=(target==='txt')?'0 0 0 2px var(--blue,#3a6df0)':'none';
+              tbM.style.boxShadow=(target==='main')?'0 0 0 2px #3a6df0':'none'; tbA.style.boxShadow=(target==='accent')?'0 0 0 2px #3a6df0':'none'; tbS.style.boxShadow=(target==='stroke')?'0 0 0 2px #3a6df0':'none'; tbT.style.boxShadow=(target==='txt')?'0 0 0 2px #3a6df0':'none';
               sAuto.style.opacity=(target==='stroke'||target==='txt')?'1':'.5';
               [].forEach.call(pat.children,function(x){x.classList.toggle('on',x.getAttribute('data-p')===s.pat);}); }catch(_){} }
             hd.appendChild(tbM); hd.appendChild(tbA); hd.appendChild(tbS); hd.appendChild(tbT); hd.appendChild(sAuto); hd.appendChild(pat); hd.appendChild(rs);
@@ -7290,18 +7290,18 @@ window.__buildScoutForm=function(k){
           body.ps-dock .sel-ctl[data-kind="text"]::before{content:'텍스트 편집'}
           body.ps-dock .sel-ctl>button,body.ps-dock .sel-ctl>select,body.ps-dock .sel-ctl>label{border-radius:10px!important}
           body.ps-dock .sel-ctl>button{min-height:34px!important;border-color:var(--line,#d9dde5)!important;background:var(--panel2,#f3f5f7)!important;color:var(--txt,#18202c)!important;box-shadow:none!important}
-          body.ps-dock .sel-ctl>button:hover{background:color-mix(in srgb,var(--accent,#3478f6) 10%,var(--panel2,#f3f5f7))!important;border-color:color-mix(in srgb,var(--accent,#3478f6) 35%,var(--line,#d9dde5))!important}
+          body.ps-dock .sel-ctl>button:hover{background:color-mix(in srgb,var(--accent,var(--ps-navy,#14213D)) 10%,var(--panel2,#f3f5f7))!important;border-color:color-mix(in srgb,var(--accent,var(--ps-navy,#14213D)) 35%,var(--line,#d9dde5))!important}
           body.ps-dock .sel-ctl>#textSizeCtl,
           body.ps-dock .sel-ctl>.text-color-field{border-color:var(--line,#d9dde5)!important;background:var(--panel2,#f3f5f7)!important;color:var(--txt,#18202c)!important;box-shadow:none!important}
           body.ps-dock .sel-ctl .text-color-label{color:var(--txt-dim,#6f7680)!important}
           body.ps-dock .sel-ctl .text-color-reset{background:var(--panel,#fff)!important;color:var(--txt,#18202c)!important;border:1px solid var(--line,#d9dde5)!important}
           body.ps-dock .sel-ctl .text-color-field.is-auto .text-color-reset,
-          body.ps-dock .sel-ctl .text-color-field.is-none .text-color-reset{background:var(--accent,#3478f6)!important;color:#fff!important;border-color:var(--accent,#3478f6)!important}
+          body.ps-dock .sel-ctl .text-color-field.is-none .text-color-reset{background:var(--accent,var(--ps-navy,#14213D))!important;color:#fff!important;border-color:var(--accent,var(--ps-navy,#14213D))!important}
           body.ps-dock .sel-ctl #textSizeCtl .text-size-value{color:var(--txt,#18202c)!important}
           body.ps-dock .sel-ctl #textSizeCtl button{background:var(--panel,#fff)!important;color:var(--txt,#18202c)!important;border:1px solid var(--line,#d9dde5)!important}
           body.ps-dock .sel-ctl>.del-sel{color:#c83f3a!important;border-color:color-mix(in srgb,#c83f3a 35%,var(--line,#d9dde5))!important}
           body.ps-dock .sel-ctl>.del-sel:hover{background:color-mix(in srgb,#c83f3a 10%,var(--panel2,#f3f5f7))!important}
-          body.ps-dock .sel-ctl>.gk-btn.on,body.ps-dock .sel-ctl>.coach-btn.on{background:var(--accent,#3478f6)!important;color:#fff!important;border-color:var(--accent,#3478f6)!important}
+          body.ps-dock .sel-ctl>.gk-btn.on,body.ps-dock .sel-ctl>.coach-btn.on{background:var(--accent,var(--ps-navy,#14213D))!important;color:#fff!important;border-color:var(--accent,var(--ps-navy,#14213D))!important}
           /* 1.817 — 아이패드(701~1100px): 세로 1열로 20여 개가 쌓여 화면 아래가 잘려 선택이 안 되던 것(사용자).
              2열 그리드로 높이를 절반으로 + 도크 위까지만 차지하도록 max-height 를 도크 기준으로, 안 잡히던 터치 스크롤도 명시 */
           @media (min-width:701px){
@@ -8109,13 +8109,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.017"></script>
-<script src="autosave-merge.js?v=3.017"></script>
-<script src="autosave-runtime.js?v=3.017"></script>
-<script src="autosave-recovery.js?v=3.017"></script>
-<script src="sync.js?v=3.017"></script>
+<script src="autosave-journal.js?v=3.018"></script>
+<script src="autosave-merge.js?v=3.018"></script>
+<script src="autosave-runtime.js?v=3.018"></script>
+<script src="autosave-recovery.js?v=3.018"></script>
+<script src="sync.js?v=3.018"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.017">
+<link rel="stylesheet" href="support.css?v=3.018">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
@@ -8265,7 +8265,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     history.replaceState(null,'',clean);
   }catch(_){}
   var st=document.createElement('style');st.id='psOauthRecoveryCss';
-  st.textContent='.ps-oauth-rec{position:fixed;inset:0;z-index:100000;background:rgba(11,17,27,.62);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Pretendard,system-ui,sans-serif}.ps-oauth-card{width:min(400px,100%);background:var(--panel,#fff);color:var(--text,#15171c);border:1px solid var(--line,#e4e7ec);border-radius:20px;padding:24px;box-shadow:0 24px 70px rgba(0,0,0,.28)}.ps-oauth-card i{display:grid;width:42px;height:42px;place-items:center;border-radius:13px;background:#eef4ff;color:#2563eb;font-style:normal;font-size:21px;font-weight:800}.ps-oauth-card h2{font-size:20px;line-height:1.35;margin:14px 0 7px}.ps-oauth-card p{font-size:13px;line-height:1.65;color:var(--muted,#687080);margin:0 0 17px}.ps-oauth-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ps-oauth-actions button{min-height:40px;border-radius:10px;border:1px solid var(--line,#dfe3e9);background:var(--panel2,#f7f8fa);color:inherit;font:800 13px Pretendard,system-ui;cursor:pointer}.ps-oauth-actions .primary{grid-column:1/-1;background:#2563eb;border-color:#2563eb;color:white}.ps-oauth-later{margin-top:8px;width:100%}@media(max-width:520px){.ps-oauth-card{padding:20px;border-radius:17px}.ps-oauth-actions{grid-template-columns:1fr}.ps-oauth-actions .primary{grid-column:auto}}';
+  st.textContent='.ps-oauth-rec{position:fixed;inset:0;z-index:100000;background:rgba(11,17,27,.62);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Pretendard,system-ui,sans-serif}.ps-oauth-card{width:min(400px,100%);background:var(--panel,#fff);color:var(--text,#15171c);border:1px solid var(--line,#e4e7ec);border-radius:20px;padding:24px;box-shadow:0 24px 70px rgba(0,0,0,.28)}.ps-oauth-card i{display:grid;width:42px;height:42px;place-items:center;border-radius:13px;background:#E9EDF5;color:var(--ps-navy,#14213D);font-style:normal;font-size:21px;font-weight:800}.ps-oauth-card h2{font-size:20px;line-height:1.35;margin:14px 0 7px}.ps-oauth-card p{font-size:13px;line-height:1.65;color:var(--muted,#687080);margin:0 0 17px}.ps-oauth-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ps-oauth-actions button{min-height:40px;border-radius:10px;border:1px solid var(--line,#dfe3e9);background:var(--panel2,#f7f8fa);color:inherit;font:800 13px Pretendard,system-ui;cursor:pointer}.ps-oauth-actions .primary{grid-column:1/-1;background:var(--ps-navy,#14213D);border-color:var(--ps-navy,#14213D);color:white}.ps-oauth-later{margin-top:8px;width:100%}@media(max-width:520px){.ps-oauth-card{padding:20px;border-radius:17px}.ps-oauth-actions{grid-template-columns:1fr}.ps-oauth-actions .primary{grid-column:auto}}';
   document.head.appendChild(st);
   var ov=document.createElement('div');ov.className='ps-oauth-rec';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','로그인 다시 연결');
   ov.innerHTML='<div class="ps-oauth-card"><i>↻</i><h2>로그인 연결 시간이 지났어요</h2><p>작업 데이터는 이 기기에 그대로 있습니다. 로그인만 다시 연결하면 저장된 내용을 이어서 사용할 수 있어요.</p><div class="ps-oauth-actions"><button class="primary" data-provider="google">Google로 다시 로그인</button><button data-provider="kakao">카카오로 로그인</button><button data-close="1">지금은 나중에</button></div></div>';
@@ -8365,7 +8365,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
 })();
 </script>
 
-<link rel="stylesheet" href="ui-grammar.css?v=2.981"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.018"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2598-rail">/* 2.598 — 셸 레일 마무리: 활성 필 모서리 6 → 10, 레일 아이콘 19 → 16 stroke 2(위 다섯 + 아래 로그인·앱 설정·보드 설정), 팀 내비 버튼은 팀 열림 상태에서도 32(design-v2:489 가 30 으로 내리던 것). 레일 폭은 실측 96~104(figma-premium)라 제안의 «64→72» 는 해당 없음. «보드 설정» 은 셸 안에서 유일한 문(도크 사본은 셸에서 숨김)이라 남긴다. */
 @media (min-width:768px){
 html.ps-page-app #appSeg#appSeg button:not(#_):not(#__){border-radius:10px!important}

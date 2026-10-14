@@ -54,7 +54,7 @@ test('3.017 the drawing layer and tokens hand points through the pointer that ow
 });
 
 test('3.017 release note explains the pencil changes in plain words',()=>{
-  const e=notes.entries()[0];
-  assert.equal(e.id,'2026-10-14-v3-017-pencil');
+  const e=notes.entries().find(x=>x.id==='2026-10-14-v3-017-pencil');
+  assert.ok(e,'3.017 note');
   assert.ok(e.changes.some(c=>/손바닥/.test(c))&&e.changes.some(c=>/손가락으로 선수를 옮길/.test(c))&&e.changes.some(c=>/둥근 곡선/.test(c))&&e.changes.some(c=>/호버/.test(c)));
 });

@@ -28,7 +28,7 @@ test('week board marks today; phone scrolls there once per week',()=>{
 test('quiet defaults: available chips, vault list buttons, board save; empty session has a door',()=>{
   assert.ok(/#availView \.av-chip\.ok:not\(#_\)\{background:transparent;/.test(SC),'정상은 조용히');
   assert.ok(/#drillFiles \.vx-items\.vx-list \.vcard \.vc-act\.view,#drillFiles \.vx-items\.vx-list \.vcard \.vc-act\.edit\{background:transparent;/.test(B));
-  assert.ok(/b\.classList\.toggle\('dirty',!!_chg\)/.test(B)&&/#boardManualSave\.dirty\{background:var\(--blue,#3a6df0\)!important/.test(B),'보드 저장은 바뀐 게 있을 때만 파랑');
+  assert.ok(/b\.classList\.toggle\('dirty',!!_chg\)/.test(B)&&/#boardManualSave\.dirty\{background:var\(--blue,var\(--ps-navy,#14213D\)\)!important/.test(B),'보드 저장은 바뀐 게 있을 때만 메인색(3.018 네이비)');
   assert.ok(SC.includes('class="ck-fill" data-ck="session">세션 채우기 →</button>'));
 });
 

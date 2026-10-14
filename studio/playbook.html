@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>플레이북 · PROCESS STUDIO</title>
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.580"><link rel="stylesheet" href="/vendor/tokens.css?v=2.580">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.580"><link rel="stylesheet" href="/vendor/tokens.css?v=3.018">
 <script src="storage.js"></script>
 <script src="perms.js"></script>
 <style>
@@ -33,7 +33,7 @@ body.fmdark{--bg:#121417;--panel:#161C25;--panel2:#1B2230;--line:#26313D;--line2
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--t-5,14px);line-height:1.5;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
-button:focus-visible{outline:2px solid var(--c-act,#3A6DF0);outline-offset:2px}
+button:focus-visible{outline:2px solid var(--c-act,var(--ps-navy,#14213D));outline-offset:2px}
 .wrap{max-width:1240px;margin:0 auto;padding:14px 18px 40px}
 /* 머리 */
 .hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
@@ -95,16 +95,16 @@ button:focus-visible{outline:2px solid var(--c-act,#3A6DF0);outline-offset:2px}
 /* 편집 */
 .ed{cursor:text}
 .ed:hover{background:var(--panel2)}
-.prin li.ed-on{border-color:var(--c-act,#3A6DF0);box-shadow:0 0 0 2px rgba(58,109,240,.12)}
+.prin li.ed-on{border-color:var(--c-act,var(--ps-navy,#14213D));box-shadow:0 0 0 2px color-mix(in srgb,var(--ps-navy,#14213D) 12%,transparent)}
 .prin li textarea{width:100%;min-height:44px;border:0;background:transparent;font:inherit;color:inherit;line-height:1.55;resize:vertical;padding:0;outline:none}
 .prin li .x{font-size:var(--t-2,11px);color:var(--ink3);padding:2px 4px;margin-top:3px;white-space:nowrap}
 .prin li .x:hover{color:var(--c-do)}
 .add{display:inline-flex;align-items:center;gap:4px;font-size:var(--t-3,12px);font-weight:600;color:var(--ink2);padding:7px 10px;border:1px dashed var(--line2);border-radius:6px;background:transparent;margin-top:8px}
 .add:hover{color:var(--ink);border-color:var(--ink3)}
 .dt h2.ed[contenteditable]{outline:none;border-radius:6px;padding:0 4px;margin-left:-4px}
-.dt h2.ed:focus{background:var(--panel2);box-shadow:0 0 0 2px rgba(58,109,240,.18)}
+.dt h2.ed:focus{background:var(--panel2);box-shadow:0 0 0 2px color-mix(in srgb,var(--ps-navy,#14213D) 18%,transparent)}
 .hd .idn.ed{cursor:text;border-radius:6px;padding:0 4px;margin-left:-4px}
-.hd .idn.ed:focus{background:var(--panel);box-shadow:0 0 0 2px rgba(58,109,240,.18);outline:none;white-space:normal}
+.hd .idn.ed:focus{background:var(--panel);box-shadow:0 0 0 2px color-mix(in srgb,var(--ps-navy,#14213D) 18%,transparent);outline:none;white-space:normal}
 .sig{display:flex;flex-wrap:wrap;gap:6px}
 .sig .tm{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-size:var(--t-4,13px)}
 .sig .tm b{font-weight:800;color:var(--teamc)}
@@ -113,8 +113,8 @@ button:focus-visible{outline:2px solid var(--c-act,#3A6DF0);outline-offset:2px}
 .sig .tm .x:hover{color:var(--c-do)}
 .sigform{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:6px;margin-top:8px;align-items:center}
 .sigform input{border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:inherit;background:var(--panel);color:var(--ink);min-width:0;width:100%}
-.sigform input:focus{outline:none;border-color:var(--c-act,#3A6DF0);box-shadow:0 0 0 2px rgba(58,109,240,.15)}
-.sigform .ok{font-size:var(--t-3,12px);font-weight:800;color:#fff;background:var(--c-act,#3A6DF0);border-radius:8px;padding:8px 12px;white-space:nowrap}
+.sigform input:focus{outline:none;border-color:var(--c-act,var(--ps-navy,#14213D));box-shadow:0 0 0 2px color-mix(in srgb,var(--ps-navy,#14213D) 15%,transparent)}
+.sigform .ok{font-size:var(--t-3,12px);font-weight:800;color:#fff;background:var(--c-act,var(--ps-navy,#14213D));border-radius:8px;padding:8px 12px;white-space:nowrap}
 .pick{margin-top:6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);max-height:200px;overflow:auto}
 .pick button{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;width:100%;text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);font-size:var(--t-3,12px)}
 .pick button:last-child{border-bottom:0}

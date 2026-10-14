@@ -1025,9 +1025,9 @@
 
   html.ps-page-board body.ps-dock #alignBar #multiColorBtn,
   html.ps-page-board body.ps-dock #alignBar #mDupBtn {
-    background: rgba(58,109,240,.1) !important;
-    border-color: rgba(58,109,240,.22) !important;
-    color: #2f63df !important;
+    background: color-mix(in srgb,var(--ps-navy,#14213D) 10%,transparent) !important;
+    border-color: color-mix(in srgb,var(--ps-navy,#14213D) 22%,transparent) !important;
+    color: var(--ps-navy,#14213D) !important;
   }
 
   html.ps-page-board body.ps-dock #alignBar #mDelBtn {
@@ -1037,7 +1037,7 @@
   }
 
   html.ps-page-board body.ps-dock #alignBar #mDupBtn::after {
-    color: #2f63df !important;
+    color: var(--ps-navy,#14213D) !important;
   }
 
   html.ps-page-board body.ps-dock #alignBar #mDelBtn::after {
@@ -1259,7 +1259,7 @@
   .ps-page-gamemodel #gmNav .apphd-more > #teamMoreBtn,
   .ps-page-terms #teamNav .apphd-more > #teamMoreBtn {
     color: var(--ps-m-blue) !important;
-    background: #eef3ff !important;
+    background: #E9EDF5 !important;
   }
 
   /* 2.894 — 다크: 흰 그라데이션 칸과 연파랑 알약이 그대로라 «팀 설정» 글자가 안 보였다(대비 1.00) */
@@ -1272,7 +1272,7 @@
   .ps-page-gamemodel body.fmdark #gmNav .apphd-more > #teamMoreBtn,
   .ps-page-terms body.fmdark #teamNav .apphd-more > #teamMoreBtn {
     color: #AFC3FF !important;
-    background: rgba(111,148,245,.16) !important;
+    background: rgba(127,152,208,.16) !important;
   }
 
   .ps-page-scout #teamView .tm-head-actions #tmAdd {
@@ -1373,7 +1373,7 @@
 
 /* ══ 1.862 · 폰 도크 = 데스크톱 커맨드 도크(v5)와 같은 문법(사용자)
    — 떠 있는 흰 카드(라운드 12·#dde1e7 테두리·얕은 그림자), 행 구분선 없음
-   — 버튼: 테두리 없는 투명 28~34px·라운드 7, 활성은 연파랑(#EEF2FF)+파랑 글자, hover/active 는 옅은 회색
+   — 버튼: 테두리 없는 투명 28~34px·라운드 7, 활성은 연파랑(#E9EDF5)+파랑 글자, hover/active 는 옅은 회색
    — 팀 알약 28px 둥근 사각(라운드 7·안쪽 1px 선), 선택은 파란 외곽선 / 토큰 칩 30px */
 @media (max-width:767px){
   html.ps-page-board body.ps-dock #ps-dock{
@@ -1395,7 +1395,7 @@
   }
   html.ps-page-board body.ps-dock #ps-drow-tool button:active{background:#eef0f3!important;}
   html.ps-page-board body.ps-dock #ps-drow-tool button.on,
-  html.ps-page-board body.ps-dock #ps-drow-tool [aria-pressed="true"]{background:#EEF2FF!important;color:#2c54c4!important;box-shadow:inset 0 0 0 1px #c9d7fb!important;}
+  html.ps-page-board body.ps-dock #ps-drow-tool [aria-pressed="true"]{background:#E9EDF5!important;color:var(--ps-navy-h,#1D2D50)!important;box-shadow:inset 0 0 0 1px #C3CCDD!important;}
   html.ps-page-board body.ps-dock #ps-drow-tool .seg,
   html.ps-page-board body.ps-dock #ps-drow-tool #toolSeg{background:transparent!important;border:0!important;padding:0!important;gap:2px!important;box-shadow:none!important;}
   html.ps-page-board body.ps-dock #ps-drow-tool svg{width:16px!important;height:16px!important;}
@@ -1445,7 +1445,7 @@
   html.ps-page-board body.ps-dock #ps-dock #ps-dock-scroll>#ps-eq-btn{order:3!important;}
   html.ps-page-board body.ps-dock #ps-dock #ps-dock-scroll>#animToggle::before{content:'';display:block;width:1px;height:18px;background:#e5e7eb;margin-right:6px;}
   html.ps-page-board body.ps-dock #ps-dock #ps-drow-tool button.on,
-  html.ps-page-board body.ps-dock #ps-dock #ps-drow-tool [aria-pressed="true"]{background:#EEF2FF!important;color:#2c54c4!important;box-shadow:inset 0 0 0 1px #c9d7fb!important;border-radius:9px!important;}
+  html.ps-page-board body.ps-dock #ps-dock #ps-drow-tool [aria-pressed="true"]{background:#E9EDF5!important;color:var(--ps-navy-h,#1D2D50)!important;box-shadow:inset 0 0 0 1px #C3CCDD!important;border-radius:9px!important;}
   html.ps-page-board body.ps-dock #ps-dock #ps-drow-team{height:46px!important;min-height:46px!important;padding:4px 8px!important;}
   html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .chip{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;font-size:13px!important;box-shadow:0 1px 2px rgba(15,23,42,.18)!important;}
   html.ps-page-board body.ps-dock #ps-dock #ps-drow-team #benchItems{gap:6px!important;padding:2px 2px!important;
@@ -1453,7 +1453,7 @@
   html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .ps-uni-chip,html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .catdot{border-radius:8px!important;}
   html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .ps-uni-chip.on,html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .catdot.on{outline:2px solid #2563eb!important;outline-offset:2px!important;}
   html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .ps-uni-chip:not(.on),html.ps-page-board body.ps-dock #ps-dock #ps-drow-team .catdot:not(.on){opacity:.7!important;}
-  html.ps-page-board body.ps-dock:not(.command-dock-v5) #vaultSave{min-height:40px!important;padding:8px 14px!important;border-radius:999px!important;font-size:13px!important;box-shadow:0 6px 16px rgba(58,109,240,.35)!important;}
+  html.ps-page-board body.ps-dock:not(.command-dock-v5) #vaultSave{min-height:40px!important;padding:8px 14px!important;border-radius:999px!important;font-size:13px!important;box-shadow:0 6px 16px color-mix(in srgb,var(--ps-navy,#14213D) 35%,transparent)!important;}
   /* 1.926 — 아이폰: 앱 셸 안(iframe)에서는 하단 탭바(.seg)가 이미 안전영역을 먹고 있어 도크가 safe-area만큼 또 떠 있었다(도크 아래 초록 띠 + '보관함 저장'이 도크 뒤로 숨음). 셸 안에서는 8px만 */
   html.ps-page-board body.ps-dock.ps-embedded #ps-dock{bottom:8px!important;}
   html.ps-page-board body.ps-dock.ps-embedded:not(.command-dock-v5) #vaultSave{bottom:calc(var(--ps-dock-h,100px) + 8px + 10px)!important;right:12px!important;}
@@ -1479,7 +1479,7 @@
   html.ps-page-note body.note-dock #nDock .note-ink{min-height:48px!important;}
   html.ps-page-note body.note-dock #nDock #tools{flex:1 1 auto!important;display:flex!important;width:100%!important;background:transparent!important;border:0!important;padding:0!important;gap:2px!important;}
   html.ps-page-note body.note-dock #nDock #tools button{flex:1 1 0!important;min-width:0!important;min-height:36px!important;padding:0 6px!important;border-radius:9px!important;font-size:13px!important;font-weight:700!important;background:transparent!important;color:#646A73!important;box-shadow:none!important;}
-  html.ps-page-note body.note-dock #nDock #tools button.on{background:#EEF2FF!important;color:#2c54c4!important;box-shadow:inset 0 0 0 1px #c9d7fb!important;}
+  html.ps-page-note body.note-dock #nDock #tools button.on{background:#E9EDF5!important;color:var(--ps-navy-h,#1D2D50)!important;box-shadow:inset 0 0 0 1px #C3CCDD!important;}
   html.ps-page-note body.note-dock #nDock #penOnly,html.ps-page-note body.note-dock #nDock #undoB,html.ps-page-note body.note-dock #nDock #redoB{flex:0 0 32px!important;width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;border-radius:9px!important;}
   html.ps-page-note body.note-dock #nDock #undoB{margin-left:auto!important;}
   html.ps-page-note body.note-dock #nDock #cols{flex:0 0 auto!important;display:flex!important;gap:5px!important;width:auto!important;overflow:visible!important;}
