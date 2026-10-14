@@ -15,7 +15,7 @@ const suites={
   idp:['match-board-tools','match-ob-tray','match-board-vault','availability','idp-recovery','idp-story-dedup','support','squad-phone','scouting-integration','review-training','idp-coach-goals','team-heads'],
   /* 3.012 — 보드 끌기 성능은 WebKit 에서 혼자 149~223초(테스트 하나 240초 한도)였다. 느린 러너 하나가 board 잡 전체와 배포(release-gate)를 막지 않게
      자기 묶음으로 떼고, 이 테스트만 한도를 360초로 둔다(PER_TEST_MS) — 묶음이 혼자라 잡은 7분 안쪽, Netlify 의 12분 대기 안이다. */
-  boardperf:['board-drag-performance','board-pencil'],   /* 3.019 — 펜슬 그리기(손바닥 · 중간 점 · 프레임당 한 번 · 3D 투영 · 호버) */
+  boardperf:['board-drag-performance','board-pencil'],   /* 3.020 — 펜슬 그리기(손바닥 · 중간 점 · 프레임당 한 번 · 3D 투영 · 호버) */
   /* 3.012 — CI 밖에 있던 브라우저 시험 22개(저장·복구·로그인·안내·IDP·선수단·훈련). CI 에 없어서 넷이 조용히 낡아 있었다(dock-white 는 2.614 CSS 사본과
      비교하는 일회용 점검이라 넣지 않는다). Chromium 실측 합 7분 남짓이라 둘로 나눠 다른 묶음과 나란히 돈다 — entry: 진입·계정·안내 / records: 기록·저장·선수단·훈련.
      first-work 는 guidance.mjs 를 import 만 하는 옛 이름이라 넣지 않는다(같은 시험이 두 번 돈다). */

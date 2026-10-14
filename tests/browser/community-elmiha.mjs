@@ -32,6 +32,8 @@ try{
   await c.evaluate(()=>{ try{sessionStorage.removeItem('ps_comm_feed_cache_v1');sessionStorage.removeItem('ps_comm_elmiha_v1');}catch(_){} location.reload(); });
   await page.waitForTimeout(400);
   c=await (await page.waitForSelector('#fComm')).contentFrame();
+  await c.waitForSelector('#prSeg');
+  await c.click('#prTabCoach');   // 3.019 — 처음 여는 칸은 «프로세스»(community-process 가 본다). 이 시험은 코치 자료에서 시작한다
   await c.waitForSelector('#grid .card');
   const until=async(fn,what)=>{ for(let i=0;i<100;i++){ if(await fn())return; await page.waitForTimeout(100); } throw new Error('기다림 초과: '+what); };
   const state=()=>c.evaluate(()=>({elm:document.body.classList.contains('pr-elm'),pressed:[...document.querySelectorAll('#prSeg button')].map(b=>b.getAttribute('aria-pressed')),label:[...document.querySelectorAll('#prSeg button')].map(b=>b.textContent),
@@ -39,7 +41,7 @@ try{
     titles:[...document.querySelectorAll('#grid .card .tt')].map(x=>x.textContent),fab:getComputedStyle(document.getElementById('upBtn')).display,filters:getComputedStyle(document.querySelector('.comm-list .filters')).display,
     grid:document.getElementById('grid').textContent,vw:innerWidth,docW:document.documentElement.scrollWidth}));
 
-  // 1) 처음은 코치 자료. 엘미하 칸은 화면이 보이면 미리 받는다 — 서버가 안 되면 조용하다(코치 자료 화면은 그대로)
+  // 1) 코치 자료. 엘미하 칸은 화면이 보이면 미리 받는다 — 서버가 안 되면 조용하다(코치 자료 화면은 그대로)
   await until(()=>asked.length>=1,'엘미하 칸 미리 받기');
   let s=await state();
   assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[2],s.hero,s.titles],[false,['true','false','false'],'코치 자료1','엘미하',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫

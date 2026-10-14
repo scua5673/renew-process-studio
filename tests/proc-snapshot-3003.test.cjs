@@ -35,14 +35,15 @@ test('the copy lives next to the page and is addressed by number — the same wa
 test('the site is asked first and the copy second — for the list and for a pack — and saving follows where the pack came from',()=>{
   const body=cut(comm,'/* ── 2.999 · 프로세스 칸 순수 구간 끝 ── */','var q=$(\'commSearch\');if(!q)return;var composing=false;');
   const fetchFn=cut(body,'function procFetch(force){','\nfunction procChipsRender');
-  assert.match(fetchFn,/get\(PROC_SRC,8000\)\.catch\(function\(\)\{ return get\(PROC_LOCAL_SRC,8000\); \}\)/,'목록: 사이트 → 사본');
-  assert.match(fetchFn,/sessionStorage\.setItem\(PROC_CK,JSON\.stringify\(\{at:Date\.now\(\),index:o\.j,src:o\.src\}\)\)/,'탭에 적어 둔 목록은 어디서 읽었는지도 적는다');
-  assert.match(fetchFn,/procSet\(l0,c\.at,c\.src\)/);
+  assert.match(fetchFn,/var local=get\(PROC_LOCAL_SRC,8000\); local\.catch\(function\(\)\{\}\);\n  get\(PROC_SRC,8000\)\.then\(function\(o\)\{ return local\.then\(function\(c\)\{ return \{l:procMerge\(o\.l,c\.l\),j:o\.j,lj:c\.j,src:o\.src\}; \},function\(\)\{ return o; \}\); \},function\(\)\{ return local; \}\)/,
+    '목록: 사이트(3.019 — 사본 목록의 보강 세션을 얹어서) → 안 되면 사본');
+  assert.match(fetchFn,/sessionStorage\.setItem\(PROC_CK,JSON\.stringify\(\{at:Date\.now\(\),index:o\.j,local:o\.lj\|\|null,src:o\.src\}\)\)/,'탭에 적어 둔 목록은 어디서 읽었는지도 적는다');
+  assert.match(fetchFn,/if\(c\.local\)l0=procMerge\(l0,procRead\(c\.local\)\); procSet\(l0,c\.at,c\.src\)/);
   assert.match(fetchFn,/if\(proc\.ready\)return;/,'둘 다 안 되어도 이미 그린 목록은 그대로');
   const ensure=cut(body,'function procEnsure(p){','\nfunction procOpen');
-  assert.match(ensure,/var first=proc\.src;\n  p\.__load=get\(first\)\.catch\(function\(e\)\{ if\(first===PROC_LOCAL_SRC\)throw e; return get\(PROC_LOCAL_SRC\); \}\)/,'팩: 목록을 읽은 곳 → 사본');
+  assert.match(ensure,/var first=procSrcOf\(p\.s,proc\.src\);[^\n]*\n  p\.__load=get\(first\)\.catch\(function\(e\)\{ if\(first===PROC_LOCAL_SRC\)throw e; return get\(PROC_LOCAL_SRC\); \}\)/,'팩: 목록을 읽은 곳 → 사본');
   assert.match(ensure,/p\.item=o\.it; p\.src=o\.src;/);
-  assert.match(body,/procUrl\('thumb',s,k,proc\.src\)/,'그림은 목록을 읽은 곳에서');
+  assert.match(body,/procUrl\('thumb',s,k,procSrcOf\(s,proc\.src\)\)/,'그림은 목록을 읽은 곳에서(보강한 세션은 사본에서)');
   assert.match(body,/proc\.src=\(src===PROC_LOCAL_SRC\)\?PROC_LOCAL_SRC:PROC_SRC;/);
 });
 
