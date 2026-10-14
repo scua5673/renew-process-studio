@@ -110,8 +110,11 @@ try{for(const device of ['desktop','phone']){
     });
     assert.deepEqual(tap,{mid:true,twice:1,left:0,sel:false,multi:0},'a tap leaves no box; a second press never leaves a stray box '+JSON.stringify(tap));
     // 썸네일·내보내기에는 선택 상자가 실리지 않는다(끄는 도중에 찍혀도)
+    /* 빈 곳에서 시작한다 — (400,300)은 토큰 A(420,320) 바로 위라, WebKit 은 3D 로 세운 칩의 그림 영역을 누른 것으로 쳐서 상자 대신 A 를 골랐다(CI webkit board).
+       위 «누르기만» 과 같은 빈 자리(470,600)에서 끌고, 시작점이 토큰이 아닌 판인지 먼저 확인한다 */
     const pics=await page.evaluate(()=>{
-      const p=__probe(400,300),t=document.elementFromPoint(p.x,p.y)||svg,fire=(type,q)=>t.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:73,pointerType:'mouse',isPrimary:true,buttons:type==='pointerup'?0:1,clientX:q.x,clientY:q.y}));
+      const p=__probe(470,600),t=document.elementFromPoint(p.x,p.y)||svg,fire=(type,q)=>t.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:73,pointerType:'mouse',isPrimary:true,buttons:type==='pointerup'?0:1,clientX:q.x,clientY:q.y}));
+      if(!svg.contains(t)||t.closest('.token'))return {start:'not empty board: '+(t.id||t.tagName)};
       fire('pointerdown',p);svg.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:73,pointerType:'mouse',buttons:1,clientX:p.x+60,clientY:p.y+40}));
       const live=!!document.getElementById('lassoRect'),thumb=boardThumbSVG(),xml=boardImageXML().xml;fire('pointerup',{x:p.x+60,y:p.y+40});
       return {live,thumb:/lassoRect|rgba\(47,168,255,\.16\)/.test(thumb),xml:/lassoRect|rgba\(47,168,255,\.16\)/.test(xml)};
