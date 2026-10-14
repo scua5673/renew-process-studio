@@ -16,7 +16,7 @@ function noMarkup(out,label){
 
 test('backend health escapes team names, people, error codes, versions and keys',async()=>{
   const nodes={backBody:node()};
-  const c=vm.createContext({String,Math,Number,Date,JSON,Object,Array,Promise,$:id=>nodes[id],loadIncidents(){},adminPersonName:()=>XSS,
+  const c=vm.createContext({String,Math,Number,Date,JSON,Object,Array,Promise,$:id=>nodes[id],loadIncidents(){},loadAdminActions(){},adminPersonName:()=>XSS,
     rpc:()=>Promise.resolve({db_bytes:1,tables:{},blob:{},policy:{min_build:XSS,block_unversioned:true},at:'2026-10-14T00:00:00Z',
       fails24:[{code:XSS,n:1,users:1}],stuck:[{name:XSS,fails:3,last_code:XSS,app_version:XSS,last_fail:'2026-10-14T00:00:00Z'},{user_id:'u1',fails:1}],
       versions:[{ver:XSS,users:1,events:1}],bigdocs:[{ws:XSS,k:XSS,len:10}],denied7:[{reason:XSS,k:XSS,n:1}],cron:[{job:XSS,schedule:XSS,active:true}]})});
@@ -31,7 +31,7 @@ test('backend health escapes team names, people, error codes, versions and keys'
 
 test('backend health failure message is escaped too',async()=>{
   const nodes={backBody:node()};
-  const c=vm.createContext({String,$:id=>nodes[id],loadIncidents(){},rpc:()=>Promise.reject(new Error(XSS))});
+  const c=vm.createContext({String,$:id=>nodes[id],loadIncidents(){},loadAdminActions(){},rpc:()=>Promise.reject(new Error(XSS))});
   vm.runInContext(ESC,c);
   vm.runInContext(section('function loadBack(){','/* ===== 오류 분석 ===== */'),c);
   c.loadBack();await tick();await tick();

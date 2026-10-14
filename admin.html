@@ -228,6 +228,7 @@
     border-radius:8px;font-size:11px;font-weight:700;margin-left:5px;}
   .rowbtn:hover{color:var(--txt);border-color:var(--dim);}
   .rowbtn.danger:hover{color:var(--red);border-color:var(--red);}
+  .tybadge.admActDanger{background:rgba(224,86,102,.13);color:#f08a96;}
   .empty{color:var(--dim2);font-size:13px;text-align:center;padding:26px 0;}
   .muted{color:var(--dim2);}
 
@@ -344,6 +345,11 @@
       <div class="panel" id="incPanel">
         <div class="sec-t">데이터 사고 <span style="font-weight:600;color:var(--dim2);font-size:11px;text-transform:none;letter-spacing:0">· 자료가 사라지거나 덮인 일 · 복구 · 가드가 막은 것</span> <button type="button" onclick="loadIncidents()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
         <div id="incBody"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <!-- 20261014 — 관리자 작업 기록(ps_admin_actions_list): 팀 삭제 · 멤버 내보내기 · 콘텐츠 삭제/복구 · 제보 상태 · 커뮤니티 숨김 -->
+      <div class="panel" id="admActPanel">
+        <div class="sec-t">관리자 작업 기록 <span style="font-weight:600;color:var(--dim2);font-size:11px;text-transform:none;letter-spacing:0">· 누가 언제 무엇을 지우고 바꿨나</span> <button type="button" onclick="loadAdminActions()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
+        <div id="admActBody"><div class="loading">불러오는 중…</div></div>
       </div>
       <div class="panel">
         <div class="sec-t">백엔드 건강 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 크기 · 실패 · 막힌 기기 · 판 분포 · 큰 문서 · 야간 작업</span> <button type="button" onclick="loadBack()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
@@ -597,6 +603,7 @@
 
 <script src="studio/admin-user-detail.js?v=2.964"></script>
 <script src="studio/admin-operations.js?v=2.792"></script>
+<script src="studio/admin-actions.js?v=20261014"></script>
 <script src="studio/support-diagnostics.js?v=2.816"></script>
 <script src="studio/support.js?v=2.816"></script>
 <script src="studio/admin-support.js?v=20261014"></script>
@@ -616,6 +623,7 @@ function adminLockSession(message){
   try{if(window.PSAdminUserDetail)PSAdminUserDetail.close();}catch(_){}
   try{if(adminSupport){adminSupport.destroy();adminSupport=null;}}catch(_){}
   try{if(adminContent){adminContent.destroy();adminContent=null;}ADMIN_CONTENT_OWNERS=[];}catch(_){}
+  try{adminActions=null;if($('admActBody'))$('admActBody').innerHTML='';setSupportCounts(null);}catch(_){}
   ['app','modalRoot'].forEach(function(id){var el=document.getElementById(id);if(el){el.classList.add('hide');el.replaceChildren();}});
   try{WS=[];USERS=[];ALL_LIB=[];HOME=null;WHOLOG=null;IDP_CACHE={};ERR=null;USE=null;}catch(_){}
   ['gateLogin','gateDenied'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hide');});
@@ -1041,8 +1049,15 @@ function renderIncidents(){
   }; });
 }
 /* ===== 2.630 · 백엔드 건강 ===== */
+var adminActions=null;
+function loadAdminActions(){
+  if(!window.PSAdminActions||!$('admActBody'))return;
+  if(!adminActions)adminActions=PSAdminActions.create({host:$('admActBody'),rpc:rpc});
+  return adminActions.load();
+}
 function loadBack(){
   loadIncidents();
+  loadAdminActions();
   var el=$('backBody'); if(!el)return; el.innerHTML='<div class="loading">불러오는 중…</div>';
   rpc('ps_admin_health').then(function(h){
     if(!h){ el.innerHTML='<div class="loading">자료 없음</div>'; return; }
