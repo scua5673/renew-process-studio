@@ -7,21 +7,28 @@
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
   var STORAGE_KEY='ps_release_notes_hidden_v1',WEEK_MS=7*24*60*60*1000;
+  /* 3.024 — «새 기능» 안내는 열 판마다 한 번(사용자 «새 기능 추가 이야기는 10개에 한 번씩 하자»). 판 번호 끝이 0 인 판(3.020 · 3.030 …)이 안내 판이고,
+     그 안내는 바로 앞 안내 판 뒤의 판들(3.011~3.020)을 모아 한 번에 보여 준다. 그 사이 판(3.021~3.029)은 조용하다 — 목록엔 적어 두고 다음 안내 판에 함께 나간다.
+     3.019 까지는 판마다 알렸으므로 3.020 부터 센다(그 전 안내 판 3.010 을 지금 와서 다시 띄우지 않는다). */
+  var ANNOUNCE_EVERY=10,ANNOUNCE_FROM=3020;
   var DEFAULT_ENTRIES=[{
-    id:'2026-10-14-v3-024-3d-look',date:'2026-10-14',title:'v3.024 · 보드 — 3D 분위기 · 분석 그래픽 · 팀 브랜딩',
+    id:'2026-10-14-v3-029-3d-look',date:'2026-10-14',title:'v3.029 · 보드 — 3D 분위기 · 분석 그래픽 · 팀 브랜딩',
     changes:['3D 보기에 «분위기»가 생겼습니다. 보드 설정 › 화면에서 낮 · 해질녘 · 야간을 고르면 경기장의 잔디 톤과 조명, 선수 그림자 방향이 함께 바뀝니다. 지금까지의 모습은 «야간»입니다.','보드 설정 › 분석 그래픽에서 팀 형태(외곽선 · 폭 · 길이) · 라인 간격(수비–미드–공격 사이 m) · 오프사이드 라인 · 공간 점유 · 압박 거리를 켤 수 있습니다. 여러 개를 함께 켜도 되고, 선수를 옮기면 바로 다시 계산됩니다. 보드와 함께 저장되어 사진 · 영상에도 나옵니다.','3D 보기에서 «팀 브랜딩»을 켜면 광고판에 팀 이름이 들어가고 관중석에 팀 색이 섞입니다. 팀 이름은 선수단 이름을 쓰고, 없으면 경기 시계의 우리 팀 이름을 씁니다.']
   },{
-    id:'2026-10-14-v3-023-multi-3d',date:'2026-10-14',title:'v3.023 · 보드 — 운동장 여러 개도 3D 경기장 안에',
+    id:'2026-10-14-v3-028-multi-3d',date:'2026-10-14',title:'v3.028 · 보드 — 운동장 여러 개도 3D 경기장 안에',
     changes:['운동장을 5개처럼 여러 개 놓고 3D로 보면, 바깥쪽 운동장이 관중석 위로 나가고 광고판이 운동장을 가로지르던 것을 고쳤습니다. 이제 경기장이 운동장 전체를 둘러쌉니다.','운동장 하나일 때 경기장 모습은 그대로입니다.']
   },{
-    id:'2026-10-14-v3-022-3d-default',date:'2026-10-14',title:'v3.022 · 보드 — 처음엔 3D 보기 · 그리드는 잔디만',
+    id:'2026-10-14-v3-027-3d-default',date:'2026-10-14',title:'v3.027 · 보드 — 처음엔 3D 보기 · 그리드는 잔디만',
     changes:['처음 들어오면 작전판이 3D 보기로 열립니다. 평면이 편하면 보드 설정 › 보드 보기에서 «평면»을 고르세요. 한 번 고르면 그 기기에서는 계속 그대로입니다.','훈련 만들기에서 «그리드»를 고르면 3D 보기의 관중석 · 광고판이 사라지고 잔디만 남습니다. 판이 그만큼 크게 보입니다. 운동장으로 돌아가면 경기장도 다시 나옵니다.','처음 켤 때 가끔 보드 «보기» 메뉴가 열린 채 시작하던 것을 고쳤습니다.']
   },{
-    id:'2026-10-14-v3-021-navy',date:'2026-10-14',title:'v3.021 · 앱 메인색 — 진한 네이비',
+    id:'2026-10-14-v3-026-navy',date:'2026-10-14',title:'v3.026 · 앱 메인색 — 진한 네이비',
     changes:['앱의 메인색이 파랑에서 진한 네이비로 바뀌었습니다. 저장 버튼 · 선택한 탭 · 스위치 · 도크에서 고른 도구가 네이비로 보입니다.','다크 모드에서는 어두운 바탕에서도 잘 보이도록 같은 계열의 밝은 네이비를 씁니다.','팀 색 · 펜 색 · 등급 · 국면 · 차트 색은 그대로입니다. 운동장 위 선수의 선택 표시도 잘 보이도록 파랑 그대로 둡니다.']
   },{
-    id:'2026-10-14-v3-020-pencil',date:'2026-10-14',title:'v3.020 · 보드 — 애플 펜슬로 더 부드럽게',
+    id:'2026-10-14-v3-025-pencil',date:'2026-10-14',title:'v3.025 · 보드 — 애플 펜슬로 더 부드럽게',
     changes:['펜슬로 긋는 동안 손바닥이 화면에 닿아도 선이 꼬이거나 튀지 않습니다. 손가락이 먼저 닿아 시작된 선은 펜슬이 닿는 순간 펜슬 선으로 바뀝니다.','펜슬을 한 번 쓴 기기에서는 «펜슬 전용»이 켜져, 그리기 도구를 든 채로 손가락으로 선수를 옮길 수 있습니다(아이패드는 지금처럼 길게 눌러서). 손가락으로도 그리고 싶으면 그리기 도구 옆의 «펜슬 전용» 칩을 누르거나, 손가락으로 그었을 때 나오는 안내의 «손가락도 그리기»를 누르세요. 고른 값은 그 기기에 남습니다.','자유선이 꺾인 선 대신 둥근 곡선으로 그려지고, 펜슬이 보내는 중간 점까지 모두 받아 빠르게 그어도 모양이 그대로 나옵니다. 예전에 그린 선도 같은 점으로 더 매끄럽게 보이고, 사진 · 영상에도 그대로 나옵니다.','긋는 선을 화면 한 장에 한 번만 다시 그려, 긴 선이나 3D 보기에서도 펜 끝을 바짝 따라옵니다.','펜슬 호버를 지원하는 아이패드에서는 화면에 닿기 전부터 펜 끝 자리를 작은 링으로 보여 줍니다.']
+  },{
+    id:'2026-10-14-v3-024-release-notes-every-ten',date:'2026-10-14',title:'v3.024 · «새 기능» 안내는 열 판마다 한 번',
+    changes:['왼쪽 «새 기능» 안내가 판마다 뜨지 않고, 판 번호 끝이 0인 판(3.020, 3.030 …)에서만 한 번 뜹니다. 그 안내에는 바로 앞 안내 뒤로 바뀐 것이 모두 모여 있습니다(예: 3.021~3.030).','그 사이 판은 조용히 적용됩니다. 새 판이 준비됐을 때의 «업데이트» 안내는 지금 그대로입니다.','안내를 열면 «v3.021 ~ v3.030»처럼 어느 판들의 변경인지 함께 보이고, 7일 뒤 저절로 사라지는 것은 그대로입니다.']
   },{
     id:'2026-10-14-v3-019-process-scenes',date:'2026-10-14',title:'v3.019 · 커뮤니티 — 프로세스 훈련 애니메이션 보강 · 프로세스 칸을 첫 화면으로',
     changes:['커뮤니티 «프로세스» 칸의 세션 45개, 훈련 135개 모두에 장면을 더했습니다. 훈련마다 장면이 4~6개에서 11~14개로 늘었습니다(모두 769개 → 1,729개). 원래 장면은 그대로 두고, 그 사이의 움직임 · 득점 뒤의 흐름 · 잘못했을 때 어떻게 되는지를 이어서 보여 줍니다.','장면마다 패스(흰 실선) · 선수 이동(노란 점선) · 드리블(물결선) · 슈팅 화살표가 나오고, 띄우는 패스와 휘어 뛰는 움직임도 그대로 재생됩니다. «보관함에 담기»로 담는 카드에도 똑같이 들어갑니다.','v3.016에서 늦췄던 재생 속도는 원래대로 되돌렸습니다. 장면이 늘어 훈련 하나가 원래 속도로 20초 남짓(19~27초) 재생됩니다.','커뮤니티를 열면 «프로세스» 칸이 먼저 보입니다. «코치 자료»나 «엘미하»를 보다 나가면 다음에도 그 칸으로 열립니다.','세션 카드의 그림이 한 장으로 커졌습니다. 그림 아래 1 · 2 · 3을 누르면 그 훈련의 그림과 장면 수가 나오고, 카드를 누르면 보고 있던 훈련부터 열립니다. 넓은 화면에서는 훈련 이름에 마우스를 올려도 그림이 바뀝니다.']
@@ -689,6 +696,15 @@
       return {id:text(x.id),date:text(x.date),title:text(x.title),changes:(Array.isArray(x.changes)?x.changes:[]).filter(function(s){return typeof s==='string'&&!!s;})};
     });
   }
+  /* 판 번호: 제목 머리의 «v3.019» → 3019(큰 판 × 1000 + 작은 판). 없으면 NaN */
+  function versionNo(e){var m=/^v(\d+)\.(\d{1,3})(?!\d)/.exec(text(e&&e.title));return m?(+m[1])*1000+(+m[2]):NaN;}
+  /* 지금 보여 줄 안내 묶음: 가장 최근 안내 판(끝이 0 · 3.020 부터)과 그 앞 아홉 판의 항목, 최신 판이 앞. 안내 판이 아직 없으면 빈 목록 */
+  function announced(value){
+    var all=entries(value===undefined?DEFAULT_ENTRIES:value),a=NaN;
+    all.forEach(function(e){var n=versionNo(e);if(n>=ANNOUNCE_FROM&&n%ANNOUNCE_EVERY===0&&!(n<=a))a=n;});
+    if(isNaN(a))return [];
+    return all.filter(function(e){var n=versionNo(e);return n>a-ANNOUNCE_EVERY&&n<=a;}).sort(function(x,y){return versionNo(y)-versionNo(x);});
+  }
   /* 전체 표시 내용을 그대로 비교한다. 해시 충돌이나 버전 번호 재사용으로 새 안내가 숨겨지지 않는다. */
   function revision(value){return 'release-notes-v1:'+JSON.stringify(entries(value));}
   function validTime(value){return typeof value==='number'&&Number.isFinite(value)&&value>=0;}
@@ -740,7 +756,7 @@
     var win=options.window||(typeof window!=='undefined'?window:null),host=options.host;
     if(!win||!win.document||!host)return null;
     if(host.__psReleaseNotes&&host.__psReleaseNotes.destroy)host.__psReleaseNotes.destroy();
-    var doc=win.document,current=entries(options.entries===undefined?DEFAULT_ENTRIES:options.entries),timer=null,disposed=false,expanded=false;
+    var doc=win.document,current=announced(options.entries),timer=null,disposed=false,expanded=false;   /* 3.024 — 띠도 안내 판 묶음만 */
     var now=typeof options.now==='function'?options.now:function(){return Date.now();};
     if(!doc.getElementById('psReleaseNotesStyle')){
       var style=doc.createElement('style');style.id='psReleaseNotesStyle';style.textContent=CSS;(doc.head||doc.documentElement).appendChild(style);
@@ -770,7 +786,7 @@
     }
     function refresh(nextEntries){
       if(disposed)return;
-      if(Array.isArray(nextEntries)){current=entries(nextEntries);render();}
+      if(Array.isArray(nextEntries)){current=announced(nextEntries);render();}
       clearTimer();
       var at=now(),hidden=readHidden(win),visible=shouldShow({entries:current,hidden:hidden,now:at});
       host.hidden=!visible;
@@ -802,5 +818,5 @@
     }};
     host.__psReleaseNotes=controller;render();refresh();return controller;
   }
-  return {STORAGE_KEY:STORAGE_KEY,WEEK_MS:WEEK_MS,entries:function(){return entries(DEFAULT_ENTRIES);},revision:revision,makeHidden:makeHidden,shouldShow:shouldShow,mount:mount};
+  return {STORAGE_KEY:STORAGE_KEY,WEEK_MS:WEEK_MS,ANNOUNCE_EVERY:ANNOUNCE_EVERY,ANNOUNCE_FROM:ANNOUNCE_FROM,entries:function(){return entries(DEFAULT_ENTRIES);},versionNo:versionNo,announced:announced,revision:revision,makeHidden:makeHidden,shouldShow:shouldShow,mount:mount};
 });

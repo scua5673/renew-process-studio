@@ -189,7 +189,7 @@
     var body = node(doc, 'g', { 'class': 'ps-chip', 'data-k': String(size.k), 'data-shape': kind, transform: chipTransform(item, size.k) });
     // Floodlights on four corner masts: four faint shadows in an X plus a contact shadow, as on a lit pitch.
     // Flat fills, not gradients: Safari repaints every chip on each drag frame and radial gradients made that slow.
-    // 3.024 — the light follows the board's mood (opts.mood): night = the four masts, day = one short shadow under a high sun, dusk = one long shadow.
+    // 3.029 — the light follows the board's mood (opts.mood): night = the four masts, day = one short shadow under a high sun, dusk = one long shadow.
     var mood = opts && opts.mood;
     if (mood === 'day') body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 3, rx: R + 2, ry: R * .8, fill: '#000', 'fill-opacity': '.22', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
     else if (mood === 'dusk') body.appendChild(node(doc, 'ellipse', { cx: R * 1.1, cy: 3, rx: R * 2.1, ry: R * .62, fill: '#000', 'fill-opacity': '.3', 'pointer-events': 'none', 'class': 'ps-chip-shadow', transform: 'rotate(12)' }));

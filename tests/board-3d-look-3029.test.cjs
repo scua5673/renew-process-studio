@@ -3,8 +3,8 @@ const fs=require('fs'),path=require('path'),vm=require('node:vm');
 const R=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const board=R('studio/board.html'),depth=R('studio/board-token-depth.js'),notes=require('../studio/release-notes.js');
 
-/* 3.024 — 사용자 «3D 연출 — 시간대 · 분석 그래픽»(목업 ①): 분위기 낮·해질녘·야간 · 분석 그래픽 다섯 · 팀 브랜딩 */
-test('3.024 mood is a device option with night (today\'s look) as the default, and reaches the stadium, the stage and the chips',()=>{
+/* 3.029 — 사용자 «3D 연출 — 시간대 · 분석 그래픽»(목업 ①): 분위기 낮·해질녘·야간 · 분석 그래픽 다섯 · 팀 브랜딩 */
+test('3.029 mood is a device option with night (today\'s look) as the default, and reaches the stadium, the stage and the chips',()=>{
   assert.match(board,/var TILT_MOOD=\{night:\{key:"night",ga:"#2c6a2a",gb:"#367a33",tint:null,cone:\.9,lamp:1,vig:\.62,warm:0\},/,'night keeps the colours the stadium had');
   assert.match(board,/day:\{key:"day",ga:"#3b9a4e",gb:"#348c46",tint:\["#fff",\.06\],cone:0,lamp:\.2,vig:\.3,warm:0\}/);
   assert.match(board,/dusk:\{key:"dusk",ga:"#3a8a45",gb:"#327d3e",tint:\["#ff9a3c",\.1\],cone:\.45,lamp:\.7,vig:\.52,warm:\.12\}/);
@@ -39,7 +39,7 @@ test('3.024 mood is a device option with night (today\'s look) as the default, a
   assert.match(board,/\["view","화면",\["보드 보기","카메라","경기장","광고판","분위기","팀 브랜딩"\]\],\["view","분석",\["분석 그래픽"\]\],/,'settings sections');
 });
 
-test('3.024 analysis graphics live on the board (snapshot), under the drawings, and recompute with the players',()=>{
+test('3.029 analysis graphics live on the board (snapshot), under the drawings, and recompute with the players',()=>{
   assert.match(board,/let svg,world,drawLayer,tokenLayer,drawCatch,analysisLayer=null;/);
   assert.match(board,/buildLines\(\);\n  analysisLayer=el\("g",\{id:"analysisLayer","pointer-events":"none"\}\);world\.appendChild\(analysisLayer\);[^\n]*\n  drawLayer=el\("g",\{id:"drawLayer"\}\);/,'above the lines, below drawings and tokens');
   assert.match(board,/try\{_setSelRings\(\);\}catch\(_\)\{\}\n  try\{renderAnalysis\(\);\}catch\(_\)\{\}/,'every renderTokens');
@@ -68,16 +68,16 @@ test('3.024 analysis graphics live on the board (snapshot), under the drawings, 
   assert.equal(JSON.stringify(c.L([{x:1},{x:2}],1).map(l=>l.length)),'[2]','two players are one line');
 });
 
-test('3.024 team branding: the ad text defaults to the team name and the crowd wears the team colour',()=>{
+test('3.029 team branding: the ad text defaults to the team name and the crowd wears the team colour',()=>{
   assert.match(board,/function tiltTeamName\(\)\{ try\{ var n=\(typeof squad!=="undefined"&&squad&&squad\.name&&squad\.name!=="우리 선수단"\)\?squad\.name:"";\n    if\(!n&&typeof matchClock!=="undefined"&&matchClock&&matchClock\.homeName&&matchClock\.homeName!=="우리"\)n=matchClock\.homeName;/);
   assert.match(board,/var _crowdTiles=\{\};[^\n]*\n  function crowdTile\(teamCol\)\{ var key=String\(teamCol\|\|""\);\n    if\(_crowdTiles\[key\]!=null\)return _crowdTiles\[key\];/);
   assert.match(board,/if\(\/\^#\[0-9a-f\]\{6\}\$\/i\.test\(key\)\)for\(let i=0;i<6;i\+\+\)shirts\.push\(key\);/,'about a third of the crowd');
   assert.match(board,/const crowd=deco==="full"\?crowdTile\(brand\?tcol:""\):'',ct=S\*\.046;/);
 });
 
-test('3.024 version, release note',()=>{
-  assert.match(R('sw.js'),/^const CACHE = 'process-3\.024';/m);assert.match(R('studio/app.html'),/window\.PS_BUILD='3\.024'/);
-  const e=notes.entries().find(x=>x.id==='2026-10-14-v3-024-3d-look');
-  assert.ok(e,'3.024 note');
+test('3.029 version, release note',()=>{
+  assert.match(R('sw.js'),/^const CACHE = 'process-3\.029';/m);assert.match(R('studio/app.html'),/window\.PS_BUILD='3\.029'/);
+  const e=notes.entries().find(x=>x.id==='2026-10-14-v3-029-3d-look');
+  assert.ok(e,'3.029 note');
   assert.ok(e.changes.some(c=>/낮 · 해질녘 · 야간/.test(c)&&/«야간»/.test(c))&&e.changes.some(c=>/팀 형태/.test(c)&&/압박 거리/.test(c)&&/사진 · 영상/.test(c))&&e.changes.some(c=>/«팀 브랜딩»/.test(c)));
 });

@@ -67,13 +67,19 @@ try{
     const page=await context.newPage(),errors=[];page.setDefaultTimeout(12000);page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base+'/studio/app.html?token=PRIVATE_URL_TOKEN#PRIVATE_URL_HASH',{waitUntil:'load'});
     const dialog=page.locator('#psSupportDialog');
+    /* 3.024 — 띠는 안내 판(끝이 0 · 3.020 부터)의 묶음만 보인다. 실제 목록에 안내 판이 아직 없을 수 있으니 안내 판 하나를 얹어 띄운다 */
+    const ANN20={id:'ann-20',date:'2026-09-15',title:'v3.020 · 안내 판',changes:['모아서 한 번']};
+    await page.evaluate(a=>fixtureRelease.refresh([a,...PSReleaseNotes.entries()]),ANN20);
+    assert.equal(await page.locator('#psReleaseNotes').isVisible(),true);
     /* 2.902 — 폰 폭(<768)은 안내가 한 줄이고 «일주일간 안 보기» 대신 ✕(업데이트 안내 닫기)가 같은 일을 한다 */
     await page.getByRole('button',{name:width<768?'업데이트 안내 닫기':'일주일간 안 보기',exact:true}).click();
     assert.equal(await page.locator('#psReleaseNotes').isVisible(),false);
     const hidden=await page.evaluate(()=>JSON.parse(localStorage.getItem(PSReleaseNotes.STORAGE_KEY)));
     assert.equal(hidden.until-hidden.from,7*24*60*60*1000);
-    await page.evaluate(()=>fixtureRelease.refresh([{id:'new-note',date:'2026-09-16',title:'새 안내',changes:['추가된 내용']},...PSReleaseNotes.entries()]));
-    assert.equal(await page.locator('#psReleaseNotes').isVisible(),true);
+    await page.evaluate(a=>fixtureRelease.refresh([{id:'quiet-21',date:'2026-09-16',title:'v3.021 · 조용한 판',changes:['다음 안내 판에']},a,...PSReleaseNotes.entries()]),ANN20);
+    assert.equal(await page.locator('#psReleaseNotes').isVisible(),false,'3.024 — 그 사이 판은 띠를 다시 띄우지 않는다');
+    await page.evaluate(a=>fixtureRelease.refresh([{id:'ann-30',date:'2026-09-16',title:'v3.030 · 새 안내',changes:['추가된 내용']},a,...PSReleaseNotes.entries()]),ANN20);
+    assert.equal(await page.locator('#psReleaseNotes').isVisible(),true,'다음 안내 판은 다시 보인다');
     await page.evaluate(()=>window.dispatchEvent(new CustomEvent('ps-sync-diagnostic',{detail:{stage:'personal-channel',error:{name:'StorageError',psCode:'sync_storage',message:'PRIVATE_RAW_ERROR',stack:'Error PRIVATE_STACK\n at x (https://support-app-fixture.invalid/studio/sync.js?token=PRIVATE_QUERY:123:4)'}}})));
 
     await page.locator('#psSupportOpen').click();assert.equal(await dialog.evaluate(el=>el.open),true);

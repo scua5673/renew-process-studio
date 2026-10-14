@@ -116,7 +116,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
     localStorage.setItem('ps_active_ws',WT);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:A,wid:WT}));
     localStorage.setItem('ps_ws_list',JSON.stringify(teams));
     if(dark)localStorage.setItem('cs_theme','dark');
-    if(tilt3d!==null)localStorage.setItem('ps_board_tilt3d',tilt3d?'1':'0');   /* 3.022 — 앱은 처음 들어온 기기를 3D 로 연다. 시험은 평면이 기본(null = 처음 들어온 기기 그대로) */
+    if(tilt3d!==null)localStorage.setItem('ps_board_tilt3d',tilt3d?'1':'0');   /* 3.027 — 앱은 처음 들어온 기기를 3D 로 연다. 시험은 평면이 기본(null = 처음 들어온 기기 그대로) */
     if(!examples)localStorage.setItem('ps_vault_px_v1',JSON.stringify({[A+'|'+WT]:1}));   /* 3.001 — 보관함 «프로세스» 예시를 이미 받은 사용자(이 판 전과 같은 보관함). 예시 넣기를 보는 시험만 examples:true */
   },{A,WT,teams,base,dark,examples,tilt3d});
   await context.routeWebSocket('**/*',s=>s.close());
