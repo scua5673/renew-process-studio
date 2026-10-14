@@ -871,7 +871,7 @@
       var TX='var(--text,var(--txt,#16181C))', DIM='var(--text-3,var(--dim,#5C6068))',
           LN='var(--line,#E3E5E9)', SF='var(--surface,var(--bar,#fff))',
           SF2='var(--surface-2,var(--bar2,#F1F2F4))',
-          AC='var(--accent,var(--blue,#3a6df0))', ACS='var(--accent-soft,var(--blue-soft,#edf2fe))';
+          AC='var(--accent,var(--blue,#14213D))', ACS='var(--accent-soft,var(--blue-soft,#E9EDF5))';
       S.textContent=
         '.ps-rkb{display:flex;align-items:center;gap:10px;background:'+SF2+';border:1px solid '+LN+';'
         +'border-radius:10px;padding:8px 10px;margin-bottom:11px}'

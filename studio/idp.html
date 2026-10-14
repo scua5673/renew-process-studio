@@ -24,7 +24,7 @@
 <script src="learn-concepts.js"></script><!-- 2.153 — 개념 사전(게임모델·국면·원칙이 무슨 말인지). 학습 탭 '개념' 영역이 읽는다 -->
 <script src="learn-curriculum-pro.js"></script>
 <script src="learn-toc.js?v=2.659"></script><!-- 2.323 — 학습 목차(서가). 학습 앱과 **같은 파일**을 읽는다 --><!-- 2.151 — 피지컬·분석·AT 트랙 + PROCESS 척추 + 기존 모듈 프로세스화(flow). 뒤에 실려 LR_CUR 를 넓히기만 한다 -->
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.026">
 <!-- 1.575 — 페이지 제목 규칙(premium-ui.css .ps-pagetitle)을 켜는 표시.
      셸(앱) 안에서는 탭 내비가 화면 이름을 말하므로 페이지 제목을 감춘다.
      단독으로 열었을 때는 이름을 말해 줄 내비가 없으니 그대로 보인다.
@@ -38,7 +38,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   setTimeout(function(){try{document.documentElement.removeAttribute('data-boot');}catch(_){}},1200);}}catch(_){}</script>
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
-:focus-visible{outline:2px solid #3a6df0 !important;outline-offset:2px;border-radius:6px;}
+:focus-visible{outline:2px solid var(--ps-navy,#14213D) !important;outline-offset:2px;border-radius:6px;}
   :root{
     --bg:#ECEDF0; --frame:#FFFFFF; --surface:#FFFFFF; --surface-2:#F1F2F4;
     --line:#E3E6EA; --line-soft:#ECEDF0;
@@ -128,7 +128,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sq-hd{position:relative}
   .sq-flag{position:absolute;right:0;top:0;font-size:10px;font-weight:800;letter-spacing:.02em;border-radius:999px;padding:3px 8px;line-height:1}
   .sq-flag.wait{background:#fff0ef;color:#c24a46;border:1px solid #efd2d0}
-  .sq-flag.new{background:#eef2ff;color:#3a6df0;border:1px solid #d5defc}
+  .sq-flag.new{background:#E9EDF5;color:var(--ps-navy,#14213D);border:1px solid #d5defc}
   .sq-flag.q{background:var(--accent-soft,#F0EBFF);color:var(--accent,#7C4DFF);border:1px solid rgba(124,77,255,.25)}   /* 1.677 — 보라 한 벌 */
   .sq-flag.rv{background:#fff4e5;color:#b26a00;border:1px solid #f3ddc0}   /* 2.259 — 성장 리뷰 기한(호박) */
   /* 주간 일지 목록 (목표 탭) */
@@ -870,7 +870,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .lc-level .lc-lvbar{grid-area:bar;height:4px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:8px}
   .lc-level .lc-lvbar em{display:block;height:100%;background:var(--accent);border-radius:4px}
   .lc-level .lc-lvpct{grid-area:pct;color:var(--text-3);font-size:var(--fs-micro);font-weight:600;text-align:right}
-  .lc-level.on{border-color:var(--accent);box-shadow:0 0 0 2px rgba(58,109,240,.12)}
+  .lc-level.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--ps-navy,#14213D) 12%,transparent)}
   .lc-level.on i{background:var(--accent);color:#fff}
   .lc-level.done i{background:#2E7D63;color:#fff}
   .lc-who{font-size:var(--fs-caption);color:var(--text-2);line-height:1.55;padding:10px 12px;border-radius:10px;background:var(--surface-2)}
@@ -967,7 +967,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .lc-nav .btn{padding:8px 14px;font-size:13px;min-height:0}
   .lc-donetag{color:#2E7D63;font-weight:800;font-size:var(--fs-caption)}
   .lc-flash{animation:lcflash 1.6s ease}
-  @keyframes lcflash{0%{box-shadow:0 0 0 3px rgba(58,109,240,.4)}100%{box-shadow:none}}
+  @keyframes lcflash{0%{box-shadow:0 0 0 3px color-mix(in srgb,var(--ps-navy,#14213D) 40%,transparent)}100%{box-shadow:none}}
   @media (max-width:640px){ .lc-levels{gap:6px} .lc-level{padding:10px 9px 8px;grid-template-columns:24px 1fr} .lc-level i{width:24px;height:24px;font-size:12px} .lc-level b{font-size:13px} .lc-level>small{display:none} .lc-grid{grid-template-columns:1fr 1fr;gap:8px} .lc-mod{padding:12px 11px 10px;min-height:0} .lc-mod h4{font-size:14px} .lc-modhead .lc-assign{margin-left:0;width:100%} }
   @media (max-width:420px){ .lc-grid{grid-template-columns:1fr} }
   .lp-tasks .lp-task{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line-soft)}
@@ -3704,7 +3704,7 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   #report .rs-row{display:flex;align-items:baseline;gap:16px;padding:9px 0 0}
   #report .rs-row i{flex:0 0 96px;margin:0;font-size:var(--fs-caption)}
   #report .rs-row b{font-size:var(--fs-title);font-weight:var(--fw-head)}
-  #report .rs-link{color:#2C54C4;text-decoration:underline;word-break:break-all;font-weight:var(--fw-body)}
+  #report .rs-link{color:var(--ps-navy-h,#1D2D50);text-decoration:underline;word-break:break-all;font-weight:var(--fw-body)}
   #report .rs-ft{display:flex;justify-content:space-between;margin-top:34px;border-top:1px solid #e5e6ea;padding-top:8px;font-size:var(--fs-micro);font-weight:var(--fw-body);color:var(--faint)}
   #report .rs-ft b{color:var(--ink)}
 
@@ -15508,8 +15508,8 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
 .pr-card .pr-x{flex:0 0 34px;height:34px;border:0;border-radius:9px;background:var(--panel2,#F1F3F5);color:var(--dim,#646A73);font-size:16px;cursor:pointer}
 .pr-addrow{display:flex;gap:8px;margin-top:8px}
 .pr-in{flex:1;min-width:0;width:0;height:46px;border:1.5px dashed var(--line2,#D3D7DD);border-radius:12px;background:transparent;padding:0 13px;font:inherit;font-size:14px;color:var(--txt,#14161A)}
-.pr-in:focus{outline:none;border-style:solid;border-color:var(--blue,#3a6df0);background:var(--bar,#fff)}
-.pr-ok{flex:0 0 auto;height:46px;padding:0 17px;border:0;border-radius:12px;background:var(--blue,#3a6df0);color:#fff;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.pr-in:focus{outline:none;border-style:solid;border-color:var(--blue,var(--ps-navy,#14213D));background:var(--bar,#fff)}
+.pr-ok{flex:0 0 auto;height:46px;padding:0 17px;border:0;border-radius:12px;background:var(--blue,var(--ps-navy,#14213D));color:#fff;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
 .pr-candtg{margin-top:8px;height:38px;padding:0 13px;border:0;border-radius:10px;background:var(--panel2,#F1F3F5);font:inherit;font-size:13px;font-weight:600;color:var(--dim,#646A73);cursor:pointer}
 .pr-cands{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .pr-cand{display:flex;align-items:baseline;gap:8px;min-height:44px;padding:10px 13px;border:1px solid var(--line,#E3E6EA);border-radius:11px;background:var(--bar,#fff);font:inherit;text-align:left;cursor:pointer}
@@ -15535,13 +15535,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
 .qg-ownro{font-size:12px;font-weight:600;color:var(--dim,#8A9099);margin:5px 0 2px}
 .th-hrt{color:#7C4DFF;font-style:normal}
 /* ══ 2.255 · 첫 진입 환영 세 걸음 — 폰 우선(행 52px·타깃 크게), 다 하면 스스로 사라짐 ══ */
-.wc-card{position:relative;border:0;border-radius:var(--g-radius,14px);background:linear-gradient(135deg,var(--blue,#3a6df0),#5b84f5);color:#fff}   /* 2.317 — ui-grammar '카드 한 얼굴' 예외가 됐으니 반경을 스스로 갖는다 */
+.wc-card{position:relative;border:0;border-radius:var(--g-radius,14px);background:linear-gradient(135deg,var(--blue,var(--ps-navy,#14213D)),#5b84f5);color:#fff}   /* 2.317 — ui-grammar '카드 한 얼굴' 예외가 됐으니 반경을 스스로 갖는다 */
 .wc-card .wc-x{position:absolute;top:10px;right:10px;width:30px;height:30px;border:0;border-radius:9px;background:rgba(255,255,255,.16);color:#fff;font-size:14px;cursor:pointer}
 .wc-hi{font-size:16px;font-weight:800;letter-spacing:-.015em;line-height:1.35;padding-right:34px}
 .wc-hi b{color:#fff}
 .wc-sub{font-size:13px;opacity:.9;margin:4px 0 12px;line-height:1.5}
 .wc-step{display:flex;align-items:center;gap:11px;width:100%;min-height:52px;padding:9px 12px;margin-top:7px;border:0;border-radius:12px;background:rgba(255,255,255,.94);color:var(--txt,#14161A);font:inherit;text-align:left;cursor:pointer}
-.wc-step i{flex:0 0 26px;height:26px;border-radius:50%;background:var(--blue,#3a6df0);color:#fff;font-style:normal;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.wc-step i{flex:0 0 26px;height:26px;border-radius:50%;background:var(--blue,var(--ps-navy,#14213D));color:#fff;font-style:normal;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
 .wc-step span{flex:1;min-width:0}
 .wc-step b{display:block;font-size:14px;font-weight:800}
 .wc-step small{display:block;font-size:11px;color:var(--dim,#646A73);margin-top:1px}
@@ -15562,7 +15562,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
 .gw-rate{margin-left:8px;font-size:11px;font-weight:800;color:var(--text-3)}
 .gw-rate.spurt{background:#fff4e5;color:#b26a00;border-radius:999px;padding:2px 8px}
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=2.981"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.026"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2324-idpcard">/* ══ 2.324 · IDP 카드 한 벌 — 글자 계단 · 행과 열 · 카드 얼굴 ══════════════════════
    사용자: "IDP 카드가 너무 유치한데 조금 고급지게 · 폰트의 크기와 행과 열 정리 · 일관성있게".
    유치해 보이는 원인은 장식이 아니라 **치수가 제각각**인 것이었다 — 카드마다 패딩·반경이 다르고,
