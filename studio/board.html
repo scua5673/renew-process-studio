@@ -20472,11 +20472,13 @@ try{ var _nb=document.getElementById('dfNew');
     capture();
     var c=_nbCounts(),lose=c.any||c.n>1||c.sc,dn=_nbDefaultPlayers();
     var go=function(keep){   /* keep===false — 기본 세팅의 선수는 올리지 않는다(3.031) */
-      var prev={pages:pages?_clone(pages):null,idx:idx,link:_singleLink?_clone(_singleLink):null,snap:pages?null:_snap(),anim:pages?null:_animNow()};
+      /* 3.031 — 손대지 않은 새 보드에서 다시 «새 보드»(빈 보드 ↔ 기본 세팅으로 바꿔 고르기)를 눌러도 «↶ 이전 보드»는 처음 보드를 되살린다 */
+      var chain=(_nbUndo&&_nbSig()===_nbUndo.fresh)?_nbUndo.prev:null;
+      var prev=chain||{pages:pages?_clone(pages):null,idx:idx,link:_singleLink?_clone(_singleLink):null,snap:pages?null:_snap(),anim:pages?null:_animNow()};
       pages=null; idx=0; _singleLink=null;
       var dflt=false; try{ dflt=!!(window.__boardNewCanvas&&window.__boardNewCanvas(keep)); }catch(_){}
       clearHistory();
-      clearTimeout(_nbT); _nbUndo=lose?{prev:prev,at:Date.now(),fresh:_nbSig()}:null;
+      clearTimeout(_nbT); _nbUndo=(chain||lose)?{prev:prev,at:Date.now(),fresh:_nbSig()}:null;
       if(_nbUndo)_nbT=setTimeout(function(){ _nbUndo=null; try{render();}catch(_){} },NB_UNDO_MS);
       render(); persist();
       _nbSave("새 보드로 시작했어요"+(dflt?" · 새 보드 기본 세팅으로":"")+" · 보관함 자료는 그대로예요");

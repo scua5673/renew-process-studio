@@ -18,6 +18,8 @@ test('3.031 «새 보드» asks «빈 보드 / 기본 세팅» when the saved de
   assert.match(nb[0],/\{label:"빈 보드로 시작",primary:true,value:"empty"\},\{label:"기본 세팅으로 시작 \(선수 "\+dn\+"명\)",value:"default"\},\{label:"취소",value:null\}/);
   assert.match(nb[0],/function\(v\)\{ if\(v==="empty"\)go\(false\); else if\(v==="default"\)go\(true\); \}/,'cancel does nothing');
   assert.match(nb[0],/window\.__boardNewCanvas\(keep\)/);
+  assert.match(nb[0],/var chain=\(_nbUndo&&_nbSig\(\)===_nbUndo\.fresh\)\?_nbUndo\.prev:null;/,'switching choice on an untouched new board keeps the first board for «↶ 이전 보드»');
+  assert.match(nb[0],/_nbUndo=\(chain\|\|lose\)\?\{prev:prev,/);
 });
 
 test('3.031 «빈 보드로 시작» keeps the default look but drops its players',()=>{

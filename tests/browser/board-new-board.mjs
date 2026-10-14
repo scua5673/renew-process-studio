@@ -84,6 +84,10 @@ try{
   await f.click('#bpNewBoard');await f.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.offsetParent!==null&&b.textContent.trim()==='빈 보드로 시작'));
   await pick('기본 세팅으로 시작');s=await st();
   assert.equal(s.players,3,'기본 세팅으로 — 그 선수 셋 '+JSON.stringify(s));assert.equal(s.drawings,0,'그림은 기본 세팅에 없다');
+  /* 빈 보드 → 바로 기본 세팅으로 바꿔 골라도 «↶ 이전 보드»는 처음 보드(선수 셋 + 그림)를 되살린다 */
+  assert.ok(s.undo&&s.ready,'«↶ 이전 보드»가 남아 있다 '+JSON.stringify(s));
+  await f.click('#bpNewBoardUndo');await f.waitForFunction(()=>!document.getElementById('bpNewBoardUndo'));await page.waitForTimeout(500);
+  s=await st();assert.equal(s.players,3);assert.equal(s.drawings,1,'처음 보드의 그림까지 '+JSON.stringify(s));
   await f.evaluate(()=>window.__psClearBoardDefault());
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
