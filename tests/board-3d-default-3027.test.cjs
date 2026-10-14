@@ -6,7 +6,8 @@ const notes=require('../studio/release-notes.js');
 /* 3.027 · 3.028 — 사용자 «프로세스 스튜디오 처음 들어왔을 때 기본이 3D» · «훈련 만들기에서 그리드 누르면 옆에 전광판 관중석 다 사라지게» */
 test('3.027 a device entering for the first time opens the board in 3D; a device that chose flat stays flat',()=>{
   const app=R('studio/app.html');
-  assert.match(app,/try\{if\(localStorage\.getItem\('ps_board_tilt3d'\)===null\)localStorage\.setItem\('ps_board_tilt3d','1'\);\}catch\(_\)\{\}/,'only when nothing was chosen yet');
+  /* 3.033 — 처음 3D 는 마우스 데스크톱만(아이패드 사파리가 3D 경기장을 버티지 못해 반복 강제 종료) — tests/ipad-3d-safe-3033.test.cjs */
+  assert.match(app,/else if\(localStorage\.getItem\('ps_board_tilt3d'\)===null\)localStorage\.setItem\('ps_board_tilt3d','1'\);\}catch\(_\)\{\}/,'only when nothing was chosen yet (desktop)');
   assert.ok(app.indexOf("localStorage.getItem('ps_board_tilt3d')===null")<app.indexOf('id="fBoard"'),'set before the board frame loads');
   assert.match(R('studio/board.html'),/try\{ if\(localStorage\.getItem\("ps_board_tilt3d"\)==="1"\)\{ document\.body\.classList\.add\("bc-tilt3d"\);/,'the board boots in 3D on «1»');
   assert.match(R('tests/fixtures/team-app.mjs'),/if\(tilt3d!==null\)localStorage\.setItem\('ps_board_tilt3d',tilt3d\?'1':'0'\);/,'shared fixture stays flat unless a test asks for a first-time device');

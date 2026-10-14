@@ -3127,6 +3127,9 @@ body.bc-tilt3d #tiltMood{display:block}
 body.bc-tilt3d[data-tilt-mood="night"] #tiltMood{background:radial-gradient(18% 14% at 8% 4%,rgba(255,250,230,.26),transparent 70%),radial-gradient(18% 14% at 92% 4%,rgba(255,250,230,.26),transparent 70%),radial-gradient(90% 80% at 50% 45%,transparent 60%,rgba(0,0,0,.34) 100%)}
 body.bc-tilt3d[data-tilt-mood="dusk"] #tiltMood{background:radial-gradient(60% 50% at 10% 0%,rgba(255,170,90,.32),transparent 70%),linear-gradient(180deg,rgba(255,140,60,.08),rgba(80,40,120,.12))}
 body.bc-tilt3d[data-tilt-mood="day"] #tiltMood{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.07))}
+/* 3.033 — 아이폰 · 아이패드 사파리는 이 층을 그리지 않는다: 3D 판 위에 겹친 무대 크기 층이라 따로 한 장(11인치 약 14MB · 13인치 약 20MB)을 더 잡는다.
+   아이패드에서 3D 경기장을 그리다 페이지가 연달아 강제 종료됐다(3D 판 전체 93~147MB, 평면 19MB). 무대 바탕 · 잔디 톤 · 조명 · 칩 그림자는 분위기를 그대로 따른다 */
+@supports (-webkit-touch-callout:none){ html body.bc-tilt3d #tiltMood{display:none!important} }
 /* 판 SVG 의 1px 안쪽 테두리(figma-premium.css «html.ps-page-board #boardStage>svg#board» !important)가 기울인 판의 위·아래 끝에
    가로줄로 남는다 — 입체에서는 테두리 없음. 그 규칙이 id 둘이라 여기도 id 둘 + 요소 하나 더 */
 html body.bc-tilt3d #boardStage>svg#board{box-shadow:none!important;border:0!important;outline:0!important}
@@ -14500,8 +14503,9 @@ function init(){
   }
   window.addEventListener('resize',scheduleTiltFit);
   try{if(window.ResizeObserver){var tiltResize=new ResizeObserver(scheduleTiltFit);tiltResize.observe(document.getElementById('boardStage'));tiltResize.observe(svg);}}catch(_){}
-  window.__setTilt=function(on){ on=!!on; document.body.classList.toggle("bc-tilt3d",on);
+  window.__setTilt=function(on){ on=!!on; var _was=document.body.classList.contains("bc-tilt3d"); document.body.classList.toggle("bc-tilt3d",on);
     try{localStorage.setItem("ps_board_tilt3d",on?"1":"0");}catch(_){}
+    try{ if(on&&!_was&&window.__tiltBootArm)window.__tiltBootArm(); }catch(_){}   /* 3.033 — 켜자마자 죽어도 다음 부팅은 평면(부팅 안전장치와 같은 표시) */
     try{ if(on)bcAddLight(); else if(!document.body.classList.contains("bc-cam"))bcDelLight(); }catch(_){}
     try{ if(on)window.__tiltStands(); }catch(_){}   /* 2.372 — 켜기 전에 배경을 깔아 둔다 */
     try{ if(on)setTimeout(function(){try{window.__tiltFit();}catch(_){}},30); else { var _s=document.documentElement.style; _s.removeProperty("--tilt-k"); _s.removeProperty("--tilt-ty"); } }catch(_){}   /* 2.370 — 켤 때 맞추고, 끌 때 되돌린다 */
@@ -14748,6 +14752,27 @@ function init(){
   /* ⚠ 2.377 — 원근 뷰 UI 가 없어졌으므로 **끄고 시작한다.** 예전에 켜 둔 사람이 끌 방법 없이
    기울어진 보드에 갇히는 것을 막는다. 되살릴 때는 이 줄을 걷고 아래 옛 복원 갈래를 되돌리면 된다. */
 
+/* 3.033 — 3D 부팅 안전장치(아이패드 사파리 «문제가 반복적으로 발생했습니다» — 3D 경기장을 그리다 페이지가 연달아 강제 종료).
+   3D 로 여는 부팅은 시각(ps_tilt3d_boot)을 적고, 20초 버티거나 정상으로 떠나면(pagehide) 지운다. 다음 부팅에 그 표시가 남아 있으면(10분 안)
+   앞 부팅이 3D 를 켠 채 끝나지 못한 것 — 이번엔 평면으로 열고(«0») 알린다. 사파리는 한 번 죽으면 저절로 다시 여니, 그 두 번째 부팅이 평면이다.
+   커뮤니티 보기(community_view) 같은 곁 보드는 표시를 건드리지 않는다(같은 기기의 다른 보드가 부팅 중일 수 있다). */
+window.__tiltBootSafe=false;
+window.__tiltBootArm=function(){ try{ if(/[?&]community_view=1/.test(location.search))return;
+  localStorage.setItem("ps_tilt3d_boot",String(Date.now()));
+  var hid=function(){ if(document.hidden)done(); };   /* 숨겨질 때까지 버텼으면 부팅은 넘겼다 — 뒤에서 iOS 가 탭을 정리해도 «멈춤»으로 치지 않는다(숨기면 타이머도 멈춘다) */
+  var done=function(){ try{ localStorage.removeItem("ps_tilt3d_boot"); }catch(_){} window.removeEventListener("pagehide",done); document.removeEventListener("visibilitychange",hid); };
+  clearTimeout(window.__tiltBootT); window.__tiltBootT=setTimeout(done,20000); window.addEventListener("pagehide",done); document.addEventListener("visibilitychange",hid);
+}catch(_){} };
+try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&!/[?&]community_view=1/.test(location.search)){
+  var _tb=Number(localStorage.getItem("ps_tilt3d_boot"))||0;
+  if(_tb&&Date.now()-_tb>=0&&Date.now()-_tb<600000){ window.__tiltBootSafe=true; localStorage.setItem("ps_board_tilt3d","0"); localStorage.removeItem("ps_tilt3d_boot");
+    /* 안내는 작전판이 실제로 보일 때 — 셸은 작전판 iframe 을 다른 화면 뒤에서 미리 부팅하기도 한다 */
+    var say=function(n){ var msg="3D 보기를 여는 중에 화면이 멈춰서 이번엔 평면으로 열었어요 · 보드 설정 › 보드 보기에서 다시 켤 수 있어요",vis=true;
+      try{ var fe=window.frameElement; if(fe){ var r=fe.getBoundingClientRect(); vis=r.width>0&&r.height>0&&fe.ownerDocument.defaultView.getComputedStyle(fe).display!=="none"; } }catch(_){ vis=true; }
+      if(vis&&!document.hidden){ window.__tiltBootSafeShown=Date.now(); [0,1500,3000,4500].forEach(function(ms){ setTimeout(function(){ try{ toast(msg); }catch(_){} },ms); }); return; }   /* 짧은 알림(1.7초)을 6초쯤 이어 보인다 */
+      if(n<240)setTimeout(function(){ say(n+1); },500); }; setTimeout(function(){ say(0); },1600); }
+  else window.__tiltBootArm();
+} }catch(_){}
 try{ if(localStorage.getItem("ps_board_tilt3d")==="1"){ document.body.classList.add("bc-tilt3d"); try{window.__tiltStands&&window.__tiltStands();}catch(_){} setTimeout(function(){try{window.__tiltFit&&window.__tiltFit();}catch(_){}},400);   /* 2.370 — 켜진 채로 부팅해도 맞춘다 */ setTimeout(function(){try{bcAddLight();}catch(_){}} ,400); } }catch(_){}   /* 2.274 — 부팅 복원 시 기준점도 */
   try{ __syncStageUI(); }catch(_){}
   if(window.innerWidth<=520){state.orientation="v";}   /* 부팅 기본값(스테이지 높이 확정 전) — 곧바로 아래 자동 방향(__autoOrient)이 화면 비율로 다시 판단한다 */
