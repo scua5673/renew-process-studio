@@ -8,11 +8,12 @@ import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
 const ELM='33a9d4e2-1868-40f4-8f82-3ebb4ecf011e';
 const P=(id,num,x,y,team='blue',name='')=>({id,team,num:String(num),pos:'',name,x,y});
+const FACE='data:image/png;base64,'+'R0lGODlh'.repeat(6000);   /* 3.041 — 얼굴 사진 토큰(2.975 p.img) 흉내 · 48KB */
 const snap=players=>({pitchSpec:'fifa',players,equipment:[],drawings:[],ball:{x:525,y:340,scale:.62},lines:true,gridType:'off',tokenScale:.6,label:'num',tokShape:'circle',
   orientation:'h',area:'full',pitchView:'full',pitchN:1,tokV:2,customImages:[{src:'data:image/png;base64,QUFB'}]});
 const frame=(players,cap)=>({snap:snap(players),hold:.6,dur:1.2,cap,thumb:'<svg><text>김가상</text></svg>'});
 // 페이지 1: 7번 · 3번(장면 셋) · 페이지 2: 9번 하나(장면 없음) · 페이지 3: 10번 · 4번(장면 셋) — 앱이 «페이지 3을 보던 채 저장»한 모양 그대로
-const pg1=[0,1,2].map(s=>frame([P(901,7,300+s*120,370,'blue','김가상'),P(902,3,420,300,'red')],s?'페이지 1 움직임 '+s:''));
+const pg1=[0,1,2].map(s=>frame([{...P(901,7,300+s*120,370,'blue','김가상'),img:FACE,imgBg:'#223344'},P(902,3,420,300,'red')],s?'페이지 1 움직임 '+s:''));
 const pg3=[0,1,2].map(s=>frame([P(911,10,900,200+s*40),P(912,4,800,500-s*60,'red'),P(913,'',200,200,'img')],s?'페이지 3 움직임 '+s:''));
 const BOARD={libId:'Vboard3038',type:'board',name:'가상 전술노트 — 세 장',folder:'',tags:['가상'],savedAt:Date.now(),overview:'가상 설명 — 페이지마다 움직임',
   thumb:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 60"><rect width="80" height="60" fill="#1e8c4c"/></svg>',
@@ -20,6 +21,11 @@ const BOARD={libId:'Vboard3038',type:'board',name:'가상 전술노트 — 세 �
   pages:[{name:'공격 형태',snap:pg1[2].snap,thumb:'<svg><text>김가상</text></svg>',anim:{frames:pg1,active:2,hold:.6},vlink:{libId:'Vother'}},
     {name:'',snap:snap([P(905,9,500,300)]),thumb:''},
     {name:'수비 블록',snap:pg3[2].snap,thumb:'',anim:{frames:pg3,active:2,hold:.6}}]};
+/* 3.041 — 사용자 «용량이 커도 올릴 수 있게»: 페이지 여섯 × 장면 마흔 × 22명 — 사진 없이도 500KB(옛 한도)를 넘는 작전판 */
+const crowd=(k,s)=>Array.from({length:22},(_,i)=>({id:'b'+i,team:i<11?'blue':'red',num:String(i+1),pos:'CM',name:'',x:60+i*45+s*3,y:120+(i%7)*70+k*2,size:1,shape:'circle',col:i<11?'#2459C4':'#C84A47'}));
+const BIG={libId:'Vbig3041',type:'board',name:'가상 긴 전술노트',folder:'',tags:[],savedAt:Date.now()-2000,thumb:'',
+  pages:Array.from({length:6},(_,k)=>({name:'장면 묶음 '+(k+1),snap:snap(crowd(k,0)),thumb:'',anim:{frames:Array.from({length:40},(_,s)=>({snap:snap(crowd(k,s)),hold:.6,dur:1,cap:'움직임 '+s})),active:0,hold:.6}}))};
+BIG.snap=BIG.pages[0].snap;BIG.frames=BIG.pages[0].anim.frames;
 const TRAIN={libId:'Vtrain3038',type:'train',name:'가상 론도',focus:'tech',minutes:15,folder:'',tags:[],savedAt:Date.now()-1000,snap:snap([P(1,8,300,300)])};
 const fx=await startFixture(),browsers={};
 try{
@@ -39,7 +45,7 @@ try{
   await page.waitForTimeout(1500);
   const bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
   await bf.waitForFunction(()=>{ try{ return psVaultUnlocked()&&!!psMyUid(); }catch(_){ return false; } },null,{timeout:20000});
-  await bf.evaluate(async items=>{ const lib=await libGet(); items.forEach(d=>{ stampCreator(d); lib.unshift(d); }); await libWrite(lib); libTouch(); },[TRAIN,BOARD]);
+  await bf.evaluate(async items=>{ const lib=await libGet(); items.forEach(d=>{ stampCreator(d); lib.unshift(d); }); await libWrite(lib); libTouch(); },[BIG,TRAIN,BOARD]);
 
   await page.evaluate(()=>window.__psShowApp('community'));
   const c=await (await page.waitForSelector('#fComm')).contentFrame();
@@ -54,8 +60,8 @@ try{
     rows:[...document.querySelectorAll('#upPick .pk')].map(r=>[r.querySelector('.pn').textContent,r.querySelector('.pk-k').textContent,(r.querySelector('.pm')||{}).textContent||'',r.classList.contains('on')]),
     title:document.getElementById('upTitle').value,hint:document.querySelector('#modal .hint').textContent,vw:innerWidth,docW:document.documentElement.scrollWidth}));
   let s=await sheet();
-  assert.deepEqual(s.kind,['전체 2','작전판 1*','훈련 1'],'엘미하 칸에서는 작전판부터');
-  assert.deepEqual(s.rows,[['가상 전술노트 — 세 장','작전판','페이지 3',true]],'고른 채 들어온 작전판 — 훈련처럼 «기술·개인»이라고 적지 않는다');
+  assert.deepEqual(s.kind,['전체 3','작전판 2*','훈련 1'],'엘미하 칸에서는 작전판부터');
+  assert.deepEqual(s.rows,[['가상 전술노트 — 세 장','작전판','페이지 3',true],['가상 긴 전술노트','작전판','페이지 6',false]],'고른 채 들어온 작전판 — 훈련처럼 «기술·개인»이라고 적지 않는다');
   assert.equal(s.title,'가상 전술노트 — 세 장');
   assert.match(s.hint,/작전판이나 훈련을 골라/);
   assert.equal(s.docW,s.vw,'가로로 넘치지 않는다');
@@ -65,7 +71,7 @@ try{
   assert.deepEqual(s.rows,[['가상 론도','훈련','기술·개인 · 15\'',false]]);
   await c.click('#upKind button[data-kind="all"]');
   s=await sheet();
-  assert.deepEqual(s.rows.map(r=>r[0]+':'+r[3]),['가상 전술노트 — 세 장:true','가상 론도:false'],'종류를 바꿔도 고른 것은 그대로');
+  assert.deepEqual(s.rows.map(r=>r[0]+':'+r[3]),['가상 전술노트 — 세 장:true','가상 론도:false','가상 긴 전술노트:false'],'종류를 바꿔도 고른 것은 그대로');
   await c.evaluate(()=>document.querySelector('#upCats button').click());
   await c.click('#upGo');
   for(let i=0;i<80&&!posted;i++)await page.waitForTimeout(100);
@@ -77,7 +83,8 @@ try{
   assert.deepEqual(it.pages.map(p=>[p.name,p.snap.players.map(q=>q.num).join(','),((p.anim||{}).frames||[]).length,p.thumb,'vlink' in p]),
     [['공격 형태','7,3',3,'',false],['','9',0,'',false],['수비 블록','10,4,',3,'',false]]);
   assert.deepEqual([it.snap.players.map(q=>q.num).join(','),it.frames.length,it.frames.map(f=>f.snap.players[0].x)],['7,3',3,[300,420,540]],'대표 장면은 페이지 1 의 것(전에는 페이지 3)');
-  for(const bad of ['김가상','data:image','QUFB'])assert.equal(json.includes(bad),false,'올라간 글에 «'+bad+'» 가 없다');
+  for(const bad of ['김가상','data:image','QUFB','R0lGODlh'])assert.equal(json.includes(bad),false,'올라간 글에 «'+bad+'» 가 없다');
+  assert.deepEqual(it.pages[0].anim.frames.map(f=>['img' in f.snap.players[0],'imgBg' in f.snap.players[0],f.snap.players[0].num]),Array(3).fill([false,false,'7']),'3.041 — 얼굴 사진 토큰은 장면마다 번호 토큰으로');
   assert.equal(it.pages[2].snap.players[2].team,'blue','사진 토큰은 보통 토큰으로');
   assert.equal(it.overview,'가상 설명 — 페이지마다 움직임');
 
@@ -125,9 +132,23 @@ try{
   await c.click('#cvClose');
   await c.waitForFunction(()=>!document.getElementById('cvMask').classList.contains('on'));
   assert.deepEqual(writes,['POST ps_community','POST rpc/ps_comm_view','POST rpc/ps_comm_copied'],'올리기 한 번 · 조회 한 번 · 담김 한 번');
+
+  // 5) 3.041 — 옛 한도(500KB)를 넘는 작전판도 올라간다(한도 5MB)
+  const first=posted.id;
+  await c.evaluate(()=>window.postMessage({type:'openUpload',libId:'Vbig3041'},'*'));
+  await c.waitForSelector('#upGo');
+  await c.waitForFunction(()=>!!document.querySelector('#upPick .pk.on[data-lib="Vbig3041"]'));
+  await c.evaluate(()=>document.querySelector('#upCats button').click());
+  await c.click('#upGo');
+  for(let i=0;i<100&&posted.id===first;i++)await page.waitForTimeout(100);
+  const bigBytes=Buffer.byteLength(JSON.stringify(posted));
+  assert.notEqual(posted.id,first,'큰 작전판도 올렸다');
+  assert.ok(bigBytes>500000&&bigBytes<5*1024*1024,'옛 한도 500KB 는 넘고 새 한도 5MB 안 '+bigBytes);
+  assert.deepEqual([posted.item.pages.length,posted.item.pages.map(p=>p.anim.frames.length).join(',')],[6,'40,40,40,40,40,40']);
+  await c.waitForFunction(()=>/커뮤니티에 올라갔어요/.test(document.getElementById('toast').textContent));
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log(JSON.stringify({engine,size,passed:true,pages:it.pages.length,bytes:JSON.stringify(posted).length}));
+  console.log(JSON.stringify({engine,size,passed:true,pages:it.pages.length,bigBytes}));
 }finally{
   for(const b of Object.values(browsers))await b.close().catch(()=>{});
   await fx.close();

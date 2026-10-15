@@ -4989,7 +4989,7 @@ var _tokHitPx=0;
 function _tokHitR(g){ try{ if(!_tokHitPx){ var m=tokenLayer&&tokenLayer.getScreenCTM&&tokenLayer.getScreenCTM(); _tokHitPx=m?Math.hypot(m.a,m.b):0; }
     var k=/scale\(([\d.]+)/.exec(g.getAttribute("transform")||""), s=k?+k[1]:1, px=_tokHitPx*s;
     return Math.round(Math.max(21,Math.min(160,px>0?23/px:70))); }catch(_){ return 70; } }
-/* 3.041 — 그릴 때 잰 배율이 잠깐의 모양(선택 패널 · 화면 전환이 움직이는 중)일 수 있다 — 아이패드에서 잡히는 원이 6배(r 160)로 커져 회전 핸들 · 옆 선수를 덮었다.
+/* 3.043 — 그릴 때 잰 배율이 잠깐의 모양(선택 패널 · 화면 전환이 움직이는 중)일 수 있다 — 아이패드에서 잡히는 원이 6배(r 160)로 커져 회전 핸들 · 옆 선수를 덮었다.
    자리가 잡힌 뒤(다음 프레임 · 0.3 · 0.9초) · 창 크기가 바뀌면 다시 재서 반지름만 고친다. 배율이 같으면 아무것도 안 한다 */
 function _tokHitRefresh(){ try{ if(!tokenLayer||!tokenLayer.querySelector("circle.tok-hit"))return; var m=tokenLayer.getScreenCTM&&tokenLayer.getScreenCTM(), px=m?Math.hypot(m.a,m.b):0;
     if(!px||Math.abs(px-_tokHitPx)<1e-3)return; _tokHitPx=px;
@@ -4997,7 +4997,7 @@ function _tokHitRefresh(){ try{ if(!tokenLayer||!tokenLayer.querySelector("circl
 var _tokHitT=[];
 function _tokHitLater(){ try{ _tokHitT.forEach(clearTimeout); _tokHitT=[setTimeout(_tokHitRefresh,300),setTimeout(_tokHitRefresh,900)]; requestAnimationFrame(_tokHitRefresh); }catch(_){} }
 try{ window.addEventListener("resize",_tokHitLater); }catch(_){}
-/* 3.041 — 회전 핸들은 선수 층 위(_renderRotHandle 의 뜻). renderTokens · renderDrawings 가 선수 층을 맨 뒤로 다시 붙이면서 핸들을 덮고 있었다 */
+/* 3.043 — 회전 핸들은 선수 층 위(_renderRotHandle 의 뜻). renderTokens · renderDrawings 가 선수 층을 맨 뒤로 다시 붙이면서 핸들을 덮고 있었다 */
 function _rotHandleOnTop(){ try{ var h=world&&world.querySelector("#rotHandle"); if(h&&h.parentNode===tokenLayer.parentNode)h.parentNode.appendChild(h); }catch(_){} }
 function tokenTransform(p){const _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p);
   /* 세로 피치의 부모 world 회전과 반대 방향으로 토큰을 보정해 숫자·유니폼을 항상 정방향 유지.
@@ -22718,7 +22718,7 @@ body:not(.ep-sp) #editorPanel>#epSpMore{display:none!important}
 html.ps-page-board body:not(.ps-dock) #ps-command-dock #cmd-tool-end .menuwrap{width:auto!important;flex:0 0 auto!important}
 html.ps-page-board #ps-command-dock #cmd-tool-end:not(#_):not(#_){min-width:0!important;overflow:visible!important;flex-wrap:nowrap!important}
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=3.041"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.043"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2582-selbar-trim">/* 2.582 — 선택 띠에서 뺀 것(사용자 "이것들은 없어도 될꺼 같아"): 정렬 띠(#alignBar 줄맞춤·균등·간격) · 좌우/상하 대칭 복제.
    코드는 남기고 보이지만 않게 — 되살리려면 이 블록만 지운다. inline style="display:inline-flex" 를 이기려고 !important. */
 html.ps-page-board #alignBar,html.ps-page-board #mirHBtn,html.ps-page-board #mirVBtn,#alignBar,#mirHBtn,#mirVBtn{display:none!important}
