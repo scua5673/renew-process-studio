@@ -5326,7 +5326,7 @@ function makeToken(p,kind){
     lg.appendChild(el("path",{d:"M-3 -1.2v-2.2a3 3 0 0 1 6 0v2.2M-4 -1.2h8v5.2h-8z",fill:"none",stroke:"#fff","stroke-width":1.4,"stroke-linecap":"round","stroke-linejoin":"round"}));
     g.appendChild(lg);
   }
-  if(document.body.classList.contains("bc-tilt3d")&&!window.__animExport&&window.PSBoardDepth)PSBoardDepth.apply(g,p,kind,kind==="player"?_chipOpts(p):null);   /* 3.009 — 3D 칩: 선수 모양(유니폼·원형·쉐이퍼) 그대로, 운동장 대비 최소 크기 */
+  if(document.body.classList.contains("bc-tilt3d")&&(!window.__animExport||window.__animExport3d)&&window.PSBoardDepth)PSBoardDepth.apply(g,p,kind,kind==="player"?_chipOpts(p):null);   /* 3.009 — 3D 칩: 선수 모양(유니폼·원형·쉐이퍼) 그대로, 운동장 대비 최소 크기 · 3.039 3D 영상에도 */
   enableDrag(g,p,removable,kind);return g;
 }
 function playerTeamCol(p){   // p.color 없을 때의 유효 팀색 — 렌더 로직과 동일 규칙(현재색 하이라이트용)
@@ -8931,7 +8931,9 @@ function __exportVB(){
 function boardImageXML(vbFix){ return _boardImageXMLRaw(vbFix); }
 function _boardImageXMLRaw(vbFix){
   const clone=svg.cloneNode(true);
-  if(window.PSBoardDepth)PSBoardDepth.flattenAll(clone);
+  /* 3.039 — 3D 영상(window.__animExport3d)은 화면의 3D 칩을 그대로 담고, 잔디는 경기장 그림(_t3)이 깐다 — 판 그림은 투명 바탕 */
+  const t3x=!!window.__animExport3d, t3st=t3x&&_t3StadiumHost();
+  if(window.PSBoardDepth&&!t3x)PSBoardDepth.flattenAll(clone);
   clone.querySelectorAll('.ps-selring,.tok-hit,.tok-lock,.draw-handle').forEach(n=>n.remove());
   if(document.body.classList.contains('editing')&&!window.__psThumbNoEd){
     clone.querySelectorAll('.token').forEach(n=>n.setAttribute('transform',(n.getAttribute('transform')||'')+' scale('+(1/0.68)+')'));
@@ -8954,7 +8956,9 @@ function _boardImageXMLRaw(vbFix){
   } }catch(_){}
   const w=vb[2],h=vb[3];
   appendBoardExportWatermarks(clone,vb);
-  const bg=el("rect",{x:vb[0],y:vb[1],width:w,height:h,fill:getCss("--pitchbg")||getCss("--grass-b")||"#1d8a47"});clone.insertBefore(bg,clone.firstChild);
+  if(t3x){ try{ const cd=document.querySelector('#psChipDefs defs'); if(cd)clone.insertBefore(cd.cloneNode(true),clone.firstChild); }catch(_){}
+    const css=document.createElementNS(NS,'style'); css.textContent=_t3BoardCss(!!t3st,['white','train'].includes(document.documentElement.dataset.pitch)); clone.insertBefore(css,clone.firstChild); }
+  if(!t3st){ const bg=el("rect",{x:vb[0],y:vb[1],width:w,height:h,fill:getCss("--pitchbg")||getCss("--grass-b")||"#1d8a47"});clone.insertBefore(bg,clone.firstChild); }
   const ga=getCss("--grass-a")||"#2a9d57",gb=getCss("--grass-b")||"#1d8a47";
   let xml=new XMLSerializer().serializeToString(clone).replace(/var\(--grass-a\)/g,ga).replace(/var\(--grass-b\)/g,gb);
   xml=`<svg xmlns="${NS}" width="${w}" height="${h}" viewBox="${vb.join(" ")}">`+
@@ -10084,10 +10088,12 @@ async function _animExportGuard(run){
 }
 async function exportVideo(opts){ opts=opts||{};
   if(window.__animExport||PEP.busy()){ try{toast("영상을 만드는 중이에요 — 끝난 뒤 다시 눌러 주세요");}catch(_){} return; }   /* 2.974 — 두 번 돌지 않게 */
-  try{ PEP.open(opts.capN?"미팅 영상 만드는 중":(opts.pageMode?"모든 페이지 영상 만드는 중":"영상 만드는 중")); }catch(_){}   /* 2.972 — 진행 카드 */
+  const _3d=_t3On();   /* 3.039 — 3D 보기면 3D 영상(GIF 는 평면 그대로) */
+  try{ PEP.open((_3d?"3D ":"")+(opts.capN?"미팅 영상 만드는 중":(opts.pageMode?"모든 페이지 영상 만드는 중":"영상 만드는 중"))); }catch(_){}   /* 2.972 — 진행 카드 */
+  window.__animExport3d=_3d?1:0;
   try{ return await _animExportGuard(function(){ return _exportVideoRun(opts); }); }
   catch(e){ if(e&&e.psCancel){ try{PEP.close();}catch(_){} toast("내보내기를 멈췄어요"); return; } try{PEP.close();}catch(_){} try{console.warn("[exportVideo]",e);}catch(_){} toast("영상을 만들지 못했어요 — 다시 해 주세요"); }
-  finally{ if(opts.target&&!opts.__saved)await _animDropTarget(opts.target); try{ if(PEP.busy())PEP.close(); }catch(_){} }   /* 2.969 — 중간에 멈추면 고른 자리의 빈 파일을 치운다 · 2.972 — 끝나지 않은 진행 카드는 닫는다(앞에서 돌아간 경우) */
+  finally{ window.__animExport3d=0; if(opts.target&&!opts.__saved)await _animDropTarget(opts.target); try{ if(PEP.busy())PEP.close(); }catch(_){} }   /* 2.969 — 중간에 멈추면 고른 자리의 빈 파일을 치운다 · 2.972 — 끝나지 않은 진행 카드는 닫는다(앞에서 돌아간 경우) */
 }
 /* ══ 2.975 · 영상은 16:9 — 운동장을 가운데, 터치라인 밖 잔디 폭은 일정하게(사용자 "16:9 비율로 여백없이" · "터치라인이 있으면 잔디 여백을 일정하게 · 가운데 정렬") ══
    보이는 운동장(범위·개수·회전 반영) 사각형을 기준으로 짧은 쪽에 잔디 M(3m)을 두고, 긴 쪽은 16:9 가 되도록 양쪽에 똑같이 더한다.
@@ -10195,6 +10201,92 @@ function _mp4Mux(samples,avcC,w,h,fps){
   const mdatH=new Uint8Array(8); mdatH.set(u32(total+8),0); mdatH.set(str("mdat"),4);
   return new Blob([ftyp,mv,mdatH].concat(samples.map(sm=>sm.data)),{type:"video/mp4"}); }
 window.__mp4Mux=_mp4Mux;
+/* ══ 3.039 · 3D 영상 — 3D 보기에서 만든 MP4 는 화면처럼 기울인 경기장으로(사용자 «3d모드에서 mp4 내보내기 했을 때 3d모드로») ══
+   화면의 3D 는 CSS(판 SVG 에 --tilt-tf = translateY · scale(k, sy·k) · rotateX(ax), 무대에 perspective)라 SVG 를 그림으로 바꾸면 평면이 된다.
+   그래서 한 장마다 ① 경기장 그림(#tiltSurface 의 그림 한 장)과 판 그림(3D 칩 그대로 · 바탕 투명)을 평면 캔버스에 겹치고
+   ② 같은 카메라 식으로 줄마다 옮겨 그린다 — rotateX 는 가로줄을 가로줄로 보내므로 줄 하나는 drawImage 한 번(가로 배율·자리만 다르다).
+   ③ 서 있는 골대 · 코너 깃발은 같은 식으로 높이까지 넣어 선으로 그리고 ④ 분위기 빛(#tiltMood)을 덮는다.
+   카메라 각도·세로 보정·여백·분위기는 화면 설정 그대로(__tiltCamNow · __tiltPadsNow). 원근 세기는 화면 비율(무대 760px 에 1150px)을 영상 크기에 맞춘다.
+   GIF · PNG · 평면 보기의 MP4 는 그대로(평면). (tests/export-3d-3039 가 이 구간을 잘라 쓴다) */
+/* 순수 구간 시작 */
+function _t3Project(cam,x,y,z){ const px=cam.Wo/2+(x-cam.cx)*cam.sg, u=cam.Ho/2+(y-cam.cy)*cam.sg-cam.oy, zz=(z||0)*cam.sg;
+  const yr=u*cam.c-zz*cam.s, zr=u*cam.s+zz*cam.c, d=cam.P-zr; if(!(d>1))return null; const f=cam.P/d;
+  const X=cam.ox+cam.k*(px-cam.ox), Y=cam.oy+cam.sy*cam.k*yr+cam.ty;
+  return [cam.pox+(X-cam.pox)*f,cam.poy+(Y-cam.poy)*f,f]; }
+/* 화면 줄 Y(바닥 높이 0) → 판 y 와 그 줄의 원근 배율 f. 지평선 위(카메라가 바닥을 못 보는 줄)는 null */
+function _t3Unrow(cam,Y){ const D=Y-cam.poy, A=cam.oy+cam.ty-cam.poy, den=cam.sy*cam.k*cam.c*cam.P+D*cam.s; if(!(den>1e-6))return null;
+  const u=cam.P*(D-A)/den, d=cam.P-u*cam.s; if(!(d>1))return null;
+  return {y:cam.cy+(cam.oy+u-cam.Ho/2)/cam.sg,f:cam.P/d}; }
+function _t3RowX(cam,f,x){ const px=cam.Wo/2+(x-cam.cx)*cam.sg; return cam.pox+(cam.ox+cam.k*(px-cam.ox)-cam.pox)*f; }
+function _t3Unx(cam,f,X){ const px=cam.ox+((X-cam.pox)/f+cam.pox-cam.ox)/cam.k; return cam.cx+(px-cam.Wo/2)/cam.sg; }
+/* 카메라 맞춤 — 화면의 __tiltFit 과 같은 일: box(판 좌표 [x0,y0,x1,y1] — 운동장 또는 훈련 구역)를 기울여 비춘 모습이
+   [top, bottom] 띠 안에 여백(pads = [위, 아래, 옆] 비율)을 두고 가운데 오도록 배율 k · 이동 ty 를 찾는다 */
+function _t3Camera(Wo,Ho,box,o){ o=o||{};
+  const a=(isFinite(+o.ax)&&+o.ax>0?+o.ax:24)*Math.PI/180, pads=o.pads||[.15,.11,.05], top=+o.top||0, bot=(o.bottom!=null)?+o.bottom:Ho;
+  const bw=Math.max(1,box[2]-box[0]), bh=Math.max(1,box[3]-box[1]);
+  const cam={Wo:Wo,Ho:Ho,sg:Math.min(Wo/bw,Ho/bh)*.92,cx:(box[0]+box[2])/2,cy:(box[1]+box[3])/2,c:Math.cos(a),s:Math.sin(a),sy:+o.sy>0?+o.sy:1.08,
+    k:.8,ty:0,ox:Wo*.5,oy:Ho*.55,pox:Wo*.5,poy:Ho*.32,P:1.51*Math.min(Ho,Wo*9/16)};
+  const hh=bot-top, padT=hh*pads[0], availH=hh-padT-hh*pads[1], availW=Wo-2*Math.max(12*Wo/1280,Wo*pads[2]);
+  const cs=[[box[0],box[1]],[box[2],box[1]],[box[2],box[3]],[box[0],box[3]]];
+  for(let i=0;i<16;i++){ const ps=cs.map(q=>_t3Project(cam,q[0],q[1],0)); if(ps.some(q=>!q)){ cam.k*=.8; continue; }
+    const xs=ps.map(q=>q[0]),ys=ps.map(q=>q[1]),w=Math.max(...xs)-Math.min(...xs),h=Math.max(...ys)-Math.min(...ys);
+    const r=Math.min(availH/h,availW/w), dy=(top+padT+availH/2)-(Math.min(...ys)+Math.max(...ys))/2;
+    if(Math.abs(r-1)<.002&&Math.abs(dy)<.5)break;
+    cam.k=Math.max(.15,Math.min(4,cam.k*r)); cam.ty+=dy; }
+  return cam; }
+/* 화면에 비치는 바닥(판 좌표 상자) — 이 밖은 그릴 필요가 없다(훈련 구역을 크게 볼 때 경기장 전체를 고해상도로 그리지 않게) */
+function _t3Visible(cam){ let t=null,Y=0; for(;Y<cam.Ho&&!(t=_t3Unrow(cam,Y));Y+=Math.max(1,cam.Ho/96)); const b=_t3Unrow(cam,cam.Ho); if(!t||!b)return null;
+  const xs=[_t3Unx(cam,t.f,0),_t3Unx(cam,t.f,cam.Wo),_t3Unx(cam,b.f,0),_t3Unx(cam,b.f,cam.Wo)];
+  return [Math.min(...xs),Math.min(t.y,b.y),Math.max(...xs),Math.max(t.y,b.y)]; }
+/* 평면 그림(src — 판 좌표 box=[x,y,w,h] 를 RW×RH 로 담은 캔버스)을 줄마다 옮겨 그린다 */
+function _t3Warp(ctx,cam,src,box,RW,RH){ const ky=RH/box[3];
+  for(let Y=0;Y<cam.Ho;Y++){ const a=_t3Unrow(cam,Y),b=_t3Unrow(cam,Y+1); if(!a||!b)continue;
+    let r0=(a.y-box[1])*ky, r1=(b.y-box[1])*ky; if(r1<r0){ const t=r0; r0=r1; r1=t; }
+    if(r1<=0||r0>=RH)continue; r0=Math.max(0,r0); r1=Math.min(RH,r1); const sh=Math.max(.5,r1-r0); if(r0+sh>RH)r0=RH-sh;
+    const f=(a.f+b.f)/2, x0=_t3RowX(cam,f,box[0]), x1=_t3RowX(cam,f,box[0]+box[2]);
+    ctx.drawImage(src,0,r0,RW,sh,x0,Y,x1-x0,1); } }
+/* 서 있는 골대(그물 · 기둥 · 크로스바)와 코너 깃발 — 화면 tiltGoalsSync 의 면들과 같은 모양 */
+function _t3DrawGoals(ctx,cam,geo,lw){ if(!geo)return;
+  const P=(q,z)=>_t3Project(cam,q[0],q[1],z), add=(q,n,d)=>[q[0]+n[0]*d,q[1]+n[1]*d];
+  const poly=(pts,fill,stroke,w)=>{ if(pts.some(q=>!q))return; ctx.beginPath(); pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.closePath();
+    if(fill){ ctx.fillStyle=fill; ctx.fill(); } if(stroke){ ctx.strokeStyle=stroke; ctx.lineWidth=w; ctx.stroke(); } };
+  const mesh=(p00,p10,p11,p01,n)=>{ if([p00,p10,p11,p01].some(q=>!q))return; ctx.beginPath();
+    for(let i=1;i<n;i++){ const t=i/n; ctx.moveTo(p00[0]+(p10[0]-p00[0])*t,p00[1]+(p10[1]-p00[1])*t); ctx.lineTo(p01[0]+(p11[0]-p01[0])*t,p01[1]+(p11[1]-p01[1])*t);
+      ctx.moveTo(p00[0]+(p01[0]-p00[0])*t,p00[1]+(p01[1]-p00[1])*t); ctx.lineTo(p10[0]+(p11[0]-p10[0])*t,p10[1]+(p11[1]-p10[1])*t); }
+    ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.lineWidth=Math.max(.6,lw*.32); ctx.stroke(); };
+  ctx.save(); ctx.lineJoin='round'; ctx.lineCap='round';
+  (geo.goals||[]).forEach(g=>{ const ra=add(g.a,g.n,g.d), rb=add(g.b,g.n,g.d), h=g.h, hr=h*.65;
+    const A0=P(g.a,0),A1=P(g.a,h),B0=P(g.b,0),B1=P(g.b,h),Ra0=P(ra,0),Rb0=P(rb,0),Ra1=P(ra,hr),Rb1=P(rb,hr);
+    const net='rgba(255,255,255,.08)', edge='rgba(255,255,255,.65)';
+    poly([Ra0,Rb0,Rb1,Ra1],net,edge,lw*.5); mesh(Ra0,Rb0,Rb1,Ra1,10);
+    poly([A0,A1,Ra1,Ra0],net,edge,lw*.5); mesh(A0,Ra0,Ra1,A1,4);
+    poly([B0,B1,Rb1,Rb0],net,edge,lw*.5); mesh(B0,Rb0,Rb1,B1,4);
+    poly([A1,B1,Rb1,Ra1],net,edge,lw*.5); mesh(A1,B1,Rb1,Ra1,10);
+    if(A0&&A1&&B1&&B0){ ctx.beginPath(); ctx.moveTo(A0[0],A0[1]); ctx.lineTo(A1[0],A1[1]); ctx.lineTo(B1[0],B1[1]); ctx.lineTo(B0[0],B0[1]); ctx.strokeStyle='#fff'; ctx.lineWidth=lw; ctx.stroke(); } });
+  (geo.flags||[]).forEach(fl=>{ const c0=P(fl.c,0),c1=P(fl.c,fl.h); if(!c0||!c1)return;
+    ctx.beginPath(); ctx.moveTo(c0[0],c0[1]); ctx.lineTo(c1[0],c1[1]); ctx.strokeStyle='#e9edf0'; ctx.lineWidth=Math.max(1,lw*.6); ctx.stroke();
+    const e=[fl.c[0]+fl.sx*fl.fw,fl.c[1]]; poly([c1,P(e,fl.h),P(e,fl.h-fl.fh),P(fl.c,fl.h-fl.fh)],'#f5b400','rgba(0,0,0,.25)',.6); });
+  ctx.restore(); }
+/* 분위기 빛 — 화면의 #tiltMood(CSS 그라디언트)와 같은 값. 타원 그라디언트는 캔버스를 늘려 그린다 */
+function _t3Mood(ctx,W,H,mood){ ctx.save();
+  const rad=(cx,cy,rx,ry,stops)=>{ ctx.save(); ctx.translate(cx*W,cy*H); ctx.scale(rx*W,ry*H); const g=ctx.createRadialGradient(0,0,0,0,0,1); stops.forEach(s=>g.addColorStop(s[0],s[1])); ctx.fillStyle=g; ctx.fillRect(-cx/rx,-cy/ry,1/rx,1/ry); ctx.restore(); };
+  const lin=(a,b)=>{ const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,a); g.addColorStop(1,b); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); };
+  if(mood==='day')lin('rgba(255,255,255,.05)','rgba(0,0,0,.07)');
+  else if(mood==='dusk'){ rad(.1,0,.6,.5,[[0,'rgba(255,170,90,.32)'],[.7,'rgba(255,170,90,0)']]); lin('rgba(255,140,60,.08)','rgba(80,40,120,.12)'); }
+  else { rad(.08,.04,.18,.14,[[0,'rgba(255,250,230,.26)'],[.7,'rgba(255,250,230,0)']]); rad(.92,.04,.18,.14,[[0,'rgba(255,250,230,.26)'],[.7,'rgba(255,250,230,0)']]);
+    rad(.5,.45,.9,.8,[[.6,'rgba(0,0,0,0)'],[1,'rgba(0,0,0,.34)']]); }
+  ctx.restore(); }
+const _T3_STAGE={night:'#050806',day:'#3c4753',dusk:'#241c27'};   /* 무대 바탕 — 화면 html body.bc-tilt3d #boardStage 의 분위기별 색 */
+/* 판 그림에 넣는 3D 화면 규칙(직렬화엔 페이지 CSS 가 없다) — 화면의 ps-tilt-continuous · ps-3009-stadium 과 같은 것만 */
+function _t3BoardCss(stadium,lightPitch){
+  return (stadium?'#world>rect:not([id]),.grass-stripes,#ps-pitchtile,#ps-pitchimg,':'')+'.pitch-goal,.ps-pitch-goal{visibility:hidden}'
+    +'#bcSpotR,#bcVigR,#trainGrid{display:none}#visionLayer .ps-shaper{display:none}'
+    +'#lineLayer [stroke-width="3.2"]{stroke-width:2.3}#lineLayer [stroke-width="3.6"]{stroke-width:2.6}#lineLayer [stroke-width="2.8"]{stroke-width:2.1}'
+    +(lightPitch?'#lineLayer [stroke]:not([stroke="none"]){stroke:rgba(255,255,255,.92)}#lineLayer [fill]:not([fill="none"]){fill:rgba(255,255,255,.92)}':''); }
+/* 순수 구간 끝 */
+/* 경기장 그림 한 장(tiltStadium 이 그린 <img>) — 그림 상자(__psVb)가 있을 때만 */
+function _t3StadiumHost(){ try{ const h=document.querySelector('#tiltSurface .tilt-stadium'); return (h&&h.__psVb&&h.getAttribute('src'))?h:null; }catch(_){ return null; } }
+function _t3On(){ try{ return document.body.classList.contains('bc-tilt3d')&&!!window.PSBoardDepth; }catch(_){ return false; } }
 async function _exportVideoRun(opts){
   if(!psVaultRequireLogin())return;
   opts=opts||{};
@@ -10246,6 +10338,10 @@ async function _exportVideoRun(opts){
     canvas.width=Math.round(w*S/2)*2;canvas.height=Math.round(h*S/2)*2;   /* 2.970 — 영상 가로·세로는 짝수(H.264 4:2:0 — 홀수면 QuickTime 등에서 안 열린다. 세로형 720p 가 479×720 이었다) */
   }
   const ctx=canvas.getContext("2d");
+  /* 3.039 — 3D 보기: 한 장마다 평면 그림(경기장 + 판)을 만들어 화면 카메라로 기울여 그린다(위 «3D 영상» 설명). 카메라는 맞춤 상자마다 한 번 잰다 */
+  const _t3x=window.__animExport3d?{cam:(window.__tiltCamNow&&window.__tiltCamNow())||{ax:24,sy:1.08,mood:"night"},cams:{},base:document.createElement("canvas"),baseKey:"",
+    flat:document.createElement("canvas"),st:{src:"",img:null,id:0},stN:0,lw:Math.max(1.5,canvas.height/380),
+    top:(dest&&opts.reel)?dest.topH:0,bottom:(dest&&opts.reel)?canvas.height-dest.botH:canvas.height}:null;
   /* 2.703 — 프레임을 우리가 직접 밀어 넣는다(captureStream(0) + requestFrame). 자동 캡처(FPS)는 «캔버스가 바뀐 순간»을 잡는데
      그 순간이 SVG 디코드 시간만큼 들쭉날쭉해 영상이 끊겨 보였다(사용자 "끊기는 느낌"). 지원 안 되는 브라우저는 예전 방식 */
   const _br=canvas.height>=1000?10000000:(canvas.height>=760?7000000:5000000);
@@ -10323,11 +10419,44 @@ async function _exportVideoRun(opts){
     }
     planHold(s+1, _holdOf(s+1));
   }
-  function produce(k){ try{ plan[k].set(); }catch(_){} const o=boardImageXML(plan[k].vb||uvb); const img=new Image();
+  /* 3.039 — 카메라가 맞출 상자: 훈련 구역이면 그 화면, 아니면 지금 페이지의 운동장(화면 __tiltFit 과 같다 — 둘레 여백에 경기장이 보인다) */
+  function _t3Box(k){ const v=plan[k].vb||uvb; if(!_fit){ const pb=_exportPitchBox(); if(pb)return pb; } return v?[v[0],v[1],v[0]+v[2],v[1]+v[3]]:[0,0,W,H]; }
+  function _t3Produce(k){ try{ plan[k].set(); }catch(_){}
+    const T=_t3x, box=_t3Box(k), pads=_fit?[.05,.05,.035]:((window.__tiltPadsNow&&window.__tiltPadsNow())||[.15,.11,.05]), ck=box.map(Math.round).join(",")+"|"+pads.join(",");
+    const cam=T.cams[ck]||(T.cams[ck]=_t3Camera(canvas.width,canvas.height,box,{ax:T.cam.ax,sy:T.cam.sy,pads:pads,top:T.top,bottom:T.bottom}));
+    /* 그릴 범위 = 화면에 비치는 바닥 ∩ (경기장 그림 ∪ 맞춤 상자). 판 그림의 잔디면은 운동장 밖 1600 단위까지 이어져 그대로 담으면 너무 크다 */
+    const host=_t3StadiumHost(), sv=host?host.__psVb.slice():null, vis=_t3Visible(cam)||box;
+    let x0=vis[0],y0=vis[1],x1=vis[2],y1=vis[3];
+    if(sv){ x0=Math.max(x0,Math.min(sv[0],box[0])); y0=Math.max(y0,Math.min(sv[1],box[1])); x1=Math.min(x1,Math.max(sv[0]+sv[2],box[2])); y1=Math.min(y1,Math.max(sv[1]+sv[3],box[3])); }
+    if(!(x1-x0>1&&y1-y0>1)){ x0=box[0]; y0=box[1]; x1=box[2]; y1=box[3]; }
+    const src=[x0,y0,x1-x0,y1-y0], nb=_t3Unrow(cam,cam.Ho);
+    /* 평면 그림 해상도 — 가까운 쪽이 커지는 만큼(최대 2배) · 한 변 4096 · 600만 화소 안(아이패드 메모리) */
+    let rho=cam.sg*Math.max(1,Math.min(2,(nb?nb.f:1)*cam.k*1.05)); rho=Math.min(rho,4096/src[2],4096/src[3],Math.sqrt(6e6/(src[2]*src[3])));
+    const RW=Math.max(2,Math.round(src[2]*rho)),RH=Math.max(2,Math.round(src[3]*rho));
+    const o=boardImageXML(src), xml=o.xml.replace(' width="'+o.w+'" height="'+o.h+'"',' width="'+RW+'" height="'+RH+'"');
+    const geo=window.__tiltGoalsGeo?window.__tiltGoalsGeo():null, stSrc=host?host.getAttribute("src"):"";
+    const ld=u=>new Promise(res=>{ const im=new Image(); im.onload=()=>{ if(im.decode)im.decode().then(()=>res(im),()=>res(im)); else res(im); }; im.onerror=()=>res(null); im.src=u; });
+    const stP=(stSrc&&stSrc!==T.st.src)?ld(stSrc).then(im=>{ T.st={src:stSrc,img:im,id:++T.stN}; }):Promise.resolve();
+    return Promise.all([ld("data:image/svg+xml;charset=utf-8,"+encodeURIComponent(xml)),stP]).then(r=>({img:r[0],cam:cam,src:src,RW:RW,RH:RH,geo:geo,stSrc:stSrc,stVb:sv})); }
+  function _t3Paint(fr,meta){ const T=_t3x,Wc=canvas.width,Hc=canvas.height;
+    ctx.fillStyle=_T3_STAGE[T.cam.mood]||_T3_STAGE.night; ctx.fillRect(0,0,Wc,Hc);
+    if(fr&&fr.img){ const RW=fr.RW,RH=fr.RH,src=fr.src;
+      if(T.flat.width!==RW||T.flat.height!==RH){ T.flat.width=RW; T.flat.height=RH; }
+      const fx=T.flat.getContext("2d"); fx.clearRect(0,0,RW,RH);
+      if(fr.stVb&&T.st.img&&T.st.src===fr.stSrc){ const bk=T.st.id+"|"+src.join(",")+"|"+RW+"x"+RH;
+        if(T.baseKey!==bk){ T.base.width=RW; T.base.height=RH; const kx=RW/src[2],ky=RH/src[3]; T.base.getContext("2d").drawImage(T.st.img,(fr.stVb[0]-src[0])*kx,(fr.stVb[1]-src[1])*ky,fr.stVb[2]*kx,fr.stVb[3]*ky); T.baseKey=bk; }
+        fx.drawImage(T.base,0,0); }
+      fx.drawImage(fr.img,0,0,RW,RH);
+      _t3Warp(ctx,fr.cam,T.flat,src,RW,RH);
+      _t3DrawGoals(ctx,fr.cam,fr.geo,T.lw); }
+    _t3Mood(ctx,Wc,Hc,T.cam.mood);
+    titleBar(meta); capBar(meta.cap,meta.idx); _wmDraw(ctx,Wc,Hc,!!(dest&&opts.reel)); _pushFrame(); }
+  function produce(k){ if(_t3x)return _t3Produce(k); try{ plan[k].set(); }catch(_){} const o=boardImageXML(plan[k].vb||uvb); const img=new Image();
     const pr=new Promise(function(res){ img.onload=function(){ res(img); }; img.onerror=function(){ res(null); }; });
     img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(o.xml);
     return pr.then(function(im){ if(im&&im.decode){ return im.decode().then(function(){return im;},function(){return im;}); } return im; }); }
   function paint(img,meta){
+    if(_t3x){ _t3Paint(img,meta); return; }
     if(dest){ ctx.fillStyle=dest.bg||"#0b1016"; ctx.fillRect(0,0,canvas.width,canvas.height); if(img)ctx.drawImage(img,dest.x,dest.y,dest.w,dest.h); }
     else { ctx.fillStyle=getCss("--grass-b")||"#1d8a47"; ctx.fillRect(0,0,canvas.width,canvas.height); if(img)ctx.drawImage(img,0,0,canvas.width,canvas.height); }
     titleBar(meta); capBar(meta.cap,meta.idx); _wmDraw(ctx,canvas.width,canvas.height,!!(dest&&opts.reel)); _pushFrame(); }   /* 2.720 — 워터마크 */
@@ -10447,6 +10576,7 @@ function exportVideoSheet(mode){
     if(d)d.textContent=(meeting?('슬라이드 '+anim.slides.length+'장을 차례로 — 장면이 있는 슬라이드는 움직이고, 제목은 아래 자막으로 들어갑니다. ')
       :(all?(window.__vaultBook?'고른 시퀀스를 순서대로 한 파일에 담습니다 — 아래 자막에 시퀀스와 단계 이름이 들어갑니다. ':'고른 페이지를 페이지 순서대로 한 파일에 담습니다 — 페이지가 바뀔 땐 바로 넘어가고, 장면 자막이 없으면 페이지 이름이 아래 자막으로 들어갑니다. '):''))
       +((!meeting&&opt.fit)?(opt.reel?'MP4(릴스 9:16 · 훈련 구역을 가운데 크게)로 저장합니다. ':'MP4(훈련 구역에 맞춘 화면)로 저장합니다 — 선수·장비·그림이 있는 곳만 크게 담고, 화면비는 구역 모양에 가까운 것(16:9 · 4:3 · 1:1)을 고릅니다. '):((!meeting&&opt.reel)?'MP4(릴스 9:16 · 운동장 가운데)로 저장합니다. ':'MP4(16:9 · 운동장 가운데)로 저장합니다. '))
+      +(_t3On()?'지금 보는 3D 경기장(카메라 · 분위기)으로 만듭니다 — 평면 영상은 보드 설정에서 3D 를 끄고 만드세요. ':'')   /* 3.039 */
       +'브라우저가 MP4 를 못 만들면 WebM 으로 저장됩니다.';
     if(pl){ pl.hidden=!all; var hn=pl.querySelector("#evPickN"), ha=pl.querySelector("#evPickAll"); if(hn)hn.textContent="내보낼 "+_pw+" "+n+" / "+PG.on.length; if(ha)ha.textContent=(n===PG.on.length)?"모두 빼기":"모두 고르기"; }
     var go=ov.querySelector("#evGo"); if(go&&!go.__busy){ var none=all&&!n; go.disabled=none; go.style.opacity=none?".5":""; go.textContent=none?(_pw+"를 골라 주세요"):(all?("영상 만들기 · "+_pw+" "+n+"개"):"영상 만들기"); }
@@ -14507,6 +14637,14 @@ function init(){
       ai.addEventListener("keydown",function(e){ e.stopPropagation(); if(e.key==="Enter"&&!e.isComposing&&e.keyCode!==229){ e.preventDefault(); ai.blur(); } }); }
     function boot(){ adKeys(); tiltOptsSync(); }
     if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot); else boot(); })();
+  /* 틀 맞춤 여백 [위, 아래, 옆](틀 높이·폭의 비율) — 화면 맞춤(__tiltFit)과 3D 영상(_t3Camera)이 같이 쓴다 */
+  function tiltPadsNow(){ var deco=tiltDecoNow(),pads=TILT_PAD[deco]||TILT_PAD.full;   /* 3.010 — 경기장을 줄이면(간단·잔디만) 운동장이 그만큼 크게 · 3.027 그리드 판은 잔디만 */
+    if((state.pitchN||1)>1&&deco!=="grass")pads=[pads[0],pads[1],pads[2]+.03];   /* 3.028 — 운동장 여러 개는 가로로 넓어(2.2:1) 옆 관중석 · 광고판이 잘렸다 — 옆 여백만 조금 더 */
+    try{ if(isBlankSpec()&&(state.pitchN||1)<=1)pads=TILT_PAD_BLANK; }catch(_){}   /* 3.035 — 그리드 판은 여백 없이(잔디가 판 밖으로 이어져 틀이 보이지 않는다) */
+    return pads; }
+  window.__tiltPadsNow=tiltPadsNow;
+  /* 3.039 — 3D 영상이 화면과 같은 카메라로 찍는다: 각도·세로 보정(TILT_CAM)과 분위기 */
+  window.__tiltCamNow=function(){ var t3=window.__tilt3d||{},c=TILT_CAM[t3.cam]||TILT_CAM.mid; return {ax:c.ax,sy:c.sy,mood:TILT_MOOD[t3.mood]?t3.mood:"night"}; };
   var _fitKey="";
   window.__tiltFit=function(){
     try{
@@ -14516,9 +14654,7 @@ function init(){
       var pv=(window.__pvBox&&window.__pvBox[2]>0&&window.__pvBox[3]>0)?window.__pvBox:[vb.x,vb.y,vb.width,vb.height];
       var st=document.documentElement.style, raw=stage.getBoundingClientRect(), cs=getComputedStyle(stage), pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;
       var top=raw.top+pt, hh=raw.height-pt-pb, ww=raw.width; if(!hh||!ww)return;
-      var t3=window.__tilt3d||{},deco=tiltDecoNow(),pads=TILT_PAD[deco]||TILT_PAD.full;   /* 3.010 — 경기장을 줄이면(간단·잔디만) 운동장이 그만큼 크게 · 3.027 그리드 판은 잔디만 */
-      if((state.pitchN||1)>1&&deco!=="grass")pads=[pads[0],pads[1],pads[2]+.03];   /* 3.028 — 운동장 여러 개는 가로로 넓어(2.2:1) 옆 관중석 · 광고판이 잘렸다 — 옆 여백만 조금 더 */
-      try{ if(isBlankSpec()&&(state.pitchN||1)<=1)pads=TILT_PAD_BLANK; }catch(_){}   /* 3.035 — 그리드 판은 여백 없이(잔디가 판 밖으로 이어져 틀이 보이지 않는다) */
+      var t3=window.__tilt3d||{},deco=tiltDecoNow(),pads=tiltPadsNow();
       var key=[Math.round(raw.left),Math.round(top),Math.round(ww),Math.round(hh),pv.map(Math.round).join(","),vb.x,vb.y,vb.width,vb.height,svg.getAttribute("preserveAspectRatio"),t3.cam,deco,st.getPropertyValue("--tilt-k"),st.getPropertyValue("--tilt-ty")].join("|");
       if(key===_fitKey)return;
       var prevTr=svg.style.transition; svg.style.transition="none";
@@ -14626,6 +14762,7 @@ function init(){
     const k=Math.min(bw/vb.width,bh/vb.height),al=/xMin/.test(par)?0:/xMax/.test(par)?1:.5,av=/YMin/.test(par)?0:/YMax/.test(par)?1:.5;
     const ox=(bw-vb.width*k)*al,oy=(bh-vb.height*k)*av;
     host.style.left=((bx0-vb.x)*k+ox)+'px';host.style.top=((by0-vb.y)*k+oy)+'px';host.style.width=((bx1-bx0)*k)+'px';host.style.height=((by1-by0)*k)+'px';
+    host.__psVb=[bx0,by0,bx1-bx0,by1-by0];   /* 3.039 — 그림 상자(판 좌표) — 3D 영상이 경기장 그림을 같은 자리에 깐다 */
     const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0,deco,ad,md.key,brand?1:0,tcol,bleed?1:0].join('|');   /* 3.029 — 분위기 · 브랜딩도 서명에 · 3.035 그리드 판의 잔디 이어 그리기 */
     if(host.__sig===sig)return;
     host.__sig=sig;
@@ -14789,6 +14926,28 @@ function init(){
       face(width,height,front,u,down,'goal-front');
     });
   }catch(_){}};
+  /* 3.039 — 3D 영상(_exportVideoRun)의 골대 · 코너 깃발. 위 tiltGoalsSync 와 같은 자리·크기를 화면 px 대신 판 좌표(단위)로 준다.
+     goals: a·b = 골대 입구 두 기둥(판 좌표), n = 바깥쪽(그물 쪽) 방향, h = 높이, d = 깊이 · flags: c = 모서리, sx = 깃발이 펴지는 쪽, h·fw·fh = 폴 높이·깃발 폭·높이 */
+  window.__tiltGoalsGeo=function(){ try{
+    if(state.lines===false||pitchSpec().blank)return {goals:[],flags:[]};
+    const p=PR(),sp=pitchSpec(),mouth=M2U(sp.goal)*GOAL_K.mouth,gh=M2U(sp.futsal?2:(sp.goal<6?2.15:2.44))*GOAL_K.height,gd=M2U(sp.goalD||2)*GOAL_K.depth;
+    const map=(x,y)=>state.orientation==='v'?(state.spFlip?[H-y,x]:[y,W-x]):[x,y];
+    const dir=(a,b)=>{const l=Math.hypot(b[0]-a[0],b[1]-a[1])||1;return [(b[0]-a[0])/l,(b[1]-a[1])/l];};
+    const goals=[],flags=[];
+    if((state.pitchN||1)>1){
+      svg.querySelectorAll('#ps-multipitch .ps-pitch-goal').forEach(g=>{
+        const m=g.querySelector('.ps-pitch-goal-mouth');if(!m)return;
+        const x=+m.getAttribute('x1'),y=+m.getAttribute('y1'),x2=+m.getAttribute('x2'),y2=+m.getAttribute('y2'),side=g.getAttribute('data-side')==='top'?-1:1,a=map(x,y);
+        goals.push({a:a,b:map(x2,y2),n:dir(a,map(x,y+side)),h:Math.abs(x2-x)*(sp.futsal?2:(sp.goal<6?2.15:2.44))/sp.goal*GOAL_K.height,d:+g.getAttribute('data-goal-depth')*GOAL_K.depth});
+      });
+    }else [[p.L,-1],[p.R,1]].forEach(([x,side])=>{
+      if(pitchViewKey()!=='full'&&((pvWorldRight()&&side<0)||(!pvWorldRight()&&side>0)))return;
+      const a=map(x,CY-mouth/2); goals.push({a:a,b:map(x,CY+mouth/2),n:dir(a,map(x+side,CY-mouth/2)),h:gh,d:gd});
+    });
+    if((state.pitchN||1)<=1){const k=GOAL_K.height*.85,mid=map(p.CX,CY);
+      [[p.L,p.T],[p.R,p.T],[p.R,p.B],[p.L,p.B]].forEach(([x,y])=>{const c=map(x,y);flags.push({c:c,sx:mid[0]>=c[0]?1:-1,h:M2U(1.5)*k,fw:M2U(.55)*k,fh:M2U(.4)*k});});}
+    return {goals:goals,flags:flags};
+  }catch(_){ return {goals:[],flags:[]}; } };
   window.__syncStageUI=function(){try{
     var g=(typeof window.__grassM==="number")?window.__grassM:0;
     document.querySelectorAll("#grassSeg button").forEach(function(b){b.classList.toggle("on",parseFloat(b.getAttribute("data-g"))===g);});
