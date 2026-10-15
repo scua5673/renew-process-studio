@@ -14793,8 +14793,9 @@ window.__tiltBootSafe=false; window.__tiltBootOk=true;
       var say=function(n){ if(shown()){ window.__tiltBootSafeShown=Date.now(); [0,1500,3000,4500].forEach(function(ms){ setTimeout(function(){ try{ toast(msg); }catch(_){} },ms); }); return; }   /* 짧은 알림(1.7초)을 6초쯤 이어 보인다 */
         if(n<240)setTimeout(function(){ say(n+1); },500); };   /* 작전판이 실제로 보일 때 — 셸은 부팅 막 뒤나 다른 화면 뒤에서 미리 부팅한다 */
       setTimeout(function(){ say(0); },1600); return; }
-    var light=false; try{ light=window.top.__psSafeBoot===true; }catch(_){}
-    if(light){ window.__tiltBootOk=false; return; }   /* 3.034 — 셸이 가볍게 여는 부팅(앞 페이지가 보이던 채 죽음): 이번만 평면, 3D 설정 값은 그대로 */
+    var light=false; try{ light=window.top.__psSafeBoot===true&&window.top.__psSafeBootBoard!==true; if(light)window.top.__psSafeBootBoard=true; }catch(_){}
+    if(light){ window.__tiltBootOk=false; return; }   /* 3.034 — 셸이 가볍게 여는 부팅(앞 페이지가 보이던 채 죽음): 이번만 평면, 3D 설정 값은 그대로. 한 번만 —
+                                                           같은 셸에서 작전판을 다시 읽으면(폰 회전 등) 평소대로 */
     if(!window.__tiltBootArm())window.__tiltBootOk=false;   /* 표시를 못 적으면 지킬 수 없다 — 평면 */
   }catch(_){}
 })();

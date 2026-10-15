@@ -23,17 +23,18 @@ function boot({device='ipad',local={},session={},now=1e12,full=false,board=null}
 const K='ps_boot_alive_v1';
 
 test('3.034 desktops are left alone — no mark, no light boot',()=>{
-  const e=boot({device:'desktop',session:{[K]:String(1e12-3000)}});
-  assert.equal(e.win.__psSafeBoot,false);assert.equal(e.timers.length,0);assert.equal(e.mark(),String(1e12-3000),'a desktop does not touch the mark');
+  const e=boot({device:'desktop',session:{[K]:(1e12-3000)+'|1'}});
+  assert.equal(e.win.__psSafeBoot,false);assert.equal(e.timers.length,0);assert.equal(e.mark(),(1e12-3000)+'|1','a desktop does not touch the mark');
 });
 
 test('3.034 an iPad marks this tab (sessionStorage) while it is on screen and refreshes the mark every minute',()=>{
   const e=boot();
-  assert.equal(e.win.__psSafeBoot,false,'first boot is a normal boot');assert.equal(e.mark(),String(1e12));
+  assert.equal(e.win.__psSafeBoot,false,'first boot is a normal boot');assert.equal(e.mark(),1e12+'|0','marked at boot — not loaded yet');
   assert.deepEqual(e.ls.dump(),{},'nothing in localStorage — two windows never read each other, a full localStorage does not matter');
   assert.equal(e.ss.getItem('ps_tilt3d_tab'),null,'the board 3D guard keeps its own tab id (its «new tab» rule still works)');
   const beat=e.timers.find(x=>x.kind==='i');assert.equal(beat.ms,60000);
-  e.adv(60000);beat.f();assert.equal(e.mark(),String(1e12+60000),'heartbeat');
+  e.adv(30000);e.fire('win:load');assert.equal(e.mark(),(1e12+30000)+'|1','load finished → stamped «loaded»');
+  e.adv(30000);beat.f();assert.equal(e.mark(),(1e12+60000)+'|1','heartbeat');
 });
 
 test('3.034 going to the background or leaving normally clears the mark; the next boot is normal',()=>{
@@ -47,12 +48,12 @@ test('3.034 going to the background or leaving normally clears the mark; the nex
 
 test('3.034 a page that died while on screen opens the next boot light — this boot only, the 3D choice is kept, and it says so on the board',()=>{
   const ls=store({ps_board_tilt3d:'1'}),ss=store();
-  boot({local:ls,session:ss});
+  const a=boot({local:ls,session:ss});a.fire('win:load');
   /* 강제 종료: pagehide 도 visibilitychange 도 오지 않는다 — 표시가 남는다. 사파리가 몇 초 뒤 같은 탭을 다시 연다(sessionStorage 는 남는다) */
   const toasts=[],fb={contentWindow:{toast:m=>toasts.push(m),__tiltBootSafe:false},getBoundingClientRect:()=>({width:900})};
   const b=boot({local:ls,session:ss,now:1e12+9000,board:fb});
   assert.equal(b.win.__psSafeBoot,true);assert.equal(ls.getItem('ps_board_tilt3d'),'1','the 3D choice is not changed (the board opens flat for this boot only)');
-  assert.equal(b.mark(),String(1e12+9000),'this boot is watched too (a second death in a row is still caught)');
+  assert.equal(b.mark(),(1e12+9000)+'|0','this boot is watched too (a second death in a row is still caught)');
   const say=b.timers.find(x=>x.kind==='t'&&x.ms===500);assert.ok(say,'waits while the boot splash is up');
   b.doc.body.classList.contains=()=>false;say.f();
   b.timers.filter(x=>[0,1800,3600].includes(x.ms)).forEach(x=>x.f());
@@ -60,8 +61,16 @@ test('3.034 a page that died while on screen opens the next boot light — this 
   const c=boot({local:ls,session:ss,now:1e12+9000+60000});assert.equal(c.win.__psSafeBoot,true,'died again while light → still light');
 });
 
+test('3.034 a page that left before its load finished (WebKit sends no pagehide then) boots light once but says nothing',()=>{
+  const ss=store();boot({session:ss});   /* load 전에 새로고침 — WebKit 은 pagehide · visibilitychange 를 보내지 않는다: 표시 «…|0» 이 남는다 */
+  const toasts=[],fb={contentWindow:{toast:m=>toasts.push(m),__tiltBootSafe:false},getBoundingClientRect:()=>({width:900})};
+  const b=boot({session:ss,now:1e12+3000,board:fb});
+  assert.equal(b.win.__psSafeBoot,true,'still light (cheap)');
+  assert.equal(b.timers.filter(x=>x.kind==='t').length,0,'no «제대로 닫히지 않아» notice — nothing to show');
+});
+
 test('3.034 the board 3D guard speaks for itself when 3D was the cause; the shell waits until that guard has run',()=>{
-  const ss=store({[K]:String(1e12-8000)}),toasts=[];
+  const ss=store({[K]:(1e12-8000)+'|1'}),toasts=[];
   const fb={contentWindow:{toast:m=>toasts.push(m)},getBoundingClientRect:()=>({width:900})};
   const e=boot({session:ss,board:fb});e.doc.body.classList.contains=()=>false;
   const say=e.timers.find(x=>x.kind==='t'&&x.ms===500);say.f();
@@ -69,16 +78,18 @@ test('3.034 the board 3D guard speaks for itself when 3D was the cause; the shel
   fb.contentWindow.__tiltBootSafe=true;e.timers.filter(x=>x.ms===500).pop().f();
   assert.equal(e.timers.filter(x=>[0,1800,3600].includes(x.ms)).length,0,'the board already says «3D 를 껐어요» — no second notice');
   const f2={contentWindow:{toast:m=>toasts.push(m),__tiltBootSafe:false},getBoundingClientRect:()=>({width:900})};
-  const g=boot({local:{ps_board_tilt3d:'0'},session:store({[K]:String(1e12-8000)}),board:f2});g.doc.body.classList.contains=()=>false;
+  const g=boot({local:{ps_board_tilt3d:'0'},session:store({[K]:(1e12-8000)+'|1'}),board:f2});g.doc.body.classList.contains=()=>false;
   g.timers.find(x=>x.ms===500).f();g.timers.filter(x=>x.ms===0).forEach(x=>x.f());
   assert.equal(toasts.at(-1),'앞에서 앱이 제대로 닫히지 않아 이번엔 가볍게 열었어요 — 다른 탭은 누를 때 열려요','flat already → no «평면» tail');
 });
 
 test('3.034 an old mark is not a crash; a broken or unwritable mark never blocks the boot',()=>{
-  const old=boot({session:{[K]:String(1e12-4*60000)}});assert.equal(old.win.__psSafeBoot,false,'older than 3 minutes → normal');assert.equal(old.mark(),String(1e12));
-  assert.equal(boot({session:{[K]:String(1e12+60000)}}).win.__psSafeBoot,false,'a mark from the future is not trusted');
-  for(const bad of ['x','','-5','NaN','{}'])assert.equal(boot({session:{[K]:bad}}).win.__psSafeBoot,false,bad);
-  const full=boot({full:true});assert.equal(full.win.__psSafeBoot,false);
+  const old=boot({session:{[K]:(1e12-4*60000)+'|1'}});assert.equal(old.win.__psSafeBoot,false,'older than 3 minutes → normal');assert.equal(old.mark(),1e12+'|0');
+  assert.equal(boot({session:{[K]:(1e12+60000)+'|1'}}).win.__psSafeBoot,false,'a mark from the future is not trusted');
+  for(const bad of ['x','','-5','NaN','{}','|1'])assert.equal(boot({session:{[K]:bad}}).win.__psSafeBoot,false,bad);
+  assert.equal(boot({session:{[K]:String(1e12-8000)}}).win.__psSafeBoot,true,'a bare time (no flag) still counts');
+  const full=boot({full:true,session:{[K]:(1e12-8000)+'|1'}});assert.equal(full.win.__psSafeBoot,true,'an unwritable sessionStorage still reads the mark and goes light');
+  assert.equal(boot({full:true}).win.__psSafeBoot,false);
   const other=boot({session:{ps_tilt3d_tab:'T9'}});assert.equal(other.win.__psSafeBoot,false,'a new window never reads another window');
 });
 
@@ -92,10 +103,10 @@ test('3.034 the breaker runs before the board frame is given its address, and a 
 
 /* board.html 3D 안전장치 — 셸이 가볍게 여는 부팅은 이번만 평면(설정은 그대로). 3D 가 원인이었으면(작전판 표시가 남음) 예전처럼 평면으로 저장하고 알린다 */
 const bootSnippet=()=>{const b=board,i=b.indexOf('window.__tiltBootSafe=false; window.__tiltBootOk=true;'),j=b.indexOf('try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==false){');assert.ok(i>0&&j>i);return b.slice(i,j);};
-function boardBoot({local={},session={},light=false}={}){
+function boardBoot({local={},session={},light=false,top=null}={}){
   const ls=store(local),ss=store(session),timers=[];
   const doc={hidden:false,body:{classList:{contains:()=>false}},addEventListener:()=>{}};
-  const win={top:{__psSafeBoot:light,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'ipad':null}}},frameElement:null,addEventListener:()=>{}};
+  const win={top:top||{__psSafeBoot:light,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'ipad':null}}},frameElement:null,addEventListener:()=>{}};
   vm.runInNewContext(bootSnippet(),{window:win,document:doc,localStorage:ls,sessionStorage:ss,location:{search:''},navigator:{maxTouchPoints:5},toast:()=>{},
     Date:{now:()=>1e12},setTimeout:(f,ms)=>{timers.push({f,ms});return 1;},clearTimeout:()=>{},setInterval:()=>1,clearInterval:()=>{}});
   return {ls,win};
@@ -104,7 +115,11 @@ test('3.034 a light boot opens the board flat for this boot only; a 3D crash sti
   const l=boardBoot({local:{ps_board_tilt3d:'1'},light:true});
   assert.equal(l.win.__tiltBootOk,false,'flat this boot');assert.equal(l.ls.getItem('ps_board_tilt3d'),'1','3D choice kept');assert.equal(l.ls.getItem('ps_tilt3d_boot'),null,'not armed');assert.equal(l.win.__tiltBootSafe,false);
   const n=boardBoot({local:{ps_board_tilt3d:'1'}});assert.equal(n.win.__tiltBootOk,true,'a normal boot keeps 3D');
+  const top={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'phone':null}}};
+  assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top}).win.__tiltBootOk,false,'first board load of a light boot: flat');
+  assert.equal(top.__psSafeBootBoard,true);
+  assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top}).win.__tiltBootOk,true,'the board reloaded in the same shell (phone rotation) opens as usual — once only');
   const d=boardBoot({local:{ps_board_tilt3d:'1',ps_tilt3d_boot:JSON.stringify({T1:1e12-8000})},session:{ps_tilt3d_tab:'T1'},light:true});
   assert.equal(d.win.__tiltBootSafe,true,'3D was on when it died → the 3.033 rule still applies');assert.equal(d.ls.getItem('ps_board_tilt3d'),'0');
-  assert.ok(board.indexOf('var light=false; try{ light=window.top.__psSafeBoot===true; }catch(_){}')>board.indexOf('if(died){ window.__tiltBootSafe=true;'),'the 3D rule is checked first');
+  assert.ok(board.indexOf('var light=false; try{ light=window.top.__psSafeBoot===true&&window.top.__psSafeBootBoard!==true;')>board.indexOf('if(died){ window.__tiltBootSafe=true;'),'the 3D rule is checked first');
 });

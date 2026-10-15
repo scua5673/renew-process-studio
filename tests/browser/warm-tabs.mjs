@@ -45,7 +45,7 @@ try{
     // 3.034 — 보이던 채 강제 종료된 페이지(이 탭의 «살아 있음» 표시가 sessionStorage 에 남음)를 사파리가 다시 열면:
     // 미리 띄우기 없이 · 작전판은 이번만 평면(3D 설정은 그대로) · 작전판에 알림
     await context.addInitScript(()=>{ if(window.top!==window)return; try{ if(sessionStorage.getItem('ps_test_crash')!=='1')return; sessionStorage.removeItem('ps_test_crash');
-      sessionStorage.setItem('ps_boot_alive_v1',String(Date.now()-8000)); }catch(_){} });
+      sessionStorage.setItem('ps_boot_alive_v1',(Date.now()-8000)+'|1'); }catch(_){} });   /* 다 뜬(|1) 페이지가 8초 전에 죽었다 */
     await page.evaluate(()=>{ sessionStorage.setItem('ps_test_crash','1'); localStorage.setItem('ps_board_tilt3d','1'); localStorage.setItem('ps_tilt3d_touch_reset_v1','1'); });
     await page.reload();
     await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
@@ -56,7 +56,7 @@ try{
     assert.deepEqual(await loaded(),['fBoard'],'가벼운 부팅: 작전판만');
     assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),false,'작전판은 이번만 평면');
     assert.equal(await page.evaluate(()=>localStorage.getItem('ps_board_tilt3d')),'1','3D 설정은 그대로');
-    assert.ok(await page.evaluate(()=>+sessionStorage.getItem('ps_boot_alive_v1')>0),'이번 부팅도 지켜본다');
+    assert.match(await page.evaluate(()=>sessionStorage.getItem('ps_boot_alive_v1')||''),/^\d+\|1$/,'이번 부팅도 지켜본다(다 떴다)');
     // 정상으로 다시 열면(pagehide 가 표시를 지운다) 다시 평소 부팅 — 최근 둘 · 3D 그대로
     await page.reload();
     await settle();

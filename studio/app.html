@@ -1126,25 +1126,28 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
    화면에 보이는 동안 이 탭의 «살아 있음»을 적어 둔다(sessionStorage ps_boot_alive_v1 = 시각, 1분마다 새로 — 탭마다 따로라 창 두 개가 서로를 «죽음»으로 읽지 않고,
    localStorage 가 가득해도 적힌다. 사파리가 강제 종료 뒤 같은 탭을 다시 열면 sessionStorage 는 남는다). 숨겨지거나(visibilitychange) 정상으로 떠나면(pagehide) 지운다.
    다음 부팅에 3분 안 표시가 남아 있으면 앞 페이지가 보이던 채 죽은 것 — 이번 부팅만 가볍게: 탭을 미리 띄우지 않고(window.__psSafeBoot),
-   작전판은 이번만 평면(board.html 이 __psSafeBoot 를 읽는다 — 3D 설정 값은 그대로). 작전판 3D 안전장치(3.033)의 탭 id(ps_tilt3d_tab)는 건드리지 않는다. */
+   작전판은 이번만 평면(board.html 이 __psSafeBoot 를 한 번 읽는다 — 3D 설정 값은 그대로). 작전판 3D 안전장치(3.033)의 탭 id(ps_tilt3d_tab)는 건드리지 않는다.
+   WebKit 은 load 가 끝나기 전에 떠나는 페이지에 pagehide 를 보내지 않는다(이른 새로고침 · 업데이트 새로고침) — 그때 남은 표시도 가벼운 부팅이 되지만(값싸다),
+   알림(«제대로 닫히지 않아»)은 앞 페이지가 load 까지 마쳤을 때만 띄운다(표시 «시각|1»). */
 (function(){ try{
   var dev=document.documentElement.getAttribute('data-ps-device')||'desktop'; window.__psSafeBoot=false; if(dev==='desktop')return;
-  var K='ps_boot_alive_v1',LIFE=180000,BEAT=60000,now=Date.now(),at=0;
-  try{ at=+(sessionStorage.getItem(K)||0); }catch(_){ at=0; }
-  var died=isFinite(at)&&at>0&&now-at>=0&&now-at<LIFE;
+  var K='ps_boot_alive_v1',LIFE=180000,BEAT=60000,now=Date.now(),raw='';
+  try{ raw=String(sessionStorage.getItem(K)||''); }catch(_){ raw=''; }
+  var at=+raw.split('|')[0],died=isFinite(at)&&at>0&&now-at>=0&&now-at<LIFE;
   window.__psSafeBoot=died;
-  var beat=0;
-  function stamp(){ try{ sessionStorage.setItem(K,String(Date.now())); }catch(_){} }
+  var loaded=false,beat=0;
+  function stamp(){ try{ sessionStorage.setItem(K,Date.now()+'|'+(loaded?1:0)); }catch(_){} }
   function done(){ clearInterval(beat); beat=0; try{ sessionStorage.removeItem(K); }catch(_){} }
   function live(){ if(document.hidden)return; stamp(); clearInterval(beat); beat=setInterval(stamp,BEAT); }
   window.__psBootMarkDone=done;
   window.addEventListener('pagehide',done);
   window.addEventListener('pageshow',function(e){ if(e&&e.persisted)live(); });
+  window.addEventListener('load',function(){ loaded=true; if(!document.hidden)stamp(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)done(); else live(); });
   done(); live();
   /* 셸에는 toast 가 없다 — 작전판이 화면에 보이면(1분 안) 작전판의 toast 로 알린다(짧은 알림 1.7초를 세 번).
      작전판 3D 안전장치가 제 알림(3D 를 끈 까닭)을 띄우는 부팅이면 그쪽에 맡긴다. */
-  if(died)(function say(n){ try{ var fb=document.getElementById('fBoard'),bw=fb&&fb.contentWindow;
+  if(died&&raw.split('|')[1]==='1')(function say(n){ try{ var fb=document.getElementById('fBoard'),bw=fb&&fb.contentWindow;
     if(document.body&&!document.body.classList.contains('ps-booting')&&!document.hidden&&bw&&typeof bw.toast==='function'&&typeof bw.__tiltBootSafe==='boolean'&&fb.getBoundingClientRect().width>0&&getComputedStyle(fb).visibility==='visible'){
       if(bw.__tiltBootSafe)return;
       var flat=false; try{ flat=localStorage.getItem('ps_board_tilt3d')==='1'; }catch(_){}
