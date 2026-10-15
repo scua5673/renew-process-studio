@@ -1154,7 +1154,9 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   var parts=raw.split('|'),at=+parts[0],died=isFinite(at)&&at>0&&now-at>=0&&now-at<LIFE;
   var prevLoaded=parts[1]==='1',prevStage=String(parts[2]||'').replace(/[^a-z0-9]/gi,'').slice(0,16),prevLevel=parts[3]==='2'?2:(parts[3]==='1'?1:0);
   var level=died?(prevLevel>=1?2:1):0;
-  try{ var fm=/[?&]safe=([012])(?:[&#]|$)/.exec(String(location.search||'')); if(fm){ level=+fm[1]; if(!level){ try{ sessionStorage.removeItem(K); }catch(_){} } } }catch(_){}   /* 손으로: app.html?safe=2 */
+  try{ var fm=/[?&]safe=([012])(?:[&#]|$)/.exec(String(location.search||'')); if(fm){ level=+fm[1]; if(!level){ try{ sessionStorage.removeItem(K); }catch(_){} }
+    /* 이번 부팅에만 — 주소에서 지운다. 남겨 두면 사파리가 강제 종료 뒤 같은 주소로 다시 열 때마다 safe=0 이 안전장치를 끈 채 반복된다 */
+    try{ var u=new URL(location.href); u.searchParams.delete('safe'); history.replaceState(history.state,'',u.pathname+u.search+u.hash); }catch(_){} } }catch(_){}   /* 손으로: app.html?safe=2 */
   window.__psSafeBoot=level>=1; window.__psSafeLevel=level;
   var loaded=false,beat=0,stage='shell',warm=-1,last=now;
   function write(){ try{ sessionStorage.setItem(K,last+'|'+(loaded?1:0)+'|'+stage+(warm>=0?'w'+warm:'')+'|'+level); }catch(_){} }

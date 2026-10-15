@@ -109,15 +109,25 @@ try{
     bf=await (await page.waitForSelector('#fBoard')).contentFrame();
     assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),true,'다음 부팅은 3D 그대로');
     assert.deepEqual(await loaded(),['fBoard','fComm','fLearning'],'평소처럼 최근 둘');
-    // «평소대로 열기» = app.html?safe=0 — 표시를 지우고 평소 부팅(손 실험용, 주소는 그대로 둔다)
+    // «평소대로 열기» = app.html?safe=0 — 표시를 지우고 평소 부팅. 셸이 읽은 뒤 주소에서 safe 를 지운다(남기면 사파리가 강제 종료 뒤
+    // 같은 주소로 다시 열 때마다 안전장치가 꺼진 채 반복된다)
     await page.evaluate(()=>{ sessionStorage.setItem('ps_test_crash2','1'); });
     await page.reload();
     await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
     assert.equal(await page.evaluate(()=>window.__psSafeLevel),2);
     await page.locator('#psSafeNormal').click();
-    await page.waitForURL(/safe=0/);
+    await page.waitForFunction(()=>window.__psSafeLevel===0&&!/safe=/.test(location.search));
     await settle();
-    assert.equal(await page.evaluate(()=>[window.__psSafeLevel,window.__psSafeBoot,location.search].join()),'0,false,?safe=0');
+    assert.equal(await page.evaluate(()=>[window.__psSafeLevel,window.__psSafeBoot,location.search,(sessionStorage.getItem('ps_boot_alive_v1')||'').split('|')[3]].join()),'0,false,,0','평소 부팅 · 주소에서 safe 지움 · 이번 표시는 단계 0');
+    // 손 실험: ?safe=2 도 이번 부팅에만 — 주소에서 지운다
+    await page.goto(page.url().split('?')[0]+'?safe=2',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
+    assert.equal(await page.evaluate(()=>[window.__psSafeLevel,location.search].join()),'2,','safe=2 는 안전 모드로, 주소는 비움');
+    assert.equal(await page.locator('#psSafePanel').isVisible(),true);
+    await page.goto(page.url().split('?')[0]+'?safe=0',{waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
+    await settle();
+    assert.equal(await page.evaluate(()=>[window.__psSafeLevel,location.search].join()),'0,');
     bf=await (await page.waitForSelector('#fBoard')).contentFrame();
     assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),true,'평소대로: 3D');
     assert.equal(await page.locator('#psSafePanel').isVisible(),false);
