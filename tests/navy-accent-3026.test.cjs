@@ -34,8 +34,11 @@ test('3.026 page accents follow; team colour, pens and data colours stay',()=>{
 });
 
 test('3.026 restyled sheets are re-fetched and the change is announced',()=>{
-  for(const f of ['studio/app.html','studio/board.html','studio/scout.html','studio/process.html','studio/community.html'])
-    assert.match(R(f),/ui-grammar\.css\?v=3\.026/,f);
+  /* 3.039 — 뒤 판이 ui-grammar.css 를 고치면 ?v 도 올라간다(파일 머리 규칙). 페이지마다 같은 값이고 3.026 이상이면 된다 */
+  const pins=new Set();
+  for(const f of ['studio/app.html','studio/board.html','studio/scout.html','studio/process.html','studio/community.html']){
+    const m=R(f).match(/ui-grammar\.css\?v=(3\.\d{3})/); assert.ok(m&&+m[1].slice(2)>=26,f); pins.add(m[1]); }
+  assert.equal(pins.size,1,'every page pins the same ui-grammar.css version');
   assert.match(R('studio/app.html'),/\/vendor\/tokens\.css\?v=3\.026/);
   const e=notes.entries().find(x=>x.id==='2026-10-14-v3-026-navy');
   assert.ok(e,'3.026 note');

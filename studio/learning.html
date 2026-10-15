@@ -26,6 +26,7 @@ textarea,input{font:inherit}
 .top .tabs{margin-left:2px;display:flex;gap:14px;order:1}   /* 2.657 — 오른쪽 끝(margin-left:auto)이던 탭을 제목 옆(왼쪽 묶음)으로: 오른쪽 위 구석은 셸의 동기화 메모 자리(겹쳤다, 사용자) */
 .top .pos,.top .mtitle{order:2}.top .demo{order:3;margin-left:auto}
 .top .tabs button{color:var(--gray);padding:4px 0}
+@media (pointer:coarse){.top .tabs{gap:2px}.top .tabs button{padding:0 12px;min-height:44px}}   /* 3.039 — 손가락 기기: «오늘 · 책 · 카드»가 21×27 · 10×27px 였다(피드백 DS-2). 글자 간격은 gap 대신 padding 이 맡는다 */
 .top .tabs button.on{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--acc)}
 .top .demo{font-size:11px;color:var(--faint);border:1px dashed var(--line2);border-radius:6px;padding:3px 8px}
 .wrap{max-width:1100px;margin:0 auto;padding:18px 18px 90px}

@@ -52,8 +52,8 @@ try{
     await bf.evaluate(l=>{const b=[...document.querySelectorAll('#vMenu button')].find(b=>b.textContent.trim()===l);b.click();},label);
   };
   const okDialog=async(fill)=>{
-    await bf.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent==='확인'&&b.offsetParent));
-    const msg=await bf.evaluate(f=>{const ok=[...document.querySelectorAll('button')].find(b=>b.textContent==='확인'&&b.offsetParent);const box=ok.closest('div').parentNode;const inp=box.querySelector('input');if(inp&&f!=null){inp.value=f;}const t=box.firstChild.textContent;ok.click();return t;},fill??null);
+    await bf.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')&&b.offsetParent));
+    const msg=await bf.evaluate(f=>{const ok=[...document.querySelectorAll('button')].find(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')&&b.offsetParent);const box=ok.closest('div').parentNode;const inp=box.querySelector('input');if(inp&&f!=null){inp.value=f;}const t=box.firstChild.textContent;ok.click();return t;},fill??null);
     return msg;
   };
   await menuOn('공격','삭제');

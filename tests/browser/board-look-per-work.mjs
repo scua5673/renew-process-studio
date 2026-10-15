@@ -20,7 +20,7 @@ try{
   const put=(id,x)=>f.evaluate(([id,x])=>{pushUndo();state.players=[{id,team:'red',num:'7',x,y:320},{id:id+'b',team:'blue',num:'5',x:x+120,y:340}];renderTokens();},[id,x]);
   const grow=n=>f.evaluate(n=>{for(let i=0;i<n;i++)scaleAll(1.25);},n);
   const shrinkAll=()=>f.evaluate(()=>{for(let i=0;i<8;i++)scaleAll(0.8);});
-  const confirmIf=async()=>{await page.waitForTimeout(300);await f.evaluate(()=>{const ok=[...document.querySelectorAll('button')].filter(b=>b.textContent.trim()==='확인'&&b.offsetParent).pop();if(ok)ok.click();});await page.waitForTimeout(400);};
+  const confirmIf=async()=>{await page.waitForTimeout(300);await f.evaluate(()=>{const ok=[...document.querySelectorAll('button')].filter(b=>(b.hasAttribute('data-ps-ok')||b.textContent.trim()==='확인')&&b.offsetParent).pop();if(ok)ok.click();});await page.waitForTimeout(400);};
   const vaultItem=name=>f.evaluate(async n=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x.name===n);return d?{ts:d.snap.tokenScale,x:d.snap.players&&d.snap.players[0]&&d.snap.players[0].x}:null;},name);
   const saveVault=async name=>{await f.evaluate(()=>document.getElementById('vaultSave').click());await f.waitForSelector('#psSaveOv');
     await f.evaluate(v=>{document.getElementById('pssName').value=v;},name);await f.click('#pssOk');

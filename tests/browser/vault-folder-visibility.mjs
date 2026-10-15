@@ -36,8 +36,8 @@ try{
     await bf.evaluate(l=>{const b=[...document.querySelectorAll('#vMenu button')].find(b=>b.textContent.trim()===l);b.click();},label);
   };
   const okDialog=async(fill)=>{
-    await bf.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent==='확인'&&b.offsetParent));
-    return bf.evaluate(f=>{const ok=[...document.querySelectorAll('button')].find(b=>b.textContent==='확인'&&b.offsetParent);const box=ok.closest('div').parentNode;const inp=box.querySelector('input');if(inp&&f!=null)inp.value=f;const t=box.firstChild.textContent;ok.click();return t;},fill??null);
+    await bf.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')&&b.offsetParent));
+    return bf.evaluate(f=>{const ok=[...document.querySelectorAll('button')].find(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')&&b.offsetParent);const box=ok.closest('div').parentNode;const inp=box.querySelector('input');if(inp&&f!=null)inp.value=f;const t=box.firstChild.textContent;ok.click();return t;},fill??null);
   };
   // 1) 다른 코치가 만든 빈 비공개 폴더는 안 보인다 · 공유·내 것·옛 것은 보인다
   await bf.waitForFunction(()=>[...document.querySelectorAll('.vx-folder-name')].some(e=>e.textContent==='팀 공유'),null,{timeout:20000});
