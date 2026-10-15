@@ -27,7 +27,7 @@ test('UX-3 — 연결된 선수 0명인 «오늘»은 안내 + 초대(만들 수
 test('DS-11 — 폰의 빈 작전판 안내: 폰 · 빈 판에서만, 닫으면 이 기기에서 끝, 보관함 열기는 셸이 같은 출처 · 작전판 프레임에서만 받는다',()=>{
   const a=board.indexOf('<style id="ps-3039-phone-hint">'), s=board.slice(a,board.indexOf('</script>',a));
   assert.ok(a>0);
-  assert.match(s,/b\.classList\.contains\("ps-phone-work"\)&&!off\(\)&&!window\.__vaultBook&&!window\.__vaultEdit&&!window\.__vaultViewMode&&!b\.classList\.contains\("meet-mode"\)&&empty\(\)/);
+  assert.match(s,/b\.classList\.contains\("ps-phone-work"\)&&!off\(\)&&!window\.__vaultBook&&!window\.__vaultEdit&&!window\.__vaultViewMode&&!b\.classList\.contains\("meet-mode"\)&&!b\.classList\.contains\("drawmode"\)&&\(!state\.tool\|\|state\.tool==="move"\)&&empty\(\)/,'그리기 도구를 고르면 비킨다');
   assert.match(s,/var KEY="ps_phone_board_hint_v1"/); assert.match(s,/localStorage\.setItem\(KEY,"1"\)/);
   assert.match(s,/parent\.postMessage\(\{source:"board",type:"openVault"\},location\.origin\)/);
   assert.match(s,/if\(document\.body\.classList\.contains\("ps-phone-work"\)\|\|document\.getElementById\("psPhoneHint"\)\)kick\(\);/,'폰이 아니면 아무것도 하지 않는다');

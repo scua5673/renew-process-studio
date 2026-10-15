@@ -23506,7 +23506,7 @@ body.ps-phone-work #ehDoor{display:none!important}
 (function(){ var KEY="ps_phone_board_hint_v1",raf=0;
   function off(){ try{ return localStorage.getItem(KEY)==="1"; }catch(_){ return false; } }
   function empty(){ try{ return !(state.players&&state.players.length)&&!(state.equipment&&state.equipment.length)&&!(state.drawings&&state.drawings.length)&&!(typeof anim!=="undefined"&&anim&&anim.frames&&anim.frames.length>1); }catch(_){ return false; } }
-  function want(){ try{ var b=document.body; return !!b&&b.classList.contains("ps-phone-work")&&!off()&&!window.__vaultBook&&!window.__vaultEdit&&!window.__vaultViewMode&&!b.classList.contains("meet-mode")&&empty(); }catch(_){ return false; } }
+  function want(){ try{ var b=document.body; return !!b&&b.classList.contains("ps-phone-work")&&!off()&&!window.__vaultBook&&!window.__vaultEdit&&!window.__vaultViewMode&&!b.classList.contains("meet-mode")&&!b.classList.contains("drawmode")&&(!state.tool||state.tool==="move")&&empty(); }catch(_){ return false; } }   /* 그리기 도구를 고르면 비킨다(판을 눌러야 한다) — body 클래스가 바뀌면 바로 다시 본다 */
   function sync(){ raf=0; var h=document.getElementById("psPhoneHint"), st=document.getElementById("boardStage"); if(!st)return;
     if(!want()){ if(h)h.remove(); return; } if(h)return;
     h=document.createElement("div"); h.id="psPhoneHint"; h.setAttribute("role","note");

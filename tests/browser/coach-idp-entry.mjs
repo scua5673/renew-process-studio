@@ -24,7 +24,7 @@ try{
     assert.deepEqual(em,{t:'아직 IDP를 쓰는 선수가 없어요',inv:true,ev:true},'연결된 선수 0명 — 안내와 두 단추');
     await f.evaluate(()=>document.querySelector('.sq-empty-today [data-sqe-mode="eval"]').click());
     await f.waitForFunction(()=>[...document.querySelectorAll('.sq-sc.on')].some(b=>b.textContent==='선수'));
-    const pe=logs.filter(l=>l.type==='pageerror'); assert.deepEqual(pe,[],JSON.stringify(pe.slice(0,3)));
+    const pe=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)); assert.deepEqual(pe,[],JSON.stringify(pe.slice(0,3)));
     await context.close(); }
 
   step('phone-hint');
@@ -47,7 +47,7 @@ try{
     assert.equal(await bf.evaluate(()=>localStorage.getItem('ps_phone_board_hint_v1')),'1','닫기는 이 기기에 남는다');
     await page.waitForTimeout(1800);
     assert.equal(await bf.evaluate(()=>!!document.getElementById('psPhoneHint')),false,'닫은 뒤 다시 뜨지 않는다');
-    const pe=logs.filter(l=>l.type==='pageerror'); assert.deepEqual(pe,[],JSON.stringify(pe.slice(0,3))); }
+    const pe=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)); assert.deepEqual(pe,[],JSON.stringify(pe.slice(0,3))); }   /* 웹킷이 내는 무해한 경고(다른 시험과 같은 거름) */
   console.log(JSON.stringify({engine,test:'coach-idp-entry',ok:true}));
 }catch(e){ console.error('[coach-idp-entry] step='+cur); throw e; }
 finally{ for(const b of Object.values(browsers))await b.close().catch(()=>{}); await fx.close?.(); }

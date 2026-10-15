@@ -53,7 +53,7 @@ try{
   assert.equal(sent[0].o.meta.source,'connect-src https://evil.example','호스트까지만');
   assert.doesNotMatch(JSON.stringify(sent[0]),/secret|token/,'경로 · 질의는 올리지 않는다');
   assert.equal(await page.evaluate(()=>{ const b=document.getElementById('ps-errbar'); return !!b&&b.style.display==='block'&&/csp/i.test(b.textContent); }),false,'화면 오류 띠는 없다');
-  const pe=logs.filter(l=>l.type==='pageerror');
+  const pe=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(pe,[],'페이지 오류 없음 '+JSON.stringify(pe.slice(0,3)));
   console.log(JSON.stringify({engine,test:'csp-report-only',ok:true}));
 }catch(e){ console.error('[csp-report-only] step='+cur); throw e; }
