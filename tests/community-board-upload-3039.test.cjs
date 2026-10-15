@@ -4,7 +4,7 @@ const fs=require('fs');
 const path=require('path');
 const vm=require('vm');
 
-/* 3.038 — 커뮤니티에 작전판을 작전판으로(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게» · 박수빈 코치 «지금은 '훈련'으로만 업로드가 가능한 것 같아서요!
+/* 3.039(3.038 로 준비했다가 #407 이 먼저 3.038 을 써서 판을 올렸다) — 커뮤니티에 작전판을 작전판으로(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게» · 박수빈 코치 «지금은 '훈련'으로만 업로드가 가능한 것 같아서요!
    작전판을 업로드해도 빈 작전판으로 열리더라구요»).
    · 올리기가 작전판의 pages 를 버려 첫 페이지 판만 올라갔고, 최상위 frames 는 저장할 때 보던 페이지의 장면이라 판과 장면이 다른 페이지였다.
    · 올리기 목록은 작전판도 «기술·개인»(훈련 국면 기본값)으로 적었다.
@@ -16,7 +16,7 @@ function cut(src,from,to){ const a=src.indexOf(from); assert.ok(a>=0,'start mark
 const plain=o=>JSON.parse(JSON.stringify(o));
 const STRIP=cut(comm,'var __pubNames=[];','function openUpload(){');
 const VIEW=cut(comm,'var procCv=null;\n','/* «보관함에 담기» — 레터의 단추와 같은 주소를 셸에 건넨다.');
-const KIND=cut(comm,'var FOCUS=[','/* ── 커뮤니티 분류')+cut(comm,'/* 3.038 — 올리기 목록의 종류','function buildUpload(');
+const KIND=cut(comm,'var FOCUS=[','/* ── 커뮤니티 분류')+cut(comm,'/* 3.039 — 올리기 목록의 종류','function buildUpload(');
 function strip(){ const c=vm.createContext({}); vm.runInContext(STRIP+';this.api={stripPages,boardLead,names:function(){return __pubNames;}};',c); return c.api; }
 
 const P=(id,num,name,team)=>({id,team:team||'blue',num:String(num),name:name||'',x:100+id,y:200,...(team==='img'?{src:'data:image/png;base64,AAAA'}:{})});
@@ -27,7 +27,7 @@ const boardItem=()=>({type:'board',name:'가상 작전판',snap:snap([P(1,7,'김
     {name:'',snap:snap([P(21,9,'이둘째')]),thumb:'',anim:{frames:frames([P(21,9)],1),active:0}},
     null,{name:'옛 모양',snap:snap([P(31,10)]),anim:frames([P(31,10,'박셋째')],2)},{name:'판 없음'}]});
 
-test('3.038 every page of a board goes up, each cleaned like a training (names, photos, pictures, my vault link)',()=>{
+test('3.039 every page of a board goes up, each cleaned like a training (names, photos, pictures, my vault link)',()=>{
   const g=strip(),out=plain(g.stripPages(boardItem())),json=JSON.stringify(out);
   for(const bad of ['김가상','이둘째','박셋째','data:image','AAAA','BBBB','vlink'])assert.equal(json.includes(bad),false,'올라가는 페이지에 «'+bad+'» 가 없다');
   assert.deepEqual(out.map(p=>p.name),['공격','','옛 모양'],'판이 없는 페이지 · 빈 칸은 버린다');
@@ -40,7 +40,7 @@ test('3.038 every page of a board goes up, each cleaned like a training (names, 
   assert.deepEqual(plain(g.names()).sort(),['김가상','박셋째','이둘째'].sort(),'지운 이름은 카드 그림에서도 지운다(stripThumbNames)');
 });
 
-test('3.038 only boards carry pages — trainings and empty pages give nothing',()=>{
+test('3.039 only boards carry pages — trainings and empty pages give nothing',()=>{
   const g=strip();
   assert.equal(g.stripPages({type:'train',pages:[{snap:snap([])}]}),null);
   assert.equal(g.stripPages({type:'board'}),null);
@@ -49,7 +49,7 @@ test('3.038 only boards carry pages — trainings and empty pages give nothing',
   assert.equal(g.stripPages(null),null);
 });
 
-test('3.038 the post leads with page 1 — its board and its scenes (not the page that was open when saved)',()=>{
+test('3.039 the post leads with page 1 — its board and its scenes (not the page that was open when saved)',()=>{
   const g=strip(),it=boardItem();it.pages=g.stripPages(it);g.boardLead(it);
   assert.deepEqual([it.snap.players.map(p=>p.num).join(','),it.frames.length,it.frames[0].snap.players[0].num],['7,',3,'7'],'예전에는 판은 페이지 1 · 장면은 다른 페이지(10번)였다');
   const one={type:'board',snap:snap([]),frames:frames([P(1,7)],2),pages:[{name:'',snap:snap([P(1,9)])}]};
@@ -59,15 +59,15 @@ test('3.038 the post leads with page 1 — its board and its scenes (not the pag
   assert.deepEqual(plain(g.boardLead(train)),plain({type:'train',snap:snap([P(1,8)]),frames:frames([P(1,8)],2)}),'페이지가 없으면 그대로');
 });
 
-test('3.038 the upload, the edit sync and the copy all keep pages',()=>{
+test('3.039 the upload, the edit sync and the copy all keep pages',()=>{
   assert.match(comm,/var COPY_FIELDS=\[[^\]]*'warmFor',\n  'pages','book'\];/,'담기는 페이지 · 패턴북 표식까지');
   const up=cut(comm,"$('upGo').onclick=function(){",'var payload=JSON.stringify(body);');
   assert.match(up,/var _frUp=stripFrames\(item\.frames\); if\(_frUp\)item\.frames=_frUp; else delete item\.frames;\n      var _pgUp=stripPages\(sel\); if\(_pgUp\)\{item\.pages=_pgUp;boardLead\(item\);\} else delete item\.pages;/,'COPY_FIELDS 가 실은 날 페이지는 정리한 것으로 바꾼다');
-  assert.match(comm,/var _pgU=stripPages\(src\); if\(_pgU\)\{item\.pages=_pgU;boardLead\(item\);\} else delete item\.pages;   \/\* 3\.038 \*\/\n    var patch=\{item:item\};/,'뷰어의 글 고치기도 같은 정리');
+  assert.match(comm,/var _pgU=stripPages\(src\); if\(_pgU\)\{item\.pages=_pgU;boardLead\(item\);\} else delete item\.pages;   \/\* 3\.039 \*\/\n    var patch=\{item:item\};/,'뷰어의 글 고치기도 같은 정리');
   assert.match(comm,/toast\(item\.pages\?'용량이 커서 올릴 수 없어요 — 페이지나 장면 수를 줄여보세요':'용량이 커서 올릴 수 없어요 — 장면 수를 줄여보세요'\)/);
 });
 
-test('3.038 the upload list says what each item is — a board is not «기술·개인»',()=>{
+test('3.039 the upload list says what each item is — a board is not «기술·개인»',()=>{
   const c=vm.createContext({});vm.runInContext(KIND+';this.api={upKindOf,upKindName,upMetaOf};',c);const k=c.api;
   const rows=[{type:'board',pages:[{},{},{}]},{type:'board',book:1,pages:[{},{}]},{type:'board',frames:[{},{},{}]},{type:'board'},{type:'train',focus:'tech',minutes:15},{type:'setpiece',focus:'set',minutes:10},{focus:'warm'}];
   assert.deepEqual(rows.map(d=>[k.upKindOf(d),k.upKindName(d),k.upMetaOf(d)]),[
@@ -82,13 +82,13 @@ test('3.038 the upload list says what each item is — a board is not «기술·
   assert.match(sheet,/내 보관함에서 작전판이나 훈련을 골라 모든 코치에게 공유합니다/);
 });
 
-test('3.038 a preselected item survives opening the sheet (vault «커뮤니티에 올리기» · after «새로 만들기»)',()=>{
+test('3.039 a preselected item survives opening the sheet (vault «커뮤니티에 올리기» · after «새로 만들기»)',()=>{
   /* 새 흐름이 앞 흐름을 닫으며 __upPreselect 를 지워, 보관함에서 고른 항목이 고르지 않은 채 열렸다 */
   assert.match(comm,/var pre=window\.__upPreselect\|\|null;\n  var flowEpoch=communityLibraryBeginFlow\(\);\n  window\.__upPreselect=pre;/);
   assert.match(cut(comm,'function communityLibraryCloseFlow(){','function communityLibraryBeginFlow(){'),/window\.__upPreselect=null;/,'닫을 때는 그대로 지운다(다음에 손으로 연 올리기에 남지 않게)');
 });
 
-test('3.038 copying from the viewer uses the post object that holds the original',()=>{
+test('3.039 copying from the viewer uses the post object that holds the original',()=>{
   const fn=cut(comm,'window.__commAction=function(act,id,extra){',"if(act==='update'){");
   assert.match(fn,/else if\(!p\.item\)\{ var pe=elmFind\(id\); if\(pe&&pe\.item\)p=pe; \}/,'엘미하 칸에서 연 글 — 원본은 엘미하 목록의 객체에');
   assert.match(comm,/if\(act==='copy'\)\{ if\(p\.item\)copyToLib\(p,null\); else copyPreviewPost\(p,null\); \}/,'원본이 없으면 받아서 담는다(빈 카드를 담지 않는다)');
@@ -112,7 +112,7 @@ const post=over=>Object.assign({id:'Cb1',owner:'u-elm',owner_name:'엘미하',ti
   item:{type:'board',name:'가상 전술노트',overview:'가상 설명',tags:['가상'],snap:snap([P(1,7)]),frames:frames([P(1,7)],3),
     pages:[{name:'공격 형태',snap:snap([P(1,7)]),anim:{frames:frames([P(1,7)],3)}},{name:'',snap:snap([P(2,9)])},{name:'수비 블록',snap:snap([P(3,10)]),anim:frames([P(3,10)],2)}]}},over||{});
 
-test('3.038 a board with several pages opens one page at a time — that page’s board and scenes, the post’s description',()=>{
+test('3.039 a board with several pages opens one page at a time — that page’s board and scenes, the post’s description',()=>{
   const h=harness(),p=post();
   h.api.boardViewOpen(p,{mine:true});
   assert.equal(h.opened.length,1);
@@ -125,7 +125,7 @@ test('3.038 a board with several pages opens one page at a time — that page’
   assert.equal(h.opened[0].fallback,'Cb1');
 });
 
-test('3.038 the page picker sits where the training picker does, and says pages',()=>{
+test('3.039 the page picker sits where the training picker does, and says pages',()=>{
   const h=harness();
   h.api.boardViewOpen(post(),{});
   const tabs=h.tabs();
@@ -144,7 +144,7 @@ test('3.038 the page picker sits where the training picker does, and says pages'
   assert.match(comm,/if\(boardPagesOf\(d\)\.some\(function\(pg\)\{ return hasBoardData\(pg\.snap\)\|\|/,'첫 페이지가 비어도 다른 페이지에 그림이 있으면 연다');
 });
 
-test('3.038 the read-only viewer calls a board a board',()=>{
+test('3.039 the read-only viewer calls a board a board',()=>{
   const v=cut(board,'window.__commView=function(post, editMode){','window.__commPrepView=function(){');
   assert.match(v,/var _commBoard=\(d\.type==="board"\);\n    \$\("modalTitle"\)\.textContent=editMode\?"커뮤니티 글 편집":\(_commBoard\?"커뮤니티 작전판":"커뮤니티 훈련"\);/);
   assert.match(v,/'<b>'\+\(_commBoard\?'커뮤니티 작전판':'커뮤니티 훈련'\)\+'<\/b> — '\+who\+'님이 공유했어요'\+\(\(_commBoard&&post\.pageN>1\)\?\(' · '\+\(d\.book\?'시퀀스 ':'페이지 '\)\+post\.pageN\+'개'\):''\)\+' · 보기 전용'/);
@@ -152,13 +152,13 @@ test('3.038 the read-only viewer calls a board a board',()=>{
   assert.match(v,/if\(_commBoard\)\{ try\{ var _nm=document\.getElementById\("epRoNoMemo"\); if\(_nm\)_nm\.textContent="작성된 설명이 없습니다\.";/);
 });
 
-test('3.038 release note and cache',()=>{
+test('3.039 release note and cache',()=>{
   const notes=require('../studio/release-notes.js');
-  const e=notes.entries().find(x=>x.id==='2026-10-15-v3-038-community-board-upload');assert.ok(e,'3.038 안내');
-  assert.match(e.title,/v3\.038/);
+  const e=notes.entries().find(x=>x.id==='2026-10-15-v3-039-community-board-upload');assert.ok(e,'3.039 안내');
+  assert.match(e.title,/v3\.039/);
   assert.match(e.changes.join(' '),/작전판/);
   const cache=(R('sw.js').match(/^const CACHE = 'process-(3\.\d{3})';/m)||[])[1],build=(R('studio/app.html').match(/window\.PS_BUILD='(3\.\d{3})'/)||[])[1];
   assert.equal(cache,build,'sw.js CACHE = app.html PS_BUILD');
-  assert.ok(Number(build)>=3.038,'3.038 이 판을 올렸다 — 뒤 판도 지나간다');
+  assert.ok(Number(build)>=3.039,'3.039 이 판을 올렸다 — 뒤 판도 지나간다');
   assert.match(R('tests/browser/run-critical.mjs'),/'community-elmiha','community-board'/,'브라우저 시험이 CI 묶음에 있다');
 });

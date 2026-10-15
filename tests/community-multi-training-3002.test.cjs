@@ -88,7 +88,7 @@ test('a process session still opens the same way, and only posts with two or mor
   h.api.procViewOpen(proc);
   const post=h.opened[0].post;
   assert.deepEqual([post.proc,post.procN,post.mine,post.cat,post.item.name,post.item.frames.length],[true,2,false,'','연습 1',3]);
-  assert.match(comm,/if\(p\.proc\|\|\(Array\.isArray\(p\.item\.trainings\)&&p\.item\.trainings\.length>1\)\)\{procViewOpen\(p,post\);return;\}\n    if\(boardPagesOf\(p\.item\)\.length>1\)\{boardViewOpen\(p,post\);return;\}[^\n]*\n    openCommunityViewer\(post,p\);/,'훈련이 하나인 글은 전처럼 바로 연다(3.038 — 여러 페이지 작전판만 페이지 고르기 줄로)');
+  assert.match(comm,/if\(p\.proc\|\|\(Array\.isArray\(p\.item\.trainings\)&&p\.item\.trainings\.length>1\)\)\{procViewOpen\(p,post\);return;\}\n    if\(boardPagesOf\(p\.item\)\.length>1\)\{boardViewOpen\(p,post\);return;\}[^\n]*\n    openCommunityViewer\(post,p\);/,'훈련이 하나인 글은 전처럼 바로 연다(3.039 — 여러 페이지 작전판만 페이지 고르기 줄로)');
   assert.match(board,/body\.comm-viewing #trainingStrip,/,'뷰어가 훈련 탭 줄을 감추는 동안에는 이 줄이 필요하다');
   assert.match(comm,/\.pr-cvtabs\{display:grid;grid-auto-flow:column;grid-auto-columns:minmax\(96px,1fr\);gap:6px;padding:6px 10px;overflow-x:auto\}/,'폰: 훈련이 많으면 칸 폭을 지키고 옆으로 민다');
 });

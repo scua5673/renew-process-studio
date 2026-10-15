@@ -115,7 +115,7 @@
   .pk .pth img{width:100%;height:100%;object-fit:cover;display:block}
   .pk .pn{font-size:var(--fs-body);font-weight:var(--fw-body);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pk .pm{font-size:var(--fs-caption);color:var(--text-3);font-weight:var(--fw-body);flex:0 0 auto}
-  /* 3.038 — 올릴 자료의 종류: 고르는 줄(전체 · 작전판 · 훈련)과 줄마다의 종류 표시 */
+  /* 3.039 — 올릴 자료의 종류: 고르는 줄(전체 · 작전판 · 훈련)과 줄마다의 종류 표시 */
   .up-kind{margin-bottom:2px}
   .pk .pk-k{font-size:var(--fs-caption);font-weight:700;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);border-radius:999px;padding:1px 8px;flex:0 0 auto;white-space:nowrap}
   .hint{font-size:var(--fs-caption);color:var(--text-3);margin-top:8px;line-height:1.6}
@@ -770,7 +770,7 @@ function cpDescOf(p){
     if(it.trainings.length>4)parts.push('<i style="color:var(--text-3);font-style:normal">＋ 훈련 '+(it.trainings.length-4)+'개 — 큰 화면에서 전체 확인</i>');
   }
   if(it.note&&String(it.note).trim())parts.push(esc(String(it.note).trim()));
-  var _pgN=boardPagesOf(it).length;   /* 3.038 — 여러 페이지 작전판 */
+  var _pgN=boardPagesOf(it).length;   /* 3.039 — 여러 페이지 작전판 */
   if(_pgN>1)parts.push('<b>'+(it.book?'패턴북':'작전판')+'</b>'+(it.book?'시퀀스 ':'페이지 ')+_pgN+'개 — 큰 화면에서 '+(it.book?'시퀀스':'페이지')+'를 골라 볼 수 있어요');
   return parts.join('<br>');
 }
@@ -809,7 +809,7 @@ function copyPreviewPost(p,btn){
   if(!communityLibraryRequireUnlocked(true))return;
   var me=sess(),flowEpoch=__communityLibraryEpoch,uid=me&&me.uid;
   if(p.item){copyToLib(p,btn);return;}
-  if(btn){btn.disabled=true;btn.textContent='내용 확인 중…';}   /* 3.038 — 뷰어의 담기(단추 없음)도 이 길 */
+  if(btn){btn.disabled=true;btn.textContent='내용 확인 중…';}   /* 3.039 — 뷰어의 담기(단추 없음)도 이 길 */
   fetch(base()+'/rest/v1/ps_community?id=eq.'+encodeURIComponent(p.id)+'&select=item',{headers:hd()})
     .then(function(r){if(!r.ok)throw 0;return r.json();})
     .then(function(j){communityLibraryContinuation(flowEpoch,uid);p.item=(j&&j[0]&&j[0].item)||{};if(btn)btn.disabled=false;copyToLib(p,btn);})
@@ -1001,7 +1001,7 @@ function openPost(p){
       return t&&(hasBoardData(t.snap)||hasTextData(t)||
         (Array.isArray(t.scenes)&&t.scenes.some(function(s){return s&&hasBoardData(s.snap);})));
     }))return true;
-    if(boardPagesOf(d).some(function(pg){ return hasBoardData(pg.snap)||(boardPageFrames(pg)||[]).some(function(f){return f&&hasBoardData(f.snap);}); }))return true;   /* 3.038 — 첫 페이지가 비어도 다른 페이지에 그림이 있으면 */
+    if(boardPagesOf(d).some(function(pg){ return hasBoardData(pg.snap)||(boardPageFrames(pg)||[]).some(function(f){return f&&hasBoardData(f.snap);}); }))return true;   /* 3.039 — 첫 페이지가 비어도 다른 페이지에 그림이 있으면 */
     return false;
   }
   function go(){
@@ -1013,7 +1013,7 @@ function openPost(p){
               thumb:p.thumb,item:p.item||{},mine:!!(me&&me.uid===p.owner),proc:!!p.proc};
     /* 2.999 — 프로세스 세션은 훈련 셋을 하나씩 뷰어에 싣는다 · 3.002 — 훈련이 둘 이상인 코치 글도 같은 줄로 골라 본다(전에는 첫 훈련만 보였다) */
     if(p.proc||(Array.isArray(p.item.trainings)&&p.item.trainings.length>1)){procViewOpen(p,post);return;}
-    if(boardPagesOf(p.item).length>1){boardViewOpen(p,post);return;}   /* 3.038 — 여러 페이지 작전판: 같은 줄로 페이지를 골라 본다 */
+    if(boardPagesOf(p.item).length>1){boardViewOpen(p,post);return;}   /* 3.039 — 여러 페이지 작전판: 같은 줄로 페이지를 골라 본다 */
     openCommunityViewer(post,p);
   }
   if(p.item){ go(); return; }
@@ -1075,7 +1075,7 @@ window.__commAction=function(act,id,extra){
   extra=extra||{};
   var p=null; for(var i=0;i<posts.length;i++)if(posts[i].id===id){p=posts[i];break;}
   if(!p)p=elmFind(id);   /* 3.018 — 엘미하 글은 코치 자료 최신 100개 밖에 있을 수 있다 */
-  /* 3.038 — 엘미하 글은 코치 자료 목록에도 있다(같은 글 · 다른 객체). 엘미하 칸에서 열면 원본(item)은 엘미하 목록의 객체에만 실려,
+  /* 3.039 — 엘미하 글은 코치 자료 목록에도 있다(같은 글 · 다른 객체). 엘미하 칸에서 열면 원본(item)은 엘미하 목록의 객체에만 실려,
      뷰어의 «내 보관함에 담기»가 원본 없는 코치 자료 쪽 객체를 집어 빈 카드를 담았다(«빈 작전판으로 열려요»). 원본이 있는 쪽을 쓴다 */
   else if(!p.item){ var pe=elmFind(id); if(pe&&pe.item)p=pe; }
   if(act==='update'){
@@ -1086,7 +1086,7 @@ window.__commAction=function(act,id,extra){
     if(item.scenes)item.scenes=item.scenes.map(function(sc){return {snap:stripSnap(sc&&sc.snap),thumb:''};});
     var _trsU=stripTrainings(src); if(_trsU)item.trainings=_trsU;
     var _frU=stripFrames(item.frames); if(_frU)item.frames=_frU; else delete item.frames;
-    var _pgU=stripPages(src); if(_pgU){item.pages=_pgU;boardLead(item);} else delete item.pages;   /* 3.038 */
+    var _pgU=stripPages(src); if(_pgU){item.pages=_pgU;boardLead(item);} else delete item.pages;   /* 3.039 */
     var patch={item:item};
     if(extra.title!=null&&(''+extra.title).trim())patch.title=(''+extra.title).trim();
     if(extra.thumb!=null)patch.thumb=sanSvg(extra.thumb)||'';
@@ -1100,7 +1100,7 @@ window.__commAction=function(act,id,extra){
   if(!p)p=procFind(id);   /* 2.999 — 프로세스 세션은 posts 밖에 있다 */
   if(!p)return;
   if(p.proc){ if(act==='copy')procSave(p); return; }   /* 신고·삭제·고치기는 코치 자료만 */
-  if(act==='copy'){ if(p.item)copyToLib(p,null); else copyPreviewPost(p,null); }   /* 3.038 — 원본이 아직 없으면 받아서 담는다 */
+  if(act==='copy'){ if(p.item)copyToLib(p,null); else copyPreviewPost(p,null); }   /* 3.039 — 원본이 아직 없으면 받아서 담는다 */
   else if(act==='report'){
     var me=sess();
     try{fetch(base()+'/rest/v1/ps_comm_reports',{method:'POST',headers:hd(me&&me.at),body:JSON.stringify({pub_id:p.id,reporter:(me&&me.uid)||null,reason:''})});}catch(_){}
@@ -1320,7 +1320,7 @@ var store={
   set:function(k,v){if(!communityLibraryDataUnlocked())return Promise.reject(communityLibraryLockedError());return window.storage?window.storage.set(k,JSON.stringify(v)):Promise.resolve();}
 };
 var COPY_FIELDS=['name','focus','minutes','sets','rpe','tags','type','snap','scenes','frames','overview','setup','func','coaching','prog','memo','memoQuick','success','fourDs','playerTask','sessionCheck','playerReflection','evidence','summaryLine','coachReflection','nextSession','warmFor',
-  'pages','book'];   /* 3.038 — 작전판의 페이지 묶음 · 패턴북 표식. 올릴 때는 stripPages 를 거친 것으로 바꾼다 */
+  'pages','book'];   /* 3.039 — 작전판의 페이지 묶음 · 패턴북 표식. 올릴 때는 stripPages 를 거친 것으로 바꾼다 */
 function copyToLib(p,btn){
   if(p&&p.proc){procSave(p);return;}
   if(!communityLibraryRequireUnlocked(true))return;
@@ -1418,7 +1418,7 @@ function stripTrainings(src){ /* 다중 훈련·텍스트 섹션 보존 — 각 
     return tt;
   });
 }
-/* 3.038 — 작전판(type "board")의 페이지들(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게» · 박수빈 코치 «작전판을 업로드해도 빈 작전판으로 열려요»).
+/* 3.039 — 작전판(type "board")의 페이지들(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게» · 박수빈 코치 «작전판을 업로드해도 빈 작전판으로 열려요»).
    보관함의 작전판은 대표 판(snap = 첫 페이지)과 페이지 묶음(pages[{snap,name,thumb,anim:{frames,…}}])을 함께 갖는다. 예전에는 pages 를 버려
    첫 페이지 판만 올라갔고, 최상위 frames 는 저장할 때 보던 페이지의 장면이라 판과 장면이 서로 다른 페이지였다.
    페이지마다 판 · 장면은 같은 정리(이름 · 사진)를 거친다. 페이지 그림은 비운다 — 뷰어는 판에서 다시 그리고 용량(500KB)을 아낀다. */
@@ -1445,7 +1445,7 @@ function boardLead(item){
 function openUpload(){
   var me=sess();
   if(!communityLibraryRequireUnlocked(true)||!me||!me.uid)return;
-  /* 3.038 — 새 흐름을 열면서 앞 흐름을 닫는 것(communityLibraryCloseFlow)이 방금 받은 «이 항목으로»(보관함 미리보기 «커뮤니티에 올리기» ·
+  /* 3.039 — 새 흐름을 열면서 앞 흐름을 닫는 것(communityLibraryCloseFlow)이 방금 받은 «이 항목으로»(보관함 미리보기 «커뮤니티에 올리기» ·
      새로 만들기 뒤)까지 지워, 올리기 창이 아무것도 고르지 않은 채 열렸다. 지우는 것은 앞 흐름의 것만 — 이번 것은 들고 간다. */
   var pre=window.__upPreselect||null;
   var flowEpoch=communityLibraryBeginFlow();
@@ -1464,7 +1464,7 @@ function openUpload(){
     communityLibraryCloseFlow();toast('보관함을 열지 못했어요 — 잠시 후 다시');
   });
 }
-/* 3.038 — 올리기 목록의 종류 · 줄 설명. 세트피스는 «훈련» 쪽(같은 훈련 편집기) · 패턴북은 «작전판» 쪽(type "board" + book) */
+/* 3.039 — 올리기 목록의 종류 · 줄 설명. 세트피스는 «훈련» 쪽(같은 훈련 편집기) · 패턴북은 «작전판» 쪽(type "board" + book) */
 function upKindOf(d){ return (d&&d.type==='board')?'board':'train'; }
 function upKindName(d){ var t=(d&&d.type)||'train'; return t==='board'?(d.book?'패턴북':'작전판'):(t==='setpiece'?'세트피스':'훈련'); }
 function upMetaOf(d){
@@ -1487,7 +1487,7 @@ function buildUpload(me,handle,flowEpoch){
       modal.innerHTML=h;mask.classList.add('on');$('upClose').onclick=function(){communityLibraryCloseFlow();};
       if($('upNewEmpty'))$('upNewEmpty').onclick=communityCreateNew;return;
     }
-    /* 3.038 — 올릴 자료의 종류(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게»). 예전 목록은 작전판도 훈련처럼 «기술·개인»으로 적어
+    /* 3.039 — 올릴 자료의 종류(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게»). 예전 목록은 작전판도 훈련처럼 «기술·개인»으로 적어
        무엇이 작전판인지 보이지 않았다. 종류가 둘 다 있으면 고르는 줄을 두고, 엘미하 칸에서 열면 작전판부터 보여 준다. */
     var nBoard=lib.filter(function(d){return d.type==='board';}).length, nTrain=lib.length-nBoard;
     var kind=(tabF==='elmiha'&&nBoard)?'board':'all';
@@ -1559,7 +1559,7 @@ function buildUpload(me,handle,flowEpoch){
       if(item.scenes)item.scenes=item.scenes.map(function(sc){return {snap:stripSnap(sc&&sc.snap),thumb:''};});
       var _trsUp=stripTrainings(sel); if(_trsUp)item.trainings=_trsUp;
       var _frUp=stripFrames(item.frames); if(_frUp)item.frames=_frUp; else delete item.frames;
-      var _pgUp=stripPages(sel); if(_pgUp){item.pages=_pgUp;boardLead(item);} else delete item.pages;   /* 3.038 — 작전판은 페이지 전부 · 대표는 첫 페이지 */
+      var _pgUp=stripPages(sel); if(_pgUp){item.pages=_pgUp;boardLead(item);} else delete item.pages;   /* 3.039 — 작전판은 페이지 전부 · 대표는 첫 페이지 */
       var body={id:'C'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
         owner:me.uid,owner_name:handle,
         title:title,summary:'',
@@ -1907,7 +1907,7 @@ var procCv=null;
    옛 카드(애니메이션이 카드에만 있고 훈련에는 없다)는 작전판이 첫 훈련에 얹어 보여 주므로(_trainAdoptCardFrames) 여기서도 첫 훈련에만 준다.
    담기·신고·삭제는 글 번호(id)로 가므로 어느 훈련을 보고 있든 글 전체에 닿는다. */
 function procViewPost(k){
-  if(procCv.pages)return boardViewPost(k);   /* 3.038 */
+  if(procCv.pages)return boardViewPost(k);   /* 3.039 */
   var p=procCv.p,it=p.item,trs=it.trainings,t=trs[k]||{},one={};
   ['type','focus','rpe','sets','tags'].forEach(function(f){ if(it[f]!=null)one[f]=it[f]; });
   one.name=t.name||('훈련 '+(k+1)); if(t.minutes!=null)one.minutes=t.minutes; one.snap=t.snap; one.trainings=[t];
@@ -1921,7 +1921,7 @@ function procViewPost(k){
 function procViewTabs(){
   var box=$('prCvTabs'); if(!box||!procCv)return;
   var pg=!!procCv.pages,trs=pg?boardPagesOf(procCv.p.item):procCv.p.item.trainings; box.innerHTML=''; box.hidden=trs.length<2;
-  try{ box.setAttribute('aria-label',pg?'이 작전판의 페이지':'이 글의 훈련'); }catch(_){}   /* 3.038 */
+  try{ box.setAttribute('aria-label',pg?'이 작전판의 페이지':'이 글의 훈련'); }catch(_){}   /* 3.039 */
   trs.forEach(function(t,i){ t=(t&&typeof t==='object')?t:{};
     var on=i===procCv.k,b=document.createElement('button'),min=+t.minutes>0?Math.round(+t.minutes):0,fr=pg?boardPageFrames(t):null; b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
     b.innerHTML='<span class="pr-i">'+(i+1)+'</span><span class="pr-nm">'+esc(String(t.name||'').trim()||((pg?(procCv.p.item.book?'시퀀스 ':'페이지 '):'훈련 ')+(i+1)))+'</span>'
@@ -1932,7 +1932,7 @@ function procViewTabs(){
 }
 function procViewOpen(p,post){ var n=p.item.trainings.length,k=(p.proc&&+p.__k>0&&+p.__k<n)?+p.__k:0;   /* 3.019 — 프로세스 카드에서 고른 훈련부터 */
   procCv={p:p,k:k,post:post||null}; procViewTabs(); openCommunityViewer(procViewPost(k),p); }
-/* 3.038 — 여러 페이지 작전판 글(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게»): 훈련 고르기 줄과 같은 자리 · 같은 방식으로 페이지를 고른다.
+/* 3.039 — 여러 페이지 작전판 글(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게»): 훈련 고르기 줄과 같은 자리 · 같은 방식으로 페이지를 고른다.
    페이지 k 하나만 실은 작전판 글을 짓는다 — 판은 그 페이지의 것, 애니메이션은 그 페이지의 장면. 설명(overview)은 글 전체의 것이라 어느 페이지에서나 보인다.
    담기 · 신고 · 삭제는 글 번호로 가므로 어느 페이지를 보고 있든 페이지 전부가 담긴다. */
 function boardPagesOf(it){ return (it&&it.type==='board'&&Array.isArray(it.pages))?it.pages.filter(function(pg){ return pg&&typeof pg==='object'&&pg.snap&&typeof pg.snap==='object'; }):[]; }

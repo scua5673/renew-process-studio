@@ -13508,7 +13508,7 @@ window.__commView=function(post, editMode){
     if(!document.body.classList.contains("editing"))editorStash=captureSnap();
     var d=Object.assign({},post.item||{}); d.name=d.name||post.title||"훈련";
     if(post.thumb&&!d.thumb)d.thumb=post.thumb;
-    /* 3.038 — 작전판 글(type "board")은 작전판이라고 말한다(박수빈 코치 «지금은 '훈련'으로만 업로드가 가능한 것 같아서요»). 여러 페이지는 커뮤니티가 페이지마다 한 장씩 싣는다 */
+    /* 3.039 — 작전판 글(type "board")은 작전판이라고 말한다(박수빈 코치 «지금은 '훈련'으로만 업로드가 가능한 것 같아서요»). 여러 페이지는 커뮤니티가 페이지마다 한 장씩 싣는다 */
     var _commBoard=(d.type==="board");
     $("modalTitle").textContent=editMode?"커뮤니티 글 편집":(_commBoard?"커뮤니티 작전판":"커뮤니티 훈련");
     editorDrillId=null; editorLibId=null; editorFileName=post.title||d.name||"";
@@ -13518,7 +13518,7 @@ window.__commView=function(post, editMode){
     moveBoardTo($("editorBoardWrap")); $("editorModal").classList.add("on"); document.body.classList.add("editing");try{parent.postMessage({source:"board",type:"editorState",open:true},"*");}catch(_){} try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}
     try{applyView();}catch(_){} try{renderBench();}catch(_){} renderTokens();
     applyEditorReadOnly(null);
-    if(_commBoard){ try{ var _nm=document.getElementById("epRoNoMemo"); if(_nm)_nm.textContent="작성된 설명이 없습니다."; }catch(_){} }   /* 3.038 */
+    if(_commBoard){ try{ var _nm=document.getElementById("epRoNoMemo"); if(_nm)_nm.textContent="작성된 설명이 없습니다."; }catch(_){} }   /* 3.039 */
     var panel=$("editorPanel");
     /* ══ 2.575 · 보기 전용 설명 = 문서 ═══════════════════════════════════════════
        항목마다 [이름 | 내용] 한 줄(textarea 대신 글). 빈 항목은 applyEditorReadOnly 가 이미 ep-ro-empty 로 걸러 둔다.
@@ -13530,7 +13530,7 @@ window.__commView=function(post, editMode){
         var lab=f.querySelector(".ep-flabel"), ta=f.querySelector("textarea");
         var lt=String((lab&&lab.value)||"").trim(), tt=String((ta&&ta.value)||"").trim();
         if(!tt)return; _any++;
-        if(_commBoard&&lt==="훈련 방법")lt="설명";   /* 3.038 — 작전판의 설명(overview)이 훈련 편집기의 «훈련 방법» 칸에 실린다 */
+        if(_commBoard&&lt==="훈련 방법")lt="설명";   /* 3.039 — 작전판의 설명(overview)이 훈련 편집기의 «훈련 방법» 칸에 실린다 */
         var l=document.createElement("div"); l.className="ep-ro-doc ep-ro-label"; l.textContent=lt||"메모"; l.title=lt||"메모";
         var t=document.createElement("div"); t.className="ep-ro-doc ep-ro-text"; t.textContent=tt;
         f.appendChild(l); f.appendChild(t);
