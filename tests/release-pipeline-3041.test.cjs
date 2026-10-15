@@ -32,7 +32,7 @@ test('release-guard — 같은 판 · 다른 파일이면 멈춘다, 판을 올�
   const live={release:'process-3.050',files:{'/a.js':'1','/b.js':'2'}};
   assert.equal(compare(live,{release:'process-3.050',files:{'/a.js':'1','/b.js':'2'}}).ok,true);
   const same=compare(live,{release:'process-3.050',files:{'/a.js':'1','/b.js':'3'}});
-  assert.equal(same.ok,false); assert.deepEqual(same.changed,['/b.js']); assert.match(same.why,/판 번호는 process-3\.042 그대로/);
+  assert.equal(same.ok,false); assert.deepEqual(same.changed,['/b.js']); assert.match(same.why,/판 번호는 process-3\.050 그대로/);
   assert.equal(compare(live,{release:'process-3.050',files:{'/a.js':'1'}}).ok,false,'파일이 빠져도 바뀐 것');
   assert.equal(compare(live,{release:'process-3.051',files:{'/a.js':'9'}}).ok,true);
   assert.equal(compare(live,{release:'process-3.039',files:live.files}).ok,false,'판을 낮춘 배포');
