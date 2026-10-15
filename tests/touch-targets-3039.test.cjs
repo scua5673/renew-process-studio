@@ -13,10 +13,12 @@ test('손가락 기기(pointer:coarse)의 단추 하한은 44px — 마우스 �
   assert.match(learning,/@media \(pointer:coarse\)\{\.top \.tabs\{gap:2px\}\.top \.tabs button\{padding:0 12px;min-height:44px\}\}/,'학습 «오늘 · 책 · 카드»');
 });
 
-test('ui-grammar.css 를 고쳤으니 모든 페이지의 ?v 가 같이 올라간다',()=>{
+test('ui-grammar.css 를 고쳤으니 모든 페이지의 ?v 가 같이 올라간다(3.039 이후 · 페이지마다 같은 값 — 그 뒤 판에서 이 파일을 안 고쳤으면 그대로 둔다)',()=>{
   const dir=path.join(__dirname,'..','studio'), pins=new Set();
   for(const f of fs.readdirSync(dir).filter(f=>f.endsWith('.html'))){ const m=R('studio/'+f).match(/ui-grammar\.css\?v=([\d.]+)/g); if(m)m.forEach(x=>pins.add(x)); }
-  assert.deepEqual([...pins],['ui-grammar.css?v='+app.match(/window\.PS_BUILD='([\d.]+)'/)[1]]);
+  assert.equal(pins.size,1,[...pins].join(' '));
+  const v=Number([...pins][0].split('=')[1]), build=Number(app.match(/window\.PS_BUILD='([\d.]+)'/)[1]);
+  assert.ok(v>=3.039&&v<=build,String(v));
 });
 
 test('UX-7 — 토큰의 잡히는 원은 화면 지름 46px(폰 · 아이패드), 보이는 크기는 그대로',()=>{

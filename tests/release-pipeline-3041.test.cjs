@@ -57,18 +57,19 @@ function swHarness({manifest,oldBodies,changed=[]}){
   return {ctx,store,fetched,listeners,body,install:async()=>{ let p; listeners.install({waitUntil:x=>{p=x;}}); await p; }};
 }
 const sha=s=>crypto.createHash('sha256').update(s).digest('hex');
+const LIVE=R('sw.js').match(/const CACHE = '(process-[\d.]+)'/)[1];   /* 판을 올려도 시험은 지금 판으로 */
 
 test('서비스워커 install — 옛 판 캐시의 본문이 목록 해시와 같으면 옮겨 담고, 바뀐 것만 받는다',async()=>{
   const probe=swHarness({}); const all=[...new Set(probe.ctx.__CORE.concat(probe.ctx.__OPTIONAL))];
   const files={}; all.forEach(p=>{ if(!/\/$/.test(p)&&p!=='/admin')files[p]=sha(p==='/studio/app.html'?'new:'+p:'old:'+p); });
   const old={}; all.forEach(p=>{ old[p]='old:'+p; });
   old['/studio/sync.js']='tampered';   /* 옛 캐시가 목록과 어긋나 있으면(옛 install 이 배포와 겹친 경우) 믿지 않고 받는다 */
-  const h=swHarness({manifest:{v:1,release:'process-3.041',files},oldBodies:old,changed:['/studio/app.html']});
+  const h=swHarness({manifest:{v:1,release:LIVE,files},oldBodies:old,changed:['/studio/app.html']});
   await h.install();
   const got=h.fetched.filter(p=>p!=='/sw-manifest.json').sort();
   const expect=['/studio/app.html','/studio/sync.js'].concat(all.filter(p=>!files[p])).sort();
   assert.deepEqual(got,expect,'받은 것 = 바뀐 것 + 본문이 어긋난 것 + 목록에 없는 경로 이름');
-  const nc=h.store.get('process-3.041');
+  const nc=h.store.get(LIVE);
   for(const p of all)assert.ok(nc.has(p),'새 캐시에 '+p);
   assert.equal(await nc.get('/studio/app.html').text(),'new:/studio/app.html');
   assert.equal(await nc.get('/studio/board.html').clone().text(),'old:/studio/board.html','옮겨 담은 본문');

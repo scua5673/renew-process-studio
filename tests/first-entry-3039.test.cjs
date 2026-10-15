@@ -32,5 +32,5 @@ test('DS-11 — 폰의 빈 작전판 안내: 폰 · 빈 판에서만, 닫으면 
   assert.match(s,/parent\.postMessage\(\{source:"board",type:"openVault"\},location\.origin\)/);
   assert.match(s,/if\(document\.body\.classList\.contains\("ps-phone-work"\)\|\|document\.getElementById\("psPhoneHint"\)\)kick\(\);/,'폰이 아니면 아무것도 하지 않는다');
   assert.match(app,/if\(d\.source==='board' && d\.type==='openVault'\)\{ var _fb=document\.getElementById\('fBoard'\); if\(e\.origin!==location\.origin\|\|!_fb\|\|e\.source!==_fb\.contentWindow\)return; var _vb=document\.getElementById\('psTrainBtn'\);/);
-  assert.match(R('tests/browser/run-critical.mjs'),/'coach-idp-entry'\]/,'CI 브라우저 묶음에');
+  assert.match(R('tests/browser/run-critical.mjs'),/'coach-idp-entry'[,\]]/,'CI 브라우저 묶음에');
 });

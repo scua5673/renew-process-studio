@@ -14142,7 +14142,7 @@ function ilPickAccount(pl){
     if(!picked.length&&!same.length&&!free.length)h+='<div class="il-empty">연결 안 된 계정이 없어요 — 선수가 아직 팀에 합류하지 않았다면 초대 코드를 보내 주세요.</div>';
     if(taken.length)h+='<div class="il-gh ok">'+IL_CHECK+'다른 선수에 연결됨 — 고를 수 없어요</div>'+taken.map(function(t){var p2=ilPlayerById(t.hold);
       return '<div class="il-row dis"><span class="il-av ok">'+IL_CHECK+'</span><span class="il-tx"><b>'+esc(nm(t.r))+'</b><small>→ '+esc(p2?ilLabel(p2):"명단에 없는 선수")+'</small></span><span class="il-go ok">연결됨</span></div>';}).join("");
-    h+='<div class="il-foot"><span>아직 합류 안 했나요?</span><button type="button" class="btn sm" data-il-invite>초대 코드 보내기</button></div>';
+    h+='<div class="il-foot"><span>아직 합류 안 했나요?</span>'+(A.inviteFor?'<button type="button" class="btn sm primary" data-il-plink>이 선수 초대 링크</button>':'')+'<button type="button" class="btn sm" data-il-invite>초대 코드 보내기</button></div>';   /* 3.042 — 링크로 합류하면 이 선수와 바로 이어진다 */
     S.body.innerHTML=h;
     [].forEach.call(S.body.querySelectorAll("[data-il-acc]"),function(b){b.onclick=function(){
       var uid=b.dataset.ilAcc,c=claims[uid],r=(rows||[]).filter(function(x){return x.uid===uid;})[0];
@@ -14151,6 +14151,7 @@ function ilPickAccount(pl){
         psConfirm("이 계정이 고른 선수는 "+(cp?ilLabel(cp):"다른 선수")+"예요. 그래도 "+ilLabel(pl)+"에 연결할까요?",go);return;}
       go();};});
     var inv=S.body.querySelector("[data-il-invite]");if(inv)inv.onclick=function(){S.close();try{A.invite();}catch(_){}};
+    var pl2=S.body.querySelector("[data-il-plink]");if(pl2)pl2.onclick=function(){S.close();try{A.inviteFor(pid,ilLabel(pl));}catch(_){}};
   }).catch(function(){if(S.ov.isConnected)S.body.innerHTML='<div class="il-empty">팀원을 불러오지 못했어요 — 연결을 확인하고 다시 열어 주세요.</div>';});
 }
 /* ④의 «아니에요»·«명단에서 고르기» → «이 계정은 누구인가요?» — 연결 안 된 선수가 위, 연결된 선수는 ✓ 흐리게 */
@@ -14174,9 +14175,29 @@ function ilPickPlayer(uid,who,claim){
   inp.oninput=function(){q=inp.value;draw();};
   draw();
 }
+/* 3.042 — 선수별 초대 링크(sync.js uiPlayerInvite): 이 기기에서 만든 링크의 토큰과 claim 의 토큰이 같으면 확인 없이 잇는다.
+   토큰은 한 번 쓰면 지운다. 다른 임원 기기 · 토큰이 다른 claim 은 아래 확인 카드 그대로(«초대 링크로 합류» 표시). */
+var IL_TOKENS="ps_idp_invite_tokens_v1",_ilAutoBusy=false;
+function ilAutoLinkByToken(){
+  if(_ilAutoBusy||!ilCan())return 0;
+  var all=null;try{all=JSON.parse(localStorage.getItem(IL_TOKENS)||"null");}catch(_){all=null;}
+  var wid=String(localStorage.getItem("ps_active_ws")||""),mine=all&&all[wid];if(!mine)return 0;
+  var holders=ilHolders(),n=0;_ilAutoBusy=true;
+  try{ idpClaims(true).forEach(function(x){var c=x.claim||{},pid=String(c.pid||""),t=mine[pid];
+      if(!c.tk||!t||String(t.tk)!==String(c.tk)||holders[pid])return;
+      var A=ilApi();if(!A)return;
+      try{A.set(x.uid,pid);}catch(e){return;}
+      delete mine[pid];n++;holders[pid]=x.uid;
+      var p=ilPlayerById(pid);toast((p?ilLabel(p):"선수")+" — 초대 링크로 합류해 IDP 가 이어졌어요 ✓");});
+    if(n){ if(!Object.keys(mine).length)delete all[wid]; try{localStorage.setItem(IL_TOKENS,JSON.stringify(all));}catch(_){} setTimeout(ilRerender,0); }
+  }finally{_ilAutoBusy=false;}
+  return n;
+}
+window.__ilAutoLinkByToken=ilAutoLinkByToken;
 /* ④ «오늘» 맨 위 — 선수가 고른 이름을 코치가 한 번 확인한다. 임원에게만, 확인할 것이 있을 때만. */
 function ilClaimCard(){
   if(!ilCan())return "";
+  try{ if(ilAutoLinkByToken())return ""; }catch(_){}   /* 이어졌으면 다음 그림에서 남은 것만 */
   var L=idpClaims(false);if(!L.length)return "";
   var holders=ilHolders(),names=ilNames();
   return '<section class="il-claims" aria-label="IDP 연결 확인"><div class="il-ch"><b>IDP 연결 확인 '+L.length+'</b><span>선수가 고른 이름 — 맞으면 연결</span></div>'
@@ -14190,7 +14211,7 @@ function ilClaimCard(){
         btns='<button type="button" class="btn" data-il-dismiss="'+esc(x.uid)+'">닫기</button><button type="button" class="btn primary" data-il-pick="'+esc(x.uid)+'">다른 선수 고르기</button>';}
       else{line='<span class="il-to">→ <b>'+esc(ilLabel(p))+'</b>'+(ilMeta(p)?' · '+esc(ilMeta(p)):'')+'</span>';
         btns='<button type="button" class="btn" data-il-no="'+esc(x.uid)+'">아니에요</button><button type="button" class="btn primary il-ok" data-il-yes="'+esc(x.uid)+'" data-pid="'+esc(p.id)+'">연결</button>';}
-      return '<div class="il-c"><span class="il-who"><b>'+esc(who)+'</b><small>'+esc(ilWhen(c.at))+' 고름</small></span>'+line+'<div class="il-btns">'+btns+'</div></div>';
+      return '<div class="il-c"><span class="il-who"><b>'+esc(who)+'</b><small>'+esc(ilWhen(c.at))+(c.via==="link"?' 초대 링크로 합류':' 고름')+'</small></span>'+line+'<div class="il-btns">'+btns+'</div></div>';
     }).join("")+(L.length>6?'<div class="il-more">외 '+(L.length-6)+'명 — 하나씩 확인하면 다음 사람이 올라와요</div>':'')+'</section>';
 }
 /* 선수 문서(claim)·권한 문서가 다른 기기에서 오면 확인 카드를 다시 그린다 — 확인할 목록이 실제로 바뀐 때만
@@ -14201,6 +14222,7 @@ window.addEventListener("storage",function(e){
   clearTimeout(_ilSigT);_ilSigT=setTimeout(function(){
     try{
       if(!ilCan())return;
+      try{ ilAutoLinkByToken(); }catch(_){}   /* 3.042 — 초대 링크로 합류한 선수 문서가 막 왔으면 바로 잇는다 */
       var sig=idpClaims(false).map(function(c){return c.uid+":"+c.claim.at;}).join("|")+"#"+JSON.stringify(ilHolders());
       if(sig===_ilSig)return;_ilSig=sig;
       ilRerender();

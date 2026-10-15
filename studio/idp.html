@@ -2545,6 +2545,8 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sq-empty-today .sq-empty-acts:empty{display:none}
   .sq-empty-today>small{display:block;margin-top:10px;font-size:var(--fs-caption,12px)}
   .sq-empty-today .sqg-un{margin-top:12px}
+  .sqst-none .sqst-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+  .sqst-none .sqst-hint{display:block;margin-top:8px;font-size:var(--fs-caption,12px)}   /* 3.042 */
   .sqe-msg b{display:block;font-size:var(--fs-title);color:var(--text-2);margin-bottom:6px}
   .sqe-msg button{margin-top:12px;min-height:32px;padding:0 16px;border:1px solid var(--line-soft);background:var(--surface);
     border-radius:10px;font:800 13px var(--f);color:var(--text-2);cursor:pointer}
@@ -9038,7 +9040,13 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var ctx=sqStoryContext(p),h='<div class="sqth" data-story-state="'+ctx.state+'">';
     if(ctx.state!=='ready'){
       var msg={unavailable:['이야기를 열 수 없어요','팀의 코치 계정으로 연결 상태를 확인해 주세요.'],unlinked:['선수 계정이 연결되지 않았어요','계정을 연결하면 선수가 남긴 이야기를 볼 수 있어요.'],ambiguous:['선수 계정 연결을 확인해 주세요','여러 계정이 이 선수에게 연결되어 있어요.'],pending:['선수 기록을 아직 불러오지 못했어요','계정과 기록이 동기화되면 이곳에 표시돼요.'],invalid:['선수 기록을 읽을 수 없어요','동기화 상태를 확인한 뒤 다시 열어 주세요.']}[ctx.state];
-      return h+'<div class="sqst-none"><b>'+msg[0]+'</b><span>'+msg[1]+'</span></div></div>';
+      /* 3.042 — 연결 안 된 선수에서 막히지 않게(피드백 UX-15): 이 선수 초대 링크(임원 — 합류하면 바로 이어진다) · 평가는 연결 없이도 */
+      var acts='';
+      if(ctx.state==='unlinked'){ var _ia=idpSaveApi(),_can=false; try{ _can=!!(_ia&&_ia.idpLink&&_ia.idpLink.can&&_ia.idpLink.can()&&_ia.idpLink.inviteFor); }catch(_){}
+        acts='<div class="sqst-acts">'+(_can?'<button type="button" class="btn primary" data-sq-plink="'+esc(p.id)+'" data-sq-plabel="'+esc((p.num?'#'+p.num+' ':'')+String(p.name||''))+'">이 선수 초대 링크</button>':'')
+          +'<button type="button" class="btn" data-sqe-mode="eval">평가하기</button></div>'
+          +(_can?'':'<small class="sqst-hint">초대 링크는 팀 임원이 만들어요</small>'); }
+      return h+'<div class="sqst-none"><b>'+msg[0]+'</b><span>'+msg[1]+'</span>'+acts+'</div></div>';
     }
     var d=ctx.doc,v=visionOf(d),reacts=(rvRec(PREFIX+ctx.uid).reacts)||{},d0=doc,k0=viewing;
     try{
@@ -9680,6 +9688,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           if(!squadView||String(sqEvalSel)!==String((function(){ try{ var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'); return pm&&pm.members&&pm.members[to.uid]&&pm.members[to.uid].playerId||''; }catch(_){return '';} })()))return;
           if(changed)gToast(v?(to.key.indexOf('vision:')===0?'질문·제안을 선수에게 보냈어요':'답글을 선수에게 보냈어요'):'답글을 비웠어요'); render(); },0); }; });
     try{ var _pdf=wrap.querySelector('[data-sq-pdf]'); if(_pdf)_pdf.onclick=function(){ var rb=document.getElementById('repBtn'); if(rb)rb.click(); }; }catch(_){}   /* 2.478 — 병합 헤더의 PDF 프록시 */
+    [].forEach.call(wrap.querySelectorAll('[data-sq-plink]'),function(b){ b.onclick=function(){ try{ var a=idpSaveApi(); if(a&&a.idpLink&&a.idpLink.inviteFor)a.idpLink.inviteFor(b.getAttribute('data-sq-plink'),b.getAttribute('data-sq-plabel')||''); }catch(_){} }; });   /* 3.042 — 선수별 초대 링크(UX-15) */
     [].forEach.call(wrap.querySelectorAll('[data-sq-invite]'),function(b){ b.onclick=function(){ try{ var a=idpSaveApi(); if(a&&a.idpLink&&a.idpLink.invite)a.idpLink.invite(); }catch(_){} }; });   /* 3.039 — «오늘» 빈 화면의 선수 초대(셸의 합류 코드 창) */
     [].forEach.call(wrap.querySelectorAll('[data-sqe-mode]'),function(b){ b.onclick=function(){
       var nx=b.dataset.sqeMode||'eval', isScope=(nx==='req'||nx==='today'||nx==='qa');   /* 2.467 — 공통질문도 범위 세그(주석 2.409와 코드가 어긋나 평가→공통질문→선수가 이야기로 튕겼다, 1판) */   /* 2.163 */
@@ -10267,9 +10276,22 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   function ilcJ(w,t){var s=String(w||"").trim(),c=s.charCodeAt(s.length-1),j=(c>=0xAC00&&c<=0xD7A3)?(c-0xAC00)%28:-1;if(t==="으로")return s+(j<0?"(으)로":(j===0||j===8)?"로":"으로");var A=t==="은는"?["은","는"]:["이","가"];return s+(j<0?"("+A[0]+")"+A[1]:j?A[0]:A[1]);}
   function ilcLabel(p){return p?((p.num?'#'+p.num+' ':'')+String(p.name||'')):'';}
+  /* 3.042 — 선수별 초대 링크로 합류했으면(셸이 둔 ps_invite_pending_v1 — 이 팀 · 이 계정) 고르지 않고 그 선수로 claim 을 남긴다.
+     토큰을 함께 남기면 링크를 만든 임원 기기가 확인 없이 잇는다(scout.html ilAutoLinkByToken). 이미 다른 사람에게 이어진 선수면 평소처럼 고르기 */
+  function ilcFromLink(st){
+    try{
+      var pd=JSON.parse(localStorage.getItem('ps_invite_pending_v1')||'null'),w=teamWsObj();
+      if(!pd||!pd.pid||!pd.tk||!pd.wid||!w||String(pd.wid)!==String(w.id)||(pd.uid&&pd.uid!==st.uid))return null;
+      localStorage.removeItem('ps_invite_pending_v1');
+      if(st.taken[String(pd.pid)])return null;
+      var lp=(st.roster||[]).filter(function(p){return String(p.id)===String(pd.pid);})[0]||null;
+      return {pid:String(pd.pid),num:lp?String(lp.num||''):'',name:lp?String(lp.name||''):'',at:Date.now(),tk:String(pd.tk),via:'link'};
+    }catch(_){return null;}
+  }
   function rIdpClaim(){
     var st=ilcState();if(!st)return '';
     var c=doc.claim&&typeof doc.claim==='object'?doc.claim:null;
+    if(!c&&!st.mine){ var lc=ilcFromLink(st); if(lc){ doc.claim=c=lc; setTimeout(function(){try{save();gToast('초대 링크로 합류했어요 — 코치가 확인하면 '+(lc.name?ilcJ((lc.num?'#'+lc.num+' ':'')+lc.name,'으로'):'명단의 내 이름으로')+' 이어져요');}catch(_){}},0); } }
     if(st.mine){
       /* 연결 완료 — claim 은 정리한다(그릴 때 바로 쓰지 않고 한 박자 뒤에, 다시 그리지 않고) */
       if(c){var same=!c.none&&String(c.pid||'')===st.mine,lbl='';
