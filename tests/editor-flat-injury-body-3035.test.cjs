@@ -71,6 +71,7 @@ test('3.035 release note and cache',()=>{
   const e=notes.entries().find(x=>x.id==='2026-10-15-v3-035-editor-flat-injury-body');assert.ok(e);
   assert.match(e.title,/v3\.035/);assert.equal(e.changes.length,3);
   assert.match(e.changes[0],/평면 · 훈련 피치/);assert.match(e.changes[1],/그리드/);assert.match(e.changes[2],/사람 모형/);
-  assert.match(R('sw.js'),/const CACHE = 'process-3\.035';/);
-  assert.match(R('studio/app.html'),/window\.PS_BUILD='3\.035';/);
+  /* 3.036 부터는 판이 올라간다 — 3.035 이상이면 된다 */
+  assert.ok(parseFloat(/const CACHE = 'process-(3\.\d+)';/.exec(R('sw.js'))[1])>=3.035);
+  assert.ok(parseFloat(/window\.PS_BUILD='(3\.\d+)';/.exec(R('studio/app.html'))[1])>=3.035);
 });

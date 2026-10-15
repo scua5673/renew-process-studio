@@ -3151,16 +3151,38 @@ body.bc-tilt3d #lineLayer [stroke-width="3.2"]{stroke-width:2.3}body.bc-tilt3d #
 </style>
 <style id="ps-2977-tone">html body .menurow.ps-tone-off:not(#_){display:none!important}</style>
 <style id="ps-3010-settings">/* 3.010 — 3D 설정 줄은 3D 를 켰을 때만 · 광고판 문구 입력 칸 · 보드 설정 묶음 제목(.bs-sec) · 내 설정(.bs-preset) */
-html body:not(.bc-tilt3d) .menurow.ps-tilt-row:not(#_),html body:not(.bc-tilt3d) #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .menurow.ps-tilt-row{display:none!important}
+html body:not(.bc-tilt3d) .menurow.ps-tilt-row:not(#_),html body:not(.bc-tilt3d) #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .menurow.ps-tilt-row,html body:not(.bc-tilt3d) #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .bs-sec.ps-tilt-row{display:none!important}   /* 3.036 — 평면에서는 «3D 경기장» 묶음 제목도 */
 /* 2.978 의 잔디 톤 줄 숨김(.ps-tone-off)도 figma-premium 의 «.menurow display:flex!important»(id 하나·클래스 셋)에 눌려 네이비·화이트에서도 보였다 — 같은 자리에서 이긴다 */
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .menurow.ps-tone-off{display:none!important}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop #tiltAdRow#tiltAdRow input#tiltAdInput.ps-tilt-ad{flex:1 1 0!important;width:0!important;min-width:0!important}
 html body .menurow input.ps-tilt-ad:not(#_){flex:1 1 auto;min-width:0;width:auto;height:28px;padding:0 9px;border:1px solid var(--line,#e3e6ea);border-radius:8px;background:var(--surface,#fff);color:var(--ink,#14161A);font-size:12px;font-weight:600;box-sizing:border-box}
 html body .menurow input.ps-tilt-ad:not(#_):focus{outline:2px solid var(--accent,#2f6bff);outline-offset:0;border-color:transparent}
-html body #viewMenu .bs-sec:not(#_){font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--txt-dim,#646A73);margin:10px 0 2px;padding-top:8px;border-top:1px solid var(--line,#eceef1)}
-html body #viewMenu .bs-sec.bs-first:not(#_){border-top:0;padding-top:2px;margin-top:4px}
-html body:not(.ps-dock) #cmd-board-settings-pop[data-bs-tab="view"] #viewMenu .bs-sec[data-bs-tab="pitch"]:not(#_),
-html body:not(.ps-dock) #cmd-board-settings-pop[data-bs-tab="pitch"] #viewMenu .bs-sec[data-bs-tab="view"]:not(#_){display:none}
+html body :is(#viewMenu,#moreMenu) .bs-sec:not(#_){font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--txt-dim,#646A73);margin:10px 0 2px;padding-top:8px;border-top:1px solid var(--line,#eceef1)}   /* 3.036 — #moreMenu(배치 탭)의 «선수 불러오기» 제목도 */
+html body :is(#viewMenu,#moreMenu) .bs-sec.bs-first:not(#_){border-top:0;padding-top:2px;margin-top:4px}
+/* 3.036 — 탭마다 제 줄만: #viewMenu 의 자식(묶음 제목 · 줄 · 안내)은 data-bs-tab 이 패널의 탭과 다르면 숨는다. 'board'(내 스타일)는 운동장 · 선수 표시 둘 다 */
+html body:not(.ps-dock) #cmd-board-settings-pop:not([data-bs-tab="pitch"]) #viewMenu > [data-bs-tab="pitch"]:not(#_),
+html body:not(.ps-dock) #cmd-board-settings-pop:not([data-bs-tab="look"]) #viewMenu > [data-bs-tab="look"]:not(#_),
+html body:not(.ps-dock) #cmd-board-settings-pop:not([data-bs-tab="view"]) #viewMenu > [data-bs-tab="view"]:not(#_),
+html body:not(.ps-dock) #cmd-board-settings-pop:not([data-bs-tab="pitch"]):not([data-bs-tab="look"]) #viewMenu > [data-bs-tab="board"]:not(#_){display:none!important}
+/* 3.036 — 범위 칩 아래 탭 간격(내 화면은 앞 세 탭과 떼어 놓는다) · 안내 줄 · 접힌 단축키 · 배치 카드의 두 단추 · 숨김 규칙(상태 소스 줄 · 훈련 격자 · 3D 꾸밈 · 편집기 · 그리드 판) */
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .cmd-board-settings-tabs>button.bs-tab-me{margin-left:9px!important;position:relative}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .cmd-board-settings-tabs>button.bs-tab-me::before{content:"";position:absolute;left:-6px;top:7px;bottom:7px;width:1px;background:var(--line2,#D3D7DD)}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .bs-hint{display:block;font-size:10.5px;line-height:1.5;color:var(--txt-dim,#646A73);padding:0 2px 4px;margin:-2px 0 2px}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .menurow.cmd-settings-state-source{display:none!important}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .menurow.ps-train-off{display:none!important}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .menurow.ps-deco-off{display:none!important}
+html body:not(.editing) #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop #bsEditorHint{display:none!important}
+html body.editing #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop :is(#pitchSpecSeg [data-spec^="grid"],#squadGrpRow,#bsLoadSec,#bsSavedTeamRow,#cmd-board-default-row,#bsDefaultHint,.bs-sec-newboard){display:none!important}
+html body:not(.editing) #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop #bsBlankHint,html body:not(.ps-blank-spec) #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop #bsBlankHint{display:none!important}
+html body.editing.ps-blank-spec #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop :is(#pitchSpecRow,#bsGrassRow,#bsLineRow,#grassToneBRow,#grassTonePRow,#cmd-board-settings-pitchview,#cmd-board-settings-pvside,#cmd-board-settings-pitchn){display:none!important}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys{margin:10px 0 2px;padding-top:8px;border-top:1px solid var(--line,#eceef1)}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys>summary{cursor:pointer;font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--txt-dim,#646A73);list-style:none;display:flex;align-items:center;gap:6px;padding:0 0 6px}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys>summary::-webkit-details-marker{display:none}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys>summary::before{content:"▸";font-size:10px}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys[open]>summary::before{content:"▾"}
+#emptyHint .eh-acts{display:flex;gap:6px;align-items:stretch}
+#emptyHint .eh-acts>#ehGo{flex:1.4 1 0;margin:0;min-width:0}
+#emptyHint .eh-acts>#loadSquadBtn{flex:1 1 0;justify-content:center;min-width:0;white-space:nowrap}
 html body #viewMenu .bs-preset-row:not(#_){display:flex;align-items:center}
 html body #viewMenu .bs-presets:not(#_){flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 html body #viewMenu .bs-presets[hidden]:not(#_),html body #viewMenu .bs-preset-form[hidden]:not(#_){display:none}
@@ -4497,7 +4519,9 @@ function isPosLabel(){return state.label==="pos"||state.label==="fpos";}   /* 2.
 function PR(){const sp=pitchSpec();if(sp===PITCH_SPECS.fifa||sp.blank)return {L,R,T,B,PW,PH,CX,CY};   /* 2.989 — 그리드 판도 판 전체 */
   const pw=M2U(sp.len),ph=M2U(sp.wid),l=CX-pw/2,t=CY-ph/2;return {L:l,R:l+pw,T:t,B:t+ph,PW:pw,PH:ph,CX,CY};}
 window.__pitchSpec=function(){return state.pitchSpec||"fifa";};
-window.__syncPitchSpecUI=function(){try{var k=state.pitchSpec||"fifa",_bl=!!(PITCH_SPECS[k]&&PITCH_SPECS[k].blank);document.querySelectorAll("#pitchSpecSeg button").forEach(function(b){var s=b.getAttribute("data-spec");b.classList.toggle("on",s===k||(_bl&&!!(PITCH_SPECS[s]&&PITCH_SPECS[s].blank)));});}catch(_){}
+window.__syncPitchSpecUI=function(){try{var k=state.pitchSpec||"fifa",_bl=!!(PITCH_SPECS[k]&&PITCH_SPECS[k].blank);document.querySelectorAll("#pitchSpecSeg button").forEach(function(b){var s=b.getAttribute("data-spec");b.classList.toggle("on",s===k||(_bl&&!!(PITCH_SPECS[s]&&PITCH_SPECS[s].blank)));});
+    document.body.classList.toggle("ps-blank-spec",_bl); var _dr=document.getElementById("tiltDecoRow"); if(_dr)_dr.classList.toggle("ps-deco-off",_bl);   /* 3.036 — 그리드 판: 편집기의 운동장 줄 숨김(body.ps-blank-spec) · 3D «꾸밈» 줄은 효과가 없어(tiltDecoNow = 잔디만) 숨긴다 */
+  }catch(_){}
   try{window.__renderEpSurface&&window.__renderEpSurface();}catch(_){}};   /* 2.989 — 그리드 판(어느 넓이든)이면 «그리드» 단추가 켜지고, 편집기 «바탕» 줄도 따라온다 */
 window.__setPitchSpec=function(k){if(!PITCH_SPECS[k])k="fifa";if((state.pitchSpec||"fifa")===k)return;
   var _wasBl=isBlankSpec(),_bl=!!PITCH_SPECS[k].blank; if(_wasBl&&_bl)return;   /* 2.989 — 그리드 판끼리(판 넓이)는 __setGridArea 가 내용을 함께 줄이고 늘린다 */
@@ -7883,6 +7907,8 @@ window.__syncGrassToneUI=function(){ try{
   document.querySelectorAll("#grassTonePSeg button[data-gp]").forEach(function(b){ var on=b.getAttribute("data-gp")===a[1]; b.classList.toggle("on",on); b.setAttribute("aria-pressed",String(on)); });
   document.querySelectorAll(".menurow.ps-tone-row").forEach(function(r){ r.classList.toggle("ps-tone-off",!real); });
 }catch(_){} };
+/* 3.036 — 훈련 격자 줄(보드 설정 › 운동장 › 바탕)은 피치=훈련일 때만 보인다(buildTrainGrid 가 다른 피치에선 바로 돌아간다 — 늘 보여 «왜 안 바뀌지» 하던 줄) */
+window.__syncTrainGridRowUI=function(){ try{ var on=(document.documentElement.dataset.pitch||"")==="train"; document.querySelectorAll(".menurow.ps-train-row").forEach(function(r){ r.classList.toggle("ps-train-off",!on); }); }catch(_){} };
 window.__setGrassTone=function(k){ k=grassToneKey(k); _lookFreeze();
   /* 피치가 실사가 아니면(단축키로 바꾼 경우) 실사 잔디로 — 톤은 실사 잔디에만 보인다 */
   try{ if(state.pitchImg!=="@real"){ var rb=document.querySelector('#pitchSeg button[data-p="real"]'); if(rb){ window.__psUserClick=1; try{rb.click();}finally{window.__psUserClick=0;} } } }catch(_){}   /* 2.982 — 사람이 톤을 고른 것 */
@@ -15260,7 +15286,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     const TOOL_NAMES={move:"이동·선택",run:"선수 이동",pass:"패스",dribble:"드리블",line:"직선",dashline:"점선",link:"연결선",poly:"다각형",free:"자유선",rect:"구역",ellipse:"원형 구역",rectline:"사각형(실선)",rectdash:"사각형(점선)",text:"텍스트 라벨",eraser:"지우개"};
     /* 2.975 — «보드» 탭(사용자 "작전판에 보드 설정과 펜색상도 전부 단축키로" · "저장하기 단축키도"). 보드 설정 버튼을 그대로 눌러 준다 — 동작이 두 벌이 되지 않게. */
     const PEN_COLS=[["#1c1c1e","검정"],["#ff453a","빨강"],["#ff9f0a","주황"],["#ffd60a","노랑"],["#30d158","초록"],["#0a84ff","파랑"],["#5ac8fa","하늘"],["#5e5ce6","남보라"],["#bf5af2","보라"],["#ff375f","분홍"],["#8e8e93","회색"],["#ffffff","흰색"]];
-    const BOARD_ACTS={save:"저장",boardSettings:"보드 설정 열기·닫기",shapeCycle:"선수 모양 바꾸기",labelCycle:"표시(번호·포지션) 바꾸기",lineToggle:"라인 표시·숨김",gridCycle:"전술 그리드 바꾸기",pitchCycle:"피치 색 바꾸기",specCycle:"규격 바꾸기",pitchViewCycle:"운동장 범위 바꾸기",pitchViewSide:"범위 — 우리 쪽·상대 쪽",pitchNCycle:"운동장 개수 바꾸기",rotate:"운동장 90° 회전",sizeUp:"토큰 크게",sizeDown:"토큰 작게",snapToggle:"끌기 자석 켜기·끄기",grassCycle:"잔디 줄무늬 바꾸기",grassBright:"실사 잔디 밝기 바꾸기",grassPale:"실사 잔디 연하기 바꾸기",tiltToggle:"보드 보기 평면·3D",penNext:"펜 색 다음",penPrev:"펜 색 이전"};
+    const BOARD_ACTS={save:"저장",boardSettings:"보드 설정 열기·닫기",shapeCycle:"선수 모양 바꾸기",labelCycle:"칩 글자(번호·포지션) 바꾸기",lineToggle:"라인 표시·숨김",gridCycle:"전술 구역 바꾸기",pitchCycle:"피치 색 바꾸기",specCycle:"규격 바꾸기",pitchViewCycle:"운동장 범위 바꾸기",pitchViewSide:"범위 — 우리 쪽·상대 쪽",pitchNCycle:"운동장 개수 바꾸기",rotate:"운동장 90° 회전",sizeUp:"토큰 크게",sizeDown:"토큰 작게",snapToggle:"끌기 자석 켜기·끄기",grassCycle:"잔디 줄무늬 바꾸기",grassBright:"실사 잔디 밝기 바꾸기",grassPale:"실사 잔디 연하기 바꾸기",tiltToggle:"보드 보기 평면·3D",penNext:"펜 색 다음",penPrev:"펜 색 이전"};
     PEN_COLS.forEach(function(c,i){ BOARD_ACTS["pen"+i]="펜 색 — "+c[1]; });
     const BOARD_IDS=Object.keys(BOARD_ACTS);
     Object.assign(TOOL_NAMES,ANIM_ACTS,BOARD_ACTS); const KEY_IDS=TOOLS.concat(ANIM_IDS,BOARD_IDS);
@@ -16854,6 +16880,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   /* 피치 외형을 항목 snap 값으로 적용 (전역 공유 방지) */
   function applyPitchState(theme, custom){
+    try{ setTimeout(function(){ try{ if(window.__syncTrainGridRowUI)window.__syncTrainGridRowUI(); }catch(_){} },0); }catch(_){}   /* 3.036 — 훈련 격자 줄은 피치=훈련일 때만(적용이 끝난 뒤 한 번) */
     /* 2.365 — 피치가 언제·어디서 바뀌었는지 자국을 남긴다(사용자 "운동장이 색이 막 바뀌어").
        부르는 자리가 셋이라(스냅 복원 6079/6080 · 훈련 편집기 'train' 9480 · 되돌리기 9566)
        화면만 봐서는 누가 바꿨는지 알 수 없었다. 부팅 몇 번뿐이라 비용은 없다.
@@ -21635,20 +21662,27 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","false");panel.setAttribute("aria-label","보드 설정");panel.setAttribute("aria-hidden","true");
     var head=make("div",null,"cmd-board-settings-head"),titleBox=make("div",null,"cmd-board-settings-titlebox");
     titleBox.appendChild(make("strong",null,"cmd-board-settings-title","보드 설정"));
-    titleBox.appendChild(make("span",null,"cmd-board-settings-scope","작전판"));
-    var close=make("button","cmd-board-settings-close","cmd-board-settings-close","×");close.type="button";close.title="작전판 설정 닫기";close.setAttribute("aria-label","작전판 설정 닫기");
+    /* 3.036 — 머리의 고정 칩 «작전판» → 탭마다 바뀌는 범위 칩(«이 보드에 저장» · «바로 적용» · «이 기기에만» · 편집기에서는 «이 훈련에 저장») */
+    var scopeChip=make("span",null,"cmd-board-settings-scope","이 보드에 저장");titleBox.appendChild(scopeChip);
+    var close=make("button","cmd-board-settings-close","cmd-board-settings-close","×");close.type="button";close.title="보드 설정 닫기";close.setAttribute("aria-label","보드 설정 닫기");
     head.appendChild(titleBox);head.appendChild(close);panel.appendChild(head);
 
-    var tabs=make("div",null,"cmd-board-settings-tabs");tabs.setAttribute("role","tablist");tabs.setAttribute("aria-label","작전판 설정 범주");
-    var viewTab=make("button","cmd-board-settings-view-tab",null,"보기"),pitchTab=make("button","cmd-board-settings-pitch-tab",null,"운동장"),layoutTab=make("button","cmd-board-settings-layout-tab",null,"선수");   /* 2.222 — 세 탭(사용자) · 2.460 — '배치'→'선수'(사용자): 2.459 정리 뒤 이 탭에 남은 것은 선수 불러오기(선발 11명·선수단·명단)와 지우기뿐 — 이름이 내용을 따라간다 */
-    var formTab=make("button","cmd-board-settings-form-tab",null,"배치");   /* 2.277 네 번째 탭 · 2.497 — 라벨 '포메이션'→'배치'(사용자 — 좁은 팝에서 두 줄로 꺾이던 이름) */
-    var keysTab=make("button","cmd-board-settings-keys-tab",null,"단축키");   /* 2.495 — 다섯째 탭(사용자 "보드 설정에 단축키 설정 만들어줘") */
-    [formTab,viewTab,pitchTab,layoutTab,keysTab].forEach(function(b){b.type="button";b.setAttribute("role","tab");tabs.appendChild(b);});panel.appendChild(tabs);
+    /* ══ 3.036 · 네 탭 — 운동장 · 선수 표시 · 배치 | 내 화면(사용자 «보드 설정 위계를 잘 만들어보자 — 메뉴들이 좀 안 맞게 막 들어간 것 같아») ═══════
+       탭 하나 = 저장 범위 하나. 운동장 · 선수 표시의 줄은 이 보드와 함께 저장되는 값(lookKeys · captureSnap), 배치는 누르면 보드에 바로 들어가는 동작,
+       내 화면은 이 기기에만 남는 값(ps_board_tilt3d · ps_tilt3d_opts_v1 · cs_drag_snap_v1 · cs_board_default_v1 · cs_tool_shortcuts_v1).
+       옛 «보기» 탭이 기기 줄 일곱(3D · 카메라 · 경기장 · 광고판 · 분위기 · 브랜딩 · 끌기 자석)과 보드 줄 여덟(분석 그래픽 · 칩 모양 일곱)을 한 탭에 섞어
+       «막 들어간» 느낌을 주었다. 옛 «선수» 탭(불러오기 · 지우기)은 «배치»에 합치고, 단축키는 «내 화면» 아래 접힌 묶음으로 내린다.
+       탭 키: pitch · look · form · view(옛 layout → form, keys → view 로 이어 준다 — __psOpenFormation · 셸 · 테스트의 "form" · "view" 는 그대로). */
+    var tabs=make("div",null,"cmd-board-settings-tabs");tabs.setAttribute("role","tablist");tabs.setAttribute("aria-label","보드 설정 범주");
+    var pitchTab=make("button","cmd-board-settings-pitch-tab",null,"운동장"),lookTab=make("button","cmd-board-settings-look-tab",null,"선수 표시");
+    var formTab=make("button","cmd-board-settings-form-tab",null,"배치");   /* 2.277 네 번째 탭 · 2.497 — 라벨 '포메이션'→'배치' · 3.036 — 옛 «선수» 탭(불러오기 · 지우기)을 합쳤다 */
+    var viewTab=make("button","cmd-board-settings-view-tab",null,"내 화면");viewTab.classList.add("bs-tab-me");viewTab.title="이 기기에서 보는 방식 — 보드엔 저장되지 않아요";   /* 3.036 — 옛 «보기» · 기기 값만 · 2.495 의 단축키는 이 아래 접힌 묶음 */
+    [pitchTab,lookTab,formTab,viewTab].forEach(function(b){b.type="button";b.setAttribute("role","tab");tabs.appendChild(b);});panel.appendChild(tabs);
     var content=make("div",null,"cmd-board-settings-content"),viewPane=make("div","cmd-board-settings-view","cmd-board-settings-pane"),layoutPane=make("div","cmd-board-settings-layout","cmd-board-settings-pane"),formPane=make("div","cmd-board-settings-form","cmd-board-settings-pane"),keysPane=make("div","cmd-board-settings-keyspane","cmd-board-settings-pane");
-    keysPane.setAttribute("role","tabpanel");keysPane.setAttribute("aria-labelledby",keysTab.id);keysTab.setAttribute("aria-controls",keysPane.id);
-    viewPane.setAttribute("role","tabpanel");viewPane.setAttribute("aria-labelledby",viewTab.id);layoutPane.setAttribute("role","tabpanel");layoutPane.setAttribute("aria-labelledby",layoutTab.id);
+    keysPane.setAttribute("role","tabpanel");keysPane.setAttribute("aria-labelledby",viewTab.id);
+    viewPane.setAttribute("role","tabpanel");viewPane.setAttribute("aria-labelledby",pitchTab.id);layoutPane.setAttribute("role","tabpanel");layoutPane.setAttribute("aria-labelledby",formTab.id);
     formPane.setAttribute("role","tabpanel");formPane.setAttribute("aria-labelledby",formTab.id);formTab.setAttribute("aria-controls",formPane.id);
-    viewTab.setAttribute("aria-controls",viewPane.id);layoutTab.setAttribute("aria-controls",layoutPane.id);
+    pitchTab.setAttribute("aria-controls",viewPane.id);lookTab.setAttribute("aria-controls",viewPane.id);viewTab.setAttribute("aria-controls",viewPane.id);
 
     /* 원본 컨트롤 노드를 그대로 옮겨 포메이션·명단·동적 대형·삭제 핸들러를 보존한다. */
     viewMenu.classList.remove("on");moreMenu.classList.remove("on");
@@ -21661,9 +21695,9 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     var clearDraw=id("clearDrawBtn"),clearPlayers=id("clearPlayersBtn"),reset=id("resetBtn");
     var clearRow=(clearDraw&&clearDraw.closest(".menurow"))||(clearPlayers&&clearPlayers.closest(".menurow")),resetRow=reset&&reset.closest(".menurow");
     var deleteHeading=null;[].some.call(moreMenu.querySelectorAll(":scope > .menusec"),function(sec){if(sec.textContent.trim()==="지우기"){deleteHeading=sec;return true;}return false;});
-    if(reset)reset.textContent="기본 배치로 초기화";
+    if(reset)reset.textContent="보드 초기화";   /* 3.036 — «기본 배치로 초기화»: 확인 창이 이미 그리드 · 방향 · 크기 · 팀 색까지 되돌린다고 말하므로 «배치»를 뺀다 */
     if(clearRow||resetRow){
-      var danger=make("details",null,"cmd-board-settings-danger"),summary=make("summary",null,null,"초기화 및 삭제"),dangerBody=make("div",null,"cmd-board-settings-danger-body");
+      var danger=make("details",null,"cmd-board-settings-danger"),summary=make("summary",null,null,"지우기·초기화"),dangerBody=make("div",null,"cmd-board-settings-danger-body");   /* 3.036 — «초기화 및 삭제» → «지우기·초기화»(배치 탭 맨 아래) */
       danger.appendChild(summary);if(clearRow)dangerBody.appendChild(clearRow);if(resetRow&&resetRow!==clearRow)dangerBody.appendChild(resetRow);danger.appendChild(dangerBody);
       if(deleteHeading)deleteHeading.remove();
     }
@@ -21734,7 +21768,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       return sync;
     })();
     var defaultRow=make("div","cmd-board-default-row","menurow");
-    defaultRow.appendChild(make("span",null,"menulbl","기본 세팅"));
+    defaultRow.appendChild(make("span",null,"menulbl","기본값"));   /* 3.036 — «기본 세팅» → «기본값»(내 화면 › 새 보드 묶음 안이라 «새 보드»가 제목에 있다) */
     var defaultSeg=make("div",null,"seg");
     /* 3.031 — «현재 보드 저장» → «새 보드로 정하기»: «보드 저장»(지금 보드 저장)과 헷갈려 눌리면 그 뒤 «새 보드»가 늘 그 선수들로 시작했다(오류 제보 88a82188 후속) */
     var defaultSave=make("button","cmd-board-default-save",null,"새 보드로 정하기");defaultSave.type="button";defaultSave.title="지금 보드(배치·운동장·색)를 «새 보드»의 기본 세팅으로 — «새 보드»를 누르면 이 배치로 시작할 수 있어요";
@@ -21744,18 +21778,16 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
     defaultSeg.appendChild(defaultSave);defaultSeg.appendChild(defaultClear);defaultRow.appendChild(defaultSeg);
     function syncDefaultRow(){try{var on=!!(window.__psGetBoardDefault&&window.__psGetBoardDefault());defaultClear.disabled=!on;defaultClear.classList.toggle("on",on);}catch(_){}}
     window.__syncBoardDefaultUI=syncDefaultRow;syncDefaultRow();
-    formPane.appendChild(defaultRow);
-    /* 2.222 — 보기 행을 '보기'(선수 모양·표시·라인·크기) / '운동장'(전술 그리드·피치·개수·범위·회전)으로 나눈다. 노드는 안 옮기고 data-bs-tab 만 */
-    try{var PITCH_LBL={"규격":1,"전술 그리드":1,"피치":1,"운동장 개수":1,"운동장 범위":1,"확대 쪽":1,"운동장 회전":1,"운동장 방향":1,"잔디 줄무늬":1,"원근 뷰":1,"밝기":1,"연하기":1,"라인":1,"훈련 격자":1};   /* 2.272 · 2.978 실사 잔디 톤 · 3.010 라인·훈련 격자는 운동장 쪽 */
-      [].forEach.call(viewMenu.querySelectorAll(".menurow"),function(row){var l=row.querySelector(".menulbl"),t=l?l.textContent.trim():"";row.setAttribute("data-bs-tab",PITCH_LBL[t]?"pitch":"view");});}catch(_){}
+    /* 3.036 — 기본값 줄은 cs_board_default_v1(이 기기)에 저장되는 값이라 «내 화면 › 새 보드»에 둔다(아래 PLAN). 2.222 의 라벨 기반 PITCH_LBL 태깅은 id 기반 PLAN 이 대신한다 */
+    var defaultHint=make("div","bsDefaultHint","bs-hint","«새 보드»를 누르면 지금 정한 보드로 시작해요 · 지금 보드는 바뀌지 않아요");
     /* ══ 3.010 · 내 설정 줄 + 묶음 제목(사용자 «설정 패널 정리») ═══════════════════════════════════
        탭은 그대로(배치·보기·운동장·선수·단축키). 탭 안의 줄을 묶음으로 세운다 — 노드를 같은 부모(#viewMenu) 안에서 순서만 바꾸므로
        줄마다 붙은 핸들러(문서 위임·노드 핸들러)는 그대로다. 묶음 제목(.bs-sec)도 줄처럼 data-bs-tab 을 달아 다른 탭에서 숨는다.
        목록에 없는 줄은 원래 순서대로 맨 뒤에 남는다(새 줄을 넣고 여기 안 적어도 사라지지 않는다). */
     var presetRow=(function(){
       var row=make("div","bsPresetRow","menurow bs-preset-row"),list=make("div","bsPresets","bs-presets"),form=make("div","bsPresetForm","bs-preset-form");
-      row.setAttribute("role","group");row.setAttribute("aria-label","내 설정");
-      var inp=document.createElement("input");inp.type="text";inp.id="bsPresetName";inp.maxLength=16;inp.placeholder="이름 (예: 경기 분석)";inp.setAttribute("aria-label","내 설정 이름");inp.autocomplete="off";inp.spellcheck=false;inp.setAttribute("enterkeyhint","done");
+      row.setAttribute("role","group");row.setAttribute("aria-label","내 스타일");   /* 3.036 — «내 설정» → «내 스타일»(운동장 · 선수 표시 값만 담는다 — 기기 설정인 3D 는 안 담는다) */
+      var inp=document.createElement("input");inp.type="text";inp.id="bsPresetName";inp.maxLength=16;inp.placeholder="이름 (예: 경기 분석)";inp.setAttribute("aria-label","내 스타일 이름");inp.autocomplete="off";inp.spellcheck=false;inp.setAttribute("enterkeyhint","done");
       var ok=make("button","bsPresetOk","bs-preset-ok","저장"),no=make("button","bsPresetNo",null,"취소");ok.type="button";no.type="button";
       form.appendChild(inp);form.appendChild(ok);form.appendChild(no);form.hidden=true;
       row.appendChild(list);row.appendChild(form);
@@ -21769,7 +21801,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
             if(armed===x.name){armed=null;lookPresetDelete(x.name);draw();return;}
             armed=x.name;draw();armT=setTimeout(function(){armed=null;draw();},3000);});   /* 잘못 눌러 지우지 않게 두 번 */
           chip.appendChild(ap);chip.appendChild(del);list.appendChild(chip); });
-        var add=make("button","bsPresetAdd","bs-preset-add",a.length?"＋ 저장":"＋ 지금 설정 저장");add.type="button";add.title="지금 보기·운동장 설정을 이름 붙여 저장";
+        var add=make("button","bsPresetAdd","bs-preset-add",a.length?"＋ 저장":"＋ 지금 스타일 저장");add.type="button";add.title="지금 운동장 · 선수 표시 설정을 이름 붙여 저장";
         add.addEventListener("click",function(e){e.stopPropagation();list.hidden=true;form.hidden=false;inp.value="";try{inp.focus();}catch(_){}});
         list.appendChild(add); }
       function close(){ form.hidden=true; list.hidden=false; }
@@ -21780,27 +21812,62 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       window.__syncLookPresetUI=draw; draw();
       return row; })();
     try{(function(){
-      var byLbl={};[].forEach.call(viewMenu.querySelectorAll(":scope > .menurow"),function(r){var l=r.querySelector(".menulbl"),t=l?l.textContent.trim():"";if(t&&!byLbl[t]&&!r.classList.contains("cmd-settings-state-source"))byLbl[t]=r;});
-      var PLAN=[["view","내 설정",[presetRow]],["view","화면",["보드 보기","카메라","경기장","광고판","분위기","팀 브랜딩"]],["view","분석",["분석 그래픽"]],["view","선수",["선수 모양","칩","크기","표시","이름표","이름표 크기","이름표 모양"]],["view","편집",["끌기 자석"]],   /* 3.029 — 분위기 · 팀 브랜딩 · 분석 */
-                ["pitch","운동장",["피치","밝기","연하기","잔디 줄무늬","라인","규격"]],["pitch","범위·방향",["운동장 개수","운동장 범위","확대 쪽","운동장 방향"]],["pitch","그리드",["전술 그리드","훈련 격자"]]];
+      /* ══ 3.036 · id 기반 PLAN(라벨을 바꿔도 줄이 «남은 줄»로 떨어지지 않는다 — 폰 시트 app.html 의 rowOf 와 같은 관례) ═══════════════
+         [탭 키, 묶음 제목, [컨트롤 id | 노드], 묶음 제목 클래스?]. 'board' 는 운동장 · 선수 표시 두 탭 맨 위에 같은 줄로 보인다.
+         탭 안 차례는 바탕 → 그 위에 그리는 것 → 보이는 범위. 다른 값에 딸린 줄(밝기 · 연하기 · 훈련 격자 · 확대 쪽 · 3D 경기장)은 그 값 바로 아래에서, 효과가 있을 때만 보인다.
+         노드는 같은 부모(#viewMenu) 안에서 순서만 바꾸므로 줄마다 붙은 핸들러(문서 위임 · 노드 핸들러)는 그대로다. */
+      var rowOf=function(x){ if(typeof x!=="string")return x; var e=document.getElementById(x); return e?(e.closest(".menurow")||e):null; };
+      var editorHint=make("div","bsEditorHint","bs-hint","훈련 편집기는 평면으로 열려요 · 나가면 원래대로"),snapHint=make("div","bsSnapHint","bs-hint","운동장 › 훈련 격자 칸에 붙어요"),blankHint=make("div","bsBlankHint","bs-hint","그리드 크기 · 모양은 오른쪽 «바탕»에서 고쳐요");
+      var PLAN=[["board","내 스타일",[presetRow]],
+                ["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","grassSeg"]],
+                ["pitch","선·구역",["lineSeg","zonePreset"]],
+                ["pitch","범위·방향",["cmdPitchViewSeg","cmdPitchSideSeg","cmdOrientSeg","cmdPitchNSeg"]],
+                ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","labelSeg"]],
+                ["look","이름표",["namePosSeg","nameSizeSeg","nameStyleSeg"]],
+                ["look","분석",["analysisSeg"]],
+                ["view","보기",["tiltSeg",editorHint]],
+                ["view","3D 경기장",["tiltCamSeg","tiltDecoSeg","tiltAdInput","tiltMoodSeg","tiltBrandSeg"],"ps-tilt-row"],
+                ["view","편집",["dragSnapSeg",snapHint]],
+                ["view","새 보드",[defaultRow,defaultHint],"bs-sec-newboard"]];
       var frag=document.createDocumentFragment(),first={};
-      PLAN.forEach(function(sec){ var rows=sec[2].map(function(x){return typeof x==="string"?byLbl[x]:x;}).filter(Boolean); if(!rows.length)return;
-        var h=make("div",null,"bs-sec"+(first[sec[0]]?"":" bs-first"),sec[1]);h.setAttribute("data-bs-tab",sec[0]);h.setAttribute("role","heading");h.setAttribute("aria-level","3");first[sec[0]]=1;
+      PLAN.forEach(function(sec){ var rows=sec[2].map(rowOf).filter(Boolean); if(!rows.length)return;
+        var h=make("div",null,"bs-sec"+(first[sec[0]]?"":" bs-first")+(sec[3]?" "+sec[3]:""),sec[1]);h.setAttribute("data-bs-tab",sec[0]);h.setAttribute("role","heading");h.setAttribute("aria-level","3");first[sec[0]]=1;
+        if(sec[0]==="board"){first.pitch=1;first.look=1;}   /* 내 스타일이 두 탭의 첫 묶음이다 */
         frag.appendChild(h);rows.forEach(function(r){r.setAttribute("data-bs-tab",sec[0]);frag.appendChild(r);}); });
       viewMenu.insertBefore(frag,viewMenu.firstChild);
+      /* 목록에 없는 줄은 «선수 표시» 끝에 — 사라지지는 않되 콘솔에 남긴다(새 줄을 넣으면 PLAN 에 적어야 한다) */
+      [].forEach.call(viewMenu.querySelectorAll(":scope > .menurow"),function(r){ var t=r.getAttribute("data-bs-tab"); if(r.classList.contains("cmd-settings-state-source")||t==="pitch"||t==="look"||t==="view"||t==="board")return; r.setAttribute("data-bs-tab","look"); viewMenu.appendChild(r); try{console.warn("boardSettings: PLAN 에 없는 줄 — 선수 표시 끝에 둔다",r);}catch(_){} });
+      /* 줄 id · 클래스(편집기 · 그리드 판 · 훈련 피치 숨김 규칙이 쓴다) */
+      try{ var _gr=rowOf("grassSeg"); if(_gr&&!_gr.id)_gr.id="bsGrassRow"; var _lr=rowOf("lineSeg"); if(_lr&&!_lr.id)_lr.id="bsLineRow"; var _tr=rowOf("trainGridSeg"); if(_tr){_tr.classList.add("ps-train-row"); if(!_tr.id)_tr.id="bsTrainGridRow";} }catch(_){}
+      /* 데스크톱 패널 라벨 — 겹치던 말을 정리한다(«표시»는 라인 «표시/숨김»과, «평면»은 보드 보기와 헷갈렸다). 정적 마크업 · 폰 시트(app.html relabel)는 그대로 */
+      try{ var DESK_LBL={labelSeg:"칩 글자",chip3dSeg:"입체 칩",zonePreset:"전술 구역",tiltDecoSeg:"꾸밈"};
+        Object.keys(DESK_LBL).forEach(function(k){ var r=rowOf(k),l=r&&r.querySelector(".menulbl"); if(l)l.textContent=DESK_LBL[k]; });
+        var c0=document.querySelector("#chip3dSeg button[data-c3='0']"),c1=document.querySelector("#chip3dSeg button[data-c3='1']"); if(c0)c0.textContent="끄기"; if(c1)c1.textContent="켜기"; }catch(_){}
+      try{ if(window.__syncTrainGridRowUI)window.__syncTrainGridRowUI(); if(window.__syncPitchSpecUI)window.__syncPitchSpecUI(); }catch(_){}
     })();}catch(_){}
-    /* 2.495 — 단축키 팬: 내장 단축키 안내 + 도구·토큰 인라인 편집기(즉시 저장) */
+    /* 3.036 — 배치 탭의 #moreMenu: 포메이션은 카드 하나(2.459 에 숨긴 우리 팀/상대 팀 줄은 design-v2.css 의 «.menurow display:flex!important»에 다시 새어 나왔다 — 상태 소스로만 남긴다),
+       «선수 불러오기» 묶음 제목, «저장 팀» 줄(떠 있던 전체 폭 단추를 줄로), «선발 11명»은 포메이션 카드의 [배치] 옆으로(1.841 의 :has(>#squadBtn) 규칙에 묻혀 실수로 숨어 있었다).
+       #loadAnalysisTeamBtn 은 init 가 나중에 넣을 수 있어 배치 탭을 고를 때마다 한 번 더 본다(selectTab). */
+    function tidyMoreMenu(){ try{
+      ["formHome","formAway"].forEach(function(k){ var e=id(k),r=e&&e.closest(".menurow"); if(r){ r.classList.add("cmd-settings-state-source"); r.hidden=true; } });
+      var sq=id("squadGrpRow"); if(sq&&!id("bsLoadSec")){ var h=make("div","bsLoadSec","bs-sec bs-first","선수 불러오기"); h.setAttribute("role","heading"); h.setAttribute("aria-level","3"); sq.before(h); var sl=sq.querySelector(".menulbl"); if(sl)sl.textContent="선수단"; }   /* 묶음 제목이 «선수 불러오기»라 줄 라벨은 «선수단»(A팀 · B팀 · C팀 · 전체) */
+      var alb=id("loadAnalysisTeamBtn"); if(alb&&sq&&!alb.closest("#bsSavedTeamRow")){ var r2=make("div","bsSavedTeamRow","menurow"); r2.appendChild(make("span",null,"menulbl","저장 팀")); alb.textContent="불러오기"; alb.style.cssText="flex:1 1 auto;justify-content:center;margin:0"; r2.appendChild(alb); sq.after(r2); }
+      var lsb=id("loadSquadBtn"),eg=id("ehGo"); if(lsb&&eg&&!id("ehActs")){ var acts=make("div","ehActs","eh-acts"); eg.replaceWith(acts); acts.appendChild(eg); lsb.classList.remove("primary"); lsb.classList.add("ghost"); lsb.removeAttribute("style"); lsb.title="고른 우리 팀 포메이션에 맞춰 선수단의 선발 11명만 배치"; acts.appendChild(lsb); }
+    }catch(_){} }
+    tidyMoreMenu();
+    /* 2.495 — 단축키 팬: 내장 단축키 안내 + 도구·토큰 인라인 편집기(즉시 저장) · 3.036 — «내 화면» 아래 접힌 묶음(<details class="bs-keys">). 펼칠 때 저장소 기준으로 그린다 */
     (function(){
+      var det=make("details",null,"bs-keys"),sum=make("summary",null,null,"단축키");det.appendChild(sum);
       var cap=document.createElement("div"); cap.style.cssText="font-size:11px;color:var(--txt-dim,#646A73);line-height:1.6;padding:2px 2px 8px;border-bottom:1px solid var(--line,#e3e6ea);margin-bottom:10px";
       cap.textContent="기본: ⌘Z 되돌리기 · ⇧⌘Z 다시 · ⌘C/V/X 복사·붙여넣기·잘라내기 · ⌘D 복제 · ⌘A 전체 · [ ] 앞뒤 · 방향키 미세 이동(⇧=1m) · ⌫ 삭제";
-      keysPane.appendChild(cap);
+      det.appendChild(cap);
       var s1=document.createElement("div"); s1.textContent="도구 단축키 — 누르면 그 도구로"; s1.style.cssText="font-size:11px;font-weight:800;color:var(--txt-dim,#646A73);margin:2px 2px 6px";
       var h1=document.createElement("div");
-      keysPane.appendChild(s1); keysPane.appendChild(h1);
+      det.appendChild(s1); det.appendChild(h1); keysPane.appendChild(det); keysPane.__psDetails=det;
       keysPane.__psRemount=function(){
-        try{ if(window.__mountToolKeyEditor)window.__mountToolKeyEditor(h1); }catch(_){}
+        try{ if(det.open&&window.__mountToolKeyEditor)window.__mountToolKeyEditor(h1); }catch(_){}
       };
-      keysPane.__psRemount();
+      det.addEventListener("toggle",function(){ if(det.open)keysPane.__psRemount(); });
     })();
     viewPane.appendChild(viewMenu);layoutPane.appendChild(moreMenu);content.appendChild(formPane);content.appendChild(viewPane);content.appendChild(layoutPane);content.appendChild(keysPane);if(danger)content.appendChild(danger);panel.appendChild(content);document.body.appendChild(panel);
     viewMenu.__psMenuHome={p:viewPane,n:null};moreMenu.__psMenuHome={p:layoutPane,n:null};
@@ -21812,27 +21879,35 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       if(!ehHome)ehHome={p:e.parentNode,n:e.nextSibling};
       e.classList.add("eh-in-panel"); e.style.removeProperty("display");
       try{document.body.classList.remove("eh-open");}catch(_){}   /* 떠 있는 카드 자리잡기 규칙(figma-premium)을 끈다 */
-      formPane.appendChild(e); }
+      formPane.insertBefore(e,formPane.firstChild); }   /* 3.036 — 배치 탭 맨 위(옛 기본 세팅 줄은 내 화면으로 갔다) */
     function ehGoHome(){ var e=ehNode(); if(!e||!ehHome||e.parentNode!==formPane)return;
       e.classList.remove("eh-in-panel"); e.style.display=window.__ehForce?"block":"none";
       if(ehHome.n&&ehHome.n.parentNode===ehHome.p)ehHome.p.insertBefore(e,ehHome.n); else ehHome.p.appendChild(e); }
     panel.__psEhHome=ehGoHome;
 
+    var ALIAS={layout:"form",keys:"view"};   /* 3.036 — 옛 탭 키(셸 · 기억 · 테스트)를 이어 준다 */
+    function tabKey(){ return document.body.classList.contains("editing")?"ps_board_settings_tab_editor_v1":"ps_board_settings_tab_v2"; }   /* 편집기는 따로 기억한다 */
+    function savedTab(){ var v=null; try{ v=localStorage.getItem(tabKey()); }catch(_){}
+      if(!v){ try{ var o=localStorage.getItem("ps_board_settings_tab_v1"); if(o)v=({view:"look",layout:"form",keys:"view",form:"form",pitch:"pitch"})[o]||null; }catch(_){} }   /* 옛 기억은 한 번 옮긴다(«보기»에 있던 선수 줄은 «선수 표시»로) */
+      return (v==="pitch"||v==="look"||v==="form"||v==="view")?v:"pitch"; }
+    function scopeOf(name){ if(name==="form")return ["바로 적용","누르면 이 보드에 바로 들어가요"]; if(name==="view")return ["이 기기에만","이 기기에서 보는 방식 — 보드엔 저장되지 않아요"];
+      return document.body.classList.contains("editing")?["이 훈련에 저장","이 훈련과 함께 저장돼요"]:["이 보드에 저장","이 보드와 함께 저장돼요"]; }
     function selectTab(name){
-      if(name!=="layout"&&name!=="pitch"&&name!=="form"&&name!=="keys")name="view";
-      var isLayout=name==="layout",isForm=name==="form",isKeys=name==="keys";panel.setAttribute("data-bs-tab",name);
-      [[formTab,"form"],[viewTab,"view"],[pitchTab,"pitch"],[layoutTab,"layout"],[keysTab,"keys"]].forEach(function(pr){var on=pr[1]===name;pr[0].classList.toggle("on",on);pr[0].setAttribute("aria-selected",on?"true":"false");pr[0].tabIndex=on?0:-1;});
-      formPane.hidden=!isForm;viewPane.hidden=isLayout||isForm||isKeys;layoutPane.hidden=!isLayout;keysPane.hidden=!isKeys;
-      if(isKeys){ try{ keysPane.__psRemount(); }catch(_){} }   /* 탭 열 때마다 저장소 기준으로 다시 그림 */
-      if(isForm)ehIntoPanel(); else ehGoHome();   /* 2.277 */
-      try{localStorage.setItem("ps_board_settings_tab_v1",name);}catch(_){}
+      var orig=name; name=ALIAS[name]||name; if(name!=="pitch"&&name!=="look"&&name!=="form"&&name!=="view")name="pitch";
+      var isForm=name==="form",isView=name==="view";panel.setAttribute("data-bs-tab",name);
+      [[pitchTab,"pitch"],[lookTab,"look"],[formTab,"form"],[viewTab,"view"]].forEach(function(pr){var on=pr[1]===name;pr[0].classList.toggle("on",on);pr[0].setAttribute("aria-selected",on?"true":"false");pr[0].tabIndex=on?0:-1;if(on&&!isForm)viewPane.setAttribute("aria-labelledby",pr[0].id);});
+      formPane.hidden=!isForm;layoutPane.hidden=!isForm;viewPane.hidden=isForm;keysPane.hidden=!isView;   /* 배치 = 포메이션 카드 + #moreMenu(불러오기 · 지우기) · 내 화면 = #viewMenu 의 view 줄 + 접힌 단축키 */
+      if(isForm){ehIntoPanel();tidyMoreMenu();} else ehGoHome();   /* 2.277 */
+      if(isView){ try{ if(orig==="keys"&&keysPane.__psDetails)keysPane.__psDetails.open=true; keysPane.__psRemount(); }catch(_){} }   /* 옛 «단축키» 탭으로 열면 펼친다 · 펼쳐져 있으면 저장소 기준으로 다시 그림 */
+      try{ var sc=scopeOf(name); scopeChip.textContent=sc[0]; scopeChip.title=sc[1]; }catch(_){}
+      try{localStorage.setItem(tabKey(),name);}catch(_){}
       /* 2.287 — 탭마다 키가 달라진다. 열려 있으면 자리를 다시 잡아야 화면 밖으로 안 나간다 */
       try{ if(activePop===panel&&!bsPinnedMode())place(panel,view); }catch(_){}
     }
     panel.__psSelectTab=selectTab;   /* 2.277 — 밖에서 포메이션 탭을 열 수 있게 */
-    var savedTab="view";try{savedTab=localStorage.getItem("ps_board_settings_tab_v1")||"view";}catch(_){}
-    selectTab(savedTab);formTab.addEventListener("click",function(){selectTab("form");});viewTab.addEventListener("click",function(){selectTab("view");});pitchTab.addEventListener("click",function(){selectTab("pitch");});layoutTab.addEventListener("click",function(){selectTab("layout");});keysTab.addEventListener("click",function(){selectTab("keys");});
-    tabs.addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();var order=["form","view","pitch","layout","keys"],cur=order.indexOf(panel.getAttribute("data-bs-tab")||"view"),nx=order[(cur+(e.key==="ArrowRight"?1:order.length-1))%order.length];selectTab(nx);({form:formTab,view:viewTab,pitch:pitchTab,layout:layoutTab,keys:keysTab})[nx].focus();});
+    panel.__psSavedTab=savedTab;   /* 3.036 — 편집기 여닫이가 맥락별 탭 · 범위 칩을 다시 맞춘다(__psReplaceBoardSettings) */
+    selectTab(savedTab());pitchTab.addEventListener("click",function(){selectTab("pitch");});lookTab.addEventListener("click",function(){selectTab("look");});formTab.addEventListener("click",function(){selectTab("form");});viewTab.addEventListener("click",function(){selectTab("view");});
+    tabs.addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();var order=["pitch","look","form","view"],cur=order.indexOf(panel.getAttribute("data-bs-tab")||"pitch"),nx=order[(cur+(e.key==="ArrowRight"?1:order.length-1))%order.length];selectTab(nx);({pitch:pitchTab,look:lookTab,form:formTab,view:viewTab})[nx].focus();});
     panel.addEventListener("click",function(e){
       var action=e.target&&e.target.closest&&e.target.closest("#loadSquadBtn,#squadBtn,#rosterBtn,#clearDrawBtn,#clearPlayersBtn,#resetBtn");
       if(action&&!bsPinnedMode())closeCustom();
@@ -21877,7 +21952,8 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       toggleSettings("force-close");
     });
     window.__psToggleBoardSettings=toggleSettings;
-    window.__psReplaceBoardSettings=function(){try{if(activePop&&activePop.id==="cmd-board-settings-pop")place(activePop,activeButton);}catch(_){}};   /* 2.476 — 편집기 여닫이가 고정↔팝오버 자리를 다시 잡게(감사: 고정 패널이 편집기 좌상단을 덮었다) */
+    window.__psReplaceBoardSettings=function(){try{ var p=id("cmd-board-settings-pop"); if(p&&p.__psSelectTab&&p.__psSavedTab)p.__psSelectTab(p.__psSavedTab()); }catch(_){}   /* 3.036 — 편집기 ↔ 작전판: 맥락별로 기억한 탭 · 범위 칩(«이 훈련에 저장»)을 다시 맞춘다 */
+      try{if(activePop&&activePop.id==="cmd-board-settings-pop")place(activePop,activeButton);}catch(_){}};   /* 2.476 — 편집기 여닫이가 고정↔팝오버 자리를 다시 잡게(감사: 고정 패널이 편집기 좌상단을 덮었다) */
     var hidden=id("cmd-settings-hidden");if(!hidden){hidden=make("div","cmd-settings-hidden","cmd-settings-hidden");hidden.hidden=true;document.body.appendChild(hidden);}moreWrap.hidden=true;hidden.appendChild(moreWrap);
     viewWrap.classList.add("cmd-board-settings-wrap");
     bsShellChip();   /* 2.732 — 호출 구조는 유지하되 셸에서도 도크 칩을 숨기지 않는다. */
@@ -22036,9 +22112,11 @@ html.ps-in-shell body:not(.ps-dock).ps-bs-pinned :is(#ps-boost,#cmd-board-settin
 html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop) .cmd-board-settings-tabs{display:flex!important;gap:4px!important;margin:8px 14px 2px!important;padding:3px!important;border-radius:9px!important;background:var(--fill,#F1F3F5)!important;border:0!important}
 html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop) .cmd-board-settings-tabs>button{flex:1 1 0!important;height:30px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:var(--gray,#646A73)!important;font-size:11px!important;font-weight:600!important;box-shadow:none!important}
 html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop) .cmd-board-settings-tabs>button.on{background:var(--surface,#fff)!important;color:var(--ink,#14161A)!important;box-shadow:0 1px 2px rgba(0,0,0,.08)!important}
-html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop)[data-bs-tab="view"] #viewMenu .menurow[data-bs-tab="pitch"],
-html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop)[data-bs-tab="pitch"] #viewMenu .menurow[data-bs-tab="view"],
-html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop):not([data-bs-tab="layout"]) .cmd-board-settings-danger,
+html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop):not([data-bs-tab="pitch"]) #viewMenu>[data-bs-tab="pitch"],
+html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop):not([data-bs-tab="look"]) #viewMenu>[data-bs-tab="look"],
+html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop):not([data-bs-tab="view"]) #viewMenu>[data-bs-tab="view"],
+html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop):not([data-bs-tab="pitch"]):not([data-bs-tab="look"]) #viewMenu>[data-bs-tab="board"],
+html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop):not([data-bs-tab="form"]) .cmd-board-settings-danger,
 html.ps-page-board body:not(.ps-dock) :is(#ps-boost,#cmd-board-settings-pop):is(#ps-boost2,#cmd-board-settings-pop):is(#ps-boost3,#cmd-board-settings-pop) .cmd-board-settings-pane[hidden]{display:none!important}
 /* ══ 2.224 · 도크 위계 제안 A(사용자, 줄 키커 글자는 뺌): ① 오른쪽 끝 = 줄의 출구(내보내기·장비 색·보드 설정, spacer 로 밀어 같은 x) ② 파란 면은 1행 내보내기 하나(재생은 흰 면+파란 아이콘) ③ 묶음 라벨 편집·재생·색 ④ 묶음 안 소그룹 헤어라인(장비 4|6|+ · 도구 1|3|3|4|1) ⑤ 유니폼 칩은 선수 묶음 안 첫 자리 */
 html.ps-page-board body:not(.ps-dock) #ps-command-dock #cmd-scene-edit::before{content:"편집"}
@@ -23071,7 +23149,7 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
   #psSaveBar button:disabled{opacity:.55}
   #psSaveBar button:focus-visible{outline:2px solid #9AA8C4;outline-offset:2px}
   /* 포메이션 카드의 «배치»가 스크롤 아래로 잘리던 것 — 카드(#emptyHint, 스크롤 상자) 아래에 붙인다 */
-  #emptyHint>#ehGo{position:sticky;bottom:0;z-index:2}
+  #emptyHint>#ehGo,#emptyHint>.eh-acts{position:sticky;bottom:0;z-index:2}   /* 3.036 — [배치] + [선발 11명] 두 단추(.eh-acts) */
 }
 </style>
 <script>
