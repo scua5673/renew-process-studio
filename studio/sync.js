@@ -10685,6 +10685,8 @@ function boardLiveSave(raw,options){
 window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dataUnlocked:dataUnlocked,keys:KEYS,state:syncState,   /* 2.625 상태 한 줄 */
   reportSharedView:reportSharedView,
   boardLive:{version:2,scope:'personal',owner:boardLiveContext,get:boardLiveGet,save:boardLiveSave},
+  /* 3.034 — 선수 본인의 «코치 확인» 몸 상태만(서버 ps_idp_daily_mine). 선수에게 cs_idp_daily_v1 전체는 내려가지 않는다(PLAYER_BLIND · 20261015 마이그레이션) */
+  idpDailyMine:function(){ var w=activeWs(); if(!w)return Promise.resolve(null); return rpc('ps_idp_daily_mine',{wid:w}).then(function(o){ return o&&o.v===1&&o.days&&typeof o.days==='object'?o:null; }); },
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */
   rosterReady:function(wid){return rosterReady(wid||activeWs());},
   idpLink:{can:idpLinkCan,members:idpLinkMembers,set:idpLinkSet,invite:function(){ var w=activeWsObj(); if(w&&w.id)uiInvite(w.id); }},   /* 2.945 — 명단 칩·오늘 확인 카드 */

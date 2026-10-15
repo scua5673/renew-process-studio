@@ -19,4 +19,5 @@ BEGIN
   RAISE NOTICE '20261015 rollback: ps_can_read_key 되돌림';
 END
 $rollback$;
+DROP FUNCTION IF EXISTS public.ps_idp_daily_mine(uuid);
 COMMIT;

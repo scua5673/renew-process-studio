@@ -9,6 +9,9 @@ BEGIN
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid=to_regprocedure('public.ps_can_read_key(uuid,text)')) THEN RAISE EXCEPTION 'verify: SECURITY DEFINER 가 풀렸습니다'; END IF;
   SELECT array_to_string(proconfig, ',') INTO cfg FROM pg_proc WHERE oid=to_regprocedure('public.ps_can_read_key(uuid,text)');
   IF cfg IS NULL OR cfg NOT LIKE '%search_path%' THEN RAISE EXCEPTION 'verify: search_path 고정이 풀렸습니다'; END IF;
+  IF to_regprocedure('public.ps_idp_daily_mine(uuid)') IS NULL THEN RAISE EXCEPTION 'verify: ps_idp_daily_mine(uuid) 가 없습니다'; END IF;
+  IF NOT (SELECT prosecdef FROM pg_proc WHERE oid=to_regprocedure('public.ps_idp_daily_mine(uuid)')) THEN RAISE EXCEPTION 'verify: ps_idp_daily_mine 이 SECURITY DEFINER 가 아닙니다'; END IF;
+  IF has_function_privilege('public', 'public.ps_idp_daily_mine(uuid)', 'EXECUTE') THEN RAISE EXCEPTION 'verify: ps_idp_daily_mine 을 PUBLIC 이 실행할 수 있습니다'; END IF;
 END
 $verify$;
 SELECT 'player_daily_blind_verified' AS result;

@@ -89,5 +89,57 @@ test('the save strip and the shell say what to do instead of «저장됨» over 
  assert.match(html,/class="sb-vault" title="보관함에 항목으로 저장">보관함 저장<\/button>/,'phone strip names the action like the iPad button (CP-14)');
  assert.match(app,/d\.type==='boardDirty'\)\{ var _bd=!!d\.changed;/,'shell receives boardDirty');
  assert.match(app,/if\(window\.__psBoardDirty&&scope&&out\.kind!=='bad'&&out\.kind!=='busy'&&out\.kind!=='held'\)return \{kind:'pending',text:'보드 · 저장 전'/,'shell status overrides «저장됨»');
- assert.match(app,/_fbd\.addEventListener\('load',function\(\)\{ if\(window\.__psBoardDirty\)\{window\.__psBoardDirty=false;/,'a reloaded board frame resets the flag');
+});
+
+/* ── 3.034 코드 리뷰에서 확인된 경로 ── */
+const now=Date.now();
+const newerDraft=(x,at)=>[['ps_private_board_draft_v1:synthetic-user-a:unsaved',JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(x,now-1000),at:at||now})]];
+test('the draft is never restored onto a borrowed canvas (vault edit, saving) and stays stored until the working board is back',async()=>{
+ const h=harness({serverRaw:payload(12,now-5000),ls:newerDraft(40)});await h.boot();assert.ok(h.c.__boardDraftPending);
+ h.c._vaultBoardContext={id:'vault-item'};
+ assert.equal(h.c.__boardDraftRestore(),false);assert.equal(h.c.state.players[0].x,12,'vault canvas untouched');assert.equal(h.c.boardManualChanged(),false);assert.ok(h.draft(),'draft kept');
+ h.c._vaultBoardContext=null;h.c._boardManualSaving={uid:'x'};
+ assert.equal(h.c.__boardDraftRestore(),false,'refused while an explicit save is running');
+ h.c._boardManualSaving=false;
+ assert.equal(h.c.__boardDraftRestore(),true);assert.equal(h.c.state.players[0].x,40);
+});
+test('a restore bumps the edit sequence so an in-flight save cannot mark it saved',async()=>{
+ const h=harness({serverRaw:payload(12,now-5000),ls:newerDraft(40)});await h.boot();
+ const seq=h.c._boardPrivateEditSeq;assert.equal(h.c.__boardDraftRestore(),true);assert.equal(h.c._boardPrivateEditSeq,seq+1);
+});
+test('starting to edit withdraws the offer; the newer edits become the draft and a late click cannot replace them',async()=>{
+ const h=harness({serverRaw:payload(12,now-5000),ls:newerDraft(40)});await h.boot();assert.ok(h.c.__boardDraftPending);
+ h.edit(99);assert.equal(h.c.__boardDraftPending,null,'offer withdrawn on the first edit');
+ assert.equal(h.c.__boardDraftRestore(),false);assert.equal(h.c.state.players[0].x,99);
+ h.fire();assert.equal(JSON.parse(h.draft().raw).snap.players[0].x,99,'the stored draft is the newest work');
+});
+test('an explicit save while the offer is showing withdraws it first',async()=>{
+ const h=harness({serverRaw:payload(12,now-5000),ls:newerDraft(40)});await h.boot();assert.ok(h.c.__boardDraftPending);
+ const p=h.c.boardSaveExplicit();assert.equal(h.c.__boardDraftPending,null,'bar withdrawn before the save awaits');
+ assert.equal(h.c.__boardDraftRestore(),false);await p;
+ assert.ok(h.messages.some(m=>typeof m==='string'&&/이전 작업은 버렸어요/.test(m)),'the save says the old draft was dropped');
+});
+test('when localStorage fills up the stale small-store copy is removed and the newer IndexedDB draft wins',async()=>{
+ const opts={};const h=harness(opts);await h.boot();h.edit(5);h.fire();assert.ok(h.ls.has(h.draftKey()));
+ opts.quota=true;h.edit(6);h.fire();await ticks();
+ assert.equal(h.ls.has(h.draftKey()),false,'stale localStorage copy removed');assert.equal(JSON.parse(JSON.parse(h.idb.get(h.draftKey())).raw).snap.players[0].x,6);
+ const both=harness({ls:[[h.draftKey(),JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(1,now-9000),at:now-9000})]],idb:[[h.draftKey(),JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(2,now-1000),at:now-1000})]]});
+ await both.boot();assert.equal(JSON.parse(both.c.__boardDraftPending.raw).snap.players[0].x,2,'the newer of the two stores is offered');
+});
+test('restoring from the match view switches to the working board and keeps the match canvas',async()=>{
+ const h=harness({serverRaw:payload(12,now-5000),ls:newerDraft(40)});await h.boot();
+ h.c.__csView='match';h.c.state=snap(70);
+ assert.equal(h.c.__boardDraftRestore(),true);assert.equal(h.c.__csView,'board');assert.equal(h.c.state.players[0].x,40);
+ assert.equal(h.c.__viewSnaps.match.players[0].x,70,'match canvas kept');
+});
+test('the shell reads the board state on frame load, players get their own coach marks, and leftover greys are gone',()=>{
+ assert.match(app,/_fbd\.addEventListener\('load',function\(\)\{ var chg=false; try\{ var bw=_fbd\.contentWindow; chg=!!\(bw&&typeof bw\.boardManualChanged==='function'&&bw\.boardManualChanged\(\)\);/);
+ const sync=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8'),idp=fs.readFileSync(path.join(__dirname,'../studio/idp.html'),'utf8');
+ assert.match(sync,/idpDailyMine:function\(\)\{ var w=activeWs\(\); if\(!w\)return Promise\.resolve\(null\); return rpc\('ps_idp_daily_mine',\{wid:w\}\)/);
+ assert.match(idp,/localStorage\.getItem\(isCoach\(\)\?DAILY_KEY:DAILY_MINE_KEY\)/,'players read their own copy');
+ assert.match(idp,/api\.idpDailyMine\(\)\.then/);
+ const R=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
+ assert.doesNotMatch(R('studio/scout.html'),/\.ck\{[^}]*--faint:#8A9099/i,'scout cockpit light grey');
+ for(const f of ['studio/process.html','studio/gamemodel.html'])assert.doesNotMatch(R(f),/--text-3:#7C838D!important/i,f);
+ assert.doesNotMatch(R('start/idp.html'),/#8A9099/i,'start/idp.html');
 });

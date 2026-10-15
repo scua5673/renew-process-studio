@@ -31,3 +31,11 @@ test('the old failing greys are no longer the token values',()=>{
   assert.doesNotMatch(css,/--faint:#8A9099|--text-3:#8A9099|--ghost:#8A9099|--faint:#7C838D|--text-3:#7C838D/i);
   for(const f of ['landing.html','start/index.html','start/how.html'])assert.doesNotMatch(read(f),/--faint:#9a9da3/i,f);
 });
+
+test('pages that pin their own grey tokens use readable values too (3.034 review)',()=>{
+  const ck=/\.ck\{[^}]*--faint:(#[0-9A-Fa-f]{6})/.exec(read('studio/scout.html'));assert.ok(ck,'scout .ck');
+  for(const back of ['#FFFFFF','#F1F3F5'])assert.ok(ratio(ck[1],back)>=4.5,'scout .ck --faint '+ck[1]+' on '+back);
+  for(const f of ['studio/process.html','studio/gamemodel.html']){const m=/body\.fmdark\{[^}]*--text-3:(#[0-9A-Fa-f]{6})!important/.exec(read(f));assert.ok(m,f);assert.ok(ratio(m[1],'#1B1E23')>=4.5,f+' dark --text-3 '+m[1]);}
+  const idp=read('start/idp.html'),l=/--text-3:(#[0-9A-Fa-f]{6})/.exec(idp);assert.ok(l);
+  for(const back of ['#FFFFFF','#ECEDF0'])assert.ok(ratio(l[1],back)>=4.5,'start/idp.html --text-3 '+l[1]+' on '+back);
+});

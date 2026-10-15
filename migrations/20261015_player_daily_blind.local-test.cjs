@@ -21,7 +21,7 @@ async function seed(db){
   await db.query('INSERT INTO public.ps_workspaces(id,name,owner_id,kind) VALUES($1,$2,$3,$4)',[W,'Synthetic team',who.owner,'team']);
   for(const [u,r] of [[who.owner,'owner'],[who.exec],[who.staff],[who.player],[who.player2]])await db.query('INSERT INTO public.ps_members(workspace_id,user_id,role) VALUES($1,$2,$3)',[W,u,r||'member']);
   const perms={v:1,members:{[who.exec]:{role:'executive'},[who.staff]:{role:'staff'},[who.player]:{role:'player'},[who.player2]:{role:'player'}}};
-  const daily={v:1,days:{'2026-10-14':{[who.player2]:{status:'injury',at:1,by:who.exec}}}};
+  const daily={v:1,days:{'2026-10-14':{[who.player2]:{status:'injury',at:1,by:who.exec},[who.player]:{status:'rest',at:2,by:who.exec}},'2026-10-15':{[who.player2]:{status:'rehab',at:3,by:who.exec}},_bad:'x'}};
   const kv=[['cs_perms_v1',JSON.stringify(perms)],['cs_idp_daily_v1',JSON.stringify(daily)],['cs_idp_pub_v1','{"items":{}}'],
     ['cs_team_notice_v1','{"notices":[]}'],['cs_team_matches_v1','{"matches":[]}'],['scout_tool_v1','{"players":[]}']];
   for(const [k,v] of kv)await db.query('INSERT INTO public.ps_kv(workspace_id,k,v) VALUES($1,$2,$3)',[W,k,v]);
@@ -41,6 +41,7 @@ const sees=(db,uid,k)=>as(db,uid,async()=>(await db.query('SELECT count(*)::int 
 const canRead=(db,uid,k)=>as(db,uid,async()=>(await db.query('SELECT public.ps_can_read_key($1,$2) AS r',[W,k])).rows[0].r);
 const def=async db=>(await db.query('SELECT pg_get_functiondef(to_regprocedure($1)) d',[FN])).rows[0].d;
 const meta=async db=>(await db.query("SELECT p.proacl::text a, p.prosecdef s, p.proowner o, p.proconfig::text c, p.provolatile v FROM pg_proc p WHERE p.oid=to_regprocedure($1)",[FN])).rows[0];
+const mine=(db,uid)=>as(db,uid,async()=>(await db.query('SELECT public.ps_idp_daily_mine($1) AS r',[W])).rows[0].r);
 const others=async db=>(await db.query("SELECT p.proname, pg_get_functiondef(p.oid) d FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname<>'ps_can_read_key' ORDER BY 1")).rows;
 
 async function run(){
@@ -71,14 +72,22 @@ async function run(){
     equal(await sees(db,who.owner,'cs_idp_daily_v1'),true,'after: the owner still reads daily status');
     equal(await sees(db,who.outsider,'cs_idp_daily_v1'),false,'after: a non-member still sees nothing');
 
+    // ── 선수 본인 칸만: ps_idp_daily_mine ─────────────────────────
+    equal(await mine(db,who.player),{v:1,days:{'2026-10-14':{[who.player]:{status:'rest',at:2,by:who.exec}}}},'a player gets only their own coach-confirmed status');
+    equal(await mine(db,who.player2),{v:1,days:{'2026-10-14':{[who.player2]:{status:'injury',at:1,by:who.exec}},'2026-10-15':{[who.player2]:{status:'rehab',at:3,by:who.exec}}}},'each player sees every day of their own');
+    equal(await mine(db,who.outsider),null,'a non-member gets nothing');
+    equal(await mine(db,who.staff),{v:1,days:{}},'staff have no own rows (they read the full key instead)');
+    equal((await db.query("SELECT has_function_privilege('public','public.ps_idp_daily_mine(uuid)','EXECUTE') AS p")).rows[0].p,false,'PUBLIC cannot execute ps_idp_daily_mine');
+
     // ── 함수의 나머지와 다른 함수는 바이트 그대로 ──────────────────
     equal(await meta(db),origMeta,'ACL, SECURITY DEFINER, owner, search_path and volatility unchanged');
-    equal(await others(db),origOthers,'no other function changed');
+    equal((await others(db)).filter(r=>r.proname!=='ps_idp_daily_mine'),origOthers,'no other existing function changed');
     equal((await def(db)).replace(/,'cs_idp_daily_v1','cs_idp_pub_v1' \/\* ps-20261015-player-daily-blind \*\//,''),origDef,'only the list grew');
 
     // ── 되돌리기: 원문 그대로 ─────────────────────────────────────
     await db.exec(rollback);await db.exec(rollback);   // 두 번 실행해도 안전
     equal(await def(db),origDef,'rollback restores the exact original definition');
+    equal((await db.query("SELECT to_regprocedure('public.ps_idp_daily_mine(uuid)') IS NULL AS gone")).rows[0].gone,true,'rollback drops ps_idp_daily_mine');
     equal(await sees(db,who.player,'cs_idp_daily_v1'),true,'rollback: player reads daily status again');
     await db.exec(sql);
     equal(await sees(db,who.player,'cs_idp_daily_v1'),false,'re-apply after rollback works');

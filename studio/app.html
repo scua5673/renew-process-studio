@@ -3861,7 +3861,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     return out;
   }
   window.__psAutosaveView=saveView;
-  try{var _fbd=document.getElementById('fBoard');if(_fbd)_fbd.addEventListener('load',function(){ if(window.__psBoardDirty){window.__psBoardDirty=false;try{refreshPushState();}catch(_){}} });}catch(_){}
+  try{var _fbd=document.getElementById('fBoard');if(_fbd)_fbd.addEventListener('load',function(){ var chg=false; try{ var bw=_fbd.contentWindow; chg=!!(bw&&typeof bw.boardManualChanged==='function'&&bw.boardManualChanged()); }catch(_){} if(!!window.__psBoardDirty!==chg){window.__psBoardDirty=chg;try{refreshPushState();}catch(_){}} });   /* 3.034 리뷰 — 보드의 load 는 첫 편집보다 늦을 수 있다: 무조건 끄지 않고 보드의 실제 상태를 읽는다(about:blank 면 false) */}catch(_){}
   var recoveryButton=document.getElementById('psRecoveryOpen');
   if(recoveryButton)recoveryButton.addEventListener('click',function(){
     try{if(window.PSDataReview&&PSDataReview.recovery){PSDataReview.recovery();return;}}catch(_){}

@@ -16,7 +16,7 @@ test('3.014 «새 보드» clears the page canvas to the «새 보드 기본 세
 test('3.014 «새 보드» saves at once without writing the empty board into linked vault items',()=>{
   assert.match(board,/async function boardSaveExplicit\(o\)\{[^\n]*\n  o=\(o&&typeof o==="object"&&!o\.type\)\?o:\{\};/,'click events are not options');
   assert.match(board,/var _wb=\[\]; if\(!o\.noLink\)\{ try\{ _wb=await boardLinkWriteBack\(false\); \}/,'noLink skips the vault write-back');
-  assert.match(board,/else if\(!o\.quiet\)toast\(_wbt\?\("보드에 저장됨 ✓"/,'quiet keeps the success toast for the caller');
+  assert.match(board,/else if\(!o\.quiet\)toast\(\(?_wbt\?\("보드에 저장됨 ✓"/,'quiet keeps the success toast for the caller');
   const nb=/function newBoard\(\)\{[\s\S]*?\n  \}\n/.exec(board);assert.ok(nb,'newBoard');
   assert.match(nb[0],/pages=null; idx=0; _singleLink=null;/,'one page, no vault link');
   assert.match(nb[0],/_nbSave\("새 보드로 시작했어요"/);
