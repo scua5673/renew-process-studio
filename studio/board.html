@@ -13510,7 +13510,7 @@ window.__commView=function(post, editMode){
     if(post.thumb&&!d.thumb)d.thumb=post.thumb;
     /* 3.039 — 작전판 글(type "board")은 작전판이라고 말한다(박수빈 코치 «지금은 '훈련'으로만 업로드가 가능한 것 같아서요»). 여러 페이지는 커뮤니티가 페이지마다 한 장씩 싣는다 */
     var _commBoard=(d.type==="board");
-    $("modalTitle").textContent=editMode?"커뮤니티 글 편집":(_commBoard?"커뮤니티 작전판":"커뮤니티 훈련");
+    $("modalTitle").textContent=editMode?"커뮤니티 글 편집":(_commBoard?("커뮤니티 "+(d.kindLabel||"작전판")):"커뮤니티 훈련");   /* 3.042 — 미팅 자료는 «커뮤니티 미팅 자료» */
     editorDrillId=null; editorLibId=null; editorFileName=post.title||d.name||"";
     loadEditorTrainings(d); _activateTraining(0);
     _commOrient();   /* 2.575 — 스냅이 실린 뒤, 그리기 전에 */
@@ -13561,7 +13561,7 @@ window.__commView=function(post, editMode){
         var who=post.owner_name?("@"+esc(post.owner_name)):"코치";
         b.innerHTML='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
           /* 2.999 — 커뮤니티 «프로세스» 칸의 훈련 세션(post.proc): 신고 없음 · 담기는 레터의 «보관함에 담기»와 같은 길(커뮤니티가 셸에 #pack= 을 건넨다) */
-          +'<span style="flex:1 1 auto;min-width:150px">'+(post.proc?('<b>프로세스 훈련 세션</b> — 훈련 '+(post.procN||(post.item&&post.item.trainings&&post.item.trainings.length)||1)+'개 · 보기 전용'):('<b>'+(_commBoard?'커뮤니티 작전판':'커뮤니티 훈련')+'</b> — '+who+'님이 공유했어요'+((_commBoard&&post.pageN>1)?(' · '+(d.book?'시퀀스 ':'페이지 ')+post.pageN+'개'):'')+' · 보기 전용'))+'</span>'
+          +'<span style="flex:1 1 auto;min-width:150px">'+(post.proc?('<b>프로세스 훈련 세션</b> — 훈련 '+(post.procN||(post.item&&post.item.trainings&&post.item.trainings.length)||1)+'개 · 보기 전용'):('<b>'+(_commBoard?('커뮤니티 '+(d.kindLabel||'작전판')):'커뮤니티 훈련')+'</b> — '+who+'님이 공유했어요'+((_commBoard&&post.pageN>1)?(' · '+(d.unit||(d.book?'시퀀스 ':'페이지 '))+post.pageN+(d.kindLabel?'장':'개')):'')+' · 보기 전용'))+'</span>'
           +'<button id="commCopyBtn" type="button" style="border:0;border-radius:10px;background:var(--blue,var(--ps-navy,#14213D));color:#fff;font-family:inherit;font-weight:800;font-size:12px;padding:8px 13px;cursor:pointer">'+(post.proc?'보관함에 담기':'내 보관함에 담기')+'</button>'
           +(post.proc?'':'<button id="commRepBtn" type="button" style="border:0;background:none;color:var(--txt-dim,#646A73);font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">신고</button>')
           +(post.mine?'<button id="commDelBtn" type="button" style="border:0;background:none;color:#C24A46;font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">삭제</button>':'')
