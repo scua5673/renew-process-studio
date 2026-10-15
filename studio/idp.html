@@ -5266,7 +5266,7 @@ html.ps-page-idp .mt-rv{gap:var(--g-gap)!important}
   var DAILY_KEY='cs_idp_daily_v1';
   var PHYS_STATES=[null,'team','rest','recovery','rehab','injury','excluded','absent','coaching'];
   var PHYS_LB={team:'훈련',rest:'휴식',recovery:'회복',rehab:'재활',injury:'부상',excluded:'열외',absent:'불참',coaching:'코칭'};
-  /* 3.034 — 선수 계정은 팀원 전체 몸 상태(DAILY_KEY)를 받지 않는다(보안 점검 SEC-3). 일정의 «코치 확인» 표시는 서버가 본인 칸만 돌려주는
+  /* 3.038 — 선수 계정은 팀원 전체 몸 상태(DAILY_KEY)를 받지 않는다(보안 점검 SEC-3). 일정의 «코치 확인» 표시는 서버가 본인 칸만 돌려주는
      PSSync.idpDailyMine 으로 채우고, 이 기기에 그 본인 칸만 DAILY_MINE_KEY 로 둔다(동기화하지 않는 키). */
   var DAILY_MINE_KEY='cs_idp_daily_mine_v1';
   function dailyLoad(){ try{ var o=JSON.parse(localStorage.getItem(isCoach()?DAILY_KEY:DAILY_MINE_KEY)||'null'); return o&&o.v===1&&o.days?o:{v:1,days:{}}; }catch(_){ return {v:1,days:{}}; } }

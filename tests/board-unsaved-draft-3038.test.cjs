@@ -1,5 +1,5 @@
 'use strict';
-/* 3.034 — 저장 안 한 작전판의 기기 초안(피드백 UX-1 «저장 안 한 작전판이 새로고침 한 번에 사라지는데, 그동안 «저장됨»이 떠 있다»).
+/* 3.038 — 저장 안 한 작전판의 기기 초안(피드백 UX-1 «저장 안 한 작전판이 새로고침 한 번에 사라지는데, 그동안 «저장됨»이 떠 있다»).
    «보드 저장» 전의 화면은 이 기기에만 초안으로 남고, 다시 열면 «되살리기»를 권하며, 셸은 «보드 · 저장 전»을 띄운다.
    개인 보드 기록(ps_private_board_draft_v1:<uid>)과 서버는 건드리지 않는다 — tests/private-board-draft 가 지키는 규칙 그대로. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
@@ -91,7 +91,7 @@ test('the save strip and the shell say what to do instead of «저장됨» over 
  assert.match(app,/if\(window\.__psBoardDirty&&scope&&out\.kind!=='bad'&&out\.kind!=='busy'&&out\.kind!=='held'\)return \{kind:'pending',text:'보드 · 저장 전'/,'shell status overrides «저장됨»');
 });
 
-/* ── 3.034 코드 리뷰에서 확인된 경로 ── */
+/* ── 3.038 코드 리뷰에서 확인된 경로 ── */
 const now=Date.now();
 const newerDraft=(x,at)=>[['ps_private_board_draft_v1:synthetic-user-a:unsaved',JSON.stringify({v:1,uid:'synthetic-user-a',wid:'personal-a',raw:payload(x,now-1000),at:at||now})]];
 test('the draft is never restored onto a borrowed canvas (vault edit, saving) and stays stored until the working board is back',async()=>{

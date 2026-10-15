@@ -11,11 +11,11 @@
 
 - 라이브 `ps_can_read_key(uuid,text)` 정의를 읽어 차단목록에 `'cs_idp_daily_v1','cs_idp_pub_v1'` 두 키만 더한다(표식 `ps-20261015-player-daily-blind`).
 - 함수의 다른 줄·SECURITY DEFINER·search_path·GRANT·소유자·정책·데이터는 그대로다.
-- 앱(3.034)의 같은 목록 `studio/sync.js PLAYER_BLIND` 에도 `cs_idp_daily_v1` 을 더했다 — 선수 기기는 이 키를 받지도, 갖고 있지도 않는다.
+- 앱(3.038)의 같은 목록 `studio/sync.js PLAYER_BLIND` 에도 `cs_idp_daily_v1` 을 더했다 — 선수 기기는 이 키를 받지도, 갖고 있지도 않는다.
   (`cs_idp_pub_v1` 은 앱이 동기화하지 않는 옛 키라 서버 목록에만 넣는다.)
 - 선수 화면도 이 키의 **본인 칸**을 읽는다 — IDP 일정의 «코치 확인 · 부상/재활…» 표시(`idp.html` rCal → coachStatus).
   그래서 같은 마이그레이션이 `ps_idp_daily_mine(wid)` 를 만든다: 같은 문서에서 `auth.uid()` 칸만 `{v:1,days:{날짜:{uid:기록}}}` 로 돌려준다
-  (SECURITY DEFINER · search_path 고정 · PUBLIC/anon 회수 · authenticated 만). 3.034 앱은 선수일 때 `PSSync.idpDailyMine()` 으로 부르고,
+  (SECURITY DEFINER · search_path 고정 · PUBLIC/anon 회수 · authenticated 만). 3.038 앱은 선수일 때 `PSSync.idpDailyMine()` 으로 부르고,
   그 결과만 이 기기의 `cs_idp_daily_mine_v1`(동기화하지 않는 키)에 둔다. 키를 다시 여는 쪽으로 가지 않는다.
 
 ## 적용 (SQL 편집기, 사람이)
@@ -26,8 +26,8 @@
 3. 선수 계정으로 로그인한 기기에서 앱 설정 › 데이터 › 저장 확인이 깨끗한지(선수 기기가 이 키를 올리려던 적은 없다 — 쓰기 가드가 먼저 막는다).
 4. 다음 날: 관리자 오류 탭에 `sync_server_rejected` 가 `cs_idp_daily_v1` 로 늘지 않았는지.
 
-순서: **서버를 먼저 적용한다**(3.034 를 main 에 올리기 전). 앱이 먼저 깔리면 선수 기기는 `ps_idp_daily_mine` 이 없어(404) 그동안 «코치 확인» 표시만 빠진다 — 오류 띠는 뜨지 않는다.
-옛 판(3.033 이하) 앱이 남아 있어도 된다 — RLS 는 행을 조용히 걸러 낼 뿐 오류를 내지 않는다. 옛 판 선수 기기에 남은 사본은 3.034 가 깔리면
+순서: **서버를 먼저 적용한다**(3.038 를 main 에 올리기 전). 앱이 먼저 깔리면 선수 기기는 `ps_idp_daily_mine` 이 없어(404) 그동안 «코치 확인» 표시만 빠진다 — 오류 띠는 뜨지 않는다.
+옛 판(3.033 이하) 앱이 남아 있어도 된다 — RLS 는 행을 조용히 걸러 낼 뿐 오류를 내지 않는다. 옛 판 선수 기기에 남은 사본은 3.038 가 깔리면
 `PLAYER_BLIND` 정리가 지운다.
 
 되돌리기: `20261015_player_daily_blind.rollback.sql`(표식이 붙은 두 키만 뺀다, 데이터 그대로).

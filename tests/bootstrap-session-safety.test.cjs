@@ -36,7 +36,7 @@ function harness({owner=B,wid='B-workspace',rows=[{id:'A-workspace',kind:'person
     stashSnapshot(){calls.stashes++;return hooks.stash?hooks.stash():Promise.resolve();},
     legacyCacheInfo:()=>hooks.legacyInfo?hooks.legacyInfo():Promise.resolve({has:true,uid:''}),
     askConfirm(){calls.confirms++;return hooks.confirm?hooks.confirm():Promise.resolve(false);},
-    askChoice(){calls.confirms++;return hooks.choose?hooks.choose():Promise.resolve('keep');},   /* 3.034 — 로그아웃 전 자료는 선택창(keep/wipe/null) */
+    askChoice(){calls.confirms++;return hooks.choose?hooks.choose():Promise.resolve('keep');},   /* 3.038 — 로그아웃 전 자료는 선택창(keep/wipe/null) */
     legacyWorkspace(){calls.legacyChoices++;return hooks.legacyChoice?hooks.legacyChoice():Promise.resolve('A-workspace');}
   });
   vm.runInContext(code,c);
@@ -69,7 +69,7 @@ test('an owner change during token refresh cannot send bootstrap for the later a
   assert.deepEqual(await pending,{ok:false,locked:true});assert.equal(h.calls.requests.length,0);assert.equal(h.snapshot(),before);
 });
 for(const answer of ['wipe','keep',null])test('an old legacy choice cannot wipe or attach data when answered '+answer,async()=>{
-  /* 3.034 — 선택창: keep = 연결 · wipe = 지우기(2차 확인은 기본 stub false → 연결) · null = 닫음(다시 묻고 결국 연결). 어느 답도 계정이 바뀐 뒤엔 지우지도 붙이지도 못한다 */
+  /* 3.038 — 선택창: keep = 연결 · wipe = 지우기(2차 확인은 기본 stub false → 연결) · null = 닫음(다시 묻고 결국 연결). 어느 답도 계정이 바뀐 뒤엔 지우지도 붙이지도 못한다 */
   const h=harness({legacy:true}),g=deferred(),before=h.snapshot();h.hooks.choose=()=>g.promise;const pending=h.run();await tick();assert.equal(h.calls.confirms,1);
   h.change(sess(B),false);g.resolve(answer);assert.deepEqual(await pending,{ok:false,locked:true});assert.equal(h.snapshot(),before);assert.equal(h.calls.legacyChoices,0);assert.deepEqual(h.calls.idbErased,[]);
 });

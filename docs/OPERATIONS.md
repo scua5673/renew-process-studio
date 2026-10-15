@@ -22,7 +22,7 @@
 `main` 에 합치는 것이 곧 실사용 배포다 — 실기기 확인 없이 `main` 으로 바로 가지 않는다(급한 고침은 아래 «급한 고침»).
 
 1. `git fetch origin && git switch -c <가지> origin/staging`. 같은 폴더를 다른 세션이 쓰고 있으면 `git worktree add` 로 따로 연다(브랜치 전환이 서로를 밟는다).
-2. 판 번호를 올린다 — `sw.js` 의 `const CACHE = 'process-3.xxx'`(그 줄엔 판 번호만 — 판마다 머리에 쌓던 변경 기록은 3.034 에서 걷었다. 바뀐 점은 `release-notes.js` 와 커밋 메시지에), `studio/app.html` 의 `window.PS_BUILD` 와 `?v=` 일곱 곳. 사용자 화면이 바뀌면 `studio/release-notes.js` 맨 앞에 안내 한 항목(관리자 화면·테스트만 바뀌면 넣지 않는다 — 넣으면 모두에게 «최근 업데이트» 띠가 다시 뜬다). 테스트·문서만이면 판을 올리지 않는다.
+2. 판 번호를 올린다 — `sw.js` 의 `const CACHE = 'process-3.xxx'`(그 줄엔 판 번호만 — 판마다 머리에 쌓던 변경 기록은 3.038 에서 걷었다. 바뀐 점은 `release-notes.js` 와 커밋 메시지에), `studio/app.html` 의 `window.PS_BUILD` 와 `?v=` 일곱 곳. 사용자 화면이 바뀌면 `studio/release-notes.js` 맨 앞에 안내 한 항목(관리자 화면·테스트만 바뀌면 넣지 않는다 — 넣으면 모두에게 «최근 업데이트» 띠가 다시 뜬다). 테스트·문서만이면 판을 올리지 않는다.
 3. `npm ci` → `npm test` · `npm run test:sql` · 필요하면 `node tests/browser/run-critical.mjs`(`PS_TEST_GROUP=board|board2|boardperf|identity|storage|idp|entry|records`).
 4. PR(`gh pr create --repo scua5673/renew-process-studio --base staging`). CI: 회귀 1 + 브라우저 8묶음(board·board2·boardperf·identity·storage·idp·entry·records)×2엔진 + release-gate + 배포 미리보기. 묶음은 나란히 돌고, 묶음 목록은 `tests/browser/run-critical.mjs` 한 곳이다(3.012 — CI 밖 시험이 조용히 낡지 않게 브라우저 시험은 모두 여기에 둔다. 엔진과 상관없이 Chromium 을 직접 띄우는 시험은 `CHROMIUM_ONLY` 로 WebKit 잡에서 건너뛰고 로그에 `skipped` 로 적는다).
 5. 합치면 testprocess 가 빌드하며 **그 커밋의 `release-gate` CI 가 초록이 될 때까지 최대 12분** 기다린다(`scripts/verify-release.mjs`). 빨강이면 게시를 멈춘다(«Build script returned non-zero exit code: 2»).

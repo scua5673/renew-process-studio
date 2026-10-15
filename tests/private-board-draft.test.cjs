@@ -20,7 +20,7 @@ function harness(options={}){
   state:snap(0),undoStack:[],redoStack:[],autoOrient:true,
   document:{body:{classList:{contains:()=>false}},addEventListener(){}},
   setTimeout(fn,ms){timers.push({fn,ms});return timers.length;},clearTimeout(){},
-  localStorage:{getItem(k){reads.push(['ls',k]);return ls.get(k)??null;},setItem(k,v){if(options.quota)throw Error('synthetic quota');writes.push(['ls',k,String(v)]);ls.set(k,String(v));},removeItem(k){assert.ok(k.includes(':kept:')||k.endsWith(':unsaved'),'only a verified recovery copy or the unsaved device draft (3.034) may be removed');ls.delete(k);}},
+  localStorage:{getItem(k){reads.push(['ls',k]);return ls.get(k)??null;},setItem(k,v){if(options.quota)throw Error('synthetic quota');writes.push(['ls',k,String(v)]);ls.set(k,String(v));},removeItem(k){assert.ok(k.includes(':kept:')||k.endsWith(':unsaved'),'only a verified recovery copy or the unsaved device draft (3.038) may be removed');ls.delete(k);}},
   storage:{async get(k){reads.push(['idb',k]);return idb.has(k)?{value:idb.get(k)}:null;},async set(k,v,current){if(current)current();writes.push(['idb',k,v]);idb.set(k,v);return true;},async replaceIfValue(k,b,v,current){if(current)current();if((idb.get(k)??null)!==b)return false;idb.set(k,v);return true;}},
   store:{async get(){return null;}},$:id=>nodes[id]||null,toast:m=>messages.push(m),captureSnap(){return copy(c.state);},loadSnap(s){c.state=copy(s);},
   dc:copy,renderTokens(){},renderDrawings(){},updateDelUI(){},restoreAnimBeforeCapture(){},renderAnimFrames(){},

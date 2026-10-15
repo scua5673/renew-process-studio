@@ -1,5 +1,5 @@
 'use strict';
-/* 3.034 — 로그아웃 전 자료 묻기(sync.js legacyCacheAsk). 전엔 «확인/취소» 창이었고 «취소»가 기기 자료를 지웠는데,
+/* 3.038 — 로그아웃 전 자료 묻기(sync.js legacyCacheAsk). 전엔 «확인/취소» 창이었고 «취소»가 기기 자료를 지웠는데,
    psConfirm 은 바깥 탭·Esc 도 «취소»라 잘못 탭 한 번이 삭제였다(피드백 CP-1). 이제: 단추에 할 일 · 닫기는 지우지 않음 · 지우기는 2차 확인. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const sync=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8'),app=fs.readFileSync(path.join(__dirname,'../studio/app.html'),'utf8');

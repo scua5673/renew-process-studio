@@ -9,9 +9,9 @@
 -- 고침: 라이브 정의를 그 자리에서 읽어(pg_get_functiondef) 차단목록 한 줄만 늘려 다시 만든다.
 --   NOT IN ('scout_tool_v1', … ,'cs_match_roster_v1') → NOT IN (… ,'cs_match_roster_v1','cs_idp_daily_v1','cs_idp_pub_v1' /* 표식 */)
 --   다른 줄·함수 이름·인자·SECURITY DEFINER·search_path·권한(GRANT)·소유자는 CREATE OR REPLACE 라 그대로 남는다.
---   정책·테이블·데이터는 건드리지 않는다. 앱의 같은 목록(studio/sync.js PLAYER_BLIND)은 3.034 에서 cs_idp_daily_v1 을 더했다.
+--   정책·테이블·데이터는 건드리지 않는다. 앱의 같은 목록(studio/sync.js PLAYER_BLIND)은 3.038 에서 cs_idp_daily_v1 을 더했다.
 --   선수 화면(IDP 일정 «코치 확인 · 부상/재활…» 표시, idp.html rCal → coachStatus)은 이 키의 **본인 칸**을 읽는다. 그래서 같은 파일에서
---   ps_idp_daily_mine(wid) 를 만든다 — 같은 문서에서 auth.uid() 의 칸만 {v:1,days:{날짜:{uid:기록}}} 모양으로 돌려준다. 3.034 앱은 선수일 때 이것을 부른다.
+--   ps_idp_daily_mine(wid) 를 만든다 — 같은 문서에서 auth.uid() 의 칸만 {v:1,days:{날짜:{uid:기록}}} 모양으로 돌려준다. 3.038 앱은 선수일 때 이것을 부른다.
 --
 -- 안전장치: 바꿀 목록이 **정확히 한 번** 있어야 한다. 아니면 아무것도 바꾸지 않고 멈춘다(EXCEPTION).
 --           이미 적용된 함수(표식 ps-20261015-player-daily-blind)는 건너뛴다 — 다시 실행해도 안전하다.
@@ -47,7 +47,7 @@ BEGIN
 END
 $migration$;
 
--- 선수 본인 칸만: 3.034 앱(idp.html → PSSync.idpDailyMine)이 선수 계정에서 부른다. 구성원이 아니거나 로그인 전이면 NULL.
+-- 선수 본인 칸만: 3.038 앱(idp.html → PSSync.idpDailyMine)이 선수 계정에서 부른다. 구성원이 아니거나 로그인 전이면 NULL.
 CREATE OR REPLACE FUNCTION public.ps_idp_daily_mine(wid uuid) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO public AS $fn$
 DECLARE

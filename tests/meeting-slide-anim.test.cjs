@@ -93,7 +93,7 @@ test('meeting wiring: stash on enter, restore on exit, autosave and live save fo
   assert.ok(exit.indexOf('meetStore(meetIdx,true)')<exit.indexOf('classList.remove("meet-mode")'),'the current scene is stored before leaving');
   assert.match(exit,/meetRestoreBoardAnim\(\)/);
   assert.match(part('function autoSaveAnimFrame(){','\n'),/\(!document\.body\.classList\.contains\("meet-mode"\)\|\|\(window\.__meetSceneBound&&window\.__meetSceneBound\(\)\)\)/);
-  const live=part('function _boardLiveWriteNow(recovery){','/* ══ 3.034 · 저장 안 한 작업의 기기 초안');   /* 3.034 — 담기(장면·슬라이드 동기화 포함)는 boardLiveCapture 로 옮겼다 — 같은 구간에 있다 */
+  const live=part('function _boardLiveWriteNow(recovery){','/* ══ 3.038 · 저장 안 한 작업의 기기 초안');   /* 3.038 — 담기(장면·슬라이드 동기화 포함)는 boardLiveCapture 로 옮겼다 — 같은 구간에 있다 */
   assert.match(live,/window\.__meetSyncCur\(\)/);
   assert.match(live,/_af=_animToFrames\(_sa\)/,'the work board animation is saved from the stash during a meeting');
   const step=part('  function meetStep(dir){','  window.__meetStep=meetStep;');

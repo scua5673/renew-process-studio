@@ -1,5 +1,5 @@
 'use strict';
-/* 3.034 — 보조 회색(--faint · --text-3 · --ghost)은 WCAG AA(본문 4.5:1)를 넘어야 한다(피드백 DS-1·DS-14).
+/* 3.038 — 보조 회색(--faint · --text-3 · --ghost)은 WCAG AA(본문 4.5:1)를 넘어야 한다(피드백 DS-1·DS-14).
    전엔 #8A9099(흰 바탕 3.2:1)가 앱 전체의 기본 보조색이었고 랜딩·시작 페이지는 #9A9DA3(2.7:1)였다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
@@ -32,7 +32,7 @@ test('the old failing greys are no longer the token values',()=>{
   for(const f of ['landing.html','start/index.html','start/how.html'])assert.doesNotMatch(read(f),/--faint:#9a9da3/i,f);
 });
 
-test('pages that pin their own grey tokens use readable values too (3.034 review)',()=>{
+test('pages that pin their own grey tokens use readable values too (3.038 review)',()=>{
   const ck=/\.ck\{[^}]*--faint:(#[0-9A-Fa-f]{6})/.exec(read('studio/scout.html'));assert.ok(ck,'scout .ck');
   for(const back of ['#FFFFFF','#F1F3F5'])assert.ok(ratio(ck[1],back)>=4.5,'scout .ck --faint '+ck[1]+' on '+back);
   for(const f of ['studio/process.html','studio/gamemodel.html']){const m=/body\.fmdark\{[^}]*--text-3:(#[0-9A-Fa-f]{6})!important/.exec(read(f));assert.ok(m,f);assert.ok(ratio(m[1],'#1B1E23')>=4.5,f+' dark --text-3 '+m[1]);}

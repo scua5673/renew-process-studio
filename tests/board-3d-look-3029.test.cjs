@@ -14,7 +14,7 @@ test('3.029 mood is a device option with night (today\'s look) as the default, a
   assert.match(board,/if\(n\.mood!==o\.mood\)\{ try\{ if\(document\.body\.classList\.contains\("bc-tilt3d"\)\)renderTokens\(\); \}catch\(_\)\{\} \}/,'chips are rebuilt so their shadows follow');
   /* stadium picture */
   assert.match(board,/md=TILT_MOOD\[t3\.mood\]\|\|TILT_MOOD\.night,brand=!!t3\.brand,tname=brand\?tiltTeamName\(\):"",tcol=brand\?String\(teamHex\("blue"\)\|\|""\):"",ad=String\(t3\.ad\|\|""\)\.trim\(\)\|\|tname\|\|"PROCESS STUDIO"/);
-  assert.match(board,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad,md\.key,brand\?1:0,tcol\]\.join\('\|'\);/,'mood and branding redraw the picture');
+  assert.match(board,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad,md\.key,brand\?1:0,tcol(?:,bleed\?1:0)?\]\.join\('\|'\);/,'mood and branding redraw the picture');
   assert.match(board,/fill="'\+md\.ga\+'"\/><rect width="'\+f\(5\*m\)\+'" height="'\+f\(10\*m\)\+'" fill="'\+md\.gb\+'"\/>/,'grass tone');
   assert.match(board,/stop-opacity="'\+md\.vig\+'"\/><\/radialGradient>'/,'outer darkness');
   assert.match(board,/<radialGradient id="psStCone">/);assert.match(board,/<clipPath id="psStPitchClip"><path d="'\+rr\(0\)\+'"\/><\/clipPath>/,'light cones stay on the grass');
@@ -36,7 +36,8 @@ test('3.029 mood is a device option with night (today\'s look) as the default, a
   assert.match(board,/<div class="menurow ps-tilt-row" id="tiltBrandRow"><span class="menulbl">팀 브랜딩<\/span>/);
   assert.match(board,/document\.querySelectorAll\("#tiltMoodSeg button\[data-mood\]"\)\.forEach\(function\(b\)\{ var on=b\.getAttribute\("data-mood"\)===o\.mood;/);
   assert.match(board,/closest\("#tiltCamSeg button\[data-cam\],#tiltDecoSeg button\[data-deco\],#tiltMoodSeg button\[data-mood\],#tiltBrandSeg button\[data-brand\]"\)/);
-  assert.match(board,/\["view","화면",\["보드 보기","카메라","경기장","광고판","분위기","팀 브랜딩"\]\],\["view","분석",\["분석 그래픽"\]\],/,'settings sections');
+  assert.match(board,/\["view","3D 경기장",\["tiltCamSeg","tiltDecoSeg","tiltAdInput","tiltMoodSeg","tiltBrandSeg"\],"ps-tilt-row"\]/,'settings sections (3.036: 3D rows under «내 화면», analysis under «선수 표시»)');
+  assert.match(board,/\["look","분석",\["analysisSeg"\]\]/);
 });
 
 test('3.029 analysis graphics live on the board (snapshot), under the drawings, and recompute with the players',()=>{
