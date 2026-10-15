@@ -748,6 +748,7 @@
       }catch(_){}
       return rows.sort(function(a,b){return b.bytes-a.bytes;}).slice(0,limit);
     },
+    spaceLabel:function(k){ return spaceLabel(k); },   /* 3.038 — [이름, 줄이는 길] · 앱 설정 › 기기 › 저장 공간 줄이 «큰 항목» 이름을 쓴다 */
     /* 실제 콘텐츠는 삭제하지 않는다. IndexedDB에 동일한 문자열이 저장됐다고
        다시 읽어 확인한 기기 전용 중복 사본만 localStorage에서 제거한다. */
     optimize:function(){
