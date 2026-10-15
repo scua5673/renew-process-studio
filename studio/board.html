@@ -11646,7 +11646,10 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   }
   if(!sq.length){toast(opts.startersOnly?"선발 선수가 없어요 — 팀 탭에서 선발을 지정하세요":(_out?"훈련 가능한 선수가 없어요 — 팀 탭에서 상태를 확인하세요":"선수단에 선수가 없어요 — 팀 탭에서 선수를 추가하세요"));return;}
   if(_out){try{toast("훈련 가능 "+sq.length+"명 배치 · 부상·휴식 "+_out+"명 제외");}catch(_){}}
-  if(opts.startersOnly||opts.byPosition!==false){   /* 2.683 — 조·전체 불러오기도 포지션대로 자동 배치(사용자). 11명은 포메이션 자리, 나머지는 오른쪽 대기줄 */
+  /* 3.0xx — 훈련 만들기에서 우리 팀 선수를 불러오면 포메이션 자리가 아니라 **운동장 전체에 고르게**(사용자 "훈련만들기에서 우리팀 선수 불러올때 운동장 전체에 균일하게 배치").
+     훈련은 대형이 아니라 판 위에 흩어져 시작한다. 선발(startersOnly)은 경기 대형이라 그대로 둔다. */
+  var _even=!opts.startersOnly&&(opts.even===true||(opts.even!==false&&typeof __trainingWizardActive!=="undefined"&&__trainingWizardActive));
+  if(!_even&&(opts.startersOnly||opts.byPosition!==false)){   /* 2.683 — 조·전체 불러오기도 포지션대로 자동 배치(사용자). 11명은 포메이션 자리, 나머지는 오른쪽 대기줄 */
     var formEl=document.getElementById("formHome"),formKey=(formEl&&formEl.value)||squad.form||"433";
     var slots=(FORM[formKey]||FORM["433"]||[]).slice(0,11),pool=sq.filter(function(p){return p&&String(p.name||"").trim();}),picked=[];
     opts.formKey=formKey;
@@ -11691,6 +11694,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
         같은 계산을 여기서 또 하면 언젠가 어긋나고, 그때 화면이 «여기 있다»고 거짓말한다.
      ⚠ 셸이 없는 단독 작전판에는 그 값이 없다 — 그러면 **예전 그대로**(대기줄) 간다. */
   var _rects=null;
+  if(_even){ try{ var _pr0=PR(); _rects=[{x:_pr0.L,y:_pr0.T,w:_pr0.PW,h:_pr0.PH}]; }catch(_){} }
   try{ if((state.pitchN||1)>1 && Array.isArray(window.__psPitchRects) && window.__psPitchRects.length>1) _rects=window.__psPitchRects; }catch(_){}
   /* 사각형 안 비율 좌표(0~1)를 월드 좌표로 — 터치라인에 붙지 않게 6% 안쪽으로 */
   const putIn=(pl,R,fx,fy,i)=>{
@@ -11741,7 +11745,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
     var _groups=_rects.map(function(){return [];});
     _all.forEach(function(pl,i){ _groups[i%_rects.length].push(pl); });
     _groups.forEach(function(list,i){ spread(list,_rects[i]); });
-    window.__psSquadSpread={n:_rects.length, per:_groups.map(function(g){return g.length;})};
+    window.__psSquadSpread={n:_rects.length, per:_groups.map(function(g){return g.length;}), even:_even};
   }else if(_rects && opts.formationSlots){
     /* 포메이션은 **한 팀의 모양**이라 나누지 않는다 — 첫 운동장에 그 운동장 크기로 얹는다 */
     (opts.formationPicked||sq.slice(0,11)).forEach(function(pl,i){ if(!pl)return; var sl=opts.formationSlots[i]; putIn(pl,_rects[0],sl[0],sl[1],gi++); });   /* 2.699 — 빈 자리는 비워 둔다 */
@@ -11763,11 +11767,12 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   sel=null;renderTokens();if(typeof updateEmptyHint==="function")updateEmptyHint();closeSquad();
   /* 2.543 — 나눠 놓았으면 **몇 개에 몇 명씩**인지 말한다. 안 말하면 코치가 세어 봐야 한다 */
   var _sp=null; try{ _sp=window.__psSquadSpread; }catch(_){}
+  if(_sp&&_sp.even){ toast(sq.length+"명 운동장 전체에 고르게 배치 ✓"+(_sp.n>1?(" · 운동장 "+_sp.n+"개에 "+_sp.per.join("·")+"명"):"")+(_pgN?(" · 다른 페이지 "+_pgN+"개에도"):"")); return; }
   if(opts.boardToks){ var _nm=(opts.formationPicked||[]).filter(Boolean).length, _ex=(opts.formationExtra||[]).length;
     toast("지금 판의 선수 자리 "+opts.boardToks.length+"곳에 "+_nm+"명"+(_ex?(" · 자리 밖 "+_ex+"명은 같은 포지션 뒤로"):"")+(_pgN?(" · 다른 페이지 "+_pgN+"개에도"):"")+" ✓"); return; }
   toast((opts.startersOnly?(opts.slotsFromCards?"팀 구성 카드 자리로 선발 ":"선택 포메이션 선발 "):("포메이션 "+(function(k){ k=String(k||"433"); var fu=/^f/.test(k); k=k.replace(/^f/,""); return (fu?"풋살 ":"")+(/^\d+$/.test(k)?k.split("").join("-"):k); })(opts.formKey)+" · "))+sq.length+"명 작전판에 적용됨 ✓"+(_pgN?(" · 다른 페이지 "+_pgN+"개에도"):"")
     +(_sp&&_sp.formation?(" · 운동장 1번에"):"")
-    +(_sp&&!_sp.formation?(" · 운동장 "+_sp.n+"개에 "+_sp.per.join("·")+"명"):"")
+    +(_sp&&!_sp.formation&&_sp.n>1?(" · 운동장 "+_sp.n+"개에 "+_sp.per.join("·")+"명"):"")
     +(!opts.startersOnly&&rest.length?(" · 포지션 미지정 "+rest.length+"명"):""));}
 /* 2.975 — 선수단을 불러오면 **지금 페이지의 모든 장면**과 **다른 페이지 전부**에도(사용자 "팀을 불러왔을 때 모든 페이지에 적용").
    같은 토큰(id)은 같은 선수, 나머지 우리 팀 토큰은 그 페이지의 자리(포지션)대로 같은 규칙으로 입힌다. 위치는 건드리지 않는다.
@@ -13386,7 +13391,7 @@ function epLoadSquadGroup(grp){
   var roster=syncEpRosterUI({counts:{gk:gk,field:fd,rehab:rh,out:ot},syncInputs:true,persist:true}),able=roster.able;
   /* 토큰: 메인 작전판에 그 조를 올린다. squad 를 최신 거울로 갱신한 뒤 배치(부상·재활은 applySquadToBoard 가 제외). */
   try{ squad=info.sq; }catch(_){}
-  try{ applySquadToBoard({group:grp,includeUnavailable:!grp}); }catch(_){}
+  try{ applySquadToBoard({group:grp,includeUnavailable:!grp,even:true}); }catch(_){}   /* 훈련 편집기 — 운동장 전체에 고르게 */
   try{
     if(grp)toast(grp+" 올림 · 훈련 "+able+"명"+((rh+ot)?(" · 빠짐 "+(rh+ot)):""));
     else toast("전체 "+pool.length+"명 올림 · 훈련 가능 "+able+"명"+((rh+ot)?(" · 재활·부상·불참 "+(rh+ot)+"명 포함"):""));
