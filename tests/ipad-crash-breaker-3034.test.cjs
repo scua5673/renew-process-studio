@@ -121,5 +121,12 @@ test('3.034 a light boot opens the board flat for this boot only; a 3D crash sti
   assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top}).win.__tiltBootOk,true,'the board reloaded in the same shell (phone rotation) opens as usual — once only');
   const d=boardBoot({local:{ps_board_tilt3d:'1',ps_tilt3d_boot:JSON.stringify({T1:1e12-8000})},session:{ps_tilt3d_tab:'T1'},light:true});
   assert.equal(d.win.__tiltBootSafe,true,'3D was on when it died → the 3.033 rule still applies');assert.equal(d.ls.getItem('ps_board_tilt3d'),'0');
-  assert.ok(board.indexOf('var light=false; try{ light=window.top.__psSafeBoot===true&&window.top.__psSafeBootBoard!==true;')>board.indexOf('if(died){ window.__tiltBootSafe=true;'),'the 3D rule is checked first');
+  assert.ok(board.indexOf('    if(light){ window.__tiltBootOk=false; return; }')>board.indexOf('if(died){ window.__tiltBootSafe=true;'),'the 3D rule is checked first');
+  /* 첫 작전판이 3D 꺼짐이었거나 3.033 판정이 먼저 돌았어도 한 번은 쓴 것 — 같은 셸에서 다시 읽은 작전판(폰 회전)은 평소대로 */
+  const t2={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'phone':null}}};
+  boardBoot({local:{ps_board_tilt3d:'0'},top:t2});assert.equal(t2.__psSafeBootBoard,true,'3D off at the first load still uses it up');
+  assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top:t2}).win.__tiltBootOk,true,'turned 3D on, rotated → 3D');
+  const t3={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'phone':null}}};
+  boardBoot({local:{ps_board_tilt3d:'1',ps_tilt3d_boot:JSON.stringify({T1:1e12-8000})},session:{ps_tilt3d_tab:'T1'},top:t3});assert.equal(t3.__psSafeBootBoard,true,'the 3.033 branch first still uses it up');
+  assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top:t3}).win.__tiltBootOk,true);
 });
