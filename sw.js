@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.041';
+const CACHE = 'process-3.043';
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
@@ -72,7 +72,7 @@ async function fetchFresh(path) {
   return res;
 }
 
-/* 3.041 — 바뀐 파일만 받는다(피드백 TD-4 — 판마다 13.6MB 를 전부 다시 받았다. 하루 4~5판이면 셀룰러 코치에게 부담).
+/* 3.043 — 바뀐 파일만 받는다(피드백 TD-4 — 판마다 13.6MB 를 전부 다시 받았다. 하루 4~5판이면 셀룰러 코치에게 부담).
    배포의 판 목록(/sw-manifest.json — scripts/package-site.mjs 가 만든다: 주소 → SHA-256)을 받아, 옛 판 캐시에 있는 같은 주소의
    **본문을 직접 해시해** 목록과 같을 때만 그 응답을 새 캐시에 옮겨 담는다. 옛 캐시의 목록을 믿지 않는다 — 옛 install 이 배포와 겹쳐
    목록과 파일이 어긋났을 수 있다. 목록이 없거나 못 받으면(첫 배포 · 로컬 실행) 예전처럼 전부 받는다. 목록에 없는 주소(/ · /studio/ 같은
