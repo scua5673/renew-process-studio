@@ -98,3 +98,15 @@ npx -y netlify-cli api createSiteBuild --data '{"site_id":"<site-id>"}'
 - 매주: 관리자 백엔드 탭 «데이터 사고»(마지막 사고 뒤 며칠 · 자동 감지 후보를 사고로 볼지 판정), 운영 홈(핵심 행동·주별 사용자), 오류 탭 되풀이, 막힌 기기.
 - 매달: Supabase Usage(이그레스·로그 수집량 — 로그 수집은 2027년부터 20GB 초과 과금), DB 크기, `node scripts/schema-baseline.mjs --check`(운영 ≠ 기준본이면 누군가 운영에 손으로 적용한 것).
 - 분기: 새 Supabase 프로젝트에 기준본 + 백업으로 되살려 보는 복구 훈련(`migrations/00000000_baseline.runbook.md`). 걸린 시간·막힌 곳을 기록한다.
+
+## 6. CSP (콘텐츠 보안 정책)
+
+- 막는 정책은 `_headers` 의 `Content-Security-Policy`(object-src · base-uri · frame-ancestors) 하나다. 3.039 부터 그 옆에 **보고 모드**
+  `Content-Security-Policy-Report-Only` 가 있다 — 아무것도 막지 않고, 이 정책이었다면 막혔을 것을 브라우저가 알린다.
+- 앱(`studio/app.html` 머리의 CSP 수집기)이 그 알림을 «지시어 + 출처(호스트까지)»로 묶어 한 창에 한 번씩 `app_error` · `csp_report` 로 올린다.
+  관리자 오류 탭에서 `csp_report` 로 찾는다. 사용자 화면에는 아무것도 뜨지 않는다.
+- 새 바깥 주소(API · CDN · 이미지 아닌 자료)를 쓰려면 **먼저** `_headers` 의 해당 지시어에 더한다. `tests/csp-report-only-3039`(주소 목록)와
+  `tests/browser/csp-report-only`(탭을 돌며 위반 0건)가 지킨다. Supabase 주소를 바꾸면 connect-src 의 https · wss 두 줄도 같이.
+- 막는 정책으로 옮기는 때: 운영(main)에서 `csp_report` 가 2주 동안 0건(또는 전부 확장 프로그램 같은 바깥 원인)일 때, 같은 값을
+  `Content-Security-Policy` 로 옮긴다. `'unsafe-inline'`(인라인 스크립트 · 스타일)은 그때도 남는다 — 페이지마다 인라인 스크립트가 많아서,
+  걷어 내는 것은 따로 할 일이다.

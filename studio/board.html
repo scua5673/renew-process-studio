@@ -23474,6 +23474,39 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
 <style id="ps-2953-board">/* 2.953 — 폰은 작전판 편집 도구가 없는 화면(2.086)인데 «포메이션으로 시작 ＋» 문이 떠 있었다 — 눌러도 편집이 이어지지 않는다(코치 점검 10/7) */
 body.ps-phone-work #ehDoor{display:none!important}
 </style>
+<style id="ps-3039-phone-hint">/* 3.039 — 폰의 빈 작전판 안내(피드백 DS-11 — 첫 화면이 제목도 행동도 없는 빈 피치였다). 아래 스크립트가 붙이고 뗀다 */
+#psPhoneHint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:40;width:min(86%,320px);box-sizing:border-box;padding:16px 16px 12px;border-radius:14px;
+  background:rgba(18,22,30,.88);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);box-shadow:0 10px 28px rgba(0,0,0,.35);
+  color:#fff;text-align:center;font-family:inherit;word-break:keep-all}
+#psPhoneHint b{display:block;font-size:15px;font-weight:700;margin-bottom:6px}
+#psPhoneHint span{display:block;font-size:13px;line-height:1.5;color:rgba(255,255,255,.78)}
+#psPhoneHint .ph-acts{display:flex;gap:8px;justify-content:center;margin-top:12px}
+#psPhoneHint button{min-height:40px;padding:0 16px;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:transparent;color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+#psPhoneHint button[data-ph-vault]{background:#fff;color:#14161A;border-color:#fff}
+</style>
+<script>/* 3.039 — 폰(ps-phone-work)에서 작전판이 비어 있으면(선수 · 장비 · 그림 없음) 가운데에 안내 한 장: 폰은 보기 전용(2.086)이라는 것과 할 수 있는 일(보관함 열기).
+   «닫기»는 이 기기에서 다시 띄우지 않는다(ps_phone_board_hint_v1). 보관함 · 패턴북 · 보기 전용 화면에는 띄우지 않는다. 판이 채워지면 스스로 사라진다. */
+(function(){ var KEY="ps_phone_board_hint_v1",raf=0;
+  function off(){ try{ return localStorage.getItem(KEY)==="1"; }catch(_){ return false; } }
+  function empty(){ try{ return !(state.players&&state.players.length)&&!(state.equipment&&state.equipment.length)&&!(state.drawings&&state.drawings.length)&&!(typeof anim!=="undefined"&&anim&&anim.frames&&anim.frames.length>1); }catch(_){ return false; } }
+  function want(){ try{ var b=document.body; return !!b&&b.classList.contains("ps-phone-work")&&!off()&&!window.__vaultBook&&!window.__vaultEdit&&!window.__vaultViewMode&&!b.classList.contains("meet-mode")&&empty(); }catch(_){ return false; } }
+  function sync(){ raf=0; var h=document.getElementById("psPhoneHint"), st=document.getElementById("boardStage"); if(!st)return;
+    if(!want()){ if(h)h.remove(); return; } if(h)return;
+    h=document.createElement("div"); h.id="psPhoneHint"; h.setAttribute("role","note");
+    h.innerHTML='<b>폰에서는 작전판을 보기만 해요</b><span>저장한 작전판은 보관함에서 열어 봐요. 선수를 놓고 그리는 건 아이패드 · 컴퓨터에서 해요.</span>'
+      +'<div class="ph-acts"><button type="button" data-ph-vault>보관함 열기</button><button type="button" data-ph-close>닫기</button></div>';
+    h.addEventListener("click",function(e){ var t=e.target.closest&&e.target.closest("button"); if(!t)return; e.stopPropagation();
+      if(t.hasAttribute("data-ph-close")){ try{ localStorage.setItem(KEY,"1"); }catch(_){} h.remove(); return; }
+      if(t.hasAttribute("data-ph-vault")){ try{ parent.postMessage({source:"board",type:"openVault"},location.origin); }catch(_){} } });
+    ["pointerdown","touchstart","mousedown"].forEach(function(n){ h.addEventListener(n,function(e){ e.stopPropagation(); },{passive:true}); });   /* 안내를 누른 손가락이 판을 끌지 않게 */
+    st.appendChild(h); }
+  function kick(){ if(!raf)raf=requestAnimationFrame(sync); }
+  window.__psPhoneHintSync=kick;
+  /* 판의 층(tokenLayer 등)은 운동장을 바꿀 때마다 새로 만들어져 지켜볼 수 없다 — 폰일 때만 1.5초마다 배열 길이 넷을 본다(가볍다) */
+  function boot(){ kick(); try{ new MutationObserver(kick).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){}
+    setInterval(function(){ try{ if(document.body.classList.contains("ps-phone-work")||document.getElementById("psPhoneHint"))kick(); }catch(_){} },1500); }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot); else boot(); })();
+</script>
 <style id="ps-2963-vault">/* ══ 2.963 · 보관함 소음 줄이기(전체 디자인 점검 2판, 2026-10-07) ══
    ⚠ 보관함 옷(14600~14950행)은 런타임에 문서에 붙는 <style> 이라 이 블록보다 **뒤에** 올 수 있다 — 순서가 아니라 특이도(:not(#_))로 이긴다.
    ① 목록 줄마다 «보기 · 편집 · ⋯» (한 화면 50쌍) — 오른쪽 미리보기에 같은 버튼이 이미 있다. 넓은 화면(세 칸, ≥901)에서는 **고른 줄에만**.

@@ -7,6 +7,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(self)
   Content-Security-Policy: object-src 'none'; base-uri 'self'; frame-ancestors 'self'
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' data: blob: https://jvtajoeptzfsdwizxejg.supabase.co wss://jvtajoeptzfsdwizxejg.supabase.co https://process-letter.netlify.app https://process-letter-sessions.netlify.app https://api.open-meteo.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdnjs.cloudflare.com; frame-src 'self' blob: data:; media-src 'self' data: blob:; manifest-src 'self'; form-action 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
 /studio/packs/*
   Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox
   X-Content-Type-Options: nosniff

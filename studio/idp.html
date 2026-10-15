@@ -2538,6 +2538,13 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .sqe-note{font-size:11px;color:var(--text-3);line-height:1.55;margin-top:12px}
   .sqe-saving{font-size:11px;font-weight:800;color:var(--accent)}
   .sqe-msg{padding:40px 20px;text-align:center;color:var(--text-3)}
+  /* 3.039 — «오늘» 빈 화면(연결된 선수 0명) */
+  .sq-empty-today>b{display:block;font-size:var(--fs-title,16px);color:var(--text);margin-bottom:6px}
+  .sq-empty-today>span{display:block;font-size:var(--fs-sub,13px);line-height:1.5;word-break:keep-all}
+  .sq-empty-today .sq-empty-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0 4px}
+  .sq-empty-today .sq-empty-acts:empty{display:none}
+  .sq-empty-today>small{display:block;margin-top:10px;font-size:var(--fs-caption,12px)}
+  .sq-empty-today .sqg-un{margin-top:12px}
   .sqe-msg b{display:block;font-size:var(--fs-title);color:var(--text-2);margin-bottom:6px}
   .sqe-msg button{margin-top:12px;min-height:32px;padding:0 16px;border:1px solid var(--line-soft);background:var(--surface);
     border-radius:10px;font:800 13px var(--f);color:var(--text-2);cursor:pointer}
@@ -8263,7 +8270,15 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
          같은 팀이 선수단 31 · IDP 28 로 달리 말했다(코치 점검 10/7). 문서가 아직 없는 선수는 아래 sqUnlinkedNote 가 따로 말한다. */
       var accLinkedN=rws.filter(function(r){ return r.d2||sqDocState(r.x&&r.x.p&&r.x.p.id)==='nodoc'; }).length;
       var linked=rws.filter(function(r){return r.d2;}).sort(function(a,b){ return (b.sig-a.sig)||String(a.x.p.num||'').localeCompare(String(b.x.p.num||''),undefined,{numeric:true}); });
-      if(!linked.length)return '';
+      /* 3.039 — 연결된 선수가 0명이면(새 팀은 모두) 빈 화면 대신 다음 할 일 두 가지(피드백 UX-3 — 제목 줄 아래가 비어 «고장났나?» 싶었다).
+         초대 코드는 만들 수 있는 사람(소유자 · 임원 — PSSync.idpLink.can)에게만 단추로, 아니면 어디서 만드는지 한 줄. 평가는 «선수» 탭의 평가로 바로 */
+      if(!linked.length){ var _ia=idpSaveApi(), _inv=false; try{ _inv=!!(_ia&&_ia.idpLink&&_ia.idpLink.can&&_ia.idpLink.can()); }catch(_){}
+        return '<div class="card sqe-msg sq-empty-today"><b>아직 IDP를 쓰는 선수가 없어요</b>'
+          +'<span>선수가 앱에서 IDP를 쓰기 시작하면 그날 기록이 여기 모여요. 평가는 지금도 시작할 수 있어요.</span>'
+          +'<div class="sq-empty-acts">'+(_inv?'<button type="button" class="btn" data-sq-invite>선수 초대하기</button>':'')
+          +(can?'<button type="button" class="btn primary" data-sqe-mode="eval">선수 평가 시작</button>':'')+'</div>'
+          +(_inv?'':'<small>선수 초대 코드는 팀 임원이 계정 › 권한 관리에서 만들어요</small>')
+          +sqUnlinkedNote(rws)+'</div>'; }
       var wroteN=linked.filter(function(r){return r.wrote;}).length;
       var dt=new Date(day+'T12:00:00'); var WD=['일','월','화','수','목','금','토'];
       var ttl=isNaN(dt)?day:((dt.getMonth()+1)+'월 '+dt.getDate()+'일 ('+WD[dt.getDay()]+')');
@@ -9665,6 +9680,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           if(!squadView||String(sqEvalSel)!==String((function(){ try{ var pm=JSON.parse(localStorage.getItem('cs_perms_v1')||'null'); return pm&&pm.members&&pm.members[to.uid]&&pm.members[to.uid].playerId||''; }catch(_){return '';} })()))return;
           if(changed)gToast(v?(to.key.indexOf('vision:')===0?'질문·제안을 선수에게 보냈어요':'답글을 선수에게 보냈어요'):'답글을 비웠어요'); render(); },0); }; });
     try{ var _pdf=wrap.querySelector('[data-sq-pdf]'); if(_pdf)_pdf.onclick=function(){ var rb=document.getElementById('repBtn'); if(rb)rb.click(); }; }catch(_){}   /* 2.478 — 병합 헤더의 PDF 프록시 */
+    [].forEach.call(wrap.querySelectorAll('[data-sq-invite]'),function(b){ b.onclick=function(){ try{ var a=idpSaveApi(); if(a&&a.idpLink&&a.idpLink.invite)a.idpLink.invite(); }catch(_){} }; });   /* 3.039 — «오늘» 빈 화면의 선수 초대(셸의 합류 코드 창) */
     [].forEach.call(wrap.querySelectorAll('[data-sqe-mode]'),function(b){ b.onclick=function(){
       var nx=b.dataset.sqeMode||'eval', isScope=(nx==='req'||nx==='today'||nx==='qa');   /* 2.467 — 공통질문도 범위 세그(주석 2.409와 코드가 어긋나 평가→공통질문→선수가 이야기로 튕겼다, 1판) */   /* 2.163 */
       if(!isScope)sqPanelSet=true;   /* 2.125 — 사람이 고른 모드는 유지한다 */

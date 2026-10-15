@@ -104,7 +104,10 @@ export const SIZES={
   desktop:{engine:'chromium',ctx:{viewport:{width:1280,height:800},deviceScaleFactor:1}}
 };
 
-export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false}={}){
+export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false}={}){
+  /* 3.039 — csp:true 면 HTML 응답에 _headers 의 Content-Security-Policy-Report-Only 를 그대로 붙인다(tests/browser/csp-report-only) */
+  const cspValue=csp?(/\n  Content-Security-Policy-Report-Only: (.+)\n/.exec(fs.readFileSync(path.join(root,'_headers'),'utf8'))||[])[1]:null;
+  if(csp&&!cspValue)throw new Error('_headers 에 Content-Security-Policy-Report-Only 가 없다');
   const S=SIZES[sizeName];
   const browser=browsers[S.engine]||(browsers[S.engine]=await pw[S.engine].launch({headless:true,...(S.engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})}));
   const context=await browser.newContext({...S.ctx,serviceWorkers:'block',timezoneId:'Asia/Seoul',locale:'ko-KR',colorScheme:dark?'dark':'light'});
@@ -127,7 +130,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
     if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory())return route.fulfill({status:404,body:''});
     let content=fs.readFileSync(file);
     if(url.pathname==='/studio/app.html')content=Buffer.from(content.toString().replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b));
-    return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream'});
+    return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream',...(cspValue&&path.extname(file)==='.html'?{headers:{'content-security-policy-report-only':cspValue}}:{})});
   });
   const page=await context.newPage();page.setDefaultTimeout(45000);
   const logs=[];
