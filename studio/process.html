@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="review-training.css">
 <script src="learn-model.js"></script><!-- 2.108 — 학습모델 카테고리 사전(고정 id). 블록이 어느 카테고리를 다뤘는지 여기에 건다 -->
 
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.026">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.044">
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
 :focus-visible{outline:2px solid var(--ps-navy,#14213D) !important;outline-offset:2px;border-radius:6px;}
@@ -793,7 +793,7 @@
   #printDoc.pl-weekboard .pwb-title b{font-size:22px;font-weight:800;letter-spacing:-.02em;color:#14161A;line-height:1.1}
   #printDoc.pl-weekboard .pwb-title span{font-size:12px;color:#646A73;font-weight:600}
   #printDoc.pl-weekboard .pwb-right{display:flex;align-items:center;gap:16px;flex:0 0 auto}
-  #printDoc.pl-weekboard .pwb-tot{font-size:11.5px;color:#646A73;font-weight:600}
+  #printDoc.pl-weekboard .pwb-tot{font-size:12px;color:#646A73;font-weight:600}
   #printDoc.pl-weekboard .pwb-team{display:flex;align-items:center;gap:8px}
   #printDoc.pl-weekboard .pwb-team img{height:30px;max-width:56px;object-fit:contain}
   #printDoc.pl-weekboard .pwb-team span{font-size:13px;font-weight:800;color:#14161A}
@@ -804,21 +804,21 @@
   #printDoc.pl-weekboard .pwb-h b{font-size:14px;font-weight:800;color:#14161A}
   #printDoc.pl-weekboard .pwb-h .dt{font-size:11px;color:#646A73;font-weight:600}
   #printDoc.pl-weekboard .pwb-h .mn{margin-left:auto;font-size:11px;color:#646A73;font-weight:700;font-variant-numeric:tabular-nums}
-  #printDoc.pl-weekboard .pwb-md{font-size:9.5px;font-weight:800;border-radius:4px;padding:0 5px;line-height:1.7;color:#646A73;border:1px solid #D8DCE0;letter-spacing:.02em}
+  #printDoc.pl-weekboard .pwb-md{font-size:10px;font-weight:800;border-radius:4px;padding:0 5px;line-height:1.7;color:#646A73;border:1px solid #D8DCE0;letter-spacing:.02em}
   #printDoc.pl-weekboard .pwb-md.m{color:#fff;background:#C24A46;border-color:#C24A46}
   #printDoc.pl-weekboard .pwb-s{display:flex;flex-direction:column;gap:3px;flex:0 0 auto;break-inside:avoid}
   #printDoc.pl-weekboard .pwb-sh{display:flex;align-items:baseline;gap:5px;min-width:0}
   #printDoc.pl-weekboard .pwb-sh b{font-size:12px;font-weight:800;color:#14161A;flex:0 0 auto}
   #printDoc.pl-weekboard .pwb-sh em{font-style:normal;font-size:11px;font-weight:800;color:#14161A;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #printDoc.pl-weekboard .pwb-sh .tag{margin-left:auto;flex:0 0 auto;font-size:9px;font-weight:800;border-radius:3px;padding:0 4px;line-height:1.6;white-space:nowrap}
-  #printDoc.pl-weekboard .pwb-who{font-size:9.5px;color:#646A73;font-weight:600;line-height:1.3;margin-top:-2px;overflow-wrap:anywhere}
+  #printDoc.pl-weekboard .pwb-who{font-size:10px;color:#646A73;font-weight:600;line-height:1.3;margin-top:-2px;overflow-wrap:anywhere}
   #printDoc.pl-weekboard .pwb-bl{display:flex;flex-direction:column;gap:2px}
   #printDoc.pl-weekboard .pwb-b{box-sizing:border-box;display:flex;align-items:flex-start;gap:4px;padding:3px 6px 2px;border-left:3px solid #C2C7CF;border-radius:3px;background:#F1F3F5;color:#3F454D;break-inside:avoid}
-  #printDoc.pl-weekboard .pwb-b b{flex:1 1 auto;min-width:0;font-size:10.5px;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
+  #printDoc.pl-weekboard .pwb-b b{flex:1 1 auto;min-width:0;font-size:11px;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
   #printDoc.pl-weekboard .pwb-b i{flex:0 0 auto;font-style:normal;font-size:10px;font-weight:800;white-space:nowrap;opacity:.8;font-variant-numeric:tabular-nums}
   #printDoc.pl-weekboard .pwb-b.meet{background:#fff;border:1px dashed #C9CDD3;border-left:3px solid #C9CDD3;color:#3F454D}
-  #printDoc.pl-weekboard .pwb-co{font-size:9.5px;color:#4B5563;line-height:1.35;overflow-wrap:anywhere}
-  #printDoc.pl-weekboard .pwb-note{font-size:9.5px;color:#2A2F36;line-height:1.35;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere}
+  #printDoc.pl-weekboard .pwb-co{font-size:10px;color:#4B5563;line-height:1.35;overflow-wrap:anywhere}
+  #printDoc.pl-weekboard .pwb-note{font-size:10px;color:#2A2F36;line-height:1.35;font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere}
   #printDoc.pl-weekboard .pwb-tbd{font-size:10px;color:#8A9099;font-weight:600;padding:2px 2px}
   #printDoc.pl-weekboard .pwb-fill{flex:1 1 auto;min-height:22px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 21px,#DDE1E5 21px,#DDE1E5 22px)}
   #printDoc.pl-weekboard .pwb-match{display:flex;flex-direction:column;gap:3px;background:#C24A46;color:#fff;border-radius:4px;padding:9px 9px;flex:0 0 auto}
@@ -826,14 +826,14 @@
   #printDoc.pl-weekboard .pwb-match small{font-size:10px;font-weight:800;letter-spacing:.08em;opacity:.88}
   #printDoc.pl-weekboard .pwb-match b{font-size:15px;font-weight:800;line-height:1.3;overflow-wrap:anywhere}
   #printDoc.pl-weekboard .pwb-match span{font-size:12px;font-weight:700}
-  #printDoc.pl-weekboard .pwb-match em{font-style:normal;font-size:10.5px;font-weight:500;opacity:.88;overflow-wrap:anywhere}
+  #printDoc.pl-weekboard .pwb-match em{font-style:normal;font-size:11px;font-weight:500;opacity:.88;overflow-wrap:anywhere}
   #printDoc.pl-weekboard .pwb-match img{height:14mm;max-width:70%;object-fit:contain;align-self:flex-start;background:#fff;border-radius:4px;padding:2px}
   #printDoc.pl-weekboard .pwb-match.x{padding:6px 9px;background:#E38D89}
   #printDoc.pl-weekboard .pwb-match.x b{font-size:12px}
   #printDoc.pl-weekboard .pwb-off{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:4px;background:repeating-linear-gradient(135deg,#F4F5F7 0,#F4F5F7 6px,#ECEEF1 6px,#ECEEF1 12px)}
   #printDoc.pl-weekboard .pwb-off b{font-size:13px;font-weight:800;letter-spacing:.14em;color:#8A9099}
-  #printDoc.pl-weekboard .pwb-off span{font-size:10.5px;font-weight:600;color:#8A9099}
-  #printDoc.pl-weekboard .pwb-leg{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin-top:8px;font-size:9.5px;color:#646A73;font-weight:500}
+  #printDoc.pl-weekboard .pwb-off span{font-size:11px;font-weight:600;color:#8A9099}
+  #printDoc.pl-weekboard .pwb-leg{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin-top:8px;font-size:10px;color:#646A73;font-weight:500}
   #printDoc.pl-weekboard .pwb-leg span{display:inline-flex;align-items:center;gap:4px}
   #printDoc.pl-weekboard .pwb-leg i{width:10px;height:10px;border-radius:2px;border-left:3px solid;box-sizing:border-box;display:inline-block}
   #printDoc.pl-weekboard .pwb-leg .m{color:#C24A46;font-weight:700}
@@ -841,11 +841,11 @@
   #printDoc.pl-weekboard .pwb-foot h4{margin:0 0 5px;font-size:10px;font-weight:800;letter-spacing:.06em;color:#646A73}
   #printDoc.pl-weekboard .pwb-bar{display:flex;height:7px;border-radius:4px;overflow:hidden;gap:1px;background:#EDF0F2}
   #printDoc.pl-weekboard .pwb-mixl{display:flex;flex-wrap:wrap;gap:3px 12px;margin-top:5px}
-  #printDoc.pl-weekboard .pwb-mixl span{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:#374151}
+  #printDoc.pl-weekboard .pwb-mixl span{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#374151}
   #printDoc.pl-weekboard .pwb-mixl i{width:7px;height:7px;border-radius:2px;display:inline-block}
   #printDoc.pl-weekboard .pwb-lrow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;align-items:end}
   #printDoc.pl-weekboard .pwb-lc{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;height:58px}
-  #printDoc.pl-weekboard .pwb-lc span{font-size:8.5px;color:#646A73;font-weight:700;font-variant-numeric:tabular-nums}
+  #printDoc.pl-weekboard .pwb-lc span{font-size:9px;color:#646A73;font-weight:700;font-variant-numeric:tabular-nums}
   #printDoc.pl-weekboard .pwb-lc i{width:70%;border-radius:2px;display:block}
   #printDoc.pl-weekboard .pwb-lc em{font-style:normal;font-size:9px;color:#8A9099;font-weight:700}
   #printDoc.pl-weekboard .pwb-sum{display:flex;gap:16px}
@@ -1184,11 +1184,6 @@ body.fmdark .del,body.fmdark .brem:active,body.fmdark .wkx:active,body.fmdark .h
 })();
 </script>
 
-<link rel="stylesheet" href="design-v2.css">
-<style id="ps-dv2-align">/* 재설계 정합: 공통 의미 토큰 alias — 이 블록만 지우면 원복 */
-:root{--blue:var(--ps-color-action,#14213D);--blue-soft:var(--ps-color-action-soft,#E9EDF5);--accent-blue:var(--ps-color-action,#14213D);}
-@media (min-width:768px){ .btn.primary{box-shadow:var(--dv2-sh-btn-accent);} }
-</style>
 <div class="phone">
   <!-- .apphd 는 이제 세로(column) 배치 — 제목 띠 아래 서브탭. 예전 가로 배치 때 쓰던 인라인
        flex-wrap:wrap / flex:1 1 100% 를 남겨두면 서브탭이 제목 옆 칸으로 밀려나 '일정' 탭만 헤더가 158px 로 튄다(나머지는 87px). -->
@@ -7907,29 +7902,29 @@ function monthDocHTML(){
         let kind=''; try{ kind=M_KIND_LB[mMatchKind(day)]||''; }catch(_){}
         const tm=String((day.match&&day.match.time)||'').trim();
         body=`<div style="font-size:11px;color:#B4423C;font-weight:800;line-height:1.35;overflow-wrap:anywhere">경기${opp?' vs '+E(opp):''}</div>`
-            +((tm||kind)?`<div style="font-size:9.5px;color:#8A4B47;font-weight:600;margin-top:1px">${E([tm,kind].filter(Boolean).join(' · '))}</div>`:'')
-            +mxExtraList(day).map(x=>{const L=mxExtraLabel(x);return `<div style="font-size:9.5px;color:#B4423C;font-weight:700;margin-top:3px;padding-top:2px;border-top:1px dashed #E3B7B4;line-height:1.3">경기${L.t?' · '+E(L.t):''} · ${E(L.o)}</div>`;}).join('');   /* 2.620 */
+            +((tm||kind)?`<div style="font-size:10px;color:#8A4B47;font-weight:600;margin-top:1px">${E([tm,kind].filter(Boolean).join(' · '))}</div>`:'')
+            +mxExtraList(day).map(x=>{const L=mxExtraLabel(x);return `<div style="font-size:10px;color:#B4423C;font-weight:700;margin-top:3px;padding-top:2px;border-top:1px dashed #E3B7B4;line-height:1.3">경기${L.t?' · '+E(L.t):''} · ${E(L.o)}</div>`;}).join('');   /* 2.620 */
         if(!out){ tot.match+=1+mxExtraList(day).length; }
       } else if(ts.length){
         const compact=ts.length>=3;
         const shown=ts.length>4?ts.slice(0,3):ts;
         body=shown.map((tr,i)=>{ const L=getLoad(tr), mins=trMinutes(tr)||0, rp=L&&!L.rec?loadRpe(L):0;
           const place=String(tr.place||'').trim();
-          const l1=`<div style="font-size:10.5px;font-weight:700;line-height:1.3;color:#14161A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E([tr.time,sesName(day,tr)].filter(Boolean).join(' '))}</div>`;
+          const l1=`<div style="font-size:11px;font-weight:700;line-height:1.3;color:#14161A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E([tr.time,sesName(day,tr)].filter(Boolean).join(' '))}</div>`;
           const sub=[place,mins?mins+'′':'',L?(L.rec?'회복':(rp?'RPE '+rp:'')):''].filter(Boolean).join(' · ');
           const l2=(!compact&&sub)?`<div style="font-size:9px;color:#646A73;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(sub)}</div>`:'';
           return `<div style="padding-left:6px;border-left:3px solid ${rpeCol(L)};${i?'margin-top:3px;':''}">${l1}${l2}</div>`; }).join('')
-          +(ts.length>4?`<div style="font-size:9.5px;color:#646A73;font-weight:700;margin-top:3px;padding-left:9px">외 ${ts.length-3}</div>`:'');
+          +(ts.length>4?`<div style="font-size:10px;color:#646A73;font-weight:700;margin-top:3px;padding-left:9px">외 ${ts.length-3}</div>`:'');
         if(!out){ ts.forEach(tr=>{ tot.ses++; tot.min+=(trMinutes(tr)||0); const L=getLoad(tr); if(L&&!L.rec&&loadRpe(L))tot.rpe.push(loadRpe(L)); }); }
       } else if(isOff){
         body=`<div style="font-size:11px;color:#A2A8AE;font-weight:700">휴식</div>`;
       } else if(btrains.length){
         /* 세션 없이 보드 칩만 있는 옛 저장본(연간 빠른 추가 등) — 이름만 */
-        body=`<div style="padding-left:6px;border-left:3px solid #C2C7CF"><div style="font-size:10.5px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(btrains[0])}${btrains.length>1?` <span style="color:#8A9099;font-weight:600">외 ${btrains.length-1}</span>`:''}</div></div>`;
+        body=`<div style="padding-left:6px;border-left:3px solid #C2C7CF"><div style="font-size:11px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(btrains[0])}${btrains.length>1?` <span style="color:#8A9099;font-weight:600">외 ${btrains.length-1}</span>`:''}</div></div>`;
         if(!out)tot.ses++;
       }
       cells+=`<td style="border:1px solid #E3E6EA;background:${cellBg};padding:6px 7px;vertical-align:top;width:14.28%;${out?'opacity:.5;':''}">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:2px;margin-bottom:2px"><span style="font-size:12px;color:#14161A;font-weight:800">${dt.getDate()}</span><span style="font-size:9.5px;color:${(isMatch||md==='MD')?'#B4423C':'#8A9099'};font-weight:700">${md}</span></div><div style="max-height:${cap}px;overflow:hidden">${body}</div></td>`;
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:2px;margin-bottom:2px"><span style="font-size:12px;color:#14161A;font-weight:800">${dt.getDate()}</span><span style="font-size:10px;color:${(isMatch||md==='MD')?'#B4423C':'#8A9099'};font-weight:700">${md}</span></div><div style="max-height:${cap}px;overflow:hidden">${body}</div></td>`;
     }
     rows+=`<tr>${cells}</tr>`;
   }
@@ -7938,7 +7933,7 @@ function monthDocHTML(){
   let legend='', right='';
   if(!__pBlank){
     const ldot=c=>`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:4px;vertical-align:-1px"></span>`;
-    legend=`<div style="display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;font-size:9.5px;color:#646A73;font-weight:500;margin-top:6px;flex-shrink:0">`
+    legend=`<div style="display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;font-size:10px;color:#646A73;font-weight:500;margin-top:6px;flex-shrink:0">`
       +`<span>${ldot('#2E9D6A')}회복·낮음 (RPE ≤4)</span>`
       +`<span>${ldot('#3A6DF0')}보통 (5–6)</span>`
       +`<span>${ldot('#D9822B')}높음 (7+)</span>`
@@ -9448,6 +9443,11 @@ body.fmdark{ --ps-sh1:0 1px 2px rgba(0,0,0,.45); --ps-sh-hero:0 18px 38px -16px 
 <link rel="stylesheet" href="mobile-polish.css">
 <link rel="stylesheet" href="premium-ui.css">
 <link rel="stylesheet" href="team-ui-v375.css">
+<link rel="stylesheet" href="design-v2.css">
+<style id="ps-dv2-align">/* 재설계 정합: 공통 의미 토큰 alias — 이 블록만 지우면 원복 */
+:root{--blue:var(--ps-color-action,#14213D);--blue-soft:var(--ps-color-action-soft,#E9EDF5);--accent-blue:var(--ps-color-action,#14213D);}
+@media (min-width:768px){ .btn.primary{box-shadow:var(--dv2-sh-btn-accent);} }
+</style>
 <script>document.documentElement.classList.add('ps-page-process')</script>
 <script>(function(){
   window.openBoardForBlock=function(bi){if(!curSession)return;window.__boardBi=bi;var b=curTr().blocks[bi];try{parent.postMessage({source:'process',type:'openBoard',snap:(b&&b.board)?b.board.snap:null},'*');}catch(_){}};
@@ -10173,7 +10173,7 @@ window.quickFillWeek=function(){
 .wkbd-ronote b{color:var(--dim,#646A73)}
 @media (prefers-color-scheme:dark){.wkbd-srcbadge{background:#1E2A44;color:#6D93FF}}
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=3.041"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.044"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2593-size">/* 2.593 — 조작 높이 28/32/40 마무리 · :not(#_):not(#__) 는 premium/mobile-polish 의 !important 규칙(특이도 0,3,2)을 이기기 위한 id 부스트(패딩으로 높이가 정해지던 것들). 데스크톱 32 · 칩 28 · 폰(≤600) 은 32짜리를 40 으로 */
 html body .apphd-seg button:not(#_):not(#__),html body #topNav button:not(#_):not(#__),html body .weeknav button:not(#_):not(#__),html body .wks-add button:not(#_):not(#__),html body .actionbar .btn:not(#_):not(#__),html body .ab-more-wrap .btn:not(#_):not(#__){height:32px!important;min-height:32px!important;padding-top:0!important;padding-bottom:0!important;line-height:1!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
 html body .wks-kbtn:not(#_):not(#__){height:28px!important;min-height:28px!important;padding-top:0!important;padding-bottom:0!important;line-height:1!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
@@ -10288,7 +10288,7 @@ html body .wks-day:not(.is-match):not(.is-off):not(:has(.wks-ses))>.wks-kind .wk
 .mxcell{margin-top:3px;padding:4px 8px;border-radius:6px;background:var(--match-soft,#FBECEC);color:var(--match,#C24A46);font-size:11px;font-weight:700;line-height:1.35}
 .pmatch.mx{margin-top:2px}
 /* 2.912 — 경기장·홈/원정(경기 문서에서 읽기만). 경기 이름보다 한 단 조용하게 */
-.wks-venue{margin-top:5px;font-size:11.5px;font-weight:600;color:var(--text-2,#646A73);line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wks-venue{margin-top:5px;font-size:12px;font-weight:600;color:var(--text-2,#646A73);line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wkbd-venue{font-weight:600;letter-spacing:0;overflow-wrap:anywhere}
 .matchcell{flex-wrap:wrap}
 .matchcell .s{flex:1 0 100%;margin-top:4px;font-size:var(--fs-caption,12px);font-weight:600;color:var(--text-2,#646A73)}

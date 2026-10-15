@@ -40,4 +40,26 @@
   --c-ok:#1F7A4C;    /* 가능 */
   --c-warn:#B5762B;  /* 재활·주의 */
   --c-bad:#C24A46;   /* 부상 */
+
+  /* ── 3.044 · 글자 · 면 · 선의 정본(피드백 DS-4). 이름이 24개로 갈라진 별칭(--ink · --txt · --dim · --muted · --panel …)은
+     studio/ui-grammar.css 가 **이 값을 가리키게만** 한다 — 새 값은 여기서만 정한다. 다크 값은 아래 body.fmdark 한 곳 ── */
+  --c-ink:#14161A;      /* 글자 */
+  --c-muted:#646A73;    /* 보조 글자 */
+  --c-faint:#697079;    /* 날짜 · 라벨 — 흰 5.0 · #F4F5F7 4.6(AA) */
+  --c-line:#E3E6EA;     /* 헤어라인 */
+  --c-line-2:#D3D7DD;   /* 진한 선(입력칸) */
+  --c-line-3:#EEF0F3;   /* 옅은 선(표 안) */
+  --c-bg:#F4F5F7;       /* 바탕 */
+  --c-surface:#FFFFFF;  /* 카드 · 띠 */
+  --c-surface-2:#F1F3F5;/* 칸 · 트랙 */
+  --r-card:12px;        /* 카드 모서리(ui-grammar --g-radius) */
+  --r-control:10px;     /* 버튼 · 입력칸 */
+  /* 글자 이름 — ui-grammar 의 --fs-* 는 위 7단을 가리킨다: micro=--t-2 · caption=--t-3 · sub=--t-4 · body=--t-5 · title=--t-6 · h2 18px(7단 밖 하나 — 큰 제목) */
+}
+/* 다크 — 조명을 낮춘 같은 방(ui-grammar 2.637). 의미색은 채도를 낮추고 명도만 올린다(2.981) */
+body.fmdark{
+  --c-ink:#F2F3F5; --c-muted:#A9AFB8; --c-faint:#8B929C;
+  --c-line:#2E333A; --c-line-2:#3A4048; --c-line-3:#262B31;
+  --c-bg:#121417; --c-surface:#1B1E23; --c-surface-2:#23272D;
+  --c-act:#7F98D0; --c-ok:#4CC27A; --c-warn:#D9A15A; --c-bad:#E07470;
 }

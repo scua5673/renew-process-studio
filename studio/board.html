@@ -10,7 +10,7 @@
 
 
 <title>코치 보드 · 작전판 & 훈련 설계</title>
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.026">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.044">
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
 :focus-visible{outline:2px solid var(--ps-navy,#14213D) !important;outline-offset:2px;border-radius:6px;}
@@ -1350,7 +1350,7 @@
   #editorPanel #epSurface .sf-l{flex:none;font-size:12px;font-weight:800;color:var(--txt,#14161A)}
   #editorPanel #epSurface .sf-seg{flex:1;min-width:0;display:flex;gap:3px;padding:3px;border-radius:10px;background:var(--fill,#F1F3F5)}
   #editorPanel #epSurface .sf-seg.sm{background:#E7EAEE}
-  #editorPanel #epSurface .sf-seg>button{flex:1 1 0;min-width:0;width:auto!important;height:30px;padding:0 6px!important;border:0!important;border-radius:8px;background:transparent;color:var(--txt-dim,#646A73);font:inherit;font-size:12.5px;font-weight:600;line-height:1;white-space:nowrap;cursor:pointer}
+  #editorPanel #epSurface .sf-seg>button{flex:1 1 0;min-width:0;width:auto!important;height:30px;padding:0 6px!important;border:0!important;border-radius:8px;background:transparent;color:var(--txt-dim,#646A73);font:inherit;font-size:13px;font-weight:600;line-height:1;white-space:nowrap;cursor:pointer}
   #editorPanel #epSurface .sf-seg>button.on{background:var(--surface,#fff);color:var(--txt,#14161A);font-weight:800;box-shadow:0 1px 2px rgba(20,22,26,.14)}
   #editorPanel #epSurface .sf-box{margin-top:8px;display:flex;flex-direction:column;gap:8px;padding:9px 10px 10px;border:1px solid var(--line,#E3E6EA);border-radius:8px;background:var(--fill,#F1F3F5)}
   #editorPanel #epSurface .sf-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
@@ -3157,7 +3157,7 @@ html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop 
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop #tiltAdRow#tiltAdRow input#tiltAdInput.ps-tilt-ad{flex:1 1 0!important;width:0!important;min-width:0!important}
 html body .menurow input.ps-tilt-ad:not(#_){flex:1 1 auto;min-width:0;width:auto;height:28px;padding:0 9px;border:1px solid var(--line,#e3e6ea);border-radius:8px;background:var(--surface,#fff);color:var(--ink,#14161A);font-size:12px;font-weight:600;box-sizing:border-box}
 html body .menurow input.ps-tilt-ad:not(#_):focus{outline:2px solid var(--accent,#2f6bff);outline-offset:0;border-color:transparent}
-html body :is(#viewMenu,#moreMenu) .bs-sec:not(#_){font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--txt-dim,#646A73);margin:10px 0 2px;padding-top:8px;border-top:1px solid var(--line,#eceef1)}   /* 3.036 — #moreMenu(배치 탭)의 «선수 불러오기» 제목도 */
+html body :is(#viewMenu,#moreMenu) .bs-sec:not(#_){font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--txt-dim,#646A73);margin:10px 0 2px;padding-top:8px;border-top:1px solid var(--line,#eceef1)}   /* 3.036 — #moreMenu(배치 탭)의 «선수 불러오기» 제목도 */
 html body :is(#viewMenu,#moreMenu) .bs-sec.bs-first:not(#_){border-top:0;padding-top:2px;margin-top:4px}
 /* 3.036 — 탭마다 제 줄만: #viewMenu 의 자식(묶음 제목 · 줄 · 안내)은 data-bs-tab 이 패널의 탭과 다르면 숨는다. 'board'(내 스타일)는 운동장 · 선수 표시 둘 다 */
 html body:not(.ps-dock) #cmd-board-settings-pop:not([data-bs-tab="pitch"]) #viewMenu > [data-bs-tab="pitch"]:not(#_),
@@ -3167,7 +3167,7 @@ html body:not(.ps-dock) #cmd-board-settings-pop:not([data-bs-tab="pitch"]):not([
 /* 3.036 — 범위 칩 아래 탭 간격(내 화면은 앞 세 탭과 떼어 놓는다) · 안내 줄 · 접힌 단축키 · 배치 카드의 두 단추 · 숨김 규칙(상태 소스 줄 · 훈련 격자 · 3D 꾸밈 · 편집기 · 그리드 판) */
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .cmd-board-settings-tabs>button.bs-tab-me{margin-left:9px!important;position:relative}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .cmd-board-settings-tabs>button.bs-tab-me::before{content:"";position:absolute;left:-6px;top:7px;bottom:7px;width:1px;background:var(--line2,#D3D7DD)}
-html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .bs-hint{display:block;font-size:10.5px;line-height:1.5;color:var(--txt-dim,#646A73);padding:0 2px 4px;margin:-2px 0 2px}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .bs-hint{display:block;font-size:11px;line-height:1.5;color:var(--txt-dim,#646A73);padding:0 2px 4px;margin:-2px 0 2px}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .menurow.cmd-settings-state-source{display:none!important}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .menurow.ps-train-off{display:none!important}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop .menurow.ps-deco-off{display:none!important}
@@ -3176,7 +3176,7 @@ html body.editing #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-setti
 html body:not(.editing) #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop #bsBlankHint,html body:not(.ps-blank-spec) #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop #bsBlankHint{display:none!important}
 html body.editing.ps-blank-spec #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop :is(#pitchSpecRow,#bsGrassRow,#bsLineRow,#grassToneBRow,#grassTonePRow,#cmd-board-settings-pitchview,#cmd-board-settings-pvside,#cmd-board-settings-pitchn){display:none!important}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys{margin:10px 0 2px;padding-top:8px;border-top:1px solid var(--line,#eceef1)}
-html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys>summary{cursor:pointer;font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--txt-dim,#646A73);list-style:none;display:flex;align-items:center;gap:6px;padding:0 0 6px}
+html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys>summary{cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--txt-dim,#646A73);list-style:none;display:flex;align-items:center;gap:6px;padding:0 0 6px}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys>summary::-webkit-details-marker{display:none}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys>summary::before{content:"▸";font-size:10px}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys[open]>summary::before{content:"▾"}
@@ -10154,7 +10154,7 @@ var PEP=(function(){
       +'#psExpProg.make .pep-bar i,#psExpProg.save .pep-bar i{background-image:linear-gradient(45deg,rgba(255,255,255,.28) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.28) 50%,rgba(255,255,255,.28) 75%,transparent 75%);background-size:18px 18px;animation:pepStripe .7s linear infinite}'
       +'#psExpProg.done .pep-bar i{background-color:#1f8a4c}'
       +'#psExpProg.warn .pep-ic{background:#FDF3E7;color:#B5762B}#psExpProg.warn .pep-bar i{background-color:#B5762B}'
-      +'#psExpProg .pep-sub{font-size:12.5px;line-height:1.45;color:var(--dim,#646A73);min-height:18px;overflow-wrap:anywhere}'
+      +'#psExpProg .pep-sub{font-size:13px;line-height:1.45;color:var(--dim,#646A73);min-height:18px;overflow-wrap:anywhere}'
       +'#psExpProg .pep-acts{display:flex;gap:8px;margin-top:14px}#psExpProg .pep-acts[hidden]{display:none}'
       +'#psExpProg .pep-acts button{flex:1 1 0;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line,#E3E6EA);background:var(--surface,#fff);color:var(--ink,#14161A);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}'
       +'#psExpProg .pep-acts .pep-go{flex:1.4 1 0;border-color:transparent;background:var(--accent,var(--ps-navy,#14213D));color:#fff}'
@@ -10707,7 +10707,7 @@ function exportVideoSheet(mode){
     hd.appendChild(ha); pl.appendChild(hd);
     var list=document.createElement("div"); list.style.cssText="max-height:184px;overflow:auto"; pl.appendChild(list);
     PG.all.forEach(function(p){ var ok=p.frames.length>1;
-      var row=document.createElement("label"); row.style.cssText="display:flex;align-items:center;gap:9px;min-height:38px;padding:4px 10px;border-top:1px solid var(--line,#E3E6EA);font-size:12.5px;cursor:"+(ok?"pointer":"default")+(ok?"":";opacity:.45");
+      var row=document.createElement("label"); row.style.cssText="display:flex;align-items:center;gap:9px;min-height:38px;padding:4px 10px;border-top:1px solid var(--line,#E3E6EA);font-size:13px;cursor:"+(ok?"pointer":"default")+(ok?"":";opacity:.45");
       var cb=document.createElement("input"); cb.type="checkbox"; cb.setAttribute("data-pi",String(p.i)); cb.disabled=!ok; cb.checked=ok&&!!pick[p.i]; cb.style.cssText="flex:0 0 auto;width:17px;height:17px;margin:0;accent-color:var(--blue,var(--ps-navy,#14213D))";
       cb.onchange=function(){ if(cb.checked)pick[p.i]=1; else delete pick[p.i]; paintScope(); };
       var no=document.createElement("span"); no.textContent=String(p.i+1); no.style.cssText="flex:0 0 18px;font-size:11px;font-weight:800;color:var(--txt-dim,#646A73);text-align:center;font-variant-numeric:tabular-nums";
@@ -12643,8 +12643,8 @@ body{padding:9mm 11mm;}
 .fsx-scn i{position:absolute;left:3px;top:2px;font-style:normal;font-size:8px;font-weight:800;color:#111;background:rgba(255,255,255,.85);border-radius:5px;padding:0 4px;line-height:1.55;}
 .fsx-memo{flex:0 0 auto;margin-top:1.6mm;display:flex;flex-direction:column;gap:1mm;}
 /* 2.714 — 방법·코칭 두 줄: 9.5px 진한 글자, 각 2줄까지 이어 쓰고 넘치면 …(예전 9px 회색 1줄). 라벨은 작은 알약, 코칭은 굵게 */
-.fsx-ml{display:flex;align-items:flex-start;gap:1.6mm;font-size:9.5px;line-height:1.35;color:#16181c;min-height:0;}
-.fsx-ml b{flex:0 0 auto;font-weight:800;color:#666;font-size:7.5px;letter-spacing:.03em;padding:.2mm 1.4mm;border:.3mm solid #e1e3e7;border-radius:3mm;margin-top:.3mm;white-space:nowrap;}
+.fsx-ml{display:flex;align-items:flex-start;gap:1.6mm;font-size:10px;line-height:1.35;color:#16181c;min-height:0;}
+.fsx-ml b{flex:0 0 auto;font-weight:800;color:#666;font-size:8px;letter-spacing:.03em;padding:.2mm 1.4mm;border:.3mm solid #e1e3e7;border-radius:3mm;margin-top:.3mm;white-space:nowrap;}
 .fsx-ml span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0;word-break:break-word;}
 .fsx-ml.coach b{color:#c0463f;border-color:#f0c9c6;}
 .fsx-ml.coach span{font-weight:600;}
@@ -12656,7 +12656,7 @@ body{padding:9mm 11mm;}
 .fsx-card.empty .fsx-dia{background:#fff;border:.4px solid #E3E6EA;}   /* 빈 칸은 모눈종이(흰 바탕) */
 body.ink .fsx-dia,body.ink .fsx-scn{background:#fff;}
 /* 2.714 — 2.713 의 오른쪽 글 칸(.fsx-body/.fsx-txt/.fsx-blk)은 걷었다: 세로 운동장이 56% 칸에서 1/4 크기로 줄어 배치를 못 봤다(사용자) */
-.fsx-hc{flex:0 0 auto;font-size:9.5px;font-weight:800;color:#16181c;white-space:nowrap;padding-left:2mm;border-left:.3mm solid #d9dde3;}   /* 2.901 — 훈련 인원 */
+.fsx-hc{flex:0 0 auto;font-size:10px;font-weight:800;color:#16181c;white-space:nowrap;padding-left:2mm;border-left:.3mm solid #d9dde3;}   /* 2.901 — 훈련 인원 */
 /* ══ 2.900 · 한 장에 3·2·1개(사용자 목업 승인) — 운동장 + «훈련 방법»·«코칭 포인트» 전문 ══ */
 .fsx-grid.fsx-n3,.fsx-grid.fsx-n2,.fsx-grid.fsx-n1{grid-auto-flow:row;grid-template-rows:1fr;}
 .fsx-grid.fsx-n3{grid-template-columns:1fr 1fr 1fr;} .fsx-grid.fsx-n2{grid-template-columns:1fr 1fr;} .fsx-grid.fsx-n1{grid-template-columns:1fr;}
@@ -22718,7 +22718,7 @@ body:not(.ep-sp) #editorPanel>#epSpMore{display:none!important}
 html.ps-page-board body:not(.ps-dock) #ps-command-dock #cmd-tool-end .menuwrap{width:auto!important;flex:0 0 auto!important}
 html.ps-page-board #ps-command-dock #cmd-tool-end:not(#_):not(#_){min-width:0!important;overflow:visible!important;flex-wrap:nowrap!important}
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=3.041"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.044"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2582-selbar-trim">/* 2.582 — 선택 띠에서 뺀 것(사용자 "이것들은 없어도 될꺼 같아"): 정렬 띠(#alignBar 줄맞춤·균등·간격) · 좌우/상하 대칭 복제.
    코드는 남기고 보이지만 않게 — 되살리려면 이 블록만 지운다. inline style="display:inline-flex" 를 이기려고 !important. */
 html.ps-page-board #alignBar,html.ps-page-board #mirHBtn,html.ps-page-board #mirVBtn,#alignBar,#mirHBtn,#mirVBtn{display:none!important}

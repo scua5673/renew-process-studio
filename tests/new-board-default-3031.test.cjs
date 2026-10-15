@@ -59,7 +59,7 @@ test('3.031 version and release note',()=>{
   /* 3.032 — 뒤 판이 올라가도 깨지지 않게: 3.031 이상 · sw.js CACHE = app.html PS_BUILD = ?v= 일곱 곳 · 3.031 은 sw.js 기록에 남는다 */
   const cache=(R('sw.js').match(/^const CACHE = 'process-(3\.\d{3})';/m)||[])[1],build=(R('studio/app.html').match(/window\.PS_BUILD='(3\.\d{3})'/)||[])[1];
   assert.ok(cache&&build);assert.equal(cache,build);assert.ok(+build.slice(2)>=31,build);
-  assert.equal((R('studio/app.html').replace(/ui-grammar\.css\?v=[\d.]+/g,'').match(new RegExp('\\?v='+build.replace('.','\\.')+'"','g'))||[]).length,7);   /* 3.039 — ui-grammar.css 의 ?v 는 그 파일을 고칠 때만 따라온다(세지 않는다) */
+  assert.equal((R('studio/app.html').replace(/(?:ui-grammar|tokens)\.css\?v=[\d.]+/g,'').match(new RegExp('\\?v='+build.replace('.','\\.')+'"','g'))||[]).length,7);   /* 3.039 — ui-grammar.css 의 ?v 는 그 파일을 고칠 때만 따라온다(세지 않는다) */
   /* 3.038 — sw.js 머리에 판마다 쌓던 변경 기록은 걷었다(피드백 TD-7). 판 기록은 release-notes.js(아래)와 커밋 메시지가 든다 */
   assert.doesNotMatch(R('sw.js'),/^\/\/ 3\.\d{3} /m,'sw.js carries no per-release changelog lines');
   const e=notes.entries().find(x=>x.id==='2026-10-14-v3-031-reports');assert.ok(e,'3.031 note');
