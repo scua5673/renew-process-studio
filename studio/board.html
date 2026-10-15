@@ -11702,17 +11702,19 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
       x:R.x+R.w*(0.06+0.88*Math.max(0,Math.min(1,fx))), y:R.y+R.h*(0.06+0.88*Math.max(0,Math.min(1,fy)))});
   };
   /* 한 운동장 안에 k 명을 고르게 — 가로가 길면 열을 더 준다 */
+  const _evenPlan=[];   /* 훈련 고른 배치 — 운동장별 토큰 id(렌더 뒤 겹침 검사 _evenFit 이 쓴다) */
   const spread=(list,R)=>{
     var k=list.length; if(!k)return;
     var cols=Math.max(1,Math.round(Math.sqrt(k*((R.w/R.h)||1))));
     if(cols>k)cols=k;
-    var rows=Math.ceil(k/cols);
+    var rows=Math.ceil(k/cols), id0=uid;
     list.forEach(function(pl,idx){
       var c=idx%cols, r=Math.floor(idx/cols);
       var inRow=Math.min(cols,k-r*cols);                 /* 마지막 줄이 덜 찼으면 그 줄에서 가운데 정렬 */
       var fx=(c+0.5)/inRow, fy=(r+0.5)/rows;
       putIn(pl,R,fx,fy,gi++);
     });
+    var ids=[]; for(var q=id0;q<uid;q++)ids.push(q); _evenPlan.push({R:R,ids:ids,cols:cols});
   };
   /* 2.683 — 포메이션 밖 선수(12번째부터)는 오른쪽 대기줄(GK→DF→MF→FW, 미지정은 맨 아래) */
   function _placeWaiting(list){ var b={GK:[],DF:[],MF:[],FW:[]},r=[];
@@ -11765,6 +11767,7 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
   if(!state.ball)state.ball={x:CX,y:CY};
   var _pgN=0; try{ _pgN=squadSpreadAll(opts,_uid0,sq); }catch(e){ try{console.warn("squad all pages",e);}catch(_){} }
   sel=null;renderTokens();if(typeof updateEmptyHint==="function")updateEmptyHint();closeSquad();
+  if(_even&&_evenPlan.length){ try{ _evenFit(_evenPlan); }catch(e){ try{console.warn("even fit",e);}catch(_){} } }
   /* 2.543 — 나눠 놓았으면 **몇 개에 몇 명씩**인지 말한다. 안 말하면 코치가 세어 봐야 한다 */
   var _sp=null; try{ _sp=window.__psSquadSpread; }catch(_){}
   if(_sp&&_sp.even){ toast(sq.length+"명 운동장 전체에 고르게 배치 ✓"+(_sp.n>1?(" · 운동장 "+_sp.n+"개에 "+_sp.per.join("·")+"명"):"")+(_pgN?(" · 다른 페이지 "+_pgN+"개에도"):"")); return; }
@@ -11774,6 +11777,51 @@ function applySquadToBoard(opts){opts=opts||{};let sq=(squad.players||[]).slice(
     +(_sp&&_sp.formation?(" · 운동장 1번에"):"")
     +(_sp&&!_sp.formation&&_sp.n>1?(" · 운동장 "+_sp.n+"개에 "+_sp.per.join("·")+"명"):"")
     +(!opts.startersOnly&&rest.length?(" · 포지션 미지정 "+rest.length+"명"):""));}
+/* ══ 훈련 고른 배치 — 토큰이 겹치지 않게(사용자 "토큰이 겹치지 않게") ══
+   토큰 크기는 기기(폰·태블릿)·화면 방향·크기 설정마다 달라 좌표만으로는 모른다 → **그려진 화면에서** 원(.tok-c)과 글자(번호·이름)를 재서 겹침을 본다.
+   겹치면 ① 열 수를 바꿔 다시 깔아 보고 ② 그래도 안 되면 토큰 크기를 한 단계씩 줄인다(사다리 [0] 기본까지).
+   공이 선수 위에 겹치면 공을 가장 가까운 빈 칸 모서리로 옮긴다. 판이 안 보일 때(크기 0)는 잴 수 없으니 그대로 둔다. */
+function _evenFit(plan){
+  var byId={}; (state.players||[]).forEach(function(t){ byId[t.id]=t; });
+  var GAP=3;
+  function box(id){ var g=tokenLayer.querySelector('.token[data-id="'+id+'"]'); if(!g)return null;
+    var parts=g.querySelectorAll(".tok-c,text,rect:not([fill=transparent])"), b=null;   /* 원 · 글자 · 이름표 알약(투명 터치 영역 제외) */ if(!parts.length)parts=g.querySelectorAll(":scope>svg"); if(!parts.length)parts=[g];   /* 공은 안쪽 svg(투명 터치 영역 제외) */
+    [].forEach.call(parts,function(e){ var r=e.getBoundingClientRect(); if(!(r.width>0&&r.height>0))return;
+      if(!b)b={l:r.left,t:r.top,r:r.right,b:r.bottom}; else { b.l=Math.min(b.l,r.left); b.t=Math.min(b.t,r.top); b.r=Math.max(b.r,r.right); b.b=Math.max(b.b,r.bottom); } });
+    return b; }
+  function mv(t){ var g=tokenLayer.querySelector('.token[data-id="'+t.id+'"]'); if(g){ g.setAttribute("transform",tokenTransform(t)); try{ if(window.PSBoardDepth)PSBoardDepth.update(g,t); }catch(_){} } }   /* 위치만 — 후보마다 전체를 다시 그리지 않는다 */
+  function hit(a,c){ return a&&c&&a.l<c.r+GAP&&c.l<a.r+GAP&&a.t<c.b+GAP&&c.t<a.b+GAP; }
+  function clash(ids){ var bs=ids.map(box); for(var i=0;i<bs.length;i++)for(var j=i+1;j<bs.length;j++)if(hit(bs[i],bs[j]))return true; return false; }
+  function lay(g,cols){ var k=g.ids.length, rows=Math.ceil(k/cols), R=g.R;
+    g.ids.forEach(function(id,idx){ var t=byId[id]; if(!t)return; var c=idx%cols, r=Math.floor(idx/cols), inRow=Math.min(cols,k-r*cols);
+      t.x=R.x+R.w*(0.06+0.88*((c+0.5)/inRow)); t.y=R.y+R.h*(0.06+0.88*((r+0.5)/rows)); mv(t); }); g.cols=cols; }
+  var all=[]; plan.forEach(function(g){ all=all.concat(g.ids); });
+  if(!all.some(function(id){ return box(id); }))return;   /* 판이 안 보인다 — 잴 수 없음 */
+  var L=tokScaleLevels();
+  for(var guard=0;guard<L.length+1;guard++){
+    var ok=true;
+    plan.forEach(function(g){ if(!clash(g.ids))return;
+      var k=g.ids.length, base=g.cols, tried={}, cand=[];
+      for(var d=1;d<=Math.min(k,6);d++){ [base+d,base-d].forEach(function(c){ if(c>=1&&c<=k&&!tried[c]){ tried[c]=1; cand.push(c); } }); }
+      for(var i=0;i<cand.length;i++){ lay(g,cand[i]); if(!clash(g.ids))return; }
+      lay(g,base); ok=false; });
+    if(ok)break;
+    var cur=state.tokenScale||L[0]; if(cur<=L[0]+0.001)break;   /* 기본(최소)까지 줄였다 — 더는 못 줄인다 */
+    var nx=L[0]; for(var li=L.length-1;li>=0;li--){ if(L[li]<cur-0.001){ nx=L[li]; break; } }
+    state.tokenScale=Math.round(nx*1000)/1000; renderTokens();
+  }
+  /* 공이 선수 위에 있으면 첫 운동장의 빈 칸 모서리(가운데에서 가장 가까운)로 */
+  if(state.ball){ var bb=box("ball"); if(bb&&all.some(function(id){ return hit(bb,box(id)); })){
+    var g0=plan[0], R=g0.R, k=g0.ids.length, cols=g0.cols, rows=Math.ceil(k/cols), best=null, bd=1e9, cx=R.x+R.w/2, cy=R.y+R.h/2, pts=[];
+    for(var ci=0;ci<=cols;ci++)for(var ri=0;ri<=rows;ri++)pts.push([0.06+0.88*ci/cols,0.06+0.88*ri/rows]);   /* 빈 칸 모서리 먼저 */
+    for(var si=0;si<=24;si++)for(var sj=0;sj<=16;sj++)pts.push([0.01+0.98*si/24,0.01+0.98*sj/16]);   /* 모서리가 다 막히면 판 전체(터치라인 쪽 여백 포함)에서 */
+    for(var pi=0;pi<pts.length;pi++){ if(best&&pi>=(cols+1)*(rows+1))break; var x=R.x+R.w*pts[pi][0], y=R.y+R.h*pts[pi][1], d2=Math.hypot(x-cx,y-cy);
+      var save={x:state.ball.x,y:state.ball.y}; state.ball.x=x; state.ball.y=y; mv(state.ball); var nb=box("ball");
+      var free=!all.some(function(id){ return hit(nb,box(id)); }); state.ball.x=save.x; state.ball.y=save.y;
+      if(free&&d2<bd){ bd=d2; best={x:x,y:y}; } }
+    if(best){ state.ball.x=best.x; state.ball.y=best.y; } mv(state.ball); } }
+  renderTokens();   /* 마지막에 한 번 제대로 그린다(선·시야 등 따라오는 것들) */
+}
 /* 2.975 — 선수단을 불러오면 **지금 페이지의 모든 장면**과 **다른 페이지 전부**에도(사용자 "팀을 불러왔을 때 모든 페이지에 적용").
    같은 토큰(id)은 같은 선수, 나머지 우리 팀 토큰은 그 페이지의 자리(포지션)대로 같은 규칙으로 입힌다. 위치는 건드리지 않는다.
    이번에 새로 놓은 토큰은 지금 페이지의 다른 장면에도 같은 자리로 넣는다(없으면 재생 때 나타났다 사라진다). 우리 팀 토큰이 없는 페이지는 그대로. */
