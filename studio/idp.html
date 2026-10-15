@@ -8691,7 +8691,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       var ask=uids.filter(function(u){return !_sqDocsAbsent[u];}), absentN=uids.length-ask.length, waitN=Math.max(0,nodoc-absentN);
       if(ask.length&&window.parent!==window&&now-_sqDocsReqAt>20000){ _sqDocsReqAt=now; try{ window.parent.postMessage({source:'idp',type:'idpDocsMissing',uids:ask},'*'); }catch(_){} }
       var failed=_sqDocsAck&&_sqDocsAck.missing>0&&(now-_sqDocsAck.at<120000);
-      if(waitN)o+='<div class="sqg-un sqg-nodoc">선수 문서 아직 안 받음 '+waitN+'명 — '+(failed?('받지 못했어요 · 앱 설정 › 동기화 진단'+(_sqDocsAck.stage?(' ('+esc(_sqDocsAck.stage)+')'):'')):'서버에서 받는 중…')+'</div>';
+      if(waitN)o+='<div class="sqg-un sqg-nodoc">선수 문서 아직 안 받음 '+waitN+'명 — '+(failed?('받지 못했어요 · 앱 설정 › 데이터 › «진단 보기»'+(_sqDocsAck.stage?(' ('+esc(_sqDocsAck.stage)+')'):'')):'서버에서 받는 중…')+'</div>';
       if(absentN)o+='<div class="sqg-un">IDP 를 아직 시작하지 않은 선수 '+absentN+'명 — 선수가 IDP 를 처음 열면 여기에 들어와요</div>';
     }
     if(nolink)o+='<div class="sqg-un">계정 연결 안 됨 '+nolink+'명 — 연결은 계정 › 권한 관리</div>';
@@ -15597,7 +15597,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
 .gw-rate{margin-left:8px;font-size:11px;font-weight:800;color:var(--text-3)}
 .gw-rate.spurt{background:#fff4e5;color:#b26a00;border-radius:999px;padding:2px 8px}
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=3.026"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.039"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2324-idpcard">/* ══ 2.324 · IDP 카드 한 벌 — 글자 계단 · 행과 열 · 카드 얼굴 ══════════════════════
    사용자: "IDP 카드가 너무 유치한데 조금 고급지게 · 폰트의 크기와 행과 열 정리 · 일관성있게".
    유치해 보이는 원인은 장식이 아니라 **치수가 제각각**인 것이었다 — 카드마다 패딩·반경이 다르고,

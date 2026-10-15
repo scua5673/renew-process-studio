@@ -166,7 +166,7 @@ test('3.036 sync.js: always:true skips the 5-minute error dedup; ua is kept in m
 test('3.036 version, cache and release note',()=>{
   const build=app.match(/window\.PS_BUILD='([0-9.]+)'/)[1];
   assert.ok(Number(build)>=3.036);assert.match(R('sw.js'),new RegExp("const CACHE = 'process-"+build.replace('.','\\.')+"';"));
-  assert.equal((app.match(/\?v=3\.0\d\d/g)||[]).filter(v=>v==='?v='+build).length,7,'the seven shell script/style pins follow the build (3.026 pins are historic)');assert.doesNotMatch(app,/\?v=3\.035/);
+  assert.equal((app.replace(/ui-grammar\.css\?v=[\d.]+/g,'').match(/\?v=3\.0\d\d/g)||[]).filter(v=>v==='?v='+build).length,7,'the seven shell script/style pins follow the build (3.026 pins are historic)');assert.doesNotMatch(app,/\?v=3\.035/);
   const e=notes.entries().find(x=>x.id==='2026-10-15-v3-036-safe-mode');assert.ok(e);assert.equal(e.changes.length,2);
   assert.match(e.changes[0],/안전 모드/);assert.match(e.changes[0],/작전판 열기/);assert.match(e.changes[1],/멈춘 뒤 다시 연 기록/);
   assert.doesNotMatch(e.changes.join(' '),/고쳤습니다|해결/,'does not promise the crash is fixed');

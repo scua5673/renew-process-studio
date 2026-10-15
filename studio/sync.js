@@ -1043,7 +1043,8 @@ function linkIdentity(provider){
     var raw=String((j&&(j.error_description||j.msg||j.message||j.error))||('연결 실패 '+r.status));
     var msg=raw;
     if(/already|exist/i.test(raw)) msg='이 '+(provider==='kakao'?'카카오':'Google')+' 로그인은 이미 다른 계정에 연결돼 있어요 — 그 계정의 팀에는 초대 코드로 합류하세요';
-    else if(/disable|not.*enabl|manual/i.test(raw)) msg='서버에서 계정 연결이 꺼져 있어요 — Supabase 대시보드 › Authentication 에서 Manual Linking 을 켜 주세요';
+    else if(/disable|not.*enabl|manual/i.test(raw)) { msg='지금은 로그인 방법을 합칠 수 없어요. 잠시 뒤 다시 시도하고, 계속되면 «오류 제보»로 알려 주세요';   /* 3.039 — 운영자용 원인(Manual Linking 꺼짐)은 화면이 아니라 진단 기록으로(피드백 CP-12) */
+      try{ console.warn('[PSSync] identity link: Supabase Auth «Manual Linking» is off'); }catch(_){} }   /* 원문은 아래 syncDiagnostic('link-identity') 가 진단 기록에 남긴다 */
     chip('연결 안 됨 — '+msg); setStatus(msg); syncDiagnostic('link-identity',new Error(raw.slice(0,80)));
   }); }).catch(function(e){
     if(request?!sessionIdentityCurrent(request):!sameOwner())return;

@@ -73,5 +73,6 @@ body.fmdark .teamnav button.on{background:var(--surface-2)!important;color:var(-
   border-radius:var(--g-radius)!important;border:1px solid var(--line)!important;background:var(--surface)!important;box-shadow:none!important}
 /* 제목 무게 700 — 800/900 은 숫자에만 */
 h1,h2,h3,h4,.card-h .t,.hd-h h3,.ck .hd,.lab,.gvh-title,.avh-title,.nh-t{font-weight:600}
-/* 터치 타깃 하한 */
-@media (pointer:coarse){ button:not(.cdot):not(.ms-o):not(.arc-star):not(.t-idp):not(.t-grp):not(.chk){min-height:32px} }
+/* 터치 타깃 하한 — 3.039 32px → 44px(피드백 DS-2 · WCAG 2.5.5 / 애플 44pt). 손가락 기기(pointer:coarse)만, 마우스 화면은 그대로.
+   제외: 표 안의 작은 점·별·체크(원래 목록) · 작전판 도크(#ps-command-dock — 아래 board.html 의 도크 규칙이 따로 맞춘다) */
+@media (pointer:coarse){ button:not(.cdot):not(.ms-o):not(.arc-star):not(.t-idp):not(.t-grp):not(.chk){min-height:44px} }
