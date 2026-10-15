@@ -2,6 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script>/* 3.034 — 앱에서 연 관리자 탭(window.open, opener 유지)은 앱 탭의 sessionStorage 를 복사해 온다. 앱의 «살아 있음» 표시(ps_boot_alive_v1)는
+   여기서 버린다 — 이 탭에서 앱으로 돌아가는 부팅(로그아웃 대체 경로)이 «앞 페이지가 죽음»으로 읽지 않게. */try{sessionStorage.removeItem('ps_boot_alive_v1');}catch(_){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>PROCESS STUDIO · 관리자</title>

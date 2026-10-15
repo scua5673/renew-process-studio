@@ -41,6 +41,7 @@ try{
    // 다시 켜면 3D 로 열리고 표시가 생긴다(20초 버티면 지워진다 — 단위 시험) · 정상 새로고침은 표시를 지워 다음 부팅도 3D
    await f.evaluate(()=>window.__setTilt(true));
    assert.ok(await f.evaluate(()=>JSON.parse(localStorage.getItem('ps_tilt3d_boot')||'{}')[sessionStorage.getItem('ps_tilt3d_tab')]>0),'turning 3D on arms this tab\'s mark');
+   await page.waitForLoadState('load');   /* 3.034 검토 — WebKit 은 load 전에 떠나는 페이지에 pagehide 를 보내지 않는다(표시가 남아 «죽음»으로 읽힌다). 정상 새로고침은 다 뜬 뒤에 */
    await page.reload({waitUntil:'domcontentloaded'});await page.waitForTimeout(2500);
    f=await openBoard(page);
    const again=await f.evaluate(()=>({tilt:document.body.classList.contains('bc-tilt3d'),safe:window.__tiltBootSafe}));
