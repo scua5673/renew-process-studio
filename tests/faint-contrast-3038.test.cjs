@@ -5,7 +5,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 function lum(hex){const h=hex.replace('#','');const c=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4));return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];}
 function ratio(a,b){const [x,y]=[lum(a),lum(b)].sort((p,q)=>q-p);return (x+0.05)/(y+0.05);}
-/* 3.046 — ui-grammar 의 별칭은 vendor/tokens.css 의 정본(--c-*)을 가리킨다(피드백 17 · DS-4). var(--c-x[,폴백]) 은 tokens.css 의 같은 모드 값으로 푼다 */
+/* 3.054 — ui-grammar 의 별칭은 vendor/tokens.css 의 정본(--c-*)을 가리킨다(피드백 17 · DS-4). var(--c-x[,폴백]) 은 tokens.css 의 같은 모드 값으로 푼다 */
 const tokensCss=read('vendor/tokens.css'),tokLight=tokensCss.slice(0,tokensCss.indexOf('body.fmdark{')),tokDark=tokensCss.slice(tokensCss.indexOf('body.fmdark{'));
 function token(block,name,label){const m=new RegExp('(?:^|[\\s;{])'+name+':(#[0-9A-Fa-f]{6}|var\\((--c-[a-z0-9-]+)[^)]*\\))').exec(block);assert.ok(m,name+' in '+label);
   if(m[1][0]==='#')return m[1];const src=label==='dark'?tokDark:tokLight;const t=new RegExp('(?:^|[\\s;{])'+m[2]+':\\s*(#[0-9A-Fa-f]{6})').exec(src);assert.ok(t,m[2]+' in tokens.css '+label);return t[1];}

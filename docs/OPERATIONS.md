@@ -22,7 +22,7 @@
   팀과 맞추는 키는 `sync.js` `KEYS`(개인 공간만이면 `PERSONAL` 도)와 표가 같아야 하고, `ps_*` 키는 동기화하지 않는다.
 - **페이지 저장소 이름은 뜻대로** — 작전판 `boardStore`(IndexedDB 정본), 팀 운영 `scoutStore`(localStorage 껍데기 — 공유 키는 `psSaveShared` 로 IndexedDB 에도), 커뮤니티 `libStore`(보관함). 예전엔 셋 다 `store` 라서 «IndexedDB 에 썼다고 믿은 값이 localStorage 에만» 있는 사고가 났다(scout.html 1.618).
 - **큰 페이지는 더 키우지 않는다** — `tests/code-budget-3043.test.cjs` 의 바이트 예산. 새 기능은 `studio/<기능>.js` 모듈(UMD — `autosave-*.js` · `team-files.js` 모양)로 쓰고 페이지는 부르기만 한다.
-- **색 · 글자 · 모서리 값은 `vendor/tokens.css` 한 곳**(3.046 · 피드백 17) — 라이트 `:root`, 다크 `body.fmdark`. `ui-grammar.css` 의 별칭(`--ink` · `--muted` · `--panel` …)은 `var(--c-*)` 로 가리키기만 한다. 새 CSS 는 hex · px 글자 크기 대신 `--c-*` · `--t-*` · `--sp-*` · `--r-*` 를 쓴다(`tests/design-tokens-3044.test.cjs` 래칫 — 반 픽셀 글자는 0). 두 파일을 고치면 모든 페이지의 `?v=` 를 같이 올린다.
+- **색 · 글자 · 모서리 값은 `vendor/tokens.css` 한 곳**(3.054 · 피드백 17) — 라이트 `:root`, 다크 `body.fmdark`. `ui-grammar.css` 의 별칭(`--ink` · `--muted` · `--panel` …)은 `var(--c-*)` 로 가리키기만 한다. 새 CSS 는 hex · px 글자 크기 대신 `--c-*` · `--t-*` · `--sp-*` · `--r-*` 를 쓴다(`tests/design-tokens-3044.test.cjs` 래칫 — 반 픽셀 글자는 0). 두 파일을 고치면 모든 페이지의 `?v=` 를 같이 올린다.
   단추는 세 가지 — `ps-btn-primary`(주 행동) · `ps-btn-secondary`(다음 행동) · `ps-btn-text`(글자 링크). 알약 모양은 상태 표시 전용, 점선은 «비어 있음 → 채우기» 하나. 시트 순서는 fonts → tokens → mobile-polish → premium-ui → team-ui → design-v2 → figma-premium → ui-grammar(마지막).
 - **시험은 행동을 본다** — 모듈은 `require` 해서 돌려 본다. 주석(`'/* 2.138'`)을 잘라내기 기준점으로 쓰거나 판 번호를 박는 시험은 늘리지 않는다(같은 시험의 래칫 — 줄였으면 상한도 내린다).
 
