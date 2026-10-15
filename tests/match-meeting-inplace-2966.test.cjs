@@ -38,7 +38,7 @@ test('«＋ 새 미팅»은 시트를 거치지 않고 바로 만든다 — 2.97
 test('셸 — 경기 준비 안 편집은 팀 화면으로 친다, 다른 곳으로 가면 내려놓는다', ()=>{
   const sa=fnAt(app,'function showApp(app)');
   assert.match(sa,/\(app==='design'&&document\.body\.classList\.contains\('ps-match-edit'\)\)/,'팀 머리·팀 탭이 남는다');
-  assert.match(sa,/if\(app==='design'&&!document\.body\.classList\.contains\('ps-match-edit'\)\)\{try\{var _vw0/,'보관함 목록으로 갈아끼우지 않는다');
+  assert.match(sa,/if\(app==='design'&&!document\.body\.classList\.contains\('ps-match-edit'\)\)\{ var _goV=function\(\)\{try\{var _vw0/,'보관함 목록으로 갈아끼우지 않는다(3.036 — 작전판이 뜨는 중이면 뜬 뒤에)');
   assert.ok(sa.indexOf("ps-match-edit")<sa.indexOf('closeTransientUI(app)'),'맨 앞에서 표식 정리');
   assert.match(sa,/type:'matchEditEnd'/,'다른 화면으로 가면 편집기에 알린다');
   const en=fnAt(app,'function psMatchEditEnter()');
