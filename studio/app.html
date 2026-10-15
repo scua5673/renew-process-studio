@@ -1203,7 +1203,11 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
 /* ==== PWA 안전 다이얼로그: 네이티브 confirm()/prompt() 대체 (설치형 PWA에서 차단됨) ==== */
 (function(){
   if(window.psConfirm) return;
-  function build(msg, withInput, def, onOk, onCancel){
+  /* 3.039 — 실행 단추에 할 일을 적는다(피드백 CP-2 «삭제도 파란 «확인»»). opts={ok:'삭제',danger:true}. opts 가 없으면 질문에서 읽는다:
+     «…삭제할까요?» → [삭제](빨강) · «…지울까요?» → [지우기](빨강) · 그 밖은 «확인». */
+  function okOf(msg,opts){ opts=opts||{}; if(opts.ok)return {label:String(opts.ok),danger:!!opts.danger};
+    var q=String(msg).split('\n')[0]; if(/삭제할까요\?/.test(q))return {label:'삭제',danger:true}; if(/지울까요\?/.test(q))return {label:'지우기',danger:true}; return {label:'확인',danger:!!opts.danger}; }
+  function build(msg, withInput, def, onOk, onCancel, opts){
     var ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:rgba(10,14,20,.45);z-index:2147483000;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)';
     var dark=false; try{dark=document.body.classList.contains('fmdark');}catch(_){}
@@ -1219,8 +1223,8 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     var row=document.createElement('div');row.style.cssText='display:flex;gap:8px;justify-content:flex-end';
     var bc=document.createElement('button');bc.type='button';bc.textContent='취소';
     bc.style.cssText='font:inherit;font-size:13px;padding:8px 14px;border-radius:10px;border:1px solid rgba(128,140,160,.35);background:transparent;color:inherit;cursor:pointer';
-    var bo=document.createElement('button');bo.type='button';bo.textContent='확인';
-    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:var(--ps-navy,#14213D);color:#fff;cursor:pointer';
+    var bo=document.createElement('button');bo.type='button';var _ok=withInput?{label:'확인',danger:false}:okOf(msg,opts);bo.textContent=_ok.label;bo.setAttribute('data-ps-ok','1');
+    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:'+(_ok.danger?'#C24A46':'var(--ps-navy,#14213D)')+';color:#fff;cursor:pointer';
     row.appendChild(bc);row.appendChild(bo);bx.appendChild(row);ov.appendChild(bx);
     var done=false;
     function close(){ if(done)return; done=true; document.removeEventListener('keydown',onKey,true); try{ov.remove();}catch(_){} }
@@ -1234,7 +1238,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     try{ov.animate&&ov.animate([{opacity:0},{opacity:1}],{duration:140,easing:'ease-out'});}catch(_){}
     if(inp){ try{inp.focus();inp.select();}catch(_){} }
   }
-  window.psConfirm=function(msg,onOk,onCancel){ build(String(msg),false,null,function(){onOk&&onOk();},onCancel); };
+  window.psConfirm=function(msg,onOk,onCancel,opts){ build(String(msg),false,null,function(){onOk&&onOk();},onCancel,opts); };
   window.psPrompt=function(msg,def,onOk,onCancel){ build(String(msg),true,def,function(v){onOk&&onOk(v);},onCancel); };
   /* 3.038 — 단추에 할 일을 적는 선택창(보드의 psChoice 와 같은 모양). buttons=[{label,primary,danger,value}] → onPick(value) · 닫기(Esc·바깥 탭)는 onPick(null).
      «확인/취소»만 있는 psConfirm 은 바깥 탭도 «취소»라, 취소가 무언가를 지우는 창(sync.js 로그아웃 전 자료)에 쓰면 잘못 탭 한 번이 삭제였다(피드백 CP-1). */
@@ -1396,7 +1400,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
              평소에는 '지금 동기화' 하나만 보이고, 실제로 크게 줄어든 변경이 막혔을 때만
              같은 버튼이 '확인'으로 바뀐다. 안전장치는 유지하되 내부 상태를 여러 군데 노출하지 않는다. -->
         <!-- 2.337 ⚠ 탭 CSS 가 [data-gp-tab] 에 display:grid!important 를 강제한다 — 문장을 span 하나로 감싸 그리드 칸 하나로 만든다(안 감싸면 <b> 마다 행으로 갈라진다) -->
-        <div data-gp-tab="data" style="font-size:11px;line-height:1.55;color:#8A9099;padding:2px 2px 0"><span>변경사항은 자동 저장됩니다. 백업과 복구 도구는 고급에서 확인합니다.</span></div>
+        <div data-gp-tab="data" style="font-size:11px;line-height:1.55;color:#8A9099;padding:2px 2px 0"><span>팀 운영·IDP·노트는 자동으로 저장돼요. 작전판은 «보드 저장»을 눌러야 저장되고, 그전에는 이 기기에 초안으로 남아요. 백업·복구는 «고급»에 있어요.</span></div>
         <div class="gp-row"><span class="gp-lb">상태</span>
           <span id="psPushState" style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4">확인 중…</span>
           <button type="button" id="psPushNow" title="자동 저장 상태를 다시 확인합니다"
@@ -5110,9 +5114,15 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     if(!sid&&location.hash.indexOf('#s=')===0)sid=location.hash.slice(3);
     if(sid&&/^[a-z0-9]{6,16}$/.test(sid)){
       var cfg=window.PS_SYNC||{};
-      fetch(cfg.url+'/rest/v1/ps_share?id=eq.'+encodeURIComponent(sid)+'&select=v',{headers:{apikey:cfg.anonKey}})
-        .then(function(r){return r.ok?r.json():[];})
-        .then(function(rows){ if(!rows||!rows[0]||!rows[0].v){alert('공유 링크를 찾을 수 없어요 — 지워졌거나 아직 올라가지 않았어요');return;} return unzips(rows[0].v).then(showShared); })
+      /* 3.039 — 아는 id 한 건만 서버 함수로 받는다(ps_share_get · migrations/20261015_share_get). 테이블을 직접 읽으면 익명이 모든 공유본을
+         나열할 수 있었다(보안 점검 SEC-4). 함수가 아직 없으면(404 — 마이그레이션 전) 옛 읽기로 한 번 돌아간다. */
+      var H={apikey:cfg.anonKey,'Content-Type':'application/json'};
+      fetch(cfg.url+'/rest/v1/rpc/ps_share_get',{method:'POST',headers:H,body:JSON.stringify({p_id:sid})})
+        .then(function(r){
+          if(r.status===404)return fetch(cfg.url+'/rest/v1/ps_share?id=eq.'+encodeURIComponent(sid)+'&select=v',{headers:{apikey:cfg.anonKey}}).then(function(r2){return r2.ok?r2.json():[];}).then(function(rows){return rows&&rows[0]&&rows[0].v||null;});
+          return r.ok?r.json():null;
+        })
+        .then(function(v){ if(!v||typeof v!=='string'){alert('공유 링크를 찾을 수 없어요 — 지워졌거나 아직 올라가지 않았어요');return;} return unzips(v).then(showShared); })
         .catch(function(){ alert('공유 링크를 여는 중 문제가 생겼어요 — 네트워크를 확인해 주세요'); });
     } else if(location.hash.indexOf('#share=')===0){
       unzips(location.hash.slice(7)).then(showShared).catch(function(){});

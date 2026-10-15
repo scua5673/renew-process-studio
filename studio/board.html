@@ -3340,7 +3340,11 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 /* ==== PWA 안전 다이얼로그: 네이티브 confirm()/prompt() 대체 (설치형 PWA에서 차단됨) ==== */
 (function(){
   if(window.psConfirm) return;
-  function build(msg, withInput, def, onOk, onCancel){
+  /* 3.039 — 실행 단추에 할 일을 적는다(피드백 CP-2 «삭제도 파란 «확인»»). opts={ok:'삭제',danger:true}. opts 가 없으면 질문에서 읽는다:
+     «…삭제할까요?» → [삭제](빨강) · «…지울까요?» → [지우기](빨강) · 그 밖은 «확인». */
+  function okOf(msg,opts){ opts=opts||{}; if(opts.ok)return {label:String(opts.ok),danger:!!opts.danger};
+    var q=String(msg).split('\n')[0]; if(/삭제할까요\?/.test(q))return {label:'삭제',danger:true}; if(/지울까요\?/.test(q))return {label:'지우기',danger:true}; return {label:'확인',danger:!!opts.danger}; }
+  function build(msg, withInput, def, onOk, onCancel, opts){
     var ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:rgba(16,24,40,.5);z-index:2147483000;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)';
     var dark=false; try{dark=document.body.classList.contains('fmdark');}catch(_){}
@@ -3356,8 +3360,8 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
     var row=document.createElement('div');row.style.cssText='display:flex;gap:8px;justify-content:flex-end';
     var bc=document.createElement('button');bc.type='button';bc.textContent='취소';
     bc.style.cssText='font:inherit;font-size:13px;padding:8px 14px;border-radius:10px;border:1px solid rgba(128,140,160,.35);background:transparent;color:inherit;cursor:pointer';
-    var bo=document.createElement('button');bo.type='button';bo.textContent='확인';
-    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:var(--blue,var(--ps-navy,#14213D));color:#fff;cursor:pointer';
+    var bo=document.createElement('button');bo.type='button';var _ok=withInput?{label:'확인',danger:false}:okOf(msg,opts);bo.textContent=_ok.label;bo.setAttribute('data-ps-ok','1');
+    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:'+(_ok.danger?'#C24A46':'var(--blue,var(--ps-navy,#14213D))')+';color:#fff;cursor:pointer';
     row.appendChild(bc);row.appendChild(bo);bx.appendChild(row);ov.appendChild(bx);
     var done=false;
     function close(){ if(done)return; done=true; document.removeEventListener('keydown',onKey,true); try{ov.remove();}catch(_){} }
@@ -3371,7 +3375,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
     try{ov.animate&&ov.animate([{opacity:0},{opacity:1}],{duration:140,easing:'ease-out'});}catch(_){}
     if(inp){ try{inp.focus();inp.select();}catch(_){} }
   }
-  window.psConfirm=function(msg,onOk,onCancel){ build(String(msg),false,null,function(){onOk&&onOk();},onCancel); };
+  window.psConfirm=function(msg,onOk,onCancel,opts){ build(String(msg),false,null,function(){onOk&&onOk();},onCancel,opts); };
   window.psPrompt=function(msg,def,onOk,onCancel){ build(String(msg),true,def,function(v){onOk&&onOk(v);},onCancel); };
   /* 1.950 — 세 갈래 선택(저장하고 나가기 / 저장 안 하고 나가기 / 취소). buttons=[{label,primary,danger,value}] */
   window.psChoice=function(msg,buttons,onPick){
@@ -8630,7 +8634,7 @@ function _boardLiveWriteNow(recovery){
     if(boardPrivateCurrent(owner)&&!recovery)try{
       var durable=_boardPrivateRecord&&_boardPrivateDurableToken===_boardPrivateRecord.token;
       if(!durable)toast("기기에 저장하지 못했습니다 — 앱을 닫지 말고 다시 시도해 주세요");
-      else if(!localOnly)toast("개인 보드 저장 대기 — 현재 작업은 기기에 보관됐습니다");
+      else if(!localOnly)toast("이 기기에만 저장됨 · 인터넷이 연결되면 자동으로 올라가요");   /* 3.039 — 같은 상태를 세 가지로 말하던 것을 하나로(CP-15) */
     }catch(_){}
     return false;
   });
@@ -8788,6 +8792,7 @@ function boardManualChanged(){ if(!_boardManualDirty)_boardUserTouched=false; re
 var _boardDirtyPosted=null;
 function boardManualStatus(){
   var _chg=boardManualChanged(); try{ if(typeof window.__psSaveBarSync==='function')window.__psSaveBarSync(_chg); }catch(_){}
+  try{ document.body.classList.toggle('ps-board-dirty',!!_chg); }catch(_){}   /* 3.039 — 바뀐 게 있으면 채운 단추는 «보드 저장» 하나(UX-9 · DS-5): «보관함 저장»은 테두리로 */
   try{ if(_chg!==_boardDirtyPosted){ _boardDirtyPosted=_chg; parent.postMessage({source:'board',type:'boardDirty',changed:_chg},location.origin); } }catch(_){}   /* 3.038 — 셸 저장 표시 «보드 · 저장 전»(app.html saveView) */
   try{var b=document.getElementById('boardManualSave');if(b){/* 2.907 — «보드 저장»: 보관함의 «저장하기»와 이름이 같아 보관함에 들어간 줄 알았다(오류 제보). 바뀐 표시는 점 하나 — 768px 띠에 «· 변경됨»까지 들어가지 않는다. */b.textContent=_boardManualSaving?'저장 중…':(_chg?'보드 저장 ●':'보드 저장');b.disabled=_boardManualSaving;b.title=(_chg?'저장하지 않은 변경이 있어요 — ':'')+'작업 보드를 저장합니다. 보관함 항목은 «보관함 저장»으로 넣어요';b.setAttribute('aria-label',_chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장');b.classList.toggle('dirty',!!_chg);}}catch(_){}
 }
@@ -8857,7 +8862,7 @@ async function boardSaveExplicit(o){   /* 3.014 — o.noLink: 보관함 연결 �
       if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;try{boardDraftClear(owner);}catch(_){}   /* 3.038 — 저장했으니 기기 초안은 지운다 */
         var _wb=[]; if(!o.noLink){ try{ _wb=await boardLinkWriteBack(false); }catch(e){ _wb=[{err:true}]; } }   /* 2.927 — 가져온 보관함 자료에도 */
         var _wbt=boardLinkSaveText(_wb);
-        if(!ok)toast("이 기기에 저장됨 · 서버 저장은 아직 완료되지 않았습니다"+_wbt);else if(!o.quiet)toast((_wbt?("보드에 저장됨 ✓"+_wbt):"보드에 저장됨 ✓ · 보관함에는 «보관함 저장»으로 넣어요")+(_hadOffer?" · 저장 안 했던 이전 작업은 버렸어요":""));}
+        if(!ok)toast("이 기기에만 저장됨 · 인터넷이 연결되면 자동으로 올라가요"+_wbt);else if(!o.quiet)toast((_wbt?("보드에 저장됨 ✓"+_wbt):"보드에 저장됨 ✓ · 보관함에는 «보관함 저장»으로 넣어요")+(_hadOffer?" · 저장 안 했던 이전 작업은 버렸어요":""));}
     }
     return !!ok;
   }finally{if(_boardManualSaving===owner)_boardManualSaving=false;boardManualStatus();}
@@ -15359,7 +15364,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   if($("allReset"))$("allReset").onclick=resetTokenSize;
   syncBoardLock();
   document.addEventListener("pointerup",()=>clearGuides(),true);document.addEventListener("pointercancel",()=>clearGuides(),true);
-  $("clearPlayersBtn").onclick=()=>{psConfirm("필드의 모든 선수·장비·공을 비울까요?",()=>{pushUndo();state.players=[];state.equipment=[];state.ball=null;sel=null;multiSel=[];renderTokens();updateDelUI();try{boardSaveLive();}catch(_){}});};
+  $("clearPlayersBtn").onclick=()=>{psConfirm("운동장의 선수·장비·공을 모두 지울까요?\n그린 선은 남아요 · 되돌리기(↶)로 살릴 수 있어요",()=>{pushUndo();state.players=[];state.equipment=[];state.ball=null;sel=null;multiSel=[];renderTokens();updateDelUI();try{boardSaveLive();}catch(_){}},null,{ok:'모두 지우기',danger:true});};
   $("undoBtn").onclick=undoLast;
   if($("redoBtn"))$("redoBtn").onclick=redoLast;
   (function(){
@@ -15646,7 +15651,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     });
   })();
   $("clearDrawBtn").onclick=()=>{if(state.drawings.length)pushUndo();state.drawings=[];deselect();renderDrawings();};
-  $("resetBtn").onclick=()=>{psConfirm("배치·장비·선을 지우고 그리드·코트 방향·토큰 크기·팀 색도 기본값으로 되돌릴까요?",()=>{pushUndo();matchActive=false;
+  $("resetBtn").onclick=()=>{psConfirm("운동장을 처음 상태로 되돌릴까요?\n· 선수·장비·선을 모두 지워요\n· 그리드·운동장 방향·선수 크기·팀 색도 기본값으로",()=>{pushUndo();matchActive=false;
     state.gridType="off";state.area="full";state.pitchView="full";state.pvSide="own";state.orientation="h";state.spFlip=false;state.halfSide="L";state.press=null;
     state.teamColors={};state.teamColor2={};state.teamPattern={};state.teamStrokeC={};state.teamTxtC={};state.gkColors={};state.gkColor2={};state.gkPattern={};state.gkStrokeC={};state.gkTxtC={};
     state.tokenScale=defaultTokenScale();try{localStorage.removeItem("cs_tokscale_v4");}catch(_){}
@@ -15657,7 +15662,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     try{if(window.__syncPitchViewSettings)window.__syncPitchViewSettings();}catch(_){}
     try{document.querySelectorAll("#gridSeg button").forEach(function(b){b.classList.toggle("on",b.dataset.g===(state.gridType||"off"));});}catch(_){}
     try{if(window.__psDockSync)window.__psDockSync();}catch(_){}
-    try{boardSaveLive();}catch(_){}});};
+    try{boardSaveLive();}catch(_){}},null,{ok:'초기화',danger:true});};
   $("delSelBtn").onclick=deleteSelected;
   if($("dupSelBtn"))$("dupSelBtn").onclick=duplicateSelected;
   if($("frontSelBtn"))$("frontSelBtn").onclick=function(e){ e.stopPropagation(); zOrderSel(true); try{updateDelUI();}catch(_){} };   /* 2.980 */
@@ -19902,6 +19907,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   var manualSaveBtn=document.createElement('button');manualSaveBtn.id='boardManualSave';manualSaveBtn.type='button';
   manualSaveBtn.className='primary';manualSaveBtn.style.cssText='flex:0 0 auto;white-space:nowrap;padding:8px 12px;border:1px solid var(--line,#E3E6EA);border-radius:9px;background:var(--panel,#fff);color:var(--ink,#14161A);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer';   /* 2.953 — 파랑은 «보관함 저장» 하나. 보드 저장은 바뀐 게 있을 때만 파랗게(.dirty) */
   manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveExplicit();};
+  var draftStyle=document.createElement('style');draftStyle.id='ps-3039-one-filled';draftStyle.textContent='body.ps-board-dirty #vaultSave,html.ps-page-board body.ps-board-dirty.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________):not(#_________) #vaultSave{background:var(--panel,#fff)!important;color:var(--ps-navy,#14213D)!important;border:1px solid var(--ps-navy,#14213D)!important;box-shadow:none!important}body.fmdark.ps-board-dirty #vaultSave,html.ps-page-board body.fmdark.ps-board-dirty.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________):not(#_________) #vaultSave{background:transparent!important;color:#E7EBF1!important;border-color:rgba(231,235,241,.55)!important}';document.head.appendChild(draftStyle);
   var manualStyle=document.createElement('style');manualStyle.textContent='#boardManualSave.dirty{background:var(--blue,var(--ps-navy,#14213D))!important;border-color:var(--blue,var(--ps-navy,#14213D))!important;color:#fff!important}@media(max-width:639px){#boardManualSave{position:fixed!important;left:14px!important;right:auto!important;bottom:calc(102px + var(--ps-animbar-h,48px) + 8px)!important;z-index:171!important;min-height:42px;max-width:150px}}';document.head.appendChild(manualStyle);
   boardManualStatus();
   function mountSave(){
@@ -20704,7 +20710,7 @@ try{ var _nb=document.getElementById('dfNew');
       return;
     }
     if(!lose){ go(); return; }   /* 이미 빈 한 장이면 묻지 않는다 */
-    psConfirm("지금 보드를 비우고 새 보드로 시작할까요?\n\n· "+what+"선수·장비·그림을 모두 지워요\n· 보관함에 저장한 자료는 그대로예요\n· 1분 안에는 위 띠의 «↶ 이전 보드»로 되살릴 수 있어요",go);
+    psConfirm("지금 보드를 비우고 새 보드로 시작할까요?\n\n· "+what+"선수·장비·그림을 모두 지워요\n· 보관함에 저장한 자료는 그대로예요\n· 1분 안에는 «↶ 이전 보드»로 되살릴 수 있어요",go,null,{ok:'새 보드 시작'});   /* 3.039 — 단추 이름(CP-13) · 폰은 위 띠가 없어 «위 띠의» 를 뺐다 */
   }
   function newBoardUndo(){ var u=_nbUndo; if(!u||!_nbAvailable())return;
     var back=function(){
@@ -23276,7 +23282,7 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
     if(chg===undefined){ try{ chg=boardManualChanged(); }catch(_){ chg=false; } }
     bar.classList.toggle("chg",!!chg&&!saving);
     var owner=null,loaded=true,pend=false; try{ owner=boardPrivateOwner(); loaded=!!_boardPrivateLoaded; pend=!!(_boardPrivateRecord&&_boardPrivateRecord.pending&&_boardPrivateDurableToken!==_boardPrivateRecord.token); }catch(_){}
-    var t=ro()?"보기 전용":(!owner?"로그인하면 저장돼요":(!loaded?"불러오는 중…":(saving?"저장 중…":(chg?"저장 안 한 변경 있음":(pend?"기기에 저장됨 · 서버 대기":"저장됨")))));   /* 3.038 — «변경됨 · 저장 안 함»은 '저장하지 않기로 했다'로 읽혔다(피드백 CP-6) */
+    var t=ro()?"보기 전용":(!owner?"로그인하면 저장돼요":(!loaded?"불러오는 중…":(saving?"저장 중…":(chg?"저장 안 한 변경 있음":(pend?"이 기기에만 저장됨":"저장됨")))));   /* 3.038 — «변경됨 · 저장 안 함»은 '저장하지 않기로 했다'로 읽혔다(피드백 CP-6) */
     if(tx.textContent!==t)tx.textContent=t;   /* aria-live 가 같은 말을 되풀이하지 않게 */
     bSave.disabled=!!saving; bSave.hidden=ro(); bVault.hidden=ro();
   }catch(_){} }

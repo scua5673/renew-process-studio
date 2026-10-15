@@ -588,6 +588,40 @@ function sanSvg(s){
     s=s.replace(/<svg\b/i,'<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
   return s;
 }
+/* 3.039 — 재생(▶)은 썸네일 SVG 를 실제 화면 DOM 에 올린다. 문자열을 innerHTML 로 넣지 않고(정규식 정화만으로는 브라우저 파서와 어긋날 수 있다 —
+   보안 점검 SEC-1), XML 로 파싱한 뒤 **허용한 요소만** 새로 만들어 붙인다. 이벤트 속성 · javascript:/data:text 값 · 바깥을 가리키는 href ·
+   style 안 바깥 url(…) 은 버린다. script · foreignObject · animate/set · a · style 요소는 아예 만들지 않는다. 못 읽으면 null(일반 재생으로). */
+var SVG_NS='http://www.w3.org/2000/svg',XLINK_NS='http://www.w3.org/1999/xlink';
+var SAFE_SVG_TAGS={svg:1,g:1,rect:1,circle:1,ellipse:1,line:1,path:1,polygon:1,polyline:1,text:1,tspan:1,defs:1,linearGradient:1,radialGradient:1,stop:1,
+  pattern:1,image:1,clipPath:1,mask:1,marker:1,use:1,symbol:1,title:1,desc:1,filter:1,feColorMatrix:1,feGaussianBlur:1,feOffset:1,feMerge:1,feMergeNode:1,feFlood:1,feComposite:1,feDropShadow:1,feBlend:1};
+function safeSvgAttr(name,value){
+  var n=String(name).toLowerCase(),v=String(value);
+  if(/^on/.test(n))return false;
+  if(/(java|vb)script\s*:|data\s*:\s*text|expression\s*\(/i.test(v))return false;
+  if(n==='href'||n==='xlink:href'){ return /^#[\w.:-]+$/.test(v)||/^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+\/=\s]+$/i.test(v); }
+  if(n==='style'||n==='fill'||n==='stroke'||n==='filter'||n==='clip-path'||n==='mask'||/^marker/.test(n)){ if(/url\(\s*['"]?\s*(?!#)/i.test(v))return false; }
+  return true;
+}
+function safeSvgNode(str){
+  var s=sanSvg(str);if(!s||typeof DOMParser==='undefined')return null;
+  var doc;try{doc=new DOMParser().parseFromString(s,'image/svg+xml');}catch(_){return null;}
+  if(!doc||doc.getElementsByTagName('parsererror').length)return null;
+  var root=doc.documentElement;if(!root||root.localName!=='svg'||root.namespaceURI!==SVG_NS)return null;
+  function copy(src){
+    if(src.nodeType===3)return document.createTextNode(src.nodeValue);
+    if(src.nodeType!==1||src.namespaceURI!==SVG_NS||!SAFE_SVG_TAGS[src.localName])return null;
+    var el=document.createElementNS(SVG_NS,src.localName);
+    for(var i=0;i<src.attributes.length;i++){var a=src.attributes[i];
+      if(/^xmlns(:|$)/.test(a.name))continue;
+      if(!safeSvgAttr(a.name,a.value))continue;
+      try{ if(a.namespaceURI===XLINK_NS)el.setAttributeNS(XLINK_NS,'xlink:'+a.localName,a.value); else if(!a.namespaceURI)el.setAttribute(a.name,a.value); }catch(_){}
+    }
+    for(var c=src.firstChild;c;c=c.nextSibling){var k=copy(c);if(k)el.appendChild(k);}
+    return el;
+  }
+  return copy(root);
+}
+window.__psSafeSvgNode=safeSvgNode;   /* 시험용(tests/browser 로 직접 부른다) */
 function thumbImg(svg,cls){
   var s=sanSvg(svg);
   if(!s)return '<span class="noimg">그림 없음</span>';
@@ -885,9 +919,8 @@ function cpAnimControls(onPause,onStop){
   ctl.appendChild(pause);ctl.appendChild(stop);return ctl;
 }
 function cpAnimReal(box,frames,thumbSvg,onStop){
-  var s=sanSvg(thumbSvg);if(!s)return false;
-  var wrap=document.createElement('div');wrap.className='cpa-real';wrap.innerHTML=s;
-  var svgEl=wrap.querySelector('svg');if(!svgEl)return false;
+  var svgEl=safeSvgNode(thumbSvg);if(!svgEl)return false;   /* 3.039 — innerHTML 대신 허용목록으로 다시 만든 노드(SEC-1) */
+  var wrap=document.createElement('div');wrap.className='cpa-real';wrap.appendChild(svgEl);
   var toks={};[].forEach.call(svgEl.querySelectorAll('.token[data-id]'),function(g){toks[g.getAttribute('data-id')]=g;});
   if(!Object.keys(toks).length)return false;
   box.innerHTML='';box.appendChild(wrap);

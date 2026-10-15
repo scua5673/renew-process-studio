@@ -19,10 +19,10 @@ try{
     frames:(window.__animGet&&window.__animGet()||{frames:[]}).frames.length,undo:!!document.getElementById('bpNewBoardUndo'),ready:window.__psPages.newBoardUndoReady(),
     save:(document.getElementById('boardManualSave')||{}).textContent}));
   /* 보드의 psConfirm 창 — 클래스가 없어 «확인»·«취소» 단추로 찾는다 */
-  const dlgOpen=()=>f.evaluate(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='확인'&&b.offsetParent!==null));
-  const dlgText=()=>f.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='확인'&&b.offsetParent!==null);return b?b.parentElement.parentElement.textContent:'';});
-  const dlgPress=async(label)=>{await f.evaluate(l=>{[...document.querySelectorAll('button')].filter(b=>b.textContent.trim()===l&&b.offsetParent!==null).pop().click();},label);await f.waitForFunction(()=>![...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='확인'&&b.offsetParent!==null));};
-  const confirm=async(re)=>{ await f.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='확인'&&b.offsetParent!==null));const t=await dlgText();if(re)assert.match(t,re,t);await dlgPress('확인');};
+  const dlgOpen=()=>f.evaluate(()=>[...document.querySelectorAll('button')].some(b=>b.hasAttribute('data-ps-ok')&&b.offsetParent!==null));
+  const dlgText=()=>f.evaluate(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.hasAttribute('data-ps-ok')&&b.offsetParent!==null);return b?b.parentElement.parentElement.textContent:'';});
+  const dlgPress=async(label)=>{await f.evaluate(l=>{[...document.querySelectorAll('button')].filter(b=>b.textContent.trim()===l&&b.offsetParent!==null).pop().click();},label);await f.waitForFunction(()=>![...document.querySelectorAll('button')].some(b=>b.hasAttribute('data-ps-ok')&&b.offsetParent!==null));};
+  const confirm=async(re)=>{ await f.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.hasAttribute('data-ps-ok')&&b.offsetParent!==null));const t=await dlgText();if(re)assert.match(t,re,t);await f.evaluate(()=>{[...document.querySelectorAll('button[data-ps-ok]')].filter(b=>b.offsetParent!==null).pop().click();});await f.waitForFunction(()=>![...document.querySelectorAll('button[data-ps-ok]')].some(b=>b.offsetParent!==null));};
   // 1) 이전 작업 — 두 페이지, 선수·그림, 장면 둘
   await f.evaluate(()=>{pushUndo();state.players.push({id:'nb1',team:'blue',num:'9',name:'가상 공격수',x:400,y:300},{id:'nb2',team:'red',num:'4',x:600,y:330});
     state.drawings.push({type:'line',pts:[{x:300,y:200},{x:500,y:260}],color:'#fff'});renderTokens();renderDrawings();});
