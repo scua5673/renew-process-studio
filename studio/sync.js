@@ -993,6 +993,7 @@ function signIn(provider){
   var back=w.location.origin+w.location.pathname;
   try{ w.sessionStorage.setItem('ps_oauth_provider',provider); }catch(_){}
   /* Google 브라우저 세션이 남아 있어도 로그인할 계정을 직접 고를 수 있게 한다. */
+  try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){}   /* 3.036 — 로그인으로 떠나는 것은 «죽음»이 아니다 */
   w.location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back)+(provider==='google'?'&prompt=select_account':'');
   return true;
 }
@@ -1016,7 +1017,7 @@ function linkIdentity(provider){
     /* 연결 URL도 요청한 계정의 응답이다. 로그아웃/다른 로그인 뒤에는 이동하거나
        새 계정 위에 옛 연결 실패 문구를 표시하지 않는다. */
     if(!sessionIdentityCurrent(request))return;
-    if(r.ok&&j&&typeof j.url==='string'&&j.url){ w.location.href=j.url; return; }
+    if(r.ok&&j&&typeof j.url==='string'&&j.url){ try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){} w.location.href=j.url; return; }
     var raw=String((j&&(j.error_description||j.msg||j.message||j.error))||('연결 실패 '+r.status));
     var msg=raw;
     if(/already|exist/i.test(raw)) msg='이 '+(provider==='kakao'?'카카오':'Google')+' 로그인은 이미 다른 계정에 연결돼 있어요 — 그 계정의 팀에는 초대 코드로 합류하세요';

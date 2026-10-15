@@ -1172,7 +1172,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     else if(/^t\d+$/.test(code))tmax=Math.max(tmax,+code.slice(1)||0);   /* 버틴 초는 꼬리(t60) — 늦게 온 sync · load 가 덮지 않는다 */
     else if(RANK[code]==null||RANK[code]>=(RANK[stage]||0))stage=code;   /* 단계는 뒤로 가지 않는다(검토: 늦은 sync 가 load · t30 을 덮어 과소 기록) */
     if(beat)write(); };   /* 숨겨진 동안(표시 없음)은 적지 않는다 — 뒤에서 iOS 가 탭을 정리한 것은 «죽음»이 아니다 */
-  window.__psBootMarkDone=done;
+  window.__psBootMarkDone=function(){ done(); setTimeout(function(){ if(loaded&&!beat&&!document.hidden)live(); },4000); };   /* 스스로 하는 새로고침 직전. 취소되면(떠나기 확인창) 다시 지킨다 */
   window.addEventListener('pagehide',done);
   window.addEventListener('pageshow',function(e){ if(e&&e.persisted)live(); });
   window.addEventListener('load',function(){ loaded=true; try{ window.__psBootStage('load'); }catch(_){} if(!document.hidden)stamp(); });
@@ -2344,9 +2344,9 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
         if(d.type==='notePdfReady'&&d.buffer){queueNotePdf(d);return;}
       }
     });
-    fBoard.addEventListener('load',function onBl(){ if(!fBoard.getAttribute('src'))return; fBoard.removeEventListener('load',onBl); try{ if(window.__psBootStage)window.__psBootStage('boardload'); }catch(_){} });   /* 3.036 — 강제 종료 기록: 첫 작전판이 떴다(안전 모드의 about:blank 는 아니다) */
+    fBoard.addEventListener('load',function onBl(){ var _bs=fBoard.getAttribute('src'); if(!_bs||/^about:blank/.test(_bs))return; fBoard.removeEventListener('load',onBl); try{ if(window.__psBootStage)window.__psBootStage('boardload'); }catch(_){} });   /* 3.036 — 강제 종료 기록: 첫 작전판이 떴다(안전 모드의 about:blank 는 아니다) */
     fBoard.addEventListener('load',function(){
-      if(!fBoard.getAttribute('src'))return;   /* 3.036 — 안전 모드: 주소 없는 틀의 load 는 작전판이 아니다 */
+      var _bs2=fBoard.getAttribute('src'); if(!_bs2||/^about:blank/.test(_bs2))return;   /* 3.036 — 안전 모드(주소 없음) · 팀 전환 동결(about:blank)의 load 는 작전판이 아니다 */
       try{clearTimeout(window.__brFb);}catch(_){}
       /* 느린 복원에서는 실제 준비 신호를 기다리며 시작 안내를 유지한다. */
       window.__brFb=setTimeout(function(){revealAfterTidy('slow-board');},2600);
@@ -2523,7 +2523,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
          작전판(board)으로 갈 때는 boardShowDefault() 가 보이는 크기를 재서 캔버스를 맞추므로
          숨은 상태에서 부르면 0 으로 맞춰진다. 그래서 board 는 예전 자리에 그대로 둔다. */
       /* 3.036 — 안전 모드에서 훈련 만들기(같은 작전판 문서)를 누르면 그때 작전판을 열고, 뜬 뒤 보관함 보기로 */
-      if(app==='design'&&window.__psSafeBoardPending){ try{ window.__psSafeOpenBoard(function(){ try{ var _vw1=fBoard.contentWindow; if(_vw1.__vaultEnterReset)_vw1.__vaultEnterReset(); _vw1.setView('session'); }catch(_){} }); }catch(_){} }
+      if(app==='design'&&window.__psSafeBoardPending){ try{ window.__psSafeOpenBoard(); }catch(_){} }   /* 뜬 뒤의 보관함 보기는 아래 줄이 맡는다(경기 준비 안 편집은 거기서 건너뛴다) */
       if(app==='design'&&!document.body.classList.contains('ps-match-edit')){ var _goV=function(){try{var _vw0=fBoard.contentWindow;if(_vw0.__vaultEnterReset)_vw0.__vaultEnterReset();_vw0.setView('session');}catch(_){}};
         if(fBoard.getAttribute('src')&&!psFrameReady(fBoard))psFrameWhenReady(fBoard,_goV,120); else _goV(); }   /* 3.036 — «작전판 열기» 뒤 아직 뜨는 중이면 뜬 뒤에 보관함 보기로 */
       fBoard.style.display = (app==='board'||app==='design')?'block':'none';
@@ -2574,7 +2574,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     if(openIdpTool)openIdpTool.addEventListener('click',function(){currentTeamKey='';showApp('idp');});
     /* 2.201 — 로고 클릭 → 홈(부팅 기본 화면과 같은 규칙): 선수 전용 → IDP · 팀 작업공간 → 팀 오늘 · 개인 → 보드 */
     /* 2.205 — 사용자: "완전 처음 화면으로" → 앱을 처음 연 상태로 다시 연다(새로고침 = 부팅 기본 화면·상태 초기화) */
-    try{ var _brand=document.getElementById('psBrand'); if(_brand){ var _goHome=function(){ try{ location.href=location.pathname; }catch(_){ try{ (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload()); }catch(__){} } };
+    try{ var _brand=document.getElementById('psBrand'); if(_brand){ var _goHome=function(){ try{ window.__psBootMarkDone&&window.__psBootMarkDone(); location.href=location.pathname; }catch(_){ try{ (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload()); }catch(__){} } };
     _brand.addEventListener('click',_goHome); _brand.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); _goHome(); } }); } }catch(_){}
     if(openNoteTool)openNoteTool.addEventListener('click',function(){currentTeamKey='';showApp('note');});
     function sendTeamView(fr,b){

@@ -125,14 +125,16 @@ test('3.036 safe mode: the board frame gets no address at boot, the shell reveal
   q.fire('psSafeNormal:click');assert.equal(q.loc.href,'/studio/app.html?mode=player&safe=0');
   /* 셸 배선 */
   assert.match(app,/if\(!shellSwitchBlocked&&window\.__psSafeLevel>=2\)\{ try\{ window\.__psSafeModeStart\(\); \}catch\(_\)\{\} \}[^\n]*\n    else if\(!shellSwitchBlocked\)try\{\n      fBoard\.src='board\.html\?v='\+PS_BUILD;\n      try\{ if\(window\.__psBootStage\)window\.__psBootStage\('board'\); \}catch\(_\)\{\}/,'the board address is skipped only in safe mode, and stamped as «board» otherwise');
-  assert.match(app,/fBoard\.addEventListener\('load',function onBl\(\)\{ if\(!fBoard\.getAttribute\('src'\)\)return; fBoard\.removeEventListener\('load',onBl\); try\{ if\(window\.__psBootStage\)window\.__psBootStage\('boardload'\); \}catch\(_\)\{\} \}\);/,'about:blank of safe mode is not a board load');
+  assert.match(app,/fBoard\.addEventListener\('load',function onBl\(\)\{ var _bs=fBoard\.getAttribute\('src'\); if\(!_bs\|\|\/\^about:blank\/\.test\(_bs\)\)return; fBoard\.removeEventListener\('load',onBl\); try\{ if\(window\.__psBootStage\)window\.__psBootStage\('boardload'\); \}catch\(_\)\{\} \}\);/,'about:blank of safe mode is not a board load');
   assert.match(app,/function psBoardThen\(fn,ms\)\{ if\(window\.__psSafeBoardPending\)\{ try\{ window\.__psSafeOpenBoard\(fn\); \}catch\(_\)\{\} return; \} psFrameWhenReady\(fBoard,fn,ms\|\|0\); \}/,'relays open the board in safe mode');
   assert.equal((app.match(/psBoardThen\(function\(\)\{/g)||[]).length,8,'eight relay sites: 3 enterCapture · 3 openDrillEditor · openBoardPage · openMeeting');
   assert.ok(app.indexOf("try{ clearTimeout(window.__psBootGuard); clearTimeout(window.__psBootCheck); }catch(_){}")>0,'safe mode cancels the 5 s boot guard');
   const rest=app.replace(/__psBootMarkDone\(\)[;,]location\.reload\(\)/g,'').match(/[\w.]*location\.reload\(\)/g)||[];
   assert.deepEqual(rest,['dockFrame.contentWindow.location.reload()'],'every self reload of the shell clears the alive mark first (the board frame reload is not the shell)');
   assert.match(sync,/function markSelfReload\(\)\{[^\n]*__psBootMarkDone/,'sync.js self reloads too');
-  assert.match(app,/if\(app==='design'&&window\.__psSafeBoardPending\)\{ try\{ window\.__psSafeOpenBoard\(function\(\)\{/,'훈련 만들기 opens the board on tap');
+  assert.match(app,/if\(app==='design'&&window\.__psSafeBoardPending\)\{ try\{ window\.__psSafeOpenBoard\(\); \}catch\(_\)\{\} \}/,'훈련 만들기 opens the board on tap (the vault view is deferred once, below)');
+  assert.match(app,/var _goHome=function\(\)\{ try\{ window\.__psBootMarkDone&&window\.__psBootMarkDone\(\); location\.href=location\.pathname;/,'going home is not a death');
+  assert.match(sync,/__psBootMarkDone\(\); \}catch\(_\)\{\}[^\n]*\n  w\.location\.href=BASE\+'\/auth\/v1\/authorize/,'leaving for OAuth is not a death');
   assert.match(app,/var plan=window\.__psSafeBoot\?\[\]:psWarmPlan\(psWarmLean\(\),psWarmUsed\(\)\);/,'safe boots (level ≥ 1) warm nothing');
   assert.match(app,/try\{ if\(window\.__psBootStage\)window\.__psBootStage\('w'\+plan\.length\); \}catch\(_\)\{\}/);
   assert.ok(app.indexOf(PSTART)<app.indexOf('    var bootFinished=false;'),'the panel script runs before the shell boot script');
