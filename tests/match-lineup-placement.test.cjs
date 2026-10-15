@@ -8,7 +8,8 @@ const code=[
   part('function matchReviewSquad(m){','function matchSquadModernHas(m){'),
   part('function matchPlayerRole(m,pid){','function matchKitPaint('),
   part('function matchLineupStarters(m){','/* ══ 2.757 · 경기 준비'),
-  part('function mb2FillUs(m){','function mb2FillOp(m){')
+  part('function mb2FillUs(m){','function mb2FillOp(m){'),
+  part('var TB_HOME=','/* 지금 포메이션의 포지션 id')   /* 3.040 — «우리 11»도 tbRender 와 같은 카드 자리(tbCardPos) */
 ].join('\n');
 const plain=v=>JSON.parse(JSON.stringify(v));
 function setup(codes=['GK','RB','RCB','LCB','LB','RDM','LDM','RW','AM','LW','ST']){
@@ -103,7 +104,7 @@ test('analysis fill takes the top available player of each squad-board card at t
   const h=setup();squadBoard(h);const {c,m,state,players}=h;players[1].status='injury';
   m.squad.start=['p9'];m.phaseBoards.boards.atk.us=[{pid:'p0',x:80,y:10}];
   c.obFillUs(m);const us=plain(m.oppPB.boards.atk.frames[0].us);
-  assert.deepEqual(us.map(t=>[t.pid,t.x,t.y]),[['p0',6,50],['p2',18.4,80],['p3',30.8,35],['p9',6,90]],'xy store, then formation default, then the bottom-row fallback like the squad board');
+  assert.deepEqual(us.map(t=>[t.pid,t.x,t.y]),[['p0',6,50],['p2',18.4,80],['p3',30.8,35],['p9',59.7,15]],'xy store, then formation default, then the position home like the squad board (3.040 — no longer the bottom-left row)');
   assert.equal(us[1].name,'선수 2','an injured first choice is skipped for the next player of the same card');
   assert.deepEqual(m.squad.start,['p9'],'the hidden starter list is neither read nor written');
   assert.equal(state.saves,1);assert.match(state.messages.at(-1),/선수단 작전판에서 4명을 놓았어요/);
