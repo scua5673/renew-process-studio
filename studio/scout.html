@@ -4602,6 +4602,18 @@ html.ps-page-scout body.fmdark #homeView .team-topbar .ttb-yleft .ybar{backgroun
       #stInjOv .inj-g>b i{font-style:normal;font-size:11px;font-weight:500;color:var(--dim);margin-left:4px}
       #stInjOv .inj-c{display:flex;flex-wrap:wrap;gap:6px}
       #stInjOv .inj-c .btn{min-height:34px}
+      /* 3.035 — 사람 모형(앞 · 뒤). 부위마다 한 도형 — 테두리는 창 바탕색이라 도형 사이가 갈라져 보인다. 고른 부위는 부상 빨강 */
+      #stInjOv .inj-body{display:flex;justify-content:center;gap:22px;margin:2px 0 8px}
+      #stInjOv .inj-body figure{margin:0;text-align:center}
+      #stInjOv .inj-body svg{display:block;width:100px;height:auto;overflow:visible}
+      #stInjOv .inj-body figcaption{font-size:11px;font-weight:650;color:var(--dim);margin-top:4px}
+      #stInjOv .inj-body [data-part]{fill:#DCE1E8;stroke:var(--bar,#fff);stroke-width:1.4;cursor:pointer;transition:fill .12s}
+      #stInjOv .inj-body [data-part]:hover{fill:#B9C3D1}
+      #stInjOv .inj-body [data-part].on,#stInjOv .inj-body [data-part].on:hover{fill:#C24A46}
+      body.fmdark #stInjOv .inj-body [data-part]{fill:#3A414B}
+      body.fmdark #stInjOv .inj-body [data-part]:hover{fill:#4C5563}
+      #stInjOv .inj-pick{font-size:12px;color:var(--dim);text-align:center;margin:0 0 8px}
+      #stInjOv .inj-pick.has{color:var(--txt);font-weight:650}
       #stInjOv textarea{display:block;box-sizing:border-box;width:100%;min-height:64px;font-size:13px;line-height:1.5;padding:10px}
       #stInjOv .inj-ft{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
       #stInjOv [data-inj-ok]:disabled{opacity:.5;cursor:not-allowed}
@@ -8030,8 +8042,28 @@ document.addEventListener("click",function(e){
       선수 기기에는 내려가지 않는다(sync.js PLAYER_BLIND). 코칭스태프만 본다.
    ⓓ 상태가 «부상»이 되는 순간(명단 칩·작전판·상태 화면·가용인원 기록 창) 이 시트가 뜬다. «나중에»를 누르면 상태는
       그대로 «부상»이고 «부위 미정»으로 남는다 — 가용인원 › 선수별 누적 › 선수 카드에서 다시 적는다. */
-var INJ_PARTS=["발목","무릎","햄스트링","허벅지 앞","종아리","사타구니","발","허리","등","어깨","팔","머리","얼굴","기타"];
+/* 3.035 — 부위는 사람 모형에서 누른다(사용자 «부상 부위 사람 모형으로 해서 선택할 수 있게»). 앞 · 뒤 두 모형, 왼쪽 · 오른쪽은 모형의 그 쪽을 누르면 바로 정해진다.
+   앞 모형은 마주 보는 사람이라 선수의 오른쪽이 화면 왼쪽(x<60), 뒤 모형은 선수의 왼쪽이 화면 왼쪽. 가운데 부위(머리 · 얼굴 · 목 · 가슴 · 사타구니 · 등 · 허리)는 쪽이 없다.
+   모형이 몸을 다 덮도록 목록에 다섯(목 · 가슴 · 손 · 엉덩이 · 정강이)을 더했다 — 저장 형식(part 글자 · side)은 2.943 그대로라 옛 기록 · 요약(av-inj)이 그대로 읽는다.
+   칩 목록은 남긴다(키보드 · «기타» · 모형에 없는 부위). */
+var INJ_PARTS=["발목","무릎","햄스트링","허벅지 앞","종아리","정강이","사타구니","엉덩이","발","허리","등","가슴","어깨","팔","손","목","머리","얼굴","기타"];
 var INJ_SIDE={L:"왼쪽",R:"오른쪽",B:"양쪽"},INJ_WHEN={match:"경기 중",train:"훈련 중",out:"팀 밖"};
+var INJ_BODY=(function(){ var R=function(x,y,w,h,r){return {t:"rect",x:x,y:y,w:w,h:h,r:r};},E=function(cx,cy,rx,ry){return {t:"ell",cx:cx,cy:cy,rx:rx,ry:ry};};
+  /* [부위, "pair"(좌우 한 쌍 — 화면 왼쪽 모양을 적고 오른쪽은 x=60 기준으로 비춘다) | ""(가운데), 모양] · 그리는 차례 = 겹침 차례(뒤에 적은 것이 위) · viewBox 0 0 120 252 */
+  return {front:[["머리","",E(60,14,15,11)],["얼굴","",E(60,31,12.5,12)],["목","",R(54,41,12,10,3)],["가슴","",R(42,50,36,56,8)],
+      ["어깨","pair",E(37,56,9,8)],["팔","pair",R(24,62,10,58,5)],["손","pair",E(29,128,6,8)],["허벅지 앞","pair",R(44,121,15,46,6)],["사타구니","",E(60,116,14,9)],
+      ["무릎","pair",E(51.5,172,7.5,7.5)],["정강이","pair",R(45,181,13,42,5)],["발목","pair",E(51.5,228,5.5,5.5)],["발","pair",R(43,235,17,12,5)]],
+    back:[["머리","",E(60,22,15,17)],["목","",R(54,41,12,10,3)],["등","",R(42,50,36,34,8)],["허리","",R(42,86,36,22,6)],
+      ["어깨","pair",E(37,56,9,8)],["팔","pair",R(24,62,10,58,5)],["손","pair",E(29,128,6,8)],["엉덩이","pair",R(42,109,17,17,6)],["햄스트링","pair",R(44,128,15,42,6)],
+      ["무릎","pair",E(51.5,174,7.5,7.5)],["종아리","pair",R(45,183,13,40,5)],["발목","pair",E(51.5,228,5.5,5.5)],["발","pair",R(43,235,17,12,5)]]}; })();
+function injBodySvg(view){
+  var f=function(n){return Math.round(n*10)/10;},mir=function(s){return s.t==="rect"?{t:"rect",x:120-s.x-s.w,y:s.y,w:s.w,h:s.h,r:s.r}:{t:"ell",cx:120-s.cx,cy:s.cy,rx:s.rx,ry:s.ry};};
+  var tag=function(s,part,side){var a=' data-part="'+esc(part)+'" data-side="'+side+'" role="button" aria-pressed="false"><title>'+esc((INJ_SIDE[side]?INJ_SIDE[side]+" ":"")+part)+'</title></';
+    return s.t==="rect"?'<rect x="'+f(s.x)+'" y="'+f(s.y)+'" width="'+f(s.w)+'" height="'+f(s.h)+'" rx="'+f(s.r)+'"'+a+'rect>':'<ellipse cx="'+f(s.cx)+'" cy="'+f(s.cy)+'" rx="'+f(s.rx)+'" ry="'+f(s.ry)+'"'+a+'ellipse>';};
+  var left=view==="front"?"R":"L",right=view==="front"?"L":"R",o="";
+  (INJ_BODY[view]||[]).forEach(function(p){ if(p[1]==="pair")o+=tag(p[2],p[0],left)+tag(mir(p[2]),p[0],right); else o+=tag(p[2],p[0],""); });
+  return '<svg viewBox="0 0 120 252" data-inj-view="'+view+'" aria-label="'+(view==="front"?"앞":"뒤")+' 모형">'+o+'</svg>';
+}
 function stEpisodes(p){try{return (p&&window.PSParticipation&&PSParticipation.episodes)?PSParticipation.episodes(data.meta||{},p.id,plStatusOf(p),stYmd()):[];}catch(_){return [];}}
 function stOpenEpisode(p){var L=stEpisodes(p),e=L[L.length-1];return e&&e.open?e:null;}
 function stInjLabel(e){if(!e)return "";var a=[e.part||"부위 미정"];if(INJ_SIDE[e.side])a.push(INJ_SIDE[e.side]);return a.join(" · ");}
@@ -8055,7 +8087,9 @@ function stInjurySheet(pl,opts){
   var sub=e.open?("부상 기록 · "+stMD(e.from)+"부터 "+e.days+"일째"):("지난 부상 · "+stMD(e.from)+"–"+stMD(e.to)+" · "+e.days+"일");
   ov.innerHTML='<div class="ts-card inj-card" role="dialog" aria-modal="true" aria-labelledby="stInjT">'
     +'<div class="ts-hd"><div><small>'+esc(sub)+'</small><h3 id="stInjT">'+esc(pl.name||"선수")+' · 어디를 다쳤나요</h3></div><button class="ts-x" type="button" aria-label="닫기">×</button></div>'
-    +'<div class="inj-g"><b>부위 <em>꼭 골라 주세요</em></b><div class="inj-c" data-f="part"></div></div>'
+    +'<div class="inj-g"><b>부위 <em>꼭 골라 주세요</em></b>'
+    +'<div class="inj-body"><figure>'+injBodySvg("front")+'<figcaption>앞</figcaption></figure><figure>'+injBodySvg("back")+'<figcaption>뒤</figcaption></figure></div>'   /* 3.035 */
+    +'<div class="inj-pick" data-inj-pick aria-live="polite"></div><div class="inj-c" data-f="part"></div></div>'
     +'<div class="inj-g"><b>어느 쪽 <i>선택</i></b><div class="inj-c" data-f="side"></div></div>'
     +'<div class="inj-g"><b>언제 <i>선택</i></b><div class="inj-c" data-f="when"></div></div>'
     +(askRet?'<div class="inj-g"><b>복귀 예상</b><div class="inj-c" data-f="ret"></div></div>':'')
@@ -8074,9 +8108,17 @@ function stInjurySheet(pl,opts){
     chips("side",Object.keys(INJ_SIDE).map(function(k){return [k,INJ_SIDE[k]];}),sel.side,true);
     chips("when",Object.keys(INJ_WHEN).map(function(k){return [k,INJ_WHEN[k]];}),sel.when,true);
     if(askRet)chips("ret",stRetOptions(pl.statusUntil?String(pl.statusUntil):""),retSel,false);
+    /* 3.035 — 모형: 고른 부위를 칠한다. 쪽을 안 골랐거나 «양쪽»이면 그 부위 양쪽 다, 왼쪽 · 오른쪽이면 그 쪽만 */
+    [].forEach.call(ov.querySelectorAll(".inj-body [data-part]"),function(r){var sd=r.getAttribute("data-side")||"",on=!!sel.part&&r.getAttribute("data-part")===sel.part&&(!sd||!sel.side||sel.side==="B"||sd===sel.side);r.classList.toggle("on",on);r.setAttribute("aria-pressed",on?"true":"false");});
+    var pk=ov.querySelector("[data-inj-pick]");if(pk){pk.textContent=sel.part?("고른 부위 · "+stInjLabel({part:sel.part,side:sel.side})):"모형에서 누르거나 아래 목록에서 고르세요";pk.classList.toggle("has",!!sel.part);}
     ov.querySelector("[data-inj-ok]").disabled=!sel.part;
   }
   draw();
+  /* 3.035 — 모형의 부위를 누르면 부위 + 그 쪽. 같은 곳을 다시 누르면 푼다. «양쪽»을 골라 둔 채 다른 부위를 누르면 양쪽 그대로, 가운데 부위는 쪽이 없다 */
+  ov.addEventListener("click",function(ev){var r=ev.target&&ev.target.closest&&ev.target.closest(".inj-body [data-part]");if(!r)return;ev.preventDefault();
+    var p=r.getAttribute("data-part"),sd=r.getAttribute("data-side")||"";
+    if(sel.part===p&&(sel.side||"")===sd){sel.part="";sel.side="";}else{sel.part=p;sel.side=sd?(sel.side==="B"?"B":sd):"";}
+    draw();});
   ov.querySelector(".ts-x").onclick=close;ov.querySelector("[data-inj-later]").onclick=close;
   ov.addEventListener("click",function(ev){if(ev.target===ov)close();});
   ov.addEventListener("keydown",function(ev){if(ev.key==="Escape")close();});

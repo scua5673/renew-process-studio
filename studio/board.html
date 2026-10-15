@@ -13639,6 +13639,11 @@ function openEditor(id,type){
   if(!document.body.classList.contains("editing")){
     try{ editorAnimStash=(window.__animFrames?__animFrames():null); editorAnimIdx=(typeof animActive!=="undefined"&&animActive>=0)?animActive:0; editorAnimStashed=true; }catch(_){}
     editorStash=captureSnap();
+    /* 3.035 — 훈련 편집기는 평면으로 연다(사용자 «훈련 세션 만들기 들어갔을 때는 보드 설정이 평면에 훈련 피치로»). 3D 가 켜져 있었으면 이번만 끄고(설정 값은 그대로),
+       닫을 때 되돌린다(__edTiltPrev). 편집기 안에서 3D 를 직접 켜면 그 뜻대로 두고, 껐다 켰다 해 설정 값이 «0»이 됐으면 되돌리지 않는다. 처음 한 번만 짧게 알린다. */
+    try{ window.__edTiltPrev=document.body.classList.contains("bc-tilt3d");
+      if(window.__edTiltPrev&&window.__setTilt){ window.__setTilt(false,{transient:true,quiet:true});
+        try{ if(localStorage.getItem("ps_editor_flat_told")!=="1"){ localStorage.setItem("ps_editor_flat_told","1"); setTimeout(function(){ try{toast("훈련 편집기는 평면으로 열려요 — 나가면 3D 로 돌아갑니다");}catch(_){} },600); } }catch(_){} } }catch(_){}
     /* 1.962 — 편집기로 들어가기 전, 지금 보드를 라이브에 확정 저장(디바운스 대기 중이던 것 포함). 편집 중엔 라이브 저장이 멈춘다(_boardLiveWriteNow) */
     try{ if(!window.__vaultEdit&&typeof _boardLiveWriteNow==="function"){ try{clearTimeout(_bliveT);_bliveT=null;}catch(_){} boardFlushLive(); } }catch(_){}
   }
@@ -13800,6 +13805,9 @@ function closeEditor(save){
     try{ var _pbc=document.getElementById("commPlayControls"); if(_pbc){ if(_pbc.__t)clearInterval(_pbc.__t); _pbc.remove(); } }catch(_){}
     try{ if(typeof stopAnim==="function")stopAnim(); var _ab=document.getElementById("animBar"); if(_ab)_ab.classList.remove("on"); }catch(_){} }
   if(__spPrevPitch!=null){try{ if(window.__applyPitch)window.__applyPitch(__spPrevPitch,__spPrevCustom); else document.documentElement.dataset.pitch=__spPrevPitch; if(__spPrevLines!=null)state.lines=__spPrevLines;if(__spPrevGrid!=null)state.gridType=__spPrevGrid;buildPitch();buildLines();buildGrid();renderTokens();renderDrawings();}catch(_){}__spPrevPitch=null;__spPrevLines=null;__spPrevGrid=null;__spPrevCustom=null;}
+  /* 3.035 — 들어올 때 잠깐 끈 3D 를 되돌린다(설정 값이 아직 «1»일 때만 — 편집기 안에서 «평면»을 고른 사람은 그대로) */
+  try{ var _etp=window.__edTiltPrev; window.__edTiltPrev=false;
+    if(_etp&&!document.body.classList.contains("bc-tilt3d")&&window.__setTilt){ var _tv=null; try{ _tv=localStorage.getItem("ps_board_tilt3d"); }catch(_){} if(_tv!=="0")window.__setTilt(true,{transient:true,quiet:true}); } }catch(_){}
   editorScenes=null;editorSceneIdx=0;editorTrainings=null;editorTrainIdx=0;editorFileName="";renderSceneStrip();renderTrainingTabs();
   try{ if(window.__psNoDraft){ window.__psNoDraft=false; clearEditorDraft(); } }catch(_){}   /* 1.940 */
   setView("session");renderSession();
@@ -14411,6 +14419,9 @@ function init(){
      ⚠ 3D 켜기·끄기와 같이 **기기 설정**이다(보드가 아니라 «내가 보는 방식» — 2.929 표의 «보드 보기»와 같은 자리). */
   var TILT_CAM={low:{ax:36,sy:1.3},mid:{ax:24,sy:1.08},high:{ax:12,sy:1}};
   var TILT_PAD={full:[.15,.11,.05],simple:[.09,.08,.035],grass:[.05,.05,.03]};
+  /* 3.035 — 그리드 판(라인 없는 빈 판)은 여백 없이 판을 꽉 채운다(사용자 «그리드 선택했을 때 보드에 여백이 없이 다 활용할 수 있게»). 잔디는 tiltStadium 이 판 밖으로
+     한 판 넓이만큼 이어 그려(bleed) 기울인 판의 네 귀가 어두운 무대로 비치지 않는다 — 무대 끝까지 훈련장이다. */
+  var TILT_PAD_BLANK=[.012,.012,.012];
   /* 3.029 — 분위기(사용자 «3D 연출 — 낮 · 해질녘 · 야간»). 야간 = 지금까지의 모습(어두운 무대 · 조명탑 넷 · 네 방향 그림자)이라 기본.
      ga·gb 잔디 톤(사진 잔디가 아닐 때) · tint 잔디 위 색 겹 · cone 조명 빛 기둥(잔디 네 귀퉁이) · lamp 지붕 조명등 밝기 · vig 바깥 어둠 · warm 전체 노을 겹.
      무대 바탕 · 화면 위 빛 층은 CSS(body[data-tilt-mood]) · 칩 그림자는 _chipOpts().mood → board-token-depth.js */
@@ -14476,6 +14487,7 @@ function init(){
       var top=raw.top+pt, hh=raw.height-pt-pb, ww=raw.width; if(!hh||!ww)return;
       var t3=window.__tilt3d||{},deco=tiltDecoNow(),pads=TILT_PAD[deco]||TILT_PAD.full;   /* 3.010 — 경기장을 줄이면(간단·잔디만) 운동장이 그만큼 크게 · 3.027 그리드 판은 잔디만 */
       if((state.pitchN||1)>1&&deco!=="grass")pads=[pads[0],pads[1],pads[2]+.03];   /* 3.028 — 운동장 여러 개는 가로로 넓어(2.2:1) 옆 관중석 · 광고판이 잘렸다 — 옆 여백만 조금 더 */
+      try{ if(isBlankSpec()&&(state.pitchN||1)<=1)pads=TILT_PAD_BLANK; }catch(_){}   /* 3.035 — 그리드 판은 여백 없이(잔디가 판 밖으로 이어져 틀이 보이지 않는다) */
       var key=[Math.round(raw.left),Math.round(top),Math.round(ww),Math.round(hh),pv.map(Math.round).join(","),vb.x,vb.y,vb.width,vb.height,svg.getAttribute("preserveAspectRatio"),t3.cam,deco,st.getPropertyValue("--tilt-k"),st.getPropertyValue("--tilt-ty")].join("|");
       if(key===_fitKey)return;
       var prevTr=svg.style.transition; svg.style.transition="none";
@@ -14503,8 +14515,9 @@ function init(){
   }
   window.addEventListener('resize',scheduleTiltFit);
   try{if(window.ResizeObserver){var tiltResize=new ResizeObserver(scheduleTiltFit);tiltResize.observe(document.getElementById('boardStage'));tiltResize.observe(svg);}}catch(_){}
-  window.__setTilt=function(on){ on=!!on; var _was=document.body.classList.contains("bc-tilt3d"); document.body.classList.toggle("bc-tilt3d",on);
-    try{localStorage.setItem("ps_board_tilt3d",on?"1":"0");}catch(_){}
+  /* 3.035 — opts.transient: 설정 값(ps_board_tilt3d)은 건드리지 않는다(훈련 편집기가 잠깐 평면으로 여닫을 때) · opts.quiet: 안내 없이 */
+  window.__setTilt=function(on,opts){ on=!!on; opts=opts||{}; var _was=document.body.classList.contains("bc-tilt3d"); document.body.classList.toggle("bc-tilt3d",on);
+    if(!opts.transient){ try{localStorage.setItem("ps_board_tilt3d",on?"1":"0");}catch(_){} }
     try{ if(on&&!_was&&window.__tiltBootArm)window.__tiltBootArm(); else if(!on&&_was&&window.__tiltBootDone)window.__tiltBootDone(); }catch(_){}   /* 3.033 — 켜자마자 죽어도 다음 부팅은 평면(부팅 안전장치와 같은 표시) · 끄면 지운다 */
     try{ if(on)bcAddLight(); else if(!document.body.classList.contains("bc-cam"))bcDelLight(); }catch(_){}
     try{ if(on)window.__tiltStands(); }catch(_){}   /* 2.372 — 켜기 전에 배경을 깔아 둔다 */
@@ -14512,7 +14525,7 @@ function init(){
     try{ tiltGoalsSync();renderTokens(); }catch(_){}
     // Geometry follows actual layout changes; never periodically reset the live transform.
     try{ if(window.__tiltIv){clearInterval(window.__tiltIv);window.__tiltIv=null;} }catch(_){}
-    try{toast(on?"3D 보기 — 끌기·그리기 그대로 됩니다":"3D 보기 끔");}catch(_){}   /* 3.009 — «입체»·«원근 뷰» 대신 «3D»(사용자) */
+    if(!opts.quiet){ try{toast(on?"3D 보기 — 끌기·그리기 그대로 됩니다":"3D 보기 끔");}catch(_){} }   /* 3.009 — «입체»·«원근 뷰» 대신 «3D»(사용자) */
     try{__syncStageUI();}catch(_){} };
   /* 2.274 — 서 있는 골대(사용자 "TV 중계처럼 · 골대도 서 있게"): SVG 는 한 평면이라 골대만 HTML 3D 레이어에.
      보드와 같은 기울기(preserve-3d) 위에서 rotateY(-90°)로 골라인 평면에 수직으로 선다(포스트=위·아래 테두리, 크로스바=바깥 테두리, 그물=배경 망).
@@ -14574,17 +14587,18 @@ function init(){
     if(!host){host=document.createElement('img');host.className='tilt-stadium';host.alt='';host.setAttribute('aria-hidden','true');host.decoding='async';host.draggable=false;surface.appendChild(host);}
     surface.classList.add('ps-stadium');
     const t3=window.__tilt3d||{},deco=tiltDecoNow(),md=TILT_MOOD[t3.mood]||TILT_MOOD.night,brand=!!t3.brand,tname=brand?tiltTeamName():"",tcol=brand?String(teamHex("blue")||""):"",ad=String(t3.ad||"").trim()||tname||"PROCESS STUDIO";   /* 3.010 — 경기장 꾸밈 · 광고판 문구 · 3.027 그리드 판은 잔디만 · 3.029 분위기 · 팀 브랜딩(광고판 기본 문구 = 팀 이름 · 관중석 팀 색) */
-    const dE=deco==="full"?dRo:(deco==="simple"?dT+S*.03:dT);   /* 그림이 끝나는 바깥 테(줄이면 그림 상자도 작게) */
+    const bleed=(!multi&&!!sp.blank)?Math.max(PW,PH)*.5:0;   /* 3.035 — 그리드 판: 잔디가 판 밖으로 반 판 넓이만큼 이어진다(무대 네 귀까지 훈련장 · 멀리는 어둠에 잠긴다). 먼 변이 가장 좁은 «낮게» 카메라(36°)도 덮는다(실측 ≈ 0.33 판). 더 넓히면 그림(이미지 한 장)이 커져 아이패드 메모리를 먹는다 */
+    const dE=bleed?dT+bleed:(deco==="full"?dRo:(deco==="simple"?dT+S*.03:dT));   /* 그림이 끝나는 바깥 테(줄이면 그림 상자도 작게) */
     const mt=(/matrix\(([^)]*)\)/.exec(wt)||[0,'1 0 0 1 0 0'])[1].split(/[\s,]+/).map(Number),ext=gx+dE,eyt=gy+dE;
     const cs=[[L-ext,T-eyt],[R+ext,T-eyt],[R+ext,B+eyt],[L-ext,B+eyt]].map(([x,y])=>[mt[0]*x+mt[2]*y+mt[4],mt[1]*x+mt[3]*y+mt[5]]);
     const bx0=Math.min(...cs.map(c=>c[0])),by0=Math.min(...cs.map(c=>c[1])),bx1=Math.max(...cs.map(c=>c[0])),by1=Math.max(...cs.map(c=>c[1]));
     const k=Math.min(bw/vb.width,bh/vb.height),al=/xMin/.test(par)?0:/xMax/.test(par)?1:.5,av=/YMin/.test(par)?0:/YMax/.test(par)?1:.5;
     const ox=(bw-vb.width*k)*al,oy=(bh-vb.height*k)*av;
     host.style.left=((bx0-vb.x)*k+ox)+'px';host.style.top=((by0-vb.y)*k+oy)+'px';host.style.width=((bx1-bx0)*k)+'px';host.style.height=((by1-by0)*k)+'px';
-    const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0,deco,ad,md.key,brand?1:0,tcol].join('|');   /* 3.029 — 분위기 · 브랜딩도 서명에 */
+    const sig=[wt,L,R,T,B,goals?sp.goal:0,turf?1:0,deco,ad,md.key,brand?1:0,tcol,bleed?1:0].join('|');   /* 3.029 — 분위기 · 브랜딩도 서명에 · 3.035 그리드 판의 잔디 이어 그리기 */
     if(host.__sig===sig)return;
     host.__sig=sig;
-    const rr=d=>{const x0=L-gx-d,x1=R+gx+d,y0=T-gy-d,y1=B+gy+d,r=r0+d,a='A'+f(r)+' '+f(r)+' 0 0 1 ';
+    const rr=d=>{const x0=L-gx-d,x1=R+gx+d,y0=T-gy-d,y1=B+gy+d,r=r0+Math.min(d,dRo),a='A'+f(r)+' '+f(r)+' 0 0 1 ';   /* 3.035 — 모서리는 지붕 테까지만 둥글게(그리드 판의 잔디 bleed 는 네 귀가 둥글어 무대가 비쳤다) */
       return 'M'+f(x0+r)+' '+f(y0)+'H'+f(x1-r)+a+f(x1)+' '+f(y0+r)+'V'+f(y1-r)+a+f(x1-r)+' '+f(y1)+'H'+f(x0+r)+a+f(x0)+' '+f(y1-r)+'V'+f(y0+r)+a+f(x0+r)+' '+f(y0)+'Z';};
     const ring=(d0,d1,fill,op)=>'<path d="'+rr(d1)+rr(d0)+'" fill-rule="evenodd" fill="'+fill+'"'+(op!=null?' fill-opacity="'+op+'"':'')+'/>';
     const line=(d,stroke,w,op,dash)=>'<path d="'+rr(d)+'" fill="none" stroke="'+stroke+'" stroke-width="'+f(w)+'"'+(op!=null?' stroke-opacity="'+op+'"':'')+(dash?' stroke-dasharray="'+dash+'"':'')+'/>';
@@ -14631,11 +14645,12 @@ function init(){
       +line(dT+S*.002,'#3a4249',S*.0045)+line(dT+S*.0005,'#d9e1e6',S*.0012,.6);
     }else if(deco==="simple")o+=ring(dT,dE,'#11161b')+line(dT+S*.002,'#3a4249',S*.0045)+line(dE,'#05080a',S*.004);   /* 간단: 관중석 대신 어두운 콘크리트 테 */
     /* 광고판 뒤 띠(인조 잔디) · 잔디 · 닳은 자국 — 잔디만이면 띠도 잔디(광고판이 없다) */
-    o+=(deco==="grass"?ring(0,dT,'url(#psStGrass)')+ring(0,dT,'url(#psStMow)')+ring(0,dT,'#0b2410',.18):ring(bt,dT,'#173a20'))
+    o+=(deco==="grass"?ring(0,bleed?dE:dT,'url(#psStGrass)')+ring(0,bleed?dE:dT,'url(#psStMow)')+ring(0,dT,'#0b2410',.18):ring(bt,dT,'#173a20'))   /* 3.035 — 그리드 판은 잔디가 dE(판 밖 한 판 넓이)까지 */
       +'<path d="'+rr(0)+'" fill="url(#psStGrass)"/>'
       +(turf?'<path d="'+rr(0)+'" fill="#1c7a34" fill-opacity=".24"/>':'')   /* 타일의 누런 기를 경기장 잔디 초록으로 */
       +'<path d="'+rr(0)+'" fill="url(#psStMow)"/>'   /* 잔디결(5m)을 중계 화면처럼 또렷하게 */
       +'<path d="'+rr(0)+'" fill="url(#psStLight)"/>';
+    if(bleed)o+=line(0,'#ffffff',S*.0014,.18);   /* 3.035 — 그리드 판: 판 끝(카드 · 사진에 담기는 범위)을 옅은 줄로 — 잔디가 이어져 끝이 안 보인다 */
     if(md.tint)o+='<path d="'+rr(0)+'" fill="'+md.tint[0]+'" fill-opacity="'+md.tint[1]+'"/>';   /* 3.029 — 낮은 밝게 · 해질녘은 노을 빛 */
     if(md.cone>0){ o+='<g clip-path="url(#psStPitchClip)" fill="url(#psStCone)" fill-opacity="'+md.cone+'">'; [[L,T],[R,T],[R,B],[L,B]].forEach(([cx,cy])=>{ o+='<ellipse cx="'+f(cx)+'" cy="'+f(cy)+'" rx="'+f(S*.36)+'" ry="'+f(PH*.5)+'"/>'; }); o+='</g>'; }   /* 3.029 — 야간 · 해질녘 조명탑 네 개의 빛 기둥(잔디 안에서만) */
     if(!whole){const wr=(cx,cy,rx,ry)=>'<ellipse cx="'+f(cx)+'" cy="'+f(cy)+'" rx="'+f(rx)+'" ry="'+f(ry)+'" fill="url(#psStWear)"/>';
