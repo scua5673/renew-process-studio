@@ -1,4 +1,4 @@
-// 3.044 — 피드백 17(DS-4 · DS-6 · DS-13): vendor/tokens.css 가 글자 · 면 · 선 · 모서리의 정본이고, ui-grammar 의 별칭은 그 값을 가리키기만 한다.
+// 3.046 — 피드백 17(DS-4 · DS-6 · DS-13): vendor/tokens.css 가 글자 · 면 · 선 · 모서리의 정본이고, ui-grammar 의 별칭은 그 값을 가리키기만 한다.
 // stylelint 를 들이지 않고 같은 일을 래칫으로 — 새 hex · px 글자 크기 · !important · :not(#_) 가 늘지 않고, 반 픽셀 글자는 없다.
 // 화면이 바뀌지 않았다는 확인은 계산된 스타일 비교로 했다(PR 본문 — 데스크톱 라이트/다크 · 폰 · 아이패드의 모든 요소).
 const test=require('node:test');
@@ -27,11 +27,11 @@ test('tokens.css · ui-grammar.css 를 고쳤으니 모든 페이지의 ?v 가 �
   for(const re of [/\/vendor\/tokens\.css\?v=([\d.]+)/g,/ui-grammar\.css\?v=([\d.]+)/g]){
     const pins=new Set(); for(const f of styleFiles().filter(f=>f.endsWith('.html')))for(const m of R(f).matchAll(re))pins.add(m[1]);
     assert.equal(pins.size,1,re+' '+[...pins].join(' '));
-    assert.ok(Number([...pins][0])>=3.044,re+' '+[...pins][0]);
+    assert.ok(Number([...pins][0])>=3.046,re+' '+[...pins][0]);
   }
 });
 
-/* 스타일 코드 래칫(3.044 실측값이 상한). 줄였으면 상한도 내린다 */
+/* 스타일 코드 래칫(3.046 실측값이 상한). 줄였으면 상한도 내린다 */
 const CSS_RATCHET={hex:1320,important:13471,notId:1353,fontPx:4349};
 test('스타일 래칫 — 새 hex 색 · px 글자 크기 · !important · :not(#_) 가 늘지 않는다, 반 픽셀 글자는 0',()=>{
   const hex=new Set(); let important=0,notId=0,fontPx=0; const half=[];
