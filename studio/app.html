@@ -32,7 +32,7 @@
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.051"></script>
+<script src="autosave-status.js?v=3.052"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -514,7 +514,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.051';</script>
+<script>window.PS_BUILD='3.052';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1387,6 +1387,7 @@ window.psFailAlert=function(lead,e,stage){
       <button id="bkDown" title="현재 팀 메뉴를 파일로 저장" aria-label="파일 저장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"/></svg>파일 저장</button>
       <button id="bkUp" title="팀 메뉴 파일 가져오기" aria-label="파일 가져오기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M6 13l6-6 6 6M4 3h16"/></svg>파일 가져오기</button>
       <input type="file" id="bkFile" accept="application/json" style="display:none">
+      <button id="bkAll" title="팀 전체 자료(JSON)와 명단 · 평가(CSV)를 내려받기 — 임원만" aria-label="팀 전체 내보내기" style="display:none">팀 전체 내보내기</button>
       <button id="bkTest" title="저장 무결성 점검" aria-label="저장 점검" style="display:none">점검</button>
       <button id="bkStash" title="워크스페이스 전환 때 이 기기에 남긴 자동 백업에서 복구" aria-label="전환 백업 복구" style="display:none">전환 백업 복구</button>
       <button id="bkErase" title="서버와 이 기기의 내 데이터를 영구 삭제 (개인정보 파기 요청)" aria-label="내 데이터 삭제" style="display:none;color:#C24A46">내 데이터 삭제</button>
@@ -4859,6 +4860,20 @@ window.psFailAlert=function(lead,e,stage){
     r.readAsText(file);
     f.value='';
   });
+  /* 3.052 — 팀 전체 내보내기(team-files.js exportAll): 팀 공간 · 임원(소유자 · 임원)에게만 보인다. 앱 설정을 열 때마다 다시 본다 */
+  (function(){
+    var btn=document.getElementById('bkAll');if(!btn)return;
+    function sync(){ var on=false; try{ var w=window.PSSync&&PSSync.activeWsObj&&PSSync.activeWsObj(); on=!!(w&&w.kind==='team'&&PSSync.idpLink&&PSSync.idpLink.can()&&window.PSTeamFiles&&PSTeamFiles.exportAll); }catch(_){} btn.style.display=on?'':'none'; }
+    document.addEventListener('click',function(e){ if(e.target&&e.target.closest&&e.target.closest('#gearBtn,#gearWrap,[data-gp-go="data"]'))setTimeout(sync,60); },true);
+    window.addEventListener('ps-sync-state',sync); setTimeout(sync,1500);
+    btn.onclick=function(){
+      if(!fileDataUnlocked(true))return;
+      btn.disabled=true; var t=btn.textContent; btn.textContent='내보내는 중…';
+      PSTeamFiles.exportAll().then(function(r){ btn.textContent='내려받았어요 ✓'; setTimeout(function(){ btn.textContent=t; btn.disabled=false; },2500);
+        try{ if(window.PSSync&&PSSync.event)PSSync.event('team_export',{status:'ok',feature:'app',meta:{stage:'all',source:String(r&&r.keys||0)}}); }catch(_){} })
+      .catch(function(e){ btn.textContent=t; btn.disabled=false; psFailAlert('팀 전체 내보내기를 하지 못했어요.',e,'team_export'); });
+    };
+  })();
   /* v319 — 내 데이터 삭제(개인정보 파기 요청): 서버 RPC ps_delete_my_data + 이 기기 데이터 삭제.
      '삭제'를 직접 입력해야 실행. 백업 파일을 먼저 받도록 강하게 권한다. */
   (function(){
@@ -8085,13 +8100,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.051"></script>
-<script src="autosave-merge.js?v=3.051"></script>
-<script src="autosave-runtime.js?v=3.051"></script>
-<script src="autosave-recovery.js?v=3.051"></script>
-<script src="sync.js?v=3.051"></script>
+<script src="autosave-journal.js?v=3.052"></script>
+<script src="autosave-merge.js?v=3.052"></script>
+<script src="autosave-runtime.js?v=3.052"></script>
+<script src="autosave-recovery.js?v=3.052"></script>
+<script src="sync.js?v=3.052"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.051">
+<link rel="stylesheet" href="support.css?v=3.052">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

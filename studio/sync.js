@@ -9138,10 +9138,11 @@ function ensureDisplayName(){
     }).catch(function(){});
   }catch(_){}
 }
-function uiJoin(){
+function uiJoin(link){
   var current=accountActionCurrent();
   function modal(opts){opts.current=current;return psModal(opts);}
   if(!current())return;
+  link=(link&&typeof link==='object'&&/^[A-Z0-9]{6,12}$/.test(String(link.code||'')))?link:null;   /* 3.052 — 선수별 초대 링크(?join=)로 왔으면 코드를 묻지 않는다 */
   function askName(message,value){
     var body=(message?'<div style="margin-bottom:8px;color:#d12f38;font-weight:800">'+esc(message)+'</div>':'')
       +'팀에서 구분할 수 있는 <b>이름 또는 아이디</b>를 입력하세요. 합류하면 기본적으로 <b>선수</b> 역할이 적용됩니다.';
@@ -9149,8 +9150,14 @@ function uiJoin(){
       nm=String(nm||'').trim();
       if(nm.length<2){ askName('이름 또는 아이디를 2자 이상 입력해 주세요.',nm); return; }
       setDisplayName(nm);
-      askCode();
+      if(link)askLink(); else askCode();
     }});
+  }
+  function askLink(){
+    modal({title:'초대 링크로 합류',body:'코치가 보낸 초대 링크예요(코드 <b>'+esc(link.code)+'</b>). <b>선수</b>로 합류하고, 명단의 내 이름과 바로 이어집니다.',ok:'합류',onOk:function(){
+      var mm=modal({title:'합류 중…',body:'잠시만요',hideCancel:true,ok:' '});
+      joinTeam(link.code).then(function(wid){ inviteLinkJoined(wid); }).catch(function(){ mm.close(); inviteLinkDrop(); modal({title:'합류 실패',body:'링크의 코드가 올바르지 않거나 만료됐어요. 코치에게 새 링크를 받아 주세요.',hideCancel:true,ok:'확인'}); });
+    },onCancel:function(){ inviteLinkDrop(); }});
   }
   function askCode(message){
     var body=(message?'<div style="margin-bottom:8px;color:#d12f38;font-weight:800">'+esc(message)+'</div>':'')
@@ -9206,7 +9213,76 @@ function uiInvite(wid){
     modal({title:'선수 초대 설정 필요',body:'배포 파일의 <b>supabase-player-invites.sql</b>을 Supabase SQL Editor에서 한 번 실행해주세요.',hideCancel:true,ok:'확인'});
   });
 }
+/* ══ 3.052 · 선수별 초대 링크 — 합류하면 명단의 그 선수와 바로 이어진다(피드백 15 · 제품 3 · UX-15) ══════════════════
+   ① 임원이 명단의 선수에서 «초대 링크»를 만든다: 선수 합류 코드(ps_get_or_create_role_invite — 서버 그대로) + 그 선수 id + 한 번 쓰는 토큰.
+      토큰은 **링크를 만든 기기에만** 둔다(ps_idp_invite_tokens_v1 — 동기화하지 않는 키). 공유 문서 · 서버는 바뀌지 않는다.
+   ② 선수가 링크를 열면(?join=코드&pid=선수&tk=토큰) 셸이 주소에서 걷어 이 기기에 둔다(ps_invite_pending_v1, 7일) → 로그인 뒤 «초대 링크로 합류».
+   ③ 합류한 선수의 IDP 가 «명단에서 나를 고르기» 대신 그 선수로 claim 을 남긴다(idp.html rIdpClaim — 토큰 함께).
+   ④ 링크를 만든 임원 기기는 claim 의 토큰이 제 것과 같으면 확인 없이 연결한다(scout.html ilAutoLinkByToken). 다른 임원 기기에는
+      평소의 «IDP 연결 확인» 카드로 보인다(«초대 링크로 합류»). 토큰은 한 번 쓰면 지운다 — 링크를 다른 사람이 써도 두 번은 안 된다. */
+var INV_TOKENS='ps_idp_invite_tokens_v1', INV_PENDING='ps_invite_pending_v1', INV_LIFE=7*24*3600*1000;
+function invRead(k){ try{ var v=JSON.parse(localStorage.getItem(k)||'null'); return (v&&typeof v==='object')?v:null; }catch(_){ return null; } }
+function invWrite(k,v){ try{ if(v==null)localStorage.removeItem(k); else localStorage.setItem(k,JSON.stringify(v)); }catch(_){} }
+function invToken(){ var b=new Uint8Array(12); try{ crypto.getRandomValues(b); }catch(_){ for(var i=0;i<b.length;i++)b[i]=Math.floor(Math.random()*256); }
+  return Array.prototype.map.call(b,function(x){ return ('0'+x.toString(16)).slice(-2); }).join(''); }
+function uiPlayerInvite(pid,label){
+  var w=activeWsObj(); pid=String(pid||'').slice(0,80); label=String(label||'').slice(0,40);
+  var current=accountActionCurrent(w&&w.id,true);
+  function modal(opts){opts.current=current;return psModal(opts);}
+  if(!current()||!w||!w.id||!pid)return;
+  if(!idpLinkCan()){ modal({title:'초대 링크',body:'선수 초대 링크는 팀 임원이 만들어요.',hideCancel:true,ok:'확인'}); return; }
+  var mm=modal({title:'초대 링크 만드는 중…',body:'잠시만요',hideCancel:true,ok:' '});
+  createRoleInvite(w.id,'player').then(function(code){
+    mm.close(); if(!current())return;
+    var tk=invToken(), all=invRead(INV_TOKENS)||{}, now=Date.now();
+    Object.keys(all).forEach(function(wid){ var m=all[wid]||{}; Object.keys(m).forEach(function(p){ if(!m[p]||now-(+m[p].at||0)>30*24*3600*1000)delete m[p]; }); if(!Object.keys(m).length)delete all[wid]; });   /* 30일 지난 토큰은 버린다(코드도 30일) */
+    all[w.id]=all[w.id]||{}; all[w.id][pid]={tk:tk,at:now}; invWrite(INV_TOKENS,all);
+    var url=location.origin+'/studio/app.html?join='+encodeURIComponent(code)+'&pid='+encodeURIComponent(pid)+'&tk='+tk;
+    var who=label||'선수', msg='['+(w.name||'팀')+'] '+who+' 님 초대 링크예요.\n링크를 열고 로그인하면 팀에 합류하고, 명단의 '+who+' 님과 바로 이어집니다.\n'+url+'\n(30일 동안 쓸 수 있어요. 다른 사람에게 보내지 마세요 — 한 사람만 이어집니다)';
+    var canShare=false; try{ canShare=!!navigator.share; }catch(_){}
+    var body='<b>'+esc(who)+'</b> 님만 쓰는 링크예요. 열고 로그인하면 팀에 <b>선수</b>로 합류하고, 명단의 이 선수와 <b>확인 없이 바로</b> 이어집니다.'
+      +'<div style="margin-top:10px;padding:9px 11px;border:1px solid var(--line,#d2d6dd);border-radius:10px;font-size:11px;line-height:1.55;word-break:break-all;color:var(--dim,#8a8f98)">'+esc(url)+'</div>'
+      +(canShare?'<button id="psPinvShare" style="margin-top:9px;width:100%;padding:9px 0;border:1px solid var(--line,#d2d6dd);background:transparent;color:inherit;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">공유하기</button>':'')
+      +'<div style="margin-top:8px;font-size:11px;color:var(--dim,#8a8f98)">바로 이어지는 것은 이 기기에서 만든 링크만이에요 — 다른 기기에서는 «IDP 연결 확인»에서 한 번 눌러 이어 주세요.</div>';
+    modal({title:who+' 초대 링크',body:body,ok:'링크 복사',cancel:'닫기',onOk:function(){ if(psCopy(msg))psCopied('초대 링크'); }});
+    setTimeout(function(){ var sb=document.getElementById('psPinvShare'); if(sb)sb.onclick=function(){ try{ navigator.share({title:(w.name||'팀')+' 초대',text:msg}); }catch(_){} }; },0);
+    try{ actTrack('a_idp_invite_link','team'); }catch(_){}
+  }).catch(function(){ mm.close(); if(current())modal({title:'초대 링크를 만들지 못했어요',body:'잠시 뒤 다시 시도해 주세요. 계속되면 «초대 코드 보내기»로 코드를 보내 주세요.',hideCancel:true,ok:'확인'}); });
+}
+function consumeInviteLink(){
+  try{
+    if(window.top!==window)return;
+    var q=new URLSearchParams(location.search), code=String(q.get('join')||'').trim().toUpperCase();
+    if(!q.has('join'))return;
+    var pid=String(q.get('pid')||'').slice(0,80), tk=String(q.get('tk')||'');
+    ['join','pid','tk'].forEach(function(k){ q.delete(k); });
+    history.replaceState(null,'',location.pathname+(q.toString()?'?'+q.toString():'')+location.hash);   /* 주소창 · 기록에 코드 · 토큰을 남기지 않는다 */
+    if(!/^[A-Z0-9]{6,12}$/.test(code))return;
+    if(!/^[0-9a-f]{24}$/.test(tk))tk='';   /* 토큰이 없거나 이상하면 코드 합류만(연결은 평소처럼 고르기) */
+    invWrite(INV_PENDING,{code:code,pid:tk?pid:'',tk:tk,at:Date.now()});
+  }catch(_){}
+}
+/* 로그인 · 부팅 때 한 번 — 기다리는 링크가 있고 아직 합류 전이면 묻는다 */
+var _invAsked=false;
+function inviteResume(){
+  try{
+    if(window.top!==window||_invAsked)return;
+    var pd=invRead(INV_PENDING); if(!pd||!pd.code)return;
+    if(Date.now()-(+pd.at||0)>INV_LIFE){ invWrite(INV_PENDING,null); return; }
+    if(pd.wid)return;   /* 이미 합류했다 — 이제 IDP 가 claim 을 남길 차례 */
+    var s=getSess(); if(!s||!s.uid)return;   /* 로그인하면 다시 온다(ps-auth-state) */
+    _invAsked=true; setTimeout(function(){ try{ uiJoin({code:pd.code}); }catch(_){} },600);
+  }catch(_){}
+}
+function inviteLinkJoined(wid){
+  var pd=invRead(INV_PENDING); if(!pd)return;
+  var s=getSess(); pd.wid=String(wid||''); pd.uid=s&&s.uid?String(s.uid):''; pd.joined=Date.now();
+  if(pd.pid&&pd.tk)invWrite(INV_PENDING,pd); else invWrite(INV_PENDING,null);   /* 연결할 선수가 없는 링크는 합류로 끝 */
+  try{ actTrack('a_join_link','team'); }catch(_){}
+}
+function inviteLinkDrop(){ invWrite(INV_PENDING,null); }
 /* 1.528 — 코드만 복사하면 받는 사람이 "이걸 어디에 넣지?"에서 막힌다.
+
    그래서 카톡에 그대로 붙여넣을 수 있는 안내 문구를 함께 만든다.
    ① 초대 메시지 복사(설명+주소+코드) ② 코드만 복사 ③ 공유하기(폰·아이패드) 세 갈래. */
 function psCopy(text){
@@ -9981,6 +10057,8 @@ function renderUI(){
 function boot(){
   consumeHash();
   consumeAccountAction();
+  consumeInviteLink();   /* 3.052 — 선수별 초대 링크 */
+  try{ window.addEventListener('ps-auth-state',function(e){ if(e&&e.detail&&e.detail.unlocked)inviteResume(); }); setTimeout(inviteResume,1500); }catch(_){}   /* 로그인을 마치면 «초대 링크로 합류» */
   try{ if(COPIES_OFF){ var _pc=purgeCopies(); if(_pc)syncDiagnostic('copies-purged',new Error('기기 사본 '+_pc+'개 정리')); } }catch(_){}   /* 2.674 — 쌓여 있던 구조선·충돌 사본 한 번에 정리 */
   /* 2.675 — 닫을 때 팀 자료 지우기 · 지운 뒤 첫 부팅은 서버를 기다린다 */
   try{ window.addEventListener('pagehide',function(e){ if(e&&e.persisted)return; try{ var _n=wipeTeamCacheSoft(); if(_n)syncDiagnostic('cache-wiped',new Error('닫으며 팀 자료 '+_n+'키 지움')); }catch(_){} }); }catch(_){}
@@ -10693,7 +10771,8 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
   idpDailyMine:function(){ var w=activeWs(); if(!w)return Promise.resolve(null); return rpc('ps_idp_daily_mine',{wid:w}).then(function(o){ return o&&o.v===1&&o.days&&typeof o.days==='object'?o:null; }); },
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */
   rosterReady:function(wid){return rosterReady(wid||activeWs());},
-  idpLink:{can:idpLinkCan,members:idpLinkMembers,set:idpLinkSet,invite:function(){ var w=activeWsObj(); if(w&&w.id)uiInvite(w.id); }},   /* 2.945 — 명단 칩·오늘 확인 카드 */
+  teamKeys:function(){ return KEYS.filter(function(k){ return !PERSONAL[k]; }); },   /* 3.052 — 팀 전체 내보내기(team-files.js exportAll)가 쓰는 팀 키 목록(동기화 대상 그대로) */
+  idpLink:{can:idpLinkCan,members:idpLinkMembers,set:idpLinkSet,invite:function(){ var w=activeWsObj(); if(w&&w.id)uiInvite(w.id); },inviteFor:function(pid,label){ uiPlayerInvite(pid,label); }},   /* 2.945 — 명단 칩·오늘 확인 카드 */
   scheduleEdit:{set:scheduleEditSet,touch:scheduleEditTouch,active:scheduleHeld},
   ping:function(f){ usagePing(null,f); },
   act:function(f,feat){ actTrack(f,feat); },   /* 2.516 — 하루 한 줄 핑 + 횟수·시각·기기 이벤트 */

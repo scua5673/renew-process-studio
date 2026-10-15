@@ -360,5 +360,53 @@
   }
   function updateUI(){var section=current(),lab=document.getElementById('bkLabel'),down=document.getElementById('bkDown'),up=document.getElementById('bkUp');if(section&&workspace()&&workspace().kind==='team'){if(lab)lab.textContent=LABEL[section]+' 파일';if(down)down.title=LABEL[section]+' 파일 저장';if(up)up.title='팀 메뉴 파일 가져오기';}else if(lab)lab.textContent='전체 백업';}
   try{var gear=document.getElementById('gearBtn');if(gear)gear.addEventListener('click',function(){setTimeout(updateUI,0);});}catch(_){}
-  window.PSTeamFiles={active:active,current:current,importing:function(){return IMPORTING;},importTarget:function(){return IMPORT_TARGET;},isPackage:function(p){return !!(p&&p.type===TYPE);},exportCurrent:exportCurrent,importPackage:importPackage,validate:validate,updateUI:updateUI,_test:{scheduleMap:scheduleMap,scoutDependency:scoutDependency,matchLinksOk:matchLinksOk,validateSection:validateSection,syncState:syncState}};
+  /* ══ 3.052 · 팀 전체 내보내기(피드백 15 · 제품 3 «팀 전체 내보내기» · 약관 5 · 7조) ══════════════════════════════
+     «파일 저장»은 지금 연 팀 메뉴 한 칸이다(가져오기로 되돌리는 파일). 이것은 **읽는 사람용 사본**이다 — 가져오기에 쓰지 않는다.
+     ① 팀 전체 JSON: 동기화되는 팀 키 전부(PSSync.teamKeys) + 이 기기에 받아 둔 선수 IDP 문서(cs_idp_v1_<uid>) — 원문 그대로.
+     ② 명단 CSV: 번호 · 이름 · 조 · 포지션 · 상태(가용 · 부상 · 재활 …) · 상태 끝나는 날 — 연락처 · 생년월일 같은 칸은 넣지 않는다.
+     ③ 평가 CSV: 선수 · 항목 · 단계(코치 평가 levels). 엑셀이 한글을 읽게 UTF-8 BOM.
+     임원(소유자 · 임원 — PSSync.idpLink.can)만 — 미성년 선수 자료가 통째로 나간다. 참여(날마다의 출결)는 한곳에 모인 자료가 없어 상태 칸으로 대신한다. */
+  function csvCell(v){var s=String(v==null?'':v);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+  function csv(rows){return '﻿'+rows.map(function(r){return r.map(csvCell).join(',');}).join('\r\n')+'\r\n';}
+  function rosterRows(scout){
+    var pos={};(scout.positions||[]).forEach(function(p){if(p&&p.id)pos[p.id]=p.name||'';});
+    var out=[['번호','이름','조','포지션','상태','상태 끝나는 날']];
+    (scout.players||[]).filter(function(p){return p&&p.type!=='target'&&String(p.name||'').trim();}).forEach(function(p){out.push([p.num||'',String(p.name).trim(),p.grp||'',pos[p.posId]||'',p.status||'ok',p.statusUntil||'']);});
+    return out;
+  }
+  function evalRows(scout){
+    var names={};(scout.attrs||[]).forEach(function(a){if(a&&a.id)names[a.id]=a.name||a.id;});
+    var out=[['번호','이름','항목','단계']];
+    (scout.players||[]).filter(function(p){return p&&p.type!=='target'&&p.levels&&typeof p.levels==='object';}).forEach(function(p){
+      Object.keys(p.levels).sort().forEach(function(k){var v=p.levels[k];if(v==null||v==='')return;out.push([p.num||'',String(p.name||'').trim(),names[k]||k,v]);});});
+    return out;
+  }
+  function download(name,text,type){var blob=new Blob([text],{type:type}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},4000);}
+  function exportAll(){
+    requireDataUnlocked();
+    var w=workspace();if(!w||w.kind!=='team')return Promise.reject(new Error('팀 공간에서만 쓸 수 있어요'));
+    var can=false;try{can=!!(window.PSSync&&PSSync.idpLink&&PSSync.idpLink.can());}catch(_){}
+    if(!can)return Promise.reject(new Error('팀 전체 내보내기는 팀 임원만 할 수 있어요'));
+    var keys=[];try{keys=(PSSync.teamKeys&&PSSync.teamKeys())||[];}catch(_){}
+    keys=keys.concat(localPrefix('cs_idp_v1_').filter(function(k){return idpUidKey('cs_idp_v1_',k);}));
+    return readAny(keys).then(function(raw){
+      var d=new Date(),p=function(n){return String(n).padStart(2,'0');},stamp=d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes());
+      var base=(String(w.name||'팀').replace(/[\\/:*?"<>|\s]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'팀')+'-전체-'+stamp;
+      var build='';try{build=String(window.PS_BUILD||(window.parent&&window.parent.PS_BUILD)||'');}catch(_){}
+      download(base+'.json',JSON.stringify({type:'process-studio-team-export',version:1,date:d.toISOString(),build:build,workspace:{id:w.id,name:w.name||''},note:'읽기용 사본입니다 — «파일 가져오기»에 쓰지 않습니다',keys:raw}),'application/json');
+      var scout=null;try{scout=raw.scout_tool_v1?JSON.parse(raw.scout_tool_v1):null;}catch(_){scout=null;}
+      var files=[base+'.json'];
+      if(scout&&Array.isArray(scout.players)){
+        setTimeout(function(){download(base+'-명단.csv',csv(rosterRows(scout)),'text/csv;charset=utf-8');},400);
+        setTimeout(function(){download(base+'-평가.csv',csv(evalRows(scout)),'text/csv;charset=utf-8');},800);
+        files.push(base+'-명단.csv',base+'-평가.csv');
+      }
+      return {files:files,keys:Object.keys(raw).length};
+    });
+  }
+  function readAny(keys){var out={};return Promise.all(keys.map(function(k){
+      var viaStore=window.storage&&window.storage.get?window.storage.get(k).then(function(r){return r&&r.value!=null?r.value:null;},function(){return null;}):Promise.resolve(null);
+      return viaStore.then(function(v){if(v==null){try{v=localStorage.getItem(k);}catch(_){v=null;}}if(v!=null)out[k]=typeof v==='string'?v:JSON.stringify(v);});
+    })).then(function(){return out;});}
+  window.PSTeamFiles={exportAll:exportAll,_csv:{csv:csv,rosterRows:rosterRows,evalRows:evalRows},active:active,current:current,importing:function(){return IMPORTING;},importTarget:function(){return IMPORT_TARGET;},isPackage:function(p){return !!(p&&p.type===TYPE);},exportCurrent:exportCurrent,importPackage:importPackage,validate:validate,updateUI:updateUI,_test:{scheduleMap:scheduleMap,scoutDependency:scoutDependency,matchLinksOk:matchLinksOk,validateSection:validateSection,syncState:syncState}};
 })();
