@@ -8330,7 +8330,7 @@ function storeFailure(k,error){
     if(typeof toast==="function")toast(msg);
   }catch(_){}
 }
-/* 3.045 — 이 페이지의 저장소(IndexedDB 정본 · localStorage 예비). scout.html 의 scoutStore(localStorage 껍데기)와 이름이 같아 사고가 났다(scout.html 1.618) — 키마다 어디에 사는지는 studio/storage-keys.js */
+/* 3.053 — 이 페이지의 저장소(IndexedDB 정본 · localStorage 예비). scout.html 의 scoutStore(localStorage 껍데기)와 이름이 같아 사고가 났다(scout.html 1.618) — 키마다 어디에 사는지는 studio/storage-keys.js */
 const boardStore={
   async get(k){try{if(window.storage){const r=await window.storage.get(k);return r?JSON.parse(r.value):null;}}catch(_){}
     try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(_){}return mem[k]??null;},

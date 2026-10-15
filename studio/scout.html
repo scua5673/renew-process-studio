@@ -6351,7 +6351,7 @@ const scoutStore={
   /* 동기 접수 여부를 돌려준다. 예전에는 실패를 삼키고 mem에만 넣은 뒤 호출부가 "저장됨"이라고
      말해서, 코치는 저장된 줄 알고 앱을 닫았다. mem 사본은 이 탭이 살아 있는 동안의
      임시 대비일 뿐 저장이 아니다. */
-  /* 1.618 — scoutStore 는 localStorage 껍데기다(IndexedDB 가 아니다 — 3.045 까지 이름이 board.html 의 store 와
+  /* 1.618 — scoutStore 는 localStorage 껍데기다(IndexedDB 가 아니다 — 3.053 까지 이름이 board.html 의 store 와
      같아서 헷갈렸다. 이제 boardStore(IndexedDB) · scoutStore(localStorage) · libStore(커뮤니티 보관함)로 가른다 — studio/storage-keys.js). 그런데 sync.js 는 IDBK 목록의 키를 **IndexedDB 에서 읽어 올린다.**
      그래서 여기서 쓴 경기(cs_team_matches_v1)·후보(cs_scout_targets_v1)는 화면에만 남고
      팀에는 옛 자료가 계속 올라갔다. 해당 키는 psSaveShared 로 두 곳에 같이 쓴다. */
