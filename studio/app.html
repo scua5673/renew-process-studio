@@ -3787,6 +3787,14 @@ window.psFailAlert=function(lead,e,stage){
 <script>
 (function(){
   function mb(n){return (Math.max(0,+n||0)/1048576).toFixed(n>=10485760?0:1)+'MB';}
+  /* 3.040 — «큰 항목 5.0MB»만으로는 무엇을 줄일지 몰랐다(사용자 «이름도 보이게»). 저장 공간 경고(storage.js spaceLabel)와 같은 이름 · 줄이는 길,
+     거기 없는 키는 동기화 이름(PSSync.keyLabel), 그래도 없으면 키 그대로 */
+  function bigLabel(key){
+    var L=[key,''];
+    try{ if(window.PSStorage&&PSStorage.spaceLabel)L=PSStorage.spaceLabel(key)||L; }catch(_){}
+    if(L[0]===key){ try{ var s=window.PSSync&&PSSync.keyLabel?PSSync.keyLabel(key):''; if(s)L=[s,L[1]||'']; }catch(_){} }
+    return L;
+  }
   function updateStorageUsage(){
     var el=document.getElementById('psStorageUsage');if(!el)return;
     var local=window.PSStorage&&PSStorage.localBytes?PSStorage.localBytes():0;
@@ -3794,8 +3802,10 @@ window.psFailAlert=function(lead,e,stage){
     Promise.resolve(p).then(function(e){
       var total=e&&e.usage!=null?(' · 전체 '+mb(e.usage)):'';
       var large=window.PSStorage&&PSStorage.largestLocal?PSStorage.largestLocal(1):[];
-      var top=large[0]&&large[0].bytes>=524288?(' · 큰 항목 '+mb(large[0].bytes)):'';
+      var big=large[0]&&large[0].bytes>=524288?large[0]:null,L=big?bigLabel(big.key):null;
+      var top=big?(' · 큰 항목 '+L[0]+' '+mb(big.bytes)):'';
       el.textContent='빠른 저장 '+mb(local)+total+top;
+      if(L&&L[1]&&local>=3145728){ var h=document.createElement('small'); h.style.cssText='display:block;font-weight:500;color:#646A73'; h.textContent=L[1]; el.appendChild(h); }   /* 주황 · 빨강일 때만 줄이는 길 */
       el.style.color=local>=4194304?'#C24A46':(local>=3145728?'#B5762B':'#646A73');
     }).catch(function(){el.textContent='빠른 저장 '+mb(local);});
   }
@@ -3961,7 +3971,8 @@ window.psFailAlert=function(lead,e,stage){
       updateStorageUsage();
       var msg=r.freed>0?('중복 사본 '+mb(r.freed)+'를 안전하게 정리했습니다.'):(
         '지울 수 있는 중복 사본이 없습니다. 기록은 그대로 보존했습니다.');
-      if(r.largest&&r.largest[0]&&r.largest[0].bytes>=1048576)msg+='\n가장 큰 빠른 저장 항목은 '+mb(r.largest[0].bytes)+'입니다.';   /* 2.265 — '\\n' 이 글자 그대로 찍히던 것(아이패드 스크린샷) */
+      if(r.largest&&r.largest[0]&&r.largest[0].bytes>=1048576){ var L0=bigLabel(r.largest[0].key);   /* 3.040 — 이름과 줄이는 길도 */
+        msg+='\n가장 큰 빠른 저장 항목은 «'+L0[0]+'» '+mb(r.largest[0].bytes)+'입니다.'+(L0[1]?('\n'+L0[1]):''); }   /* 2.265 — '\\n' 이 글자 그대로 찍히던 것(아이패드 스크린샷) */
       alert(msg);
     }).catch(function(){alert('정리를 완료하지 못했습니다. 데이터는 삭제하지 않았습니다.');})
       .then(function(){o.disabled=false;o.textContent='안전 정리';});
