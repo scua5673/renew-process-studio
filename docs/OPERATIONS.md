@@ -16,7 +16,7 @@
 
 비밀값: Supabase **publishable** 키만 코드(`studio/app.html` 의 `PS_SYNC`)에 있다. secret 키는 어디에도 두지 않는다. 운영 DB 를 스크립트로 읽을 때는 사람이 만든 개인 접근 토큰 `~/.supabase-pat` 만 쓴다.
 
-### 코드 규칙 (3.043 · 피드백 16 — TD-1 · TD-2 · TD-3)
+### 코드 규칙 (3.045 · 피드백 16 — TD-1 · TD-2 · TD-3)
 
 - **새 키는 표에 먼저** — `studio/storage-keys.js` 에 한 줄(동기화 · 정본 위치 · 구실 · 복구 사본이면 지키는 키 `of`). 표에 없는 키를 코드에 쓰면 `tests/storage-keys-registry.test.cjs` 가 멈춘다. 무엇이 걸렸는지는 `node scripts/storage-keys-scan.cjs`.
   팀과 맞추는 키는 `sync.js` `KEYS`(개인 공간만이면 `PERSONAL` 도)와 표가 같아야 하고, `ps_*` 키는 동기화하지 않는다.

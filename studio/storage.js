@@ -75,7 +75,7 @@
     if(k.indexOf('ps_sync_base_')===0)return ['일정 동기화 기준본','안전 저장소 확인 뒤 자동으로 정리됩니다'];
     if(k.indexOf('ps_sync_conflict_')===0)return ['동기화 충돌 사본','안전하게 지워도 되는 임시 사본입니다'];
     if(SPACE_LABEL[k])return SPACE_LABEL[k];
-    /* 3.043 — 표(storage-keys.js)에 적힌 구실 — «복구 사본 · 이 기기만». 작전판 · 팀 운영 프레임은 셸의 표를 본다 */
+    /* 3.045 — 표(storage-keys.js)에 적힌 구실 — «복구 사본 · 이 기기만». 작전판 · 팀 운영 프레임은 셸의 표를 본다 */
     try{ var T=window.PSStorageKeys||(window.top&&window.top.PSStorageKeys); if(T&&T.label(k))return [k,T.label(k)]; }catch(_){}
     return [k,''];
   }
