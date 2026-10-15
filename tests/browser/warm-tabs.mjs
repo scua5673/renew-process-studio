@@ -57,7 +57,7 @@ try{
     assert.deepEqual(await loaded(),['fBoard'],'가벼운 부팅: 작전판만');
     assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),false,'작전판은 이번만 평면');
     assert.equal(await page.evaluate(()=>localStorage.getItem('ps_board_tilt3d')),'1','3D 설정은 그대로');
-    assert.match(await page.evaluate(()=>sessionStorage.getItem('ps_boot_alive_v1')||''),/^\d+\|1\|(?:load|sync|t10|t30|t60)w0\|1$/,'이번 부팅도 지켜본다(다 떴다) — 3.036: 단계 · 미리 띄운 수 0 · 안전 단계 1');
+    assert.match(await page.evaluate(()=>sessionStorage.getItem('ps_boot_alive_v1')||''),/^\d+\|1\|(?:sync|load)w0(?:t\d+)?\|1$/,'이번 부팅도 지켜본다(다 떴다) — 3.036: 단계 · 미리 띄운 수 0 · 안전 단계 1');
     // 정상으로 다시 열면(pagehide 가 표시를 지운다) 다시 평소 부팅 — 최근 둘 · 3D 그대로
     await page.reload();
     await settle();
@@ -93,14 +93,15 @@ try{
     assert.deepEqual([ev.meta.stage,ev.meta.loaded,ev.meta.prevLevel,ev.meta.level,ev.meta.w,ev.meta.h,ev.meta.standalone],['t10',1,1,2,1100,820,false]);
     assert.ok(ev.meta.age>=8&&ev.meta.age<60,'죽은 표시 뒤 초: '+ev.meta.age);assert.match(ev.meta.ua,/^Mozilla\/5\.0 \(iPad/);assert.equal(typeof ev.meta.dpr,'number');
     await page.locator('#psSafeOpen').click();
-    assert.equal(await page.locator('#psSafePanel').isVisible(),false,'단추를 누르면 판이 내려간다');
+    assert.equal(await page.locator('#psSafeOpen').innerText(),'여는 중…','뜨는 동안 판은 남는다');
     bf=await (await page.waitForSelector('#fBoard[src]')).contentFrame();
+    await page.waitForFunction(()=>document.getElementById('psSafePanel').hidden===true,null,{timeout:30000});
     await bf.waitForFunction(()=>typeof renderTokens==='function'&&typeof window.__setTilt==='function'&&window.__boardReady!==false,null,{timeout:30000});
     await page.waitForTimeout(800);
     assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),false,'단추로 연 작전판은 이번만 평면');
     assert.equal(await page.evaluate(()=>localStorage.getItem('ps_board_tilt3d')),'1','3D 설정은 그대로');
     assert.deepEqual(await loaded(),['fBoard','fComm']);
-    assert.match(await page.evaluate(()=>sessionStorage.getItem('ps_boot_alive_v1')||''),/^\d+\|1\|(?:board|boardload|sync|load|t10|t30|t60)w0\|2$/,'표시: 안전 단계 2');
+    assert.match(await page.evaluate(()=>sessionStorage.getItem('ps_boot_alive_v1')||''),/^\d+\|1\|(?:board|boardload|sync|load)w0(?:t\d+)?\|2$/,'표시: 안전 단계 2');
     // 정상으로 다시 열면 평소 부팅(단계 0) — 3D 그대로 · 최근 둘(안전 모드에서 연 커뮤니티가 최근)
     await page.reload();
     await settle();

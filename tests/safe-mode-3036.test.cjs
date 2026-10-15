@@ -23,10 +23,11 @@ function boot({device='ipad',local={},session={},now=1e12,full=false,board=null,
   const win={addEventListener:(n,f)=>{(listeners['win:'+n]=listeners['win:'+n]||[]).push(f);},removeEventListener:(n,f)=>{listeners['win:'+n]=(listeners['win:'+n]||[]).filter(x=>x!==f);},
     PSSync:sync,navigator:nav||{userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Safari/605.1.15',hardwareConcurrency:4,deviceMemory:undefined,standalone:true},
     innerWidth:1180,innerHeight:820,devicePixelRatio:2,matchMedia:q=>({matches:false})};
-  const ctx={window:win,document:doc,localStorage:ls,sessionStorage:ss,getComputedStyle:()=>({visibility:'visible'}),isFinite,String,location:{search},
+  const hist=[];win.history={state:null,replaceState:(st,t,u)=>hist.push(u)};
+  const ctx={window:win,document:doc,localStorage:ls,sessionStorage:ss,getComputedStyle:()=>({visibility:'visible'}),isFinite,String,URL,history:win.history,location:{search,href:'https://x.test/studio/app.html'+search},
     Date:{now:()=>t},setTimeout:(f,ms)=>{timers.push({f,ms,kind:'t'});return timers.length;},clearTimeout:()=>{},setInterval:(f,ms)=>{timers.push({f,ms,kind:'i'});return timers.length;},clearInterval:()=>{}};
   vm.runInNewContext(snippet(),ctx);
-  return {ls,ss,win,doc,fb,timers,fire:(k,e)=>(listeners[k]||[]).forEach(f=>f(e||{})),adv:ms=>{t+=ms;},mark:()=>ss.getItem(K),
+  return {ls,ss,win,doc,fb,timers,hist,fire:(k,e)=>(listeners[k]||[]).forEach(f=>f(e||{})),adv:ms=>{t+=ms;},mark:()=>ss.getItem(K),
     polls:()=>timers.filter(x=>x.kind==='t'&&x.ms===500),stageTimers:()=>timers.filter(x=>x.kind==='t'&&[10000,30000,60000].includes(x.ms))};
 }
 function fakeSync(){const ev=[];return {ev,api:{event:(n,o)=>ev.push({n,o}),state:()=>({kind:'ok'})}};}
@@ -44,7 +45,7 @@ test('3.036 safe level: 0 normally, 1 after a death, 2 when the light boot died 
 
 test('3.036 ?safe=0|1|2 forces the level for manual experiments; safe=0 also clears the mark; desktops ignore it all',()=>{
   const s=store({[K]:(1e12-8000)+'|1|t10|1'});
-  const z=boot({session:s,search:'?safe=0'});assert.equal(z.win.__psSafeLevel,0);assert.equal(z.win.__psSafeBoot,false);assert.equal(z.mark(),1e12+'|0|shell|0','cleared, then this boot marks itself as level 0');
+  const z=boot({session:s,search:'?safe=0'});assert.equal(z.win.__psSafeLevel,0);assert.deepEqual(z.hist,['/studio/app.html'],'safe is stripped from the address (this boot only)');assert.deepEqual(boot({search:'?mode=player&safe=2#x'}).hist,['/studio/app.html?mode=player#x'],'other params and the hash stay');assert.deepEqual(boot({search:'?mode=player'}).hist,[],'no safe → untouched');assert.equal(z.win.__psSafeBoot,false);assert.equal(z.mark(),1e12+'|0|shell|0','cleared, then this boot marks itself as level 0');
   assert.equal(boot({search:'?x=1&safe=2'}).win.__psSafeLevel,2,'no mark at all, forced');assert.equal(boot({search:'?safe=1#h'}).win.__psSafeLevel,1);
   assert.equal(boot({search:'?safe=3'}).win.__psSafeLevel,0,'unknown value ignored');assert.equal(boot({search:'?unsafe=2'}).win.__psSafeLevel,0);
   const dk=boot({device:'desktop',session:{[K]:(1e12-3000)+'|1|t10|1'},search:'?safe=2'});
@@ -59,12 +60,15 @@ test('3.036 the mark carries the boot stage: shell → board → boardload → s
   e.win.__psBootStage('boardload');e.win.__psBootStage('w2');assert.equal(e.mark(),1e12+'|0|boardloadw2|0','warmed two tabs');
   e.fire('win:ps-sync-state');assert.equal(e.mark(),1e12+'|0|syncw2|0','PSSync says ok');
   e.adv(1000);e.fire('win:load');assert.equal(e.mark(),(1e12+2000)+'|1|loadw2|0','load stamps the time');
+  e.win.__psBootStage('sync');assert.equal(e.mark(),(1e12+2000)+'|1|loadw2|0','a late sync (outbox drained after load) does not step back');
+  e.win.__psBootStage('board');assert.equal(e.mark(),(1e12+2000)+'|1|loadw2|0');
   const ts=e.stageTimers();assert.deepEqual(ts.map(x=>x.ms),[10000,30000,60000],'visible-time timers');
-  ts[0].f();assert.equal(e.mark(),(1e12+2000)+'|1|t10w2|0');ts[2].f();assert.equal(e.mark(),(1e12+2000)+'|1|t60w2|0');
-  e.win.__psBootStage('bad code!!');assert.equal(e.mark(),(1e12+2000)+'|1|badcodew2|0','sanitised');e.win.__psBootStage('');assert.equal(e.mark(),(1e12+2000)+'|1|badcodew2|0');
+  ts[0].f();assert.equal(e.mark(),(1e12+2000)+'|1|loadw2t10|0','seconds on screen ride as a tail');ts[2].f();assert.equal(e.mark(),(1e12+2000)+'|1|loadw2t60|0');
+  e.win.__psBootStage('t30');assert.equal(e.mark(),(1e12+2000)+'|1|loadw2t60|0','never less');e.win.__psBootStage('sync');assert.equal(e.mark(),(1e12+2000)+'|1|loadw2t60|0','a late sync keeps load and the 60 s');
+  e.win.__psBootStage('bad code!!');assert.equal(e.mark(),(1e12+2000)+'|1|badcodew2t60|0','sanitised (an unknown code is taken as is)');e.win.__psBootStage('');assert.equal(e.mark(),(1e12+2000)+'|1|badcodew2t60|0');
   e.doc.hidden=true;e.fire('doc:visibilitychange');assert.equal(e.mark(),null,'hidden → cleared');
   e.win.__psBootStage('t30');assert.equal(e.mark(),null,'a hidden page writes no mark (a tab iOS tidies in the background is not a death)');
-  e.adv(5000);e.doc.hidden=false;e.fire('doc:visibilitychange');assert.equal(e.mark(),(1e12+7000)+'|1|t30w2|0','back in front → marked again with the latest stage');
+  e.adv(5000);e.doc.hidden=false;e.fire('doc:visibilitychange');assert.equal(e.mark(),(1e12+7000)+'|1|badcodew2t60|0','back in front → marked again with the latest stage');
   const n=boot({sync:{state:()=>({kind:'busy'})}});n.fire('win:ps-sync-state');assert.equal(n.mark(),1e12+'|0|shell|0','not ok yet → no sync stage');
   const old=boot({session:{[K]:String(1e12-8000)}});assert.equal(old.win.__psSafeLevel,1,'a bare time still counts');
 });
@@ -112,7 +116,8 @@ test('3.036 safe mode: the board frame gets no address at boot, the shell reveal
   assert.equal(p.win.__psBoardBootReady,true,'finishBoot no longer waits for the board');assert.deepEqual(p.calls,['finishBoot']);
   assert.equal(p.els.fBoard.src,null,'no board.html');assert.equal(p.els.psSafePanel.hidden,false);assert.equal(p.win.__psSafeBoardPending,true);
   p.fire('psSafeOpen:click');
-  assert.equal(p.els.fBoard.src,'board.html?v=9.999','the normal boot address');assert.equal(p.els.psSafePanel.hidden,true);assert.deepEqual(p.calls,['finishBoot','stage:board']);assert.equal(p.win.__psSafeBoardPending,false);
+  assert.equal(p.els.fBoard.src,'board.html?v=9.999','the normal boot address');assert.equal(p.els.psSafePanel.hidden,false,'the panel stays while board.html loads');assert.deepEqual([p.els.psSafeOpen.disabled,p.els.psSafeOpen.textContent],[true,'여는 중…']);assert.deepEqual(p.calls,['finishBoot','stage:board']);assert.equal(p.win.__psSafeBoardPending,false);
+  p.fire('fBoard:load');assert.equal(p.els.psSafePanel.hidden,true,'down once the board is up');
   assert.equal(p.win.__psSafeOpenBoard(),false,'a second tap does nothing');assert.equal(p.calls.length,2);
   /* 훈련 만들기 탭: 뜬 뒤에 할 일을 받는다 */
   const q=panel();q.win.__psSafeModeStart();let after=0;assert.equal(q.win.__psSafeOpenBoard(()=>after++),true);q.fire('fBoard:load');assert.equal(after,1);assert.equal(q.els.fBoard.src,'board.html?v=9.999');
@@ -120,7 +125,13 @@ test('3.036 safe mode: the board frame gets no address at boot, the shell reveal
   q.fire('psSafeNormal:click');assert.equal(q.loc.href,'/studio/app.html?mode=player&safe=0');
   /* 셸 배선 */
   assert.match(app,/if\(!shellSwitchBlocked&&window\.__psSafeLevel>=2\)\{ try\{ window\.__psSafeModeStart\(\); \}catch\(_\)\{\} \}[^\n]*\n    else if\(!shellSwitchBlocked\)try\{\n      fBoard\.src='board\.html\?v='\+PS_BUILD;\n      try\{ if\(window\.__psBootStage\)window\.__psBootStage\('board'\); \}catch\(_\)\{\}/,'the board address is skipped only in safe mode, and stamped as «board» otherwise');
-  assert.match(app,/fBoard\.addEventListener\('load',function\(\)\{ try\{ if\(window\.__psBootStage\)window\.__psBootStage\('boardload'\); \}catch\(_\)\{\} \},\{once:true\}\);/);
+  assert.match(app,/fBoard\.addEventListener\('load',function onBl\(\)\{ if\(!fBoard\.getAttribute\('src'\)\)return; fBoard\.removeEventListener\('load',onBl\); try\{ if\(window\.__psBootStage\)window\.__psBootStage\('boardload'\); \}catch\(_\)\{\} \}\);/,'about:blank of safe mode is not a board load');
+  assert.match(app,/function psBoardThen\(fn,ms\)\{ if\(window\.__psSafeBoardPending\)\{ try\{ window\.__psSafeOpenBoard\(fn\); \}catch\(_\)\{\} return; \} psFrameWhenReady\(fBoard,fn,ms\|\|0\); \}/,'relays open the board in safe mode');
+  assert.equal((app.match(/psBoardThen\(function\(\)\{/g)||[]).length,8,'eight relay sites: 3 enterCapture · 3 openDrillEditor · openBoardPage · openMeeting');
+  assert.ok(app.indexOf("try{ clearTimeout(window.__psBootGuard); clearTimeout(window.__psBootCheck); }catch(_){}")>0,'safe mode cancels the 5 s boot guard');
+  const rest=app.replace(/__psBootMarkDone\(\)[;,]location\.reload\(\)/g,'').match(/[\w.]*location\.reload\(\)/g)||[];
+  assert.deepEqual(rest,['dockFrame.contentWindow.location.reload()'],'every self reload of the shell clears the alive mark first (the board frame reload is not the shell)');
+  assert.match(sync,/function markSelfReload\(\)\{[^\n]*__psBootMarkDone/,'sync.js self reloads too');
   assert.match(app,/if\(app==='design'&&window\.__psSafeBoardPending\)\{ try\{ window\.__psSafeOpenBoard\(function\(\)\{/,'훈련 만들기 opens the board on tap');
   assert.match(app,/var plan=window\.__psSafeBoot\?\[\]:psWarmPlan\(psWarmLean\(\),psWarmUsed\(\)\);/,'safe boots (level ≥ 1) warm nothing');
   assert.match(app,/try\{ if\(window\.__psBootStage\)window\.__psBootStage\('w'\+plan\.length\); \}catch\(_\)\{\}/);

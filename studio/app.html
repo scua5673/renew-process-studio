@@ -715,7 +715,7 @@ function psAutoReloadWhenSafe(manualOnly){
         if(!active||psReloadWorkspaceBusy()||psReloadWorkspaceSeal()!==seal)return false;
         /* 2.981 — 보던 화면을 이 탭에 적어 둔다(다시 열린 뒤 psResumeScreen 이 한 번 읽고 지운다) */
         try{sessionStorage.setItem('ps_resume_screen',JSON.stringify({app:document.body.getAttribute('data-ps-app')||'',team:(window.__psTeamSection?String(window.__psTeamSection()||''):''),at:Date.now()}));}catch(_){}
-        active=false;clearTimeout(timer);location.reload();return true;
+        active=false;clearTimeout(timer);window.__psBootMarkDone&&window.__psBootMarkDone();location.reload();return true;
       });
     }
     Promise.resolve().then(function(){
@@ -765,7 +765,7 @@ function psShowUpdBand(){
   /* 실행 직후(3초 이내) 감지된 업데이트는 즉시 조용히 재시작 — 시작하자마자 "로드→배너→리로드" 이중 깜빡임 방지. 사용 중 감지된 경우에만 배너+지연 */
   /* 시작 직후에도 강제 새로고침하지 않는다. 현재 작업 화면은 유지하고,
      사용자가 선택할 때만 새 버전으로 다시 시작한다. */
-  try{ if(!document.getElementById("psUpdBtn")){ var b=document.createElement("button");b.id="psUpdBtn";b.type="button";b.title="새 버전으로 업데이트";b.innerHTML="<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' style='margin-right:5px;flex:0 0 auto'><path d='M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4'/><path d='M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4'/></svg><span>업데이트</span>";b.style.cssText="display:inline-flex;align-items:center;height:34px;padding:0 13px;border:0;border-radius:10px;background:var(--ps-navy,#14213D);color:#fff;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 9px color-mix(in srgb,var(--ps-navy,#14213D) 45%,transparent)";b.onclick=function(){location.reload();};var _g=document.getElementById("gearWrap");if(_g&&_g.parentNode){_g.parentNode.insertBefore(b,_g);}else{b.style.position="fixed";b.style.top="calc(9px + env(safe-area-inset-top))";b.style.right="14px";b.style.zIndex="2147483001";document.body.appendChild(b);}} }catch(_){}}});});}</script>
+  try{ if(!document.getElementById("psUpdBtn")){ var b=document.createElement("button");b.id="psUpdBtn";b.type="button";b.title="새 버전으로 업데이트";b.innerHTML="<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' style='margin-right:5px;flex:0 0 auto'><path d='M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4'/><path d='M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4'/></svg><span>업데이트</span>";b.style.cssText="display:inline-flex;align-items:center;height:34px;padding:0 13px;border:0;border-radius:10px;background:var(--ps-navy,#14213D);color:#fff;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 9px color-mix(in srgb,var(--ps-navy,#14213D) 45%,transparent)";b.onclick=function(){(window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());};var _g=document.getElementById("gearWrap");if(_g&&_g.parentNode){_g.parentNode.insertBefore(b,_g);}else{b.style.position="fixed";b.style.top="calc(9px + env(safe-area-inset-top))";b.style.right="14px";b.style.zIndex="2147483001";document.body.appendChild(b);}} }catch(_){}}});});}</script>
 <script>
 /* PWA 설치 — 자리는 **한 곳**: 앱 설정 › 기기 › 앱·오프라인 행(#psPwaInstall).
    2.455 — 사이드바 '설치하기'(#psInstallBtn)를 걷었다(사용자 "앱설정에 넣어주고"). 2.437 이 그것을
@@ -1158,8 +1158,8 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     /* 이번 부팅에만 — 주소에서 지운다. 남겨 두면 사파리가 강제 종료 뒤 같은 주소로 다시 열 때마다 safe=0 이 안전장치를 끈 채 반복된다 */
     try{ var u=new URL(location.href); u.searchParams.delete('safe'); history.replaceState(history.state,'',u.pathname+u.search+u.hash); }catch(_){} } }catch(_){}   /* 손으로: app.html?safe=2 */
   window.__psSafeBoot=level>=1; window.__psSafeLevel=level;
-  var loaded=false,beat=0,stage='shell',warm=-1,last=now;
-  function write(){ try{ sessionStorage.setItem(K,last+'|'+(loaded?1:0)+'|'+stage+(warm>=0?'w'+warm:'')+'|'+level); }catch(_){} }
+  var loaded=false,beat=0,stage='shell',warm=-1,tmax=0,last=now,RANK={shell:0,board:1,boardload:2,sync:3,load:4};
+  function write(){ try{ sessionStorage.setItem(K,last+'|'+(loaded?1:0)+'|'+stage+(warm>=0?'w'+warm:'')+(tmax?'t'+tmax:'')+'|'+level); }catch(_){} }
   function stamp(){ last=Date.now(); write(); }
   function done(){ clearInterval(beat); beat=0; tStop(); try{ sessionStorage.removeItem(K); }catch(_){} }
   function live(){ if(document.hidden)return; stamp(); clearInterval(beat); beat=setInterval(stamp,BEAT); tStart(); }
@@ -1168,12 +1168,14 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   function tStart(){ tStop(); vis0=Date.now(); [10,30,60].forEach(function(sec){ var left=sec*1000-visMs; if(left>0)tt.push(setTimeout(function(){ window.__psBootStage('t'+sec); },left)); }); }
   function tStop(){ tt.forEach(function(t){ clearTimeout(t); }); tt=[]; if(vis0){ visMs+=Date.now()-vis0; vis0=0; } }
   window.__psBootStage=function(code){ code=String(code||'').replace(/[^a-z0-9]/gi,'').slice(0,12); if(!code)return;
-    if(/^w\d+$/.test(code))warm=+code.slice(1)||0; else stage=code;
+    if(/^w\d+$/.test(code))warm=+code.slice(1)||0;
+    else if(/^t\d+$/.test(code))tmax=Math.max(tmax,+code.slice(1)||0);   /* 버틴 초는 꼬리(t60) — 늦게 온 sync · load 가 덮지 않는다 */
+    else if(RANK[code]==null||RANK[code]>=(RANK[stage]||0))stage=code;   /* 단계는 뒤로 가지 않는다(검토: 늦은 sync 가 load · t30 을 덮어 과소 기록) */
     if(beat)write(); };   /* 숨겨진 동안(표시 없음)은 적지 않는다 — 뒤에서 iOS 가 탭을 정리한 것은 «죽음»이 아니다 */
   window.__psBootMarkDone=done;
   window.addEventListener('pagehide',done);
   window.addEventListener('pageshow',function(e){ if(e&&e.persisted)live(); });
-  window.addEventListener('load',function(){ loaded=true; stage='load'; if(!document.hidden)stamp(); });
+  window.addEventListener('load',function(){ loaded=true; try{ window.__psBootStage('load'); }catch(_){} if(!document.hidden)stamp(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)done(); else live(); });
   window.addEventListener('ps-sync-state',function onSync(){ try{ var S=window.PSSync; if(!S||typeof S.state!=='function'||S.state().kind!=='ok')return; }catch(_){ return; }
     try{ window.removeEventListener('ps-sync-state',onSync); }catch(_){} window.__psBootStage('sync'); });
@@ -1986,13 +1988,15 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   window.__psSafeBoardPending=false;
   window.__psSafeOpenBoard=function(after){ try{
     if(!window.__psSafeBoardPending||!fb)return false; window.__psSafeBoardPending=false;
-    if(panel)panel.hidden=true;
+    try{ var b=document.getElementById('psSafeOpen'); if(b){ b.disabled=true; b.textContent='여는 중…'; } }catch(_){}   /* 빈 흰 틀 대신 — 작전판(2.5MB)이 뜨면 판을 내린다 */
+    fb.addEventListener('load',function(){ if(panel)panel.hidden=true; },{once:true});
     if(typeof after==='function')fb.addEventListener('load',function(){ setTimeout(after,120); },{once:true});
     fb.src='board.html?v='+window.PS_BUILD;
     try{ if(window.__psBootStage)window.__psBootStage('board'); }catch(_){}
     return true; }catch(_){ return false; } };
   window.__psSafeModeStart=function(){
     window.__psSafeBoardPending=true;
+    try{ clearTimeout(window.__psBootGuard); clearTimeout(window.__psBootCheck); }catch(_){}   /* 작전판을 기다리지 않는다 — 5초 보호막의 «다시 열기»가 뜨면 안 된다(그 새로고침은 표시를 지워 평소 부팅으로 돌아간다) */
     window.__psBoardBootReady=true; try{ if(window.__psFinishBoot)window.__psFinishBoot(); }catch(_){}
     if(panel)panel.hidden=false;
   };
@@ -2166,7 +2170,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
           var live='';try{live=localStorage.getItem('ps_ws_switch_guard_v1')||'';}catch(_){}
           /* 소유 탭이 종료돼 clear 이벤트가 오지 않아도, 같은 guard가 만료되면
              값은 지우지 않고 잠긴 새 부팅으로 서버 workspace를 다시 확인한다. */
-          if(live===raw&&!shellSwitchGuardValid(live)){try{sessionStorage.setItem('ps_self_reload','1');}catch(_){}location.reload();}
+          if(live===raw&&!shellSwitchGuardValid(live)){try{sessionStorage.setItem('ps_self_reload','1');}catch(_){}(window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());}
         },left);
       }catch(_){}
     }
@@ -2178,7 +2182,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       if(!e.newValue&&shellSwitchBlocked){
         window.removeEventListener('storage',__psShellSwitchWait);
         try{sessionStorage.setItem('ps_self_reload','1');}catch(_){}
-        location.reload();
+        (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());
       }
     });
     try{var __shellGuardRaw=localStorage.getItem('ps_ws_switch_guard_v1');if(shellSwitchGuardValid(__shellGuardRaw))shellFreezeForSwitch(__shellGuardRaw);}catch(_){}
@@ -2340,8 +2344,9 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
         if(d.type==='notePdfReady'&&d.buffer){queueNotePdf(d);return;}
       }
     });
-    fBoard.addEventListener('load',function(){ try{ if(window.__psBootStage)window.__psBootStage('boardload'); }catch(_){} },{once:true});   /* 3.036 — 강제 종료 기록: 첫 작전판이 떴다 */
+    fBoard.addEventListener('load',function onBl(){ if(!fBoard.getAttribute('src'))return; fBoard.removeEventListener('load',onBl); try{ if(window.__psBootStage)window.__psBootStage('boardload'); }catch(_){} });   /* 3.036 — 강제 종료 기록: 첫 작전판이 떴다(안전 모드의 about:blank 는 아니다) */
     fBoard.addEventListener('load',function(){
+      if(!fBoard.getAttribute('src'))return;   /* 3.036 — 안전 모드: 주소 없는 틀의 load 는 작전판이 아니다 */
       try{clearTimeout(window.__brFb);}catch(_){}
       /* 느린 복원에서는 실제 준비 신호를 기다리며 시작 안내를 유지한다. */
       window.__brFb=setTimeout(function(){revealAfterTidy('slow-board');},2600);
@@ -2414,6 +2419,9 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       if(psFrameReady(fr))setTimeout(fn,ms||0);
       else fr.addEventListener('load',function(){ setTimeout(fn,Math.max(ms||0,120)); },{once:true});
     }
+    /* 3.036 — 다른 화면이 작전판에 건네는 말(첨부 · 훈련 편집기 · 페이지 · 미팅). 안전 모드(작전판을 미리 안 엶)면 그때 작전판을 열고 뜬 뒤에 건넨다 —
+       전에는 about:blank 틀에 postMessage 하거나 setTimeout 뒤 없는 함수를 불러 단추가 조용히 죽었다(검토). 평소엔 psFrameWhenReady 와 같다. */
+    function psBoardThen(fn,ms){ if(window.__psSafeBoardPending){ try{ window.__psSafeOpenBoard(fn); }catch(_){} return; } psFrameWhenReady(fBoard,fn,ms||0); }
     function psFrameSkel(fr){
       psFrameSkelOff();
       if(!fr||psFrameReady(fr))return;
@@ -2516,7 +2524,8 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
          숨은 상태에서 부르면 0 으로 맞춰진다. 그래서 board 는 예전 자리에 그대로 둔다. */
       /* 3.036 — 안전 모드에서 훈련 만들기(같은 작전판 문서)를 누르면 그때 작전판을 열고, 뜬 뒤 보관함 보기로 */
       if(app==='design'&&window.__psSafeBoardPending){ try{ window.__psSafeOpenBoard(function(){ try{ var _vw1=fBoard.contentWindow; if(_vw1.__vaultEnterReset)_vw1.__vaultEnterReset(); _vw1.setView('session'); }catch(_){} }); }catch(_){} }
-      if(app==='design'&&!document.body.classList.contains('ps-match-edit')){try{var _vw0=fBoard.contentWindow;if(_vw0.__vaultEnterReset)_vw0.__vaultEnterReset();_vw0.setView('session');}catch(_){}}
+      if(app==='design'&&!document.body.classList.contains('ps-match-edit')){ var _goV=function(){try{var _vw0=fBoard.contentWindow;if(_vw0.__vaultEnterReset)_vw0.__vaultEnterReset();_vw0.setView('session');}catch(_){}};
+        if(fBoard.getAttribute('src')&&!psFrameReady(fBoard))psFrameWhenReady(fBoard,_goV,120); else _goV(); }   /* 3.036 — «작전판 열기» 뒤 아직 뜨는 중이면 뜬 뒤에 보관함 보기로 */
       fBoard.style.display = (app==='board'||app==='design')?'block':'none';
       try{ var _bm=document.getElementById('psBoardMoreBtn'); if(_bm)_bm.hidden=(app!=='board'); }catch(_){}   /* 2.216 */
       fProcess.style.display = app==='process'?'block':'none';
@@ -2565,7 +2574,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     if(openIdpTool)openIdpTool.addEventListener('click',function(){currentTeamKey='';showApp('idp');});
     /* 2.201 — 로고 클릭 → 홈(부팅 기본 화면과 같은 규칙): 선수 전용 → IDP · 팀 작업공간 → 팀 오늘 · 개인 → 보드 */
     /* 2.205 — 사용자: "완전 처음 화면으로" → 앱을 처음 연 상태로 다시 연다(새로고침 = 부팅 기본 화면·상태 초기화) */
-    try{ var _brand=document.getElementById('psBrand'); if(_brand){ var _goHome=function(){ try{ location.href=location.pathname; }catch(_){ try{ location.reload(); }catch(__){} } };
+    try{ var _brand=document.getElementById('psBrand'); if(_brand){ var _goHome=function(){ try{ location.href=location.pathname; }catch(_){ try{ (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload()); }catch(__){} } };
     _brand.addEventListener('click',_goHome); _brand.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); _goHome(); } }); } }catch(_){}
     if(openNoteTool)openNoteTool.addEventListener('click',function(){currentTeamKey='';showApp('note');});
     function sendTeamView(fr,b){
@@ -3038,20 +3047,20 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       if(d.source==='board' && d.type==='boardSettingsState'){ if(d.open){ try{ if(window.__psCloseAppSettings)window.__psCloseAppSettings(); }catch(_){} } return; }   /* 2.700 — 보드 설정이 열리면 앱 설정은 닫는다(둘 중 하나만) */
       if(d.source==='board' && d.type==='editorState'){ document.body.classList.toggle('ps-editor-open',!!d.open); return; }   /* 2.698 — 편집기가 열리면 일반 저장 표시를 숨긴다. 하단 오류·보관 상태는 유지한다. */
       if(d.source==='board' && d.type==='boardLiveSaved'){ if(!__psBoardLiveMuted)try{ localStorage.setItem('ps_private_board_rev_v1',String(Date.now())); }catch(_){} return; }
-      if((d.source==='process'||d.source==='scout'||d.source==='playbook') && d.type==='openDrillEditor'){   /* 2.312 — 콕핏에서도 보관함 훈련을 바로 연다 · 2.580 플레이북에서 열면 저장·취소 뒤 플레이북으로 돌아온다 */ captureReq=(d.source==='playbook')?'playbook':'process'; showApp('design'); var _ed=d; setTimeout(function(){try{ if(_ed.readonly){ if(fBoard.contentWindow.__openScheduleDrillView)fBoard.contentWindow.__openScheduleDrillView({libId:_ed.libId,libIdx:_ed.libIdx,play:!!_ed.play,reason:_ed.reason||'',name:_ed.name,snap:_ed.snap}); else fBoard.contentWindow.__openScheduleDrillEdit&&fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); }   /* 2.669 — 지난 날은 보기 전용 */ else if(_ed.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,libIdx:_ed.libIdx,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap,toLib:!!(_ed.toLib&&d.source==='process')}); }   /* 2.950 — toLib: 일정의 직접 적은 줄에서 그리면 보관함에 넣고 잇는다 */   /* 2.946 — libIdx: 그 훈련으로 */ else if(_ed.wizard){ fBoard.contentWindow.__openSessionWizard && fBoard.contentWindow.__openSessionWizard({date:_ed.date||'',roster:_ed.roster||null}); }   /* 2.698 — 출석 그 날 카드에서 온 «훈련 세션 만들기»: 날짜·인원 프리셋 */ else { try{ fBoard.contentWindow.__psPreselectPhases=(Array.isArray(_ed.gmPhases)&&_ed.gmPhases.length)?_ed.gmPhases.slice():null; }catch(_){}   /* 1.958 — 보강 추천에서 온 국면 프리셀렉트 */ fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); } }catch(_){}},80); return; }
+      if((d.source==='process'||d.source==='scout'||d.source==='playbook') && d.type==='openDrillEditor'){   /* 2.312 — 콕핏에서도 보관함 훈련을 바로 연다 · 2.580 플레이북에서 열면 저장·취소 뒤 플레이북으로 돌아온다 */ captureReq=(d.source==='playbook')?'playbook':'process'; showApp('design'); var _ed=d; psBoardThen(function(){try{ if(_ed.readonly){ if(fBoard.contentWindow.__openScheduleDrillView)fBoard.contentWindow.__openScheduleDrillView({libId:_ed.libId,libIdx:_ed.libIdx,play:!!_ed.play,reason:_ed.reason||'',name:_ed.name,snap:_ed.snap}); else fBoard.contentWindow.__openScheduleDrillEdit&&fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); }   /* 2.669 — 지난 날은 보기 전용 */ else if(_ed.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,libIdx:_ed.libIdx,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap,toLib:!!(_ed.toLib&&d.source==='process')}); }   /* 2.950 — toLib: 일정의 직접 적은 줄에서 그리면 보관함에 넣고 잇는다 */   /* 2.946 — libIdx: 그 훈련으로 */ else if(_ed.wizard){ fBoard.contentWindow.__openSessionWizard && fBoard.contentWindow.__openSessionWizard({date:_ed.date||'',roster:_ed.roster||null}); }   /* 2.698 — 출석 그 날 카드에서 온 «훈련 세션 만들기»: 날짜·인원 프리셋 */ else { try{ fBoard.contentWindow.__psPreselectPhases=(Array.isArray(_ed.gmPhases)&&_ed.gmPhases.length)?_ed.gmPhases.slice():null; }catch(_){}   /* 1.958 — 보강 추천에서 온 국면 프리셀렉트 */ fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); } }catch(_){}},80); return; }
       if(d.source==='process' && d.type==='openBoard'){
         captureReq='process';
         showApp('board');
-        try{ fBoard.contentWindow.postMessage({type:'enterCapture',snap:d.snap,meta:d.meta,name:d.name,minutes:d.minutes},'*'); }catch(_){}
+        psBoardThen(function(){ try{ fBoard.contentWindow.postMessage({type:'enterCapture',snap:d.snap,meta:d.meta,name:d.name,minutes:d.minutes},'*'); }catch(_){} });
       } else if(d.source==='gamemodel' && d.type==='openBoard'){
         captureReq='gamemodel';
         showApp('board');
-        try{ fBoard.contentWindow.postMessage({type:'enterCapture',snap:d.snap,frames:d.frames,meta:d.meta,name:d.name,minutes:d.minutes,view:!!d.view},'*'); }catch(_){}   /* 2.903 — 게임모델 첨부도 장면을 싣는다(분석과 같은 길) · 3.007 — «▶ 보기»는 보기로(view) */
+        psBoardThen(function(){ try{ fBoard.contentWindow.postMessage({type:'enterCapture',snap:d.snap,frames:d.frames,meta:d.meta,name:d.name,minutes:d.minutes,view:!!d.view},'*'); }catch(_){} });   /* 2.903 — 게임모델 첨부도 장면을 싣는다(분석과 같은 길) · 3.007 — «▶ 보기»는 보기로(view) */
       } else if(d.source==='analysis' && d.type==='openBoard' && d.snap){
         /* 매치 데스크 국면 형태·장면집 — 배치(와 애니메이션)를 실어 보내고, 그린 장면은 boardResult로 분석에 돌아간다 */
         captureReq='analysis';
         showApp('board');
-        try{ fBoard.contentWindow.postMessage({type:'enterCapture',snap:d.snap,frames:d.frames,meta:d.meta,name:d.name,minutes:d.minutes},'*'); }catch(_){}
+        psBoardThen(function(){ try{ fBoard.contentWindow.postMessage({type:'enterCapture',snap:d.snap,frames:d.frames,meta:d.meta,name:d.name,minutes:d.minutes},'*'); }catch(_){} });
       } else if((d.source==='process'||(d.source==='board'&&fBoard&&e.source===fBoard.contentWindow)) && d.type==='openTeamMatch'){
         /* 일정 주간 보드 '경기 준비 →' — 팀 허브의 경기 화면에서 그 날짜 경기를 연다(1.522)
            2.928 — 보관함 미팅의 «경기 열기 ›»도 같은 길. 경기 id(mid)가 있으면 그 경기를 바로 연다 */
@@ -3063,7 +3072,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
         /* 2.924 — 커뮤니티 «＋ 새로 만들기»: 일정과 같은 새 훈련 편집기(보관함에 저장) → 저장·취소하면 커뮤니티로 */
         captureReq='community'; commCreatePending=false; if(commCreateT){clearTimeout(commCreateT);commCreateT=null;}
         showApp('design');
-        setTimeout(function(){try{ fBoard.contentWindow.__psPreselectPhases=null; fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); }catch(_){}},80);
+        psBoardThen(function(){try{ fBoard.contentWindow.__psPreselectPhases=null; fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); }catch(_){}},80);
         return;
       } else if(d.source==='board' && d.type==='captureSaved'){
         if(commCreatePending){ commCreatePending=false; if(commCreateT){clearTimeout(commCreateT);commCreateT=null;} commSendUpload(d.libId||null); }
@@ -3097,7 +3106,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       } else if(d.source==='idp' && d.type==='openDrillEditor'){
         /* IDP 개인훈련의 그림 첨부 — 일정 탭과 같은 '훈련 편집기' 캡처 모드(장면 스트립 포함) */
         captureReq='idp'; showApp('design');
-        var _edI=d; setTimeout(function(){try{
+        var _edI=d; psBoardThen(function(){try{
           if(_edI.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({name:_edI.name,minutes:_edI.minutes,snap:_edI.snap}); }
           else { fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); }
         }catch(_){}},80); return;
@@ -3139,7 +3148,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       } else if(d.source==='scout' && d.type==='openBoardPage'){
         /* 이미지노트 시나리오 칸 → 같은 이름의 작전판 페이지로 (없으면 안내) */
         showApp('board');
-        (function(_nm){ setTimeout(function(){ try{
+        (function(_nm){ psBoardThen(function(){ try{
           var bw=fBoard.contentWindow;
           var ok=bw.__psPages&&bw.__psPages.openByName&&bw.__psPages.openByName(_nm);
           if(!ok&&bw.toast)bw.toast('"'+_nm+'" 페이지가 없어요 — 페이지 바의 [미팅 세트]로 한 번에 만들 수 있어요');
@@ -3149,7 +3158,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
         /* 2.966 — 경기 준비에서 온 것(inplace)은 팀 화면을 떠나지 않는다: 팀 머리·경기 탭 그대로, 그 아래에 보관함 편집기 */
         var _inp=!!d.inplace;
         if(_inp)psMatchEditEnter(); else { currentTeamKey=''; showApp('design'); }
-        (function(_d){ setTimeout(function(){ try{
+        (function(_d){ psBoardThen(function(){ try{
           var bw=fBoard.contentWindow;
           if(_d.type==='openMeeting'){ if(bw.__vaultOpenMeeting)bw.__vaultOpenMeeting(String(_d.libId||''),{show:!!_d.show,inplace:_inp,parts:_d.parts||null}); }
           else if(bw.__meetingFromMatch)bw.__meetingFromMatch(Object.assign({},_d.payload||{},{inplace:_inp}));
@@ -3923,7 +3932,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     /* 캐시 정리가 늦어져도 새로고침은 반드시 일어나야 한다 — 3초 뒤에는 그냥 연다.
        (캐시를 못 지웠더라도 재로드 자체는 사용자가 기대한 동작이다) */
     var done=false,go=function(){if(done)return;done=true;
-      try{location.reload();}catch(_){location.href=location.href;}};
+      try{(window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());}catch(_){location.href=location.href;}};
     Promise.all(jobs).then(go);
     setTimeout(go,3000);
   });
@@ -4031,7 +4040,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
             if(which==='pull'){
               say('가져왔습니다 · '+r.n+'개'+(r.skipped&&r.skipped.length?(' (건너뜀 '+r.skipped.length+')'):'')+' — 새로고침하면 보여요');
               try{ if(window.toast)toast('팀 자료를 가져왔어요 ✓'); }catch(_){}
-              setTimeout(function(){ _cfm('가져온 자료를 화면에 반영하려면 다시 열어야 합니다.\n지금 새로고침할까요?',function(){ location.reload(); }); },400);
+              setTimeout(function(){ _cfm('가져온 자료를 화면에 반영하려면 다시 열어야 합니다.\n지금 새로고침할까요?',function(){ (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload()); }); },400);
             } else {
               var denied=Math.max(0,(+r.total||0)-(+r.n||0));
               say('올렸습니다 · '+r.n+'개'+(denied?(' (권한으로 제외 '+denied+'개)'):''),!!denied);
@@ -4966,7 +4975,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
               if(out&&out.localMismatch)alert((out.label||'팀 자료')+' 파일 원문이 이 기기에 그대로 유지되지 않아 가져오기를 완료하지 못했습니다.\n\n인터넷 연결과 선택한 팀을 확인한 뒤 같은 파일로 다시 시도해 주세요.');
               else if(out&&out.localOnly)alert((out.label||'팀 자료')+' 파일을 이 기기에 가져왔습니다.\n\n팀 서버 동기화는 대기 중입니다. 인터넷 연결을 확인한 뒤 설정의 “지금 동기화”를 눌러 주세요.');
               else alert((out&&out.label||'팀 자료')+' 파일을 가져오고 팀과 동기화했습니다.');
-              location.reload();
+              (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());
             }
             else{u.disabled=false;u.textContent='파일 가져오기';}
           }).catch(function(e){
@@ -4983,7 +4992,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
             psApplyScheduleRecovery(p).then(function(out){
               if(out.localOnly)alert('이 기기의 8월 8일 일정은 복구했습니다.\n\n서버 동기화는 대기 상태입니다. 인터넷 연결을 확인한 뒤 앱의 “지금 동기화”를 한 번 눌러 주세요.');
               else alert('복구 완료 — 8월 8일 솔티로 치바 U18 일정과 연결 경기를 확인했습니다.');
-              location.reload();
+              (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());
             }).catch(function(e){
               alert('복구를 적용하지 못했습니다. 원본은 그대로 보존했습니다.\n\n'+String(e&&e.message||e||'검증 실패'));
               u.disabled=false;u.textContent='가져오기';
@@ -4998,7 +5007,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
             alert(out&&out.skippedOwnerData
               ?'불러오기 완료 — 팀 자료만 합쳤습니다. 소유 계정을 확인할 수 없는 개인 자료와 비공개 보관함은 제외했습니다. 화면을 새로고침합니다'
               :'불러오기 완료 — 기존 항목에 합쳐졌습니다. 화면을 새로고침합니다');
-            location.reload();
+            (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());
           }).catch(function(e){
             if(e&&e.psWorkspaceChanged)alert('백업을 만든 팀과 지금 선택한 팀이 달라 복구를 중단했습니다.\n\n백업을 만든 팀으로 전환한 뒤 다시 시도해 주세요. 현재 팀에는 더 쓰지 않았습니다.');
             else alert('백업을 복구하지 못했습니다. 확인되지 않은 항목은 적용 완료로 처리하지 않았습니다.\n\n'+String(e&&e.message||e||'복구 실패'));
@@ -5049,7 +5058,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
             if(k&&(k.indexOf('cs_')===0||k.indexOf('ps_')===0||k.indexOf('scout_')===0||k.indexOf('training_')===0||k.indexOf('process_')===0))localStorage.removeItem(k); } }catch(_){}
           alert(msg+'\n이 기기의 데이터도 삭제했어요. 처음 화면으로 돌아갑니다.');
           try{ if(window.PSSync&&window.PSSync.signOut)window.PSSync.signOut(); }catch(_){}
-          location.reload();
+          (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());
         });
       }).catch(function(e){
         btn.disabled=false;btn.textContent='내 데이터 삭제';
@@ -5120,7 +5129,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
           Promise.resolve(psMergeRestore(s.data,s.wid,s.uid)).then(function(out){
             alert(out&&out.skippedOwnerData
               ?'팀 자료를 복구했습니다. 소유 계정을 확인할 수 없는 개인 자료와 비공개 보관함은 제외했어요 — 화면을 새로 고칩니다'
-              :'복구했어요 — 화면을 새로 고칩니다');location.reload();
+              :'복구했어요 — 화면을 새로 고칩니다');(window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());
           }).catch(function(){btn.disabled=false;btn.textContent='전환 백업 복구';alert('복구하지 못했어요 — 다시 시도해 주세요');});
         },back);
       }

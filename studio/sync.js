@@ -93,7 +93,7 @@ var COPIES_OFF=true;
    문제가 있는 기기는 `localStorage.ps_cache_wipe='0'` 으로 끌 수 있고, 구버전의 `'1'` 값도 계속 켜짐으로 취급한다. */
 var CACHE_WIPE=(function(){ try{ return localStorage.getItem('ps_cache_wipe')!=='0'; }catch(_){ return true; } })();
 var CACHE_WAIT_MS=5000, CACHE_FLAG='ps_cache_wiped_v1', SELF_RELOAD='ps_self_reload', BOOT_AT=Date.now(), cacheWaitTimer=null;
-function markSelfReload(){ try{ sessionStorage.setItem(SELF_RELOAD,'1'); }catch(_){} }
+function markSelfReload(){ try{ sessionStorage.setItem(SELF_RELOAD,'1'); }catch(_){} try{ if(window.__psBootMarkDone)window.__psBootMarkDone(); }catch(_){} }   /* 3.036 — 스스로 하는 새로고침은 «죽음»이 아니다(셸 안전장치 표시를 지운다 — WebKit 은 load 전엔 pagehide 를 안 보낸다) */
 function wipeAllowedNow(){
   try{ if(sessionStorage.getItem(SELF_RELOAD))return false; }catch(_){}
   try{ if(document.body&&document.body.classList.contains('ps-booting'))return false; }catch(_){}
@@ -1169,6 +1169,7 @@ function resumeOAuthCallback(){
   if(!oauthCallbackPending())return false;
   if(consumeHash({deferIdentity:true})){
     setDataReady(false);
+    try{ if(window.__psBootMarkDone)window.__psBootMarkDone(); }catch(_){}   /* 3.036 */
     location.reload();
   }
   return true;
@@ -8752,6 +8753,7 @@ function switchWorkspaceCore(wid, skipSave){
       localStorage.setItem('ps_ws_switched_v1',JSON.stringify({from:_fr,to:_to,at:Date.now()}));
     }catch(_){}
     markSelfReload();
+    try{ if(window.__psBootMarkDone)window.__psBootMarkDone(); }catch(_){}   /* 3.036 */
     location.reload();   /* 오버레이는 reload로 사라짐 */
   });
   }).catch(function(e){
