@@ -98,7 +98,7 @@ test('3.033 the guard runs right before the 3D boot restore, which obeys it; tur
   const b=R('studio/board.html');
   const guard=b.indexOf('window.__tiltBootSafe=false; window.__tiltBootOk=true;'),restore=b.indexOf('try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==false){ document.body.classList.add("bc-tilt3d");');
   assert.ok(guard>0&&restore>guard&&restore-guard<6000,'guard sits right above the restore');
-  assert.match(b,/window\.__setTilt=function\(on\)\{ on=!!on; var _was=document\.body\.classList\.contains\("bc-tilt3d"\);[\s\S]{0,200}try\{ if\(on&&!_was&&window\.__tiltBootArm\)window\.__tiltBootArm\(\); else if\(!on&&_was&&window\.__tiltBootDone\)window\.__tiltBootDone\(\); \}catch\(_\)\{\}/);
+  assert.match(b,/window\.__setTilt=function\(on,opts\)\{ on=!!on; opts=opts\|\|\{\}; var _was=document\.body\.classList\.contains\("bc-tilt3d"\);[\s\S]{0,200}try\{ if\(on&&!_was&&window\.__tiltBootArm\)window\.__tiltBootArm\(\); else if\(!on&&_was&&window\.__tiltBootDone\)window\.__tiltBootDone\(\); \}catch\(_\)\{\}/);
 });
 
 test('3.033 iPhone/iPad Safari does not draw the stage-sized 3D light layer',()=>{

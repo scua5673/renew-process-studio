@@ -150,7 +150,15 @@ try{
     // 2.943 — 새 부상은 부상 기록 창: 부위를 고르기 전에는 «기록하기»가 잠겨 있고, 고르면 그 부상의 첫날에 붙는다
     await frame.locator('#stInjOv').waitFor();assert.equal(await frame.locator('#stInjOv [data-inj-ok]').isDisabled(),true);
     assert.equal(await frame.locator('#stInjOv .inj-c[data-f=ret]').count(),0,'복귀 예상은 기록 창에서 이미 물었다');
-    await frame.locator('#stInjOv .inj-c[data-f=part] [data-v="햄스트링"]').click();await frame.locator('#stInjOv .inj-c[data-f=side] [data-v=L]').click();
+    // 3.035 — 사람 모형(앞 · 뒤): 앞 모형의 왼쪽 무릎을 누르면 부위 + 쪽이 함께 잡히고 칩도 따라온다. 그 뒤 칩으로 바꿔도 모형이 따라온다
+    assert.equal(await frame.locator('#stInjOv .inj-body svg').count(),2,'앞 · 뒤 모형');
+    await frame.locator('#stInjOv .inj-body svg[data-inj-view=front] [data-part="무릎"][data-side=L]').click();
+    assert.equal(await frame.locator('#stInjOv [data-inj-pick]').innerText(),'고른 부위 · 무릎 · 왼쪽');
+    assert.equal(await frame.locator('#stInjOv .inj-c[data-f=part] [data-v="무릎"][aria-pressed=true]').count(),1,'칩이 따라온다');
+    assert.equal(await frame.locator('#stInjOv .inj-body [data-part="무릎"].on').count(),2,'앞 · 뒤 모형의 왼쪽 무릎만');
+    await frame.locator('#stInjOv .inj-c[data-f=part] [data-v="햄스트링"]').click();   /* 쪽(왼쪽)은 모형에서 고른 그대로 — 칩을 다시 누르면 풀린다(2.943 토글) */
+    assert.equal(await frame.locator('#stInjOv .inj-c[data-f=side] [data-v=L][aria-pressed=true]').count(),1,'왼쪽 그대로');
+    assert.equal(await frame.locator('#stInjOv .inj-body [data-part="햄스트링"].on').count(),1,'뒤 모형의 왼쪽 햄스트링');
     await page.screenshot({path:path.join(out,width+'-injury-sheet.png')});
     await frame.locator('#stInjOv [data-inj-ok]').click();await frame.locator('#stInjOv').waitFor({state:'detached'});
     assert.deepEqual(await frame.evaluate(()=>{const e=PSParticipation.episodes(data.meta,'p1',plStatusOf(data.players.find(p=>p.id==='p1')),stYmd()).pop();return [e.from,e.part,e.side,e.open];}),['2026-09-15','햄스트링','L',true]);

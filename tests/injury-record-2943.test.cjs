@@ -53,7 +53,7 @@ test('부위는 목록 안에서만, 메모는 200자, 쪽·언제는 정해진 
   const a=c.data.meta.injuryInfo.a['2026-10-01'],b=c.data.meta.injuryInfo.b['2026-10-01'];
   assert.equal(a.part,'햄스트링');assert.equal(a.side,'L');assert.equal(a.when,'train');assert.equal(a.n.length,200);
   assert.equal(b.part,undefined);assert.equal(b.side,undefined);assert.equal(b.when,undefined);assert.equal(b.n,undefined);
-  assert.equal(c.INJ_PARTS.length,14);
+  assert.equal(c.INJ_PARTS.length,19);   /* 3.035 — 모형이 몸을 다 덮도록 목 · 가슴 · 손 · 엉덩이 · 정강이 */
   assert.equal(c.stInjLabel({part:'',side:'R'}),'부위 미정 · 오른쪽');
 });
 test('부위별 요약: 이 기간에 걸친 부상만, 평균 복귀는 끝난 부상만으로',()=>{
