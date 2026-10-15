@@ -13770,7 +13770,9 @@ window.__commView=function(post, editMode){
     if(!document.body.classList.contains("editing"))editorStash=captureSnap();
     var d=Object.assign({},post.item||{}); d.name=d.name||post.title||"훈련";
     if(post.thumb&&!d.thumb)d.thumb=post.thumb;
-    $("modalTitle").textContent=editMode?"커뮤니티 글 편집":"커뮤니티 훈련";
+    /* 3.039 — 작전판 글(type "board")은 작전판이라고 말한다(박수빈 코치 «지금은 '훈련'으로만 업로드가 가능한 것 같아서요»). 여러 페이지는 커뮤니티가 페이지마다 한 장씩 싣는다 */
+    var _commBoard=(d.type==="board");
+    $("modalTitle").textContent=editMode?"커뮤니티 글 편집":(_commBoard?"커뮤니티 작전판":"커뮤니티 훈련");
     editorDrillId=null; editorLibId=null; editorFileName=post.title||d.name||"";
     loadEditorTrainings(d); _activateTraining(0);
     _commOrient();   /* 2.575 — 스냅이 실린 뒤, 그리기 전에 */
@@ -13778,6 +13780,7 @@ window.__commView=function(post, editMode){
     moveBoardTo($("editorBoardWrap")); $("editorModal").classList.add("on"); document.body.classList.add("editing");try{parent.postMessage({source:"board",type:"editorState",open:true},"*");}catch(_){} try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}
     try{applyView();}catch(_){} try{renderBench();}catch(_){} renderTokens();
     applyEditorReadOnly(null);
+    if(_commBoard){ try{ var _nm=document.getElementById("epRoNoMemo"); if(_nm)_nm.textContent="작성된 설명이 없습니다."; }catch(_){} }   /* 3.039 */
     var panel=$("editorPanel");
     /* ══ 2.575 · 보기 전용 설명 = 문서 ═══════════════════════════════════════════
        항목마다 [이름 | 내용] 한 줄(textarea 대신 글). 빈 항목은 applyEditorReadOnly 가 이미 ep-ro-empty 로 걸러 둔다.
@@ -13789,6 +13792,7 @@ window.__commView=function(post, editMode){
         var lab=f.querySelector(".ep-flabel"), ta=f.querySelector("textarea");
         var lt=String((lab&&lab.value)||"").trim(), tt=String((ta&&ta.value)||"").trim();
         if(!tt)return; _any++;
+        if(_commBoard&&lt==="훈련 방법")lt="설명";   /* 3.039 — 작전판의 설명(overview)이 훈련 편집기의 «훈련 방법» 칸에 실린다 */
         var l=document.createElement("div"); l.className="ep-ro-doc ep-ro-label"; l.textContent=lt||"메모"; l.title=lt||"메모";
         var t=document.createElement("div"); t.className="ep-ro-doc ep-ro-text"; t.textContent=tt;
         f.appendChild(l); f.appendChild(t);
@@ -13819,7 +13823,7 @@ window.__commView=function(post, editMode){
         var who=post.owner_name?("@"+esc(post.owner_name)):"코치";
         b.innerHTML='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
           /* 2.999 — 커뮤니티 «프로세스» 칸의 훈련 세션(post.proc): 신고 없음 · 담기는 레터의 «보관함에 담기»와 같은 길(커뮤니티가 셸에 #pack= 을 건넨다) */
-          +'<span style="flex:1 1 auto;min-width:150px">'+(post.proc?('<b>프로세스 훈련 세션</b> — 훈련 '+(post.procN||(post.item&&post.item.trainings&&post.item.trainings.length)||1)+'개 · 보기 전용'):('<b>커뮤니티 훈련</b> — '+who+'님이 공유했어요 · 보기 전용'))+'</span>'
+          +'<span style="flex:1 1 auto;min-width:150px">'+(post.proc?('<b>프로세스 훈련 세션</b> — 훈련 '+(post.procN||(post.item&&post.item.trainings&&post.item.trainings.length)||1)+'개 · 보기 전용'):('<b>'+(_commBoard?'커뮤니티 작전판':'커뮤니티 훈련')+'</b> — '+who+'님이 공유했어요'+((_commBoard&&post.pageN>1)?(' · '+(d.book?'시퀀스 ':'페이지 ')+post.pageN+'개'):'')+' · 보기 전용'))+'</span>'
           +'<button id="commCopyBtn" type="button" style="border:0;border-radius:10px;background:var(--blue,var(--ps-navy,#14213D));color:#fff;font-family:inherit;font-weight:800;font-size:12px;padding:8px 13px;cursor:pointer">'+(post.proc?'보관함에 담기':'내 보관함에 담기')+'</button>'
           +(post.proc?'':'<button id="commRepBtn" type="button" style="border:0;background:none;color:var(--txt-dim,#646A73);font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">신고</button>')
           +(post.mine?'<button id="commDelBtn" type="button" style="border:0;background:none;color:#C24A46;font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">삭제</button>':'')
@@ -22702,7 +22706,7 @@ body:not(.ep-sp) #editorPanel>#epSpMore{display:none!important}
 html.ps-page-board body:not(.ps-dock) #ps-command-dock #cmd-tool-end .menuwrap{width:auto!important;flex:0 0 auto!important}
 html.ps-page-board #ps-command-dock #cmd-tool-end:not(#_):not(#_){min-width:0!important;overflow:visible!important;flex-wrap:nowrap!important}
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=3.039"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.041"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2582-selbar-trim">/* 2.582 — 선택 띠에서 뺀 것(사용자 "이것들은 없어도 될꺼 같아"): 정렬 띠(#alignBar 줄맞춤·균등·간격) · 좌우/상하 대칭 복제.
    코드는 남기고 보이지만 않게 — 되살리려면 이 블록만 지운다. inline style="display:inline-flex" 를 이기려고 !important. */
 html.ps-page-board #alignBar,html.ps-page-board #mirHBtn,html.ps-page-board #mirVBtn,#alignBar,#mirHBtn,#mirVBtn{display:none!important}

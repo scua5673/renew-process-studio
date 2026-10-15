@@ -82,7 +82,7 @@ test('3.036 release note and cache',()=>{
   const e=notes.entries().find(x=>x.id==='2026-10-15-v3-037-board-settings-tabs');assert.ok(e);
   assert.match(e.title,/v3\.037/);assert.equal(e.changes.length,5);
   assert.match(e.changes[0],/운동장.*선수 표시.*배치.*내 화면/);assert.match(e.changes[2],/내 스타일/);assert.match(e.changes[3],/선발 11명/);
-  /* 3.038 — 뒤 판이 올라가도 깨지지 않게: 3.037 이상 · sw.js CACHE = app.html PS_BUILD */
-  const build=(R('studio/app.html').match(/window\.PS_BUILD='(3\.\d{3})';/)||[])[1];assert.ok(build&&+build.slice(2)>=37,build);
-  assert.match(R('sw.js'),new RegExp("const CACHE = 'process-"+build.replace('.','\\.')+"';"));
+  /* 3.039 이 판을 올렸다 — 뒤 판도 지나가게: 3.037 이상 · sw.js CACHE = app.html PS_BUILD */
+  const cache=(R('sw.js').match(/^const CACHE = 'process-(3\.\d{3})';/m)||[])[1],build=(R('studio/app.html').match(/window\.PS_BUILD='(3\.\d{3})'/)||[])[1];
+  assert.equal(cache,build);assert.ok(Number(build)>=3.037);
 });
