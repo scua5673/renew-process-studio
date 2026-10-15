@@ -97,7 +97,7 @@ test('every card placement path uses the shared rule and the squad formation pic
   assert.match(source,/\$\("tmForm"\)\.onchange=[^\n]*tmApplyFormation\(data\.meta\.form\);\}catch\(_\)\{\}tbAdoptForm\(\);/);
 });
 
-/* 3.045 — 오류 제보(10/15) 팀의 실제 모양: 3-4-2-1 · 끈 적 없는 카드(DM · CM · LW 는 비었다) · 선수는 3-4-2-1 기본 자리에 없는 세부 포지션에도.
+/* 3.047 — 오류 제보(10/15) 팀의 실제 모양: 3-4-2-1 · 끈 적 없는 카드(DM · CM · LW 는 비었다) · 선수는 3-4-2-1 기본 자리에 없는 세부 포지션에도.
    3.040 은 포메이션 포지션만 올려서 이 팀에 아무것도 못 했다 — 빈 카드 셋이 제자리에 섰을 뿐 LCM · RCM · LWB · RWB · RM 선수는 «운동장 밖». */
 function reportTeam(xy=null){
   const h=setup({form:'3421',cards:['GK','CB','LCB','RCB','LB','RB','DM','CM','AM','CF','LW'],xy});
@@ -105,7 +105,7 @@ function reportTeam(xy=null){
   h.data.players=used.map((ab,i)=>({id:'q'+i,name:'선수'+ab,type:'ours',posId:h.id(ab)}));
   return h;
 }
-test('3.045 — positions with players come onto empty never-placed cards even outside the formation', () => {
+test('3.047 — positions with players come onto empty never-placed cards even outside the formation', () => {
   const h=reportTeam(),ids=h.api.tbCards(),cards=plain(ids.map(h.abOf));
   assert.equal(cards.length,11);
   const occ=new Set(h.data.players.map(p=>p.posId));
@@ -114,11 +114,11 @@ test('3.045 — positions with players come onto empty never-placed cards even o
   assert.deepEqual(plain(h.data.players.filter(p=>!ids.includes(p.posId)).map(p=>h.abOf(p.posId))),['RCM','RM'],'thirteen positions on eleven cards — two stay off the pitch');
   assert.deepEqual(plain(h.api.tbSlotsCompute().filter(bottomLeftRow)),[]);
 });
-test('3.045 — a card the coach placed stays even when empty and players stand off the pitch', () => {
+test('3.047 — a card the coach placed stays even when empty and players stand off the pitch', () => {
   const h=reportTeam({pos_DM:{x:46,y:50},pos_CM:{x:52,y:38},pos_LW:{x:80,y:15}});
   assert.deepEqual(plain(h.api.tbCards().map(h.abOf)),['GK','CB','LCB','RCB','LB','RB','DM','CM','AM','CF','LW']);
 });
-test('3.045 — the healed cards are stable: a second pass changes nothing', () => {
+test('3.047 — the healed cards are stable: a second pass changes nothing', () => {
   const h=reportTeam(),first=plain(h.api.tbCards());
   assert.deepEqual(plain(h.api.tbCards()),first);
 });
