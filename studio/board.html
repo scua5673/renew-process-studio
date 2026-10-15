@@ -4989,7 +4989,7 @@ var _tokHitPx=0;
 function _tokHitR(g){ try{ if(!_tokHitPx){ var m=tokenLayer&&tokenLayer.getScreenCTM&&tokenLayer.getScreenCTM(); _tokHitPx=m?Math.hypot(m.a,m.b):0; }
     var k=/scale\(([\d.]+)/.exec(g.getAttribute("transform")||""), s=k?+k[1]:1, px=_tokHitPx*s;
     return Math.round(Math.max(21,Math.min(160,px>0?23/px:70))); }catch(_){ return 70; } }
-/* 3.041 — 그릴 때 잰 배율이 잠깐의 모양(선택 패널 · 화면 전환이 움직이는 중)일 수 있다 — 아이패드에서 잡히는 원이 6배(r 160)로 커져 회전 핸들 · 옆 선수를 덮었다.
+/* 3.043 — 그릴 때 잰 배율이 잠깐의 모양(선택 패널 · 화면 전환이 움직이는 중)일 수 있다 — 아이패드에서 잡히는 원이 6배(r 160)로 커져 회전 핸들 · 옆 선수를 덮었다.
    자리가 잡힌 뒤(다음 프레임 · 0.3 · 0.9초) · 창 크기가 바뀌면 다시 재서 반지름만 고친다. 배율이 같으면 아무것도 안 한다 */
 function _tokHitRefresh(){ try{ if(!tokenLayer||!tokenLayer.querySelector("circle.tok-hit"))return; var m=tokenLayer.getScreenCTM&&tokenLayer.getScreenCTM(), px=m?Math.hypot(m.a,m.b):0;
     if(!px||Math.abs(px-_tokHitPx)<1e-3)return; _tokHitPx=px;
@@ -4997,7 +4997,7 @@ function _tokHitRefresh(){ try{ if(!tokenLayer||!tokenLayer.querySelector("circl
 var _tokHitT=[];
 function _tokHitLater(){ try{ _tokHitT.forEach(clearTimeout); _tokHitT=[setTimeout(_tokHitRefresh,300),setTimeout(_tokHitRefresh,900)]; requestAnimationFrame(_tokHitRefresh); }catch(_){} }
 try{ window.addEventListener("resize",_tokHitLater); }catch(_){}
-/* 3.041 — 회전 핸들은 선수 층 위(_renderRotHandle 의 뜻). renderTokens · renderDrawings 가 선수 층을 맨 뒤로 다시 붙이면서 핸들을 덮고 있었다 */
+/* 3.043 — 회전 핸들은 선수 층 위(_renderRotHandle 의 뜻). renderTokens · renderDrawings 가 선수 층을 맨 뒤로 다시 붙이면서 핸들을 덮고 있었다 */
 function _rotHandleOnTop(){ try{ var h=world&&world.querySelector("#rotHandle"); if(h&&h.parentNode===tokenLayer.parentNode)h.parentNode.appendChild(h); }catch(_){} }
 function tokenTransform(p){const _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p);
   /* 세로 피치의 부모 world 회전과 반대 방향으로 토큰을 보정해 숫자·유니폼을 항상 정방향 유지.
@@ -8330,7 +8330,7 @@ function storeFailure(k,error){
     if(typeof toast==="function")toast(msg);
   }catch(_){}
 }
-/* 3.043 — 이 페이지의 저장소(IndexedDB 정본 · localStorage 예비). scout.html 의 scoutStore(localStorage 껍데기)와 이름이 같아 사고가 났다(scout.html 1.618) — 키마다 어디에 사는지는 studio/storage-keys.js */
+/* 3.045 — 이 페이지의 저장소(IndexedDB 정본 · localStorage 예비). scout.html 의 scoutStore(localStorage 껍데기)와 이름이 같아 사고가 났다(scout.html 1.618) — 키마다 어디에 사는지는 studio/storage-keys.js */
 const boardStore={
   async get(k){try{if(window.storage){const r=await window.storage.get(k);return r?JSON.parse(r.value):null;}}catch(_){}
     try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(_){}return mem[k]??null;},

@@ -1,4 +1,4 @@
-// 3.043 — 피드백 16(TD-2): 저장 키 표(studio/storage-keys.js) 하나가 «무엇이 어디에 사는가»의 정본이다.
+// 3.045 — 피드백 16(TD-2): 저장 키 표(studio/storage-keys.js) 하나가 «무엇이 어디에 사는가»의 정본이다.
 // 코드가 쓰는 키는 전부 표에 있어야 하고(등록 안 된 키 쓰기 금지), 표는 sync.js · storage.js 의 목록과 어긋나지 않는다.
 const test=require('node:test');
 const assert=require('node:assert/strict');

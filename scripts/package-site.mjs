@@ -20,7 +20,7 @@ export function packageSite(root=path.resolve(path.dirname(fileURLToPath(import.
  const manifest=buildManifest(out,files);fs.writeFileSync(path.join(out,MANIFEST),JSON.stringify(manifest));
  console.log('Packaged '+files.length+' runtime files into dist ('+manifest.release+', manifest '+Object.keys(manifest.files).length+' files).');return files;
 }
-/* 3.041 — 판 목록(피드백 TD-4). 배포되는 파일마다 SHA-256. 서비스워커는 install 때 옛 판 캐시의 같은 주소를 해시로 견주어
+/* 3.043 — 판 목록(피드백 TD-4). 배포되는 파일마다 SHA-256. 서비스워커는 install 때 옛 판 캐시의 같은 주소를 해시로 견주어
    같으면 옮겨 담고 다른 것만 받는다(판마다 13.6MB 를 전부 다시 받던 것). release-guard 는 이 목록으로
    «파일은 바뀌었는데 판 번호(CACHE)는 그대로»인 배포를 멈춘다. 이 파일은 dist 에만 생긴다(저장소에 두지 않는다). */
 export const MANIFEST='sw-manifest.json';

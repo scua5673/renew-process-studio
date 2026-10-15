@@ -64,7 +64,7 @@ test('3.039 the upload, the edit sync and the copy all keep pages',()=>{
   const up=cut(comm,"$('upGo').onclick=function(){",'var payload=JSON.stringify(body);');
   assert.match(up,/var _frUp=stripFrames\(item\.frames\); if\(_frUp\)item\.frames=_frUp; else delete item\.frames;\n      var _pgUp=stripPages\(sel\); if\(_pgUp\)\{item\.pages=_pgUp;boardLead\(item\);\} else delete item\.pages;/,'COPY_FIELDS 가 실은 날 페이지는 정리한 것으로 바꾼다');
   assert.match(comm,/var _pgU=stripPages\(src\); if\(_pgU\)\{item\.pages=_pgU;boardLead\(item\);\} else delete item\.pages;   \/\* 3\.039 \*\/\n    var patch=\{item:item\};/,'뷰어의 글 고치기도 같은 정리');
-  assert.match(comm,/toast\(item\.pages\?'용량이 커서 올릴 수 없어요 — 페이지나 장면 수를 줄여보세요':'용량이 커서 올릴 수 없어요 — 장면 수를 줄여보세요'\)/);
+  assert.match(comm,/\(item\.pages\?'페이지나 장면 수를':'장면 수를'\)\+' 줄여보세요'/,'용량을 넘으면 작전판은 페이지 · 장면을 줄이라고 말한다(3.041 — 한도 5MB · 크기를 적는다)');
 });
 
 test('3.039 the upload list says what each item is — a board is not «기술·개인»',()=>{

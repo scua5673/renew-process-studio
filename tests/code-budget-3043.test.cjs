@@ -1,4 +1,4 @@
-// 3.043 — 피드백 16(TD-1 · TD-3): 큰 페이지는 더 키우지 않는다 · 시험이 구현 글자에 묶이는 것을 더 늘리지 않는다.
+// 3.045 — 피드백 16(TD-1 · TD-3): 큰 페이지는 더 키우지 않는다 · 시험이 구현 글자에 묶이는 것을 더 늘리지 않는다.
 // 둘 다 «래칫»이다 — 지금 값이 상한이고, 넘으면 실패한다. 줄였으면 상한도 같이 내린다(아래 표를 고치면 diff 에 남는다).
 // 새 기능은 studio/<기능>.js 모듈(UMD — autosave-*.js · team-files.js 모양)로 쓰고 시험은 require 로 행동을 본다.
 const test=require('node:test');
@@ -7,7 +7,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const root=path.join(__dirname,'..');
 
-/* 바이트 상한 — 3.043 의 크기 + 16KB(작은 고침 몫). 기능을 더하려면 모듈로 떼어 내고, 이 표는 올리지 않는다 */
+/* 바이트 상한 — 3.045 의 크기 + 16KB(작은 고침 몫). 기능을 더하려면 모듈로 떼어 내고, 이 표는 올리지 않는다 */
 const PAGE_BUDGET={
   'studio/board.html':2500*1024,
   'studio/scout.html':1900*1024,

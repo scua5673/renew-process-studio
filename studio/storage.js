@@ -75,7 +75,7 @@
     if(k.indexOf('ps_sync_base_')===0)return ['일정 동기화 기준본','안전 저장소 확인 뒤 자동으로 정리됩니다'];
     if(k.indexOf('ps_sync_conflict_')===0)return ['동기화 충돌 사본','안전하게 지워도 되는 임시 사본입니다'];
     if(SPACE_LABEL[k])return SPACE_LABEL[k];
-    /* 3.043 — 표(storage-keys.js)에 적힌 구실 — «복구 사본 · 이 기기만». 작전판 · 팀 운영 프레임은 셸의 표를 본다 */
+    /* 3.045 — 표(storage-keys.js)에 적힌 구실 — «복구 사본 · 이 기기만». 작전판 · 팀 운영 프레임은 셸의 표를 본다 */
     try{ var T=window.PSStorageKeys||(window.top&&window.top.PSStorageKeys); if(T&&T.label(k))return [k,T.label(k)]; }catch(_){}
     return [k,''];
   }
@@ -751,6 +751,7 @@
       }catch(_){}
       return rows.sort(function(a,b){return b.bytes-a.bytes;}).slice(0,limit);
     },
+    spaceLabel:function(k){ return spaceLabel(k); },   /* 3.040 — [이름, 줄이는 길] · 앱 설정 › 기기 › 저장 공간 줄이 «큰 항목» 이름을 쓴다 */
     /* 실제 콘텐츠는 삭제하지 않는다. IndexedDB에 동일한 문자열이 저장됐다고
        다시 읽어 확인한 기기 전용 중복 사본만 localStorage에서 제거한다. */
     optimize:function(){

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
-/* 3.041 — «판 번호를 깜빡하면 사용자는 영원히 옛 판»을 배포에서 막는다(피드백 TD-4).
+/* 3.043 — «판 번호를 깜빡하면 사용자는 영원히 옛 판»을 배포에서 막는다(피드백 TD-4).
    HTML 까지 캐시 우선이라 sw.js 의 CACHE 가 그대로면 서비스워커가 바뀌지 않고, 기기는 새 파일을 받지 않는다.
    그래서 배포(Netlify production — 운영 main · testprocess staging 둘 다) 직전에 지금 사이트의 판 목록(/sw-manifest.json)과
    새 dist 의 목록을 견준다:
