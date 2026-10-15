@@ -14766,6 +14766,7 @@ window.__tiltBootSafe=false; window.__tiltBootOk=true;
   window.__tiltBootArm=function(){ return true; }; window.__tiltBootDone=function(){};
   if(!touch)return;
   if(side){ try{ if(localStorage.getItem("ps_board_tilt3d")==="1")window.__tiltBootOk=false; }catch(_){} return; }
+  var light=false; try{ light=window.top.__psSafeBoot===true&&window.top.__psSafeBootBoard!==true; if(light)window.top.__psSafeBootBoard=true; }catch(_){}   /* 3.034 — 셸의 가벼운 부팅은 첫 작전판이 한 번 쓴다(3D 가 꺼져 있었든, 아래 3.033 판정이 먼저 돌든) */
   var me="",fresh=true; try{ me=sessionStorage.getItem("ps_tilt3d_tab")||""; fresh=!me; if(!me){ me=Date.now().toString(36)+Math.random().toString(36).slice(2,8); sessionStorage.setItem("ps_tilt3d_tab",me); } }catch(_){ me=me||"x"; }
   function recent(t,now){ return typeof t==="number"&&now-t>=0&&now-t<LIFE; }
   function read(){ try{ var o=JSON.parse(localStorage.getItem(K)||"{}"); return (o&&typeof o==="object"&&!Array.isArray(o))?o:{}; }catch(_){ return {}; } }
@@ -14793,6 +14794,8 @@ window.__tiltBootSafe=false; window.__tiltBootOk=true;
       var say=function(n){ if(shown()){ window.__tiltBootSafeShown=Date.now(); [0,1500,3000,4500].forEach(function(ms){ setTimeout(function(){ try{ toast(msg); }catch(_){} },ms); }); return; }   /* 짧은 알림(1.7초)을 6초쯤 이어 보인다 */
         if(n<240)setTimeout(function(){ say(n+1); },500); };   /* 작전판이 실제로 보일 때 — 셸은 부팅 막 뒤나 다른 화면 뒤에서 미리 부팅한다 */
       setTimeout(function(){ say(0); },1600); return; }
+    if(light){ window.__tiltBootOk=false; return; }   /* 3.034 — 셸이 가볍게 여는 부팅(앞 페이지가 보이던 채 죽음): 이번만 평면, 3D 설정 값은 그대로. 한 번만 —
+                                                           같은 셸에서 작전판을 다시 읽으면(폰 회전 등) 평소대로 */
     if(!window.__tiltBootArm())window.__tiltBootOk=false;   /* 표시를 못 적으면 지킬 수 없다 — 평면 */
   }catch(_){}
 })();
@@ -22816,6 +22819,49 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) :is(#cmd-tool-end,#cmd-tool-end .menuwrap){width:82px!important;min-width:82px!important;max-width:82px!important;flex:0 0 82px!important;padding:0!important;}
   html.ps-page-board body.ps-ipad-work.command-dock-v5.rail-full:not(.ps-dock) #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________) #animFrames:empty::after{display:none!important;}
   html.ps-page-board body.ps-ipad-work:not(.ps-dock) #cmd-board-settings-pop:not(#_):not(#_) .cmd-board-settings-title{font-size:13px!important;}
+}
+</style>
+<style id="ps-3034-dock-legible">/* 3.034 — 하단 도크를 더 잘 보이게(사용자 «하단 도크 더 잘보이게 만들어줘»). 크기 · 높이 · 배치는 그대로 — 2.702 «너무 크다»(칩 30→24) · 2.922 아이패드
+   «한 단계 작게»를 지키고 대비만 올린다. 데스크톱(고운 포인터) · 아이패드(ps-ipad-work) · 터치 컴퓨터 세 갈래 모두, 폰 도크(#ps-dock)는 건드리지 않는다.
+   ① 3.026 네이비 바꿈이 밝은 모드의 데스크톱 · 아이패드 토큰에 다크 값을 넣었다: 켜진 도구 바탕 --dk-soft #1B2640 · 글자 #A9BCE6, 주 단추 --dk-blue #7F98D0
+      (재생의 흰 아이콘 2.9:1). 아이패드는 단추 안 svg 가 글자색을 물려받지 않아(데스크톱 규칙에만 color:inherit) 켜진 이동 도구 · 겹쳐 보기가 네이비 바탕에
+      네이비 아이콘(1.1:1)으로 사라졌다 → 켜짐 = 네이비 #14213D 바탕 + 흰 아이콘, 주 단추 = 네이비, 아이콘은 단추 글자색을 물려받는다.
+   ② 고스트 아이콘 · 글자 #333E4C → #1F2937, 흐린 글자 #7D8795 → #59616E, 줄 구분선 #E9EDF2 → #D9DEE6.
+   ③ 팀 칩: 고르지 않은 팀을 58% · 채도 60% 로 흐리게 하던 것을 또렷하게(고른 팀은 테두리 · ✓ 로 구분). 흰 칩(코치 C 등)이 흰 도크에 묻히지 않게 옅은 테두리.
+   다크(fmdark)도 같은 방향. 선택자는 도크의 가장 센 규칙(14 id)보다 하나 위 — :not(#_) 13번 + #ps-command-dock. */
+@media (min-width:768px){
+  html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){
+    --dk-ink:#111827!important;--dk-text:#1F2937!important;--dk-muted:#59616E!important;--dk-line:#D9DEE6!important;--dk-hair:#D9DEE6!important;
+    --dk-soft:#14213D!important;--dk-soft-ink:#FFFFFF!important;--dk-soft-line:rgba(20,33,61,.4)!important;--dk-on:#14213D!important;   /* 터치 컴퓨터는 --dk-on 이 2614 기본 #FFFFFF 그대로라 흰 바탕에 흰 아이콘이 됐다(검토) */
+    --dk-blue:#14213D!important;--dk-blue-2:#14213D!important;--dk-blue-3:#1D2D50!important;--dk-primary-bg:#14213D!important;--dk-primary-hover:#1D2D50!important;
+    --dk-surface-shadow:0 0 0 1px rgba(15,23,42,.12),0 1px 2px rgba(15,23,42,.06),0 14px 36px -14px rgba(15,23,42,.32)!important;
+  }
+  html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #cmd-equipment-group{--dk-text:#1F2937!important;}
+  html.ps-page-board body.fmdark.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){
+    --dk-ink:#F5F7FA!important;--dk-text:#E5E9F0!important;--dk-muted:#B3BBC8!important;--dk-line:rgba(255,255,255,.14)!important;--dk-hair:rgba(255,255,255,.12)!important;
+    --dk-soft:#5070B5!important;--dk-soft-ink:#FFFFFF!important;--dk-on:#5070B5!important;
+  }
+  html.ps-page-board body.fmdark.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #cmd-equipment-group{--dk-text:#E5E9F0!important;}
+  /* 장면 추가(＋)는 바탕 없이 --dk-soft-ink 로만 그렸다(3.026 부터 흰 도크에 연한 하늘색) — 옅은 바탕 + 네이비. 올리면 2614 의 #DDE3EE · --dk-blue-3 그대로 */
+  html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #animAdd:not(:hover){background:#EEF1F6!important;color:#14213D!important;}
+  /* 고른 장면 칸은 밝은 바탕(#F4F6FA) + 네이비 테두리 — 번호도 네이비(--dk-soft-ink 를 따르면 흰 칸에 흰 숫자) */
+  html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) .anim-frame.on .afi{color:#14213D!important;}
+  /* 고른 장비 칩: 장비 그림은 제 색(currentColor · 2.245)이라 흰색으로 못 바꾼다 — 네이비 바탕 위 네이비 고리가 묻히지 않게 옅은 바탕 + 네이비 고리(다크는 흰 고리) */
+  html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #railEquip .chip.equip.stampon{background:#E9EDF5!important;box-shadow:inset 0 0 0 2px #14213D!important;}
+  html.ps-page-board body.fmdark.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #railEquip .chip.equip.stampon{background:rgba(127,152,208,.24)!important;box-shadow:inset 0 0 0 2px #FFFFFF!important;}
+  /* 빈 장면 안내(터치 컴퓨터에서만 보임)는 색이 고정(#8A9099 · 2.9:1)이었다 — 흐린 글자 토큰으로 */
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #animFrames:empty::after{color:var(--dk-muted)!important;}
+  /* 다크에서 ＋ 에 올리면 밝은 타일(#DDE3EE)로 번쩍였다 — 다크 hover 색으로 */
+  html.ps-page-board body.fmdark.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #animAdd:hover{background:var(--dk-hover)!important;color:#FFFFFF!important;}
+  /* 아이콘은 단추 글자색을 물려받는다(아이패드에 없던 것 — 데스크톱 2614 고운 포인터 규칙과 같은 뜻) */
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) button:not(.catpill):not(.cmd-stamp-token):not(.chip):not(#colorBtn):not(#cmd-equip-color) svg{color:inherit!important;}
+  /* 셋째 줄 위 테두리(#E3E6EA 고정)가 둘째 줄 아래 구분선과 겹쳐 이중선 — 다크에선 밝은 흰 줄로 튀었다. 두께는 두고 색만 지운다(높이 그대로) */
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #cmd-tool-row{border-top-color:transparent!important;}
+  /* 고르지 않은 팀 칩 — 흐리게 · 채도 낮춤 대신 또렷하게(고른 팀은 테두리 · ✓) */
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) .catpill.tpill:not(.on){opacity:.9!important;filter:none!important;}
+  /* 흰 칩이 흰 도크에 묻히지 않게 — 켜진 칩의 고리(.on)는 그대로 */
+  html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) :is(.catpill.tpill,.cmd-stamp-token):not(.on){box-shadow:inset 0 0 0 1px rgba(15,23,42,.24)!important;}
+  html.ps-page-board body.fmdark.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) :is(.catpill.tpill,.cmd-stamp-token):not(.on){box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)!important;}
 }
 </style>
 
