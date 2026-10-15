@@ -1,4 +1,4 @@
-// 3.042 — 피드백 15: 선수별 초대 링크 · 팀 전체 내보내기. 브라우저 흐름은 tests/browser/invite-link-export(코치 쪽).
+// 3.044 — 피드백 15: 선수별 초대 링크 · 팀 전체 내보내기. 브라우저 흐름은 tests/browser/invite-link-export(코치 쪽).
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');

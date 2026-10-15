@@ -14142,7 +14142,7 @@ function ilPickAccount(pl){
     if(!picked.length&&!same.length&&!free.length)h+='<div class="il-empty">연결 안 된 계정이 없어요 — 선수가 아직 팀에 합류하지 않았다면 초대 코드를 보내 주세요.</div>';
     if(taken.length)h+='<div class="il-gh ok">'+IL_CHECK+'다른 선수에 연결됨 — 고를 수 없어요</div>'+taken.map(function(t){var p2=ilPlayerById(t.hold);
       return '<div class="il-row dis"><span class="il-av ok">'+IL_CHECK+'</span><span class="il-tx"><b>'+esc(nm(t.r))+'</b><small>→ '+esc(p2?ilLabel(p2):"명단에 없는 선수")+'</small></span><span class="il-go ok">연결됨</span></div>';}).join("");
-    h+='<div class="il-foot"><span>아직 합류 안 했나요?</span>'+(A.inviteFor?'<button type="button" class="btn sm primary" data-il-plink>이 선수 초대 링크</button>':'')+'<button type="button" class="btn sm" data-il-invite>초대 코드 보내기</button></div>';   /* 3.042 — 링크로 합류하면 이 선수와 바로 이어진다 */
+    h+='<div class="il-foot"><span>아직 합류 안 했나요?</span>'+(A.inviteFor?'<button type="button" class="btn sm primary" data-il-plink>이 선수 초대 링크</button>':'')+'<button type="button" class="btn sm" data-il-invite>초대 코드 보내기</button></div>';   /* 3.044 — 링크로 합류하면 이 선수와 바로 이어진다 */
     S.body.innerHTML=h;
     [].forEach.call(S.body.querySelectorAll("[data-il-acc]"),function(b){b.onclick=function(){
       var uid=b.dataset.ilAcc,c=claims[uid],r=(rows||[]).filter(function(x){return x.uid===uid;})[0];
@@ -14175,7 +14175,7 @@ function ilPickPlayer(uid,who,claim){
   inp.oninput=function(){q=inp.value;draw();};
   draw();
 }
-/* 3.042 — 선수별 초대 링크(sync.js uiPlayerInvite): 이 기기에서 만든 링크의 토큰과 claim 의 토큰이 같으면 확인 없이 잇는다.
+/* 3.044 — 선수별 초대 링크(sync.js uiPlayerInvite): 이 기기에서 만든 링크의 토큰과 claim 의 토큰이 같으면 확인 없이 잇는다.
    토큰은 한 번 쓰면 지운다. 다른 임원 기기 · 토큰이 다른 claim 은 아래 확인 카드 그대로(«초대 링크로 합류» 표시). */
 var IL_TOKENS="ps_idp_invite_tokens_v1",_ilAutoBusy=false;
 function ilAutoLinkByToken(){
@@ -14222,7 +14222,7 @@ window.addEventListener("storage",function(e){
   clearTimeout(_ilSigT);_ilSigT=setTimeout(function(){
     try{
       if(!ilCan())return;
-      try{ ilAutoLinkByToken(); }catch(_){}   /* 3.042 — 초대 링크로 합류한 선수 문서가 막 왔으면 바로 잇는다 */
+      try{ ilAutoLinkByToken(); }catch(_){}   /* 3.044 — 초대 링크로 합류한 선수 문서가 막 왔으면 바로 잇는다 */
       var sig=idpClaims(false).map(function(c){return c.uid+":"+c.claim.at;}).join("|")+"#"+JSON.stringify(ilHolders());
       if(sig===_ilSig)return;_ilSig=sig;
       ilRerender();
