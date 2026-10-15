@@ -3180,7 +3180,7 @@ html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop 
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys>summary::-webkit-details-marker{display:none}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys>summary::before{content:"▸";font-size:10px}
 html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop details.bs-keys[open]>summary::before{content:"▾"}
-#emptyHint .eh-acts{display:flex;gap:6px;align-items:stretch}
+#emptyHint .eh-acts{display:flex;gap:6px;align-items:stretch;margin-top:12px}
 #emptyHint .eh-acts>#ehGo{flex:1.4 1 0;margin:0;min-width:0}
 #emptyHint .eh-acts>#loadSquadBtn{flex:1 1 0;justify-content:center;min-width:0;white-space:nowrap}
 html body #viewMenu .bs-preset-row:not(#_){display:flex;align-items:center}
@@ -7974,7 +7974,8 @@ window.__syncPitchSeg=function(){try{var sg=document.getElementById("pitchSeg");
   var key=(state.pitchImg==="@real")?"real":(ds===""?"navy":ds);
   if(key==="grass")key="real";   /* 2.287 — 옛 평면 잔디도 새 '잔디' 버튼으로 표시(보드 모습은 안 건드린다) */
   [].forEach.call(sg.querySelectorAll("button[data-p]"),function(x){var on=x.getAttribute("data-p")===key;x.classList.toggle("on",on);x.setAttribute("aria-pressed",String(on));});
-  try{window.__syncGrassToneUI&&window.__syncGrassToneUI();}catch(_){}   /* 2.978 — 실사일 때만 톤 줄 */}catch(_){}};
+  try{window.__syncGrassToneUI&&window.__syncGrassToneUI();}catch(_){}   /* 2.978 — 실사일 때만 톤 줄 */
+  try{window.__syncTrainGridRowUI&&window.__syncTrainGridRowUI();}catch(_){}   /* 3.036 — 훈련 격자 줄도(패널 클릭 · 단축키 · 직접 색 · 복원이 모두 여기를 지난다) */}catch(_){}};
 /* 계정 확인 전에는 기기 공용 cs_pitch_img를 적용하지 않는다. 저장된 배경은 loadSnap이 복원한다. */
 window.__getPitchN=function(){return state.pitchN||1;};
 window.__getPitchSpec=function(){ try{ return pitchSpec(); }catch(_){ return null; } };   /* 2.658 — 멀티피치 카드(셸 applyPitches)가 규격을 따라 그린다(풋살이면 풋살장) */
@@ -20588,7 +20589,7 @@ try{ var _nb=document.getElementById('dfNew');
     };
     var what=(c.n>1?("페이지 "+c.n+"개, "):"")+(c.sc?("장면 "+c.sc+"개, "):"");
     if(dn){
-      psChoice("새 보드를 어떻게 시작할까요?\n\n"+(lose?("· 지금 보드의 "+what+"선수·장비·그림은 지워요\n"):"")+"· «새 보드 기본 세팅»에 선수 "+dn+"명 배치가 저장돼 있어요(보드 설정 › 배치 › 기본 세팅)\n· 보관함에 저장한 자료는 그대로예요"+(lose?"\n· 1분 안에는 위 띠의 «↶ 이전 보드»로 되살릴 수 있어요":""),
+      psChoice("새 보드를 어떻게 시작할까요?\n\n"+(lose?("· 지금 보드의 "+what+"선수·장비·그림은 지워요\n"):"")+"· «새 보드 기본 세팅»에 선수 "+dn+"명 배치가 저장돼 있어요(보드 설정 › 내 화면 › 새 보드 › 기본값)\n· 보관함에 저장한 자료는 그대로예요"+(lose?"\n· 1분 안에는 위 띠의 «↶ 이전 보드»로 되살릴 수 있어요":""),
         [{label:"빈 보드로 시작",primary:true,value:"empty"},{label:"기본 세팅으로 시작 (선수 "+dn+"명)",value:"default"},{label:"취소",value:null}],
         function(v){ if(v==="empty")go(false); else if(v==="default")go(true); });
       return;
@@ -21753,9 +21754,9 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
         try{var n=(window.__getPitchN?window.__getPitchN():1)||1;[].forEach.call(pseg.children,function(x){x.classList.toggle("on",+x.getAttribute("data-n")===n);});}catch(_){}
         try{var v=(window.__getPitchView?window.__getPitchView():"full")||"full";[].forEach.call(vseg.children,function(x){x.classList.toggle("on",x.getAttribute("data-v")===v);});
           var sd=(window.__getPitchSide?window.__getPitchSide():"own");[].forEach.call(sseg.children,function(x){x.classList.toggle("on",x.getAttribute("data-side")===sd);});
-          sideRow.style.display=(v==="full")?"none":"";}catch(_){}
+          if(v==="full")sideRow.style.setProperty("display","none","important"); else sideRow.style.removeProperty("display");}catch(_){}   /* 3.036 — figma-premium 의 .menurow display:flex!important 를 이긴다(«전체»인데도 확대 쪽이 보였다) */
         /* hidden 속성은 .menurow display 규칙에 눌려 안 통한다 — display로 직접 숨김(단독 작전판엔 멀티피치 렌더가 없음) */
-        try{pitchRow.style.display=(typeof window.__applyPitchN==="function")?"":"none";}catch(_){}
+        try{if(typeof window.__applyPitchN==="function")pitchRow.style.removeProperty("display"); else pitchRow.style.setProperty("display","none","important");}catch(_){}
         try{var d=(window.__getRotDeg?window.__getRotDeg():0)||0;rb.textContent="90° 회전 ↻"+(d?(" · "+d+"°"):"");}catch(_){}
         try{var oo=window.__getBoardOrient?window.__getBoardOrient():"h";[].forEach.call(oseg.children,function(x){x.classList.toggle("on",x.getAttribute("data-o")===oo);});}catch(_){}   /* 2.982 */
       }
@@ -21852,6 +21853,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       ["formHome","formAway"].forEach(function(k){ var e=id(k),r=e&&e.closest(".menurow"); if(r){ r.classList.add("cmd-settings-state-source"); r.hidden=true; } });
       var sq=id("squadGrpRow"); if(sq&&!id("bsLoadSec")){ var h=make("div","bsLoadSec","bs-sec bs-first","선수 불러오기"); h.setAttribute("role","heading"); h.setAttribute("aria-level","3"); sq.before(h); var sl=sq.querySelector(".menulbl"); if(sl)sl.textContent="선수단"; }   /* 묶음 제목이 «선수 불러오기»라 줄 라벨은 «선수단»(A팀 · B팀 · C팀 · 전체) */
       var alb=id("loadAnalysisTeamBtn"); if(alb&&sq&&!alb.closest("#bsSavedTeamRow")){ var r2=make("div","bsSavedTeamRow","menurow"); r2.appendChild(make("span",null,"menulbl","저장 팀")); alb.textContent="불러오기"; alb.style.cssText="flex:1 1 auto;justify-content:center;margin:0"; r2.appendChild(alb); sq.after(r2); }
+      var sb=id("squadBtn"),r3=sb&&sb.closest(".menurow"),hr2=r3&&r3.nextElementSibling; if(hr2&&hr2.matches&&hr2.matches("hr.menudiv"))hr2.hidden=true;   /* «구성» 줄이 숨어 맞붙던 구분선 둘 → 하나 */
       var lsb=id("loadSquadBtn"),eg=id("ehGo"); if(lsb&&eg&&!id("ehActs")){ var acts=make("div","ehActs","eh-acts"); eg.replaceWith(acts); acts.appendChild(eg); lsb.classList.remove("primary"); lsb.classList.add("ghost"); lsb.removeAttribute("style"); lsb.title="고른 우리 팀 포메이션에 맞춰 선수단의 선발 11명만 배치"; acts.appendChild(lsb); }
     }catch(_){} }
     tidyMoreMenu();

@@ -34,6 +34,12 @@ try{
   await f.evaluate(()=>window.__applyPitch('train',null));await page.waitForTimeout(300);
   lb=await labels();assert.ok(lb.includes('훈련 격자'),'훈련 피치면 훈련 격자가 보인다 '+JSON.stringify(lb));
   await f.evaluate(()=>window.__applyPitch('',null));await page.waitForTimeout(300);
+  /* 리뷰 — 패널의 피치 단추(사용자 경로)도 훈련 격자 줄을 따라 바꾼다 */
+  await f.click('#cmd-board-settings-pop #pitchSeg button[data-p="train"]');await page.waitForTimeout(300);
+  lb=await labels();assert.ok(lb.includes('훈련 격자'),'패널에서 «훈련»을 누르면 훈련 격자 줄 '+JSON.stringify(lb));
+  await f.click('#cmd-board-settings-pop #pitchSeg button[data-p="navy"]');await page.waitForTimeout(300);
+  lb=await labels();assert.ok(!lb.includes('훈련 격자'),'다른 피치로 돌아가면 숨는다');
+  assert.ok(!lb.includes('확대 쪽'),'범위가 «전체»면 확대 쪽은 숨는다 '+JSON.stringify(lb));
   await page.screenshot({path:path.join(SHOTS,'board-settings-hierarchy-pitch-'+engine+'.png')});
   // ② 선수 표시 — 이 보드에 저장
   await sel('look');s=await st();assert.equal(s.scope,'이 보드에 저장');
