@@ -8,7 +8,7 @@ import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
 const ELM='33a9d4e2-1868-40f4-8f82-3ebb4ecf011e';
 const P=(id,num,x,y,team='blue',name='')=>({id,team,num:String(num),pos:'',name,x,y});
-const FACE='data:image/png;base64,'+'R0lGODlh'.repeat(6000);   /* 3.040 — 얼굴 사진 토큰(2.975 p.img) 흉내 · 48KB */
+const FACE='data:image/png;base64,'+'R0lGODlh'.repeat(6000);   /* 3.041 — 얼굴 사진 토큰(2.975 p.img) 흉내 · 48KB */
 const snap=players=>({pitchSpec:'fifa',players,equipment:[],drawings:[],ball:{x:525,y:340,scale:.62},lines:true,gridType:'off',tokenScale:.6,label:'num',tokShape:'circle',
   orientation:'h',area:'full',pitchView:'full',pitchN:1,tokV:2,customImages:[{src:'data:image/png;base64,QUFB'}]});
 const frame=(players,cap)=>({snap:snap(players),hold:.6,dur:1.2,cap,thumb:'<svg><text>김가상</text></svg>'});
@@ -21,9 +21,9 @@ const BOARD={libId:'Vboard3038',type:'board',name:'가상 전술노트 — 세 �
   pages:[{name:'공격 형태',snap:pg1[2].snap,thumb:'<svg><text>김가상</text></svg>',anim:{frames:pg1,active:2,hold:.6},vlink:{libId:'Vother'}},
     {name:'',snap:snap([P(905,9,500,300)]),thumb:''},
     {name:'수비 블록',snap:pg3[2].snap,thumb:'',anim:{frames:pg3,active:2,hold:.6}}]};
-/* 3.040 — 사용자 «용량이 커도 올릴 수 있게»: 페이지 여섯 × 장면 마흔 × 22명 — 사진 없이도 500KB(옛 한도)를 넘는 작전판 */
+/* 3.041 — 사용자 «용량이 커도 올릴 수 있게»: 페이지 여섯 × 장면 마흔 × 22명 — 사진 없이도 500KB(옛 한도)를 넘는 작전판 */
 const crowd=(k,s)=>Array.from({length:22},(_,i)=>({id:'b'+i,team:i<11?'blue':'red',num:String(i+1),pos:'CM',name:'',x:60+i*45+s*3,y:120+(i%7)*70+k*2,size:1,shape:'circle',col:i<11?'#2459C4':'#C84A47'}));
-const BIG={libId:'Vbig3040',type:'board',name:'가상 긴 전술노트',folder:'',tags:[],savedAt:Date.now()-2000,thumb:'',
+const BIG={libId:'Vbig3041',type:'board',name:'가상 긴 전술노트',folder:'',tags:[],savedAt:Date.now()-2000,thumb:'',
   pages:Array.from({length:6},(_,k)=>({name:'장면 묶음 '+(k+1),snap:snap(crowd(k,0)),thumb:'',anim:{frames:Array.from({length:40},(_,s)=>({snap:snap(crowd(k,s)),hold:.6,dur:1,cap:'움직임 '+s})),active:0,hold:.6}}))};
 BIG.snap=BIG.pages[0].snap;BIG.frames=BIG.pages[0].anim.frames;
 const TRAIN={libId:'Vtrain3038',type:'train',name:'가상 론도',focus:'tech',minutes:15,folder:'',tags:[],savedAt:Date.now()-1000,snap:snap([P(1,8,300,300)])};
@@ -84,7 +84,7 @@ try{
     [['공격 형태','7,3',3,'',false],['','9',0,'',false],['수비 블록','10,4,',3,'',false]]);
   assert.deepEqual([it.snap.players.map(q=>q.num).join(','),it.frames.length,it.frames.map(f=>f.snap.players[0].x)],['7,3',3,[300,420,540]],'대표 장면은 페이지 1 의 것(전에는 페이지 3)');
   for(const bad of ['김가상','data:image','QUFB','R0lGODlh'])assert.equal(json.includes(bad),false,'올라간 글에 «'+bad+'» 가 없다');
-  assert.deepEqual(it.pages[0].anim.frames.map(f=>['img' in f.snap.players[0],'imgBg' in f.snap.players[0],f.snap.players[0].num]),Array(3).fill([false,false,'7']),'3.040 — 얼굴 사진 토큰은 장면마다 번호 토큰으로');
+  assert.deepEqual(it.pages[0].anim.frames.map(f=>['img' in f.snap.players[0],'imgBg' in f.snap.players[0],f.snap.players[0].num]),Array(3).fill([false,false,'7']),'3.041 — 얼굴 사진 토큰은 장면마다 번호 토큰으로');
   assert.equal(it.pages[2].snap.players[2].team,'blue','사진 토큰은 보통 토큰으로');
   assert.equal(it.overview,'가상 설명 — 페이지마다 움직임');
 
@@ -133,11 +133,11 @@ try{
   await c.waitForFunction(()=>!document.getElementById('cvMask').classList.contains('on'));
   assert.deepEqual(writes,['POST ps_community','POST rpc/ps_comm_view','POST rpc/ps_comm_copied'],'올리기 한 번 · 조회 한 번 · 담김 한 번');
 
-  // 5) 3.040 — 옛 한도(500KB)를 넘는 작전판도 올라간다(한도 5MB)
+  // 5) 3.041 — 옛 한도(500KB)를 넘는 작전판도 올라간다(한도 5MB)
   const first=posted.id;
-  await c.evaluate(()=>window.postMessage({type:'openUpload',libId:'Vbig3040'},'*'));
+  await c.evaluate(()=>window.postMessage({type:'openUpload',libId:'Vbig3041'},'*'));
   await c.waitForSelector('#upGo');
-  await c.waitForFunction(()=>!!document.querySelector('#upPick .pk.on[data-lib="Vbig3040"]'));
+  await c.waitForFunction(()=>!!document.querySelector('#upPick .pk.on[data-lib="Vbig3041"]'));
   await c.evaluate(()=>document.querySelector('#upCats button').click());
   await c.click('#upGo');
   for(let i=0;i<100&&posted.id===first;i++)await page.waitForTimeout(100);
