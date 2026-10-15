@@ -5,7 +5,7 @@ const R=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const board=R('studio/board.html');
 const notes=require('../studio/release-notes.js');
 
-/* 3.036 — 사용자 «보드 설정 위계를 잘 만들어보자 — 메뉴들이 좀 안 맞게 막 들어간 것 같아» (추천안 승인).
+/* 3.037(3.036 으로 준비했다가 #403 이 먼저 3.036 을 써서 판을 올렸다) — 사용자 «보드 설정 위계를 잘 만들어보자 — 메뉴들이 좀 안 맞게 막 들어간 것 같아» (추천안 승인).
    옛 다섯 탭(배치 · 보기 · 운동장 · 선수 · 단축키)은 «보기»에 기기 줄 일곱과 보드 줄 여덟이 섞이고, 포메이션이 두 곳, «선수»가 두 뜻, «그리드»가 네 뜻이었다.
    이제 네 탭 — 운동장 · 선수 표시 · 배치 | 내 화면. 탭 하나 = 저장 범위 하나. */
 const fn=/function buildBoardSettings\(\)\{[\s\S]*?\n  \}\n  function mountTools/.exec(board);
@@ -79,9 +79,9 @@ test('3.036 내 화면 — keys collapsed under it, 3D rows only in 3D (title to
 });
 
 test('3.036 release note and cache',()=>{
-  const e=notes.entries().find(x=>x.id==='2026-10-15-v3-036-board-settings-tabs');assert.ok(e);
-  assert.match(e.title,/v3\.036/);assert.equal(e.changes.length,5);
+  const e=notes.entries().find(x=>x.id==='2026-10-15-v3-037-board-settings-tabs');assert.ok(e);
+  assert.match(e.title,/v3\.037/);assert.equal(e.changes.length,5);
   assert.match(e.changes[0],/운동장.*선수 표시.*배치.*내 화면/);assert.match(e.changes[2],/내 스타일/);assert.match(e.changes[3],/선발 11명/);
-  assert.match(R('sw.js'),/const CACHE = 'process-3\.036';/);
-  assert.match(R('studio/app.html'),/window\.PS_BUILD='3\.036';/);
+  assert.match(R('sw.js'),/const CACHE = 'process-3\.037';/);
+  assert.match(R('studio/app.html'),/window\.PS_BUILD='3\.037';/);
 });

@@ -29,12 +29,12 @@ test('3.034 desktops are left alone — no mark, no light boot',()=>{
 
 test('3.034 an iPad marks this tab (sessionStorage) while it is on screen and refreshes the mark every minute',()=>{
   const e=boot();
-  assert.equal(e.win.__psSafeBoot,false,'first boot is a normal boot');assert.equal(e.mark(),1e12+'|0','marked at boot — not loaded yet');
+  assert.equal(e.win.__psSafeBoot,false,'first boot is a normal boot');assert.equal(e.mark(),1e12+'|0|shell|0','marked at boot — not loaded yet (3.036: stage · safe level)');
   assert.deepEqual(e.ls.dump(),{},'nothing in localStorage — two windows never read each other, a full localStorage does not matter');
   assert.equal(e.ss.getItem('ps_tilt3d_tab'),null,'the board 3D guard keeps its own tab id (its «new tab» rule still works)');
   const beat=e.timers.find(x=>x.kind==='i');assert.equal(beat.ms,60000);
-  e.adv(30000);e.fire('win:load');assert.equal(e.mark(),(1e12+30000)+'|1','load finished → stamped «loaded»');
-  e.adv(30000);beat.f();assert.equal(e.mark(),(1e12+60000)+'|1','heartbeat');
+  e.adv(30000);e.fire('win:load');assert.equal(e.mark(),(1e12+30000)+'|1|load|0','load finished → stamped «loaded»');
+  e.adv(30000);beat.f();assert.equal(e.mark(),(1e12+60000)+'|1|load|0','heartbeat');
 });
 
 test('3.034 going to the background or leaving normally clears the mark; the next boot is normal',()=>{
@@ -53,12 +53,12 @@ test('3.034 a page that died while on screen opens the next boot light — this 
   const toasts=[],fb={contentWindow:{toast:m=>toasts.push(m),__tiltBootSafe:false},getBoundingClientRect:()=>({width:900})};
   const b=boot({local:ls,session:ss,now:1e12+9000,board:fb});
   assert.equal(b.win.__psSafeBoot,true);assert.equal(ls.getItem('ps_board_tilt3d'),'1','the 3D choice is not changed (the board opens flat for this boot only)');
-  assert.equal(b.mark(),(1e12+9000)+'|0','this boot is watched too (a second death in a row is still caught)');
+  assert.equal(b.mark(),(1e12+9000)+'|0|shell|1','this boot is watched too (a second death in a row is still caught) — 3.036: written as safe level 1');
   const say=b.timers.find(x=>x.kind==='t'&&x.ms===500);assert.ok(say,'waits while the boot splash is up');
   b.doc.body.classList.contains=()=>false;say.f();
   b.timers.filter(x=>[0,1800,3600].includes(x.ms)).forEach(x=>x.f());
   assert.equal(toasts.length,3);assert.match(toasts[0],/앞에서 앱이 제대로 닫히지 않아 이번엔 가볍게 열었어요 — 다른 탭은 누를 때 열려요 · 작전판도 이번만 평면/);
-  const c=boot({local:ls,session:ss,now:1e12+9000+60000});assert.equal(c.win.__psSafeBoot,true,'died again while light → still light');
+  const c=boot({local:ls,session:ss,now:1e12+9000+60000});assert.equal(c.win.__psSafeBoot,true,'died again while light → still light');assert.equal(c.win.__psSafeLevel,2,'3.036: the light boot died too → safe mode');
 });
 
 test('3.034 a page that left before its load finished (WebKit sends no pagehide then) boots light once but says nothing',()=>{
@@ -66,7 +66,7 @@ test('3.034 a page that left before its load finished (WebKit sends no pagehide 
   const toasts=[],fb={contentWindow:{toast:m=>toasts.push(m),__tiltBootSafe:false},getBoundingClientRect:()=>({width:900})};
   const b=boot({session:ss,now:1e12+3000,board:fb});
   assert.equal(b.win.__psSafeBoot,true,'still light (cheap)');
-  assert.equal(b.timers.filter(x=>x.kind==='t').length,0,'no «제대로 닫히지 않아» notice — nothing to show');
+  assert.equal(b.timers.filter(x=>x.kind==='t'&&x.ms===500).length,1,'no «제대로 닫히지 않아» notice — only the 3.036 crash record waits for PSSync');
 });
 
 test('3.034 the board 3D guard speaks for itself when 3D was the cause; the shell waits until that guard has run',()=>{
@@ -84,7 +84,7 @@ test('3.034 the board 3D guard speaks for itself when 3D was the cause; the shel
 });
 
 test('3.034 an old mark is not a crash; a broken or unwritable mark never blocks the boot',()=>{
-  const old=boot({session:{[K]:(1e12-4*60000)+'|1'}});assert.equal(old.win.__psSafeBoot,false,'older than 3 minutes → normal');assert.equal(old.mark(),1e12+'|0');
+  const old=boot({session:{[K]:(1e12-4*60000)+'|1'}});assert.equal(old.win.__psSafeBoot,false,'older than 3 minutes → normal');assert.equal(old.mark(),1e12+'|0|shell|0');
   assert.equal(boot({session:{[K]:(1e12+60000)+'|1'}}).win.__psSafeBoot,false,'a mark from the future is not trusted');
   for(const bad of ['x','','-5','NaN','{}','|1'])assert.equal(boot({session:{[K]:bad}}).win.__psSafeBoot,false,bad);
   assert.equal(boot({session:{[K]:String(1e12-8000)}}).win.__psSafeBoot,true,'a bare time (no flag) still counts');

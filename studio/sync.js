@@ -93,7 +93,7 @@ var COPIES_OFF=true;
    문제가 있는 기기는 `localStorage.ps_cache_wipe='0'` 으로 끌 수 있고, 구버전의 `'1'` 값도 계속 켜짐으로 취급한다. */
 var CACHE_WIPE=(function(){ try{ return localStorage.getItem('ps_cache_wipe')!=='0'; }catch(_){ return true; } })();
 var CACHE_WAIT_MS=5000, CACHE_FLAG='ps_cache_wiped_v1', SELF_RELOAD='ps_self_reload', BOOT_AT=Date.now(), cacheWaitTimer=null;
-function markSelfReload(){ try{ sessionStorage.setItem(SELF_RELOAD,'1'); }catch(_){} }
+function markSelfReload(){ try{ sessionStorage.setItem(SELF_RELOAD,'1'); }catch(_){} try{ if(window.__psBootMarkDone)window.__psBootMarkDone(); }catch(_){} }   /* 3.036 — 스스로 하는 새로고침은 «죽음»이 아니다(셸 안전장치 표시를 지운다 — WebKit 은 load 전엔 pagehide 를 안 보낸다) */
 function wipeAllowedNow(){
   try{ if(sessionStorage.getItem(SELF_RELOAD))return false; }catch(_){}
   try{ if(document.body&&document.body.classList.contains('ps-booting'))return false; }catch(_){}
@@ -486,7 +486,7 @@ function safeEventMeta(meta){
   Object.keys(meta).slice(0,12).forEach(function(k){
     var v=meta[k];
     if(typeof v==='number'||typeof v==='boolean')out[String(k).slice(0,32)]=v;
-    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage|name|msg)$/i.test(k))out[String(k).slice(0,32)]=v.slice(0,k==='msg'?120:80);   /* 짧은 stage/source도 보존. 내용·토큰은 호출부에서 제외한다. */
+    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage|name|msg|ua)$/i.test(k))out[String(k).slice(0,32)]=v.slice(0,k==='msg'?120:(k==='ua'?140:80));   /* 짧은 stage/source도 보존. 내용·토큰은 호출부에서 제외한다. 3.036 — ua(기기 UA 앞 140자: 멈춘 뒤 다시 연 기록) */
   });
   return out;
 }
@@ -549,8 +549,8 @@ function eventTrack(name,opts){
     var s=getSess(); if(!s||!s.uid)return;
     var status=String(opts.status||'ok').toLowerCase().replace(/[^a-z]/g,'').slice(0,12)||'ok';
     var code=String(opts.error_code||'').replace(/[^a-zA-Z0-9_.:-]/g,'').slice(0,80);
-    /* 같은 오류가 반복 폭주해도 5분에 한 번만 기록 */
-    if(status==='error'){
+    /* 같은 오류가 반복 폭주해도 5분에 한 번만 기록. 3.036 — opts.always 는 비껴간다(boot_after_crash: 부팅마다 한 줄이 곧 기록 — 호출부가 탭마다 시간당 40건으로 막는다) */
+    if(status==='error'&&opts.always!==true){
       var seenKey=eventUserKey(EVENT_SEEN),sk=ev+'|'+code, seen={};try{seen=JSON.parse(localStorage.getItem(seenKey)||'{}')||{};}catch(_){}
       if(seen[sk]&&Date.now()-seen[sk]<300000)return;
       seen[sk]=Date.now();Object.keys(seen).forEach(function(k){if(Date.now()-seen[k]>86400000)delete seen[k];});
@@ -993,6 +993,7 @@ function signIn(provider){
   var back=w.location.origin+w.location.pathname;
   try{ w.sessionStorage.setItem('ps_oauth_provider',provider); }catch(_){}
   /* Google 브라우저 세션이 남아 있어도 로그인할 계정을 직접 고를 수 있게 한다. */
+  try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){}   /* 3.036 — 로그인으로 떠나는 것은 «죽음»이 아니다 */
   w.location.href=BASE+'/auth/v1/authorize?provider='+encodeURIComponent(provider)+'&redirect_to='+encodeURIComponent(back)+(provider==='google'?'&prompt=select_account':'');
   return true;
 }
@@ -1016,7 +1017,7 @@ function linkIdentity(provider){
     /* 연결 URL도 요청한 계정의 응답이다. 로그아웃/다른 로그인 뒤에는 이동하거나
        새 계정 위에 옛 연결 실패 문구를 표시하지 않는다. */
     if(!sessionIdentityCurrent(request))return;
-    if(r.ok&&j&&typeof j.url==='string'&&j.url){ w.location.href=j.url; return; }
+    if(r.ok&&j&&typeof j.url==='string'&&j.url){ try{ if(w.__psBootMarkDone)w.__psBootMarkDone(); }catch(_){} w.location.href=j.url; return; }
     var raw=String((j&&(j.error_description||j.msg||j.message||j.error))||('연결 실패 '+r.status));
     var msg=raw;
     if(/already|exist/i.test(raw)) msg='이 '+(provider==='kakao'?'카카오':'Google')+' 로그인은 이미 다른 계정에 연결돼 있어요 — 그 계정의 팀에는 초대 코드로 합류하세요';
@@ -1169,6 +1170,7 @@ function resumeOAuthCallback(){
   if(!oauthCallbackPending())return false;
   if(consumeHash({deferIdentity:true})){
     setDataReady(false);
+    try{ if(window.__psBootMarkDone)window.__psBootMarkDone(); }catch(_){}   /* 3.036 */
     location.reload();
   }
   return true;
@@ -8752,6 +8754,7 @@ function switchWorkspaceCore(wid, skipSave){
       localStorage.setItem('ps_ws_switched_v1',JSON.stringify({from:_fr,to:_to,at:Date.now()}));
     }catch(_){}
     markSelfReload();
+    try{ if(window.__psBootMarkDone)window.__psBootMarkDone(); }catch(_){}   /* 3.036 */
     location.reload();   /* 오버레이는 reload로 사라짐 */
   });
   }).catch(function(e){
