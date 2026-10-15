@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import {startFixture,openApp} from '../fixtures/team-app.mjs';
+import {startFixture,openApp,build} from '../fixtures/team-app.mjs';
 // 3.004 — 미리 띄우기는 기기를 본다. 데스크톱은 탭 아홉을 전부(2.252 그대로), 폰·아이패드는 이 기기에서 최근에 연 탭만(처음이면 팀 허브와 일정).
 // 미리 띄우지 않은 탭도 누르면 열리고, 그 탭에 건네는 말(공용어의 «뒤로» 이름)은 뜬 뒤에 닿는다.
 // 3.034 — 폰·아이패드는 그중 최근 둘까지. 보이던 채 강제 종료된 뒤의 부팅은 셸 안전장치가 가볍게(미리 띄우기 없음 · 작전판 평면).
+// 3.036 — 가벼운 부팅마저 죽으면 안전 모드: 작전판을 미리 열지 않고 안내 판(«작전판 열기» · «평소대로 열기»), 서버에 boot_after_crash(멈춘 뒤 다시 연 기록).
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop',lean=size!=='desktop';
 const ALL=['fAnalysis','fBoard','fComm','fGameModel','fIdp','fLearning','fProcess','fScout','fScouting','fTerms'];
 const fx=await startFixture(),browsers={};
@@ -56,7 +57,7 @@ try{
     assert.deepEqual(await loaded(),['fBoard'],'가벼운 부팅: 작전판만');
     assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),false,'작전판은 이번만 평면');
     assert.equal(await page.evaluate(()=>localStorage.getItem('ps_board_tilt3d')),'1','3D 설정은 그대로');
-    assert.match(await page.evaluate(()=>sessionStorage.getItem('ps_boot_alive_v1')||''),/^\d+\|1$/,'이번 부팅도 지켜본다(다 떴다)');
+    assert.match(await page.evaluate(()=>sessionStorage.getItem('ps_boot_alive_v1')||''),/^\d+\|1\|(?:load|sync|t10|t30|t60)w0\|1$/,'이번 부팅도 지켜본다(다 떴다) — 3.036: 단계 · 미리 띄운 수 0 · 안전 단계 1');
     // 정상으로 다시 열면(pagehide 가 표시를 지운다) 다시 평소 부팅 — 최근 둘 · 3D 그대로
     await page.reload();
     await settle();
@@ -64,6 +65,62 @@ try{
     bf=await (await page.waitForSelector('#fBoard')).contentFrame();
     assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),true,'다음 부팅은 3D 그대로');
     assert.deepEqual(await loaded(),['fBoard','fIdp','fLearning'],'다음은 평소처럼 최근 둘');
+    assert.equal(await page.evaluate(()=>window.__psSafeLevel),0);
+    // 3.036 — 가벼운 부팅(안전 단계 1, 단계 t10 까지 갔다)마저 보이던 채 죽었다 → 안전 모드(단계 2):
+    // 작전판을 미리 열지 않고 안내 판 · 셸은 작전판을 기다리지 않고 바로 보인다 · 다른 탭은 누르면 열린다 · 서버에 boot_after_crash · «작전판 열기»로 작전판(이번만 평면)
+    await context.addInitScript(()=>{ if(window.top!==window)return; try{ if(sessionStorage.getItem('ps_test_crash2')!=='1')return; sessionStorage.removeItem('ps_test_crash2');
+      sessionStorage.setItem('ps_boot_alive_v1',(Date.now()-8000)+'|1|t10|1'); }catch(_){} });
+    const evFrom=fx.calls.length;
+    await page.evaluate(()=>{ sessionStorage.setItem('ps_test_crash2','1'); });
+    await page.reload();
+    await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
+    assert.equal(await page.evaluate(()=>window.__psSafeLevel),2,'가벼운 부팅이 죽은 것을 안다');assert.equal(await page.evaluate(()=>window.__psSafeBoot),true);
+    assert.equal(await page.evaluate(()=>document.getElementById('fBoard').getAttribute('src')),null,'안전 모드: 작전판을 미리 열지 않는다');
+    assert.equal(await page.locator('#psSafePanel').isVisible(),true,'안내 판');assert.equal(await page.locator('#psSafePanel h2').innerText(),'안전 모드로 열었어요');
+    assert.equal(await page.locator('#psBootRetry').isVisible(),false,'«다시 열기»는 뜨지 않는다');
+    await page.waitForTimeout(7600);
+    assert.deepEqual(await loaded(),[],'안전 모드: 아무 탭도 미리 띄우지 않는다');
+    assert.equal(await page.evaluate(()=>document.getElementById('fBoard').getAttribute('src')),null,'7초 뒤에도 작전판은 그대로 닫혀 있다');
+    await page.evaluate(()=>window.__psShowApp('community'));
+    const c2=await (await page.waitForSelector('#fComm')).contentFrame();await c2.waitForSelector('#prSeg');
+    assert.equal(await page.locator('#psSafePanel').isVisible(),false,'다른 탭은 제 프레임을 보인다');
+    await page.evaluate(()=>window.__psShowApp('board'));
+    assert.equal(await page.locator('#psSafePanel').isVisible(),true,'작전판 탭으로 오면 다시 안내 판');
+    for(let i=0;i<60&&!fx.calls.slice(evFrom).some(c=>c.p==='/rest/v1/ps_events'&&JSON.stringify(c.body||'').includes('boot_after_crash'));i++)await page.waitForTimeout(250);
+    const crash=fx.calls.slice(evFrom).flatMap(c=>c.p==='/rest/v1/ps_events'&&Array.isArray(c.body)?c.body:[]).filter(r=>r.event_name==='boot_after_crash');
+    assert.equal(crash.length,1,'멈춘 뒤 다시 연 기록 한 건');const ev=crash[0];
+    assert.deepEqual([ev.status,ev.feature,ev.error_code,ev.device,ev.app_version],['error','app','L2','tablet',build]);
+    assert.deepEqual([ev.meta.stage,ev.meta.loaded,ev.meta.prevLevel,ev.meta.level,ev.meta.w,ev.meta.h,ev.meta.standalone],['t10',1,1,2,1100,820,false]);
+    assert.ok(ev.meta.age>=8&&ev.meta.age<60,'죽은 표시 뒤 초: '+ev.meta.age);assert.match(ev.meta.ua,/^Mozilla\/5\.0 \(iPad/);assert.equal(typeof ev.meta.dpr,'number');
+    await page.locator('#psSafeOpen').click();
+    assert.equal(await page.locator('#psSafePanel').isVisible(),false,'단추를 누르면 판이 내려간다');
+    bf=await (await page.waitForSelector('#fBoard[src]')).contentFrame();
+    await bf.waitForFunction(()=>typeof renderTokens==='function'&&typeof window.__setTilt==='function'&&window.__boardReady!==false,null,{timeout:30000});
+    await page.waitForTimeout(800);
+    assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),false,'단추로 연 작전판은 이번만 평면');
+    assert.equal(await page.evaluate(()=>localStorage.getItem('ps_board_tilt3d')),'1','3D 설정은 그대로');
+    assert.deepEqual(await loaded(),['fBoard','fComm']);
+    assert.match(await page.evaluate(()=>sessionStorage.getItem('ps_boot_alive_v1')||''),/^\d+\|1\|(?:board|boardload|sync|load|t10|t30|t60)w0\|2$/,'표시: 안전 단계 2');
+    // 정상으로 다시 열면 평소 부팅(단계 0) — 3D 그대로 · 최근 둘(안전 모드에서 연 커뮤니티가 최근)
+    await page.reload();
+    await settle();
+    assert.equal(await page.evaluate(()=>window.__psSafeLevel),0);assert.equal(await page.evaluate(()=>window.__psSafeBoot),false);
+    assert.equal(await page.locator('#psSafePanel').isVisible(),false);
+    bf=await (await page.waitForSelector('#fBoard')).contentFrame();
+    assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),true,'다음 부팅은 3D 그대로');
+    assert.deepEqual(await loaded(),['fBoard','fComm','fLearning'],'평소처럼 최근 둘');
+    // «평소대로 열기» = app.html?safe=0 — 표시를 지우고 평소 부팅(손 실험용, 주소는 그대로 둔다)
+    await page.evaluate(()=>{ sessionStorage.setItem('ps_test_crash2','1'); });
+    await page.reload();
+    await page.waitForFunction(()=>!document.body.classList.contains('ps-booting'));
+    assert.equal(await page.evaluate(()=>window.__psSafeLevel),2);
+    await page.locator('#psSafeNormal').click();
+    await page.waitForURL(/safe=0/);
+    await settle();
+    assert.equal(await page.evaluate(()=>[window.__psSafeLevel,window.__psSafeBoot,location.search].join()),'0,false,?safe=0');
+    bf=await (await page.waitForSelector('#fBoard')).contentFrame();
+    assert.equal(await bf.evaluate(()=>document.body.classList.contains('bc-tilt3d')),true,'평소대로: 3D');
+    assert.equal(await page.locator('#psSafePanel').isVisible(),false);
   }
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');

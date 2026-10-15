@@ -486,7 +486,7 @@ function safeEventMeta(meta){
   Object.keys(meta).slice(0,12).forEach(function(k){
     var v=meta[k];
     if(typeof v==='number'||typeof v==='boolean')out[String(k).slice(0,32)]=v;
-    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage|name|msg)$/i.test(k))out[String(k).slice(0,32)]=v.slice(0,k==='msg'?120:80);   /* 짧은 stage/source도 보존. 내용·토큰은 호출부에서 제외한다. */
+    else if(typeof v==='string'&&/^(code|reason|mode|format|source|stage|name|msg|ua)$/i.test(k))out[String(k).slice(0,32)]=v.slice(0,k==='msg'?120:(k==='ua'?140:80));   /* 짧은 stage/source도 보존. 내용·토큰은 호출부에서 제외한다. 3.036 — ua(기기 UA 앞 140자: 멈춘 뒤 다시 연 기록) */
   });
   return out;
 }
@@ -549,8 +549,8 @@ function eventTrack(name,opts){
     var s=getSess(); if(!s||!s.uid)return;
     var status=String(opts.status||'ok').toLowerCase().replace(/[^a-z]/g,'').slice(0,12)||'ok';
     var code=String(opts.error_code||'').replace(/[^a-zA-Z0-9_.:-]/g,'').slice(0,80);
-    /* 같은 오류가 반복 폭주해도 5분에 한 번만 기록 */
-    if(status==='error'){
+    /* 같은 오류가 반복 폭주해도 5분에 한 번만 기록. 3.036 — opts.always 는 비껴간다(boot_after_crash: 부팅마다 한 줄이 곧 기록 — 호출부가 탭마다 시간당 40건으로 막는다) */
+    if(status==='error'&&opts.always!==true){
       var seenKey=eventUserKey(EVENT_SEEN),sk=ev+'|'+code, seen={};try{seen=JSON.parse(localStorage.getItem(seenKey)||'{}')||{};}catch(_){}
       if(seen[sk]&&Date.now()-seen[sk]<300000)return;
       seen[sk]=Date.now();Object.keys(seen).forEach(function(k){if(Date.now()-seen[k]>86400000)delete seen[k];});

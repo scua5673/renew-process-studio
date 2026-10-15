@@ -57,7 +57,7 @@ export async function startFixture(opts={}){
     if(!uid&&req.method==='GET'&&url.pathname==='/rest/v1/ps_community')return {status:200,headers,body:'[]'};
     if(!uid&&url.pathname==='/rest/v1/ps_err'){calls.push({step,m:req.method,p:url.pathname,body:JSON.stringify(req.body).slice(0,300)});return {status:201,headers,body:''};}
     if(!uid){calls.push({step,m:req.method,p:url.pathname,unauth:1});return {status:401,headers,body:'{}'};}
-    calls.push({step,t:Date.now(),m:req.method,p:url.pathname,q:url.search.slice(0,200)});
+    calls.push({step,t:Date.now(),m:req.method,p:url.pathname,q:url.search.slice(0,200),...(url.pathname==='/rest/v1/ps_events'?{body:req.body}:{})});   /* 3.036 — 이벤트 행은 본문도(boot_after_crash 시험) */
     let body=[];
     if(url.pathname==='/auth/v1/user')body={id:uid,email:'a@example.invalid'};
     else if(url.pathname.endsWith('/ps_bootstrap'))body=teams;
