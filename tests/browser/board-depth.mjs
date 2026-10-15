@@ -109,6 +109,7 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       __setNameSize('l');out.fk=font()/f0;__setNameStyle('pill');out.pill=!!g().querySelector('.ps-chip-namebg');
       __setNameStyle('text');out.pillText=!!g().querySelector('.ps-chip-namebg');__setNameSize('m');__setNameStyle('auto');
       const img=()=>document.querySelector('#tiltSurface img.tilt-stadium'),xml=()=>decodeURIComponent(img().src.slice(img().src.indexOf(',')+1));
+      try{const p=document.getElementById('cmd-board-settings-pop');if(p&&p.__psSelectTab)p.__psSelectTab('view');}catch(_){}   /* 3.036 — 3D 줄은 «내 화면» 탭에 산다(기본 탭은 운동장) */
       const row=()=>getComputedStyle(document.getElementById('tiltCamRow')).display;out.rowOn=row();
       out.cam={};for(const c of ['low','mid','high']){__setTilt3dOpt('cam',c);out.cam[c]={ax:document.documentElement.style.getPropertyValue('--tilt-ax'),tf:getComputedStyle(svg).transform};}
       __setTilt3dOpt('cam','mid');

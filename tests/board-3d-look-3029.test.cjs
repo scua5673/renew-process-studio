@@ -36,7 +36,8 @@ test('3.029 mood is a device option with night (today\'s look) as the default, a
   assert.match(board,/<div class="menurow ps-tilt-row" id="tiltBrandRow"><span class="menulbl">팀 브랜딩<\/span>/);
   assert.match(board,/document\.querySelectorAll\("#tiltMoodSeg button\[data-mood\]"\)\.forEach\(function\(b\)\{ var on=b\.getAttribute\("data-mood"\)===o\.mood;/);
   assert.match(board,/closest\("#tiltCamSeg button\[data-cam\],#tiltDecoSeg button\[data-deco\],#tiltMoodSeg button\[data-mood\],#tiltBrandSeg button\[data-brand\]"\)/);
-  assert.match(board,/\["view","화면",\["보드 보기","카메라","경기장","광고판","분위기","팀 브랜딩"\]\],\["view","분석",\["분석 그래픽"\]\],/,'settings sections');
+  assert.match(board,/\["view","3D 경기장",\["tiltCamSeg","tiltDecoSeg","tiltAdInput","tiltMoodSeg","tiltBrandSeg"\],"ps-tilt-row"\]/,'settings sections (3.036: 3D rows under «내 화면», analysis under «선수 표시»)');
+  assert.match(board,/\["look","분석",\["analysisSeg"\]\]/);
 });
 
 test('3.029 analysis graphics live on the board (snapshot), under the drawings, and recompute with the players',()=>{
