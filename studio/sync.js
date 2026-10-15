@@ -10782,6 +10782,7 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
      이 기기가 **왜** 못 올리는지/언제 받았는지를 한 장으로. 2.445 가 대기 항목에 적어 두는
      이유(lastError·roundError)를 처음으로 사람 앞에 꺼낸다 — 추측 대신 증거. */
   diagLog:function(){ return SYNC_DIAG_LOG.slice(); },   /* 2.798 */
+  keyLabel:keyLabel,   /* 3.040 — 저장 공간 줄의 «큰 항목» 이름(storage.js 에 이름이 없는 키) */
   /* 2.916 — 지난 회차 서버 목록에 그 키가 있었나. 모르면 null(같은 워크스페이스·10분 안의 목록만 믿는다) */
   serverHasKey:function(k){ var L=lastServerKeys; if(!L||L.wid!==activeWs()||Date.now()-L.at>600000)return null; return !!L.keys[String(k||'')]; },
   diag:function(){
