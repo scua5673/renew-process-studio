@@ -1,5 +1,5 @@
 'use strict';
-/* 3.038 — 앱 설정 › 기기 › 저장 공간 줄이 «큰 항목 5.0MB» 크기만 말해 무엇을 줄일지 몰랐다(사용자 «이름도 보이게»).
+/* 3.040 — 앱 설정 › 기기 › 저장 공간 줄이 «큰 항목 5.0MB» 크기만 말해 무엇을 줄일지 몰랐다(사용자 «이름도 보이게»).
    이제 «큰 항목 선수단·스카우트 5.0MB» + (주황 · 빨강일 때) 줄이는 길 한 줄. 안전 정리 결과 창도 같은 이름. */
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
@@ -10,7 +10,7 @@ const R=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 const app=R('studio/app.html'),storage=R('studio/storage.js'),sync=R('studio/sync.js');
 function part(src,start,end){const a=src.indexOf(start),b=src.indexOf(end,a+start.length);assert.ok(a>=0&&b>a,start);return src.slice(a,b);}
 const labels=part(storage,'  var SPACE_LABEL={','  /* 비동기 본 저장 전에');
-const usage=part(app,"  function mb(n){return (Math.max(0,+n||0)/1048576).toFixed(n>=10485760?0:1)+'MB';}\n  /* 3.038","  window.__psUpdateStorageUsage=updateStorageUsage;");
+const usage=part(app,"  function mb(n){return (Math.max(0,+n||0)/1048576).toFixed(n>=10485760?0:1)+'MB';}\n  /* 3.040","  window.__psUpdateStorageUsage=updateStorageUsage;");
 const MB=1048576;
 function run({local,largest,syncLabels={}}){
   const el={style:{},children:[],_t:'',set textContent(v){this._t=v;this.children=[];},get textContent(){return this._t+this.children.map(c=>c.textContent).join('');},

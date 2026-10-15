@@ -11,7 +11,7 @@ const suites={
   board:['gamemodel-sync','board-depth','board-color-palette','vault-board-isolation','board-fmstadio','board-fmstadio2','board-savebar','board-vault-save','vault-folder-delete','vault-folder-visibility','team-library-load','gamemodel-vault-import','board-new-board','board-settings-strip','board-look-per-work','board-3d-default','board-3d-look','board-3d-marquee','board-3d-ipad-safe','board-editor-flat','board-settings-hierarchy'],
   board2:['anim-erase-export','anim-export-once','meeting-names-video','meeting-upgrade','gamemodel-anim','gamemodel-attach-pages','board-feedback-2975','anim-all-pages','anim-export-fit','anim-orient','patternbook','shaper-ball','phone-page-strip','rondo-grid'],
   identity:['session-team-picker','month-quick-detail','admin-content-play','admin-user-made','admin-safety','board-boot','cache-wait','admin-errors','service-worker-update','update-notice','account-team-switch','mobile-oauth-recovery','schedule-phone','phone-app-more','board-settings-manual','year-weekdays'],
-  storage:['storage-safety','library-insert-ack','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery','letter-pack','community-process','community-elmiha','vault-examples','warm-tabs','thumb-diet'],
+  storage:['storage-safety','library-insert-ack','team-library','private-board-isolation','roster-main-save','autosave-journal-recovery','letter-pack','community-process','community-elmiha','community-board','vault-examples','warm-tabs','thumb-diet'],
   idp:['match-board-tools','match-ob-tray','match-board-vault','match-board-show','availability','idp-recovery','idp-story-dedup','support','squad-phone','scouting-integration','review-training','idp-coach-goals','team-heads'],
   /* 3.012 — 보드 끌기 성능은 WebKit 에서 혼자 149~223초(테스트 하나 240초 한도)였다. 느린 러너 하나가 board 잡 전체와 배포(release-gate)를 막지 않게
      자기 묶음으로 떼고, 이 테스트만 한도를 360초로 둔다(PER_TEST_MS) — 묶음이 혼자라 잡은 7분 안쪽, Netlify 의 12분 대기 안이다. */
@@ -20,7 +20,7 @@ const suites={
      비교하는 일회용 점검이라 넣지 않는다). Chromium 실측 합 7분 남짓이라 둘로 나눠 다른 묶음과 나란히 돈다 — entry: 진입·계정·안내 / records: 기록·저장·선수단·훈련.
      first-work 는 guidance.mjs 를 import 만 하는 옛 이름이라 넣지 않는다(같은 시험이 두 번 돈다). */
   entry:['admin-logout-handoff','admin-operations','admin-support','autosave-status','guidance','ipad-team-navigation','mobile-oauth','oauth-same-document','quiet-entry'],
-  records:['idp-player-matches','idp-start','match-lineup','personal-large-upload','roster-history-review','roster-projection','roster-recovery','save-status-layout','storage-commit','team-position-delete','training-context','training-dock-layout','squad-cards']   /* 3.038 — 선수단 작전판 포메이션 바꾸기 · 이미 어긋난 팀 */
+  records:['idp-player-matches','idp-start','match-lineup','personal-large-upload','roster-history-review','roster-projection','roster-recovery','save-status-layout','storage-commit','team-position-delete','training-context','training-dock-layout','squad-cards']   /* 3.040 — 선수단 작전판 포메이션 바꾸기 · 이미 어긋난 팀 */
 };
 const PER_TEST_MS={'board-drag-performance':360000};   /* 3.012 — 한 테스트 한도(기본 240초)의 예외. 위 boardperf 참고 */
 /* 3.012 — 엔진과 상관없이 Chromium 을 직접 띄우는 시험(PS_BROWSER_ENGINE 을 읽지 않는다). WebKit 잡에서는 Chrome 경로가 없어 바로 죽거나
