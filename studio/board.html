@@ -4989,6 +4989,16 @@ var _tokHitPx=0;
 function _tokHitR(g){ try{ if(!_tokHitPx){ var m=tokenLayer&&tokenLayer.getScreenCTM&&tokenLayer.getScreenCTM(); _tokHitPx=m?Math.hypot(m.a,m.b):0; }
     var k=/scale\(([\d.]+)/.exec(g.getAttribute("transform")||""), s=k?+k[1]:1, px=_tokHitPx*s;
     return Math.round(Math.max(21,Math.min(160,px>0?23/px:70))); }catch(_){ return 70; } }
+/* 3.041 — 그릴 때 잰 배율이 잠깐의 모양(선택 패널 · 화면 전환이 움직이는 중)일 수 있다 — 아이패드에서 잡히는 원이 6배(r 160)로 커져 회전 핸들 · 옆 선수를 덮었다.
+   자리가 잡힌 뒤(다음 프레임 · 0.3 · 0.9초) · 창 크기가 바뀌면 다시 재서 반지름만 고친다. 배율이 같으면 아무것도 안 한다 */
+function _tokHitRefresh(){ try{ if(!tokenLayer||!tokenLayer.querySelector("circle.tok-hit"))return; var m=tokenLayer.getScreenCTM&&tokenLayer.getScreenCTM(), px=m?Math.hypot(m.a,m.b):0;
+    if(!px||Math.abs(px-_tokHitPx)<1e-3)return; _tokHitPx=px;
+    [].forEach.call(tokenLayer.querySelectorAll("circle.tok-hit"),function(c){ if(c.parentNode)c.setAttribute("r",_tokHitR(c.parentNode)); }); }catch(_){} }
+var _tokHitT=[];
+function _tokHitLater(){ try{ _tokHitT.forEach(clearTimeout); _tokHitT=[setTimeout(_tokHitRefresh,300),setTimeout(_tokHitRefresh,900)]; requestAnimationFrame(_tokHitRefresh); }catch(_){} }
+try{ window.addEventListener("resize",_tokHitLater); }catch(_){}
+/* 3.041 — 회전 핸들은 선수 층 위(_renderRotHandle 의 뜻). renderTokens · renderDrawings 가 선수 층을 맨 뒤로 다시 붙이면서 핸들을 덮고 있었다 */
+function _rotHandleOnTop(){ try{ var h=world&&world.querySelector("#rotHandle"); if(h&&h.parentNode===tokenLayer.parentNode)h.parentNode.appendChild(h); }catch(_){} }
 function tokenTransform(p){const _ed=(document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1;const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p);
   /* 세로 피치의 부모 world 회전과 반대 방향으로 토큰을 보정해 숫자·유니폼을 항상 정방향 유지.
      spFlip=true(골대 위)는 부모가 +90°이므로 -90°, 골대 아래는 부모가 -90°이므로 +90°. */
@@ -6494,7 +6504,8 @@ function renderTokens(){try{applyLookAt();}catch(_){} _tokHitPx=0; tokenLayer.in
   try{renderAnalysis();}catch(_){}   /* 3.029 — 선수가 움직이면 분석 그래픽도 다시 */
   if(rosterOpen){const ae=document.activeElement;if(!(ae&&ae.classList&&(ae.classList.contains("rs-name")||ae.classList.contains("rs-num"))))renderRoster();}
   if(typeof updateEmptyHint==="function")updateEmptyHint();
-  if(typeof tokenLayer!=="undefined"&&tokenLayer&&tokenLayer.parentNode)tokenLayer.parentNode.appendChild(tokenLayer);try{updateMotionPaths();}catch(_){}try{boardSaveLive();}catch(_){}}
+  _tokHitLater();
+  if(typeof tokenLayer!=="undefined"&&tokenLayer&&tokenLayer.parentNode){tokenLayer.parentNode.appendChild(tokenLayer);_rotHandleOnTop();}try{updateMotionPaths();}catch(_){}try{boardSaveLive();}catch(_){}}
 function csHintSeen(k){try{return localStorage.getItem(k)==="1";}catch(_){return false;}}
 function csHintMark(k){try{localStorage.setItem(k,"1");}catch(_){}}
 let __ehWasShown=false;
@@ -6974,7 +6985,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
   return g;}
 function renderDrawings(){[...drawLayer.children].forEach(c=>c.remove());
   state.drawings.forEach(d=>drawLayer.appendChild(drawingEl(d)));
-  if(typeof tokenLayer!=="undefined"&&tokenLayer&&tokenLayer.parentNode)tokenLayer.parentNode.appendChild(tokenLayer);try{updateMotionPaths();}catch(_){}try{boardSaveLive();}catch(_){}}
+  if(typeof tokenLayer!=="undefined"&&tokenLayer&&tokenLayer.parentNode){tokenLayer.parentNode.appendChild(tokenLayer);_rotHandleOnTop();}try{updateMotionPaths();}catch(_){}try{boardSaveLive();}catch(_){}}
 let _bTxtEd=null;
 /* ── 텍스트 박스: 측정·줄바꿈·크기 ── */
 var _txCtx=null;
@@ -18234,7 +18245,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       +"#mpPartsOv .btn.primary{background:var(--blue,var(--ps-navy,#14213D));color:#fff;border-color:var(--blue,var(--ps-navy,#14213D));}"
       +"#mpPartsOv .btn.primary:disabled{opacity:.45;cursor:default;}"
       +"body.vc-match #ksTop .kssave{display:none!important;}"   /* 자동 저장이고 «완료»가 마무리한다 — 파란 버튼 둘이 다투지 않게 */
-      +"@media(max-width:600px){body.vc-match #vCreateBar{flex-wrap:nowrap;gap:6px;}body.vc-match #vCreateBar .btn{padding:7px 10px;flex:0 0 auto;}body.vc-match #vCreateTitle{flex:1 1 auto;min-width:0;font-size:13px;}body.vc-match #vCreateBar .vcb-sp{display:none;}#mpPartsOv{align-items:flex-end;padding:0;}#mpPartsOv .mp-card{border-radius:18px 18px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom));}}"
+      +"@media(max-width:600px){body.vc-match #vCreateBar{flex-wrap:nowrap;gap:6px;padding:5px 10px;}body.vc-match #vCreateBar .btn{padding:7px 10px;flex:0 0 auto;}body.vc-match #vCreateTitle{flex:1 1 auto;min-width:0;font-size:13px;}body.vc-match #vCreateBar .vcb-sp{display:none;}#mpPartsOv{align-items:flex-end;padding:0;}#mpPartsOv .mp-card{border-radius:18px 18px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom));}}"
       +"body.vcreating #boardView{padding-top:56px;box-sizing:border-box;}"
       +"#vCreateChooser{position:fixed;inset:0;z-index:10020;background:rgba(8,12,18,.58);display:flex;align-items:center;justify-content:center;padding:18px;font-family:inherit;}"
       +"#vCreateChooser .vcc-card{width:min(720px,96vw);max-height:min(760px,92dvh);overflow:auto;box-sizing:border-box;background:var(--panel,#fff);color:var(--txt,#14161A);border:1px solid var(--line,#E3E6EA);border-radius:20px;box-shadow:0 28px 80px rgba(0,0,0,.4);padding:22px;}"
