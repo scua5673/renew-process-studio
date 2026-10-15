@@ -14,7 +14,7 @@ test('3.029 mood is a device option with night (today\'s look) as the default, a
   assert.match(board,/if\(n\.mood!==o\.mood\)\{ try\{ if\(document\.body\.classList\.contains\("bc-tilt3d"\)\)renderTokens\(\); \}catch\(_\)\{\} \}/,'chips are rebuilt so their shadows follow');
   /* stadium picture */
   assert.match(board,/md=TILT_MOOD\[t3\.mood\]\|\|TILT_MOOD\.night,brand=!!t3\.brand,tname=brand\?tiltTeamName\(\):"",tcol=brand\?String\(teamHex\("blue"\)\|\|""\):"",ad=String\(t3\.ad\|\|""\)\.trim\(\)\|\|tname\|\|"PROCESS STUDIO"/);
-  assert.match(board,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad,md\.key,brand\?1:0,tcol\]\.join\('\|'\);/,'mood and branding redraw the picture');
+  assert.match(board,/const sig=\[wt,L,R,T,B,goals\?sp\.goal:0,turf\?1:0,deco,ad,md\.key,brand\?1:0,tcol(?:,bleed\?1:0)?\]\.join\('\|'\);/,'mood and branding redraw the picture');
   assert.match(board,/fill="'\+md\.ga\+'"\/><rect width="'\+f\(5\*m\)\+'" height="'\+f\(10\*m\)\+'" fill="'\+md\.gb\+'"\/>/,'grass tone');
   assert.match(board,/stop-opacity="'\+md\.vig\+'"\/><\/radialGradient>'/,'outer darkness');
   assert.match(board,/<radialGradient id="psStCone">/);assert.match(board,/<clipPath id="psStPitchClip"><path d="'\+rr\(0\)\+'"\/><\/clipPath>/,'light cones stay on the grass');

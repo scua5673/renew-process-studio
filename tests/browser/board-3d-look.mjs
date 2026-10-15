@@ -76,7 +76,7 @@ try{
     return {mood:document.body.getAttribute('data-tilt-mood'),sig:st.sig,cone:st.svg.includes('psStCone')&&/clip-path="url\(#psStPitchClip\)"/.test(st.svg),shadows:document.querySelectorAll('#tokenLayer .ps-chip-shadow').length,chips:document.querySelectorAll('#tokenLayer .ps-chip').length,
       moodLayer:(function(){const m=document.getElementById('tiltMood');return m?getComputedStyle(m).display:'';})(),iosSafari:CSS.supports('-webkit-touch-callout','none'),stored:JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'{}').mood,pressed:[...document.querySelectorAll('#tiltMoodSeg button')].map(b=>b.getAttribute('aria-pressed')).join('')};
   });
-  assert.equal(night.mood,'night','today\'s look is the default');assert.match(night.sig,/\|night\|0\|$/);assert.ok(night.cone,'floodlight cones on the grass');
+  assert.equal(night.mood,'night','today\'s look is the default');assert.match(night.sig,/\|night\|0\|\|0$/);assert.ok(night.cone,'floodlight cones on the grass');
   assert.equal(night.chips,22);assert.equal(night.shadows,88,'four shadows per chip under the masts');assert.equal(night.moodLayer,night.iosSafari?'none':'block','3.033 — iPhone/iPad Safari skips the stage-sized light layer (memory)');assert.equal(night.stored,undefined,'nothing stored until chosen');
   assert.equal(night.pressed,'falsefalsetrue');
   const day=await page.evaluate(async()=>{
@@ -84,13 +84,13 @@ try{
     return {mood:document.body.getAttribute('data-tilt-mood'),sig:st.sig,cone:st.svg.includes('psStCone')&&/clip-path="url\(#psStPitchClip\)"/.test(st.svg),lampDim:/fill="url\(#psStLamp\)" fill-opacity="0?\.2"/.test(st.svg),shadows:document.querySelectorAll('#tokenLayer .ps-chip-shadow').length,
       bg:getComputedStyle(document.getElementById('boardStage')).backgroundColor,stored:JSON.parse(localStorage.getItem('ps_tilt3d_opts_v1')||'{}').mood,pressed:[...document.querySelectorAll('#tiltMoodSeg button')].map(b=>b.getAttribute('aria-pressed')).join('')};
   });
-  assert.equal(day.mood,'day');assert.match(day.sig,/\|day\|0\|$/,'the stadium is redrawn');assert.equal(day.cone,false,'no floodlights by day');assert.ok(day.lampDim,'roof lamps off');
+  assert.equal(day.mood,'day');assert.match(day.sig,/\|day\|0\|\|0$/,'the stadium is redrawn');assert.equal(day.cone,false,'no floodlights by day');assert.ok(day.lampDim,'roof lamps off');
   assert.equal(day.shadows,22,'one short shadow per chip');assert.equal(day.bg,'rgb(60, 71, 83)','a lighter stage');assert.equal(day.stored,'day','remembered on this device');assert.equal(day.pressed,'truefalsefalse');
   const dusk=await page.evaluate(async()=>{
     window.__setTilt3dOpt('mood','dusk');await __sleep(800);const st=__stadium();
     return {sig:st.sig,warm:/fill="#ff9a3c" fill-opacity="0?\.12"/.test(st.svg),shadows:document.querySelectorAll('#tokenLayer .ps-chip-shadow').length,long:!!document.querySelector('#tokenLayer .ps-chip-shadow[transform="rotate(12)"]'),bg:getComputedStyle(document.getElementById('boardStage')).backgroundColor};
   });
-  assert.match(dusk.sig,/\|dusk\|0\|$/);assert.ok(dusk.warm,'a sunset wash');assert.equal(dusk.shadows,22);assert.ok(dusk.long,'one long shadow');assert.equal(dusk.bg,'rgb(36, 28, 39)');
+  assert.match(dusk.sig,/\|dusk\|0\|\|0$/);assert.ok(dusk.warm,'a sunset wash');assert.equal(dusk.shadows,22);assert.ok(dusk.long,'one long shadow');assert.equal(dusk.bg,'rgb(36, 28, 39)');
 
   // ③ 팀 브랜딩 — 광고판 = 팀 이름 · 관중은 팀 색 · 직접 적은 문구가 우선 · 끄면 PROCESS STUDIO
   const brand=await page.evaluate(async()=>{
@@ -100,10 +100,10 @@ try{
     window.__setTilt3dOpt('ad','');window.__setTilt3dOpt('brand','0');await __sleep(800);st=__stadium();r.off=(st.svg.match(/PROCESS STUDIO/g)||[]).length;r.offSig=st.sig;
     return r;
   });
-  assert.equal(brand.team,'프로세스 FC');assert.match(brand.sig,/\|프로세스 FC\|night\|1\|#1a2f5c$/,'the picture carries the name and the team colour');
+  assert.equal(brand.team,'프로세스 FC');assert.match(brand.sig,/\|프로세스 FC\|night\|1\|#1a2f5c\|0$/,'the picture carries the name and the team colour');
   assert.ok(brand.ads>=20&&brand.noDefault,'every ad panel reads the team name '+brand.ads);assert.equal(brand.stored,true);assert.equal(brand.pressed,'falsetrue');
   assert.ok(brand.custom>=20&&brand.customNoTeam,'a custom ad text wins over the team name');
-  assert.ok(brand.off>=20,'off → PROCESS STUDIO again');assert.match(brand.offSig,/\|PROCESS STUDIO\|night\|0\|$/);
+  assert.ok(brand.off>=20,'off → PROCESS STUDIO again');assert.match(brand.offSig,/\|PROCESS STUDIO\|night\|0\|\|0$/);
 
   // ④ 세로 보기 — 분석 글자가 바로 선다(세트피스 글자와 같은 회전)
   const vert=await page.evaluate(async()=>{
