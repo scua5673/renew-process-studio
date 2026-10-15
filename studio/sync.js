@@ -9142,7 +9142,7 @@ function uiJoin(link){
   var current=accountActionCurrent();
   function modal(opts){opts.current=current;return psModal(opts);}
   if(!current())return;
-  link=(link&&typeof link==='object'&&/^[A-Z0-9]{6,12}$/.test(String(link.code||'')))?link:null;   /* 3.044 — 선수별 초대 링크(?join=)로 왔으면 코드를 묻지 않는다 */
+  link=(link&&typeof link==='object'&&/^[A-Z0-9]{6,12}$/.test(String(link.code||'')))?link:null;   /* 3.052 — 선수별 초대 링크(?join=)로 왔으면 코드를 묻지 않는다 */
   function askName(message,value){
     var body=(message?'<div style="margin-bottom:8px;color:#d12f38;font-weight:800">'+esc(message)+'</div>':'')
       +'팀에서 구분할 수 있는 <b>이름 또는 아이디</b>를 입력하세요. 합류하면 기본적으로 <b>선수</b> 역할이 적용됩니다.';
@@ -9213,7 +9213,7 @@ function uiInvite(wid){
     modal({title:'선수 초대 설정 필요',body:'배포 파일의 <b>supabase-player-invites.sql</b>을 Supabase SQL Editor에서 한 번 실행해주세요.',hideCancel:true,ok:'확인'});
   });
 }
-/* ══ 3.044 · 선수별 초대 링크 — 합류하면 명단의 그 선수와 바로 이어진다(피드백 15 · 제품 3 · UX-15) ══════════════════
+/* ══ 3.052 · 선수별 초대 링크 — 합류하면 명단의 그 선수와 바로 이어진다(피드백 15 · 제품 3 · UX-15) ══════════════════
    ① 임원이 명단의 선수에서 «초대 링크»를 만든다: 선수 합류 코드(ps_get_or_create_role_invite — 서버 그대로) + 그 선수 id + 한 번 쓰는 토큰.
       토큰은 **링크를 만든 기기에만** 둔다(ps_idp_invite_tokens_v1 — 동기화하지 않는 키). 공유 문서 · 서버는 바뀌지 않는다.
    ② 선수가 링크를 열면(?join=코드&pid=선수&tk=토큰) 셸이 주소에서 걷어 이 기기에 둔다(ps_invite_pending_v1, 7일) → 로그인 뒤 «초대 링크로 합류».
@@ -10057,7 +10057,7 @@ function renderUI(){
 function boot(){
   consumeHash();
   consumeAccountAction();
-  consumeInviteLink();   /* 3.044 — 선수별 초대 링크 */
+  consumeInviteLink();   /* 3.052 — 선수별 초대 링크 */
   try{ window.addEventListener('ps-auth-state',function(e){ if(e&&e.detail&&e.detail.unlocked)inviteResume(); }); setTimeout(inviteResume,1500); }catch(_){}   /* 로그인을 마치면 «초대 링크로 합류» */
   try{ if(COPIES_OFF){ var _pc=purgeCopies(); if(_pc)syncDiagnostic('copies-purged',new Error('기기 사본 '+_pc+'개 정리')); } }catch(_){}   /* 2.674 — 쌓여 있던 구조선·충돌 사본 한 번에 정리 */
   /* 2.675 — 닫을 때 팀 자료 지우기 · 지운 뒤 첫 부팅은 서버를 기다린다 */
@@ -10771,7 +10771,7 @@ window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dat
   idpDailyMine:function(){ var w=activeWs(); if(!w)return Promise.resolve(null); return rpc('ps_idp_daily_mine',{wid:w}).then(function(o){ return o&&o.v===1&&o.days&&typeof o.days==='object'?o:null; }); },
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */
   rosterReady:function(wid){return rosterReady(wid||activeWs());},
-  teamKeys:function(){ return KEYS.filter(function(k){ return !PERSONAL[k]; }); },   /* 3.044 — 팀 전체 내보내기(team-files.js exportAll)가 쓰는 팀 키 목록(동기화 대상 그대로) */
+  teamKeys:function(){ return KEYS.filter(function(k){ return !PERSONAL[k]; }); },   /* 3.052 — 팀 전체 내보내기(team-files.js exportAll)가 쓰는 팀 키 목록(동기화 대상 그대로) */
   idpLink:{can:idpLinkCan,members:idpLinkMembers,set:idpLinkSet,invite:function(){ var w=activeWsObj(); if(w&&w.id)uiInvite(w.id); },inviteFor:function(pid,label){ uiPlayerInvite(pid,label); }},   /* 2.945 — 명단 칩·오늘 확인 카드 */
   scheduleEdit:{set:scheduleEditSet,touch:scheduleEditTouch,active:scheduleHeld},
   ping:function(f){ usagePing(null,f); },

@@ -392,7 +392,7 @@
           <button type="button" data-type-nav="training">훈련·작전판</button>
         </div>
       </div>
-      <div class="nav-sec">
+      <div class="nav-sec pr-cat-sec">
         <div class="nav-lb" id="prCatLb">훈련 주제</div>
         <div class="nav-items" id="catChips"></div>
       </div>
@@ -743,11 +743,13 @@ function render(){
   }
   var list=(elmTab?elmSort(elm.list,sort):posts).filter(function(p){
     var isMatch=catKeys(p.cat).indexOf('match')>=0||(p.item&&p.item.type==='match');
+    if(!elmTab){   /* 3.042 — 엘미하 칸에는 주제 · 유형 · 연령 · 인원 고르개가 없다(코치 자료에서 골라 둔 것이 엘미하 목록을 거르지 않게) */
     if(typeF==='match'&&!isMatch)return false;
     if(typeF==='training'&&isMatch)return false;
     if(catSel.length && !catKeys(p.cat).some(function(k){return catSel.indexOf(k)>=0;}))return false;
     if(ageF && catKeys(p.age).indexOf(ageF)<0)return false;
     if(plF && !plInRange(p.players,plF))return false;
+    }
     if(searchF){
       var hay=[p.title,p.owner_name,p.summary,p.cat,p.age,p.players].join(' ').toLowerCase();
       if(hay.indexOf(searchF)<0)return false;
@@ -805,7 +807,7 @@ function cpDescOf(p){
   }
   if(it.note&&String(it.note).trim())parts.push(esc(String(it.note).trim()));
   var _pgN=boardPagesOf(it).length;   /* 3.039 — 여러 페이지 작전판 */
-  if(_pgN>1)parts.push('<b>'+(it.book?'패턴북':'작전판')+'</b>'+(it.book?'시퀀스 ':'페이지 ')+_pgN+'개 — 큰 화면에서 '+(it.book?'시퀀스':'페이지')+'를 골라 볼 수 있어요');
+  if(_pgN>1||(it.type==='meeting'&&_pgN))parts.push('<b>'+(it.type==='meeting'?'미팅 자료':it.book?'패턴북':'작전판')+'</b>'+boardUnit(it)+_pgN+(it.type==='meeting'?'장':'개')+' — 큰 화면에서 '+boardUnit(it).trim()+'를 골라 볼 수 있어요');
   return parts.join('<br>');
 }
 var _cpCur='';
@@ -1046,7 +1048,7 @@ function openPost(p){
               thumb:p.thumb,item:p.item||{},mine:!!(me&&me.uid===p.owner),proc:!!p.proc};
     /* 2.999 — 프로세스 세션은 훈련 셋을 하나씩 뷰어에 싣는다 · 3.002 — 훈련이 둘 이상인 코치 글도 같은 줄로 골라 본다(전에는 첫 훈련만 보였다) */
     if(p.proc||(Array.isArray(p.item.trainings)&&p.item.trainings.length>1)){procViewOpen(p,post);return;}
-    if(boardPagesOf(p.item).length>1){boardViewOpen(p,post);return;}   /* 3.039 — 여러 페이지 작전판: 같은 줄로 페이지를 골라 본다 */
+    if(boardPagesOf(p.item).length>1||(p.item.type==='meeting'&&boardPagesOf(p.item).length)){boardViewOpen(p,post);return;}   /* 3.042 — 미팅 자료는 한 장이어도 이 길(«미팅 자료»라고 말한다) */   /* 3.039 — 여러 페이지 작전판: 같은 줄로 페이지를 골라 본다 */
     openCommunityViewer(post,p);
   }
   if(p.item){ go(); return; }
@@ -1120,6 +1122,7 @@ window.__commAction=function(act,id,extra){
     var _trsU=stripTrainings(src); if(_trsU)item.trainings=_trsU;
     var _frU=stripFrames(item.frames); if(_frU)item.frames=_frU; else delete item.frames;
     var _pgU=stripPages(src); if(_pgU){item.pages=_pgU;boardLead(item);} else delete item.pages;   /* 3.039 */
+    var _slU=stripSlides(src); if(_slU){item.slides=_slU;item.snap=_slU[0].snap;} else delete item.slides;   /* 3.042 */
     var patch={item:item};
     if(extra.title!=null&&(''+extra.title).trim())patch.title=(''+extra.title).trim();
     if(extra.thumb!=null)patch.thumb=sanSvg(stripThumbPhotos(extra.thumb))||'';   /* 3.041 */
@@ -1353,7 +1356,7 @@ var libStore={
   set:function(k,v){if(!communityLibraryDataUnlocked())return Promise.reject(communityLibraryLockedError());return window.storage?window.storage.set(k,JSON.stringify(v)):Promise.resolve();}
 };
 var COPY_FIELDS=['name','focus','minutes','sets','rpe','tags','type','snap','scenes','frames','overview','setup','func','coaching','prog','memo','memoQuick','success','fourDs','playerTask','sessionCheck','playerReflection','evidence','summaryLine','coachReflection','nextSession','warmFor',
-  'pages','book'];   /* 3.039 — 작전판의 페이지 묶음 · 패턴북 표식. 올릴 때는 stripPages 를 거친 것으로 바꾼다 */
+  'pages','book','slides'];   /* 3.042 — 미팅 자료의 슬라이드(올릴 때는 stripSlides) */   /* 3.039 — 작전판의 페이지 묶음 · 패턴북 표식. 올릴 때는 stripPages 를 거친 것으로 바꾼다 */
 function copyToLib(p,btn){
   if(p&&p.proc){procSave(p);return;}
   if(!communityLibraryRequireUnlocked(true))return;
@@ -1495,6 +1498,18 @@ function stripPages(src){
   }).filter(Boolean);
   return out.length?out:null;
 }
+/* 3.042 — 미팅 자료(type "meeting")의 슬라이드: 장마다 판 · 장면은 같은 정리(이름 · 사진), 장 그림은 비운다. 제목 · 요점(points)은 글이라 그대로 */
+function stripSlides(src){
+  if(!src||src.type!=='meeting'||!Array.isArray(src.slides)||!src.slides.length)return null;
+  var out=src.slides.map(function(sl){
+    if(!sl||typeof sl!=='object'||!sl.snap||typeof sl.snap!=='object')return null;
+    var x={}; try{x=JSON.parse(JSON.stringify(sl));}catch(_){return null;}
+    x.snap=stripSnap(x.snap); x.thumb='';
+    var fr=stripFrames(x.frames); if(fr)x.frames=fr; else delete x.frames;
+    return x;
+  }).filter(Boolean);
+  return out.length?out:null;
+}
 /* 대표 판 · 장면 = 첫 페이지의 것(카드 그림도 첫 페이지 — 미리보기 ▶ 가 그 위에서 움직인다) */
 function boardLead(item){
   var p0=item&&Array.isArray(item.pages)&&item.pages[0]; if(!p0)return item;
@@ -1525,10 +1540,12 @@ function openUpload(){
   });
 }
 /* 3.039 — 올리기 목록의 종류 · 줄 설명. 세트피스는 «훈련» 쪽(같은 훈련 편집기) · 패턴북은 «작전판» 쪽(type "board" + book) */
-function upKindOf(d){ return (d&&d.type==='board')?'board':'train'; }
-function upKindName(d){ var t=(d&&d.type)||'train'; return t==='board'?(d.book?'패턴북':'작전판'):(t==='setpiece'?'세트피스':'훈련'); }
+/* 3.042 — 엘미하 칸은 만든 것 전부(사용자 «만든거 원하는거 전부 올릴 수 있게»): 미팅 자료(«미팅» 칸) · 경기 분석(작전판 쪽)도. 팀 등록(analysis)은 자료가 아니다 */
+function upKindOf(d){ var t=(d&&d.type)||'train'; return (t==='board'||t==='match')?'board':(t==='meeting'?'meeting':'train'); }
+function upKindName(d){ var t=(d&&d.type)||'train'; return t==='board'?(d.book?'패턴북':'작전판'):(t==='setpiece'?'세트피스':t==='meeting'?'미팅 자료':t==='match'?'경기 분석':'훈련'); }
 function upMetaOf(d){
-  if(d&&d.type==='board'){
+  if(d&&d.type==='meeting'){ var sn=Array.isArray(d.slides)?d.slides.length:0; return sn?('슬라이드 '+sn):''; }
+  if(d&&(d.type==='board'||d.type==='match')){
     var n=Array.isArray(d.pages)?d.pages.length:0, fr=Array.isArray(d.frames)?d.frames.length:0;
     return n>1?((d.book?'시퀀스 ':'페이지 ')+n):(fr>1?('장면 '+fr):'');
   }
@@ -1539,8 +1556,10 @@ function buildUpload(me,handle,flowEpoch){
   try{communityLibraryContinuation(flowEpoch,me&&me.uid);}catch(_){return;}
   libStore.get(LIB_KEY).then(function(lib){
     communityLibraryContinuation(flowEpoch,me.uid);
-    lib=(Array.isArray(lib)?lib:[]).filter(function(d){var t=d.type||'train';return t==='train'||t==='setpiece'||t==='board';});
-    var h='<h2>커뮤니티에 올리기</h2><div class="hint" style="margin-top:2px">내 보관함에서 작전판이나 훈련을 골라 모든 코치에게 공유합니다. 사진 · 선수 이름은 자동으로 빠져요. 아이디 <b>@'+esc(handle)+'</b> 로 올라갑니다.</div>';
+    /* 3.042 — 엘미하 칸: 만든 것 전부 · 분류 · 연령대 · 인원 없이 제목만(사용자 «엘미하 페이지는 훈련 주제 분류 필요없고 원하는 거 올릴 수 있게») */
+    var elmUp=(tabF==='elmiha');
+    lib=(Array.isArray(lib)?lib:[]).filter(function(d){var t=(d&&d.type)||'train';if(!d||!d.libId)return false;return elmUp?(t!=='analysis'):(t==='train'||t==='setpiece'||t==='board');});
+    var h='<h2>커뮤니티에 올리기</h2><div class="hint" style="margin-top:2px">'+(elmUp?'엘미하 칸에 올립니다 — 보관함의 작전판 · 패턴북 · 훈련 · 세트피스 · 미팅 자료 · 경기 분석 무엇이든.':'내 보관함에서 작전판이나 훈련을 골라 모든 코치에게 공유합니다.')+' 사진 · 선수 이름은 자동으로 빠져요. 아이디 <b>@'+esc(handle)+'</b> 로 올라갑니다.</div>';
     if(!lib.length){
       h+='<div class="empty" style="padding:40px 10px"><b>보관함이 비어 있어요</b>'+(IN_SHELL?'여기서 바로 훈련을 만들 수 있어요 — 저장하면 이 창으로 돌아와요.':'작전판이나 훈련을 보관함에 저장한 뒤 올릴 수 있어요.')+'</div>'
         +'<div class="drow"><button class="btn" id="upClose">닫기</button>'+(IN_SHELL?'<button class="btn primary" id="upNewEmpty">＋ 새로 만들기</button>':'')+'</div>';   /* 2.924 — 막다른 길 대신 만들기 문 */
@@ -1549,21 +1568,22 @@ function buildUpload(me,handle,flowEpoch){
     }
     /* 3.039 — 올릴 자료의 종류(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게»). 예전 목록은 작전판도 훈련처럼 «기술·개인»으로 적어
        무엇이 작전판인지 보이지 않았다. 종류가 둘 다 있으면 고르는 줄을 두고, 엘미하 칸에서 열면 작전판부터 보여 준다. */
-    var nBoard=lib.filter(function(d){return d.type==='board';}).length, nTrain=lib.length-nBoard;
-    var kind=(tabF==='elmiha'&&nBoard)?'board':'all';
+    var nBoard=lib.filter(function(d){return upKindOf(d)==='board';}).length, nMeet=lib.filter(function(d){return upKindOf(d)==='meeting';}).length, nTrain=lib.length-nBoard-nMeet;
+    var nKinds=(nBoard?1:0)+(nTrain?1:0)+(nMeet?1:0);
+    var kind=(elmUp&&nBoard)?'board':'all';
     try{ var _pre0=window.__upPreselect; if(_pre0&&kind!=='all'&&!lib.some(function(d){return d.libId===_pre0&&upKindOf(d)===kind;}))kind='all'; }catch(_){}   /* 고른 채 들어온 항목은 꼭 보인다 */
     h+='<div class="fld"><div class="up-lblrow"><span>올릴 자료</span>'+(IN_SHELL?'<button type="button" class="up-newlink" id="upNewInline">＋ 새로 만들기</button>':'')+'</div>'   /* 2.924 */
-      +((nBoard&&nTrain)?'<div class="agechips up-kind" id="upKind" role="group" aria-label="자료 종류"></div>':'')
+      +((nKinds>1)?'<div class="agechips up-kind" id="upKind" role="group" aria-label="자료 종류"></div>':'')
       +'<div class="pick" id="upPick"></div></div>'
-      +'<div class="fld"><label>분류 (여러 개 선택 가능)</label><div class="agechips" id="upCats"></div></div>'
-      +'<div class="fld"><label>제목</label><input type="text" id="upTitle" maxlength="60" placeholder="예: 4v2 론도 — 탈압박 기본"></div>'
-      +'<div class="fld"><label>연령대 (여러 개 선택 가능)</label><div class="agechips" id="upAges"></div></div>'
-      +'<div class="fld"><label>인원 (명)</label><input type="number" id="upPlayers" min="1" max="40" inputmode="numeric" placeholder="예: 8"></div>'
+      +(elmUp?'':'<div class="fld"><label>분류 (여러 개 선택 가능)</label><div class="agechips" id="upCats"></div></div>')
+      +'<div class="fld"><label>제목</label><input type="text" id="upTitle" maxlength="60" placeholder="'+(elmUp?'예: 하프스페이스 침투 — 3인 연계':'예: 4v2 론도 — 탈압박 기본')+'"></div>'
+      +(elmUp?'':'<div class="fld"><label>연령대 (여러 개 선택 가능)</label><div class="agechips" id="upAges"></div></div>'
+        +'<div class="fld"><label>인원 (명)</label><input type="number" id="upPlayers" min="1" max="40" inputmode="numeric" placeholder="예: 8"></div>')
       +'<div class="drow"><button class="btn" id="upCancel">취소</button><button class="btn primary" id="upGo">올리기</button></div>';
     modal.innerHTML=h;mask.classList.add('on');
     var sel=null, ages=[], selCats=[];
-    function markCat(){[].forEach.call($('upCats').children,function(x){x.classList.toggle('on',selCats.indexOf(x.dataset.k)>=0);});}
-    CATS.forEach(function(cd){
+    function markCat(){var bx=$('upCats');if(!bx)return;[].forEach.call(bx.children,function(x){x.classList.toggle('on',selCats.indexOf(x.dataset.k)>=0);});}
+    if($('upCats'))CATS.forEach(function(cd){
       var b=document.createElement('button');b.type='button';b.textContent=cd[1];b.dataset.k=cd[0];
       b.onclick=function(){var i=selCats.indexOf(cd[0]);if(i>=0)selCats.splice(i,1);else selCats.push(cd[0]);markCat();};
       $('upCats').appendChild(b);
@@ -1587,7 +1607,7 @@ function buildUpload(me,handle,flowEpoch){
     }
     function drawKind(){
       var box=$('upKind'); if(!box)return; box.innerHTML='';
-      [['all','전체 '+lib.length],['board','작전판 '+nBoard],['train','훈련 '+nTrain]].forEach(function(k){
+      [['all','전체 '+lib.length],['board','작전판 '+nBoard],['train','훈련 '+nTrain],['meeting','미팅 '+nMeet]].filter(function(k){return k[0]==='all'||+k[1].split(' ')[1]>0;}).forEach(function(k){
         var b=document.createElement('button');b.type='button';b.textContent=k[1];b.dataset.kind=k[0];
         b.className=(kind===k[0])?'on':'';b.setAttribute('aria-pressed',kind===k[0]?'true':'false');
         b.onclick=function(){ if(kind===k[0])return; kind=k[0]; drawKind(); drawPick(); };
@@ -1599,8 +1619,8 @@ function buildUpload(me,handle,flowEpoch){
     try{ var _pre=window.__upPreselect;
       if(_pre){ var _pr=pick.querySelector('[data-lib="'+_pre+'"]');
         if(_pr){ _pr.click(); _pr.scrollIntoView({block:'nearest'}); } window.__upPreselect=null; } }catch(_){}
-    function markAge(){[].forEach.call($('upAges').children,function(x){x.classList.toggle('on',ages.indexOf(x.textContent)>=0);});}
-    AGES.forEach(function(a){
+    function markAge(){var bx=$('upAges');if(!bx)return;[].forEach.call(bx.children,function(x){x.classList.toggle('on',ages.indexOf(x.textContent)>=0);});}
+    if($('upAges'))AGES.forEach(function(a){
       var b=document.createElement('button');b.type='button';b.textContent=a;
       b.onclick=function(){var i=ages.indexOf(a);if(i>=0)ages.splice(i,1);else ages.push(a);markAge();};
       $('upAges').appendChild(b);
@@ -1610,8 +1630,8 @@ function buildUpload(me,handle,flowEpoch){
     $('upGo').onclick=function(){
       try{communityLibraryContinuation(flowEpoch,me.uid);}catch(_){return;}
       var title=($('upTitle').value||'').trim();
-      if(!sel){toast('올릴 작전판이나 훈련을 골라주세요');return;}
-      if(!selCats.length){toast('분류를 하나 이상 골라주세요');return;}
+      if(!sel){toast(elmUp?'올릴 자료를 골라주세요':'올릴 작전판이나 훈련을 골라주세요');return;}
+      if(!elmUp&&!selCats.length){toast('분류를 하나 이상 골라주세요');return;}   /* 3.042 — 엘미하 칸은 분류 없이 */
       if(!title){toast('제목을 적어주세요');$('upTitle').focus();return;}
       var item={}; __pubNames=[];   /* 2.668 */
       COPY_FIELDS.forEach(function(k){if(sel[k]!=null)item[k]=sel[k];});
@@ -1620,13 +1640,15 @@ function buildUpload(me,handle,flowEpoch){
       var _trsUp=stripTrainings(sel); if(_trsUp)item.trainings=_trsUp;
       var _frUp=stripFrames(item.frames); if(_frUp)item.frames=_frUp; else delete item.frames;
       var _pgUp=stripPages(sel); if(_pgUp){item.pages=_pgUp;boardLead(item);} else delete item.pages;   /* 3.039 — 작전판은 페이지 전부 · 대표는 첫 페이지 */
+      var _slUp=stripSlides(sel); if(_slUp){item.slides=_slUp;item.snap=_slUp[0].snap;} else delete item.slides;   /* 3.042 — 미팅 자료는 슬라이드 전부 · 대표는 첫 장 */
+      if(item.type==='match')item.type='board';   /* 3.042 — 보관함의 경기 분석(판 · 장면)은 작전판으로 본다 — 커뮤니티의 type "match" 는 경기 리뷰 글(openMatchDetail)의 모양이다 */
       var body={id:'C'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
         owner:me.uid,owner_name:handle,
         title:title,summary:'',
-        cat:selCats.join(','),age:ages.join(','),players:(($('upPlayers').value||'').replace(/[^0-9]/g,'')),thumb:stripThumbNames(sanSvg(stripThumbPhotos(sel.thumb)))||'',item:item};   /* 2.668 — 썸네일 이름 제거 */
+        cat:selCats.join(','),age:ages.join(','),players:(($('upPlayers')||{}).value||'').replace(/[^0-9]/g,''),thumb:stripThumbNames(sanSvg(stripThumbPhotos(sel.thumb)))||'',item:item};   /* 2.668 — 썸네일 이름 제거 */
       var payload=JSON.stringify(body);
       var _bUp=commBytes(payload);   /* 3.041 — 500KB → 5MB */
-      if(_bUp>COMM_MAX_BYTES){toast('용량이 커서 올릴 수 없어요('+commMB(_bUp)+' · 최대 '+commMB(COMM_MAX_BYTES)+') — '+(item.pages?'페이지나 장면 수를':'장면 수를')+' 줄여보세요');return;}
+      if(_bUp>COMM_MAX_BYTES){toast('용량이 커서 올릴 수 없어요('+commMB(_bUp)+' · 최대 '+commMB(COMM_MAX_BYTES)+') — '+(item.pages?'페이지나 장면 수를':item.slides?'슬라이드나 장면 수를':'장면 수를')+' 줄여보세요');return;}
       $('upGo').disabled=true;$('upGo').textContent='올리는 중…';
       var ctl=typeof AbortController==='function'?new AbortController():null;__communityLibraryAbort=ctl;
       fetch(base()+'/rest/v1/ps_community',{method:'POST',headers:hd(me.at),body:payload,signal:ctl?ctl.signal:undefined})
@@ -1982,10 +2004,10 @@ function procViewPost(k){
 function procViewTabs(){
   var box=$('prCvTabs'); if(!box||!procCv)return;
   var pg=!!procCv.pages,trs=pg?boardPagesOf(procCv.p.item):procCv.p.item.trainings; box.innerHTML=''; box.hidden=trs.length<2;
-  try{ box.setAttribute('aria-label',pg?'이 작전판의 페이지':'이 글의 훈련'); }catch(_){}   /* 3.039 */
+  try{ box.setAttribute('aria-label',pg?(procCv.p.item.type==='meeting'?'이 미팅 자료의 슬라이드':'이 작전판의 페이지'):'이 글의 훈련'); }catch(_){}   /* 3.039 · 3.042 */
   trs.forEach(function(t,i){ t=(t&&typeof t==='object')?t:{};
     var on=i===procCv.k,b=document.createElement('button'),min=+t.minutes>0?Math.round(+t.minutes):0,fr=pg?boardPageFrames(t):null; b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
-    b.innerHTML='<span class="pr-i">'+(i+1)+'</span><span class="pr-nm">'+esc(String(t.name||'').trim()||((pg?(procCv.p.item.book?'시퀀스 ':'페이지 '):'훈련 ')+(i+1)))+'</span>'
+    b.innerHTML='<span class="pr-i">'+(i+1)+'</span><span class="pr-nm">'+esc(String(t.name||'').trim()||((pg?boardUnit(procCv.p.item):'훈련 ')+(i+1)))+'</span>'
       +(pg?(fr?('<span class="pr-mn">장면 '+fr.length+'</span>'):''):(min?('<span class="pr-mn">'+min+'분</span>'):''));
     b.onclick=function(){ if(!procCv||procCv.k===i)return; procCv.k=i; procViewTabs(); openCommunityViewer(procViewPost(i),procCv.p); };
     box.appendChild(b);
@@ -1996,13 +2018,21 @@ function procViewOpen(p,post){ var n=p.item.trainings.length,k=(p.proc&&+p.__k>0
 /* 3.039 — 여러 페이지 작전판 글(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게»): 훈련 고르기 줄과 같은 자리 · 같은 방식으로 페이지를 고른다.
    페이지 k 하나만 실은 작전판 글을 짓는다 — 판은 그 페이지의 것, 애니메이션은 그 페이지의 장면. 설명(overview)은 글 전체의 것이라 어느 페이지에서나 보인다.
    담기 · 신고 · 삭제는 글 번호로 가므로 어느 페이지를 보고 있든 페이지 전부가 담긴다. */
-function boardPagesOf(it){ return (it&&it.type==='board'&&Array.isArray(it.pages))?it.pages.filter(function(pg){ return pg&&typeof pg==='object'&&pg.snap&&typeof pg.snap==='object'; }):[]; }
+function boardPagesOf(it){
+  /* 3.042 — 미팅 자료의 슬라이드도 같은 줄로 본다: 장 = 페이지(제목 → 이름 · 장면 → 움직임 · 요점 → 설명) */
+  if(it&&it.type==='meeting'&&Array.isArray(it.slides))return it.slides.filter(function(sl){ return sl&&typeof sl==='object'&&sl.snap&&typeof sl.snap==='object'; })
+    .map(function(sl){ return {name:sl.title||'',snap:sl.snap,anim:{frames:Array.isArray(sl.frames)?sl.frames:[]},points:sl.points}; });
+  return (it&&it.type==='board'&&Array.isArray(it.pages))?it.pages.filter(function(pg){ return pg&&typeof pg==='object'&&pg.snap&&typeof pg.snap==='object'; }):[];
+}
+function boardUnit(it){ return (it&&it.type==='meeting')?'슬라이드 ':((it&&it.book)?'시퀀스 ':'페이지 '); }
 function boardPageFrames(pg){ var an=pg&&pg.anim,fr=Array.isArray(an)?an:((an&&Array.isArray(an.frames))?an.frames:null); return (fr&&fr.length>1)?fr:null; }
 function boardViewPost(k){
   var p=procCv.p,it=p.item,pgs=boardPagesOf(it),pg=pgs[k]||{},fr=boardPageFrames(pg),one={type:'board'};
   ['overview','tags'].forEach(function(f){ if(it[f]!=null)one[f]=it[f]; });
   if(it.book)one.book=1;
-  one.name=String(pg.name||'').trim()||((it.book?'시퀀스 ':'페이지 ')+(k+1)); one.snap=pg.snap; if(fr)one.frames=fr;
+  if(it.type==='meeting'){ one.kindLabel='미팅 자료'; var pts=(Array.isArray(pg.points)?pg.points:[]).map(function(x){return String(x==null?'':x).trim();}).filter(Boolean); if(pts.length)one.overview=pts.join('\n'); }   /* 3.042 */
+  one.unit=boardUnit(it);
+  one.name=String(pg.name||'').trim()||(boardUnit(it)+(k+1)); one.snap=pg.snap; if(fr)one.frames=fr;
   var base=procCv.post||{};
   return {id:p.id,title:p.title,owner_name:p.owner_name,cat:p.cat,age:p.age,summary:p.summary,thumb:k?'':p.thumb,item:one,mine:!!base.mine,pageN:pgs.length};
 }
@@ -2121,7 +2151,7 @@ html body .comm-list .bar:not(#_):not(#__){display:none!important}
     });
   }
   function sync(){ mirror(cfsSort,'data-sort-nav'); mirror(cfsType,'data-type-nav'); badge(); }
-  function count(){ var n=0; try{ if(typeof sort!=='undefined'&&sort!=='new')n++; if(typeof typeF!=='undefined'&&typeF!=='all')n++; }catch(_){} if(age&&age.value)n++; if(pl&&pl.value)n++; return n; }
+  function count(){ var n=0, elm=document.body.classList.contains('pr-elm'); try{ if(typeof sort!=='undefined'&&sort!=='new')n++; if(!elm&&typeof typeF!=='undefined'&&typeF!=='all')n++; }catch(_){} if(!elm&&age&&age.value)n++; if(!elm&&pl&&pl.value)n++; return n; }   /* 3.042 — 엘미하 칸은 탐색만 센다 */
   function badge(){ var n=count(), s=btn.querySelector('.n'); s.textContent=String(n); s.hidden=!n; }
   function open(){ sync(); sheet.hidden=false; }
   function close(){ sheet.hidden=true; badge(); }
@@ -2133,7 +2163,7 @@ html body .comm-list .bar:not(#_):not(#__){display:none!important}
     if(t0)t0.click(); if(s0)s0.click(); sync();
   };
   if(age)age.addEventListener('change',badge); if(pl)pl.addEventListener('change',badge);
-  document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('[data-sort-nav],[data-type-nav]'))setTimeout(badge,0); },true);
+  document.addEventListener('click',function(e){ if(e.target.closest&&e.target.closest('[data-sort-nav],[data-type-nav],#prSeg button'))setTimeout(badge,0); },true);
   function place(){
     if(mq.matches){
       if(q.parentNode!==top){ top.appendChild(q); top.appendChild(btn); }
@@ -2243,6 +2273,10 @@ html body.pr-proc .comm-list .grid:not(#_):not(#__){grid-template-columns:minmax
 }
 /* ══ 3.018 · «엘미하» 칸 — 카드·고르개·미리보기는 코치 자료 그대로, 머리에 유튜브 채널로 가는 띠 하나 ══
    같은 새 블록 기준(2.979). «올리기»는 엘미하 계정으로 볼 때만(다른 코치가 여기서 올리면 코치 자료로 간다 — 헷갈린다). */
+/* 3.042 — 엘미하 칸에는 훈련 주제 · 콘텐츠 유형 · 연령 · 인원 고르개가 없다(사용자 «엘미하 페이지는 훈련 주제 분류 필요없고»). 검색 · 정렬(탐색)은 그대로 */
+html body.pr-elm .comm-nav .pr-cat-sec:not(#_):not(#__),html body.pr-elm .comm-nav .nav-sec:has(#typeNav):not(#_):not(#__){display:none!important}
+html.ps-page-community body.pr-elm .comm-list .filters #ageSel:not(#_):not(#__),html.ps-page-community body.pr-elm .comm-list .filters #plSel:not(#_):not(#__),html body.pr-elm #cfTypeSel:not(#_):not(#__){display:none!important}
+html body.pr-elm #commFiltSheet .ps-fsheet-sec:has(#cfsType):not(#_):not(#__),html body.pr-elm #commFiltSheet .ps-fsheet-sec:has(#cfsSel):not(#_):not(#__){display:none!important}   /* 폰 «필터» 시트도 탐색만 */
 html body.pr-elm:not(.pr-elm-own) .fab:not(#_):not(#__),html body.pr-elm:not(.pr-elm-own) #upMenu:not(#_):not(#__){display:none!important}
 .el-hero{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 14px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff)}
 .el-hero[hidden]{display:none!important}

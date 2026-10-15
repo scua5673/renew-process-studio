@@ -4861,7 +4861,7 @@ window.psFailAlert=function(lead,e,stage){
     r.readAsText(file);
     f.value='';
   });
-  /* 3.044 — 팀 전체 내보내기(team-files.js exportAll): 팀 공간 · 임원(소유자 · 임원)에게만 보인다. 앱 설정을 열 때마다 다시 본다 */
+  /* 3.052 — 팀 전체 내보내기(team-files.js exportAll): 팀 공간 · 임원(소유자 · 임원)에게만 보인다. 앱 설정을 열 때마다 다시 본다 */
   (function(){
     var btn=document.getElementById('bkAll');if(!btn)return;
     function sync(){ var on=false; try{ var w=window.PSSync&&PSSync.activeWsObj&&PSSync.activeWsObj(); on=!!(w&&w.kind==='team'&&PSSync.idpLink&&PSSync.idpLink.can()&&window.PSTeamFiles&&PSTeamFiles.exportAll); }catch(_){} btn.style.display=on?'':'none'; }

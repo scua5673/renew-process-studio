@@ -6351,7 +6351,7 @@ const scoutStore={
   /* 동기 접수 여부를 돌려준다. 예전에는 실패를 삼키고 mem에만 넣은 뒤 호출부가 "저장됨"이라고
      말해서, 코치는 저장된 줄 알고 앱을 닫았다. mem 사본은 이 탭이 살아 있는 동안의
      임시 대비일 뿐 저장이 아니다. */
-  /* 1.618 — scoutStore 는 localStorage 껍데기다(IndexedDB 가 아니다 — 3.045 까지 이름이 board.html 의 store 와
+  /* 1.618 — scoutStore 는 localStorage 껍데기다(IndexedDB 가 아니다 — 3.053 까지 이름이 board.html 의 store 와
      같아서 헷갈렸다. 이제 boardStore(IndexedDB) · scoutStore(localStorage) · libStore(커뮤니티 보관함)로 가른다 — studio/storage-keys.js). 그런데 sync.js 는 IDBK 목록의 키를 **IndexedDB 에서 읽어 올린다.**
      그래서 여기서 쓴 경기(cs_team_matches_v1)·후보(cs_scout_targets_v1)는 화면에만 남고
      팀에는 옛 자료가 계속 올라갔다. 해당 키는 psSaveShared 로 두 곳에 같이 쓴다. */
@@ -11461,13 +11461,18 @@ function tbCards(){
   /* 3.040 — ① 이미 어긋난 팀: 끈 적도 고른 적도 없는(tbXY 없음 — 끌기 · 포지션 고르기는 늘 tbXY 를 적는다) 빈 카드가 지금 포메이션에 없는 포지션이고,
      지금 포메이션의 포지션에 선수가 있는데 카드가 없으면(«운동장 밖») 그 카드를 그 포지션으로 바꾼다 — 예전 판에서 포메이션을 바꾼 팀이 다시 열면 바로 맞는다.
      ② 빈 칸(지운 포지션 · 포지션 기본값으로 다시 만들기)은 지금 포메이션의 포지션 → 선수가 있는 포지션 → 포지션 목록 차례로 채운다.
-     예전엔 바로 포지션 목록 차례(GK · CB · LCB · RCB · LB · RB · LWB …)라 포메이션에 없는 카드가 왼쪽 아래에 쌓이고 선수 있는 자리는 «운동장 밖»으로 밀렸다. */
+     예전엔 바로 포지션 목록 차례(GK · CB · LCB · RCB · LB · RB · LWB …)라 포메이션에 없는 카드가 왼쪽 아래에 쌓이고 선수 있는 자리는 «운동장 밖»으로 밀렸다.
+     3.047 — ①을 넓힌다. 오류 제보(10/15 «선수단 표시 오류») 팀의 실제 자료: 3-4-2-1 인데 카드는 DM · CM · LW 가 비어 있고(tbXY 없음) 선수는 LCM · RCM · LWB · RWB · RM 에
+     있었다 — 3-4-2-1 기본 자리에 없는 세부 포지션이라 ①이 하나도 올리지 못했다. 이제 선수가 있는데 카드가 없는 포지션이면 포메이션 밖이라도 올린다
+     (포메이션 포지션 먼저, 다음은 포지션 목록 차례). 바꾸는 카드는 끈 적 · 고른 적 없는 빈 카드뿐이고, 포메이션 밖 카드부터 · 그다음 포메이션 자리의 빈 카드.
+     카드는 11장이라 선수 있는 포지션이 11개를 넘으면 나머지는 그대로 «운동장 밖» 줄에 선다. */
   var form=tbFormCardIds(), occ={}, xy0=data.meta.tbXY||{}, def0=tbDefaultMap();
   tmOurs().forEach(function(p){ if(p&&p.posId&&(p.manual===true||String(p.name||"").trim()))occ[p.posId]=1; });
   var want=form.filter(function(id){return occ[id]&&ids.indexOf(id)<0;});
-  if(want.length)ids=ids.map(function(id){ if(!want.length||xy0[id]||occ[id])return id;
-    var ps=P.find(function(x){return x.id===id;}), ab=ps?String(posAbbr(ps.name)||ps.name||"").toUpperCase():"";
-    return def0[ab]?id:want.shift(); });
+  P.forEach(function(ps){ if(occ[ps.id]&&ids.indexOf(ps.id)<0&&want.indexOf(ps.id)<0)want.push(ps.id); });
+  var abOf=function(id){ var ps=P.find(function(x){return x.id===id;}); return ps?String(posAbbr(ps.name)||ps.name||"").toUpperCase():""; };
+  [false,true].forEach(function(inForm){ if(want.length)ids=ids.map(function(id){
+    if(!want.length||xy0[id]||occ[id]||!!def0[abOf(id)]!==inForm)return id; return want.shift(); }); });
   if(ids.length<11)form.forEach(function(id){ if(ids.length<11&&ids.indexOf(id)<0)ids.push(id); });
   if(ids.length<11)P.forEach(function(ps){ if(ids.length<11&&occ[ps.id]&&ids.indexOf(ps.id)<0)ids.push(ps.id); });
   P.forEach(function(ps){ if(ids.length<11&&ids.indexOf(ps.id)<0)ids.push(ps.id); });
@@ -14191,7 +14196,7 @@ function ilPickAccount(pl){
     if(!picked.length&&!same.length&&!free.length)h+='<div class="il-empty">연결 안 된 계정이 없어요 — 선수가 아직 팀에 합류하지 않았다면 초대 코드를 보내 주세요.</div>';
     if(taken.length)h+='<div class="il-gh ok">'+IL_CHECK+'다른 선수에 연결됨 — 고를 수 없어요</div>'+taken.map(function(t){var p2=ilPlayerById(t.hold);
       return '<div class="il-row dis"><span class="il-av ok">'+IL_CHECK+'</span><span class="il-tx"><b>'+esc(nm(t.r))+'</b><small>→ '+esc(p2?ilLabel(p2):"명단에 없는 선수")+'</small></span><span class="il-go ok">연결됨</span></div>';}).join("");
-    h+='<div class="il-foot"><span>아직 합류 안 했나요?</span>'+(A.inviteFor?'<button type="button" class="btn sm primary" data-il-plink>이 선수 초대 링크</button>':'')+'<button type="button" class="btn sm" data-il-invite>초대 코드 보내기</button></div>';   /* 3.044 — 링크로 합류하면 이 선수와 바로 이어진다 */
+    h+='<div class="il-foot"><span>아직 합류 안 했나요?</span>'+(A.inviteFor?'<button type="button" class="btn sm primary" data-il-plink>이 선수 초대 링크</button>':'')+'<button type="button" class="btn sm" data-il-invite>초대 코드 보내기</button></div>';   /* 3.052 — 링크로 합류하면 이 선수와 바로 이어진다 */
     S.body.innerHTML=h;
     [].forEach.call(S.body.querySelectorAll("[data-il-acc]"),function(b){b.onclick=function(){
       var uid=b.dataset.ilAcc,c=claims[uid],r=(rows||[]).filter(function(x){return x.uid===uid;})[0];
@@ -14224,7 +14229,7 @@ function ilPickPlayer(uid,who,claim){
   inp.oninput=function(){q=inp.value;draw();};
   draw();
 }
-/* 3.044 — 선수별 초대 링크(sync.js uiPlayerInvite): 이 기기에서 만든 링크의 토큰과 claim 의 토큰이 같으면 확인 없이 잇는다.
+/* 3.052 — 선수별 초대 링크(sync.js uiPlayerInvite): 이 기기에서 만든 링크의 토큰과 claim 의 토큰이 같으면 확인 없이 잇는다.
    토큰은 한 번 쓰면 지운다. 다른 임원 기기 · 토큰이 다른 claim 은 아래 확인 카드 그대로(«초대 링크로 합류» 표시). */
 var IL_TOKENS="ps_idp_invite_tokens_v1",_ilAutoBusy=false;
 function ilAutoLinkByToken(){
@@ -14271,7 +14276,7 @@ window.addEventListener("storage",function(e){
   clearTimeout(_ilSigT);_ilSigT=setTimeout(function(){
     try{
       if(!ilCan())return;
-      try{ ilAutoLinkByToken(); }catch(_){}   /* 3.044 — 초대 링크로 합류한 선수 문서가 막 왔으면 바로 잇는다 */
+      try{ ilAutoLinkByToken(); }catch(_){}   /* 3.052 — 초대 링크로 합류한 선수 문서가 막 왔으면 바로 잇는다 */
       var sig=idpClaims(false).map(function(c){return c.uid+":"+c.claim.at;}).join("|")+"#"+JSON.stringify(ilHolders());
       if(sig===_ilSig)return;_ilSig=sig;
       ilRerender();

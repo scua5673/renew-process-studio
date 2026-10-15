@@ -16,7 +16,7 @@
 
 비밀값: Supabase **publishable** 키만 코드(`studio/app.html` 의 `PS_SYNC`)에 있다. secret 키는 어디에도 두지 않는다. 운영 DB 를 스크립트로 읽을 때는 사람이 만든 개인 접근 토큰 `~/.supabase-pat` 만 쓴다.
 
-### 코드 규칙 (3.045 · 피드백 16 — TD-1 · TD-2 · TD-3)
+### 코드 규칙 (3.053 · 피드백 16 — TD-1 · TD-2 · TD-3)
 
 - **새 키는 표에 먼저** — `studio/storage-keys.js` 에 한 줄(동기화 · 정본 위치 · 구실 · 복구 사본이면 지키는 키 `of`). 표에 없는 키를 코드에 쓰면 `tests/storage-keys-registry.test.cjs` 가 멈춘다. 무엇이 걸렸는지는 `node scripts/storage-keys-scan.cjs`.
   팀과 맞추는 키는 `sync.js` `KEYS`(개인 공간만이면 `PERSONAL` 도)와 표가 같아야 하고, `ps_*` 키는 동기화하지 않는다.
@@ -47,7 +47,7 @@
 
 ### 배포 열차 (2026-10-15~ · 피드백 «제품 1» · TD-4)
 
-하루 4~6판이 실사용에 나가 기기마다 다시 받고(3.043 전엔 판마다 13.6MB), 판이 바뀌는 순간에 생긴 사고가 오류 제보의 큰 몫이었다.
+하루 4~6판이 실사용에 나가 기기마다 다시 받고(3.051 전엔 판마다 13.6MB), 판이 바뀌는 순간에 생긴 사고가 오류 제보의 큰 몫이었다.
 
 - **`main` 승격은 주 2회 — 화 · 금 오전.** 그 사이 고친 것은 `staging`(testprocess)에 계속 쌓는다. 승격 PR 하나에 여러 판이 들어가도 된다.
 - **급한 고침만 예외**(자료가 사라지거나 · 로그인 · 저장 · 동기화가 안 되는 장애). 아래 «급한 고침» 그대로.
@@ -84,7 +84,7 @@ npx -y netlify-cli api createSiteBuild --data '{"site_id":"<site-id>"}'
 
 ## 3. 서버(SQL) 바꾸기
 
-`migrations/<날짜>_<이름>.*` 한 묶음으로 만든다: `preflight.sql`(읽기 전용 사전 점검) · `.sql`(멱등, 예상과 다르면 예외로 멈춤) · `verify.sql` · `rollback.sql` · `runbook.md` · `local-test.cjs`(PGlite — 3.043 부터 `scripts/test-sql.cjs` 가 `migrations/*.local-test.cjs` 를 전부 돈다. 목록에 따로 적지 않는다). 운영 적용은 Supabase SQL 편집기에서 runbook 순서대로 하고, 결과를 `.applied.md` 로 남긴다. 적용 뒤 `node scripts/schema-baseline.mjs` 로 기준본을 새로 받아 같은 PR 에 넣는다. RLS 함수는 앱의 권한 규칙(`studio/perms.js`, `sync.js` 의 `canW`/`keyScope`)과 **같은 판정**이어야 한다 — 어긋나면 403 이 되풀이된다.
+`migrations/<날짜>_<이름>.*` 한 묶음으로 만든다: `preflight.sql`(읽기 전용 사전 점검) · `.sql`(멱등, 예상과 다르면 예외로 멈춤) · `verify.sql` · `rollback.sql` · `runbook.md` · `local-test.cjs`(PGlite — 3.051 부터 `scripts/test-sql.cjs` 가 `migrations/*.local-test.cjs` 를 전부 돈다. 목록에 따로 적지 않는다). 운영 적용은 Supabase SQL 편집기에서 runbook 순서대로 하고, 결과를 `.applied.md` 로 남긴다. 적용 뒤 `node scripts/schema-baseline.mjs` 로 기준본을 새로 받아 같은 PR 에 넣는다. RLS 함수는 앱의 권한 규칙(`studio/perms.js`, `sync.js` 의 `canW`/`keyScope`)과 **같은 판정**이어야 한다 — 어긋나면 403 이 되풀이된다.
 
 ## 4. 장애 대응
 
