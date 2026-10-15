@@ -11408,6 +11408,39 @@ function tbDefaultMap(){
   });
   return map;
 }
+/* 3.040 — 카드 자리 정하기(오류 제보 «선수단 표시 오류»: 선수가 포지션과 상관없이 운동장 왼쪽 아래에 몰려 있다).
+   저장한 자리(tbXY)가 없고 포메이션 표에 같은 약어도 없으면 {x:14+15n, y:90} — 왼쪽 아래 한 줄 — 에 세웠다.
+   직접 만든 포지션(센터백·스트라이커·윙어·풀백 → CB·ST·W·FB)과 4-4-2 둘째 CF처럼 약어가 겹치는 카드가 모두 그 줄로 갔다.
+   이제 ① 저장한 자리 ② 포메이션의 같은 약어(겹치면 둘째·셋째 자리) ③ 같은 뜻의 약어(ST=CF, LDM→DM, FB→LB …)의 포메이션 자리
+   ④ 그 포지션의 기본 자리 ⑤ 그래도 모르는 포지션은 하프라인에 세로로 — 순서로 정한다. 표시용 계산이라 아무것도 저장하지 않는다. */
+var TB_ALT={ST:"CF",FW:"CF",CDM:"DM",CAM:"AM",MF:"CM",MID:"CM",FB:"LB",WB:"LWB",W:"LW",DF:"CB"};
+var TB_HOME={GK:[50,84],CB:[50,73],LCB:[33,78],RCB:[67,78],LB:[14,72],RB:[86,72],LWB:[12,58],RWB:[88,58],DM:[50,58],LDM:[38,58],RDM:[62,58],
+  CM:[50,46],LCM:[35,46],RCM:[65,46],LM:[14,46],RM:[86,46],AM:[50,33],LW:[15,21],RW:[85,21],CF:[50,11]};
+function tbFormToBoard(x,y){return {x:Math.max(7,Math.min(93,100-y)),y:Math.max(10,Math.min(90,x))};}   /* 세로 포메이션 % → 가로 운동장 % */
+function tbPlacer(){
+  var xy=tbXYStore(), form=(data.meta&&data.meta.form)||"433", slots=[], free={};
+  try{slots=tmFormSlotsAdj(form)||[];}catch(_){try{slots=tmFormSlots(form)||[];}catch(__){}}
+  slots.forEach(function(sl){
+    var ab=String(Array.isArray(sl)?sl[0]:(sl&&(sl.pos||sl.name)||"")).toUpperCase();
+    var x=Array.isArray(sl)?sl[1]:(sl&&sl.x),y=Array.isArray(sl)?sl[2]:(sl&&sl.y);
+    if(!ab||typeof x!=="number"||typeof y!=="number")return;
+    (free[ab]=free[ab]||[]).push(tbFormToBoard(x,y));
+  });
+  function keys(ab){ var a=[ab],add=function(k){ if(k&&a.indexOf(k)<0)a.push(k); };
+    add(TB_ALT[ab]); try{ add(tmBase(ab)); if(TB_ALT[ab])add(tmBase(TB_ALT[ab])); }catch(_){}
+    return a; }
+  var taken={}, mark=function(p){ taken[p.x+","+p.y]=1; return p; };
+  /* 기본 자리가 이미 다른 카드 자리면 위아래로 비켜 선다(14%씩 번갈아) */
+  function aside(p){ for(var n=1;taken[p.x+","+p.y]&&n<8;n++){ p={x:p.x,y:Math.max(10,Math.min(90,p.y+((n%2)?1:-1)*14*Math.ceil(n/2)))}; } return p; }
+  return function(id,ab){
+    ab=String(ab||"").toUpperCase();
+    if(xy[id]){ if(free[ab]&&free[ab].length)mark(free[ab].shift()); return xy[id]; }   /* 옮겨 둔 카드도 제 약어 자리 하나를 차지한다(예전과 같다) */
+    var ks=keys(ab),i,l,h;
+    for(i=0;i<ks.length;i++){ l=free[ks[i]]; if(l&&l.length)return mark(l.shift()); }
+    for(i=0;i<ks.length;i++){ h=TB_HOME[ks[i]]; if(h)return mark(aside(tbFormToBoard(h[0],h[1]))); }
+    return mark(aside({x:50,y:22}));
+  };
+}
 function tbOurs(){return tmOurs().filter(tmGrpFlt).filter(function(p){return p.manual===true||String(p.name||"").trim();});}
 /* ══ 2.759 · 포지션 카드 열한 장(사용자 «카드를 항상 11개 띄우고 포지션을 고르게 하면 포메이션을 없애도 된다») ══
    운동장의 카드는 늘 11장(data.meta.tbCards = posId 11개). 카드 머리의 포지션은 고르는 것이고 자리는 끌어서 정한다(좌표 tbXY 그대로).
@@ -11449,10 +11482,9 @@ function tbPosSelectHTML(gr){
 }
 /* 2.760 — 카드 11장을 «자리» 로 내보낸다(meta.tbSlots: [{ab,x,y}] 팀 구성 운동장 % 좌표). 경기 준비·상대 분석·작전판 «선발 배치» 가 포메이션 표 대신 이것을 읽는다 */
 function tbSlotsCompute(){ try{
-  var xy=tbXYStore(), def=tbDefaultMap(), fb=0, seen={};
-  var by={}; var P=data.positions||[];
+  var place=tbPlacer(); var P=data.positions||[];
   return tbCards().map(function(id){ var ps=P.find(function(x){return x.id===id;}); var ab=String(posAbbr(ps.name)||ps.name||"").toUpperCase();
-    var pos=xy[id]||(!seen[ab]&&def[ab])||{x:14+(fb++)*15,y:90}; seen[ab]=1;
+    var pos=place(id,ab);
     return {ab:ab,x:Math.round(+pos.x*10)/10,y:Math.round(+pos.y*10)/10}; });
 }catch(_){ return null; } }
 /* 2.761 — 카드 11장을 팀 구성 SVG·명단 출력의 자리([k,x,y,label], 세로 좌표계 x'=tb.y, y'=100-tb.x)로 */
@@ -11502,10 +11534,9 @@ var TB_PITCH_LINES='<svg class="tb-lines" viewBox="0 0 1190 500" preserveAspectR
   +'</svg>';
 function tbRender(){
   var pitch=$("tbPitch");if(!pitch)return;
-  var xy=tbXYStore(),def=tbDefaultMap(),fb=0,seen={};
+  var place=tbPlacer();
   pitch.innerHTML=TB_PITCH_LINES+tbGroups().map(function(gr){
-    var pos=xy[gr.id]||(!seen[gr.ab]&&def[gr.ab])||{x:14+(fb++)*15,y:90};
-    seen[gr.ab]=1;
+    var pos=place(gr.id,gr.ab);
     return '<div class="tb-slot" data-posid="'+esc(gr.id)+'" style="left:'+pos.x+'%;top:'+pos.y+'%">'
       +'<div class="tb-t"><span class="tb-h" title="끌어서 자리 이동" aria-label="자리 이동"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12" style="display:block;pointer-events:none" aria-hidden="true"><path d="M8 6h8M8 12h8M8 18h8"/></svg></span>'+tbPosSelectHTML(gr)+'<u title="지금 '+gr.players.length+'명">'+gr.players.length+'</u></div>'
       +gr.players.map(function(p,i){return tbPillHTML(p,i===0);}).join("")
@@ -18264,10 +18295,10 @@ function obFillUs(m){
      예전엔 숨은 선발 명단(m.squad)과 접어 둔 경기 준비 보드를 읽었다 — 둘 다 2.971 부터 화면에서 고칠 수 없다.
      좌표는 matchStartersToSlots 의 카드 변환과 같다(우리 골대 왼쪽, 가로 6~68%). */
   var groups=[]; try{groups=tbGroups()||[];}catch(_){groups=[];}
-  var xy=tbXYStore(),def=tbDefaultMap(),seenAb={},used={},tokens=[],skipped=0,fb=0;
+  var place=tbPlacer(),used={},tokens=[],skipped=0;
   groups.forEach(function(gr){
     if(!gr)return;
-    var pos=xy[gr.id]||(!seenAb[gr.ab]&&def[gr.ab])||{x:14+(fb++)*15,y:90}; seenAb[gr.ab]=1;   /* tbRender 와 같은 자리 */
+    var pos=place(gr.id,gr.ab);   /* tbRender 와 같은 자리(3.040 tbPlacer) */
     var list=(gr.players||[]).filter(function(q){return q&&!used[q.id];});
     var p=list.filter(function(q){return !plOut(plStatusOf(q));})[0];
     if(!p){ if(list.length)skipped++; return; }

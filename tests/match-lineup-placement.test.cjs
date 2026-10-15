@@ -24,7 +24,9 @@ function setup(codes=['GK','RB','RCB','LCB','LB','RDM','LDM','RW','AM','LW','ST'
     mb2Draw:()=>state.draws++,obDraw:()=>state.draws++,mb2Counts(){},mb2SyncTray(){},
     mb2Save:()=>state.saves++,obSave:()=>state.saves++,toast:message=>state.messages.push(message),
     /* 2.974 — 상대 분석 «우리 11»은 선수단 작전판(카드 11장)에서 */
-    tbGroups:()=>state.groups||[],tbXYStore:()=>state.xy||{},tbDefaultMap:()=>state.def||{},
+    tbGroups:()=>state.groups||[],
+    /* 3.040 — 자리는 tbPlacer 하나가 정한다(실제 규칙은 tests/squad-card-placement-3040.test.cjs). 여기선 저장 자리 → 포메이션 자리 → 하프라인 */
+    tbPlacer:()=>(id,ab)=>(state.xy||{})[id]||(state.def||{})[ab]||{x:50,y:22},
     plStatusOf:p=>p.status||'ok',plOut:s=>s==='injury'||s==='rehab'||s==='out'
   });vm.runInContext(code,c);return {c,m,data,players,state};
 }
@@ -103,7 +105,7 @@ test('analysis fill takes the top available player of each squad-board card at t
   const h=setup();squadBoard(h);const {c,m,state,players}=h;players[1].status='injury';
   m.squad.start=['p9'];m.phaseBoards.boards.atk.us=[{pid:'p0',x:80,y:10}];
   c.obFillUs(m);const us=plain(m.oppPB.boards.atk.frames[0].us);
-  assert.deepEqual(us.map(t=>[t.pid,t.x,t.y]),[['p0',6,50],['p2',18.4,80],['p3',30.8,35],['p9',6,90]],'xy store, then formation default, then the bottom-row fallback like the squad board');
+  assert.deepEqual(us.map(t=>[t.pid,t.x,t.y]),[['p0',6,50],['p2',18.4,80],['p3',30.8,35],['p9',35.8,22]],'xy store, then formation default, then the shared placer fallback like the squad board');
   assert.equal(us[1].name,'선수 2','an injured first choice is skipped for the next player of the same card');
   assert.deepEqual(m.squad.start,['p9'],'the hidden starter list is neither read nor written');
   assert.equal(state.saves,1);assert.match(state.messages.at(-1),/선수단 작전판에서 4명을 놓았어요/);
