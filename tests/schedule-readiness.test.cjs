@@ -31,7 +31,7 @@ const tick=()=>new Promise(r=>setImmediate(r));
 
 // Run the actual sync round, HTTP ACK/CAS, kvWrite and readiness functions.
 // I/O, unrelated IDP/library channels and the UI are synthetic. No keyReady stub,
-// live account, real browser store or network is involved.
+// live account, real browser scoutStore or network is involved.
 function harness(opt={}){
   const local=new Map(),idb=new Map(),server=new Map(),base=new Map(),requests=[],errors=[],acks=[],hooks={},notices=[],nodes=new Map();
   let session={uid:'coach-a'},active='team-a',held=false;
@@ -105,7 +105,7 @@ function harness(opt={}){
   c.window=c;c.parent={PSSync:null,postMessage(){}};
   vm.runInContext(code,c,{filename:'actual sync readiness contract'});
   c.parent.PSSync={session:c.getSess,dataUnlocked:c.dataUnlocked,keyReady:c.keyReady};
-  c.store={owner:()=>local.get(OWNER),get:k=>local.has(k)?JSON.parse(local.get(k)):null};
+  c.scoutStore={owner:()=>local.get(OWNER),get:k=>local.has(k)?JSON.parse(local.get(k)):null};
   c.matchSession=c.getSess;c.matchCurrent='match-a';
   vm.runInContext(section(scout,'function matchTrainingContext(','function matchTrainingRecentRows('),c);
   local.set(MATCH,JSON.stringify({matches:[{id:'match-a',date:'2026-09-05',opponent:'Away',reviewImprove:'improve'}]}));

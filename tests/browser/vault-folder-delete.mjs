@@ -10,24 +10,24 @@ const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   await page.waitForTimeout(1500);
-  const board=async()=>{const f=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await f.waitForFunction(()=>typeof store==='object'&&typeof renderDrillFiles==='function');return f;};
+  const board=async()=>{const f=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await f.waitForFunction(()=>typeof boardStore==='object'&&typeof renderDrillFiles==='function');return f;};
   let bf=await board();
   await bf.evaluate(async A=>{
     const now=Date.now();
-    const lib=(await store.get('cs_drill_lib_v1'))||[];
+    const lib=(await boardStore.get('cs_drill_lib_v1'))||[];
     lib.unshift(
       {libId:'Vqa_f1',type:'train',name:'가상 1v1 / 2v2',folder:'팀 공유/공격 /공격-수비',tags:[],savedAt:now,createdBy:A},
       {libId:'Vqa_f2',type:'train',name:'가상 2v2 사이드',folder:'팀 공유/공격 /공격-수비',tags:[],savedAt:now-1,createdBy:A},
       {libId:'Vqa_f3',type:'train',name:'가상 론도',folder:'팀 공유',tags:[],savedAt:now-2,createdBy:A});
     window.__qaLib=lib;
-    await store.set('cs_vault_folders_v1',['팀 공유','tactice','팀 공유/공격 /공격-수비','팀 공유/공격','팀 공유/공격/수비','팀 공유/공격/공격-수비']);
+    await boardStore.set('cs_vault_folders_v1',['팀 공유','tactice','팀 공유/공격 /공격-수비','팀 공유/공격','팀 공유/공격/수비','팀 공유/공격/공격-수비']);
     localStorage.setItem('cs_vault_folder_meta_v1',JSON.stringify({'팀 공유':{shared:true}}));
     localStorage.setItem('cs_vault_open_v1',JSON.stringify({'팀 공유':1,'팀 공유/공격':1}));
     localStorage.setItem('cs_lib_rev',String(now));
     window.dispatchEvent(new StorageEvent('storage',{key:'cs_vault_folders_v1'}));
   },A);
   await page.waitForTimeout(1500);   /* 폴더 목록을 다 읽은 뒤에 자료를 심는다 */
-  await bf.evaluate(async()=>{await store.set('cs_drill_lib_v1',window.__qaLib);localStorage.setItem('cs_lib_rev',String(Date.now()));});
+  await bf.evaluate(async()=>{await boardStore.set('cs_drill_lib_v1',window.__qaLib);localStorage.setItem('cs_lib_rev',String(Date.now()));});
   await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]:not([data-train])').click());
   bf=await board();
   const rows=()=>bf.evaluate(()=>[...document.querySelectorAll('.vx-folder')].map(r=>({name:(r.querySelector('.vx-folder-name')||{}).textContent,pad:r.style.paddingLeft,share:(r.querySelector('.vx-share')||{className:''}).className})));
@@ -37,8 +37,8 @@ try{
   // 1) 열자마자 «공격»은 하나 — 자료도 그 하나 아래로
   await bf.waitForFunction(()=>[...document.querySelectorAll('.vx-folder-name')].filter(e=>e.textContent.trim()==='공격').length===1,null,{timeout:15000});
   assert.equal((await named('공격')).length,1,'똑같아 보이는 «공격»이 하나로 합쳐진다 '+JSON.stringify(await rows()));
-  const stored=async()=>bf.evaluate(async()=>({lib:((await store.get('cs_drill_lib_v1'))||[]).filter(d=>/^Vqa_f/.test(d.libId)).map(d=>({id:d.libId,folder:d.folder,ed:+d.editedAt||0})),list:await store.get('cs_vault_folders_v1'),meta:JSON.parse(localStorage.getItem('cs_vault_folder_meta_v1')||'{}')}));
-  await bf.waitForFunction(async()=>{const l=(await store.get('cs_drill_lib_v1'))||[];return l.filter(d=>d.folder==='팀 공유/공격/공격-수비').length===2;},null,{timeout:15000});
+  const stored=async()=>bf.evaluate(async()=>({lib:((await boardStore.get('cs_drill_lib_v1'))||[]).filter(d=>/^Vqa_f/.test(d.libId)).map(d=>({id:d.libId,folder:d.folder,ed:+d.editedAt||0})),list:await boardStore.get('cs_vault_folders_v1'),meta:JSON.parse(localStorage.getItem('cs_vault_folder_meta_v1')||'{}')}));
+  await bf.waitForFunction(async()=>{const l=(await boardStore.get('cs_drill_lib_v1'))||[];return l.filter(d=>d.folder==='팀 공유/공격/공격-수비').length===2;},null,{timeout:15000});
   let st=await stored();
   assert.ok(!st.list.some(x=>/ \/|\/ | $/.test(x)),'저장된 폴더 목록에 끝 공백 칸이 없다 '+JSON.stringify(st.list));
   assert.equal(st.list.filter(x=>x==='팀 공유/공격/공격-수비').length,1);
@@ -59,7 +59,7 @@ try{
   await menuOn('공격','삭제');
   const delMsg=await okDialog();
   assert.match(delMsg,/항목 2개는 ‘팀 공유’으로 옮길까요/,delMsg);
-  await bf.waitForFunction(async()=>{const l=(await store.get('cs_drill_lib_v1'))||[];return l.filter(d=>/^Vqa_f/.test(d.libId)).every(d=>d.folder==='팀 공유');},null,{timeout:15000});
+  await bf.waitForFunction(async()=>{const l=(await boardStore.get('cs_drill_lib_v1'))||[];return l.filter(d=>/^Vqa_f/.test(d.libId)).every(d=>d.folder==='팀 공유');},null,{timeout:15000});
   await bf.waitForFunction(()=>![...document.querySelectorAll('.vx-folder-name')].some(e=>e.textContent.trim()==='공격'),null,{timeout:15000});
   // 다시 그려도 되살아나지 않는다(예전엔 다음 그리기에서 자가 치유가 «공격»을 다시 만들었다)
   await bf.evaluate(()=>{const b=[...document.querySelectorAll('.vx-nav button')].find(b=>/전체 자료/.test(b.textContent));b.click();});

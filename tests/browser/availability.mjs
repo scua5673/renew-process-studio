@@ -74,7 +74,7 @@ async function makeContext(browser,width){
   return context;
 }
 async function ready(page){const frame=page.frame({url:/studio\/scout\.html/});await frame.waitForFunction(()=>typeof renderAvail==='function'&&window.PSParticipation&&window.PSPerms&&typeof scoutBootPending!=='undefined'&&!scoutBootPending);return frame;}
-async function flush(frame){await frame.evaluate(async()=>{await store.ready();if(window.PSStorage)await PSStorage.sharedReady();});}
+async function flush(frame){await frame.evaluate(async()=>{await scoutStore.ready();if(window.PSStorage)await PSStorage.sharedReady();});}
 async function resolved(frame,pid,day){return frame.evaluate(({pid,day})=>{const p=data.players.find(x=>x.id===pid);return PSParticipation.resolve(data.meta,pid,day,avDayKind(new Date(day+'T00:00:00'),plGrpOf(p)),p.status,stYmd());},{pid,day});}
 async function choose(frame,pid,state,note,screenshot){
   await frame.locator('[data-av-st="'+pid+'"]').click();await frame.locator('.av-pick [data-k="'+state+'"]').click();
@@ -90,10 +90,10 @@ try{
     const context=await makeContext(browser,width),page=await context.newPage(),errors=[];page.setDefaultTimeout(20000);page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base+'/fixture-attendance.html');let frame=await ready(page);
     await frame.evaluate(async({fixture,schedule,UID,WID})=>{
-      await PSStorage.sharedReady();data=JSON.parse(JSON.stringify(fixture));store.set('scout_tool_v1',data);await store.ready();
+      await PSStorage.sharedReady();data=JSON.parse(JSON.stringify(fixture));scoutStore.set('scout_tool_v1',data);await scoutStore.ready();
       await psSaveSharedAsync('process_coach_v1',JSON.stringify(schedule));await PSStorage.sharedVerified('process_coach_v1',JSON.stringify(schedule));
       const seal=localStorage.getItem('ps_cache_owner_v1');localStorage.setItem('ps_sync_meta',JSON.stringify({h:{},c:{},r:{process_coach_v1:{w:WID,u:UID,o:seal,present:true},cs_scout_targets_v1:{w:WID,u:UID,o:seal,present:false}}}));
-      await scPrepare();load();await store.ready(true);availRange=14;availDay=null;setView('avail');
+      await scPrepare();load();await scoutStore.ready(true);availRange=14;availDay=null;setView('avail');
     },{fixture,schedule,UID,WID});
     await frame.locator('[data-av-date="2026-09-11"]').waitFor();assert.equal(await frame.locator('.av-stale').count(),0);
     const perf=await frame.evaluate(()=>{
@@ -179,10 +179,10 @@ try{
     const beforeRace=await frame.evaluate(()=>({raw:localStorage.getItem('scout_tool_v1'),seal:localStorage.getItem('ps_cache_owner_v1')}));
     await frame.locator('[data-av-st=p1]').click();await frame.locator('.av-pick [data-k=rest]').click();
     await frame.locator('.av-pick [data-av-note]').fill('새 계정으로 넘어가면 저장하면 안 되는 합성 초안');
-    await frame.evaluate(()=>{window.fixtureOriginalReady=store.ready;store.ready=function(...args){window.fixtureReadyEntered=true;return new Promise(resolve=>{window.fixtureReleaseReady=()=>resolve(fixtureOriginalReady.apply(store,args));});};});
+    await frame.evaluate(()=>{window.fixtureOriginalReady=scoutStore.ready;scoutStore.ready=function(...args){window.fixtureReadyEntered=true;return new Promise(resolve=>{window.fixtureReleaseReady=()=>resolve(fixtureOriginalReady.apply(scoutStore,args));});};});
     await frame.locator('.av-pick [data-av-save]').click();await frame.waitForFunction(()=>window.fixtureReadyEntered===true);
     await frame.evaluate(()=>{const seal=JSON.parse(localStorage.getItem('ps_cache_owner_v1'));seal.nonce='changed-during-await';localStorage.setItem('ps_cache_owner_v1',JSON.stringify(seal));});
-    await frame.locator('.av-pick').waitFor({state:'hidden'});await frame.evaluate(()=>{store.ready=fixtureOriginalReady;fixtureReleaseReady();});
+    await frame.locator('.av-pick').waitFor({state:'hidden'});await frame.evaluate(()=>{scoutStore.ready=fixtureOriginalReady;fixtureReleaseReady();});
     await frame.waitForFunction(()=>!avSaving);assert.equal(await frame.evaluate(()=>localStorage.getItem('scout_tool_v1')),beforeRace.raw);assert.equal(await frame.locator('.av-pick').count(),0);
     assert.deepEqual(errors,[]);
     results.push({engine,width,passed:true,pastDayOnly:true,notePersisted:true,cancelDoesNotSave:true,dateKeyboardAccessible:true,groupScheduleTotals:true,injuryThroughWeekend:true,normalReturnClosesFuture:true,noStaleBanner:true,htmlEscaped:true,ownerChangeDuringSaveBlocked:true,geometry});

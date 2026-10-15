@@ -6,7 +6,7 @@ function deferred(){let resolve,reject;const promise=new Promise((r,j)=>{resolve
 function fixture(){
  const data=new Map([['ps_cache_owner_v1','owner-a']]),hooks={},saved=[],failures=[];let uid='A',wid='team-a',renders=0;
  const c={Promise,JSON,localStorage:{getItem:k=>data.get(k)||null},VFOLD_KEY:'cs_vault_folders_v1',psVaultUnlocked:()=>true,psMyUid:()=>uid,psActiveWs:()=>({id:wid}),
- store:{get:async()=>hooks.read?hooks.read():['A','B']},psSaveSharedAsync:(k,raw)=>{saved.push({k,raw});data.set(k,raw);return hooks.write?hooks.write():Promise.resolve(true);},
+ boardStore:{get:async()=>hooks.read?hooks.read():['A','B']},psSaveSharedAsync:(k,raw)=>{saved.push({k,raw});data.set(k,raw);return hooks.write?hooks.write():Promise.resolve(true);},
  storeFailure:(k,e)=>failures.push(e.message),renderDrillFiles:()=>renders++,toggleSave(){}};c.window=c;vm.createContext(c);vm.runInContext(code,c);c.vaultFolders=['A'];
  return{c,data,hooks,saved,failures,get renders(){return renders;},switch(){uid='B';wid='team-b';data.set('ps_cache_owner_v1','owner-b');}};
 }

@@ -33,11 +33,11 @@ try{
     await page.goto(base+'/studio/scout.html',{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>window.PSStorage&&typeof itemsApply==='function');
     await page.evaluate(async()=>{
-      await PSStorage.sharedReady();await psSaveSharedAsync(TKEY,localStorage.getItem(TKEY));await scPrepare();await store.ready(true);
+      await PSStorage.sharedReady();await psSaveSharedAsync(TKEY,localStorage.getItem(TKEY));await scPrepare();await scoutStore.ready(true);
       const p=(id,name,grp)=>({id,name,grp,posId:'pos_CB',levels:{},num:'',profile:{},type:'ours'});
       data.players=Array.from({length:44},(_,i)=>p('current-'+i,'가상 선수 '+i,i<26?'A':'B'));
       data.meta.evalMode='fifa';data._items={build:'2.809'};scMainMigrationPending=false;
-      await psSaveSharedAsync(KEY,JSON.stringify(data));await psSaveSharedAsync(PDKEY,'{}');await store.ready(true);
+      await psSaveSharedAsync(KEY,JSON.stringify(data));await psSaveSharedAsync(PDKEY,'{}');await scoutStore.ready(true);
       window.fixtureRows=data.players.concat(Array.from({length:25},(_,i)=>p('old-'+i,'가상 선수 '+i,'')));
       window.fixtureWrites=[];window.fixtureConfirmed={};window.fixtureHeld={};
       window.PSItems={active:()=>true,readAll:async()=>({players:fixtureRows,tombs:{},rows:fixtureRows.length,n:fixtureRows.length,confirmed:fixtureConfirmed,held:fixtureHeld}),write:players=>fixtureWrites.push(JSON.stringify(players))};

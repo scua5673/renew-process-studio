@@ -19,7 +19,7 @@ function fixture(view='availView'){
     load(){calls.push('load');state.data=state.raw;},
     itemsApply:async reason=>{calls.push('items:'+reason);if(state.row===null)return false;state.data=state.row;return true;},
     renderAvail(){calls.push('avail:'+state.data+':'+state.schedule);},renderTeam(){calls.push('team');},renderTeamHome(){calls.push('home');},renderMatch(){calls.push('match');},
-    renderGrowth(){calls.push('growth');},store:{hasPending:()=>state.pending,hasFailed:()=>state.failed},
+    renderGrowth(){calls.push('growth');},scoutStore:{hasPending:()=>state.pending,hasFailed:()=>state.failed},
     matchLoad(){calls.push('schedule');return {matches:[]};},matchDocPending:()=>false,matchRefreshLater(){calls.push('later');},matchOpenAtRequest(){calls.push('open');}
   });c.window=c;vm.runInContext(refreshCode,c);
   return {c,state,calls,root,note,dialog,storage(key){for(const fn of handlers.storage||[])fn({key});},

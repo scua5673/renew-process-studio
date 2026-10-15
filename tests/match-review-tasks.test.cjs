@@ -34,7 +34,7 @@ function harness() {
   const parent = {PSSync:{keyReady(){return state.keyReady;}},postMessage(message,origin){calls.messages.push({message,origin});}};
   const c=vm.createContext({console,Promise,Date,Math,JSON,PSReviewTraining:review,parent,location:{origin:'https://local.test'},
     localStorage:{getItem(k){return local.has(k)?local.get(k):null;}},
-    store:{owner(){return JSON.stringify([local.get('ps_active_ws'),JSON.parse(local.get('ps_sync_session')).uid]);},get(){return state.doc;}},
+    scoutStore:{owner(){return JSON.stringify([local.get('ps_active_ws'),JSON.parse(local.get('ps_sync_session')).uid]);},get(){return state.doc;}},
     matchSession(){return JSON.parse(local.get('ps_sync_session'));},matchRole(){return state.role;},matchCanEditOne(){return state.canEdit;},
     matchDocPending(){return state.pending;},matchCanLeaveCurrent(){return state.mayLeave;},
     matchCurrent:'match-a',matchSaveRevision:0,matchTab:'prep',matchStage:'prep',
@@ -201,7 +201,7 @@ test('confirmed review remains after the actual later cancel restores its snapsh
   h.c.matchIndividualPublishWasAttempted=()=>false;h.c.matchPrivateLoad=()=>({});h.c.matchIndividualPendingAny=()=>false;h.c.matchIndividualPublicPendingAny=()=>false;
   h.c.matchIndividualPendingClear=()=>{};h.c.matchIndividualPublicPendingClear=()=>{};
   h.c.matchBackToList=()=>{};h.c.matchSaveNow=()=>true;h.c.matchIndividualCanLeaveActive=()=>true;
-  let cancelled;h.c.psConfirm=(message,callback)=>{cancelled=callback();};h.c.store.set=()=>true;
+  let cancelled;h.c.psConfirm=(message,callback)=>{cancelled=callback();};h.c.scoutStore.set=()=>true;
   h.c.MATCH_PRIVATE_KEY='private';
   vm.runInContext(section('var matchSnap=null, matchSnapPriv=null, matchSnapId="";','window.matchSaveAndExit=')+
     section('window.matchCancelExit=','function renderMatch(){'),h.c);

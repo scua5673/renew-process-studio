@@ -8292,11 +8292,11 @@ window.__psSelfTest=function(){
 window.__psVaultTest=function(){ return new Promise(function(resolve){
   var bak=null;try{bak=captureSnap();}catch(_){}
   var _cl=window.__capLock; window.__capLock=1; var TMP="cs__vaulttest_tmp";
-  function done(ok,why){ try{store.set(TMP,null);}catch(_){} try{localStorage.removeItem(TMP);}catch(_){} try{if(bak)loadSnap(bak);}catch(_){} window.__capLock=_cl; try{renderTokens();}catch(_){} resolve({ok:ok,why:why||""}); }
+  function done(ok,why){ try{boardStore.set(TMP,null);}catch(_){} try{localStorage.removeItem(TMP);}catch(_){} try{if(bak)loadSnap(bak);}catch(_){} window.__capLock=_cl; try{renderTokens();}catch(_){} resolve({ok:ok,why:why||""}); }
   try{
     state.players=[{id:5001,team:"red",num:"9",x:111,y:222,vis:true,dir:90,shaper:true}];state.equipment=[];state.ball={x:50,y:60};state.spFlip=true;state.pitchView="q1";state.pitchN=3;state.teamPattern={red:"h"};
     var snap=captureSnap();
-    Promise.resolve(store.set(TMP,{type:"board",snap:snap})).then(function(){ return Promise.resolve(store.get(TMP)); }).then(function(item){
+    Promise.resolve(boardStore.set(TMP,{type:"board",snap:snap})).then(function(){ return Promise.resolve(boardStore.get(TMP)); }).then(function(item){
       var ok=false,why="";
       try{ loadSnap((item&&item.snap)||{}); ok=(state.players.length===1&&Math.round(state.players[0].x)===111&&pitchViewKey()==="q1"&&state.pitchN===3&&state.spFlip===true&&(state.teamPattern&&state.teamPattern.red==="h")); if(!ok)why="복원값 불일치"; }
       catch(e){why="예외:"+(e&&e.message);}
@@ -8330,7 +8330,8 @@ function storeFailure(k,error){
     if(typeof toast==="function")toast(msg);
   }catch(_){}
 }
-const store={
+/* 3.053 — 이 페이지의 저장소(IndexedDB 정본 · localStorage 예비). scout.html 의 scoutStore(localStorage 껍데기)와 이름이 같아 사고가 났다(scout.html 1.618) — 키마다 어디에 사는지는 studio/storage-keys.js */
+const boardStore={
   async get(k){try{if(window.storage){const r=await window.storage.get(k);return r?JSON.parse(r.value):null;}}catch(_){}
     try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(_){}return mem[k]??null;},
   async set(k,v){
@@ -8996,7 +8997,7 @@ async function restoreLiveBoard(){
     if(chosen&&chosen.pending&&!remoteError)boardPrivateSend(owner).then(function(){if(current())_bliveDirty=!!(_boardPrivateRecord&&_boardPrivateRecord.pending);}).catch(function(){});
     // Training editor drafts retain their existing separate workflow. They are
     // never used as a personal working-board snapshot.
-    try{var ed=await store.get(EDRAFT_KEY);if(current()&&ed&&ed.trainings&&ed.trainings.length)window.__editorDraft=ed;}catch(_){}
+    try{var ed=await boardStore.get(EDRAFT_KEY);if(current()&&ed&&ed.trainings&&ed.trainings.length)window.__editorDraft=ed;}catch(_){}
     try{if(current()&&typeof boardDraftOffer==='function')boardDraftOffer(owner,chosen).catch(function(){});}catch(_){}   /* 3.038 — 저장본보다 새 기기 초안이 있으면 «되살리기» 띠 */
     return current();
   }catch(e){if(current())try{toast('내 보드를 불러오지 못했어요. 이 기기에 있는 작업은 그대로예요 — 인터넷 연결을 확인하고 보드를 다시 열어 주세요');   /* 3.039 — «개인 보드» · «원문»은 내부 말(피드백 CP-16) */}catch(_){}return false;}
@@ -11209,7 +11210,7 @@ function isWarm(d){return !!warmForOf(d)||((d.name||"").indexOf("웜업")===0);}
 function isTpl(d){return !!d.tpl||((d.libId||"").charAt(0)==="T");}
 async function libGet(){
   if(!psVaultUnlocked())throw psVaultLockedError();
-  var lib=(await store.get(LIB_KEY))||[];
+  var lib=(await boardStore.get(LIB_KEY))||[];
   if(!psVaultUnlocked())throw psVaultLockedError();
   /* 보관함 편집 직후 새로고침·앱 전환으로 IndexedDB 저장이 끝나지 못한 경우,
      동기식 안전 복사본을 원래 항목에 한 번 병합한다. */
@@ -11247,7 +11248,7 @@ function psVaultUnlocked(){
   try{return !!(window.parent&&window.parent!==window&&window.parent.PSSync&&window.parent.PSSync.dataUnlocked&&window.parent.PSSync.dataUnlocked()===true);}catch(_){return false;}
 }
 function psVaultLockedError(){ var e=new Error("보관함은 로그인한 뒤 열 수 있습니다");e.name="PSVaultLockedError";e.psVaultLocked=true;return e; }
-function libWrite(lib){if(!psVaultUnlocked())return Promise.reject(psVaultLockedError());return Promise.resolve().then(function(){if(!psVaultUnlocked())throw psVaultLockedError();return store.set(LIB_KEY,lib);});}
+function libWrite(lib){if(!psVaultUnlocked())return Promise.reject(psVaultLockedError());return Promise.resolve().then(function(){if(!psVaultUnlocked())throw psVaultLockedError();return boardStore.set(LIB_KEY,lib);});}
 /* 2.991 — 보관함은 목록 한 덩어리(cs_drill_lib_v1)라 «읽고-고치고-쓰기» 둘이 겹치면 늦게 쓰는 쪽이 먼저 쓴 쪽을 지운다.
    실측(리눅스 CI 웹킷 45회 중 3회): 미팅 자동 저장이 새 내용을 쓴 1~27ms 뒤, 그보다 먼저 목록을 읽어 둔 썸네일 채우기(vxThumbOf)가
    옛 목록을 통째로 되써 자동 저장이 사라졌다 — 상태 줄은 «이 기기에 저장됨 ✓», 동기화·저장소 경고는 없었다.
@@ -11825,9 +11826,9 @@ function sessCard(name,s){const c=document.createElement("div");c.className="lib
   const cp=document.createElement("button");cp.className="btn";cp.textContent="복제";
   cp.onclick=async()=>{await loadSession(name);session.linkId="ln"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);session.title=(s.title||name)+" 복사";if($("sTitle"))$("sTitle").value=session.title;closeSessLib();toast("복제됨 — 저장 시 새 이름으로");};
   const del=document.createElement("button");del.className="btn ghost danger";del.textContent="삭제";
-  del.onclick=()=>{psConfirm('"'+(s.title||name)+'" 세션을 삭제할까요?',async()=>{const all=(await store.get(SESS_KEY))||{};delete all[name];await store.set(SESS_KEY,all);renderSessLib();refreshSessions();});};
+  del.onclick=()=>{psConfirm('"'+(s.title||name)+'" 세션을 삭제할까요?',async()=>{const all=(await boardStore.get(SESS_KEY))||{};delete all[name];await boardStore.set(SESS_KEY,all);renderSessLib();refreshSessions();});};
   act.append(ld,cp,del);bd.appendChild(act);c.appendChild(bd);return c;}
-async function renderSessLib(){const grid=$("sessLibGrid");if(!grid)return;const all=(await store.get(SESS_KEY))||{};
+async function renderSessLib(){const grid=$("sessLibGrid");if(!grid)return;const all=(await boardStore.get(SESS_KEY))||{};
   let names=Object.keys(all);const totalN=names.length;
   if(sessLibQ)names=names.filter(n=>((all[n].title||n).toLowerCase().includes(sessLibQ.toLowerCase())));
   const cnt=$("sessLibCount");if(cnt)cnt.textContent=totalN+"개 세션"+(names.length!==totalN?(" · "+names.length+"개 표시"):"");
@@ -11860,8 +11861,8 @@ function posCode(v){ var t=String(v||"").trim(); if(!t)return ""; var K=t.toUppe
 function posBase(v){ v=posCode(v); if(/^(L|R)?CB$/.test(v))return"CB"; if(/^(L|R)?CM$/.test(v))return"CM"; if(/^(L|R)?DM$/.test(v))return"DM";
   if(v==="CF")return"ST"; if(v==="LWB")return"LB"; if(v==="RWB")return"RB"; return v; }
 function posGroup(v){ v=posCode(v); if(!v)return""; if(v==="GK")return"GK"; if(/CB|LB|RB|WB|FB/.test(v))return"DF"; if(/DM|CM|AM|LM|RM/.test(v))return"MF"; return"FW"; }
-async function squadLoad(){try{var ls=localStorage.getItem("cs_squad_v1");if(ls){var o=JSON.parse(ls);if(o&&Array.isArray(o.players)){squad=o;return;}}}catch(_){}try{const s=await store.get(TEAM_KEY);if(s&&Array.isArray(s.players))squad=s;}catch(_){}}
-function squadSave(){try{store.set(TEAM_KEY,squad);}catch(_){}try{localStorage.setItem("cs_squad_v1",JSON.stringify(squad));}catch(_){}if($("squadCount"))$("squadCount").textContent=(squad.players.length)+"명";}
+async function squadLoad(){try{var ls=localStorage.getItem("cs_squad_v1");if(ls){var o=JSON.parse(ls);if(o&&Array.isArray(o.players)){squad=o;return;}}}catch(_){}try{const s=await boardStore.get(TEAM_KEY);if(s&&Array.isArray(s.players))squad=s;}catch(_){}}
+function squadSave(){try{boardStore.set(TEAM_KEY,squad);}catch(_){}try{localStorage.setItem("cs_squad_v1",JSON.stringify(squad));}catch(_){}if($("squadCount"))$("squadCount").textContent=(squad.players.length)+"명";}
 function renderSquad(){const box=$("squadList");if(!box)return;box.innerHTML="";
   if($("squadName"))$("squadName").value=squad.name||"";
   if($("squadCount"))$("squadCount").textContent=(squad.players.length)+"명";
@@ -12086,14 +12087,14 @@ async function openAnalysisTeamLibrary(){
 function loadTeamToBoard(startersOnly){try{var ls=localStorage.getItem("cs_squad_v1");if(ls){var o=JSON.parse(ls);if(o&&Array.isArray(o.players))squad=o;}}catch(_){}applySquadToBoard({startersOnly:!!startersOnly});}
 try{window.applySquadToBoard=applySquadToBoard;window.loadTeamToBoard=loadTeamToBoard;}catch(_){}
 
-async function refreshSessions(sel){const all=await store.get(SESS_KEY)||{};
+async function refreshSessions(sel){const all=await boardStore.get(SESS_KEY)||{};
   const s=$("sessSel");s.innerHTML='<option value="">불러오기</option>';
   Object.keys(all).forEach(n=>{const o=document.createElement("option");o.value=n;o.textContent=(all[n]&&all[n].title)||n;s.appendChild(o);});
   if(sel)s.value=sel;}
 async function saveSession(){const title=((session.title||"").trim())||("세션 "+(session.date||new Date().toLocaleDateString()));
-  session.title=title;const all=await store.get(SESS_KEY)||{};
+  session.title=title;const all=await boardStore.get(SESS_KEY)||{};
   all[title]={title,date:session.date,time:session.time,md:session.md,players:session.players,pGk:session.pGk,pField:session.pField,pRehab:session.pRehab,pOut:session.pOut,drills:session.drills};
-  await store.set(SESS_KEY,all);await refreshSessions(title);toast(`"${title}" 기록에 저장됨 — ⋯ 세션 ▾ 불러오기에서 확인`);try{window.__autoSyncToWeek&&window.__autoSyncToWeek();}catch(_){}}
+  await boardStore.set(SESS_KEY,all);await refreshSessions(title);toast(`"${title}" 기록에 저장됨 — ⋯ 세션 ▾ 불러오기에서 확인`);try{window.__autoSyncToWeek&&window.__autoSyncToWeek();}catch(_){}}
 async function saveSessionPrompt(){
   if(!session.drills.length){toast("드릴이 없어요 — 먼저 구성하세요");return;}
   const def=session.title||("세션 "+new Date().toLocaleDateString());
@@ -12104,25 +12105,25 @@ function newSessionBtn(){var go=function(){
   session.title="";session.date=todayStr();session.time="";session.md="";session.players="";session.pGk="";session.pField="";session.pRehab="";session.pOut="";session.drills=[];
   if($("sTitle"))$("sTitle").value="";renderSession();toast("새 세션");};
   if(session.drills.length)psConfirm("현재 세션을 비우고 새로 시작할까요?",go);else go();}
-async function loadSession(name){if(!name)return;const all=await store.get(SESS_KEY)||{};const s=all[name];if(!s)return;
+async function loadSession(name){if(!name)return;const all=await boardStore.get(SESS_KEY)||{};const s=all[name];if(!s)return;
   session.title=s.title;session.date=s.date||todayStr();session.time=s.time||"";session.md=s.md||"";session.players=s.players||"";session.pGk=s.pGk||"";session.pField=s.pField||"";session.pRehab=s.pRehab||"";session.pOut=s.pOut||"";session.linkId=s.linkId||name;session.drills=dc(s.drills||[]);reindexDrills();renderSession();}
 async function delSession(){const name=$("sessSel").value;if(!name)return;psConfirm(`"${name}" 세션 삭제?`,async function(){
-  const all=await store.get(SESS_KEY)||{};delete all[name];await store.set(SESS_KEY,all);await refreshSessions();});}
+  const all=await boardStore.get(SESS_KEY)||{};delete all[name];await boardStore.set(SESS_KEY,all);await refreshSessions();});}
 let _arcT=null;
 async function archiveAuto(){try{
   if(!session.drills.length)return;
   if(!((session.title||"").trim())&&!session.date)return;
   if(!session.linkId)session.linkId="ln"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  const all=await store.get(SESS_KEY)||{};
+  const all=await boardStore.get(SESS_KEY)||{};
   // 옛 제목 키 항목이 같은 linkId면 정리
   Object.keys(all).forEach(k=>{if(all[k]&&all[k].linkId===session.linkId&&k!==session.linkId)delete all[k];});
   all[session.linkId]={linkId:session.linkId,title:(session.title||"").trim()||("세션 "+(session.date||"")),
     date:session.date,time:session.time,md:session.md,players:session.players,pGk:session.pGk,pField:session.pField,pRehab:session.pRehab,pOut:session.pOut,drills:session.drills};
-  await store.set(SESS_KEY,all);refreshSessions();
+  await boardStore.set(SESS_KEY,all);refreshSessions();
 }catch(_){}}
-function autosaveCur(){try{store.set(SESS_CUR,{title:session.title,date:session.date,time:session.time,md:session.md,players:session.players,pGk:session.pGk,pField:session.pField,pRehab:session.pRehab,pOut:session.pOut,linkId:session.linkId,drills:session.drills});}catch(_){}
+function autosaveCur(){try{boardStore.set(SESS_CUR,{title:session.title,date:session.date,time:session.time,md:session.md,players:session.players,pGk:session.pGk,pField:session.pField,pRehab:session.pRehab,pOut:session.pOut,linkId:session.linkId,drills:session.drills});}catch(_){}
   clearTimeout(_arcT);_arcT=setTimeout(archiveAuto,800);}
-async function restoreCur(){try{const c=await store.get(SESS_CUR);
+async function restoreCur(){try{const c=await boardStore.get(SESS_CUR);
   if(c&&c.drills&&c.drills.length){session.title=c.title||"";session.date=c.date||todayStr();session.time=c.time||"";session.md=c.md||"";session.players=c.players||"";session.pGk=c.pGk||"";session.pField=c.pField||"";session.pRehab=c.pRehab||"";session.pOut=c.pOut||"";session.linkId=c.linkId||null;session.drills=dc(c.drills);}}catch(_){}
   reindexDrills();renderSession();}
 function newSession(){var go=function(){
@@ -12902,17 +12903,17 @@ function saveEditorDraft(){ try{
   /* 2.613 — 애니메이션은 trainings[i].frames 안에 있다(captureActiveTraining). 최상위 frames 는 더 쓰지 않는다 */
   if(editorLibId!=null){
     var _lid=editorLibId;
-    store.get(EWORK_KEY).then(function(all){all=all&&typeof all==="object"?all:{};all[_lid]=_draft;return store.set(EWORK_KEY,all);})
+    boardStore.get(EWORK_KEY).then(function(all){all=all&&typeof all==="object"?all:{};all[_lid]=_draft;return boardStore.set(EWORK_KEY,all);})
       .then(function(){editorSaveStatus("임시 저장됨 · "+new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),true);})
       .catch(function(){editorSaveStatus("임시 저장 실패",false);});
   }else if(editorDrillId==null){
     if(window.__psNoDraft){ editorSaveStatus("",false); return; }   /* 1.940 — 임시 저장 없음 */
-    store.set(EDRAFT_KEY,_draft); try{window.__editorDraft=_draft;}catch(_){}
+    boardStore.set(EDRAFT_KEY,_draft); try{window.__editorDraft=_draft;}catch(_){}
     editorSaveStatus("임시 저장됨",true);
   }
 }catch(_){} }
-function clearEditorDraft(){ try{ store.set(EDRAFT_KEY,null); }catch(_){} try{ window.__editorDraft=null; }catch(_){} }
-function clearEditorWork(libId){if(libId==null)return;try{store.get(EWORK_KEY).then(function(all){if(!all||typeof all!=="object")return;delete all[libId];return store.set(EWORK_KEY,all);});}catch(_){}}
+function clearEditorDraft(){ try{ boardStore.set(EDRAFT_KEY,null); }catch(_){} try{ window.__editorDraft=null; }catch(_){} }
+function clearEditorWork(libId){if(libId==null)return;try{boardStore.get(EWORK_KEY).then(function(all){if(!all||typeof all!=="object")return;delete all[libId];return boardStore.set(EWORK_KEY,all);});}catch(_){}}
 var _edrT=null;
 function _schedEditorDraft(){ if(_edrT)return; _edrT=setTimeout(function(){_edrT=null;saveEditorDraft();},600); }
 function renameTraining(i){ if(!editorTrainings||!editorTrainings[i])return;
@@ -13683,7 +13684,7 @@ async function openLibDrawEditor(libId, readOnly, opts){
   $("modalTitle").textContent=editorReadOnly?(_vt+" 보기"):(_vt+" 편집");
   editorDrillId=null;editorLibId=libId;editorFileName=d.name||"";
   var _work=null;
-  if(!editorReadOnly){try{var _works=await store.get(EWORK_KEY);_work=_works&&_works[libId];}catch(_){}}
+  if(!editorReadOnly){try{var _works=await boardStore.get(EWORK_KEY);_work=_works&&_works[libId];}catch(_){}}
   if(_work&&_work.trainings&&_work.trainings.length&&(+_work.ts||0)>(+d.editedAt||+d.savedAt||0)){
     editorTrainings=_work.trainings;editorTrainIdx=Math.min(+_work.trainIdx||0,editorTrainings.length-1);
     _trainAdoptCardFrames(editorTrainings,_work.frames,editorTrainIdx);   /* 2.613 — 2.612 이전 임시본(frames 가 최상위) 호환 */
@@ -14379,8 +14380,8 @@ let _csWake=null;
 async function csReqWake(){try{if("wakeLock" in navigator){_csWake=await navigator.wakeLock.request("screen");}}catch(_){}}
 function csRelWake(){try{if(_csWake){_csWake.release();_csWake=null;}}catch(_){}}
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&document.body.classList.contains("match-mode"))csReqWake();});
-function mcSave(){try{store.set("cs_match_v1",{home:matchClock.home,away:matchClock.away,homeName:matchClock.homeName,awayName:matchClock.awayName,elapsed:matchClock.elapsed,half:matchClock.half,halfMin:matchClock.halfMin,events:matchClock.events||[],teamColors:dc(state.teamColors||{})});}catch(_){}}
-async function mcLoad(){try{const d=await store.get("cs_match_v1");if(d){matchClock.home=d.home||0;matchClock.away=d.away||0;
+function mcSave(){try{boardStore.set("cs_match_v1",{home:matchClock.home,away:matchClock.away,homeName:matchClock.homeName,awayName:matchClock.awayName,elapsed:matchClock.elapsed,half:matchClock.half,halfMin:matchClock.halfMin,events:matchClock.events||[],teamColors:dc(state.teamColors||{})});}catch(_){}}
+async function mcLoad(){try{const d=await boardStore.get("cs_match_v1");if(d){matchClock.home=d.home||0;matchClock.away=d.away||0;
   matchClock.homeName=d.homeName||"우리";matchClock.awayName=d.awayName||"상대";matchClock.events=d.events||[];
   matchClock.elapsed=d.elapsed||0;matchClock._base=matchClock.elapsed;matchClock.half=d.half||1;matchClock.halfMin=d.halfMin||45;matchClock.running=false;
   if(d.teamColors){Object.assign(state.teamColors,d.teamColors);if(typeof syncTeamDots==="function")syncTeamDots();if(typeof renderTokens==="function")renderTokens();}
@@ -16932,8 +16933,8 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function uid(){return "s"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
   function clone(o){return JSON.parse(JSON.stringify(o));}
   function migrate(d){(d||[]).forEach(function(c){if(!c.group)c.group="review";(c.items||[]).forEach(function(it){if(!it.id)it.id=uid();if(!it.frames){it.frames=it.snap?[{snap:it.snap,dur:1}]:[];}delete it.snap;});});return d;}
-  function load(cb){var done=function(v){data=(v&&v.length)?v:clone(DEF);migrate(data);cb&&cb();};try{var r=store.get(KEY);if(r&&r.then){r.then(done).catch(function(){done(null);});}else{done(r);}}catch(e){done(null);}}
-  function save(){try{store.set(KEY,data);}catch(e){}}
+  function load(cb){var done=function(v){data=(v&&v.length)?v:clone(DEF);migrate(data);cb&&cb();};try{var r=boardStore.get(KEY);if(r&&r.then){r.then(done).catch(function(){done(null);});}else{done(r);}}catch(e){done(null);}}
+  function save(){try{boardStore.set(KEY,data);}catch(e){}}
   function T(m){try{toast(m);}catch(e){}}
   function snap(){try{return captureSnap();}catch(e){return null;}}
   function thumb(){try{return boardThumbSVG();}catch(e){return "";}}
@@ -17336,7 +17337,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function saveVaultFolders(){
     var scope=vaultFolderScope(),raw=JSON.stringify(vaultFolders);if(!scope)return Promise.resolve(false);
     vaultFolderWrites++;vaultFolderReads++;var pending;
-    try{pending=typeof window.psSaveSharedAsync==='function'?window.psSaveSharedAsync(VFOLD_KEY,raw):store.set(VFOLD_KEY,JSON.parse(raw));}
+    try{pending=typeof window.psSaveSharedAsync==='function'?window.psSaveSharedAsync(VFOLD_KEY,raw):boardStore.set(VFOLD_KEY,JSON.parse(raw));}
     catch(e){pending=Promise.reject(e);}
     return Promise.resolve(pending).then(function(ok){vaultFolderWrites--;return ok;},function(e){
       vaultFolderWrites--;
@@ -17348,7 +17349,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   function reloadVaultFolders(){
     var generation=++vaultFolderReads,scope=vaultFolderScope(),before=JSON.stringify(vaultFolders);
     if(!scope||vaultFolderWrites)return Promise.resolve(false);
-    return store.get(VFOLD_KEY).then(function(a){
+    return boardStore.get(VFOLD_KEY).then(function(a){
       if(generation!==vaultFolderReads||vaultFolderWrites||scope!==vaultFolderScope()||before!==JSON.stringify(vaultFolders))return false;
       if(a==null){vaultFoldersReady=true;return false;}   /* 2.968 — 아직 저장된 목록이 없다 = 빈 목록이 정본 */
       if(!Array.isArray(a)||!a.every(function(name){return typeof name==='string';}))return false;
@@ -20004,7 +20005,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   /* ══ 3.001 · 보관함 예시 — 사용자 «보관함에 예시로 전부 하나씩 — 훈련도 미팅도 세트피스도 · 처음 들어온 사람들이 잘 볼 수 있게 · 제대로 만들어줘 조사해서».
      자료는 vault-examples.js(PSVaultExamples)가 만든다(늘 새 사본). 여기서는 담기만 한다 — 빈 보관함 첫 화면 카드와 ＋ 만들기 창의 «예시 담기»가 부른다.
      · 사본은 «프로세스» 폴더, ex 표식(어느 예시인가). 같은 예시가 보관함에 있으면 다시 담지 않고 그것을 연다 — 지운 뒤에는 다시 담긴다(새 번호 · 지금 날짜).
-     · 보기 전용(팀의 보기 권한 · 선수 · 권한표가 아직 안 온 팀 공간)은 보관함 쓰기가 메모리에만 남고 사라진다(store.set) — 손잡이를 아예 두지 않는다.
+     · 보기 전용(팀의 보기 권한 · 선수 · 권한표가 아직 안 온 팀 공간)은 보관함 쓰기가 메모리에만 남고 사라진다(boardStore.set) — 손잡이를 아예 두지 않는다.
      · 그림(thumb)은 차례 밖에서 미리 그린다 — 미팅 슬라이드 줄 · 훈련 탭 · 페이지가 처음부터 그림을 갖게. 차례 안에서는 읽고 쓰기만(libTurn). ══ */
   var _vxList=null;
   function vxEx(){ return window.PSVaultExamples||null; }

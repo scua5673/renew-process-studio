@@ -1351,7 +1351,7 @@ function openDetail(p,opt){
 
 /* ── 담기 → 내 보관함(cs_drill_lib_v1, 로컬) — 로그인·데이터 해제 후만 ── */
 var LIB_KEY='cs_drill_lib_v1';
-var store={
+var libStore={
   get:function(k){if(!communityLibraryDataUnlocked())return Promise.reject(communityLibraryLockedError());return window.storage?window.storage.get(k).then(function(r){if(!communityLibraryDataUnlocked())throw communityLibraryLockedError();return r?JSON.parse(r.value):null;}):Promise.resolve(null);},
   set:function(k,v){if(!communityLibraryDataUnlocked())return Promise.reject(communityLibraryLockedError());return window.storage?window.storage.set(k,JSON.stringify(v)):Promise.resolve();}
 };
@@ -1362,7 +1362,7 @@ function copyToLib(p,btn){
   if(!communityLibraryRequireUnlocked(true))return;
   var me=sess(),flowEpoch=__communityLibraryEpoch,uid=me&&me.uid;
   if(btn){btn.disabled=true;btn.textContent='담는 중…';}
-  store.get(LIB_KEY).then(function(lib){
+  libStore.get(LIB_KEY).then(function(lib){
     communityLibraryContinuation(flowEpoch,uid);
     lib=Array.isArray(lib)?lib:[];
     var src=p.item||{}, d={};
@@ -1375,7 +1375,7 @@ function copyToLib(p,btn){
     d.srcComm={id:p.id,by:p.owner_name||''};
     lib.unshift(d);
     communityLibraryContinuation(flowEpoch,uid);
-    return store.set(LIB_KEY,lib);
+    return libStore.set(LIB_KEY,lib);
   }).then(function(){
     communityLibraryContinuation(flowEpoch,uid);
     try{localStorage.setItem('cs_lib_rev',String(Date.now()));}catch(_){}
@@ -1554,7 +1554,7 @@ function upMetaOf(d){
 }
 function buildUpload(me,handle,flowEpoch){
   try{communityLibraryContinuation(flowEpoch,me&&me.uid);}catch(_){return;}
-  store.get(LIB_KEY).then(function(lib){
+  libStore.get(LIB_KEY).then(function(lib){
     communityLibraryContinuation(flowEpoch,me.uid);
     /* 3.042 — 엘미하 칸: 만든 것 전부 · 분류 · 연령대 · 인원 없이 제목만(사용자 «엘미하 페이지는 훈련 주제 분류 필요없고 원하는 거 올릴 수 있게») */
     var elmUp=(tabF==='elmiha');

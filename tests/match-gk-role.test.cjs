@@ -206,7 +206,7 @@ function editorSetup(mode){
     insertBefore(el,before){const index=this.children.indexOf(before);assert.ok(index>=0);this.children.splice(index,0,el);}
   };
   c.localStorage={getItem:key=>stored.get(key)||null};
-  c.store={owner:()=>c.teamSaveOwner()};
+  c.scoutStore={owner:()=>c.teamSaveOwner()};
   c.document={createElement:tag=>({tagName:tag.toUpperCase(),attributes:{},listeners:{},
     setAttribute(key,value){this.attributes[key]=value;},
     addEventListener(type,fn){this.listeners[type]=fn;},

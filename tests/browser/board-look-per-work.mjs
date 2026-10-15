@@ -21,10 +21,10 @@ try{
   const grow=n=>f.evaluate(n=>{for(let i=0;i<n;i++)scaleAll(1.25);},n);
   const shrinkAll=()=>f.evaluate(()=>{for(let i=0;i<8;i++)scaleAll(0.8);});
   const confirmIf=async()=>{await page.waitForTimeout(300);await f.evaluate(()=>{const ok=[...document.querySelectorAll('button')].filter(b=>(b.hasAttribute('data-ps-ok')||b.textContent.trim()==='확인')&&b.offsetParent).pop();if(ok)ok.click();});await page.waitForTimeout(400);};
-  const vaultItem=name=>f.evaluate(async n=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x.name===n);return d?{ts:d.snap.tokenScale,x:d.snap.players&&d.snap.players[0]&&d.snap.players[0].x}:null;},name);
+  const vaultItem=name=>f.evaluate(async n=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.name===n);return d?{ts:d.snap.tokenScale,x:d.snap.players&&d.snap.players[0]&&d.snap.players[0].x}:null;},name);
   const saveVault=async name=>{await f.evaluate(()=>document.getElementById('vaultSave').click());await f.waitForSelector('#psSaveOv');
     await f.evaluate(v=>{document.getElementById('pssName').value=v;},name);await f.click('#pssOk');
-    await f.waitForFunction(async n=>((await store.get('cs_drill_lib_v1'))||[]).some(d=>d.name===n),name);await page.waitForTimeout(400);};
+    await f.waitForFunction(async n=>((await boardStore.get('cs_drill_lib_v1'))||[]).some(d=>d.name===n),name);await page.waitForTimeout(400);};
   // 작업물 A — 크기 +3 으로 보관함에
   await put('a1',400);await grow(3);const big=await ts();
   await saveVault('가상 크기 A');
@@ -49,7 +49,7 @@ try{
   // ③ 움직이고 «보드 저장» → A 에도 저장되지만 A 의 크기는 A 것
   await f.evaluate(()=>{pushUndo();state.players[0].x=480;renderTokens();});
   await f.evaluate(()=>window.__boardSaveExplicit());
-  await f.waitForFunction(async()=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x.name==='가상 크기 A');return d&&d.snap.players[0].x===480;},null,{timeout:15000});
+  await f.waitForFunction(async()=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.name==='가상 크기 A');return d&&d.snap.players[0].x===480;},null,{timeout:15000});
   assert.deepEqual(await vaultItem('가상 크기 A'),{ts:big,x:480},'내용은 보드에서, 크기는 A 의 것');
   // ④ 보관함에서 A 를 열면 A 의 크기, 나오면 보드 크기
   await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]:not([data-train])').click());

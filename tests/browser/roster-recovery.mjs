@@ -33,7 +33,7 @@ try{
     await page.goto(base+'/studio/scout.html',{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>window.PSRosterRecovery&&window.PSPerms&&typeof rosterRecoveryOpen==='function');
     await page.evaluate(async()=>{
-      await PSStorage.sharedReady();await psSaveSharedAsync(TKEY,localStorage.getItem(TKEY));await scPrepare();await store.ready(true);
+      await PSStorage.sharedReady();await psSaveSharedAsync(TKEY,localStorage.getItem(TKEY));await scPrepare();await scoutStore.ready(true);
       const p=(id,name)=>({id,name,posId:'pos_CB',levels:{},num:'',profile:{},memo:'가상 검증 기록'});
       const keep=[p('lost','김가상 · 보관 기록'),p('deleted','박가상 · 삭제 확인'),p('item','이가상 · 선수별 명단'),p('escape','<img src=x onerror="window.xss=true">')];
       data.players=[p('current','정가상')];data.meta.evalMode='fifa';scMainMigrationPending=false;
@@ -46,7 +46,7 @@ try{
         if(current.length!==expected.size)throw Error('SQ preimage changed');
         for(const key of current)if((await storage.get(key)).value!==expected.get(key))throw Error('SQ preimage changed');
         for(const p of players)await storage.set('sq:'+p.id,JSON.stringify(p));return {n:players.length,wrote:players.length};}};
-      await store.ready(true);document.querySelectorAll('.view.on').forEach(e=>e.classList.remove('on'));document.getElementById('teamView').classList.add('on');renderTeam();rosterRecoveryMenu();
+      await scoutStore.ready(true);document.querySelectorAll('.view.on').forEach(e=>e.classList.remove('on'));document.getElementById('teamView').classList.add('on');renderTeam();rosterRecoveryMenu();
     });
     await page.locator('#tmEtcBtn').click();await page.locator('#rosterRecoveryBtn').click();
     await page.waitForFunction(()=>document.querySelector('#rosterRecoveryPanel [data-state]')?.textContent.includes('보관 기록 4명'));

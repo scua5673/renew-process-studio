@@ -21,7 +21,7 @@ function harness({pending,matches,weeks}){
     cs_team_matches_v1:{version:1,matches}};
   const sets=[];
   const c=vm.createContext({MATCH_KEY:'cs_team_matches_v1',matchState:null,matchCurrent:'',
-    store:{get:k=>JSON.parse(JSON.stringify(docs[k]??null)),set:(k,v)=>{sets.push(k);docs[k]=JSON.parse(JSON.stringify(v));return true;}},
+    scoutStore:{get:k=>JSON.parse(JSON.stringify(docs[k]??null)),set:(k,v)=>{sets.push(k);docs[k]=JSON.parse(JSON.stringify(v));return true;}},
     matchDocPending:()=>pending,matchMergeSchedule:()=>{throw new Error('merge must not run while pending');},
     PSSchedule:{newId:()=>{throw new Error('no new ids while pending');}}});
   vm.runInContext(code,c);
