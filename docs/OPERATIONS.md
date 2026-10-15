@@ -1,6 +1,6 @@
 # PROCESS STUDIO 운영 문서
 
-처음 합류한 사람이 이 한 장으로 구조를 이해하고, 배포하고, 장애에 대응할 수 있게 쓴다. 작업 이력은 문서 저장소(`process-studio`)의 `AGENTS.md` 에, 판별 변경은 `sw.js` 머리 주석과 커밋에 있다.
+처음 합류한 사람이 이 한 장으로 구조를 이해하고, 배포하고, 장애에 대응할 수 있게 쓴다. 작업 이력은 문서 저장소(`process-studio`)의 `AGENTS.md` 에, 판별 변경은 `studio/release-notes.js` 와 커밋에 있다(3.038 전 판은 옛 `sw.js` 머리 주석 — git 기록).
 
 ## 1. 구조
 
@@ -26,11 +26,27 @@
 3. `npm ci` → `npm test` · `npm run test:sql` · 필요하면 `node tests/browser/run-critical.mjs`(`PS_TEST_GROUP=board|board2|boardperf|identity|storage|idp|entry|records`).
 4. PR(`gh pr create --repo scua5673/renew-process-studio --base staging`). CI: 회귀 1 + 브라우저 8묶음(board·board2·boardperf·identity·storage·idp·entry·records)×2엔진 + release-gate + 배포 미리보기. 묶음은 나란히 돌고, 묶음 목록은 `tests/browser/run-critical.mjs` 한 곳이다(3.012 — CI 밖 시험이 조용히 낡지 않게 브라우저 시험은 모두 여기에 둔다. 엔진과 상관없이 Chromium 을 직접 띄우는 시험은 `CHROMIUM_ONLY` 로 WebKit 잡에서 건너뛰고 로그에 `skipped` 로 적는다).
 5. 합치면 testprocess 가 빌드하며 **그 커밋의 `release-gate` CI 가 초록이 될 때까지 최대 12분** 기다린다(`scripts/verify-release.mjs`). 빨강이면 게시를 멈춘다(«Build script returned non-zero exit code: 2»).
+   그다음 `scripts/package-site.mjs` 가 `dist/sw-manifest.json`(배포 파일마다 SHA-256)을 만들고, `scripts/release-guard.mjs` 가 지금 사이트의 목록과 견준다 —
+   **실행 파일이 바뀌었는데 판 번호가 그대로면 게시를 멈춘다**(«…판 번호는 3.xxx 그대로예요»). 판 번호를 낮춰도 멈춘다. 이 목록으로 서비스워커는 바뀐 파일만 받는다
+   (옛 판 캐시의 본문을 직접 해시해 같으면 옮겨 담는다 — `sw.js` «바뀐 파일만 받는다»). 지금 사이트에 목록이 없거나(첫 배포) 못 받으면 견주지 않고 지나간다.
 6. testprocess(<https://testprocess.netlify.app>)에서 확인한다. 저장·동기화·로그인·셸을 건드렸으면 `docs/device-checklist.md` 를 실기기로 돈다.
 7. 승격: `gh pr create --repo scua5673/renew-process-studio --base main --head staging --title "배포: staging → main (2.xxx~2.yyy)"`. 본문에 실기기 확인 결과를 적는다. 합치면 processstudio 가 같은 방식으로 게시한다. 승격 뒤 `staging` 과 `main` 은 같은 커밋을 가리킨다.
 8. 확인: `npx netlify-cli api listSiteDeploys --data '{"site_id":"…"}'` 에서 `context:"production"` 의 `state:"ready"` 와 커밋(PS_BUILD 만 보면 «빌드 중»과 «실패»가 구분되지 않는다), 그리고 `curl https://processstudio.netlify.app/studio/app.html | grep PS_BUILD`.
 
 사이트 ID: processstudio `51517b22-e1df-493a-ad81-5204303ded1b` · testprocess `52c8c8c7-f3ae-41e0-95ae-19233921a900`.
+
+### 배포 열차 (2026-10-15~ · 피드백 «제품 1» · TD-4)
+
+하루 4~6판이 실사용에 나가 기기마다 다시 받고(3.041 전엔 판마다 13.6MB), 판이 바뀌는 순간에 생긴 사고가 오류 제보의 큰 몫이었다.
+
+- **`main` 승격은 주 2회 — 화 · 금 오전.** 그 사이 고친 것은 `staging`(testprocess)에 계속 쌓는다. 승격 PR 하나에 여러 판이 들어가도 된다.
+- **급한 고침만 예외**(자료가 사라지거나 · 로그인 · 저장 · 동기화가 안 되는 장애). 아래 «급한 고침» 그대로.
+- **보드 표현력 신규 작업은 12/2 까지 동결**(새 그리기 도구 · 3D 연출 · 칩 모양 등). 고침 · 피드백 우선순위 작업 · 성능은 계속한다.
+- **승격 PR 본문에 실기기 점검 결과 칸이 필수**(`.github/pull_request_template.md` 의 «승격 PR» 칸 — `docs/device-checklist.md`).
+- 판 번호가 겹치면(두 PR 이 같은 번호) 늦게 합치는 쪽이 staging 을 합치며 번호를 뒤로 민다 — 3.039 · #407 이 그렇게 했다. 판 번호를 CI 가 붙이는 것은 다음 할 일(아래).
+
+다음 할 일(결정이 필요하다): 판 번호를 사람이 아니라 합칠 때 CI 가 붙이게 — PR 은 «다음 판»으로만 쓰고 staging 에 합치는 순간 번호 · CACHE · `?v=` 를 정하는
+작업(봇 커밋이 staging 에 푸시한다). 봇 권한과 번호 규칙(합칠 때마다 +1 인가, 하루 한 번인가)을 정한 뒤 만든다. 그 전까지는 위 release-guard 가 «깜빡한 판 번호»를 막는다.
 
 ### 급한 고침 (실사용 장애)
 
@@ -58,7 +74,7 @@ npx -y netlify-cli api createSiteBuild --data '{"site_id":"<site-id>"}'
 
 ## 3. 서버(SQL) 바꾸기
 
-`migrations/<날짜>_<이름>.*` 한 묶음으로 만든다: `preflight.sql`(읽기 전용 사전 점검) · `.sql`(멱등, 예상과 다르면 예외로 멈춤) · `verify.sql` · `rollback.sql` · `runbook.md` · `local-test.cjs`(PGlite, `scripts/test-sql.cjs` 목록에 추가). 운영 적용은 Supabase SQL 편집기에서 runbook 순서대로 하고, 결과를 `.applied.md` 로 남긴다. 적용 뒤 `node scripts/schema-baseline.mjs` 로 기준본을 새로 받아 같은 PR 에 넣는다. RLS 함수는 앱의 권한 규칙(`studio/perms.js`, `sync.js` 의 `canW`/`keyScope`)과 **같은 판정**이어야 한다 — 어긋나면 403 이 되풀이된다.
+`migrations/<날짜>_<이름>.*` 한 묶음으로 만든다: `preflight.sql`(읽기 전용 사전 점검) · `.sql`(멱등, 예상과 다르면 예외로 멈춤) · `verify.sql` · `rollback.sql` · `runbook.md` · `local-test.cjs`(PGlite — 3.041 부터 `scripts/test-sql.cjs` 가 `migrations/*.local-test.cjs` 를 전부 돈다. 목록에 따로 적지 않는다). 운영 적용은 Supabase SQL 편집기에서 runbook 순서대로 하고, 결과를 `.applied.md` 로 남긴다. 적용 뒤 `node scripts/schema-baseline.mjs` 로 기준본을 새로 받아 같은 PR 에 넣는다. RLS 함수는 앱의 권한 규칙(`studio/perms.js`, `sync.js` 의 `canW`/`keyScope`)과 **같은 판정**이어야 한다 — 어긋나면 403 이 되풀이된다.
 
 ## 4. 장애 대응
 

@@ -72,23 +72,58 @@ async function fetchFresh(path) {
   return res;
 }
 
+/* 3.041 — 바뀐 파일만 받는다(피드백 TD-4 — 판마다 13.6MB 를 전부 다시 받았다. 하루 4~5판이면 셀룰러 코치에게 부담).
+   배포의 판 목록(/sw-manifest.json — scripts/package-site.mjs 가 만든다: 주소 → SHA-256)을 받아, 옛 판 캐시에 있는 같은 주소의
+   **본문을 직접 해시해** 목록과 같을 때만 그 응답을 새 캐시에 옮겨 담는다. 옛 캐시의 목록을 믿지 않는다 — 옛 install 이 배포와 겹쳐
+   목록과 파일이 어긋났을 수 있다. 목록이 없거나 못 받으면(첫 배포 · 로컬 실행) 예전처럼 전부 받는다. 목록에 없는 주소(/ · /studio/ 같은
+   경로 이름)도 늘 받는다. 목록은 새 캐시에 함께 둔다(다음 판이 견줄 일은 없지만 진단에 쓴다). */
+const MANIFEST = '/sw-manifest.json';
+async function readManifest() {
+  try {
+    const res = await fetch(MANIFEST, { cache: 'no-store' });
+    if (!res || !res.ok) return null;
+    const j = await res.clone().json();
+    if (!j || j.release !== CACHE || !j.files || typeof j.files !== 'object') return null;   /* 다른 판의 목록(배포가 바뀌는 중)이면 쓰지 않는다 */
+    return { files: j.files, res };
+  } catch (_) { return null; }
+}
+function hex(buf) { return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join(''); }
+async function reusable(path, want, olds) {
+  if (!want || !/^[0-9a-f]{64}$/.test(want) || !self.crypto || !crypto.subtle) return null;
+  for (const old of olds) {
+    try {
+      const hit = await old.match(path);
+      if (!hit || !hit.ok) continue;
+      if (hex(await crypto.subtle.digest('SHA-256', await hit.clone().arrayBuffer())) === want) return hit;
+    } catch (_) {}
+  }
+  return null;
+}
+async function precache(cache, path, files, olds, stats) {
+  const old = files ? await reusable(path, files[path], olds) : null;
+  if (old) { await cache.put(path, old); stats.reused++; return; }
+  await cache.put(path, await fetchFresh(path)); stats.fetched++;
+}
+/* 한꺼번에 백 개를 열지 않는다 — 옛 본문을 해시하려고 읽는 메모리(아이패드)를 묶어 둔다 */
+async function eachLimit(list, n, fn) {
+  let i = 0; const run = async () => { while (i < list.length) { const k = i++; await fn(list[k]); } };
+  await Promise.all(Array.from({ length: Math.min(n, list.length) }, run));
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
+    const man = await readManifest(), files = man ? man.files : null, stats = { reused: 0, fetched: 0 };
+    const olds = files ? await Promise.all((await caches.keys()).filter(k => isReleaseCache(k) && k !== CACHE).reverse().slice(0, 2).map(k => caches.open(k))) : [];
 
     // 필수 파일은 원자적으로 취급한다. 하나라도 실패하면 install이 실패하고 이전 SW가 유지된다.
-    await Promise.all(CORE.map(async (path) => {
-      const res = await fetchFresh(path);
-      await cache.put(path, res);
-    }));
+    await eachLimit(CORE, 6, path => precache(cache, path, files, olds, stats));
 
     // 선택 파일은 가능한 만큼 준비한다. 누락 파일은 첫 사용 시 네트워크에서 채운다.
-    await Promise.all(OPTIONAL.map(async (path) => {
-      try {
-        const res = await fetchFresh(path);
-        await cache.put(path, res);
-      } catch (_) {}
-    }));
+    await eachLimit(OPTIONAL.filter(p => !CORE.includes(p)), 6, async (path) => {   /* 두 목록에 다 있는 것(board.html)은 한 번만 */ try { await precache(cache, path, files, olds, stats); } catch (_) {} });
+    if (man) { try { await cache.put(MANIFEST, man.res); } catch (_) {} }
+    /* 진단: 이번 install 이 몇 개를 옮겨 담고 몇 개를 받았나(앱 설정 › 데이터 › «진단 보기»가 읽을 수 있는 자리 — 판 캐시 안) */
+    try { await cache.put('/__ps_sw_install__', new Response(JSON.stringify({ at: Date.now(), release: CACHE, manifest: !!files, ...stats }), { headers: { 'Content-Type': 'application/json' } })); } catch (_) {}
 
     await self.skipWaiting();
   })());
