@@ -1123,34 +1123,33 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   else if(localStorage.getItem('ps_board_tilt3d')===null)localStorage.setItem('ps_board_tilt3d','1');}catch(_){}</script>
 <script>/* 3.034 — 셸 강제 종료 안전장치(아이패드 «'…/studio/app.html'에서 문제가 반복적으로 발생했습니다»가 3.033 뒤에도: 서버 기록상 쓰는 중 한 번 죽고,
    사파리가 다시 연 부팅은 4~10초 만에 또 죽었다 — 부팅이 최근 14일에 연 탭 전부(운영자는 아홉)를 6.4초 안에 미리 띄우던 것). 폰 · 아이패드만.
-   화면에 보이는 동안 이 탭의 «살아 있음»을 적어 둔다(localStorage ps_boot_mark_v1 = {탭 id: 시각}, 1분마다 새로; 탭 id 는 sessionStorage — 작전판 3D 안전장치와 같은 id).
-   숨겨지거나(visibilitychange) 정상으로 떠나면(pagehide) 지운다. 다음 부팅에 이 탭의 3분 안 표시가 남아 있으면(또는 새 탭이 다른 탭의 것을 보면)
-   앞 페이지가 보이던 채 죽은 것 — 사파리가 곧바로 다시 연 이번 부팅은 가볍게: 탭을 미리 띄우지 않고(window.__psSafeBoot) 작전판은 평면으로 연다. */
+   화면에 보이는 동안 이 탭의 «살아 있음»을 적어 둔다(sessionStorage ps_boot_alive_v1 = 시각, 1분마다 새로 — 탭마다 따로라 창 두 개가 서로를 «죽음»으로 읽지 않고,
+   localStorage 가 가득해도 적힌다. 사파리가 강제 종료 뒤 같은 탭을 다시 열면 sessionStorage 는 남는다). 숨겨지거나(visibilitychange) 정상으로 떠나면(pagehide) 지운다.
+   다음 부팅에 3분 안 표시가 남아 있으면 앞 페이지가 보이던 채 죽은 것 — 이번 부팅만 가볍게: 탭을 미리 띄우지 않고(window.__psSafeBoot),
+   작전판은 이번만 평면(board.html 이 __psSafeBoot 를 읽는다 — 3D 설정 값은 그대로). 작전판 3D 안전장치(3.033)의 탭 id(ps_tilt3d_tab)는 건드리지 않는다. */
 (function(){ try{
   var dev=document.documentElement.getAttribute('data-ps-device')||'desktop'; window.__psSafeBoot=false; if(dev==='desktop')return;
-  var K='ps_boot_mark_v1',LIFE=180000,BEAT=60000,me='',fresh=true;
-  try{ me=sessionStorage.getItem('ps_tilt3d_tab')||''; fresh=!me; if(!me){ me=Date.now().toString(36)+Math.random().toString(36).slice(2,8); sessionStorage.setItem('ps_tilt3d_tab',me); } }catch(_){ me=me||'x'; }
-  function recent(t,now){ return typeof t==='number'&&now-t>=0&&now-t<LIFE; }
-  function read(){ try{ var o=JSON.parse(localStorage.getItem(K)||'{}'); return (o&&typeof o==='object'&&!Array.isArray(o))?o:{}; }catch(_){ return {}; } }
-  function write(o){ var now=Date.now(),n={},k; for(k in o)if(recent(o[k],now))n[k]=o[k]; if(Object.keys(n).length)localStorage.setItem(K,JSON.stringify(n)); else localStorage.removeItem(K); }
-  var o=read(),now=Date.now(),died=recent(o[me],now),k;
-  if(!died&&fresh)for(k in o)if(k!==me&&recent(o[k],now)){ died=true; delete o[k]; }
-  delete o[me]; try{ write(o); }catch(_){}
+  var K='ps_boot_alive_v1',LIFE=180000,BEAT=60000,now=Date.now(),at=0;
+  try{ at=+(sessionStorage.getItem(K)||0); }catch(_){ at=0; }
+  var died=isFinite(at)&&at>0&&now-at>=0&&now-at<LIFE;
   window.__psSafeBoot=died;
-  if(died){ try{ localStorage.setItem('ps_board_tilt3d','0'); }catch(_){} }
   var beat=0;
-  function stamp(){ try{ var p=read(); p[me]=Date.now(); write(p); }catch(_){} }
-  function done(){ clearInterval(beat); beat=0; try{ var p=read(); delete p[me]; write(p); }catch(_){} }
+  function stamp(){ try{ sessionStorage.setItem(K,String(Date.now())); }catch(_){} }
+  function done(){ clearInterval(beat); beat=0; try{ sessionStorage.removeItem(K); }catch(_){} }
   function live(){ if(document.hidden)return; stamp(); clearInterval(beat); beat=setInterval(stamp,BEAT); }
   window.__psBootMarkDone=done;
   window.addEventListener('pagehide',done);
   window.addEventListener('pageshow',function(e){ if(e&&e.persisted)live(); });
   document.addEventListener('visibilitychange',function(){ if(document.hidden)done(); else live(); });
-  live();
-  /* 셸에는 toast 가 없다 — 작전판이 화면에 보이면(1분 안) 작전판의 toast 로 알린다(짧은 알림 1.7초를 세 번) */
+  done(); live();
+  /* 셸에는 toast 가 없다 — 작전판이 화면에 보이면(1분 안) 작전판의 toast 로 알린다(짧은 알림 1.7초를 세 번).
+     작전판 3D 안전장치가 제 알림(3D 를 끈 까닭)을 띄우는 부팅이면 그쪽에 맡긴다. */
   if(died)(function say(n){ try{ var fb=document.getElementById('fBoard'),bw=fb&&fb.contentWindow;
-    if(document.body&&!document.body.classList.contains('ps-booting')&&!document.hidden&&bw&&typeof bw.toast==='function'&&fb.getBoundingClientRect().width>0&&getComputedStyle(fb).visibility==='visible'){
-      [0,1800,3600].forEach(function(ms){ setTimeout(function(){ try{ bw.toast('앞에서 앱이 갑자기 닫혀서 이번엔 가볍게 열었어요 — 다른 탭은 누를 때 열려요'); }catch(_){} },ms); }); return; } }catch(_){}
+    if(document.body&&!document.body.classList.contains('ps-booting')&&!document.hidden&&bw&&typeof bw.toast==='function'&&typeof bw.__tiltBootSafe==='boolean'&&fb.getBoundingClientRect().width>0&&getComputedStyle(fb).visibility==='visible'){
+      if(bw.__tiltBootSafe)return;
+      var flat=false; try{ flat=localStorage.getItem('ps_board_tilt3d')==='1'; }catch(_){}
+      var msg='앞에서 앱이 제대로 닫히지 않아 이번엔 가볍게 열었어요 — 다른 탭은 누를 때 열려요'+(flat?' · 작전판도 이번만 평면':'');
+      [0,1800,3600].forEach(function(ms){ setTimeout(function(){ try{ bw.toast(msg); }catch(_){} },ms); }); return; } }catch(_){}
     if(n<120)setTimeout(function(){ say(n+1); },500); })(0);
 }catch(_){ window.__psSafeBoot=false; } })();</script>
 <script>
