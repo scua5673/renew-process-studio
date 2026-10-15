@@ -378,7 +378,8 @@ var PERSONAL={'cs_notes_v1':1,'cs_note_papers_v1':1,'cs_coach_img_v1':1,'cs_team
 /* 선수 역할에게는 서버가 아예 내려 주지 않는 키 — supabase-security-v2.sql 의 ps_can_read_key 와
    **같은 목록이어야 한다.** 1.633 까지 이 목록은 두 곳(선수 역할 정리 코드 · 화면 안내문)에 따로
    적힐 뻔했다. 표가 갈라지면 화면이 "선수도 봅니다"라고 거짓말을 하게 된다 — 아무 말도 안 하느니 못하다. */
-var PLAYER_BLIND=['scout_tool_v1','cs_squad_v1','cs_meet_sit_v1','cs_match_v1','cs_match_roster_v1'];
+var PLAYER_BLIND=['scout_tool_v1','cs_squad_v1','cs_meet_sit_v1','cs_match_v1','cs_match_roster_v1',
+  'cs_idp_daily_v1'];   /* 3.034 — 코치가 적는 선수별 부상·재활·불참(미성년 건강 정보). 서버는 migrations/20261015_player_daily_blind 가 같은 키를 막는다(보안 점검 SEC-3) */
 /* 동기화는 안 하지만 워크스페이스 전환 시엔 비워야 하는 작업 버퍼 */
 var DRAFT_KEYS=['training_session_cur_v1'];
 /* 2.464 — QA #18 "다른 워크스페이스의 데이터가 보인다": 작전판 라이브 문서(배치·그림·애니메이션
@@ -826,6 +827,9 @@ function defaultWorkspace(rows){return (rows.filter(function(w){return w.kind===
    없으면(단독 로드) 네이티브로 — 둘 다 Promise 로 감싸 호출부 흐름을 하나로 둔다. */
 function askConfirm(msg){return new Promise(function(res){try{if(window.psConfirm){window.psConfirm(msg,function(){res(true);},function(){res(false);});return;}}catch(_){}var r=false;try{r=window.confirm(msg);}catch(_){}res(r);});}
 function askPrompt(msg,def){return new Promise(function(res){try{if(window.psPrompt){window.psPrompt(msg,def,function(v){res(v);},function(){res(null);});return;}}catch(_){}var r=null;try{r=window.prompt(msg,def);}catch(_){}res(r);});}
+/* 3.034 — 단추에 할 일을 적는 선택창(app.html psChoice). buttons=[{label,primary,danger,value}] → Promise<value | null(닫음)>.
+   셸 밖(단독 로드)엔 psChoice 가 없다 — null 로 답해 호출부가 되돌릴 수 있는 쪽을 고르게 한다. 네이티브 confirm 으로 흉내 내지 않는다(취소=삭제가 되던 길). */
+function askChoice(msg,buttons){return new Promise(function(res){try{if(window.psChoice){window.psChoice(msg,buttons,function(v){res(v==null?null:v);});return;}}catch(_){}res(null);});}
 function legacyWorkspace(rows,info){   /* → Promise<workspaceId> */
   var personal=defaultWorkspace(rows),teams=rows.filter(function(w){return w.kind==='team';});
   if(!teams.length)return Promise.resolve(personal);
@@ -886,7 +890,9 @@ function prepareCacheForSession(s,rows,prepareSwitchEpoch,prepareAuthEpoch){
     if(!info.has)return finish(defaultWorkspace(rows));
     if(info.uid&&info.uid!==uid)return wipeAccountCache(prepareCurrent).then(function(){return finish(defaultWorkspace(rows));});
     if(!info.uid){
-      return askConfirm('로그아웃 전에 이 기기에 저장된 자료가 있습니다.\n현재 로그인한 계정의 자료가 맞습니까?\n\n확인: 현재 계정에 연결\n취소: 이전 자료를 제거하고 서버 자료만 불러오기').then(function(mine){
+      /* 3.034 — 전엔 «확인/취소» 창이었고 «취소»(바깥 탭·Esc 도 취소)가 기기 자료를 지웠다(피드백 CP-1). 아래 legacyCacheAsk: 단추에 할 일을 적고,
+         창을 닫으면 아무것도 지우지 않으며, 지우기는 한 번 더 확인한다 — 그 확인의 «취소»는 연결 쪽이다. */
+      return legacyCacheAsk().then(function(mine){
         prepareCurrent();
         if(!mine)return wipeAccountCache(prepareCurrent).then(function(){return finish(defaultWorkspace(rows));});
         return legacyWorkspace(rows,info).then(finish);
@@ -894,6 +900,22 @@ function prepareCacheForSession(s,rows,prepareSwitchEpoch,prepareAuthEpoch){
     }
     return legacyWorkspace(rows,info).then(finish);
   });
+}
+/* 3.034 — 로그아웃 전 자료 묻기(위 prepareCacheForSession) → Promise<boolean mine>.
+   · «이 계정에 연결» = 되돌릴 수 있는 쪽(기본) · «기기 자료 지우고 서버 자료만 받기» = 빨강, 한 번 더 확인
+   · 닫기(Esc·바깥 탭 → null)는 지우지 않는다: 세 번까지 다시 묻고 그래도 닫으면 연결 쪽.
+   · 2차 확인은 psConfirm 이라 바깥 탭·Esc 가 «취소»인데, 여기선 «취소» = 연결이므로 잘못 탭해도 지워지지 않는다. */
+function legacyCacheAsk(){
+  var msg='이 기기에 로그아웃 전에 저장된 자료가 남아 있어요.\n지금 로그인한 계정의 자료인가요?';
+  var buttons=[{label:'이 계정에 연결',primary:true,value:'keep'},{label:'기기 자료 지우고 서버 자료만 받기',danger:true,value:'wipe'}];
+  function ask(left){
+    return askChoice(msg,buttons).then(function(v){
+      if(v==='keep')return true;
+      if(v==='wipe')return askConfirm('이 기기에 남은 자료를 지우고 서버 자료만 받을까요?\n지운 자료는 되돌릴 수 없어요.\n\n확인: 지우기\n취소: 이 계정에 연결').then(function(sure){return !sure;});
+      return left>0?ask(left-1):true;
+    });
+  }
+  return ask(3);
 }
 /* RPC 호출(PostgREST) */
 function rpcContext(accountOnly){

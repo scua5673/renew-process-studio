@@ -60,7 +60,8 @@ test('3.031 version and release note',()=>{
   const cache=(R('sw.js').match(/^const CACHE = 'process-(3\.\d{3})';/m)||[])[1],build=(R('studio/app.html').match(/window\.PS_BUILD='(3\.\d{3})'/)||[])[1];
   assert.ok(cache&&build);assert.equal(cache,build);assert.ok(+build.slice(2)>=31,build);
   assert.equal((R('studio/app.html').match(new RegExp('\\?v='+build.replace('.','\\.')+'"','g'))||[]).length,7);
-  assert.match(R('sw.js'),/^(const CACHE = 'process-3\.031';|\/\/) 3\.031 오류 제보 둘/m,'3.031 판 기록');
+  /* 3.034 — sw.js 머리에 판마다 쌓던 변경 기록은 걷었다(피드백 TD-7). 판 기록은 release-notes.js(아래)와 커밋 메시지가 든다 */
+  assert.doesNotMatch(R('sw.js'),/^\/\/ 3\.\d{3} /m,'sw.js carries no per-release changelog lines');
   const e=notes.entries().find(x=>x.id==='2026-10-14-v3-031-reports');assert.ok(e,'3.031 note');
   assert.ok(e.changes.some(c=>/«빈 보드로 시작»/.test(c))&&e.changes.some(c=>/«새 보드로 정하기»/.test(c))&&e.changes.some(c=>/«▶ 슬라이드쇼»/.test(c)));
 });

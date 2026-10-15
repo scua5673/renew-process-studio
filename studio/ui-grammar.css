@@ -10,8 +10,10 @@
   --fw-body:500;--fw-strong:600;--fw-head:700;
   /* 검정 1 · 회색 3 */
   --ink:#14161A;--txt:#14161A;--text:#14161A;--text-2:#646A73;--fig-ink:#14161A;--ps-color-text:#14161A;
-  --dim:#646A73;--muted:#646A73;--gray:#646A73;--text-3:#8A9099;--fig-muted:#646A73;--ps-color-muted:#646A73;
-  --faint:#8A9099;--ghost:#8A9099;
+  --dim:#646A73;--muted:#646A73;--gray:#646A73;--text-3:#697079;--fig-muted:#646A73;--ps-color-muted:#646A73;
+  /* 3.034 — 보조 회색 #8A9099 는 흰 바탕 3.2:1 로 AA(4.5:1) 미달인데 날짜·라벨·빈 화면 문구 1,300여 곳의 기본색이었다(피드백 DS-1).
+     #697079 = 흰 5.0 · #F4F5F7 4.6 · #F1F3F5 4.5. 다크는 아래 #8B929C(#121417 바탕 5.6). tests/faint-contrast-3034 가 지킨다. */
+  --faint:#697079;--ghost:#697079;
   /* 선 2 */
   --line:#E3E6EA;--line-soft:#E3E6EA;--border:#E3E6EA;--fig-line:#E3E6EA;--border2:#EEF0F3;--line2:#D3D7DD;
   /* 면 3 — 바탕 / 카드 / 칸 */
@@ -36,7 +38,7 @@
   color-scheme:dark;
   --ink:#F2F3F5;--txt:#F2F3F5;--text:#F2F3F5;--text-1:#F2F3F5;--navy:#F2F3F5;--fig-ink:#F2F3F5;--ps-color-text:#F2F3F5;--dv2-ink:#F2F3F5;   /* 2.639 — --text-1(공지 글 등) 폴백 #16213A 가 다크에서 검정이었다 */
   --text-2:#A9AFB8;--dim:#A9AFB8;--muted:#A9AFB8;--gray:#A9AFB8;--fig-muted:#A9AFB8;--ps-color-muted:#A9AFB8;--txt-dim:#A9AFB8;
-  --text-3:#7C838D;--faint:#7C838D;--ghost:#7C838D;
+  --text-3:#8B929C;--faint:#8B929C;--ghost:#8B929C;   /* 3.034 — 다크 보조 회색도 AA(위 라이트 주석) */
   --line:#2E333A;--line-soft:#2E333A;--border:#2E333A;--fig-line:#2E333A;--dv2-border:#2E333A;--ps-hairline:#2E333A;--border2:#262B31;--line2:#3A4048;
   --bg:#121417;--frame:#121417;--fig-canvas:#121417;--ps-color-page-bg:#121417;--ps-color-app-bg:#121417;--ps-premium-bg:#121417;
   --bar:#1B1E23;--surface:#1B1E23;--panel:#1B1E23;--fig-surface:#1B1E23;--dv2-surface:#1B1E23;
@@ -58,7 +60,7 @@ body.fmdark{color:var(--ink)}
 /* 다크에서 흰 면 하드코딩이 남은 곳(2.637에서 282곳을 토큰으로 바꿨지만 인라인 style 은 남는다)을 위한 마지막 그물 */
 body.fmdark :is(.card,.pn,.panel,.gp-row,.acct-pop,.gearpop){color:var(--ink)}
 /* 2.638 — 컨테이너가 제 토큰을 다시 정하는 곳(콕핏 .ck)과 팀 머리줄: 실계정 다크 실측에서 «다음 할 일»·주간 칸 글자가 검정, 팀 머리줄이 흰색이었다 */
-body.fmdark .ck{--ink:#F2F3F5;--gray:#A9AFB8;--faint:#7C838D;--line:#2E333A;--line2:#3A4048;--teams:#1E2A3D;--teamc:#9FB3D6;--oks:#173224;--res:#3A2D18;--injs:#3D2222;--outs:#23272D}
+body.fmdark .ck{--ink:#F2F3F5;--gray:#A9AFB8;--faint:#8B929C;--line:#2E333A;--line2:#3A4048;--teams:#1E2A3D;--teamc:#9FB3D6;--oks:#173224;--res:#3A2D18;--injs:#3D2222;--outs:#23272D}
 body.fmdark nav.teamnav,body.fmdark nav.teamnav.tn-colored{background:var(--surface)!important;color:var(--ink)}
 body.fmdark .teamnav .teamname{color:var(--ink)!important}
 body.fmdark .teamnav button.on{background:var(--surface-2)!important;color:var(--ink)!important}
