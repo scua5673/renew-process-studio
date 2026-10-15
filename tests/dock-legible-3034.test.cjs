@@ -21,6 +21,8 @@ test('3.034 the legibility block comes after every dock style it overrides and o
 test('3.034 light mode: on = navy with white icon, primary = navy, icons inherit the button colour (the iPad fix)',()=>{
   const css=block();
   assert.match(css,/body:not\(\.fmdark\)[^{]*\{[^}]*--dk-soft:#14213D!important;--dk-soft-ink:#FFFFFF!important;/);
+  assert.match(css,/body:not\(\.fmdark\)[^{]*\{[^}]*--dk-on:#14213D!important;/,'touch computers: --dk-on is the on fill too (it stayed #FFFFFF → white on white)');
+  assert.match(css,/#railEquip \.chip\.equip\.stampon\{background:#E9EDF5!important;box-shadow:inset 0 0 0 2px #14213D!important;\}/,'chosen equipment: light tile + navy ring (glyphs keep their colours)');
   assert.match(css,/--dk-blue:#14213D!important;[^}]*--dk-primary-bg:#14213D!important;/);
   assert.match(css,/--dk-text:#1F2937!important;--dk-muted:#59616E!important;--dk-line:#D9DEE6!important;--dk-hair:#D9DEE6!important;/);
   assert.match(css,/button:not\(\.catpill\):not\(\.cmd-stamp-token\):not\(\.chip\):not\(#colorBtn\):not\(#cmd-equip-color\) svg\{color:inherit!important;\}/);

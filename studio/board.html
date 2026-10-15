@@ -22829,7 +22829,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
 @media (min-width:768px){
   html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_){
     --dk-ink:#111827!important;--dk-text:#1F2937!important;--dk-muted:#59616E!important;--dk-line:#D9DEE6!important;--dk-hair:#D9DEE6!important;
-    --dk-soft:#14213D!important;--dk-soft-ink:#FFFFFF!important;--dk-soft-line:rgba(20,33,61,.4)!important;
+    --dk-soft:#14213D!important;--dk-soft-ink:#FFFFFF!important;--dk-soft-line:rgba(20,33,61,.4)!important;--dk-on:#14213D!important;   /* 터치 컴퓨터는 --dk-on 이 2614 기본 #FFFFFF 그대로라 흰 바탕에 흰 아이콘이 됐다(검토) */
     --dk-blue:#14213D!important;--dk-blue-2:#14213D!important;--dk-blue-3:#1D2D50!important;--dk-primary-bg:#14213D!important;--dk-primary-hover:#1D2D50!important;
     --dk-surface-shadow:0 0 0 1px rgba(15,23,42,.12),0 1px 2px rgba(15,23,42,.06),0 14px 36px -14px rgba(15,23,42,.32)!important;
   }
@@ -22843,6 +22843,13 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
   html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #animAdd:not(:hover){background:#EEF1F6!important;color:#14213D!important;}
   /* 고른 장면 칸은 밝은 바탕(#F4F6FA) + 네이비 테두리 — 번호도 네이비(--dk-soft-ink 를 따르면 흰 칸에 흰 숫자) */
   html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) .anim-frame.on .afi{color:#14213D!important;}
+  /* 고른 장비 칩: 장비 그림은 제 색(currentColor · 2.245)이라 흰색으로 못 바꾼다 — 네이비 바탕 위 네이비 고리가 묻히지 않게 옅은 바탕 + 네이비 고리(다크는 흰 고리) */
+  html.ps-page-board body:not(.fmdark).command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #railEquip .chip.equip.stampon{background:#E9EDF5!important;box-shadow:inset 0 0 0 2px #14213D!important;}
+  html.ps-page-board body.fmdark.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #railEquip .chip.equip.stampon{background:rgba(127,152,208,.24)!important;box-shadow:inset 0 0 0 2px #FFFFFF!important;}
+  /* 빈 장면 안내(터치 컴퓨터에서만 보임)는 색이 고정(#8A9099 · 2.9:1)이었다 — 흐린 글자 토큰으로 */
+  html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #animFrames:empty::after{color:var(--dk-muted)!important;}
+  /* 다크에서 ＋ 에 올리면 밝은 타일(#DDE3EE)로 번쩍였다 — 다크 hover 색으로 */
+  html.ps-page-board body.fmdark.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) #animAdd:hover{background:var(--dk-hover)!important;color:#FFFFFF!important;}
   /* 아이콘은 단추 글자색을 물려받는다(아이패드에 없던 것 — 데스크톱 2614 고운 포인터 규칙과 같은 뜻) */
   html.ps-page-board body.command-dock-v5.rail-full:not(.ps-dock):not(.ps-phone-work) #ps-command-dock:not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_):not(#_) button:not(.catpill):not(.cmd-stamp-token):not(.chip):not(#colorBtn):not(#cmd-equip-color) svg{color:inherit!important;}
   /* 셋째 줄 위 테두리(#E3E6EA 고정)가 둘째 줄 아래 구분선과 겹쳐 이중선 — 다크에선 밝은 흰 줄로 튀었다. 두께는 두고 색만 지운다(높이 그대로) */
