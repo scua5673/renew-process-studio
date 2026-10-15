@@ -157,11 +157,11 @@ try{
   },newId);
   const renameDiag=()=>bf.evaluate(id=>({toasts:(window.__toastLog||[]).slice(-6),title:(document.getElementById('vCreateTitle')||{}).textContent,
     sub:(document.getElementById('vCreateSub')||{}).textContent,cur:window.__curVaultId===id,from:window.__vaultFromMatch&&{libId:window.__vaultFromMatch.libId===id,name:window.__vaultFromMatch.name},
-    ro:!!window.__vaultReadOnly,okButtons:[...document.querySelectorAll('button')].filter(b=>b.textContent==='확인'&&b.offsetParent).length,
+    ro:!!window.__vaultReadOnly,okButtons:[...document.querySelectorAll('button')].filter(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')&&b.offsetParent).length,
     inputs:[...document.querySelectorAll('input[type=text]')].filter(i=>i.offsetParent).map(i=>i.value).slice(-3),writes:(window.__libLog||[]).slice(-10)}),newId).catch(e=>({diagErr:String(e)}));
   await bf.click('#vCreateTitle');await bf.waitForFunction(()=>{const i=[...document.querySelectorAll('input[type=text]')].pop();return !!i&&i.offsetParent!==null&&i.value==='가상 상대 FC전 미팅';},null,{timeout:15000});
   await bf.evaluate(()=>{const i=[...document.querySelectorAll('input[type=text]')].pop();i.value='송도전 미팅 최종';});
-  await bf.evaluate(()=>{[...document.querySelectorAll('button')].filter(b=>b.textContent==='확인').pop().click();});
+  await bf.evaluate(()=>{[...document.querySelectorAll('button')].filter(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')).pop().click();});
   for(let t=0;t<40;t++){ after=await lib(); if(after.name==='송도전 미팅 최종')break; await page.waitForTimeout(150); }
   if(after.name!=='송도전 미팅 최종')assert.fail('이름이 6초 안에 바뀌지 않았다 '+JSON.stringify({name:after.name,...await renameDiag()}));assert.equal(await bf.evaluate(()=>document.getElementById('vCreateTitle').textContent),'송도전 미팅 최종');
   await page.screenshot({path:path.join(SHOTS,'match-meeting-inplace-new-'+size+'.png')});
