@@ -60,11 +60,11 @@ test('3.039 the post leads with page 1 — its board and its scenes (not the pag
 });
 
 test('3.039 the upload, the edit sync and the copy all keep pages',()=>{
-  assert.match(comm,/var COPY_FIELDS=\[[^\]]*'warmFor',\n  'pages','book'\];/,'담기는 페이지 · 패턴북 표식까지');
+  assert.match(comm,/var COPY_FIELDS=\[[^\]]*'warmFor',\n  'pages','book','slides'\];/,'담기는 페이지 · 패턴북 표식까지(3.042 — 미팅 자료의 슬라이드도)');
   const up=cut(comm,"$('upGo').onclick=function(){",'var payload=JSON.stringify(body);');
   assert.match(up,/var _frUp=stripFrames\(item\.frames\); if\(_frUp\)item\.frames=_frUp; else delete item\.frames;\n      var _pgUp=stripPages\(sel\); if\(_pgUp\)\{item\.pages=_pgUp;boardLead\(item\);\} else delete item\.pages;/,'COPY_FIELDS 가 실은 날 페이지는 정리한 것으로 바꾼다');
-  assert.match(comm,/var _pgU=stripPages\(src\); if\(_pgU\)\{item\.pages=_pgU;boardLead\(item\);\} else delete item\.pages;   \/\* 3\.039 \*\/\n    var patch=\{item:item\};/,'뷰어의 글 고치기도 같은 정리');
-  assert.match(comm,/\(item\.pages\?'페이지나 장면 수를':'장면 수를'\)\+' 줄여보세요'/,'용량을 넘으면 작전판은 페이지 · 장면을 줄이라고 말한다(3.041 — 한도 5MB · 크기를 적는다)');
+  assert.match(comm,/var _pgU=stripPages\(src\); if\(_pgU\)\{item\.pages=_pgU;boardLead\(item\);\} else delete item\.pages;   \/\* 3\.039 \*\/\n(?:[^\n]*\n)?    var patch=\{item:item\};/,'뷰어의 글 고치기도 같은 정리');
+  assert.match(comm,/\(item\.pages\?'페이지나 장면 수를':(?:item\.slides\?'슬라이드나 장면 수를':)?'장면 수를'\)\+' 줄여보세요'/,'용량을 넘으면 작전판은 페이지 · 장면을 줄이라고 말한다(3.041 — 한도 5MB · 크기를 적는다)');
 });
 
 test('3.039 the upload list says what each item is — a board is not «기술·개인»',()=>{
@@ -74,10 +74,10 @@ test('3.039 the upload list says what each item is — a board is not «기술·
     ['board','작전판','페이지 3'],['board','패턴북','시퀀스 2'],['board','작전판','장면 3'],['board','작전판',''],
     ['train','훈련',"기술·개인 · 15'"],['train','세트피스',"10'"],['train','훈련','웜업']]);
   const sheet=cut(comm,'function buildUpload(me,handle,flowEpoch){',"$('upCancel').onclick");
-  assert.match(sheet,/var kind=\(tabF==='elmiha'&&nBoard\)\?'board':'all';/,'엘미하 칸에서 열면 작전판부터');
+  assert.match(sheet,/var kind=\(elmUp&&nBoard\)\?'board':'all';/,'엘미하 칸에서 열면 작전판부터');
   assert.match(sheet,/if\(_pre0&&kind!=='all'&&!lib\.some\(function\(d\)\{return d\.libId===_pre0&&upKindOf\(d\)===kind;\}\)\)kind='all';/,'고른 채 들어온 항목은 가리지 않는다');
-  assert.match(sheet,/\(\(nBoard&&nTrain\)\?'<div class="agechips up-kind" id="upKind" role="group" aria-label="자료 종류"><\/div>':''\)/,'종류가 둘 다 있을 때만 고르는 줄');
-  assert.match(sheet,/\[\['all','전체 '\+lib\.length\],\['board','작전판 '\+nBoard\],\['train','훈련 '\+nTrain\]\]/);
+  assert.match(sheet,/\(\(nKinds>1\)\?'<div class="agechips up-kind" id="upKind" role="group" aria-label="자료 종류"><\/div>':''\)/,'종류가 둘 이상 있을 때만 고르는 줄');
+  assert.match(sheet,/\[\['all','전체 '\+lib\.length\],\['board','작전판 '\+nBoard\],\['train','훈련 '\+nTrain\],\['meeting','미팅 '\+nMeet\]\]/);
   assert.match(sheet,/<span>올릴 자료<\/span>/);
   assert.match(sheet,/내 보관함에서 작전판이나 훈련을 골라 모든 코치에게 공유합니다/);
 });
@@ -140,14 +140,14 @@ test('3.039 the page picker sits where the training picker does, and says pages'
   book.api.boardViewOpen(bp,{});
   assert.deepEqual([book.tabs()[1].innerHTML,book.opened[0].post.item.book],['<span class="pr-i">2</span><span class="pr-nm">시퀀스 2</span>',1],'패턴북은 시퀀스');
   assert.deepEqual(plain(h.api.boardPagesOf({type:'train',pages:[{snap:{}}]})),[],'훈련 글은 페이지 줄이 없다');
-  assert.match(comm,/if\(boardPagesOf\(p\.item\)\.length>1\)\{boardViewOpen\(p,post\);return;\}/,'한 페이지 작전판은 전처럼 바로 연다');
+  assert.match(comm,/if\(boardPagesOf\(p\.item\)\.length>1\|\|\(p\.item\.type==='meeting'&&boardPagesOf\(p\.item\)\.length\)\)\{boardViewOpen\(p,post\);return;\}/,'한 페이지 작전판은 전처럼 바로 연다(3.042 — 미팅 자료만 한 장이어도 이 길)');
   assert.match(comm,/if\(boardPagesOf\(d\)\.some\(function\(pg\)\{ return hasBoardData\(pg\.snap\)\|\|/,'첫 페이지가 비어도 다른 페이지에 그림이 있으면 연다');
 });
 
 test('3.039 the read-only viewer calls a board a board',()=>{
   const v=cut(board,'window.__commView=function(post, editMode){','window.__commPrepView=function(){');
-  assert.match(v,/var _commBoard=\(d\.type==="board"\);\n    \$\("modalTitle"\)\.textContent=editMode\?"커뮤니티 글 편집":\(_commBoard\?"커뮤니티 작전판":"커뮤니티 훈련"\);/);
-  assert.match(v,/'<b>'\+\(_commBoard\?'커뮤니티 작전판':'커뮤니티 훈련'\)\+'<\/b> — '\+who\+'님이 공유했어요'\+\(\(_commBoard&&post\.pageN>1\)\?\(' · '\+\(d\.book\?'시퀀스 ':'페이지 '\)\+post\.pageN\+'개'\):''\)\+' · 보기 전용'/);
+  assert.match(v,/var _commBoard=\(d\.type==="board"\);\n    \$\("modalTitle"\)\.textContent=editMode\?"커뮤니티 글 편집":\(_commBoard\?\("커뮤니티 "\+\(d\.kindLabel\|\|"작전판"\)\):"커뮤니티 훈련"\);/,'3.042 — 미팅 자료는 «커뮤니티 미팅 자료»');
+  assert.match(v,/'<b>'\+\(_commBoard\?\('커뮤니티 '\+\(d\.kindLabel\|\|'작전판'\)\):'커뮤니티 훈련'\)\+'<\/b> — '\+who\+'님이 공유했어요'\+\(\(_commBoard&&post\.pageN>1\)\?\(' · '\+\(d\.unit\|\|\(d\.book\?'시퀀스 ':'페이지 '\)\)\+post\.pageN\+\(d\.kindLabel\?'장':'개'\)\):''\)\+' · 보기 전용'/);
   assert.match(v,/if\(_commBoard&&lt==="훈련 방법"\)lt="설명";/,'작전판의 설명이 «훈련 방법» 칸에 실린다 — 이름은 «설명»');
   assert.match(v,/if\(_commBoard\)\{ try\{ var _nm=document\.getElementById\("epRoNoMemo"\); if\(_nm\)_nm\.textContent="작성된 설명이 없습니다\.";/);
 });

@@ -39,12 +39,18 @@ try{
   const state=()=>c.evaluate(()=>({elm:document.body.classList.contains('pr-elm'),pressed:[...document.querySelectorAll('#prSeg button')].map(b=>b.getAttribute('aria-pressed')),label:[...document.querySelectorAll('#prSeg button')].map(b=>b.textContent),
     sub:document.getElementById('prSub').textContent,ph:document.getElementById('commSearch').placeholder,count:document.getElementById('commCount').textContent,hero:!document.getElementById('elHero').hidden&&getComputedStyle(document.getElementById('elHero')).display!=='none',
     titles:[...document.querySelectorAll('#grid .card .tt')].map(x=>x.textContent),fab:getComputedStyle(document.getElementById('upBtn')).display,filters:getComputedStyle(document.querySelector('.comm-list .filters')).display,
-    grid:document.getElementById('grid').textContent,vw:innerWidth,docW:document.documentElement.scrollWidth}));
+    grid:document.getElementById('grid').textContent,vw:innerWidth,docW:document.documentElement.scrollWidth,
+    pickers:['.pr-cat-sec','#ageSel','#plSel'].map(q=>{const e=document.querySelector(q);return getComputedStyle(e.closest('.ps-fsheet-sec')||e).display!=='none';}),   // 폰은 연령 · 인원이 «필터» 시트 안
+    badge:(document.querySelector('#commFiltBtn .n')||{hidden:true}).hidden}));
 
   // 1) 코치 자료. 엘미하 칸은 화면이 보이면 미리 받는다 — 서버가 안 되면 조용하다(코치 자료 화면은 그대로)
   await until(()=>asked.length>=1,'엘미하 칸 미리 받기');
   let s=await state();
   assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[2],s.hero,s.titles],[false,['true','false','false'],'코치 자료1','엘미하',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫
+  assert.deepEqual(s.pickers,[true,true,true],'코치 자료에는 훈련 주제 · 연령 · 인원 고르개');
+  // 3.042 — 코치 자료에서 연령을 골라 둬도 엘미하 칸은 거르지 않는다(엘미하 글은 «성인»)
+  await c.evaluate(()=>{ const a=document.getElementById('ageSel'); a.value='U12'; a.dispatchEvent(new Event('change')); });   // 폰은 고르개가 «필터» 시트 안
+  await until(async()=>(await state()).titles.join()==='가상 코치 글','U12 고르기');
 
   // 2) 엘미하 칸 — 못 받으면 사실대로 말하고 다시 시도를 준다. 유튜브 채널 띠는 그래도 있다
   await c.click('#prTabElm');
@@ -64,7 +70,9 @@ try{
   assert.deepEqual([s.titles,s.count,s.label[2]],[['가상 전술노트 — 하프스페이스 침투'],'전술노트 1개','엘미하1']);
   assert.equal(asked.every(o=>o==='eq.'+ELM),true,'계정 번호로 묻는다 '+JSON.stringify(asked));
   assert.equal(s.fab,'none','다른 코치에게는 이 칸에 «올리기»가 없다(올리면 코치 자료로 간다)');
-  assert.notEqual(s.filters,'none','고르개는 코치 자료와 같다');
+  assert.notEqual(s.filters,'none','검색 · 정렬은 코치 자료와 같다');
+  assert.equal(s.badge,true,'필터 단추는 엘미하 칸에서 골라 둔 연령을 세지 않는다');
+  assert.deepEqual(s.pickers,[false,false,false],'3.042 — 엘미하 칸에는 훈련 주제 · 연령 · 인원 고르개가 없다(골라 둔 U12 도 거르지 않는다)');
   assert.equal(s.docW,s.vw,'가로로 넘치지 않는다');
   const foot=await c.evaluate(()=>document.querySelector('#grid .card .foot .who').textContent);
   assert.equal(foot,'@엘미하');
@@ -92,7 +100,7 @@ try{
   // 5) 코치 자료로 돌아가면 지금 화면 그대로
   await c.click('#prTabCoach');
   s=await state();
-  assert.deepEqual([s.elm,s.pressed,s.hero,s.titles],[false,['true','false','false'],false,['가상 코치 글']]);
+  assert.deepEqual([s.elm,s.pressed,s.hero,s.titles,s.pickers],[false,['true','false','false'],false,['가상 코치 글'],[true,true,true]]);
   assert.notEqual(s.fab,'none');
 
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
