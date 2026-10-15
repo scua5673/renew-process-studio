@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {startFixture,openApp,WT} from '../fixtures/team-app.mjs';
-// 3.044 — 피드백 15: 선수별 초대 링크(만들기 · 링크로 들어오기 · 토큰으로 바로 잇기) · 팀 전체 내보내기(JSON + 명단 · 평가 CSV).
+// 3.052 — 피드백 15: 선수별 초대 링크(만들기 · 링크로 들어오기 · 토큰으로 바로 잇기) · 팀 전체 내보내기(JSON + 명단 · 평가 CSV).
 // 픽스처 계정은 팀 소유자라 «선수 쪽 claim 남기기»는 tests/invite-link-3042(단위)이 맡는다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const fx=await startFixture(),browsers={};

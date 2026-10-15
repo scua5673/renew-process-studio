@@ -360,7 +360,7 @@
   }
   function updateUI(){var section=current(),lab=document.getElementById('bkLabel'),down=document.getElementById('bkDown'),up=document.getElementById('bkUp');if(section&&workspace()&&workspace().kind==='team'){if(lab)lab.textContent=LABEL[section]+' 파일';if(down)down.title=LABEL[section]+' 파일 저장';if(up)up.title='팀 메뉴 파일 가져오기';}else if(lab)lab.textContent='전체 백업';}
   try{var gear=document.getElementById('gearBtn');if(gear)gear.addEventListener('click',function(){setTimeout(updateUI,0);});}catch(_){}
-  /* ══ 3.044 · 팀 전체 내보내기(피드백 15 · 제품 3 «팀 전체 내보내기» · 약관 5 · 7조) ══════════════════════════════
+  /* ══ 3.052 · 팀 전체 내보내기(피드백 15 · 제품 3 «팀 전체 내보내기» · 약관 5 · 7조) ══════════════════════════════
      «파일 저장»은 지금 연 팀 메뉴 한 칸이다(가져오기로 되돌리는 파일). 이것은 **읽는 사람용 사본**이다 — 가져오기에 쓰지 않는다.
      ① 팀 전체 JSON: 동기화되는 팀 키 전부(PSSync.teamKeys) + 이 기기에 받아 둔 선수 IDP 문서(cs_idp_v1_<uid>) — 원문 그대로.
      ② 명단 CSV: 번호 · 이름 · 조 · 포지션 · 상태(가용 · 부상 · 재활 …) · 상태 끝나는 날 — 연락처 · 생년월일 같은 칸은 넣지 않는다.

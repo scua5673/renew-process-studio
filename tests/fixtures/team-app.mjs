@@ -88,7 +88,7 @@ export async function startFixture(opts={}){
         if(fx_opts.emptyLibraryInsert&&ignore)body=[];   // 저장은 됐지만 응답 본문이 빈 경우(응답 유실·프록시)
       }
       else if(req.method==='PATCH'){body=[];for(const r of lib.values())if(r.workspace_id===wid&&(!ids||ids==='eq.'+r.lib_id)){Object.assign(r,req.body);writes.push({step,t:Date.now(),m:'PATCH',wid,k:'ps_library:'+r.lib_id});body.push(r);}}
-    }else if(url.pathname.endsWith('/rpc/ps_get_or_create_role_invite')){body='FIXJOIN1';   /* 3.044 — 선수별 초대 링크 시험(coach-idp-entry) */
+    }else if(url.pathname.endsWith('/rpc/ps_get_or_create_role_invite')){body='FIXJOIN1';   /* 3.052 — 선수별 초대 링크 시험(coach-idp-entry) */
     }else if(url.pathname.endsWith('/rpc/ps_join')){body=req.body&&req.body.p_code==='FIXJOIN1'?WT:null;
     }else if(url.pathname.startsWith('/rest/v1/rpc/')){body=url.pathname.includes('report')?{}:[];}
     return {status:200,headers,body:JSON.stringify(body)};
