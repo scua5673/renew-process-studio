@@ -8,13 +8,21 @@
 |---|---|---|
 | 앱 | 빌드 없는 정적 PWA. 셸 `studio/app.html` 이 화면마다 iframe(작전판 `board.html`, 팀 운영 `scout.html`·`process.html`, IDP `idp.html`, 학습 `learning.html` …)을 띄운다 | 이 저장소 |
 | 오프라인 | `sw.js` — HTML 은 **캐시 우선**. `const CACHE` 이름이 바뀌어야 사용자가 새 판을 받는다 | `sw.js` |
-| 기기 저장 | `studio/storage.js` — IndexedDB 가 정본, localStorage 는 화면용 거울. 공유 문서는 키별 쓰기 대기열 | `storage.js` |
+| 기기 저장 | `studio/storage.js` — IndexedDB 가 정본, localStorage 는 화면용 거울. 공유 문서는 키별 쓰기 대기열. **키마다 어디에 사는지 · 동기화하는지 · 무슨 구실인지는 `studio/storage-keys.js` 한 표**(아래 «코드 규칙») | `storage.js` · `storage-keys.js` |
 | 동기화 | `studio/sync.js` — 45초(실시간 연결 중 3분) 주기 + Realtime 핑(`ps_kv_ping`)으로 바로 받기. 문서 단위 3-way 병합, 서버 판본(`cupd`) 확인 | `sync.js` |
 | 서버 | Supabase(Pro, 프로젝트 `jvtajoeptzfsdwizxejg`). 팀 문서 `ps_kv`(워크스페이스·키), 보관함 `ps_library`, 그림 `ps_blob`, 판 역사 `ps_kv_history`(90일), 이벤트 `ps_events`(7일), 사용 핑 `ps_usage`. 권한은 RLS 와 함수(`ps_can_write_key`·`ps_key_scope`·`ps_team_role`) | `migrations/` + `00000000_baseline.*` |
 | 배포 | GitHub `scua5673/renew-process-studio` — **`staging` → testprocess**(점검용) · **`main` → processstudio**(실사용). 2026-10-07 전까지는 둘 다 main 이었다 | `netlify.toml` |
 | 관리자 | `admin.html` — 운영 홈·사용 방식·오류·백엔드 건강·사람·팀 | `admin.html` |
 
 비밀값: Supabase **publishable** 키만 코드(`studio/app.html` 의 `PS_SYNC`)에 있다. secret 키는 어디에도 두지 않는다. 운영 DB 를 스크립트로 읽을 때는 사람이 만든 개인 접근 토큰 `~/.supabase-pat` 만 쓴다.
+
+### 코드 규칙 (3.043 · 피드백 16 — TD-1 · TD-2 · TD-3)
+
+- **새 키는 표에 먼저** — `studio/storage-keys.js` 에 한 줄(동기화 · 정본 위치 · 구실 · 복구 사본이면 지키는 키 `of`). 표에 없는 키를 코드에 쓰면 `tests/storage-keys-registry.test.cjs` 가 멈춘다. 무엇이 걸렸는지는 `node scripts/storage-keys-scan.cjs`.
+  팀과 맞추는 키는 `sync.js` `KEYS`(개인 공간만이면 `PERSONAL` 도)와 표가 같아야 하고, `ps_*` 키는 동기화하지 않는다.
+- **페이지 저장소 이름은 뜻대로** — 작전판 `boardStore`(IndexedDB 정본), 팀 운영 `scoutStore`(localStorage 껍데기 — 공유 키는 `psSaveShared` 로 IndexedDB 에도), 커뮤니티 `libStore`(보관함). 예전엔 셋 다 `store` 라서 «IndexedDB 에 썼다고 믿은 값이 localStorage 에만» 있는 사고가 났다(scout.html 1.618).
+- **큰 페이지는 더 키우지 않는다** — `tests/code-budget-3043.test.cjs` 의 바이트 예산. 새 기능은 `studio/<기능>.js` 모듈(UMD — `autosave-*.js` · `team-files.js` 모양)로 쓰고 페이지는 부르기만 한다.
+- **시험은 행동을 본다** — 모듈은 `require` 해서 돌려 본다. 주석(`'/* 2.138'`)을 잘라내기 기준점으로 쓰거나 판 번호를 박는 시험은 늘리지 않는다(같은 시험의 래칫 — 줄였으면 상한도 내린다).
 
 ## 2. 판 올리기와 배포
 

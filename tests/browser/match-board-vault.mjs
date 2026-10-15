@@ -10,17 +10,17 @@ const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   await page.waitForTimeout(2500);
-  const board=async()=>{const f=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await f.waitForFunction(()=>typeof window.__meetingSetMatch==='function'&&typeof window.__snapToThumb==='function'&&typeof store==='object');return f;};
+  const board=async()=>{const f=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await f.waitForFunction(()=>typeof window.__meetingSetMatch==='function'&&typeof window.__snapToThumb==='function'&&typeof boardStore==='object');return f;};
   // 1) 보관함에 미팅(3장)·작전판(1장) — 그림은 작전판이 실제로 그린 썸네일
   let bf=await board();
   await bf.evaluate(async()=>{
     const snap=(n,x)=>({players:Array.from({length:n},(_,i)=>({id:i+1,team:i%2?'red':'blue',num:String(i+1),x:x+i*38,y:250+(i%3)*90})),equipment:[],drawings:[],ball:{x:555,y:370}});
     const sl=[['가상 1장',['첫 줄']],['가상 2장',['압박 시작','라인 높이']],['가상 3장',[]]].map((t,i)=>{const s=snap(4+i*3,240+i*60);return {pdfOrientation:'landscape',snap:s,thumb:window.__snapToThumb(s),title:t[0],points:t[1]};});
     const b=snap(6,300);
-    const lib=(await store.get('cs_drill_lib_v1'))||[];
+    const lib=(await boardStore.get('cs_drill_lib_v1'))||[];
     lib.unshift({libId:'Vqa_meet',type:'meeting',name:'가상 미팅',folder:'',thumb:sl[0].thumb,snap:sl[0].snap,slides:sl,tags:[],savedAt:Date.now(),createdBy:'11111111-1111-4111-8111-111111111111'},
                 {libId:'Vqa_board',type:'board',name:'가상 작전판',folder:'',thumb:window.__snapToThumb(b),snap:b,tags:[],savedAt:Date.now()-1000,createdBy:'11111111-1111-4111-8111-111111111111'});
-    await store.set('cs_drill_lib_v1',lib);try{localStorage.setItem('cs_lib_rev',String(Date.now()));}catch(_){}
+    await boardStore.set('cs_drill_lib_v1',lib);try{localStorage.setItem('cs_lib_rev',String(Date.now()));}catch(_){}
   });
   // 2) 팀 › 경기 › 이번 주 토요일 경기(일정에서 만들어진 것) › 경기 준비
   await page.evaluate(()=>{const b=document.querySelector('[data-team-key="match"]');if(b)b.click();});
@@ -44,7 +44,7 @@ try{
   await sf.click('#mmSheetOv .mm-pick[data-mm-lib="Vqa_board"]');
   await sf.waitForFunction(()=>document.querySelector('#matchMeetCard .mmv[data-mmv="Vqa_board"] .mmv-svg svg'),null,{timeout:15000});
   bf=await board();
-  assert.equal(await bf.evaluate(async id=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x.libId==='Vqa_board');return d&&d.matchRef&&d.matchRef.mid;},mid),mid,'연결은 자료 쪽(matchRef)에 — 작전판도 잇는다');
+  assert.equal(await bf.evaluate(async id=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.libId==='Vqa_board');return d&&d.matchRef&&d.matchRef.mid;},mid),mid,'연결은 자료 쪽(matchRef)에 — 작전판도 잇는다');
   // 미팅도 가져온다 → 탭 둘, 방금 가져온 것이 열린다
   await sf.click('#matchMeetActs [data-mm-link]');await sf.waitForSelector('#mmSheetOv .mm-pick[data-mm-lib="Vqa_meet"]');
   await sf.click('#mmSheetOv .mm-pick[data-mm-lib="Vqa_meet"]');
@@ -126,9 +126,9 @@ try{
   await page.waitForFunction(()=>document.body.classList.contains('ps-match-edit')&&document.body.getAttribute('data-ps-app')==='design',null,{timeout:15000});
   bf=await board();
   let newId=null;
-  for(let t=0;t<60;t++){ newId=await bf.evaluate(async id=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.type==='meeting'&&d.libId!=='Vqa_meet'&&d.matchRef&&d.matchRef.mid===id);return d?d.libId:null;},mid); if(newId)break; await page.waitForTimeout(250); }
+  for(let t=0;t<60;t++){ newId=await bf.evaluate(async id=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(d=>d.type==='meeting'&&d.libId!=='Vqa_meet'&&d.matchRef&&d.matchRef.mid===id);return d?d.libId:null;},mid); if(newId)break; await page.waitForTimeout(250); }
   assert.ok(newId,'보관함에 저장됐다');
-  const lib=()=>bf.evaluate(async id=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x.libId===id);return {name:d.name,folder:d.folder,n:d.slides.length,titles:d.slides.map(s=>s.title),thumbs:d.slides.filter(s=>/<svg/.test(s.thumb||'')).length};},newId);
+  const lib=()=>bf.evaluate(async id=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.libId===id);return {name:d.name,folder:d.folder,n:d.slides.length,titles:d.slides.map(s=>s.title),thumbs:d.slides.filter(s=>/<svg/.test(s.thumb||'')).length};},newId);
   const made=await lib();
   assert.equal(made.name,'가상 상대 FC전 미팅');assert.ok(made.n===9,'기본 9장(선발 11 이 있으면 그것이 BEST 11 자리) '+JSON.stringify(made));
   assert.ok(made.titles.includes('하이블록')&&made.titles.includes('코너킥 공격'),JSON.stringify(made.titles));assert.equal(made.thumbs,made.n,'장마다 그림');

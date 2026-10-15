@@ -11,7 +11,7 @@ const fx=await startFixture(),browsers={};
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   await page.waitForTimeout(2500);
-  const board=async()=>{const f=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await f.waitForFunction(()=>typeof window.__meetingSetMatch==='function'&&typeof window.__snapToThumb==='function'&&typeof store==='object'&&typeof window.__meetSlidesFromBoard==='function');return f;};
+  const board=async()=>{const f=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();await f.waitForFunction(()=>typeof window.__meetingSetMatch==='function'&&typeof window.__snapToThumb==='function'&&typeof boardStore==='object'&&typeof window.__meetSlidesFromBoard==='function');return f;};
   let bf=await board();
   // 작전판 셋 페이지 — 1: 그림 한 장 · 2: 장면 둘 · 3: 세로
   await bf.evaluate(async()=>{
@@ -20,15 +20,15 @@ try{
     const pages=[{snap:p1,name:'가상 빌드업',thumb:window.__snapToThumb(p1),anim:{frames:[],hold:.6,active:-1,title:'',titleColor:'#e23b3b'}},
       {snap:p2b,name:'가상 압박',thumb:window.__snapToThumb(p2),anim:{frames:[{snap:p2,dur:1},{snap:p2b}],hold:.9,active:1,title:'',titleColor:'#e23b3b'}},
       {snap:p3,name:'가상 세로',thumb:window.__snapToThumb(p3),anim:{frames:[],hold:.6,active:-1}}];
-    const lib=(await store.get('cs_drill_lib_v1'))||[];
+    const lib=(await boardStore.get('cs_drill_lib_v1'))||[];
     lib.unshift({libId:'Vqa_board',type:'board',name:'가상 작전판',folder:'',thumb:pages[0].thumb,snap:p1,pages,tags:[],savedAt:Date.now()-1000,createdBy:'11111111-1111-4111-8111-111111111111'});
-    await store.set('cs_drill_lib_v1',lib);try{localStorage.setItem('cs_lib_rev',String(Date.now()));}catch(_){}
+    await boardStore.set('cs_drill_lib_v1',lib);try{localStorage.setItem('cs_lib_rev',String(Date.now()));}catch(_){}
   });
   /* 작업 보드에 선수 둘 — 쇼(보기 전용 미팅)는 작업 보드를 빌렸다가 그대로 돌려준다 */
   const work0=await bf.evaluate(()=>{ if((window.__csView||'board')!=='board')return null; pushUndo(); state.players=[{id:'w1',team:'blue',num:'8',x:350,y:300},{id:'w2',team:'red',num:'3',x:520,y:330}]; renderTokens(); try{boardSaveLive();}catch(_){} return state.players.map(p=>p.id).join(','); });
   assert.equal(work0,'w1,w2','작업 보드에서 시작');
-  const item=id=>bf.evaluate(async id=>JSON.stringify(((await store.get('cs_drill_lib_v1'))||[]).find(x=>x.libId===id)||null),id);
-  const meetings=()=>bf.evaluate(async()=>((await store.get('cs_drill_lib_v1'))||[]).filter(x=>x.type==='meeting').map(x=>x.libId));
+  const item=id=>bf.evaluate(async id=>JSON.stringify(((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.libId===id)||null),id);
+  const meetings=()=>bf.evaluate(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).filter(x=>x.type==='meeting').map(x=>x.libId));
   // 팀 › 경기 › 가상 상대 FC › 경기 준비 — 작전판을 가져온다
   await page.evaluate(()=>{const b=document.querySelector('[data-team-key="match"]');if(b)b.click();});
   const sf=await (await page.waitForSelector('#fScout')).contentFrame();
@@ -39,7 +39,7 @@ try{
   await sf.waitForSelector('#mmSheetOv .mm-pick[data-mm-lib="Vqa_board"]');await sf.click('#mmSheetOv .mm-pick[data-mm-lib="Vqa_board"]');
   await sf.waitForFunction(()=>document.querySelector('#matchMeetCard .mmv[data-mmv="Vqa_board"] .mmv-svg svg'),null,{timeout:15000});
   bf=await board();
-  await bf.waitForFunction(async()=>{const d=((await store.get('cs_drill_lib_v1'))||[]).find(x=>x.libId==='Vqa_board');return !!(d&&d.matchRef);},null,{timeout:15000});
+  await bf.waitForFunction(async()=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.libId==='Vqa_board');return !!(d&&d.matchRef);},null,{timeout:15000});
   const linked=await item('Vqa_board'),meet0=await meetings();
   // 1) 작전판에도 «▶ 슬라이드쇼»
   assert.equal(await sf.evaluate(()=>{const b=document.querySelector('#matchMeetCard .mmv-acts [data-mm-show]');return b&&b.textContent.trim();}),'▶ 슬라이드쇼','작전판도 슬라이드쇼 버튼');

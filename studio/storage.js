@@ -74,7 +74,10 @@
     if(k.indexOf('cs_idp_v1_')===0)return ['IDP','이미지노트 사진이 큽니다'];
     if(k.indexOf('ps_sync_base_')===0)return ['일정 동기화 기준본','안전 저장소 확인 뒤 자동으로 정리됩니다'];
     if(k.indexOf('ps_sync_conflict_')===0)return ['동기화 충돌 사본','안전하게 지워도 되는 임시 사본입니다'];
-    return SPACE_LABEL[k]||[k,''];
+    if(SPACE_LABEL[k])return SPACE_LABEL[k];
+    /* 3.043 — 표(storage-keys.js)에 적힌 구실 — «복구 사본 · 이 기기만». 작전판 · 팀 운영 프레임은 셸의 표를 본다 */
+    try{ var T=window.PSStorageKeys||(window.top&&window.top.PSStorageKeys); if(T&&T.label(k))return [k,T.label(k)]; }catch(_){}
+    return [k,''];
   }
   /* 비동기 본 저장 전에 잠깐 쓰는 복구 사본. 이 키의 실패는 본 저장 실패가 아니므로
      기존 사본을 비우고 한 번 재시도하되, 그래도 안 되면 빨간 데이터 유실 경고를 띄우지 않는다. */

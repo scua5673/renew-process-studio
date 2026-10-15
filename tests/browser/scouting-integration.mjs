@@ -105,7 +105,7 @@ try{
   await frame.waitForFunction(()=>scStore().state.verified&&data.players.some(p=>p.id==='qa-candidate'));
   assert.equal(await frame.locator('#scDbHits').innerText(),'','local DB is not automatically attributed to this team');
   await frame.locator('[data-sc-import]').click();await frame.locator('[data-legacy-id="qa-db"]').check();await frame.locator('#scImportPoints').check();await frame.locator('[data-import]').click();
-  await frame.evaluate(()=>store.ready());
+  await frame.evaluate(()=>scoutStore.ready());
   assert.equal(await frame.evaluate(()=>scStore().state.doc.scoutRegistry.candidates['db:unselected-local']),undefined);
   await frame.locator('[data-sccard="qa-candidate"]').click();
   await frame.locator('#plName').fill('원본 하나로 바꾼 이름');
@@ -123,7 +123,7 @@ try{
   assert.equal(await frame.evaluate(()=>{const e=new InputEvent('beforeinput',{bubbles:true,cancelable:true,data:'x',inputType:'insertText'});return document.getElementById('plName').dispatchEvent(e);}),true,'input resumes after readiness returns');
 
 
-  await frame.evaluate(()=>store.ready());
+  await frame.evaluate(()=>scoutStore.ready());
   assert.deepEqual(await frame.evaluate(()=>data.players.filter(p=>p.dbId==='qa-db').map(p=>p.name)),['원본 하나로 바꾼 이름','원본 하나로 바꾼 이름']);
   await frame.locator('#plScoutIdentity > details').first().locator('summary').first().click();
   assert.equal(await frame.locator('#plScoutIdentity').innerText().then(t=>t.includes('다른 기록 팀')),true);
@@ -159,7 +159,7 @@ try{
   assert.equal(await frame.evaluate(()=>data.players.find(p=>p.id==='qa-candidate').posId),'');
   assert.equal(await frame.evaluate(()=>data.players.find(p=>p.id==='qa-candidate').memo),'반드시 남길 관찰 기록');
   assert.equal(await frame.locator('#toast').innerText(),'보드에서 내렸어요. 후보와 평가 기록은 남아 있어요.');
-  const unplaced=await frame.evaluate(async()=>{await store.ready();const t=JSON.parse(localStorage.getItem('cs_scout_targets_v1')),c=t.players.find(p=>p.id==='qa-candidate'),m=JSON.parse(localStorage.getItem('scout_tool_v1'));
+  const unplaced=await frame.evaluate(async()=>{await scoutStore.ready();const t=JSON.parse(localStorage.getItem('cs_scout_targets_v1')),c=t.players.find(p=>p.id==='qa-candidate'),m=JSON.parse(localStorage.getItem('scout_tool_v1'));
     return {posId:c.posId,memo:c.memo,levels:c.levels,other:t.players.find(p=>p.id==='qa-other-placement').posId,points:t.scoutRegistry.candidates['db:qa-db'].points['가상 공격|공간을 먼저 찾는가?'],mainTargets:m.players.filter(p=>p.type==='target').length,mainPlayers:JSON.stringify(m.players)};});
   assert.deepEqual({posId:unplaced.posId,memo:unplaced.memo,levels:unplaced.levels,other:unplaced.other,points:unplaced.points,mainTargets:unplaced.mainTargets},{posId:'',memo:'반드시 남길 관찰 기록',levels:{fifa_scan:4},other:'pos_LW',points:4,mainTargets:0},'unplace keeps candidate record and other placement');
   assert.equal(unplaced.mainPlayers,JSON.stringify(JSON.parse(unplaceBefore.main).players),'unplace keeps main roster players');
@@ -168,7 +168,7 @@ try{
   assert.equal(await frame.locator('[data-dbattach="db:qa-db"]').count(),0,'archived candidate does not resurface in search');
   await frame.locator('#scCandidateTools summary').click();await frame.locator('[data-sc-restore="db:qa-db"]').click();
   await frame.locator('[data-sccard="qa-candidate"]').click();await frame.locator('[data-sc-place]').click();await frame.locator('.sas-pos').first().click();
-  const saved=await frame.evaluate(async()=>{await store.ready();return scStore().state.doc;});
+  const saved=await frame.evaluate(async()=>{await scoutStore.ready();return scStore().state.doc;});
   assert.equal(saved.players.filter(p=>p.dbId==='qa-db').length,2);assert.equal(saved.players.find(p=>p.id==='qa-candidate').memo,'반드시 남길 관찰 기록');assert.equal(saved.players.find(p=>p.id==='qa-other-placement').levels.fifa_scan,2);
   assert.equal(saved.scoutRegistry.candidates['db:qa-db'].info.club,'현재 팀');assert.equal(saved.scoutRegistry.candidates['db:qa-db'].points['가상 공격|공간을 먼저 찾는가?'],4);
   assert.equal(await frame.evaluate(()=>localStorage.getItem('scout_tool_v1').includes('scoutRegistry')),false);
@@ -180,7 +180,7 @@ try{
   await page.evaluate(()=>{const m=JSON.parse(localStorage.getItem('ps_sync_meta'));m.last=Date.now();localStorage.setItem('ps_sync_meta',JSON.stringify(m));});await pointsPage.waitForTimeout(60);
   assert.equal(await pointsPage.evaluate(()=>window.__questionNode.isConnected&&document.activeElement===window.__questionNode&&window.__questionNode.value==='입력 중인 새 질문'),true,'routine meta preserves point question DOM and focus');await pointsPage.close();
   // The full candidate editor uses canonical deletions and persists source-only notes.
-  await frame.evaluate(async()=>{await scPrepare();const d=PSScoutStore.copy(scStore().state.doc);PSScoutStore.edit(d,'db:qa-db','profile.photo',undefined,scStore().stamp());store.set(TKEY,d);await store.ready();});
+  await frame.evaluate(async()=>{await scPrepare();const d=PSScoutStore.copy(scStore().state.doc);PSScoutStore.edit(d,'db:qa-db','profile.photo',undefined,scStore().stamp());scoutStore.set(TKEY,d);await scoutStore.ready();});
   const detailPage=await context.newPage();detailPage.on('pageerror',e=>errors.push(e.message));await detailPage.goto(base+'/studio/scouting.html');await detailPage.locator('#scStoreState').waitFor({state:'hidden'});await detailPage.locator('[data-id="db:qa-db"]').first().click();
   assert.equal(await detailPage.locator('#dPhoto img').count(),0,'source photo cannot restore deleted canonical photo');await detailPage.locator('#fOne').fill('수정한 관찰 한줄평');await detailPage.evaluate(()=>psFlushPendingReady());await detailPage.reload();await detailPage.locator('#scStoreState').waitFor({state:'hidden'});await detailPage.locator('[data-id="db:qa-db"]').first().click();assert.equal(await detailPage.locator('#fOne').inputValue(),'수정한 관찰 한줄평');assert.equal(await detailPage.locator('#dPhoto img').count(),0);await detailPage.close();await frame.evaluate(async()=>{await scPrepare();});
   // The registration handler itself receives two immediate click events, including while IDB is pending.
@@ -200,7 +200,7 @@ try{
       main.players.push(legacy);const source=JSON.stringify(main);localStorage.setItem('scout_tool_v1',source);
       const realSet=storage.set.bind(storage);storage.set=(k,v)=>k===TKEY?Promise.reject(new Error('fixture migration disk')):realSet(k,v);
       let rejected=false;try{await scMigrateMainTargets();}catch(_){rejected=true;}
-      const kept=localStorage.getItem('scout_tool_v1')===source;storage.set=realSet;await store.ready(true);await scMigrateMainTargets();await store.ready();
+      const kept=localStorage.getItem('scout_tool_v1')===source;storage.set=realSet;await scoutStore.ready(true);await scMigrateMainTargets();await scoutStore.ready();
       const d=scStore().state.doc;return {rejected,kept,removed:!JSON.parse(localStorage.getItem('scout_tool_v1')).players.some(p=>p.type==='target'),history:d.scoutRegistry.placementHistory['qa-candidate'],variants:d.scoutRegistry.candidates['db:qa-db'].variants};
     });assert.equal(migration.rejected,true);assert.equal(migration.kept,true);assert.equal(migration.removed,true);assert.ok(migration.history.some(h=>h.memo==='본문에만 남은 메모'&&h.levels.fifa_scan===1));assert.ok(migration.variants.some(v=>v.value==='본문에만 남은 표기'));
   }

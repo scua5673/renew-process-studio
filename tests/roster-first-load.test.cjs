@@ -118,7 +118,7 @@ function mountScout(h){
     KEY,TKEY:'cs_scout_targets_v1',data:{attrs:[],positions:[],players:[],meta:{}},scoutBootPending:true,scMainMigrationPending:false,
     itemsWriteBusy:()=>false,itemsHoldList:()=>({ids:[]}),psSync:()=>h.c,PDKEY:'cs_player_del_v1',
     teamSaves:{track(k,p){Promise.resolve(p).catch(()=>{});}},PSItems:{active:()=>false},PSRosterOutbox:require('../studio/roster-outbox.js'),
-    store:{get(k){const value=h.local.get(k);return value==null?null:JSON.parse(value);},set(k,value){const valueRaw=raw(value);writes.push({k,value:valueRaw});h.local.set(k,valueRaw);h.idb.set(k,valueRaw);return true;}},
+    scoutStore:{get(k){const value=h.local.get(k);return value==null?null:JSON.parse(value);},set(k,value){const valueRaw=raw(value);writes.push({k,value:valueRaw});h.local.set(k,valueRaw);h.idb.set(k,valueRaw);return true;}},
     setTimeout(fn){timers.push(fn);return timers.length;},
     init(){h.initCount=(h.initCount||0)+1;h.c.load();if(h.c.scoutAutomaticWriteAllowed())h.c.save({skipTargets:true});},
     fifaAttrs:()=>[],fifaCats:()=>[],DEFAULT_POS:[],DEFAULT_CATS:[],TM_POS:[],
@@ -176,8 +176,8 @@ test('initial evaluation normalization never writes candidates before their sepa
   h.c.fifaAttrs=()=>[{id:'current',cat:'tech',name:'Current field'}];
   h.c.renderAttrs=()=>{};h.c.renderForms=()=>{};
   vm.runInContext(section(scout,'function setEvalMode(','// 기본 속성 없음'),h.c);
-  const set=h.c.store.set;let candidateAttempts=0;
-  h.c.store.set=(key,value)=>{if(key===h.c.TKEY){candidateAttempts++;throw Error('unprepared candidate document');}return set(key,value);};
+  const set=h.c.scoutStore.set;let candidateAttempts=0;
+  h.c.scoutStore.set=(key,value)=>{if(key===h.c.TKEY){candidateAttempts++;throw Error('unprepared candidate document');}return set(key,value);};
   h.c.scoutBoot();
   assert.equal(h.initCount,1);assert.equal(h.c.data.meta.evalMode,'fifa');
   assert.equal(JSON.parse(h.local.get(KEY)).attrs[0].id,'current');
@@ -267,7 +267,7 @@ function readOnlyScout(h){
     section(scout,'const mem={};','const KEY='),
     section(scout,'function setEvalMode(','// 기본 속성 없음'),
     section(perms,'  function gate(section, opts){','  window.PSPerms='),
-    'window.actualStore=store;',
+    'window.actualStore=scoutStore;',
   ].join('\n'),h.c);
   h.c.gate('team');return Object.assign(h,{toasts});
 }

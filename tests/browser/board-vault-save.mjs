@@ -12,7 +12,7 @@ try{
   const f=await (await page.waitForSelector('#fBoard')).contentFrame();
   await f.waitForFunction(()=>typeof renderTokens==='function'&&window.__vaultSave&&document.getElementById('vaultSave'));
   await page.waitForTimeout(1500);
-  const lib=()=>f.evaluate(async()=>((await store.get('cs_drill_lib_v1'))||[]).filter(d=>/^가상 전술/.test(d.name||'')).map(d=>({name:d.name,nums:(d.snap.players||[]).map(p=>p.num).join(',')})));
+  const lib=()=>f.evaluate(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).filter(d=>/^가상 전술/.test(d.name||'')).map(d=>({name:d.name,nums:(d.snap.players||[]).map(p=>p.num).join(',')})));
   const put=nums=>f.evaluate(ns=>{state.players=ns.map((n,i)=>({id:'vs'+n,team:'red',num:String(n),x:300+i*40,y:320}));renderTokens();},nums);
   // 폰은 저장 띠의 «보관함», 데스크톱은 원래 버튼 — 둘 다 같은 저장 경로
   const openSheet=async()=>{
@@ -22,7 +22,7 @@ try{
       width:Math.round(document.querySelector('#psSaveOv>div').getBoundingClientRect().width),vw:innerWidth}));
   };
   const name=n=>f.evaluate(v=>{document.getElementById('pssName').value=v;},n);
-  const waitLib=pred=>f.waitForFunction(async p=>{const a=((await store.get('cs_drill_lib_v1'))||[]).filter(d=>/^가상 전술/.test(d.name||'')).map(d=>({name:d.name,nums:(d.snap.players||[]).map(x=>x.num).join(',')}));return new Function('a','return '+p)(a);},pred,{polling:100,timeout:5000});
+  const waitLib=pred=>f.waitForFunction(async p=>{const a=((await boardStore.get('cs_drill_lib_v1'))||[]).filter(d=>/^가상 전술/.test(d.name||'')).map(d=>({name:d.name,nums:(d.snap.players||[]).map(x=>x.num).join(',')}));return new Function('a','return '+p)(a);},pred,{polling:100,timeout:5000});
 
   assert.equal(await f.evaluate(()=>document.getElementById('boardManualSave').textContent),'보드 저장','보드의 «저장»은 «보드 저장»');
   // 1) 처음 저장 — 확인창, 덮어쓰기 없음, 보드 문맥 설명

@@ -5,7 +5,7 @@ function part(a,b){const i=source.indexOf(a),j=source.indexOf(b,i+1);assert.ok(i
 function setup(){
  const timers=[],m={id:'m',phaseBoards:{cur:'atk'},oppPB:{cur:'atk'}},state={m,owner:'team-a',pending:false,failed:false,edit:true,renders:0,loads:0};
  const c=vm.createContext({console,Promise,JSON,Math,setTimeout(fn){timers.push(fn);return timers.length;},
-  store:{owner:()=>state.owner,hasPending:()=>state.pending,hasFailed:()=>state.failed,ready:()=>state.ready||Promise.resolve()},
+  scoutStore:{owner:()=>state.owner,hasPending:()=>state.pending,hasFailed:()=>state.failed,ready:()=>state.ready||Promise.resolve()},
   matchGet:()=>state.m,matchCanEditOne:()=>state.edit,mb2Ensure:m=>m.phaseBoards,obEnsure:m=>m.oppPB,
   matchSaveTimer:0,_mprT:0,matchState:m,matchCurrent:'m',matchPendingOpen:null,MATCH_KEY:'matches',
   matchLoad:()=>{state.loads++;return {matches:[state.m]};},renderMatch:()=>state.renders++,renderTeamHome(){},

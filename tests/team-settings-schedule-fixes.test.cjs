@@ -32,7 +32,7 @@ test('opponent save respects edit permission',()=>{
 });
 function brand(options={}){
  let latest={attrs:[],positions:[],players:[{name:'새 선수'}],meta:{emblem:'new-logo',color:'#123456',headline:'새 문구'}},writes=0;
- const c=vm.createContext({data:{meta:{emblem:'stale-logo',color:'#000000'}},KEY:'main',teamSaveOwner:()=>options.owner||'team-a',scoutAutomaticWriteAllowed:()=>!options.denied,toast(){},teamEmblemApply(){},psTeamMetaPing(){},store:{get:()=>latest,set(k,v){if(options.fail)return false;latest=v;writes++;return true;}}});
+ const c=vm.createContext({data:{meta:{emblem:'stale-logo',color:'#000000'}},KEY:'main',teamSaveOwner:()=>options.owner||'team-a',scoutAutomaticWriteAllowed:()=>!options.denied,toast(){},teamEmblemApply(){},psTeamMetaPing(){},scoutStore:{get:()=>latest,set(k,v){if(options.fail)return false;latest=v;writes++;return true;}}});
  vm.runInContext(part(scout,'function teamBrandSave(','/* ── 1.891'),c);return {c,latest:()=>latest,writes:()=>writes};
 }
 test('changing team color preserves latest emblem and players, not stale frame metadata',()=>{
@@ -51,7 +51,7 @@ test('OFF sessions are excluded from weekly counts, including a selected group',
  assert.equal(c.daySessionCount(day),1);c.__schedGrp='A';assert.equal(c.daySessionCount(day),0);c.__schedGrp='B';assert.equal(c.daySessionCount(day),1);assert.equal(day.trainings.length,2);
 });
 test('ordinary roster persistence cannot overwrite newer branding',()=>{
- let stored;const c=vm.createContext({KEY:'main',store:{get:()=>({meta:{color:'#abcdef',headline:'latest'}}),set(k,v){stored=v;return true;}},rosterRemember(){},rosterSaveMirrors:()=>true});
+ let stored;const c=vm.createContext({KEY:'main',scoutStore:{get:()=>({meta:{color:'#abcdef',headline:'latest'}}),set(k,v){stored=v;return true;}},rosterRemember(){},rosterSaveMirrors:()=>true});
  vm.runInContext(part(scout,'function rosterPersist(','function rosterProject('),c);
  const main={players:[],meta:{emblem:'stale-logo',color:'#000000',headline:'old',formation:'4-4-2'}};
  assert.equal(c.rosterPersist(main,{skipItems:true}),true);assert.equal(stored.meta.emblem,undefined);assert.equal(stored.meta.color,'#abcdef');assert.equal(stored.meta.headline,'latest');assert.equal(stored.meta.formation,'4-4-2');

@@ -1348,7 +1348,7 @@ function openDetail(p,opt){
 
 /* ── 담기 → 내 보관함(cs_drill_lib_v1, 로컬) — 로그인·데이터 해제 후만 ── */
 var LIB_KEY='cs_drill_lib_v1';
-var store={
+var libStore={
   get:function(k){if(!communityLibraryDataUnlocked())return Promise.reject(communityLibraryLockedError());return window.storage?window.storage.get(k).then(function(r){if(!communityLibraryDataUnlocked())throw communityLibraryLockedError();return r?JSON.parse(r.value):null;}):Promise.resolve(null);},
   set:function(k,v){if(!communityLibraryDataUnlocked())return Promise.reject(communityLibraryLockedError());return window.storage?window.storage.set(k,JSON.stringify(v)):Promise.resolve();}
 };
@@ -1359,7 +1359,7 @@ function copyToLib(p,btn){
   if(!communityLibraryRequireUnlocked(true))return;
   var me=sess(),flowEpoch=__communityLibraryEpoch,uid=me&&me.uid;
   if(btn){btn.disabled=true;btn.textContent='담는 중…';}
-  store.get(LIB_KEY).then(function(lib){
+  libStore.get(LIB_KEY).then(function(lib){
     communityLibraryContinuation(flowEpoch,uid);
     lib=Array.isArray(lib)?lib:[];
     var src=p.item||{}, d={};
@@ -1372,7 +1372,7 @@ function copyToLib(p,btn){
     d.srcComm={id:p.id,by:p.owner_name||''};
     lib.unshift(d);
     communityLibraryContinuation(flowEpoch,uid);
-    return store.set(LIB_KEY,lib);
+    return libStore.set(LIB_KEY,lib);
   }).then(function(){
     communityLibraryContinuation(flowEpoch,uid);
     try{localStorage.setItem('cs_lib_rev',String(Date.now()));}catch(_){}
@@ -1510,7 +1510,7 @@ function upMetaOf(d){
 }
 function buildUpload(me,handle,flowEpoch){
   try{communityLibraryContinuation(flowEpoch,me&&me.uid);}catch(_){return;}
-  store.get(LIB_KEY).then(function(lib){
+  libStore.get(LIB_KEY).then(function(lib){
     communityLibraryContinuation(flowEpoch,me.uid);
     lib=(Array.isArray(lib)?lib:[]).filter(function(d){var t=d.type||'train';return t==='train'||t==='setpiece'||t==='board';});
     var h='<h2>커뮤니티에 올리기</h2><div class="hint" style="margin-top:2px">내 보관함에서 작전판이나 훈련을 골라 모든 코치에게 공유합니다. 사진 · 선수 이름은 자동으로 빠져요. 아이디 <b>@'+esc(handle)+'</b> 로 올라갑니다.</div>';
