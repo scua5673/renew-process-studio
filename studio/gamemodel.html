@@ -1501,7 +1501,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
   function gmTrainCount(){
     var out={byPhase:{},byMoment:{},any:false,weeks:GM_TRAIN_WEEKS};
     try{
-      var src=JSON.parse(localStorage.getItem('process_coach_v1')||'null');
+      var src=JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem('process_coach_v1'))||'null');
       var weeks=src&&src.weeks; if(!weeks||typeof weeks!=='object')return out;
       /* 오늘이 몇 번째 주인지 — 일정이 쓰는 기준(anchorMonday)을 그대로 쓴다 */
       var cur=0;
@@ -1607,7 +1607,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
   function lmCoverCounts(){
     var c={};
     try{
-      var raw=localStorage.getItem('process_coach_v1'); var doc=raw?JSON.parse(raw):null; var weeks=doc&&doc.weeks;
+      var raw=((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem('process_coach_v1')); var doc=raw?JSON.parse(raw):null; var weeks=doc&&doc.weeks;
       if(!weeks||typeof weeks!=='object')return c;
       var now=new Date(); now.setHours(0,0,0,0); var from=new Date(now); from.setDate(from.getDate()-28);
       var anchor=null; try{ anchor=window.PSSchedule&&PSSchedule.anchor&&PSSchedule.anchor(); }catch(_){}
@@ -1918,7 +1918,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
     if(_evTrainCache)return _evTrainCache;
     var counts={};
     try{
-      var raw=localStorage.getItem('process_coach_v1'); var doc=raw?JSON.parse(raw):null; var weeks=doc&&doc.weeks;
+      var raw=((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem('process_coach_v1')); var doc=raw?JSON.parse(raw):null; var weeks=doc&&doc.weeks;
       if(weeks&&typeof weeks==='object'){
         var now=new Date(); now.setHours(0,0,0,0); var from=new Date(now); from.setDate(from.getDate()-28);
         var anchor=null; try{ anchor=window.PSSchedule&&PSSchedule.anchor&&PSSchedule.anchor(); }catch(_){}
