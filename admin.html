@@ -15,11 +15,14 @@
   }
   *{box-sizing:border-box;}
   :focus-visible{outline:2px solid #3a6df0;outline-offset:2px}
+  html{color-scheme:dark;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
     font-family:-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
     -webkit-font-smoothing:antialiased;font-size:14px;}
   a{color:var(--blue2);text-decoration:none;}
   button{font-family:inherit;cursor:pointer;}
+  /* 3.068 — 따로 꾸미지 않은 선택 상자가 브라우저 기본 흰 상자로 떠서 어두운 화면에서 튀었다(오류 · 사용 방식 · 활동 분석) */
+  select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:0 8px;font-family:inherit;}
   .hide{display:none!important;}
   /* ── 관리자 앱 셸: 목업과 같은 좌측 내비게이션 + 넓은 작업영역 ── */
   #app{min-height:100vh;padding-left:220px;}
@@ -35,11 +38,10 @@
   .navBadge[hidden]{display:none}
   .admin-nav svg{width:16px;height:16px;flex:0 0 auto;}
   .admin-side-foot{position:absolute;left:14px;right:14px;bottom:18px;padding:11px 12px;border-top:1px solid var(--line);color:var(--dim2);font-size:10px;line-height:1.5;}
-  #app>header,#app>.stats,#app>.tabs,#app>.wrap{margin-left:0;}
+  #app>header,#app>.stats,#app>.wrap{margin-left:0;}
   #app>header{padding-left:26px;}
   #app>header .logo{display:none;}
   .admin-top-title{font-size:14px;font-weight:800;letter-spacing:-.01em;}
-  #app>.tabs{display:none;}
   #app>.stats{padding:16px 26px 6px;}
   #app>.wrap{padding:14px 26px 42px;max-width:1460px;margin-right:auto;}
   @media(max-width:900px){
@@ -100,12 +102,6 @@
   .stat .n{font-size:24px;font-weight:800;letter-spacing:-.01em;}
   .stat .l{font-size:12px;color:var(--dim);margin-top:2px;font-weight:600;}
 
-  /* ── 탭 ── */
-  .tabs{display:flex;gap:6px;padding:8px 18px 0;}
-  .tab{height:38px;padding:0 16px;border:0;background:transparent;color:var(--dim);border-radius:10px 10px 0 0;
-    font-weight:800;font-size:13px;border-bottom:2px solid transparent;}
-  .tab.on{color:var(--txt);border-bottom-color:var(--blue);}
-
   /* ── 레이아웃 ── */
   .wrap{display:grid;grid-template-columns:360px 1fr;gap:16px;padding:14px 18px 40px;align-items:start;}
   @media(max-width:900px){ .wrap{grid-template-columns:1fr;} }
@@ -115,7 +111,7 @@
      폰(≤900)은 종전대로 페이지 스크롤. 마법 숫자 없음 — 높이는 flex 가 나눈다. */
   @media(min-width:901px){
     #app{height:100vh;display:flex;flex-direction:column;}
-    #app>header,#app>.stats,#app>.tabs{flex:0 0 auto;}
+    #app>header,#app>.stats{flex:0 0 auto;}
     #app>.wrap{flex:1 1 auto;min-height:0;align-items:stretch;grid-auto-rows:minmax(0,1fr);padding-bottom:18px;}
     .col{display:flex;flex-direction:column;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
     .col>.panel.ps-scroll{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin-bottom:0;}
@@ -319,7 +315,7 @@
       <button data-admin-tab="ws" onclick="setTab('ws')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V6l8-3 8 3v14"/><path d="M9 20v-5h6v5M8 9h1M15 9h1"/></svg>팀 관리</button>
       <button data-admin-tab="users" onclick="setTab('users')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0112 0M15 19a5 5 0 016 0"/></svg>사용자</button>
       <button data-admin-tab="idp" onclick="setTab('idp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>IDP</button>
-      <button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>백엔드</button>
+      <button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5v13c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-13"/><path d="M4 12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8"/></svg>백엔드</button>
       <button data-admin-tab="errors" onclick="setTab('errors')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 9v4M12 17h.01"/></svg>오류</button>
       <button data-admin-tab="support" onclick="setTab('support')" title="오류 제보" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v12H9l-5 4V4z"/><path d="M8 8h8M8 12h5"/></svg>오류 제보<span class="navBadge" id="supportBadge" hidden></span></button>
       <button data-admin-tab="comm" onclick="setTab('comm')" title="커뮤니티 신고" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>커뮤니티<span class="navBadge" id="commBadge" hidden></span></button>
@@ -337,19 +333,6 @@
 
   <div class="stats" id="stats"></div>
 
-  <div class="tabs">
-    <button class="tab" id="tabHome" onclick="setTab('home')">홈</button>
-    <button class="tab" id="tabUse" onclick="setTab('use')">사용 방식</button>
-    <button class="tab on" id="tabAct" onclick="setTab('act')">활동</button>
-    <button class="tab" id="tabAll" onclick="setTab('all')">훈련 전체</button>
-    <button class="tab" id="tabWs" onclick="setTab('ws')">워크스페이스</button>
-    <button class="tab" id="tabUsers" onclick="setTab('users')">유저</button>
-    <button class="tab" id="tabIdp" onclick="setTab('idp')">IDP</button>
-    <button class="tab" id="tabBack" onclick="setTab('back')">백엔드</button>
-    <button class="tab" id="tabErrors" onclick="setTab('errors')">오류</button>
-    <button class="tab" id="tabSupport" onclick="setTab('support')">오류 제보</button>
-    <button class="tab" id="tabComm" onclick="setTab('comm')">커뮤니티</button>
-  </div>
 
   <section class="wrap hide" id="viewSupport" style="grid-template-columns:1fr" aria-label="오류 제보 접수함"></section>
 
@@ -870,6 +853,9 @@ function consumeHash(){
 }
 
 /* ===== 유틸 ===== */
+/* 3.068 — 예전 안내는 «supabase-admin.sql 을 다시 실행»이었다. 그 파일들은 운영과 달라 기준본(migrations/00000000_baseline.sql)으로 바뀌었다 —
+   응답하지 않은 함수 이름을 대고, 권한 · 연결부터 보게 한다. */
+function fnMiss(fn){ return '<span class="muted"><code>'+fn+'</code> 응답 없음 — 관리자 권한 · 연결을 먼저 확인하고, 그래도 안 되면 운영 DB 에 이 함수가 있는지 기준본(migrations/00000000_baseline.sql)과 견주세요.</span>'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function $(id){ return document.getElementById(id); }
 function show(id){ $(id).classList.remove('hide'); }
@@ -959,11 +945,11 @@ function reloadAll(){
     renderStats();
     loadAdminOps();
     if(res[0].ok) renderWsList();
-    else $('wsList').innerHTML='<div class="empty">팀 정보를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>';
+    else $('wsList').innerHTML='<div class="empty">팀 정보를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_workspaces')+'</div>';
     if(res[1].ok) renderUsers();
-    else $('usersTable').innerHTML='<tr><td colspan="6"><div class="empty">사용자 집계 오류 — 최신 supabase-admin.sql을 다시 실행하세요.</div></td></tr>';
+    else $('usersTable').innerHTML='<tr><td colspan="6"><div class="empty">사용자 집계를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_users')+'</div></td></tr>';
     if(res[2].ok||libTicket!==adminLibraryTicket) renderAllLib();
-    else $('alBody').innerHTML='<div class="empty">콘텐츠 정보를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>';
+    else $('alBody').innerHTML='<div class="empty">콘텐츠 정보를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_library')+'</div>';
     if(curWid && res[0].ok && WS.some(function(w){return w.id===curWid;})) selectWs(curWid);
     if(res.some(function(x){return !x.ok;})) toast('일부 관리자 지표를 불러오지 못했습니다.');
   });
@@ -983,11 +969,11 @@ function renderStats(){
   var teams=WS.filter(function(w){return w.kind==='team';}).length;
   var act7=ACT_WS?ACT_WS.filter(function(w){ var last=(new Date(w.last_kv||0)>new Date(w.last_lib||0))?w.last_kv:w.last_lib; return isFresh(last); }).length:null;
   $('stats').innerHTML=
-     stat(USERS.length,'유저')
-    +stat(WS.length,'워크스페이스')
+     stat(USERS.length,'계정')
+    +stat(WS.length,'공간 (팀 + 개인)')
     +stat(teams,'팀')
-    +stat(libTotal,'훈련·항목')
-    +(act7!=null?stat(act7,'7일 활성 WS'):'');
+    +stat(libTotal,'콘텐츠')
+    +(act7!=null?stat(act7,'7일 갱신된 공간'):'');
 }
 function stat(n,l){ return '<div class="stat"><div class="n">'+n+'</div><div class="l">'+esc(l)+'</div></div>'; }
 
@@ -996,16 +982,11 @@ function setTab(t){
   if(adminSupport&&curTab==='support'&&t!=='support')adminSupport.deactivate();
   if(adminContent&&curTab==='all'&&t!=='all')adminContent.deactivate();
   curTab=t; $('app').classList.toggle('admin-home-mode',t==='home'); $('app').classList.toggle('admin-content-mode',t==='all');
-  if($('tabBack'))$('tabBack').classList.toggle('on',t==='back'); if($('viewBack'))$('viewBack').classList.toggle('hide',t!=='back'); if(t==='back')loadBack();   /* 2.630 */
-  if($('tabUse'))$('tabUse').classList.toggle('on',t==='use');
-  if($('tabErrors'))$('tabErrors').classList.toggle('on',t==='errors');
+  if($('viewBack'))$('viewBack').classList.toggle('hide',t!=='back'); if(t==='back')loadBack();   /* 2.630 */
   if($('viewUse'))$('viewUse').classList.toggle('hide',t!=='use');
   if($('viewErrors'))$('viewErrors').classList.toggle('hide',t!=='errors');
-  if($('tabSupport'))$('tabSupport').classList.toggle('on',t==='support');
   if($('viewSupport'))$('viewSupport').classList.toggle('hide',t!=='support');
-  if($('tabComm'))$('tabComm').classList.toggle('on',t==='comm');
   if($('viewComm'))$('viewComm').classList.toggle('hide',t!=='comm');
-  $('tabHome').classList.toggle('on',t==='home'); $('tabAct').classList.toggle('on',t==='act'); $('tabAll').classList.toggle('on',t==='all'); $('tabWs').classList.toggle('on',t==='ws'); $('tabUsers').classList.toggle('on',t==='users'); $('tabIdp').classList.toggle('on',t==='idp');
   [].forEach.call(document.querySelectorAll('[data-admin-tab]'),function(b){b.classList.toggle('on',b.dataset.adminTab===t);});
   var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({support:'오류 제보',comm:'커뮤니티 신고',back:'백엔드 건강',errors:'오류 분석',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
   $('viewHome').classList.toggle('hide',t!=='home'); $('viewAct').classList.toggle('hide',t!=='act'); $('viewAll').classList.toggle('hide',t!=='all'); $('viewWs').classList.toggle('hide',t!=='ws'); $('viewUsers').classList.toggle('hide',t!=='users'); $('viewIdp').classList.toggle('hide',t!=='idp');
@@ -1468,7 +1449,7 @@ function renderHome(){
       +'<div style="font-size:31px;font-weight:800;letter-spacing:-.6px;line-height:1;font-variant-numeric:tabular-nums">'+n+'</div>'
       +'<div style="font-size:12px;font-weight:700;color:var(--dim);margin-top:6px">'+lb+'</div>'
       +(sub?'<div class="muted" style="font-size:10px;margin-top:1px">'+sub+'</div>':'')+'</div>'; };
-    var hint=(R.coaches==null)?'<div class="muted" style="font-size:10.5px;margin-top:8px">코치·선수 분류를 켜려면 supabase-admin.sql을 SQL Editor에서 다시 실행하세요.</div>':'';
+    var hint=(R.coaches==null)?'<div class="muted" style="font-size:10.5px;margin-top:8px">코치·선수 분류가 비어 있습니다 — <code>ps_admin_reach</code> 가 coaches · player_accounts 를 돌려주는지 확인하세요.</div>':'';
     var el=document.getElementById('hmReach');
     if(el)el.innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap">'
       +stat(signupsC,'가입자','실가입 계정')
@@ -1516,7 +1497,7 @@ function renderHome(){
       +'<b style="font-size:10px">'+esc((hV2?H.top_app_error:H.top_error)||'정상')+'</b></div>'
       +renderErrorDetails()+renderSyncDetails();
   }else{
-    $('hmHealth').innerHTML='<div class="empty">안정성 수집 준비 — supabase-events.sql을 SQL Editor에서 실행하세요.</div>';
+    $('hmHealth').innerHTML='<div class="empty">안정성 현황을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_event_summary_v2')+'</div>';
   }
   /* ── 운영자가 바로 처리할 수 있는 조치 목록 ── */
   var actionRows=[];
@@ -1559,7 +1540,7 @@ function renderHome(){
       +'<span style="font-size:12px"><b style="font-size:16px">'+(US.mau!=null?US.mau:'—')+'</b> <span class="muted">30일</span></span></div>'
       +'<div style="display:flex;align-items:flex-end;gap:1px;height:72px">'+bars+'</div>';
   } else {
-    $('hmUsage').innerHTML='<div class="empty">수집 시작 전 — supabase-usage.sql 설치 + 새 버전 배포 후, 유저가 접속하는 날부터 쌓입니다.</div>';
+    $('hmUsage').innerHTML='<div class="empty">일별 사용 기록을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_usage_daily')+'</div>';
   }
   /* ── IDP 퍼널 ── */
   if(F){
@@ -1573,12 +1554,12 @@ function renderHome(){
         +'<span style="flex:0 0 74px;font-size:11.5px;font-weight:800">'+s[1]+'<span class="muted" style="font-weight:600"> · '+pct+'%</span></span></div>';
     }).join('');
   } else {
-    $('hmFunnel').innerHTML='<div class="empty">관리자 퍼널 RPC를 확인할 수 없습니다. 최신 <code>supabase-admin.sql</code>을 다시 실행하세요.</div>';
+    $('hmFunnel').innerHTML='<div class="empty">IDP 현황을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_idp_funnel')+'</div>';
   }
   /* ── 2.022 핵심 행동(a_* 핑) — 깔때기 순으로, 없는 행동도 0으로 보여 빈 곳이 보이게 ── */
   (function(){
     var host=$('hmActs'); if(!host)return;
-    if(HOME.feat===null){ host.innerHTML='<div class="empty">RPC가 없어요 — supabase-usage.sql의 ps_admin_usage_features를 실행하세요.</div>'; return; }
+    if(HOME.feat===null){ host.innerHTML='<div class="empty">핵심 행동을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_usage_features')+'</div>'; return; }
     var by={}; (HOME.feat||[]).forEach(function(x){ if(/^a_/.test(x.feature))by[x.feature]=x; });
     var rows=ACT_LB.map(function(a){ var x=by[a[0]]||{users:0,pings:0,prev_users:0}; return {k:a[0],lb:a[1],users:x.users,pings:x.pings,prev:x.prev_users||0}; });
     var amx=Math.max.apply(null,rows.map(function(r){return r.users;}).concat([1]));
@@ -1609,7 +1590,7 @@ function renderHome(){
     }).join('');
   } else {
     $('hmFeat').innerHTML='<div class="empty">'+(HOME.feat===null
-      ?'RPC가 없어요 — supabase-usage.sql의 ps_admin_usage_features를 SQL Editor에서 실행하세요.'
+      ?'기능 방문을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_usage_features')
       :'수집 시작 전 — 새 버전 배포 후, 유저가 탭에 들어오는 날부터 쌓입니다.')+'</div>';
   }
   /* ── 기능별 저장 활동(kv) ── */
@@ -1648,7 +1629,7 @@ function renderHome(){
       }).join(''));
   /* ── 최근 가입 ── */
   var recent=users.slice().sort(function(a,b){return new Date(b.created_at||0)-new Date(a.created_at||0);});
-  $('hmNew').innerHTML=!usersOk?'<div class="empty">사용자 집계를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>':recent.slice(0,6).map(function(u){
+  $('hmNew').innerHTML=!usersOk?'<div class="empty">사용자 집계를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_users')+'</div>':recent.slice(0,6).map(function(u){
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)">'
       +'<span class="nm" style="flex:1;font-size:12px">'+esc(u.email||'(이메일 없음)')+'</span>'
       +(u.idp_last?'<span style="font-size:10px;font-weight:800;color:#9D7BFF">IDP</span>':'')
@@ -1909,7 +1890,7 @@ function loadActivity(){
   Promise.all([ rpc('ps_admin_activity_ws'), rpc('ps_admin_activity_keys',{p_days:14}), rpc('ps_admin_activity_users') ])
     .then(function(res){ ACT_WS=res[0]||[]; ACT_KEYS=res[1]||[]; ACT_USERS=res[2]||[];
       renderActivity(); renderStats(); })
-    .catch(function(e){ var m='<div class="empty">관리자 활동 RPC를 확인할 수 없습니다. 최신 <code>supabase-admin.sql</code>을 다시 실행하세요.<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
+    .catch(function(e){ var m='<div class="empty">활동 집계를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_activity_ws · ps_admin_activity_keys · ps_admin_activity_users')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
       $('actWs').innerHTML=m; $('actKeys').innerHTML=''; $('actUsers').innerHTML=''; });
 }
 function renderActivity(){
@@ -2189,7 +2170,7 @@ function userTeamsCell(u){
 function userSubLine(u){
   var parts=[];
   var nm=(u.name||'').trim();
-  if(u.email){ if(u.email!==nm)parts.push(u.email); }
+  if(u.email){ if(nm&&u.email!==nm)parts.push(u.email); }   /* 3.068 — 이름이 없으면 윗줄이 이미 이메일이다(두 번 나오던 것) */
   else if(Array.isArray(u.teams)) parts.push('이메일 없음');
   if(u.provider) parts.push((ADMIN_PROVIDER[u.provider]||u.provider)+' 로그인');
   if(u.account_name&&u.member_name&&u.account_name!==u.member_name) parts.push('계정 이름 '+u.account_name);
@@ -2243,7 +2224,7 @@ function loadIdpList(){
       IDP_USERS=(r||[]).filter(function(u){ return u.idp_last; });
       renderIdpList();
     }).catch(function(e){
-      $('idpList').innerHTML='<div class="empty">유저 목록 RPC 오류 — 최신 <code>supabase-admin.sql</code>을 다시 실행하세요.<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
+      $('idpList').innerHTML='<div class="empty">IDP 사용자 목록을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_idp_users')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
     });
   });
 }
@@ -2304,7 +2285,7 @@ function openIdp(uid,email){
     :rpc('ps_admin_idp_get',{p_uid:uid}).then(function(rows){ var row=(rows&&rows[0])||null; IDP_CACHE[uid]=row; return row; }))
   .then(function(row){ if(curIdpUid!==uid)return; renderIdpDoc(row); })
   .catch(function(e){ if(curIdpUid!==uid)return;
-    $('idpBody').innerHTML='<div class="empty">불러오기 실패 — 최신 <code>supabase-admin.sql</code>을 SQL Editor에서 다시 실행했는지 확인하세요.<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>'; });
+    $('idpBody').innerHTML='<div class="empty">IDP 문서를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_idp_get')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>'; });
 }
 function _idpRow(l,v){ return '<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)"><span class="muted" style="flex:0 0 92px;font-size:11px;padding-top:1px">'+esc(l)+'</span><span style="flex:1;font-size:12px;min-width:0">'+v+'</span></div>'; }
 function _idpSec(t){ return '<div class="sec-t" style="margin:16px 0 4px">'+esc(t)+'</div>'; }

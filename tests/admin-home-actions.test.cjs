@@ -7,7 +7,8 @@ const html=fs.readFileSync(require.resolve('../admin.html'),'utf8');
 function section(a,b){const i=html.indexOf(a);assert.ok(i>=0,'missing '+a);const j=html.indexOf(b,i);assert.ok(j>i,'missing '+b);return html.slice(i,j);}
 const block=section('/* ── 2.022 핵심 행동(a_* 핑)','/* ── 기능별 저장 활동(kv) ──');
 const actLb=html.slice(html.indexOf('var ACT_LB='),html.indexOf('\n',html.indexOf('var ACT_LB=')));
-const code=actLb+'\nfunction renderPart(){\n'+block+'\n}';
+const fnMiss=html.slice(html.indexOf('function fnMiss('),html.indexOf('\n',html.indexOf('function fnMiss(')));
+const code=actLb+'\n'+fnMiss+'\nfunction renderPart(){\n'+block+'\n}';
 
 function harness(feat){
   const nodes={hmActs:{innerHTML:''},hmFeat:{innerHTML:''}};
@@ -63,6 +64,10 @@ test('only action pings: visits show the empty state, actions still counted',()=
 test('missing RPC is still reported in both sections',()=>{
   const h=harness(null);
   h.c.renderPart();
-  assert.match(h.nodes.hmActs.innerHTML,/RPC가 없어요/);
-  assert.match(h.nodes.hmFeat.innerHTML,/RPC가 없어요/);
+  /* 3.068 — 없는 파일(supabase-usage.sql)을 실행하라던 안내 대신, 응답하지 않은 함수 이름을 댄다 */
+  for(const id of ['hmActs','hmFeat']){
+    assert.match(h.nodes[id].innerHTML,/불러오지 못했습니다/);
+    assert.match(h.nodes[id].innerHTML,/<code>ps_admin_usage_features<\/code> 응답 없음/);
+    assert.doesNotMatch(h.nodes[id].innerHTML,/supabase-usage\.sql/);
+  }
 });
