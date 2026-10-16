@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.056"></script>
+<script src="autosave-status.js?v=3.059"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -515,7 +515,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.056';</script>
+<script>window.PS_BUILD='3.059';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1158,6 +1158,13 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   try{ var fm=/[?&]safe=([012])(?:[&#]|$)/.exec(String(location.search||'')); if(fm){ level=+fm[1]; if(!level){ try{ sessionStorage.removeItem(K); }catch(_){} }
     /* 이번 부팅에만 — 주소에서 지운다. 남겨 두면 사파리가 강제 종료 뒤 같은 주소로 다시 열 때마다 safe=0 이 안전장치를 끈 채 반복된다 */
     try{ var u=new URL(location.href); u.searchParams.delete('safe'); history.replaceState(history.state,'',u.pathname+u.search+u.hash); }catch(_){} } }catch(_){}   /* 손으로: app.html?safe=2 */
+  /* 3.059 — 안전 단계는 **앱이 스스로 하는 새로고침**(__psBootMarkDone — 부팅 동기화가 바뀐 것을 받으면 새로 연다)을 건너 이어 간다.
+     예전엔 그 새로고침이 표시를 지워 다음 부팅이 다시 평소(단계 0 · 미리 띄우기 둘)로 열렸다 — 오류 제보 10/16 아이패드: 강제 종료 두 번 모두 prevLevel 0.
+     3분 안의 이어받기만 · ?safe= 로 정한 부팅은 그대로 · 이어받은 값은 한 번 쓰고 지운다. */
+  var carried=false;
+  try{ var CARRY='ps_boot_safe_carry_v1',cr=String(sessionStorage.getItem(CARRY)||'').split('|'),ca=+cr[0],cl=cr[1]==='2'?2:(cr[1]==='1'?1:0);
+    sessionStorage.removeItem(CARRY);
+    if(!fm&&isFinite(ca)&&ca>0&&now-ca>=0&&now-ca<LIFE&&cl>level){ level=cl; carried=true; } }catch(_){}
   window.__psSafeBoot=level>=1; window.__psSafeLevel=level;
   var loaded=false,beat=0,stage='shell',warm=-1,tmax=0,last=now,RANK={shell:0,board:1,boardload:2,sync:3,load:4};
   function write(){ try{ sessionStorage.setItem(K,last+'|'+(loaded?1:0)+'|'+stage+(warm>=0?'w'+warm:'')+(tmax?'t'+tmax:'')+'|'+level); }catch(_){} }
@@ -1173,7 +1180,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     else if(/^t\d+$/.test(code))tmax=Math.max(tmax,+code.slice(1)||0);   /* 버틴 초는 꼬리(t60) — 늦게 온 sync · load 가 덮지 않는다 */
     else if(RANK[code]==null||RANK[code]>=(RANK[stage]||0))stage=code;   /* 단계는 뒤로 가지 않는다(검토: 늦은 sync 가 load · t30 을 덮어 과소 기록) */
     if(beat)write(); };   /* 숨겨진 동안(표시 없음)은 적지 않는다 — 뒤에서 iOS 가 탭을 정리한 것은 «죽음»이 아니다 */
-  window.__psBootMarkDone=function(){ done(); setTimeout(function(){ if(loaded&&!beat&&!document.hidden)live(); },4000); };   /* 스스로 하는 새로고침 직전. 취소되면(떠나기 확인창) 다시 지킨다 */
+  window.__psBootMarkDone=function(){ done(); if(level>=1){ try{ sessionStorage.setItem('ps_boot_safe_carry_v1',Date.now()+'|'+level); }catch(_){} } setTimeout(function(){ if(loaded&&!beat&&!document.hidden)live(); },4000); };   /* 스스로 하는 새로고침 직전. 취소되면(떠나기 확인창) 다시 지킨다 */
   window.addEventListener('pagehide',done);
   window.addEventListener('pageshow',function(e){ if(e&&e.persisted)live(); });
   window.addEventListener('load',function(){ loaded=true; try{ window.__psBootStage('load'); }catch(_){} if(!document.hidden)stamp(); });
@@ -1191,7 +1198,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       [0,1800,3600].forEach(function(ms){ setTimeout(function(){ try{ bw.toast(msg); }catch(_){} },ms); }); return; } }catch(_){}
     if(n<120)setTimeout(function(){ say(n+1); },500); })(0);
   /* ③ 멈춘 뒤 다시 연 기록 — PSSync 가 생기면(문서 끝의 sync.js) 한 건. 내용은 없다(단계 · 초 · 숫자 · UA 앞부분). */
-  if(level>=1)(function send(n){ try{ var S=window.PSSync; if(S&&typeof S.event==='function'){
+  if(level>=1&&!carried)(function send(n){   /* 3.059 — 이어받은 단계(스스로 새로고침)는 죽음이 아니다 — 기록하지 않는다 */ try{ var S=window.PSSync; if(S&&typeof S.event==='function'){
       var nav=window.navigator||{},sa=false; try{ sa=nav.standalone===true||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches); }catch(_){}
       var CAP='ps_boot_crash_sent_v1',hr=Math.floor(Date.now()/3600000),cp=[]; try{ cp=String(sessionStorage.getItem(CAP)||'').split('|'); }catch(_){}
       var cn=+cp[0]===hr?(+cp[1]||0):0; if(cn>=40)return; try{ sessionStorage.setItem(CAP,hr+'|'+(cn+1)); }catch(_){}
@@ -1652,7 +1659,7 @@ window.psFailAlert=function(lead,e,stage){
   .ps-updpop .pup-h b{font-size:15px;font-weight:800;flex:0 1 auto}
   .ps-updpop .pup-v{font-size:12px;font-weight:600;color:var(--dim,#646A73);flex:1 1 auto}
   html body .ps-updpop .pup-x:not(#_){border:0;background:none;width:32px;height:32px;min-height:32px;padding:0;font-size:18px;line-height:1;color:var(--dim,#646A73);cursor:pointer;align-self:center}
-  .ps-updpop .pup-body{display:flex;flex-direction:column;gap:10px;max-height:min(46vh,340px);overflow:auto}
+  .ps-updpop .pup-body{display:flex;flex-direction:column;gap:10px;max-height:min(62vh,520px);overflow:auto;overscroll-behavior:contain}   /* 3.057 — 업데이트 기록 전부라 길다 */
   .ps-updpop .pup-body:empty{display:none}
   .ps-updpop .pup-ent+.pup-ent{border-top:1px solid var(--line,#E3E6EA);padding-top:10px}
   .ps-updpop .pup-d{font-size:12px;font-weight:700;color:var(--dim,#646A73)}
@@ -2684,13 +2691,16 @@ window.psFailAlert=function(lead,e,stage){
     }
     /* ── 3.004 · 미리 띄우기 순수 구간 끝 ── */
     function psWarmLean(){ try{ var dv=document.documentElement.getAttribute('data-ps-device'); return dv==='phone'||dv==='ipad'; }catch(_){ return false; } }
+    function psWarmNone(){ try{ return document.documentElement.getAttribute('data-ps-device')==='ipad'; }catch(_){ return false; } }
     function psWarmUsed(){ var raw=''; try{ raw=localStorage.getItem(PS_WARM_KEY)||''; }catch(_){} return psWarmParse(raw,Date.now()); }
     function psWarmNote(app){
       try{ if(!PS_WARM_TABS.some(function(t){ return t[0]===app; }))return;
         var u=psWarmUsed(); u[app]=Date.now(); localStorage.setItem(PS_WARM_KEY,JSON.stringify(u)); }catch(_){}
     }
     (function(){
-      var plan=window.__psSafeBoot?[]:psWarmPlan(psWarmLean(),psWarmUsed());   /* 3.034 — 앞 부팅이 죽었으면 미리 띄우지 않는다(셸 부팅 안전장치) */
+      /* 3.059 — 아이패드는 미리 띄우지 않는다(오류 제보 10/16 «경기 준비 열기 → 문제가 반복적으로 발생»: 미리 띄운 둘(scout · process)이 보관함 전체를
+         저마다 읽어 들인 채로 경기 준비가 열려 강제 종료 — 서버 기록 loadw2t10 두 번). 누를 때 연다. 폰은 3.034 대로 최근 둘. */
+      var plan=(window.__psSafeBoot||psWarmNone())?[]:psWarmPlan(psWarmLean(),psWarmUsed());   /* 3.034 — 앞 부팅이 죽었으면 미리 띄우지 않는다(셸 부팅 안전장치) */
       PS_WARM_TABS.forEach(function(t){ if(plan.indexOf(t[0])<0)return;
         setTimeout(function(){ try{
           /* 기준(gamemodel)은 src 가 scope 로 갈린다(개인/팀 — showApp 의 _want 재검사) — 주 진입로인 '기준' 탭(팀 판)을 미리.
@@ -8101,13 +8111,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.056"></script>
-<script src="autosave-merge.js?v=3.056"></script>
-<script src="autosave-runtime.js?v=3.056"></script>
-<script src="autosave-recovery.js?v=3.056"></script>
-<script src="sync.js?v=3.056"></script>
+<script src="autosave-journal.js?v=3.059"></script>
+<script src="autosave-merge.js?v=3.059"></script>
+<script src="autosave-runtime.js?v=3.059"></script>
+<script src="autosave-recovery.js?v=3.059"></script>
+<script src="sync.js?v=3.059"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.056">
+<link rel="stylesheet" href="support.css?v=3.059">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
@@ -8125,7 +8135,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
    ⚠ 띠·상태 문구 로직(psAutoReloadWhenSafe·psUpdateStatus·release-notes mount)은 그대로 두고 **보이는 자리만** 바꾼다.
       상태 문구는 psUpdateStatus 가 [data-upd-msg]·[data-upd-now] 에도 같이 쓴다. */
 (function(){
-  var SEEN='ps_release_notes_seen_v1',DAY=86400000;
+  var SEEN='ps_release_notes_seen_v1';
   var st={ready:false,next:null,fetching:false,open:'',from:null,raf:0};
   function $(id){return document.getElementById(id);}
   function mq(q){try{return !!(window.matchMedia&&window.matchMedia(q).matches);}catch(_){return false;}}
@@ -8133,13 +8143,9 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
   function band(){return !rail()&&document.body.classList.contains('ps-player-idp-only');}
   function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function all(){try{return window.PSReleaseNotes?PSReleaseNotes.entries():[];}catch(_){return [];}}
-  function dayOf(e){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec((e&&e.date)||'');return m?new Date(+m[1],+m[2]-1,+m[3]).getTime():NaN;}
-  /* 3.024 — «새 기능»은 열 판마다 한 번: 안내 판(끝이 0)의 묶음(PSReleaseNotes.announced — 바로 앞 안내 판 뒤의 판들까지, 최신이 앞)을
-     안내 판 날짜로 오늘 포함 7일 — 날짜만 본다(시계가 틀려도 영영 남거나 영영 안 뜨지 않게 미래 하루까지만). 그 사이 판은 조용하다. */
-  function bundle(){try{return window.PSReleaseNotes&&PSReleaseNotes.announced?PSReleaseNotes.announced():[];}catch(_){return [];}}
-  function news(){var t0=new Date();t0.setHours(0,0,0,0);var from=t0.getTime()-6*DAY,to=t0.getTime()+DAY;
-    var b=bundle(),t=dayOf(b[0]);return (b.length&&t>=from&&t<=to)?b:[];}
-  function rangeOf(n){var a=verOf(n[0]),z=verOf(n[n.length-1]);return (n.length>1&&z&&z!==a)?z+' ~ '+a:a;}   /* «v3.011 ~ v3.020» */
+  /* 3.057 — «새 기능»은 늘 떠 있고 판마다 바뀐 것을 최신부터 전부 보여 준다(사용자 «새기능은 계속 떠있게 해줘 뭐가 업데이트 됫는지도 쭉 나오게»).
+     3.024 의 «열 판마다 한 번 · 7일 뒤 사라짐»은 걷었다. 안 본 새 판이 있으면 ● (맨 앞 항목 기준). 선수 전용 폰 띠(release-notes.js mount)는 그대로. */
+  function news(){return all();}
   function seen(){try{return localStorage.getItem(SEEN)||'';}catch(_){return '';}}
   function markSeen(id){try{if(id&&seen()!==id)localStorage.setItem(SEEN,id);}catch(_){}}
   function verOf(e){var m=/^v([\d.]+)/.exec((e&&e.title)||'');return m?'v'+m[1]:'';}
@@ -8159,7 +8165,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     }).catch(function(){st.next={entry:null};}).then(function(){st.fetching=false;render();});
   }
   function entHtml(e,isNew,brief){
-    var d=(e.date||'').replace(/^\d{4}-0?(\d+)-0?(\d+)$/,'$1. $2.'),ch=(e.changes||[]).slice(0,brief?2:3);
+    var d=(e.date||'').replace(/^\d{4}-0?(\d+)-0?(\d+)$/,'$1. $2.'),ch=brief?(e.changes||[]).slice(0,2):(e.changes||[]);   /* 3.057 — «새 기능»은 바뀐 것 전부 */
     return '<div class="pup-ent'+(isNew?' new':'')+'">'
       +(brief?'':'<div class="pup-d">'+esc([d,verOf(e)].filter(Boolean).join(' · ')+(isNew?' · 새로':''))+'</div>')
       +'<div class="pup-t">'+esc(titleOf(e))+'</div>'
@@ -8169,8 +8175,10 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     var md=st.open,T=$('psUpdPopT'),V=$('psUpdPopV'),B=$('psUpdPopBody'),N=$('psUpdPopNote'),BT=$('psUpdPopBtns');if(!T)return;
     if(md==='ready'){var e=st.next&&st.next.entry;T.textContent='새 판이 준비됐어요';V.textContent=e?verOf(e):'';B.innerHTML=e?entHtml(e,true,true):'';
       N.textContent='하던 일은 저장한 뒤 같은 화면으로 다시 열려요. 입력을 멈추면 저절로도 바뀝니다.';BT.hidden=false;}
-    else{var n=news();T.textContent='새 기능';V.textContent=rangeOf(n);B.innerHTML=n.map(function(x,i){return entHtml(x,i===0,false);}).join('');
-      N.textContent='열 판마다 한 번 모아서 알려 드려요. 이 표시는 7일 뒤 저절로 사라져요.';BT.hidden=true;}
+    else{var n=news(),sn=st.sn,cut=-1;n.forEach(function(x,i){if(cut<0&&x.id===sn)cut=i;});
+      T.textContent='새 기능';V.textContent=verOf(n[0])?('최신 '+verOf(n[0])):'';
+      B.innerHTML=n.map(function(x,i){return entHtml(x,cut<0?i===0:i<cut,false);}).join('');   /* 3.057 — 지난번에 본 판 뒤로 새로 온 판은 «새로» */
+      N.textContent='판마다 바뀐 것을 최신부터 모두 적어 두었어요.';BT.hidden=true;}
   }
   function bottomNav(){var t=document.body.classList.contains('ps-team-open')?$('teamBottom'):$('appSeg');
     try{var r=t&&t.getBoundingClientRect();if(r&&r.height>0&&r.top>innerHeight/2)return r.top;}catch(_){}return innerHeight-64;}
@@ -8188,7 +8196,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     if(!md)return;closeSheets();
     try{if(window.__psCloseAppSettings)window.__psCloseAppSettings();}catch(_){}
     try{if(window.__psCloseAcctPop)window.__psCloseAcctPop();}catch(_){}
-    st.open=md;st.from=(from&&from.id==='psUpdRail')?from:null;fill();
+    st.open=md;st.sn=seen();st.from=(from&&from.id==='psUpdRail')?from:null;fill();   /* 3.057 — 연 순간의 «본 판»: 그 뒤로 온 판이 «새로» */
     var p=$('psUpdPop');p.hidden=false;place();
     var b=$('psUpdRail');if(b)b.setAttribute('aria-expanded','true');
     if(md==='news'){var n=news();if(n[0])markSeen(n[0].id);render();}else fetchNext();
@@ -8205,13 +8213,13 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     if(w)w.hidden=!md;
     if(b){b.classList.toggle('is-ready',md==='ready');b.classList.toggle('has-dot',!!dot);
       if(lb)lb.textContent=md==='ready'?'업데이트':'새 기능';
-      b.title=md==='ready'?'새 판이 준비됐어요':'최근 열 판에서 바뀐 것';b.setAttribute('aria-label',b.title);}
+      b.title=md==='ready'?'새 판이 준비됐어요':'업데이트 기록 — 판마다 바뀐 것';b.setAttribute('aria-label',b.title);}
     var v=st.next&&st.next.entry?verOf(st.next.entry):'';
     [].forEach.call(document.querySelectorAll('[data-upd-row]'),function(r){
       r.hidden=!md;r.classList.toggle('news',md==='news');
       var tx=r.querySelector('[data-upd-rowtext]'),bt=r.querySelector('[data-upd="row"]');if(!tx||!bt)return;
       if(md==='ready'){tx.innerHTML='<b>새 판이 준비됐어요</b>'+(v?' · '+esc(v):'');bt.setAttribute('data-upd-now','');bt.setAttribute('data-upd-label','적용');if(!bt.disabled)bt.textContent='적용';}
-      else if(md==='news'){tx.innerHTML='<b>새 기능</b> · '+esc(n.length>1?rangeOf(n)+' · '+n.length+'가지':titleOf(first));bt.removeAttribute('data-upd-now');bt.removeAttribute('data-upd-label');bt.disabled=false;bt.textContent='보기';}
+      else if(md==='news'){tx.innerHTML='<b>새 기능</b> · '+esc((verOf(first)?verOf(first)+' · ':'')+titleOf(first));bt.removeAttribute('data-upd-now');bt.removeAttribute('data-upd-label');bt.disabled=false;bt.textContent='보기';}
     });
     if(st.open){if(st.open==='news'&&!md)closePop();else{fill();place();}}
   }
