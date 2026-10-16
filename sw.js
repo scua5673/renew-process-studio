@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.055';   // 3.055 동기화 회차가 «자료 확인»에 걸린 선수 수정 때문에 입구에서 멈추던 것(풋볼A 운영자 아이패드 — 3.047 내내 회차 0번 완료, 보관함이 비어 보임): sync.js 회차 입구의 itemsWriteFlush 실패 중 items_patch_unconfirmed(sync_storage, 확인 대기 held)만 진단을 남기고 이어 간다 · 그 수정은 재시도 목록에 그대로
+const CACHE = 'process-3.056';   // 3.056 아이패드 사파리에서 IndexedDB 열기가 멈추면 보관함 · 동기화 · «진단»이 끝없이 기다리던 것 — storage.js open() 이 기다리는 동안 indexedDB.databases() 로 깨우고 10초 안에 안 열리면 TimeoutError(진단 «idb-open-timeout») · 다음 요청이 새로 연다(풋볼A 아이패드 «진단» 줄이 «확인 중…»에서 멈춤). 시험: storage-idb-open-timeout-3056.
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
