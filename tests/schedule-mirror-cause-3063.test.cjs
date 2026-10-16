@@ -1,5 +1,5 @@
 'use strict';
-/* 3.061 — 풋볼A 운영자 아이패드: 기기 localStorage 0.7MB · 일정 0.24MB 인데 회차마다 «저장 공간 부족»(schedule_mirror_quota).
+/* 3.063 — 풋볼A 운영자 아이패드: 기기 localStorage 0.7MB · 일정 0.24MB 인데 회차마다 «저장 공간 부족»(schedule_mirror_quota).
    진단이 원인과 상관없이 늘 QuotaExceededError 라고 적었다. 실제 원인을 적고, 저장 공간 문구는 진짜 용량 오류에만 쓴다.
    던지지 않았는데 안 바뀐 쓰기(보기 전용 게이트가 조용히 막은 것)는 원래 Storage.setItem 으로 한 번 더 쓴다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');

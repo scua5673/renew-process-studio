@@ -5661,7 +5661,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
 /* 2.920 — 일정 화면 사본(localStorage 거울) 쓰기. 9/25~26 한 기기는 저장 공간이 차서 거울 쓰기가 조용히 실패했고,
    준비표 확인이 매 회차 «세 사본이 다르다»로 실패하며 일정 전체(2MB)를 매번 다시 받았다. */
 var scheduleMirrorFull=false,scheduleMirrorCause='',scheduleMirrorTidyAt=0;
-/* 3.061 — 풋볼A 운영자 아이패드: 이 기기 localStorage 는 0.7MB 뿐이고 일정 문서는 0.24MB 인데 회차마다 «저장 공간 부족»(schedule_mirror_quota)이었다.
+/* 3.063 — 풋볼A 운영자 아이패드: 이 기기 localStorage 는 0.7MB 뿐이고 일정 문서는 0.24MB 인데 회차마다 «저장 공간 부족»(schedule_mirror_quota)이었다.
    예전 진단은 실패 원인과 상관없이 늘 QuotaExceededError 라고 적었다. 이제 실제 원인을 적는다 —
    던진 오류 이름(threw-…) · 던지지 않았는데 안 바뀜(readback-…) · 크기(일정 k · 기기 k). 저장 공간 문구는 진짜 용량 오류일 때만 쓴다.
    던지지 않았는데 안 바뀌면 이 프레임의 보기 전용 게이트(perms.js)가 조용히 막은 것이다 — 서버 확인본을 받아 적는 동기화 쓰기는
@@ -5777,8 +5777,16 @@ function libraryAfterRoundFailure(e,at,wid,guard,started){
   return syncLibrary(at,lm,Date.now(),wid,guard).then(function(lr){
     if(!current())return null;
     var latest=meta();latest.li=lm.li||{};latest.ls=lm.ls||null;latest.ld=lm.ld;setMetaExact(latest);
-    return outboxAckLibrary(wid,lr&&lr.ackHash,guard).then(function(){return lr;});
-  }).catch(function(le){syncDiagnostic('library-after-failure',le);return null;});
+    return outboxAckLibrary(wid,lr&&lr.ackHash,guard).then(function(){
+      /* 3.061 — 운영 기록: 따로 받기가 실제로 돌았나(10분에 한 번 · 개수만). 3.056 뒤 운영자 아이패드에서 결과가 서버에 안 보였다 */
+      try{eventTrack('library_fallback_saved',{status:'ok',feature:'sync',meta:{applied:+(lr&&lr.applied)||0,pushed:+(lr&&lr.pushed)||0,skipped:lr&&lr.libSkipped?1:0,cause:String(e&&e.psStage||'').slice(0,40)}});}catch(_){}
+      return lr;
+    });
+  }).catch(function(le){
+    syncDiagnostic('library-after-failure',le);
+    try{eventTrack('library_fallback_failed',{status:'error',feature:'sync',error_code:String((le&&(le.psStage||le.psCode||le.name))||'unknown').slice(0,60),meta:{code:String(le&&le.psCode||'').slice(0,40),stage:String(le&&le.psStage||'').slice(0,48),cause:String(e&&e.psStage||'').slice(0,40)}});}catch(_){}
+    return null;
+  });
 }
 function outboxAckLibrary(wid,ackHash,guard){
   if(ackHash==null)return Promise.resolve(false);
