@@ -32,7 +32,7 @@ test('tokens.css · ui-grammar.css 를 고쳤으니 모든 페이지의 ?v 가 �
 });
 
 /* 스타일 코드 래칫(3.054 실측값이 상한). 줄였으면 상한도 내린다 */
-const CSS_RATCHET={hex:1320,important:13474,notId:1360,fontPx:4349};   /* staging #418 · #419 가 더한 !important 3 · :not(#_) 7 포함 */
+const CSS_RATCHET={hex:1320,important:13485,notId:1360,fontPx:4349};   /* staging #418 · #419 가 더한 !important 3 · :not(#_) 7 포함 · 3.066 폰 가로 커뮤니티 뷰어 11 (기존 comm-viewing · mobile-polish !important 규칙을 이겨야 한다) */
 test('스타일 래칫 — 새 hex 색 · px 글자 크기 · !important · :not(#_) 가 늘지 않는다, 반 픽셀 글자는 0',()=>{
   const hex=new Set(); let important=0,notId=0,fontPx=0; const half=[];
   for(const f of styleFiles()){
