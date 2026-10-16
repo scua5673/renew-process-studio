@@ -1292,6 +1292,13 @@
   @media (max-width:600px){ body.comm-viewing #editorPanel{padding:12px 16px 28px!important} }
   /* 2.579 — 폰: 안쪽 머리줄(«커뮤니티 훈련 · 이름 · 닫기», 52px)은 바깥 뷰어 머리(제목·×)와 겹친다 → 감춘다. 판과 설명에 그만큼 더(사용자 "헤더들 폰트 크기를 더 줄여서 보드와 밑에 설명이 잘 보이게") */
   /* ⚠ mobile-polish 1.927 의 `html.ps-page-board #editorModal .modal-head{display:flex!important}` 가 이긴다 — html 클래스까지 붙여 특이도를 넘긴다 */
+  /* 3.066 — 폰 가로(높이 ≤500): 판이 남는 높이를 설명 띠와 나눠 124px 뿐이었다. 판이 화면 높이를 다 쓰고 설명 · «내 보관함에 담기»는 아래로 내려 본다 */
+  @media (max-height:500px) and (orientation:landscape){
+    html.ps-page-board body.comm-viewing #editorModal .modal-head,body.comm-viewing #editorModal .modal-head{display:none!important}
+    body.comm-viewing #editorBoardWrap{height:auto!important;max-height:none!important;min-height:0!important;flex:0 0 auto!important;overflow:visible!important;padding-top:0!important}
+    html.ps-page-board body.comm-viewing #editorModal.ep-ro #editorBoardWrap #boardStage,
+    body.comm-viewing #editorBoardWrap #boardStage{flex:0 0 auto!important;height:100dvh!important;aspect-ratio:auto!important;max-height:none!important}
+  }
   @media (max-width:700px){ html.ps-page-board body.comm-viewing #editorModal .modal-head,body.comm-viewing #editorModal .modal-head{display:none!important} body.comm-viewing #editorBoardWrap{padding-top:0!important} }
   /* 커뮤니티/보관함 뷰어 전용 재생 컨트롤 — 보드 위 하단 중앙 플로팅 */
   #commPlayControls{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;
@@ -13764,6 +13771,15 @@ function applyEditorReadOnly(d){
 }
 /* ── 커뮤니티 훈련 보기 — 보관함과 동일한 편집기, 읽기 전용 + 담기만 ── */
 let __commPost=null, __commEdit=false;
+/* 3.066 — 폰으로 커뮤니티 글을 보다가 돌리면(세로 ↔ 가로) 판 방향은 처음 연 그대로라, 가로 화면에 세로 판이 작게 남았다.
+   보기 전용 뷰어에서만: 폭 ≤600 이면 세로, 높이 ≤500 인 가로 화면이면 가로로 다시 세운다. 판 좌표는 그대로(그리는 방향만). */
+var _commRotT=0;
+try{ window.addEventListener("resize",function(){ clearTimeout(_commRotT); _commRotT=setTimeout(function(){ try{
+  if(!document.body.classList.contains("comm-viewing")||__commEdit)return;
+  var want=window.innerWidth<=600?"v":(window.innerHeight<=500&&window.innerWidth>window.innerHeight?"h":null);
+  if(!want||state.orientation===want)return;
+  state.orientation=want; state.spFlip=false; applyView(); renderTokens();
+}catch(_){} },180); }); }catch(_){}
 window.__commView=function(post, editMode){
   editMode=false; // Published community material is edited only after copying to the personal library.
   /* ══ 2.575 · 드러내기는 **한 번**, 방향은 **고정** ═══════════════════════════════════
