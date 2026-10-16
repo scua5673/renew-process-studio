@@ -129,7 +129,8 @@ test('an HTTP 403 on a team record leaves local edits pending and last-confirmed
 
 test('client permission denial does not confirm an unsent team record',async()=>{
   const local=changed(privateBase,'match-b','unsent review');const h=harness({server:privateBase,mirror:local,idb:local,role:'staff',teamRole:'member',scopes:[]});h.baseline(privateBase);await h.mark();
-  await h.run();assert.equal(pushed(h).length,0);assert.equal(h.server.get(DEFAULT_KEY).v,privateBase);assert.equal(h.queue.length,1);assert.equal(h.c.meta().h[DEFAULT_KEY],h.c.hash(privateBase));
+  /* 3.056 — 올릴 수 없는 키는 대기함에서 뺀다(«N일째 저장 대기» · 로그아웃 막힘). 확인은 여전히 하지 않는다 — m.h 는 예전 값, 기기 사본도 그대로 */
+  await h.run();assert.equal(pushed(h).length,0);assert.equal(h.server.get(DEFAULT_KEY).v,privateBase);assert.equal(h.queue.length,0);assert.equal(h.c.meta().h[DEFAULT_KEY],h.c.hash(privateBase));assert.equal(h.local.get(DEFAULT_KEY),local);
 });
 
 test('two known divergent coach edits keep the local review available for an explicit decision',async()=>{
