@@ -115,18 +115,18 @@ test('3.034 a light boot opens the board flat for this boot only; a 3D crash sti
   const l=boardBoot({local:{ps_board_tilt3d:'1'},light:true});
   assert.equal(l.win.__tiltBootOk,false,'flat this boot');assert.equal(l.ls.getItem('ps_board_tilt3d'),'1','3D choice kept');assert.equal(l.ls.getItem('ps_tilt3d_boot'),null,'not armed');assert.equal(l.win.__tiltBootSafe,false);
   const n=boardBoot({local:{ps_board_tilt3d:'1'}});assert.equal(n.win.__tiltBootOk,true,'a normal boot keeps 3D');
-  const top={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'phone':null}}};
+  const top={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'ipad':null}}};
   assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top}).win.__tiltBootOk,false,'first board load of a light boot: flat');
   assert.equal(top.__psSafeBootBoard,true);
-  assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top}).win.__tiltBootOk,true,'the board reloaded in the same shell (phone rotation) opens as usual — once only');
+  assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top}).win.__tiltBootOk,true,'the board reloaded in the same shell (iPad rotation) opens as usual — once only');
   const d=boardBoot({local:{ps_board_tilt3d:'1',ps_tilt3d_boot:JSON.stringify({T1:1e12-8000})},session:{ps_tilt3d_tab:'T1'},light:true});
   assert.equal(d.win.__tiltBootSafe,true,'3D was on when it died → the 3.033 rule still applies');assert.equal(d.ls.getItem('ps_board_tilt3d'),'0');
   assert.ok(board.indexOf('    if(light){ window.__tiltBootOk=false; return; }')>board.indexOf('if(died){ window.__tiltBootSafe=true;'),'the 3D rule is checked first');
   /* 첫 작전판이 3D 꺼짐이었거나 3.033 판정이 먼저 돌았어도 한 번은 쓴 것 — 같은 셸에서 다시 읽은 작전판(폰 회전)은 평소대로 */
-  const t2={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'phone':null}}};
+  const t2={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'ipad':null}}};
   boardBoot({local:{ps_board_tilt3d:'0'},top:t2});assert.equal(t2.__psSafeBootBoard,true,'3D off at the first load still uses it up');
   assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top:t2}).win.__tiltBootOk,true,'turned 3D on, rotated → 3D');
-  const t3={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'phone':null}}};
+  const t3={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'ipad':null}}};
   boardBoot({local:{ps_board_tilt3d:'1',ps_tilt3d_boot:JSON.stringify({T1:1e12-8000})},session:{ps_tilt3d_tab:'T1'},top:t3});assert.equal(t3.__psSafeBootBoard,true,'the 3.033 branch first still uses it up');
   assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top:t3}).win.__tiltBootOk,true);
 });
@@ -150,4 +150,11 @@ test('3.059 a self-reload of a light boot keeps the next boot light (not reporte
   assert.equal(boot({device:'desktop',session:store({ps_boot_safe_carry_v1:(1e12-1000)+'|2'})}).win.__psSafeBoot,false,'desktops are untouched');
   const ss3=store({ps_boot_safe_carry_v1:(1e12-1000)+'|1'});boot({session:ss3}).fire('win:load');   // 이어받은 부팅이 또 죽으면 → 안전 모드
   assert.equal(boot({session:ss3,now:1e12+9000}).win.__psSafeLevel,2,'a carried light boot that dies escalates to safe mode as before');
+});
+
+test('3.069 phones never boot the board in 3D (setting kept, no boot marker)',()=>{
+  const top={__psSafeBoot:false,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'phone':null}}};
+  const p=boardBoot({local:{ps_board_tilt3d:'1'},top});
+  assert.equal(p.win.__tiltBootOk,false,'flat');assert.equal(p.ls.getItem('ps_board_tilt3d'),'1','3D choice kept');assert.equal(p.ls.getItem('ps_tilt3d_boot'),null,'not armed');
+  assert.match(board,/if\(_wrapT&&window\.__setTilt&&window\.PSBoardDepth&&psBoardDevice\(\)!=="phone"\)\{/,'no community 3D button on phones');
 });
