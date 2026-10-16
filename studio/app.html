@@ -2700,7 +2700,7 @@ window.psFailAlert=function(lead,e,stage){
     }
     /* ── 3.004 · 미리 띄우기 순수 구간 끝 ── */
     function psWarmLean(){ try{ var dv=document.documentElement.getAttribute('data-ps-device'); return dv==='phone'||dv==='ipad'; }catch(_){ return false; } }
-    function psWarmNone(){ try{ return document.documentElement.getAttribute('data-ps-device')==='ipad'; }catch(_){ return false; } }
+    function psWarmNone(){ try{ var dv=document.documentElement.getAttribute('data-ps-device'); return dv==='ipad'||dv==='phone'; }catch(_){ return false; } }   /* 3.068 — 폰도(아래 3.059 와 같은 강제 종료: 아이폰 loadw2 · 켜진 지 5~14초) */
     function psWarmUsed(){ var raw=''; try{ raw=localStorage.getItem(PS_WARM_KEY)||''; }catch(_){} return psWarmParse(raw,Date.now()); }
     function psWarmNote(app){
       try{ if(!PS_WARM_TABS.some(function(t){ return t[0]===app; }))return;
@@ -2708,7 +2708,8 @@ window.psFailAlert=function(lead,e,stage){
     }
     (function(){
       /* 3.059 — 아이패드는 미리 띄우지 않는다(오류 제보 10/16 «경기 준비 열기 → 문제가 반복적으로 발생»: 미리 띄운 둘(scout · process)이 보관함 전체를
-         저마다 읽어 들인 채로 경기 준비가 열려 강제 종료 — 서버 기록 loadw2t10 두 번). 누를 때 연다. 폰은 3.034 대로 최근 둘. */
+         저마다 읽어 들인 채로 경기 준비가 열려 강제 종료 — 서버 기록 loadw2t10 두 번). 누를 때 연다.
+         3.068 — 폰도 미리 띄우지 않는다(10/17 아이폰 «업데이트 화면 나오다가 문제가 반복적으로 발생»: 서버 기록 boot_after_crash loadw2 · loadw2t10 네 번 — 미리 띄운 둘과 함께 켜진 지 5~14초에 종료). */
       var plan=(window.__psSafeBoot||psWarmNone())?[]:psWarmPlan(psWarmLean(),psWarmUsed());   /* 3.034 — 앞 부팅이 죽었으면 미리 띄우지 않는다(셸 부팅 안전장치) */
       PS_WARM_TABS.forEach(function(t){ if(plan.indexOf(t[0])<0)return;
         setTimeout(function(){ try{

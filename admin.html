@@ -21,7 +21,7 @@
     -webkit-font-smoothing:antialiased;font-size:14px;}
   a{color:var(--blue2);text-decoration:none;}
   button{font-family:inherit;cursor:pointer;}
-  /* 3.068 — 따로 꾸미지 않은 선택 상자가 브라우저 기본 흰 상자로 떠서 어두운 화면에서 튀었다(오류 · 사용 방식 · 활동 분석) */
+  /* 3.069 — 따로 꾸미지 않은 선택 상자가 브라우저 기본 흰 상자로 떠서 어두운 화면에서 튀었다(오류 · 사용 방식 · 활동 분석) */
   select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:0 8px;font-family:inherit;}
   .hide{display:none!important;}
   /* ── 관리자 앱 셸: 목업과 같은 좌측 내비게이션 + 넓은 작업영역 ── */
@@ -880,7 +880,7 @@ function consumeHash(){
 }
 
 /* ===== 유틸 ===== */
-/* 3.068 — 예전 안내는 «supabase-admin.sql 을 다시 실행»이었다. 그 파일들은 운영과 달라 기준본(migrations/00000000_baseline.sql)으로 바뀌었다 —
+/* 3.069 — 예전 안내는 «supabase-admin.sql 을 다시 실행»이었다. 그 파일들은 운영과 달라 기준본(migrations/00000000_baseline.sql)으로 바뀌었다 —
    응답하지 않은 함수 이름을 대고, 권한 · 연결부터 보게 한다. */
 function fnMiss(fn){ return '<span class="muted"><code>'+fn+'</code> 응답 없음 — 관리자 권한 · 연결을 먼저 확인하고, 그래도 안 되면 운영 DB 에 이 함수가 있는지 기준본(migrations/00000000_baseline.sql)과 견주세요.</span>'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -2200,7 +2200,7 @@ function userTeamsCell(u){
 function userSubLine(u){
   var parts=[];
   var nm=(u.name||'').trim();
-  if(u.email){ if(nm&&u.email!==nm)parts.push(u.email); }   /* 3.068 — 이름이 없으면 윗줄이 이미 이메일이다(두 번 나오던 것) */
+  if(u.email){ if(nm&&u.email!==nm)parts.push(u.email); }   /* 3.069 — 이름이 없으면 윗줄이 이미 이메일이다(두 번 나오던 것) */
   else if(Array.isArray(u.teams)) parts.push('이메일 없음');
   if(u.provider) parts.push((ADMIN_PROVIDER[u.provider]||u.provider)+' 로그인');
   if(u.account_name&&u.member_name&&u.account_name!==u.member_name) parts.push('계정 이름 '+u.account_name);
