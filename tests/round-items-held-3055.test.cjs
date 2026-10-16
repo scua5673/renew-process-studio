@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const {createRequire}=require('node:module');
-/* 3.048 — «자료 확인»에 걸린 선수 수정(items_patch_unconfirmed · held)이 동기화 회차 입구(itemsWriteFlush)에서 회차 전체를 멈추지 않는다.
+/* 3.055 — «자료 확인»에 걸린 선수 수정(items_patch_unconfirmed · held)이 동기화 회차 입구(itemsWriteFlush)에서 회차 전체를 멈추지 않는다.
    운영자 아이패드(풋볼A)는 선수 확인 5건을 남긴 채 3.047 내내 회차를 한 번도 못 끝냈고(ps_sync_reports last_round_ack_at 없음),
    회차 맨 끝의 보관함 받기까지 못 가 보관함이 비어 보였다. 그 수정은 계속 재시도 목록에 남고, 다른 실패는 예전처럼 회차를 멈춘다. */
 const sync=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');

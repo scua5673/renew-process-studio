@@ -6558,7 +6558,7 @@ function syncNowCore(reason){
   try{ clearTimeout(busyDog); }catch(_){} busyDog=setTimeout(function(){ busy=false; }, 25000);   /* 워치독: fetch가 응답 없이 멈춰도 25초 뒤 busy 해제(전체 동기화 영구 정지 방지) */
   /* iframe storage 이벤트를 받아 parent IDB에 미러링하던 쓰기가 끝난 뒤 preload한다. */
   var sharedReady=(window.PSStorage&&PSStorage.sharedReady)?PSStorage.sharedReady():Promise.resolve(true);
-  /* 3.048 — «자료 확인»에 걸린 선수의 수정(items_patch_unconfirmed · sync_storage = 확인 대기 held)은 그 선수만 기다린다.
+  /* 3.055 — «자료 확인»에 걸린 선수의 수정(items_patch_unconfirmed · sync_storage = 확인 대기 held)은 그 선수만 기다린다.
      예전엔 이 실패가 회차 입구에서 그대로 던져져 일정·경기·보관함까지 모든 주고받기가 멈췄다 — 운영자 아이패드(풋볼A)가
      선수 확인 5건을 남긴 채 3.047 내내 회차를 한 번도 못 끝내 보관함이 비어 보였다. 그 수정은 계속 재시도 목록에 남고
      (itemsWriteBusy 참 — 대기 확인 칸은 그대로 «대기»), 확인을 마치면 다음 회차의 flush 가 다시 올린다. 다른 실패는 예전처럼 회차를 멈춘다. */
