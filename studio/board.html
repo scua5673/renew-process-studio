@@ -1310,6 +1310,10 @@
   #commPlayControls button.primary{background:var(--blue,var(--ps-navy,#14213D));}
   #commPlayControls button[hidden]{display:none!important}
   #commPlayControls:active{transform:translateX(-50%) scale(.98);}
+  /* 3.067 — 커뮤니티 뷰어 «3D» 단추(사용자 «엘미하가 올린거 핸드폰에서 3d로») — 판 오른쪽 위. 재생 단추(아래 가운데)와 겹치지 않는다 */
+  #commTiltBtn{position:absolute;top:10px;right:max(10px,env(safe-area-inset-right));z-index:6;min-width:52px;height:36px;padding:0 12px;border:0;border-radius:18px;
+    background:rgba(10,16,28,.62);color:#fff;font-family:inherit;font-weight:var(--fw-head);font-size:var(--fs-body);cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.28);}
+  #commTiltBtn.on{background:var(--blue,var(--ps-navy,#14213D));}
   @media (min-width:760px){#editorPanel{flex:0 0 332px;border-top:0;border-left:1px solid var(--line);}}
   @media (max-width:759px){#editorPanel{max-height:34vh;}}
   #editorPanel .ep-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -8201,6 +8205,7 @@ function loadSnap(s,opts){s=s||{};opts=opts||{};sel=null;multiSel=[];state.playe
   state.pitchSpec=(s.pitchSpec&&PITCH_SPECS[s.pitchSpec])?s.pitchSpec:"fifa";state.gridM=(+s.gridM>0)?+s.gridM:0;   /* 2.989 */try{window.__syncPitchSpecUI&&window.__syncPitchSpecUI();}catch(_){}   /* 2.233 */
   try{if(world){buildTrainGrid();buildLines();buildGrid();}}catch(_){}   /* 2.235 — 복원된 규격으로 라인·그리드 즉시 재생성(서명에 규격 포함) · 2.989 모눈도 */
   state.orientation=s.orientation||"h";state.area=s.area||"full";state.pitchView=normPitchView(s.pitchView||((state.area||"full")==="half"?"half":"full"));state.fieldMode=s.fieldMode||"standard";state.spFlip=!!s.spFlip;state.halfSide=s.halfSide||"L";state.pvSide=(s.pvSide==="opp")?"opp":"own";
+  try{ var _cwo=window.__commWantOrient; if(_cwo&&document.body.classList.contains("comm-viewing")){ state.orientation=_cwo; state.spFlip=false; } }catch(_){}   /* 3.067 — 커뮤니티 뷰어는 판 방향을 화면이 정한다. 재생이 장면마다 이 길로 올린 사람의 방향(가로)을 되살려, 폰 세로 화면에서 재생하면 판이 가로로 작아졌다 */
   if(state.fieldMode==="setpiece")autoOrient=false;   /* 3.001 — 세트피스 판은 골이 위인 세로 판으로 만든 화면이다(setSpField 도 끈다). 저장된 세트피스를 다시 열 때 자동 방향(창 크기 변화)이 가로로 돌려 좁고 긴 판이 되던 것 */
 	  /* 2.929 — gridType·label·lines·tokenScale 은 위 lookApply 가 맡는다 */state.boardLocked=false;   /* 2.459 — '배치 고정' 문이 사라졌다: 켠 채 저장된 보드가 열리지 않는 자물쇠가 되지 않게 항상 풀고 연다 */
   state.pitchN=s.pitchN||1;   /* 새 보드도 사용자 저장 토큰 크기 우선 */
@@ -9334,6 +9339,7 @@ function renderInterp(a,b,u,curves){
   if(u>=1)state.ball=b.ball?dc(b.ball):null;
   state.drawings=_interpDrawings(a.drawings||[],b.drawings||[],u);   /* 2.719 — 장면 사이 그림 서서히 */
   state.orientation=a.orientation||"h";state.area=a.area||"full";state.pitchView=normPitchView(a.pitchView||((state.area||"full")==="half"?"half":"full"));state.pvSide=(a.pvSide==="opp")?"opp":"own";state.tokenScale=((typeof _tokMig==="function")?_tokMig(a.tokenScale,a):a.tokenScale)||1;
+  try{ var _cwo2=window.__commWantOrient; if(_cwo2&&document.body.classList.contains("comm-viewing")){ state.orientation=_cwo2; state.spFlip=false; } }catch(_){}   /* 3.067 — 재생 중에도 뷰어의 판 방향(loadSnap 과 같은 규칙) */
   sel=null;applyView();renderTokens();renderDrawings();try{trailTick();}catch(_){}
   try{if(typeof window.__syncUniformDock==="function")window.__syncUniformDock();}catch(_){}
 }
@@ -13778,8 +13784,11 @@ try{ window.addEventListener("resize",function(){ clearTimeout(_commRotT); _comm
   if(!document.body.classList.contains("comm-viewing")||__commEdit)return;
   var want=window.innerWidth<=600?"v":(window.innerHeight<=500&&window.innerWidth>window.innerHeight?"h":null);
   if(!want||state.orientation===want)return;
-  state.orientation=want; state.spFlip=false; applyView(); renderTokens();
+  window.__commWantOrient=want; state.orientation=want; state.spFlip=false; applyView(); renderTokens();
 }catch(_){} },180); }); }catch(_){}
+/* 3.067 — 뷰어의 «3D» 단추로 켠 3D 는 뷰어 것이다. 닫거나 다른 탭으로 가면 끈다(보드 설정의 3D 는 아래 3.035 가 되돌린다) */
+function __commTiltOff(){ try{ window.__commWantOrient=null; var b=document.getElementById("commTiltBtn"); if(b)b.remove();
+  if(window.__commTilt){ window.__commTilt=false; if(document.body.classList.contains("bc-tilt3d")&&window.__setTilt)window.__setTilt(false,{transient:true,quiet:true}); } }catch(_){} }
 window.__commView=function(post, editMode){
   editMode=false; // Published community material is edited only after copying to the personal library.
   /* ══ 2.575 · 드러내기는 **한 번**, 방향은 **고정** ═══════════════════════════════════
@@ -13788,7 +13797,7 @@ window.__commView=function(post, editMode){
      방향: 자동 방향(autoOrient)은 뷰어에서 끈다 — 재생 중 apply() 가 판을 세로로 뒤집던 것. 폰(≤600)은 처음부터 세로. */
   var _hasAnim=false; try{ _hasAnim=!!(post&&post.item&&post.item.frames&&post.item.frames.length>1); }catch(_){}
   var _commReveal=function(){ try{ document.body.classList.remove("comm-settling"); document.documentElement.classList.remove("comm-boot"); }catch(_){} };
-  var _commOrient=function(){ try{ autoOrient=false; if(window.innerWidth<=600&&!editMode){ state.orientation="v"; state.spFlip=false; } }catch(_){} };
+  var _commOrient=function(){ try{ autoOrient=false; window.__commWantOrient=null; if(window.innerWidth<=600&&!editMode){ state.orientation="v"; state.spFlip=false; window.__commWantOrient="v"; } }catch(_){} };   /* 3.067 — loadSnap 이 지킨다 */
   try{ setTimeout(_commReveal,_hasAnim?420:160); }catch(_){ }
   try{
     try{window.__animReset&&window.__animReset();}catch(_){}
@@ -13930,6 +13939,18 @@ window.__commView=function(post, editMode){
           }
         }
       }catch(_){}
+      /* 3.067 — «3D» 단추. 편집기는 들어올 때 3D 를 끄므로(3.035) 뷰어에서 따로 켠다. 설정 값(ps_board_tilt3d)은 건드리지 않고(transient),
+         뷰어를 닫으면 끈다(__commTiltOff). 같은 뷰어에서 다른 글을 열면 켜 둔 그대로 */
+      try{
+        var _wrapT=$("editorBoardWrap"), _tb=document.getElementById("commTiltBtn"); if(_tb)_tb.remove();
+        if(_wrapT&&window.__setTilt&&window.PSBoardDepth){
+          _tb=document.createElement("button"); _tb.type="button"; _tb.id="commTiltBtn";
+          var _tSync=function(){ var on=document.body.classList.contains("bc-tilt3d"); _tb.classList.toggle("on",on); _tb.setAttribute("aria-pressed",on?"true":"false"); _tb.textContent=on?"평면":"3D"; _tb.title=on?"평면으로 보기":"3D 로 보기"; };
+          _tb.onclick=function(){ try{ var on=!document.body.classList.contains("bc-tilt3d"); window.__commTilt=true; window.__setTilt(on,{transient:true,quiet:true});
+            applyView(); renderTokens(); setTimeout(function(){ try{ window.__tiltFit&&window.__tiltFit(); }catch(_){} },60); }catch(_){} _tSync(); };
+          _tSync(); _wrapT.appendChild(_tb);
+        }
+      }catch(_){}
     }
     var _ep=$("editorPanel"); if(_ep)_ep.scrollTop=0;
   }catch(e){}
@@ -13940,6 +13961,7 @@ window.__commPrepView=function(){ try{ __commPost=null; __commEdit=false;
   if(document.body.classList.contains("comm-viewing")){ document.body.classList.remove("comm-viewing");
     try{ var _pbc=document.getElementById("commPlayControls"); if(_pbc){ if(_pbc.__t)clearInterval(_pbc.__t); _pbc.remove(); } }catch(_){}
     try{ if(typeof stopAnim==="function")stopAnim(); var _ab=document.getElementById("animBar"); if(_ab)_ab.classList.remove("on"); }catch(_){} }
+  __commTiltOff();   /* 3.067 */
   }catch(_){} };
 window.addEventListener("message",function(e){
   var d=e.data||{};
@@ -14130,6 +14152,7 @@ function closeEditor(save){
   if(document.body.classList.contains("comm-viewing")){ document.body.classList.remove("comm-viewing");
     try{ var _pbc=document.getElementById("commPlayControls"); if(_pbc){ if(_pbc.__t)clearInterval(_pbc.__t); _pbc.remove(); } }catch(_){}
     try{ if(typeof stopAnim==="function")stopAnim(); var _ab=document.getElementById("animBar"); if(_ab)_ab.classList.remove("on"); }catch(_){} }
+  __commTiltOff();   /* 3.067 — 아래 3.035 복원보다 먼저 */
   if(__spPrevPitch!=null){try{ if(window.__applyPitch)window.__applyPitch(__spPrevPitch,__spPrevCustom); else document.documentElement.dataset.pitch=__spPrevPitch; if(__spPrevLines!=null)state.lines=__spPrevLines;if(__spPrevGrid!=null)state.gridType=__spPrevGrid;buildPitch();buildLines();buildGrid();renderTokens();renderDrawings();}catch(_){}__spPrevPitch=null;__spPrevLines=null;__spPrevGrid=null;__spPrevCustom=null;}
   /* 3.035 — 들어올 때 잠깐 끈 3D 를 되돌린다(설정 값이 아직 «1»일 때만 — 편집기 안에서 «평면»을 고른 사람은 그대로) */
   try{ var _etp=window.__edTiltPrev; window.__edTiltPrev=false;
@@ -14806,6 +14829,7 @@ function init(){
   function tiltPadsNow(){ var deco=tiltDecoNow(),pads=TILT_PAD[deco]||TILT_PAD.full;   /* 3.010 — 경기장을 줄이면(간단·잔디만) 운동장이 그만큼 크게 · 3.027 그리드 판은 잔디만 */
     if((state.pitchN||1)>1&&deco!=="grass")pads=[pads[0],pads[1],pads[2]+.03];   /* 3.028 — 운동장 여러 개는 가로로 넓어(2.2:1) 옆 관중석 · 광고판이 잘렸다 — 옆 여백만 조금 더 */
     try{ if(isBlankSpec()&&(state.pitchN||1)<=1)pads=TILT_PAD_BLANK; }catch(_){}   /* 3.035 — 그리드 판은 여백 없이(잔디가 판 밖으로 이어져 틀이 보이지 않는다) */
+    try{ if(commViewTok()>1)pads=[Math.min(pads[0],.05),Math.min(pads[1],.04),Math.min(pads[2],.015)]; }catch(_){}   /* 3.067 — 폰 커뮤니티 뷰어의 3D 는 운동장을 크게(관중석은 판 밖으로 잘린다) */
     return pads; }
   window.__tiltPadsNow=tiltPadsNow;
   /* 3.039 — 3D 영상이 화면과 같은 카메라로 찍는다: 각도·세로 보정(TILT_CAM)과 분위기 */
