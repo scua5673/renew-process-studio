@@ -12915,7 +12915,7 @@ function matchOpenAtRequest(d){
    만들기·연결·떼기는 셸을 거쳐 보관함(작전판)이 한다(같은 목록을 둘이 통째로 쓰면 한쪽이 지워진다).
    다른 코치에게 보이는지는 보관함 공유 규칙 그대로(팀 공유 폴더). 선수에게는 카드를 그리지 않는다. */
 var MM_LIB_KEY="cs_drill_lib_v1", mmLib=null, mmLibP=null, mmLibStampAt="";
-/* 3.058 — 보관함 판(cs_lib_rev)과 팀이 그대로면 읽어 둔 것을 다시 쓴다. 예전엔 경기 화면을 그릴 때마다 보관함 전체(팀에 따라 10MB 넘게)를
+/* 3.059 — 보관함 판(cs_lib_rev)과 팀이 그대로면 읽어 둔 것을 다시 쓴다. 예전엔 경기 화면을 그릴 때마다 보관함 전체(팀에 따라 10MB 넘게)를
    IndexedDB 에서 다시 읽어 JSON.parse 했다 — 아이패드 강제 종료(오류 제보 10/16)의 한 몫. 보관함을 바꾸는 쪽은 모두 cs_lib_rev 를 바꾼다(board libTouch · sync libSave). */
 function mmLibStamp(){ try{ var r=localStorage.getItem("cs_lib_rev"); return r?r+"|"+(localStorage.getItem("ps_active_ws")||""):""; }catch(_){ return ""; } }
 var MM_WD=["일","월","화","수","목","금","토"];

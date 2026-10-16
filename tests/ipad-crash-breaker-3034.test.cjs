@@ -96,7 +96,7 @@ test('3.034 an old mark is not a crash; a broken or unwritable mark never blocks
 test('3.034 the breaker runs before the board frame is given its address, and a light boot warms nothing',()=>{
   assert.ok(app.indexOf(START)>app.indexOf("var _psDev=document.documentElement.getAttribute('data-ps-device')"),'after the 3D default');
   assert.ok(app.indexOf(START)<app.indexOf("fBoard.src='board.html?v='+PS_BUILD"),'before the board loads');
-  assert.match(app,/var plan=\(window\.__psSafeBoot\|\|psWarmNone\(\)\)\?\[\]:psWarmPlan\(psWarmLean\(\),psWarmUsed\(\)\);/);   /* 3.058 — 아이패드는 처음부터 미리 띄우지 않는다(psWarmNone) */
+  assert.match(app,/var plan=\(window\.__psSafeBoot\|\|psWarmNone\(\)\)\?\[\]:psWarmPlan\(psWarmLean\(\),psWarmUsed\(\)\);/);   /* 3.059 — 아이패드는 처음부터 미리 띄우지 않는다(psWarmNone) */
   assert.match(app,/var PS_WARM_LEAN_MAX=2;/);
   assert.doesNotMatch(snippet(),/localStorage\.setItem/,'the shell never changes stored settings');
 });
@@ -131,9 +131,9 @@ test('3.034 a light boot opens the board flat for this boot only; a 3D crash sti
   assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top:t3}).win.__tiltBootOk,true);
 });
 
-/* 3.058 — 오류 제보 10/16(아이패드 «경기 준비 열기 → 문제가 반복적으로 발생»): 강제 종료 두 번 모두 prevLevel 0 —
+/* 3.059 — 오류 제보 10/16(아이패드 «경기 준비 열기 → 문제가 반복적으로 발생»): 강제 종료 두 번 모두 prevLevel 0 —
    가볍게 연 부팅(단계 1)이 부팅 동기화 뒤 스스로 새로고침하며 표시를 지워, 다음 부팅이 다시 평소(미리 띄우기 둘)로 열렸다. 단계는 그 새로고침을 건너 이어 간다. */
-test('3.058 a self-reload of a light boot keeps the next boot light (not reported as a crash), only once and only for 3 minutes',()=>{
+test('3.059 a self-reload of a light boot keeps the next boot light (not reported as a crash), only once and only for 3 minutes',()=>{
   const ss=store();
   boot({session:ss}).fire('win:load');                       // 평소 부팅이 보이는 채 죽음(표시가 남는다)
   const b=boot({session:ss,now:1e12+9000});assert.equal(b.win.__psSafeLevel,1);
