@@ -274,7 +274,8 @@
 <link rel="stylesheet" href="studio/admin-operations.css?v=2.816">
 <link rel="stylesheet" href="studio/admin-support.css?v=20261014">
 <link rel="stylesheet" href="studio/admin-content.css?v=2.890">
-<link rel="stylesheet" href="studio/admin-density.css?v=2.867">
+<link rel="stylesheet" href="studio/admin-density.css?v=3.069">
+<link rel="stylesheet" href="studio/admin-today.css?v=3.069">
 </head>
 <body>
 
@@ -309,16 +310,20 @@
     <div class="admin-brand"><i>PRO</i><span>STUDIO 관리자</span></div>
     <nav class="admin-nav">
       <button data-admin-tab="home" onclick="setTab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8v10H3z"/><path d="M9 21v-7h6v7"/></svg>운영 홈</button>
-      <button data-admin-tab="use" onclick="setTab('use')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>사용 방식</button>
-      <button data-admin-tab="act" onclick="setTab('act')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/></svg>활동 분석</button>
-      <button data-admin-tab="all" onclick="setTab('all')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>콘텐츠</button>
-      <button data-admin-tab="ws" onclick="setTab('ws')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V6l8-3 8 3v14"/><path d="M9 20v-5h6v5M8 9h1M15 9h1"/></svg>팀 관리</button>
-      <button data-admin-tab="users" onclick="setTab('users')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0112 0M15 19a5 5 0 016 0"/></svg>사용자</button>
-      <button data-admin-tab="idp" onclick="setTab('idp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>IDP</button>
-      <button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5v13c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-13"/><path d="M4 12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8"/></svg>백엔드</button>
-      <button data-admin-tab="errors" onclick="setTab('errors')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 9v4M12 17h.01"/></svg>오류</button>
+      <div class="admin-nav-group" aria-hidden="true">처리할 일</div>
       <button data-admin-tab="support" onclick="setTab('support')" title="오류 제보" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v12H9l-5 4V4z"/><path d="M8 8h8M8 12h5"/></svg>오류 제보<span class="navBadge" id="supportBadge" hidden></span></button>
       <button data-admin-tab="comm" onclick="setTab('comm')" title="커뮤니티 신고" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>커뮤니티<span class="navBadge" id="commBadge" hidden></span></button>
+      <div class="admin-nav-group" aria-hidden="true">사람 · 팀</div>
+      <button data-admin-tab="users" onclick="setTab('users')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0112 0M15 19a5 5 0 016 0"/></svg>사용자</button>
+      <button data-admin-tab="ws" onclick="setTab('ws')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V6l8-3 8 3v14"/><path d="M9 20v-5h6v5M8 9h1M15 9h1"/></svg>팀 관리</button>
+      <button data-admin-tab="idp" onclick="setTab('idp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>IDP</button>
+      <button data-admin-tab="all" onclick="setTab('all')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>콘텐츠</button>
+      <div class="admin-nav-group" aria-hidden="true">지표</div>
+      <button data-admin-tab="use" onclick="setTab('use')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>사용 방식</button>
+      <button data-admin-tab="act" onclick="setTab('act')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/></svg>활동 분석</button>
+      <div class="admin-nav-group" aria-hidden="true">시스템</div>
+      <button data-admin-tab="errors" onclick="setTab('errors')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 9v4M12 17h.01"/></svg>오류</button>
+      <button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5v13c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-13"/><path d="M4 12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8"/></svg>백엔드</button>
     </nav>
     <div class="admin-side-foot">PROCESS STUDIO<br>운영 관리자 전용</div>
   </aside>
@@ -396,10 +401,8 @@
 
   <!-- 홈 — 모든 데이터 한눈에: 7일 지표 · IDP 퍼널 · 팀 활성/침묵 · 기능 사용 · 최근 가입 -->
   <div class="wrap hide" id="viewHome">
-    <section class="panel admin-support-entry" style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <div><b>오류 제보 접수함</b> <span id="supportEntryCount" class="muted" style="font-size:12px;font-weight:700"></span><p class="muted" style="margin:6px 0 0">앱에서 보낸 제보와 오류 로그를 확인하고 답변합니다.</p></div>
-      <button type="button" class="hbtn" onclick="setTab('support')">오류 제보 열기</button>
-    </section>
+    <!-- 3.069 — 오늘 확인할 일 한 줄(studio/admin-today.js): 제보 · 신고 · 앱 오류 · 후속 기한 · 무사고 -->
+    <section class="admin-today" id="adminToday" aria-label="오늘 확인할 일"></section>
     <div class="col">
       <div class="panel">
         <div class="sec-t">사용 현황 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 실가입자 = 코치 + 선수 · 팀 (누적)</span></div>
@@ -603,7 +606,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="studio/admin-user-detail.js?v=2.964"></script>
-<script src="studio/admin-operations.js?v=2.792"></script>
+<script src="studio/admin-operations.js?v=3.069"></script>
+<script src="studio/admin-today.js?v=3.069"></script>
 <script src="studio/admin-actions.js?v=20261014"></script>
 <script src="studio/admin-community.js?v=20261014"></script>
 <script src="studio/support-diagnostics.js?v=2.816"></script>
@@ -732,15 +736,16 @@ function loadAdminSupport(){
 }
 /* 20261014 — 답변이 필요한 제보 수(새 제보 + 재문의). 서버가 counts 를 주지 않으면(옛 SQL) 아무것도 표시하지 않는다. */
 function setSupportCounts(c){
-  var n=c&&Number.isInteger(c.needs)&&c.needs>=0?c.needs:null,b=$('supportBadge'),e=$('supportEntryCount');
+  var n=c&&Number.isInteger(c.needs)&&c.needs>=0?c.needs:null,b=$('supportBadge');
   if(b){b.hidden=!n;b.textContent=n?String(n):'';}
-  if(e)e.textContent=n==null?'':(n?'· 답변 필요 '+n+'건':'· 답변 필요 없음');
+  todaySet('support',n);
 }
 /* 20261014 — 커뮤니티 열린 신고 수. 서버 함수가 없으면(마이그레이션 전) 아무것도 표시하지 않는다. */
 var adminCommunity=null;
 function setCommCounts(c){
   var n=c&&Number.isInteger(c.open_reports)&&c.open_reports>=0?c.open_reports:null,b=$('commBadge');
   if(b){b.hidden=!n;b.textContent=n?String(n):'';}
+  todaySet('comm',n);
 }
 function loadComm(){
   if(!adminSupportContext().ready||!window.PSAdminCommunity||!$('commBody'))return;
@@ -749,18 +754,40 @@ function loadComm(){
 }
 function refreshCommBadge(){
   if(!adminSupportContext().ready)return;
-  var epoch=adminAuthEpoch;
-  rpc('ps_admin_comm_queue',{p_limit:1}).then(function(r){if(!adminSessionLocked&&epoch===adminAuthEpoch&&r)setCommCounts(r.counts);}).catch(function(){});
+  var epoch=adminAuthEpoch;todaySet('comm',undefined);
+  rpc('ps_admin_comm_queue',{p_limit:1}).then(function(r){if(!adminSessionLocked&&epoch===adminAuthEpoch)setCommCounts(r&&r.counts);}).catch(function(){if(epoch===adminAuthEpoch)todaySet('comm',null);});
 }
 function refreshSupportBadge(){
   if(!adminSupportContext().ready)return;
-  var epoch=adminAuthEpoch;
-  adminRpc('ps_support_list',{p_limit:1}).then(function(r){if(!adminSessionLocked&&epoch===adminAuthEpoch&&r&&r.is_admin===true)setSupportCounts(r.counts);}).catch(function(){});
+  var epoch=adminAuthEpoch;todaySet('support',undefined);
+  adminRpc('ps_support_list',{p_limit:1}).then(function(r){if(!adminSessionLocked&&epoch===adminAuthEpoch)setSupportCounts(r&&r.is_admin===true?r.counts:null);}).catch(function(){if(epoch===adminAuthEpoch)todaySet('support',null);});
 }
+/* 3.069 — 운영 홈 «오늘 확인할 일» 한 줄. 숫자는 위 배지 · 운영 상태 · 홈 집계가 받는 값을 그대로 쓴다 */
+var adminToday=null;
+function todayInit(){ if(!adminToday&&window.PSAdminToday&&$('adminToday'))adminToday=PSAdminToday.create({host:$('adminToday'),go:todayGo,reload:todayReload}); return adminToday; }
+function todaySet(k,v){ if(todayInit())adminToday.set(k,v); }
+function todayGo(k){
+  if(k!=='followups'){setTab(k);return;}
+  var el=$('adminOpFollowups'); if(el)try{el.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(_){el.scrollIntoView();}
+}
+function loadTodayIncident(){
+  var epoch=adminAuthEpoch;todaySet('incident',undefined);
+  rpc('ps_admin_incidents',{p_days:56}).then(function(r){if(epoch===adminAuthEpoch)todaySet('incident',r||null);}).catch(function(){if(epoch===adminAuthEpoch)todaySet('incident',null);});
+}
+/* 홈을 열 때 아직 안 받은 칸만 채운다(제보 · 신고 화면에서 새로고침하면 그 화면만 다시 읽기 때문) */
+function todayFill(){
+  if(!todayInit())return; var st=adminToday.state();
+  if(!('support' in st))refreshSupportBadge();
+  if(!('comm' in st))refreshCommBadge();
+  if(!('incident' in st))loadTodayIncident();
+  if(!('overdue' in st))loadAdminOps();
+}
+function todayReload(){ if(!todayInit())return; adminToday.reset(); refreshSupportBadge(); refreshCommBadge(); loadTodayIncident(); loadAdminOps(); HOME=null; loadHome(); }
 window.addEventListener('beforeunload',function(e){if(adminSupport&&adminSupport.pendingUnsafe()){e.preventDefault();e.returnValue='';}});
 function loadAdminOps(){
   if(!window.PSAdminOperations)return;
-  if(!adminOps)adminOps=PSAdminOperations.create({rpc:adminRpc,users:function(){return USERS;},workspaces:function(){return WS;},openUser:openAdminUser,
+  todaySet('overdue',undefined);
+  if(!adminOps)adminOps=PSAdminOperations.create({rpc:adminRpc,onFollowups:function(rows){todaySet('overdue',window.PSAdminToday?PSAdminToday.overdueCount(rows,Date.now()):null);},users:function(){return USERS;},workspaces:function(){return WS;},openUser:openAdminUser,
     findUser:function(q){setTab('users');$('uSearch').value=q;renderUsers();$('uSearch').focus();}});
   return adminOps.load();
 }
@@ -917,7 +944,8 @@ function showDenied(uid){
 function reloadAll(){
   if(curTab==='support'){loadAdminSupport();return;}
   if(curTab==='comm'){loadComm();return;}
-  refreshSupportBadge();refreshCommBadge();
+  refreshSupportBadge();refreshCommBadge();loadTodayIncident();
+  todaySet('overdue',undefined);   /* 3.069 — 아래 loadAdminOps 가 곧 채운다(홈이 먼저 열려 한 번 더 부르지 않게) */
   var libTicket=++adminLibraryTicket,reloadTicket=++adminReloadTicket,epoch=adminAuthEpoch;
   if(adminContent)adminContent.deactivate();
   $('wsList').innerHTML='<div class="loading">불러오는 중…</div>';
@@ -1368,6 +1396,7 @@ function loadHealthSummary(){
   }).catch(function(){return null;});
 }
 function loadHome(){
+  todayFill();
   if(HOME){ renderHome(); return; }
   Promise.all([
     rpc('ps_admin_idp_funnel').catch(function(){return null;}),
@@ -1475,6 +1504,7 @@ function renderHome(){
     +'</div>';
   /* ── 안정성: 실제 앱 오류·동기화 실패·연결 전환을 분리한다. 콘텐츠 본문은 수집하지 않는다 ── */
   var H=HOME.health;
+  todaySet('errors',H?(+(H.app_errors_24h!=null?H.app_errors_24h:H.errors_24h)||0):null);
   if(H){
     var hV2=H.app_errors_24h!=null;
     var appErr24=+(hV2?H.app_errors_24h:H.errors_24h)||0;

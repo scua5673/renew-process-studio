@@ -119,7 +119,6 @@
   .admin-op-note{margin-top:8px;line-height:1.5}
   .admin-op-find{margin-top:10px;padding:10px 12px;gap:10px}
   .admin-op-find input{padding:7px 9px}
-  .admin-support-entry p{font-size:12px}
   #hmReach>div>div{min-width:90px!important;padding:10px!important;border-radius:9px!important}
   #hmReach>div>div>div:first-child{font-size:24px!important}
   .aud-header{padding:14px 16px 12px}
@@ -142,7 +141,6 @@
   #app.admin-home-mode>#viewHome>.col{display:flex;min-height:0;overflow-y:auto}
   .admin-ops{margin-bottom:0}
   .admin-op-panel{max-height:clamp(160px,26dvh,260px);overflow:auto;scrollbar-width:thin}
-  .admin-support-entry{margin:0;padding:9px 12px}
   #viewHome>.col>.panel{margin-top:0!important}
 }
 

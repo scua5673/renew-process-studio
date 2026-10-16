@@ -58,6 +58,12 @@ try{
   });
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/admin.html',{waitUntil:'domcontentloaded'});await page.locator('.admin-ops [data-op-user="'+U+'"]').first().waitFor();await page.waitForTimeout(150);
   assert.match(await page.locator('.admin-ops').innerText(),/가상 문의: 저장 흐름 확인/);assert.match(await page.locator('.admin-ops').innerText(),/10분/);assert.match(await page.locator('.admin-ops').innerText(),/현재 상태를 판단하지/);await page.screenshot({path:path.join(out,'home-'+width+'.png')});
+  /* 3.069 — 오늘 확인할 일 한 줄: 다섯 칸 · 못 받은 값(가짜 서버가 빈 응답을 주는 제보 · 신고 · 사고)은 0 이 아니라 «확인 못 함» · 칸을 누르면 그 화면 */
+  await page.waitForFunction(()=>document.querySelectorAll('.admin-today-tile').length===5&&!document.querySelector('.admin-today-tile.wait'));
+  assert.equal(await page.locator('.admin-today-tile[data-today-key="support"]').innerText().then(t=>/확인 못 함/.test(t)),true);
+  assert.match(await page.locator('.admin-today-tile[data-today-key="overdue"]').innerText(),/없음/);
+  await page.locator('.admin-today-tile[data-today-key="errors"]').click();assert.equal(await page.locator('#adminTopTitle').innerText(),'오류 분석');
+  await page.locator('[data-admin-tab="home"]').click();await page.locator('.admin-ops [data-op-user="'+U+'"]').first().waitFor();
   await page.locator('.admin-ops [data-op-user="'+U+'"]').first().click();await page.locator('.aud-followup-card').waitFor();await page.locator('.aud-report').first().waitFor();
   assert.match(await page.locator('.aud-panel').innerText(),/최근 인증 로그인/);assert.match(await page.locator('.aud-panel').innerText(),/최근 수집된 사용 흔적/);assert.match(await page.locator('.aud-panel').innerText(),/일부 항목 미확인/);assert.match(await page.locator('.aud-panel').innerText(),/조회 시 10분 이내 보고/);assert.match(await page.locator('.aud-panel').innerText(),/개별 경기/);assert.equal(await page.locator('.aud-panel img').count(),0);await page.screenshot({path:path.join(out,'detail-initial-'+width+'.png')});
   const memo=page.getByLabel('관리 메모',{exact:true});await memo.fill('가상 새 기록 <script>alert(1)</script>');await page.getByRole('button',{name:'기록 저장',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.aud-save-message')?.textContent.includes('저장했습니다'));assert.equal(saveCalls,1);assert.equal(followups.length,2);assert.equal(await page.locator('.aud-panel script').count(),0);assert.equal(await memo.inputValue(),'가상 새 기록 <script>alert(1)</script>');
