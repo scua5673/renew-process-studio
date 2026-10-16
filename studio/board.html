@@ -7935,7 +7935,7 @@ window.__syncTrainGridRowUI=function(){ try{ var on=(document.documentElement.da
 window.__setGrassTone=function(k){ k=grassToneKey(k); _lookFreeze();
   /* 피치가 실사가 아니면(단축키로 바꾼 경우) 실사 잔디로 — 톤은 실사 잔디에만 보인다 */
   try{ if(state.pitchImg!=="@real"){ var rb=document.querySelector('#pitchSeg button[data-p="real"]'); if(rb){ window.__psUserClick=1; try{rb.click();}finally{window.__psUserClick=0;} } } }catch(_){}   /* 2.982 — 사람이 톤을 고른 것 */
-  window.__grassTone=k; grassToneRender(); try{window.__syncGrassToneUI();}catch(_){} try{boardSaveLive();}catch(_){} };
+  window.__grassTone=k; grassToneRender(); try{window.__syncGrassToneUI();}catch(_){} try{boardSaveLive();}catch(_){} try{window.__meetPitchOffer&&window.__meetPitchOffer();}catch(_){} };   /* 3.055 */
 try{ document.addEventListener("click",function(e){ var b=e.target&&e.target.closest&&e.target.closest("#grassToneBSeg button[data-gb],#grassTonePSeg button[data-gp]"); if(!b)return; e.stopPropagation();
   var a=grassToneKey().split("|"); if(b.hasAttribute("data-gb"))a[0]=b.getAttribute("data-gb"); else a[1]=b.getAttribute("data-gp"); window.__setGrassTone(a[0]+"|"+a[1]); },true); }catch(_){}   /* board-pitch-presets 시험 하네스가 이 구간을 가짜 문서로 돌린다 */
 function renderPitchImg(){try{
@@ -15369,6 +15369,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     buildPitch();renderTokens();renderDrawings();updateDelUI();
     /* 2.982 — 사람이 고른 피치는 모든 장면에. 프로그램이 누른 클릭(부팅·복원)은 장면을 건드리지 않는다 — 단축키·잔디 톤은 __psUserClick 으로 사람 것임을 알린다 */
     if(e.isTrusted||window.__psUserClick){ try{_viewScenesToast(_viewScenesMatch("pitch"),"피치를");}catch(_){} }
+    if(e.isTrusted||window.__psUserClick){ try{window.__meetPitchOffer&&window.__meetPitchOffer();}catch(_){} }   /* 3.055 — 미팅이면 «모든 슬라이드에» */
     try{boardSaveLive();}catch(_){}});})();
   seg("labelSeg","data-l",l=>{var prev=state.label;state.label=l;try{convertPosVocab(prev,l);}catch(_){}renderBench();renderTokens();try{boardSaveLive();}catch(_){}});
   /* 2.239 — 포지션 어휘 변환(사용자 "포지션 눌러도 풋살 포지션이 나와"): '포지션'↔'풋살' 전환 때 선수 pos 를 축구/풋살 이름으로 바꾼다.
@@ -16182,6 +16183,45 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     if(n){ try{if(window.__ksRender)window.__ksRender();}catch(_){} try{boardSaveLive();}catch(_){} try{toast("‘"+(nm||"이름 지움")+"’ — 다른 "+n+"장에도 함께 적용했어요");}catch(_){} }
     return n;
   };
+  /* 3.055 — 오류 제보 «미팅»(10/16): 운동장 디자인(딥그린 등)을 슬라이드마다 하나씩 바꿔야 해 불편 · «전체 적용 · 부분 적용». 
+     바꾼 것은 지금 슬라이드에만(부분 적용 — 예전 그대로) 들어가고, 안내에 «모든 슬라이드에» 단추가 붙는다(전체 적용). 누른 뒤엔 «되돌리기».
+     맞추는 칸은 운동장 바탕뿐(피치 색 · 직접 고른 색 · 실사 잔디 · 잔디 톤) — 방향 · 범위 · 선수는 슬라이드마다 그대로. 값은 단추를 누를 때 판에서 읽는다(잔디 톤은 피치 클릭 뒤에 들어온다). */
+  var MEET_PITCH_KEYS=["pitchTheme","pitchCustom","pitchImg","grassTone"],meetPitchT=null;
+  function meetPitchVal(sn,k){ if(k==="grassTone"){ var v=sn?sn[k]:undefined; return (v===undefined||v===null||v==="")?null:String(v); } return _viewVal(sn,k); }
+  function meetPitchOk(){ return document.body.classList.contains("meet-mode")&&!meetInShow()&&!window.__meetingPageActive&&meetIdx>=0&&!!anim.slides[meetIdx]&&anim.slides.length>1&&!window.__vaultReadOnly&&!communityBoardReadOnly(); }
+  function meetPitchDiff(cur){ var n=0; anim.slides.forEach(function(sl,i){ if(i!==meetIdx&&sl&&sl.snap&&MEET_PITCH_KEYS.some(function(k){ return meetPitchVal(sl.snap,k)!==meetPitchVal(cur,k); }))n++; }); return n; }
+  function meetPitchThumbs(sl){ try{ if(window.__snapToThumb)sl.thumb=window.__snapToThumb(sl.snap)||sl.thumb; }catch(_){} if(Array.isArray(sl.frames))sl.frames.forEach(function(f,k){ if(!f)return; if(k===0){ if(sl.thumb)f.thumb=sl.thumb; } else delete f.thumb; }); }
+  window.__meetPitchAll=function(){
+    if(!meetPitchOk())return 0;
+    try{window.__meetSyncCur&&window.__meetSyncCur();}catch(_){}
+    var cur=captureSnap(),undo=[];
+    function put(sn){ if(!sn||typeof sn!=="object")return null; var was=null;
+      MEET_PITCH_KEYS.forEach(function(k){ if(meetPitchVal(sn,k)===meetPitchVal(cur,k))return; if(!was)was={}; was[k]=Object.prototype.hasOwnProperty.call(sn,k)?sn[k]:undefined; if(cur[k]===undefined)delete sn[k]; else sn[k]=cur[k]; });
+      return was; }
+    anim.slides.forEach(function(sl,i){ if(!sl||i===meetIdx)return; var rec={sl:sl,snap:put(sl.snap),frames:[]};
+      if(Array.isArray(sl.frames))sl.frames.forEach(function(f,k){ var w=f&&put(f.snap); if(w)rec.frames.push([k,w]); });
+      if(rec.snap||rec.frames.length){ undo.push(rec); meetPitchThumbs(sl); } });
+    if(!undo.length)return 0;
+    try{if(window.__ksRender)window.__ksRender();}catch(_){} try{boardSaveLive();}catch(_){}
+    var n=undo.length;
+    function back(sn,w){ if(!sn||!w)return; for(var k in w){ if(w[k]===undefined)delete sn[k]; else sn[k]=w[k]; } }
+    meetPitchToast("운동장 바탕을 다른 "+n+"장에도 적용했어요","되돌리기",function(){
+      undo.forEach(function(r){ back(r.sl.snap,r.snap); r.frames.forEach(function(fw){ var f=Array.isArray(r.sl.frames)&&r.sl.frames[fw[0]]; if(f)back(f.snap,fw[1]); }); meetPitchThumbs(r.sl); });
+      try{if(window.__ksRender)window.__ksRender();}catch(_){} try{boardSaveLive();}catch(_){} try{toast("다른 슬라이드의 운동장 바탕을 되돌렸어요");}catch(_){} });
+    return n;
+  };
+  function meetPitchToast(msg,label,fn){ try{ toast(msg); var t=document.getElementById("cs-ftoast"); if(!t)return;
+    var b=document.createElement("button"); b.type="button"; b.className="ftoast-act"; b.textContent=label;
+    b.addEventListener("click",function(ev){ ev.stopPropagation(); try{b.remove();}catch(_){} t.style.pointerEvents="none"; fn(); });
+    b.addEventListener("pointerdown",function(ev){ ev.stopPropagation(); });
+    t.appendChild(b); t.style.pointerEvents="auto";
+    clearTimeout(t._ft); t._ft=setTimeout(function(){ t.style.opacity="0"; t.style.transform="translateX(-50%) translateY(10px)"; t.style.pointerEvents="none"; setTimeout(function(){ t.textContent=""; t.setAttribute("aria-hidden","true"); },220); },6000);
+  }catch(_){} }
+  /* 사람이 피치 · 피치 색 · 잔디 톤을 바꾸면 부른다. 끌거나 연달아 누르는 동안은 기다렸다가 한 번만 묻는다 */
+  window.__meetPitchOffer=function(){ try{ if(!meetPitchOk())return; clearTimeout(meetPitchT); meetPitchT=setTimeout(function(){ meetPitchT=null; if(!meetPitchOk())return;
+    var n=meetPitchDiff(captureSnap()); if(!n)return;
+    var at=anim.slides[meetIdx];   /* 단추를 누르기 전에 다른 슬라이드로 넘어갔으면 그 슬라이드 바탕을 퍼뜨리지 않는다 */
+    meetPitchToast("이 슬라이드만 바꿨어요","모든 슬라이드에 ("+n+"장)",function(){ if(anim.slides[meetIdx]!==at){ try{toast("슬라이드가 바뀌어 적용하지 않았어요");}catch(_){} return; } window.__meetPitchAll(); }); },450); }catch(_){} };
   /* 2.974 — 예전에 만든 미팅도 새 규칙으로(사용자 «이미 만든 미팅도 새 규칙으로»). 보관함에서 고칠 수 있게 열 때 한 번 돈다.
      코치가 한 일은 건드리지 않는 것만 바꾼다 — 그래서 몇 번을 다시 열어도 같은 결과다(두 번째부터는 바꿀 것이 없다).
      ① 이름(2.970): 같은 선수(팀·등번호)에 붙은 이름이 하나뿐이면 이름이 빈 다른 장의 그 선수에 채운다. 장마다 이름이 다르면 그대로.
@@ -17180,6 +17220,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{window.__syncPitchSeg();}catch(_){}
     try{buildPitch();renderTokens();renderDrawings();updateDelUI();}catch(e){}
     if(!_silent){try{boardSaveLive();}catch(_){}try{_viewScenesSoon("pitch","피치 색을");}catch(_){}}   // 현재 보드에만 저장(전역 X) · 2.982 — 이 애니메이션의 장면들에도(끌기를 멈춘 뒤 한 번)
+    if(!_silent){try{window.__meetPitchOffer&&window.__meetPitchOffer();}catch(_){}}   /* 3.055 — 미팅이면 «모든 슬라이드에» */
   }
   function clearCustom(){
     var s=document.documentElement.style;
