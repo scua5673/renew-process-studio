@@ -18218,6 +18218,11 @@ function renderMB2(){
 }
 /* ── 리뷰: 준비 → 실행 확인 ── */
 /* ── 상대 분석 국면 보드(1.450) — 국면별 배치 + 프레임 애니메이션. 데이터 m.oppPB ── */
+/* 3.067 — 상대 분석 보드에 실제로 놓은 것(선수·그림)이 있나. 빈 뼈대(obEnsure)는 없는 것으로 본다 */
+function obHasContent(m){
+  var pb=m&&m.oppPB, bs=(pb&&pb.boards)||{};
+  return Object.keys(bs).some(function(k){ var b=bs[k]||{}; return (Array.isArray(b.frames)?b.frames:[]).some(function(f){ return mmBoardHas(f); }); });
+}
 function obEnsure(m){
   if(!m.oppPB||!Array.isArray(m.oppPB.list)||!m.oppPB.boards)
     m.oppPB={list:JSON.parse(JSON.stringify(MB2_STD_PHASES)),cur:"atk",boards:{}};
@@ -19752,7 +19757,7 @@ function ckSession(o){
   var isOff=!!(day&&(day.off||b.sched==="OFF"));
   var load=""; try{ load=teamSessionPlannedLoad(training,b)||""; }catch(_){}
   var DOW=["일","월","화","수","목","금","토"], when=(o===0)?"오늘":(DOW[date.getDay()]+" "+date.getDate()+"일");
-  var r={when:when,title:"",sub:"",blocks:[],kind:"none",time:(training&&training.time)||"",place:String((training&&training.place)||"").trim(),note:String((training&&training.note)||"").trim()};   /* 2.908 — 세션 장소·메모(일정 세션 채우기) */
+  var r={when:when,title:"",sub:"",blocks:[],kind:"none",slot:String((training&&training.slot)||""),time:(training&&training.time)||"",place:String((training&&training.place)||"").trim(),note:String((training&&training.note)||"").trim()};   /* 2.908 — 세션 장소·메모(일정 세션 채우기) */
   if(isMatch){ var tm=(day&&day.match)||{}, opp=tm.opponent||tm.opp||b.opp||ctx.opp||"상대 미정"; r.kind="m"; r.title="경기 · vs "+opp; r.sub="경기 계획과 출전 인원을 최종 확인"; r.time=tm.time||""; }
   else if(!isOff&&training){ r.kind="tr"; r.title=training.aims||training.title||"팀 훈련"; var mins=0; try{ mins=teamHomeMinutes(training)||0; }catch(_){}
     r.sub=[load?"강도 "+load:"",mins?"총 "+mins+"분":""].filter(Boolean).join(" · "); r.load=load; r.mins=mins;   /* 2.584 — 머리줄 알약용 */   /* 아래에서 블록으로 다시 센다 */
@@ -20123,7 +20128,7 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
   var todo=[];
   if(m){ /* 2.181 — 경기 탭의 세 단계 그대로(사용자): 01 상대 분석 · 02 경기 준비 · 03 경기 리뷰. 완료는 그 단계의 필드에서 파생 */
     var has=function(v){ return !!(v&&String(typeof v==="object"?JSON.stringify(v):v).replace(/[\[\]{}"\s]/g,"")); };
-    var aDone=["oppAttack","oppDefense","oppAttackTransition","oppDefenseTransition","oppSetPlay","oppConclusion","oppNote"].some(function(k){return has(m[k]);})||has(m.oppPB);
+    var aDone=["oppAttack","oppDefense","oppAttackTransition","oppDefenseTransition","oppSetPlay","oppConclusion","oppNote"].some(function(k){return has(m[k]);})||obHasContent(m);   /* 3.067 — 경기를 열기만 해도 obEnsure 가 빈 국면 보드(공격 시·수비 시…)를 깔아 has(m.oppPB) 가 참이 됐다 → «다음 할 일»이 상대 분석을 건너뛰었다(코치 점검 10/16). 판에 선수·그림이 있을 때만 */
     var pDone=has(m.briefing)||(m.fifaPlans||[]).length>0||!!m.prepPublished;   /* 2.971 — 명단(선발 11)은 더 정하지 않는다 */
     var st=matchStatusOf(m), rDone=(st==="review");
     /* 2.193 — 체크는 코치가 직접 누른다(m.ckDone, 경기별 저장). 자동 판정은 처음 값일 뿐. MD 라벨은 뺀다(사용자) */
@@ -20203,7 +20208,7 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
           +(bl.t?'<time class="ckt" role="button" tabindex="0" data-ck="edittime" title="눌러서 일정에서 시간·세트 고치기">'+ckEsc(bl.t)+'</time>':'')+(bl.ph?'<span class="ph">'+ckEsc(bl.ph)+'</span>':'')+(bl.libId?'<u class="go">→</u>':'')+'</div>'; }).join("")
       /* 2.201 — OFF 날 '개별 재활·부상' 줄 제거(사용자). 가용 인원 패널이 같은 정보를 보여 준다 */
       :((ss.kind==="off"||ss.kind==="none")?'':(ss.kind==="m"?('<div class="ck-acts"><button type="button" class="ck-act pri ps-btn-primary" data-ck="match" data-md="'+_selIso+'">경기 준비 열기</button><button type="button" class="ck-act ps-btn-secondary" data-ck="stage" data-step="opp" data-md="'+_selIso+'">상대 분석</button></div>')   /* 2.979 — 문장 대신 그 문 */
-        :('<div class="empty">훈련 블록이 아직 없어요'+(ss.kind==="tr"?'<button type="button" class="ck-fill" data-ck="session">세션 채우기 →</button>':'')+'</div>'))))   /* 2.953 — 빈 카드에 문 하나(코치 점검 10/7: 흰 카드에 한 줄뿐이었다) */
+        :('<div class="empty">훈련 블록이 아직 없어요'+(ss.kind==="tr"?'<button type="button" class="ck-fill" data-ck="fill">세션 채우기 →</button>':'')+'</div>'))))   /* 2.953 — 빈 카드에 문 하나(코치 점검 10/7: 흰 카드에 한 줄뿐이었다) */
     /* 2.570 — 2.299 의 «다음 경기» 줄은 «이번 주» 머리줄의 D-n 칩으로 **옮겼다**(같은 data-ck="match"). 카드에서는 그린다면 두 번이 된다. */
     +'</div></div>';
   /* ② 인원 */
@@ -20358,6 +20363,10 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
       return; }   /* 2.482 — 국면 상세 펼침 */
     var b=e.target.closest("[data-ck]"); if(!b)return; var k=b.dataset.ck;
     if(k==="session"){ teamHomeGoSchedule(); }
+    /* 3.067 — «세션 채우기 →»는 그 날 세션의 채우기 시트까지 연다(코치 점검 10/16: 주간 일정만 열려 한 번 더 눌러야 했고, 위 탭은 «오늘»에 머물렀다) */
+    else if(k==="fill"){ try{ var _fd=new Date(); _fd.setHours(0,0,0,0); _fd.setDate(_fd.getDate()+(window.__sessSel||0));
+        var _fs=ckSession(window.__sessSel||0)||{};
+        parent.postMessage({source:"scout",type:"openSchedule",date:_fd.getFullYear()+"-"+String(_fd.getMonth()+1).padStart(2,"0")+"-"+String(_fd.getDate()).padStart(2,"0"),fill:{slot:_fs.slot||"",at:Date.now()}},"*"); }catch(_){ teamHomeGoSchedule(); } }
     else if(k==="players"){ setView("team"); }   /* 2.583 — 가용 인원 카드의 «선수단 열기 →»(사용자) */
     else if(k==="avail"){ setView("avail"); }   /* 2.692 — 가용 인원 카드는 «출석 열기 →»(사용자) */
     /* 2.536 — 시간을 누르면 일정으로. 값 자체는 일정 화면이 주인이라 거기서 고친다 */
