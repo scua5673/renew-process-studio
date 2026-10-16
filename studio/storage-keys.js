@@ -157,6 +157,7 @@
     ['ps_board_tilt3d','device','ls','pref','board.html'],
     ['ps_boot_alive_v1','device','ls','session','app.html'],
     ['ps_boot_crash_sent_v1','device','ls','diag','app.html'],
+    ['ps_boot_safe_carry_v1','device','ls','session','app.html'],
     ['ps_cache_owner_v1','device','ls','session','scout.html'],
     ['ps_cache_wipe','device','ls','session','sync.js'],
     ['ps_cache_wiped_v1','device','ls','session','sync.js'],

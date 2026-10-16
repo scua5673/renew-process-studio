@@ -12914,7 +12914,10 @@ function matchOpenAtRequest(d){
    경기 문서는 선수 기기에도 내려가고, 쓰려면 팀 편집권이 필요하다. 여기는 보관함(cs_drill_lib_v1, IDB)을 **읽기만** 하고
    만들기·연결·떼기는 셸을 거쳐 보관함(작전판)이 한다(같은 목록을 둘이 통째로 쓰면 한쪽이 지워진다).
    다른 코치에게 보이는지는 보관함 공유 규칙 그대로(팀 공유 폴더). 선수에게는 카드를 그리지 않는다. */
-var MM_LIB_KEY="cs_drill_lib_v1", mmLib=null, mmLibP=null;
+var MM_LIB_KEY="cs_drill_lib_v1", mmLib=null, mmLibP=null, mmLibStampAt="";
+/* 3.059 — 보관함 판(cs_lib_rev)과 팀이 그대로면 읽어 둔 것을 다시 쓴다. 예전엔 경기 화면을 그릴 때마다 보관함 전체(팀에 따라 10MB 넘게)를
+   IndexedDB 에서 다시 읽어 JSON.parse 했다 — 아이패드 강제 종료(오류 제보 10/16)의 한 몫. 보관함을 바꾸는 쪽은 모두 cs_lib_rev 를 바꾼다(board libTouch · sync libSave). */
+function mmLibStamp(){ try{ var r=localStorage.getItem("cs_lib_rev"); return r?r+"|"+(localStorage.getItem("ps_active_ws")||""):""; }catch(_){ return ""; } }
 var MM_WD=["일","월","화","수","목","금","토"];
 function mmDateLabel(ymd){ var x=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd||"")); if(!x)return ""; return (+x[2])+"/"+(+x[3])+" "+MM_WD[new Date(+x[1],+x[2]-1,+x[3]).getDay()]; }
 function mmMyUid(){ try{ var s=JSON.parse(localStorage.getItem("ps_sync_session")||"null"); return (s&&s.uid)||""; }catch(_){ return ""; } }
@@ -12925,10 +12928,11 @@ function mmFolderShared(folder,meta){ var f=String(folder==null?"":folder).trim(
 function mmRefOf(m){ return {mid:String(m.id),date:String(m.date||""),opp:String(m.opponent||""),time:String(m.time||""),ha:String(m.homeAway||""),kind:String(m.kind||""),at:Date.now()}; }
 function mmLoadLib(){
   if(mmLibP)return mmLibP;
+  var stamp=mmLibStamp(); if(stamp&&mmLib&&stamp===mmLibStampAt)return Promise.resolve(mmLib);
   var st=window.storage;
   mmLibP=Promise.resolve(st&&st.get?st.get(MM_LIB_KEY):null).then(function(r){
     var v=(r&&typeof r==="object"&&"value" in r)?r.value:r, a=[]; try{ a=typeof v==="string"?JSON.parse(v||"[]"):(v||[]); }catch(_){ a=[]; }
-    mmLib=Array.isArray(a)?a:[]; return mmLib;
+    mmLib=Array.isArray(a)?a:[]; mmLibStampAt=stamp; return mmLib;
   },function(){ mmLib=mmLib||[]; return mmLib; }).then(function(x){ mmLibP=null; return x; },function(){ mmLibP=null; return mmLib||[]; });
   return mmLibP;
 }
