@@ -40,6 +40,9 @@
    **실행 파일이 바뀌었는데 판 번호가 그대로면 게시를 멈춘다**(«…판 번호는 3.xxx 그대로예요»). 판 번호를 낮춰도 멈춘다. 이 목록으로 서비스워커는 바뀐 파일만 받는다
    (옛 판 캐시의 본문을 직접 해시해 같으면 옮겨 담는다 — `sw.js` «바뀐 파일만 받는다»). 지금 사이트에 목록이 없거나(첫 배포) 못 받으면 견주지 않고 지나간다.
 6. testprocess(<https://testprocess.netlify.app>)에서 확인한다. 저장·동기화·로그인·셸을 건드렸으면 `docs/device-checklist.md` 를 실기기로 돈다.
+   testprocess · PR 미리보기도 **운영 Supabase** 로 로그인한다. 로그인 뒤 돌아올 주소는 Supabase 대시보드 › Authentication › URL Configuration › Redirect URLs 에
+   `https://testprocess.netlify.app/**` · `https://*--testprocess.netlify.app/**` 가 있어야 한다(2026-10-16 추가). 없으면 Supabase 가 Site URL(processstudio)로 돌려보내
+   testprocess 에서는 로그아웃 상태로 남는다 — 로그인이 필요한 MP4 · GIF · PNG 내보내기 · 보관함을 점검할 수 없다. Site URL 은 processstudio 그대로 둔다.
 7. 승격: `gh pr create --repo scua5673/renew-process-studio --base main --head staging --title "배포: staging → main (2.xxx~2.yyy)"`. 본문에 실기기 확인 결과를 적는다. 합치면 processstudio 가 같은 방식으로 게시한다. 승격 뒤 `staging` 과 `main` 은 같은 커밋을 가리킨다.
 8. 확인: `npx netlify-cli api listSiteDeploys --data '{"site_id":"…"}'` 에서 `context:"production"` 의 `state:"ready"` 와 커밋(PS_BUILD 만 보면 «빌드 중»과 «실패»가 구분되지 않는다), 그리고 `curl https://processstudio.netlify.app/studio/app.html | grep PS_BUILD`.
 
