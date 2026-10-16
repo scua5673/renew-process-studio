@@ -31,6 +31,7 @@
 </script>
 <script src="support-diagnostics.js"></script>
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
+<script src="storage-keys.js"></script>
 <script src="storage.js"></script>
 <script src="autosave-status.js?v=3.055"></script>
 
@@ -46,7 +47,7 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta name="author" content="PROCESS STUDIO">
 <meta name="copyright" content="© 2026 PROCESS STUDIO. All rights reserved.">
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.026"><!-- 로컬 폰트 — 완전 오프라인 -->
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.054"><!-- 로컬 폰트 — 완전 오프라인 -->
 <meta name="theme-color" content="#ECEDF0">
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1203,7 +1204,11 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
 /* ==== PWA 안전 다이얼로그: 네이티브 confirm()/prompt() 대체 (설치형 PWA에서 차단됨) ==== */
 (function(){
   if(window.psConfirm) return;
-  function build(msg, withInput, def, onOk, onCancel){
+  /* 3.039 — 실행 단추에 할 일을 적는다(피드백 CP-2 «삭제도 파란 «확인»»). opts={ok:'삭제',danger:true}. opts 가 없으면 질문에서 읽는다:
+     «…삭제할까요?» → [삭제](빨강) · «…지울까요?» → [지우기](빨강) · 그 밖은 «확인». */
+  function okOf(msg,opts){ opts=opts||{}; if(opts.ok)return {label:String(opts.ok),danger:!!opts.danger};
+    var q=String(msg).split('\n')[0]; if(/삭제할까요\?/.test(q))return {label:'삭제',danger:true}; if(/지울까요\?/.test(q))return {label:'지우기',danger:true}; return {label:'확인',danger:!!opts.danger}; }
+  function build(msg, withInput, def, onOk, onCancel, opts){
     var ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;background:rgba(10,14,20,.45);z-index:2147483000;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)';
     var dark=false; try{dark=document.body.classList.contains('fmdark');}catch(_){}
@@ -1219,8 +1224,8 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     var row=document.createElement('div');row.style.cssText='display:flex;gap:8px;justify-content:flex-end';
     var bc=document.createElement('button');bc.type='button';bc.textContent='취소';
     bc.style.cssText='font:inherit;font-size:13px;padding:8px 14px;border-radius:10px;border:1px solid rgba(128,140,160,.35);background:transparent;color:inherit;cursor:pointer';
-    var bo=document.createElement('button');bo.type='button';bo.textContent='확인';
-    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:var(--ps-navy,#14213D);color:#fff;cursor:pointer';
+    var bo=document.createElement('button');bo.type='button';var _ok=withInput?{label:'확인',danger:false}:okOf(msg,opts);bo.textContent=_ok.label;bo.setAttribute('data-ps-ok','1');
+    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:'+(_ok.danger?'#C24A46':'var(--ps-navy,#14213D)')+';color:#fff;cursor:pointer';
     row.appendChild(bc);row.appendChild(bo);bx.appendChild(row);ov.appendChild(bx);
     var done=false;
     function close(){ if(done)return; done=true; document.removeEventListener('keydown',onKey,true); try{ov.remove();}catch(_){} }
@@ -1234,10 +1239,56 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     try{ov.animate&&ov.animate([{opacity:0},{opacity:1}],{duration:140,easing:'ease-out'});}catch(_){}
     if(inp){ try{inp.focus();inp.select();}catch(_){} }
   }
-  window.psConfirm=function(msg,onOk,onCancel){ build(String(msg),false,null,function(){onOk&&onOk();},onCancel); };
+  window.psConfirm=function(msg,onOk,onCancel,opts){ build(String(msg),false,null,function(){onOk&&onOk();},onCancel,opts); };
   window.psPrompt=function(msg,def,onOk,onCancel){ build(String(msg),true,def,function(v){onOk&&onOk(v);},onCancel); };
+  /* 3.038 — 단추에 할 일을 적는 선택창(보드의 psChoice 와 같은 모양). buttons=[{label,primary,danger,value}] → onPick(value) · 닫기(Esc·바깥 탭)는 onPick(null).
+     «확인/취소»만 있는 psConfirm 은 바깥 탭도 «취소»라, 취소가 무언가를 지우는 창(sync.js 로그아웃 전 자료)에 쓰면 잘못 탭 한 번이 삭제였다(피드백 CP-1). */
+  window.psChoice=function(msg,buttons,onPick){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(10,14,20,.45);z-index:2147483000;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)';
+    var dark=false; try{dark=document.body.classList.contains('fmdark');}catch(_){}
+    var bx=document.createElement('div');
+    bx.style.cssText='background:'+(dark?'#1C232E':'#fff')+';color:'+(dark?'#E7EBF1':'#14161A')+';border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.35);padding:18px 18px 14px;width:min(340px,88vw);font:inherit';
+    var tx=document.createElement('div');tx.style.cssText='font-size:14px;line-height:1.5;white-space:pre-wrap;margin-bottom:14px;word-break:break-word';tx.textContent=String(msg);bx.appendChild(tx);
+    var row=document.createElement('div');row.style.cssText='display:flex;flex-direction:column;gap:6px';
+    var done=false; function close(){ if(done)return; done=true; document.removeEventListener('keydown',onKey,true); try{ov.remove();}catch(_){} }
+    function onKey(e){ if(e.key==='Escape'){e.stopPropagation();close();onPick&&onPick(null);} }
+    (buttons||[]).forEach(function(b){ var el=document.createElement('button');el.type='button';el.textContent=b.label;
+      el.style.cssText='font:inherit;font-size:13px;font-weight:'+(b.primary?'700':'600')+';padding:10px 14px;border-radius:10px;cursor:pointer;width:100%;'+(b.primary?'border:0;background:var(--ps-navy,#14213D);color:#fff':(b.danger?'border:1px solid rgba(194,74,70,.35);background:transparent;color:#C24A46':'border:1px solid rgba(128,140,160,.35);background:transparent;color:inherit'));
+      el.onclick=function(){ close(); onPick&&onPick(b.value); }; row.appendChild(el); });
+    bx.appendChild(row);ov.appendChild(bx);
+    ov.addEventListener('pointerdown',function(e){ if(e.target===ov){ close(); onPick&&onPick(null); } });
+    document.addEventListener('keydown',onKey,true);
+    document.body.appendChild(ov);
+    try{var first=row.querySelector('button');if(first)first.focus();}catch(_){}
+    try{ov.animate&&ov.animate([{opacity:0},{opacity:1}],{duration:140,easing:'ease-out'});}catch(_){}
+  };
 })();
 </script>
+<script>/* 3.039 — 실패 경고창은 사람 말로(피드백 CP-18 · CP-19). 브라우저 · 내부 오류문(영어 · «IndexedDB …»)을 본문에 붙이지 않고
+   관리자 오류 탭(app_error · alert_fail)에 남긴다. 우리가 쓴 짧은 한국어 이유(«다른 팀의 파일이에요» 같은)만 «이유:»로 보인다.
+   옛 문구의 «관리자»는 팀 운영진인지 앱 운영팀인지 알 수 없어 «오류 제보»로 보낸다. */
+window.psUserReason=function(e){ try{ var m=String((e&&e.message)||e||'').trim(); if(!m||m.length>120||!/[가-힣]/.test(m)||/[A-Za-z]{4,}/.test(m))return ''; return m; }catch(_){ return ''; } };
+window.psFailAlert=function(lead,e,stage){
+  try{ console.warn('[PS]',stage||'alert',e); if(window.PSSync&&PSSync.event)PSSync.event('app_error',{status:'error',feature:'app',error_code:'alert_fail',meta:{stage:String(stage||'alert').slice(0,40),source:String((e&&(e.psCode||e.code||e.name))||'').slice(0,40),msg:String((e&&e.message)||e||'').slice(0,140)}}); }catch(_){}
+  var why=window.psUserReason(e); alert(lead+(why?'\n\n이유: '+why:'')+'\n\n계속되면 앱 설정 › 일반 › «오류 제보»로 알려 주세요.'); };
+</script>
+<script>/* 3.039 — CSP 보고 모드(피드백 SEC-2). _headers 의 Content-Security-Policy-Report-Only 는 막지 않고 «이 정책이면 막혔을 것»만 알린다.
+   이 창과 같은 출처의 프레임(작전판 · IDP · 커뮤니티 …)에서 난 위반을 «지시어 + 출처»로 묶어 한 번씩 app_error(csp_report)로 올린다 — 관리자 오류 탭에서 본다.
+   출처는 호스트까지만(경로 · 질의 · 사용자 자료는 버린다). 사용자 화면의 오류 띠는 띄우지 않는다. 한 창에서 20건까지.
+   정책을 막는 쪽(Content-Security-Policy)으로 옮기는 것은 이 보고가 2주 조용한 뒤 — docs/OPERATIONS.md «CSP». */
+(function(){ if(window.__psCspInit)return; window.__psCspInit=1; var seen={},n=0;
+  function src(u){ try{ u=String(u||''); if(!u)return ''; if(/^(inline|eval|wasm-eval|trusted-types-)/.test(u))return u; if(/^(data|blob):/.test(u))return u.split(':')[0];
+    var x=new URL(u,location.href); return x.origin===location.origin?'self':x.protocol+'//'+x.host; }catch(_){ return 'other'; } }
+  function on(e){ try{ var d=String(e.effectiveDirective||e.violatedDirective||'').split(' ')[0], b=src(e.blockedURI), k=d+'|'+b; if(!d||seen[k]||n>=20)return; seen[k]=1; n++;
+    var at=''; try{ at=e.sourceFile?String(new URL(e.sourceFile).pathname.split('/').pop()).slice(0,60)+':'+(e.lineNumber||0):''; }catch(_){}
+    var send=function(){ try{ if(window.PSSync&&PSSync.event){ PSSync.event('app_error',{status:'error',feature:'app',error_code:'csp_report',meta:{stage:'csp',source:(d+' '+b).slice(0,120),msg:at}}); return true; } }catch(_){} return false; };
+    if(!send())setTimeout(send,4000); }catch(_){} }
+  function hook(w){ try{ if(!w||w.__psCsp||!w.document)return; w.__psCsp=1; w.document.addEventListener('securitypolicyviolation',on); }catch(_){} }   /* 다른 출처 프레임은 접근이 막혀 조용히 지나간다 */
+  window.__psCspHook=hook; hook(window);
+  document.addEventListener('load',function(e){ var t=e.target; if(t&&t.tagName==='IFRAME')hook(t.contentWindow); },true);
+  document.addEventListener('DOMContentLoaded',function(){ [].forEach.call(document.querySelectorAll('iframe'),function(f){ hook(f.contentWindow); }); });
+})();</script>
 <script>(function(){if(window.__psErrInit)return;window.__psErrInit=1;function errorSource(reason){try{var lines=String(reason&&reason.stack||'').split('\n').slice(0,8);/* 2.916 — 사파리는 첫 줄부터 위치다(머리글 줄이 없다). slice(1) 이 유일한 위치를 버려 unknown-script 로 남았다 */for(var i=0;i<lines.length;i++){var m=lines[i].match(/((?:https?|chrome-extension|moz-extension):\/\/[^\s)]+):(\d+):(\d+)/);if(!m)continue;var u=new URL(m[1]);if(u.origin!==location.origin)return 'external-script';var file=u.pathname.split('/').pop();if(!/^[a-zA-Z0-9_.-]{1,60}$/.test(file))return 'app-script';return file+':'+m[2]+':'+m[3];}}catch(_){}return 'unknown-script';}function track(code,stage,msg,source){try{var send=function(){try{window.PSSync&&PSSync.event&&PSSync.event('app_error',{status:'error',feature:'app',error_code:code||'unknown',meta:{stage:stage||'runtime',source:source||'',msg:String(msg||'').slice(0,140)}});}catch(_){}};send();setTimeout(send,2200);}catch(_){}}function show(m){try{var b=document.getElementById('ps-errbar');if(!b){b=document.createElement('div');b.id='ps-errbar';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99999;max-width:84vw;background:#3a1414;color:#ffd7d7;border:1px solid #a33;border-radius:10px;padding:8px 12px;font:600 12px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;';b.title='탭하면 닫기';b.addEventListener('click',function(){b.style.display='none';});(document.body||document.documentElement).appendChild(b);}b.style.display='block';b.textContent='⚠︎ 오류: '+m;clearTimeout(b.__t);b.__t=setTimeout(function(){b.style.display='none';},6000);}catch(_){}}window.addEventListener('error',function(e){var _m=(e&&e.message)||'';if(/ResizeObserver loop/i.test(_m))return;if(/^Script error\.?$/i.test(_m)&&!(e&&e.filename))return;/* 2.917 — 다른 출처 스크립트(확장 프로그램 등)의 오류는 브라우저가 내용을 가려 «Script error.» 한 줄만 준다 — 고칠 정보가 없고 사용자에게 빨간 토스트만 띄웠다 *//* 2.476 — 무해한 브라우저 경고가 사용자 오류 토스트로 떴다(폰 실측) */try{console.error('[PS]',(e&&(e.error||e.message)),e&&e.filename,e&&e.lineno);}catch(_){}track('js_error','runtime',(_m||'')+' @'+((e&&e.filename)||'').split('/').pop()+':'+((e&&e.lineno)||0));show(_m||'스크립트 오류');});window.addEventListener('unhandledrejection',function(e){var r=e&&e.reason,msg='';try{msg=String((r&&r.message)||r||'');}catch(_){}if(/service\\s*worker|failed to update a serviceworker|fetching the script|sw\\.js/i.test(msg)){try{e.preventDefault();}catch(_){}return;}try{console.error('[PS promise]',r);}catch(_){}track('promise_rejection','promise',msg,errorSource(r));show('작업을 완료하지 못했습니다');});})();</script>
   <style>
     /* 화면 방향은 사용자가 선택한다 — 폰·아이패드·컴퓨터 모두 세로/가로 사용 가능 */
@@ -1337,6 +1388,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       <button id="bkDown" title="현재 팀 메뉴를 파일로 저장" aria-label="파일 저장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"/></svg>파일 저장</button>
       <button id="bkUp" title="팀 메뉴 파일 가져오기" aria-label="파일 가져오기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M6 13l6-6 6 6M4 3h16"/></svg>파일 가져오기</button>
       <input type="file" id="bkFile" accept="application/json" style="display:none">
+      <button id="bkAll" title="팀 전체 자료(JSON)와 명단 · 평가(CSV)를 내려받기 — 임원만" aria-label="팀 전체 내보내기" style="display:none">팀 전체 내보내기</button>
       <button id="bkTest" title="저장 무결성 점검" aria-label="저장 점검" style="display:none">점검</button>
       <button id="bkStash" title="워크스페이스 전환 때 이 기기에 남긴 자동 백업에서 복구" aria-label="전환 백업 복구" style="display:none">전환 백업 복구</button>
       <button id="bkErase" title="서버와 이 기기의 내 데이터를 영구 삭제 (개인정보 파기 요청)" aria-label="내 데이터 삭제" style="display:none;color:#C24A46">내 데이터 삭제</button>
@@ -1374,7 +1426,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
              평소에는 '지금 동기화' 하나만 보이고, 실제로 크게 줄어든 변경이 막혔을 때만
              같은 버튼이 '확인'으로 바뀐다. 안전장치는 유지하되 내부 상태를 여러 군데 노출하지 않는다. -->
         <!-- 2.337 ⚠ 탭 CSS 가 [data-gp-tab] 에 display:grid!important 를 강제한다 — 문장을 span 하나로 감싸 그리드 칸 하나로 만든다(안 감싸면 <b> 마다 행으로 갈라진다) -->
-        <div data-gp-tab="data" style="font-size:11px;line-height:1.55;color:#8A9099;padding:2px 2px 0"><span>변경사항은 자동 저장됩니다. 백업과 복구 도구는 고급에서 확인합니다.</span></div>
+        <div data-gp-tab="data" style="font-size:11px;line-height:1.55;color:#8A9099;padding:2px 2px 0"><span>팀 운영·IDP·노트는 자동으로 저장돼요. 작전판은 «보드 저장»을 눌러야 저장되고, 그전에는 이 기기에 초안으로 남아요. 백업·복구는 «고급»에 있어요.</span></div>
         <div class="gp-row"><span class="gp-lb">상태</span>
           <span id="psPushState" style="font-size:11px;font-weight:600;color:#646A73;line-height:1.4">확인 중…</span>
           <button type="button" id="psPushNow" title="자동 저장 상태를 다시 확인합니다"
@@ -2666,6 +2718,8 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       var _y=window.__psMeScroll|0; if(_y>0){ [0,80,260].forEach(function(t){ setTimeout(function(){ try{ fScout.contentWindow.scrollTo(0,_y); }catch(_){} },t); }); }
       try{ fScout.contentWindow.postMessage({source:'app',type:'matchEditDone',libId:String(d.libId||''),mid:String(d.mid||'')},'*'); }catch(_){}
     }
+    function psCoachTeamIdp(){ try{ var r=window.PSPerms&&PSPerms.role&&PSPerms.role(); return r==='staff'||r==='executive'; }catch(_){ return false; } }
+    window.__psCoachTeamIdp=psCoachTeamIdp;
     function openTeamButton(b){
       currentTeamKey=b.dataset.teamKey||'today';
       var _idpWasHidden=false; try{ _idpWasHidden=!(fIdp.offsetWidth>0&&fIdp.offsetHeight>0); }catch(_){ _idpWasHidden=true; }   /* 2.777 */
@@ -2693,6 +2747,10 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
         var hubKey='today';try{if(window.PSPerms&&PSPerms.role&&PSPerms.role()==='player')hubKey='training';}catch(_){}
         var today=teamKeyBtn(hubKey);if(today)openTeamButton(today);return;
       }
+      /* 3.039 — 팀의 코칭스태프 · 임원이 사이드바(폰 하단바) «IDP»를 누르면 팀 IDP(선수 평가)로 간다(피드백 UX-2 — 전엔 코치 본인의 선수용 일지
+         «오늘 훈련에 참여했나요?»가 열려 첫 방문에 길을 잃었다). 내 일지는 팀 IDP 의 보기 선택 «내 IDP»로 그대로 간다.
+         선수 · 개인 공간(혼자 쓰는 코치 — 역할 admin) · 손님은 예전처럼 개인 IDP. */
+      if(b.dataset.app==='idp'&&b.dataset.scope==='global'&&!b.dataset.train&&psCoachTeamIdp()){ var _ti=teamKeyBtn('idp'); if(_ti){ openTeamButton(_ti); return; } }
       currentTeamKey='';
       showApp(b.dataset.train?'design':b.dataset.app);
       /* 2.298 — 들어가자마자 뜨던 '무엇을 만들까요?' 모달 제거(사용자).
@@ -3047,6 +3105,9 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       if(d.source==='board' && d.type==='boardSettingsState'){ if(d.open){ try{ if(window.__psCloseAppSettings)window.__psCloseAppSettings(); }catch(_){} } return; }   /* 2.700 — 보드 설정이 열리면 앱 설정은 닫는다(둘 중 하나만) */
       if(d.source==='board' && d.type==='editorState'){ document.body.classList.toggle('ps-editor-open',!!d.open); return; }   /* 2.698 — 편집기가 열리면 일반 저장 표시를 숨긴다. 하단 오류·보관 상태는 유지한다. */
       if(d.source==='board' && d.type==='boardLiveSaved'){ if(!__psBoardLiveMuted)try{ localStorage.setItem('ps_private_board_rev_v1',String(Date.now())); }catch(_){} return; }
+      /* 3.039 — 폰의 빈 작전판 안내 «보관함 열기»(board.html ps-3039-phone-hint). 사이드바(폰 하단바) «보관함»과 같은 길 */
+      if(d.source==='board' && d.type==='openVault'){ var _fb=document.getElementById('fBoard'); if(e.origin!==location.origin||!_fb||e.source!==_fb.contentWindow)return; var _vb=document.getElementById('psTrainBtn'); if(_vb)_vb.click(); else { currentTeamKey=''; showApp('design'); } return; }
+      if(d.source==='board' && d.type==='boardDirty'){ var _bd=!!d.changed; if(_bd!==!!window.__psBoardDirty){ window.__psBoardDirty=_bd; try{ if(window.__psRefreshPushState)window.__psRefreshPushState(); }catch(_){} } return; }   /* 3.038 — 보드의 저장 안 한 변경 → 셸 저장 표시 «보드 · 저장 전»(saveView) */
       if((d.source==='process'||d.source==='scout'||d.source==='playbook') && d.type==='openDrillEditor'){   /* 2.312 — 콕핏에서도 보관함 훈련을 바로 연다 · 2.580 플레이북에서 열면 저장·취소 뒤 플레이북으로 돌아온다 */ captureReq=(d.source==='playbook')?'playbook':'process'; showApp('design'); var _ed=d; psBoardThen(function(){try{ if(_ed.readonly){ if(fBoard.contentWindow.__openScheduleDrillView)fBoard.contentWindow.__openScheduleDrillView({libId:_ed.libId,libIdx:_ed.libIdx,play:!!_ed.play,reason:_ed.reason||'',name:_ed.name,snap:_ed.snap}); else fBoard.contentWindow.__openScheduleDrillEdit&&fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap}); }   /* 2.669 — 지난 날은 보기 전용 */ else if(_ed.edit){ fBoard.contentWindow.__openScheduleDrillEdit && fBoard.contentWindow.__openScheduleDrillEdit({libId:_ed.libId,libIdx:_ed.libIdx,name:_ed.name,minutes:_ed.minutes,snap:_ed.snap,toLib:!!(_ed.toLib&&d.source==='process')}); }   /* 2.950 — toLib: 일정의 직접 적은 줄에서 그리면 보관함에 넣고 잇는다 */   /* 2.946 — libIdx: 그 훈련으로 */ else if(_ed.wizard){ fBoard.contentWindow.__openSessionWizard && fBoard.contentWindow.__openSessionWizard({date:_ed.date||'',roster:_ed.roster||null}); }   /* 2.698 — 출석 그 날 카드에서 온 «훈련 세션 만들기»: 날짜·인원 프리셋 */ else { try{ fBoard.contentWindow.__psPreselectPhases=(Array.isArray(_ed.gmPhases)&&_ed.gmPhases.length)?_ed.gmPhases.slice():null; }catch(_){}   /* 1.958 — 보강 추천에서 온 국면 프리셀렉트 */ fBoard.contentWindow.__openScheduleDrill && fBoard.contentWindow.__openScheduleDrill(); } }catch(_){}},80); return; }
       if(d.source==='process' && d.type==='openBoard'){
         captureReq='process';
@@ -3797,7 +3858,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
         w.querySelector('.pd-x').addEventListener('click',close);
         w.querySelector('.pd-sync').addEventListener('click',function(){ close(); try{ PSSync.syncNow('diag'); }catch(_){ } setTimeout(line,3000); });
         w.querySelector('.pd-clean').addEventListener('click',function(){ close(); var o2=document.getElementById('psStorageOptimize'); if(o2)o2.click(); });
-      }).catch(function(e){ alert('진단을 만들지 못했어요: '+(e&&e.message||e)); });
+      }).catch(function(e){ psFailAlert('진단을 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.',e,'diag'); });
     });
   })();
   /* ── 2.465 · 팀 기록(판 역사) — 사용자 "로그를 남겨서 그쪽으로 가거나 되돌리거나" ──────
@@ -3961,9 +4022,14 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     if(pushNotice&&view.complete&&Number(state.at)>pushNotice.at)pushNotice=null;
     if(pushInFlight)return autosaveView({kind:'busy'});
     if(view.kind==='bad')return view;
-    return pushNotice?pushNotice.view:view;
+    var out=pushNotice?pushNotice.view:view;
+    /* 3.038 — 작전판에 «보드 저장»을 누르지 않은 변경이 있으면 «저장됨» 대신 그것을 말한다(피드백 UX-1 — 안 한 저장 위에 «● 저장됨»이 떠 있었다).
+       오류·저장 중·보관(held)이 먼저다. 보드가 boardDirty 로 알려 주고(message 수신부), 보드 프레임이 새로 열리면(load) false 로 돌아간다. */
+    if(window.__psBoardDirty&&scope&&out.kind!=='bad'&&out.kind!=='busy'&&out.kind!=='held')return {kind:'pending',text:'보드 · 저장 전',detail:'작전판에 저장하지 않은 변경이 있어요. 보드 화면의 «보드 저장»을 누르면 저장돼요. 그전에도 이 기기에는 초안으로 남아 있어요.',action:'',attention:true,complete:false};
+    return out;
   }
   window.__psAutosaveView=saveView;
+  try{var _fbd=document.getElementById('fBoard');if(_fbd)_fbd.addEventListener('load',function(){ var chg=false; try{ var bw=_fbd.contentWindow; chg=!!(bw&&typeof bw.boardManualChanged==='function'&&bw.boardManualChanged()); }catch(_){} if(!!window.__psBoardDirty!==chg){window.__psBoardDirty=chg;try{refreshPushState();}catch(_){}} });   /* 3.038 리뷰 — 보드의 load 는 첫 편집보다 늦을 수 있다: 무조건 끄지 않고 보드의 실제 상태를 읽는다(about:blank 면 false) */}catch(_){}
   var recoveryButton=document.getElementById('psRecoveryOpen');
   if(recoveryButton)recoveryButton.addEventListener('click',function(){
     try{if(window.PSDataReview&&PSDataReview.recovery){PSDataReview.recovery();return;}}catch(_){}
@@ -4218,7 +4284,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   d.addEventListener('click',function(){
     if(!fileDataUnlocked(true))return;
     if(window.PSTeamFiles&&PSTeamFiles.active&&PSTeamFiles.active()){
-      PSTeamFiles.exportCurrent().catch(function(e){alert('파일을 저장하지 못했습니다.\n\n'+String(e&&e.message||e||'저장 실패'));});
+      PSTeamFiles.exportCurrent().catch(function(e){psFailAlert('파일을 저장하지 못했어요. 자료는 그대로예요 — 기기의 저장 공간을 확인하고 다시 시도해 주세요.',e,'file_export');});
       return;
     }
     var ctx=backupContext(),data=Object.create(null),localData=Object.create(null);
@@ -4259,8 +4325,8 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   function _makeBackup(data,ctx){
     if(!fileDataUnlocked(true))return;
     var now=backupContext();
-    if(ctx&&now.seal!==ctx.seal){alert('Backup stopped because the account or team changed.');return;}
-    if(!ctx||!ctx.uid||!ctx.wid||now.uid!==ctx.uid||now.wid!==ctx.wid){alert('백업 중 계정이나 팀이 바뀌어 파일 생성을 중단했습니다.');return;}
+    /* 3.039 — 영어 경고창 하나와 한국어 경고창 하나가 같은 일을 말했다(피드백 CP-20) — 한 문장으로 */
+    if((ctx&&now.seal!==ctx.seal)||!ctx||!ctx.uid||!ctx.wid||now.uid!==ctx.uid||now.wid!==ctx.wid){alert('백업 중에 계정이나 팀이 바뀌어 파일 만들기를 멈췄어요.\n\n원래 팀으로 돌아가 다시 시도해 주세요.');return;}
     var payload={type:'process-studio-backup',version:2,date:new Date().toISOString(),ownerUid:ctx.uid,workspaceId:ctx.wid,data:data};
     var json=JSON.stringify(payload);
     var dt=new Date(),p=function(n){return (n<10?'0':'')+n;};
@@ -4290,231 +4356,6 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     if(bw.__psVaultTest){ bw.__psVaultTest().then(function(v){ finish((v.ok?'✓ ':'✗ ')+'보관함 저장 왕복'+(v.ok?'':' — '+(v.why||''))); },function(){ finish('✗ 보관함 저장 왕복 — 실패'); }); }
     else finish('· 보관함 테스트 없음');
   }catch(e){ alert('점검 실행 실패'); } }); }catch(_){}
-  /* 1.641 — 8/8 일정 사고 전용 복구 파일.
-     일반 백업 병합은 기존 값을 덮지 않고 IndexedDB도 고치지 않으므로 이 사고에는 쓸 수 없다.
-     검증된 마지막 동기화본 두 개만 별도 형식으로 받아, 현재 일정과 연결 경기만 복구한다. */
-  var REC1641_ID='schedule-20260808-v1';
-  var REC1641_BACKUP_SHA='a010afd92cffc0e230da1aecea1607f749ba97221847db5a4c231097c07dc67d';
-  var REC1641_SCHEDULE_SHA='e979536eacaa2791cf4f51770a961de85d57e7d5a03af59bd3668cc02a1d6dab';
-  var REC1641_MATCHES_SHA='2b7959f1a980c4e387e02a727b7ecd38cd76c69874ded90922c2fff5412a7ddf';
-  function rec1641Fail(msg){var e=new Error(msg||'recovery validation failed');e.name='PSRecoveryError';throw e;}
-  function rec1641Ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-  function rec1641HasMatch(day){var b=day&&day.board||{};return !!(day&&(day.match||b.sched==='경기'||b.type==='경기'||b.kind==='match'));}
-  function rec1641Opponent(day){
-    day=day||{};var m=day.match||{},b=day.board||{},md=m.data||m.details||{},bd=b.data||b.details||{};
-    var a=[m.opp,m.opponent,m.opponentName,m.vs,m.team,m.awayTeam,m.homeTeam,m.name,m.title,
-      md.opp,md.opponent,md.opponentName,md.vs,md.team,md.name,md.title,
-      b.opp,b.opponent,b.opponentName,b.vs,b.team,b.awayTeam,b.homeTeam,b.title,b.label,
-      bd.opp,bd.opponent,bd.opponentName,bd.vs,bd.team,bd.name,bd.title,
-      day.opp,day.opponent,day.opponentName,day.vs,day.awayTeam,day.homeTeam,day.title];
-    for(var i=0;i<a.length;i++){var s=String(a[i]==null?'':a[i]).replace(/\s+/g,' ').trim();if(s&&s!=='상대 미정'&&s!=='새 경기')return s;}
-    return '';
-  }
-  function rec1641Time(day){day=day||{};var m=day.match||{},b=day.board||{};return String(m.time||m.kickoff||b.time||b.kickoff||day.time||'').trim();}
-  function rec1641Sha(raw){
-    if(!window.crypto||!crypto.subtle||!window.TextEncoder)return Promise.reject(new Error('이 브라우저에서는 복구 파일 해시를 검증할 수 없습니다'));
-    return crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(raw))).then(function(buf){
-      return Array.prototype.map.call(new Uint8Array(buf),function(x){return x.toString(16).padStart(2,'0');}).join('');
-    });
-  }
-  function rec1641ScheduleMap(doc){
-    if(!doc||doc.anchorMonday!=='2026-08-03'||doc.wk!==0||!doc.weeks||typeof doc.weeks!=='object')rec1641Fail('일정 기준일이 정답 본과 다릅니다');
-    var anchor=new Date(2026,7,3),mids={},map={};
-    Object.keys(doc.weeks).forEach(function(k){
-      var wn=parseInt(k,10);if(String(wn)!==String(k))return;
-      var arr=doc.weeks[k];if(!Array.isArray(arr)||arr.length!==7)rec1641Fail('주간 일정 형식이 올바르지 않습니다');
-      arr.forEach(function(day,di){
-        if(day&&day.mid){var mid0=String(day.mid);if(mids[mid0])rec1641Fail('일정 경기 ID가 중복되어 있습니다');mids[mid0]=1;}
-        if(!rec1641HasMatch(day))return;
-        var mid=String(day&&day.mid||'');if(!mid)rec1641Fail('경기 칸에 연결 ID가 없습니다');
-        var sid='sched:'+mid;if(map[sid])rec1641Fail('연결 경기가 중복되어 있습니다');
-        var dt=new Date(anchor);dt.setDate(dt.getDate()+wn*7+di);
-        map[sid]={date:rec1641Ymd(dt),opponent:rec1641Opponent(day),time:rec1641Time(day),mid:mid};
-      });
-    });
-    var ids=Object.keys(map),target=map['sched:mms8c3tb71cy64v'];
-    if(ids.length!==6||Object.keys(mids).length!==7)rec1641Fail('정답 일정의 경기 수가 검증값과 다릅니다');
-    if(!target||target.date!=='2026-08-08'||target.opponent!=='솔티로 치바 U18')rec1641Fail('8월 8일 솔티로 경기를 확인하지 못했습니다');
-    return map;
-  }
-  function rec1641CanonicalSchedule(doc){
-    function clean(v){
-      if(Array.isArray(v))return v.map(clean);
-      if(!v||typeof v!=='object')return v;
-      var out={};Object.keys(v).sort().forEach(function(k){
-        if(k==='wk'||k==='dayIdx'||k==='scheduleRev'||k==='editedAt'||k==='editedBy')return;
-        out[k]=clean(v[k]);
-      });return out;
-    }
-    return JSON.stringify(clean(doc));
-  }
-  function rec1641BaseMatches(doc,map){
-    if(!doc||!Array.isArray(doc.matches))rec1641Fail('연결 경기 문서 형식이 올바르지 않습니다');
-    var out={};
-    doc.matches.forEach(function(m){
-      var sid=String(m&&m.sourceId||'');if(!map[sid])rec1641Fail('정답 경기 문서에 일정 밖 경기가 있습니다');
-      if(out[sid])rec1641Fail('정답 경기 문서에 중복 연결이 있습니다');
-      var x=map[sid];
-      if(String(m.date||'')!==x.date||String(m.opponent||'')!==x.opponent||String(m.time||'')!==x.time)rec1641Fail('일정과 경기 문서의 날짜·상대·시간이 다릅니다');
-      out[sid]=m;
-    });
-    if(Object.keys(out).length!==Object.keys(map).length)rec1641Fail('일정과 연결 경기 수가 다릅니다');
-    return out;
-  }
-  function rec1641Validate(pkg){
-    if(!fileDataUnlocked(true))return Promise.reject(new Error('로그인과 팀 데이터 준비가 필요합니다'));
-    var r=pkg&&pkg.recovery;
-    if(!pkg||pkg.type!=='process-studio-recovery'||pkg.version!==1||!r||r.id!==REC1641_ID||r.kind!=='schedule-linked-matches'||r.schema!==1)rec1641Fail('이 앱용 복구 파일이 아닙니다');
-    if(['1.641','1.642','1.643','1.644','1.645','1.646','1.647','1.648','1.649','1.650','1.651','1.652','1.653','1.654','1.655','1.656','1.657','1.658','1.659'].indexOf(window.PS_BUILD)<0||r.requiresBuild!=='1.641')rec1641Fail('PROCESS STUDIO 1.641 이상에서만 적용할 수 있습니다');
-    if(r.sourceBackupSha256!==REC1641_BACKUP_SHA||!r.hashes||r.hashes.schedule!==REC1641_SCHEDULE_SHA||r.hashes.matches!==REC1641_MATCHES_SHA)rec1641Fail('복구 파일 출처 정보가 다릅니다');
-    if(typeof r.scheduleRaw!=='string'||typeof r.matchesRaw!=='string')rec1641Fail('복구 본문이 없습니다');
-    return Promise.all([rec1641Sha(r.scheduleRaw),rec1641Sha(r.matchesRaw)]).then(function(h){
-      if(h[0]!==REC1641_SCHEDULE_SHA||h[1]!==REC1641_MATCHES_SHA)rec1641Fail('복구 파일이 변경되어 적용을 중단했습니다');
-      var schedule=null,baseMatches=null;try{schedule=JSON.parse(r.scheduleRaw);baseMatches=JSON.parse(r.matchesRaw);}catch(_){rec1641Fail('복구 본문을 읽을 수 없습니다');}
-      var map=rec1641ScheduleMap(schedule),baseBy=rec1641BaseMatches(baseMatches,map),ex=r.expected||{};
-      if(ex.anchorMonday!=='2026-08-03'||ex.targetDate!=='2026-08-08'||ex.targetMid!=='mms8c3tb71cy64v'||ex.targetOpponent!=='솔티로 치바 U18'||ex.linkedMatches!==6)rec1641Fail('복구 검증표가 다릅니다');
-      return {r:r,schedule:schedule,scheduleRaw:r.scheduleRaw,scheduleCanon:rec1641CanonicalSchedule(schedule),baseMatches:baseMatches,baseBy:baseBy,map:map};
-    });
-  }
-  function rec1641MergeMatches(currentRaw,v){
-    var cur=null;
-    try{cur=currentRaw?JSON.parse(currentRaw):JSON.parse(v.r.matchesRaw);}catch(_){rec1641Fail('현재 경기 자료를 읽을 수 없습니다');}
-    if(!cur||!Array.isArray(cur.matches))rec1641Fail('현재 경기 자료 형식이 올바르지 않습니다');
-    var by={};cur.matches.forEach(function(m){var sid=String(m&&m.sourceId||'');if(!sid)return;(by[sid]||(by[sid]=[])).push(m);});
-    Object.keys(v.map).forEach(function(sid){
-      var a=by[sid]||[];if(a.length>1)rec1641Fail('현재 경기 자료에 같은 일정 연결이 두 개 있어 자동 복구를 중단했습니다');
-      var m=a[0];
-      if(!m){m=JSON.parse(JSON.stringify(v.baseBy[sid]));cur.matches.push(m);by[sid]=[m];}
-      var x=v.map[sid];m.sourceId=sid;m.date=x.date;m.opponent=x.opponent;m.time=x.time;
-    });
-    rec1641CheckMerged(cur,v.map);
-    return JSON.stringify(cur);
-  }
-  function rec1641CheckMerged(doc,map){
-    if(!doc||!Array.isArray(doc.matches))rec1641Fail('복구된 경기 자료 형식이 올바르지 않습니다');
-    var got={};doc.matches.forEach(function(m){
-      var sid=String(m&&m.sourceId||'');if(!map[sid])return;
-      if(got[sid])rec1641Fail('복구된 경기 자료에 중복 연결이 있습니다');
-      var x=map[sid];if(String(m.date||'')!==x.date||String(m.opponent||'')!==x.opponent||String(m.time||'')!==x.time)rec1641Fail('복구된 경기의 날짜·상대·시간이 맞지 않습니다');
-      got[sid]=1;
-    });
-    if(Object.keys(got).length!==Object.keys(map).length)rec1641Fail('복구된 경기 연결이 빠졌습니다');
-    return true;
-  }
-  function rec1641Sync(reason){
-    var tries=0;
-    function run(){
-      if(!window.PSSync||!PSSync.syncNow)return Promise.resolve({noauth:1});
-      return Promise.resolve(PSSync.syncNow(reason)).then(function(res){
-        if(res&&res.skip&&tries++<20)return new Promise(function(ok){setTimeout(ok,500);}).then(run);
-        return res||{};
-      });
-    }
-    return run();
-  }
-  function rec1641RestoreLocal(scheduleRaw,matchesRaw){
-    return Promise.all([window.storage.set('process_coach_v1',scheduleRaw),window.storage.set('cs_team_matches_v1',matchesRaw)]).then(function(){
-      localStorage.setItem('process_coach_v1',scheduleRaw);localStorage.setItem('cs_team_matches_v1',matchesRaw);
-    });
-  }
-  function rec1641BaseKey(){var wid='';try{wid=localStorage.getItem('ps_active_ws')||'';}catch(_){}return 'ps_sync_base_'+(wid?(wid+'_'):'')+'process_coach_v1';}
-  function rec1641BaseRead(){
-    var key=rec1641BaseKey();
-    if(window.PSStorage&&PSStorage.auxGet)return PSStorage.auxGet(key);
-    try{return Promise.resolve(localStorage.getItem(key));}catch(_){return Promise.resolve(null);}
-  }
-  function rec1641BaseWrite(v){
-    var key=rec1641BaseKey();
-    if(window.PSStorage&&PSStorage.auxSet)return PSStorage.auxSet(key,v);
-    try{if(v==null)localStorage.removeItem(key);else localStorage.setItem(key,v);return Promise.resolve(true);}
-    catch(e){return Promise.reject(e);}
-  }
-  function psApplyScheduleRecovery(pkg){
-    if(!fileDataUnlocked(true))return Promise.reject(new Error('로그인과 팀 데이터 준비가 필요합니다'));
-    var oldSchedule=null,oldMatches=null,oldLocalSchedule=null,oldLocalMatches=null,oldBase=null,backupKey='',landed=false,mergedRaw='';
-    return rec1641Validate(pkg).then(function(v){
-      if(localStorage.getItem('ps_active_ws')!==v.r.workspaceId)rec1641Fail('백업을 만든 풋볼A 팀을 먼저 선택해 주세요');
-      if(!window.storage||!window.storage.get||!window.storage.set)rec1641Fail('안전 저장소를 열 수 없습니다');
-      return Promise.all([window.storage.get('process_coach_v1'),window.storage.get('cs_team_matches_v1'),rec1641BaseRead()]).then(function(rows){
-        oldSchedule=rows[0]&&rows[0].value||null;oldMatches=rows[1]&&rows[1].value||null;
-        oldBase=rows[2]==null?null:String(rows[2]);
-        try{oldLocalSchedule=localStorage.getItem('process_coach_v1');oldLocalMatches=localStorage.getItem('cs_team_matches_v1');}catch(_){}
-        /* 검증된 1.641 본문은 그대로 검증한 뒤, 적용할 때만 1.642 단조 판본을 붙인다.
-           서버에 rev가 생긴 뒤에도 복구 파일이 '구버전 문서'로 거부되지 않게 한다. */
-        var oldDoc=null;try{oldDoc=JSON.parse(oldSchedule||oldLocalSchedule||'null');}catch(_){}
-        var applied=JSON.parse(v.r.scheduleRaw);
-        /* 서버 확정 rev는 유지한다. sync가 현재 서버 rev를 확인한 뒤 정확히 +1로 커밋한다. */
-        applied.scheduleRev=Math.max(+(oldDoc&&oldDoc.scheduleRev)||0,+applied.scheduleRev||0);
-        applied.editedAt=Date.now();
-        try{applied.editedBy=localStorage.getItem('ps_display_name')||applied.editedBy||'';}catch(_){}
-        delete applied.wk;delete applied.dayIdx;
-        v.schedule=applied;v.scheduleRaw=JSON.stringify(applied);
-        mergedRaw=rec1641MergeMatches(oldMatches,v);
-        return Promise.resolve(window.PSSnapshots&&PSSnapshots.make?PSSnapshots.make(true):null).catch(function(){}).then(function(){return v;});
-      });
-    }).then(function(v){
-      backupKey='ps_schedule_recovery_1641_'+Date.now();
-      var backupRaw=JSON.stringify({type:'process-studio-pre-recovery',version:1,at:Date.now(),workspaceId:v.r.workspaceId,schedule:oldSchedule,matches:oldMatches,localSchedule:oldLocalSchedule,localMatches:oldLocalMatches,syncBaseSchedule:oldBase});
-      return window.storage.set(backupKey,backupRaw).then(function(){return window.storage.get(backupKey);}).then(function(saved){
-        if(!saved||saved.value!==backupRaw)rec1641Fail('복구 전 백업을 확인하지 못했습니다');
-        /* 3-way 병합 기준은 복구 직전 오염본으로 둔다. 서버가 같은 판이면 정답 로컬이 확실히 이긴다. */
-        if(oldSchedule!=null)return rec1641BaseWrite(oldSchedule).then(function(){return rec1641RestoreLocal(v.scheduleRaw,mergedRaw);}).then(function(){return v;});
-        return rec1641RestoreLocal(v.scheduleRaw,mergedRaw).then(function(){return v;});
-      });
-    }).then(function(v){
-      return Promise.all([window.storage.get('process_coach_v1'),window.storage.get('cs_team_matches_v1')]).then(function(rows){
-        if(!rows[0]||rows[0].value!==v.scheduleRaw||!rows[1]||rows[1].value!==mergedRaw)rec1641Fail('복구 저장 확인에 실패했습니다');
-        if(localStorage.getItem('process_coach_v1')!==v.scheduleRaw||localStorage.getItem('cs_team_matches_v1')!==mergedRaw)rec1641Fail('화면 저장 확인에 실패했습니다');
-        landed=true;
-        /* SHA·팀·연결 경기까지 확인한 전용 복구다. 일반 삭제처럼 다시 사람에게 묻지 않고,
-           지금 검증한 두 값에만 출고 승인 해시를 찍는다. 다른 보류 항목은 건드리지 않는다. */
-        var h=window.PSSync&&PSSync.hold;
-        if(!h||!h.approveExact)rec1641Fail('검증된 복구를 동기화할 안전장치를 열 수 없습니다');
-        return Promise.all([
-          h.approveExact('process_coach_v1',v.scheduleRaw),
-          h.approveExact('cs_team_matches_v1',mergedRaw)
-        ]).then(function(ok){
-          if(ok[0]!==true||ok[1]!==true)rec1641Fail('복구 확인 뒤 자료가 바뀌어 동기화를 중단했습니다');
-          return rec1641Sync('schedule-1641-recovery');
-        });
-      }).then(function(syncResult){
-        if(syncResult&&(syncResult.offline||syncResult.noauth||syncResult.skip||syncResult.error||syncResult.scheduleDeferred))return {v:v,localOnly:true,syncResult:syncResult};
-        return rec1641Sync('schedule-1641-verify').then(function(verifyResult){
-          var localOnly=!!(verifyResult&&(verifyResult.offline||verifyResult.noauth||verifyResult.skip||verifyResult.error||verifyResult.scheduleDeferred));
-          return {v:v,localOnly:localOnly,syncResult:verifyResult};
-        });
-      });
-    }).then(function(state){
-      return Promise.all([window.storage.get('process_coach_v1'),window.storage.get('cs_team_matches_v1')]).then(function(rows){
-        var sr=rows[0]&&rows[0].value,mr=rows[1]&&rows[1].value;
-        var finalDoc=null;try{finalDoc=JSON.parse(sr||'null');}catch(_){}
-        return Promise.resolve().then(function(){
-          if(!finalDoc||rec1641CanonicalSchedule(finalDoc)!==state.v.scheduleCanon){
-            /* 서버에 옛 판이 남아 다시 들어온 경우, 검증된 기기 본을 한 번 더 세우고 대기로 남긴다. */
-            return rec1641RestoreLocal(state.v.scheduleRaw,mergedRaw).then(function(){state.localOnly=true;return state;});
-          }
-          var md=null;try{md=JSON.parse(mr);}catch(_){rec1641Fail('동기화 뒤 경기 자료를 읽을 수 없습니다');}
-          rec1641CheckMerged(md,state.v.map);return state;
-        });
-      });
-    }).then(function(state){
-      try{localStorage.setItem('ps_schedule_recovery_1641_done',JSON.stringify({at:Date.now(),id:REC1641_ID,backupKey:backupKey,workspaceId:state.v.r.workspaceId,localOnly:!!state.localOnly}));}catch(_){}
-      return {ok:true,localOnly:!!state.localOnly,backupKey:backupKey};
-    }).catch(function(err){
-      if(!landed&&backupKey&&window.storage){
-        var jobs=[];
-        if(oldSchedule!=null)jobs.push(window.storage.set('process_coach_v1',oldSchedule));
-        if(oldMatches!=null)jobs.push(window.storage.set('cs_team_matches_v1',oldMatches));
-        try{
-          if(oldLocalSchedule==null)localStorage.removeItem('process_coach_v1');else localStorage.setItem('process_coach_v1',oldLocalSchedule);
-          if(oldLocalMatches==null)localStorage.removeItem('cs_team_matches_v1');else localStorage.setItem('cs_team_matches_v1',oldLocalMatches);
-        }catch(_){}
-        jobs.push(rec1641BaseWrite(oldBase));
-        return Promise.all(jobs).catch(function(){}).then(function(){throw err;});
-      }
-      throw err;
-    });
-  }
   /* 불러오기 병합 — 덮어쓰지 않고 기존 데이터 위에 추가.
      보관함(항목)·폴더·폴더태그·훈련세션은 합집합, 그 외 키는 로컬이 비어 있을 때만 채움(기존 설정·작업 보존) */
   function psMergeRestore(bk,expectedWid,ownerHint){
@@ -4984,31 +4825,21 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
           PSTeamFiles.importPackage(p).then(function(out){
             if(!out||!out.cancelled){
               if(out&&out.localMismatch)alert((out.label||'팀 자료')+' 파일 원문이 이 기기에 그대로 유지되지 않아 가져오기를 완료하지 못했습니다.\n\n인터넷 연결과 선택한 팀을 확인한 뒤 같은 파일로 다시 시도해 주세요.');
-              else if(out&&out.localOnly)alert((out.label||'팀 자료')+' 파일을 이 기기에 가져왔습니다.\n\n팀 서버 동기화는 대기 중입니다. 인터넷 연결을 확인한 뒤 설정의 “지금 동기화”를 눌러 주세요.');
+              else if(out&&out.localOnly)alert((out.label||'팀 자료')+' 파일을 이 기기에 가져왔어요.\n\n팀에는 아직 올라가지 않았어요 — 인터넷 연결을 확인한 뒤 앱 설정 › 데이터 › «저장 확인»을 눌러 주세요.');
               else alert((out&&out.label||'팀 자료')+' 파일을 가져오고 팀과 동기화했습니다.');
               (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());
             }
             else{u.disabled=false;u.textContent='파일 가져오기';}
           }).catch(function(e){
             if(e&&e.psWorkspaceChanged)alert('파일을 가져오는 동안 선택한 팀이 바뀌어 중단했습니다.\n\n원래 팀을 다시 선택한 뒤 자료를 확인하고 다시 시도해 주세요.');
-            else if(e&&e.psRestoreFailed)alert('파일 가져오기를 중단했지만 원래 자료의 자동 복구도 확인하지 못했습니다.\n\n이 기기에서 계속 편집하지 말고 관리자에게 알려 주세요.\n\n'+String(e.message||e));
-            else alert('파일을 가져오지 못했습니다. 기존 자료는 그대로 보존했습니다.\n\n'+String(e&&e.message||e||'검증 실패'));
+            else if(e&&e.psRestoreFailed)psFailAlert('파일 가져오기를 멈췄지만, 원래 자료로 되돌린 것도 확인하지 못했어요.\n\n이 기기에서 더 고치지 말고 바로 알려 주세요.',e,'file_import_restore');
+            else psFailAlert('파일을 가져오지 못했어요. 지금 자료는 그대로예요.',e,'file_import');
             u.disabled=false;u.textContent='파일 가져오기';
           });
           return;
         }
-        if(p&&p.type==='process-studio-recovery'){
-          psConfirm('검증된 8월 7일 동기화본으로 일정과 연결 경기 날짜를 복구합니다.\n\n· 8월 8일: 솔티로 치바 U18\n· 현재 경기 준비·리뷰 내용과 수동 경기는 유지\n· 적용 직전 원본은 별도 보관\n\n계속할까요?',function(){
-            u.disabled=true;u.textContent='복구 중…';
-            psApplyScheduleRecovery(p).then(function(out){
-              if(out.localOnly)alert('이 기기의 8월 8일 일정은 복구했습니다.\n\n서버 동기화는 대기 상태입니다. 인터넷 연결을 확인한 뒤 앱의 “지금 동기화”를 한 번 눌러 주세요.');
-              else alert('복구 완료 — 8월 8일 솔티로 치바 U18 일정과 연결 경기를 확인했습니다.');
-              (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());
-            }).catch(function(e){
-              alert('복구를 적용하지 못했습니다. 원본은 그대로 보존했습니다.\n\n'+String(e&&e.message||e||'검증 실패'));
-              u.disabled=false;u.textContent='가져오기';
-            });
-          });
+        if(p&&p.type==='process-studio-recovery'){   /* 3.038 — 2026-08-08 일정 사고 전용 복구 파일(1.641). 그 복구는 끝났고 적용 코드는 걷었다(피드백 TD-5) */
+          alert('이 파일은 2026년 8월 일정 복구 전용 파일이라 더 이상 가져오지 않습니다.\n\n일반 백업 파일(앱 설정 › 데이터 › «파일 저장»으로 만든 파일)을 선택해 주세요.');
           return;
         }
         if(!p||p.type!=='process-studio-backup'||!p.data)throw new Error('bad');
@@ -5021,7 +4852,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
             (window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());
           }).catch(function(e){
             if(e&&e.psWorkspaceChanged)alert('백업을 만든 팀과 지금 선택한 팀이 달라 복구를 중단했습니다.\n\n백업을 만든 팀으로 전환한 뒤 다시 시도해 주세요. 현재 팀에는 더 쓰지 않았습니다.');
-            else alert('백업을 복구하지 못했습니다. 확인되지 않은 항목은 적용 완료로 처리하지 않았습니다.\n\n'+String(e&&e.message||e||'복구 실패'));
+            else psFailAlert('백업을 되살리지 못했어요. 확인되지 않은 항목은 적용하지 않았어요 — 지금 자료는 그대로예요.',e,'backup_restore');
             u.disabled=false;u.textContent='파일 가져오기';
           });
         });
@@ -5030,6 +4861,20 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     r.readAsText(file);
     f.value='';
   });
+  /* 3.052 — 팀 전체 내보내기(team-files.js exportAll): 팀 공간 · 임원(소유자 · 임원)에게만 보인다. 앱 설정을 열 때마다 다시 본다 */
+  (function(){
+    var btn=document.getElementById('bkAll');if(!btn)return;
+    function sync(){ var on=false; try{ var w=window.PSSync&&PSSync.activeWsObj&&PSSync.activeWsObj(); on=!!(w&&w.kind==='team'&&PSSync.idpLink&&PSSync.idpLink.can()&&window.PSTeamFiles&&PSTeamFiles.exportAll); }catch(_){} btn.style.display=on?'':'none'; }
+    document.addEventListener('click',function(e){ if(e.target&&e.target.closest&&e.target.closest('#gearBtn,#gearWrap,[data-gp-go="data"]'))setTimeout(sync,60); },true);
+    window.addEventListener('ps-sync-state',sync); setTimeout(sync,1500);
+    btn.onclick=function(){
+      if(!fileDataUnlocked(true))return;
+      btn.disabled=true; var t=btn.textContent; btn.textContent='내보내는 중…';
+      PSTeamFiles.exportAll().then(function(r){ btn.textContent='내려받았어요 ✓'; setTimeout(function(){ btn.textContent=t; btn.disabled=false; },2500);
+        try{ if(window.PSSync&&PSSync.event)PSSync.event('team_export',{status:'ok',feature:'app',meta:{stage:'all',source:String(r&&r.keys||0)}}); }catch(_){} })
+      .catch(function(e){ btn.textContent=t; btn.disabled=false; psFailAlert('팀 전체 내보내기를 하지 못했어요.',e,'team_export'); });
+    };
+  })();
   /* v319 — 내 데이터 삭제(개인정보 파기 요청): 서버 RPC ps_delete_my_data + 이 기기 데이터 삭제.
      '삭제'를 직접 입력해야 실행. 백업 파일을 먼저 받도록 강하게 권한다. */
   (function(){
@@ -5073,7 +4918,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
         });
       }).catch(function(e){
         btn.disabled=false;btn.textContent='내 데이터 삭제';
-        alert('서버 삭제에 실패했어요('+(e&&e.message||'네트워크')+').\n관리자에게 삭제를 요청해 주세요 — 이 기기 데이터는 지우지 않았습니다.');
+        psFailAlert('서버에서 지우지 못했어요. 이 기기의 자료도 지우지 않았어요 — 인터넷 연결을 확인하고 다시 시도해 주세요.',e,'data_delete');
       });
       }   /* run() 끝 — 1.847 */
     };
@@ -5328,9 +5173,15 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     if(!sid&&location.hash.indexOf('#s=')===0)sid=location.hash.slice(3);
     if(sid&&/^[a-z0-9]{6,16}$/.test(sid)){
       var cfg=window.PS_SYNC||{};
-      fetch(cfg.url+'/rest/v1/ps_share?id=eq.'+encodeURIComponent(sid)+'&select=v',{headers:{apikey:cfg.anonKey}})
-        .then(function(r){return r.ok?r.json():[];})
-        .then(function(rows){ if(!rows||!rows[0]||!rows[0].v){alert('공유 링크를 찾을 수 없어요 — 지워졌거나 아직 올라가지 않았어요');return;} return unzips(rows[0].v).then(showShared); })
+      /* 3.039 — 아는 id 한 건만 서버 함수로 받는다(ps_share_get · migrations/20261015_share_get). 테이블을 직접 읽으면 익명이 모든 공유본을
+         나열할 수 있었다(보안 점검 SEC-4). 함수가 아직 없으면(404 — 마이그레이션 전) 옛 읽기로 한 번 돌아간다. */
+      var H={apikey:cfg.anonKey,'Content-Type':'application/json'};
+      fetch(cfg.url+'/rest/v1/rpc/ps_share_get',{method:'POST',headers:H,body:JSON.stringify({p_id:sid})})
+        .then(function(r){
+          if(r.status===404)return fetch(cfg.url+'/rest/v1/ps_share?id=eq.'+encodeURIComponent(sid)+'&select=v',{headers:{apikey:cfg.anonKey}}).then(function(r2){return r2.ok?r2.json():[];}).then(function(rows){return rows&&rows[0]&&rows[0].v||null;});
+          return r.ok?r.json():null;
+        })
+        .then(function(v){ if(!v||typeof v!=='string'){alert('공유 링크를 찾을 수 없어요 — 지워졌거나 아직 올라가지 않았어요');return;} return unzips(v).then(showShared); })
         .catch(function(){ alert('공유 링크를 여는 중 문제가 생겼어요 — 네트워크를 확인해 주세요'); });
     } else if(location.hash.indexOf('#share=')===0){
       unzips(location.hash.slice(7)).then(showShared).catch(function(){});
@@ -8510,12 +8361,16 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
 })();
 </script>
 
-<link rel="stylesheet" href="ui-grammar.css?v=3.026"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.054"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2598-rail">/* 2.598 — 셸 레일 마무리: 활성 필 모서리 6 → 10, 레일 아이콘 19 → 16 stroke 2(위 다섯 + 아래 로그인·앱 설정·보드 설정), 팀 내비 버튼은 팀 열림 상태에서도 32(design-v2:489 가 30 으로 내리던 것). 레일 폭은 실측 96~104(figma-premium)라 제안의 «64→72» 는 해당 없음. «보드 설정» 은 셸 안에서 유일한 문(도크 사본은 셸에서 숨김)이라 남긴다. */
 @media (min-width:768px){
 html.ps-page-app #appSeg#appSeg button:not(#_):not(#__){border-radius:10px!important}
 html.ps-page-app #appSeg#appSeg button svg:not(#_):not(#__),html.ps-page-app .appbar .acct-btn svg:not(#_):not(#__),html.ps-page-app .appbar .gearbtn svg:not(#_):not(#__),html.ps-page-app .appbar #psBoardMoreBtn svg:not(#_):not(#__){width:16px!important;height:16px!important;stroke-width:2!important}
 html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button:not(#_):not(#__){min-height:32px!important}
+}
+/* 3.039 — 손가락 기기(아이패드)는 팀 탭도 44px(피드백 DS-2 — 47×32 였다). 팀 줄 높이(56px) 안에 들어간다 */
+@media (min-width:768px) and (pointer:coarse){
+html.ps-page-app body.ps-team-open nav#teamNav .tn-seg button:not(#_):not(#__):not(#___){min-height:44px!important}
 }
 </style>
 </body>

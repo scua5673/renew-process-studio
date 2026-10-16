@@ -15,7 +15,7 @@ const implementation=[
   part('function tmFormSlots(key){','function svgPoint('),
   part('const TM_FORMS={','const SHIRT_D='),
   part('function tbXYStore()','function tbGroupOf('),
-  part('function tbSlotsCompute()','/* 2.761')
+  part('function tbSlotsCompute()','function tbCardSlotsTm()')
 ].join('\n')+'\nthis.api={tbCards,tbAdoptForm,tbSlotsCompute,tbCardPos,tbHomeXY,tbDefaultMap};';
 const AB=['GK','LB','LCB','RCB','RB','DM','CM','AM','LW','RW','CF'];
 function setup({form='433',cards=null,xy=null,extra=[]}={}){

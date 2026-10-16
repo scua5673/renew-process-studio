@@ -12,7 +12,7 @@ function fixture(players){
   Object.assign(c,{ITEMS_ACTIVE:true,ITEMP:'sq:',ITEMS_HOLD:'ps_items_hold_v1',ITEMS_IDX:'ps_items_idx_v1',_itemConflicts:[],KEYS:[MAIN,PD],KEY:MAIN,PDKEY:PD,TKEY:'cs_scout_targets_v1',PS_BUILD:'2.809',scMainMigrationPending:false,
     PSRosterOutbox:require('../studio/roster-outbox.js'),PSPerms:{canEdit:()=>true,role:()=> 'executive'},
     itemsServerCheck:async()=>true,itemsPushAllowed:()=>true,isItemKey:k=>k.startsWith('sq:'),idbBacked:k=>k.startsWith('sq:'),data:doc(players),
-    store:{get:k=>JSON.parse(h.local.get(k)||'null'),set(k,v){h.local.set(k,raw(v));saves.push({k,v:copy(v)});return true;}},
+    scoutStore:{get:k=>JSON.parse(h.local.get(k)||'null'),set(k,v){h.local.set(k,raw(v));saves.push({k,v:copy(v)});return true;}},
     evalMode:()=>'fifa',evalSetId:()=>'standard',canSeeTargets:()=>false,rosterKeepSave(){},posAbbr:x=>x,plStatusOf:p=>p.status||'ok',psAct(){}});
   h.local.set('ps_sync_session',raw(c.getSess()));
   c.storage.conditionalGuardVersion=1;
@@ -99,7 +99,7 @@ for(const origin of ['profile','team row'])test(origin+' confirmed deletion remo
 });
 test('failed deletion-record save leaves the profile and roster intact before any item request',()=>{
   const h=fixture([p('a')]),button={};let confirmed;Object.assign(h.c,{$:()=>button,psConfirm:(_text,fn)=>confirmed=fn,pl:h.c.data.players[0]});
-  vm.runInContext(section(scout,'  if($("plDelete"))$("plDelete").onclick=()=>{','  $("plName").value'),h.c);h.c.store.set=(k)=>k!==PD;button.onclick();confirmed();
+  vm.runInContext(section(scout,'  if($("plDelete"))$("plDelete").onclick=()=>{','  $("plName").value'),h.c);h.c.scoutStore.set=(k)=>k!==PD;button.onclick();confirmed();
   assert.equal(h.c.data.players.length,1);assert.equal(h.c._itemsActiveJobs.length,0);assert.equal(h.c.itemsWriteBusy(),false);
 });
 function deletionHandler(origin){
@@ -114,8 +114,8 @@ function deletionButton(h,origin,id){
 for(const origin of ['profile','team row','player list'])test(origin+' roster deletion does not save an untouched candidate document, even when candidate writes would fail',async()=>{
   const h=fixture([p('a'),p('deleted')]),candidate={...p('private','Private candidate'),type:'target',memo:'Unchanged candidate original'},tkey=h.c.TKEY;
   h.c.data.players.push(copy(candidate));h.c.canSeeTargets=()=>true;h.local.set(tkey,raw({v:1,players:[candidate],scoutRegistry:{source:'retained'}}));
-  const before=h.local.get(tkey),untouched=h.idb.get('sq:a'),write=h.c.store.set,piWrite=h.c.PSItems.writeReady,calls=[];
-  h.c.store.set=(k,v)=>{assert.notEqual(k,tkey,'unrelated candidate write would fail its current verification');return write(k,v);};
+  const before=h.local.get(tkey),untouched=h.idb.get('sq:a'),write=h.c.scoutStore.set,piWrite=h.c.PSItems.writeReady,calls=[];
+  h.c.scoutStore.set=(k,v)=>{assert.notEqual(k,tkey,'unrelated candidate write would fail its current verification');return write(k,v);};
   h.c.PSItems.writeReady=(players,options)=>{calls.push(copy({players,options}));return piWrite(players,options);};
   // The server-confirmed deletion target may not be in this tab's legacy index.
   h.local.set('ps_items_idx_v1:team-a',raw({a:h.c.hash(untouched)}));
