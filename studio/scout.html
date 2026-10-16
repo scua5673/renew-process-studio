@@ -18218,7 +18218,7 @@ function renderMB2(){
 }
 /* ── 리뷰: 준비 → 실행 확인 ── */
 /* ── 상대 분석 국면 보드(1.450) — 국면별 배치 + 프레임 애니메이션. 데이터 m.oppPB ── */
-/* 3.069 — 상대 분석 보드에 실제로 놓은 것(선수·그림)이 있나. 빈 뼈대(obEnsure)는 없는 것으로 본다 */
+/* 3.070 — 상대 분석 보드에 실제로 놓은 것(선수·그림)이 있나. 빈 뼈대(obEnsure)는 없는 것으로 본다 */
 function obHasContent(m){
   var pb=m&&m.oppPB, bs=(pb&&pb.boards)||{};
   return Object.keys(bs).some(function(k){ var b=bs[k]||{}; return (Array.isArray(b.frames)?b.frames:[]).some(function(f){ return mmBoardHas(f); }); });
@@ -20128,7 +20128,7 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
   var todo=[];
   if(m){ /* 2.181 — 경기 탭의 세 단계 그대로(사용자): 01 상대 분석 · 02 경기 준비 · 03 경기 리뷰. 완료는 그 단계의 필드에서 파생 */
     var has=function(v){ return !!(v&&String(typeof v==="object"?JSON.stringify(v):v).replace(/[\[\]{}"\s]/g,"")); };
-    var aDone=["oppAttack","oppDefense","oppAttackTransition","oppDefenseTransition","oppSetPlay","oppConclusion","oppNote"].some(function(k){return has(m[k]);})||obHasContent(m);   /* 3.069 — 경기를 열기만 해도 obEnsure 가 빈 국면 보드(공격 시·수비 시…)를 깔아 has(m.oppPB) 가 참이 됐다 → «다음 할 일»이 상대 분석을 건너뛰었다(코치 점검 10/16). 판에 선수·그림이 있을 때만 */
+    var aDone=["oppAttack","oppDefense","oppAttackTransition","oppDefenseTransition","oppSetPlay","oppConclusion","oppNote"].some(function(k){return has(m[k]);})||obHasContent(m);   /* 3.070 — 경기를 열기만 해도 obEnsure 가 빈 국면 보드(공격 시·수비 시…)를 깔아 has(m.oppPB) 가 참이 됐다 → «다음 할 일»이 상대 분석을 건너뛰었다(코치 점검 10/16). 판에 선수·그림이 있을 때만 */
     var pDone=has(m.briefing)||(m.fifaPlans||[]).length>0||!!m.prepPublished;   /* 2.971 — 명단(선발 11)은 더 정하지 않는다 */
     var st=matchStatusOf(m), rDone=(st==="review");
     /* 2.193 — 체크는 코치가 직접 누른다(m.ckDone, 경기별 저장). 자동 판정은 처음 값일 뿐. MD 라벨은 뺀다(사용자) */
@@ -20363,7 +20363,7 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
       return; }   /* 2.482 — 국면 상세 펼침 */
     var b=e.target.closest("[data-ck]"); if(!b)return; var k=b.dataset.ck;
     if(k==="session"){ teamHomeGoSchedule(); }
-    /* 3.069 — «세션 채우기 →»는 그 날 세션의 채우기 시트까지 연다(코치 점검 10/16: 주간 일정만 열려 한 번 더 눌러야 했고, 위 탭은 «오늘»에 머물렀다) */
+    /* 3.070 — «세션 채우기 →»는 그 날 세션의 채우기 시트까지 연다(코치 점검 10/16: 주간 일정만 열려 한 번 더 눌러야 했고, 위 탭은 «오늘»에 머물렀다) */
     else if(k==="fill"){ try{ var _fd=new Date(); _fd.setHours(0,0,0,0); _fd.setDate(_fd.getDate()+(window.__sessSel||0));
         var _fs=ckSession(window.__sessSel||0)||{};
         parent.postMessage({source:"scout",type:"openSchedule",date:_fd.getFullYear()+"-"+String(_fd.getMonth()+1).padStart(2,"0")+"-"+String(_fd.getDate()).padStart(2,"0"),fill:{slot:_fs.slot||"",at:Date.now()}},"*"); }catch(_){ teamHomeGoSchedule(); } }

@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.069';   // 3.069 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어가던 것 · 오늘 «세션 채우기 →»가 그 세션 시트까지 연다 · 주간 일정의 상대팀 이름이 잘리지 않는다
+const CACHE = 'process-3.070';   // 3.070 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어가던 것 · 오늘 «세션 채우기 →»가 그 세션 시트까지 연다 · 주간 일정의 상대팀 이름이 잘리지 않는다
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
