@@ -117,7 +117,7 @@ test('a permission-filtered direct read does not authorize a denied local write'
   h.c.syncFetch=async(stage,url,options)=>stage==='kv_pull'?response([]):fetch(stage,url,options);
   const result=await h.run();
   assert.equal(result.error,undefined);assert.equal(writes(h).length,0);assert.equal(h.server.get(KEY).v,BASE);
-  assert.equal(h.local.get(KEY),LOCAL);assert.equal(h.idb.get(KEY),LOCAL);assert.equal(h.queue.length,0);   /* 3.056 — 올릴 수 없는 키는 대기함에서 뺀다(기기 사본은 그대로 · tests/denied-pending-3056) */
+  assert.equal(h.local.get(KEY),LOCAL);assert.equal(h.idb.get(KEY),LOCAL);assert.equal(h.queue.length,0);   /* 3.057 — 올릴 수 없는 키는 대기함에서 뺀다(기기 사본은 그대로 · tests/denied-pending-3057) */
 });
 
 test('an owner switch during the direct read cannot apply or send the prior owner draft',async()=>{

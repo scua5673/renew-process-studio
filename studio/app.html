@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.057"></script>
+<script src="autosave-status.js?v=3.058"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -515,7 +515,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.057';</script>
+<script>window.PS_BUILD='3.058';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1158,7 +1158,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   try{ var fm=/[?&]safe=([012])(?:[&#]|$)/.exec(String(location.search||'')); if(fm){ level=+fm[1]; if(!level){ try{ sessionStorage.removeItem(K); }catch(_){} }
     /* 이번 부팅에만 — 주소에서 지운다. 남겨 두면 사파리가 강제 종료 뒤 같은 주소로 다시 열 때마다 safe=0 이 안전장치를 끈 채 반복된다 */
     try{ var u=new URL(location.href); u.searchParams.delete('safe'); history.replaceState(history.state,'',u.pathname+u.search+u.hash); }catch(_){} } }catch(_){}   /* 손으로: app.html?safe=2 */
-  /* 3.057 — 안전 단계는 **앱이 스스로 하는 새로고침**(__psBootMarkDone — 부팅 동기화가 바뀐 것을 받으면 새로 연다)을 건너 이어 간다.
+  /* 3.058 — 안전 단계는 **앱이 스스로 하는 새로고침**(__psBootMarkDone — 부팅 동기화가 바뀐 것을 받으면 새로 연다)을 건너 이어 간다.
      예전엔 그 새로고침이 표시를 지워 다음 부팅이 다시 평소(단계 0 · 미리 띄우기 둘)로 열렸다 — 오류 제보 10/16 아이패드: 강제 종료 두 번 모두 prevLevel 0.
      3분 안의 이어받기만 · ?safe= 로 정한 부팅은 그대로 · 이어받은 값은 한 번 쓰고 지운다. */
   var carried=false;
@@ -1198,7 +1198,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       [0,1800,3600].forEach(function(ms){ setTimeout(function(){ try{ bw.toast(msg); }catch(_){} },ms); }); return; } }catch(_){}
     if(n<120)setTimeout(function(){ say(n+1); },500); })(0);
   /* ③ 멈춘 뒤 다시 연 기록 — PSSync 가 생기면(문서 끝의 sync.js) 한 건. 내용은 없다(단계 · 초 · 숫자 · UA 앞부분). */
-  if(level>=1&&!carried)(function send(n){   /* 3.057 — 이어받은 단계(스스로 새로고침)는 죽음이 아니다 — 기록하지 않는다 */ try{ var S=window.PSSync; if(S&&typeof S.event==='function'){
+  if(level>=1&&!carried)(function send(n){   /* 3.058 — 이어받은 단계(스스로 새로고침)는 죽음이 아니다 — 기록하지 않는다 */ try{ var S=window.PSSync; if(S&&typeof S.event==='function'){
       var nav=window.navigator||{},sa=false; try{ sa=nav.standalone===true||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches); }catch(_){}
       var CAP='ps_boot_crash_sent_v1',hr=Math.floor(Date.now()/3600000),cp=[]; try{ cp=String(sessionStorage.getItem(CAP)||'').split('|'); }catch(_){}
       var cn=+cp[0]===hr?(+cp[1]||0):0; if(cn>=40)return; try{ sessionStorage.setItem(CAP,hr+'|'+(cn+1)); }catch(_){}
@@ -2698,7 +2698,7 @@ window.psFailAlert=function(lead,e,stage){
         var u=psWarmUsed(); u[app]=Date.now(); localStorage.setItem(PS_WARM_KEY,JSON.stringify(u)); }catch(_){}
     }
     (function(){
-      /* 3.057 — 아이패드는 미리 띄우지 않는다(오류 제보 10/16 «경기 준비 열기 → 문제가 반복적으로 발생»: 미리 띄운 둘(scout · process)이 보관함 전체를
+      /* 3.058 — 아이패드는 미리 띄우지 않는다(오류 제보 10/16 «경기 준비 열기 → 문제가 반복적으로 발생»: 미리 띄운 둘(scout · process)이 보관함 전체를
          저마다 읽어 들인 채로 경기 준비가 열려 강제 종료 — 서버 기록 loadw2t10 두 번). 누를 때 연다. 폰은 3.034 대로 최근 둘. */
       var plan=(window.__psSafeBoot||psWarmNone())?[]:psWarmPlan(psWarmLean(),psWarmUsed());   /* 3.034 — 앞 부팅이 죽었으면 미리 띄우지 않는다(셸 부팅 안전장치) */
       PS_WARM_TABS.forEach(function(t){ if(plan.indexOf(t[0])<0)return;
@@ -8111,13 +8111,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.057"></script>
-<script src="autosave-merge.js?v=3.057"></script>
-<script src="autosave-runtime.js?v=3.057"></script>
-<script src="autosave-recovery.js?v=3.057"></script>
-<script src="sync.js?v=3.057"></script>
+<script src="autosave-journal.js?v=3.058"></script>
+<script src="autosave-merge.js?v=3.058"></script>
+<script src="autosave-runtime.js?v=3.058"></script>
+<script src="autosave-recovery.js?v=3.058"></script>
+<script src="sync.js?v=3.058"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.057">
+<link rel="stylesheet" href="support.css?v=3.058">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

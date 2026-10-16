@@ -46,8 +46,8 @@ test('the note on the device is read carefully — fourteen days, known tabs, sa
 test('the shell notes a tab when it is shown, warms by the plan, and speaks to a cold tab only after it has loaded',()=>{
   assert.match(app,/try\{ psWarmNote\(app\); \}catch\(_\)\{\}[^\n]*\n      var _skFrame=ensureAppFrame\(app\);/,'showApp 이 적는다');
   assert.match(app,/function psWarmLean\(\)\{ try\{ var dv=document\.documentElement\.getAttribute\('data-ps-device'\); return dv==='phone'\|\|dv==='ipad'; \}/,'폰·아이패드 판정은 부팅이 심어 둔 속성으로');
-  assert.match(app,/var plan=\(window\.__psSafeBoot\|\|psWarmNone\(\)\)\?\[\]:psWarmPlan\(psWarmLean\(\),psWarmUsed\(\)\);[^\n]*\n      PS_WARM_TABS\.forEach\(function\(t\)\{ if\(plan\.indexOf\(t\[0\]\)<0\)return;/,'3.034 — 앞 페이지가 죽었으면(셸 안전장치) 미리 띄우지 않는다 · 3.057 아이패드도');
-  assert.match(app,/function psWarmNone\(\)\{ try\{ return document\.documentElement\.getAttribute\('data-ps-device'\)==='ipad'; \}/,'3.057 — 아이패드만 0(폰은 최근 둘)');
+  assert.match(app,/var plan=\(window\.__psSafeBoot\|\|psWarmNone\(\)\)\?\[\]:psWarmPlan\(psWarmLean\(\),psWarmUsed\(\)\);[^\n]*\n      PS_WARM_TABS\.forEach\(function\(t\)\{ if\(plan\.indexOf\(t\[0\]\)<0\)return;/,'3.034 — 앞 페이지가 죽었으면(셸 안전장치) 미리 띄우지 않는다 · 3.058 아이패드도');
+  assert.match(app,/function psWarmNone\(\)\{ try\{ return document\.documentElement\.getAttribute\('data-ps-device'\)==='ipad'; \}/,'3.058 — 아이패드만 0(폰은 최근 둘)');
   assert.equal((app.match(/setTimeout\(function\(\)\{try\{ensureAppFrame\(/g)||[]).length,1,'미리 띄우는 곳은 이 한 곳(보관함을 열 때의 노트 2.247 만 따로)');
   const when=cut(app,'function psFrameWhenReady(fr,fn,ms){','\n    }');
   assert.match(when,/if\(psFrameReady\(fr\)\)setTimeout\(fn,ms\|\|0\);\n      else fr\.addEventListener\('load',function\(\)\{ setTimeout\(fn,Math\.max\(ms\|\|0,120\)\); \},\{once:true\}\);/);

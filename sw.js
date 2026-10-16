@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.057';   // 3.057 아이패드 «경기 준비 열기 → 문제가 반복적으로 발생»(오류 제보 10/16): 아이패드는 탭을 미리 띄우지 않는다 · 가볍게 연 부팅의 안전 단계가 스스로 하는 새로고침을 건너 이어 간다(3분) · 팀 운영 경기 화면이 보관함 전체를 그릴 때마다 다시 읽지 않는다(cs_lib_rev 캐시)
+const CACHE = 'process-3.058';   // 3.058 아이패드 «경기 준비 열기 → 문제가 반복적으로 발생»(오류 제보 10/16): 아이패드는 탭을 미리 띄우지 않는다 · 가볍게 연 부팅의 안전 단계가 스스로 하는 새로고침을 건너 이어 간다(3분) · 팀 운영 경기 화면이 보관함 전체를 그릴 때마다 다시 읽지 않는다(cs_lib_rev 캐시)
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
