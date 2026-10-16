@@ -1437,7 +1437,10 @@ function scheduleReadyCommit(m,raw,uid,wid,seal,current){
       var which=idb===mirror?'새 입력':mirror!==raw&&idb===raw?'거울':idb!==raw&&mirror===raw?'IDB':'IDB·거울';
       /* 2.920 — 거울만 다르고 방금 거울 쓰기가 실패했으면 원인은 저장 공간이다 — 그렇게 말한다(저장소 오류·안전 정리 안내). */
       var mirrorFull=false;try{mirrorFull=!!scheduleMirrorFull;}catch(_){}
-      if(which==='거울'&&mirrorFull)throw syncIssue('sync_storage','schedule_mirror_quota','저장 공간이 부족해 일정 화면 사본을 바꾸지 못했어요 — 앱 설정 › 기기 › 안전 정리');
+      if(which==='거울'&&mirrorFull){
+        if(scheduleMirrorQuota()||!scheduleMirrorCause)throw syncIssue('sync_storage','schedule_mirror_quota','저장 공간이 부족해 일정 화면 사본을 바꾸지 못했어요 — 앱 설정 › 기기 › 안전 정리');
+        throw syncIssue('sync_storage','schedule_mirror_write','이 기기가 일정 화면 사본을 바꾸지 못했어요('+scheduleMirrorCause+') — 저장 공간 문제는 아니에요');
+      }
       var ie=syncIssue('sync_local_changed','schedule_ready_exact','일정 서버 확인 원문·기기 저장소·화면 사본이 다릅니다('+which+')');
       if(idb!==null&&idb===mirror)ie.psNewerLocal=true;
       throw ie;
@@ -5657,11 +5660,33 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
 }
 /* 2.920 — 일정 화면 사본(localStorage 거울) 쓰기. 9/25~26 한 기기는 저장 공간이 차서 거울 쓰기가 조용히 실패했고,
    준비표 확인이 매 회차 «세 사본이 다르다»로 실패하며 일정 전체(2MB)를 매번 다시 받았다. */
-var scheduleMirrorFull=false,scheduleMirrorTidyAt=0;
-function scheduleMirrorTry(v){ try{ localStorage.setItem(SCHEDULE_KEY,v); return localStorage.getItem(SCHEDULE_KEY)===v; }catch(_){ return false; } }
+var scheduleMirrorFull=false,scheduleMirrorCause='',scheduleMirrorTidyAt=0;
+/* 3.061 — 풋볼A 운영자 아이패드: 이 기기 localStorage 는 0.7MB 뿐이고 일정 문서는 0.24MB 인데 회차마다 «저장 공간 부족»(schedule_mirror_quota)이었다.
+   예전 진단은 실패 원인과 상관없이 늘 QuotaExceededError 라고 적었다. 이제 실제 원인을 적는다 —
+   던진 오류 이름(threw-…) · 던지지 않았는데 안 바뀜(readback-…) · 크기(일정 k · 기기 k). 저장 공간 문구는 진짜 용량 오류일 때만 쓴다.
+   던지지 않았는데 안 바뀌면 이 프레임의 보기 전용 게이트(perms.js)가 조용히 막은 것이다 — 서버 확인본을 받아 적는 동기화 쓰기는
+   사용자 편집이 아니므로(셸 프레임도 같은 값을 쓴다) 원래 Storage.setItem 으로 한 번 더 쓴다. */
+function scheduleMirrorKb(n){ return Math.round((+n||0)/1024)+'k'; }
+function scheduleMirrorTry(v){
+  var cause='',got;
+  try{ localStorage.setItem(SCHEDULE_KEY,v); }catch(e){ cause='threw-'+String(e&&e.name||'Error').slice(0,32); }
+  try{ got=localStorage.getItem(SCHEDULE_KEY); }catch(e){ scheduleMirrorCause=cause||('read-'+String(e&&e.name||'Error').slice(0,32)); return false; }
+  if(got===v){ scheduleMirrorCause=''; return true; }
+  if(!cause){
+    try{
+      var native=typeof Storage!=='undefined'&&Storage.prototype&&Storage.prototype.setItem;
+      if(native&&localStorage.setItem!==native){ native.call(localStorage,SCHEDULE_KEY,v); got=localStorage.getItem(SCHEDULE_KEY); if(got===v){ scheduleMirrorCause=''; return true; } }
+    }catch(e){ cause='native-'+String(e&&e.name||'Error').slice(0,32); }
+    if(!cause)cause=got==null?'readback-null':(got.length===v.length?'readback-same-length':'readback-other');
+  }
+  scheduleMirrorCause=cause;return false;
+}
+function scheduleMirrorQuota(){ return /^(threw|native)-(QuotaExceededError|NS_ERROR_DOM_QUOTA_REACHED)$/.test(scheduleMirrorCause); }
 function scheduleMirrorWrite(v,stillSafe){
   if(scheduleMirrorTry(v)){ scheduleMirrorFull=false; return Promise.resolve(true); }
-  syncDiagnostic('schedule-mirror-write',Object.assign(new Error('일정 화면 사본을 쓰지 못했습니다'),{name:'QuotaExceededError'}));
+  var lsBytes=0;try{ lsBytes=window.PSStorage&&PSStorage.localBytes?PSStorage.localBytes():0; }catch(_){}
+  syncDiagnostic('schedule-mirror-write',Object.assign(new Error('일정 화면 사본을 쓰지 못했습니다'),{name:scheduleMirrorQuota()?'QuotaExceededError':'MirrorWriteError',
+    psCode:scheduleMirrorCause+'_'+scheduleMirrorKb(String(v).length*2)+'_ls'+scheduleMirrorKb(lsBytes)}));
   if(!(window.PSStorage&&PSStorage.optimize)||Date.now()-scheduleMirrorTidyAt<600000){ scheduleMirrorFull=true; return Promise.resolve(false); }
   scheduleMirrorTidyAt=Date.now();
   /* 안전 정리는 IDB 에 같은 값이 확인된 중복 사본만 지운다(일정 거울은 건드리지 않는다). 정리하는 동안 사용자가
