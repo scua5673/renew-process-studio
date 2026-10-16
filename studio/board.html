@@ -13943,7 +13943,7 @@ window.__commView=function(post, editMode){
          뷰어를 닫으면 끈다(__commTiltOff). 같은 뷰어에서 다른 글을 열면 켜 둔 그대로 */
       try{
         var _wrapT=$("editorBoardWrap"), _tb=document.getElementById("commTiltBtn"); if(_tb)_tb.remove();
-        if(_wrapT&&window.__setTilt&&window.PSBoardDepth){
+        if(_wrapT&&window.__setTilt&&window.PSBoardDepth&&psBoardDevice()!=="phone"){   /* 3.069 — 폰은 3D 를 그리다 강제 종료(아래 3D 부팅 안전장치) — 단추 없음 */
           _tb=document.createElement("button"); _tb.type="button"; _tb.id="commTiltBtn";
           var _tSync=function(){ var on=document.body.classList.contains("bc-tilt3d"); _tb.classList.toggle("on",on); _tb.setAttribute("aria-pressed",on?"true":"false"); _tb.textContent=on?"평면":"3D"; _tb.title=on?"평면으로 보기":"3D 로 보기"; };
           _tb.onclick=function(){ try{ var on=!document.body.classList.contains("bc-tilt3d"); window.__commTilt=true; window.__setTilt(on,{transient:true,quiet:true});
@@ -15160,6 +15160,10 @@ window.__tiltBootSafe=false; window.__tiltBootOk=true;
   window.__tiltBootArm=function(){ return true; }; window.__tiltBootDone=function(){};
   if(!touch)return;
   if(side){ try{ if(localStorage.getItem("ps_board_tilt3d")==="1")window.__tiltBootOk=false; }catch(_){} return; }
+  /* 3.069 — 폰은 3D 로 부팅하지 않는다(설정 값은 그대로 · 켜면 그 보기에서만 3D). 10/17 아이폰: 3.068 에서 미리 띄우기를 다 껐는데도 앱을 열면 load 뒤 5초 안에
+     강제 종료(boot_after_crash loadw0 세 번 · 모두 앞 단계 0). 같은 기기의 «가벼운 부팅»(단계 1 = 작전판 평면)은 한 번도 죽지 않았다 — 다른 점은 3D 하나. */
+  var phone=false; try{ phone=window.top.document.documentElement.getAttribute("data-ps-device")==="phone"; }catch(_){}
+  if(phone){ try{ if(localStorage.getItem("ps_board_tilt3d")==="1")window.__tiltBootOk=false; }catch(_){} return; }
   var light=false; try{ light=window.top.__psSafeBoot===true&&window.top.__psSafeBootBoard!==true; if(light)window.top.__psSafeBootBoard=true; }catch(_){}   /* 3.034 — 셸의 가벼운 부팅은 첫 작전판이 한 번 쓴다(3D 가 꺼져 있었든, 아래 3.033 판정이 먼저 돌든) */
   var me="",fresh=true; try{ me=sessionStorage.getItem("ps_tilt3d_tab")||""; fresh=!me; if(!me){ me=Date.now().toString(36)+Math.random().toString(36).slice(2,8); sessionStorage.setItem("ps_tilt3d_tab",me); } }catch(_){ me=me||"x"; }
   function recent(t,now){ return typeof t==="number"&&now-t>=0&&now-t<LIFE; }
