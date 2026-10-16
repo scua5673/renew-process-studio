@@ -2364,14 +2364,16 @@ function outboxUnreachableOnly(it){
   if(+it.attempts>0)return !!UNREACHABLE[String(it.lastError||'')];   /* push 를 해 봤다면 그 결과로 판정 */
   return !!it.roundError&&!!UNREACHABLE[String(it.roundError||'')];   /* 아예 못 올라간 경우 */
 }
-function outboxAckSynced(wid,m,skipped,libraryAckHash,guard){
-  var uid=outboxOwner(),sc=outboxScope(uid,wid),skip={};
+function outboxAckSynced(wid,m,skipped,libraryAckHash,guard,denied){
+  var uid=outboxOwner(),sc=outboxScope(uid,wid),skip={},drop={};
+  (denied||[]).forEach(function(k){drop[k]=1;});   /* 3.058 — 이 계정이 올릴 수 없는 키(권한 거절): 대기함에서 뺀다. 기기 사본은 그대로 */
   function requireCurrent(){if(typeof guard==='function'&&!guard())throw syncIssue('sync_workspace_changed','team_ack_owner','팀 저장 확인 중 계정이나 팀이 바뀌었습니다');}
   (skipped||[]).forEach(function(k){skip[k]=1;});
   return outboxTxn(function(q){
     requireCurrent();
     return Promise.all(q.map(function(it){
       if(!it||outboxScope(it.uid,it.wid)!==sc||skip[it.key])return Promise.resolve(true);
+      if(drop[it.key])return Promise.resolve(false);
       return currentValueForKey(it.key).then(function(v){
         if(it.key==='@library'){
           /* 보관함 pull/충돌 정리가 libSave를 호출하면 cs_lib_rev는 이 회차 안에서 바뀐다.
@@ -2385,6 +2387,9 @@ function outboxAckSynced(wid,m,skipped,libraryAckHash,guard){
            서버에 그 행이 없으면 충돌 보관도 안 생기므로, 대기함에만 영원히 남아 «8일째 저장 대기»가 됐다(코치 점검 10/7 — 방성환).
            올릴 일이 없는 항목이니 대기에서 뺀다. 기기 사본 자체는 지우지 않는다. 서버 행이 있으면 heldKeys(skip)로 위에서 이미 유지된다. */
         if(typeof ITEMP==='string'&&typeof itemsDeletedLive==='function'&&String(it.key).indexOf(ITEMP)===0&&typeof v==='string'&&itemsDeletedLive(it.key,v))return false;   /* typeof — 구간을 잘라 쓰는 시험 하네스에도 안전 */
+        /* 3.058 — 기기 사본도 없고 확인된 해시도 없으면 올릴 것이 없다(선수 기기에서 지운 PLAYER_BLIND 키 — 7690). 예전엔 hash(null)='' ≠ undefined 라 영원히 대기였다.
+           지운 것을 서버에 알릴 일이면 m.h 에 서버 해시가 남아 있으므로 이 줄에 걸리지 않는다. */
+        if(v==null&&m.h&&m.h[it.key]==null)return false;
         var keep=!m.h||hash(v)!==m.h[it.key];              /* 현재 로컬과 확인된 해시가 다르면 유지 */
         /* 2.952 — 이 회차는 첫 pull 을 지나 확인까지 왔다 = 회차 실패가 아니다. 예전 회차 실패(«오프라인이에요»)를 남겨 두면
            온라인·실시간 연결 중인데도 이유가 «오프라인»으로 8일 내내 보였다. 회차 오류는 지우고 남은 이유는 항목이 말한다. */
@@ -6751,7 +6756,7 @@ function syncNowCore(reason){
       var scoutFullRequested=!!pair[4];
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
       var libraryRoundStarted=false;   /* 3.056 — 이 회차가 보관함 단계에 들어갔나(실패 뒤 보관함만 따로 돌릴지 판정) */
-      var m=meta(), pushRows=[], teamPushCandidates={},confirmedPushKeys={}, idpBaseNext={},idpPushCandidate={},idpPushConfirmed={},idpLocalStage={},idpCommitDone=false, applied=0, skippedBig=0, skippedKeys=[], heldKeys=[], dependencyDeferredKeys=[], now=Date.now(), writes=[], itemsApplied=0,itemsObservedChanged=false,matchReadyBlocked=false;
+      var m=meta(), pushRows=[], teamPushCandidates={},confirmedPushKeys={}, idpBaseNext={},idpPushCandidate={},idpPushConfirmed={},idpLocalStage={},idpCommitDone=false, applied=0, skippedBig=0, skippedKeys=[], heldKeys=[], dependencyDeferredKeys=[], permDeniedKeys=[], now=Date.now(), writes=[], itemsApplied=0,itemsObservedChanged=false,matchReadyBlocked=false;
       var idpMetaBefore={h:{},c:{},n:{}};Object.keys(m.h||{}).forEach(function(k){idpMetaBefore.h[k]=m.h[k];});Object.keys(m.c||{}).forEach(function(k){idpMetaBefore.c[k]=m.c[k];});Object.keys(m.n||{}).forEach(function(k){idpMetaBefore.n[k]=m.n[k];});
       function roundWorkspaceCurrent(){
         var own=cacheOwner(),ss=getSess(),seal='',liveSwitch=workspaceSwitchGuardRead();try{seal=String(localStorage.getItem(OWNERKEY)||'');}catch(_){}
@@ -6970,10 +6975,10 @@ function syncNowCore(reason){
         m.h[k]=hash(send);m.c[k]=now;nSet(m,k,send);syncBaseSet(k,send);
         return send;
       }
-      function restoreUnconfirmedTeamKey(k){
+      function restoreUnconfirmedTeamKey(k,noDefer){
         var candidate=teamPushCandidates[k];if(!candidate||candidate.confirmed)return;
         ['h','c','n'].forEach(function(part){var old=idpMetaBefore[part][k];if(old===undefined)delete m[part][k];else m[part][k]=old;});
-        if(dependencyDeferredKeys.indexOf(k)<0)dependencyDeferredKeys.push(k);
+        if(!noDefer&&dependencyDeferredKeys.indexOf(k)<0)dependencyDeferredKeys.push(k);
       }
       function resolveTeamConflict(k,loc,row,forceReview,reason){
         if(typeof row.v!=='string')throw syncIssue('sync_confirm_missing','team_conflict_raw','다른 기기의 팀 자료 원문을 확인하지 못했습니다');
@@ -7691,8 +7696,13 @@ function syncNowCore(reason){
         var pushCandidates=pushRows.map(function(r){return r.k;});   /* 2.434 — 거르기 전 후보(아래 맵 갱신용) */
         /* 2.604 — 서버가 403 으로 거부한 키(ps_sync_403_v1, 6시간)는 그 사이 다시 밀지 않는다 — 표가 어긋나 있어도 회차마다 403 을 반복하지 않게 */
         var _s403={}; try{ _s403=JSON.parse(localStorage.getItem('ps_sync_403_v1')||'{}')||{}; }catch(_){ _s403={}; }
-        pushRows=pushRows.filter(function(r){ if(_s403[r.k]&&Date.now()-(+_s403[r.k]||0)<6*3600000){ deniedKeys.push(r.k); return false; } if(canW(r.k))return true; deniedKeys.push(r.k); return false; });
-        deniedKeys.forEach(function(k){cancelIdpCandidate(k);restoreUnconfirmedTeamKey(k);});
+        pushRows=pushRows.filter(function(r){ if(_s403[r.k]&&Date.now()-(+_s403[r.k]||0)<6*3600000){ deniedKeys.push(r.k); return false; } if(canW(r.k))return true; deniedKeys.push(r.k); if(!permsMissing&&permDeniedKeys.indexOf(r.k)<0)permDeniedKeys.push(r.k); return false; });
+        /* 3.058 — 앱의 권한 판정(canW)이 거절한 키는 **이 계정이 올릴 수 없는 사본**이다(구성원 기기의 cs_perms_v1 등 — 옛 판의 흔적).
+           예전엔 «다음 회차로 미룸»(dependencyDeferredKeys)에 넣어 대기함에서 영원히 안 빠졌다 — 회차마다 같은 거절 · «N일째 저장 대기»(빨강) ·
+           로그아웃 막힘(prelogout 의 deferred) · 관리자 «주의»(파일럿 10/16: 김포 25 · 풋볼A 16 · 재현중 11대). 이제 대기함에서만 뺀다(outboxAckSynced drop).
+           m.h 는 예전처럼 되돌리므로 기기 사본은 그대로 «서버와 다름»으로 남고, 권한이 생기면 다음 회차에 올라간다(잃지 않는다). 거절 칩(ps_sync_denied)도 그대로.
+           권한 문서를 못 읽은 회차(permsMissing — 일시 상태)와 서버 403 창(_s403)은 예전처럼 미룬다. */
+        deniedKeys.forEach(function(k){cancelIdpCandidate(k);restoreUnconfirmedTeamKey(k,permDeniedKeys.indexOf(k)>=0);});
         if(deniedKeys.indexOf(MATCH_KEY)>=0)blockMatchReady('match-push-denied',new Error('경기 쓰기 권한이 없어 서버 확인을 완료하지 못했습니다'));
         /* ══ 2.434 · 권한 거부 키의 **지속 기록**(ps_sync_denied_map_v1) ═══════════════
            기존 ps_sync_denied(배열)는 칩이 읽고 바로 지운다(3739) — 전환 차단 판정에는 못 쓴다.
@@ -7849,7 +7859,7 @@ function syncNowCore(reason){
             if(matchPushPlanned&&!matchResolved)blockMatchReady('match-push-unconfirmed',new Error('경기 push 확인 응답이 없습니다'));
             if(schedulePushExpected!==null&&!schedulePushConfirmed)restoreScheduleMeta();
             if(scoutStage&&scoutStage.push&&!scoutStage.confirmed)deferScout('scout-push-unconfirmed');
-            Object.keys(teamPushCandidates).forEach(restoreUnconfirmedTeamKey);
+            Object.keys(teamPushCandidates).forEach(function(k){restoreUnconfirmedTeamKey(k,permDeniedKeys.indexOf(k)>=0);});   /* 3.058 — 권한 거절 키는 미루지 않는다(위 canW) · forEach 의 순번이 noDefer 로 들어가지 않게 */
             return itemsResolveConflicts(at,wid,roundWorkspaceCurrent,m).then(function(){return res;});
           });   /* 2.731 */
         });
@@ -7877,7 +7887,7 @@ function syncNowCore(reason){
            예전 meta hash가 우연히 현재 raw와 같아도 outbox를 지우지 않는다. */
         var ackSkipped=curKeys.concat(heldKeys,dependencyDeferredKeys,KEYS.filter(function(k){return PERSONAL[k];}));
         if(scheduleDeferred||scheduleDependencyBlocked||scheduleHeld())ackSkipped.push(SCHEDULE_KEY);
-        return doPersonal.then(function(){return holdConflictClearConfirmed(m,roundWorkspaceCurrent);}).then(function(){ return outboxAckSynced(wid,m,ackSkipped,lr&&lr.ackHash,roundWorkspaceCurrent); }).then(function(){
+        return doPersonal.then(function(){return holdConflictClearConfirmed(m,roundWorkspaceCurrent);}).then(function(){ return outboxAckSynced(wid,m,ackSkipped,lr&&lr.ackHash,roundWorkspaceCurrent,permDeniedKeys); }).then(function(){
         busy=false; try{ clearTimeout(busyDog); }catch(_){}
         requireRoundWorkspace('round_ack_final');
         rosterSyncMark={uid:s.uid,wid:wid,seal:roundOwnerSeal,at:Date.now()};
