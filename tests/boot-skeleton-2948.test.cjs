@@ -18,7 +18,7 @@ function fixture(players,memory,opt){
   Object.assign(c,{ITEMS_ACTIVE:true,ITEMP:'sq:',ITEMS_HOLD:'ps_items_hold_v1',ITEMS_IDX:'ps_items_idx_v1',_itemConflicts:[],KEYS:[MAIN,PD],KEY:MAIN,PDKEY:PD,TKEY:'cs_scout_targets_v1',PS_BUILD:'2.948',scMainMigrationPending:false,
     PSRosterOutbox:require('../studio/roster-outbox.js'),PSPerms:{canEdit:()=>true,role:()=> 'executive'},
     itemsServerCheck:async()=>true,itemsPushAllowed:()=>true,isItemKey:k=>k.startsWith('sq:'),idbBacked:k=>k.startsWith('sq:'),data:memory,
-    store:{get:k=>JSON.parse(h.local.get(k)||'null'),set(k,v){h.local.set(k,raw(v));saves.push({k,v:copy(v)});return true;}},
+    scoutStore:{get:k=>JSON.parse(h.local.get(k)||'null'),set(k,v){h.local.set(k,raw(v));saves.push({k,v:copy(v)});return true;}},
     evalMode:()=>'fifa',evalSetId:()=>'standard',canSeeTargets:()=>false,rosterKeepSave(){},posAbbr:x=>x,plStatusOf:p=>p.status||'ok',psAct(){}});
   h.local.set('ps_sync_session',raw(c.getSess()));
   c.storage.conditionalGuardVersion=1;c.storage.keys=async()=>[...h.idb.keys()];

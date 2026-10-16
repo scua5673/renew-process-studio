@@ -23,7 +23,7 @@ try{
   await page.waitForTimeout(2500);
   const f=await (await page.waitForSelector('#fBoard')).contentFrame();
   await f.waitForFunction(()=>typeof window.__letterPackOpen==='function'&&typeof renderDrillFiles==='function');
-  const lib=()=>f.evaluate(async()=>((await store.get('cs_drill_lib_v1'))||[]).filter(d=>d&&d.letter));
+  const lib=()=>f.evaluate(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).filter(d=>d&&d.letter));
   const go=id=>page.evaluate(h=>{location.hash=h;},'#pack='+id);
   const hint=()=>f.evaluate(()=>(document.getElementById('hint')||{}).textContent||'');
   const shell=()=>page.evaluate(()=>({app:document.body.getAttribute('data-ps-app'),hash:location.hash,pending:sessionStorage.getItem('ps_pack_pending_v1'),note:!!document.getElementById('psPackNote')}));
@@ -48,7 +48,7 @@ try{
 
   // 2) 담기 — 카드 한 장 · 훈련 셋 · 훈련마다 제 장면
   await f.click('#lpOk');
-  await f.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).some(d=>d&&d.letter&&d.letter.issue===3));
+  await f.waitForFunction(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).some(d=>d&&d.letter&&d.letter.issue===3));
   await f.waitForFunction(()=>!document.getElementById('lpOv'));
   const c=(await lib())[0];
   assert.deepEqual([c.name,c.type,c.minutes,c.trainings.length],['레터 3호 · 가상 세션','train',60,3]);
@@ -94,7 +94,7 @@ try{
   await go('review-03');
   await f.waitForSelector('#lpAgain');
   await f.click('#lpAgain');
-  await f.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).filter(d=>d&&d.letter).length===2);
+  await f.waitForFunction(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).filter(d=>d&&d.letter).length===2);
   const two=await lib();
   assert.notEqual(two[0].libId,two[1].libId,'한 장 더 = 새 카드');
 

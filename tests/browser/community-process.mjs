@@ -282,13 +282,13 @@ try{
   assert.deepEqual(await page.evaluate(()=>({app:document.body.getAttribute('data-ps-app'),hash:location.hash})),{app:'design',hash:''},'보관함으로 왔고 주소는 비워졌다');
   assert.equal(await c.evaluate(()=>document.getElementById('cvMask').classList.contains('on')),false,'뷰어는 닫혔다');
   assert.match(await f.evaluate(()=>document.querySelector('#lpOv>div').textContent),/PROCESS LETTER · 3호 · 훈련 세션가상 세션 3훈련 3개 · 60분/);
-  assert.equal(await f.evaluate(async()=>((await store.get('cs_drill_lib_v1'))||[]).filter(d=>d&&d.letter).length),0,'확인 전에는 담기지 않는다');
+  assert.equal(await f.evaluate(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).filter(d=>d&&d.letter).length),0,'확인 전에는 담기지 않는다');
   await f.click('#lpOk');
   await f.waitForFunction(()=>!document.getElementById('lpOv'));   // 저장이 끝나야 확인 창이 닫힌다
   // 3.000 — 보관함은 여기서 직접 되풀이해 읽는다. waitForFunction 에 async 함수를 주면 약속(Promise) 자체가 참이라 저장 전에 지나갈 수 있다(리눅스 웹킷 CI 에서 빈 목록을 읽었다).
   let saved=[];
   for(let i=0;i<60&&!saved.length;i++){
-    saved=await f.evaluate(async()=>((await store.get('cs_drill_lib_v1'))||[]).filter(d=>d&&d.letter).map(d=>[d.name,d.trainings.length,d.letter.issue,d.minutes]));
+    saved=await f.evaluate(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).filter(d=>d&&d.letter).map(d=>[d.name,d.trainings.length,d.letter.issue,d.minutes]));
     if(!saved.length)await page.waitForTimeout(100);
   }
   assert.deepEqual(saved,[['레터 3호 · 가상 세션',3,3,60]],'카드 한 장 · 훈련 셋');

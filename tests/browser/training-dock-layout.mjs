@@ -74,7 +74,7 @@ try{
     // of writing a board; training's own save below writes only fake local data.
     await frame.locator('#vaultSave').click();await frame.locator('#pssName').waitFor({state:'visible'});await frame.locator('#pssCancel').click();
     await enter(page,frame);await frame.locator('#epNameTop').fill('가상 훈련 도크 검증');await frame.locator('#editorDone').click();
-    await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).some(d=>d.name==='가상 훈련 도크 검증'));
+    await frame.waitForFunction(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).some(d=>d.name==='가상 훈련 도크 검증'));
     await page.evaluate(()=>document.querySelector('#appSeg [data-app=board]').click());await settle(page);const saved=await inspect(frame);result.states.push({stage:'after-training-save',...saved});check(saved,false);
     await page.screenshot({path:path.join(out,spec.width+'-returned.png')});
    }

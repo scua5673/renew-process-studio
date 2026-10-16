@@ -14,7 +14,7 @@ function fixture(initial='{}'){
   let tombRaw=initial;
   const c=vm.createContext({MATCH_DEL_KEY:MD,SCHEDULE_KEY:'process_coach_v1',ITEMP:'sq:',PDKEY:PD,
     isItemKey:k=>k.startsWith('sq:'),isIdpPrivateKey:()=>false,isIdpPubKey:()=>false,
-    localStorage:{getItem:k=>k===PD?tombRaw:null},store:{get:k=>k===PD?JSON.parse(tombRaw):null}
+    localStorage:{getItem:k=>k===PD?tombRaw:null},scoutStore:{get:k=>k===PD?JSON.parse(tombRaw):null}
   });
   vm.runInContext(['autosavePrepare','itemsDeletedLive'].map(n=>fn(sync,n)).concat(['plTombs','plTombApply'].map(n=>fn(scout,n))).join('\n'),c);
   return {c,set:raw=>{tombRaw=raw;},prepare(key,local,remote,base=null,kind='conflict'){

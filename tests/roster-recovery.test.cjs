@@ -62,7 +62,7 @@ function harness(){
     players.forEach(p=>items.set('sq:'+p.id,JSON.stringify(p)));return {n:players.length,wrote:players.length};}};
   const ctx={console,Promise,Set,Map,JSON,Date,Number,Error,PSRosterRecovery:R,localStorage,storage,
     KEY:'scout_tool_v1',PDKEY:'cs_player_del_v1',PS_BUILD:'2.791',itemsPI:()=>pi,itemsRerender(){},load(){state.success++;},posAbbr:x=>x,plStatusOf:p=>p.status||'ok',$:()=>null,
-    store:{hasPending:()=>false,hasFailed:()=>false,set(k,v){if(state.failSet)return false;localStorage.setItem(k,JSON.stringify(v));return true;},ready:()=>Promise.resolve(true)},
+    scoutStore:{hasPending:()=>false,hasFailed:()=>false,set(k,v){if(state.failSet)return false;localStorage.setItem(k,JSON.stringify(v));return true;},ready:()=>Promise.resolve(true)},
     PSPerms:{role:()=>state.role,canEdit:()=>!state.readOnly},
     PSStorage:{sharedReady:()=>state.failMirror?Promise.reject(Error('IDB failed')):Promise.resolve(),sharedVerified:()=>Promise.resolve(true)},
     psSaveShared(k,raw){localStorage.setItem(k,raw);return true;},
@@ -107,16 +107,16 @@ test('legacy archive is preserved; read-only confirmed capture excludes private 
 test('ordinary save stops immediately when the main document is not accepted',()=>{
   const code=source.slice(source.indexOf('/* 2.825 — roster save coordinator.'),source.indexOf('\nfunction attr(id)'));
   const writes=[],context={data:doc([p('current')]),scMainMigrationPending:false,evalMode:()=> 'fifa',evalSetId:()=> 'standard',KEY:'scout_tool_v1',TKEY:'cs_scout_targets_v1',
-    isTargetPl:p=>p.type==='target',canSeeTargets:()=>true,store:{get:()=>null,set(k){writes.push(k);return false;}},teamSaveOwner:()=> 'synthetic',itemsPI:()=>({active:()=>false}),localStorage:{getItem:()=>null,setItem(k){writes.push(k);}},PSItems:{write(){writes.push('items');}},rosterKeepSave(){writes.push('keep');}};
+    isTargetPl:p=>p.type==='target',canSeeTargets:()=>true,scoutStore:{get:()=>null,set(k){writes.push(k);return false;}},teamSaveOwner:()=> 'synthetic',itemsPI:()=>({active:()=>false}),localStorage:{getItem:()=>null,setItem(k){writes.push(k);}},PSItems:{write(){writes.push('items');}},rosterKeepSave(){writes.push('keep');}};
   context.window=context;context.parent=context;vm.createContext(context);vm.runInContext(code,context);
   assert.equal(context.save(),false);assert.deepEqual(writes,['scout_tool_v1']);
 });
-test('ordinary store.ready waits for the strict item flush and propagates its failure',async()=>{
+test('ordinary scoutStore.ready waits for the strict item flush and propagates its failure',async()=>{
   const code=source.slice(source.indexOf('const mem={};'),source.indexOf('const KEY="scout_tool_v1";'));
   let release,failed=false,called=0;const wait=new Promise(r=>release=r);
   const context={Promise,localStorage:{getItem:()=>null},itemsPI:()=>({flush(){called++;return wait.then(()=>{if(failed)throw Error('SQ commit failed');return true;});}}),
     PSSaveState:{createTracker:()=>({ready:()=>Promise.resolve(true)})}};
-  context.window=context;vm.createContext(context);vm.runInContext(code+'\nwindow.actualStore=store;',context);
+  context.window=context;vm.createContext(context);vm.runInContext(code+'\nwindow.actualStore=scoutStore;',context);
   let done=false;const pending=context.actualStore.ready().then(()=>{done=true;});await new Promise(setImmediate);assert.equal(called,1);assert.equal(done,false);release();await pending;assert.equal(done,true);
   failed=true;await assert.rejects(()=>context.actualStore.ready(),/SQ commit failed/);
 });
@@ -124,7 +124,7 @@ test('bootstrap saves only team data while unreceived private candidates retain 
   const code=source.slice(source.indexOf('/* 2.825 — roster save coordinator.'),source.indexOf('\nfunction attr(id)'));
   const writes=[],d=doc([p('current'),p('private',{type:'target'})]);let candidateFails=false;
   const context={data:d,scMainMigrationPending:false,evalMode:()=> 'fifa',evalSetId:()=> 'standard',KEY:'scout_tool_v1',TKEY:'cs_scout_targets_v1',
-    isTargetPl:p=>p.type==='target',canSeeTargets:()=>true,store:{get:()=>null,set(k,v){writes.push([k,copy(v)]);return !(k==='cs_scout_targets_v1'&&candidateFails);}},teamSaveOwner:()=> 'synthetic',itemsPI:()=>({active:()=>false}),localStorage:{getItem:()=>null,setItem(k,v){writes.push([k,v]);}},PSItems:{write(){writes.push(['items']);}},rosterKeepSave(){},posAbbr:x=>x,plStatusOf:()=> 'ok'};
+    isTargetPl:p=>p.type==='target',canSeeTargets:()=>true,scoutStore:{get:()=>null,set(k,v){writes.push([k,copy(v)]);return !(k==='cs_scout_targets_v1'&&candidateFails);}},teamSaveOwner:()=> 'synthetic',itemsPI:()=>({active:()=>false}),localStorage:{getItem:()=>null,setItem(k,v){writes.push([k,v]);}},PSItems:{write(){writes.push(['items']);}},rosterKeepSave(){},posAbbr:x=>x,plStatusOf:()=> 'ok'};
   context.window=context;context.parent=context;vm.createContext(context);vm.runInContext(code,context);
   assert.equal(context.save({skipTargets:true}),true);assert.equal(writes.some(x=>x[0]==='cs_scout_targets_v1'),false);assert.equal(d.players[1].id,'private');
   writes.length=0;candidateFails=true;assert.equal(context.save(),false);assert.equal(writes.find(x=>x[0]==='scout_tool_v1')[1].players.length,1);assert.equal(writes.some(x=>x[0]==='items'),false,'unchanged roster is not rewritten while candidates save');

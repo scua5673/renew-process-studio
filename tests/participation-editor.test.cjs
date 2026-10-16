@@ -13,7 +13,7 @@ function harness(){
     scoutAutomaticWriteAllowed:()=>can,psSync:()=>({dataUnlocked:()=>true}),isTargetPl:p=>p.type==='target',plGrpOf:p=>p.grp,plStatusOf:p=>p.status||'ok',
     stYmd:()=>today,stAddDays:(d,n)=>{const v=new Date(d+'T00:00:00Z');v.setUTCDate(v.getUTCDate()+n);return v.toISOString().slice(0,10);},
     avDayKind:d=>[0,6].includes(d.getDay())?'off':'train',renderTeam(){},renderTeamHome(){},
-    store:{owner:()=>ls.get('ps_active_ws'),ready:async()=>{calls++;if(readyHook)await readyHook(calls);if(failReady&&calls===2)throw Error('IDB failed');}},
+    scoutStore:{owner:()=>ls.get('ps_active_ws'),ready:async()=>{calls++;if(readyHook)await readyHook(calls);if(failReady&&calls===2)throw Error('IDB failed');}},
     save:opts=>{writes++;if(failSave)return false;ls.set('scout_tool_v1',JSON.stringify({...c.data,players:c.data.players.filter(p=>p.type!=='target')}));return true;}
   });
   /* 2.942 — 상태를 바꾸면 복귀 예상(statusUntil)도 같이 정한다: 그 도우미를 같은 화면 코드에서 가져온다 */

@@ -39,7 +39,7 @@ function setup(m=match()){
   const state={m,owner:'team-a',edit:true,saves:0,draws:0,renders:0,counts:0,forms:[],confirms:[],messages:[]};
   class FixedDate extends Date{static now(){return 1770000000000;}}
   const c=vm.createContext({JSON,Object,Date:FixedDate,
-    store:{owner:()=>state.owner},matchGet:()=>state.m,matchCanEditOne:id=>state.edit&&id===state.m.id,
+    scoutStore:{owner:()=>state.owner},matchGet:()=>state.m,matchCanEditOne:id=>state.edit&&id===state.m.id,
     mb2RenderPhases:()=>state.renders++,mb2Draw:()=>state.draws++,mb2Counts:()=>state.counts++,mb2Save:()=>state.saves++,
     toast:message=>state.messages.push(message),psForm:form=>state.forms.push(form),psConfirm:(text,onOk)=>state.confirms.push({text,onOk})
   });

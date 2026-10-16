@@ -81,7 +81,7 @@ async function seed(frame,{blank=false}={}){
     await window.__boardSaveExplicit();
     await new Promise(r=>setTimeout(r,100));
     if(blank)delete window.__viewSnaps.board;
-    return {library:await store.get('cs_drill_lib_v1'),live:await store.get('cs_board_live_v1')};
+    return {library:await boardStore.get('cs_drill_lib_v1'),live:await boardStore.get('cs_board_live_v1')};
   },{uid:UID,blank});
 }
 async function stateOf(frame){
@@ -114,13 +114,13 @@ try{
     try{
       const seeded=await seed(frame),before=await stateOf(frame);
       await library(page,frame);await page.waitForTimeout(150);
-      const liveAtEntry=await frame.evaluate(()=>store.get('cs_board_live_v1'));
+      const liveAtEntry=await frame.evaluate(()=>boardStore.get('cs_board_live_v1'));
       await view(frame);await page.waitForTimeout(550);
       assert.equal(await frame.evaluate(()=>captureSnap().players[0]?.id),'LIBRARY-A','viewer opens saved board');
       await frame.evaluate(()=>{boardSaveLive();window.__boardFlushLive();dispatchEvent(new PageTransitionEvent('pagehide'));});
       await page.waitForTimeout(500);
-      assert.deepEqual(await frame.evaluate(()=>store.get('cs_board_live_v1')),liveAtEntry,'view and pagehide do not overwrite live persisted data');
-      assert.deepEqual(await frame.evaluate(()=>store.get('cs_drill_lib_v1')),seeded.library,'read-only viewing does not rewrite library');
+      assert.deepEqual(await frame.evaluate(()=>boardStore.get('cs_board_live_v1')),liveAtEntry,'view and pagehide do not overwrite live persisted data');
+      assert.deepEqual(await frame.evaluate(()=>boardStore.get('cs_drill_lib_v1')),seeded.library,'read-only viewing does not rewrite library');
       await page.screenshot({path:path.join(out,spec.name+'-viewer.png')});
       await page.locator('#live').click();await page.waitForTimeout(550);
       await assertLive(frame,before,'main board restores snapshot, animation, pages and history');
@@ -160,11 +160,11 @@ try{
       result.cases.push('close-to-library-and-open-another-item-keeps-live-board');
 
       await library(page,frame);await view(frame,'A',true);await page.waitForTimeout(500);
-      const libraryBeforeEdit=await frame.evaluate(()=>store.get('cs_drill_lib_v1'));
+      const libraryBeforeEdit=await frame.evaluate(()=>boardStore.get('cs_drill_lib_v1'));
       await frame.evaluate(()=>{state.players[0].name='가상 편집 저장 검증';renderTokens();boardSaveLive();});
       await page.waitForTimeout(2300);
       await frame.evaluate(()=>{window.__vaultAutoSaveFlush();dispatchEvent(new PageTransitionEvent('pagehide'));});
-      assert.deepEqual(await frame.evaluate(()=>store.get('cs_drill_lib_v1')),libraryBeforeEdit,'library edits and lifecycle events wait for Save');
+      assert.deepEqual(await frame.evaluate(()=>boardStore.get('cs_drill_lib_v1')),libraryBeforeEdit,'library edits and lifecycle events wait for Save');
       await frame.evaluate(()=>{window.fixtureOriginalLibWrite=libWrite;libWrite=()=>Promise.reject(new Error('synthetic save failure'));});
       await frame.locator('#vCreateSave').click();
       await frame.waitForFunction(()=>!document.getElementById('vCreateSave').disabled);
@@ -172,7 +172,7 @@ try{
       assert.equal(await frame.evaluate(()=>state.players[0].name),'가상 편집 저장 검증');
       await frame.evaluate(()=>{libWrite=window.fixtureOriginalLibWrite;});
       await frame.locator('#vCreateSave').click();
-      await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 편집 저장 검증');
+      await frame.waitForFunction(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 편집 저장 검증');
       await page.locator('#live').click();await page.waitForTimeout(500);await assertLive(frame,before,'saving edited library item leaves working board intact');
       result.cases.push('library-edit-saves-only-library-item');
 
@@ -182,7 +182,7 @@ try{
       assert.equal(await frame.locator('#vCreateSaveOnly').isVisible(),true,'편집 중에는 «저장» 단추가 보인다');
       await frame.evaluate(()=>{state.players[0].name='가상 그냥 저장';renderTokens();boardSaveLive();});
       await frame.locator('#vCreateSaveOnly').click();
-      await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 그냥 저장');
+      await frame.waitForFunction(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 그냥 저장');
       await frame.waitForFunction(()=>!window.__vaultManualDirty&&!document.getElementById('vCreateSaveOnly').disabled&&/저장됨/.test(document.getElementById('vCreateSub').textContent||''),null,{timeout:8000});   /* 저장이 끝날 때까지(저장 표시·변경 없음) */
       assert.equal(await frame.locator('#vCreateBar.on').count(),1,'«저장»은 편집을 닫지 않는다');
       assert.equal(await frame.evaluate(()=>{window.__vaultAutoSaveSchedule();return window.__vaultManualDirty;}),false,'바뀐 게 없으면 늦게 도는 기록이 «변경 있음»을 켜지 않는다');
@@ -192,7 +192,7 @@ try{
       /* 리눅스 웹킷(CI)은 Control+S 를 보드 문서에 넘기지 않는다(진단 2026-10-09 — 같은 시험이 리눅스 크롬·맥 웹킷에선 키로 통과). 거기선 같은 저장 단축키 함수를 직접 부른다 */
       if(engine==='webkit'&&process.platform!=='darwin')await frame.evaluate(()=>window.__psSaveShortcut());
       else await page.keyboard.press((process.platform==='darwin'?'Meta':'Control')+'+KeyS');
-      await frame.waitForFunction(async()=>((await store.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 단축키 저장',null,{timeout:5000});
+      await frame.waitForFunction(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).find(d=>d.libId==='fixture-a')?.snap?.players?.[0]?.name==='가상 단축키 저장',null,{timeout:5000});
       await frame.waitForFunction(()=>!window.__vaultManualDirty&&/저장됨/.test(document.getElementById('vCreateSub').textContent||''),null,{timeout:8000});
       assert.equal(await frame.locator('#vCreateBar.on').count(),1,'⌘S 도 편집을 닫지 않는다');
       await frame.locator('#vCreateCancel').click().catch(()=>{});

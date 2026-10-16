@@ -312,11 +312,11 @@ async function scoutScenario(page, spec, schedule, result) {
   const frame = page.frame({ url: /\/studio\/scout\.html\?fixture=review-training$/ });
   assert.ok(frame, 'real scout iframe is mounted');
   await frame.waitForFunction(() => typeof matchLoad === 'function' && typeof matchState !== 'undefined' &&
-    window.PSReviewTraining && typeof matchReviewTrainingOpen === 'function' && typeof store.ready === 'function');
+    window.PSReviewTraining && typeof matchReviewTrainingOpen === 'function' && typeof scoutStore.ready === 'function');
   await frame.evaluate(async ({ matches, schedule, mid }) => {
     await PSStorage.sharedReady();
-    if (!store.set('cs_team_matches_v1', matches) || !store.set('process_coach_v1', schedule)) throw new Error('fixture admission failed');
-    await store.ready();
+    if (!scoutStore.set('cs_team_matches_v1', matches) || !scoutStore.set('process_coach_v1', schedule)) throw new Error('fixture admission failed');
+    await scoutStore.ready();
     await PSStorage.sharedVerified('process_coach_v1',JSON.stringify(schedule));
     const session=JSON.parse(localStorage.getItem('ps_sync_session')),wid=localStorage.getItem('ps_active_ws');
     const marker={w:wid,u:session.uid,o:localStorage.getItem('ps_cache_owner_v1'),present:true};
@@ -349,10 +349,10 @@ async function scoutScenario(page, spec, schedule, result) {
 
   const refreshed = '저장 메시지로 받은 가상 관찰 결과';
   await frame.evaluate(async ({ taskId, refreshed }) => {
-    const doc = store.get('process_coach_v1');
+    const doc = scoutStore.get('process_coach_v1');
     const row = PSReviewTraining.list(doc).find(row => row.task.id === taskId);
     row.task.observation = refreshed; row.task.updatedAt = Date.now();
-    store.set('process_coach_v1', doc); await store.ready();
+    scoutStore.set('process_coach_v1', doc); await scoutStore.ready();
   }, { taskId, refreshed });
   await page.evaluate(({ uid, wid, mid, taskId }) => document.getElementById('fixtureScout').contentWindow.postMessage(
     { source: 'app', type: 'reviewTrainingSaved', uid, wid, matchId: mid, taskId }, location.origin), { uid: UID, wid: WID, mid: MID, taskId });

@@ -34,11 +34,11 @@ try{
       await page.goto(base+'/studio/scout.html',{waitUntil:'domcontentloaded'});
       await page.waitForFunction(()=>window.PSStorage&&typeof tmPosPopup==='function');
       await page.evaluate(async()=>{
-        await PSStorage.sharedReady();await psSaveSharedAsync(TKEY,localStorage.getItem(TKEY));await scPrepare();await store.ready(true);
+        await PSStorage.sharedReady();await psSaveSharedAsync(TKEY,localStorage.getItem(TKEY));await scPrepare();await scoutStore.ready(true);
         const pl=(id,num)=>({id,name:'가상 동명이인',num,grp:'A팀',type:'ours',posId:'pos_CB',foot:'R',status:'ok',levels:{},profile:{},memo:'원문 '+id});
         data.positions=[{id:'pos_CB',name:'CB',targets:{},req:{}}];data.players=[pl('keep','1'),pl('remove','2')];
         data.meta.evalMode='fifa';data.meta.teamName='가상 검증팀';data._items={build:'synthetic'};scMainMigrationPending=false;
-        await psSaveSharedAsync(KEY,JSON.stringify(data));await psSaveSharedAsync(PDKEY,'{}');await store.ready(true);rosterRemember(data.players);
+        await psSaveSharedAsync(KEY,JSON.stringify(data));await psSaveSharedAsync(PDKEY,'{}');await scoutStore.ready(true);rosterRemember(data.players);
         window.fixtureOriginal=JSON.parse(JSON.stringify(data.players));window.fixtureTargetRaw=localStorage.getItem(TKEY);
         data.players.push({...pl('private','3'),type:'target',name:'비공개 후보'});
         window.fixtureCalls=[];window.fixtureGate=new Promise(resolve=>window.fixtureRelease=resolve);
@@ -75,7 +75,7 @@ try{
       assert.deepEqual(state.calls[0].options.changedIds,[]);assert.deepEqual(state.calls[0].players,[]);
       assert.deepEqual(state.calls[0].options.basePlayers,[state.original.find(p=>p.id==='remove')]);
       assert.equal(state.targetUnchanged,true);assert.equal(state.pending,true);assert.equal(state.state,'saving');
-      await page.evaluate(async()=>{fixtureRelease();await store.ready();});
+      await page.evaluate(async()=>{fixtureRelease();await scoutStore.ready();});
       state=await inspect();assert.equal(state.pending,false);assert.equal(state.targetUnchanged,true);assert.deepEqual(state.main,state.idb);
       await page.screenshot({path:path.join(out,`${engine}-${width}-deleted.png`),animations:'disabled'});
       assert.deepEqual(errors,[]);assert.deepEqual(nativeDialogs,[]);

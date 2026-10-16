@@ -55,7 +55,7 @@ test('PSSync 에 idpLink 로 내보낸다',()=>{
 function scoutCtx(opts){
   const ls=fakeLS(opts.ls),toasts=[];
   const c=vm.createContext({JSON,Object,String,Array,Math,Date,parseInt,isNaN,console,localStorage:ls,
-    data:opts.data,store:{get:k=>JSON.parse(ls.getItem(k)||'null'),set:(k,v)=>{ls.setItem(k,JSON.stringify(v));return true;}},
+    data:opts.data,scoutStore:{get:k=>JSON.parse(ls.getItem(k)||'null'),set:(k,v)=>{ls.setItem(k,JSON.stringify(v));return true;}},
     scoutAutomaticWriteAllowed:()=>opts.canWrite!==false,
     matchPerms:()=>JSON.parse(ls.getItem('cs_perms_v1')||'null')||{},matchSession:()=>({uid:'coach'}),
     posAbbr:n=>({'센터백':'CB','공격수':'FW'})[n]||n,tmAbbrOf:p=>({pa:'CB',pb:'FW'})[p.posId]||'',

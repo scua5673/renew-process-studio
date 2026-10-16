@@ -5,7 +5,7 @@ function section(a,b){const i=scout.indexOf(a),j=scout.indexOf(b,i+a.length);ass
 const fn=name=>section('function '+name+'(','\nfunction ');
 const coordinator=section('/* 2.825 — roster save coordinator.','\nfunction save(){');
 const behavior=coordinator+'\n'+fn('save')+'\n'+fn('itemsPI')+'\n'+fn('itemsApply');
-// Reuse the actual PSSaveState, shared-write queue and scout store, without
+// Reuse the actual PSSaveState, shared-write queue and scout scoutStore, without
 // registering that file's tests. The SQ patch writer is an explicit boundary:
 // its own CAS/preimage contract is covered by roster-write-reliability tests.
 const harnessPath=path.join(__dirname,'roster-main-durability.test.cjs'),harnessSource=fs.readFileSync(harnessPath,'utf8');
@@ -51,7 +51,7 @@ function fixture({privateCandidate=false,persisted=null}={}){
   vm.runInContext(behavior,c,{filename:'actual roster save coordinator and projection'});
   c.rosterRemember(initial.players);
   return Object.assign(h,{c,initial,candidate,privateRaw,rowCalls,rowWrites,rowState,state,localWrites,
-    save:options=>c.save({skipTargets:true,...options}),ready:retry=>h.store.ready(retry),
+    save:options=>c.save({skipTargets:true,...options}),ready:retry=>h.scoutStore.ready(retry),
     persisted:()=>({values:[...h.values],disk:[...h.disk]}),
     // These are the reload boundary operations inside actual load(); rendering
     // and unrelated evaluation migrations are outside this coordinator fixture.
@@ -98,7 +98,7 @@ test('a second edit compares with the accepted snapshot instead of resending ear
 });
 
 test('main rejection stops candidate, item and public mirror mutations',()=>{
-  const h=fixture({privateCandidate:true}),before=h.values.get(MAIN),set=h.store.set;h.store.set=(k,v)=>k===MAIN?false:set(k,v);
+  const h=fixture({privateCandidate:true}),before=h.values.get(MAIN),set=h.scoutStore.set;h.scoutStore.set=(k,v)=>k===MAIN?false:set(k,v);
   h.c.data.players[0].memo='rejected';assert.equal(h.c.save(),false);assert.equal(h.values.get(MAIN),before);assert.deepEqual(h.rowCalls,[]);assert.deepEqual(h.localWrites.filter(x=>!x.k.startsWith(Outbox.prefix)),[]);assert.equal(h.values.get(TARGET),h.privateRaw);assert.equal(h.c.rosterPendingRows(),true);
 });
 
@@ -110,7 +110,7 @@ test('duplicate player identity is rejected before overwriting the persisted mai
 
 test('mirror IndexedDB failure is part of the same strict ready barrier and exact retry',async()=>{
   const h=fixture();h.hooks.set=k=>{if(k===MIRROR)throw Error('synthetic mirror failure');};h.save();
-  await assert.rejects(h.ready(),/mirror failure/);assert.equal(h.c.PSSaveState.get('team'),'failed');assert.equal(h.store.hasFailed(MIRROR),true);
+  await assert.rejects(h.ready(),/mirror failure/);assert.equal(h.c.PSSaveState.get('team'),'failed');assert.equal(h.scoutStore.hasFailed(MIRROR),true);
   delete h.hooks.set;await h.ready(true);assert.equal(h.values.get(MIRROR),h.disk.get(MIRROR));assert.equal(h.c.PSSaveState.get('team'),'saved');
 });
 

@@ -36,7 +36,7 @@ try{
       await page.goto(base+'/studio/scout.html',{waitUntil:'domcontentloaded'});
       await page.waitForFunction(()=>window.PSStorage&&typeof tbRender==='function');
       const state=await page.evaluate(async scenario=>{
-        await PSStorage.sharedReady();await store.ready(true);
+        await PSStorage.sharedReady();await scoutStore.ready(true);
         const AB=['GK','LB','LCB','RCB','RB','DM','CM','AM','LW','RW','CF'],pos={};
         data.positions.forEach(p=>{const ab=posAbbr(p.name);if(!pos[ab])pos[ab]=p.id;});
         data.players=AB.map((ab,i)=>({id:'pl'+i,name:'가상 '+ab,num:String(i+1),type:'ours',posId:pos[ab],status:'ok',levels:{},profile:{},memo:''}));
