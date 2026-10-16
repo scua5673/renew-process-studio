@@ -1652,7 +1652,7 @@ window.psFailAlert=function(lead,e,stage){
   .ps-updpop .pup-h b{font-size:15px;font-weight:800;flex:0 1 auto}
   .ps-updpop .pup-v{font-size:12px;font-weight:600;color:var(--dim,#646A73);flex:1 1 auto}
   html body .ps-updpop .pup-x:not(#_){border:0;background:none;width:32px;height:32px;min-height:32px;padding:0;font-size:18px;line-height:1;color:var(--dim,#646A73);cursor:pointer;align-self:center}
-  .ps-updpop .pup-body{display:flex;flex-direction:column;gap:10px;max-height:min(46vh,340px);overflow:auto}
+  .ps-updpop .pup-body{display:flex;flex-direction:column;gap:10px;max-height:min(62vh,520px);overflow:auto;overscroll-behavior:contain}   /* 3.057 — 업데이트 기록 전부라 길다 */
   .ps-updpop .pup-body:empty{display:none}
   .ps-updpop .pup-ent+.pup-ent{border-top:1px solid var(--line,#E3E6EA);padding-top:10px}
   .ps-updpop .pup-d{font-size:12px;font-weight:700;color:var(--dim,#646A73)}
@@ -8125,7 +8125,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
    ⚠ 띠·상태 문구 로직(psAutoReloadWhenSafe·psUpdateStatus·release-notes mount)은 그대로 두고 **보이는 자리만** 바꾼다.
       상태 문구는 psUpdateStatus 가 [data-upd-msg]·[data-upd-now] 에도 같이 쓴다. */
 (function(){
-  var SEEN='ps_release_notes_seen_v1',DAY=86400000;
+  var SEEN='ps_release_notes_seen_v1';
   var st={ready:false,next:null,fetching:false,open:'',from:null,raf:0};
   function $(id){return document.getElementById(id);}
   function mq(q){try{return !!(window.matchMedia&&window.matchMedia(q).matches);}catch(_){return false;}}
@@ -8133,13 +8133,9 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
   function band(){return !rail()&&document.body.classList.contains('ps-player-idp-only');}
   function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function all(){try{return window.PSReleaseNotes?PSReleaseNotes.entries():[];}catch(_){return [];}}
-  function dayOf(e){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec((e&&e.date)||'');return m?new Date(+m[1],+m[2]-1,+m[3]).getTime():NaN;}
-  /* 3.024 — «새 기능»은 열 판마다 한 번: 안내 판(끝이 0)의 묶음(PSReleaseNotes.announced — 바로 앞 안내 판 뒤의 판들까지, 최신이 앞)을
-     안내 판 날짜로 오늘 포함 7일 — 날짜만 본다(시계가 틀려도 영영 남거나 영영 안 뜨지 않게 미래 하루까지만). 그 사이 판은 조용하다. */
-  function bundle(){try{return window.PSReleaseNotes&&PSReleaseNotes.announced?PSReleaseNotes.announced():[];}catch(_){return [];}}
-  function news(){var t0=new Date();t0.setHours(0,0,0,0);var from=t0.getTime()-6*DAY,to=t0.getTime()+DAY;
-    var b=bundle(),t=dayOf(b[0]);return (b.length&&t>=from&&t<=to)?b:[];}
-  function rangeOf(n){var a=verOf(n[0]),z=verOf(n[n.length-1]);return (n.length>1&&z&&z!==a)?z+' ~ '+a:a;}   /* «v3.011 ~ v3.020» */
+  /* 3.057 — «새 기능»은 늘 떠 있고 판마다 바뀐 것을 최신부터 전부 보여 준다(사용자 «새기능은 계속 떠있게 해줘 뭐가 업데이트 됫는지도 쭉 나오게»).
+     3.024 의 «열 판마다 한 번 · 7일 뒤 사라짐»은 걷었다. 안 본 새 판이 있으면 ● (맨 앞 항목 기준). 선수 전용 폰 띠(release-notes.js mount)는 그대로. */
+  function news(){return all();}
   function seen(){try{return localStorage.getItem(SEEN)||'';}catch(_){return '';}}
   function markSeen(id){try{if(id&&seen()!==id)localStorage.setItem(SEEN,id);}catch(_){}}
   function verOf(e){var m=/^v([\d.]+)/.exec((e&&e.title)||'');return m?'v'+m[1]:'';}
@@ -8159,7 +8155,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     }).catch(function(){st.next={entry:null};}).then(function(){st.fetching=false;render();});
   }
   function entHtml(e,isNew,brief){
-    var d=(e.date||'').replace(/^\d{4}-0?(\d+)-0?(\d+)$/,'$1. $2.'),ch=(e.changes||[]).slice(0,brief?2:3);
+    var d=(e.date||'').replace(/^\d{4}-0?(\d+)-0?(\d+)$/,'$1. $2.'),ch=brief?(e.changes||[]).slice(0,2):(e.changes||[]);   /* 3.057 — «새 기능»은 바뀐 것 전부 */
     return '<div class="pup-ent'+(isNew?' new':'')+'">'
       +(brief?'':'<div class="pup-d">'+esc([d,verOf(e)].filter(Boolean).join(' · ')+(isNew?' · 새로':''))+'</div>')
       +'<div class="pup-t">'+esc(titleOf(e))+'</div>'
@@ -8169,8 +8165,10 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     var md=st.open,T=$('psUpdPopT'),V=$('psUpdPopV'),B=$('psUpdPopBody'),N=$('psUpdPopNote'),BT=$('psUpdPopBtns');if(!T)return;
     if(md==='ready'){var e=st.next&&st.next.entry;T.textContent='새 판이 준비됐어요';V.textContent=e?verOf(e):'';B.innerHTML=e?entHtml(e,true,true):'';
       N.textContent='하던 일은 저장한 뒤 같은 화면으로 다시 열려요. 입력을 멈추면 저절로도 바뀝니다.';BT.hidden=false;}
-    else{var n=news();T.textContent='새 기능';V.textContent=rangeOf(n);B.innerHTML=n.map(function(x,i){return entHtml(x,i===0,false);}).join('');
-      N.textContent='열 판마다 한 번 모아서 알려 드려요. 이 표시는 7일 뒤 저절로 사라져요.';BT.hidden=true;}
+    else{var n=news(),sn=st.sn,cut=-1;n.forEach(function(x,i){if(cut<0&&x.id===sn)cut=i;});
+      T.textContent='새 기능';V.textContent=verOf(n[0])?('최신 '+verOf(n[0])):'';
+      B.innerHTML=n.map(function(x,i){return entHtml(x,cut<0?i===0:i<cut,false);}).join('');   /* 3.057 — 지난번에 본 판 뒤로 새로 온 판은 «새로» */
+      N.textContent='판마다 바뀐 것을 최신부터 모두 적어 두었어요.';BT.hidden=true;}
   }
   function bottomNav(){var t=document.body.classList.contains('ps-team-open')?$('teamBottom'):$('appSeg');
     try{var r=t&&t.getBoundingClientRect();if(r&&r.height>0&&r.top>innerHeight/2)return r.top;}catch(_){}return innerHeight-64;}
@@ -8188,7 +8186,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     if(!md)return;closeSheets();
     try{if(window.__psCloseAppSettings)window.__psCloseAppSettings();}catch(_){}
     try{if(window.__psCloseAcctPop)window.__psCloseAcctPop();}catch(_){}
-    st.open=md;st.from=(from&&from.id==='psUpdRail')?from:null;fill();
+    st.open=md;st.sn=seen();st.from=(from&&from.id==='psUpdRail')?from:null;fill();   /* 3.057 — 연 순간의 «본 판»: 그 뒤로 온 판이 «새로» */
     var p=$('psUpdPop');p.hidden=false;place();
     var b=$('psUpdRail');if(b)b.setAttribute('aria-expanded','true');
     if(md==='news'){var n=news();if(n[0])markSeen(n[0].id);render();}else fetchNext();
@@ -8205,13 +8203,13 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     if(w)w.hidden=!md;
     if(b){b.classList.toggle('is-ready',md==='ready');b.classList.toggle('has-dot',!!dot);
       if(lb)lb.textContent=md==='ready'?'업데이트':'새 기능';
-      b.title=md==='ready'?'새 판이 준비됐어요':'최근 열 판에서 바뀐 것';b.setAttribute('aria-label',b.title);}
+      b.title=md==='ready'?'새 판이 준비됐어요':'업데이트 기록 — 판마다 바뀐 것';b.setAttribute('aria-label',b.title);}
     var v=st.next&&st.next.entry?verOf(st.next.entry):'';
     [].forEach.call(document.querySelectorAll('[data-upd-row]'),function(r){
       r.hidden=!md;r.classList.toggle('news',md==='news');
       var tx=r.querySelector('[data-upd-rowtext]'),bt=r.querySelector('[data-upd="row"]');if(!tx||!bt)return;
       if(md==='ready'){tx.innerHTML='<b>새 판이 준비됐어요</b>'+(v?' · '+esc(v):'');bt.setAttribute('data-upd-now','');bt.setAttribute('data-upd-label','적용');if(!bt.disabled)bt.textContent='적용';}
-      else if(md==='news'){tx.innerHTML='<b>새 기능</b> · '+esc(n.length>1?rangeOf(n)+' · '+n.length+'가지':titleOf(first));bt.removeAttribute('data-upd-now');bt.removeAttribute('data-upd-label');bt.disabled=false;bt.textContent='보기';}
+      else if(md==='news'){tx.innerHTML='<b>새 기능</b> · '+esc((verOf(first)?verOf(first)+' · ':'')+titleOf(first));bt.removeAttribute('data-upd-now');bt.removeAttribute('data-upd-label');bt.disabled=false;bt.textContent='보기';}
     });
     if(st.open){if(st.open==='news'&&!md)closePop();else{fill();place();}}
   }

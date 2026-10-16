@@ -57,16 +57,16 @@ test('선수 전용 폰 띠: 안내 판 묶음만 보이고, 그 사이 판이 �
   const none=harness([E('3.019'),E('3.010')]);assert.equal(none.host.hidden,true,'안내 판이 아직 없으면 띠도 없다');
 });
 
-test('앱 설정 위 «새 기능»: 묶음을 안내 판 날짜로 7일 · 제목 «v3.011 ~ v3.020» · 폰 줄은 «새 기능 · v3.011 ~ v3.020 · n가지»',()=>{
+test('3.057 — 앱 설정 위 «새 기능»은 늘 떠 있고 업데이트 기록 전부(사용자 «새기능은 계속 떠있게 · 뭐가 업데이트 됫는지도 쭉»)',()=>{
   const body=A.slice(A.indexOf('(function(){\n  var SEEN='),A.indexOf('window.__psUpdSurface='));
-  assert.match(body,/function bundle\(\)\{try\{return window\.PSReleaseNotes&&PSReleaseNotes\.announced\?PSReleaseNotes\.announced\(\):\[\];\}catch\(_\)\{return \[\];\}\}/);
-  assert.match(body,/function news\(\)\{[^\n]*\n\s*var b=bundle\(\),t=dayOf\(b\[0\]\);return \(b\.length&&t>=from&&t<=to\)\?b:\[\];\}/,'안내 판(묶음 맨 앞) 날짜로 7일 · 셋으로 자르지 않는다');
-  assert.doesNotMatch(body,/\.slice\(0,3\)/);
-  assert.match(body,/T\.textContent='새 기능';V\.textContent=rangeOf\(n\);/);
-  assert.match(body,/N\.textContent='열 판마다 한 번 모아서 알려 드려요\. 이 표시는 7일 뒤 저절로 사라져요\.';/);
-  assert.match(body,/b\.title=md==='ready'\?'새 판이 준비됐어요':'최근 열 판에서 바뀐 것';/);
-  assert.match(body,/tx\.innerHTML='<b>새 기능<\/b> · '\+esc\(n\.length>1\?rangeOf\(n\)\+' · '\+n\.length\+'가지':titleOf\(first\)\);/);
+  assert.match(body,/function news\(\)\{return all\(\);\}/,'열 판 묶음 · 7일 거르기를 걷었다');
+  assert.match(body,/ch=brief\?\(e\.changes\|\|\[\]\)\.slice\(0,2\):\(e\.changes\|\|\[\]\);/,'«새 기능»은 바뀐 것을 자르지 않는다');
+  assert.match(body,/T\.textContent='새 기능';V\.textContent=verOf\(n\[0\]\)\?\('최신 '\+verOf\(n\[0\]\)\):'';/);
+  assert.match(body,/N\.textContent='판마다 바뀐 것을 최신부터 모두 적어 두었어요\.';/);
+  assert.match(body,/b\.title=md==='ready'\?'새 판이 준비됐어요':'업데이트 기록 — 판마다 바뀐 것';/);
+  assert.match(body,/tx\.innerHTML='<b>새 기능<\/b> · '\+esc\(\(verOf\(first\)\?verOf\(first\)\+' · ':''\)\+titleOf\(first\)\);/);
   assert.match(body,/if\(md==='ready'\)\{var e=st\.next&&st\.next\.entry;T\.textContent='새 판이 준비됐어요';/,'«업데이트»(새 판 준비됨)는 그대로');
+  assert.match(A,/\.ps-updpop \.pup-body\{display:flex;flex-direction:column;gap:10px;max-height:min\(62vh,520px\);overflow:auto;overscroll-behavior:contain\}/,'긴 기록은 창 안에서 넘긴다');
 });
 
 test('판 3.024 이상 — app.html · sw.js 가 같은 판(뒤 PR 이 판을 올려도 깨지지 않게 3.024 이상 · 같음만 본다)',()=>{
