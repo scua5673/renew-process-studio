@@ -1,5 +1,5 @@
 'use strict';
-/* 3.065 — 잠에서 깬 아이패드의 «열림인데 죽은» 실시간 소켓을 알아채고 다시 붙는다 */
+/* 3.066 — 잠에서 깬 아이패드의 «열림인데 죽은» 실시간 소켓을 알아채고 다시 붙는다 */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const S=fs.readFileSync(path.join(__dirname,'..','studio','sync.js'),'utf8');
 function slice(a,b){const i=S.indexOf(a),j=S.indexOf(b,i+1);assert.ok(i>=0&&j>i,a);return S.slice(i,j);}

@@ -3216,7 +3216,7 @@ function libBlobPrepRows(at,wid,rows){
    supabase-js 없이 Phoenix 채널 프로토콜 최소 구현: phx_join(postgres_changes 필터 + access_token) · heartbeat 30초 · postgres_changes 수신.
    내가 방금 올린 키(m.c[k]===cupd)는 무시. 핑은 1.2초 묶어 syncNow('realtime'). 끊기면 지수 백오프(최대 60초)로 다시 붙는다.
    실패해도 아무것도 나빠지지 않는다 — 폴링이 그대로 돈다. */
-/* 3.065 — 사용자 «아이패드·컴퓨터에서 바로바로 적용되게». 서버 실측(10-15~16): 웹소켓 1,846회 붙었고 핑 1,972건이 나갔는데도 늦었다.
+/* 3.066 — 사용자 «아이패드·컴퓨터에서 바로바로 적용되게». 서버 실측(10-15~16): 웹소켓 1,846회 붙었고 핑 1,972건이 나갔는데도 늦었다.
    원인: 아이패드가 잠들었다 깨면 소켓이 readyState 1(열림)로 남은 채 죽어 있다(좀비). rtConnected() 가 참이라 폴링은 3분으로 늘고,
    rtConnect 는 «이미 붙어 있다»며 새로 붙지 않아 — 다른 기기 변경이 최대 3분 늦게 보였다.
    고침: 서버에서 마지막으로 받은 시각(rtSeen)을 잰다. 하트비트(30초)마다 답이 오므로 75초 넘게 조용하면 죽은 소켓으로 보고 다시 붙는다.
@@ -3235,10 +3235,10 @@ function rtConnect(){
     if(!('WebSocket' in window))return;
     var s=getSess(); if(!s||!dataUnlocked()||navigator.onLine===false)return;
     var wid=activeWs(); if(!wid)return;
-    if(rtWs&&rtTopicWid===wid&&(rtWs.readyState===0||rtAlive()))return;   /* 이미 이 워크스페이스에 붙어 있거나 붙는 중(3.065 — 열림인데 조용한 소켓은 죽은 것) */
+    if(rtWs&&rtTopicWid===wid&&(rtWs.readyState===0||rtAlive()))return;   /* 이미 이 워크스페이스에 붙어 있거나 붙는 중(3.066 — 열림인데 조용한 소켓은 죽은 것) */
     rtClose();
     ensureToken().then(function(at){
-      /* 3.065 — 서버 실측: 실시간 «MalformedJWT» 256건은 실제 사용자가 아니라 가짜 세션(fixture-access-…)을 넣은 자동 시험 브라우저(HeadlessChrome·클라우드 IP)였다.
+      /* 3.066 — 서버 실측: 실시간 «MalformedJWT» 256건은 실제 사용자가 아니라 가짜 세션(fixture-access-…)을 넣은 자동 시험 브라우저(HeadlessChrome·클라우드 IP)였다.
          진짜 로그인 토큰은 늘 JWT(점 두 개로 나뉜 세 조각)다 — 아니면 붙지 않는다(운영 실시간 로그를 깨끗하게, 폴링은 그대로). */
       if(!rtTokenOk(at))return;
       var ws; try{ ws=new WebSocket(rtUrl()); }catch(_){ return; }
@@ -3248,7 +3248,7 @@ function rtConnect(){
           payload:{config:{postgres_changes:[{event:'INSERT',schema:'public',table:'ps_kv_ping',filter:'workspace_id=eq.'+wid}]},access_token:at}});
         rtHb=setInterval(function(){
           if(rtWs!==ws)return;
-          if(Date.now()-rtSeen>=RT_STALE_MS){ syncDiagnostic('rt-stale',null); rtRetry=0; rtScheduleReconnect(); return; }   /* 3.065 — 하트비트 답이 끊긴 소켓 */
+          if(Date.now()-rtSeen>=RT_STALE_MS){ syncDiagnostic('rt-stale',null); rtRetry=0; rtScheduleReconnect(); return; }   /* 3.066 — 하트비트 답이 끊긴 소켓 */
           rtRef++; rtSend({topic:'phoenix',event:'heartbeat',payload:{},ref:String(rtRef)});
         },30000);
       };
@@ -3256,7 +3256,7 @@ function rtConnect(){
         rtSeen=Date.now();
         var m=null; try{ m=JSON.parse(ev.data); }catch(_){ return; } if(!m)return;
         if(m.event==='phx_reply'&&m.payload&&m.payload.status==='ok'&&!rtJoined&&m.topic!=='phoenix'){ rtJoined=true; rtRetry=0;
-          if(rtJoinedOnce)rtPing({k:'@rejoin',cupd:0});   /* 3.065 — 다시 붙었다: 끊긴 동안 놓친 변경을 한 번 당겨온다 */
+          if(rtJoinedOnce)rtPing({k:'@rejoin',cupd:0});   /* 3.066 — 다시 붙었다: 끊긴 동안 놓친 변경을 한 번 당겨온다 */
           rtJoinedOnce=true; try{ window.dispatchEvent(new CustomEvent('ps-sync-state')); }catch(_){} }
         else if(m.event==='phx_reply'&&m.payload&&m.payload.status==='error'&&m.topic!=='phoenix'){ syncDiagnostic('rt-join',new Error(JSON.stringify(m.payload).slice(0,160))); rtScheduleReconnect(); }
         else if(m.event==='postgres_changes'){ var rec=m.payload&&m.payload.data&&m.payload.data.record; if(rec)rtPing(rec); }
@@ -3278,7 +3278,7 @@ try{ window.addEventListener('online',function(){ setTimeout(rtConnect,500); });
 try{ setInterval(rtConnect,60000); }catch(_){}
 try{ setTimeout(rtConnect,6000); setTimeout(rtConnect,20000); }catch(_){}   /* 부팅 회차가 보류로 끝나도 붙는다(실측: 첫 회차 뒤 rt false) */
 try{ document.addEventListener('visibilitychange',function(){ if(document.visibilityState!=='visible')return;
-  /* 3.065 — 잠에서 깬 아이패드·맥: 숨은 동안 하트비트가 멈췄으면 열림처럼 보여도 갈아 끼운다(깨어날 땐 'show' 회차가 따로 당겨온다) */
+  /* 3.066 — 잠에서 깬 아이패드·맥: 숨은 동안 하트비트가 멈췄으면 열림처럼 보여도 갈아 끼운다(깨어날 땐 'show' 회차가 따로 당겨온다) */
   if(rtWs&&rtWs.readyState===1&&Date.now()-rtSeen>=RT_WAKE_STALE_MS){ rtRetry=0; rtClose(); }
   setTimeout(rtConnect,300); }); }catch(_){}
 function kvPullValues(at,wid,keys){
