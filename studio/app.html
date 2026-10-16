@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.056"></script>
+<script src="autosave-status.js?v=3.057"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -515,7 +515,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.056';</script>
+<script>window.PS_BUILD='3.057';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1158,6 +1158,13 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   try{ var fm=/[?&]safe=([012])(?:[&#]|$)/.exec(String(location.search||'')); if(fm){ level=+fm[1]; if(!level){ try{ sessionStorage.removeItem(K); }catch(_){} }
     /* 이번 부팅에만 — 주소에서 지운다. 남겨 두면 사파리가 강제 종료 뒤 같은 주소로 다시 열 때마다 safe=0 이 안전장치를 끈 채 반복된다 */
     try{ var u=new URL(location.href); u.searchParams.delete('safe'); history.replaceState(history.state,'',u.pathname+u.search+u.hash); }catch(_){} } }catch(_){}   /* 손으로: app.html?safe=2 */
+  /* 3.057 — 안전 단계는 **앱이 스스로 하는 새로고침**(__psBootMarkDone — 부팅 동기화가 바뀐 것을 받으면 새로 연다)을 건너 이어 간다.
+     예전엔 그 새로고침이 표시를 지워 다음 부팅이 다시 평소(단계 0 · 미리 띄우기 둘)로 열렸다 — 오류 제보 10/16 아이패드: 강제 종료 두 번 모두 prevLevel 0.
+     3분 안의 이어받기만 · ?safe= 로 정한 부팅은 그대로 · 이어받은 값은 한 번 쓰고 지운다. */
+  var carried=false;
+  try{ var CARRY='ps_boot_safe_carry_v1',cr=String(sessionStorage.getItem(CARRY)||'').split('|'),ca=+cr[0],cl=cr[1]==='2'?2:(cr[1]==='1'?1:0);
+    sessionStorage.removeItem(CARRY);
+    if(!fm&&isFinite(ca)&&ca>0&&now-ca>=0&&now-ca<LIFE&&cl>level){ level=cl; carried=true; } }catch(_){}
   window.__psSafeBoot=level>=1; window.__psSafeLevel=level;
   var loaded=false,beat=0,stage='shell',warm=-1,tmax=0,last=now,RANK={shell:0,board:1,boardload:2,sync:3,load:4};
   function write(){ try{ sessionStorage.setItem(K,last+'|'+(loaded?1:0)+'|'+stage+(warm>=0?'w'+warm:'')+(tmax?'t'+tmax:'')+'|'+level); }catch(_){} }
@@ -1173,7 +1180,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
     else if(/^t\d+$/.test(code))tmax=Math.max(tmax,+code.slice(1)||0);   /* 버틴 초는 꼬리(t60) — 늦게 온 sync · load 가 덮지 않는다 */
     else if(RANK[code]==null||RANK[code]>=(RANK[stage]||0))stage=code;   /* 단계는 뒤로 가지 않는다(검토: 늦은 sync 가 load · t30 을 덮어 과소 기록) */
     if(beat)write(); };   /* 숨겨진 동안(표시 없음)은 적지 않는다 — 뒤에서 iOS 가 탭을 정리한 것은 «죽음»이 아니다 */
-  window.__psBootMarkDone=function(){ done(); setTimeout(function(){ if(loaded&&!beat&&!document.hidden)live(); },4000); };   /* 스스로 하는 새로고침 직전. 취소되면(떠나기 확인창) 다시 지킨다 */
+  window.__psBootMarkDone=function(){ done(); if(level>=1){ try{ sessionStorage.setItem('ps_boot_safe_carry_v1',Date.now()+'|'+level); }catch(_){} } setTimeout(function(){ if(loaded&&!beat&&!document.hidden)live(); },4000); };   /* 스스로 하는 새로고침 직전. 취소되면(떠나기 확인창) 다시 지킨다 */
   window.addEventListener('pagehide',done);
   window.addEventListener('pageshow',function(e){ if(e&&e.persisted)live(); });
   window.addEventListener('load',function(){ loaded=true; try{ window.__psBootStage('load'); }catch(_){} if(!document.hidden)stamp(); });
@@ -1191,7 +1198,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       [0,1800,3600].forEach(function(ms){ setTimeout(function(){ try{ bw.toast(msg); }catch(_){} },ms); }); return; } }catch(_){}
     if(n<120)setTimeout(function(){ say(n+1); },500); })(0);
   /* ③ 멈춘 뒤 다시 연 기록 — PSSync 가 생기면(문서 끝의 sync.js) 한 건. 내용은 없다(단계 · 초 · 숫자 · UA 앞부분). */
-  if(level>=1)(function send(n){ try{ var S=window.PSSync; if(S&&typeof S.event==='function'){
+  if(level>=1&&!carried)(function send(n){   /* 3.057 — 이어받은 단계(스스로 새로고침)는 죽음이 아니다 — 기록하지 않는다 */ try{ var S=window.PSSync; if(S&&typeof S.event==='function'){
       var nav=window.navigator||{},sa=false; try{ sa=nav.standalone===true||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches); }catch(_){}
       var CAP='ps_boot_crash_sent_v1',hr=Math.floor(Date.now()/3600000),cp=[]; try{ cp=String(sessionStorage.getItem(CAP)||'').split('|'); }catch(_){}
       var cn=+cp[0]===hr?(+cp[1]||0):0; if(cn>=40)return; try{ sessionStorage.setItem(CAP,hr+'|'+(cn+1)); }catch(_){}
@@ -2684,13 +2691,16 @@ window.psFailAlert=function(lead,e,stage){
     }
     /* ── 3.004 · 미리 띄우기 순수 구간 끝 ── */
     function psWarmLean(){ try{ var dv=document.documentElement.getAttribute('data-ps-device'); return dv==='phone'||dv==='ipad'; }catch(_){ return false; } }
+    function psWarmNone(){ try{ return document.documentElement.getAttribute('data-ps-device')==='ipad'; }catch(_){ return false; } }
     function psWarmUsed(){ var raw=''; try{ raw=localStorage.getItem(PS_WARM_KEY)||''; }catch(_){} return psWarmParse(raw,Date.now()); }
     function psWarmNote(app){
       try{ if(!PS_WARM_TABS.some(function(t){ return t[0]===app; }))return;
         var u=psWarmUsed(); u[app]=Date.now(); localStorage.setItem(PS_WARM_KEY,JSON.stringify(u)); }catch(_){}
     }
     (function(){
-      var plan=window.__psSafeBoot?[]:psWarmPlan(psWarmLean(),psWarmUsed());   /* 3.034 — 앞 부팅이 죽었으면 미리 띄우지 않는다(셸 부팅 안전장치) */
+      /* 3.057 — 아이패드는 미리 띄우지 않는다(오류 제보 10/16 «경기 준비 열기 → 문제가 반복적으로 발생»: 미리 띄운 둘(scout · process)이 보관함 전체를
+         저마다 읽어 들인 채로 경기 준비가 열려 강제 종료 — 서버 기록 loadw2t10 두 번). 누를 때 연다. 폰은 3.034 대로 최근 둘. */
+      var plan=(window.__psSafeBoot||psWarmNone())?[]:psWarmPlan(psWarmLean(),psWarmUsed());   /* 3.034 — 앞 부팅이 죽었으면 미리 띄우지 않는다(셸 부팅 안전장치) */
       PS_WARM_TABS.forEach(function(t){ if(plan.indexOf(t[0])<0)return;
         setTimeout(function(){ try{
           /* 기준(gamemodel)은 src 가 scope 로 갈린다(개인/팀 — showApp 의 _want 재검사) — 주 진입로인 '기준' 탭(팀 판)을 미리.
@@ -8101,13 +8111,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.056"></script>
-<script src="autosave-merge.js?v=3.056"></script>
-<script src="autosave-runtime.js?v=3.056"></script>
-<script src="autosave-recovery.js?v=3.056"></script>
-<script src="sync.js?v=3.056"></script>
+<script src="autosave-journal.js?v=3.057"></script>
+<script src="autosave-merge.js?v=3.057"></script>
+<script src="autosave-runtime.js?v=3.057"></script>
+<script src="autosave-recovery.js?v=3.057"></script>
+<script src="sync.js?v=3.057"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.056">
+<link rel="stylesheet" href="support.css?v=3.057">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

@@ -96,7 +96,7 @@ test('3.034 an old mark is not a crash; a broken or unwritable mark never blocks
 test('3.034 the breaker runs before the board frame is given its address, and a light boot warms nothing',()=>{
   assert.ok(app.indexOf(START)>app.indexOf("var _psDev=document.documentElement.getAttribute('data-ps-device')"),'after the 3D default');
   assert.ok(app.indexOf(START)<app.indexOf("fBoard.src='board.html?v='+PS_BUILD"),'before the board loads');
-  assert.match(app,/var plan=window\.__psSafeBoot\?\[\]:psWarmPlan\(psWarmLean\(\),psWarmUsed\(\)\);/);
+  assert.match(app,/var plan=\(window\.__psSafeBoot\|\|psWarmNone\(\)\)\?\[\]:psWarmPlan\(psWarmLean\(\),psWarmUsed\(\)\);/);   /* 3.057 — 아이패드는 처음부터 미리 띄우지 않는다(psWarmNone) */
   assert.match(app,/var PS_WARM_LEAN_MAX=2;/);
   assert.doesNotMatch(snippet(),/localStorage\.setItem/,'the shell never changes stored settings');
 });
@@ -129,4 +129,25 @@ test('3.034 a light boot opens the board flat for this boot only; a 3D crash sti
   const t3={__psSafeBoot:true,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'phone':null}}};
   boardBoot({local:{ps_board_tilt3d:'1',ps_tilt3d_boot:JSON.stringify({T1:1e12-8000})},session:{ps_tilt3d_tab:'T1'},top:t3});assert.equal(t3.__psSafeBootBoard,true,'the 3.033 branch first still uses it up');
   assert.equal(boardBoot({local:{ps_board_tilt3d:'1'},top:t3}).win.__tiltBootOk,true);
+});
+
+/* 3.057 — 오류 제보 10/16(아이패드 «경기 준비 열기 → 문제가 반복적으로 발생»): 강제 종료 두 번 모두 prevLevel 0 —
+   가볍게 연 부팅(단계 1)이 부팅 동기화 뒤 스스로 새로고침하며 표시를 지워, 다음 부팅이 다시 평소(미리 띄우기 둘)로 열렸다. 단계는 그 새로고침을 건너 이어 간다. */
+test('3.057 a self-reload of a light boot keeps the next boot light (not reported as a crash), only once and only for 3 minutes',()=>{
+  const ss=store();
+  boot({session:ss}).fire('win:load');                       // 평소 부팅이 보이는 채 죽음(표시가 남는다)
+  const b=boot({session:ss,now:1e12+9000});assert.equal(b.win.__psSafeLevel,1);
+  b.win.__psBootMarkDone();b.fire('win:pagehide');            // 부팅 동기화가 바뀐 것을 받아 스스로 새로고침
+  assert.equal(b.mark(),null,'the alive mark is cleared as before');assert.equal(ss.getItem('ps_boot_safe_carry_v1'),(1e12+9000)+'|1');
+  const c=boot({session:ss,now:1e12+12000});
+  assert.equal(c.win.__psSafeBoot,true,'still light after the self-reload');assert.equal(c.win.__psSafeLevel,1);
+  assert.equal(ss.getItem('ps_boot_safe_carry_v1'),null,'used once');
+  assert.equal(c.timers.filter(x=>x.kind==='t'&&x.ms===500).length,0,'not reported as a crash — no boot_after_crash, no «closed badly» notice');
+  c.fire('win:pagehide');                                     // 사용자가 닫음 — 이어 가지 않는다
+  assert.equal(boot({session:ss,now:1e12+15000}).win.__psSafeBoot,false,'a normal leave is a normal next boot');
+  const ss2=store({ps_boot_safe_carry_v1:(1e12-4*60000)+'|2'});
+  assert.equal(boot({session:ss2}).win.__psSafeBoot,false,'older than 3 minutes → normal');
+  assert.equal(boot({device:'desktop',session:store({ps_boot_safe_carry_v1:(1e12-1000)+'|2'})}).win.__psSafeBoot,false,'desktops are untouched');
+  const ss3=store({ps_boot_safe_carry_v1:(1e12-1000)+'|1'});boot({session:ss3}).fire('win:load');   // 이어받은 부팅이 또 죽으면 → 안전 모드
+  assert.equal(boot({session:ss3,now:1e12+9000}).win.__psSafeLevel,2,'a carried light boot that dies escalates to safe mode as before');
 });
