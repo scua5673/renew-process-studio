@@ -20,6 +20,7 @@ try{
     assert.equal(await f.evaluate(()=>/오늘 훈련에 참여했나요/.test(document.body.innerText)),false,'선수용 일지가 아니다');
 
     step('today-empty');
+    await f.waitForFunction(()=>!!document.querySelector('.sq-empty-today b'),null,{timeout:20000}).catch(()=>{});   /* .sq-ph 뒤에 그려진다 — 웹킷은 한 박자 늦을 때가 있다 */
     const em=await f.evaluate(()=>{ const c=document.querySelector('.sq-empty-today'); return c?{t:c.querySelector('b').textContent,inv:!!c.querySelector('[data-sq-invite]'),ev:!!c.querySelector('[data-sqe-mode="eval"]')}:null; });
     assert.deepEqual(em,{t:'아직 IDP를 쓰는 선수가 없어요',inv:true,ev:true},'연결된 선수 0명 — 안내와 두 단추');
     await f.evaluate(()=>document.querySelector('.sq-empty-today [data-sqe-mode="eval"]').click());
