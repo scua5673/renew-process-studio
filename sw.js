@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.061';   // 3.061 보관함 따로 받기(3.056 libraryAfterRoundFailure)의 결과를 운영 기록에 남긴다 — library_fallback_saved(10분에 한 번 · 받은 수 · 올린 수) · library_fallback_failed(단계 · 코드). 운영자 아이패드에서 3.059 뒤에도 보관함 결과가 서버에 안 보여 원인을 볼 길이 없었다
+const CACHE = 'process-3.062';   // 3.062 «오늘»·출석·IDP 가 일정 거울(localStorage)이 IDB 정본보다 뒤처진 기기에서 정본을 읽는다(PSSchedule 그림자) — 아이패드에서 일정 화면엔 보이는데 팀운영 › 오늘에는 일정이 안 보였다
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',

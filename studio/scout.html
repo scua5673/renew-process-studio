@@ -6347,7 +6347,8 @@ function teamSaveOwner(){
 }
 const teamSaves=window.PSSaveState.createTracker("team",teamSaveOwner);
 const scoutStore={
-  get(k){try{const v=localStorage.getItem(k);if(v)return JSON.parse(v);}catch(_){}return mem[k]??null;},
+  /* 3.062 — 일정은 PSSchedule.raw(): 거울이 IDB 정본보다 뒤처진 기기(아이패드 거울 쓰기 실패)에서도 정본을 읽고, 정본 위에 고쳐 쓴다 */
+  get(k){try{const v=(k==="process_coach_v1"&&window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem(k);if(v)return JSON.parse(v);}catch(_){}return mem[k]??null;},
   /* 동기 접수 여부를 돌려준다. 예전에는 실패를 삼키고 mem에만 넣은 뒤 호출부가 "저장됨"이라고
      말해서, 코치는 저장된 줄 알고 앱을 닫았다. mem 사본은 이 탭이 살아 있는 동안의
      임시 대비일 뿐 저장이 아니다. */
@@ -16989,6 +16990,8 @@ function teamHomeWeekHTML(diff,opp){
   return out;
 }
 /* 2.176 — renderTeamHome 이 끝날 때마다 콕핏을 다시 그린다 */
+/* 3.062 — 일정 원문이 거울 → IDB 정본으로 바뀌면(PSSchedule 그림자) 열린 «오늘»을 다시 그린다. 입력 중이면 다음 기회로 */
+try{ window.addEventListener("ps-schedule-source",function(){ try{ var a=document.activeElement; if(a&&(/INPUT|TEXTAREA|SELECT/.test(a.tagName)||a.isContentEditable))return; var hv=$("homeView"); if(hv&&hv.classList.contains("on"))renderTeamHome(); }catch(_){} }); }catch(_){}
 try{ (function(){ var _o=renderTeamHome; renderTeamHome=function(){ var r=_o.apply(this,arguments); try{ renderCkHome(); }catch(e){ try{console.warn("ck",e);}catch(_){} } return r; }; })(); }catch(_){}
 function teamWeekNav(d){
   window.__twOff=(window.__twOff||0)+d;
@@ -19143,7 +19146,7 @@ function ckSeasonStats(){
      «한 번도 안 했다» 로 읽힌다 — 실제로는 128일 중 76일에 국면 자체를 안 붙인 것이었다(사용자 실데이터). */
   var out={train:0,off:0,match:0,byMoment:{},moments:[],any:false,weeks:0,detail:{},tagged:0};   /* 2.482 — detail[moKey]={last,phases:{id:{n,last}},unspec,days} · 날수 기준(하루 중복 제거) */
   try{
-    var src=JSON.parse(localStorage.getItem("process_coach_v1")||"null");
+    var src=JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null");
     var weeks=src&&src.weeks; if(!weeks||typeof weeks!=="object")return out;
     var model=null; try{ model=JSON.parse(localStorage.getItem("cs_gamemodel_v1")||"null"); }catch(_){}
     var pm={},order=[];
@@ -19222,7 +19225,7 @@ function ckSeasonStats(){
 function tgeTrainCount(model){
   var out={byPhase:{},byMoment:{},any:false};
   try{
-    var src=JSON.parse(localStorage.getItem("process_coach_v1")||"null");
+    var src=JSON.parse(((window.PSSchedule&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))||"null");
     var weeks=src&&src.weeks; if(!weeks||typeof weeks!=="object")return out;
     var cur=0;
     try{ var am=src.anchorMonday?new Date(src.anchorMonday+"T00:00:00"):null;
@@ -20092,7 +20095,7 @@ function ckDataWait(){
     if(!localStorage.getItem("ps_active_ws"))return o;
     /* 명단: 서버 확인 전(scoutBootPending)에는 메모리의 명단이 빈 기본값이다. 사본이 확인된 기기는 문서를 읽는 순간 이미 false 다(scoutBoot 가 먼저 돈다) */
     o.r=(typeof scoutBootPending!=="undefined"&&scoutBootPending===true);
-    o.s=localStorage.getItem("process_coach_v1")===null&&!(S.keyReady&&S.keyReady("process_coach_v1"));
+    o.s=((typeof PSSchedule!=="undefined"&&PSSchedule.raw)?PSSchedule.raw():localStorage.getItem("process_coach_v1"))===null&&!(S.keyReady&&S.keyReady("process_coach_v1"));
   }catch(_){}
   return o;
 }

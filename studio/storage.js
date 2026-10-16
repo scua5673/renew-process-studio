@@ -1371,9 +1371,49 @@
        일정을 한 번 저장할 때마다 숨어 있는 «오늘» 화면이 그만큼 메인 스레드를 붙잡아 세션 시트가 굳었다.
        같은 원문이면 한 번만 읽는다. 비교는 `===` — 크롬은 getItem 이 같은 문자열 객체를 돌려줘 즉시 끝나고,
        아니어도 memcmp 라 파싱보다 수십 배 싸다. 돌려주는 Date 는 매번 새 사본(호출부가 고쳐도 안전). */
+  /* 3.062 — 화면이 읽는 일정 원문. 거울(localStorage)이 정본(IndexedDB)보다 뒤처진 기기에서는 정본을 읽는다.
+     풋볼A 운영자 아이패드: 일정 문서가 커서 거울 쓰기가 실패(schedule_mirror_quota)해 거울에는 옛 일정이 남았다.
+     일정 화면은 IDB 를 읽어 보였지만 «오늘»(scout.html)·출석·IDP 는 거울을 읽어 일정이 비어 보였다.
+     - 그림자는 «비교한 그 거울 원문»에만 붙는다. 거울이 바뀌면(새 입력·쓰기 성공) 그 순간 무효 — 새 입력을 가리지 않는다.
+     - 다른 창의 IDB 쓰기가 아직 진행 중일 수 있어, 1.2초 뒤 다시 읽어 IDB·거울이 그대로일 때만 그림자를 쓴다.
+     - 읽기 전용. 거울을 고쳐 쓰지 않는다(쓰기는 저장 공간 문제로 또 실패할 수 있고, 저장 경로는 그대로 둔다). */
+  var idbShadow=null,shadowT=0,shadowSeq=0;
+  function mirrorRaw(){ try{ return localStorage.getItem(SCHED_KEY); }catch(_){ return null; } }
+  function schedRaw(){ var raw=mirrorRaw(); return (idbShadow&&idbShadow.mirror===raw)?idbShadow.raw:raw; }
+  function readSched(){ var v=schedRaw(); try{ return v?JSON.parse(v):null; }catch(_){ return null; } }
+  function shadowShape(raw){ try{ var d=JSON.parse(raw); return !!(d&&typeof d==='object'&&!Array.isArray(d)&&d.weeks&&typeof d.weeks==='object'); }catch(_){ return false; } }
+  function shadowRead(){
+    var st=window.storage;if(!st||!st.get)return Promise.resolve(null);
+    var ready=window.PSStorage&&PSStorage.sharedReady?PSStorage.sharedReady(SCHED_KEY):true,m0;
+    return Promise.resolve(ready).catch(function(){}).then(function(){ m0=mirrorRaw(); return st.get(SCHED_KEY); })
+      .then(function(rec){ return {mirror:m0,now:mirrorRaw(),idb:rec&&rec.value!=null?String(rec.value):null}; });
+  }
+  function shadowSet(next){
+    var before=schedRaw();idbShadow=next;
+    if(schedRaw()!==before){ try{ window.dispatchEvent(new CustomEvent('ps-schedule-source',{detail:{idb:!!next}})); }catch(_){} }
+  }
+  function shadowCheck(){
+    var seq=++shadowSeq;
+    return shadowRead().then(function(a){
+      if(seq!==shadowSeq||!a||a.mirror!==a.now)return false;
+      if(a.idb==null||a.idb===a.mirror||!shadowShape(a.idb)){ shadowSet(null); return false; }
+      if(idbShadow&&idbShadow.mirror===a.mirror&&idbShadow.raw===a.idb)return true;
+      return new Promise(function(r){ setTimeout(r,1200); }).then(shadowRead).then(function(b){
+        if(seq!==shadowSeq||!b||b.mirror!==a.mirror||b.now!==a.mirror||b.idb!==a.idb)return false;
+        shadowSet({mirror:a.mirror,raw:a.idb}); return true;
+      });
+    }).catch(function(e){ note('schedule-shadow',e); return false; });
+  }
+  function shadowSoon(ms){ clearTimeout(shadowT); shadowT=setTimeout(shadowCheck,ms==null?400:ms); }
+  try{
+    window.addEventListener('storage',function(e){ if(e&&(e.key===SCHED_KEY||e.key==='ps_sync_meta'||e.key==null))shadowSoon(); });
+    document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible')shadowSoon(); });
+    shadowSoon(600);
+  }catch(_){}
+
   var anchorMemo={raw:null,d:null};
   function anchor(){
-    var raw=null;try{raw=localStorage.getItem(SCHED_KEY);}catch(_){}
+    var raw=schedRaw();
     var d=null;
     if(raw){
       if(raw===anchorMemo.raw)d=anchorMemo.d;
@@ -1391,7 +1431,7 @@
      다음 호출자도 같은 객체를 받는다. 고쳐야 하면 read()/readFor() 로 새 사본을 받는다. */
   var viewMemo={raw:null,by:{}};
   function view(grp){
-    var raw=null;try{raw=localStorage.getItem(SCHED_KEY);}catch(_){}
+    var raw=schedRaw();
     if(!raw)return null;
     if(raw!==viewMemo.raw)viewMemo={raw:raw,by:{}};
     var key=String(grp||'');
@@ -1599,9 +1639,11 @@
     mondayOf:mondayOf,
     hasMatch:hasMatch, newId:newId, stampIds:stampIds,
     anchor:anchor, cellOf:cellOf,
-    read:function(){ return readJSON(SCHED_KEY); },
+    read:function(){ return readSched(); },
+    /* 3.062 — 화면이 읽을 일정 원문(거울이 뒤처졌으면 IDB 정본). check 는 지금 다시 비교한다(Promise). */
+    raw:schedRaw, check:shadowCheck,
     /* 2.215 — 조별 일정: grpWeeks[조] 가 있으면 그것을 weeks 로 돌려준다(없으면 전체). 원본은 건드리지 않는다 */
-    readFor:function(grp){ var d=readJSON(SCHED_KEY); if(!d||!grp)return d; return readForData(d,grp); },
+    readFor:function(grp){ var d=readSched(); if(!d||!grp)return d; return readForData(d,grp); },
     /* 2.933 — 읽기 전용 공유 사본(위 view 주석). 화면 그리기용 */
     view:view,
     sesMin:sesMin, sesMoments:sesMoments,   /* 2.951 — 세션의 분·국면(일정·콕핏·플레이북이 같은 함수) */
