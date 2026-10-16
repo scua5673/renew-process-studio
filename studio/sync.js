@@ -3225,6 +3225,7 @@ var RT_STALE_MS=75000, RT_WAKE_STALE_MS=35000;
 var rtWs=null, rtRef=0, rtTopicWid='', rtHb=null, rtRetry=0, rtTimer=null, rtJoined=false, rtLast=0, rtHits=0, rtSeen=0, rtJoinedOnce=false;
 function rtUrl(){ return BASE.replace(/^http/,'ws')+'/realtime/v1/websocket?apikey='+encodeURIComponent(CFG.anonKey)+'&vsn=1.0.0'; }
 function rtSend(o){ try{ if(rtWs&&rtWs.readyState===1)rtWs.send(JSON.stringify(o)); }catch(_){} }
+function rtTokenOk(at){ return typeof at==='string'&&/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(at); }
 function rtAlive(){ return !!(rtWs&&rtWs.readyState===1&&rtSeen&&Date.now()-rtSeen<RT_STALE_MS); }
 function rtConnected(){ return !!(rtAlive()&&rtJoined&&rtTopicWid===activeWs()); }
 function rtClose(){ try{ if(rtHb)clearInterval(rtHb); }catch(_){} rtHb=null; try{ if(rtWs){ rtWs.onclose=null; rtWs.onmessage=null; rtWs.close(); } }catch(_){} rtWs=null; rtJoined=false; }
@@ -3237,7 +3238,9 @@ function rtConnect(){
     if(rtWs&&rtTopicWid===wid&&(rtWs.readyState===0||rtAlive()))return;   /* 이미 이 워크스페이스에 붙어 있거나 붙는 중(3.064 — 열림인데 조용한 소켓은 죽은 것) */
     rtClose();
     ensureToken().then(function(at){
-      if(!at)return;
+      /* 3.064 — 서버 실측: 실시간 «MalformedJWT» 256건은 실제 사용자가 아니라 가짜 세션(fixture-access-…)을 넣은 자동 시험 브라우저(HeadlessChrome·클라우드 IP)였다.
+         진짜 로그인 토큰은 늘 JWT(점 두 개로 나뉜 세 조각)다 — 아니면 붙지 않는다(운영 실시간 로그를 깨끗하게, 폴링은 그대로). */
+      if(!rtTokenOk(at))return;
       var ws; try{ ws=new WebSocket(rtUrl()); }catch(_){ return; }
       rtWs=ws; rtTopicWid=wid; rtJoined=false; rtSeen=Date.now();
       ws.onopen=function(){ rtSeen=Date.now();

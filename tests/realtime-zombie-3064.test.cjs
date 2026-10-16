@@ -11,7 +11,7 @@ function harness(){
     window:{WebSocket:WS,addEventListener(){},dispatchEvent(){}},WebSocket:WS,
     navigator:{onLine:true},document:{visibilityState:'visible',addEventListener:(e,f)=>docL.push(f)},
     BASE:'https://x.supabase.co',CFG:{anonKey:'k'},getSess:()=>({at:'t'}),dataUnlocked:()=>true,activeWs:()=>'w1',
-    ensureToken:()=>({then:f=>{f('jwt');return {catch(){}};}}),meta:()=>({c:{}}),syncNow:r=>syncs.push(r),syncDiagnostic(){},
+    ensureToken:()=>({then:f=>{f(c.__tok);return {catch(){}};}}),__tok:'eyJa.eyJb.sig',meta:()=>({c:{}}),syncNow:r=>syncs.push(r),syncDiagnostic(){},
     setTimeout:(f,d)=>{timers.push({f,d});return timers.length;},clearTimeout(){},setInterval:(f,d)=>{intervals.push({f,d});return intervals.length;},clearInterval(i){if(intervals[i-1])intervals[i-1].dead=1;}};
   c.window.WebSocket=WS;vm.createContext(c);vm.runInContext(RT,c);
   function join(ws){ws.readyState=1;ws.onopen();ws.onmessage({data:JSON.stringify({event:'phx_reply',topic:'realtime:ps_kv_ping:w1',payload:{status:'ok'}})});}
@@ -44,4 +44,9 @@ test('화면이 다시 보일 때 오래 조용했으면 갈아 끼우고, 다�
 test('첫 연결은 따로 당겨오지 않는다(부팅 회차가 이미 받는다)',()=>{
   const h=harness();h.c.rtConnect();h.timers.length=0;h.join(h.sockets[0]);
   assert.equal(h.timers.filter(t=>t.d===1200).length,0);
+});
+test('JWT 가 아닌 토큰(시험용 가짜 세션)으로는 실시간에 붙지 않는다',()=>{
+  const h=harness();h.c.__tok='fixture-access-A';h.c.rtConnect();assert.equal(h.sockets.length,0);
+  h.c.__tok='';h.c.rtConnect();assert.equal(h.sockets.length,0);
+  h.c.__tok='eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln';h.c.rtConnect();assert.equal(h.sockets.length,1);
 });
