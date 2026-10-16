@@ -45,24 +45,13 @@ test('상태 문구·버튼은 팝오버·폰 줄([data-upd-msg]·[data-upd-now]
   assert.equal(btns[0].disabled,false);assert.equal(btns[0].textContent,'지금 적용');assert.equal(btns[1].textContent,'적용');
   c.psUpdateStatus('',false);assert.equal(msgs[0].hidden,true);
 });
-test('«새 기능»은 안내 판 묶음(3.024 — 열 판마다 한 번)을 안내 판 날짜로 오늘 포함 7일 — 본 것은 기기에만 기억해 점을 끈다',()=>{
-  const src=cut('  function dayOf(e){','  function seen(){');
-  const mk=(bundle,now)=>{const RealDate=Date;class D extends RealDate{constructor(...a){super(...(a.length?a:[now]));}static now(){return now;}}
-    const c=vm.createContext({PSReleaseNotes:{announced:()=>bundle},window:{PSReleaseNotes:1},Date:D,DAY:86400000});
-    vm.runInContext('function verOf(e){var m=/^v([\\d.]+)/.exec((e&&e.title)||"");return m?"v"+m[1]:"";}\n'+src+'\nthis.news=news;this.rangeOf=rangeOf;',c);return c;};
-  const B=[{id:'a20',date:'2026-10-14',title:'v3.020 · 하나'},{id:'a19',date:'2026-10-14',title:'v3.019 · 둘'},{id:'a11',date:'2026-10-13',title:'v3.011 · 셋'}];
-  const ids=(b,now)=>Array.from(mk(b,now).news(),e=>e.id);   /* vm 안 배열을 바깥 배열과 견주려면 Array.from */
-  assert.deepEqual(ids(B,new Date(2026,9,14,12).getTime()),['a20','a19','a11'],'안내 판 날짜(10/14) — 묶음 전부, 셋으로 자르지 않는다');
-  assert.deepEqual(ids(B,new Date(2026,9,20,9).getTime()),['a20','a19','a11'],'10/20 은 7일째');
-  assert.deepEqual(ids(B,new Date(2026,9,21,9).getTime()),[],'10/21 이면 지났다 — 묶음 안 항목의 날짜는 보지 않는다');
-  assert.deepEqual(ids(B,new Date(2026,9,13,9).getTime()),['a20','a19','a11'],'안내 판 날짜가 내일이면 띄운다(시계가 하루 틀려도)');
-  assert.deepEqual(ids(B,new Date(2026,9,12,9).getTime()),[],'안내 판 날짜가 모레보다 뒤(시계 틀림)면 띄우지 않는다');
-  assert.deepEqual(ids([],new Date(2026,9,14).getTime()),[],'안내 판이 아직 없으면 조용하다');
-  const c=mk(B,new Date(2026,9,14,12).getTime());
-  assert.equal(c.rangeOf(B),'v3.011 ~ v3.020');assert.equal(c.rangeOf([B[0]]),'v3.020');
+test('«새 기능»은 늘 떠 있고(3.056 — 7일 · 열 판 묶음을 걷었다) 판마다 바뀐 것을 전부 · 본 것은 기기에만 기억해 점을 끈다',()=>{
   const body=cut('(function(){\n  var SEEN=','window.__psUpdSurface=');
+  assert.match(body,/function news\(\)\{return all\(\);\}/,'날짜 · 묶음 거르기 없이 전부');
+  assert.doesNotMatch(body,/function dayOf\(|function rangeOf\(|function bundle\(/);
   assert.match(body,/if\(md==='news'\)\{var n=news\(\);if\(n\[0\]\)markSeen\(n\[0\]\.id\);render\(\);\}/,'열면 본 것으로');
-  assert.match(body,/dot=md==='ready'\|\|\(md==='news'&&!!first&&seen\(\)!==first\.id\)/);
+  assert.match(body,/dot=md==='ready'\|\|\(md==='news'&&!!first&&seen\(\)!==first\.id\)/,'새 판이 오면 ●');
+  assert.match(body,/st\.open=md;st\.sn=seen\(\);/,'연 순간의 본 판 — 그 뒤로 온 판이 «새로»');
 });
 test('폰: 더보기 두 시트 맨 위에 같은 줄 · 더보기 버튼 점',()=>{
   const row='<div class="ps-upd-row" data-upd-row hidden>';
