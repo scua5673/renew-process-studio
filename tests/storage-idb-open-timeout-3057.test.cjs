@@ -1,5 +1,5 @@
 'use strict';
-/* 3.056 — 아이패드 사파리에서 IndexedDB 열기가 성공도 오류도 없이 멈추면 보관함 · 동기화 · «진단»이 끝없이 기다렸다
+/* 3.057 — 아이패드 사파리에서 IndexedDB 열기가 성공도 오류도 없이 멈추면 보관함 · 동기화 · «진단»이 끝없이 기다렸다
    (풋볼A 아이패드 — «진단» 줄이 «확인 중…», 자동 저장 «기기 저장을 확인해 주세요»).
    열기를 기다리는 동안 indexedDB.databases() 로 깨우고, OPEN_TIMEOUT 안에 안 열리면 TimeoutError 로 끝낸 뒤 다음 요청이 새로 연다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');

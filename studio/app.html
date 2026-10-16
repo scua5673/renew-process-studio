@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.056"></script>
+<script src="autosave-status.js?v=3.057"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -515,7 +515,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.056';</script>
+<script>window.PS_BUILD='3.057';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1652,7 +1652,7 @@ window.psFailAlert=function(lead,e,stage){
   .ps-updpop .pup-h b{font-size:15px;font-weight:800;flex:0 1 auto}
   .ps-updpop .pup-v{font-size:12px;font-weight:600;color:var(--dim,#646A73);flex:1 1 auto}
   html body .ps-updpop .pup-x:not(#_){border:0;background:none;width:32px;height:32px;min-height:32px;padding:0;font-size:18px;line-height:1;color:var(--dim,#646A73);cursor:pointer;align-self:center}
-  .ps-updpop .pup-body{display:flex;flex-direction:column;gap:10px;max-height:min(62vh,520px);overflow:auto;overscroll-behavior:contain}   /* 3.056 — 업데이트 기록 전부라 길다 */
+  .ps-updpop .pup-body{display:flex;flex-direction:column;gap:10px;max-height:min(62vh,520px);overflow:auto;overscroll-behavior:contain}   /* 3.057 — 업데이트 기록 전부라 길다 */
   .ps-updpop .pup-body:empty{display:none}
   .ps-updpop .pup-ent+.pup-ent{border-top:1px solid var(--line,#E3E6EA);padding-top:10px}
   .ps-updpop .pup-d{font-size:12px;font-weight:700;color:var(--dim,#646A73)}
@@ -8101,13 +8101,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.056"></script>
-<script src="autosave-merge.js?v=3.056"></script>
-<script src="autosave-runtime.js?v=3.056"></script>
-<script src="autosave-recovery.js?v=3.056"></script>
-<script src="sync.js?v=3.056"></script>
+<script src="autosave-journal.js?v=3.057"></script>
+<script src="autosave-merge.js?v=3.057"></script>
+<script src="autosave-runtime.js?v=3.057"></script>
+<script src="autosave-recovery.js?v=3.057"></script>
+<script src="sync.js?v=3.057"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.056">
+<link rel="stylesheet" href="support.css?v=3.057">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
@@ -8133,7 +8133,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
   function band(){return !rail()&&document.body.classList.contains('ps-player-idp-only');}
   function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function all(){try{return window.PSReleaseNotes?PSReleaseNotes.entries():[];}catch(_){return [];}}
-  /* 3.056 — «새 기능»은 늘 떠 있고 판마다 바뀐 것을 최신부터 전부 보여 준다(사용자 «새기능은 계속 떠있게 해줘 뭐가 업데이트 됫는지도 쭉 나오게»).
+  /* 3.057 — «새 기능»은 늘 떠 있고 판마다 바뀐 것을 최신부터 전부 보여 준다(사용자 «새기능은 계속 떠있게 해줘 뭐가 업데이트 됫는지도 쭉 나오게»).
      3.024 의 «열 판마다 한 번 · 7일 뒤 사라짐»은 걷었다. 안 본 새 판이 있으면 ● (맨 앞 항목 기준). 선수 전용 폰 띠(release-notes.js mount)는 그대로. */
   function news(){return all();}
   function seen(){try{return localStorage.getItem(SEEN)||'';}catch(_){return '';}}
@@ -8155,7 +8155,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     }).catch(function(){st.next={entry:null};}).then(function(){st.fetching=false;render();});
   }
   function entHtml(e,isNew,brief){
-    var d=(e.date||'').replace(/^\d{4}-0?(\d+)-0?(\d+)$/,'$1. $2.'),ch=brief?(e.changes||[]).slice(0,2):(e.changes||[]);   /* 3.056 — «새 기능»은 바뀐 것 전부 */
+    var d=(e.date||'').replace(/^\d{4}-0?(\d+)-0?(\d+)$/,'$1. $2.'),ch=brief?(e.changes||[]).slice(0,2):(e.changes||[]);   /* 3.057 — «새 기능»은 바뀐 것 전부 */
     return '<div class="pup-ent'+(isNew?' new':'')+'">'
       +(brief?'':'<div class="pup-d">'+esc([d,verOf(e)].filter(Boolean).join(' · ')+(isNew?' · 새로':''))+'</div>')
       +'<div class="pup-t">'+esc(titleOf(e))+'</div>'
@@ -8167,7 +8167,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
       N.textContent='하던 일은 저장한 뒤 같은 화면으로 다시 열려요. 입력을 멈추면 저절로도 바뀝니다.';BT.hidden=false;}
     else{var n=news(),sn=st.sn,cut=-1;n.forEach(function(x,i){if(cut<0&&x.id===sn)cut=i;});
       T.textContent='새 기능';V.textContent=verOf(n[0])?('최신 '+verOf(n[0])):'';
-      B.innerHTML=n.map(function(x,i){return entHtml(x,cut<0?i===0:i<cut,false);}).join('');   /* 3.056 — 지난번에 본 판 뒤로 새로 온 판은 «새로» */
+      B.innerHTML=n.map(function(x,i){return entHtml(x,cut<0?i===0:i<cut,false);}).join('');   /* 3.057 — 지난번에 본 판 뒤로 새로 온 판은 «새로» */
       N.textContent='판마다 바뀐 것을 최신부터 모두 적어 두었어요.';BT.hidden=true;}
   }
   function bottomNav(){var t=document.body.classList.contains('ps-team-open')?$('teamBottom'):$('appSeg');
@@ -8186,7 +8186,7 @@ if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getEl
     if(!md)return;closeSheets();
     try{if(window.__psCloseAppSettings)window.__psCloseAppSettings();}catch(_){}
     try{if(window.__psCloseAcctPop)window.__psCloseAcctPop();}catch(_){}
-    st.open=md;st.sn=seen();st.from=(from&&from.id==='psUpdRail')?from:null;fill();   /* 3.056 — 연 순간의 «본 판»: 그 뒤로 온 판이 «새로» */
+    st.open=md;st.sn=seen();st.from=(from&&from.id==='psUpdRail')?from:null;fill();   /* 3.057 — 연 순간의 «본 판»: 그 뒤로 온 판이 «새로» */
     var p=$('psUpdPop');p.hidden=false;place();
     var b=$('psUpdRail');if(b)b.setAttribute('aria-expanded','true');
     if(md==='news'){var n=news();if(n[0])markSeen(n[0].id);render();}else fetchNext();

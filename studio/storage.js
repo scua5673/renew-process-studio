@@ -10,7 +10,7 @@
    3) localStorage.setItem 용량 초과를 감지해 화면에 경고. 더는 조용히 잃지 않는다. */
 (function(){
   "use strict";
-  var DB='ps-store', STORE='kv', VER=1, dbp=null, OPEN_TIMEOUT=10000, POKE_MS=150;   /* 3.056 — 멈춘 IndexedDB 열기 */
+  var DB='ps-store', STORE='kv', VER=1, dbp=null, OPEN_TIMEOUT=10000, POKE_MS=150;   /* 3.057 — 멈춘 IndexedDB 열기 */
 
   /* HTML 문자열을 DOM에 넣어야 하는 기존 화면의 단일 이스케이프 규칙.
      새 코드는 textContent를 우선하고, 템플릿 문자열이 필요한 곳만 이 함수를 쓴다. */
@@ -92,7 +92,7 @@
       r.onupgradeneeded=function(){ try{ r.result.createObjectStore(STORE); }catch(_){} };
       function settle(){ if(timer!==null){try{clearTimeout(timer);}catch(_){}timer=null;} if(poke!==null){try{clearInterval(poke);}catch(_){}poke=null;} }
       function fail(e){if(failed)return;failed=true;settle();rej(e);}
-      /* 3.056 — 아이패드 사파리는 IndexedDB 열기가 성공도 오류도 없이 멈출 때가 있다(WebKit — 페이지 첫 열기 · 오래 쉰 뒤).
+      /* 3.057 — 아이패드 사파리는 IndexedDB 열기가 성공도 오류도 없이 멈출 때가 있다(WebKit — 페이지 첫 열기 · 오래 쉰 뒤).
          그러면 보관함 읽기 · 동기화 · «진단»까지 끝없이 기다려 «기기 저장을 확인해 주세요»만 남았다(풋볼A 아이패드 — «진단» 줄이 «확인 중…»에서 멈춤).
          기다리는 동안 indexedDB.databases() 를 두드려 깨우고(멈춘 열기를 푸는 알려진 방법), 그래도 OPEN_TIMEOUT 안에 안 열리면
          이름 있는 TimeoutError 로 끝낸다 — 연결 약속은 버려지고 다음 요청이 새로 연다. 읽기는 한 번 더(readRetry), 쓰기는 다시 보내지 않는다. */

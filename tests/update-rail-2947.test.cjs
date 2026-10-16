@@ -45,7 +45,7 @@ test('상태 문구·버튼은 팝오버·폰 줄([data-upd-msg]·[data-upd-now]
   assert.equal(btns[0].disabled,false);assert.equal(btns[0].textContent,'지금 적용');assert.equal(btns[1].textContent,'적용');
   c.psUpdateStatus('',false);assert.equal(msgs[0].hidden,true);
 });
-test('«새 기능»은 늘 떠 있고(3.056 — 7일 · 열 판 묶음을 걷었다) 판마다 바뀐 것을 전부 · 본 것은 기기에만 기억해 점을 끈다',()=>{
+test('«새 기능»은 늘 떠 있고(3.057 — 7일 · 열 판 묶음을 걷었다) 판마다 바뀐 것을 전부 · 본 것은 기기에만 기억해 점을 끈다',()=>{
   const body=cut('(function(){\n  var SEEN=','window.__psUpdSurface=');
   assert.match(body,/function news\(\)\{return all\(\);\}/,'날짜 · 묶음 거르기 없이 전부');
   assert.doesNotMatch(body,/function dayOf\(|function rangeOf\(|function bundle\(/);

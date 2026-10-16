@@ -57,7 +57,7 @@ test('선수 전용 폰 띠: 안내 판 묶음만 보이고, 그 사이 판이 �
   const none=harness([E('3.019'),E('3.010')]);assert.equal(none.host.hidden,true,'안내 판이 아직 없으면 띠도 없다');
 });
 
-test('3.056 — 앱 설정 위 «새 기능»은 늘 떠 있고 업데이트 기록 전부(사용자 «새기능은 계속 떠있게 · 뭐가 업데이트 됫는지도 쭉»)',()=>{
+test('3.057 — 앱 설정 위 «새 기능»은 늘 떠 있고 업데이트 기록 전부(사용자 «새기능은 계속 떠있게 · 뭐가 업데이트 됫는지도 쭉»)',()=>{
   const body=A.slice(A.indexOf('(function(){\n  var SEEN='),A.indexOf('window.__psUpdSurface='));
   assert.match(body,/function news\(\)\{return all\(\);\}/,'열 판 묶음 · 7일 거르기를 걷었다');
   assert.match(body,/ch=brief\?\(e\.changes\|\|\[\]\)\.slice\(0,2\):\(e\.changes\|\|\[\]\);/,'«새 기능»은 바뀐 것을 자르지 않는다');
