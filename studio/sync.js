@@ -5733,6 +5733,34 @@ function libSave(out,ownerGuard,expectedRaw,expectedRev){
   }
   catch(e){ return Promise.reject(e); }
 }
+/* 3.056 — 보관함은 팀 문서(ps_kv)와 따로인 표(ps_library)다. 예전엔 회차 앞 단계(일정 화면 사본 · 경기 · 스카우트 준비표)가
+   기기 저장소 문제로 실패하면 회차 맨 끝의 보관함 단계까지 가지 못했다 — 풋볼A 운영자 아이패드는 일정 화면 사본 쓰기가 계속 실패해
+   (schedule_mirror_quota) 새로 로그인한 뒤 보관함이 비어 있었다. 이제 그런 «기기 쪽» 실패(sync_storage · sync_local_changed)면
+   보관함만 따로 한 번 주고받는다. 회차 전체는 그대로 실패로 남는다(상태 줄 · 재시도 · 다른 키의 메타는 예전과 같다).
+   보관함 장부(m.li · ls · ld)는 회차 meta 가 아니라 **지금 meta 에 그 칸만** 옮겨 적는다 — 안 적으면 다음 회차가 받은 자료를
+   «로컬 새 편집»으로 읽어 다시 올린다. 보관함 대기(@library)도 그 확인값으로 닫는다. */
+function libraryAfterRoundFailure(e,at,wid,guard,started){
+  function current(){try{return typeof guard!=='function'||!!guard();}catch(_){return false;}}
+  var code=e&&e.psCode;
+  if(started||!at||!wid||!current()||(code!=='sync_storage'&&code!=='sync_local_changed'))return Promise.resolve(null);
+  var lm=meta();
+  return syncLibrary(at,lm,Date.now(),wid,guard).then(function(lr){
+    if(!current())return null;
+    var latest=meta();latest.li=lm.li||{};latest.ls=lm.ls||null;latest.ld=lm.ld;setMetaExact(latest);
+    return outboxAckLibrary(wid,lr&&lr.ackHash,guard).then(function(){return lr;});
+  }).catch(function(le){syncDiagnostic('library-after-failure',le);return null;});
+}
+function outboxAckLibrary(wid,ackHash,guard){
+  if(ackHash==null)return Promise.resolve(false);
+  var sc=outboxScope(outboxOwner(),wid);
+  return outboxTxn(function(q){
+    if(typeof guard==='function'&&!guard())throw syncIssue('sync_workspace_changed','library_ack_owner','보관함 저장 확인 중 계정이나 팀이 바뀌었습니다');
+    return Promise.all(q.map(function(it){
+      if(!it||it.key!=='@library'||outboxScope(it.uid,it.wid)!==sc)return Promise.resolve(true);
+      return currentValueForKey(it.key).then(function(v){return hash(v)!==ackHash;}).catch(function(){return true;});
+    })).then(function(keep){return q.filter(function(_,i){return keep[i];});});
+  });
+}
 function syncLibrary(at,m,now,wid,ownerGuard){
   function current(){try{return typeof ownerGuard!=='function'||!!ownerGuard();}catch(_){return false;}}
   function requireCurrent(stage){if(!current())throw syncIssue('sync_workspace_changed',stage,'보관함 동기화 중 작업 공간이 바뀌었습니다');}
@@ -6722,6 +6750,7 @@ function syncNowCore(reason){
       var scheduleFullRequested=!!pair[3];
       var scoutFullRequested=!!pair[4];
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
+      var libraryRoundStarted=false;   /* 3.056 — 이 회차가 보관함 단계에 들어갔나(실패 뒤 보관함만 따로 돌릴지 판정) */
       var m=meta(), pushRows=[], teamPushCandidates={},confirmedPushKeys={}, idpBaseNext={},idpPushCandidate={},idpPushConfirmed={},idpLocalStage={},idpCommitDone=false, applied=0, skippedBig=0, skippedKeys=[], heldKeys=[], dependencyDeferredKeys=[], now=Date.now(), writes=[], itemsApplied=0,itemsObservedChanged=false,matchReadyBlocked=false;
       var idpMetaBefore={h:{},c:{},n:{}};Object.keys(m.h||{}).forEach(function(k){idpMetaBefore.h[k]=m.h[k];});Object.keys(m.c||{}).forEach(function(k){idpMetaBefore.c[k]=m.c[k];});Object.keys(m.n||{}).forEach(function(k){idpMetaBefore.n[k]=m.n[k];});
       function roundWorkspaceCurrent(){
@@ -7824,7 +7853,7 @@ function syncNowCore(reason){
             return itemsResolveConflicts(at,wid,roundWorkspaceCurrent,m).then(function(){return res;});
           });   /* 2.731 */
         });
-      }).then(function(){return commitIdpBasesAndMeta();}).then(function(){return commitScheduleReady();}).then(function(){return commitMatchReady();}).then(function(){return commitScoutReady();}).then(function(){ return syncLibrary(at,m,now,wid,roundWorkspaceCurrent); }).then(function(lr){
+      }).then(function(){return commitIdpBasesAndMeta();}).then(function(){return commitScheduleReady();}).then(function(){return commitMatchReady();}).then(function(){return commitScoutReady();}).then(function(){ libraryRoundStarted=true; return syncLibrary(at,m,now,wid,roundWorkspaceCurrent); }).then(function(lr){
         applied+=(lr&&lr.applied)||0;
         m.last=Date.now();requireRoundWorkspace('round_meta_final');setMetaExact(m);lastIssue=null;   /* 2.625 */
         if(itemsApplied>0||itemsObservedChanged){try{localStorage.setItem('ps_items_rev',String(Date.now()));}catch(_){}} /* 첫 서버 확인도 확정 메타 뒤에 화면에 알린다 */
@@ -7917,8 +7946,8 @@ function syncNowCore(reason){
           if(roundWorkspaceCurrent()&&matchTouched&&matchReadyPending){
             try{blockMatchReady('match-round-failed',e);}catch(ie){syncDiagnostic('match-ready-fail-close',ie);}
           }
-          throw e;
-        });
+          return typeof libraryAfterRoundFailure==='function'?libraryAfterRoundFailure(e,at,wid,roundWorkspaceCurrent,libraryRoundStarted):null;   /* typeof — 회차 구간만 잘라 쓰는 시험 하네스 */
+        }).then(function(){ throw e; });
       });
     });
   }).catch(function(e){
