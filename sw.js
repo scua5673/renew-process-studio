@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.062';   // 3.062 «오늘»·출석·IDP 가 일정 거울(localStorage)이 IDB 정본보다 뒤처진 기기에서 정본을 읽는다(PSSchedule 그림자) — 아이패드에서 일정 화면엔 보이는데 팀운영 › 오늘에는 일정이 안 보였다
+const CACHE = 'process-3.063';   // 3.063 아이패드 «저장 공간이 부족해 일정 화면 사본을 바꾸지 못했어요» — 일정 사본 쓰기 실패의 실제 원인을 진단에 적고(용량 오류일 때만 저장 공간 문구), 보기 전용 게이트가 조용히 막은 쓰기는 원래 setItem 으로 마친다
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
