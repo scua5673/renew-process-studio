@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.057';   // 3.057 권한으로 못 올리는 키(구성원 기기의 cs_perms_v1 등)가 대기함에 영원히 남아 «N일째 저장 대기» · 로그아웃 막힘: sync.js 회차의 canW 거절 키를 미루지 않고 대기함에서만 뺀다(기기 사본 · m.h 는 그대로) · 기기 사본도 확인 해시도 없는 항목도 뺀다
+const CACHE = 'process-3.058';   // 3.058 권한으로 못 올리는 키(구성원 기기의 cs_perms_v1 등)가 대기함에 영원히 남아 «N일째 저장 대기» · 로그아웃 막힘: sync.js 회차의 canW 거절 키를 미루지 않고 대기함에서만 뺀다(기기 사본 · m.h 는 그대로) · 기기 사본도 확인 해시도 없는 항목도 뺀다
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',

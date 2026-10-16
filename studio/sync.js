@@ -2366,7 +2366,7 @@ function outboxUnreachableOnly(it){
 }
 function outboxAckSynced(wid,m,skipped,libraryAckHash,guard,denied){
   var uid=outboxOwner(),sc=outboxScope(uid,wid),skip={},drop={};
-  (denied||[]).forEach(function(k){drop[k]=1;});   /* 3.057 — 이 계정이 올릴 수 없는 키(권한 거절): 대기함에서 뺀다. 기기 사본은 그대로 */
+  (denied||[]).forEach(function(k){drop[k]=1;});   /* 3.058 — 이 계정이 올릴 수 없는 키(권한 거절): 대기함에서 뺀다. 기기 사본은 그대로 */
   function requireCurrent(){if(typeof guard==='function'&&!guard())throw syncIssue('sync_workspace_changed','team_ack_owner','팀 저장 확인 중 계정이나 팀이 바뀌었습니다');}
   (skipped||[]).forEach(function(k){skip[k]=1;});
   return outboxTxn(function(q){
@@ -2387,7 +2387,7 @@ function outboxAckSynced(wid,m,skipped,libraryAckHash,guard,denied){
            서버에 그 행이 없으면 충돌 보관도 안 생기므로, 대기함에만 영원히 남아 «8일째 저장 대기»가 됐다(코치 점검 10/7 — 방성환).
            올릴 일이 없는 항목이니 대기에서 뺀다. 기기 사본 자체는 지우지 않는다. 서버 행이 있으면 heldKeys(skip)로 위에서 이미 유지된다. */
         if(typeof ITEMP==='string'&&typeof itemsDeletedLive==='function'&&String(it.key).indexOf(ITEMP)===0&&typeof v==='string'&&itemsDeletedLive(it.key,v))return false;   /* typeof — 구간을 잘라 쓰는 시험 하네스에도 안전 */
-        /* 3.057 — 기기 사본도 없고 확인된 해시도 없으면 올릴 것이 없다(선수 기기에서 지운 PLAYER_BLIND 키 — 7690). 예전엔 hash(null)='' ≠ undefined 라 영원히 대기였다.
+        /* 3.058 — 기기 사본도 없고 확인된 해시도 없으면 올릴 것이 없다(선수 기기에서 지운 PLAYER_BLIND 키 — 7690). 예전엔 hash(null)='' ≠ undefined 라 영원히 대기였다.
            지운 것을 서버에 알릴 일이면 m.h 에 서버 해시가 남아 있으므로 이 줄에 걸리지 않는다. */
         if(v==null&&m.h&&m.h[it.key]==null)return false;
         var keep=!m.h||hash(v)!==m.h[it.key];              /* 현재 로컬과 확인된 해시가 다르면 유지 */
@@ -5738,6 +5738,34 @@ function libSave(out,ownerGuard,expectedRaw,expectedRev){
   }
   catch(e){ return Promise.reject(e); }
 }
+/* 3.056 — 보관함은 팀 문서(ps_kv)와 따로인 표(ps_library)다. 예전엔 회차 앞 단계(일정 화면 사본 · 경기 · 스카우트 준비표)가
+   기기 저장소 문제로 실패하면 회차 맨 끝의 보관함 단계까지 가지 못했다 — 풋볼A 운영자 아이패드는 일정 화면 사본 쓰기가 계속 실패해
+   (schedule_mirror_quota) 새로 로그인한 뒤 보관함이 비어 있었다. 이제 그런 «기기 쪽» 실패(sync_storage · sync_local_changed)면
+   보관함만 따로 한 번 주고받는다. 회차 전체는 그대로 실패로 남는다(상태 줄 · 재시도 · 다른 키의 메타는 예전과 같다).
+   보관함 장부(m.li · ls · ld)는 회차 meta 가 아니라 **지금 meta 에 그 칸만** 옮겨 적는다 — 안 적으면 다음 회차가 받은 자료를
+   «로컬 새 편집»으로 읽어 다시 올린다. 보관함 대기(@library)도 그 확인값으로 닫는다. */
+function libraryAfterRoundFailure(e,at,wid,guard,started){
+  function current(){try{return typeof guard!=='function'||!!guard();}catch(_){return false;}}
+  var code=e&&e.psCode;
+  if(started||!at||!wid||!current()||(code!=='sync_storage'&&code!=='sync_local_changed'))return Promise.resolve(null);
+  var lm=meta();
+  return syncLibrary(at,lm,Date.now(),wid,guard).then(function(lr){
+    if(!current())return null;
+    var latest=meta();latest.li=lm.li||{};latest.ls=lm.ls||null;latest.ld=lm.ld;setMetaExact(latest);
+    return outboxAckLibrary(wid,lr&&lr.ackHash,guard).then(function(){return lr;});
+  }).catch(function(le){syncDiagnostic('library-after-failure',le);return null;});
+}
+function outboxAckLibrary(wid,ackHash,guard){
+  if(ackHash==null)return Promise.resolve(false);
+  var sc=outboxScope(outboxOwner(),wid);
+  return outboxTxn(function(q){
+    if(typeof guard==='function'&&!guard())throw syncIssue('sync_workspace_changed','library_ack_owner','보관함 저장 확인 중 계정이나 팀이 바뀌었습니다');
+    return Promise.all(q.map(function(it){
+      if(!it||it.key!=='@library'||outboxScope(it.uid,it.wid)!==sc)return Promise.resolve(true);
+      return currentValueForKey(it.key).then(function(v){return hash(v)!==ackHash;}).catch(function(){return true;});
+    })).then(function(keep){return q.filter(function(_,i){return keep[i];});});
+  });
+}
 function syncLibrary(at,m,now,wid,ownerGuard){
   function current(){try{return typeof ownerGuard!=='function'||!!ownerGuard();}catch(_){return false;}}
   function requireCurrent(stage){if(!current())throw syncIssue('sync_workspace_changed',stage,'보관함 동기화 중 작업 공간이 바뀌었습니다');}
@@ -6727,6 +6755,7 @@ function syncNowCore(reason){
       var scheduleFullRequested=!!pair[3];
       var scoutFullRequested=!!pair[4];
       var srv={}; (rows||[]).forEach(function(r0){ srv[r0.k]=r0; });
+      var libraryRoundStarted=false;   /* 3.056 — 이 회차가 보관함 단계에 들어갔나(실패 뒤 보관함만 따로 돌릴지 판정) */
       var m=meta(), pushRows=[], teamPushCandidates={},confirmedPushKeys={}, idpBaseNext={},idpPushCandidate={},idpPushConfirmed={},idpLocalStage={},idpCommitDone=false, applied=0, skippedBig=0, skippedKeys=[], heldKeys=[], dependencyDeferredKeys=[], permDeniedKeys=[], now=Date.now(), writes=[], itemsApplied=0,itemsObservedChanged=false,matchReadyBlocked=false;
       var idpMetaBefore={h:{},c:{},n:{}};Object.keys(m.h||{}).forEach(function(k){idpMetaBefore.h[k]=m.h[k];});Object.keys(m.c||{}).forEach(function(k){idpMetaBefore.c[k]=m.c[k];});Object.keys(m.n||{}).forEach(function(k){idpMetaBefore.n[k]=m.n[k];});
       function roundWorkspaceCurrent(){
@@ -7668,7 +7697,7 @@ function syncNowCore(reason){
         /* 2.604 — 서버가 403 으로 거부한 키(ps_sync_403_v1, 6시간)는 그 사이 다시 밀지 않는다 — 표가 어긋나 있어도 회차마다 403 을 반복하지 않게 */
         var _s403={}; try{ _s403=JSON.parse(localStorage.getItem('ps_sync_403_v1')||'{}')||{}; }catch(_){ _s403={}; }
         pushRows=pushRows.filter(function(r){ if(_s403[r.k]&&Date.now()-(+_s403[r.k]||0)<6*3600000){ deniedKeys.push(r.k); return false; } if(canW(r.k))return true; deniedKeys.push(r.k); if(!permsMissing&&permDeniedKeys.indexOf(r.k)<0)permDeniedKeys.push(r.k); return false; });
-        /* 3.057 — 앱의 권한 판정(canW)이 거절한 키는 **이 계정이 올릴 수 없는 사본**이다(구성원 기기의 cs_perms_v1 등 — 옛 판의 흔적).
+        /* 3.058 — 앱의 권한 판정(canW)이 거절한 키는 **이 계정이 올릴 수 없는 사본**이다(구성원 기기의 cs_perms_v1 등 — 옛 판의 흔적).
            예전엔 «다음 회차로 미룸»(dependencyDeferredKeys)에 넣어 대기함에서 영원히 안 빠졌다 — 회차마다 같은 거절 · «N일째 저장 대기»(빨강) ·
            로그아웃 막힘(prelogout 의 deferred) · 관리자 «주의»(파일럿 10/16: 김포 25 · 풋볼A 16 · 재현중 11대). 이제 대기함에서만 뺀다(outboxAckSynced drop).
            m.h 는 예전처럼 되돌리므로 기기 사본은 그대로 «서버와 다름»으로 남고, 권한이 생기면 다음 회차에 올라간다(잃지 않는다). 거절 칩(ps_sync_denied)도 그대로.
@@ -7830,11 +7859,11 @@ function syncNowCore(reason){
             if(matchPushPlanned&&!matchResolved)blockMatchReady('match-push-unconfirmed',new Error('경기 push 확인 응답이 없습니다'));
             if(schedulePushExpected!==null&&!schedulePushConfirmed)restoreScheduleMeta();
             if(scoutStage&&scoutStage.push&&!scoutStage.confirmed)deferScout('scout-push-unconfirmed');
-            Object.keys(teamPushCandidates).forEach(function(k){restoreUnconfirmedTeamKey(k,permDeniedKeys.indexOf(k)>=0);});   /* 3.057 — 권한 거절 키는 미루지 않는다(위 canW) · forEach 의 순번이 noDefer 로 들어가지 않게 */
+            Object.keys(teamPushCandidates).forEach(function(k){restoreUnconfirmedTeamKey(k,permDeniedKeys.indexOf(k)>=0);});   /* 3.058 — 권한 거절 키는 미루지 않는다(위 canW) · forEach 의 순번이 noDefer 로 들어가지 않게 */
             return itemsResolveConflicts(at,wid,roundWorkspaceCurrent,m).then(function(){return res;});
           });   /* 2.731 */
         });
-      }).then(function(){return commitIdpBasesAndMeta();}).then(function(){return commitScheduleReady();}).then(function(){return commitMatchReady();}).then(function(){return commitScoutReady();}).then(function(){ return syncLibrary(at,m,now,wid,roundWorkspaceCurrent); }).then(function(lr){
+      }).then(function(){return commitIdpBasesAndMeta();}).then(function(){return commitScheduleReady();}).then(function(){return commitMatchReady();}).then(function(){return commitScoutReady();}).then(function(){ libraryRoundStarted=true; return syncLibrary(at,m,now,wid,roundWorkspaceCurrent); }).then(function(lr){
         applied+=(lr&&lr.applied)||0;
         m.last=Date.now();requireRoundWorkspace('round_meta_final');setMetaExact(m);lastIssue=null;   /* 2.625 */
         if(itemsApplied>0||itemsObservedChanged){try{localStorage.setItem('ps_items_rev',String(Date.now()));}catch(_){}} /* 첫 서버 확인도 확정 메타 뒤에 화면에 알린다 */
@@ -7927,8 +7956,8 @@ function syncNowCore(reason){
           if(roundWorkspaceCurrent()&&matchTouched&&matchReadyPending){
             try{blockMatchReady('match-round-failed',e);}catch(ie){syncDiagnostic('match-ready-fail-close',ie);}
           }
-          throw e;
-        });
+          return typeof libraryAfterRoundFailure==='function'?libraryAfterRoundFailure(e,at,wid,roundWorkspaceCurrent,libraryRoundStarted):null;   /* typeof — 회차 구간만 잘라 쓰는 시험 하네스 */
+        }).then(function(){ throw e; });
       });
     });
   }).catch(function(e){
