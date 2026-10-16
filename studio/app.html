@@ -33,7 +33,8 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.059"></script>
+<script src="autosave-status.js?v=3.062"></script>
+<script src="update-progress.js"></script>
 
 <title>PROCESS STUDIO</title>
 <!-- © 2026 PROCESS STUDIO. All rights reserved. 무단 복제·배포를 금합니다. -->
@@ -515,7 +516,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.059';</script>
+<script>window.PS_BUILD='3.062';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -594,7 +595,7 @@ function psFlushAllPending(){
    실패한 화면 id를 오류의 psFrame에 붙인다. 결과·순서는 바꾸지 않는다. */
 function psFlushAllPendingReady(track){
   function psFlushWatch(track,id,p){
-    if(track){track.pending=track.pending||{};track.pending[id]=1;}
+    if(track){track.pending=track.pending||{};track.pending[id]=1;track.seen=track.seen||{};track.seen[id]=1;}   /* 3.060 — seen: 진행 카드가 «확인 끝난 화면 수»를 센다 */
     return Promise.resolve(p).then(function(v){if(track&&track.pending)delete track.pending[id];return v;},function(e){
       if(track&&track.pending)delete track.pending[id];
       if(!e||typeof e!=='object')e=new Error(String(e||'flush failed'));
@@ -702,9 +703,16 @@ function psAutoReloadWhenSafe(manualOnly){
     window.__psReloading=1;
     if(manual)psUpdateStatus('작성 내용을 기기에 저장한 뒤 새 버전으로 열고 있어요.',true);
     var active=true,timer,track={};   /* 2.925 — track.pending = 아직 저장 확인이 안 끝난 화면 */
+    /* 3.060 — 업데이트 진행 카드(update-progress.js): 저장 확인 70→95% · 다시 여는 중 100%. 숨은 탭은 보일 사람이 없어 그리지 않는다.
+       스스로 하는 시도가 실패하면 카드를 조용히 «준비됨»으로 돌리고, 누른 시도만 «미뤘어요»와 이유를 보인다. */
+    var prog=null,progT=0,progTotal=1;try{prog=(!document.hidden&&window.PSUpdProg)?window.PSUpdProg:null;}catch(_){}
+    try{progTotal=document.querySelectorAll('iframe').length+2;}catch(_){}
+    if(prog){try{prog.saving(progTotal,progTotal);}catch(_){}
+      progT=setInterval(function(){try{if(!active)return;var seen=Object.keys(track.seen||{}).length,pend=Object.keys(track.pending||{}).length,tot=Math.max(progTotal,seen);prog.saving(tot-(seen-pend),tot);}catch(_){}},150);}
     function finish(message,reason){
-      if(!active)return;active=false;clearTimeout(timer);window.__psReloading=0;
+      if(!active)return;active=false;clearTimeout(timer);if(progT)clearInterval(progT);window.__psReloading=0;
       psUpdNote(reason);
+      if(prog){try{if(manual)prog.failed(message);else prog.ready();}catch(_){}}
       psUpdateStatus(message,false);psShowUpdBand();
     }
     timer=setTimeout(function(){finish('저장 확인이 지연되어 업데이트를 보류했어요. 작업 내용을 보관한 뒤 다시 시도해 주세요.','flush_timeout:'+(Object.keys(track.pending||{}).join('+')||'none'));},20000);
@@ -716,7 +724,8 @@ function psAutoReloadWhenSafe(manualOnly){
         if(!active||psReloadWorkspaceBusy()||psReloadWorkspaceSeal()!==seal)return false;
         /* 2.981 — 보던 화면을 이 탭에 적어 둔다(다시 열린 뒤 psResumeScreen 이 한 번 읽고 지운다) */
         try{sessionStorage.setItem('ps_resume_screen',JSON.stringify({app:document.body.getAttribute('data-ps-app')||'',team:(window.__psTeamSection?String(window.__psTeamSection()||''):''),at:Date.now()}));}catch(_){}
-        active=false;clearTimeout(timer);window.__psBootMarkDone&&window.__psBootMarkDone();location.reload();return true;
+        active=false;clearTimeout(timer);if(progT)clearInterval(progT);if(prog){try{prog.reloading();}catch(_){}}
+        window.__psBootMarkDone&&window.__psBootMarkDone();location.reload();return true;
       });
     }
     Promise.resolve().then(function(){
@@ -8111,13 +8120,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.059"></script>
-<script src="autosave-merge.js?v=3.059"></script>
-<script src="autosave-runtime.js?v=3.059"></script>
-<script src="autosave-recovery.js?v=3.059"></script>
-<script src="sync.js?v=3.059"></script>
+<script src="autosave-journal.js?v=3.062"></script>
+<script src="autosave-merge.js?v=3.062"></script>
+<script src="autosave-runtime.js?v=3.062"></script>
+<script src="autosave-recovery.js?v=3.062"></script>
+<script src="sync.js?v=3.062"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.059">
+<link rel="stylesheet" href="support.css?v=3.062">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

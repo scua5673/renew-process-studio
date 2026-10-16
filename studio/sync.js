@@ -5752,8 +5752,16 @@ function libraryAfterRoundFailure(e,at,wid,guard,started){
   return syncLibrary(at,lm,Date.now(),wid,guard).then(function(lr){
     if(!current())return null;
     var latest=meta();latest.li=lm.li||{};latest.ls=lm.ls||null;latest.ld=lm.ld;setMetaExact(latest);
-    return outboxAckLibrary(wid,lr&&lr.ackHash,guard).then(function(){return lr;});
-  }).catch(function(le){syncDiagnostic('library-after-failure',le);return null;});
+    return outboxAckLibrary(wid,lr&&lr.ackHash,guard).then(function(){
+      /* 3.061 — 운영 기록: 따로 받기가 실제로 돌았나(10분에 한 번 · 개수만). 3.056 뒤 운영자 아이패드에서 결과가 서버에 안 보였다 */
+      try{eventTrack('library_fallback_saved',{status:'ok',feature:'sync',meta:{applied:+(lr&&lr.applied)||0,pushed:+(lr&&lr.pushed)||0,skipped:lr&&lr.libSkipped?1:0,cause:String(e&&e.psStage||'').slice(0,40)}});}catch(_){}
+      return lr;
+    });
+  }).catch(function(le){
+    syncDiagnostic('library-after-failure',le);
+    try{eventTrack('library_fallback_failed',{status:'error',feature:'sync',error_code:String((le&&(le.psStage||le.psCode||le.name))||'unknown').slice(0,60),meta:{code:String(le&&le.psCode||'').slice(0,40),stage:String(le&&le.psStage||'').slice(0,48),cause:String(e&&e.psStage||'').slice(0,40)}});}catch(_){}
+    return null;
+  });
 }
 function outboxAckLibrary(wid,ackHash,guard){
   if(ackHash==null)return Promise.resolve(false);

@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.059';   // 3.059 아이패드 «경기 준비 열기 → 문제가 반복적으로 발생»(오류 제보 10/16): 아이패드는 탭을 미리 띄우지 않는다 · 가볍게 연 부팅의 안전 단계가 스스로 하는 새로고침을 건너 이어 간다(3분) · 팀 운영 경기 화면이 보관함 전체를 그릴 때마다 다시 읽지 않는다(cs_lib_rev 캐시)
+const CACHE = 'process-3.062';   // 3.062 «오늘»·출석·IDP 가 일정 거울(localStorage)이 IDB 정본보다 뒤처진 기기에서 정본을 읽는다(PSSchedule 그림자) — 아이패드에서 일정 화면엔 보이는데 팀운영 › 오늘에는 일정이 안 보였다
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
@@ -13,7 +13,7 @@ const CORE = [
   '/studio/idp-evidence.js', '/studio/idp-evidence.css', '/studio/idp-start.css', '/studio/idp-daily.css',
   '/studio/storage-keys.js', '/studio/storage.js', '/studio/team-library.js', '/studio/profile-sheet.js',
   '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/participation.js', '/studio/match-board-tools.js', '/studio/sync-observability.js', '/studio/sync.js',
-  '/studio/autosave-status.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
+  '/studio/autosave-status.js', '/studio/update-progress.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
   '/studio/shared-view-observation.js',
   '/studio/team-files.js',
   '/studio/support-diagnostics.js', '/studio/support.js', '/studio/support.css', '/studio/release-notes.js',
@@ -99,10 +99,13 @@ async function reusable(path, want, olds) {
   }
   return null;
 }
+async function notifyProgress(done, total) {
+  try { for (const c of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) c.postMessage({ type: 'ps-sw-progress', release: CACHE, done, total }); } catch (_) {}
+}
 async function precache(cache, path, files, olds, stats) {
   const old = files ? await reusable(path, files[path], olds) : null;
-  if (old) { await cache.put(path, old); stats.reused++; return; }
-  await cache.put(path, await fetchFresh(path)); stats.fetched++;
+  if (old) { await cache.put(path, old); stats.reused++; if (stats.tick) stats.tick(); return; }
+  await cache.put(path, await fetchFresh(path)); stats.fetched++; if (stats.tick) stats.tick();   /* 3.060 — 진행 알림(받은 뒤에만 센다) */
 }
 /* 한꺼번에 백 개를 열지 않는다 — 옛 본문을 해시하려고 읽는 메모리(아이패드)를 묶어 둔다 */
 async function eachLimit(list, n, fn) {
@@ -116,11 +119,16 @@ self.addEventListener('install', (event) => {
     const man = await readManifest(), files = man ? man.files : null, stats = { reused: 0, fetched: 0 };
     const olds = files ? await Promise.all((await caches.keys()).filter(k => isReleaseCache(k) && k !== CACHE).reverse().slice(0, 2).map(k => caches.open(k))) : [];
 
+    /* 3.060 — 받는 만큼 열린 화면에 알린다(update-progress.js 의 «새 버전 받는 중 42%»). 판 이름과 개수뿐 — 내용 없음 */
+    const prog = { done: 0, total: SHELL.length, at: 0 };
+    stats.tick = () => { prog.done++; if (prog.done < prog.total && Date.now() - prog.at < 200) return; prog.at = Date.now(); notifyProgress(prog.done, prog.total); };
+
     // 필수 파일은 원자적으로 취급한다. 하나라도 실패하면 install이 실패하고 이전 SW가 유지된다.
     await eachLimit(CORE, 6, path => precache(cache, path, files, olds, stats));
 
     // 선택 파일은 가능한 만큼 준비한다. 누락 파일은 첫 사용 시 네트워크에서 채운다.
-    await eachLimit(OPTIONAL.filter(p => !CORE.includes(p)), 6, async (path) => {   /* 두 목록에 다 있는 것(board.html)은 한 번만 */ try { await precache(cache, path, files, olds, stats); } catch (_) {} });
+    await eachLimit(OPTIONAL.filter(p => !CORE.includes(p)), 6, async (path) => {   /* 두 목록에 다 있는 것(board.html)은 한 번만 */ try { await precache(cache, path, files, olds, stats); } catch (_) { stats.tick(); } });
+    delete stats.tick;
     if (man) { try { await cache.put(MANIFEST, man.res); } catch (_) {} }
     /* 진단: 이번 install 이 몇 개를 옮겨 담고 몇 개를 받았나(앱 설정 › 데이터 › «진단 보기»가 읽을 수 있는 자리 — 판 캐시 안) */
     try { await cache.put('/__ps_sw_install__', new Response(JSON.stringify({ at: Date.now(), release: CACHE, manifest: !!files, ...stats }), { headers: { 'Content-Type': 'application/json' } })); } catch (_) {}
