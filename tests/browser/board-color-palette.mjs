@@ -100,6 +100,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
       for(let n=1;n<=12;n++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:sx+(tx-sx)*n/12,y:sy+(ty-sy)*n/12,id:1}]});
       await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       assert.equal((await colors()).length,2,'native touch drag places a player instead of panning');
+      if(await frame.locator('#ps-df-team').count()&&!(await frame.locator('#cmd-player-stamp').isVisible()))await press(frame.locator('#ps-df-team'));   /* 3.073 · 3.076 — 떠 있는 도크: 선수 칸을 연다 */
       await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',x:sx,y:sy,button:'left',buttons:1,clickCount:1,pointerType:'pen'});
       await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:tx+60,y:ty,button:'left',buttons:1,pointerType:'pen'});
       await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:tx+60,y:ty,button:'left',buttons:0,clickCount:1,pointerType:'pen'});
@@ -108,6 +109,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
       await cdp.detach();
     }
     await frame.evaluate(()=>openEditor(null,'train'));await frame.locator('body.editing #editorModal.on').waitFor();
+    if(await frame.locator('#ps-df-team').count()&&!(await frame.locator('#cmd-player-stamp').isVisible()))await press(frame.locator('#ps-df-team'));   /* 3.073 · 3.076 — 떠 있는 도크: 선수 칸을 연다 */
     const stamp=await frame.locator('#cmd-player-stamp').boundingBox(),pitch=await frame.locator('svg.board').boundingBox();
     const countBefore=await frame.evaluate(()=>state.players.length);
     await page.mouse.move(stamp.x+stamp.width/2,stamp.y+stamp.height/2);await page.mouse.down();await page.mouse.move(pitch.x+pitch.width*.4,pitch.y+pitch.height*.4,{steps:10});await page.mouse.up();
