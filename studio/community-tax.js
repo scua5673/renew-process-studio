@@ -112,6 +112,8 @@
   /* 고르개 — host 를 비우고 다시 그린다. items: 지금 칸의 글들(fromX 결과) — 타일 옆 숫자. onChange: 고른 것이 바뀌면 */
   function draw(host,items,onChange){
     if(!host)return; var doc=host.ownerDocument,c=counts(items),ch=function(o){ set(o); if(onChange)onChange(); };
+    /* 폰에서는 줄마다 옆으로 밀어 본다 — 칩을 눌러 다시 그려도 민 자리를 지킨다(끝의 U18 을 누르면 그 칩이 그대로 보이게) */
+    var sx={}; [].forEach.call(host.querySelectorAll('[data-sx]'),function(r){ sx[r.getAttribute('data-sx')]=r.scrollLeft; });
     host.textContent='';
     var ph=el(doc,'div','tx-phases'); ph.setAttribute('role','group'); ph.setAttribute('aria-label','경기 국면');
     PHASES.forEach(function(k){ var t=TMAP[k],on=S.topic===k,b=el(doc,'button','tx-tile'+(on?' on':'')); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
@@ -120,14 +122,14 @@
       b.appendChild(top); b.appendChild(el(doc,'span','tx-tile-hint',t[3]));
       b.onclick=function(){ ch({topic:on?'':k}); }; ph.appendChild(b); });
     host.appendChild(ph);
-    var ex=el(doc,'div','tx-row'); ex.setAttribute('role','group'); ex.setAttribute('aria-label','경기 밖의 주제');
+    var ex=el(doc,'div','tx-row'); ex.setAttribute('data-sx','ex'); ex.setAttribute('role','group'); ex.setAttribute('aria-label','경기 밖의 주제');
     EXTRAS.forEach(function(k){ var t=TMAP[k],on=S.topic===k,b=el(doc,'button','tx-chip'+(on?' on':'')); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
       if(on){ b.style.background=t[2]; b.style.borderColor=t[2]; }
       b.appendChild(dot(doc,on?'#fff':t[2])); b.appendChild(doc.createTextNode(t[1])); b.appendChild(el(doc,'span','tx-n',String(c[k]||0)));
       b.onclick=function(){ ch({topic:on?'':k}); }; ex.appendChild(b); });
     host.appendChild(ex);
     if(SUBS[S.topic]){   /* 3.079 — 고른 국면의 세부 국면 */
-      var t0=TMAP[S.topic],sr=el(doc,'div','tx-row tx-subs'); sr.setAttribute('role','group'); sr.setAttribute('aria-label',t0[1]+' 세부 국면');
+      var t0=TMAP[S.topic],sr=el(doc,'div','tx-row tx-subs'); sr.setAttribute('data-sx','sub:'+S.topic); sr.setAttribute('role','group'); sr.setAttribute('aria-label',t0[1]+' 세부 국면');
       sr.appendChild(el(doc,'span','tx-lb','세부 국면'));
       SUBS[S.topic].forEach(function(x){ var on=S.sub===x[0],b=el(doc,'button','tx-chip'+(on?' on':'')); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
         if(on){ b.style.background=t0[2]; b.style.borderColor=t0[2]; }
@@ -135,7 +137,7 @@
         b.onclick=function(){ ch({sub:on?'':x[0]}); }; sr.appendChild(b); });
       host.appendChild(sr);
     }
-    var who=el(doc,'div','tx-who');
+    var who=el(doc,'div','tx-who'); who.setAttribute('data-sx','who');
     var ag=el(doc,'div','tx-row'); ag.setAttribute('role','group'); ag.setAttribute('aria-label','연령');
     ag.appendChild(el(doc,'span','tx-lb','연령'));
     AGES.forEach(function(a){ var on=S.age===a,b=el(doc,'button','tx-chip'+(on?' on':''),a); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
@@ -150,6 +152,7 @@
     [mi,nv,pv,an].forEach(function(x){ pl.appendChild(x); });
     who.appendChild(pl);
     host.appendChild(who);
+    [].forEach.call(host.querySelectorAll('[data-sx]'),function(r){ var v=sx[r.getAttribute('data-sx')]; if(v)r.scrollLeft=v; });
   }
 
   /* 미리보기 창 — o = {title, topic(키), item, by, thumbUrl | thumbHtml(정리된 HTML), trainings:[{name,minutes}], desc, onPlay(k), onSave(), saveLabel} */
@@ -255,6 +258,8 @@
   /* 옛 고르개(주제 칩 · 콘텐츠 유형 · 연령 · 인원 · 폰 필터 시트의 같은 칸)를 감춘다 — 새 고르개가 대신한다. 정렬 · 검색 · 보기 방식은 그대로 */
   function hideOld(doc,noNav){
     var hide=function(n){ if(n&&n.style)n.style.setProperty('display','none','important'); };
+    /* 3.080 — 폰의 «필터» 단추는 이제 정렬만 연다(유형 · 연령 · 인원은 위의 고르개로) — 이름을 맞춘다 */
+    var fb=doc.getElementById('commFiltBtn'); if(fb&&fb.firstChild&&fb.firstChild.nodeType===3&&fb.firstChild.nodeValue!=='정렬'){ fb.firstChild.nodeValue='정렬'; fb.setAttribute('aria-label','정렬'); }
     var nav=doc.querySelector('.comm-nav'); if(nav){ if(noNav)hide(nav); else nav.style.removeProperty('display'); }   /* 정렬(탐색)만 남는 코치 자료 칸 밖에서는 왼쪽 칸이 빈다 */
     [].forEach.call(doc.querySelectorAll('.comm-nav .pr-cat-sec,#ageSel,#plSel,#cfTypeSel'),hide);
     var tn=doc.getElementById('typeNav'); if(tn&&tn.closest)hide(tn.closest('.nav-sec'));
