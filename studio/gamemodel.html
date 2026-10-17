@@ -2583,8 +2583,11 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
     try{
       var mk=document.createElement('div'); mk.className='gm-mkdrill';
       var vn=(window.__gmVC&&window.__gmVC[ph.id])||0;
-      mk.innerHTML='<button type="button" class="gm-mkdrill-b">이 단계로 훈련 만들기 →</button><span class="gm-mkdrill-n">'+(vn?('보관함 훈련 '+vn+'개'):'아직 이 단계 훈련이 없어요')+'</span>';
-      mk.querySelector('button').onclick=function(){
+      var _stdId=''; try{ var _sm=gmStdMap(); Object.keys(_sm).some(function(k){ if(_sm[k]===ph.id){ _stdId=k; return true; } return false; }); }catch(_){}
+      mk.innerHTML='<button type="button" class="gm-mkdrill-b">이 단계로 훈련 만들기 →</button><span class="gm-mkdrill-n">'+(vn?('보관함 훈련 '+vn+'개'):'아직 이 단계 훈련이 없어요')+'</span>'
+        +(_stdId?'<button type="button" class="gm-mkdrill-b gm-comm-b">커뮤니티에서 이 단계 훈련 보기 →</button>':'');
+      var _cb=mk.querySelector('.gm-comm-b'); if(_cb)_cb.onclick=function(){ try{ parent.postMessage({source:'gamemodel',type:'gmOpenCommunity',sub:_stdId},'*'); }catch(_){} };   /* 3.080 — 같은 이름의 표준 세부 국면으로 커뮤니티 고르개를 맞춘다 */
+      mk.querySelector('.gm-mkdrill-b').onclick=function(){
         var pr=''; (ph.principles||[]).some(function(x){ var t=String(pTxt(x)||'').trim(); if(t){pr=t;return true;} return false; });
         try{ parent.postMessage({source:'gamemodel',type:'gmMakeDrill',phaseId:ph.id,phaseName:(m.name||'')+' › '+(ph.name||''),principle:pr},'*'); }catch(_){}
       };

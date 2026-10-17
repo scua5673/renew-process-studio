@@ -1117,6 +1117,12 @@ window.addEventListener('message',function(e){
   }
   if(d.source==='app'&&d.type==='closeTransientUI'){try{upMenuClose();}catch(_){}closeCommunityViewer();communityLibraryCloseFlow();mask.classList.remove('on');return;}
   if(d.type==='openUpload'){window.__upPreselect=d.libId||null;try{openUpload();}catch(_){}return;}
+  /* 3.080 — 게임모델 단계의 «커뮤니티에서 이 단계 훈련 보기»: 셸이 세부 국면(std_*)을 보낸다. 고르개를 그 세부 국면으로 맞추고 다시 그린다 */
+  if(d.source==='app'&&d.type==='commFilter'){
+    if(window.parent!==window&&e.source!==window.parent)return;
+    try{ var _tx=window.PSCommTax; if(_tx&&_tx.SUBMAP&&_tx.SUBMAP[d.sub]){ _tx.set({sub:String(d.sub)}); render(); } }catch(_){}
+    return;
+  }
   if(e.source!==cvFrame.contentWindow)return;
   if(d.source==='board'&&d.type==='commClosed')closeCommunityViewer();
   else if(d.source==='board'&&d.type==='commAct')window.__commAction(d.act,d.id,d);

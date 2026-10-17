@@ -99,6 +99,14 @@ button.tb-row.done{background:var(--panel);border:1px solid var(--line)}
 .tb-row.part.fold{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)}
 .tb-row.part.fold em{color:var(--acc-ink);font-weight:700}
 .door .row{gap:8px}
+/* 3.080 — 나의 코칭 고리 */
+.loopbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0 4px}
+.lp-h{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}.lp-h b{font-size:var(--t-5)}.lp-h small{color:var(--gray);font-size:var(--t-3)}
+.lp-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.lp-c{border:1px solid var(--line);border-radius:10px;padding:9px 10px;display:grid;gap:2px;min-width:0}
+.lp-c i{font-style:normal;font-size:var(--t-2);font-weight:800;color:var(--acc-ink)}.lp-c b{font-size:var(--t-4)}.lp-c span{font-size:var(--t-3);color:var(--gray)}.lp-c small{font-size:var(--t-2);color:var(--faint)}
+.lp-next{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:var(--t-4)}
+@media(max-width:760px){.lp-row{grid-template-columns:1fr 1fr}}
 /* 3.079 — 스튜디오에서 해보기 */
 .trybox{margin-top:12px;border:1px solid var(--acc);border-radius:10px;padding:10px 14px;background:var(--acc-soft)}
 .trybox .k{display:block;color:var(--acc-ink);margin-bottom:4px}
@@ -409,6 +417,59 @@ function nextLesson(role,idp){
     if(!lsDone(mods[i].lessons[j].id,idp))return {m:mods[i],l:mods[i].lessons[j]};
   return null;
 }
+/* ══ 3.080 · 나의 코칭 고리 — 공부 → 내 게임모델 → 훈련 → 커뮤니티 진행판(사용자 «학습 진행판도») ══════════
+   읽기만 한다: 『스튜디오로 배우는 코칭』 진도(S.done) · 내 게임모델(cs_gamemodel_personal_v1, 없으면 계정 사본) · 보관함 훈련(셸 storage 'cs_drill_lib_v1').
+   «다음 한 걸음»은 비어 있는 첫 칸을 가리킨다. 숫자를 판정하지 않는다 — 한 줄이라도 있으면 그 칸은 시작된 것이다. */
+var LOOP_CORE=[['ao','공격 조직'],['do','수비 조직'],['dt','공격 → 수비 전환'],['at','수비 → 공격 전환']];
+var LOOP_STD={ao:['빌드업','전진 · 전개','침투 · 마무리'],do:['전방 압박','미드 블록','로우 블록'],dt:['즉시 반응 (역압박)','후퇴 · 재정비'],at:['빠른 역습','점유 안정화'],ic:['경합'],set:['공격 세트피스','수비 세트피스']};
+function loopPrTxt(x){ return String(typeof x==='string'?x:((x&&(x.t||x.text||x.title))||'')).trim(); }
+function loopVaultFetch(){
+  if(loopVaultFetch._busy)return; loopVaultFetch._busy=true;
+  try{ var st=(window.parent&&window.parent!==window&&window.parent.storage)||window.storage; if(!st){ loopVaultFetch._busy=false; return; }
+    Promise.resolve(st.get('cs_drill_lib_v1')).then(function(r){
+      var lib=[]; try{ lib=JSON.parse((r&&r.value)||'[]')||[]; }catch(_){}
+      var ids={}; (Array.isArray(lib)?lib:[]).forEach(function(d){ if(!d||d.deleted)return; var one={};
+        (d.gmPhases||[]).forEach(function(x){ one[x]=1; }); (d.trainings||[]).forEach(function(t){ (t&&t.gmPhases||[]).forEach(function(x){ one[x]=1; }); });
+        Object.keys(one).forEach(function(k){ ids[k]=(ids[k]||0)+1; }); });
+      var before=JSON.stringify(window.__loopVault||null); window.__loopVault=ids; loopVaultFetch._busy=false;
+      if(JSON.stringify(ids)!==before&&page==='toc')render();
+    }).catch(function(){ loopVaultFetch._busy=false; });
+  }catch(_){ loopVaultFetch._busy=false; }
+}
+function loopState(){
+  var gm=myGameModel(), st={sd:0,sn:0,core:0,miss:[],pr:0,ph:0,phDrill:0};
+  try{ (window.LR_STUDIO&&LR_STUDIO.chapters||[]).forEach(function(c){ (c.sections||[]).forEach(function(x){ st.sn++; if(isDone(x.id))st.sd++; }); }); }catch(_){}
+  var V=window.__loopVault||{};
+  LOOP_CORE.forEach(function(cm){
+    var m=gm&&(gm.moments||[]).filter(function(x){ return x&&x.key===cm[0]; })[0], any=false;
+    if(m)(m.phases||[]).forEach(function(ph,i){ var n=(ph.principles||[]).filter(function(x){ return loopPrTxt(x); }).length; if(!n)return; any=true; st.pr+=n; st.ph++;
+      var stdI=(LOOP_STD[cm[0]]||[]).indexOf(String(ph.name||'').trim()), std=stdI>=0?('std_'+cm[0]+'_'+(stdI+1)):'';
+      if((ph.id&&V[ph.id])||(std&&V[std]))st.phDrill++; });
+    if(any)st.core++; else st.miss.push(cm[1]);
+  });
+  return st;
+}
+function loopHtml(){
+  var st=loopState(), nx;
+  if(st.sd<2&&!st.pr)nx={t:'1장 «네 국면»을 읽고 첫 원칙을 내 게임모델에 담아 보세요.',b:'1장 열기',a:'sec:SG2'};
+  else if(st.core<4)nx={t:'아직 약속이 없는 국면: '+st.miss.join(' · ')+'. 한 줄씩 담아 보세요.',b:'원칙 담으러 가기',a:'sec:SG3'};
+  else if(st.phDrill<st.ph)nx={t:'원칙이 있는 단계 '+st.ph+'곳 중 '+(st.ph-st.phDrill)+'곳에 아직 훈련이 없어요. 그 원칙으로 훈련을 만들어 보세요.',b:'훈련 만들러 가기',a:'sec:ST1'};
+  else nx={t:'네 국면에 약속과 훈련이 다 있어요. 커뮤니티에서 다른 코치의 같은 국면 훈련을 찾아보고, 경기 리뷰로 고쳐 가세요.',b:'커뮤니티 열기',a:'go:community'};
+  function cell(n,k,v,sub){ return '<div class="lp-c"><i>'+n+' · '+esc(k)+'</i><b>'+esc(v)+'</b>'+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>'; }
+  return '<div class="loopbox"><div class="lp-h"><b>나의 코칭 고리</b><small>공부 → 내 게임모델 → 훈련 → 커뮤니티</small></div>'
+    +'<div class="lp-row">'+cell(1,'공부','『스튜디오로 배우는 코칭』 '+st.sd+'/'+st.sn+'절')
+    +cell(2,'내 게임모델','국면 '+st.core+'/4 · 원칙 '+st.pr,'')
+    +cell(3,'훈련','원칙 단계 '+st.ph+'곳 중 '+st.phDrill+'곳','보관함 훈련 기준')
+    +cell(4,'커뮤니티','같은 국면 훈련 찾기','')+'</div>'
+    +'<div class="lp-next"><span>다음 한 걸음 — '+esc(nx.t)+'</span><span class="row"><button type="button" class="btn pri" data-loop="'+esc(nx.a)+'">'+esc(nx.b)+' →</button>'
+    +((window.parent&&window.parent!==window)?'<button type="button" class="btn" data-loop="go:mygm">내 게임모델 열기</button>':'')+'</span></div></div>';
+}
+document.addEventListener('click',function(e){
+  var b=e.target&&e.target.closest&&e.target.closest('[data-loop]'); if(!b)return;
+  var a=String(b.getAttribute('data-loop')||'');
+  if(a.indexOf('sec:')===0){ BOOK=BOOKS.studio; openSec(a.slice(4)); return; }
+  if(a.indexOf('go:')===0){ try{ parent.postMessage({source:'learning',type:'studioGo',to:a.slice(3)},'*'); }catch(_){ toast('앱 안에서 열어 주세요'); } }
+});
 function renderShelf(){
   var el=$('#p-toc'), h='', idp=idpCurDone();
   if(!window.LR_CUR){ h+='<div class="card">교과서를 불러오지 못했어요</div>'; }
@@ -441,6 +502,8 @@ function renderShelf(){
         +'<div class="meta"><span>이 책 '+door.d+'/'+door.n+'</span>'+(due.length?'<button type="button" class="lnk" data-due>다시 볼 카드 '+due.length+'장</button>':'<span>다시 볼 카드 0</span>')+'</div>'
         +'<div class="row"><button class="btn pri" data-door>'+(door.step?'이어서 →':'시작 →')+'</button>'+(due.length?'<button class="btn" data-due>카드 '+due.length+'장 먼저 · 2분</button>':'')+'</div></div>';
     } else if(p.n&&p.d>=p.n){ h+='<div class="door"><span class="k">'+esc(role.ko)+'의 교과서</span><h3>다 읽었습니다</h3><p>모든 절을 마쳤어요 — 아래 목차에서 다시 열어볼 수 있습니다.</p></div>'; }
+    /* 3.080 — 나의 코칭 고리(코치 쪽 역할이거나 내 게임모델이 있으면) */
+    try{ if(window.LR_STUDIO&&(S.role!=='player'||myGameModel())){ h+=loopHtml(); loopVaultFetch(); } }catch(_){}
     /* 내 책 — 시작한 것만 */
     var mine=[];
     if(p.d>0)mine.push({id:'role',ko:role.ko+'의 교과서',d:p.d,n:p.n,next:nx?nx.l.ko:'',open:function(){ if(nx)openLesson(nx.m.id,nx.l.id); }});

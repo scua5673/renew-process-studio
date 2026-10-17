@@ -46,6 +46,19 @@ try{
   const picks=await lf.$$eval('[data-mkdrill]',x=>x.map(b=>b.textContent));
   assert.ok(picks.some(t=>t.includes('가까운 둘이 즉시 압박')),'내 원칙이 고르개에 보인다');
 
+  // 3.080 — 진행판(학습 첫 화면): 국면 1/4 · 원칙 단계 1곳 중 1곳(보관함 훈련 기준)
+  await lf.evaluate(()=>{ S.role='coach'; go('toc'); });
+  await lf.waitForFunction(()=>{ render(); const t=(document.querySelector('.loopbox')||{}).textContent||''; return t.includes('국면 1/4')&&t.includes('1곳 중 1곳'); },null,{timeout:10000,polling:500});
+  assert.match(await lf.$eval('.lp-next',e=>e.textContent),/아직 약속이 없는 국면: 공격 조직 · 수비 조직 · 수비 → 공격 전환/);
+
+  // 3.080 — 게임모델 단계 → 커뮤니티(같은 세부 국면으로 걸러서)
+  await page.evaluate(()=>{ currentTeamKey=''; window.__psShowApp('gamemodel'); });
+  await gf.waitForSelector('.gm-comm-b');
+  await gf.click('.gm-comm-b');
+  const cf=await (await page.waitForSelector('#fComm')).contentFrame();
+  await cf.waitForFunction(()=>window.PSCommTax&&PSCommTax.state().sub==='std_dt_1'&&PSCommTax.state().topic==='trd',null,{timeout:15000});
+  assert.equal(await visibleFrameId(page),'fComm');
+
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log(JSON.stringify({passed:true}));

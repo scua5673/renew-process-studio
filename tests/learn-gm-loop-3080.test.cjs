@@ -35,3 +35,17 @@ test('learning offers «내 게임모델에 담기» in chapter 1 and «내 원�
   assert.deepEqual(secs.filter(s=>s.try.keep).map(s=>s.id),['SG2','SG3','SG4','SG5']);
   assert.deepEqual(secs.filter(s=>s.try.drill).map(s=>s.id),['ST1','ST3','ST5']);
 });
+const comm=R('community.html');
+test('a game-model phase opens community filtered to the same standard sub-phase',()=>{
+  assert.match(gm,/type:'gmOpenCommunity',sub:_stdId/);
+  assert.match(app,/d\.source==='gamemodel' && d\.type==='gmOpenCommunity'\)\{[\s\S]{0,300}if\(\/\^std_\[a-z\]\+_\\d\$\/\.test\(_sub\)\)/,'표준 세부 국면 id 만 보낸다');
+  assert.match(comm,/if\(d\.source==='app'&&d\.type==='commFilter'\)\{\n    if\(window\.parent!==window&&e\.source!==window\.parent\)return;/);
+  assert.match(comm,/_tx\.set\(\{sub:String\(d\.sub\)\}\); render\(\);/);
+});
+test('the learning home shows «나의 코칭 고리» and points at the first empty step',()=>{
+  const code=learn.slice(learn.indexOf('var LOOP_CORE='),learn.indexOf('function loopVaultFetch('));
+  assert.match(learn,/function loopHtml\(\)\{/);
+  assert.match(learn,/if\(window\.LR_STUDIO&&\(S\.role!=='player'\|\|myGameModel\(\)\)\)\{ h\+=loopHtml\(\); loopVaultFetch\(\); \}/);
+  assert.ok(code.includes("['ao','공격 조직'],['do','수비 조직'],['dt','공격 → 수비 전환'],['at','수비 → 공격 전환']"));
+  assert.match(app,/else if\(_sg==='mygm'\)\{ currentTeamKey=''; showApp\('gamemodel'\); \}/);
+});
