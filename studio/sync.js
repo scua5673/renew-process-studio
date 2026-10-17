@@ -2645,6 +2645,17 @@ function libDietItem(it){
   return n;
 }
 /* ── 3.005 · 썸네일 정리 순수 구간 끝 ── */
+/* ══ 3.071 · 폰 · 아이패드는 보관함 본문을 조금씩 받는다 ══
+   10/17 아이폰 · 아이패드(운영자 계정 하나 · 팀 보관함 149개 33MB · 한 개 최대 2MB): 앱을 열면 load 뒤 5초 안에 강제 종료 →
+   사파리가 한 번 다시 열고 또 종료 → «문제가 반복적으로 발생». 보관함 받기(pullAll)는 본문을 20개씩 받아 회차 끝에 한 번에 저장한다 —
+   중간에 메모리가 넘쳐 죽으면 아무것도 남지 않아 다음 부팅도 처음부터 같은 양을 다시 받는다.
+   터치 기기는 2개씩 받고, 한 회차에 받은 글자가 budget 을 넘으면 남은 것은 다음 회차로 미룬다(deferred). 미룬 자료는 기준(m.li)이
+   그대로라 다음 회차가 다시 고르고, 이번 회차는 받은 만큼 평소대로 끝까지 저장한다 — 진행이 쌓인다. 데스크톱은 그대로(20개 · 한도 없음). */
+/* ── 3.071 · 보관함 받기 묶음 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
+function libPullCapFor(dev){ return (dev==='phone'||dev==='ipad')?{chunk:2,budget:6e6}:{chunk:20,budget:0}; }
+/* ── 3.071 · 보관함 받기 묶음 순수 구간 끝 ── */
+function libPullCap(){ var d='desktop'; try{ d=document.documentElement.getAttribute('data-ps-device')||'desktop'; }catch(_){} return libPullCapFor(d); }
+function libCrumb(c){ try{ if(window.__psBootCrumb)window.__psBootCrumb(c); }catch(_){} }   /* 3.071 — 강제 종료 위치 기록(셸 3.070 발자국) */
 /* ── 비공개 백업(1.523) ───────────────────────────────────────────────
    팀 공간에서 저장한 자료는 '팀에 공유' 전까지 서버에 올라가지 않았다 → 기기를 잃으면 사라졌다.
    이제 ps_library에 private/owner_id를 두고, 팀 공간에서도 내 자료를 **비공개 행**으로 올린다.
@@ -5831,7 +5842,7 @@ function syncLibrary(at,m,now,wid,ownerGuard){
     return libLoad().then(function(snap){requireCurrent('library_load_done');return _syncLibrary(at,m,now,wid,snap.list,ownerGuard,snap.raw,snap.rev); }).then(function(res){
       requireCurrent('library_done');
       var rev2=rev; try{ rev2=String(localStorage.getItem('cs_lib_rev')||''); }catch(_){}
-      if(sig&&res&&!res.pushed&&!res.applied) m.ls={sig:sig,rev:rev2,tomb:tombN}; else m.ls=null;
+      if(sig&&res&&!res.pushed&&!res.applied&&!res.deferred) m.ls={sig:sig,rev:rev2,tomb:tombN}; else m.ls=null;   /* 3.071 — 미룬 것이 있으면 다음 회차도 건너뛰지 않는다 */
       m.ld=LIB_DIET;   /* 3.005 — 이 회차가 이 기기의 목록을 끝까지 보았다(받은 자료는 받을 때마다 정리한다) */
       return res;
     });
@@ -6049,13 +6060,18 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
         });},updateRun);
       });
     }
+    var deferred=0;   /* 3.071 — 이번 회차에 받지 않고 미룬 자료 수 */
     function pullAll(){
       if(!pullIds.length)return Promise.resolve();
-      var chunks=[]; for(var i=0;i<pullIds.length;i+=20)chunks.push(pullIds.slice(i,i+20));
+      var cap=libPullCap(),got=0,bytes=0;
+      var chunks=[]; for(var i=0;i<pullIds.length;i+=cap.chunk)chunks.push(pullIds.slice(i,i+cap.chunk));
       return chunks.reduce(function(p,ch){ return p.then(function(){
+        if(cap.budget&&bytes>=cap.budget){ deferred+=ch.length; return; }   /* 3.071 — 남은 것은 다음 회차에 */
+        libCrumb('lb'+got); got+=ch.length;
         var q='lib_id=in.('+encodeURIComponent('"'+ch.join('","')+'"')+')';
         return syncFetch('library_body',BASE+'/rest/v1/ps_library?workspace_id=eq.'+wid+'&select='+libSelCols('lib_id,item,saved_at')+'&'+q,{headers:hj(at)})
-          .then(function(r){ if(!r.ok)throw syncHttpError('library_body',r.status); return r.json(); })
+          .then(function(r){ if(!r.ok)throw syncHttpError('library_body',r.status); return r.text(); })
+          .then(function(t){ bytes+=t.length; return JSON.parse(t); })
           .then(function(rows2){   /* 2.727 — psblob: 참조를 사진으로 되돌린 뒤 적용 */
             return Promise.all((rows2||[]).map(function(r0){ if(!r0||!r0.item)return; var raw; try{ raw=JSON.stringify(r0.item); }catch(_){ return; } if(raw.indexOf('"psblob:')<0)return; return libBlobHydrate(at,wid,raw).then(function(v){ try{ r0.item=JSON.parse(v); }catch(_){} }); })).then(function(){ return rows2; });
           })
@@ -6107,7 +6123,7 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
           if(localStorage.getItem(TOMBKEY)!==tombNextRaw)
             throw syncIssue('sync_storage','library_tomb_verify','보관함 삭제 표식을 저장하지 못했습니다');
         }
-        requireCurrent('library_commit_done');return {applied:applied,pushed:pushedOk,ackHash:hash(libAckRev)};
+        requireCurrent('library_commit_done');libCrumb('lbok');return {applied:applied,pushed:pushedOk,ackHash:hash(libAckRev),deferred:deferred};
       });
     });
   });
