@@ -49,3 +49,19 @@ test('wiring: board loads the module after the kit editor; service worker caches
   assert.match(b,/<script src="board-kit\.js"><\/script><script src="board-create-frame\.js"><\/script>/);
   assert.match(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'),/'\/studio\/board-create-frame\.js'/);
 });
+test('meeting (step 2): own toolbar wins over the board top bar, no drawing dock on slide pages, one save in the vault',()=>{
+  const c=cf.css();
+  assert.match(c,/body\.ps-dock-float\.meet-mode:not\(\.focus-board\) #boardPageStrip\.ps-tb(:not\(#cf\d+\))+\{display:none!important\}/);
+  assert.match(c,/body\.ps-dock-float\.meeting-page-mode #ps-command-dock(:not\(#cf\d+\))+,/);
+  assert.match(c,/body\.vcreating(:not\(#cf\d+\))+ #ksTop \.ksbar \.kssave\{display:none!important\}/);
+  // 넓은 화면: 슬라이드 목록 · «이 슬라이드» = 떠 있는 카드, 종이는 둘 사이
+  assert.match(c,/@media \(min-width:980px\)\{/);
+  assert.match(c,/ #ksStrip\{left:12px!important;top:52px!important;bottom:12px!important;width:150px!important/);
+  assert.match(c,/ #ksEd\{right:12px!important;top:52px!important;bottom:12px!important;width:300px!important/);
+  assert.match(c,/ #ksPagePreview\{left:174px!important;width:calc\(100% - 174px - 324px\)!important/);
+});
+test('badge kind on the vault bar comes from board state (item names are not types)',()=>{
+  assert.match(src,/if \(c\.contains\('book-mode'\) \|\| win\.__vaultBook\) return 'book';/);
+  assert.match(src,/if \(c\.contains\('meet-mode'\)\) return 'meeting';/);
+  assert.match(src,/var it = win\.__vvItem; if \(it && KINDS\[it\.type\]\) return it\.type;/);
+});

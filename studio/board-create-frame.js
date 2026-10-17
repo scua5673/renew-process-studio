@@ -34,6 +34,8 @@
   var E = 'html.ps-page-board body.editing' + NN;            // 훈련 · 세트피스 편집기
   var M = E + ' #editorModal';
   var WIDE = '@media (min-width:1000px)';
+  var K = 'html.ps-page-board body.meet-mode:not(.focus-board)' + NN;   // 미팅(슬라이드 편집 · 운동장 편집)
+  var P2 = 'html.ps-page-board body.meeting-page-mode' + NN;            // 미팅 슬라이드 편집(종이 미리보기)
   function css() {
     var card = 'background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(248,249,251,.97))!important;border:1px solid rgba(20,22,26,.07)!important;box-shadow:0 1px 0 #fff inset,0 2px 6px rgba(15,23,42,.06),0 14px 34px rgba(15,23,42,.14)!important;';
     var cardD = 'background:linear-gradient(180deg,#323845,#262B35)!important;border:1px solid rgba(255,255,255,.07)!important;box-shadow:0 14px 34px rgba(0,0,0,.45)!important;color:#E6E9EF!important;';
@@ -125,6 +127,37 @@
         'html.ps-page-board body.fmdark.editing' + NN + ' #editorModal #trainingStrip .tr-add.tr-lib{border-left-color:rgba(255,255,255,.1)!important}',
         'html.ps-page-board body.fmdark.editing' + NN + ' #editorModal #epNameTop,html.ps-page-board body.fmdark.editing' + NN + ' #editorModal #editorPanel>.ep-row[class="ep-row"]:not([id]) input{color:#E6E9EF!important}',
         'html.ps-page-board body.fmdark.editing' + NN + ' #editorModal #epNameTop:focus,html.ps-page-board body.fmdark.editing' + NN + ' #editorModal #editorPanel>.ep-row[class="ep-row"]:not([id]) input:focus{background:rgba(255,255,255,.06)!important}'
+      ].join('') + '}',
+
+      // ── 미팅(3.084 2단계): 미팅에는 제 도구줄(#ksTop)과 슬라이드 목록이 있다 ──
+      // 작전판 위쪽 막대(페이지 탭 · 보기)는 미팅 도구줄을 덮었다(«경기 연결»이 가려짐) — 미팅 화면에서는 걷는다(보드 설정은 도크 끝 단추)
+      'html.ps-page-board body.ps-dock-float.meet-mode:not(.focus-board) #boardPageStrip.ps-tb' + NN + NN + '{display:none!important}',
+      // 슬라이드 편집(종이 미리보기)에서는 그리기 도크가 쓸 데가 없다 — 보드는 원래 감췄는데 떠 있는 도크 규칙이 이겨 보였다
+      'html.ps-page-board body.ps-dock-float.meeting-page-mode #ps-command-dock' + NN + NN + ',html.ps-page-board body.ps-dock-float.meeting-page-mode #ps-df-tray' + NN + NN + ',html.ps-page-board body.ps-dock-float.meeting-page-mode #ps-df-opts' + NN + NN + '{display:none!important}',
+      // 보관함에서 만들기 · 편집 중이면 저장은 위 머리줄 하나(«보관함 저장»이 머리줄 «저장하기»와 겹쳤다)
+      'html.ps-page-board body.vcreating' + NN + ' #ksTop .ksbar .kssave{display:none!important}',
+      '@media (min-width:980px){' + [
+        // 도구줄 = 바탕 위에 떠 있는 단추들(작전판 · 훈련의 떠 있는 덩어리와 같은 모양)
+        K + ' #ksTop{background:transparent!important;border:0!important;padding:0 12px!important}',
+        K + ' #ksTop .ksbar button{height:36px!important;min-height:0!important;padding:0 13px!important;border-radius:11px!important;font:700 12.5px/1 Pretendard,-apple-system,sans-serif!important;' + pill + 'color:#1A2233!important}',
+        K + ' #ksTop .ksbar button:hover{filter:brightness(.97)}',
+        K + ' #ksTop .ksbar .ks-direction{height:36px!important;box-sizing:border-box!important;padding:3px!important;gap:2px!important;border-radius:11px!important;' + pill + '}',
+        K + ' #ksTop .ksbar .ks-direction button{height:28px!important;min-height:0!important;padding:0 11px!important;border-radius:8px!important;background:transparent!important;border:0!important;box-shadow:none!important;color:#5E6675!important}',
+        K + ' #ksTop .ksbar .ks-direction button[aria-pressed="true"]{background:linear-gradient(180deg,#2A3D6E,#14213D 60%,#0D1630)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 2px 5px rgba(20,33,61,.3)!important}',
+        K + ' #ksTop .ksbar .ksshow{background:linear-gradient(180deg,#2A3D6E,#14213D 60%,#0D1630)!important;border:1px solid #14213D!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 2px 6px rgba(20,33,61,.3)!important}',
+        K + ' #ksTop .ksbar .kssave{background:linear-gradient(180deg,#2A3D6E,#14213D 60%,#0D1630)!important;border:1px solid #14213D!important;color:#fff!important}',
+        // 슬라이드 진행 막대(몇 번째 슬라이드인지)는 머리줄 바로 아래 가는 줄로 — 카드 사이에 끼어 보이던 것
+        K + ' #ksProg{top:0!important;height:2px!important;z-index:59!important}',
+        // 왼쪽 슬라이드 목록 = 떠 있는 카드
+        K + ' #ksStrip{left:12px!important;top:52px!important;bottom:12px!important;width:150px!important;height:auto!important;box-sizing:border-box!important;border-radius:16px!important;border:0!important;padding:10px 8px!important;' + card + '}',
+        // 슬라이드 편집: 오른쪽 «이 슬라이드» = 떠 있는 카드, 종이는 둘 사이 · 바탕은 종이 책상과 같은 색
+        P2 + ' #boardStage{background:var(--cf-desk,#E6E9ED)!important}',
+        P2 + ' #ksEd{right:12px!important;top:52px!important;bottom:12px!important;width:300px!important;border-radius:16px!important;border:0!important;' + card + '}',
+        P2 + ' #ksPagePreview{left:174px!important;width:calc(100% - 174px - 324px)!important;background:transparent!important}',
+        // 어두운 화면
+        'html.ps-page-board body.fmdark.meet-mode:not(.focus-board)' + NN + ' #ksStrip,html.ps-page-board body.fmdark.meeting-page-mode' + NN + ' #ksEd{' + cardD + '}',
+        'html.ps-page-board body.fmdark.meet-mode:not(.focus-board)' + NN + ' #ksTop .ksbar button:not(.ksshow):not(.kssave),html.ps-page-board body.fmdark.meet-mode:not(.focus-board)' + NN + ' #ksTop .ksbar .ks-direction{background:linear-gradient(180deg,#3A414E,#2A303B 55%,#20252E)!important;border-color:rgba(255,255,255,.06)!important;color:#E6E9EF!important}',
+        'html.ps-page-board body.fmdark.meet-mode:not(.focus-board)' + NN + ' #ksTop .ksbar .ks-direction button{background:transparent!important;color:rgba(230,233,239,.7)!important}'
       ].join('') + '}'
     ].join('\n');
   }
@@ -133,13 +166,22 @@
     var doc = win.document, body = doc.body;
     if (!body || doc.getElementById('ps-create-frame-css')) return;
     var st = doc.createElement('style'); st.id = 'ps-create-frame-css'; st.textContent = css(); doc.head.appendChild(st);
-    function badge(head, title) {
+    // 보관함 띠의 종류: 보기 · 편집에서는 제목이 항목 이름이라 글로 알 수 없다 — 보드가 아는 것(패턴북 · 미팅 화면 · 연 항목의 type)을 먼저
+    function barKind(title) {
+      var c = body.classList, t = String(title || '');
+      if (c.contains('book-mode') || win.__vaultBook) return 'book';
+      if (c.contains('meet-mode')) return 'meeting';
+      var it = win.__vvItem; if (it && KINDS[it.type]) return it.type;
+      if (/(만들기|수정)$/.test(t)) return kindOf(t);
+      return 'board';
+    }
+    function badge(head, title, kind) {
       if (!head || !title) return;
-      var k = KINDS[kindOf(title.textContent)] || KINDS.board;
+      var k = KINDS[kind || kindOf(title.textContent)] || KINDS.board;
       var b = head.querySelector('.cf-badge');
       if (!b) { b = doc.createElement('span'); b.className = 'cf-badge'; b.setAttribute('aria-hidden', 'true'); head.insertBefore(b, title); }
       if (b.textContent !== k.ic) b.textContent = k.ic;
-      b.style.setProperty('--cf-k', k.color);
+      if (b.style.getPropertyValue('--cf-k') !== k.color) b.style.setProperty('--cf-k', k.color);
     }
     function nudge() { win.setTimeout(function () { try { win.dispatchEvent(new win.Event('resize')); } catch (_) {} }, 0); }
     // 카드 바깥(패널 뒤) 바탕 = 운동장 무대 바탕(테마 · 다크 모드마다 다르다) — 이음매 없이
@@ -172,14 +214,15 @@
     }
     function paint() {
       var eh = doc.querySelector('#editorModal .modal-head'); if (eh) { badge(eh, doc.getElementById('modalTitle')); panelBtn(eh); }
-      var vb = doc.getElementById('vCreateBar'); if (vb) badge(vb, doc.getElementById('vCreateTitle'));
+      var vb = doc.getElementById('vCreateBar'), vt = doc.getElementById('vCreateTitle'); if (vb && vt) badge(vb, vt, barKind(vt.textContent));
     }
     paint();
     var was = body.classList.contains('editing');
     try {
       new win.MutationObserver(function () {
         var now = body.classList.contains('editing');
-        if (now !== was) { was = now; if (!now && body.classList.contains('cf-panel-off')) body.classList.remove('cf-panel-off'); paint(); nudge(); }
+        if (now !== was) { was = now; if (!now && body.classList.contains('cf-panel-off')) body.classList.remove('cf-panel-off'); nudge(); }
+        paint();   // 미팅 · 패턴북 화면이 켜지고 꺼질 때도 종류 표시를 맞춘다(가벼움: 글자 · 색이 같으면 손대지 않는다)
         stageTone(); dockFit();
       }).observe(body, { attributes: true, attributeFilter: ['class'] });
       // 제목 글이 바뀌면(종류 · 수정/만들기) 표시를 다시. 보드 전체를 지켜보지 않는다(재생 중 매 장면 바뀌는 노드가 많다) — 제목 두 개만.
