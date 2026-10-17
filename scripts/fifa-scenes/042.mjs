@@ -31,7 +31,6 @@ export default {
         {type: 'cone', x: 80, y: 135}, {type: 'cone', x: 1030, y: 135}, {type: 'cone', x: 1030, y: 605}, {type: 'cone', x: 80, y: 605},
         {type: 'cone', x: 555, y: 180, color: '#ff8a00'}, {type: 'cone', x: 555, y: 275, color: '#ff8a00'},
         {type: 'cone', x: 555, y: 465, color: '#ff8a00'}, {type: 'cone', x: 555, y: 560, color: '#ff8a00'},
-        {type: 'marker', x: 190, y: 420}, {type: 'marker', x: 920, y: 420},
       ],
       lines: [{rect: [80, 135, 1030, 605]}, {line: [555, 135, 555, 605], dash: true}],
       ball: [212, 372],
