@@ -1,5 +1,5 @@
 'use strict';
-/* 3.081 — 운영 홈 «오늘 확인할 일» 한 줄(studio/admin-today.js). 못 받은 값은 0 이 아니라 «확인 못 함» */
+/* 3.083 — 운영 홈 «오늘 확인할 일» 한 줄(studio/admin-today.js). 못 받은 값은 0 이 아니라 «확인 못 함» */
 const test=require('node:test'),assert=require('node:assert/strict');
 const T=require('../studio/admin-today.js');
 const byKey=s=>Object.fromEntries(T.tiles(s).map(t=>[t.key,t]));

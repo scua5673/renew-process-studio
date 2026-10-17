@@ -21,7 +21,7 @@
     -webkit-font-smoothing:antialiased;font-size:14px;}
   a{color:var(--blue2);text-decoration:none;}
   button{font-family:inherit;cursor:pointer;}
-  /* 3.081 — 따로 꾸미지 않은 선택 상자가 브라우저 기본 흰 상자로 떠서 어두운 화면에서 튀었다(오류 · 사용 방식 · 활동 분석) */
+  /* 3.083 — 따로 꾸미지 않은 선택 상자가 브라우저 기본 흰 상자로 떠서 어두운 화면에서 튀었다(오류 · 사용 방식 · 활동 분석) */
   select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:0 8px;font-family:inherit;}
   .hide{display:none!important;}
   /* ── 관리자 앱 셸: 목업과 같은 좌측 내비게이션 + 넓은 작업영역 ── */
@@ -274,8 +274,8 @@
 <link rel="stylesheet" href="studio/admin-operations.css?v=2.816">
 <link rel="stylesheet" href="studio/admin-support.css?v=20261014">
 <link rel="stylesheet" href="studio/admin-content.css?v=2.890">
-<link rel="stylesheet" href="studio/admin-density.css?v=3.081">
-<link rel="stylesheet" href="studio/admin-today.css?v=3.081">
+<link rel="stylesheet" href="studio/admin-density.css?v=3.083">
+<link rel="stylesheet" href="studio/admin-today.css?v=3.083">
 </head>
 <body>
 
@@ -401,7 +401,7 @@
 
   <!-- 홈 — 모든 데이터 한눈에: 7일 지표 · IDP 퍼널 · 팀 활성/침묵 · 기능 사용 · 최근 가입 -->
   <div class="wrap hide" id="viewHome">
-    <!-- 3.081 — 오늘 확인할 일 한 줄(studio/admin-today.js): 제보 · 신고 · 앱 오류 · 후속 기한 · 무사고 -->
+    <!-- 3.083 — 오늘 확인할 일 한 줄(studio/admin-today.js): 제보 · 신고 · 앱 오류 · 후속 기한 · 무사고 -->
     <section class="admin-today" id="adminToday" aria-label="오늘 확인할 일"></section>
     <div class="col">
       <div class="panel">
@@ -606,8 +606,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="studio/admin-user-detail.js?v=2.964"></script>
-<script src="studio/admin-operations.js?v=3.081"></script>
-<script src="studio/admin-today.js?v=3.081"></script>
+<script src="studio/admin-operations.js?v=3.083"></script>
+<script src="studio/admin-today.js?v=3.083"></script>
 <script src="studio/admin-actions.js?v=20261014"></script>
 <script src="studio/admin-community.js?v=20261014"></script>
 <script src="studio/support-diagnostics.js?v=2.816"></script>
@@ -762,7 +762,7 @@ function refreshSupportBadge(){
   var epoch=adminAuthEpoch;todaySet('support',undefined);
   adminRpc('ps_support_list',{p_limit:1}).then(function(r){if(!adminSessionLocked&&epoch===adminAuthEpoch)setSupportCounts(r&&r.is_admin===true?r.counts:null);}).catch(function(){if(epoch===adminAuthEpoch)todaySet('support',null);});
 }
-/* 3.081 — 운영 홈 «오늘 확인할 일» 한 줄. 숫자는 위 배지 · 운영 상태 · 홈 집계가 받는 값을 그대로 쓴다 */
+/* 3.083 — 운영 홈 «오늘 확인할 일» 한 줄. 숫자는 위 배지 · 운영 상태 · 홈 집계가 받는 값을 그대로 쓴다 */
 var adminToday=null;
 function todayInit(){ if(!adminToday&&window.PSAdminToday&&$('adminToday'))adminToday=PSAdminToday.create({host:$('adminToday'),go:todayGo,reload:todayReload}); return adminToday; }
 function todaySet(k,v){ if(todayInit())adminToday.set(k,v); }
@@ -880,7 +880,7 @@ function consumeHash(){
 }
 
 /* ===== 유틸 ===== */
-/* 3.081 — 예전 안내는 «supabase-admin.sql 을 다시 실행»이었다. 그 파일들은 운영과 달라 기준본(migrations/00000000_baseline.sql)으로 바뀌었다 —
+/* 3.083 — 예전 안내는 «supabase-admin.sql 을 다시 실행»이었다. 그 파일들은 운영과 달라 기준본(migrations/00000000_baseline.sql)으로 바뀌었다 —
    응답하지 않은 함수 이름을 대고, 권한 · 연결부터 보게 한다. */
 function fnMiss(fn){ return '<span class="muted"><code>'+fn+'</code> 응답 없음 — 관리자 권한 · 연결을 먼저 확인하고, 그래도 안 되면 운영 DB 에 이 함수가 있는지 기준본(migrations/00000000_baseline.sql)과 견주세요.</span>'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -945,7 +945,7 @@ function reloadAll(){
   if(curTab==='support'){loadAdminSupport();return;}
   if(curTab==='comm'){loadComm();return;}
   refreshSupportBadge();refreshCommBadge();loadTodayIncident();
-  todaySet('overdue',undefined);   /* 3.081 — 아래 loadAdminOps 가 곧 채운다(홈이 먼저 열려 한 번 더 부르지 않게) */
+  todaySet('overdue',undefined);   /* 3.083 — 아래 loadAdminOps 가 곧 채운다(홈이 먼저 열려 한 번 더 부르지 않게) */
   var libTicket=++adminLibraryTicket,reloadTicket=++adminReloadTicket,epoch=adminAuthEpoch;
   if(adminContent)adminContent.deactivate();
   $('wsList').innerHTML='<div class="loading">불러오는 중…</div>';
@@ -2200,7 +2200,7 @@ function userTeamsCell(u){
 function userSubLine(u){
   var parts=[];
   var nm=(u.name||'').trim();
-  if(u.email){ if(nm&&u.email!==nm)parts.push(u.email); }   /* 3.081 — 이름이 없으면 윗줄이 이미 이메일이다(두 번 나오던 것) */
+  if(u.email){ if(nm&&u.email!==nm)parts.push(u.email); }   /* 3.083 — 이름이 없으면 윗줄이 이미 이메일이다(두 번 나오던 것) */
   else if(Array.isArray(u.teams)) parts.push('이메일 없음');
   if(u.provider) parts.push((ADMIN_PROVIDER[u.provider]||u.provider)+' 로그인');
   if(u.account_name&&u.member_name&&u.account_name!==u.member_name) parts.push('계정 이름 '+u.account_name);

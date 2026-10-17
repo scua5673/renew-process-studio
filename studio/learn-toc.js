@@ -22,11 +22,17 @@
   'use strict';
 
   /* 살아 있는 데이터가 없을 때만 쓰는 총 개수(위 ⚠) */
-  var FALLBACK={ mikl:21, gmhow:5, futsal:12, cur:90, principles:95, game:13, concepts:16, terms:35 };   /* 2.659 — futsal 폴백(IDP 는 learn-futsal.js 를 안 싣는다) */   /* 2.467 — gmhow 폴백: IDP는 learn-gamemodel.js를 안 실어 «0 절»로 거짓말했다(1판) */
+  var FALLBACK={ studio:17, mikl:21, gmhow:5, futsal:12, cur:90, principles:95, game:13, concepts:16, terms:35 };   /* 2.659 — futsal 폴백(IDP 는 learn-futsal.js 를 안 싣는다) */   /* 2.467 — gmhow 폴백: IDP는 learn-gamemodel.js를 안 실어 «0 절»로 거짓말했다(1판) */
 
   function ic(d){ return '<svg class="toc-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>'; }
 
   var ITEMS=[
+    /* 3.079 — 코치 실습 책: 게임모델 · IDP · 훈련 만들기(국제 지도자 교육 → 스튜디오에서 해보기) */
+    { id:'studio', owner:'learn',
+      ko:'스튜디오로 배우는 코칭', en:'Coaching with the studio', unit:'절',
+      desc:'게임모델 · IDP · 훈련 만들기 — 읽고, 스튜디오에서 바로 해 본다',
+      chap:'게임모델 · IDP · 훈련 만들기',
+      icon:ic('<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/><path d="M8 11l2.5 2.5L16 8"/>') },
     { id:'mikl', owner:'learn',
       ko:'축구를 배우는 법', en:'How football is learned', unit:'절',
       desc:'왜 배우는가 · 뇌는 어떻게 배우는가 · 코치와 선수 사이',
@@ -85,6 +91,8 @@
         return window.LR_GMHOW.chapters.reduce(function(a,c){ return a+((c.sections||[]).length); },0);
       if(id==='futsal'&&window.LR_FUTSAL&&window.LR_FUTSAL.chapters)
         return window.LR_FUTSAL.chapters.reduce(function(a,c){ return a+((c.sections||[]).length); },0);
+      if(id==='studio'&&window.LR_STUDIO&&window.LR_STUDIO.chapters)
+        return window.LR_STUDIO.chapters.reduce(function(a,c){ return a+((c.sections||[]).length); },0);
       if(id==='mikl'&&window.LR_MIKL&&window.LR_MIKL.chapters)
         return window.LR_MIKL.chapters.reduce(function(a,c){ return a+((c.sections||[]).length); },0);
       if(id==='cur'&&window.LR_CUR&&window.LR_CUR.byTrack)
@@ -101,6 +109,8 @@
 
   function doneOf(id){
     try{
+      if(id==='studio'&&window.LR_STUDIO){ var d0=(learnDoc().done)||{}, n0=0;   /* 3.079 */
+        window.LR_STUDIO.chapters.forEach(function(c){ (c.sections||[]).forEach(function(x){ if(d0[x.id]&&d0[x.id].hits>=3)n0++; }); }); return n0; }
       if(id==='mikl'){ var d=(learnDoc().done)||{}; var n=0;
         Object.keys(d).forEach(function(k){ if(d[k]&&d[k].hits>=3)n++; }); return n; }
       var L=(idpDoc().learning)||{};
