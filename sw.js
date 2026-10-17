@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.084';   // 3.084 만들기 화면 한 틀 — 훈련 만들기(머리줄 · 떠 있는 탭 · 오른쪽 카드)
+const CACHE = 'process-3.085';   // 3.085 홈 화면 설치 — 더보기 · 왼쪽 메뉴 문과 한 번 뜨는 안내
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js',
@@ -16,7 +16,7 @@ const CORE = [
   '/studio/autosave-status.js', '/studio/update-progress.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
   '/studio/shared-view-observation.js',
   '/studio/team-files.js',
-  '/studio/support-diagnostics.js', '/studio/support.js', '/studio/support.css', '/studio/release-notes.js',
+  '/studio/support-diagnostics.js', '/studio/support.js', '/studio/support.css', '/studio/release-notes.js', '/studio/install-door.js',
   '/studio/perms.js',
   '/studio/football-language.js',
   '/studio/eval-standard.js',

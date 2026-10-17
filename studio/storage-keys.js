@@ -185,6 +185,7 @@
     ['ps_idp_edit_recovery_v1:','device','ls','recovery','idp-recovery.js',{of:'cs_idp_v1_',prefix:1}],
     ['ps_idp_invite_tokens_v1','device','ls','session','sync.js'],
     ['ps_idp_recovery_tab_v1','device','ls','pref','idp-recovery.js'],
+    ['ps_install_nudge_v1','device','ls','seen','install-door.js'],
     ['ps_invite_pending_v1','device','ls','session','idp.html'],
     ['ps_items_hold_v1','device','ls','recovery','sync.js',{of:'scout_tool_v1'}],
     ['ps_items_idx_v1','device','ls','cache','sync.js'],

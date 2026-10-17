@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.084"></script>
+<script src="autosave-status.js?v=3.085"></script>
 <script src="update-progress.js"></script>
 
 <title>PROCESS STUDIO</title>
@@ -522,7 +522,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.084';</script>
+<script>window.PS_BUILD='3.085';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -783,9 +783,10 @@ function psShowUpdBand(){
      사용자가 선택할 때만 새 버전으로 다시 시작한다. */
   try{ if(!document.getElementById("psUpdBtn")){ var b=document.createElement("button");b.id="psUpdBtn";b.type="button";b.title="새 버전으로 업데이트";b.innerHTML="<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' style='margin-right:5px;flex:0 0 auto'><path d='M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4'/><path d='M4 13a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4'/></svg><span>업데이트</span>";b.style.cssText="display:inline-flex;align-items:center;height:34px;padding:0 13px;border:0;border-radius:10px;background:var(--ps-navy,#14213D);color:#fff;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 9px color-mix(in srgb,var(--ps-navy,#14213D) 45%,transparent)";b.onclick=function(){(window.__psBootMarkDone&&window.__psBootMarkDone(),location.reload());};var _g=document.getElementById("gearWrap");if(_g&&_g.parentNode){_g.parentNode.insertBefore(b,_g);}else{b.style.position="fixed";b.style.top="calc(9px + env(safe-area-inset-top))";b.style.right="14px";b.style.zIndex="2147483001";document.body.appendChild(b);}} }catch(_){}}});});}</script>
 <script>
-/* PWA 설치 — 자리는 **한 곳**: 앱 설정 › 기기 › 앱·오프라인 행(#psPwaInstall).
-   2.455 — 사이드바 '설치하기'(#psInstallBtn)를 걷었다(사용자 "앱설정에 넣어주고"). 2.437 이 그것을
-   레일에 둔 이유는 발견이었지만, 같은 일을 두 곳이 말하면 어느 쪽이 진짜인지 사람이 판단해야 한다.
+/* PWA 설치 — 안내 시트와 원클릭은 여기 한 곳(window.psInstallGo). 설정 자리: 앱 설정 › 기기 › 앱·오프라인 행(#psPwaInstall).
+   2.455 — 사이드바 '설치하기'(#psInstallBtn)를 걷었다(사용자 "앱설정에 넣어주고").
+   3.085 — 찾기 어려워 문을 더 열었다(사용자 «홈화면에 설치도 만들고 싶은데 앱안에 어디다» → 목업 → «아이패드와 컴퓨터 사용자도»):
+      폰 더보기 «앱» 줄 · 아이패드 · 컴퓨터 왼쪽 메뉴 한 칸 · 다른 날 세 번째로 열 때 한 번 뜨는 안내. 모두 이 시트를 연다 — install-door.js.
    ⚠⚠ 2.437 — 예전에는 `beforeinstallprompt` 가 와야만 버튼을 보였다. 그 이벤트는
       **iOS 사파리에 영원히 안 온다**(설치 API 자체가 없다). 크롬도 체류 시간을 채워야 준다.
       그래서 **안내가 가장 필요한 기기에서만 버튼이 숨었다** — 만든 사람조차 있는 줄 몰랐다.
@@ -1356,12 +1357,12 @@ window.psFailAlert=function(lead,e,stage){
     </div>
     <div class="hintbar" id="hintbar"></div>
         <!-- 2.455 — 사이드바의 '설치하기' 를 걷었다(사용자 "앱설정에 넣어주고").
-             2.437 이 여기 둔 이유는 **발견**이었다(iOS 에서 아예 안 보였다). 그 문제는 남지만,
-             자리를 둘로 두면 같은 일을 두 곳이 말한다 — 앱 설정 › 기기 › 앱·오프라인 한 곳으로 모은다.
-             ⚠ 대신 그 줄이 **무엇인지·왜 하는지**를 스스로 말하게 했다(아래 guide). -->
+             3.085 — 아이패드 · 컴퓨터에 다시 한 칸(사용자 «아이패드와 컴퓨터 사용자도 볼 수 있게»). 아래 #psInstWrap — 업데이트 · 앱 설정 바로 위,
+             앱 설정 타일과 같은 옷이고 설치되면 사라진다. 누르면 앱 설정 줄과 같은 안내 시트(psInstallGo)를 연다. 보이기는 install-door.js -->
     <!-- 2.732 — 보드 설정은 작전판·훈련 편집기의 도크가 맡는다. 다른 앱에서 작전판으로 이동시키던 사이드바 문은 제거. -->
     <!-- 2.947 — 업데이트 알림은 위쪽 띠가 아니라 앱 설정 바로 위 한 칸(사용자 «업데이트가 되면 왼쪽 앱설정 위에» → 목업 «추천대로 둘 다»).
          새 판이 준비되면 «업데이트 ●», 적용된 뒤 7일은 «새 기능»(3.024 — 열 판마다 한 번). 폰은 더보기 시트 맨 위 줄 + 더보기 점. 선수 전용 폰만 예전 띠 -->
+    <div class="ps-instwrap" id="psInstWrap" hidden><button type="button" class="gearbtn" id="psInstRail" aria-haspopup="dialog" title="이 기기에 앱으로 설치하는 방법"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v6.5"/><path d="M9.3 11.4 12 14l2.7-2.6"/><path d="M10.5 18.3h3"/></svg><span class="gear-label" id="psInstRailLb">앱 설치</span></button></div>
     <div class="ps-updwrap" id="psUpdWrap" hidden><button type="button" class="gearbtn" id="psUpdRail" aria-haspopup="dialog" aria-expanded="false" aria-controls="psUpdPop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg><span class="gear-label" id="psUpdRailLb">업데이트</span><i class="ps-updot" aria-hidden="true"></i></button></div>
     <div class="gear" id="gearWrap">
       <button class="gearbtn" id="gearBtn" title="설정" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
@@ -1637,7 +1638,7 @@ window.psFailAlert=function(lead,e,stage){
     <div class="ps-upd-row" data-upd-row hidden><span class="pur-t"><span data-upd-rowtext></span><small data-upd-msg hidden></small></span><button type="button" data-upd="row" data-upd-now>적용</button></div><!-- 2.947 -->
     <div class="tms-g"><i>팀</i><button type="button" data-tb="scouting">스카우팅</button></div><!-- 2.954 — 위 줄 탭이 됐지만 폰 하단은 여섯 칸 그대로라 여기 -->
     <div class="tms-g"><i>설정</i><button type="button" data-tb="attrs">평가표</button><button type="button" data-tb="playbook">플레이북</button><button type="button" data-tb="settings">게임모델</button><button type="button" data-tb="terms">공용어</button></div><!-- 2.908 — 설정 묶음 -->
-    <div class="tms-g"><i>앱</i><button type="button" data-tb-app="board">보드</button><button type="button" data-tb-app="design">보관함</button><button type="button" data-tb-app="idp">내 IDP</button><button type="button" data-tb-app="learning">학습</button><button type="button" data-tb-app="community">커뮤니티</button></div>
+    <div class="tms-g"><i>앱</i><button type="button" data-tb-app="board">보드</button><button type="button" data-tb-app="design">보관함</button><button type="button" data-tb-app="idp">내 IDP</button><button type="button" data-tb-app="learning">학습</button><button type="button" data-tb-app="community">커뮤니티</button><button type="button" data-tb-install data-install-door hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v6.5"/><path d="M9.3 11.4 12 14l2.7-2.6"/><path d="M10.5 18.3h3"/></svg><span data-install-label>홈 화면에 추가</span></button></div>
   </div>
   <!-- 2.938 — 앱 하단 메뉴 «더보기» 시트. 모양은 팀 더보기(#teamMoreSheet)와 같다 -->
   <div class="app-more" id="appMoreSheet" role="dialog" aria-label="더보기" hidden>
@@ -1645,7 +1646,7 @@ window.psFailAlert=function(lead,e,stage){
     <div class="ps-upd-row" data-upd-row hidden><span class="pur-t"><span data-upd-rowtext></span><small data-upd-msg hidden></small></span><button type="button" data-upd="row" data-upd-now>적용</button></div><!-- 2.947 -->
     <!-- 2.940 — 폰 작전판엔 저장 띠가 없다(2.939). 계정에 올리는 길을 여기 하나 둔다 — 작전판을 보고 있을 때만 보인다 -->
     <div class="tms-g" data-am-row="board" hidden><i>보드</i><button type="button" data-am="boardsave" title="작업 보드를 계정에 저장">보드 저장</button></div>
-    <div class="tms-g"><i>앱</i><button type="button" data-am-app="design">보관함</button></div>
+    <div class="tms-g"><i>앱</i><button type="button" data-am-app="design">보관함</button><button type="button" data-am="install" data-install-door hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7.5v6.5"/><path d="M9.3 11.4 12 14l2.7-2.6"/><path d="M10.5 18.3h3"/></svg><span data-install-label>홈 화면에 추가</span></button></div><!-- 3.085 — 설치 문(install-door.js 가 보이기 · 이름) -->
     <div class="tms-g"><i>도움</i><button type="button" data-am="settings">앱 설정</button><button type="button" data-am="support">오류 제보</button><button type="button" data-am="guide">사용법</button></div>
   </div>
   <div class="ps-updpop" id="psUpdPop" role="dialog" aria-labelledby="psUpdPopT" hidden>
@@ -2819,6 +2820,7 @@ window.psFailAlert=function(lead,e,stage){
         if(k==='settings'){ openGear(); return; }
         if(k==='support'){ openGear(function(){ var s2=document.getElementById('psSupportSettingsOpen'); if(s2)s2.click(); }); return; }
         if(k==='guide'){ var a=document.getElementById('guideOpen'); if(a)window.open(a.href,'_blank','noopener'); return; }
+        if(k==='install'){ if(window.psInstallGo)window.psInstallGo(); return; }   /* 3.085 — 앱 설정 줄과 같은 안내 시트 */
       });
       document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!sheet.hidden)set(false); });
       document.addEventListener('pointerdown',function(e){ if(sheet.hidden)return; if(e.target.closest('#appMoreSheet')||e.target.closest('#psMoreBtn'))return; set(false); },true);
@@ -2836,6 +2838,7 @@ window.psFailAlert=function(lead,e,stage){
         if(k==='more'){ if(sheet)sheet.hidden=!sheet.hidden; return; } go(k); });
       if(sheet)sheet.addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b)return;
         if(b.dataset.tb==='close'){ sheet.hidden=true; return; }
+        if(b.hasAttribute('data-tb-install')){ sheet.hidden=true; if(window.psInstallGo)window.psInstallGo(); return; }   /* 3.085 */
         if(b.dataset.tb){ go(b.dataset.tb); return; }
         if(b.dataset.tbApp){ sheet.hidden=true; currentTeamKey=''; showApp(b.dataset.tbApp); } });
       window.__teamBottomSync=function(){ var k=currentTeamKey||''; var g=teamGrpOf(k);   /* 2.908 — 선수단 묶음은 «선수단», 설정 묶음은 «더보기»가 켜진다 */
@@ -8202,15 +8205,16 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.084"></script>
-<script src="autosave-merge.js?v=3.084"></script>
-<script src="autosave-runtime.js?v=3.084"></script>
-<script src="autosave-recovery.js?v=3.084"></script>
-<script src="sync.js?v=3.084"></script>
+<script src="autosave-journal.js?v=3.085"></script>
+<script src="autosave-merge.js?v=3.085"></script>
+<script src="autosave-runtime.js?v=3.085"></script>
+<script src="autosave-recovery.js?v=3.085"></script>
+<script src="sync.js?v=3.085"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.084">
+<link rel="stylesheet" href="support.css?v=3.085">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
+<script src="install-door.js"></script>
 <script>
 if(window.PSSupport)PSSupport.mount({window:window});
 if(window.PSReleaseNotes)PSReleaseNotes.mount({window:window,host:document.getElementById('psReleaseNotes')});

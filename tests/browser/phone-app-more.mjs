@@ -22,7 +22,7 @@ try{
     const shown=()=>page.evaluate(()=>[...document.querySelectorAll('#appMoreSheet .tms-g button')].filter(b=>b.offsetParent!==null).map(b=>b.textContent.trim()));
     const items=await shown();
     // 2.940 — 작전판 화면이면 맨 위에 «보드 저장»(폰엔 저장 띠가 없다, 2.939)
-    assert.deepEqual(items,['보드 저장','보관함','앱 설정','오류 제보','사용법'],'시트 = 보드 저장 + 보관함 + 도움 셋');
+    assert.deepEqual(items,['보드 저장','보관함','홈 화면에 추가','앱 설정','오류 제보','사용법'],'시트 = 보드 저장 + 보관함 · 홈 화면에 추가(3.085, 설치 전) + 도움 셋');
     const board=await (await page.$('#fBoard')).contentFrame();
     await board.evaluate(()=>{window.__bsClicks=0;document.getElementById('boardManualSave').addEventListener('click',()=>{window.__bsClicks++;});});
     await sheet.locator('.tms-g button',{hasText:'보드 저장'}).tap();await wait(300);
@@ -36,7 +36,7 @@ try{
     assert.equal(await sheet.isVisible(),false,'고르면 닫힌다');
     assert.equal(await more.evaluate(b=>b.classList.contains('on')),true,'바에 없는 화면이면 더보기에 불');
     await more.tap();await wait(200);
-    assert.deepEqual(await shown(),['보관함','앱 설정','오류 제보','사용법'],'보관함 화면에서는 «보드 저장»이 없다');
+    assert.deepEqual(await shown(),['보관함','홈 화면에 추가','앱 설정','오류 제보','사용법'],'보관함 화면에서는 «보드 저장»이 없다');
     await page.keyboard.press('Escape');await wait(150);
     assert.equal(await sheet.isVisible(),false,'Esc 로 닫힌다');
     await page.locator('#appSeg button[data-app="board"]:not([data-train])').tap();await wait(900);
