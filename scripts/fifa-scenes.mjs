@@ -9,7 +9,7 @@
 //   { path: 'elite-sessions/…/x.php',  ← community-fifa.js ROWS 의 경로와 같아야 한다
 //     name: '세션 이름(우리말)', focus: 'bpo',   ← board FOCUS 키: warm bp poss bpo tr_att tr_def set phys tech rec
 //     trainings: [{
-//       name, minutes, focus?, pitch: 'grid30'|'grid20'|'grid45'|'u12'|'futsal'|'fifa', tokenScale?,
+//       name, minutes, focus?, pitch: 'grid30'|'grid20'|'grid45'|'u12'|'futsal'|'fifa', tokenScale?, marks?(false = 운동장 라인 · 골을 그리지 않는다),
 //       players: [{id:101, team:'blue'|'red'|'yellow', num:'1', gk:true?, x, y}],   ← 첫 장면의 자리
 //       equipment: [{type:'cone'|'marker'|'minigoalV'|'goalV'|'dummy'|'pole', x, y, rot?, scale?, color?}],
 //       lines: [{rect:[x1,y1,x2,y2]} | {line:[x1,y1,x2,y2], dash?:true}],
@@ -34,7 +34,7 @@ const num=(v,lo,hi)=>typeof v==='number'&&isFinite(v)&&v>=lo&&v<=hi;
 const xy=(v,what)=>{ if(!Array.isArray(v)||v.length!==2||!num(v[0],0,1110)||!num(v[1],0,740))throw Error(what+': 판 안의 [x, y] 가 아닙니다 — '+JSON.stringify(v)); return v; };
 
 /* 판의 나머지 칸 — 프로세스 칸 팩(studio/packs/02.json 첫 훈련)과 같은 값 */
-const TEMPLATE={teamColors:{blue:'#3a6df0',red:'#e5484d',yellow:'#ffd23f'},gkColors:{blue:'#3a6df0'},teamColor2:{},teamPattern:{},teamStrokeC:{},teamTxtC:{},
+const TEMPLATE={teamColors:{blue:'#3a6df0',red:'#e5484d',yellow:'#ffd23f'},gkColors:{blue:'#3a6df0',red:'#e5484d'},teamColor2:{},teamPattern:{},teamStrokeC:{},teamTxtC:{},
   gkColor2:{},gkPattern:{},gkStrokeC:{},gkTxtC:{},orientation:'h',area:'full',pitchView:'full',pvSide:'own',fieldMode:'standard',halfSide:'L',gridType:'off',
   label:'num',lines:false,boardLocked:false,spFlip:false,tokenScale:1,pitchN:1,press:null,spMarks:null,spMark:null,pitchImg:null,matchNote:'',pitchTheme:'',
   pitchCustom:null,tokShape:'shaper',chip3d:false,grassM:0,trainGridM:'def',ballStyle:'1970',grassTone:'0|0',tokV:2};
@@ -60,7 +60,9 @@ export function snapOf(t,where){
       const d={type:'line',color:'#ffffff',lw:1,op:.6,pts:[{x:l.line[0],y:l.line[1]},{x:l.line[2],y:l.line[3]}]}; if(l.dash)d.dash=true; return d; }
     throw Error(where+': 선은 {rect:[…]} 또는 {line:[…]}'); });
   const ball=xy(t.ball,where+' 공');
-  return {pitchSpec:t.pitch,players,equipment,ball:{x:ball[0],y:ball[1],scale:.62,trail:1},drawings,...clone(TEMPLATE),tokenScale:t.tokenScale||TOKEN_SCALE[t.pitch]};
+  /* 운동장 라인 · 골(lines) — 8인제 · 풋살 · 11인제는 그리고, 그리드 판은 원래 없다. marks:false 면 운동장 일부만 쓰는 훈련(직접 그린 칸)이라 끈다 */
+  const marks=!t.pitch.startsWith('grid')&&t.marks!==false;
+  return {pitchSpec:t.pitch,players,equipment,ball:{x:ball[0],y:ball[1],scale:.62,trail:1},drawings,...clone(TEMPLATE),lines:marks,tokenScale:t.tokenScale||TOKEN_SCALE[t.pitch]};
 }
 
 export function packOf(spec,id){

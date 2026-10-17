@@ -89,7 +89,7 @@ export default {
     },
     {
       /* 3 — 8v8 + GK 경기 (70 × 30m · fifa: x 205~905 · y 220~520, 가운데 선 x 555). 빨강 GK는 왼쪽(빨강 → 오른쪽 공격), 파랑은 4-3-1 로 높이 누른다 */
-      name: '8v8 경기: 세 줄로 함께 누르기', minutes: 30, pitch: 'fifa', dur: 1.3,
+      name: '8v8 경기: 세 줄로 함께 누르기', minutes: 30, pitch: 'fifa', marks: false, dur: 1.3,
       players: [
         {id: 201, team: 'red', num: '1', gk: true, x: 225, y: 370},
         {id: 202, team: 'red', num: '', x: 305, y: 255}, {id: 203, team: 'red', num: '', x: 290, y: 330},
