@@ -233,7 +233,9 @@
   }
   function personFigure(doc, fill, stroke, label, pose) {
     var solid = /^#[0-9a-f]{3,6}$/i.test(String(fill || '').trim()) ? fill : (/^#[0-9a-f]{3,6}$/i.test(String(stroke || '').trim()) ? stroke : '#3a6df0');
-    var shorts = shade(solid, .38) || '#1d2128', sock = solid, P = personPose(pose), A = P.amp, TAU = Math.PI * 2;
+    // 3.083 — 팀 유니폼의 하의 · 스타킹(pose.kit, 보드 설정 › 팀 유니폼). 없으면 하의 = 상의를 어둡게 · 스타킹 = 상의
+    var kit = (pose && pose.kit) || {}, kh = function (v) { return /^#[0-9a-f]{6}$/i.test(String(v || '')) ? v : ''; };
+    var shorts = kh(kit.shorts) || shade(solid, .38) || '#1d2128', sock = kh(kit.socks) || solid, P = personPose(pose), A = P.amp, TAU = Math.PI * 2;
     var yaw = P.yaw * D2R, F = { x: Math.cos(yaw), d: Math.sin(yaw) }, L = { x: Math.sin(yaw), d: -Math.cos(yaw) };
     var fig = node(doc, 'g', { 'class': 'ps-person', 'data-yaw': String(Math.round(P.yaw)) });
     // Upper body: leans forward with speed; shoulders turn against the hips with the arms.

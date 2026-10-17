@@ -219,7 +219,13 @@
       var s = screenVec(dx, dy, view); return (lastYaw[p.id] = Math.atan2(s.y, s.x) / D2R);
     }
     function personLive() { try { return tokShape === 'person' && document.body.classList.contains('bc-tilt3d'); } catch (_) { return false; } }
-    win._personPose = function (p) { try { var v = win._bcView(); return pose(win.__psMotion && win.__psMotion[p.id], v, p.coach ? null : ballYaw(p, v)); } catch (_) { return null; } };
+    win._personPose = function (p) {
+      try {
+        var v = win._bcView(), r = pose(win.__psMotion && win.__psMotion[p.id], v, p.coach ? null : ballYaw(p, v)), kit = win.__kitOf ? win.__kitOf(p) : null;
+        if (kit) { r = r || {}; r.kit = kit; }   // 3.083 — 하의 · 스타킹(board-kit.js)
+        return r;
+      } catch (_) { return null; }
+    };
     // 공 · 선수를 끄는 동안: 보드는 _dirLive() 일 때만 시선을 다시 그린다 — 그 길에 사람 몸 돌리기를 붙인다
     // (보드 본문 스크립트가 이 모듈 뒤에 그 함수들을 정의하므로 문서를 다 읽은 뒤에 감싼다)
     function wrapLive() {

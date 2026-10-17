@@ -4,7 +4,7 @@
 const CACHE = 'process-3.083';   // 3.083 작전판 3D 사람 선수 · 중계 시점 · 새 도크와 레이아웃(staging 3.082 위에)
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
-  '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js',
+  '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js',
   '/studio/process.html',
   '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/review-training.css',
   '/studio/first-work.js', '/studio/first-work.css',

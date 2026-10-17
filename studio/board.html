@@ -4231,7 +4231,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="pitches.js"></script>
 <script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
-<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script>
+<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script>
 <script src="board-actions.js"></script>
 <script>
 "use strict";
@@ -6607,7 +6607,7 @@ function psSyncTokenAll(p,fields){ if(!p||!Array.isArray(fields))return 0; var k
     fields.forEach(function(f){ var v=p[f]; if(v===undefined||v===null||v===""){ if(t[f]!==undefined&&t[f]!==null&&t[f]!==""){ delete t[f]; c=true; } } else if(JSON.stringify(t[f])!==JSON.stringify(v)){ t[f]=(typeof v==="object")?JSON.parse(JSON.stringify(v)):v; c=true; } }); return c; });
   try{ if(n)renderAnimFrames(); }catch(_){} return n; }
 /* 2.975 — 유니폼(팀·GK 색·무늬·테두리·글자색)은 보드 하나의 값: 바꾸면 모든 장면·모든 페이지에 */
-var KIT_KEYS=["teamColors","teamColor2","teamPattern","teamStrokeC","teamTxtC","gkColors","gkColor2","gkPattern","gkStrokeC","gkTxtC"];
+var KIT_KEYS=["teamColors","teamColor2","teamPattern","teamStrokeC","teamTxtC","teamKit","gkColors","gkColor2","gkPattern","gkStrokeC","gkTxtC"];
 function kitSig(){ try{ return JSON.stringify(KIT_KEYS.map(function(k){ return state[k]||{}; })); }catch(_){ return ""; } }
 var _kitBase=null;
 function kitPropagateIfChanged(){ try{ if(typeof animPlaying!=="undefined"&&animPlaying)return; if(window.__animExport||window.__psThumbCapturing)return; var sg=kitSig(); if(_kitBase===null){ _kitBase=sg; return; } if(sg===_kitBase)return; _kitBase=sg;
@@ -7874,7 +7874,7 @@ function _boardThumbSVGRaw(){
    어차피 localStorage(loadCustomEquipLib)에서 다시 합친다(6358행). 그래서 뺀다.
    ⚠ 남는 값: 다른 기기에서 카드를 열면 «내 장비» 팔레트에 그 이미지가 안 뜬다 — 토큰은 그대로 그려진다. */
 function captureSnap(){var __cs={pitchSpec:state.pitchSpec||"fifa",players:dc(state.players),equipment:dc(state.equipment),
-	  ball:state.ball?{...state.ball}:null,drawings:dc(state.drawings),teamColors:dc(state.teamColors||{}),gkColors:dc(state.gkColors||{}),teamColor2:dc(state.teamColor2||{}),teamPattern:dc(state.teamPattern||{}),teamStrokeC:dc(state.teamStrokeC||{}),teamTxtC:dc(state.teamTxtC||{}),gkColor2:dc(state.gkColor2||{}),gkPattern:dc(state.gkPattern||{}),gkStrokeC:dc(state.gkStrokeC||{}),gkTxtC:dc(state.gkTxtC||{}),orientation:state.orientation,area:state.area,pitchView:pitchViewKey(),pvSide:state.pvSide==="opp"?"opp":"own",fieldMode:state.fieldMode||"standard",halfSide:state.halfSide||"L",gridType:state.gridType,label:state.label,lines:state.lines,boardLocked:!!state.boardLocked,spFlip:!!state.spFlip,tokenScale:state.tokenScale,pitchN:state.pitchN||1,analysis:anNorm(state.analysis),/* 3.029 — 분석 그래픽 켬 상태(보드에) */ /* 2.559 — customImages 를 스냅에 안 넣는다(아래 설명) */press:(state.press&&state.press.on)?{...state.press}:null,spMarks:(function(){var sm=state.spMarks;if(!sm||!sm.on)return null;var pts=Array.isArray(sm.pts)?sm.pts.slice():[];if(!pts.length){if(sm.m1)pts.push(sm.m1);if(sm.m2)pts.push(sm.m2);}if(!pts.length)return null;return {on:true,pts:pts.map(function(p){return {x:p.x,y:p.y};})};})(),spMark:(state.spMark&&state.spMark!=="none")?state.spMark:null,pitchImg:state.pitchImg||null,matchNote:state.matchNote||"",
+	  ball:state.ball?{...state.ball}:null,drawings:dc(state.drawings),teamColors:dc(state.teamColors||{}),gkColors:dc(state.gkColors||{}),teamColor2:dc(state.teamColor2||{}),teamPattern:dc(state.teamPattern||{}),teamStrokeC:dc(state.teamStrokeC||{}),teamTxtC:dc(state.teamTxtC||{}),teamKit:dc(state.teamKit||{}),gkColor2:dc(state.gkColor2||{}),gkPattern:dc(state.gkPattern||{}),gkStrokeC:dc(state.gkStrokeC||{}),gkTxtC:dc(state.gkTxtC||{}),orientation:state.orientation,area:state.area,pitchView:pitchViewKey(),pvSide:state.pvSide==="opp"?"opp":"own",fieldMode:state.fieldMode||"standard",halfSide:state.halfSide||"L",gridType:state.gridType,label:state.label,lines:state.lines,boardLocked:!!state.boardLocked,spFlip:!!state.spFlip,tokenScale:state.tokenScale,pitchN:state.pitchN||1,analysis:anNorm(state.analysis),/* 3.029 — 분석 그래픽 켬 상태(보드에) */ /* 2.559 — customImages 를 스냅에 안 넣는다(아래 설명) */press:(state.press&&state.press.on)?{...state.press}:null,spMarks:(function(){var sm=state.spMarks;if(!sm||!sm.on)return null;var pts=Array.isArray(sm.pts)?sm.pts.slice():[];if(!pts.length){if(sm.m1)pts.push(sm.m1);if(sm.m2)pts.push(sm.m2);}if(!pts.length)return null;return {on:true,pts:pts.map(function(p){return {x:p.x,y:p.y};})};})(),spMark:(state.spMark&&state.spMark!=="none")?state.spMark:null,pitchImg:state.pitchImg||null,matchNote:state.matchNote||"",
   pitchTheme:(function(){try{return document.documentElement.dataset.pitch||"";}catch(_){return "";}})(),
   pitchCustom:(function(){try{return (document.documentElement.dataset.pitch==="custom")?((document.documentElement.style.getPropertyValue("--pitchbg")||"").trim()||null):null;}catch(_){return null;}})()};
   try{var __lk=lookNow();for(var __k in __lk)__cs[__k]=__lk[__k];}catch(_){}   /* 2.929 — 보드 설정은 그 보드에 */
@@ -7885,7 +7885,7 @@ function boardDefaultSnap(src){
   src=src||{};
   return {pitchSpec:src.pitchSpec||"fifa",players:dc(src.players||[]),equipment:[],drawings:[],ball:src.ball?{x:src.ball.x,y:src.ball.y}:{x:CX,y:CY},
     teamColors:dc(src.teamColors||{}),gkColors:dc(src.gkColors||{}),teamColor2:dc(src.teamColor2||{}),teamPattern:dc(src.teamPattern||{}),
-    teamStrokeC:dc(src.teamStrokeC||{}),teamTxtC:dc(src.teamTxtC||{}),gkColor2:dc(src.gkColor2||{}),gkPattern:dc(src.gkPattern||{}),
+    teamStrokeC:dc(src.teamStrokeC||{}),teamTxtC:dc(src.teamTxtC||{}),teamKit:dc(src.teamKit||{}),gkColor2:dc(src.gkColor2||{}),gkPattern:dc(src.gkPattern||{}),
     gkStrokeC:dc(src.gkStrokeC||{}),gkTxtC:dc(src.gkTxtC||{}),orientation:src.orientation||"h",area:src.area||"full",
     pitchView:src.pitchView||((src.area||"full")==="half"?"half":"full"),pvSide:src.pvSide==="opp"?"opp":"own",fieldMode:src.fieldMode||"standard",halfSide:src.halfSide||"L",
     gridType:src.gridType,label:src.label,lines:src.lines,spFlip:!!src.spFlip,tokenScale:src.tokenScale,pitchN:1,
@@ -8237,7 +8237,7 @@ function loadSnap(s,opts){s=s||{};opts=opts||{};sel=null;multiSel=[];state.playe
 	  /* 2.929 — gridType·label·lines·tokenScale 은 위 lookApply 가 맡는다 */state.boardLocked=false;   /* 2.459 — '배치 고정' 문이 사라졌다: 켠 채 저장된 보드가 열리지 않는 자물쇠가 되지 않게 항상 풀고 연다 */
   state.pitchN=s.pitchN||1;   /* 새 보드도 사용자 저장 토큰 크기 우선 */
   state.teamColors=s.teamColors?dc(s.teamColors):{};state.gkColors=s.gkColors?dc(s.gkColors):{};
-  state.teamColor2=s.teamColor2?dc(s.teamColor2):{};state.teamPattern=s.teamPattern?dc(s.teamPattern):{};state.teamStrokeC=s.teamStrokeC?dc(s.teamStrokeC):{};state.teamTxtC=s.teamTxtC?dc(s.teamTxtC):{};state.gkTxtC=s.gkTxtC?dc(s.gkTxtC):{};   /* 2.474 */
+  state.teamColor2=s.teamColor2?dc(s.teamColor2):{};state.teamPattern=s.teamPattern?dc(s.teamPattern):{};state.teamStrokeC=s.teamStrokeC?dc(s.teamStrokeC):{};state.teamTxtC=s.teamTxtC?dc(s.teamTxtC):{};state.teamKit=s.teamKit?dc(s.teamKit):{};state.gkTxtC=s.gkTxtC?dc(s.gkTxtC):{};   /* 2.474 */
   state.gkColor2=s.gkColor2?dc(s.gkColor2):{};state.gkPattern=s.gkPattern?dc(s.gkPattern):{};state.gkStrokeC=s.gkStrokeC?dc(s.gkStrokeC):{};   /* 1.989 */
   state.customImages=mergeCustomEquip(s.customImages?dc(s.customImages):(state.customImages||[]),loadCustomEquipLib());
   state.press=(s.press&&s.press.on)?{...s.press}:null;
@@ -9367,7 +9367,7 @@ function renderInterp(a,b,u,curves){
      장면 도착 순간에는 도착 장면의 스타일을 사용해 재생·GIF에서 색이 뒤늦게 튀지 않게 한다. */
   var styleSnap=(u>=1?b:a)||{};
   state.teamColors=dc(styleSnap.teamColors||{});state.gkColors=dc(styleSnap.gkColors||{});
-  state.teamColor2=dc(styleSnap.teamColor2||{});state.teamPattern=dc(styleSnap.teamPattern||{});state.teamStrokeC=dc(styleSnap.teamStrokeC||{});state.teamTxtC=dc(styleSnap.teamTxtC||{});state.gkTxtC=dc(styleSnap.gkTxtC||{});
+  state.teamColor2=dc(styleSnap.teamColor2||{});state.teamPattern=dc(styleSnap.teamPattern||{});state.teamStrokeC=dc(styleSnap.teamStrokeC||{});state.teamTxtC=dc(styleSnap.teamTxtC||{});state.teamKit=dc(styleSnap.teamKit||{});state.gkTxtC=dc(styleSnap.gkTxtC||{});
   state.gkColor2=dc(styleSnap.gkColor2||{});state.gkPattern=dc(styleSnap.gkPattern||{});state.gkStrokeC=dc(styleSnap.gkStrokeC||{});
   const bp={};(b.players||[]).forEach(o=>bp[o.id]=o);
   const be={};(b.equipment||[]).forEach(o=>be[o.id]=o);
@@ -15961,7 +15961,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   $("clearDrawBtn").onclick=()=>{if(state.drawings.length)pushUndo();state.drawings=[];deselect();renderDrawings();};
   $("resetBtn").onclick=()=>{psConfirm("운동장을 처음 상태로 되돌릴까요?\n· 선수·장비·선을 모두 지워요\n· 그리드·운동장 방향·선수 크기·팀 색도 기본값으로",()=>{pushUndo();matchActive=false;
     state.gridType="off";state.area="full";state.pitchView="full";state.pvSide="own";state.orientation="h";state.spFlip=false;state.halfSide="L";state.press=null;
-    state.teamColors={};state.teamColor2={};state.teamPattern={};state.teamStrokeC={};state.teamTxtC={};state.gkColors={};state.gkColor2={};state.gkPattern={};state.gkStrokeC={};state.gkTxtC={};
+    state.teamColors={};state.teamColor2={};state.teamPattern={};state.teamStrokeC={};state.teamTxtC={};state.teamKit={};state.gkColors={};state.gkColor2={};state.gkPattern={};state.gkStrokeC={};state.gkTxtC={};
     state.tokenScale=defaultTokenScale();try{localStorage.removeItem("cs_tokscale_v4");}catch(_){}
     applyDefaultXI();state.equipment=[];state.drawings=[];sel=null;
     try{applyView();}catch(_){}try{buildPitch();buildLines();buildGrid();}catch(_){}
@@ -20968,7 +20968,7 @@ try{ var _nb=document.getElementById('dfNew');
     var s=_snap()||{};
     return {pitchSpec:s.pitchSpec,orientation:s.orientation,area:s.area,pitchView:s.pitchView,pvSide:s.pvSide,gridType:s.gridType,label:s.label,lines:s.lines,spFlip:s.spFlip,
       tokenScale:s.tokenScale,pitchN:s.pitchN,teamColors:s.teamColors,teamColor2:s.teamColor2,teamPattern:s.teamPattern,
-      teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,pitchTheme:s.pitchTheme,pitchCustom:s.pitchCustom,customImages:s.customImages,
+      teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,teamKit:s.teamKit,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,pitchTheme:s.pitchTheme,pitchCustom:s.pitchCustom,customImages:s.customImages,
       tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,realScale:s.realScale,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};
   }
