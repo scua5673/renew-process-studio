@@ -14401,7 +14401,7 @@ function setView(v){
   if(v==="session"){
     /* 1.691 — 보관함에 들어올 때마다 '내 자료'가 먼저, 최신순(사용자).
        안에서 다른 곳을 골랐으면 나갔다 다시 들어올 때까지 그 선택을 유지한다. */
-    try{ if(__prevV!=="session"&&psIsTeamWs()){ libFilter.folder="__mine"; libFilter.sort=libFilter.sort||"new"; } }catch(_){}
+    try{ if(__prevV!=="session"&&psIsTeamWs()){ libFilter.folder="__mine"; libFilter.sort=libFilter.sort||"new"; } if(window.__vaultBackTake)window.__vaultBackTake(); }catch(_){}
     renderSession();
     try{renderLibDock();}catch(_){}
     const sh=document.getElementById("sessHint");
@@ -17901,6 +17901,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
 
   function openItem(d, readOnly){
     if(!psVaultRequireLogin())return;
+    vaultBack=window.__vaultFromMatch?null:(window.__csView==="session"?{f:libFilter.folder,w:(psActiveWs()||{}).id,id:d.libId}:vaultBack);   /* 2d392249 — 보관함 목록에서 연 자리 */
     var ty=d.type||"train";
     if(ty!=='board'&&_vaultBoardContext)window.__vaultBoardLeave();
     var boardGen=ty==='board'?vaultBoardBegin():null;
@@ -18486,10 +18487,16 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   /* 2.966 — 경기 준비 안 편집인가 · 경기 준비로 돌려보내기(셸 psMatchEditDone). doViewClose 곁에 둔다(시험 하네스가 이 구간을 잘라 쓴다) */
   function meetMatchInplaceNow(){ var fm=window.__vaultFromMatch; return !!(fm&&fm.inplace&&document.body.classList.contains("vc-match")); }
   function meetMatchDonePost(fm,fail){ try{parent.postMessage({source:"board",type:"matchEditDone",libId:(fm&&fm.libId)||"",mid:(fm&&fm.ref&&fm.ref.mid)||"",fail:!!fail},"*");}catch(_){} }
+  /* 오류 제보 2d392249 — 보관함 목록에서 연 자료를 닫으면(저장하고 나가기·나가기) 연 자리로. 그 폴더가 없어졌으면 전체 자료.
+     셸이 한 차례에 보관함을 두 번 열어(메시지 받는 곳이 둘) 차례가 끝날 때 지운다 */
+  var vaultBack=null;
+  window.__vaultBackTake=function(){ var b=vaultBack; if(!b||!b.go)return; setTimeout(function(){ if(vaultBack===b)vaultBack=null; },0);
+    if(b.w!==(psActiveWs()||{}).id)return; var f=b.f||""; libFilter.folder=(f.indexOf("__")===0||foldersShown().indexOf(f)>=0)?f:"__all"; window.__vaultPreviewId=b.id; };
   function doViewClose(){
     if(window.__vaultManualDirty){psConfirm("저장하지 않은 변경 사항을 버리고 나갈까요?",function(){window.__vaultManualDirty=false;doViewClose();});return;}
     /* 2.966 — 경기 준비 안 편집: 저장(자동 저장 마무리)하고 닫은 뒤 경기 준비의 같은 자리로 */
     var _toMatch=meetMatchInplaceNow(), _fm=window.__vaultFromMatch;
+    if(vaultBack&&!_toMatch)vaultBack.go=1;
     if(_toMatch){ document.body.classList.remove("vc-match"); try{ var _px=$id("mpPartsOv"); if(_px)_px.remove(); }catch(_){} }
     if(_vaultBoardContext){window.__vaultBoardLeave();try{parent.postMessage(_toMatch?{source:"board",type:"matchEditDone",libId:(_fm&&_fm.libId)||"",mid:(_fm&&_fm.ref&&_fm.ref.mid)||""}:{source:'board',type:'goApp',app:'design'},'*');}catch(_){}return;}
     if(_toMatch){ try{exitVaultFull();}catch(_){} try{ if(document.body.classList.contains("focus-board")){ if(typeof exitFocus==="function")exitFocus(); else { var _fx=document.getElementById("focusExit"); if(_fx)_fx.click(); } } }catch(_){}
