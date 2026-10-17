@@ -81,7 +81,7 @@
       S + ' .tb-seg button{height:32px;padding:0 13px;border:0;border-radius:9px;background:transparent;font:700 12.5px/1 Pretendard,-apple-system,sans-serif;cursor:pointer}',
       // 오른쪽
       S + '>.tb-r>*{flex:none}',
-      S + '>.tb-r button{height:36px!important;min-height:0!important;border-radius:11px!important;font:700 12.5px/1 Pretendard,-apple-system,sans-serif!important;border:0!important;display:inline-flex!important;align-items:center!important;gap:6px!important;padding:0 12px!important;white-space:nowrap!important}',
+      S + '>.tb-r button:not(#vaultSave){height:36px!important;min-height:0!important;border-radius:11px!important;font:700 12.5px/1 Pretendard,-apple-system,sans-serif!important;border:0!important;align-items:center!important;gap:6px!important;padding:0 12px!important;white-space:nowrap!important;vertical-align:middle!important}',   // display 은 두지 않는다 — 첨부 · 편집 · 미팅 모드의 숨김 규칙이 이기게
       S + ' #bpBoardSettings{width:36px!important;padding:0!important;justify-content:center!important}',
       S + ' #bpBoardSettings>span{display:none!important}',
       S + ' #bpBoardSettings svg{width:18px!important;height:18px!important}',
@@ -102,12 +102,12 @@
       var ink = dark ? '#E8ECF4' : '#1A2233';
       out.push(
         X + '>.tb-g{' + t[1] + '}',
-        X + ' .bp-tab,' + X + ' .tb-add,' + X + ' .tb-seg button,' + X + '>.tb-r button:not(#vaultSave){color:' + t[4] + '!important;background:transparent!important;box-shadow:none!important}',
+        X + ' .bp-tab,' + X + ' .tb-add,' + X + ' .tb-seg button,' + X + '>.tb-r button:not(#vaultSave):not(#boardManualSave){color:' + t[4] + '!important;background:transparent!important;box-shadow:none!important}',
         X + ' .bp-tab.on,' + X + ' .tb-seg button.on{' + t[2] + '}',
-        X + ' .bp-tab:hover:not(.on),' + X + ' .tb-add:hover,' + X + ' .tb-seg button:hover:not(.on),' + X + '>.tb-r button:not(#vaultSave):hover{color:' + ink + '!important;background:' + (dark ? 'rgba(255,255,255,.08)' : 'rgba(20,33,61,.06)') + '!important}',
-        X + ' #boardManualSave,' + X + ' #bpBoardSettings{color:' + ink + '!important}',
+        X + ' .bp-tab:hover:not(.on),' + X + ' .tb-add:hover,' + X + ' .tb-seg button:hover:not(.on),' + X + '>.tb-r button:not(#vaultSave):not(#boardManualSave):hover{color:' + ink + '!important;background:' + (dark ? 'rgba(255,255,255,.08)' : 'rgba(20,33,61,.06)') + '!important}',
+        X + ' #bpBoardSettings{color:' + ink + '!important}',
         X + ' #bpBoardSettings[aria-expanded="true"]{background:' + t[5] + '!important}',
-        X + ' #vaultSave{' + t[3] + '}',
+        X + ' #vaultSave,' + X + ' #boardManualSave{' + t[3] + '}',   // 3.083 — 저장 단추는 «저장» 하나(staging 3.077) — 주 단추로
         X + ' .tb-logo{' + t[3] + '}',
         X + ' .tb-seg{background:' + t[5] + ';box-shadow:inset 0 1px 3px rgba(0,0,0,' + (dark ? '.45' : '.12') + ')}',
         X + ' .tb-sep{background:' + (dark ? 'rgba(255,255,255,.12)' : 'rgba(20,33,61,.12)') + '}',

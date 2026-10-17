@@ -8,7 +8,7 @@ test('strip buttons go to the right group: first «＋ 페이지» beside the ta
   const g=tb.sortStrip(kids);
   assert.ok(g.head);assert.equal(g.tabs.length,2);assert.equal(g.add.textContent,'＋ 페이지');
   assert.deepEqual(g.menu.map(x=>x.textContent),['미팅 세트','보드 가져오기','새 보드']);
-  assert.deepEqual(g.right.map(x=>x.id),['boardManualSave','bpBoardSettings','vaultSave']);
+  assert.deepEqual(g.right.map(x=>x.id),['boardManualSave','bpBoardSettings','vaultSave'],'3.017 — settings right after save');
 });
 test('view switch reads 평면 · 3D · 중계',()=>{
   assert.equal(tb.viewOf(false,'tv'),'flat');assert.equal(tb.viewOf(true,'mid'),'3d');assert.equal(tb.viewOf(true,'tv'),'tv');
