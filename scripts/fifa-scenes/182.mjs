@@ -15,7 +15,7 @@ export default {
       /* 1 — 워밍업: 측면 공격수가 하프라인에서 몰고 들어와 1v1. GK는 공과 두 골대 사이 가운데를 지키고, 잡으면 다음 공격수에게 굴려 준다. 가까운 골대에 붙는 실패 장면 */
       name: '측면 1v1 자리 잡기: 공과 두 골대의 가운데', minutes: 12, pitch: 'futsal', scale: .5, lw: .7, dur: 1.15,
       players: [
-        {id: 102, team: 'blue', num: '2', gk: true, x: 745, y: 370}, {id: 101, team: 'blue', num: '1', gk: true, x: 790, y: 450},
+        {id: 102, team: 'blue', num: '2', gk: true, x: 745, y: 370},
         {id: 203, team: 'red', num: '', x: 555, y: 285}, {id: 204, team: 'red', num: '', x: 555, y: 455},
       ],
       lines: ZONES,
