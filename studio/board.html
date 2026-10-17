@@ -987,7 +987,7 @@
   #colorPop #myColPin{flex:1}#colorPop #myColEdit{min-width:48px}
   #colorPop .color-pop-actions button:disabled{opacity:.45;cursor:default}
   #colorPop .cdot.mine.is-removing{position:relative}
-  #colorPop .cdot.mine.is-removing::after{content:"×";position:absolute;right:-7px;top:-8px;width:14px;height:14px;border-radius:50%;background:#fff;color:#222;font:bold 12px/14px sans-serif;text-align:center;box-shadow:0 1px 4px #0005}
+  #colorPop .cdot.mine.is-removing::after{content:"×";position:absolute;right:-7px;top:-8px;width:14px;height:14px;border-radius:50%;background:#fff;color:#222;font:bold 12px/14px Pretendard,sans-serif;text-align:center;box-shadow:0 1px 4px #0005}
   .sel-ctl #colorCtl .cdot-custom{-webkit-appearance:none;appearance:none;background:conic-gradient(from 90deg,#e23b3b,#ff7a1a,#d4a017,#34a56f,#2f6df0,#8b5cf6,#e23b3b)!important;cursor:pointer;}
   .sel-ctl #colorCtl .cdot-custom::-webkit-color-swatch-wrapper{padding:0;}
   .sel-ctl #colorCtl .cdot-custom::-webkit-color-swatch{border:none;border-radius:50%;opacity:0;}
@@ -2894,7 +2894,7 @@ body.match-mode:not(.token-drag) #tokenLayer>g{transition:transform .22s cubic-b
   #printDoc{display:block!important;width:100%!important;}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
 }
-#printDoc{color:#14161A;font-family:-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
+#printDoc{color:#14161A;font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
 #printDoc .page{page-break-after:always;}
 #printDoc .page:last-child{page-break-after:auto;}
 #printDoc h1{font-size:19px;margin:0 0 3px;font-weight:800;}
@@ -3411,7 +3411,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
   };
 })();
 </script>
-<script>(function(){if(window.__psErrInit)return;window.__psErrInit=1;function show(m){try{var b=document.getElementById('ps-errbar');if(!b){b=document.createElement('div');b.id='ps-errbar';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99999;max-width:84vw;background:#3a1414;color:#ffd7d7;border:1px solid #a33;border-radius:10px;padding:8px 12px;font:600 12px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;';b.title='탭하면 닫기';b.addEventListener('click',function(){b.style.display='none';});(document.body||document.documentElement).appendChild(b);}b.style.display='block';b.textContent='⚠︎ 오류: '+m;clearTimeout(b.__t);b.__t=setTimeout(function(){b.style.display='none';},6000);}catch(_){}}window.addEventListener('error',function(e){var _m=(e&&e.message)||'';if(/ResizeObserver loop/i.test(_m))return;/* 2.737 — 셸과 같이 무해한 브라우저 배치 진단은 사용자 오류로 표시하지 않는다. */try{console.error('[PS]',(e&&(e.error||e.message)),e&&e.filename,e&&e.lineno);}catch(_){}show(_m||'스크립트 오류');});window.addEventListener('unhandledrejection',function(e){try{console.error('[PS promise]',e&&e.reason);}catch(_){}show('처리되지 않은 작업 오류');});})();</script>
+<script>(function(){if(window.__psErrInit)return;window.__psErrInit=1;function show(m){try{var b=document.getElementById('ps-errbar');if(!b){b=document.createElement('div');b.id='ps-errbar';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99999;max-width:84vw;background:#3a1414;color:#ffd7d7;border:1px solid #a33;border-radius:10px;padding:8px 12px;font:600 12px/1.4 Pretendard,-apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;';b.title='탭하면 닫기';b.addEventListener('click',function(){b.style.display='none';});(document.body||document.documentElement).appendChild(b);}b.style.display='block';b.textContent='⚠︎ 오류: '+m;clearTimeout(b.__t);b.__t=setTimeout(function(){b.style.display='none';},6000);}catch(_){}}window.addEventListener('error',function(e){var _m=(e&&e.message)||'';if(/ResizeObserver loop/i.test(_m))return;/* 2.737 — 셸과 같이 무해한 브라우저 배치 진단은 사용자 오류로 표시하지 않는다. */try{console.error('[PS]',(e&&(e.error||e.message)),e&&e.filename,e&&e.lineno);}catch(_){}show(_m||'스크립트 오류');});window.addEventListener('unhandledrejection',function(e){try{console.error('[PS promise]',e&&e.reason);}catch(_){}show('처리되지 않은 작업 오류');});})();</script>
   <section id="boardView" class="view active">
     <div class="toolbar" id="boardToolbar">
       <button class="btn ghost" id="benchTog" title="선수·장비 팔레트 열기/접기">선수 ▾</button>
@@ -3798,7 +3798,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <button id="visBlindBtn" class="gk-btn" title="등 뒤 사각지대 표시·끄기" style="display:none">사각</button>
         <button id="shaperBtn" class="gk-btn" title="쉐이퍼(몸 방향) 토큰 디자인" style="display:none">쉐이퍼</button>
         <button id="ballLookBtn" class="gk-btn" title="볼 보기 — 쉐이퍼가 볼 쪽을 향하고 볼이 움직이면 따라 돕니다. 손으로 돌리면 그 방향으로 고정되고, 다시 누르면 볼을 봅니다" style="display:none">볼 보기</button>
-        <button id="tokAnimResetBtn" class="gk-btn" title="이 토큰만 리셋 — 지금 위치·이름·번호를 뒤의 모든 장면에 적용하고 이 토큰 동선 곡선을 지웁니다(다른 토큰은 그대로)" style="display:none">↺ 이후 장면 리셋</button>
+        <button id="tokAnimResetBtn" class="gk-btn" title="이 토큰만 리셋 — 지금 위치·이름·번호를 뒤의 모든 장면에 적용하고 이 토큰 동선 곡선을 지웁니다(다른 토큰은 그대로)" style="display:none">↺ 이 토큰만 리셋</button>
         <button id="dupSelBtn" class="dup-sel" title="복제"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>복제</button>
         <button id="frontSelBtn" class="dup-sel" title="맨 앞으로 — 겹친 토큰 위로 올려 번호·이름이 가려지지 않게 (⌘] · 맨 뒤로는 ⌘[)" style="display:none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="11" height="11" rx="2" fill="currentColor" fill-opacity=".22"/><path d="M19 9v9a2 2 0 0 1-2 2H9"/></svg>맨 앞</button>
         <button id="mirHBtn" class="dup-sel" title="좌우 대칭 복제"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2"/><path d="M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>좌우</button>
@@ -3819,7 +3819,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <select class="btn" id="animSpeedSel" title="선택한 장면에서 다음 장면까지 움직이는 속도" aria-label="장면 이동 속도">
           <option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select>
         <select class="btn" id="animHoldSel" title="이동이 끝난 뒤 다음 장면 전까지 유지하는 시간" aria-label="장면 유지 시간">
-          <option value="0.3">0.3초</option><option value="0.6">0.6초</option><option value="1">1초</option><option value="1.5">1.5초</option><option value="2">2초</option></select>
+          <option value="0.1">0.1초</option><option value="0.3">0.3초</option><option value="0.6">0.6초</option><option value="1">1초</option><option value="1.5">1.5초</option><option value="2">2초</option></select>
         <button class="btn anim-ico export-format-btn" id="animGif" title="GIF 애니메이션 내보내기" aria-label="GIF 애니메이션 내보내기"><span class="export-format-icon" aria-hidden="true">GIF</span></button>
         <button class="btn anim-ico export-format-btn" id="animExport" title="MP4 영상 내보내기 — 미지원 브라우저에서는 WebM으로 저장" aria-label="MP4 영상 내보내기 — 미지원 브라우저에서는 WebM으로 저장"><span class="export-format-icon" aria-hidden="true">MP4</span></button>
         <button class="btn ghost anim-ico export-format-btn" id="pngBtn" title="PNG 이미지 내보내기" aria-label="PNG 이미지 내보내기"><span class="export-format-icon" aria-hidden="true">PNG</span></button>
@@ -4231,7 +4231,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="pitches.js"></script>
 <script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
-<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script>
+<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script>
 <script src="board-actions.js"></script>
 <script>
 "use strict";
@@ -9659,7 +9659,7 @@ function playAnim(){
      moveSpeed는 출발 장면별, animHold는 전체 공통이라 재생 리듬이 일정하다. */
   let s=(resume&&resume.s>=0&&resume.s<anim.frames.length?resume.s:((animActive>=0&&animActive<anim.frames.length-1)?animActive:0)),
       t0=performance.now()-((resume&&resume.elapsed)||0),lastHi=-1,phase=(resume&&resume.phase)||"hold";   /* 2.682 — 선택한 장면부터 재생(사용자) */
-  const holdMs=()=>Math.max(.2,animHold||.6)*1000;
+  const holdMs=()=>Math.max(.1,animHold||.6)*1000;
   if(phase==="move"&&s<anim.frames.length-1){
     const a=anim.frames[s].snap,b=anim.frames[s+1].snap,dur=Math.max(.3,(anim.frames[s].dur||1))*1000/animMoveSpeed(anim.frames[s]);
     renderInterp(a,b,easeInOut(Math.max(0,Math.min(1,(performance.now()-t0)/dur))),anim.frames[s].curves);
@@ -10534,7 +10534,7 @@ async function _exportVideoRun(opts){
       if(vw/vh<ar){ const nw=vh*ar; vx-=(nw-vw)/2; vw=nw; } else { const nh=vw/ar; vy-=(nh-vh)/2; vh=nh; }
       return [vx,vy,vw,vh]; };
     if(_fit)uvb=_fit.raw.slice();   /* 2.988 — 릴스도 훈련 구역을 가운데 크게 */
-    if(uvb){ uvb=_toAr(uvb); }
+    if(uvb){ uvb=_toAr((!_fit&&window.__psReelVB)?__psReelVB(uvb):uvb); }
     if(opts.pageMode)Object.keys(_segVB).forEach(g=>{ const sg=_segVB[g]; if(sg&&sg.raw)sg.reel=_toAr(sg.raw); });   /* 2.976 */
     dest={x:0, y:0, w:canvas.width, h:canvas.height, bg:getCss("--grass-b")||"#1d8a47", topH:topH, availH:availH, botH:botH};
   } else if(!opts.capN){
@@ -10941,7 +10941,7 @@ async function exportGif(){
 /* 2.935 — 장면 목록 → GIF 바이트. 작전판 «GIF 내보내기»와 미팅 PPT(장면이 있는 슬라이드는 움직이는 그림)가 같이 쓴다.
    판(보드)을 장면마다 바꿔 가며 그리므로 부르는 쪽이 _animExportGuard 안에서 부르고 화면을 되돌린다. */
 async function _gifEncode(frames,o){
-  o=o||{};const hold=Math.max(.2,+o.hold||.6),lastHold=Math.max(hold,+o.lastHold||0),fps=+o.fps||25,frameCs=Math.max(2,Math.round(100/fps)),N=frames.length,title=o.title||"",titleColor=o.titleColor||"#e23b3b",maxFrames=+o.maxFrames||260,W0=+o.width||640;
+  o=o||{};const hold=Math.max(.1,+o.hold||.6),lastHold=Math.max(hold,+o.lastHold||0),fps=+o.fps||25,frameCs=Math.max(2,Math.round(100/fps)),N=frames.length,title=o.title||"",titleColor=o.titleColor||"#e23b3b",maxFrames=+o.maxFrames||260,W0=+o.width||640;
   let uvb=null;   /* 영상과 동일: 전 장면 경계 합집합으로 캔버스 고정 */
   for(const f of frames){try{loadSnap(f.snap);const o2=boardImageXML();
     if(!uvb)uvb=o2.vb.slice();
@@ -12572,10 +12572,10 @@ function meetingScenePictures(frames,land,opts,si){
 }
 function buildMeetingPrintDoc(slides,title,opts){
   opts=opts||{};var land=opts.orientation==="landscape",size=land?22:24,leading=land?30:32;
-  var font=size+'px system-ui, sans-serif',width=land?300:728,capacity=land?22:4,pages=[];
+  var font=size+'px Pretendard,sans-serif',width=land?300:728,capacity=land?22:4,pages=[];
   slides=Array.isArray(slides)?slides:[];
   slides.forEach(function(slide,i){
-    var brand=meetingTextStyle(slide,'brand',land),headerHeight=Math.max(22,brand.height),rows=[],group=0,push=function(text,kind,pointIndex){group++;var style=meetingTextStyle(slide,kind,land);meetingPdfLines(text,width,(style.weight>=600?'bold ':'')+style.size+'px system-ui, sans-serif').forEach(function(line){rows.push({text:line,kind:kind,group:group,pointIndex:pointIndex,style:style});});};
+    var brand=meetingTextStyle(slide,'brand',land),headerHeight=Math.max(22,brand.height),rows=[],group=0,push=function(text,kind,pointIndex){group++;var style=meetingTextStyle(slide,kind,land);meetingPdfLines(text,width,(style.weight>=600?'bold ':'')+style.size+'px Pretendard,sans-serif').forEach(function(line){rows.push({text:line,kind:kind,group:group,pointIndex:pointIndex,style:style});});};
     if(title&&title!=="미팅")push(title,"name");
     push(slide.title||("슬라이드 "+(i+1)),"title");
     (Array.isArray(slide.points)?slide.points:[]).forEach(function(point,pointIndex){if(String(point==null?"":point).trim())push("• "+point,"point",pointIndex);});
@@ -12600,7 +12600,7 @@ function buildMeetingPrintDoc(slides,title,opts){
     }
   });
   if(!pages.length)pages.push('<section class="page mp-page"><p>미팅 슬라이드가 없습니다.</p></section>');
-  var css='@page{size:A4 '+(land?'landscape':'portrait')+';margin:6mm;}*{box-sizing:border-box}body{margin:0;color:#172235;background:#fff;font-family:system-ui,sans-serif}.mp-page{width:'+(land?'285':'198')+'mm;height:'+(land?'196':'283')+'mm;page-break-after:always;display:flex;flex-direction:column}.mp-page:last-child{page-break-after:auto}.mp-page header{height:22px;flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-start;font-size:11px;color:#64748b;margin-bottom:4px}.mp-page header b{letter-spacing:2px;color:#172235}.mp-page main{display:flex;flex:1;min-height:0;gap:'+(land?'16':'8')+'px;flex-direction:'+(land?'row':'column')+'}.mp-pitch{display:flex;align-items:center;justify-content:center;overflow:hidden;'+(land?'width:0;height:100%;':'width:100%;')+'flex:1;min-width:0;min-height:0}.mp-pitch img{display:block;width:100%;height:100%;object-fit:contain}.mp-notes{width:'+(land?'320px':'100%')+';order:'+(land?'0':'-1')+';padding:0 8px;min-width:0;flex-shrink:0}.mp-line{font-size:'+size+'px;line-height:'+leading+'px;height:'+leading+'px;white-space:pre;letter-spacing:0}.mp-line.title{font-weight:700}.mp-line.name{color:#64748b}.mp-page footer{padding-top:4px;height:18px;flex-shrink:0;text-align:right;color:#64748b;font-size:10px}.mp-board{flex:1 1 auto;align-self:stretch;display:grid;gap:10px;min-width:0;min-height:0}.mp-scene{margin:0;display:flex;flex-direction:column;min-width:0;min-height:0}.mp-sc-img{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}.mp-scene figcaption{flex:0 0 auto;font-size:11px;line-height:16px;height:16px;margin-top:3px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-scene figcaption b{color:#172235;margin-right:5px}@media screen{body{width:'+(land?'297':'210')+'mm;padding:6mm}.mp-page{margin-bottom:12mm;border-bottom:1px solid #e2e8f0}}';
+  var css='@page{size:A4 '+(land?'landscape':'portrait')+';margin:6mm;}*{box-sizing:border-box}body{margin:0;color:#172235;background:#fff;font-family:Pretendard,system-ui,sans-serif}.mp-page{width:'+(land?'285':'198')+'mm;height:'+(land?'196':'283')+'mm;page-break-after:always;display:flex;flex-direction:column}.mp-page:last-child{page-break-after:auto}.mp-page header{height:22px;flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-start;font-size:11px;color:#64748b;margin-bottom:4px}.mp-page header b{letter-spacing:2px;color:#172235}.mp-page main{display:flex;flex:1;min-height:0;gap:'+(land?'16':'8')+'px;flex-direction:'+(land?'row':'column')+'}.mp-pitch{display:flex;align-items:center;justify-content:center;overflow:hidden;'+(land?'width:0;height:100%;':'width:100%;')+'flex:1;min-width:0;min-height:0}.mp-pitch img{display:block;width:100%;height:100%;object-fit:contain}.mp-notes{width:'+(land?'320px':'100%')+';order:'+(land?'0':'-1')+';padding:0 8px;min-width:0;flex-shrink:0}.mp-line{font-size:'+size+'px;line-height:'+leading+'px;height:'+leading+'px;white-space:pre;letter-spacing:0}.mp-line.title{font-weight:700}.mp-line.name{color:#64748b}.mp-page footer{padding-top:4px;height:18px;flex-shrink:0;text-align:right;color:#64748b;font-size:10px}.mp-board{flex:1 1 auto;align-self:stretch;display:grid;gap:10px;min-width:0;min-height:0}.mp-scene{margin:0;display:flex;flex-direction:column;min-width:0;min-height:0}.mp-sc-img{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}.mp-scene figcaption{flex:0 0 auto;font-size:11px;line-height:16px;height:16px;margin-top:3px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-scene figcaption b{color:#172235;margin-right:5px}@media screen{body{width:'+(land?'297':'210')+'mm;padding:6mm}.mp-page{margin-bottom:12mm;border-bottom:1px solid #e2e8f0}}';
   return '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(title||"미팅")+'</title><style>'+css+'</style></head><body>'+pages.join("")+'</body></html>';
 }
 function exportMeetingPDF(){
@@ -14303,7 +14303,7 @@ function wbRender(){const s=wbSurf();if(!s)return;let out="";
     else if(st.kind==="free"){out+='<path d="'+wbSmoothPath(st.pts)+'" fill="none" stroke="'+st.color+'" stroke-width="'+st.w+'" stroke-linecap="round" stroke-linejoin="round"/>';}
     else if(st.kind==="text"){ if(st===wbEditItem)return;
       const lines=(st.text||"").split("\n");
-      let t='<text x="'+st.x.toFixed(1)+'" y="'+(st.y+st.size*0.95).toFixed(1)+'" font-size="'+st.size+'" fill="'+st.color+'" font-family="-apple-system,BlinkMacSystemFont,system-ui,sans-serif" font-weight="600">';
+      let t='<text x="'+st.x.toFixed(1)+'" y="'+(st.y+st.size*0.95).toFixed(1)+'" font-size="'+st.size+'" fill="'+st.color+'" font-family="Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif" font-weight="600">';
       lines.forEach((ln,i)=>{t+='<tspan x="'+st.x.toFixed(1)+'" dy="'+(i===0?0:st.size*1.25).toFixed(1)+'">'+(wbEsc(ln)||" ")+'</tspan>';});
       t+='</text>'; out+=t;
     } else {const a=st.pts[0],b=st.pts[1];
@@ -16208,7 +16208,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     var sl=anim.slides[meetIdx];if(!meetInShow()||!sl||sl!==meetBound||anim.frames.length<2)return;
     meetSceneFinish();var tok=++meetAutoTok;
     animActive=0;try{loadSnap(anim.frames[0].snap);}catch(_){}try{_animCapShow(anim.frames[0].cap,0);}catch(_){}meetCntSync();
-    var holdMs=Math.max(.2,animHold||.6)*1000;
+    var holdMs=Math.max(.1,animHold||.6)*1000;
     var nx=function(){if(tok!==meetAutoTok||!meetInShow()||animActive>=anim.frames.length-1)return;meetSceneStep(1,function(){setTimeout(nx,holdMs);},true);};
     setTimeout(nx,holdMs);
   }
@@ -16949,7 +16949,7 @@ try{Promise.resolve(restoreLiveBoard()).then(function(){window.__boardReady=true
 (function(){var bar=null,__saved=null,__savedAnim=null,_meta=null,__savedPages=null,__savedHist=null,_view=false;
   function makeBar(){try{document.body.classList.add('ps-capturing');}catch(_){}bar=document.createElement('div');
      if(_meta){
-       bar.style.cssText='position:fixed;right:12px;top:12px;z-index:99999;display:flex;flex-direction:column;gap:7px;width:210px;padding:14px;background:#fff;color:#14161A;border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.42);font-family:-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Roboto,sans-serif';
+       bar.style.cssText='position:fixed;right:12px;top:12px;z-index:99999;display:flex;flex-direction:column;gap:7px;width:210px;padding:14px;background:#fff;color:#14161A;border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.42);font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Roboto,sans-serif';
        bar.innerHTML='<div style="font-size:14px;font-weight:800;margin-bottom:2px">훈련 드릴 만들기</div><label style="font-size:11px;font-weight:600;color:#8A9099">드릴 이름</label><input id="capName" type="text" maxlength="40" placeholder="예: 4v4 론도" style="font-size:14px;padding:8px 10px;border:1px solid #d2d6dd;border-radius:8px;outline:none;font-family:inherit"><label style="font-size:11px;font-weight:600;color:#8A9099">시간 (분)</label><input id="capMin" type="number" min="0" max="120" placeholder="15" style="font-size:14px;padding:8px 10px;border:1px solid #d2d6dd;border-radius:8px;outline:none;font-family:inherit"><div style="font-size:11px;color:#8A9099;line-height:1.4;margin:2px 0">캔버스에 배치·화살표를 그린 뒤 완료</div>';
        var done=document.createElement('button');done.textContent='✓ 첨부 완료';done.style.cssText='border:0;border-radius:8px;padding:10px;font-weight:800;cursor:pointer;background:var(--ps-navy,#14213D);color:#fff;font-family:inherit';done.onclick=finish;
        var cancel=document.createElement('button');cancel.textContent='취소';cancel.style.cssText='border:1px solid #d2d6dd;background:#f1f3f5;color:#14161A;border-radius:8px;padding:8px;cursor:pointer;font-family:inherit;font-weight:600';
@@ -16957,7 +16957,7 @@ try{Promise.resolve(restoreLiveBoard()).then(function(){window.__boardReady=true
        bar.appendChild(done);bar.appendChild(cancel);document.body.appendChild(bar);
        try{var _n=document.getElementById('capName');if(_n){_n.value=_meta.name||'';setTimeout(function(){try{_n.focus();}catch(_){}},40);}var _m=document.getElementById('capMin');if(_m&&_meta.minutes)_m.value=_meta.minutes;}catch(_){}
      } else {
-       bar.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 12px;background:var(--ps-navy,#14213D);color:#fff;font-weight:600;font-size:13px;font-family:-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Roboto,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.45)';
+       bar.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 12px;background:var(--ps-navy,#14213D);color:#fff;font-weight:600;font-size:13px;font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",Roboto,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.45)';
        /* 3.007 — «▶ 보기»로 연 판은 보는 곳이다: 닫기 하나. 예전엔 «첨부 완료»가 있었고 눌러도 어디에도 저장되지 않았다 */
        var msg=document.createElement('span');msg.textContent=_view?'첨부한 작전판 보기 — 고칠 때는 «작전판 다시 첨부»로 여세요':'새 작전판 (원본과 분리) — 배치·화살표를 그린 뒤 완료를 누르세요';
        var done=document.createElement('button');done.textContent='✓ 첨부 완료';done.style.cssText='border:0;border-radius:8px;padding:8px 14px;font-weight:800;cursor:pointer;background:#fff;color:var(--ps-navy,#14213D);font-family:inherit';done.onclick=finish;
@@ -20298,7 +20298,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var row=document.createElement("div");row.style.cssText="display:flex;align-items:center;gap:8px;";
     var swp=document.createElement("div");swp.style.cssText="width:28px;height:28px;border-radius:8px;border:1px solid rgba(0,0,0,.2);flex:0 0 auto;";
     var hx=document.createElement("input");hx.type="text";hx.maxLength=7;hx.placeholder="#RRGGBB";hx.spellcheck=false;hx.autocapitalize="off";
-    hx.style.cssText="flex:1 1 auto;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;padding:7px 8px;border:1.5px solid var(--line,#d2d6dd);border-radius:8px;outline:none;background:var(--panel2,#F1F2F4);color:var(--txt,#14161A);box-sizing:border-box;";
+    hx.style.cssText="flex:1 1 auto;min-width:0;font-family:Pretendard,ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;padding:7px 8px;border:1.5px solid var(--line,#d2d6dd);border-radius:8px;outline:none;background:var(--panel2,#F1F2F4);color:var(--txt,#14161A);box-sizing:border-box;";
     row.appendChild(swp);row.appendChild(hx);
     root.appendChild(sv);root.appendChild(hue);root.appendChild(row);
     function cur(){return hsv2hex(hsv.h,hsv.s,hsv.v);}
@@ -20726,12 +20726,12 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
           line.parentNode.querySelectorAll('.mp-line').forEach(function(row){if((continuous?row.classList.contains('point'):row.dataset.group===group)&&row!==line)row.style.display='none';});
           line.style.height='auto';line.textContent='';
           var kind=isBrand?'brand':isTitle?'title':'point',style=meetingTextStyle(slide,kind,meetingPdfOrientation(anim.slides)==='landscape');
-          var controls=doc.createElement('div');controls.className='mp-inline-tools';controls.style.cssText='display:flex;flex-wrap:wrap;gap:4px;background:#E9EDF5;padding:4px;font:12px system-ui;letter-spacing:0;line-height:24px';
+          var controls=doc.createElement('div');controls.className='mp-inline-tools';controls.style.cssText='display:flex;flex-wrap:wrap;gap:4px;background:#E9EDF5;padding:4px;font:12px Pretendard,system-ui;letter-spacing:0;line-height:24px';
           controls.innerHTML='<label>크기 <input aria-label="글자 크기" type="number" min="10" max="48" style="width:48px" value="'+style.size+'"></label><label>굵기 <select aria-label="글자 굵기"><option value="400">보통</option><option value="500">중간</option><option value="600">약간 굵게</option><option value="700">굵게</option><option value="800">아주 굵게</option></select></label><label>색상 <input aria-label="글자 색상" type="color" value="'+style.color+'" style="width:30px;height:24px;vertical-align:middle"></label>';
           controls.querySelector('select').value=String(style.weight);
           function updateStyle(){var inputs=controls.querySelectorAll('input');slide.textStyles=slide.textStyles||{};slide.textStyles[kind]={size:Math.max(10,Math.min(48,Number(inputs[0].value)||style.size)),weight:Number(controls.querySelector('select').value),color:inputs[1].value};if(kind==='brand'){var _bs=slide.textStyles.brand;anim.slides.forEach(function(s){if(s===slide)return;s.textStyles=s.textStyles||{};s.textStyles.brand={size:_bs.size,weight:_bs.weight,color:_bs.color};});}   /* 2.960 — 머리글 모양도 미팅 전체 */var next=meetingTextStyle(slide,kind,meetingPdfOrientation(anim.slides)==='landscape');editor.style.fontSize=next.size+'px';editor.style.fontWeight=next.weight;editor.style.color=next.color;editor.style.lineHeight=next.height+'px';editor.style.height='auto';editor.style.height=editor.scrollHeight+'px';}
           controls.addEventListener('input',updateStyle);controls.addEventListener('change',updateStyle);
-          if(isBrand){line.textContent=original||'상단 문구';line.style.position='relative';var popup=doc.createElement('div');popup.style.cssText='position:absolute;left:0;top:calc(100% + 8px);width:340px;max-width:80vw;padding:10px;border:1px solid #dce2ee;border-radius:10px;background:#fff;box-shadow:0 8px 28px #17223526;z-index:100;font:14px system-ui;letter-spacing:0;white-space:normal';var caption=doc.createElement('div');caption.textContent='상단 문구';caption.style.cssText='font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px';popup.appendChild(caption);popup.appendChild(editor);popup.appendChild(controls);var done=doc.createElement('button');done.textContent='완료';done.style.cssText='display:block;margin:8px 0 0 auto;border:0;border-radius:6px;background:var(--ps-navy,#14213D);color:#fff;padding:6px 14px;font:13px system-ui';done.onclick=function(ev){ev.stopPropagation();editor.classList.remove('mp-inline-editor');window.__ksRender();};popup.appendChild(done);popup.className='mp-inline-tools';line.appendChild(popup);}else{line.appendChild(controls);line.appendChild(editor);}
+          if(isBrand){line.textContent=original||'상단 문구';line.style.position='relative';var popup=doc.createElement('div');popup.style.cssText='position:absolute;left:0;top:calc(100% + 8px);width:340px;max-width:80vw;padding:10px;border:1px solid #dce2ee;border-radius:10px;background:#fff;box-shadow:0 8px 28px #17223526;z-index:100;font:14px Pretendard,system-ui;letter-spacing:0;white-space:normal';var caption=doc.createElement('div');caption.textContent='상단 문구';caption.style.cssText='font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px';popup.appendChild(caption);popup.appendChild(editor);popup.appendChild(controls);var done=doc.createElement('button');done.textContent='완료';done.style.cssText='display:block;margin:8px 0 0 auto;border:0;border-radius:6px;background:var(--ps-navy,#14213D);color:#fff;padding:6px 14px;font:13px Pretendard,system-ui';done.onclick=function(ev){ev.stopPropagation();editor.classList.remove('mp-inline-editor');window.__ksRender();};popup.appendChild(done);popup.className='mp-inline-tools';line.appendChild(popup);}else{line.appendChild(controls);line.appendChild(editor);}
           var brandBefore=isBrand?anim.slides.map(function(s){return s.pageBrand;}):null;   /* 2.960 — Esc 는 장마다 원래 문구로 */
           function write(value){if(isBrand)anim.slides.forEach(function(s){s.pageBrand=value;});else if(isTitle)slide.title=value;else if(continuous)slide.points=value.split('\n');else{if(!slide.points)slide.points=[];slide.points[pointIndex]=value;}}
           editor.addEventListener('input',function(){write(editor.value);editor.style.height='auto';editor.style.height=editor.scrollHeight+'px';});
