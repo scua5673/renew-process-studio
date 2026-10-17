@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/transition-to-attacking/opening-space-on-the-counter-attack.php',
   name: '역습에서 공간 열기 — 뒷공간 패스, 휘어 뛰기, 함께 올라가기',
   focus: 'tr_att',
+  subs: ['std_at_1'],
   by: 'Jonas Urias',
   trainings: [
     {

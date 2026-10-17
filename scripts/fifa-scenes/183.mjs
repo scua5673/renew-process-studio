@@ -10,6 +10,7 @@ export default {
   path: 'futsal/block-6/using-the-goalkeeper-to-create-overloads.php',
   name: '골키퍼로 수적 우위 만들기 — 한 명 더 있는 빌드업',
   focus: 'bp',
+  subs: ['std_ao_1'],
   by: 'Antonio García',
   trainings: [
     {

@@ -22,6 +22,7 @@ export default {
   path: 'futsal/block-2/playing-out-from-the-back-1.php',
   name: '뒤에서부터 풀어 나오기 — GK부터 세 구역을 차례로',
   focus: 'bp',
+  subs: ['std_ao_1'],
   by: 'Graeme Dell',
   trainings: [
     {

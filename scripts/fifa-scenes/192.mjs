@@ -8,6 +8,7 @@ export default {
   path: 'futsal/fitness/recovery-runs.php',
   name: '회복 달리기 — 슈팅하고 바로 돌아서 지키기',
   focus: 'phys',
+  subs: ['std_dt_2'],
   by: 'Gary Phillips',
   trainings: [
     {

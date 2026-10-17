@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/finish-your-chances.php',
   name: '기회를 골로 — 4v2 술래에서 세 팀 웨이브 게임까지',
   focus: 'tech',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

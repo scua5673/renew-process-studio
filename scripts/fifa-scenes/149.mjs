@@ -15,6 +15,7 @@ export default {
   path: 'futsal/block-1/shooting-in-tight-spaces.php',
   name: '좁은 공간 슈팅 — 숫자가 많은 구역에서 슈팅 만들기',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

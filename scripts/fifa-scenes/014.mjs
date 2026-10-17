@@ -22,6 +22,7 @@ export default {
   path: 'elite-sessions/in-possession/improving-the-ability-to-play-forward-centrally.php',
   name: '가운데로 전진 패스하는 힘 키우기 — 공을 보고, 앞을 보는 자리',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Sean Douglas',
   trainings: [
     {

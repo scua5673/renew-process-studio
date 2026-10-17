@@ -16,6 +16,7 @@ export default {
   path: 'training-perspectives/on-the-training-ground-with/roger-schmidt/on-the-training-ground-with-roger-schmidt-part-3.php',
   name: '결정적인 전진 플레이 — 다섯 번 안에 줄을 넘겨라',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Roger Schmidt',
   trainings: [
     {

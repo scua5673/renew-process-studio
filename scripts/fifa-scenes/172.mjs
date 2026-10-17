@@ -9,6 +9,7 @@ export default {
   path: 'futsal/block-5/2-2-system-1v1-situations.php',
   name: '2-2 시스템 — 넓고 깊게 서서 1대1 만들기',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: 'José Venancio López',
   trainings: [
     {

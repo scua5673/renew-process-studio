@@ -6,6 +6,7 @@ export default {
   path: 'grassroots/global-grassroots-insights/cefor-jilo-u13-fundamental-technical-skills-and-attacking.php',
   name: '기본 기술과 공격 — 받고, 주고, 몰고, 끝내기',
   focus: 'tech',
+  subs: ['std_ao_2', 'std_ao_3'],
   by: 'Cefor Jilo',
   trainings: [
     {

@@ -19,6 +19,7 @@ export default {
   path: 'futsal/block-4/counter-attacking-with-speed.php',
   name: '빠른 역습 — 던지고, 앞으로 받고, 바로 끝내기',
   focus: 'tr_att',
+  subs: ['std_at_1'],
   by: '',
   trainings: [
     {

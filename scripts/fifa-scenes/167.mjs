@@ -24,6 +24,7 @@ export default {
   path: 'futsal/block-4/defending-the-counter-outnumbered.php',
   name: '수가 적을 때 역습 막기 — 늦추고, 삼각형으로 버티기',
   focus: 'tr_def',
+  subs: ['std_dt_2'],
   by: '',
   trainings: [
     {

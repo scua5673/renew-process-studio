@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/in-possession/switching_play.php',
   name: '반대쪽으로 넘기기 — 한쪽에서 끌고 다른 쪽에서 끝내기',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Lamia Boumehdi',
   trainings: [
     {

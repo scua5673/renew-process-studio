@@ -6,6 +6,7 @@ export default {
   path: 'elite-sessions/national-teams/spain-u23/landing-page.php',
   name: '카운터프레스 원칙 — 잃으면 바로, 되찾으면 뒤로',
   focus: 'tr_def',
+  subs: ['std_dt_1'],
   by: '스페인 U-23 여자 대표팀',
   trainings: [
     {
