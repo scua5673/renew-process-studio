@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/in-possession/duenker-passing-under-pressure.php',
   name: '압박 속에서 패스하기 — 단단한 첫 터치와 열린 몸',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Jacqueline Dünker',
   trainings: [
     {

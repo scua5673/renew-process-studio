@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/goalkeeper/goalkeepersbuildup.php',
   name: '골키퍼 빌드업 — 받쳐 주고, 받고, 패스하기',
   focus: 'tech',
+  subs: ['std_ao_1'],
   by: 'Dean Santangelo',
   trainings: [
     {

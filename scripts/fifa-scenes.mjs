@@ -29,6 +29,13 @@ export const BASE='https://www.fifatrainingcentre.com/en/practice/';
 export const PITCHES=['grid20','grid30','grid45','u12','futsal','fifa'];
 export const EQUIP=['cone','marker','minigoalV','goalV','dummy','pole','ladder','hurdle','minihurdle','ball'];
 export const FOCUS=['warm','bp','poss','bpo','tr_att','tr_def','set','phys','tech','rec'];
+/* 3.079 — 세부 국면(사용자 «세부 국면도 선택할 수 있게»). 작전판 편집기의 경기 국면 기본 골격(EP_STD_MOMENTS)과 같은 id · 이름.
+   spec.subs = ['std_ao_3', …] → 팩의 gmPhases · gmPhaseNames(보관함에 담으면 편집기의 경기 국면 칩이 켜진 채로) · 목록 줄의 subs(커뮤니티 고르개) */
+export const SUBS={std_ao_1:'공격 조직 › 빌드업',std_ao_2:'공격 조직 › 전진 · 전개',std_ao_3:'공격 조직 › 침투 · 마무리',
+  std_do_1:'수비 조직 › 전방 압박',std_do_2:'수비 조직 › 미드 블록',std_do_3:'수비 조직 › 로우 블록',
+  std_dt_1:'공격 → 수비 전환 › 즉시 반응 (역압박)',std_dt_2:'공격 → 수비 전환 › 후퇴 · 재정비',
+  std_at_1:'수비 → 공격 전환 › 빠른 역습',std_at_2:'수비 → 공격 전환 › 점유 안정화',
+  std_set_1:'세트피스 › 공격 세트피스',std_set_2:'세트피스 › 수비 세트피스'};
 const clone=o=>JSON.parse(JSON.stringify(o));
 const num=(v,lo,hi)=>typeof v==='number'&&isFinite(v)&&v>=lo&&v<=hi;
 const xy=(v,what)=>{ if(!Array.isArray(v)||v.length!==2||!num(v[0],0,1110)||!num(v[1],0,740))throw Error(what+': 판 안의 [x, y] 가 아닙니다 — '+JSON.stringify(v)); return v; };
@@ -70,6 +77,9 @@ export function packOf(spec,id){
   if(!spec.name)throw Error(id+': name 이 없습니다');
   if(!FOCUS.includes(spec.focus))throw Error(id+': focus 는 '+FOCUS.join(' · '));
   if(!Array.isArray(spec.trainings)||spec.trainings.length<1||spec.trainings.length>6)throw Error(id+': 훈련은 1~6개');
+  const subs=spec.subs==null?[]:spec.subs;
+  if(!Array.isArray(subs)||subs.length>3||new Set(subs).size!==subs.length||!subs.every(k=>Object.prototype.hasOwnProperty.call(SUBS,k)))throw Error(id+': subs 는 '+Object.keys(SUBS).join(' · ')+' 중 0~3개');
+  const gm=()=>({gmPhases:subs.slice(),gmPhaseNames:subs.map(k=>SUBS[k])});
   const trainings=spec.trainings.map((t,i)=>{
     const where=id+' 훈련 '+(i+1);
     if(!t.name||!num(t.minutes,1,120))throw Error(where+': name · minutes');
@@ -78,11 +88,11 @@ export function packOf(spec,id){
     t.scenes.forEach((sc,k)=>{ if(sc.ball)xy(sc.ball,where+' 장면 '+(k+1)+' 공'); for(const [pid,v] of Object.entries(sc.pos||{}))xy(v,where+' 장면 '+(k+1)+' 선수 '+pid); });
     const snap=snapOf(t,where);
     const frames=buildFrames(snap,t,{scale:t.scale||1,lw:t.lw||1,dur:t.dur||1.2,runs:t.runs||null});
-    return {type:'train',name:t.name,minutes:t.minutes,sets:1,rpe:t.rpe||5,focus:t.focus||spec.focus,gmPhases:[],gmPhaseNames:[],memoQuick:'',overview:'',
+    return {type:'train',name:t.name,minutes:t.minutes,sets:1,rpe:t.rpe||5,focus:t.focus||spec.focus,...gm(),memoQuick:'',overview:'',
       method:t.method,spDesc:t.method,setup:'',func:'',coaching:t.coaching,prog:'',tags:[],sp:null,spCall:'',snap:clone(frames[0].snap),frames,animIdx:0};
   });
   const drill={name:spec.name,type:'train',snap:clone(trainings[0].snap),trainings,frames:clone(trainings[0].frames),
-    minutes:trainings.reduce((a,t)=>a+t.minutes,0),sets:1,focus:spec.focus,rpe:5,tags:[],method:'',coaching:'',
+    minutes:trainings.reduce((a,t)=>a+t.minutes,0),sets:1,focus:spec.focus,...gm(),rpe:5,tags:[],method:'',coaching:'',
     fifa:{path:spec.path,url:BASE+spec.path,by:spec.by||''}};
   return {type:'process-studio-drillpack',version:1,date:'2026-10-17T00:00:00.000Z',source:'fifa',drills:[drill]};
 }
@@ -91,7 +101,7 @@ export function packOf(spec,id){
 export function rowOf(id,text){ const d=JSON.parse(text).drills[0];
   /* 3.075 — 커뮤니티 공통 분류: 주제(작전판 FOCUS)와 인원(훈련마다 판 위 선수 수의 가장 작은 ~ 가장 큰 값) */
   const ns=d.trainings.map(t=>t.snap.players.length);
-  return {id,path:d.fifa.path,rev:rev(text),focus:d.focus,players:[Math.min(...ns),Math.max(...ns)],trainings:d.trainings.map(t=>({name:t.name,minutes:t.minutes,scenes:t.frames.length}))}; }
+  return {id,path:d.fifa.path,rev:rev(text),focus:d.focus,...((d.gmPhases||[]).length?{subs:d.gmPhases.slice()}:{}),players:[Math.min(...ns),Math.max(...ns)],trainings:d.trainings.map(t=>({name:t.name,minutes:t.minutes,scenes:t.frames.length}))}; }
 export function indexOf(){
   const ids=fs.readdirSync(out).filter(f=>/^\d{3}\.json$/.test(f)).map(f=>f.slice(0,3)).sort();
   return {type:'process-studio-fifa-index',version:1,sessions:ids.map(id=>rowOf(id,fs.readFileSync(path.join(out,id+'.json'),'utf8')))};

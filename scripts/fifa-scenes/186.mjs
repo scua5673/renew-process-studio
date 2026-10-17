@@ -6,6 +6,7 @@ export default {
   path: 'futsal/fitness/pressing-4v4plus-4.php',
   name: '4v4+4 압박 — 수가 적어도 넷이 한 덩어리로',
   focus: 'phys',
+  subs: ['std_do_1'],
   by: 'Gary Phillips',
   trainings: [
     {

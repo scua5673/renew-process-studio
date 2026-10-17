@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/german-academies/landing-pages/tsg-hoffenheim-u19-landing-page.php',
   name: '게임 모델을 훈련으로 — 수적 우위 살리기와 즉시 압박',
   focus: 'bp',
+  subs: ['std_ao_2', 'std_ao_3'],
   by: 'TSG Hoffenheim U-19',
   trainings: [
     {

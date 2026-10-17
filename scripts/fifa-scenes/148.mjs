@@ -8,6 +8,7 @@ export default {
   path: 'futsal/block-1/progressive-shooting.php',
   name: '단계별 슈팅 — 번호 슈팅에서 5v5 경기까지',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

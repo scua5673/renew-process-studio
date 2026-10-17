@@ -14,6 +14,7 @@ export default {
   path: 'elite-sessions/transition-to-defending/regaining-possession-high-up-the-pitch.php',
   name: '높은 곳에서 공 되찾기 — 잃은 자리에서 바로 사냥',
   focus: 'tr_def',
+  subs: ['std_dt_1'],
   by: '',
   trainings: [
     {

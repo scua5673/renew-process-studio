@@ -19,6 +19,7 @@ export default {
   path: 'futsal/block-2/passing-and-directional-play.php',
   name: '패스와 방향 있는 플레이 — 앞을 보고, 앞으로 주고, 앞으로 가기',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

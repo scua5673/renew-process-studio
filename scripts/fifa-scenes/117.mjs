@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/developing-shooting-skills.php',
   name: '슈팅 — 번호 부르기에서 3+2 대 3+2 경기까지',
   focus: 'tech',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

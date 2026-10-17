@@ -8,6 +8,7 @@ export default {
   path: 'futsal/block-6/restarts-keeping-play-going-and-aerial-balls.php',
   name: '골키퍼 재시작 — 피보에게 띄우는 긴 공과 그 공을 막는 법',
   focus: 'bp',
+  subs: ['std_ao_1'],
   by: 'Antonio García',
   trainings: [
     {

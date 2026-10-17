@@ -46,17 +46,17 @@ test('the upload form uses the same topics and ages, prefilled from the chosen t
   assert.deepEqual(ages.children.map(b=>b.textContent),T.AGES);
   const P=n=>({players:Array.from({length:n},(_,i)=>({id:i}))});
   up.fill({focus:'tr_def',ages:['U12','X'],snap:P(4),trainings:[{snap:P(6)},{frames:[{snap:P(10)}]}]});
-  assert.deepEqual(up.get(),{topics:['trd'],cat:'tr_def',ages:['U12'],age:'U12',players:'10'},'가장 많은 훈련의 인원');
+  assert.deepEqual(up.get(),{topics:['trd'],subs:[],subNames:[],cat:'tr_def',ages:['U12'],age:'U12',players:'10'},'가장 많은 훈련의 인원');
   assert.ok(topics.children[1].classList.contains('on'));
   topics.children[6].click(); assert.equal(up.get().cat,'tr_def,gk','골키퍼를 더 고를 수 있다');
   up.fill({focus:'bp',snap:P(3)}); assert.deepEqual([up.get().cat,up.get().players],['tr_def,gk','10'],'코치가 고친 것은 덮지 않는다');
 });
 
 test('community.html uses the shared table for upload and for saving to the vault',()=>{
-  assert.match(comm,/TX\.upForm\(document,\{topics:\$\('upCats'\),ages:\$\('upAges'\),pl:\$\('upPlayers'\)\}\)/);
+  assert.match(comm,/TX\.upForm\(document,\{topics:\$\('upCats'\),subs:\$\('upSubs'\),ages:\$\('upAges'\),pl:\$\('upPlayers'\)\}\)/);
   assert.match(comm,/if\(up\)up\.fill\(d\);/,'고른 훈련에서 미리 채움');
   assert.match(comm,/cat:uf\.cat,age:uf\.age,players:uf\.players,/);
-  assert.match(comm,/d\.focus=d\.focus\|\|\(TX\?TX\.focusOfPost\(p\):'tech'\);if\(!d\.ages&&p\.age\)d\.ages=catKeys\(p\.age\);/,'담을 때는 거꾸로 · 연령도 함께');
-  assert.match(comm,/'slides','ages'\];/,'연령이 보관함 ↔ 글 사이를 오간다');
+  assert.match(comm,/d\.focus=d\.focus\|\|\(TX\?TX\.focusOfPost\(p\):'tech'\);if\(!d\.ages&&p\.age\)d\.ages=catKeys\(p\.age\);if\(TX&&!\(d\.gmPhases\|\|\[\]\)\.length\)\{var g=TX\.subsOfPost\(p\);/,'담을 때는 거꾸로 · 연령도 함께');
+  assert.match(comm,/'slides','ages','gmPhases','gmPhaseNames'\];/,'연령이 보관함 ↔ 글 사이를 오간다');
   assert.doesNotMatch(comm,/CATGUESS|selCats/,'옛 21종 칩은 올리기에서 빠진다');
 });

@@ -6,6 +6,7 @@ export default {
   path: 'futsal/block-2/building-an-attack.php',
   name: '공격 만들기 — 넓히고, 돌리고, 기다렸다 찌르기',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

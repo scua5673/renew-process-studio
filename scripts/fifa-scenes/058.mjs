@@ -4,6 +4,7 @@ export default {
   path: 'training-perspectives/on-the-training-ground-with/gilberto-silva/landing-page.php',
   name: '경기를 읽는 눈 키우기 — 남는 사람 찾기에서 압박 벗기기까지',
   focus: 'bp',
+  subs: ['std_ao_2', 'std_ao_1'],
   by: 'Gilberto Silva',
   trainings: [
     {

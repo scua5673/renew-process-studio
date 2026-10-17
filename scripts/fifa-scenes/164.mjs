@@ -6,6 +6,7 @@ export default {
   path: 'futsal/block-4/progressive-attacking-waves.php',
   name: '단계별 공격 웨이브 — 한 명씩 늘려 가며 빠르게 끝내기',
   focus: 'tr_att',
+  subs: ['std_at_1'],
   by: 'Graeme Dell',
   trainings: [
     {

@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/in-possession/diagonal-and-vertical-passing.php',
   name: '대각선 패스와 세로 패스 — 나란히 달리고, 비스듬히 찌르기',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Anouschka Bernhard',
   trainings: [
     {

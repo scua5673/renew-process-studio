@@ -19,6 +19,7 @@ export default {
   path: 'grassroots/4-to-8/defending-outnumbered.php',
   name: '수가 적을 때 수비하기 — 가운데 막기에서 4+4v4까지',
   focus: 'tech',
+  subs: ['std_do_3'],
   by: '',
   trainings: [
     {
