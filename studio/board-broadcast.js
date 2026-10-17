@@ -29,7 +29,37 @@
       var p0 = pt(Math.max(0, u - 0.02)), p1 = pt(Math.min(1, u + 0.02));
       out[p.id] = { vx: p1.x - p0.x, vy: p1.y - p0.y, run: run / m, total: tot / m, u: u };
     });
+    var k = kick(a, b, m);
+    if (k) {
+      var kk = out[k.kicker] || (out[k.kicker] = { vx: 0, vy: 0, run: 0, total: 0, u: u });
+      // 주발(env.foot: 선수단의 'L' 왼발 · 'R' 오른발 · 'B' 양발): 왼발잡이는 왼발로 차고 받는다
+      var foot = function (p) { try { return env && env.foot && env.foot(p) === 'L' ? 'L' : 'R'; } catch (_) { return 'R'; } };
+      if (u < KICK.win) { kk.kick = u / KICK.win; kk.bx = k.dx; kk.by = k.dy; kk.foot = foot(k.kp); }
+      if (k.receiver != null && u > KICK.recvFrom) { var rr = out[k.receiver] || (out[k.receiver] = { vx: 0, vy: 0, run: 0, total: 0, u: u }); rr.recv = (u - KICK.recvFrom) / (1 - KICK.recvFrom); rr.bx = -k.dx; rr.by = -k.dy; rr.foot = foot(k.rp); }
+    }
     return out;
+  }
+  // 3.074 — 차기(사용자 «차는 모습»): 장면 사이에 공이 움직이면, 공이 있던 자리에서 가장 가까운 선수(2.5m 안)가 찬다 —
+  // 장면 앞 KICK.win 동안 다리를 뒤로 뺐다가 차고, 발이 닿는 순간(KICK.contact)에 공이 출발한다.
+  // 공이 닿는 자리에서 가장 가까운 선수(3m 안)는 받는 사람 — 끝 무렵 공 쪽을 보고 발을 내민다.
+  var KICK = { win: 0.2, contact: 0.11, near: 2.5, recvNear: 3, recvFrom: 0.8 };
+  function ballOf(s) {
+    if (s && s.ball && isFinite(s.ball.x)) return s.ball;
+    var e = s && (s.equipment || []).filter(function (o) { return o && o.team === 'ball'; })[0];
+    return e || null;
+  }
+  function kick(a, b, mpp) {
+    var A = ballOf(a), B = ballOf(b), m = mpp || 10;
+    if (!A || !B || Math.hypot(B.x - A.x, B.y - A.y) < 1.5 * m) return null;
+    function nearest(list, p, max) { var best = null, bd = max * m; (list || []).forEach(function (o) { if (!o || o.coach) return; var d = Math.hypot(o.x - p.x, o.y - p.y); if (d < bd) { bd = d; best = o; } }); return best; }
+    var k = nearest(a.players, A, KICK.near), r = nearest(b.players, B, KICK.recvNear);
+    if (!k) return null;
+    return { kicker: k.id, receiver: r && r.id !== k.id ? r.id : null, dx: B.x - A.x, dy: B.y - A.y, kp: k, rp: r };
+  }
+  // 공이 움직이는 몫: 찰 사람이 있으면 발이 닿을 때까지 제자리, 그 뒤 끝까지.
+  function ballU(a, b, u, mpp) {
+    if (!(u > 0 && u < 1) || !kick(a, b, mpp)) return u;
+    return u < KICK.contact ? 0 : (u - KICK.contact) / (1 - KICK.contact);
   }
   // 판 좌표의 벡터 → 화면 방향. 세로 보기는 판(world)이 ±90° 돌아 있고, 중계 시점은 사선으로 돌고 크게 기운다.
   function screenVec(x, y, view) {
@@ -42,6 +72,10 @@
   // 출발할 때는 카메라 쪽(서 있던 방향)에서 뛰는 방향으로 돌아서고, 도착하면 다시 돌아선다 — 짧은 쪽으로.
   function pose(mv, view) {
     if (!mv) return null;
+    if (mv.kick != null || mv.recv != null) {
+      var b = screenVec(mv.bx, mv.by, view), face = Math.atan2(b.y, b.x) / D2R;
+      return { yaw: face, phase: mv.run / 2.6, amp: 0, kick: mv.kick != null ? mv.kick : null, recv: mv.recv != null ? mv.recv : null, foot: mv.foot === 'L' ? 'L' : 'R' };
+    }
     var s = screenVec(mv.vx, mv.vy, view), amp = Math.min(1, 0.45 + mv.total / 14), ease = Math.min(1, mv.u * 5, (1 - mv.u) * 5);
     var dir = Math.atan2(s.y, s.x) / D2R, turn = ((dir - 90) % 360 + 540) % 360 - 180;
     return { yaw: 90 + turn * Math.min(1, ease * 1.6), phase: mv.run / 2.6, amp: Math.max(0, amp * ease) };
@@ -86,5 +120,5 @@
     }
     return { update: update, off: off, zoom: function () { return st.k; } };
   }
-  return { TV: TV, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
+  return { TV: TV, KICK: KICK, kick: kick, ballU: ballU, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
 });

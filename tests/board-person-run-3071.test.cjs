@@ -7,7 +7,7 @@ const board=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
 const line=(x0,y0,x1,y1,c,t)=>({x:x0+(x1-x0)*t,y:y0+(y1-y0)*t});
 
 test('3.072 — no pose is a player standing toward the camera; the pose carries the facing angle',()=>{
-  assert.deepEqual(depth.personPose(null),{yaw:90,phase:0,amp:0});
+  assert.deepEqual(depth.personPose(null),{yaw:90,phase:0,amp:0,kick:null,recv:null,foot:'R'});
   assert.equal(depth.personPose({yaw:-90,amp:.8}).yaw,-90,'running away shows the back');
   assert.equal(depth.personPose({yaw:0,amp:5}).amp,1,'amp is capped');
 });
@@ -42,4 +42,14 @@ test('board wiring: motion once per frame, cleared after; 3D «사람» only; ca
   assert.match(board,/<button type="button" data-cam="tv"[^>]*>중계<\/button>/);
   assert.match(board,/<script src="board-broadcast\.js"><\/script>/);
   assert.match(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'),/'\/studio\/board-broadcast\.js'/,'cached for offline');
+});
+
+test('3.074 kick: the player nearest the ball kicks, the ball leaves on contact, the nearest player at the end receives — with his own foot',()=>{
+  const a={players:[{id:1,x:100,y:100,sqId:'s1'},{id:2,x:400,y:100}],ball:{x:110,y:100}},b={players:[{id:1,x:100,y:100,sqId:'s1'},{id:2,x:400,y:100}],ball:{x:395,y:100}};
+  const k=bc.kick(a,b,10);assert.equal(k.kicker,1);assert.equal(k.receiver,2);
+  assert.equal(bc.ballU(a,b,bc.KICK.contact*.9,10),0,'the ball waits for the foot');assert.ok(bc.ballU(a,b,.5,10)>0&&bc.ballU(a,b,.5,10)<.5);assert.equal(bc.ballU(a,b,1,10),1);
+  const far={players:[{id:1,x:300,y:300}],ball:{x:110,y:100}};assert.equal(bc.kick(far,b,10),null,'nobody near the ball — it just moves');assert.equal(bc.ballU(far,b,.05,10),.05);
+  const env={curvePt:line,mpp:10,foot:p=>p.sqId==='s1'?'L':''};
+  const m=bc.motion(a,b,.1,null,env),pk=bc.pose(m[1],{});assert.ok(pk.kick>0&&pk.kick<1);assert.equal(pk.foot,'L','left-footed from the roster');assert.equal(Math.round(pk.yaw),0,'faces the pass');
+  const r=bc.pose(bc.motion(a,b,.95,null,env)[2],{});assert.ok(r.recv>0);assert.equal(r.foot,'R');assert.equal(Math.round(Math.abs(r.yaw)),180,'faces the ball coming in');
 });

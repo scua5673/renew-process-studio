@@ -194,8 +194,16 @@
   var DEPTH = .3, D2R = Math.PI / 180;
   function personPose(pose) {
     var p = pose || {}, amp = Math.max(0, Math.min(1, +p.amp || 0)), yaw = Number(p.yaw);
-    return { yaw: isFinite(yaw) ? yaw : 90, phase: +p.phase || 0, amp: amp };
+    var k = p.kick == null ? null : Math.max(0, Math.min(1, +p.kick)), r = p.recv == null ? null : Math.max(0, Math.min(1, +p.recv));
+    return { yaw: isFinite(yaw) ? yaw : 90, phase: +p.phase || 0, amp: amp, kick: isFinite(k) ? k : null, recv: isFinite(r) ? r : null, foot: p.foot === 'L' ? 'L' : 'R' };
   }
+  // 3.074 — 차기: 오른발을 뒤로 뺐다가(0~.45) 휘둘러 차고(.58 에 공에 닿음) 따라 나간 뒤 내려놓는다. 디딤발은 살짝 굽힌다.
+  var KICK = {
+    hip:  [[0, 4], [.45, -42], [.58, 62], [.75, 46], [1, 8]],
+    knee: [[0, 14], [.45, 104], [.58, 10], [.75, 22], [1, 12]],
+    foot: [[0, 0], [.45, -28], [.58, -58], [.8, -20], [1, -2]],
+    lean: [[0, 4], [.45, 2], [.58, -8], [.8, -3], [1, 3]]
+  };
   function r1(n) { return Math.round(n * 10) / 10; }
   // One running stride for one leg, from foot strike (0): stance until 0.35, then flight, swing and reach. Degrees.
   var GAIT = {
@@ -225,7 +233,8 @@
     var yaw = P.yaw * D2R, F = { x: Math.cos(yaw), d: Math.sin(yaw) }, L = { x: Math.sin(yaw), d: -Math.cos(yaw) };
     var fig = node(doc, 'g', { 'class': 'ps-person', 'data-yaw': String(Math.round(P.yaw)) });
     // Upper body: leans forward with speed; shoulders turn against the hips with the arms.
-    var HIP = 82, lean = (2 + A * 13) * D2R, ph = P.phase, swing = Math.cos(TAU * (ph - .8));
+    var KK = P.kick, RR = P.recv, KS = P.foot === 'L' ? 1 : -1;   // 차는 발 쪽(1 = 선수의 왼쪽)
+    var HIP = 82, lean = (KK != null ? curve(KICK.lean, KK) : RR != null ? 4 : 2 + A * 13) * D2R, ph = P.phase, swing = Math.cos(TAU * (ph - .8));
     var tauS = A * 13 * D2R * swing, tauP = -A * 6 * D2R * swing;
     function turn(q, t) { return [q[0] * Math.cos(t) - q[1] * Math.sin(t), q[0] * Math.sin(t) + q[1] * Math.cos(t), q[2]]; }
     function upper(q) { var dz = q[2] - HIP; return [q[0] + dz * Math.sin(lean), q[1], HIP + dz * Math.cos(lean)]; }
@@ -236,6 +245,8 @@
     // Legs: hip angle (forward +), knee bend, foot pitch from the gait, scaled from standing to sprinting.
     function leg(side) {
       var p = ph + (side > 0 ? 0 : .5), th = A * curve(GAIT.hip, p) * D2R, kn = (4 + A * (curve(GAIT.knee, p) - 4)) * D2R, ft = A * curve(GAIT.foot, p) * D2R;
+      if (KK != null) { if (side === KS) { th = curve(KICK.hip, KK) * D2R; kn = curve(KICK.knee, KK) * D2R; ft = curve(KICK.foot, KK) * D2R; } else { th = 8 * D2R; kn = 22 * D2R; ft = 0; } }
+      else if (RR != null) { var e = Math.sin(Math.PI * Math.min(1, RR * 1.15)); if (side === KS) { th = (6 + 26 * e) * D2R; kn = (14 + 22 * e) * D2R; ft = 22 * e * D2R; } else { th = 4 * D2R; kn = (14 + 10 * e) * D2R; ft = 0; } }
       var hip = pelvis([0, side * 8.5, HIP]), sh = th - kn;
       var knee = [hip[0] + 40 * Math.sin(th), hip[1] + side * .6, hip[2] - 40 * Math.cos(th)];
       var ank = [knee[0] + 39 * Math.sin(sh), knee[1] + side * .4, knee[2] - 39 * Math.cos(sh)];
@@ -244,6 +255,8 @@
     }
     function arm(side) {
       var p = ph + (side > 0 ? 0 : .5), c = Math.cos(TAU * (p - .8)), sa = (-A * 46 * c) * D2R, el = (10 + A * (78 + 14 * c)) * D2R, ab = (1 - A) * 7 * D2R + 4 * D2R;
+      if (KK != null) { var w = Math.sin(Math.PI * Math.min(1, KK * 1.2)); sa = (side !== KS ? 30 : -25) * w * D2R; el = (25 + 20 * w) * D2R; ab = (12 + (side !== KS ? 38 : 22) * w) * D2R; }   // 균형: 팔을 벌린다
+      else if (RR != null) { sa = 10 * D2R; el = 30 * D2R; ab = 18 * D2R; }
       var sh = body([0, side * 16, 120]);
       var elb = body([25 * Math.sin(sa), side * (16 + 25 * Math.sin(ab)), 120 - 25 * Math.cos(sa)]);
       var fa = sa + el, wr = body([25 * Math.sin(sa) + 22 * Math.sin(fa), side * (16 + 25 * Math.sin(ab) + 2), 120 - 25 * Math.cos(sa) - 22 * Math.cos(fa)]);
