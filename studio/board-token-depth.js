@@ -510,6 +510,14 @@
     }
     token.setAttribute('data-depth', String(height));
   }
+  // 3.083 — «선수들이 몸의 방향을 전부 볼 따라가게»: 공이 움직이면 사람 모양의 몸만 다시 그린다(칩 전체는 그대로).
+  function repose(token, pose) {
+    var st = token && token.querySelector('.ps-person-stand'), old = st && st.querySelector('.ps-person'); if (!old) return false;
+    var P = personPose(pose); if (!P.amp && P.kick == null && Math.abs(((P.yaw - (+old.getAttribute('data-yaw') || 0)) % 360 + 540) % 360 - 180) < 3) return true;
+    var o = token.querySelector('.ps-depth-original'), sh = o && o.querySelector('.tok-c');
+    st.replaceChild(personFigure(token.ownerDocument, (sh && sh.getAttribute('fill')) || '#3a6df0', (sh && sh.getAttribute('stroke')) || 'rgba(0,0,0,.35)', o && o.querySelector('text'), pose), old);
+    return true;
+  }
   function update(token, item) {
     if (!token || !token.hasAttribute('data-depth')) return;
     if(token.hasAttribute('data-depth-equipment')){var old=token.querySelector('.ps-equipment-mesh');old.parentNode.replaceChild(equipmentMesh(token.ownerDocument,item),old);return;}
@@ -521,5 +529,5 @@
       side.setAttribute('transform', 'translate(' + offset.x + ',' + offset.y + ')');
     });
   }
-  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, flatten: flatten, flattenAll: flattenAll, elevation: elevation, chipSize: chipSize, turnChip: turnChip, PERSON_M: PERSON_M, PERSON_H: PERSON_H, personPose: personPose };
+  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, flatten: flatten, flattenAll: flattenAll, elevation: elevation, chipSize: chipSize, turnChip: turnChip, repose: repose, PERSON_M: PERSON_M, PERSON_H: PERSON_H, personPose: personPose };
 });

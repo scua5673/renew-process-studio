@@ -17,7 +17,7 @@ test('«사람» is a board look shape and «실제 비율» a per-board look se
   assert.match(board,/function lookKeys\(\)\{return \[[^\]]*"realScale"\];\}/);
   assert.match(board,/id="realScaleSeg"[\s\S]{0,200}data-rs="0"[^>]*>보기 좋게<[\s\S]{0,300}data-rs="1"[^>]*>실제 비율</);
   /* 1m = mppNow() units: player body 0.5 m wide (r 21 → 84 units/m), ball 22 cm across; equipment keeps its size */
-  assert.match(board,/if\(p\.team==="ball"\)return m\*0\.11\/REAL_BALL_R;\n  if\(p\.team==="img"\|\|equipKey\(p\.team\)\)return 0;\n  return m\/REAL_TOK_M; \}/);
+  assert.match(board,/if\(p\.team==="ball"\)return m\*0\.11\/REAL_BALL_R\*k\(1\);\n  if\(p\.team==="img"\|\|equipKey\(p\.team\)\)return 0;\n  return m\/REAL_TOK_M\*k\(0\); \}/);
   assert.match(board,/function tokenTransform\(p\)\{const s=_realTokS\(p\)\|\|_normTokS\(p\);/);
   assert.match(board,/shape:sh\?"shaper":\(\(tokShape==="person"&&!p\.shaper\)\?"person":/,'3D draws the standing player');
 });

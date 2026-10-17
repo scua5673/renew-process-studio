@@ -100,8 +100,8 @@
   }
   // 움직임 → 자세: 몸이 바라보는 각도(0 오른쪽 · 90 카메라 쪽 · -90 먼 쪽 · 180 왼쪽), 뛴 걸음(두 발 2.6m), 보폭(멀리 뛸수록 크게).
   // 출발할 때는 카메라 쪽(서 있던 방향)에서 뛰는 방향으로 돌아서고, 도착하면 다시 돌아선다 — 짧은 쪽으로.
-  function pose(mv, view) {
-    if (!mv) return null;
+  function pose(mv, view, by) {
+    if (!mv) return by == null ? null : { yaw: by, phase: 0, amp: 0 };
     if (mv.kick != null || mv.recv != null || mv.head != null || mv.dive != null || mv.chest != null || mv.catch != null || mv.punch != null) {
       var b = screenVec(mv.bx, mv.by, view), face = Math.atan2(b.y, b.x) / D2R, out = { yaw: face, phase: mv.run / 2.6, amp: 0, kick: mv.kick != null ? mv.kick : null, recv: mv.recv != null ? mv.recv : null, foot: mv.foot === 'L' ? 'L' : 'R' };
       if (mv.head != null) out.head = mv.head;
@@ -110,8 +110,8 @@
       return out;
     }
     var s = screenVec(mv.vx, mv.vy, view), amp = Math.min(1, 0.45 + mv.total / 14), ease = Math.min(1, mv.u * 5, (1 - mv.u) * 5);
-    var dir = Math.atan2(s.y, s.x) / D2R, turn = ((dir - 90) % 360 + 540) % 360 - 180;
-    return { yaw: 90 + turn * Math.min(1, ease * 1.6), phase: mv.run / 2.6, amp: Math.max(0, amp * ease) };
+    var base = by == null ? 90 : by, dir = Math.atan2(s.y, s.x) / D2R, turn = ((dir - base) % 360 + 540) % 360 - 180;
+    return { yaw: base + turn * Math.min(1, ease * 1.6), phase: mv.run / 2.6, amp: Math.max(0, amp * ease) };
   }
   // 중계 시점에서 선수를 화면에 바로 세운다 — 사선 회전을 되돌리고, 기울어 짧아진 만큼 키를 늘린다.
   function stand(tv) { return tv ? { rot: -TV.yaw, sy: 1 / Math.cos(TV.ax * D2R) } : null; }
@@ -210,7 +210,30 @@
     win._footOf = function (p) { try { if (p.foot) return p.foot; var q = p.sqId && (squad.players || []).find(function (x) { return x.id === p.sqId; }); return (q && q.foot) || ''; } catch (_) { return ''; } };   // 3.074 주발
     win._kU = function (a, b, u, c) { try { return (tokShape === 'person' && document.body.classList.contains('bc-tilt3d')) ? ballU(a, b, u, mppNow(), c) : u; } catch (_) { return u; } };   // 3.074 차는 순간 공이 출발
     win._personStand = function () { try { return stand(!!(win.__tvOn && win.__tvOn())); } catch (_) { return null; } };
-    win._personPose = function (p) { try { return pose(win.__psMotion && win.__psMotion[p.id], win._bcView()); } catch (_) { return null; } };
+    // 3.083 — 서 있을 때도 뛸 때도 몸은 공을 본다(쉐이퍼처럼). 공이 몸에 붙어 있으면 방금 보던 쪽 그대로.
+    var lastYaw = {};
+    function ballYaw(p, view) {
+      var b = typeof win._ballFor === 'function' ? win._ballFor(p) : null; if (!b || typeof b.x !== 'number') return null;
+      var dx = b.x - p.x, dy = b.y - p.y, m = 1.2 * (mppNow() || 10);
+      if (dx * dx + dy * dy < m * m) return lastYaw[p.id] != null ? lastYaw[p.id] : null;
+      var s = screenVec(dx, dy, view); return (lastYaw[p.id] = Math.atan2(s.y, s.x) / D2R);
+    }
+    function personLive() { try { return tokShape === 'person' && document.body.classList.contains('bc-tilt3d'); } catch (_) { return false; } }
+    win._personPose = function (p) { try { var v = win._bcView(); return pose(win.__psMotion && win.__psMotion[p.id], v, p.coach ? null : ballYaw(p, v)); } catch (_) { return null; } };
+    // 공 · 선수를 끄는 동안: 보드는 _dirLive() 일 때만 시선을 다시 그린다 — 그 길에 사람 몸 돌리기를 붙인다
+    // (보드 본문 스크립트가 이 모듈 뒤에 그 함수들을 정의하므로 문서를 다 읽은 뒤에 감싼다)
+    function wrapLive() {
+      var dirLive = win._dirLive, turnAll = win._chipTurnAll;
+      if (typeof dirLive !== 'function' || typeof turnAll !== 'function' || turnAll.__person) return;
+      win._dirLive = function () { return personLive() || dirLive(); };
+      win._chipTurnAll = function () {
+        turnAll();
+        if (!personLive() || !win.PSBoardDepth || !PSBoardDepth.repose || typeof tokenLayer === 'undefined' || !tokenLayer) return;
+        (state.players || []).forEach(function (p) { var g = tokenLayer.querySelector('[data-id="' + p.id + '"][data-depth-chip]'); if (g) PSBoardDepth.repose(g, win._personPose(p)); });
+      };
+      win._chipTurnAll.__person = 1;
+    }
+    if (win.document.readyState === 'loading') win.document.addEventListener('DOMContentLoaded', wrapLive); else wrapLive();
     // 3.070 보드 설정 › 비율: 보기 좋게 | 실제 비율(보드마다)
     var n = 0; (function tryIt() {
       var sg = document.getElementById('realScaleSeg');

@@ -4231,7 +4231,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="pitches.js"></script>
 <script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
-<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script>
+<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script>
 <script src="board-actions.js"></script>
 <script>
 "use strict";
@@ -5023,9 +5023,10 @@ function commViewTok(){ try{ if(!document.body.classList.contains("comm-viewing"
 var REAL_TOK_M=84, REAL_BALL_R=28*113/240;
 function _realScaleOn(){ return window.__realScale===true; }
 function _realTokS(p){ if(!(_realScaleOn()||typeof tokShape!=="undefined"&&tokShape==="person")||!p||!document.body.classList.contains("bc-tilt3d"))return 0; var m=mppNow();
-  if(p.team==="ball")return m*0.11/REAL_BALL_R;
+  var k=window.__rk?__rk:function(){return 1};
+  if(p.team==="ball")return m*0.11/REAL_BALL_R*k(1);
   if(p.team==="img"||equipKey(p.team))return 0;
-  return m/REAL_TOK_M; }
+  return m/REAL_TOK_M*k(0); }
 function _normTokS(p){const _cv=commViewTok();const _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p)*(window.__flatK?__flatK(p):1);}
 /* 이름표·링을 평소 크기로 두는 배수(실제 비율일 때만 1 보다 크다) */
 function _realBoost(p){ var r=_realTokS(p); if(!r)return 1; var n=_normTokS(p); return n>r?n/r:1; }
