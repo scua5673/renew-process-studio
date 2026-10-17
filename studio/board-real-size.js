@@ -113,7 +113,7 @@
     var st = doc.createElement('style'); st.id = 'ps-rsize-css';
     st.textContent = [
       // 위쪽 바 «크기» 단추: 3D · 중계에서만
-      'html body:not(.bc-tilt3d) #boardPageStrip .tb-rsize{display:none!important}',
+      'html body:not(.bc-tilt3d) #boardPageStrip .tb-rs,html body:not(.bc-tilt3d) #boardPageStrip .tb-rsize{display:none!important}',
       '#boardPageStrip .tb-rsize{position:relative}',
       '#boardPageStrip .tb-rsize[data-k]:not([data-k=""]):after{content:attr(data-k);position:absolute;right:-3px;top:-4px;font:800 9px/1 Pretendard,-apple-system,sans-serif;padding:2px 4px;border-radius:6px;background:#2f6bff;color:#fff}',
       '#ps-rsize-pop{position:fixed;z-index:10050;width:260px;padding:12px 14px 12px;border-radius:14px;background:rgba(255,255,255,.98);color:#1A2233;border:1px solid rgba(20,33,61,.08);box-shadow:0 14px 34px rgba(15,23,42,.22);display:none;font:600 12.5px/1.3 Pretendard,-apple-system,sans-serif}',

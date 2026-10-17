@@ -57,6 +57,9 @@
       // 띠 자체는 투명한 겹(경기장 위) — 덩어리만 누를 수 있다
       'html.ps-page-board body.ps-dock-float #boardStage' + N + '{}',
       S + '{display:flex!important;position:absolute!important;left:0!important;right:0!important;top:0!important;z-index:60!important;height:auto!important;padding:12px 14px!important;gap:10px!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important;pointer-events:none!important;justify-content:space-between!important;align-items:flex-start!important}',
+      // 3.083 — 보관함에서 연 편집(위에 고정된 #vCreateBar 56px)에서는 그 아래로 · 빈 보드의 «포메이션으로 시작» 문은 막대 아래로
+      'html.ps-page-board body.ps-dock-float.vcreating #boardPageStrip.ps-tb' + N + '{top:56px!important}',
+      'html.ps-page-board body.ps-dock-float #ehDoor{top:76px!important}',
       S + '>.tb-g{pointer-events:auto;display:flex;align-items:center;gap:4px;height:50px;padding:0 8px;border-radius:18px;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);flex:0 1 auto;min-width:0;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}',
       S + '>.tb-l{overflow:hidden}',
       S + '>.bp-head{display:none!important}',
@@ -217,7 +220,7 @@
       return true;
     }
     // 띠가 다시 그려질 때 · 떠 있는 도크가 켜지고 꺼질 때 · 3D/카메라가 바뀔 때
-    try { new win.MutationObserver(function () { var s = strip(); if (s && on() !== s.classList.contains('ps-tb')) { if (on()) build(); else unbuild(); try { win.dispatchEvent(new win.Event('resize')); } catch (_) {} } paintView(); try { clearSelCtl(); } catch (_) {} }).observe(body, { attributes: true, attributeFilter: ['class'] }); } catch (_) {}
+    try { new win.MutationObserver(function () { var s = strip(); if (s && on() !== s.classList.contains('ps-tb')) { var was = s.classList.contains('ps-tb'); if (on()) build(); else unbuild(); if (s.classList.contains('ps-tb') !== was) win.setTimeout(function () { try { win.dispatchEvent(new win.Event('resize')); } catch (_) {} }, 0); }   /* 3.083 — 바뀐 때만 · 다음 차례에(커뮤니티 보기에서 세우지 못하면 resize → 도크 mount → class 가 끝없이 돌았다) */ paintView(); try { clearSelCtl(); } catch (_) {} }).observe(body, { attributes: true, attributeFilter: ['class'] }); } catch (_) {}
     win.addEventListener('resize', function () { win.setTimeout(clearSelCtl, 50); });
     // 선택 패널(.sel-ctl)이 위쪽 막대와 겹치면 막대 아래로 내린다 — 예전에는 띠 아래 무대 안이라 겹칠 일이 없었다
     function clearSelCtl() {

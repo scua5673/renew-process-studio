@@ -44,7 +44,7 @@ try{
   // ② 선수 표시 — 이 보드에 저장
   await sel('look');s=await st();assert.equal(s.scope,'이 보드에 저장');
   sc=await secs();assert.deepEqual(sc,['내 스타일','칩','이름표','분석'],'선수 표시 묶음 '+JSON.stringify(sc));
-  lb=await labels();assert.deepEqual(lb,['선수 모양','입체 칩','크기','비율','칩 글자','이름표','이름표 크기','이름표 모양','분석 그래픽'],'선수 표시 줄 '+JSON.stringify(lb));
+  lb=await labels();assert.deepEqual(lb,['선수 모양','입체 칩','크기','비율','실제 크기','칩 글자','이름표','이름표 크기','이름표 모양','분석 그래픽'],'선수 표시 줄 '+JSON.stringify(lb));
   assert.deepEqual(await f.evaluate(()=>[...document.querySelectorAll('#chip3dSeg button')].map(b=>b.textContent.trim())),['끄기','켜기'],'«평면»은 보드 보기에만');
   await page.screenshot({path:path.join(SHOTS,'board-settings-hierarchy-look-'+engine+'.png')});
   // ③ 배치 — 바로 적용 · 카드 하나 · 선발 11명 · 저장 팀 줄 · 지우기·초기화

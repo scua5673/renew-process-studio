@@ -39,3 +39,11 @@ test('«사람» is 3D-only: flat boards draw the uniform, the bar offers 유니
 test('3.079 — pattern-book keeps its page strip folded (the bar must not re-show it)',()=>{
   assert.match(tb.css(),/body\.book-mode:not\(\.focus-board\):not\(\.vault-full\):not\(\.ps-phone-work\):not\(\.ps-dock\) #boardPageStrip\.ps-tb(:not\(#tb\d\)){20}\{display:none!important\}/);
 });
+test('3.083 — no resize loop when the bar cannot build (community viewer), clears the vault edit header and the formation door',()=>{
+  const src=fs.readFileSync(path.join(__dirname,'../studio/board-topbar.js'),'utf8');
+  assert.match(src,/if \(s\.classList\.contains\('ps-tb'\) !== was\) win\.setTimeout\(function \(\) \{ try \{ win\.dispatchEvent\(new win\.Event\('resize'\)\)/);
+  assert.doesNotMatch(src,/else unbuild\(\); try \{ win\.dispatchEvent/);
+  const css=tb.css();
+  assert.match(css,/body\.ps-dock-float\.vcreating #boardPageStrip\.ps-tb[^{]*\{top:56px!important\}/);
+  assert.match(css,/body\.ps-dock-float #ehDoor\{top:76px!important\}/);
+});
