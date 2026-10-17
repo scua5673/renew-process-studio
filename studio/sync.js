@@ -2572,6 +2572,10 @@ function syncState(){
   if(rc)return {kind:'ask',text:'저장할 내용 선택 · '+rc+'건',n:n,review:rc};
   if(busy)return {kind:'busy',text:'올리는 중'+(n?(' · '+n):''),n:n,review:rc};
   if(n)return {kind:'pending',text:'전송 대기 · '+n+'건',n:n,review:rc};
+  /* 3.080 — 이 공간에서 받은 적이 없거나(팀 전환 안의 받기가 실패 — meta 가 비었다) 닫기 정리 뒤 첫 받기 전이면 «팀과 같아요»가 아니다.
+     ps_last_pull_at 은 공간을 가리지 않아 이전 팀에서 받은 시각으로 «저장됨 · 1분 전»을 보여 줬다 */
+  var wiped=false; try{ wiped=typeof cacheWipedFlag==='function'&&cacheWipedFlag(); }catch(_){}
+  if(!(+m.last)||wiped)return fresh?{kind:'wait',reason:lastIssue.code,text:'아직 못 받았어요 · '+syncReasonText(lastIssue.code),n:0,review:0,at:lastIssue.at}:{kind:'wait',text:'받는 중',n:0,review:0};
   var at=0; try{ at=+localStorage.getItem('ps_last_pull_at')||0; }catch(_){} at=Math.max(at,+m.last||0);
   return {kind:'ok',text:'팀과 같아요',at:at,ago:at?agoText(at):'',n:0,review:0,rt:rtConnected(),rtAt:rtLast,rtHits:rtHits};
 
