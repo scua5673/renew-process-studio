@@ -7,6 +7,7 @@ export default {
   path: 'futsal/block-5/1-3-system-space-and-verticality.php',
   name: '1-3 시스템 — 넓게 서고 세로로 찌르기',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Jorge Braz',
   trainings: [
     {

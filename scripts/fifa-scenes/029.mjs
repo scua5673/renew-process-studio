@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/transition-to-defending/fast-recapture.php',
   name: '빠르게 다시 빼앗기 — 가장 가까운 사람이 먼저',
   focus: 'tr_def',
+  subs: ['std_dt_1'],
   by: 'Jacqueline Dünker',
   trainings: [
     {

@@ -6,6 +6,7 @@ export default {
   path: 'futsal/block-3/low-block-press.php',
   name: '낮은 블록 압박 — 측면 패스가 신호, 맨투맨으로 되찾기',
   focus: 'bpo',
+  subs: ['std_do_3'],
   by: 'Clàudia Pons',
   trainings: [
     {

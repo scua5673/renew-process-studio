@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/8-to-12/give-and-go.php',
   name: '주고 나가기 — 번호 순서 패스에서 넓은 문 5v5까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

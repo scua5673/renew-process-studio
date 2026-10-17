@@ -19,6 +19,7 @@ export default {
   path: 'futsal/block-6/close-range-finishing-and-quick-restarts.php',
   name: '가까운 슈팅과 빠른 재시작 — 막자마자 공격을 여는 골키퍼',
   focus: 'tr_att',
+  subs: ['std_at_1'],
   by: '',
   trainings: [
     {

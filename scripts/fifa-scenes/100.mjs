@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/experimenting-with-positional-freedom.php',
   name: '포지션을 자유롭게 — 목표 선수 점유에서 자리 바꾸는 9v9까지',
   focus: 'poss',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

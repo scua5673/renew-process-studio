@@ -10,6 +10,7 @@ export default {
   path: 'futsal/block-2/playing-into-the-pivot-in-the-final-third.php',
   name: '공격 지역에서 피보에게 넣기 — 3v2에서 피보와 연결해 마무리',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

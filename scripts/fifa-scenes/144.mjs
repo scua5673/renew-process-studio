@@ -9,6 +9,7 @@ export default {
   path: 'futsal/block-1/passing-to-keep-possession.php',
   name: '점유를 지키는 패스 — 아끼고, 열고, 서두르지 않기',
   focus: 'poss',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/8-to-12/towards-goal-as-a-team-and-alone.php',
   name: '골을 향해 — 혼자 제치는 1v1에서 도우미와 함께하는 3v3까지',
   focus: 'tech',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/sydney-fc-home.php',
   name: '경기 중심 훈련 방식 — 보너스 점수로 키우는 팀 색깔',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Sydney FC',
   trainings: [
     {

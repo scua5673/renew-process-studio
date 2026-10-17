@@ -21,6 +21,7 @@ export default {
   path: 'training-perspectives/session-design-tool/-simon-jennings.php',
   name: '선수 중심 세션 설계 — 압박 속에서 받기, 기술에서 경기까지',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Simon Jennings',
   trainings: [
     {

@@ -24,6 +24,7 @@ export default {
   path: 'futsal/block-5/4-0-system-creating-space-in-behind.php',
   name: '4-0 시스템 — 마크를 끌어내고 뒷공간으로',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/in-possession/creating-chances-and-finishing.php',
   name: '기회 만들기와 마무리 — 보이면 차고, 안 되면 만들어 주기',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: 'Jonas Urias',
   trainings: [
     {

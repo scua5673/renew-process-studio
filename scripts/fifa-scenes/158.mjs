@@ -6,6 +6,7 @@ export default {
   path: 'futsal/block-2/playing-out-from-the-back-under-pressure.php',
   name: '압박 속에서 뒤에서부터 풀어 나오기 — 넓이와 블록으로 피벗까지',
   focus: 'bp',
+  subs: ['std_ao_1'],
   by: '',
   trainings: [
     {

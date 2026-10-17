@@ -23,6 +23,7 @@ export default {
   path: 'futsal/block-2/creating-chances-in-the-final-third.php',
   name: '공격 지역에서 기회 만들기 — 피보를 거쳐 먼 골대로',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: 'José Venancio López',
   trainings: [
     {

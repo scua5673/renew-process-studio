@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/offensive-advantage.php',
   name: '공격 수적 우위 — 안팎 주고받기에서 중거리 슈팅 6v6까지',
   focus: 'tech',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

@@ -5,6 +5,7 @@ export default {
   path: 'grassroots/8-to-12/possession-versus-attacking.php',
   name: '점유 대 공격 — 지키는 팀과 넣는 팀',
   focus: 'tech',
+  subs: ['std_ao_2'],
   trainings: [
     {
       /* 1 — 3목 놀이: 출발선(x 240) → 3 × 3 칸(x 640~880 · y 250~490). 칸에 선 아이 = 그 팀의 표시(조끼 대신) */

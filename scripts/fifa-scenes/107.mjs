@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/wing-play.php',
   name: '측면 플레이 — 넷이 주고받기에서 양옆 통로 경기까지',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

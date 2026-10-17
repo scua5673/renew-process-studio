@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/transition-to-attacking/recognising-opportunities-for-attacking-transitions.php',
   name: '역습 기회 알아채기 — 론도에서 3v2 웨이브까지',
   focus: 'tr_att',
+  subs: ['std_at_1'],
   by: 'Nils Nielsen',
   trainings: [
     {
