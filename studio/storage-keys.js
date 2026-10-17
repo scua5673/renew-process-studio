@@ -11,7 +11,7 @@
   if(root)root.PSStorageKeys=api;
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
-  var SYNC={team:'팀과 동기화',personal:'개인 공간 기기끼리',member:'팀 · 사람별 문서',library:'보관함 표',board:'작전판 통로',blob:'큰 그림',device:'이 기기만'};
+  var SYNC={team:'팀과 동기화',personal:'개인 공간 기기끼리',member:'팀 · 사람별 문서',library:'보관함 표',board:'작전판 통로',pdoc:'개인 문서 통로(학습 기록 · 개인 게임모델)',blob:'큰 그림',device:'이 기기만'};
   var HOME={idb:'IndexedDB',ls:'localStorage'};
   var ROLE={data:'자료',recovery:'복구 사본',queue:'보낼 것 · 대기',draft:'작성 중 초안',pref:'화면 설정',seen:'안내 본 표시',session:'계정 · 공간 상태',cache:'다시 만들 수 있는 사본',diag:'진단 기록',probe:'저장 확인용 임시'};
   var ROWS=[
@@ -60,6 +60,8 @@
     /* ── 작전판 전용 통로(PSSync.boardLive · 개인 작전판) ── */
     ['cs_board_live_v1','board','idb','data','sync.js'],
     ['cs_private_board_v1','board','ls','data','sync.js'],
+    /* ── 3.080 개인 문서 통로(PSSync.learn · gmPersonal — 내 개인 공간의 키 하나씩). 학습 기록은 기기 사본 cs_learn_v1_<uid> 와 합쳐 맞춘다 ── */
+    ['cs_learn_sync_v1','pdoc','ls','data','sync.js'],
     /* ── 큰 그림 — ps_blob 로 따로 올린다 ── */
     ['ps_blob:','blob','ls','data','sync.js',{prefix:1}],
     /* ── 이 기기에만 — 서버로 가지 않는다 ── */
@@ -86,7 +88,7 @@
     ['cs_editor_work_v1','device','ls','draft','board.html'],
     ['cs_emblem','device','ls','pref','board.html'],
     ['cs_errlog_v1','device','ls','diag','storage.js'],
-    ['cs_gamemodel_personal_v1','device','idb','data','gamemodel.html',{mirror:1}],
+    ['cs_gamemodel_personal_v1','pdoc','idb','data','gamemodel.html',{mirror:1}],   /* 3.080 — 계정(개인 공간)의 같은 이름 키와 맞춘다(PSSync.gmPersonal) */
     ['cs_grass_m','device','ls','pref','board.html'],
     ['cs_hint_anchor_v1','device','ls','seen','board.html'],
     ['cs_hint_equipstamp_v1','device','ls','seen','board.html'],
@@ -98,7 +100,7 @@
     ['cs_lang','device','ls','pref','app.html'],
     ['cs_lastbk','device','ls','pref','app.html'],
     ['cs_layout','device','ls','pref','app.html'],
-    ['cs_learn_v1_','device','ls','data','learning.html',{prefix:1}],
+    ['cs_learn_v1_','pdoc','ls','data','learning.html',{prefix:1}],   /* 3.080 — 계정의 cs_learn_sync_v1 과 합쳐 맞춘다 */
     ['cs_lib_rev','device','ls','cache','sync.js'],
     ['cs_libdock_v1','device','ls','pref','board.html'],
     ['cs_match_trash_v1','device','ls','data','scout.html'],

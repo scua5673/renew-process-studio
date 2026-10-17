@@ -104,6 +104,13 @@ button.tb-row.done{background:var(--panel);border:1px solid var(--line)}
 .trybox .k{display:block;color:var(--acc-ink);margin-bottom:4px}
 .trybox ol{margin:0 0 8px 18px;padding:0;display:grid;gap:3px}
 .trybox .hint{margin:0 0 8px}
+.keepbox{margin-top:10px;padding-top:10px;border-top:1px dashed var(--acc)}
+.keepbox b{display:block;font-size:var(--t-4);margin-bottom:6px}
+.keeprow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.keeprow select,.keeprow input{border:1px solid var(--line2);border-radius:8px;padding:7px 9px;font:inherit;font-size:var(--t-4);background:var(--surface);color:var(--ink)}
+.keeprow input{flex:1;min-width:200px}
+.keepbox .pick{display:block;width:100%;text-align:left;border:1px solid var(--line2);border-radius:8px;padding:7px 10px;margin-bottom:6px;background:var(--surface);font-size:var(--t-4)}
+.keepbox .pick small{display:block;color:var(--faint);font-size:var(--t-2)}
 .shelf-row .toc-head{display:none}
 @media(max-width:760px){.door h3{font-size:18px}.mine{grid-template-columns:1fr 1fr}.shelf-row .toc-grid{grid-template-columns:1fr 1fr}
   /* 3.079 — 역할 고르기: 폰에서 다섯 장이 한 화면을 다 채웠다 → 두 줄 바둑판 */
@@ -260,7 +267,7 @@ body.fmdark{color-scheme:dark}
 <div class="bt"><button data-p="toc" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>오늘</button><button data-p="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c-1.6-1.3-3.6-2-6-2H3v13h3c2.4 0 4.4.7 6 2 1.6-1.3 3.6-2 6-2h3v-13h-3c-2.4 0-4.4.7-6 2z"/><path d="M12 6.5v13"/></svg>책</button><button data-p="cards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="14" height="11" rx="2"/><path d="M7.5 4.5h11a2 2 0 0 1 2 2v9"/></svg>카드</button></div>
 <div class="toast" id="toast"></div>
 <!-- 3.079 — 『축구를 배우는 법』(learn-mikl.js — 근거가 국내 지도자 매뉴얼, 국제표준 아님)은 학습에서 내렸다(사용자 «국제표준만»). 파일은 남겨 둔다 -->
-<script src="learn-studio.js?v=3.079"></script><!-- 3.079 — 『스튜디오로 배우는 코칭』(게임모델 · IDP · 훈련 만들기). 『게임모델 만드는 법』은 이 책 1장으로 들어왔다 -->
+<script src="learn-studio.js?v=3.080"></script><!-- 3.079 — 『스튜디오로 배우는 코칭』(게임모델 · IDP · 훈련 만들기). 『게임모델 만드는 법』은 이 책 1장으로 들어왔다 -->
 <script src="learn-futsal.js?v=2.659"></script><!-- 2.659 — 풋살을 배우는 법(같은 자료 모양, 3장 12절) -->
 <script src="learn-toc.js?v=2.659"></script><!-- 2.323 — 목차는 두 화면이 같은 파일을 읽는다 -->
 <script src="learn-curriculum.js"></script><!-- 2.342 — 역할 교과서 본문(90장 275절, 국제표준 재서술 2.010) -->
@@ -279,7 +286,50 @@ var KEY='cs_learn_v1_'+sessUid();
 var DEMO=/[?&]demo=1/.test(location.search);
 var S=load();
 function load(){try{var o=Object.assign({track:'coach',done:{},cards:{},ask:{},mc:{},now:null,dayOff:0,mix:{},role:null,cur:null},JSON.parse(localStorage.getItem(KEY)||'{}'));o.cur=o.cur||{done:{},quiz:{}};o.cur.done=o.cur.done||{};o.cur.quiz=o.cur.quiz||{};return o}catch(e){return {track:'coach',done:{},cards:{},ask:{},mc:{},now:null,dayOff:0,mix:{},role:null,cur:{done:{},quiz:{}}}}}
-function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+function save(){localStorage.setItem(KEY,JSON.stringify(S));learnSchedulePush();}
+/* ───────── 3.080 · 계정에 저장(사용자 «기록도 계정에 저장되게») ─────────
+   이 기기의 기록(cs_learn_v1_<uid>)은 그대로 쓰고, 내 개인 공간의 학습 기록(셸 PSSync.learn)과 맞춘다.
+   합치기는 «더 나아간 쪽»을 남긴다 — 맞힘 수는 큰 쪽, 카드는 단계가 높은 쪽, 적은 답은 비어 있지 않은 쪽(이 기기 먼저).
+   그래서 두 기기에서 따로 공부해도 어느 쪽 진도도 사라지지 않는다. 로그인 전 · 셸 밖에서는 이 기기에만 남는다. */
+var LSYNC={raw:null,cupd:null,uid:null,wid:null,t:0,busy:false,again:false};
+function learnApi(){ try{ var p=(window.parent&&window.parent!==window)?window.parent.PSSync:window.PSSync; return (p&&p.learn&&typeof p.learn.owner==='function'&&p.learn.owner())?p.learn:null; }catch(_){ return null; } }
+function lmPick(a,b){ return (a!=null&&a!=='')?a:b; }
+function mergeLearn(a,b){
+  a=a||{}; b=b||{}; var o=Object.assign({},b,a), k;
+  o.done={}; [b.done||{},a.done||{}].forEach(function(m){ for(k in m){ var x=m[k], y=o.done[k]; if(x&&(!y||(x.hits||0)>(y.hits||0)))o.done[k]=x; } });
+  o.cards={}; [b.cards||{},a.cards||{}].forEach(function(m){ for(k in m){ var x=m[k], y=o.cards[k]; if(x&&(!y||(x.stage||0)>(y.stage||0)||((x.stage||0)===(y.stage||0)&&(x.due||0)>=(y.due||0))))o.cards[k]=x; } });
+  ['ask','mc','mix'].forEach(function(f){ var m=Object.assign({},b[f]||{}); var la=a[f]||{}; for(k in la)m[k]=lmPick(la[k],m[k]); o[f]=m; });
+  var ca=a.cur||{}, cb=b.cur||{}; o.cur={done:Object.assign({},cb.done||{},ca.done||{}),quiz:Object.assign({},cb.quiz||{},ca.quiz||{})};
+  o.role=lmPick(a.role,b.role); o.now=lmPick(a.now,b.now); o.track=lmPick(a.track,b.track);
+  o.dayOff=a.dayOff||0;   /* 시험용 날짜 당기기는 기기에만 */
+  return o;
+}
+function learnSame(raw){ try{ return !!raw&&JSON.stringify(JSON.parse(raw).s)===JSON.stringify(S); }catch(_){ return false; } }
+function learnPull(then){
+  var api=learnApi(); if(!api){ if(then)then(false); return; }
+  api.get().then(function(r){
+    LSYNC.raw=r.raw; LSYNC.cupd=r.cupd; LSYNC.uid=r.uid; LSYNC.wid=r.wid;
+    if(r.raw){ var before=JSON.stringify(S); S=mergeLearn(S,JSON.parse(r.raw).s); localStorage.setItem(KEY,JSON.stringify(S)); if(JSON.stringify(S)!==before)render(); }
+    if(then)then(true); else if(!learnSame(LSYNC.raw))learnSchedulePush(400);
+  }).catch(function(){ if(then)then(false); });
+}
+function learnSchedulePush(ms){ clearTimeout(LSYNC.t); LSYNC.t=setTimeout(learnPush,ms==null?2000:ms); }
+function learnPush(retried){
+  var api=learnApi(); if(!api)return;
+  if(LSYNC.busy){ LSYNC.again=true; return; }
+  if(!LSYNC.uid){ learnPull(function(ok){ if(ok)learnPush(retried); }); return; }
+  if(learnSame(LSYNC.raw))return;
+  var raw=JSON.stringify({v:1,at:Date.now(),s:S});
+  LSYNC.busy=true;
+  api.save(raw,{uid:LSYNC.uid,wid:LSYNC.wid,expected_raw:LSYNC.raw,expected_cupd:LSYNC.cupd}).then(function(ack){
+    LSYNC.raw=ack.raw; LSYNC.cupd=ack.cupd;
+  }).catch(function(e){
+    /* 다른 기기가 먼저 썼다 → 다시 읽어 합치고 한 번만 더. 그 밖의 실패는 이 기기에 남아 다음 저장 때 다시 간다 */
+    if(e&&e.psCode==='sync_conflict'&&!retried){ LSYNC.busy=false; learnPull(function(ok){ if(ok)learnPush(true); }); return 'skip'; }
+    if(e&&e.psCode==='sync_workspace_changed'){ LSYNC.uid=null; }
+  }).then(function(x){ if(x==='skip')return; LSYNC.busy=false; if(LSYNC.again){ LSYNC.again=false; learnSchedulePush(400); } });
+}
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible')learnPull(); else if(!learnSame(LSYNC.raw))learnPush(); });
 function now(){return Date.now()+S.dayOff*86400000}
 var DAY=86400000, GAP=[3,7,21];
 /* ───────── 유틸 ───────── */
@@ -591,8 +641,47 @@ function tryHtml(s){
   var inShell=false; try{ inShell=window.parent&&window.parent!==window; }catch(_){}
   return '<div class="trybox"><span class="k">스튜디오에서 해보기</span><ol>'+(t.steps||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol>'
     +(t.note?'<div class="hint">'+esc(t.note)+'</div>':'')
-    +(inShell&&t.to?'<button type="button" class="btn" data-try="'+esc(t.to)+'">'+esc(t.label||'열기')+' →</button>':'')+'</div>';
+    +(inShell&&t.to?'<button type="button" class="btn" data-try="'+esc(t.to)+'">'+esc(t.label||'열기')+' →</button>':'')
+    +(inShell&&t.keep?keepHtml(t.keep):'')+(inShell&&t.drill?drillHtml():'')+'</div>';
 }
+/* 3.080 — 고리: 학습 → 내 게임모델(보관함 › 게임모델 · 개인 판) → 훈련 */
+var GM_MOMENTS=[['ao','공격 조직'],['do','수비 조직'],['dt','공격 → 수비 전환'],['at','수비 → 공격 전환'],['set','세트피스']];
+function keepHtml(k){
+  return '<div class="keepbox"><b>내 게임모델에 담기</b><div class="keeprow"><select id="keepM">'+GM_MOMENTS.map(function(m){ return '<option value="'+m[0]+'"'+(m[0]===k.moment?' selected':'')+'>'+esc(m[1])+'</option>'; }).join('')
+    +'</select><input id="keepT" maxlength="200" value="'+esc(k.text||'')+'" placeholder="원칙 한 줄 — 누가 · 언제 · 무엇을"></div>'
+    +'<div class="row"><button type="button" class="btn pri" data-keep="1">담기 →</button><span class="hint" style="margin:0">예시 문장을 우리 팀 말로 고쳐 담으세요</span></div></div>';
+}
+function myGameModel(){ try{ var m=JSON.parse(localStorage.getItem('cs_gamemodel_personal_v1')||'null'); if(m&&Array.isArray(m.moments)&&m.moments.length)return m; }catch(_){} return window.__gmRemote||null; }
+/* 3.080 — 이 기기에 개인 게임모델이 아직 없으면(새 기기) 계정의 것을 읽기만 해서 «내 원칙으로 훈련 만들기»에 쓴다. 쓰기는 게임모델 화면만 한다 */
+function gmRemoteFetch(){
+  try{ var loc=JSON.parse(localStorage.getItem('cs_gamemodel_personal_v1')||'null'); if(loc&&Array.isArray(loc.moments)&&loc.moments.length)return; }catch(_){}
+  try{ var p=(window.parent&&window.parent!==window)?window.parent.PSSync:null; if(!p||!p.gmPersonal||!p.gmPersonal.owner())return;
+    p.gmPersonal.get().then(function(r){ var d=r&&r.raw?JSON.parse(r.raw):null; if(d&&d.m&&Array.isArray(d.m.moments)){ window.__gmRemote=d.m; if(page==='book')render(); } }).catch(function(){}); }catch(_){}
+}
+function drillHtml(){
+  var gm=myGameModel(), rows=[];
+  if(gm)gm.moments.forEach(function(m){ (m.phases||[]).forEach(function(ph){ if(!ph||!ph.id)return;
+    var pr=''; (ph.principles||[]).some(function(x){ var t=String(typeof x==='string'?x:((x&&(x.t||x.text))||'')).trim(); if(t){pr=t;return true;} return false; });
+    if(pr)rows.push({id:ph.id,name:(m.name||'')+' › '+(ph.name||''),pr:pr}); }); });
+  if(!rows.length)return '<div class="keepbox"><b>내 원칙으로 훈련 만들기</b><div class="hint" style="margin:4px 0 0">내 게임모델에 아직 원칙이 없어요. 1장(게임모델)의 «내 게임모델에 담기»로 먼저 한 줄 담아 보세요.</div></div>';
+  return '<div class="keepbox"><b>내 원칙으로 훈련 만들기</b><div class="hint" style="margin:2px 0 6px">원칙을 고르면 훈련 설계가 열리고 제목 · 국면 · 코칭 포인트가 채워져요.</div>'
+    +rows.slice(0,8).map(function(r,i){ return '<button type="button" class="pick" data-mkdrill="'+i+'"><small>'+esc(r.name)+'</small>'+esc(r.pr)+'</button>'; }).join('')+'</div>';
+}
+document.addEventListener('click',function(e){
+  var b=e.target&&e.target.closest&&e.target.closest('[data-keep],[data-mkdrill]'); if(!b)return;
+  try{
+    if(b.hasAttribute('data-keep')){
+      var mk=($('#keepM')||{}).value||'ao', tx=String(($('#keepT')||{}).value||'').trim();
+      if(!tx){ toast('원칙 한 줄을 적어 주세요'); return; }
+      parent.postMessage({source:'learning',type:'gmAdd',momentKey:mk,text:tx},'*');
+    } else {
+      var gm=myGameModel(), rows=[];
+      if(gm)gm.moments.forEach(function(m){ (m.phases||[]).forEach(function(ph){ if(!ph||!ph.id)return; var pr=''; (ph.principles||[]).some(function(x){ var t=String(typeof x==='string'?x:((x&&(x.t||x.text))||'')).trim(); if(t){pr=t;return true;} return false; }); if(pr)rows.push({id:ph.id,name:(m.name||'')+' › '+(ph.name||''),pr:pr}); }); });
+      var r=rows[+b.getAttribute('data-mkdrill')]; if(!r)return;
+      parent.postMessage({source:'learning',type:'gmMakeDrill',phaseId:r.id,phaseName:r.name,principle:r.pr},'*');
+    }
+  }catch(_){ toast('앱 안에서 열어 주세요'); }
+});
 function renderSec(s){
   var st=bookState.step, a=S.ask, k=s.id;
   var ex=S.track==='player'?s.ex.slice().reverse():s.ex;
@@ -694,7 +783,7 @@ function renderCards(){
   h+='</div><div class="row" style="margin-top:18px"><button class="btn" id="resetAll">진행 전부 지우기</button></div>';
   $('#p-cards').innerHTML=h;
   $$('#p-cards [data-cf]').forEach(function(b){b.onclick=function(){cardFilter=b.dataset.cf;render()}});
-  $('#resetAll').onclick=function(){if(confirm('이 기기의 학습 기록을 지울까요?')){localStorage.removeItem(KEY);S=load();bookState={view:'toc',sec:null,step:0,mixI:0};render();toast('지웠습니다')}};
+  $('#resetAll').onclick=function(){if(confirm('학습 기록을 모두 지울까요? 로그인했다면 계정에 저장된 기록도 지워집니다.')){localStorage.removeItem(KEY);S=load();bookState={view:'toc',sec:null,step:0,mixI:0};render();learnSchedulePush(0);toast('지웠습니다')}};   /* 3.080 — 계정 기록도 빈 기록으로 덮는다(합치지 않고) */
 }
 /* ───────── 공통 ───────── */
 function render(){
@@ -721,11 +810,12 @@ function render(){
    ⚠ 순서가 곧 규칙이다 — 셸은 `learnHome` 을 먼저, `openLearnArea` 를 나중에 보낸다(나중 것이 이긴다). */
 window.addEventListener('message',function(e){
   var d=e.data||{};
-  if(d.type==='learnHome'){ if(page!=='toc')go('toc'); else render(); }
+  if(d.type==='learnHome'){ if(page!=='toc')go('toc'); else render(); learnPull(); }   /* 3.080 — 학습 탭을 열 때마다 계정 기록과 맞춘다 */
   /* ⚠ 2.411 — 예전엔 `mikl` 하나만 받았다. 학습이 두 권이 됐으니 **받은 갈래의 책**을 연다. */
   else if(d.type==='openLearnArea'&&(BOOKS[d.area]||d.area==='gmhow')){ BOOK=BOOKS[d.area]||BOOKS.studio; bookState.view='toc'; go('book'); }   /* 3.079 — gmhow(게임모델 «학습에서 보기») 는 새 책 1장으로 */
 });
 render();
+setTimeout(function(){ learnPull(); gmRemoteFetch(); },300);   /* 3.080 — 계정의 학습 기록을 받아 합친다 · 새 기기면 개인 게임모델도 읽어 둔다 */
 /* 3.079 — 고른 역할의 교재는 첫 화면이 뜬 뒤에 미리 받아 둔다(절을 누를 때 기다리지 않게) */
 if(S.role)setTimeout(function(){ ensureRoleBook(S.role); },600);
 </script>
