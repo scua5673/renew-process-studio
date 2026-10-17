@@ -147,6 +147,8 @@
     ['ps_admin_support_reply_v1:','device','ls','draft','admin-support.js',{prefix:1}],
     ['ps_anim_export_fit_v1','device','ls','pref','board.html'],
     ['ps_anim_export_scope_v1','device','ls','pref','board.html'],
+    ['ps_anim_export_cap_v1','device','ls','pref','board-tweaks.js'],   // 3.085 여러 페이지 영상 — 페이지 이름 자막 넣기 · 빼기
+    ['ps_anim_speed_all_v1','device','ls','pref','board-tweaks.js'],   // 3.085 속도를 모든 장면에 같이(«전체»)
     ['ps_app_settings_tab_v1','device','ls','pref','app.html'],
     ['ps_auto_snap_idx_v1','device','ls','recovery','sync.js',{of:'*'}],
     ['ps_autosave_arch_seen_v1','device','ls','seen','app.html'],
@@ -168,6 +170,7 @@
     ['ps_comm_elmiha_v1','device','ls','cache','community.html'],
     ['ps_comm_feed_cache_v1','device','ls','cache','community.html'],
     ['ps_comm_handle','device','ls','pref','community.html'],
+    ['ps_comm_look_v1','device','ls','pref','board-comm-look.js'],   /* 3.087 — 커뮤니티 뷰어 «보기»(평면 · 3D · 선수 모양 · board-comm-look.js) */
     ['ps_comm_proc_index_v1','device','ls','cache','community.html'],
     ['ps_comm_tab_v1','device','ls','pref','community.html'],
     ['ps_count_scale','device','ls','pref','sync.js'],

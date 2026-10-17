@@ -26,6 +26,9 @@ try{
     // 2.939 — 폰에는 띠도, 원래 떠 있던 저장·보관함 버튼도 보이지 않는다(사용자 «배치·보관함·보드 저장은 안 보이게»)
     assert.equal(fresh.shown,false,'폰에는 저장 띠가 없다');assert.equal(edited.shown,false,'손대도 띠가 나오지 않는다');
     assert.equal(fresh.manual,'none','떠 있던 보드 저장 버튼도 숨는다');assert.equal(fresh.vault,'none','보관함 저장 버튼도 숨는다');
+    // 3.039 의 폰 빈 판 안내(«보관함 열기»)는 판이 채워지면 다음 프레임(또는 1.5초 점검)에 걷힌다 — 걷힐 때까지 기다린 뒤 잰다.
+    // 3.086 CI: 느린 WebKit 에서 선수를 놓자마자 재서 아직 남아 있던 안내 단추를 잡았다. 끝내 안 걷히면 아래 단언이 잡는다.
+    await f.waitForFunction(()=>!document.getElementById('psPhoneHint'),null,{timeout:4000}).catch(()=>{});
     const visible=await f.evaluate(()=>[...document.querySelectorAll('button')].filter(b=>b.getBoundingClientRect().width>0&&getComputedStyle(b).visibility!=='hidden'&&/^(배치|보관함|보드 저장|저장)/.test(b.textContent.trim())).map(b=>b.textContent.trim()));
     assert.deepEqual(visible,[],'«배치·보관함·보드 저장» 이름의 버튼이 화면에 없다');
     // 띠가 없으니 애니메이션 막대가 켜져도 띠 몫(58px)을 따로 비우지 않는다

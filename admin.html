@@ -7,6 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>PROCESS STUDIO · 관리자</title>
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b">
 <style>
   :root{
     --bg:#0F141B; --panel:#1A212B; --panel2:#232C38; --line:#2C3744; --line2:#39434F;
@@ -17,11 +18,11 @@
   :focus-visible{outline:2px solid #3a6df0;outline-offset:2px}
   html{color-scheme:dark;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
-    font-family:-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
+    font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
     -webkit-font-smoothing:antialiased;font-size:14px;}
   a{color:var(--blue2);text-decoration:none;}
   button{font-family:inherit;cursor:pointer;}
-  /* 3.084 — 따로 꾸미지 않은 선택 상자가 브라우저 기본 흰 상자로 떠서 어두운 화면에서 튀었다(오류 · 사용 방식 · 활동 분석) */
+  /* 3.088 — 따로 꾸미지 않은 선택 상자가 브라우저 기본 흰 상자로 떠서 어두운 화면에서 튀었다(오류 · 사용 방식 · 활동 분석) */
   select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:0 8px;font-family:inherit;}
   .hide{display:none!important;}
   /* ── 관리자 앱 셸: 목업과 같은 좌측 내비게이션 + 넓은 작업영역 ── */
@@ -80,7 +81,7 @@
     font-weight:800;font-size:14px;margin-top:10px;}
   .btn-kakao{background:#FEE500;color:#181600;}
   .btn-google{background:#fff;color:#1f232b;}
-  .uidbox{margin-top:16px;font:600 12px/1.5 ui-monospace,Menlo,monospace;color:var(--dim);
+  .uidbox{margin-top:16px;font:600 12px/1.5 Pretendard,ui-monospace,Menlo,monospace;color:var(--dim);
     background:var(--panel2);border:1px dashed var(--line2);border-radius:10px;padding:11px;word-break:break-all;user-select:all;}
 
   /* ── 헤더 ── */
@@ -180,13 +181,13 @@
   .health-detail-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px}
   .health-detail-head div{min-width:0;flex:1}.health-detail-head b{display:block;font-size:12px}.health-detail-head span{display:block;margin-top:2px;color:var(--dim);font-size:10px;line-height:1.5}
   .health-detail table{min-width:610px}.health-detail th,.health-detail td{padding:8px 6px;font-size:10px}
-  .health-detail code{font:650 10px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ef9eaa;word-break:break-word}
+  .health-detail code{font:650 10px/1.35 Pretendard,ui-monospace,SFMono-Regular,Menlo,monospace;color:#ef9eaa;word-break:break-word}
   .err-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:12px}
   .err-kpi{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
   .err-kpi b{display:block;font-size:20px}.err-kpi span{display:block;margin-top:3px;color:var(--dim);font-size:10px}
-  .err-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:rgba(224,86,102,.12);color:#ef9eaa;font:750 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .err-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:rgba(224,86,102,.12);color:#ef9eaa;font:750 10px/1 Pretendard,ui-monospace,SFMono-Regular,Menlo,monospace}
   .err-msg{max-width:460px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim);font-size:10px}
-  .err-meta{font:600 10px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim2);word-break:break-word}
+  .err-meta{font:600 10px/1.45 Pretendard,ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim2);word-break:break-word}
   .err-title{font-weight:800;font-size:12px;color:var(--txt);line-height:1.35}
   .err-cause{margin-top:4px;color:var(--dim);font-size:10px;line-height:1.45;max-width:520px}
   .err-fix{margin-top:5px;color:#b9c9e4;font-size:10px;line-height:1.5;max-width:360px}
@@ -274,8 +275,8 @@
 <link rel="stylesheet" href="studio/admin-operations.css?v=2.816">
 <link rel="stylesheet" href="studio/admin-support.css?v=20261014">
 <link rel="stylesheet" href="studio/admin-content.css?v=2.890">
-<link rel="stylesheet" href="studio/admin-density.css?v=3.084">
-<link rel="stylesheet" href="studio/admin-today.css?v=3.084">
+<link rel="stylesheet" href="studio/admin-density.css?v=3.088">
+<link rel="stylesheet" href="studio/admin-today.css?v=3.088">
 </head>
 <body>
 
@@ -401,7 +402,7 @@
 
   <!-- 홈 — 모든 데이터 한눈에: 7일 지표 · IDP 퍼널 · 팀 활성/침묵 · 기능 사용 · 최근 가입 -->
   <div class="wrap hide" id="viewHome">
-    <!-- 3.084 — 오늘 확인할 일 한 줄(studio/admin-today.js): 제보 · 신고 · 앱 오류 · 후속 기한 · 무사고 -->
+    <!-- 3.088 — 오늘 확인할 일 한 줄(studio/admin-today.js): 제보 · 신고 · 앱 오류 · 후속 기한 · 무사고 -->
     <section class="admin-today" id="adminToday" aria-label="오늘 확인할 일"></section>
     <div class="col">
       <div class="panel">
@@ -606,8 +607,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="studio/admin-user-detail.js?v=2.964"></script>
-<script src="studio/admin-operations.js?v=3.084"></script>
-<script src="studio/admin-today.js?v=3.084"></script>
+<script src="studio/admin-operations.js?v=3.088"></script>
+<script src="studio/admin-today.js?v=3.088"></script>
 <script src="studio/admin-actions.js?v=20261014"></script>
 <script src="studio/admin-community.js?v=20261014"></script>
 <script src="studio/support-diagnostics.js?v=2.816"></script>
@@ -762,7 +763,7 @@ function refreshSupportBadge(){
   var epoch=adminAuthEpoch;todaySet('support',undefined);
   adminRpc('ps_support_list',{p_limit:1}).then(function(r){if(!adminSessionLocked&&epoch===adminAuthEpoch)setSupportCounts(r&&r.is_admin===true?r.counts:null);}).catch(function(){if(epoch===adminAuthEpoch)todaySet('support',null);});
 }
-/* 3.084 — 운영 홈 «오늘 확인할 일» 한 줄. 숫자는 위 배지 · 운영 상태 · 홈 집계가 받는 값을 그대로 쓴다 */
+/* 3.088 — 운영 홈 «오늘 확인할 일» 한 줄. 숫자는 위 배지 · 운영 상태 · 홈 집계가 받는 값을 그대로 쓴다 */
 var adminToday=null;
 function todayInit(){ if(!adminToday&&window.PSAdminToday&&$('adminToday'))adminToday=PSAdminToday.create({host:$('adminToday'),go:todayGo,reload:todayReload}); return adminToday; }
 function todaySet(k,v){ if(todayInit())adminToday.set(k,v); }
@@ -880,7 +881,7 @@ function consumeHash(){
 }
 
 /* ===== 유틸 ===== */
-/* 3.084 — 예전 안내는 «supabase-admin.sql 을 다시 실행»이었다. 그 파일들은 운영과 달라 기준본(migrations/00000000_baseline.sql)으로 바뀌었다 —
+/* 3.088 — 예전 안내는 «supabase-admin.sql 을 다시 실행»이었다. 그 파일들은 운영과 달라 기준본(migrations/00000000_baseline.sql)으로 바뀌었다 —
    응답하지 않은 함수 이름을 대고, 권한 · 연결부터 보게 한다. */
 function fnMiss(fn){ return '<span class="muted"><code>'+fn+'</code> 응답 없음 — 관리자 권한 · 연결을 먼저 확인하고, 그래도 안 되면 운영 DB 에 이 함수가 있는지 기준본(migrations/00000000_baseline.sql)과 견주세요.</span>'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -945,7 +946,7 @@ function reloadAll(){
   if(curTab==='support'){loadAdminSupport();return;}
   if(curTab==='comm'){loadComm();return;}
   refreshSupportBadge();refreshCommBadge();loadTodayIncident();
-  todaySet('overdue',undefined);   /* 3.084 — 아래 loadAdminOps 가 곧 채운다(홈이 먼저 열려 한 번 더 부르지 않게) */
+  todaySet('overdue',undefined);   /* 3.088 — 아래 loadAdminOps 가 곧 채운다(홈이 먼저 열려 한 번 더 부르지 않게) */
   var libTicket=++adminLibraryTicket,reloadTicket=++adminReloadTicket,epoch=adminAuthEpoch;
   if(adminContent)adminContent.deactivate();
   $('wsList').innerHTML='<div class="loading">불러오는 중…</div>';
@@ -2120,7 +2121,7 @@ function wsIdpPane(rows){
   var started=players.filter(function(r){return !!r.idp_updated_at;}).length;
   var reval=players.filter(function(r){return !!r.needs_reval;}).length;
   var h='<div class="sec-t">현재 평가표</div><div class="kv"><span class="k">활성표</span><span>'+(mode==='fifa'?'PROCESS 기본 평가표':mode==='team'?'팀 평가표':'설정 없음')+'</span>'
-    +'<span class="k">항목</span><span>'+attrs+'개</span><span class="k">세트 ID</span><span style="font:600 10px ui-monospace,Menlo,monospace;word-break:break-all">'+esc(first.active_set_id||'—')+'</span></div>'
+    +'<span class="k">항목</span><span>'+attrs+'개</span><span class="k">세트 ID</span><span style="font:600 10px Pretendard,ui-monospace,Menlo,monospace;word-break:break-all">'+esc(first.active_set_id||'—')+'</span></div>'
     +'<div class="eval-kpis"><div class="eval-kpi"><b>'+linked+'/'+players.length+'</b><span>계정–선수 연결</span></div>'
     +'<div class="eval-kpi"><b>'+started+'/'+players.length+'</b><span>IDP 시작</span></div>'
     +'<div class="eval-kpi"><b>'+reval+'</b><span>새 표 재평가 필요</span></div></div>';
@@ -2137,7 +2138,7 @@ function wsIdpPane(rows){
   return h;
 }
 function wsSettingsPane(w){
-  var base='<div class="kv"><span class="k">워크스페이스 ID</span><span style="font:600 11px ui-monospace,Menlo,monospace">'+esc(w.id||'—')+'</span>'
+  var base='<div class="kv"><span class="k">워크스페이스 ID</span><span style="font:600 11px Pretendard,ui-monospace,Menlo,monospace">'+esc(w.id||'—')+'</span>'
     +'<span class="k">종류</span><span>'+(w.kind==='personal'?'개인':'팀')+'</span><span class="k">소유자</span><span>'+esc(adminOwnerInfo(w).label)+'</span><span class="k">생성일</span><span>'+fmtDate(w.created_at)+'</span></div>';
   if(w.kind!=='team')return base;
   return base+'<div class="ws-danger"><b>위험 작업</b><p>워크스페이스 삭제는 소속 훈련·멤버·데이터에 영향을 줍니다. 일반 운영 정보와 분리해 두었습니다.</p><button class="rowbtn danger" data-admin-act="del-ws" data-wid="'+esc(w.id)+'">워크스페이스 삭제</button></div>';
@@ -2200,7 +2201,7 @@ function userTeamsCell(u){
 function userSubLine(u){
   var parts=[];
   var nm=(u.name||'').trim();
-  if(u.email){ if(nm&&u.email!==nm)parts.push(u.email); }   /* 3.084 — 이름이 없으면 윗줄이 이미 이메일이다(두 번 나오던 것) */
+  if(u.email){ if(nm&&u.email!==nm)parts.push(u.email); }   /* 3.088 — 이름이 없으면 윗줄이 이미 이메일이다(두 번 나오던 것) */
   else if(Array.isArray(u.teams)) parts.push('이메일 없음');
   if(u.provider) parts.push((ADMIN_PROVIDER[u.provider]||u.provider)+' 로그인');
   if(u.account_name&&u.member_name&&u.account_name!==u.member_name) parts.push('계정 이름 '+u.account_name);
@@ -2222,7 +2223,7 @@ function renderUsers(){
     +(hasV2?'<th>만든 수</th>':'<th>워크스페이스</th><th>훈련</th>')+'</tr>';
   var rows=list.map(function(u){
     return '<tr><td class="nm"><button type="button" class="admin-user-open" data-admin-user="'+esc(u.user_id)+'">'+esc(userLabel(u))+'</button>'
-      +'<div class="muted" style="font:600 11px ui-monospace,Menlo,monospace">'+esc(userSubLine(u))+'</div></td>'
+      +'<div class="muted" style="font:600 11px Pretendard,ui-monospace,Menlo,monospace">'+esc(userSubLine(u))+'</div></td>'
       +'<td>'+userTeamsCell(u)+'</td>'
       +'<td class="muted">'+fmtDate(u.created_at)+'</td>'
       +'<td class="muted">'+fmtDateT(u.last_sign_in_at)+'</td>'
@@ -2520,9 +2521,9 @@ function snapPreview(snap){
     if(!/^#[0-9a-f]{3,8}$/i.test(String(fill)))fill='#f2c94c';
     out+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="14" fill="'+fill+'" stroke="#fff" stroke-width="2"/>';
     var nm=txt(p.num).trim();
-    if(nm)out+='<text x="'+x.toFixed(1)+'" y="'+(y+4.5).toFixed(1)+'" text-anchor="middle" font-family="sans-serif" font-size="12.5" font-weight="800" fill="'+(dark(fill)?'#fff':'#16213a')+'">'+nm+'</text>';
+    if(nm)out+='<text x="'+x.toFixed(1)+'" y="'+(y+4.5).toFixed(1)+'" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12.5" font-weight="800" fill="'+(dark(fill)?'#fff':'#16213a')+'">'+nm+'</text>';
     var pn=txt(p.name).trim();
-    if(pn)out+='<text x="'+x.toFixed(1)+'" y="'+(y+31).toFixed(1)+'" text-anchor="middle" font-family="sans-serif" font-size="11.5" font-weight="700" fill="#fff" stroke="rgba(10,16,28,.75)" stroke-width="3" paint-order="stroke">'+pn+'</text>';
+    if(pn)out+='<text x="'+x.toFixed(1)+'" y="'+(y+31).toFixed(1)+'" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11.5" font-weight="700" fill="#fff" stroke="rgba(10,16,28,.75)" stroke-width="3" paint-order="stroke">'+pn+'</text>';
   });
   if(ball)out+='<circle cx="'+((+ball.x||0)*sx).toFixed(1)+'" cy="'+((+ball.y||0)*sy).toFixed(1)+'" r="7" fill="#fff" stroke="#111" stroke-width="2"/>';
   return out+'</svg>';
@@ -2581,7 +2582,7 @@ function preview(wid,lidEnc){ var lid=decodeURIComponent(lidEnc);
       +'<span class="k">장면 수</span><span>'+(sc.s||0)+'</span>'
       +'<span class="k">폴더</span><span>'+esc(meta.folder||'—')+'</span>'
       +'<span class="k">수정</span><span>'+fmtDateT(meta.updated_at)+'</span>'
-      +'<span class="k">lib_id</span><span style="font:600 11px ui-monospace,Menlo,monospace">'+esc(lid)+'</span>'
+      +'<span class="k">lib_id</span><span style="font:600 11px Pretendard,ui-monospace,Menlo,monospace">'+esc(lid)+'</span>'
       +'</div>'
       +'<details><summary class="muted" style="cursor:pointer;font-size:12px;margin-top:6px">원본 데이터(JSON)</summary>'
       +'<pre class="json">'+esc(shorten(item))+'</pre></details>';
