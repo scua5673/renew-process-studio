@@ -13791,6 +13791,7 @@ function __commTiltOff(){ try{ window.__commWantOrient=null; var b=document.getE
   if(window.__commTilt){ window.__commTilt=false; if(document.body.classList.contains("bc-tilt3d")&&window.__setTilt)window.__setTilt(false,{transient:true,quiet:true}); } }catch(_){} }
 window.__commView=function(post, editMode){
   editMode=false; // Published community material is edited only after copying to the personal library.
+  try{ if(window.top&&window.top.__psBootStage)window.top.__psBootStage('cmView'); }catch(_){}   /* 3.070 — 강제 종료 위치 기록 */
   /* ══ 2.575 · 드러내기는 **한 번**, 방향은 **고정** ═══════════════════════════════════
      2.568 은 120ms 타이머가 애니 글에도 그대로 돌아 340ms 재측정 중간에 벗겨졌고, 감춤 규칙 자체도 죽어 있었다.
      애니 글은 마지막 재측정(320ms) 뒤 420ms, 없는 글은 160ms 에 html.comm-boot·body.comm-settling 을 같이 벗긴다.
