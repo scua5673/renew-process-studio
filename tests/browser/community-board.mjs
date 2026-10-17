@@ -175,6 +175,16 @@ try{
   v=await viewer();L=await look(v);
   assert.deepEqual([L.nums,L.frames,L.play],['6',3,true],'둘째 슬라이드의 판과 장면');
   await page.waitForTimeout(500);await shot('4-viewer-meeting');
+  // 3.087 — 사용자 «커뮤니티에 있는 것들 보관함으로 가져오면 페이지 전부 가져오게»: 미팅 자료도 어느 슬라이드를 보고 있든 슬라이드 전부를 담는다
+  await v.click('#commCopyBtn');
+  let mSaved=null;
+  for(let i=0;i<60&&!mSaved;i++){
+    mSaved=await c.evaluate(async id=>{ const r=await window.storage.get('cs_drill_lib_v1'); const lib=r?JSON.parse(r.value):[];
+      const d=(Array.isArray(lib)?lib:[]).find(d=>d&&d.srcComm&&d.srcComm.id===id);
+      return d?{type:d.type,slides:(d.slides||[]).map(x=>[x.title,(x.frames||[]).length])}:null; },posted.id);
+    if(!mSaved)await page.waitForTimeout(100);
+  }
+  assert.deepEqual(mSaved,{type:'meeting',slides:[['빌드업 원칙',0],['',3]]},'담은 미팅 자료도 슬라이드 둘 · 장면까지');
   await c.click('#cvClose');
 
   // 7) 3.076 — 코치 자료 칸의 올리기: 커뮤니티 고르개와 같은 주제 · 연령, 고른 훈련의 성격 · 판 위 선수 수로 미리 채움
