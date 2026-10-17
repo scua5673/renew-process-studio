@@ -27,7 +27,7 @@
   function create(opts){
     var host=document.getElementById('viewHome'),gen=0,state={reports:null,followups:null},section;
     if(!host)return {load:function(){return Promise.resolve();}};
-    section=document.createElement('section');section.className='admin-ops';section.setAttribute('aria-label','운영 확인');var today=host.querySelector('.admin-today');host.insertBefore(section,today?today.nextSibling:host.firstChild);   /* 3.083 — 제목은 «오늘 확인할 일» 한 줄(admin-today.js)이 맡는다 */
+    section=document.createElement('section');section.className='admin-ops';section.setAttribute('aria-label','운영 확인');var today=host.querySelector('.admin-today');host.insertBefore(section,today?today.nextSibling:host.firstChild);   /* 3.084 — 제목은 «오늘 확인할 일» 한 줄(admin-today.js)이 맡는다 */
     function userName(uid){var u=(opts.users()||[]).find(function(x){return x.user_id===uid;});return u?(u.name||u.email||'사용자'):'사용자 상세';}
     function workspaceName(wid){var w=(opts.workspaces()||[]).find(function(x){return x.id===wid;});return w?(w.name||'이름 없는 공간'):'공간 확인 필요';}
     function button(uid,label){return UUID.test(uid||'')?'<button type="button" class="admin-op-link" data-op-user="'+esc(uid)+'">'+esc(label||userName(uid))+' ↗</button>':esc(label||'사용자 미확인');}
