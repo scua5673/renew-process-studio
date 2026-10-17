@@ -154,6 +154,12 @@
   // wide. The default size is unchanged and every step still changes the chip (×1.25 step → ×1.12 chip). So the
   // chip's radius is pitch × CHIP_BASE × √(unit / ref), reached through the geometric mean of unit and ref.
   function chipSize(opts) {
+    // 3.070 — «실제 비율»: the token is already drawn at its real size (opts.real), so the chip is not enlarged.
+    // The name keeps the size it has on an ordinary board (opts.nameUnit = that board's token scale) so it stays readable.
+    if (opts && opts.real && +opts.unit > 0) {
+      var nu = +opts.nameUnit > 0 ? +opts.nameUnit : +opts.unit, base = chipSize({ unit: nu, ref: opts.ref, pitch: opts.pitch });
+      return { k: 1, font: Math.round(base.font * base.k * nu / +opts.unit * 100) / 100 };
+    }
     var unit = opts && +opts.unit > 0 ? +opts.unit : 1, pitch = opts && +opts.pitch > 0 ? +opts.pitch : 0;
     var ref = opts && +opts.ref > 0 ? +opts.ref : unit, mid = Math.sqrt(ref * unit);
     var k = Math.min(3.2, Math.max(CHIP_SCALE, pitch * CHIP_BASE / (CHIP_R * mid)));
@@ -164,6 +170,7 @@
   }
   // The name sits above the chip — and above a shaper's beak when the beak points up, so it never hides the heading.
   function nameY(kind, h, font, dir) {
+    if (kind === 'person') return Math.round((-PERSON_H - 6 - font * .4) * 10) / 10;
     var top = kind === 'shirt' ? 20 : CHIP_R;
     if (kind === 'shaper') top = Math.max(top, -BEAK * Math.sin((+dir || 0) * Math.PI / 180) + 2);
     return Math.round((-h - top - 4 - font * .4) * 10) / 10;
@@ -175,10 +182,50 @@
     var ph = font * 1.5, r = function (n) { return String(Math.round(n * 10) / 10); };
     return { x: r(-w / 2), y: r(y - font * .36 - ph / 2), width: r(w), height: r(ph) };
   }
-  // opts.shape = 'shirt' | 'circle' | 'shaper' (the board's player shape), opts.dir = shaper heading in chip degrees.
+  // 3.070 — «사람» (user: «3D 모드로 실제 사람처럼»): a standing player in the team's kit, feet on the token's spot.
+  // Drawn upright like the chips' height (screen up), so the tilted board makes it stand on the grass.
+  // Token units with 1 m = 84 (the flat disc, 42 wide, is a body 0.5 m wide): 1.8 m tall.
+  var PERSON_M = 84, PERSON_H = 151;
+  var SKIN = '#c8987a', HAIR = '#2b221d', BOOT = '#15181d', LINE = 'rgba(10,14,22,.55)';
+  function personFigure(doc, fill, stroke, label) {
+    var solid = /^#[0-9a-f]{3,6}$/i.test(String(fill || '').trim()) ? fill : (/^#[0-9a-f]{3,6}$/i.test(String(stroke || '').trim()) ? stroke : '#3a6df0');
+    var shorts = shade(solid, .38) || '#1d2128', sock = solid;
+    var fig = node(doc, 'g', { 'class': 'ps-person' });
+    function part(d, color, edge, parent) {
+      var p = node(doc, 'path', { d: d, fill: color, stroke: LINE, 'stroke-width': '1', 'stroke-linejoin': 'round' });
+      (parent || fig).appendChild(p);
+      if (edge) (parent || fig).appendChild(node(doc, 'path', { d: d, fill: 'url(#psChipEdge)', 'pointer-events': 'none' }));
+    }
+    // One side of the body; the other side is the same group mirrored.
+    function limbs(parent) {
+      part('M-10.5 -6L-11.5 -41L-3 -41L-3.5 -6Z', sock, true, parent);                 // sock and shin
+      part('M-11.5 -41L-12 -57L-2.5 -57L-3 -41Z', SKIN, false, parent);                  // knee
+      parent.appendChild(node(doc, 'rect', { x: -12.5, y: -7, width: 10, height: 7.5, rx: 2.6, fill: BOOT }));   // boot
+      part('M-19 -122L-26.5 -106L-19.5 -102.5L-15.5 -112Z', fill, true, parent);         // sleeve
+      part('M-26.5 -106L-27.8 -84L-22.6 -84L-19.5 -103Z', SKIN, false, parent);          // forearm
+      parent.appendChild(node(doc, 'circle', { cx: -25.2, cy: -82, r: 3.3, fill: SKIN, stroke: LINE, 'stroke-width': '.8' }));
+    }
+    var left = node(doc, 'g'), right = node(doc, 'g', { transform: 'scale(-1,1)' });
+    limbs(left); limbs(right); fig.appendChild(left); fig.appendChild(right);
+    part('M-15 -88L15 -88L16.5 -58L1.6 -56L0 -66L-1.6 -56L-16.5 -58Z', shorts, true);   // shorts
+    fig.appendChild(node(doc, 'rect', { x: -3.6, y: -130, width: 7.2, height: 10, fill: SKIN }));   // neck
+    part('M-19 -122Q0 -126.5 19 -122L17 -100L15.5 -86Q0 -83.5 -15.5 -86L-17 -100Z', fill, true);   // shirt
+    fig.appendChild(node(doc, 'path', { d: 'M-5.5 -124L0 -117.5L5.5 -124', fill: 'none', stroke: stroke || LINE, 'stroke-width': '1.6', 'stroke-linejoin': 'round' }));   // collar
+    fig.appendChild(node(doc, 'ellipse', { cx: 0, cy: -138, rx: 9, ry: 10.5, fill: SKIN, stroke: LINE, 'stroke-width': '1' }));   // head
+    fig.appendChild(node(doc, 'path', { d: 'M-9.2 -137Q-10.5 -150.5 0 -150.8Q10.5 -150.5 9.2 -137Q6.5 -144.5 0 -145Q-6.5 -144.5 -9.2 -137Z', fill: HAIR }));
+    var text = label && label.textContent;
+    if (text) {
+      var n = label.cloneNode(true), len = String(text).length;
+      n.setAttribute('x', '0'); n.setAttribute('y', '-104'); n.setAttribute('pointer-events', 'none');
+      n.setAttribute('font-size', len >= 3 ? '9' : (len === 2 ? '12' : '14'));
+      fig.appendChild(n);
+    }
+    return fig;
+  }
+  // opts.shape = 'shirt' | 'circle' | 'shaper' | 'person' (the board's player shape), opts.dir = shaper heading in chip degrees.
   function applyChip(token, item, opts) {
     var doc = token.ownerDocument; chipDefs(doc);
-    var size = chipSize(opts), kind = opts && (opts.shape === 'shirt' || opts.shape === 'shaper') ? opts.shape : 'circle';
+    var size = chipSize(opts), kind = opts && (opts.shape === 'shirt' || opts.shape === 'shaper' || opts.shape === 'person') ? opts.shape : 'circle';
     var face = node(doc, 'g', { 'class': 'ps-depth-face' }), original = node(doc, 'g', { 'class': 'ps-depth-original', display: 'none' });
     while (token.firstChild) original.appendChild(token.firstChild);
     var shape = original.querySelector('.tok-c'), label = original.querySelector('text');
@@ -190,6 +237,17 @@
     // Floodlights on four corner masts: four faint shadows in an X plus a contact shadow, as on a lit pitch.
     // Flat fills, not gradients: Safari repaints every chip on each drag frame and radial gradients made that slow.
     // 3.029 — the light follows the board's mood (opts.mood): night = the four masts, day = one short shadow under a high sun, dusk = one long shadow.
+    if (kind === 'person') {
+      var mood = opts && opts.mood;
+      // A standing player: a contact shadow at the feet and a cast shadow on the grass that follows the light.
+      if (mood === 'day') body.appendChild(node(doc, 'ellipse', { cx: 4, cy: 2, rx: 17, ry: 6.5, fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
+      else if (mood === 'dusk') body.appendChild(node(doc, 'path', { d: 'M-8 1L-10 -4L95 -14L100 -6L94 4Z', fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
+      else [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(function (o) {
+        body.appendChild(node(doc, 'path', { d: 'M-7 0L7 0L' + (o[0] * 38 + 6) + ' ' + (o[1] * 26) + 'L' + (o[0] * 38 - 6) + ' ' + (o[1] * 26) + 'Z', fill: '#000', 'fill-opacity': '.11', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
+      });
+      body.appendChild(node(doc, 'ellipse', { cx: 0, cy: 0, rx: 15, ry: 5.5, fill: '#000', 'fill-opacity': '.34', 'pointer-events': 'none' }));
+      body.appendChild(personFigure(doc, fill, stroke, label));
+    } else {
     var mood = opts && opts.mood;
     if (mood === 'day') body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 3, rx: R + 2, ry: R * .8, fill: '#000', 'fill-opacity': '.22', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
     else if (mood === 'dusk') body.appendChild(node(doc, 'ellipse', { cx: R * 1.1, cy: 3, rx: R * 2.1, ry: R * .62, fill: '#000', 'fill-opacity': '.3', 'pointer-events': 'none', 'class': 'ps-chip-shadow', transform: 'rotate(12)' }));
@@ -222,6 +280,7 @@
     var text = label && label.textContent;
     if (text) { var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('pointer-events', 'none'); lid.appendChild(n); }
     body.appendChild(lid);
+    }
     if (item.name) {
       // opts.nameK = the board's name size (0.8 · 1 · 1.25); opts.nameStyle 'pill' puts the name on a dark pill, otherwise an outlined name.
       var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1), str = String(item.name).toUpperCase(), y0 = nameY(kind, h, font, opts && opts.dir);
@@ -234,7 +293,8 @@
     }
     face.appendChild(original); face.appendChild(body);
     original.querySelectorAll('.tok-hit,.tok-lock').forEach(function (n) { face.appendChild(n.cloneNode(true)); });
-    token.appendChild(face); token.setAttribute('data-depth', String(h)); token.setAttribute('data-depth-chip', String(size.k));
+    token.appendChild(face); token.setAttribute('data-depth', String(kind === 'person' ? PERSON_H : h)); token.setAttribute('data-depth-chip', String(size.k));
+    if (kind === 'person') token.setAttribute('data-depth-person', '1');
   }
   // A shaper turns without a rebuild: its heading follows the ball or the rotate handle.
   function turnChip(token, deg) {
@@ -259,6 +319,7 @@
     token.removeAttribute('data-depth');
     token.removeAttribute('data-depth-equipment');
     token.removeAttribute('data-depth-chip');
+    token.removeAttribute('data-depth-person');
   }
   function flattenAll(svg) {
     svg.querySelectorAll('.token[data-depth]').forEach(flatten);
@@ -311,5 +372,5 @@
       side.setAttribute('transform', 'translate(' + offset.x + ',' + offset.y + ')');
     });
   }
-  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, flatten: flatten, flattenAll: flattenAll, elevation: elevation, chipSize: chipSize, turnChip: turnChip };
+  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, flatten: flatten, flattenAll: flattenAll, elevation: elevation, chipSize: chipSize, turnChip: turnChip, PERSON_M: PERSON_M, PERSON_H: PERSON_H };
 });

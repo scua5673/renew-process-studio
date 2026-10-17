@@ -3456,6 +3456,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
               <button data-s="shirt">유니폼</button>
               <button data-s="circle">원형</button>
               <button data-s="shaper">쉐이퍼</button>
+              <button data-s="person" title="평면은 상반신, 3D 에서는 유니폼을 입고 서 있는 선수">사람</button>
             </div>
           </div>
           <div class="menurow"><span class="menulbl">전술 그리드</span><div class="seg" id="zonePreset">
@@ -3516,6 +3517,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
           <div class="menurow"><span class="menulbl">그리드</span><div class="seg" id="gridSeg"><button data-g="off">끄기</button><button data-g="lanes">5레인</button><button data-g="grid">격자</button><button data-g="zone20">20존</button><button data-g="thirds">삼등분</button><button data-g="fthird">파이널 써드</button><button data-g="grid15" class="on">15존</button></div></div>
 <!-- 압박선·세트피스 행 제거 -->
 	          <div class="menurow"><span class="menulbl">크기</span><div class="group" id="sizeGroup"><button class="btn" id="allDown">－</button><button class="btn" id="allUp">＋</button><button class="btn" id="allReset" title="토큰 크기 기본값으로">기본</button></div></div>
+	          <div class="menurow"><span class="menulbl">비율</span><div class="seg" id="realScaleSeg" role="group" aria-label="운동장과 토큰 비율"><button type="button" data-rs="0" class="on" aria-pressed="true" title="잘 보이게 키운 토큰">보기 좋게</button><button type="button" data-rs="1" aria-pressed="false" title="선수·공을 운동장과 똑같은 실제 비율로(선수 몸 폭 0.5m · 키 1.8m · 공 지름 22cm)">실제 비율</button></div></div><!-- 3.070 -->
 	          <!-- 2.459 — '배치 고정' 행 삭제(사용자). state.boardLocked 저장값은 그대로 읽힌다(6188) — 켜 둔 채 지워진 사람이 잠기지 않게 아래 init 에서 풀어 준다 -->
         </div>
       </div>
@@ -5015,13 +5017,27 @@ function _rotHandleOnTop(){ try{ var h=world&&world.querySelector("#rotHandle");
    보기 전용 뷰어는 편집기 축소(×0.68)를 쓰지 않고, 폰 폭(≤600)에서는 한 번 더 키운다. 저장된 크기(tokenScale)는 바꾸지 않는다 — 그리는 배율만. */
 var COMM_PHONE_TOK=1.6;
 function commViewTok(){ try{ if(!document.body.classList.contains("comm-viewing")||window.__psThumbNoEd)return 0; return (window.innerWidth<=600||psBoardDevice()==="phone")?COMM_PHONE_TOK:1; }catch(_){ return 0; } }
-function tokenTransform(p){const _cv=commViewTok();const _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;const s=(p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p);
+/* ══ 3.070 · 실제 비율(사용자 «실제운동장과 토큰 비율을 실제와 똑같은 것») ══
+   선수 토큰의 원(r 21, 지름 42)을 몸 폭 0.5m 로 — 1m = 84 토큰 단위(3D 의 서 있는 선수는 키 1.8m). 공은 지름 22cm(공 그림의 원 r ≈ 13.2).
+   운동장 1m 가 몇 단위인지(mppNow)로 바로 정하므로 «크기 ＋ －»·선수별 크기·기기·편집기 배율은 따르지 않는다. 장비(콘·골대 등)는 그대로.
+   이름표는 평소 보드의 크기로 남긴다(실제 크기면 글자가 점이 된다). */
+var REAL_TOK_M=84, REAL_BALL_R=28*113/240;
+function _realScaleOn(){ return window.__realScale===true; }
+function _realTokS(p){ if(!_realScaleOn()||!p)return 0; var m=mppNow();
+  if(p.team==="ball")return m*0.11/REAL_BALL_R;
+  if(p.team==="img"||equipKey(p.team))return 0;
+  return m/REAL_TOK_M; }
+function _normTokS(p){const _cv=commViewTok();const _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p);}
+/* 이름표·링을 평소 크기로 두는 배수(실제 비율일 때만 1 보다 크다) */
+function _realBoost(p){ var r=_realTokS(p); if(!r)return 1; var n=_normTokS(p); return n>r?n/r:1; }
+function tokenTransform(p){const s=_realTokS(p)||_normTokS(p);   /* 3.070 — 실제 비율 · 평소 배율은 _normTokS 한 곳 */
   /* 세로 피치의 부모 world 회전과 반대 방향으로 토큰을 보정해 숫자·유니폼을 항상 정방향 유지.
      spFlip=true(골대 위)는 부모가 +90°이므로 -90°, 골대 아래는 부모가 -90°이므로 +90°. */
   const _upright=(state.orientation==="v")?(state.spFlip?-90:90):0;
   return `translate(${p.x},${p.y})`+(_upright?` rotate(${_upright})`:"")+(p.rot?` rotate(${p.rot})`:"")+(s!==1?` scale(${s})`:"");}
 const SHIRT_D="M -8 -20 C -10.5 -20 -13.8 -19.3 -16.5 -18.2 L -23 -14.3 L -19.3 -4.6 L -14.6 -7.2 L -14.6 16.5 Q -14.6 20.5 -10.6 20.5 L 10.6 20.5 Q 14.6 20.5 14.6 16.5 L 14.6 -7.2 L 19.3 -4.6 L 23 -14.3 L 16.5 -18.2 C 13.8 -19.3 10.5 -20 8 -20 Q 0 -12.6 -8 -20 Z";
 const SHIRT_ACC="M -7.5 -19.6 Q 0 -12.6 7.5 -19.6 M -22.2 -13.6 L -18.9 -5.2 M 22.2 -13.6 L 18.9 -5.2";
+const PERSON_BUST_D="M -19 21 L -19 9 Q -19 -1.5 -9 -2.5 L 9 -2.5 Q 19 -1.5 19 9 L 19 21 Q 19 23 17 23 L -17 23 Q -19 23 -19 21 Z";   /* 3.070 — «사람»의 평면 모양(상반신 몸통 · 머리는 원) */
 /* ══ 2.929 · 보드 설정은 보드마다 ═══════════════════════════════════════════════
    사용자 «훈련이든 작전판이든 보드 설정이 각각 — 쉐이퍼·등번호를 한 보드에서 바꿔도 다른 저장분엔 안 번지게».
    ① 겉모습 설정(LOOK)은 스냅에 들어간다 — 저장 항목·페이지·훈련이 저마다 갖는다(captureSnap/loadSnap).
@@ -5034,7 +5050,7 @@ const SHIRT_ACC="M -7.5 -19.6 Q 0 -12.6 7.5 -19.6 M -22.2 -13.6 L -18.9 -5.2 M 2
    ③ 애니메이션 장면·편집기 장면은 한 보드다 — 장면을 바꾸기 전·저장 직전에 지금 설정을 모든 장면에 맞춘다(lookStampScenes).
    ⚠ 기기 설정으로 남는 것: 끌기 자석·보드 보기(평면/3D)·정렬 간격 — 보드가 아니라 «내가 일하는 방식»이다.
    ⚠ 함수 선언만 둔다(호이스팅) — 4327·4740 의 부팅 초기값이 이 블록보다 먼저 실행된다. */
-function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle"];}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
+function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle","realScale"];}   /* 3.070 realScale — 운동장과 토큰을 실제 비율로 */   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
 function _lookLegacy(){
   if(_lookLegacy._v)return _lookLegacy._v;
   var v=null; try{ v=JSON.parse(localStorage.getItem("cs_board_lookdef_v1")||"null"); }catch(_){ v=null; }
@@ -5056,11 +5072,11 @@ function _lookDefSnap(){ var raw=null; try{ raw=localStorage.getItem("cs_board_d
   if(raw!==_lookDefSnap._raw){ _lookDefSnap._raw=raw; _lookDefSnap._v=null; try{ var d=raw?JSON.parse(raw):null; _lookDefSnap._v=(d&&(d.snap||d))||null; }catch(_){} }
   return _lookDefSnap._v; }
 function _lookCode(k){ switch(k){ case "tokShape":return "circle"; case "label":return "num"; case "lines":return true; case "gridType":return "grid15";
-  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; case "namePos":return "below"; case "nameSize":return "m"; case "nameStyle":return "auto"; } return null; }
+  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; case "namePos":return "below"; case "nameSize":return "m"; case "nameStyle":return "auto"; case "realScale":return false; } return null; }
 function _lookOk(k,v){ if(v===undefined||v===null)return false;
-  switch(k){ case "tokShape":return v==="shirt"||v==="circle"||v==="shaper";
+  switch(k){ case "tokShape":return v==="shirt"||v==="circle"||v==="shaper"||v==="person";
     case "label":case "gridType":case "trainGridM":return typeof v==="string";
-    case "lines":case "chip3d":return typeof v==="boolean";
+    case "lines":case "chip3d":case "realScale":return typeof v==="boolean";
     case "tokenScale":return +v>0; case "grassM":return typeof v==="number"&&isFinite(v)&&v>=0;
     case "ballStyle":try{ return !!BALL_SVG_INNER[v]; }catch(_){ return typeof v==="string"; }
     case "grassTone":return typeof v==="string"&&/^(d|0|l|ll)\|(v|0|p|pp)$/.test(v);
@@ -5086,6 +5102,7 @@ function lookNow(){ var o={};
   o.grassTone=window.__grassTone;   /* 2.978 */
   o.namePos=window.__namePos;   /* 3.009 — 이름표 위치 */
   o.nameSize=window.__nameSize; o.nameStyle=window.__nameStyle;   /* 3.010 — 이름표 크기·모양 */
+  o.realScale=(window.__realScale===true);   /* 3.070 */
   var r={}; lookKeys().forEach(function(k){ r[k]=_lookOk(k,o[k])?o[k]:lookDefault(k); }); r.tokV=2; return r; }   /* 2.977 — 이 판부터의 크기(저장·장면 맞추기에 같이 실린다) */
 /* 스냅의 설정 — 없는 칸은 기본값(지금 화면 아님) */
 function lookOf(sn){ var r={}; lookKeys().forEach(function(k){ var v=sn?sn[k]:undefined; if(k==="tokenScale"&&_lookOk(k,v))v=_tokMig(v,sn); r[k]=_lookOk(k,v)?v:lookDefault(k); }); return r; }
@@ -5100,6 +5117,7 @@ function lookApply(o){ var ch={};
   if((window.__grassTone||"0|0")!==o.grassTone){ window.__grassTone=o.grassTone; ch.tone=true; }
   window.__namePos=o.namePos;   /* 3.009 */
   window.__nameSize=o.nameSize; window.__nameStyle=o.nameStyle;   /* 3.010 */
+  window.__realScale=(o.realScale===true);   /* 3.070 */
   return ch; }
 function lookRebuild(ch){ ch=ch||{};
   try{ if(ch.train&&document.documentElement.dataset.pitch==="train"){ buildPitch(); renderTokens(); renderDrawings(); updateDelUI(); }
@@ -5110,6 +5128,7 @@ function lookSyncUI(){
   try{ window.__syncChip3dSeg&&window.__syncChip3dSeg(); }catch(_){}
   try{ window.__syncNamePosSeg&&window.__syncNamePosSeg(); }catch(_){}   /* 3.009 */
   try{ window.__syncNameLookSeg&&window.__syncNameLookSeg(); }catch(_){}   /* 3.010 */
+  try{ window.__syncRealScaleSeg&&window.__syncRealScaleSeg(); }catch(_){}   /* 3.070 */
   try{ window.__syncStageUI&&window.__syncStageUI(); }catch(_){}
   try{ window.__syncTrainGridSeg&&window.__syncTrainGridSeg(); }catch(_){}
   try{ window.__syncGrassToneUI&&window.__syncGrassToneUI(); }catch(_){}
@@ -5130,7 +5149,8 @@ window.__lookStampScenes=function(){ lookStampScenes(); };   /* 3.017 — 페이
 let tokShape=(function(){try{return lookDefault("tokShape");}catch(_){return "circle";}})();   /* 2.459 기본=원형 · 2.929 — 보드마다(이 값은 부팅 직후의 기본값일 뿐) */
 try{window.__trainGridM=lookDefault("trainGridM");}catch(_){window.__trainGridM="def";}
 try{window.__grassTone=lookDefault("grassTone");}catch(_){window.__grassTone="0|0";}   /* 2.978 */
-function setTokShape(v){if(v!=="shirt"&&v!=="circle"&&v!=="shaper")return;_lookFreeze();tokShape=v;try{boardSaveLive();}catch(_){}}   /* 2.929 — 기기에 안 쓴다(이 보드에만) */
+try{window.__realScale=(lookDefault("realScale")===true);}catch(_){window.__realScale=false;}   /* 3.070 */
+function setTokShape(v){if(v!=="shirt"&&v!=="circle"&&v!=="shaper"&&v!=="person")return;_lookFreeze();tokShape=v;try{boardSaveLive();}catch(_){}}   /* 2.929 — 기기에 안 쓴다(이 보드에만) */
 const EQUIP_TYPES=["cone","marker","goalH","minigoal","ball","dummy","pole","ladder","hurdle","minihurdle"];   /* 2.672 — 허들(사용자). 아이콘·이름은 이미 있었고 줄에만 없었다 */
 const EQUIP_COL_DEF={cone:"#ff6a00",marker:"#e23b3b",pole:"#d4a017",ladder:"#d4a017",dummy:"#d4a017",flag:"#d4a017",hurdle:"#e23b3b",minihurdle:"#d4a017",dome:"#21a3c9",tire:"#30343c"};
 var BALL_SVG_INNER={"1970": "<defs><radialGradient id=\"b70spc\" cx=\"32%\" cy=\"25%\" r=\"46%\"><stop offset=\"0%\" stop-color=\"#fff\" stop-opacity=\"0.5\"></stop><stop offset=\"60%\" stop-color=\"#fff\" stop-opacity=\"0.07\"></stop><stop offset=\"100%\" stop-color=\"#fff\" stop-opacity=\"0\"></stop></radialGradient><radialGradient id=\"b70vg\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"68%\" stop-color=\"#000\" stop-opacity=\"0\"></stop><stop offset=\"100%\" stop-color=\"#000\" stop-opacity=\"0.40\"></stop></radialGradient><clipPath id=\"b70cl\"><circle cx=\"120\" cy=\"120\" r=\"113\"></circle></clipPath></defs><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"#cfd3da\"></circle><g clip-path=\"url(#b70cl)\"><polygon points=\"8.55,101.54 14.38,127.72 22.09,170.40 21.01,170.59 12.64,128.03\" fill=\"#2b2d33\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"21.01,170.59 22.09,170.40 51.99,196.70 80.82,223.20 79.74,223.39 49.84,197.09\" fill=\"#a1a3a8\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"80.22,16.61 81.30,16.42 47.12,42.60 24.91,58.98 45.37,42.91\" fill=\"#3f434b\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"120.84,223.20 159.78,223.39 158.70,223.58 118.68,223.58 79.74,223.39 80.82,223.20\" fill=\"#a1a3a8\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"159.18,16.80 160.26,16.61 121.32,16.42 81.30,16.42 80.22,16.61 119.16,16.80\" fill=\"#ebeced\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"194.63,197.09 215.09,181.02 192.88,197.40 158.70,223.58 159.78,223.39\" fill=\"#1c1e22\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"190.16,42.91 160.26,16.61 159.18,16.80 188.01,43.30 217.91,69.60 218.99,69.41\" fill=\"#b4b6ba\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"218.99,69.41 217.91,69.60 225.62,112.28 231.45,138.46 227.36,111.97\" fill=\"#1c1e22\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"49.47,69.41 45.37,42.91 24.91,58.98 8.55,101.54 12.64,128.03 33.10,111.97\" fill=\"#ffffff\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"231.45,138.46 225.62,112.28 203.41,128.65 187.05,171.21 192.88,197.40 215.09,181.02\" fill=\"#a1a3a8\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"70.30,181.02 49.84,197.09 79.74,223.39 118.68,223.58 112.85,197.40\" fill=\"#1c1e22\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"159.18,16.80 119.16,16.80 123.26,43.30 165.81,59.67 188.01,43.30\" fill=\"#3d4149\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"33.10,111.97 12.64,128.03 21.01,170.59 49.84,197.09 70.30,181.02 61.93,138.46\" fill=\"#e0e1e2\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"119.16,16.80 80.22,16.61 45.37,42.91 49.47,69.41 88.41,69.60 123.26,43.30\" fill=\"#ffffff\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"158.70,223.58 192.88,197.40 187.05,171.21 147.03,171.21 112.85,197.40 118.68,223.58\" fill=\"#a1a3a8\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"217.91,69.60 188.01,43.30 165.81,59.67 173.51,102.35 203.41,128.65 225.62,112.28\" fill=\"#c1c3c6\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"88.41,69.60 49.47,69.41 33.10,111.97 61.93,138.46 96.11,112.28\" fill=\"#40444c\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"203.41,128.65 173.51,102.35 138.66,128.65 147.03,171.21 187.05,171.21\" fill=\"#272a2f\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"138.66,128.65 96.11,112.28 61.93,138.46 70.30,181.02 112.85,197.40 147.03,171.21\" fill=\"#dcdddf\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><polygon points=\"165.81,59.67 123.26,43.30 88.41,69.60 96.11,112.28 138.66,128.65 173.51,102.35\" fill=\"#ffffff\" stroke=\"#15171c\" stroke-width=\"1\" stroke-linejoin=\"round\"></polygon><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"url(#b70vg)\"></circle><ellipse cx=\"90\" cy=\"78\" rx=\"58\" ry=\"46\" fill=\"url(#b70spc)\"></ellipse></g><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"none\" stroke=\"rgba(0,0,0,0.28)\" stroke-width=\"2\"></circle>", "1998": "<defs><radialGradient id=\"b98spc\" cx=\"32%\" cy=\"25%\" r=\"46%\"><stop offset=\"0%\" stop-color=\"#fff\" stop-opacity=\"0.55\"/><stop offset=\"60%\" stop-color=\"#fff\" stop-opacity=\"0.07\"/><stop offset=\"100%\" stop-color=\"#fff\" stop-opacity=\"0\"/></radialGradient><radialGradient id=\"b98vg\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"68%\" stop-color=\"#000\" stop-opacity=\"0\"/><stop offset=\"100%\" stop-color=\"#000\" stop-opacity=\"0.40\"/></radialGradient><clipPath id=\"b98cl\"><circle cx=\"120\" cy=\"120\" r=\"113\"/></clipPath></defs><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"#eef0f4\"/><g clip-path=\"url(#b98cl)\"><circle cx=\"120.0\" cy=\"120.0\" r=\"30\" fill=\"none\" stroke=\"#1e3a8c\" stroke-width=\"5\"/><circle cx=\"120.0\" cy=\"64.0\" r=\"30\" fill=\"none\" stroke=\"#1e3a8c\" stroke-width=\"5\"/><circle cx=\"168.5\" cy=\"92.0\" r=\"30\" fill=\"none\" stroke=\"#1e3a8c\" stroke-width=\"5\"/><circle cx=\"168.5\" cy=\"148.0\" r=\"30\" fill=\"none\" stroke=\"#1e3a8c\" stroke-width=\"5\"/><circle cx=\"120.0\" cy=\"176.0\" r=\"30\" fill=\"none\" stroke=\"#1e3a8c\" stroke-width=\"5\"/><circle cx=\"71.5\" cy=\"148.0\" r=\"30\" fill=\"none\" stroke=\"#1e3a8c\" stroke-width=\"5\"/><circle cx=\"71.5\" cy=\"92.0\" r=\"30\" fill=\"none\" stroke=\"#1e3a8c\" stroke-width=\"5\"/><path d=\"M 99.3 112.5 A 22 22 0 0 1 140.7 112.5\" fill=\"none\" stroke=\"#cf1130\" stroke-width=\"5\" stroke-linecap=\"round\"/><path d=\"M 99.3 56.5 A 22 22 0 0 1 140.7 56.5\" fill=\"none\" stroke=\"#cf1130\" stroke-width=\"5\" stroke-linecap=\"round\"/><path d=\"M 147.8 140.5 A 22 22 0 0 1 189.2 140.5\" fill=\"none\" stroke=\"#cf1130\" stroke-width=\"5\" stroke-linecap=\"round\"/><path d=\"M 50.8 140.5 A 22 22 0 0 1 92.2 140.5\" fill=\"none\" stroke=\"#cf1130\" stroke-width=\"5\" stroke-linecap=\"round\"/><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"url(#b98vg)\" clip-path=\"url(#b98cl)\"/><ellipse cx=\"90\" cy=\"78\" rx=\"58\" ry=\"46\" fill=\"url(#b98spc)\" clip-path=\"url(#b98cl)\"/></g><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"none\" stroke=\"rgba(0,0,0,0.28)\" stroke-width=\"2\"/>", "2014": "<defs><radialGradient id=\"b14spc\" cx=\"32%\" cy=\"25%\" r=\"46%\"><stop offset=\"0%\" stop-color=\"#fff\" stop-opacity=\"0.55\"/><stop offset=\"60%\" stop-color=\"#fff\" stop-opacity=\"0.07\"/><stop offset=\"100%\" stop-color=\"#fff\" stop-opacity=\"0\"/></radialGradient><radialGradient id=\"b14vg\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"68%\" stop-color=\"#000\" stop-opacity=\"0\"/><stop offset=\"100%\" stop-color=\"#000\" stop-opacity=\"0.40\"/></radialGradient><clipPath id=\"b14cl\"><circle cx=\"120\" cy=\"120\" r=\"113\"/></clipPath></defs><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"#eef0f2\"/><g clip-path=\"url(#b14cl)\"><path d=\"M 120 120 Q 144.0 74.0 120.0 28.0 Q 96.0 74.0 120 120 Z\" fill=\"#f0c419\"/><path d=\"M 120 120 Q 171.2 128.6 207.5 91.6 Q 156.3 83.0 120 120 Z\" fill=\"#1f9d57\"/><path d=\"M 120 120 Q 127.6 171.3 174.1 194.4 Q 166.5 143.1 120 120 Z\" fill=\"#1f74c0\"/><path d=\"M 120 120 Q 73.5 143.1 65.9 194.4 Q 112.4 171.3 120 120 Z\" fill=\"#c0392b\"/><path d=\"M 120 120 Q 83.7 83.0 32.5 91.6 Q 68.8 128.6 120 120 Z\" fill=\"#f0c419\"/><circle cx=\"60\" cy=\"80\" r=\"2.6\" fill=\"#aeb3bb\"/><circle cx=\"170\" cy=\"65\" r=\"2.6\" fill=\"#aeb3bb\"/><circle cx=\"190\" cy=\"150\" r=\"2.6\" fill=\"#aeb3bb\"/><circle cx=\"80\" cy=\"175\" r=\"2.6\" fill=\"#aeb3bb\"/><circle cx=\"140\" cy=\"190\" r=\"2.6\" fill=\"#aeb3bb\"/><circle cx=\"50\" cy=\"135\" r=\"2.6\" fill=\"#aeb3bb\"/><circle cx=\"165\" cy=\"180\" r=\"2.6\" fill=\"#aeb3bb\"/><circle cx=\"100\" cy=\"55\" r=\"2.6\" fill=\"#aeb3bb\"/><circle cx=\"120\" cy=\"120\" r=\"22\" fill=\"#15171c\"/><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"url(#b14vg)\" clip-path=\"url(#b14cl)\"/><ellipse cx=\"90\" cy=\"78\" rx=\"58\" ry=\"46\" fill=\"url(#b14spc)\" clip-path=\"url(#b14cl)\"/></g><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"none\" stroke=\"rgba(0,0,0,0.28)\" stroke-width=\"2\"/>", "2022": "<defs><radialGradient id=\"b22spc\" cx=\"32%\" cy=\"25%\" r=\"46%\"><stop offset=\"0%\" stop-color=\"#fff\" stop-opacity=\"0.55\"/><stop offset=\"60%\" stop-color=\"#fff\" stop-opacity=\"0.07\"/><stop offset=\"100%\" stop-color=\"#fff\" stop-opacity=\"0\"/></radialGradient><radialGradient id=\"b22vg\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"68%\" stop-color=\"#000\" stop-opacity=\"0\"/><stop offset=\"100%\" stop-color=\"#000\" stop-opacity=\"0.40\"/></radialGradient><clipPath id=\"b22cl\"><circle cx=\"120\" cy=\"120\" r=\"113\"/></clipPath></defs><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"#dfe2e7\"/><g clip-path=\"url(#b22cl)\"><path d=\"M 120 120 L 81.4 13.8 A 113 113 0 0 1 158.6 13.8 Z\" fill=\"#16a39a\"/><path d=\"M 120 120 L 158.6 13.8 A 113 113 0 0 1 229.6 92.7 Z\" fill=\"#c84a6e\"/><path d=\"M 120 120 L 26.3 183.2 A 113 113 0 0 1 26.3 56.8 Z\" fill=\"#5e3aa8\"/><path d=\"M 120 120 L 11.4 88.9 A 113 113 0 0 1 81.4 13.8 Z\" fill=\"#d99a2b\"/><line x1=\"120\" y1=\"120\" x2=\"120.0\" y2=\"7.0\" stroke=\"#aeb3bb\" stroke-width=\"2\" opacity=\"0.7\"/><line x1=\"120\" y1=\"120\" x2=\"192.6\" y2=\"33.4\" stroke=\"#aeb3bb\" stroke-width=\"2\" opacity=\"0.7\"/><line x1=\"120\" y1=\"120\" x2=\"231.3\" y2=\"100.4\" stroke=\"#aeb3bb\" stroke-width=\"2\" opacity=\"0.7\"/><line x1=\"120\" y1=\"120\" x2=\"217.9\" y2=\"176.5\" stroke=\"#aeb3bb\" stroke-width=\"2\" opacity=\"0.7\"/><line x1=\"120\" y1=\"120\" x2=\"158.6\" y2=\"226.2\" stroke=\"#aeb3bb\" stroke-width=\"2\" opacity=\"0.7\"/><line x1=\"120\" y1=\"120\" x2=\"81.4\" y2=\"226.2\" stroke=\"#aeb3bb\" stroke-width=\"2\" opacity=\"0.7\"/><line x1=\"120\" y1=\"120\" x2=\"22.1\" y2=\"176.5\" stroke=\"#aeb3bb\" stroke-width=\"2\" opacity=\"0.7\"/><line x1=\"120\" y1=\"120\" x2=\"8.7\" y2=\"100.4\" stroke=\"#aeb3bb\" stroke-width=\"2\" opacity=\"0.7\"/><line x1=\"120\" y1=\"120\" x2=\"47.4\" y2=\"33.4\" stroke=\"#aeb3bb\" stroke-width=\"2\" opacity=\"0.7\"/><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"url(#b22vg)\" clip-path=\"url(#b22cl)\"/><ellipse cx=\"90\" cy=\"78\" rx=\"58\" ry=\"46\" fill=\"url(#b22spc)\" clip-path=\"url(#b22cl)\"/></g><circle cx=\"120\" cy=\"120\" r=\"113\" fill=\"none\" stroke=\"rgba(0,0,0,0.28)\" stroke-width=\"2\"/>",
@@ -5320,6 +5340,11 @@ function makeToken(p,kind){
       const im=el("image",{x:-20,y:-20,width:40,height:40,preserveAspectRatio:"xMidYMid slice","clip-path":"url(#"+cid+")"});
       im.setAttribute("href",p.img);g.appendChild(im);
       g.appendChild(el("circle",{r:21,fill:"none",stroke:col,"stroke-width":3}));
+    }else if(tokShape==="person"&&!p.shaper){
+      /* 3.070 — «사람»: 평면은 상반신(머리 + 어깨, 번호는 가슴). 3D 에서는 board-token-depth.js 가 서 있는 선수로 그린다 */
+      g.appendChild(el("circle",{r:23,fill:"transparent"}));
+      g.appendChild(el("path",{d:PERSON_BUST_D,fill:fillC,stroke:strokeC,"stroke-width":2.2,"stroke-linejoin":"round","class":"tok-c"}));
+      g.appendChild(el("circle",{cx:0,cy:-11.5,r:8.5,fill:fillC,stroke:strokeC,"stroke-width":2.2}));
     }else if(tokShape==="shirt"&&!p.coach&&!p.shaper){
       g.appendChild(el("circle",{r:23,fill:"transparent"}));
       g.appendChild(el("path",{d:SHIRT_D,fill:fillC,stroke:strokeC,"stroke-width":2.2,"stroke-linejoin":"round","class":"tok-c"}));
@@ -5334,9 +5359,10 @@ function makeToken(p,kind){
     const _customLab=!!(_numLab&&/[^0-9]/.test(_numLab));
     const lab=(p.hideLabel||p.img)?"":(p.coach?"C":((state.label==="none")?"":(_customLab?_numLab:((isPosLabel())?(p.pos||_numLab):_numLab))));
     const ls=(""+lab).length;
-    const _sh=(tokShape==="shirt"&&!p.coach&&!p.shaper);
-    const t=el("text",{x:0,y:_sh?2.5:0,"text-anchor":"middle","dominant-baseline":"central",fill:txtc,
-      "font-size":p.coach?"19":(_sh?(ls>=3?"13":(ls===2?"16":"19")):(ls>=3?"15":(ls===2?"18":"22"))),"font-weight":"800","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif"});
+    const _sh=(tokShape==="shirt"&&!p.coach&&!p.shaper)||(tokShape==="person"&&!p.shaper&&!p.img);
+    const _bust=(tokShape==="person"&&!p.shaper&&!p.img);
+    const t=el("text",{x:0,y:_bust?10.5:(_sh?2.5:0),"text-anchor":"middle","dominant-baseline":"central",fill:txtc,
+      "font-size":_bust?(ls>=3?"11":(ls===2?"14":"16")):(p.coach?"19":(_sh?(ls>=3?"13":(ls===2?"16":"19")):(ls>=3?"15":(ls===2?"18":"22")))),"font-weight":"800","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif"});
     /* 2.683 — 유니폼 색이 무엇이든 번호·포지션이 읽히게: 글자색 밝기에 따라 반대색 테두리(사용자 "번호나 포지션이 다 잘 보이게") */
     if(lab){ var _lumT=1; try{ var _c=String(txtc||""); if(_c[0]==="#"){ var _v=_c.slice(1); if(_v.length===3)_v=_v.split("").map(function(x){return x+x;}).join(""); var _n=parseInt(_v,16); if(!isNaN(_n))_lumT=(0.2126*((_n>>16)&255)+0.7152*((_n>>8)&255)+0.0722*(_n&255))/255; } }catch(_){}
       t.setAttribute("stroke",_lumT>0.5?"rgba(0,0,0,.5)":"rgba(255,255,255,.6)");t.setAttribute("stroke-width",striped?"0.9":"0.8");t.setAttribute("paint-order","stroke");t.setAttribute("stroke-linejoin","round"); }
@@ -5349,6 +5375,9 @@ function makeToken(p,kind){
         "font-size":String(Math.round(18*_nk*10)/10),"font-weight":_nt?"800":"700","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif"});
       if(_nt){nm.setAttribute("stroke","rgba(10,14,22,.86)");nm.setAttribute("stroke-width",String(Math.round(4.2*_nk*10)/10));nm.setAttribute("stroke-linejoin","round");nm.setAttribute("paint-order","stroke");}
       nm.textContent=nmStr;g.appendChild(nm);
+      { const _rb=_realBoost(p); if(_rb>1){   /* 3.070 — 실제 비율: 이름표는 평소 크기 그대로, 작은 토큰 가장자리에서 평소 화면 간격만큼 */
+        const ng=el("g",{transform:"translate(0,"+((_up?-1:1)*21*(1-_rb)).toFixed(2)+") scale("+_rb.toFixed(3)+")"}),bg=_nt?null:nm.previousSibling;
+        if(bg)ng.appendChild(bg); ng.appendChild(nm); g.appendChild(ng); } }
     }
   }
   g.setAttribute("data-kind",kind);
@@ -5356,7 +5385,8 @@ function makeToken(p,kind){
   /* 2.799 — 폰: 보이는 원(r 21 ≈ 지름 13px)은 그대로 두고 잡히는 범위만 지름 ≈44px 로(사용자 «폰에서는 토큰을 가볍게 옮기는 것만»). 첫 자식이라 그림 위에 얹히지 않는다. */
   /* 3.039 — 아이패드도 같은 «잡히는 범위»(피드백 UX-7 · DS-2 — 아이패드 토큰은 15px 로 손가락보다 훨씬 작았다). 크기는 고정 값 대신 지금 화면의 배율로 잰다:
      폰의 옛 값(r 70 ÷ 폰 배율)은 토큰이 작아진 뒤 실측 지름 27px 이었다. 보이는 크기는 그대로, 잡히는 지름만 46px(아이패드 셸이 0.75배로 줄여도 34pt 이상) */
-  try{ var _dv=psBoardDevice(); if(_dv==="phone"||_dv==="ipad"){ g.insertBefore(el("circle",{r:_tokHitR(g),fill:"transparent","class":"tok-hit"}),g.firstChild); } }catch(_){}
+  try{ var _dv=psBoardDevice(); if(_dv==="phone"||_dv==="ipad"){ g.insertBefore(el("circle",{r:_tokHitR(g),fill:"transparent","class":"tok-hit"}),g.firstChild); }
+    else if(_realTokS(p)){ g.insertBefore(el("circle",{r:_tokHitR(g),fill:"transparent","class":"tok-hit"}),g.firstChild); }   /* 3.070 — 실제 비율 토큰은 작아서 컴퓨터에서도 잡히는 원을 둔다 */ }catch(_){}
   if(p.locked){
     var lg=el("g",{"class":"tok-lock",transform:"translate(24,-24)"});
     lg.appendChild(el("circle",{r:8.5,fill:"rgba(18,22,30,.86)",stroke:"#fff","stroke-width":1.4}));
@@ -6288,7 +6318,8 @@ function _fillPattern(kind,color){
   }catch(_){ return hexA(color,.24); }
 }
 function _visBlindPattern(light){try{ var ex=svg.querySelector("#psBlindHatch"); if(ex)ex.parentNode.removeChild(ex); var defs=svg.querySelector("defs"); if(!defs){defs=el("defs");svg.insertBefore(defs,svg.firstChild);} var rectF=light?"rgba(70,78,90,.10)":"rgba(120,128,138,.13)"; var lineS=light?"rgba(55,62,74,.55)":"rgba(195,203,213,.5)"; var pat=el("pattern",{id:"psBlindHatch",width:8,height:8,patternUnits:"userSpaceOnUse",patternTransform:"rotate(45)"}); pat.appendChild(el("rect",{width:8,height:8,fill:rectF})); pat.appendChild(el("line",{x1:0,y1:0,x2:0,y2:8,stroke:lineS,"stroke-width":1.2})); defs.appendChild(pat);}catch(_){}}
-function _tokScaleOf(p){var _cv=commViewTok();var _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor()*phoneTokFactor(p);}
+function _tokScaleOf(p){var _rs=_realTokS(p);if(_rs)return _rs;   /* 3.070 */
+  var _cv=commViewTok();var _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor()*phoneTokFactor(p);}
 /* 2.233 — 작은 규격에서는 토큰도 줄인다(완전 비례는 너무 작아 (길이/105)^0.6: 초등 0.75 · 풋살 0.56) */
 function specTokFactor(){try{var sp=pitchSpec();return sp===PITCH_SPECS.fifa?1:Math.pow(sp.len/105,0.6);}catch(_){return 1;}}
 /* 2.986 — 쉐이퍼 부리의 꼴(순수): 토큰 원(반지름 21·s)에 붙은 부리. 밑변은 원 위 ±34°, 꼭짓점은 원 밖으로 반지름만큼 넘게(작은 토큰에서도 10 단위 이상) */
@@ -6408,8 +6439,8 @@ function _setSelRings(){ try{
   if(!tokenLayer)return;
   var olds=tokenLayer.querySelectorAll(".ps-selring"); for(var i=0;i<olds.length;i++)olds[i].parentNode.removeChild(olds[i]);
   function ring(ref,color,r,sw,dash){ if(!ref||ref.id==null)return; var gg=tokenLayer.querySelector('[data-id="'+ref.id+'"]'); if(!gg)return;
-    var isP=(gg.getAttribute("data-kind")==="player"),ck=_chipK(gg); r*=ck; var s=isP?el("circle",{r:r,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"}):el("rect",{x:-r,y:-r,width:2*r,height:2*r,rx:6,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"});
-    if(dash)s.setAttribute("stroke-dasharray",dash); if(ck!==1)gg.insertBefore(s,gg.querySelector(".ps-depth-face")); else gg.appendChild(s); }   /* 3.009 — 경기장 칩은 링이 칩 밑 바닥에 */
+    var isP=(gg.getAttribute("data-kind")==="player"),ck=_chipK(gg),_rb=_realBoost(ref); r*=ck*_rb; sw*=_rb;   /* 3.070 — 실제 비율이면 평소 크기의 링 */ var s=isP?el("circle",{r:r,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"}):el("rect",{x:-r,y:-r,width:2*r,height:2*r,rx:6,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"});
+    if(dash)s.setAttribute("stroke-dasharray",dash); if(gg.hasAttribute("data-depth-chip"))gg.insertBefore(s,gg.querySelector(".ps-depth-face")); else gg.appendChild(s); }   /* 3.070 — 실제 비율의 칩(배율 1)도 링은 바닥에 */   /* 3.009 — 경기장 칩은 링이 칩 밑 바닥에 */
   if(sel&&sel.ref&&(sel.type==="player"||sel.type==="equip"||sel.type==="ball")) ring(sel.ref,"#ffd60a",28,3,"6 5");
   if(typeof multiSel!=="undefined"&&multiSel.length){ multiSel.forEach(function(o){ ring(o,"#2fa8ff",27,3.5,null); }); }
 }catch(_){} try{_setRoleRings();}catch(_){} try{_setChip3d();}catch(_){} try{_syncRingBtn();}catch(_){}}
@@ -6418,8 +6449,8 @@ function _setSelRings(){ try{
 function _chipUpright(){ return (state.orientation==="v")?(state.spFlip?-90:90):0; }
 /* ref = 기본 크기일 때의 토큰 배율. 3D 칩의 기본 크기는 운동장 대비로 정하고, 보드 설정 «크기 ＋ －»·선수별 크기는 그 위에 같은 비율로 곱한다
    (예전에는 최소 크기가 덮어써 처음 세 단계는 3D 에서 크기가 그대로였다 — 사용자 «크기도 수정할 수 있게») */
-function _chipOpts(p){ var sh=_shaperOn(p),u=_tokScaleOf(p);
-  return {unit:u,ref:u/((p.scale||1)*(state.tokenScale||1))*defaultTokenScale(),pitch:PR().PW,shape:sh?"shaper":((tokShape==="shirt"&&!p.coach&&!p.shaper)?"shirt":"circle"),dir:sh?(_dirOf(p)-_chipUpright()):0,
+function _chipOpts(p){ var sh=_shaperOn(p),u=_tokScaleOf(p),nu=_realTokS(p)?_normTokS(p):u;   /* 3.070 — 실제 비율이면 u 는 실제 크기, nu 는 평소 크기(이름표용) */
+  return {unit:u,ref:nu/((p.scale||1)*(state.tokenScale||1))*defaultTokenScale(),pitch:PR().PW,shape:sh?"shaper":((tokShape==="person"&&!p.shaper)?"person":((tokShape==="shirt"&&!p.coach&&!p.shaper)?"shirt":"circle")),real:!!_realTokS(p),nameUnit:nu,dir:sh?(_dirOf(p)-_chipUpright()):0,
     nameK:_nameK(),nameStyle:window.__nameStyle==="pill"?"pill":"text",mood:(window.__tilt3d&&window.__tilt3d.mood)||"night"}; }   /* 3.010 — 이름표 크기·모양(3D 의 «기본»은 글자만 — 중계 화면처럼) · 3.029 분위기(그림자 방향) */
 /* 쉐이퍼는 공을 바라보므로 공만 움직여도 방향이 바뀐다 — 시야·쉐이퍼를 다시 그릴 때마다 3D 칩의 부리도 돌린다(칩은 다시 만들지 않는다) */
 function _chipTurnAll(){ if(!tokenLayer||!window.PSBoardDepth||!document.body.classList.contains("bc-tilt3d"))return;
@@ -6433,7 +6464,7 @@ var ROLE_RING_ORDER=["","press","target","focus"];
 function _setRoleRings(){ if(!tokenLayer)return;
   var olds=tokenLayer.querySelectorAll(".ps-rolering"); for(var i=0;i<olds.length;i++)olds[i].parentNode.removeChild(olds[i]);
   (state.players||[]).forEach(function(p){ var R=p&&ROLE_RING[p.ring]; if(!R)return; var gg=tokenLayer.querySelector('[data-id="'+p.id+'"]'); if(!gg)return;
-    var c=el("circle",{r:27.5*_chipK(gg),fill:"none",stroke:R.c,"stroke-width":5.5,"class":"ps-rolering","pointer-events":"none"});
+    var _rb=_realBoost(p),c=el("circle",{r:27.5*_chipK(gg)*_rb,fill:"none",stroke:R.c,"stroke-width":5.5*_rb,"class":"ps-rolering","pointer-events":"none"});
     gg.insertBefore(c,gg.firstChild); }); }
 /* ══ 2.902 · 입체 칩(FmStadio 참고) — 선수 칩에 바닥 그림자와 위쪽 광택. SVG 요소라 내보내기에 그대로 들어간다. 기기 설정 cs_chip3d. ══ */
 function _setChip3d(){ if(!tokenLayer)return;
@@ -6512,10 +6543,14 @@ function cycleRoleRing(){ var t=_ringTargets(); if(!t.length){ try{toast("선수
 }catch(_){} })();
 var _rvRAF=0;
 function renderVisionRAF(){ if(_rvRAF)return; try{_rvRAF=(window.requestAnimationFrame||function(f){return setTimeout(f,16);})(function(){_rvRAF=0;try{renderVision();}catch(_){}});}catch(_){_rvRAF=0;try{renderVision();}catch(__){}} }
+function _tokFarKey(){ try{ if(tokShape!=="person"||!document.body.classList.contains("bc-tilt3d"))return null;
+    if(state.orientation==="v")return state.spFlip?function(o){return +o.x||0;}:function(o){return -(+o.x||0);};
+    return function(o){return +o.y||0;}; }catch(_){ return null; } }
 function renderTokens(){try{applyLookAt();}catch(_){} _tokHitPx=0; tokenLayer.innerHTML="";
   try{ensureTeamPatterns();}catch(_){}
   try{renderVision();}catch(_){}
-  tokenItems().sort((a,b)=>{const az=Number.isFinite(+a.o.z)?+a.o.z:1e9,bz=Number.isFinite(+b.o.z)?+b.o.z:1e9;return az-bz;}).forEach(it=>tokenLayer.appendChild(makeToken(it.o,it.kind)));
+  const _far=_tokFarKey();   /* 3.070 — 3D 의 서 있는 선수: 화면 위(먼 쪽)부터 그려 앞 선수가 뒤 선수를 가린다 */
+  tokenItems().sort((a,b)=>{const az=Number.isFinite(+a.o.z)?+a.o.z:1e9,bz=Number.isFinite(+b.o.z)?+b.o.z:1e9;return (az-bz)||(_far?_far(a.o)-_far(b.o):0);}).forEach(it=>tokenLayer.appendChild(makeToken(it.o,it.kind)));
   try{_setSelRings();}catch(_){}
   try{renderAnalysis();}catch(_){}   /* 3.029 — 선수가 움직이면 분석 그래픽도 다시 */
   if(rosterOpen){const ae=document.activeElement;if(!(ae&&ae.classList&&(ae.classList.contains("rs-name")||ae.classList.contains("rs-num"))))renderRoster();}
@@ -7696,7 +7731,7 @@ function renderBench(){const box=$("benchItems");if(!box)return;box.innerHTML=""
 /* 2.977 — 기본 토큰 크기를 사다리 두 칸 아래로(사용자 «기본 토큰 크기 2단계 작게»). 선수·장비·공이 함께 작아진다(사용자 «장비도 작게»).
    사다리는 아래로 두 칸이 늘었을 뿐 — [2] 가 예전 기본이라 «＋» 두 번이면 예전 크기, 그 위로는 예전 사다리 그대로(최대 크기도 같다). */
 function tokScaleLevels(){var b=defaultTokenScale(),o=_tokOldDefault();return [b,b*1.25,o,o*1.25,o*1.55,o*1.9,o*2.3];}   /* 7단계: [0]=기본(최소) · [2]=예전 기본 … [6]=최대 */
-function scaleAll(f){var L=tokScaleLevels();var cur=state.tokenScale||L[0];var idx=0,bd=1e9;for(var i=0;i<L.length;i++){var d=Math.abs(L[i]-cur);if(d<bd){bd=d;idx=i;}}var nidx=(f>1)?Math.min(L.length-1,idx+1):Math.max(0,idx-1);
+function scaleAll(f){if(_realScaleOn()){try{toast("실제 비율에서는 토큰 크기가 운동장에 맞춰 고정돼요 — «비율 › 보기 좋게»에서 바꿀 수 있어요");}catch(_){}return;}var L=tokScaleLevels();var cur=state.tokenScale||L[0];var idx=0,bd=1e9;for(var i=0;i<L.length;i++){var d=Math.abs(L[i]-cur);if(d<bd){bd=d;idx=i;}}var nidx=(f>1)?Math.min(L.length-1,idx+1):Math.max(0,idx-1);
   if(nidx===idx){try{toast(f>1?"가장 큰 크기예요":"가장 작은 크기예요 — 기본이 최소");}catch(_){}return;}   /* 한계에서 무반응처럼 느껴지지 않게 */
   idx=nidx;_lookFreeze();state.tokenScale=Math.round(L[idx]*100)/100;renderTokens();try{boardSaveLive();}catch(_){}}   /* 2.929 — 기기에 안 쓴다(이 보드에만) */
 function _tokOldDefault(){try{if(window.innerWidth>=1024)return 0.55;if(Math.min(window.innerWidth,window.innerHeight)<=480)return 0.60;}catch(_){}return 0.70;}   /* 2.976 까지의 기본(데스크톱 0.55 · 폰 0.60 · 태블릿 0.70) */
@@ -7863,7 +7898,7 @@ function boardDefaultSnap(src){
     pitchView:src.pitchView||((src.area||"full")==="half"?"half":"full"),pvSide:src.pvSide==="opp"?"opp":"own",fieldMode:src.fieldMode||"standard",halfSide:src.halfSide||"L",
     gridType:src.gridType,label:src.label,lines:src.lines,spFlip:!!src.spFlip,tokenScale:src.tokenScale,pitchN:1,
     pitchImg:src.pitchImg||null,pitchTheme:src.pitchTheme||"",pitchCustom:src.pitchCustom||null,matchNote:"",press:null,spMarks:null,spMark:null,
-    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone,namePos:src.namePos,nameSize:src.nameSize,nameStyle:src.nameStyle};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
+    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone,namePos:src.namePos,nameSize:src.nameSize,nameStyle:src.nameStyle,realScale:src.realScale};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
 }
 function boardDefaultRead(){try{var raw=localStorage.getItem(BOARD_DEFAULT_KEY);if(!raw)return null;var data=JSON.parse(raw);var snap=data&&(data.snap||data);return snap?boardDefaultSnap(snap):null;}catch(_){return null;}}
 function boardDefaultSave(){
@@ -16339,6 +16374,14 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       try{localStorage.setItem("cs_drag_snap_v1",bt.dataset.ds==="1"?"1":"0");}catch(_){}
       sync();toast(bt.dataset.ds==="1"?"끌기 자석 켬 — 끌면 행·열에 착 붙어요":"끌기 자석 끔 — ⌘/Ctrl 로는 언제든 붙어요");});
     sync();})();
+  (function(){const sg=$("realScaleSeg");if(!sg)return;   /* 3.070 — 비율: 보기 좋게 | 실제 비율(보드마다) */
+    const sync=()=>{[...sg.querySelectorAll("button")].forEach(x=>{const on=(x.dataset.rs==="1")===_realScaleOn();x.classList.toggle("on",on);x.setAttribute("aria-pressed",on?"true":"false");});
+      try{document.body.classList.toggle("ps-real-scale",_realScaleOn());}catch(_){}};
+    window.__syncRealScaleSeg=sync;
+    sg.addEventListener("click",e=>{const bt=e.target.closest("button[data-rs]");if(!bt)return;const on=bt.dataset.rs==="1";if(on===_realScaleOn())return;
+      _lookFreeze();window.__realScale=on;sync();renderTokens();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}
+      try{toast(on?"실제 비율 — 선수 몸 폭 0.5m · 공 22cm 로 운동장과 같은 비율이에요":"보기 좋게 — 토큰을 잘 보이게 키웠어요");}catch(_){}});
+    sync();})();
   (function(){const sg=$("shapeSeg");if(!sg)return;
     const sync=()=>{[...sg.children].forEach(x=>x.classList.toggle("on",x.dataset.s===tokShape));};
     window.__syncShapeSeg=sync;   /* 2.929 — 보드를 바꾸면 그 보드의 모양으로 */
@@ -20893,7 +20936,7 @@ try{ var _nb=document.getElementById('dfNew');
     return {pitchSpec:s.pitchSpec,orientation:s.orientation,area:s.area,pitchView:s.pitchView,pvSide:s.pvSide,gridType:s.gridType,label:s.label,lines:s.lines,spFlip:s.spFlip,
       tokenScale:s.tokenScale,pitchN:s.pitchN,teamColors:s.teamColors,teamColor2:s.teamColor2,teamPattern:s.teamPattern,
       teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,pitchTheme:s.pitchTheme,pitchCustom:s.pitchCustom,customImages:s.customImages,
-      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
+      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,realScale:s.realScale,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};
   }
   /* 3.017 — keep: 한 작업물 안에서 페이지를 옮길 때(고르기·지우기·더하기·복제·미팅 세트·시퀀스)는 지금 보드 설정(겉모습 — 토큰 크기·모양·표시…)을 그대로 둔다.
@@ -22179,7 +22222,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
                 ["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","grassSeg"]],
                 ["pitch","선·구역",["lineSeg","zonePreset"]],
                 ["pitch","범위·방향",["cmdPitchViewSeg","cmdPitchSideSeg","cmdOrientSeg","cmdPitchNSeg"]],
-                ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","labelSeg"]],
+                ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","realScaleSeg","labelSeg"]],
                 ["look","이름표",["namePosSeg","nameSizeSeg","nameStyleSeg"]],
                 ["look","분석",["analysisSeg"]],
                 ["view","보기",["tiltSeg",editorHint]],
