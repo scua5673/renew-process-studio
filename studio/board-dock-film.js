@@ -19,12 +19,12 @@
     if (i < frames.length - 1) { var sp = speedOf ? +speedOf(f) : (+f.moveSpeed > 0 ? +f.moveSpeed : 1); s += Math.max(0.3, +f.dur || 1) / (sp > 0 ? sp : 1); }
     return Math.round(s * 10) / 10;
   }
-  // 썸네일 SVG 글: 가로 판은 전체 운동장(data-psvb)으로 칸을 채우고(slice), 세로 판은 잘리지 않게(meet)
+  // 썸네일 SVG 글: 언제나 전체 운동장(data-psvb, 없으면 제 viewBox) — 가로 판은 칸을 채우고(slice), 세로 판은 잘리지 않게(meet)
   function fitThumb(markup, w, h) {
     var m = /^\s*<svg\b[^>]*>/.exec(markup || ''); if (!m) return markup || '';
-    var tag = m[0], vb = (/\sdata-psvb="([^"]+)"/.exec(tag) || [])[1], q = vb ? vb.split(/[\s,]+/).map(Number) : null, wide = q && q.length === 4 && q[2] >= q[3];
+    var tag = m[0], vb = (/\sdata-psvb="([^"]+)"/.exec(tag) || [])[1] || (/\sviewBox="([^"]+)"/.exec(tag) || [])[1], q = vb ? vb.split(/[\s,]+/).map(Number) : null, wide = !!(q && q.length === 4 && q[2] >= q[3]);
     var t = tag.replace(/\spreserveAspectRatio="[^"]*"/, '');
-    if (wide) t = /\sviewBox="[^"]*"/.test(t) ? t.replace(/\sviewBox="[^"]*"/, ' viewBox="' + vb + '"') : t.replace(/^(\s*<svg\b)/, '$1 viewBox="' + vb + '"');
+    if (vb) t = /\sviewBox="[^"]*"/.test(t) ? t.replace(/\sviewBox="[^"]*"/, ' viewBox="' + vb + '"') : t.replace(/^(\s*<svg\b)/, '$1 viewBox="' + vb + '"');
     t = t.replace(/^(\s*<svg\b)/, '$1 preserveAspectRatio="' + (wide ? 'xMidYMid slice' : 'xMidYMid meet') + '"');
     if (w > 0 && h > 0) { t = t.replace(/\s(width|height)="[^"]*"/g, '').replace(/^(\s*<svg\b)/, '$1 width="' + w + '" height="' + h + '"'); }
     return t + markup.slice(tag.length);
@@ -111,7 +111,7 @@
     function decorate() {
       var box = doc.getElementById('animFrames'); if (!box) return;
       var chips = box.children;
-      edges(box);
+      if (!box.__dfE) { box.__dfE = 1; win.requestAnimationFrame(function () { box.__dfE = 0; edges(box); }); }   // 크기 읽기는 다음 그림 때(관찰자 안에서 배치를 강제하지 않게)
       if (!on()) { undecorate(box); return; }
       var A0 = g('anim'), frames = A0 && A0.frames, hold = g('animHold'), sp = typeof win.animMoveSpeed === 'function' ? win.animMoveSpeed : null;
       for (var i = 0; i < chips.length; i++) {
@@ -127,14 +127,19 @@
         var aft = c.querySelector('.aft'), sv = aft && aft.querySelector(':scope>svg');
         if (sv && frames && frames[i] && frames[i].thumb) {
           var url = thumbUrl(frames[i]);
-          if (url) { var im = doc.createElement('img'); im.className = 'df-thumb'; im.alt = ''; im.decoding = 'async'; im.draggable = false; im.src = url; aft.replaceChildren(im); }
+          if (url) {   // 같은 장면은 같은 img 를 다시 쓴다(새로 만들면 매번 다시 불러온다)
+            var rc = cache.get(frames[i]), im = rc && rc.img;
+            if (!im || im.__u !== url) { im = doc.createElement('img'); im.className = 'df-thumb'; im.alt = ''; im.decoding = 'async'; im.draggable = false; im.src = url; im.__u = url; if (rc) rc.img = im; }
+            else if (im.isConnected) im = im.cloneNode();
+            aft.replaceChildren(im);
+          }
         }
       }
     }
     // 장면 그림 캐시: 장면 객체 → { thumb 글, blob URL }. 글이 바뀔 때만 다시 만든다(최근 80장만 남긴다)
     // SVG 그림을 img 로 쓰면 줄을 다시 그릴 때마다 SVG 를 새로 그려 느리다(실측 4장에 ~35ms) — 장면마다 한 번 PNG(156×92)로 구워 둔다
     var cache = new win.WeakMap(), lru = [], TW = 156, TH = 92;
-    function drop(rec) { if (rec && rec.url) { try { win.URL.revokeObjectURL(rec.url); } catch (_) {} rec.url = null; } }
+    function drop(rec) { if (!rec) return; if (rec.url) { try { win.URL.revokeObjectURL(rec.url); } catch (_) {} } rec.url = null; rec.thumb = null; rec.img = null; }   // thumb 을 비워 다음에 다시 굽게
     function thumbUrl(f) {
       var rec = cache.get(f); if (rec && rec.thumb === f.thumb) return rec.url || '';   // 굽는 중이면 ''(잔디색 칸)
       drop(rec);
@@ -144,7 +149,7 @@
       var svgUrl = ''; try { svgUrl = win.URL.createObjectURL(new win.Blob([fitThumb(mk, TW, TH)], { type: 'image/svg+xml' })); } catch (_) { return ''; }
       var img = new win.Image();
       img.onload = function () {
-        var done = function (url) { try { win.URL.revokeObjectURL(svgUrl); } catch (_) {} if (cache.get(f) !== rec) { if (url) try { win.URL.revokeObjectURL(url); } catch (_) {} return; } rec.url = url; lru.push(rec); while (lru.length > 120) drop(lru.shift()); later(); };
+        var done = function (url) { try { win.URL.revokeObjectURL(svgUrl); } catch (_) {} if (cache.get(f) !== rec) { if (url) try { win.URL.revokeObjectURL(url); } catch (_) {} return; } rec.url = url; for (var q = lru.length - 1; q >= 0; q--) if (!lru[q].url) lru.splice(q, 1); lru.push(rec); while (lru.length > 120) drop(lru.shift()); later(); };
         try {
           var cv = doc.createElement('canvas'); cv.width = TW; cv.height = TH; var cx = cv.getContext('2d');
           cx.fillStyle = '#2f6e3a'; cx.fillRect(0, 0, TW, TH); cx.drawImage(img, 0, 0, TW, TH);

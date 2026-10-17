@@ -26,7 +26,9 @@ test('thumbnails: wide boards fill the chip with the whole pitch, tall boards ar
   const w=fm.fitThumb('<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 10 50 30" data-psvb="0 0 1110 740" preserveAspectRatio="xMidYMid meet"><g/></svg>');
   assert.match(w,/viewBox="0 0 1110 740"/);assert.match(w,/preserveAspectRatio="xMidYMid slice"/);assert.equal((w.match(/preserveAspectRatio=/g)||[]).length,1);assert.match(w,/<g\/><\/svg>$/);
   const t=fm.fitThumb('<svg viewBox="1 2 3 4" data-psvb="0 0 740 1110"><g/></svg>');
-  assert.match(t,/viewBox="1 2 3 4"/,'tall board keeps its own framing');assert.match(t,/xMidYMid meet/);
+  assert.match(t,/viewBox="0 0 740 1110"/,'tall board shows the whole pitch');assert.match(t,/xMidYMid meet/,'and is not cropped');
+  const n=fm.fitThumb('<svg viewBox="0 0 1110 740"><g/></svg>');assert.match(n,/xMidYMid slice/,'wide board without data-psvb still fills the chip');
+  assert.match(fm.fitThumb('<svg width="9" viewBox="0 0 1110 740"><g/></svg>',156,92),/^<svg width="156" height="92" /,'raster viewport');
   assert.equal(fm.fitThumb(''),'');assert.equal(fm.fitThumb('nope'),'nope');
   assert.match(fm.css(),/\.aft>svg\{display:none!important\}/,'the inline svg is never laid out in the film row');
 });
