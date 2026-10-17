@@ -8,7 +8,7 @@
   'use strict';
   var D2R = Math.PI / 180;
   // 중계 시점(사용자 «이런 느낌으로» — 관중석 높은 곳의 중계 카메라 사진): 비스듬히(ax) · 사선으로(yaw) · 운동장 폭 widthM m 만 · 원근 persp px.
-  var TV = { ax: 56, yaw: -16, widthM: 66, persp: 1000 };
+  var TV = { ax: 56, yaw: -16, widthM: 66, persp: 1000, marginM: 22, minK: 0.55 };
 
   // 장면 a → b 사이 u 에서 움직이는 선수마다 진행 방향(판 좌표의 접선), 지금까지 뛴 거리와 이번 장면의 전체 거리(m).
   // env.curvePt(x0,y0,x1,y1,curve,t) = 판의 곡선 경로, env.mpp = 1m 가 몇 단위. 40cm 안쪽으로 움직이는 선수는 서 있다.
@@ -134,7 +134,8 @@
     function update(snap) {
       var svg = env.svg(), stage = env.stage(), layer = env.layer(); if (!svg || !stage || !layer) return;
       var sw = stage.clientWidth, sh = stage.clientHeight, vb = svg.viewBox && svg.viewBox.baseVal; if (!sw || !sh || !vb || !vb.width) return;
-      var base = Math.min(sw / vb.width, sh / vb.height), k = Math.max(1, Math.min(8, sw / (TV.widthM * env.mpp() * base)));
+      var base = Math.min(sw / vb.width, sh / vb.height), wm = env.spanM ? env.spanM() : TV.widthM;   // 3.083 — 선수가 다 보이게(사용자 «멀리서 잡더라도 전부 보이게»)
+      var k = Math.max(TV.minK, Math.min(8, sw / (wm * env.mpp() * base)));
       var W = Math.round(sw * k), H = Math.round(sh * k), size = [W, H, sw, sh].join('x');
       if (st.size !== size) {
         st.size = size; st.k = k;
@@ -147,7 +148,7 @@
       }
       var m = layer.getCTM(); if (!m) return;
       var t = env.target(), px = { x: m.a * t.x + m.c * t.y + m.e, y: m.b * t.x + m.d * t.y + m.f };
-      if (!snap && st.cur && env.playing()) px = { x: st.cur.x + (px.x - st.cur.x) * 0.08, y: st.cur.y + (px.y - st.cur.y) * 0.08 };   // 재생 중: 공을 천천히 따라간다
+      if (!snap && st.cur && env.playing()) px = { x: st.cur.x + (px.x - st.cur.x) * 0.08, y: st.cur.y + (px.y - st.cur.y) * 0.08 };   // 재생 중: 천천히 따라간다
       st.cur = px;
       document.body.style.setProperty('--tilt-tf', 'translateY(' + Math.round(sh * 0.08) + 'px) rotateX(' + TV.ax + 'deg) rotateZ(' + TV.yaw + 'deg) translate(' + (W * 0.5 - px.x).toFixed(1) + 'px,' + (H * 0.55 - px.y).toFixed(1) + 'px)');
     }
@@ -175,15 +176,24 @@
   // ── 작전판 연결(3.083 — board.html 크기 예산 때문에 여기로 옮김). 작전판의 전역(state · tokShape · svg · tokenLayer · CX · CY · squad · animPlaying …)은
   //    같은 문서의 다른 스크립트라 부를 때 이름으로 읽는다. board.html 은 같은 이름으로 부른다(window 속성).
   /* global state, tokShape, svg, tokenLayer, CX, CY, squad, animPlaying, mppNow, renderTokens, _curvePt, _lookFreeze, _realScaleOn, positionSelCtl, boardSaveLive, toast */
+  // 중계 카메라가 담을 범위: 모든 장면의 선수 · 공(재생 중에도 화면이 흔들리지 않게)
+  function playBox() {
+    var pts = [];
+    function add(sn) { if (!sn) return; (sn.players || []).forEach(function (p) { if (p && isFinite(p.x) && isFinite(p.y)) pts.push(p); }); var b = sn.ball; if (b && isFinite(b.x) && isFinite(b.y)) pts.push(b); }
+    try { add(state); } catch (_) {}
+    try { if (typeof anim !== 'undefined' && anim && anim.frames) anim.frames.forEach(function (f) { add(f && f.snap); }); } catch (_) {}
+    if (!pts.length) return null;
+    var b = { l: Infinity, r: -Infinity, t: Infinity, b: -Infinity };
+    pts.forEach(function (p) { b.l = Math.min(b.l, +p.x); b.r = Math.max(b.r, +p.x); b.t = Math.min(b.t, +p.y); b.b = Math.max(b.b, +p.y); });
+    return b;
+  }
   function tv(bridge) {
+    var box = playBox;   /* global anim */
     var win = window, cam = camera({
       svg: function () { return svg; }, stage: function () { return document.getElementById('boardStage'); }, layer: function () { return tokenLayer; }, mpp: function () { return mppNow(); },
       goalK: bridge.goalK, playing: function () { return typeof animPlaying !== 'undefined' && !!animPlaying; },
-      target: function () {
-        var b = state.ball; if (b && isFinite(b.x) && isFinite(b.y)) return { x: +b.x, y: +b.y };
-        var ps = (state.players || []).filter(function (p) { return p && isFinite(p.x) && isFinite(p.y); }); if (!ps.length) return { x: CX, y: CY };
-        var x = 0, y = 0; ps.forEach(function (p) { x += +p.x; y += +p.y; }); return { x: x / ps.length, y: y / ps.length };
-      },
+      target: function () { var b = box(); return b ? { x: (b.l + b.r) / 2, y: (b.t + b.b) / 2 } : { x: CX, y: CY }; },
+      spanM: function () { var b = box(), m = mppNow() || 10; return b ? Math.max(TV.widthM, (b.r - b.l) / m + TV.marginM, ((b.b - b.t) / m + TV.marginM) * 1.45) : TV.widthM; },
       resized: function (redraw) { try { var gh = document.getElementById('tiltGoals'); if (gh) { gh.__pre = null; gh.__projectionSignature = null; } bridge.sync(); } catch (_) {} if (redraw) { try { renderTokens(); } catch (_) {} } }
     });
     function on() { try { return document.body.classList.contains('bc-tilt3d') && win.__tilt3d && win.__tilt3d.cam === 'tv'; } catch (_) { return false; } }

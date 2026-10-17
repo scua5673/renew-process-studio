@@ -23,7 +23,7 @@ test('flat view: players and ball one step bigger, equipment and images unchange
 test('board wiring: flat factor, real scale only in 3D, script tag, cache',()=>{
   const b=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
   assert.match(b,/\*phoneTokFactor\(p\)\*\(window\.__flatK\?__flatK\(p\):1\);\}/);
-  assert.match(b,/function _realTokS\(p\)\{ if\(!_realScaleOn\(\)\|\|!p\|\|!document\.body\.classList\.contains\("bc-tilt3d"\)\)return 0;/);
+  assert.match(b,/function _realTokS\(p\)\{ if\(!\(_realScaleOn\(\)\|\|typeof tokShape!=="undefined"&&tokShape==="person"\)\|\|!p\|\|!document\.body\.classList\.contains\("bc-tilt3d"\)\)return 0;/);
   assert.match(b,/<script src="board-topbar\.js"><\/script>/);
   assert.match(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'),/'\/studio\/board-topbar\.js'/);
 });

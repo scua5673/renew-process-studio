@@ -5022,7 +5022,7 @@ var COMM_PHONE_TOK=1.6;
 function commViewTok(){ try{ if(!document.body.classList.contains("comm-viewing")||window.__psThumbNoEd)return 0; return (window.innerWidth<=600||psBoardDevice()==="phone")?COMM_PHONE_TOK:1; }catch(_){ return 0; } }
 var REAL_TOK_M=84, REAL_BALL_R=28*113/240;
 function _realScaleOn(){ return window.__realScale===true; }
-function _realTokS(p){ if(!_realScaleOn()||!p||!document.body.classList.contains("bc-tilt3d"))return 0; var m=mppNow();
+function _realTokS(p){ if(!(_realScaleOn()||typeof tokShape!=="undefined"&&tokShape==="person")||!p||!document.body.classList.contains("bc-tilt3d"))return 0; var m=mppNow();
   if(p.team==="ball")return m*0.11/REAL_BALL_R;
   if(p.team==="img"||equipKey(p.team))return 0;
   return m/REAL_TOK_M; }
