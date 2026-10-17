@@ -9,7 +9,7 @@ export default {
   path: 'futsal/block-6/throw-outs-and-1v1s-from-out-wide.php',
   name: '골키퍼 스로 아웃 — 멀리 정확하게 던지고, 측면 1v1은 가운데에서',
   focus: 'bp',
-  by: '',
+  by: 'Antonio García',
   trainings: [
     {
       /* 1 — 워밍업: 측면 공격수가 하프라인에서 몰고 들어와 1v1. GK는 공과 두 골대 사이 가운데를 지키고, 잡으면 다음 공격수에게 굴려 준다. 가까운 골대에 붙는 실패 장면 */

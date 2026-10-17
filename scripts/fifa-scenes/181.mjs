@@ -8,7 +8,7 @@ export default {
   path: 'futsal/block-6/restarts-keeping-play-going-and-aerial-balls.php',
   name: '골키퍼 재시작 — 피보에게 띄우는 긴 공과 그 공을 막는 법',
   focus: 'bp',
-  by: '',
+  by: 'Antonio García',
   trainings: [
     {
       /* 1 — 워밍업: 양쪽 GK가 반대편 구역의 피보에게 번갈아 길게 띄운다. 피보는 세워 주거나 첫 터치로 방향을 바꿔 슈팅. 짧게 떨어지는 실패 장면 */

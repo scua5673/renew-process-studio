@@ -10,7 +10,7 @@ export default {
   path: 'futsal/block-6/using-the-goalkeeper-to-create-overloads.php',
   name: '골키퍼로 수적 우위 만들기 — 한 명 더 있는 빌드업',
   focus: 'bp',
-  by: '',
+  by: 'Antonio García',
   trainings: [
     {
       /* 1 — 워밍업: GK + 2 vs 1. GK가 공을 몰고 나와 압박을 끌어내고, 빈 쪽으로 내줘 하프라인을 몰고 넘는다. GK가 오래 끌다 뺏기는 장면 */
