@@ -14,7 +14,7 @@ test('real-scale chips are not enlarged, and their names keep the ordinary on-sc
 test('«사람» is a board look shape and «실제 비율» a per-board look setting',()=>{
   assert.match(board,/<button data-s="person"[^>]*>사람<\/button>/);
   assert.match(board,/case "tokShape":return v==="shirt"\|\|v==="circle"\|\|v==="shaper"\|\|v==="person";/);
-  assert.match(board,/function lookKeys\(\)\{return \[[^\]]*"realScale"\];\}/);
+  assert.match(board,/function lookKeys\(\)\{return \[[^\]]*"realScale"\](\.concat\(Object\.keys\(window\.__psLookExt\|\|\{\}\)\))?;\}/);   /* 3.087 — 모듈이 더하는 설정(window.__psLookExt) */
   assert.match(board,/id="realScaleSeg"[\s\S]{0,200}data-rs="0"[^>]*>보기 좋게<[\s\S]{0,300}data-rs="1"[^>]*>실제 비율</);
   /* 1m = mppNow() units: player body 0.5 m wide (r 21 → 84 units/m), ball 22 cm across; equipment keeps its size */
   assert.match(board,/if\(p\.team==="ball"\)return m\*0\.11\/REAL_BALL_R\*k\(1\);\n  if\(p\.team==="img"\|\|equipKey\(p\.team\)\)return 0;\n  return m\/REAL_TOK_M\*k\(0\); \}/);

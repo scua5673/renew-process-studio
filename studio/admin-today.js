@@ -1,4 +1,4 @@
-/* 3.089 — 운영 홈 맨 위 «지금 처리할 일» 한 줄.
+/* 3.090 — 운영 홈 맨 위 «지금 처리할 일» 한 줄.
    숫자는 각 화면이 이미 부르는 함수에서 받는다(새 서버 함수 없음): 오류 제보 답변 필요(ps_support_list counts) ·
    커뮤니티 열린 신고(ps_admin_comm_queue counts) · 24시간 실제 앱 오류(ps_admin_event_summary_v2) ·
    기한 지난 후속 확인(ps_admin_followups_list) · 마지막 데이터 사고 뒤 날수(ps_admin_incidents).
