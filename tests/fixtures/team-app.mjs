@@ -64,7 +64,7 @@ export async function startFixture(opts={}){
     else if(url.pathname.endsWith('/ps_members_of_v2')||url.pathname.endsWith('/ps_members_of'))body=[{user_id:uid,name:'가상 코치',email:'a@example.invalid',role:'owner'}];
     else if(url.pathname.endsWith('/ps_key_scope'))body='team';
     else if(url.pathname==='/rest/v1/ps_kv'){
-      if(kvGate&&req.method==='GET'&&(!kvGate.wid||url.searchParams.get('workspace_id')==='eq.'+kvGate.wid))await kvGate.promise;   /* 3.083 — holdKvPull(): 팀 자료 받기를 붙잡아 «받기 전» 틈을 만든다 */
+      if(kvGate&&req.method==='GET'&&(!kvGate.wid||url.searchParams.get('workspace_id')==='eq.'+kvGate.wid))await kvGate.promise;   /* 3.089 — holdKvPull(): 팀 자료 받기를 붙잡아 «받기 전» 틈을 만든다 */
       const wid=(url.searchParams.get('workspace_id')||'eq.'+WT).slice(3),filter=url.searchParams.get('k');
       const matches=row=>row.workspace_id===wid&&(!filter||filter==='eq.'+row.k||(filter.startsWith('in.(')&&filter.slice(4,-1).split(',').map(k=>k.replace(/^"|"$/g,'')).includes(row.k))||(filter.startsWith('like.')&&row.k.startsWith(filter.slice(5).replace(/\*$/,''))));
       if(req.method==='GET'){const cols=(url.searchParams.get('select')||'').split(',').filter(Boolean);body=[...db.values()].filter(matches).map(row=>cols.length?Object.fromEntries(cols.map(k=>[k,row[k]])):{...row});}
@@ -94,7 +94,7 @@ export async function startFixture(opts={}){
     }else if(url.pathname.startsWith('/rest/v1/rpc/')){body=url.pathname.includes('report')?{}:[];}
     return {status:200,headers,body:JSON.stringify(body)};
   }
-  const server=http.createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;
+  const server=http.createServer(async(req,res)=>{let raw='';try{for await(const c of req)raw+=c;}catch(_){ /* 3.086 CI — 브라우저가 보내던 요청을 끊으면(페이지 닫기 · 이동 중 POST) 여기서 거부된 promise 가 서버 프로세스를 죽였다(invite-link-export ECONNRESET) */ try{res.destroy();}catch(__){} return; }
     try{const r=await api({url:base+req.url,method:req.method,headers:req.headers,body:raw?JSON.parse(raw):null});res.writeHead(r.status,r.headers);res.end(r.body);}catch(e){res.writeHead(500);res.end('{}');}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port;
   /* holdKvPull(wid?) — 이후 ps_kv GET(wid 를 주면 그 공간 것만)은 돌려준 함수를 부를 때까지 기다린다(쓰기는 그대로) */

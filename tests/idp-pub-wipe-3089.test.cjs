@@ -1,5 +1,5 @@
 'use strict';
-/* 3.083 — 닫을 때 지운 코치 피드백(cs_idp_pub_v1_<uid>)을 받기 전에 새로 쓰면 서버본이 한 항목짜리로 덮이던 길.
+/* 3.089 — 닫을 때 지운 코치 피드백(cs_idp_pub_v1_<uid>)을 받기 전에 새로 쓰면 서버본이 한 항목짜리로 덮이던 길.
    ① 모듈(studio/idp-pub-wipe.js)의 표 규칙 ② 실제 동기화 회차(team-data-consistency 의 가상 서버 · sync.js 원문)로 본다.
    가상 자료만 쓴다 — 실서버 · 실계정 없음. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');

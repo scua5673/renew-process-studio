@@ -44,7 +44,7 @@ try{
   // ② 선수 표시 — 이 보드에 저장
   await sel('look');s=await st();assert.equal(s.scope,'이 보드에 저장');
   sc=await secs();assert.deepEqual(sc,['내 스타일','칩','이름표','분석'],'선수 표시 묶음 '+JSON.stringify(sc));
-  lb=await labels();assert.deepEqual(lb,['선수 모양','입체 칩','크기','칩 글자','이름표','이름표 크기','이름표 모양','분석 그래픽'],'선수 표시 줄 '+JSON.stringify(lb));
+  lb=await labels();assert.deepEqual(lb,['선수 모양','입체 칩','크기','비율','실제 크기','칩 글자','이름표','이름표 크기','이름표 모양','이름표 글꼴','분석 그래픽'],'선수 표시 줄 '+JSON.stringify(lb));
   assert.deepEqual(await f.evaluate(()=>[...document.querySelectorAll('#chip3dSeg button')].map(b=>b.textContent.trim())),['끄기','켜기'],'«평면»은 보드 보기에만');
   await page.screenshot({path:path.join(SHOTS,'board-settings-hierarchy-look-'+engine+'.png')});
   // ③ 배치 — 바로 적용 · 카드 하나 · 선발 11명 · 저장 팀 줄 · 지우기·초기화
@@ -58,12 +58,12 @@ try{
   await page.screenshot({path:path.join(SHOTS,'board-settings-hierarchy-form-'+engine+'.png')});
   // ④ 내 화면 — 이 기기에만 · 3D 묶음은 3D 일 때만 · 접힌 단축키
   await sel('view');s=await st();assert.equal(s.scope,'이 기기에만');
-  sc=await secs();assert.deepEqual(sc,['보기','편집','새 보드','단축키'],'평면: 3D 경기장 묶음 없음 '+JSON.stringify(sc));
-  lb=await labels();assert.deepEqual(lb,['보드 보기','끌기 자석','기본값'],'내 화면 줄 '+JSON.stringify(lb));
+  sc=await secs();assert.deepEqual(sc,['보기','편집','도크','새 보드','단축키'],'평면: 3D 경기장 묶음 없음 '+JSON.stringify(sc));
+  lb=await labels();assert.deepEqual(lb,['보드 보기','끌기 자석','스타일','기본값'],'내 화면 줄 '+JSON.stringify(lb));
   assert.equal(await f.evaluate(()=>document.querySelector('#cmd-board-settings-pop details.bs-keys').open),false,'단축키는 접혀 있다');
   assert.equal(await vis('#cmd-board-settings-pop .cmd-board-settings-danger'),false,'지우기·초기화는 배치에만');
   await f.evaluate(()=>window.__setTilt(true));await page.waitForTimeout(600);
-  sc=await secs();assert.deepEqual(sc,['보기','3D 경기장','편집','새 보드','단축키'],'3D: 3D 경기장 묶음 '+JSON.stringify(sc));
+  sc=await secs();assert.deepEqual(sc,['보기','3D 경기장','편집','도크','새 보드','단축키'],'3D: 3D 경기장 묶음 '+JSON.stringify(sc));
   lb=await labels();assert.ok(lb.includes('카메라')&&lb.includes('꾸밈')&&lb.includes('분위기'),'3D 줄 '+JSON.stringify(lb));
   await page.screenshot({path:path.join(SHOTS,'board-settings-hierarchy-view-3d-'+engine+'.png')});
   await f.evaluate(()=>window.__setPitchSpec('grid30'));await page.waitForTimeout(500);

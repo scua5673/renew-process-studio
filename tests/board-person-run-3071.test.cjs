@@ -1,0 +1,90 @@
+'use strict';
+/* 3.071 — 사용자 «3d 실제모양 애니메이션 만들면 뛰는 모습» · 3.072 «더 리얼하게» · «중계 시점» */
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const depth=require('../studio/board-token-depth.js');
+const bc=require('../studio/board-broadcast.js');
+const board=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
+const line=(x0,y0,x1,y1,c,t)=>({x:x0+(x1-x0)*t,y:y0+(y1-y0)*t});
+
+test('3.072 — no pose is a player standing toward the camera; the pose carries the facing angle',()=>{
+  assert.deepEqual(depth.personPose(null),{yaw:90,phase:0,amp:0,kick:null,recv:null,foot:'R',head:null,dive:null,chest:null,catch:null,punch:null});
+  assert.equal(depth.personPose({yaw:-90,amp:.8}).yaw,-90,'running away shows the back');
+  assert.equal(depth.personPose({yaw:0,amp:5}).amp,1,'amp is capped');
+});
+test('motion: distance run so far and the whole run, in metres; players moving under 40 cm stand',()=>{
+  const a={players:[{id:1,x:0,y:0},{id:2,x:100,y:100}]},b={players:[{id:1,x:200,y:0},{id:2,x:102,y:100}]};
+  const m=bc.motion(a,b,.5,null,{curvePt:line,mpp:10});
+  assert.ok(Math.abs(m[1].total-20)<1e-6,'20 m');assert.ok(Math.abs(m[1].run-10)<1e-6,'half way');assert.ok(m[1].vx>0&&m[1].vy===0);
+  assert.equal(m[2],undefined,'20 cm is standing');
+  assert.equal(bc.motion(a,b,0,null,{curvePt:line,mpp:10}),null,'nothing between scenes');assert.equal(bc.motion(a,b,1,null,{curvePt:line,mpp:10}),null);
+});
+test('pose: faces the run (right, toward the camera, away) mid-run and turns back to the camera at the ends',()=>{
+  const mv=(vx,vy,u)=>({vx,vy,run:5,total:20,u});
+  assert.equal(Math.round(bc.pose(mv(1,0,.5),{}).yaw),0,'running right');
+  assert.equal(Math.round(bc.pose(mv(0,1,.5),{}).yaw),90,'running down the screen = toward the camera');
+  assert.equal(Math.round(bc.pose(mv(0,-1,.5),{}).yaw),-90,'running up = the back');
+  assert.equal(Math.round(bc.pose(mv(1,0,.02),{}).yaw*10)/10>0,true,'starting: still turning from the camera');
+  assert.equal(bc.pose(mv(1,0,.5),{}).phase,5/2.6,'one stride cycle per 2.6 m');
+  assert.equal(bc.pose(mv(1,0,1),{}).amp,0,'stops at the end');
+  // vertical board: the world is turned 90°, so a run along +x is up or down the screen
+  assert.equal(Math.round(bc.pose(mv(1,0,.5),{orientation:'v',spFlip:true}).yaw),90);
+});
+test('broadcast view: players stand upright on the tilted, turned pitch',()=>{
+  assert.equal(bc.stand(false),null);
+  const s=bc.stand(true);assert.equal(s.rot,-bc.TV.yaw);assert.ok(Math.abs(s.sy-1/Math.cos(bc.TV.ax*Math.PI/180))<1e-9);
+  assert.ok(bc.TV.ax>45&&bc.TV.ax<65,'oblique like a stand camera');assert.ok(bc.TV.widthM>40&&bc.TV.widthM<90,'about half the pitch across');
+});
+test('board wiring: motion once per frame, cleared after; 3D «사람» only; camera button',()=>{
+  assert.match(board,/try\{ window\.__psMotion=_personMotion\(a,b,u,curves\); \}catch\(_\)\{ window\.__psMotion=null; \}/);
+  assert.match(board,/renderTokens\(\);window\.__psMotion=null;/,'cleared right after the frame so later redraws stand still');
+  // 3.083 — 연결 함수는 board.html 크기 예산 때문에 board-broadcast.js 로(같은 이름의 window 함수)
+  const bsrc=fs.readFileSync(path.join(__dirname,'../studio/board-broadcast.js'),'utf8');
+  assert.match(bsrc,/win\._personMotion = function \(a, b, u, curves\) \{ if \(tokShape !== 'person' \|\| !document\.body\.classList\.contains\('bc-tilt3d'\)\)/,'3D «사람» only');
+  assert.doesNotMatch(board,/function _personMotion\(/,'not defined twice');
+  assert.match(board,/PSBroadcast\.tv\(\{goalK:function\(\)\{return GOAL_K;\},sync:function\(\)\{tiltGoalsSync\(\);\}\}\)/,'broadcast camera bridge');
+  assert.match(board,/nameUnit:nu,pose:_personPose\(p\),stand:_personStand\(\),zoom:/);
+  assert.match(board,/<button type="button" data-cam="tv"[^>]*>중계<\/button>/);
+  assert.match(board,/<script src="board-broadcast\.js"><\/script>/);
+  assert.match(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'),/'\/studio\/board-broadcast\.js'/,'cached for offline');
+});
+
+test('3.074 kick: the player nearest the ball kicks, the ball leaves on contact, the nearest player at the end receives — with his own foot',()=>{
+  const a={players:[{id:1,x:100,y:100,sqId:'s1'},{id:2,x:400,y:100}],ball:{x:110,y:100}},b={players:[{id:1,x:100,y:100,sqId:'s1'},{id:2,x:400,y:100}],ball:{x:395,y:100}};
+  const k=bc.kick(a,b,10);assert.equal(k.kicker,1);assert.equal(k.receiver,2);
+  assert.equal(bc.ballU(a,b,bc.KICK.contact*.9,10),0,'the ball waits for the foot');assert.ok(bc.ballU(a,b,.5,10)>0&&bc.ballU(a,b,.5,10)<.5);assert.equal(bc.ballU(a,b,1,10),1);
+  const far={players:[{id:1,x:300,y:300}],ball:{x:110,y:100}};assert.equal(bc.kick(far,b,10),null,'nobody near the ball — it just moves');assert.equal(bc.ballU(far,b,.05,10),.05);
+  const env={curvePt:line,mpp:10,foot:p=>p.sqId==='s1'?'L':''};
+  const m=bc.motion(a,b,.1,null,env),pk=bc.pose(m[1],{});assert.ok(pk.kick>0&&pk.kick<1);assert.equal(pk.foot,'L','left-footed from the roster');assert.equal(Math.round(pk.yaw),0,'faces the pass');
+  const r=bc.pose(bc.motion(a,b,.95,null,env)[2],{});assert.ok(r.recv>0);assert.equal(r.foot,'R');assert.equal(Math.round(Math.abs(r.yaw)),180,'faces the ball coming in');
+});
+
+test('3.075 header on an aerial ball, goalkeeper dive when the ball comes within 8 m',()=>{
+  const a={players:[{id:1,x:100,y:100},{id:2,x:400,y:100},{id:9,x:700,y:100,pos:'GK',num:1}],ball:{x:110,y:100}};
+  const b={players:[{id:1,x:100,y:100},{id:2,x:400,y:100},{id:9,x:700,y:100,pos:'GK',num:1}],ball:{x:395,y:100}};
+  const env={curvePt:line,mpp:10};
+  const ground=bc.pose(bc.motion(a,b,.95,null,env)[2],{});assert.ok(ground.recv>0);assert.equal(ground.head,undefined,'a ground pass is taken with the foot');
+  const air=bc.pose(bc.motion(a,b,.95,{ball:{air:2}},env)[2],{});assert.ok(air.head>0,'an aerial ball is headed');assert.equal(air.recv,null);
+  assert.equal(bc.motion(a,b,.95,null,env)[9],undefined,'the keeper 30 m away does not dive');
+  const shot={players:a.players,ball:{x:660,y:150}},m=bc.motion(a,shot,.8,null,env),d=bc.pose(m[9],{});
+  assert.ok(d.dive&&d.dive.t>0&&d.dive.t<1,'the keeper dives');assert.equal(d.dive.dir,-1,'toward the ball (screen left)');assert.equal(bc.motion(a,shot,.4,null,env)[9],undefined,'not before the second half of the scene');
+  assert.equal(bc.isGK({num:'1'}),true);assert.equal(bc.isGK({pos:'GK'}),true);assert.equal(bc.isGK({num:1,coach:true}),false);
+  assert.deepEqual(depth.personPose({dive:{t:.5,dir:-1,reach:2}}).dive,{t:.5,dir:-1,reach:1,high:false});
+});
+
+test('3.075 actions chosen per token override the automatic ones and travel with the scene curves',()=>{
+  const acts=require('../studio/board-actions.js');
+  const a={players:[{id:1,x:100,y:100},{id:2,x:400,y:100},{id:3,x:300,y:400},{id:9,x:700,y:100,pos:'GK'}],ball:{x:110,y:100}};
+  const b={players:a.players.map(p=>({...p})),ball:{x:395,y:100}},env={curvePt:line,mpp:10};
+  // header pass by a player far from the ball, chest control by another, keeper catches instead of diving
+  const curves={acts:{3:'headout',2:'chest',9:'catch'}};
+  const s0=bc.motion(a,b,.1,curves,env);assert.ok(s0[3].head>0,'player 3 heads it out');assert.equal(s0[1],undefined,'the automatic kicker stays out');
+  const s1=bc.motion(a,b,.95,curves,env);assert.ok(s1[2].chest>0,'chest control');assert.ok(bc.pose(s1[2],{}).chest>0);
+  const near={...b,ball:{x:690,y:110}},s2=bc.motion(a,near,.9,curves,env);assert.ok(s2[9].catch>0,'the keeper catches');assert.equal(s2[9].dive,undefined);
+  const d=bc.motion(a,near,.9,{acts:{9:'dive_hl'}},env)[9],pd=bc.pose(d,{});assert.equal(pd.dive.dir,-1);assert.equal(pd.dive.high,true,'high dive to the left as chosen');
+  assert.equal(bc.ballU(a,b,.05,10,{acts:{1:'none'}}),.05,'«동작 없음» on the kicker: the ball does not wait');
+  assert.equal(bc.ballU(a,b,.05,10,{acts:{3:'kick'}}),0,'a chosen kicker: the ball waits for the foot');
+  // the scene keeps its curves; setting «자동» removes the entry and an empty table
+  const f={curves:{ball:{mx:1,my:2}}};acts.setAct(f,3,'headout');assert.deepEqual(f.curves,{ball:{mx:1,my:2},acts:{3:'headout'}});assert.equal(acts.getAct(f,3),'headout');
+  acts.setAct(f,3,'');assert.deepEqual(f.curves,{ball:{mx:1,my:2}});const g={};acts.setAct(g,1,'');assert.equal(g.curves,null);
+  assert.ok(bc.ACTS.some(x=>x.items.some(i=>i[0]==='dive_hr')),'the list offers the high dive');
+});

@@ -1,4 +1,4 @@
-/* 3.083 — 닫을 때 지운 코치 피드백(cs_idp_pub_v1_<uid>)이 «받기 전에 쓴 한 줄»에 덮이지 않게 한다.
+/* 3.089 — 닫을 때 지운 코치 피드백(cs_idp_pub_v1_<uid>)이 «받기 전에 쓴 한 줄»에 덮이지 않게 한다.
    닫기(sync.js wipeTeamCacheSoft)는 이 기기 사본만 지우고 확정 표(meta.h · meta.c)와 기준본은 남긴다.
    다음에 열어 받기 전에 코치가 쓰면 페이지(idp.html pubPushAt · reactSetAt · cgSetAt …, scout.html 경기 전달 …)는
    빈 {} 에서 한 항목짜리 문서를 만들고, 동기화는 그것을 «내가 고쳤고 서버는 그대로»로 보아 서버본을 통째로 덮었다
