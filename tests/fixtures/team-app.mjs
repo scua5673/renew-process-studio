@@ -64,7 +64,7 @@ export async function startFixture(opts={}){
     else if(url.pathname.endsWith('/ps_members_of_v2')||url.pathname.endsWith('/ps_members_of'))body=[{user_id:uid,name:'가상 코치',email:'a@example.invalid',role:'owner'}];
     else if(url.pathname.endsWith('/ps_key_scope'))body='team';
     else if(url.pathname==='/rest/v1/ps_kv'){
-      if(kvGate&&req.method==='GET')await kvGate.promise;   /* 3.077 — holdKvPull(): 팀 자료 받기를 붙잡아 «받기 전» 틈을 만든다 */
+      if(kvGate&&req.method==='GET')await kvGate.promise;   /* 3.080 — holdKvPull(): 팀 자료 받기를 붙잡아 «받기 전» 틈을 만든다 */
       const wid=(url.searchParams.get('workspace_id')||'eq.'+WT).slice(3),filter=url.searchParams.get('k');
       const matches=row=>row.workspace_id===wid&&(!filter||filter==='eq.'+row.k||(filter.startsWith('in.(')&&filter.slice(4,-1).split(',').map(k=>k.replace(/^"|"$/g,'')).includes(row.k))||(filter.startsWith('like.')&&row.k.startsWith(filter.slice(5).replace(/\*$/,''))));
       if(req.method==='GET'){const cols=(url.searchParams.get('select')||'').split(',').filter(Boolean);body=[...db.values()].filter(matches).map(row=>cols.length?Object.fromEntries(cols.map(k=>[k,row[k]])):{...row});}
@@ -109,7 +109,7 @@ export const SIZES={
   desktop:{engine:'chromium',ctx:{viewport:{width:1280,height:800},deviceScaleFactor:1}}
 };
 
-export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false}={}){
+export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false}={}){
   /* 3.039 — csp:true 면 HTML 응답에 _headers 의 Content-Security-Policy-Report-Only 를 그대로 붙인다(tests/browser/csp-report-only) */
   const cspValue=csp?(/\n  Content-Security-Policy-Report-Only: (.+)\n/.exec(fs.readFileSync(path.join(root,'_headers'),'utf8'))||[])[1]:null;
   if(csp&&!cspValue)throw new Error('_headers 에 Content-Security-Policy-Report-Only 가 없다');
@@ -148,6 +148,17 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
   page.on('dialog',d=>{logs.push({step:tag(),type:'dialog',text:d.type()+': '+d.message().slice(0,300)});(d.type()==='beforeunload'?d.accept():d.dismiss()).catch(()=>{});});
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
   await ready(page);
+  /* 3.077 — 폰은 로그인한 팀 공간이면 팀운영 › 오늘로 열린다(app.html psPhoneStart). 대부분의 시험은 작전판 + 앱 하단 바에서 시작하므로
+     사용자가 가는 길(팀 더보기 › 앱 › 보드)로 돌아온다. 폰 첫 화면 자체를 보는 시험만 phoneStart:true. */
+  if(!phoneStart&&sizeName==='phone'){
+    const opened=await page.waitForFunction(()=>document.body.classList.contains('ps-team-open'),null,{timeout:4000}).then(()=>true,()=>false);
+    if(opened){
+      await page.locator('#teamBottom [data-tb="more"]').click();
+      await page.locator('#teamMoreSheet [data-tb-app="board"]').click();
+      await page.waitForFunction(()=>document.body.dataset.psApp==='board'&&!document.body.classList.contains('ps-team-open'));
+      await page.waitForTimeout(400);
+    }
+  }
   return {browser,context,page,logs,blocked};
 }
 

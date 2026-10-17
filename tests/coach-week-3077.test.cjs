@@ -1,0 +1,77 @@
+'use strict';
+/* 3.077 — 코치 점검(10/16): 폰 첫 화면이 보기만 하는 작전판이었다 · 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어갔다 · «세션 채우기 →»가 시트까지 열지 않았다 · 상대팀 이름이 잘렸다 */
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const read=f=>fs.readFileSync(path.join(__dirname,'../studio',f),'utf8');
+const SC=read('scout.html'),P=read('process.html'),APP=read('app.html');
+
+test('an empty opponent-analysis scaffold does not count as analysis done',()=>{
+  const ctx={};vm.createContext(ctx);
+  vm.runInContext(/function mmBoardHas\(b\)\{[^\n]*\}/.exec(SC)[0]+'\n'+/function obHasContent\(m\)\{[\s\S]*?\n\}/.exec(SC)[0]+'\n'+/function obEnsure\(m\)\{[\s\S]*?\n\}/.exec(SC)[0]+'\nvar MB2_STD_PHASES=[["atk","공격 시"],["def","수비 시"]];',ctx);
+  const m={};ctx.obEnsure(m);
+  assert.equal(ctx.obHasContent(m),false,'obEnsure 가 깐 빈 뼈대는 내용이 아니다');
+  m.oppPB.boards.def.frames.push({opp:[{x:1,y:2}],us:[]});
+  assert.equal(ctx.obHasContent(m),true,'상대 선수를 놓은 프레임이 있으면 내용이다');
+  assert.equal(ctx.obHasContent({}),false);
+  assert.ok(SC.includes('.some(function(k){return has(m[k]);})||obHasContent(m);'),'완료 판정이 빈 뼈대를 세지 않는다');
+  assert.ok(!SC.includes('||has(m.oppPB)'));
+});
+
+test('today «세션 채우기 →» opens that session\'s fill sheet once',()=>{
+  assert.ok(SC.includes('class="ck-fill" data-ck="fill">세션 채우기 →</button>'));
+  assert.ok(/else if\(k==="fill"\)\{[\s\S]{0,400}type:"openSchedule",date:[\s\S]{0,200}fill:\{slot:_fs\.slot\|\|"",at:Date\.now\(\)\}/.test(SC));
+  assert.ok(/slot:String\(\(training&&training\.slot\)\|\|""\)/.test(SC),'ckSession 이 세션 slot 을 알려 준다');
+  assert.ok(APP.includes("postMessage({type:'gotoDate',date:_gd,fill:_gf},'*')"),'셸이 fill 을 일정 화면에 넘긴다');
+  assert.ok(/if\(d\.fill&&d\.fill\.at&&d\.fill\.at!==window\.__gotoFillAt\)\{ window\.__gotoFillAt=d\.fill\.at; try\{ wksFill\(_col,String\(d\.fill\.slot\|\|''\),'train'\)/.test(P),'두 번 와도 한 번만 연다');
+});
+
+test('the opponent name takes its own line in the weekly match card',()=>{
+  assert.ok(P.includes('.wks-kind.m .wks-krow:has(>.wks-opp){flex-wrap:wrap}'));
+  assert.ok(P.includes('.wks-kind.m .wks-krow>.wks-opp{flex:1 0 100%;white-space:normal;overflow-wrap:anywhere}'));
+});
+
+test('phone opens on team today (team workspace) or community (otherwise); desktop keeps the board',()=>{
+  const m=/function psPhoneStart\(\)\{[\s\S]*?\n    \}\n/.exec(APP);assert.ok(m,'psPhoneStart');
+  const src=m[0];
+  assert.ok(src.includes("getAttribute('data-ps-device')!=='phone')return false"),'폰만');
+  assert.ok(/localStorage\.getItem\('ps_sync_session'\)&&Array\.isArray\(list\)&&list\.some\(function\(w\)\{ return w&&w\.id===wid&&w\.kind==='team'; \}\)/.test(src),'로그인한 팀 공간');
+  assert.ok(src.includes("#appSeg button[data-team-hub]")&&src.includes('#teamBottom [data-tb="today"]'),'팀 → 오늘');
+  assert.ok(/PSSync\.dataUnlocked&&PSSync\.dataUnlocked\(\)\)\{\s*var hub=/.test(src),'팀 운영은 자료 잠금이 풀린 뒤에 연다');
+  assert.ok(src.includes("showApp('community')"),'그 밖 → 커뮤니티');
+  assert.ok(/if\(q==='player'\)\{ showApp\('idp'\); \}\n      else if\(psPhoneStart\(\)\)return;\n      else pingApp\('board'\);/.test(APP),'선수 딥링크가 먼저, 데스크톱은 작전판');
+});
+
+test('match review falls back to the four standard phases when the game model is empty',()=>{
+  const ctx={localStorage:{_v:null,getItem(){return this._v;}}};vm.createContext(ctx);
+  vm.runInContext(/var MPR_STD=\[[^\n]*\n/.exec(SC)[0]+/function mprMomentsOwn\(\)\{[^\n]*\n/.exec(SC)[0]+/function mprMoments\(\)\{[^\n]*\n/.exec(SC)[0],ctx);
+  assert.equal(ctx.mprMoments().map(m=>m.key).join(),'ao,do,dt,at','빈 게임모델 → 표준 네 국면');
+  ctx.localStorage._v=JSON.stringify({moments:[{key:'ao',name:'우리 공격'},{key:'set',name:'세트피스'}]});
+  assert.equal(ctx.mprMoments().map(m=>m.name).join(),'우리 공격,세트피스','게임모델이 있으면 그 국면');
+  assert.ok(!SC.includes('게임모델에 국면이 없어요'),'막힌 안내 대신 기본 국면으로 평가');
+});
+
+test('quick evaluation: one item per area, no position items, remembered per device, next-player door',()=>{
+  assert.ok(/let plEvalMode=\(function\(\)\{ try\{ var v=localStorage\.getItem\("cs_eval_mode_v1"\); return \(v==="quick"\|\|v==="all"\)\?v:"all";/.test(SC),'기본은 전체(2.908), 고른 것은 이 기기에');
+  assert.ok(SC.includes("const _quickIds={}; if(quick)CATS.forEach(([cat])=>{ const f=(byCat[cat]||[])[0]; if(f)_quickIds[f.id]=1; });"),'영역마다 첫 문항 하나');
+  assert.ok(SC.includes("try{ if(!quick&&window.PS_EVAL_STD&&PS_EVAL_STD.posItems){"),'빠른 평가는 포지션 문항을 숨긴다');
+  assert.ok(/nb\.id="plEvalNext"; nb\.textContent="다음 선수 평가 ›";/.test(SC)&&/const p2=plNextUnrated\(pl\.id\); if\(p2\)openPlayer\(p2\.id,\{to:"eval"\}\);/.test(SC),'다음 미평가 선수로');
+  assert.ok(read('storage-keys.js').includes("['cs_eval_mode_v1','device','ls','pref','scout.html']"),'키 표에 있다');
+});
+
+test('unlinked accounts: a team with nobody linked gets one calm line, not a red mark per player',()=>{
+  assert.ok(SC.includes('var _nolink=_anyLinked&&!matchAccountForPlayer(p.id);'),'아무도 연결 안 된 팀은 칩마다 ⃠ 를 달지 않는다');
+  assert.ok(/if\(nOk===0\)\{ n\.classList\.add\("all"\);/.test(SC),'팀 한 줄 안내');
+  assert.ok(SC.includes('.mi-nolink.all{border-color:var(--c-line);background:var(--c-bg);color:var(--c-muted)}'),'경고 빨강이 아닌 안내 회색');
+});
+
+test('board: one «저장» — saves the work board, writes back to a linked vault item, otherwise asks via the 2.907 sheet',()=>{
+  const B=read('board.html');
+  const m=/async function boardSaveOne\(\)\{[\s\S]*?\n\}\nwindow\.__boardSaveOne=boardSaveOne;/.exec(B);assert.ok(m,'boardSaveOne');const src=m[0];
+  assert.ok(src.includes('var ask=!linked&&!empty&&!_boardVaultDeclined&&typeof window.__vaultSave==="function";'),'이어진 판 · 빈 판 · 닫은 판은 묻지 않는다');
+  assert.ok(src.includes('var ok=await boardSaveExplicit(ask?{quiet:true}:{});'),'먼저 작업 보드(이어진 자료 되쓰기 포함)');
+  assert.ok(!/linkTag/.test(src),'새로 담은 자료와 저절로 잇지 않는다(2.907 — 확인 없이 덮어쓰지 않게)');
+  assert.ok(!/__curVaultId=null/.test(src),'앞서 담은 자료 덮어쓰기는 확인창에서 고를 수 있게 둔다');
+  assert.ok(B.includes('manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveOne();};'),'단추');
+  assert.ok(B.includes('  boardSaveOne();   /* 3.077 — 단추와 같은 «저장» */'),'⌘S 도 같은 저장');
+  assert.ok(B.includes('saveBtn.style.display="none";manualSaveBtn.style.display=hide?"none":"inline-flex";'),'«보관함 저장»은 숨긴다');
+  assert.ok(B.includes("b.textContent=_boardManualSaving?'저장 중…':(_chg?'저장 ●':'저장');"),'이름은 «저장»');
+});
