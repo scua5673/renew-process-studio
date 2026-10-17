@@ -143,6 +143,7 @@
     ['ps_active_ws','device','ls','session','scout.html'],
     ['ps_admin_support_reply_v1:','device','ls','draft','admin-support.js',{prefix:1}],
     ['ps_anim_export_fit_v1','device','ls','pref','board.html'],
+    ['ps_anim_export_pgcap_v1','device','ls','pref','board-export-frame.js'],
     ['ps_anim_export_scope_v1','device','ls','pref','board.html'],
     ['ps_app_settings_tab_v1','device','ls','pref','app.html'],
     ['ps_auto_snap_idx_v1','device','ls','recovery','sync.js',{of:'*'}],

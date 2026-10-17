@@ -7,7 +7,7 @@ const source=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8')
 const slice=(a,b)=>{const i=source.indexOf(a);assert.ok(i>=0,a);const j=source.indexOf(b,i+a.length);assert.ok(j>i,b);return source.slice(i,j);};
 
 function seqCtx(){ const c={Object,String,Math,JSON,window:{},toast(){}}; vm.createContext(c);
-  vm.runInContext(slice('function animPagesSequence(on){','async function exportPagesVideo(opts){'),c); return c; }
+  vm.runInContext(slice('function animPagesSequence(on,noName){','async function exportPagesVideo(opts){'),c); return c; }
 
 test('pages join in page order — the first scene of every later page is a cut, captions fall back to the page name',()=>{
   const c=seqCtx();
@@ -24,6 +24,10 @@ test('pages join in page order — the first scene of every later page is a cut,
   assert.deepEqual(s.map(f=>f.hold),[.6,.6,1,1.4,1],'page hold · the last scene of a page stays at least 1s');
   assert.equal(s[0].title,'1단계');assert.equal(s[0].titleColor,'#123456');assert.equal(s[3].title,'');
   assert.equal(on[0].frames[1].cap,'  풀백 전진 ','the page list is not written to');
+  /* 178c465c — «자막: 넣지 않기»: 장면에 쓴 자막만, 페이지 이름은 안 들어간다(자막이 비면 자막 띠도 없다) */
+  const q=JSON.parse(JSON.stringify(c.animPagesSequence(on,true)));
+  assert.deepEqual(q.map(f=>f.cap),['','풀백 전진','','',''],'no page-name fallback');
+  assert.deepEqual(q.map(f=>f.capNo),[0,0,0,1,1]);assert.deepEqual(q.map(f=>!!f.cut),[false,false,false,true,false],'only captions change');
 });
 
 test('exportPagesVideo hands a copied scene list to the same video engine — anim.frames is never swapped',()=>{
@@ -66,7 +70,7 @@ test('the video sheet offers «이 페이지 | 여러 페이지» with a page pi
   assert.doesNotMatch(slice('  function buildPicker(){','  function paintScope(){'),/innerHTML/,'page names are user text — textContent, never innerHTML');
   const go=slice('  ov.querySelector("#evGo").onclick=async function(){','\n}');
   assert.ok(go.indexOf('_animPickSaveTarget(')<go.indexOf('close();'),'pick before the sheet closes');
-  assert.match(go,/else if\(_all\)exportPagesVideo\(\{height:opt\.height,fps:opt\.fps,reel:!!opt\.reel,fit:!!opt\.fit,target:_t,fileBase:_base,pick:_sel\.map\(function\(p\)\{return p\.i;\}\)\}\)/);
+  assert.match(go,/else if\(_all\)exportPagesVideo\(\{height:opt\.height,fps:opt\.fps,reel:!!opt\.reel,fit:!!opt\.fit,target:_t,fileBase:_base,pick:_sel\.map\(function\(p\)\{return p\.i;\}\),noName:!opt\.pgcap\}\)/);
   assert.match(go,/if\(_all&&!_sel\.length\)\{/,'nothing picked → nothing made');
 });
 

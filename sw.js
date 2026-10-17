@@ -4,7 +4,7 @@
 const CACHE = 'process-3.074';   // 3.074 FIFA 애니메이션 카드에 미리보기 그림(훈련마다 · 1·2·3)
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
-  '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
+  '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js', '/studio/board-export-frame.js',
   '/studio/process.html',
   '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/review-training.css',
   '/studio/first-work.js', '/studio/first-work.css',

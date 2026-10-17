@@ -4229,6 +4229,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
 <script src="board-token-depth.js"></script>
+<script src="board-export-frame.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -9076,11 +9077,13 @@ function __exportLayerBBox(g){
   return {x:x0,y:y0,width:x1-x0,height:y1-y0};
 }
 // 내보내기·썸네일 공용 경계: 운동장(BASEVB)에 여백 작업영역의 토큰·그림·시야를 합집합 (기기 화면비·애니 예약공간과 무관)
-function __exportVB(){
+// pitchOnly — 운동장 층만(영상 «운동장 전체»: 선수·그림이 어디 있든 같은 화면 · 8e143f85). 잡히는 원(.tok-hit)은 화면 배율로 크기가 바뀌어 재지 않는다
+function __exportVB(pitchOnly){
   let vb=(typeof BASEVB!=="undefined"&&BASEVB)?BASEVB.slice():svg.getAttribute("viewBox").split(" ").map(Number);
-  try{
+  const hit=[].slice.call(svg.querySelectorAll(".tok-hit"));
+  try{ hit.forEach(c=>c.setAttribute("display","none"));
     let x0=vb[0],y0=vb[1],x1=vb[0]+vb[2],y1=vb[1]+vb[3],grew=false;const PAD=14;
-    ["tokenLayer","drawLayer","visionLayer","ps-multipitch"].forEach(id=>{   // 멀티피치(2·3개 배치)도 포함 — 화면 채움 배치가 기본 박스 밖까지 나가도 내보내기·썸네일에서 안 잘리게
+    (pitchOnly?["ps-multipitch"]:["tokenLayer","drawLayer","visionLayer","ps-multipitch"]).forEach(id=>{   // 멀티피치(2·3개 배치)도 포함 — 화면 채움 배치가 기본 박스 밖까지 나가도 내보내기·썸네일에서 안 잘리게
       const g=svg.querySelector("#"+id);if(!g||!g.childNodes.length)return;
       const b=__exportLayerBBox(g);if(!b||(!b.width&&!b.height))return;
       if(b.x-PAD<x0){x0=b.x-PAD;grew=true;}if(b.y-PAD<y0){y0=b.y-PAD;grew=true;}
@@ -9088,6 +9091,7 @@ function __exportVB(){
     });
     if(grew)vb=[x0,y0,x1-x0,y1-y0];
   }catch(_){}
+  hit.forEach(c=>c.removeAttribute("display"));
   return vb;}
 /* 2.705 — 내보내기(PNG·GIF·MP4)도 썸네일과 같이 편집기 화면용 0.68 배수를 뺀다 */
 function boardImageXML(vbFix){ return _boardImageXMLRaw(vbFix); }
@@ -10260,7 +10264,7 @@ async function exportVideo(opts){ opts=opts||{};
 }
 /* ══ 2.975 · 영상은 16:9 — 운동장을 가운데, 터치라인 밖 잔디 폭은 일정하게(사용자 "16:9 비율로 여백없이" · "터치라인이 있으면 잔디 여백을 일정하게 · 가운데 정렬") ══
    보이는 운동장(범위·개수·회전 반영) 사각형을 기준으로 짧은 쪽에 잔디 M(3m)을 두고, 긴 쪽은 16:9 가 되도록 양쪽에 똑같이 더한다.
-   잔디면은 운동장 밖으로 1600 단위까지 이어져 있어 넓힌 자리도 빈칸이 아니라 잔디다. 판 밖으로 나간 토큰·그림이 있으면 가운데를 지킨 채 그만큼 넓힌다(범위를 자른 보기는 넓히지 않는다). */
+   잔디면은 운동장 밖으로 1600 단위까지 이어져 있어 넓힌 자리도 빈칸이 아니라 잔디다. 판 밖 토큰·그림은 세지 않는다 — 운동장이 같으면 화면도 같다(8e143f85 · 셈은 board-export-frame.js). */
 /* ══ 2.988 · 훈련 구역에 맞춘 화면 — 순수 구간 시작 ══
    영상은 운동장 전체를 16:9 로 담는다(2.975) — 12m 짜리 론도는 그 안에서 점이 된다(트레이닝 레터에 넣을 영상을 뽑다가 드러났다).
    «화면: 훈련 구역»을 고르면 장면들의 선수·장비·공·그림이 차지하는 상자를 재고, 그 상자를 가장 알뜰하게 담는 화면비(16:9 · 4:3 · 1:1 · 3:4)로 자른다.
@@ -10319,11 +10323,7 @@ function _exportPitchBox(){ try{ const p=PR();
   if(!cards.length&&pitchViewKey()!=='full'){const span=pitchViewSpan(pitchViewKey());if(pvWorldRight())p.L=Math.max(p.L,W-span);else p.R=Math.min(p.R,span);}
   const pts=[[p.L,p.T],[p.R,p.T],[p.L,p.B],[p.R,p.B]].map(([x,y])=>state.orientation==='v'?(state.spFlip?[H-y,x]:[y,W-x]):[x,y]);
   const xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]); return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]; }catch(_){ return null; } }
-function _export169(uvb){ try{ const pb=_exportPitchBox(); if(!pb)return uvb; const m=M, cx=(pb[0]+pb[2])/2, cy=(pb[1]+pb[3])/2, pw=pb[2]-pb[0], ph=pb[3]-pb[1];
-  let Hh=ph+2*m, Ww=Hh*16/9; if(Ww<pw+2*m){ Ww=pw+2*m; Hh=Ww*9/16; }
-  if(uvb&&pitchViewKey()==='full'){ const needW=2*Math.max(cx-uvb[0],uvb[0]+uvb[2]-cx), needH=2*Math.max(cy-uvb[1],uvb[1]+uvb[3]-cy);
-    if(needW>Ww+0.5){ Ww=needW; Hh=Ww*9/16; } if(needH>Hh+0.5){ Hh=needH; Ww=Hh*16/9; } }
-  return [cx-Ww/2,cy-Hh/2,Ww,Hh]; }catch(_){ return uvb; } }
+function _export169(uvb){ try{ const pb=_exportPitchBox(); return pb?PSExportFrame.frame169(pb,M,pitchViewKey()==='full'?uvb:null):uvb; }catch(_){ return uvb; } }
 window.__export169=_export169;
 /* ══ 2.975 · 끊기지 않는 MP4 — WebCodecs 인코딩(사용자 "영상 내보내기 했을 때 애니메이션이 가끔 버벅거릴 때가 있어") ══
    예전 길(MediaRecorder)은 «실제 시각»에 맞춰 화면을 찍는다 — 한 장이라도 늦게 그려지면 그 장이 길게 멈췄다가 다음 장들이 몰려 튀었다.
@@ -10463,7 +10463,7 @@ async function _exportVideoRun(opts){
      16:9 틀(_export169)은 그 페이지의 판이 올라와 있을 때 재야 하므로 페이지의 마지막 장면을 읽은 그 자리에서 잰다. */
   const _segVB={};
   const _vbUnion=(u,v)=>{ if(!u)return v.slice(); const x1=Math.max(u[0]+u[2],v[0]+v[2]),y1=Math.max(u[1]+u[3],v[1]+v[3]); u[0]=Math.min(u[0],v[0]);u[1]=Math.min(u[1],v[1]);u[2]=x1-u[0];u[3]=y1-u[1]; return u; };
-  for(let fi=0;fi<FR.length;fi++){const f=FR[fi];try{loadSnap(f.snap);const o=boardImageXML();
+  for(let fi=0;fi<FR.length;fi++){const f=FR[fi];try{loadSnap(f.snap);const o={vb:__exportVB(!opts.capN)};   /* 8e143f85 — 운동장 층만(미팅 영상은 예전처럼 내용까지) */
     uvb=_vbUnion(uvb,o.vb);
     if(opts.pageMode){ const g=f.pg|0; _segVB[g]=_segVB[g]||{raw:null}; _segVB[g].raw=_vbUnion(_segVB[g].raw,o.vb);
       const nx=FR[fi+1]; if(!nx||(nx.pg|0)!==g){ try{ _segVB[g].v169=_export169(_segVB[g].raw.slice()); }catch(_){} } }
@@ -10485,9 +10485,7 @@ async function _exportVideoRun(opts){
     /* 2.719 — 좌우(위아래) 검정 여백 대신 잔디로 채운다(코치 피드백 "영상 좌우 여백 없이 잔디로"): 보드를 검정 위에 얹지 않고
        viewBox 를 캔버스 9:16 비율로 대칭 확장해 SVG 잔디면(운동장 밖 1600 단위까지 이어진다)이 화면 전체를 채운다.
        운동장 크기는 예전 폭 맞춤과 같거나(가로 운동장) 더 크다(세로 하프 — 예전엔 가용 높이에 눌려 작아졌다). 제목띠·자막은 잔디 위에 그려진다. */
-    const _toAr=v=>{ const ar=canvas.width/canvas.height; let vx=v[0],vy=v[1],vw=v[2],vh=v[3];
-      if(vw/vh<ar){ const nw=vh*ar; vx-=(nw-vw)/2; vw=nw; } else { const nh=vw/ar; vy-=(nh-vh)/2; vh=nh; }
-      return [vx,vy,vw,vh]; };
+    const _toAr=v=>PSExportFrame.toAr(v,canvas.width/canvas.height);
     if(_fit)uvb=_fit.raw.slice();   /* 2.988 — 릴스도 훈련 구역을 가운데 크게 */
     if(uvb){ uvb=_toAr(uvb); }
     if(opts.pageMode)Object.keys(_segVB).forEach(g=>{ const sg=_segVB[g]; if(sg&&sg.raw)sg.reel=_toAr(sg.raw); });   /* 2.976 */
@@ -10692,7 +10690,7 @@ function exportVideoSheet(mode){
   var old=document.getElementById("evSheet"); if(old)old.remove();
   var opt={height:1080,fps:30,reel:0,hold:3,scope:0,fit:0};
   if(!meeting){ try{ opt.fit=localStorage.getItem("ps_anim_export_fit_v1")==="1"?1:0; }catch(_){} }   /* 2.988 — 화면: 운동장 전체 | 훈련 구역(고른 쪽을 이 기기에 기억) */
-  if(showScope){ var _sc=""; try{_sc=localStorage.getItem("ps_anim_export_scope_v1")||"";}catch(_){} opt.scope=(!curOK||_sc==="all")?1:0; }
+  if(showScope){ var _sc=""; try{_sc=localStorage.getItem("ps_anim_export_scope_v1")||"";}catch(_){} opt.scope=(!curOK||_sc==="all")?1:0; opt.pgcap=PSExportFrame.capOn()?1:0; }
   var ov=document.createElement("div"); ov.id="evSheet";
   ov.style.cssText="position:fixed;inset:0;z-index:99998;background:rgba(10,14,22,.5);display:flex;align-items:center;justify-content:center;font-family:inherit;";
   function seg(label,rows,key){
@@ -10704,7 +10702,7 @@ function exportVideoSheet(mode){
     +'<div style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;margin-bottom:7px"><span class="export-format-icon" aria-hidden="true">MP4</span><span>'+(meeting?'슬라이드 영상 내보내기':'영상 내보내기')+'</span></div>'
     +'<div id="evDesc" style="font-size:11px;line-height:1.45;color:var(--txt-dim,#646A73);margin-bottom:16px;word-break:keep-all"></div>'
     +(showScope?seg("범위",[["이 "+_pw,0],["여러 "+_pw,1]],"scope"):'')
-    +(showScope?'<div id="evPages" style="margin:-4px 0 14px;border:1px solid var(--line,#E3E6EA);border-radius:12px;overflow:hidden"></div>':'')
+    +(showScope?'<div id="evPages" style="margin:-4px 0 14px;border:1px solid var(--line,#E3E6EA);border-radius:12px;overflow:hidden"></div><div id="evCapRow">'+seg("자막",[[_pw+" 이름",1],["넣지 않기",0]],"pgcap")+'</div>':'')   /* 178c465c */
     +(meeting?seg("한 장",[["2초",2],["3초",3],["5초",5]],"hold"):seg("형식",[["가로 16:9",0],["릴스 9:16",1]],"reel"))
     +(meeting?'':seg("화면",[["운동장 전체",0],["훈련 구역",1]],"fit"))
     +seg("화질",[["720p",720],["1080p",1080]],"height")
@@ -10737,10 +10735,11 @@ function exportVideoSheet(mode){
   function paintScope(){
     var d=ov.querySelector("#evDesc"), pl=ov.querySelector("#evPages"), all=showScope&&opt.scope===1, n=pickedPages().length;
     if(d)d.textContent=(meeting?('슬라이드 '+anim.slides.length+'장을 차례로 — 장면이 있는 슬라이드는 움직이고, 제목은 아래 자막으로 들어갑니다. ')
-      :(all?(window.__vaultBook?'고른 시퀀스를 순서대로 한 파일에 담습니다 — 아래 자막에 시퀀스와 단계 이름이 들어갑니다. ':'고른 페이지를 페이지 순서대로 한 파일에 담습니다 — 페이지가 바뀔 땐 바로 넘어가고, 장면 자막이 없으면 페이지 이름이 아래 자막으로 들어갑니다. '):''))
-      +((!meeting&&opt.fit)?(opt.reel?'MP4(릴스 9:16 · 훈련 구역을 가운데 크게)로 저장합니다. ':'MP4(훈련 구역에 맞춘 화면)로 저장합니다 — 선수·장비·그림이 있는 곳만 크게 담고, 화면비는 구역 모양에 가까운 것(16:9 · 4:3 · 1:1)을 고릅니다. '):((!meeting&&opt.reel)?'MP4(릴스 9:16 · 운동장 가운데)로 저장합니다. ':'MP4(16:9 · 운동장 가운데)로 저장합니다. '))
+      :(all?(window.__vaultBook?'고른 시퀀스를 순서대로 한 파일에 담습니다 — ':'고른 페이지를 페이지 순서대로 한 파일에 담습니다 — 페이지가 바뀔 땐 바로 넘어가고, ')+(!opt.pgcap?_pw+' 이름 자막은 넣지 않습니다. ':window.__vaultBook?'아래 자막에 시퀀스와 단계 이름이 들어갑니다. ':'장면 자막이 없으면 페이지 이름이 아래 자막으로 들어갑니다. '):''))
+      +((!meeting&&opt.fit)?(opt.reel?'MP4(릴스 9:16 · 훈련 구역을 가운데 크게)로 저장합니다. ':'MP4(훈련 구역에 맞춘 화면)로 저장합니다 — 선수·장비·그림이 있는 곳만 크게 담고, 화면비는 구역 모양에 가까운 것(16:9 · 4:3 · 1:1)을 고릅니다. '):((!meeting&&opt.reel)?'MP4(릴스 9:16 · 운동장 가운데)로 저장합니다. ':'MP4(16:9 · 운동장 가운데)로 저장합니다. ')+(meeting?'':'운동장은 영상마다 같은 자리 · 크기이고, 운동장 밖 멀리 둔 선수 · 그림은 잘릴 수 있습니다. '))   /* 8e143f85 */
       +(_t3On()?'지금 보는 3D 경기장(카메라 · 분위기)으로 만듭니다 — 평면 영상은 보드 설정에서 3D 를 끄고 만드세요. ':'')   /* 3.039 */
       +'브라우저가 MP4 를 못 만들면 WebM 으로 저장됩니다.';
+    var cr=ov.querySelector("#evCapRow"); if(cr)cr.hidden=!all;
     if(pl){ pl.hidden=!all; var hn=pl.querySelector("#evPickN"), ha=pl.querySelector("#evPickAll"); if(hn)hn.textContent="내보낼 "+_pw+" "+n+" / "+PG.on.length; if(ha)ha.textContent=(n===PG.on.length)?"모두 빼기":"모두 고르기"; }
     var go=ov.querySelector("#evGo"); if(go&&!go.__busy){ var none=all&&!n; go.disabled=none; go.style.opacity=none?".5":""; go.textContent=none?(_pw+"를 골라 주세요"):(all?("영상 만들기 · "+_pw+" "+n+"개"):"영상 만들기"); }
   }
@@ -10749,7 +10748,7 @@ function exportVideoSheet(mode){
   ov.querySelectorAll(".ev-seg").forEach(function(sg){ sg.addEventListener("click",function(e){ var b=e.target.closest(".ev-b"); if(!b||b.disabled)return;
     opt[sg.getAttribute("data-key")]=+b.getAttribute("data-v");
     [].forEach.call(sg.querySelectorAll(".ev-b"),function(x){ x.classList.toggle("on",x===b); x.style.background=(x===b)?"var(--blue,#14213D)":"var(--panel2,#F1F2F4)"; x.style.color=(x===b)?"#fff":"var(--txt,#14161A)"; x.style.borderColor=(x===b)?"var(--blue,#14213D)":"var(--line,#E3E6EA)"; });
-    var _sk=sg.getAttribute("data-key"); if(_sk==="scope"||_sk==="fit"||_sk==="reel")paintScope(); }); });
+    var _sk=sg.getAttribute("data-key"); if(_sk==="scope"||_sk==="fit"||_sk==="reel"||_sk==="pgcap")paintScope(); }); });
   paintScope();
   ov.querySelectorAll(".ev-b.on").forEach(function(x){ x.style.background="var(--blue,#14213D)"; x.style.color="#fff"; x.style.borderColor="var(--blue,#14213D)"; });
   function close(){ try{ov.remove();}catch(_){} }
@@ -10762,10 +10761,10 @@ function exportVideoSheet(mode){
     var _all=showScope&&opt.scope===1, _sel=_all?pickedPages():null;   /* 2.976 — 고른 페이지 */
     if(_all&&!_sel.length){ _go.__busy=0; paintScope(); return; }
     var _base=meeting?"미팅_슬라이드":(_all?_animPagesBase(_sel.length===PG.on.length?null:_sel.map(function(p){return p.name;})):null);   /* 다 고르면 «작전판 - 모든 페이지», 몇 개면 «작전판 - 빌드업·코너킥» */
-    if(showScope){ try{ localStorage.setItem("ps_anim_export_scope_v1",_all?"all":"page"); }catch(_){} }
+    if(showScope){ try{ localStorage.setItem("ps_anim_export_scope_v1",_all?"all":"page"); }catch(_){} if(_all)PSExportFrame.capSave(opt.pgcap); }
     if(!meeting){ try{ localStorage.setItem("ps_anim_export_fit_v1",opt.fit?"1":"0"); }catch(_){} }   /* 2.988 */
     var _t=await _animPickSaveTarget(_animExportName(_ext,_base),_ext); if(_t===false){ _go.__busy=0; _go.disabled=false; _go.style.opacity=""; return; }
-    close(); setTimeout(function(){ if(meeting)exportMeetingVideo({height:opt.height,fps:opt.fps,hold:opt.hold,target:_t}); else if(_all)exportPagesVideo({height:opt.height,fps:opt.fps,reel:!!opt.reel,fit:!!opt.fit,target:_t,fileBase:_base,pick:_sel.map(function(p){return p.i;})}); else exportVideo(Object.assign({height:opt.height,fps:opt.fps,reel:!!opt.reel,fit:!!opt.fit,target:_t},window.__bkExportOne?window.__bkExportOne():null)); },30); };   /* 2.985 — 패턴북: 자막에 시퀀스·단계 이름 */
+    close(); setTimeout(function(){ if(meeting)exportMeetingVideo({height:opt.height,fps:opt.fps,hold:opt.hold,target:_t}); else if(_all)exportPagesVideo({height:opt.height,fps:opt.fps,reel:!!opt.reel,fit:!!opt.fit,target:_t,fileBase:_base,pick:_sel.map(function(p){return p.i;}),noName:!opt.pgcap}); else exportVideo(Object.assign({height:opt.height,fps:opt.fps,reel:!!opt.reel,fit:!!opt.fit,target:_t},window.__bkExportOne?window.__bkExportOne():null)); },30); };   /* 2.985 — 패턴북: 자막에 시퀀스·단계 이름 */
 }
 /* 2.970 — 미팅 슬라이드 → 영상. 발표(슬라이드쇼)와 같은 순서: 슬라이드마다 opts.hold 초 머물고, 다음 장으로는 같은 선수가 움직여 넘어간다.
    장면이 있는 슬라이드는 장면대로 움직인다. 영상 엔진은 작전판 애니메이션과 같은 것 — 장면 목록만 잠깐 슬라이드로 바꿔 끼우고 끝나면 되돌린다.
@@ -10800,11 +10799,11 @@ function animPagesForExport(){ try{ var L=window.__psPages&&window.__psPages.exp
 function _animPagesBase(names){ var _pw=window.__vaultBook?"시퀀스":"페이지", b=_animDefaultBase(true), t="모든 "+_pw;
   if(Array.isArray(names)&&names.length){ t=names.map(function(x){return String(x||"").trim();}).filter(Boolean).join("·"); if(!t||t.length>48)t=_pw+" "+names.length+"개"; }
   return (b+" - "+t).replace(/[\\\/:*?"<>|\u0000-\u001f]/g,"_").replace(/\s+/g," ").trim().slice(0,120); }
-function animPagesSequence(on){ var seq=[];
+function animPagesSequence(on,noName){ var seq=[];   /* noName — 페이지 이름 자막 빼기(178c465c): 장면에 쓴 자막만 */
   (on||[]).forEach(function(pg,pi){ var hold=pg.hold>0?pg.hold:.6, n=pg.frames.length;
-    var _bkc=window.__vaultBook?bkCapFrames(pg.frames,pg.name):null;   /* 2.985 — 패턴북 */
+    var _bkc=(window.__vaultBook&&!noName)?bkCapFrames(pg.frames,pg.name):null;   /* 2.985 — 패턴북 */
     pg.frames.forEach(function(f,k){ var own=(f&&f.hold>0)?f.hold:hold;
-      seq.push(Object.assign({},f,{pg:pi,cut:pi>0&&k===0,cap:_bkc?_bkc[k].cap:(String((f&&f.cap)||"").trim()||pg.name),capNo:pi,
+      seq.push(Object.assign({},f,{pg:pi,cut:pi>0&&k===0,cap:_bkc?_bkc[k].cap:(String((f&&f.cap)||"").trim()||(noName?"":pg.name)),capNo:pi,
         hold:k===n-1?Math.max(1,own):own,   /* 페이지 마지막 장면은 1초 이상 — 바로 넘어가기 전에 읽을 틈 */
         title:pg.title||"",titleColor:pg.titleColor||""})); }); });
   return seq; }
@@ -10812,7 +10811,7 @@ async function exportPagesVideo(opts){ opts=opts||{};
   var P=animPagesForExport(); if(!P||!P.on.length){ toast("애니메이션이 있는 페이지가 없어요"); return; }
   var on=P.on; if(Array.isArray(opts.pick)){ var want={}; opts.pick.forEach(function(i){ want[i]=1; }); on=on.filter(function(p){ return !!want[p.i]; }); }   /* 고른 페이지만(페이지 순서는 그대로) */
   if(!on.length){ toast("내보낼 페이지를 골라 주세요"); return; }
-  var seq=animPagesSequence(on); if(seq.length<2){ toast("장면을 2개 이상 만들어주세요"); return; }
+  var seq=animPagesSequence(on,opts.noName); if(seq.length<2){ toast("장면을 2개 이상 만들어주세요"); return; }
   return exportVideo(Object.assign({},opts,{frames:seq,pageMode:true,pageN:on.length,fileBase:opts.fileBase||_animPagesBase(on.length===P.on.length?null:on.map(function(p){return p.name;}))}));
 }
 window.__exportPagesVideo=exportPagesVideo;
@@ -10898,7 +10897,7 @@ async function exportGif(){
 async function _gifEncode(frames,o){
   o=o||{};const hold=Math.max(.2,+o.hold||.6),lastHold=Math.max(hold,+o.lastHold||0),fps=+o.fps||25,frameCs=Math.max(2,Math.round(100/fps)),N=frames.length,title=o.title||"",titleColor=o.titleColor||"#e23b3b",maxFrames=+o.maxFrames||260,W0=+o.width||640;
   let uvb=null;   /* 영상과 동일: 전 장면 경계 합집합으로 캔버스 고정 */
-  for(const f of frames){try{loadSnap(f.snap);const o2=boardImageXML();
+  for(const f of frames){try{loadSnap(f.snap);const o2={vb:__exportVB(o.ratio==="16:9")};   /* 8e143f85 — 16:9 는 운동장 층만(영상과 같다) */
     if(!uvb)uvb=o2.vb.slice();
     else{const x1=Math.max(uvb[0]+uvb[2],o2.vb[0]+o2.vb[2]),y1=Math.max(uvb[1]+uvb[3],o2.vb[1]+o2.vb[3]);
       uvb[0]=Math.min(uvb[0],o2.vb[0]);uvb[1]=Math.min(uvb[1],o2.vb[1]);uvb[2]=x1-uvb[0];uvb[3]=y1-uvb[1];}
