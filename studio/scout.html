@@ -15591,7 +15591,12 @@ function matchCopyPrepBoards(){
   try{toast(added.length+"개 준비 장면을 리뷰 사본으로 만들었어요");}catch(_){}
 }
 /* ── 1.879 · 국면 평가 · 선수 평가 (경기 리뷰) ─────────────────────────────── */
-function mprMoments(){ try{ var g=JSON.parse(localStorage.getItem("cs_gamemodel_v1")||"null"); return (g&&Array.isArray(g.moments))?g.moments.filter(function(m){return m&&m.key;}):[]; }catch(_){ return []; } }
+/* 3.075 — 게임모델이 비었으면 경기 리뷰는 표준 네 국면으로 평가한다(코치 점검 10/16: 새 팀은 첫 경기 리뷰의 «국면별 리뷰»가 막혔다).
+   게임모델 문서에는 아무것도 넣지 않는다(2.419 «기본 국면을 만들어 두지 않는다»). 키는 게임모델 표준 국면(GM_LIB)과 같아
+   나중에 게임모델에 같은 국면을 만들면 적어 둔 리뷰가 그대로 이어진다. */
+var MPR_STD=[{key:"ao",name:"공격 조직"},{key:"do",name:"수비 조직"},{key:"dt",name:"공격 → 수비 전환"},{key:"at",name:"수비 → 공격 전환"}];
+function mprMomentsOwn(){ try{ var g=JSON.parse(localStorage.getItem("cs_gamemodel_v1")||"null"); return (g&&Array.isArray(g.moments))?g.moments.filter(function(m){return m&&m.key;}):[]; }catch(_){ return []; } }
+function mprMoments(){ var own=mprMomentsOwn(); return own.length?own:MPR_STD.slice(); }
 var MPR_COL={ao:"#2E7D63",do:"#C24A46",dt:"#B5762B",at:"#3A6DF0"};
 function mprSeg(cls,val,col,onPick,ro){ var seg=document.createElement("span"); seg.className=cls; seg.style.setProperty("--gc",col||"var(--blue)"); seg.setAttribute("role","radiogroup");seg.setAttribute("aria-label","국면 평점");
   for(var i=1;i<=10;i++){ (function(n){ var b=document.createElement("button"); b.type="button"; b.className=(val!=null&&n<=val)?"on":""; b.title=n+"점"; b.setAttribute("role","radio"); b.setAttribute("aria-label",n+"점"); b.setAttribute("aria-checked",String(val===n)); if(ro)b.disabled=true; b.onclick=function(e){ e.stopPropagation(); if(ro)return; onPick(val===n?0:n); }; seg.appendChild(b); })(i); }
@@ -15812,7 +15817,8 @@ function matchRenderPeriods(m,readonly){
 }
 function matchRenderPhaseReview(m,readonly){
   var host=$("matchPhaseReview"), avgEl=$("matchPhaseAvg"); if(!host)return; host.innerHTML="";
-  var moms=mprMoments(); if(!moms.length){ host.innerHTML='<div class="mpl-empty">게임모델에 국면이 없어요 — 게임모델 탭에서 만들면 여기서 평가할 수 있어요.</div>'; if(avgEl)avgEl.textContent=""; return; }
+  var moms=mprMoments();
+  if(!mprMomentsOwn().length){ var std=document.createElement("div"); std.className="mpl-empty"; std.textContent="게임모델이 비어 있어 기본 네 국면으로 평가해요 — 게임모델 탭에서 국면을 만들면 그 국면으로 바뀝니다."; host.appendChild(std); }
   m.phaseReview=m.phaseReview||{}; var sum=0,n=0;
   moms.forEach(function(mo){ var pr=m.phaseReview[mo.key]||{}, v=(+pr.s>0)?+pr.s:null; if(v){sum+=v;n++;}
     var col=MPR_COL[mo.cat||mo.key]||MPR_COL.ao;

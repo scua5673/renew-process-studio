@@ -39,3 +39,12 @@ test('phone opens on team today (team workspace) or community (otherwise); deskt
   assert.ok(src.includes("showApp('community')"),'그 밖 → 커뮤니티');
   assert.ok(/if\(q==='player'\)\{ showApp\('idp'\); \}\n      else if\(psPhoneStart\(\)\)return;\n      else pingApp\('board'\);/.test(APP),'선수 딥링크가 먼저, 데스크톱은 작전판');
 });
+
+test('match review falls back to the four standard phases when the game model is empty',()=>{
+  const ctx={localStorage:{_v:null,getItem(){return this._v;}}};vm.createContext(ctx);
+  vm.runInContext(/var MPR_STD=\[[^\n]*\n/.exec(SC)[0]+/function mprMomentsOwn\(\)\{[^\n]*\n/.exec(SC)[0]+/function mprMoments\(\)\{[^\n]*\n/.exec(SC)[0],ctx);
+  assert.equal(ctx.mprMoments().map(m=>m.key).join(),'ao,do,dt,at','빈 게임모델 → 표준 네 국면');
+  ctx.localStorage._v=JSON.stringify({moments:[{key:'ao',name:'우리 공격'},{key:'set',name:'세트피스'}]});
+  assert.equal(ctx.mprMoments().map(m=>m.name).join(),'우리 공격,세트피스','게임모델이 있으면 그 국면');
+  assert.ok(!SC.includes('게임모델에 국면이 없어요'),'막힌 안내 대신 기본 국면으로 평가');
+});
