@@ -168,6 +168,49 @@
     SHEET={node:mask,doc:doc,key:key,focus:doc.activeElement};
     try{ x.focus(); }catch(_){}
   }
+  /* 3.076 — 훈련 만들기 ↔ 커뮤니티를 한 표로(사용자 «훈련만들기와 잘 연동이 되어야 해 · 둘이 잘 맞추고 싶어»).
+     작전판 훈련의 성격(FOCUS 10가지)은 운동량 · 일정에 쓰이니 그대로 두고, 커뮤니티 주제 8개와는 이 표 하나로만 오간다.
+     · 올릴 때 주제는 작전판 키로 적는다(TO_CAT) — 예전 글 표시(catOf 의 국면 키 호환) · fromCoach 가 그대로 읽는다
+     · 담을 때는 거꾸로(focusOfPost) — 보관함에는 언제나 작전판이 아는 키만 들어간다 */
+  var TO_CAT={att:'bp',def:'bpo',tra:'tr_att',trd:'tr_def',set:'set',tech:'tech',gk:'gk',phys:'phys'};
+  var TO_FOCUS={att:'bp',def:'bpo',tra:'tr_att',trd:'tr_def',set:'set',tech:'tech',gk:'tech',phys:'phys'};
+  function keys(s){ return String(s==null?'':s).split(',').map(function(x){ return x.trim(); }).filter(Boolean); }
+  function topicOf(k){ return FOCUS[k]||COACH[k]||(TMAP[k]?k:''); }
+  /* 커뮤니티 글(p.cat) → 보관함의 훈련 성격. 작전판 키가 있으면 그대로, 없으면 주제를 거꾸로. 모르면 기술(옛 기본값) */
+  function focusOfPost(p){
+    var it=p&&p.item; if(it&&FOCUS[it.focus])return it.focus;
+    var ks=keys(p&&p.cat),i,t,gk=false;
+    for(i=0;i<ks.length;i++){ if(FOCUS[ks[i]])return ks[i]; t=topicOf(ks[i]); if(t==='gk')gk=true; else if(t)return TO_FOCUS[t]; }
+    return gk?TO_FOCUS.gk:'tech';
+  }
+  /* 보관함 훈련 → 커뮤니티 주제 제안(작전판 성격 + 판에 골키퍼가 있으면 골키퍼는 묻지 않는다 — 골키퍼 훈련인지는 코치가 안다) */
+  function topicsOfDrill(d){ var t=d&&FOCUS[d.focus]; var a=t?[t]:[]; (Array.isArray(d&&d.topics)?d.topics:[]).forEach(function(k){ if(TMAP[k]&&a.indexOf(k)<0)a.push(k); }); return a; }
+  /* 판 위 선수 수 — 훈련이 여럿이면 가장 많은 훈련(그 인원이면 전부 할 수 있다) */
+  function headcount(d){
+    var n=function(sn){ return (sn&&Array.isArray(sn.players))?sn.players.length:0; },m=n(d&&d.snap);
+    (Array.isArray(d&&d.trainings)?d.trainings:[]).forEach(function(t){ var fr=Array.isArray(t&&t.frames)&&t.frames[0]; m=Math.max(m,n(t&&t.snap),n(fr&&fr.snap)); });
+    return m;
+  }
+  /* 올리기 창의 주제 · 연령 · 인원 — 커뮤니티 고르개와 같은 이름 · 순서. fill(d) 는 고른 훈련에서 미리 채운다(코치는 확인만) */
+  function upForm(doc,o){
+    var tp=[],ag=[],pl=o&&o.pl;
+    function chips(host,list,sel,label){
+      if(!host)return function(){};
+      var bs=list.map(function(k){ var b=el(doc,'button','',label(k)); b.type='button'; b.dataset.k=k;
+        b.onclick=function(){ var i=sel.indexOf(k); if(i>=0)sel.splice(i,1); else sel.push(k); mark(); }; host.appendChild(b); return b; });
+      function mark(){ bs.forEach(function(b){ var on=sel.indexOf(b.dataset.k)>=0; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false'); }); }
+      mark(); return mark;
+    }
+    var mT=chips(o&&o.topics,PHASES.concat(EXTRAS),tp,function(k){ return TMAP[k][1]; }),mA=chips(o&&o.ages,AGES,ag,function(a){ return a; });
+    return {
+      fill:function(d){
+        if(!tp.length){ topicsOfDrill(d).forEach(function(k){ tp.push(k); }); mT(); }
+        if(!ag.length&&Array.isArray(d&&d.ages)){ d.ages.forEach(function(a){ if(AGES.indexOf(a)>=0&&ag.indexOf(a)<0)ag.push(a); }); mA(); }
+        var h=headcount(d); if(pl&&!pl.value&&h)pl.value=String(h);
+      },
+      get:function(){ return {topics:tp.slice(),cat:tp.map(function(k){ return TO_CAT[k]; }).join(','),ages:ag.slice(),age:ag.join(','),players:String(pl&&pl.value||'').replace(/[^0-9]/g,'')}; }
+    };
+  }
   /* 옛 고르개(주제 칩 · 콘텐츠 유형 · 연령 · 인원 · 폰 필터 시트의 같은 칸)를 감춘다 — 새 고르개가 대신한다. 정렬 · 검색 · 보기 방식은 그대로 */
   function hideOld(doc,noNav){
     var hide=function(n){ if(n&&n.style)n.style.setProperty('display','none','important'); };
@@ -178,5 +221,5 @@
   }
   return {TOPICS:TOPICS,PHASES:PHASES,EXTRAS:EXTRAS,AGES:AGES,COACH:COACH,FOCUS:FOCUS,PROC_PL:PROC_PL,
     fromCoach:fromCoach,fromProc:fromProc,fromFifa:fromFifa,fifaAges:fifaAges,state:state,set:set,ok:ok,fit:fit,counts:counts,
-    draw:draw,badge:badge,open:open,close:close,hideOld:hideOld,isOpen:function(){ return !!SHEET; }};
+    draw:draw,badge:badge,TO_CAT:TO_CAT,TO_FOCUS:TO_FOCUS,focusOfPost:focusOfPost,topicsOfDrill:topicsOfDrill,headcount:headcount,upForm:upForm,open:open,close:close,hideOld:hideOld,isOpen:function(){ return !!SHEET; }};
 });

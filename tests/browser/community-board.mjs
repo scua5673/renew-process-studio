@@ -176,6 +176,22 @@ try{
   assert.deepEqual([L.nums,L.frames,L.play],['6',3,true],'둘째 슬라이드의 판과 장면');
   await page.waitForTimeout(500);await shot('4-viewer-meeting');
   await c.click('#cvClose');
+
+  // 7) 3.076 — 코치 자료 칸의 올리기: 커뮤니티 고르개와 같은 주제 · 연령, 고른 훈련의 성격 · 판 위 선수 수로 미리 채움
+  await c.click('#prTabCoach');
+  const third=posted.id;
+  await c.evaluate(()=>window.postMessage({type:'openUpload',libId:'Vtrain3038'},'*'));
+  await c.waitForSelector('#upGo');
+  await c.waitForFunction(()=>!!document.querySelector('#upPick .pk.on[data-lib="Vtrain3038"]'));
+  const uf=await c.evaluate(()=>({topics:[...document.querySelectorAll('#upCats button')].map(b=>b.textContent+(b.classList.contains('on')?'*':'')),
+    ages:[...document.querySelectorAll('#upAges button')].map(b=>b.textContent),pl:document.getElementById('upPlayers').value}));
+  assert.deepEqual(uf,{topics:['공격','수비 전환','공격 전환','수비','세트피스','개인 기술*','골키퍼','피지컬·웜업'],ages:['U8','U10','U12','U15','U18','성인'],pl:'1'},'훈련 성격 «기술·개인» → 주제 «개인 기술» · 판 위 1명');
+  await c.click('#upAges button:nth-child(3)');
+  await c.click('#upGo');
+  for(let i=0;i<100&&posted.id===third;i++)await page.waitForTimeout(100);
+  assert.deepEqual([posted.cat,posted.age,posted.players,posted.item.ages,posted.item.focus],['tech','U12','1',['U12'],'tech'],'올린 글의 주제는 작전판 키 · 연령은 보관함에도 실려 간다');
+  await shot('5-upload-coach');
+
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log(JSON.stringify({engine,size,passed:true,pages:it.pages.length,bigBytes}));
