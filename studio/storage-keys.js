@@ -147,6 +147,8 @@
     ['ps_admin_support_reply_v1:','device','ls','draft','admin-support.js',{prefix:1}],
     ['ps_anim_export_fit_v1','device','ls','pref','board.html'],
     ['ps_anim_export_scope_v1','device','ls','pref','board.html'],
+    ['ps_anim_export_cap_v1','device','ls','pref','board-tweaks.js'],   // 3.085 여러 페이지 영상 — 페이지 이름 자막 넣기 · 빼기
+    ['ps_anim_speed_all_v1','device','ls','pref','board-tweaks.js'],   // 3.085 속도를 모든 장면에 같이(«전체»)
     ['ps_app_settings_tab_v1','device','ls','pref','app.html'],
     ['ps_auto_snap_idx_v1','device','ls','recovery','sync.js',{of:'*'}],
     ['ps_autosave_arch_seen_v1','device','ls','seen','app.html'],
@@ -253,6 +255,8 @@
     ['ps_sync_skipped','device','ls','queue','sync.js'],
     ['ps_tilt3d_boot','device','ls','session','board.html'],
     ['ps_tilt3d_opts_v1','device','ls','pref','board.html'],
+    ['ps_dock_float_v1','device','ls','pref','board-dock-float.js'],   // 3.073 떠 있는 하단 도크 — 열린 칸 · 묶은 도구의 마지막 종류
+    ['ps_dock_skin_v1','device','ls','pref','board-dock-skin.js'],   // 3.077 하단 도크 스타일 — 자동 · 글래스 · 베벨 · 기본
     ['ps_tilt3d_tab','device','ls','pref','board.html'],
     ['ps_tilt3d_touch_reset_v1','device','ls','pref','app.html'],
     ['ps_tm_view','device','ls','pref','scout.html'],
