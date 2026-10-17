@@ -136,7 +136,7 @@ function scoutCtx(over){
     matchStartersToSlots:()=>({ok:true,formLabel:'4-3-3',slots:[[8,50],[40,30]],picked:[{id:'p1'},{id:'p2'}],pool:[]}),
     matchLineupToken:(m,p,x,y)=>({pid:p.id,num:p.id==='p1'?'1':'7',name:p.id,pos:p.id==='p1'?'GK':'RW',x,y,gk:p.id==='p1',extra:'x'})},over||{}));
   vm.runInContext(['var MM_WD=["일","월","화","수","목","금","토"];',fnAt(scout,'function mmLinkable(d)'),fnAt(scout,'function mmDateLabel(ymd)'),fnAt(scout,'function mmFolderShared(folder,meta)'),fnAt(scout,'function matchMeetsFor(lib,mid)'),
-    fnAt(scout,'function mmTok(t)'),fnAt(scout,'function mmBoardHas(b)'),fnAt(scout,'function mmOppBoard(m)'),fnAt(scout,'function mmPrepPages(m)'),fnAt(scout,'function mmStartXI(m)'),fnAt(scout,'function matchMeetParts(m)')].join('\n')
+    fnAt(scout,'function mmTok(t)'),fnAt(scout,'function mmBoardHas(b)'),fnAt(scout,'function mmOppBoard(m)'),fnAt(scout,'function mmPrepPages(m)'),fnAt(scout,'function mmStartXI(m)'),fnAt(scout,'function matchKindLabel(m)'),fnAt(scout,'function matchMeetParts(m)')].join('\n')
     +';this.meets=matchMeetsFor;this.shared=mmFolderShared;this.parts=matchMeetParts;this.dl=mmDateLabel;',ctx);
   return ctx;
 }
@@ -162,7 +162,7 @@ test('경기 자료로 미팅 — 표지·상대 분석·게임플랜·경기 �
   const P=c.parts(m),by=k=>P.find(p=>p.key===k);
   assert.deepEqual(J(P.map(p=>p.key)),['cover','opp','plan','pages'],'2.971 — 선발 명단이 저장돼 있어도 «선발 11» 갈래는 만들지 않는다(정하는 칸이 경기 준비에서 빠졌다)');
   assert.equal(JSON.stringify(m),before,'경기 문서는 바꾸지 않는다(읽기만)');
-  const cov=by('cover').slides[0];assert.equal(cov.title,'vs 한빛FC');assert.equal(cov.points[0],'10/4 일 15:00 · 홈 · 정식');assert.ok(cov.points.includes('장소 — 프로세스 구장'));assert.ok(cov.points.includes('압박은 GK 빌드업에서'));
+  const cov=by('cover').slides[0];assert.equal(cov.title,'vs 한빛FC');assert.equal(cov.points[0],'10/4 일 15:00 · 홈 · 리그');assert.ok(cov.points.includes('장소 — 프로세스 구장'));assert.ok(cov.points.includes('압박은 GK 빌드업에서'));
   const op=by('opp');assert.equal(op.ok,true);assert.equal(op.slides[0].points[0],'결론 — 왼쪽 뒷공간');assert.equal(op.slides[0].points[1],'강점 — 오버래핑 · 제공권');
   assert.equal(op.slides[0].opp.length,1,'빈 «수비 시» 대신 내용 있는 «공격 시» 장면');assert.equal(op.slides[0].opp[0].secret,undefined,'토큰은 필요한 칸만');
   const pl=by('plan');assert.deepEqual(J(pl.slides[0].points),['공격 시 — 짧게 빌드업']);assert.equal(pl.slides[0].us.length,0,'게임플랜 장에도 숨은 선발을 얹지 않는다');
