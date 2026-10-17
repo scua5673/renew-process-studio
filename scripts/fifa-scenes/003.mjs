@@ -6,6 +6,7 @@ export default {
   path: 'futsal/block-2/power-play.php',
   name: '파워 플레이 — 한 명 더 많은 5v4를 골로 바꾸기',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: 'Jorge Braz',
   trainings: [
     {

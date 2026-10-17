@@ -17,6 +17,7 @@ export default {
   path: 'elite-sessions/national-teams/costa-rica-w/landing-page.php',
   name: '빠른 템포의 플레이와 압박 — 1v1 수비에서 수적 우위 공격까지',
   focus: 'bp',
+  subs: ['std_at_1', 'std_dt_1'],
   by: '코스타리카 여자 대표팀',
   trainings: [
     {

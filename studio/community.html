@@ -1373,7 +1373,7 @@ var libStore={
   set:function(k,v){if(!communityLibraryDataUnlocked())return Promise.reject(communityLibraryLockedError());return window.storage?window.storage.set(k,JSON.stringify(v)):Promise.resolve();}
 };
 var COPY_FIELDS=['name','focus','minutes','sets','rpe','tags','type','snap','scenes','frames','overview','setup','func','coaching','prog','memo','memoQuick','success','fourDs','playerTask','sessionCheck','playerReflection','evidence','summaryLine','coachReflection','nextSession','warmFor',
-  'pages','book','slides','ages'];   /* 3.042 — 미팅 자료의 슬라이드(올릴 때는 stripSlides) */   /* 3.039 — 작전판의 페이지 묶음 · 패턴북 표식. 올릴 때는 stripPages 를 거친 것으로 바꾼다 */
+  'pages','book','slides','ages','gmPhases','gmPhaseNames'];   /* 3.042 — 미팅 자료의 슬라이드(올릴 때는 stripSlides) */   /* 3.039 — 작전판의 페이지 묶음 · 패턴북 표식. 올릴 때는 stripPages 를 거친 것으로 바꾼다 */
 function copyToLib(p,btn){
   if(p&&p.proc){procSave(p);return;}
   if(!communityLibraryRequireUnlocked(true))return;
@@ -1385,7 +1385,7 @@ function copyToLib(p,btn){
     var src=p.item||{}, d={};
     COPY_FIELDS.forEach(function(k){if(src[k]!=null)d[k]=src[k];});
     if(src.trainings)d.trainings=src.trainings;   /* 다중 훈련·텍스트 보존 */
-    d.name=d.name||p.title; d.focus=d.focus||(TX?TX.focusOfPost(p):'tech');if(!d.ages&&p.age)d.ages=catKeys(p.age); d.type=d.type||'train';
+    d.name=d.name||p.title; d.focus=d.focus||(TX?TX.focusOfPost(p):'tech');if(!d.ages&&p.age)d.ages=catKeys(p.age);if(TX&&!(d.gmPhases||[]).length){var g=TX.subsOfPost(p);if(g.ids.length){d.gmPhases=g.ids;d.gmPhaseNames=g.names;}} d.type=d.type||'train';
     d.thumb=sanSvg(p.thumb)||'';
     d.libId='L'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     d.savedAt=Date.now();
@@ -1595,13 +1595,13 @@ function buildUpload(me,handle,flowEpoch){
     h+='<div class="fld"><div class="up-lblrow"><span>올릴 자료</span>'+(IN_SHELL?'<button type="button" class="up-newlink" id="upNewInline">＋ 새로 만들기</button>':'')+'</div>'   /* 2.924 */
       +((nKinds>1)?'<div class="agechips up-kind" id="upKind" role="group" aria-label="자료 종류"></div>':'')
       +'<div class="pick" id="upPick"></div></div>'
-      +(elmUp?'':'<div class="fld"><label>주제 (여러 개 선택 가능)</label><div class="agechips" id="upCats"></div></div>')
+      +(elmUp?'':'<div class="fld"><label>주제 (여러 개 선택 가능)</label><div class="agechips" id="upCats"></div></div><div class="fld"><label>세부 국면</label><div class="agechips" id="upSubs"></div></div>')
       +'<div class="fld"><label>제목</label><input type="text" id="upTitle" maxlength="60" placeholder="'+(elmUp?'예: 하프스페이스 침투 — 3인 연계':'예: 4v2 론도 — 탈압박 기본')+'"></div>'
       +(elmUp?'':'<div class="fld"><label>연령대 (여러 개 선택 가능)</label><div class="agechips" id="upAges"></div></div>'
         +'<div class="fld"><label>인원 (명)</label><input type="number" id="upPlayers" min="1" max="40" inputmode="numeric" placeholder="예: 8"></div>')
       +'<div class="drow"><button class="btn" id="upCancel">취소</button><button class="btn primary" id="upGo">올리기</button></div>';
     modal.innerHTML=h;mask.classList.add('on');
-    var sel=null, up=(!elmUp&&TX)?TX.upForm(document,{topics:$('upCats'),ages:$('upAges'),pl:$('upPlayers')}):null;   /* 3.076 — 커뮤니티 고르개와 같은 주제 · 연령 · 인원, 고른 훈련에서 미리 채움 */
+    var sel=null, up=(!elmUp&&TX)?TX.upForm(document,{topics:$('upCats'),subs:$('upSubs'),ages:$('upAges'),pl:$('upPlayers')}):null;   /* 3.076 — 커뮤니티 고르개와 같은 주제 · 연령 · 인원, 고른 훈련에서 미리 채움 */
     var pick=$('upPick');
     function drawPick(){
       pick.innerHTML='';
@@ -1651,6 +1651,7 @@ function buildUpload(me,handle,flowEpoch){
       var _slUp=stripSlides(sel); if(_slUp){item.slides=_slUp;item.snap=_slUp[0].snap;} else delete item.slides;   /* 3.042 — 미팅 자료는 슬라이드 전부 · 대표는 첫 장 */
       __pubKeepNames=false;   /* 3.064 */
       if(uf.ages&&uf.ages.length)item.ages=uf.ages;
+      if(uf.subs&&uf.subs.length){item.gmPhases=uf.subs;item.gmPhaseNames=uf.subNames;}
       if(item.type==='match')item.type='board';   /* 3.042 — 보관함의 경기 분석(판 · 장면)은 작전판으로 본다 — 커뮤니티의 type "match" 는 경기 리뷰 글(openMatchDetail)의 모양이다 */
       var body={id:'C'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
         owner:me.uid,owner_name:handle,

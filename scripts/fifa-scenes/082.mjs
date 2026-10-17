@@ -8,6 +8,7 @@ export default {
   path: 'grassroots/8-to-12/playing-the-final-pass.php',
   name: '마지막 패스 넣어 주기 — 문 통과 패스에서 7v7 경기까지',
   focus: 'tech',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

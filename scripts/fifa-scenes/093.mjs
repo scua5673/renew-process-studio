@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/8-to-12/switch-of-play.php',
   name: '반대쪽으로 넘기기 — 짝 슈팅 경주에서 골 여섯 6v6까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

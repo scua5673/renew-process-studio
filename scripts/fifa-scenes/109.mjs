@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/towards-the-goal-with-pace.php',
   name: '속도를 붙여 골로 — 끝선 2v2에서 골 셋 4v3까지',
   focus: 'bp',
+  subs: ['std_at_1'],
   by: '',
   trainings: [
     {

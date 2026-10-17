@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/defending-outnumbered.php',
   name: '수가 적을 때 수비하기 — 공 가져오기 술래잡기에서 7v5 경기까지',
   focus: 'bpo',
+  subs: ['std_do_3'],
   by: '',
   trainings: [
     {

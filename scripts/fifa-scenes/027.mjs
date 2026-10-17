@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/transition-to-attacking/counter-attacking.php',
   name: '역습 패턴 — 빼앗은 자리에 따라 달라지는 길',
   focus: 'tr_att',
+  subs: ['std_at_1'],
   by: 'Lamia Boumehdi',
   trainings: [
     {

@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/8-to-12/with-accuracy-into-space.php',
   name: '공간으로 정확하게 — 문 통과 패스에서 모서리 골 경기까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/global-grassroots-insights/u-12-clearwater-instilling-a-combinative-style-of-play.php',
   name: '콤비네이션 플레이 — 패스 순환에서 5v5 수적 우위까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: 'Chargers Soccer Club',
   trainings: [
     {

@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/breaking-lines.php',
   name: '라인 깨기 — 끝 구역 던지고 받기에서 공 세우기 5v5까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

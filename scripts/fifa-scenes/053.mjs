@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/german-academies/landing-pages/grasshoppers-club-zurich-women-landing-page.php',
   name: '카운터프레스 다듬기 — 잃은 순간 바로 되찾기',
   focus: 'tr_def',
+  subs: ['std_dt_1'],
   by: 'GC Zürich 여자팀',
   trainings: [
     {

@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/out-of-possession/chiba_said-defending-in-a-mid-block.php',
   name: '미드 블록 — 가운데를 닫고 바깥으로 몰기',
   focus: 'bpo',
+  subs: ['std_do_2'],
   by: 'Saïd Chiba',
   trainings: [
     {

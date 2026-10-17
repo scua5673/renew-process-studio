@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/transition-to-defending/counter-pressing.php',
   name: '카운터프레스하는 마음가짐 — 잃은 사람이 먼저 간다',
   focus: 'tr_def',
+  subs: ['std_dt_1'],
   by: 'Noureddine Boubou',
   trainings: [
     {

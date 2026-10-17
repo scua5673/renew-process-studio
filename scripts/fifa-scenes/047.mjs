@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/dutch-academies/fc-twente-heracles-home.php',
   name: '두 클럽, 하나의 아카데미 — 첫 줄을 넘기고 빈 선수 찾기',
   focus: 'bp',
+  subs: ['std_ao_1', 'std_ao_2'],
   by: 'FC 트벤테 · 헤라클레스 알멜로',
   trainings: [
     {

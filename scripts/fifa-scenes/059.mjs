@@ -4,6 +4,7 @@ export default {
   path: 'training-perspectives/on-the-training-ground-with/roger-schmidt/landing-page.php',
   name: '강한 전방 압박 원칙 — 세 칸 활성화에서 조건 붙은 11v11까지',
   focus: 'bpo',
+  subs: ['std_do_1'],
   by: 'Roger Schmidt',
   trainings: [
     {

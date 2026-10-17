@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/youth-national-teams/mexico-u15-boys-/landing-page-combined.php',
   name: '남녀 대표팀 훈련 캠프 — 길 열기, 압박 풀기, 높은 압박',
   focus: 'bp',
+  subs: ['std_ao_1', 'std_do_1'],
   by: '멕시코 U-15 대표팀',
   trainings: [
     {

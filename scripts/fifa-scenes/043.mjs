@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/youth-national-teams/south-africa-u15/landing-page.php',
   name: '가치와 경기 스타일 심기 — 공격과 수비의 기본',
   focus: 'bp',
+  subs: ['std_ao_3', 'std_do_3'],
   by: '남아공 U-15 대표팀',
   trainings: [
     {

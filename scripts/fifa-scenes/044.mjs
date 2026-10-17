@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/youth-national-teams/france-u17-men/landing-page.php',
   name: '경기 준비 훈련 — 빈 선수 찾기와 다이아몬드 상대 압박',
   focus: 'bp',
+  subs: ['std_do_1', 'std_ao_2'],
   by: '프랑스 U-17 대표팀',
   trainings: [
     {
