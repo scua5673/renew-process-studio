@@ -1,0 +1,182 @@
+/* PROCESS STUDIO — 커뮤니티 공통 분류(3.075 · 사용자 «E안으로 앱에 적용해줘 · 커뮤니티에 전부 적용해줘 다른 탭에도»).
+   목업 E안: 경기 4국면 타일(공격 · 수비 전환 · 공격 전환 · 수비) + 경기 밖 주제 칩(세트피스 · 개인 기술 · 골키퍼 · 피지컬·웜업)
+   + 연령 칩 + «오늘 인원» −/+(상관없음) + 카드를 누르면 미리보기 창(그림 · 훈련 · 오늘 인원 맞춤 · 재생 · 보관함에 담기).
+   코치 자료 · 프로세스 · FIFA 가 같은 고르개를 쓴다. 엘미하는 고르개 없이 미리보기 창만(사용자 3.042 «엘미하는 분류 필요없고»).
+   · 칸마다 원래 분류(코치 CATS 21종 · 프로세스 테마 · FIFA 묶음)는 그대로 두고 여기서 새 주제 8개 · 연령 · 인원으로 옮긴다(fromCoach · fromProc · fromFifa).
+   · 연령을 모르는 글은 연령 고르개에 걸리지 않는다(보인다). 인원을 모르는 글도 같다.
+   · 화면에 쓰는 글은 textContent 로만. 그림은 <img src> 로만(코치 글 그림은 커뮤니티가 정리한 thumbImg 의 HTML 을 받는다). */
+(function(root,factory){
+  'use strict';
+  var api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  if(root)root.PSCommTax=api;
+})(typeof window!=='undefined'?window:null,function(){
+  'use strict';
+  /* [키, 이름, 색, 짧은 설명] — 앞 넷이 경기의 네 국면(공격 → 잃으면 수비 전환 → 수비 → 얻으면 공격 전환) */
+  var TOPICS=[['att','공격','#3A6DF0','공을 가졌을 때'],['trd','수비 전환','#C2573F','잃은 순간'],['tra','공격 전환','#2E9E6B','빼앗은 순간'],['def','수비','#5B6B8C','공이 없을 때'],
+    ['set','세트피스','#2A8FA6',''],['tech','개인 기술','#7A5BC0',''],['gk','골키퍼','#A07C12',''],['phys','피지컬·웜업','#B0582A','']];
+  var PHASES=['att','trd','tra','def'],EXTRAS=['set','tech','gk','phys'];
+  var AGES=['U8','U10','U12','U15','U18','성인'];
+  var TMAP={}; TOPICS.forEach(function(t){ TMAP[t[0]]=t; });
+  /* 코치 자료 CATS(21종) → 새 주제. 경기 분석(match)은 주제가 없다(«전체»에서만 보인다) */
+  var COACH={idp:'tech',warm:'phys',rondo:'att',poss:'att',posgame:'att',ssg:'att',game:'att',pass:'tech',control:'tech',dribble:'tech',shoot:'tech',cross:'att',
+    tech:'tech',attack:'att',defend:'def',buildup:'att',trans:'tra',set:'set',gk:'gk',phys:'phys',fun:'tech'};
+  /* 작전판 FOCUS → 새 주제(FIFA 애니메이션 팩 · 보관함 카드) */
+  var FOCUS={bp:'att',poss:'att',bpo:'def',tr_att:'tra',tr_def:'trd',set:'set',tech:'tech',phys:'phys',warm:'phys',rec:'phys'};
+  /* 프로세스 세션의 훈련 인원(판 위 선수 수: 가장 적은 훈련 ~ 가장 많은 훈련) — studio/packs 사본에서 셌다(3.075). 목록에 없는 새 세션은 인원 모름 */
+  var PROC_PL={2:[6,13],3:[4,14],4:[7,14],5:[3,12],6:[4,14],7:[4,9],8:[9,15],9:[8,15],10:[5,12],11:[8,12],12:[5,14],13:[9,14],14:[4,12],15:[8,14],16:[6,14],17:[10,14],18:[6,14],
+    19:[3,12],20:[4,14],21:[8,14],22:[7,13],23:[6,10],24:[6,13],25:[10,16],26:[3,14],27:[5,14],28:[7,14],29:[5,16],30:[7,13],31:[8,16],32:[5,13],33:[7,16],34:[4,9],35:[5,10],
+    36:[3,9],37:[5,14],38:[4,10],39:[9,13],40:[5,14],41:[7,14],42:[12,14],43:[8,16],44:[5,14],45:[6,16],46:[6,13]};
+  var ELITE=['U15','U18','성인'];
+
+  function num(v){ v=parseInt(v,10); return v>0&&v<200?v:0; }
+  function uniq(a){ var o=[]; a.forEach(function(x){ if(x&&o.indexOf(x)<0)o.push(x); }); return o; }
+  function item(topics,ages,min,max){ return {topics:uniq(topics||[]),ages:(ages&&ages.length)?uniq(ages):null,min:num(min),max:num(max)||num(min)}; }
+  function fromCoach(p,keysOf){
+    var ks=keysOf(p&&p.cat),ag=keysOf(p&&p.age).filter(function(a){ return AGES.indexOf(a)>=0; }),n=num(p&&p.players);
+    if(!ks.length&&p&&p.item&&FOCUS[p.item.focus])ks=[p.item.focus];
+    return item(ks.map(function(k){ return COACH[k]||FOCUS[k]||''; }),ag,n,n);
+  }
+  function fromProc(s){
+    var h=String(s&&s.head||String(s&&s.theme||'').split(' › ')[0]).trim(),t='';
+    if(h.indexOf('공격 → 수비')===0)t='trd'; else if(h.indexOf('수비 → 공격')===0)t='tra'; else if(h.indexOf('전환')>=0)t='tra';
+    else if(h==='공격 조직')t='att'; else if(h==='수비 조직')t='def'; else if(h==='세트피스')t='set';
+    else if(h==='피지컬'||h==='경기 준비')t='phys'; else if(h==='훈련 설계')t='tech';
+    var pl=PROC_PL[s&&s.n]||[0,0];
+    return item([t],['U12','U15','U18','성인'],pl[0],pl[1]);   /* 프로세스 레터는 U12~성인 팀을 두고 쓴 세션이다 */
+  }
+  /* FIFA 줄(e: community-fifa.js list 의 한 줄) + 애니메이션 목록 줄(an: 있으면 focus · players) */
+  function fifaAges(e){
+    var g=e&&e.g,ko=String(e&&e.ko||'');
+    if(g==='u8')return ['U8']; if(g==='u12')return ['U10','U12']; if(g==='u15')return ['U12','U15'];
+    if(g==='yb'){ if(ko.indexOf('4–8세')===0)return ['U8']; if(ko.indexOf('8–12세')===0)return ['U10','U12']; if(ko.indexOf('12–15세')===0)return ['U12','U15']; return ['U8','U10','U12','U15']; }
+    if(g==='yc')return ['U8','U10','U12','U15'];
+    return ELITE;
+  }
+  var FIFA_G={att:'att',def:'def',tra:'tra',trd:'trd',gk:'gk',phys:'phys',club:'att',view:'att',fs:'att',u8:'tech',u12:'tech',u15:'tech',yb:'tech',yc:'tech'};
+  function fromFifa(e,an){
+    var t=(an&&FOCUS[an.focus])||FIFA_G[e&&e.g]||'';
+    var pl=(an&&Array.isArray(an.players))?an.players:[0,0];
+    return item([t],fifaAges(e),pl[0],pl[1]);
+  }
+
+  /* 고르개 상태 — 이 탭(창)에서만. 인원은 처음엔 «상관없음» */
+  var S={topic:'',age:'',n:12,any:true};
+  function state(){ return {topic:S.topic,age:S.age,n:S.n,any:S.any}; }
+  function set(o){ o=o||{}; if('topic' in o)S.topic=TMAP[o.topic]?o.topic:''; if('age' in o)S.age=AGES.indexOf(o.age)>=0?o.age:'';
+    if('n' in o){ var n=Math.floor(+o.n); S.n=Math.max(1,Math.min(30,isFinite(n)?n:12)); } if('any' in o)S.any=!!o.any; }
+  function okAgePl(it){
+    if(S.age&&it.ages&&it.ages.indexOf(S.age)<0)return false;
+    if(!S.any&&it.min&&it.min>S.n)return false;
+    return true;
+  }
+  function ok(it){ if(!it)return true; if(S.topic&&it.topics.indexOf(S.topic)<0)return false; return okAgePl(it); }
+  /* 카드의 «오늘 인원» 맞춤 — 인원을 고르지 않았거나 모르면 없음 */
+  function fit(it){
+    if(S.any||!it||!it.min)return null;
+    var mx=it.max||it.min;
+    return mx<=S.n?{text:'오늘 인원으로 전부 할 수 있어요',kind:'ok'}:{text:'마지막 훈련은 '+mx+'명 — 줄여서 진행',kind:'warn'};
+  }
+  function counts(items){ var c={}; (items||[]).forEach(function(it){ if(!okAgePl(it))return; it.topics.forEach(function(k){ c[k]=(c[k]||0)+1; }); }); return c; }
+
+  function el(doc,tag,cls,text){ var x=doc.createElement(tag); if(cls)x.className=cls; if(text!=null)x.textContent=text; return x; }
+  function dot(doc,color){ var d=el(doc,'span','tx-dot'); d.setAttribute('aria-hidden','true'); d.style.background=color; return d; }
+  function badge(host,it){
+    if(!host)return; var f=fit(it),old=host.querySelector('.tx-fit'); if(old)old.remove(); if(!f)return;
+    host.appendChild(el(host.ownerDocument,'span','tx-fit tx-fit-'+f.kind,f.text));
+  }
+  function topicBadge(doc,k){ var t=TMAP[k]; if(!t)return null; var b=el(doc,'span','tx-topic',t[1]); b.style.background=t[2]; return b; }
+
+  /* 고르개 — host 를 비우고 다시 그린다. items: 지금 칸의 글들(fromX 결과) — 타일 옆 숫자. onChange: 고른 것이 바뀌면 */
+  function draw(host,items,onChange){
+    if(!host)return; var doc=host.ownerDocument,c=counts(items),ch=function(o){ set(o); if(onChange)onChange(); };
+    host.textContent='';
+    var ph=el(doc,'div','tx-phases'); ph.setAttribute('role','group'); ph.setAttribute('aria-label','경기 국면');
+    PHASES.forEach(function(k){ var t=TMAP[k],on=S.topic===k,b=el(doc,'button','tx-tile'+(on?' on':'')); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
+      if(on){ b.style.background=t[2]; b.style.borderColor=t[2]; }
+      var top=el(doc,'span','tx-tile-top'); top.appendChild(dot(doc,on?'#fff':t[2])); top.appendChild(el(doc,'span','tx-tile-nm',t[1])); top.appendChild(el(doc,'span','tx-n',String(c[k]||0)));
+      b.appendChild(top); b.appendChild(el(doc,'span','tx-tile-hint',t[3]));
+      b.onclick=function(){ ch({topic:on?'':k}); }; ph.appendChild(b); });
+    host.appendChild(ph);
+    var ex=el(doc,'div','tx-row'); ex.setAttribute('role','group'); ex.setAttribute('aria-label','경기 밖의 주제');
+    EXTRAS.forEach(function(k){ var t=TMAP[k],on=S.topic===k,b=el(doc,'button','tx-chip'+(on?' on':'')); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
+      if(on){ b.style.background=t[2]; b.style.borderColor=t[2]; }
+      b.appendChild(dot(doc,on?'#fff':t[2])); b.appendChild(doc.createTextNode(t[1])); b.appendChild(el(doc,'span','tx-n',String(c[k]||0)));
+      b.onclick=function(){ ch({topic:on?'':k}); }; ex.appendChild(b); });
+    host.appendChild(ex);
+    var who=el(doc,'div','tx-who');
+    var ag=el(doc,'div','tx-row'); ag.setAttribute('role','group'); ag.setAttribute('aria-label','연령');
+    ag.appendChild(el(doc,'span','tx-lb','연령'));
+    AGES.forEach(function(a){ var on=S.age===a,b=el(doc,'button','tx-chip'+(on?' on':''),a); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
+      b.onclick=function(){ ch({age:on?'':a}); }; ag.appendChild(b); });
+    who.appendChild(ag);
+    var pl=el(doc,'div','tx-row tx-pl'); pl.setAttribute('role','group'); pl.setAttribute('aria-label','오늘 인원');
+    pl.appendChild(el(doc,'span','tx-lb','오늘 인원'));
+    var mi=el(doc,'button','tx-step','−'); mi.type='button'; mi.setAttribute('aria-label','한 명 빼기'); mi.onclick=function(){ ch({any:false,n:S.any?S.n:S.n-1}); };
+    var nv=el(doc,'span','tx-nv',S.any?'—':(S.n+'명')); nv.setAttribute('aria-live','polite');
+    var pv=el(doc,'button','tx-step','+'); pv.type='button'; pv.setAttribute('aria-label','한 명 더하기'); pv.onclick=function(){ ch({any:false,n:S.any?S.n:S.n+1}); };
+    var an=el(doc,'button','tx-chip'+(S.any?' on':''),'상관없음'); an.type='button'; an.setAttribute('aria-pressed',S.any?'true':'false'); an.onclick=function(){ ch({any:!S.any}); };
+    [mi,nv,pv,an].forEach(function(x){ pl.appendChild(x); });
+    who.appendChild(pl);
+    host.appendChild(who);
+  }
+
+  /* 미리보기 창 — o = {title, topic(키), item, by, thumbUrl | thumbHtml(정리된 HTML), trainings:[{name,minutes}], desc, onPlay(k), onSave(), saveLabel} */
+  var SHEET=null;
+  function close(){ if(SHEET){ try{ SHEET.doc.removeEventListener('keydown',SHEET.key); }catch(_){} SHEET.node.remove(); var f=SHEET.focus; SHEET=null; try{ if(f&&f.focus)f.focus(); }catch(_){} } }
+  function open(doc,o){
+    close(); o=o||{};
+    var trs=Array.isArray(o.trainings)?o.trainings:[],mask=el(doc,'div','tx-mask'),k=(o.k>0&&o.k<trs.length)?Math.floor(o.k):0;   /* 카드에서 고른 훈련부터 */
+    var aside=el(doc,'aside','tx-sheet'); aside.setAttribute('role','dialog'); aside.setAttribute('aria-modal','true'); aside.setAttribute('aria-label',(o.title||'')+' 미리보기');
+    var hd=el(doc,'div','tx-sh-hd'),hl=el(doc,'div','tx-sh-hl'),bg=el(doc,'div','tx-row');
+    var tb=topicBadge(doc,o.topic); if(tb)bg.appendChild(tb);
+    if(o.form)bg.appendChild(el(doc,'span','tx-form',o.form));
+    hl.appendChild(bg); hl.appendChild(el(doc,'h2','tx-sh-tt',o.title||''));
+    var it=o.item||null,meta=[];
+    if(it&&it.ages)meta.push('연령 '+(it.ages.length>1?it.ages[0]+'~'+it.ages[it.ages.length-1]:it.ages[0]));
+    if(it&&it.min)meta.push('인원 '+(it.max&&it.max!==it.min?it.min+'~'+it.max:it.min)+'명');
+    if(o.by)meta.push(o.by);
+    if(meta.length)hl.appendChild(el(doc,'span','tx-sh-meta',meta.join(' · ')));
+    var x=el(doc,'button','tx-x','×'); x.type='button'; x.setAttribute('aria-label','닫기'); x.onclick=close;
+    hd.appendChild(hl); hd.appendChild(x); aside.appendChild(hd);
+    var pic=el(doc,'div','tx-sh-pic');
+    var img=null;
+    if(o.thumbUrl){ img=el(doc,'img'); img.alt=''; img.decoding='async'; img.referrerPolicy='no-referrer'; img.src=typeof o.thumbUrl==='function'?o.thumbUrl(k+1):o.thumbUrl; pic.appendChild(img); }
+    else if(o.thumbHtml)pic.innerHTML=o.thumbHtml;   /* 커뮤니티의 thumbImg(정리한 SVG 를 <img src="data:"> 로) 결과만 */
+    aside.appendChild(pic);
+    if(trs.length){
+      var tl=el(doc,'div','tx-sh-trs'); tl.setAttribute('role','group'); tl.setAttribute('aria-label','훈련');
+      var mark=function(){ [].forEach.call(tl.children,function(b,j){ b.setAttribute('aria-pressed',j===k?'true':'false'); b.classList.toggle('on',j===k); });
+        if(img&&typeof o.thumbUrl==='function')img.src=o.thumbUrl(k+1); };
+      trs.forEach(function(t,j){ var b=el(doc,'button','tx-tr'); b.type='button';
+        b.appendChild(el(doc,'span','tx-i',String(j+1))); b.appendChild(el(doc,'span','tx-tr-nm',t&&t.name||('훈련 '+(j+1)))); b.appendChild(el(doc,'span','tx-tr-mn',t&&t.minutes?t.minutes+'분':''));
+        b.onclick=function(){ k=j; mark(); }; tl.appendChild(b); });
+      aside.appendChild(tl); mark();
+    }
+    if(o.desc)aside.appendChild(el(doc,'p','tx-sh-desc',o.desc));
+    var f=fit(it); if(f)aside.appendChild(el(doc,'span','tx-fit tx-fit-'+f.kind,f.text));
+    var act=el(doc,'div','tx-sh-act');
+    var play=el(doc,'button','tx-btn','▶ 크게 재생'); play.type='button'; play.onclick=function(){ var kk=k; close(); if(o.onPlay)o.onPlay(kk); };
+    act.appendChild(play);
+    if(o.onSave){ var sv=el(doc,'button','tx-btn tx-btn-pri',o.saveLabel||'보관함에 담기'); sv.type='button'; sv.onclick=function(){ close(); o.onSave(); }; act.appendChild(sv); }
+    aside.appendChild(act);
+    mask.appendChild(aside);
+    mask.addEventListener('click',function(e){ if(e.target===mask)close(); });
+    var key=function(e){ if(e.key==='Escape')close(); };
+    doc.addEventListener('keydown',key);
+    (doc.body||doc.documentElement).appendChild(mask);
+    SHEET={node:mask,doc:doc,key:key,focus:doc.activeElement};
+    try{ x.focus(); }catch(_){}
+  }
+  /* 옛 고르개(주제 칩 · 콘텐츠 유형 · 연령 · 인원 · 폰 필터 시트의 같은 칸)를 감춘다 — 새 고르개가 대신한다. 정렬 · 검색 · 보기 방식은 그대로 */
+  function hideOld(doc,noNav){
+    var hide=function(n){ if(n&&n.style)n.style.setProperty('display','none','important'); };
+    var nav=doc.querySelector('.comm-nav'); if(nav){ if(noNav)hide(nav); else nav.style.removeProperty('display'); }   /* 정렬(탐색)만 남는 코치 자료 칸 밖에서는 왼쪽 칸이 빈다 */
+    [].forEach.call(doc.querySelectorAll('.comm-nav .pr-cat-sec,#ageSel,#plSel,#cfTypeSel'),hide);
+    var tn=doc.getElementById('typeNav'); if(tn&&tn.closest)hide(tn.closest('.nav-sec'));
+    [].forEach.call(doc.querySelectorAll('#commFiltSheet .ps-fsheet-sec'),function(s){ if(s.querySelector('#cfsType,#cfsSel,#cfsAge,#cfsPl'))hide(s); });
+  }
+  return {TOPICS:TOPICS,PHASES:PHASES,EXTRAS:EXTRAS,AGES:AGES,COACH:COACH,FOCUS:FOCUS,PROC_PL:PROC_PL,
+    fromCoach:fromCoach,fromProc:fromProc,fromFifa:fromFifa,fifaAges:fifaAges,state:state,set:set,ok:ok,fit:fit,counts:counts,
+    draw:draw,badge:badge,open:open,close:close,hideOld:hideOld,isOpen:function(){ return !!SHEET; }};
+});
