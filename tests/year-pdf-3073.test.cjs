@@ -21,7 +21,7 @@ function ctx(Y,opt){
   put(2,14,{match:{opp:'광주FC <U15>',time:'15:00',kind:'cup'},matchAdd:[{opp:'수원 U15',time:'10:00',kind:'friendly'}]});
   put(2,22,{off:true,board:{sched:'OFF'}});
   put(5,3,{trainings:[{load:{rpe:5},min:60}],grp:'B'});
-  const docs={[Y+'-03-14|광주FC <U15>']:{scoreUs:'2',scoreThem:'1',homeAway:'away',competition:'주말리그',execution:4,reviewGood:'측면 2:1',reviewImprove:'전환 첫 3초'},[Y+'-03-14|수원 U15']:{scoreUs:'0',scoreThem:'0'}};
+  const docs={[Y+'-03-14|광주FC <U15>']:{squad:{start:['p1'],res:['p2']},scoreUs:'2',scoreThem:'1',homeAway:'away',competition:'주말리그',execution:4,reviewGood:'측면 2:1',reviewImprove:'전환 첫 3초'},[Y+'-03-14|수원 U15']:{scoreUs:'0',scoreThem:'0'}};
   const c=vm.createContext({
     yearAnchor:Y,weeksMap,offsetOfDate:off,WDAYS:['월','화','수','목','금','토','일'],
     schedViewDay:d=>(opt.grp&&d&&d.grp&&d.grp!==opt.grp)?{}:(d||{}),
@@ -35,6 +35,8 @@ function ctx(Y,opt){
     seasonPlan:{},document:{getElementById:()=>null},schedEditBlocked:()=>!!opt.blocked,schedBlockNotice:()=>{},saves:0
   });
   c.save=()=>{c.saves++;};
+  if(opt.roster){ const LS={scout_tool_v1:JSON.stringify(opt.roster)}; c.localStorage={getItem:k=>LS[k]||null}; c.window=c;
+    vm.runInContext(fs.readFileSync(require.resolve('../studio/participation.js'),'utf8'),c); }
   vm.runInContext([
     part('function mxExtraList(','function mxExtraHtml('),
     part('function yearDayKind(','function yearActivityStats('),
@@ -201,4 +203,27 @@ test('yearly print documents get per-page margins and skip the one-page zoom',()
   assert.ok(src.includes("padding:'+(cls==='year'?'0':(land?'10mm':'12mm'))"));
   assert.ok(src.includes("(cls==='year'?'':'<script>'+zoomJs+'<\\/script>')"));
   assert.ok(M.includes('#printDoc.pl-year .ponepage{height:209.5mm;padding:10mm 0;box-sizing:border-box;break-after:page}'));
+});
+
+test('player pages: attendance, absence, injury days, starts and reserves per player; injury record with part and days',()=>{
+  const Y=NOW-1;
+  const roster={players:[{id:'p2',name:'이둘',num:'9'},{id:'p1',name:'김하나',num:'7'},{id:'t1',name:'관찰',type:'target'}],
+    meta:{statusRuns:{p2:[{s:'injury',from:Y+'-01-05',to:Y+'-01-07'}]},injuryInfo:{p2:{[Y+'-01-05']:{part:'발목',side:'오른쪽',when:'훈련'}}},
+      participationDays:{[Y+'-01-06']:{p1:{s:'out',kind:'train',at:1}}}}};
+  const P=pages(ctx(Y,{roster}).yearDocHTML('review'));
+  const pt=P.find(p=>p.includes('<b>선수별 출석 · 출전</b>')), inj=P.find(p=>p.includes('<b>부상 · 결석</b>'));
+  assert.ok(pt&&inj,'두 장이 생긴다');
+  assert.ok(P.indexOf(pt)<P.indexOf(inj)&&P.indexOf(inj)<P.length-1,'노트 앞');
+  assert.ok(pt.indexOf('김하나')<pt.indexOf('이둘'),'번호 순');assert.equal(pt.includes('관찰'),false,'관찰 대상은 빠진다');
+  assert.ok(pt.includes('<b>80%</b></td><td>3</td><td>1</td><td>1</td><td><span class="z">·</span></td><td><span class="z">·</span></td><td>1</td><td><span class="z">·</span></td><td>1<small>/1</small></td>'),'김하나: 결석 1 · 선발 1');
+  assert.ok(pt.includes('<b>40%</b></td><td>1</td><td>1</td><td><span class="z">·</span></td><td>3</td>'),'이둘: 부상 3일');
+  assert.ok(pt.includes('명단 적은 경기 1/2'));
+  assert.ok(inj.includes('<b>1<small>건</small></b><span>부상</span>')&&inj.includes('<b>3<small>일</small></b><span>부상 · 회복으로 빠진 일정</span>'));
+  assert.match(inj,/<th class="txt">이둘 <small>9<\/small><\/th><td>1\.5 – 1\.7<\/td><td>3일<\/td><td class="txt">발목 · 오른쪽<\/td><td class="txt">훈련<\/td>/);
+  assert.ok(inj.includes('<th class="txt">팀 출석률</th>'));
+});
+
+test('no roster or no participation module: no player pages',()=>{
+  assert.equal(pages(ctx(NOW-1).yearDocHTML('review')).some(p=>p.includes('선수별 출석')),false);
+  assert.ok(S.includes('<script src="participation.js?v=2.901"></script>'),'일정 화면이 출석 셈을 싣는다');
 });

@@ -55,7 +55,7 @@
   #printDoc.pl-year .pyr-msum>div span{font-size:var(--t-1,10px);color:#8A9099;font-weight:600}
   #printDoc.pl-year .pyr-msum .kinds{margin-left:auto;font-size:var(--t-2,11px);color:#3F454D}
   #printDoc.pl-year .pyr-msum .kinds p{margin:0 0 3px;font-weight:600}
-  #printDoc.pl-year .pyr-msum .kinds u{text-decoration:none;display:inline-block;min-width:34px;color:#8A9099;font-weight:700}
+  #printDoc.pl-year .pyr-msum .kinds u{text-decoration:none;display:inline-block;min-width:34px;margin-right:6px;color:#8A9099;font-weight:700}
   #printDoc.pl-year .pyr-mt td,#printDoc.pl-year .pyr-mt th{vertical-align:top;padding:6px 6px}
   #printDoc.pl-year .pyr-mt td.opp{width:190px}
   #printDoc.pl-year .pyr-mt td.opp b{display:block;font-weight:800}
@@ -77,6 +77,20 @@
   #printDoc.pl-year .pyr-nb{display:flex;flex-direction:column;min-height:0}
   #printDoc.pl-year .pyr-nb h3{margin:0 0 4px}
   #printDoc.pl-year .pyr-nb .pfill{flex:1 1 auto}
+  #printDoc.pl-year .pyr-pt td,#printDoc.pl-year .pyr-pt th{padding:4px 8px}
+  #printDoc.pl-year .pyr-pt td.num{color:#8A9099;font-weight:700;width:32px}
+  #printDoc.pl-year .pyr-pt tbody th{font-weight:700;min-width:120px}
+  #printDoc.pl-year .pyr-pt td.rt{text-align:left;width:150px}
+  #printDoc.pl-year .pyr-rate{display:inline-block;width:80px;height:6px;border-radius:3px;background:#F1F3F5;overflow:hidden;vertical-align:middle;margin-right:8px}
+  #printDoc.pl-year .pyr-rate i{display:block;height:100%;background:#2E9D6A;border-radius:3px}
+  #printDoc.pl-year .pyr-rate i.lo{background:#D9822B}
+  #printDoc.pl-year .pyr-pt td.rt b{font-weight:700}
+  #printDoc.pl-year .pyr-tbl .z{color:#C2C7CF}
+  #printDoc.pl-year .pyr-tbl small{font-size:var(--t-1,10px);color:#8A9099;font-weight:600}
+  #printDoc.pl-year u.now{text-decoration:none;font-size:var(--t-1,10px);color:#C24A46;font-weight:700;margin-left:4px}
+  #printDoc.pl-year .pyr-fn{margin:10px 0 0;font-size:var(--t-1,10px);color:#8A9099;line-height:1.5;flex:0 0 auto}
+  #printDoc.pl-year .pyr-msum>div b small{font-size:var(--t-2,11px);color:#646A73;font-weight:600;margin-left:1px}
+  #printDoc.pl-year .pyr-et td.notes{color:#3F454D;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #printDoc.pl-year .pyr-plan td,#printDoc.pl-year .pyr-plan th{vertical-align:top;padding:6px 8px}
   #printDoc.pl-year .pyr-plan tbody th{width:96px}
   #printDoc.pl-year .pyr-plan tbody th small{display:block;margin-top:2px}
@@ -488,6 +502,8 @@ function yearReviewPages(Y,team){
       pages.push(yPage(ctxLine,'경기 기록',k?`계속 · ${i+1}–${i+part.length} / ${matches.length}`:`${matches.length}경기`,(k?'':sumBox)+`<table class="pyr-tbl pyr-mt">${mhead}<tbody>${part.map(mrow).join('')}</tbody></table>`));
       i+=n; k++; }
   }
+  /* ── 선수별 출석 · 출전, 부상 · 결석 (3.076) ── */
+  try{ yearPlayerPages(Y,ctxLine,days,matches).forEach(pg=>pages.push(pg)); }catch(e){ try{console.error(e);}catch(_){} }
   /* ── ⑤ 돌아보기 노트 ── */
   const box=(t,h)=>`<div class="pyr-nb"><h3>${t}${h?` <em>${h}</em>`:''}</h3><div class="pfill"></div></div>`;
   pages.push(yPage(ctxLine,'돌아보기 노트','',`<div class="pyr-one"><b>한 해를 한 줄로</b><span></span></div><div class="pyr-notes">`
@@ -509,4 +525,80 @@ function yearPlanPages(Y,team){
       +`<td>${tr||'—'}</td><td class="txt focus"><span class="pen-l"></span><span class="pen-l"></span></td><td class="chk"><i></i></td></tr>`; }).join('');
   const tbl=`<table class="pyr-tbl pyr-plan"><thead><tr><th>달 · 단계</th><th class="txt">목표</th><th class="txt">경기</th><th>훈련일</th><th class="txt">훈련 중점 · 할 일</th><th>점검</th></tr></thead><tbody>${rows}</tbody></table>`;
   return [yPage(ctxLine,'월별 계획표','달마다 목표 · 경기 · 훈련 중점을 적어 두고, 끝나면 점검',tbl)];
+}
+
+/* ══ 3.076 · 돌아보기 — 선수별 출석 · 출전, 부상 · 결석 ═══════════════════════════════════════════
+   사용자 «선수별 출전 기록, 부상 · 결석 같은 것들을 넣고 싶어요». 읽기만 한다:
+   선수단(scout_tool_v1 의 players · meta.statusRuns · participationDays · injuryInfo) — 셈은 선수단 화면과 같은 PSParticipation
+   (totals: 기록 없는 훈련일은 참석으로 본다 · episodes: 부상 → 회복을 한 건으로, 달력일).
+   경기 명단은 경기 문서의 선발 · 리저브(squad.start/res, 옛 문서는 startingIds/squadIds). 분 · 득점은 앱에 없어 세지 않는다.
+   조 보기면 그 조 선수만. */
+function yRoster(){
+  let d=null; try{ d=JSON.parse(localStorage.getItem('scout_tool_v1')||'null'); }catch(_){ d=null; }
+  const g=(typeof __schedGrp==='string'&&__schedGrp)?__schedGrp:'';
+  const players=(d&&Array.isArray(d.players)?d.players:[]).filter(p=>p&&p.type!=='target'&&p.id&&(!g||String(p.grp||'').trim()===g));
+  players.sort((a,b)=>{ const x=parseInt(a.num,10), y=parseInt(b.num,10); if(isFinite(x)&&isFinite(y)&&x!==y)return x-y; if(isFinite(x)!==isFinite(y))return isFinite(x)?-1:1; return String(a.name||'').localeCompare(String(b.name||''),'ko'); });
+  return {players:players,meta:(d&&d.meta&&typeof d.meta==='object')?d.meta:{}};
+}
+function yStatusOf(p,tIso){ const s=(p&&p.status)||'ok'; if(['ok','injury','rehab','out','rest'].indexOf(s)<0)return 'ok'; if((s==='rest'||s==='out')&&p.statusUntil&&String(p.statusUntil)<tIso)return 'ok'; return s; }
+function ySquad(doc){
+  const raw=(doc&&doc.squad)||{}; let st=Array.isArray(raw.start)?raw.start.filter(Boolean):[], rs=Array.isArray(raw.res)?raw.res.filter(Boolean):[];
+  if(!st.length&&!rs.length){ const all=Array.isArray(doc&&doc.squadIds)?doc.squadIds.filter(Boolean):[], s0=Array.isArray(doc&&doc.startingIds)?doc.startingIds.filter(Boolean):[]; st=s0.slice(); rs=all.filter(id=>st.indexOf(id)<0); }
+  return {start:st,res:rs.filter(id=>st.indexOf(id)<0)};
+}
+function yearPlayerPages(Y,ctxLine,days,matches){
+  const PP=window.PSParticipation; if(!PP||!days.length)return [];
+  const R=yRoster(); if(!R.players.length)return [];
+  const E=wkbdEsc, tIso=yearQuickFormatIso((()=>{ const t=new Date(); t.setHours(0,0,0,0); return t; })());
+  const from=Y+'-01-01', to=days[days.length-1].iso;
+  const kindMap={}; days.forEach(x=>{ kindMap[x.iso]=x.kind==='g'?'match':(x.kind==='o'?'off':(x.kind==='t'?'train':'none')); });
+  const kindOf=day=>kindMap[day]||'none';
+  const withLineup=matches.filter(r=>{ const s=ySquad(r.doc); return s.start.length||s.res.length; });
+  const rows=R.players.map(p=>{
+    const st=yStatusOf(p,tIso); let T=null; try{ T=PP.totals(R.meta,p.id,from,to,kindOf,st,tIso,true); }catch(_){ T=null; }
+    T=T||{training:0,match:0,exercise:0,scheduled:0,missed:{rest:0,out:0,rehab:0,injury:0}};
+    let s=0,r=0; withLineup.forEach(m=>{ const q=ySquad(m.doc); if(q.start.indexOf(p.id)>=0)s++; else if(q.res.indexOf(p.id)>=0)r++; });
+    let eps=[]; try{ eps=PP.episodes(R.meta,p.id,st,tIso).filter(e=>e.to>=from&&e.from<=to); }catch(_){ eps=[]; }
+    return {p:p,st:st,T:T,start:s,res:r,eps:eps,rate:T.scheduled?Math.round(T.exercise/T.scheduled*100):null};
+  });
+  const pages=[];
+  /* ── 선수별 출석 · 출전 ── */
+  const bar=v=>v==null?'—':`<span class="pyr-rate"><i style="width:${v}%"${v<70?' class="lo"':''}></i></span><b>${v}%</b>`;
+  const nz=v=>v?v:'<span class="z">·</span>';
+  const prow=x=>{ const T=x.T, inj=T.missed.injury+T.missed.rehab;
+    return `<tr><td class="num">${E(x.p.num||'')}</td><th class="txt">${E(x.p.name||'이름 없음')}${x.st==='injury'||x.st==='rehab'?' <u class="now">'+(x.st==='injury'?'부상 중':'회복 중')+'</u>':''}</th>`
+      +`<td class="rt">${bar(x.rate)}</td><td>${T.training}</td><td>${T.match}</td><td>${nz(T.missed.out)}</td><td>${nz(inj)}</td><td>${nz(T.missed.rest)}</td>`
+      +`<td>${nz(x.start)}</td><td>${nz(x.res)}</td><td>${withLineup.length?`${x.start+x.res}<small>/${withLineup.length}</small>`:'—'}</td></tr>`; };
+  const head=`<thead><tr><th>번호</th><th class="txt">이름</th><th class="txt">출석률</th><th>훈련</th><th>경기</th><th>결석</th><th>부상 · 회복</th><th>휴식</th><th>선발</th><th>리저브</th><th>명단</th></tr></thead>`;
+  const sum=rows.reduce((a,x)=>{ a.sch+=x.T.scheduled; a.ex+=x.T.exercise; a.out+=x.T.missed.out; a.inj+=x.T.missed.injury+x.T.missed.rehab; a.rest+=x.T.missed.rest; return a; },{sch:0,ex:0,out:0,inj:0,rest:0});
+  const foot=`<tfoot><tr><td></td><th class="txt">팀 ${rows.length}명</th><td class="rt">${bar(sum.sch?Math.round(sum.ex/sum.sch*100):null)}</td><td></td><td></td><td>${sum.out}</td><td>${sum.inj}</td><td>${sum.rest}</td><td></td><td></td><td>${withLineup.length?`<small>명단 적은 경기 ${withLineup.length}/${matches.length}</small>`:''}</td></tr></tfoot>`;
+  const note=`<p class="pyr-fn">훈련 · 경기 = 나온 날 · 결석 · 부상 · 휴식 = 일정이 있었는데 빠진 날(일). 선수단 화면의 상태 · 출석 기록 기준이고, 기록이 없는 일정일은 참석으로 셉니다. 선발 · 리저브는 경기 기록에 적은 명단입니다.</p>`;
+  const PER=20;
+  for(let i=0;i<rows.length;i+=PER){ const part=rows.slice(i,i+PER), last=i+PER>=rows.length;
+    pages.push(yPage(ctxLine,'선수별 출석 · 출전',i?`계속 · ${i+1}–${i+part.length} / ${rows.length}명`:`${rows.length}명 · ${from.slice(5).replace('-','.')} – ${to.slice(5).replace('-','.')}`,
+      `<table class="pyr-tbl pyr-pt">${head}<tbody>${part.map(prow).join('')}</tbody>${last?foot:''}</table>${last?note:''}`)); }
+  /* ── 부상 · 결석 ── */
+  const eps=[].concat(...rows.map(x=>x.eps.map(e=>Object.assign({who:x.p},e)))).sort((a,b)=>a.from<b.from?-1:1);
+  const longest=eps.slice().sort((a,b)=>b.days-a.days)[0];
+  const nowInj=rows.filter(x=>x.st==='injury'||x.st==='rehab').length;
+  const sumBox=`<div class="pyr-msum"><div><b>${eps.length}<small>건</small></b><span>부상</span></div><div><b>${sum.inj}<small>일</small></b><span>부상 · 회복으로 빠진 일정</span></div>`
+    +`<div><b>${sum.out}<small>일</small></b><span>결석(불참)</span></div><div><b>${nowInj}<small>명</small></b><span>지금 부상 · 회복 중</span></div>`
+    +(longest?`<div class="kinds"><p><u>가장 길었던</u>${E(longest.who.name||'')} · ${longest.days}일${longest.part?' · '+E(longest.part):''}</p></div>`:'')+`</div>`;
+  const md=s=>{ const a=s.split('-'); return (+a[1])+'.'+(+a[2]); };
+  const erow=e=>`<tr><th class="txt">${E(e.who.name||'')}${e.who.num?` <small>${E(e.who.num)}</small>`:''}</th><td>${md(e.from)} – ${e.open?'<u class="now">진행 중</u>':md(e.to)}</td><td>${e.days}일</td>`
+    +`<td class="txt">${E([e.part,e.side].filter(Boolean).join(' · '))||'—'}</td><td class="txt">${E(e.when||'')||'—'}</td><td class="txt notes">${E([e.memo].concat(e.notes||[]).filter(Boolean).join(' · ').slice(0,80))}</td></tr>`;
+  const ehead=`<thead><tr><th class="txt">선수</th><th>기간</th><th>일수</th><th class="txt">부위 · 좌우</th><th class="txt">상황</th><th class="txt">메모</th></tr></thead>`;
+  /* 달마다 빠진 날 — 선수 · 일 합 */
+  const MS=[]; for(let m=0;m<=days[days.length-1].m;m++)MS.push(m);
+  const mm=MS.map(m=>{ const a=yearQuickFormatIso(new Date(Y,m,1)), b0=yearQuickFormatIso(new Date(Y,m+1,0)), b=b0>to?to:b0; const o={out:0,inj:0,rest:0,sch:0,ex:0};
+    R.players.forEach(p=>{ try{ const T=PP.totals(R.meta,p.id,a,b,kindOf,yStatusOf(p,tIso),tIso,true); o.out+=T.missed.out; o.inj+=T.missed.injury+T.missed.rehab; o.rest+=T.missed.rest; o.sch+=T.scheduled; o.ex+=T.exercise; }catch(_){} });
+    return o; });
+  const mtbl=`<table class="pyr-tbl pyr-heat"><thead><tr><th class="txt">빠진 날 (선수 · 일)</th>${MS.map(m=>`<th>${m+1}월</th>`).join('')}</tr></thead><tbody>`
+    +[['결석','out'],['부상 · 회복','inj'],['휴식','rest']].map(k=>`<tr><th class="txt">${k[0]}</th>${mm.map(o=>`<td>${o[k[1]]||''}</td>`).join('')}</tr>`).join('')
+    +`<tr><th class="txt">팀 출석률</th>${mm.map(o=>`<td>${o.sch?Math.round(o.ex/o.sch*100)+'%':''}</td>`).join('')}</tr></tbody></table>`;
+  const FIRST=8, NEXT=14;
+  if(!eps.length) pages.push(yPage(ctxLine,'부상 · 결석','',sumBox+`<h3>달마다 빠진 날</h3>${mtbl}<h3>부상 기록</h3><div class="pyr-none">올해 기록된 부상이 없어요</div>`));
+  else for(let i=0,k=0;i<eps.length;k++){ const n=k?NEXT:FIRST, part=eps.slice(i,i+n);
+    pages.push(yPage(ctxLine,'부상 · 결석',k?`계속 · 부상 ${i+1}–${i+part.length} / ${eps.length}`:'',(k?'':sumBox+`<h3>달마다 빠진 날</h3>${mtbl}<h3>부상 기록</h3>`)+`<table class="pyr-tbl pyr-et">${ehead}<tbody>${part.map(erow).join('')}</tbody></table>`)); i+=n; }
+  return pages;
 }
