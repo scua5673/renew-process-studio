@@ -35,3 +35,7 @@ test('«사람» is 3D-only: flat boards draw the uniform, the bar offers 유니
   assert.match(b,/\}else if\(\(tokShape==="shirt"\|\|tokShape==="person"\)&&!p\.coach&&!p\.shaper\)\{/);
   assert.match(tb.css(),/body:not\(\.bc-tilt3d\) #shapeSeg button\[data-s="person"\]\{display:none!important\}/);
 });
+
+test('3.079 — pattern-book keeps its page strip folded (the bar must not re-show it)',()=>{
+  assert.match(tb.css(),/body\.book-mode:not\(\.focus-board\):not\(\.vault-full\):not\(\.ps-phone-work\):not\(\.ps-dock\) #boardPageStrip\.ps-tb(:not\(#tb\d\)){20}\{display:none!important\}/);
+});

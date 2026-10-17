@@ -60,6 +60,8 @@
       S + '>.tb-g{pointer-events:auto;display:flex;align-items:center;gap:4px;height:50px;padding:0 8px;border-radius:18px;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);flex:0 1 auto;min-width:0;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}',
       S + '>.tb-l{overflow:hidden}',
       S + '>.bp-head{display:none!important}',
+      // 3.079 — 패턴북(book-mode)은 왼쪽 기둥이 시퀀스 목록이라 띠를 접는다(board.html 의 접기 규칙과 같은 조건) — 막대가 그 규칙을 덮지 않게
+      'html.ps-page-board body.book-mode:not(.focus-board):not(.vault-full):not(.ps-phone-work):not(.ps-dock) #boardPageStrip.ps-tb' + N + N + '{display:none!important}',
       S + ' .tb-tabs{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}',
       S + ' .tb-tabs::-webkit-scrollbar{display:none}',
       S + ' .tb-sep{width:1px;height:22px;margin:0 4px;flex:none}',

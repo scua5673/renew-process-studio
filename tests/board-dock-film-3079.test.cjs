@@ -12,7 +12,7 @@ test('scene time = hold + move to the next scene (1 / speed); the last scene onl
 test('one card: the dock carries the glass, both rows are see-through, the film row only when scenes are shown',()=>{
   const c=fm.css();
   assert.match(c,/body\.ps-dock-float #ps-command-dock(:not\(#fm\d+\)){16}>#animBar,/,'rows transparent');
-  assert.match(c,/body\.ps-dock-float:not\(\.ps-df-anim-off\) #ps-command-dock/,'film row rules never re-show a hidden scene row');
+  assert.match(c,/body\.ps-dock-float:not\(\.ps-df-anim-off\):not\(\.cmd-dock-folded\) #ps-command-dock/,'film row rules never re-show a hidden or folded scene row');
   assert.doesNotMatch(c,/#animFrames>\.anim-frame\{[^}]*margin/,'no margin on chips (the stage-start gap stays)');
   assert.match(c,/\.aft>svg\{/,'only the thumbnail root svg is sized, not the ball inside');
   assert.match(sk.skinCSS('glass'),/#ps-command-dock(:not\(#lx\d+\)){14}\{background:linear-gradient/,'skin glass on the dock itself');
@@ -21,4 +21,12 @@ test('one card: the dock carries the glass, both rows are see-through, the film 
 test('wiring: script tag after the top bar, offline cache',()=>{
   assert.match(fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8'),/<script src="board-topbar\.js"><\/script><script src="board-dock-film\.js"><\/script>/);
   assert.match(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'),/'\/studio\/board-dock-film\.js'/);
+});
+test('thumbnails: wide boards fill the chip with the whole pitch, tall boards are not cropped',()=>{
+  const w=fm.fitThumb('<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 10 50 30" data-psvb="0 0 1110 740" preserveAspectRatio="xMidYMid meet"><g/></svg>');
+  assert.match(w,/viewBox="0 0 1110 740"/);assert.match(w,/preserveAspectRatio="xMidYMid slice"/);assert.equal((w.match(/preserveAspectRatio=/g)||[]).length,1);assert.match(w,/<g\/><\/svg>$/);
+  const t=fm.fitThumb('<svg viewBox="1 2 3 4" data-psvb="0 0 740 1110"><g/></svg>');
+  assert.match(t,/viewBox="1 2 3 4"/,'tall board keeps its own framing');assert.match(t,/xMidYMid meet/);
+  assert.equal(fm.fitThumb(''),'');assert.equal(fm.fitThumb('nope'),'nope');
+  assert.match(fm.css(),/\.aft>svg\{display:none!important\}/,'the inline svg is never laid out in the film row');
 });
