@@ -356,6 +356,7 @@
       // back upright on screen and stretches him so he stands at his real height instead of lying on the grass.
       var st = opts && opts.stand, stand = node(doc, 'g', { 'class': 'ps-person-stand' });
       if (st && (st.rot || (st.sy && st.sy !== 1))) stand.setAttribute('transform', 'rotate(' + r1(+st.rot || 0) + ') scale(1,' + (Math.round((+st.sy || 1) * 1000) / 1000) + ')');
+      stand.appendChild(node(doc, 'rect', { x: -22, y: -PERSON_H - 4, width: 44, height: PERSON_H + 8, fill: 'transparent', 'class': 'ps-person-hit' }));   // the whole figure is grabbable, not only its thin limbs
       stand.appendChild(personFigure(doc, fill, stroke, label, opts && opts.pose));
       body.appendChild(stand);
     } else {
@@ -394,7 +395,7 @@
     }
     if (item.name) {
       // opts.nameK = the board's name size (0.8 · 1 · 1.25); opts.nameStyle 'pill' puts the name on a dark pill, otherwise an outlined name.
-      var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1), str = String(item.name).toUpperCase(), y0 = nameY(kind, h, font, opts && opts.dir);
+      var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1) / (opts && +opts.zoom > 1 ? +opts.zoom : 1), str = String(item.name).toUpperCase(), y0 = nameY(kind, h, font, opts && opts.dir);
       var nameHost = (kind === 'person' && body.querySelector('.ps-person-stand')) || body;
       if (opts && opts.nameStyle === 'pill') nameHost.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
       var name = node(doc, 'text', { x: 0, y: y0, 'data-font': String(font), 'text-anchor': 'middle', 'font-size': String(Math.round(font * 10) / 10), 'font-weight': '800', 'letter-spacing': '.4',
