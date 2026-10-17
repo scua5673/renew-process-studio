@@ -456,6 +456,9 @@
 <script>
 (function(){
 "use strict";
+/* 3.070 — 강제 종료 위치 기록(셸 boot_after_crash 의 stage). 10/17 아이폰이 커뮤니티를 열면 5초 안에 꺼지는데 어느 단계인지 서버에서 볼 수 없었다. 단계 이름만(내용 없음) */
+function cmStage(c){ try{ var T=window.top; if(T&&T!==window&&T.__psBootCrumb&&T.document.body.getAttribute('data-ps-app')==='community')T.__psBootCrumb(c); }catch(_){} }   /* 보이는 커뮤니티만 — 미리 띄운 탭은 적지 않는다 */
+cmStage('cm0');
 var $=function(id){return document.getElementById(id);};
 function esc(s){return window.PSSafe&&window.PSSafe.html?window.PSSafe.html(s):String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove('on');},2200);}
@@ -658,7 +661,7 @@ function fetchMyLikes(){
 /* 피드 단기 캐시 — 같은 탭에서 60초 안 재방문은 서버를 다시 부르지 않는다(동시 사용자 확장 대비).
    발행·삭제 등 변경 후엔 fetchPosts(true)로 캐시를 깨고 새로 받는다. */
 var FEED_TTL=60000,FEED_CK='ps_comm_feed_cache_v1';
-function fetchPosts(force){
+function fetchPosts(force){ cmStage('cmFF');
   var b=base();
   var grid=$('grid');
   if(!b){grid.innerHTML='<div class="empty"><b>커뮤니티에 연결할 수 없어요</b>네트워크 연결을 확인해 주세요.</div>';return;}
@@ -736,7 +739,7 @@ function catBadges(catStr){
   if(ks.length>2)show+='<span class="cat">+'+(ks.length-2)+'</span>';
   return show;
 }
-function render(){
+function render(){ cmStage('cmR'+String(tabF||'').slice(0,4));
   prCounts();
   if(tabF==='proc'){renderProc();return;}
   var elmTab=(tabF==='elmiha');   /* 3.018 — 엘미하 칸은 코치 자료와 같은 카드·고르개·미리보기·뷰어를 쓴다. 목록만 엘미하 계정의 글 */
@@ -1013,7 +1016,7 @@ function cpAnimGeneric(box,frames,p){
   }
   _cpaT.push(setTimeout(step,700));
 }
-function openPost(p){
+function openPost(p){ cmStage('cmOpen');
   /* 조회수 + 전체 페이로드 확보 → 커뮤니티 내부 읽기 전용 상세보기 */
   if(p.proc){ if(!p.item){procOpen(p,null);return;} }   /* 2.999 — 프로세스 세션: 원본은 팩(procEnsure), 조회수 표 없음 */
   else{
@@ -1746,13 +1749,13 @@ var ELM_CK='ps_comm_elmiha_v1',ELM_TTL=60000;   /* 코치 자료 피드와 같�
 function elmFind(id){ if(typeof id!=='string')return null; for(var i=0;i<elm.list.length;i++)if(elm.list[i].id===id)return elm.list[i]; return null; }
 function elmIsOwner(){ var me=sess(); return !!(me&&me.uid===ELM_UID); }
 function elmOwnerMark(){ document.body.classList.toggle('pr-elm-own',elmIsOwner()); }
-function elmSet(list,at){
+function elmSet(list,at){ cmStage('cmES');
   elm.list=list; elm.ready=true; elm.err=''; elm.at=at||Date.now();
   prCounts();
   if(tabF==='elmiha')render();
 }
 function elmStale(){ elm.at=0; try{sessionStorage.removeItem(ELM_CK);}catch(_){} if(elm.ready||tabF==='elmiha')elmFetch(true); }
-function elmFetch(force){
+function elmFetch(force){ cmStage('cmEF');
   var b=base();
   if(!b){ elm.err='net'; if(tabF==='elmiha')render(); return; }
   if(!force){
@@ -1880,7 +1883,7 @@ function prCounts(){
   var e=$('prElmN');   /* 3.018 — 엘미하 칸: 글이 있을 때만 */
   if(e)e.textContent=(elm.ready&&elm.list.length)?String(elm.list.length):'';
 }
-function procSet(list,at,src){
+function procSet(list,at,src){ cmStage('cmPS');
   var keep={};
   list.forEach(function(s){ var id='proc-'+s.nn,old=proc.posts[id];
     keep[id]=(old&&old.s.rev===s.rev)?old:{id:id,proc:true,title:s.session,owner_name:'프로세스',cat:'',age:'',players:'',summary:'',thumb:'',item:null};
@@ -1890,7 +1893,7 @@ function procSet(list,at,src){
   prCounts();
   if(tabF==='proc'){ catChipsRender(); renderProc(); }
 }
-function procFetch(force){
+function procFetch(force){ cmStage('cmPF');
   if(proc.loading)return;
   if(!force&&!proc.ready){ try{ var c=JSON.parse(sessionStorage.getItem(PROC_CK)||'null');
       if(c&&Date.now()>=c.at&&Date.now()-c.at<PROC_TTL){ var l0=procRead(c.index); if(l0&&l0.length){ if(c.local)l0=procMerge(l0,procRead(c.local)); procSet(l0,c.at,c.src); return; } } }catch(_){} }
@@ -1920,7 +1923,7 @@ function procChipsRender(){
   PROC_GROUPS.forEach(function(g){ if(counts[g[0]])mk(g[0],g[1],counts[g[0]]); });
 }
 function procThumb(s,k){ return '<img alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(procUrl('thumb',s,k,procSrcOf(s,proc.src)))+'">'; }
-function renderProc(){
+function renderProc(){ cmStage('cmRP');
   var grid=$('grid'),cc=$('commCount'); if(!grid)return;
   try{cpAnimStop();}catch(_){}
   if(!proc.ready){
@@ -2056,7 +2059,7 @@ function procSave(p){
   if(IN_SHELL){ try{ window.parent.location.hash=hash; return; }catch(_){} }
   try{ location.href='app.html'+hash; }catch(_){}
 }
-function procSetTab(t,boot){
+function procSetTab(t,boot){ cmStage('cmT'+String(t||'').slice(0,4));
   t=(t==='proc'||t==='elmiha')?t:'coach'; if(t===tabF&&!boot)return;
   tabF=t; document.body.classList.toggle('pr-proc',t==='proc'); document.body.classList.toggle('pr-elm',t==='elmiha');
   if(!boot)try{localStorage.setItem(PROC_TAB_KEY,t);}catch(_){}
