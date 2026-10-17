@@ -2068,13 +2068,13 @@ html.ps-page-scout .vchip,html.ps-page-scout .t-grp,html.ps-page-scout .sc-gr,ht
 .mi-nolink{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 10px;padding:10px 12px;
   border:1px solid rgba(194,74,70,.32);background:rgba(194,74,70,.07);border-radius:11px;font-size:13px;color:var(--txt,#14161A)}
 .mi-nolink b{font-weight:800}
-.mi-nolink.all{border-color:var(--c-line);background:var(--c-bg);color:var(--c-muted)}   /* 3.076 — 새 팀: 경고가 아니라 안내 */
+.mi-nolink.all{border-color:var(--c-line);background:var(--c-bg);color:var(--c-muted)}   /* 3.077 — 새 팀: 경고가 아니라 안내 */
 .mi-nolink small{flex:1 1 100%;color:var(--txt-dim,#8a9099);font-size:11px}
 .mi-nolink button{flex:0 0 auto;height:28px;padding:0 11px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);
   color:var(--txt,#14161A);border-radius:6px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
 .mi-nolink button:hover{border-color:var(--line2,#D3D7DD)}
 /* 2.204 — 계정 연결 여부를 색으로(사용자): 안 됨 = 빨강 · 됨 = 초록. 폰 점·데스크톱 칩 공통 */
-/* 3.076 — 연결된 선수가 아직 한 명도 없는 팀(#teamList.tm-nolink-all)은 빨강을 걸지 않는다 — 1.543 의 중립 칩 그대로 */
+/* 3.077 — 연결된 선수가 아직 한 명도 없는 팀(#teamList.tm-nolink-all)은 빨강을 걸지 않는다 — 1.543 의 중립 칩 그대로 */
 html.ps-page-scout #teamList:not(.tm-nolink-all) .tm-row .t-idp{border-color:rgba(212,64,58,.45)!important;background:#fdecea!important;color:#b4322d!important}
 html.ps-page-scout #teamList:not(.tm-nolink-all) .tm-row .t-idp::before{background:#d4403a!important}
 html.ps-page-scout #teamList .tm-row .t-idp.linked{border-color:rgba(31,138,76,.5)!important;background:#e7f5ec!important;color:#1f8a4c!important}
@@ -7939,7 +7939,7 @@ function renderPosEditor(){
 
 // ===================== 선수 =====================
 let editingPlayer=null;
-/* 3.076 — 빠른 평가(코치 점검 10/16: 24+8 문항 × 18명 = 576번). quick = 영역마다 팀 평가표 순서의 첫 문항 하나(5문항), 포지션 문항은 숨긴다.
+/* 3.077 — 빠른 평가(코치 점검 10/16: 24+8 문항 × 18명 = 576번). quick = 영역마다 팀 평가표 순서의 첫 문항 하나(5문항), 포지션 문항은 숨긴다.
    고른 모드는 이 기기에 남긴다. 기본은 2.908 그대로 «전체». 점수는 같은 pl.levels — 나중에 «전체»에서 나머지를 채우면 된다. */
 let plEvalMode=(function(){ try{ var v=localStorage.getItem("cs_eval_mode_v1"); return (v==="quick"||v==="all")?v:"all"; }catch(_){ return "all"; } })();
 function plSetEvalMode(m){ plEvalMode=m; if(m==="quick"||m==="all"){ try{ localStorage.setItem("cs_eval_mode_v1",m); }catch(_){} } }
@@ -9997,7 +9997,7 @@ function openPlayer(id,opts){
       });
     } else if(!pl.posId){ var hint=document.createElement("div");hint.className="lvlmode-hint";hint.style.marginTop="8px";hint.textContent="주 포지션을 정하면 포지션별 문항 4개가 아래에 붙어요";box.appendChild(hint); }
   } }catch(_){}
-  /* 3.076 — 평가 칸 아래 «다음 선수 평가 ›»: 아직 한 칸도 안 매긴 다음 선수를 평가부터 연다(18명을 연달아) */
+  /* 3.077 — 평가 칸 아래 «다음 선수 평가 ›»: 아직 한 칸도 안 매긴 다음 선수를 평가부터 연다(18명을 연달아) */
   try{ if(data.attrs.length){ const nx=document.createElement("div"); nx.className="lvl-next";
     const nb=document.createElement("button"); nb.type="button"; nb.className="btn"; nb.id="plEvalNext"; nb.textContent="다음 선수 평가 ›";
     nb.onclick=()=>{ const p2=plNextUnrated(pl.id); if(p2)openPlayer(p2.id,{to:"eval"}); else { try{ toast&&toast("모든 선수 평가 완료 ✓"); }catch(_){} } };
@@ -12002,7 +12002,7 @@ function renderTeam(){
   if(statUnavailable){ statUnavailable.textContent=String(unavailableN);
     try{ statUnavailable.parentNode.classList.toggle("zero",unavailableN===0); }catch(_){} }   /* 2.981 — 0 은 색으로 말하지 않는다 */
   if(statNeed)statNeed.textContent=String(Math.max(0,oursAll.length-evalN));
-  /* 3.076 — 연결된 선수가 한 명도 없으면(새 팀) IDP 칩을 빨강이 아닌 회색으로(코치 점검 10/16: 18명 전부 빨강 = 경보가 아니라 시작 상태).
+  /* 3.077 — 연결된 선수가 한 명도 없으면(새 팀) IDP 칩을 빨강이 아닌 회색으로(코치 점검 10/16: 18명 전부 빨강 = 경보가 아니라 시작 상태).
      한 명이라도 연결되면 2.204 그대로 안 됨 = 빨강 · 됨 = 초록 — 그때 빨강은 «아직 안 한 선수»를 가려 준다. */
   try{ box.classList.toggle("tm-nolink-all",!oursAll.some(function(p){ try{ return !!matchAccountForPlayer(p.id); }catch(_){ return false; } })); }catch(_){}
   /* 평가를 한 번도 안 쓴 팀에겐 '평가 미완료 N명' 배너가 영구 잔소리 — 한 명이라도 평가했을 때만 노출.
@@ -14582,7 +14582,7 @@ function matchRenderIndividual(m,kind,readonly,keepCurrent){
       /* 2.529 — 개인 전달사항은 **계정이 연결된 선수에게만** 간다(matchToggleIndividual 의 규칙).
          전에는 그 사실이 다 쓴 뒤 공개 체크에서야 토스트로 나왔다 — 사용자: "나오는 선수가 있고 안 나오는 선수가 있어요".
          띠에서 미리 갈라 보여 준다: 미연결은 흐리게 + 자물쇠. 명단에서 빼지는 않는다(초안은 적어 둘 수 있다). */
-      var _nolink=_anyLinked&&!matchAccountForPlayer(p.id);   /* 3.076 — 아무도 연결 안 된 팀은 모든 칩에 ⃠ 를 달지 않는다(아래 팀 한 줄이 말한다) */
+      var _nolink=_anyLinked&&!matchAccountForPlayer(p.id);   /* 3.077 — 아무도 연결 안 된 팀은 모든 칩에 ⃠ 를 달지 않는다(아래 팀 한 줄이 말한다) */
       return'<button type="button" class="'+st+(p.id===pid?" on":"")+(_nolink?" nolink":"")+'" data-match-person="'+esc(p.id)+'" aria-pressed="'+(p.id===pid)+'"'
         +(_nolink?' title="계정 미연결 — 지금은 전달되지 않아요"':'')+'>'+esc(p.name||p.num||"선수")+(_nolink?'<i aria-hidden="true"> ⃠</i>':'')+"</button>";
     }).join("")+(filt==="todo"&&!shown.length?'<span class="mri-all-done">모두 작성했어요</span>':'');
@@ -14612,7 +14612,7 @@ function matchRenderIndividual(m,kind,readonly,keepCurrent){
       var all=tmOurs(), nOk=0; all.forEach(function(p){ try{ if(matchAccountForPlayer(p.id))nOk++; }catch(_){} });
       var who=(players.filter(function(p){return p.id===pid;})[0]||{}).name||"이 선수";
       var n=document.createElement("div"); n.className="mi-nolink";
-      /* 3.076 — 아무도 연결 안 된 팀(새 팀)이면 선수마다 빨간 경고 대신 팀 한 줄로, 회색으로. 쓰는 일은 그대로 된다(코치 초안) */
+      /* 3.077 — 아무도 연결 안 된 팀(새 팀)이면 선수마다 빨간 경고 대신 팀 한 줄로, 회색으로. 쓰는 일은 그대로 된다(코치 초안) */
       if(nOk===0){ n.classList.add("all");
         n.innerHTML='아직 선수 계정이 연결되지 않았어요 <b>0/'+all.length+'</b><small>개인 전달은 코치 초안으로 남고, 선수를 초대해 계정이 연결되면 그때 공개할 수 있어요</small>'; }
       else
@@ -15614,7 +15614,7 @@ function matchCopyPrepBoards(){
   try{toast(added.length+"개 준비 장면을 리뷰 사본으로 만들었어요");}catch(_){}
 }
 /* ── 1.879 · 국면 평가 · 선수 평가 (경기 리뷰) ─────────────────────────────── */
-/* 3.076 — 게임모델이 비었으면 경기 리뷰는 표준 네 국면으로 평가한다(코치 점검 10/16: 새 팀은 첫 경기 리뷰의 «국면별 리뷰»가 막혔다).
+/* 3.077 — 게임모델이 비었으면 경기 리뷰는 표준 네 국면으로 평가한다(코치 점검 10/16: 새 팀은 첫 경기 리뷰의 «국면별 리뷰»가 막혔다).
    게임모델 문서에는 아무것도 넣지 않는다(2.419 «기본 국면을 만들어 두지 않는다»). 키는 게임모델 표준 국면(GM_LIB)과 같아
    나중에 게임모델에 같은 국면을 만들면 적어 둔 리뷰가 그대로 이어진다. */
 var MPR_STD=[{key:"ao",name:"공격 조직"},{key:"do",name:"수비 조직"},{key:"dt",name:"공격 → 수비 전환"},{key:"at",name:"수비 → 공격 전환"}];
@@ -18247,7 +18247,7 @@ function renderMB2(){
 }
 /* ── 리뷰: 준비 → 실행 확인 ── */
 /* ── 상대 분석 국면 보드(1.450) — 국면별 배치 + 프레임 애니메이션. 데이터 m.oppPB ── */
-/* 3.076 — 상대 분석 보드에 실제로 놓은 것(선수·그림)이 있나. 빈 뼈대(obEnsure)는 없는 것으로 본다 */
+/* 3.077 — 상대 분석 보드에 실제로 놓은 것(선수·그림)이 있나. 빈 뼈대(obEnsure)는 없는 것으로 본다 */
 function obHasContent(m){
   var pb=m&&m.oppPB, bs=(pb&&pb.boards)||{};
   return Object.keys(bs).some(function(k){ var b=bs[k]||{}; return (Array.isArray(b.frames)?b.frames:[]).some(function(f){ return mmBoardHas(f); }); });
@@ -20157,7 +20157,7 @@ function renderCkHome(){ try{ setTimeout(ckGrpNote,0); }catch(_){}
   var todo=[];
   if(m){ /* 2.181 — 경기 탭의 세 단계 그대로(사용자): 01 상대 분석 · 02 경기 준비 · 03 경기 리뷰. 완료는 그 단계의 필드에서 파생 */
     var has=function(v){ return !!(v&&String(typeof v==="object"?JSON.stringify(v):v).replace(/[\[\]{}"\s]/g,"")); };
-    var aDone=["oppAttack","oppDefense","oppAttackTransition","oppDefenseTransition","oppSetPlay","oppConclusion","oppNote"].some(function(k){return has(m[k]);})||obHasContent(m);   /* 3.076 — 경기를 열기만 해도 obEnsure 가 빈 국면 보드(공격 시·수비 시…)를 깔아 has(m.oppPB) 가 참이 됐다 → «다음 할 일»이 상대 분석을 건너뛰었다(코치 점검 10/16). 판에 선수·그림이 있을 때만 */
+    var aDone=["oppAttack","oppDefense","oppAttackTransition","oppDefenseTransition","oppSetPlay","oppConclusion","oppNote"].some(function(k){return has(m[k]);})||obHasContent(m);   /* 3.077 — 경기를 열기만 해도 obEnsure 가 빈 국면 보드(공격 시·수비 시…)를 깔아 has(m.oppPB) 가 참이 됐다 → «다음 할 일»이 상대 분석을 건너뛰었다(코치 점검 10/16). 판에 선수·그림이 있을 때만 */
     var pDone=has(m.briefing)||(m.fifaPlans||[]).length>0||!!m.prepPublished;   /* 2.971 — 명단(선발 11)은 더 정하지 않는다 */
     var st=matchStatusOf(m), rDone=(st==="review");
     /* 2.193 — 체크는 코치가 직접 누른다(m.ckDone, 경기별 저장). 자동 판정은 처음 값일 뿐. MD 라벨은 뺀다(사용자) */
@@ -20392,7 +20392,7 @@ var okNames=""; if(open){ try{ var PLB={GK:"GK",DEF:"수비",MID:"미드필더",
       return; }   /* 2.482 — 국면 상세 펼침 */
     var b=e.target.closest("[data-ck]"); if(!b)return; var k=b.dataset.ck;
     if(k==="session"){ teamHomeGoSchedule(); }
-    /* 3.076 — «세션 채우기 →»는 그 날 세션의 채우기 시트까지 연다(코치 점검 10/16: 주간 일정만 열려 한 번 더 눌러야 했고, 위 탭은 «오늘»에 머물렀다) */
+    /* 3.077 — «세션 채우기 →»는 그 날 세션의 채우기 시트까지 연다(코치 점검 10/16: 주간 일정만 열려 한 번 더 눌러야 했고, 위 탭은 «오늘»에 머물렀다) */
     else if(k==="fill"){ try{ var _fd=new Date(); _fd.setHours(0,0,0,0); _fd.setDate(_fd.getDate()+(window.__sessSel||0));
         var _fs=ckSession(window.__sessSel||0)||{};
         parent.postMessage({source:"scout",type:"openSchedule",date:_fd.getFullYear()+"-"+String(_fd.getMonth()+1).padStart(2,"0")+"-"+String(_fd.getDate()).padStart(2,"0"),fill:{slot:_fs.slot||"",at:Date.now()}},"*"); }catch(_){ teamHomeGoSchedule(); } }
@@ -21600,7 +21600,7 @@ html.ps-page-scout #teamList.tm-4col .tm-row .t-idp{grid-column:8!important;grid
   width:auto!important;height:20px!important;min-width:0!important;padding:0!important;border:0!important;background:none!important;
   font-size:10px!important;font-weight:800!important;letter-spacing:.02em!important;line-height:20px!important;
   justify-self:center!important;opacity:1!important}
-html.ps-page-scout #teamList.tm-4col:not(.tm-nolink-all) .tm-row .t-idp{color:#d4403a!important}   /* 3.076 — 연결된 선수가 아무도 없으면 빨강 대신 기본(var(--dim)) */
+html.ps-page-scout #teamList.tm-4col:not(.tm-nolink-all) .tm-row .t-idp{color:#d4403a!important}   /* 3.077 — 연결된 선수가 아무도 없으면 빨강 대신 기본(var(--dim)) */
 html.ps-page-scout #teamList.tm-4col .tm-row .t-idp.linked{color:#1f8a4c!important}
 html.ps-page-scout #teamList.tm-4col .tm-row .t-idp::after{content:none!important}
 html.ps-page-scout #teamList.tm-4col .tm-row .t-idp::before{display:none!important}

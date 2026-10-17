@@ -1,5 +1,5 @@
 'use strict';
-/* 3.076 — 코치 점검(10/16): 폰 첫 화면이 보기만 하는 작전판이었다 · 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어갔다 · «세션 채우기 →»가 시트까지 열지 않았다 · 상대팀 이름이 잘렸다 */
+/* 3.077 — 코치 점검(10/16): 폰 첫 화면이 보기만 하는 작전판이었다 · 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어갔다 · «세션 채우기 →»가 시트까지 열지 않았다 · 상대팀 이름이 잘렸다 */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=f=>fs.readFileSync(path.join(__dirname,'../studio',f),'utf8');
 const SC=read('scout.html'),P=read('process.html'),APP=read('app.html');
@@ -71,7 +71,7 @@ test('board: one «저장» — saves the work board, writes back to a linked va
   assert.ok(!/linkTag/.test(src),'새로 담은 자료와 저절로 잇지 않는다(2.907 — 확인 없이 덮어쓰지 않게)');
   assert.ok(!/__curVaultId=null/.test(src),'앞서 담은 자료 덮어쓰기는 확인창에서 고를 수 있게 둔다');
   assert.ok(B.includes('manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveOne();};'),'단추');
-  assert.ok(B.includes('  boardSaveOne();   /* 3.076 — 단추와 같은 «저장» */'),'⌘S 도 같은 저장');
+  assert.ok(B.includes('  boardSaveOne();   /* 3.077 — 단추와 같은 «저장» */'),'⌘S 도 같은 저장');
   assert.ok(B.includes('saveBtn.style.display="none";manualSaveBtn.style.display=hide?"none":"inline-flex";'),'«보관함 저장»은 숨긴다');
   assert.ok(B.includes("b.textContent=_boardManualSaving?'저장 중…':(_chg?'저장 ●':'저장');"),'이름은 «저장»');
 });

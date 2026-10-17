@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.076"></script>
+<script src="autosave-status.js?v=3.077"></script>
 <script src="update-progress.js"></script>
 
 <title>PROCESS STUDIO</title>
@@ -516,7 +516,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.076';</script>
+<script>window.PS_BUILD='3.077';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -3023,7 +3023,7 @@ window.psFailAlert=function(lead,e,stage){
       }catch(_){}
     }); }catch(e){}
     var hb=document.getElementById('hintbar');if(hb)hb.textContent=hints.board;
-    /* 3.076 — 폰은 작전판을 보기만 하는데(«폰에서는 작전판을 보기만 해요» 창) 첫 화면이 작전판이었다(코치 점검 10/16).
+    /* 3.077 — 폰은 작전판을 보기만 하는데(«폰에서는 작전판을 보기만 해요» 창) 첫 화면이 작전판이었다(코치 점검 10/16).
        폰은 로그인한 팀 공간이면 팀 운영 › 오늘, 그 밖(개인 공간 · 로그인 전)은 커뮤니티로 연다. 선수는 아래 선수 전용 블록이 IDP 로 보낸다.
        작전판 iframe 은 그대로 뒤에서 뜬다 — 다른 화면이 작전판이 떠 있다고 기대한다(psBoardThen). */
     function psPhoneStart(){
@@ -3332,7 +3332,7 @@ window.psFailAlert=function(lead,e,stage){
       } else if(d.type==='openSchedule'){
         /* 2.583 — date 가 오면 팀 «일정» 탭으로 열고(탭 불 켜짐) 그 날의 주간으로 보낸다. 없으면 예전 그대로 */
         if(d.date){ var _tbT=teamKeyBtn('training'); if(_tbT)openTeamButton(_tbT); else showApp('process');
-          var _gd=String(d.date), _gf=d.fill||null, _gs=function(){ try{ fProcess.contentWindow.postMessage({type:'gotoDate',date:_gd,fill:_gf},'*'); }catch(_){} };   /* 3.076 — fill: 그 날 세션 채우기 시트까지(두 번 보내도 일정 화면이 at 으로 한 번만 연다) */
+          var _gd=String(d.date), _gf=d.fill||null, _gs=function(){ try{ fProcess.contentWindow.postMessage({type:'gotoDate',date:_gd,fill:_gf},'*'); }catch(_){} };   /* 3.077 — fill: 그 날 세션 채우기 시트까지(두 번 보내도 일정 화면이 at 으로 한 번만 연다) */
           setTimeout(_gs,150); setTimeout(_gs,700); }
         else showApp('process');
       } else if(d.source==='process' && d.type==='backToTeam'){
@@ -8147,13 +8147,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.076"></script>
-<script src="autosave-merge.js?v=3.076"></script>
-<script src="autosave-runtime.js?v=3.076"></script>
-<script src="autosave-recovery.js?v=3.076"></script>
-<script src="sync.js?v=3.076"></script>
+<script src="autosave-journal.js?v=3.077"></script>
+<script src="autosave-merge.js?v=3.077"></script>
+<script src="autosave-runtime.js?v=3.077"></script>
+<script src="autosave-recovery.js?v=3.077"></script>
+<script src="sync.js?v=3.077"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.076">
+<link rel="stylesheet" href="support.css?v=3.077">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

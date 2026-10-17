@@ -8905,7 +8905,7 @@ async function boardSaveExplicit(o){   /* 3.014 — o.noLink: 보관함 연결 �
   }finally{if(_boardManualSaving===owner)_boardManualSaving=false;boardManualStatus();}
 }
 window.__boardSaveExplicit=boardSaveExplicit;
-/* 3.076 — 저장 단추 하나(코치 점검 10/16 · 파일럿 §5 #2, 사용자 확인 10/17). «보드 저장»과 «보관함 저장» 둘이라 무엇이 어디로 가는지 헷갈렸다.
+/* 3.077 — 저장 단추 하나(코치 점검 10/16 · 파일럿 §5 #2, 사용자 확인 10/17). «보드 저장»과 «보관함 저장» 둘이라 무엇이 어디로 가는지 헷갈렸다.
    «저장» = 작업 보드를 계정에 저장(2.869 수동 저장 그대로) + 보관함:
      · 지금 페이지가 보관함 자료와 이어져 있으면(보드 가져오기 — 2.927 연결 칩이 보인다) 그 자료에도 덮어쓴다(boardSaveExplicit 되쓰기). 묻지 않는다
      · 아니면 예전 «보관함 저장» 확인창을 그대로 연다 — 기본은 새 자료, 앞서 담은 자료 덮어쓰기는 고를 때만(2.907 오류 제보: 확인 없이 덮어 옛 전술이 사라졌다).
@@ -8929,7 +8929,7 @@ window.__psSaveShortcut=function(){ try{
   if(document.body.classList.contains("editing")){ try{saveEditorDraft();}catch(_){} toast("작업 중인 훈련을 임시 저장했어요 · 보관함에 넣기는 «저장하기»"); return; }
   if(window.__vaultViewMode&&window.__vaultEdit){ if(window.__vaultReadOnly){ toast("보기 전용이라 저장하지 않아요"); return; } if(window.__vaultSaveOnly&&window.__vaultSaveOnly())return; }
   if(window.__vaultEdit){ var cs=document.getElementById("vCreateSave"); if(cs&&cs.offsetParent!==null){ cs.click(); return; } }
-  boardSaveOne();   /* 3.076 — 단추와 같은 «저장» */
+  boardSaveOne();   /* 3.077 — 단추와 같은 «저장» */
 }catch(e){ try{console.warn("save shortcut",e);}catch(_){} } };
 function boardSaveLive(){
   if(window.__psThumbCapturing||window.__psPreviewRefreshing)return;
@@ -20166,7 +20166,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   saveBtn.onclick=function(e){e.stopPropagation();vaultSaveCurrent();};
   var manualSaveBtn=document.createElement('button');manualSaveBtn.id='boardManualSave';manualSaveBtn.type='button';
   manualSaveBtn.className='primary';manualSaveBtn.style.cssText='flex:0 0 auto;white-space:nowrap;padding:8px 12px;border:1px solid var(--line,#E3E6EA);border-radius:9px;background:var(--panel,#fff);color:var(--ink,#14161A);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer';   /* 2.953 — 파랑은 «보관함 저장» 하나. 보드 저장은 바뀐 게 있을 때만 파랗게(.dirty) */
-  manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveOne();};   /* 3.076 — 저장 하나(보드 + 보관함) */
+  manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveOne();};   /* 3.077 — 저장 하나(보드 + 보관함) */
   var draftStyle=document.createElement('style');draftStyle.id='ps-3039-one-filled';draftStyle.textContent='body.ps-board-dirty #vaultSave,html.ps-page-board body.ps-board-dirty.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________):not(#_________) #vaultSave{background:var(--panel,#fff)!important;color:var(--ps-navy,#14213D)!important;border:1px solid var(--ps-navy,#14213D)!important;box-shadow:none!important}body.fmdark.ps-board-dirty #vaultSave,html.ps-page-board body.fmdark.ps-board-dirty.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________):not(#_________) #vaultSave{background:transparent!important;color:#E7EBF1!important;border-color:rgba(231,235,241,.55)!important}';document.head.appendChild(draftStyle);
   var manualStyle=document.createElement('style');manualStyle.textContent='#boardManualSave.dirty{background:var(--blue,var(--ps-navy,#14213D))!important;border-color:var(--blue,var(--ps-navy,#14213D))!important;color:#fff!important}@media(max-width:639px){#boardManualSave{position:fixed!important;left:14px!important;right:auto!important;bottom:calc(102px + var(--ps-animbar-h,48px) + 8px)!important;z-index:171!important;min-height:42px;max-width:150px}}';document.head.appendChild(manualStyle);
   boardManualStatus();
@@ -20181,7 +20181,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(manualHost&&manualSaveBtn.parentNode!==manualHost){if(manualHost===host)host.insertBefore(manualSaveBtn,saveBtn);else manualHost.appendChild(manualSaveBtn);}
     boardManualStatus();
   }
-  function toggleSave(){mountSave();var v=window.__csView||"board";var hide=(v==="session")||!!window.__vaultEdit;saveBtn.style.display="none";manualSaveBtn.style.display=hide?"none":"inline-flex";}   /* 3.076 — «보관함 저장»은 «저장»에 합쳤다(노드는 남긴다 — 다른 코드가 찾는다) */   /* 보관함 목록·항목 보기/편집 중엔 숨김(vCreateBar 저장이 대신함) */
+  function toggleSave(){mountSave();var v=window.__csView||"board";var hide=(v==="session")||!!window.__vaultEdit;saveBtn.style.display="none";manualSaveBtn.style.display=hide?"none":"inline-flex";}   /* 3.077 — «보관함 저장»은 «저장»에 합쳤다(노드는 남긴다 — 다른 코드가 찾는다) */   /* 보관함 목록·항목 보기/편집 중엔 숨김(vCreateBar 저장이 대신함) */
   var _saveResizeT=null;
   window.addEventListener("resize",function(){clearTimeout(_saveResizeT);_saveResizeT=setTimeout(function(){try{toggleSave();}catch(_){}},80);});
   var _osetView=setView;
