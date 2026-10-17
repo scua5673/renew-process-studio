@@ -116,7 +116,7 @@
     var a = BEAK_W * Math.PI / 180, x = Math.round(CHIP_R * Math.cos(a) * 10) / 10, y = Math.round(CHIP_R * Math.sin(a) * 10) / 10;
     return 'M' + x + ' ' + (-y) + 'L' + BEAK + ' 0L' + x + ' ' + y + 'A' + CHIP_R + ' ' + CHIP_R + ' 0 1 1 ' + x + ' ' + (-y) + 'Z';
   })();
-  var FONT = "-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif";
+  var FONT = "Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";
   function gradient(doc, tag, id, attrs, stops) {
     var g = node(doc, tag, Object.assign({ id: id }, attrs));
     stops.forEach(function (s) { g.appendChild(node(doc, 'stop', { offset: s[0], 'stop-color': s[1], 'stop-opacity': s[2] == null ? '1' : s[2] })); });
@@ -169,11 +169,26 @@
     return kind === 'circle' ? node(doc, 'circle', Object.assign({ r: CHIP_R }, attrs)) : node(doc, 'path', Object.assign({ d: kind === 'shirt' ? SHIRT : TEAR }, attrs));
   }
   // The name sits above the chip — and above a shaper's beak when the beak points up, so it never hides the heading.
-  function nameY(kind, h, font, dir) {
+  // 3.086 — below = the board's «이름표 아래» (보드 설정 › 이름표 위치). 3D 는 그 설정을 읽지 않고 늘 머리 위에 두었다(사용자 «위 아래 선택이 안돼 무조건 위로만 나와»).
+  //         아래면 칩(또는 서 있는 사람의 발) 바로 밑 — 2D 이름표와 같은 쪽이다. 쉐이퍼는 부리가 아래를 볼 때 부리 끝 밑으로.
+  function nameY(kind, h, font, dir, below) {
+    var sin = Math.sin((+dir || 0) * Math.PI / 180);
+    if (below) {
+      var foot = kind === 'person' ? 4 : kind === 'shirt' ? 20 : CHIP_R;
+      if (kind === 'shaper') foot = Math.max(foot, BEAK * sin + 2);
+      return Math.round((foot + 4 + font * .8) * 10) / 10;
+    }
     if (kind === 'person') return Math.round((-PERSON_H - 6 - font * .4) * 10) / 10;
     var top = kind === 'shirt' ? 20 : CHIP_R;
-    if (kind === 'shaper') top = Math.max(top, -BEAK * Math.sin((+dir || 0) * Math.PI / 180) + 2);
+    if (kind === 'shaper') top = Math.max(top, -BEAK * sin + 2);
     return Math.round((-h - top - 4 - font * .4) * 10) / 10;
+  }
+  // 3.086 — 이름표 글꼴(board-name-font.js · 보드 설정 › 이름표 글꼴). «기본»이면 빈 글자 → 번호와 같은 글꼴
+  function nameFF(doc) { try { return (doc && doc.defaultView && doc.defaultView.__nameFF) || ''; } catch (_) { return ''; } }
+  // opts.namePos 가 없으면 작전판의 지금 값(window.__namePos — 보드마다 · 기본 «아래»)
+  function nameBelow(doc, opts) {
+    var v = opts && opts.namePos; if (!v) { try { v = doc && doc.defaultView && doc.defaultView.__namePos; } catch (_) { v = ''; } }
+    return v !== 'above';
   }
   // The pill behind a name: an estimate of the text width (wide CJK glyphs, narrower Latin capitals) around the text's middle.
   function namePill(str, font, y) {
@@ -431,14 +446,29 @@
     if (text) { var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('pointer-events', 'none'); lid.appendChild(n); }
     body.appendChild(lid);
     }
+    // 3.086 — «사람»: 칩 글자(번호 · 포지션 · 풋살 — 보드 설정 › 칩 글자, «없음»이면 없다)를 발밑 작은 패에.
+    //         셔츠의 번호는 실제 크기에서 읽히지 않는다(사용자 «사람 토큰 밑으로 포지션이나 번호가 들어갈수 있게»). 팀 색 패 · 팀 글자색.
+    var tagH = 0, tagTxt = kind === 'person' && label ? String(label.textContent || '').trim() : '';
+    if (tagTxt) {
+      var lf = size.font / (opts && +opts.zoom > 1 ? +opts.zoom : 1), tagHost = body.querySelector('.ps-person-stand') || body, tagY = 6;
+      tagH = r1(lf * 1.15);
+      var tagW = Math.max(tagH * 1.3, lf * .8 + tagTxt.length * lf * .56);
+      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH * .3), fill: fill, stroke: 'rgba(255,255,255,.92)', 'stroke-width': r1(lf * .09) }));
+      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + tagH / 2 + lf * .29), 'text-anchor': 'middle', 'font-size': r1(lf * .8), 'font-weight': '800',
+        fill: label.getAttribute('fill') || '#fff', 'font-family': label.getAttribute('font-family') || FONT, 'pointer-events': 'none' });
+      tagT.textContent = tagTxt; tagHost.appendChild(tagT);
+    }
     if (item.name) {
       // opts.nameK = the board's name size (0.8 · 1 · 1.25); opts.nameStyle 'pill' puts the name on a dark pill, otherwise an outlined name.
-      var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1) / (opts && +opts.zoom > 1 ? +opts.zoom : 1), str = String(item.name).toUpperCase(), y0 = nameY(kind, h, font, opts && opts.dir);
-      var nameHost = (kind === 'person' && body.querySelector('.ps-person-stand')) || body;
-      if (opts && opts.nameStyle === 'pill') nameHost.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
-      var name = node(doc, 'text', { x: 0, y: y0, 'data-font': String(font), 'text-anchor': 'middle', 'font-size': String(Math.round(font * 10) / 10), 'font-weight': '800', 'letter-spacing': '.4',
-        fill: '#fff', stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke',
-        'font-family': (label && label.getAttribute('font-family')) || FONT, 'class': 'ps-chip-name' });   // the name is part of the chip: pressing it picks the player
+      var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1) / (opts && +opts.zoom > 1 ? +opts.zoom : 1), str = String(item.name).toUpperCase(), below = nameBelow(doc, opts), y0 = nameY(kind, h, font, opts && opts.dir, below);
+      if (below && tagH) y0 = r1(y0 + tagH + 2);   // 사람: 이름표가 아래면 번호 패 밑으로
+      var nameHost = (kind === 'person' && body.querySelector('.ps-person-stand')) || body, pill = opts && opts.nameStyle === 'pill';
+      if (pill) nameHost.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
+      // 3.086 — 알약이면 글자 테두리 없이(평면 알약과 같다 · 사용자 «테두리 없는것도 만들어줘 알약느낌으로»). 글자만이면 테두리 글자.
+      var name = node(doc, 'text', Object.assign({ x: 0, y: y0, 'data-font': String(font), 'text-anchor': 'middle', 'font-size': String(Math.round(font * 10) / 10), 'font-weight': pill ? '700' : '800', 'letter-spacing': '.4', fill: '#fff' },
+        pill ? {} : { stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke' },
+        { 'font-family': nameFF(doc) || (label && label.getAttribute('font-family')) || FONT, 'class': 'ps-chip-name' }));   // the name is part of the chip: pressing it picks the player
+      if (below) name.setAttribute('data-np', 'below');
       name.textContent = str;
       nameHost.appendChild(name);
     }
@@ -454,7 +484,7 @@
     token.querySelectorAll('.ps-chip-turn').forEach(function (g) { if (g.getAttribute('transform') !== t) g.setAttribute('transform', t); });
     var name = token.querySelector('.ps-chip-name');
     if (!name) return;
-    var font = +name.getAttribute('data-font') || 15, y = nameY('shaper', CHIP_H, font, deg);
+    var font = +name.getAttribute('data-font') || 15, y = nameY('shaper', CHIP_H, font, deg, name.getAttribute('data-np') === 'below');
     if (+name.getAttribute('y') === y) return;
     name.setAttribute('y', String(y));
     var bg = token.querySelector('.ps-chip-namebg');
@@ -531,5 +561,5 @@
       side.setAttribute('transform', 'translate(' + offset.x + ',' + offset.y + ')');
     });
   }
-  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, flatten: flatten, flattenAll: flattenAll, elevation: elevation, chipSize: chipSize, turnChip: turnChip, repose: repose, PERSON_M: PERSON_M, PERSON_H: PERSON_H, personPose: personPose };
+  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, nameY: nameY, flatten: flatten, flattenAll: flattenAll, elevation: elevation, chipSize: chipSize, turnChip: turnChip, repose: repose, PERSON_M: PERSON_M, PERSON_H: PERSON_H, personPose: personPose };
 });

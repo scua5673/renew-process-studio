@@ -78,7 +78,7 @@ test('the engine frames on the training area only when asked, and falls back to 
   assert.match(run,/if\(_fit\)\{ uvb=_fit\.vb\.slice\(\); const cs=_fitCanvas\(_fit\.ar,opts\.height\); canvas\.width=cs\[0\]; canvas\.height=cs\[1\]; \}/);
   assert.match(run,/else \{ uvb=_export169\(uvb\);/,'no plan (empty board) → the 16:9 pitch view as before');
   assert.match(run,/_segVB\[g\]\.v169=_fit\.seg\[g\]\.vb\.slice\(\)/,'every page gets its own area');
-  assert.match(run,/if\(_fit\)uvb=_fit\.raw\.slice\(\);[^\n]*\n\s*if\(uvb\)\{ uvb=_toAr\(uvb\); \}/,'reels centre the area too');
+  assert.match(run,/if\(_fit\)uvb=_fit\.raw\.slice\(\);[^\n]*\n\s*if\(uvb\)\{ uvb=_toAr\(\(!_fit&&window\.__psReelVB\)\?__psReelVB\(uvb\):uvb\); \}/,'reels centre the area too (3.085 — without a training area, the pitch is the centre)');
   const guard=slice('async function _animExportGuard(run){','async function exportVideo(opts){');
   assert.match(guard,/finally\{ window\.__animExport=0; try\{trailReset\(\);\}catch\(_\)\{\} window\.__psExportFit=0;/,'the watermark flag never outlives an export');
   const plan=slice('function _exportFitPlan(FR,pageMode){','window.__exportFitPlan=_exportFitPlan;');

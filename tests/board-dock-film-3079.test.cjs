@@ -5,7 +5,7 @@ const fm=require('../studio/board-dock-film.js'),sk=require('../studio/board-doc
 test('scene time = hold + move to the next scene (1 / speed); the last scene only holds',()=>{
   const fr=[{},{moveSpeed:2},{dur:1,moveSpeed:.5},{}];
   assert.equal(fm.sceneSecs(fr,0,.6),1.6);assert.equal(fm.sceneSecs(fr,1,.6),1.1);assert.equal(fm.sceneSecs(fr,2,.6),2.6);assert.equal(fm.sceneSecs(fr,3,.6),.6);
-  assert.equal(fm.sceneSecs(fr,0,0),1.6,'hold falls back to 0.6 like the board');assert.equal(fm.sceneSecs(fr,0,.1),1.2,'hold at least 0.2');
+  assert.equal(fm.sceneSecs(fr,0,0),1.6,'hold falls back to 0.6 like the board');assert.equal(fm.sceneSecs(fr,0,.1),1.1,'0.1s hold (3.085 — user «0.1초까지»)');assert.equal(fm.sceneSecs(fr,0,.05),1.1,'hold at least 0.1');
   assert.equal(fm.sceneSecs(fr,0,.6,()=>2),1.1,'the board\'s own speed lookup wins');assert.equal(fm.sceneSecs(fr,9,.6),0);
   assert.equal(fm.fmtSecs(1.1),'1.1초');assert.equal(fm.fmtSecs(2),'2.0초');
 });

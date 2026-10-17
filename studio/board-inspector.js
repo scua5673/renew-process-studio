@@ -70,6 +70,8 @@
       C + '>button svg{width:15px!important;height:15px!important}',
       C + '>.sizebox:not(#posCtl):not(#colorCtl) button{background:transparent!important;border:0!important;color:var(--in-ink)!important;height:30px!important;min-width:26px!important}',
       C + '>#delSelBtn{color:#e5484d!important}',
+      // 3.085 — «이 토큰만 리셋»은 «다음 장면» 묶음에 넓게(제보 «토큰을 우클릭 했을 때 리셋 버튼이 있으면» — 도구 사이에 묻혀 못 찾았다)
+      C + '>#tokAnimResetBtn{order:9!important;flex:1 1 100%!important;height:38px!important;min-height:38px!important;justify-content:flex-start!important;padding:0 12px!important;font:700 13px/1 ' + font + '!important}',
       // 판 색
       'html body.ps-dock-float{--in-bg:linear-gradient(180deg,rgba(255,255,255,.98),rgba(244,246,250,.96));--in-border:rgba(20,22,26,.07);--in-shadow:inset 0 1px 0 #fff,0 14px 34px rgba(15,23,42,.24);--in-ink:#1A2233;--in-dim:#5E6675;--in-line:rgba(20,33,61,.1);--in-well:rgba(20,33,61,.06);--in-tab:#fff;--in-accent:#14213D;--in-on-ink:#fff}',
       'html body.ps-dock-float.ps-skin-glass,html body.ps-dock-float.fmdark{--in-bg:linear-gradient(180deg,rgba(46,54,74,.9),rgba(20,24,36,.93) 55%,rgba(12,15,24,.95));--in-border:rgba(255,255,255,.08);--in-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 18px 40px rgba(0,0,0,.5);--in-ink:#E8ECF4;--in-dim:rgba(232,236,244,.6);--in-line:rgba(255,255,255,.1);--in-well:rgba(255,255,255,.08);--in-tab:rgba(255,255,255,.16);--in-accent:#3E6BFF;--in-on-ink:#fff}',
