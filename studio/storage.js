@@ -235,7 +235,7 @@
     if(!document.body||document.getElementById('psStorageFull')) return;
     var b=document.createElement('div'); b.id='psStorageFull';
     b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:99999;max-width:min(560px,92vw);'
-      +'background:#D6453D;color:#fff;font:700 13px/1.5 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
+      +'background:#D6453D;color:#fff;font:700 13px/1.5 Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
       +'padding:11px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
     var msg=document.createElement('span'); msg.style.cssText='flex:1 1 240px';
     msg.innerHTML='⚠ 저장 공간이 가득 찼어요 — <b>방금 변경이 저장되지 않았습니다.</b><br>'
@@ -1218,7 +1218,7 @@
     if(el) return;
     el=document.createElement('div'); el.id='psSaveFailed';
     el.style.cssText='position:fixed;left:16px;bottom:16px;z-index:99998;max-width:min(340px,88vw);'
-      +'background:#C24A46;color:#fff;font:700 12px/1.45 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
+      +'background:#C24A46;color:#fff;font:700 12px/1.45 Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
       +'padding:10px 12px;border-radius:11px;box-shadow:0 8px 24px rgba(0,0,0,.28);display:flex;align-items:center;gap:9px;';
     var t=document.createElement('span'); t.style.cssText='flex:1';
     t.innerHTML='⚠ <b>저장되지 않았습니다.</b><br>앱을 닫으면 방금 편집이 사라집니다.';

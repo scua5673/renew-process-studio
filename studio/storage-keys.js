@@ -32,6 +32,7 @@
     ['cs_scout_targets_v1','team','idb','data','sync.js'],
     ['cs_squad_v1','team','idb','data','scout.html',{mirror:1}],
     ['cs_team_attrs_v1','team','ls','data','idp.html'],
+    ['cs_team_photos_v1','device','idb','data','team-photos.js'],   /* 저장 팀 선수 → 사진(PSImg 참조). 기기마다 따로 — 동기화하지 않는다 */
     ['cs_team_matches_v1','team','idb','data','sync.js',{mirror:1}],
     ['cs_team_notice_v1','team','ls','data','idp.html'],
     ['cs_team_v1','team','ls','data','process.html'],
@@ -122,7 +123,6 @@
     ['cs_scoutdb_v1','device','ls','data','scout.html'],
     ['cs_snap_board_v1','device','idb','cache','sync.js'],
     ['cs_snap_match_v2','device','idb','cache','sync.js'],
-    ['cs_team_photos_v1','device','idb','data','team-photos.js'],   /* 저장 팀 선수 → 사진(PSImg 참조). 기기마다 따로 — 동기화하지 않는다 */
     ['cs_theme','device','ls','pref','app.html'],
     ['cs_tokscale_v4','device','ls','pref','board.html'],
     ['cs_tokshape','device','ls','pref','board.html'],
@@ -147,8 +147,9 @@
     ['ps_active_ws','device','ls','session','scout.html'],
     ['ps_admin_support_reply_v1:','device','ls','draft','admin-support.js',{prefix:1}],
     ['ps_anim_export_fit_v1','device','ls','pref','board.html'],
-    ['ps_anim_export_pgcap_v1','device','ls','pref','board-export-frame.js'],
     ['ps_anim_export_scope_v1','device','ls','pref','board.html'],
+    ['ps_anim_export_cap_v1','device','ls','pref','board-tweaks.js'],   // 3.085 여러 페이지 영상 — 페이지 이름 자막 넣기 · 빼기
+    ['ps_anim_speed_all_v1','device','ls','pref','board-tweaks.js'],   // 3.085 속도를 모든 장면에 같이(«전체»)
     ['ps_app_settings_tab_v1','device','ls','pref','app.html'],
     ['ps_auto_snap_idx_v1','device','ls','recovery','sync.js',{of:'*'}],
     ['ps_autosave_arch_seen_v1','device','ls','seen','app.html'],
@@ -254,6 +255,8 @@
     ['ps_sync_skipped','device','ls','queue','sync.js'],
     ['ps_tilt3d_boot','device','ls','session','board.html'],
     ['ps_tilt3d_opts_v1','device','ls','pref','board.html'],
+    ['ps_dock_float_v1','device','ls','pref','board-dock-float.js'],   // 3.073 떠 있는 하단 도크 — 열린 칸 · 묶은 도구의 마지막 종류
+    ['ps_dock_skin_v1','device','ls','pref','board-dock-skin.js'],   // 3.077 하단 도크 스타일 — 자동 · 글래스 · 베벨 · 기본
     ['ps_tilt3d_tab','device','ls','pref','board.html'],
     ['ps_tilt3d_touch_reset_v1','device','ls','pref','app.html'],
     ['ps_tm_view','device','ls','pref','scout.html'],

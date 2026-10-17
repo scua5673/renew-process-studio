@@ -8135,7 +8135,7 @@ function chip(msg,onClick){
     var c=document.getElementById('psSyncChip');
     if(!c){ c=document.createElement('button'); c.id='psSyncChip';
       /* 데이터 충돌·유실 경고다 — 검정 과묵 톤 대신 호박색 경고 톤, 하단 CTA와 안 겹치게 위로 */
-      c.style.cssText='position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:99999;max-width:min(92vw,560px);border:1px solid #E2C66B;border-radius:12px;padding:11px 16px;background:#FFF8E6;color:#7A5B12;font:700 13px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.22);cursor:pointer;text-align:left;';
+      c.style.cssText='position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:99999;max-width:min(92vw,560px);border:1px solid #E2C66B;border-radius:12px;padding:11px 16px;background:#FFF8E6;color:#7A5B12;font:700 13px/1.45 Pretendard,-apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.22);cursor:pointer;text-align:left;';
       document.body.appendChild(c); }
     c.textContent=msg; c.style.display='block';
     c.onclick=function(){ c.style.display='none'; if(onClick)onClick(); };
@@ -9030,7 +9030,7 @@ function ensureCSS(){
   +".acct-pop .ap-ws .wk{font-size:12px;color:var(--blue,var(--ps-navy,#14213D));flex:0 0 auto;}"
   +".acct-pop .ap-mini{display:flex;gap:6px;}"
   +".acct-pop .ap-mini .ap-b{padding:8px 0;font-size:12px;}"
-  +".acct-pop .ap-code{font:800 20px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-align:center;padding:12px;border:1px dashed var(--line);border-radius:9px;color:var(--txt);user-select:all;}"
+  +".acct-pop .ap-code{font:800 20px/1 Pretendard,ui-monospace,Menlo,monospace;letter-spacing:.14em;text-align:center;padding:12px;border:1px dashed var(--line);border-radius:9px;color:var(--txt);user-select:all;}"
   +"body.fmdark .acct-pop .ap-ws{color:#E7EBF1;}"
   +"body.fmdark .acct-pop .ap-ws:hover,body.fmdark .acct-pop .ap-ws.on{background:#222c39;}"
   +"body.fmdark .acct-pop .ap-div{background:#2C3744;}"

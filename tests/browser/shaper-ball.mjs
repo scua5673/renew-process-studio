@@ -40,6 +40,9 @@ try{
   const fb=await (await page.$('#fBoard')).boundingBox();
   await page.mouse.move(fb.x+bpos.x,fb.y+bpos.y); await page.mouse.down(); await page.mouse.move(fb.x+bpos.x+40,fb.y+bpos.y+90,{steps:6}); await page.mouse.move(fb.x+bpos.x+120,fb.y+bpos.y+170,{steps:8});
   await page.waitForTimeout(200);
+  /* 3.084 — 시선은 다음 화면 프레임(renderVisionRAF)에 그린다. 느린 CI 의 WebKit 에서는 200ms 안에 그 프레임이 안 올 때가 있었다
+     (부리가 바로 앞 볼 자리를 보고 있었다: «3.6 vs 11.4»). 볼을 쥔 채로 — 놓기 전에 — 따라올 때까지 기다린 뒤 아래에서 똑같이 잰다 */
+  await f.waitForFunction(()=>{ const b=state.ball; return state.players.filter(p=>!p.coach).every(p=>{ const e=document.querySelector('#visionLayer path.ps-shaper[data-pid="'+p.id+'"]'); if(!e)return false; const want=((Math.atan2(b.y-p.y,b.x-p.x)*180/Math.PI)%360+360)%360, d=Math.abs(((+e.getAttribute('data-deg')-want)%360+540)%360-180); return d<=2; }); },null,{timeout:3000,polling:50}).catch(()=>{});
   const mid=await f.evaluate(()=>({b:{x:state.ball.x,y:state.ball.y},d:Object.fromEntries([...document.querySelectorAll('#visionLayer path.ps-shaper')].map(p=>[p.getAttribute('data-pid'),+p.getAttribute('data-deg')])),ps:state.players.filter(p=>!p.coach).map(p=>({id:p.id,x:p.x,y:p.y}))}));
   assert.ok(Math.hypot(mid.b.x-560,mid.b.y-300)>60,'the ball moved: '+JSON.stringify(mid.b));
   for(const p of mid.ps)assert.ok(near(mid.d[p.id],toBall(p,mid.b),2),`while dragging, player ${p.id} follows: ${mid.d[p.id]} vs ${toBall(p,mid.b)}`);
