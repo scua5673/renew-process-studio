@@ -3496,7 +3496,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">칩</span><div class="seg" id="chip3dSeg" role="group" aria-label="선수 칩 모양"><button type="button" data-c3="0">평면</button><button type="button" data-c3="1" title="광택과 바닥 그림자 — 영상·사진 내보내기에도 들어갑니다">입체</button></div></div><!-- 2.902 -->
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">보드 보기</span><div class="seg" id="tiltSeg" role="group" aria-label="보드 보기"><button data-t="0" class="on">평면</button><button data-t="1" title="경기장 중계 화면처럼 — 끌기·그리기 그대로">3D</button></div></div>
           <!-- 3.010 — 3D 보기 설정(3D 를 켰을 때만 보인다 · 기기 설정) -->
-          <div class="menurow ps-tilt-row" id="tiltCamRow"><span class="menulbl">카메라</span><div class="seg" id="tiltCamSeg" role="group" aria-label="3D 카메라 높이"><button type="button" data-cam="low" aria-pressed="false" title="낮게 — 관중석 눈높이처럼 비스듬히">낮게</button><button type="button" data-cam="mid" class="on" aria-pressed="true" title="보통 — 중계 화면">보통</button><button type="button" data-cam="high" aria-pressed="false" title="높게 — 위에서 내려다보듯">높게</button></div></div>
+          <div class="menurow ps-tilt-row" id="tiltCamRow"><span class="menulbl">카메라</span><div class="seg" id="tiltCamSeg" role="group" aria-label="3D 카메라 높이"><button type="button" data-cam="low" aria-pressed="false" title="낮게 — 관중석 눈높이처럼 비스듬히">낮게</button><button type="button" data-cam="mid" class="on" aria-pressed="true" title="보통 — 중계 화면">보통</button><button type="button" data-cam="high" aria-pressed="false" title="높게 — 위에서 내려다보듯">높게</button><button type="button" data-cam="tv" aria-pressed="false" title="중계 — 관중석 높은 곳의 중계 카메라처럼 비스듬히, 가까이, 공을 따라간다">중계</button></div></div>
           <div class="menurow ps-tilt-row" id="tiltDecoRow"><span class="menulbl">경기장</span><div class="seg" id="tiltDecoSeg" role="group" aria-label="3D 경기장 꾸밈"><button type="button" data-deco="full" class="on" aria-pressed="true" title="관중석·지붕·광고판·벤치">전체</button><button type="button" data-deco="simple" aria-pressed="false" title="광고판·벤치만 — 운동장이 더 크게">간단</button><button type="button" data-deco="grass" aria-pressed="false" title="잔디만 — 운동장이 가장 크게">잔디만</button></div></div>
           <div class="menurow ps-tilt-row" id="tiltAdRow"><span class="menulbl">광고판</span><input type="text" id="tiltAdInput" class="ps-tilt-ad" maxlength="24" placeholder="PROCESS STUDIO" title="광고판에 들어갈 글자 — 비우면 PROCESS STUDIO" aria-label="3D 광고판 문구" autocomplete="off" spellcheck="false" enterkeyhint="done"></div>
           <!-- 3.029 — 3D 분위기 · 팀 브랜딩(기기 설정, 3D 를 켰을 때만) -->
@@ -6450,8 +6450,8 @@ function _chipUpright(){ return (state.orientation==="v")?(state.spFlip?-90:90):
 /* ref = 기본 크기일 때의 토큰 배율. 3D 칩의 기본 크기는 운동장 대비로 정하고, 보드 설정 «크기 ＋ －»·선수별 크기는 그 위에 같은 비율로 곱한다
    (예전에는 최소 크기가 덮어써 처음 세 단계는 3D 에서 크기가 그대로였다 — 사용자 «크기도 수정할 수 있게») */
 function _chipOpts(p){ var sh=_shaperOn(p),u=_tokScaleOf(p),nu=_realTokS(p)?_normTokS(p):u;   /* 3.070 — 실제 비율이면 u 는 실제 크기, nu 는 평소 크기(이름표용) */
-  return {unit:u,ref:nu/((p.scale||1)*(state.tokenScale||1))*defaultTokenScale(),pitch:PR().PW,shape:sh?"shaper":((tokShape==="person"&&!p.shaper)?"person":((tokShape==="shirt"&&!p.coach&&!p.shaper)?"shirt":"circle")),real:!!_realTokS(p),nameUnit:nu,pose:_personPose(p),dir:sh?(_dirOf(p)-_chipUpright()):0,
-    nameK:_nameK(),nameStyle:window.__nameStyle==="pill"?"pill":"text",mood:(window.__tilt3d&&window.__tilt3d.mood)||"night"}; }   /* 3.010 — 이름표 크기·모양(3D 의 «기본»은 글자만 — 중계 화면처럼) · 3.029 분위기(그림자 방향) */
+  return {unit:u,ref:nu/((p.scale||1)*(state.tokenScale||1))*defaultTokenScale(),pitch:PR().PW,shape:sh?"shaper":((tokShape==="person"&&!p.shaper)?"person":((tokShape==="shirt"&&!p.coach&&!p.shaper)?"shirt":"circle")),real:!!_realTokS(p),nameUnit:nu,pose:_personPose(p),stand:_personStand(),dir:sh?(_dirOf(p)-_chipUpright()):0,
+    nameK:_nameK()/((window.__tvOn&&window.__tvOn())?window.__tvCamCfg.k:1),nameStyle:window.__nameStyle==="pill"?"pill":"text",mood:(window.__tilt3d&&window.__tilt3d.mood)||"night"}; }   /* 3.010 — 이름표 크기·모양(3D 의 «기본»은 글자만 — 중계 화면처럼) · 3.029 분위기(그림자 방향) */
 /* 쉐이퍼는 공을 바라보므로 공만 움직여도 방향이 바뀐다 — 시야·쉐이퍼를 다시 그릴 때마다 3D 칩의 부리도 돌린다(칩은 다시 만들지 않는다) */
 function _chipTurnAll(){ if(!tokenLayer||!window.PSBoardDepth||!document.body.classList.contains("bc-tilt3d"))return;
   (state.players||[]).forEach(function(p){ if(!_shaperOn(p))return; var g=tokenLayer.querySelector('[data-id="'+p.id+'"][data-depth-chip]'); if(g)PSBoardDepth.turnChip(g,_dirOf(p)-_chipUpright()); }); }
@@ -6543,9 +6543,12 @@ function cycleRoleRing(){ var t=_ringTargets(); if(!t.length){ try{toast("선수
 }catch(_){} })();
 var _rvRAF=0;
 function renderVisionRAF(){ if(_rvRAF)return; try{_rvRAF=(window.requestAnimationFrame||function(f){return setTimeout(f,16);})(function(){_rvRAF=0;try{renderVision();}catch(_){}});}catch(_){_rvRAF=0;try{renderVision();}catch(__){}} }
+/* 판 좌표의 벡터 → 3D 화면 방향(세로 보기의 판 회전 · 중계 시점의 사선 회전과 기울기까지) */
+function _scrVec(x,y){ var sx=x,sy=y; if(state.orientation==="v"){ if(state.spFlip){ sx=-y; sy=x; } else { sx=y; sy=-x; } }
+  try{ if(window.__tvOn&&window.__tvOn()){ var T=window.__tvCamCfg,a=T.yaw*Math.PI/180,rx=sx*Math.cos(a)-sy*Math.sin(a),ry=sx*Math.sin(a)+sy*Math.cos(a); sx=rx; sy=ry*Math.cos(T.ax*Math.PI/180); } }catch(_){}
+  return {x:sx,y:sy}; }
 function _tokFarKey(){ try{ if(tokShape!=="person"||!document.body.classList.contains("bc-tilt3d"))return null;
-    if(state.orientation==="v")return state.spFlip?function(o){return +o.x||0;}:function(o){return -(+o.x||0);};
-    return function(o){return +o.y||0;}; }catch(_){ return null; } }
+    return function(o){return _scrVec(+o.x||0,+o.y||0).y;}; }catch(_){ return null; } }
 function renderTokens(){try{applyLookAt();}catch(_){} _tokHitPx=0; tokenLayer.innerHTML="";
   try{ensureTeamPatterns();}catch(_){}
   try{renderVision();}catch(_){}
@@ -6556,7 +6559,8 @@ function renderTokens(){try{applyLookAt();}catch(_){} _tokHitPx=0; tokenLayer.in
   if(rosterOpen){const ae=document.activeElement;if(!(ae&&ae.classList&&(ae.classList.contains("rs-name")||ae.classList.contains("rs-num"))))renderRoster();}
   if(typeof updateEmptyHint==="function")updateEmptyHint();
   _tokHitLater();
-  if(typeof tokenLayer!=="undefined"&&tokenLayer&&tokenLayer.parentNode){tokenLayer.parentNode.appendChild(tokenLayer);_rotHandleOnTop();}try{updateMotionPaths();}catch(_){}try{boardSaveLive();}catch(_){}}
+  if(typeof tokenLayer!=="undefined"&&tokenLayer&&tokenLayer.parentNode){tokenLayer.parentNode.appendChild(tokenLayer);_rotHandleOnTop();}try{updateMotionPaths();}catch(_){}try{boardSaveLive();}catch(_){}
+  try{ if(window.__tvOn&&window.__tvOn())window.__tvCam(false); }catch(_){}}   /* 3.072 — 중계 시점: 공을 따라간다 */
 function csHintSeen(k){try{return localStorage.getItem(k)==="1";}catch(_){return false;}}
 function csHintMark(k){try{localStorage.setItem(k,"1");}catch(_){}}
 let __ehWasShown=false;
@@ -9397,8 +9401,10 @@ function _personMotion(a,b,u,curves){
 /* 판 좌표의 움직임 → 3D 선수의 자세. 세로 보기는 판(world)이 ±90° 돌아 있어 화면 방향으로 바꾼다.
    3.072 — 몸이 바라보는 각도(yaw: 0 오른쪽 · 90 카메라 쪽 · -90 먼 쪽 · 180 왼쪽)를 그대로 넘겨 어느 방향이든 그 각도로 보인다.
    출발할 때는 카메라 쪽(서 있던 방향)에서 뛰는 방향으로 돌아서고, 도착하면 다시 돌아선다. 한 걸음 주기(두 발) 2.6m · 장면에서 멀리 뛸수록 빠르게. */
+/* 3.072 — 중계 시점: 판이 크게 기울고 돌아 있어 선수를 화면에 바로 세운다(사선 회전을 되돌리고, 기울어 짧아진 만큼 키를 늘린다) */
+function _personStand(){ try{ if(!(window.__tvOn&&window.__tvOn()))return null; var T=window.__tvCamCfg; return {rot:-T.yaw,sy:1/Math.cos(T.ax*Math.PI/180)}; }catch(_){ return null; } }
 function _personPose(p){ var mv=window.__psMotion&&window.__psMotion[p.id]; if(!mv)return null;
-  var sx=mv.vx,sy=mv.vy; if(state.orientation==="v"){ if(state.spFlip){ sx=-mv.vy; sy=mv.vx; } else { sx=mv.vy; sy=-mv.vx; } }
+  var _sv=_scrVec(mv.vx,mv.vy),sx=_sv.x,sy=_sv.y;
   var amp=Math.min(1,0.45+mv.total/14), ease=Math.min(1,mv.u*5,(1-mv.u)*5), run=Math.atan2(sy,sx)*180/Math.PI;
   var dy=((run-90)%360+540)%360-180, yaw=90+dy*Math.min(1,ease*1.6);   /* 짧은 쪽으로 돈다 */
   return {yaw:yaw,phase:mv.run/2.6,amp:Math.max(0,amp*ease)}; }
@@ -14825,7 +14831,7 @@ function init(){
      경기장: 전체(관중석·지붕·광고판·벤치) · 간단(광고판·벤치) · 잔디만. 줄인 만큼 틀 맞춤의 여백도 줄여 운동장이 커진다(TILT_PAD).
      광고판 문구: 비우면 PROCESS STUDIO. 24자까지.
      ⚠ 3D 켜기·끄기와 같이 **기기 설정**이다(보드가 아니라 «내가 보는 방식» — 2.929 표의 «보드 보기»와 같은 자리). */
-  var TILT_CAM={low:{ax:36,sy:1.3},mid:{ax:24,sy:1.08},high:{ax:12,sy:1}};
+  var TILT_CAM={low:{ax:36,sy:1.3},mid:{ax:24,sy:1.08},high:{ax:12,sy:1},tv:{ax:24,sy:1.08,tv:true}};   /* 3.072 tv — 중계 시점(아래 __tvCam) */
   var TILT_PAD={full:[.15,.11,.05],simple:[.09,.08,.035],grass:[.05,.05,.03]};
   /* 3.035 — 그리드 판(라인 없는 빈 판)은 여백 없이 판을 꽉 채운다(사용자 «그리드 선택했을 때 보드에 여백이 없이 다 활용할 수 있게»). 잔디는 tiltStadium 이 판 밖으로
      한 판 넓이만큼 이어 그려(bleed) 기울인 판의 네 귀가 어두운 무대로 비치지 않는다 — 무대 끝까지 훈련장이다. */
@@ -14869,7 +14875,7 @@ function init(){
     if(n.cam===o.cam&&n.deco===o.deco&&n.ad===o.ad&&n.mood===o.mood&&n.brand===!!o.brand){ tiltOptsSync(); return; }
     window.__tilt3d=n; try{ localStorage.setItem("ps_tilt3d_opts_v1",JSON.stringify(n)); }catch(_){}
     tiltCamApply(); tiltMoodApply(); tiltOptsSync();
-    if(n.mood!==o.mood){ try{ if(document.body.classList.contains("bc-tilt3d"))renderTokens(); }catch(_){} }   /* 3.029 — 칩 그림자 방향이 분위기를 따른다 */
+    if(n.mood!==o.mood||n.cam!==o.cam){ try{ if(document.body.classList.contains("bc-tilt3d"))renderTokens(); }catch(_){} }   /* 3.072 — 중계 시점은 선수를 화면에 바로 세운다 */   /* 3.029 — 칩 그림자 방향이 분위기를 따른다 */
     try{ var gh=document.getElementById("tiltGoals"); if(gh){ gh.__pre=null; gh.__projectionSignature=null; } }catch(_){}
     _fitKey=""; try{ if(document.body.classList.contains("bc-tilt3d")){ window.__tiltFit(); tiltGoalsSync(); } }catch(_){} };
   (function(){ var adT=0;
@@ -14894,9 +14900,46 @@ function init(){
   /* 3.039 — 3D 영상이 화면과 같은 카메라로 찍는다: 각도·세로 보정(TILT_CAM)과 분위기 */
   window.__tiltCamNow=function(){ var t3=window.__tilt3d||{},c=TILT_CAM[t3.cam]||TILT_CAM.mid; return {ax:c.ax,sy:c.sy,mood:TILT_MOOD[t3.mood]?t3.mood:"night"}; };
   var _fitKey="";
+  /* ══ 3.072 · 중계 시점(사용자 «이런 느낌으로» — 관중석 높은 곳의 중계 카메라 사진) ══
+     보통 3D 는 운동장 전체를 위에서 24° 로 본다. 중계 시점은 ① 더 비스듬히(TV.ax) ② 사선으로 돌려(TV.yaw) ③ 운동장 폭 TV.widthM m 만 보이게 가까이
+     ④ 공(없으면 선수들 가운데)을 화면 가운데로 — 재생 중에는 카메라가 부드럽게 따라간다.
+     같은 변환 한 줄(--tilt-tf)을 판 · 경기장 그림 · 골대가 함께 쓰므로 body 에 직접 적는다. 끌기 · 그리기는 네 귀를 실제로 재는 bcUnproject 라 그대로 된다.
+     선수(3D «사람»)는 바닥과 같이 기울면 누워 보이므로 _chipOpts().stand 로 화면에 바로 세운다. */
+  var TV={ax:56,yaw:-16,widthM:66,persp:1000,cur:null,k:1,size:""};
+  function _tvOn(){ try{ return document.body.classList.contains("bc-tilt3d")&&window.__tilt3d&&window.__tilt3d.cam==="tv"; }catch(_){ return false; } }
+  window.__tvOn=_tvOn; window.__tvCamCfg=TV;
+  var TV_SVG_PROPS=["position","left","top","width","height","max-width","max-height"];
+  function _tvOff(){ try{ if(!TV.size&&!document.body.style.getPropertyValue("--tilt-tf"))return;
+      document.body.style.removeProperty("--tilt-tf"); var sg=document.getElementById("boardStage"); if(sg){ sg.style.removeProperty("perspective"); sg.style.removeProperty("perspective-origin"); }
+      TV_SVG_PROPS.forEach(function(k){ svg.style.removeProperty(k); }); TV.cur=null; TV.k=1; TV.size="";
+      try{ tiltGoalsSync(); }catch(_){} }catch(_){} }
+  function _tvTarget(){ var b=state.ball; if(b&&isFinite(b.x)&&isFinite(b.y))return {x:+b.x,y:+b.y};
+    var ps=(state.players||[]).filter(function(p){return p&&isFinite(p.x)&&isFinite(p.y);}); if(!ps.length)return {x:CX,y:CY};
+    var x=0,y=0; ps.forEach(function(p){x+=+p.x;y+=+p.y;}); return {x:x/ps.length,y:y/ps.length}; }
+  /* 확대는 CSS scale 이 아니라 판 SVG 의 상자 자체를 키워서 한다 — scale 로 키우면 브라우저가 원래 크기로 그린 그림을 늘려 흐려진다(실측).
+     경기장 그림 · 골대 층은 판 상자를 재서 따라오므로(tiltGoalsSync) 함께 또렷하다. */
+  window.__tvCam=function(snap){ try{ if(!_tvOn()){ _tvOff(); return; }
+    var stage=document.getElementById("boardStage"); if(!stage||!svg||!tokenLayer)return;
+    var sw=stage.clientWidth,sh=stage.clientHeight; if(!sw||!sh)return;
+    var vb=svg.viewBox&&svg.viewBox.baseVal; if(!vb||!vb.width)return;
+    var base=Math.min(sw/vb.width,sh/vb.height), k=Math.max(1,Math.min(8,sw/(TV.widthM*mppNow()*base))), W=Math.round(sw*k), H=Math.round(sh*k), size=[W,H,sw,sh].join("x");
+    if(TV.size!==size){ TV.size=size; TV.k=k;
+      svg.style.setProperty("position","absolute"); svg.style.setProperty("left",Math.round((sw-W)/2)+"px"); svg.style.setProperty("top",Math.round((sh-H)/2)+"px");
+      svg.style.setProperty("width",W+"px"); svg.style.setProperty("height",H+"px"); svg.style.setProperty("max-width","none"); svg.style.setProperty("max-height","none");
+      stage.style.setProperty("perspective",TV.persp+"px"); stage.style.setProperty("perspective-origin","50% 28%");
+      try{ var gh=document.getElementById("tiltGoals"); if(gh){ gh.__pre=null; gh.__projectionSignature=null; } tiltGoalsSync(); }catch(_){}
+      if(!snap){ try{ renderTokens(); }catch(_){} return; }   /* 이름표 크기가 배율을 따른다 */ }
+    var m=tokenLayer.getCTM(); if(!m)return;
+    var t=_tvTarget(), px={x:m.a*t.x+m.c*t.y+m.e,y:m.b*t.x+m.d*t.y+m.f};
+    if(!snap&&TV.cur&&typeof animPlaying!=="undefined"&&animPlaying){ px={x:TV.cur.x+(px.x-TV.cur.x)*0.08,y:TV.cur.y+(px.y-TV.cur.y)*0.08}; }   /* 재생 중: 카메라가 공을 천천히 따라간다 */
+    TV.cur=px;
+    document.body.style.setProperty("--tilt-tf","translateY("+Math.round(sh*0.08)+"px) rotateX("+TV.ax+"deg) rotateZ("+TV.yaw+"deg) translate("+(W*0.5-px.x).toFixed(1)+"px,"+(H*0.55-px.y).toFixed(1)+"px)");
+  }catch(_){} };
   window.__tiltFit=function(){
     try{
       if(!document.body.classList.contains("bc-tilt3d"))return;
+      if(_tvOn()){ _fitKey=""; window.__tvCam(true); return; }   /* 3.072 — 중계 시점은 운동장 전체를 맞추지 않고 공 둘레를 가까이 */
+      _tvOff();
       var stage=document.getElementById("boardStage"); if(!stage||!svg)return;
       var vb=svg.viewBox&&svg.viewBox.baseVal; if(!vb||!vb.width||!vb.height)return;
       var pv=(window.__pvBox&&window.__pvBox[2]>0&&window.__pvBox[3]>0)?window.__pvBox:[vb.x,vb.y,vb.width,vb.height];

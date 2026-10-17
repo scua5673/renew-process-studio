@@ -352,7 +352,12 @@
         body.appendChild(node(doc, 'path', { d: 'M-7 0L7 0L' + (o[0] * 38 + 6) + ' ' + (o[1] * 26) + 'L' + (o[0] * 38 - 6) + ' ' + (o[1] * 26) + 'Z', fill: '#000', 'fill-opacity': '.11', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
       });
       body.appendChild(node(doc, 'ellipse', { cx: 0, cy: 0, rx: 15, ry: 5.5, fill: '#000', 'fill-opacity': '.34', 'pointer-events': 'none' }));
-      body.appendChild(personFigure(doc, fill, stroke, label, opts && opts.pose));
+      // 3.072 — a low, turned camera (the broadcast view) foreshortens the board: opts.stand = { rot, sy } turns the player
+      // back upright on screen and stretches him so he stands at his real height instead of lying on the grass.
+      var st = opts && opts.stand, stand = node(doc, 'g', { 'class': 'ps-person-stand' });
+      if (st && (st.rot || (st.sy && st.sy !== 1))) stand.setAttribute('transform', 'rotate(' + r1(+st.rot || 0) + ') scale(1,' + (Math.round((+st.sy || 1) * 1000) / 1000) + ')');
+      stand.appendChild(personFigure(doc, fill, stroke, label, opts && opts.pose));
+      body.appendChild(stand);
     } else {
     var mood = opts && opts.mood;
     if (mood === 'day') body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 3, rx: R + 2, ry: R * .8, fill: '#000', 'fill-opacity': '.22', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
@@ -390,12 +395,13 @@
     if (item.name) {
       // opts.nameK = the board's name size (0.8 · 1 · 1.25); opts.nameStyle 'pill' puts the name on a dark pill, otherwise an outlined name.
       var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1), str = String(item.name).toUpperCase(), y0 = nameY(kind, h, font, opts && opts.dir);
-      if (opts && opts.nameStyle === 'pill') body.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
+      var nameHost = (kind === 'person' && body.querySelector('.ps-person-stand')) || body;
+      if (opts && opts.nameStyle === 'pill') nameHost.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
       var name = node(doc, 'text', { x: 0, y: y0, 'data-font': String(font), 'text-anchor': 'middle', 'font-size': String(Math.round(font * 10) / 10), 'font-weight': '800', 'letter-spacing': '.4',
         fill: '#fff', stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke',
         'font-family': (label && label.getAttribute('font-family')) || FONT, 'class': 'ps-chip-name' });   // the name is part of the chip: pressing it picks the player
       name.textContent = str;
-      body.appendChild(name);
+      nameHost.appendChild(name);
     }
     face.appendChild(original); face.appendChild(body);
     original.querySelectorAll('.tok-hit,.tok-lock').forEach(function (n) { face.appendChild(n.cloneNode(true)); });
