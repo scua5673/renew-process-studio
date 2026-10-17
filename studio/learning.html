@@ -254,7 +254,7 @@ body.fmdark{color-scheme:dark}
 </div>
 <div class="bt"><button data-p="toc" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>오늘</button><button data-p="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c-1.6-1.3-3.6-2-6-2H3v13h3c2.4 0 4.4.7 6 2 1.6-1.3 3.6-2 6-2h3v-13h-3c-2.4 0-4.4.7-6 2z"/><path d="M12 6.5v13"/></svg>책</button><button data-p="cards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="14" height="11" rx="2"/><path d="M7.5 4.5h11a2 2 0 0 1 2 2v9"/></svg>카드</button></div>
 <div class="toast" id="toast"></div>
-<script src="learn-mikl.js"></script>
+<!-- 3.079 — 『축구를 배우는 법』(learn-mikl.js — 근거가 국내 지도자 매뉴얼, 국제표준 아님)은 학습에서 내렸다(사용자 «국제표준만»). 파일은 남겨 둔다 -->
 <script src="learn-gamemodel.js?v=2.411"></script><!-- 2.411 — 게임모델 만드는 법(같은 자료 모양) -->
 <script src="learn-futsal.js?v=2.659"></script><!-- 2.659 — 풋살을 배우는 법(같은 자료 모양, 3장 12절) -->
 <script src="learn-toc.js?v=2.659"></script><!-- 2.323 — 목차는 두 화면이 같은 파일을 읽는다 -->
@@ -266,8 +266,8 @@ body.fmdark{color-scheme:dark}
 /* ⚠ 2.411 — 이 화면은 **두 권**을 연다(MIKL · 게임모델 만드는 법). 예전엔 `BOOK` 이 MIKL 로
    못 박혀 있어 학습 소유 갈래를 늘려도 늘 MIKL 이 열렸다. 서가에서 고른 id 로 바꿔 끼운다.
    ⚠ 진행·카드 저장은 절 id(`G1`·`A1`…)로 갈리므로 두 권이 섞이지 않는다. */
-var BOOKS={mikl:window.LR_MIKL,gmhow:window.LR_GMHOW,futsal:window.LR_FUTSAL};   /* 2.659 — 풋살 */
-var BOOK=BOOKS.mikl;
+var BOOKS={gmhow:window.LR_GMHOW,futsal:window.LR_FUTSAL};   /* 2.659 — 풋살 · 3.079 — MIKL 내림 */
+var BOOK=BOOKS.gmhow;
 /* ───────── 저장 ───────── */
 function sessUid(){try{var s=JSON.parse(localStorage.getItem('ps_sync_session')||'null');return (s&&s.uid)||'local'}catch(e){return 'local'}}
 var KEY='cs_learn_v1_'+sessUid();
@@ -430,11 +430,11 @@ function renderShelf(){
     var _started=['cur']; try{ Object.keys(BOOKS).forEach(function(id){ var bk=BOOKS[id]; if(bk&&bk.chapters&&bk.chapters.some(function(c){return (c.sections||[]).some(function(x){return S.done[x.id]&&S.done[x.id].hits>=3;});}))_started.push(id); }); }catch(_){}
     /* 3.079 — 전술 원칙 · 경기 읽기 · 개념은 IDP 옛 학습 층이 그리던 갈래라 2.510 뒤로 눌러도 IDP 첫 화면만 열렸다 — 서가에서 뺀다.
        용어는 공용어 화면(terms)으로 보낸다. 머리글(«무엇을 공부할까요»)은 위 «다른 책» 하나로 */
-    _started=_started.concat(['principles','game','concepts']);
+    _started=_started.concat(['mikl','principles','game','concepts']);
     shelf.innerHTML=LR_TOC.render({skip:_started,head:false});
     try{ var _sn=shelf.querySelectorAll('[data-toc]').length; $('#tbShelfN').textContent=_sn?_sn+'권':''; }catch(_){}   /* 2.660 — 시작한 책은 «내 책»에 있으니 여기서 뺀다 */   /* 2.467 — 교과서가 대신한다. DOM에서 떼는 대신 세는 목록에서 빼 머리글(갈래·합계)도 같이 정직해진다(오디트 ③) */
     LR_TOC.bind(shelf,function(id,owner){
-      if(owner==='learn'){ BOOK=BOOKS[id]||BOOKS.mikl; bookState.view='toc'; go('book'); return; }   /* 2.411 — 고른 책을 연다 */
+      if(owner==='learn'){ BOOK=BOOKS[id]||BOOKS.gmhow; bookState.view='toc'; go('book'); return; }   /* 2.411 — 고른 책을 연다 */
       if(id==='terms'){ try{ parent.postMessage({source:'learning',type:'openTerms'},'*'); }catch(_){ toast('용어는 팀 운영 › 공용어에서 열려요'); } return; }   /* 3.079 */
       try{ parent.postMessage({source:'learning',type:'openLearnArea',area:id,owner:owner},'*'); }
       catch(e){ toast('그 갈래는 IDP 학습에서 열려요'); }
@@ -587,7 +587,7 @@ function renderSec(s){
   // 0
   h+=stageHtml(0,'먼저 묻기 — 읽기 전에','<div class="q">'+esc(s.pre)+'</div><textarea id="pre" placeholder="틀려도 됩니다. 읽고 나서 내 답과 비교합니다.">'+esc(a[k+':pre']||'')+'</textarea><div class="row" style="margin-top:8px"><button class="btn pri" data-next="1">읽기로 →</button></div>',false);
   // 1
-  h+=stageHtml(1,'읽기',s.read.map(function(p){return '<p>'+p+'</p>'}).join('')+(s.fig?'<div class="fig"><b>[그림 · 재작도 예정]</b> '+esc(s.fig)+'</div>':'')+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="2">예시로 →</button></div>',st<1);
+  h+=stageHtml(1,'읽기',s.read.map(function(p){return '<p>'+p+'</p>'}).join('')+(s.fig?'<div class="fig"><b>한 줄로</b> '+esc(s.fig)+'</div>':'')+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="2">예시로 →</button></div>',st<1);
   // 2
   h+=stageHtml(2,'예시 — '+(S.track==='player'?'선수 먼저':'코치 먼저'),'<div class="ex">'+ex.map(function(e){return '<div><b class="w">'+esc(e.who)+'</b>'+e.t+'</div>'}).join('')+'</div><div class="row" style="margin-top:10px"><button class="btn pri" data-next="3">꺼내기로 →</button></div>',st<2);
   // 3
@@ -601,7 +601,7 @@ function renderSec(s){
   var mc=s.mc, picked=S.mc[k];
   var opts=shuffled(mc.o,k+':'+S.track);
   var mch='<div class="q" style="margin-top:4px">가려내기 — '+esc(mc.q)+'</div><div class="opts">'+opts.map(function(o,i){var cls='';if(picked){if(o.ok)cls=' right';else if(picked===o.id)cls=' wrong'}return '<button class="opt'+cls+'" data-opt="'+o.id+'"'+(picked?' disabled':'')+'><b>'+String.fromCharCode(65+i)+'</b><span>'+esc(o.t)+'</span></button>'}).join('')+'</div>'+(picked?'<div class="why"><b>'+(opts.filter(function(o){return o.ok})[0]?String.fromCharCode(65+opts.findIndex(function(o){return o.ok}))+'.':'')+'</b> '+esc(mc.why)+' <span class="hint">(보기 순서는 절·트랙 시드로 섞임 — 원본 번호 '+esc(opts.filter(function(o){return o.ok})[0].id)+')</span></div>':'');
-  var cardsH='<div class="cards">'+s.cards.map(function(c){var cc=S.cards[c.id];return '<div class="gl"><div class="id">'+esc(c.id)+' <span class="tag mikl">'+esc(BOOK.tag||'MIKL')+'</span></div>'+esc(c.ko)+'<div class="life">'+(cc?(cc.stage>=3?'내 것':'재학습 '+(cc.stage+1)+'번째 · '+fmtDays(cc.due)):'오늘 생애 시작 → 3일 · 1주 · 3주')+'</div></div>'}).join('')+'</div>';
+  var cardsH='<div class="cards">'+s.cards.map(function(c){var cc=S.cards[c.id];return '<div class="gl"><div class="id">'+esc(c.id)+' <span class="tag mikl">'+esc(BOOK.tag||BOOK.ko||'')+'</span></div>'+esc(c.ko)+'<div class="life">'+(cc?(cc.stage>=3?'내 것':'재학습 '+(cc.stage+1)+'번째 · '+fmtDays(cc.due)):'오늘 생애 시작 → 3일 · 1주 · 3주')+'</div></div>'}).join('')+'</div>';
   h+=stageHtml(6,'다시 — 카드 '+s.cards.length+'장, 가려내기 1',cardsH+mch+'<div class="foot"><span class="k">맞힘 '+hits(k)+' / 3 — '+(isDone(k)?'이 절은 닫혔습니다':'3번 맞히면 닫힙니다')+'</span><div class="row"><button class="btn" id="again">한 번 더 꺼내기</button><button class="btn pri" id="finish">'+(isDone(k)?'다음 절 →':'이 절 마치고 다음 →')+'</button></div></div>',st<6);
   h+='<div class="linkbox">이어짐 → <b>'+esc(s.links)+'</b></div></div>';
   return h;
