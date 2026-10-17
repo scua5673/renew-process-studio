@@ -60,7 +60,7 @@ test('3.042 a meeting post opens slide by slide, with the slide points as its te
 test('3.042 the elmiha tab neither filters nor shows the topic, type, age or players pickers',()=>{
   assert.match(comm,/if\(!elmTab\)\{   \/\* 3\.042/,'엘미하 칸 목록은 고르개로 거르지 않는다');
   assert.match(comm,/<div class="nav-sec pr-cat-sec">/);
-  assert.match(comm,/html body\.pr-elm \.comm-nav \.pr-cat-sec:not\(#_\):not\(#__\),html body\.pr-elm \.comm-nav \.nav-sec:has\(#typeNav\):not\(#_\):not\(#__\)\{display:none!important\}/);
+  assert.match(comm,/html body\.pr-elm \.comm-nav \.pr-cat-sec:not\(#_\):not\(#__\),html body\.pr-elm \.comm-nav \.nav-sec:has\(#typeNav\):not\(#_\):not\(#__\)(,html body\.pr-fifa [^,{]+)*\{display:none!important\}/);   // 3.071 — 같은 규칙에 FIFA 칸 줄이 붙는다
   assert.match(comm,/html body\.pr-elm #commFiltSheet \.ps-fsheet-sec:has\(#cfsType\)[^{]*#commFiltSheet \.ps-fsheet-sec:has\(#cfsSel\):not\(#_\):not\(#__\)\{display:none!important\}/,'폰 «필터» 시트도 탐색만');
   assert.match(comm,/if\(!elm&&age&&age\.value\)n\+\+; if\(!elm&&pl&&pl\.value\)n\+\+;/,'필터 단추 숫자도 엘미하 칸에서는 탐색만');
   assert.match(comm,/body\.pr-elm \.comm-list \.filters #ageSel:not\(#_\):not\(#__\),[^{]*#plSel[^{]*#cfTypeSel:not\(#_\):not\(#__\)\{display:none!important\}/);
