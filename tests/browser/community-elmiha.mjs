@@ -46,7 +46,7 @@ try{
   // 1) 코치 자료. 엘미하 칸은 화면이 보이면 미리 받는다 — 서버가 안 되면 조용하다(코치 자료 화면은 그대로)
   await until(()=>asked.length>=1,'엘미하 칸 미리 받기');
   let s=await state();
-  assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[2],s.hero,s.titles],[false,['true','false','false'],'코치 자료1','엘미하',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫
+  assert.deepEqual([s.elm,s.pressed,s.label[0],s.label[2],s.hero,s.titles],[false,['true','false','false','false'],'코치 자료1','엘미하',false,['가상 코치 글']]);   // 프로세스 칸의 개수는 앱에 실린 사본 몫
   assert.deepEqual(s.pickers,[true,true,true],'코치 자료에는 훈련 주제 · 연령 · 인원 고르개');
   // 3.042 — 코치 자료에서 연령을 골라 둬도 엘미하 칸은 거르지 않는다(엘미하 글은 «성인»)
   await c.evaluate(()=>{ const a=document.getElementById('ageSel'); a.value='U12'; a.dispatchEvent(new Event('change')); });   // 폰은 고르개가 «필터» 시트 안
@@ -56,7 +56,7 @@ try{
   await c.click('#prTabElm');
   await c.waitForSelector('#elRetry');
   s=await state();
-  assert.deepEqual([s.elm,s.pressed,s.sub,s.ph,s.hero,s.titles,s.count],[true,['false','false','true'],'엘미하가 만든 전술 애니메이션','제목·내용 검색',true,[],'']);
+  assert.deepEqual([s.elm,s.pressed,s.sub,s.ph,s.hero,s.titles,s.count],[true,['false','false','true','false'],'엘미하가 만든 전술 애니메이션','제목·내용 검색',true,[],'']);
   assert.match(s.grid,/엘미하의 전술노트를 불러오지 못했어요/);
   const yt=await c.evaluate(()=>{const a=document.getElementById('elYt'),r=a.getBoundingClientRect();return {href:a.href,target:a.target,rel:a.rel,text:a.textContent,l:Math.round(r.left),r:Math.round(r.right),h:Math.round(r.height)};});
   assert.deepEqual([yt.href,yt.target,yt.rel,yt.text],['https://www.youtube.com/@ELMIHA_TacticalNote','_blank','noopener noreferrer','유튜브 채널']);
@@ -100,7 +100,7 @@ try{
   // 5) 코치 자료로 돌아가면 지금 화면 그대로
   await c.click('#prTabCoach');
   s=await state();
-  assert.deepEqual([s.elm,s.pressed,s.hero,s.titles,s.pickers],[false,['true','false','false'],false,['가상 코치 글'],[true,true,true]]);
+  assert.deepEqual([s.elm,s.pressed,s.hero,s.titles,s.pickers],[false,['true','false','false','false'],false,['가상 코치 글'],[true,true,true]]);
   assert.notEqual(s.fab,'none');
 
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));

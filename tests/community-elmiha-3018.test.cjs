@@ -44,19 +44,19 @@ test('sorting by views, likes or saves keeps the newest first among equals; the 
   assert.deepEqual(plain(g.elmSort(null,'views')),[]);
 });
 
-test('the head has three tabs and the elmiha tab carries the YouTube channel link',()=>{
-  assert.match(comm,/<button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">엘미하<span id="prElmN"><\/span><\/button><\/div>/);
+test('the head has the elmiha tab (3.071 — FIFA comes after it) and the elmiha tab carries the YouTube channel link',()=>{
+  assert.match(comm,/<button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">엘미하<span id="prElmN"><\/span><\/button><button type="button" id="prTabFifa" data-pr-tab="fifa"/);
   const hero=cut(comm,'<div class="el-hero" id="elHero" hidden>','<div class="comm-count" id="commCount">');
   assert.match(hero,/<b>엘미하의 전술노트<\/b>/);
   assert.match(hero,/<a class="el-yt" id="elYt" href="https:\/\/www\.youtube\.com\/@ELMIHA_TacticalNote" target="_blank" rel="noopener noreferrer"/,'새 창 · 이 앱의 창을 넘기지 않는다');
-  assert.match(comm,/\[\['prTabCoach','coach'\],\['prTabProc','proc'\],\['prTabElm','elmiha'\]\]/);
+  assert.match(comm,/\[\['prTabCoach','coach'\],\['prTabProc','proc'\],\['prTabElm','elmiha'\],\['prTabFifa','fifa'\]\]/);
   assert.match(comm,/var hero=\$\('elHero'\); if\(hero\)hero\.hidden=\(t!=='elmiha'\);/);
-  assert.match(comm,/html body \.top \.pr-seg:not\(#_\):not\(#__\)\{order:9;flex:1 0 100%;display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/,'폰에서는 칸 셋이 한 줄');
+  assert.match(comm,/html body \.top \.pr-seg:not\(#_\):not\(#__\)\{order:9;flex:1 0 100%;display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/,'폰에서는 칸 넷(3.071 — FIFA)이 한 줄');
 });
 
 test('opening, playing and putting in the vault go the coach-post way — the viewer finds an elmiha post even outside the coach feed',()=>{
   assert.match(comm,/if\(!p\)p=elmFind\(id\);   \/\* 3\.018/,'뷰어의 «내 보관함에 담기» · 신고가 엘미하 글을 찾는다');
-  assert.ok(comm.indexOf('if(!p)p=elmFind(id);')<comm.indexOf('if(!p)p=procFind(id);'));
+  assert.ok(comm.indexOf('if(!p)p=elmFind(id);')<comm.indexOf('if(!p)p=procFind(id)'));
   const body=cut(comm,'/* ── 3.018 · 엘미하 칸 순수 구간 끝 ── */','/* ══ 2.999 · 커뮤니티 안의 «프로세스» 칸 ══');
   assert.equal(/method:'(POST|PATCH|DELETE)'/.test(body),false,'엘미하 칸은 읽기만 한다(올리기 · 고치기 · 지우기는 코치 자료의 길)');
   assert.match(comm,/if\(force\)\{try\{sessionStorage\.removeItem\(FEED_CK\)\}catch\(_\)\{\}\n    elmStale\(\);\}/,'올린 · 고친 · 지운 뒤 엘미하 칸도 새로 받는다');

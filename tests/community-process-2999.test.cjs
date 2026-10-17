@@ -107,14 +107,14 @@ test('the process tab stays out of the server — no views, no copies, no report
   assert.match(comm,/function copyToLib\(p,btn\)\{\n  if\(p&&p\.proc\)\{procSave\(p\);return;\}/,'담기는 보관함 확인 창(2.997)으로');
   assert.match(comm,/function copyPreviewPost\(p,btn\)\{\n  if\(p&&p\.proc\)\{procSave\(p\);return;\}/);
   assert.match(comm,/if\(p\.proc\)\{ if\(act==='copy'\)procSave\(p\); return; \}/,'신고·삭제·고치기는 코치 자료만');
-  assert.match(comm,/if\(p\.proc\)\{ if\(!p\.item\)\{procOpen\(p,null\);return;\} \}[^\n]*\n  else\{\n  try\{fetch\(base\(\)\+'\/rest\/v1\/rpc\/ps_comm_view'/,'조회수는 서버 글만');
+  assert.match(comm,/if\(p\.proc\)\{ if\(!p\.item\)\{procOpen\(p,null\);return;\} \}[^\n]*\n  else( if\(!p\.fifa\))?\{[^\n]*\n  try\{fetch\(base\(\)\+'\/rest\/v1\/rpc\/ps_comm_view'/,'조회수는 서버 글만');
   assert.match(body,/var hash='#pack='\+\(\(p\.src\|\|proc\.src\)===PROC_LOCAL_SRC\?PROC_LOCAL_SRC:PROC_SRC\)\+'-'\+p\.s\.nn;/,'3.003 — 사본으로 보고 있으면 사본에서, 아니면 훈련 세션 사이트에서');
   assert.match(body,/window\.parent\.location\.hash=hash/,'레터의 단추와 같은 주소를 셸에 건넨다');
 });
 
 test('the viewer says whose session it is and offers one thing — putting it in the vault',()=>{
   assert.match(board,/post\.proc\?\('<b>프로세스 훈련 세션<\/b> — 훈련 '\+\(post\.procN\|\|/);
-  assert.match(board,/\+\(post\.proc\?'':'<button id="commRepBtn"/,'신고 단추 없음');
+  assert.match(board,/\+\(\(?post\.proc(\|\|post\.fifa\))?\?'':'<button id="commRepBtn"/,'신고 단추 없음');
   assert.match(board,/if\(post\.proc\)\{ try\{parent\.postMessage\(\{source:"board",type:"commAct",act:"copy",id:post\.id\},"\*"\);\}catch\(_\)\{\} return; \}/,'«담겼어요»는 보관함의 확인 창이 말한다');
   assert.match(board,/if\(rb\)rb\.onclick=/);
 });
