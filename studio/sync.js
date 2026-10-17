@@ -145,6 +145,7 @@ function wipeTeamCacheSoft(){
     if(inIdb&&(!window.storage||!window.storage.delIfValue))return;
     if(!holdConflictCurrent(owner)||localStorage.getItem(k)!==loc)return;
     try{ localStorage.removeItem(k); n++; }catch(_){ return; }
+    if(typeof PSIdpPubWipe!=='undefined')PSIdpPubWipe.mark(m,k);   /* 3.077 — 다시 받기 전에 새로 쓴 공개본이 서버본을 덮지 않게(idp-pub-wipe.js) */
     /* 2.733 — 경기 사본을 지웠으면 이 워크스페이스에서 경기 키를 확인했다는 표도 지운다.
        표만 남으면 다음 부팅이 빈 로컬을 확인 완료로 오해해 일정에서 빈 문서를 만든다. */
     if(k===MATCH_KEY&&m.r)delete m.r[k];
@@ -6775,6 +6776,7 @@ function syncNowCore(reason){
         if(idbBacked(k)) loc=(idbVals[k]===undefined?null:idbVals[k]);
         else { try{ loc=localStorage.getItem(k); }catch(_){} }
         if(loc==null) needV.push(k);   /* 로컬이 비었으면 서버본으로 복원해야 하니 값이 필요하다 */
+        else if(typeof PSIdpPubWipe!=='undefined'&&PSIdpPubWipe.state(m0,k,loc,hash)==='rebuilt') needV.push(k);   /* 3.077 — 받기 전에 새로 쓴 공개본은 서버본과 합친다 */
         /* 1.573 — 로컬이 '빈 목록'이면 서버 값을 받아 대조한다(기억한 숫자보다 정확하다).
            빈 값 업로드는 바로 이 경우라, 이때만 값을 더 받는 비용은 싸다. */
         else if(psCount(loc)===0) needV.push(k);
@@ -7532,6 +7534,7 @@ function syncNowCore(reason){
         Object.keys(set2).forEach(function(k){
           if(k===PUBP+'local')return;
           var mine=(k===myPub),row=srv[k],loc=null;try{loc=localStorage.getItem(k);}catch(_){}
+          var PW=typeof PSIdpPubWipe!=='undefined'?PSIdpPubWipe:null,pw=PW?PW.settle(m,k,loc,hash):'';
           if(role==='player'&&!mine){
             try{localStorage.removeItem(k);}catch(_){}delete m.h[k];delete m.c[k];return;
           }
@@ -7547,6 +7550,9 @@ function syncNowCore(reason){
             return;
           }
           var lh=hash(loc),dirty=(lh!==(m.h[k]||'')),srvChanged=row?(row.cupd!==(m.c[k]||0)):false;
+          /* 3.077 — 닫을 때 지운 뒤 받기 전에 새로 쓴 문서는 서버본과 «조상 없이» 합친다. 그대로 올리거나 기준본과 합치면 서버본이 사라진다 */
+          var rebuilt=pw==='rebuilt'&&!!row;
+          if(rebuilt){if(typeof row.v!=='string'){syncDiagnostic('idp-public-rebuilt-wait',new Error('다시 받기 전에 쓴 공개 IDP — 서버 원문을 기다림'));return;}srvChanged=true;}
           if(loc!=null&&loc.length>MAXLEN){skippedBig++;skippedKeys.push(k);return;}
           if(loc!=null&&!idpRawMergeable(k,loc)){
             if(row&&typeof row.v==='string'&&row.v===loc){m.h[k]=lh;m.c[k]=row.cupd;return;}
@@ -7562,7 +7568,7 @@ function syncNowCore(reason){
           if(loc==null&&!row)return;
           if(loc==null&&row){
             if(typeof row.v!=='string'||!idpRawMergeable(k,row.v)){syncDiagnostic('idp-public-pull-missing',new Error('공개 IDP 서버 원문을 확인할 수 없음'));return;}
-            if(roundKvWrite(k,row.v,writes,loc)){applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;if(idpRawMergeable(k,row.v))idpBaseNext[k]=row.v;}return;
+            if(roundKvWrite(k,row.v,writes,loc)){applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;if(PW)PW.clear(m,k);if(idpRawMergeable(k,row.v))idpBaseNext[k]=row.v;}return;
           }
           if(loc!=null&&!row){
             if(!idpRawMergeable(k,loc)){syncDiagnostic('idp-public-shape',new Error('공개 IDP 형식이 아니라 올리지 않음'));return;}
@@ -7579,16 +7585,16 @@ function syncNowCore(reason){
           if(dirty&&srvChanged){
             if(typeof row.v!=='string'){syncDiagnostic('idp-public-merge-missing',new Error('공개 IDP 서버 원문이 없음'));return;}
             if(row.v===loc){m.h[k]=lh;m.c[k]=row.cupd;idpBaseNext[k]=loc;return;}
-            var pubBase=syncBaseGet(k,wid,m),pubBaseStored=syncBaseHas(k,wid),pubTrusted=typeof pubBase==='string';
+            var pubBase=rebuilt?null:syncBaseGet(k,wid,m),pubBaseStored=!rebuilt&&syncBaseHas(k,wid),pubTrusted=typeof pubBase==='string';
             if(pubBaseStored&&!pubTrusted){syncDiagnostic('idp-public-base-untrusted',new Error('공개 IDP 기준본과 확정 meta가 맞지 않음'));return;}
             var pubMerged=pubTrusted?idpMergeRaw(k,pubBase,loc,row.v,teamW):idpMergeInitialRaw(k,loc,row.v,teamW);
             if(!pubMerged){
               syncDiagnostic('idp-public-merge-shape',new Error('공개 IDP 병합 형식을 확인할 수 없음'));return;
             }
-            var pubChoice=idpConflictChoice(k,loc,row,pubMerged);if(pubChoice==='pending')return;
+            var pubChoice=rebuilt?'':idpConflictChoice(k,loc,row,pubMerged);if(pubChoice==='pending')return;   /* 다시 쓴 문서 통째 고르기는 서버본을 버린다 */
             if(pubChoice==='local')pubMerged={local:loc,cloud:loc};
             if(pubChoice==='server')pubMerged={local:row.v,cloud:row.v};
-            if(pubMerged.cloud===row.v){if(pubMerged.local!==loc){if(!roundKvWrite(k,pubMerged.local,writes,loc))return;applied++;}m.h[k]=hash(pubMerged.local);m.c[k]=row.cupd;idpBaseNext[k]=pubMerged.local;return;}
+            if(pubMerged.cloud===row.v){if(pubMerged.local!==loc){if(!roundKvWrite(k,pubMerged.local,writes,loc))return;applied++;}m.h[k]=hash(pubMerged.local);m.c[k]=row.cupd;if(rebuilt)PW.clear(m,k);idpBaseNext[k]=pubMerged.local;return;}
             if(!planIdpCandidate(k,pubMerged.local,loc)){syncDiagnostic('idp-public-merge-stale',new Error('공개 IDP 병합 적용을 준비하지 못함'));return;}
             pushRows.push({workspace_id:wid,k:k,v:pubMerged.cloud,cupd:now,_casCupd:row.cupd});return;
           }

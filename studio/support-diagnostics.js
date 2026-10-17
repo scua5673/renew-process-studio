@@ -12,6 +12,8 @@
   var STORAGE_STAGES=('aux-migration aux-read-conflict idb-set migration stash-migration stash-migration-all stash-migration-conflict').split(' ');
   STORAGE_STAGES=STORAGE_STAGES.concat('schedule match roster library idp base outbox journal other'.split(' ').map(function(k){return 'idb-set-'+k;}));
   STAGES=STAGES.concat(['idp-base-history-recovered','idp-base-history-read']);
+  // 3.077 — 자동 저장 실패(sync.js autosaveRunner.fail)가 제보에 단계 '' 로 찍히던 것 · 닫기 뒤 다시 쓴 공개 IDP 대기
+  STAGES=STAGES.concat(['autosave','autosave-archive-list','idp-public-rebuilt-wait']);
   // 2.890 — fixed reasons only (no keys or content): why a frame save signal skipped the IDB mirror.
   CODES=CODES.concat(('owner-read local-read external-switch-frozen locked-or-wiping tab-workspace-stale uid-changed workspace-changed generation-changed owner-generation-changed switch-seal-changed foreign-switch value-stale frame_pending').split(' '));
   // Workspace-switch barrier: fixed shell frame ids and steps, never document names.
