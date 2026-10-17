@@ -197,7 +197,17 @@
         if (st.size && !document.body.classList.contains('bc-tilt3d') && off()) { try { window.dispatchEvent(new Event('resize')); } catch (_) {} }
       }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
     } catch (_) {}
-    return { update: update, off: off, zoom: function () { return st.k; } };
+    // 3.086 — 작전판 applyView 는 판 너비 · 높이를 지운다. 재생 중 장면마다 도크 폭이 조금 바뀌면 그 길로 불려(도크 크기 감시)
+    //         지운 채 한 프레임이 그려졌다 — 판이 원래 크기로 튀었다가 돌아왔다(사용자 «재생해보니까 화면이 깜빡이는데»).
+    //         카메라가 판 크기를 잡고 있는 동안은 그대로 둔다. 무대 크기가 정말 바뀌면 update 가 새 크기를 입힌다.
+    function hold(fn) {
+      var s = null, keep = null;
+      try { var svg = env.svg(); if (st.size && svg) { s = svg.style; keep = PROPS.map(function (k) { return [k, s.getPropertyValue(k), s.getPropertyPriority(k)]; }); } } catch (_) {}
+      try { return fn(); } finally {
+        if (keep) try { keep.forEach(function (q) { if (q[1] && (s.getPropertyValue(q[0]) !== q[1] || s.getPropertyPriority(q[0]) !== q[2])) s.setProperty(q[0], q[1], q[2]); }); } catch (_) {}
+      }
+    }
+    return { update: update, off: off, hold: hold, zoom: function () { return st.k; } };
   }
   // 동작 고르기(3.075): 장면 시작 · 장면 끝 · 골키퍼. 화면 방향(←·→)은 작전판에 보이는 그대로.
   var ACTS = [
@@ -255,7 +265,7 @@
         var stg = document.getElementById('boardStage'); if (!stg) return null; var r = stg.getBoundingClientRect(), top = r.top, bot = r.bottom;
         var tb = document.querySelector('#boardPageStrip.ps-tb>.tb-c'); if (tb) { var q = tb.getBoundingClientRect(); if (q.height) top = Math.max(top, q.bottom); }
         var dk = document.getElementById('ps-command-dock'); if (dk && getComputedStyle(dk).display !== 'none') { var d = dk.getBoundingClientRect(); if (d.height && d.top > top) bot = Math.min(bot, d.top); }
-        top += 56; bot -= 16;   // 선 사람의 키 · 이름표 몫(위) · 여유(아래)
+        top += 56; bot -= (win.__namePos === 'above' ? 16 : 36) + (typeof tokShape !== 'undefined' && tokShape === 'person' ? 20 : 0);   // 선 사람의 키 · 이름표 몫(위) · 여유(아래) — 3.086 이름표가 아래면 그 몫, 사람이면 발밑 번호 패 몫도
         return { x: r.left + 24, y: top, w: r.width - 48, h: bot - top };
       },
       resized: function (redraw) { try { var gh = document.getElementById('tiltGoals'); if (gh) { gh.__pre = null; gh.__projectionSignature = null; } bridge.sync(); } catch (_) {} if (redraw) { try { renderTokens(); } catch (_) {} } }
@@ -264,6 +274,12 @@
     function off() { try { cam.off(); } catch (_) {} }
     win.__tvOn = on; win.__tvZoom = function () { return on() ? cam.zoom() : 1; };
     win.__tvCam = function (snap) { try { if (!on()) { off(); return; } cam.update(snap); } catch (_) {} };
+    // 작전판은 applyView 를 이름으로 부른다(같은 문서의 전역 함수) — 감싸면 모든 부름이 여기를 지난다
+    var av = win.applyView;
+    if (typeof av === 'function' && !av.__tvHold) {
+      win.applyView = function () { var self = this, a = arguments; return on() ? cam.hold(function () { return av.apply(self, a); }) : av.apply(self, a); };
+      win.applyView.__tvHold = 1;
+    }
     return { on: on, off: off };
   }
   function glue(win) {

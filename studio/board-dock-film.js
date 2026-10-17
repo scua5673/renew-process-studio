@@ -55,7 +55,8 @@
       A + '>#cmd-scene-transport{order:0!important}' + A + '>#cmd-scene-strip{order:1!important;flex:1 1 auto!important;min-width:120px!important;overflow:hidden!important}' + A + '>#cmd-scene-edit{order:2!important}' + A + '>#cmd-scene-time{order:3!important}' + A + '>#cmd-scene-export{order:4!important}',
       A + '>#cmd-scene-time,' + A + '>#cmd-scene-export{padding-left:8px!important;border-left:1px solid var(--df-line)!important;border-radius:0!important}',
       A + ' #cmd-scene-meta{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;height:34px!important;min-width:0!important;padding:0 2px 0 0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important}',
-      A + ' #cmd-scene-status{height:auto!important;padding:0!important;font:800 10px/1.2 Pretendard,-apple-system,sans-serif!important;color:var(--df-dim)!important;white-space:nowrap!important;background:transparent!important}',
+      A + ' #cmd-scene-status{height:auto!important;padding:0!important;font:800 10px/1.2 Pretendard,-apple-system,sans-serif!important;font-variant-numeric:tabular-nums!important;color:var(--df-dim)!important;white-space:nowrap!important;background:transparent!important}',
+      // ↑ 3.086 — 숫자 폭을 같게: «1 / 7» → «2 / 7» 로 바뀔 때마다 도크 폭이 1px 남짓 흔들려 작전판이 판 크기를 다시 쟀다(재생 중 깜빡임의 방아쇠)
       A + ' #cmd-scene-strip{display:flex!important;align-items:center!important;gap:2px!important}',
       // ▶ 큰 둥근 단추
       A + ' #animPlay{width:34px!important;min-width:34px!important;max-width:34px!important;height:34px!important;min-height:34px!important;max-height:34px!important;flex:0 0 34px!important;border-radius:50%!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border:0!important}',
