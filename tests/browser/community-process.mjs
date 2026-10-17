@@ -58,9 +58,10 @@ try{
   c=await (await page.waitForSelector('#fComm')).contentFrame();
   await c.waitForSelector('#prRetry');   // 3.019 — 처음 여는 칸은 프로세스(목록은 아직 내려가 있다)
   const rect=sel=>c.evaluate(s=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {l:Math.round(r.left),t:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height),d:getComputedStyle(e).display};},sel);
+  // 3.075 — chips = 공통 분류(경기 4국면 타일 + 주제 칩)의 이름 · 개수
   const state=()=>c.evaluate(()=>({proc:document.body.classList.contains('pr-proc'),pressed:[...document.querySelectorAll('#prSeg button')].map(b=>b.getAttribute('aria-pressed')),label:[...document.querySelectorAll('#prSeg button')].map(b=>b.textContent),
     sub:document.getElementById('prSub').textContent,lb:document.getElementById('prCatLb').textContent,ph:document.getElementById('commSearch').placeholder,count:document.getElementById('commCount').textContent,
-    chips:[...document.querySelectorAll('#catChips .chip')].map(b=>b.textContent+(b.classList.contains('on')?'*':'')),cards:[...document.querySelectorAll('.pr-card')].map(x=>x.getAttribute('data-proc')),coach:document.querySelectorAll('#grid .card').length,
+    chips:[...document.querySelectorAll('#txBar .tx-tile,#txBar .tx-row[aria-label="경기 밖의 주제"] .tx-chip')].map(b=>(b.querySelector('.tx-tile-nm')||b.childNodes[1]).textContent+b.querySelector('.tx-n').textContent+(b.classList.contains('on')?'*':'')),cards:[...document.querySelectorAll('.pr-card')].map(x=>x.getAttribute('data-proc')),coach:document.querySelectorAll('#grid .card').length,
     fab:getComputedStyle(document.getElementById('upBtn')).display,filters:getComputedStyle(document.querySelector('.comm-list .filters')).display,vw:innerWidth,docW:document.documentElement.scrollWidth}));
 
   const fifaN=()=>c.evaluate(()=>'FIFA'+PSCommFifa.list().length);   // 3.071 — 넷째 칸 이름 옆의 개수(목록은 모듈 안의 표)
@@ -85,14 +86,14 @@ try{
   s=await state();
   assert.deepEqual([s.proc,s.pressed,s.sub,s.lb,s.ph,s.coach],[false,['true','false','false','false'],'작전판·훈련·경기 분석 탐색','훈련 주제','제목·작성자·내용 검색',1]);
   assert.notEqual(s.fab,'none','코치 자료 칸에는 «올리기»가 있다');
-  assert.ok(s.chips.includes('론도')&&s.chips[0]==='전체 주제*','코치 자료의 주제 칩 그대로');
+  assert.equal(s.chips[0],'공격1','3.075 — 코치 자료도 공통 분류(론도 → 공격)');
   const seg=await rect('#prSeg'),tabs=await c.evaluate(()=>[...document.querySelectorAll('#prSeg button')].map(b=>Math.round(b.getBoundingClientRect().height)));
   assert.ok(seg.l>=0&&seg.l+seg.w<=s.vw,'칸들이 화면 안 '+JSON.stringify(seg));
   assert.ok(tabs.length===4&&tabs.every(h=>h>=(phone?36:30)),'칸 넷(3.071 FIFA)의 높이 '+JSON.stringify(tabs));
   assert.equal(s.docW,s.vw,'가로로 넘치지 않는다');
 
   // 1-2) 3.002 — 훈련이 둘인 코치 글: 뷰어 머리 아래에서 훈련을 골라 본다. 띠·담기·신고는 코치 글 그대로
-  await c.click('#grid .card');
+  await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   v=await view('코치 훈련 A');
   pk=await pick();
@@ -138,7 +139,7 @@ try{
   assert.deepEqual(await c.evaluate(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] .pr-hero img')].map(i=>i.getAttribute('src'))),['packs/thumbs/06-1.svg?v=0a1b2c3d4e'],'그림도 사본에서');
   await c.waitForFunction(()=>[...document.querySelectorAll('.pr-card[data-proc="06"] img')].every(i=>i.complete&&i.naturalWidth>0));
   const remoteBefore=asked.length;
-  await c.click('.pr-card[data-proc="06"] .pr-tt');
+  await c.click('.pr-card[data-proc="06"] .pr-tt'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   v=await view('가상 연습 1');
   iv=await inside();
@@ -169,7 +170,7 @@ try{
   assert.deepEqual(s.cards,['03','04']);
   assert.deepEqual(s.label,['코치 자료1','프로세스2','엘미하',await fifaN()],'칸 이름 옆의 개수는 사실만');
   assert.equal(s.count,'세션 2개 · 훈련 6개');
-  assert.deepEqual(s.chips,['전체 주제2*','공격 조직1','수비 조직1'],'있는 주제만 칩으로');
+  assert.deepEqual(s.chips,['공격1','수비 전환0','공격 전환0','수비1','세트피스0','개인 기술0','골키퍼0','피지컬·웜업0'],'3.075 — 프로세스 테마 → 공통 분류');
   const card=await c.evaluate(()=>{const el=document.querySelector('.pr-card[data-proc="03"]'),r=el.getBoundingClientRect();
     return {title:el.querySelector('.pr-tt').textContent,meta:el.querySelector('.pr-meta').textContent,rows:[...el.querySelectorAll('.pr-trs li')].map(li=>[...li.children].map(x=>x.textContent)),foot:el.querySelector('.pr-foot').textContent,
       imgs:[...el.querySelectorAll('.pr-hero img')].map(i=>i.getAttribute('src')),l:Math.round(r.left),r:Math.round(r.right),stats:el.querySelectorAll('.stat,.likebtn').length,
@@ -218,7 +219,7 @@ try{
   await c.waitForFunction(()=>document.querySelectorAll('.pr-card').length===2);
 
   // 3-3) 카드를 누르면 보고 있던 훈련(3)부터 연다
-  await c.click('.pr-card[data-proc="03"] .pr-tt');
+  await c.click('.pr-card[data-proc="03"] .pr-tt'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   v=await view('가상 연습 3');
   assert.deepEqual((await pick()).btn.map(b=>b[3]),['false','false','true'],'뷰어도 셋째 훈련부터');
@@ -227,10 +228,10 @@ try{
   await c.click('.pr-card[data-proc="03"] .pr-pick button[data-k="0"]');
 
   // 4) 주제 · 검색(세션 안의 훈련 이름까지)
-  await c.locator('#catChips .chip',{hasText:'수비 조직'}).click();
+  await c.locator('#txBar .tx-tile',{hasText:'공이 없을 때'}).click();
   s=await state();
-  assert.deepEqual([s.cards,s.count,s.chips],[['04'],'세션 1개 · 훈련 3개',['전체 주제2','공격 조직1','수비 조직1*']]);
-  await c.locator('#catChips .chip',{hasText:'전체 주제'}).click();
+  assert.deepEqual([s.cards,s.count,s.chips.slice(0,4)],[['04'],'세션 1개 · 훈련 3개',['공격1','수비 전환0','공격 전환0','수비1*']]);
+  await c.locator('#txBar .tx-tile',{hasText:'공이 없을 때'}).click();
   await c.fill('#commSearch','골문 앞');
   await c.waitForFunction(()=>document.querySelectorAll('.pr-card').length===1);
   assert.deepEqual((await state()).cards,['04'],'훈련 이름으로 세션을 찾는다');
@@ -244,7 +245,7 @@ try{
   const own=await c.evaluate(()=>{ const el=document.querySelector('.pr-card[data-proc="04"]'); return {foot:el.querySelector('.pr-foot').textContent,sc:el.querySelector('.pr-sc').textContent,imgs:[...el.querySelectorAll('.pr-hero img')].map(i=>i.getAttribute('src'))}; });
   assert.deepEqual([own.foot,own.sc],['@프로세스 · 레터 4호장면 13','훈련 1 · 장면 7'],'장면 수는 사본의 줄');
   assert.deepEqual(own.imgs,['packs/thumbs/04-1.svg?v=bbbbbbbbbb'],'그림도 사본에서');
-  await c.click('.pr-card[data-proc="04"] .pr-tt');
+  await c.click('.pr-card[data-proc="04"] .pr-tt'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   v=await view('가상 연습 1');
   iv=await inside();
@@ -255,7 +256,7 @@ try{
   await c.waitForFunction(()=>!document.getElementById('cvMask').classList.contains('on'));
 
   // 5) 카드 → 읽기 전용 뷰어. 훈련 고르는 줄이 머리 아래에 있고, 고르면 그 훈련이 실린다
-  await c.click('.pr-card[data-proc="03"] .pr-tt');
+  await c.click('.pr-card[data-proc="03"] .pr-tt'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   v=await view('가상 연습 1');
   pk=await pick();
@@ -303,7 +304,7 @@ try{
   s=await state();
   assert.deepEqual([s.proc,s.pressed,s.lb,s.ph,s.cards.length,s.coach],[false,['true','false','false','false'],'훈련 주제','제목·작성자·내용 검색',0,1]);
   assert.notEqual(s.fab,'none');assert.notEqual(s.filters,'none');
-  assert.ok(s.chips.includes('론도'));
+  assert.equal(s.chips[0],'공격1');
   // 3.071 — «FIFA» 칸: FIFA 훈련센터로 가는 링크 카드. 프로세스 칸처럼 고르개 · 올리기가 없고, 서버를 부르지 않는다
   await c.click('#prTabFifa');
   await c.waitForSelector('.fi-card');
@@ -313,13 +314,13 @@ try{
   assert.deepEqual([s.proc,s.pressed,s.sub,s.ph,s.fab,s.filters,s.coach,s.cards.length],[true,['false','false','false','true'],'FIFA 훈련센터의 훈련 세션','훈련·지도자 이름 검색','none','none',0,0]);
   assert.ok(fi.n>=150&&fi.bad===0&&fi.hero&&fi.label===String(fi.n),'FIFA 카드 '+JSON.stringify(fi));
   assert.equal(fi.sortNav,'none','정렬(탐색)이 없다');
-  assert.equal(s.count,'훈련 '+fi.n+'개'); assert.equal(s.chips[0],'전체'+fi.n+'*');
+  assert.equal(s.count,'훈련 '+fi.n+'개'); assert.equal(s.chips.length,8,'FIFA 칸도 공통 분류');
   assert.equal(s.docW,s.vw,'FIFA 칸도 가로로 넘치지 않는다');
   // 3.072 — «▶ 애니메이션» 카드(studio/fifa-packs): 누르면 코치 글과 같은 읽기 전용 뷰어 · 출처 띠 · 신고 없음 · 서버에 쓰지 않는다(아래 writes)
   await c.waitForSelector('.fi-anim');
   const an=await c.evaluate(()=>({n:document.querySelectorAll('.fi-anim').length,first:document.querySelector('#grid .fi-card').classList.contains('fi-anim'),src:document.querySelector('.fi-anim a.fi-go').href}));
   assert.ok(an.n>=1&&an.first&&an.src.startsWith('https://www.fifatrainingcentre.com/en/practice/'),'애니메이션 카드가 앞에 '+JSON.stringify(an));
-  await c.click('.fi-anim');
+  await c.click('.fi-anim'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   const fv=await (await c.waitForSelector('#cvFrame')).contentFrame();
   await fv.waitForFunction(()=>!!document.getElementById('commCopyBtn'),null,{timeout:20000});

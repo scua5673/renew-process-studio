@@ -89,7 +89,9 @@ export function packOf(spec,id){
 
 /* 목록은 팩 파일들에서 다시 짓는다(읽고 고쳐 쓰지 않는다) — 여러 사람이 동시에 지어도 마지막에 쓴 목록이 그때 있는 팩 전부를 담는다 */
 export function rowOf(id,text){ const d=JSON.parse(text).drills[0];
-  return {id,path:d.fifa.path,rev:rev(text),trainings:d.trainings.map(t=>({name:t.name,minutes:t.minutes,scenes:t.frames.length}))}; }
+  /* 3.075 — 커뮤니티 공통 분류: 주제(작전판 FOCUS)와 인원(훈련마다 판 위 선수 수의 가장 작은 ~ 가장 큰 값) */
+  const ns=d.trainings.map(t=>t.snap.players.length);
+  return {id,path:d.fifa.path,rev:rev(text),focus:d.focus,players:[Math.min(...ns),Math.max(...ns)],trainings:d.trainings.map(t=>({name:t.name,minutes:t.minutes,scenes:t.frames.length}))}; }
 export function indexOf(){
   const ids=fs.readdirSync(out).filter(f=>/^\d{3}\.json$/.test(f)).map(f=>f.slice(0,3)).sort();
   return {type:'process-studio-fifa-index',version:1,sessions:ids.map(id=>rowOf(id,fs.readFileSync(path.join(out,id+'.json'),'utf8')))};
