@@ -8,6 +8,8 @@
 <script src="session-focus.js"></script>
 <link rel="stylesheet" href="daily-effort.css">
 <script src="review-training-schedule.js"></script>
+<script src="participation.js?v=2.901"></script><!-- 3.076 — 연간 돌아보기의 선수별 출석 · 부상(선수단 화면과 같은 셈, 읽기만) -->
+<script src="year-plan.js"></script><!-- 3.073 — 연간 PDF(돌아보기 · 계획) · 시즌 계획 카드 -->
 <link rel="stylesheet" href="review-training.css">
 <script src="learn-model.js"></script><!-- 2.108 — 학습모델 카테고리 사전(고정 id). 블록이 어느 카테고리를 다뤘는지 여기에 건다 -->
 
@@ -1409,6 +1411,8 @@ body.fmdark .del,body.fmdark .brem:active,body.fmdark .wkx:active,body.fmdark .h
           <div class="stack" id="yearMixStack"></div>
           <div class="legend" id="yearMixLegend"></div>
         </div>
+        <div class="mixcard sumcard sp-card" id="spCard"></div>   <!-- 3.073 — 시즌 계획 -->
+        <div class="actionbar"><button class="btn" onclick="exportPDF('yearReview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>돌아보기 PDF</button><button class="btn solid" onclick="exportPDF('yearPlan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>계획 PDF</button></div>   <!-- 3.073 — 한 해 했던 것 · 할 것 -->
       </div>
       <button type="button" class="schedule-fab" onclick="openSelectedDayQuick()" aria-label="선택한 날짜에 일정 추가"><span style="font-size:20px;line-height:1">＋</span> 일정 추가</button>
     </section>
@@ -2760,6 +2764,8 @@ let ddayLabel='';
 /* 사진은 IndexedDB 에 있고 본문에는 참조만 있다. 아직 안 옮긴 원본도 그대로 통과시킨다. */
 function __psImgSrc(v){ try{ return window.PSImg.src(v); }catch(_){ return v||''; } }
 const STORE_KEY='process_coach_v1';
+var seasonPlan={};   /* 3.073 — 시즌 계획(일정 문서 최상위 seasonPlan). var — 부팅 때 loadState 가 먼저 돌 수 있다. 읽고 쓰는 곳은 year-plan.js */
+
 var __procFirst=false;try{__procFirst=!localStorage.getItem(STORE_KEY);}catch(_){}
 var __hist=[], __undoing=false;
 /* 일정 편집 중 도착한 팀 판본은 화면에 즉시 덮지 않는다. */
@@ -2978,7 +2984,7 @@ function saveNow(){
         try{ localStorage.setItem('ps_grpweeks_stash_v1', window.storage?'idb':'ls'); }catch(_){} } }catch(_){}
     /* 2.601 — 기존 문서의 썸네일도 같은 다이어트(작전판 2.601 과 같은 규칙: data: <image> 제거 · 소수점 둘째 자리). thumb 는 그림 캐시일 뿐이라 제자리에서 줄여도 된다. */
     try{ schedThumbDiet(__schedBase||weeksMap); }catch(_){}
-    const data={weeks:(__schedBase||weeksMap), grpWeeks:__gw, templates:myTemplates, dday: dn?(parseInt(dn.value)||28):28, ddayLabel:ddayLabel,
+    const data={weeks:(__schedBase||weeksMap), grpWeeks:__gw, templates:myTemplates, dday: dn?(parseInt(dn.value)||28):28, ddayLabel:ddayLabel, seasonPlan:seasonPlan,
       anchorMonday:`${__ANCHOR.getFullYear()}-${String(__ANCHOR.getMonth()+1).padStart(2,'0')}-${String(__ANCHOR.getDate()).padStart(2,'0')}`,
       scheduleRev:currentScheduleRev,
       /* 누가 마지막으로 만졌는지 — 팀 일정 화면의 '마지막 수정' 표시용(1.482) */
@@ -3050,6 +3056,7 @@ function loadState(opt){
     const dn=document.getElementById('dayN');
     if(data.dday && dn){ dn.value=data.dday; if(typeof fitDayNum==='function') fitDayNum(); }
     if(typeof data.ddayLabel==='string') ddayLabel=data.ddayLabel;
+    seasonPlan=(data.seasonPlan&&typeof data.seasonPlan==='object'&&!Array.isArray(data.seasonPlan))?data.seasonPlan:{};   /* 3.073 — 시즌 계획(없으면 빈 것: 지운 것도 따라온다) */
     __schedSavedRaw=raw;
     saveCursor();
   }catch(e){}
@@ -7093,6 +7100,7 @@ function renderYear(){
   renderTopicMix(document.getElementById('yearMixStack'), document.getElementById('yearMixLegend'), daysTopicCount(yearDaysList()));
 
   renderYearActivitySummary(yearActivityStats());
+  try{ renderSeasonPlan(); }catch(_){}   /* 3.073 */
   /* 1.675 — 날짜 셀을 누르면 그 날짜가 채워진 빠른 추가가 바로 열린다(사용자 요청:
      상단 '＋ 일정 추가' 버튼 제거). 월 이름·여백을 누르면 예전처럼 월간으로 이동.
      바인딩은 그리드에 1회 위임 — innerHTML 재렌더마다 카드별로 다시 묶지 않는다. */
@@ -7973,7 +7981,7 @@ function reviewDocHTML(){
 function __buildPrintDoc(kind, blank){
   kind=kind||'week';
   if(blank && kind==='today') kind='day';           // 빈 양식은 오늘 날짜 스왑 불필요 (상태 미접근)
-  if(kind==='review'||kind==='season'||kind==='weekboard') blank=false; // 리포트·보드엔 빈 양식 없음
+  if(kind==='review'||kind==='season'||kind==='weekboard'||kind==='yearReview'||kind==='yearPlan') blank=false; // 리포트·보드엔 빈 양식 없음
   __pBlank=!!blank;
   let html, fname, cls=kind;
   try{
@@ -7997,6 +8005,8 @@ function __buildPrintDoc(kind, blank){
     else if(kind==='season'){ html=seasonDocHTML(); fname='process_시즌'; }
     else if(kind==='day'){ html=dayDocHTML(); fname='process_일간'; }
     else if(kind==='month'){ html=monthDocHTML(); fname='process_월간'; }
+    else if(kind==='yearReview'){ html=yearDocHTML('review'); fname='process_연간_돌아보기'; cls='year'; }   /* 3.073 */
+    else if(kind==='yearPlan'){ html=yearDocHTML('plan'); fname='process_연간_계획'; cls='year'; }
     else if(kind==='weekboard'){ html=weekBoardDocHTML(); fname='process_주간보드'; }
     else { html=weekBoardDocHTML(); fname='process_주간'; cls='weekboard'; }   /* 2.911 — 목록 보기 주간·주간 빈 양식도 분량 블록 */
   } finally {
@@ -8012,7 +8022,7 @@ function __buildPrintDoc(kind, blank){
   const pageCss=(land?'@page{size:A4 landscape;margin:0}':'@page{size:A4;margin:0}')
     +'html{margin:0;background:var(--surface)}'
     // !important — ALL_CSS의 레거시 @media print{html,body{padding:0!important}}보다 뒤에 와서 이겨야 함
-    +'body{margin:0!important;padding:'+(land?'10mm':'12mm')+'!important;background:var(--surface)}'
+    +'body{margin:0!important;padding:'+(cls==='year'?'0':(land?'10mm':'12mm'))+'!important;background:var(--surface)}'   /* 3.073 — 연간은 여러 장: 여백은 장마다(.ponepage) */
     +'#printDoc{display:block!important;position:static;width:'+baseWpx+'px;margin:0 auto}'; // 인쇄 가용 폭과 동일(가로 297−20=277mm / 세로 210−24=186mm @96dpi)
   // 고정 1페이지 안전망: 높이를 잠시 풀어 자연 높이(need)를 정확히 잰 뒤, 넘치면 높이를 풀고 zoom으로 1장에 맞춤
   const zoomJs="window.addEventListener('load',function(){try{var p=document.querySelector('.ponepage');if(!p)return;var pd=document.getElementById('printDoc');var availH=p.clientHeight;p.style.height='auto';var needH=p.scrollHeight;var zw="+pageWpx+"/"+baseWpx+";var zh=availH/needH;var z=Math.min(zw,zh,1.6);p.style.height=needH+'px';if(z&&isFinite(z)&&Math.abs(z-1)>0.02){pd.style.zoom=(z*100).toFixed(1)+'%';}else{p.style.height='';}}catch(e){}});";
@@ -8024,7 +8034,7 @@ function __buildPrintDoc(kind, blank){
     +'<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b">'   /* 2.908 — Pretendard(화면과 같은 글꼴) */
     +'<style>'+allCss+'</style><style>'+pageCss+'</style></head>'
     +'<body><div id="printDoc" class="pl-'+cls+'">'+html+'</div>'
-    +(fitJs?'<script>'+fitJs+'<\/script>':'')+'<script>'+zoomJs+'<\/script></body></html>';
+    +(fitJs?'<script>'+fitJs+'<\/script>':'')+(cls==='year'?'':'<script>'+zoomJs+'<\/script>')+'</body></html>';   /* 3.073 — 연간은 장마다 크기를 맞춰 짓는다(한 장 zoom 안전망은 첫 장만 본다) */
 }
 
 /* ---------- 출력 미리보기 모달 ---------- */
