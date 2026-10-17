@@ -145,7 +145,7 @@ function wipeTeamCacheSoft(){
     if(inIdb&&(!window.storage||!window.storage.delIfValue))return;
     if(!holdConflictCurrent(owner)||localStorage.getItem(k)!==loc)return;
     try{ localStorage.removeItem(k); n++; }catch(_){ return; }
-    if(typeof PSIdpPubWipe!=='undefined')PSIdpPubWipe.mark(m,k);   /* 3.081 — 다시 받기 전에 새로 쓴 공개본이 서버본을 덮지 않게(idp-pub-wipe.js) */
+    if(typeof PSIdpPubWipe!=='undefined')PSIdpPubWipe.mark(m,k);   /* 3.082 idp-pub-wipe.js */
     /* 2.733 — 경기 사본을 지웠으면 이 워크스페이스에서 경기 키를 확인했다는 표도 지운다.
        표만 남으면 다음 부팅이 빈 로컬을 확인 완료로 오해해 일정에서 빈 문서를 만든다. */
     if(k===MATCH_KEY&&m.r)delete m.r[k];
@@ -2572,9 +2572,8 @@ function syncState(){
   if(rc)return {kind:'ask',text:'저장할 내용 선택 · '+rc+'건',n:n,review:rc};
   if(busy)return {kind:'busy',text:'올리는 중'+(n?(' · '+n):''),n:n,review:rc};
   if(n)return {kind:'pending',text:'전송 대기 · '+n+'건',n:n,review:rc};
-  /* 3.081 — 이 공간에서 받은 적이 없거나(팀 전환 안의 받기가 실패 — meta 가 비었다) 닫기 정리 뒤 첫 받기 전이면 «팀과 같아요»가 아니다.
-     ps_last_pull_at 은 공간을 가리지 않아 이전 팀에서 받은 시각으로 «저장됨 · 1분 전»을 보여 줬다 */
-  var wiped=false; try{ wiped=typeof cacheWipedFlag==='function'&&cacheWipedFlag(); }catch(_){}
+  /* 3.082 — 이 공간에서 아직 못 받았으면(전환 뒤 · 닫기 정리 뒤) ok 가 아니다. ps_last_pull_at 은 공간을 안 가린다 */
+  var wiped=typeof cacheWipedFlag==='function'&&cacheWipedFlag();
   if(!(+m.last)||wiped)return fresh?{kind:'wait',reason:lastIssue.code,text:'아직 못 받았어요 · '+syncReasonText(lastIssue.code),n:0,review:0,at:lastIssue.at}:{kind:'wait',text:'받는 중',n:0,review:0};
   var at=0; try{ at=+localStorage.getItem('ps_last_pull_at')||0; }catch(_){} at=Math.max(at,+m.last||0);
   return {kind:'ok',text:'팀과 같아요',at:at,ago:at?agoText(at):'',n:0,review:0,rt:rtConnected(),rtAt:rtLast,rtHits:rtHits};
@@ -6780,7 +6779,7 @@ function syncNowCore(reason){
         if(idbBacked(k)) loc=(idbVals[k]===undefined?null:idbVals[k]);
         else { try{ loc=localStorage.getItem(k); }catch(_){} }
         if(loc==null) needV.push(k);   /* 로컬이 비었으면 서버본으로 복원해야 하니 값이 필요하다 */
-        else if(typeof PSIdpPubWipe!=='undefined'&&PSIdpPubWipe.state(m0,k,loc,hash)==='rebuilt') needV.push(k);   /* 3.081 — 받기 전에 새로 쓴 공개본은 서버본과 합친다 */
+        else if(typeof PSIdpPubWipe!=='undefined'&&PSIdpPubWipe.state(m0,k,loc,hash)==='rebuilt') needV.push(k);
         /* 1.573 — 로컬이 '빈 목록'이면 서버 값을 받아 대조한다(기억한 숫자보다 정확하다).
            빈 값 업로드는 바로 이 경우라, 이때만 값을 더 받는 비용은 싸다. */
         else if(psCount(loc)===0) needV.push(k);
@@ -7554,9 +7553,9 @@ function syncNowCore(reason){
             return;
           }
           var lh=hash(loc),dirty=(lh!==(m.h[k]||'')),srvChanged=row?(row.cupd!==(m.c[k]||0)):false;
-          /* 3.081 — 닫을 때 지운 뒤 받기 전에 새로 쓴 문서는 서버본과 «조상 없이» 합친다. 그대로 올리거나 기준본과 합치면 서버본이 사라진다 */
+          /* 3.082 — 받기 전에 다시 쓴 문서는 서버본과 조상 없이 합친다(idp-pub-wipe.js) */
           var rebuilt=pw==='rebuilt'&&!!row;
-          if(rebuilt){if(typeof row.v!=='string'){syncDiagnostic('idp-public-rebuilt-wait',new Error('다시 받기 전에 쓴 공개 IDP — 서버 원문을 기다림'));return;}srvChanged=true;}
+          if(rebuilt){if(typeof row.v!=='string'){syncDiagnostic('idp-public-rebuilt-wait',new Error('rebuilt pub: wait for server raw'));return;}srvChanged=true;}
           if(loc!=null&&loc.length>MAXLEN){skippedBig++;skippedKeys.push(k);return;}
           if(loc!=null&&!idpRawMergeable(k,loc)){
             if(row&&typeof row.v==='string'&&row.v===loc){m.h[k]=lh;m.c[k]=row.cupd;return;}
@@ -7595,7 +7594,7 @@ function syncNowCore(reason){
             if(!pubMerged){
               syncDiagnostic('idp-public-merge-shape',new Error('공개 IDP 병합 형식을 확인할 수 없음'));return;
             }
-            var pubChoice=rebuilt?'':idpConflictChoice(k,loc,row,pubMerged);if(pubChoice==='pending')return;   /* 다시 쓴 문서 통째 고르기는 서버본을 버린다 */
+            var pubChoice=rebuilt?'':idpConflictChoice(k,loc,row,pubMerged);if(pubChoice==='pending')return;
             if(pubChoice==='local')pubMerged={local:loc,cloud:loc};
             if(pubChoice==='server')pubMerged={local:row.v,cloud:row.v};
             if(pubMerged.cloud===row.v){if(pubMerged.local!==loc){if(!roundKvWrite(k,pubMerged.local,writes,loc))return;applied++;}m.h[k]=hash(pubMerged.local);m.c[k]=row.cupd;if(rebuilt)PW.clear(m,k);idpBaseNext[k]=pubMerged.local;return;}
@@ -10869,9 +10868,82 @@ function boardLiveSave(raw,options){
   });
 }
 
+/* 3.080 — 학습 기록(진도 · 카드 · 답)을 계정에 둔다(사용자 «기록도 계정에 저장되게»).
+   작업 보드와 같은 길: 내 개인 공간(personalWid) 의 전용 키 하나를 직접 읽고 쓴다 — 지금 열린 공간이 팀이어도 기록은 사람을 따라간다.
+   저장은 판본 확인(CAS): 읽은 판(raw · cupd)과 서버가 같을 때만 쓴다. 다르면 sync_conflict — learning.html 이 다시 읽어 합친 뒤 한 번 더 쓴다.
+   ⚠ 서버 정책: 개인 공간은 주인 한 사람만 회원이라 ps_can_read_key/ps_can_write_key 가 이 키를 그대로 허락한다(새 마이그레이션 없음). */
+/* 3.080 — 개인 문서 통로(학습 기록 · 개인 게임모델). 작업 보드와 같은 길: 내 개인 공간(personalWid)의 전용 키 하나를 직접 읽고 쓴다 —
+   지금 열린 공간이 팀이어도 기록은 사람을 따라간다. 저장은 판본 확인(CAS): 읽은 판(raw · cupd)과 서버가 같을 때만 쓴다.
+   다르면 sync_conflict — 화면이 다시 읽어 합치거나(학습) 더 새 쪽을 고른 뒤(게임모델) 한 번 더 쓴다.
+   ⚠ 서버 정책: 개인 공간은 주인 한 사람만 회원이라 ps_can_read_key/ps_can_write_key 가 이 키들을 그대로 허락한다(새 마이그레이션 없음). */
+function pdRequire(ctx,cfg){
+  if(!boardLiveCurrent(ctx))throw syncIssue('sync_workspace_changed',cfg.label+'_owner',cfg.name+'의 계정 확인이 바뀌었습니다');
+}
+function pdRaw(raw,cfg){
+  if(typeof raw!=='string'||!raw||raw.length>cfg.max)throw syncIssue('sync_storage',cfg.label+'_shape',cfg.name+' 원문을 확인할 수 없습니다');
+  var doc;try{doc=JSON.parse(raw);}catch(_){throw syncIssue('sync_storage',cfg.label+'_shape',cfg.name+' 원문을 읽을 수 없습니다');}
+  if(!doc||typeof doc!=='object'||Array.isArray(doc)||doc.v!==1||!cfg.ok(doc))throw syncIssue('sync_storage',cfg.label+'_shape',cfg.name+' 형식이 다릅니다');
+  return raw;
+}
+function pdRead(at,ctx,cfg){
+  pdRequire(ctx,cfg);
+  return syncFetch(cfg.label+'_get',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(ctx.wid)+'&k=eq.'+cfg.key+'&select=workspace_id,k,v,cupd&limit=2',{headers:hj(at)}).then(function(r){
+    pdRequire(ctx,cfg);if(!r.ok)throw syncHttpError(cfg.label+'_get',r.status);return r.json();
+  }).then(function(rows){
+    pdRequire(ctx,cfg);
+    if(!Array.isArray(rows)||rows.length>1)throw syncIssue('sync_confirm_missing',cfg.label+'_get',cfg.name+'의 저장 응답을 확인할 수 없습니다');
+    if(!rows.length)return {ok:true,uid:ctx.uid,wid:ctx.wid,raw:null,cupd:null};
+    var r=rows[0];
+    if(!r||r.workspace_id!==ctx.wid||r.k!==cfg.key)throw syncIssue('sync_confirm_missing',cfg.label+'_get','다른 공간의 '+cfg.name+'은(는) 불러오지 않습니다');
+    return {ok:true,uid:ctx.uid,wid:ctx.wid,raw:pdRaw(r.v,cfg),cupd:boardLiveVersion(r.cupd)};
+  });
+}
+function pdGet(cfg){
+  var ctx=boardLiveContext();
+  if(!ctx)return Promise.reject(syncIssue('sync_workspace_changed',cfg.label+'_owner',cfg.name+'을(를) 불러올 계정을 확인할 수 없습니다'));
+  return ensureToken().then(function(at){pdRequire(ctx,cfg);if(!at)throw syncIssue('sync_auth',cfg.label+'_auth',cfg.name+' 로그인을 확인할 수 없습니다');return pdRead(at,ctx,cfg);});
+}
+function pdSave(cfg,raw,options){
+  var ctx=boardLiveContext(),expected;
+  try{
+    pdRequire(ctx,cfg);pdRaw(raw,cfg);
+    if(!options||options.uid!==ctx.uid||options.wid!==ctx.wid||!Object.prototype.hasOwnProperty.call(options,'expected_raw')||!Object.prototype.hasOwnProperty.call(options,'expected_cupd'))throw syncIssue('sync_confirm_missing',cfg.label+'_base',cfg.name+'의 저장 기준을 확인할 수 없습니다');
+    expected={raw:options.expected_raw,cupd:options.expected_cupd};
+    if(expected.raw===null){if(expected.cupd!==null)throw syncIssue('sync_confirm_missing',cfg.label+'_base',cfg.name+'의 빈 저장 기준이 다릅니다');}
+    else{pdRaw(expected.raw,cfg);expected.cupd=boardLiveVersion(expected.cupd);}
+  }catch(e){return Promise.reject(e);}
+  return ensureToken().then(function(at){
+    pdRequire(ctx,cfg);if(!at)throw syncIssue('sync_auth',cfg.label+'_auth',cfg.name+' 로그인을 확인할 수 없습니다');
+    return pdRead(at,ctx,cfg).then(function(current){
+      pdRequire(ctx,cfg);
+      if(current.raw===raw)return current;
+      if(current.raw!==expected.raw||current.cupd!==expected.cupd)throw syncIssue('sync_conflict',cfg.label+'_base','다른 기기에서 '+cfg.name+'이(가) 바뀌었습니다');
+      var row={workspace_id:ctx.wid,k:cfg.key,v:raw,cupd:Math.max(Date.now(),(expected.cupd||0)+1)},ack=null;
+      if(expected.raw===null)row._casMissing=true;else row._casCupd=expected.cupd;
+      return kvPushRows(at,[row],function(rows){if(rows.length===1&&rows[0].v===raw)ack={ok:true,uid:ctx.uid,wid:ctx.wid,raw:raw,cupd:boardLiveVersion(rows[0].cupd)};},cfg.label+'_push',function(){return boardLiveCurrent(ctx);}).then(function(){
+        pdRequire(ctx,cfg);if(!ack)throw syncIssue('sync_confirm_missing',cfg.label+'_push',cfg.name+' 저장 확인이 끝나지 않았습니다');
+        return ack;
+      });
+    });
+  });
+}
+/* 학습 기록 — learning.html(진도 · 카드 · 답) */
+var LEARN_KEY='cs_learn_sync_v1', LEARN_MAXLEN=1500000;
+var LEARN_CFG={key:LEARN_KEY,max:LEARN_MAXLEN,label:'learn',name:'학습 기록',ok:function(d){ return !!d.s&&typeof d.s==='object'&&!Array.isArray(d.s); }};
+function learnGet(){ return pdGet(LEARN_CFG); }
+function learnSave(raw,options){ return pdSave(LEARN_CFG,raw,options); }
+/* 개인 게임모델 — gamemodel.html(보관함 › 게임모델 · 개인 판). 이 기기 사본은 cs_gamemodel_personal_v1 그대로, 서버엔 같은 이름의 키 하나.
+   문서 = {v:1, at:마지막 편집 시각, m:게임모델}. 두 기기가 엇갈리면 at 이 더 새 쪽(빈 판은 늘 진다) — gamemodel.html gmPdPull */
+var GMP_KEY='cs_gamemodel_personal_v1';
+var GMP_CFG={key:GMP_KEY,max:(typeof PERSONAL_MAXLEN==='number'?PERSONAL_MAXLEN:12000000),label:'gm_personal',name:'개인 게임모델',ok:function(d){ return typeof d.at==='number'&&!!d.m&&typeof d.m==='object'&&Array.isArray(d.m.moments); }};
+function gmPersonalGet(){ return pdGet(GMP_CFG); }
+function gmPersonalSave(raw,options){ return pdSave(GMP_CFG,raw,options); }
+
 window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dataUnlocked:dataUnlocked,keys:KEYS,state:syncState,   /* 2.625 상태 한 줄 */
   reportSharedView:reportSharedView,
   boardLive:{version:2,scope:'personal',owner:boardLiveContext,get:boardLiveGet,save:boardLiveSave},
+  learn:{version:1,key:LEARN_KEY,owner:boardLiveContext,get:learnGet,save:learnSave},   /* 3.080 — 학습 기록(learning.html) */
+  gmPersonal:{version:1,key:GMP_KEY,owner:boardLiveContext,get:gmPersonalGet,save:gmPersonalSave},   /* 3.080 — 개인 게임모델(gamemodel.html scope=personal) */
   /* 3.038 — 선수 본인의 «코치 확인» 몸 상태만(서버 ps_idp_daily_mine). 선수에게 cs_idp_daily_v1 전체는 내려가지 않는다(PLAYER_BLIND · 20261015 마이그레이션) */
   idpDailyMine:function(){ var w=activeWs(); if(!w)return Promise.resolve(null); return rpc('ps_idp_daily_mine',{wid:w}).then(function(o){ return o&&o.v===1&&o.days&&typeof o.days==='object'?o:null; }); },
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */
