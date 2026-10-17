@@ -31,7 +31,7 @@ function harness(){
     _fillTr:()=>tr,curTr:()=>tr,dayBoard:d=>d.board,
     schedDayGrp:i=>days[i].grp,schedGroups:()=>['A팀','B팀'],
     wksSlotLabel:t=>t.slot,wksTopicsOf:()=>[],wksTopicOpts:()=>[],wksSesMinutes:()=>0,wksEndTime:()=>'',
-    wkbdEsc:F.esc,_fillEsc:F.esc,_fillFree:()=>'',_fillList:()=>[],_fillChips:()=>'',bMap:()=>[],trainChipMerge:()=>[],
+    wkbdEsc:F.esc,_fillEsc:F.esc,rpeWord:n=>String(n),_fillFree:()=>'',_fillList:()=>[],_fillChips:()=>'',bMap:()=>[],trainChipMerge:()=>[],
     trMinutes:()=>0,endTime:()=>'',blockCard:()=>'',sessMetaHTML:()=>'',sessIntroHTML:()=>'',sessReviewHTML:()=>'',
     renderDrillShelf(){},bindAimsInput(){},bindTimePlayers(){},save(){writes.push(['save']);throw Error('must not save');},
   };c.window=c;
