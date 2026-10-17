@@ -5063,7 +5063,8 @@ function _lookLegacy(){
 }
 /* 얼리기는 «쓰기»에서만 — 읽기(부팅·보드 열기)는 저장소를 바꾸지 않는다(board-pitch-presets 테스트의 약속).
    이 판부터 작전판은 옛 기기 키를 안 쓰므로, 처음 설정을 바꾸는 순간 한 번 적어 두면 충분하다. */
-function _lookFreeze(){ try{ if(localStorage.getItem("cs_board_lookdef_v1")==null)localStorage.setItem("cs_board_lookdef_v1",JSON.stringify(_lookLegacy())); }catch(_){} }
+function _lookFreeze(){ try{ if(typeof communityBoardReadOnly==="function"&&communityBoardReadOnly())return;   /* 3.088 — 보기 전용 판은 기기 값을 얼리지 않는다 */
+  if(localStorage.getItem("cs_board_lookdef_v1")==null)localStorage.setItem("cs_board_lookdef_v1",JSON.stringify(_lookLegacy())); }catch(_){} }
 function _lookDefSnap(){ var raw=null; try{ raw=localStorage.getItem("cs_board_default_v1"); }catch(_){}
   if(raw!==_lookDefSnap._raw){ _lookDefSnap._raw=raw; _lookDefSnap._v=null; try{ var d=raw?JSON.parse(raw):null; _lookDefSnap._v=(d&&(d.snap||d))||null; }catch(_){} }
   return _lookDefSnap._v; }
