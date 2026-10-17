@@ -8,6 +8,7 @@
 <script src="session-focus.js"></script>
 <link rel="stylesheet" href="daily-effort.css">
 <script src="review-training-schedule.js"></script>
+<script src="year-plan.js"></script><!-- 3.073 — 연간 PDF(돌아보기 · 계획) · 시즌 계획 카드 -->
 <link rel="stylesheet" href="review-training.css">
 <script src="learn-model.js"></script><!-- 2.108 — 학습모델 카테고리 사전(고정 id). 블록이 어느 카테고리를 다뤘는지 여기에 건다 -->
 
@@ -785,81 +786,6 @@
   #printDoc .pfill{flex:1 1 auto;min-height:6mm;background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(7mm - 1px),#DDE1E5 calc(7mm - 1px),#DDE1E5 7mm)}
   #printDoc.pl-day .pfill{background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(9.5mm - 1px),#DDE1E5 calc(9.5mm - 1px),#DDE1E5 9.5mm)}
   #printDoc .pmemo{margin-top:22px;break-inside:avoid;flex:1;display:flex;flex-direction:column;min-height:0}
-  /* ---------- PRINT: 연간 1장 (pl-year) — 3.072 ----------
-     글자는 tokens.css 7단(var(--t-*), 인쇄 문서엔 tokens.css 가 없어 같은 값을 대체값으로) · 색은 주간 보드 PDF 와 같은 칸.
-     A4 가로 · 머리(제목·해 / 합계·팀) → 왼쪽 12개월 달력(4×3, 칸 색 = 경기·훈련 강도·휴식) · 오른쪽 요약·월별 막대·주제·경기 → 범례 → 바닥글 */
-  #printDoc.pl-year .ponepage{height:186mm}
-  #printDoc.pl-year .pyr-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-bottom:7px;border-bottom:2px solid #14161A;margin-bottom:10px;flex:0 0 auto}
-  #printDoc.pl-year .pyr-title{display:flex;align-items:baseline;gap:12px}
-  #printDoc.pl-year .pyr-title b{font-size:var(--t-7,20px);font-weight:800;letter-spacing:-.02em;color:#14161A;line-height:1.1}
-  #printDoc.pl-year .pyr-title span{font-size:var(--t-4,13px);color:#646A73;font-weight:600}
-  #printDoc.pl-year .pyr-right{display:flex;align-items:center;gap:16px}
-  #printDoc.pl-year .pyr-tot{font-size:var(--t-3,12px);color:#646A73;font-weight:600;font-variant-numeric:tabular-nums}
-  #printDoc.pl-year .pyr-team{display:flex;align-items:center;gap:8px}
-  #printDoc.pl-year .pyr-team img{height:30px;max-width:56px;object-fit:contain}
-  #printDoc.pl-year .pyr-team span{font-size:var(--t-4,13px);font-weight:800;color:#14161A}
-  #printDoc.pl-year .pyr-body{flex:1 1 auto;min-height:0;display:flex;gap:16px}
-  #printDoc.pl-year .pyr-grid{flex:1 1 0;min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:8px 14px}
-  #printDoc.pl-year .pyr-m{min-width:0;display:flex;flex-direction:column}
-  #printDoc.pl-year .pyr-mh{display:flex;align-items:baseline;justify-content:space-between;gap:6px;border-bottom:1px solid #DBDEE2;padding-bottom:2px;margin-bottom:3px}
-  #printDoc.pl-year .pyr-mh b{font-size:var(--t-5,14px);font-weight:800;color:#14161A;letter-spacing:-.01em}
-  #printDoc.pl-year .pyr-mh span{font-size:var(--t-1,10px);color:#646A73;font-weight:600;white-space:nowrap}
-  #printDoc.pl-year .pyr-cal{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:12px repeat(6,minmax(0,1fr));gap:2px}   /* 여섯 줄 고정 — 달마다 같은 높이 */
-  #printDoc.pl-year .pyr-cal i{font-style:normal;display:flex;align-items:center;justify-content:center;font-size:var(--t-1,10px);line-height:1;border-radius:3px;color:#5A6068;font-weight:600;font-variant-numeric:tabular-nums}
-  #printDoc.pl-year .pyr-cal i.w{font-size:var(--t-1,10px);color:#A2A8AE;font-weight:700}
-  #printDoc.pl-year .pyr-cal i.we{color:#A2A8AE}
-  #printDoc.pl-year .pyr-cal i.g{background:#C24A46;color:#fff;font-weight:800}
-  #printDoc.pl-year .pyr-cal i.tl{background:#E4F3EB;color:#1F5E40;font-weight:700}
-  #printDoc.pl-year .pyr-cal i.tm{background:#E7EDFD;color:#23408F;font-weight:700}
-  #printDoc.pl-year .pyr-cal i.th{background:#FBEBDA;color:#7A4412;font-weight:700}
-  #printDoc.pl-year .pyr-cal i.tu{background:#E9ECEF;color:#3F454D;font-weight:700}
-  #printDoc.pl-year .pyr-cal i.o{background:repeating-linear-gradient(135deg,#E3E6EA 0 2px,#fff 2px 4px);color:#A2A8AE}
-  #printDoc.pl-year .pyr-top{flex:0 0 auto;padding-top:3px;font-size:var(--t-1,10px);color:#646A73;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #printDoc.pl-year .pyr-side{flex:0 0 300px;min-width:0;display:flex;flex-direction:column;border-left:1px solid #E3E6EA;padding-left:16px}
-  #printDoc.pl-year .pyr-side h4{font-size:var(--t-3,12px);font-weight:800;color:#14161A;margin:12px 0 6px;flex:0 0 auto}
-  #printDoc.pl-year .pyr-side h4:first-child{margin-top:0}
-  #printDoc.pl-year .pyr-side h4 em{font-style:normal;font-size:var(--t-1,10px);color:#8A9099;font-weight:600;margin-left:4px}
-  #printDoc.pl-year .pyr-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;flex:0 0 auto}
-  #printDoc.pl-year .pyr-st{border:1px solid #E2E5E8;border-radius:8px;padding:6px 8px}
-  #printDoc.pl-year .pyr-st.tr{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px}
-  #printDoc.pl-year .pyr-st b{display:block;font-size:var(--t-7,20px);font-weight:700;letter-spacing:-.02em;line-height:1.1;color:#14161A;font-variant-numeric:tabular-nums}
-  #printDoc.pl-year .pyr-st.tr b{display:inline}
-  #printDoc.pl-year .pyr-st.g b{color:#C24A46}
-  #printDoc.pl-year .pyr-st b small{font-size:var(--t-2,11px);font-weight:600;color:#646A73;margin-left:1px}
-  #printDoc.pl-year .pyr-st span{font-size:var(--t-1,10px);color:#646A73;font-weight:600}
-  #printDoc.pl-year .pyr-st em{flex:1 0 100%;font-style:normal;font-size:var(--t-1,10px);color:#3F454D;font-weight:600;margin-top:3px;display:flex;align-items:center;gap:3px 5px;flex-wrap:wrap}
-  #printDoc.pl-year .pyr-st em i,#printDoc.pl-year .pyr-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-left:4px}
-  #printDoc.pl-year .pyr-st em i:first-child{margin-left:0}
-  #printDoc.pl-year i.l,#printDoc.pl-year .pyr-legend i.tl{background:#2E9D6A}
-  #printDoc.pl-year i.m,#printDoc.pl-year .pyr-legend i.tm{background:#3A6DF0}
-  #printDoc.pl-year i.h,#printDoc.pl-year .pyr-legend i.th{background:#D9822B}
-  #printDoc.pl-year i.u,#printDoc.pl-year .pyr-legend i.tu{background:#C2C7CF}
-  #printDoc.pl-year .pyr-legend i.g{background:#C24A46}
-  #printDoc.pl-year .pyr-legend i.o{background:repeating-linear-gradient(135deg,#C2C7CF 0 2px,#fff 2px 4px);border:1px solid #C2C7CF}
-  #printDoc.pl-year .pyr-bars{display:flex;align-items:stretch;gap:5px;height:84px;flex:0 0 auto}
-  #printDoc.pl-year .pyr-bc{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
-  #printDoc.pl-year .pyr-bg{font-size:var(--t-1,10px);line-height:11px;height:11px;color:#C24A46;font-weight:800;white-space:nowrap}
-  #printDoc.pl-year .pyr-bar{flex:1 1 auto;width:70%;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;border-bottom:1px solid #C2C7CF}
-  #printDoc.pl-year .pyr-bar i{display:block;width:100%;border-radius:2px 2px 0 0;min-height:2px}
-  #printDoc.pl-year .pyr-bv{font-size:var(--t-1,10px);line-height:11px;color:#3F454D;font-weight:700;font-variant-numeric:tabular-nums}
-  #printDoc.pl-year .pyr-bl{font-size:var(--t-1,10px);line-height:10px;color:#8A9099;font-weight:600}
-  #printDoc.pl-year .pyr-dist{gap:5px;flex:0 0 auto}
-  #printDoc.pl-year .pyr-dist .pdrow{gap:8px}
-  #printDoc.pl-year .pyr-dist .pdrow:nth-child(n+6){display:none}   /* 상위 다섯 주제만 — 한 장 고정 */
-  #printDoc.pl-year .pyr-dist .pdrow .k{font-size:var(--t-1,10px);width:70px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #printDoc.pl-year .pyr-dist .pdrow .track{height:6px}
-  #printDoc.pl-year .pyr-dist .pdrow .v{font-size:var(--t-1,10px)}
-  #printDoc.pl-year .pyr-ml{list-style:none;margin:0;padding:0;flex:1 1 auto;min-height:0;overflow:hidden}
-  #printDoc.pl-year .pyr-ml li{display:flex;align-items:baseline;gap:8px;font-size:var(--t-1,10px);line-height:1.35;padding:2px 0;border-bottom:1px dotted #E3E6EA}
-  #printDoc.pl-year .pyr-ml li b{flex:0 0 52px;color:#C24A46;font-weight:800;font-variant-numeric:tabular-nums}
-  #printDoc.pl-year .pyr-ml li.f b{color:#8A4B47}
-  #printDoc.pl-year .pyr-ml li span{flex:1 1 auto;min-width:0;color:#14161A;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #printDoc.pl-year .pyr-ml li em{flex:0 0 auto;font-style:normal;font-size:var(--t-1,10px);color:#646A73;font-weight:600}
-  #printDoc.pl-year .pyr-ml li.more,#printDoc.pl-year .pyr-ml li.none{color:#8A9099;font-weight:600;border-bottom:0}
-  #printDoc.pl-year .pyr-legend{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;font-size:var(--t-1,10px);color:#646A73;font-weight:500;margin-top:8px;flex:0 0 auto}
-  #printDoc.pl-year .pyr-legend i{margin:0 4px 0 0;vertical-align:-1px}
-  #printDoc.pl-year .pyr-legend .note{margin-left:auto;color:#8A9099}
-  #printDoc.pl-year footer{margin-top:8px}
   /* ---------- PRINT: 주간 보드 1장 (pl-weekboard) — 2.910 분량 블록(사용자 목업 A안) ----------
      A4 가로 · 머리(제목·기간 / 합계·팀) → 요일 7칸(세션을 시각 순으로 쌓고, 훈련 하나 = 블록 하나, 블록 높이 = 시간)
      → 범례 → 주제 배분 · 요일별 부하 · 합계 → 바닥글. 블록 배율은 .pwb 의 --pm(1분당 px). */
@@ -1481,7 +1407,8 @@ body.fmdark .del,body.fmdark .brem:active,body.fmdark .wkx:active,body.fmdark .h
           <div class="stack" id="yearMixStack"></div>
           <div class="legend" id="yearMixLegend"></div>
         </div>
-        <div class="actionbar"><button class="btn solid" onclick="exportPDF('year')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>연간 PDF</button></div>   <!-- 3.072 -->
+        <div class="mixcard sumcard sp-card" id="spCard"></div>   <!-- 3.073 — 시즌 계획 -->
+        <div class="actionbar"><button class="btn" onclick="exportPDF('yearReview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>돌아보기 PDF</button><button class="btn solid" onclick="exportPDF('yearPlan')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>계획 PDF</button></div>   <!-- 3.073 — 한 해 했던 것 · 할 것 -->
       </div>
       <button type="button" class="schedule-fab" onclick="openSelectedDayQuick()" aria-label="선택한 날짜에 일정 추가"><span style="font-size:20px;line-height:1">＋</span> 일정 추가</button>
     </section>
@@ -2830,6 +2757,8 @@ let ddayLabel='';
 /* 사진은 IndexedDB 에 있고 본문에는 참조만 있다. 아직 안 옮긴 원본도 그대로 통과시킨다. */
 function __psImgSrc(v){ try{ return window.PSImg.src(v); }catch(_){ return v||''; } }
 const STORE_KEY='process_coach_v1';
+var seasonPlan={};   /* 3.073 — 시즌 계획(일정 문서 최상위 seasonPlan). var — 부팅 때 loadState 가 먼저 돌 수 있다. 읽고 쓰는 곳은 year-plan.js */
+
 var __procFirst=false;try{__procFirst=!localStorage.getItem(STORE_KEY);}catch(_){}
 var __hist=[], __undoing=false;
 /* 일정 편집 중 도착한 팀 판본은 화면에 즉시 덮지 않는다. */
@@ -3048,7 +2977,7 @@ function saveNow(){
         try{ localStorage.setItem('ps_grpweeks_stash_v1', window.storage?'idb':'ls'); }catch(_){} } }catch(_){}
     /* 2.601 — 기존 문서의 썸네일도 같은 다이어트(작전판 2.601 과 같은 규칙: data: <image> 제거 · 소수점 둘째 자리). thumb 는 그림 캐시일 뿐이라 제자리에서 줄여도 된다. */
     try{ schedThumbDiet(__schedBase||weeksMap); }catch(_){}
-    const data={weeks:(__schedBase||weeksMap), grpWeeks:__gw, templates:myTemplates, dday: dn?(parseInt(dn.value)||28):28, ddayLabel:ddayLabel,
+    const data={weeks:(__schedBase||weeksMap), grpWeeks:__gw, templates:myTemplates, dday: dn?(parseInt(dn.value)||28):28, ddayLabel:ddayLabel, seasonPlan:seasonPlan,
       anchorMonday:`${__ANCHOR.getFullYear()}-${String(__ANCHOR.getMonth()+1).padStart(2,'0')}-${String(__ANCHOR.getDate()).padStart(2,'0')}`,
       scheduleRev:currentScheduleRev,
       /* 누가 마지막으로 만졌는지 — 팀 일정 화면의 '마지막 수정' 표시용(1.482) */
@@ -3120,6 +3049,7 @@ function loadState(opt){
     const dn=document.getElementById('dayN');
     if(data.dday && dn){ dn.value=data.dday; if(typeof fitDayNum==='function') fitDayNum(); }
     if(typeof data.ddayLabel==='string') ddayLabel=data.ddayLabel;
+    seasonPlan=(data.seasonPlan&&typeof data.seasonPlan==='object'&&!Array.isArray(data.seasonPlan))?data.seasonPlan:{};   /* 3.073 — 시즌 계획(없으면 빈 것: 지운 것도 따라온다) */
     __schedSavedRaw=raw;
     saveCursor();
   }catch(e){}
@@ -7159,6 +7089,7 @@ function renderYear(){
   renderTopicMix(document.getElementById('yearMixStack'), document.getElementById('yearMixLegend'), daysTopicCount(yearDaysList()));
 
   renderYearActivitySummary(yearActivityStats());
+  try{ renderSeasonPlan(); }catch(_){}   /* 3.073 */
   /* 1.675 — 날짜 셀을 누르면 그 날짜가 채워진 빠른 추가가 바로 열린다(사용자 요청:
      상단 '＋ 일정 추가' 버튼 제거). 월 이름·여백을 누르면 예전처럼 월간으로 이동.
      바인딩은 그리드에 1회 위임 — innerHTML 재렌더마다 카드별로 다시 묶지 않는다. */
@@ -8021,80 +7952,6 @@ function monthDocHTML(){
   return `<div class="ponepage">`+pHeader(monthLabel()+pGrpTag(),'월간 일정',{noNext:true,right:right})+
     `<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin-top:6px"><table style="width:100%;height:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`+legend+pFooter()+`</div>`;
 }
-/* ══ 3.072 · 연간 PDF — 한 해를 A4 가로 한 장에(사용자 «년간 PDF부터 만들어줘») ═══════════════════
-   왼쪽: 12개월 달력(4×3). 칸 색 = 그 날 — 경기 빨강 · 훈련은 강도 세 칸(저 초록 · 중 파랑 · 고 주황, 미입력 회색) · 휴식 빗금.
-   달 머리에 그 달 훈련·경기 수와 가장 많이 고른 주제. 오른쪽: 올해 요약(화면 «올해 요약»과 같은 숫자 activityStatsForDates) →
-   월별 훈련일 막대(강도로 쌓음, 위에 경기 수) → 주제 배분 → 경기 목록(추가 경기 포함, 넘치면 «외 n»).
-   강도 경계는 화면 연간 요약과 같다(≤3 저 · ≤6 중 · 7+ 고) — 같은 해를 화면과 종이가 다르게 말하지 않게.
-   일정은 읽기만 한다. 지금 보기(조)를 따른다(schedViewDay). 빈 양식은 없다. */
-function yearDocHTML(){
-  const E=wkbdEsc, Y=yearAnchor;
-  const t=(typeof teamGet==='function'&&teamGet())||{};
-  const teamMark=t.logo?`<img src="${__psImgSrc(t.logo)}" alt="">${t.name?`<span>${E(t.name)}</span>`:''}`:(t.name?`<span>${E(t.name)}</span>`:'');
-  const kindOfRpe=r=>r===null?'u':(r<=3?'l':(r<=6?'m':'h'));
-  const months=[], matches=[], allDates=[];
-  for(let m=0;m<12;m++){
-    const dim=new Date(Y,m+1,0).getDate(), lead=(new Date(Y,m,1).getDay()+6)%7;   /* 월요일 시작 — 화면 연간과 같다 */
-    const mo={m:m,lead:lead,cells:[],tr:0,g:0,raw:[],bars:{l:0,m:0,h:0,u:0}};
-    for(let d=1;d<=dim;d++){
-      const dt=new Date(Y,m,d); allDates.push(dt);
-      const n=offsetOfDate(dt), r=Math.floor(n/7), col=((n%7)+7)%7;
-      const raw=weeksMap[r]&&weeksMap[r][col], day=schedViewDay(raw);
-      if(raw)mo.raw.push(raw);
-      let k=yearDayKind(day), c='';
-      if(k==='g'){
-        c='g'; mo.g++;
-        const add=mxExtraList(day);
-        mo.g+=add.length;
-        let mk='official'; try{ mk=mMatchKind(day); }catch(_){}
-        matches.push({dt:dt,opp:String((day.match&&day.match.opp)||(day.board&&day.board.opp)||'').trim()||'상대 미정',time:String((day.match&&day.match.time)||'').trim(),kind:mk});
-        add.forEach(x=>{ const L=mxExtraLabel(x); matches.push({dt:dt,opp:L.o,time:L.t,kind:L.friendly?'friendly':'official'}); });
-      } else if(k==='o') c='o';
-      else if(k==='t'){ const q=kindOfRpe(yearDayTrainingRpe(day)); c='t'+q; mo.tr++; mo.bars[q]++; }
-      mo.cells.push({d:d,c:c,we:col>=5});
-    }
-    try{ const mix=daysTopicCount(mo.raw); const top=mix.order.map(x=>[x,mix.b[x]||0]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1])[0]; mo.top=top?top[0]:''; }catch(_){ mo.top=''; }
-    months.push(mo);
-  }
-  const st=activityStatsForDates(allDates);
-  /* ── 12개월 달력 ── */
-  const wd=WDAYS.map((w,i)=>`<i class="w${i>=5?' we':''}">${w}</i>`).join('');
-  const cal=months.map(mo=>{
-    const cells='<i class="e"></i>'.repeat(mo.lead)+mo.cells.map(x=>`<i class="${x.c}${x.we&&!x.c?' we':''}">${x.d}</i>`).join('');
-    const meta=[mo.tr?`훈련 ${mo.tr}`:'',mo.g?`경기 ${mo.g}`:''].filter(Boolean).join(' · ');
-    return `<div class="pyr-m"><div class="pyr-mh"><b>${mo.m+1}월</b><span>${meta||'—'}</span></div>`
-      +`<div class="pyr-cal">${wd}${cells}</div>`
-      +`<div class="pyr-top">${mo.top?'주제 · '+E(mo.top):'&nbsp;'}</div></div>`;
-  }).join('');
-  /* ── 올해 요약 ── */
-  const sum=`<div class="pyr-stats">`
-    +`<div class="pyr-st tr"><b>${st.trainingDays}<small>일</small></b><span>훈련일</span>`
-      +`<em><i class="l"></i>저 ${st.lowIntensityDays}<i class="m"></i>중 ${st.midIntensityDays}<i class="h"></i>고 ${st.highIntensityDays}${st.unratedTrainingDays?`<i class="u"></i>미입력 ${st.unratedTrainingDays}`:''}</em></div>`
-    +`<div class="pyr-st"><b>${st.restDays}<small>일</small></b><span>휴식일</span></div>`
-    +`<div class="pyr-st g"><b>${st.matchesOfficial}<small>회</small></b><span>정식경기</span></div>`
-    +`<div class="pyr-st"><b>${st.matchesFriendly}<small>회</small></b><span>친선경기</span></div></div>`;
-  /* ── 월별 훈련일 막대 ── */
-  const bmax=Math.max(1,...months.map(mo=>mo.tr));
-  const bars=months.map(mo=>{
-    const seg=['h','m','l','u'].map(q=>mo.bars[q]?`<i class="${q}" style="height:${mo.bars[q]/bmax*100}%"></i>`:'').join('');
-    return `<div class="pyr-bc"><span class="pyr-bg">${mo.g?'●'+mo.g:''}</span><div class="pyr-bar">${seg}</div><span class="pyr-bv">${mo.tr||''}</span><span class="pyr-bl">${mo.m+1}</span></div>`;
-  }).join('');
-  /* ── 경기 목록 ── */
-  const CAP=12, shown=matches.length>CAP?matches.slice(0,CAP-1):matches;
-  const mlist=matches.length
-    ? shown.map(x=>`<li class="${x.kind==='friendly'?'f':''}"><b>${x.dt.getMonth()+1}.${x.dt.getDate()} ${WDAYS[(x.dt.getDay()+6)%7]}</b><span>${E(x.opp)}</span><em>${E([x.time,M_KIND_LB[x.kind]||''].filter(Boolean).join(' · '))}</em></li>`).join('')
-      +(matches.length>CAP?`<li class="more">외 ${matches.length-shown.length}경기</li>`:'')
-    : '<li class="none">올해 등록한 경기가 없어요</li>';
-  const right=[`훈련 ${st.trainingDays}일`,`휴식 ${st.restDays}일`,`경기 ${matches.length}`].join(' · ');
-  const head=`<div class="pyr-head"><div class="pyr-title"><b>연간 일정</b><span>${Y}년${pGrpTag()}</span></div>`
-    +`<div class="pyr-right"><span class="pyr-tot">${right}</span>${teamMark?`<span class="pyr-team">${teamMark}</span>`:''}</div></div>`;
-  const legend=`<div class="pyr-legend"><span><i class="g"></i>경기</span><span><i class="tl"></i>훈련 · 저강도 (RPE ≤3)</span><span><i class="tm"></i>중 (4–6)</span><span><i class="th"></i>고 (7+)</span><span><i class="tu"></i>강도 미입력</span><span><i class="o"></i>휴식</span><span class="note">달 아래 «주제» = 그 달 가장 많이 고른 주제</span></div>`;
-  return `<div class="ponepage">${head}<div class="pyr-body"><div class="pyr-grid">${cal}</div>`
-    +`<div class="pyr-side"><h4>올해 요약</h4>${sum}`
-    +`<h4>월별 훈련일 <em>강도별 · 위 ● = 경기 수</em></h4><div class="pyr-bars">${bars}</div>`
-    +`<h4>주제 배분 <em>세션에 고른 주제 기준</em></h4><div class="pdist pyr-dist">${pTopicRows(daysTopicCount(yearDaysList()))}</div>`
-    +`<h4>경기 일정</h4><ul class="pyr-ml">${mlist}</ul></div></div>${legend}${pFooter()}</div>`;
-}
 function reviewDocHTML(){
   const st=reviewStats();
   let wkbars=''; const dmax=Math.max(1,...st.perDay.map(x=>x.load));
@@ -8113,7 +7970,7 @@ function reviewDocHTML(){
 function __buildPrintDoc(kind, blank){
   kind=kind||'week';
   if(blank && kind==='today') kind='day';           // 빈 양식은 오늘 날짜 스왑 불필요 (상태 미접근)
-  if(kind==='review'||kind==='season'||kind==='weekboard'||kind==='year') blank=false; // 리포트·보드엔 빈 양식 없음
+  if(kind==='review'||kind==='season'||kind==='weekboard'||kind==='yearReview'||kind==='yearPlan') blank=false; // 리포트·보드엔 빈 양식 없음
   __pBlank=!!blank;
   let html, fname, cls=kind;
   try{
@@ -8137,7 +7994,8 @@ function __buildPrintDoc(kind, blank){
     else if(kind==='season'){ html=seasonDocHTML(); fname='process_시즌'; }
     else if(kind==='day'){ html=dayDocHTML(); fname='process_일간'; }
     else if(kind==='month'){ html=monthDocHTML(); fname='process_월간'; }
-    else if(kind==='year'){ html=yearDocHTML(); fname='process_연간'; }   /* 3.072 */
+    else if(kind==='yearReview'){ html=yearDocHTML('review'); fname='process_연간_돌아보기'; cls='year'; }   /* 3.073 */
+    else if(kind==='yearPlan'){ html=yearDocHTML('plan'); fname='process_연간_계획'; cls='year'; }
     else if(kind==='weekboard'){ html=weekBoardDocHTML(); fname='process_주간보드'; }
     else { html=weekBoardDocHTML(); fname='process_주간'; cls='weekboard'; }   /* 2.911 — 목록 보기 주간·주간 빈 양식도 분량 블록 */
   } finally {
