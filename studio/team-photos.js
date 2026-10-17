@@ -46,12 +46,17 @@ function commit(w,teamId,edits,keep){
  return run();
 }
 /* 고른 그림을 가운데 정사각형으로 잘라 작게(192px JPEG) — 화면마다 PSImg 가 사진을 모두 메모리에 올리므로 작게 둔다. 투명한 곳은 흰색 */
+/* blob 주소로 못 읽으면(CI 웹킷에서 고른 파일이 «이미지를 읽지 못했습니다») FileReader 로 한 번 더. 둘 다 안 되면 까닭을 detail 에 */
 function square(file,doc){
  doc=doc||document;
- return new Promise(function(res,rej){var url=URL.createObjectURL(file),img=new Image();
-  img.onload=function(){try{var s=Math.min(img.naturalWidth,img.naturalHeight);if(!s)throw Error('empty');var c=doc.createElement('canvas');c.width=c.height=SIZE;var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,SIZE,SIZE);
-   g.drawImage(img,(img.naturalWidth-s)/2,(img.naturalHeight-s)/2,s,s,0,0,SIZE,SIZE);res(c.toDataURL('image/jpeg',0.82));}catch(e){rej(e);}finally{URL.revokeObjectURL(url);}};
-  img.onerror=function(){URL.revokeObjectURL(url);rej(Error('이미지를 읽지 못했습니다.'));};img.src=url;});
+ function draw(img){var w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,s=Math.min(w,h);if(!s)throw Error('empty');var c=doc.createElement('canvas');c.width=c.height=SIZE;var g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,SIZE,SIZE);
+  g.drawImage(img,(w-s)/2,(h-s)/2,s,s,0,0,SIZE,SIZE);return c.toDataURL('image/jpeg',0.82);}
+ function load(src){return new Promise(function(res,rej){var img=new Image();img.onload=function(){try{res(draw(img));}catch(e){rej(e);}};img.onerror=function(){rej(Error('decode'));};img.src=src;});}
+ function viaUrl(){var url;try{url=URL.createObjectURL(file);}catch(e){return Promise.reject(e);}
+  return load(url).then(function(v){URL.revokeObjectURL(url);return v;},function(e){URL.revokeObjectURL(url);throw e;});}
+ function viaReader(){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(String(r.result||''));};r.onerror=function(){rej(r.error||Error('read'));};r.readAsDataURL(file);}).then(load);}
+ function why(e){return String((e&&(e.name&&e.name!=='Error'?e.name+': ':'')+(e.message||''))||e).slice(0,80);}
+ return viaUrl().catch(function(e1){return viaReader().catch(function(e2){var e=Error('이미지를 읽지 못했습니다.');e.detail='url '+why(e1)+' · reader '+why(e2);throw e;});});
 }
 return {key:KEY,size:SIZE,parse:parse,apply:apply,read:read,images:images,forLoad:forLoad,commit:commit,square:square};
 });

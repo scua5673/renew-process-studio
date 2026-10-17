@@ -79,7 +79,7 @@ try{
   await chooser.setFiles({name:'gk.png',mimeType:'image/png',buffer:Buffer.from(PNG,'base64')});
   /* 사진이 안 나타나면 왜인지(안내 줄 · 고른 칸 · 모듈) 메시지에 싣는다 — 파일을 올리는 브라우저 시험은 이것 하나라 웹킷에서 처음 돈다 */
   await a.waitForFunction(()=>document.querySelector('#playerRows .row:nth-child(1) .ph img'),null,{timeout:15000}).catch(async e=>{
-    const d=await a.evaluate(()=>({status:document.getElementById('status').textContent,files:(document.getElementById('photoFile').files||[]).length,mod:!!window.PSTeamPhotos,ph:document.querySelector('#playerRows .row:nth-child(1) .ph').outerHTML.slice(0,160)})).catch(x=>({diagErr:String(x)}));
+    const d=await a.evaluate(()=>({status:document.getElementById('status').textContent,err:document.getElementById('status').getAttribute('data-err'),files:(document.getElementById('photoFile').files||[]).length,mod:!!window.PSTeamPhotos,ph:document.querySelector('#playerRows .row:nth-child(1) .ph').outerHTML.slice(0,160)})).catch(x=>({diagErr:String(x)}));
     throw new Error('선수 사진이 줄에 나타나지 않았다 '+JSON.stringify(d)+' · '+e.message);});
   assert.match(await a.getAttribute('#playerRows .row:nth-child(1) .ph','aria-label'),/사진 바꾸기/);
   assert.ok(await a.evaluate(()=>document.querySelector('.photo-hint').textContent.includes('이 기기에만')),'기기마다 따로라는 안내');
