@@ -512,6 +512,10 @@ body.fmdark .apphd-seg button{color:#A9AFB8!important}
 body.fmdark .apphd-seg button.on{background:rgba(127,152,208,.16)!important;color:#AFC3FF!important;box-shadow:none!important}   /* 1.677 — 다크 선택탭 3파일 동일 조합 */
 body.fmdark .apphd-iconbtn{background:rgba(0,0,0,.25)!important;color:#A9AFB8!important;border-color:#2E333A!important}
 /*ENDFMDARK*/
+  /* 3.080 — 단계 카드: 이 단계로 훈련 만들기 */
+  .gm-mkdrill{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .gm-mkdrill-b{border:1px solid var(--line,#e2e4e8);background:transparent;border-radius:8px;padding:6px 10px;font:inherit;font-size:var(--t-3);font-weight:700;cursor:pointer;color:inherit}
+  .gm-mkdrill-n{font-size:var(--t-3);color:var(--text-3,#8a9099)}
 </style>
 <style>
 /* ===== UNIFIED APP HEADER — shared pattern across sub-apps ===== */
@@ -929,7 +933,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
          ⚠ 진행률·단계 안내도 함께 뺐다. 몇 걸음 왔는지 세는 것은 감독관의 말이지 작업대의 말이 아니다.
          ⚠ 걷어낸 것은 **화면**이다. 저장 자료·마법사 코드는 그대로 둔다(되돌릴 일이 생기면 필요하다). -->
     <div class="gm-toline">
-      <span>만드는 법은 <b>학습 › 게임모델 만드는 법</b>에 있어요</span>
+      <span>만드는 법은 <b>학습 › 스튜디오로 배우는 코칭</b>에 있어요</span>
       <button type="button" class="gm-tolearn" id="gmToLearn">학습에서 보기 ›</button>
     </div>
 
@@ -1207,12 +1211,64 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
 
   function save(){
     try{
+      if(GM_PERSONAL)model._at=Date.now();   /* 3.080 — 개인 판은 계정에 저장한다(gmPdPush) — 마지막 편집 시각으로 두 기기 중 새 쪽을 고른다 */
       var raw=JSON.stringify(model);
       if(window.psSaveShared){if(!window.psSaveShared(LS,raw))throw new Error('게임모델 저장 실패');}
       else {localStorage.setItem(LS,raw);if(localStorage.getItem(LS)!==raw)throw new Error('게임모델 저장 실패');}
       if(window.PSStorage&&PSStorage.sharedReady)PSStorage.sharedReady(LS).catch(gmSaveError);
+      if(GM_PERSONAL)gmPdSchedule();
       return true;
     }catch(e){gmSaveError(e);return false;}
+  }
+  /* ══ 3.080 · 개인 게임모델을 계정에(사용자 «개인 게임모델도 계정에 저장되게») ═══════════════════════════
+     셸 PSSync.gmPersonal — 내 개인 공간의 키 하나(sync.js pdGet/pdSave, 판본 확인). 이 기기 사본(cs_gamemodel_personal_v1)은 그대로 쓴다.
+     열 때 · 다시 보일 때 받아서 더 새 쪽을 고른다: 서버 문서의 at 과 이 판의 _at(마지막 편집 시각) 비교.
+     ⚠ 빈 판은 늘 진다 — 새 기기에서 빈 판으로 열려도 계정의 게임모델을 덮어쓰지 않고 받아 온다.
+     ⚠ 받기 전에는 올리지 않는다(gmPd.pulled). 로그인 전 · 팀 판(GM_PERSONAL 아님)은 아무것도 하지 않는다. */
+  var gmPd={raw:null,cupd:null,uid:null,wid:null,t:0,busy:false,again:false,pulled:false,bootEmpty:false};
+  function gmPdApi(){ try{ var p=(window.parent&&window.parent!==window)?window.parent.PSSync:window.PSSync; return (p&&p.gmPersonal&&typeof p.gmPersonal.owner==='function'&&p.gmPersonal.owner())?p.gmPersonal:null; }catch(_){ return null; } }
+  function gmIsEmpty(m){ try{ return !m||(!(m.moments||[]).length&&!String(m.identity||'').trim()); }catch(_){ return true; } }
+  function gmPdLocal(){ var c=JSON.parse(JSON.stringify(model)); delete c.open; return c; }
+  function gmPdSameAsBase(){ try{ if(!gmPd.raw)return false; var a=JSON.parse(gmPd.raw).m; delete a.open; return JSON.stringify(a)===JSON.stringify(gmPdLocal()); }catch(_){ return false; } }
+  function gmPdAdopt(m){
+    var open=model.open||{}; model=m; model.open={};
+    try{ model.moments.forEach(function(x){ model.open[x.key]=(open[x.key]!==undefined)?open[x.key]:true; }); }catch(_){}
+    try{ var raw=JSON.stringify(model); if(window.psSaveShared)window.psSaveShared(LS,raw); else localStorage.setItem(LS,raw); }catch(_){}
+    try{ var ln=document.getElementById('gmIdentLine'); if(ln)ln.value=model.identity||''; }catch(_){}
+    render();
+  }
+  function gmPdPull(then){
+    var api=gmPdApi(); if(!GM_PERSONAL||!api){ if(then)then(false); return; }
+    api.get().then(function(r){
+      gmPd.raw=r.raw; gmPd.cupd=r.cupd; gmPd.uid=r.uid; gmPd.wid=r.wid; gmPd.pulled=true;
+      var doc=null; try{ doc=r.raw?JSON.parse(r.raw):null; }catch(_){ doc=null; }
+      /* 이 기기에서 처음 연 판이 비어 있었으면(새 기기) 받기 전에 손댄 것이 있어도 계정의 것을 받는다 — 빈 판의 «방금 편집»이 계정을 이기지 않게 */
+      var _boot=gmPd.bootEmpty; gmPd.bootEmpty=false;
+      if(doc&&doc.m&&!gmIsEmpty(doc.m)&&(_boot||gmIsEmpty(model)||(doc.at||0)>(model._at||0))){ gmPdAdopt(doc.m); if(then)then(true); return; }
+      if(then)then(true);
+      else if(!gmIsEmpty(model)&&!gmPdSameAsBase())gmPdSchedule(400);
+    }).catch(function(){ if(then)then(false); });
+  }
+  function gmPdSchedule(ms){ if(!GM_PERSONAL)return; clearTimeout(gmPd.t); gmPd.t=setTimeout(gmPdPush,ms==null?2000:ms); }
+  function gmPdPush(retried){
+    var api=gmPdApi(); if(!api)return;
+    if(gmPd.busy){ gmPd.again=true; return; }
+    if(!gmPd.pulled){ gmPdPull(function(ok){ if(ok)gmPdPush(retried); }); return; }
+    if(gmIsEmpty(model)&&gmPd.raw)return;   /* 빈 판으로 계정의 게임모델을 덮지 않는다 */
+    if(gmPdSameAsBase())return;
+    var raw=JSON.stringify({v:1,at:model._at||Date.now(),m:gmPdLocal()});
+    gmPd.busy=true;
+    api.save(raw,{uid:gmPd.uid,wid:gmPd.wid,expected_raw:gmPd.raw,expected_cupd:gmPd.cupd}).then(function(ack){
+      gmPd.raw=ack.raw; gmPd.cupd=ack.cupd;
+    }).catch(function(e){
+      if(e&&e.psCode==='sync_conflict'&&!retried){ gmPd.busy=false; gmPdPull(function(ok){ if(ok)gmPdPush(true); }); return 'skip'; }
+      if(e&&e.psCode==='sync_workspace_changed'){ gmPd.pulled=false; }
+    }).then(function(x){ if(x==='skip')return; gmPd.busy=false; if(gmPd.again){ gmPd.again=false; gmPdSchedule(400); } });
+  }
+  if(GM_PERSONAL){
+    gmPd.bootEmpty=gmIsEmpty(model);
+    setTimeout(function(){ gmPdPull(); },400);
+    document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible')gmPdPull(); else if(gmPd.pulled&&!gmPdSameAsBase())gmPdPush(); });
   }
   function gmSaveError(error){
     var n=document.getElementById('gmSaveError');if(!n){n=document.createElement('p');n.id='gmSaveError';n.setAttribute('role','alert');stage.before(n);}
@@ -1498,6 +1554,53 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
       var L=PS.groupList(t,day); return !L.length||L.some(function(g){ return PS.groupKind(day,g)!=='OFF'; });
     }catch(_){ return true; }
   }
+  /* 3.080 — 보관함 훈련 중 이 단계(phase id)를 고른 카드 수. 보관함 본문은 IndexedDB(window.storage)에만 있어 비동기로 세고,
+     숫자가 바뀌었을 때만 한 번 다시 그린다(무한 반복 없음). 이름이 같은 표준 국면(std_* — 게임모델이 없을 때 고른 것)도 센다 */
+  /* 3.080 — 짧은 알림(이 화면엔 toast 가 없다) */
+  function gmAddApply(d){
+      try{
+        var key=String(d.momentKey||''), txt=String(d.text||'').trim().slice(0,200);
+        var L=GM_LIB.filter(function(x){ return x.k===key; })[0]; if(!L)return;
+        var mo=(model.moments||[]).filter(function(x){ return x&&x.key===key; })[0], added=false;
+        if(!mo){ mo={key:L.k,cat:GM_CAT[L.k],name:L.nm,tag:L.tag,phases:L.ph.map(gmNewPh)}; model.moments.push(mo); added=true; }
+        var ph=(mo.phases||[])[0]; if(!ph){ ph=gmNewPh(L.ph[0]||'새 단계'); mo.phases=[ph]; }
+        if(txt){ ph.principles=Array.isArray(ph.principles)?ph.principles:[];
+          var dup=ph.principles.some(function(x){ return String(pTxt(x)||'').trim()===txt; });
+          if(!dup){ if(ph.principles.length===1&&!String(pTxt(ph.principles[0])||'').trim())ph.principles[0]=txt; else ph.principles.push(txt); added=true; } }
+        model.open[key]=true; gmSel=key;
+        if(added){ save(); }
+        render();
+        gmFlash(added?('«'+L.nm+'»에 담았어요 — 고쳐 써도 돼요'):'이미 내 게임모델에 있어요');
+      }catch(_){}
+  }
+  function gmFlash(t){ try{ var el=document.getElementById('gmFlash'); if(!el){ el=document.createElement('div'); el.id='gmFlash'; el.setAttribute('role','status');
+      el.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--c-ink,#202329);color:var(--c-bg,#fff);padding:9px 14px;border-radius:10px;font-size:var(--t-4);z-index:9999;transition:opacity .2s';
+      document.body.appendChild(el); }
+    el.textContent=t; el.style.opacity='1'; clearTimeout(gmFlash._t); gmFlash._t=setTimeout(function(){ el.style.opacity='0'; },2200); }catch(_){} }
+  function gmVaultCount(){
+    if(!window.storage||gmVaultCount._busy)return; gmVaultCount._busy=true;
+    Promise.resolve(window.storage.get('cs_drill_lib_v1')).then(function(r){
+      var lib=[]; try{ lib=JSON.parse((r&&r.value)||'[]')||[]; }catch(_){ lib=[]; }
+      var byId={}, std=gmStdMap();
+      (Array.isArray(lib)?lib:[]).forEach(function(d){
+        if(!d||d.deleted)return; var ids={};
+        (d.gmPhases||[]).forEach(function(x){ ids[std[x]||x]=1; });
+        (d.trainings||[]).forEach(function(t){ (t&&t.gmPhases||[]).forEach(function(x){ ids[std[x]||x]=1; }); });
+        Object.keys(ids).forEach(function(k){ byId[k]=(byId[k]||0)+1; });
+      });
+      var before=JSON.stringify(window.__gmVC||{}); window.__gmVC=byId;
+      gmVaultCount._busy=false;
+      if(JSON.stringify(byId)!==before)render();
+    }).catch(function(){ gmVaultCount._busy=false; });
+  }
+  /* 표준 국면 id(std_ao_1 …) → 이 판에서 같은 국면 · 같은 이름 단계의 id. 훈련 편집기의 표준 목록(board.html EP_STD_MOMENTS)과 같은 순서 */
+  function gmStdMap(){
+    var STD={ao:['빌드업','전진 · 전개','침투 · 마무리'],do:['전방 압박','미드 블록','로우 블록'],dt:['즉시 반응 (역압박)','후퇴 · 재정비'],at:['빠른 역습','점유 안정화'],ic:['경합'],set:['공격 세트피스','수비 세트피스']};
+    var out={};
+    (model.moments||[]).forEach(function(m){ var L=STD[m.key]; if(!L)return;
+      L.forEach(function(nm,i){ var ph=(m.phases||[]).filter(function(x){ return x&&String(x.name||'').trim()===nm; })[0]; if(ph)out['std_'+m.key+'_'+(i+1)]=ph.id; }); });
+    return out;
+  }
   function gmTrainCount(){
     var out={byPhase:{},byMoment:{},any:false,weeks:GM_TRAIN_WEEKS};
     try{
@@ -1512,6 +1615,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
       }catch(_){}
       var phaseToM={};
       (model.moments||[]).forEach(function(m){ (m.phases||[]).forEach(function(ph){ if(ph&&ph.id)phaseToM[ph.id]=m.key||m.name; }); });
+      var _std=gmStdMap();   /* 3.080 — 게임모델이 없을 때 고른 표준 국면(std_*)도 같은 이름 단계로 센다(늘 0 이던 것) */
       for(var w=cur-(GM_TRAIN_WEEKS-1); w<=cur; w++){
         var arr=weeks[String(w)]; if(!Array.isArray(arr))continue;
         arr.forEach(function(day){
@@ -1519,6 +1623,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
           bd.trainData.forEach(function(td){
             if(!td||!Array.isArray(td.gmPhases))return;
             td.gmPhases.forEach(function(id){
+              id=_std[id]||id;
               out.byPhase[id]=(out.byPhase[id]||0)+1; out.any=true;
               var mk=phaseToM[id]; if(mk)out.byMoment[mk]=(out.byMoment[mk]||0)+1;
             });
@@ -2283,6 +2388,7 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
       momentsEl.appendChild(box);
     })();
     try{ window.__gmTC=gmTrainCount(); }catch(_){ window.__gmTC={byPhase:{},byMoment:{}}; }   /* 2.148 — 한 번 세어 카드들이 나눠 쓴다 */
+    try{ gmVaultCount(); }catch(_){}   /* 3.080 */
     /* 2.147 — 진척은 여기서 한 번만(팀 전체 합). 카드마다 되풀이하지 않는다 */
     try{
       var _tP=0,_tS=0;
@@ -2472,6 +2578,21 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
       var tas=princ.querySelectorAll('textarea'); tas[tas.length-1].focus();
     });
     card.appendChild(addpr);
+    /* 3.080 — 이 단계로 훈련 만들기(고리: 게임모델 → 훈련). 셸이 보관함 훈련 설계를 열고 국면 · 원칙을 채운다.
+       옆 숫자는 보관함 훈련 중 이 단계를 고른 카드 수(gmVaultCount). 개인 판에서도 팀 판에서도 같다 */
+    try{
+      var mk=document.createElement('div'); mk.className='gm-mkdrill';
+      var vn=(window.__gmVC&&window.__gmVC[ph.id])||0;
+      var _stdId=''; try{ var _sm=gmStdMap(); Object.keys(_sm).some(function(k){ if(_sm[k]===ph.id){ _stdId=k; return true; } return false; }); }catch(_){}
+      mk.innerHTML='<button type="button" class="gm-mkdrill-b">이 단계로 훈련 만들기 →</button><span class="gm-mkdrill-n">'+(vn?('보관함 훈련 '+vn+'개'):'아직 이 단계 훈련이 없어요')+'</span>'
+        +(_stdId?'<button type="button" class="gm-mkdrill-b gm-comm-b">커뮤니티에서 이 단계 훈련 보기 →</button>':'');
+      var _cb=mk.querySelector('.gm-comm-b'); if(_cb)_cb.onclick=function(){ try{ parent.postMessage({source:'gamemodel',type:'gmOpenCommunity',sub:_stdId},'*'); }catch(_){} };   /* 3.080 — 같은 이름의 표준 세부 국면으로 커뮤니티 고르개를 맞춘다 */
+      mk.querySelector('.gm-mkdrill-b').onclick=function(){
+        var pr=''; (ph.principles||[]).some(function(x){ var t=String(pTxt(x)||'').trim(); if(t){pr=t;return true;} return false; });
+        try{ parent.postMessage({source:'gamemodel',type:'gmMakeDrill',phaseId:ph.id,phaseName:(m.name||'')+' › '+(ph.name||''),principle:pr},'*'); }catch(_){}
+      };
+      card.appendChild(mk);
+    }catch(_){}
 
     // 자주 쓰는 원칙 칩 — 탭해서 추가(초보자용). 이미 추가된 칩은 숨김
     var _chips=GM_CHIPS[m.cat||m.key]||GM_CHIPS.ao;
@@ -2793,6 +2914,18 @@ window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='psTe
   }
   window.addEventListener('message',function(e){
     var d=e.data||{};
+    /* 3.080 — 학습(『스튜디오로 배우는 코칭』)의 «내 게임모델에 담기». 셸이 개인 판으로 열고 보낸다.
+       ⚠ 개인 판에서만 받는다(팀 판에 학습 초안이 들어가지 않게). 같은 문장은 두 번 넣지 않는다(셸이 여러 번 보내도 한 번). */
+    if(d.source==='app'&&d.type==='gmAddPrinciple'){
+      if(e.source!==parent)return;
+      if(!GM_PERSONAL)return;
+      if(d.req&&window.__gmAddReq===d.req)return;   /* 셸이 같은 요청을 몇 번 보내도 한 번만 */
+      window.__gmAddReq=d.req||null;
+      if(gmPdApi()&&!gmPd.pulled){ gmPdPull(function(){ gmAddApply(d); }); return; }   /* 3.080 — 계정의 판을 받은 뒤에 넣는다 */
+      gmAddApply(d);
+      return;
+    }
+
     if(d.source==='app'&&d.type==='gameModelShell'){
       if(e.source!==parent)return;
       if(location.protocol!=='file:'&&e.origin!==location.origin)return;

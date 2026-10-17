@@ -14060,6 +14060,21 @@ function openEditor(id,type){
       if(_pm&&Array.isArray(_pm.moments))_pm.moments.forEach(function(m){ (m.phases||[]).forEach(function(ph){ if(ph&&_pre.indexOf(ph.id)>=0){ _ids.push(ph.id); _names.push((m.name||"")+" › "+(ph.name||"")); if(!_fk)_fk=_MAP[m.key]||null; } }); });
       if(_ids.length){ editorDraft.gmPhases=_ids; editorDraft.gmPhaseNames=_names; if(_fk)editorDraft.focus=_fk; }
     } }catch(_){}
+  /* 3.080 — 게임모델 단계(또는 학습)에서 온 새 훈련: 제목 · 코칭 포인트에 그 원칙을 미리 적는다(window.__psDrillPreset 한 번 소비).
+     국면은 위 프리셀렉트가 고른다. 이 편집기의 게임모델 목록에 그 단계가 없으면(팀 판이 따로 있을 때) 이름만이라도 남긴다 */
+  try{ var _dp=window.__psDrillPreset; window.__psDrillPreset=null;
+    if(id==null&&type!=="setpiece"&&_dp&&editorDraft){
+      var _pr=String(_dp.principle||"").trim().slice(0,200), _pn=String(_dp.phaseName||"").trim().slice(0,80);
+      if(_pr){ editorDraft.name=_pr.length>40?_pr.slice(0,40)+"…":_pr; if(!String(editorDraft.coaching||"").trim())editorDraft.coaching=_pr; }
+      else if(_pn){ editorDraft.name=_pn; }
+      if(_pn&&!String(editorDraft.overview||"").trim())editorDraft.overview="게임모델 · "+_pn+(_pr?" — "+_pr:"");
+      /* 편집기의 국면 칩은 표준 목록(EP_STD_MOMENTS)이다 — 같은 국면 · 같은 이름의 표준 단계로 고른다(게임모델 화면의 gmStdMap 이 거꾸로 같은 단계로 센다).
+         표준에 없는 이름이면 받은 id 와 이름을 그대로 둔다(«예전에 고른 국면» 칩으로 보인다) */
+      if(_pn){ var _parts=_pn.split(" › "), _mN=String(_parts[0]||"").trim(), _pN=String(_parts.slice(1).join(" › ")||"").trim(), _hit=null;
+        EP_STD_MOMENTS.forEach(function(m){ if(_hit||String(m.name).trim()!==_mN)return; (m.phases||[]).forEach(function(ph){ if(!_hit&&String(ph.name).trim()===_pN)_hit={id:ph.id,nm:m.name+" › "+ph.name,k:m.key}; }); });
+        if(_hit){ editorDraft.gmPhases=[_hit.id]; editorDraft.gmPhaseNames=[_hit.nm]; var _FK={ao:"bp",do:"bpo",dt:"tr_def",at:"tr_att",set:"set",ic:"poss"}; if(_FK[_hit.k])editorDraft.focus=_FK[_hit.k]; }
+        else if(_dp.phaseId){ editorDraft.gmPhases=[String(_dp.phaseId)]; editorDraft.gmPhaseNames=[_pn]; } }
+    } }catch(_){}
   fillEditorPanel();renderSceneStrip();renderTrainingTabs();
   try{ if(type!=="setpiece"&&epAutoRoster()){ setTimeout(function(){try{toast(window.__rosterFromAtt?"출석의 그 날 인원으로 채웠어요 — 필요하면 고치세요":"훈련 인원을 선수단에서 채웠어요 — 필요하면 고치세요");window.__rosterFromAtt=false;}catch(_){}},400); } }catch(_){}   /* 1.968 · 2.182 — 비어 있으면 기존 훈련에서도 자동 계산(사용자) */
   moveBoardTo($("editorBoardWrap"));$("editorModal").classList.add("on");document.body.classList.add("editing");try{parent.postMessage({source:"board",type:"editorState",open:true},"*");}catch(_){}try{window.__psReplaceBoardSettings&&window.__psReplaceBoardSettings();}catch(_){}try{applyView();}catch(_){}try{renderBench();}catch(_){}renderTokens();
