@@ -31,6 +31,22 @@
     if(r.stage==='answered')return r.fixed_in?'고침 '+r.fixed_in+' · 답변함':'답변함';
     return r.has_admin_reply?'재문의':'새 제보';
   }
+  /* 20261017 — 보낸 사람(관리자에게만 · 서버 ps_support_reporter). 없거나 모양이 이상하면 null — 화면은 예전처럼 «사용자 제보» */
+  function reporterOf(v){
+    if(!v||typeof v!=='object'||Array.isArray(v))return null;
+    var s=function(x,n){return typeof x==='string'&&x.trim()?x.trim().slice(0,n):'';};
+    var teams=Array.isArray(v.teams)?v.teams.map(function(t){return t&&typeof t==='object'?s(t.name,60):'';}).filter(Boolean).slice(0,6):[];
+    var r={id:UUID.test(v.user_id||'')?String(v.user_id).toLowerCase():'',name:s(v.name,60),email:s(v.email,120),teams:teams};
+    return r.id||r.name||r.email?r:null;
+  }
+  /* 목록 줄은 짧게(이름 · 첫 팀 외 n), 제보 머리는 다(이름 · 이메일 · 팀 모두) */
+  function reporterLine(r,full){
+    if(!r)return '';
+    var who=r.name||(!full&&r.email?r.email.split('@')[0]:'')||(r.id?'이름 없음 · '+r.id.slice(0,8):'이름 없음'),parts=[who];
+    if(full&&r.email)parts.push(r.email);
+    if(r.teams.length)parts.push(full?r.teams.join(', '):r.teams[0]+(r.teams.length>1?' 외 '+(r.teams.length-1):''));
+    return parts.join(' · ');
+  }
   function validCounts(c){return !!c&&typeof c==='object'&&['needs','answered','closed','total'].every(function(k){return Number.isInteger(c[k])&&c[k]>=0;});}
   function date(v){if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/.test(v))return '시각 미확인';var d=new Date(v);return isFinite(d.getTime())?d.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'시각 미확인';}
   function create(options){
@@ -100,7 +116,7 @@
       if(listError)h+='<p class="admSupportError" role="alert">'+esc(listError)+'</p>';
       if(listLoading&&!rows.length)h+='<p class="admSupportEmpty" role="status">접수된 제보를 불러오는 중…</p>';
       else if(can&&!rows.length&&!listError)h+='<p class="admSupportEmpty">'+(filter?'이 상태의 제보가 없습니다.':'아직 접수된 제보가 없습니다.')+'</p>';
-      h+='<div class="admSupportList">'+(can?rows.map(function(r){return '<button type="button" class="admSupportRow'+(selected===r.id?' is-selected':'')+'" data-adm-report="'+esc(r.id)+'" aria-pressed="'+(selected===r.id)+'"'+(busy?' disabled':'')+'><span><strong>'+esc(r.title)+'</strong><small>'+esc(date(r.created_at))+' · '+(r.is_own?'내 제보':'사용자 제보')+'</small></span><span class="admSupportCount'+(r.stage?' is-'+r.stage:'')+'">'+esc(stageLabel(r))+'</span></button>';}).join(''):'')+'</div>';
+      h+='<div class="admSupportList">'+(can?rows.map(function(r){return '<button type="button" class="admSupportRow'+(selected===r.id?' is-selected':'')+'" data-adm-report="'+esc(r.id)+'" aria-pressed="'+(selected===r.id)+'"'+(busy?' disabled':'')+'><span><strong>'+esc(r.title)+'</strong><small>'+esc(date(r.created_at))+' · '+(r.is_own?'내 제보':r.reporter?esc(reporterLine(r.reporter)):'사용자 제보')+'</small></span><span class="admSupportCount'+(r.stage?' is-'+r.stage:'')+'">'+esc(stageLabel(r))+'</span></button>';}).join(''):'')+'</div>';
       if(can&&cursor)h+='<button type="button" class="admSupportMore" data-adm-support="more"'+(listLoading||busy?' disabled':'')+'>'+(listLoading?'불러오는 중…':'이전 제보 더 보기')+'</button>';
       h+='</section><section class="admSupportDetail" aria-label="제보 내용과 답변">';
       if(can&&selected)h+='<button type="button" class="admSupportBack" data-adm-support="back"'+(busy?' disabled':'')+'>목록으로</button>';
@@ -108,8 +124,9 @@
       if(notice)h+='<p class="admSupportNotice" role="status">'+esc(notice)+'</p>';
       if(detailLoading)h+='<p class="admSupportEmpty" role="status">제보와 답변을 불러오는 중…</p>';
       else if(can&&detail){
-        var r=detail.report,entry=currentDraft,count=r.diagnostics&&Array.isArray(r.diagnostics.logs)?r.diagnostics.logs.length:0;
-        h+='<article class="admSupportReport"><h2>'+esc(r.title)+'</h2><small>'+esc(date(r.created_at))+'</small><p>'+esc(r.body)+'</p>'
+        var r=detail.report,entry=currentDraft,count=r.diagnostics&&Array.isArray(r.diagnostics.logs)?r.diagnostics.logs.length:0,who=detailReporter();
+        h+='<article class="admSupportReport"><h2>'+esc(r.title)+'</h2><small>'+esc(date(r.created_at))+'</small>'
+          +(who?'<p class="admSupportWho">보낸 사람 <b>'+esc(reporterLine(who,true))+'</b></p>':'')+'<p>'+esc(r.body)+'</p>'
           +'<details class="admSupportLogs"><summary>제보 당시 사용 환경 · 오류 로그 '+count+'건</summary><pre>'+esc(diagnosticText(r.diagnostics))+'</pre></details>'
           +'<button type="button" data-adm-support="copy">제보·대화·사용 환경·로그 전체 복사</button></article>'
           +statusHtml()
@@ -125,6 +142,7 @@
       h+='</section></div>';root.dataset.detail=can&&selected?'true':'false';root.innerHTML=h;renderedSelected=selected;
       root.querySelector('.admSupportInbox').scrollTop=inboxScroll;root.querySelector('.admSupportDetail').scrollTop=detailScroll;
     }
+    function detailReporter(){ if(!detail||!detail.report||detail.report.is_own)return null; return reporterOf(detail.report.reporter)||(rowOf(selected)||{}).reporter||null; }
     function statusHtml(){
       var row=rowOf(selected);if(!triage||!row||STAGES.indexOf(row.stage)<0)return '';
       var closed=row.status==='closed';
@@ -151,7 +169,8 @@
         var seen=new Set(rows.map(function(r){return r.id;}));
         result.reports.forEach(function(r){if(seen.has(r.id))return;
           rows.push({id:r.id,title:r.title,created_at:r.created_at,is_own:r.is_own,reply_count:r.reply_count,
-            stage:STAGES.indexOf(r.stage)>=0?r.stage:'',status:r.status==='closed'?'closed':'open',has_admin_reply:r.has_admin_reply===true,fixed_in:r.fixed_in||''});seen.add(r.id);});
+            stage:STAGES.indexOf(r.stage)>=0?r.stage:'',status:r.status==='closed'?'closed':'open',has_admin_reply:r.has_admin_reply===true,fixed_in:r.fixed_in||'',
+            reporter:r.is_own?null:reporterOf(r.reporter)});seen.add(r.id);});
         cursor=result.next_cursor||null;adminConfirmed=true;
         if(validCounts(result.counts)){triage=true;counts=Object.assign({},result.counts);shareCounts();}else if(!more){triage=false;counts=null;filter='';}
       }).catch(function(e){if(!safe(s)||ticket!==listTicket)return;var kind=errorKind(e);if(kind==='denied'){denied();return;}listError=errorText(kind);})
@@ -217,6 +236,7 @@
       try{
         if(typeof o.copyText!=='function')throw fault('support_unavailable');
         text=String(o.copyText(Object.assign({},detail.report,{replies:detail.replies,draftReply:currentDraft?currentDraft.body:''}),detail.report.diagnostics,o.format));
+        var who=detailReporter();if(who)text='보낸 사람: '+reporterLine(who,true)+'\n'+text;
       }catch(_){detailError='전체 복사를 준비하지 못했습니다. 다시 시도해 주세요.';render();return;}
       function current(){return safe(s)&&selected===id&&ticket===detailTicket;}
       function showStatus(value){if(!current())return;notice=value;var el=root.querySelector('.admSupportNotice');if(!el){el=d.createElement('p');el.className='admSupportNotice';el.setAttribute('role','status');root.querySelector('.admSupportDetail').appendChild(el);}el.textContent=value;}

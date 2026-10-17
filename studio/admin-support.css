@@ -67,3 +67,6 @@
 @media(min-width:901px){.admSupport{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden}.admSupportHead{flex:none}.admSupportGrid{flex:1;min-height:0;overflow:hidden;align-items:stretch}.admSupportInbox,.admSupportDetail{min-height:0;overflow:auto;overscroll-behavior:contain}}
 @media(max-width:1000px){.admSupportGrid{grid-template-columns:minmax(220px,290px) minmax(0,1fr);gap:14px}.admSupportDetail{padding:18px}.admSupportActions{align-items:flex-start;flex-direction:column}.admSupportActions>button{align-self:flex-end}}
 @media(max-width:700px){.admSupportHead{gap:12px;margin-bottom:16px}.admSupportHead h1{font-size:23px}.admSupportGrid{grid-template-columns:minmax(0,1fr)}.admSupportInbox{max-height:none}.admSupport[data-detail="true"] .admSupportInbox,.admSupport[data-detail="false"] .admSupportDetail{display:none}.admSupport .admSupportRow{padding:14px 8px}.admSupportDetail{padding:16px}.admSupportReply>header{align-items:flex-start;flex-direction:column;gap:3px}.admSupport textarea,.admSupport .admSupportStatusRow input{font-size:16px}.admSupport button{min-height:44px}.admSupportActions>button{align-self:stretch;width:100%}}
+/* 20261017 — 보낸 사람(관리자만) */
+.admSupport .admSupportWho{margin:8px 0 0;font-size:var(--t-3,12px);color:var(--dim,#6c7480);overflow-wrap:anywhere}
+.admSupportWho b{color:var(--txt,inherit);font-weight:700}
