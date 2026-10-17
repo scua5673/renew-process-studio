@@ -44,14 +44,14 @@ test('sorting by views, likes or saves keeps the newest first among equals; the 
   assert.deepEqual(plain(g.elmSort(null,'views')),[]);
 });
 
-test('the head has three tabs and the elmiha tab carries the YouTube channel link',()=>{
-  assert.match(comm,/<button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">엘미하<span id="prElmN"><\/span><\/button><\/div>/);
+test('the head has the elmiha tab (3.071 — FIFA comes after it) and the elmiha tab carries the YouTube channel link',()=>{
+  assert.match(comm,/<button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">엘미하<span id="prElmN"><\/span><\/button><button type="button" id="prTabFifa" data-pr-tab="fifa"/);
   const hero=cut(comm,'<div class="el-hero" id="elHero" hidden>','<div class="comm-count" id="commCount">');
   assert.match(hero,/<b>엘미하의 전술노트<\/b>/);
   assert.match(hero,/<a class="el-yt" id="elYt" href="https:\/\/www\.youtube\.com\/@ELMIHA_TacticalNote" target="_blank" rel="noopener noreferrer"/,'새 창 · 이 앱의 창을 넘기지 않는다');
-  assert.match(comm,/\[\['prTabCoach','coach'\],\['prTabProc','proc'\],\['prTabElm','elmiha'\]\]/);
+  assert.match(comm,/\[\['prTabCoach','coach'\],\['prTabProc','proc'\],\['prTabElm','elmiha'\],\['prTabFifa','fifa'\]\]/);
   assert.match(comm,/var hero=\$\('elHero'\); if\(hero\)hero\.hidden=\(t!=='elmiha'\);/);
-  assert.match(comm,/html body \.top \.pr-seg:not\(#_\):not\(#__\)\{order:9;flex:1 0 100%;display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/,'폰에서는 칸 셋이 한 줄');
+  assert.match(comm,/html body \.top \.pr-seg:not\(#_\):not\(#__\)\{order:9;flex:1 0 100%;display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/,'폰에서는 칸 넷(3.071 — FIFA)이 한 줄');
 });
 
 test('opening, playing and putting in the vault go the coach-post way — the viewer finds an elmiha post even outside the coach feed',()=>{

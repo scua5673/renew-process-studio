@@ -7,6 +7,7 @@
 <title>커뮤니티 · 훈련 공유</title>
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.054">
 <script src="storage.js"></script>
+<script src="community-fifa.js"></script><!-- 3.071 — «FIFA» 칸의 목록 · 카드 -->
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
   :focus-visible{outline:2px solid var(--ps-navy,#14213D) !important;outline-offset:2px;border-radius:6px;}
@@ -377,7 +378,7 @@
   <div class="top">
     <h1>커뮤니티</h1>
     <!-- 2.999 — 커뮤니티 안의 두 칸: 코치들이 올린 자료 | 프로세스가 만든 훈련 세션 · 3.018 — 셋째 칸: 엘미하(유튜브 «엘미하의 전술노트»)가 올린 전술 애니메이션 -->
-    <div class="pr-seg" id="prSeg" role="group" aria-label="커뮤니티 칸"><button type="button" id="prTabCoach" data-pr-tab="coach" aria-pressed="true">코치 자료<span id="prCoachN"></span></button><button type="button" id="prTabProc" data-pr-tab="proc" aria-pressed="false">프로세스<span id="prProcN"></span></button><button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">엘미하<span id="prElmN"></span></button></div>
+    <div class="pr-seg" id="prSeg" role="group" aria-label="커뮤니티 칸"><button type="button" id="prTabCoach" data-pr-tab="coach" aria-pressed="true">코치 자료<span id="prCoachN"></span></button><button type="button" id="prTabProc" data-pr-tab="proc" aria-pressed="false">프로세스<span id="prProcN"></span></button><button type="button" id="prTabElm" data-pr-tab="elmiha" aria-pressed="false">엘미하<span id="prElmN"></span></button><button type="button" id="prTabFifa" data-pr-tab="fifa" aria-pressed="false">FIFA<span id="prFifaN"></span></button></div>
     <span class="sub" id="prSub">작전판·훈련·경기 분석 탐색</span>
   </div>
   <div class="comm-shell">
@@ -644,12 +645,12 @@ function thumbImg(svg,cls){
 /* ── 상태 ── */
 var posts=[], catSel=[], ageF='', plF='', sort='new', typeF='all', searchF='', selectedPostId='', ready=false, tableMissing=false;
 var myLikes=new Set();   /* 내가 좋아요한 게시물 id */
-var tabF='coach';   /* 2.999 — 'coach' 코치 자료 | 'proc' 프로세스 훈련 세션(아래 «2.999 · 커뮤니티 안의 프로세스 칸») · 3.018 — 'elmiha' 엘미하 칸(아래 «3.018 · 엘미하 칸») */
+var tabF='coach';   /* 2.999 — 'coach' 코치 자료 | 'proc' 프로세스 훈련 세션(아래 «2.999 · 커뮤니티 안의 프로세스 칸») · 3.018 — 'elmiha' 엘미하 칸(아래 «3.018 · 엘미하 칸») · 3.071 — 'fifa' FIFA 훈련센터 링크(community-fifa.js) */
 var COMM_FULL='id,owner,owner_name,title,summary,cat,age,players,thumb,views,copies,likes,created_at';
 var COMM_LEAN='id,owner,owner_name,title,summary,cat,age,thumb,views,copies,created_at';
 /* 3.019 — 처음 여는 칸은 «프로세스»(사용자 «커뮤니티에 올린 훈련을 더 잘 보이게» → 프로세스를 첫 화면으로). 마지막에 본 칸(코치 자료 · 엘미하도)은 이 기기에 적어 두고 다음에 그 칸으로 연다. */
 var PROC_TAB_KEY='ps_comm_tab_v1';
-function procTabFirst(){ try{ var t=localStorage.getItem(PROC_TAB_KEY); return (t==='coach'||t==='elmiha')?t:'proc'; }catch(_){ return 'proc'; } }
+function procTabFirst(){ try{ var t=localStorage.getItem(PROC_TAB_KEY); return (t==='coach'||t==='elmiha'||t==='fifa')?t:'proc'; }catch(_){ return 'proc'; } }
 
 function fetchMyLikes(){
   var me=sess(); if(!me||!me.at||!me.uid){ myLikes=new Set(); return Promise.resolve(); }
@@ -664,7 +665,7 @@ var FEED_TTL=60000,FEED_CK='ps_comm_feed_cache_v1';
 function fetchPosts(force){ cmStage('cmFF');
   var b=base();
   var grid=$('grid');
-  if(!b){grid.innerHTML='<div class="empty"><b>커뮤니티에 연결할 수 없어요</b>네트워크 연결을 확인해 주세요.</div>';return;}
+  if(!b){if(tabF==='coach')grid.innerHTML='<div class="empty"><b>커뮤니티에 연결할 수 없어요</b>네트워크 연결을 확인해 주세요.</div>';return;}   /* 3.071 — 다른 칸을 보는 중이면 덮지 않는다(아래 catch 와 같은 규칙) */
   if(force){try{sessionStorage.removeItem(FEED_CK)}catch(_){}
     elmStale();}   /* 3.018 — 올리기·고치기·지우기 뒤에는 엘미하 칸도 새로 받는다 */
   else{
@@ -721,6 +722,7 @@ function toggleLike(p,btn){
 
 function catChipsRender(){
   if(tabF==='proc'){procChipsRender();return;}
+  if(tabF==='fifa'){fifaChips();return;}
   var box=$('catChips');box.innerHTML='';
   var all=document.createElement('button');all.className='chip'+(catSel.length===0?' on':'');all.textContent='전체 주제';
   all.onclick=function(){catSel=[];catChipsRender();render();};box.appendChild(all);
@@ -742,6 +744,7 @@ function catBadges(catStr){
 function render(){ cmStage('cmR'+String(tabF||'').slice(0,4));
   prCounts();
   if(tabF==='proc'){renderProc();return;}
+  if(tabF==='fifa'){fifaRender();return;}
   var elmTab=(tabF==='elmiha');   /* 3.018 — 엘미하 칸은 코치 자료와 같은 카드·고르개·미리보기·뷰어를 쓴다. 목록만 엘미하 계정의 글 */
   var grid=$('grid');grid.innerHTML='';
   if(elmTab){ elmOwnerMark(); if(!elm.ready||!elm.list.length){elmWait(grid);renderPreview(null);return;} }
@@ -1882,7 +1885,15 @@ function prCounts(){
   if(b)b.textContent=proc.ready?String(proc.list.length):'';
   var e=$('prElmN');   /* 3.018 — 엘미하 칸: 글이 있을 때만 */
   if(e)e.textContent=(elm.ready&&elm.list.length)?String(elm.list.length):'';
+  var f=$('prFifaN'); if(f&&window.PSCommFifa)f.textContent=String(PSCommFifa.list().length);   /* 3.071 */
 }
+/* 3.071 · «FIFA» 칸 — 목록 · 카드는 community-fifa.js(서버를 부르지 않는다). 카드는 FIFA 사이트로 가는 링크라 미리보기 · 뷰어 · 담기가 없다 */
+var fifaG='all';
+function fifaRender(){ var F=window.PSCommFifa,grid=$('grid'); if(!grid)return;
+  try{cpAnimStop();}catch(_){}
+  if(!F){ grid.innerHTML='<div class="empty"><b>FIFA 훈련 목록을 불러오지 못했어요</b>앱을 새로 고쳐 주세요.</div>'; return; }
+  F.render(grid,{group:fifaG,q:searchF,count:$('commCount')}); F.aside($('commPreview')); }
+function fifaChips(){ var F=window.PSCommFifa; if(F)F.chips($('catChips'),fifaG,function(k){ fifaG=k; fifaChips(); fifaRender(); }); }
 function procSet(list,at,src){ cmStage('cmPS');
   var keep={};
   list.forEach(function(s){ var id='proc-'+s.nn,old=proc.posts[id];
@@ -2060,21 +2071,25 @@ function procSave(p){
   try{ location.href='app.html'+hash; }catch(_){}
 }
 function procSetTab(t,boot){ cmStage('cmT'+String(t||'').slice(0,4));
-  t=(t==='proc'||t==='elmiha')?t:'coach'; if(t===tabF&&!boot)return;
-  tabF=t; document.body.classList.toggle('pr-proc',t==='proc'); document.body.classList.toggle('pr-elm',t==='elmiha');
+  t=(t==='proc'||t==='elmiha'||t==='fifa')?t:'coach'; if(t===tabF&&!boot)return;
+  var wasFifa=tabF==='fifa';
+  tabF=t; document.body.classList.toggle('pr-proc',t==='proc'||t==='fifa');   /* 3.071 — FIFA 칸도 프로세스 칸의 화면 규칙(고르개 · 올리기 없음 · 카드 격자)을 쓴다 */
+  document.body.classList.toggle('pr-elm',t==='elmiha'); document.body.classList.toggle('pr-fifa',t==='fifa');
   if(!boot)try{localStorage.setItem(PROC_TAB_KEY,t);}catch(_){}
-  [['prTabCoach','coach'],['prTabProc','proc'],['prTabElm','elmiha']].forEach(function(x){ var b=$(x[0]); if(b)b.setAttribute('aria-pressed',x[1]===t?'true':'false'); });
-  var sub=$('prSub'); if(sub)sub.textContent=(t==='proc')?'프로세스가 만든 훈련 세션':(t==='elmiha')?'엘미하가 만든 전술 애니메이션':'작전판·훈련·경기 분석 탐색';
+  [['prTabCoach','coach'],['prTabProc','proc'],['prTabElm','elmiha'],['prTabFifa','fifa']].forEach(function(x){ var b=$(x[0]); if(b)b.setAttribute('aria-pressed',x[1]===t?'true':'false'); });
+  var sub=$('prSub'); if(sub)sub.textContent=(t==='proc')?'프로세스가 만든 훈련 세션':(t==='elmiha')?'엘미하가 만든 전술 애니메이션':(t==='fifa')?'FIFA 훈련센터의 훈련 세션':'작전판·훈련·경기 분석 탐색';
   var lb=$('prCatLb'); if(lb)lb.textContent=(t==='proc')?'세션 주제':'훈련 주제';
-  var q=$('commSearch'); if(q)q.placeholder=(t==='proc')?'세션·훈련 이름 검색':(t==='elmiha')?'제목·내용 검색':'제목·작성자·내용 검색';
+  var q=$('commSearch'); if(q)q.placeholder=(t==='proc')?'세션·훈련 이름 검색':(t==='elmiha')?'제목·내용 검색':(t==='fifa')?'훈련·지도자 이름 검색':'제목·작성자·내용 검색';
   var hero=$('elHero'); if(hero)hero.hidden=(t!=='elmiha');   /* 3.018 */
   try{upMenuClose();}catch(_){}
   try{var fs=$('commFiltSheet'); if(fs)fs.hidden=true;}catch(_){}
   selectedPostId=''; procOpenSeq++;
+  if(wasFifa)try{renderPreview(null);}catch(_){}   /* 3.071 — FIFA 칸의 오른쪽 안내를 걷는다 */
   catChipsRender();
   if(boot){ if(t!=='coach')render(); return; }   /* 3.019 — 처음 열 때: 목록은 화면이 실제로 보일 때 받는다(아래 «칸 이름 옆의 개수» — 그동안 «불러오는 중»), 코치 자료는 아래 fetchPosts */
   if(t==='proc'){ if(!proc.ready)procFetch(); else if(Date.now()-proc.at>PROC_TTL)procFetch(true);   /* 오래 열어 둔 탭 — 새 세션이 실렸는지 다시 본다(받는 동안·실패해도 지금 목록은 그대로) */
     renderProc(); }
+  else if(t==='fifa')fifaRender();
   else if(t==='elmiha'){ if(!elm.ready)elmFetch(); else if(Date.now()-elm.at>ELM_TTL)elmFetch(true);   /* 3.018 — 받는 동안 · 실패해도 지금 목록은 그대로 */
     render(); }
   else if(!ready&&!tableMissing)fetchPosts(); else render();
@@ -2275,7 +2290,7 @@ html body.pr-proc .comm-list .grid:not(#_):not(#__){display:grid!important;grid-
 @media (max-width:560px){
 html body .top:not(#_):not(#__){flex-wrap:wrap;height:auto;min-height:52px;row-gap:6px;padding-top:6px;padding-bottom:6px}
 html body .top #commSearch:not(#_):not(#__){flex:1 1 0!important;width:0!important;min-width:0!important}   /* 줄바꿈을 켜면 입력 칸의 제 폭이 한 줄을 다 차지한다 — 남는 폭만 쓰게 */
-html body .top .pr-seg:not(#_):not(#__){order:9;flex:1 0 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}   /* 3.018 — 칸 셋 */
+html body .top .pr-seg:not(#_):not(#__){order:9;flex:1 0 100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}   /* 3.018 — 칸 셋 · 3.071 — 넷(FIFA) */
 html body .top .pr-seg button:not(#_):not(#__){height:36px;padding:0 8px}
 html body.pr-proc .comm-list .grid:not(#_):not(#__){grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
 .pr-tt{font-size:16px}
@@ -2289,7 +2304,7 @@ html body.pr-proc .comm-list .grid:not(#_):not(#__){grid-template-columns:minmax
 /* ══ 3.018 · «엘미하» 칸 — 카드·고르개·미리보기는 코치 자료 그대로, 머리에 유튜브 채널로 가는 띠 하나 ══
    같은 새 블록 기준(2.979). «올리기»는 엘미하 계정으로 볼 때만(다른 코치가 여기서 올리면 코치 자료로 간다 — 헷갈린다). */
 /* 3.042 — 엘미하 칸에는 훈련 주제 · 콘텐츠 유형 · 연령 · 인원 고르개가 없다(사용자 «엘미하 페이지는 훈련 주제 분류 필요없고»). 검색 · 정렬(탐색)은 그대로 */
-html body.pr-elm .comm-nav .pr-cat-sec:not(#_):not(#__),html body.pr-elm .comm-nav .nav-sec:has(#typeNav):not(#_):not(#__){display:none!important}
+html body.pr-elm .comm-nav .pr-cat-sec:not(#_):not(#__),html body.pr-elm .comm-nav .nav-sec:has(#typeNav):not(#_):not(#__),html body.pr-fifa .comm-nav .nav-sec:has(#typeNav),html body.pr-fifa .comm-nav .nav-sec:has([data-sort-nav]){display:none!important}   /* 3.071 — FIFA 칸도 유형 · 탐색(정렬)이 없다 */
 html.ps-page-community body.pr-elm .comm-list .filters #ageSel:not(#_):not(#__),html.ps-page-community body.pr-elm .comm-list .filters #plSel:not(#_):not(#__),html body.pr-elm #cfTypeSel:not(#_):not(#__){display:none!important}
 html body.pr-elm #commFiltSheet .ps-fsheet-sec:has(#cfsType):not(#_):not(#__),html body.pr-elm #commFiltSheet .ps-fsheet-sec:has(#cfsSel):not(#_):not(#__){display:none!important}   /* 폰 «필터» 시트도 탐색만 */
 html body.pr-elm:not(.pr-elm-own) .fab:not(#_):not(#__),html body.pr-elm:not(.pr-elm-own) #upMenu:not(#_):not(#__){display:none!important}
@@ -2306,5 +2321,6 @@ html body.pr-elm:not(.pr-elm-own) .fab:not(#_):not(#__),html body.pr-elm:not(.pr
 .el-yt{height:40px}
 }
 </style>
+<link rel="stylesheet" href="community-fifa.css"><!-- 3.071 — «FIFA» 칸 -->
 </body>
 </html>
