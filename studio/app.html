@@ -3031,10 +3031,17 @@ window.psFailAlert=function(lead,e,stage){
       var team=false;
       try{ var wid=localStorage.getItem('ps_active_ws')||'', list=JSON.parse(localStorage.getItem('ps_ws_list')||'[]');
         team=!!localStorage.getItem('ps_sync_session')&&Array.isArray(list)&&list.some(function(w){ return w&&w.id===wid&&w.kind==='team'; }); }catch(_){}
-      setTimeout(function(){ try{
-        if(team){ var hub=document.querySelector('#appSeg button[data-team-hub]'); if(hub){ hub.click(); var td=document.querySelector('#teamBottom [data-tb="today"]'); if(td&&!td.classList.contains('on'))td.click(); return; } }
-        showApp('community');
-      }catch(_){} },0);
+      if(!team){ setTimeout(function(){ try{ showApp('community'); }catch(_){} },0); return true; }
+      /* 팀 운영은 자료 잠금이 풀린 뒤에 연다 — 먼저 열면 불러오는 동안 «자료를 불러오지 못했어요» 잠금 판이 비친다(quiet-entry).
+         15초 안에 안 풀리면(오프라인 · 서버 문제) 작전판에 그대로 둔다. 그사이 사용자가 다른 탭을 눌렀으면 건드리지 않는다. */
+      var t0=Date.now(), app0=document.body.dataset.psApp||'';
+      (function wait(){ try{
+        if((document.body.dataset.psApp||'')!==app0)return;
+        if(window.PSSync&&PSSync.dataUnlocked&&PSSync.dataUnlocked()){
+          var hub=document.querySelector('#appSeg button[data-team-hub]'); if(hub){ hub.click(); var td=document.querySelector('#teamBottom [data-tb="today"]'); if(td&&!td.classList.contains('on'))td.click(); }
+          return; }
+        if(Date.now()-t0<15000)setTimeout(wait,150);
+      }catch(_){} })();
       return true;
     }
     /* ===== 시작 화면 — 앱을 열면 언제나 작전판이 먼저 (온보딩·역할 안내는 랜딩이 담당).

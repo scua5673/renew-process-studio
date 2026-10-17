@@ -35,6 +35,7 @@ test('phone opens on team today (team workspace) or community (otherwise); deskt
   assert.ok(src.includes("getAttribute('data-ps-device')!=='phone')return false"),'폰만');
   assert.ok(/localStorage\.getItem\('ps_sync_session'\)&&Array\.isArray\(list\)&&list\.some\(function\(w\)\{ return w&&w\.id===wid&&w\.kind==='team'; \}\)/.test(src),'로그인한 팀 공간');
   assert.ok(src.includes("#appSeg button[data-team-hub]")&&src.includes('#teamBottom [data-tb="today"]'),'팀 → 오늘');
+  assert.ok(/PSSync\.dataUnlocked&&PSSync\.dataUnlocked\(\)\)\{\s*var hub=/.test(src),'팀 운영은 자료 잠금이 풀린 뒤에 연다');
   assert.ok(src.includes("showApp('community')"),'그 밖 → 커뮤니티');
   assert.ok(/if\(q==='player'\)\{ showApp\('idp'\); \}\n      else if\(psPhoneStart\(\)\)return;\n      else pingApp\('board'\);/.test(APP),'선수 딥링크가 먼저, 데스크톱은 작전판');
 });
