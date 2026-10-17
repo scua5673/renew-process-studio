@@ -63,10 +63,6 @@
       'html.ps-page-board body.ps-dock-float #ehDoor{top:58px!important}',
       S + '>.tb-g{pointer-events:auto;display:flex;align-items:center;gap:2px;height:36px;padding:0 4px;border-radius:12px;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);flex:0 1 auto;min-width:0;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}',
       S + '>.tb-l{overflow:hidden}',
-      // 3.083 — 끄는 동안(body.token-drag)은 떠 있는 판들의 뒤 흐림을 끈다: 배경이 거의 불투명(.9~.98)이라 보기엔 같고,
-      //         GPU 없이 그리는 WebKit(CI · 오래된 iPad)에서 매 프레임 흐림을 다시 그리느라 끌기가 밀렸다(shaper-ball: 시야가 한 걸음 늦음)
-      (function () { var X = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map(function (i) { return ':not(#tdz' + i + ')'; }).join(''), B = 'html body.token-drag ';   // 도크 겉옷(board-dock-skin)의 :not 14개보다 세게
-        return [B + '#boardPageStrip' + X + '>.tb-g', B + '#ps-command-dock' + X, B + '#ps-command-dock' + X + ' *', B + '#ps-df-tray' + X, B + '.sel-ctl' + X, B + '#ps-tb-menu' + X].join(',') + '{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}'; })(),
       // 3.083 — 가운데 덩어리(보기 · 모양)는 화면 가운데에(왼쪽 덩어리가 넓어도) — 양옆과 겹치지 않을 때만(tb-mid, JS 가 잰다)
       S + '.tb-mid>.tb-c{position:absolute;left:50%;top:8px;transform:translateX(-50%)}',
       S + '>.bp-head{display:none!important}',

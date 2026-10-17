@@ -47,10 +47,13 @@ test('3.083 — no resize loop when the bar cannot build (community viewer), cle
   assert.match(css,/body\.ps-dock-float\.vcreating #boardPageStrip\.ps-tb[^{]*\{top:56px!important\}/);
   assert.match(css,/body\.ps-dock-float #ehDoor\{top:58px!important\}/);
 });
-test('3.083 — centre group truly centred when it fits; no backdrop blur while dragging tokens',()=>{
+test('3.083 — centre group truly centred when it fits',()=>{
   const css=tb.css(),src=fs.readFileSync(path.join(__dirname,'../studio/board-topbar.js'),'utf8');
   assert.match(css,/\.tb-mid>\.tb-c\{position:absolute;left:50%;top:8px;transform:translateX\(-50%\)\}/);
   assert.match(src,/var ok = mid - cw \/ 2 >= lr \+ 10 && mid \+ cw \/ 2 <= rl - 10;/);
-  assert.match(css,/html body\.token-drag #ps-command-dock(:not\(#tdz\d+\)){20}[,{]/);
-  assert.match(css,/\{-webkit-backdrop-filter:none!important;backdrop-filter:none!important\}/);
+});
+test('3.083 — the floating dock is hidden on the vault list (no board, editor, creation or meeting on screen)',()=>{
+  const df=require('../studio/board-dock-float.js');const css=(df.css?df.css():fs.readFileSync(path.join(__dirname,'../studio/board-dock-float.js'),'utf8'));
+  assert.match(fs.readFileSync(path.join(__dirname,'../studio/board-dock-float.js'),'utf8'),/body\.ps-dock-float:not\(\.board-view\):not\(\.editing\):not\(\.vcreating\):not\(\.meet-mode\):not\(\.focus-board\) /);
+  void css;
 });

@@ -69,6 +69,9 @@
   function css() {
     var glass = 'background:rgba(255,255,255,.9)!important;-webkit-backdrop-filter:blur(18px) saturate(1.4)!important;backdrop-filter:blur(18px) saturate(1.4)!important;border:1px solid rgba(20,22,26,.07)!important;border-radius:20px!important;box-shadow:0 10px 28px rgba(8,12,24,.22),0 1px 0 rgba(255,255,255,.7) inset!important;';
     return [
+      // 3.083 — 보관함 목록(작전판 · 편집 · 만들기 · 미팅 화면이 아닐 때)에는 떠 있는 도크 · 칸을 감춘다(목록 위에 장면 줄 · 도구가 떠 있었다)
+      (function () { var X = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map(function (i) { return ':not(#dfv' + i + ')'; }).join(''), B = 'html body.ps-dock-float:not(.board-view):not(.editing):not(.vcreating):not(.meet-mode):not(.focus-board) ';
+        return [B + '#ps-command-dock' + X, B + '#ps-df-tray' + X, B + '#ps-df-opts' + X].join(',') + '{display:none!important}'; })(),
       P + '{left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:max-content!important;max-width:calc(100vw - 24px)!important;height:auto!important;min-height:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;bottom:calc(14px + env(safe-area-inset-bottom))!important;grid-template-rows:none!important}',
       P + '>#floatBar{display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;height:auto!important;width:auto!important;background:transparent!important;padding:0!important}',
       P + '>#animBar,' + P + ' #drawPanel,' + P + ' #cmd-tool-row{' + glass + 'height:auto!important;min-height:0!important;width:auto!important;max-width:calc(100vw - 24px)!important;padding:6px 10px!important;overflow-x:auto!important;overflow-y:visible!important}',
