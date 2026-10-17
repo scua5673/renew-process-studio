@@ -68,8 +68,9 @@ test('3.042 the elmiha tab neither filters nor shows the topic, type, age or pla
 
 test('3.042 the elmiha upload takes anything but analysis video, with only a title',()=>{
   assert.match(comm,/return elmUp\?\(t!=='analysis'\):\(t==='train'\|\|t==='setpiece'\|\|t==='board'\);/,'코치 자료 올리기는 전처럼 훈련 · 세트피스 · 작전판');
-  assert.match(comm,/\+\(elmUp\?'':'<div class="fld"><label>분류 \(여러 개 선택 가능\)<\/label>/,'엘미하는 분류 칸이 없다');
+  assert.match(comm,/\+\(elmUp\?'':'<div class="fld"><label>주제 \(여러 개 선택 가능\)<\/label>/,'엘미하는 주제 칸이 없다(3.076 분류 → 주제)');
   assert.match(comm,/\+\(elmUp\?'':'<div class="fld"><label>연령대 \(여러 개 선택 가능\)<\/label>/,'엘미하는 연령 칸이 없다');
-  assert.match(comm,/if\(!elmUp&&!selCats\.length\)\{toast\('분류를 하나 이상 골라주세요'\);return;\}/);
+  assert.match(comm,/up=\(!elmUp&&TX\)\?TX\.upForm\(/,'3.076 — 엘미하는 주제 · 연령 · 인원 고르개가 없다');
+  assert.match(comm,/if\(up&&!uf\.cat\)\{toast\('주제를 하나 이상 골라주세요'\);return;\}/);
   assert.match(comm,/if\(item\.type==='match'\)item\.type='board';/,'경기 분석은 작전판으로 올라간다');
 });
