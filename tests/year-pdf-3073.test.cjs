@@ -46,59 +46,62 @@ function ctx(Y,opt){
 }
 const months=h=>h.split('<div class="pyr-m">').slice(1);
 
-test('header leads with the team name, then the document name; period and totals are a smaller second line',()=>{
+test('header leads with the team name, then the document name, then the period; no duplicate totals',()=>{
   const h=ctx(NOW-1).yearDocHTML('review');
-  assert.match(h,/<div class="pyr-h1"><b>FC 예시 U15<\/b><span>\d{4} 연간 돌아보기<\/span><\/div><div class="pyr-h2">\d{4}\.1\.1 – 12\.31<\/div>/);
+  assert.match(h,/<div class="pyr-h1"><b>FC 예시 U15<\/b><span>\d{4} 연간 돌아보기<\/span><\/div><div class="pyr-h2">\d{4}\.1\.1 – 12\.31<\/div><\/div><\/div>/);
   assert.ok(M.includes("#printDoc.pl-year .pyr-h1{display:flex;align-items:baseline;gap:10px;font-size:var(--t-7,20px)"),'① 20');
   assert.ok(M.includes("#printDoc.pl-year .pyr-mh b{flex:0 0 auto;font-size:var(--t-5,14px);font-weight:800")&&M.includes("#printDoc.pl-year .pyr-side h4{font-size:var(--t-5,14px);font-weight:800"),'③ 달 이름 = 오른쪽 제목');
   assert.match(ctx(NOW+1).yearDocHTML('plan'),/<b>FC 예시 U15<\/b><span>\d{4} 연간 계획<\/span>/);
 });
 
-test('review: past year counts sessions, minutes, RPE, intensity and results from match documents',()=>{
+test('calendar has three day colours only: training, match, rest',()=>{
   const h=ctx(NOW-1).yearDocHTML('review'),m=months(h);
   assert.equal(m.length,12);
-  assert.ok(m[0].includes('<i class="tl">5</i>')&&m[0].includes('<i class="th">6</i>')&&m[0].includes('<i class="tu">7</i>'));
-  assert.ok(m[2].includes('<i class="g">14</i>')&&m[2].includes('경기 2'),'추가 경기도 센다');
-  assert.ok(h.includes('<b>4<small>회</small></b><span>훈련 세션</span>'));
-  assert.ok(h.includes('<b>4<small>시간</small></b><span>훈련 시간</span>'),'240분');
-  assert.ok(h.includes('<b>5</b><span>평균 RPE</span>'),'(2+8+5)/3');
-  assert.ok(h.includes('<b>1<small>승</small> 1<small>무</small> 0<small>패</small></b>')&&h.includes('득 2 · 실 1 · 결과 적은 경기 2/2'));
-  assert.ok(h.includes('<span>광주FC &lt;U15&gt;</span><em>2 : 1 <u class="r-w">승</u></em>'));
-  assert.ok(h.includes('<span>수원 U15</span><em>0 : 0 <u class="r-d">무</u></em>'));
-  assert.ok(h.includes('class="pfill pyr-pen"'),'손글씨 칸');
+  assert.ok(m[0].includes('<i class="t">5</i>')&&m[0].includes('<i class="t">6</i>')&&m[0].includes('<i class="t">7</i>'),'강도와 상관없이 훈련 한 색');
+  assert.ok(m[2].includes('<i class="g">14</i>')&&m[2].includes('<i class="o">22</i>'));
+  assert.equal(/class="t[lmhu]/.test(h),false);
+  assert.ok(h.includes('<span><i class="t"></i>훈련</span><span><i class="g"></i>경기</span><span><i class="o"></i>휴식</span>'));
+});
+
+test('review: big numbers, monthly hours, top topics, recent results from match documents, note lines',()=>{
+  const h=ctx(NOW-1).yearDocHTML('review'),m=months(h);
+  assert.ok(m[2].includes('경기 2'),'추가 경기도 센다');
+  assert.ok(h.includes('<div><b>4</b><span>훈련</span></div><div><b>4</b><span>시간</span></div><div><b>1승 1무 0패</b><span>전적</span></div>'));
+  assert.ok(h.includes('<span>광주FC &lt;U15&gt;</span><em>2:1 <u class="r-w">승</u></em>'));
+  assert.ok(h.includes('<span>수원 U15</span><em>0:0 <u class="r-d">무</u></em>'));
+  assert.ok(h.includes('<h4>월별 훈련 시간</h4>')&&h.includes('<h4>많이 한 주제</h4>')&&h.includes('class="pfill pyr-pen"'));
   assert.equal(h.includes(' dim'),false,'지난해는 흐린 날이 없다');
 });
 
 test('review of a future year counts nothing and greys every day',()=>{
   const h=ctx(NOW+1).yearDocHTML('review');
   assert.ok(h.includes('아직 지난 날이 없어요'));
-  assert.ok(h.includes('<b>0<small>회</small></b><span>훈련 세션</span>'));
-  assert.ok(h.includes('<i class="tl dim">5</i>'));assert.ok(h.includes('지난 경기가 없어요'));
+  assert.ok(h.includes('<div><b>0</b><span>훈련</span></div>'));
+  assert.ok(h.includes('<i class="t dim">5</i>'));assert.ok(h.includes('지난 경기가 없어요'));
 });
 
-test('plan: phase band, phase underline and month chips, goals or pen line, upcoming matches with D-n',()=>{
+test('plan: phase band, month phase chip, goal or pen line, upcoming matches with D-n',()=>{
   const Y=NOW+1;
   const h=ctx(Y,{plan:{[Y]:{phases:[{name:'전반기',start:Y+'-03-01',end:Y+'-07-15',color:'#2E9D6A'},{name:'',start:Y+'-01-05',end:Y+'-02-28',color:'#evil'}],goals:{3:'빌드업 <첫 패스>',4:'  '}}}}).yearDocHTML('plan');
   assert.ok(h.includes('<b>전반기</b></i>')&&h.includes('class="pyr-band"'));
-  assert.ok(h.includes('<i class="g" style="box-shadow:inset 0 -2px 0 #2E9D6A">14</i>'),'3/14 = 전반기 밑줄');
   const m=months(h);
   assert.ok(m[2].includes('<span class="pyr-phn"><i style="background:#2E9D6A"></i>전반기</span>'));
-  assert.ok(m[0].includes('<b>단계</b>')===false&&m[0].includes('>단계</span>'),'이름 없는 단계 = «단계», 엉뚱한 색은 팔레트로');
-  assert.ok(m[2].includes('<div class="pyr-goal"><b>목표</b>빌드업 &lt;첫 패스&gt;</div>'));
-  assert.ok(m[3].includes('<div class="pyr-goal pen"><b>목표</b></div>'),'빈 목표 = 펜 줄');
-  assert.match(h,/3\.14 [월화수목금토일]<\/b><span>광주FC &lt;U15&gt;<\/span><em>15:00 · 컵 · D-\d+<\/em>/);
-  assert.ok(h.includes('<b>2<small>경기</small></b><span>남은 경기</span>'));
+  assert.ok(m[0].includes('<i style="background:#2E9D6A"></i>단계</span>'),'이름 없는 단계 = «단계», 엉뚱한 색은 팔레트로');
+  assert.ok(m[2].includes('<div class="pyr-goal">빌드업 &lt;첫 패스&gt;</div>'));
+  assert.ok(m[3].includes('<div class="pyr-goal pen"></div>'),'빈 목표 = 펜 줄');
+  assert.match(h,/<b>3\.14 [월화수목금토일]<\/b><span>광주FC &lt;U15&gt;<\/span><em>D-\d+<\/em>/);
+  assert.ok(h.includes('<b>2</b><span>남은 경기</span>'));
   assert.ok(h.indexOf('1.5 – 2.28')<h.indexOf('3.1 – 7.15'),'단계는 날짜 순');
 });
 
 test('plan without phases tells where to add them',()=>{
   const h=ctx(NOW+1).yearDocHTML('plan');
-  assert.ok(h.includes('시즌 계획»에서 넣으면'));assert.ok(h.includes('아직 없어요'));
+  assert.ok(h.includes('시즌 계획»에서 넣어요'));assert.ok(h.includes('아직 없어요'));
 });
 
 test('group view follows the visible group',()=>{
   const h=ctx(NOW-1,{grp:'A'}).yearDocHTML('review');
-  assert.ok(h.includes('1.1 – 12.31 · A 일정'));assert.equal(months(h)[5].includes('<i class="tm">3</i>'),false);
+  assert.ok(h.includes('1.1 – 12.31 · A 일정'));assert.equal(months(h)[5].includes('<i class="t">3</i>'),false);
 });
 
 test('season plan writes go through save(), are cleaned, and are blocked without edit rights',()=>{
