@@ -90,11 +90,39 @@ textarea,input{font:inherit}
 .tb-list .tb-chap{margin:0}
 .tb-list .tb-chap.open{border-color:var(--acc)}
 .tb-list .tb-chap .tc-t{font-weight:600}
-.shelf-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
-.shelf-row .toc-grid{display:flex;gap:8px}
-.shelf-row .toc-card{flex:0 0 200px;padding:10px 12px;border-radius:12px}
+/* 3.079 — 서가는 옆으로 넘기지 않고 바둑판(남은 책이 몇 권 안 된다 — 한눈에) */
+.shelf-row{padding-bottom:6px}
+.shelf-row .toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.shelf-row .toc-card{padding:10px 12px;border-radius:12px;min-width:0}
+button.tb-row{width:100%;font:inherit;text-align:left;cursor:pointer;background:none;border:0}
+button.tb-row.done{background:var(--panel);border:1px solid var(--line)}
+.tb-row.part.fold{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)}
+.tb-row.part.fold em{color:var(--acc-ink);font-weight:700}
+.door .row{gap:8px}
+/* 3.080 — 나의 코칭 고리 */
+.loopbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0 4px}
+.lp-h{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}.lp-h b{font-size:var(--t-5)}.lp-h small{color:var(--gray);font-size:var(--t-3)}
+.lp-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.lp-c{border:1px solid var(--line);border-radius:10px;padding:9px 10px;display:grid;gap:2px;min-width:0}
+.lp-c i{font-style:normal;font-size:var(--t-2);font-weight:800;color:var(--acc-ink)}.lp-c b{font-size:var(--t-4)}.lp-c span{font-size:var(--t-3);color:var(--gray)}.lp-c small{font-size:var(--t-2);color:var(--faint)}
+.lp-next{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:var(--t-4)}
+@media(max-width:760px){.lp-row{grid-template-columns:1fr 1fr}}
+/* 3.079 — 스튜디오에서 해보기 */
+.trybox{margin-top:12px;border:1px solid var(--acc);border-radius:10px;padding:10px 14px;background:var(--acc-soft)}
+.trybox .k{display:block;color:var(--acc-ink);margin-bottom:4px}
+.trybox ol{margin:0 0 8px 18px;padding:0;display:grid;gap:3px}
+.trybox .hint{margin:0 0 8px}
+.keepbox{margin-top:10px;padding-top:10px;border-top:1px dashed var(--acc)}
+.keepbox b{display:block;font-size:var(--t-4);margin-bottom:6px}
+.keeprow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.keeprow select,.keeprow input{border:1px solid var(--line2);border-radius:8px;padding:7px 9px;font:inherit;font-size:var(--t-4);background:var(--surface);color:var(--ink)}
+.keeprow input{flex:1;min-width:200px}
+.keepbox .pick{display:block;width:100%;text-align:left;border:1px solid var(--line2);border-radius:8px;padding:7px 10px;margin-bottom:6px;background:var(--surface);font-size:var(--t-4)}
+.keepbox .pick small{display:block;color:var(--faint);font-size:var(--t-2)}
 .shelf-row .toc-head{display:none}
-@media(max-width:760px){.door h3{font-size:18px}.mine{grid-template-columns:1fr 1fr}.shelf-row .toc-card{flex-basis:170px}}
+@media(max-width:760px){.door h3{font-size:18px}.mine{grid-template-columns:1fr 1fr}.shelf-row .toc-grid{grid-template-columns:1fr 1fr}
+  /* 3.079 — 역할 고르기: 폰에서 다섯 장이 한 화면을 다 채웠다 → 두 줄 바둑판 */
+  .rolegrid{grid-template-columns:1fr 1fr;gap:8px}.rolecard{padding:12px}.rolecard .rc-bar{margin-top:4px}}
 /* 2.664~2.665 — 앱 안 폰(body.ps-emb-phone — 아래 스크립트가 self≠top && 폭≤600 으로 켠다; 셸의 ps-phone-work 는 작전판 프레임만 받는다): 학습 제 아래 막대(.bt)가 앱 아래 막대 위에 한 겹 더 쌓였다(실측) → .bt 숨기고 상단 탭 셋을 작게 보인다 */
 body.ps-emb-phone .bt{display:none!important}
 body.ps-emb-phone .top .tabs{display:flex;gap:10px;font-size:12px}
@@ -214,7 +242,7 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line2);border-radius:
   .opts{grid-template-columns:1fr}
   /* 2.345 — ⚠ 버튼은 넷(목차·지금·책·카드)인데 3열이었다(2.323 에서 목차 탭을 더할 때 열을 안 늘림).
      폰에선 상단 탭이 숨어 이 바가 유일한 길인데, 넷째 버튼이 아랫줄로 흘러 잘리고 본문을 덮었다("하단 메뉴가 겹쳐"). */
-  .bt{display:grid;position:fixed;left:0;right:0;bottom:0;height:56px;background:var(--surface);border-top:1px solid var(--line);grid-template-columns:repeat(4,1fr);z-index:5;padding-bottom:env(safe-area-inset-bottom)}
+  .bt{display:grid;position:fixed;left:0;right:0;bottom:0;height:56px;background:var(--surface);border-top:1px solid var(--line);grid-template-columns:repeat(3,1fr);z-index:5;padding-bottom:env(safe-area-inset-bottom)}   /* 3.079 — 버튼은 셋(오늘 · 책 · 카드)인데 네 칸이라 오른쪽이 비었다 */
   .bt button{font-size:11px;color:var(--gray);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
   .bt button.on{color:var(--acc-ink);font-weight:600}
   .bt button i{font-style:normal;font-size:16px}
@@ -246,31 +274,70 @@ body.fmdark{color-scheme:dark}
 </div>
 <div class="bt"><button data-p="toc" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>오늘</button><button data-p="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c-1.6-1.3-3.6-2-6-2H3v13h3c2.4 0 4.4.7 6 2 1.6-1.3 3.6-2 6-2h3v-13h-3c-2.4 0-4.4.7-6 2z"/><path d="M12 6.5v13"/></svg>책</button><button data-p="cards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="14" height="11" rx="2"/><path d="M7.5 4.5h11a2 2 0 0 1 2 2v9"/></svg>카드</button></div>
 <div class="toast" id="toast"></div>
-<script src="learn-mikl.js"></script>
-<script src="learn-gamemodel.js?v=2.411"></script><!-- 2.411 — 게임모델 만드는 법(같은 자료 모양) -->
+<!-- 3.079 — 『축구를 배우는 법』(learn-mikl.js — 근거가 국내 지도자 매뉴얼, 국제표준 아님)은 학습에서 내렸다(사용자 «국제표준만»). 파일은 남겨 둔다 -->
+<script src="learn-studio.js?v=3.081"></script><!-- 3.079 — 『스튜디오로 배우는 코칭』(게임모델 · IDP · 훈련 만들기). 『게임모델 만드는 법』은 이 책 1장으로 들어왔다 -->
 <script src="learn-futsal.js?v=2.659"></script><!-- 2.659 — 풋살을 배우는 법(같은 자료 모양, 3장 12절) -->
 <script src="learn-toc.js?v=2.659"></script><!-- 2.323 — 목차는 두 화면이 같은 파일을 읽는다 -->
 <script src="learn-curriculum.js"></script><!-- 2.342 — 역할 교과서 본문(90장 275절, 국제표준 재서술 2.010) -->
 <script src="learn-curriculum-pro.js"></script><!-- 2.151 — 피지컬·분석·AT 트랙이 LR_CUR 를 넓힌다 -->
-<script src="learn-book-player.js?v=2.441"></script><!-- 선수 교과서 본문 59절 -->
-<script src="learn-book-coach.js?v=2.441"></script><!-- 코치 교과서 본문 -->
-<script src="learn-book-physical.js?v=2.442"></script><!-- 피지컬 교과서 본문 -->
-<script src="learn-book-analysis.js?v=2.443"></script><!-- 분석 교과서 본문 -->
-<script src="learn-book-at.js?v=2.444"></script><!-- AT 교과서 본문 -->
+<!-- 3.079 — 역할 교재 본문(learn-book-<역할>.js, 다섯 권 합 약 0.9MB)은 여기서 싣지 않는다. 고른 역할 한 권만 ensureRoleBook 이 받는다 -->
 <script src="learn-books.js?v=2.438"></script><!-- 2.438 — 역할 교과서를 게임모델과 같은 7단계 고리로(본문은 그대로, 고리에 없는 것만 덧붙임) -->
 <script>
 /* ⚠ 2.411 — 이 화면은 **두 권**을 연다(MIKL · 게임모델 만드는 법). 예전엔 `BOOK` 이 MIKL 로
    못 박혀 있어 학습 소유 갈래를 늘려도 늘 MIKL 이 열렸다. 서가에서 고른 id 로 바꿔 끼운다.
    ⚠ 진행·카드 저장은 절 id(`G1`·`A1`…)로 갈리므로 두 권이 섞이지 않는다. */
-var BOOKS={mikl:window.LR_MIKL,gmhow:window.LR_GMHOW,futsal:window.LR_FUTSAL};   /* 2.659 — 풋살 */
-var BOOK=BOOKS.mikl;
+var BOOKS={studio:window.LR_STUDIO,futsal:window.LR_FUTSAL};   /* 2.659 — 풋살 · 3.079 — MIKL 내림 · 게임모델 만드는 법 → 스튜디오로 배우는 코칭 */
+var BOOK=BOOKS.studio;
 /* ───────── 저장 ───────── */
 function sessUid(){try{var s=JSON.parse(localStorage.getItem('ps_sync_session')||'null');return (s&&s.uid)||'local'}catch(e){return 'local'}}
 var KEY='cs_learn_v1_'+sessUid();
 var DEMO=/[?&]demo=1/.test(location.search);
 var S=load();
 function load(){try{var o=Object.assign({track:'coach',done:{},cards:{},ask:{},mc:{},now:null,dayOff:0,mix:{},role:null,cur:null},JSON.parse(localStorage.getItem(KEY)||'{}'));o.cur=o.cur||{done:{},quiz:{}};o.cur.done=o.cur.done||{};o.cur.quiz=o.cur.quiz||{};return o}catch(e){return {track:'coach',done:{},cards:{},ask:{},mc:{},now:null,dayOff:0,mix:{},role:null,cur:{done:{},quiz:{}}}}}
-function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+function save(){localStorage.setItem(KEY,JSON.stringify(S));learnSchedulePush();}
+/* ───────── 3.080 · 계정에 저장(사용자 «기록도 계정에 저장되게») ─────────
+   이 기기의 기록(cs_learn_v1_<uid>)은 그대로 쓰고, 내 개인 공간의 학습 기록(셸 PSSync.learn)과 맞춘다.
+   합치기는 «더 나아간 쪽»을 남긴다 — 맞힘 수는 큰 쪽, 카드는 단계가 높은 쪽, 적은 답은 비어 있지 않은 쪽(이 기기 먼저).
+   그래서 두 기기에서 따로 공부해도 어느 쪽 진도도 사라지지 않는다. 로그인 전 · 셸 밖에서는 이 기기에만 남는다. */
+var LSYNC={raw:null,cupd:null,uid:null,wid:null,t:0,busy:false,again:false};
+function learnApi(){ try{ var p=(window.parent&&window.parent!==window)?window.parent.PSSync:window.PSSync; return (p&&p.learn&&typeof p.learn.owner==='function'&&p.learn.owner())?p.learn:null; }catch(_){ return null; } }
+function lmPick(a,b){ return (a!=null&&a!=='')?a:b; }
+function mergeLearn(a,b){
+  a=a||{}; b=b||{}; var o=Object.assign({},b,a), k;
+  o.done={}; [b.done||{},a.done||{}].forEach(function(m){ for(k in m){ var x=m[k], y=o.done[k]; if(x&&(!y||(x.hits||0)>(y.hits||0)))o.done[k]=x; } });
+  o.cards={}; [b.cards||{},a.cards||{}].forEach(function(m){ for(k in m){ var x=m[k], y=o.cards[k]; if(x&&(!y||(x.stage||0)>(y.stage||0)||((x.stage||0)===(y.stage||0)&&(x.due||0)>=(y.due||0))))o.cards[k]=x; } });
+  ['ask','mc','mix'].forEach(function(f){ var m=Object.assign({},b[f]||{}); var la=a[f]||{}; for(k in la)m[k]=lmPick(la[k],m[k]); o[f]=m; });
+  var ca=a.cur||{}, cb=b.cur||{}; o.cur={done:Object.assign({},cb.done||{},ca.done||{}),quiz:Object.assign({},cb.quiz||{},ca.quiz||{})};
+  o.role=lmPick(a.role,b.role); o.now=lmPick(a.now,b.now); o.track=lmPick(a.track,b.track);
+  o.dayOff=a.dayOff||0;   /* 시험용 날짜 당기기는 기기에만 */
+  return o;
+}
+function learnSame(raw){ try{ return !!raw&&JSON.stringify(JSON.parse(raw).s)===JSON.stringify(S); }catch(_){ return false; } }
+function learnPull(then){
+  var api=learnApi(); if(!api){ if(then)then(false); return; }
+  api.get().then(function(r){
+    LSYNC.raw=r.raw; LSYNC.cupd=r.cupd; LSYNC.uid=r.uid; LSYNC.wid=r.wid;
+    if(r.raw){ var before=JSON.stringify(S); S=mergeLearn(S,JSON.parse(r.raw).s); localStorage.setItem(KEY,JSON.stringify(S)); if(JSON.stringify(S)!==before)render(); }
+    if(then)then(true); else if(!learnSame(LSYNC.raw))learnSchedulePush(400);
+  }).catch(function(){ if(then)then(false); });
+}
+function learnSchedulePush(ms){ clearTimeout(LSYNC.t); LSYNC.t=setTimeout(learnPush,ms==null?2000:ms); }
+function learnPush(retried){
+  var api=learnApi(); if(!api)return;
+  if(LSYNC.busy){ LSYNC.again=true; return; }
+  if(!LSYNC.uid){ learnPull(function(ok){ if(ok)learnPush(retried); }); return; }
+  if(learnSame(LSYNC.raw))return;
+  var raw=JSON.stringify({v:1,at:Date.now(),s:S});
+  LSYNC.busy=true;
+  api.save(raw,{uid:LSYNC.uid,wid:LSYNC.wid,expected_raw:LSYNC.raw,expected_cupd:LSYNC.cupd}).then(function(ack){
+    LSYNC.raw=ack.raw; LSYNC.cupd=ack.cupd;
+  }).catch(function(e){
+    /* 다른 기기가 먼저 썼다 → 다시 읽어 합치고 한 번만 더. 그 밖의 실패는 이 기기에 남아 다음 저장 때 다시 간다 */
+    if(e&&e.psCode==='sync_conflict'&&!retried){ LSYNC.busy=false; learnPull(function(ok){ if(ok)learnPush(true); }); return 'skip'; }
+    if(e&&e.psCode==='sync_workspace_changed'){ LSYNC.uid=null; }
+  }).then(function(x){ if(x==='skip')return; LSYNC.busy=false; if(LSYNC.again){ LSYNC.again=false; learnSchedulePush(400); } });
+}
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible')learnPull(); else if(!learnSame(LSYNC.raw))learnPush(); });
 function now(){return Date.now()+S.dayOff*86400000}
 var DAY=86400000, GAP=[3,7,21];
 /* ───────── 유틸 ───────── */
@@ -308,6 +375,7 @@ var page='toc', bookState={view:'toc',sec:null,step:0,mixCh:null,mixI:0,tocOpen:
 (function(){ function emb(){ try{ document.body.classList.toggle('ps-emb-phone', window.self!==window.top && window.innerWidth<=600); }catch(_){} } emb(); window.addEventListener('resize',emb,{passive:true}); })();
 function go(p){page=p;$$('[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p)});$$('.page').forEach(function(x){x.classList.toggle('on',x.id==='p-'+p)});render();window.scrollTo(0,0)}
 $$('[data-p]').forEach(function(b){b.onclick=function(){go(b.dataset.p)}});
+document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-try]'); if(!b)return; try{ parent.postMessage({source:'learning',type:'studioGo',to:b.dataset.try},'*'); }catch(_){ toast('앱 안에서 열어 주세요'); } });   /* 3.079 */
 $('#trackBtn').onclick=function(){S.track=S.track==='coach'?'player':'coach';save();render();toast(S.track==='coach'?'코치 트랙':'선수 트랙 (목업: 본문 같음, 예시만 순서 바뀜)')};
 $('#demoDay').hidden=!DEMO;$('#demoDay').onclick=function(){S.dayOff++;save();render();toast('+'+S.dayOff+'일 — 재학습 기한 확인용')};
 /* ═══ 2.323 · 목차(서가) — 들어오면 여기부터 ════════════════════════════════════════
@@ -328,6 +396,7 @@ var ROLES=[
   {id:'analysis', ko:'분석관',      en:'Analyst'},
   {id:'at',       ko:'AT · 트레이너', en:'Athletic trainer'}];
 var tbOpen=null;   /* 펼친 장 — 화면 상태라 저장하지 않는다 */
+var partOpen=null;   /* 3.079 — 펼친 부(1·2·3). 비면 지금 읽는 장이 든 부 */
 var roleOpen=false;   /* 2.660 — 역할 칩 펼침(상단 «바꾸기») */
 function idpCurDone(){
   var out={};
@@ -348,6 +417,59 @@ function nextLesson(role,idp){
     if(!lsDone(mods[i].lessons[j].id,idp))return {m:mods[i],l:mods[i].lessons[j]};
   return null;
 }
+/* ══ 3.080 · 나의 코칭 고리 — 공부 → 내 게임모델 → 훈련 → 커뮤니티 진행판(사용자 «학습 진행판도») ══════════
+   읽기만 한다: 『스튜디오로 배우는 코칭』 진도(S.done) · 내 게임모델(cs_gamemodel_personal_v1, 없으면 계정 사본) · 보관함 훈련(셸 storage 'cs_drill_lib_v1').
+   «다음 한 걸음»은 비어 있는 첫 칸을 가리킨다. 숫자를 판정하지 않는다 — 한 줄이라도 있으면 그 칸은 시작된 것이다. */
+var LOOP_CORE=[['ao','공격 조직'],['do','수비 조직'],['dt','공격 → 수비 전환'],['at','수비 → 공격 전환']];
+var LOOP_STD={ao:['빌드업','전진 · 전개','침투 · 마무리'],do:['전방 압박','미드 블록','로우 블록'],dt:['즉시 반응 (역압박)','후퇴 · 재정비'],at:['빠른 역습','점유 안정화'],ic:['경합'],set:['공격 세트피스','수비 세트피스']};
+function loopPrTxt(x){ return String(typeof x==='string'?x:((x&&(x.t||x.text||x.title))||'')).trim(); }
+function loopVaultFetch(){
+  if(loopVaultFetch._busy)return; loopVaultFetch._busy=true;
+  try{ var st=(window.parent&&window.parent!==window&&window.parent.storage)||window.storage; if(!st){ loopVaultFetch._busy=false; return; }
+    Promise.resolve(st.get('cs_drill_lib_v1')).then(function(r){
+      var lib=[]; try{ lib=JSON.parse((r&&r.value)||'[]')||[]; }catch(_){}
+      var ids={}; (Array.isArray(lib)?lib:[]).forEach(function(d){ if(!d||d.deleted)return; var one={};
+        (d.gmPhases||[]).forEach(function(x){ one[x]=1; }); (d.trainings||[]).forEach(function(t){ (t&&t.gmPhases||[]).forEach(function(x){ one[x]=1; }); });
+        Object.keys(one).forEach(function(k){ ids[k]=(ids[k]||0)+1; }); });
+      var before=JSON.stringify(window.__loopVault||null); window.__loopVault=ids; loopVaultFetch._busy=false;
+      if(JSON.stringify(ids)!==before&&page==='toc')render();
+    }).catch(function(){ loopVaultFetch._busy=false; });
+  }catch(_){ loopVaultFetch._busy=false; }
+}
+function loopState(){
+  var gm=myGameModel(), st={sd:0,sn:0,core:0,miss:[],pr:0,ph:0,phDrill:0};
+  try{ (window.LR_STUDIO&&LR_STUDIO.chapters||[]).forEach(function(c){ (c.sections||[]).forEach(function(x){ st.sn++; if(isDone(x.id))st.sd++; }); }); }catch(_){}
+  var V=window.__loopVault||{};
+  LOOP_CORE.forEach(function(cm){
+    var m=gm&&(gm.moments||[]).filter(function(x){ return x&&x.key===cm[0]; })[0], any=false;
+    if(m)(m.phases||[]).forEach(function(ph,i){ var n=(ph.principles||[]).filter(function(x){ return loopPrTxt(x); }).length; if(!n)return; any=true; st.pr+=n; st.ph++;
+      var stdI=(LOOP_STD[cm[0]]||[]).indexOf(String(ph.name||'').trim()), std=stdI>=0?('std_'+cm[0]+'_'+(stdI+1)):'';
+      if((ph.id&&V[ph.id])||(std&&V[std]))st.phDrill++; });
+    if(any)st.core++; else st.miss.push(cm[1]);
+  });
+  return st;
+}
+function loopHtml(){
+  var st=loopState(), nx;
+  if(st.sd<2&&!st.pr)nx={t:'1장 «네 국면»을 읽고 첫 원칙을 내 게임모델에 담아 보세요.',b:'1장 열기',a:'sec:SG2'};
+  else if(st.core<4)nx={t:'아직 약속이 없는 국면: '+st.miss.join(' · ')+'. 한 줄씩 담아 보세요.',b:'원칙 담으러 가기',a:'sec:SG3'};
+  else if(st.phDrill<st.ph)nx={t:'원칙이 있는 단계 '+st.ph+'곳 중 '+(st.ph-st.phDrill)+'곳에 아직 훈련이 없어요. 그 원칙으로 훈련을 만들어 보세요.',b:'훈련 만들러 가기',a:'sec:ST1'};
+  else nx={t:'네 국면에 약속과 훈련이 다 있어요. 커뮤니티에서 다른 코치의 같은 국면 훈련을 찾아보고, 경기 리뷰로 고쳐 가세요.',b:'커뮤니티 열기',a:'go:community'};
+  function cell(n,k,v,sub){ return '<div class="lp-c"><i>'+n+' · '+esc(k)+'</i><b>'+esc(v)+'</b>'+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>'; }
+  return '<div class="loopbox"><div class="lp-h"><b>나의 코칭 고리</b><small>공부 → 내 게임모델 → 훈련 → 커뮤니티</small></div>'
+    +'<div class="lp-row">'+cell(1,'공부','『스튜디오로 배우는 코칭』 '+st.sd+'/'+st.sn+'절')
+    +cell(2,'내 게임모델','국면 '+st.core+'/4 · 원칙 '+st.pr,'')
+    +cell(3,'훈련','원칙 단계 '+st.ph+'곳 중 '+st.phDrill+'곳','보관함 훈련 기준')
+    +cell(4,'커뮤니티','같은 국면 훈련 찾기','')+'</div>'
+    +'<div class="lp-next"><span>다음 한 걸음 — '+esc(nx.t)+'</span><span class="row"><button type="button" class="btn pri" data-loop="'+esc(nx.a)+'">'+esc(nx.b)+' →</button>'
+    +((window.parent&&window.parent!==window)?'<button type="button" class="btn" data-loop="go:mygm">내 게임모델 열기</button>':'')+'</span></div></div>';
+}
+document.addEventListener('click',function(e){
+  var b=e.target&&e.target.closest&&e.target.closest('[data-loop]'); if(!b)return;
+  var a=String(b.getAttribute('data-loop')||'');
+  if(a.indexOf('sec:')===0){ BOOK=BOOKS.studio; openSec(a.slice(4)); return; }
+  if(a.indexOf('go:')===0){ try{ parent.postMessage({source:'learning',type:'studioGo',to:a.slice(3)},'*'); }catch(_){ toast('앱 안에서 열어 주세요'); } }
+});
 function renderShelf(){
   var el=$('#p-toc'), h='', idp=idpCurDone();
   if(!window.LR_CUR){ h+='<div class="card">교과서를 불러오지 못했어요</div>'; }
@@ -378,8 +500,10 @@ function renderShelf(){
       h+='<div class="door"><span class="k">오늘 한 절 · 약 5분</span><h3>'+esc(door.title)+'</h3><p>'+esc(door.sub)+'</p>'
         +'<div class="bar"><i style="width:'+(door.n?Math.round(door.d/door.n*100):0)+'%"></i></div>'
         +'<div class="meta"><span>이 책 '+door.d+'/'+door.n+'</span>'+(due.length?'<button type="button" class="lnk" data-due>다시 볼 카드 '+due.length+'장</button>':'<span>다시 볼 카드 0</span>')+'</div>'
-        +'<button class="btn pri" data-door>'+(door.step?'이어서 →':'시작 →')+'</button></div>';
+        +'<div class="row"><button class="btn pri" data-door>'+(door.step?'이어서 →':'시작 →')+'</button>'+(due.length?'<button class="btn" data-due>카드 '+due.length+'장 먼저 · 2분</button>':'')+'</div></div>';
     } else if(p.n&&p.d>=p.n){ h+='<div class="door"><span class="k">'+esc(role.ko)+'의 교과서</span><h3>다 읽었습니다</h3><p>모든 절을 마쳤어요 — 아래 목차에서 다시 열어볼 수 있습니다.</p></div>'; }
+    /* 3.080 — 나의 코칭 고리(코치 쪽 역할이거나 내 게임모델이 있으면) */
+    try{ if(window.LR_STUDIO&&(S.role!=='player'||myGameModel())){ h+=loopHtml(); loopVaultFetch(); } }catch(_){}
     /* 내 책 — 시작한 것만 */
     var mine=[];
     if(p.d>0)mine.push({id:'role',ko:role.ko+'의 교과서',d:p.d,n:p.n,next:nx?nx.l.ko:'',open:function(){ if(nx)openLesson(nx.m.id,nx.l.id); }});
@@ -397,7 +521,10 @@ function renderShelf(){
     (LR_CUR.levels||[]).forEach(function(lv){
       var ms=mods.filter(function(m){return m.level===lv.id}); if(!ms.length)return;
       var tot=0,dn=0; ms.forEach(function(m){ m.lessons.forEach(function(l){ tot++; if(lsDone(l.id,idp))dn++; }); });
-      if(tot&&dn>=tot&&!ms.some(function(m){return tbOpen===m.id;})){ h+='<div class="tb-row done"><i>✓</i><b>'+lv.id+'부 — '+esc(lv.ko)+' · '+ms.length+'장</b><em>'+dn+'/'+tot+'</em></div>'; return; }
+      if(tot&&dn>=tot&&!ms.some(function(m){return tbOpen===m.id;})&&String(partOpen)!==String(lv.id)){ h+='<button type="button" class="tb-row done" data-part="'+lv.id+'"><i>✓</i><b>'+lv.id+'부 — '+esc(lv.ko)+' · '+ms.length+'장</b><em>'+dn+'/'+tot+'</em></button>'; return; }
+      /* 3.079 — 18장을 한꺼번에 늘어놓지 않는다: 지금 부(읽는 장이 든 부, 또는 누른 부)만 장을 펴고 나머지 부는 한 줄 */
+      var _here=(partOpen!=null)?String(partOpen)===String(lv.id):ms.some(function(m){return tbOpen===m.id||(nx&&nx.m.id===m.id);});
+      if(!_here){ h+='<button type="button" class="tb-row part fold" data-part="'+lv.id+'"><b>'+lv.id+'부 — '+esc(lv.ko)+' · '+ms.length+'장</b><em>'+dn+'/'+tot+' ›</em></button>'; return; }
       h+='<div class="tb-row part"><b>'+lv.id+'부 — '+esc(lv.ko)+'</b><em>'+dn+'/'+tot+'</em></div>';
       ms.forEach(function(m){
         var ar=(LR_CUR.area&&LR_CUR.area(S.role,m.area))||{};
@@ -415,25 +542,51 @@ function renderShelf(){
     h+='</div>';
   }
   /* 서재 — 나머지 갈래(2.323). '학습 과정' 카드는 위 교과서가 그 자체라 뺀다(두 번 세우지 않는다) */
-  h+='<div class="sh"><b>다른 책</b><small>서가</small></div><div id="tbShelf" class="shelf-row"></div>';
+  h+='<div class="sh"><b>다른 책</b><small id="tbShelfN"></small></div><div id="tbShelf" class="shelf-row"></div>';
   el.innerHTML=h;
   var shelf=$('#tbShelf');
   if(shelf&&window.LR_TOC){
     var _started=['cur']; try{ Object.keys(BOOKS).forEach(function(id){ var bk=BOOKS[id]; if(bk&&bk.chapters&&bk.chapters.some(function(c){return (c.sections||[]).some(function(x){return S.done[x.id]&&S.done[x.id].hits>=3;});}))_started.push(id); }); }catch(_){}
-    shelf.innerHTML=LR_TOC.render({skip:_started});   /* 2.660 — 시작한 책은 «내 책»에 있으니 여기서 뺀다 */   /* 2.467 — 교과서가 대신한다. DOM에서 떼는 대신 세는 목록에서 빼 머리글(갈래·합계)도 같이 정직해진다(오디트 ③) */
+    /* 3.079 — 전술 원칙 · 경기 읽기 · 개념은 IDP 옛 학습 층이 그리던 갈래라 2.510 뒤로 눌러도 IDP 첫 화면만 열렸다 — 서가에서 뺀다.
+       용어는 공용어 화면(terms)으로 보낸다. 머리글(«무엇을 공부할까요»)은 위 «다른 책» 하나로 */
+    _started=_started.concat(['mikl','gmhow','principles','game','concepts']);
+    shelf.innerHTML=LR_TOC.render({skip:_started,head:false});
+    try{ var _sn=shelf.querySelectorAll('[data-toc]').length; $('#tbShelfN').textContent=_sn?_sn+'권':''; }catch(_){}   /* 2.660 — 시작한 책은 «내 책»에 있으니 여기서 뺀다 */   /* 2.467 — 교과서가 대신한다. DOM에서 떼는 대신 세는 목록에서 빼 머리글(갈래·합계)도 같이 정직해진다(오디트 ③) */
     LR_TOC.bind(shelf,function(id,owner){
-      if(owner==='learn'){ BOOK=BOOKS[id]||BOOKS.mikl; bookState.view='toc'; go('book'); return; }   /* 2.411 — 고른 책을 연다 */
+      if(owner==='learn'){ BOOK=BOOKS[id]||BOOKS.studio; bookState.view='toc'; go('book'); return; }   /* 2.411 — 고른 책을 연다 */
+      if(id==='terms'){ try{ parent.postMessage({source:'learning',type:'openTerms'},'*'); }catch(_){ toast('용어는 팀 운영 › 공용어에서 열려요'); } return; }   /* 3.079 */
       try{ parent.postMessage({source:'learning',type:'openLearnArea',area:id,owner:owner},'*'); }
       catch(e){ toast('그 갈래는 IDP 학습에서 열려요'); }
     });
   }
-  $$('[data-role]',el).forEach(function(b){ b.onclick=function(){ S.role=b.dataset.role; tbOpen=null; roleOpen=false; save(); render(); }; });
+  $$('[data-role]',el).forEach(function(b){ b.onclick=function(){ S.role=b.dataset.role; tbOpen=null; partOpen=null; roleOpen=false; save(); render(); ensureRoleBook(S.role); }; });
   /* 2.660 — 문·내 책·다시 볼 카드 */
   var _dr=el.querySelector('[data-door]'); if(_dr)_dr.onclick=function(){ try{ var _cur=S.now&&sec(S.now); if(_cur&&!isDone(_cur.id)){ openSec(_cur.id); return; } }catch(_){} var _nx=nextLesson(S.role,idpCurDone()); if(_nx)openLesson(_nx.m.id,_nx.l.id); };
-  var _du=el.querySelector('[data-due]'); if(_du)_du.onclick=function(){ bookState.view='due'; go('book'); };
+  $$('[data-due]',el).forEach(function(_du){ _du.onclick=function(){ bookState.view='due'; go('book'); }; });
   $$('[data-mine]',el).forEach(function(b){ b.onclick=function(){ try{ var _m=window.__lrMine&&window.__lrMine[+b.dataset.mine]; if(_m)_m.open(); }catch(_){} }; });
   $$('[data-chap]',el).forEach(function(b){ b.onclick=function(){ tbOpen=(tbOpen===b.dataset.chap?null:b.dataset.chap); render(); }; });
+  $$('[data-part]',el).forEach(function(b){ b.onclick=function(){ partOpen=b.dataset.part; tbOpen=null; render(); }; });
   $$('[data-open]',el).forEach(function(b){ b.onclick=function(){ var p2=b.dataset.open.split(':'); openLesson(p2[0],p2[1]); }; });
+}
+/* ── 3.079 · 역할 교재는 그 역할 한 권만 받는다 ──
+   본문 다섯 권(선수 · 코치 · 피지컬 · 분석 · AT)을 처음 열 때 다 받으면 약 0.9MB 다. 목차 · 진행률은 LR_CUR(늘 실림)로 그리고,
+   본문(LR_BOOK_ADD)은 절을 열 때 그 모듈의 트랙 한 권만 받는다. 못 받으면 예전 화면(renderLesson — LR_CUR 원본)이 맡는다. */
+var ROLE_BOOK_V={player:'2.441',coach:'2.441',physical:'2.442',analysis:'2.443',at:'2.444'};
+var _roleBook={};   /* 트랙 → 'loading' | 'ok' | 'fail' */
+function ensureRoleBook(track,cb){
+  cb=cb||function(){};
+  if(!ROLE_BOOK_V[track]){ cb(); return; }
+  var st=_roleBook[track];
+  if(st==='ok'||st==='fail'){ cb(); return; }
+  (ensureRoleBook._q=ensureRoleBook._q||{})[track]=(ensureRoleBook._q[track]||[]).concat([cb]);
+  if(st==='loading')return;
+  _roleBook[track]='loading';
+  var sc=document.createElement('script');
+  sc.src='learn-book-'+track+'.js?v='+ROLE_BOOK_V[track];
+  function done(ok){ _roleBook[track]=ok?'ok':'fail'; var q=ensureRoleBook._q[track]||[]; ensureRoleBook._q[track]=[]; q.forEach(function(f){ try{ f(); }catch(_){} }); }
+  sc.onload=function(){ done(true); };
+  sc.onerror=function(){ done(false); };
+  document.head.appendChild(sc);
 }
 /* ── 절 한 장 ── */
 var lessonState={m:null,l:null,picked:null};
@@ -441,6 +594,9 @@ function openLesson(mid,lid){
   var m=(window.LR_CUR&&LR_CUR.module)?LR_CUR.module(mid):null;
   if(!m)m=roleMods(S.role||'coach').filter(function(x){return x.id===mid})[0];
   if(!m)return;
+  if(m.track&&ROLE_BOOK_V[m.track]&&_roleBook[m.track]!=='ok'&&_roleBook[m.track]!=='fail'){
+    toast('교재를 여는 중…'); ensureRoleBook(m.track,function(){ openLesson(mid,lid); }); return;
+  }
   var l=m.lessons.filter(function(x){return x.id===lid})[0]; if(!l)return;
   /* 2.438 — 이 모듈이 7단계 고리로 다 채워졌으면 **같은 책 화면**으로 연다(renderSec).
      ⚠ 화면을 새로 만들지 않는다 — 만들면 절 화면이 세 벌이 된다(2.411 이 이미 적어 둔 규칙).
@@ -529,7 +685,7 @@ function openSec(id){S.now=id;save();bookState.view='sec';bookState.sec=id;bookS
 function renderToc(){
   /* ⚠ 2.411 — 부제가 MIKL 것으로 박혀 있었다("MIKL · A·B·D … C·E·F 준비 중"). 책이 둘이 되면서
      『게임모델 만드는 법』에도 그 문구가 붙었다. **책에서 읽어** 만든다. */
-  var _bs=(BOOK.id==='mikl')?'MIKL · A·B·D':(BOOK.ko||'');
+  var _bs=(BOOK.id==='mikl')?'MIKL · A·B·D':(BOOK.tag||'');   /* 3.079 — 제목을 두 번 쓰지 않는다 */
   var h='<div class="bh"><h4>'+esc(BOOK.ko)+'</h4><small>'+esc(_bs)+' '+secs().length+'절'+(BOOK.id==='mikl'?' (C·E·F 준비 중)':'')+' · 맞힘 '+secs().filter(function(x){return isDone(x.id)}).length+'</small></div>';
   BOOK.chapters.forEach(function(c){var d=c.sections.filter(function(x){return isDone(x.id)}).length;
     h+='<div class="ch"><b>'+c.id+'</b>'+esc(c.ko)+'<span>'+d+'/'+c.sections.length+'</span></div>';
@@ -540,8 +696,55 @@ function renderToc(){
 }
 /* 2.438 — 장 이름표. MIKL 은 장 id 가 'A'·'B' 한 글자라 'A장 끝'이 자연스러웠는데,
    교과서 장은 id 가 'p1-game' 이라 그대로 쓰면 'P1-GAME장 끝'으로 읽힌다(대문자는 CSS). */
-function chLabel(c){ var id=(c&&c.id)||''; return id.length<=2?(id+'장'):'이 장'; }
+function chLabel(c){ var id=(c&&c.id)||''; return id.length===1?(id+'장'):((c&&c.ko)?'«'+c.ko+'»':'이 장'); }   /* 3.079 — 두 글자 장 id(SG · FA)는 «SG장»이 되던 것 → 장 이름 */
 function stageHtml(no,title,inner,locked){return '<div class="stage'+(locked?' locked':'')+'" data-st="'+no+'"><span class="no">'+no+'</span><h5>'+title+'</h5>'+inner+'</div>'}
+/* 3.079 — «스튜디오에서 해보기»: 절의 try {label, steps[], to, note}. 단추는 셸에 studioGo 를 보낸다(app.html). 셸 밖(단독 열기)에서는 순서만 보인다 */
+function tryHtml(s){
+  var t=s&&s.try; if(!t)return '';
+  var inShell=false; try{ inShell=window.parent&&window.parent!==window; }catch(_){}
+  return '<div class="trybox"><span class="k">스튜디오에서 해보기</span><ol>'+(t.steps||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol>'
+    +(t.note?'<div class="hint">'+esc(t.note)+'</div>':'')
+    +(inShell&&t.to?'<button type="button" class="btn" data-try="'+esc(t.to)+'">'+esc(t.label||'열기')+' →</button>':'')
+    +(inShell&&t.keep?keepHtml(t.keep):'')+(inShell&&t.drill?drillHtml():'')+'</div>';
+}
+/* 3.080 — 고리: 학습 → 내 게임모델(보관함 › 게임모델 · 개인 판) → 훈련 */
+var GM_MOMENTS=[['ao','공격 조직'],['do','수비 조직'],['dt','공격 → 수비 전환'],['at','수비 → 공격 전환'],['set','세트피스']];
+function keepHtml(k){
+  return '<div class="keepbox"><b>내 게임모델에 담기</b><div class="keeprow"><select id="keepM">'+GM_MOMENTS.map(function(m){ return '<option value="'+m[0]+'"'+(m[0]===k.moment?' selected':'')+'>'+esc(m[1])+'</option>'; }).join('')
+    +'</select><input id="keepT" maxlength="200" value="'+esc(k.text||'')+'" placeholder="원칙 한 줄 — 누가 · 언제 · 무엇을"></div>'
+    +'<div class="row"><button type="button" class="btn pri" data-keep="1">담기 →</button><span class="hint" style="margin:0">예시 문장을 우리 팀 말로 고쳐 담으세요</span></div></div>';
+}
+function myGameModel(){ try{ var m=JSON.parse(localStorage.getItem('cs_gamemodel_personal_v1')||'null'); if(m&&Array.isArray(m.moments)&&m.moments.length)return m; }catch(_){} return window.__gmRemote||null; }
+/* 3.080 — 이 기기에 개인 게임모델이 아직 없으면(새 기기) 계정의 것을 읽기만 해서 «내 원칙으로 훈련 만들기»에 쓴다. 쓰기는 게임모델 화면만 한다 */
+function gmRemoteFetch(){
+  try{ var loc=JSON.parse(localStorage.getItem('cs_gamemodel_personal_v1')||'null'); if(loc&&Array.isArray(loc.moments)&&loc.moments.length)return; }catch(_){}
+  try{ var p=(window.parent&&window.parent!==window)?window.parent.PSSync:null; if(!p||!p.gmPersonal||!p.gmPersonal.owner())return;
+    p.gmPersonal.get().then(function(r){ var d=r&&r.raw?JSON.parse(r.raw):null; if(d&&d.m&&Array.isArray(d.m.moments)){ window.__gmRemote=d.m; if(page==='book')render(); } }).catch(function(){}); }catch(_){}
+}
+function drillHtml(){
+  var gm=myGameModel(), rows=[];
+  if(gm)gm.moments.forEach(function(m){ (m.phases||[]).forEach(function(ph){ if(!ph||!ph.id)return;
+    var pr=''; (ph.principles||[]).some(function(x){ var t=String(typeof x==='string'?x:((x&&(x.t||x.text))||'')).trim(); if(t){pr=t;return true;} return false; });
+    if(pr)rows.push({id:ph.id,name:(m.name||'')+' › '+(ph.name||''),pr:pr}); }); });
+  if(!rows.length)return '<div class="keepbox"><b>내 원칙으로 훈련 만들기</b><div class="hint" style="margin:4px 0 0">내 게임모델에 아직 원칙이 없어요. 1장(게임모델)의 «내 게임모델에 담기»로 먼저 한 줄 담아 보세요.</div></div>';
+  return '<div class="keepbox"><b>내 원칙으로 훈련 만들기</b><div class="hint" style="margin:2px 0 6px">원칙을 고르면 훈련 설계가 열리고 제목 · 국면 · 코칭 포인트가 채워져요.</div>'
+    +rows.slice(0,8).map(function(r,i){ return '<button type="button" class="pick" data-mkdrill="'+i+'"><small>'+esc(r.name)+'</small>'+esc(r.pr)+'</button>'; }).join('')+'</div>';
+}
+document.addEventListener('click',function(e){
+  var b=e.target&&e.target.closest&&e.target.closest('[data-keep],[data-mkdrill]'); if(!b)return;
+  try{
+    if(b.hasAttribute('data-keep')){
+      var mk=($('#keepM')||{}).value||'ao', tx=String(($('#keepT')||{}).value||'').trim();
+      if(!tx){ toast('원칙 한 줄을 적어 주세요'); return; }
+      parent.postMessage({source:'learning',type:'gmAdd',momentKey:mk,text:tx},'*');
+    } else {
+      var gm=myGameModel(), rows=[];
+      if(gm)gm.moments.forEach(function(m){ (m.phases||[]).forEach(function(ph){ if(!ph||!ph.id)return; var pr=''; (ph.principles||[]).some(function(x){ var t=String(typeof x==='string'?x:((x&&(x.t||x.text))||'')).trim(); if(t){pr=t;return true;} return false; }); if(pr)rows.push({id:ph.id,name:(m.name||'')+' › '+(ph.name||''),pr:pr}); }); });
+      var r=rows[+b.getAttribute('data-mkdrill')]; if(!r)return;
+      parent.postMessage({source:'learning',type:'gmMakeDrill',phaseId:r.id,phaseName:r.name,principle:r.pr},'*');
+    }
+  }catch(_){ toast('앱 안에서 열어 주세요'); }
+});
 function renderSec(s){
   var st=bookState.step, a=S.ask, k=s.id;
   var ex=S.track==='player'?s.ex.slice().reverse():s.ex;
@@ -550,9 +753,9 @@ function renderSec(s){
   // 0
   h+=stageHtml(0,'먼저 묻기 — 읽기 전에','<div class="q">'+esc(s.pre)+'</div><textarea id="pre" placeholder="틀려도 됩니다. 읽고 나서 내 답과 비교합니다.">'+esc(a[k+':pre']||'')+'</textarea><div class="row" style="margin-top:8px"><button class="btn pri" data-next="1">읽기로 →</button></div>',false);
   // 1
-  h+=stageHtml(1,'읽기',s.read.map(function(p){return '<p>'+p+'</p>'}).join('')+(s.fig?'<div class="fig"><b>[그림 · 재작도 예정]</b> '+esc(s.fig)+'</div>':'')+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="2">예시로 →</button></div>',st<1);
+  h+=stageHtml(1,'읽기',s.read.map(function(p){return '<p>'+p+'</p>'}).join('')+(s.fig?'<div class="fig"><b>한 줄로</b> '+esc(s.fig)+'</div>':'')+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="2">예시로 →</button></div>',st<1);
   // 2
-  h+=stageHtml(2,'예시 — '+(S.track==='player'?'선수 먼저':'코치 먼저'),'<div class="ex">'+ex.map(function(e){return '<div><b class="w">'+esc(e.who)+'</b>'+e.t+'</div>'}).join('')+'</div><div class="row" style="margin-top:10px"><button class="btn pri" data-next="3">꺼내기로 →</button></div>',st<2);
+  h+=stageHtml(2,'예시 — '+(S.track==='player'?'선수 먼저':'코치 먼저'),'<div class="ex">'+ex.map(function(e){return '<div><b class="w">'+esc(e.who)+'</b>'+e.t+'</div>'}).join('')+'</div>'+tryHtml(s)+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="3">꺼내기로 →</button></div>',st<2);
   // 3
   var rv=a[k+':rshow'];
   h+=stageHtml(3,'꺼내기 — '+esc(s.recall.type),'<div class="q">'+esc(s.recall.q)+'</div><textarea id="recall" placeholder="보지 않고 씁니다.">'+esc(a[k+':recall']||'')+'</textarea>'+(rv?'<div class="ans">답: '+esc(s.recall.a)+'</div><div class="row" style="margin-top:8px"><span class="hint" style="margin:0">내 답은?</span><button class="btn ok" data-grade="1">맞았다</button><button class="btn no" data-grade="0">틀렸다</button></div>':'<div class="row" style="margin-top:8px"><button class="btn pri" id="showAns">답 보기</button><span class="hint" style="margin:0">서술형은 스스로 채점합니다.</span></div>'),st<3);
@@ -564,7 +767,7 @@ function renderSec(s){
   var mc=s.mc, picked=S.mc[k];
   var opts=shuffled(mc.o,k+':'+S.track);
   var mch='<div class="q" style="margin-top:4px">가려내기 — '+esc(mc.q)+'</div><div class="opts">'+opts.map(function(o,i){var cls='';if(picked){if(o.ok)cls=' right';else if(picked===o.id)cls=' wrong'}return '<button class="opt'+cls+'" data-opt="'+o.id+'"'+(picked?' disabled':'')+'><b>'+String.fromCharCode(65+i)+'</b><span>'+esc(o.t)+'</span></button>'}).join('')+'</div>'+(picked?'<div class="why"><b>'+(opts.filter(function(o){return o.ok})[0]?String.fromCharCode(65+opts.findIndex(function(o){return o.ok}))+'.':'')+'</b> '+esc(mc.why)+' <span class="hint">(보기 순서는 절·트랙 시드로 섞임 — 원본 번호 '+esc(opts.filter(function(o){return o.ok})[0].id)+')</span></div>':'');
-  var cardsH='<div class="cards">'+s.cards.map(function(c){var cc=S.cards[c.id];return '<div class="gl"><div class="id">'+esc(c.id)+' <span class="tag mikl">'+esc(BOOK.tag||'MIKL')+'</span></div>'+esc(c.ko)+'<div class="life">'+(cc?(cc.stage>=3?'내 것':'재학습 '+(cc.stage+1)+'번째 · '+fmtDays(cc.due)):'오늘 생애 시작 → 3일 · 1주 · 3주')+'</div></div>'}).join('')+'</div>';
+  var cardsH='<div class="cards">'+s.cards.map(function(c){var cc=S.cards[c.id];return '<div class="gl"><div class="id">'+esc(c.id)+' <span class="tag mikl">'+esc(BOOK.tag||BOOK.ko||'')+'</span></div>'+esc(c.ko)+'<div class="life">'+(cc?(cc.stage>=3?'내 것':'재학습 '+(cc.stage+1)+'번째 · '+fmtDays(cc.due)):'오늘 생애 시작 → 3일 · 1주 · 3주')+'</div></div>'}).join('')+'</div>';
   h+=stageHtml(6,'다시 — 카드 '+s.cards.length+'장, 가려내기 1',cardsH+mch+'<div class="foot"><span class="k">맞힘 '+hits(k)+' / 3 — '+(isDone(k)?'이 절은 닫혔습니다':'3번 맞히면 닫힙니다')+'</span><div class="row"><button class="btn" id="again">한 번 더 꺼내기</button><button class="btn pri" id="finish">'+(isDone(k)?'다음 절 →':'이 절 마치고 다음 →')+'</button></div></div>',st<6);
   h+='<div class="linkbox">이어짐 → <b>'+esc(s.links)+'</b></div></div>';
   return h;
@@ -643,7 +846,7 @@ function renderCards(){
   h+='</div><div class="row" style="margin-top:18px"><button class="btn" id="resetAll">진행 전부 지우기</button></div>';
   $('#p-cards').innerHTML=h;
   $$('#p-cards [data-cf]').forEach(function(b){b.onclick=function(){cardFilter=b.dataset.cf;render()}});
-  $('#resetAll').onclick=function(){if(confirm('이 기기의 학습 기록을 지울까요?')){localStorage.removeItem(KEY);S=load();bookState={view:'toc',sec:null,step:0,mixI:0};render();toast('지웠습니다')}};
+  $('#resetAll').onclick=function(){if(confirm('학습 기록을 모두 지울까요? 로그인했다면 계정에 저장된 기록도 지워집니다.')){localStorage.removeItem(KEY);S=load();bookState={view:'toc',sec:null,step:0,mixI:0};render();learnSchedulePush(0);toast('지웠습니다')}};   /* 3.080 — 계정 기록도 빈 기록으로 덮는다(합치지 않고) */
 }
 /* ───────── 공통 ───────── */
 function render(){
@@ -670,11 +873,14 @@ function render(){
    ⚠ 순서가 곧 규칙이다 — 셸은 `learnHome` 을 먼저, `openLearnArea` 를 나중에 보낸다(나중 것이 이긴다). */
 window.addEventListener('message',function(e){
   var d=e.data||{};
-  if(d.type==='learnHome'){ if(page!=='toc')go('toc'); else render(); }
+  if(d.type==='learnHome'){ if(page!=='toc')go('toc'); else render(); learnPull(); }   /* 3.080 — 학습 탭을 열 때마다 계정 기록과 맞춘다 */
   /* ⚠ 2.411 — 예전엔 `mikl` 하나만 받았다. 학습이 두 권이 됐으니 **받은 갈래의 책**을 연다. */
-  else if(d.type==='openLearnArea'&&BOOKS[d.area]){ BOOK=BOOKS[d.area]; bookState.view='toc'; go('book'); }
+  else if(d.type==='openLearnArea'&&(BOOKS[d.area]||d.area==='gmhow')){ BOOK=BOOKS[d.area]||BOOKS.studio; bookState.view='toc'; go('book'); }   /* 3.079 — gmhow(게임모델 «학습에서 보기») 는 새 책 1장으로 */
 });
 render();
+setTimeout(function(){ learnPull(); gmRemoteFetch(); },300);   /* 3.080 — 계정의 학습 기록을 받아 합친다 · 새 기기면 개인 게임모델도 읽어 둔다 */
+/* 3.079 — 고른 역할의 교재는 첫 화면이 뜬 뒤에 미리 받아 둔다(절을 누를 때 기다리지 않게) */
+if(S.role)setTimeout(function(){ ensureRoleBook(S.role); },600);
 </script>
 </body>
 </html>

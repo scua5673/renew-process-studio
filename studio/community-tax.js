@@ -258,7 +258,7 @@
   /* 옛 고르개(주제 칩 · 콘텐츠 유형 · 연령 · 인원 · 폰 필터 시트의 같은 칸)를 감춘다 — 새 고르개가 대신한다. 정렬 · 검색 · 보기 방식은 그대로 */
   function hideOld(doc,noNav){
     var hide=function(n){ if(n&&n.style)n.style.setProperty('display','none','important'); };
-    /* 3.081 — 폰의 «필터» 단추는 이제 정렬만 연다(유형 · 연령 · 인원은 위의 고르개로) — 이름을 맞춘다 */
+    /* 3.082 — 폰의 «필터» 단추는 이제 정렬만 연다(유형 · 연령 · 인원은 위의 고르개로) — 이름을 맞춘다 */
     var fb=doc.getElementById('commFiltBtn'); if(fb&&fb.firstChild&&fb.firstChild.nodeType===3&&fb.firstChild.nodeValue!=='정렬'){ fb.firstChild.nodeValue='정렬'; fb.setAttribute('aria-label','정렬'); }
     var nav=doc.querySelector('.comm-nav'); if(nav){ if(noNav)hide(nav); else nav.style.removeProperty('display'); }   /* 정렬(탐색)만 남는 코치 자료 칸 밖에서는 왼쪽 칸이 빈다 */
     [].forEach.call(doc.querySelectorAll('.comm-nav .pr-cat-sec,#ageSel,#plSel,#cfTypeSel'),hide);
