@@ -28,7 +28,8 @@ test('token numbers and names use the app font first',()=>{
 test('«사람» shows the chip label under the feet; a 3D pill name has no outline',()=>{
   const src=read('studio/board-token-depth.js');
   assert.match(src,/tagTxt = kind === 'person' && label \? String\(label\.textContent \|\| ''\)\.trim\(\) : ''/,'the board\'s chip label (번호 · 포지션 · 없음)');
-  assert.match(src,/'class': 'ps-person-tag', .*rx: r1\(tagH \* \.3\), fill: fill,/,'in the team colour');
+  assert.match(src,/'class': 'ps-person-tag', [^\n]*fill: 'rgba\(14,18,26,\.9\)'/,'3.087 — a dark pill (the kit colour hid the letters)');
+  assert.match(src,/'class': 'ps-person-tagbar', [^\n]*fill: fill,/,'the team colour as a thin bar');
   assert.match(src,/if \(below && tagH\) y0 = r1\(y0 \+ tagH \+ 2\)/,'a name below goes under it');
   assert.match(src,/pill \? \{\} : \{ stroke: 'rgba\(6,12,8,\.82\)'/,'pill = no outline');
 });

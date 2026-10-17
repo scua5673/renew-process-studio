@@ -185,6 +185,8 @@
   }
   // 3.086 — 이름표 글꼴(board-name-font.js · 보드 설정 › 이름표 글꼴). «기본»이면 빈 글자 → 번호와 같은 글꼴
   function nameFF(doc) { try { return (doc && doc.defaultView && doc.defaultView.__nameFF) || ''; } catch (_) { return ''; } }
+  // 3.087 — 사람 발밑 번호 패 크기(board-name-font.js 의 window.__tagK · opts.tagK 가 먼저)
+  function tagK(doc, opts) { var k = opts && +opts.tagK; if (!(k > 0)) { try { k = +(doc && doc.defaultView && doc.defaultView.__tagK); } catch (_) { k = 0; } } return k > 0 ? k : 1; }
   // opts.namePos 가 없으면 작전판의 지금 값(window.__namePos — 보드마다 · 기본 «아래»)
   function nameBelow(doc, opts) {
     var v = opts && opts.namePos; if (!v) { try { v = doc && doc.defaultView && doc.defaultView.__namePos; } catch (_) { v = ''; } }
@@ -447,15 +449,18 @@
     body.appendChild(lid);
     }
     // 3.086 — «사람»: 칩 글자(번호 · 포지션 · 풋살 — 보드 설정 › 칩 글자, «없음»이면 없다)를 발밑 작은 패에.
-    //         셔츠의 번호는 실제 크기에서 읽히지 않는다(사용자 «사람 토큰 밑으로 포지션이나 번호가 들어갈수 있게»). 팀 색 패 · 팀 글자색.
+    //         셔츠의 번호는 실제 크기에서 읽히지 않는다(사용자 «사람 토큰 밑으로 포지션이나 번호가 들어갈수 있게»).
+    // 3.087 — 패는 어두운 알약 · 흰 글자, 팀 색은 아래 가는 띠로만(사용자 «유니폼색상이 들어가니까 잘 안보이는거 같아» — 빨강 · 줄무늬 유니폼에서 글자가 묻혔다).
+    //         크기는 보드 설정 › 칩 › 글자 크기(tagK · 작게 0.8 ~ 아주 크게 1.7).
     var tagH = 0, tagTxt = kind === 'person' && label ? String(label.textContent || '').trim() : '';
     if (tagTxt) {
-      var lf = size.font / (opts && +opts.zoom > 1 ? +opts.zoom : 1), tagHost = body.querySelector('.ps-person-stand') || body, tagY = 6;
-      tagH = r1(lf * 1.15);
-      var tagW = Math.max(tagH * 1.3, lf * .8 + tagTxt.length * lf * .56);
-      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH * .3), fill: fill, stroke: 'rgba(255,255,255,.92)', 'stroke-width': r1(lf * .09) }));
-      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + tagH / 2 + lf * .29), 'text-anchor': 'middle', 'font-size': r1(lf * .8), 'font-weight': '800',
-        fill: label.getAttribute('fill') || '#fff', 'font-family': label.getAttribute('font-family') || FONT, 'pointer-events': 'none' });
+      var lf = tagK(doc, opts) * size.font / (opts && +opts.zoom > 1 ? +opts.zoom : 1), tagHost = body.querySelector('.ps-person-stand') || body, tagY = 6;
+      tagH = r1(lf * 1.2);
+      var tagW = Math.max(tagH * 1.35, lf * .9 + tagTxt.length * lf * .58), bar = r1(Math.max(1.5, tagH * .14));
+      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH * .32), fill: 'rgba(14,18,26,.9)', stroke: 'rgba(255,255,255,.18)', 'stroke-width': r1(lf * .05) }));
+      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tagbar', x: r1(-tagW / 2 + tagH * .32), y: r1(tagY + tagH - bar), width: r1(Math.max(0, tagW - tagH * .64)), height: bar, rx: r1(bar / 2), fill: fill, 'pointer-events': 'none' }));
+      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + (tagH - bar) / 2 + lf * .3), 'text-anchor': 'middle', 'font-size': r1(lf * .78), 'font-weight': '800', 'letter-spacing': '.3',
+        fill: '#fff', 'font-family': label.getAttribute('font-family') || FONT, 'pointer-events': 'none' });
       tagT.textContent = tagTxt; tagHost.appendChild(tagT);
     }
     if (item.name) {

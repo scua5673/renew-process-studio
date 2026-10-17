@@ -4229,7 +4229,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-name-font.js"></script><script src="board-token-depth.js"></script>
+<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script>
 <script src="board-actions.js"></script>
@@ -5049,7 +5049,7 @@ const SHIRT_ACC="M -7.5 -19.6 Q 0 -12.6 7.5 -19.6 M -22.2 -13.6 L -18.9 -5.2 M 2
    ③ 애니메이션 장면·편집기 장면은 한 보드다 — 장면을 바꾸기 전·저장 직전에 지금 설정을 모든 장면에 맞춘다(lookStampScenes).
    ⚠ 기기 설정으로 남는 것: 끌기 자석·보드 보기(평면/3D)·정렬 간격 — 보드가 아니라 «내가 일하는 방식»이다.
    ⚠ 함수 선언만 둔다(호이스팅) — 4327·4740 의 부팅 초기값이 이 블록보다 먼저 실행된다. */
-function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle","nameFont","realScale"];}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
+function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle","realScale"].concat(Object.keys(window.__psLookExt||{}));}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
 function _lookLegacy(){
   if(_lookLegacy._v)return _lookLegacy._v;
   var v=null; try{ v=JSON.parse(localStorage.getItem("cs_board_lookdef_v1")||"null"); }catch(_){ v=null; }
@@ -5071,7 +5071,7 @@ function _lookDefSnap(){ var raw=null; try{ raw=localStorage.getItem("cs_board_d
   if(raw!==_lookDefSnap._raw){ _lookDefSnap._raw=raw; _lookDefSnap._v=null; try{ var d=raw?JSON.parse(raw):null; _lookDefSnap._v=(d&&(d.snap||d))||null; }catch(_){} }
   return _lookDefSnap._v; }
 function _lookCode(k){ switch(k){ case "tokShape":return "circle"; case "label":return "num"; case "lines":return true; case "gridType":return "grid15";
-  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; case "namePos":return "below"; case "nameSize":return "m"; case "nameStyle":return "auto"; case "nameFont":return "base"; case "realScale":return false; } return null; }
+  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; case "namePos":return "below"; case "nameSize":return "m"; case "nameStyle":return "auto"; case "realScale":return false; } var x=(window.__psLookExt||{})[k]; return x?x.def:null; }
 function _lookOk(k,v){ if(v===undefined||v===null)return false;
   switch(k){ case "tokShape":return v==="shirt"||v==="circle"||v==="shaper"||v==="person";
     case "label":case "gridType":case "trainGridM":return typeof v==="string";
@@ -5080,8 +5080,8 @@ function _lookOk(k,v){ if(v===undefined||v===null)return false;
     case "ballStyle":try{ return !!BALL_SVG_INNER[v]; }catch(_){ return typeof v==="string"; }
     case "grassTone":return typeof v==="string"&&/^(d|0|l|ll)\|(v|0|p|pp)$/.test(v);
     case "namePos":return v==="below"||v==="above";
-    case "nameSize":return v==="s"||v==="m"||v==="l"; case "nameStyle":return v==="auto"||v==="pill"||v==="text"; case "nameFont":return /^(base|bold|round|hand|serif)$/.test(v); }
-  return true; }
+    case "nameSize":return /^(s|m|l|xl)$/.test(v); case "nameStyle":return v==="auto"||v==="pill"||v==="text"; }
+  var x=(window.__psLookExt||{})[k]; return x?!!x.ok(v):true; }
 /* 2.977 — 예전 기본 크기 그대로인 보드(코치가 크기를 안 바꾼 보드)는 새 기본으로 옮겨 읽는다 — 저장본은 고치지 않는다(다음 저장 때 새 값으로).
    «＋» 로 키운 보드는 그대로. 이 판부터 저장하는 스냅엔 tokV:2 가 붙는다 — 새 기본에서 «＋» 두 번 = 예전 기본 값이라
    표식 없이는 «안 바꾼 옛 보드»와 «새로 키운 보드»를 가를 수 없다. 옛 기기 값(cs_tokscale_v4)도 같은 규칙. */
@@ -5100,8 +5100,8 @@ function lookNow(){ var o={};
   try{ o.ballStyle=curBallStyle; }catch(_){ o.ballStyle=lookDefault("ballStyle"); }
   o.grassTone=window.__grassTone;   /* 2.978 */
   o.namePos=window.__namePos;   /* 3.009 — 이름표 위치 */
-  o.nameSize=window.__nameSize; o.nameStyle=window.__nameStyle; o.nameFont=window.__nameFont;   /* 3.010 — 이름표 크기·모양 */
-  o.realScale=(window.__realScale===true);
+  o.nameSize=window.__nameSize; o.nameStyle=window.__nameStyle;   /* 3.010 — 이름표 크기·모양 */
+  o.realScale=(window.__realScale===true); for(var x in window.__psLookExt||{})o[x]=window["__"+x];
   var r={}; lookKeys().forEach(function(k){ r[k]=_lookOk(k,o[k])?o[k]:lookDefault(k); }); r.tokV=2; return r; }   /* 2.977 — 이 판부터의 크기(저장·장면 맞추기에 같이 실린다) */
 /* 스냅의 설정 — 없는 칸은 기본값(지금 화면 아님) */
 function lookOf(sn){ var r={}; lookKeys().forEach(function(k){ var v=sn?sn[k]:undefined; if(k==="tokenScale"&&_lookOk(k,v))v=_tokMig(v,sn); r[k]=_lookOk(k,v)?v:lookDefault(k); }); return r; }
@@ -5115,8 +5115,8 @@ function lookApply(o){ var ch={};
   try{ curBallStyle=o.ballStyle; }catch(_){}
   if((window.__grassTone||"0|0")!==o.grassTone){ window.__grassTone=o.grassTone; ch.tone=true; }
   window.__namePos=o.namePos;   /* 3.009 */
-  window.__nameSize=o.nameSize; window.__nameStyle=o.nameStyle; window.__nameFont=o.nameFont;   /* 3.010 */
-  window.__realScale=(o.realScale===true);
+  window.__nameSize=o.nameSize; window.__nameStyle=o.nameStyle;   /* 3.010 */
+  window.__realScale=(o.realScale===true); for(var x in window.__psLookExt||{})window["__"+x]=o[x];
   return ch; }
 function lookRebuild(ch){ ch=ch||{};
   try{ if(ch.train&&document.documentElement.dataset.pitch==="train"){ buildPitch(); renderTokens(); renderDrawings(); updateDelUI(); }
@@ -6484,13 +6484,13 @@ function _setChip3d(){ if(!tokenLayer)return;
 /* ══ 3.010 · 이름표 크기·모양(사용자 «보드 설정도 더 업데이트» — 선수·이름표 꾸미기) — 보드마다(겉모습 설정 nameSize · nameStyle).
    크기: 작게 0.8 · 보통 1 · 크게 1.25(평면 알약과 3D 칩 이름 모두). 모양: 기본(평면은 알약, 3D 는 글자만) · 알약 · 글자만(테두리 글자).
    ⚠ _nameK 는 함수 선언이다 — makeToken 이 이 블록보다 먼저(부팅) 불릴 수 있다. ══ */
-function _nameK(){ var v=window.__nameSize; return v==="s"?0.8:(v==="l"?1.25:1); }
+function _nameK(){ var v=window.__nameSize; return v==="s"?0.8:(v==="l"?1.25:(v==="xl"?1.6:1)); }
 (function(){ try{
   try{ window.__nameSize=lookDefault("nameSize"); window.__nameStyle=lookDefault("nameStyle"); }catch(_){ window.__nameSize="m"; window.__nameStyle="auto"; }
   function sync(){
     document.querySelectorAll("#nameSizeSeg button").forEach(function(b){ var on=b.getAttribute("data-ns")===(window.__nameSize||"m"); b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); });
     document.querySelectorAll("#nameStyleSeg button").forEach(function(b){ var on=b.getAttribute("data-nt")===(window.__nameStyle||"auto"); b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); }); }
-  window.__setNameSize=function(v){ if(v!=="s"&&v!=="m"&&v!=="l")return; _lookFreeze(); window.__nameSize=v; try{renderTokens();}catch(_){} sync(); try{boardSaveLive();}catch(_){} };
+  window.__setNameSize=function(v){ if(!/^(s|m|l|xl)$/.test(v))return; _lookFreeze(); window.__nameSize=v; try{renderTokens();}catch(_){} sync(); try{boardSaveLive();}catch(_){} };
   window.__setNameStyle=function(v){ if(v!=="auto"&&v!=="pill"&&v!=="text")return; _lookFreeze(); window.__nameStyle=v; try{renderTokens();}catch(_){} sync(); try{boardSaveLive();}catch(_){} };
   window.__syncNameLookSeg=sync;
   document.addEventListener("click",function(e){ var t=e.target&&e.target.closest&&e.target.closest("#nameSizeSeg button[data-ns],#nameStyleSeg button[data-nt]"); if(!t)return; e.stopPropagation();
@@ -7890,7 +7890,7 @@ function boardDefaultSnap(src){
     pitchView:src.pitchView||((src.area||"full")==="half"?"half":"full"),pvSide:src.pvSide==="opp"?"opp":"own",fieldMode:src.fieldMode||"standard",halfSide:src.halfSide||"L",
     gridType:src.gridType,label:src.label,lines:src.lines,spFlip:!!src.spFlip,tokenScale:src.tokenScale,pitchN:1,
     pitchImg:src.pitchImg||null,pitchTheme:src.pitchTheme||"",pitchCustom:src.pitchCustom||null,matchNote:"",press:null,spMarks:null,spMark:null,
-    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone,namePos:src.namePos,nameSize:src.nameSize,nameStyle:src.nameStyle,nameFont:src.nameFont,realScale:src.realScale};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
+    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone,namePos:src.namePos,nameSize:src.nameSize,nameStyle:src.nameStyle,realScale:src.realScale};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
 }
 function boardDefaultRead(){try{var raw=localStorage.getItem(BOARD_DEFAULT_KEY);if(!raw)return null;var data=JSON.parse(raw);var snap=data&&(data.snap||data);return snap?boardDefaultSnap(snap):null;}catch(_){return null;}}
 function boardDefaultSave(){
@@ -20969,7 +20969,7 @@ try{ var _nb=document.getElementById('dfNew');
     return {pitchSpec:s.pitchSpec,orientation:s.orientation,area:s.area,pitchView:s.pitchView,pvSide:s.pvSide,gridType:s.gridType,label:s.label,lines:s.lines,spFlip:s.spFlip,
       tokenScale:s.tokenScale,pitchN:s.pitchN,teamColors:s.teamColors,teamColor2:s.teamColor2,teamPattern:s.teamPattern,
       teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,teamKit:s.teamKit,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,pitchTheme:s.pitchTheme,pitchCustom:s.pitchCustom,customImages:s.customImages,
-      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,nameFont:s.nameFont,realScale:s.realScale,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
+      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,realScale:s.realScale,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};
   }
   /* 3.017 — keep: 한 작업물 안에서 페이지를 옮길 때(고르기·지우기·더하기·복제·미팅 세트·시퀀스)는 지금 보드 설정(겉모습 — 토큰 크기·모양·표시…)을 그대로 둔다.
@@ -22255,7 +22255,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
                 ["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","grassSeg"]],
                 ["pitch","선·구역",["lineSeg","zonePreset"]],
                 ["pitch","범위·방향",["cmdPitchViewSeg","cmdPitchSideSeg","cmdOrientSeg","cmdPitchNSeg"]],
-                ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","realScaleSeg","labelSeg"]],
+                ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","realScaleSeg","labelSeg","tagSizeSeg"]],
                 ["look","이름표",["namePosSeg","nameSizeSeg","nameStyleSeg","nameFontSeg"]],
                 ["look","분석",["analysisSeg"]],
                 ["view","보기",["tiltSeg",editorHint]],

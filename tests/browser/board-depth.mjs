@@ -122,6 +122,9 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       const lab0=state.label;setTokShape('person');renderTokens();const pg=()=>tokenLayer.querySelector('[data-id="depth-b"]'),tag=()=>pg().querySelector('.ps-person-tagtxt');
       const want=pg().querySelector('.ps-depth-original text')?.textContent||'';out.tagText=tag()?.textContent;out.tagWant=want;
       __setNamePos('below');{const t=tag().getBoundingClientRect(),n=pg().querySelector('.ps-chip-name').getBoundingClientRect();out.tagThenName=n.top>=t.bottom-1;}
+      /* 3.087 — 패는 어두운 알약(유니폼 색은 아래 띠) · 보드 설정 «글자 크기»로 커진다 */
+      const pill=()=>pg().querySelector('.ps-person-tag');out.tagFill=pill().getAttribute('fill');out.tagBar=!!pg().querySelector('.ps-person-tagbar');
+      const h1=+pill().getAttribute('height');__setTagSize('xl');out.tagGrow=+pill().getAttribute('height')/h1;out.tagSaved=captureSnap().tagSize;__setTagSize('m');
       state.label='none';renderTokens();out.tagNone=!tag();state.label=lab0;setTokShape('circle');renderTokens();
       const img=()=>document.querySelector('#tiltSurface img.tilt-stadium'),xml=()=>decodeURIComponent(img().src.slice(img().src.indexOf(',')+1));
       try{const p=document.getElementById('cmd-board-settings-pop');if(p&&p.__psSelectTab)p.__psSelectTab('view');}catch(_){}   /* 3.036 — 3D 줄은 «내 화면» 탭에 산다(기본 탭은 운동장) */
@@ -147,7 +150,9 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
     assert.equal(t3.nfBack,"round|'PSN Jua'",'reopening the board brings its font back');assert.equal(t3.nfBad,'base','an unknown value reads as «기본»');
     assert.equal(t3.pillStroke,null,'«알약» name has no outline');assert.equal(t3.textStroke,true,'«글자만» keeps the outline');
     assert.ok(t3.tagWant,'the token has a chip label');assert.equal(t3.tagText,t3.tagWant,'«사람» shows the chip label under the feet');
-    assert.equal(t3.tagThenName,true,'a name below goes under the label');assert.equal(t3.tagNone,true,'«칩 글자 없음» = no label');assert.equal(t3.npAbove,'above','«위» puts it over the chip');
+    assert.equal(t3.tagThenName,true,'a name below goes under the label');
+    assert.equal(t3.tagFill,'rgba(14,18,26,.9)','a dark pill — the kit colour hid the letters (3.087)');assert.equal(t3.tagBar,true,'the kit colour as a bar');
+    assert.ok(Math.abs(t3.tagGrow-1.7)<.08,'«아주 크게» = 1.7× '+t3.tagGrow);assert.equal(t3.tagSaved,'xl','saved with the board');assert.equal(t3.tagNone,true,'«칩 글자 없음» = no label');assert.equal(t3.npAbove,'above','«위» puts it over the chip');
     assert.notEqual(t3.rowOn,'none','3D rows show in 3D');assert.equal(t3.rowOff,'none','3D rows hide on the flat board');
     assert.deepEqual([t3.cam.low.ax,t3.cam.mid.ax,t3.cam.high.ax],['36deg','','12deg'],'낮게 = more oblique · 보통 = 3.009 · 높게 = from above');
     assert.ok(new Set(Object.values(t3.cam).map(c=>c.tf)).size===3,'the camera changes the board transform');
