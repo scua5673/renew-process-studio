@@ -26,6 +26,8 @@
     out.right.sort(function (a, b) { return R.indexOf(a.id) - R.indexOf(b.id); });
     return out;
   }
+  // 보이는 선수 모양: «사람»은 3D · 중계에서만, 평면에서는 유니폼(3.079)
+  function shapeShown(shape, tilt) { return shape === 'person' && !tilt ? 'shirt' : (shape || 'circle'); }
   // 지금 보기: 평면 · 3D · 중계
   function viewOf(tilt, cam) { return !tilt ? 'flat' : cam === 'tv' ? 'tv' : '3d'; }
 
@@ -73,6 +75,7 @@
       S + ' .tb-add:before{content:"＋";font:800 16px/1 Pretendard,-apple-system,sans-serif}',
       // 보기 전환
       S + ' .tb-seg{display:flex;gap:2px;padding:3px;border-radius:12px}',
+      S + ' .tb-shape button{padding:0 9px!important;display:inline-flex;align-items:center;justify-content:center}',
       S + ' .tb-seg button{height:32px;padding:0 13px;border:0;border-radius:9px;background:transparent;font:700 12.5px/1 Pretendard,-apple-system,sans-serif;cursor:pointer}',
       // 오른쪽
       S + '>.tb-r>*{flex:none}',
@@ -82,6 +85,8 @@
       S + ' #bpBoardSettings svg{width:18px!important;height:18px!important}',
       S + ' #bpLinkChip{height:32px!important}',
       S + ' #vaultSave{position:static!important;right:auto!important;bottom:auto!important;top:auto!important;left:auto!important;transform:none!important;margin:0 0 0 2px!important}',
+      // 선수 모양: «사람»은 3D · 중계에서만(평면은 유니폼으로 그린다)
+      'html body:not(.bc-tilt3d) #boardPageStrip .tb-shape button[data-shape="person"],html body:not(.bc-tilt3d) #shapeSeg button[data-s="person"]{display:none!important}',
       // 메뉴
       '#ps-tb-menu{position:fixed;z-index:430;display:none;min-width:200px;padding:6px;border-radius:14px;background:rgba(255,255,255,.98);box-shadow:0 14px 34px rgba(8,12,24,.28);border:1px solid rgba(20,22,26,.07);font-family:Pretendard,-apple-system,sans-serif;color:#14161A}',
       '#ps-tb-menu.on{display:block}',
@@ -130,7 +135,13 @@
       }
       win.setTimeout(paintView, 120);
     }
-    function paintView() { var s = strip(), v = curView(); if (!s) return; s.querySelectorAll('.tb-seg button').forEach(function (b) { var o = b.getAttribute('data-v') === v; b.classList.toggle('on', o); b.setAttribute('aria-pressed', o ? 'true' : 'false'); }); }
+    function curShape() { var t = ''; try { t = win.eval('typeof tokShape!=="undefined"?tokShape:""'); } catch (_) {} return shapeShown(t, body.classList.contains('bc-tilt3d')); }
+    function paintView() {
+      var s = strip(), v = curView(), sh = curShape(); if (!s) return;
+      s.querySelectorAll('.tb-seg button').forEach(function (b) { var k = b.getAttribute('data-v'), o = k ? k === v : b.getAttribute('data-shape') === sh; b.classList.toggle('on', o); b.setAttribute('aria-pressed', o ? 'true' : 'false'); });
+      // 보드 설정의 «선수 모양»도 평면에서는 «사람» 보드를 유니폼으로 보이게
+      try { var seg = doc.getElementById('shapeSeg'); if (seg && !body.classList.contains('bc-tilt3d')) seg.querySelectorAll('button[data-s]').forEach(function (b) { if (b.getAttribute('data-s') === 'shirt' && sh === 'shirt') b.classList.add('on'); }); } catch (_) {}
+    }
     function mk(tag, cls, html) { var e = doc.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
     function build() {
       var s = strip(); if (!s || busy) return;
@@ -152,7 +163,7 @@
         menu.innerHTML = ''; g.menu.forEach(function (b) { menu.appendChild(b); });
         brand.style.display = '';
         g.other.forEach(function (n) { L.appendChild(n); });
-        C.innerHTML = '<div class="tb-seg" role="group" aria-label="보기"><button type="button" data-v="flat" title="평면 작전판">평면</button><button type="button" data-v="3d" title="3D 경기장">3D</button><button type="button" data-v="tv" title="중계 카메라처럼 공을 따라가요">중계</button></div>';
+        C.innerHTML = '<div class="tb-seg" role="group" aria-label="보기"><button type="button" data-v="flat" title="평면 작전판">평면</button><button type="button" data-v="3d" title="3D 경기장">3D</button><button type="button" data-v="tv" title="중계 카메라처럼 공을 따라가요">중계</button></div><span class="tb-sep"></span><div class="tb-seg tb-shape" role="group" aria-label="선수 모양"><button type="button" data-shape="shirt" title="선수 모양 — 유니폼" aria-label="유니폼"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 3l-5 3 2 5 2-1v11h10V10l2 1 2-5-5-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/></svg></button><button type="button" data-shape="circle" title="선수 모양 — 원형" aria-label="원형"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg></button><button type="button" data-shape="person" title="선수 모양 — 사람(3D · 중계에서 서 있는 선수)" aria-label="사람"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4.5" r="2.6"/><path d="M8.5 8.5h7l1 7h-2l-.6 7h-3.8l-.6-7h-2z"/></svg></button></div>';
         g.right.forEach(function (n) { R.appendChild(n); });
         s.appendChild(L); s.appendChild(C); s.appendChild(R);
         s.classList.add('ps-tb');
@@ -191,6 +202,7 @@
     doc.addEventListener('click', function (e) {
       var b = e.target.closest && e.target.closest('#tbBrand'); if (b) { e.stopPropagation(); if (!menu.children.length) return; menu.classList.toggle('on'); placeMenu(); return; }
       var v = e.target.closest && e.target.closest('#boardPageStrip .tb-seg button[data-v]'); if (v) { e.stopPropagation(); setView(v.getAttribute('data-v')); return; }
+      var sb = e.target.closest && e.target.closest('#boardPageStrip .tb-shape button[data-shape]'); if (sb) { e.stopPropagation(); var o = doc.querySelector('#shapeSeg button[data-s="' + sb.getAttribute('data-shape') + '"]'); if (o) o.click(); win.setTimeout(paintView, 30); return; }
       if (menu.classList.contains('on') && !menu.contains(e.target)) menu.classList.remove('on');
     }, true);
     menu.addEventListener('click', function () { win.setTimeout(function () { menu.classList.remove('on'); }, 0); });
@@ -213,7 +225,8 @@
       s.querySelectorAll(':scope>.tb-g').forEach(function (g) { var r = g.getBoundingClientRect(); if (r.width && r.left < cr.right && r.right > cr.left) bottom = Math.max(bottom, r.bottom); });
       if (bottom && cr.top < bottom + 8) { c.style.setProperty('margin-top', Math.ceil(bottom + 8 - cr.top) + 'px', 'important'); c.__psTbM = true; }
     }
-    function wrapSel() {
+    function wrapShapeSync() { var f = win.__syncShapeSeg; if (typeof f !== 'function' || f.__psTb) return; var w = function () { var r = f.apply(this, arguments); try { paintView(); } catch (_) {} return r; }; w.__psTb = true; win.__syncShapeSeg = w; }
+    function wrapSel() { try { wrapShapeSync(); } catch (_) {}
       var orig = win.positionSelCtl; if (typeof orig !== 'function' || orig.__psTb) return typeof orig === 'function';
       var w = function () { var r = orig.apply(this, arguments); try { clearSelCtl(); } catch (_) {} return r; }; w.__psTb = true; win.positionSelCtl = w; return true;
     }
@@ -224,5 +237,5 @@
     var go = function () { window.__psTopBar = install(window); };
     if (window.document.readyState === 'loading') window.document.addEventListener('DOMContentLoaded', go); else go();
   }
-  return { sortStrip: sortStrip, viewOf: viewOf, css: css, install: install };
+  return { sortStrip: sortStrip, viewOf: viewOf, shapeShown: shapeShown, css: css, install: install };
 });

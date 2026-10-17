@@ -27,3 +27,11 @@ test('board wiring: flat factor, real scale only in 3D, script tag, cache',()=>{
   assert.match(b,/<script src="board-topbar\.js"><\/script>/);
   assert.match(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'),/'\/studio\/board-topbar\.js'/);
 });
+
+test('«사람» is 3D-only: flat boards draw the uniform, the bar offers 유니폼 · 원형 (+ 사람 in 3D)',()=>{
+  assert.equal(tb.shapeShown('person',false),'shirt');assert.equal(tb.shapeShown('person',true),'person');assert.equal(tb.shapeShown('circle',false),'circle');
+  const b=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
+  assert.doesNotMatch(b,/PERSON_BUST_D/,'no flat upper-body figure any more');
+  assert.match(b,/\}else if\(\(tokShape==="shirt"\|\|tokShape==="person"\)&&!p\.coach&&!p\.shaper\)\{/);
+  assert.match(tb.css(),/body:not\(\.bc-tilt3d\) #shapeSeg button\[data-s="person"\]\{display:none!important\}/);
+});
