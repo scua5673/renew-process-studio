@@ -8011,7 +8011,7 @@ function __buildPrintDoc(kind, blank){
   const pageCss=(land?'@page{size:A4 landscape;margin:0}':'@page{size:A4;margin:0}')
     +'html{margin:0;background:var(--surface)}'
     // !important — ALL_CSS의 레거시 @media print{html,body{padding:0!important}}보다 뒤에 와서 이겨야 함
-    +'body{margin:0!important;padding:'+(land?'10mm':'12mm')+'!important;background:var(--surface)}'
+    +'body{margin:0!important;padding:'+(cls==='year'?'0':(land?'10mm':'12mm'))+'!important;background:var(--surface)}'   /* 3.073 — 연간은 여러 장: 여백은 장마다(.ponepage) */
     +'#printDoc{display:block!important;position:static;width:'+baseWpx+'px;margin:0 auto}'; // 인쇄 가용 폭과 동일(가로 297−20=277mm / 세로 210−24=186mm @96dpi)
   // 고정 1페이지 안전망: 높이를 잠시 풀어 자연 높이(need)를 정확히 잰 뒤, 넘치면 높이를 풀고 zoom으로 1장에 맞춤
   const zoomJs="window.addEventListener('load',function(){try{var p=document.querySelector('.ponepage');if(!p)return;var pd=document.getElementById('printDoc');var availH=p.clientHeight;p.style.height='auto';var needH=p.scrollHeight;var zw="+pageWpx+"/"+baseWpx+";var zh=availH/needH;var z=Math.min(zw,zh,1.6);p.style.height=needH+'px';if(z&&isFinite(z)&&Math.abs(z-1)>0.02){pd.style.zoom=(z*100).toFixed(1)+'%';}else{p.style.height='';}}catch(e){}});";
@@ -8023,7 +8023,7 @@ function __buildPrintDoc(kind, blank){
     +'<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b">'   /* 2.908 — Pretendard(화면과 같은 글꼴) */
     +'<style>'+allCss+'</style><style>'+pageCss+'</style></head>'
     +'<body><div id="printDoc" class="pl-'+cls+'">'+html+'</div>'
-    +(fitJs?'<script>'+fitJs+'<\/script>':'')+'<script>'+zoomJs+'<\/script></body></html>';
+    +(fitJs?'<script>'+fitJs+'<\/script>':'')+(cls==='year'?'':'<script>'+zoomJs+'<\/script>')+'</body></html>';   /* 3.073 — 연간은 장마다 크기를 맞춰 짓는다(한 장 zoom 안전망은 첫 장만 본다) */
 }
 
 /* ---------- 출력 미리보기 모달 ---------- */

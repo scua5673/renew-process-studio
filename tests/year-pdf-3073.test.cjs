@@ -15,13 +15,13 @@ function ctx(Y,opt){
   const off=d=>Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-M0)/86400000);
   const weeksMap={};
   const put=(m,d,day)=>{const n=off(new Date(Y,m,d)),r=Math.floor(n/7),c=((n%7)+7)%7;(weeksMap[r]=weeksMap[r]||[{},{},{},{},{},{},{}])[c]=day;};
-  put(0,5,{trainings:[{load:{rpe:2},min:60}]});
-  put(0,6,{trainings:[{load:{rpe:8},min:90}]});
+  put(0,5,{trainings:[{load:{rpe:2},min:60}],board:{theme:'',trains:['론도 4v2','SSG'],trainData:[{minutes:12,sets:2},{minutes:20}]}});
+  put(0,6,{trainings:[{load:{rpe:8},min:90}],board:{theme:'',trains:['론도 4v2'],trainData:[{minutes:10}]}});
   put(0,7,{trainings:[{min:30}]});
   put(2,14,{match:{opp:'광주FC <U15>',time:'15:00',kind:'cup'},matchAdd:[{opp:'수원 U15',time:'10:00',kind:'friendly'}]});
   put(2,22,{off:true,board:{sched:'OFF'}});
   put(5,3,{trainings:[{load:{rpe:5},min:60}],grp:'B'});
-  const docs={[Y+'-03-14|광주FC <U15>']:{scoreUs:'2',scoreThem:'1'},[Y+'-03-14|수원 U15']:{scoreUs:'0',scoreThem:'0'}};
+  const docs={[Y+'-03-14|광주FC <U15>']:{scoreUs:'2',scoreThem:'1',homeAway:'away',competition:'주말리그',execution:4,reviewGood:'측면 2:1',reviewImprove:'전환 첫 3초'},[Y+'-03-14|수원 U15']:{scoreUs:'0',scoreThem:'0'}};
   const c=vm.createContext({
     yearAnchor:Y,weeksMap,offsetOfDate:off,WDAYS:['월','화','수','목','금','토','일'],
     schedViewDay:d=>(opt.grp&&d&&d.grp&&d.grp!==opt.grp)?{}:(d||{}),
@@ -30,7 +30,7 @@ function ctx(Y,opt){
     daysTopicCount:days=>({order:['공격'],b:{'공격':days.length?1:0},colOf:{}}),
     yearDaysList:()=>[],pTopicRows:()=>'<div class="pdrow"></div>',
     pGrpTag:()=>opt.grp?' · '+opt.grp+' 일정':'',pFooter:()=>'<footer></footer>',
-    trMinutes:tr=>tr.min||0,getLoad:tr=>tr.load||null,loadRpe:L=>L&&L.rpe||0,
+    trMinutes:tr=>tr.min||0,dayBoard:d=>d.board||{trains:[]},getLoad:tr=>tr.load||null,loadRpe:L=>L&&L.rpe||0,
     wkbdMatchDoc:(ymd,o)=>docs[ymd+'|'+o]||null,
     seasonPlan:{},document:{getElementById:()=>null},schedEditBlocked:()=>!!opt.blocked,schedBlockNotice:()=>{},saves:0
   });
@@ -128,7 +128,77 @@ test('two buttons on the year screen; both kinds wired into the print builder wi
   assert.ok(src.includes("kind==='yearReview'||kind==='yearPlan') blank=false"));
   const y=part('<div id="yearViewWrap"','</section>');
   assert.ok(y.includes("exportPDF('yearReview')")&&y.includes('돌아보기 PDF')&&y.includes("exportPDF('yearPlan')")&&y.includes('계획 PDF'));
-  assert.ok(y.includes('id="spCard"'));assert.ok(M.includes('#printDoc.pl-year .ponepage{height:186mm}'));
+  assert.ok(y.includes('id="spCard"'));
   assert.ok(M.includes("st.id='ps-year-plan-css'"),'인쇄 문서가 모으는 <style> 로 붙는다');
   assert.ok(S.includes('<script src="year-plan.js"></script>'));
+});
+
+const pages=h=>h.split('<div class="ponepage').slice(1);
+
+test('review is several pages: overview, month by month, training, match record, notes — numbered',()=>{
+  const h=ctx(NOW-1).yearDocHTML('review'),P=pages(h);
+  assert.equal(P.length,5);
+  ['달마다 돌아보기','훈련 내용','경기 기록','돌아보기 노트'].forEach((t,i)=>assert.ok(P[i+1].includes('<div class="pyr-h1"><b>'+t+'</b>'),t));
+  assert.ok(P[1].includes('<div class="pyr-h0">FC 예시 U15 · '+(NOW-1)+' 연간 돌아보기</div>'),'작은 맥락 줄 + 큰 장 이름');
+  P.forEach((p,i)=>assert.ok(p.includes('<span class="pyr-pg">'+(i+1)+' / 5</span>')));
+  assert.equal(h.includes('@@PG@@'),false);
+});
+
+test('month table: sessions, hours, RPE, intensity split, rest, matches, record, goals and a total row; weekly load chart',()=>{
+  const P=pages(ctx(NOW-1,{plan:{[NOW-1]:{phases:[],goals:{3:'전환 3초'}}}}).yearDocHTML('review'));
+  const t=P[1];
+  assert.equal((t.match(/<tr[^>]*><th>\d+월<\/th>/g)||[]).length,12,'지난해는 열두 달');
+  assert.match(t,/<th>1월<\/th><td>3<\/td><td>3<\/td><td>3<\/td><td>5<\/td>/,'세션 · 훈련일 · 시간 · 평균 RPE');
+  assert.ok(t.includes('1·0·1 <small>(1)</small>'),'저 · 중 · 고 (미입력)');
+  assert.match(t,/<th>3월<\/th>.*?<td>2<\/td><td>1승 1무 0패<\/td><td>2–1<\/td>/);
+  assert.ok(t.includes('<td class="txt goal">전환 3초</td>'));
+  assert.ok(t.includes('<tfoot><tr><th>합계</th><td>4</td>'));
+  assert.ok(t.includes('class="pyr-wk"')&&t.includes('주별 부하 흐름'));
+});
+
+test('training page: topic by month table and most used drills with counts and minutes',()=>{
+  const t=pages(ctx(NOW-1).yearDocHTML('review'))[2];
+  assert.ok(t.includes('pyr-heat'));
+  assert.ok(t.includes('<li><b>론도 4v2</b><span>2회 · 34분</span>'),'12′×2 + 10′');
+  assert.ok(t.indexOf('론도 4v2')<t.indexOf('<b>SSG</b>'),'많이 쓴 순');
+});
+
+test('match record: summary by kind and home/away, then one row per match with review notes; empty result is a pen line',()=>{
+  const t=pages(ctx(NOW-1).yearDocHTML('review'))[3];
+  assert.ok(t.includes('<b>1승 1무 0패</b><span>전체 2경기</span>'));
+  assert.ok(t.includes('<p><u>컵</u>1경기 · 1승 0무 0패 · 2–1</p>')&&t.includes('<p><u>원정</u>1경기 · 1승 0무 0패</p>'));
+  assert.ok(t.includes('<b>4 / 5</b><span>평균 실행도 · 1경기</span>'));
+  assert.ok(t.includes('<b>광주FC &lt;U15&gt;</b><small>컵 · 주말리그 · 원정</small>'));
+  assert.ok(t.includes('<b>2:1</b> <u class="r-w">승</u>')&&t.includes('<td>4<small>/5</small></td>'));
+  assert.ok(t.includes('<u class="g">잘된 점</u>측면 2:1')&&t.includes('<u class="b">바꿀 점</u>전환 첫 3초'));
+  assert.ok(t.includes('<span class="pen-l"></span>'),'리뷰 없는 경기는 펜 줄');
+});
+
+test('match record splits into pages of 7 then 10 rows',()=>{
+  const c=ctx(NOW-1);
+  vm.runInContext(`(function(){ for(let w=0;w<20;w++){ const d=new Date(${NOW-1},3,4+w*7); const n=offsetOfDate(d),r=Math.floor(n/7),col=((n%7)+7)%7; (weeksMap[r]=weeksMap[r]||[{},{},{},{},{},{},{}])[col]={match:{opp:'팀'+w}}; } })()`,c);
+  const P=pages(c.yearDocHTML('review')).filter(p=>p.includes('<b>경기 기록</b>'));
+  assert.equal(P.length,3,'22경기 = 7 + 10 + 5');
+  assert.ok(P[1].includes('계속 · 8–17 / 22')&&P[2].includes('계속 · 18–22 / 22'));
+  assert.equal((P[0].match(/<tr><th>\d+\.\d+ /g)||[]).length,7);assert.equal((P[1].match(/<tr><th>\d+\.\d+ /g)||[]).length,10);
+});
+
+test('review of a year with no past days stays one page',()=>{ assert.equal(pages(ctx(NOW+1).yearDocHTML('review')).length,1); });
+
+test('plan is two pages: clean overview and a monthly planning sheet with pen lines and checkboxes',()=>{
+  const Y=NOW+1, P=pages(ctx(Y,{plan:{[Y]:{phases:[{name:'전반기',start:Y+'-03-01',end:Y+'-07-15',color:'#2E9D6A'}],goals:{3:'빌드업'}}}}).yearDocHTML('plan'));
+  assert.equal(P.length,2);
+  const t=P[1];
+  assert.ok(t.includes('<b>월별 계획표</b>'));
+  assert.equal((t.match(/<tr[^>]*><th>\d+월/g)||[]).length,12);
+  assert.ok(t.includes('<th>3월<small><span><i style="background:#2E9D6A"></i>전반기</span></small></th><td class="txt goal"><b>빌드업</b></td><td class="txt mt"><b>2경기</b><small>14일 광주FC &lt;U15&gt; · 14일 수원 U15</small></td>'));
+  assert.ok(t.includes('<td class="txt goal"><span class="pen-l"></span></td>'),'빈 목표 = 펜 줄');
+  assert.equal((t.match(/<td class="chk"><i><\/i><\/td>/g)||[]).length,12);
+});
+
+test('yearly print documents get per-page margins and skip the one-page zoom',()=>{
+  const src=part('function __buildPrintDoc(','/* ---------- 출력 미리보기 모달');
+  assert.ok(src.includes("padding:'+(cls==='year'?'0':(land?'10mm':'12mm'))"));
+  assert.ok(src.includes("(cls==='year'?'':'<script>'+zoomJs+'<\\/script>')"));
+  assert.ok(M.includes('#printDoc.pl-year .ponepage{height:209.5mm;padding:10mm 0;box-sizing:border-box;break-after:page}'));
 });

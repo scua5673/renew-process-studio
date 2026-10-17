@@ -8,7 +8,88 @@
   /* ---------- PRINT: 연간 1장 (pl-year) — 3.073 돌아보기/계획, 단순하게 ----------
      위계: ① 엠블럼 + 팀 이름 + 문서 이름(20) → ② 기간(12, 회색) → ③ 달 이름 = 오른쪽 제목(14, 800) → ④ 칸 · 목록(10~11).
      칸 색은 셋(훈련 연파랑 · 경기 빨강 · 휴식 회색). 선 · 상자를 줄이고 여백으로 나눈다. 글자는 tokens.css 7단(대체값 같이). */
-  #printDoc.pl-year .ponepage{height:186mm}
+  #printDoc.pl-year .ponepage{height:209.5mm;padding:10mm 0;box-sizing:border-box;break-after:page}   /* 3.073 — 여러 장: 장마다 A4 가로 한 쪽, 여백도 장마다 */
+  #printDoc.pl-year .ponepage:last-child{break-after:auto}
+  #printDoc.pl-year .pyr-pg{font-variant-numeric:tabular-nums}
+  #printDoc.pl-year .pyr-h0{font-size:var(--t-3,12px);color:#8A9099;font-weight:600;margin-bottom:3px}
+  #printDoc.pl-year .pyr-sub .pyr-h1 span{font-size:var(--t-3,12px);color:#8A9099;font-weight:600;letter-spacing:0}
+  #printDoc.pl-year .pyr-pbody{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+  #printDoc.pl-year .pyr-pbody h3{font-size:var(--t-5,14px);font-weight:800;color:#14161A;margin:16px 0 8px;flex:0 0 auto}
+  #printDoc.pl-year .pyr-pbody h3:first-child{margin-top:0}
+  #printDoc.pl-year .pyr-pbody h3 em{font-style:normal;font-size:var(--t-1,10px);color:#8A9099;font-weight:600;margin-left:6px}
+  #printDoc.pl-year .pyr-none{font-size:var(--t-2,11px);color:#8A9099;padding:6px 0}
+  #printDoc.pl-year .pyr-tbl{width:100%;border-collapse:collapse;table-layout:auto;font-variant-numeric:tabular-nums;flex:0 0 auto}
+  #printDoc.pl-year .pyr-tbl th,#printDoc.pl-year .pyr-tbl td{font-size:var(--t-2,11px);padding:5px 6px;text-align:center;border-bottom:1px solid #ECEEF1;color:#14161A;white-space:nowrap}
+  #printDoc.pl-year .pyr-tbl thead th{font-size:var(--t-1,10px);color:#8A9099;font-weight:700;border-bottom:1.5px solid #14161A;padding-bottom:4px}
+  #printDoc.pl-year .pyr-tbl thead th small{font-weight:600}
+  #printDoc.pl-year .pyr-tbl tbody th{font-weight:800;text-align:left}
+  #printDoc.pl-year .pyr-tbl tfoot th,#printDoc.pl-year .pyr-tbl tfoot td{font-weight:800;border-top:1.5px solid #14161A;border-bottom:0}
+  #printDoc.pl-year .pyr-tbl tfoot th{text-align:left}
+  #printDoc.pl-year .pyr-tbl .txt{text-align:left;white-space:normal}
+  #printDoc.pl-year .pyr-tbl td.goal{color:#3F454D;max-width:170px}
+  #printDoc.pl-year .pyr-tbl tr.quiet td,#printDoc.pl-year .pyr-tbl tr.quiet th{color:#A2A8AE}
+  #printDoc.pl-year .pyr-tbl td.ibc{text-align:left}
+  #printDoc.pl-year .pyr-ib{display:inline-flex;width:70px;height:7px;border-radius:2px;overflow:hidden;vertical-align:middle;background:#F1F3F5;gap:1px}
+  #printDoc.pl-year .pyr-ib i{display:block;height:100%}
+  #printDoc.pl-year .pyr-ib i.l{background:#2E9D6A} #printDoc.pl-year .pyr-ib i.m{background:#3A6DF0} #printDoc.pl-year .pyr-ib i.h{background:#D9822B} #printDoc.pl-year .pyr-ib i.u{background:#C2C7CF}
+  #printDoc.pl-year .pyr-ib.none{background:none;width:auto;color:#A2A8AE}
+  #printDoc.pl-year .pyr-ibn{margin-left:6px;font-size:var(--t-1,10px);color:#3F454D}
+  #printDoc.pl-year .pyr-ibn small{color:#A2A8AE}
+  #printDoc.pl-year .pyr-wk{display:flex;align-items:flex-end;gap:2px;height:110px;border-bottom:1px solid #C2C7CF;flex:0 0 auto}
+  #printDoc.pl-year .pyr-wc{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+  #printDoc.pl-year .pyr-wc i{display:block;background:rgba(58,109,240,.38);border-radius:2px 2px 0 0;min-height:1px}
+  #printDoc.pl-year .pyr-wc.hi i{background:#3A6DF0}
+  #printDoc.pl-year .pyr-wc b{position:absolute;bottom:-7px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#C24A46}
+  #printDoc.pl-year .pyr-wkt{position:relative;height:16px;margin-top:8px}
+  #printDoc.pl-year .pyr-wkt span{position:absolute;font-size:var(--t-1,10px);color:#8A9099;font-weight:600;border-left:1px solid #C2C7CF;padding-left:3px}
+  #printDoc.pl-year .pyr-heat td{min-width:28px}
+  #printDoc.pl-year .pyr-heat tbody th i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:0}
+  #printDoc.pl-year .pyr-dr{list-style:none;margin:0;padding:0;columns:2;column-gap:32px;flex:0 0 auto}
+  #printDoc.pl-year .pyr-dr li{display:flex;align-items:baseline;gap:10px;font-size:var(--t-2,11px);padding:4px 0;border-bottom:1px solid #ECEEF1;break-inside:avoid;counter-increment:dr}
+  #printDoc.pl-year .pyr-dr li:before{content:counter(dr);flex:0 0 16px;color:#A2A8AE;font-weight:700;font-variant-numeric:tabular-nums}
+  #printDoc.pl-year .pyr-dr li b{flex:1 1 auto;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #printDoc.pl-year .pyr-dr li span{flex:0 0 auto;color:#3F454D;font-weight:600;font-variant-numeric:tabular-nums}
+  #printDoc.pl-year .pyr-dr li em{flex:0 0 auto;font-style:normal;font-size:var(--t-1,10px);color:#A2A8AE}
+  #printDoc.pl-year .pyr-msum{display:flex;gap:28px;align-items:flex-start;padding-bottom:12px;margin-bottom:10px;border-bottom:1px solid #E3E6EA;flex:0 0 auto}
+  #printDoc.pl-year .pyr-msum>div b{display:block;font-size:var(--t-7,20px);font-weight:800;letter-spacing:-.02em;line-height:1.15;white-space:nowrap}
+  #printDoc.pl-year .pyr-msum>div span{font-size:var(--t-1,10px);color:#8A9099;font-weight:600}
+  #printDoc.pl-year .pyr-msum .kinds{margin-left:auto;font-size:var(--t-2,11px);color:#3F454D}
+  #printDoc.pl-year .pyr-msum .kinds p{margin:0 0 3px;font-weight:600}
+  #printDoc.pl-year .pyr-msum .kinds u{text-decoration:none;display:inline-block;min-width:34px;color:#8A9099;font-weight:700}
+  #printDoc.pl-year .pyr-mt td,#printDoc.pl-year .pyr-mt th{vertical-align:top;padding:6px 6px}
+  #printDoc.pl-year .pyr-mt td.opp{width:190px}
+  #printDoc.pl-year .pyr-mt td.opp b{display:block;font-weight:800}
+  #printDoc.pl-year .pyr-mt small{font-size:var(--t-1,10px);color:#8A9099;font-weight:600}
+  #printDoc.pl-year .pyr-mt td.opp small{display:block}
+  #printDoc.pl-year .pyr-mt td.sc{width:70px}
+  #printDoc.pl-year .pyr-mt td.sc u{text-decoration:none;font-weight:800;margin-left:3px}
+  #printDoc.pl-year u.r-w{color:#2E9D6A} #printDoc.pl-year u.r-d{color:#8A9099} #printDoc.pl-year u.r-l{color:#C24A46}
+  #printDoc.pl-year .pyr-mt td.notes{color:#3F454D;line-height:1.45}
+  #printDoc.pl-year .pyr-mt td.notes p{margin:0 0 2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  #printDoc.pl-year .pyr-mt td.notes u{text-decoration:none;font-weight:700;margin-right:6px}
+  #printDoc.pl-year .pyr-mt td.notes u.g{color:#2E9D6A} #printDoc.pl-year .pyr-mt td.notes u.b{color:#C24A46}
+  #printDoc.pl-year .pen-l{display:block;height:16px;border-bottom:1px solid #DDE1E5}
+  #printDoc.pl-year .pen-s{display:inline-block;width:44px;height:14px;border-bottom:1px solid #DDE1E5}
+  #printDoc.pl-year .pyr-one{display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex:0 0 auto}
+  #printDoc.pl-year .pyr-one b{font-size:var(--t-5,14px);font-weight:800;white-space:nowrap}
+  #printDoc.pl-year .pyr-one span{flex:1 1 auto;border-bottom:1px solid #C2C7CF;height:22px}
+  #printDoc.pl-year .pyr-notes{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:16px 28px}
+  #printDoc.pl-year .pyr-nb{display:flex;flex-direction:column;min-height:0}
+  #printDoc.pl-year .pyr-nb h3{margin:0 0 4px}
+  #printDoc.pl-year .pyr-nb .pfill{flex:1 1 auto}
+  #printDoc.pl-year .pyr-plan td,#printDoc.pl-year .pyr-plan th{vertical-align:top;padding:6px 8px}
+  #printDoc.pl-year .pyr-plan tbody th{width:96px}
+  #printDoc.pl-year .pyr-plan tbody th small{display:block;margin-top:2px}
+  #printDoc.pl-year .pyr-plan tbody th small span{display:inline-flex;align-items:center;gap:3px;font-size:var(--t-1,10px);color:#646A73;font-weight:600;margin-right:6px}
+  #printDoc.pl-year .pyr-plan tbody th small i{width:7px;height:7px;border-radius:2px;display:inline-block}
+  #printDoc.pl-year .pyr-plan td.goal{width:230px}
+  #printDoc.pl-year .pyr-plan td.goal b{font-weight:700}
+  #printDoc.pl-year .pyr-plan td.mt{width:300px;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #printDoc.pl-year .pyr-plan td.mt b{font-weight:700;margin-right:6px}
+  #printDoc.pl-year .pyr-plan td.mt small{font-size:var(--t-1,10px);color:#646A73}
+  #printDoc.pl-year .pyr-plan td.focus .pen-l+.pen-l{margin-top:2px}
+  #printDoc.pl-year .pyr-plan td.chk i{display:inline-block;width:14px;height:14px;border:1.5px solid #A2A8AE;border-radius:3px}
+  #printDoc.pl-year .pyr-plan tr.past td,#printDoc.pl-year .pyr-plan tr.past th{opacity:.45}
   #printDoc.pl-year .pyr-head{display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:2px solid #14161A;margin-bottom:12px;flex:0 0 auto}
   #printDoc.pl-year .pyr-emb img{display:block;height:40px;max-width:64px;object-fit:contain}
   #printDoc.pl-year .pyr-tt{flex:1 1 auto;min-width:0}
@@ -287,6 +368,145 @@ function yearDocHTML(mode){
     side+=`<h4>메모</h4><div class="pfill pyr-pen"></div>`;
   }
   const legend=`<div class="pyr-legend"><span><i class="t"></i>훈련</span><span><i class="g"></i>경기</span><span><i class="o"></i>휴식</span><span class="note">흐린 날 = ${plan?'지난 날':'아직 오지 않은 날'}</span></div>`;
-  return `<div class="ponepage pyr-${plan?'plan':'review'}">${head}${band}<div class="pyr-body"><div class="pyr-grid">${cal}</div>`
-    +`<div class="pyr-side">${side}</div></div>${legend}${pFooter()}</div>`;
+  const first=`<div class="ponepage pyr-${plan?'plan':'review'}">${head}${band}<div class="pyr-body"><div class="pyr-grid">${cal}</div>`
+    +`<div class="pyr-side">${side}</div></div>${legend}${yFoot()}</div>`;
+  /* 3.073 — 뒷장: 돌아보기는 자세히, 계획은 월별 계획표. 쪽 번호는 다 지은 뒤 붙인다 */
+  let rest=[]; try{ rest=plan?yearPlanPages(Y,t.name||''):yearReviewPages(Y,t.name||''); }catch(e){ try{console.error(e);}catch(_){} rest=[]; }
+  const pages=[first].concat(rest);
+  return pages.map((h,i)=>h.replace('@@PG@@',(i+1)+' / '+pages.length)).join('');
+}
+
+/* ══ 3.073 · 연간 PDF 뒷장 — 돌아보기는 자세히(여러 장), 계획은 월별 계획표 한 장 ══════════════════════
+   사용자 «돌아보기는 구체적으로 · 몇 장이 되어도 좋으니 잘 돌아볼 수 있게 / 계획은 깔끔하게 잘 계획할 수 있게».
+   장마다 크기를 정해 짓는다(행 수를 나눠 담는다) — 넘쳐서 잘리는 장이 없게. 장 머리 = 작은 맥락 줄(팀 · 문서) + 큰 장 이름.
+   돌아보기: ② 달마다(표 + 주별 부하 흐름) ③ 훈련 내용(주제 × 달 · 자주 쓴 훈련) ④~ 경기 기록(요약 + 경기마다 결과 · 실행 · 리뷰) ⑤ 돌아보기 노트.
+   계획: ② 월별 계획표(단계 · 목표 · 경기 · 훈련 중점 펜 줄 · 점검). 일정 · 경기 문서는 읽기만 한다. */
+function yFoot(){ return pFooter().replace('</footer>','<span class="pyr-pg">@@PG@@</span></footer>'); }
+function yPage(ctxLine,title,sub,body,cls){
+  return `<div class="ponepage pyr-sub${cls?' '+cls:''}"><div class="pyr-head"><div class="pyr-tt"><div class="pyr-h0">${ctxLine}</div>`
+    +`<div class="pyr-h1"><b>${title}</b>${sub?`<span>${sub}</span>`:''}</div></div></div><div class="pyr-pbody">${body}</div>${yFoot()}</div>`;
+}
+/* 한 해의 날을 한 번만 읽는다 — 돌아보기는 오늘까지(지난 해는 1년) */
+function yearCollect(Y,uptoToday){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const days=[];
+  for(let dt=new Date(Y,0,1);dt.getFullYear()===Y;dt.setDate(dt.getDate()+1)){
+    const d=new Date(dt); if(uptoToday&&d>today)break;
+    const n=offsetOfDate(d), r=Math.floor(n/7), col=((n%7)+7)%7;
+    const raw=weeksMap[r]&&weeksMap[r][col], day=schedViewDay(raw), kind=yearDayKind(day);
+    const ses=[]; if(kind==='t')(day.trainings||[]).filter(Boolean).forEach(tr=>{ let mi=0,rp=0; try{ mi=trMinutes(tr)||0; }catch(_){} try{ const L=getLoad(tr); rp=L&&!L.rec?(loadRpe(L)||0):0; }catch(_){} ses.push({min:mi,rpe:rp}); });
+    days.push({dt:d,iso:yearQuickFormatIso(d),m:d.getMonth(),col:col,raw:raw,day:day,kind:kind,ses:ses,rpe:kind==='t'?yearDayTrainingRpe(day):null});
+  }
+  return days;
+}
+function yearMatchRows(days){
+  const out=[];
+  days.forEach(x=>{ if(x.kind!=='g')return; const day=x.day;
+    let mk='official'; try{ mk=mMatchKind(day); }catch(_){}
+    const list=[{opp:String((day.match&&day.match.opp)||(day.board&&day.board.opp)||'').trim(),kind:mk}]
+      .concat(mxExtraList(day).map(a=>{ const L=mxExtraLabel(a); return {opp:L.o==='상대 미정'?'':L.o,kind:L.friendly?'friendly':'official'}; }));
+    list.forEach(o=>{ let doc=null; try{ doc=wkbdMatchDoc(x.iso,o.opp); }catch(_){}
+      const r={dt:x.dt,m:x.m,opp:o.opp||'상대 미정',kind:(doc&&(doc.kind==='friendly'||doc.kind==='cup'))?doc.kind:o.kind,doc:doc,res:'',gf:null,ga:null};
+      const a=doc&&doc.scoreUs, b=doc&&doc.scoreThem;
+      if(doc&&a!==''&&a!=null&&b!==''&&b!=null&&isFinite(+a)&&isFinite(+b)){ r.gf=+a; r.ga=+b; r.res=r.gf>r.ga?'w':(r.gf<r.ga?'l':'d'); }
+      out.push(r); }); });
+  return out;
+}
+function yRec(rows){ const o={n:rows.length,w:0,d:0,l:0,gf:0,ga:0,cs:0,rec:0}; rows.forEach(r=>{ if(!r.res)return; o.rec++; o[r.res]++; o.gf+=r.gf; o.ga+=r.ga; if(r.ga===0)o.cs++; }); return o; }
+function yRecTxt(o){ return o.rec?`${o.w}승 ${o.d}무 ${o.l}패`:'—'; }
+function yearReviewPages(Y,team){
+  const E=wkbdEsc, today=new Date(); today.setHours(0,0,0,0);
+  const days=yearCollect(Y,true); if(!days.length)return [];
+  const ctxLine=`${team?E(team)+' · ':''}${Y} 연간 돌아보기`;
+  const lastM=days[days.length-1].m, MS=[]; for(let m=0;m<=lastM;m++)MS.push(m);
+  const matches=yearMatchRows(days), sp=spYear(Y);
+  const pages=[];
+  /* ── ② 달마다 ── */
+  const band=r=>r===null?'u':(r<=3?'l':(r<=6?'m':'h'));
+  const rows=MS.map(m=>{
+    const ds=days.filter(x=>x.m===m), tr=ds.filter(x=>x.kind==='t'), ses=tr.reduce((a,x)=>a+(x.ses.length||1),0);
+    const min=tr.reduce((a,x)=>a+x.ses.reduce((b,s)=>b+s.min,0),0), rp=[].concat(...tr.map(x=>x.ses.map(s=>s.rpe).filter(Boolean)));
+    const ib={l:0,m:0,h:0,u:0}; tr.forEach(x=>ib[band(x.rpe)]++);
+    const mr=matches.filter(r=>r.m===m), rec=yRec(mr);
+    let top=''; try{ const mix=daysTopicCount(ds.map(x=>x.raw).filter(Boolean)); top=mix.order.map(k=>[k,mix.b[k]||0]).filter(k=>k[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,2).map(k=>k[0]).join(' · '); }catch(_){}
+    return {m:m,ses:ses,trd:tr.length,min:min,avg:rp.length?Math.round(rp.reduce((a,b)=>a+b,0)/rp.length*10)/10:null,ib:ib,off:ds.filter(x=>x.kind==='o').length,g:mr.length,rec:rec,top:top,goal:sp.goals[m+1]||''};
+  });
+  const T=rows.reduce((a,r)=>{ a.ses+=r.ses; a.trd+=r.trd; a.min+=r.min; a.off+=r.off; a.g+=r.g; ['l','m','h','u'].forEach(k=>a.ib[k]+=r.ib[k]); return a; },{ses:0,trd:0,min:0,off:0,g:0,ib:{l:0,m:0,h:0,u:0}});
+  const allR=[].concat(...days.filter(x=>x.kind==='t').map(x=>x.ses.map(s=>s.rpe).filter(Boolean))), tRec=yRec(matches);
+  const ibBar=ib=>{ const n=ib.l+ib.m+ib.h+ib.u; if(!n)return '<span class="pyr-ib none">—</span>';
+    return `<span class="pyr-ib">${['l','m','h','u'].map(k=>ib[k]?`<i class="${k}" style="flex:${ib[k]}"></i>`:'').join('')}</span><span class="pyr-ibn">${ib.l}·${ib.m}·${ib.h}${ib.u?` <small>(${ib.u})</small>`:''}</span>`; };
+  const hrs=v=>v?(Math.round(v/6)/10):'—';
+  const trow=r=>`<tr${(r.ses||r.g)?'':' class="quiet"'}><th>${r.m+1}월</th><td>${r.ses||'—'}</td><td>${r.trd||'—'}</td><td>${hrs(r.min)}</td><td>${r.avg!=null?r.avg:'—'}</td><td class="ibc">${ibBar(r.ib)}</td><td>${r.off||'—'}</td><td>${r.g||'—'}</td><td>${yRecTxt(r.rec)}</td><td>${r.rec.rec?`${r.rec.gf}–${r.rec.ga}`:'—'}</td><td class="txt">${E(r.top)||'—'}</td><td class="txt goal">${E(r.goal)}</td></tr>`;
+  const table=`<table class="pyr-tbl"><thead><tr><th>달</th><th>세션</th><th>훈련일</th><th>시간</th><th>평균 RPE</th><th class="ibc">강도 저·중·고 <small>(미입력)</small></th><th>휴식</th><th>경기</th><th>전적</th><th>득–실</th><th class="txt">많이 한 주제</th><th class="txt">그 달 목표</th></tr></thead>`
+    +`<tbody>${rows.map(trow).join('')}</tbody><tfoot><tr><th>합계</th><td>${T.ses}</td><td>${T.trd}</td><td>${hrs(T.min)}</td><td>${allR.length?Math.round(allR.reduce((a,b)=>a+b,0)/allR.length*10)/10:'—'}</td><td class="ibc">${ibBar(T.ib)}</td><td>${T.off}</td><td>${T.g}</td><td>${yRecTxt(tRec)}</td><td>${tRec.rec?`${tRec.gf}–${tRec.ga}`:'—'}</td><td class="txt"></td><td class="txt"></td></tr></tfoot></table>`;
+  /* 주별 부하 흐름 — 주(월요일 시작)마다 RPE × 분 */
+  const wk=[]; days.forEach(x=>{ const mon=new Date(x.dt); mon.setDate(mon.getDate()-x.col); const k=yearQuickFormatIso(mon);
+    let w=wk[wk.length-1]; if(!w||w.k!==k){ w={k:k,mon:mon,load:0,g:0}; wk.push(w); }
+    x.ses.forEach(s=>{ if(s.rpe&&s.min)w.load+=s.rpe*s.min; }); if(x.kind==='g')w.g++; });
+  const wmax=Math.max(1,...wk.map(w=>w.load)), avgL=wk.length?wk.reduce((a,w)=>a+w.load,0)/wk.length:0;
+  const wbars=wk.map(w=>`<div class="pyr-wc${w.load>avgL*1.3?' hi':''}" title="${w.mon.getMonth()+1}.${w.mon.getDate()}"><i style="height:${w.load/wmax*100}%"></i>${w.g?'<b></b>':''}</div>`).join('');
+  const wticks=MS.map(m=>{ const f=new Date(Y,m,1), i=wk.findIndex(w=>w.mon<=f&&f<new Date(w.mon.getTime()+7*864e5)); return i<0?'':`<span style="left:${i/Math.max(1,wk.length)*100}%">${m+1}월</span>`; }).join('');
+  const weekly=`<h3>주별 부하 흐름 <em>주마다 RPE × 분 · 진한 막대 = 평균보다 30% 넘게 높은 주 · 아래 점 = 경기 있는 주</em></h3><div class="pyr-wk">${wbars}</div><div class="pyr-wkt">${wticks}</div>`;
+  pages.push(yPage(ctxLine,'달마다 돌아보기',`${Y}.1.1 – ${days[days.length-1].dt.getMonth()+1}.${days[days.length-1].dt.getDate()}`,table+weekly));
+  /* ── ③ 훈련 내용 ── */
+  const yMix=(()=>{ try{ return daysTopicCount(days.map(x=>x.raw).filter(Boolean)); }catch(_){ return {order:[],b:{},colOf:{}}; } })();
+  const topics=yMix.order.filter(k=>(yMix.b[k]||0)>0).sort((a,b)=>(yMix.b[b]||0)-(yMix.b[a]||0)).slice(0,10);
+  const per=MS.map(m=>{ try{ return daysTopicCount(days.filter(x=>x.m===m).map(x=>x.raw).filter(Boolean)).b; }catch(_){ return {}; } });
+  const tTot=topics.reduce((a,k)=>a+(yMix.b[k]||0),0)||1, cmax=Math.max(1,...per.map(b=>Math.max(0,...topics.map(k=>b[k]||0))));
+  const heat=topics.length?`<table class="pyr-tbl pyr-heat"><thead><tr><th class="txt">주제</th>${MS.map(m=>`<th>${m+1}월</th>`).join('')}<th>합계</th><th>비율</th></tr></thead><tbody>`
+    +topics.map(k=>`<tr><th class="txt"><i style="background:${yMix.colOf[k]||'#8A9099'}"></i>${E(k)}</th>${per.map(b=>{ const v=b[k]||0; return `<td${v?` style="background:rgba(58,109,240,${(0.08+v/cmax*0.5).toFixed(2)})"`:''}>${v||''}</td>`; }).join('')}<td><b>${yMix.b[k]}</b></td><td>${Math.round(yMix.b[k]/tTot*100)}%</td></tr>`).join('')
+    +`</tbody></table>`:'<div class="pyr-none">세션에 고른 주제가 없어요</div>';
+  const dr={}; days.forEach(x=>{ if(x.kind!=='t')return; let b=null; try{ b=dayBoard(x.day); }catch(_){} if(!b)return;
+    (b.trains||[]).forEach((v,i)=>{ const nm=String(v==null?'':v).trim(); if(!nm)return; const d=(b.trainData||[])[i]||{}; const mi=(parseInt(d.minutes,10)||0)*Math.max(1,parseInt(d.sets,10)||1);
+      const o=dr[nm]||(dr[nm]={n:0,min:0,last:null}); o.n++; o.min+=mi; o.last=x.dt; }); });
+  const drills=Object.keys(dr).map(k=>[k,dr[k]]).sort((a,b)=>b[1].n-a[1].n||b[1].min-a[1].min).slice(0,16);
+  const dlist=drills.length?`<ol class="pyr-dr">${drills.map(d=>`<li><b>${E(d[0])}</b><span>${d[1].n}회${d[1].min?` · ${d[1].min}분`:''}</span><em>마지막 ${d[1].last.getMonth()+1}.${d[1].last.getDate()}</em></li>`).join('')}</ol>`:'<div class="pyr-none">훈련 칩(작전판 · 보관함 훈련)을 넣은 날이 없어요</div>';
+  pages.push(yPage(ctxLine,'훈련 내용',`세션 ${T.ses} · ${hrs(T.min)}시간`,`<h3>달마다 고른 주제 <em>세션 수 · 진할수록 많이</em></h3>${heat}<h3>자주 쓴 훈련 <em>횟수 순 · 일정에 넣은 훈련 이름 기준</em></h3>${dlist}`));
+  /* ── ④~ 경기 기록 ── */
+  const kinds=['official','cup','friendly'].map(k=>[k,yRec(matches.filter(r=>r.kind===k))]).filter(k=>k[1].n);
+  const ha=k=>yRec(matches.filter(r=>r.doc&&String(r.doc.homeAway||'')===k));
+  const ex=matches.map(r=>+(r.doc&&r.doc.execution)||0).filter(v=>v>0);
+  const sumBox=`<div class="pyr-msum">`
+    +`<div><b>${yRecTxt(tRec)}</b><span>전체 ${matches.length}경기${tRec.rec<matches.length?` · 결과 적은 경기 ${tRec.rec}`:''}</span></div>`
+    +`<div><b>${tRec.rec?`${tRec.gf} – ${tRec.ga}`:'—'}</b><span>득점 – 실점${tRec.rec?` · 경기당 ${(tRec.gf/tRec.rec).toFixed(1)} – ${(tRec.ga/tRec.rec).toFixed(1)}`:''}</span></div>`
+    +`<div><b>${tRec.cs}</b><span>무실점 경기</span></div>`
+    +`<div><b>${ex.length?(Math.round(ex.reduce((a,b)=>a+b,0)/ex.length*10)/10)+' / 5':'—'}</b><span>평균 실행도${ex.length?` · ${ex.length}경기`:''}</span></div>`
+    +`<div class="kinds">${kinds.map(k=>`<p><u>${M_KIND_LB[k[0]]}</u>${k[1].n}경기 · ${yRecTxt(k[1])}${k[1].rec?` · ${k[1].gf}–${k[1].ga}`:''}</p>`).join('')}`
+    +[['home','홈'],['away','원정']].map(h=>{ const o=ha(h[0]); return o.n?`<p><u>${h[1]}</u>${o.n}경기 · ${yRecTxt(o)}</p>`:''; }).join('')+`</div></div>`;
+  const R={w:'승',d:'무',l:'패'}, HA={home:'홈',away:'원정',neutral:'중립'};
+  const cut=(s,n)=>{ s=String(s||'').replace(/\s+/g,' ').trim(); return s.length>n?s.slice(0,n-1)+'…':s; };
+  const mrow=r=>{ const d=r.doc||{}; const where=[HA[d.homeAway]||'',String(d.venue||'').trim()].filter(Boolean).join(' · ');
+    const notes=[d.resultSummary?`<p>${E(cut(d.resultSummary,90))}</p>`:'',d.reviewGood?`<p><u class="g">잘된 점</u>${E(cut(d.reviewGood,80))}</p>`:'',d.reviewImprove?`<p><u class="b">바꿀 점</u>${E(cut(d.reviewImprove,80))}</p>`:''].join('');
+    return `<tr><th>${r.dt.getMonth()+1}.${r.dt.getDate()} <small>${WDAYS[(r.dt.getDay()+6)%7]}</small></th>`
+      +`<td class="txt opp"><b>${E(r.opp)}</b><small>${E([M_KIND_LB[r.kind]||'',String(d.competition||'').trim(),where].filter(Boolean).join(' · '))}</small></td>`
+      +`<td class="sc">${r.res?`<b>${r.gf}:${r.ga}</b> <u class="r-${r.res}">${R[r.res]}</u>`:'<span class="pen-s"></span>'}</td>`
+      +`<td>${+d.execution>0?`${+d.execution}<small>/5</small>`:'—'}</td><td class="txt notes">${notes||'<span class="pen-l"></span>'}</td></tr>`; };
+  const mhead=`<thead><tr><th>날짜</th><th class="txt">상대 · 구분 · 장소</th><th>결과</th><th>실행</th><th class="txt">경기 요약 · 리뷰</th></tr></thead>`;
+  if(matches.length){
+    const FIRST=7, NEXT=10; let i=0, k=0;
+    while(i<matches.length){ const n=k?NEXT:FIRST, part=matches.slice(i,i+n);
+      pages.push(yPage(ctxLine,'경기 기록',k?`계속 · ${i+1}–${i+part.length} / ${matches.length}`:`${matches.length}경기`,(k?'':sumBox)+`<table class="pyr-tbl pyr-mt">${mhead}<tbody>${part.map(mrow).join('')}</tbody></table>`));
+      i+=n; k++; }
+  }
+  /* ── ⑤ 돌아보기 노트 ── */
+  const box=(t,h)=>`<div class="pyr-nb"><h3>${t}${h?` <em>${h}</em>`:''}</h3><div class="pfill"></div></div>`;
+  pages.push(yPage(ctxLine,'돌아보기 노트','',`<div class="pyr-one"><b>한 해를 한 줄로</b><span></span></div><div class="pyr-notes">`
+    +box('잘된 점','계속 가져갈 것')+box('아쉬운 점','왜 그랬나')+box('선수 성장','눈에 띈 선수 · IDP')+box('내년에 바꿀 것','훈련 · 경기 · 운영')+`</div>`));
+  return pages;
+}
+function yearPlanPages(Y,team){
+  const E=wkbdEsc, today=new Date(); today.setHours(0,0,0,0);
+  const sp=spYear(Y), days=yearCollect(Y,false), matches=yearMatchRows(days);
+  const ctxLine=`${team?E(team)+' · ':''}${Y} 연간 계획`;
+  const rows=[0,1,2,3,4,5,6,7,8,9,10,11].map(m=>{
+    const first=new Date(Y,m,1), last=new Date(Y,m+1,0), past=last<today;
+    const phs=sp.phases.filter(p=>p.start<=yearQuickFormatIso(last)&&p.end>=yearQuickFormatIso(first));
+    const mm=matches.filter(r=>r.m===m), tr=days.filter(x=>x.m===m&&x.kind==='t').length;
+    const ml=mm.slice(0,2).map(r=>`${r.dt.getDate()}일 ${E(r.opp)}`).join(' · ')+(mm.length>2?` 외 ${mm.length-2}`:'');   /* 한 줄 — 표가 한 장에 남게 */
+    return `<tr${past?' class="past"':''}><th>${m+1}월${phs.length?`<small>${phs.map(p=>`<span><i style="background:${p.color}"></i>${E(p.name)}</span>`).join('')}</small>`:''}</th>`
+      +`<td class="txt goal">${sp.goals[m+1]?`<b>${E(sp.goals[m+1])}</b>`:'<span class="pen-l"></span>'}</td>`
+      +`<td class="txt mt">${mm.length?`<b>${mm.length}경기</b><small>${ml}</small>`:'<small>—</small>'}</td>`
+      +`<td>${tr||'—'}</td><td class="txt focus"><span class="pen-l"></span><span class="pen-l"></span></td><td class="chk"><i></i></td></tr>`; }).join('');
+  const tbl=`<table class="pyr-tbl pyr-plan"><thead><tr><th>달 · 단계</th><th class="txt">목표</th><th class="txt">경기</th><th>훈련일</th><th class="txt">훈련 중점 · 할 일</th><th>점검</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return [yPage(ctxLine,'월별 계획표','달마다 목표 · 경기 · 훈련 중점을 적어 두고, 끝나면 점검',tbl)];
 }
