@@ -31,6 +31,12 @@
 .fi-trs .fi-i{font-weight:700;font-variant-numeric:tabular-nums;color:var(--c-act,#3A6DF0)}
 .fi-trs .fi-nm{min-width:0;word-break:keep-all;overflow-wrap:anywhere}
 .fi-trs .fi-mn{font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
+/* 3.074 · 미리보기 그림 — 카드 위 끝까지(프로세스 카드의 .pr-hero 3:2 · .pr-bar 1·2·3 을 그대로 쓴다) */
+.fi-anim{padding:0;overflow:hidden;gap:0}
+.fi-anim .fi-bar{padding:10px 12px 0}
+.fi-bd{display:flex;flex-direction:column;gap:6px;flex:1 1 auto;min-width:0;padding:10px 12px 12px}
+.fi-trs li{cursor:pointer}
+.fi-trs li.on{color:var(--text,#14161A)}
 .fi-aside{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff);color:var(--text-2,#646A73);font-size:var(--t-5);line-height:1.55}
 .fi-aside b{font-size:var(--t-6);font-weight:700;color:var(--text,#14161A)}
 .fi-aside ul{margin:0;padding-left:18px}

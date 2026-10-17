@@ -1897,9 +1897,9 @@ function fifaRender(){ var F=window.PSCommFifa,grid=$('grid'); if(!grid)return;
 /* 3.072 — 애니메이션 카드: 팩을 받아 코치 글과 같은 읽기 전용 뷰어로(훈련 고르기 줄 · 재생). «보관함에 담기»는 copyToLib(서버 숫자 없음) */
 var fifaIx=0,fifaPosts={};
 function fifaFind(id){ return (typeof id==='string'&&Object.prototype.hasOwnProperty.call(fifaPosts,id))?fifaPosts[id]:null; }
-function fifaOpen(e,card){ if(card)card.setAttribute('aria-busy','true');
+function fifaOpen(e,card,k){ if(card)card.setAttribute('aria-busy','true');
   PSCommFifa.loadPost(e,{fields:COPY_FIELDS,snap:stripSnap,trainings:stripTrainings,frames:stripFrames},fetch.bind(window))
-    .then(function(p){ if(card)card.removeAttribute('aria-busy'); fifaPosts[p.id]=p; if(tabF==='fifa')openPost(p); },
+    .then(function(p){ if(card)card.removeAttribute('aria-busy'); p.__k=+k||0; fifaPosts[p.id]=p; if(tabF==='fifa')openPost(p); },   /* 3.074 — 카드에서 고른 훈련부터 */
       function(){ if(card)card.removeAttribute('aria-busy'); toast('애니메이션을 불러오지 못했어요 — 다시 눌러 주세요'); }); }
 function fifaChips(){ var F=window.PSCommFifa; if(F)F.chips($('catChips'),fifaG,function(k){ fifaG=k; fifaChips(); fifaRender(); }); }
 function procSet(list,at,src){ cmStage('cmPS');
@@ -2049,7 +2049,7 @@ function procViewTabs(){
     box.appendChild(b);
     if(on)try{ b.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(_){} });
 }
-function procViewOpen(p,post){ var n=p.item.trainings.length,k=(p.proc&&+p.__k>0&&+p.__k<n)?+p.__k:0;   /* 3.019 — 프로세스 카드에서 고른 훈련부터 */
+function procViewOpen(p,post){ var n=p.item.trainings.length,k=((p.proc||p.fifa)&&+p.__k>0&&+p.__k<n)?+p.__k:0;   /* 3.019 — 프로세스 카드에서 고른 훈련부터 */
   procCv={p:p,k:k,post:post||null}; procViewTabs(); openCommunityViewer(procViewPost(k),p); }
 /* 3.039 — 여러 페이지 작전판 글(사용자 «엘미하 페이지 작전판으로 업로드 할 수 있게»): 훈련 고르기 줄과 같은 자리 · 같은 방식으로 페이지를 고른다.
    페이지 k 하나만 실은 작전판 글을 짓는다 — 판은 그 페이지의 것, 애니메이션은 그 페이지의 장면. 설명(overview)은 글 전체의 것이라 어느 페이지에서나 보인다.
