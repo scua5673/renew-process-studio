@@ -1,5 +1,5 @@
 'use strict';
-/* 3.070 — 코치 점검(10/16): 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어갔다 · «세션 채우기 →»가 시트까지 열지 않았다 · 상대팀 이름이 잘렸다 */
+/* 3.072 — 코치 점검(10/16): 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어갔다 · «세션 채우기 →»가 시트까지 열지 않았다 · 상대팀 이름이 잘렸다 */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=f=>fs.readFileSync(path.join(__dirname,'../studio',f),'utf8');
 const SC=read('scout.html'),P=read('process.html'),APP=read('app.html');

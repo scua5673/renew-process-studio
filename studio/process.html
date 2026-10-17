@@ -8988,7 +8988,7 @@ try{
 .wks-mxadd{width:100%;min-height:30px;border:1px dashed var(--line);background:transparent;border-radius:9px;
   font:800 11px var(--f,inherit);color:var(--text-3);cursor:pointer}
 .wks-kind.m .wks-opp{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* 3.070 — 상대팀 이름은 제 줄 하나를 다 쓰고 «상대 분석 →»는 그 아래로(코치 점검 10/16: 148px 열에서 «가상 …»으로 잘렸다 — 경기 날 가장 중요한 글자).
+/* 3.072 — 상대팀 이름은 제 줄 하나를 다 쓰고 «상대 분석 →»는 그 아래로(코치 점검 10/16: 148px 열에서 «가상 …»으로 잘렸다 — 경기 날 가장 중요한 글자).
    줄 수는 폭과 무관하게 늘 같다(2.137) */
 .wks-kind.m .wks-krow:has(>.wks-opp){flex-wrap:wrap}
 .wks-kind.m .wks-krow>.wks-opp{flex:1 0 100%;white-space:normal;overflow-wrap:anywhere}
@@ -9509,7 +9509,7 @@ body.fmdark{ --ps-sh1:0 1px 2px rgba(0,0,0,.45); --ps-sh-hero:0 18px 38px -16px 
     if(d.type==='gotoDate'&&d.date){ try{ var _dt=new Date(String(d.date)+'T00:00:00'); if(!isNaN(_dt.getTime())){
         var _wt=document.querySelector('#vtoggle div[data-v="week"]'); if(_wt&&!_wt.classList.contains('on')&&_wt.onclick)_wt.onclick();
         var _n=offsetOfDate(_dt), _col=((_n%7)+7)%7; focusScheduleDate(Math.floor(_n/7),_col); renderWeek(); try{renderDay();}catch(_){}
-        /* 3.070 — 콕핏 «세션 채우기 →»: 그 날 세션의 채우기 시트를 훈련 칸으로 연다. 셸이 같은 소식을 두 번 보내므로 at 으로 한 번만 */
+        /* 3.072 — 콕핏 «세션 채우기 →»: 그 날 세션의 채우기 시트를 훈련 칸으로 연다. 셸이 같은 소식을 두 번 보내므로 at 으로 한 번만 */
         if(d.fill&&d.fill.at&&d.fill.at!==window.__gotoFillAt){ window.__gotoFillAt=d.fill.at; try{ wksFill(_col,String(d.fill.slot||''),'train'); }catch(_){} } } }catch(_){} return; }
     if(d.type==='boardCancel'){window.__boardCapTarget=null;window.__boardCapLink=null;return;}
     /* 2.950 — 작전판이 보관함 쓰기를 끝내고 새 항목 번호를 알렸다(boardSaved ← board captureSaved) → 방금 그린 훈련 줄을 그 항목과 잇는다.
