@@ -3763,6 +3763,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
             <span class="color-pop-actions"><button type="button" id="myColPin">＋ 현재 색 고정</button><button type="button" id="myColEdit" aria-pressed="false">편집</button></span>
           </span>
         </span>
+        <button id="tokAnimResetBtn" class="gk-btn" title="토큰 리셋을 이 토큰만 — 지금 위치·이름·번호를 뒤의 모든 장면에 적용하고 이 토큰 동선 곡선을 지웁니다(다른 토큰은 그대로)" style="display:none">↺ 이 토큰만 리셋</button>
         <span class="sizebox" id="ringCtl" style="display:none"><button type="button" id="ringBtn" class="ring-btn" title="역할 링 — 누를 때마다 압박 · 목표 · 주목 · 없음 (H)"><span class="ring-sw" aria-hidden="true"></span><span id="ringLb">링</span></button></span><!-- 2.902 -->
         <button type="button" id="textEditBtn" class="text-edit-btn" title="선택한 텍스트 내용 수정">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M14.5 6.5l3 3"/></svg>내용 수정
@@ -3797,7 +3798,6 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <button id="visBlindBtn" class="gk-btn" title="등 뒤 사각지대 표시·끄기" style="display:none">사각</button>
         <button id="shaperBtn" class="gk-btn" title="쉐이퍼(몸 방향) 토큰 디자인" style="display:none">쉐이퍼</button>
         <button id="ballLookBtn" class="gk-btn" title="볼 보기 — 쉐이퍼가 볼 쪽을 향하고 볼이 움직이면 따라 돕니다. 손으로 돌리면 그 방향으로 고정되고, 다시 누르면 볼을 봅니다" style="display:none">볼 보기</button>
-        <button id="tokAnimResetBtn" class="gk-btn" title="이 토큰만 리셋 — 지금 위치·이름·번호를 뒤의 모든 장면에 적용하고 이 토큰 동선 곡선을 지웁니다(다른 토큰은 그대로)" style="display:none">↺ 이후 장면 리셋</button>
         <button id="dupSelBtn" class="dup-sel" title="복제"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>복제</button>
         <button id="frontSelBtn" class="dup-sel" title="맨 앞으로 — 겹친 토큰 위로 올려 번호·이름이 가려지지 않게 (⌘] · 맨 뒤로는 ⌘[)" style="display:none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="11" height="11" rx="2" fill="currentColor" fill-opacity=".22"/><path d="M19 9v9a2 2 0 0 1-2 2H9"/></svg>맨 앞</button>
         <button id="mirHBtn" class="dup-sel" title="좌우 대칭 복제"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2"/><path d="M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg>좌우</button>
@@ -3809,7 +3809,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
       <div class="anim-bar" id="animBar">
         <button class="btn anim-ico" id="animAdd" title="현재 화면을 새 장면으로 추가" aria-label="현재 화면을 새 장면으로 추가"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg></button>
-        <button class="btn anim-ico" id="animUpdate" title="토큰 리셋 — 현재 위치·이름·번호·포지션을 이후 모든 장면에 적용" aria-label="토큰 리셋 — 현재 위치·이름·번호·포지션을 이후 모든 장면에 적용"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5"/><path d="M4 17v-5h5"/><path d="M6.1 9a7 7 0 0 1 11.3-2.5L20 9M4 15l2.6 2.5A7 7 0 0 0 17.9 15"/></svg></button>
+        <button class="btn anim-ico" id="animUpdate" title="토큰 리셋 — 현재 위치·이름·번호·포지션을 이후 모든 장면에 적용 · 토큰 하나만은 그 토큰을 오른쪽 클릭 › «이 토큰만 리셋»" aria-label="토큰 리셋 — 현재 위치·이름·번호·포지션을 이후 모든 장면에 적용"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5"/><path d="M4 17v-5h5"/><path d="M6.1 9a7 7 0 0 1 11.3-2.5L20 9M4 15l2.6 2.5A7 7 0 0 0 17.9 15"/></svg></button>
         <div class="anim-frames" id="animFrames" role="listbox" aria-orientation="horizontal" aria-label="애니메이션 장면 필름"></div>
         <button class="btn on anim-ico" id="animOnionBtn" title="이전 장면 겹쳐 보기" aria-label="이전 장면 겹쳐 보기" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="4" width="11" height="11" rx="2"/><rect x="9" y="9" width="11" height="11" rx="2"/></svg></button>
         <button class="btn anim-ico" id="animBlinkBtn" title="선택한 토큰 깜박임 설정" aria-label="선택한 토큰 깜박임 설정" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg></button><button class="btn anim-ico" id="animHlBtn" title="선택한 토큰 계속 강조" aria-label="선택한 토큰 계속 강조" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></button>
@@ -3818,7 +3818,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
         <select class="btn" id="animSpeedSel" title="선택한 장면에서 다음 장면까지 움직이는 속도" aria-label="장면 이동 속도">
           <option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select>
         <select class="btn" id="animHoldSel" title="이동이 끝난 뒤 다음 장면 전까지 유지하는 시간" aria-label="장면 유지 시간">
-          <option value="0.3">0.3초</option><option value="0.6">0.6초</option><option value="1">1초</option><option value="1.5">1.5초</option><option value="2">2초</option></select>
+          <option value="0.1">0.1초</option><option value="0.3">0.3초</option><option value="0.6">0.6초</option><option value="1">1초</option><option value="1.5">1.5초</option><option value="2">2초</option></select>
         <button class="btn anim-ico export-format-btn" id="animGif" title="GIF 애니메이션 내보내기" aria-label="GIF 애니메이션 내보내기"><span class="export-format-icon" aria-hidden="true">GIF</span></button>
         <button class="btn anim-ico export-format-btn" id="animExport" title="MP4 영상 내보내기 — 미지원 브라우저에서는 WebM으로 저장" aria-label="MP4 영상 내보내기 — 미지원 브라우저에서는 WebM으로 저장"><span class="export-format-icon" aria-hidden="true">MP4</span></button>
         <button class="btn ghost anim-ico export-format-btn" id="pngBtn" title="PNG 이미지 내보내기" aria-label="PNG 이미지 내보내기"><span class="export-format-icon" aria-hidden="true">PNG</span></button>
@@ -4230,6 +4230,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="pitches.js"></script>
 <script src="board-token-depth.js"></script>
 <script src="board-export-frame.js"></script>
+<script src="board-anim-tools.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -5828,7 +5829,8 @@ function updateDelUI(){try{window.__renderEpSurface&&window.__renderEpSurface();
   try{ var _tar=document.getElementById("tokAnimResetBtn"); if(_tar){ var _isTok=function(o){var t=typeOfItem(o);return t==="player"||t==="equip"||t==="ball";};   /* 2.975 */
     var _tokSel=(sel&&(sel.type==="player"||sel.type==="equip"||sel.type==="ball"))||(_multiOn&&multiSel.some(_isTok));
     var _later=(typeof anim!=="undefined")&&anim.frames&&anim.frames.length>=2&&animActive>=0&&animActive<anim.frames.length-1;
-    _tar.style.display=(_tokSel&&_later)?"inline-flex":"none"; } }catch(_){}
+    _tar.style.display=(_tokSel&&anim.frames.length>=2)?"inline-flex":"none"; _tar.style.opacity=_later?"":".5";   /* 제보 6cbcf0d1 — 마지막 장면에서도 보이게(흐리게) */
+    var _tl=_multiOn?"↺ 고른 토큰만 리셋":"↺ 이 토큰만 리셋"; if(_tar.textContent!==_tl)_tar.textContent=_tl; } }catch(_){}
   const _multiResz=(typeof multiSel!=="undefined"&&multiSel.length&&multiSel.some(function(o){var t=typeOfItem(o);return t==="player"||t==="equip"||(t==="drawing"&&o&&o.type!=="text");}));
   const s=document.getElementById("sizeCtl");if(s)s.style.display=((sel&&(sel.type==="player"||sel.type==="equip"||sel.type==="ball"||(sel.type==="drawing"&&sel.ref&&sel.ref.type!=="text")))||_multiResz)?"inline-flex":"none";
   const dup=document.getElementById("dupSelBtn");if(dup)dup.style.display=((sel&&sel.type!=="spball")||_multiOn)?"inline-flex":"none";
@@ -9257,7 +9259,7 @@ window.__animEnsureMode=ensureAnimMode;
    지금 장면의 이 토큰 모습(위치·이름·번호·색·사진…)을 뒤의 장면 전부에 넣고, 이 토큰의 동선 곡선만 지운다. 다른 토큰·그림·자막은 그대로.
    되돌리기 기록이 같은 스냅을 쥐고 있으니 고쳐 쓰지 않고 새로 만든다(copy-on-write). */
 function resetTokensLaterFrames(items){ items=(items||[]).filter(function(o){ var t=typeOfItem(o); return t==="player"||t==="equip"||t==="ball"; });
-  if(!items.length)return 0; if(!anim.frames||anim.frames.length<2||animActive<0||animActive>=anim.frames.length-1){ toast("뒤에 장면이 있을 때 씁니다"); return 0; }
+  if(!items.length||window.__vaultReadOnly||communityBoardReadOnly())return 0; if(!anim.frames||anim.frames.length<2||animActive<0||animActive>=anim.frames.length-1){ toast("마지막 장면이에요 — 뒤에 장면이 있는 장면에서 누르세요"); return 0; }
   try{ if(animPlaying)stopAnim(); }catch(_){} pushUndo();
   try{ anim.frames[animActive].snap=captureSnap(); anim.frames[animActive].thumb=boardThumbSVG(); }catch(_){}
   var dcp=function(o){ return JSON.parse(JSON.stringify(o)); };
@@ -9618,7 +9620,7 @@ function playAnim(){
      moveSpeed는 출발 장면별, animHold는 전체 공통이라 재생 리듬이 일정하다. */
   let s=(resume&&resume.s>=0&&resume.s<anim.frames.length?resume.s:((animActive>=0&&animActive<anim.frames.length-1)?animActive:0)),
       t0=performance.now()-((resume&&resume.elapsed)||0),lastHi=-1,phase=(resume&&resume.phase)||"hold";   /* 2.682 — 선택한 장면부터 재생(사용자) */
-  const holdMs=()=>Math.max(.2,animHold||.6)*1000;
+  const holdMs=()=>Math.max(.1,animHold||.6)*1000;
   if(phase==="move"&&s<anim.frames.length-1){
     const a=anim.frames[s].snap,b=anim.frames[s+1].snap,dur=Math.max(.3,(anim.frames[s].dur||1))*1000/animMoveSpeed(anim.frames[s]);
     renderInterp(a,b,easeInOut(Math.max(0,Math.min(1,(performance.now()-t0)/dur))),anim.frames[s].curves);
@@ -10895,7 +10897,7 @@ async function exportGif(){
 /* 2.935 — 장면 목록 → GIF 바이트. 작전판 «GIF 내보내기»와 미팅 PPT(장면이 있는 슬라이드는 움직이는 그림)가 같이 쓴다.
    판(보드)을 장면마다 바꿔 가며 그리므로 부르는 쪽이 _animExportGuard 안에서 부르고 화면을 되돌린다. */
 async function _gifEncode(frames,o){
-  o=o||{};const hold=Math.max(.2,+o.hold||.6),lastHold=Math.max(hold,+o.lastHold||0),fps=+o.fps||25,frameCs=Math.max(2,Math.round(100/fps)),N=frames.length,title=o.title||"",titleColor=o.titleColor||"#e23b3b",maxFrames=+o.maxFrames||260,W0=+o.width||640;
+  o=o||{};const hold=Math.max(.1,+o.hold||.6),lastHold=Math.max(hold,+o.lastHold||0),fps=+o.fps||25,frameCs=Math.max(2,Math.round(100/fps)),N=frames.length,title=o.title||"",titleColor=o.titleColor||"#e23b3b",maxFrames=+o.maxFrames||260,W0=+o.width||640;
   let uvb=null;   /* 영상과 동일: 전 장면 경계 합집합으로 캔버스 고정 */
   for(const f of frames){try{loadSnap(f.snap);const o2={vb:__exportVB(o.ratio==="16:9")};   /* 8e143f85 — 16:9 는 운동장 층만(영상과 같다) */
     if(!uvb)uvb=o2.vb.slice();
@@ -16134,7 +16136,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     var sl=anim.slides[meetIdx];if(!meetInShow()||!sl||sl!==meetBound||anim.frames.length<2)return;
     meetSceneFinish();var tok=++meetAutoTok;
     animActive=0;try{loadSnap(anim.frames[0].snap);}catch(_){}try{_animCapShow(anim.frames[0].cap,0);}catch(_){}meetCntSync();
-    var holdMs=Math.max(.2,animHold||.6)*1000;
+    var holdMs=Math.max(.1,animHold||.6)*1000;
     var nx=function(){if(tok!==meetAutoTok||!meetInShow()||animActive>=anim.frames.length-1)return;meetSceneStep(1,function(){setTimeout(nx,holdMs);},true);};
     setTimeout(nx,holdMs);
   }
@@ -16610,7 +16612,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     pushUndo();   /* 2.682 — 장면 추가도 ⌘Z */
     var _prevF=anim.frames[at-1],_nf={snap:captureSnap(),thumb:boardThumbSVG(),dur:1};
     /* 2.682 — 강조(hl)·깜빡임은 다음 장면에 이어받는다(사용자 "강조를 켜면 다음 장면에 유지되다가 끄면 꺼지게") */
-    if(_prevF){ try{ if(_prevF.hl&&_prevF.hl.length)_nf.hl=_prevF.hl.slice(); if(_prevF.blink)_nf.blink=JSON.parse(JSON.stringify(_prevF.blink)); }catch(_){} }
+    if(_prevF){ try{ if(_prevF.hl&&_prevF.hl.length)_nf.hl=_prevF.hl.slice(); if(_prevF.blink)_nf.blink=JSON.parse(JSON.stringify(_prevF.blink)); if(window.PSBoardAnimTools)PSBoardAnimTools.inheritSpeed(_prevF,_nf); }catch(_){} }   /* 속도도 이어받는다 */
     anim.frames.splice(at,0,_nf);animActive=at;
     renderAnimFrames();renderOnion();try{_animFitPad();}catch(_){}try{boardSaveLive();}catch(_){}toast("장면 "+(animActive+1)+" 추가됨");};
   $("animUpdate").onclick=resetLaterAnimTokens;
@@ -16618,7 +16620,9 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   $("animOnionBtn").onclick=()=>{animOnion=!animOnion;$("animOnionBtn").classList.toggle("on",animOnion);$("animOnionBtn").setAttribute("aria-pressed",animOnion?"true":"false");renderOnion();};
   $("animLoopBtn").onclick=()=>{var next=!animLoop;if(next&&anim.frames.length<2){toast("장면을 2개 이상 만들어주세요");return;}
     animLoop=next;syncLoopUI();if(animLoop&&!animPlaying){toast("반복 재생 시작");playAnim();}else if(!animLoop)toast("반복 재생 꺼짐");};
-  $("animSpeedSel").value="1";$("animSpeedSel").onchange=e=>{if(animActive>=0&&anim.frames[animActive]){anim.frames[animActive].moveSpeed=+e.target.value;try{boardSaveLive();}catch(_){}}};
+  /* 제보 0d7c9cca — 목록 아래 «모든 장면에 적용»(board-anim-tools.js) · 속도 바꾸기도 ⌘Z */
+  $("animSpeedSel").value="1";$("animSpeedSel").onchange=e=>{var f=anim.frames[animActive],T=window.PSBoardAnimTools;if(!f)return;pushUndo();
+    var r=T?T.setSpeed(anim.frames,animActive,e.target.value):(f.moveSpeed=+e.target.value,{});syncAnimTiming();if(r.all)toast("모든 장면 이동 속도 "+r.speed+"×");try{boardSaveLive();}catch(_){}};
   $("animHoldSel").value="0.6";$("animHoldSel").onchange=e=>{animHold=+e.target.value||.6;try{boardSaveLive();}catch(_){}};
   $("animExport").onclick=()=>exportVideoSheet();
   try{$("animGif").onclick=()=>exportGif();}catch(_){}
@@ -16965,6 +16969,9 @@ window.__snapToThumb=function(snap,opts){
   catch(e){ return ""; }
   finally{ window.__psThumbCapturing=true; try{ loadSnap(cur); }catch(_){} window.__psThumbCapturing=_cap; }
 };
+/* 제보 6cbcf0d1 — loadSnap 이 고른 것을 풀므로, 장면 그림을 늦게 채워도(토큰 리셋 뒤 등) 고른 토큰 · 정보 창이 그대로 있게 되찾는다 */
+(function(raw){ window.__snapToThumb=function(){ var T=window.PSBoardAnimTools,k=T&&(sel||multiSel.length)?T.selKeys(sel,multiSel,typeOfItem):null;
+  try{ return raw.apply(this,arguments); }finally{ if(k&&!sel&&!multiSel.length)try{ var r=T.selFind(k,state); if(r.multi.length>=2){ multiSel=r.multi; _setSelRings();renderDrawings();updateDelUI();updateAlignBar();renderMultiGuides(); } else if(r.sel)selectItem(r.sel.type,r.sel.ref); }catch(_){} } }; })(window.__snapToThumb);
 window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="snapToThumb"){var svg="";try{svg=window.__snapToThumb(d.snap);}catch(_){}try{parent.postMessage({type:"snapToThumbResult",id:d.id,svg:svg},"*");}catch(_){}}});
 </script>
 <script>
@@ -18227,7 +18234,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   /* 2.975 — «저장»(나가지 않고) 뒤에 늦게 도는 기록·키 떼기가 «변경 있음»을 다시 켜, 나갈 때 «버리고 나갈까요?»가 뜨던 것.
      저장한 그 모습(판·장면)을 지문으로 들고 있다가, 정말 달라졌을 때만 «변경 있음». 처음 달라지면 지문은 버린다(그 뒤는 예전처럼). */
-  window.__vaultEditSig=function(){ try{ var fr=(anim&&anim.frames||[]).map(function(f,i){ if(i===animActive)return "A";   /* 지금 장면은 판(captureSnap)이 말한다 — 장면 확정 시점에 따라 달라지지 않게 */ var q=(f&&f.snap)||{}; return JSON.stringify([q.players,q.equipment,q.drawings,q.ball,f&&f.dur,f&&f.hold,f&&f.cap]); }).join("|"); return JSON.stringify(captureSnap())+"#"+fr+"#"+animActive+(window.__bkSig?("#"+window.__bkSig()):""); }catch(_){ return null; } };   /* 2.985 — 패턴북 글자도 지문에 */
+  window.__vaultEditSig=function(){ try{ var fr=(anim&&anim.frames||[]).map(function(f,i){ if(i===animActive)return "A"+(f&&f.moveSpeed||"");   /* 지금 장면은 판(captureSnap)이 말한다 — 장면 확정 시점에 따라 달라지지 않게 */ var q=(f&&f.snap)||{}; return JSON.stringify([q.players,q.equipment,q.drawings,q.ball,f&&f.dur,f&&f.hold,f&&f.cap,f&&f.moveSpeed]); }).join("|"); return JSON.stringify(captureSnap())+"#"+fr+"#"+animActive+"#"+animHold+(window.__bkSig?("#"+window.__bkSig()):""); }catch(_){ return null; } };   /* 2.985 — 패턴북 글자도 지문에 */
   window.__vaultAutoSaveSchedule=function(){
     if(window.__vaultHydrating)return;
     if(!window.__vaultEdit||window.__vaultReadOnly||!window.__curVaultId||window.__vaultPending)return;
