@@ -94,6 +94,9 @@
         M + ' #trainingStrip .tr-add:hover{background:rgba(20,33,61,.07)!important}',
         M + ' #trainingStrip .tr-add.tr-lib{margin-left:4px!important;padding-left:12px!important;border-left:1px solid rgba(20,22,26,.1)!important;border-radius:0 8px 8px 0!important;color:#5E6675!important}',
         M + ' #trainingStrip .tr-add.tr-lib svg{width:14px!important;height:14px!important}',
+        // 3.087 — 커뮤니티 보기(읽기 전용)에는 훈련 탭 덩어리(이름 바꾸기 · 복제 · «＋ 훈련»)가 없다 — 보드가 감추던 것(comm-viewing)을 위 규칙이 이겼다.
+        //   글의 훈련이 여럿이면 커뮤니티가 뷰어 위에 고르는 줄(#prCvTabs)을 따로 둔다
+        'html.ps-page-board body.editing.comm-viewing' + NN + NN + ' #editorModal #trainingStrip{display:none!important}',
         // 오른쪽 입력 = 떠 있는 카드
         M + ' #editorPanel{position:absolute!important;top:6px!important;right:' + GAP + 'px!important;bottom:' + GAP + 'px!important;width:' + PANEL_W + 'px!important;max-width:' + PANEL_W + 'px!important;min-width:0!important;height:auto!important;box-sizing:border-box!important;z-index:61!important;display:flex!important;flex-direction:column!important;gap:0!important;padding:6px 14px 14px!important;border-radius:18px!important;overflow-y:auto!important;overscroll-behavior:contain;' + card + '}',
         E + '.cf-panel-off #editorModal #editorPanel{display:none!important}',
