@@ -7958,7 +7958,7 @@ try{ document.addEventListener("click",function(e){ var b=e.target&&e.target.clo
   var a=grassToneKey().split("|"); if(b.hasAttribute("data-gb"))a[0]=b.getAttribute("data-gb"); else a[1]=b.getAttribute("data-gp"); window.__setGrassTone(a[0]+"|"+a[1]); },true); }catch(_){}   /* board-pitch-presets 시험 하네스가 이 구간을 가짜 문서로 돌린다 */
 function renderPitchImg(){try{
   if(!world||!svg)return;
-  if(window.PSPitchPhoto&&PSPitchPhoto.render(state.pitchImg,svg,world,PR(),M,renderPitchImg))return;   /* 3.083 — 운동장 사진(@photo: 참조 · 이 기기에만) */
+  if(window.PSPitchPhoto&&PSPitchPhoto.render(state.pitchImg,svg,world,PR(),M,renderPitchImg))return;   /* 3.084 — 운동장 사진(@photo: 참조 · 이 기기에만) */
   var ex=svg.querySelector('#ps-pitchimg');
   var tg=world.querySelector('#ps-pitchtile');
   var _pu=state.pitchImg;

@@ -43,4 +43,17 @@
 .tx-sh-act{display:flex;gap:8px;margin-top:auto;padding-top:6px}
 .tx-btn{flex:1 1 0;min-height:48px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff);color:var(--text,#14161A);font:inherit;font-size:var(--t-5);font-weight:700;cursor:pointer}
 .tx-btn-pri{border-color:var(--c-act,#14213D);background:var(--c-act,#14213D);color:#fff}
-@media (max-width:560px){ .tx-sheet{width:100%} .tx-phases{grid-template-columns:repeat(2,minmax(0,1fr))} }
+/* 3.082 — 폰(사용자 «핸드폰으로 보기도 당연히 좋게»): 고르개가 화면 절반을 넘게 먹어 카드가 아래로 밀렸다(390px 에서 430~520px).
+   국면 타일은 2×2 로 낮게(설명 줄 숨김), 주제 · 세부 국면 · 연령/인원은 한 줄씩 옆으로 밀어 보는 줄 — 줄바꿈 없이 세 줄. 바깥 상자 테두리는 겹치지 않게 뺀다 */
+@media (max-width:560px){
+  .tx-sheet{width:100%}
+  .tx-bar{gap:8px;padding:0;border:0;background:transparent}
+  .tx-phases{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .tx-tile{min-height:44px;padding:8px 10px;justify-content:center}
+  .tx-tile-hint{display:none}
+  .tx-bar>.tx-row,.tx-who{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .tx-bar>.tx-row::-webkit-scrollbar,.tx-who::-webkit-scrollbar{display:none}
+  .tx-bar .tx-chip,.tx-bar .tx-lb,.tx-bar .tx-step,.tx-bar .tx-nv{flex:0 0 auto}
+  .tx-who{gap:6px 16px}
+  .tx-who>.tx-row{flex:0 0 auto;flex-wrap:nowrap}
+}
