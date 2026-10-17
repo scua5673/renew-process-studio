@@ -41,7 +41,10 @@ test('그 뒤 확정이 바뀌면(받았거나 올렸다) 표는 낡은 것 — 
     const m={h:{[KEY]:'H1'},c:{[KEY]:3}};W.mark(m,KEY);change(m);
     assert.equal(W.state(m,KEY,rebuiltRaw,hashOf),'stale');assert.equal(W.settle(m,KEY,rebuiltRaw,hashOf),'');assert.equal(m.w[KEY],undefined);
   }
-  assert.equal(W.state({h:{},c:{}},KEY,rebuiltRaw,hashOf),'','표가 없으면 아무 일도 없다');
+  assert.equal(W.state({h:{[KEY]:'H1'},c:{[KEY]:3}},KEY,rebuiltRaw,hashOf),'','확정 판이 있고 표가 없으면 평소 편집');
+  assert.equal(W.state({h:{},c:{}},KEY,rebuiltRaw,hashOf),'rebuilt','확정 판 없이 있는 공개본(팀 전환 뒤) — 서버본과 조상 없이 합친다');
+  assert.equal(W.state({h:{},c:{}},KEY,null,hashOf),'','로컬도 없으면 평소처럼 받는다');
+  assert.equal(W.state({h:{},c:{}},'cs_idp_v1_player-a',rebuiltRaw,hashOf),'','선수 개인 문서는 해당 없음');
   assert.equal(W.clear({h:{}},KEY),false);
 });
 
@@ -91,4 +94,18 @@ test('동기화 진단 제보에 자동 저장 · 다시 쓴 공개본 대기 �
   const D=require('../studio/support-diagnostics.js');
   for(const stage of ['autosave','autosave-archive-list','idp-public-rebuilt-wait'])assert.equal(D.sanitizeLog('sync',{name:'Error',stage},null,0).stage,stage);
   assert.equal(D.sanitizeLog('sync',{name:'Error',stage:'autosave:PRIVATE_KEY'},null,0).stage,'','모르는 꼬리는 버린다');
+});
+/* 팀 전환 — 돌아오는 팀의 받기가 전환 안에서 끝나지 못하면(15초) 동기화 기록(meta)이 빈 채로 다시 열린다.
+   공개본은 전환 때 늘 지워지고 확인까지 받으니, 확정 판 없이 이 기기에 있는 공개본은 받기 전에 새로 쓴 문서다.
+   그 팀에서 예전에 확정한 기준본은 보조 저장소에 남아 있어 3-way 로 합치면 «없는 항목 = 지움»이 된다(가상 팀 재현 9 → 1). */
+test('팀 전환 뒤 기록 없이 쓴 한 줄도 서버본에 더해진다 — 남아 있던 옛 기준본으로 지움을 추측하지 않는다',async()=>{
+  const h=box.module.exports.harness({key:KEY,dynamic:true,localOnly:true,uid:'coach-a',server:raw(original),cupd:1,mirror:rebuiltRaw});
+  h.c.PSIdpPubWipe=W;h.base.set(KEY,raw(original));   // meta 는 비었고(전환이 지웠다) 옛 기준본만 있다
+  await h.mark();
+  const r=await h.run();assert.equal(r.error,undefined,raw(h.errors));
+  assert.deepEqual(ids(parse(h.server.get(KEY).v)),{reviews:['r1','r2'],goals:['g1','g2'],talk:['t1','t-gap'],reacts:['day:2026-10-01','day:2026-10-02']});
+  /* 합친 판이 확정된 뒤의 평소 삭제는 그대로 올라간다 */
+  const saved=parse(h.server.get(KEY).v);h.local.set(KEY,raw(Object.assign({},saved,{goals:saved.goals.filter(g=>g.id!=='g2')})));await h.mark();
+  const r2=await h.run();assert.equal(r2.error,undefined,raw(h.errors));
+  assert.deepEqual(ids(parse(h.server.get(KEY).v)).goals,['g1']);
 });

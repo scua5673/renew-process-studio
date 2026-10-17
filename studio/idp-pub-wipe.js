@@ -24,9 +24,15 @@
   }
   function clear(m,k){if(own(m&&m.w,k)){delete m.w[k];return true;}return false;}
   /* '' 표 없음 · 'stale' 그 뒤 확정이 바뀌었거나 서버본이 그대로 돌아와 있다(표를 걷을 때)
-     'missing' 아직 안 받았다 · 'rebuilt' 받기 전에 새로 쓴 문서 — 그대로 올리면 서버본을 덮는다 */
+     'missing' 아직 안 받았다 · 'rebuilt' 받기 전에 새로 쓴 문서 — 그대로 올리거나 기준본과 합치면 서버본을 덮는다 */
   function state(m,k,localRaw,hash){
-    var w=own(m&&m.w,k)?m.w[k]:null;if(!w||typeof w!=='object')return w?'stale':'';
+    if(!isPub(k))return '';
+    var w=own(m&&m.w,k)?m.w[k]:null;
+    /* 팀 전환은 공개본과 meta 를 함께 지우고(지운 것을 확인까지 한다) 그 팀의 옛 기준본은 보조 저장소에 남긴다.
+       돌아오는 팀의 받기가 전환 안에서 끝나지 못하면 meta 가 빈 채로 열린다 — 확정 판 없이 이 기기에 있는
+       공개본은 받기 전에 새로 쓴 문서다. 옛 기준본과 3-way 로 합치면 «없는 항목 = 지움»이 된다(가상 팀 재현 9 → 1). */
+    if(!w)return (localRaw!=null&&!(own(m&&m.h,k)&&m.h[k]))?'rebuilt':'';
+    if(typeof w!=='object')return 'stale';
     var h=own(m.h,k)?String(m.h[k]||''):'',c=+((m.c&&m.c[k])||0);
     if(!h||h!==w.h||c!==+w.c)return 'stale';
     if(localRaw==null)return 'missing';
