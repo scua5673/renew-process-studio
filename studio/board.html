@@ -25,7 +25,7 @@
     --neutral:#f4b400;--gk:#22c55e;
     --grass-a:#20243f;--grass-b:#15172b;
     --pitchbg:#15172b;--pline:#eef0f6;--grid:#6f8ff0;--zone:#6f8ff0;--canvas:#0c0f17;
-    font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
+    font-family:'Pretendard Variable','Pretendard',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   }
   html[data-pitch="white"]{--pitchbg:#ffffff;--pline:#dadee4;--grid:#9aa3af;--zone:#9aa3af;--canvas:#dde1e8;--grass-a:#ffffff;--grass-b:#edf0f5;}
   html[data-pitch="train"]{--pitchbg:#ffffff;--pline:#8b95a3;--grid:#aeb7c2;--zone:#aeb7c2;--canvas:#dde1e8;--grass-a:#ffffff;--grass-b:#ffffff;}
@@ -149,7 +149,7 @@
     font-weight:var(--fw-head);font-size:var(--fs-body);cursor:pointer;}
   body.focus-board #board{border-radius:0;}
   .score-bug{display:none;position:absolute;top:10px;left:10px;z-index:25;user-select:none;
-    font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
+    font-family:'Pretendard',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;}
   .score-bug .sb-main{display:flex;align-items:stretch;height:40px;filter:drop-shadow(0 6px 16px rgba(0,0,0,.4));}
   .score-bug button{font-family:inherit;border:none;margin:0;cursor:pointer;-webkit-appearance:none;}
   .score-bug .sb-team{height:100%;padding:0 11px;display:flex;align-items:center;font-weight:var(--fw-head);font-size:var(--fs-title);letter-spacing:.4px;background:#1a2f5c;color:#fff;}
@@ -2896,7 +2896,7 @@ body.match-mode:not(.token-drag) #tokenLayer>g{transition:transform .22s cubic-b
   #printDoc{display:block!important;width:100%!important;}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
 }
-#printDoc{color:#14161A;font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
+#printDoc{color:#14161A;font-family:Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;}
 #printDoc .page{page-break-after:always;}
 #printDoc .page:last-child{page-break-after:auto;}
 #printDoc h1{font-size:19px;margin:0 0 3px;font-weight:800;}
@@ -4231,7 +4231,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-token-depth.js"></script>
+<script src="board-name-font.js"></script><script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script>
 <script src="board-actions.js"></script>
@@ -5051,7 +5051,7 @@ const SHIRT_ACC="M -7.5 -19.6 Q 0 -12.6 7.5 -19.6 M -22.2 -13.6 L -18.9 -5.2 M 2
    ③ 애니메이션 장면·편집기 장면은 한 보드다 — 장면을 바꾸기 전·저장 직전에 지금 설정을 모든 장면에 맞춘다(lookStampScenes).
    ⚠ 기기 설정으로 남는 것: 끌기 자석·보드 보기(평면/3D)·정렬 간격 — 보드가 아니라 «내가 일하는 방식»이다.
    ⚠ 함수 선언만 둔다(호이스팅) — 4327·4740 의 부팅 초기값이 이 블록보다 먼저 실행된다. */
-function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle","realScale"];}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
+function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle","nameFont","realScale"];}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
 function _lookLegacy(){
   if(_lookLegacy._v)return _lookLegacy._v;
   var v=null; try{ v=JSON.parse(localStorage.getItem("cs_board_lookdef_v1")||"null"); }catch(_){ v=null; }
@@ -5073,7 +5073,7 @@ function _lookDefSnap(){ var raw=null; try{ raw=localStorage.getItem("cs_board_d
   if(raw!==_lookDefSnap._raw){ _lookDefSnap._raw=raw; _lookDefSnap._v=null; try{ var d=raw?JSON.parse(raw):null; _lookDefSnap._v=(d&&(d.snap||d))||null; }catch(_){} }
   return _lookDefSnap._v; }
 function _lookCode(k){ switch(k){ case "tokShape":return "circle"; case "label":return "num"; case "lines":return true; case "gridType":return "grid15";
-  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; case "namePos":return "below"; case "nameSize":return "m"; case "nameStyle":return "auto"; case "realScale":return false; } return null; }
+  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; case "namePos":return "below"; case "nameSize":return "m"; case "nameStyle":return "auto"; case "nameFont":return "base"; case "realScale":return false; } return null; }
 function _lookOk(k,v){ if(v===undefined||v===null)return false;
   switch(k){ case "tokShape":return v==="shirt"||v==="circle"||v==="shaper"||v==="person";
     case "label":case "gridType":case "trainGridM":return typeof v==="string";
@@ -5082,7 +5082,7 @@ function _lookOk(k,v){ if(v===undefined||v===null)return false;
     case "ballStyle":try{ return !!BALL_SVG_INNER[v]; }catch(_){ return typeof v==="string"; }
     case "grassTone":return typeof v==="string"&&/^(d|0|l|ll)\|(v|0|p|pp)$/.test(v);
     case "namePos":return v==="below"||v==="above";
-    case "nameSize":return v==="s"||v==="m"||v==="l"; case "nameStyle":return v==="auto"||v==="pill"||v==="text"; }
+    case "nameSize":return v==="s"||v==="m"||v==="l"; case "nameStyle":return v==="auto"||v==="pill"||v==="text"; case "nameFont":return /^(base|bold|round|hand|serif)$/.test(v); }
   return true; }
 /* 2.977 — 예전 기본 크기 그대로인 보드(코치가 크기를 안 바꾼 보드)는 새 기본으로 옮겨 읽는다 — 저장본은 고치지 않는다(다음 저장 때 새 값으로).
    «＋» 로 키운 보드는 그대로. 이 판부터 저장하는 스냅엔 tokV:2 가 붙는다 — 새 기본에서 «＋» 두 번 = 예전 기본 값이라
@@ -5102,7 +5102,7 @@ function lookNow(){ var o={};
   try{ o.ballStyle=curBallStyle; }catch(_){ o.ballStyle=lookDefault("ballStyle"); }
   o.grassTone=window.__grassTone;   /* 2.978 */
   o.namePos=window.__namePos;   /* 3.009 — 이름표 위치 */
-  o.nameSize=window.__nameSize; o.nameStyle=window.__nameStyle;   /* 3.010 — 이름표 크기·모양 */
+  o.nameSize=window.__nameSize; o.nameStyle=window.__nameStyle; o.nameFont=window.__nameFont;   /* 3.010 — 이름표 크기·모양 */
   o.realScale=(window.__realScale===true);
   var r={}; lookKeys().forEach(function(k){ r[k]=_lookOk(k,o[k])?o[k]:lookDefault(k); }); r.tokV=2; return r; }   /* 2.977 — 이 판부터의 크기(저장·장면 맞추기에 같이 실린다) */
 /* 스냅의 설정 — 없는 칸은 기본값(지금 화면 아님) */
@@ -5117,7 +5117,7 @@ function lookApply(o){ var ch={};
   try{ curBallStyle=o.ballStyle; }catch(_){}
   if((window.__grassTone||"0|0")!==o.grassTone){ window.__grassTone=o.grassTone; ch.tone=true; }
   window.__namePos=o.namePos;   /* 3.009 */
-  window.__nameSize=o.nameSize; window.__nameStyle=o.nameStyle;   /* 3.010 */
+  window.__nameSize=o.nameSize; window.__nameStyle=o.nameStyle; window.__nameFont=o.nameFont;   /* 3.010 */
   window.__realScale=(o.realScale===true);
   return ch; }
 function lookRebuild(ch){ ch=ch||{};
@@ -5357,7 +5357,7 @@ function makeToken(p,kind){
     const ls=(""+lab).length;
     const _sh=(tokShape==="shirt"||tokShape==="person")&&!p.coach&&!p.shaper;
     const t=el("text",{x:0,y:_sh?2.5:0,"text-anchor":"middle","dominant-baseline":"central",fill:txtc,
-      "font-size":(p.coach?"19":(_sh?(ls>=3?"13":(ls===2?"16":"19")):(ls>=3?"15":(ls===2?"18":"22")))),"font-weight":"800","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif"});
+      "font-size":(p.coach?"19":(_sh?(ls>=3?"13":(ls===2?"16":"19")):(ls>=3?"15":(ls===2?"18":"22")))),"font-weight":"800","font-family":"Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif"});
     /* 2.683 — 유니폼 색이 무엇이든 번호·포지션이 읽히게: 글자색 밝기에 따라 반대색 테두리(사용자 "번호나 포지션이 다 잘 보이게") */
     if(lab){ var _lumT=1; try{ var _c=String(txtc||""); if(_c[0]==="#"){ var _v=_c.slice(1); if(_v.length===3)_v=_v.split("").map(function(x){return x+x;}).join(""); var _n=parseInt(_v,16); if(!isNaN(_n))_lumT=(0.2126*((_n>>16)&255)+0.7152*((_n>>8)&255)+0.0722*(_n&255))/255; } }catch(_){}
       t.setAttribute("stroke",_lumT>0.5?"rgba(0,0,0,.5)":"rgba(255,255,255,.6)");t.setAttribute("stroke-width",striped?"0.9":"0.8");t.setAttribute("paint-order","stroke");t.setAttribute("stroke-linejoin","round"); }
@@ -5367,7 +5367,7 @@ function makeToken(p,kind){
       const h=27*_nk,_up=(window.__namePos==="above"),yy=(_up?-1:1)*((_shaperOn(p)?60:48)+(h-27)/2);   /* 2.986 — 쉐이퍼 부리(끝 46)가 아래를 볼 때 이름표에 가리지 않게 · 3.009 — 이름표 위치 «위»면 머리 위로(보드마다 · 사용자) · 3.010 — 크기가 커져도 토큰과 틈은 그대로 */
       if(!_nt)g.appendChild(el("rect",{x:-w/2,y:yy-h/2,width:w,height:h,rx:9*_nk,fill:"rgba(18,22,30,.88)"}));   /* 3.010 — «글자만»이면 알약 없이 테두리 글자 */
       const nm=el("text",{x:0,y:yy+0.5*_nk,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff",
-        "font-size":String(Math.round(18*_nk*10)/10),"font-weight":_nt?"800":"700","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif"});
+        "font-size":String(Math.round(18*_nk*10)/10),"font-weight":_nt?"800":"700","font-family":window.__nameFF||"Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif"});
       if(_nt){nm.setAttribute("stroke","rgba(10,14,22,.86)");nm.setAttribute("stroke-width",String(Math.round(4.2*_nk*10)/10));nm.setAttribute("stroke-linejoin","round");nm.setAttribute("paint-order","stroke");}
       nm.textContent=nmStr;g.appendChild(nm);
       { const _rb=_realBoost(p); if(_rb>1){
@@ -6909,7 +6909,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
       const _lab=`${_mNum(w)} × ${_mNum(h)} m`,_fs=18,_pw=_lab.length*_fs*0.6+16,_ph=_fs+12,_cx=x+w/2,_cy=y;
       const _pg=el("g");
       _pg.appendChild(el("rect",{x:_cx-_pw/2,y:_cy-_ph/2,width:_pw,height:_ph,rx:8,fill:"rgba(18,22,30,.92)"}));
-      const _tt=el("text",{x:_cx,y:_cy,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":_fs,"font-weight":"800","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif",style:"pointer-events:none"});
+      const _tt=el("text",{x:_cx,y:_cy,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":_fs,"font-weight":"800","font-family":"Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif",style:"pointer-events:none"});
       _tt.textContent=_lab;_pg.appendChild(_tt);
       if(state.orientation==="v")_pg.setAttribute("transform",`rotate(${state.spFlip?-90:90} ${_cx} ${_cy})`);
       g.appendChild(_pg);
@@ -6966,7 +6966,7 @@ function drawingEl(d){const g=el("g");const isSel=(sel&&sel.ref===d)||(typeof mu
        상자(p 중심·boxW)는 그대로 두고 줄의 기준점만 옮긴다 — 왼쪽은 상자 왼 여백선, 오른쪽은 오른 여백선. */
     const al=(d.align==="left"||d.align==="right")?d.align:"center";
     const ax=al==="left"?(x0+B.padX):al==="right"?(x0+B.boxW-B.padX):p.x;
-    const tatt={"text-anchor":(al==="left"?"start":al==="right"?"end":"middle"),"dominant-baseline":"central","font-size":fs,"font-weight":"700","font-family":"Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif",fill:fillC,style:"pointer-events:none"};
+    const tatt={"text-anchor":(al==="left"?"start":al==="right"?"end":"middle"),"dominant-baseline":"central","font-size":fs,"font-weight":"700","font-family":"Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif",fill:fillC,style:"pointer-events:none"};
     if(!hasBg){tatt.stroke="rgba(0,0,0,.58)";tatt["stroke-width"]=Math.max(1.5,fs*.08);tatt["paint-order"]="stroke";}
     const tx=el("text",tatt);
     B.lines.forEach(function(ln,i){const ts=el("tspan",{x:ax,y:(p.y+(i-(B.lines.length-1)/2)*B.lh),"dominant-baseline":"central"});ts.textContent=ln;tx.appendChild(ts);});
@@ -7034,7 +7034,7 @@ function renderDrawings(){[...drawLayer.children].forEach(c=>c.remove());
 let _bTxtEd=null;
 /* ── 텍스트 박스: 측정·줄바꿈·크기 ── */
 var _txCtx=null;
-function _txMeasW(str,fs){ if(!_txCtx)_txCtx=document.createElement("canvas").getContext("2d"); _txCtx.font="700 "+fs+"px Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif"; return _txCtx.measureText(str||"").width; }
+function _txMeasW(str,fs){ if(!_txCtx)_txCtx=document.createElement("canvas").getContext("2d"); _txCtx.font="700 "+fs+"px Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif"; return _txCtx.measureText(str||"").width; }
 function _colorInputHex(c,fallback){
   c=(""+(c||"")).trim();
   var m;
@@ -7338,7 +7338,7 @@ function showMeas(d,pt){if(!world||!pt)return;
   else text=_fmtM(_drawMeters(d));
   const fs=26,padX=13,padY=7,w=text.length*fs*0.6+padX*2,h=fs+padY*2,x=pt.x,y=pt.y-40;
   _measEl.appendChild(el("rect",{x:x-w/2,y:y-h/2,width:w,height:h,rx:9,fill:"rgba(18,22,30,.92)"}));
-  const t=el("text",{x:x,y:y,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":fs,"font-weight":"800","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Segoe UI',Roboto,sans-serif"});
+  const t=el("text",{x:x,y:y,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":fs,"font-weight":"800","font-family":"Pretendard,-apple-system,'Apple SD Gothic Neo',sans-serif"});
   t.textContent=text;_measEl.appendChild(t);}
 function hideMeas(){if(_measEl)_measEl.style.display="none";}
 /* ══ 2.679 · 연결선(link) — 선수·장비·공을 차례로 눌러 잇는 선·다각형. 좌표를 저장하지 않고 **토큰 id** 를 저장해
@@ -7892,7 +7892,7 @@ function boardDefaultSnap(src){
     pitchView:src.pitchView||((src.area||"full")==="half"?"half":"full"),pvSide:src.pvSide==="opp"?"opp":"own",fieldMode:src.fieldMode||"standard",halfSide:src.halfSide||"L",
     gridType:src.gridType,label:src.label,lines:src.lines,spFlip:!!src.spFlip,tokenScale:src.tokenScale,pitchN:1,
     pitchImg:src.pitchImg||null,pitchTheme:src.pitchTheme||"",pitchCustom:src.pitchCustom||null,matchNote:"",press:null,spMarks:null,spMark:null,
-    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone,namePos:src.namePos,nameSize:src.nameSize,nameStyle:src.nameStyle,realScale:src.realScale};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
+    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone,namePos:src.namePos,nameSize:src.nameSize,nameStyle:src.nameStyle,nameFont:src.nameFont,realScale:src.realScale};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
 }
 function boardDefaultRead(){try{var raw=localStorage.getItem(BOARD_DEFAULT_KEY);if(!raw)return null;var data=JSON.parse(raw);var snap=data&&(data.snap||data);return snap?boardDefaultSnap(snap):null;}catch(_){return null;}}
 function boardDefaultSave(){
@@ -12214,7 +12214,7 @@ g.token>svg[width="28"][height="28"]{width:28px!important;height:28px!important}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 html{margin:0;padding:0;background:#fff;}
 body{margin:0;padding:12mm;background:#fff;}
-body{color:#14161A;font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;padding:16px;}
+body{color:#14161A;font-family:'Pretendard',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;padding:16px;}
 @media print{body{padding:12mm;}}
 .page{page-break-after:always;}
 .page:last-child{page-break-after:auto;}
@@ -20973,7 +20973,7 @@ try{ var _nb=document.getElementById('dfNew');
     return {pitchSpec:s.pitchSpec,orientation:s.orientation,area:s.area,pitchView:s.pitchView,pvSide:s.pvSide,gridType:s.gridType,label:s.label,lines:s.lines,spFlip:s.spFlip,
       tokenScale:s.tokenScale,pitchN:s.pitchN,teamColors:s.teamColors,teamColor2:s.teamColor2,teamPattern:s.teamPattern,
       teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,teamKit:s.teamKit,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,pitchTheme:s.pitchTheme,pitchCustom:s.pitchCustom,customImages:s.customImages,
-      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,realScale:s.realScale,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
+      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,nameFont:s.nameFont,realScale:s.realScale,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};
   }
   /* 3.017 — keep: 한 작업물 안에서 페이지를 옮길 때(고르기·지우기·더하기·복제·미팅 세트·시퀀스)는 지금 보드 설정(겉모습 — 토큰 크기·모양·표시…)을 그대로 둔다.
@@ -22260,7 +22260,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
                 ["pitch","선·구역",["lineSeg","zonePreset"]],
                 ["pitch","범위·방향",["cmdPitchViewSeg","cmdPitchSideSeg","cmdOrientSeg","cmdPitchNSeg"]],
                 ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","realScaleSeg","labelSeg"]],
-                ["look","이름표",["namePosSeg","nameSizeSeg","nameStyleSeg"]],
+                ["look","이름표",["namePosSeg","nameSizeSeg","nameStyleSeg","nameFontSeg"]],
                 ["look","분석",["analysisSeg"]],
                 ["view","보기",["tiltSeg",editorHint]],
                 ["view","3D 경기장",["tiltCamSeg","tiltDecoSeg","tiltAdInput","tiltMoodSeg","tiltBrandSeg"],"ps-tilt-row"],
@@ -22982,7 +22982,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
     var off=Math.max(ra,rb)*0.35+h/2+8,mx=(a.x+b.x)/2+nx*off,my=(a.y+b.y)/2+ny*off;
     var g=el("g",{transform:"translate("+mx+","+my+") rotate("+upright()+")"});
     g.appendChild(el("rect",{x:-w/2,y:-h/2,width:w,height:h,rx:h/2,fill:"rgba(18,22,30,.92)",stroke:"rgba(255,255,255,.35)","stroke-width":1.2}));
-    var tx=el("text",{x:0,y:0.5,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":fs,"font-weight":"800","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Segoe UI',Roboto,sans-serif","font-variant-numeric":"tabular-nums"}); tx.textContent=t; g.appendChild(tx); ml.appendChild(g);
+    var tx=el("text",{x:0,y:0.5,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":fs,"font-weight":"800","font-family":"Pretendard,-apple-system,'Apple SD Gothic Neo',sans-serif","font-variant-numeric":"tabular-nums"}); tx.textContent=t; g.appendChild(tx); ml.appendChild(g);
   }
   /* 2.611 — 장비에만(사용자 "일단 장비에만 적용해보자, 훈련 그리드 만들 때만"): 선수 토큰은 거리를 안 잰다.
      장비 둘 → 짝 거리. 셋 이상 → 바깥 테두리(점선 사각형) + «가로 × 세로 m» 알약 하나(일렬이면 길이 하나). 선수가 섞여 있어도 장비만 센다. */
@@ -22990,7 +22990,7 @@ html.ps-page-board body:not(.ps-dock) .sel-ctl > #dupSelBtn:not(#_):not(#__):not
   function pill(ml,x,y,t,fs){
     var w=t.length*fs*0.58+20,h=fs+8,g=el("g",{transform:"translate("+x+","+y+") rotate("+upright()+")"});
     g.appendChild(el("rect",{x:-w/2,y:-h/2,width:w,height:h,rx:h/2,fill:"rgba(18,22,30,.92)",stroke:"rgba(255,255,255,.35)","stroke-width":1.2}));
-    var tx=el("text",{x:0,y:0.5,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":fs,"font-weight":"800","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Segoe UI',Roboto,sans-serif","font-variant-numeric":"tabular-nums"}); tx.textContent=t; g.appendChild(tx); ml.appendChild(g);
+    var tx=el("text",{x:0,y:0.5,"text-anchor":"middle","dominant-baseline":"central",fill:"#fff","font-size":fs,"font-weight":"800","font-family":"Pretendard,-apple-system,'Apple SD Gothic Neo',sans-serif","font-variant-numeric":"tabular-nums"}); tx.textContent=t; g.appendChild(tx); ml.appendChild(g);
   }
   function grid(ml,P){
     var x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
