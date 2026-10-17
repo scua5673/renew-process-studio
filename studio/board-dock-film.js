@@ -12,10 +12,10 @@
   if (root) root.PSDockFilm = api;
 })(typeof window === 'undefined' ? null : window, function () {
   'use strict';
-  // 장면 i 의 재생 시간(초) — 보드 playAnim 과 같은 셈: 머묾 max(.2, hold) + (마지막이 아니면) 이동 max(.3, dur||1) / 속도
+  // 장면 i 의 재생 시간(초) — 보드 playAnim 과 같은 셈: 머묾 max(.1, hold) + (마지막이 아니면) 이동 max(.3, dur||1) / 속도
   function sceneSecs(frames, i, hold, speedOf) {
     if (!frames || !frames[i]) return 0;
-    var f = frames[i], s = Math.max(0.2, +hold || 0.6);
+    var f = frames[i], s = Math.max(0.1, +hold || 0.6);
     if (i < frames.length - 1) { var sp = speedOf ? +speedOf(f) : (+f.moveSpeed > 0 ? +f.moveSpeed : 1); s += Math.max(0.3, +f.dur || 1) / (sp > 0 ? sp : 1); }
     return Math.round(s * 10) / 10;
   }

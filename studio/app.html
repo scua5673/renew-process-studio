@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.084"></script>
+<script src="autosave-status.js?v=3.085"></script>
 <script src="update-progress.js"></script>
 
 <title>PROCESS STUDIO</title>
@@ -522,7 +522,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.084';</script>
+<script>window.PS_BUILD='3.085';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1314,7 +1314,7 @@ window.psFailAlert=function(lead,e,stage){
   document.addEventListener('load',function(e){ var t=e.target; if(t&&t.tagName==='IFRAME')hook(t.contentWindow); },true);
   document.addEventListener('DOMContentLoaded',function(){ [].forEach.call(document.querySelectorAll('iframe'),function(f){ hook(f.contentWindow); }); });
 })();</script>
-<script>(function(){if(window.__psErrInit)return;window.__psErrInit=1;function errorSource(reason){try{var lines=String(reason&&reason.stack||'').split('\n').slice(0,8);/* 2.916 — 사파리는 첫 줄부터 위치다(머리글 줄이 없다). slice(1) 이 유일한 위치를 버려 unknown-script 로 남았다 */for(var i=0;i<lines.length;i++){var m=lines[i].match(/((?:https?|chrome-extension|moz-extension):\/\/[^\s)]+):(\d+):(\d+)/);if(!m)continue;var u=new URL(m[1]);if(u.origin!==location.origin)return 'external-script';var file=u.pathname.split('/').pop();if(!/^[a-zA-Z0-9_.-]{1,60}$/.test(file))return 'app-script';return file+':'+m[2]+':'+m[3];}}catch(_){}return 'unknown-script';}function track(code,stage,msg,source){try{var send=function(){try{window.PSSync&&PSSync.event&&PSSync.event('app_error',{status:'error',feature:'app',error_code:code||'unknown',meta:{stage:stage||'runtime',source:source||'',msg:String(msg||'').slice(0,140)}});}catch(_){}};send();setTimeout(send,2200);}catch(_){}}function show(m){try{var b=document.getElementById('ps-errbar');if(!b){b=document.createElement('div');b.id='ps-errbar';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99999;max-width:84vw;background:#3a1414;color:#ffd7d7;border:1px solid #a33;border-radius:10px;padding:8px 12px;font:600 12px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;';b.title='탭하면 닫기';b.addEventListener('click',function(){b.style.display='none';});(document.body||document.documentElement).appendChild(b);}b.style.display='block';b.textContent='⚠︎ 오류: '+m;clearTimeout(b.__t);b.__t=setTimeout(function(){b.style.display='none';},6000);}catch(_){}}window.addEventListener('error',function(e){var _m=(e&&e.message)||'';if(/ResizeObserver loop/i.test(_m))return;if(/^Script error\.?$/i.test(_m)&&!(e&&e.filename))return;/* 2.917 — 다른 출처 스크립트(확장 프로그램 등)의 오류는 브라우저가 내용을 가려 «Script error.» 한 줄만 준다 — 고칠 정보가 없고 사용자에게 빨간 토스트만 띄웠다 *//* 2.476 — 무해한 브라우저 경고가 사용자 오류 토스트로 떴다(폰 실측) */try{console.error('[PS]',(e&&(e.error||e.message)),e&&e.filename,e&&e.lineno);}catch(_){}track('js_error','runtime',(_m||'')+' @'+((e&&e.filename)||'').split('/').pop()+':'+((e&&e.lineno)||0));show(_m||'스크립트 오류');});window.addEventListener('unhandledrejection',function(e){var r=e&&e.reason,msg='';try{msg=String((r&&r.message)||r||'');}catch(_){}if(/service\\s*worker|failed to update a serviceworker|fetching the script|sw\\.js/i.test(msg)){try{e.preventDefault();}catch(_){}return;}try{console.error('[PS promise]',r);}catch(_){}track('promise_rejection','promise',msg,errorSource(r));show('작업을 완료하지 못했습니다');});})();</script>
+<script>(function(){if(window.__psErrInit)return;window.__psErrInit=1;function errorSource(reason){try{var lines=String(reason&&reason.stack||'').split('\n').slice(0,8);/* 2.916 — 사파리는 첫 줄부터 위치다(머리글 줄이 없다). slice(1) 이 유일한 위치를 버려 unknown-script 로 남았다 */for(var i=0;i<lines.length;i++){var m=lines[i].match(/((?:https?|chrome-extension|moz-extension):\/\/[^\s)]+):(\d+):(\d+)/);if(!m)continue;var u=new URL(m[1]);if(u.origin!==location.origin)return 'external-script';var file=u.pathname.split('/').pop();if(!/^[a-zA-Z0-9_.-]{1,60}$/.test(file))return 'app-script';return file+':'+m[2]+':'+m[3];}}catch(_){}return 'unknown-script';}function track(code,stage,msg,source){try{var send=function(){try{window.PSSync&&PSSync.event&&PSSync.event('app_error',{status:'error',feature:'app',error_code:code||'unknown',meta:{stage:stage||'runtime',source:source||'',msg:String(msg||'').slice(0,140)}});}catch(_){}};send();setTimeout(send,2200);}catch(_){}}function show(m){try{var b=document.getElementById('ps-errbar');if(!b){b=document.createElement('div');b.id='ps-errbar';b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:99999;max-width:84vw;background:#3a1414;color:#ffd7d7;border:1px solid #a33;border-radius:10px;padding:8px 12px;font:600 12px/1.4 Pretendard,-apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer;';b.title='탭하면 닫기';b.addEventListener('click',function(){b.style.display='none';});(document.body||document.documentElement).appendChild(b);}b.style.display='block';b.textContent='⚠︎ 오류: '+m;clearTimeout(b.__t);b.__t=setTimeout(function(){b.style.display='none';},6000);}catch(_){}}window.addEventListener('error',function(e){var _m=(e&&e.message)||'';if(/ResizeObserver loop/i.test(_m))return;if(/^Script error\.?$/i.test(_m)&&!(e&&e.filename))return;/* 2.917 — 다른 출처 스크립트(확장 프로그램 등)의 오류는 브라우저가 내용을 가려 «Script error.» 한 줄만 준다 — 고칠 정보가 없고 사용자에게 빨간 토스트만 띄웠다 *//* 2.476 — 무해한 브라우저 경고가 사용자 오류 토스트로 떴다(폰 실측) */try{console.error('[PS]',(e&&(e.error||e.message)),e&&e.filename,e&&e.lineno);}catch(_){}track('js_error','runtime',(_m||'')+' @'+((e&&e.filename)||'').split('/').pop()+':'+((e&&e.lineno)||0));show(_m||'스크립트 오류');});window.addEventListener('unhandledrejection',function(e){var r=e&&e.reason,msg='';try{msg=String((r&&r.message)||r||'');}catch(_){}if(/service\\s*worker|failed to update a serviceworker|fetching the script|sw\\.js/i.test(msg)){try{e.preventDefault();}catch(_){}return;}try{console.error('[PS promise]',r);}catch(_){}track('promise_rejection','promise',msg,errorSource(r));show('작업을 완료하지 못했습니다');});})();</script>
   <style>
     /* 화면 방향은 사용자가 선택한다 — 폰·아이패드·컴퓨터 모두 세로/가로 사용 가능 */
     #rotateGate{display:none!important;}
@@ -3949,7 +3949,7 @@ window.psFailAlert=function(lead,e,stage){
           +'<div class="pd-k">서버로 안 올라간 변경 '+(d.pending.length?d.pending.length+'건':'')+'</div>'+rows
           +'<div class="pd-k">이 기기 저장 공간 <b>'+mb(d.localBytes)+'</b></div>'
           +(big?'<div class="pd-meta">'+big+'</div>':'')
-          +((d.recent&&d.recent.length)?('<div class="pd-k">최근 진단</div><div class="pd-meta" style="font-family:ui-monospace,monospace;font-size:11px;line-height:1.5">'+d.recent.map(function(r){ return esc(new Date(r.at).toLocaleTimeString()+' '+r.stage+(r.code?(' · '+r.code):'')); }).join('<br>')+'</div>'):'')   /* 2.798 */
+          +((d.recent&&d.recent.length)?('<div class="pd-k">최근 진단</div><div class="pd-meta" style="font-family:Pretendard,ui-monospace,monospace;font-size:11px;line-height:1.5">'+d.recent.map(function(r){ return esc(new Date(r.at).toLocaleTimeString()+' '+r.stage+(r.code?(' · '+r.code):'')); }).join('<br>')+'</div>'):'')   /* 2.798 */
           +'<div class="pd-note">다른 기기에서 한 변경이 안 보이면: 그 기기에서도 이 진단을 열어 «안 올라간 변경»의 이유를 확인하세요 — 올라가지 않은 것은 여기서 받을 수도 없습니다.</div>'
           +'<div class="pd-acts"><button type="button" class="pd-sync">지금 주고받기</button><button type="button" class="pd-clean">안전 정리</button></div>'
           +'</div>';
@@ -5310,7 +5310,7 @@ window.psFailAlert=function(lead,e,stage){
   function note(text){ try{ var n=document.getElementById('psPackNote');
       if(!text){ if(n)n.remove(); return; }
       if(!n){ n=document.createElement('div'); n.id='psPackNote'; n.setAttribute('role','status');
-        n.style.cssText='position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translateX(-50%);z-index:100001;max-width:min(92vw,520px);box-sizing:border-box;padding:10px 16px;border-radius:999px;background:#14161A;color:#fff;font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Pretendard",sans-serif;text-align:center;word-break:keep-all;box-shadow:0 8px 24px rgba(0,0,0,.28);pointer-events:none';
+        n.style.cssText='position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translateX(-50%);z-index:100001;max-width:min(92vw,520px);box-sizing:border-box;padding:10px 16px;border-radius:999px;background:#14161A;color:#fff;font:600 13px/1.45 Pretendard,-apple-system,BlinkMacSystemFont,"Pretendard",sans-serif;text-align:center;word-break:keep-all;box-shadow:0 8px 24px rgba(0,0,0,.28);pointer-events:none';
         document.body.appendChild(n); }
       if(n.textContent!==text)n.textContent=text; }catch(_){} }
   function stop(){ if(timer){ clearInterval(timer); timer=null; } }
@@ -8202,13 +8202,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.084"></script>
-<script src="autosave-merge.js?v=3.084"></script>
-<script src="autosave-runtime.js?v=3.084"></script>
-<script src="autosave-recovery.js?v=3.084"></script>
-<script src="sync.js?v=3.084"></script>
+<script src="autosave-journal.js?v=3.085"></script>
+<script src="autosave-merge.js?v=3.085"></script>
+<script src="autosave-runtime.js?v=3.085"></script>
+<script src="autosave-recovery.js?v=3.085"></script>
+<script src="sync.js?v=3.085"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.084">
+<link rel="stylesheet" href="support.css?v=3.085">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

@@ -63,3 +63,9 @@ body.fmdark{
   --c-bg:#121417; --c-surface:#1B1E23; --c-surface-2:#23272D;
   --c-act:#7F98D0; --c-ok:#4CC27A; --c-warn:#D9A15A; --c-bad:#E07470;
 }
+
+/* ══ 3.085 · 글꼴 하나 — Pretendard (사용자 «앱의 모든 폰트 통일 해야되지 않아?») ══
+   글꼴 파일은 /vendor/fonts.css(Pretendard 조각 받기). 화면마다 system-ui · -apple-system · 고정폭 · Jost 가 섞여 기기마다 달라 보였다.
+   단추 · 입력 칸은 브라우저 기본 글꼴을 쓰므로 부모 글꼴을 물려받게 한다(페이지 규칙이 따로 정하면 그쪽이 이긴다). */
+:root{--ps-font:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif}
+button,input,select,textarea,optgroup{font-family:inherit}

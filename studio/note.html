@@ -869,7 +869,7 @@ function ribbon(c,s){
 let tmp=document.createElement('canvas'),tctx=tmp.getContext('2d');
 /* 텍스트 줄바꿈 — s.wrap(논리 px)이 있으면 그 폭에서 자동 줄바꿈, 없으면 기존처럼 \n만 */
 let mcv=document.createElement('canvas'),mctx=mcv.getContext('2d');
-function textFont(s){return '600 '+(s.size*1.7)+"px -apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";}
+function textFont(s){return '600 '+(s.size*1.7)+"px Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";}
 function textLines(s){
   const raw=String(s.text||'').split('\n');
   if(!s.wrap)return raw;
@@ -1022,7 +1022,7 @@ function openTextEditor(l,existing){
   ed._size=existing?existing.size:size;
   ed.style.cssText='position:fixed;z-index:60;background:rgba(255,255,255,.96);border:1.5px dashed var(--ps-navy,#14213D);border-radius:6px;'
     +'padding:2px 6px;margin:0;outline:none;resize:both;overflow:auto;min-width:80px;min-height:40px;color:'+(existing?existing.color:color)
-    +";font:600 "+fs+"px -apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.34;";
+    +";font:600 "+fs+"px Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.34;";
   const px=l.r.left+(existing?existing.x:l.x)/LW*l.r.width, py=l.r.top+(existing?existing.y:l.y)/LH*l.r.height;
   ed.style.left=(px-8)+'px';ed.style.top=(py-4)+'px';
   ed._l={x:existing?existing.x:l.x,y:existing?existing.y:l.y};

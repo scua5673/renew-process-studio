@@ -1550,7 +1550,7 @@ body.fmdark .ci-hd:hover{background:#23272D;}
   .ev-sheet,.rz{break-inside:avoid;}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
 }
-#printDoc{color:#14161A;font-family:-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
+#printDoc{color:#14161A;font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
 #printDoc h1{font-size:20px;margin:0 0 4px;font-weight:800;}
 #printDoc .meta{color:#666;font-size:12px;margin:0 0 4px;}#printDoc .meta b{color:#111;}
 #printDoc .dnote{background:#E9EDF5;border:1px solid #C3CCDD;border-radius:8px;padding:9px 12px;font-size:12px;line-height:1.5;margin:8px 0 14px;white-space:pre-wrap;}
@@ -10773,7 +10773,7 @@ const MDAY_CSS=`*{box-sizing:border-box;-webkit-print-color-adjust:exact!importa
 @page{size:A4 landscape;margin:0;}
 html{margin:0;padding:0;}
 body{margin:0!important;padding:9mm!important;}
-body{color:#14161A;font-family:-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
+body{color:#14161A;font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
 .sheet{width:279mm;height:192mm;display:flex;flex-direction:column;overflow:hidden;}
 .hd{flex:0 0 auto;display:flex;align-items:flex-end;gap:6mm;border-bottom:2px solid #14161A;padding-bottom:2.6mm;}
 .wm{line-height:1;}
@@ -12611,7 +12611,7 @@ const ROSTER_CSS=`*{box-sizing:border-box;-webkit-print-color-adjust:exact!impor
 @page{size:A4 landscape;margin:0;}
 html{margin:0;padding:0;}
 body{margin:0!important;padding:9mm!important;}
-body{color:#14161A;font-family:-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
+body{color:#14161A;font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;}
 .sheet{width:279mm;height:192mm;display:flex;flex-direction:column;overflow:hidden;}
 .hd{flex:0 0 auto;display:flex;align-items:flex-end;gap:6mm;border-bottom:2px solid #14161A;padding-bottom:2.6mm;}
 .wm{line-height:1;}
@@ -12713,7 +12713,7 @@ function scoutRosterDocHTML(ink){
     return ((isNaN(na)?1e9:na)-(isNaN(nb)?1e9:nb))||String(a.name||"").localeCompare(String(b2.name||""),"ko");});
   const rows=all.map((pl,i)=>{const p=pos(pl.posId);
     return '<tr><td>'+(i+1)+'</td><td>'+esc(pl.num||"")+'</td><td>'+esc(pl.name||"")+'</td><td>'+esc(p?posAbbr(p.name):"")+'</td></tr>';}).join("");
-  const css='@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;color:#14161A;margin:0}h2{margin:0 0 4px;font-size:20px}.sub{color:#646A73;font-size:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse}th,td{border:1px solid '+(ink?'#666':'#D7DBE2')+';padding:7px 10px;font-size:13px;text-align:left}th{background:'+(ink?'#eee':'#F1F2F4')+';font-weight:800}td:first-child,th:first-child{width:34px;text-align:center;color:#646A73}td:nth-child(2),th:nth-child(2){width:52px;text-align:center}td:nth-child(4),th:nth-child(4){width:72px}';
+  const css='@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;color:#14161A;margin:0}h2{margin:0 0 4px;font-size:20px}.sub{color:#646A73;font-size:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse}th,td{border:1px solid '+(ink?'#666':'#D7DBE2')+';padding:7px 10px;font-size:13px;text-align:left}th{background:'+(ink?'#eee':'#F1F2F4')+';font-weight:800}td:first-child,th:first-child{width:34px;text-align:center;color:#646A73}td:nth-child(2),th:nth-child(2){width:52px;text-align:center}td:nth-child(4),th:nth-child(4){width:72px}';
   return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(title)+'_스카우트대상</title><style>'+css+'</style></head><body><h2>스카우트 대상 — '+esc(title)+'</h2><div class="sub">총 '+all.length+'명 · '+esc(today)+'</div><table><thead><tr><th>#</th><th>번호</th><th>이름</th><th>포지션</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>';
 }
 function printScoutRoster(){printStandalone(scoutRosterDocHTML(false),ink=>scoutRosterDocHTML(!!ink));}
