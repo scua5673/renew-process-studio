@@ -8386,9 +8386,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   function rSquadEval(){
     if(sqEvalState==='loading'||sqEvalState==='idle')
-      return '<div class="ps-ph sq-ph"><b>선수단 평가</b><small>선수 목록을 옆에 두고 이어서 평가합니다</small></div><div class="card sqe-msg"><b>선수단을 불러오는 중…</b>팀 자료를 여는 중이에요.</div>';
+      return '<div class="ps-ph sq-ph"><b>팀 IDP</b><small>선수 목록을 옆에 두고 이어서 평가합니다</small></div><div class="card sqe-msg"><b>선수단을 불러오는 중…</b>팀 자료를 여는 중이에요.</div>';
     if(sqEvalState==='err')
-      return '<div class="ps-ph sq-ph"><b>선수단 평가</b><small>선수 목록을 옆에 두고 이어서 평가합니다</small></div>'
+      return '<div class="ps-ph sq-ph"><b>팀 IDP</b><small>선수 목록을 옆에 두고 이어서 평가합니다</small></div>'
         +'<div class="card sqe-msg"><b>'+(sqEvalErr==='timeout'?'팀 화면을 여는 데 시간이 걸려요':'선수단을 불러오지 못했어요')+'</b>'
         +(sqEvalErr==='standalone'?'앱 안에서 열어야 팀 자료를 읽을 수 있어요.':'잠시 뒤 다시 시도해 주세요.')
         +'<div><button type="button" data-sqe-retry>다시 시도</button></div></div>';
@@ -8408,7 +8408,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       :((_scope==='qa')?'팀 전체에게 한 가지를 묻고, 돌아온 글을 여기서 읽습니다'
       :(sqPhone()?('선수 '+all.length+'명 · 이름을 누르면 그 선수의 이야기가 열려요')
                  :('선수 '+all.length+'명 · 한 명씩 — 이야기·평가·면담·리포트'))));
-    var h='<div class="ps-ph sq-ph"><b>선수단</b><small>'+_sub+(editable?'':' · 읽기 전용')+'</small>'
+    var h='<div class="ps-ph sq-ph"><b>팀 IDP</b><small>'+_sub+(editable?'':' · 읽기 전용')+'</small>'
       +'<span class="ps-sp"></span><div class="sq-scope">'
       /* 2.454 — '팀 갭' 문을 걷음 → 2.475 — 그리는 코드(rSqTeam 군)까지 철거(2단계 예약 이행) */
       +[['today','today','오늘'],['qa','qa','공통질문'],['pl',((sqPrevPanel&&sqPrevPanel!=='today')?sqPrevPanel:'story'),'선수'],['req','req','기준']].map(function(t){
@@ -14311,7 +14311,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
           +'</div></section>'; }
     }catch(_){}
     function row(m){
-      var sc=mtScore(m), rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', kind=m.kind==='friendly'?'친선':'정식';
+      var sc=mtScore(m), rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', kind=m.kind==='friendly'?'친선':(m.kind==='cup'?'컵':'리그');
       return '<button type="button" class="mt-row" data-mt-open="'+esc(m.id)+'"><span class="mt-row-d">'+esc(mtDate(m.date))+(m.time?' '+esc(m.time):'')+'</span>'
         +'<span class="mt-row-m"><b>vs '+esc(m.opponent||'상대')+'</b><small>'+kind+(m.competition?' · '+esc(m.competition):'')+'</small></span>'
         +'<span class="mt-row-r">'+(sc?'<b class="r-'+sc.r+'">'+sc.us+':'+sc.them+'<i>'+rl+'</i></b>':'')
@@ -14333,7 +14333,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       +'<button type="button" class="gl-pick none" data-mt-vnone'+(cur?'':' hidden')+'>연결 해제</button></div></div>';
   }
   function rMatchDetail(m){
-    var sc=mtScore(m), kind=m.kind==='friendly'?'친선':'정식', rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', who=ro()?'선수':'내', future=String(m.date||'')>=mtTodayYmd();
+    var sc=mtScore(m), kind=m.kind==='friendly'?'친선':(m.kind==='cup'?'컵':'리그'), rl=sc?{W:'승',D:'무',L:'패'}[sc.r]:'', who=ro()?'선수':'내', future=String(m.date||'')>=mtTodayYmd();
     var mm={}; try{ mm=rvRec(viewing).matchMessages||{}; if(!mm||typeof mm!=='object'||Array.isArray(mm))mm={}; }catch(_){ mm={}; }
     var h='<button type="button" class="mt-back" data-mt-back>‹ 경기 목록</button>';
     var r=mtSelf(m.id), sc2=mtSc5(r.score), _apps=String(r.apps||'');   /* 2.782 — 출전은 머리 카드로 올라간다 */
