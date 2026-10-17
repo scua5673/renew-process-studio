@@ -15,6 +15,11 @@ const ITEM={name:'가상 보기 글',type:'train',focus:'bp',minutes:10,snap:sna
 const fx=await startFixture(),browsers={};
 try{
   const {page,context,logs}=await openApp(fx,size,{browsers});
+  // 기기 기본 보드 모양을 누가 쓰는지 — 실패하면 어느 화면 · 어느 줄인지 알 수 있게(3.088 WebKit 폰에서만 '{}' 가 적혔다)
+  const lkTrap=()=>{try{if(Storage.prototype.__lkTrap)return;const o=Storage.prototype.setItem;Storage.prototype.__lkTrap=1;
+    Storage.prototype.setItem=function(k,v){if(k==='cs_board_lookdef_v1'){try{const t=window.top;(t.__lkW=t.__lkW||[]).push(location.pathname+location.search+' '+String(new Error().stack||'').split('\n').slice(0,6).join(' | '));}catch(_){}}return o.apply(this,arguments);};}catch(_){}};
+  await context.addInitScript(lkTrap);
+  for(const f of page.frames()){try{await f.evaluate(lkTrap);}catch(_){}}
   const shot=n=>page.screenshot({path:path.join(SHOTS,`community-view-look-${engine}-${size}-${n}.png`)});
   const cors={'access-control-allow-origin':'*'};
   await context.route('**/rest/v1/rpc/ps_comm_**',r=>r.fulfill({status:200,contentType:'application/json',headers:cors,body:'null'}));
@@ -117,7 +122,7 @@ try{
     assert.deepEqual([L.tilt,L.shape],[true,'circle'],'3D 도 기기에 남는다(데스크톱)');
     assert.equal(L.setting,setting0,'보드 설정의 3D 값은 끝까지 그대로');
   }
-  assert.equal(L.lookdef,null,'기기 기본 보드 모양(cs_board_lookdef_v1)을 쓰지 않는다');
+  assert.equal(L.lookdef,null,'기기 기본 보드 모양(cs_board_lookdef_v1)을 쓰지 않는다 — '+JSON.stringify(await page.evaluate(()=>window.__lkW||[])));
   assert.equal(L.docW,L.vw,'가로로 넘치지 않는다');
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
