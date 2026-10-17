@@ -170,6 +170,7 @@
     ['ps_comm_elmiha_v1','device','ls','cache','community.html'],
     ['ps_comm_feed_cache_v1','device','ls','cache','community.html'],
     ['ps_comm_handle','device','ls','pref','community.html'],
+    ['ps_comm_look_v1','device','ls','pref','board-comm-look.js'],   /* 3.087 — 커뮤니티 뷰어 «보기»(평면 · 3D · 선수 모양 · board-comm-look.js) */
     ['ps_comm_proc_index_v1','device','ls','cache','community.html'],
     ['ps_comm_tab_v1','device','ls','pref','community.html'],
     ['ps_count_scale','device','ls','pref','sync.js'],
@@ -215,7 +216,7 @@
     ['ps_perms_missing','device','ls','session','sync.js'],
     ['ps_personal_review_v1','device','ls','pref','sync.js'],
     ['ps_phone_board_hint_v1','device','ls','seen','board.html'],
-    ['ps_pitch_photo:','device','idb','data','board-pitch-photo.js',{prefix:1}],   /* 3.084 — 운동장 사진(판에는 @photo: 참조만 · 서버로 가지 않는다) */
+    ['ps_pitch_photo:','device','idb','data','board-pitch-photo.js',{prefix:1}],   /* 3.091 — 운동장 사진(판에는 @photo: 참조만 · 서버로 가지 않는다) */
     ['ps_private_board_draft_v1:','device','ls','draft','storage.js',{prefix:1}],
     ['ps_private_board_rev_v1','device','ls','cache','app.html'],
     ['ps_push_log_v1','device','ls','diag','sync.js'],

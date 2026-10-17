@@ -18,7 +18,7 @@ test('참조 — @photo:<16자 hex>-<가로>x<세로>, 같은 사진은 같은 �
   assert.deepEqual(P.dimsOf(ra),{w:1600,h:900});
   assert.equal(P.isRef(P.refOf(a)),true,'크기 없는 참조도 읽는다');assert.equal(P.dimsOf(P.refOf(a)),null);
   for(const v of ['@real',null,'',a,'@photo:xyz','@photo:'+'0'.repeat(15),'x@photo:'+'0'.repeat(16),'@photo:'+'0'.repeat(16)+'-1600x','@photo:'+'0'.repeat(16)+'-0x0x']){assert.equal(P.isRef(v),false,String(v).slice(0,30));assert.equal(P.idOf(v),'');}
-  assert.equal(P.REF.charAt(0),'@','옛 판(3.083 이하)은 «@» 프리셋 길에서 모르는 키라 고른 피치를 그린다');
+  assert.equal(P.REF.charAt(0),'@','옛 판(3.090 이하)은 «@» 프리셋 길에서 모르는 키라 고른 피치를 그린다');
 });
 
 test('고른 파일 — PNG · JPEG · WebP, 10MB 이하만',()=>{

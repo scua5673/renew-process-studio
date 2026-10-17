@@ -30,13 +30,15 @@ test('export SVG gets the font inside it (an SVG picture cannot see the page fon
   assert.equal(NF.embed('<svg><g/></svg>',''),'<svg><g/></svg>');
 });
 test('the board saves it per board and both name drawings use it',()=>{
-  const b=read('studio/board.html'),d=read('studio/board-token-depth.js');
-  assert.match(b,/"nameStyle","nameFont","realScale"\];\}/,'a look key');
-  assert.match(b,/case "nameFont":return "base";/);
-  const re=b.match(/case "nameFont":return \/\^\(([a-z|]+)\)\$\/\.test\(v\);/); assert.ok(re,'validated');
-  assert.deepStrictEqual(re[1].split('|'),NF.ORDER,'the board accepts exactly the module\'s choices');
-  assert.match(b,/o\.nameFont=window\.__nameFont;/); assert.match(b,/window\.__nameFont=o\.nameFont;/);
-  assert.match(b,/nameFont:src\.nameFont,/,'new board keeps the default board\'s font'); assert.match(b,/nameFont:s\.nameFont,/,'a new page too');
+  const b=read('studio/board.html'),d=read('studio/board-token-depth.js'),m=read('studio/board-name-font.js');
+  // 3.087 — 보드마다 저장하는 설정은 모듈이 window.__psLookExt 에 적고 board.html 이 다섯 곳에서 읽는다(키를 board.html 에 하나씩 적지 않는다)
+  assert.match(b,/"realScale"\]\.concat\(Object\.keys\(window\.__psLookExt\|\|\{\}\)\);\}/,'look key');
+  assert.match(b,/var x=\(window\.__psLookExt\|\|\{\}\)\[k\]; return x\?x\.def:null; \}/,'default');
+  assert.match(b,/var x=\(window\.__psLookExt\|\|\{\}\)\[k\]; return x\?!!x\.ok\(v\):true; \}/,'validated');
+  assert.match(b,/for\(var x in window\.__psLookExt\|\|\{\}\)o\[x\]=window\["__"\+x\];/,'saved');
+  assert.match(b,/for\(var x in window\.__psLookExt\|\|\{\}\)window\["__"\+x\]=o\[x\];/,'applied');
+  assert.match(m,/ext\.nameFont = \{ def: 'base', ok: ok \};/);
+  for(const k of NF.ORDER)assert.ok(NF.ok(k),k); assert.ok(!NF.ok('zzz'));
   assert.match(b,/"font-weight":_nt\?"800":"700","font-family":window\.__nameFF\|\|"Pretendard,/,'2D name');
   assert.match(d,/'font-family': nameFF\(doc\) \|\| \(label && label\.getAttribute\('font-family'\)\) \|\| FONT/,'3D name');
   assert.match(b,/\["look","이름표",\["namePosSeg","nameSizeSeg","nameStyleSeg","nameFontSeg"\]\]/,'settings row under 이름표');
