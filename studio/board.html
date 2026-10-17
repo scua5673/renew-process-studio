@@ -6531,6 +6531,7 @@ function hideEmptyHint(){csHintMark("cs_hint_board");window.__ehForce=false;cons
   try{updateEmptyHint();}catch(_){}}   /* 2.457 — 카드를 닫으면 문이 제자리로 */
 /* 2.275 — 포메이션 열기(토큰이 있어도 강제 — __ehForce) · 2.277 — 자리를 보드 설정 '포메이션' 탭으로 옮겼다(사용자) */
 window.__psOpenFormation=function(){
+  try{ document.querySelectorAll(".empty-hint .eh-forms").forEach(function(r){ r._applied=""; }); }catch(_){}   /* 3.079 — 새로 열면 다시 고른 대형은 다시 깐다 */
   try{ var p=document.getElementById("cmd-board-settings-pop");
     if(p&&p.__psSelectTab){ p.__psSelectTab("form"); if(window.__psToggleBoardSettings)window.__psToggleBoardSettings("open"); return; } }catch(_){}
   var e=document.getElementById("emptyHint"); if(!e)return;   /* 패널이 아직 안 세워졌으면 옛 길(떠 있는 카드) */
@@ -15487,6 +15488,12 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       /* 2.459 — 옛 select(숨김)와 값을 하나로: '선발 11명'(8174)이 formHome.value 를 읽는다 */
       try{ var sel=document.getElementById(row.dataset.team==="red"?"formAway":"formHome");
         if(sel&&b.dataset.f!==undefined)sel.value=b.dataset.f; }catch(_){}
+      /* 3.079 — 고르면 바로 깔린다(코치 피드백 «4-3-3 을 눌러도 «배치»를 한 번 더 눌러야 한다»). 되돌리기(⌘Z)로 돌아간다.
+         «없음»은 이 창에서 방금 깐 것만 거둔다 — 원래 있던 선수는 건드리지 않는다. «배치»는 같은 대형을 두 번 깔지 않는다. */
+      try{ var _t=row.dataset.team==="red"?"red":"blue", _f=b.dataset.f||"";
+        if(_f){ if(row._applied!==_f){ applyFormationTo(_t,_f); row._applied=_f; deselect(); try{boardSaveLive();}catch(_){} } }
+        else if(row._applied){ pushUndo(); state.players=state.players.filter(function(p){return p.team!==_t;}); row._applied=""; renderTokens(); try{boardSaveLive();}catch(_){} }
+      }catch(_){}
     });});
   });
   /* 팀 색상 스와치 — 포메이션(더보기)·온보딩 공용. state.teamColors 갱신 → teamHex()가 렌더 시 즉시 반영 */
@@ -15512,8 +15519,10 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     const our=document.querySelector('.empty-hint .eh-forms[data-team="blue"] .eh-f.on');
     const opp=document.querySelector('.empty-hint .eh-forms[data-team="red"] .eh-f.on');
     const ourF=our?our.dataset.f:"", oppF=opp?opp.dataset.f:"";
-    if(ourF)applyFormationTo("blue",ourF);
-    if(oppF)applyFormationTo("red",oppF);
+    const rowOf=t=>document.querySelector('.empty-hint .eh-forms[data-team="'+t+'"]')||{};
+    if(ourF&&rowOf("blue")._applied!==ourF)applyFormationTo("blue",ourF);   /* 3.079 — 고를 때 이미 깔렸으면 다시 깔지 않는다(옮긴 자리를 지키도록) */
+    if(oppF&&rowOf("red")._applied!==oppF)applyFormationTo("red",oppF);
+    ["blue","red"].forEach(t=>{ try{ rowOf(t)._applied=""; }catch(_){} });
     deselect();hideEmptyHint();
   });
   const ehX=document.getElementById("ehClose");
@@ -19093,7 +19102,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{var ex=document.getElementById("mmPickOv");if(ex)ex.remove();}catch(_){}
     var cur=o.cur||null,live=cur?meetLiveMatch(cur):null,lists=meetPickLists(meetMatchesAll(),meetYmd());
     var ov=document.createElement("div");ov.id="mmPickOv";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-label","경기 연결");
-    var KD={official:"정식",friendly:"친선"};
+    var KD={official:"리그",cup:"컵",friendly:"친선"};   /* 3.079 — 일정과 같은 이름 */
     function row(m,past){ var on=cur&&String(cur.mid)===String(m.id);
       var meta=[m.competition||KD[m.kind]||"",m.homeAway||""].filter(Boolean).join(" · ");
       var tail=""; if(past){ var su=String(m.scoreUs==null?"":m.scoreUs).trim(),st=String(m.scoreThem==null?"":m.scoreThem).trim(); if(su!==""&&st!=="")tail=su+":"+st; }
@@ -23561,7 +23570,7 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
   bForm.addEventListener("click",function(e){ e.stopPropagation();
     function open(){ try{ if(window.__psOpenFormation)window.__psOpenFormation(); }catch(_){} setTimeout(vis,0); }
     var has=false; try{ has=(state.players||[]).length>0; }catch(_){}
-    if(has&&typeof psConfirm==="function")psConfirm("포메이션을 고르고 «배치»를 누르면 지금 선수 자리가 새로 바뀝니다. 계속할까요?",open); else open(); });
+    if(has&&typeof psConfirm==="function")psConfirm("포메이션을 고르면 지금 선수 자리가 바로 새로 바뀝니다(⌘Z 로 되돌릴 수 있어요). 계속할까요?",open); else open(); });
   try{ new MutationObserver(vis).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){}
   try{ var ab=document.getElementById("animBar"); if(ab)new MutationObserver(vis).observe(ab,{attributes:true,attributeFilter:["class"]}); }catch(_){}
   try{ var sc=document.querySelector(".sel-ctl"); if(sc)new MutationObserver(vis).observe(sc,{attributes:true,attributeFilter:["style","class"]}); }catch(_){}

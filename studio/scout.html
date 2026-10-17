@@ -12984,9 +12984,9 @@ function mmStartXI(m){
   }catch(_){ return null; }
 }
 function matchMeetParts(m){
-  var Ls=matchCarryLines, opp=String(m.opponent||"").trim()||"상대", KD={official:"정식",friendly:"친선"};
+  var Ls=matchCarryLines, opp=String(m.opponent||"").trim()||"상대", KD=null;
   var when=[mmDateLabel(m.date),m.time].filter(Boolean).join(" ");
-  var cov=[[when,m.homeAway,m.competition||KD[m.kind]||""].filter(Boolean).join(" · ")]; if(String(m.venue||"").trim())cov.push("장소 — "+String(m.venue).trim());
+  var cov=[[when,m.homeAway,m.competition||matchKindLabel(m)].filter(Boolean).join(" · ")]; if(String(m.venue||"").trim())cov.push("장소 — "+String(m.venue).trim());
   var brief=Ls(m.briefing); brief.slice(0,6).forEach(function(x){cov.push(x);});
   var parts=[{key:"cover",label:"표지",ok:true,detail:[when,m.homeAway].filter(Boolean).join(" · ")+(brief.length?" · 브리핑":""),slides:[{title:"vs "+opp,points:cov.filter(Boolean),us:[],opp:[],draw:[]}]}];
   var op=[],cnt=[]; function add(lab,v,c){var ls=Ls(v); if(ls.length){op.push(lab+" — "+ls.join(" · ")); if(c)cnt.push(lab+(ls.length>1?(" "+ls.length):""));}}
@@ -13965,7 +13965,7 @@ function matchMergeSchedule(state){
          옛 일정(구분 없음)은 경기 쪽 값을 그대로 둔다(경기 화면에서 고른 것을 지우지 않는다). */
       var _sk=sl.kind;
       if(_sk==='friendly'||_sk==='cup'||_sk==='official'){
-        var _nk=(_sk==='friendly')?'friendly':'official';
+        var _nk=_sk;   /* 3.079 — 컵을 컵으로 남긴다(전적은 matchKindOf 가 공식전으로 센다) */
         if(m.kind!==_nk){m.kind=_nk;changed=true;}
       }
       });
@@ -14858,7 +14858,7 @@ function matchWriteSchedule(state){
     return alt.length===1?alt[0]:null;
   }
   function updateLinked(hit,m,opp){
-    var kind=(m.kind==="friendly")?"friendly":"official",time=String(m.time||"");
+    var kind=(m.kind==="friendly"||m.kind==="cup")?m.kind:"official",time=String(m.time||"");
     if(hit.sl.xi>=0){
       var extra=hit.sl.h;if(!extra||typeof extra!=="object")return;
       if(opp)srcChanged=put(extra,"opp",opp)||srcChanged;
@@ -14908,11 +14908,11 @@ function matchWriteSchedule(state){
     var oldSid=m.sourceId||"";
     if(scheduleHasMatch(day)){
       if(!Array.isArray(day.matchAdd)){day.matchAdd=[];srcChanged=true;}
-      day.matchAdd.push({mid:mid,time:String(m.time||""),opp:opp,kind:(m.kind==="friendly"?"friendly":"official")});
+      day.matchAdd.push({mid:mid,time:String(m.time||""),opp:opp,kind:((m.kind==="friendly"||m.kind==="cup")?m.kind:"official")});
       m.sourceId="schedx:"+mid;
     }else{
       day.mid=mid;
-      day.match=Object.assign({},day.match&&typeof day.match==="object"?day.match:{},{time:String(m.time||""),opp:opp,kind:(m.kind==="friendly"?"friendly":"official")});
+      day.match=Object.assign({},day.match&&typeof day.match==="object"?day.match:{},{time:String(m.time||""),opp:opp,kind:((m.kind==="friendly"||m.kind==="cup")?m.kind:"official")});
       var board=day.board&&typeof day.board==="object"?day.board:{};
       day.board=Object.assign({},board,{sched:"경기",opp:opp});day.rest=false;day.off=false;
       m.sourceId="sched:"+mid;
@@ -15123,9 +15123,9 @@ function matchAdd(){
     window.psForm({title:"경기 추가",sub:"상대와 날짜만 정하면 준비 화면이 열려요.",ok:"추가",
       fields:[{key:"opponent",label:"상대",type:"text",placeholder:"예: FC서울 U15",required:true,maxlength:30},
               {key:"date",label:"날짜",type:"date",value:b0.date,required:true},
-              {key:"kind",label:"구분",type:"seg",options:[{value:"official",label:"정식경기"},{value:"friendly",label:"친선경기"}],value:"official"},   /* 2.144 */
+              {key:"kind",label:"구분",type:"seg",options:[{value:"official",label:"리그"},{value:"cup",label:"컵"},{value:"friendly",label:"친선"}],value:"official"},   /* 3.079 — 일정과 같은 세 이름 */   /* 2.144 */
               {key:"homeAway",label:"홈 / 원정",type:"seg",options:[{value:"home",label:"홈"},{value:"away",label:"원정"},{value:"",label:"중립·미정"}],value:""}],
-      onOk:function(v){var m=matchBlank();m.opponent=v.opponent||"새 경기";m.date=v.date||m.date;m.homeAway=v.homeAway||"";m.kind=(v.kind==="friendly")?"friendly":"official";
+      onOk:function(v){var m=matchBlank();m.opponent=v.opponent||"새 경기";m.date=v.date||m.date;m.homeAway=v.homeAway||"";m.kind=(v.kind==="friendly"||v.kind==="cup")?v.kind:"official";
         matchCurrent=m.id;matchLoad().matches.unshift(m);matchSaveNow();matchOpen(m.id);}});   /* 2.733 — 첫 저장 전에 현재 경기로 정해 exact 새 일정 슬롯을 받는다 */
     return;
   }
@@ -15204,7 +15204,10 @@ function matchDelete(id){
       화면이 코치보다 앞서 결론을 내린다. 카드에는 적힌 그대로 `2 : -` 로 보인다.
    ⚠ 옛 저장본에는 `kind` 가 없다 — **정식으로 본다**(matchKindOf). 친선만 고치면 되는 쪽이 손이 덜 간다. */
 function matchKindOf(m){ return (m&&m.kind==="friendly")?"friendly":"official"; }
-var MATCH_KIND_LABEL={official:"정식",friendly:"친선"};
+var MATCH_KIND_LABEL={official:"공식전",friendly:"친선"};
+/* 3.079 — 경기 이름 하나로(코치 피드백 «주간은 경기, 월간은 리그, 목록은 정식»). 한 경기는 일정과 같은 말 — 리그·컵·친선.
+   전적 통은 그대로 둘(공식전 = 리그+컵 · 친선). 컵은 일정에서 오면 kind:"cup" 으로 남는다(matchKindOf 는 공식전으로 센다). */
+function matchKindLabel(m){ var k=m&&m.kind; return k==="friendly"?"친선":(k==="cup"?"컵":"리그"); }
 function matchResultOf(m){
   if(!m)return"";
   var a=m.scoreUs, b=m.scoreThem;
@@ -17421,7 +17424,7 @@ function matchRowHTML(m,alive){
     /* 2.144 — 구분(정식·친선)은 이름 바로 옆. 상태(준비 중·경기·리뷰)는 결과가 있으면 결과가 대신 말한다 */
     /* 2.387 — 조 칩. 구분(정식·친선) 앞에 둔다 — 누구의 경기인지가 먼저다(일정 카드와 같은 순서) */
     +(function(){ var L=matchGrpList(m); return L.length?('<em class="mr-grp">'+esc(L.join(' · '))+'</em>'):''; })()
-    +'<em class="mr-kind '+kind+'">'+MATCH_KIND_LABEL[kind]+'</em>'
+    +'<em class="mr-kind '+kind+'">'+matchKindLabel(m)+'</em>'
     +(res?'':'<em class="mr-st '+st+'">'+stl+'</em>')
     +(unlinked?'<u class="unlink">일정에 없음</u>':'')+'</span>'
     +(sub?'<span class="mr-sub">'+esc(sub)+'</span>':'')+'</span>'
@@ -17561,8 +17564,8 @@ function matchEditOne(id){
   infoFields=infoFields.concat([{key:"time",label:"시간",type:"time",value:m.time||""},
             /* 2.144 — 구분과 스코어. 경기가 끝나고 코치가 제일 먼저 적는 두 가지가 여기 있어야
                목록에서 바로 끝난다(전에는 스코어를 적으려고 경기 안 리뷰 패널까지 들어가야 했다). */
-            {key:"kind",label:"구분",type:"seg",value:matchKindOf(m),
-             options:[{value:"official",label:"정식경기"},{value:"friendly",label:"친선경기"}]},
+            {key:"kind",label:"구분",type:"seg",value:(m.kind==="cup"?"cup":matchKindOf(m)),
+             options:[{value:"official",label:"리그"},{value:"cup",label:"컵"},{value:"friendly",label:"친선"}]},
             {key:"scoreUs",label:"우리 득점",type:"number",value:(m.scoreUs===null||m.scoreUs===undefined)?"":m.scoreUs,placeholder:"비우면 미기록"},
             {key:"scoreThem",label:"상대 득점",type:"number",value:(m.scoreThem===null||m.scoreThem===undefined)?"":m.scoreThem,placeholder:"비우면 미기록"},
             {key:"competition",label:"대회",type:"text",value:m.competition||"",placeholder:"예: 주말리그",maxlength:30},
@@ -17574,7 +17577,7 @@ function matchEditOne(id){
     onOk:function(v){
       m.opponent=v.opponent||"상대 미정"; if(!linked)m.date=v.date||""; m.time=v.time||"";
       m.competition=v.competition||""; m.venue=v.venue||""; m.homeAway=v.homeAway||"";
-      m.kind=(v.kind==="friendly")?"friendly":"official";
+      m.kind=(v.kind==="friendly"||v.kind==="cup")?v.kind:"official";
       /* 빈칸은 **미기록**으로 남긴다(0 으로 채우지 않는다) — 0:0 무승부와 '아직 안 적음'은 다른 일이다 */
       m.scoreUs=String(v.scoreUs||"").trim()===""?"":String(+v.scoreUs);
       m.scoreThem=String(v.scoreThem||"").trim()===""?"":String(+v.scoreThem);
