@@ -308,13 +308,25 @@ try{
   await c.click('#prTabFifa');
   await c.waitForSelector('.fi-card');
   s=await state();
-  const fi=await c.evaluate(()=>({n:document.querySelectorAll('.fi-card').length,bad:[...document.querySelectorAll('.fi-card')].filter(a=>!a.href.startsWith('https://www.fifatrainingcentre.com/en/practice/')||a.target!=='_blank'||a.rel!=='noopener noreferrer').length,
+  const fi=await c.evaluate(()=>({n:document.querySelectorAll('.fi-card').length,bad:[...document.querySelectorAll('a.fi-card')].filter(a=>!a.href.startsWith('https://www.fifatrainingcentre.com/en/practice/')||a.target!=='_blank'||a.rel!=='noopener noreferrer').length,
     hero:!!document.querySelector('.fi-hero'),sortNav:getComputedStyle(document.querySelector('.comm-nav .nav-sec')).display,label:document.getElementById('prFifaN').textContent}));
   assert.deepEqual([s.proc,s.pressed,s.sub,s.ph,s.fab,s.filters,s.coach,s.cards.length],[true,['false','false','false','true'],'FIFA 훈련센터의 훈련 세션','훈련·지도자 이름 검색','none','none',0,0]);
   assert.ok(fi.n>=150&&fi.bad===0&&fi.hero&&fi.label===String(fi.n),'FIFA 카드 '+JSON.stringify(fi));
   assert.equal(fi.sortNav,'none','정렬(탐색)이 없다');
   assert.equal(s.count,'훈련 '+fi.n+'개'); assert.equal(s.chips[0],'전체'+fi.n+'*');
   assert.equal(s.docW,s.vw,'FIFA 칸도 가로로 넘치지 않는다');
+  // 3.072 — «▶ 애니메이션» 카드(studio/fifa-packs): 누르면 코치 글과 같은 읽기 전용 뷰어 · 출처 띠 · 신고 없음 · 서버에 쓰지 않는다(아래 writes)
+  await c.waitForSelector('.fi-anim');
+  const an=await c.evaluate(()=>({n:document.querySelectorAll('.fi-anim').length,first:document.querySelector('#grid .fi-card').classList.contains('fi-anim'),src:document.querySelector('.fi-anim a.fi-go').href}));
+  assert.ok(an.n>=1&&an.first&&an.src.startsWith('https://www.fifatrainingcentre.com/en/practice/'),'애니메이션 카드가 앞에 '+JSON.stringify(an));
+  await c.click('.fi-anim');
+  await c.waitForSelector('#cvMask.on');
+  const fv=await (await c.waitForSelector('#cvFrame')).contentFrame();
+  await fv.waitForFunction(()=>!!document.getElementById('commCopyBtn'),null,{timeout:20000});
+  const fb=await fv.evaluate(()=>({banner:document.getElementById('epRoBanner').textContent,rep:!!document.getElementById('commRepBtn'),play:!!document.getElementById('commPlayControls')}));
+  assert.match(fb.banner,/FIFA 훈련 애니메이션 — FIFA Training Centre 참고 · 훈련 \d개/); assert.equal(fb.rep,false,'신고 없음'); assert.ok(fb.play,'재생');
+  assert.equal(await c.evaluate(()=>!document.getElementById('prCvTabs').hidden),true,'훈련 고르기 줄');
+  await c.click('#cvClose');
   await c.click('#prTabCoach');
   await c.waitForSelector('#grid .card');
   // 다음에 열면 마지막에 본 칸(코치 자료)으로

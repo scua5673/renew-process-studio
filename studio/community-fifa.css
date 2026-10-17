@@ -21,6 +21,16 @@
 .fi-by{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fi-go{margin-left:auto;flex:0 0 auto;font-weight:600;color:var(--c-act,#3A6DF0)}
 
+/* 3.072 · 애니메이션 카드 — 누르면 작전판 뷰어(훈련 고르기 · 재생 · 보관함에 담기). «원문 ↗»만 FIFA 로 */
+.fi-anim{cursor:pointer;border-color:var(--c-act,#3A6DF0)}
+.fi-anim[aria-busy="true"]{opacity:.6}
+.fi-badge-anim{background:var(--c-act,#3A6DF0);color:#fff}
+.fi-top .fi-badge-anim+.fi-badge{margin-left:0}
+.fi-trs{display:flex;flex-direction:column;gap:4px;list-style:none;margin:2px 0 0;padding:0}
+.fi-trs li{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:6px;align-items:baseline;font-size:var(--t-3);font-weight:500;line-height:1.45;color:var(--text-2,#646A73)}
+.fi-trs .fi-i{font-weight:700;font-variant-numeric:tabular-nums;color:var(--c-act,#3A6DF0)}
+.fi-trs .fi-nm{min-width:0;word-break:keep-all;overflow-wrap:anywhere}
+.fi-trs .fi-mn{font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
 .fi-aside{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff);color:var(--text-2,#646A73);font-size:var(--t-5);line-height:1.55}
 .fi-aside b{font-size:var(--t-6);font-weight:700;color:var(--text,#14161A)}
 .fi-aside ul{margin:0;padding-left:18px}

@@ -56,7 +56,7 @@ test('the head has the elmiha tab (3.071 — FIFA comes after it) and the elmiha
 
 test('opening, playing and putting in the vault go the coach-post way — the viewer finds an elmiha post even outside the coach feed',()=>{
   assert.match(comm,/if\(!p\)p=elmFind\(id\);   \/\* 3\.018/,'뷰어의 «내 보관함에 담기» · 신고가 엘미하 글을 찾는다');
-  assert.ok(comm.indexOf('if(!p)p=elmFind(id);')<comm.indexOf('if(!p)p=procFind(id);'));
+  assert.ok(comm.indexOf('if(!p)p=elmFind(id);')<comm.indexOf('if(!p)p=procFind(id)'));
   const body=cut(comm,'/* ── 3.018 · 엘미하 칸 순수 구간 끝 ── */','/* ══ 2.999 · 커뮤니티 안의 «프로세스» 칸 ══');
   assert.equal(/method:'(POST|PATCH|DELETE)'/.test(body),false,'엘미하 칸은 읽기만 한다(올리기 · 고치기 · 지우기는 코치 자료의 길)');
   assert.match(comm,/if\(force\)\{try\{sessionStorage\.removeItem\(FEED_CK\)\}catch\(_\)\{\}\n    elmStale\(\);\}/,'올린 · 고친 · 지운 뒤 엘미하 칸도 새로 받는다');

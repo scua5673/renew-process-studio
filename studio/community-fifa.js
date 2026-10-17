@@ -1,4 +1,4 @@
-/* PROCESS STUDIO — 커뮤니티 «FIFA» 칸(3.071).
+/* PROCESS STUDIO — 커뮤니티 «FIFA» 칸(3.071 · 3.072 애니메이션 시범).
    사용자 «fifatrainingcentre.com 에 있는 훈련들 커뮤니티 안에 넣어줘».
    FIFA 훈련센터(FIFA Training Centre)가 공개한 훈련 세션을 링크 카드로 모은다. 설명 · 그림 · 영상은 옮기지 않는다(FIFA 저작물).
    카드에는 우리말 제목 · 원래 영어 제목 · 지도자 · 주제만 적고, 누르면 FIFA 사이트(영어)가 새 탭에서 열린다.
@@ -234,14 +234,73 @@
   }
   var LIST=null;
   function list(){ if(!LIST)LIST=read(ROWS); return LIST; }
+  /* ── 3.072 · 애니메이션(시범) — studio/fifa-packs/index.json(scripts/fifa-scenes.mjs 가 짓는다)에 있는 세션은 카드를 누르면 작전판 뷰어로 연다 ──
+     목록 줄: {id:'001'(세 자리), path(ROWS 의 경로), rev, trainings:[{name,minutes,scenes}]}. 표에 없는 경로 · 이상한 줄은 버린다 */
+  var ANIM={},ANIM_N=0,PACK_DIR='fifa-packs/',PACK_MAX=4*1024*1024;
+  function readIndex(j){
+    var m={},n=0; if(!j||j.type!=='process-studio-fifa-index'||!Array.isArray(j.sessions))return null;
+    var known={}; list().forEach(function(e){ known[e.url]=1; });
+    j.sessions.slice(0,400).forEach(function(r){ if(!r||typeof r!=='object')return;
+      var u=url(r.path),id=str(r.id,3); if(!u||!known[u]||m[u]||!/^\d{3}$/.test(id)||!Array.isArray(r.trainings)||r.trainings.length<1||r.trainings.length>6)return;
+      m[u]={id:id,rev:/^[0-9a-f]{6,12}$/.test(r.rev)?r.rev:'',trainings:r.trainings.map(function(t,k){ t=(t&&typeof t==='object')?t:{};
+        return {name:str(t.name,60)||('훈련 '+(k+1)),minutes:Math.max(0,Math.min(600,Math.floor(+t.minutes||0))),scenes:Math.max(0,Math.min(40,Math.floor(+t.scenes||0)))}; })}; n++; });
+    return {m:m,n:n};
+  }
+  function setIndex(j){ var r=readIndex(j); if(!r)return false; ANIM=r.m; ANIM_N=r.n; return true; }
+  function animOf(e){ return (e&&Object.prototype.hasOwnProperty.call(ANIM,e.url))?ANIM[e.url]:null; }
+  function packUrl(a){ return PACK_DIR+a.id+'.json'+(a.rev?('?v='+a.rev):''); }
+  /* 팩 → 뷰어가 받는 글(item) — 프로세스 칸 procItem 과 같은 정리(dep = {fields, snap, trainings, frames}). 목록의 그 세션이 아니면 받지 않는다 */
+  function item(pack,e,dep){
+    var a=animOf(e); if(!a||!pack||pack.type!=='process-studio-drillpack'||!Array.isArray(pack.drills)||pack.drills.length!==1)return null;
+    var d=pack.drills[0]; if(!d||typeof d!=='object'||!Array.isArray(d.trainings)||d.trainings.length!==a.trainings.length)return null;
+    if(!d.fifa||typeof d.fifa!=='object'||url(d.fifa.path)!==e.url)return null;
+    for(var i=0;i<d.trainings.length;i++){ var t=d.trainings[i]; if(!t||typeof t!=='object'||!t.snap||typeof t.snap!=='object'||!Array.isArray(t.snap.players))return null; }
+    var it={}; dep.fields.forEach(function(k){ if(d[k]!=null)it[k]=d[k]; });
+    it.type='train'; it.name=str(d.name,60)||e.ko; delete it.scenes;
+    it.snap=dep.snap(it.snap);
+    var trs=dep.trainings(d); if(!trs||trs.length!==a.trainings.length)return null;
+    trs.forEach(function(t){ t.thumb=''; delete t.scenes; var tf=dep.frames(t.frames); if(tf)t.frames=tf; else{ delete t.frames; delete t.animIdx; } });
+    it.trainings=trs;
+    var fr=dep.frames(it.frames); if(fr)it.frames=fr; else delete it.frames;
+    return it;
+  }
+  /* 뷰어 · 담기가 쓰는 글. 서버 글이 아니다(id 가 fifa- 로 시작) — 조회 · 담김 숫자 · 신고가 없다 */
+  function post(e,it){ var a=animOf(e); return {id:'fifa-'+a.id,fifa:true,title:e.ko,owner_name:'FIFA Training Centre 참고',cat:'',age:'',players:'',summary:'',thumb:'',item:it,src:e.url}; }
+  function get(fetcher,u){ return fetcher(u,{credentials:'omit',redirect:'error',referrerPolicy:'no-referrer'}).then(function(r){ if(!r.ok)throw new Error('http '+r.status); return r.text(); })
+    .then(function(t){ if(t.length>PACK_MAX)throw new Error('big'); return JSON.parse(t); }); }
+  function loadIndex(fetcher){ return get(fetcher,PACK_DIR+'index.json').then(function(j){ if(!setIndex(j))throw new Error('shape'); return ANIM_N; }); }
+  function loadPost(e,dep,fetcher){ var a=animOf(e); if(!a)return Promise.reject(new Error('none'));
+    return get(fetcher,packUrl(a)).then(function(pk){ var it=item(pk,e,dep); if(!it)throw new Error('shape'); return post(e,it); }); }
   function match(e,group,q){
-    if(group&&group!=='all'&&e.g!==group)return false;
+    if(group==='anim'){ if(!animOf(e))return false; }
+    else if(group&&group!=='all'&&e.g!==group)return false;
     if(q){ var hay=[e.ko,e.en,e.by,e.label,e.sec].join(' ').toLowerCase(); if(hay.indexOf(String(q).toLowerCase())<0)return false; }
     return true;
   }
   function counts(l){ var c={}; (l||list()).forEach(function(e){ c[e.g]=(c[e.g]||0)+1; }); return c; }
   function el(doc,tag,cls,text){ var x=doc.createElement(tag); if(cls)x.className=cls; if(text!=null)x.textContent=text; return x; }
-  function card(doc,e){
+  function animCard(doc,e,an,onOpen){
+    var c=el(doc,'div','fi-card fi-anim'); c.setAttribute('role','button'); c.tabIndex=0;
+    c.setAttribute('aria-label',e.ko+' — 애니메이션 · 훈련 '+an.trainings.length+'개 열기');
+    var top=el(doc,'div','fi-top');
+    top.appendChild(el(doc,'span','fi-badge fi-badge-anim','▶ 애니메이션'));
+    top.appendChild(el(doc,'span','fi-badge',e.sec===e.label?e.label:(e.sec+' · '+e.label)));
+    c.appendChild(top);
+    c.appendChild(el(doc,'div','fi-tt',e.ko));
+    var ol=el(doc,'ol','fi-trs');
+    an.trainings.forEach(function(t,i){ var li=el(doc,'li'); li.appendChild(el(doc,'span','fi-i',String(i+1))); li.appendChild(el(doc,'span','fi-nm',t.name)); li.appendChild(el(doc,'span','fi-mn',t.minutes?(t.minutes+'분'):'')); ol.appendChild(li); });
+    c.appendChild(ol);
+    var ft=el(doc,'div','fi-foot');
+    ft.appendChild(el(doc,'span','fi-by','FIFA Training Centre 참고'+(e.by?' · '+e.by:'')));
+    var src=el(doc,'a','fi-go','원문 ↗'); src.href=e.url; src.target='_blank'; src.rel='noopener noreferrer'; src.setAttribute('aria-label','FIFA 원문 — 새 탭에서 열기');
+    src.onclick=function(ev){ ev.stopPropagation(); };
+    ft.appendChild(src); c.appendChild(ft);
+    c.onclick=function(){ if(onOpen)onOpen(e,c); };
+    c.onkeydown=function(ev){ if(ev.target!==c)return; if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); if(onOpen)onOpen(e,c); } };
+    return c;
+  }
+  function card(doc,e,onOpen){
+    var an=animOf(e); if(an)return animCard(doc,e,an,onOpen);
     var a=el(doc,'a','fi-card');
     a.href=e.url; a.target='_blank'; a.rel='noopener noreferrer';
     a.setAttribute('aria-label',e.ko+(e.by?' · '+e.by:'')+' — FIFA 훈련센터에서 열기(새 탭)');
@@ -260,18 +319,20 @@
   /* 목록 — grid 를 비우고 머리 띠 + 카드. 개수는 count 칸에. 고른 주제가 비면(없는 키) 전체로 본다 */
   function render(grid,o){
     o=o||{}; var doc=grid.ownerDocument,group=GMAP[o.group]?o.group:'all',q=str(o.q,80);
+    if(group==='anim'&&!ANIM_N)group='all';
     var l=list().filter(function(e){ return match(e,group,q); });
+    l=l.filter(animOf).concat(l.filter(function(e){ return !animOf(e); }));   /* 3.072 — 애니메이션이 있는 세션을 앞에 */
     grid.textContent='';
     var hero=el(doc,'div','fi-hero'),tx=el(doc,'div','fi-hero-tx');
     tx.appendChild(el(doc,'b',null,'FIFA 훈련센터'));
-    tx.appendChild(el(doc,'span',null,'FIFA가 공개한 훈련 세션 모음이에요. 카드를 누르면 FIFA 사이트(영어)에서 설명 · 그림 · 영상을 볼 수 있어요. 일부 영상은 FIFA 계정 로그인이 필요해요.'));
+    tx.appendChild(el(doc,'span',null,'FIFA가 공개한 훈련 세션 모음이에요. ▶ 애니메이션 카드는 FIFA 훈련을 참고해 작전판으로 다시 그린 것으로, 눌러서 움직임을 보고 보관함에 담을 수 있어요. 나머지 카드는 FIFA 사이트(영어)에서 열려요.'));
     hero.appendChild(tx);
     var go=el(doc,'a','fi-home','사이트 열기 ↗'); go.href=HOME; go.target='_blank'; go.rel='noopener noreferrer'; go.setAttribute('aria-label','FIFA 훈련센터 사이트 — 새 탭에서 열기');
     hero.appendChild(go);
     grid.appendChild(hero);
     if(o.count)o.count.textContent='훈련 '+l.length+'개';
     if(!l.length){ var em=el(doc,'div','empty'); em.appendChild(el(doc,'b',null,'이 조건의 훈련은 0개예요')); em.appendChild(doc.createTextNode('검색어나 주제를 바꿔 보세요.')); grid.appendChild(em); return l.length; }
-    l.forEach(function(e){ grid.appendChild(card(doc,e)); });
+    l.forEach(function(e){ grid.appendChild(card(doc,e,o.onOpen)); });
     return l.length;
   }
   /* 컴퓨터의 오른쪽 칸 — 고를 글이 없다(카드는 바로 FIFA 로 간다). 묶음별 개수와 안내 */
@@ -290,12 +351,14 @@
   }
   /* 왼쪽 «훈련 주제» 칩 — 전체 + 훈련이 있는 주제만 */
   function chips(box,group,onPick){
-    if(!box)return; var doc=box.ownerDocument,c=counts(),cur=GMAP[group]?group:'all';
+    if(!box)return; var doc=box.ownerDocument,c=counts(),cur=(GMAP[group]||(group==='anim'&&ANIM_N))?group:'all';
     box.textContent='';
     var mk=function(key,label,n){ var on=cur===key,b=el(doc,'button','chip'+(on?' on':''),label); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
       var s=el(doc,'span','pr-cn',String(n)); b.appendChild(s); b.onclick=function(){ onPick(key); }; box.appendChild(b); };
     mk('all','전체',list().length);
+    if(ANIM_N)mk('anim','▶ 애니메이션',ANIM_N);
     GROUPS.forEach(function(g){ if(c[g[0]])mk(g[0],g[3]||g[1],c[g[0]]); });
   }
-  return {BASE:BASE,HOME:HOME,GROUPS:GROUPS,ROWS:ROWS,read:read,list:list,url:url,match:match,counts:counts,render:render,aside:aside,chips:chips};
+  return {BASE:BASE,HOME:HOME,GROUPS:GROUPS,ROWS:ROWS,read:read,list:list,url:url,match:match,counts:counts,render:render,aside:aside,chips:chips,
+    readIndex:readIndex,setIndex:setIndex,animOf:animOf,packUrl:packUrl,item:item,post:post,loadIndex:loadIndex,loadPost:loadPost,animCount:function(){ return ANIM_N; }};
 });
