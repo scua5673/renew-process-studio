@@ -4,7 +4,7 @@
 const CACHE = 'process-3.089';   // 3.089 닫은 뒤 받기 전에 쓴 코치 피드백이 서버본을 덮지 않게(idp-pub-wipe.js) · 받기 전 상태 표시
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
-  '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-token-depth.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js',
+  '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-token-depth.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js',
   '/studio/process.html',
   '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/review-training.css',
   '/studio/first-work.js', '/studio/first-work.css',

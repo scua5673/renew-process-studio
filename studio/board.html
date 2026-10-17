@@ -1310,10 +1310,7 @@
   #commPlayControls button.primary{background:var(--blue,var(--ps-navy,#14213D));}
   #commPlayControls button[hidden]{display:none!important}
   #commPlayControls:active{transform:translateX(-50%) scale(.98);}
-  /* 3.067 — 커뮤니티 뷰어 «3D» 단추(사용자 «엘미하가 올린거 핸드폰에서 3d로») — 판 오른쪽 위. 재생 단추(아래 가운데)와 겹치지 않는다 */
-  #commTiltBtn{position:absolute;top:10px;right:max(10px,env(safe-area-inset-right));z-index:6;min-width:52px;height:36px;padding:0 12px;border:0;border-radius:18px;
-    background:rgba(10,16,28,.62);color:#fff;font-family:inherit;font-weight:var(--fw-head);font-size:var(--fs-body);cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.28);}
-  #commTiltBtn.on{background:var(--blue,var(--ps-navy,#14213D));}
+  /* 3.067 «3D» 단추 → 3.087 «보기» 고르개 #commLook(판 오른쪽 위) — 모양은 board-comm-look.js */
   @media (min-width:760px){#editorPanel{flex:0 0 332px;border-top:0;border-left:1px solid var(--line);}}
   @media (max-width:759px){#editorPanel{max-height:34vh;}}
   #editorPanel .ep-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -4231,7 +4228,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="pitches.js"></script>
 <script src="board-name-font.js"></script><script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
-<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script>
+<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
 <script src="board-actions.js"></script>
 <script>
 "use strict";
@@ -8229,6 +8226,7 @@ window.__setBoardOrient=function(o){ o=(o==="v")?"v":"h";
 function loadSnap(s,opts){s=s||{};opts=opts||{};sel=null;multiSel=[];state.players=dc(s.players||[]);state.equipment=dc(s.equipment||[]);
   state.ball=(s.ball===null)?null:{...(s.ball||{x:CX,y:CY})};state.drawings=dc(s.drawings||[]);
   var __lkc={};try{__lkc=lookApply(opts.keepLook?lookNow():lookOf(s));}catch(_){}   /* 2.929 — 보드 설정: 이 스냅의 것, 없으면 기본값(앞서 연 보드 값 아님) */
+  try{if(document.body.classList.contains("comm-viewing")){if(!opts.keepLook&&window.__commPostShape==null)window.__commPostShape=tokShape;if(window.__commWantShape)tokShape=window.__commWantShape;}}catch(_){}   /* 3.087 — 커뮤니티 «보기»의 모양을 장면마다(board-comm-look.js) */
   state.pitchSpec=(s.pitchSpec&&PITCH_SPECS[s.pitchSpec])?s.pitchSpec:"fifa";state.gridM=(+s.gridM>0)?+s.gridM:0;   /* 2.989 */try{window.__syncPitchSpecUI&&window.__syncPitchSpecUI();}catch(_){}   /* 2.233 */
   try{if(world){buildTrainGrid();buildLines();buildGrid();}}catch(_){}   /* 2.235 — 복원된 규격으로 라인·그리드 즉시 재생성(서명에 규격 포함) · 2.989 모눈도 */
   state.orientation=s.orientation||"h";state.area=s.area||"full";state.pitchView=normPitchView(s.pitchView||((state.area||"full")==="half"?"half":"full"));state.fieldMode=s.fieldMode||"standard";state.spFlip=!!s.spFlip;state.halfSide=s.halfSide||"L";state.pvSide=(s.pvSide==="opp")?"opp":"own";
@@ -13833,7 +13831,7 @@ try{ window.addEventListener("resize",function(){ clearTimeout(_commRotT); _comm
   window.__commWantOrient=want; state.orientation=want; state.spFlip=false; applyView(); renderTokens();
 }catch(_){} },180); }); }catch(_){}
 /* 3.067 — 뷰어의 «3D» 단추로 켠 3D 는 뷰어 것이다. 닫거나 다른 탭으로 가면 끈다(보드 설정의 3D 는 아래 3.035 가 되돌린다) */
-function __commTiltOff(){ try{ window.__commWantOrient=null; var b=document.getElementById("commTiltBtn"); if(b)b.remove();
+function __commTiltOff(){ try{ window.__commWantOrient=null; window.__commWantShape=null; var b=document.getElementById("commLook"); if(b)b.remove();
   if(window.__commTilt){ window.__commTilt=false; if(document.body.classList.contains("bc-tilt3d")&&window.__setTilt)window.__setTilt(false,{transient:true,quiet:true}); } }catch(_){} }
 window.__commView=function(post, editMode){
   editMode=false; // Published community material is edited only after copying to the personal library.
@@ -13863,6 +13861,7 @@ window.__commView=function(post, editMode){
     var _commBoard=(d.type==="board");
     $("modalTitle").textContent=editMode?"커뮤니티 글 편집":(_commBoard?("커뮤니티 "+(d.kindLabel||"작전판")):"커뮤니티 훈련");   /* 3.042 — 미팅 자료는 «커뮤니티 미팅 자료» */
     editorDrillId=null; editorLibId=null; editorFileName=post.title||d.name||"";
+    try{PSCommLook.prime(window);}catch(_){}   /* 3.087 */
     loadEditorTrainings(d); _activateTraining(0);
     _commOrient();   /* 2.575 — 스냅이 실린 뒤, 그리기 전에 */
     fillEditorPanel(); renderSceneStrip(); renderTrainingTabs();
@@ -13986,18 +13985,8 @@ window.__commView=function(post, editMode){
           }
         }
       }catch(_){}
-      /* 3.067 — «3D» 단추. 편집기는 들어올 때 3D 를 끄므로(3.035) 뷰어에서 따로 켠다. 설정 값(ps_board_tilt3d)은 건드리지 않고(transient),
-         뷰어를 닫으면 끈다(__commTiltOff). 같은 뷰어에서 다른 글을 열면 켜 둔 그대로 */
-      try{
-        var _wrapT=$("editorBoardWrap"), _tb=document.getElementById("commTiltBtn"); if(_tb)_tb.remove();
-        if(_wrapT&&window.__setTilt&&window.PSBoardDepth&&psBoardDevice()!=="phone"){   /* 3.069 — 폰은 3D 를 그리다 강제 종료(아래 3D 부팅 안전장치) — 단추 없음 */
-          _tb=document.createElement("button"); _tb.type="button"; _tb.id="commTiltBtn";
-          var _tSync=function(){ var on=document.body.classList.contains("bc-tilt3d"); _tb.classList.toggle("on",on); _tb.setAttribute("aria-pressed",on?"true":"false"); _tb.textContent=on?"평면":"3D"; _tb.title=on?"평면으로 보기":"3D 로 보기"; };
-          _tb.onclick=function(){ try{ var on=!document.body.classList.contains("bc-tilt3d"); window.__commTilt=true; window.__setTilt(on,{transient:true,quiet:true});
-            applyView(); renderTokens(); setTimeout(function(){ try{ window.__tiltFit&&window.__tiltFit(); }catch(_){} },60); }catch(_){} _tSync(); };
-          _tSync(); _wrapT.appendChild(_tb);
-        }
-      }catch(_){}
+      /* 3.087 — «보기» 고르개(평면 · 3D · 선수 모양 — board-comm-look.js). 3D 는 transient, 닫으면 __commTiltOff 가 끈다 */
+      try{PSCommLook.mount(window);}catch(_){}
     }
     var _ep=$("editorPanel"); if(_ep)_ep.scrollTop=0;
   }catch(e){}
@@ -14208,7 +14197,7 @@ function closeEditor(save){
     else if(editorAnimIdx>0&&anim.frames&&editorAnimIdx<anim.frames.length){ animActive=editorAnimIdx; try{renderAnimFrames();}catch(_){} }
   } }catch(_){}
   editorAnimStash=null;editorAnimIdx=0;editorAnimStashed=false;
-  if(editorStash)loadSnap(editorStash);editorStash=null;editorDrillId=null;editorLibId=null;editorDraft=null;
+  window.__commWantShape=null;if(editorStash)loadSnap(editorStash);editorStash=null;editorDrillId=null;editorLibId=null;editorDraft=null;
   if(editorReadOnly){editorReadOnly=false;try{applyEditorReadOnly(null);}catch(_){}}
   if(__commPost){ __commPost=null; __commEdit=false; try{parent.postMessage({source:"board",type:"commClosed"},"*");}catch(_){} }
   if(document.body.classList.contains("comm-viewing")){ document.body.classList.remove("comm-viewing");
