@@ -62,3 +62,16 @@ test('unlinked accounts: a team with nobody linked gets one calm line, not a red
   assert.ok(/if\(nOk===0\)\{ n\.classList\.add\("all"\);/.test(SC),'팀 한 줄 안내');
   assert.ok(SC.includes('.mi-nolink.all{border-color:var(--c-line);background:var(--c-bg);color:var(--c-muted)}'),'경고 빨강이 아닌 안내 회색');
 });
+
+test('board: one «저장» — saves the work board, writes back to a linked vault item, otherwise asks via the 2.907 sheet',()=>{
+  const B=read('board.html');
+  const m=/async function boardSaveOne\(\)\{[\s\S]*?\n\}\nwindow\.__boardSaveOne=boardSaveOne;/.exec(B);assert.ok(m,'boardSaveOne');const src=m[0];
+  assert.ok(src.includes('var ask=!linked&&!empty&&!_boardVaultDeclined&&typeof window.__vaultSave==="function";'),'이어진 판 · 빈 판 · 닫은 판은 묻지 않는다');
+  assert.ok(src.includes('var ok=await boardSaveExplicit(ask?{quiet:true}:{});'),'먼저 작업 보드(이어진 자료 되쓰기 포함)');
+  assert.ok(!/linkTag/.test(src),'새로 담은 자료와 저절로 잇지 않는다(2.907 — 확인 없이 덮어쓰지 않게)');
+  assert.ok(!/__curVaultId=null/.test(src),'앞서 담은 자료 덮어쓰기는 확인창에서 고를 수 있게 둔다');
+  assert.ok(B.includes('manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveOne();};'),'단추');
+  assert.ok(B.includes('  boardSaveOne();   /* 3.076 — 단추와 같은 «저장» */'),'⌘S 도 같은 저장');
+  assert.ok(B.includes('saveBtn.style.display="none";manualSaveBtn.style.display=hide?"none":"inline-flex";'),'«보관함 저장»은 숨긴다');
+  assert.ok(B.includes("b.textContent=_boardManualSaving?'저장 중…':(_chg?'저장 ●':'저장');"),'이름은 «저장»');
+});
