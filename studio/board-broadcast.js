@@ -29,13 +29,20 @@
       var p0 = pt(Math.max(0, u - 0.02)), p1 = pt(Math.min(1, u + 0.02));
       out[p.id] = { vx: p1.x - p0.x, vy: p1.y - p0.y, run: run / m, total: tot / m, u: u };
     });
-    var k = kick(a, b, m);
+    var k = kick(a, b, m, curves);
     if (k) {
       var kk = out[k.kicker] || (out[k.kicker] = { vx: 0, vy: 0, run: 0, total: 0, u: u });
       // 주발(env.foot: 선수단의 'L' 왼발 · 'R' 오른발 · 'B' 양발): 왼발잡이는 왼발로 차고 받는다
       var foot = function (p) { try { return env && env.foot && env.foot(p) === 'L' ? 'L' : 'R'; } catch (_) { return 'R'; } };
       if (u < KICK.win) { kk.kick = u / KICK.win; kk.bx = k.dx; kk.by = k.dy; kk.foot = foot(k.kp); }
-      if (k.receiver != null && u > KICK.recvFrom) { var rr = out[k.receiver] || (out[k.receiver] = { vx: 0, vy: 0, run: 0, total: 0, u: u }); rr.recv = (u - KICK.recvFrom) / (1 - KICK.recvFrom); rr.bx = -k.dx; rr.by = -k.dy; rr.foot = foot(k.rp); }
+      if (k.receiver != null && u > KICK.recvFrom) { var rr = out[k.receiver] || (out[k.receiver] = { vx: 0, vy: 0, run: 0, total: 0, u: u }); var rp = (u - KICK.recvFrom) / (1 - KICK.recvFrom); if (k.air) rr.head = rp; else rr.recv = rp; rr.bx = -k.dx; rr.by = -k.dy; rr.foot = foot(k.rp); }
+      k.gks.forEach(function (g) {
+        if (u <= DIVE.from) return;
+        var e = out[g.id] || (out[g.id] = { vx: 0, vy: 0, run: 0, total: 0, u: u });
+        delete e.recv; delete e.head;
+        e.dive = (u - DIVE.from) / (1 - DIVE.from); e.bx = k.A.x - g.x; e.by = k.A.y - g.y;   // 골키퍼는 차는 쪽을 본다
+        e.dx = k.B.x - g.x; e.dy = k.B.y - g.y; e.reach = Math.min(1, Math.hypot(e.dx, e.dy) / (5 * k.m));
+      });
     }
     return out;
   }
@@ -43,18 +50,24 @@
   // 장면 앞 KICK.win 동안 다리를 뒤로 뺐다가 차고, 발이 닿는 순간(KICK.contact)에 공이 출발한다.
   // 공이 닿는 자리에서 가장 가까운 선수(3m 안)는 받는 사람 — 끝 무렵 공 쪽을 보고 발을 내민다.
   var KICK = { win: 0.2, contact: 0.11, near: 2.5, recvNear: 3, recvFrom: 0.8 };
+  // 3.075 — 헤딩: 공중볼(장면 곡선의 높이 air 1~3)이면 받는 선수가 점프해 머리로 받는다.
+  //          다이빙: 공이 골키퍼(포지션 GK 또는 1번) 8m 안으로 가면 장면 뒤쪽 절반 동안 공 쪽으로 몸을 날린다.
+  var DIVE = { near: 8, from: 0.5 };
+  function isGK(p) { return !!p && !p.coach && (p.pos === 'GK' || String(p.num) === '1'); }
   function ballOf(s) {
     if (s && s.ball && isFinite(s.ball.x)) return s.ball;
     var e = s && (s.equipment || []).filter(function (o) { return o && o.team === 'ball'; })[0];
     return e || null;
   }
-  function kick(a, b, mpp) {
+  function kick(a, b, mpp, curves) {
     var A = ballOf(a), B = ballOf(b), m = mpp || 10;
     if (!A || !B || Math.hypot(B.x - A.x, B.y - A.y) < 1.5 * m) return null;
     function nearest(list, p, max) { var best = null, bd = max * m; (list || []).forEach(function (o) { if (!o || o.coach) return; var d = Math.hypot(o.x - p.x, o.y - p.y); if (d < bd) { bd = d; best = o; } }); return best; }
     var k = nearest(a.players, A, KICK.near), r = nearest(b.players, B, KICK.recvNear);
     if (!k) return null;
-    return { kicker: k.id, receiver: r && r.id !== k.id ? r.id : null, dx: B.x - A.x, dy: B.y - A.y, kp: k, rp: r };
+    var key = a.ball && A === a.ball ? 'ball' : A.id, air = curves && curves[key] && +curves[key].air > 0;
+    var gks = (b.players || []).filter(function (o) { return isGK(o) && o.id !== k.id && Math.hypot(o.x - B.x, o.y - B.y) < DIVE.near * m; });
+    return { kicker: k.id, receiver: r && r.id !== k.id ? r.id : null, dx: B.x - A.x, dy: B.y - A.y, kp: k, rp: r, air: !!air, A: { x: A.x, y: A.y }, B: { x: B.x, y: B.y }, gks: gks, m: m };
   }
   // 공이 움직이는 몫: 찰 사람이 있으면 발이 닿을 때까지 제자리, 그 뒤 끝까지.
   function ballU(a, b, u, mpp) {
@@ -72,9 +85,11 @@
   // 출발할 때는 카메라 쪽(서 있던 방향)에서 뛰는 방향으로 돌아서고, 도착하면 다시 돌아선다 — 짧은 쪽으로.
   function pose(mv, view) {
     if (!mv) return null;
-    if (mv.kick != null || mv.recv != null) {
-      var b = screenVec(mv.bx, mv.by, view), face = Math.atan2(b.y, b.x) / D2R;
-      return { yaw: face, phase: mv.run / 2.6, amp: 0, kick: mv.kick != null ? mv.kick : null, recv: mv.recv != null ? mv.recv : null, foot: mv.foot === 'L' ? 'L' : 'R' };
+    if (mv.kick != null || mv.recv != null || mv.head != null || mv.dive != null) {
+      var b = screenVec(mv.bx, mv.by, view), face = Math.atan2(b.y, b.x) / D2R, out = { yaw: face, phase: mv.run / 2.6, amp: 0, kick: mv.kick != null ? mv.kick : null, recv: mv.recv != null ? mv.recv : null, foot: mv.foot === 'L' ? 'L' : 'R' };
+      if (mv.head != null) out.head = mv.head;
+      if (mv.dive != null) { var d = screenVec(mv.dx, mv.dy, view); out.dive = { t: mv.dive, dir: d.x < 0 ? -1 : 1, reach: Math.max(0.35, mv.reach || 0) }; }
+      return out;
     }
     var s = screenVec(mv.vx, mv.vy, view), amp = Math.min(1, 0.45 + mv.total / 14), ease = Math.min(1, mv.u * 5, (1 - mv.u) * 5);
     var dir = Math.atan2(s.y, s.x) / D2R, turn = ((dir - 90) % 360 + 540) % 360 - 180;
@@ -120,5 +135,5 @@
     }
     return { update: update, off: off, zoom: function () { return st.k; } };
   }
-  return { TV: TV, KICK: KICK, kick: kick, ballU: ballU, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
+  return { TV: TV, KICK: KICK, DIVE: DIVE, isGK: isGK, kick: kick, ballU: ballU, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
 });

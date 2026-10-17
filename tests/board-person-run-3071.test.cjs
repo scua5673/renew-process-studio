@@ -7,7 +7,7 @@ const board=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
 const line=(x0,y0,x1,y1,c,t)=>({x:x0+(x1-x0)*t,y:y0+(y1-y0)*t});
 
 test('3.072 — no pose is a player standing toward the camera; the pose carries the facing angle',()=>{
-  assert.deepEqual(depth.personPose(null),{yaw:90,phase:0,amp:0,kick:null,recv:null,foot:'R'});
+  assert.deepEqual(depth.personPose(null),{yaw:90,phase:0,amp:0,kick:null,recv:null,foot:'R',head:null,dive:null});
   assert.equal(depth.personPose({yaw:-90,amp:.8}).yaw,-90,'running away shows the back');
   assert.equal(depth.personPose({yaw:0,amp:5}).amp,1,'amp is capped');
 });
@@ -52,4 +52,17 @@ test('3.074 kick: the player nearest the ball kicks, the ball leaves on contact,
   const env={curvePt:line,mpp:10,foot:p=>p.sqId==='s1'?'L':''};
   const m=bc.motion(a,b,.1,null,env),pk=bc.pose(m[1],{});assert.ok(pk.kick>0&&pk.kick<1);assert.equal(pk.foot,'L','left-footed from the roster');assert.equal(Math.round(pk.yaw),0,'faces the pass');
   const r=bc.pose(bc.motion(a,b,.95,null,env)[2],{});assert.ok(r.recv>0);assert.equal(r.foot,'R');assert.equal(Math.round(Math.abs(r.yaw)),180,'faces the ball coming in');
+});
+
+test('3.075 header on an aerial ball, goalkeeper dive when the ball comes within 8 m',()=>{
+  const a={players:[{id:1,x:100,y:100},{id:2,x:400,y:100},{id:9,x:700,y:100,pos:'GK',num:1}],ball:{x:110,y:100}};
+  const b={players:[{id:1,x:100,y:100},{id:2,x:400,y:100},{id:9,x:700,y:100,pos:'GK',num:1}],ball:{x:395,y:100}};
+  const env={curvePt:line,mpp:10};
+  const ground=bc.pose(bc.motion(a,b,.95,null,env)[2],{});assert.ok(ground.recv>0);assert.equal(ground.head,undefined,'a ground pass is taken with the foot');
+  const air=bc.pose(bc.motion(a,b,.95,{ball:{air:2}},env)[2],{});assert.ok(air.head>0,'an aerial ball is headed');assert.equal(air.recv,null);
+  assert.equal(bc.motion(a,b,.95,null,env)[9],undefined,'the keeper 30 m away does not dive');
+  const shot={players:a.players,ball:{x:660,y:150}},m=bc.motion(a,shot,.8,null,env),d=bc.pose(m[9],{});
+  assert.ok(d.dive&&d.dive.t>0&&d.dive.t<1,'the keeper dives');assert.equal(d.dive.dir,-1,'toward the ball (screen left)');assert.equal(bc.motion(a,shot,.4,null,env)[9],undefined,'not before the second half of the scene');
+  assert.equal(bc.isGK({num:'1'}),true);assert.equal(bc.isGK({pos:'GK'}),true);assert.equal(bc.isGK({num:1,coach:true}),false);
+  assert.deepEqual(depth.personPose({dive:{t:.5,dir:-1,reach:2}}).dive,{t:.5,dir:-1,reach:1});
 });
