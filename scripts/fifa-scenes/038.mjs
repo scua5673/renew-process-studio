@@ -124,8 +124,6 @@ export default {
       equipment: [
         {type: 'goalV', x: 195, y: 370, rot: 180}, {type: 'goalV', x: 1080, y: 370, rot: 0},
         {type: 'cone', x: 195, y: 30}, {type: 'cone', x: 1080, y: 30}, {type: 'cone', x: 1080, y: 710}, {type: 'cone', x: 195, y: 710},
-        {type: 'cone', x: 405, y: 30, color: '#ffd23f'}, {type: 'cone', x: 805, y: 30, color: '#ffd23f'},
-        {type: 'cone', x: 405, y: 710, color: '#ffd23f'}, {type: 'cone', x: 805, y: 710, color: '#ffd23f'},
       ],
       lines: [{rect: [195, 30, 1080, 710]}, {line: [555, 30, 555, 710]}, {line: [195, 370, 1080, 370], dash: true},
         {line: [405, 30, 405, 710], dash: true}, {line: [805, 30, 805, 710], dash: true}],
