@@ -17,8 +17,8 @@ test('name size has «아주 크게»; the person tag has its own size, saved pe
 });
 test('the person tag is a dark pill with white letters; the kit colour is a thin bar',()=>{
   const d=read('studio/board-token-depth.js');
-  assert.match(d,/'class': 'ps-person-tag', [^\n]*fill: 'rgba\(14,18,26,\.9\)'/);
-  assert.match(d,/'class': 'ps-person-tagbar', [^\n]*fill: fill,/);
+  assert.match(d,/'class': 'ps-person-tag', [^\n]*fill: PILL \}/);
+  assert.doesNotMatch(d,/ps-person-tagbar/);
   assert.match(d,/'class': 'ps-person-tagtxt', [^\n]*\n\s*fill: '#fff',/,'white letters on every kit');
 });
 test('settings panel: one label column, even groups, the hide rules keep working',()=>{

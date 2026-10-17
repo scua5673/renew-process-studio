@@ -192,6 +192,8 @@
     var v = opts && opts.namePos; if (!v) { try { v = doc && doc.defaultView && doc.defaultView.__namePos; } catch (_) { v = ''; } }
     return v !== 'above';
   }
+  // 이름표 «알약»과 사람 발밑 번호 · 포지션 패가 같이 쓰는 어두운 알약 색(유니폼 색 없이)
+  var PILL = 'rgba(18,22,30,.86)';
   // The pill behind a name: an estimate of the text width (wide CJK glyphs, narrower Latin capitals) around the text's middle.
   function namePill(str, font, y) {
     var w = font * .9;
@@ -450,16 +452,16 @@
     }
     // 3.086 — «사람»: 칩 글자(번호 · 포지션 · 풋살 — 보드 설정 › 칩 글자, «없음»이면 없다)를 발밑 작은 패에.
     //         셔츠의 번호는 실제 크기에서 읽히지 않는다(사용자 «사람 토큰 밑으로 포지션이나 번호가 들어갈수 있게»).
-    // 3.087 — 패는 어두운 알약 · 흰 글자, 팀 색은 아래 가는 띠로만(사용자 «유니폼색상이 들어가니까 잘 안보이는거 같아» — 빨강 · 줄무늬 유니폼에서 글자가 묻혔다).
+    // 3.087 — 패는 이름표 «알약»과 같은 어두운 알약 · 흰 글자, 유니폼 색은 넣지 않는다(사용자 «유니폼색상이 들어가니까 잘 안보이는거 같아»
+    //         · «포지션도 알약으로 뜨게 해줘 유니폼 색상 적용하지 말고» — 빨강 · 줄무늬 유니폼에서 글자가 묻혔다).
     //         크기는 보드 설정 › 칩 › 글자 크기(tagK · 작게 0.8 ~ 아주 크게 1.7).
     var tagH = 0, tagTxt = kind === 'person' && label ? String(label.textContent || '').trim() : '';
     if (tagTxt) {
       var lf = tagK(doc, opts) * size.font / (opts && +opts.zoom > 1 ? +opts.zoom : 1), tagHost = body.querySelector('.ps-person-stand') || body, tagY = 6;
       tagH = r1(lf * 1.2);
-      var tagW = Math.max(tagH * 1.35, lf * .9 + tagTxt.length * lf * .58), bar = r1(Math.max(1.5, tagH * .14));
-      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH * .32), fill: 'rgba(14,18,26,.9)', stroke: 'rgba(255,255,255,.18)', 'stroke-width': r1(lf * .05) }));
-      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tagbar', x: r1(-tagW / 2 + tagH * .32), y: r1(tagY + tagH - bar), width: r1(Math.max(0, tagW - tagH * .64)), height: bar, rx: r1(bar / 2), fill: fill, 'pointer-events': 'none' }));
-      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + (tagH - bar) / 2 + lf * .3), 'text-anchor': 'middle', 'font-size': r1(lf * .78), 'font-weight': '800', 'letter-spacing': '.3',
+      var tagW = Math.max(tagH * 1.5, lf * 1.1 + tagTxt.length * lf * .58);
+      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH * .3), fill: PILL }));
+      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + tagH / 2 + lf * .28), 'text-anchor': 'middle', 'font-size': r1(lf * .78), 'font-weight': '800', 'letter-spacing': '.3',
         fill: '#fff', 'font-family': label.getAttribute('font-family') || FONT, 'pointer-events': 'none' });
       tagT.textContent = tagTxt; tagHost.appendChild(tagT);
     }
@@ -468,7 +470,7 @@
       var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1) / (opts && +opts.zoom > 1 ? +opts.zoom : 1), str = String(item.name).toUpperCase(), below = nameBelow(doc, opts), y0 = nameY(kind, h, font, opts && opts.dir, below);
       if (below && tagH) y0 = r1(y0 + tagH + 2);   // 사람: 이름표가 아래면 번호 패 밑으로
       var nameHost = (kind === 'person' && body.querySelector('.ps-person-stand')) || body, pill = opts && opts.nameStyle === 'pill';
-      if (pill) nameHost.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
+      if (pill) nameHost.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: PILL }, namePill(str, font, y0))));
       // 3.086 — 알약이면 글자 테두리 없이(평면 알약과 같다 · 사용자 «테두리 없는것도 만들어줘 알약느낌으로»). 글자만이면 테두리 글자.
       var name = node(doc, 'text', Object.assign({ x: 0, y: y0, 'data-font': String(font), 'text-anchor': 'middle', 'font-size': String(Math.round(font * 10) / 10), 'font-weight': pill ? '700' : '800', 'letter-spacing': '.4', fill: '#fff' },
         pill ? {} : { stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke' },
