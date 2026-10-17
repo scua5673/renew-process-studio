@@ -91,6 +91,6 @@ test('3.010 name label size and style — per-board look settings, flat and 3D',
   assert.match(src,/id="nameStyleSeg"[\s\S]{0,200}data-nt="auto"[^>]*>기본<[\s\S]{0,200}data-nt="pill"[^>]*>알약<[\s\S]{0,200}data-nt="text"[^>]*>글자만</,'style row');
   assert.match(src,/if\(!_nt\)g\.appendChild\(el\("rect"/,'«글자만» draws no pill');
   assert.match(src,/nameK:_nameK\(\),nameStyle:window\.__nameStyle==="pill"\?"pill":"text"/,'3D: «기본» stays an outlined name, «알약» puts it on a pill');
-  assert.match(src,/namePos:src\.namePos,nameSize:src\.nameSize,nameStyle:src\.nameStyle,realScale:src\.realScale\}/,'기본 세팅 snapshot carries them');
+  assert.match(src,/namePos:src\.namePos,nameSize:src\.nameSize,nameStyle:src\.nameStyle,(nameFont:src\.nameFont,)?realScale:src\.realScale\}/,'기본 세팅 snapshot carries them');   /* 3.086 — 이름표 글꼴도 같이 */
   assert.match(src,/namePos:s\.namePos,nameSize:s\.nameSize,nameStyle:s\.nameStyle,/,'a new page keeps them');
 });
