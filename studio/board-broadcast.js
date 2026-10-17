@@ -151,6 +151,12 @@
       st.cur = px;
       document.body.style.setProperty('--tilt-tf', 'translateY(' + Math.round(sh * 0.08) + 'px) rotateX(' + TV.ax + 'deg) rotateZ(' + TV.yaw + 'deg) translate(' + (W * 0.5 - px.x).toFixed(1) + 'px,' + (H * 0.55 - px.y).toFixed(1) + 'px)');
     }
+    // 3.078 — 중계 카메라인 채 3D 를 끄면(평면) 키운 판 크기를 바로 돌려놓는다 — 평면에서는 update/off 를 부르는 곳이 없어 판이 확대된 채 남았다
+    try {
+      if (typeof document !== 'undefined' && document.body && typeof MutationObserver !== 'undefined') new MutationObserver(function () {
+        if (st.size && !document.body.classList.contains('bc-tilt3d') && off()) { try { window.dispatchEvent(new Event('resize')); } catch (_) {} }
+      }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    } catch (_) {}
     return { update: update, off: off, zoom: function () { return st.k; } };
   }
   // 동작 고르기(3.075): 장면 시작 · 장면 끝 · 골키퍼. 화면 방향(←·→)은 작전판에 보이는 그대로.
@@ -160,5 +166,11 @@
     { group: '장면 끝 — 공을 받는다', items: [['recv', '발로 받기'], ['chest', '가슴으로 받기'], ['headin', '머리로 받기']] },
     { group: '골키퍼', items: [['dive', '다이빙(공 쪽)'], ['dive_l', '다이빙 ←'], ['dive_r', '다이빙 →'], ['dive_hl', '높게 ←'], ['dive_hr', '높게 →'], ['catch', '캐치'], ['punch', '펀칭']] }
   ];
-  return { TV: TV, KICK: KICK, DIVE: DIVE, ACTS: ACTS, isGK: isGK, kick: kick, ballU: ballU, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
+  // 3.078 — 평면에서는 선수 · 공을 한 칸 크게(사용자 «평면일때는 토큰이 좀 더 크게»). 3D · 중계는 그대로, 장비 · 그림은 그대로.
+  var FLAT_K = 1.5;
+  function flatK(p, flat, isEquip) { return flat && p && p.team !== 'img' && !(isEquip && isEquip(p.team)) ? FLAT_K : 1; }
+  if (typeof window !== 'undefined' && window.document) window.__flatK = function (p) {
+    var b = window.document.body; return flatK(p, !!b && !b.classList.contains('bc-tilt3d'), typeof window.equipKey === 'function' ? window.equipKey : null);
+  };
+  return { FLAT_K: FLAT_K, flatK: flatK, TV: TV, KICK: KICK, DIVE: DIVE, ACTS: ACTS, isGK: isGK, kick: kick, ballU: ballU, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
 });

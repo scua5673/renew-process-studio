@@ -27,7 +27,7 @@ try{
       shown:kids.filter(shown).map(c=>c.id||String(c.className).split(' ')[0]),tabH:tabs.filter(shown).map(t=>Math.round(t.getBoundingClientRect().height)),
       bpx:[...ps.querySelectorAll('.bpx')].filter(shown).length,hitTabs:tabs.filter(t=>{ const b=t.getBoundingClientRect(); return b.right>4&&b.left<innerWidth-4; }).map(at),
       onIdx:tabs.indexOf(on),onIn:ob?(ob.left>=-1&&ob.right<=innerWidth+1):null,stage:r(st),docSW:document.documentElement.scrollWidth,vw:innerWidth,
-      phoneWork:document.body.classList.contains('ps-phone-work'),has901:state.players.some(p=>p.id===901)}; });
+      phoneWork:document.body.classList.contains('ps-phone-work'),tb:ps.classList.contains('ps-tb'),groups:[...ps.querySelectorAll(':scope>.tb-g')].filter(shown).map(g=>g.className.split(' ')[1]),menu:[...document.querySelectorAll('#ps-tb-menu>button')].map(b=>b.id||b.textContent.trim()),addShown:[...ps.querySelectorAll('.bp-add')].filter(shown).length,has901:state.players.some(p=>p.id===901)}; });
   const addPage=n=>bf.evaluate(k=>{ const a=()=>[...document.querySelectorAll('#boardPageStrip .bp-add')].find(b=>/페이지/.test(b.textContent)); for(let i=0;i<k;i++)a().click(); },n);
   const dbl=()=>bf.evaluate(()=>{ const keep=window.psPrompt; let n=0; window.psPrompt=function(){ n++; };
     document.querySelector('#boardPageStrip .bp-tab.on').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true})); window.psPrompt=keep; return n; });
@@ -94,7 +94,10 @@ try{
     await addPage(2); await page.waitForTimeout(600);
     const s=await strip(); console.log(size,JSON.stringify(s));
     assert.equal(s.phoneWork,false); assert.equal(s.multi,true); assert.notEqual(s.z,'6','the phone rule stays on the phone');
-    assert.ok(s.shown.includes('bp-head'),'the head stays'); assert.ok(s.shown.filter(k=>k==='bp-add').length>=2,'＋ 페이지 · 미팅 세트 stay'); assert.ok(s.shown.includes('bpImportBoard'),'보드 가져오기 stays');
+    if(s.tb){   // 3.078 — 떠 있는 도크면 띠는 위쪽 막대 세 덩어리: 보드 ▾(미팅 세트 · 보드 가져오기는 메뉴) · 보기 · 저장
+      assert.deepEqual(s.groups,['tb-l','tb-c','tb-r'],'three groups'); assert.ok(s.addShown>=1,'＋ 페이지 stays beside the tabs');
+      assert.ok(s.menu.includes('미팅 세트')&&s.menu.includes('bpImportBoard'),'미팅 세트 · 보드 가져오기 in the «보드 ▾» menu '+JSON.stringify(s.menu));
+    }else{ assert.ok(s.shown.includes('bp-head'),'the head stays'); assert.ok(s.shown.filter(k=>k==='bp-add').length>=2,'＋ 페이지 · 미팅 세트 stay'); assert.ok(s.shown.includes('bpImportBoard'),'보드 가져오기 stays'); }
     assert.ok(s.bpx>=3,'rename · duplicate · menu handles stay: '+s.bpx); assert.equal(s.onIdx,2);
     assert.ok(s.hitTabs.every(Boolean),'tabs can be pressed');
     assert.equal(await dbl(),1,'double-click still renames');
