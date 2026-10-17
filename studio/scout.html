@@ -2425,6 +2425,7 @@ html.ps-page-scout .match-grid{gap:var(--g-gap)!important}
     .mpl-ph .ph{display:grid;grid-template-columns:76px minmax(0,1fr) 22px;align-items:center;gap:6px;font-size:var(--fs-caption)}
     .mpl-ph .ph em{font-style:normal;font-weight:800;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .mpl-ph .ph .v{font-size:var(--fs-caption)}
+    .lvl-next{display:flex;justify-content:flex-end;margin:14px 0 4px}   /* 3.075 */
     .mpl-empty{font-size:var(--fs-sub);color:var(--dim);padding:8px 0}
     @media (max-width:760px){.mpr-row{grid-template-columns:minmax(0,1fr) 34px}.mpr-row .nm{grid-column:1/-1}.mpr-row .inp{grid-column:1/-1}
       .mpl-row{grid-template-columns:minmax(0,1fr) 34px 28px}.mpl-row .nm{grid-column:1/-1}.mpl-row .inp{grid-column:1/-1}}
@@ -7936,6 +7937,12 @@ function renderPosEditor(){
 
 // ===================== 선수 =====================
 let editingPlayer=null;
+/* 3.075 — 빠른 평가(코치 점검 10/16: 24+8 문항 × 18명 = 576번). quick = 영역마다 팀 평가표 순서의 첫 문항 하나(5문항), 포지션 문항은 숨긴다.
+   고른 모드는 이 기기에 남긴다. 기본은 2.908 그대로 «전체». 점수는 같은 pl.levels — 나중에 «전체»에서 나머지를 채우면 된다. */
+let plEvalMode=(function(){ try{ var v=localStorage.getItem("cs_eval_mode_v1"); return (v==="quick"||v==="all")?v:"all"; }catch(_){ return "all"; } })();
+function plSetEvalMode(m){ plEvalMode=m; if(m==="quick"||m==="all"){ try{ localStorage.setItem("cs_eval_mode_v1",m); }catch(_){} } }
+function plNextUnrated(curId){ return tmOurs().filter(function(x){return x.id!==curId&&(x.manual===true||String(x.name||"").trim());})
+  .find(function(x){return !(x.levels&&Object.keys(x.levels).length);}); }
 let plCoreOnly=false;   /* 2.908 — 기본은 전체(요청 «선수단 프로필과 평가표가 잘 연동»). 옛 «핵심만» 목록은 옛 44항목 이름이라 표준 24에서 1~3개만 맞았다 */
 /* 선수 상태 — 오늘 누가 훈련 가능한지. 가이드 의미색(초록=완료·상승 / 빨강=경고 / 주황=강도 / 회색=휴식)에 맞춤 */
 const PL_STATUS=[{k:"ok",label:"훈련 가능",c:"#2E7D63"},{k:"injury",label:"부상",c:"#C24A46"},{k:"rehab",label:"회복 중",c:"#B5762B"},{k:"out",label:"불참",c:"#646A73"},{k:"rest",label:"휴식",c:"#8A9099"}];
@@ -9947,15 +9954,16 @@ function openPlayer(id,opts){
   }
   const pos0=pos(pl.posId); const coreIds=coreIdsFor(pos0);
   const tgl=document.createElement("div");tgl.className="lvlmode";
-  if(coreIds){
-    tgl.innerHTML=`<span class="seg lvlseg"><button class="${plCoreOnly?'on':''}" data-m="core">핵심만</button><button class="${plCoreOnly?'':'on'}" data-m="all">전체</button></span><span class="lvlmode-hint">${pos0?esc(pos0.name):''} 핵심 속성만 빠르게</span>`;
-  } else {
-    tgl.innerHTML=`<span class="lvlmode-hint">${pl.posId?'':'주 포지션을 정하면 핵심 속성만 빠르게 입력할 수 있어요'}</span>`;
-  }
+  if(plEvalMode==="core"&&!coreIds)plEvalMode="all";
+  plCoreOnly=(plEvalMode==="core");
+  const quick=(plEvalMode==="quick");
+  const _mb=(m,lb)=>`<button class="${plEvalMode===m?'on':''}" data-m="${m}">${lb}</button>`;
+  tgl.innerHTML=`<span class="seg lvlseg">${_mb('quick','빠른 평가')}${coreIds?_mb('core','핵심만'):''}${_mb('all','전체')}</span><span class="lvlmode-hint">${quick?'영역마다 하나씩 5문항 — 나머지는 «전체»에서 언제든':(plCoreOnly?(pos0?esc(pos0.name):'')+' 핵심 속성만 빠르게':'')}</span>`;
   box.appendChild(tgl);
-  tgl.querySelectorAll('[data-m]').forEach(btn=>btn.onclick=()=>{ plCoreOnly = btn.dataset.m==='core'; openPlayer(pl.id); });
-  const inSet = a => !(plCoreOnly && coreIds) || coreIds.indexOf(a.id)>=0;
+  tgl.querySelectorAll('[data-m]').forEach(btn=>btn.onclick=()=>{ plSetEvalMode(btn.dataset.m); openPlayer(pl.id,{to:"eval"}); });
   const byCat=attrsByCat();
+  const _quickIds={}; if(quick)CATS.forEach(([cat])=>{ const f=(byCat[cat]||[])[0]; if(f)_quickIds[f.id]=1; });
+  const inSet = a => quick ? !!_quickIds[a.id] : (!(plCoreOnly && coreIds) || coreIds.indexOf(a.id)>=0);
   /* 2.908 — 선수가 IDP 에서 매긴 셀프 점수를 같은 줄에(요청 «선수도 코치도 평가했을 때 두 개 다 보이게»). 코치 기기에만 있는 선수 문서를 읽기만 한다 */
   let _selfLv=null; try{ const _lk=idpLinkForPlayer(pl); _selfLv=(_lk&&_lk.doc&&_lk.doc.selfEval&&_lk.doc.selfEval.levels)||null; }catch(_){}
   const selfOf=id=>{ const v=_selfLv?+(_selfLv[id]||0):0; return v>0?v:0; };
@@ -9973,7 +9981,7 @@ function openPlayer(id,opts){
     });
   });
   /* 2.025 — 포지션별 추가 문항(사용자): 선수 주 포지션 → 그룹 4문항, 코치 관찰 문장. 점수는 같은 pl.levels 에 저장(선수 셀프평가와 같은 id → IDP 코치 비교에 그대로 나온다) */
-  try{ if(window.PS_EVAL_STD&&PS_EVAL_STD.posItems){
+  try{ if(!quick&&window.PS_EVAL_STD&&PS_EVAL_STD.posItems){
     var _pos0=(data.positions||[]).find(function(x){return x.id===pl.posId;}), _pg=PS_EVAL_STD.posGroupOf(_pos0?_pos0.name:'');
     var _pi=_pg?PS_EVAL_STD.posItems(_pg):[];
     if(_pi.length){
@@ -9987,6 +9995,11 @@ function openPlayer(id,opts){
       });
     } else if(!pl.posId){ var hint=document.createElement("div");hint.className="lvlmode-hint";hint.style.marginTop="8px";hint.textContent="주 포지션을 정하면 포지션별 문항 4개가 아래에 붙어요";box.appendChild(hint); }
   } }catch(_){}
+  /* 3.075 — 평가 칸 아래 «다음 선수 평가 ›»: 아직 한 칸도 안 매긴 다음 선수를 평가부터 연다(18명을 연달아) */
+  try{ if(data.attrs.length){ const nx=document.createElement("div"); nx.className="lvl-next";
+    const nb=document.createElement("button"); nb.type="button"; nb.className="btn"; nb.id="plEvalNext"; nb.textContent="다음 선수 평가 ›";
+    nb.onclick=()=>{ const p2=plNextUnrated(pl.id); if(p2)openPlayer(p2.id,{to:"eval"}); else { try{ toast&&toast("모든 선수 평가 완료 ✓"); }catch(_){} } };
+    nx.appendChild(nb); box.appendChild(nx); } }catch(_){}
   scRenderProfile(pl);
   if($("plEditModal"))$("plEditModal").scrollTop=0;
   /* 2.774 — «평가 시작 ›» 에서 열면 프로필 칸이 아니라 평가(#plLevels)부터 보이게. 모달(.pl-modal)이 스크롤 주체라 scrollIntoView 로 충분 */

@@ -48,3 +48,11 @@ test('match review falls back to the four standard phases when the game model is
   assert.equal(ctx.mprMoments().map(m=>m.name).join(),'우리 공격,세트피스','게임모델이 있으면 그 국면');
   assert.ok(!SC.includes('게임모델에 국면이 없어요'),'막힌 안내 대신 기본 국면으로 평가');
 });
+
+test('quick evaluation: one item per area, no position items, remembered per device, next-player door',()=>{
+  assert.ok(/let plEvalMode=\(function\(\)\{ try\{ var v=localStorage\.getItem\("cs_eval_mode_v1"\); return \(v==="quick"\|\|v==="all"\)\?v:"all";/.test(SC),'기본은 전체(2.908), 고른 것은 이 기기에');
+  assert.ok(SC.includes("const _quickIds={}; if(quick)CATS.forEach(([cat])=>{ const f=(byCat[cat]||[])[0]; if(f)_quickIds[f.id]=1; });"),'영역마다 첫 문항 하나');
+  assert.ok(SC.includes("try{ if(!quick&&window.PS_EVAL_STD&&PS_EVAL_STD.posItems){"),'빠른 평가는 포지션 문항을 숨긴다');
+  assert.ok(/nb\.id="plEvalNext"; nb\.textContent="다음 선수 평가 ›";/.test(SC)&&/const p2=plNextUnrated\(pl\.id\); if\(p2\)openPlayer\(p2\.id,\{to:"eval"\}\);/.test(SC),'다음 미평가 선수로');
+  assert.ok(read('storage-keys.js').includes("['cs_eval_mode_v1','device','ls','pref','scout.html']"),'키 표에 있다');
+});
