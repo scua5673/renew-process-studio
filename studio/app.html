@@ -725,6 +725,9 @@ function psAutoReloadWhenSafe(manualOnly){
         /* 2.981 — 보던 화면을 이 탭에 적어 둔다(다시 열린 뒤 psResumeScreen 이 한 번 읽고 지운다) */
         try{sessionStorage.setItem('ps_resume_screen',JSON.stringify({app:document.body.getAttribute('data-ps-app')||'',team:(window.__psTeamSection?String(window.__psTeamSection()||''):''),at:Date.now()}));}catch(_){}
         active=false;clearTimeout(timer);if(progT)clearInterval(progT);if(prog){try{prog.reloading();}catch(_){}}
+        /* 오류 제보 8d8daa7e — 새 판으로 여는 것도 우리가 하는 새로고침이다. 표시가 없으면 닫을 때처럼 팀 자료 사본을 지워(sync.js wipeTeamCacheSoft)
+           다시 열린 IDP 가 빈 명단을 받아 «피드백이 전부 없어졌다»로 보였다 */
+        try{sessionStorage.setItem('ps_self_reload','1');}catch(_){}
         window.__psBootMarkDone&&window.__psBootMarkDone();location.reload();return true;
       });
     }

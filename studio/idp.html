@@ -8,6 +8,7 @@
 <script src="storage.js"></script>
 <script src="idp-evidence.js"></script>
 <script src="idp-recovery.js"></script>
+<script src="idp-roster-refresh.js"></script>
 <script src="shared-view-observation.js"></script>
 <link rel="stylesheet" href="idp-recovery.css">
 <link rel="stylesheet" href="idp-start.css">
@@ -7097,12 +7098,22 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(sqEvalData&&!force)return;
     sqEvalState='loading'; render();
     teSend('teamEvalList').then(function(r){
-      if(r&&r.ok){ sqEvalData=r; sqEvalState='ok'; sqEvalErr='';
-        var ps=sqEvalPlayers(); if(!sqEvalSel||!ps.some(function(p){return p.id===sqEvalSel;})) sqEvalSel=ps.length?ps[0].id:'';
-      } else { sqEvalState='err'; sqEvalErr=(r&&r.err)||'unknown'; }
-      render();
+      if(r&&r.ok)sqEvalTake(r);
+      else { sqEvalState='err'; sqEvalErr=(r&&r.err)||'unknown'; }
+      render(); sqRosterPoke();
     });
   }
+  function sqEvalTake(r){ sqEvalData=r; sqEvalState='ok'; sqEvalErr='';
+    var ps=sqEvalPlayers(); if(!sqEvalSel||!ps.some(function(p){return p.id===sqEvalSel;})) sqEvalSel=ps.length?ps[0].id:''; }
+  /* 오류 제보 8d8daa7e — 팀 자료가 오기 전에 물어 받은 빈 명단·못 받은 답은 자료가 오면 조용히 다시 묻는다(idp-roster-refresh.js) */
+  var _sqRoster=null;
+  function sqRosterPoke(ms,fresh){ try{
+    if(!_sqRoster&&window.PSIdpRosterRefresh)_sqRoster=PSIdpRosterRefresh.create({
+      stale:function(){ return squadView&&!personalOnly&&isCoach()&&((sqEvalState==='ok'&&!sqEvalPlayers().length)||(sqEvalState==='err'&&!/^(player|standalone)$/.test(sqEvalErr))); },
+      ask:function(){ return teSend('teamEvalList'); },
+      apply:function(r){ sqEvalTake(r); if(!(visionEdit||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))))render(); }});
+    if(_sqRoster)_sqRoster.poke(ms,fresh);
+  }catch(_){} }
   function sqEvalPlayers(){ return (sqEvalData&&sqEvalData.players)||[]; }
   /* 2.074 · 역할 요구 — "우리 팀이 이 자리에 요구하는 수준". 선수 점수와 같은 눈금(1~5)을 쓴다.
      같은 눈금이라야 갭(요구 − 현재)이 "경기에서 → 압박에서도" 처럼 다음에 뭘 훈련할지로 읽힌다.
@@ -8207,7 +8218,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   function rSqToday(){
     var ps=sqEvalPlayers();
-    if(!ps.length)return '<div class="card sqe-msg"><b>명단이 비어 있어요</b>팀 › 선수단에서 선수를 먼저 등록하세요.</div>';
+    var wiped=false; try{ wiped=!!localStorage.getItem('ps_cache_wiped_v1'); }catch(_){}
+    if(!ps.length)return wiped?'<div class="card sqe-msg"><b>팀 자료를 받는 중이에요</b>받는 대로 선수 명단과 피드백이 나타나요.</div>'   /* 8d8daa7e — 비운 기기 사본을 다시 받는 중엔 «비었다»고 하지 않는다 */
+      :'<div class="card sqe-msg"><b>명단이 비어 있어요</b>팀 › 선수단에서 선수를 먼저 등록하세요.</div>';
     var rows=ps.map(function(p){ var ln=sqLinkOfPlayer(p.id), br=null; try{ br=sqThreadBrief(p.id); }catch(_){}
       return {p:p,ln:ln,br:br}; });
     var SL=SQ_SL5;
@@ -15536,7 +15549,9 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   }
   window.addEventListener('storage',function(e){
     if(_idpRecoverySuspended)return;
+    sqRosterPoke(800,true);   /* 8d8daa7e — 팀 자료가 들어오면 빈 명단을 다시 묻는다 */
     var typing=visionEdit||(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+    if(e.key==='ps_cache_wiped_v1'){ if(squadView&&!typing)render(); return; }   /* «받는 중» 문구를 거둔다 */
     /* 일정 iframe·다른 기기 동기화가 최신 팀 일정을 넣으면, IDP를 다시 열지 않아도
        읽기 전용 카드와 오늘 루틴 후보를 즉시 다시 계산한다. 입력 중인 개인 기록은 지키기. */
     if(e.key==='process_coach_v1'){
