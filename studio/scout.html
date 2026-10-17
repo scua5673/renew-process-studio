@@ -2068,16 +2068,18 @@ html.ps-page-scout .vchip,html.ps-page-scout .t-grp,html.ps-page-scout .sc-gr,ht
 .mi-nolink{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 10px;padding:10px 12px;
   border:1px solid rgba(194,74,70,.32);background:rgba(194,74,70,.07);border-radius:11px;font-size:13px;color:var(--txt,#14161A)}
 .mi-nolink b{font-weight:800}
+.mi-nolink.all{border-color:var(--c-line);background:var(--c-bg);color:var(--c-muted)}   /* 3.075 — 새 팀: 경고가 아니라 안내 */
 .mi-nolink small{flex:1 1 100%;color:var(--txt-dim,#8a9099);font-size:11px}
 .mi-nolink button{flex:0 0 auto;height:28px;padding:0 11px;border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);
   color:var(--txt,#14161A);border-radius:6px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
 .mi-nolink button:hover{border-color:var(--line2,#D3D7DD)}
 /* 2.204 — 계정 연결 여부를 색으로(사용자): 안 됨 = 빨강 · 됨 = 초록. 폰 점·데스크톱 칩 공통 */
-html.ps-page-scout #teamList .tm-row .t-idp{border-color:rgba(212,64,58,.45)!important;background:#fdecea!important;color:#b4322d!important}
-html.ps-page-scout #teamList .tm-row .t-idp::before{background:#d4403a!important}
+/* 3.075 — 연결된 선수가 아직 한 명도 없는 팀(#teamList.tm-nolink-all)은 빨강을 걸지 않는다 — 1.543 의 중립 칩 그대로 */
+html.ps-page-scout #teamList:not(.tm-nolink-all) .tm-row .t-idp{border-color:rgba(212,64,58,.45)!important;background:#fdecea!important;color:#b4322d!important}
+html.ps-page-scout #teamList:not(.tm-nolink-all) .tm-row .t-idp::before{background:#d4403a!important}
 html.ps-page-scout #teamList .tm-row .t-idp.linked{border-color:rgba(31,138,76,.5)!important;background:#e7f5ec!important;color:#1f8a4c!important}
 html.ps-page-scout #teamList .tm-row .t-idp.linked::before{background:#1f8a4c!important}
-html.ps-page-scout body.fmdark #teamList .tm-row .t-idp{border-color:rgba(224,116,112,.45)!important;background:rgba(224,116,112,.16)!important;color:#F2A09C!important}   /* 2.641 — 다크 */
+html.ps-page-scout body.fmdark #teamList:not(.tm-nolink-all) .tm-row .t-idp{border-color:rgba(224,116,112,.45)!important;background:rgba(224,116,112,.16)!important;color:#F2A09C!important}   /* 2.641 — 다크 */
 html.ps-page-scout body.fmdark #teamList .tm-row .t-idp.linked{border-color:rgba(76,194,122,.5)!important;background:rgba(76,194,122,.16)!important;color:#7ED3A8!important}
 html.ps-page-scout body.fmdark #teamList .tm-row .t-idp.linked::before{background:#4CC27A!important}
 /* 행 */
@@ -12000,6 +12002,9 @@ function renderTeam(){
   if(statUnavailable){ statUnavailable.textContent=String(unavailableN);
     try{ statUnavailable.parentNode.classList.toggle("zero",unavailableN===0); }catch(_){} }   /* 2.981 — 0 은 색으로 말하지 않는다 */
   if(statNeed)statNeed.textContent=String(Math.max(0,oursAll.length-evalN));
+  /* 3.075 — 연결된 선수가 한 명도 없으면(새 팀) IDP 칩을 빨강이 아닌 회색으로(코치 점검 10/16: 18명 전부 빨강 = 경보가 아니라 시작 상태).
+     한 명이라도 연결되면 2.204 그대로 안 됨 = 빨강 · 됨 = 초록 — 그때 빨강은 «아직 안 한 선수»를 가려 준다. */
+  try{ box.classList.toggle("tm-nolink-all",!oursAll.some(function(p){ try{ return !!matchAccountForPlayer(p.id); }catch(_){ return false; } })); }catch(_){}
   /* 평가를 한 번도 안 쓴 팀에겐 '평가 미완료 N명' 배너가 영구 잔소리 — 한 명이라도 평가했을 때만 노출.
      평가 진입로는 ⋯ 메뉴 '프로필·평가'와 스카우팅 탭에 그대로 있다. */
   try{var _et=$("tmEvalTodo");if(_et)_et.style.display=(evalN>0&&oursAll.length-evalN>0)?"":"none";}catch(_){}
@@ -14568,6 +14573,7 @@ function matchRenderIndividual(m,kind,readonly,keepCurrent){
       pid=shown[0].id; if(kind==="prep")matchPrepPlayer=pid;else matchReviewPlayer=pid;
       if(select)select.value=pid;
     }
+    var _anyLinked=tmOurs().some(function(x){ try{ return !!matchAccountForPlayer(x.id); }catch(_){ return false; } });
     var tabs=[["all","전체",players.length]];
     if(kind==="review")tabs.push(["todo","미작성",todoN]);
     strip.innerHTML=(tabs.length<2?'':'<span class="mp-seg">'+tabs.map(function(x){ return '<button type="button" data-mpf="'+x[0]+'" class="'+(filt===x[0]?"on":"")+'" aria-pressed="'+(filt===x[0])+"\">"+x[1]+'<b>'+x[2]+'</b></button>'; }).join("")+'</span>')
@@ -14576,7 +14582,7 @@ function matchRenderIndividual(m,kind,readonly,keepCurrent){
       /* 2.529 — 개인 전달사항은 **계정이 연결된 선수에게만** 간다(matchToggleIndividual 의 규칙).
          전에는 그 사실이 다 쓴 뒤 공개 체크에서야 토스트로 나왔다 — 사용자: "나오는 선수가 있고 안 나오는 선수가 있어요".
          띠에서 미리 갈라 보여 준다: 미연결은 흐리게 + 자물쇠. 명단에서 빼지는 않는다(초안은 적어 둘 수 있다). */
-      var _nolink=!matchAccountForPlayer(p.id);
+      var _nolink=_anyLinked&&!matchAccountForPlayer(p.id);   /* 3.075 — 아무도 연결 안 된 팀은 모든 칩에 ⃠ 를 달지 않는다(아래 팀 한 줄이 말한다) */
       return'<button type="button" class="'+st+(p.id===pid?" on":"")+(_nolink?" nolink":"")+'" data-match-person="'+esc(p.id)+'" aria-pressed="'+(p.id===pid)+'"'
         +(_nolink?' title="계정 미연결 — 지금은 전달되지 않아요"':'')+'>'+esc(p.name||p.num||"선수")+(_nolink?'<i aria-hidden="true"> ⃠</i>':'')+"</button>";
     }).join("")+(filt==="todo"&&!shown.length?'<span class="mri-all-done">모두 작성했어요</span>':'');
@@ -14606,6 +14612,10 @@ function matchRenderIndividual(m,kind,readonly,keepCurrent){
       var all=tmOurs(), nOk=0; all.forEach(function(p){ try{ if(matchAccountForPlayer(p.id))nOk++; }catch(_){} });
       var who=(players.filter(function(p){return p.id===pid;})[0]||{}).name||"이 선수";
       var n=document.createElement("div"); n.className="mi-nolink";
+      /* 3.075 — 아무도 연결 안 된 팀(새 팀)이면 선수마다 빨간 경고 대신 팀 한 줄로, 회색으로. 쓰는 일은 그대로 된다(코치 초안) */
+      if(nOk===0){ n.classList.add("all");
+        n.innerHTML='아직 선수 계정이 연결되지 않았어요 <b>0/'+all.length+'</b><small>개인 전달은 코치 초안으로 남고, 선수를 초대해 계정이 연결되면 그때 공개할 수 있어요</small>'; }
+      else
       n.innerHTML='<b>'+esc(who)+'</b> 님은 계정이 연결되지 않아 <b>전달되지 않습니다</b>'
         +'<small>적어 두면 코치 초안으로 남고, 계정을 연결하면 그때 공개할 수 있어요 · 지금 팀에서 '+nOk+'/'+all.length+'명 연결됨</small>';
       /* 2.945 — 예전엔 «선수단에서 연결하기»가 명단으로 보내고, 명단의 IDP 칩은 안내만 띄워 **막다른 길**이었다.
@@ -21589,7 +21599,8 @@ html.ps-page-scout #teamList.tm-4col .tm-row .t-injury{grid-column:2!important;g
 html.ps-page-scout #teamList.tm-4col .tm-row .t-idp{grid-column:8!important;grid-row:1!important;order:0!important;
   width:auto!important;height:20px!important;min-width:0!important;padding:0!important;border:0!important;background:none!important;
   font-size:10px!important;font-weight:800!important;letter-spacing:.02em!important;line-height:20px!important;
-  justify-self:center!important;color:#d4403a!important;opacity:1!important}
+  justify-self:center!important;opacity:1!important}
+html.ps-page-scout #teamList.tm-4col:not(.tm-nolink-all) .tm-row .t-idp{color:#d4403a!important}   /* 3.075 — 연결된 선수가 아무도 없으면 빨강 대신 기본(var(--dim)) */
 html.ps-page-scout #teamList.tm-4col .tm-row .t-idp.linked{color:#1f8a4c!important}
 html.ps-page-scout #teamList.tm-4col .tm-row .t-idp::after{content:none!important}
 html.ps-page-scout #teamList.tm-4col .tm-row .t-idp::before{display:none!important}

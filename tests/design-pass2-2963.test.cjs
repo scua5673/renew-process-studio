@@ -94,5 +94,9 @@ test('community: topic tags are one grey, the category colour table stays',()=>{
 
 test('IDP unlinked chip keeps the colours the user chose (2.204 · 2.406 — red unlinked, green linked)',()=>{
   const s=read('scout.html');
-  assert.ok(s.includes('justify-self:center!important;color:#d4403a!important;opacity:1!important}'),'점검은 회색을 권했지만 사용자가 두 번 정한 색이라 이번 판에서 바꾸지 않는다');
+  /* 3.075 — 사용자 확인(10/17): 연결된 선수가 한 명도 없는 새 팀(#teamList.tm-nolink-all)만 회색. 한 명이라도 연결되면 빨강 · 초록 그대로 */
+  assert.ok(s.includes('html.ps-page-scout #teamList.tm-4col:not(.tm-nolink-all) .tm-row .t-idp{color:#d4403a!important}'),'미연결 = 빨강(새 팀 제외)');
+  assert.ok(s.includes('html.ps-page-scout #teamList:not(.tm-nolink-all) .tm-row .t-idp{border-color:rgba(212,64,58,.45)!important;background:#fdecea!important;color:#b4322d!important}'),'좁은 칩도 같은 규칙');
+  assert.ok(s.includes('html.ps-page-scout #teamList.tm-4col .tm-row .t-idp.linked{color:#1f8a4c!important}'),'연결 = 초록');
+  assert.ok(/box\.classList\.toggle\("tm-nolink-all",!oursAll\.some\(/.test(s),'새 팀 판정은 명단 전체 기준');
 });

@@ -56,3 +56,9 @@ test('quick evaluation: one item per area, no position items, remembered per dev
   assert.ok(/nb\.id="plEvalNext"; nb\.textContent="다음 선수 평가 ›";/.test(SC)&&/const p2=plNextUnrated\(pl\.id\); if\(p2\)openPlayer\(p2\.id,\{to:"eval"\}\);/.test(SC),'다음 미평가 선수로');
   assert.ok(read('storage-keys.js').includes("['cs_eval_mode_v1','device','ls','pref','scout.html']"),'키 표에 있다');
 });
+
+test('unlinked accounts: a team with nobody linked gets one calm line, not a red mark per player',()=>{
+  assert.ok(SC.includes('var _nolink=_anyLinked&&!matchAccountForPlayer(p.id);'),'아무도 연결 안 된 팀은 칩마다 ⃠ 를 달지 않는다');
+  assert.ok(/if\(nOk===0\)\{ n\.classList\.add\("all"\);/.test(SC),'팀 한 줄 안내');
+  assert.ok(SC.includes('.mi-nolink.all{border-color:var(--c-line);background:var(--c-bg);color:var(--c-muted)}'),'경고 빨강이 아닌 안내 회색');
+});
