@@ -17,6 +17,8 @@
     serif: { label: '명조', family: 'PSN Gowun Batang', dir: 'gowun-batang' }
   };
   var ORDER = ['base', 'bold', 'round', 'hand', 'serif'];
+  // 3.087 — «사람» 발밑 번호 · 포지션 패 크기(보드마다 · tagSize)
+  var TAG_K = { s: 0.8, m: 1, l: 1.3, xl: 1.7 }, TAG_ORDER = ['s', 'm', 'l', 'xl'], TAG_LBL = { s: '작게', m: '보통', l: '크게', xl: '아주 크게' };
   var FALLBACK = "Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";
   var BASE_URL = '/vendor/name-fonts/';
   function ok(v) { return typeof v === 'string' && Object.prototype.hasOwnProperty.call(FONTS, v); }
@@ -71,6 +73,16 @@
       var l = doc.createElement('link'); l.rel = 'stylesheet'; l.id = 'psNameFont-' + dir; l.href = BASE_URL + dir + '/font.css';
       (doc.head || doc.documentElement).appendChild(l);
     }
+    // 3.087 — 보드마다 저장되는 설정을 작전판에 알린다(board.html 의 lookKeys · _lookCode · _lookOk · lookNow · lookApply 가 window.__psLookExt 를 읽는다).
+    //         값은 window.__<키> 로 오간다. 보드를 여는 길(restoreLiveBoard)보다 먼저 있어야 한다 — 그래서 이 파일은 본문 스크립트 앞에서 읽힌다.
+    var ext = win.__psLookExt || (win.__psLookExt = {});
+    ext.nameFont = { def: 'base', ok: ok };
+    ext.tagSize = { def: 'm', ok: function (v) { return Object.prototype.hasOwnProperty.call(TAG_K, v); } };
+    var tag = 'm';
+    try {
+      Object.defineProperty(win, '__tagSize', { configurable: true, get: function () { return tag; }, set: function (v) { v = ext.tagSize.ok(v) ? v : 'm'; if (v === tag) return; tag = v; syncTag(); } });
+      Object.defineProperty(win, '__tagK', { configurable: true, get: function () { return TAG_K[tag]; } });
+    } catch (_) {}
     // 작전판이 lookApply · lookNow 에서 읽고 쓰는 값. 고르면 그 글꼴의 CSS 를 건다(글꼴 조각은 글자가 화면에 나올 때 브라우저가 받는다)
     try {
       Object.defineProperty(win, '__nameFont', { configurable: true, get: function () { return cur; }, set: function (v) {
@@ -95,6 +107,36 @@
       try { if (win.IntersectionObserver) { var io = new win.IntersectionObserver(function (es) { if (es.some(function (e) { return e.isIntersecting; })) { show(); io.disconnect(); } }); io.observe(r); } else show(); } catch (_) { show(); }
       sync();
     }
+    // 3.087 — 이름표 크기 «아주 크게»(사용자 «이름 포지션 번호도 크기 조절 가능하게»). 작전판의 sync · 클릭 처리는 data-ns 로 이미 받는다
+    function xlButton() {
+      var ns = doc.getElementById('nameSizeSeg'); if (!ns || ns.querySelector('[data-ns="xl"]')) return;
+      var b = doc.createElement('button'); b.type = 'button'; b.setAttribute('data-ns', 'xl'); b.setAttribute('aria-pressed', 'false'); b.textContent = '아주 크게'; ns.appendChild(b);
+    }
+    // 3.087 — «사람» 발밑 번호 · 포지션 패의 크기(칩 글자 줄 바로 아래 · 사람 모양일 때만 보인다)
+    function tagRow() {
+      if (doc.getElementById('tagSizeSeg')) return;
+      var lb = doc.getElementById('labelSeg'), after = lb && lb.closest('.menurow'); if (!after) return;
+      var r = doc.createElement('div'); r.className = 'menurow ps-tag-off'; r.id = 'tagSizeRow';
+      r.innerHTML = '<span class="menulbl">글자 크기</span><div class="seg" id="tagSizeSeg" role="group" aria-label="사람 발밑 번호 · 포지션 크기">' +
+        TAG_ORDER.map(function (k) { return '<button type="button" data-ts="' + k + '" aria-pressed="false">' + TAG_LBL[k] + '</button>'; }).join('') + '</div>';
+      after.parentNode.insertBefore(r, after.nextSibling);
+      syncTag();
+    }
+    function syncTag() {
+      var seg = doc.getElementById('tagSizeSeg'); if (!seg) return;
+      [].forEach.call(seg.querySelectorAll('button[data-ts]'), function (b) { var on = b.getAttribute('data-ts') === tag; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      var person = false; try { person = typeof tokShape !== 'undefined' && tokShape === 'person'; } catch (_) {}   /* global tokShape */
+      var row = doc.getElementById('tagSizeRow'); if (row && row.classList.contains('ps-tag-off') === person) row.classList.toggle('ps-tag-off', !person);
+    }
+    win.__syncTagSizeSeg = syncTag;
+    win.__setTagSize = function (v) {
+      if (!ext.tagSize.ok(v)) return;
+      try { if (typeof win._lookFreeze === 'function') win._lookFreeze(); } catch (_) {}
+      win.__tagSize = v;
+      try { win.renderTokens(); } catch (_) {}
+      syncTag();
+      try { win.boardSaveLive(); } catch (_) {}
+    };
     function sync() {
       var seg = doc.getElementById('nameFontSeg'); if (!seg) return;
       [].forEach.call(seg.querySelectorAll('button[data-nf]'), function (b) { var on = b.getAttribute('data-nf') === cur; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
@@ -109,6 +151,8 @@
       try { win.boardSaveLive(); } catch (_) {}
     };
     doc.addEventListener('click', function (e) {
+      var t = e.target && e.target.closest && e.target.closest('#tagSizeSeg button[data-ts]');
+      if (t) { e.stopPropagation(); win.__setTagSize(t.getAttribute('data-ts')); return; }
       var b = e.target && e.target.closest && e.target.closest('#nameFontSeg button[data-nf]'); if (!b) return;
       e.stopPropagation(); win.__setNameFont(b.getAttribute('data-nf'));
     }, true);
@@ -156,13 +200,13 @@
       }
       var rt = win.renderTokens;   // 이름이 바뀌면(선수 불러오기 · 이름 고치기) 새 글자의 조각도
       if (typeof rt === 'function' && !rt.__psNameFont) {
-        win.renderTokens = function () { var r = rt.apply(this, arguments); if (FONTS[cur].dir) warmSoon(); return r; };
+        win.renderTokens = function () { var r = rt.apply(this, arguments); if (FONTS[cur].dir) warmSoon(); syncTag(); return r; };
         win.renderTokens.__psNameFont = 1;
       }
     }
-    row();
-    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', function () { row(); wrap(); }); else wrap();
+    row(); xlButton(); tagRow();
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', function () { row(); xlButton(); tagRow(); wrap(); syncTag(); }); else { wrap(); syncTag(); }
   }
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) install(window);
-  return { FONTS: FONTS, ORDER: ORDER, ok: ok, stack: stack, parseCss: parseCss, pick: pick, faceCss: faceCss, embed: embed, install: install };
+  return { FONTS: FONTS, ORDER: ORDER, TAG_K: TAG_K, ok: ok, stack: stack, parseCss: parseCss, pick: pick, faceCss: faceCss, embed: embed, install: install };
 });
