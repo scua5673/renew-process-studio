@@ -457,7 +457,7 @@
 (function(){
 "use strict";
 /* 3.070 — 강제 종료 위치 기록(셸 boot_after_crash 의 stage). 10/17 아이폰이 커뮤니티를 열면 5초 안에 꺼지는데 어느 단계인지 서버에서 볼 수 없었다. 단계 이름만(내용 없음) */
-function cmStage(c){ try{ if(window.top&&window.top!==window&&window.top.__psBootStage)window.top.__psBootStage(c); }catch(_){} }
+function cmStage(c){ try{ var T=window.top; if(T&&T!==window&&T.__psBootCrumb&&T.document.body.getAttribute('data-ps-app')==='community')T.__psBootCrumb(c); }catch(_){} }   /* 보이는 커뮤니티만 — 미리 띄운 탭은 적지 않는다 */
 cmStage('cm0');
 var $=function(id){return document.getElementById(id);};
 function esc(s){return window.PSSafe&&window.PSSafe.html?window.PSSafe.html(s):String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}

@@ -1160,6 +1160,8 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
 (function(){ try{
   var dev=document.documentElement.getAttribute('data-ps-device')||'desktop'; window.__psSafeBoot=false; window.__psSafeLevel=0; if(dev==='desktop')return;
   var K='ps_boot_alive_v1',LIFE=180000,BEAT=60000,now=Date.now(),raw='';
+  /* 3.070 — 마지막 발자국(따로 둔 칸): 셸이 연 화면 · 커뮤니티 단계 · 뷰어. 단계 표시(K)와 섞지 않는다 — 단계는 순서 규칙이 있다 */
+  var CK='ps_boot_crumb_v1',prevCrumb=''; try{ prevCrumb=String(sessionStorage.getItem(CK)||'').replace(/[^a-z0-9]/gi,'').slice(0,12); sessionStorage.removeItem(CK); }catch(_){}
   try{ raw=String(sessionStorage.getItem(K)||''); }catch(_){ raw=''; }
   var parts=raw.split('|'),at=+parts[0],died=isFinite(at)&&at>0&&now-at>=0&&now-at<LIFE;
   var prevLoaded=parts[1]==='1',prevStage=String(parts[2]||'').replace(/[^a-z0-9]/gi,'').slice(0,16),prevLevel=parts[3]==='2'?2:(parts[3]==='1'?1:0);
@@ -1178,7 +1180,8 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
   var loaded=false,beat=0,stage='shell',warm=-1,tmax=0,last=now,RANK={shell:0,board:1,boardload:2,sync:3,load:4};
   function write(){ try{ sessionStorage.setItem(K,last+'|'+(loaded?1:0)+'|'+stage+(warm>=0?'w'+warm:'')+(tmax?'t'+tmax:'')+'|'+level); }catch(_){} }
   function stamp(){ last=Date.now(); write(); }
-  function done(){ clearInterval(beat); beat=0; tStop(); try{ sessionStorage.removeItem(K); }catch(_){} }
+  function done(){ clearInterval(beat); beat=0; tStop(); try{ sessionStorage.removeItem(K); sessionStorage.removeItem(CK); }catch(_){} }
+  window.__psBootCrumb=function(c){ c=String(c||'').replace(/[^a-z0-9]/gi,'').slice(0,12); if(!c||!beat)return; try{ sessionStorage.setItem(CK,c); }catch(_){} };   /* 숨겨진 동안은 적지 않는다(단계 표시와 같은 규칙) */
   function live(){ if(document.hidden)return; stamp(); clearInterval(beat); beat=setInterval(stamp,BEAT); tStart(); }
   /* 보인 채 버틴 시간(t10 · t30 · t60) — 숨겨지면 멈추고 돌아오면 이어서 센다 */
   var tt=[],vis0=0,visMs=0;
@@ -1211,7 +1214,7 @@ try{var _psDev=document.documentElement.getAttribute('data-ps-device')||'desktop
       var nav=window.navigator||{},sa=false; try{ sa=nav.standalone===true||!!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches); }catch(_){}
       var CAP='ps_boot_crash_sent_v1',hr=Math.floor(Date.now()/3600000),cp=[]; try{ cp=String(sessionStorage.getItem(CAP)||'').split('|'); }catch(_){}
       var cn=+cp[0]===hr?(+cp[1]||0):0; if(cn>=40)return; try{ sessionStorage.setItem(CAP,hr+'|'+(cn+1)); }catch(_){}
-      S.event('boot_after_crash',{status:'error',feature:'app',error_code:'L'+level,always:true,meta:{age:died?Math.round((now-at)/1000):-1,stage:prevStage||'none',loaded:prevLoaded?1:0,prevLevel:prevLevel,level:level,
+      S.event('boot_after_crash',{status:'error',feature:'app',error_code:'L'+level,always:true,meta:{age:died?Math.round((now-at)/1000):-1,stage:(prevStage||'none')+(prevCrumb?'.'+prevCrumb:''),loaded:prevLoaded?1:0,prevLevel:prevLevel,level:level,
         standalone:sa,w:window.innerWidth|0,h:window.innerHeight|0,dpr:+window.devicePixelRatio||0,hc:nav.hardwareConcurrency|0,mem:+nav.deviceMemory||0,ua:String(nav.userAgent||'').slice(0,140)}});
       return; } }catch(_){ return; }
     if(n<120)setTimeout(function(){ send(n+1); },500); })(0);
@@ -2517,7 +2520,7 @@ window.psFailAlert=function(lead,e,stage){
     }
     window.__psResumeScreen=psResumeScreen;
     function showApp(app){
-      try{ if(window.__psBootStage)window.__psBootStage('a'+String(app||'').replace(/[^a-z]/gi,'').slice(0,8)); }catch(_){}   /* 3.070 — 강제 종료 위치 기록: 마지막으로 연 화면 */
+      try{ if(window.__psBootCrumb)window.__psBootCrumb('a'+String(app||'').replace(/[^a-z]/gi,'').slice(0,8)); }catch(_){}   /* 3.070 — 강제 종료 위치 기록: 마지막으로 연 화면 */
       /* 2.966 — 경기 준비 안 편집(ps-match-edit)은 그 문(psMatchEditEnter)으로 들어올 때만 산다. 다른 곳으로 가면 내려놓고 편집기에 알린다 */
       if(!window.__psMatchEditing&&document.body.classList.contains('ps-match-edit')){
         document.body.classList.remove('ps-match-edit','ps-me-wait');
