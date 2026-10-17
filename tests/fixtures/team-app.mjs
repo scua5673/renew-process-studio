@@ -93,7 +93,7 @@ export async function startFixture(opts={}){
     }else if(url.pathname.startsWith('/rest/v1/rpc/')){body=url.pathname.includes('report')?{}:[];}
     return {status:200,headers,body:JSON.stringify(body)};
   }
-  const server=http.createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;
+  const server=http.createServer(async(req,res)=>{let raw='';try{for await(const c of req)raw+=c;}catch(_){ /* 3.086 CI — 브라우저가 보내던 요청을 끊으면(페이지 닫기 · 이동 중 POST) 여기서 거부된 promise 가 서버 프로세스를 죽였다(invite-link-export ECONNRESET) */ try{res.destroy();}catch(__){} return; }
     try{const r=await api({url:base+req.url,method:req.method,headers:req.headers,body:raw?JSON.parse(raw):null});res.writeHead(r.status,r.headers);res.end(r.body);}catch(e){res.writeHead(500);res.end('{}');}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port;
   return {db,lib,writes,calls,get base(){return base;},setStep(s){step=s;},close:()=>new Promise(r=>server.close(r))};
