@@ -3023,11 +3023,26 @@ window.psFailAlert=function(lead,e,stage){
       }catch(_){}
     }); }catch(e){}
     var hb=document.getElementById('hintbar');if(hb)hb.textContent=hints.board;
+    /* 3.075 — 폰은 작전판을 보기만 하는데(«폰에서는 작전판을 보기만 해요» 창) 첫 화면이 작전판이었다(코치 점검 10/16).
+       폰은 로그인한 팀 공간이면 팀 운영 › 오늘, 그 밖(개인 공간 · 로그인 전)은 커뮤니티로 연다. 선수는 아래 선수 전용 블록이 IDP 로 보낸다.
+       작전판 iframe 은 그대로 뒤에서 뜬다 — 다른 화면이 작전판이 떠 있다고 기대한다(psBoardThen). */
+    function psPhoneStart(){
+      if(document.documentElement.getAttribute('data-ps-device')!=='phone')return false;
+      var team=false;
+      try{ var wid=localStorage.getItem('ps_active_ws')||'', list=JSON.parse(localStorage.getItem('ps_ws_list')||'[]');
+        team=!!localStorage.getItem('ps_sync_session')&&Array.isArray(list)&&list.some(function(w){ return w&&w.id===wid&&w.kind==='team'; }); }catch(_){}
+      setTimeout(function(){ try{
+        if(team){ var hub=document.querySelector('#appSeg button[data-team-hub]'); if(hub){ hub.click(); var td=document.querySelector('#teamBottom [data-tb="today"]'); if(td&&!td.classList.contains('on'))td.click(); return; } }
+        showApp('community');
+      }catch(_){} },0);
+      return true;
+    }
     /* ===== 시작 화면 — 앱을 열면 언제나 작전판이 먼저 (온보딩·역할 안내는 랜딩이 담당).
        랜딩의 "내 IDP 시작하기" 딥링크(?mode=player)만 그 방문에 한해 IDP로 이동. */
     (function(){ try{
       var q=null; try{ q=new URLSearchParams(location.search).get('mode'); }catch(_){}
       if(q==='player'){ showApp('idp'); }
+      else if(psPhoneStart())return;
       else pingApp('board');   /* 시작 화면(작전판)은 showApp을 거치지 않으므로 여기서 방문 핑 */
     }catch(_){} })();
     // ---- bridge relay between the apps ----

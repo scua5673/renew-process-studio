@@ -1,5 +1,5 @@
 'use strict';
-/* 3.075 — 코치 점검(10/16): 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어갔다 · «세션 채우기 →»가 시트까지 열지 않았다 · 상대팀 이름이 잘렸다 */
+/* 3.075 — 코치 점검(10/16): 폰 첫 화면이 보기만 하는 작전판이었다 · 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어갔다 · «세션 채우기 →»가 시트까지 열지 않았다 · 상대팀 이름이 잘렸다 */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const read=f=>fs.readFileSync(path.join(__dirname,'../studio',f),'utf8');
 const SC=read('scout.html'),P=read('process.html'),APP=read('app.html');
@@ -27,4 +27,14 @@ test('today «세션 채우기 →» opens that session\'s fill sheet once',()=>
 test('the opponent name takes its own line in the weekly match card',()=>{
   assert.ok(P.includes('.wks-kind.m .wks-krow:has(>.wks-opp){flex-wrap:wrap}'));
   assert.ok(P.includes('.wks-kind.m .wks-krow>.wks-opp{flex:1 0 100%;white-space:normal;overflow-wrap:anywhere}'));
+});
+
+test('phone opens on team today (team workspace) or community (otherwise); desktop keeps the board',()=>{
+  const m=/function psPhoneStart\(\)\{[\s\S]*?\n    \}\n/.exec(APP);assert.ok(m,'psPhoneStart');
+  const src=m[0];
+  assert.ok(src.includes("getAttribute('data-ps-device')!=='phone')return false"),'폰만');
+  assert.ok(/localStorage\.getItem\('ps_sync_session'\)&&Array\.isArray\(list\)&&list\.some\(function\(w\)\{ return w&&w\.id===wid&&w\.kind==='team'; \}\)/.test(src),'로그인한 팀 공간');
+  assert.ok(src.includes("#appSeg button[data-team-hub]")&&src.includes('#teamBottom [data-tb="today"]'),'팀 → 오늘');
+  assert.ok(src.includes("showApp('community')"),'그 밖 → 커뮤니티');
+  assert.ok(/if\(q==='player'\)\{ showApp\('idp'\); \}\n      else if\(psPhoneStart\(\)\)return;\n      else pingApp\('board'\);/.test(APP),'선수 딥링크가 먼저, 데스크톱은 작전판');
 });
