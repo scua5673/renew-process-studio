@@ -4,7 +4,7 @@ const src=fs.readFileSync(path.join(__dirname,'..','studio','board.html'),'utf8'
 
 test('3.010 the settings tabs are grouped under section titles, rows keep their nodes (3.036: four tabs, rows found by control id)',()=>{
   const plan=/var PLAN=\[([\s\S]*?)\];\n/.exec(src);assert.ok(plan,'one plan for the sections');
-  for(const s of ['["board","내 스타일",[presetRow]]','["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","grassSeg"]]','["pitch","선·구역",["lineSeg","zonePreset"]]',
+  for(const s of ['["board","내 스타일",[presetRow]]','["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","pitchPhotoRow","pitchPhotoHint","grassSeg"]]','["pitch","선·구역",["lineSeg","zonePreset"]]',
     '["pitch","범위·방향",["cmdPitchViewSeg","cmdPitchSideSeg","cmdOrientSeg","cmdPitchNSeg"]]','["look","칩",["shapeSeg","chip3dSeg","sizeGroup","labelSeg"]]','["look","이름표",["namePosSeg","nameSizeSeg","nameStyleSeg"]]','["look","분석",["analysisSeg"]]',
     '["view","보기",["tiltSeg",editorHint]]','["view","3D 경기장",["tiltCamSeg","tiltDecoSeg","tiltAdInput","tiltMoodSeg","tiltBrandSeg"],"ps-tilt-row"]','["view","편집",["dragSnapSeg",snapHint]]','["view","새 보드",[defaultRow,defaultHint],"bs-sec-newboard"]'])
     assert.ok(plan[1].includes(s),s);
