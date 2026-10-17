@@ -27,7 +27,7 @@ function check(g,editing){
   assert.deepEqual(g.collisions,[],'dock controls do not overlap');
   // 2.904 — «저장»(#boardManualSave)은 도크로 옮겨져도 훈련 편집기에선 숨는다(도크 버튼 규칙이 덮지 않게).
   if(editing){assert.equal(g.save.visible,false,'working-board save hidden in training editor');assert.equal(g.manual.visible,false,'board manual save hidden in training editor');assert.ok(g.editorSave.visible&&g.editorSave.centerOwned,'training save remains actionable');}
-  else assert.ok(g.save.visible&&g.save.centerOwned,'working-board save restored');
+  else assert.ok(g.manual.visible&&g.manual.centerOwned,'working-board save restored');   /* 3.077 — 저장 단추는 «저장»(#boardManualSave) 하나 · #vaultSave 는 숨는다 */
 }
 async function enter(page,frame){
   // Existing shell route; all create/editor interactions use original DOM handlers.
@@ -72,7 +72,8 @@ try{
     await frame.locator('#viewBtn').click();assert.ok(await frame.locator('#cmd-board-settings-pop').isVisible());await frame.locator('#cmd-board-settings-close').click();
     // Original library-save handler opens its normal save sheet. Cancel instead
     // of writing a board; training's own save below writes only fake local data.
-    await frame.locator('#vaultSave').click();await frame.locator('#pssName').waitFor({state:'visible'});await frame.locator('#pssCancel').click();
+    /* 3.077 — #vaultSave 단추는 숨는다(«저장» 하나). 보관함 저장 시트는 같은 처리기(window.__vaultSave)로 연다. */
+    await frame.evaluate(()=>window.__vaultSave());await frame.locator('#pssName').waitFor({state:'visible'});await frame.locator('#pssCancel').click();
     await enter(page,frame);await frame.locator('#epNameTop').fill('가상 훈련 도크 검증');await frame.locator('#editorDone').click();
     await frame.waitForFunction(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).some(d=>d.name==='가상 훈련 도크 검증'));
     await page.evaluate(()=>document.querySelector('#appSeg [data-app=board]').click());await settle(page);const saved=await inspect(frame);result.states.push({stage:'after-training-save',...saved});check(saved,false);
