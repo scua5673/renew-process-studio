@@ -20106,6 +20106,11 @@ function ckNextTask(c){
       if(c.diff<=1&&t2&&!t2.d) return line("m","MD-"+c.diff+" · 경기 준비 · 명단·브리핑","경기 준비 열기","setView('match');matchOpen('"+esc(c.m.id)+"')");
     }
   }catch(_){}
+  /* 3.080 — 선수 기록에 아직 답(♥ · 한 줄)이 없는 수. 사실만 조용히(q) 한 줄 — 1.857 «재촉하지 않는다»를 지켜 빨강·배지는 쓰지 않는다.
+     누르면 팀 IDP(«오늘 한 장»)로 간다. 경기 일(1~4)이 먼저고, 이것은 그 다음이다. */
+  try{ var jw=ckJournalWait(today);
+    if(jw&&jw.wait>0) return line("q",jw.label+" 선수 기록 "+jw.wrote+"명 · 아직 답 안 함 "+jw.wait+"명","IDP 열기","try{parent.document.querySelector('[data-app=\"idp\"][data-idp-squad]').click();}catch(_){}");
+  }catch(_){}
   /* 2.979 — quiet: 아래 둘(오늘 세션 · 다음 경기 D-n)은 세션 카드와 주간 머리 칩이 이미 말한다 */
   if(c.quiet)return "";
   /* 5) 오늘 세션 */
@@ -20113,6 +20118,25 @@ function ckNextTask(c){
   /* 6) 다음 경기까지 */
   if(c.m&&c.diff!=null&&c.diff>0) return line("q","다음 경기 D-"+c.diff+" · vs "+esc(c.m.opponent||"상대 미정"),"","");
   return "";
+}
+/* 3.080 — 오늘(없으면 어제) 하루 기록을 쓴 선수 수와, 그중 코치 답(♥ 또는 한 줄)이 아직 없는 수.
+   «쓴 기록»의 판정은 팀 IDP «오늘 한 장»(idp.html 2.397)과 같다: memo · body · sleepq · try 중 하나라도.
+   답은 cs_idp_pub_v1_<uid>.reacts['day:날짜'] 의 h 또는 t. 선수 계정에는 세지 않는다(남의 기록은 코칭스태프만). */
+function ckJournalWait(today){
+  try{ if(matchRole()==="player")return null; }catch(_){}
+  var ours=[]; try{ ours=tmOurs().filter(function(p){return p.manual===true||String(p.name||"").trim();}); }catch(_){ return null; }
+  var map=tcUidByPlayerId(); if(!Object.keys(map).length)return null;
+  function count(ymd){ var wrote=0, wait=0;
+    ours.forEach(function(p){ var uid=map[String(p.id)]; if(!uid)return;
+      var doc=null; try{ doc=JSON.parse(localStorage.getItem(IDP_PREFIX+uid)||"null"); }catch(_){}
+      var lg=doc&&doc.log&&doc.log[ymd]; if(!(lg&&(String(lg.memo||"").trim()||lg.body||lg.sleepq||lg.try!=null)))return;
+      wrote++;
+      var rc=null; try{ rc=((plsPub(uid)||{}).reacts||{})["day:"+ymd]||null; }catch(_){}
+      if(!(rc&&(rc.h||String(rc.t||"").trim())))wait++; });
+    return {wrote:wrote,wait:wait}; }
+  var y=new Date(today); y.setDate(y.getDate()-1);
+  var r=count(tcYmd(today)); if(r.wrote)return {label:"오늘",wrote:r.wrote,wait:r.wait};
+  r=count(tcYmd(y)); return r.wrote?{label:"어제",wrote:r.wrote,wait:r.wait}:null;
 }
 /* 2.979 — 그 날짜(YYYY-MM-DD)의 경기 기록. 없으면 null(부르는 쪽이 다음 경기로 물러난다) */
 function ckMatchOn(iso){ if(!iso)return null; try{ return ((matchLoad()||{}).matches||[]).filter(function(x){ return String(x.date||"")===String(iso); })[0]||null; }catch(_){ return null; } }

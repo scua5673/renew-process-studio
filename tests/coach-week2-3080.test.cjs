@@ -39,3 +39,23 @@ test('board: picking a formation places it at once, «배치» does not re-place
   assert.ok(B.includes('if(ourF&&rowOf("blue")._applied!==ourF)applyFormationTo("blue",ourF);'));
   assert.ok(B.includes('r._applied=""; });'),'reopening resets');
 });
+
+test('«다음 할 일» counts player journals still without a coach reply — facts only, quiet line',()=>{
+  const ls={},today=new Date(2026,9,17);
+  const set=(k,v)=>{ls[k]=JSON.stringify(v);};
+  set('cs_idp_v1_u1',{log:{'2026-10-17':{memo:'다리가 무거웠다'}}});
+  set('cs_idp_v1_u2',{log:{'2026-10-17':{sleepq:3}}});
+  set('cs_idp_v1_u3',{log:{'2026-10-16':{memo:'어제 것'}}});
+  set('cs_idp_pub_v1_u2',{reacts:{'day:2026-10-17':{h:1}}});
+  const c={localStorage:{getItem:k=>ls[k]==null?null:ls[k]},IDP_PREFIX:'cs_idp_v1_',
+    matchRole:()=>'executive',tmOurs:()=>[{id:'p1',name:'가'},{id:'p2',name:'나'},{id:'p3',name:'다'},{id:'p4',name:'라'}],
+    tcUidByPlayerId:()=>({p1:'u1',p2:'u2',p3:'u3'}),
+    plsPub:uid=>ls['cs_idp_pub_v1_'+uid]?JSON.parse(ls['cs_idp_pub_v1_'+uid]):null};
+  vm.runInNewContext(fn(S,'tcYmd')+fn(S,'ckJournalWait')+';this.f=ckJournalWait;',c);
+  assert.equal(JSON.stringify(c.f(today)),JSON.stringify({label:'오늘',wrote:2,wait:1}),'today: two wrote, one already ♥');
+  delete ls['cs_idp_v1_u1'];delete ls['cs_idp_v1_u2'];
+  assert.equal(JSON.stringify(c.f(today)),JSON.stringify({label:'어제',wrote:1,wait:1}),'nothing today → yesterday');
+  c.matchRole=()=>'player';assert.equal(c.f(today),null,'players never see others\' counts');
+  assert.ok(S.includes('return line("q",jw.label+" 선수 기록 "'),'quiet (q) line, no red badge');
+  const a=S.indexOf('var jw=ckJournalWait(today)'),b=S.indexOf('if(c.quiet)return "";',a);assert.ok(a>0&&b>a,'shown on the quiet home too, after match work');
+});
