@@ -4,9 +4,9 @@ import {startFixture,openApp,build} from '../fixtures/team-app.mjs';
 // 미리 띄우지 않은 탭도 누르면 열리고, 그 탭에 건네는 말(공용어의 «뒤로» 이름)은 뜬 뒤에 닿는다.
 // 3.034 — 폰·아이패드는 그중 최근 둘까지. 보이던 채 강제 종료된 뒤의 부팅은 셸 안전장치가 가볍게(미리 띄우기 없음 · 작전판 평면).
 // 3.059 — 아이패드는 미리 띄우지 않는다(오류 제보 10/16 «경기 준비 열기 → 문제가 반복적으로 발생»). 폰은 3.034 대로 최근 둘(시험 엔진은 webkit=아이패드).
+// 3.076 — 데스크톱도 팀 허브 · 일정 + 최근 둘(«앱이 무거워진다»). 학습은 미리 띄우지 않는다.
 // 3.036 — 가벼운 부팅마저 죽으면 안전 모드: 작전판을 미리 열지 않고 안내 판(«작전판 열기» · «평소대로 열기»), 서버에 boot_after_crash(멈춘 뒤 다시 연 기록).
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop',lean=size!=='desktop';
-const ALL=['fAnalysis','fBoard','fComm','fGameModel','fIdp','fLearning','fProcess','fScout','fScouting','fTerms'];
 const fx=await startFixture(),browsers={};
 try{
   const {page,logs,context}=await openApp(fx,size,{browsers});
@@ -16,7 +16,19 @@ try{
   assert.equal(await page.evaluate(()=>document.documentElement.getAttribute('data-ps-device')),lean?'ipad':'desktop');
   let now=await loaded();
   if(!lean){
-    assert.deepEqual(now,ALL,'데스크톱은 전부 미리 띄운다');
+    // 3.076 — 데스크톱도 전부가 아니라 팀 허브 · 일정 + 최근에 연 다른 탭 둘. 학습은 미리 띄우지 않는다.
+    assert.deepEqual(now,['fBoard','fProcess','fScout'],'3.076 — 처음 데스크톱: 작전판 · 팀 허브 · 일정만');
+    for(const app of ['learning','community','terms'])await page.evaluate(a=>window.__psShowApp(a),app);
+    await (await (await page.waitForSelector('#fTerms')).contentFrame()).waitForSelector('body');
+    await page.evaluate(()=>window.__psShowApp('board'));
+    assert.deepEqual(await page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('ps_warm_tabs_v1')||'{}')).sort()),['community','terms'],'연 탭을 적어 둔다(학습은 적지 않는다)');
+    await page.reload();
+    await settle();
+    assert.deepEqual(await loaded(),['fBoard','fComm','fProcess','fScout','fTerms'],'다음 부팅: 팀 허브 · 일정 + 쓰던 둘');
+    await page.evaluate(()=>{ const n=Date.now(),o={}; ['idp','community','scouting','terms','analysis','gamemodel'].forEach((k,i)=>{ o[k]=n-(i+2)*3600000; }); o.analysis=n-60000; o.learning=n; localStorage.setItem('ps_warm_tabs_v1',JSON.stringify(o)); });
+    await page.reload();
+    await settle();
+    assert.deepEqual(await loaded(),['fAnalysis','fBoard','fIdp','fProcess','fScout'],'여섯을 다 썼어도 다른 탭은 최근 둘');
   }else{
     assert.deepEqual(now,['fBoard'],'3.059 — 아이패드는 미리 띄우지 않는다: 작전판만(팀 허브·일정도 누를 때)');
     // 안 띄운 탭을 누르면 그때 읽는다

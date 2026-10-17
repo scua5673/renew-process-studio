@@ -1,10 +1,10 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.071';   // 3.071 폰 · 아이패드는 보관함 본문을 조금씩 받는다 — 큰 보관함에서 앱을 열면 강제 종료 반복
+const CACHE = 'process-3.084';   // 3.084 만들기 화면 한 틀 — 훈련 만들기(머리줄 · 떠 있는 탭 · 오른쪽 카드)
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
-  '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
+  '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js',
   '/studio/process.html',
   '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/review-training.css',
   '/studio/first-work.js', '/studio/first-work.css',
@@ -23,13 +23,6 @@ const CORE = [
   '/studio/eval-anchors.js',
   '/studio/archetypes.js',
   '/studio/req-baseline.js',
-  '/studio/learn-mikl.js',   /* 2.219 */
-  '/studio/learn-gamemodel.js',   /* 2.411 — 게임모델 만드는 법 */
-  '/studio/learn-futsal.js',   /* 2.659 — 풋살을 배우는 법 */
-  '/studio/learn-toc.js',    /* 2.323 — 학습 목차(두 화면이 같이 읽는다) */
-  '/studio/learn-toc.css',   /* 2.323 */
-  '/studio/learn-curriculum.js',
-  '/studio/learn-curriculum-pro.js',   /* 2.151 — 안 넣으면 오프라인에서 새 트랙만 사라진다 */
   '/studio/mobile-polish.css',
   '/studio/premium-ui.css',
   '/studio/design-v2.css',
@@ -41,17 +34,15 @@ const CORE = [
 // 기능별로 늦게 쓰이거나, 실패해도 기본 앱 실행은 가능한 파일.
 const OPTIONAL = [
   '/guide/quick.html', '/guide/index.html', '/guide/team.html', '/start/index.html', '/start/how.html', '/start/idp.html',
-  '/', '/index.html', '/manifest.json', '/admin', '/admin.html',
-  '/studio/admin-operations.js', '/studio/admin-operations.css',
-  '/studio/admin-support.js', '/studio/admin-support.css',
-  '/studio/admin-user-detail.js', '/studio/admin-user-detail.css',
-  '/studio/admin-content.js', '/studio/admin-content-data.js', '/studio/admin-content.css', '/studio/admin-density.css',
+  '/', '/index.html', '/manifest.json',
+  /* 3.076 — 관리자 화면(admin.html · admin-*, 약 0.4MB)은 미리 받지 않는다. 운영자만 쓰고, 열면 그때 받아 이 판 캐시에 담긴다(cacheFirst). */
   '/studio/', '/studio/index.html',
   '/studio/board.html',
   '/studio/gamemodel.html', '/studio/scout.html', '/studio/terms.html', '/studio/idp.html', '/studio/note.html', '/studio/scouting.html', '/studio/community.html', '/studio/analysis.html', '/studio/learning.html', '/studio/playbook.html',
   '/studio/balls.js', '/studio/pitches.js', '/studio/rpt-i18n.js',
   '/studio/vault-examples.js',   /* 3.001 — 빈 보관함 첫 화면의 예시. 없으면 첫 화면은 옛 모양 그대로 */
-  '/pptxgen.bundle.js',
+  '/studio/community-fifa.js', '/studio/community-fifa.css', '/studio/community-tax.js', '/studio/community-tax.css',   /* 3.071 — 커뮤니티 «FIFA» 칸. 없으면 그 칸만 «불러오지 못했어요» */
+  /* 3.076 — PPT 모듈(pptxgen 0.46MB)은 미리 받지 않는다. 내보낼 때 받고, 못 받으면 board · gamemodel 이 jsdelivr 로 다시 받는다. */
   /* 2.552 — 통짜 폰트(2,009KB)를 **미리 받지 않는다.** 여기 목록에 있으면 첫 방문에
      화면과 상관없이 2MB 를 끌어온다 — 코치는 운동장에서 셀룰러로 앱을 연다.
      ⚠ Pretendard 는 이제 92 조각 동적 서브셋이라 **화면이 실제로 쓰는 조각만** 내려온다.
@@ -59,7 +50,7 @@ const OPTIONAL = [
         받는 즉시 잡는다 — 오프라인은 그대로 되고, 안 쓰는 글자는 안 받는다.
      ⚠ Jost(라틴 26KB)는 남긴다 — 숫자·영문에 늘 쓰여 어차피 첫 화면에서 받는다. */
   '/vendor/fonts.css', '/vendor/tokens.css', '/vendor/Jost-latin.woff2', '/vendor/qrcode.js',
-  '/vendor/pdfjs/pdf.min.js', '/vendor/pdfjs/pdf.worker.min.js',
+  /* 3.076 — PDF 뷰어(pdfjs 1.4MB)는 미리 받지 않는다. 개인 노트에서 PDF 를 열 때 받고, 못 받으면 note.html 이 cdnjs 로 다시 받는다. */
   '/icon-192.png', '/icon-512.png', '/icon-512-maskable.png', '/favicon.png', '/apple-touch-icon.png',
   '/icon-mac-192.png', '/icon-mac-512.png', '/icon-mac-1024.png'
 ];

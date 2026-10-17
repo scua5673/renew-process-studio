@@ -65,7 +65,7 @@ test('match list: a row carries one «more» button; delete still goes through m
 
 test('match record: one line per kind, numbers keep their colours, a zero goes quiet',()=>{
   const m={};vm.runInNewContext(
-    'var MATCH_KIND_LABEL={official:"정식",friendly:"친선"};var out="";function $(id){return {set innerHTML(v){out=v;}};}'
+    'var MATCH_KIND_LABEL={official:"공식전",friendly:"친선"};var out="";function $(id){return {set innerHTML(v){out=v;}};}'
     +'var store={get:function(){return {};}};function matchDocPending(){return false;}'
     +'function matchKindOf(m){return m.kind==="friendly"?"friendly":"official";}'
     +between(scout,'function matchResultOf(m){','function matchStatusOf(m){')

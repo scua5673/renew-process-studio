@@ -473,6 +473,7 @@
   .fmtpick{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
   /* 2.482 — 세부 국면 줄(주제 아래 2단) */
   .wf-subph{margin-top:2px;color:var(--txt-dim,#646A73)}
+  .wf-rpe-key{font-size:var(--fs-caption);margin:-8px 0 12px}   /* 3.080 */
   .wf-subpick{margin:2px 0 10px}
   .wf-subpick .fp.sm{min-height:32px;padding:0 12px;font-size:13px}
   /* 2.486 — 세션 표(블록 스택) */
@@ -884,9 +885,11 @@
   .mpop .mp-kind button{flex:1;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 0;font-size:var(--fs-sub);font-weight:var(--fw-head);color:var(--text-2);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px}
   .mpop .mp-kind button .kd{width:8px;height:8px;border-radius:50%}
   .mpop .mp-kind button[data-mk="official"] .kd{background:var(--match,#C24A46)}
-  .mpop .mp-kind button[data-mk="friendly"] .kd{background:var(--warm,#B5762B)}
+  .mpop .mp-kind button[data-mk="friendly"] .kd{background:var(--fri)}
   .mpop .mp-kind button.on[data-mk="official"]{border-color:var(--match,#C24A46);background:var(--match-soft,#FBEBEA);color:var(--match,#C24A46)}
-  .mpop .mp-kind button.on[data-mk="friendly"]{border-color:var(--warm,#B5762B);background:var(--warm-soft,#FBF1E0);color:var(--warm,#B5762B)}
+  .mpop .mp-kind button.on[data-mk="friendly"]{border-color:var(--fri);background:var(--fri-soft);color:var(--fri)}
+  .mpop .mp-kind button[data-mk="cup"] .kd{background:var(--warm)}   /* 3.080 — 리그·컵·친선 셋(일정 시트와 같은 말) */
+  .mpop .mp-kind button.on[data-mk="cup"]{border-color:var(--warm);background:var(--warm-soft);color:var(--warm)}
   body.fmdark .mpop .mp-kind button{background:#23272D!important;color:#F2F3F5!important}
   /* 2.890 — 월간에서 바로: 훈련 시간대·경기 상대 팀(사용자 제보 «스케줄») */
   .mpop .mp-grps{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -1574,12 +1577,14 @@ function mxStripMid(d){ try{ (d&&Array.isArray(d.matchAdd)?d.matchAdd:[]).forEac
 /* 2.620 — 추가 경기를 읽기 전용 줄로(코치 "일정표에도 두 경기 다 나오게"). 주간 카드(wksCard)만 그렸고
    주간 보드(wkbd)·월간 칸·하루·허브·인쇄(주간보드 PDF·하루·월간)는 첫 경기만 보였다. day 를 바꾸지 않는다(mxList 는 빈 배열을 심는다). */
 function mxExtraList(day){ return (day&&Array.isArray(day.matchAdd))?day.matchAdd.filter(function(x){return x&&typeof x==='object';}):[]; }
-function mxExtraLabel(x){ var t=String((x&&x.time)||'').trim(), o=String((x&&x.opp)||'').trim()||'상대 미정', g=x&&x.grp; g=Array.isArray(g)?g.filter(Boolean).join(' · '):String(g||'').trim(); return {t:t,o:o,g:g,friendly:!!(x&&x.kind==='friendly')}; }
+function mxExtraLabel(x){ var t=String((x&&x.time)||'').trim(), o=String((x&&x.opp)||'').trim()||'상대 미정', g=x&&x.grp; g=Array.isArray(g)?g.filter(Boolean).join(' · '):String(g||'').trim(); var k=(x&&(x.kind==='friendly'||x.kind==='cup'))?x.kind:'official'; return {t:t,o:o,g:g,k:k,friendly:k==='friendly'}; }
+/* 3.080 — 경기 이름 하나로(코치 피드백 «주간은 경기, 월간은 리그, 목록은 정식»): 한 경기는 어디서나 리그·컵·친선 */
+function mKindLb(k){ return ({official:'리그',cup:'컵',friendly:'친선'})[k]||'리그'; }
 function mxExtraHtml(day,cls,di,mymd){
   var e=wkbdEsc;
   return mxExtraList(day).map(function(x,xi){ var L=mxExtraLabel(x);
     var pl=(mymd&&typeof wkbdMatchPlace==='function')?wkbdMatchPlace(mymd,x.opp||''):'';   /* 2.912 — 경기장 */
-    return '<div class="'+cls+(L.friendly?' friendly':'')+'">'+(L.friendly?'친선':'경기')+(L.t?' · '+e(L.t):'')+' · '+e(L.o)+(L.g?' <i>'+e(L.g)+'</i>':'')+(pl?' <i>'+e(pl)+'</i>':'')
+    return '<div class="'+cls+(L.friendly?' friendly':'')+'">'+mKindLb(L.k)+(L.t?' · '+e(L.t):'')+' · '+e(L.o)+(L.g?' <i>'+e(L.g)+'</i>':'')+(pl?' <i>'+e(pl)+'</i>':'')
       +((di!=null&&mymd)?' <button type="button" class="mx-go" onclick="event.stopPropagation();wkbdGoMatchX(\''+e(mymd)+'\','+di+','+xi+')">'+e(wkbdMatchDoor(mymd,x.opp||'').short)+'</button>':'')+'</div>'; }).join('');
 }
 /* ══ 2.449 · 첫 경기에도 × 와 조 ═════════════════════════════════════════════════
@@ -2260,7 +2265,7 @@ window.wksPickSes=function(di,slot,kind){
   var cur=(kind==='time')?(tr.time||''):String((tr.load&&tr.load.rpe)||'');
   var title=(kind==='time')?'시간':'강도';
   var opts=(kind==='time')?['06:00','09:00','10:30','16:00','19:30'].map(function(x){return {v:x,name:x};})
-          :['2','3','4','5','6','7','8','9'].map(function(x){return {v:x,name:'RPE '+x};});
+          :['1','2','3','4','5','6','7','8','9','10'].map(function(x){return {v:x,name:'RPE '+x};});   /* 3.080 — 1~10 모두 */
   var btns=opts.map(function(o){
     if(!o||!o.v)return '';
     return '<button class="fp'+(String(cur)===String(o.v)?' on':'')+'" onclick="wksSetSes(\''+wkbdEsc(String(o.v)).replace(/'/g,'&#39;')+'\')">'
@@ -2270,6 +2275,7 @@ window.wksPickSes=function(di,slot,kind){
   sheet.innerHTML='<button class="closex" onclick="closeSheet()">×</button>'
     +'<h3>'+wkbdEsc(day.d)+'요일 '+wkbdEsc(slot||'')+' — '+title+'</h3>'
     +'<div class="pksub">자주 쓰는 항목</div><div class="fmtpick">'+btns+clr+'</div>'
+    +(kind==='time'?'':'<div class="wf-subph wf-rpe-key">선수가 느끼는 힘듦(RPE) · 1~3 회복 · 4~5 저강도 · 6~7 중강도 · 8~9 고강도 · 10 최대</div>')
     +'<div class="pksub">또는 직접 입력</div>'
     +'<div class="freerow"><input id="sesFree" type="text" maxlength="40" value="'+wkbdEsc(cur)+'" '
       +'placeholder="'+(kind==='time'?'예: 07:30':'1~10')+'" '
@@ -3264,6 +3270,8 @@ function setWkMode(m){
   try{ localStorage.setItem('cs_wkmode',wkMode); }catch(_){}
   renderWeek();
 }
+/* 3.080 — RPE 숫자의 뜻(wkbdFitness 의 띠와 같은 경계: ≤3 회복 · ≤5 저 · ≤7 중 · 그 위 고, 10 은 최대) */
+function rpeWord(n){ n=+n||0; return n<=0?'':n<=3?'회복':n<=5?'저강도':n<=7?'중강도':n<=9?'고강도':'최대'; }
 function wkbdEsc(s){ return (''+(s==null?'':s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 // 피트니스 성격 — rpe에서 파생 (읽기 전용). MD-1은 활성화.
 function wkbdFitness(day){
@@ -4016,8 +4024,8 @@ function renderWeekBoard(el){
       var _mTime=(day.match&&day.match.time)||'';
       /* 1.730 — 셀 배경 클릭도 경기일(일정 유형) 모달을 연다 + 크레스트('성' 이니셜/로고 원) 제거(사용자 요청).
          내부 컨트롤(경기일 ▾·상대팀 편집·＋로고·경기 준비)은 그대로. 로고는 ＋로고로 올리면 PDF 주간보드에 반영. */
-      h+='<div class="wkbd-merge wkbd-match'+(_mk==='friendly'?' friendly':'')+'" style="grid-column:'+col+';grid-row:2/'+(lastRow+1)+';cursor:pointer" title="눌러서 일정 유형 변경(정식·친선·휴식)" onclick="if(!event.target.closest(\'button,label,[contenteditable]\'))wkbdPick('+di+',\'sched\')">'
-        +'<button class="wkbd-mlabel" onclick="wkbdPick('+di+',\'sched\')">'+(_mk==='friendly'?'친선경기 ▾':'경기일 ▾')+'</button>'
+      h+='<div class="wkbd-merge wkbd-match'+(_mk==='friendly'?' friendly':'')+'" style="grid-column:'+col+';grid-row:2/'+(lastRow+1)+';cursor:pointer" title="눌러서 일정 유형 변경(리그·컵·친선·휴식)" onclick="if(!event.target.closest(\'button,label,[contenteditable]\'))wkbdPick('+di+',\'sched\')">'
+        +'<button class="wkbd-mlabel" onclick="wkbdPick('+di+',\'sched\')">'+(mKindLb(_mk)+' ▾')+'</button>'
         +'<div class="wkbd-tx wkbd-opp" contenteditable="true" data-di="'+di+'" data-f="opp" data-ph="상대팀" onblur="wkbdSave(this)">'+wkbdEsc(opp)+'</div>'
         +(_mTime?'<div class="wkbd-mko">'+wkbdEsc(_mTime)+'</div>':'')
         +(function(){ var pl=wkbdMatchPlace(mymd,opp); return pl?'<div class="wkbd-mko wkbd-venue">'+wkbdEsc(pl)+'</div>':''; })()   /* 2.912 */
@@ -4057,7 +4065,7 @@ function renderWeekBoard(el){
       var oppC=(dayC.match&&dayC.match.opp)||bC.opp||''; var mkC=mMatchKind(dayC); var mTimeC=(dayC.match&&dayC.match.time)||'';
       var mymdC=dtC.getFullYear()+'-'+String(dtC.getMonth()+1).padStart(2,'0')+'-'+String(dtC.getDate()).padStart(2,'0');
       body='<div class="wkday-match'+(mkC==='friendly'?' friendly':'')+'" onclick="if(event.target===this)wkbdPick('+ci+',\'sched\')">'
-        +'<button class="wkbd-mlabel" onclick="event.stopPropagation();wkbdPick('+ci+',\'sched\')">'+(mkC==='friendly'?'친선경기 ▾':'경기일 ▾')+'</button>'
+        +'<button class="wkbd-mlabel" onclick="event.stopPropagation();wkbdPick('+ci+',\'sched\')">'+(mKindLb(mkC)+' ▾')+'</button>'
         +'<div class="wkbd-tx wkbd-opp" contenteditable="true" data-di="'+ci+'" data-f="opp" data-ph="상대팀" onblur="wkbdSave(this)">'+wkbdEsc(oppC)+'</div>'
         +(mTimeC?'<div class="wkbd-mko">'+wkbdEsc(mTimeC)+'</div>':'')
         +(function(){ var pl=wkbdMatchPlace(mymdC,oppC); return pl?'<div class="wkbd-mko wkbd-venue">'+wkbdEsc(pl)+'</div>':''; })()   /* 2.912 */
@@ -4445,10 +4453,12 @@ function wksFillRender(keep,focus){
     +'</div>';
 
   /* ② 강도 */
-  h+='<div class="wf-sec" id="wfSec-rpe"><div class="pksub sm">강도'+(rpe?(' <span class="cnt">RPE '+rpe+'</span>'):'')+'</div>'
-    +'<div class="fmtpick">'+[2,3,4,5,6,7,8,9].map(function(n){
+  /* 3.080 — 강도 1~10 모두(코치 피드백 «2~9 만 있고 뜻이 없다»). 고른 값 옆에 말로 된 뜻, 아래에 눈금 뜻 한 줄. */
+  h+='<div class="wf-sec" id="wfSec-rpe"><div class="pksub sm">강도'+(rpe?(' <span class="cnt">RPE '+rpe+' · '+rpeWord(rpe)+'</span>'):'')+'</div>'
+    +'<div class="fmtpick wf-rpe">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){
         return '<button class="fp'+(rpe===n?' on':'')+'" onclick="wksFillRpe('+n+')">'+n+'</button>';
-      }).join('')+(rpe?'<button class="fp" onclick="wksFillRpe(0)">지우기</button>':'')+'</div></div>';
+      }).join('')+(rpe?'<button class="fp" onclick="wksFillRpe(0)">지우기</button>':'')+'</div>'
+    +'<div class="wf-subph wf-rpe-key">선수가 느끼는 힘듦(RPE) · 1~3 회복 · 4~5 저강도 · 6~7 중강도 · 8~9 고강도 · 10 최대</div></div>';
 
   /* ══ 2.908 · 훈련 장소(요청 «일정에 훈련장소 추가») ═══════════════════════════════════
      세션마다 한 칸(`tr.place`). 저장은 칸을 벗어날 때(change) — 다시 그리지 않아 한글 조합이 끊기지 않는다(2.316).
@@ -5077,7 +5087,7 @@ function renderWeekSessions(el){
         +'</div>')
         /* 첫 경기가 다른 조 것이면 종류 바꾸기 문도 숨긴다 — 안 보이는 경기를 지우는 길이 되면 안 된다 */
         +(!mxFirstVis?'':'<div class="wks-krow">'
-          +'<button type="button" class="wks-kbtn" onclick="wkbdPick('+di+',\'sched\')">경기 ▾</button>'
+          +'<button type="button" class="wks-kbtn" onclick="wkbdPick('+di+',\'sched\')">'+mKindLb(mMatchKind(day))+' ▾</button>'
         +'</div>')
         +(!mxFirstVis?'':'<div class="wks-krow">'
           +'<div class="wkbd-tx wks-opp" contenteditable="true" data-di="'+di+'" data-f="opp" data-ph="상대팀" title="'+wkbdEsc(opp||'상대팀')+'" onblur="wkbdSave(this)">'+wkbdEsc(opp)+'</div>'
@@ -5785,8 +5795,8 @@ function renderDayHub(focusMeet){
   const esc=wkbdEsc;
   let list='';
   if(day.off) list+=`<div class="hub-item"><span class="ht" style="cursor:default">OFF</span><button class="hub-x" onclick="hubClearOff()">해제</button></div>`;
-  if(day.match) list+=`<div class="hub-item match"><span class="ht" onclick="hubEditMatch()"><span class="cdot" style="background:var(--match)"></span>경기 · ${esc(day.match.opp||'상대 미정')} <span class="sub">${esc(day.match.time||'')}</span></span><button class="hub-x" onclick="hubEditMatch()">편집</button><button class="hub-x" onclick="hubDelMatch()">삭제</button></div>`;
-  list+=mxExtraList(day).map(function(x){ var L=mxExtraLabel(x); return '<div class="hub-item match"><span class="ht" style="cursor:default"><span class="cdot" style="background:var(--match)"></span>경기 · '+esc(L.o)+' <span class="sub">'+esc(L.t)+'</span></span></div>'; }).join('');   /* 2.620 — 추가 경기는 주간 카드에서 편집한다 */
+  if(day.match) list+=`<div class="hub-item match"><span class="ht" onclick="hubEditMatch()"><span class="cdot" style="background:var(--match)"></span>${mKindLb(mMatchKind(day))} · ${esc(day.match.opp||'상대 미정')} <span class="sub">${esc(day.match.time||'')}</span></span><button class="hub-x" onclick="hubEditMatch()">편집</button><button class="hub-x" onclick="hubDelMatch()">삭제</button></div>`;
+  list+=mxExtraList(day).map(function(x){ var L=mxExtraLabel(x); return '<div class="hub-item match"><span class="ht" style="cursor:default"><span class="cdot" style="background:var(--match)"></span>'+mKindLb(L.k)+' · '+esc(L.o)+' <span class="sub">'+esc(L.t)+'</span></span></div>'; }).join('');   /* 2.620 — 추가 경기는 주간 카드에서 편집한다 */
   (day.trainings||[]).forEach((tr,ti)=>{
     const c=tr.aims?distColorAx(tr.aims):'hsl(215 10% 74%)'; const min=trMinutes(tr);
     if(__hub.editTr===ti){
@@ -6629,7 +6639,7 @@ function monthCellInfo(day){
   if(dayIsMatch(day)){
     var _opp=(((day.match&&day.match.opp)||(b&&b.opp)||'')+'').trim();
     var _k=mMatchKind(day);
-    var _pre=(_k==='friendly')?'친선 ':'';
+    var _pre=mKindLb(_k)+' ';   /* 3.080 — 리그·컵·친선 */
     return {md:(day.md||'MD'), txt:_opp?(_pre+'vs '+_opp):(_pre+((b&&b.theme)?('경기 · '+b.theme):'경기')), match:true, kind:_k};
   }
   if(day.off || (b&&b.sched==='OFF')) return {md:(day.md||''), txt:'OFF', match:false};
@@ -6804,7 +6814,7 @@ function monthQuickAdd(r,col,kind,detail,matchKind){
     return;
   }
   if(kind==='meet'){ b.meet=title||'미팅'; day.meeting=b.meet; try{save();}catch(_){} syncViews(); _mpReopen(r,col); return; }
-  if(kind==='match'){ setSched(r,col,'경기'); if(!day.match) day.match={time:'',opp:''}; day.match.kind=(matchKind==='friendly')?'friendly':'official'; if(title) day.match.opp=title; try{save();}catch(_){} _mpReopen(r,col); return; }
+  if(kind==='match'){ setSched(r,col,'경기'); if(!day.match) day.match={time:'',opp:''}; day.match.kind=(matchKind==='friendly'||matchKind==='cup'||matchKind==='official')?matchKind:mMatchKind(day);   /* 3.080 — 컵을 지우지 않는다 */ if(title) day.match.opp=title; try{save();}catch(_){} _mpReopen(r,col); return; }
   setSched(r,col,'훈련');
   if(title){ if(!b.trains)b.trains=[]; b.trains.push(title); if(!b.trainThemes)b.trainThemes=[]; b.trainThemes.push(''); try{save();}catch(_){} syncViews(); }
   if(detail){ closeMonthPop(); focusScheduleDate(r,col,{syncMonth:false}); try{renderWeek();}catch(_){} var el=document.querySelector('#vtoggle div[data-v=\"week\"]'); if(el) el.click(); return; }
@@ -6904,7 +6914,7 @@ function openMonthPop(r,col,cellEl){
     +(mGrpAll.length>1?'<div class="mp-grps"'+(initialKind==='tr'?'':' style="display:none"')+'><span class="mp-grps-l">조</span>'+mGrpAll.map(function(g){var on=mGrps.indexOf(g)>=0;return '<button type="button" class="'+(on?'on':'')+'" data-grp="'+_mpEsc(g)+'" aria-pressed="'+on+'"'+(mRo?' disabled':'')+'>'+_mpEsc(g)+'</button>';}).join('')+'</div>':'')
     +'<div class="mp-slots"'+(initialKind==='tr'?'':' style="display:none"')+'>'+TOD.map(function(sl){return '<button type="button" class="'+(mSlotOn[sl]?'on':'')+'" data-slot="'+sl+'" aria-pressed="'+(mSlotOn[sl]?'true':'false')+'"'+(mRo?' disabled':'')+'>'+sl+'</button>';}).join('')+'</div>'
     +'<input class="mp-opp" type="text" maxlength="30" placeholder="상대 팀 (예: ○○FC)" value="'+_mpEsc((day.match&&day.match.opp)||__b.opp||'')+'"'+(mRo?' readonly':'')+(initialKind==='match'?'':' style="display:none"')+'>'
-    +'<div class="mp-kind"'+(initialKind==='match'?'':' style="display:none"')+'><button class="'+(initMatchKind==='official'?'on':'')+'" data-mk="official"><span class="kd"></span>정식경기</button><button class="'+(initMatchKind==='friendly'?'on':'')+'" data-mk="friendly"><span class="kd"></span>친선경기</button></div>'
+    +'<div class="mp-kind"'+(initialKind==='match'?'':' style="display:none"')+'><button class="'+(initMatchKind==='official'?'on':'')+'" data-mk="official"><span class="kd"></span>리그</button><button class="'+(initMatchKind==='cup'?'on':'')+'" data-mk="cup"><span class="kd"></span>컵</button><button class="'+(initMatchKind==='friendly'?'on':'')+'" data-mk="friendly"><span class="kd"></span>친선</button></div>'
     +'<button class="mp-week" onclick="closeMonthPop();monthGoEdit('+r+','+col+')">주간에서 열기 →</button>'
     /* 2.393 — 지우기는 **맨 아래·조용한 글자**로. 자주 쓰는 것이 아니고 되돌릴 수 없으니 눈에 먼저 들어오면 안 된다 */
     +'<button class="mp-clear" data-k="clear">이 날 일정 지우기</button>';
@@ -7049,7 +7059,7 @@ function renderYearActivitySummary(stats){
         +'<span class="missing"><i></i>미입력 <b>'+stats.unratedTrainingDays+'</b></span>'
       +'</div></div>'
    +'<div class="year-activity-stat rest"><dt>휴식일</dt><dd>'+stats.restDays+'<span>일</span></dd><small>OFF 등록</small></div>'
-   +'<div class="year-activity-stat match"><dt>정식경기</dt><dd>'+stats.matchesOfficial+'<span>회</span></dd><small>공식전</small></div>'
+   +'<div class="year-activity-stat match"><dt>공식전</dt><dd>'+stats.matchesOfficial+'<span>회</span></dd><small>리그·컵</small></div>'
    +'<div class="year-activity-stat friendly"><dt>친선경기</dt><dd>'+stats.matchesFriendly+'<span>회</span></dd><small>친선·연습</small></div>';
 }
 function renderYear(){
@@ -7318,7 +7328,7 @@ function buildMonthGrid(g){
       body=`<div class="mtxt mmatch"><b class="mkind k-${info.kind}">${_kl}</b>`
         +(_opp?`<span class="mopp">${wkbdEsc(_opp)}</span>`:'')+`</div>`
         /* 2.620 — 추가 경기도 같은 알약으로 한 줄씩(코치 "일정표에도 두 경기 다 나오게") */
-        +mxExtraList(day).map(x=>{const L=mxExtraLabel(x);const k=L.friendly?'friendly':'official';return `<div class="mtxt mmatch mx"><b class="mkind k-${k}">${M_KIND_LB[k]||'리그'}</b><span class="mopp">${wkbdEsc(L.o)}</span></div>`;}).join('');
+        +mxExtraList(day).map(x=>{const L=mxExtraLabel(x);const k=L.k;return `<div class="mtxt mmatch mx"><b class="mkind k-${k}">${M_KIND_LB[k]||'리그'}</b><span class="mopp">${wkbdEsc(L.o)}</span></div>`;}).join('');
     }
     /* 2.327 — 훈련·OFF 도 **경기와 같은 알약**으로(사용자). 모양이 셋 다 같아야 한 칸씩 훑을 때 눈이 안 튄다.
        ⚠ 대신 **채도로 위계를 남긴다** — 모양까지 같고 색까지 같으면 무엇이 중요한지 사라진다:
@@ -7356,7 +7366,7 @@ function renderMonthSummary(){
   el.innerHTML=
      '<span class="msum-training"><span class="msum-c t">훈련 <b>'+stats.trainingDays+'일</b></span>'
        +'<span class="msum-intensity" aria-label="훈련 강도 분포">저 <b>'+stats.lowIntensityDays+'</b> · 중 <b>'+stats.midIntensityDays+'</b> · 고 <b>'+stats.highIntensityDays+'</b> · 미입력 <b>'+stats.unratedTrainingDays+'</b></span></span>'
-    +'<span class="msum-c g">정식 <b>'+stats.matchesOfficial+'</b></span>'
+    +'<span class="msum-c g">공식전 <b>'+stats.matchesOfficial+'</b></span>'
     +'<span class="msum-c f">친선 <b>'+stats.matchesFriendly+'</b></span>'
     +'<span class="msum-c r">휴식 <b>'+stats.restDays+'일</b></span>';
 }
@@ -7781,9 +7791,9 @@ function weekBoardDocHTML(){
       let kind=''; try{ kind=M_KIND_LB[mMatchKind(day)]||''; }catch(_){}
       const lg=__psImgSrc((day.match&&day.match.logo)||'');
       let pl=''; try{ pl=wkbdMatchPlace(d.dt.getFullYear()+'-'+String(d.dt.getMonth()+1).padStart(2,'0')+'-'+String(d.dt.getDate()).padStart(2,'0'),opp); }catch(_){}   /* 2.912 — 경기장·홈/원정(경기 문서) */
-      h+=`<div class="pwb-match${d.ses.length?'':' grow'}"><small>경기${kind?' · '+esc(kind):''}</small>${lg?`<img src="${lg}">`:''}<b>${opp?'vs '+esc(opp):'상대 미정'}</b>${tm?`<span>${esc(tm)}</span>`:''}${pl?`<em>${esc(pl)}</em>`:''}</div>`;
+      h+=`<div class="pwb-match${d.ses.length?'':' grow'}"><small>${esc(kind||'경기')}</small>${lg?`<img src="${lg}">`:''}<b>${opp?'vs '+esc(opp):'상대 미정'}</b>${tm?`<span>${esc(tm)}</span>`:''}${pl?`<em>${esc(pl)}</em>`:''}</div>`;
       mxExtraList(day).forEach(x=>{ const L=mxExtraLabel(x);   /* 2.620 — 하루 두 경기 */
-        h+=`<div class="pwb-match x"><small>${L.friendly?'친선':'경기'}${L.t?' · '+esc(L.t):''}${L.g?' · '+esc(L.g):''}</small><b>vs ${esc(L.o)}</b></div>`; });
+        h+=`<div class="pwb-match x"><small>${mKindLb(L.k)}${L.t?' · '+esc(L.t):''}${L.g?' · '+esc(L.g):''}</small><b>vs ${esc(L.o)}</b></div>`; });
     } else if(d.isOff){
       h+=`<div class="pwb-off"><b>OFF</b><span>휴식</span></div>`;
     }
@@ -7901,9 +7911,9 @@ function monthDocHTML(){
         const opp=String((day.match&&day.match.opp)||(day.board&&day.board.opp)||'').trim();
         let kind=''; try{ kind=M_KIND_LB[mMatchKind(day)]||''; }catch(_){}
         const tm=String((day.match&&day.match.time)||'').trim();
-        body=`<div style="font-size:11px;color:#B4423C;font-weight:800;line-height:1.35;overflow-wrap:anywhere">경기${opp?' vs '+E(opp):''}</div>`
+        body=`<div style="font-size:11px;color:#B4423C;font-weight:800;line-height:1.35;overflow-wrap:anywhere">${mKindLb(mMatchKind(day))}${opp?' vs '+E(opp):''}</div>`
             +((tm||kind)?`<div style="font-size:10px;color:#8A4B47;font-weight:600;margin-top:1px">${E([tm,kind].filter(Boolean).join(' · '))}</div>`:'')
-            +mxExtraList(day).map(x=>{const L=mxExtraLabel(x);return `<div style="font-size:10px;color:#B4423C;font-weight:700;margin-top:3px;padding-top:2px;border-top:1px dashed #E3B7B4;line-height:1.3">경기${L.t?' · '+E(L.t):''} · ${E(L.o)}</div>`;}).join('');   /* 2.620 */
+            +mxExtraList(day).map(x=>{const L=mxExtraLabel(x);return `<div style="font-size:10px;color:#B4423C;font-weight:700;margin-top:3px;padding-top:2px;border-top:1px dashed #E3B7B4;line-height:1.3">${mKindLb(L.k)}${L.t?' · '+E(L.t):''} · ${E(L.o)}</div>`;}).join('');   /* 2.620 */
         if(!out){ tot.match+=1+mxExtraList(day).length; }
       } else if(ts.length){
         const compact=ts.length>=3;
@@ -8988,6 +8998,10 @@ try{
 .wks-mxadd{width:100%;min-height:30px;border:1px dashed var(--line);background:transparent;border-radius:9px;
   font:800 11px var(--f,inherit);color:var(--text-3);cursor:pointer}
 .wks-kind.m .wks-opp{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 3.077 — 상대팀 이름은 제 줄 하나를 다 쓰고 «상대 분석 →»는 그 아래로(코치 점검 10/16: 148px 열에서 «가상 …»으로 잘렸다 — 경기 날 가장 중요한 글자).
+   줄 수는 폭과 무관하게 늘 같다(2.137) */
+.wks-kind.m .wks-krow:has(>.wks-opp){flex-wrap:wrap}
+.wks-kind.m .wks-krow>.wks-opp{flex:1 0 100%;white-space:normal;overflow-wrap:anywhere}
 .wks-kind.m .wks-opp:focus{text-overflow:clip}   /* 적는 동안은 잘리지 않게 */
 .wks-kind.m .wks-go{flex:0 0 auto}
 .wks-kind.off{background:var(--surface-2)}
@@ -9504,7 +9518,9 @@ body.fmdark{ --ps-sh1:0 1px 2px rgba(0,0,0,.45); --ps-sh-hero:0 18px 38px -16px 
        주간 토글의 onclick 은 오늘로 맞추므로 먼저 부르고, 그 뒤 목표 날짜로 옮긴다(offsetOfDate·focusScheduleDate 는 다른 script 블록의 전역 함수). */
     if(d.type==='gotoDate'&&d.date){ try{ var _dt=new Date(String(d.date)+'T00:00:00'); if(!isNaN(_dt.getTime())){
         var _wt=document.querySelector('#vtoggle div[data-v="week"]'); if(_wt&&!_wt.classList.contains('on')&&_wt.onclick)_wt.onclick();
-        var _n=offsetOfDate(_dt); focusScheduleDate(Math.floor(_n/7),((_n%7)+7)%7); renderWeek(); try{renderDay();}catch(_){} } }catch(_){} return; }
+        var _n=offsetOfDate(_dt), _col=((_n%7)+7)%7; focusScheduleDate(Math.floor(_n/7),_col); renderWeek(); try{renderDay();}catch(_){}
+        /* 3.077 — 콕핏 «세션 채우기 →»: 그 날 세션의 채우기 시트를 훈련 칸으로 연다. 셸이 같은 소식을 두 번 보내므로 at 으로 한 번만 */
+        if(d.fill&&d.fill.at&&d.fill.at!==window.__gotoFillAt){ window.__gotoFillAt=d.fill.at; try{ wksFill(_col,String(d.fill.slot||''),'train'); }catch(_){} } } }catch(_){} return; }
     if(d.type==='boardCancel'){window.__boardCapTarget=null;window.__boardCapLink=null;return;}
     /* 2.950 — 작전판이 보관함 쓰기를 끝내고 새 항목 번호를 알렸다(boardSaved ← board captureSaved) → 방금 그린 훈련 줄을 그 항목과 잇는다.
        같은 줄인지 확인(같은 하루 보드·같은 이름·2분 안)하고, 아니면 잇지 않는다(보관함 항목은 그대로 남는다). */

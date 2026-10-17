@@ -95,10 +95,10 @@ try{
   // 3) 엘미하 칸의 카드 → 뷰어: «커뮤니티 작전판», 페이지 고르기 줄, 페이지마다 그 판과 그 장면
   await c.waitForFunction(()=>document.querySelectorAll('#grid .card').length===1,null,{timeout:15000});
   if(await c.evaluate(()=>getComputedStyle(document.getElementById('commPreview')).display!=='none')){
-    await c.click('#grid .card');
+    await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
     await c.waitForFunction(()=>/작전판페이지 3개/.test((document.querySelector('#commPreview .cp-summary')||{}).textContent||''));
     await c.click('#cpOpen');
-  }else await c.click('#grid .card');
+  }else await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   const viewer=async()=>{ const v=await (await c.waitForSelector('#cvFrame')).contentFrame();
     await v.waitForFunction(()=>!!document.getElementById('commCopyBtn')&&!document.documentElement.classList.contains('comm-boot'));
@@ -164,8 +164,8 @@ try{
   assert.deepEqual([mt.type,mt.slides.map(x=>[x.title,x.points.join('/'),x.thumb,(x.frames||[]).length]),mt.snap.players[0].num],['meeting',[['빌드업 원칙','넓게 선다/3인 연계','',0],['','','',3]],'5']);
   for(const bad of ['김가상','QUFB'])assert.equal(mjson.includes(bad),false,'올라간 미팅 자료에 «'+bad+'» 가 없다');
   await c.waitForFunction(()=>document.querySelectorAll('#grid .card').length===1&&/가상 미팅/.test(document.querySelector('#grid .card').textContent),null,{timeout:15000});
-  if(await c.evaluate(()=>getComputedStyle(document.getElementById('commPreview')).display!=='none')){ await c.click('#grid .card'); await c.click('#cpOpen'); }
-  else await c.click('#grid .card');
+  if(await c.evaluate(()=>getComputedStyle(document.getElementById('commPreview')).display!=='none')){ await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn'); await c.click('#cpOpen'); }
+  else await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   v=await viewer();L=await look(v);
   assert.deepEqual([L.tabs.label,L.tabs.btn,L.title,L.nums,L.play],['이 미팅 자료의 슬라이드',['1빌드업 원칙*','2슬라이드 2장면 3'],'커뮤니티 미팅 자료','5',false]);
@@ -176,6 +176,22 @@ try{
   assert.deepEqual([L.nums,L.frames,L.play],['6',3,true],'둘째 슬라이드의 판과 장면');
   await page.waitForTimeout(500);await shot('4-viewer-meeting');
   await c.click('#cvClose');
+
+  // 7) 3.076 — 코치 자료 칸의 올리기: 커뮤니티 고르개와 같은 주제 · 연령, 고른 훈련의 성격 · 판 위 선수 수로 미리 채움
+  await c.click('#prTabCoach');
+  const third=posted.id;
+  await c.evaluate(()=>window.postMessage({type:'openUpload',libId:'Vtrain3038'},'*'));
+  await c.waitForSelector('#upGo');
+  await c.waitForFunction(()=>!!document.querySelector('#upPick .pk.on[data-lib="Vtrain3038"]'));
+  const uf=await c.evaluate(()=>({topics:[...document.querySelectorAll('#upCats button')].map(b=>b.textContent+(b.classList.contains('on')?'*':'')),
+    ages:[...document.querySelectorAll('#upAges button')].map(b=>b.textContent),pl:document.getElementById('upPlayers').value}));
+  assert.deepEqual(uf,{topics:['공격','수비 전환','공격 전환','수비','세트피스','개인 기술*','골키퍼','피지컬·웜업'],ages:['U8','U10','U12','U15','U18','성인'],pl:'1'},'훈련 성격 «기술·개인» → 주제 «개인 기술» · 판 위 1명');
+  await c.click('#upAges button:nth-child(3)');
+  await c.click('#upGo');
+  for(let i=0;i<100&&posted.id===third;i++)await page.waitForTimeout(100);
+  assert.deepEqual([posted.cat,posted.age,posted.players,posted.item.ages,posted.item.focus],['tech','U12','1',['U12'],'tech'],'올린 글의 주제는 작전판 키 · 연령은 보관함에도 실려 간다');
+  await shot('5-upload-coach');
+
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log(JSON.stringify({engine,size,passed:true,pages:it.pages.length,bigBytes}));
