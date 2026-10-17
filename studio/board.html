@@ -1312,10 +1312,7 @@
   #commPlayControls button.primary{background:var(--blue,var(--ps-navy,#14213D));}
   #commPlayControls button[hidden]{display:none!important}
   #commPlayControls:active{transform:translateX(-50%) scale(.98);}
-  /* 3.067 — 커뮤니티 뷰어 «3D» 단추(사용자 «엘미하가 올린거 핸드폰에서 3d로») — 판 오른쪽 위. 재생 단추(아래 가운데)와 겹치지 않는다 */
-  #commTiltBtn{position:absolute;top:10px;right:max(10px,env(safe-area-inset-right));z-index:6;min-width:52px;height:36px;padding:0 12px;border:0;border-radius:18px;
-    background:rgba(10,16,28,.62);color:#fff;font-family:inherit;font-weight:var(--fw-head);font-size:var(--fs-body);cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.28);}
-  #commTiltBtn.on{background:var(--blue,var(--ps-navy,#14213D));}
+  /* 3.067 «3D» 단추 → 3.087 «보기» 고르개 #commLook(판 오른쪽 위) — 모양은 board-comm-look.js */
   @media (min-width:760px){#editorPanel{flex:0 0 332px;border-top:0;border-left:1px solid var(--line);}}
   @media (max-width:759px){#editorPanel{max-height:34vh;}}
   #editorPanel .ep-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -4231,9 +4228,9 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-name-font.js"></script><script src="board-token-depth.js"></script>
+<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
-<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script>
+<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
 <script src="board-actions.js"></script>
 <script>
 "use strict";
@@ -5051,7 +5048,7 @@ const SHIRT_ACC="M -7.5 -19.6 Q 0 -12.6 7.5 -19.6 M -22.2 -13.6 L -18.9 -5.2 M 2
    ③ 애니메이션 장면·편집기 장면은 한 보드다 — 장면을 바꾸기 전·저장 직전에 지금 설정을 모든 장면에 맞춘다(lookStampScenes).
    ⚠ 기기 설정으로 남는 것: 끌기 자석·보드 보기(평면/3D)·정렬 간격 — 보드가 아니라 «내가 일하는 방식»이다.
    ⚠ 함수 선언만 둔다(호이스팅) — 4327·4740 의 부팅 초기값이 이 블록보다 먼저 실행된다. */
-function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle","nameFont","realScale"];}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
+function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle","realScale"].concat(Object.keys(window.__psLookExt||{}));}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
 function _lookLegacy(){
   if(_lookLegacy._v)return _lookLegacy._v;
   var v=null; try{ v=JSON.parse(localStorage.getItem("cs_board_lookdef_v1")||"null"); }catch(_){ v=null; }
@@ -5068,12 +5065,13 @@ function _lookLegacy(){
 }
 /* 얼리기는 «쓰기»에서만 — 읽기(부팅·보드 열기)는 저장소를 바꾸지 않는다(board-pitch-presets 테스트의 약속).
    이 판부터 작전판은 옛 기기 키를 안 쓰므로, 처음 설정을 바꾸는 순간 한 번 적어 두면 충분하다. */
-function _lookFreeze(){ try{ if(localStorage.getItem("cs_board_lookdef_v1")==null)localStorage.setItem("cs_board_lookdef_v1",JSON.stringify(_lookLegacy())); }catch(_){} }
+function _lookFreeze(){ try{ if(typeof communityBoardReadOnly==="function"&&communityBoardReadOnly())return;   /* 3.088 — 보기 전용 판은 기기 값을 얼리지 않는다 */
+  if(localStorage.getItem("cs_board_lookdef_v1")==null)localStorage.setItem("cs_board_lookdef_v1",JSON.stringify(_lookLegacy())); }catch(_){} }
 function _lookDefSnap(){ var raw=null; try{ raw=localStorage.getItem("cs_board_default_v1"); }catch(_){}
   if(raw!==_lookDefSnap._raw){ _lookDefSnap._raw=raw; _lookDefSnap._v=null; try{ var d=raw?JSON.parse(raw):null; _lookDefSnap._v=(d&&(d.snap||d))||null; }catch(_){} }
   return _lookDefSnap._v; }
 function _lookCode(k){ switch(k){ case "tokShape":return "circle"; case "label":return "num"; case "lines":return true; case "gridType":return "grid15";
-  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; case "namePos":return "below"; case "nameSize":return "m"; case "nameStyle":return "auto"; case "nameFont":return "base"; case "realScale":return false; } return null; }
+  case "tokenScale":return defaultTokenScale(); case "chip3d":return false; case "grassM":return 0; case "trainGridM":return "def"; case "ballStyle":return "1970"; case "grassTone":return "0|0"; case "namePos":return "below"; case "nameSize":return "m"; case "nameStyle":return "auto"; case "realScale":return false; } var x=(window.__psLookExt||{})[k]; return x?x.def:null; }
 function _lookOk(k,v){ if(v===undefined||v===null)return false;
   switch(k){ case "tokShape":return v==="shirt"||v==="circle"||v==="shaper"||v==="person";
     case "label":case "gridType":case "trainGridM":return typeof v==="string";
@@ -5082,8 +5080,8 @@ function _lookOk(k,v){ if(v===undefined||v===null)return false;
     case "ballStyle":try{ return !!BALL_SVG_INNER[v]; }catch(_){ return typeof v==="string"; }
     case "grassTone":return typeof v==="string"&&/^(d|0|l|ll)\|(v|0|p|pp)$/.test(v);
     case "namePos":return v==="below"||v==="above";
-    case "nameSize":return v==="s"||v==="m"||v==="l"; case "nameStyle":return v==="auto"||v==="pill"||v==="text"; case "nameFont":return /^(base|bold|round|hand|serif)$/.test(v); }
-  return true; }
+    case "nameSize":return /^(s|m|l|xl)$/.test(v); case "nameStyle":return v==="auto"||v==="pill"||v==="text"; }
+  var x=(window.__psLookExt||{})[k]; return x?!!x.ok(v):true; }
 /* 2.977 — 예전 기본 크기 그대로인 보드(코치가 크기를 안 바꾼 보드)는 새 기본으로 옮겨 읽는다 — 저장본은 고치지 않는다(다음 저장 때 새 값으로).
    «＋» 로 키운 보드는 그대로. 이 판부터 저장하는 스냅엔 tokV:2 가 붙는다 — 새 기본에서 «＋» 두 번 = 예전 기본 값이라
    표식 없이는 «안 바꾼 옛 보드»와 «새로 키운 보드»를 가를 수 없다. 옛 기기 값(cs_tokscale_v4)도 같은 규칙. */
@@ -5102,8 +5100,8 @@ function lookNow(){ var o={};
   try{ o.ballStyle=curBallStyle; }catch(_){ o.ballStyle=lookDefault("ballStyle"); }
   o.grassTone=window.__grassTone;   /* 2.978 */
   o.namePos=window.__namePos;   /* 3.009 — 이름표 위치 */
-  o.nameSize=window.__nameSize; o.nameStyle=window.__nameStyle; o.nameFont=window.__nameFont;   /* 3.010 — 이름표 크기·모양 */
-  o.realScale=(window.__realScale===true);
+  o.nameSize=window.__nameSize; o.nameStyle=window.__nameStyle;   /* 3.010 — 이름표 크기·모양 */
+  o.realScale=(window.__realScale===true); for(var x in window.__psLookExt||{})o[x]=window["__"+x];
   var r={}; lookKeys().forEach(function(k){ r[k]=_lookOk(k,o[k])?o[k]:lookDefault(k); }); r.tokV=2; return r; }   /* 2.977 — 이 판부터의 크기(저장·장면 맞추기에 같이 실린다) */
 /* 스냅의 설정 — 없는 칸은 기본값(지금 화면 아님) */
 function lookOf(sn){ var r={}; lookKeys().forEach(function(k){ var v=sn?sn[k]:undefined; if(k==="tokenScale"&&_lookOk(k,v))v=_tokMig(v,sn); r[k]=_lookOk(k,v)?v:lookDefault(k); }); return r; }
@@ -5117,8 +5115,8 @@ function lookApply(o){ var ch={};
   try{ curBallStyle=o.ballStyle; }catch(_){}
   if((window.__grassTone||"0|0")!==o.grassTone){ window.__grassTone=o.grassTone; ch.tone=true; }
   window.__namePos=o.namePos;   /* 3.009 */
-  window.__nameSize=o.nameSize; window.__nameStyle=o.nameStyle; window.__nameFont=o.nameFont;   /* 3.010 */
-  window.__realScale=(o.realScale===true);
+  window.__nameSize=o.nameSize; window.__nameStyle=o.nameStyle;   /* 3.010 */
+  window.__realScale=(o.realScale===true); for(var x in window.__psLookExt||{})window["__"+x]=o[x];
   return ch; }
 function lookRebuild(ch){ ch=ch||{};
   try{ if(ch.train&&document.documentElement.dataset.pitch==="train"){ buildPitch(); renderTokens(); renderDrawings(); updateDelUI(); }
@@ -6486,13 +6484,13 @@ function _setChip3d(){ if(!tokenLayer)return;
 /* ══ 3.010 · 이름표 크기·모양(사용자 «보드 설정도 더 업데이트» — 선수·이름표 꾸미기) — 보드마다(겉모습 설정 nameSize · nameStyle).
    크기: 작게 0.8 · 보통 1 · 크게 1.25(평면 알약과 3D 칩 이름 모두). 모양: 기본(평면은 알약, 3D 는 글자만) · 알약 · 글자만(테두리 글자).
    ⚠ _nameK 는 함수 선언이다 — makeToken 이 이 블록보다 먼저(부팅) 불릴 수 있다. ══ */
-function _nameK(){ var v=window.__nameSize; return v==="s"?0.8:(v==="l"?1.25:1); }
+function _nameK(){ var v=window.__nameSize; return v==="s"?0.8:(v==="l"?1.25:(v==="xl"?1.6:1)); }
 (function(){ try{
   try{ window.__nameSize=lookDefault("nameSize"); window.__nameStyle=lookDefault("nameStyle"); }catch(_){ window.__nameSize="m"; window.__nameStyle="auto"; }
   function sync(){
     document.querySelectorAll("#nameSizeSeg button").forEach(function(b){ var on=b.getAttribute("data-ns")===(window.__nameSize||"m"); b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); });
     document.querySelectorAll("#nameStyleSeg button").forEach(function(b){ var on=b.getAttribute("data-nt")===(window.__nameStyle||"auto"); b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false"); }); }
-  window.__setNameSize=function(v){ if(v!=="s"&&v!=="m"&&v!=="l")return; _lookFreeze(); window.__nameSize=v; try{renderTokens();}catch(_){} sync(); try{boardSaveLive();}catch(_){} };
+  window.__setNameSize=function(v){ if(!/^(s|m|l|xl)$/.test(v))return; _lookFreeze(); window.__nameSize=v; try{renderTokens();}catch(_){} sync(); try{boardSaveLive();}catch(_){} };
   window.__setNameStyle=function(v){ if(v!=="auto"&&v!=="pill"&&v!=="text")return; _lookFreeze(); window.__nameStyle=v; try{renderTokens();}catch(_){} sync(); try{boardSaveLive();}catch(_){} };
   window.__syncNameLookSeg=sync;
   document.addEventListener("click",function(e){ var t=e.target&&e.target.closest&&e.target.closest("#nameSizeSeg button[data-ns],#nameStyleSeg button[data-nt]"); if(!t)return; e.stopPropagation();
@@ -7892,7 +7890,7 @@ function boardDefaultSnap(src){
     pitchView:src.pitchView||((src.area||"full")==="half"?"half":"full"),pvSide:src.pvSide==="opp"?"opp":"own",fieldMode:src.fieldMode||"standard",halfSide:src.halfSide||"L",
     gridType:src.gridType,label:src.label,lines:src.lines,spFlip:!!src.spFlip,tokenScale:src.tokenScale,pitchN:1,
     pitchImg:src.pitchImg||null,pitchTheme:src.pitchTheme||"",pitchCustom:src.pitchCustom||null,matchNote:"",press:null,spMarks:null,spMark:null,
-    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone,namePos:src.namePos,nameSize:src.nameSize,nameStyle:src.nameStyle,nameFont:src.nameFont,realScale:src.realScale};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
+    tokShape:src.tokShape,chip3d:src.chip3d,grassM:src.grassM,trainGridM:src.trainGridM,ballStyle:src.ballStyle,tokV:src.tokV,grassTone:src.grassTone,namePos:src.namePos,nameSize:src.nameSize,nameStyle:src.nameStyle,realScale:src.realScale};   /* 2.929 — 새 보드의 설정도 · 2.977 크기 표식 · 2.978 잔디 톤 */
 }
 function boardDefaultRead(){try{var raw=localStorage.getItem(BOARD_DEFAULT_KEY);if(!raw)return null;var data=JSON.parse(raw);var snap=data&&(data.snap||data);return snap?boardDefaultSnap(snap):null;}catch(_){return null;}}
 function boardDefaultSave(){
@@ -8231,6 +8229,7 @@ window.__setBoardOrient=function(o){ o=(o==="v")?"v":"h";
 function loadSnap(s,opts){s=s||{};opts=opts||{};sel=null;multiSel=[];state.players=dc(s.players||[]);state.equipment=dc(s.equipment||[]);
   state.ball=(s.ball===null)?null:{...(s.ball||{x:CX,y:CY})};state.drawings=dc(s.drawings||[]);
   var __lkc={};try{__lkc=lookApply(opts.keepLook?lookNow():lookOf(s));}catch(_){}   /* 2.929 — 보드 설정: 이 스냅의 것, 없으면 기본값(앞서 연 보드 값 아님) */
+  try{if(document.body.classList.contains("comm-viewing")){if(!opts.keepLook&&window.__commPostShape==null)window.__commPostShape=tokShape;if(window.__commWantShape)tokShape=window.__commWantShape;}}catch(_){}   /* 3.087 — 커뮤니티 «보기»의 모양을 장면마다(board-comm-look.js) */
   state.pitchSpec=(s.pitchSpec&&PITCH_SPECS[s.pitchSpec])?s.pitchSpec:"fifa";state.gridM=(+s.gridM>0)?+s.gridM:0;   /* 2.989 */try{window.__syncPitchSpecUI&&window.__syncPitchSpecUI();}catch(_){}   /* 2.233 */
   try{if(world){buildTrainGrid();buildLines();buildGrid();}}catch(_){}   /* 2.235 — 복원된 규격으로 라인·그리드 즉시 재생성(서명에 규격 포함) · 2.989 모눈도 */
   state.orientation=s.orientation||"h";state.area=s.area||"full";state.pitchView=normPitchView(s.pitchView||((state.area||"full")==="half"?"half":"full"));state.fieldMode=s.fieldMode||"standard";state.spFlip=!!s.spFlip;state.halfSide=s.halfSide||"L";state.pvSide=(s.pvSide==="opp")?"opp":"own";
@@ -13837,7 +13836,7 @@ try{ window.addEventListener("resize",function(){ clearTimeout(_commRotT); _comm
   window.__commWantOrient=want; state.orientation=want; state.spFlip=false; applyView(); renderTokens();
 }catch(_){} },180); }); }catch(_){}
 /* 3.067 — 뷰어의 «3D» 단추로 켠 3D 는 뷰어 것이다. 닫거나 다른 탭으로 가면 끈다(보드 설정의 3D 는 아래 3.035 가 되돌린다) */
-function __commTiltOff(){ try{ window.__commWantOrient=null; var b=document.getElementById("commTiltBtn"); if(b)b.remove();
+function __commTiltOff(){ try{ window.__commWantOrient=null; window.__commWantShape=null; var b=document.getElementById("commLook"); if(b)b.remove();
   if(window.__commTilt){ window.__commTilt=false; if(document.body.classList.contains("bc-tilt3d")&&window.__setTilt)window.__setTilt(false,{transient:true,quiet:true}); } }catch(_){} }
 window.__commView=function(post, editMode){
   editMode=false; // Published community material is edited only after copying to the personal library.
@@ -13867,6 +13866,7 @@ window.__commView=function(post, editMode){
     var _commBoard=(d.type==="board");
     $("modalTitle").textContent=editMode?"커뮤니티 글 편집":(_commBoard?("커뮤니티 "+(d.kindLabel||"작전판")):"커뮤니티 훈련");   /* 3.042 — 미팅 자료는 «커뮤니티 미팅 자료» */
     editorDrillId=null; editorLibId=null; editorFileName=post.title||d.name||"";
+    try{PSCommLook.prime(window);}catch(_){}   /* 3.087 */
     loadEditorTrainings(d); _activateTraining(0);
     _commOrient();   /* 2.575 — 스냅이 실린 뒤, 그리기 전에 */
     fillEditorPanel(); renderSceneStrip(); renderTrainingTabs();
@@ -13990,18 +13990,8 @@ window.__commView=function(post, editMode){
           }
         }
       }catch(_){}
-      /* 3.067 — «3D» 단추. 편집기는 들어올 때 3D 를 끄므로(3.035) 뷰어에서 따로 켠다. 설정 값(ps_board_tilt3d)은 건드리지 않고(transient),
-         뷰어를 닫으면 끈다(__commTiltOff). 같은 뷰어에서 다른 글을 열면 켜 둔 그대로 */
-      try{
-        var _wrapT=$("editorBoardWrap"), _tb=document.getElementById("commTiltBtn"); if(_tb)_tb.remove();
-        if(_wrapT&&window.__setTilt&&window.PSBoardDepth&&psBoardDevice()!=="phone"){   /* 3.069 — 폰은 3D 를 그리다 강제 종료(아래 3D 부팅 안전장치) — 단추 없음 */
-          _tb=document.createElement("button"); _tb.type="button"; _tb.id="commTiltBtn";
-          var _tSync=function(){ var on=document.body.classList.contains("bc-tilt3d"); _tb.classList.toggle("on",on); _tb.setAttribute("aria-pressed",on?"true":"false"); _tb.textContent=on?"평면":"3D"; _tb.title=on?"평면으로 보기":"3D 로 보기"; };
-          _tb.onclick=function(){ try{ var on=!document.body.classList.contains("bc-tilt3d"); window.__commTilt=true; window.__setTilt(on,{transient:true,quiet:true});
-            applyView(); renderTokens(); setTimeout(function(){ try{ window.__tiltFit&&window.__tiltFit(); }catch(_){} },60); }catch(_){} _tSync(); };
-          _tSync(); _wrapT.appendChild(_tb);
-        }
-      }catch(_){}
+      /* 3.087 — «보기» 고르개(평면 · 3D · 선수 모양 — board-comm-look.js). 3D 는 transient, 닫으면 __commTiltOff 가 끈다 */
+      try{PSCommLook.mount(window);}catch(_){}
     }
     var _ep=$("editorPanel"); if(_ep)_ep.scrollTop=0;
   }catch(e){}
@@ -14212,7 +14202,7 @@ function closeEditor(save){
     else if(editorAnimIdx>0&&anim.frames&&editorAnimIdx<anim.frames.length){ animActive=editorAnimIdx; try{renderAnimFrames();}catch(_){} }
   } }catch(_){}
   editorAnimStash=null;editorAnimIdx=0;editorAnimStashed=false;
-  if(editorStash)loadSnap(editorStash);editorStash=null;editorDrillId=null;editorLibId=null;editorDraft=null;
+  window.__commWantShape=null;if(editorStash)loadSnap(editorStash);editorStash=null;editorDrillId=null;editorLibId=null;editorDraft=null;
   if(editorReadOnly){editorReadOnly=false;try{applyEditorReadOnly(null);}catch(_){}}
   if(__commPost){ __commPost=null; __commEdit=false; try{parent.postMessage({source:"board",type:"commClosed"},"*");}catch(_){} }
   if(document.body.classList.contains("comm-viewing")){ document.body.classList.remove("comm-viewing");
@@ -20973,7 +20963,7 @@ try{ var _nb=document.getElementById('dfNew');
     return {pitchSpec:s.pitchSpec,orientation:s.orientation,area:s.area,pitchView:s.pitchView,pvSide:s.pvSide,gridType:s.gridType,label:s.label,lines:s.lines,spFlip:s.spFlip,
       tokenScale:s.tokenScale,pitchN:s.pitchN,teamColors:s.teamColors,teamColor2:s.teamColor2,teamPattern:s.teamPattern,
       teamStrokeC:s.teamStrokeC,teamTxtC:s.teamTxtC,teamKit:s.teamKit,gkColors:s.gkColors,gkColor2:s.gkColor2,gkPattern:s.gkPattern,gkStrokeC:s.gkStrokeC,gkTxtC:s.gkTxtC,pitchImg:s.pitchImg,pitchTheme:s.pitchTheme,pitchCustom:s.pitchCustom,customImages:s.customImages,
-      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,nameFont:s.nameFont,realScale:s.realScale,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
+      tokShape:s.tokShape,chip3d:s.chip3d,grassM:s.grassM,trainGridM:s.trainGridM,ballStyle:s.ballStyle,tokV:s.tokV,grassTone:s.grassTone,namePos:s.namePos,nameSize:s.nameSize,nameStyle:s.nameStyle,realScale:s.realScale,   /* 2.929 · 2.977 크기 표식 · 2.978 잔디 톤(새 페이지는 지금 톤 그대로) */
       players:[],equipment:[],drawings:[],ball:(s.ball?{x:s.ball.x,y:s.ball.y}:null)};
   }
   /* 3.017 — keep: 한 작업물 안에서 페이지를 옮길 때(고르기·지우기·더하기·복제·미팅 세트·시퀀스)는 지금 보드 설정(겉모습 — 토큰 크기·모양·표시…)을 그대로 둔다.
@@ -22259,7 +22249,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
                 ["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","grassSeg"]],
                 ["pitch","선·구역",["lineSeg","zonePreset"]],
                 ["pitch","범위·방향",["cmdPitchViewSeg","cmdPitchSideSeg","cmdOrientSeg","cmdPitchNSeg"]],
-                ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","realScaleSeg","labelSeg"]],
+                ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","realScaleSeg","labelSeg","tagSizeSeg"]],
                 ["look","이름표",["namePosSeg","nameSizeSeg","nameStyleSeg","nameFontSeg"]],
                 ["look","분석",["analysisSeg"]],
                 ["view","보기",["tiltSeg",editorHint]],

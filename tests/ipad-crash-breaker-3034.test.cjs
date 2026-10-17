@@ -156,5 +156,7 @@ test('3.069 phones never boot the board in 3D (setting kept, no boot marker)',()
   const top={__psSafeBoot:false,document:{documentElement:{getAttribute:k=>k==='data-ps-device'?'phone':null}}};
   const p=boardBoot({local:{ps_board_tilt3d:'1'},top});
   assert.equal(p.win.__tiltBootOk,false,'flat');assert.equal(p.ls.getItem('ps_board_tilt3d'),'1','3D choice kept');assert.equal(p.ls.getItem('ps_tilt3d_boot'),null,'not armed');
-  assert.match(board,/if\(_wrapT&&window\.__setTilt&&window\.PSBoardDepth&&psBoardDevice\(\)!=="phone"\)\{/,'no community 3D button on phones');
+  const CL=require('../studio/board-comm-look.js');   // 3.087 — 커뮤니티 «보기» 고르개가 3D 를 고른다
+  assert.equal(CL.can3d({phone:true,touch:true},{__setTilt(){},PSBoardDepth:{}}),false,'no community 3D on phones');
+  assert.equal(CL.can3d({phone:false,touch:true},{__setTilt(){},PSBoardDepth:{}}),true,'iPads keep the community 3D choice');
 });
