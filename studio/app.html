@@ -1795,7 +1795,7 @@ window.psFailAlert=function(lead,e,stage){
     </span>
     <!-- 2.480 — 게임모델 안내줄 병합(사용자 "여기도 마찬가지"): iframe 안 .gm-toline 을 접고 셸 서브바 오른쪽으로.
          버튼은 gmToLearn 과 같은 통로(openLearnArea gmhow)를 셸 자신에게 쏜다 -->
-    <span class="tn-subnote" id="psGmLearnNote" hidden>만드는 법은 <b>학습 › 게임모델 만드는 법</b>에 있어요<button type="button" id="psGmLearnBtn">학습에서 보기 ›</button></span>
+    <span class="tn-subnote" id="psGmLearnNote" hidden>만드는 법은 <b>학습 › 스튜디오로 배우는 코칭</b>에 있어요<button type="button" id="psGmLearnBtn">학습에서 보기 ›</button></span>
   </div>
   <style id="ps-2176-ctx">/* 2.176 — 팀 내비 컨텍스트 바 */
   .teamnav .tn-ctx{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--dim,#6f7580);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;margin-right:4px}
@@ -3343,6 +3343,19 @@ window.psFailAlert=function(lead,e,stage){
         showApp('scout'); try{ fScout.contentWindow.postMessage({type:'setView',view:d.view},'*'); }catch(_){}
       } else if(d.source==='process' && d.type==='openGameModel'){
         showApp('gamemodel');
+      } else if(d.source==='learning' && d.type==='studioGo'){
+        /* 3.079 — 학습 『스튜디오로 배우는 코칭』의 «스튜디오에서 해보기». 이름만 받는다(아래 표에 없으면 무시) */
+        try{
+          var _sg=String(d.to||''), _tk={gamemodel:'settings',match:'match',idp:'idp',players:'players',schedule:'training',terms:'terms'}[_sg];
+          if(_sg==='myidp'){ currentTeamKey=''; showApp('idp'); }
+          else if(_sg==='create'){ currentTeamKey=''; showApp('design'); psBoardThen(function(){ try{ fBoard.contentWindow.__openCreateMenu(); }catch(_){} },150); }
+          else if(_tk){ var _tb=teamKeyBtn(_tk);
+            if(_tb)openTeamButton(_tb);
+            else if(_sg==='gamemodel'){ currentTeamKey=''; showApp('gamemodel'); }
+            else if(_sg==='schedule')showApp('process');
+            else if(_sg==='idp')showApp('idp');
+            else showApp('scout'); }
+        }catch(_){}
       } else if(d.source==='learning' && d.type==='openTerms'){
         /* 3.079 — 학습 서가의 «용어 학습»은 공용어 화면으로(예전엔 IDP 로 보내 아무것도 안 열렸다). «뒤로»는 학습으로 */
         try{ window.__termsFrom='learning'; }catch(_){}

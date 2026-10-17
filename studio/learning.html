@@ -99,6 +99,11 @@ button.tb-row.done{background:var(--panel);border:1px solid var(--line)}
 .tb-row.part.fold{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)}
 .tb-row.part.fold em{color:var(--acc-ink);font-weight:700}
 .door .row{gap:8px}
+/* 3.079 — 스튜디오에서 해보기 */
+.trybox{margin-top:12px;border:1px solid var(--acc);border-radius:10px;padding:10px 14px;background:var(--acc-soft)}
+.trybox .k{display:block;color:var(--acc-ink);margin-bottom:4px}
+.trybox ol{margin:0 0 8px 18px;padding:0;display:grid;gap:3px}
+.trybox .hint{margin:0 0 8px}
 .shelf-row .toc-head{display:none}
 @media(max-width:760px){.door h3{font-size:18px}.mine{grid-template-columns:1fr 1fr}.shelf-row .toc-grid{grid-template-columns:1fr 1fr}
   /* 3.079 — 역할 고르기: 폰에서 다섯 장이 한 화면을 다 채웠다 → 두 줄 바둑판 */
@@ -255,7 +260,7 @@ body.fmdark{color-scheme:dark}
 <div class="bt"><button data-p="toc" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>오늘</button><button data-p="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c-1.6-1.3-3.6-2-6-2H3v13h3c2.4 0 4.4.7 6 2 1.6-1.3 3.6-2 6-2h3v-13h-3c-2.4 0-4.4.7-6 2z"/><path d="M12 6.5v13"/></svg>책</button><button data-p="cards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="14" height="11" rx="2"/><path d="M7.5 4.5h11a2 2 0 0 1 2 2v9"/></svg>카드</button></div>
 <div class="toast" id="toast"></div>
 <!-- 3.079 — 『축구를 배우는 법』(learn-mikl.js — 근거가 국내 지도자 매뉴얼, 국제표준 아님)은 학습에서 내렸다(사용자 «국제표준만»). 파일은 남겨 둔다 -->
-<script src="learn-gamemodel.js?v=2.411"></script><!-- 2.411 — 게임모델 만드는 법(같은 자료 모양) -->
+<script src="learn-studio.js?v=3.079"></script><!-- 3.079 — 『스튜디오로 배우는 코칭』(게임모델 · IDP · 훈련 만들기). 『게임모델 만드는 법』은 이 책 1장으로 들어왔다 -->
 <script src="learn-futsal.js?v=2.659"></script><!-- 2.659 — 풋살을 배우는 법(같은 자료 모양, 3장 12절) -->
 <script src="learn-toc.js?v=2.659"></script><!-- 2.323 — 목차는 두 화면이 같은 파일을 읽는다 -->
 <script src="learn-curriculum.js"></script><!-- 2.342 — 역할 교과서 본문(90장 275절, 국제표준 재서술 2.010) -->
@@ -266,8 +271,8 @@ body.fmdark{color-scheme:dark}
 /* ⚠ 2.411 — 이 화면은 **두 권**을 연다(MIKL · 게임모델 만드는 법). 예전엔 `BOOK` 이 MIKL 로
    못 박혀 있어 학습 소유 갈래를 늘려도 늘 MIKL 이 열렸다. 서가에서 고른 id 로 바꿔 끼운다.
    ⚠ 진행·카드 저장은 절 id(`G1`·`A1`…)로 갈리므로 두 권이 섞이지 않는다. */
-var BOOKS={gmhow:window.LR_GMHOW,futsal:window.LR_FUTSAL};   /* 2.659 — 풋살 · 3.079 — MIKL 내림 */
-var BOOK=BOOKS.gmhow;
+var BOOKS={studio:window.LR_STUDIO,futsal:window.LR_FUTSAL};   /* 2.659 — 풋살 · 3.079 — MIKL 내림 · 게임모델 만드는 법 → 스튜디오로 배우는 코칭 */
+var BOOK=BOOKS.studio;
 /* ───────── 저장 ───────── */
 function sessUid(){try{var s=JSON.parse(localStorage.getItem('ps_sync_session')||'null');return (s&&s.uid)||'local'}catch(e){return 'local'}}
 var KEY='cs_learn_v1_'+sessUid();
@@ -312,6 +317,7 @@ var page='toc', bookState={view:'toc',sec:null,step:0,mixCh:null,mixI:0,tocOpen:
 (function(){ function emb(){ try{ document.body.classList.toggle('ps-emb-phone', window.self!==window.top && window.innerWidth<=600); }catch(_){} } emb(); window.addEventListener('resize',emb,{passive:true}); })();
 function go(p){page=p;$$('[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p)});$$('.page').forEach(function(x){x.classList.toggle('on',x.id==='p-'+p)});render();window.scrollTo(0,0)}
 $$('[data-p]').forEach(function(b){b.onclick=function(){go(b.dataset.p)}});
+document.addEventListener('click',function(e){ var b=e.target&&e.target.closest&&e.target.closest('[data-try]'); if(!b)return; try{ parent.postMessage({source:'learning',type:'studioGo',to:b.dataset.try},'*'); }catch(_){ toast('앱 안에서 열어 주세요'); } });   /* 3.079 */
 $('#trackBtn').onclick=function(){S.track=S.track==='coach'?'player':'coach';save();render();toast(S.track==='coach'?'코치 트랙':'선수 트랙 (목업: 본문 같음, 예시만 순서 바뀜)')};
 $('#demoDay').hidden=!DEMO;$('#demoDay').onclick=function(){S.dayOff++;save();render();toast('+'+S.dayOff+'일 — 재학습 기한 확인용')};
 /* ═══ 2.323 · 목차(서가) — 들어오면 여기부터 ════════════════════════════════════════
@@ -430,11 +436,11 @@ function renderShelf(){
     var _started=['cur']; try{ Object.keys(BOOKS).forEach(function(id){ var bk=BOOKS[id]; if(bk&&bk.chapters&&bk.chapters.some(function(c){return (c.sections||[]).some(function(x){return S.done[x.id]&&S.done[x.id].hits>=3;});}))_started.push(id); }); }catch(_){}
     /* 3.079 — 전술 원칙 · 경기 읽기 · 개념은 IDP 옛 학습 층이 그리던 갈래라 2.510 뒤로 눌러도 IDP 첫 화면만 열렸다 — 서가에서 뺀다.
        용어는 공용어 화면(terms)으로 보낸다. 머리글(«무엇을 공부할까요»)은 위 «다른 책» 하나로 */
-    _started=_started.concat(['mikl','principles','game','concepts']);
+    _started=_started.concat(['mikl','gmhow','principles','game','concepts']);
     shelf.innerHTML=LR_TOC.render({skip:_started,head:false});
     try{ var _sn=shelf.querySelectorAll('[data-toc]').length; $('#tbShelfN').textContent=_sn?_sn+'권':''; }catch(_){}   /* 2.660 — 시작한 책은 «내 책»에 있으니 여기서 뺀다 */   /* 2.467 — 교과서가 대신한다. DOM에서 떼는 대신 세는 목록에서 빼 머리글(갈래·합계)도 같이 정직해진다(오디트 ③) */
     LR_TOC.bind(shelf,function(id,owner){
-      if(owner==='learn'){ BOOK=BOOKS[id]||BOOKS.gmhow; bookState.view='toc'; go('book'); return; }   /* 2.411 — 고른 책을 연다 */
+      if(owner==='learn'){ BOOK=BOOKS[id]||BOOKS.studio; bookState.view='toc'; go('book'); return; }   /* 2.411 — 고른 책을 연다 */
       if(id==='terms'){ try{ parent.postMessage({source:'learning',type:'openTerms'},'*'); }catch(_){ toast('용어는 팀 운영 › 공용어에서 열려요'); } return; }   /* 3.079 */
       try{ parent.postMessage({source:'learning',type:'openLearnArea',area:id,owner:owner},'*'); }
       catch(e){ toast('그 갈래는 IDP 학습에서 열려요'); }
@@ -566,7 +572,7 @@ function openSec(id){S.now=id;save();bookState.view='sec';bookState.sec=id;bookS
 function renderToc(){
   /* ⚠ 2.411 — 부제가 MIKL 것으로 박혀 있었다("MIKL · A·B·D … C·E·F 준비 중"). 책이 둘이 되면서
      『게임모델 만드는 법』에도 그 문구가 붙었다. **책에서 읽어** 만든다. */
-  var _bs=(BOOK.id==='mikl')?'MIKL · A·B·D':(BOOK.ko||'');
+  var _bs=(BOOK.id==='mikl')?'MIKL · A·B·D':(BOOK.tag||'');   /* 3.079 — 제목을 두 번 쓰지 않는다 */
   var h='<div class="bh"><h4>'+esc(BOOK.ko)+'</h4><small>'+esc(_bs)+' '+secs().length+'절'+(BOOK.id==='mikl'?' (C·E·F 준비 중)':'')+' · 맞힘 '+secs().filter(function(x){return isDone(x.id)}).length+'</small></div>';
   BOOK.chapters.forEach(function(c){var d=c.sections.filter(function(x){return isDone(x.id)}).length;
     h+='<div class="ch"><b>'+c.id+'</b>'+esc(c.ko)+'<span>'+d+'/'+c.sections.length+'</span></div>';
@@ -577,8 +583,16 @@ function renderToc(){
 }
 /* 2.438 — 장 이름표. MIKL 은 장 id 가 'A'·'B' 한 글자라 'A장 끝'이 자연스러웠는데,
    교과서 장은 id 가 'p1-game' 이라 그대로 쓰면 'P1-GAME장 끝'으로 읽힌다(대문자는 CSS). */
-function chLabel(c){ var id=(c&&c.id)||''; return id.length<=2?(id+'장'):'이 장'; }
+function chLabel(c){ var id=(c&&c.id)||''; return id.length===1?(id+'장'):((c&&c.ko)?'«'+c.ko+'»':'이 장'); }   /* 3.079 — 두 글자 장 id(SG · FA)는 «SG장»이 되던 것 → 장 이름 */
 function stageHtml(no,title,inner,locked){return '<div class="stage'+(locked?' locked':'')+'" data-st="'+no+'"><span class="no">'+no+'</span><h5>'+title+'</h5>'+inner+'</div>'}
+/* 3.079 — «스튜디오에서 해보기»: 절의 try {label, steps[], to, note}. 단추는 셸에 studioGo 를 보낸다(app.html). 셸 밖(단독 열기)에서는 순서만 보인다 */
+function tryHtml(s){
+  var t=s&&s.try; if(!t)return '';
+  var inShell=false; try{ inShell=window.parent&&window.parent!==window; }catch(_){}
+  return '<div class="trybox"><span class="k">스튜디오에서 해보기</span><ol>'+(t.steps||[]).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol>'
+    +(t.note?'<div class="hint">'+esc(t.note)+'</div>':'')
+    +(inShell&&t.to?'<button type="button" class="btn" data-try="'+esc(t.to)+'">'+esc(t.label||'열기')+' →</button>':'')+'</div>';
+}
 function renderSec(s){
   var st=bookState.step, a=S.ask, k=s.id;
   var ex=S.track==='player'?s.ex.slice().reverse():s.ex;
@@ -589,7 +603,7 @@ function renderSec(s){
   // 1
   h+=stageHtml(1,'읽기',s.read.map(function(p){return '<p>'+p+'</p>'}).join('')+(s.fig?'<div class="fig"><b>한 줄로</b> '+esc(s.fig)+'</div>':'')+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="2">예시로 →</button></div>',st<1);
   // 2
-  h+=stageHtml(2,'예시 — '+(S.track==='player'?'선수 먼저':'코치 먼저'),'<div class="ex">'+ex.map(function(e){return '<div><b class="w">'+esc(e.who)+'</b>'+e.t+'</div>'}).join('')+'</div><div class="row" style="margin-top:10px"><button class="btn pri" data-next="3">꺼내기로 →</button></div>',st<2);
+  h+=stageHtml(2,'예시 — '+(S.track==='player'?'선수 먼저':'코치 먼저'),'<div class="ex">'+ex.map(function(e){return '<div><b class="w">'+esc(e.who)+'</b>'+e.t+'</div>'}).join('')+'</div>'+tryHtml(s)+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="3">꺼내기로 →</button></div>',st<2);
   // 3
   var rv=a[k+':rshow'];
   h+=stageHtml(3,'꺼내기 — '+esc(s.recall.type),'<div class="q">'+esc(s.recall.q)+'</div><textarea id="recall" placeholder="보지 않고 씁니다.">'+esc(a[k+':recall']||'')+'</textarea>'+(rv?'<div class="ans">답: '+esc(s.recall.a)+'</div><div class="row" style="margin-top:8px"><span class="hint" style="margin:0">내 답은?</span><button class="btn ok" data-grade="1">맞았다</button><button class="btn no" data-grade="0">틀렸다</button></div>':'<div class="row" style="margin-top:8px"><button class="btn pri" id="showAns">답 보기</button><span class="hint" style="margin:0">서술형은 스스로 채점합니다.</span></div>'),st<3);
@@ -709,7 +723,7 @@ window.addEventListener('message',function(e){
   var d=e.data||{};
   if(d.type==='learnHome'){ if(page!=='toc')go('toc'); else render(); }
   /* ⚠ 2.411 — 예전엔 `mikl` 하나만 받았다. 학습이 두 권이 됐으니 **받은 갈래의 책**을 연다. */
-  else if(d.type==='openLearnArea'&&BOOKS[d.area]){ BOOK=BOOKS[d.area]; bookState.view='toc'; go('book'); }
+  else if(d.type==='openLearnArea'&&(BOOKS[d.area]||d.area==='gmhow')){ BOOK=BOOKS[d.area]||BOOKS.studio; bookState.view='toc'; go('book'); }   /* 3.079 — gmhow(게임모델 «학습에서 보기») 는 새 책 1장으로 */
 });
 render();
 /* 3.079 — 고른 역할의 교재는 첫 화면이 뜬 뒤에 미리 받아 둔다(절을 누를 때 기다리지 않게) */

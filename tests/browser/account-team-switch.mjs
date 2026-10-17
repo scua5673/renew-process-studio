@@ -231,11 +231,11 @@ try{
   // A failed book asset must expose recovery without discarding saved progress.
   const learning=await context.newPage(),learningErrors=[];
   learning.on('pageerror',e=>learningErrors.push(e.message));
-  await learning.route('**/learn-gamemodel.js*',route=>route.abort('failed'));
+  await learning.route('**/learn-studio.js*',route=>route.abort('failed'));
   await learning.goto(base+'/studio/learning.html',{waitUntil:'load'});
   await learning.locator('#retryLearning').waitFor();
   const savedLearning=await learning.evaluate(()=>localStorage.getItem(KEY));
-  await learning.unroute('**/learn-gamemodel.js*');
+  await learning.unroute('**/learn-studio.js*');
   await Promise.all([learning.waitForNavigation({waitUntil:'load'}),learning.locator('#retryLearning').click()]);
   assert.equal(await learning.locator('#retryLearning').count(),0);
   assert.equal(await learning.evaluate(()=>localStorage.getItem(KEY)),savedLearning);
