@@ -21,7 +21,7 @@ try{
     assert.equal(team.app,'board','데스크톱은 그대로 작전판');
     assert.equal(team.team,false);
   }
-  assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/navabort/.test(l.type)),[],'page errors');
+  assert.deepEqual(logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text)),[],'page errors');   /* WebKit 의 ResizeObserver 경고는 다른 시험과 같이 뺀다 */
   console.log(JSON.stringify({engine,size,passed:true,team}));
 }finally{
   for(const b of Object.values(browsers))await b.close().catch(()=>{});
