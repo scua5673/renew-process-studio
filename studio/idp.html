@@ -19,11 +19,8 @@
 <script src="archetypes.js"></script><!-- 2.078 — 포지션 유형(아키타입) 6군×6 = 36 -->
 <script src="learn-model.js"></script><!-- 2.110 — 학습모델 카테고리 사전. 코치 목표가 어느 국면인지 여기에 건다 -->
 <script src="req-baseline.js"></script><!-- 2.080 — 게임모델 4국면 답 → 자리 요구 기본값 -->
-<script src="learn-principles.js"></script><!-- 1.971 — 전술 원칙 학습 데이터(6권 원리 재서술) -->
-<script src="learn-curriculum.js"></script><!-- 2.010 — 학습 과정(선수·코치 트랙 3단계×6영역, 글로벌 표준 재서술) -->
-<script src="learn-concepts.js"></script><!-- 2.153 — 개념 사전(게임모델·국면·원칙이 무슨 말인지). 학습 탭 '개념' 영역이 읽는다 -->
-<script src="learn-curriculum-pro.js"></script>
-<script src="learn-toc.js?v=2.659"></script><!-- 2.323 — 학습 목차(서가). 학습 앱과 **같은 파일**을 읽는다 --><!-- 2.151 — 피지컬·분석·AT 트랙 + PROCESS 척추 + 기존 모듈 프로세스화(flow). 뒤에 실려 LR_CUR 를 넓히기만 한다 -->
+<!-- 3.075 — 옛 학습 층 자료(learn-principles · curriculum · concepts · curriculum-pro · toc, 약 0.5MB)를 더 싣지 않는다. 그 층은 2.510 부터 들어갈 길이 없었다.
+     학습은 셸의 learning.html 이 맡는다. rLearn 등 함수는 window.LR_* 가 없으면 빈 안내로 끝난다. -->
 <link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.054">
 <!-- 1.575 — 페이지 제목 규칙(premium-ui.css .ps-pagetitle)을 켜는 표시.
      셸(앱) 안에서는 탭 내비가 화면 이름을 말하므로 페이지 제목을 감춘다.
@@ -3993,7 +3990,6 @@ try{if(document.documentElement.getAttribute('data-shell')==='1'){document.docum
   .qanch>div.rq .l{color:#3a6df0}
   @media (max-width:639px){ .qanch>div{grid-template-columns:56px minmax(0,1fr);font-size:11px} }
 </style>
-<link rel="stylesheet" href="learn-toc.css"><!-- 2.323 — 학습 목차(서가) · 학습 앱과 같은 파일 -->
 <link rel="stylesheet" href="mobile-polish.css">
 <link rel="stylesheet" href="premium-ui.css">
 <style id="ps-2537-notice">/* 2.537 — 팀 공지(읽는 쪽). 첫 화면 맨 위 카드. */
@@ -5744,7 +5740,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     var _learnAvg=_learnN?Math.round(_learnSum/_learnN*100):null;
     var h='<div class="ps-ph sq-ph"><b>IDP</b><small>선수단 '+cards.length+'명 · 보라 = 셀프 · 초록 = 코치'+(_tset?' · 기준 = 팀 › 평가표':' · 팀 평가표 없음')+'</small><span class="ps-sp"></span>'
       +'<button type="button" class="btn" id="sqTeamAttrs" style="display:none">'+(_tset?'팀 평가표 관리':'팀 평가표 만들기')+'</button></div>'
-      +'<div class="card sq-sum"><span class="stat"><b>'+_selfWk+'<small>/'+cards.length+'</small></b><i>이번 주 셀프평가</i></span><span class="stat"><b>'+_coachDone+'</b><i>코치 평가 있음</i></span><span class="stat"><b>'+(_learnAvg==null?'–':_learnAvg+'<small>%</small>')+'</b><i>학습 과정 평균</i></span><span class="ps-sp"></span>'
+      +'<div class="card sq-sum"><span class="stat"><b>'+_selfWk+'<small>/'+cards.length+'</small></b><i>이번 주 셀프평가</i></span><span class="stat"><b>'+_coachDone+'</b><i>코치 평가 있음</i></span><span class="ps-sp"></span>'
       +(_rvDue?'<span class="sq-pill rv">리뷰 기한 '+_rvDue+'</span>':'')+(_rvNever?'<span class="sq-pill rv0">첫 리뷰 전 '+_rvNever+'</span>':'')+(_waitN?'<span class="sq-pill wait">피드백 대기 '+_waitN+'</span>':'')+(_qN?'<span class="sq-pill q">질문 '+_qN+'</span>':'')+'</div>'
       +(cards.length?'<div class="sq-lhead"><span></span><span>선수</span><span>목표 · 피드백</span><span class="c5"><i>전술</i><i>기술</i><i>체력</i><i>심리</i><i>태도</i></span><span>상태</span></div>':'');
     /* 오늘 챙길 선수 — 피드백 대기 원탭 스트립 */
