@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/out-of-possession/defending-with-a-back-four.php',
   name: '포백 수비 — 한 줄로 함께 밀고 함께 올라가기',
   focus: 'bpo',
+  subs: ['std_do_3'],
   by: 'Jens Lehmann',
   trainings: [
     {

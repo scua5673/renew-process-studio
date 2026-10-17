@@ -7,6 +7,7 @@ export default {
   path: 'elite-sessions/in-possession/nils-nielsen-solutions-in-the-final-third.php',
   name: '마지막 3분의 1 지역에서 답 찾기 — 끌어내고, 비우고, 뒤로 들어가기',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: 'Nils Nielsen',
   trainings: [
     {

@@ -7,6 +7,7 @@ export default {
   path: 'grassroots/8-to-12/the-art-of-keeping-the-ball.php',
   name: '공을 지키는 기술 — 사람 핀 볼링에서 골 여덟 개 경기까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

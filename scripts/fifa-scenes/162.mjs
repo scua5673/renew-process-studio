@@ -6,6 +6,7 @@ export default {
   path: 'futsal/block-3/press-with-a-numerical-disadvantage.php',
   name: '수가 적을 때 압박하기 — 언제 달려들고 누가 남을까',
   focus: 'bpo',
+  subs: ['std_do_1'],
   by: 'Jorge Braz',
   trainings: [
     {

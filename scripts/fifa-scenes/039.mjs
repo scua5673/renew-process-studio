@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/english-academies/newcastle-u-18-attacking-patterns.php',
   name: '박스 주변 콤비네이션 플레이 — 사이로, 뒤로, 돌아서',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: 'Newcastle United U-18',
   trainings: [
     {

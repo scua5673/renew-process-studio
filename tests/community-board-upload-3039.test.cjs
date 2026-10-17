@@ -60,7 +60,7 @@ test('3.039 the post leads with page 1 — its board and its scenes (not the pag
 });
 
 test('3.039 the upload, the edit sync and the copy all keep pages',()=>{
-  assert.match(comm,/var COPY_FIELDS=\[[^\]]*'warmFor',\n  'pages','book','slides'(?:,'ages')?\];/,'담기는 페이지 · 패턴북 표식까지(3.042 — 미팅 자료의 슬라이드도)');
+  assert.match(comm,/var COPY_FIELDS=\[[^\]]*'warmFor',\n  'pages','book','slides'(?:,'ages'(?:,'gmPhases','gmPhaseNames')?)?\];/,'담기는 페이지 · 패턴북 표식까지(3.042 — 미팅 자료의 슬라이드도)');
   const up=cut(comm,"$('upGo').onclick=function(){",'var payload=JSON.stringify(body);');
   assert.match(up,/var _frUp=stripFrames\(item\.frames\); if\(_frUp\)item\.frames=_frUp; else delete item\.frames;\n      var _pgUp=stripPages\(sel\); if\(_pgUp\)\{item\.pages=_pgUp;boardLead\(item\);\} else delete item\.pages;/,'COPY_FIELDS 가 실은 날 페이지는 정리한 것으로 바꾼다');
   assert.match(comm,/var _pgU=stripPages\(src\); if\(_pgU\)\{item\.pages=_pgU;boardLead\(item\);\} else delete item\.pages;   \/\* 3\.039 \*\/\n(?:[^\n]*\n)?    var patch=\{item:item\};/,'뷰어의 글 고치기도 같은 정리');

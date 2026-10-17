@@ -243,7 +243,7 @@
     j.sessions.slice(0,400).forEach(function(r){ if(!r||typeof r!=='object')return;
       var u=url(r.path),id=str(r.id,3); if(!u||!known[u]||m[u]||!/^\d{3}$/.test(id)||!Array.isArray(r.trainings)||r.trainings.length<1||r.trainings.length>6)return;
       var pl=Array.isArray(r.players)?r.players.map(function(v){ return Math.max(0,Math.min(99,Math.floor(+v||0))); }).slice(0,2):null;
-      m[u]={id:id,rev:/^[0-9a-f]{6,12}$/.test(r.rev)?r.rev:'',focus:str(r.focus,8),players:pl&&pl.length===2?pl:null,trainings:r.trainings.map(function(t,k){ t=(t&&typeof t==='object')?t:{};
+      m[u]={id:id,rev:/^[0-9a-f]{6,12}$/.test(r.rev)?r.rev:'',focus:str(r.focus,8),subs:Array.isArray(r.subs)?r.subs.filter(function(k){ return typeof k==='string'&&/^std_(ao|do|dt|at|set)_\d$/.test(k); }).slice(0,4):[],players:pl&&pl.length===2?pl:null,trainings:r.trainings.map(function(t,k){ t=(t&&typeof t==='object')?t:{};
         return {name:str(t.name,60)||('훈련 '+(k+1)),minutes:Math.max(0,Math.min(600,Math.floor(+t.minutes||0))),scenes:Math.max(0,Math.min(40,Math.floor(+t.scenes||0)))}; })}; n++; });
     return {m:m,n:n};
   }

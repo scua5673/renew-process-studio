@@ -7,6 +7,7 @@ export default {
   path: 'futsal/block-3/defending-in-a-mid-block.php',
   name: '미드 블록 수비 — 가운데 두 구역에서 막고 받는 순간 붙기',
   focus: 'bpo',
+  subs: ['std_do_2'],
   by: 'José Venancio López',
   trainings: [
     {

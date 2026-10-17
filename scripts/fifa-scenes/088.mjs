@@ -5,6 +5,7 @@ export default {
   path: 'grassroots/8-to-12/different-pitches.php',
   name: '여러 가지 경기장 — 칸 모양이 바뀌면 플레이도 바뀐다',
   focus: 'tech',
+  subs: ['std_ao_2'],
   trainings: [
     {
       /* 1 — 2v1 공 지키기(10 × 10m: x 293~818 · y 108~633). 파랑 둘이 공을 지키고 빨강 하나가 빼앗는다 */

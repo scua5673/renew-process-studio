@@ -5,6 +5,7 @@ export default {
   path: 'futsal/fitness/high-speed-transitions.php',
   name: '고속 전환 — 빼앗기면 바로 누르고, 빼앗으면 바로 돌리기',
   focus: 'phys',
+  subs: ['std_dt_1'],
   by: 'Gary Phillips',
   trainings: [
     {

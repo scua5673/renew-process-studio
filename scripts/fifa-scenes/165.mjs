@@ -7,6 +7,7 @@ export default {
   path: 'futsal/block-4/exploiting-overloads-on-the-counter-attack.php',
   name: '역습에서 수적 우위 살리기 — 대각으로 보고, 연결하고, 들어가기',
   focus: 'tr_att',
+  subs: ['std_at_1'],
   by: 'Graeme Dell',
   trainings: [
     {

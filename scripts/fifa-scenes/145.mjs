@@ -10,6 +10,7 @@ export default {
   path: 'futsal/block-1/passing-to-progress-play.php',
   name: '전진하는 패스 — 셋이 만지고 끝 구역까지',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

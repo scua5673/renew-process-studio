@@ -6,6 +6,7 @@ export default {
   path: 'elite-sessions/out-of-possession/johnson-defending-principles.php',
   name: '개인 · 소그룹 수비 원칙 — 높은 압박, 짝 수비, 측면 잠그기',
   focus: 'bpo',
+  subs: ['std_do_1', 'std_do_3'],
   by: 'Michael Johnson',
   trainings: [
     {

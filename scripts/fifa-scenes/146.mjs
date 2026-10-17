@@ -6,6 +6,7 @@ export default {
   path: 'futsal/block-1/dribbling-to-beat-an-opponent.php',
   name: '상대를 벗겨내는 드리블 — 속임 동작으로 1v1 이기기',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

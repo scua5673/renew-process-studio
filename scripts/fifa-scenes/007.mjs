@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/in-possession/movement_of_the_front-three_johnson.php',
   name: '전방 세 명의 움직임 — 내려오고, 비우고, 뒤로 뛰기',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: 'Michael Johnson',
   trainings: [
     {

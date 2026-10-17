@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/global-grassroots-insights/christchurch-united.php',
   name: '살피고 앞으로 플레이하기 — 네 칸 론도에서 3v3+2 경기까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: 'Christchurch United',
   trainings: [
     {

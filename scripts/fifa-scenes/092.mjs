@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/8-to-12/find-the-gap.php',
   name: '빈틈 찾기 — 번호 이어달리기에서 골 넷 6v6까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

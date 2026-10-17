@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/multi-team-passing-and-small-sided-game-exercises.php',
   name: '여러 팀 패스와 작은 경기 — 두 겹 원 주고받기에서 세 팀 교대 6v6까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

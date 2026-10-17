@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/optimising-game-application.php',
   name: '경기로 옮기기 — 수적 우위에서 세 구역 11v11까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

@@ -22,6 +22,7 @@ export default {
   path: 'futsal/block-2/playing-through-the-thirds.php',
   name: '세 구역을 지나 전진하기 — 앞을 보고, 앞으로, 빠르게',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Graeme Dell',
   trainings: [
     {

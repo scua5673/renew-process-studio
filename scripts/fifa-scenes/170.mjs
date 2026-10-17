@@ -28,6 +28,7 @@ export default {
   path: 'futsal/block-5/3-1-system-role-of-the-pivot.php',
   name: '3-1 시스템 — 피보가 버티고, 돌고, 내주기',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

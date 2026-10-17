@@ -23,6 +23,7 @@ export default {
   path: 'futsal/fitness/transition-and-pressing-from-4v2-to-4v6.php',
   name: '4v2에서 4v6까지 — 빼앗기는 순간 넷이 함께 압박',
   focus: 'phys',
+  subs: ['std_dt_1'],
   by: 'Gary Phillips',
   trainings: [
     {

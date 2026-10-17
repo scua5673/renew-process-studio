@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/youth-national-teams/u15-boys-tournament/landing-page.php',
   name: '청소년 대표팀 대회 안에서 — 다이아몬드 압박과 그 압박 풀기',
   focus: 'bp',
+  subs: ['std_do_1', 'std_ao_1'],
   by: 'U-15 대표팀',
   trainings: [
     {

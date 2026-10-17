@@ -6,6 +6,7 @@ export default {
   path: 'grassroots/global-grassroots-insights/cefor-jilo-u15-attacking-technique.php',
   name: '공격 기술 — 넓게 벌리고, 빠르게 들어가 끝내기',
   focus: 'tech',
+  subs: ['std_ao_3'],
   by: 'Cefor Jilo',
   trainings: [
     {

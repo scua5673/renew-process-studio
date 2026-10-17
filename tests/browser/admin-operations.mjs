@@ -58,7 +58,7 @@ try{
   });
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/admin.html',{waitUntil:'domcontentloaded'});await page.locator('.admin-ops [data-op-user="'+U+'"]').first().waitFor();await page.waitForTimeout(150);
   assert.match(await page.locator('.admin-ops').innerText(),/가상 문의: 저장 흐름 확인/);assert.match(await page.locator('.admin-ops').innerText(),/10분/);assert.match(await page.locator('.admin-ops').innerText(),/현재 상태를 판단하지/);await page.screenshot({path:path.join(out,'home-'+width+'.png')});
-  /* 3.079 — 오늘 확인할 일 한 줄: 다섯 칸 · 못 받은 값(가짜 서버가 빈 응답을 주는 제보 · 신고 · 사고)은 0 이 아니라 «확인 못 함» · 칸을 누르면 그 화면 */
+  /* 3.081 — 오늘 확인할 일 한 줄: 다섯 칸 · 못 받은 값(가짜 서버가 빈 응답을 주는 제보 · 신고 · 사고)은 0 이 아니라 «확인 못 함» · 칸을 누르면 그 화면 */
   await page.waitForFunction(()=>document.querySelectorAll('.admin-today-tile').length===5&&!document.querySelector('.admin-today-tile.wait'));
   assert.equal(await page.locator('.admin-today-tile[data-today-key="support"]').innerText().then(t=>/확인 못 함/.test(t)),true);
   assert.match(await page.locator('.admin-today-tile[data-today-key="overdue"]').innerText(),/없음/);

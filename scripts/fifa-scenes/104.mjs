@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/pass-and-offer-pass-and-move.php',
   name: '주고 받으러 가기, 주고 움직이기 — 던지고 받기에서 9v5 경기까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

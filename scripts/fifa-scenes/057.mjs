@@ -4,6 +4,7 @@ export default {
   path: 'training-perspectives/designing-games-for-development/landing-page.php',
   name: '경기 중심 훈련의 디테일 — 인원 · 공간 · 목표 · 규칙으로 경기 짜기',
   focus: 'bp',
+  subs: ['std_ao_1', 'std_do_1'],
   by: 'Arne Barez',
   trainings: [
     {

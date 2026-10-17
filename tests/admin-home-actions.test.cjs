@@ -64,7 +64,7 @@ test('only action pings: visits show the empty state, actions still counted',()=
 test('missing RPC is still reported in both sections',()=>{
   const h=harness(null);
   h.c.renderPart();
-  /* 3.079 — 없는 파일(supabase-usage.sql)을 실행하라던 안내 대신, 응답하지 않은 함수 이름을 댄다 */
+  /* 3.081 — 없는 파일(supabase-usage.sql)을 실행하라던 안내 대신, 응답하지 않은 함수 이름을 댄다 */
   for(const id of ['hmActs','hmFeat']){
     assert.match(h.nodes[id].innerHTML,/불러오지 못했습니다/);
     assert.match(h.nodes[id].innerHTML,/<code>ps_admin_usage_features<\/code> 응답 없음/);
