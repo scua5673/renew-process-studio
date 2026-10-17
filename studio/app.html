@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.081"></script>
+<script src="autosave-status.js?v=3.082"></script>
 <script src="update-progress.js"></script>
 
 <title>PROCESS STUDIO</title>
@@ -408,12 +408,18 @@
       display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;overflow:visible;}
     .seg button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
       font-size:var(--fs-micro);letter-spacing:-.3px;padding:3px 0 2px;border-radius:10px;white-space:nowrap;}
-    .seg button svg{display:block;}
-    .seg button.on{background:transparent;box-shadow:none;color:var(--blue);}
+    /* 3.082 — 폰 하단 메뉴 A안(사용자 «앱의 결에 맞게» → «A안으로»): 고른 칸은 아이콘 뒤 옅은 남색 알약 + 남색 굵은 글자 — 커뮤니티 고르개 칩과 같은 결.
+       알약 자리(아이콘 둘레 4·14px)는 모든 칸이 미리 갖고 있어 고를 때 칸이 흔들리지 않는다. IDP · 학습은 예전처럼 보라 */
+    .seg button svg{display:block;box-sizing:content-box;padding:4px 14px;border-radius:999px;transition:background-color .15s ease;}
+    .seg button.on{background:transparent;box-shadow:none;color:var(--blue);font-weight:700;}
+    .seg button.on svg{background:var(--dv2-accent-soft,#E9EDF5);stroke-width:2.1;}
     .seg button[data-app="idp"].on,.seg button[data-app="learning"].on{color:#7C4DFF;}
-    /* 다크: 라이트와 동일하게 박스 없이 색 텍스트/아이콘만 (모드 간 통일) */
+    .seg button[data-app="idp"].on svg,.seg button[data-app="learning"].on svg{background:var(--dv2-violet-soft,#f5f2ff);}
+    /* 다크: 같은 알약을 어두운 면에 맞춰 */
     body.fmdark .seg button.on{background:transparent;box-shadow:none;color:#7F98D0;}
+    body.fmdark .seg button.on svg{background:rgba(127,152,208,.18);}
     body.fmdark .seg button[data-app="idp"].on,body.fmdark .seg button[data-app="learning"].on{color:#9D7BFF;}
+    body.fmdark .seg button[data-app="idp"].on svg,body.fmdark .seg button[data-app="learning"].on svg{background:rgba(157,123,255,.18);}
     .seg button.on::after{display:none;}
     /* 2.349 — ⚠ 56px 은 **추정치**였고 실제 바는 59px 이라 iframe 이 3px 파고들어, iframe 앱이 제 하단 바를
        가진 화면(IDP·학습)에서 두 바가 겹쳤다(실측: IDP 바 697~756 vs 셸 바 753~812).
@@ -516,7 +522,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.081';</script>
+<script>window.PS_BUILD='3.082';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -1619,12 +1625,12 @@ window.psFailAlert=function(lead,e,stage){
   <!-- 2.179 — 폰 하단 탭(콕핏 §05): 팀 안에서는 오늘·경기·일정·선수단·더보기. 더보기 = 스카우팅·IDP·기준 + 다른 앱 -->
   <nav class="team-bottom" id="teamBottom" aria-label="팀 하단 탭" hidden>
     <!-- 2.908 — 위 줄과 같은 순서: 오늘 · 경기 · 일정 · 선수단 · IDP · 더보기(설정 묶음과 다른 앱). 스카우팅·가용인원은 선수단 서브탭 줄에 -->
-    <button type="button" data-tb="today">오늘</button>
-    <button type="button" data-tb="match">경기</button>
-    <button type="button" data-tb="training">일정</button>
-    <button type="button" data-tb="players">선수단</button>
-    <button type="button" data-tb="idp">IDP</button>
-    <button type="button" data-tb="more">더보기</button>
+    <button type="button" data-tb="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><circle cx="12" cy="14.6" r="1.7"/></svg><span>오늘</span></button>
+    <button type="button" data-tb="match"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6l3.3 2.4-1.3 3.9h-4L8.7 10z"/><path d="M12 3.5v4.1M20.1 9.4l-4.8.6M16.9 19.2l-2.9-5.3M7.1 19.2l2.9-5.3M3.9 9.4l4.8.6"/></svg><span>경기</span></button>
+    <button type="button" data-tb="training"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4M7.5 13h3M13.5 13h3M7.5 16.5h3"/></svg><span>일정</span></button>
+    <button type="button" data-tb="players"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16 14.6a5 5 0 0 1 5 5"/></svg><span>선수단</span></button>
+    <button type="button" data-tb="idp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 19.5v-5"/><path d="M12 19.5v-9"/><path d="M18.5 19.5v-14"/></svg><span>IDP</span></button>
+    <button type="button" data-tb="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></svg><span>더보기</span></button>
   </nav>
   <div class="team-more" id="teamMoreSheet" hidden>
     <div class="tms-h"><b>더보기</b><button type="button" data-tb="close" aria-label="닫기">×</button></div>
@@ -1762,8 +1768,13 @@ window.psFailAlert=function(lead,e,stage){
   .team-bottom .tb-ipad-idp{display:none}
   @media (max-width:600px){
     body.ps-team-open .team-bottom{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:170;grid-template-columns:repeat(6,1fr);background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-top:1px solid var(--line,#e6e8ee);padding:6px 0 max(8px,env(safe-area-inset-bottom))}
-    body.ps-team-open .team-bottom button{border:0;background:none;font:inherit;font-size:10px;letter-spacing:-.01em;white-space:nowrap;font-weight:600;color:var(--dim,#6f7580);padding:6px 0;min-height:40px}
+    body.ps-team-open .team-bottom button{border:0;background:none;font:inherit;font-size:10px;letter-spacing:-.01em;white-space:nowrap;font-weight:600;color:var(--dim,#6f7580);padding:3px 0 2px;min-height:40px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
     body.ps-team-open .team-bottom button.on{color:var(--team-c,#15305a);font-weight:800}
+    /* 3.081 — 팀 하단 탭도 앱 하단 메뉴(A안)와 같은 문법: 아이콘 위 · 글자 아래, 고른 칸은 아이콘 뒤 옅은 남색 알약 */
+    body.ps-team-open .team-bottom button svg{display:block;width:22px;height:22px;box-sizing:content-box;padding:4px 14px;border-radius:999px;transition:background-color .15s ease}
+    body.ps-team-open .team-bottom button.on svg{background:var(--dv2-accent-soft,#E9EDF5);stroke-width:2.1}
+    body.fmdark.ps-team-open .team-bottom button.on svg{background:rgba(127,152,208,.18)}
     body.fmdark.ps-team-open .team-bottom{background:rgba(15,20,27,.97);border-top-color:#26313d}   /* 2.894 — 다크에서도 흰 바탕이었다 */
     body.fmdark.ps-team-open .team-bottom button{color:#9aa4b3}
     body.fmdark.ps-team-open .team-bottom button.on{color:#e7ebf1}
@@ -8191,13 +8202,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.081"></script>
-<script src="autosave-merge.js?v=3.081"></script>
-<script src="autosave-runtime.js?v=3.081"></script>
-<script src="autosave-recovery.js?v=3.081"></script>
-<script src="sync.js?v=3.081"></script>
+<script src="autosave-journal.js?v=3.082"></script>
+<script src="autosave-merge.js?v=3.082"></script>
+<script src="autosave-runtime.js?v=3.082"></script>
+<script src="autosave-recovery.js?v=3.082"></script>
+<script src="sync.js?v=3.082"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.081">
+<link rel="stylesheet" href="support.css?v=3.082">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>
