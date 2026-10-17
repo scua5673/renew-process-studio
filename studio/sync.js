@@ -145,7 +145,7 @@ function wipeTeamCacheSoft(){
     if(inIdb&&(!window.storage||!window.storage.delIfValue))return;
     if(!holdConflictCurrent(owner)||localStorage.getItem(k)!==loc)return;
     try{ localStorage.removeItem(k); n++; }catch(_){ return; }
-    if(typeof PSIdpPubWipe!=='undefined')PSIdpPubWipe.mark(m,k);   /* 3.080 — 다시 받기 전에 새로 쓴 공개본이 서버본을 덮지 않게(idp-pub-wipe.js) */
+    if(typeof PSIdpPubWipe!=='undefined')PSIdpPubWipe.mark(m,k);   /* 3.081 — 다시 받기 전에 새로 쓴 공개본이 서버본을 덮지 않게(idp-pub-wipe.js) */
     /* 2.733 — 경기 사본을 지웠으면 이 워크스페이스에서 경기 키를 확인했다는 표도 지운다.
        표만 남으면 다음 부팅이 빈 로컬을 확인 완료로 오해해 일정에서 빈 문서를 만든다. */
     if(k===MATCH_KEY&&m.r)delete m.r[k];
@@ -2572,7 +2572,7 @@ function syncState(){
   if(rc)return {kind:'ask',text:'저장할 내용 선택 · '+rc+'건',n:n,review:rc};
   if(busy)return {kind:'busy',text:'올리는 중'+(n?(' · '+n):''),n:n,review:rc};
   if(n)return {kind:'pending',text:'전송 대기 · '+n+'건',n:n,review:rc};
-  /* 3.080 — 이 공간에서 받은 적이 없거나(팀 전환 안의 받기가 실패 — meta 가 비었다) 닫기 정리 뒤 첫 받기 전이면 «팀과 같아요»가 아니다.
+  /* 3.081 — 이 공간에서 받은 적이 없거나(팀 전환 안의 받기가 실패 — meta 가 비었다) 닫기 정리 뒤 첫 받기 전이면 «팀과 같아요»가 아니다.
      ps_last_pull_at 은 공간을 가리지 않아 이전 팀에서 받은 시각으로 «저장됨 · 1분 전»을 보여 줬다 */
   var wiped=false; try{ wiped=typeof cacheWipedFlag==='function'&&cacheWipedFlag(); }catch(_){}
   if(!(+m.last)||wiped)return fresh?{kind:'wait',reason:lastIssue.code,text:'아직 못 받았어요 · '+syncReasonText(lastIssue.code),n:0,review:0,at:lastIssue.at}:{kind:'wait',text:'받는 중',n:0,review:0};
@@ -6780,7 +6780,7 @@ function syncNowCore(reason){
         if(idbBacked(k)) loc=(idbVals[k]===undefined?null:idbVals[k]);
         else { try{ loc=localStorage.getItem(k); }catch(_){} }
         if(loc==null) needV.push(k);   /* 로컬이 비었으면 서버본으로 복원해야 하니 값이 필요하다 */
-        else if(typeof PSIdpPubWipe!=='undefined'&&PSIdpPubWipe.state(m0,k,loc,hash)==='rebuilt') needV.push(k);   /* 3.080 — 받기 전에 새로 쓴 공개본은 서버본과 합친다 */
+        else if(typeof PSIdpPubWipe!=='undefined'&&PSIdpPubWipe.state(m0,k,loc,hash)==='rebuilt') needV.push(k);   /* 3.081 — 받기 전에 새로 쓴 공개본은 서버본과 합친다 */
         /* 1.573 — 로컬이 '빈 목록'이면 서버 값을 받아 대조한다(기억한 숫자보다 정확하다).
            빈 값 업로드는 바로 이 경우라, 이때만 값을 더 받는 비용은 싸다. */
         else if(psCount(loc)===0) needV.push(k);
@@ -7554,7 +7554,7 @@ function syncNowCore(reason){
             return;
           }
           var lh=hash(loc),dirty=(lh!==(m.h[k]||'')),srvChanged=row?(row.cupd!==(m.c[k]||0)):false;
-          /* 3.080 — 닫을 때 지운 뒤 받기 전에 새로 쓴 문서는 서버본과 «조상 없이» 합친다. 그대로 올리거나 기준본과 합치면 서버본이 사라진다 */
+          /* 3.081 — 닫을 때 지운 뒤 받기 전에 새로 쓴 문서는 서버본과 «조상 없이» 합친다. 그대로 올리거나 기준본과 합치면 서버본이 사라진다 */
           var rebuilt=pw==='rebuilt'&&!!row;
           if(rebuilt){if(typeof row.v!=='string'){syncDiagnostic('idp-public-rebuilt-wait',new Error('다시 받기 전에 쓴 공개 IDP — 서버 원문을 기다림'));return;}srvChanged=true;}
           if(loc!=null&&loc.length>MAXLEN){skippedBig++;skippedKeys.push(k);return;}
