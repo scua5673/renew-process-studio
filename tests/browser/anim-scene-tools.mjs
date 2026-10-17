@@ -61,9 +61,12 @@ try{
   await pick('animSpeedSel','all:4');   /* 이동은 짧게(장면 사이 0.25초) — 유지 시간 차이가 잘 보이게 */
   const playMs=()=>f.evaluate(()=>new Promise(res=>{ animActive=0; const t0=performance.now(); playAnim();
     (function w(){ if(!animPlaying)res(performance.now()-t0); else requestAnimationFrame(w); })(); }));
-  const ms01=await playMs();
+  /* 첫 재생은 장면 그림 · 처음 도는 코드 값이 붙어 느리다(CI 웹킷에서 0.1초 쪽만 0.7초 더 걸려 차이가 0.65초로 보였다) — 한 번 데우고, 두 번 재서 짧은 쪽 */
+  await playMs();
+  const best=async()=>Math.min(await playMs(),await playMs());
+  const ms01=await best();
   await pick('animHoldSel','0.3');
-  const ms03=await playMs();
+  const ms03=await best();
   /* 장면 6 개 = 머묾 6번. 0.1초면 0.3초보다 6×0.2 = 1.2초 짧다(예전처럼 0.2초로 잘리면 0.6초만 짧다) */
   assert.ok(ms03-ms01>900,`0.1초 유지가 재생에 그대로 쓰인다: 0.1 → ${Math.round(ms01)}ms, 0.3 → ${Math.round(ms03)}ms`);
   assert.ok(ms01<3000,'0.1초 재생 '+Math.round(ms01)+'ms');
