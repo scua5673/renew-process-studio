@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/national-teams/spain-u23/spain-u23-womens-defensive-shape-and-press-after-losing-possession.php',
   name: '공 잃은 뒤 수비 대형과 압박 — 바로 되찾거나, 바로 대형으로',
   focus: 'tr_def',
+  subs: ['std_dt_1', 'std_dt_2'],
   by: '스페인 U-23 여자 대표팀',
   trainings: [
     {

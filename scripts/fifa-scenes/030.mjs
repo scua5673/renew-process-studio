@@ -14,6 +14,7 @@ export default {
   path: 'elite-sessions/transition-to-defending/defensive-transitions.php',
   name: '수비 전환에서 대형 되찾기 — 가까운 사람이 늦추고 모두 돌아온다',
   focus: 'tr_def',
+  subs: ['std_dt_2', 'std_dt_1'],
   by: 'Abdallah Idrissi',
   trainings: [
     {

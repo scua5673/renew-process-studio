@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/out-of-possession/bernhard-forward-defending.php',
   name: '앞에서 수비하기 — 먼저 튀어나가 공을 빼앗기',
   focus: 'bpo',
+  subs: ['std_do_1', 'std_dt_1'],
   by: 'Anouschka Bernhard',
   trainings: [
     {

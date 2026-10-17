@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/german-academies/landing-pages/borussia-dortmund-u17-landing-page.php',
   name: '핵심 경기 원칙 훈련 — 높은 강도 · 2v1 만들기 · 남은 수비',
   focus: 'bp',
+  subs: ['std_at_1', 'std_ao_1'],
   by: 'Borussia Dortmund U-17',
   trainings: [
     {

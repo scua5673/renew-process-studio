@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/in-possession/building_from_the_back_skinner.php',
   name: '골키퍼부터 시작하는 빌드업 — 세 줄을 차례로 지나가기',
   focus: 'bp',
+  subs: ['std_ao_1'],
   by: 'Rehanne Skinner',
   trainings: [
     {

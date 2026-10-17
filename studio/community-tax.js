@@ -28,14 +28,34 @@
     19:[3,12],20:[4,14],21:[8,14],22:[7,13],23:[6,10],24:[6,13],25:[10,16],26:[3,14],27:[5,14],28:[7,14],29:[5,16],30:[7,13],31:[8,16],32:[5,13],33:[7,16],34:[4,9],35:[5,10],
     36:[3,9],37:[5,14],38:[4,10],39:[9,13],40:[5,14],41:[7,14],42:[12,14],43:[8,16],44:[5,14],45:[6,16],46:[6,13]};
   var ELITE=['U15','U18','성인'];
+  /* 3.079 — 세부 국면(사용자 «세부 국면도 선택할 수 있게»). 작전판 편집기의 경기 국면 기본 골격(board.html EP_STD_MOMENTS)과 같은 id · 이름이라
+     보관함에 담으면 편집기의 경기 국면 칩이 그대로 켜진다. [id, 짧은 이름]. 큰 국면 이름은 MOM(작전판 gmPhaseNames 의 «국면 › 세부» 앞쪽) */
+  var SUBS={att:[['std_ao_1','빌드업'],['std_ao_2','전진 · 전개'],['std_ao_3','침투 · 마무리']],def:[['std_do_1','전방 압박'],['std_do_2','미드 블록'],['std_do_3','로우 블록']],
+    trd:[['std_dt_1','즉시 반응 (역압박)'],['std_dt_2','후퇴 · 재정비']],tra:[['std_at_1','빠른 역습'],['std_at_2','점유 안정화']],set:[['std_set_1','공격 세트피스'],['std_set_2','수비 세트피스']]};
+  var MOM={att:'공격 조직',def:'수비 조직',trd:'공격 → 수비 전환',tra:'수비 → 공격 전환',set:'세트피스'};
+  var SUBMAP={}; Object.keys(SUBS).forEach(function(t){ SUBS[t].forEach(function(x){ SUBMAP[x[0]]={topic:t,name:x[1],full:MOM[t]+' › '+x[1]}; }); });
+  /* 세부 국면 읽기 — std id 그대로, 아니면 «국면 › 세부» 이름(팀 게임모델로 고른 훈련도 이름이 같으면 맞춘다) */
+  function subsOf(ids,names){
+    var out=[]; (Array.isArray(ids)?ids:[]).forEach(function(k){ if(SUBMAP[k]&&out.indexOf(k)<0)out.push(k); });
+    (Array.isArray(names)?names:[]).forEach(function(nm){ var tail=String(nm||'').split(' › ').pop().trim();
+      Object.keys(SUBMAP).forEach(function(k){ if((SUBMAP[k].full===nm||SUBMAP[k].name===tail)&&out.indexOf(k)<0)out.push(k); }); });
+    return out.slice(0,4);
+  }
+  /* 프로세스 세션 n → 세부 국면(레터의 테마 «국면 › 주제»에서 골랐다 · 훈련 설계 · 피지컬 · 경기 준비 · 소통은 없음) */
+  var PROC_SUB={2:['ao_1'],3:['ao_2'],4:['dt_1'],5:['ao_2'],6:['set_1'],7:['ao_3'],8:['at_1'],9:['do_2'],10:['ao_2'],11:['do_2'],12:['ao_3'],13:['ao_3'],14:['ao_2'],15:['ao_2'],
+    16:['ao_2'],17:['do_1'],20:['do_3'],23:['ao_3'],24:['do_1'],26:['ao_2'],28:['ao_1'],29:['ao_3'],30:['ao_2'],31:['ao_1','ao_3'],33:['ao_1'],36:['do_3'],37:['dt_2'],
+    39:['ao_1'],40:['ao_2','ao_3'],41:['ao_3'],42:['ao_2'],43:['ao_1'],44:['set_1'],45:['ao_1'],46:['do_3']};
 
   function num(v){ v=parseInt(v,10); return v>0&&v<200?v:0; }
   function uniq(a){ var o=[]; a.forEach(function(x){ if(x&&o.indexOf(x)<0)o.push(x); }); return o; }
-  function item(topics,ages,min,max){ return {topics:uniq(topics||[]),ages:(ages&&ages.length)?uniq(ages):null,min:num(min),max:num(max)||num(min)}; }
+  function item(topics,ages,min,max,subs){ var sb=subsOf(subs),tp=uniq((topics||[]).concat(sb.map(function(k){ return SUBMAP[k].topic; })));
+    var it={topics:tp,ages:(ages&&ages.length)?uniq(ages):null,min:num(min),max:num(max)||num(min)}; if(sb.length)it.subs=sb; return it; }
   function fromCoach(p,keysOf){
     var ks=keysOf(p&&p.cat),ag=keysOf(p&&p.age).filter(function(a){ return AGES.indexOf(a)>=0; }),n=num(p&&p.players);
     if(!ks.length&&p&&p.item&&FOCUS[p.item.focus])ks=[p.item.focus];
-    return item(ks.map(function(k){ return COACH[k]||FOCUS[k]||''; }),ag,n,n);
+    var it=p&&p.item,sb=ks.filter(function(k){ return SUBMAP[k]; });   /* 3.079 — 올릴 때 cat 에 세부 국면 id 도 적는다(목록에는 item 이 없다) */
+    if(!sb.length&&it)sb=subsOf(it.gmPhases,it.gmPhaseNames);
+    return item(ks.map(function(k){ return COACH[k]||FOCUS[k]||''; }),ag,n,n,sb);
   }
   function fromProc(s){
     var h=String(s&&s.head||String(s&&s.theme||'').split(' › ')[0]).trim(),t='';
@@ -43,7 +63,7 @@
     else if(h==='공격 조직')t='att'; else if(h==='수비 조직')t='def'; else if(h==='세트피스')t='set';
     else if(h==='피지컬'||h==='경기 준비')t='phys'; else if(h==='훈련 설계')t='tech';
     var pl=PROC_PL[s&&s.n]||[0,0];
-    return item([t],['U12','U15','U18','성인'],pl[0],pl[1]);   /* 프로세스 레터는 U12~성인 팀을 두고 쓴 세션이다 */
+    return item([t],['U12','U15','U18','성인'],pl[0],pl[1],(PROC_SUB[s&&s.n]||[]).map(function(k){ return 'std_'+k; }).filter(function(k){ return SUBMAP[k].topic===t; }));   /* 세션 번호 표와 테마가 어긋나면(다른 레터 사본) 세부 국면을 붙이지 않는다 */   /* 프로세스 레터는 U12~성인 팀을 두고 쓴 세션이다 */
   }
   /* FIFA 줄(e: community-fifa.js list 의 한 줄) + 애니메이션 목록 줄(an: 있으면 focus · players) */
   function fifaAges(e){
@@ -57,27 +77,29 @@
   function fromFifa(e,an){
     var t=(an&&FOCUS[an.focus])||FIFA_G[e&&e.g]||'';
     var pl=(an&&Array.isArray(an.players))?an.players:[0,0];
-    return item([t],fifaAges(e),pl[0],pl[1]);
+    return item([t],fifaAges(e),pl[0],pl[1],an&&an.subs);
   }
 
   /* 고르개 상태 — 이 탭(창)에서만. 인원은 처음엔 «상관없음» */
-  var S={topic:'',age:'',n:12,any:true};
-  function state(){ return {topic:S.topic,age:S.age,n:S.n,any:S.any}; }
-  function set(o){ o=o||{}; if('topic' in o)S.topic=TMAP[o.topic]?o.topic:''; if('age' in o)S.age=AGES.indexOf(o.age)>=0?o.age:'';
+  var S={topic:'',sub:'',age:'',n:12,any:true};
+  function state(){ return {topic:S.topic,sub:S.sub,age:S.age,n:S.n,any:S.any}; }
+  function set(o){ o=o||{}; if('topic' in o){ S.topic=TMAP[o.topic]?o.topic:''; if(!SUBMAP[S.sub]||SUBMAP[S.sub].topic!==S.topic)S.sub=''; }
+    if('sub' in o){ S.sub=SUBMAP[o.sub]?o.sub:''; if(S.sub)S.topic=SUBMAP[S.sub].topic; }
+     if('age' in o)S.age=AGES.indexOf(o.age)>=0?o.age:'';
     if('n' in o){ var n=Math.floor(+o.n); S.n=Math.max(1,Math.min(30,isFinite(n)?n:12)); } if('any' in o)S.any=!!o.any; }
   function okAgePl(it){
     if(S.age&&it.ages&&it.ages.indexOf(S.age)<0)return false;
     if(!S.any&&it.min&&it.min>S.n)return false;
     return true;
   }
-  function ok(it){ if(!it)return true; if(S.topic&&it.topics.indexOf(S.topic)<0)return false; return okAgePl(it); }
+  function ok(it){ if(!it)return true; if(S.topic&&it.topics.indexOf(S.topic)<0)return false; if(S.sub&&(it.subs||[]).indexOf(S.sub)<0)return false; return okAgePl(it); }   /* 세부 국면을 고르면 그 표시가 있는 글만 */
   /* 카드의 «오늘 인원» 맞춤 — 인원을 고르지 않았거나 모르면 없음 */
   function fit(it){
     if(S.any||!it||!it.min)return null;
     var mx=it.max||it.min;
     return mx<=S.n?{text:'오늘 인원으로 전부 할 수 있어요',kind:'ok'}:{text:'마지막 훈련은 '+mx+'명 — 줄여서 진행',kind:'warn'};
   }
-  function counts(items){ var c={}; (items||[]).forEach(function(it){ if(!okAgePl(it))return; it.topics.forEach(function(k){ c[k]=(c[k]||0)+1; }); }); return c; }
+  function counts(items){ var c={}; (items||[]).forEach(function(it){ if(!okAgePl(it))return; it.topics.concat(it.subs||[]).forEach(function(k){ c[k]=(c[k]||0)+1; }); }); return c; }
 
   function el(doc,tag,cls,text){ var x=doc.createElement(tag); if(cls)x.className=cls; if(text!=null)x.textContent=text; return x; }
   function dot(doc,color){ var d=el(doc,'span','tx-dot'); d.setAttribute('aria-hidden','true'); d.style.background=color; return d; }
@@ -104,6 +126,15 @@
       b.appendChild(dot(doc,on?'#fff':t[2])); b.appendChild(doc.createTextNode(t[1])); b.appendChild(el(doc,'span','tx-n',String(c[k]||0)));
       b.onclick=function(){ ch({topic:on?'':k}); }; ex.appendChild(b); });
     host.appendChild(ex);
+    if(SUBS[S.topic]){   /* 3.079 — 고른 국면의 세부 국면 */
+      var t0=TMAP[S.topic],sr=el(doc,'div','tx-row tx-subs'); sr.setAttribute('role','group'); sr.setAttribute('aria-label',t0[1]+' 세부 국면');
+      sr.appendChild(el(doc,'span','tx-lb','세부 국면'));
+      SUBS[S.topic].forEach(function(x){ var on=S.sub===x[0],b=el(doc,'button','tx-chip'+(on?' on':'')); b.type='button'; b.setAttribute('aria-pressed',on?'true':'false');
+        if(on){ b.style.background=t0[2]; b.style.borderColor=t0[2]; }
+        b.appendChild(doc.createTextNode(x[1])); b.appendChild(el(doc,'span','tx-n',String(c[x[0]]||0)));
+        b.onclick=function(){ ch({sub:on?'':x[0]}); }; sr.appendChild(b); });
+      host.appendChild(sr);
+    }
     var who=el(doc,'div','tx-who');
     var ag=el(doc,'div','tx-row'); ag.setAttribute('role','group'); ag.setAttribute('aria-label','연령');
     ag.appendChild(el(doc,'span','tx-lb','연령'));
@@ -131,6 +162,7 @@
     var hd=el(doc,'div','tx-sh-hd'),hl=el(doc,'div','tx-sh-hl'),bg=el(doc,'div','tx-row');
     var tb=topicBadge(doc,o.topic); if(tb)bg.appendChild(tb);
     if(o.form)bg.appendChild(el(doc,'span','tx-form',o.form));
+    ((o.item&&o.item.subs)||[]).forEach(function(k){ if(SUBMAP[k]&&SUBMAP[k].name!==o.form)bg.appendChild(el(doc,'span','tx-form',SUBMAP[k].name)); });
     hl.appendChild(bg); hl.appendChild(el(doc,'h2','tx-sh-tt',o.title||''));
     var it=o.item||null,meta=[];
     if(it&&it.ages)meta.push('연령 '+(it.ages.length>1?it.ages[0]+'~'+it.ages[it.ages.length-1]:it.ages[0]));
@@ -193,7 +225,7 @@
   }
   /* 올리기 창의 주제 · 연령 · 인원 — 커뮤니티 고르개와 같은 이름 · 순서. fill(d) 는 고른 훈련에서 미리 채운다(코치는 확인만) */
   function upForm(doc,o){
-    var tp=[],ag=[],pl=o&&o.pl;
+    var tp=[],ag=[],sb=[],pl=o&&o.pl;
     function chips(host,list,sel,label){
       if(!host)return function(){};
       var bs=list.map(function(k){ var b=el(doc,'button','',label(k)); b.type='button'; b.dataset.k=k;
@@ -201,14 +233,23 @@
       function mark(){ bs.forEach(function(b){ var on=sel.indexOf(b.dataset.k)>=0; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on?'true':'false'); }); }
       mark(); return mark;
     }
-    var mT=chips(o&&o.topics,PHASES.concat(EXTRAS),tp,function(k){ return TMAP[k][1]; }),mA=chips(o&&o.ages,AGES,ag,function(a){ return a; });
+    var mS=chips(o&&o.subs,Object.keys(SUBMAP),sb,function(k){ return SUBMAP[k].name; });
+    /* 세부 국면 칩은 고른 주제의 것만 보인다 — 주제를 빼면 그 세부 국면도 빠진다 */
+    function vis(){ if(!o||!o.subs)return; for(var i=sb.length-1;i>=0;i--)if(tp.indexOf(SUBMAP[sb[i]].topic)<0)sb.splice(i,1);
+      [].forEach.call(o.subs.children,function(b){ var v=tp.indexOf(SUBMAP[b.dataset.k].topic)>=0; if(v)b.style.removeProperty('display'); else b.style.setProperty('display','none'); });
+      if(o.subs.parentNode&&o.subs.parentNode.style)o.subs.parentNode.style[tp.some(function(k){ return SUBS[k]; })?'removeProperty':'setProperty']('display','none'); mS(); }
+    var mT0=chips(o&&o.topics,PHASES.concat(EXTRAS),tp,function(k){ return TMAP[k][1]; }),mT=function(){ mT0(); vis(); },mA=chips(o&&o.ages,AGES,ag,function(a){ return a; });
+    if(o&&o.topics)[].forEach.call(o.topics.children,function(b){ var f=b.onclick; b.onclick=function(){ f(); vis(); }; });
+    vis();
     return {
       fill:function(d){
-        if(!tp.length){ topicsOfDrill(d).forEach(function(k){ tp.push(k); }); mT(); }
+        var ds=subsOf(d&&d.gmPhases,d&&d.gmPhaseNames);
+        if(!tp.length){ topicsOfDrill(d).concat(ds.map(function(k){ return SUBMAP[k].topic; })).forEach(function(k){ if(tp.indexOf(k)<0)tp.push(k); }); mT(); }
+        if(!sb.length){ ds.forEach(function(k){ if(tp.indexOf(SUBMAP[k].topic)>=0)sb.push(k); }); vis(); }
         if(!ag.length&&Array.isArray(d&&d.ages)){ d.ages.forEach(function(a){ if(AGES.indexOf(a)>=0&&ag.indexOf(a)<0)ag.push(a); }); mA(); }
         var h=headcount(d); if(pl&&!pl.value&&h)pl.value=String(h);
       },
-      get:function(){ return {topics:tp.slice(),cat:tp.map(function(k){ return TO_CAT[k]; }).join(','),ages:ag.slice(),age:ag.join(','),players:String(pl&&pl.value||'').replace(/[^0-9]/g,'')}; }
+      get:function(){ return {topics:tp.slice(),subs:sb.slice(),subNames:sb.map(function(k){ return SUBMAP[k].full; }),cat:tp.map(function(k){ return TO_CAT[k]; }).concat(sb).join(','),ages:ag.slice(),age:ag.join(','),players:String(pl&&pl.value||'').replace(/[^0-9]/g,'')}; }
     };
   }
   /* 옛 고르개(주제 칩 · 콘텐츠 유형 · 연령 · 인원 · 폰 필터 시트의 같은 칸)를 감춘다 — 새 고르개가 대신한다. 정렬 · 검색 · 보기 방식은 그대로 */
@@ -221,5 +262,5 @@
   }
   return {TOPICS:TOPICS,PHASES:PHASES,EXTRAS:EXTRAS,AGES:AGES,COACH:COACH,FOCUS:FOCUS,PROC_PL:PROC_PL,
     fromCoach:fromCoach,fromProc:fromProc,fromFifa:fromFifa,fifaAges:fifaAges,state:state,set:set,ok:ok,fit:fit,counts:counts,
-    draw:draw,badge:badge,TO_CAT:TO_CAT,TO_FOCUS:TO_FOCUS,focusOfPost:focusOfPost,topicsOfDrill:topicsOfDrill,headcount:headcount,upForm:upForm,open:open,close:close,hideOld:hideOld,isOpen:function(){ return !!SHEET; }};
+    draw:draw,badge:badge,TO_CAT:TO_CAT,SUBS:SUBS,SUBMAP:SUBMAP,subsOf:subsOf,PROC_SUB:PROC_SUB,subsOfPost:function(p){ var it=fromCoach(p,keys),ids=it.subs||[]; return {ids:ids,names:ids.map(function(k){ return SUBMAP[k].full; })}; },TO_FOCUS:TO_FOCUS,focusOfPost:focusOfPost,topicsOfDrill:topicsOfDrill,headcount:headcount,upForm:upForm,open:open,close:close,hideOld:hideOld,isOpen:function(){ return !!SHEET; }};
 });

@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/english-academies/newcastle-united-home.php',
   name: '엘리트 아카데미의 훈련 — 겹쳐 뛰기와 박스 침투로 측면 뚫기',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: 'Newcastle United',
   trainings: [
     {

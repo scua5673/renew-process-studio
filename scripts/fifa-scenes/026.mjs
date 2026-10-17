@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/transition-to-attacking/transition-into-attack.php',
   name: '간격을 좁혀 지키고 공격으로 바꾸기 — 막고, 빼앗고, 앞으로',
   focus: 'tr_att',
+  subs: ['std_at_1', 'std_do_2'],
   by: 'Simon Jennings',
   trainings: [
     {

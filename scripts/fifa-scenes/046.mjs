@@ -6,6 +6,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/dutch-academies/nec-nijmegen-home.php',
   name: '가운데 전진 막기 — 2-2-2에서 4-4-2까지 한 덩어리 압박',
   focus: 'bpo',
+  subs: ['std_do_1'],
   by: 'NEC 네이메헌',
   trainings: [
     {

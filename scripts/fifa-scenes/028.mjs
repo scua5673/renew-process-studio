@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/transition-to-attacking/transitions.php',
   name: '공격 전환과 수비 전환 — 잃으면 곧장 되찾고, 얻으면 곧장 간다',
   focus: 'tr_att',
+  subs: ['std_at_1', 'std_dt_1'],
   by: 'Adrian Boothroyd',
   trainings: [
     {

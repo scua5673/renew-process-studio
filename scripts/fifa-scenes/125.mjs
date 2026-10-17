@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/coaching-with-the-global-analytical-global-model.php',
   name: '전체-부분-전체 — 경기로 보고, 패스를 다듬고, 다시 경기로',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

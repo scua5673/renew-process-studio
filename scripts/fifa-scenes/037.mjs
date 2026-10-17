@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/german-academies/training-methods-for-the-playing-style-of-the-bvb-u17-ii.php',
   name: '도르트문트 플레이 스타일을 위한 훈련 — 줄 뒤를 노리고, 잃으면 바로 되감기',
   focus: 'bp',
+  subs: ['std_ao_3', 'std_dt_1'],
   by: 'Borussia Dortmund U-17',
   trainings: [
     {
