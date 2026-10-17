@@ -33,8 +33,10 @@ var uploadId=0;document.getElementById('emblemFile').onchange=function(){var fil
 var photoFile=document.getElementById('photoFile'),photoDlg=document.getElementById('photoDlg');
 function openPhoto(src,who){document.getElementById('photoDlgImg').src=src;document.getElementById('photoDlgTitle').textContent=(who||'선수')+' 사진';if(photoDlg.showModal)photoDlg.showModal();else photoDlg.setAttribute('open','');}
 function closePhoto(){if(photoDlg.close)photoDlg.close();else photoDlg.removeAttribute('open');}
-photoFile.onchange=function(){var file=this.files[0],target=draft,pid=photoFor;this.value='';if(!file||!target||!pid||!photos)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>5*1024*1024){status.textContent='5MB 이하의 PNG·JPG·WebP 이미지를 선택하세요.';return;}
- photos.square(file).then(function(url){if(draft!==target)return;edits[pid]=url;dirty=true;renderRows();status.textContent='사진을 골랐습니다. 저장을 눌러 이 기기에 저장하세요.';},function(){if(draft===target)status.textContent='이미지를 읽지 못했습니다.';});};
+/* 고른 칸은 그림을 다 읽은 뒤에 비운다(엠블럼과 같은 순서 — 같은 사진을 다시 고를 수 있게). 종류가 비어 오면 확장자로 본다 */
+photoFile.onchange=function(){var input=this,file=input.files[0],target=draft,pid=photoFor,done=function(){input.value='';};if(!file||!target||!pid||!photos){done();return;}
+ var okType=['image/png','image/jpeg','image/webp'].includes(file.type)||(!file.type&&/\.(png|jpe?g|webp)$/i.test(file.name||''));if(!okType||file.size>5*1024*1024){done();status.textContent='5MB 이하의 PNG·JPG·WebP 이미지를 선택하세요.';return;}
+ photos.square(file).then(function(url){done();if(draft!==target)return;edits[pid]=url;dirty=true;renderRows();status.textContent='사진을 골랐습니다. 저장을 눌러 이 기기에 저장하세요.';},function(){done();if(draft===target)status.textContent='이미지를 읽지 못했습니다.';});};
 document.getElementById('photoReplace').onclick=function(){closePhoto();photoFile.click();};
 document.getElementById('photoRemove').onclick=function(){if(draft&&photoFor){edits[photoFor]=null;dirty=true;renderRows();status.textContent='사진을 뺐습니다. 저장을 눌러 적용하세요.';}closePhoto();};
 document.getElementById('photoClose').onclick=closePhoto;
