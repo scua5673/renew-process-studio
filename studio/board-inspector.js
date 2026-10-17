@@ -2,7 +2,7 @@
    떠 있는 하단 도크(body.ps-dock-float)에서 선수 한 명을 고르면, 보드의 선택 패널(.sel-ctl)을 오른쪽 위에 붙은 카드로 보인다.
    - 패널 안의 원래 입력 · 단추(번호 · 이름 · 포지션 · 색 · 동작 · 크기 · 숨김 · 복제 · 삭제 …)를 그대로 쓴다 — 옮기지 않고 CSS 로 자리만(order).
    - 더하는 것: 머리(번호 구슬 · 이름 · 포지션/번호/주발 · ✕), 묶음 제목, «주발»(자동 = 선수단 · 오른발 · 왼발 → p.foot, 3.074 차기/받기가 읽는다).
-   - 선수를 고르면 패널이 바로 열린다(예전에는 오른쪽 클릭). ✕ 로 닫으면 이번에는 다시 저절로 열지 않는다(오른쪽 클릭으로는 언제든).
+   - 여는 법은 그대로(2.975 피드백: 마우스는 오른쪽 클릭 · 터치는 길게 누르기). ✕ 는 패널을 닫는다.
    - 무대 아래 여백 계산(psSelBarLayout)이 이 패널을 아래 띠로 세지 않게 한다 — 판이 작아지지 않게. */
 (function (root, factory) {
   var api = factory();
@@ -27,7 +27,7 @@
   function css() {
     var font = 'Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif';
     var out = [
-      C + '{position:fixed!important;right:14px!important;top:76px!important;bottom:auto!important;width:288px!important;min-width:0!important;max-width:calc(100vw - 28px)!important;max-height:calc(100vh - var(--dock-h,72px) - 112px)!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;align-content:flex-start!important;justify-content:flex-start!important;gap:6px!important;padding:14px!important;margin:0!important;border-radius:20px!important;z-index:250!important;transform:none!important;scrollbar-width:thin;font-family:' + font + '!important;color:var(--in-ink)!important;background:var(--in-bg)!important;border:1px solid var(--in-border)!important;box-shadow:var(--in-shadow)!important;-webkit-backdrop-filter:blur(20px) saturate(1.5)!important;backdrop-filter:blur(20px) saturate(1.5)!important}',
+      C + '{position:fixed!important;right:14px!important;top:76px!important;bottom:auto!important;width:288px!important;min-width:0!important;max-width:calc(100vw - 28px)!important;max-height:min(62vh,calc(100vh - var(--dock-h,72px) - 112px))!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;align-content:flex-start!important;justify-content:flex-start!important;gap:6px!important;padding:14px!important;margin:0!important;border-radius:20px!important;z-index:250!important;transform:none!important;scrollbar-width:thin;font-family:' + font + '!important;color:var(--in-ink)!important;background:var(--in-bg)!important;border:1px solid var(--in-border)!important;box-shadow:var(--in-shadow)!important;-webkit-backdrop-filter:blur(20px) saturate(1.5)!important;backdrop-filter:blur(20px) saturate(1.5)!important}',
       C + '::before,' + C + '::after{display:none!important}',
       C + '>*{order:13!important;flex:0 0 auto!important;margin:0!important}',
       // 머리
@@ -51,8 +51,8 @@
       C + ' #posSel{width:100%!important;height:100%!important;border:0!important;background:transparent!important;color:var(--in-ink)!important;font:700 14px/1 ' + font + '!important}',
       // 색: 펼친 그대로
       C + '>#colorCtl{order:7!important;flex:1 1 100%!important;display:block!important;background:transparent!important;border:0!important;padding:0!important;height:auto!important;width:auto!important;max-width:none!important}',
-      C + ' #colorTrig{display:none!important}',
-      C + ' #colorPop{display:flex!important;position:static!important;flex-wrap:wrap!important;gap:8px!important;background:transparent!important;box-shadow:none!important;border:0!important;padding:2px 0!important;inset:auto!important;transform:none!important;width:auto!important;max-width:none!important;opacity:1!important;visibility:visible!important}',
+      C + ' #colorTrig{height:38px!important;width:100%!important;border-radius:10px!important;background:var(--in-well)!important;color:var(--in-ink)!important;border:0!important;justify-content:flex-start!important;padding:0 10px!important;gap:8px!important;font:700 13px/1 ' + font + '!important}',
+      C + ' #colorCtl.open #colorPop{display:flex!important;position:static!important;flex-wrap:wrap!important;gap:8px!important;background:transparent!important;box-shadow:none!important;border:0!important;padding:8px 0 2px!important;inset:auto!important;transform:none!important;width:auto!important;max-width:none!important;opacity:1!important;visibility:visible!important}',
       C + ' #colorPop .cdot{width:26px!important;height:26px!important;border-radius:50%!important;box-shadow:inset 0 2px 3px rgba(255,255,255,.4),inset 0 -3px 4px rgba(0,0,0,.3),0 2px 5px rgba(0,0,0,.3)!important}',
       C + ' #colorPop button:not(.cdot){color:var(--in-ink)!important;background:var(--in-well)!important;border:0!important;box-shadow:none!important;opacity:1!important}',
       C + ' .szlbl{color:var(--in-dim)!important;opacity:1!important}',
@@ -88,7 +88,7 @@
     function active() { return body.classList.contains('ps-dock-float') && !!selPlayer() && shown(); }
     // 더하는 칸들(머리 · 제목 · 주발) — 떠 있는 도크 밖에서는 CSS 가 숨긴다(.ps-insp-on 없이는 display:none)
     var hd = doc.createElement('div'); hd.className = 'ps-in-hd';
-    hd.innerHTML = '<span class="ps-in-ball"></span><span style="min-width:0;flex:1 1 auto"><div class="ps-in-nm"></div><div class="ps-in-sub"></div></span><button type="button" class="ps-in-x" title="패널 닫기 (오른쪽 클릭으로 다시 열어요)" aria-label="패널 닫기">✕</button>';
+    hd.innerHTML = '<span class="ps-in-ball"></span><span style="min-width:0;flex:1 1 auto"><div class="ps-in-nm"></div><div class="ps-in-sub"></div></span><button type="button" class="ps-in-x" title="패널 닫기 (선수를 오른쪽 클릭하면 다시 열려요)" aria-label="패널 닫기">✕</button>';
     var heads = {}; SECTIONS.forEach(function (s) { var h = doc.createElement('div'); h.className = 'ps-in-h'; h.setAttribute('data-sec', s[0]); h.textContent = s[1]; h.style.setProperty('order', String(s[2]), 'important'); heads[s[0]] = h; });
     var foot = doc.createElement('div'); foot.className = 'ps-in-foot'; foot.setAttribute('role', 'group'); foot.setAttribute('aria-label', '주발');
     foot.innerHTML = FEET.map(function (f) { return '<button type="button" data-foot="' + f[0] + '">' + f[1] + '</button>'; }).join('');
@@ -143,12 +143,8 @@
       paint();
     });
     // 선수를 고르면 바로 연다(떠 있는 도크에서만). 오른쪽 클릭으로 열면 «닫음»을 잊는다
-    function autoOpen() {
-      if (opening || !body.classList.contains('ps-dock-float') || !selPlayer()) return;
-      if (g('selPanelOpen')) { userClosed = false; return; }
-      if (userClosed || typeof win.__selPanelOpen !== 'function') return;
-      opening = true; try { win.__selPanelOpen(true); } catch (_) {} opening = false;
-    }
+    // 2.975 사용자 피드백: 마우스로는 왼쪽 클릭 = 고르기만, 오른쪽 클릭 = 정보 창. 그대로 둔다(패널 자리만 오른쪽)
+    function autoOpen() {}
     var orig = win.positionSelCtl;
     if (typeof orig === 'function') win.positionSelCtl = function () { var r = orig.apply(this, arguments); try { autoOpen(); paint(); } catch (_) {} return r; };
     // 무대 아래 여백: 오른쪽 패널은 아래 띠가 아니다
