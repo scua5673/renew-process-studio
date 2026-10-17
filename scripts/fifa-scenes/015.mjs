@@ -7,6 +7,7 @@ export default {
   path: 'elite-sessions/in-possession/breaking-lines.php',
   name: '라인 깨기 — 돌아서 받고, 속이고, 줄 사이로',
   focus: 'bp',
+  subs: ['std_ao_2', 'std_ao_1'],
   by: 'Jonas Urias',
   trainings: [
     {

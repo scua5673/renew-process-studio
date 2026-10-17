@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/in-possession/john-peacock-passing-and-receiving.php',
   name: '패스와 받기의 구조 — 둘러보고, 열린 몸으로, 단단하게',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'John Peacock',
   trainings: [
     {

@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/transition.php',
   name: '전환 — 표적 콘 4v3+1에서 옆 통로 6v6+2까지',
   focus: 'tr_att',
+  subs: ['std_at_1'],
   by: '',
   trainings: [
     {

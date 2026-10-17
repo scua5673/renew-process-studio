@@ -21,6 +21,7 @@ export default {
   path: 'futsal/block-6/defending-mid-range-shots.php',
   name: '중거리 슈팅 막기 — 받는 모습을 읽고 버틸지 나갈지 정하기',
   focus: 'bpo',
+  subs: ['std_at_1'],
   by: '',
   trainings: [
     {

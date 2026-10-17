@@ -22,6 +22,7 @@ export default {
   path: 'futsal/block-2/using-width-to-create-space-in-attack.php',
   name: '폭을 써서 공격 공간 만들기 — 넓게 서고, 붙으면 빠르게',
   focus: 'bp',
+  subs: ['std_ao_3'],
   by: 'Graeme Dell',
   trainings: [
     {

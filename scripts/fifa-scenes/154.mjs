@@ -23,6 +23,7 @@ export default {
   path: 'futsal/block-2/using-the-pivot-to-overcome-the-press.php',
   name: '피보로 압박 넘기 — 등지고 버티고, 내주고, 받으러 가기',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'José Venancio López',
   trainings: [
     {

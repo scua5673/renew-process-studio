@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/in-possession/turning-to-exploit-space-in-central-area-nielsen.php',
   name: '돌아서서 가운데 공간 쓰기 — 패스할 쪽으로 첫 터치',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Nils Nielsen',
   trainings: [
     {

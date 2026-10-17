@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/sydney-fc-embedding-individual-challenges-team-training.php',
   name: '팀 훈련 안에 개인 과제 넣기 — 보너스 점수로 키우는 행동',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Sydney FC',
   trainings: [
     {
