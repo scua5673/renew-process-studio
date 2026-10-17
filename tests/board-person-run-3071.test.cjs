@@ -7,7 +7,7 @@ const board=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
 const line=(x0,y0,x1,y1,c,t)=>({x:x0+(x1-x0)*t,y:y0+(y1-y0)*t});
 
 test('3.072 — no pose is a player standing toward the camera; the pose carries the facing angle',()=>{
-  assert.deepEqual(depth.personPose(null),{yaw:90,phase:0,amp:0,kick:null,recv:null,foot:'R',head:null,dive:null});
+  assert.deepEqual(depth.personPose(null),{yaw:90,phase:0,amp:0,kick:null,recv:null,foot:'R',head:null,dive:null,chest:null,catch:null,punch:null});
   assert.equal(depth.personPose({yaw:-90,amp:.8}).yaw,-90,'running away shows the back');
   assert.equal(depth.personPose({yaw:0,amp:5}).amp,1,'amp is capped');
 });
@@ -64,5 +64,23 @@ test('3.075 header on an aerial ball, goalkeeper dive when the ball comes within
   const shot={players:a.players,ball:{x:660,y:150}},m=bc.motion(a,shot,.8,null,env),d=bc.pose(m[9],{});
   assert.ok(d.dive&&d.dive.t>0&&d.dive.t<1,'the keeper dives');assert.equal(d.dive.dir,-1,'toward the ball (screen left)');assert.equal(bc.motion(a,shot,.4,null,env)[9],undefined,'not before the second half of the scene');
   assert.equal(bc.isGK({num:'1'}),true);assert.equal(bc.isGK({pos:'GK'}),true);assert.equal(bc.isGK({num:1,coach:true}),false);
-  assert.deepEqual(depth.personPose({dive:{t:.5,dir:-1,reach:2}}).dive,{t:.5,dir:-1,reach:1});
+  assert.deepEqual(depth.personPose({dive:{t:.5,dir:-1,reach:2}}).dive,{t:.5,dir:-1,reach:1,high:false});
+});
+
+test('3.075 actions chosen per token override the automatic ones and travel with the scene curves',()=>{
+  const acts=require('../studio/board-actions.js');
+  const a={players:[{id:1,x:100,y:100},{id:2,x:400,y:100},{id:3,x:300,y:400},{id:9,x:700,y:100,pos:'GK'}],ball:{x:110,y:100}};
+  const b={players:a.players.map(p=>({...p})),ball:{x:395,y:100}},env={curvePt:line,mpp:10};
+  // header pass by a player far from the ball, chest control by another, keeper catches instead of diving
+  const curves={acts:{3:'headout',2:'chest',9:'catch'}};
+  const s0=bc.motion(a,b,.1,curves,env);assert.ok(s0[3].head>0,'player 3 heads it out');assert.equal(s0[1],undefined,'the automatic kicker stays out');
+  const s1=bc.motion(a,b,.95,curves,env);assert.ok(s1[2].chest>0,'chest control');assert.ok(bc.pose(s1[2],{}).chest>0);
+  const near={...b,ball:{x:690,y:110}},s2=bc.motion(a,near,.9,curves,env);assert.ok(s2[9].catch>0,'the keeper catches');assert.equal(s2[9].dive,undefined);
+  const d=bc.motion(a,near,.9,{acts:{9:'dive_hl'}},env)[9],pd=bc.pose(d,{});assert.equal(pd.dive.dir,-1);assert.equal(pd.dive.high,true,'high dive to the left as chosen');
+  assert.equal(bc.ballU(a,b,.05,10,{acts:{1:'none'}}),.05,'«동작 없음» on the kicker: the ball does not wait');
+  assert.equal(bc.ballU(a,b,.05,10,{acts:{3:'kick'}}),0,'a chosen kicker: the ball waits for the foot');
+  // the scene keeps its curves; setting «자동» removes the entry and an empty table
+  const f={curves:{ball:{mx:1,my:2}}};acts.setAct(f,3,'headout');assert.deepEqual(f.curves,{ball:{mx:1,my:2},acts:{3:'headout'}});assert.equal(acts.getAct(f,3),'headout');
+  acts.setAct(f,3,'');assert.deepEqual(f.curves,{ball:{mx:1,my:2}});const g={};acts.setAct(g,1,'');assert.equal(g.curves,null);
+  assert.ok(bc.ACTS.some(x=>x.items.some(i=>i[0]==='dive_hr')),'the list offers the high dive');
 });

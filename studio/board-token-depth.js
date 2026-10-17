@@ -197,7 +197,9 @@
     var k = p.kick == null ? null : Math.max(0, Math.min(1, +p.kick)), r = p.recv == null ? null : Math.max(0, Math.min(1, +p.recv));
     return { yaw: isFinite(yaw) ? yaw : 90, phase: +p.phase || 0, amp: amp, kick: isFinite(k) ? k : null, recv: isFinite(r) ? r : null, foot: p.foot === 'L' ? 'L' : 'R',
       head: p.head == null || !isFinite(+p.head) ? null : Math.max(0, Math.min(1, +p.head)),
-      dive: p.dive && isFinite(+p.dive.t) ? { t: Math.max(0, Math.min(1, +p.dive.t)), dir: +p.dive.dir < 0 ? -1 : 1, reach: Math.max(0, Math.min(1, +p.dive.reach || .6)) } : null };
+      dive: p.dive && isFinite(+p.dive.t) ? { t: Math.max(0, Math.min(1, +p.dive.t)), dir: +p.dive.dir < 0 ? -1 : 1, reach: Math.max(0, Math.min(1, +p.dive.reach || .6)), high: !!p.dive.high } : null,
+      chest: unit(p.chest), catch: unit(p.catch), punch: unit(p.punch) };
+    function unit(v) { return v == null || !isFinite(+v) ? null : Math.max(0, Math.min(1, +v)); }
   }
   // 3.074 — 차기: 오른발을 뒤로 뺐다가(0~.45) 휘둘러 차고(.58 에 공에 닿음) 따라 나간 뒤 내려놓는다. 디딤발은 살짝 굽힌다.
   var KICK = {
@@ -238,7 +240,9 @@
     var KK = P.kick, RR = P.recv, KS = P.foot === 'L' ? 1 : -1;   // 차는 발 쪽(1 = 선수의 왼쪽)
     // 3.075 — 헤딩(HE: 0 → 1, 공은 .85 무렵 머리에) · 다이빙(DV: t 0 → 1, dir 화면 왼쪽 -1 / 오른쪽 1)
     var HD = P.head, DV = P.dive, HE = HD != null ? Math.sin(Math.PI * Math.min(1, HD * 1.1)) : 0;
-    var HIP = 82, lean = (HD != null ? -8 + 26 * Math.max(0, (HD - .6) / .4) : DV ? 6 : KK != null ? curve(KICK.lean, KK) : RR != null ? 4 : 2 + A * 13) * D2R, ph = P.phase, swing = Math.cos(TAU * (ph - .8));
+    // 가슴으로 받기(CH) · 캐치(CT) · 펀칭(PU): 0 → 1, 가운데에서 가장 크게
+    var CH = P.chest, CT = P.catch, PU = P.punch, bell = function (v) { return v == null ? 0 : Math.sin(Math.PI * Math.min(1, v * 1.1)); }, CHE = bell(CH), CTE = CT != null ? Math.min(1, CT * 2) : 0, PUE = bell(PU);
+    var HIP = 82, lean = (CH != null ? 2 - 18 * CHE : CT != null ? 4 + 6 * CTE : PU != null ? -4 : HD != null ? -8 + 26 * Math.max(0, (HD - .6) / .4) : DV ? 6 : KK != null ? curve(KICK.lean, KK) : RR != null ? 4 : 2 + A * 13) * D2R, ph = P.phase, swing = Math.cos(TAU * (ph - .8));
     var tauS = A * 13 * D2R * swing, tauP = -A * 6 * D2R * swing;
     function turn(q, t) { return [q[0] * Math.cos(t) - q[1] * Math.sin(t), q[0] * Math.sin(t) + q[1] * Math.cos(t), q[2]]; }
     function upper(q) { var dz = q[2] - HIP; return [q[0] + dz * Math.sin(lean), q[1], HIP + dz * Math.cos(lean)]; }
@@ -251,7 +255,10 @@
       var p = ph + (side > 0 ? 0 : .5), th = A * curve(GAIT.hip, p) * D2R, kn = (4 + A * (curve(GAIT.knee, p) - 4)) * D2R, ft = A * curve(GAIT.foot, p) * D2R;
       if (KK != null) { if (side === KS) { th = curve(KICK.hip, KK) * D2R; kn = curve(KICK.knee, KK) * D2R; ft = curve(KICK.foot, KK) * D2R; } else { th = 8 * D2R; kn = 22 * D2R; ft = 0; } }
       else if (RR != null) { var e = Math.sin(Math.PI * Math.min(1, RR * 1.15)); if (side === KS) { th = (6 + 26 * e) * D2R; kn = (14 + 22 * e) * D2R; ft = 22 * e * D2R; } else { th = 4 * D2R; kn = (14 + 10 * e) * D2R; ft = 0; } }
-      if (HD != null) { th = (10 + 16 * HE) * D2R; kn = (18 + 58 * HE) * D2R; ft = -24 * HE * D2R; }
+      if (CH != null) { th = 6 * D2R; kn = (12 + 16 * CHE) * D2R; ft = 0; }
+      else if (CT != null) { th = (10 + 14 * CTE) * D2R; kn = (16 + 30 * CTE) * D2R; ft = 0; }
+      else if (PU != null) { th = (10 + 18 * PUE) * D2R; kn = (18 + 54 * PUE) * D2R; ft = -20 * PUE * D2R; }
+      else if (HD != null) { th = (10 + 16 * HE) * D2R; kn = (18 + 58 * HE) * D2R; ft = -24 * HE * D2R; }
       else if (DV) { th = (side > 0 ? 14 : 4) * D2R; kn = (side > 0 ? 34 : 16) * D2R; ft = -12 * D2R; }
       var hip = pelvis([0, side * 8.5, HIP]), sh = th - kn;
       var knee = [hip[0] + 40 * Math.sin(th), hip[1] + side * .6, hip[2] - 40 * Math.cos(th)];
@@ -263,7 +270,10 @@
       var p = ph + (side > 0 ? 0 : .5), c = Math.cos(TAU * (p - .8)), sa = (-A * 46 * c) * D2R, el = (10 + A * (78 + 14 * c)) * D2R, ab = (1 - A) * 7 * D2R + 4 * D2R;
       if (KK != null) { var w = Math.sin(Math.PI * Math.min(1, KK * 1.2)); sa = (side !== KS ? 30 : -25) * w * D2R; el = (25 + 20 * w) * D2R; ab = (12 + (side !== KS ? 38 : 22) * w) * D2R; }   // 균형: 팔을 벌린다
       else if (RR != null) { sa = 10 * D2R; el = 30 * D2R; ab = 18 * D2R; }
-      if (HD != null) { sa = (40 + 70 * HE) * D2R; el = (35 + 25 * HE) * D2R; ab = (14 + 16 * HE) * D2R; }   // 팔로 몸을 띄운다
+      if (CH != null) { sa = (8 + 22 * CHE) * D2R; el = 25 * D2R; ab = (14 + 34 * CHE) * D2R; }   // 가슴을 내밀고 팔을 벌린다
+      else if (CT != null) { sa = (20 + 78 * CTE) * D2R; el = (20 + 34 * CTE) * D2R; ab = (8 - 4 * CTE) * D2R; }   // 두 손을 앞으로 모아 잡는다
+      else if (PU != null) { sa = (side === KS ? 30 + 145 * PUE : 20) * D2R; el = (side === KS ? 30 - 26 * PUE : 40) * D2R; ab = 12 * D2R; }   // 한 팔을 뻗어 쳐낸다
+      else if (HD != null) { sa = (40 + 70 * HE) * D2R; el = (35 + 25 * HE) * D2R; ab = (14 + 16 * HE) * D2R; }   // 팔로 몸을 띄운다
       else if (DV) { var ue = Math.min(1, DV.t * 2.2); sa = (20 + 150 * ue) * D2R; el = (30 - 22 * ue) * D2R; ab = (12 + 8 * ue) * D2R; }   // 두 팔을 공 쪽으로 뻗는다
       var sh = body([0, side * 16, 120]);
       var elb = body([25 * Math.sin(sa), side * (16 + 25 * Math.sin(ab)), 120 - 25 * Math.cos(sa)]);
@@ -274,7 +284,7 @@
     // The lower foot stands on the grass; in the flight phase both feet leave it.
     var low = Math.min(LL.ank[2], LR.ank[2], LL.toe[2] + 1.5, LR.toe[2] + 1.5), flight = 0;
     [ph, ph + .5].forEach(function (q) { q -= Math.floor(q); if (q > .35 && q < .5) flight = Math.max(flight, Math.sin(Math.PI * (q - .35) / .15)); });
-    lift = 6 - low + A * 5 * flight + (HD != null ? 34 * HE : 0);   // 헤딩: 0.4m 점프
+    lift = 6 - low + A * 5 * flight + (HD != null ? 34 * HE : 0) + (PU != null ? 30 * PUE : 0);   // 헤딩 · 펀칭: 점프
     // Drawing helpers: a limb is a tapered capsule through its points; colours by part.
     function capsule(pts, radii) {
       var n = pts.length, left = [], right = [];
@@ -341,8 +351,8 @@
     } });
     parts.sort(function (a, b) { return a.d - b.d; }).forEach(function (q) { q.draw(fig); });
     if (DV) {   // 몸을 옆으로 날린다: 공 쪽으로 기울며 떠올랐다가 떨어진다
-      var de = 1 - Math.pow(1 - DV.t, 2), R = DV.reach;
-      fig.setAttribute('transform', 'translate(' + r1(DV.dir * 120 * R * de) + ',' + r1(-34 * R * Math.sin(Math.PI * Math.min(1, DV.t * 1.1)) + 66 * R * de * de) + ') rotate(' + r1(DV.dir * 84 * R * de) + ' 0 -' + HIP + ')');   // 끝엔 바닥에 눕는다(1.4m 옆으로)
+      var de = 1 - Math.pow(1 - DV.t, 2), R = DV.reach, up = DV.high ? 78 : 34, rot = DV.high ? 66 : 84;   // 높은 다이빙: 더 높이 떠서 덜 눕는다
+      fig.setAttribute('transform', 'translate(' + r1(DV.dir * 120 * R * de) + ',' + r1(-up * R * Math.sin(Math.PI * Math.min(1, DV.t * 1.1)) + 66 * R * de * de) + ') rotate(' + r1(DV.dir * rot * R * de) + ' 0 -' + HIP + ')');   // 끝엔 바닥에 눕는다(1.4m 옆으로)
     }
     // Head last: hair at the back and top, the face toward where the player looks.
     var hb = { x: head.x - F.x * 2.8, y: head.y - 1.2 - F.d * 2.8 * DEPTH * 3 }, facing = F.d > -.25;

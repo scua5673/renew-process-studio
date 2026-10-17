@@ -29,20 +29,36 @@
       var p0 = pt(Math.max(0, u - 0.02)), p1 = pt(Math.min(1, u + 0.02));
       out[p.id] = { vx: p1.x - p0.x, vy: p1.y - p0.y, run: run / m, total: tot / m, u: u };
     });
-    var k = kick(a, b, m, curves);
+    // 3.075 — 코치가 고른 동작(장면 곡선의 acts: 토큰 id → 동작)이 자동 판단보다 먼저다. 'none' 은 자동 동작을 끈다.
+    var acts = (curves && curves.acts) || {}, k = kick(a, b, m, curves), A = ballOf(a), B = ballOf(b);
+    var foot = function (p) { try { return env && env.foot && env.foot(p) === 'L' ? 'L' : 'R'; } catch (_) { return 'R'; } };
+    var byA = {}, byB = {}; (a.players || []).forEach(function (o) { byA[o.id] = o; }); (b.players || []).forEach(function (o) { byB[o.id] = o; });
+    function ent(id) { return out[id] || (out[id] = { vx: 0, vy: 0, run: 0, total: 0, u: u }); }
+    function act(id) { var v = acts[id]; return typeof v === 'string' ? v : ''; }
+    var dxB = A && B ? B.x - A.x : 0, dyB = A && B ? B.y - A.y : 0;
+    // 장면 시작: 차기 · 헤딩으로 보내기
+    var starter = null;
+    Object.keys(acts).forEach(function (id) { if ((acts[id] === 'kick' || acts[id] === 'headout') && byA[id] && !starter) starter = id; });
+    if (!starter && k && act(k.kicker) !== 'none') starter = String(k.kicker);
+    if (starter != null && A && B && u < KICK.win) {
+      var sp = byA[starter] || byA[+starter], e0 = ent(sp ? sp.id : starter);
+      if (act(starter) === 'headout') e0.head = u / KICK.win; else e0.kick = u / KICK.win;
+      e0.bx = dxB || 1; e0.by = dyB; e0.foot = foot(sp);
+    }
+    // 장면 끝: 고른 받기 · 골키퍼 동작, 아니면 자동(가까운 받는 사람 · 8m 안의 골키퍼)
+    var ENDS = { recv: 1, chest: 1, headin: 1, catch: 1, punch: 1, dive: 1, dive_l: 1, dive_r: 1, dive_hl: 1, dive_hr: 1 };
+    var ended = {};
+    function endAct(id, type, p) {
+      var from = type.indexOf('dive') === 0 ? DIVE.from : KICK.recvFrom; if (u <= from) return; var e = ent(id);
+      var t = (u - from) / (1 - from); ended[id] = 1;
+      e.bx = A ? A.x - p.x : -dxB; e.by = A ? A.y - p.y : -dyB; e.foot = foot(p);   // 공이 오는 쪽을 본다
+      if (type === 'recv') e.recv = t; else if (type === 'headin') e.head = t; else if (type === 'chest') e.chest = t; else if (type === 'catch') e.catch = t; else if (type === 'punch') e.punch = t;
+      else { e.dive = t; e.dx = B ? B.x - p.x : 0; e.dy = B ? B.y - p.y : 0; e.reach = Math.max(.5, Math.min(1, Math.hypot(e.dx, e.dy) / (5 * m))); e.high = type === 'dive_hl' || type === 'dive_hr'; e.side = /_(h?)l$/.test(type) ? -1 : /_(h?)r$/.test(type) ? 1 : 0; }
+    }
+    Object.keys(acts).forEach(function (id) { var t = acts[id], p = byB[id] || byB[+id]; if (ENDS[t] && p && A && B) endAct(p.id, t, p); });
     if (k) {
-      var kk = out[k.kicker] || (out[k.kicker] = { vx: 0, vy: 0, run: 0, total: 0, u: u });
-      // 주발(env.foot: 선수단의 'L' 왼발 · 'R' 오른발 · 'B' 양발): 왼발잡이는 왼발로 차고 받는다
-      var foot = function (p) { try { return env && env.foot && env.foot(p) === 'L' ? 'L' : 'R'; } catch (_) { return 'R'; } };
-      if (u < KICK.win) { kk.kick = u / KICK.win; kk.bx = k.dx; kk.by = k.dy; kk.foot = foot(k.kp); }
-      if (k.receiver != null && u > KICK.recvFrom) { var rr = out[k.receiver] || (out[k.receiver] = { vx: 0, vy: 0, run: 0, total: 0, u: u }); var rp = (u - KICK.recvFrom) / (1 - KICK.recvFrom); if (k.air) rr.head = rp; else rr.recv = rp; rr.bx = -k.dx; rr.by = -k.dy; rr.foot = foot(k.rp); }
-      k.gks.forEach(function (g) {
-        if (u <= DIVE.from) return;
-        var e = out[g.id] || (out[g.id] = { vx: 0, vy: 0, run: 0, total: 0, u: u });
-        delete e.recv; delete e.head;
-        e.dive = (u - DIVE.from) / (1 - DIVE.from); e.bx = k.A.x - g.x; e.by = k.A.y - g.y;   // 골키퍼는 차는 쪽을 본다
-        e.dx = k.B.x - g.x; e.dy = k.B.y - g.y; e.reach = Math.min(1, Math.hypot(e.dx, e.dy) / (5 * k.m));
-      });
+      if (k.receiver != null && !ended[k.receiver] && !act(k.receiver)) endAct(k.receiver, k.air ? 'headin' : 'recv', k.rp);
+      k.gks.forEach(function (g) { if (!ended[g.id] && !act(g.id)) { if (out[g.id]) { delete out[g.id].recv; delete out[g.id].head; } endAct(g.id, 'dive', g); } });
     }
     return out;
   }
@@ -70,8 +86,9 @@
     return { kicker: k.id, receiver: r && r.id !== k.id ? r.id : null, dx: B.x - A.x, dy: B.y - A.y, kp: k, rp: r, air: !!air, A: { x: A.x, y: A.y }, B: { x: B.x, y: B.y }, gks: gks, m: m };
   }
   // 공이 움직이는 몫: 찰 사람이 있으면 발이 닿을 때까지 제자리, 그 뒤 끝까지.
-  function ballU(a, b, u, mpp) {
-    if (!(u > 0 && u < 1) || !kick(a, b, mpp)) return u;
+  function ballU(a, b, u, mpp, curves) {
+    var acts = (curves && curves.acts) || {}, forced = Object.keys(acts).some(function (id) { return acts[id] === 'kick' || acts[id] === 'headout'; }), k = kick(a, b, mpp, curves);
+    if (!(u > 0 && u < 1) || !(forced || (k && acts[k.kicker] !== 'none'))) return u;
     return u < KICK.contact ? 0 : (u - KICK.contact) / (1 - KICK.contact);
   }
   // 판 좌표의 벡터 → 화면 방향. 세로 보기는 판(world)이 ±90° 돌아 있고, 중계 시점은 사선으로 돌고 크게 기운다.
@@ -85,10 +102,11 @@
   // 출발할 때는 카메라 쪽(서 있던 방향)에서 뛰는 방향으로 돌아서고, 도착하면 다시 돌아선다 — 짧은 쪽으로.
   function pose(mv, view) {
     if (!mv) return null;
-    if (mv.kick != null || mv.recv != null || mv.head != null || mv.dive != null) {
+    if (mv.kick != null || mv.recv != null || mv.head != null || mv.dive != null || mv.chest != null || mv.catch != null || mv.punch != null) {
       var b = screenVec(mv.bx, mv.by, view), face = Math.atan2(b.y, b.x) / D2R, out = { yaw: face, phase: mv.run / 2.6, amp: 0, kick: mv.kick != null ? mv.kick : null, recv: mv.recv != null ? mv.recv : null, foot: mv.foot === 'L' ? 'L' : 'R' };
       if (mv.head != null) out.head = mv.head;
-      if (mv.dive != null) { var d = screenVec(mv.dx, mv.dy, view); out.dive = { t: mv.dive, dir: d.x < 0 ? -1 : 1, reach: Math.max(0.35, mv.reach || 0) }; }
+      ['chest', 'catch', 'punch'].forEach(function (n) { if (mv[n] != null) out[n] = mv[n]; });
+      if (mv.dive != null) { var d = screenVec(mv.dx, mv.dy, view); out.dive = { t: mv.dive, dir: mv.side ? mv.side : (d.x < 0 ? -1 : 1), reach: Math.max(0.35, mv.reach || 0), high: !!mv.high }; }
       return out;
     }
     var s = screenVec(mv.vx, mv.vy, view), amp = Math.min(1, 0.45 + mv.total / 14), ease = Math.min(1, mv.u * 5, (1 - mv.u) * 5);
@@ -135,5 +153,12 @@
     }
     return { update: update, off: off, zoom: function () { return st.k; } };
   }
-  return { TV: TV, KICK: KICK, DIVE: DIVE, isGK: isGK, kick: kick, ballU: ballU, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
+  // 동작 고르기(3.075): 장면 시작 · 장면 끝 · 골키퍼. 화면 방향(←·→)은 작전판에 보이는 그대로.
+  var ACTS = [
+    { group: '기본', items: [['', '자동'], ['none', '동작 없음']] },
+    { group: '장면 시작 — 공을 보낸다', items: [['kick', '발로 차기'], ['headout', '헤딩으로 보내기']] },
+    { group: '장면 끝 — 공을 받는다', items: [['recv', '발로 받기'], ['chest', '가슴으로 받기'], ['headin', '머리로 받기']] },
+    { group: '골키퍼', items: [['dive', '다이빙(공 쪽)'], ['dive_l', '다이빙 ←'], ['dive_r', '다이빙 →'], ['dive_hl', '높게 ←'], ['dive_hr', '높게 →'], ['catch', '캐치'], ['punch', '펀칭']] }
+  ];
+  return { TV: TV, KICK: KICK, DIVE: DIVE, ACTS: ACTS, isGK: isGK, kick: kick, ballU: ballU, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
 });
