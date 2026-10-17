@@ -1,5 +1,5 @@
 'use strict';
-/* 3.082 — 이 기기가 이 공간의 자료를 아직 받지 못했는데 «팀과 같아요 · 저장됨»이라 하던 것.
+/* 3.083 — 이 기기가 이 공간의 자료를 아직 받지 못했는데 «팀과 같아요 · 저장됨»이라 하던 것.
    팀 전환 안의 받기가 실패하면 meta 가 빈 채로 열리고(meta.last 0), 공간을 가리지 않는 ps_last_pull_at 이 이전 팀에서
    받은 시각을 그대로 보여 줬다(가상 팀 재현: 아무것도 못 받은 채 «팀과 같아요 · 1분 전»). 닫기 정리 뒤 첫 받기 전도 같다. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
