@@ -4228,7 +4228,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="pitches.js"></script>
 <script src="board-name-font.js"></script><script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
-<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
+<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script><script src="board-vault-reads.js"></script>
 <script src="board-actions.js"></script>
 <script>
 "use strict";
@@ -16827,7 +16827,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   };
 
   refreshSessions();restoreCur();
-  try{libGet().then(function(L){}).catch(function(){});}catch(_){}
+  try{if(localStorage.getItem(VAULT_REC_KEY))libGet().then(function(L){}).catch(function(){});}catch(_){}   /* 3.090 복구 사본이 있을 때만 */
   if($("exportPdfBtn"))$("exportPdfBtn").onclick=printSession;
   if($("sFieldSheet"))$("sFieldSheet").onclick=printFieldSheet;
   if($("fieldSheetBtn"))$("fieldSheetBtn").onclick=printFieldSheet;
@@ -16835,6 +16835,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   setInterval(()=>{try{autosaveCur();}catch(_){}},3000);
   window.addEventListener("beforeunload",()=>{try{autosaveCur();}catch(_){}});
 }
+try{PSVaultReads.install(window);}catch(_){}
 init();
 try{mcLoad();}catch(_){}
 window.__boardReady=false;window.__boardRestoreDone=false;window.__boardReadySent=false;

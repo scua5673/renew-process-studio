@@ -6106,6 +6106,9 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
         var out=order.map(function(id){return locMap[id];}).filter(Boolean);
         out.sort(function(a,b){ return (b.savedAt||0)-(a.savedAt||0); });
         _saved=libSave(out,ownerGuard,libExpectedRaw,libExpectedRev).then(function(rev){if(rev!=null)libAckRev=String(rev);return libAckRev;});
+        /* 3.090 — libSave 가 글자로 바꿔 쥐었다. 비교 저장(IndexedDB 에서 한 벌 더 읽는다)을 기다리는 동안 풀어 둔 목록 객체는 놓는다
+           (아이폰 강제 종료 — 36MB 보관함이면 이 객체만 100MB 가까이. 이 아래로는 쓰지 않는다) */
+        out=null;lib=null;locMap=null;order=null;
       }
       var cut=now-7776e6;
       var tl=Object.keys(tombMap).map(function(id){return {id:id,at:tombMap[id]};}).filter(function(t){return t.at>cut;});

@@ -27,6 +27,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 보드마다 저장되는 겉모습 설정: `lookKeys` · `_lookCode` · `_lookOk` · `lookNow` · `lookApply` 와 `boardDefaultSnap` · `blankSnap` 에 같이 넣는다.
 - 보드 설정 창의 줄 차례는 board.html 의 `PLAN`(id 목록). 줄을 더하면 `tests/board-settings-3010.test.cjs` 와 `tests/browser/board-settings-hierarchy.mjs` 의 목록도 고친다.
 - 3.087 — 커뮤니티 뷰어(`body.comm-viewing`): 떠 있는 도크 · 만들기 틀 규칙은 id 를 열 개 넘게 붙여 보드의 감춤을 이긴다 — 뷰어에서 감출 것은 그 파일 안에서 더 센 선택자로. 보기 전용 막이(`communityBoardReadOnly` 의 guard)가 판을 누른 pointerdown · click 을 window 에서 맨 먼저 멈춘다 — 판 바깥 누름을 알아야 하면 pointerup 을 본다. 뷰어 «보기» 고르개는 `board-comm-look.js`(3.087 board.html 남은 몫 약 1.4KB).
+- 3.090 — 보관함(`cs_drill_lib_v1`)은 IndexedDB 에 **목록 한 덩어리**라 읽을 때마다 전체를 읽고 parse 한다(36MB 팀 = 읽기마다 문자열 ~70MB + 객체 ~100MB). 아이폰은 이걸 여러 번 겹치면 «문제가 반복적으로 발생»으로 죽는다. 작전판의 보관함 그리기 읽기는 `board-vault-reads.js` 가 감싼다 — 같이 들어온 읽기는 하나로, 같은 계정 · 팀의 «로그인 상태» 알림은 다시 그리지 않음, 숨은 작전판(iframe `display:none`)은 보일 때 그림. 새 보관함 읽기는 `psVaultReadForRender` 로만. 강제 종료 위치는 Supabase `ps_events` 의 `boot_after_crash`(meta.stage · 꼬리 `.lbok` = 보관함 동기화 끝 · `.a<화면>` = 마지막으로 연 화면)에서 본다. board.html 남은 몫 약 1KB.
 - `applyView` 는 판(svg)의 너비 · 높이를 지운다. 중계 카메라가 판을 잡고 있으면 `board-broadcast.js` 의 `hold` 가 지킨다(3.086 깜빡임).
 - 내보내기(그림 · GIF · 영상)는 판을 SVG 그림(`data:image/svg+xml`)으로 그린다 — 페이지 글꼴 · CSS 를 못 본다. 글꼴은 SVG 안에 넣어야 한다.
 
