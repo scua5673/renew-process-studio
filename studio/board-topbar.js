@@ -35,15 +35,15 @@
   var S = 'html.ps-page-board body.ps-dock-float #boardPageStrip.ps-tb' + N;
   function css() {
     var Bk = function (k) { return 'html.ps-page-board body.ps-dock-float' + k + ' #boardPageStrip.ps-tb' + N; };
-    var glass = 'background:linear-gradient(180deg,rgba(46,54,74,.86),rgba(20,24,36,.9) 55%,rgba(12,15,24,.94))!important;border:1px solid rgba(255,255,255,.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.5),0 2px 4px rgba(0,0,0,.35),0 14px 30px rgba(0,0,0,.45)!important;color:#E8ECF4!important;';
-    var bevel = 'background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(244,246,250,.95) 60%,rgba(232,236,243,.95))!important;border:1px solid rgba(255,255,255,.9)!important;box-shadow:inset 0 1px 0 #fff,inset 0 -2px 0 rgba(20,33,61,.06),0 1px 2px rgba(15,23,42,.12),0 12px 26px rgba(15,23,42,.18)!important;color:#1A2233!important;';
-    var bevelD = 'background:linear-gradient(180deg,#3A414E,#2A303B 55%,#20252E)!important;border:1px solid rgba(255,255,255,.06)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.35),0 12px 26px rgba(0,0,0,.45)!important;color:#E6E9EF!important;';
-    var flat = 'background:rgba(255,255,255,.96)!important;border:1px solid rgba(20,22,26,.07)!important;box-shadow:0 8px 24px rgba(8,12,24,.18)!important;color:#14161A!important;';
-    var flatD = 'background:rgba(28,32,42,.95)!important;border:1px solid rgba(255,255,255,.07)!important;box-shadow:0 10px 28px rgba(0,0,0,.45)!important;color:#E6E9EF!important;';
-    var onB = 'background:linear-gradient(180deg,#2A3D6E,#14213D 60%,#0D1630)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.3),0 4px 10px rgba(20,33,61,.4)!important;';
-    var onG = 'background:linear-gradient(180deg,#3E6BFF,#2448D8 55%,#1B37B0)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -2px 0 rgba(0,0,0,.25),0 4px 12px rgba(36,72,216,.5)!important;';
+    var glass = 'background:linear-gradient(180deg,rgba(46,54,74,.86),rgba(20,24,36,.9) 55%,rgba(12,15,24,.94))!important;border:1px solid rgba(255,255,255,.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.3),0 6px 16px rgba(0,0,0,.35)!important;color:#E8ECF4!important;';
+    var bevel = 'background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(244,246,250,.95) 60%,rgba(232,236,243,.95))!important;border:1px solid rgba(255,255,255,.9)!important;box-shadow:inset 0 1px 0 #fff,inset 0 -2px 0 rgba(20,33,61,.06),0 1px 2px rgba(15,23,42,.10),0 4px 12px rgba(15,23,42,.12)!important;color:#1A2233!important;';
+    var bevelD = 'background:linear-gradient(180deg,#3A414E,#2A303B 55%,#20252E)!important;border:1px solid rgba(255,255,255,.06)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.35),0 6px 16px rgba(0,0,0,.35)!important;color:#E6E9EF!important;';
+    var flat = 'background:rgba(255,255,255,.96)!important;border:1px solid rgba(20,22,26,.07)!important;box-shadow:0 3px 12px rgba(8,12,24,.14)!important;color:#14161A!important;';
+    var flatD = 'background:rgba(28,32,42,.95)!important;border:1px solid rgba(255,255,255,.07)!important;box-shadow:0 6px 18px rgba(0,0,0,.38)!important;color:#E6E9EF!important;';
+    var onB = 'background:linear-gradient(180deg,#2A3D6E,#14213D 60%,#0D1630)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(0,0,0,.3),0 2px 5px rgba(20,33,61,.3)!important;';
+    var onG = 'background:linear-gradient(180deg,#3E6BFF,#2448D8 55%,#1B37B0)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 0 rgba(0,0,0,.25),0 2px 6px rgba(36,72,216,.4)!important;';
     var onW = 'background:linear-gradient(180deg,#fff,#E4E8EF 60%,#CDD3DD)!important;color:#14161A!important;box-shadow:inset 0 1px 0 #fff,0 4px 10px rgba(0,0,0,.45)!important;';
-    var tabOnL = 'background:linear-gradient(180deg,#fff,#F1F3F7)!important;color:#14161A!important;box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(15,23,42,.1),0 3px 8px rgba(15,23,42,.1)!important;';
+    var tabOnL = 'background:linear-gradient(180deg,#fff,#F1F3F7)!important;color:#14161A!important;box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(15,23,42,.1),0 2px 4px rgba(15,23,42,.08)!important;';
     var tabOnD = 'background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.08))!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 2px 6px rgba(0,0,0,.4)!important;';
     // [덩어리 판, 고른 탭, 주 단추, 흐린 글자, 오목한 홈]
     var themes = [
@@ -53,43 +53,50 @@
       ['.ps-skin-flat:not(.fmdark)', flat, tabOnL, onB, '#646A73', 'rgba(20,33,61,.06)'],
       ['.ps-skin-flat.fmdark', flatD, tabOnD, onW, 'rgba(230,233,239,.6)', 'rgba(0,0,0,.3)']
     ];
+    // 3.083 — 사용자 «클로드처럼 작게»(B안): 덩어리 높이 50 → 36, 단추 · 글자 · 그림자를 줄였다
     var out = [
       // 띠 자체는 투명한 겹(경기장 위) — 덩어리만 누를 수 있다
       'html.ps-page-board body.ps-dock-float #boardStage' + N + '{}',
-      S + '{display:flex!important;position:absolute!important;left:0!important;right:0!important;top:0!important;z-index:60!important;height:auto!important;padding:12px 14px!important;gap:10px!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important;pointer-events:none!important;justify-content:space-between!important;align-items:flex-start!important}',
+      S + '{display:flex!important;position:absolute!important;left:0!important;right:0!important;top:0!important;z-index:60!important;height:auto!important;padding:8px 10px!important;gap:8px!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important;pointer-events:none!important;justify-content:space-between!important;align-items:flex-start!important}',
       // 3.083 — 보관함에서 연 편집(위에 고정된 #vCreateBar 56px)에서는 그 아래로 · 빈 보드의 «포메이션으로 시작» 문은 막대 아래로
       'html.ps-page-board body.ps-dock-float.vcreating #boardPageStrip.ps-tb' + N + '{top:56px!important}',
-      'html.ps-page-board body.ps-dock-float #ehDoor{top:76px!important}',
-      S + '>.tb-g{pointer-events:auto;display:flex;align-items:center;gap:4px;height:50px;padding:0 8px;border-radius:18px;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);flex:0 1 auto;min-width:0;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}',
+      'html.ps-page-board body.ps-dock-float #ehDoor{top:58px!important}',
+      S + '>.tb-g{pointer-events:auto;display:flex;align-items:center;gap:2px;height:36px;padding:0 4px;border-radius:12px;-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);flex:0 1 auto;min-width:0;font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}',
       S + '>.tb-l{overflow:hidden}',
+      // 3.083 — 끄는 동안(body.token-drag)은 떠 있는 판들의 뒤 흐림을 끈다: 배경이 거의 불투명(.9~.98)이라 보기엔 같고,
+      //         GPU 없이 그리는 WebKit(CI · 오래된 iPad)에서 매 프레임 흐림을 다시 그리느라 끌기가 밀렸다(shaper-ball: 시야가 한 걸음 늦음)
+      (function () { var X = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map(function (i) { return ':not(#tdz' + i + ')'; }).join(''), B = 'html body.token-drag ';   // 도크 겉옷(board-dock-skin)의 :not 14개보다 세게
+        return [B + '#boardPageStrip' + X + '>.tb-g', B + '#ps-command-dock' + X, B + '#ps-command-dock' + X + ' *', B + '#ps-df-tray' + X, B + '.sel-ctl' + X, B + '#ps-tb-menu' + X].join(',') + '{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}'; })(),
+      // 3.083 — 가운데 덩어리(보기 · 모양)는 화면 가운데에(왼쪽 덩어리가 넓어도) — 양옆과 겹치지 않을 때만(tb-mid, JS 가 잰다)
+      S + '.tb-mid>.tb-c{position:absolute;left:50%;top:8px;transform:translateX(-50%)}',
       S + '>.bp-head{display:none!important}',
       // 3.079 — 패턴북(book-mode)은 왼쪽 기둥이 시퀀스 목록이라 띠를 접는다(board.html 의 접기 규칙과 같은 조건) — 막대가 그 규칙을 덮지 않게
       'html.ps-page-board body.book-mode:not(.focus-board):not(.vault-full):not(.ps-phone-work):not(.ps-dock) #boardPageStrip.ps-tb' + N + N + '{display:none!important}',
       S + ' .tb-tabs{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}',
       S + ' .tb-tabs::-webkit-scrollbar{display:none}',
-      S + ' .tb-sep{width:1px;height:22px;margin:0 4px;flex:none}',
+      S + ' .tb-sep{width:1px;height:16px;margin:0 3px;flex:none}',
       // «보드 ▾»
-      S + ' .tb-brand{display:flex;align-items:center;gap:8px;height:38px;padding:0 8px 0 4px;border:0;border-radius:12px;background:transparent;color:inherit;font:800 14px/1 Pretendard,-apple-system,sans-serif;cursor:pointer;flex:none}',
-      S + ' .tb-logo{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font:900 11.5px/1 Pretendard,-apple-system,sans-serif;letter-spacing:-.04em}',
+      S + ' .tb-brand{display:flex;align-items:center;gap:6px;height:28px;padding:0 6px 0 3px;border:0;border-radius:9px;background:transparent;color:inherit;font:800 12.5px/1 Pretendard,-apple-system,sans-serif;cursor:pointer;flex:none}',
+      S + ' .tb-logo{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font:900 9px/1 Pretendard,-apple-system,sans-serif;letter-spacing:-.04em}',
       S + ' .tb-brand svg{opacity:.6}',
       // 페이지 탭
-      S + ' .bp-tab{height:32px!important;padding:0 12px!important;border-radius:10px!important;border:0!important;background:transparent!important;font:700 12.5px/1 Pretendard,-apple-system,sans-serif!important;display:inline-flex!important;align-items:center!important;gap:4px!important;white-space:nowrap!important;flex:none!important}',
+      S + ' .bp-tab{height:26px!important;padding:0 8px!important;border-radius:7px!important;border:0!important;background:transparent!important;font:700 12px/1 Pretendard,-apple-system,sans-serif!important;display:inline-flex!important;align-items:center!important;gap:4px!important;white-space:nowrap!important;flex:none!important}',
       S + ' .bp-tab .bpx{opacity:.55;display:inline-flex;align-items:center}',
       S + ' .bp-tab:not(.on) .bpx{display:none!important}',
-      S + ' .tb-add{width:32px!important;min-width:32px!important;height:32px!important;padding:0!important;border:0!important;border-radius:10px!important;background:transparent!important;font:700 0/0 a!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:none!important;cursor:pointer}',
-      S + ' .tb-add:before{content:"＋";font:800 16px/1 Pretendard,-apple-system,sans-serif}',
+      S + ' .tb-add{width:26px!important;min-width:26px!important;height:26px!important;padding:0!important;border:0!important;border-radius:7px!important;background:transparent!important;font:700 0/0 a!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:none!important;cursor:pointer}',
+      S + ' .tb-add:before{content:"＋";font:800 14px/1 Pretendard,-apple-system,sans-serif}',
       // 보기 전환
-      S + ' .tb-seg{display:flex;gap:2px;padding:3px;border-radius:12px}',
-      S + ' .tb-rs button{padding:0 9px!important;display:inline-flex;align-items:center;justify-content:center}',
-      S + ' .tb-shape button{padding:0 9px!important;display:inline-flex;align-items:center;justify-content:center}',
-      S + ' .tb-seg button{height:32px;padding:0 13px;border:0;border-radius:9px;background:transparent;font:700 12.5px/1 Pretendard,-apple-system,sans-serif;cursor:pointer}',
+      S + ' .tb-seg{display:flex;gap:1px;padding:2px;border-radius:9px}',
+      S + ' .tb-rs button{padding:0 7px!important;display:inline-flex;align-items:center;justify-content:center}',
+      S + ' .tb-shape button{padding:0 7px!important;display:inline-flex;align-items:center;justify-content:center}',
+      S + ' .tb-seg button{height:26px;padding:0 10px;border:0;border-radius:7px;background:transparent;font:700 11.5px/1 Pretendard,-apple-system,sans-serif;cursor:pointer}',
       // 오른쪽
       S + '>.tb-r>*{flex:none}',
-      S + '>.tb-r button:not(#vaultSave){height:36px!important;min-height:0!important;border-radius:11px!important;font:700 12.5px/1 Pretendard,-apple-system,sans-serif!important;border:0!important;align-items:center!important;gap:6px!important;padding:0 12px!important;white-space:nowrap!important;vertical-align:middle!important}',   // display 은 두지 않는다 — 첨부 · 편집 · 미팅 모드의 숨김 규칙이 이기게
-      S + ' #bpBoardSettings{width:36px!important;padding:0!important;justify-content:center!important}',
+      S + '>.tb-r button:not(#vaultSave){height:28px!important;min-height:0!important;border-radius:8px!important;font:700 12px/1 Pretendard,-apple-system,sans-serif!important;border:0!important;align-items:center!important;gap:5px!important;padding:0 10px!important;white-space:nowrap!important;vertical-align:middle!important}',   // display 은 두지 않는다 — 첨부 · 편집 · 미팅 모드의 숨김 규칙이 이기게
+      S + ' #bpBoardSettings{width:28px!important;padding:0!important;justify-content:center!important}',
       S + ' #bpBoardSettings>span{display:none!important}',
-      S + ' #bpBoardSettings svg{width:18px!important;height:18px!important}',
-      S + ' #bpLinkChip{height:32px!important}',
+      S + ' #bpBoardSettings svg{width:16px!important;height:16px!important}',
+      S + ' #bpLinkChip{height:26px!important}',
       S + ' #vaultSave{position:static!important;right:auto!important;bottom:auto!important;top:auto!important;left:auto!important;transform:none!important;margin:0 0 0 2px!important}',
       // 선수 모양: «사람»은 3D · 중계에서만(평면은 유니폼으로 그린다)
       'html body:not(.bc-tilt3d) #boardPageStrip .tb-shape button[data-shape="person"],html body:not(.bc-tilt3d) #shapeSeg button[data-s="person"]{display:none!important}',
@@ -175,7 +182,7 @@
         g.right.forEach(function (n) { R.appendChild(n); });
         s.appendChild(L); s.appendChild(C); s.appendChild(R);
         s.classList.add('ps-tb');
-        paintView(); win.setTimeout(clearSelCtl, 0);
+        paintView(); win.setTimeout(clearSelCtl, 0); win.setTimeout(function () { try { center(); } catch (_) {} }, 0);
       } finally { busy = false; }
     }
     // 떠 있는 도크가 꺼지면(좁은 창) 띠를 원래 차례로 되돌린다
@@ -223,7 +230,19 @@
     }
     // 띠가 다시 그려질 때 · 떠 있는 도크가 켜지고 꺼질 때 · 3D/카메라가 바뀔 때
     try { new win.MutationObserver(function () { var s = strip(); if (s && on() !== s.classList.contains('ps-tb')) { var was = s.classList.contains('ps-tb'); if (on()) build(); else unbuild(); if (s.classList.contains('ps-tb') !== was) win.setTimeout(function () { try { win.dispatchEvent(new win.Event('resize')); } catch (_) {} }, 0); }   /* 3.083 — 바뀐 때만 · 다음 차례에(커뮤니티 보기에서 세우지 못하면 resize → 도크 mount → class 가 끝없이 돌았다) */ paintView(); try { clearSelCtl(); } catch (_) {} }).observe(body, { attributes: true, attributeFilter: ['class'] }); } catch (_) {}
-    win.addEventListener('resize', function () { win.setTimeout(clearSelCtl, 50); });
+    win.addEventListener('resize', function () { win.setTimeout(clearSelCtl, 50); win.setTimeout(center, 60); });
+    // 가운데 맞추기: 정말 가운데에 두어도 왼쪽 · 오른쪽 덩어리와 10px 이상 떨어질 때만
+    function center() {
+      var s = strip(); if (!s || !s.classList.contains('ps-tb')) return;
+      var L = s.querySelector(':scope>.tb-l'), C = s.querySelector(':scope>.tb-c'), R = s.querySelector(':scope>.tb-r'); if (!L || !C) return;
+      if (ro) [L, C, R].forEach(function (g) { if (g && !g.__tbRO) { g.__tbRO = 1; ro.observe(g); } });   // 탭이 늘거나 이름이 바뀌어도 다시 잰다
+      var sr = s.getBoundingClientRect(); if (!sr.width) return;
+      var lr = L.getBoundingClientRect().left - sr.left + Math.max(L.offsetWidth, L.scrollWidth), rl = R ? R.getBoundingClientRect().left - sr.left : sr.width, cw = C.offsetWidth, mid = sr.width / 2;
+      var ok = mid - cw / 2 >= lr + 10 && mid + cw / 2 <= rl - 10;
+      if (s.classList.contains('tb-mid') !== ok) s.classList.toggle('tb-mid', ok);
+    }
+    win.__psTopBarCenter = center;
+    var ro = null; try { if (win.ResizeObserver) ro = new win.ResizeObserver(function () { center(); }); } catch (_) {}
     // 선택 패널(.sel-ctl)이 위쪽 막대와 겹치면 막대 아래로 내린다 — 예전에는 띠 아래 무대 안이라 겹칠 일이 없었다
     function clearSelCtl() {
       var s = strip(), c = doc.querySelector('.sel-ctl'); if (!c) return;

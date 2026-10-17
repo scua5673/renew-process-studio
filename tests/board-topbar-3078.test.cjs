@@ -45,5 +45,12 @@ test('3.083 — no resize loop when the bar cannot build (community viewer), cle
   assert.doesNotMatch(src,/else unbuild\(\); try \{ win\.dispatchEvent/);
   const css=tb.css();
   assert.match(css,/body\.ps-dock-float\.vcreating #boardPageStrip\.ps-tb[^{]*\{top:56px!important\}/);
-  assert.match(css,/body\.ps-dock-float #ehDoor\{top:76px!important\}/);
+  assert.match(css,/body\.ps-dock-float #ehDoor\{top:58px!important\}/);
+});
+test('3.083 — centre group truly centred when it fits; no backdrop blur while dragging tokens',()=>{
+  const css=tb.css(),src=fs.readFileSync(path.join(__dirname,'../studio/board-topbar.js'),'utf8');
+  assert.match(css,/\.tb-mid>\.tb-c\{position:absolute;left:50%;top:8px;transform:translateX\(-50%\)\}/);
+  assert.match(src,/var ok = mid - cw \/ 2 >= lr \+ 10 && mid \+ cw \/ 2 <= rl - 10;/);
+  assert.match(css,/html body\.token-drag #ps-command-dock(:not\(#tdz\d+\)){20}[,{]/);
+  assert.match(css,/\{-webkit-backdrop-filter:none!important;backdrop-filter:none!important\}/);
 });

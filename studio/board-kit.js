@@ -197,9 +197,11 @@
     }
     function place() {
       var w = box.offsetWidth || 400, h = box.offsetHeight || 520, vw = win.innerWidth, vh = win.innerHeight, r = ed.anchor && ed.anchor.getBoundingClientRect ? ed.anchor.getBoundingClientRect() : null;
-      var left, top;
-      if (r && r.width) { left = r.left + r.width / 2 - w / 2; top = r.top - h - 10; if (top < 8) top = r.bottom + 10; if (top + h > vh - 8) top = Math.max(8, (vh - h) / 2); }
-      else { left = (vw - w) / 2; top = Math.max(8, Math.min(76, (vh - h) / 2)); }
+      // 위쪽 막대(보관함 편집에서는 편집 막대 아래로 내려가 있다)를 가리지 않게 그 아래부터
+      var left, top, minTop = 8, tb = doc.querySelector('#boardPageStrip.ps-tb>.tb-c'); if (tb) { var q = tb.getBoundingClientRect(); if (q.height) minTop = Math.round(q.bottom + 10); }
+      if (r && r.width) { left = r.left + r.width / 2 - w / 2; top = r.top - h - 10; if (top < minTop) top = r.bottom + 10; if (top + h > vh - 8) top = Math.max(minTop, (vh - h) / 2); }
+      else { left = (vw - w) / 2; top = minTop; }
+      if (top + h > vh - 8) top = Math.max(8, vh - h - 8);
       box.style.left = Math.round(Math.max(8, Math.min(vw - w - 8, left))) + 'px'; box.style.top = Math.round(Math.max(8, Math.min(vh - h - 8, top))) + 'px';
     }
     function open(o) {

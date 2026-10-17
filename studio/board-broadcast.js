@@ -8,7 +8,8 @@
   'use strict';
   var D2R = Math.PI / 180;
   // 중계 시점(사용자 «이런 느낌으로» — 관중석 높은 곳의 중계 카메라 사진): 비스듬히(ax) · 사선으로(yaw) · 운동장 폭 widthM m 만 · 원근 persp px.
-  var TV = { ax: 56, yaw: -16, widthM: 66, persp: 1000, marginM: 22, minK: 0.55 };
+  // 3.083 — 사용자 «운동장이 최대한 많이 보이게 · 관중석은 거의 안 보여도»: 사선(-16°)을 없애고(중계 메인 카메라처럼 옆에서 곧게) 조금 덜 눕힌다(56° → 46°).
+  var TV = { ax: 46, yaw: 0, widthM: 66, persp: 1000, marginM: 22, minK: 0.55 };
 
   // 장면 a → b 사이 u 에서 움직이는 선수마다 진행 방향(판 좌표의 접선), 지금까지 뛴 거리와 이번 장면의 전체 거리(m).
   // env.curvePt(x0,y0,x1,y1,curve,t) = 판의 곡선 경로, env.mpp = 1m 가 몇 단위. 40cm 안쪽으로 움직이는 선수는 서 있다.
@@ -120,7 +121,7 @@
   // 경기장 그림 · 골대 층은 판 상자를 재서 따라온다(env.resized). 같은 변환 한 줄(--tilt-tf)을 판 · 경기장 · 골대가 함께 쓰므로 body 에 적는다.
   // env: svg() · stage() · layer()(판 좌표 층) · target() · mpp() · playing() · resized(rerender) · goalK(골대 과장 배율 — 중계는 실제 크기)
   function camera(env) {
-    var st = { cur: null, k: 1, size: '', goal: null }, PROPS = ['position', 'left', 'top', 'width', 'height', 'max-width', 'max-height'];
+    var st = { cur: null, k: 1, size: '', goal: null, kf: 1, off: { x: 0, y: 0 }, fitting: false }, PROPS = ['position', 'left', 'top', 'width', 'height', 'max-width', 'max-height'];
     function off() {
       var svg = env.svg(), stage = env.stage();
       if (!st.size || !svg) return false;
@@ -128,29 +129,67 @@
       if (stage) { stage.style.removeProperty('perspective'); stage.style.removeProperty('perspective-origin'); }
       PROPS.forEach(function (k) { svg.style.removeProperty(k); });
       if (st.goal) { var g = env.goalK(); Object.keys(st.goal).forEach(function (k) { g[k] = st.goal[k]; }); st.goal = null; }
-      st.cur = null; st.k = 1; st.size = ''; env.resized(false);
+      st.cur = null; st.k = 1; st.size = ''; st.kf = 1; st.off = { x: 0, y: 0 }; st.base = 0; st.bkey = ''; env.resized(false);
       return true;
     }
     function update(snap) {
       var svg = env.svg(), stage = env.stage(), layer = env.layer(); if (!svg || !stage || !layer) return;
       var sw = stage.clientWidth, sh = stage.clientHeight, vb = svg.viewBox && svg.viewBox.baseVal; if (!sw || !sh || !vb || !vb.width) return;
-      var base = Math.min(sw / vb.width, sh / vb.height), wm = env.spanM ? env.spanM() : TV.widthM;   // 3.083 — 선수가 다 보이게(사용자 «멀리서 잡더라도 전부 보이게»)
-      var k = Math.max(TV.minK, Math.min(8, sw / (wm * env.mpp() * base)));
+      // 3.083 — 기준 배율은 무대 크기마다 한 번만 잰다. 판을 키우면 작전판이 viewBox 를 다시 잡아 기준이 바뀌고, 그게 다시 크기를 바꿔
+      //         두 값(1.31 ↔ 1.42)을 끝없이 오갔다(그리기 반복 · 겨냥이 흔들림)
+      var bkey = sw + 'x' + sh; if (st.bkey !== bkey || !st.base) { st.base = Math.min(sw / vb.width, sh / vb.height); st.bkey = bkey; }
+      var base = st.base, wm = env.spanM ? env.spanM() : TV.widthM;   // 3.083 — 선수가 다 보이게(사용자 «멀리서 잡더라도 전부 보이게»)
+      var k = Math.max(0.2, Math.min(8, Math.max(TV.minK, sw / (wm * env.mpp() * base)) * st.kf));   // st.kf — 실제로 재서 맞춘 배율(fit)
       var W = Math.round(sw * k), H = Math.round(sh * k), size = [W, H, sw, sh].join('x');
-      if (st.size !== size) {
+      // 3.083 — 작전판 applyView 가 판 너비를 지울 때가 있다(창 크기 · 보기 바꿈) — 지워졌으면 같은 크기여도 다시 입힌다
+      var stale = svg.style.getPropertyValue('width') !== W + 'px' || svg.style.getPropertyPriority('width') !== 'important' || svg.style.getPropertyValue('height') !== H + 'px';
+      if (st.size !== size || stale) {
         st.size = size; st.k = k;
         if (!st.goal) { var g = env.goalK(); st.goal = {}; Object.keys(g).forEach(function (n) { st.goal[n] = g[n]; g[n] = 1; }); }
         var css = { position: 'absolute', left: Math.round((sw - W) / 2) + 'px', top: Math.round((sh - H) / 2) + 'px', width: W + 'px', height: H + 'px', 'max-width': 'none', 'max-height': 'none' };
-        Object.keys(css).forEach(function (n) { svg.style.setProperty(n, css[n]); });
+        Object.keys(css).forEach(function (n) { svg.style.setProperty(n, css[n], 'important'); });   // 3.083 — 3D 의 width:100%!important 규칙이 이 상자를 이겨 판이 커지지 않았고, 겨냥이 어긋났다(선수가 화면 위로 몰림)
         stage.style.setProperty('perspective', TV.persp + 'px'); stage.style.setProperty('perspective-origin', '50% 28%');
         env.resized(!snap);   // 이름표 크기가 배율을 따른다 — 다시 그리면 그 끝에서 다시 불린다
         if (!snap) return;
       }
       var m = layer.getCTM(); if (!m) return;
-      var t = env.target(), px = { x: m.a * t.x + m.c * t.y + m.e, y: m.b * t.x + m.d * t.y + m.f };
+      var t0 = env.target(), t = { x: t0.x + st.off.x, y: t0.y + st.off.y }, px = { x: m.a * t.x + m.c * t.y + m.e, y: m.b * t.x + m.d * t.y + m.f };
       if (!snap && st.cur && env.playing()) px = { x: st.cur.x + (px.x - st.cur.x) * 0.08, y: st.cur.y + (px.y - st.cur.y) * 0.08 };   // 재생 중: 천천히 따라간다
       st.cur = px;
       document.body.style.setProperty('--tilt-tf', 'translateY(' + Math.round(sh * 0.08) + 'px) rotateX(' + TV.ax + 'deg) rotateZ(' + TV.yaw + 'deg) translate(' + (W * 0.5 - px.x).toFixed(1) + 'px,' + (H * 0.55 - px.y).toFixed(1) + 'px)');
+      if (snap && !st.fitting) fit();
+    }
+    // 3.083 — 원근 · 사선 때문에 계산만으로는 가장자리 선수가 화면 밖으로 나갔다(실측: 왼쪽 골키퍼).
+    // 담을 범위의 네 귀를 실제로 그려 재고(env.project), 화면의 빈 자리(env.safe — 위쪽 막대 아래 · 도크 위)에 들어오도록 배율 · 겨냥을 몇 번 고친다.
+    function fit() {
+      if (!env.project || !env.corners || !env.safe) return;
+      var pts = env.corners(), safe = env.safe(); if (!pts || !pts.length || !safe || safe.w < 40 || safe.h < 40) return;
+      var k0 = st.k; st.fitting = true;
+      function loop(n) {
+        for (var i = 0; i < n; i++) {
+          var P = env.project(pts); if (!P || !P.length) break;
+          var bx = { l: Infinity, r: -Infinity, t: Infinity, b: -Infinity };
+          P.forEach(function (q) { bx.l = Math.min(bx.l, q.x); bx.r = Math.max(bx.r, q.x); bx.t = Math.min(bx.t, q.y); bx.b = Math.max(bx.b, q.y); });
+          var sc = Math.min(safe.w / Math.max(1, bx.r - bx.l), safe.h / Math.max(1, bx.b - bx.t));
+          var ex = (safe.x + safe.w / 2) - (bx.l + bx.r) / 2, ey = (safe.y + safe.h / 2) - (bx.t + bx.b) / 2;
+          var scaleOk = sc >= 1 && sc <= 1.08, posOk = Math.abs(ex) < 6 && Math.abs(ey) < 6;
+          if (scaleOk && posOk) break;
+          if (!scaleOk) st.kf = Math.max(0.15, Math.min(4, st.kf * (sc < 1 ? Math.max(0.5, sc * 0.96) : Math.min(1.5, sc * 0.98))));
+          else {
+            // 화면에서 ex · ey 만큼 옮기려면 판 좌표로 얼마나 — 겨냥 둘레 두 점으로 잰 기울기(야코비안)로 푼다
+            var c = env.target(), o = { x: c.x + st.off.x, y: c.y + st.off.y }, J = env.project([o, { x: o.x + 10, y: o.y }, { x: o.x, y: o.y + 10 }]); if (!J || J.length < 3) break;
+            var a = (J[1].x - J[0].x) / 10, b = (J[2].x - J[0].x) / 10, cc = (J[1].y - J[0].y) / 10, d = (J[2].y - J[0].y) / 10, det = a * d - b * cc; if (Math.abs(det) < 1e-6) break;
+            st.off.x -= (d * ex - b * ey) / det; st.off.y -= (-cc * ex + a * ey) / det;
+          }
+          update(true);
+        }
+      }
+      try {
+        loop(7);
+        // 판을 다시 그리면 작전판이 viewBox 를 조금 다시 잡는다(도크 몫 등) — 다시 그린 뒤 한 번 더 재서 맞춘다
+        if (Math.abs(st.k - k0) > 1e-3) { st.fitting = false; try { env.resized(true); } catch (_) {} st.fitting = true; loop(4); }
+      } catch (_) {}
+      st.fitting = false;
     }
     // 3.078 — 중계 카메라인 채 3D 를 끄면(평면) 키운 판 크기를 바로 돌려놓는다 — 평면에서는 update/off 를 부르는 곳이 없어 판이 확대된 채 남았다
     try {
@@ -194,6 +233,31 @@
       goalK: bridge.goalK, playing: function () { return typeof animPlaying !== 'undefined' && !!animPlaying; },
       target: function () { var b = box(); return b ? { x: (b.l + b.r) / 2, y: (b.t + b.b) / 2 } : { x: CX, y: CY }; },
       spanM: function () { var b = box(), m = mppNow() || 10; return b ? Math.max(TV.widthM, (b.r - b.l) / m + TV.marginM, ((b.b - b.t) / m + TV.marginM) * 1.45) : TV.widthM; },
+      // 3.083 — 실제로 재서 맞추기(fit): 담을 범위의 네 귀(여유 2m) · 판 좌표 → 화면 · 화면의 빈 자리
+      // 3.083 — 사용자 «운동장이 최대한 많이 보이게 · 관중석은 거의 안 보여도»: 담을 범위 = 운동장 전체 + 선수 · 공(판 좌표)
+      corners: function () {
+        // 운동장 선(PR — 판 좌표 L · R · T · B). __pvBox 는 벤치 쪽 여백까지 들어 있어 관중석이 많이 담겼다
+        var out = [], r = null, b = box(), m = 1.5 * (mppNow() || 10); try { r = typeof PR === 'function' ? PR() : null; } catch (_) {}   /* global PR */
+        if (r && isFinite(r.L) && r.R > r.L) [[r.L - m, r.T - m], [r.R + m, r.T - m], [r.L - m, r.B + m], [r.R + m, r.B + m]].forEach(function (q) { out.push({ x: q[0], y: q[1] }); });
+        if (b) [[b.l, b.t], [b.r, b.t], [b.l, b.b], [b.r, b.b]].forEach(function (q) { out.push({ x: q[0], y: q[1] }); });
+        return out.length ? out : null;
+      },
+      project: function (pts) {
+        var L = typeof tokenLayer !== 'undefined' ? tokenLayer : null, R = typeof svg !== 'undefined' ? svg : null; if (!L || !R) return null;
+        var ns = 'http://www.w3.org/2000/svg', gl = document.createElementNS(ns, 'g'), gs = document.createElementNS(ns, 'g'), cs = [], out = [];
+        [gl, gs].forEach(function (g) { g.setAttribute('pointer-events', 'none'); g.setAttribute('class', 'ps-tv-probe'); });
+        pts.forEach(function (p) { var c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', String(p.x)); c.setAttribute('cy', String(p.y)); c.setAttribute('r', '0.5'); c.setAttribute('fill', 'none'); (p.s === 'svg' ? gs : gl).appendChild(c); cs.push(c); });
+        L.appendChild(gl); R.appendChild(gs);
+        try { cs.forEach(function (c) { var r = c.getBoundingClientRect(); out.push({ x: r.left + r.width / 2, y: r.top + r.height / 2 }); }); } finally { L.removeChild(gl); R.removeChild(gs); }
+        return out;
+      },
+      safe: function () {
+        var stg = document.getElementById('boardStage'); if (!stg) return null; var r = stg.getBoundingClientRect(), top = r.top, bot = r.bottom;
+        var tb = document.querySelector('#boardPageStrip.ps-tb>.tb-c'); if (tb) { var q = tb.getBoundingClientRect(); if (q.height) top = Math.max(top, q.bottom); }
+        var dk = document.getElementById('ps-command-dock'); if (dk && getComputedStyle(dk).display !== 'none') { var d = dk.getBoundingClientRect(); if (d.height && d.top > top) bot = Math.min(bot, d.top); }
+        top += 56; bot -= 16;   // 선 사람의 키 · 이름표 몫(위) · 여유(아래)
+        return { x: r.left + 24, y: top, w: r.width - 48, h: bot - top };
+      },
       resized: function (redraw) { try { var gh = document.getElementById('tiltGoals'); if (gh) { gh.__pre = null; gh.__projectionSignature = null; } bridge.sync(); } catch (_) {} if (redraw) { try { renderTokens(); } catch (_) {} } }
     });
     function on() { try { return document.body.classList.contains('bc-tilt3d') && win.__tilt3d && win.__tilt3d.cam === 'tv'; } catch (_) { return false; } }
