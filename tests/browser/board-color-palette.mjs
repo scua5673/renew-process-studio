@@ -92,6 +92,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
     assert.ok(panel.height<=panel.max+1,JSON.stringify(panel));assert.equal(panel.overflow,'auto');
     await press(frame.locator('#delSelBtn'));assert.equal((await colors()).length,1,'landscape tablet can reach and use delete');
     if(engine==='chromium'){
+      if(await frame.locator('#ps-df-team').count()&&!(await frame.locator('#cmd-player-stamp').isVisible()))await press(frame.locator('#ps-df-team'));   /* 3.073 — 떠 있는 도크: 선수 줄은 «선수» 버튼으로 연다 */
       const cdp=await context.newCDPSession(page),start=await frame.locator('#cmd-player-stamp').boundingBox(),target=await frame.locator('svg.board').boundingBox();
       const sx=start.x+start.width/2,sy=start.y+start.height/2,tx=target.x+target.width*.45,ty=target.y+target.height*.4;
       const beforeScroll=await frame.evaluate(()=>({x:scrollX,y:scrollY,stage:document.querySelector('#boardStage').scrollTop}));
