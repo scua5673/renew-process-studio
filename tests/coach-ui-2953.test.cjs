@@ -29,7 +29,7 @@ test('quiet defaults: available chips, vault list buttons, board save; empty ses
   assert.ok(/#availView \.av-chip\.ok:not\(#_\)\{background:transparent;/.test(SC),'정상은 조용히');
   assert.ok(/#drillFiles \.vx-items\.vx-list \.vcard \.vc-act\.view,#drillFiles \.vx-items\.vx-list \.vcard \.vc-act\.edit\{background:transparent;/.test(B));
   assert.ok(/b\.classList\.toggle\('dirty',!!_chg\)/.test(B)&&/#boardManualSave\.dirty\{background:var\(--blue,var\(--ps-navy,#14213D\)\)!important/.test(B),'보드 저장은 바뀐 게 있을 때만 메인색(3.026 네이비)');
-  assert.ok(SC.includes('class="ck-fill" data-ck="session">세션 채우기 →</button>'));
+  assert.ok(SC.includes('class="ck-fill" data-ck="fill">세션 채우기 →</button>'));
 });
 
 test('phone: no formation door on the view-only board, compact match header',()=>{

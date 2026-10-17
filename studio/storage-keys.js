@@ -68,6 +68,7 @@
     ['cs_align_space_v1','device','ls','pref','board.html'],
     ['cs_animres_v1','device','ls','cache','board.html'],
     ['cs_av_view_v1','device','ls','pref','scout.html'],
+    ['cs_eval_mode_v1','device','ls','pref','scout.html'],   /* 3.077 — 선수 평가 «빠른 평가 · 전체» 고른 것 */
     ['cs_avail_open_v1','device','ls','pref','scout.html'],
     ['cs_ball_style','device','ls','pref','board.html'],
     ['cs_bksnooze','device','ls','seen','app.html'],
@@ -156,6 +157,7 @@
     ['ps_board_settings_tab_v1','device','ls','pref','board.html'],
     ['ps_board_tilt3d','device','ls','pref','board.html'],
     ['ps_boot_alive_v1','device','ls','session','app.html'],
+    ['ps_boot_crumb_v1','device','ls','session','app.html'],
     ['ps_boot_crash_sent_v1','device','ls','diag','app.html'],
     ['ps_boot_safe_carry_v1','device','ls','session','app.html'],
     ['ps_cache_owner_v1','device','ls','session','scout.html'],
