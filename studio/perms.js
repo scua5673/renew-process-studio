@@ -106,7 +106,7 @@
       var dark=document.body&&document.body.classList.contains('fmdark');
       el.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;'
         +'background:'+(dark?'#E7EBF1':'#16181c')+';color:'+(dark?'#16181c':'#fff')+';'
-        +'font:700 13px/1 -apple-system,BlinkMacSystemFont,sans-serif;padding:11px 16px;border-radius:20px;'
+        +'font:700 13px/1 Pretendard,-apple-system,BlinkMacSystemFont,sans-serif;padding:11px 16px;border-radius:20px;'
         +'box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;transition:opacity .2s;pointer-events:none';
       document.body.appendChild(el);
       requestAnimationFrame(function(){ el.style.opacity='1'; });
@@ -119,7 +119,7 @@
       var dark=document.body.classList.contains('fmdark');
       var b=document.createElement('div'); b.id='psRoBanner';
       b.style.cssText='flex:0 0 auto;order:-9999;position:relative;z-index:50;padding:9px 14px;'
-        +'font:700 13px/1.5 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
+        +'font:700 13px/1.5 Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
         +'background:'+(dark?'#2a2410':'#FFF6E5')+';color:'+(dark?'#E9C46A':'#8a6d1a')+';'
         +'border-bottom:1px solid '+(dark?'#4a3f18':'#F0DFB0')+';text-align:center';
       b.textContent='🔒 '+text;

@@ -116,7 +116,7 @@
     var a = BEAK_W * Math.PI / 180, x = Math.round(CHIP_R * Math.cos(a) * 10) / 10, y = Math.round(CHIP_R * Math.sin(a) * 10) / 10;
     return 'M' + x + ' ' + (-y) + 'L' + BEAK + ' 0L' + x + ' ' + y + 'A' + CHIP_R + ' ' + CHIP_R + ' 0 1 1 ' + x + ' ' + (-y) + 'Z';
   })();
-  var FONT = "-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif";
+  var FONT = "Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";
   function gradient(doc, tag, id, attrs, stops) {
     var g = node(doc, tag, Object.assign({ id: id }, attrs));
     stops.forEach(function (s) { g.appendChild(node(doc, 'stop', { offset: s[0], 'stop-color': s[1], 'stop-opacity': s[2] == null ? '1' : s[2] })); });
@@ -154,6 +154,12 @@
   // wide. The default size is unchanged and every step still changes the chip (×1.25 step → ×1.12 chip). So the
   // chip's radius is pitch × CHIP_BASE × √(unit / ref), reached through the geometric mean of unit and ref.
   function chipSize(opts) {
+    // 3.070 — «실제 비율»: the token is already drawn at its real size (opts.real), so the chip is not enlarged.
+    // The name keeps the size it has on an ordinary board (opts.nameUnit = that board's token scale) so it stays readable.
+    if (opts && opts.real && +opts.unit > 0) {
+      var nu = +opts.nameUnit > 0 ? +opts.nameUnit : +opts.unit, base = chipSize({ unit: nu, ref: opts.ref, pitch: opts.pitch });
+      return { k: 1, font: Math.round(base.font * base.k * nu / +opts.unit * 100) / 100 };
+    }
     var unit = opts && +opts.unit > 0 ? +opts.unit : 1, pitch = opts && +opts.pitch > 0 ? +opts.pitch : 0;
     var ref = opts && +opts.ref > 0 ? +opts.ref : unit, mid = Math.sqrt(ref * unit);
     var k = Math.min(3.2, Math.max(CHIP_SCALE, pitch * CHIP_BASE / (CHIP_R * mid)));
@@ -163,10 +169,26 @@
     return kind === 'circle' ? node(doc, 'circle', Object.assign({ r: CHIP_R }, attrs)) : node(doc, 'path', Object.assign({ d: kind === 'shirt' ? SHIRT : TEAR }, attrs));
   }
   // The name sits above the chip — and above a shaper's beak when the beak points up, so it never hides the heading.
-  function nameY(kind, h, font, dir) {
+  // 3.086 — below = the board's «이름표 아래» (보드 설정 › 이름표 위치). 3D 는 그 설정을 읽지 않고 늘 머리 위에 두었다(사용자 «위 아래 선택이 안돼 무조건 위로만 나와»).
+  //         아래면 칩(또는 서 있는 사람의 발) 바로 밑 — 2D 이름표와 같은 쪽이다. 쉐이퍼는 부리가 아래를 볼 때 부리 끝 밑으로.
+  function nameY(kind, h, font, dir, below) {
+    var sin = Math.sin((+dir || 0) * Math.PI / 180);
+    if (below) {
+      var foot = kind === 'person' ? 4 : kind === 'shirt' ? 20 : CHIP_R;
+      if (kind === 'shaper') foot = Math.max(foot, BEAK * sin + 2);
+      return Math.round((foot + 4 + font * .8) * 10) / 10;
+    }
+    if (kind === 'person') return Math.round((-PERSON_H - 6 - font * .4) * 10) / 10;
     var top = kind === 'shirt' ? 20 : CHIP_R;
-    if (kind === 'shaper') top = Math.max(top, -BEAK * Math.sin((+dir || 0) * Math.PI / 180) + 2);
+    if (kind === 'shaper') top = Math.max(top, -BEAK * sin + 2);
     return Math.round((-h - top - 4 - font * .4) * 10) / 10;
+  }
+  // 3.086 — 이름표 글꼴(board-name-font.js · 보드 설정 › 이름표 글꼴). «기본»이면 빈 글자 → 번호와 같은 글꼴
+  function nameFF(doc) { try { return (doc && doc.defaultView && doc.defaultView.__nameFF) || ''; } catch (_) { return ''; } }
+  // opts.namePos 가 없으면 작전판의 지금 값(window.__namePos — 보드마다 · 기본 «아래»)
+  function nameBelow(doc, opts) {
+    var v = opts && opts.namePos; if (!v) { try { v = doc && doc.defaultView && doc.defaultView.__namePos; } catch (_) { v = ''; } }
+    return v !== 'above';
   }
   // The pill behind a name: an estimate of the text width (wide CJK glyphs, narrower Latin capitals) around the text's middle.
   function namePill(str, font, y) {
@@ -175,10 +197,193 @@
     var ph = font * 1.5, r = function (n) { return String(Math.round(n * 10) / 10); };
     return { x: r(-w / 2), y: r(y - font * .36 - ph / 2), width: r(w), height: r(ph) };
   }
-  // opts.shape = 'shirt' | 'circle' | 'shaper' (the board's player shape), opts.dir = shaper heading in chip degrees.
+  // 3.070 — «사람» (user: «3D 모드로 실제 사람처럼»): a standing player in the team's kit, feet on the token's spot.
+  // Drawn upright like the chips' height (screen up), so the tilted board makes it stand on the grass.
+  // Token units with 1 m = 84 (the flat disc, 42 wide, is a body 0.5 m wide): 1.8 m tall.
+  var PERSON_M = 84, PERSON_H = 151;
+  var SKIN = '#c8987a', HAIR = '#2b221d', BOOT = '#15181d', LINE = 'rgba(10,14,22,.55)';
+  // 3.072 — «더 리얼하게» (user): a small skeleton in 3D, posed with a running gait and seen from any direction.
+  // pose = { yaw (screen degrees the player faces: 0 right, 90 toward the camera, -90 away, 180 left), phase (stride cycles run so far), amp (0 stands … 1 sprints) }.
+  // Body frame: f forward, l to the player's left, z up (token units, 84 per metre). A point projects to the board as
+  // x = f·F.x + l·L.x, y = −z + depth·DEPTH where depth = f·F.d + l·L.d (toward the camera) — parts nearer the camera are drawn last.
+  var DEPTH = .3, D2R = Math.PI / 180;
+  function personPose(pose) {
+    var p = pose || {}, amp = Math.max(0, Math.min(1, +p.amp || 0)), yaw = Number(p.yaw);
+    var k = p.kick == null ? null : Math.max(0, Math.min(1, +p.kick)), r = p.recv == null ? null : Math.max(0, Math.min(1, +p.recv));
+    return { yaw: isFinite(yaw) ? yaw : 90, phase: +p.phase || 0, amp: amp, kick: isFinite(k) ? k : null, recv: isFinite(r) ? r : null, foot: p.foot === 'L' ? 'L' : 'R',
+      head: p.head == null || !isFinite(+p.head) ? null : Math.max(0, Math.min(1, +p.head)),
+      dive: p.dive && isFinite(+p.dive.t) ? { t: Math.max(0, Math.min(1, +p.dive.t)), dir: +p.dive.dir < 0 ? -1 : 1, reach: Math.max(0, Math.min(1, +p.dive.reach || .6)), high: !!p.dive.high } : null,
+      chest: unit(p.chest), catch: unit(p.catch), punch: unit(p.punch) };
+    function unit(v) { return v == null || !isFinite(+v) ? null : Math.max(0, Math.min(1, +v)); }
+  }
+  // 3.074 — 차기: 오른발을 뒤로 뺐다가(0~.45) 휘둘러 차고(.58 에 공에 닿음) 따라 나간 뒤 내려놓는다. 디딤발은 살짝 굽힌다.
+  var KICK = {
+    hip:  [[0, 4], [.45, -42], [.58, 62], [.75, 46], [1, 8]],
+    knee: [[0, 14], [.45, 104], [.58, 10], [.75, 22], [1, 12]],
+    foot: [[0, 0], [.45, -28], [.58, -58], [.8, -20], [1, -2]],
+    lean: [[0, 4], [.45, 2], [.58, -8], [.8, -3], [1, 3]]
+  };
+  function r1(n) { return Math.round(n * 10) / 10; }
+  // One running stride for one leg, from foot strike (0): stance until 0.35, then flight, swing and reach. Degrees.
+  var GAIT = {
+    hip:  [[0, 22], [.15, 6], [.35, -18], [.5, -6], [.65, 24], [.8, 36], [.9, 30], [1, 22]],
+    knee: [[0, 16], [.12, 36], [.35, 20], [.5, 72], [.62, 104], [.76, 80], [.9, 28], [1, 16]],
+    foot: [[0, 14], [.15, 0], [.3, -22], [.42, -55], [.56, -34], [.75, -8], [.9, 10], [1, 14]]
+  };
+  function curve(keys, p) {
+    p = p - Math.floor(p);
+    for (var i = 1; i < keys.length; i++) if (p <= keys[i][0]) {
+      var a = keys[i - 1], b = keys[i], t = (p - a[0]) / (b[0] - a[0]), e = (1 - Math.cos(Math.PI * t)) / 2;
+      return a[1] + (b[1] - a[1]) * e;
+    }
+    return keys[keys.length - 1][1];
+  }
+  function hull(pts) {
+    pts = pts.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    function cross(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+    var lo = [], up = [];
+    pts.forEach(function (q) { while (lo.length > 1 && cross(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); });
+    for (var k = pts.length - 1; k >= 0; k--) { var q = pts[k]; while (up.length > 1 && cross(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
+  function personFigure(doc, fill, stroke, label, pose) {
+    var solid = /^#[0-9a-f]{3,6}$/i.test(String(fill || '').trim()) ? fill : (/^#[0-9a-f]{3,6}$/i.test(String(stroke || '').trim()) ? stroke : '#3a6df0');
+    // 3.083 — 팀 유니폼의 하의 · 스타킹(pose.kit, 보드 설정 › 팀 유니폼). 없으면 하의 = 상의를 어둡게 · 스타킹 = 상의
+    var kit = (pose && pose.kit) || {}, kh = function (v) { return /^#[0-9a-f]{6}$/i.test(String(v || '')) ? v : ''; };
+    var shorts = kh(kit.shorts) || shade(solid, .38) || '#1d2128', sock = kh(kit.socks) || solid, P = personPose(pose), A = P.amp, TAU = Math.PI * 2;
+    var yaw = P.yaw * D2R, F = { x: Math.cos(yaw), d: Math.sin(yaw) }, L = { x: Math.sin(yaw), d: -Math.cos(yaw) };
+    var fig = node(doc, 'g', { 'class': 'ps-person', 'data-yaw': String(Math.round(P.yaw)) });
+    // Upper body: leans forward with speed; shoulders turn against the hips with the arms.
+    var KK = P.kick, RR = P.recv, KS = P.foot === 'L' ? 1 : -1;   // 차는 발 쪽(1 = 선수의 왼쪽)
+    // 3.075 — 헤딩(HE: 0 → 1, 공은 .85 무렵 머리에) · 다이빙(DV: t 0 → 1, dir 화면 왼쪽 -1 / 오른쪽 1)
+    var HD = P.head, DV = P.dive, HE = HD != null ? Math.sin(Math.PI * Math.min(1, HD * 1.1)) : 0;
+    // 가슴으로 받기(CH) · 캐치(CT) · 펀칭(PU): 0 → 1, 가운데에서 가장 크게
+    var CH = P.chest, CT = P.catch, PU = P.punch, bell = function (v) { return v == null ? 0 : Math.sin(Math.PI * Math.min(1, v * 1.1)); }, CHE = bell(CH), CTE = CT != null ? Math.min(1, CT * 2) : 0, PUE = bell(PU);
+    var HIP = 82, lean = (CH != null ? 2 - 18 * CHE : CT != null ? 4 + 6 * CTE : PU != null ? -4 : HD != null ? -8 + 26 * Math.max(0, (HD - .6) / .4) : DV ? 6 : KK != null ? curve(KICK.lean, KK) : RR != null ? 4 : 2 + A * 13) * D2R, ph = P.phase, swing = Math.cos(TAU * (ph - .8));
+    var tauS = A * 13 * D2R * swing, tauP = -A * 6 * D2R * swing;
+    function turn(q, t) { return [q[0] * Math.cos(t) - q[1] * Math.sin(t), q[0] * Math.sin(t) + q[1] * Math.cos(t), q[2]]; }
+    function upper(q) { var dz = q[2] - HIP; return [q[0] + dz * Math.sin(lean), q[1], HIP + dz * Math.cos(lean)]; }
+    function body(q) { return upper(turn(q, tauS)); }
+    function pelvis(q) { return turn(q, tauP); }
+    var lift = 0;
+    function proj(q) { var dep = q[0] * F.d + q[1] * L.d; return { x: q[0] * F.x + q[1] * L.x, y: -(q[2] + lift) + dep * DEPTH, d: dep }; }
+    // Legs: hip angle (forward +), knee bend, foot pitch from the gait, scaled from standing to sprinting.
+    function leg(side) {
+      var p = ph + (side > 0 ? 0 : .5), th = A * curve(GAIT.hip, p) * D2R, kn = (4 + A * (curve(GAIT.knee, p) - 4)) * D2R, ft = A * curve(GAIT.foot, p) * D2R;
+      if (KK != null) { if (side === KS) { th = curve(KICK.hip, KK) * D2R; kn = curve(KICK.knee, KK) * D2R; ft = curve(KICK.foot, KK) * D2R; } else { th = 8 * D2R; kn = 22 * D2R; ft = 0; } }
+      else if (RR != null) { var e = Math.sin(Math.PI * Math.min(1, RR * 1.15)); if (side === KS) { th = (6 + 26 * e) * D2R; kn = (14 + 22 * e) * D2R; ft = 22 * e * D2R; } else { th = 4 * D2R; kn = (14 + 10 * e) * D2R; ft = 0; } }
+      if (CH != null) { th = 6 * D2R; kn = (12 + 16 * CHE) * D2R; ft = 0; }
+      else if (CT != null) { th = (10 + 14 * CTE) * D2R; kn = (16 + 30 * CTE) * D2R; ft = 0; }
+      else if (PU != null) { th = (10 + 18 * PUE) * D2R; kn = (18 + 54 * PUE) * D2R; ft = -20 * PUE * D2R; }
+      else if (HD != null) { th = (10 + 16 * HE) * D2R; kn = (18 + 58 * HE) * D2R; ft = -24 * HE * D2R; }
+      else if (DV) { th = (side > 0 ? 14 : 4) * D2R; kn = (side > 0 ? 34 : 16) * D2R; ft = -12 * D2R; }
+      var hip = pelvis([0, side * 8.5, HIP]), sh = th - kn;
+      var knee = [hip[0] + 40 * Math.sin(th), hip[1] + side * .6, hip[2] - 40 * Math.cos(th)];
+      var ank = [knee[0] + 39 * Math.sin(sh), knee[1] + side * .4, knee[2] - 39 * Math.cos(sh)];
+      var toe = [ank[0] + 13 * Math.cos(ft), ank[1], ank[2] - 1.5 + 13 * Math.sin(ft)];
+      return { side: side, hip: hip, knee: knee, ank: ank, toe: toe };
+    }
+    function arm(side) {
+      var p = ph + (side > 0 ? 0 : .5), c = Math.cos(TAU * (p - .8)), sa = (-A * 46 * c) * D2R, el = (10 + A * (78 + 14 * c)) * D2R, ab = (1 - A) * 7 * D2R + 4 * D2R;
+      if (KK != null) { var w = Math.sin(Math.PI * Math.min(1, KK * 1.2)); sa = (side !== KS ? 30 : -25) * w * D2R; el = (25 + 20 * w) * D2R; ab = (12 + (side !== KS ? 38 : 22) * w) * D2R; }   // 균형: 팔을 벌린다
+      else if (RR != null) { sa = 10 * D2R; el = 30 * D2R; ab = 18 * D2R; }
+      if (CH != null) { sa = (8 + 22 * CHE) * D2R; el = 25 * D2R; ab = (14 + 34 * CHE) * D2R; }   // 가슴을 내밀고 팔을 벌린다
+      else if (CT != null) { sa = (20 + 78 * CTE) * D2R; el = (20 + 34 * CTE) * D2R; ab = (8 - 4 * CTE) * D2R; }   // 두 손을 앞으로 모아 잡는다
+      else if (PU != null) { sa = (side === KS ? 30 + 145 * PUE : 20) * D2R; el = (side === KS ? 30 - 26 * PUE : 40) * D2R; ab = 12 * D2R; }   // 한 팔을 뻗어 쳐낸다
+      else if (HD != null) { sa = (40 + 70 * HE) * D2R; el = (35 + 25 * HE) * D2R; ab = (14 + 16 * HE) * D2R; }   // 팔로 몸을 띄운다
+      else if (DV) { var ue = Math.min(1, DV.t * 2.2); sa = (20 + 150 * ue) * D2R; el = (30 - 22 * ue) * D2R; ab = (12 + 8 * ue) * D2R; }   // 두 팔을 공 쪽으로 뻗는다
+      var sh = body([0, side * 16, 120]);
+      var elb = body([25 * Math.sin(sa), side * (16 + 25 * Math.sin(ab)), 120 - 25 * Math.cos(sa)]);
+      var fa = sa + el, wr = body([25 * Math.sin(sa) + 22 * Math.sin(fa), side * (16 + 25 * Math.sin(ab) + 2), 120 - 25 * Math.cos(sa) - 22 * Math.cos(fa)]);
+      return { side: side, sh: sh, elb: elb, wr: wr };
+    }
+    var LL = leg(1), LR = leg(-1), AL = arm(1), AR = arm(-1);
+    // The lower foot stands on the grass; in the flight phase both feet leave it.
+    var low = Math.min(LL.ank[2], LR.ank[2], LL.toe[2] + 1.5, LR.toe[2] + 1.5), flight = 0;
+    [ph, ph + .5].forEach(function (q) { q -= Math.floor(q); if (q > .35 && q < .5) flight = Math.max(flight, Math.sin(Math.PI * (q - .35) / .15)); });
+    lift = 6 - low + A * 5 * flight + (HD != null ? 34 * HE : 0) + (PU != null ? 30 * PUE : 0);   // 헤딩 · 펀칭: 점프
+    // Drawing helpers: a limb is a tapered capsule through its points; colours by part.
+    function capsule(pts, radii) {
+      var n = pts.length, left = [], right = [];
+      for (var k = 0; k < n; k++) {
+        var a = pts[Math.max(0, k - 1)], b = pts[Math.min(n - 1, k + 1)], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+        var nx = -dy / len, ny = dx / len; left.push([pts[k].x + nx * radii[k], pts[k].y + ny * radii[k]]); right.push([pts[k].x - nx * radii[k], pts[k].y - ny * radii[k]]);
+      }
+      var d = 'M' + left.map(function (q) { return r1(q[0]) + ' ' + r1(q[1]); }).join('L');
+      d += 'A' + r1(radii[n - 1]) + ' ' + r1(radii[n - 1]) + ' 0 0 0 ' + r1(right[n - 1][0]) + ' ' + r1(right[n - 1][1]);
+      d += 'L' + right.slice().reverse().map(function (q) { return r1(q[0]) + ' ' + r1(q[1]); }).join('L');
+      d += 'A' + r1(radii[0]) + ' ' + r1(radii[0]) + ' 0 0 0 ' + r1(left[0][0]) + ' ' + r1(left[0][1]) + 'Z';
+      return d;
+    }
+    function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+    function piece(g, d, color, far, edge) {
+      g.appendChild(node(doc, 'path', { d: d, fill: color, stroke: LINE, 'stroke-width': '.9', 'stroke-linejoin': 'round' }));
+      if (edge) g.appendChild(node(doc, 'path', { d: d, fill: 'url(#psChipEdge)', 'pointer-events': 'none' }));
+      if (far) g.appendChild(node(doc, 'path', { d: d, fill: '#000', 'fill-opacity': '.2', 'pointer-events': 'none' }));
+    }
+    var parts = [];
+    function drawLeg(Lg) {
+      var hp = proj(Lg.hip), kp = proj(Lg.knee), ap = proj(Lg.ank), tp = proj(Lg.toe), far = (hp.d + kp.d) / 2 < -1;
+      var calf = proj(mix(Lg.knee, Lg.ank, .3)), sockTop = proj(mix(Lg.knee, Lg.ank, .16)), thighMid = proj(mix(Lg.hip, Lg.knee, .36));
+      parts.push({ d: (hp.d + kp.d + ap.d) / 3, draw: function (g) {
+        piece(g, capsule([thighMid, kp], [6.2, 4.9]), SKIN, far);                                   // thigh below the shorts, knee
+        piece(g, capsule([sockTop, calf, ap], [4.9, 5.4, 3.1]), sock, far, true);                  // sock over the calf
+        piece(g, capsule([ap, tp], [3.6, 3]), BOOT, false);                                         // boot
+        piece(g, capsule([hp, proj(mix(Lg.hip, Lg.knee, .4))], [8, 7.2]), shorts, far, true);     // shorts leg
+      } });
+    }
+    function drawArm(Am) {
+      var sp = proj(Am.sh), ep = proj(Am.elb), wp = proj(Am.wr), far = ep.d < -1, sl = proj(mix(Am.sh, Am.elb, .4));
+      parts.push({ d: ep.d + (far ? -2 : 2), draw: function (g) {
+        piece(g, capsule([sl, ep, wp], [4.1, 3.5, 2.7]), SKIN, far);                               // arm and forearm
+        g.appendChild(node(doc, 'circle', { cx: r1(wp.x), cy: r1(wp.y), r: 3.2, fill: SKIN, stroke: LINE, 'stroke-width': '.8' }));   // hand
+        piece(g, capsule([sp, sl], [4.9, 4.4]), fill, far, true);                                   // sleeve
+      } });
+    }
+    drawLeg(LL); drawLeg(LR); drawArm(AL); drawArm(AR);
+    // Torso and hips: the outline of a few points of the chest, waist and hips — wide from the front, deep from the side.
+    var tor = [], hips = [];
+    [[8, 16.5, 122], [-8, 16.5, 122], [11, 15, 108], [-9.5, 15, 108], [8.5, 13.5, 91], [-8.5, 13.5, 91]].forEach(function (q) {
+      var f = q[2] > 100 ? body : function (v) { return upper(pelvis(v)); }; tor.push(proj(f([q[0], q[1], q[2]]))); tor.push(proj(f([q[0], -q[1], q[2]])));
+    });
+    [[8.5, 14, 92], [-8.5, 14, 92], [8.5, 14, 78], [-9, 14, 78]].forEach(function (q) { hips.push(proj(pelvis([q[0], q[1], q[2]]))); hips.push(proj(pelvis([q[0], -q[1], q[2]]))); });
+    function poly(ps) { var h = hull(ps.map(function (q) { return [q.x, q.y]; })); return 'M' + h.map(function (q) { return r1(q[0]) + ' ' + r1(q[1]); }).join('L') + 'Z'; }
+    var neckB = proj(body([0, 0, 120])), neckT = proj(body([.5, 0, 131])), head = proj(body([1, 0, 139.5]));
+    parts.push({ d: 0, draw: function (g) {
+      piece(g, poly(hips), shorts, false, true);
+      piece(g, capsule([neckB, neckT], [3.8, 3.6]), SKIN, false);
+      piece(g, poly(tor), fill, false, true);
+      // Collar: a V at the front, a band at the back.
+      var c0 = proj(body([7.5, 5, 122])), c1 = proj(body([8.5, 0, 117])), c2 = proj(body([7.5, -5, 122]));
+      if (F.d > -.2) g.appendChild(node(doc, 'path', { d: 'M' + r1(c0.x) + ' ' + r1(c0.y) + 'L' + r1(c1.x) + ' ' + r1(c1.y) + 'L' + r1(c2.x) + ' ' + r1(c2.y), fill: 'none', stroke: stroke || LINE, 'stroke-width': '1.6', 'stroke-linejoin': 'round' }));
+      // Number on the chest or, larger, on the back; narrower as the shirt turns away.
+      var text = label && label.textContent;
+      if (text) {
+        var back = F.d < -.15, at = proj(body([(back ? -9.5 : 11) * Math.min(1, Math.abs(F.d) * 1.6), 0, back ? 107 : 105])), len = String(text).length, w = Math.max(.5, Math.abs(F.d));
+        var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('y', '0'); n.setAttribute('pointer-events', 'none');
+        n.setAttribute('font-size', back ? (len >= 3 ? '11' : (len === 2 ? '15' : '17')) : (len >= 3 ? '9' : (len === 2 ? '12' : '14')));
+        n.setAttribute('transform', 'translate(' + r1(at.x) + ',' + r1(at.y) + ') scale(' + (Math.round(w * 100) / 100) + ',1)');
+        g.appendChild(n);
+      }
+    } });
+    parts.sort(function (a, b) { return a.d - b.d; }).forEach(function (q) { q.draw(fig); });
+    if (DV) {   // 몸을 옆으로 날린다: 공 쪽으로 기울며 떠올랐다가 떨어진다
+      var de = 1 - Math.pow(1 - DV.t, 2), R = DV.reach, up = DV.high ? 78 : 34, rot = DV.high ? 66 : 84;   // 높은 다이빙: 더 높이 떠서 덜 눕는다
+      fig.setAttribute('transform', 'translate(' + r1(DV.dir * 120 * R * de) + ',' + r1(-up * R * Math.sin(Math.PI * Math.min(1, DV.t * 1.1)) + 66 * R * de * de) + ') rotate(' + r1(DV.dir * rot * R * de) + ' 0 -' + HIP + ')');   // 끝엔 바닥에 눕는다(1.4m 옆으로)
+    }
+    // Head last: hair at the back and top, the face toward where the player looks.
+    var hb = { x: head.x - F.x * 2.8, y: head.y - 1.2 - F.d * 2.8 * DEPTH * 3 }, facing = F.d > -.25;
+    function ell(c, rx, ry, color, extra) { fig.appendChild(node(doc, 'ellipse', Object.assign({ cx: r1(c.x), cy: r1(c.y), rx: rx, ry: ry, fill: color }, extra || {}))); }
+    if (facing) { ell(hb, 9, 10.4, HAIR); ell(head, 8.4, 10.2, SKIN, { stroke: LINE, 'stroke-width': '.9' });
+      fig.appendChild(node(doc, 'path', { d: 'M' + r1(head.x - 8.6) + ' ' + r1(head.y - 1.5) + 'Q' + r1(head.x - 9) + ' ' + r1(head.y - 12.5) + ' ' + r1(head.x) + ' ' + r1(head.y - 12.6) + 'Q' + r1(head.x + 9) + ' ' + r1(head.y - 12.5) + ' ' + r1(head.x + 8.6) + ' ' + r1(head.y - 1.5) + 'Q' + r1(head.x + 4) + ' ' + r1(head.y - 7) + ' ' + r1(head.x) + ' ' + r1(head.y - 7.4) + 'Q' + r1(head.x - 4) + ' ' + r1(head.y - 7) + ' ' + r1(head.x - 8.6) + ' ' + r1(head.y - 1.5) + 'Z', fill: HAIR, transform: Math.abs(F.x) > .3 ? 'translate(' + r1(-F.x * 2.2) + ',0)' : '' }));
+      if (Math.abs(F.x) > .25) ell({ x: head.x + F.x * 8.4, y: head.y + 1 }, 1.5, 1.8, SKIN, { stroke: LINE, 'stroke-width': '.6' });   // nose in profile
+    } else { ell(head, 8.6, 10.4, SKIN, { stroke: LINE, 'stroke-width': '.9' }); ell({ x: head.x - F.x * 1.5, y: head.y - 1 }, 8.8, 10.2, HAIR); }
+    return fig;
+  }
+  // opts.shape = 'shirt' | 'circle' | 'shaper' | 'person' (the board's player shape), opts.dir = shaper heading in chip degrees.
   function applyChip(token, item, opts) {
     var doc = token.ownerDocument; chipDefs(doc);
-    var size = chipSize(opts), kind = opts && (opts.shape === 'shirt' || opts.shape === 'shaper') ? opts.shape : 'circle';
+    var size = chipSize(opts), kind = opts && (opts.shape === 'shirt' || opts.shape === 'shaper' || opts.shape === 'person') ? opts.shape : 'circle';
     var face = node(doc, 'g', { 'class': 'ps-depth-face' }), original = node(doc, 'g', { 'class': 'ps-depth-original', display: 'none' });
     while (token.firstChild) original.appendChild(token.firstChild);
     var shape = original.querySelector('.tok-c'), label = original.querySelector('text');
@@ -190,6 +395,24 @@
     // Floodlights on four corner masts: four faint shadows in an X plus a contact shadow, as on a lit pitch.
     // Flat fills, not gradients: Safari repaints every chip on each drag frame and radial gradients made that slow.
     // 3.029 — the light follows the board's mood (opts.mood): night = the four masts, day = one short shadow under a high sun, dusk = one long shadow.
+    if (kind === 'person') {
+      var mood = opts && opts.mood, pz = personPose(opts && opts.pose), shadowHost = body;
+      if (pz.dive) { var de0 = 1 - Math.pow(1 - pz.dive.t, 2); shadowHost = node(doc, 'g', { transform: 'translate(' + r1(pz.dive.dir * 120 * pz.dive.reach * de0 * .8) + ',0)' }); body.appendChild(shadowHost); }   // 다이빙: 그림자도 따라간다
+      // A standing player: a contact shadow at the feet and a cast shadow on the grass that follows the light.
+      if (mood === 'day') shadowHost.appendChild(node(doc, 'ellipse', { cx: 4, cy: 2, rx: 17, ry: 6.5, fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
+      else if (mood === 'dusk') shadowHost.appendChild(node(doc, 'path', { d: 'M-8 1L-10 -4L95 -14L100 -6L94 4Z', fill: '#000', 'fill-opacity': '.26', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
+      else [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(function (o) {
+        shadowHost.appendChild(node(doc, 'path', { d: 'M-7 0L7 0L' + (o[0] * 38 + 6) + ' ' + (o[1] * 26) + 'L' + (o[0] * 38 - 6) + ' ' + (o[1] * 26) + 'Z', fill: '#000', 'fill-opacity': '.11', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
+      });
+      shadowHost.appendChild(node(doc, 'ellipse', { cx: 0, cy: 0, rx: 15, ry: 5.5, fill: '#000', 'fill-opacity': '.34', 'pointer-events': 'none' }));
+      // 3.072 — a low, turned camera (the broadcast view) foreshortens the board: opts.stand = { rot, sy } turns the player
+      // back upright on screen and stretches him so he stands at his real height instead of lying on the grass.
+      var st = opts && opts.stand, stand = node(doc, 'g', { 'class': 'ps-person-stand' });
+      if (st && (st.rot || (st.sy && st.sy !== 1))) stand.setAttribute('transform', 'rotate(' + r1(+st.rot || 0) + ') scale(1,' + (Math.round((+st.sy || 1) * 1000) / 1000) + ')');
+      stand.appendChild(node(doc, 'rect', { x: -22, y: -PERSON_H - 4, width: 44, height: PERSON_H + 8, fill: 'transparent', 'class': 'ps-person-hit' }));   // the whole figure is grabbable, not only its thin limbs
+      stand.appendChild(personFigure(doc, fill, stroke, label, opts && opts.pose));
+      body.appendChild(stand);
+    } else {
     var mood = opts && opts.mood;
     if (mood === 'day') body.appendChild(node(doc, 'ellipse', { cx: 3, cy: 3, rx: R + 2, ry: R * .8, fill: '#000', 'fill-opacity': '.22', 'pointer-events': 'none', 'class': 'ps-chip-shadow' }));
     else if (mood === 'dusk') body.appendChild(node(doc, 'ellipse', { cx: R * 1.1, cy: 3, rx: R * 2.1, ry: R * .62, fill: '#000', 'fill-opacity': '.3', 'pointer-events': 'none', 'class': 'ps-chip-shadow', transform: 'rotate(12)' }));
@@ -222,19 +445,37 @@
     var text = label && label.textContent;
     if (text) { var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('pointer-events', 'none'); lid.appendChild(n); }
     body.appendChild(lid);
+    }
+    // 3.086 — «사람»: 칩 글자(번호 · 포지션 · 풋살 — 보드 설정 › 칩 글자, «없음»이면 없다)를 발밑 작은 패에.
+    //         셔츠의 번호는 실제 크기에서 읽히지 않는다(사용자 «사람 토큰 밑으로 포지션이나 번호가 들어갈수 있게»). 팀 색 패 · 팀 글자색.
+    var tagH = 0, tagTxt = kind === 'person' && label ? String(label.textContent || '').trim() : '';
+    if (tagTxt) {
+      var lf = size.font / (opts && +opts.zoom > 1 ? +opts.zoom : 1), tagHost = body.querySelector('.ps-person-stand') || body, tagY = 6;
+      tagH = r1(lf * 1.15);
+      var tagW = Math.max(tagH * 1.3, lf * .8 + tagTxt.length * lf * .56);
+      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH * .3), fill: fill, stroke: 'rgba(255,255,255,.92)', 'stroke-width': r1(lf * .09) }));
+      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + tagH / 2 + lf * .29), 'text-anchor': 'middle', 'font-size': r1(lf * .8), 'font-weight': '800',
+        fill: label.getAttribute('fill') || '#fff', 'font-family': label.getAttribute('font-family') || FONT, 'pointer-events': 'none' });
+      tagT.textContent = tagTxt; tagHost.appendChild(tagT);
+    }
     if (item.name) {
       // opts.nameK = the board's name size (0.8 · 1 · 1.25); opts.nameStyle 'pill' puts the name on a dark pill, otherwise an outlined name.
-      var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1), str = String(item.name).toUpperCase(), y0 = nameY(kind, h, font, opts && opts.dir);
-      if (opts && opts.nameStyle === 'pill') body.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
-      var name = node(doc, 'text', { x: 0, y: y0, 'data-font': String(font), 'text-anchor': 'middle', 'font-size': String(Math.round(font * 10) / 10), 'font-weight': '800', 'letter-spacing': '.4',
-        fill: '#fff', stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke',
-        'font-family': (label && label.getAttribute('font-family')) || FONT, 'class': 'ps-chip-name' });   // the name is part of the chip: pressing it picks the player
+      var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1) / (opts && +opts.zoom > 1 ? +opts.zoom : 1), str = String(item.name).toUpperCase(), below = nameBelow(doc, opts), y0 = nameY(kind, h, font, opts && opts.dir, below);
+      if (below && tagH) y0 = r1(y0 + tagH + 2);   // 사람: 이름표가 아래면 번호 패 밑으로
+      var nameHost = (kind === 'person' && body.querySelector('.ps-person-stand')) || body, pill = opts && opts.nameStyle === 'pill';
+      if (pill) nameHost.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
+      // 3.086 — 알약이면 글자 테두리 없이(평면 알약과 같다 · 사용자 «테두리 없는것도 만들어줘 알약느낌으로»). 글자만이면 테두리 글자.
+      var name = node(doc, 'text', Object.assign({ x: 0, y: y0, 'data-font': String(font), 'text-anchor': 'middle', 'font-size': String(Math.round(font * 10) / 10), 'font-weight': pill ? '700' : '800', 'letter-spacing': '.4', fill: '#fff' },
+        pill ? {} : { stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke' },
+        { 'font-family': nameFF(doc) || (label && label.getAttribute('font-family')) || FONT, 'class': 'ps-chip-name' }));   // the name is part of the chip: pressing it picks the player
+      if (below) name.setAttribute('data-np', 'below');
       name.textContent = str;
-      body.appendChild(name);
+      nameHost.appendChild(name);
     }
     face.appendChild(original); face.appendChild(body);
     original.querySelectorAll('.tok-hit,.tok-lock').forEach(function (n) { face.appendChild(n.cloneNode(true)); });
-    token.appendChild(face); token.setAttribute('data-depth', String(h)); token.setAttribute('data-depth-chip', String(size.k));
+    token.appendChild(face); token.setAttribute('data-depth', String(kind === 'person' ? PERSON_H : h)); token.setAttribute('data-depth-chip', String(size.k));
+    if (kind === 'person') token.setAttribute('data-depth-person', '1');
   }
   // A shaper turns without a rebuild: its heading follows the ball or the rotate handle.
   function turnChip(token, deg) {
@@ -243,7 +484,7 @@
     token.querySelectorAll('.ps-chip-turn').forEach(function (g) { if (g.getAttribute('transform') !== t) g.setAttribute('transform', t); });
     var name = token.querySelector('.ps-chip-name');
     if (!name) return;
-    var font = +name.getAttribute('data-font') || 15, y = nameY('shaper', CHIP_H, font, deg);
+    var font = +name.getAttribute('data-font') || 15, y = nameY('shaper', CHIP_H, font, deg, name.getAttribute('data-np') === 'below');
     if (+name.getAttribute('y') === y) return;
     name.setAttribute('y', String(y));
     var bg = token.querySelector('.ps-chip-namebg');
@@ -259,6 +500,7 @@
     token.removeAttribute('data-depth');
     token.removeAttribute('data-depth-equipment');
     token.removeAttribute('data-depth-chip');
+    token.removeAttribute('data-depth-person');
   }
   function flattenAll(svg) {
     svg.querySelectorAll('.token[data-depth]').forEach(flatten);
@@ -300,6 +542,14 @@
     }
     token.setAttribute('data-depth', String(height));
   }
+  // 3.083 — «선수들이 몸의 방향을 전부 볼 따라가게»: 공이 움직이면 사람 모양의 몸만 다시 그린다(칩 전체는 그대로).
+  function repose(token, pose) {
+    var st = token && token.querySelector('.ps-person-stand'), old = st && st.querySelector('.ps-person'); if (!old) return false;
+    var P = personPose(pose); if (!P.amp && P.kick == null && Math.abs(((P.yaw - (+old.getAttribute('data-yaw') || 0)) % 360 + 540) % 360 - 180) < 3) return true;
+    var o = token.querySelector('.ps-depth-original'), sh = o && o.querySelector('.tok-c');
+    st.replaceChild(personFigure(token.ownerDocument, (sh && sh.getAttribute('fill')) || '#3a6df0', (sh && sh.getAttribute('stroke')) || 'rgba(0,0,0,.35)', o && o.querySelector('text'), pose), old);
+    return true;
+  }
   function update(token, item) {
     if (!token || !token.hasAttribute('data-depth')) return;
     if(token.hasAttribute('data-depth-equipment')){var old=token.querySelector('.ps-equipment-mesh');old.parentNode.replaceChild(equipmentMesh(token.ownerDocument,item),old);return;}
@@ -311,5 +561,5 @@
       side.setAttribute('transform', 'translate(' + offset.x + ',' + offset.y + ')');
     });
   }
-  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, flatten: flatten, flattenAll: flattenAll, elevation: elevation, chipSize: chipSize, turnChip: turnChip };
+  return { equipmentTypes: equipmentTypes.slice(), update: update, apply: apply, nameY: nameY, flatten: flatten, flattenAll: flattenAll, elevation: elevation, chipSize: chipSize, turnChip: turnChip, repose: repose, PERSON_M: PERSON_M, PERSON_H: PERSON_H, personPose: personPose };
 });
