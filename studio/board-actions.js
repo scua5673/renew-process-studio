@@ -42,7 +42,7 @@
     function ctx() {
       try {
         /* global anim, animActive, sel */
-        var A = win.eval('typeof anim!=="undefined"?anim:null'), i = win.eval('typeof animActive!=="undefined"?animActive:-1'), s = win.eval('typeof sel!=="undefined"?sel:null');
+        var A = typeof anim !== 'undefined' ? anim : null, i = typeof animActive !== 'undefined' ? animActive : -1, s = typeof sel !== 'undefined' ? sel : null;   // eval 없이(CSP)
         if (!A || !s || s.type !== 'player' || !s.ref || !(i >= 0) || i >= A.frames.length - 1) return null;
         return { frame: A.frames[i], idx: i, p: s.ref };
       } catch (_) { return null; }

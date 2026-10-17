@@ -162,7 +162,7 @@
       doc.querySelectorAll('#benchCat .tpill').forEach(function (b) {
         var c = b.getAttribute('data-cat'); b.setAttribute('data-df-label', TEAMS[c] || ''); b.setAttribute('data-df-n', (TEAMS[c] || '').replace('팀 ', ''));
         // 토큰과 같은 유니폼(주색 · 보조색 · 무늬) — 작전판의 teamChipBG · teamMain
-        try { var bgf = win.eval('typeof teamChipBG==="function"?teamChipBG:null'), mf = win.eval('typeof teamMain==="function"?teamMain:null');
+        try { var bgf = typeof win.teamChipBG === 'function' ? win.teamChipBG : null, mf = typeof win.teamMain === 'function' ? win.teamMain : null;
           if (bgf) b.style.setProperty('--df-kit', bgf(c)); var col = mf ? String(mf(c)) : ''; var m = /^#?([0-9a-f]{6})$/i.exec(col);
           if (m) { var n = parseInt(m[1], 16); b.style.setProperty('--df-kit-ink', (0.2126 * (n >> 16 & 255) + 0.7152 * (n >> 8 & 255) + 0.0722 * (n & 255)) / 255 > .6 ? '#111' : '#fff'); } } catch (_) {}
       });
@@ -170,7 +170,7 @@
       Object.keys(L).forEach(function (id) { var b = doc.getElementById(id); if (b) b.setAttribute('data-df-label', L[id]); });
     }
     function forms() {
-      var F = null; try { F = win.eval('typeof FORM!=="undefined"?FORM:null'); } catch (_) {} if (!F) return '';
+      var F = null; try { F = typeof FORM !== 'undefined' ? FORM : null; } catch (_) {}   /* global FORM */ if (!F) return '';
       var h = '';
       FORM_GROUPS.forEach(function (g) {
         var keys = g[1].filter(function (k) { return F[k]; }); if (!keys.length) return;
@@ -198,9 +198,9 @@
     tray.addEventListener('click', function (e) {
       var t = e.target.closest('[data-tab]'); if (t) { var n = t.getAttribute('data-tab'); st.tab = n; if (n === 'equip') st.panel = 'equip'; else if (st.panel === 'equip') st.panel = 'team'; writeOpen(st, env.storage); paint(); tab(n); return; }
       var s = e.target.closest('[data-step]'); if (s) { count = Math.max(1, Math.min(11, count + +s.getAttribute('data-step'))); tray.querySelector('.df-n').textContent = count; return; }
-      if (e.target.closest('[data-place]')) { var on = doc.querySelector('#benchCat .tpill.on'), team = on ? on.getAttribute('data-cat') : 'blue'; try { win.eval('addPlayers')(team, count); } catch (_) {} return; }
+      if (e.target.closest('[data-place]')) { var on = doc.querySelector('#benchCat .tpill.on'), team = on ? on.getAttribute('data-cat') : 'blue'; try { win.addPlayers(team, count); } catch (_) {} return; }
       var ft = e.target.closest('[data-fteam]'); if (ft) { formTeam = ft.getAttribute('data-fteam'); tray.querySelectorAll('[data-fteam]').forEach(function (b) { b.classList.toggle('on', b === ft); }); return; }
-      var f = e.target.closest('[data-form]'); if (f) { try { win.eval('applyFormationTo')(formTeam, f.getAttribute('data-form')); if (typeof win.toast === 'function') win.toast((formTeam === 'blue' ? '우리 팀' : '상대 팀') + ' ' + f.textContent + ' 로 놓았어요'); } catch (_) {} return; }
+      var f = e.target.closest('[data-form]'); if (f) { try { win.applyFormationTo(formTeam, f.getAttribute('data-form')); if (typeof win.toast === 'function') win.toast((formTeam === 'blue' ? '우리 팀' : '상대 팀') + ' ' + f.textContent + ' 로 놓았어요'); } catch (_) {} return; }
     });
     // 운동장을 누르거나(놓기 · 고르기는 그대로 된다) 칸에서 무언가를 끌어 밖으로 나가면 칸을 닫는다 — 운동장을 가리지 않게
     function closeTray() { if (!st.panel) return; st.panel = ''; writeOpen(st, env.storage); paint(); }

@@ -106,7 +106,13 @@
     body.__psDockFilm = true;
     var st = doc.createElement('style'); st.id = 'ps-dock-film-css'; st.textContent = css(); doc.head.appendChild(st);
     function on() { return body.classList.contains('ps-dock-float'); }
-    function g(name) { try { return win.eval('typeof ' + name + '!=="undefined"?' + name + ':null'); } catch (_) { return null; } }
+    /* global anim, animHold */
+    function g(name) {   // 작전판의 let/const 전역은 같은 문서의 다른 스크립트에서 이름으로 읽힌다(eval 없이 — CSP)
+      try { switch (name) {
+        case 'anim': return typeof anim !== 'undefined' ? anim : null;
+        case 'animHold': return typeof animHold !== 'undefined' ? animHold : null;
+      } } catch (_) {} return null;
+    }
     // 칩마다: 시간 글자 · 썸네일을 전체 운동장으로
     function decorate() {
       var box = doc.getElementById('animFrames'); if (!box) return;

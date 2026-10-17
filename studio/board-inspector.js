@@ -82,7 +82,15 @@
     if (!body || !ctl || ctl.__psInsp) return null;
     ctl.__psInsp = true;
     var st = doc.createElement('style'); st.id = 'ps-inspector-css'; st.textContent = css(); doc.head.appendChild(st);
-    function g(name) { try { return win.eval('typeof ' + name + '!=="undefined"?' + name + ':null'); } catch (_) { return null; } }
+    /* global sel, multiSel, squad, selPanelOpen */
+    function g(name) {   // 작전판의 let/const 전역은 같은 문서의 다른 스크립트에서 이름으로 읽힌다(eval 없이 — CSP)
+      try { switch (name) {
+        case 'sel': return typeof sel !== 'undefined' ? sel : null;
+        case 'multiSel': return typeof multiSel !== 'undefined' ? multiSel : null;
+        case 'squad': return typeof squad !== 'undefined' ? squad : null;
+        case 'selPanelOpen': return typeof selPanelOpen !== 'undefined' ? selPanelOpen : null;
+      } } catch (_) {} return null;
+    }
     function selPlayer() { var s = g('sel'), m = g('multiSel'); return s && s.type === 'player' && s.ref && !(m && m.length) ? s.ref : null; }
     function shown() { return ctl.style.display !== 'none' && win.getComputedStyle(ctl).display !== 'none'; }
     function active() { return body.classList.contains('ps-dock-float') && !!selPlayer() && shown(); }

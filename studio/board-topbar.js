@@ -137,7 +137,7 @@
       }
       win.setTimeout(paintView, 120);
     }
-    function curShape() { var t = ''; try { t = win.eval('typeof tokShape!=="undefined"?tokShape:""'); } catch (_) {} return shapeShown(t, body.classList.contains('bc-tilt3d')); }
+    function curShape() { var t = ''; try { t = typeof tokShape !== 'undefined' ? tokShape : ''; } catch (_) {}   /* global tokShape */ return shapeShown(t, body.classList.contains('bc-tilt3d')); }
     function paintView() {
       var s = strip(), v = curView(), sh = curShape(); if (!s) return;
       s.querySelectorAll('.tb-seg button').forEach(function (b) { var k = b.getAttribute('data-v'), o = k ? k === v : b.getAttribute('data-shape') === sh; b.classList.toggle('on', o); b.setAttribute('aria-pressed', o ? 'true' : 'false'); });
