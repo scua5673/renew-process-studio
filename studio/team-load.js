@@ -36,8 +36,12 @@ function plan(slots,players,opts){
  m.extra.forEach(function(j,k){var b=bench(k);add.push({p:players[j],x:b[0],y:b[1],bench:true});});
  return {pick:m.pick,add:add,bench:m.extra.length};
 }
-/* 판 위 토큰에 저장 선수를 입힌다 — 위치·id·크기·사진은 그대로. 포지션 표시는 토큰 것이 자리라 비어 있을 때만 채운다. 선수가 없으면 이름만 비운다 */
-function dress(t,p){if(!t)return t;if(p){t.name=String(p.name||'').trim()||null;if(p.no!=null&&String(p.no)!=='')t.num=p.no;if(!t.pos&&p.pos)t.pos=p.pos;}else t.name=null;return t;}
+/* 판 위 토큰에 저장 선수를 입힌다 — 위치·id·크기는 그대로. 포지션 표시는 토큰 것이 자리라 비어 있을 때만 채운다. 선수가 없으면 이름만 비운다.
+   img: 이 기기의 선수 사진(data URL, PSTeamPhotos). 토큰에 코치가 직접 올린 사진이 있으면 그대로 두고, 팀 불러오기가 넣은 사진(imgTeam 지문이 맞는 것)만 바꾸거나 뺀다 */
+function mark(s){s=String(s||'');for(var h=0,i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return s.length+':'+(h>>>0).toString(36);}
+function dress(t,p,img){if(!t)return t;if(p){t.name=String(p.name||'').trim()||null;if(p.no!=null&&String(p.no)!=='')t.num=p.no;if(!t.pos&&p.pos)t.pos=p.pos;}else t.name=null;
+ if(!t.img||t.imgTeam===mark(t.img)){if(p&&img){t.img=img;t.imgTeam=mark(img);}else{delete t.img;delete t.imgTeam;}}
+ return t;}
 /* 저장 팀 유니폼을 고른 쪽(side)에만 — 색은 #rrggbb, 무늬는 작전판 목록(pats)에 있는 것만 */
 var KIT_MAP={main:'teamColors',accent:'teamColor2',stroke:'teamStrokeC',text:'teamTxtC',gkMain:'gkColors',gkAccent:'gkColor2',gkStroke:'gkStrokeC',gkText:'gkTxtC'};
 function kit(state,k,side,pats){
@@ -46,15 +50,16 @@ function kit(state,k,side,pats){
  [['pattern','teamPattern'],['gkPattern','gkPattern']].forEach(function(p){if((pats||[]).indexOf(k[p[0]])>=0){state[p[1]]=state[p[1]]||{};state[p[1]][side]=k[p[0]];}});
  return state;
 }
-/* 지금 페이지의 다른 장면에도 — 같은 토큰(id)은 이름·번호·포지션을 같이, 이번에 새로 놓은 토큰은 없는 장면에 넣는다(없으면 재생 때 나타났다 사라진다).
+/* 지금 페이지의 다른 장면에도 — 같은 토큰(id)은 이름·번호·포지션·사진을 같이(사진은 작전판처럼 장면마다 같다), 이번에 새로 놓은 토큰은 없는 장면에 넣는다(없으면 재생 때 나타났다 사라진다).
    장면 묶음(snap)은 새 객체로 바꾼다 — 되돌리기 사본이 옛 객체를 쥐고 있다. 바꾼 장면 수를 돌려준다 */
 function frames(list,active,toks,fresh){
  var by={},n=0;(toks||[]).forEach(function(t){if(t)by[t.id]=t;});
  (list||[]).forEach(function(f,k){if(!f||!f.snap||k===active)return;
-  var arr=(f.snap.players||[]).map(function(q){var t=q&&by[q.id];return t?Object.assign({},q,{name:t.name==null?null:t.name,num:t.num,pos:t.pos||''}):q;});
+  var arr=(f.snap.players||[]).map(function(q){var t=q&&by[q.id];if(!t)return q;var c=Object.assign({},q,{name:t.name==null?null:t.name,num:t.num,pos:t.pos||''});
+   if(t.img){c.img=t.img;if(t.imgTeam)c.imgTeam=t.imgTeam;else delete c.imgTeam;}else if(q.img&&q.imgTeam===mark(q.img)){delete c.img;delete c.imgTeam;}return c;});
   (fresh||[]).forEach(function(t){if(!arr.some(function(q){return q&&q.id===t.id;}))arr.push(JSON.parse(JSON.stringify(t)));});
   f.snap=Object.assign({},f.snap,{players:arr});delete f.thumb;n++;});
  return n;
 }
-return {code:code,base:base,group:group,match:match,bench:bench,plan:plan,dress:dress,kit:kit,frames:frames};
+return {code:code,base:base,group:group,match:match,bench:bench,plan:plan,dress:dress,mark:mark,kit:kit,frames:frames};
 });

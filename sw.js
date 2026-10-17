@@ -11,7 +11,7 @@ const CORE = [
   '/studio/daily-effort.js', '/studio/daily-effort.css', '/studio/session-focus.js',
   '/studio/idp-recovery.js', '/studio/idp-recovery.css', '/studio/idp-roster-refresh.js',
   '/studio/idp-evidence.js', '/studio/idp-evidence.css', '/studio/idp-start.css', '/studio/idp-daily.css',
-  '/studio/storage-keys.js', '/studio/storage.js', '/studio/team-library.js', '/studio/team-load.js', '/studio/profile-sheet.js',
+  '/studio/storage-keys.js', '/studio/storage.js', '/studio/team-library.js', '/studio/team-load.js', '/studio/team-photos.js', '/studio/profile-sheet.js',
   '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/participation.js', '/studio/match-board-tools.js', '/studio/sync-observability.js', '/studio/sync.js',
   '/studio/autosave-status.js', '/studio/update-progress.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
   '/studio/shared-view-observation.js',

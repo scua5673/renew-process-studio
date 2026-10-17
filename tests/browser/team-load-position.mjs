@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
 // 제보 5400cd9e — 저장 팀을 불러오면 판에 놓아 둔 토큰은 그 자리 그대로, 포지션이 맞는 토큰에 이름·번호만 들어간다(예전: 지우고 늘 4-3-3).
-// 판이 빈 쪽은 보드 포메이션 자리에 새로 놓는다. 되돌리기 한 번이면 예전 판. 제보 4116fc54 — 팀 등록에서 선수 순서를 바꿔 저장하면 그 순서가 남는다.
+// 판이 빈 쪽은 보드 포메이션 자리에 새로 놓는다. 되돌리기 한 번이면 예전 판. 제보 4116fc54 — 팀 등록에서 선수 순서를 바꿔 저장하면 그 순서가 남는다. 선수 사진은 이 기기에만(PSImg + 기기 표) — 저장 팀 문서에는 없다.
 // 합성 팀 fixture 에서만 돈다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
 const fx=await startFixture(),browsers={};
@@ -42,6 +42,7 @@ try{
     openAnalysisTeamLibrary();await new Promise(r=>{const t=setInterval(()=>{if(document.getElementById('alLoad')){clearInterval(t);r();}},50);});
     const s=document.getElementById('alSide');s.value='red';s.dispatchEvent(new Event('change'));
     [...document.querySelectorAll('#alPlayers input')].forEach((c,i)=>{c.checked=i<11;});document.getElementById('alLoad').click();
+    await new Promise(r=>{const t=setInterval(()=>{if(!document.getElementById('alLoad')){clearInterval(t);r();}},50);});
     const pr=PR(),ps=state.players.filter(p=>p.team==='red');
     return ps.map(p=>[Math.round((1-(p.x-pr.L)/pr.PW)*1000)/1000,Math.round((1-(p.y-pr.T)/pr.PH)*1000)/1000,p.pos]);});
   assert.equal(red.length,11);
@@ -71,7 +72,42 @@ try{
   assert.deepEqual(saved.local.slice(0,4),['골키퍼','중앙 공격','센터백 둘','센터백 하나']);
   assert.deepEqual(saved.durable,saved.local,'기기 저장소에도 같은 순서');
   assert.equal(saved.local.length,13,'선수는 그대로 13명');
+
+  // 선수 사진 — 골키퍼 줄의 «사진»으로 올리고 저장 → PSImg · 기기 표에만, 저장 팀 문서(거울 · IndexedDB)에는 없다
+  const PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==';
+  const [chooser]=await Promise.all([page.waitForEvent('filechooser'),a.click('#playerRows .row:nth-child(1) .ph')]);
+  await chooser.setFiles({name:'gk.png',mimeType:'image/png',buffer:Buffer.from(PNG,'base64')});
+  await a.waitForFunction(()=>document.querySelector('#playerRows .row:nth-child(1) .ph img'));
+  assert.match(await a.getAttribute('#playerRows .row:nth-child(1) .ph','aria-label'),/사진 바꾸기/);
+  assert.ok(await a.evaluate(()=>document.querySelector('.photo-hint').textContent.includes('이 기기에만')),'기기마다 따로라는 안내');
+  await a.click('button[type=submit]');
+  await a.waitForFunction(()=>/^기기에 저장했습니다\..*이 기기에만/.test(document.getElementById('status').textContent));
+  const ph=await a.evaluate(async()=>{const lib='cs_analysis_team_library_v1',map=JSON.parse((await storage.get('cs_team_photos_v1')).value),ref=map.teams['lib-pos']&&map.teams['lib-pos'].tp1;
+    const img=ref?(await storage.get(ref.slice(6))):null,local=localStorage.getItem(lib),durable=(await storage.get(lib)).value;
+    return {ref,img:img&&img.value.slice(0,23),leak:[local,durable].some(v=>/psimg|data:image\/jpeg|"photo/.test(v)),others:Object.keys(map.teams['lib-pos']||{})};});
+  assert.match(ph.ref||'',/^psimg:psimg_/,'선수 id(tp1) 로 기기 표에');
+  assert.equal(ph.img,'data:image/jpeg;base64,','사진은 PSImg 에 작은 JPEG');
+  assert.equal(ph.leak,false,'동기화되는 저장 팀 문서에는 사진 · 참조가 없다');
+  assert.deepEqual(ph.others,['tp1']);
+  // 작전판에서 다시 불러오면 골키퍼 토큰에 사진
+  await page.evaluate(()=>document.querySelector('#appSeg [data-app="board"]:not([data-train])').click());
+  await f.evaluate(()=>openAnalysisTeamLibrary());await f.waitForSelector('#alLoad');
+  await f.evaluate(()=>document.getElementById('alLoad').click());
+  await f.waitForFunction(()=>!document.getElementById('alLoad'));
+  const tok=await f.evaluate(id=>{const t=state.players.find(p=>p.id===id);return {name:t.name,img:(t.img||'').slice(0,23),team:!!t.imgTeam,others:state.players.filter(p=>p.team==='blue'&&p.img).length,drawn:!!document.querySelector('image[href^="data:image/jpeg"]')};},before[0].id);
+  assert.deepEqual(tok,{name:'골키퍼',img:'data:image/jpeg;base64,',team:true,others:1,drawn:true},'골키퍼 토큰에 이 기기의 사진');
+  // 사진 지우기 → 기기 표 · PSImg 에서 모두 빠진다
+  await f.evaluate(()=>openAnalysisTeamLibrary());await f.waitForSelector('#alManage');await f.click('#alManage');
+  await a.waitForSelector('#teamList button.team');await a.click('#teamList button.team');
+  await a.waitForSelector('#playerRows .row:nth-child(1) .ph img');
+  await a.click('#playerRows .row:nth-child(1) .ph');
+  await a.waitForSelector('#photoDlg[open]');
+  await a.click('#photoRemove');
+  await a.click('button[type=submit]');
+  await a.waitForFunction(()=>document.getElementById('status').textContent.startsWith('기기에 저장했습니다.'));
+  const gone=await a.evaluate(async r=>{const map=JSON.parse((await storage.get('cs_team_photos_v1')).value);return {team:map.teams['lib-pos']||null,img:await storage.get(r.slice(6)),row:!!document.querySelector('#playerRows .row:nth-child(1) .ph img')};},ph.ref);
+  assert.deepEqual(gone,{team:null,img:null,row:false},'지우면 기기 표 · PSImg 에서 모두 빠진다');
   const errs2=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs2,[],'페이지 오류 없음');
-  console.log(JSON.stringify({engine,size,passed:true,kept:before.length,bench:bench.length,red:red.length,order:saved.local.slice(0,4)}));
+  console.log(JSON.stringify({engine,size,passed:true,kept:before.length,bench:bench.length,red:red.length,order:saved.local.slice(0,4),photo:tok.img}));
 }finally{for(const b of Object.values(browsers))await b.close();await fx.close();}

@@ -119,6 +119,7 @@
     ['cs_scoutdb_v1','device','ls','data','scout.html'],
     ['cs_snap_board_v1','device','idb','cache','sync.js'],
     ['cs_snap_match_v2','device','idb','cache','sync.js'],
+    ['cs_team_photos_v1','device','idb','data','team-photos.js'],   /* 저장 팀 선수 → 사진(PSImg 참조). 기기마다 따로 — 동기화하지 않는다 */
     ['cs_theme','device','ls','pref','app.html'],
     ['cs_tokscale_v4','device','ls','pref','board.html'],
     ['cs_tokshape','device','ls','pref','board.html'],
