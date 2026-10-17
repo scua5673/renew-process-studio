@@ -87,18 +87,23 @@ export function packOf(spec,id){
   return {type:'process-studio-drillpack',version:1,date:'2026-10-17T00:00:00.000Z',source:'fifa',drills:[drill]};
 }
 
+/* 목록은 팩 파일들에서 다시 짓는다(읽고 고쳐 쓰지 않는다) — 여러 사람이 동시에 지어도 마지막에 쓴 목록이 그때 있는 팩 전부를 담는다 */
+export function rowOf(id,text){ const d=JSON.parse(text).drills[0];
+  return {id,path:d.fifa.path,rev:rev(text),trainings:d.trainings.map(t=>({name:t.name,minutes:t.minutes,scenes:t.frames.length}))}; }
+export function indexOf(){
+  const ids=fs.readdirSync(out).filter(f=>/^\d{3}\.json$/.test(f)).map(f=>f.slice(0,3)).sort();
+  return {type:'process-studio-fifa-index',version:1,sessions:ids.map(id=>rowOf(id,fs.readFileSync(path.join(out,id+'.json'),'utf8')))};
+}
+function writeIndex(){ const f=path.join(out,'index.json'),tmp=f+'.'+process.pid+'.tmp'; fs.writeFileSync(tmp,JSON.stringify(indexOf())); fs.renameSync(tmp,f); }
 export async function build(id,{write=true}={}){
   if(!/^\d{3}$/.test(id))throw Error('번호는 세 자리: '+id);
   const spec=(await import(pathToFileURL(path.join(specs,id+'.mjs')).href+'?t='+Date.now())).default;
   const pack=packOf(spec,id),text=JSON.stringify(pack),d=pack.drills[0];
-  const row={id,path:spec.path,rev:rev(text),trainings:d.trainings.map(t=>({name:t.name,minutes:t.minutes,scenes:t.frames.length}))};
+  const row=rowOf(id,text);
   if(write){
     fs.mkdirSync(out,{recursive:true});
     fs.writeFileSync(path.join(out,id+'.json'),text);
-    const f=path.join(out,'index.json');
-    const index=fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')):{type:'process-studio-fifa-index',version:1,sessions:[]};
-    index.sessions=index.sessions.filter(s=>s.id!==id&&s.path!==spec.path).concat([row]).sort((a,b)=>a.id.localeCompare(b.id));
-    fs.writeFileSync(f,JSON.stringify(index));
+    writeIndex();
   }
   return {pack,row,text};
 }

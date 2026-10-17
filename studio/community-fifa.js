@@ -249,6 +249,8 @@
   function setIndex(j){ var r=readIndex(j); if(!r)return false; ANIM=r.m; ANIM_N=r.n; return true; }
   function animOf(e){ return (e&&Object.prototype.hasOwnProperty.call(ANIM,e.url))?ANIM[e.url]:null; }
   function packUrl(a){ return PACK_DIR+a.id+'.json'+(a.rev?('?v='+a.rev):''); }
+  /* 3.074 — 카드 미리보기: 훈련 k(1부터)의 첫 장면 그림(scripts/fifa-thumbs.mjs). 그림은 <img> 로만 그린다 */
+  function thumbUrl(a,k){ k=Math.max(1,Math.min(a.trainings.length,Math.floor(+k||1))); return PACK_DIR+'thumbs/'+a.id+'-'+k+'.svg'+(a.rev?('?v='+a.rev):''); }
   /* 팩 → 뷰어가 받는 글(item) — 프로세스 칸 procItem 과 같은 정리(dep = {fields, snap, trainings, frames}). 목록의 그 세션이 아니면 받지 않는다 */
   function item(pack,e,dep){
     var a=animOf(e); if(!a||!pack||pack.type!=='process-studio-drillpack'||!Array.isArray(pack.drills)||pack.drills.length!==1)return null;
@@ -282,21 +284,35 @@
   function animCard(doc,e,an,onOpen){
     var c=el(doc,'div','fi-card fi-anim'); c.setAttribute('role','button'); c.tabIndex=0;
     c.setAttribute('aria-label',e.ko+' — 애니메이션 · 훈련 '+an.trainings.length+'개 열기');
+    /* 3.074 — 미리보기 그림 한 장(프로세스 카드와 같은 자리 · 같은 3:2) + 1·2·3 으로 훈련 그림 바꾸기. 고른 훈련부터 뷰어를 연다 */
+    var k=0,nt=Math.min(3,an.trainings.length),hero=el(doc,'div','pr-hero fi-hero-img'),img=el(doc,'img');
+    img.alt=''; img.loading='lazy'; img.decoding='async'; img.referrerPolicy='no-referrer'; img.src=thumbUrl(an,1);
+    hero.appendChild(img); c.appendChild(hero);
+    var bar=el(doc,'div','pr-bar fi-bar'),pick=el(doc,'div','pr-pick'),sc=el(doc,'span','pr-sc');
+    var show=function(i){ k=i; img.src=thumbUrl(an,i+1);
+      [].forEach.call(pick.children,function(b,j){ b.setAttribute('aria-pressed',j===i?'true':'false'); });
+      [].forEach.call(ol.children,function(li,j){ li.className=j===i?'on':''; });
+      sc.textContent='훈련 '+(i+1)+' · 장면 '+(an.trainings[i].scenes||0); };
+    for(var j=0;j<nt&&nt>1;j++)(function(j){ var b=el(doc,'button',null,String(j+1)); b.type='button'; b.setAttribute('aria-pressed',j?'false':'true');
+      b.setAttribute('aria-label','훈련 '+(j+1)+' 그림 · '+an.trainings[j].name); b.onclick=function(ev){ ev.stopPropagation(); show(j); }; pick.appendChild(b); })(j);
+    if(nt>1)bar.appendChild(pick); bar.appendChild(sc); c.appendChild(bar);
+    var bd=el(doc,'div','fi-bd'); c.appendChild(bd);
     var top=el(doc,'div','fi-top');
     top.appendChild(el(doc,'span','fi-badge fi-badge-anim','▶ 애니메이션'));
     top.appendChild(el(doc,'span','fi-badge',e.sec===e.label?e.label:(e.sec+' · '+e.label)));
-    c.appendChild(top);
-    c.appendChild(el(doc,'div','fi-tt',e.ko));
+    bd.appendChild(top);
+    bd.appendChild(el(doc,'div','fi-tt',e.ko));
     var ol=el(doc,'ol','fi-trs');
-    an.trainings.forEach(function(t,i){ var li=el(doc,'li'); li.appendChild(el(doc,'span','fi-i',String(i+1))); li.appendChild(el(doc,'span','fi-nm',t.name)); li.appendChild(el(doc,'span','fi-mn',t.minutes?(t.minutes+'분'):'')); ol.appendChild(li); });
-    c.appendChild(ol);
+    an.trainings.forEach(function(t,i){ var li=el(doc,'li'); if(!i)li.className='on'; li.onclick=function(ev){ if(i<nt){ ev.stopPropagation(); show(i); if(onOpen)onOpen(e,c,i); } }; li.appendChild(el(doc,'span','fi-i',String(i+1))); li.appendChild(el(doc,'span','fi-nm',t.name)); li.appendChild(el(doc,'span','fi-mn',t.minutes?(t.minutes+'분'):'')); ol.appendChild(li); });
+    bd.appendChild(ol);
+    sc.textContent='훈련 1 · 장면 '+(an.trainings[0].scenes||0);
     var ft=el(doc,'div','fi-foot');
     ft.appendChild(el(doc,'span','fi-by','FIFA Training Centre 참고'+(e.by?' · '+e.by:'')));
     var src=el(doc,'a','fi-go','원문 ↗'); src.href=e.url; src.target='_blank'; src.rel='noopener noreferrer'; src.setAttribute('aria-label','FIFA 원문 — 새 탭에서 열기');
     src.onclick=function(ev){ ev.stopPropagation(); };
-    ft.appendChild(src); c.appendChild(ft);
-    c.onclick=function(){ if(onOpen)onOpen(e,c); };
-    c.onkeydown=function(ev){ if(ev.target!==c)return; if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); if(onOpen)onOpen(e,c); } };
+    ft.appendChild(src); bd.appendChild(ft);
+    c.onclick=function(){ if(onOpen)onOpen(e,c,k); };
+    c.onkeydown=function(ev){ if(ev.target!==c)return; if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); if(onOpen)onOpen(e,c,k); } };
     return c;
   }
   function card(doc,e,onOpen){
@@ -360,5 +376,5 @@
     GROUPS.forEach(function(g){ if(c[g[0]])mk(g[0],g[3]||g[1],c[g[0]]); });
   }
   return {BASE:BASE,HOME:HOME,GROUPS:GROUPS,ROWS:ROWS,read:read,list:list,url:url,match:match,counts:counts,render:render,aside:aside,chips:chips,
-    readIndex:readIndex,setIndex:setIndex,animOf:animOf,packUrl:packUrl,item:item,post:post,loadIndex:loadIndex,loadPost:loadPost,animCount:function(){ return ANIM_N; }};
+    readIndex:readIndex,setIndex:setIndex,animOf:animOf,packUrl:packUrl,thumbUrl:thumbUrl,item:item,post:post,loadIndex:loadIndex,loadPost:loadPost,animCount:function(){ return ANIM_N; }};
 });

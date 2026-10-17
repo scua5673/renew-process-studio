@@ -90,7 +90,7 @@ test('a pack becomes a viewer post (not a server post) only for its own row',()=
 });
 
 test('the community page opens an animated card in the coach-post viewer and keeps it off the server',()=>{
-  assert.match(comm,/function fifaOpen\(e,card\)\{/);
+  assert.match(comm,/function fifaOpen\(e,card,k\)\{/);
   assert.match(comm,/F\.render\(grid,\{group:fifaG,q:searchF,count:\$\('commCount'\),onOpen:fifaOpen\}\);/);
   assert.match(comm,/else if\(!p\.fifa\)\{   \/\* 3\.072/,'조회수 서버 호출 없음');
   assert.match(comm,/if\(!p\.fifa\)try\{fetch\(base\(\)\+'\/rest\/v1\/rpc\/ps_comm_copied'/,'담김 숫자 서버 호출 없음');
@@ -100,4 +100,21 @@ test('the community page opens an animated card in the coach-post viewer and kee
   assert.match(board,/\+\(\(post\.proc\|\|post\.fifa\)\?'':'<button id="commRepBtn"/,'신고 없음');
   const hd=fs.readFileSync(path.join(root,'_headers'),'utf8');
   assert.match(hd,/\/studio\/fifa-packs\/\*\n  Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox/,'팩 파일은 문서로 열리지 않는다');
+});
+
+test('3.074 — every animated card has a preview picture per training (built by the board, no scripts) and a 1·2·3 picker',()=>{
+  F.setIndex(index);
+  for(const s of index.sessions)for(let k=1;k<=s.trainings.length;k++){
+    const f=path.join(dir,'thumbs',s.id+'-'+k+'.svg'); assert.ok(fs.existsSync(f),'scripts/fifa-thumbs.mjs '+s.id+' — '+s.id+'-'+k+'.svg');
+    const svg=fs.readFileSync(f,'utf8'); assert.match(svg,/^<svg/); assert.ok(!/<script|\son[a-z]+=/i.test(svg),s.id+'-'+k+': 스크립트 없음');
+  }
+  const a=F.animOf(F.list().find(x=>F.animOf(x)));
+  assert.match(F.thumbUrl(a,2),/^fifa-packs\/thumbs\/\d{3}-2\.svg\?v=[0-9a-f]{10}$/);
+  assert.match(F.thumbUrl(a,99),new RegExp('-'+a.trainings.length+'\\.svg'),'없는 훈련은 마지막 그림');
+  assert.match(comm,/k=\(\(p\.proc\|\|p\.fifa\)&&\+p\.__k>0&&\+p\.__k<n\)\?\+p\.__k:0;/,'카드에서 고른 훈련부터 뷰어');
+});
+
+test('the index is rebuilt from the pack files, so parallel builds cannot drop a session',async()=>{
+  const {indexOf}=await import('../scripts/fifa-scenes.mjs');
+  assert.deepEqual(plain(indexOf()),index);
 });
