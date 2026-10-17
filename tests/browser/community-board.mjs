@@ -95,10 +95,10 @@ try{
   // 3) 엘미하 칸의 카드 → 뷰어: «커뮤니티 작전판», 페이지 고르기 줄, 페이지마다 그 판과 그 장면
   await c.waitForFunction(()=>document.querySelectorAll('#grid .card').length===1,null,{timeout:15000});
   if(await c.evaluate(()=>getComputedStyle(document.getElementById('commPreview')).display!=='none')){
-    await c.click('#grid .card');
+    await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
     await c.waitForFunction(()=>/작전판페이지 3개/.test((document.querySelector('#commPreview .cp-summary')||{}).textContent||''));
     await c.click('#cpOpen');
-  }else await c.click('#grid .card');
+  }else await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   const viewer=async()=>{ const v=await (await c.waitForSelector('#cvFrame')).contentFrame();
     await v.waitForFunction(()=>!!document.getElementById('commCopyBtn')&&!document.documentElement.classList.contains('comm-boot'));
@@ -164,8 +164,8 @@ try{
   assert.deepEqual([mt.type,mt.slides.map(x=>[x.title,x.points.join('/'),x.thumb,(x.frames||[]).length]),mt.snap.players[0].num],['meeting',[['빌드업 원칙','넓게 선다/3인 연계','',0],['','','',3]],'5']);
   for(const bad of ['김가상','QUFB'])assert.equal(mjson.includes(bad),false,'올라간 미팅 자료에 «'+bad+'» 가 없다');
   await c.waitForFunction(()=>document.querySelectorAll('#grid .card').length===1&&/가상 미팅/.test(document.querySelector('#grid .card').textContent),null,{timeout:15000});
-  if(await c.evaluate(()=>getComputedStyle(document.getElementById('commPreview')).display!=='none')){ await c.click('#grid .card'); await c.click('#cpOpen'); }
-  else await c.click('#grid .card');
+  if(await c.evaluate(()=>getComputedStyle(document.getElementById('commPreview')).display!=='none')){ await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn'); await c.click('#cpOpen'); }
+  else await c.click('#grid .card'); await c.waitForTimeout(150); if(await c.$('.tx-sheet'))await c.click('.tx-sheet .tx-btn');
   await c.waitForSelector('#cvMask.on');
   v=await viewer();L=await look(v);
   assert.deepEqual([L.tabs.label,L.tabs.btn,L.title,L.nums,L.play],['이 미팅 자료의 슬라이드',['1빌드업 원칙*','2슬라이드 2장면 3'],'커뮤니티 미팅 자료','5',false]);

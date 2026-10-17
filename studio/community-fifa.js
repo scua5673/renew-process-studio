@@ -242,7 +242,8 @@
     var known={}; list().forEach(function(e){ known[e.url]=1; });
     j.sessions.slice(0,400).forEach(function(r){ if(!r||typeof r!=='object')return;
       var u=url(r.path),id=str(r.id,3); if(!u||!known[u]||m[u]||!/^\d{3}$/.test(id)||!Array.isArray(r.trainings)||r.trainings.length<1||r.trainings.length>6)return;
-      m[u]={id:id,rev:/^[0-9a-f]{6,12}$/.test(r.rev)?r.rev:'',trainings:r.trainings.map(function(t,k){ t=(t&&typeof t==='object')?t:{};
+      var pl=Array.isArray(r.players)?r.players.map(function(v){ return Math.max(0,Math.min(99,Math.floor(+v||0))); }).slice(0,2):null;
+      m[u]={id:id,rev:/^[0-9a-f]{6,12}$/.test(r.rev)?r.rev:'',focus:str(r.focus,8),players:pl&&pl.length===2?pl:null,trainings:r.trainings.map(function(t,k){ t=(t&&typeof t==='object')?t:{};
         return {name:str(t.name,60)||('훈련 '+(k+1)),minutes:Math.max(0,Math.min(600,Math.floor(+t.minutes||0))),scenes:Math.max(0,Math.min(40,Math.floor(+t.scenes||0)))}; })}; n++; });
     return {m:m,n:n};
   }
@@ -281,7 +282,7 @@
   }
   function counts(l){ var c={}; (l||list()).forEach(function(e){ c[e.g]=(c[e.g]||0)+1; }); return c; }
   function el(doc,tag,cls,text){ var x=doc.createElement(tag); if(cls)x.className=cls; if(text!=null)x.textContent=text; return x; }
-  function animCard(doc,e,an,onOpen){
+  function animCard(doc,e,an,onOpen,o2){
     var c=el(doc,'div','fi-card fi-anim'); c.setAttribute('role','button'); c.tabIndex=0;
     c.setAttribute('aria-label',e.ko+' — 애니메이션 · 훈련 '+an.trainings.length+'개 열기');
     /* 3.074 — 미리보기 그림 한 장(프로세스 카드와 같은 자리 · 같은 3:2) + 1·2·3 으로 훈련 그림 바꾸기. 고른 훈련부터 뷰어를 연다 */
@@ -305,6 +306,7 @@
     var ol=el(doc,'ol','fi-trs');
     an.trainings.forEach(function(t,i){ var li=el(doc,'li'); if(!i)li.className='on'; li.onclick=function(ev){ if(i<nt){ ev.stopPropagation(); show(i); if(onOpen)onOpen(e,c,i); } }; li.appendChild(el(doc,'span','fi-i',String(i+1))); li.appendChild(el(doc,'span','fi-nm',t.name)); li.appendChild(el(doc,'span','fi-mn',t.minutes?(t.minutes+'분'):'')); ol.appendChild(li); });
     bd.appendChild(ol);
+    if(o2&&o2.badge)o2.badge(bd,e);
     sc.textContent='훈련 1 · 장면 '+(an.trainings[0].scenes||0);
     var ft=el(doc,'div','fi-foot');
     ft.appendChild(el(doc,'span','fi-by','FIFA Training Centre 참고'+(e.by?' · '+e.by:'')));
@@ -315,8 +317,8 @@
     c.onkeydown=function(ev){ if(ev.target!==c)return; if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); if(onOpen)onOpen(e,c,k); } };
     return c;
   }
-  function card(doc,e,onOpen){
-    var an=animOf(e); if(an)return animCard(doc,e,an,onOpen);
+  function card(doc,e,onOpen,o2){
+    var an=animOf(e); if(an)return animCard(doc,e,an,onOpen,o2);
     var a=el(doc,'a','fi-card');
     a.href=e.url; a.target='_blank'; a.rel='noopener noreferrer';
     a.setAttribute('aria-label',e.ko+(e.by?' · '+e.by:'')+' — FIFA 훈련센터에서 열기(새 탭)');
@@ -336,7 +338,7 @@
   function render(grid,o){
     o=o||{}; var doc=grid.ownerDocument,group=GMAP[o.group]?o.group:'all',q=str(o.q,80);
     if(group==='anim'&&!ANIM_N)group='all';
-    var l=list().filter(function(e){ return match(e,group,q); });
+    var l=list().filter(function(e){ return match(e,group,q)&&(!o.ok||o.ok(e)); });   /* 3.075 — 커뮤니티 공통 분류(o.ok) */
     l=l.filter(animOf).concat(l.filter(function(e){ return !animOf(e); }));   /* 3.072 — 애니메이션이 있는 세션을 앞에 */
     grid.textContent='';
     var hero=el(doc,'div','fi-hero'),tx=el(doc,'div','fi-hero-tx');
@@ -348,7 +350,7 @@
     grid.appendChild(hero);
     if(o.count)o.count.textContent='훈련 '+l.length+'개';
     if(!l.length){ var em=el(doc,'div','empty'); em.appendChild(el(doc,'b',null,'이 조건의 훈련은 0개예요')); em.appendChild(doc.createTextNode('검색어나 주제를 바꿔 보세요.')); grid.appendChild(em); return l.length; }
-    l.forEach(function(e){ grid.appendChild(card(doc,e,o.onOpen)); });
+    l.forEach(function(e){ grid.appendChild(card(doc,e,o.onOpen,o)); });
     return l.length;
   }
   /* 컴퓨터의 오른쪽 칸 — 고를 글이 없다(카드는 바로 FIFA 로 간다). 묶음별 개수와 안내 */

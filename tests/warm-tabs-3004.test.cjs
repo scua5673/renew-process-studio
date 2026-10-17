@@ -14,7 +14,7 @@ const PURE=cut(app,'/* ── 3.004 · 미리 띄우기 순수 구간 시작','/
 function pure(){ const c=vm.createContext({}); vm.runInContext(PURE+';this.api={PS_WARM_KEY,PS_WARM_MS,PS_WARM_TABS,PS_WARM_LEAN_MAX,PS_WARM_DESK_MAX,psWarmParse,psWarmPlan};',c); return c.api; }
 const DAY=24*60*60*1000,NOW=Date.UTC(2026,9,11);
 
-test('3.075 — a desk warms the team hub and schedule plus the two other tabs it opened last; a phone or tablet the two; learning is never warmed',()=>{
+test('3.076 — a desk warms the team hub and schedule plus the two other tabs it opened last; a phone or tablet the two; learning is never warmed',()=>{
   const g=pure(),all=['scout','process','idp','community','scouting','terms','analysis','gamemodel'];
   assert.deepEqual(plain(g.PS_WARM_TABS.map(t=>t[0])),all,'학습(교재 1.9MB)은 미리 띄우지 않는다');
   assert.deepEqual(plain(g.PS_WARM_TABS.map(t=>t[1])),[1600,2200,2800,4000,4600,5200,5800,6400],'띄우는 시각은 예전 자리 그대로');

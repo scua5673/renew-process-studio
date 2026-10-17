@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.075';   // 3.075 가볍게 — 안 쓰는 옛 학습 자료 · 관리자 · PDF · PPT 를 미리 받지 않는다 · PC 미리 띄우기는 팀 허브 · 일정 + 최근 둘
+const CACHE = 'process-3.076';   // 3.076 가볍게 — 안 쓰는 옛 학습 자료 · 관리자 · PDF · PPT 를 미리 받지 않는다 · PC 미리 띄우기는 팀 허브 · 일정 + 최근 둘
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
@@ -35,14 +35,14 @@ const CORE = [
 const OPTIONAL = [
   '/guide/quick.html', '/guide/index.html', '/guide/team.html', '/start/index.html', '/start/how.html', '/start/idp.html',
   '/', '/index.html', '/manifest.json',
-  /* 3.075 — 관리자 화면(admin.html · admin-*, 약 0.4MB)은 미리 받지 않는다. 운영자만 쓰고, 열면 그때 받아 이 판 캐시에 담긴다(cacheFirst). */
+  /* 3.076 — 관리자 화면(admin.html · admin-*, 약 0.4MB)은 미리 받지 않는다. 운영자만 쓰고, 열면 그때 받아 이 판 캐시에 담긴다(cacheFirst). */
   '/studio/', '/studio/index.html',
   '/studio/board.html',
   '/studio/gamemodel.html', '/studio/scout.html', '/studio/terms.html', '/studio/idp.html', '/studio/note.html', '/studio/scouting.html', '/studio/community.html', '/studio/analysis.html', '/studio/learning.html', '/studio/playbook.html',
   '/studio/balls.js', '/studio/pitches.js', '/studio/rpt-i18n.js',
   '/studio/vault-examples.js',   /* 3.001 — 빈 보관함 첫 화면의 예시. 없으면 첫 화면은 옛 모양 그대로 */
-  '/studio/community-fifa.js', '/studio/community-fifa.css',   /* 3.071 — 커뮤니티 «FIFA» 칸. 없으면 그 칸만 «불러오지 못했어요» */
-  /* 3.075 — PPT 모듈(pptxgen 0.46MB)은 미리 받지 않는다. 내보낼 때 받고, 못 받으면 board · gamemodel 이 jsdelivr 로 다시 받는다. */
+  '/studio/community-fifa.js', '/studio/community-fifa.css', '/studio/community-tax.js', '/studio/community-tax.css',   /* 3.071 — 커뮤니티 «FIFA» 칸. 없으면 그 칸만 «불러오지 못했어요» */
+  /* 3.076 — PPT 모듈(pptxgen 0.46MB)은 미리 받지 않는다. 내보낼 때 받고, 못 받으면 board · gamemodel 이 jsdelivr 로 다시 받는다. */
   /* 2.552 — 통짜 폰트(2,009KB)를 **미리 받지 않는다.** 여기 목록에 있으면 첫 방문에
      화면과 상관없이 2MB 를 끌어온다 — 코치는 운동장에서 셀룰러로 앱을 연다.
      ⚠ Pretendard 는 이제 92 조각 동적 서브셋이라 **화면이 실제로 쓰는 조각만** 내려온다.
@@ -50,7 +50,7 @@ const OPTIONAL = [
         받는 즉시 잡는다 — 오프라인은 그대로 되고, 안 쓰는 글자는 안 받는다.
      ⚠ Jost(라틴 26KB)는 남긴다 — 숫자·영문에 늘 쓰여 어차피 첫 화면에서 받는다. */
   '/vendor/fonts.css', '/vendor/tokens.css', '/vendor/Jost-latin.woff2', '/vendor/qrcode.js',
-  /* 3.075 — PDF 뷰어(pdfjs 1.4MB)는 미리 받지 않는다. 개인 노트에서 PDF 를 열 때 받고, 못 받으면 note.html 이 cdnjs 로 다시 받는다. */
+  /* 3.076 — PDF 뷰어(pdfjs 1.4MB)는 미리 받지 않는다. 개인 노트에서 PDF 를 열 때 받고, 못 받으면 note.html 이 cdnjs 로 다시 받는다. */
   '/icon-192.png', '/icon-512.png', '/icon-512-maskable.png', '/favicon.png', '/apple-touch-icon.png',
   '/icon-mac-192.png', '/icon-mac-512.png', '/icon-mac-1024.png'
 ];

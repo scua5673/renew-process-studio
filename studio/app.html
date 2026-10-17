@@ -33,7 +33,7 @@
 <script>if(window.PSSupportDiagnostics)PSSupportDiagnostics.install(window);</script>
 <script src="storage-keys.js"></script>
 <script src="storage.js"></script>
-<script src="autosave-status.js?v=3.075"></script>
+<script src="autosave-status.js?v=3.076"></script>
 <script src="update-progress.js"></script>
 
 <title>PROCESS STUDIO</title>
@@ -516,7 +516,7 @@
      서비스워커가 캐시 이름(process-x.y)으로 통째 무효화하므로 그 ?v= 들이 옛 코드를 내보내진 않았지만,
      "버전이 여러 곳에 손으로 적혀 있다"는 사실 자체가 위험하다 — 정작 중요한 sw.js 의 CACHE 를
      안 올리고 배포하면 HTML 이 cache-first 라 사용자는 옛 화면에 영구히 묶인다. 그래서 한 곳으로 모은다. -->
-<script>window.PS_BUILD='3.075';</script>
+<script>window.PS_BUILD='3.076';</script>
 <script>
 /* 2.388 — 새로고침해도 되는 때인가. 하나라도 걸리면 기다린다(하던 일을 뺏지 않는다).
    ⚠ iframe 안까지 본다 — 이 앱의 입력은 대부분 iframe 안에서 일어난다. 셸만 보면 늘 '안전'이라 나온다. */
@@ -2686,7 +2686,7 @@ window.psFailAlert=function(lead,e,stage){
        ⚠ 띄우는 시각은 예전 자리 그대로다(600ms 간격 — 부팅 직후 CPU 몰림 방지). 건너뛴 탭의 자리는 비워 둔다. */
     /* ── 3.004 · 미리 띄우기 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
     var PS_WARM_KEY='ps_warm_tabs_v1',PS_WARM_MS=14*24*60*60*1000;
-    var PS_WARM_TABS=[['scout',1600],['process',2200],['idp',2800],['community',4000],['scouting',4600],['terms',5200],['analysis',5800],['gamemodel',6400]];   /* 3.075 — 학습은 미리 띄우지 않는다(교재 1.9MB · 곧 웹사이트로 나간다). 누를 때 연다 */
+    var PS_WARM_TABS=[['scout',1600],['process',2200],['idp',2800],['community',4000],['scouting',4600],['terms',5200],['analysis',5800],['gamemodel',6400]];   /* 3.076 — 학습은 미리 띄우지 않는다(교재 1.9MB · 곧 웹사이트로 나간다). 누를 때 연다 */
     function psWarmParse(raw,now){
       var o=null,out={}; try{ o=JSON.parse(raw||'null'); }catch(_){ o=null; }
       if(!o||typeof o!=='object'||Array.isArray(o))return out;
@@ -2694,7 +2694,7 @@ window.psFailAlert=function(lead,e,stage){
       return out;
     }
     var PS_WARM_LEAN_MAX=2;   /* 3.034 — 폰 · 아이패드는 최근에 연 둘까지(아이패드 «문제가 반복적으로 발생했습니다»: 쓰던 탭 아홉을 부팅 10초 안에 다 띄워 강제 종료) */
-    var PS_WARM_DESK_MAX=2;   /* 3.075 — PC 도 전부가 아니라 팀 허브 · 일정 + 최근 14일에 연 다른 탭 둘까지(사용자 «앱이 무거워진다» — 탭마다 보관함을 저마다 읽는다). 나머지는 누를 때 연다.
+    var PS_WARM_DESK_MAX=2;   /* 3.076 — PC 도 전부가 아니라 팀 허브 · 일정 + 최근 14일에 연 다른 탭 둘까지(사용자 «앱이 무거워진다» — 탭마다 보관함을 저마다 읽는다). 나머지는 누를 때 연다.
                                  팀 허브(scout)는 PC 에서 늘 띄운다 — 계정 전환 뒤 명단 준비를 이 프레임이 알린다(tests/browser/oauth-same-document). */
     function psWarmPlan(lean,used){
       var all=PS_WARM_TABS.map(function(t){ return t[0]; });
@@ -8127,13 +8127,13 @@ window.PS_SYNC={url:"https://jvtajoeptzfsdwizxejg.supabase.co",anonKey:"sb_publi
 <script src="perms.js"></script>
 <script src="scouting-store.js"></script>
 <script src="sync-observability.js"></script>
-<script src="autosave-journal.js?v=3.075"></script>
-<script src="autosave-merge.js?v=3.075"></script>
-<script src="autosave-runtime.js?v=3.075"></script>
-<script src="autosave-recovery.js?v=3.075"></script>
-<script src="sync.js?v=3.075"></script>
+<script src="autosave-journal.js?v=3.076"></script>
+<script src="autosave-merge.js?v=3.076"></script>
+<script src="autosave-runtime.js?v=3.076"></script>
+<script src="autosave-recovery.js?v=3.076"></script>
+<script src="sync.js?v=3.076"></script>
 <script src="team-files.js"></script>
-<link rel="stylesheet" href="support.css?v=3.075">
+<link rel="stylesheet" href="support.css?v=3.076">
 <script src="support.js"></script>
 <script src="release-notes.js"></script>
 <script>

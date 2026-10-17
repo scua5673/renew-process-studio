@@ -91,7 +91,7 @@ test('a pack becomes a viewer post (not a server post) only for its own row',()=
 
 test('the community page opens an animated card in the coach-post viewer and keeps it off the server',()=>{
   assert.match(comm,/function fifaOpen\(e,card,k\)\{/);
-  assert.match(comm,/F\.render\(grid,\{group:fifaG,q:searchF,count:\$\('commCount'\),onOpen:fifaOpen\}\);/);
+  assert.match(comm,/F\.render\(grid,\{group:fifaG,q:searchF,count:\$\('commCount'\),onOpen:TX\?txFifa:fifaOpen,/,'3.075 — 카드는 미리보기 창(txFifa)을 거쳐 뷰어');
   assert.match(comm,/else if\(!p\.fifa\)\{   \/\* 3\.072/,'조회수 서버 호출 없음');
   assert.match(comm,/if\(!p\.fifa\)try\{fetch\(base\(\)\+'\/rest\/v1\/rpc\/ps_comm_copied'/,'담김 숫자 서버 호출 없음');
   assert.match(comm,/if\(!p\)p=procFind\(id\)\|\|fifaFind\(id\);/,'뷰어의 담기가 FIFA 글을 찾는다');
