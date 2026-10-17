@@ -6450,7 +6450,7 @@ function _chipUpright(){ return (state.orientation==="v")?(state.spFlip?-90:90):
 /* ref = 기본 크기일 때의 토큰 배율. 3D 칩의 기본 크기는 운동장 대비로 정하고, 보드 설정 «크기 ＋ －»·선수별 크기는 그 위에 같은 비율로 곱한다
    (예전에는 최소 크기가 덮어써 처음 세 단계는 3D 에서 크기가 그대로였다 — 사용자 «크기도 수정할 수 있게») */
 function _chipOpts(p){ var sh=_shaperOn(p),u=_tokScaleOf(p),nu=_realTokS(p)?_normTokS(p):u;   /* 3.070 — 실제 비율이면 u 는 실제 크기, nu 는 평소 크기(이름표용) */
-  return {unit:u,ref:nu/((p.scale||1)*(state.tokenScale||1))*defaultTokenScale(),pitch:PR().PW,shape:sh?"shaper":((tokShape==="person"&&!p.shaper)?"person":((tokShape==="shirt"&&!p.coach&&!p.shaper)?"shirt":"circle")),real:!!_realTokS(p),nameUnit:nu,dir:sh?(_dirOf(p)-_chipUpright()):0,
+  return {unit:u,ref:nu/((p.scale||1)*(state.tokenScale||1))*defaultTokenScale(),pitch:PR().PW,shape:sh?"shaper":((tokShape==="person"&&!p.shaper)?"person":((tokShape==="shirt"&&!p.coach&&!p.shaper)?"shirt":"circle")),real:!!_realTokS(p),nameUnit:nu,pose:_personPose(p),dir:sh?(_dirOf(p)-_chipUpright()):0,
     nameK:_nameK(),nameStyle:window.__nameStyle==="pill"?"pill":"text",mood:(window.__tilt3d&&window.__tilt3d.mood)||"night"}; }   /* 3.010 — 이름표 크기·모양(3D 의 «기본»은 글자만 — 중계 화면처럼) · 3.029 분위기(그림자 방향) */
 /* 쉐이퍼는 공을 바라보므로 공만 움직여도 방향이 바뀐다 — 시야·쉐이퍼를 다시 그릴 때마다 3D 칩의 부리도 돌린다(칩은 다시 만들지 않는다) */
 function _chipTurnAll(){ if(!tokenLayer||!window.PSBoardDepth||!document.body.classList.contains("bc-tilt3d"))return;
@@ -9375,9 +9375,32 @@ function renderInterp(a,b,u,curves){
   state.drawings=_interpDrawings(a.drawings||[],b.drawings||[],u);   /* 2.719 — 장면 사이 그림 서서히 */
   state.orientation=a.orientation||"h";state.area=a.area||"full";state.pitchView=normPitchView(a.pitchView||((state.area||"full")==="half"?"half":"full"));state.pvSide=(a.pvSide==="opp")?"opp":"own";state.tokenScale=((typeof _tokMig==="function")?_tokMig(a.tokenScale,a):a.tokenScale)||1;
   try{ var _cwo2=window.__commWantOrient; if(_cwo2&&document.body.classList.contains("comm-viewing")){ state.orientation=_cwo2; state.spFlip=false; } }catch(_){}   /* 3.067 — 재생 중에도 뷰어의 판 방향(loadSnap 과 같은 규칙) */
-  sel=null;applyView();renderTokens();renderDrawings();try{trailTick();}catch(_){}
+  try{ window.__psMotion=_personMotion(a,b,u,curves); }catch(_){ window.__psMotion=null; }   /* 3.071 — 3D 사람: 뛰는 자세 */
+  sel=null;applyView();renderTokens();window.__psMotion=null;renderDrawings();try{trailTick();}catch(_){}
   try{if(typeof window.__syncUniformDock==="function")window.__syncUniformDock();}catch(_){}
 }
+/* ══ 3.071 · 뛰는 모습(사용자 «3d 실제모양 애니메이션 만들면 뛰는 모습») ══
+   장면 사이를 움직이는 선수마다: 지금 가는 방향(경로의 접선, 판 좌표)과 지금까지 뛴 거리(m), 이번 장면에서 뛰는 전체 거리(m).
+   board-token-depth.js 가 이 값으로 자세를 그린다 — 방향에 따라 정면 · 옆 · 뒷모습, 거리에 따라 다리 · 팔이 한 걸음씩.
+   3D «사람» 모양일 때만 계산한다. 재생 · GIF · MP4 가 모두 이 한 곳(renderInterp)을 지나간다. */
+function _personMotion(a,b,u,curves){
+  if(tokShape!=="person"||!document.body.classList.contains("bc-tilt3d"))return null;
+  if(!(u>0&&u<1)||a===b)return null;
+  var bp={},out={},m=mppNow()||10,N=16; (b.players||[]).forEach(function(o){bp[o.id]=o;});
+  (a.players||[]).forEach(function(p){ var q=bp[p.id]; if(!q)return; var c=curves&&curves[p.id];
+    if(Math.hypot(q.x-p.x,q.y-p.y)<0.4*m)return;   /* 40cm 안쪽은 서 있다 */
+    var pt=function(t){return _curvePt(p.x,p.y,q.x,q.y,c,t);};
+    var tot=0,run=0,prev=pt(0); for(var i=1;i<=N;i++){ var t=i/N,cur=pt(t),d=Math.hypot(cur.x-prev.x,cur.y-prev.y); tot+=d; if(t<=u)run+=d; else if(t-1/N<u)run+=d*(u-(t-1/N))*N; prev=cur; }
+    var p0=pt(Math.max(0,u-0.02)),p1=pt(Math.min(1,u+0.02));
+    out[p.id]={vx:p1.x-p0.x,vy:p1.y-p0.y,run:run/m,total:tot/m,u:u}; });
+  return out; }
+/* 판 좌표의 움직임 → 3D 선수의 자세. 세로 보기는 판(world)이 ±90° 돌아 있어 화면 방향으로 바꾼다.
+   화면 위로 가면 등, 아래로 오면 얼굴, 옆으로 가면 옆모습. 한 걸음 주기(두 발) 2.6m · 전력 질주는 장면에서 8m 이상. */
+function _personPose(p){ var mv=window.__psMotion&&window.__psMotion[p.id]; if(!mv)return null;
+  var sx=mv.vx,sy=mv.vy; if(state.orientation==="v"){ if(state.spFlip){ sx=-mv.vy; sy=mv.vx; } else { sx=mv.vy; sy=-mv.vx; } }
+  var view=(Math.abs(sx)>=Math.abs(sy)*0.7)?"side":(sy<0?"back":"front");
+  var amp=Math.min(1,0.45+mv.total/14), ease=Math.min(1,mv.u*5,(1-mv.u)*5);   /* 출발 · 도착에서 자연스럽게 */
+  return {view:view,flip:sx<0,phase:mv.run/2.6,amp:Math.max(0,amp*ease)}; }
 /* ===== 곡선 경로 편집 오버레이 (택티컬 패드) — 선택 장면→다음 장면 사이 각 토큰의 이동 경로를 보여주고, 가운데 점을 끌어 곡선으로 만든다 ===== */
 function _mpPair(){
   try{
