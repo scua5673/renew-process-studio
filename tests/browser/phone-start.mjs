@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp,WP} from '../fixtures/team-app.mjs';
-// 3.075 — 폰 첫 화면(app.html psPhoneStart): 로그인한 팀 공간 → 팀운영 › 오늘, 개인 공간 → 커뮤니티. 데스크톱은 그대로 작전판.
+// 3.076 — 폰 첫 화면(app.html psPhoneStart): 로그인한 팀 공간 → 팀운영 › 오늘, 개인 공간 → 커뮤니티. 데스크톱은 그대로 작전판.
 // 폰 크기는 WebKit 엔진(fixture SIZES), Chromium 잡은 데스크톱만 본다(다른 폰 시험과 같은 규칙). 합성 팀 fixture.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'phone':'desktop';
 const fx=await startFixture(),browsers={};

@@ -145,7 +145,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
   page.on('dialog',d=>{logs.push({step:tag(),type:'dialog',text:d.type()+': '+d.message().slice(0,300)});(d.type()==='beforeunload'?d.accept():d.dismiss()).catch(()=>{});});
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
   await ready(page);
-  /* 3.075 — 폰은 로그인한 팀 공간이면 팀운영 › 오늘로 열린다(app.html psPhoneStart). 대부분의 시험은 작전판 + 앱 하단 바에서 시작하므로
+  /* 3.076 — 폰은 로그인한 팀 공간이면 팀운영 › 오늘로 열린다(app.html psPhoneStart). 대부분의 시험은 작전판 + 앱 하단 바에서 시작하므로
      사용자가 가는 길(팀 더보기 › 앱 › 보드)로 돌아온다. 폰 첫 화면 자체를 보는 시험만 phoneStart:true. */
   if(!phoneStart&&sizeName==='phone'){
     const opened=await page.waitForFunction(()=>document.body.classList.contains('ps-team-open'),null,{timeout:4000}).then(()=>true,()=>false);

@@ -1,7 +1,7 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.075';   // 3.075 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어가던 것 · 오늘 «세션 채우기 →»가 그 세션 시트까지 연다 · 주간 일정의 상대팀 이름이 잘리지 않는다 · 폰 첫 화면은 팀이면 오늘, 개인이면 커뮤니티 · 게임모델이 비면 경기 리뷰는 기본 네 국면 · 선수 «빠른 평가»(영역마다 1문항) · 아무도 연결 안 된 팀은 계정 미연결 표시를 회색 한 줄로
+const CACHE = 'process-3.076';   // 3.076 경기 준비를 열기만 해도 «상대 분석»이 끝난 것으로 넘어가던 것 · 오늘 «세션 채우기 →»가 그 세션 시트까지 연다 · 주간 일정의 상대팀 이름이 잘리지 않는다 · 폰 첫 화면은 팀이면 오늘, 개인이면 커뮤니티 · 게임모델이 비면 경기 리뷰는 기본 네 국면 · 선수 «빠른 평가»(영역마다 1문항) · 아무도 연결 안 된 팀은 계정 미연결 표시를 회색 한 줄로
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-token-depth.js',
@@ -51,7 +51,7 @@ const OPTIONAL = [
   '/studio/gamemodel.html', '/studio/scout.html', '/studio/terms.html', '/studio/idp.html', '/studio/note.html', '/studio/scouting.html', '/studio/community.html', '/studio/analysis.html', '/studio/learning.html', '/studio/playbook.html',
   '/studio/balls.js', '/studio/pitches.js', '/studio/rpt-i18n.js',
   '/studio/vault-examples.js',   /* 3.001 — 빈 보관함 첫 화면의 예시. 없으면 첫 화면은 옛 모양 그대로 */
-  '/studio/community-fifa.js', '/studio/community-fifa.css',   /* 3.071 — 커뮤니티 «FIFA» 칸. 없으면 그 칸만 «불러오지 못했어요» */
+  '/studio/community-fifa.js', '/studio/community-fifa.css', '/studio/community-tax.js', '/studio/community-tax.css',   /* 3.071 — 커뮤니티 «FIFA» 칸. 없으면 그 칸만 «불러오지 못했어요» */
   '/pptxgen.bundle.js',
   /* 2.552 — 통짜 폰트(2,009KB)를 **미리 받지 않는다.** 여기 목록에 있으면 첫 방문에
      화면과 상관없이 2MB 를 끌어온다 — 코치는 운동장에서 셀룰러로 앱을 연다.
