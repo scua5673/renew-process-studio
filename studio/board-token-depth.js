@@ -187,123 +187,146 @@
   // Token units with 1 m = 84 (the flat disc, 42 wide, is a body 0.5 m wide): 1.8 m tall.
   var PERSON_M = 84, PERSON_H = 151;
   var SKIN = '#c8987a', HAIR = '#2b221d', BOOT = '#15181d', LINE = 'rgba(10,14,22,.55)';
-  // 3.071 — running (user: «뛰는 모습»): pose = { view: 'front' | 'back' | 'side', flip (side view facing left), phase (stride cycles run so far), amp (0 stands … 1 sprints) }.
-  // No pose, or amp 0, is the standing player of 3.070. Front/back: knees come up and arms swing; side: a profile with legs and arms swinging from hip and shoulder.
+  // 3.072 — «더 리얼하게» (user): a small skeleton in 3D, posed with a running gait and seen from any direction.
+  // pose = { yaw (screen degrees the player faces: 0 right, 90 toward the camera, -90 away, 180 left), phase (stride cycles run so far), amp (0 stands … 1 sprints) }.
+  // Body frame: f forward, l to the player's left, z up (token units, 84 per metre). A point projects to the board as
+  // x = f·F.x + l·L.x, y = −z + depth·DEPTH where depth = f·F.d + l·L.d (toward the camera) — parts nearer the camera are drawn last.
+  var DEPTH = .3, D2R = Math.PI / 180;
   function personPose(pose) {
-    var p = pose || {}, amp = Math.max(0, Math.min(1, +p.amp || 0)), view = p.view === 'back' || p.view === 'side' ? p.view : 'front';
-    return { view: amp > 0 || view === 'back' ? view : 'front', flip: !!p.flip, phase: +p.phase || 0, amp: amp };
+    var p = pose || {}, amp = Math.max(0, Math.min(1, +p.amp || 0)), yaw = Number(p.yaw);
+    return { yaw: isFinite(yaw) ? yaw : 90, phase: +p.phase || 0, amp: amp };
   }
   function r1(n) { return Math.round(n * 10) / 10; }
+  // One running stride for one leg, from foot strike (0): stance until 0.35, then flight, swing and reach. Degrees.
+  var GAIT = {
+    hip:  [[0, 22], [.15, 6], [.35, -18], [.5, -6], [.65, 24], [.8, 36], [.9, 30], [1, 22]],
+    knee: [[0, 16], [.12, 36], [.35, 20], [.5, 72], [.62, 104], [.76, 80], [.9, 28], [1, 16]],
+    foot: [[0, 14], [.15, 0], [.3, -22], [.42, -55], [.56, -34], [.75, -8], [.9, 10], [1, 14]]
+  };
+  function curve(keys, p) {
+    p = p - Math.floor(p);
+    for (var i = 1; i < keys.length; i++) if (p <= keys[i][0]) {
+      var a = keys[i - 1], b = keys[i], t = (p - a[0]) / (b[0] - a[0]), e = (1 - Math.cos(Math.PI * t)) / 2;
+      return a[1] + (b[1] - a[1]) * e;
+    }
+    return keys[keys.length - 1][1];
+  }
+  function hull(pts) {
+    pts = pts.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    function cross(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+    var lo = [], up = [];
+    pts.forEach(function (q) { while (lo.length > 1 && cross(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); });
+    for (var k = pts.length - 1; k >= 0; k--) { var q = pts[k]; while (up.length > 1 && cross(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
   function personFigure(doc, fill, stroke, label, pose) {
     var solid = /^#[0-9a-f]{3,6}$/i.test(String(fill || '').trim()) ? fill : (/^#[0-9a-f]{3,6}$/i.test(String(stroke || '').trim()) ? stroke : '#3a6df0');
-    var shorts = shade(solid, .38) || '#1d2128', sock = solid, P = personPose(pose), TAU = Math.PI * 2;
-    var fig = node(doc, 'g', { 'class': 'ps-person', 'data-view': P.view });
-    function part(d, color, edge, parent) {
-      var p = node(doc, 'path', { d: d, fill: color, stroke: LINE, 'stroke-width': '1', 'stroke-linejoin': 'round' });
-      (parent || fig).appendChild(p);
-      if (edge) (parent || fig).appendChild(node(doc, 'path', { d: d, fill: 'url(#psChipEdge)', 'pointer-events': 'none' }));
+    var shorts = shade(solid, .38) || '#1d2128', sock = solid, P = personPose(pose), A = P.amp, TAU = Math.PI * 2;
+    var yaw = P.yaw * D2R, F = { x: Math.cos(yaw), d: Math.sin(yaw) }, L = { x: Math.sin(yaw), d: -Math.cos(yaw) };
+    var fig = node(doc, 'g', { 'class': 'ps-person', 'data-yaw': String(Math.round(P.yaw)) });
+    // Upper body: leans forward with speed; shoulders turn against the hips with the arms.
+    var HIP = 82, lean = (2 + A * 13) * D2R, ph = P.phase, swing = Math.cos(TAU * (ph - .8));
+    var tauS = A * 13 * D2R * swing, tauP = -A * 6 * D2R * swing;
+    function turn(q, t) { return [q[0] * Math.cos(t) - q[1] * Math.sin(t), q[0] * Math.sin(t) + q[1] * Math.cos(t), q[2]]; }
+    function upper(q) { var dz = q[2] - HIP; return [q[0] + dz * Math.sin(lean), q[1], HIP + dz * Math.cos(lean)]; }
+    function body(q) { return upper(turn(q, tauS)); }
+    function pelvis(q) { return turn(q, tauP); }
+    var lift = 0;
+    function proj(q) { var dep = q[0] * F.d + q[1] * L.d; return { x: q[0] * F.x + q[1] * L.x, y: -(q[2] + lift) + dep * DEPTH, d: dep }; }
+    // Legs: hip angle (forward +), knee bend, foot pitch from the gait, scaled from standing to sprinting.
+    function leg(side) {
+      var p = ph + (side > 0 ? 0 : .5), th = A * curve(GAIT.hip, p) * D2R, kn = (4 + A * (curve(GAIT.knee, p) - 4)) * D2R, ft = A * curve(GAIT.foot, p) * D2R;
+      var hip = pelvis([0, side * 8.5, HIP]), sh = th - kn;
+      var knee = [hip[0] + 40 * Math.sin(th), hip[1] + side * .6, hip[2] - 40 * Math.cos(th)];
+      var ank = [knee[0] + 39 * Math.sin(sh), knee[1] + side * .4, knee[2] - 39 * Math.cos(sh)];
+      var toe = [ank[0] + 13 * Math.cos(ft), ank[1], ank[2] - 1.5 + 13 * Math.sin(ft)];
+      return { side: side, hip: hip, knee: knee, ank: ank, toe: toe };
     }
-    function number(x, y, big) {
+    function arm(side) {
+      var p = ph + (side > 0 ? 0 : .5), c = Math.cos(TAU * (p - .8)), sa = (-A * 46 * c) * D2R, el = (10 + A * (78 + 14 * c)) * D2R, ab = (1 - A) * 7 * D2R + 4 * D2R;
+      var sh = body([0, side * 16, 120]);
+      var elb = body([25 * Math.sin(sa), side * (16 + 25 * Math.sin(ab)), 120 - 25 * Math.cos(sa)]);
+      var fa = sa + el, wr = body([25 * Math.sin(sa) + 22 * Math.sin(fa), side * (16 + 25 * Math.sin(ab) + 2), 120 - 25 * Math.cos(sa) - 22 * Math.cos(fa)]);
+      return { side: side, sh: sh, elb: elb, wr: wr };
+    }
+    var LL = leg(1), LR = leg(-1), AL = arm(1), AR = arm(-1);
+    // The lower foot stands on the grass; in the flight phase both feet leave it.
+    var low = Math.min(LL.ank[2], LR.ank[2], LL.toe[2] + 1.5, LR.toe[2] + 1.5), flight = 0;
+    [ph, ph + .5].forEach(function (q) { q -= Math.floor(q); if (q > .35 && q < .5) flight = Math.max(flight, Math.sin(Math.PI * (q - .35) / .15)); });
+    lift = 6 - low + A * 5 * flight;
+    // Drawing helpers: a limb is a tapered capsule through its points; colours by part.
+    function capsule(pts, radii) {
+      var n = pts.length, left = [], right = [];
+      for (var k = 0; k < n; k++) {
+        var a = pts[Math.max(0, k - 1)], b = pts[Math.min(n - 1, k + 1)], dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+        var nx = -dy / len, ny = dx / len; left.push([pts[k].x + nx * radii[k], pts[k].y + ny * radii[k]]); right.push([pts[k].x - nx * radii[k], pts[k].y - ny * radii[k]]);
+      }
+      var d = 'M' + left.map(function (q) { return r1(q[0]) + ' ' + r1(q[1]); }).join('L');
+      d += 'A' + r1(radii[n - 1]) + ' ' + r1(radii[n - 1]) + ' 0 0 0 ' + r1(right[n - 1][0]) + ' ' + r1(right[n - 1][1]);
+      d += 'L' + right.slice().reverse().map(function (q) { return r1(q[0]) + ' ' + r1(q[1]); }).join('L');
+      d += 'A' + r1(radii[0]) + ' ' + r1(radii[0]) + ' 0 0 0 ' + r1(left[0][0]) + ' ' + r1(left[0][1]) + 'Z';
+      return d;
+    }
+    function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+    function piece(g, d, color, far, edge) {
+      g.appendChild(node(doc, 'path', { d: d, fill: color, stroke: LINE, 'stroke-width': '.9', 'stroke-linejoin': 'round' }));
+      if (edge) g.appendChild(node(doc, 'path', { d: d, fill: 'url(#psChipEdge)', 'pointer-events': 'none' }));
+      if (far) g.appendChild(node(doc, 'path', { d: d, fill: '#000', 'fill-opacity': '.2', 'pointer-events': 'none' }));
+    }
+    var parts = [];
+    function drawLeg(Lg) {
+      var hp = proj(Lg.hip), kp = proj(Lg.knee), ap = proj(Lg.ank), tp = proj(Lg.toe), far = (hp.d + kp.d) / 2 < -1;
+      var calf = proj(mix(Lg.knee, Lg.ank, .3)), sockTop = proj(mix(Lg.knee, Lg.ank, .16)), thighMid = proj(mix(Lg.hip, Lg.knee, .36));
+      parts.push({ d: (hp.d + kp.d + ap.d) / 3, draw: function (g) {
+        piece(g, capsule([thighMid, kp], [6.2, 4.9]), SKIN, far);                                   // thigh below the shorts, knee
+        piece(g, capsule([sockTop, calf, ap], [4.9, 5.4, 3.1]), sock, far, true);                  // sock over the calf
+        piece(g, capsule([ap, tp], [3.6, 3]), BOOT, false);                                         // boot
+        piece(g, capsule([hp, proj(mix(Lg.hip, Lg.knee, .4))], [8, 7.2]), shorts, far, true);     // shorts leg
+      } });
+    }
+    function drawArm(Am) {
+      var sp = proj(Am.sh), ep = proj(Am.elb), wp = proj(Am.wr), far = ep.d < -1, sl = proj(mix(Am.sh, Am.elb, .4));
+      parts.push({ d: ep.d + (far ? -2 : 2), draw: function (g) {
+        piece(g, capsule([sl, ep, wp], [4.1, 3.5, 2.7]), SKIN, far);                               // arm and forearm
+        g.appendChild(node(doc, 'circle', { cx: r1(wp.x), cy: r1(wp.y), r: 3.2, fill: SKIN, stroke: LINE, 'stroke-width': '.8' }));   // hand
+        piece(g, capsule([sp, sl], [4.9, 4.4]), fill, far, true);                                   // sleeve
+      } });
+    }
+    drawLeg(LL); drawLeg(LR); drawArm(AL); drawArm(AR);
+    // Torso and hips: the outline of a few points of the chest, waist and hips — wide from the front, deep from the side.
+    var tor = [], hips = [];
+    [[8, 16.5, 122], [-8, 16.5, 122], [11, 15, 108], [-9.5, 15, 108], [8.5, 13.5, 91], [-8.5, 13.5, 91]].forEach(function (q) {
+      var f = q[2] > 100 ? body : function (v) { return upper(pelvis(v)); }; tor.push(proj(f([q[0], q[1], q[2]]))); tor.push(proj(f([q[0], -q[1], q[2]])));
+    });
+    [[8.5, 14, 92], [-8.5, 14, 92], [8.5, 14, 78], [-9, 14, 78]].forEach(function (q) { hips.push(proj(pelvis([q[0], q[1], q[2]]))); hips.push(proj(pelvis([q[0], -q[1], q[2]]))); });
+    function poly(ps) { var h = hull(ps.map(function (q) { return [q.x, q.y]; })); return 'M' + h.map(function (q) { return r1(q[0]) + ' ' + r1(q[1]); }).join('L') + 'Z'; }
+    var neckB = proj(body([0, 0, 120])), neckT = proj(body([.5, 0, 131])), head = proj(body([1, 0, 139.5]));
+    parts.push({ d: 0, draw: function (g) {
+      piece(g, poly(hips), shorts, false, true);
+      piece(g, capsule([neckB, neckT], [3.8, 3.6]), SKIN, false);
+      piece(g, poly(tor), fill, false, true);
+      // Collar: a V at the front, a band at the back.
+      var c0 = proj(body([7.5, 5, 122])), c1 = proj(body([8.5, 0, 117])), c2 = proj(body([7.5, -5, 122]));
+      if (F.d > -.2) g.appendChild(node(doc, 'path', { d: 'M' + r1(c0.x) + ' ' + r1(c0.y) + 'L' + r1(c1.x) + ' ' + r1(c1.y) + 'L' + r1(c2.x) + ' ' + r1(c2.y), fill: 'none', stroke: stroke || LINE, 'stroke-width': '1.6', 'stroke-linejoin': 'round' }));
+      // Number on the chest or, larger, on the back; narrower as the shirt turns away.
       var text = label && label.textContent;
-      if (!text) return;
-      var n = label.cloneNode(true), len = String(text).length;
-      n.setAttribute('x', String(r1(x))); n.setAttribute('y', String(r1(y))); n.setAttribute('pointer-events', 'none');
-      n.setAttribute('font-size', big ? (len >= 3 ? '11' : (len === 2 ? '15' : '17')) : (len >= 3 ? '9' : (len === 2 ? '12' : '14')));
-      fig.appendChild(n);
-    }
-    if (P.view === 'side') { sideFigure(); return fig; }
-    // Front or back. Each side's leg lifts in its half of the stride; the arm on that side swings the other way.
-    var bob = -P.amp * 3 * Math.abs(Math.sin(TAU * P.phase));
-    if (bob) fig.setAttribute('transform', 'translate(0,' + r1(bob) + ')');
-    function side(k) {
-      var s = Math.sin(TAU * (P.phase + (k ? .5 : 0))), lift = P.amp * Math.max(0, s), swing = P.amp * Math.max(0, -s);
-      var g = node(doc, 'g', k ? { transform: 'scale(-1,1)' } : {});
-      var leg = node(doc, 'g', lift ? { transform: 'translate(0,' + r1(-lift * 22) + ')' } : {});
-      part('M-10.5 -6L-11.5 -41L-3 -41L-3.5 -6Z', sock, true, leg);                 // sock and shin
-      part('M-11.5 -41L-12 -57L-2.5 -57L-3 -41Z', SKIN, false, leg);                  // knee
-      leg.appendChild(node(doc, 'rect', { x: -12.5, y: -7, width: 10, height: 7.5, rx: 2.6, fill: BOOT }));   // boot
-      var arm = node(doc, 'g', swing ? { transform: 'translate(' + r1(swing * 3) + ',' + r1(-swing * 13) + ')' } : {});
-      part('M-26.5 -106L-27.8 -84L-22.6 -84L-19.5 -103Z', SKIN, false, arm);          // forearm
-      arm.appendChild(node(doc, 'circle', { cx: -25.2, cy: -82, r: 3.3, fill: SKIN, stroke: LINE, 'stroke-width': '.8' }));
-      g.appendChild(leg); g.appendChild(arm);
-      part('M-19 -122L-26.5 -106L-19.5 -102.5L-15.5 -112Z', fill, true, g);         // sleeve
-      return g;
-    }
-    fig.appendChild(side(0)); fig.appendChild(side(1));
-    part('M-15 -88L15 -88L16.5 -58L1.6 -56L0 -66L-1.6 -56L-16.5 -58Z', shorts, true);   // shorts
-    fig.appendChild(node(doc, 'rect', { x: -3.6, y: -130, width: 7.2, height: 10, fill: SKIN }));   // neck
-    part('M-19 -122Q0 -126.5 19 -122L17 -100L15.5 -86Q0 -83.5 -15.5 -86L-17 -100Z', fill, true);   // shirt
-    if (P.view === 'back') {
-      fig.appendChild(node(doc, 'path', { d: 'M-6 -123.5Q0 -121.5 6 -123.5', fill: 'none', stroke: stroke || LINE, 'stroke-width': '1.6' }));
-      fig.appendChild(node(doc, 'ellipse', { cx: 0, cy: -138, rx: 9, ry: 10.5, fill: SKIN, stroke: LINE, 'stroke-width': '1' }));
-      fig.appendChild(node(doc, 'path', { d: 'M-9.3 -136Q-10.5 -150.8 0 -150.8Q10.5 -150.8 9.3 -136Q8.8 -130 0 -129.5Q-8.8 -130 -9.3 -136Z', fill: HAIR }));   // the back of the head
-      number(0, -106, true);   // the number is on the back
-      return fig;
-    }
-    fig.appendChild(node(doc, 'path', { d: 'M-5.5 -124L0 -117.5L5.5 -124', fill: 'none', stroke: stroke || LINE, 'stroke-width': '1.6', 'stroke-linejoin': 'round' }));   // collar
-    fig.appendChild(node(doc, 'ellipse', { cx: 0, cy: -138, rx: 9, ry: 10.5, fill: SKIN, stroke: LINE, 'stroke-width': '1' }));   // head
-    fig.appendChild(node(doc, 'path', { d: 'M-9.2 -137Q-10.5 -150.5 0 -150.8Q10.5 -150.5 9.2 -137Q6.5 -144.5 0 -145Q-6.5 -144.5 -9.2 -137Z', fill: HAIR }));
-    number(0, -104, false);
+      if (text) {
+        var back = F.d < -.15, at = proj(body([(back ? -9.5 : 11) * Math.min(1, Math.abs(F.d) * 1.6), 0, back ? 107 : 105])), len = String(text).length, w = Math.max(.5, Math.abs(F.d));
+        var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('y', '0'); n.setAttribute('pointer-events', 'none');
+        n.setAttribute('font-size', back ? (len >= 3 ? '11' : (len === 2 ? '15' : '17')) : (len >= 3 ? '9' : (len === 2 ? '12' : '14')));
+        n.setAttribute('transform', 'translate(' + r1(at.x) + ',' + r1(at.y) + ') scale(' + (Math.round(w * 100) / 100) + ',1)');
+        g.appendChild(n);
+      }
+    } });
+    parts.sort(function (a, b) { return a.d - b.d; }).forEach(function (q) { q.draw(fig); });
+    // Head last: hair at the back and top, the face toward where the player looks.
+    var hb = { x: head.x - F.x * 2.8, y: head.y - 1.2 - F.d * 2.8 * DEPTH * 3 }, facing = F.d > -.25;
+    function ell(c, rx, ry, color, extra) { fig.appendChild(node(doc, 'ellipse', Object.assign({ cx: r1(c.x), cy: r1(c.y), rx: rx, ry: ry, fill: color }, extra || {}))); }
+    if (facing) { ell(hb, 9, 10.4, HAIR); ell(head, 8.4, 10.2, SKIN, { stroke: LINE, 'stroke-width': '.9' });
+      fig.appendChild(node(doc, 'path', { d: 'M' + r1(head.x - 8.6) + ' ' + r1(head.y - 1.5) + 'Q' + r1(head.x - 9) + ' ' + r1(head.y - 12.5) + ' ' + r1(head.x) + ' ' + r1(head.y - 12.6) + 'Q' + r1(head.x + 9) + ' ' + r1(head.y - 12.5) + ' ' + r1(head.x + 8.6) + ' ' + r1(head.y - 1.5) + 'Q' + r1(head.x + 4) + ' ' + r1(head.y - 7) + ' ' + r1(head.x) + ' ' + r1(head.y - 7.4) + 'Q' + r1(head.x - 4) + ' ' + r1(head.y - 7) + ' ' + r1(head.x - 8.6) + ' ' + r1(head.y - 1.5) + 'Z', fill: HAIR, transform: Math.abs(F.x) > .3 ? 'translate(' + r1(-F.x * 2.2) + ',0)' : '' }));
+      if (Math.abs(F.x) > .25) ell({ x: head.x + F.x * 8.4, y: head.y + 1 }, 1.5, 1.8, SKIN, { stroke: LINE, 'stroke-width': '.6' });   // nose in profile
+    } else { ell(head, 8.6, 10.4, SKIN, { stroke: LINE, 'stroke-width': '.9' }); ell({ x: head.x - F.x * 1.5, y: head.y - 1 }, 8.8, 10.2, HAIR); }
     return fig;
-
-    // Profile facing +x (mirrored when running left). Hip at y -82: thigh 40, shin 38, upper arm 25, forearm 23.
-    function sideFigure() {
-      var A = P.amp, HIP = -82, lean = A * .2, far = 'rgba(0,0,0,.28)';
-      function leg(ph) {
-        var t = TAU * ph, th = A * .6 * Math.sin(t), kn = A * (.12 + 1.25 * Math.max(0, Math.cos(t)));
-        var kx = 40 * Math.sin(th), ky = HIP + 40 * Math.cos(th), sh = th - kn, ax = kx + 38 * Math.sin(sh), ay = ky + 38 * Math.cos(sh);
-        return { th: th, sh: sh, kx: kx, ky: ky, ax: ax, ay: ay };
-      }
-      var L1 = leg(P.phase), L2 = leg(P.phase + .5), ground = -6 - Math.max(L1.ay, L2.ay);   // the lower foot stands on the grass
-      var body = node(doc, 'g', { transform: 'translate(0,' + r1(ground) + ')' });
-      fig.appendChild(body);
-      var mir = node(doc, 'g', P.flip ? { transform: 'scale(-1,1)' } : {});
-      body.appendChild(mir);
-      function line(g, x1, y1, x2, y2, w, color, dark) {
-        g.appendChild(node(doc, 'line', { x1: r1(x1), y1: r1(y1), x2: r1(x2), y2: r1(y2), stroke: LINE, 'stroke-width': w + 1.6, 'stroke-linecap': 'round' }));
-        g.appendChild(node(doc, 'line', { x1: r1(x1), y1: r1(y1), x2: r1(x2), y2: r1(y2), stroke: color, 'stroke-width': w, 'stroke-linecap': 'round' }));
-        if (dark) g.appendChild(node(doc, 'line', { x1: r1(x1), y1: r1(y1), x2: r1(x2), y2: r1(y2), stroke: far, 'stroke-width': w, 'stroke-linecap': 'round' }));
-      }
-      function drawLeg(L, dark) {
-        var g = node(doc, 'g'), mx = L.kx * .58, my = HIP + (L.ky - HIP) * .58, sx = L.kx + (L.ax - L.kx) * .18, sy = L.ky + (L.ay - L.ky) * .18;
-        line(g, L.kx, L.ky, mx, my, 9, SKIN, dark);                                // thigh below the shorts and the knee
-        line(g, sx, sy, L.ax, L.ay, 8.5, sock, dark);                               // sock
-        line(g, L.kx, L.ky, sx, sy, 8, SKIN, dark);
-        var fa = L.sh * .35, fx = L.ax + 11 * Math.cos(fa), fy = L.ay + 2 - 11 * Math.sin(-fa) * .3;
-        line(g, L.ax - 2, L.ay + 2, fx, fy, 6.5, BOOT, false);                    // boot, toes forward
-        line(g, 0, HIP, mx, my, 12.5, shorts, dark);                               // shorts over the thigh
-        mir.appendChild(g);
-      }
-      function drawArm(ph, dark, up) {
-        var t = TAU * ph, ua = -A * .75 * Math.sin(t), fa = ua + (.25 + 1.25 * A);
-        var sx = 2, sy = -120, ex = sx + 25 * Math.sin(ua), ey = sy + 25 * Math.cos(ua), hx = ex + 23 * Math.sin(fa), hy = ey + 23 * Math.cos(fa);
-        var g = node(doc, 'g');
-        line(g, ex, ey, hx, hy, 6, SKIN, dark);
-        g.appendChild(node(doc, 'circle', { cx: r1(hx), cy: r1(hy), r: 3.4, fill: SKIN, stroke: LINE, 'stroke-width': '.8' }));
-        if (dark) g.appendChild(node(doc, 'circle', { cx: r1(hx), cy: r1(hy), r: 3.4, fill: far }));
-        line(g, sx, sy, sx + 13 * Math.sin(ua), sy + 13 * Math.cos(ua), 9.5, solid, dark);   // sleeve
-        line(g, sx + 12 * Math.sin(ua), sy + 12 * Math.cos(ua), ex, ey, 7, SKIN, dark);
-        up.appendChild(g);
-      }
-      var upper = node(doc, 'g', { transform: 'rotate(' + r1(lean * 180 / Math.PI) + ' 0 ' + HIP + ')' });
-      // Far side first and a little darker, then the body, then the near side.
-      drawArm(P.phase + .5, true, upper); mir.appendChild(upper);
-      drawLeg(L2, true);
-      var torso = node(doc, 'g', { transform: 'rotate(' + r1(lean * 180 / Math.PI) + ' 0 ' + HIP + ')' });
-      part('M-7.5 -90Q-9 -84 -6 -78L7 -78Q10 -84 8.5 -90Z', shorts, true, torso);   // shorts at the hip
-      torso.appendChild(node(doc, 'rect', { x: -2.5, y: -131, width: 6, height: 10, fill: SKIN }));   // neck
-      part('M-8 -124Q1 -127 9.5 -123Q12 -106 9.5 -88L-7.5 -88Q-10.5 -106 -8 -124Z', fill, true, torso);   // shirt, chest forward
-      torso.appendChild(node(doc, 'ellipse', { cx: 1.5, cy: -138, rx: 8.6, ry: 10.5, fill: SKIN, stroke: LINE, 'stroke-width': '1' }));   // head
-      torso.appendChild(node(doc, 'path', { d: 'M-7 -131Q-9.5 -140 -6 -147Q0 -151.5 7 -149Q10 -147 9.8 -143.5Q4 -145.5 1 -142Q-1 -137 -3 -131Z', fill: HAIR }));   // hair to the back
-      torso.appendChild(node(doc, 'circle', { cx: 9.6, cy: -137.5, r: 1.6, fill: SKIN, stroke: LINE, 'stroke-width': '.6' }));   // nose
-      mir.appendChild(torso);
-      drawLeg(L1, false);
-      var nearArm = node(doc, 'g', { transform: 'rotate(' + r1(lean * 180 / Math.PI) + ' 0 ' + HIP + ')' });
-      drawArm(P.phase, false, nearArm); mir.appendChild(nearArm);
-      // The number is never mirrored: placed on the leaning chest, outside the mirror.
-      var nx = 22 * Math.sin(lean), ny = HIP - 22 * Math.cos(lean);
-      var keep = fig; fig = body; number(P.flip ? -nx : nx, ny, false); fig = keep;
-    }
   }
   // opts.shape = 'shirt' | 'circle' | 'shaper' | 'person' (the board's player shape), opts.dir = shaper heading in chip degrees.
   function applyChip(token, item, opts) {

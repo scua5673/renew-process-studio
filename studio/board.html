@@ -9395,12 +9395,13 @@ function _personMotion(a,b,u,curves){
     out[p.id]={vx:p1.x-p0.x,vy:p1.y-p0.y,run:run/m,total:tot/m,u:u}; });
   return out; }
 /* 판 좌표의 움직임 → 3D 선수의 자세. 세로 보기는 판(world)이 ±90° 돌아 있어 화면 방향으로 바꾼다.
-   화면 위로 가면 등, 아래로 오면 얼굴, 옆으로 가면 옆모습. 한 걸음 주기(두 발) 2.6m · 전력 질주는 장면에서 8m 이상. */
+   3.072 — 몸이 바라보는 각도(yaw: 0 오른쪽 · 90 카메라 쪽 · -90 먼 쪽 · 180 왼쪽)를 그대로 넘겨 어느 방향이든 그 각도로 보인다.
+   출발할 때는 카메라 쪽(서 있던 방향)에서 뛰는 방향으로 돌아서고, 도착하면 다시 돌아선다. 한 걸음 주기(두 발) 2.6m · 장면에서 멀리 뛸수록 빠르게. */
 function _personPose(p){ var mv=window.__psMotion&&window.__psMotion[p.id]; if(!mv)return null;
   var sx=mv.vx,sy=mv.vy; if(state.orientation==="v"){ if(state.spFlip){ sx=-mv.vy; sy=mv.vx; } else { sx=mv.vy; sy=-mv.vx; } }
-  var view=(Math.abs(sx)>=Math.abs(sy)*0.7)?"side":(sy<0?"back":"front");
-  var amp=Math.min(1,0.45+mv.total/14), ease=Math.min(1,mv.u*5,(1-mv.u)*5);   /* 출발 · 도착에서 자연스럽게 */
-  return {view:view,flip:sx<0,phase:mv.run/2.6,amp:Math.max(0,amp*ease)}; }
+  var amp=Math.min(1,0.45+mv.total/14), ease=Math.min(1,mv.u*5,(1-mv.u)*5), run=Math.atan2(sy,sx)*180/Math.PI;
+  var dy=((run-90)%360+540)%360-180, yaw=90+dy*Math.min(1,ease*1.6);   /* 짧은 쪽으로 돈다 */
+  return {yaw:yaw,phase:mv.run/2.6,amp:Math.max(0,amp*ease)}; }
 /* ===== 곡선 경로 편집 오버레이 (택티컬 패드) — 선택 장면→다음 장면 사이 각 토큰의 이동 경로를 보여주고, 가운데 점을 끌어 곡선으로 만든다 ===== */
 function _mpPair(){
   try{
