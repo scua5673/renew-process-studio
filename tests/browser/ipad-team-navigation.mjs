@@ -62,7 +62,10 @@ try{
         const padW=await page.evaluate(()=>Number((/width=(\d+)/.exec(document.querySelector('meta[name="viewport"]').content)||[])[1])||0);
         if(padW&&padW!==viewport.width){await page.setViewportSize({width:padW,height:Math.round(spec.height*padW/spec.width)});await page.waitForFunction(w=>innerWidth===w,padW);}
       }
-      await page.locator('#appSeg [data-team-hub]').tap();
+      /* 3.075 — 폰은 로그인한 팀 공간이면 팀운영 › 오늘로 열린다(psPhoneStart). 그때는 «팀 운영» 단추를 누르지 않는다(이미 열려 있다). */
+      const phoneStart=await page.evaluate(()=>document.documentElement.getAttribute('data-ps-device')==='phone');
+      if(phoneStart)result.cases.push('phone-opens-on-team-today');
+      else await page.locator('#appSeg [data-team-hub]').tap();
       await page.locator('body.ps-team-open').waitFor();
       const width=await page.evaluate(()=>innerWidth);result.logicalWidth=width;
       assert.equal(await page.locator('html').getAttribute('data-ps-device'),spec.ipad?'ipad':'phone');
