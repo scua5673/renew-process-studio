@@ -78,7 +78,7 @@
     var D = B + ' #ps-command-dock' + N, T = B + ' #ps-df-tray' + N, O = B + ' #ps-df-opts' + N;
     var lift = p.flat ? '' : 'transform:translateY(-1px)!important;';
     return [
-      D + ' #cmd-tool-row,' + D + '>#animBar{' + p.glass + '}',
+      D + '{' + p.glass + '}',   // 3.079 — 도크 자체가 카드 하나(장면 줄 + 도구 줄, board-dock-film.js)
       T + ',' + O + '{' + p.glass + 'color:' + p.ink + '!important}',
       O + ':after{background:' + p.tip + '!important;border-color:transparent!important}',
       // 도구 단추: 평소 투명, 올리면 살짝 뜨고, 고르면 광택 단추
