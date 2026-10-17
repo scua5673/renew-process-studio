@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('fs');
 const path=require('path');
 
-/* 3.080 — 커뮤니티를 폰에서 보기 좋게(사용자 «핸드폰으로 보기도 당연히 좋게»). 390px 에서 고르개가 430~520px 를 먹어 카드가 첫 화면 밖으로 밀렸다.
+/* 3.081 — 커뮤니티를 폰에서 보기 좋게(사용자 «핸드폰으로 보기도 당연히 좋게»). 390px 에서 고르개가 430~520px 를 먹어 카드가 첫 화면 밖으로 밀렸다.
    폰에서는 국면 타일 2×2 를 낮게(설명 줄 숨김) · 주제 · 세부 국면 · 연령/인원은 한 줄씩 옆으로 밀어 보기, 칩을 눌러 다시 그려도 민 자리를 지킨다. */
 const root=path.join(__dirname,'..');
 const T=require(path.join(root,'studio','community-tax.js'));

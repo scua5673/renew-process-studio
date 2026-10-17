@@ -18,7 +18,7 @@ function build(blank){
     offsetOfDate:d=>days.findIndex(x=>x.getTime()===d.getTime()),blankWeek:()=>[],recomputeMD:()=>{},schedViewDay:d=>d,
     dayIsMatch:d=>!!(d&&d.match),dayBoard:d=>(d&&d.board)||{},getLoad:t=>t.load||null,loadRpe:L=>+L.rpe||0,trMinutes:t=>t.m||0,
     wksTopicsOf:t=>t.topics||[],wksTopicName:v=>String(v).slice(2),mxExtraList:()=>[],mxExtraLabel:()=>({}),
-    M_KIND_LB:{official:'리그',cup:'컵',friendly:'친선'},mMatchKind:d=>d.match.kind,WDAYS:['월','화','수','목','금','토','일'],
+    M_KIND_LB:{official:'리그',cup:'컵',friendly:'친선'},mKindLb:k=>({official:'리그',cup:'컵',friendly:'친선'})[k]||'리그',mMatchKind:d=>d.match.kind,WDAYS:['월','화','수','목','금','토','일'],
     pdfEsc:s=>String(s==null?'':s).replace(/[<>&]/g,x=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[x])),pGrpTag:()=>'',monthLabel:()=>'2026년 9월',
     pFooter:()=>'<footer></footer>',pNextMatch:()=>{throw new Error('월간은 다음 경기를 묻지 않는다');}
   });
@@ -38,7 +38,7 @@ test('more than four sessions: three shown then «외 n», one line each',()=>{
 });
 
 test('match shows opponent, time and kind; OFF says rest',()=>{
-  const h=build();assert.ok(h.includes('경기 vs 광주FC U15'));assert.ok(h.includes('15:00 · 컵'));assert.ok(h.includes('>휴식<'));
+  const h=build();assert.ok(h.includes('컵 vs 광주FC U15'),'3.080 — 경기 이름은 리그·컵·친선');assert.ok(h.includes('15:00 · 컵'));assert.ok(h.includes('>휴식<'));
 });
 
 test('header carries month totals and no next-match line',()=>{

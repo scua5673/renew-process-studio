@@ -45,7 +45,7 @@
 
 @media (pointer:coarse){ .fi-card:active{transform:scale(.985);transition:transform .08s} }
 @media (max-width:560px){
-/* 3.080 — 폰: 안내는 두 줄까지 · 단추는 같은 줄 오른쪽(안내 상자가 카드를 170px 밀어내던 것) */
+/* 3.081 — 폰: 안내는 두 줄까지 · 단추는 같은 줄 오른쪽(안내 상자가 카드를 170px 밀어내던 것) */
 .fi-hero{align-items:center;flex-wrap:nowrap;padding:10px 12px}
 .fi-hero-tx span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .fi-home{height:40px;flex:0 0 auto}

@@ -52,7 +52,7 @@ try{
       del:document.querySelectorAll('#matchList [data-mdel],#matchList [data-medit]').length,sw:de.scrollWidth,cw:de.clientWidth};});
   assert.ok(mt.sw<=mt.cw+1,'경기: 가로 넘침 없음');
   assert.equal(mt.cards,0);assert.equal(mt.lines.length,2,'전적은 정식·친선 한 줄씩');
-  assert.equal(mt.lines[0].t,'정식1승1무0패승률50%·4득2실·+2');assert.equal(mt.lines[1].t,'친선등록된경기없음');
+  assert.equal(mt.lines[0].t,'공식전1승1무0패승률50%·4득2실·+2');assert.equal(mt.lines[1].t,'친선등록된경기없음');
   assert.equal(mt.del,0,'줄마다 «편집 · 삭제»는 없다');assert.equal(mt.moreOpacity,'1','더보기는 늘 보인다');
   assert.ok(Math.min(mt.more.w,mt.more.h)>=(phone?40:32),'더보기 누르는 면: '+mt.more.w+'x'+mt.more.h);
   assert.ok(mt.q.r<=mt.head.r+1,'검색칸이 머리 밖으로 나가지 않는다');
