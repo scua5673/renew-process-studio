@@ -13965,7 +13965,7 @@ function matchMergeSchedule(state){
          옛 일정(구분 없음)은 경기 쪽 값을 그대로 둔다(경기 화면에서 고른 것을 지우지 않는다). */
       var _sk=sl.kind;
       if(_sk==='friendly'||_sk==='cup'||_sk==='official'){
-        var _nk=_sk;   /* 3.079 — 컵을 컵으로 남긴다(전적은 matchKindOf 가 공식전으로 센다) */
+        var _nk=_sk;   /* 3.080 — 컵을 컵으로 남긴다(전적은 matchKindOf 가 공식전으로 센다) */
         if(m.kind!==_nk){m.kind=_nk;changed=true;}
       }
       });
@@ -15123,7 +15123,7 @@ function matchAdd(){
     window.psForm({title:"경기 추가",sub:"상대와 날짜만 정하면 준비 화면이 열려요.",ok:"추가",
       fields:[{key:"opponent",label:"상대",type:"text",placeholder:"예: FC서울 U15",required:true,maxlength:30},
               {key:"date",label:"날짜",type:"date",value:b0.date,required:true},
-              {key:"kind",label:"구분",type:"seg",options:[{value:"official",label:"리그"},{value:"cup",label:"컵"},{value:"friendly",label:"친선"}],value:"official"},   /* 3.079 — 일정과 같은 세 이름 */   /* 2.144 */
+              {key:"kind",label:"구분",type:"seg",options:[{value:"official",label:"리그"},{value:"cup",label:"컵"},{value:"friendly",label:"친선"}],value:"official"},   /* 3.080 — 일정과 같은 세 이름 */   /* 2.144 */
               {key:"homeAway",label:"홈 / 원정",type:"seg",options:[{value:"home",label:"홈"},{value:"away",label:"원정"},{value:"",label:"중립·미정"}],value:""}],
       onOk:function(v){var m=matchBlank();m.opponent=v.opponent||"새 경기";m.date=v.date||m.date;m.homeAway=v.homeAway||"";m.kind=(v.kind==="friendly"||v.kind==="cup")?v.kind:"official";
         matchCurrent=m.id;matchLoad().matches.unshift(m);matchSaveNow();matchOpen(m.id);}});   /* 2.733 — 첫 저장 전에 현재 경기로 정해 exact 새 일정 슬롯을 받는다 */
@@ -15205,7 +15205,7 @@ function matchDelete(id){
    ⚠ 옛 저장본에는 `kind` 가 없다 — **정식으로 본다**(matchKindOf). 친선만 고치면 되는 쪽이 손이 덜 간다. */
 function matchKindOf(m){ return (m&&m.kind==="friendly")?"friendly":"official"; }
 var MATCH_KIND_LABEL={official:"공식전",friendly:"친선"};
-/* 3.079 — 경기 이름 하나로(코치 피드백 «주간은 경기, 월간은 리그, 목록은 정식»). 한 경기는 일정과 같은 말 — 리그·컵·친선.
+/* 3.080 — 경기 이름 하나로(코치 피드백 «주간은 경기, 월간은 리그, 목록은 정식»). 한 경기는 일정과 같은 말 — 리그·컵·친선.
    전적 통은 그대로 둘(공식전 = 리그+컵 · 친선). 컵은 일정에서 오면 kind:"cup" 으로 남는다(matchKindOf 는 공식전으로 센다). */
 function matchKindLabel(m){ var k=m&&m.kind; return k==="friendly"?"친선":(k==="cup"?"컵":"리그"); }
 function matchResultOf(m){

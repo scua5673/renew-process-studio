@@ -473,7 +473,7 @@
   .fmtpick{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
   /* 2.482 — 세부 국면 줄(주제 아래 2단) */
   .wf-subph{margin-top:2px;color:var(--txt-dim,#646A73)}
-  .wf-rpe-key{font-size:var(--fs-caption);margin:-8px 0 12px}   /* 3.079 */
+  .wf-rpe-key{font-size:var(--fs-caption);margin:-8px 0 12px}   /* 3.080 */
   .wf-subpick{margin:2px 0 10px}
   .wf-subpick .fp.sm{min-height:32px;padding:0 12px;font-size:13px}
   /* 2.486 — 세션 표(블록 스택) */
@@ -888,7 +888,7 @@
   .mpop .mp-kind button[data-mk="friendly"] .kd{background:var(--fri)}
   .mpop .mp-kind button.on[data-mk="official"]{border-color:var(--match,#C24A46);background:var(--match-soft,#FBEBEA);color:var(--match,#C24A46)}
   .mpop .mp-kind button.on[data-mk="friendly"]{border-color:var(--fri);background:var(--fri-soft);color:var(--fri)}
-  .mpop .mp-kind button[data-mk="cup"] .kd{background:var(--warm)}   /* 3.079 — 리그·컵·친선 셋(일정 시트와 같은 말) */
+  .mpop .mp-kind button[data-mk="cup"] .kd{background:var(--warm)}   /* 3.080 — 리그·컵·친선 셋(일정 시트와 같은 말) */
   .mpop .mp-kind button.on[data-mk="cup"]{border-color:var(--warm);background:var(--warm-soft);color:var(--warm)}
   body.fmdark .mpop .mp-kind button{background:#23272D!important;color:#F2F3F5!important}
   /* 2.890 — 월간에서 바로: 훈련 시간대·경기 상대 팀(사용자 제보 «스케줄») */
@@ -1578,7 +1578,7 @@ function mxStripMid(d){ try{ (d&&Array.isArray(d.matchAdd)?d.matchAdd:[]).forEac
    주간 보드(wkbd)·월간 칸·하루·허브·인쇄(주간보드 PDF·하루·월간)는 첫 경기만 보였다. day 를 바꾸지 않는다(mxList 는 빈 배열을 심는다). */
 function mxExtraList(day){ return (day&&Array.isArray(day.matchAdd))?day.matchAdd.filter(function(x){return x&&typeof x==='object';}):[]; }
 function mxExtraLabel(x){ var t=String((x&&x.time)||'').trim(), o=String((x&&x.opp)||'').trim()||'상대 미정', g=x&&x.grp; g=Array.isArray(g)?g.filter(Boolean).join(' · '):String(g||'').trim(); var k=(x&&(x.kind==='friendly'||x.kind==='cup'))?x.kind:'official'; return {t:t,o:o,g:g,k:k,friendly:k==='friendly'}; }
-/* 3.079 — 경기 이름 하나로(코치 피드백 «주간은 경기, 월간은 리그, 목록은 정식»): 한 경기는 어디서나 리그·컵·친선 */
+/* 3.080 — 경기 이름 하나로(코치 피드백 «주간은 경기, 월간은 리그, 목록은 정식»): 한 경기는 어디서나 리그·컵·친선 */
 function mKindLb(k){ return ({official:'리그',cup:'컵',friendly:'친선'})[k]||'리그'; }
 function mxExtraHtml(day,cls,di,mymd){
   var e=wkbdEsc;
@@ -2265,7 +2265,7 @@ window.wksPickSes=function(di,slot,kind){
   var cur=(kind==='time')?(tr.time||''):String((tr.load&&tr.load.rpe)||'');
   var title=(kind==='time')?'시간':'강도';
   var opts=(kind==='time')?['06:00','09:00','10:30','16:00','19:30'].map(function(x){return {v:x,name:x};})
-          :['1','2','3','4','5','6','7','8','9','10'].map(function(x){return {v:x,name:'RPE '+x};});   /* 3.079 — 1~10 모두 */
+          :['1','2','3','4','5','6','7','8','9','10'].map(function(x){return {v:x,name:'RPE '+x};});   /* 3.080 — 1~10 모두 */
   var btns=opts.map(function(o){
     if(!o||!o.v)return '';
     return '<button class="fp'+(String(cur)===String(o.v)?' on':'')+'" onclick="wksSetSes(\''+wkbdEsc(String(o.v)).replace(/'/g,'&#39;')+'\')">'
@@ -3270,7 +3270,7 @@ function setWkMode(m){
   try{ localStorage.setItem('cs_wkmode',wkMode); }catch(_){}
   renderWeek();
 }
-/* 3.079 — RPE 숫자의 뜻(wkbdFitness 의 띠와 같은 경계: ≤3 회복 · ≤5 저 · ≤7 중 · 그 위 고, 10 은 최대) */
+/* 3.080 — RPE 숫자의 뜻(wkbdFitness 의 띠와 같은 경계: ≤3 회복 · ≤5 저 · ≤7 중 · 그 위 고, 10 은 최대) */
 function rpeWord(n){ n=+n||0; return n<=0?'':n<=3?'회복':n<=5?'저강도':n<=7?'중강도':n<=9?'고강도':'최대'; }
 function wkbdEsc(s){ return (''+(s==null?'':s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 // 피트니스 성격 — rpe에서 파생 (읽기 전용). MD-1은 활성화.
@@ -4453,7 +4453,7 @@ function wksFillRender(keep,focus){
     +'</div>';
 
   /* ② 강도 */
-  /* 3.079 — 강도 1~10 모두(코치 피드백 «2~9 만 있고 뜻이 없다»). 고른 값 옆에 말로 된 뜻, 아래에 눈금 뜻 한 줄. */
+  /* 3.080 — 강도 1~10 모두(코치 피드백 «2~9 만 있고 뜻이 없다»). 고른 값 옆에 말로 된 뜻, 아래에 눈금 뜻 한 줄. */
   h+='<div class="wf-sec" id="wfSec-rpe"><div class="pksub sm">강도'+(rpe?(' <span class="cnt">RPE '+rpe+' · '+rpeWord(rpe)+'</span>'):'')+'</div>'
     +'<div class="fmtpick wf-rpe">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){
         return '<button class="fp'+(rpe===n?' on':'')+'" onclick="wksFillRpe('+n+')">'+n+'</button>';
@@ -6639,7 +6639,7 @@ function monthCellInfo(day){
   if(dayIsMatch(day)){
     var _opp=(((day.match&&day.match.opp)||(b&&b.opp)||'')+'').trim();
     var _k=mMatchKind(day);
-    var _pre=mKindLb(_k)+' ';   /* 3.079 — 리그·컵·친선 */
+    var _pre=mKindLb(_k)+' ';   /* 3.080 — 리그·컵·친선 */
     return {md:(day.md||'MD'), txt:_opp?(_pre+'vs '+_opp):(_pre+((b&&b.theme)?('경기 · '+b.theme):'경기')), match:true, kind:_k};
   }
   if(day.off || (b&&b.sched==='OFF')) return {md:(day.md||''), txt:'OFF', match:false};
@@ -6814,7 +6814,7 @@ function monthQuickAdd(r,col,kind,detail,matchKind){
     return;
   }
   if(kind==='meet'){ b.meet=title||'미팅'; day.meeting=b.meet; try{save();}catch(_){} syncViews(); _mpReopen(r,col); return; }
-  if(kind==='match'){ setSched(r,col,'경기'); if(!day.match) day.match={time:'',opp:''}; day.match.kind=(matchKind==='friendly'||matchKind==='cup'||matchKind==='official')?matchKind:mMatchKind(day);   /* 3.079 — 컵을 지우지 않는다 */ if(title) day.match.opp=title; try{save();}catch(_){} _mpReopen(r,col); return; }
+  if(kind==='match'){ setSched(r,col,'경기'); if(!day.match) day.match={time:'',opp:''}; day.match.kind=(matchKind==='friendly'||matchKind==='cup'||matchKind==='official')?matchKind:mMatchKind(day);   /* 3.080 — 컵을 지우지 않는다 */ if(title) day.match.opp=title; try{save();}catch(_){} _mpReopen(r,col); return; }
   setSched(r,col,'훈련');
   if(title){ if(!b.trains)b.trains=[]; b.trains.push(title); if(!b.trainThemes)b.trainThemes=[]; b.trainThemes.push(''); try{save();}catch(_){} syncViews(); }
   if(detail){ closeMonthPop(); focusScheduleDate(r,col,{syncMonth:false}); try{renderWeek();}catch(_){} var el=document.querySelector('#vtoggle div[data-v=\"week\"]'); if(el) el.click(); return; }

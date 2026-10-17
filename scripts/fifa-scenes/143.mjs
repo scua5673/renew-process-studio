@@ -5,6 +5,7 @@ export default {
   path: 'futsal/block-1/control-under-pressure.php',
   name: '압박 속 컨트롤 — 보고, 방향 있게 받고, 지키기',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

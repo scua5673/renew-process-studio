@@ -7,6 +7,7 @@ export default {
   path: 'futsal/block-2/possession-and-ball-control.php',
   name: '점유와 볼 컨트롤 — 방향 있는 첫 터치로 앞으로',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

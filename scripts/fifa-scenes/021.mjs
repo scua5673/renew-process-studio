@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/out-of-possession/collective-ball-recovery-in-a-low-block.php',
   name: '낮은 블록 — 함께 밀고 메우며 공 되찾기',
   focus: 'bpo',
+  subs: ['std_do_3'],
   by: 'Oumarou Diabaté',
   trainings: [
     {

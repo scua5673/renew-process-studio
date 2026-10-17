@@ -8,6 +8,7 @@ export default {
   path: 'futsal/block-1/running-with-the-ball-with-awareness-and-speed.php',
   name: '보면서 빠르게 몰고 가기 — 세 구역을 몰고 지나 골까지',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

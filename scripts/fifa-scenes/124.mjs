@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/learning-through-numeric-progression-games.php',
   name: '인원을 늘려 가는 게임 — 2v1에서 3v3, 그리고 세 구역 6v6',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

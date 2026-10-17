@@ -5,6 +5,7 @@ export default {
   path: 'elite-sessions/clubs-and-academies/german-academies/landing-pages/schalke-04-u19-landing-page.php',
   name: '골키퍼가 시작하는 역습 — 코너킥을 잡고 바로 굴리기 · 던지기',
   focus: 'tr_att',
+  subs: ['std_at_1'],
   by: 'Schalke 04 U-19',
   trainings: [
     {

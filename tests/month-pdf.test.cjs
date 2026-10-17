@@ -38,7 +38,7 @@ test('more than four sessions: three shown then «외 n», one line each',()=>{
 });
 
 test('match shows opponent, time and kind; OFF says rest',()=>{
-  const h=build();assert.ok(h.includes('컵 vs 광주FC U15'),'3.079 — 경기 이름은 리그·컵·친선');assert.ok(h.includes('15:00 · 컵'));assert.ok(h.includes('>휴식<'));
+  const h=build();assert.ok(h.includes('컵 vs 광주FC U15'),'3.080 — 경기 이름은 리그·컵·친선');assert.ok(h.includes('15:00 · 컵'));assert.ok(h.includes('>휴식<'));
 });
 
 test('header carries month totals and no next-match line',()=>{

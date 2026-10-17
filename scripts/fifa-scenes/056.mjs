@@ -4,6 +4,7 @@ export default {
   path: 'training-perspectives/outplaying-the-opponent-with-michael-beale/outplaying-the-opponent-with-michael-beale-home.php',
   name: '상대를 벗겨내기 — 받고 돌아서기에서 박스 게임까지',
   focus: 'bp',
+  subs: ['std_ao_2'],
   by: 'Michael Beale',
   trainings: [
     {

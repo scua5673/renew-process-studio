@@ -1,5 +1,5 @@
 'use strict';
-/* 3.079 — 코치 피드백 2차: 경기 이름 하나(리그·컵·친선) · 팀 IDP 제목 · 강도 1~10 과 뜻 · 대형을 고르면 바로 배치 */
+/* 3.080 — 코치 피드백 2차: 경기 이름 하나(리그·컵·친선) · 팀 IDP 제목 · 강도 1~10 과 뜻 · 대형을 고르면 바로 배치 */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),path=require('path'),vm=require('vm');
 const read=f=>fs.readFileSync(path.join(__dirname,'..','studio',f),'utf8');
 const P=read('process.html'),S=read('scout.html'),B=read('board.html'),I=read('idp.html');

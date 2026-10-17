@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/dominate-possession.php',
   name: '점유를 지배하기 — 구석 중립 4v4에서 8v8 자율 경기까지',
   focus: 'poss',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

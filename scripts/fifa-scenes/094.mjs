@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/8-to-12/street-football.php',
   name: '스트리트 축구 — 짝 월드컵에서 헤딩 · 발리 6v6까지',
   focus: 'tech',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

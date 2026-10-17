@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/global-grassroots-insights/legia-warsaw-the-decision-makers-of-tomorrow.php',
   name: '판단하는 선수 — 앞을 보는 첫 터치에서 끝선 넘기 경기까지',
   focus: 'tech',
+  subs: ['std_ao_2'],
   by: 'Legia Warsaw',
   trainings: [
     {

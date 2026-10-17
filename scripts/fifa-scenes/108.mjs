@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/recognise-the-situation.php',
   name: '상황 알아채기 — 신호 반응 놀이에서 4v4 경기까지',
   focus: 'tech',
+  subs: ['std_ao_3'],
   by: '',
   trainings: [
     {

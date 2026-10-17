@@ -15,6 +15,7 @@ export default {
   path: 'futsal/block-3/defensive-low-block.php',
   name: '낮은 블록의 다이아몬드 대형 — 1-2-1로 바깥으로 몰고, 받는 순간 붙기',
   focus: 'bpo',
+  subs: ['std_do_3'],
   by: '',
   trainings: [
     {

@@ -14,6 +14,7 @@ export default {
   path: 'futsal/block-4/delay-dictate-and-deny-the-opposition.php',
   name: '늦추고, 몰고, 막기 — 역습을 맞는 수비의 세 가지 일',
   focus: 'tr_def',
+  subs: ['std_dt_2'],
   by: '',
   trainings: [
     {

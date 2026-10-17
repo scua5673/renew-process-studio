@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/stay-calm.php',
   name: '침착하게 — 손 럭비에서 목표 선수 경기까지',
   focus: 'poss',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

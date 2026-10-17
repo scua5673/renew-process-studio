@@ -4,6 +4,7 @@ export default {
   path: 'grassroots/12-to-15/dynamicrondos-and-numerical-advantages.php',
   name: '움직이는 론도와 수적 우위 — 3v1 론도에서 6v6 경기까지',
   focus: 'poss',
+  subs: ['std_ao_2'],
   by: '',
   trainings: [
     {

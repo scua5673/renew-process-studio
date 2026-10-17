@@ -4,6 +4,7 @@ export default {
   path: 'elite-sessions/out-of-possession/defending-as-a-unit.php',
   name: '한 덩어리로 수비하기 — 첫 압박과 받쳐 주는 둘',
   focus: 'bpo',
+  subs: ['std_do_1'],
   by: 'Belinda Wilson',
   trainings: [
     {
