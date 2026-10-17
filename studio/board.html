@@ -4226,7 +4226,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script>
+<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
 <script src="board-actions.js"></script>
@@ -7981,6 +7981,7 @@ try{ document.addEventListener("click",function(e){ var b=e.target&&e.target.clo
   var a=grassToneKey().split("|"); if(b.hasAttribute("data-gb"))a[0]=b.getAttribute("data-gb"); else a[1]=b.getAttribute("data-gp"); window.__setGrassTone(a[0]+"|"+a[1]); },true); }catch(_){}   /* board-pitch-presets 시험 하네스가 이 구간을 가짜 문서로 돌린다 */
 function renderPitchImg(){try{
   if(!world||!svg)return;
+  if(window.PSPitchPhoto&&PSPitchPhoto.render(state.pitchImg,svg,world,PR(),M,renderPitchImg))return;
   var ex=svg.querySelector('#ps-pitchimg');
   var tg=world.querySelector('#ps-pitchtile');
   var _pu=state.pitchImg;
@@ -15133,11 +15134,11 @@ function init(){
     [host,surface].forEach(h=>{h.style.display='block';h.style.left=(r.left-sr.left+stage.scrollLeft-stage.clientLeft)+'px';h.style.top=(r.top-sr.top+stage.scrollTop-stage.clientTop)+'px';h.style.width=r.width+'px';h.style.height=r.height+'px';});
     const signature=[r.width,r.height,r.left-sr.left,r.top-sr.top,vb.x,vb.y,vb.width,vb.height,state.orientation,state.spFlip,state.pitchSpec,state.lines,state.pitchN,svg.querySelector('#ps-multipitch')?.getAttribute('data-layout'),pitchViewKey(),state.halfSide,state.pitchImg,document.documentElement.dataset.pitch,!!window.__ballImgOK].join('|');
     if(host.__projectionSignature===signature)return;host.__projectionSignature=signature;
-    const turf=surface.firstElementChild,key=String(state.pitchImg||'').replace(/^@/,'');
+    const turf=surface.firstElementChild,key=String(state.pitchImg||'').replace(/^@/,''),pu=key===state.pitchImg?key:'';
     const texture=String(state.pitchImg||'').startsWith('@')&&window.PITCH_IMG&&window.PITCH_IMG[key];
     turf.style.backgroundColor=getCss('--pitchbg')||getCss('--grass-b')||'#252839';
-    turf.style.backgroundImage=texture?'url("'+texture+'")':(state.pitchImg?'url("'+state.pitchImg+'")':'none');
-    turf.style.backgroundSize=texture?(M2U(10)*scale)+'px '+(M2U(10)*scale)+'px':(state.pitchImg?'cover':'auto');
+    turf.style.backgroundImage=texture?'url("'+texture+'")':(pu?'url("'+pu+'")':'none');
+    turf.style.backgroundSize=texture?(M2U(10)*scale)+'px '+(M2U(10)*scale)+'px':(pu?'cover':'auto');
     try{ tiltStadium(surface,r.width,r.height); }catch(_){}   /* 3.009 — 경기장(잔디·광고판·관중석) */
     host.replaceChildren();
     if(state.lines===false||pitchSpec().blank)return;   /* 2.989 — 그리드 판에는 골대도 없다 */
@@ -22242,7 +22243,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       var rowOf=function(x){ if(typeof x!=="string")return x; var e=document.getElementById(x); return e?(e.closest(".menurow")||e):null; };
       var editorHint=make("div","bsEditorHint","bs-hint","훈련 편집기는 평면으로 열려요 · 나가면 원래대로"),snapHint=make("div","bsSnapHint","bs-hint","운동장 › 훈련 격자 칸에 붙어요"),blankHint=make("div","bsBlankHint","bs-hint","그리드 크기 · 모양은 오른쪽 «바탕»에서 고쳐요");
       var PLAN=[["board","내 스타일",[presetRow]],
-                ["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","grassSeg"]],
+                ["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","pitchPhotoRow","pitchPhotoHint","grassSeg"]],
                 ["pitch","선·구역",["lineSeg","zonePreset"]],
                 ["pitch","범위·방향",["cmdPitchViewSeg","cmdPitchSideSeg","cmdOrientSeg","cmdPitchNSeg"]],
                 ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","realScaleSeg","labelSeg","tagSizeSeg"]],

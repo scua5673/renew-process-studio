@@ -1455,7 +1455,7 @@ function stripSnap(sn){ /* 사진·이름 제거 — 용량·개인정보 (링�
 /* 3.041 — 판 어디에 있든 사진 · 영상 원본(data:image · data:video, CSS url(data:…) 포함)은 올리지 않는다 — 보관함 팀 공유본(sync.js libShareCopy)과 같은 규칙.
    사용자 «용량이 커도 올릴 수 있게»: 얼굴 사진 토큰(p.img)은 2.668 의 사진 정리(team 'img' 의 src)에서 빠져 있어 장면마다 사진이 실렸고,
    장면이 많은 작전판은 사진 때문에 용량을 넘었다. 커스텀 운동장 사진(pitchImg · pitchCustom)도 장면마다 같은 사진이다. */
-var MEDIA_RE=/^\s*(?:url\(\s*["']?)?data:(?:image|video)\//i;
+var MEDIA_RE=/^\s*(?:url\(\s*["']?)?data:(?:image|video)\/|^@photo:/i;
 function dropMedia(o,depth){
   if(!o||typeof o!=='object'||(depth|0)>8)return o;
   Object.keys(o).forEach(function(k){ var v=o[k];

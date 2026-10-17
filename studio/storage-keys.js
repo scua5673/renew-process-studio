@@ -216,6 +216,7 @@
     ['ps_perms_missing','device','ls','session','sync.js'],
     ['ps_personal_review_v1','device','ls','pref','sync.js'],
     ['ps_phone_board_hint_v1','device','ls','seen','board.html'],
+    ['ps_pitch_photo:','device','idb','data','board-pitch-photo.js',{prefix:1}],   /* 3.091 — 운동장 사진(판에는 @photo: 참조만 · 서버로 가지 않는다) */
     ['ps_private_board_draft_v1:','device','ls','draft','storage.js',{prefix:1}],
     ['ps_private_board_rev_v1','device','ls','cache','app.html'],
     ['ps_push_log_v1','device','ls','diag','sync.js'],
