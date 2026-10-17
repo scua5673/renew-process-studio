@@ -18,7 +18,7 @@ export default {
         {id: 107, team: 'blue', num: '7', x: 185, y: 80},
       ],
       equipment: [
-        {type: 'goalV', x: 1065, y: 370, rot: 0},
+        {type: 'goalV', x: 1065, y: 370, rot: 0, scale: 1.8},
         {type: 'dummy', x: 540, y: 195}, {type: 'dummy', x: 540, y: 545}, {type: 'dummy', x: 870, y: 195}, {type: 'dummy', x: 870, y: 545},
         {type: 'cone', x: 60, y: 40}, {type: 'cone', x: 60, y: 700}, {type: 'cone', x: 1065, y: 40}, {type: 'cone', x: 1065, y: 700},
       ],
@@ -69,7 +69,7 @@ export default {
         {id: 204, team: 'red', num: '', x: 700, y: 310}, {id: 205, team: 'red', num: '', x: 700, y: 430},
       ],
       equipment: [
-        {type: 'goalV', x: 30, y: 370, rot: 180}, {type: 'goalV', x: 1080, y: 370, rot: 0},
+        {type: 'goalV', x: 30, y: 370, rot: 180, scale: 1.6}, {type: 'goalV', x: 1080, y: 370, rot: 0, scale: 1.6},
         {type: 'cone', x: 30, y: 78}, {type: 'cone', x: 1080, y: 78}, {type: 'cone', x: 1080, y: 662}, {type: 'cone', x: 30, y: 662},
         {type: 'cone', x: 555, y: 78}, {type: 'cone', x: 555, y: 662},
       ],

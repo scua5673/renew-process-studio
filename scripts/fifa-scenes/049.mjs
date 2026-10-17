@@ -58,7 +58,7 @@ export default {
         {id: 206, team: 'red', num: '', x: 700, y: 580}, {id: 207, team: 'red', num: '', x: 430, y: 280},
       ],
       equipment: [
-        {type: 'goalV', x: 90, y: 370, rot: 180}, {type: 'goalV', x: 1020, y: 370, rot: 0},
+        {type: 'goalV', x: 90, y: 370, rot: 180, scale: 1.6}, {type: 'goalV', x: 1020, y: 370, rot: 0, scale: 1.6},
         {type: 'cone', x: 90, y: 45}, {type: 'cone', x: 1020, y: 45}, {type: 'cone', x: 1020, y: 695}, {type: 'cone', x: 90, y: 695},
       ],
       lines: [{rect: [90, 45, 1020, 695]}, {line: [555, 45, 555, 695], dash: true}],

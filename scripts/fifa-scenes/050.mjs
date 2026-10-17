@@ -16,7 +16,7 @@ export default {
         {id: 303, team: 'yellow', num: '4', x: 680, y: 370},
       ],
       equipment: [
-        {type: 'goalV', x: 40, y: 370, rot: 180},
+        {type: 'goalV', x: 40, y: 370, rot: 180, scale: 1.8},
         {type: 'dummy', x: 560, y: 170, color: '#e5484d'}, {type: 'dummy', x: 520, y: 370, color: '#ffffff'}, {type: 'dummy', x: 560, y: 570, color: '#3a6df0'},
         {type: 'dummy', x: 860, y: 120, color: '#3a6df0'}, {type: 'dummy', x: 900, y: 370, color: '#e5484d'}, {type: 'dummy', x: 860, y: 620, color: '#ffd23f'},
         {type: 'ball', x: 95, y: 130}, {type: 'ball', x: 95, y: 612}, {type: 'ball', x: 700, y: 392},
