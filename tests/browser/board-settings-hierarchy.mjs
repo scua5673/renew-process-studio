@@ -58,12 +58,12 @@ try{
   await page.screenshot({path:path.join(SHOTS,'board-settings-hierarchy-form-'+engine+'.png')});
   // ④ 내 화면 — 이 기기에만 · 3D 묶음은 3D 일 때만 · 접힌 단축키
   await sel('view');s=await st();assert.equal(s.scope,'이 기기에만');
-  sc=await secs();assert.deepEqual(sc,['보기','편집','새 보드','단축키'],'평면: 3D 경기장 묶음 없음 '+JSON.stringify(sc));
-  lb=await labels();assert.deepEqual(lb,['보드 보기','끌기 자석','기본값'],'내 화면 줄 '+JSON.stringify(lb));
+  sc=await secs();assert.deepEqual(sc,['보기','편집','도크','새 보드','단축키'],'평면: 3D 경기장 묶음 없음 '+JSON.stringify(sc));
+  lb=await labels();assert.deepEqual(lb,['보드 보기','끌기 자석','스타일','기본값'],'내 화면 줄 '+JSON.stringify(lb));
   assert.equal(await f.evaluate(()=>document.querySelector('#cmd-board-settings-pop details.bs-keys').open),false,'단축키는 접혀 있다');
   assert.equal(await vis('#cmd-board-settings-pop .cmd-board-settings-danger'),false,'지우기·초기화는 배치에만');
   await f.evaluate(()=>window.__setTilt(true));await page.waitForTimeout(600);
-  sc=await secs();assert.deepEqual(sc,['보기','3D 경기장','편집','새 보드','단축키'],'3D: 3D 경기장 묶음 '+JSON.stringify(sc));
+  sc=await secs();assert.deepEqual(sc,['보기','3D 경기장','편집','도크','새 보드','단축키'],'3D: 3D 경기장 묶음 '+JSON.stringify(sc));
   lb=await labels();assert.ok(lb.includes('카메라')&&lb.includes('꾸밈')&&lb.includes('분위기'),'3D 줄 '+JSON.stringify(lb));
   await page.screenshot({path:path.join(SHOTS,'board-settings-hierarchy-view-3d-'+engine+'.png')});
   await f.evaluate(()=>window.__setPitchSpec('grid30'));await page.waitForTimeout(500);

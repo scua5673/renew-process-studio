@@ -249,6 +249,7 @@
     ['ps_tilt3d_boot','device','ls','session','board.html'],
     ['ps_tilt3d_opts_v1','device','ls','pref','board.html'],
     ['ps_dock_float_v1','device','ls','pref','board-dock-float.js'],   // 3.073 떠 있는 하단 도크 — 열린 칸 · 묶은 도구의 마지막 종류
+    ['ps_dock_skin_v1','device','ls','pref','board-dock-skin.js'],   // 3.077 하단 도크 스타일 — 자동 · 글래스 · 베벨 · 기본
     ['ps_tilt3d_tab','device','ls','pref','board.html'],
     ['ps_tilt3d_touch_reset_v1','device','ls','pref','app.html'],
     ['ps_tm_view','device','ls','pref','scout.html'],
