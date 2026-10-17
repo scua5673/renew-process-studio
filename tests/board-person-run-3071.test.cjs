@@ -37,7 +37,11 @@ test('broadcast view: players stand upright on the tilted, turned pitch',()=>{
 test('board wiring: motion once per frame, cleared after; 3D «사람» only; camera button',()=>{
   assert.match(board,/try\{ window\.__psMotion=_personMotion\(a,b,u,curves\); \}catch\(_\)\{ window\.__psMotion=null; \}/);
   assert.match(board,/renderTokens\(\);window\.__psMotion=null;/,'cleared right after the frame so later redraws stand still');
-  assert.match(board,/function _personMotion\(a,b,u,curves\)\{ if\(tokShape!=="person"\|\|!document\.body\.classList\.contains\("bc-tilt3d"\)/);
+  // 3.083 — 연결 함수는 board.html 크기 예산 때문에 board-broadcast.js 로(같은 이름의 window 함수)
+  const bsrc=fs.readFileSync(path.join(__dirname,'../studio/board-broadcast.js'),'utf8');
+  assert.match(bsrc,/win\._personMotion = function \(a, b, u, curves\) \{ if \(tokShape !== 'person' \|\| !document\.body\.classList\.contains\('bc-tilt3d'\)\)/,'3D «사람» only');
+  assert.doesNotMatch(board,/function _personMotion\(/,'not defined twice');
+  assert.match(board,/PSBroadcast\.tv\(\{goalK:function\(\)\{return GOAL_K;\},sync:function\(\)\{tiltGoalsSync\(\);\}\}\)/,'broadcast camera bridge');
   assert.match(board,/nameUnit:nu,pose:_personPose\(p\),stand:_personStand\(\),zoom:/);
   assert.match(board,/<button type="button" data-cam="tv"[^>]*>중계<\/button>/);
   assert.match(board,/<script src="board-broadcast\.js"><\/script>/);

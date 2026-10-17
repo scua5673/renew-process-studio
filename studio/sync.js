@@ -2645,6 +2645,17 @@ function libDietItem(it){
   return n;
 }
 /* ── 3.005 · 썸네일 정리 순수 구간 끝 ── */
+/* ══ 3.071 · 폰 · 아이패드는 보관함 본문을 조금씩 받는다 ══
+   10/17 아이폰 · 아이패드(운영자 계정 하나 · 팀 보관함 149개 33MB · 한 개 최대 2MB): 앱을 열면 load 뒤 5초 안에 강제 종료 →
+   사파리가 한 번 다시 열고 또 종료 → «문제가 반복적으로 발생». 보관함 받기(pullAll)는 본문을 20개씩 받아 회차 끝에 한 번에 저장한다 —
+   중간에 메모리가 넘쳐 죽으면 아무것도 남지 않아 다음 부팅도 처음부터 같은 양을 다시 받는다.
+   터치 기기는 2개씩 받고, 한 회차에 받은 글자가 budget 을 넘으면 남은 것은 다음 회차로 미룬다(deferred). 미룬 자료는 기준(m.li)이
+   그대로라 다음 회차가 다시 고르고, 이번 회차는 받은 만큼 평소대로 끝까지 저장한다 — 진행이 쌓인다. 데스크톱은 그대로(20개 · 한도 없음). */
+/* ── 3.071 · 보관함 받기 묶음 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
+function libPullCapFor(dev){ return (dev==='phone'||dev==='ipad')?{chunk:2,budget:6e6}:{chunk:20,budget:0}; }
+/* ── 3.071 · 보관함 받기 묶음 순수 구간 끝 ── */
+function libPullCap(){ var d='desktop'; try{ d=document.documentElement.getAttribute('data-ps-device')||'desktop'; }catch(_){} return libPullCapFor(d); }
+function libCrumb(c){ try{ if(window.__psBootCrumb)window.__psBootCrumb(c); }catch(_){} }   /* 3.071 — 강제 종료 위치 기록(셸 3.070 발자국) */
 /* ── 비공개 백업(1.523) ───────────────────────────────────────────────
    팀 공간에서 저장한 자료는 '팀에 공유' 전까지 서버에 올라가지 않았다 → 기기를 잃으면 사라졌다.
    이제 ps_library에 private/owner_id를 두고, 팀 공간에서도 내 자료를 **비공개 행**으로 올린다.
@@ -5831,7 +5842,7 @@ function syncLibrary(at,m,now,wid,ownerGuard){
     return libLoad().then(function(snap){requireCurrent('library_load_done');return _syncLibrary(at,m,now,wid,snap.list,ownerGuard,snap.raw,snap.rev); }).then(function(res){
       requireCurrent('library_done');
       var rev2=rev; try{ rev2=String(localStorage.getItem('cs_lib_rev')||''); }catch(_){}
-      if(sig&&res&&!res.pushed&&!res.applied) m.ls={sig:sig,rev:rev2,tomb:tombN}; else m.ls=null;
+      if(sig&&res&&!res.pushed&&!res.applied&&!res.deferred) m.ls={sig:sig,rev:rev2,tomb:tombN}; else m.ls=null;   /* 3.071 — 미룬 것이 있으면 다음 회차도 건너뛰지 않는다 */
       m.ld=LIB_DIET;   /* 3.005 — 이 회차가 이 기기의 목록을 끝까지 보았다(받은 자료는 받을 때마다 정리한다) */
       return res;
     });
@@ -6049,13 +6060,18 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
         });},updateRun);
       });
     }
+    var deferred=0;   /* 3.071 — 이번 회차에 받지 않고 미룬 자료 수 */
     function pullAll(){
       if(!pullIds.length)return Promise.resolve();
-      var chunks=[]; for(var i=0;i<pullIds.length;i+=20)chunks.push(pullIds.slice(i,i+20));
+      var cap=libPullCap(),got=0,bytes=0;
+      var chunks=[]; for(var i=0;i<pullIds.length;i+=cap.chunk)chunks.push(pullIds.slice(i,i+cap.chunk));
       return chunks.reduce(function(p,ch){ return p.then(function(){
+        if(cap.budget&&bytes>=cap.budget){ deferred+=ch.length; return; }   /* 3.071 — 남은 것은 다음 회차에 */
+        libCrumb('lb'+got); got+=ch.length;
         var q='lib_id=in.('+encodeURIComponent('"'+ch.join('","')+'"')+')';
         return syncFetch('library_body',BASE+'/rest/v1/ps_library?workspace_id=eq.'+wid+'&select='+libSelCols('lib_id,item,saved_at')+'&'+q,{headers:hj(at)})
-          .then(function(r){ if(!r.ok)throw syncHttpError('library_body',r.status); return r.json(); })
+          .then(function(r){ if(!r.ok)throw syncHttpError('library_body',r.status); return r.text(); })
+          .then(function(t){ bytes+=t.length; return JSON.parse(t); })
           .then(function(rows2){   /* 2.727 — psblob: 참조를 사진으로 되돌린 뒤 적용 */
             return Promise.all((rows2||[]).map(function(r0){ if(!r0||!r0.item)return; var raw; try{ raw=JSON.stringify(r0.item); }catch(_){ return; } if(raw.indexOf('"psblob:')<0)return; return libBlobHydrate(at,wid,raw).then(function(v){ try{ r0.item=JSON.parse(v); }catch(_){} }); })).then(function(){ return rows2; });
           })
@@ -6107,7 +6123,7 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
           if(localStorage.getItem(TOMBKEY)!==tombNextRaw)
             throw syncIssue('sync_storage','library_tomb_verify','보관함 삭제 표식을 저장하지 못했습니다');
         }
-        requireCurrent('library_commit_done');return {applied:applied,pushed:pushedOk,ackHash:hash(libAckRev)};
+        requireCurrent('library_commit_done');libCrumb('lbok');return {applied:applied,pushed:pushedOk,ackHash:hash(libAckRev),deferred:deferred};
       });
     });
   });
@@ -10843,9 +10859,82 @@ function boardLiveSave(raw,options){
   });
 }
 
+/* 3.080 — 학습 기록(진도 · 카드 · 답)을 계정에 둔다(사용자 «기록도 계정에 저장되게»).
+   작업 보드와 같은 길: 내 개인 공간(personalWid) 의 전용 키 하나를 직접 읽고 쓴다 — 지금 열린 공간이 팀이어도 기록은 사람을 따라간다.
+   저장은 판본 확인(CAS): 읽은 판(raw · cupd)과 서버가 같을 때만 쓴다. 다르면 sync_conflict — learning.html 이 다시 읽어 합친 뒤 한 번 더 쓴다.
+   ⚠ 서버 정책: 개인 공간은 주인 한 사람만 회원이라 ps_can_read_key/ps_can_write_key 가 이 키를 그대로 허락한다(새 마이그레이션 없음). */
+/* 3.080 — 개인 문서 통로(학습 기록 · 개인 게임모델). 작업 보드와 같은 길: 내 개인 공간(personalWid)의 전용 키 하나를 직접 읽고 쓴다 —
+   지금 열린 공간이 팀이어도 기록은 사람을 따라간다. 저장은 판본 확인(CAS): 읽은 판(raw · cupd)과 서버가 같을 때만 쓴다.
+   다르면 sync_conflict — 화면이 다시 읽어 합치거나(학습) 더 새 쪽을 고른 뒤(게임모델) 한 번 더 쓴다.
+   ⚠ 서버 정책: 개인 공간은 주인 한 사람만 회원이라 ps_can_read_key/ps_can_write_key 가 이 키들을 그대로 허락한다(새 마이그레이션 없음). */
+function pdRequire(ctx,cfg){
+  if(!boardLiveCurrent(ctx))throw syncIssue('sync_workspace_changed',cfg.label+'_owner',cfg.name+'의 계정 확인이 바뀌었습니다');
+}
+function pdRaw(raw,cfg){
+  if(typeof raw!=='string'||!raw||raw.length>cfg.max)throw syncIssue('sync_storage',cfg.label+'_shape',cfg.name+' 원문을 확인할 수 없습니다');
+  var doc;try{doc=JSON.parse(raw);}catch(_){throw syncIssue('sync_storage',cfg.label+'_shape',cfg.name+' 원문을 읽을 수 없습니다');}
+  if(!doc||typeof doc!=='object'||Array.isArray(doc)||doc.v!==1||!cfg.ok(doc))throw syncIssue('sync_storage',cfg.label+'_shape',cfg.name+' 형식이 다릅니다');
+  return raw;
+}
+function pdRead(at,ctx,cfg){
+  pdRequire(ctx,cfg);
+  return syncFetch(cfg.label+'_get',BASE+'/rest/v1/ps_kv?workspace_id=eq.'+encodeURIComponent(ctx.wid)+'&k=eq.'+cfg.key+'&select=workspace_id,k,v,cupd&limit=2',{headers:hj(at)}).then(function(r){
+    pdRequire(ctx,cfg);if(!r.ok)throw syncHttpError(cfg.label+'_get',r.status);return r.json();
+  }).then(function(rows){
+    pdRequire(ctx,cfg);
+    if(!Array.isArray(rows)||rows.length>1)throw syncIssue('sync_confirm_missing',cfg.label+'_get',cfg.name+'의 저장 응답을 확인할 수 없습니다');
+    if(!rows.length)return {ok:true,uid:ctx.uid,wid:ctx.wid,raw:null,cupd:null};
+    var r=rows[0];
+    if(!r||r.workspace_id!==ctx.wid||r.k!==cfg.key)throw syncIssue('sync_confirm_missing',cfg.label+'_get','다른 공간의 '+cfg.name+'은(는) 불러오지 않습니다');
+    return {ok:true,uid:ctx.uid,wid:ctx.wid,raw:pdRaw(r.v,cfg),cupd:boardLiveVersion(r.cupd)};
+  });
+}
+function pdGet(cfg){
+  var ctx=boardLiveContext();
+  if(!ctx)return Promise.reject(syncIssue('sync_workspace_changed',cfg.label+'_owner',cfg.name+'을(를) 불러올 계정을 확인할 수 없습니다'));
+  return ensureToken().then(function(at){pdRequire(ctx,cfg);if(!at)throw syncIssue('sync_auth',cfg.label+'_auth',cfg.name+' 로그인을 확인할 수 없습니다');return pdRead(at,ctx,cfg);});
+}
+function pdSave(cfg,raw,options){
+  var ctx=boardLiveContext(),expected;
+  try{
+    pdRequire(ctx,cfg);pdRaw(raw,cfg);
+    if(!options||options.uid!==ctx.uid||options.wid!==ctx.wid||!Object.prototype.hasOwnProperty.call(options,'expected_raw')||!Object.prototype.hasOwnProperty.call(options,'expected_cupd'))throw syncIssue('sync_confirm_missing',cfg.label+'_base',cfg.name+'의 저장 기준을 확인할 수 없습니다');
+    expected={raw:options.expected_raw,cupd:options.expected_cupd};
+    if(expected.raw===null){if(expected.cupd!==null)throw syncIssue('sync_confirm_missing',cfg.label+'_base',cfg.name+'의 빈 저장 기준이 다릅니다');}
+    else{pdRaw(expected.raw,cfg);expected.cupd=boardLiveVersion(expected.cupd);}
+  }catch(e){return Promise.reject(e);}
+  return ensureToken().then(function(at){
+    pdRequire(ctx,cfg);if(!at)throw syncIssue('sync_auth',cfg.label+'_auth',cfg.name+' 로그인을 확인할 수 없습니다');
+    return pdRead(at,ctx,cfg).then(function(current){
+      pdRequire(ctx,cfg);
+      if(current.raw===raw)return current;
+      if(current.raw!==expected.raw||current.cupd!==expected.cupd)throw syncIssue('sync_conflict',cfg.label+'_base','다른 기기에서 '+cfg.name+'이(가) 바뀌었습니다');
+      var row={workspace_id:ctx.wid,k:cfg.key,v:raw,cupd:Math.max(Date.now(),(expected.cupd||0)+1)},ack=null;
+      if(expected.raw===null)row._casMissing=true;else row._casCupd=expected.cupd;
+      return kvPushRows(at,[row],function(rows){if(rows.length===1&&rows[0].v===raw)ack={ok:true,uid:ctx.uid,wid:ctx.wid,raw:raw,cupd:boardLiveVersion(rows[0].cupd)};},cfg.label+'_push',function(){return boardLiveCurrent(ctx);}).then(function(){
+        pdRequire(ctx,cfg);if(!ack)throw syncIssue('sync_confirm_missing',cfg.label+'_push',cfg.name+' 저장 확인이 끝나지 않았습니다');
+        return ack;
+      });
+    });
+  });
+}
+/* 학습 기록 — learning.html(진도 · 카드 · 답) */
+var LEARN_KEY='cs_learn_sync_v1', LEARN_MAXLEN=1500000;
+var LEARN_CFG={key:LEARN_KEY,max:LEARN_MAXLEN,label:'learn',name:'학습 기록',ok:function(d){ return !!d.s&&typeof d.s==='object'&&!Array.isArray(d.s); }};
+function learnGet(){ return pdGet(LEARN_CFG); }
+function learnSave(raw,options){ return pdSave(LEARN_CFG,raw,options); }
+/* 개인 게임모델 — gamemodel.html(보관함 › 게임모델 · 개인 판). 이 기기 사본은 cs_gamemodel_personal_v1 그대로, 서버엔 같은 이름의 키 하나.
+   문서 = {v:1, at:마지막 편집 시각, m:게임모델}. 두 기기가 엇갈리면 at 이 더 새 쪽(빈 판은 늘 진다) — gamemodel.html gmPdPull */
+var GMP_KEY='cs_gamemodel_personal_v1';
+var GMP_CFG={key:GMP_KEY,max:(typeof PERSONAL_MAXLEN==='number'?PERSONAL_MAXLEN:12000000),label:'gm_personal',name:'개인 게임모델',ok:function(d){ return typeof d.at==='number'&&!!d.m&&typeof d.m==='object'&&Array.isArray(d.m.moments); }};
+function gmPersonalGet(){ return pdGet(GMP_CFG); }
+function gmPersonalSave(raw,options){ return pdSave(GMP_CFG,raw,options); }
+
 window.PSSync={signIn:signIn,signOut:signOut,syncNow:syncNow,session:getSess,dataUnlocked:dataUnlocked,keys:KEYS,state:syncState,   /* 2.625 상태 한 줄 */
   reportSharedView:reportSharedView,
   boardLive:{version:2,scope:'personal',owner:boardLiveContext,get:boardLiveGet,save:boardLiveSave},
+  learn:{version:1,key:LEARN_KEY,owner:boardLiveContext,get:learnGet,save:learnSave},   /* 3.080 — 학습 기록(learning.html) */
+  gmPersonal:{version:1,key:GMP_KEY,owner:boardLiveContext,get:gmPersonalGet,save:gmPersonalSave},   /* 3.080 — 개인 게임모델(gamemodel.html scope=personal) */
   /* 3.038 — 선수 본인의 «코치 확인» 몸 상태만(서버 ps_idp_daily_mine). 선수에게 cs_idp_daily_v1 전체는 내려가지 않는다(PLAYER_BLIND · 20261015 마이그레이션) */
   idpDailyMine:function(){ var w=activeWs(); if(!w)return Promise.resolve(null); return rpc('ps_idp_daily_mine',{wid:w}).then(function(o){ return o&&o.v===1&&o.days&&typeof o.days==='object'?o:null; }); },
   keyReady:function(k,wid){return keyReady(k,wid||activeWs());},   /* 2.733 — 화면별 서버 확인 완료 */

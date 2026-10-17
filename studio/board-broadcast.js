@@ -172,5 +172,49 @@
   if (typeof window !== 'undefined' && window.document) window.__flatK = function (p) {
     var b = window.document.body; return flatK(p, !!b && !b.classList.contains('bc-tilt3d'), typeof window.equipKey === 'function' ? window.equipKey : null);
   };
-  return { FLAT_K: FLAT_K, flatK: flatK, TV: TV, KICK: KICK, DIVE: DIVE, ACTS: ACTS, isGK: isGK, kick: kick, ballU: ballU, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
+  // ── 작전판 연결(3.083 — board.html 크기 예산 때문에 여기로 옮김). 작전판의 전역(state · tokShape · svg · tokenLayer · CX · CY · squad · animPlaying …)은
+  //    같은 문서의 다른 스크립트라 부를 때 이름으로 읽는다. board.html 은 같은 이름으로 부른다(window 속성).
+  /* global state, tokShape, svg, tokenLayer, CX, CY, squad, animPlaying, mppNow, renderTokens, _curvePt, _lookFreeze, _realScaleOn, positionSelCtl, boardSaveLive, toast */
+  function tv(bridge) {
+    var win = window, cam = camera({
+      svg: function () { return svg; }, stage: function () { return document.getElementById('boardStage'); }, layer: function () { return tokenLayer; }, mpp: function () { return mppNow(); },
+      goalK: bridge.goalK, playing: function () { return typeof animPlaying !== 'undefined' && !!animPlaying; },
+      target: function () {
+        var b = state.ball; if (b && isFinite(b.x) && isFinite(b.y)) return { x: +b.x, y: +b.y };
+        var ps = (state.players || []).filter(function (p) { return p && isFinite(p.x) && isFinite(p.y); }); if (!ps.length) return { x: CX, y: CY };
+        var x = 0, y = 0; ps.forEach(function (p) { x += +p.x; y += +p.y; }); return { x: x / ps.length, y: y / ps.length };
+      },
+      resized: function (redraw) { try { var gh = document.getElementById('tiltGoals'); if (gh) { gh.__pre = null; gh.__projectionSignature = null; } bridge.sync(); } catch (_) {} if (redraw) { try { renderTokens(); } catch (_) {} } }
+    });
+    function on() { try { return document.body.classList.contains('bc-tilt3d') && win.__tilt3d && win.__tilt3d.cam === 'tv'; } catch (_) { return false; } }
+    function off() { try { cam.off(); } catch (_) {} }
+    win.__tvOn = on; win.__tvZoom = function () { return on() ? cam.zoom() : 1; };
+    win.__tvCam = function (snap) { try { if (!on()) { off(); return; } cam.update(snap); } catch (_) {} };
+    return { on: on, off: off };
+  }
+  function glue(win) {
+    win._bcView = function () { return { orientation: state.orientation, spFlip: !!state.spFlip, tv: !!(win.__tvOn && win.__tvOn()) }; };
+    win._tokFarKey = function () { try { if (tokShape !== 'person' || !document.body.classList.contains('bc-tilt3d')) return null; var v = win._bcView(); return function (o) { return screenVec(+o.x || 0, +o.y || 0, v).y; }; } catch (_) { return null; } };
+    // 3.071 · 3.072 — 3D «사람»: 뛰는 자세 · 중계 시점에 바로 서기. 재생 · GIF · MP4 가 모두 renderInterp 를 지난다
+    win._personMotion = function (a, b, u, curves) { if (tokShape !== 'person' || !document.body.classList.contains('bc-tilt3d')) return null; return motion(a, b, u, curves, { curvePt: _curvePt, mpp: mppNow() || 10, foot: win._footOf }); };
+    win._footOf = function (p) { try { if (p.foot) return p.foot; var q = p.sqId && (squad.players || []).find(function (x) { return x.id === p.sqId; }); return (q && q.foot) || ''; } catch (_) { return ''; } };   // 3.074 주발
+    win._kU = function (a, b, u, c) { try { return (tokShape === 'person' && document.body.classList.contains('bc-tilt3d')) ? ballU(a, b, u, mppNow(), c) : u; } catch (_) { return u; } };   // 3.074 차는 순간 공이 출발
+    win._personStand = function () { try { return stand(!!(win.__tvOn && win.__tvOn())); } catch (_) { return null; } };
+    win._personPose = function (p) { try { return pose(win.__psMotion && win.__psMotion[p.id], win._bcView()); } catch (_) { return null; } };
+    // 3.070 보드 설정 › 비율: 보기 좋게 | 실제 비율(보드마다)
+    var n = 0; (function tryIt() {
+      var sg = document.getElementById('realScaleSeg');
+      if (!sg || typeof win._lookFreeze !== 'function' || typeof win._realScaleOn !== 'function') { if (++n < 120) win.setTimeout(tryIt, 250); return; }
+      var sync = function () { [].forEach.call(sg.querySelectorAll('button'), function (x) { var o = (x.dataset.rs === '1') === _realScaleOn(); x.classList.toggle('on', o); x.setAttribute('aria-pressed', o ? 'true' : 'false'); }); try { document.body.classList.toggle('ps-real-scale', _realScaleOn()); } catch (_) {} };
+      win.__syncRealScaleSeg = sync;
+      sg.addEventListener('click', function (e) {
+        var bt = e.target.closest('button[data-rs]'); if (!bt) return; var o = bt.dataset.rs === '1'; if (o === _realScaleOn()) return;
+        _lookFreeze(); win.__realScale = o; sync(); renderTokens(); try { positionSelCtl(); } catch (_) {} try { boardSaveLive(); } catch (_) {}
+        try { toast(o ? '실제 비율 — 선수 몸 폭 0.5m · 공 22cm 로 운동장과 같은 비율이에요' : '보기 좋게 — 토큰을 잘 보이게 키웠어요'); } catch (_) {}
+      });
+      sync();
+    })();
+  }
+  if (typeof window !== 'undefined' && window.document) glue(window);
+  return { tv: tv, FLAT_K: FLAT_K, flatK: flatK, TV: TV, KICK: KICK, DIVE: DIVE, ACTS: ACTS, isGK: isGK, kick: kick, ballU: ballU, motion: motion, screenVec: screenVec, pose: pose, stand: stand, camera: camera };
 });

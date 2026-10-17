@@ -3517,7 +3517,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
           <div class="menurow"><span class="menulbl">그리드</span><div class="seg" id="gridSeg"><button data-g="off">끄기</button><button data-g="lanes">5레인</button><button data-g="grid">격자</button><button data-g="zone20">20존</button><button data-g="thirds">삼등분</button><button data-g="fthird">파이널 써드</button><button data-g="grid15" class="on">15존</button></div></div>
 <!-- 압박선·세트피스 행 제거 -->
 	          <div class="menurow"><span class="menulbl">크기</span><div class="group" id="sizeGroup"><button class="btn" id="allDown">－</button><button class="btn" id="allUp">＋</button><button class="btn" id="allReset" title="토큰 크기 기본값으로">기본</button></div></div>
-	          <div class="menurow"><span class="menulbl">비율</span><div class="seg" id="realScaleSeg" role="group" aria-label="운동장과 토큰 비율"><button type="button" data-rs="0" class="on" aria-pressed="true" title="잘 보이게 키운 토큰">보기 좋게</button><button type="button" data-rs="1" aria-pressed="false" title="선수·공을 운동장과 똑같은 실제 비율로(선수 몸 폭 0.5m · 키 1.8m · 공 지름 22cm)">실제 비율</button></div></div><!-- 3.070 -->
+	          <div class="menurow"><span class="menulbl">비율</span><div class="seg" id="realScaleSeg" role="group" aria-label="운동장과 토큰 비율"><button type="button" data-rs="0" class="on" aria-pressed="true" title="잘 보이게 키운 토큰">보기 좋게</button><button type="button" data-rs="1" aria-pressed="false" title="선수·공을 운동장과 똑같은 실제 비율로(선수 몸 폭 0.5m · 키 1.8m · 공 지름 22cm)">실제 비율</button></div></div>
 	          <!-- 2.459 — '배치 고정' 행 삭제(사용자). state.boardLocked 저장값은 그대로 읽힌다(6188) — 켜 둔 채 지워진 사람이 잠기지 않게 아래 init 에서 풀어 준다 -->
         </div>
       </div>
@@ -4230,9 +4230,9 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
 <script src="board-token-depth.js"></script>
-<script src="board-broadcast.js"></script>   <!-- 3.072 뛰는 자세 · 중계 시점 -->
-<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script>   <!-- 3.073 떠 있는 하단 도크 -->
-<script src="board-actions.js"></script>   <!-- 3.075 토큰마다 동작 -->
+<script src="board-broadcast.js"></script>
+<script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script>
+<script src="board-actions.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -5020,7 +5020,6 @@ function _rotHandleOnTop(){ try{ var h=world&&world.querySelector("#rotHandle");
    보기 전용 뷰어는 편집기 축소(×0.68)를 쓰지 않고, 폰 폭(≤600)에서는 한 번 더 키운다. 저장된 크기(tokenScale)는 바꾸지 않는다 — 그리는 배율만. */
 var COMM_PHONE_TOK=1.6;
 function commViewTok(){ try{ if(!document.body.classList.contains("comm-viewing")||window.__psThumbNoEd)return 0; return (window.innerWidth<=600||psBoardDevice()==="phone")?COMM_PHONE_TOK:1; }catch(_){ return 0; } }
-/* 3.070 실제 비율: 선수 몸 폭 0.5m(r21 → 84단위/m) · 공 22cm. 크기 단계 · 기기 배율 무시, 장비는 그대로, 이름표는 평소 크기 */
 var REAL_TOK_M=84, REAL_BALL_R=28*113/240;
 function _realScaleOn(){ return window.__realScale===true; }
 function _realTokS(p){ if(!_realScaleOn()||!p||!document.body.classList.contains("bc-tilt3d"))return 0; var m=mppNow();
@@ -5030,7 +5029,7 @@ function _realTokS(p){ if(!_realScaleOn()||!p||!document.body.classList.contains
 function _normTokS(p){const _cv=commViewTok();const _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);const _eq=(p.team==="ball")?ballBaseScale():(equipKey(p.team)?1.8:(p.team==="img"?0.82:1));const _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_eq*_mc*specTokFactor()*phoneTokFactor(p)*(window.__flatK?__flatK(p):1);}
 /* 이름표·링을 평소 크기로 두는 배수(실제 비율일 때만 1 보다 크다) */
 function _realBoost(p){ var r=_realTokS(p); if(!r)return 1; var n=_normTokS(p); return n>r?n/r:1; }
-function tokenTransform(p){const s=_realTokS(p)||_normTokS(p);   /* 3.070 — 실제 비율 · 평소 배율은 _normTokS 한 곳 */
+function tokenTransform(p){const s=_realTokS(p)||_normTokS(p);
   /* 세로 피치의 부모 world 회전과 반대 방향으로 토큰을 보정해 숫자·유니폼을 항상 정방향 유지.
      spFlip=true(골대 위)는 부모가 +90°이므로 -90°, 골대 아래는 부모가 -90°이므로 +90°. */
   const _upright=(state.orientation==="v")?(state.spFlip?-90:90):0;
@@ -5049,7 +5048,7 @@ const SHIRT_ACC="M -7.5 -19.6 Q 0 -12.6 7.5 -19.6 M -22.2 -13.6 L -18.9 -5.2 M 2
    ③ 애니메이션 장면·편집기 장면은 한 보드다 — 장면을 바꾸기 전·저장 직전에 지금 설정을 모든 장면에 맞춘다(lookStampScenes).
    ⚠ 기기 설정으로 남는 것: 끌기 자석·보드 보기(평면/3D)·정렬 간격 — 보드가 아니라 «내가 일하는 방식»이다.
    ⚠ 함수 선언만 둔다(호이스팅) — 4327·4740 의 부팅 초기값이 이 블록보다 먼저 실행된다. */
-function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle","realScale"];}   /* 3.070 realScale — 운동장과 토큰을 실제 비율로 */   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
+function lookKeys(){return ["tokShape","label","lines","gridType","tokenScale","chip3d","grassM","trainGridM","ballStyle","grassTone","namePos","nameSize","nameStyle","realScale"];}   /* 2.978 grassTone — 실사 잔디 «밝기|연하기» · 3.010 이름표 크기·모양 */
 function _lookLegacy(){
   if(_lookLegacy._v)return _lookLegacy._v;
   var v=null; try{ v=JSON.parse(localStorage.getItem("cs_board_lookdef_v1")||"null"); }catch(_){ v=null; }
@@ -5101,7 +5100,7 @@ function lookNow(){ var o={};
   o.grassTone=window.__grassTone;   /* 2.978 */
   o.namePos=window.__namePos;   /* 3.009 — 이름표 위치 */
   o.nameSize=window.__nameSize; o.nameStyle=window.__nameStyle;   /* 3.010 — 이름표 크기·모양 */
-  o.realScale=(window.__realScale===true);   /* 3.070 */
+  o.realScale=(window.__realScale===true);
   var r={}; lookKeys().forEach(function(k){ r[k]=_lookOk(k,o[k])?o[k]:lookDefault(k); }); r.tokV=2; return r; }   /* 2.977 — 이 판부터의 크기(저장·장면 맞추기에 같이 실린다) */
 /* 스냅의 설정 — 없는 칸은 기본값(지금 화면 아님) */
 function lookOf(sn){ var r={}; lookKeys().forEach(function(k){ var v=sn?sn[k]:undefined; if(k==="tokenScale"&&_lookOk(k,v))v=_tokMig(v,sn); r[k]=_lookOk(k,v)?v:lookDefault(k); }); return r; }
@@ -5116,7 +5115,7 @@ function lookApply(o){ var ch={};
   if((window.__grassTone||"0|0")!==o.grassTone){ window.__grassTone=o.grassTone; ch.tone=true; }
   window.__namePos=o.namePos;   /* 3.009 */
   window.__nameSize=o.nameSize; window.__nameStyle=o.nameStyle;   /* 3.010 */
-  window.__realScale=(o.realScale===true);   /* 3.070 */
+  window.__realScale=(o.realScale===true);
   return ch; }
 function lookRebuild(ch){ ch=ch||{};
   try{ if(ch.train&&document.documentElement.dataset.pitch==="train"){ buildPitch(); renderTokens(); renderDrawings(); updateDelUI(); }
@@ -5127,7 +5126,7 @@ function lookSyncUI(){
   try{ window.__syncChip3dSeg&&window.__syncChip3dSeg(); }catch(_){}
   try{ window.__syncNamePosSeg&&window.__syncNamePosSeg(); }catch(_){}   /* 3.009 */
   try{ window.__syncNameLookSeg&&window.__syncNameLookSeg(); }catch(_){}   /* 3.010 */
-  try{ window.__syncRealScaleSeg&&window.__syncRealScaleSeg(); }catch(_){}   /* 3.070 */
+  try{ window.__syncRealScaleSeg&&window.__syncRealScaleSeg(); }catch(_){}
   try{ window.__syncStageUI&&window.__syncStageUI(); }catch(_){}
   try{ window.__syncTrainGridSeg&&window.__syncTrainGridSeg(); }catch(_){}
   try{ window.__syncGrassToneUI&&window.__syncGrassToneUI(); }catch(_){}
@@ -5148,7 +5147,7 @@ window.__lookStampScenes=function(){ lookStampScenes(); };   /* 3.017 — 페이
 let tokShape=(function(){try{return lookDefault("tokShape");}catch(_){return "circle";}})();   /* 2.459 기본=원형 · 2.929 — 보드마다(이 값은 부팅 직후의 기본값일 뿐) */
 try{window.__trainGridM=lookDefault("trainGridM");}catch(_){window.__trainGridM="def";}
 try{window.__grassTone=lookDefault("grassTone");}catch(_){window.__grassTone="0|0";}   /* 2.978 */
-try{window.__realScale=(lookDefault("realScale")===true);}catch(_){window.__realScale=false;}   /* 3.070 */
+try{window.__realScale=(lookDefault("realScale")===true);}catch(_){window.__realScale=false;}
 function setTokShape(v){if(v!=="shirt"&&v!=="circle"&&v!=="shaper"&&v!=="person")return;_lookFreeze();tokShape=v;try{boardSaveLive();}catch(_){}}   /* 2.929 — 기기에 안 쓴다(이 보드에만) */
 const EQUIP_TYPES=["cone","marker","goalH","minigoal","ball","dummy","pole","ladder","hurdle","minihurdle"];   /* 2.672 — 허들(사용자). 아이콘·이름은 이미 있었고 줄에만 없었다 */
 const EQUIP_COL_DEF={cone:"#ff6a00",marker:"#e23b3b",pole:"#d4a017",ladder:"#d4a017",dummy:"#d4a017",flag:"#d4a017",hurdle:"#e23b3b",minihurdle:"#d4a017",dome:"#21a3c9",tire:"#30343c"};
@@ -5339,7 +5338,7 @@ function makeToken(p,kind){
       const im=el("image",{x:-20,y:-20,width:40,height:40,preserveAspectRatio:"xMidYMid slice","clip-path":"url(#"+cid+")"});
       im.setAttribute("href",p.img);g.appendChild(im);
       g.appendChild(el("circle",{r:21,fill:"none",stroke:col,"stroke-width":3}));
-    }else if((tokShape==="shirt"||tokShape==="person")&&!p.coach&&!p.shaper){   /* 3.079 — «사람»은 3D 전용: 평면은 유니폼 */
+    }else if((tokShape==="shirt"||tokShape==="person")&&!p.coach&&!p.shaper){
       g.appendChild(el("circle",{r:23,fill:"transparent"}));
       g.appendChild(el("path",{d:SHIRT_D,fill:fillC,stroke:strokeC,"stroke-width":2.2,"stroke-linejoin":"round","class":"tok-c"}));
       g.appendChild(el("path",{d:SHIRT_ACC,fill:"none",stroke:"rgba(0,0,0,.22)","stroke-width":1.5,"stroke-linecap":"round"}));
@@ -5368,7 +5367,7 @@ function makeToken(p,kind){
         "font-size":String(Math.round(18*_nk*10)/10),"font-weight":_nt?"800":"700","font-family":"-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif"});
       if(_nt){nm.setAttribute("stroke","rgba(10,14,22,.86)");nm.setAttribute("stroke-width",String(Math.round(4.2*_nk*10)/10));nm.setAttribute("stroke-linejoin","round");nm.setAttribute("paint-order","stroke");}
       nm.textContent=nmStr;g.appendChild(nm);
-      { const _rb=_realBoost(p); if(_rb>1){   /* 3.070 — 실제 비율: 이름표는 평소 크기 그대로, 작은 토큰 가장자리에서 평소 화면 간격만큼 */
+      { const _rb=_realBoost(p); if(_rb>1){
         const ng=el("g",{transform:"translate(0,"+((_up?-1:1)*21*(1-_rb)).toFixed(2)+") scale("+_rb.toFixed(3)+")"}),bg=_nt?null:nm.previousSibling;
         if(bg)ng.appendChild(bg); ng.appendChild(nm); g.appendChild(ng); } }
     }
@@ -5379,7 +5378,7 @@ function makeToken(p,kind){
   /* 3.039 — 아이패드도 같은 «잡히는 범위»(피드백 UX-7 · DS-2 — 아이패드 토큰은 15px 로 손가락보다 훨씬 작았다). 크기는 고정 값 대신 지금 화면의 배율로 잰다:
      폰의 옛 값(r 70 ÷ 폰 배율)은 토큰이 작아진 뒤 실측 지름 27px 이었다. 보이는 크기는 그대로, 잡히는 지름만 46px(아이패드 셸이 0.75배로 줄여도 34pt 이상) */
   try{ var _dv=psBoardDevice(); if(_dv==="phone"||_dv==="ipad"){ g.insertBefore(el("circle",{r:_tokHitR(g),fill:"transparent","class":"tok-hit"}),g.firstChild); }
-    else if(_realTokS(p)){ g.insertBefore(el("circle",{r:_tokHitR(g),fill:"transparent","class":"tok-hit"}),g.firstChild); }   /* 3.070 — 실제 비율 토큰은 작아서 컴퓨터에서도 잡히는 원을 둔다 */ }catch(_){}
+    else if(_realTokS(p)){ g.insertBefore(el("circle",{r:_tokHitR(g),fill:"transparent","class":"tok-hit"}),g.firstChild); } }catch(_){}
   if(p.locked){
     var lg=el("g",{"class":"tok-lock",transform:"translate(24,-24)"});
     lg.appendChild(el("circle",{r:8.5,fill:"rgba(18,22,30,.86)",stroke:"#fff","stroke-width":1.4}));
@@ -6311,7 +6310,7 @@ function _fillPattern(kind,color){
   }catch(_){ return hexA(color,.24); }
 }
 function _visBlindPattern(light){try{ var ex=svg.querySelector("#psBlindHatch"); if(ex)ex.parentNode.removeChild(ex); var defs=svg.querySelector("defs"); if(!defs){defs=el("defs");svg.insertBefore(defs,svg.firstChild);} var rectF=light?"rgba(70,78,90,.10)":"rgba(120,128,138,.13)"; var lineS=light?"rgba(55,62,74,.55)":"rgba(195,203,213,.5)"; var pat=el("pattern",{id:"psBlindHatch",width:8,height:8,patternUnits:"userSpaceOnUse",patternTransform:"rotate(45)"}); pat.appendChild(el("rect",{width:8,height:8,fill:rectF})); pat.appendChild(el("line",{x1:0,y1:0,x2:0,y2:8,stroke:lineS,"stroke-width":1.2})); defs.appendChild(pat);}catch(_){}}
-function _tokScaleOf(p){var _rs=_realTokS(p);if(_rs)return _rs;   /* 3.070 */
+function _tokScaleOf(p){var _rs=_realTokS(p);if(_rs)return _rs;
   var _cv=commViewTok();var _ed=_cv?_cv:((document.body.classList.contains("editing")&&!window.__psThumbNoEd)?0.68:1);var _mc=document.body.classList.contains("match-mode")?0.82:1;return (p.scale||1)*(state.tokenScale||1)*_ed*_mc*specTokFactor()*phoneTokFactor(p);}
 /* 2.233 — 작은 규격에서는 토큰도 줄인다(완전 비례는 너무 작아 (길이/105)^0.6: 초등 0.75 · 풋살 0.56) */
 function specTokFactor(){try{var sp=pitchSpec();return sp===PITCH_SPECS.fifa?1:Math.pow(sp.len/105,0.6);}catch(_){return 1;}}
@@ -6432,8 +6431,8 @@ function _setSelRings(){ try{
   if(!tokenLayer)return;
   var olds=tokenLayer.querySelectorAll(".ps-selring"); for(var i=0;i<olds.length;i++)olds[i].parentNode.removeChild(olds[i]);
   function ring(ref,color,r,sw,dash){ if(!ref||ref.id==null)return; var gg=tokenLayer.querySelector('[data-id="'+ref.id+'"]'); if(!gg)return;
-    var isP=(gg.getAttribute("data-kind")==="player"),ck=_chipK(gg),_rb=_realBoost(ref); r*=ck*_rb; sw*=_rb;   /* 3.070 — 실제 비율이면 평소 크기의 링 */ var s=isP?el("circle",{r:r,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"}):el("rect",{x:-r,y:-r,width:2*r,height:2*r,rx:6,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"});
-    if(dash)s.setAttribute("stroke-dasharray",dash); if(gg.hasAttribute("data-depth-chip"))gg.insertBefore(s,gg.querySelector(".ps-depth-face")); else gg.appendChild(s); }   /* 3.070 — 실제 비율의 칩(배율 1)도 링은 바닥에 */   /* 3.009 — 경기장 칩은 링이 칩 밑 바닥에 */
+    var isP=(gg.getAttribute("data-kind")==="player"),ck=_chipK(gg),_rb=_realBoost(ref); r*=ck*_rb; sw*=_rb; var s=isP?el("circle",{r:r,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"}):el("rect",{x:-r,y:-r,width:2*r,height:2*r,rx:6,fill:"none",stroke:color,"stroke-width":sw,"class":"ps-selring"});
+    if(dash)s.setAttribute("stroke-dasharray",dash); if(gg.hasAttribute("data-depth-chip"))gg.insertBefore(s,gg.querySelector(".ps-depth-face")); else gg.appendChild(s); }   /* 3.009 — 경기장 칩은 링이 칩 밑 바닥에 */
   if(sel&&sel.ref&&(sel.type==="player"||sel.type==="equip"||sel.type==="ball")) ring(sel.ref,"#ffd60a",28,3,"6 5");
   if(typeof multiSel!=="undefined"&&multiSel.length){ multiSel.forEach(function(o){ ring(o,"#2fa8ff",27,3.5,null); }); }
 }catch(_){} try{_setRoleRings();}catch(_){} try{_setChip3d();}catch(_){} try{_syncRingBtn();}catch(_){}}
@@ -6442,7 +6441,7 @@ function _setSelRings(){ try{
 function _chipUpright(){ return (state.orientation==="v")?(state.spFlip?-90:90):0; }
 /* ref = 기본 크기일 때의 토큰 배율. 3D 칩의 기본 크기는 운동장 대비로 정하고, 보드 설정 «크기 ＋ －»·선수별 크기는 그 위에 같은 비율로 곱한다
    (예전에는 최소 크기가 덮어써 처음 세 단계는 3D 에서 크기가 그대로였다 — 사용자 «크기도 수정할 수 있게») */
-function _chipOpts(p){ var sh=_shaperOn(p),u=_tokScaleOf(p),nu=_realTokS(p)?_normTokS(p):u;   /* 3.070 — 실제 비율이면 u 는 실제 크기, nu 는 평소 크기(이름표용) */
+function _chipOpts(p){ var sh=_shaperOn(p),u=_tokScaleOf(p),nu=_realTokS(p)?_normTokS(p):u;
   return {unit:u,ref:nu/((p.scale||1)*(state.tokenScale||1))*defaultTokenScale(),pitch:PR().PW,shape:sh?"shaper":((tokShape==="person"&&!p.shaper)?"person":((tokShape==="shirt"&&!p.coach&&!p.shaper)?"shirt":"circle")),real:!!_realTokS(p),nameUnit:nu,pose:_personPose(p),stand:_personStand(),zoom:(window.__tvZoom?window.__tvZoom():1),dir:sh?(_dirOf(p)-_chipUpright()):0,
     nameK:_nameK(),nameStyle:window.__nameStyle==="pill"?"pill":"text",mood:(window.__tilt3d&&window.__tilt3d.mood)||"night"}; }   /* 3.010 — 이름표 크기·모양(3D 의 «기본»은 글자만 — 중계 화면처럼) · 3.029 분위기(그림자 방향) */
 /* 쉐이퍼는 공을 바라보므로 공만 움직여도 방향이 바뀐다 — 시야·쉐이퍼를 다시 그릴 때마다 3D 칩의 부리도 돌린다(칩은 다시 만들지 않는다) */
@@ -6536,13 +6535,10 @@ function cycleRoleRing(){ var t=_ringTargets(); if(!t.length){ try{toast("선수
 }catch(_){} })();
 var _rvRAF=0;
 function renderVisionRAF(){ if(_rvRAF)return; try{_rvRAF=(window.requestAnimationFrame||function(f){return setTimeout(f,16);})(function(){_rvRAF=0;try{renderVision();}catch(_){}});}catch(_){_rvRAF=0;try{renderVision();}catch(__){}} }
-function _bcView(){ return {orientation:state.orientation,spFlip:!!state.spFlip,tv:!!(window.__tvOn&&window.__tvOn())}; }   /* 3.072 board-broadcast.js */
-function _tokFarKey(){ try{ if(tokShape!=="person"||!document.body.classList.contains("bc-tilt3d")||!window.PSBroadcast)return null; var v=_bcView();
-    return function(o){return PSBroadcast.screenVec(+o.x||0,+o.y||0,v).y;}; }catch(_){ return null; } }
 function renderTokens(){try{applyLookAt();}catch(_){} _tokHitPx=0; tokenLayer.innerHTML="";
   try{ensureTeamPatterns();}catch(_){}
   try{renderVision();}catch(_){}
-  const _far=_tokFarKey();   /* 3.070 — 3D 의 서 있는 선수: 화면 위(먼 쪽)부터 그려 앞 선수가 뒤 선수를 가린다 */
+  const _far=_tokFarKey();
   tokenItems().sort((a,b)=>{const az=Number.isFinite(+a.o.z)?+a.o.z:1e9,bz=Number.isFinite(+b.o.z)?+b.o.z:1e9;return (az-bz)||(_far?_far(a.o)-_far(b.o):0);}).forEach(it=>tokenLayer.appendChild(makeToken(it.o,it.kind)));
   try{_setSelRings();}catch(_){}
   try{renderAnalysis();}catch(_){}   /* 3.029 — 선수가 움직이면 분석 그래픽도 다시 */
@@ -6550,7 +6546,7 @@ function renderTokens(){try{applyLookAt();}catch(_){} _tokHitPx=0; tokenLayer.in
   if(typeof updateEmptyHint==="function")updateEmptyHint();
   _tokHitLater();
   if(typeof tokenLayer!=="undefined"&&tokenLayer&&tokenLayer.parentNode){tokenLayer.parentNode.appendChild(tokenLayer);_rotHandleOnTop();}try{updateMotionPaths();}catch(_){}try{boardSaveLive();}catch(_){}
-  try{ if(window.__tvOn&&window.__tvOn())window.__tvCam(false); }catch(_){}}   /* 3.072 — 중계 시점: 공을 따라간다 */
+  try{ if(window.__tvOn&&window.__tvOn())window.__tvCam(false); }catch(_){}}
 function csHintSeen(k){try{return localStorage.getItem(k)==="1";}catch(_){return false;}}
 function csHintMark(k){try{localStorage.setItem(k,"1");}catch(_){}}
 let __ehWasShown=false;
@@ -6560,6 +6556,7 @@ function hideEmptyHint(){csHintMark("cs_hint_board");window.__ehForce=false;cons
   try{updateEmptyHint();}catch(_){}}   /* 2.457 — 카드를 닫으면 문이 제자리로 */
 /* 2.275 — 포메이션 열기(토큰이 있어도 강제 — __ehForce) · 2.277 — 자리를 보드 설정 '포메이션' 탭으로 옮겼다(사용자) */
 window.__psOpenFormation=function(){
+  try{ document.querySelectorAll(".empty-hint .eh-forms").forEach(function(r){ r._applied=""; }); }catch(_){}   /* 3.080 — 새로 열면 다시 고른 대형은 다시 깐다 */
   try{ var p=document.getElementById("cmd-board-settings-pop");
     if(p&&p.__psSelectTab){ p.__psSelectTab("form"); if(window.__psToggleBoardSettings)window.__psToggleBoardSettings("open"); return; } }catch(_){}
   var e=document.getElementById("emptyHint"); if(!e)return;   /* 패널이 아직 안 세워졌으면 옛 길(떠 있는 카드) */
@@ -7897,7 +7894,7 @@ function boardDefaultSnap(src){
 function boardDefaultRead(){try{var raw=localStorage.getItem(BOARD_DEFAULT_KEY);if(!raw)return null;var data=JSON.parse(raw);var snap=data&&(data.snap||data);return snap?boardDefaultSnap(snap):null;}catch(_){return null;}}
 function boardDefaultSave(){
   try{var __ds=boardDefaultSnap(captureSnap()),__dn=(__ds.players||[]).length;localStorage.setItem(BOARD_DEFAULT_KEY,JSON.stringify({v:1,at:Date.now(),snap:__ds}));
-    try{toast("지금 보드를 «새 보드» 기본 세팅으로 정했어요"+(__dn?(" · 선수 "+__dn+"명"):"")+" · 이 보드는 «보드 저장»으로 저장해요");}catch(_){}   /* 3.031 — 보드 저장이 아니라는 것을 말한다 */
+    try{toast("지금 보드를 «새 보드» 기본 세팅으로 정했어요"+(__dn?(" · 선수 "+__dn+"명"):"")+" · 이 보드는 «저장»으로 저장해요");}catch(_){}   /* 3.031 — 보드 저장이 아니라는 것을 말한다 */
     try{window.__syncBoardDefaultUI&&window.__syncBoardDefaultUI();}catch(_){}
     return true;}catch(_){try{toast("기본 세팅을 저장하지 못했어요");}catch(__){}return false;}
 }
@@ -8822,7 +8819,7 @@ window.__boardDraftRestore=function(){
   _boardManualDirty=true;_boardUserTouched=true;boardManualStatus();
   try{boardDraftSchedule();}catch(_){}
   boardDraftBarHide();
-  try{toast("저장 안 한 작업을 되살렸어요 · «보드 저장»을 누르면 저장돼요");}catch(_){}
+  try{toast("저장 안 한 작업을 되살렸어요 · «저장»을 누르면 저장돼요");}catch(_){}
   return true;
 };
 async function boardDraftOffer(o,chosen){
@@ -8860,7 +8857,7 @@ function boardManualStatus(){
   var _chg=boardManualChanged(); try{ if(typeof window.__psSaveBarSync==='function')window.__psSaveBarSync(_chg); }catch(_){}
   try{ document.body.classList.toggle('ps-board-dirty',!!_chg); }catch(_){}   /* 3.039 — 바뀐 게 있으면 채운 단추는 «보드 저장» 하나(UX-9 · DS-5): «보관함 저장»은 테두리로 */
   try{ if(_chg!==_boardDirtyPosted){ _boardDirtyPosted=_chg; parent.postMessage({source:'board',type:'boardDirty',changed:_chg},location.origin); } }catch(_){}   /* 3.038 — 셸 저장 표시 «보드 · 저장 전»(app.html saveView) */
-  try{var b=document.getElementById('boardManualSave');if(b){/* 2.907 — «보드 저장»: 보관함의 «저장하기»와 이름이 같아 보관함에 들어간 줄 알았다(오류 제보). 바뀐 표시는 점 하나 — 768px 띠에 «· 변경됨»까지 들어가지 않는다. */b.textContent=_boardManualSaving?'저장 중…':(_chg?'보드 저장 ●':'보드 저장');b.disabled=_boardManualSaving;b.title=(_chg?'저장하지 않은 변경이 있어요 — ':'')+'작업 보드를 저장합니다. 보관함 항목은 «보관함 저장»으로 넣어요';b.setAttribute('aria-label',_chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장');b.classList.toggle('dirty',!!_chg);}}catch(_){}
+  try{var b=document.getElementById('boardManualSave');if(b){/* 2.907 — «보드 저장»: 보관함의 «저장하기»와 이름이 같아 보관함에 들어간 줄 알았다(오류 제보). 바뀐 표시는 점 하나 — 768px 띠에 «· 변경됨»까지 들어가지 않는다. */b.textContent=_boardManualSaving?'저장 중…':(_chg?'저장 ●':'저장');b.disabled=_boardManualSaving;b.title=(_chg?'저장하지 않은 변경이 있어요 — ':'')+'작업 보드를 저장하고, 보관함 자료와 이어져 있으면 그 자료에도 저장해요(아니면 보관함에 담을지 물어요)';b.setAttribute('aria-label',_chg?'보드 저장, 저장하지 않은 변경 있음':'보드 저장');b.classList.toggle('dirty',!!_chg);}}catch(_){}
 }
 /* 2.927 — «보드 가져오기»로 이어진 보관함 자료에 지금 보드를 같은 내용으로 저장한다(사용자 «가져와서 토큰 움직이고 저장하면 보관함 것도 똑같이»).
    ⚠ 보관함(ps_library)엔 판 역사가 없다(2.907) — 그래서 확실히 같은 자료일 때만 쓴다:
@@ -8916,7 +8913,7 @@ window.__boardLinkWriteBack=boardLinkWriteBack;
 async function boardSaveExplicit(o){   /* 3.014 — o.noLink: 보관함 연결 되쓰기 없이 · o.quiet: 성공 알림 없이(«새 보드»·«이전 보드»가 제 알림을 띄운다) */
   o=(o&&typeof o==="object"&&!o.type)?o:{};
   if((_boardManualSaving&&boardPrivateCurrent(_boardManualSaving))||_vaultBoardContext||window.__vaultEdit)return false;
-  if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner)){toast("보드를 아직 불러오는 중이에요 — 잠시 뒤 «보드 저장»을 다시 눌러 주세요. 계속되면 다시 로그인해 주세요");   /* 3.039 — «보드 연결»은 확인할 방법이 없는 말이었다(피드백 CP-17) */return false;}
+  if(!_boardPrivateLoaded||!boardPrivateCurrent(_boardPrivateOwner)){toast("보드를 아직 불러오는 중이에요 — 잠시 뒤 «저장»을 다시 눌러 주세요. 계속되면 다시 로그인해 주세요");   /* 3.039 — «보드 연결»은 확인할 방법이 없는 말이었다(피드백 CP-17) */return false;}
   restoreAnimBeforeCapture();
   var owner=_boardPrivateOwner,seq=_boardPrivateEditSeq,previous=_boardPrivateRecord;
   var _hadOffer=!!window.__boardDraftPending;if(_hadOffer)try{boardDraftBarHide();}catch(_){}   /* 3.038 리뷰 — 띠를 둔 채 저장하면 지금 화면을 고른 것: 띠를 먼저 거둬 저장 중 «되살리기»가 끼어들지 않게 */
@@ -8928,19 +8925,37 @@ async function boardSaveExplicit(o){   /* 3.014 — o.noLink: 보관함 연결 �
       if(ok||(durable&&_boardPrivateRecord!==previous)){_boardManualDirty=false;try{boardDraftClear(owner);}catch(_){}   /* 3.038 — 저장했으니 기기 초안은 지운다 */
         var _wb=[]; if(!o.noLink){ try{ _wb=await boardLinkWriteBack(false); }catch(e){ _wb=[{err:true}]; } }   /* 2.927 — 가져온 보관함 자료에도 */
         var _wbt=boardLinkSaveText(_wb);
-        if(!ok)toast("이 기기에만 저장됨 · 인터넷이 연결되면 자동으로 올라가요"+_wbt);else if(!o.quiet)toast((_wbt?("보드에 저장됨 ✓"+_wbt):"보드에 저장됨 ✓ · 보관함에는 «보관함 저장»으로 넣어요")+(_hadOffer?" · 저장 안 했던 이전 작업은 버렸어요":""));}
+        if(!ok)toast("이 기기에만 저장됨 · 인터넷이 연결되면 자동으로 올라가요"+_wbt);else if(!o.quiet)toast((_wbt?("보드에 저장됨 ✓"+_wbt):"보드에 저장됨 ✓")+(_hadOffer?" · 저장 안 했던 이전 작업은 버렸어요":""));}
     }
     return !!ok;
   }finally{if(_boardManualSaving===owner)_boardManualSaving=false;boardManualStatus();}
 }
 window.__boardSaveExplicit=boardSaveExplicit;
+/* 3.077 — 저장 단추 하나(코치 점검 10/16 · 파일럿 §5 #2, 사용자 확인 10/17). «보드 저장»과 «보관함 저장» 둘이라 무엇이 어디로 가는지 헷갈렸다.
+   «저장» = 작업 보드를 계정에 저장(2.869 수동 저장 그대로) + 보관함:
+     · 지금 페이지가 보관함 자료와 이어져 있으면(보드 가져오기 — 2.927 연결 칩이 보인다) 그 자료에도 덮어쓴다(boardSaveExplicit 되쓰기). 묻지 않는다
+     · 아니면 예전 «보관함 저장» 확인창을 그대로 연다 — 기본은 새 자료, 앞서 담은 자료 덮어쓰기는 고를 때만(2.907 오류 제보: 확인 없이 덮어 옛 전술이 사라졌다).
+       그래서 새로 담은 자료와 페이지를 저절로 잇지 않는다
+     · 확인창을 닫으면 보드만 저장 — 이 판(새로고침 전까지)은 다시 묻지 않는다 · 빈 판은 보관함에 담지 않는다 */
+var _boardVaultDeclined=false;
+async function boardSaveOne(){
+  var P=window.__psPages, linked=false, empty=false;
+  try{ linked=!!(P&&P.linkAll&&P.linkAll().some(function(l){ return l&&l.isCurrent; })); }catch(_){}
+  try{ empty=_boardSnapEmpty(captureSnap()); }catch(_){}
+  var ask=!linked&&!empty&&!_boardVaultDeclined&&typeof window.__vaultSave==="function";
+  var ok=await boardSaveExplicit(ask?{quiet:true}:{});
+  if(!ask||!ok)return ok;
+  window.__vaultSave({ oncancel:function(){ _boardVaultDeclined=true; try{ toast("보드에 저장됨 ✓ · 보관함에는 담지 않았어요"); }catch(_){} } });
+  return ok;
+}
+window.__boardSaveOne=boardSaveOne;
 /* 2.975 — «저장» 단축키(기본 ⌘S · 단축키 표 «보드» 탭에서 바꾼다). 지금 화면의 저장을 누른 것과 같다 — 나가지 않는다.
    훈련 편집기는 «저장하기»가 저장과 닫기를 함께 하므로 ⌘S 는 임시 저장(초안)만 한다. */
 window.__psSaveShortcut=function(){ try{
   if(document.body.classList.contains("editing")){ try{saveEditorDraft();}catch(_){} toast("작업 중인 훈련을 임시 저장했어요 · 보관함에 넣기는 «저장하기»"); return; }
   if(window.__vaultViewMode&&window.__vaultEdit){ if(window.__vaultReadOnly){ toast("보기 전용이라 저장하지 않아요"); return; } if(window.__vaultSaveOnly&&window.__vaultSaveOnly())return; }
   if(window.__vaultEdit){ var cs=document.getElementById("vCreateSave"); if(cs&&cs.offsetParent!==null){ cs.click(); return; } }
-  boardSaveExplicit();
+  boardSaveOne();   /* 3.077 — 단추와 같은 «저장» */
 }catch(e){ try{console.warn("save shortcut",e);}catch(_){} } };
 function boardSaveLive(){
   if(window.__psThumbCapturing||window.__psPreviewRefreshing)return;
@@ -9369,16 +9384,10 @@ function renderInterp(a,b,u,curves){
   state.drawings=_interpDrawings(a.drawings||[],b.drawings||[],u);   /* 2.719 — 장면 사이 그림 서서히 */
   state.orientation=a.orientation||"h";state.area=a.area||"full";state.pitchView=normPitchView(a.pitchView||((state.area||"full")==="half"?"half":"full"));state.pvSide=(a.pvSide==="opp")?"opp":"own";state.tokenScale=((typeof _tokMig==="function")?_tokMig(a.tokenScale,a):a.tokenScale)||1;
   try{ var _cwo2=window.__commWantOrient; if(_cwo2&&document.body.classList.contains("comm-viewing")){ state.orientation=_cwo2; state.spFlip=false; } }catch(_){}   /* 3.067 — 재생 중에도 뷰어의 판 방향(loadSnap 과 같은 규칙) */
-  try{ window.__psMotion=_personMotion(a,b,u,curves); }catch(_){ window.__psMotion=null; }   /* 3.071 — 3D 사람: 뛰는 자세 */
+  try{ window.__psMotion=_personMotion(a,b,u,curves); }catch(_){ window.__psMotion=null; }
   sel=null;applyView();renderTokens();window.__psMotion=null;renderDrawings();try{trailTick();}catch(_){}
   try{if(typeof window.__syncUniformDock==="function")window.__syncUniformDock();}catch(_){}
 }
-/* 3.071 · 3.072 — 3D «사람»: 뛰는 자세 · 중계 시점에 바로 서기(board-broadcast.js). 재생 · GIF · MP4 가 모두 renderInterp 를 지난다 */
-function _personMotion(a,b,u,curves){ if(tokShape!=="person"||!document.body.classList.contains("bc-tilt3d")||!window.PSBroadcast)return null; return PSBroadcast.motion(a,b,u,curves,{curvePt:_curvePt,mpp:mppNow()||10,foot:_footOf}); }
-function _footOf(p){ try{ if(p.foot)return p.foot; var q=p.sqId&&(squad.players||[]).find(function(x){return x.id===p.sqId;}); return (q&&q.foot)||""; }catch(_){ return ""; } }   /* 3.074 주발 — 선수단의 오른발·왼발 */
-function _kU(a,b,u,c){ try{ return (tokShape==="person"&&document.body.classList.contains("bc-tilt3d"))?PSBroadcast.ballU(a,b,u,mppNow(),c):u; }catch(_){ return u; } }   /* 3.074 차는 순간 공이 출발 */
-function _personStand(){ try{ return PSBroadcast.stand(!!(window.__tvOn&&window.__tvOn())); }catch(_){ return null; } }
-function _personPose(p){ try{ return PSBroadcast.pose(window.__psMotion&&window.__psMotion[p.id],_bcView()); }catch(_){ return null; } }
 /* ===== 곡선 경로 편집 오버레이 (택티컬 패드) — 선택 장면→다음 장면 사이 각 토큰의 이동 경로를 보여주고, 가운데 점을 끌어 곡선으로 만든다 ===== */
 function _mpPair(){
   try{
@@ -13085,7 +13094,7 @@ async function openBoardImport(){
       try{ if(window.__psPages&&window.__psPages.linkTag)window.__psPages.linkTag(_canLink?{libId:d.libId,name:d.name||"작전판",srcPage:0,multi:np>1}:null); }catch(_){}
       try{ if(window.__psPages&&window.__psPages.refresh)window.__psPages.refresh(); }catch(_){}
       ov.remove();
-      try{ toast("«"+(d.name||"작전판")+"» 가져옴"+(np>1?(" · 첫 페이지(전체 "+np+"페이지)"):"")+(_capNow?" · 보관함 자료는 그대로예요":(_canLink?" · «보드 저장»하면 보관함에도 저장돼요":" · 남이 만든 자료라 보관함엔 저장되지 않아요"))+" · ⌘Z 되돌리기"); }catch(_){}
+      try{ toast("«"+(d.name||"작전판")+"» 가져옴"+(np>1?(" · 첫 페이지(전체 "+np+"페이지)"):"")+(_capNow?" · 보관함 자료는 그대로예요":(_canLink?" · «저장»하면 보관함에도 저장돼요":" · 남이 만든 자료라 보관함엔 저장되지 않아요"))+" · ⌘Z 되돌리기"); }catch(_){}
     };
     list.appendChild(b);
   });
@@ -13827,6 +13836,7 @@ function __commTiltOff(){ try{ window.__commWantOrient=null; var b=document.getE
   if(window.__commTilt){ window.__commTilt=false; if(document.body.classList.contains("bc-tilt3d")&&window.__setTilt)window.__setTilt(false,{transient:true,quiet:true}); } }catch(_){} }
 window.__commView=function(post, editMode){
   editMode=false; // Published community material is edited only after copying to the personal library.
+  try{ if(window.top&&window.top.__psBootCrumb)window.top.__psBootCrumb('cmView'); }catch(_){}   /* 3.070 — 강제 종료 위치 기록 */
   /* ══ 2.575 · 드러내기는 **한 번**, 방향은 **고정** ═══════════════════════════════════
      2.568 은 120ms 타이머가 애니 글에도 그대로 돌아 340ms 재측정 중간에 벗겨졌고, 감춤 규칙 자체도 죽어 있었다.
      애니 글은 마지막 재측정(320ms) 뒤 420ms, 없는 글은 160ms 에 html.comm-boot·body.comm-settling 을 같이 벗긴다.
@@ -13901,9 +13911,9 @@ window.__commView=function(post, editMode){
         var who=post.owner_name?("@"+esc(post.owner_name)):"코치";
         b.innerHTML='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
           /* 2.999 — 커뮤니티 «프로세스» 칸의 훈련 세션(post.proc): 신고 없음 · 담기는 레터의 «보관함에 담기»와 같은 길(커뮤니티가 셸에 #pack= 을 건넨다) */
-          +'<span style="flex:1 1 auto;min-width:150px">'+(post.proc?('<b>프로세스 훈련 세션</b> — 훈련 '+(post.procN||(post.item&&post.item.trainings&&post.item.trainings.length)||1)+'개 · 보기 전용'):('<b>'+(_commBoard?('커뮤니티 '+(d.kindLabel||'작전판')):'커뮤니티 훈련')+'</b> — '+who+'님이 공유했어요'+((_commBoard&&post.pageN>1)?(' · '+(d.unit||(d.book?'시퀀스 ':'페이지 '))+post.pageN+(d.kindLabel?'장':'개')):'')+' · 보기 전용'))+'</span>'
+          +'<span style="flex:1 1 auto;min-width:150px">'+(post.fifa?('<b>FIFA 훈련 애니메이션</b> — FIFA Training Centre 참고 · 훈련 '+(post.procN||1)+'개 · 보기 전용'):post.proc?('<b>프로세스 훈련 세션</b> — 훈련 '+(post.procN||(post.item&&post.item.trainings&&post.item.trainings.length)||1)+'개 · 보기 전용'):('<b>'+(_commBoard?('커뮤니티 '+(d.kindLabel||'작전판')):'커뮤니티 훈련')+'</b> — '+who+'님이 공유했어요'+((_commBoard&&post.pageN>1)?(' · '+(d.unit||(d.book?'시퀀스 ':'페이지 '))+post.pageN+(d.kindLabel?'장':'개')):'')+' · 보기 전용'))+'</span>'
           +'<button id="commCopyBtn" type="button" style="border:0;border-radius:10px;background:var(--blue,var(--ps-navy,#14213D));color:#fff;font-family:inherit;font-weight:800;font-size:12px;padding:8px 13px;cursor:pointer">'+(post.proc?'보관함에 담기':'내 보관함에 담기')+'</button>'
-          +(post.proc?'':'<button id="commRepBtn" type="button" style="border:0;background:none;color:var(--txt-dim,#646A73);font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">신고</button>')
+          +((post.proc||post.fifa)?'':'<button id="commRepBtn" type="button" style="border:0;background:none;color:var(--txt-dim,#646A73);font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">신고</button>')
           +(post.mine?'<button id="commDelBtn" type="button" style="border:0;background:none;color:#C24A46;font-family:inherit;font-weight:600;font-size:11px;cursor:pointer;padding:6px 4px">삭제</button>':'')
           +'</div>';
         var eb2=document.getElementById("commEditBtn");
@@ -14075,6 +14085,21 @@ function openEditor(id,type){
       var _MAP={ao:"bp",do:"bpo",dt:"tr_def",at:"tr_att",set:"set",ic:"poss"}, _ids=[], _names=[], _fk=null;
       if(_pm&&Array.isArray(_pm.moments))_pm.moments.forEach(function(m){ (m.phases||[]).forEach(function(ph){ if(ph&&_pre.indexOf(ph.id)>=0){ _ids.push(ph.id); _names.push((m.name||"")+" › "+(ph.name||"")); if(!_fk)_fk=_MAP[m.key]||null; } }); });
       if(_ids.length){ editorDraft.gmPhases=_ids; editorDraft.gmPhaseNames=_names; if(_fk)editorDraft.focus=_fk; }
+    } }catch(_){}
+  /* 3.080 — 게임모델 단계(또는 학습)에서 온 새 훈련: 제목 · 코칭 포인트에 그 원칙을 미리 적는다(window.__psDrillPreset 한 번 소비).
+     국면은 위 프리셀렉트가 고른다. 이 편집기의 게임모델 목록에 그 단계가 없으면(팀 판이 따로 있을 때) 이름만이라도 남긴다 */
+  try{ var _dp=window.__psDrillPreset; window.__psDrillPreset=null;
+    if(id==null&&type!=="setpiece"&&_dp&&editorDraft){
+      var _pr=String(_dp.principle||"").trim().slice(0,200), _pn=String(_dp.phaseName||"").trim().slice(0,80);
+      if(_pr){ editorDraft.name=_pr.length>40?_pr.slice(0,40)+"…":_pr; if(!String(editorDraft.coaching||"").trim())editorDraft.coaching=_pr; }
+      else if(_pn){ editorDraft.name=_pn; }
+      if(_pn&&!String(editorDraft.overview||"").trim())editorDraft.overview="게임모델 · "+_pn+(_pr?" — "+_pr:"");
+      /* 편집기의 국면 칩은 표준 목록(EP_STD_MOMENTS)이다 — 같은 국면 · 같은 이름의 표준 단계로 고른다(게임모델 화면의 gmStdMap 이 거꾸로 같은 단계로 센다).
+         표준에 없는 이름이면 받은 id 와 이름을 그대로 둔다(«예전에 고른 국면» 칩으로 보인다) */
+      if(_pn){ var _parts=_pn.split(" › "), _mN=String(_parts[0]||"").trim(), _pN=String(_parts.slice(1).join(" › ")||"").trim(), _hit=null;
+        EP_STD_MOMENTS.forEach(function(m){ if(_hit||String(m.name).trim()!==_mN)return; (m.phases||[]).forEach(function(ph){ if(!_hit&&String(ph.name).trim()===_pN)_hit={id:ph.id,nm:m.name+" › "+ph.name,k:m.key}; }); });
+        if(_hit){ editorDraft.gmPhases=[_hit.id]; editorDraft.gmPhaseNames=[_hit.nm]; var _FK={ao:"bp",do:"bpo",dt:"tr_def",at:"tr_att",set:"set",ic:"poss"}; if(_FK[_hit.k])editorDraft.focus=_FK[_hit.k]; }
+        else if(_dp.phaseId){ editorDraft.gmPhases=[String(_dp.phaseId)]; editorDraft.gmPhaseNames=[_pn]; } }
     } }catch(_){}
   fillEditorPanel();renderSceneStrip();renderTrainingTabs();
   try{ if(type!=="setpiece"&&epAutoRoster()){ setTimeout(function(){try{toast(window.__rosterFromAtt?"출석의 그 날 인원으로 채웠어요 — 필요하면 고치세요":"훈련 인원을 선수단에서 채웠어요 — 필요하면 고치세요");window.__rosterFromAtt=false;}catch(_){}},400); } }catch(_){}   /* 1.968 · 2.182 — 비어 있으면 기존 훈련에서도 자동 계산(사용자) */
@@ -14803,7 +14828,7 @@ function init(){
      광고판 문구: 비우면 PROCESS STUDIO. 24자까지.
      ⚠ 3D 켜기·끄기와 같이 **기기 설정**이다(보드가 아니라 «내가 보는 방식» — 2.929 표의 «보드 보기»와 같은 자리). */
   var TILT_CAM={low:{ax:36,sy:1.3},mid:{ax:24,sy:1.08},high:{ax:12,sy:1}};
-  TILT_CAM.tv={ax:24,sy:1.08};   /* 3.072 — 중계 시점: 각도 · 틀은 __tvCam 이 따로 */
+  TILT_CAM.tv={ax:24,sy:1.08};
   var TILT_PAD={full:[.15,.11,.05],simple:[.09,.08,.035],grass:[.05,.05,.03]};
   /* 3.035 — 그리드 판(라인 없는 빈 판)은 여백 없이 판을 꽉 채운다(사용자 «그리드 선택했을 때 보드에 여백이 없이 다 활용할 수 있게»). 잔디는 tiltStadium 이 판 밖으로
      한 판 넓이만큼 이어 그려(bleed) 기울인 판의 네 귀가 어두운 무대로 비치지 않는다 — 무대 끝까지 훈련장이다. */
@@ -14848,7 +14873,7 @@ function init(){
     window.__tilt3d=n; try{ localStorage.setItem("ps_tilt3d_opts_v1",JSON.stringify(n)); }catch(_){}
     tiltCamApply(); tiltMoodApply(); tiltOptsSync();
     if(n.mood!==o.mood){ try{ if(document.body.classList.contains("bc-tilt3d"))renderTokens(); }catch(_){} }   /* 3.029 — 칩 그림자 방향이 분위기를 따른다 */
-    if(n.cam!==o.cam&&n.mood===o.mood){ try{ if(document.body.classList.contains("bc-tilt3d"))renderTokens(); }catch(_){} }   /* 3.072 — 중계 시점은 선수를 바로 세운다 */   /* 3.029 — 칩 그림자 방향이 분위기를 따른다 */
+    if(n.cam!==o.cam&&n.mood===o.mood){ try{ if(document.body.classList.contains("bc-tilt3d"))renderTokens(); }catch(_){} }   /* 3.029 — 칩 그림자 방향이 분위기를 따른다 */
     try{ var gh=document.getElementById("tiltGoals"); if(gh){ gh.__pre=null; gh.__projectionSignature=null; } }catch(_){}
     _fitKey=""; try{ if(document.body.classList.contains("bc-tilt3d")){ window.__tiltFit(); tiltGoalsSync(); } }catch(_){} };
   (function(){ var adT=0;
@@ -14873,20 +14898,12 @@ function init(){
   /* 3.039 — 3D 영상이 화면과 같은 카메라로 찍는다: 각도·세로 보정(TILT_CAM)과 분위기 */
   window.__tiltCamNow=function(){ var t3=window.__tilt3d||{},c=TILT_CAM[t3.cam]||TILT_CAM.mid; return {ax:c.ax,sy:c.sy,mood:TILT_MOOD[t3.mood]?t3.mood:"night"}; };
   var _fitKey="";
-  /* 3.072 — 중계 시점(board-broadcast.js camera): 비스듬히 · 사선으로 · 가까이, 공을 따라간다. 끌기 · 그리기는 네 귀를 재는 bcUnproject 라 그대로 */
-  function _tvOn(){ try{ return document.body.classList.contains("bc-tilt3d")&&window.__tilt3d&&window.__tilt3d.cam==="tv"; }catch(_){ return false; } }
-  var _tvCamera=window.PSBroadcast?PSBroadcast.camera({svg:function(){return svg;},stage:function(){return document.getElementById("boardStage");},layer:function(){return tokenLayer;},mpp:function(){return mppNow();},
-    goalK:function(){return GOAL_K;},playing:function(){return typeof animPlaying!=="undefined"&&!!animPlaying;},
-    target:function(){ var b=state.ball; if(b&&isFinite(b.x)&&isFinite(b.y))return {x:+b.x,y:+b.y}; var ps=(state.players||[]).filter(function(p){return p&&isFinite(p.x)&&isFinite(p.y);}); if(!ps.length)return {x:CX,y:CY};
-      var x=0,y=0; ps.forEach(function(p){x+=+p.x;y+=+p.y;}); return {x:x/ps.length,y:y/ps.length}; },
-    resized:function(redraw){ try{ var gh=document.getElementById("tiltGoals"); if(gh){ gh.__pre=null; gh.__projectionSignature=null; } tiltGoalsSync(); }catch(_){} if(redraw){ try{renderTokens();}catch(_){} } }}):null;
-  function _tvOff(){ try{ if(_tvCamera)_tvCamera.off(); }catch(_){} }
-  window.__tvOn=_tvOn; window.__tvZoom=function(){ return (_tvOn()&&_tvCamera)?_tvCamera.zoom():1; };
-  window.__tvCam=function(snap){ try{ if(!_tvOn()||!_tvCamera){ _tvOff(); return; } _tvCamera.update(snap); }catch(_){} };
+  var _tv=window.PSBroadcast?PSBroadcast.tv({goalK:function(){return GOAL_K;},sync:function(){tiltGoalsSync();}}):null;
+  function _tvOn(){return !!(_tv&&_tv.on());} function _tvOff(){if(_tv)_tv.off();}
   window.__tiltFit=function(){
     try{
       if(!document.body.classList.contains("bc-tilt3d"))return;
-      if(_tvOn()){ _fitKey=""; window.__tvCam(true); return; }   /* 3.072 — 중계 시점은 운동장 전체를 맞추지 않고 공 둘레를 가까이 */
+      if(_tvOn()){ _fitKey=""; window.__tvCam(true); return; }
       _tvOff();
       var stage=document.getElementById("boardStage"); if(!stage||!svg)return;
       var vb=svg.viewBox&&svg.viewBox.baseVal; if(!vb||!vb.width||!vb.height)return;
@@ -15518,6 +15535,12 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
       /* 2.459 — 옛 select(숨김)와 값을 하나로: '선발 11명'(8174)이 formHome.value 를 읽는다 */
       try{ var sel=document.getElementById(row.dataset.team==="red"?"formAway":"formHome");
         if(sel&&b.dataset.f!==undefined)sel.value=b.dataset.f; }catch(_){}
+      /* 3.080 — 고르면 바로 깔린다(코치 피드백 «4-3-3 을 눌러도 «배치»를 한 번 더 눌러야 한다»). 되돌리기(⌘Z)로 돌아간다.
+         «없음»은 이 창에서 방금 깐 것만 거둔다 — 원래 있던 선수는 건드리지 않는다. «배치»는 같은 대형을 두 번 깔지 않는다. */
+      try{ var _t=row.dataset.team==="red"?"red":"blue", _f=b.dataset.f||"";
+        if(_f){ if(row._applied!==_f){ applyFormationTo(_t,_f); row._applied=_f; deselect(); try{boardSaveLive();}catch(_){} } }
+        else if(row._applied){ pushUndo(); state.players=state.players.filter(function(p){return p.team!==_t;}); row._applied=""; renderTokens(); try{boardSaveLive();}catch(_){} }
+      }catch(_){}
     });});
   });
   /* 팀 색상 스와치 — 포메이션(더보기)·온보딩 공용. state.teamColors 갱신 → teamHex()가 렌더 시 즉시 반영 */
@@ -15543,8 +15566,10 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     const our=document.querySelector('.empty-hint .eh-forms[data-team="blue"] .eh-f.on');
     const opp=document.querySelector('.empty-hint .eh-forms[data-team="red"] .eh-f.on');
     const ourF=our?our.dataset.f:"", oppF=opp?opp.dataset.f:"";
-    if(ourF)applyFormationTo("blue",ourF);
-    if(oppF)applyFormationTo("red",oppF);
+    const rowOf=t=>document.querySelector('.empty-hint .eh-forms[data-team="'+t+'"]')||{};
+    if(ourF&&rowOf("blue")._applied!==ourF)applyFormationTo("blue",ourF);   /* 3.080 — 고를 때 이미 깔렸으면 다시 깔지 않는다(옮긴 자리를 지키도록) */
+    if(oppF&&rowOf("red")._applied!==oppF)applyFormationTo("red",oppF);
+    ["blue","red"].forEach(t=>{ try{ rowOf(t)._applied=""; }catch(_){} });
     deselect();hideEmptyHint();
   });
   const ehX=document.getElementById("ehClose");
@@ -16388,14 +16413,6 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     sg.addEventListener("click",e=>{const bt=e.target.closest("button");if(!bt)return;
       try{localStorage.setItem("cs_drag_snap_v1",bt.dataset.ds==="1"?"1":"0");}catch(_){}
       sync();toast(bt.dataset.ds==="1"?"끌기 자석 켬 — 끌면 행·열에 착 붙어요":"끌기 자석 끔 — ⌘/Ctrl 로는 언제든 붙어요");});
-    sync();})();
-  (function(){const sg=$("realScaleSeg");if(!sg)return;   /* 3.070 — 비율: 보기 좋게 | 실제 비율(보드마다) */
-    const sync=()=>{[...sg.querySelectorAll("button")].forEach(x=>{const on=(x.dataset.rs==="1")===_realScaleOn();x.classList.toggle("on",on);x.setAttribute("aria-pressed",on?"true":"false");});
-      try{document.body.classList.toggle("ps-real-scale",_realScaleOn());}catch(_){}};
-    window.__syncRealScaleSeg=sync;
-    sg.addEventListener("click",e=>{const bt=e.target.closest("button[data-rs]");if(!bt)return;const on=bt.dataset.rs==="1";if(on===_realScaleOn())return;
-      _lookFreeze();window.__realScale=on;sync();renderTokens();try{positionSelCtl();}catch(_){}try{boardSaveLive();}catch(_){}
-      try{toast(on?"실제 비율 — 선수 몸 폭 0.5m · 공 22cm 로 운동장과 같은 비율이에요":"보기 좋게 — 토큰을 잘 보이게 키웠어요");}catch(_){}});
     sync();})();
   (function(){const sg=$("shapeSeg");if(!sg)return;
     const sync=()=>{[...sg.children].forEach(x=>x.classList.toggle("on",x.dataset.s===tokShape));};
@@ -19132,7 +19149,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     try{var ex=document.getElementById("mmPickOv");if(ex)ex.remove();}catch(_){}
     var cur=o.cur||null,live=cur?meetLiveMatch(cur):null,lists=meetPickLists(meetMatchesAll(),meetYmd());
     var ov=document.createElement("div");ov.id="mmPickOv";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-label","경기 연결");
-    var KD={official:"정식",friendly:"친선"};
+    var KD={official:"리그",cup:"컵",friendly:"친선"};   /* 3.080 — 일정과 같은 이름 */
     function row(m,past){ var on=cur&&String(cur.mid)===String(m.id);
       var meta=[m.competition||KD[m.kind]||"",m.homeAway||""].filter(Boolean).join(" · ");
       var tail=""; if(past){ var su=String(m.scoreUs==null?"":m.scoreUs).trim(),st=String(m.scoreThem==null?"":m.scoreThem).trim(); if(su!==""&&st!=="")tail=su+":"+st; }
@@ -20205,7 +20222,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   saveBtn.onclick=function(e){e.stopPropagation();vaultSaveCurrent();};
   var manualSaveBtn=document.createElement('button');manualSaveBtn.id='boardManualSave';manualSaveBtn.type='button';
   manualSaveBtn.className='primary';manualSaveBtn.style.cssText='flex:0 0 auto;white-space:nowrap;padding:8px 12px;border:1px solid var(--line,#E3E6EA);border-radius:9px;background:var(--panel,#fff);color:var(--ink,#14161A);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer';   /* 2.953 — 파랑은 «보관함 저장» 하나. 보드 저장은 바뀐 게 있을 때만 파랗게(.dirty) */
-  manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveExplicit();};
+  manualSaveBtn.onclick=function(e){e.stopPropagation();boardSaveOne();};   /* 3.077 — 저장 하나(보드 + 보관함) */
   var draftStyle=document.createElement('style');draftStyle.id='ps-3039-one-filled';draftStyle.textContent='body.ps-board-dirty #vaultSave,html.ps-page-board body.ps-board-dirty.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________):not(#_________) #vaultSave{background:var(--panel,#fff)!important;color:var(--ps-navy,#14213D)!important;border:1px solid var(--ps-navy,#14213D)!important;box-shadow:none!important}body.fmdark.ps-board-dirty #vaultSave,html.ps-page-board body.fmdark.ps-board-dirty.command-dock-v5.rail-full #ps-command-dock:not(#_):not(#__):not(#___):not(#____):not(#_____):not(#______):not(#_______):not(#________):not(#_________) #vaultSave{background:transparent!important;color:#E7EBF1!important;border-color:rgba(231,235,241,.55)!important}';document.head.appendChild(draftStyle);
   var manualStyle=document.createElement('style');manualStyle.textContent='#boardManualSave.dirty{background:var(--blue,var(--ps-navy,#14213D))!important;border-color:var(--blue,var(--ps-navy,#14213D))!important;color:#fff!important}@media(max-width:639px){#boardManualSave{position:fixed!important;left:14px!important;right:auto!important;bottom:calc(102px + var(--ps-animbar-h,48px) + 8px)!important;z-index:171!important;min-height:42px;max-width:150px}}';document.head.appendChild(manualStyle);
   boardManualStatus();
@@ -20220,7 +20237,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(manualHost&&manualSaveBtn.parentNode!==manualHost){if(manualHost===host)host.insertBefore(manualSaveBtn,saveBtn);else manualHost.appendChild(manualSaveBtn);}
     boardManualStatus();
   }
-  function toggleSave(){mountSave();var v=window.__csView||"board";var hide=(v==="session")||!!window.__vaultEdit;saveBtn.style.display=hide?"none":"inline-flex";manualSaveBtn.style.display=hide?"none":"inline-flex";}   /* 보관함 목록·항목 보기/편집 중엔 숨김(vCreateBar 저장이 대신함) */
+  function toggleSave(){mountSave();var v=window.__csView||"board";var hide=(v==="session")||!!window.__vaultEdit;saveBtn.style.display="none";manualSaveBtn.style.display=hide?"none":"inline-flex";}   /* 3.077 — «보관함 저장»은 «저장»에 합쳤다(노드는 남긴다 — 다른 코드가 찾는다) */   /* 보관함 목록·항목 보기/편집 중엔 숨김(vCreateBar 저장이 대신함) */
   var _saveResizeT=null;
   window.addEventListener("resize",function(){clearTimeout(_saveResizeT);_saveResizeT=setTimeout(function(){try{toggleSave();}catch(_){}},80);});
   var _osetView=setView;
@@ -20976,7 +20993,7 @@ try{ var _nb=document.getElementById('dfNew');
      보관함 연결은 끊는다(빈 판이 가져온 자료를 덮지 않게). 1분 동안은 띠의 «↶ 이전 보드»로 그대로 되살린다(되살릴 때도 보관함엔 쓰지 않는다). */
   var _nbUndo=null,_nbT=0,NB_UNDO_MS=60000;
   function _nbAvailable(){ return !_lent&&!_inVault&&!window.__vaultEdit&&!window.__vaultBook&&!window.__vaultReadOnly&&isBoardView(); }
-  function _nbSave(msg){ var s=window.__boardSaveExplicit; Promise.resolve(s?s({noLink:true,quiet:true}):false).then(function(ok){ _toast(ok?msg:(msg+" · «보드 저장»을 눌러 저장해 주세요")); },function(){ _toast(msg+" · «보드 저장»을 눌러 저장해 주세요"); }); }
+  function _nbSave(msg){ var s=window.__boardSaveExplicit; Promise.resolve(s?s({noLink:true,quiet:true}):false).then(function(ok){ _toast(ok?msg:(msg+" · «저장»을 눌러 저장해 주세요")); },function(){ _toast(msg+" · «저장»을 눌러 저장해 주세요"); }); }
   function _nbCounts(){ var list=pages||[{snap:_snap(),anim:_animNow()}],sc=0,any=false;
     list.forEach(function(p){ var f=p&&p.anim&&p.anim.frames; if(Array.isArray(f)&&f.length>1)sc+=f.length; try{ if(p&&p.snap&&!(typeof _boardSnapEmpty==="function"&&_boardSnapEmpty(p.snap)))any=true; }catch(_){} });
     return {n:list.length,sc:sc,any:any}; }
@@ -21174,14 +21191,14 @@ try{ var _nb=document.getElementById('dfNew');
     /* 2.927 — 연결 표시: 지금 페이지가 보관함 자료와 연결돼 있으면 «보드 저장» 때 그 자료도 같이 저장된다. × 로 끊기. */
     try{ var _lk=_linkAll().filter(function(l){return l.isCurrent;})[0];
       if(_lk&&_lk.tag){ var ch=document.createElement("span"); ch.id="bpLinkChip"; ch.className="bp-link";
-        ch.title="«보드 저장»하면 보관함 ‘"+(_lk.tag.name||"작전판")+"’에도 같은 내용이 저장됩니다"+(_lk.tag.multi?" (그 자료의 "+((+_lk.tag.srcPage||0)+1)+"페이지)":"");
+        ch.title="«저장»하면 보관함 ‘"+(_lk.tag.name||"작전판")+"’에도 같은 내용이 저장됩니다"+(_lk.tag.multi?" (그 자료의 "+((+_lk.tag.srcPage||0)+1)+"페이지)":"");
         ch.style.cssText="display:inline-flex;align-items:center;gap:4px;height:28px;max-width:240px;padding:0 4px 0 8px;border:1px dashed var(--blue,var(--ps-navy,#14213D));border-radius:999px;color:var(--blue,var(--ps-navy,#14213D));font-size:12px;font-weight:600;white-space:nowrap;flex:0 1 auto;min-width:120px;box-sizing:border-box";
         var ic=document.createElement("span"); ic.setAttribute("aria-hidden","true"); ic.style.cssText="display:inline-flex;flex:0 0 auto"; ic.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>'; ch.appendChild(ic);
         var tx=document.createElement("span"); tx.style.cssText="overflow:hidden;text-overflow:ellipsis;min-width:0"; tx.textContent=(_lk.tag.name||"작전판"); ch.appendChild(tx);
         ch.setAttribute("aria-label","보관함 연결: "+(_lk.tag.name||"작전판"));
         var cx=document.createElement("button"); cx.type="button"; cx.textContent="×"; cx.title="연결 끊기 — 이제 보드에만 저장"; cx.setAttribute("aria-label","보관함 연결 끊기");
         cx.style.cssText="width:22px;height:22px;min-height:0;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;font-size:15px;line-height:1;cursor:pointer;flex:0 0 auto";
-        cx.onclick=function(e){ e.stopPropagation(); _linkClear(_lk.tag.libId); persist(); render(); _toast("연결을 끊었어요 — 이제 «보드 저장»은 보드에만 저장해요"); };
+        cx.onclick=function(e){ e.stopPropagation(); _linkClear(_lk.tag.libId); persist(); render(); _toast("연결을 끊었어요 — 이제 «저장»은 보드에만 저장해요"); };
         ch.appendChild(cx); box.appendChild(ch); } }catch(_){}
     if(manualSave&&(window.innerWidth||0)>=640)box.appendChild(manualSave);
     /* 3.017 — «보드 설정»을 «보드 저장» 옆에(사용자 «보드 설정이 잘 안 보인다» → 1안).
@@ -23600,7 +23617,7 @@ body.ps-capturing #boardManualSave,body.ps-capturing #vaultSave,body.ps-capturin
   bForm.addEventListener("click",function(e){ e.stopPropagation();
     function open(){ try{ if(window.__psOpenFormation)window.__psOpenFormation(); }catch(_){} setTimeout(vis,0); }
     var has=false; try{ has=(state.players||[]).length>0; }catch(_){}
-    if(has&&typeof psConfirm==="function")psConfirm("포메이션을 고르고 «배치»를 누르면 지금 선수 자리가 새로 바뀝니다. 계속할까요?",open); else open(); });
+    if(has&&typeof psConfirm==="function")psConfirm("포메이션을 고르면 지금 선수 자리가 바로 새로 바뀝니다(⌘Z 로 되돌릴 수 있어요). 계속할까요?",open); else open(); });
   try{ new MutationObserver(vis).observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(_){}
   try{ var ab=document.getElementById("animBar"); if(ab)new MutationObserver(vis).observe(ab,{attributes:true,attributeFilter:["class"]}); }catch(_){}
   try{ var sc=document.querySelector(".sel-ctl"); if(sc)new MutationObserver(vis).observe(sc,{attributes:true,attributeFilter:["style","class"]}); }catch(_){}

@@ -39,7 +39,7 @@ try{
   await page.waitForTimeout(600);
   s=await st();
   assert.equal(s.tabs.length,1,'페이지 하나 '+JSON.stringify(s));assert.equal(s.players,0,'선수 없음');assert.equal(s.drawings,0,'그림 없음');assert.equal(s.frames,0,'장면 없음');
-  assert.ok(s.undo&&s.ready,'«↶ 이전 보드» '+JSON.stringify(s));assert.equal(s.save,'보드 저장','새 보드는 바로 저장됐다(변경 점 없음) '+JSON.stringify(s));
+  assert.ok(s.undo&&s.ready,'«↶ 이전 보드» '+JSON.stringify(s));assert.equal(s.save,'저장','새 보드는 바로 저장됐다(변경 점 없음) '+JSON.stringify(s));
   await page.screenshot({path:path.join(SHOTS,'board-new-board-'+engine+'.png')});
   // 3) «↶ 이전 보드» — 손대지 않았으면 묻지 않고 그대로 되살린다(페이지·선수·장면)
   await f.click('#bpNewBoardUndo');
