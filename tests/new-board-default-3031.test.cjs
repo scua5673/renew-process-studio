@@ -31,7 +31,7 @@ test('3.031 «빈 보드로 시작» keeps the default look but drops its player
 test('3.031 the default row button no longer reads like «보드 저장»',()=>{
   assert.match(board,/make\("button","cmd-board-default-save",null,"새 보드로 정하기"\)/);
   assert.doesNotMatch(board,/"현재 보드 저장"/);
-  assert.match(board,/toast\("지금 보드를 «새 보드» 기본 세팅으로 정했어요"\+\(__dn\?\(" · 선수 "\+__dn\+"명"\):""\)\+" · 이 보드는 «보드 저장»으로 저장해요"\)/);
+  assert.match(board,/toast\("지금 보드를 «새 보드» 기본 세팅으로 정했어요"\+\(__dn\?\(" · 선수 "\+__dn\+"명"\):""\)\+" · 이 보드는 «저장»으로 저장해요"\)/);
 });
 
 /* 3.031 — 오류 제보 81e77b91 «새 미팅은 슬라이드쇼가 되는데 보관함에서 가져온 자료는 슬라이드쇼가 없다» — 가져온 것은 작전판(페이지 10)이었다 */
