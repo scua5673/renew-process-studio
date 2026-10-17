@@ -1,0 +1,45 @@
+/* ══ 3.071 · 커뮤니티 «FIFA» 칸 — FIFA 훈련센터의 훈련 세션을 링크 카드로(community-fifa.js) ══
+   새 블록 기준(2.979): 글자 12·14·16(tokens.css --t-3 · --t-5 · --t-6) · 굵기 500·600·700 · 모서리 6·10 · 누르는 것만 파랑.
+   카드는 새 이름(fi-*)이라 다른 시트의 강제 규칙과 겹치지 않는다. 고르개 · 올리기를 치우는 것과 카드 격자는 프로세스 칸의 규칙(body.pr-proc)을 같이 쓰고,
+   유형 · 탐색 칸을 치우는 것은 엘미하 칸의 규칙에 한 줄 더했다(community.html). */
+
+.fi-hero{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff)}
+.fi-hero-tx{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
+.fi-hero-tx b{font-size:var(--t-6);font-weight:700;line-height:1.35;color:var(--text,#14161A);word-break:keep-all}
+.fi-hero-tx span{font-size:var(--t-3);font-weight:500;line-height:1.5;color:var(--text-2,#646A73);word-break:keep-all;overflow-wrap:anywhere}
+.fi-home{flex:0 0 auto;display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:10px;background:var(--c-act,#3A6DF0);color:#fff;font-size:var(--t-5);font-weight:600;line-height:1;text-decoration:none;white-space:nowrap}
+.fi-home:hover{filter:brightness(1.06)}
+
+.fi-card{display:flex;flex-direction:column;gap:6px;min-width:0;padding:12px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff);color:var(--text,#14161A);text-align:left;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.fi-card:hover{border-color:var(--c-act,#3A6DF0)}
+.fi-top{display:flex;align-items:center;gap:6px}
+.fi-badge{padding:2px 7px;border-radius:6px;background:var(--surface-2,#F1F3F5);font-size:var(--t-3);font-weight:600;line-height:1.4;color:var(--text-2,#646A73);white-space:nowrap}
+.fi-src{margin-left:auto;font-size:var(--t-3);font-weight:700;letter-spacing:.04em;color:var(--text-3,#8A9099)}
+.fi-tt{font-size:var(--t-5);font-weight:700;line-height:1.4;word-break:keep-all;overflow-wrap:anywhere}
+.fi-en{font-size:var(--t-3);font-weight:500;line-height:1.45;color:var(--text-3,#8A9099);overflow-wrap:anywhere}
+.fi-foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:8px;border-top:1px solid var(--line,#E3E6EA);font-size:var(--t-3);font-weight:500;color:var(--text-2,#646A73)}
+.fi-by{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-go{margin-left:auto;flex:0 0 auto;font-weight:600;color:var(--c-act,#3A6DF0)}
+
+/* 3.072 · 애니메이션 카드 — 누르면 작전판 뷰어(훈련 고르기 · 재생 · 보관함에 담기). «원문 ↗»만 FIFA 로 */
+.fi-anim{cursor:pointer;border-color:var(--c-act,#3A6DF0)}
+.fi-anim[aria-busy="true"]{opacity:.6}
+.fi-badge-anim{background:var(--c-act,#3A6DF0);color:#fff}
+.fi-top .fi-badge-anim+.fi-badge{margin-left:0}
+.fi-trs{display:flex;flex-direction:column;gap:4px;list-style:none;margin:2px 0 0;padding:0}
+.fi-trs li{display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:6px;align-items:baseline;font-size:var(--t-3);font-weight:500;line-height:1.45;color:var(--text-2,#646A73)}
+.fi-trs .fi-i{font-weight:700;font-variant-numeric:tabular-nums;color:var(--c-act,#3A6DF0)}
+.fi-trs .fi-nm{min-width:0;word-break:keep-all;overflow-wrap:anywhere}
+.fi-trs .fi-mn{font-variant-numeric:tabular-nums;color:var(--text-3,#8A9099)}
+.fi-aside{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff);color:var(--text-2,#646A73);font-size:var(--t-5);line-height:1.55}
+.fi-aside b{font-size:var(--t-6);font-weight:700;color:var(--text,#14161A)}
+.fi-aside ul{margin:0;padding-left:18px}
+.fi-aside p{margin:0;word-break:keep-all}
+.fi-aside small{font-size:var(--t-3);color:var(--text-3,#8A9099)}
+
+@media (pointer:coarse){ .fi-card:active{transform:scale(.985);transition:transform .08s} }
+@media (max-width:560px){
+.fi-hero{align-items:flex-start;flex-wrap:wrap}
+.fi-home{height:40px}
+.fi-tt{font-size:var(--t-6)}
+}
