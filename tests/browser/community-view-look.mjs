@@ -20,6 +20,7 @@ try{
     Storage.prototype.setItem=function(k,v){if(k==='cs_board_lookdef_v1'){try{const t=window.top;(t.__lkW=t.__lkW||[]).push(location.pathname+location.search+' '+String(new Error().stack||'').split('\n').slice(0,6).join(' | '));}catch(_){}}return o.apply(this,arguments);};}catch(_){}};
   await context.addInitScript(lkTrap);
   for(const f of page.frames()){try{await f.evaluate(lkTrap);}catch(_){}}
+  const lkAt=()=>page.evaluate(()=>localStorage.getItem('cs_board_lookdef_v1')),lk0=await lkAt(),frames0=page.frames().map(f=>f.url().replace(/^https?:\/\/[^/]+/,''));
   const shot=n=>page.screenshot({path:path.join(SHOTS,`community-view-look-${engine}-${size}-${n}.png`)});
   const cors={'access-control-allow-origin':'*'};
   await context.route('**/rest/v1/rpc/ps_comm_**',r=>r.fulfill({status:200,contentType:'application/json',headers:cors,body:'null'}));
@@ -62,6 +63,7 @@ try{
   const pick=async(v,sel)=>{ await v.click(sel); await page.waitForTimeout(phone?250:700); };
 
   // 1) 처음 — 편집 크롬 없음 · «움직임 재생»이 맨 위 · «보기»는 올린 그대로
+  const lkOpen=await lkAt();   // 커뮤니티 글을 열기 전 값 — 보기가 이 값을 바꾸지 않아야 한다
   let v=await open(),L=await look(v);
   assert.deepEqual(L.chrome,[],'커뮤니티 보기에는 도크 · 선수 칸 · 도구 옵션 · 훈련 탭 · 장면 줄이 없다');
   assert.equal(L.playHit,true,'«움직임 재생»을 가리는 것이 없다');
@@ -122,7 +124,8 @@ try{
     assert.deepEqual([L.tilt,L.shape],[true,'circle'],'3D 도 기기에 남는다(데스크톱)');
     assert.equal(L.setting,setting0,'보드 설정의 3D 값은 끝까지 그대로');
   }
-  assert.equal(L.lookdef,null,'기기 기본 보드 모양(cs_board_lookdef_v1)을 쓰지 않는다 — '+JSON.stringify(await page.evaluate(()=>window.__lkW||[])));
+  assert.equal(L.lookdef,lkOpen,'커뮤니티 보기는 기기 기본 보드 모양(cs_board_lookdef_v1)을 쓰지 않는다 — '+JSON.stringify({lk0,lkOpen,frames0,writes:await page.evaluate(()=>window.__lkW||[])}));
+  console.log(JSON.stringify({lookdefBeforeViewer:lk0,lookdefAtOpen:lkOpen}));
   assert.equal(L.docW,L.vw,'가로로 넘치지 않는다');
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
