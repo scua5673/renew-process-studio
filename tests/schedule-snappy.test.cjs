@@ -109,7 +109,7 @@ function saver(over){
   const writes=[],hist=[];
   const local=new Map();
   const c=vm.createContext(Object.assign({JSON,Date,Math,Object,Promise,
-    weeksMap:{0:[{d:'월',trainings:[{slot:'S1',_open:true,note:'x'}]}]},__schedBase:null,__schedGrpWeeks:{},myTemplates:[],ddayLabel:'',
+    weeksMap:{0:[{d:'월',trainings:[{slot:'S1',_open:true,note:'x'}]}]},__schedBase:null,__schedGrpWeeks:{},myTemplates:[],ddayLabel:'',seasonPlan:{},
     __ANCHOR:thisMonday(),__schedRev:2,__schedSavedRaw:'',__schedWritePending:false,__schedWriteStartGen:0,__schedLocalGen:0,__schedWriteSeq:0,
     __histRawNext:null,STORE_KEY:'process_coach_v1',
     document:{getElementById:()=>null},
