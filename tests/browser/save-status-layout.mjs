@@ -98,7 +98,9 @@ try{
         await libWrite(Array.from({length:60},(_,i)=>({libId:'layout-fixture-'+i,type:'board',name:'가상 보관 자료 '+String(i+1).padStart(2,'0'),createdBy:uid,author:'가상 테스트 코치',savedAt:i+1,thumb,snap:sn})));
         libTouch();setView('session');
       },UID);
-      await frame.locator('.vcard').nth(30).waitFor({state:'attached'});
+      /* 3.100 — WebKit 393px 에서 합성 자료 60개를 쓰고 31번째 카드가 붙기까지 25초(기본 한도)를 넘긴 일이 두 번 있었다(staging 7d090f4,
+         같은 파일이 PR 검사에서는 통과). 판정은 그대로, 이 기다림만 60초 */
+      await frame.locator('.vcard').nth(30).waitFor({state:'attached',timeout:60000});
       /* 3.012 — 보관함을 처음 열면 예시 다섯이 한 번 담기고(board.html vxSeedRun · 표식 ps_vault_px_v1) 목록을 다시 그린다. 위 합성 자료의 savedAt(1~60)이
          예시 날짜(2026-01-01)보다 옛날이라 예시가 맨 위로 들어와 카드가 43.6px 내려간다 — WebKit 에서는 그게 첫 측정 뒤에 와서
          «상태 줄이 목록을 움직였다»로 잘못 잡혔다(PR #374, 393px off). 예시가 담기고 다시 그려진 뒤에 잰다. */
