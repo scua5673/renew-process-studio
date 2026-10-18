@@ -64,7 +64,7 @@ export async function startFixture(opts={}){
     else if(url.pathname.endsWith('/ps_members_of_v2')||url.pathname.endsWith('/ps_members_of'))body=[{user_id:uid,name:'가상 코치',email:'a@example.invalid',role:'owner'}];
     else if(url.pathname.endsWith('/ps_key_scope'))body='team';
     else if(url.pathname==='/rest/v1/ps_kv'){
-      if(kvGate&&req.method==='GET'&&(!kvGate.wid||url.searchParams.get('workspace_id')==='eq.'+kvGate.wid))await kvGate.promise;   /* 3.103 — holdKvPull(): 팀 자료 받기를 붙잡아 «받기 전» 틈을 만든다 */
+      if(kvGate&&req.method==='GET'&&(!kvGate.wid||url.searchParams.get('workspace_id')==='eq.'+kvGate.wid))await kvGate.promise;   /* 3.104 — holdKvPull(): 팀 자료 받기를 붙잡아 «받기 전» 틈을 만든다 */
       const wid=(url.searchParams.get('workspace_id')||'eq.'+WT).slice(3),filter=url.searchParams.get('k');
       const matches=row=>row.workspace_id===wid&&(!filter||filter==='eq.'+row.k||(filter.startsWith('in.(')&&filter.slice(4,-1).split(',').map(k=>k.replace(/^"|"$/g,'')).includes(row.k))||(filter.startsWith('like.')&&row.k.startsWith(filter.slice(5).replace(/\*$/,''))));
       if(req.method==='GET'){const cols=(url.searchParams.get('select')||'').split(',').filter(Boolean);body=[...db.values()].filter(matches).map(row=>cols.length?Object.fromEntries(cols.map(k=>[k,row[k]])):{...row});}

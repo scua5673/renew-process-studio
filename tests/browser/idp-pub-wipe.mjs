@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp,SIZES,WT,A} from '../fixtures/team-app.mjs';
-/* 3.103 — 닫을 때 지운 코치 피드백(cs_idp_pub_v1_<uid>)을 다시 받기 전에 쓰면 서버본이 한 항목짜리로 덮이던 길(가상 팀 재현 9 → 1).
+/* 3.104 — 닫을 때 지운 코치 피드백(cs_idp_pub_v1_<uid>)을 다시 받기 전에 쓰면 서버본이 한 항목짜리로 덮이던 길(가상 팀 재현 9 → 1).
    진짜 앱 · 진짜 동기화(sync.js) · 진짜 닫기 정리(PSSync.cache.wipe = pagehide 가 부르는 wipeTeamCacheSoft)로 본다.
    ① 열기 → 받기 ② 닫으며 지우기 ③ 다시 열되 받기를 붙잡는다(fx.holdKvPull) ④ 그 틈에 코치가 한 줄 — 페이지 저장 함수
    (idp.html pubPushAt)가 로컬 문서가 없을 때 하는 그대로 {} 에서 쓴다 — 그 사이 다른 코치도 서버본에 목표 하나

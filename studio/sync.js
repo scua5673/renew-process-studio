@@ -145,7 +145,7 @@ function wipeTeamCacheSoft(){
     if(inIdb&&(!window.storage||!window.storage.delIfValue))return;
     if(!holdConflictCurrent(owner)||localStorage.getItem(k)!==loc)return;
     try{ localStorage.removeItem(k); n++; }catch(_){ return; }
-    if(typeof PSIdpPubWipe!=='undefined')PSIdpPubWipe.mark(m,k);   /* 3.103 idp-pub-wipe.js */
+    if(typeof PSIdpPubWipe!=='undefined')PSIdpPubWipe.mark(m,k);   /* 3.104 idp-pub-wipe.js */
     /* 2.733 — 경기 사본을 지웠으면 이 워크스페이스에서 경기 키를 확인했다는 표도 지운다.
        표만 남으면 다음 부팅이 빈 로컬을 확인 완료로 오해해 일정에서 빈 문서를 만든다. */
     if(k===MATCH_KEY&&m.r)delete m.r[k];
@@ -2571,7 +2571,7 @@ function syncState(){
   if(rc)return {kind:'ask',text:'저장할 내용 선택 · '+rc+'건',n:n,review:rc};
   if(busy)return {kind:'busy',text:'올리는 중'+(n?(' · '+n):''),n:n,review:rc};
   if(n)return {kind:'pending',text:'전송 대기 · '+n+'건',n:n,review:rc};
-  /* 3.103 — 이 공간에서 아직 못 받았으면(전환 뒤 · 닫기 정리 뒤) ok 가 아니다. ps_last_pull_at 은 공간을 안 가린다 */
+  /* 3.104 — 이 공간에서 아직 못 받았으면(전환 뒤 · 닫기 정리 뒤) ok 가 아니다. ps_last_pull_at 은 공간을 안 가린다 */
   var wiped=typeof cacheWipedFlag==='function'&&cacheWipedFlag();
   if(!(+m.last)||wiped)return fresh?{kind:'wait',reason:lastIssue.code,text:'아직 못 받았어요 · '+syncReasonText(lastIssue.code),n:0,review:0,at:lastIssue.at}:{kind:'wait',text:'받는 중',n:0,review:0};
   var at=0; try{ at=+localStorage.getItem('ps_last_pull_at')||0; }catch(_){} at=Math.max(at,+m.last||0);
@@ -7560,7 +7560,7 @@ function syncNowCore(reason){
             return;
           }
           var lh=hash(loc),dirty=(lh!==(m.h[k]||'')),srvChanged=row?(row.cupd!==(m.c[k]||0)):false;
-          /* 3.103 — 받기 전에 다시 쓴 문서는 서버본과 조상 없이 합친다(idp-pub-wipe.js) */
+          /* 3.104 — 받기 전에 다시 쓴 문서는 서버본과 조상 없이 합친다(idp-pub-wipe.js) */
           var rebuilt=pw==='rebuilt'&&!!row;
           if(rebuilt){if(typeof row.v!=='string'){syncDiagnostic('idp-public-rebuilt-wait',new Error('rebuilt pub: wait for server raw'));return;}srvChanged=true;}
           if(loc!=null&&loc.length>MAXLEN){skippedBig++;skippedKeys.push(k);return;}
