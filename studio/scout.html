@@ -15,7 +15,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="match-board-tools.js?v=2.886"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
-<script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 -->
+<script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 --><script src="pdf-export.js"></script><script src="player-card.js"></script><!-- 3.093 — PDF 내보내기 창(일정 · 작전판과 같은 창 · PDF 내려받기) -->
 <script src="rpt-i18n.js"></script>
 <script src="pitches.js"></script>
 <script src="eval-standard.js"></script><!-- 1.974 — PROCESS 평가 표준 v1(20항목·두 톤 문장) — 팀 평가표·IDP 셀프평가 한 벌 -->
@@ -763,6 +763,7 @@ body.fmdark .pos-li .pl-edit:hover{background:rgba(127,152,208,.22);}
 .tm-row .t-mv:disabled{opacity:.3;cursor:default;}
 .tm-row .tgt-rank{flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#eef2fe;color:var(--ps-navy,#14213D);font-weight:var(--fw-head);font-size:var(--fs-sub);display:flex;align-items:center;justify-content:center;}
 .pl-modal{position:fixed;inset:0;z-index:9000;background:rgba(16,24,40,.5);display:flex;align-items:flex-start;justify-content:center;padding:22px 14px;overflow:auto;}
+@media(max-width:480px){#plEditTitle{flex:1 0 100%}#plPdf svg{display:none}}   /* 3.093 — «선수 카드» 단추가 늘어 폰에서는 이름 한 줄 · 단추 한 줄 */
 .pl-modal .card{border-radius:16px;}
 .pl-modal>#plEditCard{max-width:680px;width:100%;margin:0;}
 /* 1.852 — 선수 편집 카드 = 스카우팅 프로필 패널 문법 */
@@ -6121,7 +6122,7 @@ body.fmdark #matchMeetCard .mmv-empty .b .mm-new{background:rgba(127,152,208,.16
       </div>
       <div class="pl-modal" id="plEditModal" style="display:none">
       <div class="card" id="plEditCard">
-        <div class="card-h"><span class="t" id="plEditTitle">선수 편집</span><span class="sp"></span><button class="btn primary sm" id="plPdf" title="이력서+세부평가 2장 PDF — IDP와 동일 양식"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>PDF 내보내기</button><button class="btn sm" id="plSheet" title="프로필 한 장 — A4 1장(장점·보완할 점·영상 QR)">프로필 한 장</button><button class="btn ghost sm" id="plDelete" style="color:var(--red,#C24A46)">선수 삭제</button><button class="btn ghost sm" id="plClose">닫기</button></div>
+        <div class="card-h"><span class="t" id="plEditTitle">선수 편집</span><span class="sp"></span><button class="btn primary sm" id="plPdf" title="이력서+세부평가 2장 PDF — IDP와 동일 양식"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>PDF 내보내기</button><button class="btn sm" id="plCard" title="선수 카드 — A4 1장(프로필 요점 + 평가 막대)">선수 카드</button><button class="btn sm" id="plSheet" title="프로필 한 장 — A4 1장(장점·보완할 점·영상 QR)">프로필 한 장</button><button class="btn ghost sm" id="plDelete" style="color:var(--red,#C24A46)">선수 삭제</button><button class="btn ghost sm" id="plClose">닫기</button></div>
         <!-- 1.852 — 스카우팅 프로필 패널(.sc-dbody)과 같은 문법(사용자 "똑같이"): 사진 정사각 상단 · 라벨 왼쪽 52px · 포지션은 칩 -->
         <div class="pl-photo" id="plPhotoPrev" aria-label="선수 사진"></div>
         <div class="pl-photorow"><button type="button" class="pl-mini" id="plPhotoUp">사진 올리기</button><button type="button" class="pl-mini" id="plPhotoDel" style="display:none">지우기</button><input type="file" accept="image/*" id="plPhoto" style="display:none"></div>
@@ -8825,7 +8826,7 @@ function sbQuickOpen(pid){
     +(coreRows?'<div class="sbq-sec">핵심 속성 · 기준 대비</div>'+coreRows:'')
     +((p.memo||"").trim()?'<div class="sbq-sec">관찰 메모</div><div class="sbq-memo">'+esc(p.memo)+'</div>':'')
     +'<div class="sbq-acts"><button type="button" class="btn" id="sbqClose">닫기</button>'
-    +'<button type="button" class="btn" id="sbqPrint" title="프로필·평가 A4 1장 — 인쇄 창에서 PDF 저장">선수 카드 PDF</button>'
+    +'<button type="button" class="btn" id="sbqPrint" title="선수 카드 — A4 1장(프로필 요점 + 평가 막대)">선수 카드 PDF</button>'
     +'<button type="button" class="btn primary" id="sbqEdit">프로필·평가 편집</button></div>'
     +'</div>';
   document.body.appendChild(el);
@@ -9895,6 +9896,7 @@ function openPlayer(id,opts){
   _m.style.display="flex";$("plEditTitle").textContent=pl.name||"선수 편집";
   if($("plPdf"))$("plPdf").onclick=()=>printPlayerReport(pl.id);
   if($("plSheet"))$("plSheet").onclick=()=>printProfileSheet(pl.id);   /* 2.617 */
+  if($("plCard"))$("plCard").onclick=()=>printPlayerCard(pl.id);   /* 3.093 */
   /* 1.691 — 모달에서 바로 삭제(사용자). 명단의 ✕와 같은 동작·같은 확인 문구 */
   if($("plDelete"))$("plDelete").onclick=()=>{
     if(pl.type==="target"){scArchiveCandidate(pl.id);closePlayer();return;}
@@ -10030,11 +10032,11 @@ function esPageHTML(pl, lang, pageLb){
     +'<rect x="28" y="112" width="44" height="16" fill="none" stroke="#d6d8dd" stroke-width="1.2"/>';
   list.forEach(k=>{const c=XY[k];if(!c)return;const main=k===mainAb,sub=subAbs.indexOf(k)>=0;
     const x=4+c[0]/100*92,y=4+c[1]/100*124;
-    pitch+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="5.4" fill="'+(main?'#7C4DFF':(sub?'#CBB8FF':'#ECEDF0'))+'"/>'
+    pitch+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="5.4" fill="'+(main?'#14161A':(sub?'#9aa0aa':'#ECEDF0'))+'"/>'
       +'<text x="'+x.toFixed(1)+'" y="'+(y+1.9).toFixed(1)+'" text-anchor="middle" font-size="4.2" font-weight="800" fill="'+((main||sub)?'#fff':'#9aa0aa')+'">'+k+'</text>';});
   pitch+='</svg>';
   const lv=pl.levels||{};
-  const dots=v=>{let h='<span class="es-dots">';for(let i=1;i<=5;i++)h+='<i'+(i<=v?' class="f"':'')+'></i>';return h+'</span>';};
+  const dots=(v,n)=>'<div class="es-bar"><i style="width:'+(Math.max(0,Math.min(5,v))*20).toFixed(1)+'%"></i></div>'+(n===0?'':'<b class="es-n">'+(v?v:'—')+'</b>');   /* 3.093 — 점 → 막대 + 숫자 */
   const groups={},order=[];
   (data.attrs||[]).forEach(a=>{const c=CATNAME[a.cat]||a.cat||"기타";if(!groups[c]){groups[c]=[];order.push(c);}groups[c].push(a);});
   const avgs=order.map(c=>{let sm=0,n=0;groups[c].forEach(a=>{const v=+lv[a.id]||0;if(v){sm+=v;n++;}});return {c,avg:n?sm/n:0,n};});
@@ -10043,9 +10045,9 @@ function esPageHTML(pl, lang, pageLb){
   const today=new Date().toLocaleDateString(lang==='ja'?'ja-JP':lang==='en'?'en-US':'ko-KR');
   let side='<div class="es-side"><div class="es-kick">PLAYER</div>'
     +'<div class="es-name">'+esc(pl.name||LB.player)+'</div>'
-    +'<div class="es-leg"><span><i style="background:#7C4DFF"></i>'+LB.mainPos+'</span><span><i style="background:#CBB8FF"></i>'+LB.subPos+'</span></div>'
+    +'<div class="es-leg"><span><i style="background:#14161A"></i>'+LB.mainPos+'</span><span><i style="background:#9aa0aa"></i>'+LB.subPos+'</span></div>'
     +pitch+'<div class="es-hr"></div><div class="es-kick" style="margin-bottom:7px">'+LB.catScores+'</div>'
-    +avgs.map(a=>'<div class="es-crow"><span>'+esc(a.c)+'</span><em'+(a.n?' class="v"':'')+'>'+(a.n?(Math.round(a.avg*10)/10).toFixed(1):'—')+'</em>'+dots(Math.round(a.avg))+'</div>').join('')
+    +avgs.map(a=>'<div class="es-crow"><span>'+esc(a.c)+'</span>'+dots(a.avg,0)+'<em'+(a.n?' class="v"':'')+'>'+(a.n?(Math.round(a.avg*10)/10).toFixed(1):'—')+'</em></div>').join('')
     +'<div class="es-hr"></div><div class="es-tot"><span>'+LB.totalAvg+'</span><b>'+tot.toFixed(1)+'</b><i>/ 5</i></div>'
     +(function(){var done=0;(data.attrs||[]).forEach(a=>{if(+lv[a.id]>0)done++;});
       return '<div class="es-cnt">'+done+' / '+(data.attrs||[]).length+' '+LB.itemsLb+'</div>';})()
@@ -10061,8 +10063,21 @@ function esPageHTML(pl, lang, pageLb){
           +pi.map(function(it){ return '<div class="es-row"><span>'+esc(it.name)+'</span>'+dots(+lv[it.id]||0)+'</div>'; }).join('')+'</div>'; }
       return '<div class="es-card"><div class="es-ct" style="color:#9aa0aa">memo</div>'+Array(11).fill('<div class="es-ml"></div>').join('')+'</div>'; })()
     +'</div>';
+  /* 3.093 — 칸 줄 수만큼 높이를 나눠 장을 채운다(같은 줄의 칸끼리 행 높이를 맞춘다) */
+  { const ch=main.split('<div class="es-card">'), n=ch.slice(1).map(x=>(x.match(/class="es-(row|ml)"/g)||[]).length), R=[];
+    for(let i=0;i<n.length;i+=3)R.push(Math.max.apply(null,n.slice(i,i+3)));
+    main=ch[0].replace('<div class="es-main">','<div class="es-main" style="grid-template-rows:'+R.map(x=>(x+1.6)+'fr').join(' ')+'">')
+      +ch.slice(1).map((x,i)=>'<div class="es-card" style="grid-template-rows:auto repeat('+R[Math.floor(i/3)]+',1fr)">'+x).join(''); }
   return '<div class="es-wrap">'+side+main+'</div>'
     +'<div class="es-ft"><span><b>PRO</b>FILE · '+LB.evalTitle+'</span><span>'+(pageLb?pageLb+' · ':'')+today+'</span></div>';
+}
+/* 3.093 — 개인 PDF(이력서 + 세부평가)는 장을 꽉 채운다(사용자 «여백이 최소화 되게»): 장 높이 고정 · 바닥글은 아래 · 세부평가 칸은 높이를 나눠 갖는다 */
+function rzMoreHTML(pf,LB){
+  const L=v=>String(v||"").split(/\r?\n/).map(x=>x.replace(/^\s*\d+[.)]?\s*/,"").trim()).filter(Boolean);
+  const cl=L(pf.career||pf.clubs).slice(0,4), st=L(pf.strengths).slice(0,3), dv=L(pf.develop).slice(0,3);
+  const li=(a,o)=>'<div class="rz-pgrid">'+a.map((t,i)=>'<div class="rz-prow"><i class="rz-no'+o+'">'+(i+1)+'</i><b>'+esc(t)+'</b></div>').join('')+'</div>';
+  return (cl.length?'<div class="rz-sec">'+LB.clubs+'</div>'+li(cl,' c'):'')
+    +((st.length||dv.length)?'<div class="rz-two"><div>'+(st.length?'<div class="rz-sec">'+LB.strengths+'</div>'+li(st,''):'')+'</div><div>'+(dv.length?'<div class="rz-sec">'+LB.develop+'</div>'+li(dv,' o'):'')+'</div></div>':'');
 }
 function printPlayerReport(id){
   const pl=player(id); if(!pl){toast("선수를 찾을 수 없어요");return;}
@@ -10072,8 +10087,8 @@ function printPlayerReport(id){
     const build=ink=>{
       /* 이력서 1장(세로) + 세부평가 1장(가로) — IDP 내보내기와 동일 양식 */
       const d0=new Date(),ymdT=d0.getFullYear()+'-'+String(d0.getMonth()+1).padStart(2,'0')+'-'+String(d0.getDate()).padStart(2,'0');
-      const body=`<section class="pg-resume">${resumePageHTML(pl,lang,'1 / 2')}</section><section class="pg-eval">${esPageHTML(pl,lang,'2 / 2')}</section>`;
-      return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${esc(name)}_이력서·세부평가_${ymdT}</title><style>${SCOUT_DOC_CSS}${ink?SCOUT_INK_CSS:""}.pg-eval{break-after:auto}</style></head><body>${body}</body></html>`;};
+      const body=`<section class="pg-resume">${resumePageHTML(pl,lang,'1 / 2',1)}</section><section class="pg-eval">${esPageHTML(pl,lang,'2 / 2')}</section>`;
+      return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${esc(name)}_이력서·세부평가_${ymdT}</title><style>${SCOUT_DOC_CSS}${ink?SCOUT_INK_CSS:""}${(window.PSPlayerCard&&PSPlayerCard.reportCSS)||""}</style></head><body>${body}</body></html>`;};
     printStandalone(build(false),build);
   });
 }
@@ -10287,7 +10302,7 @@ function evalDocHTML(players,p,note){
     <div class="ev-legend">● 현재 레벨 · ○ 미달 · 파란 테두리 = 목표 레벨 · 점수는 현재 레벨 평균(5점 만점)</div>
   </div>`;
 }
-function resumePageHTML(pl, lang, pageLb){   /* pageLb: 인쇄 짝(1/2·2/2)에서만 넘긴다 */
+function resumePageHTML(pl, lang, pageLb, more){   /* pageLb: 인쇄 짝(1/2·2/2)에서만 넘긴다 · more: 개인 PDF — 클럽 경력 · 장점 · 보완할 점도(3.093) */
   var LB=rptLabels(lang);
   const pf=pl.profile||{};
   const mainP=pos(pl.posId); const subs=(pf.subs||(pf.sub?[pf.sub]:[])).map(id=>pos(id)).filter(Boolean);
@@ -10329,6 +10344,7 @@ function resumePageHTML(pl, lang, pageLb){   /* pageLb: 인쇄 짝(1/2·2/2)에�
     </div>
     ${specs?`<div class="rz-specs">${specs}</div>`:``}
     ${(careerRows||awardRows)?`<div class="rz-sec">${LB.career}</div><div class="rz-pgrid">${careerRows}${awardRows}</div>`:``}
+    ${more?rzMoreHTML(pf,LB):``}
     ${pf.video?`<div class="rz-sec">${LB.video}</div><div class="rz-pgrid"><div class="rz-prow"><span class="rz-pk">${LB.highlight}</span><b><a class="rz-link" href="${esc(pf.video)}">${esc(pf.video)}</a></b></div></div>`:``}
     ${contact?`<div class="rz-contact">${contact}</div>`:``}
     <div class="rz-rfoot"><span><b>PRO</b>FILE · ${LB.resumeTitle}</span><span>${pageLb?pageLb+' · ':''}${today} ${LB.createdSuffix}</span></div>
@@ -10611,13 +10627,15 @@ body{margin:0;color:#14161A;font-family:'Pretendard Variable','Pretendard',-appl
 .es-crow em.v{color:#14161A}
 .es-ct em.v{color:#14161A;font-size:12px}
 .es-cnt{margin-top:5px;font-size:10px;font-weight:800;color:#9aa0aa;font-variant-numeric:tabular-nums}
-.es-crow .es-dots{margin-left:auto}
-.es-dots{white-space:nowrap;flex:0 0 auto}
-.es-dots i{width:9px;height:9px;border-radius:50%;border:1.2px solid #c8cad1;display:inline-block;margin-left:3px;vertical-align:middle}
-.es-dots i.f{background:#14161A;border-color:#14161A}
+.es-crow span{flex:0 0 auto;min-width:38px}
+.es-crow em{flex:0 0 24px;text-align:right}
+.es-bar{flex:1 1 auto;height:5px;background:#ECEDF0;border-radius:3px;overflow:hidden}
+.es-row .es-bar{flex:0 0 56px;height:4px}
+.es-bar i{display:block;height:100%;background:#14161A;border-radius:3px}
+.es-n{flex:0 0 16px;text-align:right;font-weight:800;color:#14161A;font-variant-numeric:tabular-nums}
 .es-tot{display:flex;align-items:baseline;gap:7px}
 .es-tot span{font-size:10px;font-weight:800;color:#666}
-.es-tot b{font-size:34px;font-weight:800;letter-spacing:-1px;color:#7C4DFF;line-height:1}
+.es-tot b{font-size:34px;font-weight:800;letter-spacing:-1px;color:#14161A;line-height:1}
 .es-tot i{font-style:normal;font-size:11px;font-weight:600;color:#9aa0aa}
 .es-main{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-content:start}
 .es-card{border:1px solid #e7e8ec;border-radius:10px;padding:11px 13px;break-inside:avoid}
@@ -10669,7 +10687,22 @@ function __pvClose(){
   window.removeEventListener("resize",__pvFit);
   document.removeEventListener("keydown",__pvKey);
 }
+/* 3.093 — 선수 문서(프로필 한 장 · 이력서 · 세부평가 · 명단 · 경기 · 선수 카드 · IDP)도 일정 · 작전판과 같은 내보내기 창(studio/pdf-export.js):
+   개인 노트로 · PDF 내려받기(인쇄 창 없이 파일) · 인쇄 · 닫기. 장이 문서 몸에 바로 놓인 문서(프로필 .a4 · 이력서 세로 + 세부평가 가로)는 장마다 제 방향으로 찍는다.
+   그 파일을 못 읽었으면 예전 «출력 미리보기». */
+function pdfxOpen(html,rebuild){
+  if(!(window.PSPdfExport&&typeof PSPdfExport.open==='function'))return false;
+  const land=/@page[^{]*\{[^}]*landscape/.test(html), mixed=land&&/@page\s+resume/.test(html);
+  const m=/<title>([^<]*)<\/title>/.exec(html), fname=(m&&m[1].replace(/&amp;/g,'&'))||'선수';
+  const pages=/class="a4"/.test(html)?{sel:'.a4',land:()=>false}
+    :(/class="pg-(resume|eval)"/.test(html)?{sel:'section.pg-resume,section.pg-eval',land:el=>el.classList.contains('pg-eval')}:null);
+  const opts=(typeof rebuild==='function')?[{key:'ink',label:'인쇄',choices:[['','보통'],['1','잉크 절약']]}]:[];
+  PSPdfExport.open({title:fname.split('_').slice(0,2).join(' · ')+' — PDF',html:html,fname:fname,land:land&&!mixed,size:mixed?[1123,1123]:null,pages:pages,
+    source:'scout',noteKind:'player-pdf',options:opts,values:{ink:''},rebuild:opts.length?(v=>rebuild(!!v.ink)):null});
+  return true;
+}
 function printStandalone(html,rebuild,size){   /* 2.617 — size {W,H}: 문서가 자기 크기(A4 794×1123)를 알려줄 때 */
+  if(pdfxOpen(html,rebuild))return;
   /* 명명 페이지(@page eval{...landscape})도 인식 — 혼합 문서에서 가로 장이 세로 폭으로 눌려 보이던 미리보기 수정 */
   const land=/@page[^{]*\{[^}]*landscape/.test(html);
   const mixed=land&&/@page\s+resume/.test(html);
@@ -12718,96 +12751,21 @@ function scoutRosterDocHTML(ink){
 }
 function printScoutRoster(){printStandalone(scoutRosterDocHTML(false),ink=>scoutRosterDocHTML(!!ink));}
 /* ===== 선수 카드 — 개인 프로필 A4 가로 1장 ===== */
-const PLCARD_CSS=`
-.pchm .pname{font-size:15pt;font-weight:800;color:#14161A;}
-.pcL{flex:0 0 55%;display:flex;flex-direction:column;min-height:0;}
-.pcgrid{flex:1 1 auto;min-height:0;overflow:hidden;}
-.pcgrid.two{columns:2;column-gap:6mm;}
-.pclab{break-inside:avoid;font-size:6.5pt;font-weight:800;color:#9CA1A9;letter-spacing:.1em;border-bottom:1.2px solid #14161A;padding-bottom:.8mm;margin:2.4mm 0 1.2mm;}
-.pcgrid .pclab:first-child{margin-top:0;}
-.drow{display:flex;align-items:center;gap:2mm;height:5.8mm;break-inside:avoid;}
-.pcgrid.two .drow{height:5mm;}
-.drow .an{flex:1 1 auto;font-size:8pt;font-weight:600;color:#2C3340;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dots{flex:0 0 auto;display:flex;gap:1.5mm;padding-right:1mm;}
-.dots i{position:relative;display:block;width:2.8mm;height:2.8mm;border-radius:50%;border:1.2px solid #B9BEC6;background:#fff;}
-.dots i.on{background:#3A6DF0;border-color:#3A6DF0;}
-.dots i.tg::after{content:"";position:absolute;left:50%;top:50%;width:3.2mm;height:3.2mm;border:1.2px solid #14161A;transform:translate(-50%,-50%) rotate(45deg);}
-.pcleg{flex:0 0 auto;font-size:7pt;font-weight:600;color:#9CA1A9;margin-top:1.6mm;}
-.pcleg .lgc{color:#3A6DF0;}
-.pcR{flex:1 1 auto;display:flex;flex-direction:column;gap:3mm;min-height:0;}
-.membox{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;overflow:hidden;border:1.4px solid #14161A;border-radius:1.6mm;padding:2.6mm;}
-.bt{flex:0 0 auto;font-size:7pt;font-weight:800;color:#9CA1A9;letter-spacing:.1em;margin-bottom:1.4mm;}
-.mtx{flex:0 0 auto;font-size:9pt;font-weight:600;color:#2C3340;white-space:pre-wrap;line-height:1.5;max-height:62%;overflow:hidden;}
-.mrules{flex:1 1 auto;min-height:8mm;background:repeating-linear-gradient(to bottom,transparent 0,transparent 7.4mm,#DDE1E5 7.4mm,#DDE1E5 calc(7.4mm + 1px));}
-.sumbox{flex:0 0 auto;border:1px solid #E3E6EA;border-radius:1.6mm;padding:2.4mm 2.6mm;}
-.sumbox .sr{font-size:8pt;font-weight:600;color:#2C3340;line-height:1.55;}
-.sumbox .sr b{color:#14161A;font-weight:800;}`;
-function playerCardDocHTML(id,ink){
-  ink=!!ink;
-  const pl=player(id); if(!pl)return "";
-  const po=pos(pl.posId);
-  const today=new Date().toLocaleDateString("ko-KR");
-  const team=((data.meta&&data.meta.teamName)||"").trim();
-  const abbr=po?(tmAbbrOf(pl)||posAbbr(po.name)||po.name):"";
-  const typeLb=pl.type==="target"?"스카우트 대상":"우리 선수";
-  const rawLv=aid=>(pl.levels&&pl.levels[aid])||0;
-  const rawTg=aid=>(po&&po.targets&&po.targets[aid])||0;
-  const byCat=attrsByCat();
-  let rows=0,cats=0,grid="";
-  CATS.forEach(([cat,label])=>{
-    const arr=(byCat[cat]||[]).filter(a=>rawLv(a.id)||rawTg(a.id));
-    if(!arr.length)return;
-    cats++;grid+='<div class="pclab">'+esc(label)+'</div>';
-    arr.forEach(a=>{
-      rows++;
-      const lv=rawLv(a.id),tg2=rawTg(a.id);
-      let ds="";for(let i=1;i<=5;i++)ds+='<i class="'+((i<=lv?"on ":"")+(i===tg2?"tg":"")).trim()+'"></i>';
-      grid+='<div class="drow"><span class="an">'+esc(a.name)+'</span><span class="dots">'+ds+'</span></div>';
-    });
-  });
-  let colL;
-  if(!rows){
-    let rules="";for(let i=0;i<14;i++)rules+='<div class="rule"></div>';
-    colL='<div class="pcL"><div class="empty"><div class="note">속성을 입력하면 프로필이 채워집니다 — 아래 칸은 펜 기입용</div>'+rules+'</div></div>';
-  }else{
-    colL='<div class="pcL"><div class="pcgrid'+((rows+cats)>26?' two':'')+'">'+grid+'</div>'
-      +'<div class="pcleg"><b class="lgc">●</b> 현재 · ◇ 포지션 목표</div></div>';
-  }
-  const tgAttrs=data.attrs.filter(a=>rawTg(a.id)>0);
-  const hasLv=data.attrs.some(a=>rawLv(a.id)>0);
-  let sum="";
-  if(tgAttrs.length&&hasLv){
-    const gaps=tgAttrs.map(a=>({name:a.name,gap:lvl(pl,a.id)-rawTg(a.id)}));
-    const ok=gaps.filter(g=>g.gap>=0).length;
-    const strong=gaps.filter(g=>g.gap>0).sort((x,y)=>y.gap-x.gap).slice(0,3);
-    const weak=gaps.filter(g=>g.gap<0).sort((x,y)=>x.gap-y.gap).slice(0,3);
-    sum='<div class="sumbox"><div class="bt">포지션 목표 대비'+(po?' — '+esc(po.name):'')+'</div>'
-      +'<div class="sr">충족 <b>'+ok+'</b> · 미달 <b>'+(gaps.length-ok)+'</b> / 목표 '+gaps.length+'개</div>'
-      +(strong.length?'<div class="sr">강점 <b>'+esc(strong.map(g=>g.name).join(", "))+'</b></div>':'')
-      +(weak.length?'<div class="sr">보완 <b>'+esc(weak.map(g=>g.name).join(", "))+'</b></div>':'')
-      +'</div>';
-  }
-  const memo=String(pl.memo||"").trim();
-  const colR='<div class="pcR"><div class="membox"><div class="bt">메모 · 관찰 기록</div>'
-    +(memo?'<div class="mtx">'+esc(memo)+'</div>':'')
-    +'<div class="mrules"></div></div>'+sum+'</div>';
-  const hd='<div class="hd">'
-    +'<div class="wm"><div class="t">선수 — <b>선수 카드</b></div><div class="s">PROCESS · PLAYER CARD</div></div>'
-    +'<span class="hfs"></span>'
-    +'<div class="hm pchm"><b class="pname">'+esc(pl.name||"이름 없음")+'</b>'
-    +(String(pl.num||"").trim()?'<span>#'+esc(String(pl.num).trim())+'</span>':'')
-    +'<span>· '+(abbr?esc(abbr):'포지션 미지정')+'</span>'
-    +(ROSTER_FOOT[pl.foot]?'<span>· '+ROSTER_FOOT[pl.foot]+'</span>':'')
-    +'<span>· '+typeLb+'</span><span>· '+esc(today)+'</span></div></div>';
-  const ft='<div class="ft"><span>PROCESS STUDIO — 선수 카드'+(team?' · '+esc(team):'')+'</span><span>'+esc(today)+' 출력</span></div>';
-  const inkCss=ink?('\n/* ink-save (잉크 절약) overrides */\n'
-    +'.wm .s,.pclab,.pcleg,.bt,.empty .note{color:#555555;}\n'
-    +'.dots i.on{background:#222222;border-color:#222222;}\n'
-    +'.pcleg .lgc{color:#222222;}\n'):'';
-  return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>선수카드_'+esc(pl.name||"이름없음")+'</title><style>'+ROSTER_CSS+PLCARD_CSS+inkCss+'</style></head><body><div class="sheet">'+hd+'<div class="main">'+colL+colR+'</div>'+ft+'</div></body></html>';
+/* 3.093 — 한 장 선수 카드(A4 세로): 프로필 요점 + 평가 요약 · 점수는 막대 + 숫자. 문서는 player-card.js */
+function playerCardModel(id){
+  const pl=player(id); if(!pl)return null;
+  const pf=pl.profile||{}, po=pos(pl.posId), lv=pl.levels||{}, by=attrsByCat(), v=a=>+lv[a]||0;
+  let photo=""; try{photo=window.PSImg.src(pf.photo)||"";}catch(_){photo=pf.photo||"";}
+  const areas=CATS.map(([c,n])=>({name:n,items:(by[c]||[]).map(a=>({name:a.name,v:v(a.id)}))}));
+  try{ const g=po?PS_EVAL_STD.posGroupOf(po.name):""; const it=g?PS_EVAL_STD.posItems(g):[];
+    if(it.length)areas.push({name:"포지션",sub:PS_EVAL_STD.posGroupName(g),pos:1,items:it.map(x=>({name:x.name,v:v(x.id)}))}); }catch(_){}
+  return {team:((data.meta&&data.meta.teamName)||"").trim(),nameKr:pl.name,nameEn:pf.nameEn,pos:po?posAbbr(po.name):"",
+    subs:(pf.subs||[]).map(i=>{const q=pos(i);return q?posAbbr(q.name):"";}).filter(Boolean),num:pl.num,foot:pl.foot,dob:pf.dob,
+    height:pf.height,weight:pf.weight,photo,areas,strengths:pf.strengths,develop:pf.develop,coach:growthCoachName()};
 }
-function printPlayerCard(id){const f=ink=>playerCardDocHTML(id,!!ink);printStandalone(f(false),f);}
-window.__playerCardDoc=function(id,ink){return playerCardDocHTML(id,!!ink);}; // id=선수 id · ink=true → 잉크 절약(고대비)
+function playerCardDocHTML(id){ const m=playerCardModel(id); return m&&window.PSPlayerCard?PSPlayerCard.docHTML(m):""; }
+function printPlayerCard(id){ const h=playerCardDocHTML(id); if(!h){toast("선수 카드를 만들지 못했어요 — 새로고침 뒤 다시");return;} printStandalone(h,null,{W:794,H:1123}); }
+window.__playerCardDoc=function(id){return playerCardDocHTML(id);}; // id=선수 id
 /* ===== 커스텀 포메이션 편집기 ===== */
 let feSlots=null, feEditId=null, feDrag=null;
 function renderForms(){
