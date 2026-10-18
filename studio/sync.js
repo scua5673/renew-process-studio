@@ -86,8 +86,7 @@ var COPIES_OFF=true;
    보드·보관함 키(BOARD_KEEP)와 개인 키(PERSONAL)는 건드리지 않는다. 지웠으면 표시(ps_cache_wiped_v1)를 남기고,
    다음 부팅에서 그 표시가 있으면 «팀에서 받는 중…» 덮개를 띄운다. 2.872부터 최대 5초 뒤 작은 수신 안내로 바꿔 화면 전체를 계속 가리지 않는다.
    받고 나면 한 번 새로고침한다 — 셸(app.html)은 같은 창이라 storage 이벤트를 못 받기 때문. */
-/* 2.676 — 실측(9/7 14:23~14:29, 코치 아이패드 2.675): 팀 전환 → 리로드 → 부팅 리로드(1.981) → 그때마다 pagehide 지우기 → «받는 중» 덮개 → 성공 시 또 리로드.
-   리로드가 겹치며 진행 중 fetch 가 끊겨 sync_network(kv_meta) 2건, 스플래시가 몇 분 이어졌다(«자기 팀으로 이동이 안 된다»).
+/* 2.676 — 팀 전환 → 리로드 → 부팅 리로드 → 그때마다 pagehide 지우기 → «받는 중» 덮개 → 또 리로드가 겹쳐 스플래시가 몇 분 이어졌다.
    고침: ① 우리가 스스로 하는 리로드(ps_self_reload 표시)·부팅 중(ps-booting)·연 지 15초 안에는 지우지 않는다 ② 받은 뒤 리로드하지 않는다(화면은 storage 이벤트로 갱신).
    2.819 — 로그인해야 쓰는 팀 자료는 서버본을 우선한다. 서버와 같은 로컬 캐시는 닫을 때 지우고 다음 진입에서 서버 수신을 기다린다.
    문제가 있는 기기는 `localStorage.ps_cache_wipe='0'` 으로 끌 수 있고, 구버전의 `'1'` 값도 계속 켜짐으로 취급한다. */
@@ -558,7 +557,7 @@ function eventTrack(name,opts){
       seen[sk]=Date.now();Object.keys(seen).forEach(function(k){if(Date.now()-seen[k]>86400000)delete seen[k];});
       try{localStorage.setItem(seenKey,JSON.stringify(seen));}catch(_){}
     }
-    /* 2.599 — 저장 이벤트(content_saved 등)는 저장마다 한 줄이었다(실측 ps_events 4,195,993행 중 content_saved 4,042,966 = 96%, 1.6GB).
+    /* 2.599 — 저장 이벤트(content_saved 등)는 저장마다 한 줄이었다(실측: 이벤트 행의 96%).
        사용 흔적은 «이름별 10분에 한 번» 이면 충분하다 — 오류 이벤트의 5분 억제와 같은 표. */
     if(status==='ok'&&/_saved$/.test(ev)){
       var seenKey2=eventUserKey(EVENT_SEEN),sk2='ok|'+ev, seen2={};try{seen2=JSON.parse(localStorage.getItem(seenKey2)||'{}')||{};}catch(_){}
@@ -2484,7 +2483,7 @@ function syncFetch(stage,url,opts,retried){
   /* 같은 회차의 뒤 단계는 회차 첫머리에 받은 옛 토큰을 들고 온다 — 이미 갱신됐으면 새 것으로 바꿔 401 을 한 번 덜 받는다(같은 계정일 때만). */
   try{var _a=authOf(o.headers),_s=getSess();if(_a&&tokenSwap.from===_a&&_s&&_s.at===tokenSwap.to){o=Object.assign({},o,{headers:Object.assign({},o.headers,{Authorization:'Bearer '+tokenSwap.to})});}}catch(_){}
   var sent=o;
-  /* 2.600 — 본문을 나르는 단계(kv_pull·kv_push·personal_pull·library_body)는 45초, 메타·프로브는 20초. 실측 30일 sync_timeout 752건·72명 — 일정 문서 1~3MB 를 20초 안에 못 받는 기기가 있다 */
+  /* 2.600 — 본문을 나르는 단계(kv_pull·kv_push·personal_pull·library_body)는 45초, 메타·프로브는 20초. 일정 문서 1~3MB 를 20초 안에 못 받는 기기가 있다 */
   var _ms=/^(kv_pull|kv_push|personal_push|personal_pull|library_body|library_push|bulk)/.test(String(stage||''))?45000:20000;
   try{if(typeof AbortController!=='undefined'){ctl=new AbortController();o=Object.assign({},o,{signal:ctl.signal});to=setTimeout(function(){ctl.abort();},_ms);}}catch(_){}
   return fetch(url,o).then(function(r){if(to)clearTimeout(to);
@@ -2558,7 +2557,7 @@ function syncState(){
   var s=getSess(); if(!s)return {kind:'off',text:'로그인하면 팀과 함께 써요'};
   var wid=activeWs(), n=0; try{ n=visiblePendingInfo(wid).count||0; }catch(_){}
   var m={}; try{ m=meta(); }catch(_){}
-  /* «확인할 것»은 올리기를 막는 보류만 센다. 덮임·충돌·구조선은 설정 «자료 확인»에 남는다 — 실측(2026-09-06 풋볼A): 옛 충돌 18·구조선 8이 늘 떠 있어 띠가 영구 주황이 됐다 */
+  /* «확인할 것»은 올리기를 막는 보류만 센다. 덮임·충돌·구조선은 설정 «자료 확인»에 남는다 — 옛 충돌이 늘 떠 띠가 영구 주황이 됐다 */
   var rc=0; try{ rc=holdList().length+personalReviewList().length; }catch(_){}
   try{if(dataUnlocked()&&isTeamWs()&&ITEMS_ACTIVE){var deletion=itemsHoldList();if(deletion&&deletion.ids&&deletion.ids.length)rc++;}}catch(_){}
   if(navigator.onLine===false)return {kind:'bad',reason:'sync_offline',text:'오프라인이에요'+(n?(' · 이 기기에 '+n+'건 안전하게 있어요'):''),n:n,review:rc};
@@ -3048,7 +3047,7 @@ function bulkPush(){
    ⚠ 옛 앱판은 그림 없는 문서를 받아 썸네일만 안 보이고, 저장하면 thumbRef 를 그대로 다시 올린다(손실 없음). 서버 검사(1644)는 잎 문자열을 안 본다.
    ⚠ 서버에 ps_blob 이 없거나(404) 권한이 없으면(403·401) 이 세션에서 끄고 예전처럼 통째로 보낸다 — SQL·배포 순서에 안전. */
 var BLOB_MIN=512, BLOB_PREFIX='ps_blob:', BLOB_IN=40, BLOB_UP_BYTES=900000, blobOff=false;
-/* 2.623 — 콜론 뒤 공백(\s*)을 잡아 그대로 보존한다: 서버 SQL 복구(jsonb::text)로 쓴 문서는 `"thumb": "<svg…>"` 꼴이라(풋볼A rev 341 실측) 공백 없는 정규식이 0장을 잡았다 */
+/* 2.623 — 콜론 뒤 공백(\s*)을 잡아 그대로 보존한다: 서버 SQL 복구(jsonb::text)로 쓴 문서는 `"thumb": "<svg…>"` 꼴이라 공백 없는 정규식이 0장을 잡았다 */
 /* 2.630 — 키를 넓힌다: thumb(작전판 SVG) + emblem(팀 엠블럼 data:). 옛 엠블럼 원본(최대 1.2M자)이 남은 팀이 있었다. 참조 키 이름은 «키+Ref»(thumbRef·emblemRef). 대상 키는 BLOB_KEYS. */
 var BLOB_KEYS={process_coach_v1:1,scout_tool_v1:1};
 var BLOB_RE_STRIP=/"(thumb|emblem)":(\s*)"((?:[^"\\]|\\.){512,})"/g;    /* JSON 문자열 내용(이스케이프 포함), 512자 이상만 */
@@ -3241,10 +3240,14 @@ function libBlobPrepRows(at,wid,rows){
    supabase-js 없이 Phoenix 채널 프로토콜 최소 구현: phx_join(postgres_changes 필터 + access_token) · heartbeat 30초 · postgres_changes 수신.
    내가 방금 올린 키(m.c[k]===cupd)는 무시. 핑은 1.2초 묶어 syncNow('realtime'). 끊기면 지수 백오프(최대 60초)로 다시 붙는다.
    실패해도 아무것도 나빠지지 않는다 — 폴링이 그대로 돈다. */
-var rtWs=null, rtRef=0, rtTopicWid='', rtHb=null, rtRetry=0, rtTimer=null, rtJoined=false, rtLast=0, rtHits=0;
+/* 3.108 — 잠에서 깬 기기의 소켓은 열림(1)인 채 죽어 있다(폴링 3분 · 다시 붙지 않음). 서버에서 받은 마지막 시각(rtSeen)이 75초를 넘으면 죽은 것 */
+var RT_STALE_MS=75000, RT_WAKE_STALE_MS=35000;
+var rtWs=null, rtRef=0, rtTopicWid='', rtHb=null, rtRetry=0, rtTimer=null, rtJoined=false, rtLast=0, rtHits=0, rtSeen=0, rtJoinedOnce=false;
 function rtUrl(){ return BASE.replace(/^http/,'ws')+'/realtime/v1/websocket?apikey='+encodeURIComponent(CFG.anonKey)+'&vsn=1.0.0'; }
 function rtSend(o){ try{ if(rtWs&&rtWs.readyState===1)rtWs.send(JSON.stringify(o)); }catch(_){} }
-function rtConnected(){ return !!(rtWs&&rtWs.readyState===1&&rtJoined&&rtTopicWid===activeWs()); }
+function rtTokenOk(at){ return typeof at==='string'&&/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(at); }
+function rtAlive(){ return !!(rtWs&&rtWs.readyState===1&&rtSeen&&Date.now()-rtSeen<RT_STALE_MS); }
+function rtConnected(){ return !!(rtAlive()&&rtJoined&&rtTopicWid===activeWs()); }
 function rtClose(){ try{ if(rtHb)clearInterval(rtHb); }catch(_){} rtHb=null; try{ if(rtWs){ rtWs.onclose=null; rtWs.onmessage=null; rtWs.close(); } }catch(_){} rtWs=null; rtJoined=false; }
 function rtScheduleReconnect(){ rtClose(); var d=Math.min(60000,1000*Math.pow(2,Math.min(rtRetry++,6))); setTimeout(rtConnect,d); }
 function rtConnect(){
@@ -3252,20 +3255,28 @@ function rtConnect(){
     if(!('WebSocket' in window))return;
     var s=getSess(); if(!s||!dataUnlocked()||navigator.onLine===false)return;
     var wid=activeWs(); if(!wid)return;
-    if(rtWs&&rtWs.readyState<=1&&rtTopicWid===wid)return;   /* 이미 이 워크스페이스에 붙어 있거나 붙는 중 */
+    if(rtWs&&rtTopicWid===wid&&(rtWs.readyState===0||rtAlive()))return;   /* 이미 붙어 있거나 붙는 중(3.108 조용한 소켓은 죽음) */
     rtClose();
     ensureToken().then(function(at){
-      if(!at)return;
+      /* 3.108 — 로그인 토큰은 JWT 다. 아니면(가짜 세션 시험 브라우저) 붙지 않는다 */
+      if(!rtTokenOk(at))return;
       var ws; try{ ws=new WebSocket(rtUrl()); }catch(_){ return; }
-      rtWs=ws; rtTopicWid=wid; rtJoined=false;
-      ws.onopen=function(){
+      rtWs=ws; rtTopicWid=wid; rtJoined=false; rtSeen=Date.now();
+      ws.onopen=function(){ rtSeen=Date.now();
         rtRef++; rtSend({topic:'realtime:ps_kv_ping:'+wid,event:'phx_join',ref:String(rtRef),
           payload:{config:{postgres_changes:[{event:'INSERT',schema:'public',table:'ps_kv_ping',filter:'workspace_id=eq.'+wid}]},access_token:at}});
-        rtHb=setInterval(function(){ rtRef++; rtSend({topic:'phoenix',event:'heartbeat',payload:{},ref:String(rtRef)}); },30000);
+        rtHb=setInterval(function(){
+          if(rtWs!==ws)return;
+          if(Date.now()-rtSeen>=RT_STALE_MS){ syncDiagnostic('rt-stale',null); rtRetry=0; rtScheduleReconnect(); return; }
+          rtRef++; rtSend({topic:'phoenix',event:'heartbeat',payload:{},ref:String(rtRef)});
+        },30000);
       };
       ws.onmessage=function(ev){
+        rtSeen=Date.now();
         var m=null; try{ m=JSON.parse(ev.data); }catch(_){ return; } if(!m)return;
-        if(m.event==='phx_reply'&&m.payload&&m.payload.status==='ok'&&!rtJoined&&m.topic!=='phoenix'){ rtJoined=true; rtRetry=0; try{ window.dispatchEvent(new CustomEvent('ps-sync-state')); }catch(_){} }
+        if(m.event==='phx_reply'&&m.payload&&m.payload.status==='ok'&&!rtJoined&&m.topic!=='phoenix'){ rtJoined=true; rtRetry=0;
+          if(rtJoinedOnce)rtPing({k:'@rejoin',cupd:0});   /* 3.108 놓친 변경 */
+          rtJoinedOnce=true; try{ window.dispatchEvent(new CustomEvent('ps-sync-state')); }catch(_){} }
         else if(m.event==='phx_reply'&&m.payload&&m.payload.status==='error'&&m.topic!=='phoenix'){ syncDiagnostic('rt-join',new Error(JSON.stringify(m.payload).slice(0,160))); rtScheduleReconnect(); }
         else if(m.event==='postgres_changes'){ var rec=m.payload&&m.payload.data&&m.payload.data.record; if(rec)rtPing(rec); }
         else if(m.event==='phx_error'||m.event==='phx_close'){ rtScheduleReconnect(); }
@@ -3284,8 +3295,10 @@ function rtPing(rec){
 }
 try{ window.addEventListener('online',function(){ setTimeout(rtConnect,500); }); }catch(_){}
 try{ setInterval(rtConnect,60000); }catch(_){}
-try{ setTimeout(rtConnect,6000); setTimeout(rtConnect,20000); }catch(_){}   /* 부팅 회차가 보류로 끝나도 붙는다(실측: 첫 회차 뒤 rt false) */
-try{ document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible')setTimeout(rtConnect,300); }); }catch(_){}
+try{ setTimeout(rtConnect,6000); setTimeout(rtConnect,20000); }catch(_){}   /* 부팅 회차가 보류로 끝나도 붙는다 */
+try{ document.addEventListener('visibilitychange',function(){ if(document.visibilityState!=='visible')return;
+  if(rtWs&&rtWs.readyState===1&&Date.now()-rtSeen>=RT_WAKE_STALE_MS){ rtRetry=0; rtClose(); }
+  setTimeout(rtConnect,300); }); }catch(_){}
 function kvPullValues(at,wid,keys){
   if(!keys||!keys.length) return Promise.resolve([]);
   var chunks=[]; for(var i=0;i<keys.length;i+=KV_PULL_CHUNK) chunks.push(keys.slice(i,i+KV_PULL_CHUNK));
@@ -3444,7 +3457,7 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
     cur.push(r0); sz+=l;
   });
   if(cur.length)chunks.push(cur);
-  /* 2.599 — 일반 키의 확인 응답에서는 v 를 돌려받지 않는다(올린 만큼 다시 내려받아 이그레스가 2배였다 — 실측 30일 일정 503MB·스카우트 415MB).
+  /* 2.599 — 일반 키의 확인 응답에서는 v 를 돌려받지 않는다(올린 만큼 다시 내려받아 이그레스가 2배였다).
      select=workspace_id,k,cupd 만 받고 cupd 로 대조한다: 가드가 거부하면 old.v 와 함께 old.cupd 를 돌리므로 cupd 가 다르다.
      단 «같은 원문 재전송»(응답 유실 뒤 재시도)도 가드가 old.cupd 를 유지하므로, cupd 가 다른 키만 v 를 다시 읽어 진짜 거부인지 가른다(드문 경로).
      2.826 — 선수 관련 키는 본문까지 한 응답으로 받아 대조한다. 반환이 불완전하면 정확한 원문·판본을 다시 확인한다. */
@@ -3551,7 +3564,7 @@ function kvPushRowsInner(at,rows,onOk,label,preflight){
       }
       if(!req._casMissing&&version===Number(req._casCupd)){
         /* 2.914 — 어느 키인지 붙인다. 없으면 rejectedMatchRetry(서버 원문 다시 받기·병합)가 돌지 않아
-           같은 원문을 45초마다 영원히 다시 보냈다(2026-09-30 실측: 한 기기 20시간 88번). */
+           같은 원문을 45초마다 영원히 다시 보냈다(9/30 실측). */
         try{ if(typeof rejectNote==='function')rejectNote(req.k,req._rh||(typeof hash==='function'?hash(req.v):''),version); }catch(_){}
         var rejected=syncIssue('sync_server_rejected',stage,'서버 판본은 같지만 저장이 반영되지 않았습니다');
         rejected.psRejectedKeys=[req.k];throw rejected;
@@ -6428,7 +6441,7 @@ function rejectedMatchRetry(e,wid){
   var keys=(e&&Array.isArray(e.psRejectedKeys))?e.psRejectedKeys.filter(function(k,i,a){return a.indexOf(k)===i;}):[];
   /* 2.587 — **일정(process_coach_v1)도 같은 길로**(사용자 "워크스페이스 전환이 안된다" — 서버 기록으로 확인한 원인).
      서버 계보 가드(1.644)는 낡은 base 위의 일정 커밋을 **옛 값·옛 cupd 그대로** 돌려보낸다. 기기는 «서버가 더 새롭다» 는
-     신호(cupd)를 못 받아 같은 base 로 또 올리고 또 거부된다 — ps_kv_denied 실측 2026-08-08~09-03: 45건·43명, 최근 7일 6기기.
+     신호(cupd)를 못 받아 같은 base 로 또 올리고 또 거부된다 (ps_kv_denied 실측).
      경기와 똑같이 그 키의 c 를 0 으로 내려 다음 회차가 서버 원문을 **반드시** 받아 병합(MERGE_KEYS, h 는 남겨 병합 가드 통과)한 뒤
      새 base 위에서 다시 올리게 한다. forceSync(preswitch) 는 두 번까지 재시도하므로 전환도 이 길로 풀린다. */
   /* 2.715 — 선수단·스카우트도 같은 길. 서버 모양 가드(2.681)가 거부하면 기기는 «못 올렸어요 · 팀 것이 더 새로워요»만 띄운 채
@@ -6723,9 +6736,8 @@ function syncNowCore(reason){
         var k=r0.k;
         if(PERSONAL[k])return;   /* 2.744 — 개인 원문은 공통 개인 채널만 읽고 판정한다. */
         if(!ITEMS_ACTIVE&&isItemKey(k))return;
-        /* 2.603 — 화면이 안 쓰는 키(KEYS·IDP 접두사 밖)는 값을 받지 않는다. 실측: 풋볼A 의 ps_kv 에 «팀 자료 통째로 올리기»(bulkPush)가 남긴
-           cs_drill_lib_v1 한 줄(8,036KB, 9/1·9/2·9/4 세 번)을 그 팀의 다른 기기 전부가 회차(45초)마다 통째로 받고 있었다 —
-           적용 루프(KEYS.forEach)는 무시하니 m.c[k] 가 영영 안 올라가 매번 «바뀐 키»로 보였다. 이그레스 250GB 의 가장 큰 후보. */
+        /* 2.603 — 화면이 안 쓰는 키(KEYS·IDP 접두사 밖)는 값을 받지 않는다. bulkPush 가 남긴 8MB 줄을
+           팀의 모든 기기가 회차마다 받았다(적용 루프는 무시하니 m.c[k] 가 안 올라가 매번 «바뀐 키»). */
         if(KEYS.indexOf(k)<0&&k.indexOf('cs_idp_v1_')!==0&&k.indexOf('cs_idp_pub_v1_')!==0&&!(ITEMS_ACTIVE&&isItemKey(k)))return;   /* 2.730 — 선수 행도 받는다 */
         if(k===SCOUT_KEY){
           if(!scoutWriteAllowed())return;
@@ -6794,7 +6806,7 @@ function syncNowCore(reason){
            2.626 은 «비움이 아니면 직전 팀 판본을 남기고 올린다(되돌리기 바)»인데, 그 판본(srvVal)은 이 회차에
            본문을 받았을 때만 있다. 2.599 부터 서버가 안 바뀐 키는 본문을 안 받고, 기준본(syncBase)은 일정·IDP 만
            있어서, 나머지 팀 키의 큰 삭제는 늘 «직전 판본 없음 → 보류»로 떨어졌고, 2.817 자동 재조정이 그 보류를
-           «승인 안 된 대량 삭제»로 보고 서버 옛 판으로 되돌렸다(실측: 하위 폴더 있는 보관함 폴더를 지우면 5→2 →
+           «승인 안 된 대량 삭제»로 보고 서버 옛 판으로 되돌렸다(실측: 하위 폴더 있는 폴더를 지우면 5→2 →
            1.1초 뒤 목록 원상복구, 서버엔 아무것도 안 올라감). 큰 삭제가 있는 회차에만 받으므로 이그레스는 그대로다. */
         else if(hash(loc)!==(m0.h[k]||'')&&m0.n&&bigDrop(m0.n[k],psCount(loc))) needV.push(k);
         else if(ITEMS_ACTIVE&&isItemKey(k)&&itemsDeletedLive(k,loc))needV.push(k); /* 삭제 기록과 엇갈리는 live 원문은 자동 재업로드 전에 검토 */
@@ -8051,7 +8063,7 @@ function syncNowCore(reason){
     if(quiet)setStatus('다시 맞추는 중…'+(pi.count?(' · 이 기기에 '+pi.count+'건 안전하게 있어요'):''));
     else setStatus((info.code==='sync_offline'?'오프라인이에요':'못 올렸어요 · '+syncReasonText(info.code))
       +(pi.count?(' · 이 기기에 '+pi.count+'건 안전하게 있어요'):'')+(info.code==='sync_offline'?'':' · 곧 다시 시도해요'));   /* 2.625 말 바꾸기 */
-    /* 2.631 — 원인 문장을 남긴다(내용·토큰 없음, 120자). 실측: sync_unexpected 11건·sync_storage 8건이 meta {stage,code} 뿐이라 서버에서 무엇인지 알 수 없었다
+    /* 2.631 — 원인 문장을 남긴다(내용·토큰 없음, 120자). meta {stage,code} 만으로는 서버에서 무엇인지 알 수 없었다
        2.916 — 이름·메시지 없는 값(null·Event)도 무엇인지 남기고, 회차 이유·숨김·잠자기·직전 진단 단계를 같이 싣는다. */
     /* 2.917 — 오프라인은 앱 오류가 아니다(기기 상태). 상태 줄은 «오프라인이에요»로 말하고 서버 오류 기록은 남기지 않는다(7일 11명·39건) */
     if(!quiet&&info.code!=='sync_offline'){try{eventTrack('sync_failed',{status:'error',feature:'sync',error_code:info.code,meta:syncFailMeta(e,info,ctx)});}catch(_){}}
@@ -8062,7 +8074,7 @@ function syncNowCore(reason){
 }
 /* ── 2.916 · 회차 실패 판정·기록 ── (syncNowCore 와 같은 구간에 둔다: 시험 하네스가 이 구간을 통째로 읽는다) */
 var lastServerKeys=null;   /* 2.916 — 마지막 회차 kv_meta 가 말한 키 목록(내용 없음) */
-/* 2.916 — 회차가 숨김·잠자기·깨어남 순간에 걸렸는지 알기 위한 표식. 7일 실측 네트워크·시간 초과 ~60명의 대부분이
+/* 2.916 — 회차가 숨김·잠자기·깨어남 순간에 걸렸는지 알기 위한 표식. 네트워크·시간 초과의 대부분이
    메타 조회(kv_meta) 한 번 끊김이었다 — 사파리는 숨길 때 요청을 끊고(Load failed), 맥은 잠에서 깬 직후 망이 안 붙어 있다. */
 var syncHiddenSeq=0,syncWakeAt=0;
 try{
@@ -9479,7 +9491,7 @@ function showInvite(wid,code,role){
 }
 function removeMember(wid,uid){
   var owner=rpcContext();
-  /* 2.669 — RLS(mem_del: 본인 또는 ps_is_owner)는 권한이 없으면 오류가 아니라 «0건 삭제»로 조용히 지나간다. 지운 행을 돌려받아 확인한다(실측 정책: mem_del · DELETE · user_id=auth.uid() OR ps_is_owner) */
+  /* 2.669 — RLS(mem_del: 본인 또는 ps_is_owner)는 권한이 없으면 오류가 아니라 «0건 삭제»로 조용히 지나간다. 지운 행을 돌려받아 확인한다 */
   return ensureToken().then(function(at){
     rpcCurrent(owner);if(!at)throw dataLockError();
     var h=hj(at); h['Prefer']='return=representation';
@@ -9488,7 +9500,7 @@ function removeMember(wid,uid){
       .then(function(rows){rpcCurrent(owner);if(!rows||!rows.length)throw new Error('팀원 내보내기는 팀을 만든 사람만 할 수 있어요');return true;});
   });
 }
-/* 2.669 — 전환 백업(ps_ws_stash_*)은 7일 지나면 지운다. 퇴단한 사람 기기에 팀 자료 사본이 무기한 남던 것(유소년 개인정보 실측 ②). */
+/* 2.669 — 전환 백업(ps_ws_stash_*)은 7일 지나면 지운다. 퇴단한 사람 기기에 팀 자료 사본이 무기한 남던 것(유소년 개인정보). */
 function expireStashes(days){
   var lim=Date.now()-(days||7)*864e5, n=0;
   function old(raw){ try{ var v=JSON.parse(raw||'null'); return !!(v&&v.at&&+v.at<lim); }catch(_){ return false; } }
