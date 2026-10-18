@@ -1,16 +1,18 @@
 /* PROCESS STUDIO — 실제 비율 크기(3.083 · 사용자 «실제 비율에서 원하는 만큼 키울 수 있게 해줘 공도 사람도»).
    3D · 중계에서 실제 비율(설정 «비율 › 실제 비율» 또는 «사람» 모양)일 때 선수 · 공을 운동장 대비 몇 배로 그릴지 정한다.
-   값은 보드마다(«look» 설정 realK = "선수배율|공배율") 저장되고, 작전판의 _realTokS 가 window.__rk(0 선수 · 1 공)로 곱한다. */
+   값은 보드마다(«look» 설정 realK = "선수배율|공배율") 저장되고, 작전판의 _realTokS 가 window.__rk(0 선수 · 1 공)로 곱한다.
+   3.087 — 기본은 선수 ×1.5 · 공 ×6(사용자 «기본 비율이 이렇게 뜨게 해줘 · 줄일 사람은 줄이고»). 3.083~3.086 은 손대지 않은 보드에도
+   '1|1' 을 적었으니 그 값은 새 기본으로 읽고, 이제 일부러 실제 크기로 줄인 보드는 '1.0|1.0' 으로 적어 가른다(옛 판도 그대로 읽는 모양). */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.PSRealSize = api;
 })(typeof window === 'undefined' ? null : window, function () {
   'use strict';
-  var MIN = 1, MAX = 6, STEP = 0.25, DEF = '1|1';
+  var MIN = 1, MAX = 6, STEP = 0.25, DEF = '1.5|6', REAL = '1.0|1.0';
   function clamp(v) { v = +v; if (!isFinite(v)) return 1; return Math.max(MIN, Math.min(MAX, Math.round(v / STEP) * STEP)); }
-  function parse(s) { var m = /^(\d+(?:\.\d+)?)\|(\d+(?:\.\d+)?)$/.exec(String(s == null ? '' : s)); return m ? [clamp(m[1]), clamp(m[2])] : [1, 1]; }
-  function fmt(k) { return clamp(k[0]) + '|' + clamp(k[1]); }
+  function parse(s) { s = String(s == null ? '' : s); if (s === '1|1') s = DEF; var m = /^(\d+(?:\.\d+)?)\|(\d+(?:\.\d+)?)$/.exec(s); return m ? [clamp(m[1]), clamp(m[2])] : [1.5, 6]; }
+  function fmt(k) { var a = clamp(k[0]), b = clamp(k[1]); return a === 1 && b === 1 ? REAL : a + '|' + b; }
   function ok(v) { return typeof v === 'string' && /^\d+(?:\.\d+)?\|\d+(?:\.\d+)?$/.test(v); }
   function label(v) { return '×' + (Math.round(v * 100) / 100); }
 
@@ -19,15 +21,18 @@
     var doc = win.document;
     if (!doc || win.__psRealSize) return null;
     win.__psRealSize = true;
-    var K = [1, 1];
-    win.__realK = DEF;
+    var K = parse(DEF);
+    // 보드마다 저장: 작전판의 look 설정에 realK 한 칸(3.087 — 작전판보다 먼저 읽히므로 등록부 + 접근자로. 보드를 여는 길이 언제 돌든 값이 들어온다)
+    var ext = win.__psLookExt || (win.__psLookExt = {});
+    ext.realK = { def: DEF, ok: ok };
+    Object.defineProperty(win, '__realK', { configurable: true, get: function () { return fmt(K); }, set: function (v) { var n = parse(v); if (n[0] === K[0] && n[1] === K[1]) return; K = n; sync(); redraw(); } });
     // 작전판이 곱하는 배율: 3D 실제 비율일 때만 의미가 있다(_realTokS 가 그때만 부른다)
     win.__rk = function (i) { return K[i ? 1 : 0] || 1; };
     function active() { try { return doc.body.classList.contains('bc-tilt3d') && (win.__realScale === true || tokShape === 'person'); } catch (_) { return false; } }
     function set(i, v, quiet) {
       var n = clamp(v); if (n === K[i]) return;
       if (!quiet) { try { _lookFreeze(); } catch (_) {} }
-      K[i] = n; win.__realK = fmt(K); sync(); redraw();
+      K[i] = n; sync(); redraw();
     }
     var raf = 0;
     function redraw() {
@@ -36,25 +41,19 @@
     }
     function save() { try { boardSaveLive(); } catch (_) {} }
 
-    // 보드마다 저장: 작전판의 look 설정에 realK 한 칸을 더한다(본문 스크립트가 이 모듈 뒤에 정의하므로 문서를 다 읽은 뒤에)
     function wrapLook() {
-      var keys = win.lookKeys, okF = win._lookOk, code = win._lookCode, now = win.lookNow, apply = win.lookApply, scale = win.scaleAll;
-      if (typeof keys !== 'function' || keys.__rk) return;
-      win.lookKeys = function () { var a = keys(); return a.indexOf('realK') < 0 ? a.concat(['realK']) : a; };
-      win.lookKeys.__rk = 1;
-      if (typeof okF === 'function') win._lookOk = function (k, v) { return k === 'realK' ? ok(v) : okF(k, v); };
-      if (typeof code === 'function') win._lookCode = function (k) { return k === 'realK' ? DEF : code(k); };
-      if (typeof now === 'function') win.lookNow = function () { var r = now(); r.realK = fmt(K); return r; };
-      if (typeof apply === 'function') win.lookApply = function (o) { var r = apply(o); var n = parse(o && o.realK); if (n[0] !== K[0] || n[1] !== K[1]) { K = n; win.__realK = fmt(K); sync(); } return r; };
+      var scale = win.scaleAll;
+      if (typeof scale !== 'function' || scale.__rk) return;
       // 보드 설정 «크기 ＋ －» — 실제 비율일 때는 선수 · 공 배율을 한 칸씩 함께 바꾼다(예전에는 «고정돼요» 알림만 떴다)
       if (typeof scale === 'function') win.scaleAll = function (f) {
         if (!active()) return scale(f);
         var up = f > 1, d = up ? STEP * 2 : -STEP * 2, a = clamp(K[0] + d), b = clamp(K[1] + d);
         if (a === K[0] && b === K[1]) { try { toast(up ? '실제 비율 크기가 가장 커요 (' + label(MAX) + ')' : '실제 비율 크기가 가장 작아요 (실제 크기)'); } catch (_) {} return; }
         try { _lookFreeze(); } catch (_) {}
-        K = [a, b]; win.__realK = fmt(K); sync(); redraw(); save();
+        K = [a, b]; sync(); redraw(); save();
         try { toast('실제 비율 크기 — 선수 ' + label(a) + ' · 공 ' + label(b)); } catch (_) {}
       };
+      win.scaleAll.__rk = 1;
     }
 
     // 조절 창: 선수 · 공 슬라이더 두 줄(위쪽 바의 «크기» 단추와 보드 설정 «실제 크기» 줄에서 같은 모양으로 쓴다)
@@ -65,8 +64,13 @@
         row.innerHTML = '<span class="rs-name">' + r[0] + '</span><input type="range" min="' + MIN + '" max="' + MAX + '" step="' + STEP + '" data-rk="' + r[1] + '" aria-label="' + r[0] + ' 크기"><span class="rs-val" data-rkv="' + r[1] + '"></span>';
         host.appendChild(row);
       });
-      var reset = doc.createElement('button'); reset.type = 'button'; reset.className = 'rs-reset'; reset.textContent = '실제 크기로'; reset.setAttribute('data-rk-reset', '1');
-      host.appendChild(reset);
+      // «실제 크기로» ×1 · ×1, «기본으로» ×1.5 · ×6
+      var btns = doc.createElement('div'); btns.className = 'rs-btns';
+      [['실제 크기로', 'real'], ['기본으로', 'def']].forEach(function (r) {
+        var b = doc.createElement('button'); b.type = 'button'; b.className = 'rs-reset'; b.textContent = r[0]; b.setAttribute('data-rk-reset', r[1]);
+        btns.appendChild(b);
+      });
+      host.appendChild(btns);
       sync();
     }
     function sync() {
@@ -78,7 +82,8 @@
     doc.addEventListener('change', function (e) { var t = e.target; if (t && t.matches && t.matches('input[data-rk]')) { t.__rkDrag = false; save(); } }, true);
     doc.addEventListener('click', function (e) {
       var t = e.target;
-      if (t && t.closest && t.closest('[data-rk-reset]')) { e.stopPropagation(); try { _lookFreeze(); } catch (_) {} K = [1, 1]; win.__realK = DEF; sync(); redraw(); save(); return; }
+      var r = t && t.closest && t.closest('[data-rk-reset]');
+      if (r) { e.stopPropagation(); try { _lookFreeze(); } catch (_) {} K = r.getAttribute('data-rk-reset') === 'def' ? parse(DEF) : [1, 1]; sync(); redraw(); save(); return; }
       var b = t && t.closest && t.closest('#boardPageStrip .tb-rsize');
       if (b) { e.stopPropagation(); toggle(b); return; }
       if (pop && pop.classList.contains('open') && !(t && t.closest && t.closest('#ps-rsize-pop'))) close();
@@ -126,6 +131,7 @@
       '.rs-row input[type=range]{flex:1 1 auto;min-width:0;accent-color:#2f6bff}',
       '.rs-row .rs-val{flex:none;width:40px;text-align:right;font-variant-numeric:tabular-nums;font-weight:800}',
       '.rs-reset{margin-top:6px;height:28px;padding:0 10px;border-radius:8px;border:1px solid rgba(127,127,127,.3);background:transparent;color:inherit;font:700 11.5px/1 Pretendard,-apple-system,sans-serif;cursor:pointer}',
+      '.rs-btns{display:flex;gap:6px;flex-wrap:wrap}',
       '#realSizeRow{flex-wrap:wrap}',
       '#realSizeRow .rs-inline{flex:1 1 180px;min-width:0}'
     ].join('\n');
@@ -136,5 +142,5 @@
     return { set: set, get: function () { return K.slice(); } };
   }
   if (typeof window !== 'undefined' && window.document) install(window);
-  return { parse: parse, fmt: fmt, ok: ok, clamp: clamp, MIN: MIN, MAX: MAX, STEP: STEP };
+  return { parse: parse, fmt: fmt, ok: ok, clamp: clamp, MIN: MIN, MAX: MAX, STEP: STEP, DEF: DEF };
 });

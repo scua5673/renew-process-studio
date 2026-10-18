@@ -185,11 +185,27 @@
   }
   // 3.086 — 이름표 글꼴(board-name-font.js · 보드 설정 › 이름표 글꼴). «기본»이면 빈 글자 → 번호와 같은 글꼴
   function nameFF(doc) { try { return (doc && doc.defaultView && doc.defaultView.__nameFF) || ''; } catch (_) { return ''; } }
+  // 3.087 — 사람 발밑 번호 패 크기(board-name-font.js 의 window.__tagK · opts.tagK 가 먼저)
+  function tagK(doc, opts) { var k = opts && +opts.tagK; if (!(k > 0)) { try { k = +(doc && doc.defaultView && doc.defaultView.__tagK); } catch (_) { k = 0; } } return k > 0 ? k : 1; }
   // opts.namePos 가 없으면 작전판의 지금 값(window.__namePos — 보드마다 · 기본 «아래»)
   function nameBelow(doc, opts) {
     var v = opts && opts.namePos; if (!v) { try { v = doc && doc.defaultView && doc.defaultView.__namePos; } catch (_) { v = ''; } }
     return v !== 'above';
   }
+  // 이름표 «알약»과 사람 발밑 번호 · 포지션 패가 같이 쓰는 어두운 알약 색(유니폼 색 없이)
+  var PILL = 'rgba(18,22,30,.86)';
+  // 3.093 — 사람 발밑 패는 그 선수 유니폼의 단색(사용자 «포지션 알약이 상대 팀과 비교 되게 · 최대한 티가 안 나게 · 색상을 유니폼색상으로 ·
+  //         스트라이프 적용되게 하지 말고 단색만»). 줄무늬 · 무늬 유니폼도 기본색 하나(보드의 playerTeamCol — 골키퍼 · 코치 · 선수 색 포함).
+  //         얇고 반투명한 알약(테두리 없음), 글자는 바탕이 밝으면 어둡게 · 어두우면 희게(3.087 — 유니폼 색에 글자가 묻혔다).
+  function hex6(v) { v = String(v || '').trim(); if (/^#[0-9a-f]{6}$/i.test(v)) return v.toLowerCase(); var m = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(v); return m ? ('#' + m[1] + m[1] + m[2] + m[2] + m[3] + m[3]).toLowerCase() : ''; }
+  function kitMain(doc, item, fill, stroke) {
+    var c = hex6(item && item.color); if (c) return c;
+    try { var w = doc && doc.defaultView; if (w && typeof w.playerTeamCol === 'function') c = hex6(w.playerTeamCol(item)); } catch (_) { c = ''; }
+    return c || hex6(fill) || hex6(stroke) || '#3a6df0';
+  }
+  function inkOn(bg) { var n = parseInt(bg.slice(1), 16), l = .2126 * ((n >> 16) & 255) + .7152 * ((n >> 8) & 255) + .0722 * (n & 255); return l > 150 ? '#14161a' : '#ffffff'; }
+  // 3.093 — 커뮤니티 뷰어 «보기 › 글자 › 이름»(board-comm-look.js): 사람 발밑 알약에 이름(따로 뜨는 이름표는 감춘다)
+  function tagName(doc, item) { var on = false; try { on = !!(doc && doc.defaultView && doc.defaultView.__tagName); } catch (_) {} var n = on && item && String(item.name || '').trim(); return n ? n.toUpperCase() : ''; }
   // The pill behind a name: an estimate of the text width (wide CJK glyphs, narrower Latin capitals) around the text's middle.
   function namePill(str, font, y) {
     var w = font * .9;
@@ -447,23 +463,28 @@
     body.appendChild(lid);
     }
     // 3.086 — «사람»: 칩 글자(번호 · 포지션 · 풋살 — 보드 설정 › 칩 글자, «없음»이면 없다)를 발밑 작은 패에.
-    //         셔츠의 번호는 실제 크기에서 읽히지 않는다(사용자 «사람 토큰 밑으로 포지션이나 번호가 들어갈수 있게»). 팀 색 패 · 팀 글자색.
-    var tagH = 0, tagTxt = kind === 'person' && label ? String(label.textContent || '').trim() : '';
+    //         셔츠의 번호는 실제 크기에서 읽히지 않는다(사용자 «사람 토큰 밑으로 포지션이나 번호가 들어갈수 있게»).
+    // 3.087 — 패는 이름표 «알약»과 같은 어두운 알약 · 흰 글자, 유니폼 색은 넣지 않는다(사용자 «유니폼색상이 들어가니까 잘 안보이는거 같아»
+    //         · «포지션도 알약으로 뜨게 해줘 유니폼 색상 적용하지 말고» — 빨강 · 줄무늬 유니폼에서 글자가 묻혔다).
+    //         크기는 보드 설정 › 칩 › 글자 크기(tagK · 작게 0.8 ~ 아주 크게 1.7).
+    var tagNm = kind === 'person' ? tagName(doc, item) : '', tagH = 0, tagTxt = kind === 'person' ? (tagNm || (label ? String(label.textContent || '').trim() : '')) : '';
     if (tagTxt) {
-      var lf = size.font / (opts && +opts.zoom > 1 ? +opts.zoom : 1), tagHost = body.querySelector('.ps-person-stand') || body, tagY = 6;
-      tagH = r1(lf * 1.15);
-      var tagW = Math.max(tagH * 1.3, lf * .8 + tagTxt.length * lf * .56);
-      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH * .3), fill: fill, stroke: 'rgba(255,255,255,.92)', 'stroke-width': r1(lf * .09) }));
-      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + tagH / 2 + lf * .29), 'text-anchor': 'middle', 'font-size': r1(lf * .8), 'font-weight': '800',
-        fill: label.getAttribute('fill') || '#fff', 'font-family': label.getAttribute('font-family') || FONT, 'pointer-events': 'none' });
+      var lf = tagK(doc, opts) * size.font / (opts && +opts.zoom > 1 ? +opts.zoom : 1), tagHost = body.querySelector('.ps-person-stand') || body, tagY = 6;
+      tagH = r1(lf * 1.04);
+      var tagW = lf * .9; for (var ti = 0; ti < tagTxt.length; ti++) tagW += tagTxt.charCodeAt(ti) > 0x2000 ? lf * .82 : lf * .52;   // 한글 이름은 넓게
+      tagW = Math.max(tagH * 1.5, tagW);
+      var kitC = kitMain(doc, item, fill, stroke);
+      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH / 2), fill: kitC, 'fill-opacity': '.72' }));
+      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + tagH / 2 + lf * .26), 'text-anchor': 'middle', 'font-size': r1(lf * .74), 'font-weight': '700', 'letter-spacing': '.3',
+        fill: inkOn(kitC), 'font-family': label.getAttribute('font-family') || FONT, 'pointer-events': 'none' });
       tagT.textContent = tagTxt; tagHost.appendChild(tagT);
     }
-    if (item.name) {
+    if (item.name && !tagNm) {   // 3.093 — 이름이 발밑 알약에 들어갔으면 이름표는 따로 띄우지 않는다
       // opts.nameK = the board's name size (0.8 · 1 · 1.25); opts.nameStyle 'pill' puts the name on a dark pill, otherwise an outlined name.
       var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1) / (opts && +opts.zoom > 1 ? +opts.zoom : 1), str = String(item.name).toUpperCase(), below = nameBelow(doc, opts), y0 = nameY(kind, h, font, opts && opts.dir, below);
       if (below && tagH) y0 = r1(y0 + tagH + 2);   // 사람: 이름표가 아래면 번호 패 밑으로
       var nameHost = (kind === 'person' && body.querySelector('.ps-person-stand')) || body, pill = opts && opts.nameStyle === 'pill';
-      if (pill) nameHost.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: 'rgba(18,22,30,.86)' }, namePill(str, font, y0))));
+      if (pill) nameHost.appendChild(node(doc, 'rect', Object.assign({ 'class': 'ps-chip-namebg', rx: String(Math.round(font * 4.5) / 10), fill: PILL }, namePill(str, font, y0))));
       // 3.086 — 알약이면 글자 테두리 없이(평면 알약과 같다 · 사용자 «테두리 없는것도 만들어줘 알약느낌으로»). 글자만이면 테두리 글자.
       var name = node(doc, 'text', Object.assign({ x: 0, y: y0, 'data-font': String(font), 'text-anchor': 'middle', 'font-size': String(Math.round(font * 10) / 10), 'font-weight': pill ? '700' : '800', 'letter-spacing': '.4', fill: '#fff' },
         pill ? {} : { stroke: 'rgba(6,12,8,.82)', 'stroke-width': String(Math.round(font * 2.4) / 10), 'stroke-linejoin': 'round', 'paint-order': 'stroke' },

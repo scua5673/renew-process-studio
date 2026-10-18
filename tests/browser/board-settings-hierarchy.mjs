@@ -44,7 +44,12 @@ try{
   // ② 선수 표시 — 이 보드에 저장
   await sel('look');s=await st();assert.equal(s.scope,'이 보드에 저장');
   sc=await secs();assert.deepEqual(sc,['내 스타일','칩','이름표','분석'],'선수 표시 묶음 '+JSON.stringify(sc));
-  lb=await labels();assert.deepEqual(lb,['선수 모양','입체 칩','크기','비율','실제 크기','칩 글자','이름표','이름표 크기','이름표 모양','이름표 글꼴','분석 그래픽'],'선수 표시 줄 '+JSON.stringify(lb));
+  // 3.087 — 묶음 «이름표» 아래 줄은 «위치 · 크기 · 모양 · 글꼴»(같은 말을 되풀이하지 않는다). «글자 크기»(사람 발밑 패)는 «사람» 모양일 때만
+  lb=await labels();assert.deepEqual(lb,['선수 모양','입체 칩','크기','비율','실제 크기','칩 글자','위치','크기','모양','글꼴','분석 그래픽'],'선수 표시 줄 '+JSON.stringify(lb));
+  await f.evaluate(()=>{setTokShape('person');renderTokens();});await page.waitForTimeout(200);
+  lb=await labels();assert.ok(lb.indexOf('글자 크기')===lb.indexOf('칩 글자')+1,'«사람»이면 칩 글자 아래 «글자 크기» '+JSON.stringify(lb));
+  assert.deepEqual(await f.evaluate(()=>[...document.querySelectorAll('#nameSizeSeg button')].map(b=>b.textContent.trim())),['작게','보통','크게','아주 크게']);
+  await f.evaluate(()=>{setTokShape('circle');renderTokens();});await page.waitForTimeout(200);
   assert.deepEqual(await f.evaluate(()=>[...document.querySelectorAll('#chip3dSeg button')].map(b=>b.textContent.trim())),['끄기','켜기'],'«평면»은 보드 보기에만');
   await page.screenshot({path:path.join(SHOTS,'board-settings-hierarchy-look-'+engine+'.png')});
   // ③ 배치 — 바로 적용 · 카드 하나 · 선발 11명 · 저장 팀 줄 · 지우기·초기화

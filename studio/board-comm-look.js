@@ -5,6 +5,8 @@
    - 보기만 바꾼다 — 글 · 보드 설정 값(ps_board_tilt3d · 기기 기본 모양 cs_board_lookdef_v1)은 그대로. 3D 는 __setTilt(…,{transient}), 모양은 tokShape 만.
    - 고른 것은 이 기기에 남아(ps_comm_look_v1) 다음 글도 그렇게 열린다(커뮤니티는 글마다 이 판을 새로 띄운다).
      터치 기기(아이패드)의 3D 는 남기지 않는다 — 3D 로 열다 멈추는 기기는 글을 열 때마다 같은 자리에서 멈춘다(3.033: 곁 보드는 터치 기기에서 평면으로 연다).
+   - 3.093 글자: 올린 그대로 · 포지션 · 등번호 · 이름(사용자 «포지션으로 볼건지 등번호로 볼건지 이름으로 볼건지 선택하게»). 글에 없는 것은 못 고른다.
+     보드의 칩 글자(state.label)를 장면마다 바꿔 싣고(loadSnap 을 감싼다), «이름»이면 사람 발밑 알약에 이름(board-token-depth.js 의 window.__tagName).
    보드 쪽은 세 군데만: 글을 싣기 전 prime(모양을 window.__commWantShape 에 — loadSnap 이 장면마다 지킨다), 글을 다 실은 뒤 mount, 닫을 때 고르개를 걷는다(__commTiltOff).
    보드의 함수 선언(window 속성)은 win 으로, let 전역(tokShape)은 이름으로 읽고 쓴다(eval 없이 — CSP). */
 (function (root, factory) {
@@ -16,14 +18,15 @@
   var KEY = 'ps_comm_look_v1';
   var SHAPES = ['circle', 'shirt', 'person', 'shaper'];
   var NAME = { circle: '원형', shirt: '유니폼', person: '사람', shaper: '쉐이퍼' };
+  var LABELS = ['pos', 'num', 'name'], LNAME = { pos: '포지션', num: '등번호', name: '이름' };
 
-  // ── 기기에 남긴 보기 ── { shape: '' | 원형 … , tilt: '' | '3d' | 'flat' } — '' 는 «올린 그대로»(모양) · «정하지 않음»(화면)
+  // ── 기기에 남긴 보기 ── { shape: '' | 원형 … , tilt: '' | '3d' | 'flat', label: '' | 'pos' | 'num' | 'name' } — '' 는 «올린 그대로» · «정하지 않음»
   function read(ls) {
     var o = null; try { o = JSON.parse(ls.getItem(KEY) || 'null'); } catch (_) { o = null; }
     o = o && typeof o === 'object' ? o : {};
-    return { shape: SHAPES.indexOf(o.shape) >= 0 ? o.shape : '', tilt: o.tilt === '3d' || o.tilt === 'flat' ? o.tilt : '' };
+    return { shape: SHAPES.indexOf(o.shape) >= 0 ? o.shape : '', tilt: o.tilt === '3d' || o.tilt === 'flat' ? o.tilt : '', label: LABELS.indexOf(o.label) >= 0 ? o.label : '' };
   }
-  function write(ls, o) { try { ls.setItem(KEY, JSON.stringify({ shape: o.shape || '', tilt: o.tilt || '' })); } catch (_) {} }
+  function write(ls, o) { try { ls.setItem(KEY, JSON.stringify({ shape: o.shape || '', tilt: o.tilt || '', label: o.label || '' })); } catch (_) {} }
 
   // ── 기기 ── phone: 3D · «사람» 없음. touch: 3D 를 기기에 남기지 않는다(폰도 터치)
   function device(win) {
@@ -40,8 +43,10 @@
 
   // ── 누르면 무엇이 바뀌나 ── pick: { tilt: '3d' | 'flat' } 또는 { shape: '' | 원형 … }
   //   돌려주는 것: on(3D 를 켜고/끈다, null = 그대로) · shape(바꿀 모양, null = 그대로, '' = 올린 그대로) · pref(기기에 남길 것)
+  //   3.093 — { label: '' | 'pos' | 'num' | 'name' } 은 글자만 바꾼다(pref.label)
   function choose(cur, pick, dev, threeD) {
-    var pref = { shape: (cur.pref && cur.pref.shape) || '', tilt: (cur.pref && cur.pref.tilt) || '' }, on = null, shape = null;
+    var pref = { shape: (cur.pref && cur.pref.shape) || '', tilt: (cur.pref && cur.pref.tilt) || '', label: (cur.pref && cur.pref.label) || '' }, on = null, shape = null;
+    if (pick.label != null) { pref.label = LABELS.indexOf(pick.label) >= 0 ? pick.label : ''; return { on: null, shape: null, pref: pref }; }
     if (pick.tilt) {
       if (!threeD) return { on: null, shape: null, pref: pref };
       on = pick.tilt === '3d'; if (!dev.touch) pref.tilt = pick.tilt;
@@ -81,6 +86,8 @@
       R + ' .cl-o:hover{background:rgba(255,255,255,.1)}',
       R + ' .cl-o[aria-pressed="true"]{background:rgba(255,255,255,.95);color:rgba(14,20,32,.96)}',
       R + ' .cl-o:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:1px}',
+      R + ' .cl-labels .cl-o{min-height:40px}',
+      R + ' .cl-o:disabled{opacity:.35;cursor:default;background:transparent}',
       R + ' .cl-hint{margin:10px 2px 0;font-size:var(--t-2,11px);line-height:1.45;color:rgba(255,255,255,.62)}'
     ].join('\n');
   }
@@ -105,10 +112,41 @@
     call(win, 'applyView'); call(win, 'renderTokens');
     win.setTimeout(function () { try { if (win.__tiltFit) win.__tiltFit(); } catch (_) {} }, 60);
   }
+  // 3.093 — 글자. 칩 글자(state.label)는 글의 것을 장면마다 바꿔 싣는다: 포지션 = 'pos'(풋살 글은 'fpos'), 등번호 = 'num', 이름 = 글의 것 그대로(사람 알약만 이름).
+  function getState() { try { return typeof state !== 'undefined' ? state : null; } catch (_) { return null; } }   /* global state */
+  function labelFor(want, post) { return want === 'pos' ? (post === 'fpos' ? 'fpos' : 'pos') : want === 'num' ? 'num' : (post || 'num'); }
+  // 지금 판에 있는 것만 고른다 — 포지션 · 등번호 · 이름이 하나라도 있는 선수
+  function has(players) {
+    var o = { pos: false, num: false, name: false };
+    (players || []).forEach(function (p) { if (!p) return; if (String(p.pos || '').trim()) o.pos = true; if (String(p.num == null ? '' : p.num).trim()) o.num = true; if (String(p.name || '').trim()) o.name = true; });
+    return o;
+  }
+  function hookLoad(win) {
+    if (win.__commLabelHook || typeof win.loadSnap !== 'function') return; win.__commLabelHook = true;
+    var orig = win.loadSnap;
+    win.loadSnap = function (s, o) {
+      if (s && typeof s === 'object' && win.document.body.classList.contains('comm-viewing')) {
+        if (win.__commPostLabel == null && !(o && o.keepLook)) win.__commPostLabel = s.label || 'num';
+        if (win.__commWantLabel) s = Object.assign({}, s, { label: labelFor(win.__commWantLabel, s.label) });
+      }
+      return orig.apply(this, [s].concat([].slice.call(arguments, 1)));
+    };
+    var off = win.__commTiltOff;   // 뷰어를 닫으면 글자 고르기도 걷는다
+    if (typeof off === 'function') win.__commTiltOff = function () { win.__commWantLabel = null; win.__tagName = false; win.__commPostLabel = null; return off.apply(this, arguments); };
+  }
+  function applyLabel(win, want) {
+    win.__commWantLabel = want || null; win.__tagName = want === 'name';
+    var st = getState(); if (st) st.label = want ? labelFor(want, win.__commPostLabel || st.label) : (win.__commPostLabel || st.label);
+    call(win, 'renderTokens');
+  }
   function applyShape(win, s) { win.__commWantShape = s || null; setShape(s || win.__commPostShape || getShape()); call(win, 'renderTokens'); }
   // 글을 싣기 전에 — 고른 모양을 loadSnap 이 장면마다 지키게. 올린 사람의 모양은 글을 싣는 첫 loadSnap 이 한 번만 적는다(__commPostShape) —
   //   뒤의 loadSnap 은 보드가 지금 화면을 찍어 둔 것을 되살리기도 해(재생을 멈출 때 등) 고른 모양이 «올린 그대로» 자리에 앉았다
-  function prime(win) { win.__commPostShape = null; try { win.__commWantShape = shown(read(win.localStorage).shape, device(win)) || null; } catch (_) { win.__commWantShape = null; } }
+  function prime(win) {
+    win.__commPostShape = null; win.__commPostLabel = null; hookLoad(win);
+    var pr = { shape: '', label: '' }; try { pr = read(win.localStorage); } catch (_) {}
+    win.__commWantShape = shown(pr.shape, device(win)) || null; win.__commWantLabel = pr.label || null; win.__tagName = pr.label === 'name';
+  }
 
   function mount(win) {
     var doc = win.document, wrap = doc.getElementById('editorBoardWrap'); if (!wrap) return null;
@@ -125,6 +163,9 @@
     h += '<div class="cl-h">선수 모양</div><div class="cl-seg cl-shapes" role="group" aria-label="선수 모양" style="grid-template-columns:repeat(' + shapes.length + ',1fr)">' +
       '<button type="button" class="cl-o cl-orig" data-cl-shape="">올린 그대로<small></small></button>' +
       shapes.map(function (s) { return '<button type="button" class="cl-o" data-cl-shape="' + s + '">' + IC[s] + NAME[s] + '</button>'; }).join('') +
+      '</div><div class="cl-h">글자</div><div class="cl-seg cl-labels" role="group" aria-label="글자" style="grid-template-columns:repeat(3,1fr)">' +
+      '<button type="button" class="cl-o cl-orig" data-cl-label="">올린 그대로</button>' +
+      LABELS.map(function (k) { return '<button type="button" class="cl-o cl-lab" data-cl-label="' + k + '">' + LNAME[k] + '</button>'; }).join('') +
       '</div><p class="cl-hint"></p></div>';
     box.innerHTML = h; wrap.appendChild(box);
     var btn = box.querySelector('#commLookBtn'), pop = box.querySelector('#commLookPop');
@@ -133,14 +174,20 @@
       [].forEach.call(box.querySelectorAll('[data-cl-tilt]'), function (b) { b.setAttribute('aria-pressed', (b.getAttribute('data-cl-tilt') === '3d') === t ? 'true' : 'false'); });
       [].forEach.call(box.querySelectorAll('[data-cl-shape]'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-cl-shape') === on ? 'true' : 'false'); });
       box.querySelector('.cl-orig small').textContent = ' · ' + (NAME[shown(post, dev)] || '원형');
-      box.querySelector('.cl-now').textContent = summary(dev, threeD, t, want);
+      var st = getState(), hv = has(st && st.players), lw = win.__commWantLabel || '';
+      [].forEach.call(box.querySelectorAll('[data-cl-label]'), function (b) { var k = b.getAttribute('data-cl-label'), ok = !k || hv[k];
+        b.disabled = !ok; b.title = ok ? '' : ('이 글에는 ' + LNAME[k] + (k === 'name' ? '이' : '가') + ' 없어요');
+        b.setAttribute('aria-pressed', k === lw ? 'true' : 'false'); });
+      box.querySelector('.cl-now').textContent = summary(dev, threeD, t, want) + (lw ? ' · ' + LNAME[lw] : '');
       box.querySelector('.cl-hint').textContent = hint(dev, t, getShape());
     }
     function open(on) { pop.hidden = !on; btn.setAttribute('aria-expanded', on ? 'true' : 'false'); if (on) paint(); }
     btn.addEventListener('click', function (e) { e.stopPropagation(); open(pop.hidden); });
     pop.addEventListener('click', function (e) {
-      var tb = e.target.closest('[data-cl-tilt]'), sb = e.target.closest('[data-cl-shape]'); if (!tb && !sb) return;
-      var r = choose({ is3d: is3d(win), pref: read(ls) }, tb ? { tilt: tb.getAttribute('data-cl-tilt') } : { shape: sb.getAttribute('data-cl-shape') }, dev, threeD);
+      var tb = e.target.closest('[data-cl-tilt]'), sb = e.target.closest('[data-cl-shape]'), lb = e.target.closest('[data-cl-label]'); if (!tb && !sb && !lb) return;
+      if (lb && lb.disabled) return;
+      var r = choose({ is3d: is3d(win), pref: read(ls) }, lb ? { label: lb.getAttribute('data-cl-label') } : tb ? { tilt: tb.getAttribute('data-cl-tilt') } : { shape: sb.getAttribute('data-cl-shape') }, dev, threeD);
+      if (lb) applyLabel(win, r.pref.label);
       if (r.shape !== null) applyShape(win, shown(r.shape, dev));
       if (r.on !== null && r.on !== is3d(win)) tilt(win, r.on);
       write(ls, r.pref); paint();
@@ -156,5 +203,5 @@
     paint();
     return box;
   }
-  return { KEY: KEY, SHAPES: SHAPES, NAME: NAME, read: read, write: write, device: device, can3d: can3d, shapesFor: shapesFor, shown: shown, choose: choose, summary: summary, hint: hint, css: css, prime: prime, mount: mount };
+  return { KEY: KEY, SHAPES: SHAPES, NAME: NAME, LABELS: LABELS, LNAME: LNAME, labelFor: labelFor, has: has, read: read, write: write, device: device, can3d: can3d, shapesFor: shapesFor, shown: shown, choose: choose, summary: summary, hint: hint, css: css, prime: prime, mount: mount };
 });

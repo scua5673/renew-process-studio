@@ -1,7 +1,7 @@
 /* PROCESS STUDIO — 커뮤니티 공통 분류(3.075 · 사용자 «E안으로 앱에 적용해줘 · 커뮤니티에 전부 적용해줘 다른 탭에도»).
    목업 E안: 경기 4국면 타일(공격 · 수비 전환 · 공격 전환 · 수비) + 경기 밖 주제 칩(세트피스 · 개인 기술 · 골키퍼 · 피지컬·웜업)
-   + 연령 칩 + «오늘 인원» −/+(상관없음) + 카드를 누르면 미리보기 창(그림 · 훈련 · 오늘 인원 맞춤 · 재생 · 보관함에 담기).
-   코치 자료 · 프로세스 · FIFA 가 같은 고르개를 쓴다. 엘미하는 고르개 없이 미리보기 창만(사용자 3.042 «엘미하는 분류 필요없고»).
+   + 연령 칩 + «오늘 인원» −/+(상관없음). 카드를 누르면 바로 크게 재생(3.091 — 미리보기 창 없앰).
+   코치 자료 · 프로세스 · FIFA 가 같은 고르개를 쓴다. 엘미하는 고르개가 없다(사용자 3.042 «엘미하는 분류 필요없고»).
    · 칸마다 원래 분류(코치 CATS 21종 · 프로세스 테마 · FIFA 묶음)는 그대로 두고 여기서 새 주제 8개 · 연령 · 인원으로 옮긴다(fromCoach · fromProc · fromFifa).
    · 연령을 모르는 글은 연령 고르개에 걸리지 않는다(보인다). 인원을 모르는 글도 같다.
    · 화면에 쓰는 글은 textContent 로만. 그림은 <img src> 로만(코치 글 그림은 커뮤니티가 정리한 thumbImg 의 HTML 을 받는다). */
@@ -107,7 +107,6 @@
     if(!host)return; var f=fit(it),old=host.querySelector('.tx-fit'); if(old)old.remove(); if(!f)return;
     host.appendChild(el(host.ownerDocument,'span','tx-fit tx-fit-'+f.kind,f.text));
   }
-  function topicBadge(doc,k){ var t=TMAP[k]; if(!t)return null; var b=el(doc,'span','tx-topic',t[1]); b.style.background=t[2]; return b; }
 
   /* 고르개 — host 를 비우고 다시 그린다. items: 지금 칸의 글들(fromX 결과) — 타일 옆 숫자. onChange: 고른 것이 바뀌면 */
   function draw(host,items,onChange){
@@ -155,54 +154,7 @@
     [].forEach.call(host.querySelectorAll('[data-sx]'),function(r){ var v=sx[r.getAttribute('data-sx')]; if(v)r.scrollLeft=v; });
   }
 
-  /* 미리보기 창 — o = {title, topic(키), item, by, thumbUrl | thumbHtml(정리된 HTML), trainings:[{name,minutes}], desc, onPlay(k), onSave(), saveLabel} */
-  var SHEET=null;
-  function close(){ if(SHEET){ try{ SHEET.doc.removeEventListener('keydown',SHEET.key); }catch(_){} SHEET.node.remove(); var f=SHEET.focus; SHEET=null; try{ if(f&&f.focus)f.focus(); }catch(_){} } }
-  function open(doc,o){
-    close(); o=o||{};
-    var trs=Array.isArray(o.trainings)?o.trainings:[],mask=el(doc,'div','tx-mask'),k=(o.k>0&&o.k<trs.length)?Math.floor(o.k):0;   /* 카드에서 고른 훈련부터 */
-    var aside=el(doc,'aside','tx-sheet'); aside.setAttribute('role','dialog'); aside.setAttribute('aria-modal','true'); aside.setAttribute('aria-label',(o.title||'')+' 미리보기');
-    var hd=el(doc,'div','tx-sh-hd'),hl=el(doc,'div','tx-sh-hl'),bg=el(doc,'div','tx-row');
-    var tb=topicBadge(doc,o.topic); if(tb)bg.appendChild(tb);
-    if(o.form)bg.appendChild(el(doc,'span','tx-form',o.form));
-    ((o.item&&o.item.subs)||[]).forEach(function(k){ if(SUBMAP[k]&&SUBMAP[k].name!==o.form)bg.appendChild(el(doc,'span','tx-form',SUBMAP[k].name)); });
-    hl.appendChild(bg); hl.appendChild(el(doc,'h2','tx-sh-tt',o.title||''));
-    var it=o.item||null,meta=[];
-    if(it&&it.ages)meta.push('연령 '+(it.ages.length>1?it.ages[0]+'~'+it.ages[it.ages.length-1]:it.ages[0]));
-    if(it&&it.min)meta.push('인원 '+(it.max&&it.max!==it.min?it.min+'~'+it.max:it.min)+'명');
-    if(o.by)meta.push(o.by);
-    if(meta.length)hl.appendChild(el(doc,'span','tx-sh-meta',meta.join(' · ')));
-    var x=el(doc,'button','tx-x','×'); x.type='button'; x.setAttribute('aria-label','닫기'); x.onclick=close;
-    hd.appendChild(hl); hd.appendChild(x); aside.appendChild(hd);
-    var pic=el(doc,'div','tx-sh-pic');
-    var img=null;
-    if(o.thumbUrl){ img=el(doc,'img'); img.alt=''; img.decoding='async'; img.referrerPolicy='no-referrer'; img.src=typeof o.thumbUrl==='function'?o.thumbUrl(k+1):o.thumbUrl; pic.appendChild(img); }
-    else if(o.thumbHtml)pic.innerHTML=o.thumbHtml;   /* 커뮤니티의 thumbImg(정리한 SVG 를 <img src="data:"> 로) 결과만 */
-    aside.appendChild(pic);
-    if(trs.length){
-      var tl=el(doc,'div','tx-sh-trs'); tl.setAttribute('role','group'); tl.setAttribute('aria-label','훈련');
-      var mark=function(){ [].forEach.call(tl.children,function(b,j){ b.setAttribute('aria-pressed',j===k?'true':'false'); b.classList.toggle('on',j===k); });
-        if(img&&typeof o.thumbUrl==='function')img.src=o.thumbUrl(k+1); };
-      trs.forEach(function(t,j){ var b=el(doc,'button','tx-tr'); b.type='button';
-        b.appendChild(el(doc,'span','tx-i',String(j+1))); b.appendChild(el(doc,'span','tx-tr-nm',t&&t.name||('훈련 '+(j+1)))); b.appendChild(el(doc,'span','tx-tr-mn',t&&t.minutes?t.minutes+'분':''));
-        b.onclick=function(){ k=j; mark(); }; tl.appendChild(b); });
-      aside.appendChild(tl); mark();
-    }
-    if(o.desc)aside.appendChild(el(doc,'p','tx-sh-desc',o.desc));
-    var f=fit(it); if(f)aside.appendChild(el(doc,'span','tx-fit tx-fit-'+f.kind,f.text));
-    var act=el(doc,'div','tx-sh-act');
-    var play=el(doc,'button','tx-btn','▶ 크게 재생'); play.type='button'; play.onclick=function(){ var kk=k; close(); if(o.onPlay)o.onPlay(kk); };
-    act.appendChild(play);
-    if(o.onSave){ var sv=el(doc,'button','tx-btn tx-btn-pri',o.saveLabel||'보관함에 담기'); sv.type='button'; sv.onclick=function(){ close(); o.onSave(); }; act.appendChild(sv); }
-    aside.appendChild(act);
-    mask.appendChild(aside);
-    mask.addEventListener('click',function(e){ if(e.target===mask)close(); });
-    var key=function(e){ if(e.key==='Escape')close(); };
-    doc.addEventListener('keydown',key);
-    (doc.body||doc.documentElement).appendChild(mask);
-    SHEET={node:mask,doc:doc,key:key,focus:doc.activeElement};
-    try{ x.focus(); }catch(_){}
-  }
+  /* 3.091 — 미리보기 창(3.075 open · close)은 없앴다(사용자 «커뮤니티에서 누르면 바로 크게 재생 · 미리보기 없애자»). 카드를 누르면 커뮤니티가 바로 뷰어를 연다 */
   /* 3.076 — 훈련 만들기 ↔ 커뮤니티를 한 표로(사용자 «훈련만들기와 잘 연동이 되어야 해 · 둘이 잘 맞추고 싶어»).
      작전판 훈련의 성격(FOCUS 10가지)은 운동량 · 일정에 쓰이니 그대로 두고, 커뮤니티 주제 8개와는 이 표 하나로만 오간다.
      · 올릴 때 주제는 작전판 키로 적는다(TO_CAT) — 예전 글 표시(catOf 의 국면 키 호환) · fromCoach 가 그대로 읽는다
@@ -267,5 +219,5 @@
   }
   return {TOPICS:TOPICS,PHASES:PHASES,EXTRAS:EXTRAS,AGES:AGES,COACH:COACH,FOCUS:FOCUS,PROC_PL:PROC_PL,
     fromCoach:fromCoach,fromProc:fromProc,fromFifa:fromFifa,fifaAges:fifaAges,state:state,set:set,ok:ok,fit:fit,counts:counts,
-    draw:draw,badge:badge,TO_CAT:TO_CAT,SUBS:SUBS,SUBMAP:SUBMAP,subsOf:subsOf,PROC_SUB:PROC_SUB,subsOfPost:function(p){ var it=fromCoach(p,keys),ids=it.subs||[]; return {ids:ids,names:ids.map(function(k){ return SUBMAP[k].full; })}; },TO_FOCUS:TO_FOCUS,focusOfPost:focusOfPost,topicsOfDrill:topicsOfDrill,headcount:headcount,upForm:upForm,open:open,close:close,hideOld:hideOld,isOpen:function(){ return !!SHEET; }};
+    draw:draw,badge:badge,TO_CAT:TO_CAT,SUBS:SUBS,SUBMAP:SUBMAP,subsOf:subsOf,PROC_SUB:PROC_SUB,subsOfPost:function(p){ var it=fromCoach(p,keys),ids=it.subs||[]; return {ids:ids,names:ids.map(function(k){ return SUBMAP[k].full; })}; },TO_FOCUS:TO_FOCUS,focusOfPost:focusOfPost,topicsOfDrill:topicsOfDrill,headcount:headcount,upForm:upForm,hideOld:hideOld};
 });

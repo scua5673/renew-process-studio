@@ -27,8 +27,11 @@ test('token numbers and names use the app font first',()=>{
 });
 test('«사람» shows the chip label under the feet; a 3D pill name has no outline',()=>{
   const src=read('studio/board-token-depth.js');
-  assert.match(src,/tagTxt = kind === 'person' && label \? String\(label\.textContent \|\| ''\)\.trim\(\) : ''/,'the board\'s chip label (번호 · 포지션 · 없음)');
-  assert.match(src,/'class': 'ps-person-tag', .*rx: r1\(tagH \* \.3\), fill: fill,/,'in the team colour');
+  assert.match(src,/tagTxt = kind === 'person' \? \(tagNm \|\| \(label \? String\(label\.textContent \|\| ''\)\.trim\(\) : ''\)\) : ''/,'the board\'s chip label (번호 · 포지션 · 없음) — or the name (3.093 viewer «이름»)');
+  assert.match(src,/var PILL = 'rgba\(18,22,30,\.86\)';/);
+  assert.match(src,/'class': 'ps-person-tag', [^\n]*fill: kitC, 'fill-opacity': '\.72' \}/,'3.093 — the kit\'s solid main colour (no stripes), see-through');
+  assert.match(src,/'class': 'ps-chip-namebg', [^\n]*fill: PILL \}/);
+  assert.doesNotMatch(src,/ps-person-tagbar/,'no kit colour on the badge at all («유니폼 색상 적용하지 말고»)');
   assert.match(src,/if \(below && tagH\) y0 = r1\(y0 \+ tagH \+ 2\)/,'a name below goes under it');
   assert.match(src,/pill \? \{\} : \{ stroke: 'rgba\(6,12,8,\.82\)'/,'pill = no outline');
 });
