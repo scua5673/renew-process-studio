@@ -2621,8 +2621,8 @@ function libShareCopy(it){
   }
   walk(out,'');return out;
 }
-/* 3.091 폰 강제 종료: 지문마다 자료를 통째로 복사해 다시 직렬화했다(21MB 보관함 → 회차마다 0.3GB 쓰레기). 같은 규칙을 replacer 로 한 번에 —
-   글은 JSON.stringify(libShareCopy(it)) 와 한 글자도 같다(tests/lib-hash-3091). 빠질 맨 위 칸이 객체 · BigInt 이거나 toJSON 이 있으면 옛 길 */
+/* 3.093 폰 강제 종료: 지문마다 자료를 통째로 복사해 다시 직렬화했다(21MB 보관함 → 회차마다 0.3GB 쓰레기). 같은 규칙을 replacer 로 한 번에 —
+   글은 JSON.stringify(libShareCopy(it)) 와 한 글자도 같다(tests/lib-hash-3093). 빠질 맨 위 칸이 객체 · BigInt 이거나 toJSON 이 있으면 옛 길 */
 var LIB_SHARE_TOP={thumb:1,_teamSharePending:1,_teamSharedAt:1,_teamSource:1};
 function libShareJSON(it){
   var old=!it||typeof it!=='object'||Array.isArray(it),root=null,s,k;
