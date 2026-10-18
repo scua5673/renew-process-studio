@@ -225,6 +225,7 @@
     ['ps_rescue_','device','ls','recovery','sync.js',{of:'*',prefix:1}],
     ['ps_rescue_list_v1','device','ls','recovery','sync.js',{of:'*'}],
     ['ps_resume_screen','device','ls','pref','app.html'],
+    ['ps_upd_cont_v1','device','ls','session','update-progress.js'],
     ['ps_roster_keep_v1','device','ls','recovery','scout.html',{of:'scout_tool_v1'}],
     ['ps_roster_keep_v2:','device','ls','recovery','roster-recovery.js',{of:'scout_tool_v1',prefix:1}],
     ['ps_roster_pending_v1:','device','ls','queue','roster-outbox.js',{of:'scout_tool_v1',prefix:1}],
