@@ -11582,7 +11582,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
   function rvDaysTo(d){ if(!d)return null; var t=new Date(d+'T00:00:00').getTime(); if(isNaN(t))return null; var now=new Date(); now.setHours(0,0,0,0); return Math.round((t-now.getTime())/864e5); }
   function rvNextAt(list){ var l=list[list.length-1]; return l&&l.nextAt||''; }
   /* ⚠ 2.403 — 리뷰의 `at` 은 `ymd()` 문자열이다. 그런데 밀리초가 들어오면 그대로 화면에 뱉었다
-     (실측: "코치 이슬기 · 1787198705117 성장 리뷰"). 숫자가 새어 나가지 않게 여기서 막는다. */
+     (실측: "코치 ○○○ · 1787198705117 성장 리뷰"). 숫자가 새어 나가지 않게 여기서 막는다. */
   function rvFmt(d){ if(!d)return '';
     if(typeof d==='number'||/^\d{10,}$/.test(String(d))){ var x=new Date(+d); return isNaN(x)?'':((x.getMonth()+1)+'/'+x.getDate()); }
     var p=String(d).split('-'); return p.length===3?(+p[1])+'/'+(+p[2]):String(d); }
@@ -12156,7 +12156,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
       if(it.d&&it.d!==lastD){ lastD=it.d; var dd=new Date(it.d+'T12:00:00'); var wd=['일','월','화','수','목','금','토'][dd.getDay()]||''; h+='<div class="st-day"><span>'+(dd.getMonth()+1)+'월 '+dd.getDate()+'일 · '+wd+(byDate[it.d]?(' · vs '+esc(byDate[it.d])):'')+'</span></div>'; }
       var isC=it.who==='coach', mine=coachMode?isC:!isC, who=mine?'me':'coach', go=stGo(it), body=stBody(it,opts); if(!body)return;   /* 2.768 — 보는 사람 기준으로 내 말이 오른쪽 */
       var byName=isC?(it.by||(it.r&&it.r.by)||(it.fb&&it.fb.updatedBy)||(it.qm&&it.qm.by)||cname):pname;
-      if(coachMode&&isC&&stSameCoach(byName))byName='나';   /* 2.770 — «이슬기» 와 «이슬기 코치» 는 같은 사람 */
+      if(coachMode&&isC&&stSameCoach(byName))byName='나';   /* 2.770 — «이름» 과 «이름 코치» 는 같은 사람 */
       h+='<div class="st-msg '+who+'" data-story-id="'+esc(storyItemKey(it,items.indexOf(it)))+'" data-story-ts="'+(+it.ts||0)+'"><span class="st-src">'+((isC||coachMode)?'<b>'+esc(byName)+'</b> · ':'')+(go?'<button type="button" class="st-origin" data-st-go="'+esc(go)+'">'+esc(stSrc(it))+' ›</button>':esc(stSrc(it)))+'</span><div class="st-bub">'+body+'</div></div>';
     });
     h+='</div>';
@@ -12164,7 +12164,7 @@ function psAct(n){ try{ var api=(parent&&parent!==window)?parent.PSSync:window.P
     if(!coachMode)h+=stCompose();
     h+='<div class="st-note">출처를 누르면 원래 기록으로 갑니다</div></section>'; return h;
   }
-  /* 2.770 — 실계정에서 코치 이름이 기록마다 달랐다(좋아요 by=«이슬기», 보내기 by=«이슬기 코치»=displayName). 뒤의 코치·감독·님과 공백을 걷고 비교 */
+  /* 2.770 — 실계정에서 코치 이름이 기록마다 달랐다(좋아요 by=«이름», 보내기 by=«이름 코치»=displayName). 뒤의 코치·감독·님과 공백을 걷고 비교 */
   function stSameCoach(name){ function nz(x){ return String(x||'').replace(/\s+/g,'').replace(/(코치|감독|선생님|쌤|님)$/,''); } var a=nz(name), b=nz(lrCoachName()); return !!a&&!!b&&a===b; }
   /* 2.767 — 답 보내기: 선수는 «코치에게 한 마디»(doc.talk, 내 문서), 코치는 «선수에게 한 마디»(pub.talk, 코치 문서). 둘 다 덧붙이기만 */
   function stCompose(){

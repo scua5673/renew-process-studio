@@ -17,7 +17,7 @@ function ctx(over){
     sqEvalArchOf:()=>'b2b',PS_ARCH:{get:()=>({name:'박스 투 박스'})},sqEvalPosName:()=>'CM',
     sqThreads:()=>({linked:true,uid:'u1',wk:7,q:{start:'2026-09-07'},doc:{weapon:{picks:[{t:'왼발 전환 패스'}]}},
       list:[{g:{t:'공 받기 전 어깨 너머 두 번 보기',sc:{'2026-09-07':2,'2026-10-19':3}}},{g:{t:'경기당 전진 패스 5회',owner:'both',sc:{}}}]}),
-    rvList:()=>[{at:'2026-10-14',by:'이슬기',strengths:['좁은 공간에서 몸을 열고 받는다'],develop:['받기 전 확인'],note:'경기에서도 해 보자'}],
+    rvList:()=>[{at:'2026-10-14',by:'코치 A',strengths:['좁은 공간에서 몸을 열고 받는다'],develop:['받기 전 확인'],note:'경기에서도 해 보자'}],
     sqRadarRows:()=>[{lb:'전술',n:5,coach:4.8,nC:5,self:3,nS:5,req:4.6,nR:5},{lb:'기술',n:5,coach:4.9,nC:5,self:null,nS:0,req:4,nR:5}],
     sqMeetList:()=>[{at:'2026-09-15',agreement:'스캔 두 번을 전반 15분 동안',coachFeedback:'코치만 보는 메모',nextPlan:'10/20'}]
   },over||{}));
