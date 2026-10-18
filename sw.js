@@ -16,7 +16,7 @@ const CORE = [
   '/studio/autosave-status.js', '/studio/update-progress.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
   '/studio/shared-view-observation.js',
   '/studio/team-files.js',
-  '/studio/support-diagnostics.js', '/studio/support.js', '/studio/support.css', '/studio/release-notes.js',
+  '/studio/support-diagnostics.js', '/studio/support.js', '/studio/support.css', '/studio/release-notes.js', '/studio/install-door.js',
   '/studio/perms.js',
   '/studio/football-language.js',
   '/studio/eval-standard.js',
