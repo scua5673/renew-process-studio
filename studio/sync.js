@@ -78,7 +78,7 @@ function boardLivePulled(raw){
    이제 무엇이 밀렸는지 기록하고 사용자가 되돌릴 수 있게 한다. */
 var CONFKEY='ps_sync_conflicts_v1';
 /* 2.674 — «기기는 캐시일 뿐»(사용자 "기기 것을 최대한 저장 안 하기" 1단계). 서버 값을 받으면 그냥 덮고, 구조선(ps_rescue_*)·충돌 사본(ps_sync_conflict_*)을
-   더는 만들지 않는다. 실측: 사용자 맥북에 충돌 사본 44개·구조선 39개(약 1MB)가 쌓였고, 정상 갱신(45→53명)까지 «확인할 것»으로 묻고 있었다.
+   더는 만들지 않는다. 실측: 충돌 사본 · 구조선이 1MB 쌓이고 정상 갱신까지 «확인할 것»으로 물었다.
    남기는 것: 지금 값 한 벌 + 못 올린 편집 + 급감 24h 되돌리기(undoStash, 2.626) + 일정·선수단 3-way 병합의 기준본(syncBase). 켜고 끄기는 이 스위치 하나. */
 var COPIES_OFF=true;
 /* 2.675 — 2단계 «열 때 서버부터, 닫으면 지우기»(사용자 "2단계도 이어서 가자").
@@ -145,6 +145,7 @@ function wipeTeamCacheSoft(){
     if(inIdb&&(!window.storage||!window.storage.delIfValue))return;
     if(!holdConflictCurrent(owner)||localStorage.getItem(k)!==loc)return;
     try{ localStorage.removeItem(k); n++; }catch(_){ return; }
+    if(typeof PSIdpPubWipe!=='undefined')PSIdpPubWipe.mark(m,k);   /* 3.104 idp-pub-wipe.js */
     /* 2.733 — 경기 사본을 지웠으면 이 워크스페이스에서 경기 키를 확인했다는 표도 지운다.
        표만 남으면 다음 부팅이 빈 로컬을 확인 완료로 오해해 일정에서 빈 문서를 만든다. */
     if(k===MATCH_KEY&&m.r)delete m.r[k];
@@ -1783,8 +1784,7 @@ function scheduleTokenValid(v){return typeof v==='string'&&v.length>=16&&v.lengt
 /* scheduleRev는 로컬 저장 횟수가 아니라 서버 커밋 번호다. 마지막으로 확인한
    서버/base의 정확히 +1만 새 커밋으로 보내 SQL 트리거가 원자 CAS를 할 수 있게 한다. */
 /* 2.587 — 서버 구조 검사(ps_1644_schedule_structure_ok)와 같은 규칙으로 **올리기 전에 수선**한다.
-   실측(ps_kv_denied·ps_kv 2026-09-03): 두 워크스페이스의 일정 문서가 경기일 mid 가 **중복**돼(주 복제·달 복제·내 구성이 mid 까지 복사)
-   구조 검사에서 떨어지고, 그때부터 그 팀의 모든 일정 저장이 «오래된 일정 판본…» 으로 거부됐다(한 곳은 오늘까지 반복).
+   실측(9/3): 경기일 mid 가 **중복**된(복제가 mid 까지 복사) 일정 문서는 구조 검사에서 떨어져 그 팀의 모든 일정 저장이 거부됐다.
    규칙: 경기일(match 가 참값·board.sched='경기' 등)은 비어 있지 않은 문자열 mid 가 있어야 하고, 문서 안 모든 mid 는 유일해야 한다.
    첫 것은 두고 뒤의 중복·빈 값만 새 id — 경기 연결(sched:<mid>)은 첫 날이 그대로 지킨다. */
 var __schedMidSeq=0;
@@ -2571,6 +2571,9 @@ function syncState(){
   if(rc)return {kind:'ask',text:'저장할 내용 선택 · '+rc+'건',n:n,review:rc};
   if(busy)return {kind:'busy',text:'올리는 중'+(n?(' · '+n):''),n:n,review:rc};
   if(n)return {kind:'pending',text:'전송 대기 · '+n+'건',n:n,review:rc};
+  /* 3.104 — 이 공간에서 아직 못 받았으면(전환 뒤 · 닫기 정리 뒤) ok 가 아니다. ps_last_pull_at 은 공간을 안 가린다 */
+  var wiped=typeof cacheWipedFlag==='function'&&cacheWipedFlag();
+  if(!(+m.last)||wiped)return fresh?{kind:'wait',reason:lastIssue.code,text:'아직 못 받았어요 · '+syncReasonText(lastIssue.code),n:0,review:0,at:lastIssue.at}:{kind:'wait',text:'받는 중',n:0,review:0};
   var at=0; try{ at=+localStorage.getItem('ps_last_pull_at')||0; }catch(_){} at=Math.max(at,+m.last||0);
   return {kind:'ok',text:'팀과 같아요',at:at,ago:at?agoText(at):'',n:0,review:0,rt:rtConnected(),rtAt:rtLast,rtHits:rtHits};
 
@@ -2639,7 +2642,7 @@ function libHash(it){return hash(libShareJSON(it));}
 /* ══ 3.005 · 옛 자료의 장면별 썸네일 정리 ══
    작전판은 2.559 부터 저장할 때 장면 0 의 썸네일만 남긴다(board.html __animFrames — 나머지는 불러올 때 보이는 칸부터 다시 그린다).
    그 전에 저장되고 다시 저장되지 않은 자료에는 장면마다 썸네일이 그대로 있다.
-   실측(2026-10-12 · ps_library 읽기만): 살아 있는 자료 1,557개 428.5MB 중 **189.6MB(44%)** 가 304개 자료의 frames[1…].thumb(4,116칸) — 마지막 저장은 전부 9/24 이전.
+   실측(10/12): 보관함 글자의 44% 가 frames[1…].thumb(전부 9/24 이전 저장).
    보관함은 목록 한 덩어리라 저장 한 번에 이 글자들을 전부 읽고 다시 쓴다(40MB 공간: 쓰기 ~0.2초 · 읽기 ~0.1초).
    · 하는 일은 저장할 때와 같은 규칙 하나뿐이다: frames[1…] 의 thumb 을 뗀다. 장면 0 · 카드 · 페이지 · 훈련의 그림과 판(snap)은 그대로.
    · **이 기기의 사본만** 고친다. 서버로 올리지 않고 수정 시각도 그대로다 — 정리 전 내용이 지난 회차에 확인한 것과 같았으면 기준 지문(m.li[id].h)만 새 값으로 옮긴다
@@ -3037,9 +3040,7 @@ function bulkPush(){
 }
 
 /* ══ 2.622 · 일정 그림(thumb) 분리 전송 ═══════════════════════════════════════════
-   실측(2026-09-06 대시보드, 일정 문서 상위 8팀): thumb(작전판 SVG 문자열)가 문서의 80~95% —
-   29276f9c 2.92MB 중 1.14MB(31장·장당 37KB) · 6d6d17f5 1.34MB 중 1.12MB(21장) · 765c3c39 448KB 중 417KB(10장).
-   그림을 빼면 주 42개 일정(풋볼A)이 약 125KB. 2단계 «행 분리»의 진짜 무게는 주가 아니라 그림이었다.
+   실측(9/6): 일정 문서의 80~95% 가 thumb(작전판 SVG)였다 — 무게는 주가 아니라 그림.
    설계 — **전송 경계에서만** 바꾼다. 기기 안(localStorage 거울·IDB·base·날짜 병합·해시)은 그림이 든 원래 모양 그대로.
      보낼 때: "thumb":"<svg…>" → "thumb":"","thumbRef":"<해시>" 로 바꾸고 그림은 ps_blob(workspace_id,h,v) 행으로 한 번만 올린다(내용 주소).
      받을 때: thumbRef 를 IDB 캐시(ps_blob:<h>)에서, 없으면 ps_blob 에서 묶어 받아 되돌린다.
@@ -3048,8 +3049,7 @@ function bulkPush(){
    ⚠ 서버에 ps_blob 이 없거나(404) 권한이 없으면(403·401) 이 세션에서 끄고 예전처럼 통째로 보낸다 — SQL·배포 순서에 안전. */
 var BLOB_MIN=512, BLOB_PREFIX='ps_blob:', BLOB_IN=40, BLOB_UP_BYTES=900000, blobOff=false;
 /* 2.623 — 콜론 뒤 공백(\s*)을 잡아 그대로 보존한다: 서버 SQL 복구(jsonb::text)로 쓴 문서는 `"thumb": "<svg…>"` 꼴이라(풋볼A rev 341 실측) 공백 없는 정규식이 0장을 잡았다 */
-/* 2.630 — 키를 넓힌다: thumb(작전판 SVG) + emblem(팀 엠블럼 data:). 실측(2026-09-06): scout_tool_v1 두 팀에 옛 엠블럼 원본 1,249,656·433,928자가
-   그대로(2.605 다이어트는 그 팀이 새 판으로 열어야 걸린다). 참조 키 이름은 «키+Ref»(thumbRef·emblemRef). 대상 키는 BLOB_KEYS. */
+/* 2.630 — 키를 넓힌다: thumb(작전판 SVG) + emblem(팀 엠블럼 data:). 옛 엠블럼 원본(최대 1.2M자)이 남은 팀이 있었다. 참조 키 이름은 «키+Ref»(thumbRef·emblemRef). 대상 키는 BLOB_KEYS. */
 var BLOB_KEYS={process_coach_v1:1,scout_tool_v1:1};
 var BLOB_RE_STRIP=/"(thumb|emblem)":(\s*)"((?:[^"\\]|\\.){512,})"/g;    /* JSON 문자열 내용(이스케이프 포함), 512자 이상만 */
 function blobHash(s){
@@ -3186,7 +3186,7 @@ function histHydrate(k,raw,wid){
   },function(){ return raw; });
 }
 /* ══ 2.727 · 보관함 사진 분리(사용자 «갑시다», 백엔드 점검 2026-09-09) ═══════════════════════════════════════
-   실측: ps_library 1,284행 317MB 중 data:image 든 행 687개가 349MB(보드 카드 평균 454KB) — DB 의 절반이고, 기기마다 library_body 로 통째로 받는다.
+   실측: data:image 든 행이 ps_library 의 절반이고, 기기마다 library_body 로 통째로 받는다.
    일정 그림(2.622)과 같은 방식: 올리기 직전 항목 JSON 안의 «값 전체가 data:image…base64» 인 문자열(512자 이상, 1.9MB 이하)을 ps_blob(내용 주소)로
    떼어 내고 자리에 "psblob:<해시>" 를 남긴다. 받을 때 캐시(IDB ps_blob:<h>) → 서버 순으로 되돌린다. 기기 안 보관함 모양은 그대로다.
    정규식은 JSON 값 시작(:·[·, 뒤)만 잡는다 — 썸네일 SVG 문자열 «안»의 href=\"data:image…\" 는 앞이 \ 라 안 잡힌다(잡으면 SVG 를 삼킨다).
@@ -3717,8 +3717,7 @@ function rescueRestore(k){
    사용자가 [팀에 올리기]를 누르면 그 값에 한해 통과시킨다. */
 var HOLD_LIST='ps_hold_list_v1', HOLD_MAX=12;
 /* ══ 2.626 · 막지 않고 되돌리기 ══════════════════════════════════════════════════
-   목업 둘째 판. 급감 보류는 «사람 승인» 에 기댔고, 승인 화면은 설정 안에 있어 아무도 안 봤다 — 2026-09-06 실측: 풋볼A 저장이
-   보류에 걸려 승인 전엔 조용히 안 올라갔다(코치 기기 미동기화의 원인). 새 규칙: **줄어든 값은 올린다. 대신 직전 팀 판본을 이 기기에
+   급감 보류는 «사람 승인» 에 기댔는데 승인 화면을 아무도 안 봐 저장이 조용히 안 올라갔다. 새 규칙: **줄어든 값은 올린다. 대신 직전 팀 판본을 이 기기에
    남기고 «n개가 빠진 채 올라갔어요 [되돌리기]» 를 그 자리에 띄운다.** 서버 ps_kv_history 가 90일 남아 있으니 막을 이유가 없다.
    ⚠ 예외 하나 — **0 으로 비는 것**(before≥4 → after 0)은 그대로 보류한다. 2026-08-05 스카우팅 34→1, 2026-09-04 빈 일정 덮어쓰기가
       전부 «기기가 비어서» 였다. 코치가 목록 전체를 지우는 일은 드물고, 빈 값이 팀에 퍼지면 되돌리기 전에 다른 기기가 받는다. */
@@ -3781,9 +3780,7 @@ function undoRestore(k){
    (2026-08-06 올린 기록에 `process_coach_v1(0)` 이 찍혀서 발견 — 화면엔 8주치가 멀쩡히 있었다)
    깊이 3까지 내려가며 배열 길이를 더한다. 하나도 없으면 예전처럼 칸 수로 돌아간다. */
 /* 2.624 — `grpWeeks`(2.214 조별 사본, 2.380 부터 안 씀)는 세지 않는다. 2.600 이 저장 때 그걸 빼면서 psCount 가
-   630→294 로 반토막 나 **가짜 «급감 보류»** 가 걸렸다(2026-09-06 실계정 실측 — 풋볼A 문서를 저장하자 보류, 승인해야 올라감).
-   서버 문서에 옛 사본이 남은 팀은 전부 같은 보류를 만나고, 승인 없이는 조용히 안 올라간다 — 풋볼A 코치 기기가 9/4 이후
-   못 올리던 것의 가장 유력한 원인. 내용(weeks)만 세면 전후가 같다. */
+   630→294 로 반토막 나 **가짜 «급감 보류»** 가 걸렸다(옛 사본이 남은 팀은 승인 없이는 조용히 안 올라갔다). 내용(weeks)만 세면 전후가 같다. */
 function psCountDeep(v,depth){
   if(v==null||depth>3) return 0;
   if(Array.isArray(v)) return v.length;
@@ -6789,6 +6786,7 @@ function syncNowCore(reason){
         if(idbBacked(k)) loc=(idbVals[k]===undefined?null:idbVals[k]);
         else { try{ loc=localStorage.getItem(k); }catch(_){} }
         if(loc==null) needV.push(k);   /* 로컬이 비었으면 서버본으로 복원해야 하니 값이 필요하다 */
+        else if(typeof PSIdpPubWipe!=='undefined'&&PSIdpPubWipe.state(m0,k,loc,hash)==='rebuilt') needV.push(k);
         /* 1.573 — 로컬이 '빈 목록'이면 서버 값을 받아 대조한다(기억한 숫자보다 정확하다).
            빈 값 업로드는 바로 이 경우라, 이때만 값을 더 받는 비용은 싸다. */
         else if(psCount(loc)===0) needV.push(k);
@@ -7546,6 +7544,7 @@ function syncNowCore(reason){
         Object.keys(set2).forEach(function(k){
           if(k===PUBP+'local')return;
           var mine=(k===myPub),row=srv[k],loc=null;try{loc=localStorage.getItem(k);}catch(_){}
+          var PW=typeof PSIdpPubWipe!=='undefined'?PSIdpPubWipe:null,pw=PW?PW.settle(m,k,loc,hash):'';
           if(role==='player'&&!mine){
             try{localStorage.removeItem(k);}catch(_){}delete m.h[k];delete m.c[k];return;
           }
@@ -7561,6 +7560,9 @@ function syncNowCore(reason){
             return;
           }
           var lh=hash(loc),dirty=(lh!==(m.h[k]||'')),srvChanged=row?(row.cupd!==(m.c[k]||0)):false;
+          /* 3.104 — 받기 전에 다시 쓴 문서는 서버본과 조상 없이 합친다(idp-pub-wipe.js) */
+          var rebuilt=pw==='rebuilt'&&!!row;
+          if(rebuilt){if(typeof row.v!=='string'){syncDiagnostic('idp-public-rebuilt-wait',new Error('rebuilt pub: wait for server raw'));return;}srvChanged=true;}
           if(loc!=null&&loc.length>MAXLEN){skippedBig++;skippedKeys.push(k);return;}
           if(loc!=null&&!idpRawMergeable(k,loc)){
             if(row&&typeof row.v==='string'&&row.v===loc){m.h[k]=lh;m.c[k]=row.cupd;return;}
@@ -7576,7 +7578,7 @@ function syncNowCore(reason){
           if(loc==null&&!row)return;
           if(loc==null&&row){
             if(typeof row.v!=='string'||!idpRawMergeable(k,row.v)){syncDiagnostic('idp-public-pull-missing',new Error('공개 IDP 서버 원문을 확인할 수 없음'));return;}
-            if(roundKvWrite(k,row.v,writes,loc)){applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;if(idpRawMergeable(k,row.v))idpBaseNext[k]=row.v;}return;
+            if(roundKvWrite(k,row.v,writes,loc)){applied++;m.h[k]=hash(row.v);m.c[k]=row.cupd;if(PW)PW.clear(m,k);if(idpRawMergeable(k,row.v))idpBaseNext[k]=row.v;}return;
           }
           if(loc!=null&&!row){
             if(!idpRawMergeable(k,loc)){syncDiagnostic('idp-public-shape',new Error('공개 IDP 형식이 아니라 올리지 않음'));return;}
@@ -7593,16 +7595,16 @@ function syncNowCore(reason){
           if(dirty&&srvChanged){
             if(typeof row.v!=='string'){syncDiagnostic('idp-public-merge-missing',new Error('공개 IDP 서버 원문이 없음'));return;}
             if(row.v===loc){m.h[k]=lh;m.c[k]=row.cupd;idpBaseNext[k]=loc;return;}
-            var pubBase=syncBaseGet(k,wid,m),pubBaseStored=syncBaseHas(k,wid),pubTrusted=typeof pubBase==='string';
+            var pubBase=rebuilt?null:syncBaseGet(k,wid,m),pubBaseStored=!rebuilt&&syncBaseHas(k,wid),pubTrusted=typeof pubBase==='string';
             if(pubBaseStored&&!pubTrusted){syncDiagnostic('idp-public-base-untrusted',new Error('공개 IDP 기준본과 확정 meta가 맞지 않음'));return;}
             var pubMerged=pubTrusted?idpMergeRaw(k,pubBase,loc,row.v,teamW):idpMergeInitialRaw(k,loc,row.v,teamW);
             if(!pubMerged){
               syncDiagnostic('idp-public-merge-shape',new Error('공개 IDP 병합 형식을 확인할 수 없음'));return;
             }
-            var pubChoice=idpConflictChoice(k,loc,row,pubMerged);if(pubChoice==='pending')return;
+            var pubChoice=rebuilt?'':idpConflictChoice(k,loc,row,pubMerged);if(pubChoice==='pending')return;
             if(pubChoice==='local')pubMerged={local:loc,cloud:loc};
             if(pubChoice==='server')pubMerged={local:row.v,cloud:row.v};
-            if(pubMerged.cloud===row.v){if(pubMerged.local!==loc){if(!roundKvWrite(k,pubMerged.local,writes,loc))return;applied++;}m.h[k]=hash(pubMerged.local);m.c[k]=row.cupd;idpBaseNext[k]=pubMerged.local;return;}
+            if(pubMerged.cloud===row.v){if(pubMerged.local!==loc){if(!roundKvWrite(k,pubMerged.local,writes,loc))return;applied++;}m.h[k]=hash(pubMerged.local);m.c[k]=row.cupd;if(rebuilt)PW.clear(m,k);idpBaseNext[k]=pubMerged.local;return;}
             if(!planIdpCandidate(k,pubMerged.local,loc)){syncDiagnostic('idp-public-merge-stale',new Error('공개 IDP 병합 적용을 준비하지 못함'));return;}
             pushRows.push({workspace_id:wid,k:k,v:pubMerged.cloud,cupd:now,_casCupd:row.cupd});return;
           }
@@ -7717,8 +7719,7 @@ function syncNowCore(reason){
           if(k===TOMBKEY)return null;
           if(k==='cs_perms_v1')return 'perms';
           /* 2.604 — 서버 ps_key_scope 와 같게: 후보 명단은 'scout'(1.540), 옛 공개 IDP 키는 'team'. 여기 빠져 else 'board' 가 되면
-             board 권한만 있는 구성원의 클라이언트가 통과시키고 서버 RLS 가 403 — 회차마다 반복(실측 14일 sync_permission kv_push 1,962건·39명,
-             최다 971건 사용자의 scopes = board·schedule·team·gamemodel·terms, scout 없음). */
+             board 권한만 있는 구성원의 클라이언트가 통과시키고 서버 RLS 가 403 — 회차마다 반복(sync_permission kv_push 가 2주 2천 건). */
           if(k==='cs_scout_targets_v1')return 'scout';
           if(isIdpPubKey(k))return 'team';   /* 2.741 — 실제 키는 cs_idp_pub_v1_<uid>. exact legacy 키만 보면 board로 잘못 분류된다 */
           return 'board';

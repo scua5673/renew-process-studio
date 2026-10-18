@@ -35,6 +35,9 @@
     /* 2.952 — 보관한 변경은 기다려서 풀리지 않는다 — 고르는 곳(PATH_HELD)을 말한다. 숫자·«문서 전체»는 여전히 띠에 적지 않는다. */
     if(review||kind==='ask'||kind==='held')return result('held','일부 변경 보관','자동으로 맞추지 못한 변경을 이 기기에 보관했습니다. '+PATH_HELD+'에서 남길 쪽을 고르면 이어서 저장합니다.','retry',true);
     if(n||kind==='pending')return result('pending','저장 대기','변경사항을 서버에 저장할 차례를 기다리고 있습니다.','retry');
+    /* 3.104 — 이 기기가 이 공간의 자료를 아직 받지 못했다(팀 전환 안의 받기 실패 · 닫기 정리 뒤 첫 받기 전). «저장됨»이 아니다 */
+    if(kind==='wait')return s.reason?result('bad','자료를 아직 받지 못했어요','이 기기에 최신 자료를 받지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.','retry',true)
+      :result('pending','자료 받는 중…','이 기기에 최신 자료를 받고 있습니다.','retry');
     if(archived)return result('held','일부 변경 별도 보관','다른 변경과 겹친 내용은 별도로 보관했습니다. '+PATH_HELD+'에서 확인할 수 있습니다.','recovery',true,kind==='ok'&&Number(s.at)>0);
     if(kind==='ok'&&Number(s.at)>0)return result('ok','저장됨','서버에 저장된 내용을 확인했습니다.','',false,true);
     return result('pending','저장 확인 중…','아직 서버 저장을 확인하지 못했습니다.','retry');
