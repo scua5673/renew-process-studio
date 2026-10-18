@@ -174,6 +174,15 @@ body.ps-emb-phone .wrap{padding-bottom:24px}
 .steps div b{display:block;color:var(--ink);font-size:11px}
 .steps div.done{background:var(--ok-soft);border-color:transparent;color:var(--ok)}.steps div.done b{color:var(--ok)}
 .steps div.cur{border-color:var(--acc);background:var(--acc-soft)}.steps div.cur b{color:var(--acc-ink)}
+.steps.s3{grid-template-columns:repeat(3,1fr)}.steps.s3 div{font-size:var(--t-3);padding:6px 4px}.steps.s3 div b{font-size:var(--t-3)}   /* 3.111 — 세 단 */
+.lesson .src .okk{color:var(--ok)}
+.figbox{margin:2px 0 14px}.figbox svg{display:block;width:100%;height:auto;max-height:420px}.figbox figcaption{font-size:var(--t-3);color:var(--gray);margin-top:6px;line-height:1.5}
+.lesson .ex{margin-top:14px}.lesson .ex>.k{display:block;grid-column:1/-1;margin:0}
+.why.good{border-color:var(--ok);background:var(--ok-soft)}
+.fbx{margin-top:8px;font-size:var(--t-4);line-height:1.7;color:var(--ink)}.fbx .k{display:block;margin-bottom:2px}
+details.more{background:var(--panel);border:1px dashed var(--line2);border-radius:12px;padding:10px 16px;margin:0 0 10px}
+details.more summary{cursor:pointer;font-weight:600;font-size:var(--t-4);min-height:32px;display:flex;align-items:center;gap:8px}details.more summary small{font-weight:400;color:var(--faint);font-size:var(--t-2)}
+details.more .mq{margin-top:12px}details.more .mq .k{display:block;margin-bottom:4px}
 .pos-line{font-size:13px;color:var(--gray);margin-top:4px}.pos-line b{color:var(--ink)}
 
 /* 책 */
@@ -276,7 +285,8 @@ body.fmdark{color-scheme:dark}
 <div class="bt"><button data-p="toc" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>오늘</button><button data-p="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c-1.6-1.3-3.6-2-6-2H3v13h3c2.4 0 4.4.7 6 2 1.6-1.3 3.6-2 6-2h3v-13h-3c-2.4 0-4.4.7-6 2z"/><path d="M12 6.5v13"/></svg>책</button><button data-p="cards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="14" height="11" rx="2"/><path d="M7.5 4.5h11a2 2 0 0 1 2 2v9"/></svg>카드</button></div>
 <div class="toast" id="toast"></div>
 <!-- 3.079 — 『축구를 배우는 법』(learn-mikl.js — 근거가 국내 지도자 매뉴얼, 국제표준 아님)은 학습에서 내렸다(사용자 «국제표준만»). 파일은 남겨 둔다 -->
-<script src="learn-studio.js?v=3.081"></script><!-- 3.079 — 『스튜디오로 배우는 코칭』(게임모델 · IDP · 훈련 만들기). 『게임모델 만드는 법』은 이 책 1장으로 들어왔다 -->
+<script src="learn-fig.js?v=3.111"></script><!-- 3.111 — 절 그림(작전판 색). 2판 «그림은 작전판으로» -->
+<script src="learn-studio.js?v=3.111"></script><!-- 3.079 — 『스튜디오로 배우는 코칭』(게임모델 · IDP · 훈련 만들기). 『게임모델 만드는 법』은 이 책 1장으로 들어왔다 -->
 <script src="learn-futsal.js?v=2.659"></script><!-- 2.659 — 풋살을 배우는 법(같은 자료 모양, 3장 12절) -->
 <script src="learn-toc.js?v=2.659"></script><!-- 2.323 — 목차는 두 화면이 같은 파일을 읽는다 -->
 <script src="learn-curriculum.js"></script><!-- 2.342 — 역할 교과서 본문(90장 275절, 국제표준 재서술 2.010) -->
@@ -714,7 +724,7 @@ function renderToc(){
   /* ⚠ 2.411 — 부제가 MIKL 것으로 박혀 있었다("MIKL · A·B·D … C·E·F 준비 중"). 책이 둘이 되면서
      『게임모델 만드는 법』에도 그 문구가 붙었다. **책에서 읽어** 만든다. */
   var _bs=(BOOK.id==='mikl')?'MIKL · A·B·D':(BOOK.tag||'');   /* 3.079 — 제목을 두 번 쓰지 않는다 */
-  var h='<div class="bh"><h4>'+esc(BOOK.ko)+'</h4><small>'+esc(_bs)+' '+secs().length+'절'+(BOOK.id==='mikl'?' (C·E·F 준비 중)':'')+' · 맞힘 '+secs().filter(function(x){return isDone(x.id)}).length+'</small></div>';
+  var h='<div class="bh"><h4>'+esc(BOOK.ko)+'</h4><small>'+esc(_bs)+' '+secs().length+'절'+(BOOK.id==='mikl'?' (C·E·F 준비 중)':'')+' · 완료 '+secs().filter(function(x){return isDone(x.id)}).length+'</small></div>';
   BOOK.chapters.forEach(function(c,ci){var d=c.sections.filter(function(x){return isDone(x.id)}).length;
     h+='<div class="ch"><b>'+(BOOK.chapters.length>1?(ci+1)+'장':'')+'</b>'+esc(c.ko)+'<span>'+d+'/'+c.sections.length+'</span></div>';
     c.sections.forEach(function(s,si){h+='<div class="sx'+(isDone(s.id)?' ok':'')+(bookState.view==='sec'&&bookState.sec===s.id?' here':'')+'" data-sec="'+s.id+'"><i></i>'+(si+1)+'. '+esc(s.ko)+'</div>'});
@@ -773,32 +783,58 @@ document.addEventListener('click',function(e){
     }
   }catch(_){ toast('앱 안에서 열어 주세요'); }
 });
+/* ══ 3.111 · 한 절 = 세 단(사용자 «학습 페이지 제대로» → 2판) ══════════════════════════════════════
+   예전 일곱 단(먼저 묻기 · 읽기 · 예시 · 꺼내기 · 왜 · 피드백 · 다시)은 읽을 글(약 1분)보다 쓸 칸(셋)이 많았고, 끝내려면
+   «꺼내기»를 스스로 세 번 채점해야 했다. 이제 ① 읽기(그림 · 글 · 예시) ② 확인 한 문제(맞히면 완료 · 설명은 바로)
+   ③ 해보기(스튜디오 · 다음 절). 먼저 묻기 · 꺼내기 · 왜는 «더 생각해 보기»로 접는다 — 적어 둔 답(S.ask)은 그대로.
+   ⚠ 완료 표시는 예전과 같은 자리(S.done[id].hits ≥ 3)에 적는다 — 서재 진행률 · 계정 합치기(mergeLearn) · IDP 가 그대로 읽는다.
+   ⚠ 모든 책(교과서 다섯 · 스튜디오 · 풋살)이 이 화면 하나를 쓴다. 그림(s.pic)은 learn-fig.js 가 그린다. */
+function escB(t){ return esc(t).replace(/&lt;(\/?)b&gt;/g,'<$1b>'); }   /* 해설의 굵은 글씨(<b>)만 살린다 — 예전엔 «<b>…</b>» 글자가 그대로 보였다 */
+function readMin(s){ var n=0; (s.read||[]).forEach(function(p){ n+=String(p).replace(/<[^>]+>/g,'').length; }); return Math.max(1,Math.round(n/450)); }
 function renderSec(s){
-  var st=bookState.step, a=S.ask, k=s.id;
+  var a=S.ask, k=s.id, done=isDone(k);
   var ex=S.track==='player'?s.ex.slice().reverse():s.ex;
-  var _c=chapOf(s.id), _si=((_c&&_c.sections)||[]).indexOf(s);   /* 3.103 — 머리에 절 id(c1-game-1 · SG1) 대신 장 안의 자리 */
-  var h='<div class="lesson"><div class="head"><span class="id">'+(_si>=0?(_si+1)+' / '+_c.sections.length:'')+'</span><h3>'+esc(s.ko)+'</h3></div><div class="src">'+esc(s.src)+' · 맞힘 '+hits(k)+'/3 · <button class="btn ghost" style="height:auto;padding:0" id="tocToggle">목차</button></div>';
-  h+='<div class="steps">'+['먼저 묻기','읽기','예시','꺼내기','왜','피드백','다시'].map(function(n,i){return '<div class="'+(i<st?'done':i===st?'cur':'')+'"><b>'+i+'</b>'+n+'</div>'}).join('')+'</div>';
-  // 0
-  h+=stageHtml(0,'먼저 묻기 — 읽기 전에','<div class="q">'+esc(s.pre)+'</div><textarea id="pre" placeholder="틀려도 됩니다. 읽고 나서 내 답과 비교합니다.">'+esc(a[k+':pre']||'')+'</textarea><div class="row" style="margin-top:8px"><button class="btn pri" data-next="1">읽기로 →</button></div>',false);
-  // 1
-  h+=stageHtml(1,'읽기',s.read.map(function(p){return '<p>'+p+'</p>'}).join('')+(s.fig?'<div class="fig"><b>한 줄로</b> '+esc(s.fig)+'</div>':'')+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="2">예시로 →</button></div>',st<1);
-  // 2
-  h+=stageHtml(2,'예시','<div class="ex">'+ex.map(function(e){return '<div><b class="w">'+esc(e.who)+'</b>'+e.t+'</div>'}).join('')+'</div>'+tryHtml(s)+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="3">꺼내기로 →</button></div>',st<2);
-  // 3
+  var _c=chapOf(s.id), _si=((_c&&_c.sections)||[]).indexOf(s);   /* 3.103 — 머리에 절 id 대신 장 안의 자리 */
+  var mc=s.mc, picked=S.mc[k], tries=+(a[k+':try']||0);
+  var opts=shuffled(mc.o,k+':'+S.track+(tries?':'+tries:''));
+  var pick=picked&&mc.o.filter(function(o){return o.id===picked})[0], right=!!(pick&&pick.ok);
+  var okI=opts.findIndex(function(o){return o.ok});
+  var h='<div class="lesson l3"><div class="head"><span class="id">'+(_si>=0?(_si+1)+' / '+_c.sections.length:'')+'</span><h3>'+esc(s.ko)+'</h3></div>'
+    +'<div class="src">'+(s.src?esc(s.src)+' · ':'')+(done?'<b class="okk">완료</b> · ':'')+'<button class="btn ghost" style="height:auto;padding:0" id="tocToggle">목차</button></div>';
+  h+='<div class="steps s3">'+[['읽기',true],['확인',done||right],['해보기',done||right]].map(function(x,i){ var cls=(i===1&&(done||right))?'done':(i===0?'done':((i===2&&(done||right))?'cur':'')); if(i===0&&!(done||right))cls='cur'; return '<div class="'+cls+'"><b>'+(i+1)+'</b>'+x[0]+'</div>'; }).join('')+'</div>';
+  /* ① 읽기 */
+  var pic=(s.pic&&window.LR_FIG)?LR_FIG.html(s.pic):'';
+  var r1=(pic?'<figure class="figbox">'+pic+(s.fig?'<figcaption>'+esc(s.fig)+'</figcaption>':'')+'</figure>':'')
+    +s.read.map(function(p){return '<p>'+p+'</p>'}).join('')
+    +(!pic&&s.fig?'<div class="fig"><b>한 줄로</b> '+esc(s.fig)+'</div>':'')
+    +'<div class="ex"><span class="k">예시</span>'+ex.map(function(e){return '<div><b class="w">'+esc(e.who)+'</b>'+e.t+'</div>'}).join('')+'</div>';
+  h+=stageHtml(1,'읽기 · 약 '+readMin(s)+'분',r1,false);
+  /* ② 확인 — 한 문제. 맞히면 완료, 틀리면 설명을 보고 다시 */
+  var r2='<div class="q">'+esc(mc.q)+'</div><div class="opts">'+opts.map(function(o,i){var cls='';if(picked){if(o.ok)cls=' right';else if(picked===o.id)cls=' wrong'}return '<button class="opt'+cls+'" data-opt="'+o.id+'"'+(picked?' disabled':'')+'><b>'+String.fromCharCode(65+i)+'</b><span>'+esc(o.t)+'</span></button>'}).join('')+'</div>';
+  if(picked){
+    r2+='<div class="why'+(right?' good':'')+'"><b>'+(right?'맞았어요.':'정답은 '+String.fromCharCode(65+okI)+'.')+'</b> '+escB(mc.why||'')+'</div>'
+      +(s.fb?'<div class="fbx"><span class="k">설명</span>'+s.fb+'</div>':'')
+      +(right?'':'<div class="row" style="margin-top:8px"><button class="btn" id="retryQ">다시 풀기</button><span class="hint" style="margin:0">이 절은 내일 카드로 한 번 더 물어요</span></div>');
+  } else if(done){
+    r2+='<div class="hint" style="margin-top:6px">이미 마친 절이에요 — 다시 풀어 봐도 기록은 그대로예요.</div>';
+  }
+  h+=stageHtml(2,'확인 — 한 문제',r2,false);
+  /* ③ 해보기 */
+  var cardsN=(s.cards||[]).length;
+  var r3=tryHtml(s)
+    +((done||right)&&cardsN?'<div class="hint" style="margin:8px 0 0">이 절의 카드 '+cardsN+'장 — '+(S.cards[s.cards[0].id]?fmtDays(S.cards[s.cards[0].id].due):'3일 뒤')+' 다시 물어요(«카드» 탭).</div>':'')
+    +'<div class="row" style="margin-top:10px"><button class="btn'+((done||right)?' pri':'')+'" id="nextSec">다음 절 →</button></div>';
+  h+=stageHtml(3,'해보기',r3,false);
+  /* 더 생각해 보기 — 예전 일곱 단의 쓰는 칸. 적어 둔 답은 그대로 */
   var rv=a[k+':rshow'];
-  h+=stageHtml(3,'꺼내기 — '+esc(s.recall.type),'<div class="q">'+esc(s.recall.q)+'</div><textarea id="recall" placeholder="보지 않고 씁니다.">'+esc(a[k+':recall']||'')+'</textarea>'+(rv?'<div class="ans">답: '+esc(s.recall.a)+'</div><div class="row" style="margin-top:8px"><span class="hint" style="margin:0">내 답은?</span><button class="btn ok" data-grade="1">맞았다</button><button class="btn no" data-grade="0">틀렸다</button></div>':'<div class="row" style="margin-top:8px"><button class="btn pri" id="showAns">답 보기</button><span class="hint" style="margin:0">서술형은 스스로 채점합니다.</span></div>'),st<3);
-  // 4
-  h+=stageHtml(4,'왜 — 내 말로','<div class="q">'+esc(s.why)+'</div><div class="hint" style="margin-bottom:6px">0번에 쓴 것: <i>'+esc(a[k+':pre']||'(비어 있음)')+'</i></div><textarea id="why" placeholder="내 말로. 저장만.">'+esc(a[k+':why']||'')+'</textarea><div class="row" style="margin-top:8px"><button class="btn pri" data-next="5">피드백 보기 →</button></div>',st<4);
-  // 5
-  h+=stageHtml(5,'피드백 — 설명','<div class="why"><b>정답과 설명.</b> '+s.fb+'</div><div class="row" style="margin-top:10px"><button class="btn pri" data-next="6">카드·가려내기로 →</button></div>',st<5);
-  // 6
-  var mc=s.mc, picked=S.mc[k];
-  var opts=shuffled(mc.o,k+':'+S.track);
-  var mch='<div class="q" style="margin-top:4px">가려내기 — '+esc(mc.q)+'</div><div class="opts">'+opts.map(function(o,i){var cls='';if(picked){if(o.ok)cls=' right';else if(picked===o.id)cls=' wrong'}return '<button class="opt'+cls+'" data-opt="'+o.id+'"'+(picked?' disabled':'')+'><b>'+String.fromCharCode(65+i)+'</b><span>'+esc(o.t)+'</span></button>'}).join('')+'</div>'+(picked?'<div class="why"><b>'+(opts.filter(function(o){return o.ok})[0]?String.fromCharCode(65+opts.findIndex(function(o){return o.ok}))+'.':'')+'</b> '+esc(mc.why)+' <span class="hint">(보기 순서는 절·트랙 시드로 섞임 — 원본 번호 '+esc(opts.filter(function(o){return o.ok})[0].id)+')</span></div>':'');
-  var cardsH='<div class="cards">'+s.cards.map(function(c){var cc=S.cards[c.id];return '<div class="gl"><div class="id"><span class="tag mikl">'+esc(BOOK.tag||BOOK.ko||'')+'</span></div>'+esc(c.ko)+'<div class="life">'+(cc?(cc.stage>=3?'내 것':'재학습 '+(cc.stage+1)+'번째 · '+fmtDays(cc.due)):'오늘 생애 시작 → 3일 · 1주 · 3주')+'</div></div>'}).join('')+'</div>';
-  h+=stageHtml(6,'다시 — 카드 '+s.cards.length+'장, 가려내기 1',cardsH+mch+'<div class="foot"><span class="k">맞힘 '+hits(k)+' / 3 — '+(isDone(k)?'이 절은 닫혔습니다':'3번 맞히면 닫힙니다')+'</span><div class="row"><button class="btn" id="again">한 번 더 꺼내기</button><button class="btn pri" id="finish">'+(isDone(k)?'다음 절 →':'이 절 마치고 다음 →')+'</button></div></div>',st<6);
-  h+='<div class="linkbox">이어짐 → <b>'+esc(s.links)+'</b></div></div>';
+  h+='<details class="more"'+((a[k+':pre']||a[k+':recall']||a[k+':why'])?' open':'')+'><summary>더 생각해 보기 <small>먼저 묻기 · 꺼내기 · 왜 — 쓰고 싶을 때만</small></summary>'
+    +'<div class="mq"><span class="k">먼저 묻기</span><div class="q">'+esc(s.pre)+'</div><textarea id="pre" placeholder="틀려도 됩니다.">'+esc(a[k+':pre']||'')+'</textarea></div>'
+    +'<div class="mq"><span class="k">꺼내기 — '+esc(s.recall.type)+'</span><div class="q">'+esc(s.recall.q)+'</div><textarea id="recall" placeholder="보지 않고 써 보세요.">'+esc(a[k+':recall']||'')+'</textarea>'
+      +(rv?'<div class="ans">답: '+esc(s.recall.a)+'</div>':'<div class="row" style="margin-top:6px"><button class="btn" id="showAns">답 보기</button></div>')+'</div>'
+    +'<div class="mq"><span class="k">왜 — 내 말로</span><div class="q">'+esc(s.why)+'</div><textarea id="why" placeholder="내 말로. 저장만 돼요.">'+esc(a[k+':why']||'')+'</textarea></div>'
+    +'</details>';
+  if(s.links)h+='<div class="linkbox">이어짐 → <b>'+esc(s.links)+'</b></div>';
+  h+='</div>';
   return h;
 }
 function renderDue(){
@@ -813,7 +849,7 @@ function renderMix(ch){
   if(!item){var ok=res.filter(function(r){return r===1}).length;return h+'<div class="card"><h4>'+chLabel(c)+' 섞어 묻기 끝 — '+ok+' / '+c.mix.length+'</h4><p style="color:var(--gray)">틀린 것은 내일 "오늘 다시 꺼낼 것"에 들어갑니다(목업: 표시만). 장 머리 질문을 다시:</p><ol style="padding-left:18px;margin-top:8px">'+c.head.map(function(q){return '<li>'+esc(q)+'</li>'}).join('')+'</ol><div class="row" style="margin-top:10px"><button class="btn pri" id="mixDone">책으로</button><button class="btn ghost" id="mixRedo">다시</button></div></div></div>'}
   var body='';
   if(item.kind==='가려내기'){var opts=shuffled(item.o,ch+':'+i+':'+S.track),picked=bookState.mixPick;
-    body='<div class="q">'+esc(item.q)+'</div><div class="opts">'+opts.map(function(o,j){var cls='';if(picked){if(o.ok)cls=' right';else if(picked===o.id)cls=' wrong'}return '<button class="opt'+cls+'" data-mopt="'+o.id+'" data-ok="'+(o.ok?1:0)+'"'+(picked?' disabled':'')+'><b>'+String.fromCharCode(65+j)+'</b><span>'+esc(o.t)+'</span></button>'}).join('')+'</div>'+(picked?'<div class="why">'+(item.why?esc(item.why):'이 장 본문에서 구별한 것.')+'</div><div class="row" style="margin-top:8px"><button class="btn pri" id="mixNext">다음</button></div>':'');
+    body='<div class="q">'+esc(item.q)+'</div><div class="opts">'+opts.map(function(o,j){var cls='';if(picked){if(o.ok)cls=' right';else if(picked===o.id)cls=' wrong'}return '<button class="opt'+cls+'" data-mopt="'+o.id+'" data-ok="'+(o.ok?1:0)+'"'+(picked?' disabled':'')+'><b>'+String.fromCharCode(65+j)+'</b><span>'+esc(o.t)+'</span></button>'}).join('')+'</div>'+(picked?'<div class="why">'+(item.why?escB(item.why):'이 장 본문에서 구별한 것.')+'</div><div class="row" style="margin-top:8px"><button class="btn pri" id="mixNext">다음</button></div>':'');
   } else {
     body='<div class="q">('+esc(item.note)+') '+esc(item.q)+'</div><textarea id="mixAns" placeholder="'+(item.kind==='빈칸'?'빈칸을 채웁니다.':'내 말로.')+'"></textarea>'+(item.q.indexOf('3분 설명')>-1?'<div class="hint">저장만 — 원전 없이 설명되는지 스스로 확인하는 과제.</div><div class="row" style="margin-top:8px"><button class="btn pri" data-mgrade="1">저장하고 끝내기</button></div>':'<div class="row" style="margin-top:8px"><span class="hint" style="margin:0">본문을 떠올려 스스로 채점:</span><button class="btn ok" data-mgrade="1">맞았다</button><button class="btn no" data-mgrade="0">틀렸다</button></div>');
   }
@@ -824,7 +860,7 @@ function renderBook(){
   if(v==='sec') main=renderSec(sec(bookState.sec));
   else if(v==='mix') main=renderMix(bookState.mixCh);
   else if(v==='due') main=renderDue();
-  else main='<div class="card"><h4>『'+esc(BOOK.ko)+'』</h4><p style="color:var(--gray)">왼쪽(폰: 아래) 목차에서 절을 고르세요. 절은 일곱 단, 완료는 읽음이 아니라 <b>3번 맞힘</b>입니다.</p><div class="row" style="margin-top:10px"><button class="btn pri" id="tocStart">'+nextSec().id+' '+esc(nextSec().ko)+' 시작</button></div></div>';
+  else main='<div class="card"><h4>『'+esc(BOOK.ko)+'』</h4><p style="color:var(--gray)">왼쪽(폰: 아래) 목차에서 절을 고르세요. 절은 세 단(읽기 · 확인 · 해보기)이고, 확인 문제를 맞히면 그 절을 마쳐요.</p><div class="row" style="margin-top:10px"><button class="btn pri" id="tocStart">'+esc(nextSec().ko)+' 시작</button></div></div>';
   $('#p-book').innerHTML='<div class="bookv"><aside class="toc'+((v==='toc'||bookState.tocOpen)?' show':'')+'">'+renderToc()+'</aside><div>'+main+'</div></div>';
   $$('#p-book [data-sec]').forEach(function(e){e.onclick=function(){bookState.tocOpen=false;openSec(e.dataset.sec)}});
   $$('#p-book [data-mix]').forEach(function(e){e.onclick=function(){bookState.view='mix';bookState.mixCh=e.dataset.mix;bookState.mixI=0;bookState.mixPick=null;S.mix[e.dataset.mix]=[];save();render()}});
@@ -834,23 +870,37 @@ function renderBook(){
   if(v==='mix') bindMix();
   if(v==='due') bindDue();
 }
-function setStep(k,n){if(n>bookState.step)lev('step',k,{step:n});bookState.step=Math.max(bookState.step,n);S.ask[k+':step']=bookState.step;save();render();var el=$('#p-book [data-st="'+n+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}
+/* 3.111 — 맞힌 절: 완료 표시(hits 3 — 예전 규칙과 같은 자리) · 카드 시작. 틀린 절: 카드를 내일로 */
+function secCards(s,days){ (s.cards||[]).forEach(function(c){ if(!S.cards[c.id])S.cards[c.id]={ko:c.ko,from:s.id,stage:0,hits:0,due:now()+days*DAY,at:now()}; }); }
+function secDone(s){
+  var k=s.id, was=isDone(k);
+  S.done[k]=S.done[k]||{hits:0,at:0}; if((S.done[k].hits||0)<3)S.done[k].hits=3; S.done[k].at=now();
+  secCards(s,GAP[0]); mirrorCurDone(k);
+  if(!was)lev('done',k,{via:1});
+}
+/* 다음 절 — 이 책의 다음 절. 교과서는 한 장(모듈)씩 책이 되므로, 장의 끝이면 그 역할 교과서의 다음 장 첫 절로 */
+function goNextSec(s){
+  var all=secs(), nx=all[all.indexOf(s)+1];
+  if(nx){ S.now=nx.id; openSec(nx.id); return; }
+  try{ var L=window.LR_CUR&&LR_CUR.lesson&&LR_CUR.lesson(s.id);
+    if(L){ var flat=[]; roleMods(L.m.track).forEach(function(m){ m.lessons.forEach(function(l){ flat.push([m.id,l.id]); }); });
+      var i=flat.findIndex(function(x){ return x[1]===s.id; }); if(i>=0&&flat[i+1]){ openLesson(flat[i+1][0],flat[i+1][1]); return; } } }catch(_){}
+  bookState.view='toc'; go('book');
+}
 function bindSec(s){
   var k=s.id;
   ['pre','recall','why'].forEach(function(f){var el=$('#'+f);if(el)el.oninput=function(){S.ask[k+':'+f]=el.value;save()}});
-  $$('#p-book [data-next]').forEach(function(b){b.onclick=function(){setStep(k,+b.dataset.next)}});
   var sa=$('#showAns');if(sa)sa.onclick=function(){S.ask[k+':rshow']=1;save();render()};
-  $$('#p-book [data-grade]').forEach(function(b){b.onclick=function(){var ok=b.dataset.grade==='1';S.done[k]=S.done[k]||{hits:0,at:0};if(ok)S.done[k].hits++;S.done[k].at=now();S.ask[k+':rshow']=0;mirrorCurDone(k);save();lev('recall',k,{ok:ok,hits:S.done[k].hits});toast(ok?'맞힘 '+S.done[k].hits+'/3':'틀림 — 내일 다시');setStep(k,4)}});
-  $$('#p-book [data-opt]').forEach(function(b){b.onclick=function(){S.mc[k]=b.dataset.opt;var ok=s.mc.o.filter(function(o){return o.id===b.dataset.opt})[0].ok;save();lev('quiz',k,{ok:!!ok});toast(ok?'맞았습니다':'틀렸습니다 — 왜를 읽어 보세요');render()}});
-  var ag=$('#again');if(ag)ag.onclick=function(){S.ask[k+':rshow']=0;S.ask[k+':recall']='';bookState.step=3;S.ask[k+':step']=3;save();render();$('#p-book [data-st="3"]').scrollIntoView({behavior:'smooth'})};
-  var fn=$('#finish');if(fn)fn.onclick=function(){
-    s.cards.forEach(function(c){if(!S.cards[c.id])S.cards[c.id]={ko:c.ko,from:k,stage:0,hits:0,due:now()+GAP[0]*DAY,at:now()}});
-    if(!S.done[k])S.done[k]={hits:0,at:now()};
-    mirrorCurDone(k); lev('done',k,{hits:hits(k),closed:isDone(k)});
-    var all=secs(),idx=all.indexOf(s),nx=all[idx+1];
-    save();toast('카드 '+s.cards.length+'장 생애 시작 → 3일 뒤');
-    if(nx){S.now=nx.id;openSec(nx.id)}else{bookState.view='toc';go('book')}
-  };
+  var mo=$('#p-book details.more');if(mo)mo.addEventListener('toggle',function(){ if(mo.open)lev('more',k); });
+  $$('#p-book [data-opt]').forEach(function(b){b.onclick=function(){
+    var o=s.mc.o.filter(function(x){return x.id===b.dataset.opt})[0], ok=!!(o&&o.ok);
+    S.mc[k]=b.dataset.opt; lev('quiz',k,{ok:ok,tries:+(S.ask[k+':try']||0)});
+    if(ok)secDone(s); else secCards(s,1);
+    save(); toast(ok?'맞았어요 — 이 절을 마쳤어요':'아쉬워요 — 설명을 읽고 다시 풀어 보세요'); render();
+    var st=$('#p-book [data-st="'+(ok?3:2)+'"]'); if(st&&ok)st.scrollIntoView({behavior:'smooth',block:'start'});
+  }});
+  var rq=$('#retryQ');if(rq)rq.onclick=function(){ S.ask[k+':try']=(+(S.ask[k+':try']||0))+1; delete S.mc[k]; save(); lev('retry',k); render(); var st=$('#p-book [data-st="2"]'); if(st)st.scrollIntoView({behavior:'smooth',block:'start'}); };
+  var nb=$('#nextSec');if(nb)nb.onclick=function(){ lev('next',k,{closed:isDone(k)}); save(); goNextSec(s); };
 }
 function bindMix(){
   var ch=bookState.mixCh;
