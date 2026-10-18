@@ -12,7 +12,7 @@
       awards:'주요 성과', comp:'대회', video:'영상', highlight:'하이라이트',
       photo:'사진', createdSuffix:'작성', player:'선수', club:'소속팀', itemsLb:'항목',
       catScores:'영역별 점수', totalAvg:'종합 평균', evalTitle:'세부 평가',
-      levelNow:'현재 레벨', target:'목표 레벨'
+      levelNow:'현재 레벨', target:'목표 레벨', clubs:'클럽 경력', strengths:'장점', develop:'보완할 점'
     },
     ja: {
       resumeTitle:'選手履歴書', profileCap:'Profile', basicInfo:'基本情報',
@@ -23,7 +23,7 @@
       awards:'主な実績', comp:'大会', video:'映像', highlight:'ハイライト',
       photo:'写真', createdSuffix:'作成', player:'選手', club:'所属チーム', itemsLb:'項目',
       catScores:'領域別スコア', totalAvg:'総合平均', evalTitle:'詳細評価',
-      levelNow:'現在レベル', target:'目標レベル'
+      levelNow:'現在レベル', target:'目標レベル', clubs:'クラブ経歴', strengths:'長所', develop:'課題'
     },
     en: {
       resumeTitle:'Player Profile', profileCap:'Profile', basicInfo:'Basic Info',
@@ -34,7 +34,7 @@
       awards:'Key Achievements', comp:'Competition', video:'Video', highlight:'Highlight',
       photo:'Photo', createdSuffix:'created', player:'Player', club:'Club', itemsLb:'items',
       catScores:'Scores by Area', totalAvg:'Overall Average', evalTitle:'Detailed Evaluation',
-      levelNow:'Current Level', target:'Target Level'
+      levelNow:'Current Level', target:'Target Level', clubs:'Club Career', strengths:'Strengths', develop:'Areas to Develop'
     }
   };
   var LANGS = [['ko','한국어'],['ja','日本語'],['en','English']];

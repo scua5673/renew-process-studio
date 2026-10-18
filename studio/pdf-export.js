@@ -53,7 +53,7 @@
 
   // JPEG 쪽들 → PDF(한 쪽 = 그림 한 장, A4). 작전판 board.html 의 _jpegPagesToPdf 와 같은 짜임.
   function jpegPagesToPdf(imgs, land) {
-    var wPt = land ? 841.89 : 595.28, hPt = land ? 595.28 : 841.89;
+    var box = function (im) { var L = (im && im.land != null) ? !!im.land : !!land; return L ? [841.89, 595.28] : [595.28, 841.89]; };
     var enc = function (s) { var u = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i) & 255; return u; };
     var parts = [], offs = [], pos = 0;
     var push = function (u) { parts.push(u); pos += u.length; };
@@ -66,6 +66,7 @@
     addStr(2, '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + N + ' >>');
     imgs.forEach(function (im, i) {
       var pn = 3 + i * 3, cn = 4 + i * 3, xn = 5 + i * 3;
+      var b = box(im), wPt = b[0], hPt = b[1];   // 장마다 방향(이력서 세로 + 세부평가 가로 같은 섞인 문서)
       addStr(pn, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + wPt + ' ' + hPt + '] /Resources << /XObject << /Im' + i + ' ' + xn + ' 0 R >> >> /Contents ' + cn + ' 0 R >>');
       var cs = 'q ' + wPt + ' 0 0 ' + hPt + ' 0 0 cm /Im' + i + ' Do Q';
       addStr(cn, '<< /Length ' + cs.length + ' >>\nstream\n' + cs + '\nendstream');
@@ -113,6 +114,54 @@
         }, function () {});
       }));
     }
+    // SVG 그림 한 장 → JPEG 바이트(캔버스 뒷판은 바로 놓는다 — 아이패드 메모리, 작전판 2.559 와 같은 이유)
+    function jpeg(img, W, H, draw) {
+      var c = doc.createElement('canvas'); c.width = W * SC; c.height = H * SC;
+      var ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      draw(ctx);
+      var du = c.toDataURL('image/jpeg', 0.92), cw = c.width, ch = c.height;
+      c.width = 0; c.height = 0;
+      var bin = win.atob(du.split(',')[1]); du = null;
+      var u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      return { data: u, w: cw, h: ch };
+    }
+    function loadSvg(svg) {
+      return new Promise(function (res, rej) {
+        var img = new win.Image();
+        img.onload = function () {
+          // 사파리는 SVG 그림 안의 글꼴을 onload 뒤에 늦게 입힌다 — 한 숨 쉬고 그린다
+          var d = img.decode ? img.decode().catch(function () {}) : Promise.resolve();
+          d.then(function () { win.setTimeout(function () { res(img); }, 60); });
+        };
+        img.onerror = function () { rej(new Error('raster fail')); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      });
+    }
+    // 장 하나씩 따로 찍기(cfg.pages = {sel, land(el)}) — 선수 이력서(세로) + 세부평가(가로), 프로필 한 장(.a4)처럼 장이 문서 몸에 바로 놓인 문서
+    function rasterizeEach(fdoc, pages) {
+      var els = [].slice.call(fdoc.querySelectorAll(pages.sel)).slice(0, MAX_PAGES);
+      if (!els.length) return null;
+      var styleText = ''; [].forEach.call(fdoc.querySelectorAll('style'), function (s) { styleText += s.textContent + '\n'; });
+      var body = fdoc.body;
+      return fontCssFor(body.textContent || '').then(function (fcss) {
+        var out = [];
+        return els.reduce(function (p, el) {
+          return p.then(function () {
+            var L = typeof pages.land === 'function' ? !!pages.land(el) : false, size = L ? A4.land : A4.port, W = size[0], H = size[1];
+            var tmp = doc.implementation.createHTMLDocument(''), holder = tmp.createElement('div'); holder.innerHTML = el.outerHTML;
+            return inlineImages(holder).then(function () {
+              tmp.body.innerHTML = '<style>' + (fcss || '') + '\n' + styleText + '</style>' + holder.innerHTML;
+              if (body.className) tmp.body.className = body.className;
+              tmp.body.setAttribute('style', 'margin:0;padding:0;width:' + W + 'px;height:' + H + 'px;box-sizing:border-box;background:#fff;overflow:hidden');
+              var ser = new win.XMLSerializer().serializeToString(tmp.body);
+              return loadSvg('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '"><foreignObject width="100%" height="100%">' + ser + '</foreignObject></svg>');
+            }).then(function (img) {
+              var j = jpeg(img, W, H, function (ctx) { ctx.drawImage(img, 0, 0, W * SC, H * SC); }); j.land = L; out.push(j);
+            });
+          });
+        }, Promise.resolve()).then(function () { return out; });
+      });
+    }
     // 미리보기 종이(iframe 의 문서)를 A4 쪽들로 찍는다 — 불러올 때 맞춘 높이 · 배율(인라인 style)까지 그대로
     function rasterize(fdoc, land) {
       var size = land ? A4.land : A4.port, W = size[0], H = size[1];
@@ -136,32 +185,15 @@
         tmp.body.setAttribute('style', (body.getAttribute('style') || '') + ';margin:0;width:' + W + 'px;min-height:' + FH + 'px;box-sizing:border-box;background:#fff;overflow:hidden');
         var ser = new win.XMLSerializer().serializeToString(tmp.body);
         var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + FH + '"><foreignObject width="100%" height="100%">' + ser + '</foreignObject></svg>';
-        return new Promise(function (res, rej) {
-          var img = new win.Image();
-          img.onload = function () {
-            var go = function () {
-              try {
-                var out = [];
-                for (var p = 0; p < pages; p++) {
-                  var c = doc.createElement('canvas'); c.width = W * SC; c.height = H * SC;
-                  var ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
-                  if (rects.length) { var k = SC * H / rects[p][1]; ctx.drawImage(img, 0, -rects[p][0] * k, W * k, FH * k); }   // 장 하나를 종이 한 쪽에(높이 차이는 0.5% 안팎)
-                  else ctx.drawImage(img, 0, -p * H * SC, W * SC, FH * SC);
-                  var du = c.toDataURL('image/jpeg', 0.92), cw = c.width, ch = c.height;
-                  c.width = 0; c.height = 0;   // 캔버스 뒷판을 바로 놓는다(아이패드 메모리 — 작전판 2.559 와 같은 이유)
-                  var bin = win.atob(du.split(',')[1]); du = null;
-                  var u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
-                  out.push({ data: u, w: cw, h: ch });
-                }
-                res(out);
-              } catch (e) { rej(e); }
-            };
-            // 사파리는 SVG 그림 안의 글꼴을 onload 뒤에 늦게 입힌다 — 한 숨 쉬고 그린다
-            var d = img.decode ? img.decode().catch(function () {}) : Promise.resolve();
-            d.then(function () { win.setTimeout(go, 60); });
-          };
-          img.onerror = function () { rej(new Error('raster fail')); };
-          img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        return loadSvg(svg).then(function (img) {
+          var out = [];
+          for (var p = 0; p < pages; p++) {
+            out.push(jpeg(img, W, H, function (ctx) {
+              if (rects.length) { var k = SC * H / rects[p][1]; ctx.drawImage(img, 0, -rects[p][0] * k, W * k, FH * k); }   // 장 하나를 종이 한 쪽에(높이 차이는 0.5% 안팎)
+              else ctx.drawImage(img, 0, -p * H * SC, W * SC, FH * SC);
+            }));
+          }
+          return out;
         });
       });
     }
@@ -175,7 +207,8 @@
     function busy(btn, on, txt) { if (!btn) return; btn.disabled = !!on; if (txt) btn.textContent = txt; }
     function blobOf() {
       var fd = frameDoc(); if (!fd || !fd.body) return Promise.reject(new Error('preview not ready'));
-      return rasterize(fd, !!cfg.land).then(function (imgs) { return jpegPagesToPdf(imgs, !!cfg.land); });
+      var each = cfg.pages && fd.querySelector(cfg.pages.sel) ? rasterizeEach(fd, cfg.pages) : null;
+      return (each || rasterize(fd, !!cfg.land)).then(function (imgs) { return jpegPagesToPdf(imgs, !!cfg.land); });
     }
     // «다른 이름으로 저장» 창(크롬 · 엣지 데스크톱) — 누른 그 순간에만 열리니 PDF 를 만들기 전에 연다
     function pickTarget(name) {
@@ -211,7 +244,7 @@
     // 종이 한 장을 화면에 맞춘다(줄이기만 — 폰은 폭에 맞추고 위아래로 넘겨 본다)
     function fit() {
       if (!ov || !ov.classList.contains('on')) return;
-      var size = cfg.land ? A4.land : A4.port, W = size[0], H = size[1];
+      var size = cfg.size || (cfg.land ? A4.land : A4.port), W = size[0], H = size[1];
       var bd = ov.querySelector('.px-body'), avW = Math.max(120, bd.clientWidth - 28), avH = Math.max(120, bd.clientHeight - 28);
       var phone = win.innerWidth < 600, s = phone ? avW / W : Math.min(avW / W, avH / H, 1);
       var sz = ov.querySelector('.px-sizer'), f = ov.querySelector('iframe');
@@ -281,7 +314,7 @@
       var html = ''; try { html = cfg.rebuild(cfg.values); } catch (_) { return; }
       if (html) { cfg.html = html; ov.querySelector('iframe').srcdoc = html; }
     }
-    // cfg: {title, html, fname, land, source, noteKind, options:[{key,label,choices:[[값,이름]…]}], values:{key:값}, rebuild(values)→html, onOption(key,val,values)}
+    // cfg: {title, html, fname, land, size:[W,H], pages:{sel, land(el)}, source, noteKind, note, options:[{key,label,choices:[[값,이름]…]}], values:{key:값}, rebuild(values)→html, onOption(key,val,values)}
     function open(c) {
       cfg = c || {}; cfg.values = cfg.values || {};
       if (!ov) build();

@@ -1,5 +1,5 @@
 'use strict';
-/* 3.094 — 사용자 «핸드폰으로 웹앱으로 설치하면 자꾸 안돼». 설치 안내가 모든 기기에 «새로 로그인할 필요도 없어요»라고 했는데,
+/* 3.095 — 사용자 «핸드폰으로 웹앱으로 설치하면 자꾸 안돼». 설치 안내가 모든 기기에 «새로 로그인할 필요도 없어요»라고 했는데,
    아이폰 · 아이패드 · 맥 사파리의 설치 앱은 사파리와 저장 공간을 따로 쓴다 — 로그인(localStorage ps_sync_session)도 기기 사본도 넘어가지 않는다.
    그 기기에서는 «처음 한 번 로그인»을 말하고, 크롬 · 엣지 · 안드로이드(같은 저장 공간)는 그대로. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
