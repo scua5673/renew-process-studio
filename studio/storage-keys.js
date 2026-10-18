@@ -32,6 +32,7 @@
     ['cs_scout_targets_v1','team','idb','data','sync.js'],
     ['cs_squad_v1','team','idb','data','scout.html',{mirror:1}],
     ['cs_team_attrs_v1','team','ls','data','idp.html'],
+    ['cs_team_photos_v1','device','idb','data','team-photos.js'],   /* 저장 팀 선수 → 사진(PSImg 참조). 기기마다 따로 — 동기화하지 않는다 */
     ['cs_team_matches_v1','team','idb','data','sync.js',{mirror:1}],
     ['cs_team_notice_v1','team','ls','data','idp.html'],
     ['cs_team_v1','team','ls','data','process.html'],

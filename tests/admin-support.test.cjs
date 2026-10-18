@@ -38,7 +38,7 @@ function setup(options = {}) {
       if (name === 'ps_support_list') return {is_admin: !revoked, reports: options.rows ?? [report], next_cursor: null};
       if (name === 'ps_support_get') {
         if (options.missingDetail) throw Object.assign(new Error('report_not_found'), {status: 404, code: 'PT404'});
-        return {report, replies: storedReply ? [storedReply] : []};
+        return {report: options.detailReport ?? report, replies: storedReply ? [storedReply] : []};
       }
       // Real SQL hides inaccessible reports as PT404 after an admin is revoked.
       if (name === 'ps_support_reply') {
@@ -131,4 +131,35 @@ test('all unsent drafts guard tab closing even after sessionStorage succeeds, un
   assert.equal(f.controller.pendingUnsafe(), true);
   f.controller.destroy();
   assert.equal(f.controller.pendingUnsafe(), false, 'Destroyed account state cannot block the next account');
+});
+
+test('20261017 보낸 사람 — 목록은 이름 · 첫 팀, 제보 머리와 전체 복사는 이메일 · 팀 모두, 이상한 값은 예전처럼', async t => {
+  const OWN = '33333333-3333-4333-8333-333333333333', BAD = '44444444-4444-4444-8444-444444444444', NONAME = '55555555-5555-4555-8555-555555555555';
+  const reporter = {user_id: UID, name: '<b>김코치</b>', email: 'coach@example.test', teams: [{name: '풋볼A', role: 'owner'}, {name: '가나 FC', role: 'member'}]};
+  const rows = [
+    {...report, reporter},
+    {...report, id: OWN, title: '내 시험', is_own: true, reporter: {user_id: UID, name: '운영자'}},
+    {...report, id: BAD, title: '모양 이상', reporter: 'not-an-object'},
+    {...report, id: NONAME, title: '이름 없음', reporter: {user_id: NONAME, teams: []}}
+  ];
+  const f = setup({rows, detailReport: {...report, reporter}}); t.after(() => f.controller.destroy());
+  await f.controller.load();
+  assert.match(f.root.innerHTML, /&lt;b&gt;김코치&lt;\/b&gt; · 풋볼A 외 1/, 'list row: escaped name · first team + count');
+  assert.doesNotMatch(f.root.innerHTML, /<b>김코치<\/b>/, 'name is escaped');
+  assert.match(f.root.innerHTML, /내 제보/, 'own report keeps «내 제보»');
+  assert.match(f.root.innerHTML, /모양 이상[\s\S]*?사용자 제보/, 'malformed reporter falls back');
+  assert.match(f.root.innerHTML, /이름 없음 · 55555555/, 'no name → short id');
+  click(f.root, {admReport: RID}); await tick();
+  assert.match(f.root.innerHTML, /admSupportWho">보낸 사람 <b>&lt;b&gt;김코치&lt;\/b&gt; · coach@example\.test · 풋볼A, 가나 FC<\/b>/, 'detail header: name · email · all teams');
+  click(f.root, {admSupport: 'copy'}); await tick(); await tick();
+  assert.equal(f.copies.length, 1);
+  assert.match(f.copies[0], /^보낸 사람: <b>김코치<\/b> · coach@example\.test · 풋볼A, 가나 FC\nPRIVATE_REPORT_BODY/, 'copy starts with the reporter line');
+});
+
+test('20261017 옛 서버(보낸 사람 없음)는 예전 화면 그대로', async t => {
+  const f = setup(); t.after(() => f.controller.destroy());
+  await f.controller.load();
+  assert.match(f.root.innerHTML, /사용자 제보/);
+  click(f.root, {admReport: RID}); await tick();
+  assert.doesNotMatch(f.root.innerHTML, /admSupportWho/);
 });

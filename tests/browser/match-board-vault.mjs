@@ -163,7 +163,10 @@ try{
   await bf.evaluate(()=>{const i=[...document.querySelectorAll('input[type=text]')].pop();i.value='송도전 미팅 최종';});
   await bf.evaluate(()=>{[...document.querySelectorAll('button')].filter(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')).pop().click();});
   for(let t=0;t<40;t++){ after=await lib(); if(after.name==='송도전 미팅 최종')break; await page.waitForTimeout(150); }
-  if(after.name!=='송도전 미팅 최종')assert.fail('이름이 6초 안에 바뀌지 않았다 '+JSON.stringify({name:after.name,...await renameDiag()}));assert.equal(await bf.evaluate(()=>document.getElementById('vCreateTitle').textContent),'송도전 미팅 최종');
+  if(after.name!=='송도전 미팅 최종')assert.fail('이름이 6초 안에 바뀌지 않았다 '+JSON.stringify({name:after.name,...await renameDiag()}));
+  /* 띠 제목은 보관함 쓰기 약속(meetLibMutate)이 끝난 뒤에 바뀐다 — 보관함에 새 이름이 보인 바로 그 순간엔 아직 옛 이름일 수 있다(CI 웹킷). 바뀔 때까지 기다린다 */
+  await bf.waitForFunction(()=>document.getElementById('vCreateTitle').textContent==='송도전 미팅 최종',null,{timeout:6000}).catch(()=>{});
+  assert.equal(await bf.evaluate(()=>document.getElementById('vCreateTitle').textContent),'송도전 미팅 최종');
   await page.screenshot({path:path.join(SHOTS,'match-meeting-inplace-new-'+size+'.png')});
   // «완료» → 경기 준비, 방금 만든 미팅이 경기 보드에
   await bf.click('#vCreateCancel');
