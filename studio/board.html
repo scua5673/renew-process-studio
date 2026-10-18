@@ -3209,7 +3209,7 @@ html body #cmd-board-settings-pop#cmd-board-settings-pop#cmd-board-settings-pop 
 <style id="ps-custompitch-css">body.ps-custompitch .grass-stripes{display:none!important;}body.ps-custompitch #world>rect:not([id]){display:none!important;}body.ps-custompitch #board{background:#e9edf2;}#ps-pitchimg{pointer-events:none;}#pitchSeg .ps-pcol{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin-left:3px;border-radius:50%;border:1px solid var(--line);overflow:hidden;cursor:pointer;padding:2px;flex:0 0 auto;box-sizing:border-box;background:var(--panel,#fff);box-shadow:0 1px 2px rgba(12,20,32,.10);}#pitchSeg .ps-pcol:focus-within{border-color:var(--blue,var(--ps-navy,#14213D));box-shadow:0 0 0 2px color-mix(in srgb,var(--blue,var(--ps-navy,#14213D)) 22%,transparent);}#pitchSeg .ps-pcol input{-webkit-appearance:none;appearance:none;width:100%;height:100%;border:0;padding:0;margin:0;cursor:pointer;background:transparent;border-radius:50%;outline:0;}#pitchSeg .ps-pcol input::-webkit-color-swatch-wrapper{padding:0;}#pitchSeg .ps-pcol input::-webkit-color-swatch{border:0;border-radius:50%;}#pitchSeg .ps-pcol input::-moz-color-swatch{border:0;border-radius:50%;}</style>
 <script>
 /* 2.575 — 커뮤니티 뷰어(community_view=1)는 게시물이 실릴 때까지 **아무것도 보이지 않는다**(사용자 "카드를 눌러 들어가면 화면이 깜빡이는데").
-   실측(폰 375): t=74ms 에 **내 라이브 판**(세로 375×656)이 먼저 그려지고, t=141~951 사이 판 높이가 182↔250 으로 7번 튀었다.
+   폰에서 라이브 판이 먼저 그려지고 판 높이가 튀었다.
    2.568 의 comm-settling 은 `body.comm-viewing #editorBoardWrap #board{visibility:visible!important}` 에 져서 한 번도 감춘 적이 없었다.
    여기서 html.comm-boot 를 달고 __commView 가 자리 잡은 뒤 한 번만 벗긴다. */
 try{ if(/[?&]community_view=1(&|$)/.test(location.search)) document.documentElement.classList.add("comm-boot"); }catch(_){}
@@ -4230,7 +4230,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script>
+<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -16866,7 +16866,7 @@ window.__psSignalBoardReady=function(){
   function afterDom(){requestAnimationFrame(function(){requestAnimationFrame(readyPaint);});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',afterDom,{once:true});else afterDom();
 };
-try{Promise.resolve(restoreLiveBoard()).then(function(){window.__boardReady=true;window.__boardRestoreDone=true;try{window.__autoOrient&&window.__autoOrient();}catch(_){}try{window.__psPagesConsume&&window.__psPagesConsume();}catch(_){}window.__psSignalBoardReady();},function(){window.__boardReady=true;window.__boardRestoreDone=true;try{window.__autoOrient&&window.__autoOrient();}catch(_){}window.__psSignalBoardReady();});}catch(_){window.__boardReady=true;window.__boardRestoreDone=true;window.__psSignalBoardReady();}
+try{PSBoardGuest.mount(window)}catch(_){}try{Promise.resolve(restoreLiveBoard()).then(function(){window.__boardReady=true;window.__boardRestoreDone=true;try{window.__autoOrient&&window.__autoOrient();}catch(_){}try{window.__psPagesConsume&&window.__psPagesConsume();}catch(_){}window.__psSignalBoardReady();},function(){window.__boardReady=true;window.__boardRestoreDone=true;try{window.__autoOrient&&window.__autoOrient();}catch(_){}window.__psSignalBoardReady();});}catch(_){window.__boardReady=true;window.__boardRestoreDone=true;window.__psSignalBoardReady();}
 /* 운동장 방향 자동 선택 — 화면이 가로로 넓으면 가로, 세로로 길면 세로로 눕혀 '가장 크게' 보이게.
    예전 문제 두 가지: (a) resize 때만 돌아서 '앱 실행 직후'엔 영영 적용되지 않았다.
    (b) 기준이 window.innerWidth<=520 이라 아이패드 세로(폭 1100)는 안 걸려 위아래를 크게 버렸다.
