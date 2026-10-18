@@ -237,6 +237,28 @@
       try { if (it.thumb !== undefined || meet) { var t = typeof th === 'function' ? th(it.snap) : ''; if (t) it.thumb = t; else delete it.thumb; } } catch (_) { delete it.thumb; }
       if (Array.isArray(fr)) fr.forEach(function (f, k) { if (!f) return; if (meet && k === 0 && it.thumb) f.thumb = it.thumb; else delete f.thumb; });
     }
+    /* 다른 페이지 · 슬라이드의 그림은 하나씩 나눠 그린다 — 한 번에 그리면(그림 하나에 판을 두 번 갈아 끼운다) 슬라이드 9장에 화면이 멈추고 알림도 늦었다.
+       재생 · 끌기 · 내보내기 · 슬라이드 넘김 · 훈련 편집 중이면 끝날 때까지 기다린다(그 사이 판을 갈아 끼우면 안 된다) */
+    var thumbQ = [], thumbT = 0;
+    function thumbBusy() {
+      try { return playing() || doc.body.classList.contains('editing') || !!win.__animExport || !!win.__meetVideoBusy || !!win.__ksNav || (typeof win.psDragging === 'function' && !!win.psDragging()); } catch (_) { return false; }
+    }
+    function queueThumbs(recs, meet) {
+      recs.forEach(function (r) { for (var i = 0; i < thumbQ.length; i++) if (thumbQ[i].r.it === r.it) { thumbQ[i].r = r; return; } thumbQ.push({ r: r, meet: meet, tries: 0 }); });
+      if (!thumbT && thumbQ.length) thumbT = win.setTimeout(thumbPump, 40);
+    }
+    function thumbPump() {
+      thumbT = 0; var q = thumbQ[0]; if (!q) return;
+      if (thumbBusy()) { if (++q.tries < 600) { thumbT = win.setTimeout(thumbPump, 500); return; } thumbQ.shift(); q = null; }   // 5분을 넘게 바쁘면 그 그림은 그대로 둔다
+      else thumbQ.shift();
+      if (q) try {
+        var list = q.meet ? ((A() || {}).slides || []) : ((win.__psPages && win.__psPages.pg && win.__psPages.pg()) || []), i = list.indexOf(q.r.it);
+        if (i >= 0) { thumbsOf(q.r, q.meet); if (q.meet && win.__ksThumb) win.__ksThumb(i); }   // 지운 페이지 · 슬라이드는 건너뛴다
+      } catch (_) {}
+      if (thumbQ.length) { thumbT = win.setTimeout(thumbPump, 30); return; }
+      try { if (doc.body.classList.contains('meet-mode') && win.__ksRender) win.__ksRender(); } catch (_) {}
+      try { win.boardSaveLive(); } catch (_) {}
+    }
     function spreadNow() {
       if (playing() || doc.body.classList.contains('editing')) return null;
       var cur; try { cur = win.captureSnap(); } catch (_) { return null; }
@@ -246,9 +268,8 @@
       if (!items || items.length < 2) return null;
       var recs = spreadPitch(items, cur, skip);
       if (!recs.length) return null;
-      recs.forEach(function (r) { thumbsOf(r, meet); });
-      try { if (meet && win.__ksRender) win.__ksRender(); } catch (_) {}
       try { win.boardSaveLive(); } catch (_) {}
+      queueThumbs(recs, meet);
       var word = meet ? '슬라이드' : '페이지', n = recs.length;
       win.setTimeout(function () {   // 보드의 «장면 N개에 모두» 알림 뒤에 — 이 알림이 남는다
         toast('피치를 모든 ' + word + '에 적용했어요 (다른 ' + word + ' ' + n + '개)');
@@ -257,9 +278,9 @@
           var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = '이 ' + word + '만';
           b.addEventListener('click', function (ev) {
             ev.stopPropagation(); try { b.remove(); } catch (_) {}
-            undoPitch(recs); recs.forEach(function (r) { thumbsOf(r, meet); });
-            try { if (meet && win.__ksRender) win.__ksRender(); } catch (_) {}
+            undoPitch(recs);
             try { win.boardSaveLive(); } catch (_) {}
+            queueThumbs(recs, meet);
             toast('이 ' + word + '만 바꾸고 다른 ' + word + '는 되돌렸어요');
           });
           b.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
@@ -275,6 +296,7 @@
       g.__psPitchAll = 1; win._viewScenesMatch = g; return true;
     }
     win.__psPitchAllNow = spreadNow;   // 시험 · 진단용
+    win.__psPitchThumbsLeft = function () { return thumbQ.length; };
 
     // ── 시작 · 다시 그릴 때 ──
     var tries = 0;
