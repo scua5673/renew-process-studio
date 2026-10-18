@@ -7,7 +7,7 @@
 <script src="daily-effort.js"></script>
 <script src="session-focus.js"></script>
 <link rel="stylesheet" href="daily-effort.css">
-<script src="review-training-schedule.js"></script>
+<script src="review-training-schedule.js"></script><script src="pdf-export.js"></script><script src="schedule-poster.js"></script><!-- 3.091 — PDF 내보내기 창(작전판 훈련 PDF 와 같은 창 · PDF 내려받기) · 일정 PDF «깔끔하게» -->
 <script src="participation.js?v=2.901"></script><!-- 3.076 — 연간 돌아보기의 선수별 출석 · 부상(선수단 화면과 같은 셈, 읽기만) -->
 <script src="year-plan.js"></script><!-- 3.073 — 연간 PDF(돌아보기 · 계획) · 시즌 계획 카드 -->
 <link rel="stylesheet" href="review-training.css">
@@ -7603,6 +7603,9 @@ function pTopicRows(mix,empty){
   return rows.map(r=>{ const col=mix.colOf[r[0]]||'#C2C7CF', pct=Math.round(r[1]/tot*100);
     return `<div class="pdrow"><div class="k">${r[0]}</div><div class="track"><div class="fill" style="width:${r[1]/max*100}%;background:${col}"></div></div><div class="v">${pct}%</div></div>`; }).join('');
 }
+/* 3.091 — 주간 · 월간 PDF 모양: «깔끔하게»(흰 바탕 · 큰 글자 · 색은 경기 하나 — 락커룸에 붙이는 종이, schedule-poster.js) | «자세히»(예전 문서 — 범례 · 부하 · 합계). 이 기기에 기억 */
+let __pPoster=(function(){ try{ return localStorage.getItem('ps_sched_pdf_style')!=='plain'; }catch(_){ return true; } })();
+function __posterOn(){ return !__pBlank&&__pPoster&&!!window.PSSchedPoster; }
 let __pBlank=false;   // 빈 양식(펜 기입용) 모드 — __buildPrintDoc(kind, true) 빌드 동안에만 켜짐
 function pHeader(sub,title,opt){
   const TT=title||'일정';
@@ -7840,7 +7843,14 @@ function weekBoardDocHTML(){
   const sum=`<div class="pwb-sum"><div><b>${tot.ses}</b><span>세션</span></div><div><b>${tot.min?tot.min+'′':'–'}</b><span>총 시간</span></div><div><b>${avg==null?'–':avg}</b><span>평균 RPE</span></div></div>`;
   const y=dateOf(wk*7).getFullYear();
   const line=[`세션 ${tot.ses}`,tot.min?tot.min+'분':'',avg!=null?'평균 RPE '+avg:'',tot.match?'경기 '+tot.match:''].filter(Boolean).join(' · ');
-  const head=`<div class="pwb-head"><div class="pwb-title"><b>주간 일정</b><span>${y}년 ${weekDateLabel(wk)}${pGrpTag()}</span></div><div class="pwb-right">${line?`<span class="pwb-tot">${line}</span>`:''}<span class="pwb-team">${teamMark}</span></div></div>`;
+  let head=`<div class="pwb-head"><div class="pwb-title"><b>주간 일정</b><span>${y}년 ${weekDateLabel(wk)}${pGrpTag()}</span></div><div class="pwb-right">${line?`<span class="pwb-tot">${line}</span>`:''}<span class="pwb-team">${teamMark}</span></div></div>`;
+  if(typeof __posterOn==='function'&&__posterOn()){   /* 3.091 — 깔끔하게: 머리 한 줄(엠블럼 · 팀 이름 · 기간 · 합계 · 이번 주 경기) */
+    const ms=[]; D.forEach(d=>{ if(!d.isM)return; const day=d.day, opp=String((day.match&&day.match.opp)||d.b.opp||'').trim(), tm=String((day.match&&day.match.time)||'').trim();
+      let kind=''; try{ kind=M_KIND_LB[mMatchKind(day)]||''; }catch(_){}
+      let pl=''; try{ pl=wkbdMatchPlace(d.dt.getFullYear()+'-'+String(d.dt.getMonth()+1).padStart(2,'0')+'-'+String(d.dt.getDate()).padStart(2,'0'),opp); }catch(_){}
+      ms.push({when:`${day.d||''} ${d.dt.getMonth()+1}.${d.dt.getDate()}`,opp:opp,sub:[tm,kind,pl].filter(Boolean).join(' · ')}); });
+    head=PSSchedPoster.head({team:{name:t.name,logo:t.logo?__psImgSrc(t.logo):''},title:`${y} 주간 일정${fg?' · '+fg:''}`,big:weekDateLabel(wk),matches:ms});
+  }
   return `<div class="ponepage">`+head
     +`<div class="pwb" data-pm="${pm}" style="--pm:${pm}px">${cols}</div>`
     +leg
@@ -7891,7 +7901,7 @@ function monthDocHTML(){
     if(!nm)nm=String(tr.aims||'').trim();
     if(!nm){ try{ const b=dayBoard(day)||{}; const i=(b.trainSlot||[]).findIndex((sl,j)=>String(sl||'')===String(tr.slot||'')&&String((b.trains||[])[j]||'').trim()); if(i>=0)nm=String(b.trains[i]).trim(); }catch(_){} }
     return nm||'훈련'; };
-  const tot={ses:0,min:0,rpe:[],match:0};
+  const tot={ses:0,min:0,rpe:[],match:0}, mlist=[];
   for(let w=0;w<nRows;w++){
     let cells='';
     for(let c=0;c<7;c++){
@@ -7922,7 +7932,7 @@ function monthDocHTML(){
         body=`<div style="font-size:11px;color:#B4423C;font-weight:800;line-height:1.35;overflow-wrap:anywhere">${mKindLb(mMatchKind(day))}${opp?' vs '+E(opp):''}</div>`
             +((tm||kind)?`<div style="font-size:10px;color:#8A4B47;font-weight:600;margin-top:1px">${E([tm,kind].filter(Boolean).join(' · '))}</div>`:'')
             +mxExtraList(day).map(x=>{const L=mxExtraLabel(x);return `<div style="font-size:10px;color:#B4423C;font-weight:700;margin-top:3px;padding-top:2px;border-top:1px dashed #E3B7B4;line-height:1.3">${mKindLb(L.k)}${L.t?' · '+E(L.t):''} · ${E(L.o)}</div>`;}).join('');   /* 2.620 */
-        if(!out){ tot.match+=1+mxExtraList(day).length; }
+        if(!out){ tot.match+=1+mxExtraList(day).length; mlist.push({when:`${dt.getMonth()+1}.${dt.getDate()} ${WDAYS[c]}`,opp:opp,sub:[tm,kind].filter(Boolean).join(' · ')}); }
       } else if(ts.length){
         const compact=ts.length>=3;
         const shown=ts.length>4?ts.slice(0,3):ts;
@@ -7941,7 +7951,7 @@ function monthDocHTML(){
         body=`<div style="padding-left:6px;border-left:3px solid #C2C7CF"><div style="font-size:11px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(btrains[0])}${btrains.length>1?` <span style="color:#8A9099;font-weight:600">외 ${btrains.length-1}</span>`:''}</div></div>`;
         if(!out)tot.ses++;
       }
-      cells+=`<td style="border:1px solid #E3E6EA;background:${cellBg};padding:6px 7px;vertical-align:top;width:14.28%;${out?'opacity:.5;':''}">
+      cells+=`<td class="${[isMatch?'pm-match':'',isOff?'pm-off':'',out?'pm-out':'',(!isMatch&&(ts.length||btrains.length))?'pm-train':''].filter(Boolean).join(' ')}" style="border:1px solid #E3E6EA;background:${cellBg};padding:6px 7px;vertical-align:top;width:14.28%;${out?'opacity:.5;':''}">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:2px;margin-bottom:2px"><span style="font-size:12px;color:#14161A;font-weight:800">${dt.getDate()}</span><span style="font-size:10px;color:${(isMatch||md==='MD')?'#B4423C':'#8A9099'};font-weight:700">${md}</span></div><div style="max-height:${cap}px;overflow:hidden">${body}</div></td>`;
     }
     rows+=`<tr>${cells}</tr>`;
@@ -7960,7 +7970,12 @@ function monthDocHTML(){
     const avg=tot.rpe.length?Math.round(tot.rpe.reduce((a,b)=>a+b,0)/tot.rpe.length*10)/10:null;
     right=[`훈련 ${tot.ses}회`,tot.min?`${tot.min.toLocaleString('ko-KR')}분`:'',avg!=null?`평균 RPE ${avg}`:'',`경기 ${tot.match}`].filter(Boolean).join(' · ');
   }
-  return `<div class="ponepage">`+pHeader(monthLabel()+pGrpTag(),'월간 일정',{noNext:true,right:right})+
+  let mhead=pHeader(monthLabel()+pGrpTag(),'월간 일정',{noNext:true,right:right});
+  if(typeof __posterOn==='function'&&__posterOn()){   /* 3.091 — 깔끔하게: 머리 한 줄(엠블럼 · 팀 이름 · 이 달 · 합계 · 이 달 경기) */
+    const t=teamGet(), g=(typeof __schedGrp==='string'&&__schedGrp)?__schedGrp:'';
+    mhead=PSSchedPoster.head({team:{name:t.name,logo:t.logo?__psImgSrc(t.logo):''},title:'월간 일정'+(g?' · '+g:''),big:monthLabel(),matches:mlist});
+  }
+  return `<div class="ponepage">`+mhead+
     `<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin-top:6px"><table style="width:100%;height:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`+legend+pFooter()+`</div>`;
 }
 function reviewDocHTML(){
@@ -8033,7 +8048,7 @@ function __buildPrintDoc(kind, blank){
   return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>'+fname+'</title>'
     +'<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b">'   /* 2.908 — Pretendard(화면과 같은 글꼴) */
     +'<style>'+allCss+'</style><style>'+pageCss+'</style></head>'
-    +'<body><div id="printDoc" class="pl-'+cls+'">'+html+'</div>'
+    +'<body><div id="printDoc" class="pl-'+cls+((!blank&&__pPoster&&window.PSSchedPoster&&(cls==='weekboard'||cls==='month'))?' poster':'')+'">'+html+'</div>'
     +(fitJs?'<script>'+fitJs+'<\/script>':'')+(cls==='year'?'':'<script>'+zoomJs+'<\/script>')+'</body></html>';   /* 3.073 — 연간은 장마다 크기를 맞춰 짓는다(한 장 zoom 안전망은 첫 장만 본다) */
 }
 
@@ -8055,9 +8070,20 @@ function __pvFit(){
   const mh=ov.querySelector('#pvMobHint'); if(mh)mh.style.display=mob?'block':'none';
 }
 function closePv(){ const ov=document.getElementById('pvOv'); if(ov) ov.style.display='none'; }
+/* 3.091 — 일정 PDF(연간 · 월간 · 주간 · 일간 · 부하 리포트)도 작전판 · 훈련 PDF 와 같은 내보내기 창(사용자 «일정 연간 월간 주간 PDF — PDF 내보내기 디자인»).
+   위 띠: 개인 노트로 · PDF 내려받기(인쇄 창 없이 바로 파일) · 인쇄 · 닫기 — studio/pdf-export.js. 그 파일을 못 읽었으면 예전 «출력 미리보기». */
+const PDF_TITLE={week:'주간 일정',weekboard:'주간 일정',month:'월간 일정',season:'연간 일정',yearReview:'연간 돌아보기',yearPlan:'연간 계획',day:'일간 일정',today:'일간 일정',review:'부하 리포트'};
 function exportPDF(kind){
   const doc=__buildPrintDoc(kind);
   const land=(kind!=='review');
+  if(window.PSPdfExport&&typeof PSPdfExport.open==='function'){
+    const t=PDF_TITLE[kind]||'일정', m=/<title>([^<]*)<\/title>/.exec(doc);
+    const styled=(kind==='week'||kind==='weekboard'||kind==='month')&&!!window.PSSchedPoster;
+    PSPdfExport.open({title:t+' — PDF',html:doc,fname:(m&&m[1])||('process_'+t),land:land,source:'process',noteKind:'schedule-pdf',
+      options:styled?[{key:'style',label:'모양',choices:[['poster','깔끔하게'],['plain','자세히']]}]:[],values:{style:__pPoster?'poster':'plain'},
+      rebuild:v=>{ __pPoster=v.style!=='plain'; try{ localStorage.setItem('ps_sched_pdf_style',__pPoster?'poster':'plain'); }catch(_){} return __buildPrintDoc(kind); }});
+    return;
+  }
   const W=land?1100:760, H=land?780:1080;                       // 미리보기 시트(iframe) 크기
   let ov=document.getElementById('pvOv');
   if(!ov){
