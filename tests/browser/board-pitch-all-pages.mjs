@@ -6,7 +6,11 @@ import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=process.env.PS_SIZE||(engine==='webkit'?'ipad':'desktop');
 const fx=await startFixture(),browsers={};
 const pick=(f,p)=>f.evaluate(p=>{window.__psUserClick=1;try{document.querySelector('#pitchSeg button[data-p="'+p+'"]').click();}finally{window.__psUserClick=0;}},p);
-const toastBtn=f=>f.waitForFunction(()=>{const b=document.querySelector('#cs-ftoast .ftoast-act');return b&&b.textContent;},null,{timeout:5000}).then(h=>h.jsonValue());
+const toastBtn=async f=>{try{return await f.waitForFunction(()=>{const b=document.querySelector('#cs-ftoast .ftoast-act');return b&&b.textContent;},null,{timeout:10000}).then(h=>h.jsonValue());}
+  catch(e){console.error('board-pitch-all-pages diag',JSON.stringify(await f.evaluate(()=>({toast:(document.getElementById('cs-ftoast')||{}).textContent||'',playing:typeof animPlaying!=='undefined'?animPlaying:null,
+    cls:document.body.className.slice(0,240),pitch:document.documentElement.dataset.pitch,slides:(anim.slides||[]).map(s=>s&&s.snap&&s.snap.pitchTheme),pages:((window.__psPages&&window.__psPages.pg())||[]).map(p=>p&&p.snap&&p.snap.pitchTheme)})).catch(x=>String(x))));throw e;}};
+/* 3.102 — 장면이 움직이는 동안(재생 · 슬라이드 장면 넘김) 바꾼 피치는 미리보기라 퍼뜨리지 않는다(보드 2.525 와 같다). 느린 WebKit 은 그게 끝나기를 기다린다 */
+const settle=f=>f.waitForFunction(()=>typeof animPlaying==='undefined'||!animPlaying,null,{timeout:15000});
 try{
   const {page,logs}=await openApp(fx,size,{browsers});
   await page.waitForTimeout(1500);
@@ -25,6 +29,7 @@ try{
   await f.evaluate(()=>{const P=window.__psPages.pg();P[0].snap.pitchTheme='white';P[2].snap.pitchTheme='';P[2].snap.pitchImg='@photo:0123456789abcdef-160x90';});
 
   // ② 둘째 페이지에서 «딥그린» → 첫째 페이지도 딥그린, 사진 페이지는 그대로
+  await settle(f);
   await pick(f,'calm');
   assert.equal(await toastBtn(f),'이 페이지만');
   assert.match(await f.evaluate(()=>document.getElementById('cs-ftoast').textContent),/피치를 모든 페이지에 적용했어요 \(다른 페이지 1개\)/);
@@ -59,6 +64,7 @@ try{
   const n=await f.evaluate(()=>anim.slides.length),orient=await f.evaluate(()=>anim.slides.map(s=>s.snap.orientation));
   const thumbsBefore=await f.evaluate(()=>anim.slides.map(s=>String(s.thumb||'')));
   assert.ok(await f.evaluate(()=>anim.slides.every(s=>s.snap.pitchTheme!=='calm')),'no slide is deep green yet');
+  await settle(f);
   await pick(f,'calm');
   assert.equal(await toastBtn(f),'이 슬라이드만');
   assert.deepEqual(await f.evaluate(()=>anim.slides.map(s=>s.snap.pitchTheme)),Array(n).fill('calm'),'every slide');
