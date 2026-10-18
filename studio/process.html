@@ -3492,7 +3492,7 @@ function drillLibListHtml(di,field,q){
     return '<div class="lp-folder">'+wkbdEsc(f)+'<u>'+byF[f].length+'</u></div>'
       +byF[f].map(function(d){ var idx=ds.indexOf(d);
         return '<button type="button" class="lp-item" onclick="wkbdPickDrill('+di+',\''+field+'\','+idx+')">'
-          +(d.thumb?'<span class="lp-th">'+d.thumb+'</span>':'<span class="lp-th empty"></span>')
+          +(d.thumb?'<span class="lp-th">'+PSSafe.svg(d.thumb)+'</span>':'<span class="lp-th empty"></span>')
           +'<span class="lp-nm">'+wkbdEsc(d.name||'\uc774\ub984 \uc5c6\uc74c')+'</span>'
           +(d.minutes?('<span class="lp-min">'+(+d.minutes)+'\ubd84</span>'):'')+'</button>';
       }).join('');
@@ -5204,7 +5204,7 @@ window.wkbdLibTap=function(di,li){
   var sheet=document.getElementById('sheet');
   sheet.dataset.psLibraryFlow='1';
   sheet.innerHTML='<button class="closex" onclick="closeSheet()">×</button><h3>'+wkbdEsc(nm)+'</h3>'
-    +(d.thumb?'<div class="trd-thumb">'+d.thumb+'</div>':'<div class="trd-thumb empty">그림 없음</div>')
+    +(d.thumb?'<div class="trd-thumb">'+PSSafe.svg(d.thumb)+'</div>':'<div class="trd-thumb empty">그림 없음</div>')
     +'<div class="trd-meta">'+(d.minutes?((+d.minutes)+'분'):'시간 미정')+'</div>'
     +'<div class="fp-row"><button class="fp" onclick="wkbdLibPick('+di+','+li+')">다른 자료로 바꾸기</button>'
     +'<button class="fp" onclick="wkbdLibDel('+di+','+li+')">빼기</button></div>';
@@ -5274,7 +5274,7 @@ window.wkbdLibPick=function(di,li){
         +byF[f].map(function(d){
           var idx=all.indexOf(d);
           return '<button type="button" class="lp-item" onclick="wkbdLibChoose('+di+','+(li==null?'null':li)+','+idx+')">'
-            +(d.thumb?'<span class="lp-th">'+d.thumb+'</span>':'<span class="lp-th empty"></span>')
+            +(d.thumb?'<span class="lp-th">'+PSSafe.svg(d.thumb)+'</span>':'<span class="lp-th empty"></span>')
             +'<span class="lp-nm">'+wkbdEsc(d.name||'이름 없음')+'</span>'
             +(d.minutes?('<span class="lp-min">'+(+d.minutes)+'분</span>'):'')+'</button>';
         }).join('');
@@ -5385,7 +5385,7 @@ window.wkbdTrainTap=function(di,ti){
   var srcMin=0;
   if(fromLib){ try{ (libDrills()||[]).forEach(function(x){ if(x&&x.libId===td.fromLib&&!srcMin)srcMin=+x.minutes||0; }); }catch(_){} }
   var phn=(Array.isArray(td.gmPhaseNames)&&td.gmPhaseNames.length)?td.gmPhaseNames.join(' · '):'';
-  var thumb=td.thumb?('<div class="trd-thumb">'+td.thumb+'</div>')
+  var thumb=td.thumb?('<div class="trd-thumb">'+PSSafe.svg(td.thumb)+'</div>')
     :('<div class="trd-thumb empty">'+(fromLib?'그림 없음':'그림 없음 — 작전판에서 그려보세요')+'</div>');
   var h='<button class="closex" onclick="closeSheet()">×</button>'
     +'<h3>'+wkbdEsc(nm)+(fromLib?' <span class="wkbd-srcbadge">보관함</span>':'')+'</h3>'
@@ -5564,7 +5564,7 @@ window.wkbdWarmTap=function(di,wi){
   var b=dayBoard(week[di]);
   var nm=(b.warms&&b.warms[wi])||'웜업';
   var wd=(b.warmsData&&b.warmsData[wi])||{};
-  var thumb=wd.thumb?('<div class="trd-thumb">'+wd.thumb+'</div>'):'<div class="trd-thumb empty">그림 없음 — 작전판에서 그려보세요</div>';
+  var thumb=wd.thumb?('<div class="trd-thumb">'+PSSafe.svg(wd.thumb)+'</div>'):'<div class="trd-thumb empty">그림 없음 — 작전판에서 그려보세요</div>';
   var sheet=document.getElementById('sheet');
   sheet.innerHTML='<button class="closex" onclick="closeSheet()">×</button><h3>'+wkbdEsc(nm)+'</h3>'+thumb
     +'<div class="dm-field"><label>시간 (분)</label>'
@@ -5653,7 +5653,7 @@ window.wkbdGoMatch=function(ymd,di){
   try{parent.postMessage({source:'process',type:'openTeamMatch',date:ymd,opp:opp,step:wkbdMatchDoor(ymd,opp).step},'*');}catch(_){}
 };
 function wkbdSetMeetItem(di,mi,d){var b=dayBoard(week[di]);if(!b.meets)b.meets=[];if(!b.meetsData)b.meetsData=[];b.meets[mi]=d.name||'미팅';b.meetsData[mi]={minutes:+d.minutes||0,thumb:d.thumb||'',snap:d.snap||null,focus:d.focus||''};b.meet=b.meets.join(' · ');try{var _dy=week[di];if(_dy)_dy.meeting=b.meet;}catch(_){}try{save();}catch(_){}syncViews();closeSheet();}
-window.wkbdMeetTap=function(di,mi){var b=dayBoard(week[di]);var nm=(b.meets&&b.meets[mi])||'미팅';var md=(b.meetsData&&b.meetsData[mi])||{};var sheet=document.getElementById('sheet');var thumb=md.thumb?('<div class="trd-thumb">'+md.thumb+'</div>'):'<div class="trd-thumb empty">그림 없음 — 작전판에서 그려보세요</div>';sheet.innerHTML='<button class="closex" onclick="closeSheet()">×</button><h3>'+wkbdEsc(nm)+(md.minutes?(' <span style="color:var(--text-3);font-weight:600">· '+md.minutes+'분</span>'):'')+'</h3>'+thumb+'<div class="trd-btns"><button class="btn solid" onclick="boardDrawForMeet('+di+','+mi+')">작전판에서 '+(md.snap?'열기·수정':'그리기')+'</button><button class="btn" onclick="wkbdPick('+di+',\'meet\','+mi+')">이름·드릴 교체</button><button class="btn" onclick="wkbdMeetDel('+di+','+mi+')">삭제</button></div>';document.getElementById('scrim').classList.add('show');};
+window.wkbdMeetTap=function(di,mi){var b=dayBoard(week[di]);var nm=(b.meets&&b.meets[mi])||'미팅';var md=(b.meetsData&&b.meetsData[mi])||{};var sheet=document.getElementById('sheet');var thumb=md.thumb?('<div class="trd-thumb">'+PSSafe.svg(md.thumb)+'</div>'):'<div class="trd-thumb empty">그림 없음 — 작전판에서 그려보세요</div>';sheet.innerHTML='<button class="closex" onclick="closeSheet()">×</button><h3>'+wkbdEsc(nm)+(md.minutes?(' <span style="color:var(--text-3);font-weight:600">· '+md.minutes+'분</span>'):'')+'</h3>'+thumb+'<div class="trd-btns"><button class="btn solid" onclick="boardDrawForMeet('+di+','+mi+')">작전판에서 '+(md.snap?'열기·수정':'그리기')+'</button><button class="btn" onclick="wkbdPick('+di+',\'meet\','+mi+')">이름·드릴 교체</button><button class="btn" onclick="wkbdMeetDel('+di+','+mi+')">삭제</button></div>';document.getElementById('scrim').classList.add('show');};
 window.wkbdMeetDel=function(di,mi){if(schedEditBlocked()){schedBlockNotice();return;}var b=dayBoard(week[di]);if(b.meets)b.meets.splice(mi,1);if(b.meetsData)b.meetsData.splice(mi,1);if(b.meetSlot)b.meetSlot.splice(mi,1);   /* 2.129 */b.meet=(b.meets||[]).join(' · ');try{var _dy=week[di];if(_dy){if(b.meet)_dy.meeting=b.meet;else delete _dy.meeting;}}catch(_){}try{save();}catch(_){}syncViews();closeSheet();};
 window.boardDrawForMeet=function(di,mi){var b=dayBoard(week[di]);var md=(b.meetsData&&b.meetsData[mi])||null;window.__boardCapTarget={di:di,meet:true,mi:mi};closeSheet();try{parent.postMessage({source:'process',type:'openDrillEditor',edit:true,name:(b.meets&&b.meets[mi])||'',minutes:(md&&md.minutes)||'',snap:(md&&md.snap)||null},'*');}catch(_){}};
 function openDrillMaker(di,ti){
@@ -6044,10 +6044,10 @@ function renderDay(){
   if(window.PSReviewSchedule)html+=PSReviewSchedule.dayHTML(day,dayIdx);
   html+=mkPick('일정','sched',bd.sched);
   html+=mkPick('주제','theme',bd.theme);
-  { let mch=(bd.meets||[]).map((mx,mi)=>{ const md=(bd.meetsData&&bd.meetsData[mi])||null; const c=bColor('meet',mx); const th=(md&&md.thumb)?`<span class="dthumb">${md.thumb}</span>`:''; const mn=(md&&md.minutes)?`<span class="dmin">${md.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdMeetTap(${dayIdx},${mi})">${th}<b style="flex:1;text-align:left">${mx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">미팅</div><div class="drval drtrains">${mch}<button class="drpick empty" onclick="wkbdAddMeet(${dayIdx})">＋ 미팅 추가</button></div></div>`; }
+  { let mch=(bd.meets||[]).map((mx,mi)=>{ const md=(bd.meetsData&&bd.meetsData[mi])||null; const c=bColor('meet',mx); const th=(md&&md.thumb)?`<span class="dthumb">${PSSafe.svg(md.thumb)}</span>`:''; const mn=(md&&md.minutes)?`<span class="dmin">${md.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdMeetTap(${dayIdx},${mi})">${th}<b style="flex:1;text-align:left">${mx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">미팅</div><div class="drval drtrains">${mch}<button class="drpick empty" onclick="wkbdAddMeet(${dayIdx})">＋ 미팅 추가</button></div></div>`; }
   html+=mkPick('강도','load',bd.load);
-  { let wch=(bd.warms||[]).map((wx,wi)=>{ const wd=(bd.warmsData&&bd.warmsData[wi])||null; const c=bColor('warm',wx); const th=(wd&&wd.thumb)?`<span class="dthumb">${wd.thumb}</span>`:''; const mn=(wd&&wd.minutes)?`<span class="dmin">${wd.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdWarmTap(${dayIdx},${wi})">${th}<b style="flex:1;text-align:left">${wx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">웜업</div><div class="drval drtrains">${wch}<button class="drpick empty" onclick="wkbdAddWarm(${dayIdx})">＋ 웜업 추가</button></div></div>`; }
-  { let tch=(bd.trains||[]).map((tx,ti)=>{ const td=(bd.trainData&&bd.trainData[ti])||null; const c=bColor('train',tx); const th=(td&&td.thumb)?`<span class="dthumb">${td.thumb}</span>`:''; const mn=(td&&td.minutes)?`<span class="dmin">${td.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdTrainTap(${dayIdx},${ti})">${th}<b style="flex:1;text-align:left">${tx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">훈련</div><div class="drval drtrains">${tch}<button class="drpick empty" onclick="wkbdAddTrain(${dayIdx})">＋ 훈련 추가</button></div></div>`; }
+  { let wch=(bd.warms||[]).map((wx,wi)=>{ const wd=(bd.warmsData&&bd.warmsData[wi])||null; const c=bColor('warm',wx); const th=(wd&&wd.thumb)?`<span class="dthumb">${PSSafe.svg(wd.thumb)}</span>`:''; const mn=(wd&&wd.minutes)?`<span class="dmin">${wd.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdWarmTap(${dayIdx},${wi})">${th}<b style="flex:1;text-align:left">${wx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">웜업</div><div class="drval drtrains">${wch}<button class="drpick empty" onclick="wkbdAddWarm(${dayIdx})">＋ 웜업 추가</button></div></div>`; }
+  { let tch=(bd.trains||[]).map((tx,ti)=>{ const td=(bd.trainData&&bd.trainData[ti])||null; const c=bColor('train',tx); const th=(td&&td.thumb)?`<span class="dthumb">${PSSafe.svg(td.thumb)}</span>`:''; const mn=(td&&td.minutes)?`<span class="dmin">${td.minutes}'</span>`:''; return `<button class="drpick" style="border-color:${c||'var(--line)'}" onclick="wkbdTrainTap(${dayIdx},${ti})">${th}<b style="flex:1;text-align:left">${tx}</b>${mn}</button>`; }).join(''); html+=`<div class="dayrow"><div class="drlab">훈련</div><div class="drval drtrains">${tch}<button class="drpick empty" onclick="wkbdAddTrain(${dayIdx})">＋ 훈련 추가</button></div></div>`; }
   wrap.innerHTML=html;
 }
 /* ---------- 세션 주제·부하 (세션 편집창 안에서 사용) ---------- */
@@ -8197,7 +8197,7 @@ function blockCard(b, bi){
           <input class="stime descin" type="text" value="${(b.desc||'').replace(/"/g,'&quot;')}" placeholder="무엇을·어떻게" oninput="sbDesc(${bi},this.value)"></div>
       </div>
       <div class="subel">작전판 <span style="color:var(--text-3);font-weight:600">(선택)</span></div>
-      <div class="boardrow">${b.board&&b.board.thumb?`<div class="boardthumb">${b.board.thumb}</div>`:''}<button class="boardbtn" onclick="openBoardForBlock(${bi})">${b.board?'작전판 수정':'＋ 작전판에서 그리기'}</button>${b.board?`<button class="boardbtn rm" onclick="clearBoard(${bi})">제거</button>`:''}</div>
+      <div class="boardrow">${b.board&&b.board.thumb?`<div class="boardthumb">${PSSafe.svg(b.board.thumb)}</div>`:''}<button class="boardbtn" onclick="openBoardForBlock(${bi})">${b.board?'작전판 수정':'＋ 작전판에서 그리기'}</button>${b.board?`<button class="boardbtn rm" onclick="clearBoard(${bi})">제거</button>`:''}</div>
     </div>
   </div>`;
 }

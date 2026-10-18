@@ -13009,7 +13009,7 @@ function mmSlidesOf(d){
 }
 /* 썸네일 SVG 를 칸에 넣는다. full 이면 그리던 판 그대로(data-psvb — 작은 칸용으로 내용에 맞춰 잘라 둔 viewBox 를 되돌린다). 가로/세로 비율을 돌려준다 */
 function mmSvgFit(host,thumb,full){
-  host.innerHTML=thumb||"";
+  host.innerHTML=PSSafe.svg(thumb||"");   /* 3.105 — 저장된 그림 문자열은 정리한 뒤에 */
   var sv=host.querySelector("svg"); if(!sv)return null;
   if(full){ var ovb=sv.getAttribute("data-psvb"); if(ovb)sv.setAttribute("viewBox",ovb); }
   sv.setAttribute("width","100%");sv.setAttribute("height","100%");sv.setAttribute("preserveAspectRatio","xMidYMid meet");sv.removeAttribute("style");
@@ -13068,7 +13068,7 @@ function mmPaint(card,m,lib){
       +'<div class="mmv-acts"><button type="button" class="mm-show" data-mm-show="'+esc(d.libId)+'"'+(isB?' title="페이지를 한 장씩 — 보기만 해요(작전판은 그대로)"':'')+'>▶ 슬라이드쇼</button>'   /* 3.031 — 작전판도(오류 제보 81e77b91 «보관함에서 가져오면 슬라이드쇼가 없다») — 페이지를 장으로 보기 전용 쇼 */
       +'<button type="button" class="mm-open" data-mm-open="'+esc(d.libId)+'">'+(mine?"편집 ›":"보기 ›")+'</button>'
       +((mine&&can)?'<button type="button" class="mm-x" data-mm-unlink="'+esc(d.libId)+'" aria-label="이 경기에서 떼기" title="이 경기에서 떼기 — 자료는 보관함에 그대로">×</button>':'')+'</div></div>'
-      +(sl.length>1?'<div class="mmv-strip" role="tablist" aria-label="'+unit+' 고르기">'+sl.map(function(s,k){ return '<button type="button" role="tab" class="mmv-th" data-mmv-i="'+k+'" aria-label="'+(k+1)+'. '+esc(s.title||((isB?"페이지 ":"슬라이드 ")+(k+1)))+'"><span class="s">'+(s.thumb||'')+'</span><i>'+(k+1)+'</i><em>'+esc(s.title||((isB?"페이지 ":"슬라이드 ")+(k+1)))+'</em></button>'; }).join("")+'</div>':'')
+      +(sl.length>1?'<div class="mmv-strip" role="tablist" aria-label="'+unit+' 고르기">'+sl.map(function(s,k){ return '<button type="button" role="tab" class="mmv-th" data-mmv-i="'+k+'" aria-label="'+(k+1)+'. '+esc(s.title||((isB?"페이지 ":"슬라이드 ")+(k+1)))+'"><span class="s">'+PSSafe.svg(s.thumb||'')+'</span><i>'+(k+1)+'</i><em>'+esc(s.title||((isB?"페이지 ":"슬라이드 ")+(k+1)))+'</em></button>'; }).join("")+'</div>':'')
       +'<div class="mmv-meta">'+esc(meta)+'</div></div>';
   }
   if(old)h+='<div class="mmv-old"><span>예전 «경기 준비 보드»에 그린 것이 <b>'+old+'페이지</b> 있어요 — 미팅으로 옮기면 여기서 바로 보여요</span>'
