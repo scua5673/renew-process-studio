@@ -43,6 +43,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 3.087 — 커뮤니티 뷰어(`body.comm-viewing`): 떠 있는 도크 · 만들기 틀 규칙은 id 를 열 개 넘게 붙여 보드의 감춤을 이긴다 — 뷰어에서 감출 것은 그 파일 안에서 더 센 선택자로. 보기 전용 막이(`communityBoardReadOnly` 의 guard)가 판을 누른 pointerdown · click 을 window 에서 맨 먼저 멈춘다 — 판 바깥 누름을 알아야 하면 pointerup 을 본다. 뷰어 «보기» 고르개는 `board-comm-look.js`(3.087 board.html 남은 몫 약 1.4KB).
 - `applyView` 는 판(svg)의 너비 · 높이를 지운다. 중계 카메라가 판을 잡고 있으면 `board-broadcast.js` 의 `hold` 가 지킨다(3.086 깜빡임).
 - 3.096 — 3D «중계» 카메라(`cam:'tv'`)를 뺐다(사용자 «중계화면으로 애니메이션하면 라인이 벗어나» → «중계화면은 빼자»): `TILT_CAM.tv` · 보드 설정 «카메라 › 중계» · 위쪽 «중계» 단추를 걷었고, 저장된 tv 는 «보통»으로 읽힌다. `board-broadcast.js` 의 `camera()` · `tv()` 는 남았지만 켜지지 않는다(`__tvOn` 늘 거짓). 경기 모드 옆 막대의 옛 «중계캠»(`bcCamBtn`)은 다른 기능이라 그대로.
+- 3.102 — 피치는 판 전체(제보 934aaa3e): 사람이 피치를 바꾸면(`_viewScenesMatch("pitch")` — 피치 단추 · 색 고르개만 부른다) `board-tweaks.js` 가 작전판의 모든 페이지(`__psPages.pg()` · 지금 페이지는 `book.idx()`) · 미팅의 모든 슬라이드(`anim.slides`, 먼저 `__meetSyncCur({thumb:true})`)와 그 장면에 넣는다. 알림의 «이 페이지만»이 되돌린다. 운동장 사진(`@photo:`)은 페이지 내용이라 퍼뜨리지도 덮지도 않는다. 열린 PR #425(«모든 슬라이드에» 단추)는 이 방식이 대신한다.
 - 내보내기(그림 · GIF · 영상)는 판을 SVG 그림(`data:image/svg+xml`)으로 그린다 — 페이지 글꼴 · CSS 를 못 본다. 글꼴은 SVG 안에 넣어야 한다.
 
 ## 폰 강제 종료 · 메모리
