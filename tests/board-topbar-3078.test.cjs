@@ -10,8 +10,8 @@ test('strip buttons go to the right group: first «＋ 페이지» beside the ta
   assert.deepEqual(g.menu.map(x=>x.textContent),['미팅 세트','보드 가져오기','새 보드']);
   assert.deepEqual(g.right.map(x=>x.id),['boardManualSave','bpBoardSettings','vaultSave'],'3.017 — settings right after save');
 });
-test('view switch reads 평면 · 3D · 중계',()=>{
-  assert.equal(tb.viewOf(false,'tv'),'flat');assert.equal(tb.viewOf(true,'mid'),'3d');assert.equal(tb.viewOf(true,'tv'),'tv');
+test('view switch reads 평면 · 3D (3.096 — 중계는 뺐다: 옛 tv 값도 3D)',()=>{
+  assert.equal(tb.viewOf(false,'tv'),'flat');assert.equal(tb.viewOf(true,'mid'),'3d');assert.equal(tb.viewOf(true,'tv'),'3d');
   assert.match(tb.css(),/body\.ps-dock-float #boardPageStrip\.ps-tb/,'only with the floating dock');
 });
 test('flat view: players and ball one step bigger, equipment and images unchanged',()=>{
