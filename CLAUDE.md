@@ -63,6 +63,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 앱이 열릴 때 검은 «PROCESS STUDIO» 덮개(app.html, z-index 2147483646)가 맨 위에 깔린다 — 그 위에 보여야 하는 것은 2147483647.
 
 ## 함정
+- 3.100 — 판 번호가 3.0xx 를 넘는다. 시험 · 코드에서 `3\.0\d\d` 처럼 0 을 박지 말고 `3\.\d{3}` 로(`safe-mode-3036` 이 걸렸다). 판을 숫자로 견줄 땐 `release-notes.js` 의 `versionNo`(3.100 → 3100) 처럼.
 - MutationObserver 안에서 없는 class 를 `classList.remove` 해도 속성 바뀜으로 잡혀 끝없이 돈다(3.084 보드가 안 열렸다). `contains` 로 확인한 뒤 바꾼다.
 - 비동기로 걷히는 화면(폰 빈 판 안내 «보관함 열기» 등)을 시험이 곧바로 재면 느린 WebKit 에서 남아 있는 것을 잡는다 — `waitForFunction` 으로 걷힐 때까지 기다린 뒤 잰다(3.086 board-savebar).
 - 3.097 — 판은 프레임과 상관없이 다시 놓인다(시작 타이머 · `psSelBarLayout` → MutationObserver `fix` → `applyView`). 화면→판 좌표(CTM · 3D 행렬)를 재 두고 쓰려면 **그 이벤트 안에서만**(`Promise.resolve().then` 으로 지운다) — 다음 프레임까지 두면 느린 WebKit 에서 다음 이벤트의 점이 옛 판 자리로 간다(board-pencil 2) 가끔 실패). 시험은 `await Promise.resolve()` 뒤 무대 `padding-bottom` + `applyView()` 로 프레임 없이 판을 옮겨 본다(board-pencil 2b).
