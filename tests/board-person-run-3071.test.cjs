@@ -43,7 +43,8 @@ test('board wiring: motion once per frame, cleared after; 3D «사람» only; ca
   assert.doesNotMatch(board,/function _personMotion\(/,'not defined twice');
   assert.match(board,/PSBroadcast\.tv\(\{goalK:function\(\)\{return GOAL_K;\},sync:function\(\)\{tiltGoalsSync\(\);\}\}\)/,'broadcast camera bridge');
   assert.match(board,/nameUnit:nu,pose:_personPose\(p\),stand:_personStand\(\),zoom:/);
-  assert.match(board,/<button type="button" data-cam="tv"[^>]*>중계<\/button>/);
+  assert.doesNotMatch(board,/data-cam="tv"/,'3.096 — 중계 카메라 단추는 뺐다(사용자 «중계화면은 빼자»)');
+  assert.doesNotMatch(board,/TILT_CAM\.tv=/,'저장된 tv 는 «보통»으로 읽힌다(tiltOptsRead)');
   assert.match(board,/<script src="board-broadcast\.js"><\/script>/);
   assert.match(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'),/'\/studio\/board-broadcast\.js'/,'cached for offline');
 });

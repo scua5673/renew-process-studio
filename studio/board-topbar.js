@@ -1,7 +1,7 @@
 /* PROCESS STUDIO — 위쪽 막대 정리(3.078, 레이아웃 1단계). 사용자 «레이아웃도 잘 설계하고 싶어» → 목업 «네 1단계부터».
    떠 있는 하단 도크(body.ps-dock-float)일 때 페이지 띠(#boardPageStrip)를 경기장 위에 뜬 세 덩어리로 바꾼다.
    - 왼쪽: «보드 ▾»(미팅 세트 · 보드 가져오기 · 새 보드를 이 메뉴로) + 페이지 탭 + ＋
-   - 가운데: 보기 전환 — 평면 · 3D · 중계
+   - 가운데: 보기 전환 — 평면 · 3D
    - 오른쪽: 보관함 연결 · 보드 저장 · 보드 설정(아이콘) · 보관함 저장
    띠는 그릴 때마다 비우고 새로 채우므로(board.html render) 다 그린 뒤 원래 단추를 그대로 옮겨 담는다 — 누르는 동작 · 권한은 단추에 붙은 그대로다.
    경기장은 위 흰 띠 없이 화면 끝까지 채운다. 모양은 도크 스타일(board-dock-skin.js: 글래스 · 베벨 · 기본, 다크 모드)을 따른다. */
@@ -26,10 +26,10 @@
     out.right.sort(function (a, b) { return R.indexOf(a.id) - R.indexOf(b.id); });
     return out;
   }
-  // 보이는 선수 모양: «사람»은 3D · 중계에서만, 평면에서는 유니폼(3.079)
+  // 보이는 선수 모양: «사람»은 3D 에서만, 평면에서는 유니폼(3.079)
   function shapeShown(shape, tilt) { return shape === 'person' && !tilt ? 'shirt' : (shape || 'circle'); }
-  // 지금 보기: 평면 · 3D · 중계
-  function viewOf(tilt, cam) { return !tilt ? 'flat' : cam === 'tv' ? 'tv' : '3d'; }
+  // 지금 보기: 평면 · 3D (3.096 — 중계는 뺐다. 옛 tv 값도 3D)
+  function viewOf(tilt) { return !tilt ? 'flat' : '3d'; }
 
   var N = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (i) { return ':not(#tb' + i + ')'; }).join('');
   var S = 'html.ps-page-board body.ps-dock-float #boardPageStrip.ps-tb' + N;
@@ -94,7 +94,7 @@
       S + ' #bpBoardSettings svg{width:16px!important;height:16px!important}',
       S + ' #bpLinkChip{height:26px!important}',
       S + ' #vaultSave{position:static!important;right:auto!important;bottom:auto!important;top:auto!important;left:auto!important;transform:none!important;margin:0 0 0 2px!important}',
-      // 선수 모양: «사람»은 3D · 중계에서만(평면은 유니폼으로 그린다)
+      // 선수 모양: «사람»은 3D 에서만(평면은 유니폼으로 그린다)
       'html body:not(.bc-tilt3d) #boardPageStrip .tb-shape button[data-shape="person"],html body:not(.bc-tilt3d) #shapeSeg button[data-s="person"]{display:none!important}',
       // 메뉴
       '#ps-tb-menu{position:fixed;z-index:430;display:none;min-width:200px;padding:6px;border-radius:14px;background:rgba(255,255,255,.98);box-shadow:0 14px 34px rgba(8,12,24,.28);border:1px solid rgba(20,22,26,.07);font-family:Pretendard,-apple-system,sans-serif;color:#14161A}',
@@ -133,14 +133,14 @@
     var lastCam = 'mid', obs = null, busy = false, saved = null;
     function on() { return body.classList.contains('ps-dock-float'); }
     function strip() { return doc.getElementById('boardPageStrip'); }
-    function curView() { var t = body.classList.contains('bc-tilt3d'), c = ''; try { c = (win.__tilt3d && win.__tilt3d.cam) || ''; } catch (_) {} if (c && c !== 'tv') lastCam = c; return viewOf(t, c); }
+    function curView() { var t = body.classList.contains('bc-tilt3d'), c = ''; try { c = (win.__tilt3d && win.__tilt3d.cam) || ''; } catch (_) {} if (c) lastCam = c; return viewOf(t); }
     function clickSeg(sel) { var b = doc.querySelector(sel); if (b) b.click(); return !!b; }
     function setView(v) {
       var tilt = body.classList.contains('bc-tilt3d');
       if (v === 'flat') { if (tilt) clickSeg('#tiltSeg button[data-t="0"]'); }
       else {
         if (!tilt) clickSeg('#tiltSeg button[data-t="1"]');
-        win.setTimeout(function () { clickSeg('#tiltCamSeg button[data-cam="' + (v === 'tv' ? 'tv' : lastCam) + '"]'); paintView(); }, tilt ? 0 : 60);
+        win.setTimeout(function () { clickSeg('#tiltCamSeg button[data-cam="' + lastCam + '"]'); paintView(); }, tilt ? 0 : 60);
       }
       win.setTimeout(paintView, 120);
     }
@@ -174,7 +174,7 @@
         var kit = doc.createElement('button'); kit.type = 'button'; kit.className = 'tb-kit'; kit.setAttribute('data-ps-kit-open', 'menu'); kit.setAttribute('role', 'menuitem'); kit.textContent = '팀 유니폼'; menu.appendChild(kit);
         brand.style.display = '';
         g.other.forEach(function (n) { L.appendChild(n); });
-        C.innerHTML = '<div class="tb-seg" role="group" aria-label="보기"><button type="button" data-v="flat" title="평면 작전판">평면</button><button type="button" data-v="3d" title="3D 경기장">3D</button><button type="button" data-v="tv" title="중계 카메라처럼 공을 따라가요">중계</button></div><span class="tb-sep"></span><div class="tb-seg tb-shape" role="group" aria-label="선수 모양"><button type="button" data-shape="shirt" title="선수 모양 — 유니폼" aria-label="유니폼"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 3l-5 3 2 5 2-1v11h10V10l2 1 2-5-5-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/></svg></button><button type="button" data-shape="circle" title="선수 모양 — 원형" aria-label="원형"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg></button><button type="button" data-shape="person" title="선수 모양 — 사람(3D · 중계에서 서 있는 선수)" aria-label="사람"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4.5" r="2.6"/><path d="M8.5 8.5h7l1 7h-2l-.6 7h-3.8l-.6-7h-2z"/></svg></button></div><div class="tb-seg tb-rs"><button type="button" class="tb-rsize" title="실제 비율 크기 — 선수 · 공을 몇 배로" aria-label="실제 비율 크기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20L20 4M14 4h6v6M10 20H4v-6"/></svg></button></div>';
+        C.innerHTML = '<div class="tb-seg" role="group" aria-label="보기"><button type="button" data-v="flat" title="평면 작전판">평면</button><button type="button" data-v="3d" title="3D 경기장">3D</button></div><span class="tb-sep"></span><div class="tb-seg tb-shape" role="group" aria-label="선수 모양"><button type="button" data-shape="shirt" title="선수 모양 — 유니폼" aria-label="유니폼"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 3l-5 3 2 5 2-1v11h10V10l2 1 2-5-5-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/></svg></button><button type="button" data-shape="circle" title="선수 모양 — 원형" aria-label="원형"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg></button><button type="button" data-shape="person" title="선수 모양 — 사람(3D · 중계에서 서 있는 선수)" aria-label="사람"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4.5" r="2.6"/><path d="M8.5 8.5h7l1 7h-2l-.6 7h-3.8l-.6-7h-2z"/></svg></button></div><div class="tb-seg tb-rs"><button type="button" class="tb-rsize" title="실제 비율 크기 — 선수 · 공을 몇 배로" aria-label="실제 비율 크기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20L20 4M14 4h6v6M10 20H4v-6"/></svg></button></div>';
         g.right.forEach(function (n) { R.appendChild(n); });
         s.appendChild(L); s.appendChild(C); s.appendChild(R);
         s.classList.add('ps-tb');
