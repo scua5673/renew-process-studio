@@ -44,7 +44,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
   async function open(id='color-a'){await pressTok(frame.locator('.token[data-id="'+id+'"]'));if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await frame.locator('#colorPop').waitFor({state:'visible'});}
   // Replay browser composition events against the real controls. This does not emulate a native OS IME.
   await pressTok(frame.locator('.token[data-id="color-a"]'));
-  for(const [id,value] of [['nameInput','이슬기'],['numInput','김']]){
+  for(const [id,value] of [['nameInput','홍길동'],['numInput','김']]){
     const input=frame.locator('#'+id);await input.focus();
     const during=await input.evaluate((el,value)=>{
       el.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true,data:''}));
@@ -58,7 +58,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
     await input.press('Enter');assert.equal(await input.evaluate(el=>document.activeElement===el),false);
     assert.equal(await frame.evaluate(id=>state.players[0][id==='nameInput'?'name':'num'],id),value);
   }
-  assert.equal(await frame.evaluate(()=>captureSnap().players[0].name),'이슬기');
+  assert.equal(await frame.evaluate(()=>captureSnap().players[0].name),'홍길동');
   // The extra sheet-layout fixture has the shell's CSS marker, not its injected toolbar.
   const undo=()=>spec.shellDock?frame.evaluate(()=>undoLast()):press(frame.locator('#undoBtn'));
   const colors=()=>frame.evaluate(()=>state.players.map(p=>p.color||null));

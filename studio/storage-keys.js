@@ -32,6 +32,7 @@
     ['cs_scout_targets_v1','team','idb','data','sync.js'],
     ['cs_squad_v1','team','idb','data','scout.html',{mirror:1}],
     ['cs_team_attrs_v1','team','ls','data','idp.html'],
+    ['cs_team_photos_v1','device','idb','data','team-photos.js'],   /* 저장 팀 선수 → 사진(PSImg 참조). 기기마다 따로 — 동기화하지 않는다 */
     ['cs_team_matches_v1','team','idb','data','sync.js',{mirror:1}],
     ['cs_team_notice_v1','team','ls','data','idp.html'],
     ['cs_team_v1','team','ls','data','process.html'],
@@ -216,6 +217,7 @@
     ['ps_perms_missing','device','ls','session','sync.js'],
     ['ps_personal_review_v1','device','ls','pref','sync.js'],
     ['ps_phone_board_hint_v1','device','ls','seen','board.html'],
+    ['ps_pitch_photo:','device','idb','data','board-pitch-photo.js',{prefix:1}],   /* 3.100 — 운동장 사진(판에는 @photo: 참조만 · 서버로 가지 않는다) */
     ['ps_private_board_draft_v1:','device','ls','draft','storage.js',{prefix:1}],
     ['ps_private_board_rev_v1','device','ls','cache','app.html'],
     ['ps_push_log_v1','device','ls','diag','sync.js'],

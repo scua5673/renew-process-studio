@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <script src="storage.js"></script>
 <script src="team-library.js"></script>
+<script src="team-load.js"></script>
+<script src="team-photos.js"></script>
 <script src="vault-examples.js" defer></script>   <!-- 3.001 — 빈 보관함 첫 화면의 예시(종류마다 하나). 못 받아도 첫 화면은 옛 모양 그대로 -->
 
 
@@ -4226,7 +4228,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script>
+<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
 <script src="board-actions.js"></script><script src="board-vault-lazy.js"></script>
@@ -7982,6 +7984,7 @@ try{ document.addEventListener("click",function(e){ var b=e.target&&e.target.clo
   var a=grassToneKey().split("|"); if(b.hasAttribute("data-gb"))a[0]=b.getAttribute("data-gb"); else a[1]=b.getAttribute("data-gp"); window.__setGrassTone(a[0]+"|"+a[1]); },true); }catch(_){}   /* board-pitch-presets 시험 하네스가 이 구간을 가짜 문서로 돌린다 */
 function renderPitchImg(){try{
   if(!world||!svg)return;
+  if(window.PSPitchPhoto&&PSPitchPhoto.render(state.pitchImg,svg,world,PR(),M,renderPitchImg))return;
   var ex=svg.querySelector('#ps-pitchimg');
   var tg=world.querySelector('#ps-pitchtile');
   var _pu=state.pitchImg;
@@ -12142,14 +12145,16 @@ async function openAnalysisTeamLibrary(){
   try{teams=await teamStore.read(teamOwner);}catch(_){toast('저장 명단을 확인하지 못했습니다. 기존 자료는 유지됩니다. 잠시 후 다시 열어 주세요.');return;}
   if(window.__vaultReadOnly||communityBoardReadOnly())return;
   var mask=document.createElement('div');mask.style.cssText='position:fixed;inset:0;z-index:100000;background:#0007;display:grid;place-items:center;padding:16px';
-  mask.innerHTML='<section role="dialog" aria-label="저장 팀 불러오기" style="background:var(--panel,#fff);color:var(--txt,#172235);border-radius:14px;padding:20px;width:440px;max-width:100%;max-height:85vh;overflow:auto"><h3>저장 팀 불러오기</h3><p>보관함 › 팀 등록에 저장한 명단입니다. 불러올 선수를 선택하세요. 11명이 넘으면 나머지는 운동장 아래 대기 줄에 놓입니다.</p><select id="alTeam" aria-label="저장 팀" style="width:100%;padding:8px"></select><select id="alSide" aria-label="배치할 팀" style="width:100%;padding:8px;margin:8px 0"><option value="blue">팀 1</option><option value="red">팀 2</option></select><img id="alEmblem" alt="팀 엠블럼" width="56" height="56" style="object-fit:contain" hidden><div id="alPlayers"></div><p id="alError" role="status"></p><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="alManage">팀·선수 관리</button><button class="btn" id="alCancel">취소</button><button class="btn primary" id="alLoad">불러오기</button></div></section>';
+  mask.innerHTML='<section role="dialog" aria-label="저장 팀 불러오기" style="background:var(--panel,#fff);color:var(--txt,#172235);border-radius:14px;padding:20px;width:440px;max-width:100%;max-height:85vh;overflow:auto"><h3>저장 팀 불러오기</h3><p>보관함 › 팀 등록에 저장한 명단입니다. 불러올 선수를 선택하세요. 판에 놓인 선수는 자리 그대로 포지션이 맞는 선수로 바뀌고, 자리보다 많은 선수는 운동장 아래 대기 줄에 놓입니다.</p><select id="alTeam" aria-label="저장 팀" style="width:100%;padding:8px"></select><select id="alSide" aria-label="배치할 팀" style="width:100%;padding:8px;margin:8px 0"><option value="blue">팀 1</option><option value="red">팀 2</option></select><img id="alEmblem" alt="팀 엠블럼" width="56" height="56" style="object-fit:contain" hidden><div id="alPlayers"></div><p id="alError" role="status"></p><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="alManage">팀·선수 관리</button><button class="btn" id="alCancel">취소</button><button class="btn primary" id="alLoad">불러오기</button></div></section>';
   document.body.appendChild(mask);var select=mask.querySelector('#alTeam');teams.forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.name;select.appendChild(o);});
   function roster(){var t=teams.find(function(t){return t.id===select.value;}),box=mask.querySelector('#alPlayers');box.innerHTML='';var emblem=mask.querySelector('#alEmblem');emblem.hidden=!(t&&typeof t.emblem==='string'&&t.emblem.length<250000&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(t.emblem));if(!emblem.hidden)emblem.src=t.emblem;(t&&t.players||[]).forEach(function(p,i){var label=document.createElement('label');label.style.cssText='display:flex;gap:8px;padding:7px;border-bottom:1px solid #ddd';var c=document.createElement('input');c.type='checkbox';c.value=String(i);c.checked=true;label.appendChild(c);label.appendChild(document.createTextNode([p.no,p.name,p.pos].filter(Boolean).join(' · ')));box.appendChild(label);});mask.querySelector('#alError').textContent=t?'선택한 쪽의 기존 선수만 바뀝니다.':'저장된 팀이 없습니다. 팀·선수 관리에서 등록하세요.';}
   select.onchange=roster;roster();mask.querySelector('#alCancel').onclick=function(){mask.remove();};mask.querySelector('#alManage').onclick=function(){mask.remove();parent.postMessage({source:'board',type:'goApp',app:'analysis'},location.origin);};
-  mask.querySelector('#alLoad').onclick=function(){if(teamOwner===null||teamStore.owner()!==teamOwner){mask.querySelector('#alError').textContent='계정 또는 팀이 바뀌었습니다. 명단을 다시 열어 주세요.';return;}var t=teams.find(function(t){return t.id===select.value;}),side=mask.querySelector('#alSide').value,list=Array.from(mask.querySelectorAll('#alPlayers input:checked')).map(function(c){return t.players[Number(c.value)];});if(!list.length){mask.querySelector('#alError').textContent='선수를 1명 이상 선택하세요.';return;}   /* 2.903 — 11명 제한 해제(제보 «11명만 불러오게 되어있음») */if(state.players.some(function(p){return p.team===side;})&&!confirm('선택한 쪽의 기존 선수를 저장 명단으로 바꿀까요?'))return;
-    var slots=(FORM['433']||[]).slice(0,11),free=slots.slice(),assigned=[];
-    list.forEach(function(p){var at=free.findIndex(function(slot){return posCode(slot[3])===posCode(p.pos);});assigned.push({p:p,slot:at>=0?free.splice(at,1)[0]:null});});var bench=0;assigned.forEach(function(x){if(!x.slot)x.slot=free.shift()||null;if(!x.slot){var r=Math.floor(bench/16);x.slot=[0.955-(bench%16)*0.058,0.965-r*0.05];bench++;}});   /* 2.903 — 12번째부터는 아래 대기 줄(16명마다 한 줄 위) */
-    pushUndo();if(t.kit){var mapping={main:'teamColors',accent:'teamColor2',stroke:'teamStrokeC',text:'teamTxtC',gkMain:'gkColors',gkAccent:'gkColor2',gkStroke:'gkStrokeC',gkText:'gkTxtC'};Object.keys(mapping).forEach(function(k){if(/^#[0-9a-f]{6}$/i.test(t.kit[k]||'')){state[mapping[k]]=state[mapping[k]]||{};state[mapping[k]][side]=t.kit[k];}});[['pattern','teamPattern'],['gkPattern','gkPattern']].forEach(function(pair){if(KIT_PATS.indexOf(t.kit[pair[0]])>=0){state[pair[1]]=state[pair[1]]||{};state[pair[1]][side]=t.kit[pair[0]];}});}state.players=state.players.filter(function(p){return p.team!==side;});assigned.forEach(function(x){var nx=x.slot[0],ny=x.slot[1];if(side==='red'){nx=1-nx;ny=1-ny;}var at=n2u(nx,ny);state.players.push({id:uid++,team:side,num:x.p.no||'',name:x.p.name||'',pos:x.p.pos||'',x:at.x,y:at.y});});sel=null;multiSel=[];renderTokens();renderDrawings();try{if(window.boardSaveLive)window.boardSaveLive();}catch(_){}mask.remove();toast(t.name+' · '+list.length+'명 불러옴'+(bench?(' · 대기 '+bench+'명'):''));
+  mask.querySelector('#alLoad').onclick=async function(){if(teamOwner===null||teamStore.owner()!==teamOwner){mask.querySelector('#alError').textContent='계정 또는 팀이 바뀌었습니다. 명단을 다시 열어 주세요.';return;}var t=teams.find(function(t){return t.id===select.value;}),side=mask.querySelector('#alSide').value,list=Array.from(mask.querySelectorAll('#alPlayers input:checked')).map(function(c){return t.players[Number(c.value)];});if(!list.length){mask.querySelector('#alError').textContent='선수를 1명 이상 선택하세요.';return;}   /* 2.903 — 11명 제한 해제(제보 «11명만 불러오게 되어있음») */
+    if(this.disabled)return;this.disabled=true;var ims=window.PSTeamPhotos?await PSTeamPhotos.forLoad(window,t.id):{},ph=function(q){return q&&ims[q.id]||'';};if(!mask.isConnected)return;   /* 4116fc54 — 이 기기에만 있는 선수 사진 */
+    /* 제보 5400cd9e — 그 쪽 선수가 판에 있으면 위치·id 그대로, 포지션이 맞는 토큰에 이름·번호만(PSTeamLoad). 없을 때만 보드 포메이션(없으면 4-3-3) 자리에 새로 */
+    var cur=state.players.filter(function(p){return p.team===side&&!p.coach;}),fe=document.getElementById(side==='red'?'formAway':'formHome'),flip=cur.length?_sqTokFlip(cur):side==='red',pl=PSTeamLoad.plan(cur.length?_sqTokSlots(cur,flip):(FORM[fe&&fe.value]||FORM['433']),list,{keep:cur.length>0,code:posCode,base:posBase,group:posGroup}),fresh=[];
+    pushUndo();PSTeamLoad.kit(state,t.kit,side,KIT_PATS);cur.forEach(function(p,i){var q=list[pl.pick[i]];PSTeamLoad.dress(p,q,ph(q));});pl.add.forEach(function(a){var at=n2u(flip?1-a.x:a.x,flip?1-a.y:a.y),p=PSTeamLoad.dress({id:uid++,team:side,num:a.p.no||'',pos:a.p.pos||'',x:at.x,y:at.y},a.p,ph(a.p));state.players.push(p);fresh.push(p);});PSTeamLoad.frames(anim.frames,animActive,cur,fresh);
+    sel=null;multiSel=[];renderTokens();renderDrawings();autoSaveAnimFrame();try{if(window.boardSaveLive)window.boardSaveLive();}catch(_){}mask.remove();toast(t.name+' · '+list.length+'명 불러옴'+(cur.length?' · 판의 자리 그대로':'')+(pl.bench?(' · 대기 '+pl.bench+'명'):''));
   };
 }
 function loadTeamToBoard(startersOnly){try{var ls=localStorage.getItem("cs_squad_v1");if(ls){var o=JSON.parse(ls);if(o&&Array.isArray(o.players))squad=o;}}catch(_){}applySquadToBoard({startersOnly:!!startersOnly});}
@@ -15138,11 +15143,11 @@ function init(){
     [host,surface].forEach(h=>{h.style.display='block';h.style.left=(r.left-sr.left+stage.scrollLeft-stage.clientLeft)+'px';h.style.top=(r.top-sr.top+stage.scrollTop-stage.clientTop)+'px';h.style.width=r.width+'px';h.style.height=r.height+'px';});
     const signature=[r.width,r.height,r.left-sr.left,r.top-sr.top,vb.x,vb.y,vb.width,vb.height,state.orientation,state.spFlip,state.pitchSpec,state.lines,state.pitchN,svg.querySelector('#ps-multipitch')?.getAttribute('data-layout'),pitchViewKey(),state.halfSide,state.pitchImg,document.documentElement.dataset.pitch,!!window.__ballImgOK].join('|');
     if(host.__projectionSignature===signature)return;host.__projectionSignature=signature;
-    const turf=surface.firstElementChild,key=String(state.pitchImg||'').replace(/^@/,'');
+    const turf=surface.firstElementChild,key=String(state.pitchImg||'').replace(/^@/,''),pu=key===state.pitchImg?key:'';
     const texture=String(state.pitchImg||'').startsWith('@')&&window.PITCH_IMG&&window.PITCH_IMG[key];
     turf.style.backgroundColor=getCss('--pitchbg')||getCss('--grass-b')||'#252839';
-    turf.style.backgroundImage=texture?'url("'+texture+'")':(state.pitchImg?'url("'+state.pitchImg+'")':'none');
-    turf.style.backgroundSize=texture?(M2U(10)*scale)+'px '+(M2U(10)*scale)+'px':(state.pitchImg?'cover':'auto');
+    turf.style.backgroundImage=texture?'url("'+texture+'")':(pu?'url("'+pu+'")':'none');
+    turf.style.backgroundSize=texture?(M2U(10)*scale)+'px '+(M2U(10)*scale)+'px':(pu?'cover':'auto');
     try{ tiltStadium(surface,r.width,r.height); }catch(_){}   /* 3.009 — 경기장(잔디·광고판·관중석) */
     host.replaceChildren();
     if(state.lines===false||pitchSpec().blank)return;   /* 2.989 — 그리드 판에는 골대도 없다 */
@@ -17915,7 +17920,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   +"#drillFiles.vcards .vx-items.vx-grid .vcard .vc-act.edit:hover,#drillFiles.vlarge .vx-items.vx-grid .vcard .vc-act.edit:hover{background:#DDE3EE!important;color:var(--blue,var(--ps-navy,#14213D))!important}"
   +"#drillFiles.vcards .vx-items.vx-grid .vcard .vc-more,#drillFiles.vlarge .vx-items.vx-grid .vcard .vc-more{margin-left:2px!important;margin-right:0!important;order:9}"
   /* 1.995 — ⋯ 의 margin-left:auto 가 알약을 왼쪽으로 밀던 것 → 전부 오른쪽 끝, 글자는 알약 정중앙(line-height 1·padding 0) */
-  /* 1.996 — 공유 상태(☁ 팀 공유에서 공유 중)와 만든 사람(이슬기)을 같은 줄에(사용자) */
+  /* 1.996 — 공유 상태(☁ 팀 공유에서 공유 중)와 만든 사람(이름)을 같은 줄에(사용자) */
   +"#drillFiles.vcards .vx-items.vx-grid .vcard .vc-owner,#drillFiles.vlarge .vx-items.vx-grid .vcard .vc-owner{display:inline-flex!important;align-items:center;margin:3px 12px 0 0!important;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}"
   +"#drillFiles.vcards .vx-items.vx-grid .vcard .vc-owner+.vc-owner,#drillFiles.vlarge .vx-items.vx-grid .vcard .vc-owner+.vc-owner{margin-right:0!important}"
   +"#drillFiles.vcards .vx-items.vx-grid .vcard .vc-acts,#drillFiles.vlarge .vx-items.vx-grid .vcard .vc-acts{justify-content:flex-end!important;margin-left:auto!important}"
@@ -18295,7 +18300,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
   }
   /* 2.975 — «저장»(나가지 않고) 뒤에 늦게 도는 기록·키 떼기가 «변경 있음»을 다시 켜, 나갈 때 «버리고 나갈까요?»가 뜨던 것.
      저장한 그 모습(판·장면)을 지문으로 들고 있다가, 정말 달라졌을 때만 «변경 있음». 처음 달라지면 지문은 버린다(그 뒤는 예전처럼). */
-  window.__vaultEditSig=function(){ try{ var fr=(anim&&anim.frames||[]).map(function(f,i){ if(i===animActive)return "A";   /* 지금 장면은 판(captureSnap)이 말한다 — 장면 확정 시점에 따라 달라지지 않게 */ var q=(f&&f.snap)||{}; return JSON.stringify([q.players,q.equipment,q.drawings,q.ball,f&&f.dur,f&&f.hold,f&&f.cap]); }).join("|"); return JSON.stringify(captureSnap())+"#"+fr+"#"+animActive+(window.__bkSig?("#"+window.__bkSig()):""); }catch(_){ return null; } };   /* 2.985 — 패턴북 글자도 지문에 */
+  window.__vaultEditSig=function(){ try{ var fr=(anim&&anim.frames||[]).map(function(f,i){ if(i===animActive)return "A"+(f&&f.moveSpeed||"");   /* 지금 장면은 판(captureSnap)이 말한다 — 장면 확정 시점에 따라 달라지지 않게 */ var q=(f&&f.snap)||{}; return JSON.stringify([q.players,q.equipment,q.drawings,q.ball,f&&f.dur,f&&f.hold,f&&f.cap,f&&f.moveSpeed]); }).join("|"); return JSON.stringify(captureSnap())+"#"+fr+"#"+animActive+"#"+animHold+(window.__bkSig?("#"+window.__bkSig()):""); }catch(_){ return null; } };   /* 2.985 — 패턴북 글자도 지문에 */
   window.__vaultAutoSaveSchedule=function(){
     if(window.__vaultHydrating)return;
     if(!window.__vaultEdit||window.__vaultReadOnly||!window.__curVaultId||window.__vaultPending)return;
@@ -22247,7 +22252,7 @@ try{ window.psBoardDevice=psBoardDevice; }catch(_){}
       var rowOf=function(x){ if(typeof x!=="string")return x; var e=document.getElementById(x); return e?(e.closest(".menurow")||e):null; };
       var editorHint=make("div","bsEditorHint","bs-hint","훈련 편집기는 평면으로 열려요 · 나가면 원래대로"),snapHint=make("div","bsSnapHint","bs-hint","운동장 › 훈련 격자 칸에 붙어요"),blankHint=make("div","bsBlankHint","bs-hint","그리드 크기 · 모양은 오른쪽 «바탕»에서 고쳐요");
       var PLAN=[["board","내 스타일",[presetRow]],
-                ["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","grassSeg"]],
+                ["pitch","바탕",[blankHint,"pitchSpecSeg","pitchSeg","grassToneBSeg","grassTonePSeg","trainGridSeg","pitchPhotoRow","pitchPhotoHint","grassSeg"]],
                 ["pitch","선·구역",["lineSeg","zonePreset"]],
                 ["pitch","범위·방향",["cmdPitchViewSeg","cmdPitchSideSeg","cmdOrientSeg","cmdPitchNSeg"]],
                 ["look","칩",["shapeSeg","chip3dSeg","sizeGroup","realScaleSeg","labelSeg","tagSizeSeg"]],
