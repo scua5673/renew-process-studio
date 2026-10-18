@@ -42,7 +42,7 @@ try{
      players:[P('p1','골키퍼 하나','1','gk','A팀'),P('p2','센터백 둘','4','cb','A팀','injury'),P('p3','센터백 셋','5','cb','B팀'),P('p4','미드 넷','8','cm','B팀'),P('p5','공격 다섯','9','st','A팀')],
      meta:{tbCards:['gk','cb','cm','st'],tbXY:{gk:{x:14,y:50},cb:{x:29,y:50},cm:{x:59,y:50},st:{x:89,y:50}},grpBase:['A팀','B팀']}};
     const m=matchBlank();m.id='qa-match';m.opponent='가상 상대';m.date='2026-09-16';m.squad={start:['p4'],res:['p5']};
-    data=roster;store.set('scout_tool_v1',roster);store.set('cs_team_matches_v1',{version:1,matches:[m]});await store.ready();
+    data=roster;scoutStore.set('scout_tool_v1',roster);scoutStore.set('cs_team_matches_v1',{version:1,matches:[m]});await scoutStore.ready();
     await scPrepare();load();data=roster;matchState=null;matchLoad();setView('match');matchOpen('qa-match');matchTab='opp';matchStage='opp';renderMatch();
    });
    await f.locator('#obTray .mb2-chip').first().waitFor({state:'attached'});await page.waitForTimeout(300);

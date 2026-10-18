@@ -37,8 +37,8 @@ test('position popup deletion persists the exact tombstone and SQ deletion, with
   assert.equal(ui.notices.length,0,'no premature saved-success notice');
 });
 test('failed deletion-record write leaves the visible and saved roster intact and starts no SQ request',()=>{
-  const h=liveFixture([player('keep'),player('remove')]),before=h.local.get(MAIN),ui=mount(h),set=h.c.store.set;
-  h.c.store.set=(k,v)=>k===PD?false:set(k,v);ui.click('remove');ui.confirm();
+  const h=liveFixture([player('keep'),player('remove')]),before=h.local.get(MAIN),ui=mount(h),set=h.c.scoutStore.set;
+  h.c.scoutStore.set=(k,v)=>k===PD?false:set(k,v);ui.click('remove');ui.confirm();
   assert.deepEqual(Array.from(h.c.data.players,p=>p.id),['keep','remove']);assert.equal(h.local.get(MAIN),before);
   assert.equal(h.c._itemsActiveJobs.length,0);assert.equal(h.c.rosterOutbox().pending(),false);
 });

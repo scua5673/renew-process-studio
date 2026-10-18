@@ -73,7 +73,7 @@ test('screens that only read the schedule use the shared copy',()=>{
 function scoutRefresh(win){
   const calls=[],intervals=[],listeners={};
   const c=vm.createContext({matchBoardGesture:null,matchSaveTimer:0,_mprT:0,MATCH_KEY:'cs_team_matches_v1',
-    store:{hasPending:()=>false,hasFailed:()=>false},matchState:{},matchCurrent:'',matchPendingOpen:null,
+    scoutStore:{hasPending:()=>false,hasFailed:()=>false},matchState:{},matchCurrent:'',matchPendingOpen:null,
     matchLoad(){calls.push('load');return {matches:[]};},matchDocPending:()=>false,matchRefreshLater(){calls.push('later');},
     renderMatch(){calls.push('match');},renderTeamHome(){calls.push('home');},renderAvail(){calls.push('avail');},
     setInterval(fn){intervals.push(fn);return intervals.length;},clearInterval(){intervals.length=0;},setTimeout(fn){fn();},
@@ -109,7 +109,7 @@ function saver(over){
   const writes=[],hist=[];
   const local=new Map();
   const c=vm.createContext(Object.assign({JSON,Date,Math,Object,Promise,
-    weeksMap:{0:[{d:'월',trainings:[{slot:'S1',_open:true,note:'x'}]}]},__schedBase:null,__schedGrpWeeks:{},myTemplates:[],ddayLabel:'',
+    weeksMap:{0:[{d:'월',trainings:[{slot:'S1',_open:true,note:'x'}]}]},__schedBase:null,__schedGrpWeeks:{},myTemplates:[],ddayLabel:'',seasonPlan:{},
     __ANCHOR:thisMonday(),__schedRev:2,__schedSavedRaw:'',__schedWritePending:false,__schedWriteStartGen:0,__schedLocalGen:0,__schedWriteSeq:0,
     __histRawNext:null,STORE_KEY:'process_coach_v1',
     document:{getElementById:()=>null},

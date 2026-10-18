@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const source=fs.readFileSync(path.join(__dirname,'../studio/sync.js'),'utf8');
 function section(a,b){const i=source.indexOf(a),j=source.indexOf(b,i+a.length);assert.ok(i>=0&&j>i,a);return source.slice(i,j);}
 const code=[section('function rpcContext(','function rpc(name,'),section('function accountActionCurrent(','function accountActionWatch('),section("var DNKEY='ps_display_name';",'/* 1.583'),section('function setDisplayName(v){','/* 1.533'),
-  section('function uiSetName(){','/* 관리 페이지'),section('var _dnHydratePromise=','function uiJoin(){')].join('\n');
+  section('function uiSetName(){','/* 관리 페이지'),section('var _dnHydratePromise=','function uiJoin(')].join('\n');
 function deferred(){let resolve;const promise=new Promise(r=>resolve=r);return{promise,resolve};}
 function harness(){
   const state={uid:'synthetic-a',wid:'synthetic-team',ready:true,team:true,now:100000,rows:[],fail:false,storageFail:false};

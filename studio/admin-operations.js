@@ -27,7 +27,7 @@
   function create(opts){
     var host=document.getElementById('viewHome'),gen=0,state={reports:null,followups:null},section;
     if(!host)return {load:function(){return Promise.resolve();}};
-    section=document.createElement('section');section.className='admin-ops';section.setAttribute('aria-label','운영 확인');host.insertBefore(section,host.firstChild);
+    section=document.createElement('section');section.className='admin-ops';section.setAttribute('aria-label','운영 확인');var today=host.querySelector('.admin-today');host.insertBefore(section,today?today.nextSibling:host.firstChild);   /* 3.090 — 제목은 «오늘 확인할 일» 한 줄(admin-today.js)이 맡는다 */
     function userName(uid){var u=(opts.users()||[]).find(function(x){return x.user_id===uid;});return u?(u.name||u.email||'사용자'):'사용자 상세';}
     function workspaceName(wid){var w=(opts.workspaces()||[]).find(function(x){return x.id===wid;});return w?(w.name||'이름 없는 공간'):'공간 확인 필요';}
     function button(uid,label){return UUID.test(uid||'')?'<button type="button" class="admin-op-link" data-op-user="'+esc(uid)+'">'+esc(label||userName(uid))+' ↗</button>':esc(label||'사용자 미확인');}
@@ -38,14 +38,13 @@
       var stale=reports?reports.filter(function(r){return classifyReport(r,now).kind==='stale';}):[];
       var unknown=reports?reports.filter(function(r){return classifyReport(r,now).kind==='unknown';}):[];
       var todo=followups?dueFollowups(followups,now):[];
-      section.innerHTML='<div class="admin-op-heading"><div><span>OPERATIONS</span><h1>오늘 확인할 일</h1><p>사용자 상태를 확인하고, 다음 조치까지 이어갑니다.</p></div><button type="button" class="hbtn" data-op-reload>운영 상태 새로고침</button></div>'
-        +'<div class="admin-op-grid"><article class="admin-op-panel"><div class="admin-op-title"><h2>저장 상태 확인</h2><span>최근 기기 보고</span></div>'
+      section.innerHTML='<div class="admin-op-grid"><article class="admin-op-panel"><div class="admin-op-title"><h2>저장 상태 확인</h2><span>최근 기기 보고</span></div>'
         +(!reports?unavailable(state.reports,'저장 상태'):!reports.length?'<div class="admin-op-empty"><b>아직 기기 보고가 없습니다</b><p>지원 버전으로 앱을 사용하면 수집됩니다. 모든 기기가 정상이라는 뜻은 아닙니다.</p></div>':'<div class="admin-op-count"><b>'+flagged.length+'</b><span>확인할 보고 <small>조회된 '+reports.length+'개 보고 중</small></span></div>'
           +flagged.slice(0,5).map(function(r){return '<div class="admin-op-row"><div>'+button(r.user_id)+'<small>'+esc(workspaceName(r.workspace_id))+' · '+esc(r.device_class||'기기 미확인')+'</small></div><div><span class="admin-op-state">'+esc(reportIssue(r,now))+'</span><small>'+time(r.received_at)+'</small></div></div>';}).join('')
           +(stale.length?'<p class="admin-op-note">'+stale.length+'개는 10분 넘게 갱신되지 않았거나 시각이 맞지 않아 현재 상태를 판단하지 않습니다.</p>':'')
           +(unknown.length?'<p class="admin-op-note">'+unknown.length+'개는 일부 상태가 미확인입니다.</p>':'')
           +'<p class="admin-op-note">보고 수는 사용자 수나 유실 건수가 아닙니다. 사용자 상세에서 대기·보류·마지막 확인 시각을 구분합니다.</p>')+'</article>'
-        +'<article class="admin-op-panel"><div class="admin-op-title"><h2>후속 확인</h2><span>관리자 공용 기록</span></div>'
+        +'<article class="admin-op-panel" id="adminOpFollowups"><div class="admin-op-title"><h2>후속 확인</h2><span>관리자 공용 기록</span></div>'
         +(!followups?unavailable(state.followups,'후속 관리'):!todo.length?'<div class="admin-op-empty"><b>열린 후속 기록이 없습니다</b><p>사용자 상세에서 문의·사용 확인·유료 제안을 기록하고 담당자와 다음 확인일을 정하세요.</p></div>':todo.slice(0,5).map(function(r){
           var labels={support:'문의',usage:'사용 확인',paid:'유료 검증'};var overdue=r.next_check_at&&Date.parse(r.next_check_at)<now;
           return '<div class="admin-op-row"><div><span class="admin-op-kind">'+esc(labels[r.kind]||'후속 확인')+'</span> '+button(r.subject_user_id)+'<p>'+esc(String(r.note||'').slice(0,110))+'</p><small>'+esc(r.assignee_label||'담당자 미지정')+' · '+esc(r.status==='deployed'?'배포 후 확인 대기':r.status==='in_progress'?'진행 중':'확인 예정')+'</small></div><span class="admin-op-date '+(overdue?'overdue':'')+'">'+(r.next_check_at?time(r.next_check_at):'확인일 미정')+'</span></div>';
@@ -58,8 +57,8 @@
     }
     function load(){var token=++gen;state={reports:null,followups:null};render();
       return Promise.all(['reports','followups'].map(function(k){return opts.rpc(k==='reports'?'ps_admin_sync_reports_list':'ps_admin_followups_list',{p_user_id:null,p_workspace_id:null}).then(function(rows){
-        if(token!==gen)return;state[k]=Array.isArray(rows)?rows:{error:true};render();
-      }).catch(function(){if(token!==gen)return;state[k]={error:true};render();});}));
+        if(token!==gen)return;state[k]=Array.isArray(rows)?rows:{error:true};render();if(k==='followups'&&opts.onFollowups)opts.onFollowups(Array.isArray(rows)?rows:null);
+      }).catch(function(){if(token!==gen)return;state[k]={error:true};render();if(k==='followups'&&opts.onFollowups)opts.onFollowups(null);});}));
     }
     render();return {load:load,render:render};
   }

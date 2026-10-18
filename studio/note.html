@@ -7,10 +7,10 @@
 <script src="storage.js"></script>
 
 <title>개인 노트</title>
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.054">
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
-:focus-visible{outline:2px solid #3a6df0 !important;outline-offset:2px;border-radius:6px;}
+:focus-visible{outline:2px solid var(--ps-navy,#14213D) !important;outline-offset:2px;border-radius:6px;}
 
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -18,7 +18,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
   /* UI 규칙: 레포 UI-가이드.md — 색은 의미로만(보라=목표·초록=완료·빨강=경고·파랑=코치), 이모지 금지(라인 SVG), 무게 600/800 */
 /* --bar2 는 노트 자체는 안 쓰지만 storage.js 의 저장 위험 배너가 바탕색으로 쓴다.
    여기 없으면 폴백(#F1F2F4)으로 굳어서 다크모드에서 배너만 밝은 회색으로 남는다(팀·IDP엔 원래 있다). */
-:root{--bg:#ECEDF0;--bar:#fff;--bar2:#F1F2F4;--line:#E3E6EA;--txt:#14161A;--dim:#646A73;--blue:#3a6df0;--blue-soft:#edf2fe}
+:root{--bg:#ECEDF0;--bar:#fff;--bar2:#F1F2F4;--line:#E3E6EA;--txt:#14161A;--dim:#646A73;--blue:#14213D;--blue-soft:#E9EDF5}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg);font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:var(--txt);line-height:1.5}
 body{display:flex;flex-direction:column}
 /* 독립 개인 도구 헤더 — 필기·메모는 팀 보관함과 공유 범위가 다르다. */
@@ -57,9 +57,9 @@ body.fmdark .nhead .nh-s{color:#78818D}
 .filemenu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:120;flex-direction:column;gap:4px;padding:6px;background:var(--bar);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px var(--sh16,rgba(16,24,40,.16))}
 .filewrap.open .filemenu{display:flex}
 .filemenu .btn{border:0;text-align:left;padding:8px 12px;white-space:nowrap}
-.filemenu .btn:hover{background:rgba(58,109,240,.10)}
+.filemenu .btn:hover{background:color-mix(in srgb,var(--ps-navy,#14213D) 10%,transparent)}
 body.fmdark .filemenu{box-shadow:0 12px 30px rgba(0,0,0,.5)}
-body.fmdark .filemenu .btn:hover{background:rgba(111,148,245,.16)!important}
+body.fmdark .filemenu .btn:hover{background:rgba(127,152,208,.16)!important}
 .sp{flex:1 1 auto}
 .szwrap{display:flex;align-items:center;gap:5px}
 .szwrap input{width:74px}
@@ -77,7 +77,7 @@ body.fmdark .filemenu .btn:hover{background:rgba(111,148,245,.16)!important}
 .tplp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .tplp-cell{display:flex;flex-direction:column;align-items:center;gap:4px;border:1px solid var(--line);border-radius:9px;background:var(--bar2);padding:6px 4px;cursor:pointer;font:inherit}
 .tplp-cell:hover{border-color:#c3c9d2}
-.tplp-cell.on{border-color:var(--blue,#3a6df0);box-shadow:0 0 0 2px color-mix(in srgb,var(--blue,#3a6df0) 20%,transparent)}
+.tplp-cell.on{border-color:var(--blue,var(--ps-navy,#14213D));box-shadow:0 0 0 2px color-mix(in srgb,var(--blue,var(--ps-navy,#14213D)) 20%,transparent)}
 .tplp-ic{width:100%;aspect-ratio:4/3;border-radius:5px;overflow:hidden;background:var(--surface);display:block}
 .tplp-ic svg{width:100%;height:100%;display:block}
 .tplp-lb{font-size:11px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
@@ -167,7 +167,7 @@ body.fmdark .bitem,body.fmdark .pal button{background:#23272D}
 
 
 /*FMDARK*/
-body.fmdark{--bg:#121417!important;--bar:#1B1E23!important;--bar2:#23272D!important;--line:#2E333A!important;--txt:#F2F3F5!important;--dim:#A9AFB8!important;--blue:#6F94F5!important;--blue-soft:rgba(111,148,245,.16)!important;background:#121417!important;color:#F2F3F5!important}
+body.fmdark{--bg:#121417!important;--bar:#1B1E23!important;--bar2:#23272D!important;--line:#2E333A!important;--txt:#F2F3F5!important;--dim:#A9AFB8!important;--blue:#7F98D0!important;--blue-soft:rgba(127,152,208,.16)!important;background:#121417!important;color:#F2F3F5!important}
 body.fmdark .btn,body.fmdark .icb{background:#1B1E23!important;border-color:#2E333A!important;color:#F2F3F5!important}
 body.fmdark .icb.on{background:var(--blue)!important;border-color:var(--blue)!important;color:#fff!important}
 body.fmdark .bar input[type=text]{background:#141A22!important;color:#F2F3F5!important;border-color:#2E333A!important}
@@ -233,7 +233,7 @@ body.fmdark .mi-x:hover{background:rgba(255,255,255,.08)}
 #memoText{white-space:pre-wrap;word-break:break-word;overflow-y:auto;flex:1 1 auto;width:100%;border:0;outline:0;resize:none;background:transparent;color:var(--txt);font-family:inherit;font-size:var(--fs-input);line-height:1.7;padding:22px 26px;box-sizing:border-box}
 /* 2.396 글씨 색 — 색은 **인라인이 아니라 class 로** 담는다. 인라인 색이면 어두운 화면에서 안 보인다. */
 /* ⚠ 색값을 #memoText 에만 두면 **색칩(메모 바)까지 내려가지 않는다** — 칩이 빈 동그라미로 보였다. 위에서 준다. */
-:root{--mc-n:#1A1D21;--mc-r:#D93A3F;--mc-o:#C2690A;--mc-g:#12854E;--mc-b:#2158CC;--mc-p:#6D33D6}
+:root{--mc-n:#1A1D21;--mc-r:#D93A3F;--mc-o:#C2690A;--mc-g:#12854E;--mc-b:#2c54c4;--mc-p:#6D33D6}
 body.fmdark{--mc-n:#F2F3F5;--mc-r:#FF8A8E;--mc-o:#F5B04A;--mc-g:#5BD69B;--mc-b:#7FB2FF;--mc-p:#C0A2FF}
 #memoText .mc-n{color:var(--mc-n)}#memoText .mc-r{color:var(--mc-r)}#memoText .mc-o{color:var(--mc-o)}
 #memoText .mc-g{color:var(--mc-g)}#memoText .mc-b{color:var(--mc-b)}#memoText .mc-p{color:var(--mc-p)}
@@ -251,7 +251,7 @@ body.fmdark #memoBar .memo-colors button{border-color:rgba(255,255,255,.22);box-
 <script>document.documentElement.classList.add('ps-page-note')</script>
 <link rel="stylesheet" href="design-v2.css">
 <style id="ps-dv2-align">/* 재설계 정합: 공통 의미 토큰 alias — 이 블록만 지우면 원복 */
-:root{--blue:var(--ps-color-action,#3a6df0);--blue-soft:var(--ps-color-action-soft,#edf2fe);--accent-blue:var(--ps-color-action,#3a6df0);}
+:root{--blue:var(--ps-color-action,#14213D);--blue-soft:var(--ps-color-action-soft,#E9EDF5);--accent-blue:var(--ps-color-action,#14213D);}
 @media (min-width:768px){ .btn.primary{box-shadow:var(--dv2-sh-btn-accent);} }
 </style>
 <style id="note-document-library-css">
@@ -286,7 +286,7 @@ body.fmdark #memoBar .memo-colors button{border-color:rgba(255,255,255,.22);box-
 .doc-cover .doc-paper svg{width:31px;height:31px;object-fit:contain}
 .doc-pages{position:absolute;right:8px;bottom:8px;padding:3px 7px;border-radius:999px;background:rgba(22,24,28,.78);color:#fff;font-size:10px;font-weight:800;line-height:1.35}
 .doc-source{position:absolute;left:8px;top:8px;max-width:calc(100% - 16px);padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.92);border:1px solid rgba(227,229,233,.9);color:#4d5562;font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.doc-source.vault{background:#edf2fe;border-color:#c9d7fb;color:#2c54c4}.doc-source.pdf{background:#eef8f4;border-color:#cce7dc;color:#176b4e}
+.doc-source.vault{background:#E9EDF5;border-color:#C3CCDD;color:var(--ps-navy-h,#1D2D50)}.doc-source.pdf{background:#eef8f4;border-color:#cce7dc;color:#176b4e}
 .doc-info{padding:11px 11px 8px}.doc-name{font-size:13px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.doc-sub{margin-top:3px;color:var(--dim);font-size:10px;font-weight:var(--fw-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .doc-actions{display:flex;gap:6px;padding:0 10px 10px}.doc-actions .btn{flex:1;min-width:0;height:32px;padding:0 8px;font-size:11px}.doc-actions .doc-del{flex:0 0 34px;padding:0;color:#9b4b48}
 .doc-empty{grid-column:1/-1;display:grid;place-items:center;min-height:280px;padding:30px;text-align:center;color:var(--dim);font-size:12px;line-height:1.65}
@@ -342,7 +342,7 @@ body.fmdark #libOvl .doclib-card{border-color:#2E333A}body.fmdark .doclib-head,b
     var bc=document.createElement('button');bc.type='button';bc.textContent='취소';
     bc.style.cssText='font:inherit;font-size:13px;padding:8px 14px;border-radius:10px;border:1px solid rgba(128,140,160,.35);background:transparent;color:inherit;cursor:pointer';
     var bo=document.createElement('button');bo.type='button';bo.textContent='확인';
-    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:#3A6DF0;color:#fff;cursor:pointer';
+    bo.style.cssText='font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:10px;border:0;background:var(--ps-navy,#14213D);color:#fff;cursor:pointer';
     row.appendChild(bc);row.appendChild(bo);bx.appendChild(row);ov.appendChild(bx);
     var done=false;
     function close(){ if(done)return; done=true; document.removeEventListener('keydown',onKey,true); try{ov.remove();}catch(_){} }
@@ -869,7 +869,7 @@ function ribbon(c,s){
 let tmp=document.createElement('canvas'),tctx=tmp.getContext('2d');
 /* 텍스트 줄바꿈 — s.wrap(논리 px)이 있으면 그 폭에서 자동 줄바꿈, 없으면 기존처럼 \n만 */
 let mcv=document.createElement('canvas'),mctx=mcv.getContext('2d');
-function textFont(s){return '600 '+(s.size*1.7)+"px -apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";}
+function textFont(s){return '600 '+(s.size*1.7)+"px Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";}
 function textLines(s){
   const raw=String(s.text||'').split('\n');
   if(!s.wrap)return raw;
@@ -1020,9 +1020,9 @@ function openTextEditor(l,existing){
   const ed=document.createElement('textarea');ed.id='txted';
   ed.value=existing?existing.text:'';
   ed._size=existing?existing.size:size;
-  ed.style.cssText='position:fixed;z-index:60;background:rgba(255,255,255,.96);border:1.5px dashed #3a6df0;border-radius:6px;'
+  ed.style.cssText='position:fixed;z-index:60;background:rgba(255,255,255,.96);border:1.5px dashed var(--ps-navy,#14213D);border-radius:6px;'
     +'padding:2px 6px;margin:0;outline:none;resize:both;overflow:auto;min-width:80px;min-height:40px;color:'+(existing?existing.color:color)
-    +";font:600 "+fs+"px -apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.34;";
+    +";font:600 "+fs+"px Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;line-height:1.34;";
   const px=l.r.left+(existing?existing.x:l.x)/LW*l.r.width, py=l.r.top+(existing?existing.y:l.y)/LH*l.r.height;
   ed.style.left=(px-8)+'px';ed.style.top=(py-4)+'px';
   ed._l={x:existing?existing.x:l.x,y:existing?existing.y:l.y};
@@ -1044,7 +1044,7 @@ function openTextEditor(l,existing){
   ed.addEventListener('input',auto);
   // ↘ 모서리 핸들 — 터치(펜·손가락)에서도 크기 조절
   const hd=document.createElement('div');hd.id='txtedHd';hd.textContent='↘';
-  hd.style.cssText='position:fixed;z-index:62;width:28px;height:28px;border-radius:50%;background:#3a6df0;color:#fff;'
+  hd.style.cssText='position:fixed;z-index:62;width:28px;height:28px;border-radius:50%;background:var(--ps-navy,#14213D);color:#fff;'
     +'display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;cursor:nwse-resize;'
     +'touch-action:none;box-shadow:0 2px 6px var(--sh3,rgba(16,24,40,.3));-webkit-user-select:none;user-select:none;';
   hd.addEventListener('pointerdown',ev=>{
@@ -2516,7 +2516,7 @@ try{[].forEach.call(document.querySelectorAll(".nh-seg [data-vs]"),function(b){b
 html.ps-page-note .nhead{height:52px!important;min-height:52px!important}
 html.ps-page-note .nhead .nh-seg{border:1px solid var(--line,#E3E6EA)!important}
 </style>
-<link rel="stylesheet" href="ui-grammar.css?v=2.981"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.054"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2597-notedock">/* 2.597 — 디자인 6단계 · 개인 노트 도구줄 두 묶음: 위 줄은 «문서»(모드·노트 선택·제목·쪽 이동), «펜»(볼펜·연필·형광펜·글·지우개·색·굵기·되돌리기)은 판 위 아래쪽 떠 있는 도크 — 작전판 도크와 같은 자리·같은 문법. 폰은 1.926 도크(mobile-polish) 그대로에 높이만 40/28. */
 @media (min-width:768px){
 html body.note-dock #nDock:not(#_):not(#__){position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:70;display:flex;flex-direction:row;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:6px 10px;background:var(--surface,#fff);border:1px solid var(--line,#E3E6EA);border-radius:12px;box-shadow:0 8px 24px var(--sh12,rgba(16,24,40,.12)),0 1px 2px var(--sh06,rgba(16,24,40,.06));box-sizing:border-box}

@@ -30,8 +30,8 @@ try{
   window.PSItems={active:()=>false,write(){},flush:async()=>true};
  },{uid,wid});
  page.on('pageerror',e=>errors.push(e.message));await page.goto(base+'/parent.html',{waitUntil:'domcontentloaded'});
- const frame=await (await page.locator('#fScout').elementHandle()).contentFrame();assert.ok(frame);await frame.waitForURL(base+'/studio/scout.html');await frame.waitForFunction(()=>window.PSStorage&&typeof store!=='undefined');
- await frame.evaluate(async()=>{await PSStorage.sharedReady();await psSaveSharedAsync(TKEY,localStorage.getItem(TKEY));await scPrepare();await store.ready(true);});
+ const frame=await (await page.locator('#fScout').elementHandle()).contentFrame();assert.ok(frame);await frame.waitForURL(base+'/studio/scout.html');await frame.waitForFunction(()=>window.PSStorage&&typeof scoutStore!=='undefined');
+ await frame.evaluate(async()=>{await PSStorage.sharedReady();await psSaveSharedAsync(TKEY,localStorage.getItem(TKEY));await scPrepare();await scoutStore.ready(true);});
  await page.evaluate(({uid,wid})=>{
   Object.assign(window,{IDB_LIVE:{},_idbLiveAt:0,KEYS:['scout_tool_v1'],ITEMS_ACTIVE:false,PERSONAL:{},OWNERKEY:'ps_cache_owner_v1',LIBKEY:'library',TOMBKEY:'tomb',
    edSeq:0,edT:null,editMirrorCommit:Promise.resolve(),editOutboxCommit:Promise.resolve(),switchGen:0,switchWiping:false,externalSwitchFrozen:false,tabReadyUid:uid,tabReadyWid:wid,localSwitchToken:'',
@@ -43,7 +43,7 @@ try{
  await page.addScriptTag({content:syncHelpers+'\n'+barriers+'\nwindow.addEventListener("storage",function(e){if(e.key!=="scout_tool_v1")return;fixtureEvents.push(e.newValue);'+eventBody+'\n});'});
  await frame.evaluate(async()=>{
   data.players=Array.from({length:69},(_,i)=>({id:'p'+i,name:'Synthetic '+i,grp:i<26?'A':i<44?'B':'',type:'ours',posId:'pos_CB',levels:{},profile:{},memo:'current record '+i}));
-  data.meta.evalMode='fifa';scMainMigrationPending=false;await psSaveSharedAsync(KEY,JSON.stringify(data));await psSaveSharedAsync(PDKEY,'{}');await store.ready(true);
+  data.meta.evalMode='fifa';scMainMigrationPending=false;await psSaveSharedAsync(KEY,JSON.stringify(data));await psSaveSharedAsync(PDKEY,'{}');await scoutStore.ready(true);
  });
  await page.evaluate(()=>flushWorkspaceFrames());
  const before=await frame.evaluate(async()=>({main:JSON.parse(localStorage.getItem(KEY)).players.length,idb:JSON.parse((await storage.get(KEY)).value).players.length}));assert.deepEqual(before,{main:69,idb:69});
@@ -56,7 +56,7 @@ try{
   fixtureWriteGate=new Promise(r=>fixtureWriteRelease=r);
   storage.set=function(k,v){if(k===KEY){fixtureWriteStarted=true;return fixtureWriteGate.then(()=>fixtureSet(k,v));}return fixtureSet(k,v);};
   plTombAdd('p68');data.players=data.players.filter(p=>p.id!=='p68');fixtureAccepted=save({skipTargets:true,skipItems:true});
-  fixtureSavePromise=store.ready().then(()=>fixtureSaveDone=true);
+  fixtureSavePromise=scoutStore.ready().then(()=>fixtureSaveDone=true);
  });
  await frame.waitForFunction(()=>fixtureWriteStarted);await page.waitForFunction(()=>fixtureEvents.some(raw=>JSON.parse(raw).players.length===68));
  await page.evaluate(()=>{fixtureBarrier=flushWorkspaceFrames().then(()=>fixtureBarrierDone=true);});
@@ -74,12 +74,12 @@ try{
  await frame.evaluate(()=>{
   storage.set=function(k,v){if(k===KEY)return Promise.reject(Error('synthetic main IDB failure'));return fixtureSet(k,v);};
   data.players[0].memo='latest edit awaiting durable confirmation';fixtureAccepted=save({skipTargets:true,skipItems:true});
-  fixtureFailed=store.ready().then(()=>false,()=>true);
+  fixtureFailed=scoutStore.ready().then(()=>false,()=>true);
  });
  assert.equal(await frame.evaluate(()=>fixtureFailed),true);
  assert.equal(await page.evaluate(()=>flushWorkspaceFrames().then(()=>false,()=>true)),true);
- assert.equal(await frame.evaluate(()=>store.hasFailed(KEY)),true);
- await frame.evaluate(async()=>{storage.set=fixtureSet;await store.ready(true);});await page.evaluate(()=>flushWorkspaceFrames());
+ assert.equal(await frame.evaluate(()=>scoutStore.hasFailed(KEY)),true);
+ await frame.evaluate(async()=>{storage.set=fixtureSet;await scoutStore.ready(true);});await page.evaluate(()=>flushWorkspaceFrames());
  assert.equal(await frame.evaluate(async()=>localStorage.getItem(KEY)===(await storage.get(KEY)).value),true);
  assert.equal(await frame.evaluate(()=>JSON.parse(localStorage.getItem(KEY)).players[0].memo),'latest edit awaiting durable confirmation');
  assert.deepEqual(errors,[]);

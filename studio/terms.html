@@ -8,17 +8,17 @@
 <script src="storage.js"></script>
 <script src="football-language.js"></script>
 
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.054">
 <style>
   b,strong{font-weight:var(--fw-head)}   /* 브라우저 기본 bold=700 차단 — 무게는 600·800만 */
-:focus-visible{outline:2px solid #3a6df0 !important;outline-offset:2px;border-radius:6px;}
+:focus-visible{outline:2px solid var(--ps-navy,#14213D) !important;outline-offset:2px;border-radius:6px;}
   /* UI 규칙: 레포 UI-가이드.md — 색은 의미로만(보라=목표·초록=완료·빨강=경고·파랑=코치), 이모지 금지(라인 SVG), 무게 600/800 */
   :root{
     --bg:#ECEDF0; --frame:#FFFFFF; --surface:#FFFFFF; --surface-2:#F1F2F4;
     --line:#E3E6EA; --line-soft:#ECEDF0;
     --text:#14161A; --text-2:#646A73; --text-3:#646A73;
-    --accent:#3a6df0; --accent-soft:#edf2fe;
-    --c-att:#3a6df0; --c-att-soft:#edf2fe;
+    --accent:#14213D; --accent-soft:#E9EDF5;
+    --c-att:#14213D; --c-att-soft:#E9EDF5;
     --c-def:#C24A46; --c-def-soft:#FBEBEA;
     --c-tra:#B5762B; --c-tra-soft:#FBF1E0;
     --c-com:#2E7D63; --c-com-soft:#E8F3EE;
@@ -44,7 +44,7 @@
   .apphd-seg button{min-height:40px;border:0;background:transparent;color:var(--text-2);font-weight:var(--fw-strong);font-size:var(--fs-body);
     letter-spacing:-.2px;padding:0 14px;cursor:pointer;transition:.15s;position:relative;border-radius:10px;
     white-space:nowrap;font-family:inherit;flex:0 0 auto}
-  .apphd-seg button.on{color:var(--accent,#3a6df0);font-weight:var(--fw-head);background:rgba(58,109,240,.09)}
+  .apphd-seg button.on{color:var(--accent,var(--ps-navy,#14213D));font-weight:var(--fw-head);background:color-mix(in srgb,var(--ps-navy,#14213D) 9%,transparent)}
   .apphd-seg button.on::after{display:none}
   .apphd-seg button:not(.on):hover{color:var(--text);background:var(--surface-2)}
   .apphd-more{position:relative;display:flex;align-self:stretch}
@@ -53,7 +53,7 @@
   .apphd-more.open .apphd-more-menu{display:grid}
   .apphd-more-menu button{width:100%;height:40px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;padding:0 12px!important;border-radius:10px!important}
   .apphd-more-menu button::before{content:"";width:16px;flex:0 0 16px;font-size:var(--fs-sub)}
-  .apphd-more-menu button.on{background:rgba(58,109,240,.1)!important;color:var(--accent,#3a6df0)!important}
+  .apphd-more-menu button.on{background:color-mix(in srgb,var(--ps-navy,#14213D) 10%,transparent)!important;color:var(--accent,var(--ps-navy,#14213D))!important}
   .apphd-more-menu button.on::before{content:"✓"}
   @media(max-width:520px){.apphd-name .sub{display:none}.apphd-seg{padding:6px 10px;gap:3px;scroll-padding-inline:10px;flex:1 1 100%}.apphd-seg>button,.apphd-more{flex:0 0 auto}.apphd-seg button{min-height:32px;padding:0 12px;text-align:center;font-size:var(--fs-sub)}.apphd-more>#teamMoreBtn{min-width:60px;width:auto}}
 
@@ -180,8 +180,8 @@
 
   /* ---------- dark ---------- */
   body.fmdark{--bg:#121417;--frame:#1B1E23;--surface:#1B1E23;--surface-2:#23272D;--line:#2E333A;--line-soft:#23272D;
-    --text:#F2F3F5;--text-2:#A9AFB8;--text-3:#7C838D;--accent:#6F94F5;--accent-soft:rgba(111,148,245,.16);
-    --c-att-soft:rgba(111,148,245,.14);--c-def-soft:rgba(224,110,105,.14);--c-tra-soft:rgba(224,180,90,.14);--c-com-soft:rgba(90,200,160,.14);
+    --text:#F2F3F5;--text-2:#A9AFB8;--text-3:#7C838D;--accent:#7F98D0;--accent-soft:rgba(127,152,208,.16);
+    --c-att-soft:rgba(127,152,208,.14);--c-def-soft:rgba(224,110,105,.14);--c-tra-soft:rgba(224,180,90,.14);--c-com-soft:rgba(90,200,160,.14);
     background:#121417;color:#F2F3F5}
   body.fmdark .apphd-name{border-bottom-color:#2E333A!important}
 body.fmdark .apphd{background:#1B1E23;border-color:#2E333A}
@@ -194,7 +194,7 @@ body.fmdark .apphd{background:#1B1E23;border-color:#2E333A}
 <script>document.documentElement.classList.add('ps-page-terms')</script>
 <link rel="stylesheet" href="design-v2.css">
 <style id="ps-dv2-align">/* 재설계 정합: 공통 의미 토큰 alias — 이 블록만 지우면 원복 */
-:root{--blue:var(--ps-color-action,#3a6df0);--blue-soft:var(--ps-color-action-soft,#edf2fe);--accent-blue:var(--ps-color-action,#3a6df0);}
+:root{--blue:var(--ps-color-action,#14213D);--blue-soft:var(--ps-color-action-soft,#E9EDF5);--accent-blue:var(--ps-color-action,#14213D);}
 @media (min-width:768px){ .btn.primary{box-shadow:var(--dv2-sh-btn-accent);} }
 </style>
 </head>
@@ -822,7 +822,7 @@ body.fmdark .apphd{background:#1B1E23;border-color:#2E333A}
   render();
 })();
 </script>
-<link rel="stylesheet" href="ui-grammar.css?v=2.981"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
+<link rel="stylesheet" href="ui-grammar.css?v=3.054"><!-- 2.206 — 문서 마지막 스타일시트: 본문 안 <style> 블록보다 뒤여야 토큰이 이긴다 -->
 <style id="ps-2593-size">/* 2.593 — 조작 높이 28/32/40 마무리 · :not(#_):not(#__) 는 premium/mobile-polish 의 !important 규칙(특이도 0,3,2)을 이기기 위한 id 부스트(패딩으로 높이가 정해지던 것들). 데스크톱 32 · 칩 28 · 폰(≤600) 은 32짜리를 40 으로 */
 html body .apphd-seg button:not(#_):not(#__),html body .apphd-more button:not(#_):not(#__),html body .seg2 button:not(#_):not(#__){height:32px!important;min-height:32px!important;padding-top:0!important;padding-bottom:0!important;line-height:1!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
 html body .btns .btn:not(#_):not(#__),html body .mrow .btn:not(#_):not(#__){height:40px!important;min-height:40px!important;padding-top:0!important;padding-bottom:0!important;line-height:1!important;box-sizing:border-box!important}

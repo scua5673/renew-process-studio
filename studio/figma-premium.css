@@ -11,8 +11,8 @@
   --fig-ink:#111827;
   --fig-muted:#707887;
   --fig-line:#e7e9ee;
-  --fig-blue:#3a6df0;
-  --fig-blue-soft:#eef3ff;
+  --fig-blue:#14213D;
+  --fig-blue-soft:#E9EDF5;
   --fig-violet:#7c4dff;
   --fig-green:#37b478;
   --fig-radius:16px;
@@ -78,8 +78,8 @@
     background:#f7f8fa!important;
   }
   html.ps-page-app #appSeg#appSeg button.on{
-    color:#2c54c4!important;
-    background:#edf2fe!important;
+    color:var(--ps-navy-h,#1D2D50)!important;
+    background:#E9EDF5!important;
     box-shadow:none!important;
   }
   html.ps-page-app #appSeg#appSeg button[data-app="idp"].on,
@@ -160,7 +160,7 @@
     color:#646A73!important;font-size:11px!important;font-weight:600!important;box-shadow:none!important;background:transparent!important;
   }
   html.ps-page-app #gearPop :is(.langsw,.laysw,.themesw) button.on{
-    background:#edf2ff!important;border-color:#b9c9f6!important;color:#2c54c4!important;
+    background:#E9EDF5!important;border-color:#C3CCDD!important;color:var(--ps-navy-h,#1D2D50)!important;
   }
   html.ps-page-app #gearPop .btn{
     background:var(--ps-wbtn,#fff)!important;border:1px solid #e1e5eb!important;border-radius:6px!important;
@@ -170,7 +170,7 @@
   html.ps-page-app body.fmdark #gearPop{border-color:#394351!important;}
   html.ps-page-app body.fmdark #gearPop :is(.langsw,.laysw,.themesw){background:#171d26!important;}
   html.ps-page-app body.fmdark #gearPop :is(.langsw,.laysw,.themesw) button{color:#aab3c2!important;}
-  html.ps-page-app body.fmdark #gearPop :is(.langsw,.laysw,.themesw) button.on{background:#34415b!important;border-color:#7089c9!important;color:#f4f7ff!important;}
+  html.ps-page-app body.fmdark #gearPop :is(.langsw,.laysw,.themesw) button.on{background:#323E58!important;border-color:#7F98D0!important;color:#1B2640!important;}
   html.ps-page-app body.fmdark #gearPop .btn{background:#262f3b!important;border-color:#3b4655!important;color:#e1e6ed!important;}
   html.ps-page-app body.fmdark .appbar{
     border-right-color:#2E333A!important;background:var(--fig-shell)!important;
@@ -385,7 +385,7 @@
     border-radius:9px;
     color:#fff;
     background:var(--fig-blue);
-    box-shadow:0 4px 12px rgba(58,109,240,.22);
+    box-shadow:0 4px 12px color-mix(in srgb,var(--ps-navy,#14213D) 22%,transparent);
     font:800 12px Pretendard,sans-serif;
     cursor:pointer;
   }
@@ -1204,8 +1204,8 @@ html.ps-page-idp .ipj-step small{
   html.ps-page-board body.rail-full #ps-command-dock button:focus-visible,
   html.ps-page-board body.rail-full #ps-command-dock select:focus-visible{
     outline:0!important;
-    border-color:#3a6df0!important;
-    box-shadow:inset 0 0 0 2px #3a6df0!important;
+    border-color:var(--ps-navy,#14213D)!important;
+    box-shadow:inset 0 0 0 2px var(--ps-navy,#14213D)!important;
     border-radius:7px!important;
   }
 
@@ -1256,8 +1256,8 @@ html.ps-page-idp .ipj-step small{
   }
   html.ps-page-board body.rail-full #ps-command-dock .anim-frame:focus-visible{
     outline:0!important;
-    border-color:#3a6df0!important;
-    box-shadow:inset 0 0 0 2px #3a6df0!important;
+    border-color:var(--ps-navy,#14213D)!important;
+    box-shadow:inset 0 0 0 2px var(--ps-navy,#14213D)!important;
   }
   html.ps-page-board body.rail-full #ps-command-dock .anim-frame .aft{
     left:3px!important;
@@ -1720,7 +1720,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-scope{
     display:inline-flex!important;align-items:center!important;min-height:22px!important;padding:0 8px!important;
-    border:1px solid #c9d7fb!important;border-radius:999px!important;background:#eef4ff!important;color:#2c54c4!important;
+    border:1px solid #C3CCDD!important;border-radius:999px!important;background:#E9EDF5!important;color:var(--ps-navy-h,#1D2D50)!important;
     font:800 10px/1 Pretendard,sans-serif!important;white-space:nowrap!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-close{
@@ -1738,7 +1738,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     background:transparent!important;color:#646A73!important;box-shadow:none!important;font:800 12px/1 Pretendard,sans-serif!important;cursor:pointer!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button.on{
-    background:var(--ps-wpill,#fff)!important;color:var(--ps-wacc,#2c54c4)!important;box-shadow:0 1px 3px rgba(15,23,42,.12)!important;
+    background:var(--ps-wpill,#fff)!important;color:var(--ps-wacc,var(--ps-navy-h,#1D2D50))!important;box-shadow:0 1px 3px rgba(15,23,42,.12)!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-content{
     flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;
@@ -1772,7 +1772,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     min-height:28px!important;margin:0!important;border:1px solid #e1e5eb!important;border-radius:7px!important;background:var(--ps-wbtn,#fff)!important;color:var(--ps-wink,#344054)!important;box-shadow:none!important;font:700 11px/1 Pretendard,sans-serif!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .seg>button{padding:0 8px!important;}
-  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .seg>button.on{border-color:#b9c9f6!important;background:#edf2ff!important;color:#2c54c4!important;}
+  html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .seg>button.on{border-color:#C3CCDD!important;background:#E9EDF5!important;color:var(--ps-navy-h,#1D2D50)!important;}
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop select.btn{flex:1 1 auto!important;min-width:0!important;padding:0 24px 0 8px!important;}
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .menurow>.btn{flex:1 1 auto!important;justify-content:center!important;padding:0 10px!important;}
   html.ps-page-board body.command-dock-v5 #cmd-board-settings-pop .teamcol-sw{flex:0 0 24px!important;width:24px!important;height:24px!important;margin:0!important;border-radius:50%!important;}
@@ -1794,7 +1794,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs{background:#171d26!important;border-color:#394351!important;}
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button,
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .menulbl{color:#b9c2cf!important;}
-  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button.on{background:#303a48!important;color:#dce6ff!important;}
+  html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-tabs>button.on{background:#303a48!important;color:#2A3A5E!important;}
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .seg{background:#171d26!important;}
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop :is(.seg>button,.btn,select.btn){background:#262f3b!important;border-color:#3b4655!important;color:#e1e6ed!important;}
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .cmd-board-settings-danger{border-color:#6a4144!important;background:#2b2228!important;}
@@ -1825,8 +1825,8 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
     --cmd-hover:#fff;
     --cmd-text:#344054;
     --cmd-muted:#646A73;
-    --cmd-blue:#3a6df0;
-    --cmd-soft:#edf2fe;
+    --cmd-blue:#14213D;
+    --cmd-soft:#E9EDF5;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock{
     left:var(--cmd-gutter)!important;
@@ -2003,7 +2003,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn.on,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn.on,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn.on{
-    background:var(--cmd-soft)!important;color:#2c54c4!important;
+    background:var(--cmd-soft)!important;color:var(--ps-navy-h,#1D2D50)!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animAdd svg,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animUpdate svg,
@@ -2054,7 +2054,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
   html.ps-page-board body.command-dock-v5 #cmd-equip-color svg{width:16px!important;height:16px!important;}
   /* 1.997 — '유니폼 설정'은 글자 알약(도구 색상 선택 알약과 같은 결): 위 토큰 규칙(정사각 26px)에서 빼낸다 */
   html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn{width:auto!important;min-width:0!important;flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;gap:5px!important;padding:0 10px 0 8px!important;border-radius:999px!important;font:700 11px/1 Pretendard,sans-serif!important;white-space:nowrap!important;background:var(--ps-wbtn,#fff)!important;color:var(--ps-wink,var(--cmd-muted,#646A73))!important;}
-  html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn:hover,html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn.on{color:var(--blue,#3a6df0)!important;border-color:rgba(58,109,240,.5)!important;background:var(--blue-soft,#EEF2FF)!important;}
+  html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn:hover,html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn.on{color:var(--blue,var(--ps-navy,#14213D))!important;border-color:color-mix(in srgb,var(--ps-navy,#14213D) 50%,transparent)!important;background:var(--blue-soft,#E9EDF5)!important;}
   html.ps-page-board body.command-dock-v5 #benchCat .team-style-btn svg{width:14px!important;height:14px!important;}
   /* rail-full 토큰 규칙(1454·1693)보다 특이도 높게 — 유니폼 설정 알약 폭 자유 */
   html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat #teamStyleBtn.team-style-btn,
@@ -2066,7 +2066,7 @@ html.ps-page-board body #cmd-board-settings-pop{display:none!important;}
   html.ps-page-board body.command-dock-v5 #benchCat #teamReset{border-radius:50%!important;}
   html.ps-page-board body.rail-full #drawPanel #railL2 .benchcat .catpill.tpill{border-radius:50%!important;}   /* 2.472 — 아이패드 레일의 팀 칩도 원 */
   html.ps-page-board body.command-dock-v5 .cmd-stamp-token.on{
-    box-shadow:0 0 0 2px #fff,0 0 0 4px var(--cmd-blue)!important;
+    box-shadow:0 0 0 2px #fff,0 0 0 4px #3a6df0!important;
   }
   html.ps-page-board body.command-dock-v5 #cmd-equipment-group{
     flex:1 1 220px!important;min-width:80px!important;height:32px!important;gap:3px!important;padding:2px!important;
@@ -2181,11 +2181,11 @@ html.ps-page-board #boardPageStrip .bp-export{
   min-height:34px!important;
   margin-inline-start:auto!important;
   padding:0 12px!important;
-  border:1px solid #3a6df0!important;
+  border:1px solid var(--ps-navy,#14213D)!important;
   border-radius:9px!important;
   color:#fff!important;
-  background:#3a6df0!important;
-  box-shadow:0 3px 10px rgba(58,109,240,.20)!important;
+  background:var(--ps-navy,#14213D)!important;
+  box-shadow:0 3px 10px color-mix(in srgb,var(--ps-navy,#14213D) 20%,transparent)!important;
   font:800 12px/1 Pretendard,sans-serif!important;
   white-space:nowrap!important;
   cursor:pointer;
@@ -2197,20 +2197,20 @@ html.ps-page-board #boardPageStrip .bp-export svg{
   flex:0 0 15px!important;
 }
 html.ps-page-board #boardPageStrip .bp-export:hover{
-  border-color:#2c54c4!important;
-  background:#2c54c4!important;
-  box-shadow:0 5px 14px rgba(58,109,240,.25)!important;
+  border-color:var(--ps-navy-h,#1D2D50)!important;
+  background:var(--ps-navy-h,#1D2D50)!important;
+  box-shadow:0 5px 14px color-mix(in srgb,var(--ps-navy,#14213D) 25%,transparent)!important;
 }
 html.ps-page-board #boardPageStrip .bp-export:active{
-  border-color:#2449ad!important;
-  background:#2449ad!important;
-  box-shadow:0 2px 6px rgba(58,109,240,.18)!important;
+  border-color:#0E1830!important;
+  background:#0E1830!important;
+  box-shadow:0 2px 6px color-mix(in srgb,var(--ps-navy,#14213D) 18%,transparent)!important;
   transform:translateY(1px);
 }
 html.ps-page-board #boardPageStrip .bp-export:focus-visible{
-  outline:2px solid #3a6df0!important;
+  outline:2px solid var(--ps-navy,#14213D)!important;
   outline-offset:2px!important;
-  box-shadow:0 0 0 3px rgba(58,109,240,.16)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--ps-navy,#14213D) 16%,transparent)!important;
 }
 @media (max-width:767.98px){
   html.ps-page-board #boardPageStrip .bp-export{
@@ -2297,35 +2297,35 @@ html.ps-page-board body.ps-dock.eh-open #emptyHint{
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay{
     background:var(--cmd-blue)!important;
     color:#fff!important;
-    box-shadow:0 2px 6px rgba(58,109,240,.22)!important;
+    box-shadow:0 2px 6px color-mix(in srgb,var(--ps-navy,#14213D) 22%,transparent)!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #toolSeg>button.on{
     background:var(--cmd-soft)!important;
-    color:#2c54c4!important;
-    box-shadow:inset 0 0 0 1px #c9d7fb!important;
+    color:var(--ps-navy-h,#1D2D50)!important;
+    box-shadow:inset 0 0 0 1px #C3CCDD!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-equip-color[aria-expanded="true"]{
     background:var(--cmd-soft)!important;
-    color:#2c54c4!important;
-    box-shadow:inset 0 0 0 1px #c9d7fb!important;
+    color:var(--ps-navy-h,#1D2D50)!important;
+    box-shadow:inset 0 0 0 1px #C3CCDD!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn.on,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn.on,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn.on,
   html.ps-page-board body.command-dock-v5 #ps-command-dock [aria-pressed="true"]:not(#animPlay):not(.cmd-stamp-token):not([data-tool]):not(.catpill.tpill){   /* 1.860 — 팀 알약(aria-pressed)은 제외: 유니폼 인라인 배경을 덮어 선택 시 연파랑으로 보이던 원인 */
     background:var(--cmd-soft)!important;
-    color:#2c54c4!important;
-    box-shadow:inset 0 0 0 1px #c9d7fb!important;
+    color:var(--ps-navy-h,#1D2D50)!important;
+    box-shadow:inset 0 0 0 1px #C3CCDD!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave{
-    border:1px solid #c8d6fa!important;
+    border:1px solid #C3CCDD!important;
     background:var(--ps-wbtn,#fff)!important;
-    color:var(--ps-wacc,#2c54c4)!important;
+    color:var(--ps-wacc,var(--ps-navy-h,#1D2D50))!important;
     box-shadow:none!important;
     gap:4px!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>#vaultSave:hover{
-    border-color:#9fb7f5!important;
+    border-color:#9AA8C4!important;
     background:#f5f8ff!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #vaultSave svg{
@@ -2547,7 +2547,7 @@ html.ps-page-board .export-format-icon{
   border:1px solid currentColor!important;
   border-radius:4px!important;
   color:inherit!important;
-  font-family:Jost,Pretendard,"Pretendard Variable",-apple-system,BlinkMacSystemFont,sans-serif!important;
+  font-family:Pretendard,"Pretendard Variable",-apple-system,BlinkMacSystemFont,sans-serif!important;
   font-size:10px!important;
   font-weight:800!important;
   font-style:normal!important;
@@ -2562,7 +2562,7 @@ html.ps-page-board #animBar .export-format-btn{
   line-height:0!important;
 }
 html.ps-page-board #animBar .export-format-btn:focus-visible{
-  outline:2px solid var(--cmd-blue,var(--blue,#3a6df0))!important;
+  outline:2px solid var(--cmd-blue,var(--blue,var(--ps-navy,#14213D)))!important;
   outline-offset:2px!important;
 }
 
@@ -2579,11 +2579,11 @@ html.ps-page-board #animBar .export-format-btn:focus-visible{
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-scene-export>.export-format-btn:hover{
     background:var(--cmd-hover,#f5f7fb)!important;
-    color:var(--cmd-blue,#3a6df0)!important;
+    color:var(--cmd-blue,var(--ps-navy,#14213D))!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-scene-export>.export-format-btn:active{
-    background:var(--cmd-soft,#edf2fe)!important;
-    color:#2c54c4!important;
+    background:var(--cmd-soft,#E9EDF5)!important;
+    color:var(--ps-navy-h,#1D2D50)!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-scene-export .export-format-icon{
     min-width:24px!important;
@@ -2618,11 +2618,11 @@ html.ps-page-board #animBar .export-format-btn:focus-visible{
     height:var(--cmd-token)!important;
     min-height:var(--cmd-token)!important;
     padding:0 6px!important;
-    border:1px solid #c9d7fb!important;
+    border:1px solid #C3CCDD!important;
     border-radius:7px!important;
-    background:#f7f9ff!important;
-    color:#2c54c4!important;
-    box-shadow:0 1px 2px rgba(58,109,240,.10)!important;
+    background:#F4F6FA!important;
+    color:var(--ps-navy-h,#1D2D50)!important;
+    box-shadow:0 1px 2px color-mix(in srgb,var(--ps-navy,#14213D) 10%,transparent)!important;
   }
   html.ps-page-board #cmd-equip-color .cmd-equip-color-swatch{
     flex:0 0 16px;
@@ -2640,15 +2640,15 @@ html.ps-page-board #animBar .export-format-btn:focus-visible{
     pointer-events:none;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-equipment-group>#cmd-equip-color:hover{
-    border-color:#9fb7f5!important;
-    background:#eef4ff!important;
-    box-shadow:0 2px 5px rgba(58,109,240,.16)!important;
+    border-color:#9AA8C4!important;
+    background:#E9EDF5!important;
+    box-shadow:0 2px 5px color-mix(in srgb,var(--ps-navy,#14213D) 16%,transparent)!important;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-equipment-group>#cmd-equip-color[aria-expanded="true"]{
-    border-color:#9fb7f5!important;
+    border-color:#9AA8C4!important;
     background:var(--cmd-soft)!important;
-    color:#2c54c4!important;
-    box-shadow:inset 0 0 0 1px #c9d7fb!important;
+    color:var(--ps-navy-h,#1D2D50)!important;
+    box-shadow:inset 0 0 0 1px #C3CCDD!important;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-scene-time{
     gap:2px!important;
@@ -2702,10 +2702,10 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal .ps-set-scope{
   align-items:center!important;
   min-height:20px!important;
   padding:0 7px!important;
-  border:1px solid #c9d7fb!important;
+  border:1px solid #C3CCDD!important;
   border-radius:999px!important;
-  background:#eef4ff!important;
-  color:#2c54c4!important;
+  background:#E9EDF5!important;
+  color:var(--ps-navy-h,#1D2D50)!important;
   font:800 9px/1 Pretendard,sans-serif!important;
   white-space:nowrap!important;
 }
@@ -2723,7 +2723,7 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
 
 @media (min-width:768px){
   html.ps-page-board body.fmdark.command-dock-v5 #cmd-board-settings-pop .seg>button.on{
-    border-color:#7089c9!important;background:#34415b!important;color:#f4f7ff!important;
+    border-color:#7F98D0!important;background:#323E58!important;color:#1B2640!important;
   }
 }
 
@@ -2736,11 +2736,11 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #cmd-tool-row,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #railL2,
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock #animBar{column-gap:12px!important;padding-left:10px!important;padding-right:10px!important;}
-  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn{display:inline-flex!important;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--cmd-blue,#3a6df0)!important;border-radius:8px;background:var(--cmd-blue,#3a6df0)!important;color:#fff!important;font:700 12px/1 Pretendard,sans-serif;cursor:pointer;white-space:nowrap;}
-  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn:hover,html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn.on{background:var(--cmd-blue-hover,#2c54c4)!important;border-color:var(--cmd-blue-hover,#2c54c4)!important;color:#fff!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn{display:inline-flex!important;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--cmd-blue,var(--ps-navy,#14213D))!important;border-radius:8px;background:var(--cmd-blue,var(--ps-navy,#14213D))!important;color:#fff!important;font:700 12px/1 Pretendard,sans-serif;cursor:pointer;white-space:nowrap;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn:hover,html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn.on{background:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;border-color:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;color:#fff!important;}
   html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn .cmd-export-caret{font-size:10px;opacity:.7;}
-  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave{display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;text-align:left!important;background:var(--cmd-blue,#3a6df0)!important;border-color:var(--cmd-blue,#3a6df0)!important;color:#fff!important;}
-  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave:hover{background:var(--cmd-blue-hover,#2c54c4)!important;border-color:var(--cmd-blue-hover,#2c54c4)!important;color:#fff!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave{display:inline-flex!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;text-align:left!important;background:var(--cmd-blue,var(--ps-navy,#14213D))!important;border-color:var(--cmd-blue,var(--ps-navy,#14213D))!important;color:#fff!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave:hover{background:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;border-color:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;color:#fff!important;}
   html.ps-page-board body.command-dock-v5 #cmd-export-pop{min-width:168px;padding:6px;border:1px solid var(--cmd-divider,#dfe3ea);border-radius:12px;background:#fff;box-shadow:0 12px 30px rgba(15,23,42,.14);}
   html.ps-page-board body.command-dock-v5 #cmd-export-pop .cmd-export-item{display:flex!important;align-items:center;gap:8px;width:100%;height:34px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#14161A;font:600 13px/1 Pretendard,sans-serif;text-align:left;cursor:pointer;}
   html.ps-page-board body.command-dock-v5 #cmd-export-pop .cmd-export-item:hover{background:#f2f4f7;}
@@ -2762,10 +2762,10 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
     position:sticky!important;left:auto!important;right:0!important;top:auto!important;bottom:auto!important;z-index:4!important;
     flex:0 0 auto!important;width:auto!important;min-width:96px!important;height:32px!important;min-height:32px!important;
     margin:0 0 0 auto!important;padding:0 12px!important;align-items:center!important;justify-content:center!important;gap:6px!important;
-    border:1px solid var(--cmd-blue,#3a6df0)!important;border-radius:8px!important;background:var(--cmd-blue,#3a6df0)!important;
-    color:#fff!important;box-shadow:0 4px 10px rgba(58,109,240,.18)!important;font:800 11px/1 Pretendard,sans-serif!important;white-space:nowrap!important;cursor:pointer!important;
+    border:1px solid var(--cmd-blue,var(--ps-navy,#14213D))!important;border-radius:8px!important;background:var(--cmd-blue,var(--ps-navy,#14213D))!important;
+    color:#fff!important;box-shadow:0 4px 10px color-mix(in srgb,var(--ps-navy,#14213D) 18%,transparent)!important;font:800 11px/1 Pretendard,sans-serif!important;white-space:nowrap!important;cursor:pointer!important;
   }
-  html.ps-page-board body #boardPageStrip.on>#vaultSave:hover{background:var(--cmd-blue-hover,#2c54c4)!important;border-color:var(--cmd-blue-hover,#2c54c4)!important;color:#fff!important;}
+  html.ps-page-board body #boardPageStrip.on>#vaultSave:hover{background:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;border-color:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;color:#fff!important;}
   html.ps-page-board body #boardPageStrip.on>#vaultSave svg{width:16px!important;height:16px!important;flex:0 0 auto!important;}
 }
 @media (min-width:768px){
@@ -2777,7 +2777,7 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
     background:var(--ps-wbtn,#fff)!important;color:var(--ps-wink,var(--cmd-text,#1f2937))!important;font:800 10px/1 Pretendard,sans-serif!important;white-space:nowrap!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn:hover{background:var(--cmd-hover,#f2f4f7)!important;border-color:#cfd5df!important;}
-  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn.on{background:var(--cmd-soft,#eef4ff)!important;border-color:#bfd0fb!important;color:#2c54c4!important;}
+  html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn.on{background:var(--cmd-soft,#E9EDF5)!important;border-color:#C3CCDD!important;color:var(--ps-navy-h,#1D2D50)!important;}
 }
 @media (min-width:768px) and (max-width:1199px) and (any-pointer:coarse){
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{justify-content:center!important;gap:0!important;flex-basis:36px!important;width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;}
@@ -2802,10 +2802,10 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-end>.cmd-board-settings-wrap>#viewBtn{font-size:var(--cmd-font-size)!important;}
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave{
-    background:var(--cmd-blue,#3a6df0)!important;border-color:var(--cmd-blue,#3a6df0)!important;color:#fff!important;
+    background:var(--cmd-blue,var(--ps-navy,#14213D))!important;border-color:var(--cmd-blue,var(--ps-navy,#14213D))!important;color:#fff!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-tool-row>#vaultSave:hover{
-    background:var(--cmd-blue-hover,#2c54c4)!important;border-color:var(--cmd-blue-hover,#2c54c4)!important;color:#fff!important;
+    background:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;border-color:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;color:#fff!important;
   }
 }
 
@@ -2834,7 +2834,7 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
     --cmd-hover:#f3f6fa;
     --cmd-text:#2b384c;
     --cmd-muted:#646A73;
-    --cmd-soft:#eef4ff;
+    --cmd-soft:#E9EDF5;
   }
   html.ps-page-board body.command-dock-v5.rail-full #ps-command-dock{
     border-radius:15px!important;
@@ -2906,21 +2906,21 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
     border-color:var(--cmd-blue)!important;
     background:var(--cmd-blue)!important;
     color:#fff!important;
-    box-shadow:0 3px 8px rgba(58,109,240,.20)!important;
+    box-shadow:0 3px 8px color-mix(in srgb,var(--ps-navy,#14213D) 20%,transparent)!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #toolSeg>button.on{
     border-color:var(--cmd-blue)!important;
     background:var(--cmd-blue)!important;
     color:#fff!important;
-    box-shadow:0 3px 8px rgba(58,109,240,.18)!important;
+    box-shadow:0 3px 8px color-mix(in srgb,var(--ps-navy,#14213D) 18%,transparent)!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animOnionBtn.on,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animLoopBtn.on,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animBlinkBtn.on,
   html.ps-page-board body.command-dock-v5 #ps-command-dock [aria-pressed="true"]:not(#animPlay):not(.cmd-stamp-token):not([data-tool]):not(.catpill.tpill){
-    border-color:#bfd0fb!important;
+    border-color:#C3CCDD!important;
     background:var(--cmd-soft)!important;
-    color:#2c54c4!important;
+    color:var(--ps-navy-h,#1D2D50)!important;
     box-shadow:inset 0 0 0 1px #d2defc!important;
   }
   html.ps-page-board body.command-dock-v5 #ps-command-dock #cmd-equip-color,
@@ -2942,8 +2942,8 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
   html.ps-page-board body.command-dock-v5 #ps-command-dock #animPlay:hover,
   html.ps-page-board body.command-dock-v5 #ps-command-dock>#animBar #cmd-export-btn:hover,
   html.ps-page-board body.command-dock-v5 #ps-command-dock #toolSeg>button.on:hover{
-    border-color:#2c54c4!important;
-    background:#2c54c4!important;
+    border-color:var(--ps-navy-h,#1D2D50)!important;
+    background:var(--ps-navy-h,#1D2D50)!important;
     color:#fff!important;
   }
 }
@@ -3005,14 +3005,14 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
 
 /* ══ 1.959 · 사이드바 '업데이트' 버튼도 하단 타일 규격(아이콘 위·라벨 아래, 54px, 같은 폭)으로 — 파랑은 채움 대신 연한 틴트(사용자: 왼쪽 하단 설정들과 정렬) */
 @media (min-width:768px){
-  html.ps-page-app body header.appbar>#psUpdBtn{width:100%!important;height:auto!important;min-height:54px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;padding:8px 4px 7px!important;border:0!important;border-radius:10px!important;background:#eef4ff!important;color:#2c54c4!important;box-shadow:none!important;font-size:11px!important;font-weight:600!important;line-height:1.15!important;letter-spacing:-.01em!important;text-align:center!important;white-space:nowrap!important;}
+  html.ps-page-app body header.appbar>#psUpdBtn{width:100%!important;height:auto!important;min-height:54px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;padding:8px 4px 7px!important;border:0!important;border-radius:10px!important;background:#E9EDF5!important;color:var(--ps-navy-h,#1D2D50)!important;box-shadow:none!important;font-size:11px!important;font-weight:600!important;line-height:1.15!important;letter-spacing:-.01em!important;text-align:center!important;white-space:nowrap!important;}
   html.ps-page-app body header.appbar>#psUpdBtn:hover{background:#e2ebff!important;}
   /* 하단 그룹 앵커: 업데이트가 있으면 업데이트가 margin-top:auto, 계정은 0 — design-v2 646행의 auto!important 가 둘 다 auto 로 만들어 업데이트가 중간에 떠 있었다(1.759 와 같은 병) */
   html.ps-page-app body header.appbar>#psUpdBtn{margin-top:auto!important;}
   html.ps-page-app body header.appbar:has(>#psUpdBtn)>#psAcctWrap{margin-top:0!important;}
   html.ps-page-app body header.appbar>#psUpdBtn svg{width:20px!important;height:20px!important;margin:0!important;stroke-width:2!important;flex:0 0 auto!important;display:block!important;}
   html.ps-page-app body header.appbar>#psUpdBtn span{font-size:11px!important;max-width:100%!important;}
-  html.ps-page-app body.fmdark header.appbar>#psUpdBtn{background:#233252!important;color:#b9caff!important;}
+  html.ps-page-app body.fmdark header.appbar>#psUpdBtn{background:#1B2640!important;color:#A9BCE6!important;}
 }
 
 /* ══ 1.969 · 사이드바 라벨 글자 더 작게(사용자) — 위 항목·하단 타일·업데이트 모두 10.5px, 아이콘 19px */
@@ -3083,7 +3083,7 @@ html.ps-page-board body.ps-dock #ps-group-set>.ps-settings-modal [data-ps-state-
   html.ps-page-scout #homeView .team-topbar .ttb-lbl{grid-column:1;grid-row:1;font-size:10px!important;letter-spacing:.12em!important;color:var(--fig-muted,#6f7580)!important;text-align:right;}
   html.ps-page-scout #homeView .team-topbar .ttb-match>b{grid-column:1;grid-row:2;font-size:13px!important;color:var(--fig-ink,#0f1420)!important;max-width:220px;text-align:right;}
   html.ps-page-scout #homeView .team-topbar .ttb-meta{grid-column:1;grid-row:3;font-size:11px!important;text-align:right;}
-  html.ps-page-scout #homeView .team-topbar .ttb-md{grid-column:2;grid-row:1 / span 3;height:30px!important;min-width:0!important;padding:0 11px!important;border-radius:9px!important;background:var(--fig-blue,#3a6df0)!important;color:#fff!important;white-space:nowrap;display:inline-flex!important;align-items:center;gap:4px;font-size:12px!important;font-weight:800!important;}
+  html.ps-page-scout #homeView .team-topbar .ttb-md{grid-column:2;grid-row:1 / span 3;height:30px!important;min-width:0!important;padding:0 11px!important;border-radius:9px!important;background:var(--fig-blue,var(--ps-navy,#14213D))!important;color:#fff!important;white-space:nowrap;display:inline-flex!important;align-items:center;gap:4px;font-size:12px!important;font-weight:800!important;}
   html.ps-page-scout #homeView .team-topbar .ttb-md strong{font-size:12px!important;}
   html.ps-page-scout #homeView .team-topbar .ttb-md em{margin-left:2px!important;}
   /* 색 버튼: 겹치지 않게 흐름 안 마지막 자리(작은 점) */
@@ -3258,10 +3258,10 @@ html.ps-page-board body.fmdark #ps-command-dock>#floatBar:not(#_){background:var
     position:static!important;inset:auto!important;transform:none!important;z-index:auto!important;
     flex:0 0 auto!important;width:auto!important;min-width:96px!important;height:32px!important;min-height:32px!important;
     margin:0!important;padding:0 12px!important;align-items:center!important;justify-content:center!important;gap:6px!important;
-    border:1px solid var(--cmd-blue,#3a6df0)!important;border-radius:8px!important;background:var(--cmd-blue,#3a6df0)!important;
-    color:#fff!important;box-shadow:0 4px 10px rgba(58,109,240,.18)!important;font:800 11px/1 Pretendard,sans-serif!important;white-space:nowrap!important;cursor:pointer!important;opacity:1!important;
+    border:1px solid var(--cmd-blue,var(--ps-navy,#14213D))!important;border-radius:8px!important;background:var(--cmd-blue,var(--ps-navy,#14213D))!important;
+    color:#fff!important;box-shadow:0 4px 10px color-mix(in srgb,var(--ps-navy,#14213D) 18%,transparent)!important;font:800 11px/1 Pretendard,sans-serif!important;white-space:nowrap!important;cursor:pointer!important;opacity:1!important;
   }
-  html.ps-page-board body #boardPageStrip.on>#bpImportBoard+#vaultSave:not(#_):not(#__):hover{background:var(--cmd-blue-hover,#2c54c4)!important;border-color:var(--cmd-blue-hover,#2c54c4)!important;color:#fff!important}
+  html.ps-page-board body #boardPageStrip.on>#bpImportBoard+#vaultSave:not(#_):not(#__):hover{background:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;border-color:var(--cmd-blue-hover,var(--ps-navy-h,#1D2D50))!important;color:#fff!important}
   html.ps-page-board body #boardPageStrip.on>#bpImportBoard+#vaultSave:not(#_):not(#__) svg{width:16px!important;height:16px!important;flex:0 0 auto!important}
 }
 @media (min-width:640px) and (any-pointer:coarse){

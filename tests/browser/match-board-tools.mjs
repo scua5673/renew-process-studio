@@ -40,7 +40,7 @@ try{
     await PSStorage.sharedReady();
     const roster={attrs:[],positions:[{id:'gk',name:'GK',targets:{}},{id:'cm',name:'CM',targets:{}}],players:[{id:'qa-p1',name:'가상 선수 1',num:'1',type:'ours',manual:true,grp:'A팀',posId:'gk',status:'ok'},{id:'qa-p2',name:'가상 선수 2',num:'8',type:'ours',manual:true,grp:'A팀',posId:'cm',status:'ok'}],meta:{evalMode:'fifa'}};
     const m=matchBlank();m.id='qa-match';m.opponent='가상 상대';m.date='2026-09-16';m.sourceId='sched:qa-schedule';m.phaseBoards={list:[['atk','공격']],cur:'atk',boards:{atk:{us:[{pid:"qa-p1",num:"1",name:"가상 선수 1",x:20,y:50}],opp:[{num:"9",x:80,y:50}],drawings:[{type:"ball",x:50,y:50},{type:"arrow",x:35,y:45,x2:65,y2:60,color:"#ffffff"}]}}};
-    data=roster;store.set('scout_tool_v1',roster);store.set('process_coach_v1',{version:1,anchorMonday:'2026-09-14',weeks:{'0':[{}, {},{mid:'qa-schedule',match:{opp:'가상 상대'},board:{sched:'경기'}},{},{},{},{}]}});store.set('cs_team_matches_v1',{version:1,matches:[m]});await store.ready();
+    data=roster;scoutStore.set('scout_tool_v1',roster);scoutStore.set('process_coach_v1',{version:1,anchorMonday:'2026-09-14',weeks:{'0':[{}, {},{mid:'qa-schedule',match:{opp:'가상 상대'},board:{sched:'경기'}},{},{},{},{}]}});scoutStore.set('cs_team_matches_v1',{version:1,matches:[m]});await scoutStore.ready();
     await scPrepare();load();data=roster;matchState=null;matchLoad();setView('match');matchOpen('qa-match');matchTab='prep';matchStage='prep';renderMatch();
    });
    /* 2.965 — 옛 경기 준비 보드는 접혀 있다(경기 보드는 보관함 자료). 그린 것이 있으면 한 줄 안내의 «펼쳐 보기»로 연다 */
@@ -55,7 +55,7 @@ try{
    await f.locator('[data-orientation="portrait"]').click();assert.deepEqual(await drawings(),source);result.cases.push('existing-drawings-preserved-on-rotation');
    for(const orientation of ['landscape','portrait']){await f.locator('#mb2Export summary').click();const pending=page.waitForEvent('download');await f.locator('[data-pdf="'+orientation+'"]').click();const download=await pending;const dest=path.join(out,width+'-'+orientation+'.pdf');await download.saveAs(dest);const bytes=fs.readFileSync(dest);assert.equal(bytes.subarray(0,8).toString(),'%PDF-1.4');assert.ok(bytes.length>20000);assert.ok(bytes.includes(Buffer.from(orientation==='portrait'?'/MediaBox [0 0 595.28 841.89]':'/MediaBox [0 0 841.89 595.28]')));}
    result.cases.push('actual-pdf-downloads');
-   await page.waitForTimeout(800);const saved=await drawings();const disk=await f.evaluate(async()=>{await store.ready();const record=await storage.get('cs_team_matches_v1');return JSON.parse(record.value).matches.find(m=>m.id==='qa-match').phaseBoards.boards.atk.drawings;});assert.deepEqual(disk,saved);result.cases.push('durable-idb');
+   await page.waitForTimeout(800);const saved=await drawings();const disk=await f.evaluate(async()=>{await scoutStore.ready();const record=await storage.get('cs_team_matches_v1');return JSON.parse(record.value).matches.find(m=>m.id==='qa-match').phaseBoards.boards.atk.drawings;});assert.deepEqual(disk,saved);result.cases.push('durable-idb');
    await page.screenshot({path:path.join(out,width+'-tools.png')});assert.deepEqual(errors,[]);result.ok=true;
   }catch(e){result.ok=false;result.error=e.stack;await page.screenshot({path:path.join(out,width+'-failure.png')}).catch(()=>{});}
   console.log(JSON.stringify(result));await context.close();

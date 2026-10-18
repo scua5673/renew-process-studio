@@ -10,7 +10,7 @@
    3) localStorage.setItem 용량 초과를 감지해 화면에 경고. 더는 조용히 잃지 않는다. */
 (function(){
   "use strict";
-  var DB='ps-store', STORE='kv', VER=1, dbp=null;
+  var DB='ps-store', STORE='kv', VER=1, dbp=null, OPEN_TIMEOUT=10000, POKE_MS=150;   /* 3.057 — 멈춘 IndexedDB 열기 */
 
   /* HTML 문자열을 DOM에 넣어야 하는 기존 화면의 단일 이스케이프 규칙.
      새 코드는 textContent를 우선하고, 템플릿 문자열이 필요한 곳만 이 함수를 쓴다. */
@@ -74,7 +74,10 @@
     if(k.indexOf('cs_idp_v1_')===0)return ['IDP','이미지노트 사진이 큽니다'];
     if(k.indexOf('ps_sync_base_')===0)return ['일정 동기화 기준본','안전 저장소 확인 뒤 자동으로 정리됩니다'];
     if(k.indexOf('ps_sync_conflict_')===0)return ['동기화 충돌 사본','안전하게 지워도 되는 임시 사본입니다'];
-    return SPACE_LABEL[k]||[k,''];
+    if(SPACE_LABEL[k])return SPACE_LABEL[k];
+    /* 3.053 — 표(storage-keys.js)에 적힌 구실 — «복구 사본 · 이 기기만». 작전판 · 팀 운영 프레임은 셸의 표를 본다 */
+    try{ var T=window.PSStorageKeys||(window.top&&window.top.PSStorageKeys); if(T&&T.label(k))return [k,T.label(k)]; }catch(_){}
+    return [k,''];
   }
   /* 비동기 본 저장 전에 잠깐 쓰는 복구 사본. 이 키의 실패는 본 저장 실패가 아니므로
      기존 사본을 비우고 한 번 재시도하되, 그래도 안 되면 빨간 데이터 유실 경고를 띄우지 않는다. */
@@ -85,12 +88,26 @@
     if(dbp) return dbp;
     var pending=new Promise(function(res,rej){
       var r=indexedDB.open(DB,VER);
-      var failed=false;
+      var failed=false,timer=null,poke=null;
       r.onupgradeneeded=function(){ try{ r.result.createObjectStore(STORE); }catch(_){} };
-      function fail(e){failed=true;rej(e);}
+      function settle(){ if(timer!==null){try{clearTimeout(timer);}catch(_){}timer=null;} if(poke!==null){try{clearInterval(poke);}catch(_){}poke=null;} }
+      function fail(e){if(failed)return;failed=true;settle();rej(e);}
+      /* 3.057 — 아이패드 사파리는 IndexedDB 열기가 성공도 오류도 없이 멈출 때가 있다(WebKit — 페이지 첫 열기 · 오래 쉰 뒤).
+         그러면 보관함 읽기 · 동기화 · «진단»까지 끝없이 기다려 «기기 저장을 확인해 주세요»만 남았다(풋볼A 아이패드 — «진단» 줄이 «확인 중…»에서 멈춤).
+         기다리는 동안 indexedDB.databases() 를 두드려 깨우고(멈춘 열기를 푸는 알려진 방법), 그래도 OPEN_TIMEOUT 안에 안 열리면
+         이름 있는 TimeoutError 로 끝낸다 — 연결 약속은 버려지고 다음 요청이 새로 연다. 읽기는 한 번 더(readRetry), 쓰기는 다시 보내지 않는다. */
+      if(typeof setTimeout==='function'){
+        timer=setTimeout(function(){
+          var e=new Error('IndexedDB open timed out');e.name='TimeoutError';
+          try{diagnostic('idb-open-timeout',e);}catch(_){}
+          fail(e);
+        },OPEN_TIMEOUT);
+        try{ if(typeof setInterval==='function'&&indexedDB.databases)poke=setInterval(function(){ try{ var d=indexedDB.databases(); if(d&&d.catch)d.catch(function(){}); }catch(_){} },POKE_MS); }catch(_){}
+      }
       r.onsuccess=function(){
         var db=r.result;
         if(failed){db.close();return;}
+        settle();
         function forget(){if(dbp===pending)dbp=null;}
         db.onclose=forget;
         db.onversionchange=function(){forget();db.close();};
@@ -218,7 +235,7 @@
     if(!document.body||document.getElementById('psStorageFull')) return;
     var b=document.createElement('div'); b.id='psStorageFull';
     b.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:99999;max-width:min(560px,92vw);'
-      +'background:#D6453D;color:#fff;font:700 13px/1.5 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
+      +'background:#D6453D;color:#fff;font:700 13px/1.5 Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
       +'padding:11px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
     var msg=document.createElement('span'); msg.style.cssText='flex:1 1 240px';
     msg.innerHTML='⚠ 저장 공간이 가득 찼어요 — <b>방금 변경이 저장되지 않았습니다.</b><br>'
@@ -748,6 +765,7 @@
       }catch(_){}
       return rows.sort(function(a,b){return b.bytes-a.bytes;}).slice(0,limit);
     },
+    spaceLabel:function(k){ return spaceLabel(k); },   /* 3.040 — [이름, 줄이는 길] · 앱 설정 › 기기 › 저장 공간 줄이 «큰 항목» 이름을 쓴다 */
     /* 실제 콘텐츠는 삭제하지 않는다. IndexedDB에 동일한 문자열이 저장됐다고
        다시 읽어 확인한 기기 전용 중복 사본만 localStorage에서 제거한다. */
     optimize:function(){
@@ -871,7 +889,7 @@
       var TX='var(--text,var(--txt,#16181C))', DIM='var(--text-3,var(--dim,#5C6068))',
           LN='var(--line,#E3E5E9)', SF='var(--surface,var(--bar,#fff))',
           SF2='var(--surface-2,var(--bar2,#F1F2F4))',
-          AC='var(--accent,var(--blue,#3a6df0))', ACS='var(--accent-soft,var(--blue-soft,#edf2fe))';
+          AC='var(--accent,var(--blue,#14213D))', ACS='var(--accent-soft,var(--blue-soft,#E9EDF5))';
       S.textContent=
         '.ps-rkb{display:flex;align-items:center;gap:10px;background:'+SF2+';border:1px solid '+LN+';'
         +'border-radius:10px;padding:8px 10px;margin-bottom:11px}'
@@ -1200,7 +1218,7 @@
     if(el) return;
     el=document.createElement('div'); el.id='psSaveFailed';
     el.style.cssText='position:fixed;left:16px;bottom:16px;z-index:99998;max-width:min(340px,88vw);'
-      +'background:#C24A46;color:#fff;font:700 12px/1.45 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
+      +'background:#C24A46;color:#fff;font:700 12px/1.45 Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;'
       +'padding:10px 12px;border-radius:11px;box-shadow:0 8px 24px rgba(0,0,0,.28);display:flex;align-items:center;gap:9px;';
     var t=document.createElement('span'); t.style.cssText='flex:1';
     t.innerHTML='⚠ <b>저장되지 않았습니다.</b><br>앱을 닫으면 방금 편집이 사라집니다.';
@@ -1353,9 +1371,49 @@
        일정을 한 번 저장할 때마다 숨어 있는 «오늘» 화면이 그만큼 메인 스레드를 붙잡아 세션 시트가 굳었다.
        같은 원문이면 한 번만 읽는다. 비교는 `===` — 크롬은 getItem 이 같은 문자열 객체를 돌려줘 즉시 끝나고,
        아니어도 memcmp 라 파싱보다 수십 배 싸다. 돌려주는 Date 는 매번 새 사본(호출부가 고쳐도 안전). */
+  /* 3.062 — 화면이 읽는 일정 원문. 거울(localStorage)이 정본(IndexedDB)보다 뒤처진 기기에서는 정본을 읽는다.
+     풋볼A 운영자 아이패드: 일정 문서가 커서 거울 쓰기가 실패(schedule_mirror_quota)해 거울에는 옛 일정이 남았다.
+     일정 화면은 IDB 를 읽어 보였지만 «오늘»(scout.html)·출석·IDP 는 거울을 읽어 일정이 비어 보였다.
+     - 그림자는 «비교한 그 거울 원문»에만 붙는다. 거울이 바뀌면(새 입력·쓰기 성공) 그 순간 무효 — 새 입력을 가리지 않는다.
+     - 다른 창의 IDB 쓰기가 아직 진행 중일 수 있어, 1.2초 뒤 다시 읽어 IDB·거울이 그대로일 때만 그림자를 쓴다.
+     - 읽기 전용. 거울을 고쳐 쓰지 않는다(쓰기는 저장 공간 문제로 또 실패할 수 있고, 저장 경로는 그대로 둔다). */
+  var idbShadow=null,shadowT=0,shadowSeq=0;
+  function mirrorRaw(){ try{ return localStorage.getItem(SCHED_KEY); }catch(_){ return null; } }
+  function schedRaw(){ var raw=mirrorRaw(); return (idbShadow&&idbShadow.mirror===raw)?idbShadow.raw:raw; }
+  function readSched(){ var v=schedRaw(); try{ return v?JSON.parse(v):null; }catch(_){ return null; } }
+  function shadowShape(raw){ try{ var d=JSON.parse(raw); return !!(d&&typeof d==='object'&&!Array.isArray(d)&&d.weeks&&typeof d.weeks==='object'); }catch(_){ return false; } }
+  function shadowRead(){
+    var st=window.storage;if(!st||!st.get)return Promise.resolve(null);
+    var ready=window.PSStorage&&PSStorage.sharedReady?PSStorage.sharedReady(SCHED_KEY):true,m0;
+    return Promise.resolve(ready).catch(function(){}).then(function(){ m0=mirrorRaw(); return st.get(SCHED_KEY); })
+      .then(function(rec){ return {mirror:m0,now:mirrorRaw(),idb:rec&&rec.value!=null?String(rec.value):null}; });
+  }
+  function shadowSet(next){
+    var before=schedRaw();idbShadow=next;
+    if(schedRaw()!==before){ try{ window.dispatchEvent(new CustomEvent('ps-schedule-source',{detail:{idb:!!next}})); }catch(_){} }
+  }
+  function shadowCheck(){
+    var seq=++shadowSeq;
+    return shadowRead().then(function(a){
+      if(seq!==shadowSeq||!a||a.mirror!==a.now)return false;
+      if(a.idb==null||a.idb===a.mirror||!shadowShape(a.idb)){ shadowSet(null); return false; }
+      if(idbShadow&&idbShadow.mirror===a.mirror&&idbShadow.raw===a.idb)return true;
+      return new Promise(function(r){ setTimeout(r,1200); }).then(shadowRead).then(function(b){
+        if(seq!==shadowSeq||!b||b.mirror!==a.mirror||b.now!==a.mirror||b.idb!==a.idb)return false;
+        shadowSet({mirror:a.mirror,raw:a.idb}); return true;
+      });
+    }).catch(function(e){ note('schedule-shadow',e); return false; });
+  }
+  function shadowSoon(ms){ clearTimeout(shadowT); shadowT=setTimeout(shadowCheck,ms==null?400:ms); }
+  try{
+    window.addEventListener('storage',function(e){ if(e&&(e.key===SCHED_KEY||e.key==='ps_sync_meta'||e.key==null))shadowSoon(); });
+    document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible')shadowSoon(); });
+    shadowSoon(600);
+  }catch(_){}
+
   var anchorMemo={raw:null,d:null};
   function anchor(){
-    var raw=null;try{raw=localStorage.getItem(SCHED_KEY);}catch(_){}
+    var raw=schedRaw();
     var d=null;
     if(raw){
       if(raw===anchorMemo.raw)d=anchorMemo.d;
@@ -1373,7 +1431,7 @@
      다음 호출자도 같은 객체를 받는다. 고쳐야 하면 read()/readFor() 로 새 사본을 받는다. */
   var viewMemo={raw:null,by:{}};
   function view(grp){
-    var raw=null;try{raw=localStorage.getItem(SCHED_KEY);}catch(_){}
+    var raw=schedRaw();
     if(!raw)return null;
     if(raw!==viewMemo.raw)viewMemo={raw:raw,by:{}};
     var key=String(grp||'');
@@ -1581,9 +1639,11 @@
     mondayOf:mondayOf,
     hasMatch:hasMatch, newId:newId, stampIds:stampIds,
     anchor:anchor, cellOf:cellOf,
-    read:function(){ return readJSON(SCHED_KEY); },
+    read:function(){ return readSched(); },
+    /* 3.062 — 화면이 읽을 일정 원문(거울이 뒤처졌으면 IDB 정본). check 는 지금 다시 비교한다(Promise). */
+    raw:schedRaw, check:shadowCheck,
     /* 2.215 — 조별 일정: grpWeeks[조] 가 있으면 그것을 weeks 로 돌려준다(없으면 전체). 원본은 건드리지 않는다 */
-    readFor:function(grp){ var d=readJSON(SCHED_KEY); if(!d||!grp)return d; return readForData(d,grp); },
+    readFor:function(grp){ var d=readSched(); if(!d||!grp)return d; return readForData(d,grp); },
     /* 2.933 — 읽기 전용 공유 사본(위 view 주석). 화면 그리기용 */
     view:view,
     sesMin:sesMin, sesMoments:sesMoments,   /* 2.951 — 세션의 분·국면(일정·콕핏·플레이북이 같은 함수) */

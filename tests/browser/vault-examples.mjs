@@ -21,7 +21,7 @@ try{
   const openVault=async()=>{ await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]:not([data-train])').click()); await bf.waitForFunction(()=>window.__csView==='session'&&document.getElementById('dfNew'),null,{timeout:12000}); };
   /* 나가기 — 시퀀스·페이지를 넘겨 보면 «버리고 나갈까요?»가 뜬다(모든 작전판의 옛 동작) — 뜨면 «확인» */
   const exitBoard=async()=>{ await bf.evaluate(()=>document.getElementById('vCreateCancel').click()); await page.waitForTimeout(500);
-    await bf.evaluate(()=>{ const ok=[...document.querySelectorAll('button')].filter(b=>b.textContent==='확인'&&b.offsetParent).pop(); if(ok)ok.click(); });
+    await bf.evaluate(()=>{ const ok=[...document.querySelectorAll('button')].filter(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')&&b.offsetParent).pop(); if(ok)ok.click(); });
     await bf.waitForFunction(()=>window.__csView==='session'&&!document.body.classList.contains('book-mode'),null,{timeout:12000}); await page.waitForTimeout(400); };
   const dirty=()=>bf.evaluate(()=>({manual:!!window.__vaultManualDirty,sub:(document.getElementById('vCreateSub')||{}).textContent||''}));
   const openCard=async name=>{ await bf.waitForFunction(n=>[...document.querySelectorAll('#drillFiles .vcard')].some(c=>c.textContent.includes(n)),name,{timeout:12000});

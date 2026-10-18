@@ -13,7 +13,7 @@ const nums=a=>(a||[]).map(p=>p.num).join('');
 // 판·페이지 띠·맡겨 둔 묶음을 한 번에 읽는다(읽기만 — captureContext 는 사본을 돌려준다)
 const look=f=>f.evaluate(()=>{const c=window.__psPages.captureContext(captureSnap(),null);return {cap:document.body.classList.contains('ps-capturing'),lent:window.__psPages.lent(),canvas:state.players.map(p=>p.num).join(''),
   tabs:[...document.querySelectorAll('#boardPageStrip .bp-tab')].map(b=>b.querySelector('span').textContent.trim()+(b.classList.contains('on')?'*':'')),
-  adds:[...document.querySelectorAll('#boardPageStrip .bp-add')].map(b=>b.textContent.trim()),
+  adds:[...document.querySelectorAll('#boardPageStrip .bp-add,#ps-tb-menu>.bp-add')].map(b=>b.textContent.trim()),   /* 3.078 — 떠 있는 도크에서는 «보드 ▾» 메뉴 안 */
   pages:c.pages?c.pages.map(p=>(p.snap.players||[]).map(q=>q.num).join('')):null,idx:c.idx,undo:undoStack.length,
   bar:[...document.querySelectorAll('body > div > button')].filter(b=>/첨부 완료|취소|닫기/.test(b.textContent)).map(b=>b.textContent.trim())};});
 const stored=page=>page.evaluate(()=>{const m=JSON.parse(localStorage.getItem('cs_gamemodel_personal_v1')||'null');return m.moments[0].phases.map(ph=>ph.snap&&ph.snap.snap?ph.snap.snap.players.map(p=>p.num).join(''):null);});

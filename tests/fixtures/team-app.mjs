@@ -57,7 +57,7 @@ export async function startFixture(opts={}){
     if(!uid&&req.method==='GET'&&url.pathname==='/rest/v1/ps_community')return {status:200,headers,body:'[]'};
     if(!uid&&url.pathname==='/rest/v1/ps_err'){calls.push({step,m:req.method,p:url.pathname,body:JSON.stringify(req.body).slice(0,300)});return {status:201,headers,body:''};}
     if(!uid){calls.push({step,m:req.method,p:url.pathname,unauth:1});return {status:401,headers,body:'{}'};}
-    calls.push({step,t:Date.now(),m:req.method,p:url.pathname,q:url.search.slice(0,200)});
+    calls.push({step,t:Date.now(),m:req.method,p:url.pathname,q:url.search.slice(0,200),...(url.pathname==='/rest/v1/ps_events'?{body:req.body}:{})});   /* 3.036 — 이벤트 행은 본문도(boot_after_crash 시험) */
     let body=[];
     if(url.pathname==='/auth/v1/user')body={id:uid,email:'a@example.invalid'};
     else if(url.pathname.endsWith('/ps_bootstrap'))body=teams;
@@ -88,10 +88,12 @@ export async function startFixture(opts={}){
         if(fx_opts.emptyLibraryInsert&&ignore)body=[];   // 저장은 됐지만 응답 본문이 빈 경우(응답 유실·프록시)
       }
       else if(req.method==='PATCH'){body=[];for(const r of lib.values())if(r.workspace_id===wid&&(!ids||ids==='eq.'+r.lib_id)){Object.assign(r,req.body);writes.push({step,t:Date.now(),m:'PATCH',wid,k:'ps_library:'+r.lib_id});body.push(r);}}
+    }else if(url.pathname.endsWith('/rpc/ps_get_or_create_role_invite')){body='FIXJOIN1';   /* 3.052 — 선수별 초대 링크 시험(coach-idp-entry) */
+    }else if(url.pathname.endsWith('/rpc/ps_join')){body=req.body&&req.body.p_code==='FIXJOIN1'?WT:null;
     }else if(url.pathname.startsWith('/rest/v1/rpc/')){body=url.pathname.includes('report')?{}:[];}
     return {status:200,headers,body:JSON.stringify(body)};
   }
-  const server=http.createServer(async(req,res)=>{let raw='';for await(const c of req)raw+=c;
+  const server=http.createServer(async(req,res)=>{let raw='';try{for await(const c of req)raw+=c;}catch(_){ /* 3.086 CI — 브라우저가 보내던 요청을 끊으면(페이지 닫기 · 이동 중 POST) 여기서 거부된 promise 가 서버 프로세스를 죽였다(invite-link-export ECONNRESET) */ try{res.destroy();}catch(__){} return; }
     try{const r=await api({url:base+req.url,method:req.method,headers:req.headers,body:raw?JSON.parse(raw):null});res.writeHead(r.status,r.headers);res.end(r.body);}catch(e){res.writeHead(500);res.end('{}');}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port;
   return {db,lib,writes,calls,get base(){return base;},setStep(s){step=s;},close:()=>new Promise(r=>server.close(r))};
@@ -104,20 +106,24 @@ export const SIZES={
   desktop:{engine:'chromium',ctx:{viewport:{width:1280,height:800},deviceScaleFactor:1}}
 };
 
-export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false}={}){
+export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false}={}){
+  /* 3.039 — csp:true 면 HTML 응답에 _headers 의 Content-Security-Policy-Report-Only 를 그대로 붙인다(tests/browser/csp-report-only) */
+  const cspValue=csp?(/\n  Content-Security-Policy-Report-Only: (.+)\n/.exec(fs.readFileSync(path.join(root,'_headers'),'utf8'))||[])[1]:null;
+  if(csp&&!cspValue)throw new Error('_headers 에 Content-Security-Policy-Report-Only 가 없다');
   const S=SIZES[sizeName];
   const browser=browsers[S.engine]||(browsers[S.engine]=await pw[S.engine].launch({headless:true,...(S.engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})}));
   const context=await browser.newContext({...S.ctx,serviceWorkers:'block',timezoneId:'Asia/Seoul',locale:'ko-KR',colorScheme:dark?'dark':'light'});
   const base=fx.base;
-  await context.addInitScript(({A,WT,teams,base,dark,examples})=>{
+  await context.addInitScript(({A,WT,teams,base,dark,examples,tilt3d})=>{
     if(location.origin!==base||window.top!==window)return;
     if(localStorage.getItem('wt_seeded'))return;localStorage.setItem('wt_seeded','1');
     localStorage.setItem('ps_sync_session',JSON.stringify({uid:A,at:'fixture-access-A',rt:'fixture-refresh-A',exp:Date.now()+36000000,email:'a@example.invalid'}));
     localStorage.setItem('ps_active_ws',WT);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:A,wid:WT}));
     localStorage.setItem('ps_ws_list',JSON.stringify(teams));
     if(dark)localStorage.setItem('cs_theme','dark');
+    if(tilt3d!==null)localStorage.setItem('ps_board_tilt3d',tilt3d?'1':'0');   /* 3.027 — 앱은 처음 들어온 기기를 3D 로 연다. 시험은 평면이 기본(null = 처음 들어온 기기 그대로) */
     if(!examples)localStorage.setItem('ps_vault_px_v1',JSON.stringify({[A+'|'+WT]:1}));   /* 3.001 — 보관함 «프로세스» 예시를 이미 받은 사용자(이 판 전과 같은 보관함). 예시 넣기를 보는 시험만 examples:true */
-  },{A,WT,teams,base,dark,examples});
+  },{A,WT,teams,base,dark,examples,tilt3d});
   await context.routeWebSocket('**/*',s=>s.close());
   const blocked=[];
   await context.route(u=>!(u.origin===base&&(u.pathname.startsWith('/rest/v1/')||u.pathname.startsWith('/auth/v1/'))),async route=>{
@@ -126,7 +132,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
     if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory())return route.fulfill({status:404,body:''});
     let content=fs.readFileSync(file);
     if(url.pathname==='/studio/app.html')content=Buffer.from(content.toString().replace(/(window\.PS_SYNC=\{url:")[^"]+("[,}])/,(_,a,b)=>a+base+b));
-    return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream'});
+    return route.fulfill({body:content,contentType:mime[path.extname(file)]||'application/octet-stream',...(cspValue&&path.extname(file)==='.html'?{headers:{'content-security-policy-report-only':cspValue}}:{})});
   });
   const page=await context.newPage();page.setDefaultTimeout(45000);
   const logs=[];
@@ -139,6 +145,17 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
   page.on('dialog',d=>{logs.push({step:tag(),type:'dialog',text:d.type()+': '+d.message().slice(0,300)});(d.type()==='beforeunload'?d.accept():d.dismiss()).catch(()=>{});});
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
   await ready(page);
+  /* 3.077 — 폰은 로그인한 팀 공간이면 팀운영 › 오늘로 열린다(app.html psPhoneStart). 대부분의 시험은 작전판 + 앱 하단 바에서 시작하므로
+     사용자가 가는 길(팀 더보기 › 앱 › 보드)로 돌아온다. 폰 첫 화면 자체를 보는 시험만 phoneStart:true. */
+  if(!phoneStart&&sizeName==='phone'){
+    const opened=await page.waitForFunction(()=>document.body.classList.contains('ps-team-open'),null,{timeout:4000}).then(()=>true,()=>false);
+    if(opened){
+      await page.locator('#teamBottom [data-tb="more"]').click();
+      await page.locator('#teamMoreSheet [data-tb-app="board"]').click();
+      await page.waitForFunction(()=>document.body.dataset.psApp==='board'&&!document.body.classList.contains('ps-team-open'));
+      await page.waitForTimeout(400);
+    }
+  }
   return {browser,context,page,logs,blocked};
 }
 

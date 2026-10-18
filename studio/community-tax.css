@@ -1,0 +1,36 @@
+/* ══ 3.075 · 커뮤니티 공통 분류(community-tax.js) — 경기 4국면 타일 · 주제 칩 · 연령 · 오늘 인원 ══
+   새 블록 기준(2.979): 글자 12·13·14·16(tokens --t-*) · 굵기 500·700 · 모서리 6·10·999. 주제 색은 스크립트가 칸마다 넣는다. */
+.tx-bar{display:flex;flex-direction:column;gap:10px;margin:0 0 12px;padding:14px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff)}
+.tx-bar[hidden]{display:none}
+.tx-phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.tx-tile{display:flex;flex-direction:column;gap:4px;min-height:60px;padding:10px 12px;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface-2,#F1F3F5);color:var(--text,#14161A);font:inherit;text-align:left;cursor:pointer}
+.tx-tile.on{color:#fff}
+.tx-tile-top{display:flex;align-items:center;gap:8px;font-size:var(--t-5);font-weight:700}
+.tx-tile-nm{flex:1 1 auto;min-width:0}
+.tx-tile-hint{font-size:var(--t-3);font-weight:500;opacity:.8}
+.tx-n{font-size:var(--t-3);font-weight:500;font-variant-numeric:tabular-nums;opacity:.75}
+.tx-dot{width:9px;height:9px;flex:0 0 auto;border-radius:999px}
+.tx-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tx-who{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px}
+.tx-lb{margin-right:2px;font-size:var(--t-3);font-weight:700;color:var(--text,#14161A)}
+.tx-chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line,#E3E6EA);border-radius:999px;background:var(--surface,#fff);color:var(--text-2,#646A73);font:inherit;font-size:var(--t-4);font-weight:500;cursor:pointer}
+.tx-chip.on{border-color:var(--c-act,#14213D);background:var(--c-act,#14213D);color:#fff;font-weight:700}
+.tx-step{width:36px;height:36px;padding:0;border:1px solid var(--line,#E3E6EA);border-radius:10px;background:var(--surface,#fff);color:var(--text,#14161A);font:inherit;font-size:var(--t-6);cursor:pointer}
+.tx-nv{min-width:52px;text-align:center;font-size:var(--t-6);font-weight:700;font-variant-numeric:tabular-nums}
+.tx-fit{align-self:flex-start;display:inline-block;margin-top:6px;padding:3px 8px;border-radius:6px;font-size:var(--t-3);font-weight:500}
+.tx-fit-ok{background:rgba(47,165,107,.14);color:var(--c-ok)}
+.tx-fit-warn{background:rgba(232,169,58,.18);color:var(--c-warn)}
+@media (pointer:coarse){ .tx-chip,.tx-step{min-height:44px} .tx-step{width:44px} }
+/* 3.082 — 폰(사용자 «핸드폰으로 보기도 당연히 좋게»): 고르개가 화면 절반을 넘게 먹어 카드가 아래로 밀렸다(390px 에서 430~520px).
+   국면 타일은 2×2 로 낮게(설명 줄 숨김), 주제 · 세부 국면 · 연령/인원은 한 줄씩 옆으로 밀어 보는 줄 — 줄바꿈 없이 세 줄. 바깥 상자 테두리는 겹치지 않게 뺀다 */
+@media (max-width:560px){
+  .tx-bar{gap:8px;padding:0;border:0;background:transparent}
+  .tx-phases{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .tx-tile{min-height:44px;padding:8px 10px;justify-content:center}
+  .tx-tile-hint{display:none}
+  .tx-bar>.tx-row,.tx-who{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .tx-bar>.tx-row::-webkit-scrollbar,.tx-who::-webkit-scrollbar{display:none}
+  .tx-bar .tx-chip,.tx-bar .tx-lb,.tx-bar .tx-step,.tx-bar .tx-nv{flex:0 0 auto}
+  .tx-who{gap:6px 16px}
+  .tx-who>.tx-row{flex:0 0 auto;flex-wrap:nowrap}
+}

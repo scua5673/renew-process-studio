@@ -108,7 +108,31 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       __setNameSize('m');__setNameStyle('auto');const f0=font();out.pill0=!!g().querySelector('.ps-chip-namebg');
       __setNameSize('l');out.fk=font()/f0;__setNameStyle('pill');out.pill=!!g().querySelector('.ps-chip-namebg');
       __setNameStyle('text');out.pillText=!!g().querySelector('.ps-chip-namebg');__setNameSize('m');__setNameStyle('auto');
+      /* 3.086 — «이름표 위치»를 3D 도 따른다(전엔 늘 머리 위): 아래 = 칩 밑, 위 = 칩 위. 화면에서 이름과 칩 윗면의 위아래를 잰다 */
+      const side=()=>{const n=g().querySelector('.ps-chip-name').getBoundingClientRect(),c=g().querySelector('.ps-chip-top').getBoundingClientRect();return n.top>=c.bottom-1?'below':(n.bottom<=c.top+1?'above':'overlap');};
+      __setNamePos('below');out.npBelow=side();__setNamePos('above');out.npAbove=side();__setNamePos('below');
+      /* 3.086 — 이름표 글꼴: 고르면 3D 이름이 그 글꼴, 보드에 저장되고 다시 열면 돌아온다. 내보내기 SVG 에는 쓰인 글자의 조각이 들어간다 */
+      const ff=()=>g().querySelector('.ps-chip-name').getAttribute('font-family');
+      document.querySelector('#nameFontSeg button[data-nf="round"]').click();out.nfFF=ff();out.nfSaved=captureSnap().nameFont;out.nfOn=document.querySelector('#nameFontSeg .on')?.getAttribute('data-nf');
+      await window.__nameFontWarm();out.nfExport=/@font-face\{font-family:'PSN Jua';[^}]*base64,/.test(boardImageXML().xml);
+      const keep=captureSnap();__setNameFont('base');out.nfBase=ff();loadSnap(keep);out.nfBack=window.__nameFont+'|'+ff().slice(0,9);
+      loadSnap(Object.assign(captureSnap(),{nameFont:'zzz'}));out.nfBad=window.__nameFont;__setNameFont('base');
+      /* 3.086 — 3D 알약은 글자 테두리 없이 · «사람» 발밑에 칩 글자(번호 · 포지션) 패, «없음»이면 없다, 이름표가 아래면 패 밑으로 */
+      __setNameStyle('pill');out.pillStroke=g().querySelector('.ps-chip-name').getAttribute('stroke');__setNameStyle('text');out.textStroke=!!g().querySelector('.ps-chip-name').getAttribute('stroke');__setNameStyle('auto');
+      const lab0=state.label;setTokShape('person');renderTokens();const pg=()=>tokenLayer.querySelector('[data-id="depth-b"]'),tag=()=>pg().querySelector('.ps-person-tagtxt');
+      const want=pg().querySelector('.ps-depth-original text')?.textContent||'';out.tagText=tag()?.textContent;out.tagWant=want;
+      __setNamePos('below');{const t=tag().getBoundingClientRect(),n=pg().querySelector('.ps-chip-name').getBoundingClientRect();out.tagThenName=n.top>=t.bottom-1;}
+      /* 3.087 — 패는 어두운 알약(유니폼 색은 아래 띠) · 보드 설정 «글자 크기»로 커진다 */
+      const pill=()=>pg().querySelector('.ps-person-tag');out.tagFill=pill().getAttribute('fill');out.tagBar=!!pg().querySelector('.ps-person-tagbar');
+      /* 3.093 — 팀마다 다른 알약(우리 어둡게 · 상대 밝게) · 뷰어 «이름»이면 알약에 이름 · 이름표는 따로 없음 */
+      {const pa=tokenLayer.querySelector('[data-id="depth-a"] .ps-person-tag'),pl=id=>state.players.find(q=>q.id===id);
+       out.tagKit=[pa&&pa.getAttribute('fill'),pill().getAttribute('fill')];out.tagKitWant=[pl('depth-a'),pl('depth-b')].map(q=>q.color||playerTeamCol(q)).map(c=>String(c).toLowerCase());
+       const keep=dc(state.teamColors||{}),pa2=()=>tokenLayer.querySelector('[data-id="depth-a"] .ps-person-tag');state.teamPattern=Object.assign({},state.teamPattern,{blue:'v'});state.teamColors=Object.assign({},keep,{blue:'#c8102e'});renderTokens();out.tagStripe=pa2().getAttribute('fill');out.tagStripeTok=tokenLayer.querySelector('[data-id="depth-a"] .ps-depth-original .tok-c')?.getAttribute('fill');state.teamPattern.blue='solid';state.teamColors=keep;renderTokens();
+       window.__tagName=true;renderTokens();out.tagNameTxt=tag()?.textContent;out.tagNameLabel=!!pg().querySelector('.ps-chip-name');window.__tagName=false;renderTokens();}
+      const h1=+pill().getAttribute('height');__setTagSize('xl');out.tagGrow=+pill().getAttribute('height')/h1;out.tagSaved=captureSnap().tagSize;__setTagSize('m');
+      state.label='none';renderTokens();out.tagNone=!tag();state.label=lab0;setTokShape('circle');renderTokens();
       const img=()=>document.querySelector('#tiltSurface img.tilt-stadium'),xml=()=>decodeURIComponent(img().src.slice(img().src.indexOf(',')+1));
+      try{const p=document.getElementById('cmd-board-settings-pop');if(p&&p.__psSelectTab)p.__psSelectTab('view');}catch(_){}   /* 3.036 — 3D 줄은 «내 화면» 탭에 산다(기본 탭은 운동장) */
       const row=()=>getComputedStyle(document.getElementById('tiltCamRow')).display;out.rowOn=row();
       out.cam={};for(const c of ['low','mid','high']){__setTilt3dOpt('cam',c);out.cam[c]={ax:document.documentElement.style.getPropertyValue('--tilt-ax'),tf:getComputedStyle(svg).transform};}
       __setTilt3dOpt('cam','mid');
@@ -125,6 +149,16 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       return out;});
     assert.equal(t3.pill0,false,'3D «기본» name is an outlined name');assert.ok(Math.abs(t3.fk-1.25)<.01,'«크게» = 1.25× '+t3.fk);
     assert.equal(t3.pill,true,'«알약» puts the 3D name on a pill');assert.equal(t3.pillText,false);
+    assert.equal(t3.npBelow,'below','«이름표 아래» puts the 3D name under the chip');
+    assert.match(t3.nfFF,/^'PSN Jua',Pretendard,/,'«둥글게» draws the 3D name in its font');assert.equal(t3.nfSaved,'round','saved with the board');assert.equal(t3.nfOn,'round');
+    assert.ok(t3.nfExport,'the export picture carries the font');assert.match(t3.nfBase,/^Pretendard,/,'«기본» = the app font');
+    assert.equal(t3.nfBack,"round|'PSN Jua'",'reopening the board brings its font back');assert.equal(t3.nfBad,'base','an unknown value reads as «기본»');
+    assert.equal(t3.pillStroke,null,'«알약» name has no outline');assert.equal(t3.textStroke,true,'«글자만» keeps the outline');
+    assert.ok(t3.tagWant,'the token has a chip label');assert.equal(t3.tagText,t3.tagWant,'«사람» shows the chip label under the feet');
+    assert.equal(t3.tagThenName,true,'a name below goes under the label');
+    assert.deepEqual(t3.tagKit,t3.tagKitWant,'3.093 — each team\'s solid kit colour');assert.equal(t3.tagStripe,'#c8102e','a striped kit uses its main colour only (token fill '+t3.tagStripeTok+')');
+    assert.equal(t3.tagNameTxt,'B','viewer «이름» puts the name in the pill');assert.equal(t3.tagNameLabel,false,'and drops the separate name label');assert.equal(t3.tagBar,false,'no kit colour on the badge («유니폼 색상 적용하지 말고»)');
+    assert.ok(Math.abs(t3.tagGrow-1.7)<.08,'«아주 크게» = 1.7× '+t3.tagGrow);assert.equal(t3.tagSaved,'xl','saved with the board');assert.equal(t3.tagNone,true,'«칩 글자 없음» = no label');assert.equal(t3.npAbove,'above','«위» puts it over the chip');
     assert.notEqual(t3.rowOn,'none','3D rows show in 3D');assert.equal(t3.rowOff,'none','3D rows hide on the flat board');
     assert.deepEqual([t3.cam.low.ax,t3.cam.mid.ax,t3.cam.high.ax],['36deg','','12deg'],'낮게 = more oblique · 보통 = 3.009 · 높게 = from above');
     assert.ok(new Set(Object.values(t3.cam).map(c=>c.tf)).size===3,'the camera changes the board transform');
@@ -133,7 +167,7 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
     assert.deepEqual([t3.deco.simple.bench,t3.deco.grass.bench],[true,false]);
     assert.ok(t3.deco.grass.k>t3.deco.full.k,'less stadium → bigger pitch '+JSON.stringify(t3.deco));
     assert.equal(t3.adEsc,true,'ad text is escaped');assert.equal(t3.adDecodes,true,'the stadium picture still decodes');assert.equal(t3.adBack,true,'empty → PROCESS STUDIO');
-    assert.deepEqual(t3.stored,{cam:'mid',deco:'full',ad:''},'device setting');
+    assert.deepEqual(t3.stored,{cam:'mid',deco:'full',ad:'',mood:'night',brand:false},'device setting');   /* 3.029 — 분위기 · 팀 브랜딩도 같은 기기 설정에 */
     assert.equal(t3.saved,true);assert.deepEqual(t3.names,['경기 분석'],'names are trimmed');assert.equal(t3.applied,'l','applying restores the saved look');
     assert.equal(t3.samePlayers,true,'a preset never moves players');assert.equal(t3.removed,0);
     if(viewport.width===1280){   // typing in the ad box never reaches the board's shortcuts (tool keys, delete)

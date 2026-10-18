@@ -8,16 +8,16 @@
 <meta name="theme-color" content="#ECEDF0">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=2.552b">
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b"><link rel="stylesheet" href="/vendor/tokens.css?v=3.026">
 <style>
 /* 선수 폰 우선 — 큰 글씨, 한 단계 한 화면. UI-가이드 토큰 준수 */
 :root{
-  --bg:#ECEDF0; --surface:#FFFFFF; --line:#E3E5E9; --text:#16181C; --text-2:#5C6068; --text-3:#8A9099;
+  --bg:#ECEDF0; --surface:#FFFFFF; --line:#E3E5E9; --text:#16181C; --text-2:#5C6068; --text-3:#646A73;   /* 3.038 — 보조 회색 AA(흰 5.4 · #ECEDF0 4.7) */
   --blue:#3a6df0; --purple:#7C4DFF; --red:#C24A46; --kakao:#FEE500;
   --f:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
 }
 @media (prefers-color-scheme: dark){
-  :root{ --bg:#0F141B; --surface:#1A212B; --line:#2C3744; --text:#E7EBF1; --text-2:#9AA4B3; --text-3:#7C8696; --purple:#9D7BFF; --blue:#4D7DFF; }
+  :root{ --bg:#0F141B; --surface:#1A212B; --line:#2C3744; --text:#E7EBF1; --text-2:#9AA4B3; --text-3:#8B929C; --purple:#9D7BFF; --blue:#4D7DFF; }
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased;word-break:keep-all}
@@ -77,18 +77,18 @@ footer a{color:var(--text-2);font-weight:700;text-decoration:none}
 
   <div class="os on" id="os-ios">
     <div class="mock"><svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
-      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#8A9099">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="var(--text-3)">
         <rect x="12" y="12" width="120" height="126" rx="12"/>
         <rect x="52" y="104" width="40" height="22" rx="6" stroke="#3a6df0"/>
         <path d="M72 121v-9M68 115l4-4 4 4" stroke="#3a6df0"/>
-        <text x="72" y="60" text-anchor="middle" font-family="inherit" font-size="12" fill="#8A9099" stroke="none">Safari 화면</text>
+        <text x="72" y="60" text-anchor="middle" font-family="inherit" font-size="12" fill="var(--text-3)" stroke="none">Safari 화면</text>
         <text x="72" y="97" text-anchor="middle" font-size="10" fill="#3a6df0" stroke="none" font-weight="700">① 공유 버튼</text>
         <path d="M148 75h24M166 69l6 6-6 6"/>
         <rect x="188" y="12" width="120" height="126" rx="12"/>
-        <text x="248" y="40" text-anchor="middle" font-size="11" fill="#8A9099" stroke="none">공유 메뉴에서</text>
+        <text x="248" y="40" text-anchor="middle" font-size="11" fill="var(--text-3)" stroke="none">공유 메뉴에서</text>
         <rect x="200" y="56" width="96" height="30" rx="8" stroke="#3a6df0"/>
         <text x="248" y="75" text-anchor="middle" font-size="11" fill="#3a6df0" stroke="none" font-weight="800">② 홈 화면에 추가 ⊕</text>
-        <text x="248" y="112" text-anchor="middle" font-size="11" fill="#8A9099" stroke="none">③ 오른쪽 위 [추가]</text>
+        <text x="248" y="112" text-anchor="middle" font-size="11" fill="var(--text-3)" stroke="none">③ 오른쪽 위 [추가]</text>
       </g>
     </svg></div>
     <p><b>Safari</b>로 연 상태에서 → 아래 <b>공유 버튼(⬆︎)</b> → <b>홈 화면에 추가</b> → <b>추가</b>. 홈에 PROCESS 아이콘이 생깁니다.</p>
@@ -96,17 +96,17 @@ footer a{color:var(--text-2);font-weight:700;text-decoration:none}
 
   <div class="os" id="os-and">
     <div class="mock"><svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
-      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#8A9099">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="var(--text-3)">
         <rect x="12" y="12" width="120" height="126" rx="12"/>
         <circle cx="118" cy="26" r="1.6" fill="#3a6df0" stroke="none"/><circle cx="118" cy="32" r="1.6" fill="#3a6df0" stroke="none"/><circle cx="118" cy="38" r="1.6" fill="#3a6df0" stroke="none"/>
-        <text x="72" y="60" text-anchor="middle" font-size="12" fill="#8A9099" stroke="none">Chrome 화면</text>
+        <text x="72" y="60" text-anchor="middle" font-size="12" fill="var(--text-3)" stroke="none">Chrome 화면</text>
         <text x="72" y="97" text-anchor="middle" font-size="10" fill="#3a6df0" stroke="none" font-weight="700">① 오른쪽 위 ⋮ 메뉴</text>
         <path d="M148 75h24M166 69l6 6-6 6"/>
         <rect x="188" y="12" width="120" height="126" rx="12"/>
-        <text x="248" y="40" text-anchor="middle" font-size="11" fill="#8A9099" stroke="none">메뉴에서</text>
+        <text x="248" y="40" text-anchor="middle" font-size="11" fill="var(--text-3)" stroke="none">메뉴에서</text>
         <rect x="200" y="56" width="96" height="30" rx="8" stroke="#3a6df0"/>
         <text x="248" y="75" text-anchor="middle" font-size="11" fill="#3a6df0" stroke="none" font-weight="800">② 앱 설치</text>
-        <text x="248" y="112" text-anchor="middle" font-size="11" fill="#8A9099" stroke="none">③ [설치] 확인</text>
+        <text x="248" y="112" text-anchor="middle" font-size="11" fill="var(--text-3)" stroke="none">③ [설치] 확인</text>
       </g>
     </svg></div>
     <p><b>Chrome</b>으로 연 상태에서 → 오른쪽 위 <b>⋮ 메뉴</b> → <b>앱 설치</b>(또는 홈 화면에 추가) → <b>설치</b>.</p>

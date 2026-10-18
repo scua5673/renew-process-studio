@@ -12,7 +12,7 @@ function setup(id,players=[{id:'a',name:'원래',num:'7'}]){
 }
 for(const id of ['nameInput','numInput']){
  for(const mode of ['composition-state','isComposing','keyCode229'])test(id+' leaves IME Enter to browser: '+mode,()=>{
-  const h=setup(id);h.input.value=id==='nameInput'?'이슬기':'김';
+  const h=setup(id);h.input.value=id==='nameInput'?'홍길동':'김';
   if(mode==='composition-state')h.fire('compositionstart');
   h.fire('input');const before=h.counts.paint;
   const e=h.fire('keydown',{key:'Enter',...(mode==='isComposing'?{isComposing:true}:mode==='keyCode229'?{keyCode:229}:{})});
@@ -28,8 +28,8 @@ for(const id of ['nameInput','numInput']){
  });
 }
 test('name edit applies complete Hangul to each selected player and scenes',()=>{
- const h=setup('nameInput',[{id:'a',name:'a'},{id:'b',name:'b'}]);h.fire('compositionstart');h.input.value='이슬기';h.fire('input');h.fire('compositionend');h.fire('keydown',{key:'Enter'});
- assert.deepEqual(h.players.map(p=>p.name),['이슬기','이슬기']);assert.equal(h.counts.sync,2);
+ const h=setup('nameInput',[{id:'a',name:'a'},{id:'b',name:'b'}]);h.fire('compositionstart');h.input.value='홍길동';h.fire('input');h.fire('compositionend');h.fire('keydown',{key:'Enter'});
+ assert.deepEqual(h.players.map(p=>p.name),['홍길동','홍길동']);assert.equal(h.counts.sync,2);
 });
 function rosterSetup(){
  const start=source.indexOf('const TEAMHEX='),end=source.indexOf('function toggleRoster()',start);
@@ -51,9 +51,9 @@ function rosterSetup(){
  return {name,players,counts,fire:(k,props)=>fire(name,k,props)};
 }
 for(const mode of ['composition-state','isComposing','keyCode229'])test('roster name leaves IME Enter to browser: '+mode,()=>{
- const h=rosterSetup();h.name.value='이슬기';if(mode==='composition-state')h.fire('compositionstart');h.fire('input');
+ const h=rosterSetup();h.name.value='홍길동';if(mode==='composition-state')h.fire('compositionstart');h.fire('input');
  const e=h.fire('keydown',{key:'Enter',...(mode==='isComposing'?{isComposing:true}:mode==='keyCode229'?{keyCode:229}:{})});
- assert.equal(e.prevented,false);assert.equal(h.counts.blur,0);assert.equal(h.players[0].name,'이슬기');
+ assert.equal(e.prevented,false);assert.equal(h.counts.blur,0);assert.equal(h.players[0].name,'홍길동');
 });
 test('roster name ordinary Enter finalizes once after Hangul composition',()=>{
  const h=rosterSetup();h.fire('compositionstart');h.name.value='황진성';h.fire('input');h.fire('keydown',{key:'Enter',isComposing:true});h.fire('compositionend');

@@ -44,7 +44,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
   async function open(id='color-a'){await pressTok(frame.locator('.token[data-id="'+id+'"]'));if(!await frame.locator('#colorCtl.open').count())await press(frame.locator('#colorTrig'));await frame.locator('#colorPop').waitFor({state:'visible'});}
   // Replay browser composition events against the real controls. This does not emulate a native OS IME.
   await pressTok(frame.locator('.token[data-id="color-a"]'));
-  for(const [id,value] of [['nameInput','이슬기'],['numInput','김']]){
+  for(const [id,value] of [['nameInput','홍길동'],['numInput','김']]){
     const input=frame.locator('#'+id);await input.focus();
     const during=await input.evaluate((el,value)=>{
       el.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true,data:''}));
@@ -58,7 +58,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
     await input.press('Enter');assert.equal(await input.evaluate(el=>document.activeElement===el),false);
     assert.equal(await frame.evaluate(id=>state.players[0][id==='nameInput'?'name':'num'],id),value);
   }
-  assert.equal(await frame.evaluate(()=>captureSnap().players[0].name),'이슬기');
+  assert.equal(await frame.evaluate(()=>captureSnap().players[0].name),'홍길동');
   // The extra sheet-layout fixture has the shell's CSS marker, not its injected toolbar.
   const undo=()=>spec.shellDock?frame.evaluate(()=>undoLast()):press(frame.locator('#undoBtn'));
   const colors=()=>frame.evaluate(()=>state.players.map(p=>p.color||null));
@@ -92,6 +92,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
     assert.ok(panel.height<=panel.max+1,JSON.stringify(panel));assert.equal(panel.overflow,'auto');
     await press(frame.locator('#delSelBtn'));assert.equal((await colors()).length,1,'landscape tablet can reach and use delete');
     if(engine==='chromium'){
+      if(await frame.locator('#ps-df-team').count()&&!(await frame.locator('#cmd-player-stamp').isVisible()))await press(frame.locator('#ps-df-team'));   /* 3.073 — 떠 있는 도크: 선수 줄은 «선수» 버튼으로 연다 */
       const cdp=await context.newCDPSession(page),start=await frame.locator('#cmd-player-stamp').boundingBox(),target=await frame.locator('svg.board').boundingBox();
       const sx=start.x+start.width/2,sy=start.y+start.height/2,tx=target.x+target.width*.45,ty=target.y+target.height*.4;
       const beforeScroll=await frame.evaluate(()=>({x:scrollX,y:scrollY,stage:document.querySelector('#boardStage').scrollTop}));
@@ -99,6 +100,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
       for(let n=1;n<=12;n++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:sx+(tx-sx)*n/12,y:sy+(ty-sy)*n/12,id:1}]});
       await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       assert.equal((await colors()).length,2,'native touch drag places a player instead of panning');
+      if(await frame.locator('#ps-df-team').count()&&!(await frame.locator('#cmd-player-stamp').isVisible()))await press(frame.locator('#ps-df-team'));   /* 3.073 · 3.076 — 떠 있는 도크: 선수 칸을 연다 */
       await cdp.send('Input.dispatchMouseEvent',{type:'mousePressed',x:sx,y:sy,button:'left',buttons:1,clickCount:1,pointerType:'pen'});
       await cdp.send('Input.dispatchMouseEvent',{type:'mouseMoved',x:tx+60,y:ty,button:'left',buttons:1,pointerType:'pen'});
       await cdp.send('Input.dispatchMouseEvent',{type:'mouseReleased',x:tx+60,y:ty,button:'left',buttons:0,clickCount:1,pointerType:'pen'});
@@ -107,6 +109,7 @@ try{for(const spec of [{name:'desktop',width:1280,height:900},{name:'ipad-landsc
       await cdp.detach();
     }
     await frame.evaluate(()=>openEditor(null,'train'));await frame.locator('body.editing #editorModal.on').waitFor();
+    if(await frame.locator('#ps-df-team').count()&&!(await frame.locator('#cmd-player-stamp').isVisible()))await press(frame.locator('#ps-df-team'));   /* 3.073 · 3.076 — 떠 있는 도크: 선수 칸을 연다 */
     const stamp=await frame.locator('#cmd-player-stamp').boundingBox(),pitch=await frame.locator('svg.board').boundingBox();
     const countBefore=await frame.evaluate(()=>state.players.length);
     await page.mouse.move(stamp.x+stamp.width/2,stamp.y+stamp.height/2);await page.mouse.down();await page.mouse.move(pitch.x+pitch.width*.4,pitch.y+pitch.height*.4,{steps:10});await page.mouse.up();

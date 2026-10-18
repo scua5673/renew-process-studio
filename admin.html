@@ -2,9 +2,12 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script>/* 3.034 — 앱에서 연 관리자 탭(window.open, opener 유지)은 앱 탭의 sessionStorage 를 복사해 온다. 앱의 «살아 있음» 표시(ps_boot_alive_v1)는
+   여기서 버린다 — 이 탭에서 앱으로 돌아가는 부팅(로그아웃 대체 경로)이 «앞 페이지가 죽음»으로 읽지 않게. */try{sessionStorage.removeItem('ps_boot_alive_v1');}catch(_){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>PROCESS STUDIO · 관리자</title>
+<link rel="stylesheet" href="/vendor/fonts.css?v=2.552b">
 <style>
   :root{
     --bg:#0F141B; --panel:#1A212B; --panel2:#232C38; --line:#2C3744; --line2:#39434F;
@@ -13,11 +16,14 @@
   }
   *{box-sizing:border-box;}
   :focus-visible{outline:2px solid #3a6df0;outline-offset:2px}
+  html{color-scheme:dark;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
-    font-family:-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
+    font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Roboto,sans-serif;
     -webkit-font-smoothing:antialiased;font-size:14px;}
   a{color:var(--blue2);text-decoration:none;}
   button{font-family:inherit;cursor:pointer;}
+  /* 3.090 — 따로 꾸미지 않은 선택 상자가 브라우저 기본 흰 상자로 떠서 어두운 화면에서 튀었다(오류 · 사용 방식 · 활동 분석) */
+  select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:0 8px;font-family:inherit;}
   .hide{display:none!important;}
   /* ── 관리자 앱 셸: 목업과 같은 좌측 내비게이션 + 넓은 작업영역 ── */
   #app{min-height:100vh;padding-left:220px;}
@@ -28,13 +34,15 @@
   .admin-nav button{display:flex;align-items:center;gap:10px;width:100%;height:40px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--dim);font-size:12px;font-weight:800;text-align:left;transition:.14s;}
   .admin-nav button:hover{background:rgba(255,255,255,.045);color:var(--txt);}
   .admin-nav button.on{background:var(--panel2);color:var(--txt);}
+  /* 20261014 — 오류 제보 «답변 필요» 수 */
+  .navBadge{margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--amber);color:#1a1300;font-size:11px;font-weight:800;line-height:18px;text-align:center}
+  .navBadge[hidden]{display:none}
   .admin-nav svg{width:16px;height:16px;flex:0 0 auto;}
   .admin-side-foot{position:absolute;left:14px;right:14px;bottom:18px;padding:11px 12px;border-top:1px solid var(--line);color:var(--dim2);font-size:10px;line-height:1.5;}
-  #app>header,#app>.stats,#app>.tabs,#app>.wrap{margin-left:0;}
+  #app>header,#app>.stats,#app>.wrap{margin-left:0;}
   #app>header{padding-left:26px;}
   #app>header .logo{display:none;}
   .admin-top-title{font-size:14px;font-weight:800;letter-spacing:-.01em;}
-  #app>.tabs{display:none;}
   #app>.stats{padding:16px 26px 6px;}
   #app>.wrap{padding:14px 26px 42px;max-width:1460px;margin-right:auto;}
   @media(max-width:900px){
@@ -43,6 +51,7 @@
     .admin-brand{justify-content:center;padding:0 0 22px;font-size:0;}
     .admin-nav button{justify-content:center;padding:0;font-size:0;}
     .admin-nav button svg{width:18px;height:18px;}
+    .admin-nav .navBadge{position:absolute;top:2px;right:2px;margin:0;font-size:10px;min-width:16px;height:16px;line-height:16px;padding:0 4px}
     .admin-side-foot{display:none;}
   }
   @media(max-width:680px){
@@ -72,7 +81,7 @@
     font-weight:800;font-size:14px;margin-top:10px;}
   .btn-kakao{background:#FEE500;color:#181600;}
   .btn-google{background:#fff;color:#1f232b;}
-  .uidbox{margin-top:16px;font:600 12px/1.5 ui-monospace,Menlo,monospace;color:var(--dim);
+  .uidbox{margin-top:16px;font:600 12px/1.5 Pretendard,ui-monospace,Menlo,monospace;color:var(--dim);
     background:var(--panel2);border:1px dashed var(--line2);border-radius:10px;padding:11px;word-break:break-all;user-select:all;}
 
   /* ── 헤더 ── */
@@ -94,12 +103,6 @@
   .stat .n{font-size:24px;font-weight:800;letter-spacing:-.01em;}
   .stat .l{font-size:12px;color:var(--dim);margin-top:2px;font-weight:600;}
 
-  /* ── 탭 ── */
-  .tabs{display:flex;gap:6px;padding:8px 18px 0;}
-  .tab{height:38px;padding:0 16px;border:0;background:transparent;color:var(--dim);border-radius:10px 10px 0 0;
-    font-weight:800;font-size:13px;border-bottom:2px solid transparent;}
-  .tab.on{color:var(--txt);border-bottom-color:var(--blue);}
-
   /* ── 레이아웃 ── */
   .wrap{display:grid;grid-template-columns:360px 1fr;gap:16px;padding:14px 18px 40px;align-items:start;}
   @media(max-width:900px){ .wrap{grid-template-columns:1fr;} }
@@ -109,7 +112,7 @@
      폰(≤900)은 종전대로 페이지 스크롤. 마법 숫자 없음 — 높이는 flex 가 나눈다. */
   @media(min-width:901px){
     #app{height:100vh;display:flex;flex-direction:column;}
-    #app>header,#app>.stats,#app>.tabs{flex:0 0 auto;}
+    #app>header,#app>.stats{flex:0 0 auto;}
     #app>.wrap{flex:1 1 auto;min-height:0;align-items:stretch;grid-auto-rows:minmax(0,1fr);padding-bottom:18px;}
     .col{display:flex;flex-direction:column;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
     .col>.panel.ps-scroll{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin-bottom:0;}
@@ -178,13 +181,13 @@
   .health-detail-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:9px}
   .health-detail-head div{min-width:0;flex:1}.health-detail-head b{display:block;font-size:12px}.health-detail-head span{display:block;margin-top:2px;color:var(--dim);font-size:10px;line-height:1.5}
   .health-detail table{min-width:610px}.health-detail th,.health-detail td{padding:8px 6px;font-size:10px}
-  .health-detail code{font:650 10px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ef9eaa;word-break:break-word}
+  .health-detail code{font:650 10px/1.35 Pretendard,ui-monospace,SFMono-Regular,Menlo,monospace;color:#ef9eaa;word-break:break-word}
   .err-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:12px}
   .err-kpi{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
   .err-kpi b{display:block;font-size:20px}.err-kpi span{display:block;margin-top:3px;color:var(--dim);font-size:10px}
-  .err-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:rgba(224,86,102,.12);color:#ef9eaa;font:750 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .err-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:rgba(224,86,102,.12);color:#ef9eaa;font:750 10px/1 Pretendard,ui-monospace,SFMono-Regular,Menlo,monospace}
   .err-msg{max-width:460px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim);font-size:10px}
-  .err-meta{font:600 10px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim2);word-break:break-word}
+  .err-meta{font:600 10px/1.45 Pretendard,ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim2);word-break:break-word}
   .err-title{font-weight:800;font-size:12px;color:var(--txt);line-height:1.35}
   .err-cause{margin-top:4px;color:var(--dim);font-size:10px;line-height:1.45;max-width:520px}
   .err-fix{margin-top:5px;color:#b9c9e4;font-size:10px;line-height:1.5;max-width:360px}
@@ -224,6 +227,18 @@
     border-radius:8px;font-size:11px;font-weight:700;margin-left:5px;}
   .rowbtn:hover{color:var(--txt);border-color:var(--dim);}
   .rowbtn.danger:hover{color:var(--red);border-color:var(--red);}
+  .tybadge.admActDanger{background:rgba(224,86,102,.13);color:#f08a96;}
+  /* 20261014 — 커뮤니티 신고함 */
+  .commCard{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:var(--panel2);}
+  .commCard .commTitle b{font-size:14px;}
+  .commMeta{font-size:12px;margin-top:4px;overflow-wrap:anywhere;}
+  .commSummary{font-size:13px;margin:8px 0 0;color:var(--txt);white-space:pre-wrap;overflow-wrap:anywhere;}
+  .commReports{font-size:12px;font-weight:700;color:var(--amber);margin-top:8px;}
+  .commReasons{margin:6px 0 0;padding-left:18px;font-size:12px;}
+  .commActions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px;}
+  .commActions input{flex:1 1 220px;min-width:0;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--txt);font:inherit;font-size:13px;}
+  .commNotice{font-size:13px;color:var(--blue2);padding:4px 2px 10px;}
+  .commError{font-size:13px;color:var(--red);background:rgba(224,86,102,.1);padding:10px 12px;border-radius:9px;margin-bottom:10px;}
   .empty{color:var(--dim2);font-size:13px;text-align:center;padding:26px 0;}
   .muted{color:var(--dim2);}
 
@@ -258,9 +273,10 @@
 </style>
 <link rel="stylesheet" href="studio/admin-user-detail.css?v=2.964">
 <link rel="stylesheet" href="studio/admin-operations.css?v=2.816">
-<link rel="stylesheet" href="studio/admin-support.css?v=2.816">
+<link rel="stylesheet" href="studio/admin-support.css?v=20261014">
 <link rel="stylesheet" href="studio/admin-content.css?v=2.890">
-<link rel="stylesheet" href="studio/admin-density.css?v=2.867">
+<link rel="stylesheet" href="studio/admin-density.css?v=3.090">
+<link rel="stylesheet" href="studio/admin-today.css?v=3.090">
 </head>
 <body>
 
@@ -295,15 +311,20 @@
     <div class="admin-brand"><i>PRO</i><span>STUDIO 관리자</span></div>
     <nav class="admin-nav">
       <button data-admin-tab="home" onclick="setTab('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-8 9 8v10H3z"/><path d="M9 21v-7h6v7"/></svg>운영 홈</button>
+      <div class="admin-nav-group" aria-hidden="true">처리할 일</div>
+      <button data-admin-tab="support" onclick="setTab('support')" title="오류 제보" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v12H9l-5 4V4z"/><path d="M8 8h8M8 12h5"/></svg>오류 제보<span class="navBadge" id="supportBadge" hidden></span></button>
+      <button data-admin-tab="comm" onclick="setTab('comm')" title="커뮤니티 신고" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>커뮤니티<span class="navBadge" id="commBadge" hidden></span></button>
+      <div class="admin-nav-group" aria-hidden="true">사람 · 팀</div>
+      <button data-admin-tab="users" onclick="setTab('users')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0112 0M15 19a5 5 0 016 0"/></svg>사용자</button>
+      <button data-admin-tab="ws" onclick="setTab('ws')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V6l8-3 8 3v14"/><path d="M9 20v-5h6v5M8 9h1M15 9h1"/></svg>팀 관리</button>
+      <button data-admin-tab="idp" onclick="setTab('idp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>IDP</button>
+      <button data-admin-tab="all" onclick="setTab('all')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>콘텐츠</button>
+      <div class="admin-nav-group" aria-hidden="true">지표</div>
       <button data-admin-tab="use" onclick="setTab('use')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>사용 방식</button>
       <button data-admin-tab="act" onclick="setTab('act')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/></svg>활동 분석</button>
-      <button data-admin-tab="all" onclick="setTab('all')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>콘텐츠</button>
-      <button data-admin-tab="ws" onclick="setTab('ws')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V6l8-3 8 3v14"/><path d="M9 20v-5h6v5M8 9h1M15 9h1"/></svg>팀 관리</button>
-      <button data-admin-tab="users" onclick="setTab('users')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0112 0M15 19a5 5 0 016 0"/></svg>사용자</button>
-      <button data-admin-tab="idp" onclick="setTab('idp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>IDP</button>
-      <button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/><path d="M12 15v6"/></svg>백엔드</button>
+      <div class="admin-nav-group" aria-hidden="true">시스템</div>
       <button data-admin-tab="errors" onclick="setTab('errors')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 9v4M12 17h.01"/></svg>오류</button>
-      <button data-admin-tab="support" onclick="setTab('support')" title="오류 제보"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v12H9l-5 4V4z"/><path d="M8 8h8M8 12h5"/></svg>오류 제보</button>
+      <button data-admin-tab="back" onclick="setTab('back')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5v13c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-13"/><path d="M4 12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8"/></svg>백엔드</button>
     </nav>
     <div class="admin-side-foot">PROCESS STUDIO<br>운영 관리자 전용</div>
   </aside>
@@ -318,20 +339,11 @@
 
   <div class="stats" id="stats"></div>
 
-  <div class="tabs">
-    <button class="tab" id="tabHome" onclick="setTab('home')">홈</button>
-    <button class="tab" id="tabUse" onclick="setTab('use')">사용 방식</button>
-    <button class="tab on" id="tabAct" onclick="setTab('act')">활동</button>
-    <button class="tab" id="tabAll" onclick="setTab('all')">훈련 전체</button>
-    <button class="tab" id="tabWs" onclick="setTab('ws')">워크스페이스</button>
-    <button class="tab" id="tabUsers" onclick="setTab('users')">유저</button>
-    <button class="tab" id="tabIdp" onclick="setTab('idp')">IDP</button>
-    <button class="tab" id="tabBack" onclick="setTab('back')">백엔드</button>
-    <button class="tab" id="tabErrors" onclick="setTab('errors')">오류</button>
-    <button class="tab" id="tabSupport" onclick="setTab('support')">오류 제보</button>
-  </div>
 
   <section class="wrap hide" id="viewSupport" style="grid-template-columns:1fr" aria-label="오류 제보 접수함"></section>
+
+  <!-- 20261014 — 커뮤니티 신고함 · 글 숨기기(ps_admin_comm_queue · ps_admin_comm_hide · ps_admin_comm_resolve) -->
+  <div class="wrap hide" id="viewComm" style="grid-template-columns:1fr"><div class="col" id="commBody"><div class="loading">불러오는 중…</div></div></div>
 
   <!-- 2.630 — 백엔드 건강 한 장(ps_admin_health): 코치가 제보하기 전에 본다 -->
   <div class="wrap hide" id="viewBack" style="grid-template-columns:1fr"><!-- 2.958 — 한 칸(전엔 기본 2칸 격자의 왼쪽 322px 에 끼고 오른쪽이 비어 있었다) -->
@@ -340,6 +352,11 @@
       <div class="panel" id="incPanel">
         <div class="sec-t">데이터 사고 <span style="font-weight:600;color:var(--dim2);font-size:11px;text-transform:none;letter-spacing:0">· 자료가 사라지거나 덮인 일 · 복구 · 가드가 막은 것</span> <button type="button" onclick="loadIncidents()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
         <div id="incBody"><div class="loading">불러오는 중…</div></div>
+      </div>
+      <!-- 20261014 — 관리자 작업 기록(ps_admin_actions_list): 팀 삭제 · 멤버 내보내기 · 콘텐츠 삭제/복구 · 제보 상태 · 커뮤니티 숨김 -->
+      <div class="panel" id="admActPanel">
+        <div class="sec-t">관리자 작업 기록 <span style="font-weight:600;color:var(--dim2);font-size:11px;text-transform:none;letter-spacing:0">· 누가 언제 무엇을 지우고 바꿨나</span> <button type="button" onclick="loadAdminActions()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
+        <div id="admActBody"><div class="loading">불러오는 중…</div></div>
       </div>
       <div class="panel">
         <div class="sec-t">백엔드 건강 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 크기 · 실패 · 막힌 기기 · 판 분포 · 큰 문서 · 야간 작업</span> <button type="button" onclick="loadBack()" style="margin-left:8px;font:700 11px inherit;border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:3px 8px;cursor:pointer">새로고침</button></div>
@@ -385,10 +402,8 @@
 
   <!-- 홈 — 모든 데이터 한눈에: 7일 지표 · IDP 퍼널 · 팀 활성/침묵 · 기능 사용 · 최근 가입 -->
   <div class="wrap hide" id="viewHome">
-    <section class="panel admin-support-entry" style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-      <div><b>오류 제보 접수함</b><p class="muted" style="margin:6px 0 0">앱에서 보낸 제보와 오류 로그를 확인하고 답변합니다.</p></div>
-      <button type="button" class="hbtn" onclick="setTab('support')">오류 제보 열기</button>
-    </section>
+    <!-- 3.090 — 오늘 확인할 일 한 줄(studio/admin-today.js): 제보 · 신고 · 앱 오류 · 후속 기한 · 무사고 -->
+    <section class="admin-today" id="adminToday" aria-label="오늘 확인할 일"></section>
     <div class="col">
       <div class="panel">
         <div class="sec-t">사용 현황 <span style="font-weight:600;color:var(--dim2);font-size:11px">· 실가입자 = 코치 + 선수 · 팀 (누적)</span></div>
@@ -592,10 +607,13 @@
 <div class="toast" id="toast"></div>
 
 <script src="studio/admin-user-detail.js?v=2.964"></script>
-<script src="studio/admin-operations.js?v=2.792"></script>
+<script src="studio/admin-operations.js?v=3.090"></script>
+<script src="studio/admin-today.js?v=3.090"></script>
+<script src="studio/admin-actions.js?v=20261014"></script>
+<script src="studio/admin-community.js?v=20261014"></script>
 <script src="studio/support-diagnostics.js?v=2.816"></script>
 <script src="studio/support.js?v=2.816"></script>
-<script src="studio/admin-support.js?v=2.919"></script>
+<script src="studio/admin-support.js?v=20261014"></script>
 <script src="studio/admin-content-data.js?v=2.854"></script>
 <script src="studio/admin-content.js?v=2.890"></script>
 <script>
@@ -612,6 +630,8 @@ function adminLockSession(message){
   try{if(window.PSAdminUserDetail)PSAdminUserDetail.close();}catch(_){}
   try{if(adminSupport){adminSupport.destroy();adminSupport=null;}}catch(_){}
   try{if(adminContent){adminContent.destroy();adminContent=null;}ADMIN_CONTENT_OWNERS=[];}catch(_){}
+  try{adminActions=null;if($('admActBody'))$('admActBody').innerHTML='';setSupportCounts(null);}catch(_){}
+  try{adminCommunity=null;if($('commBody'))$('commBody').innerHTML='';setCommCounts(null);}catch(_){}
   ['app','modalRoot'].forEach(function(id){var el=document.getElementById(id);if(el){el.classList.add('hide');el.replaceChildren();}});
   try{WS=[];USERS=[];ALL_LIB=[];HOME=null;WHOLOG=null;IDP_CACHE={};ERR=null;USE=null;}catch(_){}
   ['gateLogin','gateDenied'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.add('hide');});
@@ -712,13 +732,63 @@ function loadAdminSupport(){
     $('viewSupport').textContent='오류 제보 화면을 불러오지 못했습니다. 페이지를 다시 열어 주세요.';return;
   }
   if(!adminSupport)adminSupport=PSAdminSupport.create({window:window,host:$('viewSupport'),rpc:adminRpc,context:adminSupportContext,
-    format:PSSupportDiagnostics.format,copyText:PSSupport.copyText});
+    format:PSSupportDiagnostics.format,copyText:PSSupport.copyText,onCounts:setSupportCounts});
   return adminSupport.load();
 }
+/* 20261014 — 답변이 필요한 제보 수(새 제보 + 재문의). 서버가 counts 를 주지 않으면(옛 SQL) 아무것도 표시하지 않는다. */
+function setSupportCounts(c){
+  var n=c&&Number.isInteger(c.needs)&&c.needs>=0?c.needs:null,b=$('supportBadge');
+  if(b){b.hidden=!n;b.textContent=n?String(n):'';}
+  todaySet('support',n);
+}
+/* 20261014 — 커뮤니티 열린 신고 수. 서버 함수가 없으면(마이그레이션 전) 아무것도 표시하지 않는다. */
+var adminCommunity=null;
+function setCommCounts(c){
+  var n=c&&Number.isInteger(c.open_reports)&&c.open_reports>=0?c.open_reports:null,b=$('commBadge');
+  if(b){b.hidden=!n;b.textContent=n?String(n):'';}
+  todaySet('comm',n);
+}
+function loadComm(){
+  if(!adminSupportContext().ready||!window.PSAdminCommunity||!$('commBody'))return;
+  if(!adminCommunity)adminCommunity=PSAdminCommunity.create({host:$('commBody'),rpc:rpc,confirm:function(m){return window.confirm(m);},onCounts:setCommCounts});
+  return adminCommunity.load();
+}
+function refreshCommBadge(){
+  if(!adminSupportContext().ready)return;
+  var epoch=adminAuthEpoch;todaySet('comm',undefined);
+  rpc('ps_admin_comm_queue',{p_limit:1}).then(function(r){if(!adminSessionLocked&&epoch===adminAuthEpoch)setCommCounts(r&&r.counts);}).catch(function(){if(epoch===adminAuthEpoch)todaySet('comm',null);});
+}
+function refreshSupportBadge(){
+  if(!adminSupportContext().ready)return;
+  var epoch=adminAuthEpoch;todaySet('support',undefined);
+  adminRpc('ps_support_list',{p_limit:1}).then(function(r){if(!adminSessionLocked&&epoch===adminAuthEpoch)setSupportCounts(r&&r.is_admin===true?r.counts:null);}).catch(function(){if(epoch===adminAuthEpoch)todaySet('support',null);});
+}
+/* 3.090 — 운영 홈 «오늘 확인할 일» 한 줄. 숫자는 위 배지 · 운영 상태 · 홈 집계가 받는 값을 그대로 쓴다 */
+var adminToday=null;
+function todayInit(){ if(!adminToday&&window.PSAdminToday&&$('adminToday'))adminToday=PSAdminToday.create({host:$('adminToday'),go:todayGo,reload:todayReload}); return adminToday; }
+function todaySet(k,v){ if(todayInit())adminToday.set(k,v); }
+function todayGo(k){
+  if(k!=='followups'){setTab(k);return;}
+  var el=$('adminOpFollowups'); if(el)try{el.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(_){el.scrollIntoView();}
+}
+function loadTodayIncident(){
+  var epoch=adminAuthEpoch;todaySet('incident',undefined);
+  rpc('ps_admin_incidents',{p_days:56}).then(function(r){if(epoch===adminAuthEpoch)todaySet('incident',r||null);}).catch(function(){if(epoch===adminAuthEpoch)todaySet('incident',null);});
+}
+/* 홈을 열 때 아직 안 받은 칸만 채운다(제보 · 신고 화면에서 새로고침하면 그 화면만 다시 읽기 때문) */
+function todayFill(){
+  if(!todayInit())return; var st=adminToday.state();
+  if(!('support' in st))refreshSupportBadge();
+  if(!('comm' in st))refreshCommBadge();
+  if(!('incident' in st))loadTodayIncident();
+  if(!('overdue' in st))loadAdminOps();
+}
+function todayReload(){ if(!todayInit())return; adminToday.reset(); refreshSupportBadge(); refreshCommBadge(); loadTodayIncident(); loadAdminOps(); HOME=null; loadHome(); }
 window.addEventListener('beforeunload',function(e){if(adminSupport&&adminSupport.pendingUnsafe()){e.preventDefault();e.returnValue='';}});
 function loadAdminOps(){
   if(!window.PSAdminOperations)return;
-  if(!adminOps)adminOps=PSAdminOperations.create({rpc:adminRpc,users:function(){return USERS;},workspaces:function(){return WS;},openUser:openAdminUser,
+  todaySet('overdue',undefined);
+  if(!adminOps)adminOps=PSAdminOperations.create({rpc:adminRpc,onFollowups:function(rows){todaySet('overdue',window.PSAdminToday?PSAdminToday.overdueCount(rows,Date.now()):null);},users:function(){return USERS;},workspaces:function(){return WS;},openUser:openAdminUser,
     findUser:function(q){setTab('users');$('uSearch').value=q;renderUsers();$('uSearch').focus();}});
   return adminOps.load();
 }
@@ -811,6 +881,9 @@ function consumeHash(){
 }
 
 /* ===== 유틸 ===== */
+/* 3.090 — 예전 안내는 «supabase-admin.sql 을 다시 실행»이었다. 그 파일들은 운영과 달라 기준본(migrations/00000000_baseline.sql)으로 바뀌었다 —
+   응답하지 않은 함수 이름을 대고, 권한 · 연결부터 보게 한다. */
+function fnMiss(fn){ return '<span class="muted"><code>'+fn+'</code> 응답 없음 — 관리자 권한 · 연결을 먼저 확인하고, 그래도 안 되면 운영 DB 에 이 함수가 있는지 기준본(migrations/00000000_baseline.sql)과 견주세요.</span>'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function $(id){ return document.getElementById(id); }
 function show(id){ $(id).classList.remove('hide'); }
@@ -871,6 +944,9 @@ function showDenied(uid){
 /* ===== 데이터 로드 ===== */
 function reloadAll(){
   if(curTab==='support'){loadAdminSupport();return;}
+  if(curTab==='comm'){loadComm();return;}
+  refreshSupportBadge();refreshCommBadge();loadTodayIncident();
+  todaySet('overdue',undefined);   /* 3.090 — 아래 loadAdminOps 가 곧 채운다(홈이 먼저 열려 한 번 더 부르지 않게) */
   var libTicket=++adminLibraryTicket,reloadTicket=++adminReloadTicket,epoch=adminAuthEpoch;
   if(adminContent)adminContent.deactivate();
   $('wsList').innerHTML='<div class="loading">불러오는 중…</div>';
@@ -898,11 +974,11 @@ function reloadAll(){
     renderStats();
     loadAdminOps();
     if(res[0].ok) renderWsList();
-    else $('wsList').innerHTML='<div class="empty">팀 정보를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>';
+    else $('wsList').innerHTML='<div class="empty">팀 정보를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_workspaces')+'</div>';
     if(res[1].ok) renderUsers();
-    else $('usersTable').innerHTML='<tr><td colspan="6"><div class="empty">사용자 집계 오류 — 최신 supabase-admin.sql을 다시 실행하세요.</div></td></tr>';
+    else $('usersTable').innerHTML='<tr><td colspan="6"><div class="empty">사용자 집계를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_users')+'</div></td></tr>';
     if(res[2].ok||libTicket!==adminLibraryTicket) renderAllLib();
-    else $('alBody').innerHTML='<div class="empty">콘텐츠 정보를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>';
+    else $('alBody').innerHTML='<div class="empty">콘텐츠 정보를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_library')+'</div>';
     if(curWid && res[0].ok && WS.some(function(w){return w.id===curWid;})) selectWs(curWid);
     if(res.some(function(x){return !x.ok;})) toast('일부 관리자 지표를 불러오지 못했습니다.');
   });
@@ -922,11 +998,11 @@ function renderStats(){
   var teams=WS.filter(function(w){return w.kind==='team';}).length;
   var act7=ACT_WS?ACT_WS.filter(function(w){ var last=(new Date(w.last_kv||0)>new Date(w.last_lib||0))?w.last_kv:w.last_lib; return isFresh(last); }).length:null;
   $('stats').innerHTML=
-     stat(USERS.length,'유저')
-    +stat(WS.length,'워크스페이스')
+     stat(USERS.length,'계정')
+    +stat(WS.length,'공간 (팀 + 개인)')
     +stat(teams,'팀')
-    +stat(libTotal,'훈련·항목')
-    +(act7!=null?stat(act7,'7일 활성 WS'):'');
+    +stat(libTotal,'콘텐츠')
+    +(act7!=null?stat(act7,'7일 갱신된 공간'):'');
 }
 function stat(n,l){ return '<div class="stat"><div class="n">'+n+'</div><div class="l">'+esc(l)+'</div></div>'; }
 
@@ -935,22 +1011,20 @@ function setTab(t){
   if(adminSupport&&curTab==='support'&&t!=='support')adminSupport.deactivate();
   if(adminContent&&curTab==='all'&&t!=='all')adminContent.deactivate();
   curTab=t; $('app').classList.toggle('admin-home-mode',t==='home'); $('app').classList.toggle('admin-content-mode',t==='all');
-  if($('tabBack'))$('tabBack').classList.toggle('on',t==='back'); if($('viewBack'))$('viewBack').classList.toggle('hide',t!=='back'); if(t==='back')loadBack();   /* 2.630 */
-  if($('tabUse'))$('tabUse').classList.toggle('on',t==='use');
-  if($('tabErrors'))$('tabErrors').classList.toggle('on',t==='errors');
+  if($('viewBack'))$('viewBack').classList.toggle('hide',t!=='back'); if(t==='back')loadBack();   /* 2.630 */
   if($('viewUse'))$('viewUse').classList.toggle('hide',t!=='use');
   if($('viewErrors'))$('viewErrors').classList.toggle('hide',t!=='errors');
-  if($('tabSupport'))$('tabSupport').classList.toggle('on',t==='support');
   if($('viewSupport'))$('viewSupport').classList.toggle('hide',t!=='support');
-  $('tabHome').classList.toggle('on',t==='home'); $('tabAct').classList.toggle('on',t==='act'); $('tabAll').classList.toggle('on',t==='all'); $('tabWs').classList.toggle('on',t==='ws'); $('tabUsers').classList.toggle('on',t==='users'); $('tabIdp').classList.toggle('on',t==='idp');
+  if($('viewComm'))$('viewComm').classList.toggle('hide',t!=='comm');
   [].forEach.call(document.querySelectorAll('[data-admin-tab]'),function(b){b.classList.toggle('on',b.dataset.adminTab===t);});
-  var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({support:'오류 제보',back:'백엔드 건강',errors:'오류 분석',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
+  var topTitle=$('adminTopTitle'); if(topTitle) topTitle.textContent=({support:'오류 제보',comm:'커뮤니티 신고',back:'백엔드 건강',errors:'오류 분석',home:'운영 홈',use:'사용 방식',act:'활동 분석',all:'콘텐츠 관리',ws:'팀 관리',users:'사용자 관리',idp:'IDP 관리'}[t]||'관리자');
   $('viewHome').classList.toggle('hide',t!=='home'); $('viewAct').classList.toggle('hide',t!=='act'); $('viewAll').classList.toggle('hide',t!=='all'); $('viewWs').classList.toggle('hide',t!=='ws'); $('viewUsers').classList.toggle('hide',t!=='users'); $('viewIdp').classList.toggle('hide',t!=='idp');
   if(t==='idp') loadIdpList();
   if(t==='home') loadHome();
   if(t==='use') loadUse();
   if(t==='errors') loadErrors();
   if(t==='support') loadAdminSupport();
+  if(t==='comm') loadComm();
   if(t==='all')renderAllLib();
 }
 
@@ -1025,8 +1099,15 @@ function renderIncidents(){
   }; });
 }
 /* ===== 2.630 · 백엔드 건강 ===== */
+var adminActions=null;
+function loadAdminActions(){
+  if(!window.PSAdminActions||!$('admActBody'))return;
+  if(!adminActions)adminActions=PSAdminActions.create({host:$('admActBody'),rpc:rpc});
+  return adminActions.load();
+}
 function loadBack(){
   loadIncidents();
+  loadAdminActions();
   var el=$('backBody'); if(!el)return; el.innerHTML='<div class="loading">불러오는 중…</div>';
   rpc('ps_admin_health').then(function(h){
     if(!h){ el.innerHTML='<div class="loading">자료 없음</div>'; return; }
@@ -1316,6 +1397,7 @@ function loadHealthSummary(){
   }).catch(function(){return null;});
 }
 function loadHome(){
+  todayFill();
   if(HOME){ renderHome(); return; }
   Promise.all([
     rpc('ps_admin_idp_funnel').catch(function(){return null;}),
@@ -1397,7 +1479,7 @@ function renderHome(){
       +'<div style="font-size:31px;font-weight:800;letter-spacing:-.6px;line-height:1;font-variant-numeric:tabular-nums">'+n+'</div>'
       +'<div style="font-size:12px;font-weight:700;color:var(--dim);margin-top:6px">'+lb+'</div>'
       +(sub?'<div class="muted" style="font-size:10px;margin-top:1px">'+sub+'</div>':'')+'</div>'; };
-    var hint=(R.coaches==null)?'<div class="muted" style="font-size:10.5px;margin-top:8px">코치·선수 분류를 켜려면 supabase-admin.sql을 SQL Editor에서 다시 실행하세요.</div>':'';
+    var hint=(R.coaches==null)?'<div class="muted" style="font-size:10.5px;margin-top:8px">코치·선수 분류가 비어 있습니다 — <code>ps_admin_reach</code> 가 coaches · player_accounts 를 돌려주는지 확인하세요.</div>':'';
     var el=document.getElementById('hmReach');
     if(el)el.innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap">'
       +stat(signupsC,'가입자','실가입 계정')
@@ -1423,6 +1505,7 @@ function renderHome(){
     +'</div>';
   /* ── 안정성: 실제 앱 오류·동기화 실패·연결 전환을 분리한다. 콘텐츠 본문은 수집하지 않는다 ── */
   var H=HOME.health;
+  todaySet('errors',H?(+(H.app_errors_24h!=null?H.app_errors_24h:H.errors_24h)||0):null);
   if(H){
     var hV2=H.app_errors_24h!=null;
     var appErr24=+(hV2?H.app_errors_24h:H.errors_24h)||0;
@@ -1445,7 +1528,7 @@ function renderHome(){
       +'<b style="font-size:10px">'+esc((hV2?H.top_app_error:H.top_error)||'정상')+'</b></div>'
       +renderErrorDetails()+renderSyncDetails();
   }else{
-    $('hmHealth').innerHTML='<div class="empty">안정성 수집 준비 — supabase-events.sql을 SQL Editor에서 실행하세요.</div>';
+    $('hmHealth').innerHTML='<div class="empty">안정성 현황을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_event_summary_v2')+'</div>';
   }
   /* ── 운영자가 바로 처리할 수 있는 조치 목록 ── */
   var actionRows=[];
@@ -1488,7 +1571,7 @@ function renderHome(){
       +'<span style="font-size:12px"><b style="font-size:16px">'+(US.mau!=null?US.mau:'—')+'</b> <span class="muted">30일</span></span></div>'
       +'<div style="display:flex;align-items:flex-end;gap:1px;height:72px">'+bars+'</div>';
   } else {
-    $('hmUsage').innerHTML='<div class="empty">수집 시작 전 — supabase-usage.sql 설치 + 새 버전 배포 후, 유저가 접속하는 날부터 쌓입니다.</div>';
+    $('hmUsage').innerHTML='<div class="empty">일별 사용 기록을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_usage_daily')+'</div>';
   }
   /* ── IDP 퍼널 ── */
   if(F){
@@ -1502,12 +1585,12 @@ function renderHome(){
         +'<span style="flex:0 0 74px;font-size:11.5px;font-weight:800">'+s[1]+'<span class="muted" style="font-weight:600"> · '+pct+'%</span></span></div>';
     }).join('');
   } else {
-    $('hmFunnel').innerHTML='<div class="empty">관리자 퍼널 RPC를 확인할 수 없습니다. 최신 <code>supabase-admin.sql</code>을 다시 실행하세요.</div>';
+    $('hmFunnel').innerHTML='<div class="empty">IDP 현황을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_idp_funnel')+'</div>';
   }
   /* ── 2.022 핵심 행동(a_* 핑) — 깔때기 순으로, 없는 행동도 0으로 보여 빈 곳이 보이게 ── */
   (function(){
     var host=$('hmActs'); if(!host)return;
-    if(HOME.feat===null){ host.innerHTML='<div class="empty">RPC가 없어요 — supabase-usage.sql의 ps_admin_usage_features를 실행하세요.</div>'; return; }
+    if(HOME.feat===null){ host.innerHTML='<div class="empty">핵심 행동을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_usage_features')+'</div>'; return; }
     var by={}; (HOME.feat||[]).forEach(function(x){ if(/^a_/.test(x.feature))by[x.feature]=x; });
     var rows=ACT_LB.map(function(a){ var x=by[a[0]]||{users:0,pings:0,prev_users:0}; return {k:a[0],lb:a[1],users:x.users,pings:x.pings,prev:x.prev_users||0}; });
     var amx=Math.max.apply(null,rows.map(function(r){return r.users;}).concat([1]));
@@ -1538,7 +1621,7 @@ function renderHome(){
     }).join('');
   } else {
     $('hmFeat').innerHTML='<div class="empty">'+(HOME.feat===null
-      ?'RPC가 없어요 — supabase-usage.sql의 ps_admin_usage_features를 SQL Editor에서 실행하세요.'
+      ?'기능 방문을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_usage_features')
       :'수집 시작 전 — 새 버전 배포 후, 유저가 탭에 들어오는 날부터 쌓입니다.')+'</div>';
   }
   /* ── 기능별 저장 활동(kv) ── */
@@ -1577,7 +1660,7 @@ function renderHome(){
       }).join(''));
   /* ── 최근 가입 ── */
   var recent=users.slice().sort(function(a,b){return new Date(b.created_at||0)-new Date(a.created_at||0);});
-  $('hmNew').innerHTML=!usersOk?'<div class="empty">사용자 집계를 불러오지 못했습니다.<br><span class="muted">최신 supabase-admin.sql을 다시 실행하세요.</span></div>':recent.slice(0,6).map(function(u){
+  $('hmNew').innerHTML=!usersOk?'<div class="empty">사용자 집계를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_users')+'</div>':recent.slice(0,6).map(function(u){
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)">'
       +'<span class="nm" style="flex:1;font-size:12px">'+esc(u.email||'(이메일 없음)')+'</span>'
       +(u.idp_last?'<span style="font-size:10px;font-weight:800;color:#9D7BFF">IDP</span>':'')
@@ -1838,7 +1921,7 @@ function loadActivity(){
   Promise.all([ rpc('ps_admin_activity_ws'), rpc('ps_admin_activity_keys',{p_days:14}), rpc('ps_admin_activity_users') ])
     .then(function(res){ ACT_WS=res[0]||[]; ACT_KEYS=res[1]||[]; ACT_USERS=res[2]||[];
       renderActivity(); renderStats(); })
-    .catch(function(e){ var m='<div class="empty">관리자 활동 RPC를 확인할 수 없습니다. 최신 <code>supabase-admin.sql</code>을 다시 실행하세요.<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
+    .catch(function(e){ var m='<div class="empty">활동 집계를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_activity_ws · ps_admin_activity_keys · ps_admin_activity_users')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
       $('actWs').innerHTML=m; $('actKeys').innerHTML=''; $('actUsers').innerHTML=''; });
 }
 function renderActivity(){
@@ -2038,7 +2121,7 @@ function wsIdpPane(rows){
   var started=players.filter(function(r){return !!r.idp_updated_at;}).length;
   var reval=players.filter(function(r){return !!r.needs_reval;}).length;
   var h='<div class="sec-t">현재 평가표</div><div class="kv"><span class="k">활성표</span><span>'+(mode==='fifa'?'PROCESS 기본 평가표':mode==='team'?'팀 평가표':'설정 없음')+'</span>'
-    +'<span class="k">항목</span><span>'+attrs+'개</span><span class="k">세트 ID</span><span style="font:600 10px ui-monospace,Menlo,monospace;word-break:break-all">'+esc(first.active_set_id||'—')+'</span></div>'
+    +'<span class="k">항목</span><span>'+attrs+'개</span><span class="k">세트 ID</span><span style="font:600 10px Pretendard,ui-monospace,Menlo,monospace;word-break:break-all">'+esc(first.active_set_id||'—')+'</span></div>'
     +'<div class="eval-kpis"><div class="eval-kpi"><b>'+linked+'/'+players.length+'</b><span>계정–선수 연결</span></div>'
     +'<div class="eval-kpi"><b>'+started+'/'+players.length+'</b><span>IDP 시작</span></div>'
     +'<div class="eval-kpi"><b>'+reval+'</b><span>새 표 재평가 필요</span></div></div>';
@@ -2055,7 +2138,7 @@ function wsIdpPane(rows){
   return h;
 }
 function wsSettingsPane(w){
-  var base='<div class="kv"><span class="k">워크스페이스 ID</span><span style="font:600 11px ui-monospace,Menlo,monospace">'+esc(w.id||'—')+'</span>'
+  var base='<div class="kv"><span class="k">워크스페이스 ID</span><span style="font:600 11px Pretendard,ui-monospace,Menlo,monospace">'+esc(w.id||'—')+'</span>'
     +'<span class="k">종류</span><span>'+(w.kind==='personal'?'개인':'팀')+'</span><span class="k">소유자</span><span>'+esc(adminOwnerInfo(w).label)+'</span><span class="k">생성일</span><span>'+fmtDate(w.created_at)+'</span></div>';
   if(w.kind!=='team')return base;
   return base+'<div class="ws-danger"><b>위험 작업</b><p>워크스페이스 삭제는 소속 훈련·멤버·데이터에 영향을 줍니다. 일반 운영 정보와 분리해 두었습니다.</p><button class="rowbtn danger" data-admin-act="del-ws" data-wid="'+esc(w.id)+'">워크스페이스 삭제</button></div>';
@@ -2118,7 +2201,7 @@ function userTeamsCell(u){
 function userSubLine(u){
   var parts=[];
   var nm=(u.name||'').trim();
-  if(u.email){ if(u.email!==nm)parts.push(u.email); }
+  if(u.email){ if(nm&&u.email!==nm)parts.push(u.email); }   /* 3.090 — 이름이 없으면 윗줄이 이미 이메일이다(두 번 나오던 것) */
   else if(Array.isArray(u.teams)) parts.push('이메일 없음');
   if(u.provider) parts.push((ADMIN_PROVIDER[u.provider]||u.provider)+' 로그인');
   if(u.account_name&&u.member_name&&u.account_name!==u.member_name) parts.push('계정 이름 '+u.account_name);
@@ -2140,7 +2223,7 @@ function renderUsers(){
     +(hasV2?'<th>만든 수</th>':'<th>워크스페이스</th><th>훈련</th>')+'</tr>';
   var rows=list.map(function(u){
     return '<tr><td class="nm"><button type="button" class="admin-user-open" data-admin-user="'+esc(u.user_id)+'">'+esc(userLabel(u))+'</button>'
-      +'<div class="muted" style="font:600 11px ui-monospace,Menlo,monospace">'+esc(userSubLine(u))+'</div></td>'
+      +'<div class="muted" style="font:600 11px Pretendard,ui-monospace,Menlo,monospace">'+esc(userSubLine(u))+'</div></td>'
       +'<td>'+userTeamsCell(u)+'</td>'
       +'<td class="muted">'+fmtDate(u.created_at)+'</td>'
       +'<td class="muted">'+fmtDateT(u.last_sign_in_at)+'</td>'
@@ -2172,7 +2255,7 @@ function loadIdpList(){
       IDP_USERS=(r||[]).filter(function(u){ return u.idp_last; });
       renderIdpList();
     }).catch(function(e){
-      $('idpList').innerHTML='<div class="empty">유저 목록 RPC 오류 — 최신 <code>supabase-admin.sql</code>을 다시 실행하세요.<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
+      $('idpList').innerHTML='<div class="empty">IDP 사용자 목록을 불러오지 못했습니다.<br>'+fnMiss('ps_admin_idp_users')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>';
     });
   });
 }
@@ -2233,7 +2316,7 @@ function openIdp(uid,email){
     :rpc('ps_admin_idp_get',{p_uid:uid}).then(function(rows){ var row=(rows&&rows[0])||null; IDP_CACHE[uid]=row; return row; }))
   .then(function(row){ if(curIdpUid!==uid)return; renderIdpDoc(row); })
   .catch(function(e){ if(curIdpUid!==uid)return;
-    $('idpBody').innerHTML='<div class="empty">불러오기 실패 — 최신 <code>supabase-admin.sql</code>을 SQL Editor에서 다시 실행했는지 확인하세요.<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>'; });
+    $('idpBody').innerHTML='<div class="empty">IDP 문서를 불러오지 못했습니다.<br>'+fnMiss('ps_admin_idp_get')+'<br><span style="font-size:11px;opacity:.7">'+esc(e.message||'')+'</span></div>'; });
 }
 function _idpRow(l,v){ return '<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)"><span class="muted" style="flex:0 0 92px;font-size:11px;padding-top:1px">'+esc(l)+'</span><span style="flex:1;font-size:12px;min-width:0">'+v+'</span></div>'; }
 function _idpSec(t){ return '<div class="sec-t" style="margin:16px 0 4px">'+esc(t)+'</div>'; }
@@ -2438,9 +2521,9 @@ function snapPreview(snap){
     if(!/^#[0-9a-f]{3,8}$/i.test(String(fill)))fill='#f2c94c';
     out+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="14" fill="'+fill+'" stroke="#fff" stroke-width="2"/>';
     var nm=txt(p.num).trim();
-    if(nm)out+='<text x="'+x.toFixed(1)+'" y="'+(y+4.5).toFixed(1)+'" text-anchor="middle" font-family="sans-serif" font-size="12.5" font-weight="800" fill="'+(dark(fill)?'#fff':'#16213a')+'">'+nm+'</text>';
+    if(nm)out+='<text x="'+x.toFixed(1)+'" y="'+(y+4.5).toFixed(1)+'" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="12.5" font-weight="800" fill="'+(dark(fill)?'#fff':'#16213a')+'">'+nm+'</text>';
     var pn=txt(p.name).trim();
-    if(pn)out+='<text x="'+x.toFixed(1)+'" y="'+(y+31).toFixed(1)+'" text-anchor="middle" font-family="sans-serif" font-size="11.5" font-weight="700" fill="#fff" stroke="rgba(10,16,28,.75)" stroke-width="3" paint-order="stroke">'+pn+'</text>';
+    if(pn)out+='<text x="'+x.toFixed(1)+'" y="'+(y+31).toFixed(1)+'" text-anchor="middle" font-family="Pretendard,sans-serif" font-size="11.5" font-weight="700" fill="#fff" stroke="rgba(10,16,28,.75)" stroke-width="3" paint-order="stroke">'+pn+'</text>';
   });
   if(ball)out+='<circle cx="'+((+ball.x||0)*sx).toFixed(1)+'" cy="'+((+ball.y||0)*sy).toFixed(1)+'" r="7" fill="#fff" stroke="#111" stroke-width="2"/>';
   return out+'</svg>';
@@ -2499,7 +2582,7 @@ function preview(wid,lidEnc){ var lid=decodeURIComponent(lidEnc);
       +'<span class="k">장면 수</span><span>'+(sc.s||0)+'</span>'
       +'<span class="k">폴더</span><span>'+esc(meta.folder||'—')+'</span>'
       +'<span class="k">수정</span><span>'+fmtDateT(meta.updated_at)+'</span>'
-      +'<span class="k">lib_id</span><span style="font:600 11px ui-monospace,Menlo,monospace">'+esc(lid)+'</span>'
+      +'<span class="k">lib_id</span><span style="font:600 11px Pretendard,ui-monospace,Menlo,monospace">'+esc(lid)+'</span>'
       +'</div>'
       +'<details><summary class="muted" style="cursor:pointer;font-size:12px;margin-top:6px">원본 데이터(JSON)</summary>'
       +'<pre class="json">'+esc(shorten(item))+'</pre></details>';

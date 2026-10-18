@@ -5,7 +5,7 @@ const notes=require('../studio/release-notes.js');
 
 /* 3.014 — 오류 제보 88a82188 «첫 화면 보드 초기화 하는 게 있으면 좋겠다 · 전 작업이 계속 남아 있다» */
 test('3.014 «새 보드» clears the page canvas to the «새 보드 기본 세팅» (or an empty pitch) and drops its history',()=>{
-  const fn=/function boardNewCanvas\(\)\{[\s\S]*?\n\}\n/.exec(board);assert.ok(fn,'boardNewCanvas');
+  const fn=/function boardNewCanvas\(keep\)\{[\s\S]*?\n\}\n/.exec(board);assert.ok(fn,'boardNewCanvas');   /* 3.031 — keep===false: 기본 세팅의 선수 없이 */
   assert.match(fn[0],/window\.__animReset&&window\.__animReset\(\)/,'scenes go');
   assert.match(fn[0],/d=boardDefaultRead\(\)/,'uses the saved new-board default');
   assert.match(fn[0],/loadSnap\(d\|\|\{players:\[\],equipment:\[\],drawings:\[\],ball:\{x:CX,y:CY\},pitchN:1\}\)/,'empty pitch otherwise');
@@ -16,7 +16,7 @@ test('3.014 «새 보드» clears the page canvas to the «새 보드 기본 세
 test('3.014 «새 보드» saves at once without writing the empty board into linked vault items',()=>{
   assert.match(board,/async function boardSaveExplicit\(o\)\{[^\n]*\n  o=\(o&&typeof o==="object"&&!o\.type\)\?o:\{\};/,'click events are not options');
   assert.match(board,/var _wb=\[\]; if\(!o\.noLink\)\{ try\{ _wb=await boardLinkWriteBack\(false\); \}/,'noLink skips the vault write-back');
-  assert.match(board,/else if\(!o\.quiet\)toast\(_wbt\?\("보드에 저장됨 ✓"/,'quiet keeps the success toast for the caller');
+  assert.match(board,/else if\(!o\.quiet\)toast\(\(?_wbt\?\("보드에 저장됨 ✓"/,'quiet keeps the success toast for the caller');
   const nb=/function newBoard\(\)\{[\s\S]*?\n  \}\n/.exec(board);assert.ok(nb,'newBoard');
   assert.match(nb[0],/pages=null; idx=0; _singleLink=null;/,'one page, no vault link');
   assert.match(nb[0],/_nbSave\("새 보드로 시작했어요"/);
@@ -25,8 +25,8 @@ test('3.014 «새 보드» saves at once without writing the empty board into li
 
 test('3.014 «새 보드» says what goes, skips the question on an empty board and keeps «↶ 이전 보드» for a minute',()=>{
   const nb=/function newBoard\(\)\{[\s\S]*?\n  \}\n/.exec(board)[0];
-  assert.match(nb,/if\(!c\.any&&c\.n<=1&&!c\.sc\)\{ go\(\); return; \}/,'nothing to lose → no dialog');
-  assert.match(nb,/psConfirm\("지금 보드를 비우고 새 보드로 시작할까요\?[\s\S]*보관함에 저장한 자료는 그대로예요[\s\S]*«↶ 이전 보드»로 되살릴 수 있어요",go\)/);
+  assert.match(nb,/lose=c\.any\|\|c\.n>1\|\|c\.sc/);assert.match(nb,/if\(!lose\)\{ go\(\); return; \}/,'nothing to lose → no dialog');   /* 3.031 — 기본 세팅에 선수가 있으면 그 전에 묻는다(new-board-default-3031) */
+  assert.match(nb,/psConfirm\("지금 보드를 비우고 새 보드로 시작할까요\?[\s\S]*보관함에 저장한 자료는 그대로예요[\s\S]*«↶ 이전 보드»로 되살릴 수 있어요",go,null,\{ok:'새 보드 시작'\}\)/);   // 3.039 — 단추 이름(CP-13)
   assert.match(board,/var _nbUndo=null,_nbT=0,NB_UNDO_MS=60000;/);
   assert.match(nb,/_nbT=setTimeout\(function\(\)\{ _nbUndo=null; try\{render\(\);\}catch\(_\)\{\} \},NB_UNDO_MS\)/,'the undo button leaves after a minute');
   const un=/function newBoardUndo\(\)\{[\s\S]*?\n  \}\n/.exec(board);assert.ok(un,'newBoardUndo');

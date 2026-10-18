@@ -46,11 +46,11 @@ function harness() {
     matchBackToList(){calls.closed++;},psAct(){calls.acts++;}
   });
   context.window=context;
-  vm.runInContext(stateCode+'\n'+sharedCode+'\n'+saveCode+'\nwindow.PSStorage={sharedReady:sharedReady,sharedVerified:sharedVerified};\n'+storeCode+'\nwindow.testStore=store;\n'+matchCode+'\n'+flushCode+'\n'+exitCode,context);
+  vm.runInContext(stateCode+'\n'+sharedCode+'\n'+saveCode+'\nwindow.PSStorage={sharedReady:sharedReady,sharedVerified:sharedVerified};\n'+storeCode+'\nwindow.testStore=scoutStore;\n'+matchCode+'\n'+flushCode+'\n'+exitCode,context);
   return {c:context,local,durable,commits,calls,label,events};
 }
 
-test('shared store acceptance stays saving until the actual delayed commit completes', async () => {
+test('shared scoutStore acceptance stays saving until the actual delayed commit completes', async () => {
   const {c,commits}=harness();
   assert.equal(c.testStore.set('cs_team_matches_v1',{title:'new'}),true);
   assert.equal(c.PSSaveState.get('team'),'saving');

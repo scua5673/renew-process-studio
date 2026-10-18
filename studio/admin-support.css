@@ -21,13 +21,30 @@
 .admSupportRow strong{display:block;overflow-wrap:anywhere;font-size:14px;line-height:1.5;font-weight:700}
 .admSupport small,.admSupport time{display:block;font-size:12px;color:var(--dim,#6c7480);margin-top:5px}
 .admSupportCount{flex:none;white-space:nowrap;font-size:11px;font-weight:700;color:var(--blue2,#5b86ff);padding-top:3px}
+.admSupportCount.is-needs{color:var(--amber,#e0a53a)}
+.admSupportCount.is-answered{color:var(--blue2,#5b86ff)}
+.admSupportCount.is-closed{color:var(--dim,#9AA4B3)}
+/* 20261014 — 처리 상태 거르기 · 상태 바꾸기 */
+.admSupportFilters{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0 10px;border-bottom:1px solid var(--line,#2C3744)}
+.admSupport .admSupportFilter{min-height:32px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;color:var(--dim,#9AA4B3)}
+.admSupport .admSupportFilter b{font-weight:800;margin-left:2px;color:var(--txt,#E7EBF1)}
+.admSupport .admSupportFilter.is-on{background:var(--panel2,#232C38);border-color:var(--blue,#3a6df0);color:var(--txt,#E7EBF1)}
+.admSupport .admSupportFilter.is-alert b{color:var(--amber,#e0a53a)}
+.admSupportStatus{border:1px solid var(--line,#2C3744);border-radius:10px;padding:14px;margin-top:18px}
+.admSupportStatusHead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.admSupportStatusHead b{font-size:13px}
+.admSupportStatusHead .admSupportCount{padding-top:0;font-size:12px}
+.admSupportStatusRow{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px}
+.admSupportStatusRow label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;color:var(--dim,#9AA4B3)}
+.admSupport .admSupportStatusRow input{width:110px;min-height:40px;padding:8px 10px;border:1px solid var(--line,#2C3744);border-radius:9px;background:var(--panel,#1A212B);color:var(--txt,#E7EBF1);font:inherit;font-size:14px}
+.admSupportStatus .admSupportHint{margin:10px 0 0}
 .admSupport .admSupportMore{display:block;width:100%;margin-top:12px}
 .admSupport .admSupportBack{margin-bottom:18px;padding:2px 0;min-height:32px;border:0;background:transparent;color:var(--dim,#6c7480);font-size:12px}
 .admSupportReport h2{font-size:20px;line-height:1.45;font-weight:800;margin:0;overflow-wrap:anywhere}
 .admSupportReport>p,.admSupportReply>p{white-space:pre-wrap;overflow-wrap:anywhere}
 .admSupportLogs{border:1px solid var(--line,#e3e6ed);border-radius:10px;margin:18px 0;overflow:hidden}
 .admSupportLogs summary{cursor:pointer;padding:12px;background:var(--panel2,#232C38);font-weight:600;font-size:13px}
-.admSupportLogs pre{font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;padding:14px;margin:0}
+.admSupportLogs pre{font:12px/1.7 Pretendard,ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;padding:14px;margin:0}
 .admSupportConversation{border-top:1px solid var(--line,#e3e6ed);margin-top:24px;padding-top:20px}
 .admSupportConversation h3{font-size:15px;font-weight:800;margin:0 0 14px}
 .admSupportReply{background:var(--panel2,#232C38);border-radius:10px;padding:14px;margin-bottom:12px}
@@ -46,7 +63,10 @@
 .admSupportHint{font-size:12px;color:var(--dim,#6c7480);margin:10px 0}
 .admSupportError{font-size:13px;color:var(--red,#e05666);background:rgba(224,86,102,.1);padding:12px;border-radius:9px;overflow-wrap:anywhere}
 .admSupportNotice{font-size:13px;color:var(--blue2,#5b86ff);padding:10px 0;overflow-wrap:anywhere}
-.admSupport .admSupportCopy{min-height:220px;margin-top:18px;font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace}
+.admSupport .admSupportCopy{min-height:220px;margin-top:18px;font:12px/1.7 Pretendard,ui-monospace,SFMono-Regular,Consolas,monospace}
 @media(min-width:901px){.admSupport{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden}.admSupportHead{flex:none}.admSupportGrid{flex:1;min-height:0;overflow:hidden;align-items:stretch}.admSupportInbox,.admSupportDetail{min-height:0;overflow:auto;overscroll-behavior:contain}}
 @media(max-width:1000px){.admSupportGrid{grid-template-columns:minmax(220px,290px) minmax(0,1fr);gap:14px}.admSupportDetail{padding:18px}.admSupportActions{align-items:flex-start;flex-direction:column}.admSupportActions>button{align-self:flex-end}}
-@media(max-width:700px){.admSupportHead{gap:12px;margin-bottom:16px}.admSupportHead h1{font-size:23px}.admSupportGrid{grid-template-columns:minmax(0,1fr)}.admSupportInbox{max-height:none}.admSupport[data-detail="true"] .admSupportInbox,.admSupport[data-detail="false"] .admSupportDetail{display:none}.admSupport .admSupportRow{padding:14px 8px}.admSupportDetail{padding:16px}.admSupportReply>header{align-items:flex-start;flex-direction:column;gap:3px}.admSupport textarea{font-size:16px}.admSupport button{min-height:44px}.admSupportActions>button{align-self:stretch;width:100%}}
+@media(max-width:700px){.admSupportHead{gap:12px;margin-bottom:16px}.admSupportHead h1{font-size:23px}.admSupportGrid{grid-template-columns:minmax(0,1fr)}.admSupportInbox{max-height:none}.admSupport[data-detail="true"] .admSupportInbox,.admSupport[data-detail="false"] .admSupportDetail{display:none}.admSupport .admSupportRow{padding:14px 8px}.admSupportDetail{padding:16px}.admSupportReply>header{align-items:flex-start;flex-direction:column;gap:3px}.admSupport textarea,.admSupport .admSupportStatusRow input{font-size:16px}.admSupport button{min-height:44px}.admSupportActions>button{align-self:stretch;width:100%}}
+/* 20261017 — 보낸 사람(관리자만) */
+.admSupport .admSupportWho{margin:8px 0 0;font-size:var(--t-3,12px);color:var(--dim,#6c7480);overflow-wrap:anywhere}
+.admSupportWho b{color:var(--txt,inherit);font-weight:700}
