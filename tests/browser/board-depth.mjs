@@ -124,6 +124,11 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
       __setNamePos('below');{const t=tag().getBoundingClientRect(),n=pg().querySelector('.ps-chip-name').getBoundingClientRect();out.tagThenName=n.top>=t.bottom-1;}
       /* 3.087 — 패는 어두운 알약(유니폼 색은 아래 띠) · 보드 설정 «글자 크기»로 커진다 */
       const pill=()=>pg().querySelector('.ps-person-tag');out.tagFill=pill().getAttribute('fill');out.tagBar=!!pg().querySelector('.ps-person-tagbar');
+      /* 3.093 — 팀마다 다른 알약(우리 어둡게 · 상대 밝게) · 뷰어 «이름»이면 알약에 이름 · 이름표는 따로 없음 */
+      {const pa=tokenLayer.querySelector('[data-id="depth-a"] .ps-person-tag'),pl=id=>state.players.find(q=>q.id===id);
+       out.tagKit=[pa&&pa.getAttribute('fill'),pill().getAttribute('fill')];out.tagKitWant=[pl('depth-a'),pl('depth-b')].map(q=>q.color||playerTeamCol(q)).map(c=>String(c).toLowerCase());
+       const keep=dc(state.teamColors||{}),pa2=()=>tokenLayer.querySelector('[data-id="depth-a"] .ps-person-tag');state.teamPattern=Object.assign({},state.teamPattern,{blue:'v'});state.teamColors=Object.assign({},keep,{blue:'#c8102e'});renderTokens();out.tagStripe=pa2().getAttribute('fill');out.tagStripeTok=tokenLayer.querySelector('[data-id="depth-a"] .ps-depth-original .tok-c')?.getAttribute('fill');state.teamPattern.blue='solid';state.teamColors=keep;renderTokens();
+       window.__tagName=true;renderTokens();out.tagNameTxt=tag()?.textContent;out.tagNameLabel=!!pg().querySelector('.ps-chip-name');window.__tagName=false;renderTokens();}
       const h1=+pill().getAttribute('height');__setTagSize('xl');out.tagGrow=+pill().getAttribute('height')/h1;out.tagSaved=captureSnap().tagSize;__setTagSize('m');
       state.label='none';renderTokens();out.tagNone=!tag();state.label=lab0;setTokShape('circle');renderTokens();
       const img=()=>document.querySelector('#tiltSurface img.tilt-stadium'),xml=()=>decodeURIComponent(img().src.slice(img().src.indexOf(',')+1));
@@ -151,7 +156,8 @@ try{for(const viewport of [{width:1280,height:900},{width:820,height:1180},{widt
     assert.equal(t3.pillStroke,null,'«알약» name has no outline');assert.equal(t3.textStroke,true,'«글자만» keeps the outline');
     assert.ok(t3.tagWant,'the token has a chip label');assert.equal(t3.tagText,t3.tagWant,'«사람» shows the chip label under the feet');
     assert.equal(t3.tagThenName,true,'a name below goes under the label');
-    assert.equal(t3.tagFill,'rgba(18,22,30,.86)','the name «알약» dark pill — the kit colour hid the letters (3.087)');assert.equal(t3.tagBar,false,'no kit colour on the badge («유니폼 색상 적용하지 말고»)');
+    assert.deepEqual(t3.tagKit,t3.tagKitWant,'3.093 — each team\'s solid kit colour');assert.equal(t3.tagStripe,'#c8102e','a striped kit uses its main colour only (token fill '+t3.tagStripeTok+')');
+    assert.equal(t3.tagNameTxt,'B','viewer «이름» puts the name in the pill');assert.equal(t3.tagNameLabel,false,'and drops the separate name label');assert.equal(t3.tagBar,false,'no kit colour on the badge («유니폼 색상 적용하지 말고»)');
     assert.ok(Math.abs(t3.tagGrow-1.7)<.08,'«아주 크게» = 1.7× '+t3.tagGrow);assert.equal(t3.tagSaved,'xl','saved with the board');assert.equal(t3.tagNone,true,'«칩 글자 없음» = no label');assert.equal(t3.npAbove,'above','«위» puts it over the chip');
     assert.notEqual(t3.rowOn,'none','3D rows show in 3D');assert.equal(t3.rowOff,'none','3D rows hide on the flat board');
     assert.deepEqual([t3.cam.low.ax,t3.cam.mid.ax,t3.cam.high.ax],['36deg','','12deg'],'낮게 = more oblique · 보통 = 3.009 · 높게 = from above');

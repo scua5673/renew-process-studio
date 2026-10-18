@@ -1,4 +1,4 @@
-/* 3.093 — 한 장 선수 카드(A4 세로) — 프로필 요점 + 평가 요약을 한 장에. 점수는 막대 + 숫자(사용자 «한 장 선수 카드» · «막대 + 숫자»).
+/* 3.094 — 한 장 선수 카드(A4 세로) — 프로필 요점 + 평가 요약을 한 장에. 점수는 막대 + 숫자(사용자 «한 장 선수 카드» · «막대 + 숫자»).
    프로필 한 장(profile-sheet.js) · 일정 PDF 와 같은 담백한 결: 흰 바탕 · 검은 글자 · 가는 선.
    쓰는 법: PSPlayerCard.docHTML(model) → HTML 문서 문자열. model 은 아래 norm() 참고. scout.html 의 playerCardModel(id) 가 만든다. */
 (function(root){
@@ -165,7 +165,7 @@
       +'<div class="ft"><div><span>CLUB</span><b>'+esc(m.team||"—")+'</b></div><div class="r"><span>ISSUED</span><b>'+esc(issued)+'</b></div></div>'
       +'</div></body></html>';
   }
-  /* 3.093 — 개인 PDF(이력서 + 세부평가, scout.html printPlayerReport)가 장을 꽉 채우는 CSS(사용자 «여백이 최소화 되게»). 문서 CSS 라 .html 이 아니라 여기 둔다 */
+  /* 3.094 — 개인 PDF(이력서 + 세부평가, scout.html printPlayerReport)가 장을 꽉 채우는 CSS(사용자 «여백이 최소화 되게»). 문서 CSS 라 .html 이 아니라 여기 둔다 */
   var REPORT_CSS='.pg-resume{height:296.5mm;padding:12mm 12mm 9mm;display:flex;flex-direction:column;overflow:hidden}'+'.pg-resume>.rz{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}'+'.rz-name{font-size:52px}.rz-dob{font-size:15px}.rz-photo{width:150px;height:188px}.rz-sp b{font-size:19px}.rz-sp span{font-size:11px}.rz-specs{gap:16px 40px;padding-top:20px}'+'.rz-sec{font-size:12px;margin-top:24px}.rz-prow{padding:13px 0;font-size:15px}.rz-pk{font-size:14px}.rz-contact{font-size:13px}'+'.pg-resume .rz-pgrid{flex:1 1 auto;display:flex;flex-direction:column;max-height:calc(var(--n,1)*62px)}.pg-resume .rz-pgrid>.rz-prow{flex:1 1 auto}'+'.rz-pgrid:has(>:nth-child(2)){--n:2}.rz-pgrid:has(>:nth-child(3)){--n:3}.rz-pgrid:has(>:nth-child(4)){--n:4}.rz-pgrid:has(>:nth-child(5)){--n:5}.rz-pgrid:has(>:nth-child(6)){--n:6}.rz-pgrid:has(>:nth-child(7)){--n:7}'+'.rz-two{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}'+'.rz-prow:has(.rz-no){gap:12px}.rz-no{flex:0 0 20px;height:20px;border-radius:50%;background:#14161A;color:#fff;font-style:normal;font-weight:800;font-size:10px;line-height:20px;text-align:center}'+'.rz-no.o{background:#fff;color:#14161A;box-shadow:inset 0 0 0 1.5px #14161A}.rz-no.c{background:none;color:#8A9099;font-size:12px}'+'.rz-rfoot{margin-top:auto}'+'.pg-eval{height:209.5mm;padding:9mm 10mm 7mm;display:flex;flex-direction:column;overflow:hidden;break-after:auto}'+'.es-wrap{flex:1 1 auto;min-height:0;align-items:stretch}'+'.es-side{flex:0 0 220px;display:flex;flex-direction:column}.es-pitch{flex:1 1 auto;min-height:0}'+'.es-main{gap:12px}.es-card{display:grid;grid-template-columns:100%;align-content:stretch;padding:12px 16px}'+'.es-ct{font-size:16px;margin-bottom:4px}.es-row{font-size:12px;padding:0}.es-row .es-bar{flex-basis:84px;height:5px}'+'.es-n{font-size:12px;flex-basis:18px}.es-crow{font-size:12px;padding:5px 0}.es-ft{margin-top:10px}';
   var api={docHTML:docHTML,reportCSS:REPORT_CSS,overall:function(areas){return overall(norm({areas:areas}).areas);}};
   if(typeof module==="object"&&module.exports)module.exports=api;

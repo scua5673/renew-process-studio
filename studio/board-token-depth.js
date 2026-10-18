@@ -194,6 +194,18 @@
   }
   // 이름표 «알약»과 사람 발밑 번호 · 포지션 패가 같이 쓰는 어두운 알약 색(유니폼 색 없이)
   var PILL = 'rgba(18,22,30,.86)';
+  // 3.093 — 사람 발밑 패는 그 선수 유니폼의 단색(사용자 «포지션 알약이 상대 팀과 비교 되게 · 최대한 티가 안 나게 · 색상을 유니폼색상으로 ·
+  //         스트라이프 적용되게 하지 말고 단색만»). 줄무늬 · 무늬 유니폼도 기본색 하나(보드의 playerTeamCol — 골키퍼 · 코치 · 선수 색 포함).
+  //         얇고 반투명한 알약(테두리 없음), 글자는 바탕이 밝으면 어둡게 · 어두우면 희게(3.087 — 유니폼 색에 글자가 묻혔다).
+  function hex6(v) { v = String(v || '').trim(); if (/^#[0-9a-f]{6}$/i.test(v)) return v.toLowerCase(); var m = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(v); return m ? ('#' + m[1] + m[1] + m[2] + m[2] + m[3] + m[3]).toLowerCase() : ''; }
+  function kitMain(doc, item, fill, stroke) {
+    var c = hex6(item && item.color); if (c) return c;
+    try { var w = doc && doc.defaultView; if (w && typeof w.playerTeamCol === 'function') c = hex6(w.playerTeamCol(item)); } catch (_) { c = ''; }
+    return c || hex6(fill) || hex6(stroke) || '#3a6df0';
+  }
+  function inkOn(bg) { var n = parseInt(bg.slice(1), 16), l = .2126 * ((n >> 16) & 255) + .7152 * ((n >> 8) & 255) + .0722 * (n & 255); return l > 150 ? '#14161a' : '#ffffff'; }
+  // 3.093 — 커뮤니티 뷰어 «보기 › 글자 › 이름»(board-comm-look.js): 사람 발밑 알약에 이름(따로 뜨는 이름표는 감춘다)
+  function tagName(doc, item) { var on = false; try { on = !!(doc && doc.defaultView && doc.defaultView.__tagName); } catch (_) {} var n = on && item && String(item.name || '').trim(); return n ? n.toUpperCase() : ''; }
   // The pill behind a name: an estimate of the text width (wide CJK glyphs, narrower Latin capitals) around the text's middle.
   function namePill(str, font, y) {
     var w = font * .9;
@@ -455,17 +467,19 @@
     // 3.087 — 패는 이름표 «알약»과 같은 어두운 알약 · 흰 글자, 유니폼 색은 넣지 않는다(사용자 «유니폼색상이 들어가니까 잘 안보이는거 같아»
     //         · «포지션도 알약으로 뜨게 해줘 유니폼 색상 적용하지 말고» — 빨강 · 줄무늬 유니폼에서 글자가 묻혔다).
     //         크기는 보드 설정 › 칩 › 글자 크기(tagK · 작게 0.8 ~ 아주 크게 1.7).
-    var tagH = 0, tagTxt = kind === 'person' && label ? String(label.textContent || '').trim() : '';
+    var tagNm = kind === 'person' ? tagName(doc, item) : '', tagH = 0, tagTxt = kind === 'person' ? (tagNm || (label ? String(label.textContent || '').trim() : '')) : '';
     if (tagTxt) {
       var lf = tagK(doc, opts) * size.font / (opts && +opts.zoom > 1 ? +opts.zoom : 1), tagHost = body.querySelector('.ps-person-stand') || body, tagY = 6;
-      tagH = r1(lf * 1.2);
-      var tagW = Math.max(tagH * 1.5, lf * 1.1 + tagTxt.length * lf * .58);
-      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH * .3), fill: PILL }));
-      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + tagH / 2 + lf * .28), 'text-anchor': 'middle', 'font-size': r1(lf * .78), 'font-weight': '800', 'letter-spacing': '.3',
-        fill: '#fff', 'font-family': label.getAttribute('font-family') || FONT, 'pointer-events': 'none' });
+      tagH = r1(lf * 1.04);
+      var tagW = lf * .9; for (var ti = 0; ti < tagTxt.length; ti++) tagW += tagTxt.charCodeAt(ti) > 0x2000 ? lf * .82 : lf * .52;   // 한글 이름은 넓게
+      tagW = Math.max(tagH * 1.5, tagW);
+      var kitC = kitMain(doc, item, fill, stroke);
+      tagHost.appendChild(node(doc, 'rect', { 'class': 'ps-person-tag', x: r1(-tagW / 2), y: tagY, width: r1(tagW), height: tagH, rx: r1(tagH / 2), fill: kitC, 'fill-opacity': '.72' }));
+      var tagT = node(doc, 'text', { 'class': 'ps-person-tagtxt', x: 0, y: r1(tagY + tagH / 2 + lf * .26), 'text-anchor': 'middle', 'font-size': r1(lf * .74), 'font-weight': '700', 'letter-spacing': '.3',
+        fill: inkOn(kitC), 'font-family': label.getAttribute('font-family') || FONT, 'pointer-events': 'none' });
       tagT.textContent = tagTxt; tagHost.appendChild(tagT);
     }
-    if (item.name) {
+    if (item.name && !tagNm) {   // 3.093 — 이름이 발밑 알약에 들어갔으면 이름표는 따로 띄우지 않는다
       // opts.nameK = the board's name size (0.8 · 1 · 1.25); opts.nameStyle 'pill' puts the name on a dark pill, otherwise an outlined name.
       var font = size.font * (opts && +opts.nameK > 0 ? +opts.nameK : 1) / (opts && +opts.zoom > 1 ? +opts.zoom : 1), str = String(item.name).toUpperCase(), below = nameBelow(doc, opts), y0 = nameY(kind, h, font, opts && opts.dir, below);
       if (below && tagH) y0 = r1(y0 + tagH + 2);   // 사람: 이름표가 아래면 번호 패 밑으로

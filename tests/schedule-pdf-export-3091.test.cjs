@@ -77,7 +77,7 @@ test('clean: weekly and monthly docs use it; «깔끔하게 · 자세히» is re
   assert.match(read('sw.js'),/'\/studio\/schedule-poster\.js'/);
 });
 
-// 3.093 — 선수 프로필 한 장 · 평가표(이력서 + 세부평가)도 담백하게 · 같은 창(사용자 «개인 프로필과 평가표도 만들어보자»)
+// 3.094 — 선수 프로필 한 장 · 평가표(이력서 + 세부평가)도 담백하게 · 같은 창(사용자 «개인 프로필과 평가표도 만들어보자»)
 test('player docs: plain profile sheet, no purple on the evaluation sheet, same export window with per-page orientation',async()=>{
   global.window={};delete require.cache[require.resolve('../studio/profile-sheet.js')];require('../studio/profile-sheet.js');
   const html=window.PSProfileSheet.docHTML({nameKr:'가상 선수',nameEn:'Test Player',pos:'CM',num:'8',club:'가상 FC',strengths:'패스',develop:'수비'});
@@ -102,7 +102,7 @@ test('player docs: plain profile sheet, no purple on the evaluation sheet, same 
   assert.match(t,/MediaBox \[0 0 595\.28 841\.89\][\s\S]*MediaBox \[0 0 841\.89 595\.28\]/,'PDF 쪽도 장마다 방향');
 });
 
-// 3.093 — 한 장 선수 카드(프로필 요점 + 평가 요약) · 점수는 막대 + 숫자(사용자 «한 장 선수 카드» · «점수를 막대 + 숫자로»)
+// 3.094 — 한 장 선수 카드(프로필 요점 + 평가 요약) · 점수는 막대 + 숫자(사용자 «한 장 선수 카드» · «점수를 막대 + 숫자로»)
 test('player card: one A4 page with overall, area bars and item bars; evaluation sheet uses bars instead of dots',()=>{
   delete require.cache[require.resolve('../studio/player-card.js')];
   const PC=require('../studio/player-card.js');

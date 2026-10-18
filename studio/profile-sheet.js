@@ -52,7 +52,7 @@
   }
   function ymd(d){ d=d||new Date(); return d.getFullYear()+"."+String(d.getMonth()+1).padStart(2,"0")+"."+String(d.getDate()).padStart(2,"0"); }
 
-  /* 3.093 — 담백하게(사용자 «깔끔하게 · 심플하게 · 최대한 담백하게», 일정 PDF 와 같은 결): 흰 바탕 · 검은 글자 · 가는 선. 남색 띠 · 금색 선은 걷었다 */
+  /* 3.094 — 담백하게(사용자 «깔끔하게 · 심플하게 · 최대한 담백하게», 일정 PDF 와 같은 결): 흰 바탕 · 검은 글자 · 가는 선. 남색 띠 · 금색 선은 걷었다 */
   var CSS='*{box-sizing:border-box}@page{size:A4 portrait;margin:0}html,body{margin:0;padding:0;background:#fff}'
   +'body{font-family:Pretendard,"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#111418;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
   +'.a4{width:210mm;height:297mm;position:relative;overflow:hidden;display:flex;flex-direction:column;background:#fff;page-break-after:always}'
@@ -134,7 +134,7 @@
   }
   /* 인쇄 파이프라인이 없는 화면(scouting.html)용 — 미리보기 겹창 + 인쇄 */
   function preview(html,opt){
-    /* 3.093 — PDF 내보내기 창(studio/pdf-export.js)이 있으면 그 창으로: PDF 내려받기 · 인쇄 · 닫기 */
+    /* 3.094 — PDF 내보내기 창(studio/pdf-export.js)이 있으면 그 창으로: PDF 내려받기 · 인쇄 · 닫기 */
     if(window.PSPdfExport&&typeof window.PSPdfExport.open==="function"){
       var mt=/<title>([^<]*)<\/title>/.exec(html), fn=(mt&&mt[1])||"프로필";
       window.PSPdfExport.open({title:"프로필 한 장 — PDF",html:html,fname:fn,land:false,pages:{sel:".a4",land:function(){return false;}},

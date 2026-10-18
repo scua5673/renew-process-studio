@@ -15,7 +15,7 @@ try{ if(window.parent&&window.parent!==window){ document.documentElement.classLi
 <script src="match-board-tools.js?v=2.886"></script>
 <script src="review-training.js"></script>
 <script src="/vendor/qrcode.js"></script><!-- 2.617 — 프로필 한 장 QR(qrcode-generator 1.4.4 MIT) -->
-<script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 --><script src="pdf-export.js"></script><script src="player-card.js"></script><!-- 3.093 — PDF 내보내기 창(일정 · 작전판과 같은 창 · PDF 내려받기) -->
+<script src="profile-sheet.js"></script><!-- 2.617 — 선수 프로필 한 장(A4) 문서 · scouting.html 과 공용 --><script src="pdf-export.js"></script><script src="player-card.js"></script><!-- 3.094 — PDF 내보내기 창(일정 · 작전판과 같은 창 · PDF 내려받기) -->
 <script src="rpt-i18n.js"></script>
 <script src="pitches.js"></script>
 <script src="eval-standard.js"></script><!-- 1.974 — PROCESS 평가 표준 v1(20항목·두 톤 문장) — 팀 평가표·IDP 셀프평가 한 벌 -->
@@ -763,7 +763,7 @@ body.fmdark .pos-li .pl-edit:hover{background:rgba(127,152,208,.22);}
 .tm-row .t-mv:disabled{opacity:.3;cursor:default;}
 .tm-row .tgt-rank{flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#eef2fe;color:var(--ps-navy,#14213D);font-weight:var(--fw-head);font-size:var(--fs-sub);display:flex;align-items:center;justify-content:center;}
 .pl-modal{position:fixed;inset:0;z-index:9000;background:rgba(16,24,40,.5);display:flex;align-items:flex-start;justify-content:center;padding:22px 14px;overflow:auto;}
-@media(max-width:480px){#plEditTitle{flex:1 0 100%}#plPdf svg{display:none}}   /* 3.093 — «선수 카드» 단추가 늘어 폰에서는 이름 한 줄 · 단추 한 줄 */
+@media(max-width:480px){#plEditTitle{flex:1 0 100%}#plPdf svg{display:none}}   /* 3.094 — «선수 카드» 단추가 늘어 폰에서는 이름 한 줄 · 단추 한 줄 */
 .pl-modal .card{border-radius:16px;}
 .pl-modal>#plEditCard{max-width:680px;width:100%;margin:0;}
 /* 1.852 — 선수 편집 카드 = 스카우팅 프로필 패널 문법 */
@@ -9896,7 +9896,7 @@ function openPlayer(id,opts){
   _m.style.display="flex";$("plEditTitle").textContent=pl.name||"선수 편집";
   if($("plPdf"))$("plPdf").onclick=()=>printPlayerReport(pl.id);
   if($("plSheet"))$("plSheet").onclick=()=>printProfileSheet(pl.id);   /* 2.617 */
-  if($("plCard"))$("plCard").onclick=()=>printPlayerCard(pl.id);   /* 3.093 */
+  if($("plCard"))$("plCard").onclick=()=>printPlayerCard(pl.id);   /* 3.094 */
   /* 1.691 — 모달에서 바로 삭제(사용자). 명단의 ✕와 같은 동작·같은 확인 문구 */
   if($("plDelete"))$("plDelete").onclick=()=>{
     if(pl.type==="target"){scArchiveCandidate(pl.id);closePlayer();return;}
@@ -10036,7 +10036,7 @@ function esPageHTML(pl, lang, pageLb){
       +'<text x="'+x.toFixed(1)+'" y="'+(y+1.9).toFixed(1)+'" text-anchor="middle" font-size="4.2" font-weight="800" fill="'+((main||sub)?'#fff':'#9aa0aa')+'">'+k+'</text>';});
   pitch+='</svg>';
   const lv=pl.levels||{};
-  const dots=(v,n)=>'<div class="es-bar"><i style="width:'+(Math.max(0,Math.min(5,v))*20).toFixed(1)+'%"></i></div>'+(n===0?'':'<b class="es-n">'+(v?v:'—')+'</b>');   /* 3.093 — 점 → 막대 + 숫자 */
+  const dots=(v,n)=>'<div class="es-bar"><i style="width:'+(Math.max(0,Math.min(5,v))*20).toFixed(1)+'%"></i></div>'+(n===0?'':'<b class="es-n">'+(v?v:'—')+'</b>');   /* 3.094 — 점 → 막대 + 숫자 */
   const groups={},order=[];
   (data.attrs||[]).forEach(a=>{const c=CATNAME[a.cat]||a.cat||"기타";if(!groups[c]){groups[c]=[];order.push(c);}groups[c].push(a);});
   const avgs=order.map(c=>{let sm=0,n=0;groups[c].forEach(a=>{const v=+lv[a.id]||0;if(v){sm+=v;n++;}});return {c,avg:n?sm/n:0,n};});
@@ -10063,7 +10063,7 @@ function esPageHTML(pl, lang, pageLb){
           +pi.map(function(it){ return '<div class="es-row"><span>'+esc(it.name)+'</span>'+dots(+lv[it.id]||0)+'</div>'; }).join('')+'</div>'; }
       return '<div class="es-card"><div class="es-ct" style="color:#9aa0aa">memo</div>'+Array(11).fill('<div class="es-ml"></div>').join('')+'</div>'; })()
     +'</div>';
-  /* 3.093 — 칸 줄 수만큼 높이를 나눠 장을 채운다(같은 줄의 칸끼리 행 높이를 맞춘다) */
+  /* 3.094 — 칸 줄 수만큼 높이를 나눠 장을 채운다(같은 줄의 칸끼리 행 높이를 맞춘다) */
   { const ch=main.split('<div class="es-card">'), n=ch.slice(1).map(x=>(x.match(/class="es-(row|ml)"/g)||[]).length), R=[];
     for(let i=0;i<n.length;i+=3)R.push(Math.max.apply(null,n.slice(i,i+3)));
     main=ch[0].replace('<div class="es-main">','<div class="es-main" style="grid-template-rows:'+R.map(x=>(x+1.6)+'fr').join(' ')+'">')
@@ -10071,7 +10071,7 @@ function esPageHTML(pl, lang, pageLb){
   return '<div class="es-wrap">'+side+main+'</div>'
     +'<div class="es-ft"><span><b>PRO</b>FILE · '+LB.evalTitle+'</span><span>'+(pageLb?pageLb+' · ':'')+today+'</span></div>';
 }
-/* 3.093 — 개인 PDF(이력서 + 세부평가)는 장을 꽉 채운다(사용자 «여백이 최소화 되게»): 장 높이 고정 · 바닥글은 아래 · 세부평가 칸은 높이를 나눠 갖는다 */
+/* 3.094 — 개인 PDF(이력서 + 세부평가)는 장을 꽉 채운다(사용자 «여백이 최소화 되게»): 장 높이 고정 · 바닥글은 아래 · 세부평가 칸은 높이를 나눠 갖는다 */
 function rzMoreHTML(pf,LB){
   const L=v=>String(v||"").split(/\r?\n/).map(x=>x.replace(/^\s*\d+[.)]?\s*/,"").trim()).filter(Boolean);
   const cl=L(pf.career||pf.clubs).slice(0,4), st=L(pf.strengths).slice(0,3), dv=L(pf.develop).slice(0,3);
@@ -10302,7 +10302,7 @@ function evalDocHTML(players,p,note){
     <div class="ev-legend">● 현재 레벨 · ○ 미달 · 파란 테두리 = 목표 레벨 · 점수는 현재 레벨 평균(5점 만점)</div>
   </div>`;
 }
-function resumePageHTML(pl, lang, pageLb, more){   /* pageLb: 인쇄 짝(1/2·2/2)에서만 넘긴다 · more: 개인 PDF — 클럽 경력 · 장점 · 보완할 점도(3.093) */
+function resumePageHTML(pl, lang, pageLb, more){   /* pageLb: 인쇄 짝(1/2·2/2)에서만 넘긴다 · more: 개인 PDF — 클럽 경력 · 장점 · 보완할 점도(3.094) */
   var LB=rptLabels(lang);
   const pf=pl.profile||{};
   const mainP=pos(pl.posId); const subs=(pf.subs||(pf.sub?[pf.sub]:[])).map(id=>pos(id)).filter(Boolean);
@@ -10687,7 +10687,7 @@ function __pvClose(){
   window.removeEventListener("resize",__pvFit);
   document.removeEventListener("keydown",__pvKey);
 }
-/* 3.093 — 선수 문서(프로필 한 장 · 이력서 · 세부평가 · 명단 · 경기 · 선수 카드 · IDP)도 일정 · 작전판과 같은 내보내기 창(studio/pdf-export.js):
+/* 3.094 — 선수 문서(프로필 한 장 · 이력서 · 세부평가 · 명단 · 경기 · 선수 카드 · IDP)도 일정 · 작전판과 같은 내보내기 창(studio/pdf-export.js):
    개인 노트로 · PDF 내려받기(인쇄 창 없이 파일) · 인쇄 · 닫기. 장이 문서 몸에 바로 놓인 문서(프로필 .a4 · 이력서 세로 + 세부평가 가로)는 장마다 제 방향으로 찍는다.
    그 파일을 못 읽었으면 예전 «출력 미리보기». */
 function pdfxOpen(html,rebuild){
@@ -12751,7 +12751,7 @@ function scoutRosterDocHTML(ink){
 }
 function printScoutRoster(){printStandalone(scoutRosterDocHTML(false),ink=>scoutRosterDocHTML(!!ink));}
 /* ===== 선수 카드 — 개인 프로필 A4 가로 1장 ===== */
-/* 3.093 — 한 장 선수 카드(A4 세로): 프로필 요점 + 평가 요약 · 점수는 막대 + 숫자. 문서는 player-card.js */
+/* 3.094 — 한 장 선수 카드(A4 세로): 프로필 요점 + 평가 요약 · 점수는 막대 + 숫자. 문서는 player-card.js */
 function playerCardModel(id){
   const pl=player(id); if(!pl)return null;
   const pf=pl.profile||{}, po=pos(pl.posId), lv=pl.levels||{}, by=attrsByCat(), v=a=>+lv[a]||0;
