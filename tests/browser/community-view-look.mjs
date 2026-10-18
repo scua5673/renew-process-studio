@@ -78,7 +78,7 @@ try{
     assert.deepEqual(L.shapeOpts,['올린 그대로 · 원형*','원형','유니폼','쉐이퍼'],'폰은 «사람» 없음');
     await shot('2-pop');
     await pick(v,'[data-cl-shape="shaper"]'); L=await look(v);
-    assert.deepEqual([L.shape,L.now,L.pref],['shaper','쉐이퍼',JSON.stringify({shape:'shaper',tilt:''})]);
+    assert.deepEqual([L.shape,L.now,L.pref],['shaper','쉐이퍼',JSON.stringify({shape:'shaper',tilt:'',label:''})]);
     await shot('3-shaper');
     await close(); v=await open(); L=await look(v);
     assert.deepEqual([L.shape,L.now,L.tilt],['shaper','쉐이퍼',false],'다음 글도 고른 모양');
@@ -90,7 +90,7 @@ try{
     // 2) 3D — 보드 설정 값(ps_board_tilt3d)은 그대로
     const setting0=L.setting;
     await pick(v,'[data-cl-tilt="3d"]'); L=await look(v);
-    assert.deepEqual([L.tilt,L.now,L.setting,L.pref],[true,'3D · 올린 그대로',setting0,JSON.stringify({shape:'',tilt:'3d'})]);
+    assert.deepEqual([L.tilt,L.now,L.setting,L.pref],[true,'3D · 올린 그대로',setting0,JSON.stringify({shape:'',tilt:'3d',label:''})]);
     // 3) 모양 — 유니폼 · 사람
     await pick(v,'[data-cl-shape="shirt"]'); L=await look(v);
     assert.deepEqual([L.shape,L.now],['shirt','3D · 유니폼']);
@@ -115,7 +115,7 @@ try{
     await page.waitForTimeout(2600); assert.equal(await v.evaluate(()=>tokShape),'shirt','재생 끝');
     // 7) 다음 글도 고른 대로 · 올린 그대로로 되돌리기
     await close(); v=await open(); L=await look(v);
-    assert.deepEqual([L.tilt,L.shape,L.now,L.pref],[false,'shirt','평면 · 유니폼',JSON.stringify({shape:'shirt',tilt:'flat'})]);
+    assert.deepEqual([L.tilt,L.shape,L.now,L.pref],[false,'shirt','평면 · 유니폼',JSON.stringify({shape:'shirt',tilt:'flat',label:''})]);
     assert.deepEqual(L.chrome,[],'다시 열어도 편집 크롬 없음');
     await v.click('#commLookBtn'); await pick(v,'[data-cl-tilt="3d"]'); await pick(v,'[data-cl-shape=""]'); L=await look(v);
     assert.deepEqual([L.shape,L.tilt,L.now],['circle',true,'3D · 올린 그대로'],'올린 사람의 모양으로');

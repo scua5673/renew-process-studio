@@ -11319,7 +11319,7 @@ function libWrite(lib){if(!psVaultUnlocked())return Promise.reject(psVaultLocked
    앞 차례의 쓰기가 끝난 뒤에 읽으므로 서로 지우지 않는다. (셸의 동기화는 원문 비교 저장(replaceIfValue)이라 따로 안전하다) */
 var _libTurnTail=Promise.resolve();
 function libTurn(task){var run=_libTurnTail.then(function(){return task();});_libTurnTail=run.then(function(){},function(){});return run;}
-/* 3.093 폰 강제 종료: 숨은 보관함 그리기가 부팅 10초에 보관함 통째를 24번 읽었다(21MB 팀 → 메모리 0.9GB). 아직 시작 전이고 뒤에 다른 차례가 없는(꼬리가 그대로인) 읽기는 같이 쓴다 */
+/* 3.094 폰 강제 종료: 숨은 보관함 그리기가 부팅 10초에 보관함 통째를 24번 읽었다(21MB 팀 → 메모리 0.9GB). 아직 시작 전이고 뒤에 다른 차례가 없는(꼬리가 그대로인) 읽기는 같이 쓴다 */
 var _vrq=null;
 function psVaultRenderRead(){if(typeof __psVaultDefer==='function'&&__psVaultDefer())return Promise.resolve(null);   /* 숨은 작전판은 보일 때 그린다(board-vault-lazy.js) */
   if(_vrq&&_vrq.t===_libTurnTail)return _vrq.p;var q={};q.p=libTurn(function(){if(_vrq===q)_vrq=null;return libGet();});q.t=_libTurnTail;_vrq=q;return q.p;}

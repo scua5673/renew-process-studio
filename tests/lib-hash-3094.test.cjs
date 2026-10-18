@@ -4,7 +4,7 @@ const fs=require('fs');
 const path=require('path');
 const vm=require('vm');
 
-/* 3.093 — 폰 강제 종료(설치 앱이 켜진 지 5초에 꺼짐). 동기화는 회차마다 보관함 자료마다 지문(libHash)을 잰다.
+/* 3.094 — 폰 강제 종료(설치 앱이 켜진 지 5초에 꺼짐). 동기화는 회차마다 보관함 자료마다 지문(libHash)을 잰다.
    예전 지문은 자료를 통째로 복사(libShareCopy: 직렬화 · 해석 · 훑기)한 뒤 다시 직렬화했다 — 21MB 보관함이면 회차마다 0.3GB 의 쓰레기.
    새 지문(libShareJSON)은 같은 규칙을 JSON.stringify 의 replacer 로 한 번에 적는다.
    지문 글이 한 글자라도 다르면 기기에 적어 둔 기준(m.li[id].h)과 어긋나 모든 자료가 «바뀜»으로 다시 올라간다 — 그래서 옛 글과 똑같은지 본다. */
