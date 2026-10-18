@@ -67,6 +67,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - MutationObserver 안에서 없는 class 를 `classList.remove` 해도 속성 바뀜으로 잡혀 끝없이 돈다(3.084 보드가 안 열렸다). `contains` 로 확인한 뒤 바꾼다.
 - 비동기로 걷히는 화면(폰 빈 판 안내 «보관함 열기» 등)을 시험이 곧바로 재면 느린 WebKit 에서 남아 있는 것을 잡는다 — `waitForFunction` 으로 걷힐 때까지 기다린 뒤 잰다(3.086 board-savebar).
 - 3.097 — 판은 프레임과 상관없이 다시 놓인다(시작 타이머 · `psSelBarLayout` → MutationObserver `fix` → `applyView`). 화면→판 좌표(CTM · 3D 행렬)를 재 두고 쓰려면 **그 이벤트 안에서만**(`Promise.resolve().then` 으로 지운다) — 다음 프레임까지 두면 느린 WebKit 에서 다음 이벤트의 점이 옛 판 자리로 간다(board-pencil 2) 가끔 실패). 시험은 `await Promise.resolve()` 뒤 무대 `padding-bottom` + `applyView()` 로 프레임 없이 판을 옮겨 본다(board-pencil 2b).
+- 3.101 — 판에 손대는 시험은 보드가 내 작업판을 다 불러온 뒤에(`__boardReady && __boardRestoreDone && _boardPrivateLoaded && boardPrivateCurrent(_boardPrivateOwner)`). 불러오는 중(주인 확인 전 · 기기 읽기 중 — WebKit 은 첫 IndexedDB 열기가 몇 초 멈춘다)의 변경은 `boardSaveLive` 가 세지 않아 늦게 끝난 불러오기가 판을 저장본으로 바꾼다 — anim-erase-export 화살표가 첫 진짜 마우스 입력(획) 때 사라졌다(차가운 WebKit 27줄 0 !== 1). `__boardRestoreDone` 만으로는 모자란다(주인을 모를 때도 켜진다).
 - 2026-10-18 — 빈 보관함을 처음 그리면 예시 다섯이 «읽고 → 쓰기»(libTurn)로 담기고 «프로세스» 폴더가 열린다(`vxSeedRun`). 시험이 `libWrite` 로 자료를 바로 쓰면 그 사이에 끼어 덮인다(save-status-layout WebKit 393px 이 «카드 5장»에서 멈춤). 보관함 자료를 직접 넣는 시험은 사용자를 `ps_vault_px_v1` 로 «예시 이미 받음»으로 둔다(`team-app.mjs` 기본).
 - 시험 픽스처 서버(`tests/fixtures/team-app.mjs`)는 브라우저가 끊은 요청에 죽지 않게 본문 읽기를 try 로 감쌌다(3.086 invite-link-export ECONNRESET).
 - `pgrep -f "<이름>"` 으로 기다리는 셸 반복은 자기 자신의 명령줄에 걸린다 — 출력 파일을 grep 해서 기다린다.

@@ -9,6 +9,9 @@ try{
   await page.waitForTimeout(1500);
   const bf=await (await page.waitForSelector('#fBoard',{state:'attached'})).contentFrame();
   await bf.waitForFunction(()=>typeof state==='object'&&typeof anim==='object'&&document.getElementById('animAdd'));
+  /* 3.101 — 보드가 내 작업판(개인 보드)을 다 불러온 뒤에 손댄다. 불러오는 중(주인 확인 전 · 기기 읽기 중)에 바꾼 것은 «변경»으로 세지 않아
+     늦게 끝난 불러오기가 판을 저장본으로 바꾼다 — 차가운 WebKit(board2 첫 시험)에서 방금 그린 화살표가 사라졌다(1) 0 !== 1). */
+  await bf.waitForFunction(()=>window.__boardReady&&window.__boardRestoreDone&&_boardPrivateLoaded&&boardPrivateCurrent(_boardPrivateOwner));
   const box=await (await page.$('#fBoard')).boundingBox();
   /* 판 좌표 → 화면 좌표(세로 판·확대와 상관없이) */
   const U=async(x,y)=>{const c=await bf.evaluate(([x,y])=>{const s=document.getElementById('board'),m=document.getElementById('world').getScreenCTM(),p=s.createSVGPoint();p.x=x;p.y=y;const q=p.matrixTransform(m);return {x:q.x,y:q.y};},[x,y]);return {x:box.x+c.x,y:box.y+c.y};};
@@ -24,7 +27,7 @@ try{
   await bf.evaluate(()=>document.querySelectorAll('#animFrames .anim-frame')[0].click());await page.waitForTimeout(300);
   assert.ok(await bf.evaluate(()=>!!document.querySelector('#pathLayer .mp-handle')),'선수 동선과 곡선 손잡이가 보인다');
   await tool('run');await stroke([330,370],[570,370]);
-  assert.equal(await bf.evaluate(()=>state.drawings.length),1);
+  assert.equal(await bf.evaluate(()=>state.drawings.length),1,'화살표가 그려진다 '+JSON.stringify(await bf.evaluate(()=>({tool:state.tool,frames:anim.frames.length,loaded:_boardPrivateLoaded,gen:_boardPrivateGeneration,dirty:_boardManualDirty}))));
   await tool('eraser');
   const mid=await U(450,370);
   assert.equal(await bf.evaluate(([x,y])=>!!document.elementFromPoint(x,y).closest('#drawLayer'),[mid.x-box.x,mid.y-box.y]),true,'지우개 모드에선 손잡이 아래 그림이 잡힌다');
