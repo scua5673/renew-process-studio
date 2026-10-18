@@ -70,6 +70,25 @@ try{
   assert.equal(palm.added,1,'palm lifting does not end the pencil stroke and a palm after it draws nothing '+JSON.stringify(palm));
   assert.equal(palm.live,25,'1 + 24 pencil points, none from the palm');assert.ok(palm.flat,'every point lies on the pencil line');
 
+  // 2b) 3.097 — 두 펜슬 이벤트 사이에 판이 다시 놓이면(무대 여백 + applyView — psSelBarLayout · fix · 시작 타이머가 프레임과 상관없이 한다)
+  //     뒤의 점은 다시 놓인 판에서 잰다. 예전엔 잰 투영을 다음 프레임까지 다시 써서 옛 판 자리로 바뀌었다 — 느린 WebKit 에서 2) 가 가끔
+  //     실패한 까닭(1) 에서 잰 투영이 프레임 없이 2) 까지 남았다). await 한 번 = 다음 이벤트(그 사이 프레임은 없다).
+  const relaid=await page.evaluate(async()=>{
+    const m=__mid(),st=document.getElementById('boardStage'),pb=st.style.getPropertyValue('padding-bottom'),yAt=()=>clientToUnit(m.x,m.y-100).y;
+    __pt(drawCatch,'pointerdown',6,'pen',m.x-150,m.y-100);for(let i=1;i<=6;i++)__pt(drawCatch,'pointermove',6,'pen',m.x-150+i*10,m.y-100);
+    const y0=yAt();
+    await Promise.resolve();
+    st.style.setProperty('padding-bottom','240px','important');applyView();
+    const y1=yAt();
+    for(let i=7;i<=12;i++)__pt(drawCatch,'pointermove',6,'pen',m.x-150+i*10,m.y-100);
+    const ys=_draw.pts.map(p=>p.y);__pt(drawCatch,'pointerup',6,'pen',m.x-30,m.y-100);
+    if(pb)st.style.setProperty('padding-bottom',pb,'important');else st.style.removeProperty('padding-bottom');applyView();
+    return {moved:Math.abs(y1-y0)>5,n:ys.length,before:ys.slice(0,7).every(y=>Math.abs(y-y0)<1),after:ys.slice(7).every(y=>Math.abs(y-y1)<1),y0,y1,ys};
+  });
+  assert.ok(relaid.moved&&relaid.n===13,'the board really moved under the pencil '+JSON.stringify(relaid));
+  assert.ok(relaid.before,'points before the move are on the old board '+JSON.stringify(relaid));
+  assert.ok(relaid.after,'points after the move follow the board — no stale projection '+JSON.stringify(relaid));
+
   // 3) 펜슬을 쓴 뒤 그리기 도구의 손가락: 빈 곳은 그리지 않고 안내(+«손가락도 그리기» 단추 — 닿는다) · «펜슬 전용» 칩이 켜진 알약으로 보인다
   await page.waitForTimeout(400);
   const finger=await page.evaluate(()=>{
