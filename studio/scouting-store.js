@@ -7,6 +7,19 @@
   var obj=function(x){return !!x&&typeof x==='object'&&!Array.isArray(x);};
   var copy=function(x){return x==null?x:JSON.parse(JSON.stringify(x));};
   var same=function(a,b){return JSON.stringify(a)===JSON.stringify(b);};
+  /* 3.107 — 거절마다 분류 코드를 단다(문구는 그대로). 새 판 미뤄짐 기록에 «store_ready» 만 남아 어느 거절인지 몰랐다. */
+  var fail=function(message,code){var e=new Error(message);e.psCode=code;return e;};
+  function canon(x){
+    if(Array.isArray(x))return '['+x.map(canon).join(',')+']';
+    if(obj(x))return '{'+Object.keys(x).sort().map(function(k){return JSON.stringify(k)+':'+canon(x[k]);}).join(',')+'}';
+    return JSON.stringify(x);
+  }
+  /* 3.107 — 이 문서를 쓰면 저장된 원문과 내용이 같은가(칸 순서는 보지 않는다). 순서만 다르면 길이가 같다. */
+  function sameRaw(doc,raw){
+    if(typeof raw!=='string')return false;
+    var s=JSON.stringify(doc);if(s===raw)return true;if(s.length!==raw.length)return false;
+    try{return canon(JSON.parse(s))===canon(JSON.parse(raw));}catch(_){return false;}
+  }
   function safe(k){return typeof k==='string'&&k.length>0&&k!=='__proto__'&&k!=='constructor'&&k!=='prototype';}
   function valid(d){
     if(!obj(d)||(d.v!=null&&d.v!==1)||!Array.isArray(d.players))return false;
@@ -141,9 +154,11 @@
     var ws=JSON.parse(ls.getItem('ps_ws_list')||'[]').find(function(w){return w.id===wid;});
     var sync=win.PSSync;try{var host=win;for(var i=0;i<4&&!sync;i++){if(host.parent===host)break;host=host.parent;sync=host.PSSync;}}catch(_){}
     var perms=win.PSPerms,role=perms&&perms.role&&perms.role();
-    if(!s||!s.uid||!wid||!owner||owner.uid!==s.uid||owner.wid!==wid||!ws||ws.kind!=='team'||
-      !sync||!sync.dataUnlocked||!sync.dataUnlocked()||!sync.keyReady||(requireReady!==false&&!sync.keyReady(KEY,wid))||
-      !perms||!perms.canEdit||!perms.canEdit('scout')||(role!=='executive'&&role!=='admin'))throw new Error('팀의 후보 자료와 권한을 확인 중입니다.');
+    var why=!s||!s.uid||!wid||!owner||owner.uid!==s.uid||owner.wid!==wid||!ws||ws.kind!=='team'?'scout_session'
+      :!sync||!sync.dataUnlocked||!sync.dataUnlocked()?'scout_locked'
+      :!sync.keyReady||(requireReady!==false&&!sync.keyReady(KEY,wid))?'scout_not_ready'
+      :!perms||!perms.canEdit||!perms.canEdit('scout')||(role!=='executive'&&role!=='admin')?'scout_role':'';
+    if(why)throw fail('팀의 후보 자료와 권한을 확인 중입니다.',why);
     return JSON.stringify([wid,s.uid,seal]);
   }
   function createClient(win){
@@ -165,11 +180,19 @@
         return win.storage.get(KEY).then(function(v){if(v&&v.value)throw new Error('후보 저장소가 서로 다릅니다.');});
       }).then(function(){if(context(win)!==owner||win.localStorage.getItem(KEY)!==raw)throw new Error('후보 자료가 바뀌었습니다. 다시 열어 주세요.');state.verified=true;return state.doc;});
     }
-    function check(){if(!state.doc||!state.verified||context(win)!==state.owner||win.localStorage.getItem(KEY)!==state.raw)throw new Error('후보 자료가 갱신되었습니다. 다시 열어 주세요.');}
+    function check(){
+      var why=!state.doc?'scout_unread':!state.verified?'scout_unverified':context(win)!==state.owner?'scout_owner':win.localStorage.getItem(KEY)!==state.raw?'scout_raw_changed':'';
+      if(why)throw fail('후보 자료가 갱신되었습니다. 다시 열어 주세요.',why);
+    }
+    /* 3.107 — 이 문서를 지금 기준(state.raw)에 저장해도 바뀌는 것이 없는가. 확인 중(check 거절)이어도 판정할 수 있다. */
+    function unchanged(doc){
+      if(!state.doc||typeof state.raw!=='string')return false;
+      try{return sameRaw(reconcile(state.doc,doc),state.raw);}catch(_){return false;}
+    }
     function save(doc){
       check();var next=reconcile(state.doc,doc),raw=JSON.stringify(next),owner=state.owner;
-      if(raw.length>MAXLEN){state.doc=reconcile(null,state.raw==null?{v:1,players:[]}:JSON.parse(state.raw));throw new Error('후보 자료가 저장 한도를 넘었습니다. 방금 추가한 사진이나 가져올 자료를 줄여 다시 시도해 주세요. 기존 저장은 그대로 있습니다.');}
-      if(!win.psSaveShared||!win.psSaveShared(KEY,raw))throw new Error('후보 자료를 저장하지 못했습니다.');
+      if(raw.length>MAXLEN){state.doc=reconcile(null,state.raw==null?{v:1,players:[]}:JSON.parse(state.raw));throw fail('후보 자료가 저장 한도를 넘었습니다. 방금 추가한 사진이나 가져올 자료를 줄여 다시 시도해 주세요. 기존 저장은 그대로 있습니다.','scout_too_large');}
+      if(!win.psSaveShared||!win.psSaveShared(KEY,raw))throw fail('후보 자료를 저장하지 못했습니다.','scout_write_failed');
       state.doc=next;state.raw=raw;
       var p=win.PSStorage.sharedReady(KEY).then(function(){
         /* Sync may temporarily close keyReady after this write was accepted.
@@ -183,7 +206,7 @@
       });state.pending=p;p.catch(function(){if(state.owner===owner&&state.pending===p)state.verified=false;});return p;
     }
     function retry(){var owner=state.owner,raw=state.raw;if(context(win,false)!==owner||win.localStorage.getItem(KEY)!==raw)return Promise.reject(new Error('후보 자료가 바뀌어 이전 저장을 다시 쓰지 않습니다.'));return win.PSStorage.sharedVerified(KEY,raw).then(function(){if(context(win,false)!==owner||win.localStorage.getItem(KEY)!==raw)throw new Error('후보 저장 확인 중 팀이나 자료가 바뀌었습니다.');state.verified=true;return true;});}
-    return {read:read,prepare:prepare,check:check,save:save,retry:retry,stamp:stamp,state:state};
+    return {read:read,prepare:prepare,check:check,unchanged:unchanged,save:save,retry:retry,stamp:stamp,state:state};
   }
-  return {KEY:KEY,MAXLEN:MAXLEN,BASIC:BASIC,valid:valid,idOf:idOf,copy:copy,reconcile:reconcile,edit:edit,score:score,archive:archive,importLegacy:importLegacy,project:project,parsePoints:parsePoints,context:context,createClient:createClient};
+  return {KEY:KEY,MAXLEN:MAXLEN,BASIC:BASIC,valid:valid,idOf:idOf,copy:copy,sameRaw:sameRaw,reconcile:reconcile,edit:edit,score:score,archive:archive,importLegacy:importLegacy,project:project,parsePoints:parsePoints,context:context,createClient:createClient};
 });
