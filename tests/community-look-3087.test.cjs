@@ -8,11 +8,11 @@ const mem=init=>{const m=new Map(Object.entries(init||{}));return {getItem:k=>m.
 const DESK={phone:false,touch:false},IPAD={phone:false,touch:true},PHONE={phone:true,touch:true};
 
 test('기기에 남긴 보기 — 모르는 값은 «올린 그대로» · «정하지 않음»',()=>{
-  assert.deepEqual(CL.read(mem()),{shape:'',tilt:''});
-  assert.deepEqual(CL.read(mem({ps_comm_look_v1:'{bad'})),{shape:'',tilt:''});
-  assert.deepEqual(CL.read(mem({ps_comm_look_v1:JSON.stringify({shape:'star',tilt:'4d'})})),{shape:'',tilt:''});
-  const ls=mem();CL.write(ls,{shape:'person',tilt:'3d'});
-  assert.deepEqual(CL.read(ls),{shape:'person',tilt:'3d'});
+  assert.deepEqual(CL.read(mem()),{shape:'',tilt:'',label:''});
+  assert.deepEqual(CL.read(mem({ps_comm_look_v1:'{bad'})),{shape:'',tilt:'',label:''});
+  assert.deepEqual(CL.read(mem({ps_comm_look_v1:JSON.stringify({shape:'star',tilt:'4d',label:''})})),{shape:'',tilt:'',label:''});
+  const ls=mem();CL.write(ls,{shape:'person',tilt:'3d',label:''});
+  assert.deepEqual(CL.read(ls),{shape:'person',tilt:'3d',label:''});
   assert.equal(CL.KEY,'ps_comm_look_v1');
   assert.match(read('studio/storage-keys.js'),/\['ps_comm_look_v1','device','ls','pref','board-comm-look\.js'\]/,'키 표에 있다');
 });
@@ -32,17 +32,17 @@ test('기기 — 폰은 3D · «사람»이 없고, 터치 기기는 3D 를 남�
 });
 
 test('고르기 — 화면 · 모양 · 기기에 남길 것',()=>{
-  const flat={is3d:false,pref:{shape:'',tilt:''}};
-  assert.deepEqual(CL.choose(flat,{tilt:'3d'},DESK,true),{on:true,shape:null,pref:{shape:'',tilt:'3d'}});
-  assert.deepEqual(CL.choose(flat,{tilt:'3d'},IPAD,true),{on:true,shape:null,pref:{shape:'',tilt:''}},'아이패드 3D 는 이 글에서만');
-  assert.deepEqual(CL.choose(flat,{tilt:'3d'},PHONE,false),{on:null,shape:null,pref:{shape:'',tilt:''}},'폰은 3D 없음');
-  assert.deepEqual(CL.choose({is3d:true,pref:{shape:'shirt',tilt:'3d'}},{tilt:'flat'},DESK,true),{on:false,shape:null,pref:{shape:'shirt',tilt:'flat'}});
+  const flat={is3d:false,pref:{shape:'',tilt:'',label:''}};
+  assert.deepEqual(CL.choose(flat,{tilt:'3d'},DESK,true),{on:true,shape:null,pref:{shape:'',tilt:'3d',label:''}});
+  assert.deepEqual(CL.choose(flat,{tilt:'3d'},IPAD,true),{on:true,shape:null,pref:{shape:'',tilt:'',label:''}},'아이패드 3D 는 이 글에서만');
+  assert.deepEqual(CL.choose(flat,{tilt:'3d'},PHONE,false),{on:null,shape:null,pref:{shape:'',tilt:'',label:''}},'폰은 3D 없음');
+  assert.deepEqual(CL.choose({is3d:true,pref:{shape:'shirt',tilt:'3d',label:''}},{tilt:'flat'},DESK,true),{on:false,shape:null,pref:{shape:'shirt',tilt:'flat',label:''}});
   // 사람은 3D 에서 선다 — 평면에서 고르면 3D 도
-  assert.deepEqual(CL.choose(flat,{shape:'person'},DESK,true),{on:true,shape:'person',pref:{shape:'person',tilt:'3d'}});
-  assert.deepEqual(CL.choose(flat,{shape:'person'},IPAD,true),{on:true,shape:'person',pref:{shape:'person',tilt:''}});
-  assert.deepEqual(CL.choose({is3d:true,pref:{shape:'',tilt:'3d'}},{shape:'person'},DESK,true),{on:null,shape:'person',pref:{shape:'person',tilt:'3d'}},'이미 3D');
-  assert.deepEqual(CL.choose(flat,{shape:'circle'},DESK,true),{on:null,shape:'circle',pref:{shape:'circle',tilt:''}});
-  assert.deepEqual(CL.choose({is3d:false,pref:{shape:'circle',tilt:''}},{shape:''},DESK,true),{on:null,shape:'',pref:{shape:'',tilt:''}},'올린 그대로');
+  assert.deepEqual(CL.choose(flat,{shape:'person'},DESK,true),{on:true,shape:'person',pref:{shape:'person',tilt:'3d',label:''}});
+  assert.deepEqual(CL.choose(flat,{shape:'person'},IPAD,true),{on:true,shape:'person',pref:{shape:'person',tilt:'',label:''}});
+  assert.deepEqual(CL.choose({is3d:true,pref:{shape:'',tilt:'3d',label:''}},{shape:'person'},DESK,true),{on:null,shape:'person',pref:{shape:'person',tilt:'3d',label:''}},'이미 3D');
+  assert.deepEqual(CL.choose(flat,{shape:'circle'},DESK,true),{on:null,shape:'circle',pref:{shape:'circle',tilt:'',label:''}});
+  assert.deepEqual(CL.choose({is3d:false,pref:{shape:'circle',tilt:'',label:''}},{shape:''},DESK,true),{on:null,shape:'',pref:{shape:'',tilt:'',label:''}},'올린 그대로');
   assert.deepEqual(CL.choose(flat,{shape:'star'},DESK,true).shape,'','모르는 모양은 올린 그대로');
 });
 
@@ -59,10 +59,10 @@ test('단추 글 · 안내',()=>{
 
 test('글을 싣기 전 — 고른 모양을 loadSnap 이 장면마다 지킨다',()=>{
   const win=(dev,v)=>({top:{document:{documentElement:{getAttribute:()=>dev}}},navigator:{},localStorage:mem(v?{ps_comm_look_v1:JSON.stringify(v)}:{})});
-  let w=win('desktop',{shape:'shaper',tilt:''});w.__commPostShape='shirt';CL.prime(w);assert.equal(w.__commWantShape,'shaper');
+  let w=win('desktop',{shape:'shaper',tilt:'',label:''});w.__commPostShape='shirt';CL.prime(w);assert.equal(w.__commWantShape,'shaper');
   assert.equal(w.__commPostShape,null,'올린 사람의 모양은 이 글의 첫 스냅이 다시 적는다(앞 글 · 되살린 화면 것이 아니다)');
   w=win('desktop');CL.prime(w);assert.equal(w.__commWantShape,null,'고른 적 없으면 올린 그대로');
-  w=win('phone',{shape:'person',tilt:'3d'});CL.prime(w);assert.equal(w.__commWantShape,'shirt','폰의 사람은 유니폼');
+  w=win('phone',{shape:'person',tilt:'3d',label:''});CL.prime(w);assert.equal(w.__commWantShape,'shirt','폰의 사람은 유니폼');
   // 보드: 스냅마다(재생은 장면마다 loadSnap) 올린 사람의 모양을 적어 두고, 고른 모양으로 바꾼다
   assert.match(board,/lookApply\(opts\.keepLook\?lookNow\(\):lookOf\(s\)\);\}catch\(_\)\{\}[^\n]*\n  try\{if\(document\.body\.classList\.contains\("comm-viewing"\)\)\{if\(!opts\.keepLook&&window\.__commPostShape==null\)window\.__commPostShape=tokShape;if\(window\.__commWantShape\)tokShape=window\.__commWantShape;\}\}catch\(_\)\{\}/);
   const v=board.indexOf('window.__commView=function('),prime=board.indexOf('try{PSCommLook.prime(window);}catch(_){}',v),load=board.indexOf('loadEditorTrainings(d);',v),mount=board.indexOf('try{PSCommLook.mount(window);}catch(_){}',v);

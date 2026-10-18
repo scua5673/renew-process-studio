@@ -15,11 +15,12 @@ test('name size has «아주 크게»; the person tag has its own size, saved pe
   assert.match(b,/"labelSeg","tagSizeSeg"\]\]/,'the row sits under «칩 글자»');
   assert.match(m,/row\.classList\.toggle\('ps-tag-off', !person\)/,'only for the «사람» shape');
 });
-test('the person tag is a dark pill with white letters; the kit colour is a thin bar',()=>{
+test('the person tag is the kit\'s solid colour (3.093 — no stripes), letters by brightness',()=>{
   const d=read('studio/board-token-depth.js');
-  assert.match(d,/'class': 'ps-person-tag', [^\n]*fill: PILL \}/);
+  assert.match(d,/'class': 'ps-person-tag', [^\n]*fill: kitC, 'fill-opacity': '\.72' \}/);
+  assert.match(d,/w\.playerTeamCol\(item\)/,'the board\'s solid team colour (keeper · coach · own colour), never the stripe pattern');
   assert.doesNotMatch(d,/ps-person-tagbar/);
-  assert.match(d,/'class': 'ps-person-tagtxt', [^\n]*\n\s*fill: '#fff',/,'white letters on every kit');
+  assert.match(d,/'class': 'ps-person-tagtxt', [^\n]*\n\s*fill: inkOn\(kitC\),/,'dark letters on a light kit, white on a dark kit');
 });
 test('settings panel: one label column, even groups, the hide rules keep working',()=>{
   const css=SK.css();
