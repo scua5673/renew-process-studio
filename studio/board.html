@@ -3495,7 +3495,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">칩</span><div class="seg" id="chip3dSeg" role="group" aria-label="선수 칩 모양"><button type="button" data-c3="0">평면</button><button type="button" data-c3="1" title="광택과 바닥 그림자 — 영상·사진 내보내기에도 들어갑니다">입체</button></div></div><!-- 2.902 -->
           <div class="menurow" data-bs-tab="pitch"><span class="menulbl">보드 보기</span><div class="seg" id="tiltSeg" role="group" aria-label="보드 보기"><button data-t="0" class="on">평면</button><button data-t="1" title="경기장 중계 화면처럼 — 끌기·그리기 그대로">3D</button></div></div>
           <!-- 3.010 — 3D 보기 설정(3D 를 켰을 때만 보인다 · 기기 설정) -->
-          <div class="menurow ps-tilt-row" id="tiltCamRow"><span class="menulbl">카메라</span><div class="seg" id="tiltCamSeg" role="group" aria-label="3D 카메라 높이"><button type="button" data-cam="low" aria-pressed="false" title="낮게 — 관중석 눈높이처럼 비스듬히">낮게</button><button type="button" data-cam="mid" class="on" aria-pressed="true" title="보통 — 중계 화면">보통</button><button type="button" data-cam="high" aria-pressed="false" title="높게 — 위에서 내려다보듯">높게</button><button type="button" data-cam="tv" aria-pressed="false" title="중계 — 관중석 높은 곳의 중계 카메라처럼 비스듬히, 가까이, 공을 따라간다">중계</button></div></div>
+          <div class="menurow ps-tilt-row" id="tiltCamRow"><span class="menulbl">카메라</span><div class="seg" id="tiltCamSeg" role="group" aria-label="3D 카메라 높이"><button type="button" data-cam="low" aria-pressed="false" title="낮게 — 관중석 눈높이처럼 비스듬히">낮게</button><button type="button" data-cam="mid" class="on" aria-pressed="true" title="보통 — 중계 화면">보통</button><button type="button" data-cam="high" aria-pressed="false" title="높게 — 위에서 내려다보듯">높게</button></div></div>
           <div class="menurow ps-tilt-row" id="tiltDecoRow"><span class="menulbl">경기장</span><div class="seg" id="tiltDecoSeg" role="group" aria-label="3D 경기장 꾸밈"><button type="button" data-deco="full" class="on" aria-pressed="true" title="관중석·지붕·광고판·벤치">전체</button><button type="button" data-deco="simple" aria-pressed="false" title="광고판·벤치만 — 운동장이 더 크게">간단</button><button type="button" data-deco="grass" aria-pressed="false" title="잔디만 — 운동장이 가장 크게">잔디만</button></div></div>
           <div class="menurow ps-tilt-row" id="tiltAdRow"><span class="menulbl">광고판</span><input type="text" id="tiltAdInput" class="ps-tilt-ad" maxlength="24" placeholder="PROCESS STUDIO" title="광고판에 들어갈 글자 — 비우면 PROCESS STUDIO" aria-label="3D 광고판 문구" autocomplete="off" spellcheck="false" enterkeyhint="done"></div>
           <!-- 3.029 — 3D 분위기 · 팀 브랜딩(기기 설정, 3D 를 켰을 때만) -->
@@ -4231,7 +4231,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-actions.js"></script>
+<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -7232,10 +7232,11 @@ let _draw=null,_drawTmp=null;
    ④ 펜이 보내는 중간 점(getCoalescedEvents)을 모두 받는다. 합성 이벤트(시험)는 빈 목록이라 그 이벤트 하나로.
    ⑤ 점은 받는 즉시 쌓고(자유선은 모든 입력점을 유지 — 2.873), 화면은 프레임마다 한 번 다시 그린다(_inkFlush).
       예전엔 pointermove 마다 선 전체를 새로 만들어 바꿔 끼웠다 — 긴 선일수록 무거웠다.
-   ⑥ 화면→잔디 투영은 한 프레임에 한 번 잰다(3D 는 표시점 4개 실측 → 같은 행렬로 그 프레임의 모든 점).
+   ⑥ 화면→잔디 투영은 이벤트 하나에 한 번 잰다(3D 는 표시점 4개 실측 → 같은 행렬로 그 이벤트의 중간 점 모두). 3.097 — 예전엔 다음
+      프레임까지 다시 써서, 그 사이 타이머 · 관찰자가 판을 다시 놓으면(applyView) 다음 이벤트의 점이 옛 판 자리로 갔다.
    ⑦ 다음 위치 예측(getPredictedEvents)을 그리는 중인 자유선 끝에만 잠깐 붙인다 — 저장하지 않는다.
    ⑧ 펜슬 호버(지원하는 아이패드): 그리기 도구에서 닿기 전 펜 끝 자리를 링으로. 내보내기 · 썸네일은 .draw-handle 로 빠진다. */
-let _drawPid=null,_drawPtype="",_penSeen=false,_penOnly=true,_penUpAt=0,_inkLastAt=0,_inkRaf=0,_inkMap=null,_inkMapRaf=0,_inkPred=null,_inkHintAt=0;
+let _drawPid=null,_drawPtype="",_penSeen=false,_penOnly=true,_penUpAt=0,_inkLastAt=0,_inkRaf=0,_inkMap=null,_inkPred=null,_inkHintAt=0;
 let _inkHoverEl=null,_inkHoverRaf=0,_inkHoverPt=null,_inkHoverT=0;
 try{_penSeen=localStorage.getItem("ps_board_pen_seen_v1")==="1";_penOnly=localStorage.getItem("ps_board_pen_only_v1")!=="0";}catch(_){}
 function _inkPalm(e){return !!e&&e.pointerType==="touch"&&((!!_draw&&_drawPtype==="pen"&&Date.now()-_inkLastAt<2000)||(Date.now()-_penUpAt<350));}
@@ -7271,11 +7272,11 @@ function _inkMapper(){
     }
   }catch(_){f=null;}
   _inkMap=f||clientToUnit;
-  if(!_inkMapRaf)_inkMapRaf=requestAnimationFrame(function(){_inkMapRaf=0;_inkMap=null;});
+  Promise.resolve().then(function(){_inkMap=null;});
   return _inkMap;}
 function _inkUnitAt(cx,cy){return _inkMapper()(cx,cy);}
 function _inkEvents(e){let l=null;try{l=e.getCoalescedEvents?e.getCoalescedEvents():null;}catch(_){l=null;}return (l&&l.length)?l:[e];}
-function _inkBegin(e,u){_drawPid=e.pointerId;_drawPtype=e.pointerType||"mouse";_inkLastAt=Date.now();if(_drawPtype==="pen"&&!_penSeen)_inkPenSeen();_inkPred=null;_inkHoverOff();beginDraw(u);}
+function _inkBegin(e,u){_drawPid=e.pointerId;_drawPtype=e.pointerType||"mouse";_inkLastAt=Date.now();if(_drawPtype==="pen"&&!_penSeen)_inkPenSeen();_inkMap=null;_inkPred=null;_inkHoverOff();beginDraw(u);}
 /* 긋는 중에 새 포인터가 닿았을 때. 손가락(손바닥)이 먼저 시작한 선 → 버리고 펜슬 선으로. 마우스 · 펜슬의 새 획, 0.8초 넘게
    소식이 없던 선(놓친 pointerup) → 그 선을 마무리하고 새로. 손가락으로 긋는 중의 둘째 손가락 → 받지 않는다(false). */
 function _inkTakeOver(e){if(!_draw)return true;
@@ -11321,6 +11322,10 @@ function libWrite(lib){if(!psVaultUnlocked())return Promise.reject(psVaultLocked
    앞 차례의 쓰기가 끝난 뒤에 읽으므로 서로 지우지 않는다. (셸의 동기화는 원문 비교 저장(replaceIfValue)이라 따로 안전하다) */
 var _libTurnTail=Promise.resolve();
 function libTurn(task){var run=_libTurnTail.then(function(){return task();});_libTurnTail=run.then(function(){},function(){});return run;}
+/* 3.095 폰 강제 종료: 숨은 보관함 그리기가 부팅 10초에 보관함 통째를 24번 읽었다(21MB 팀 → 메모리 0.9GB). 아직 시작 전이고 뒤에 다른 차례가 없는(꼬리가 그대로인) 읽기는 같이 쓴다 */
+var _vrq=null;
+function psVaultRenderRead(){if(typeof __psVaultDefer==='function'&&__psVaultDefer())return Promise.resolve(null);   /* 숨은 작전판은 보일 때 그린다(board-vault-lazy.js) */
+  if(_vrq&&_vrq.t===_libTurnTail)return _vrq.p;var q={};q.p=libTurn(function(){if(_vrq===q)_vrq=null;return libGet();});q.t=_libTurnTail;_vrq=q;return q.p;}
 /* 그린 목록을 보고 정리할 것을 찾은 자동 정리(작성자 채우기·폴더 경로·유령 폴더 등)는, 그린 목록이 아니라 자기 차례에 새로 읽은
    목록에 같은 정리를 다시 적용해 쓴다. fix 가 참(바뀐 것 있음)을 돌려줄 때만 쓴다. */
 function libFix(fix){return libTurn(function(){return libGet().then(function(lib){if(!fix(lib))return false;return libWrite(lib).then(function(){libTouch();return true;});});});}
@@ -11382,7 +11387,7 @@ async function psVaultReadForRender(){
        실측(staging CI 웹킷 vault-folder-delete): 폴더 지우기 차례가 폴더 목록에서 빼 저장한 뒤 항목 이동(libSet)이 디스크에 닿기 전에
        다시 그리면, 아직 옛 폴더에 있는 항목을 보고 자가 치유가 지운 폴더를 목록에 되살려 저장했다. 차례가 끝난 뒤에 읽으면 항목도 이미 옮겨져 있다.
        ⚠ 차례 안에서 이 함수(또는 이를 부르는 render*)를 return·await 하지 말 것 — 자기 차례를 기다리며 멈춘다(지금은 모두 부르기만 한다). */
-    var lib=await libTurn(function(){return libGet();});
+    var lib=await psVaultRenderRead();
     if(!psVaultUnlocked()||uid!==psMyUid()||wid!==(psActiveWs()||{}).id)return null;
     return lib;
   }catch(e){
@@ -11417,7 +11422,7 @@ var __bfWs=null;
 function maybeBackfillCreators(){
   try{
     var w=psActiveWs(); if(!w||w.kind!=='team'||w.role!=='owner')return;
-    if(__bfWs===w.id)return; var me=psCurrentUser(); if(!me||!me.uid)return; __bfWs=w.id;
+    if(__bfWs===w.id||(typeof __psVaultDefer==='function'&&__psVaultDefer()))return; var me=psCurrentUser(); if(!me||!me.uid)return; __bfWs=w.id;
     return psVaultReadForRender().then(function(lib){if(!lib)return; var changed=false, nm=psDisplayName();
       /* 서버에서 받아 둔 남의 공유본은 작성자가 비어 있어도 팀 소유자의 자료가
          아니다. _teamOwner/_teamSource를 무시하고 채우면 다음 동기화가 남의
@@ -14823,7 +14828,7 @@ function init(){
      광고판 문구: 비우면 PROCESS STUDIO. 24자까지.
      ⚠ 3D 켜기·끄기와 같이 **기기 설정**이다(보드가 아니라 «내가 보는 방식» — 2.929 표의 «보드 보기»와 같은 자리). */
   var TILT_CAM={low:{ax:36,sy:1.3},mid:{ax:24,sy:1.08},high:{ax:12,sy:1}};
-  TILT_CAM.tv={ax:24,sy:1.08};
+  /* 3.096 — 중계 카메라(tv)를 뺐다(사용자 «중계화면은 빼자» — 재생하면 선이 어긋남). 저장된 tv 는 «보통»으로 읽힌다 */
   var TILT_PAD={full:[.15,.11,.05],simple:[.09,.08,.035],grass:[.05,.05,.03]};
   /* 3.035 — 그리드 판(라인 없는 빈 판)은 여백 없이 판을 꽉 채운다(사용자 «그리드 선택했을 때 보드에 여백이 없이 다 활용할 수 있게»). 잔디는 tiltStadium 이 판 밖으로
      한 판 넓이만큼 이어 그려(bleed) 기울인 판의 네 귀가 어두운 무대로 비치지 않는다 — 무대 끝까지 훈련장이다. */

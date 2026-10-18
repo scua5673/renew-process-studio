@@ -231,6 +231,7 @@
     ['ps_roster_pending_v1:','device','ls','queue','roster-outbox.js',{of:'scout_tool_v1',prefix:1}],
     ['ps_rvreply_seen_v1','device','ls','seen','scout.html'],
     ['ps_sched_grp','device','ls','pref','process.html'],
+    ['ps_sched_pdf_style','device','ls','pref','process.html'],   // 3.091 — 일정 PDF 디자인(포스터 · 잉크 절약)
     ['ps_sched_grp_common','device','ls','pref','process.html'],
     ['ps_schedule_cursor_v1','device','ls','pref','process.html'],
     ['ps_section_import_ok_','device','ls','queue','sync.js',{prefix:1}],

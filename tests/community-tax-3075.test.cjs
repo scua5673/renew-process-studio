@@ -42,16 +42,16 @@ test('filtering: one topic, one age, and «today\'s players» shows only what ca
   reset(); assert.deepEqual(T.counts([a,b,{topics:['att'],ages:null,min:0,max:0}]),{att:2,def:1});
 });
 
-test('the community page uses it on every tab — coach, process, FIFA filter; elmiha only gets the preview window',()=>{
+test('the community page uses it on every tab — coach, process, FIFA filter; elmiha has no filter',()=>{
   assert.match(comm,/<script src="community-tax\.js"><\/script>/); assert.match(comm,/<link rel="stylesheet" href="community-tax\.css">/);
   assert.match(comm,/<div class="tx-bar" id="txBar" hidden><\/div>/);
   assert.match(comm,/if\(TX&&!TX\.ok\(txC\(p\)\)\)return false;/,'코치 자료');
   assert.match(comm,/procMatch\(s,procG,searchF\)&&\(!TX\|\|TX\.ok\(TX\.fromProc\(s\)\)\)/,'프로세스');
   assert.match(comm,/ok:TX&&function\(e\)\{ return TX\.ok\(TX\.fromFifa\(e,F\.animOf\(e\)\)\); \}/,'FIFA');
   assert.match(comm,/txDraw\(elmTab\?null:posts\.map\(txC\)\);/,'엘미하 칸에는 고르개가 없다');
-  assert.match(comm,/txCoach\(p,elmTab\)/,'엘미하 · 코치 자료 카드도 미리보기 창');
+  assert.doesNotMatch(comm,/TX\.open\(/,'3.091 — 미리보기 창 없음(카드를 누르면 바로 뷰어)');
   const tax=fs.readFileSync(path.join(root,'studio','community-tax.js'),'utf8');
   assert.ok(!/fetch\(|XMLHttpRequest|localStorage/.test(tax),'서버 · 저장소를 쓰지 않는다');
-  assert.equal((tax.match(/\.innerHTML=/g)||[]).length,1,'HTML 을 넣는 곳은 코치 글 그림(thumbImg 결과) 하나');
+  assert.equal((tax.match(/\.innerHTML=/g)||[]).length,0,'HTML 을 넣는 곳이 없다(3.091 — 코치 글 그림을 넣던 미리보기 창을 없앴다)');
   const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8'); assert.match(sw,/'\/studio\/community-tax\.js', '\/studio\/community-tax\.css'/);
 });

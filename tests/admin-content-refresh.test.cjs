@@ -28,7 +28,7 @@ function harness(){
     renderUsers(){rendered.push({kind:'users',data:plain(c.USERS)});nodes.usersTable.innerHTML='users rendered';},
     renderAllLib(){rendered.push({kind:'content',data:plain(c.ALL_LIB),owners:plain(c.ADMIN_CONTENT_OWNERS)});nodes.alBody.innerHTML='content rendered';},
     loadAdminOps(){rendered.push({kind:'operations',users:plain(c.USERS)});},
-    loadActivity(){},loadWhoLog(){},loadAdminSupport(){},refreshSupportBadge(){},refreshCommBadge(){},selectWs(){},setTab(tab){c.curTab=tab;},toast(s){notices.push(s);}
+    loadActivity(){},loadWhoLog(){},loadAdminSupport(){},refreshSupportBadge(){},refreshCommBadge(){},loadTodayIncident(){},todaySet(){},selectWs(){},setTab(tab){c.curTab=tab;},toast(s){notices.push(s);}
   });
   vm.runInContext(normalize+refresh,c);
   function full(){const at=requests.length;c.reloadAll();return requests.slice(at);}

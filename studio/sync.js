@@ -2621,7 +2621,21 @@ function libShareCopy(it){
   }
   walk(out,'');return out;
 }
-function libHash(it){return hash(JSON.stringify(libShareCopy(it)));}
+/* 3.095 폰 강제 종료: 지문마다 자료를 통째로 복사해 다시 직렬화했다(21MB 보관함 → 회차마다 0.3GB 쓰레기). 같은 규칙을 replacer 로 한 번에 —
+   글은 JSON.stringify(libShareCopy(it)) 와 한 글자도 같다(tests/lib-hash-3095). 빠질 맨 위 칸이 객체 · BigInt 이거나 toJSON 이 있으면 옛 길 */
+var LIB_SHARE_TOP={thumb:1,_teamSharePending:1,_teamSharedAt:1,_teamSource:1};
+function libShareJSON(it){
+  var old=!it||typeof it!=='object'||Array.isArray(it),root=null,s,k;
+  try{ if(!old&&typeof it.toJSON==='function')old=true; for(k in LIB_SHARE_TOP){ var tv=old?0:it[k]; if((tv&&typeof tv==='object')||typeof tv==='bigint')old=true; } }catch(_){ return '{}'; }
+  if(old)return JSON.stringify(libShareCopy(it));
+  try{ s=JSON.stringify(it,function(k,v){
+      if(root===null){root=v;return v;}
+      if(this===root&&LIB_SHARE_TOP[k]===1)return undefined;
+      if(typeof v==='string'&&(/^data:(?:image|video)\//i.test(v)||/^(?:photo|image|video|logo|avatar|dataUrl)$/i.test(k)))return undefined;   /* 배열 칸은 null — delete 구멍과 같다 */
+      return v; }); }catch(_){ return '{}'; }
+  return typeof s==='string'?s:'{}';
+}
+function libHash(it){return hash(libShareJSON(it));}
 /* ══ 3.005 · 옛 자료의 장면별 썸네일 정리 ══
    작전판은 2.559 부터 저장할 때 장면 0 의 썸네일만 남긴다(board.html __animFrames — 나머지는 불러올 때 보이는 칸부터 다시 그린다).
    그 전에 저장되고 다시 저장되지 않은 자료에는 장면마다 썸네일이 그대로 있다.
