@@ -3,7 +3,7 @@ import http from 'node:http';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
-import {trackNavigationAborts} from './navigation-abort.mjs';
+import {trackNavigationAborts,pageErrorEntry} from './navigation-abort.mjs';
 
 // Synthetic team app fixture for browser regressions (ported from the 2026-09-27 walkthrough). Synthetic team workspace, loopback
 // Supabase-shaped API, every external request and websocket blocked. Never touches production.
@@ -40,7 +40,7 @@ function schedule(){
 let fx_opts={};
 export async function startFixture(opts={}){
   fx_opts=opts;
-  const db=new Map(),lib=new Map(),writes=[],calls=[];let step='init';
+  const db=new Map(),lib=new Map(),writes=[],calls=[];let step='init',kvGate=null;
   const ps=players();
   const seed=[
     ['scout_tool_v1',{attrs:[],positions:POS.map(n=>({id:'pos_'+n,name:n,targets:{}})),players:ps,meta:{evalMode:'fifa',grpBase:['A팀','B팀']},_items:{build}}],
@@ -64,6 +64,7 @@ export async function startFixture(opts={}){
     else if(url.pathname.endsWith('/ps_members_of_v2')||url.pathname.endsWith('/ps_members_of'))body=[{user_id:uid,name:'가상 코치',email:'a@example.invalid',role:'owner'}];
     else if(url.pathname.endsWith('/ps_key_scope'))body='team';
     else if(url.pathname==='/rest/v1/ps_kv'){
+      if(kvGate&&req.method==='GET'&&(!kvGate.wid||url.searchParams.get('workspace_id')==='eq.'+kvGate.wid))await kvGate.promise;   /* 3.104 — holdKvPull(): 팀 자료 받기를 붙잡아 «받기 전» 틈을 만든다 */
       const wid=(url.searchParams.get('workspace_id')||'eq.'+WT).slice(3),filter=url.searchParams.get('k');
       const matches=row=>row.workspace_id===wid&&(!filter||filter==='eq.'+row.k||(filter.startsWith('in.(')&&filter.slice(4,-1).split(',').map(k=>k.replace(/^"|"$/g,'')).includes(row.k))||(filter.startsWith('like.')&&row.k.startsWith(filter.slice(5).replace(/\*$/,''))));
       if(req.method==='GET'){const cols=(url.searchParams.get('select')||'').split(',').filter(Boolean);body=[...db.values()].filter(matches).map(row=>cols.length?Object.fromEntries(cols.map(k=>[k,row[k]])):{...row});}
@@ -96,7 +97,9 @@ export async function startFixture(opts={}){
   const server=http.createServer(async(req,res)=>{let raw='';try{for await(const c of req)raw+=c;}catch(_){ /* 3.086 CI — 브라우저가 보내던 요청을 끊으면(페이지 닫기 · 이동 중 POST) 여기서 거부된 promise 가 서버 프로세스를 죽였다(invite-link-export ECONNRESET) */ try{res.destroy();}catch(__){} return; }
     try{const r=await api({url:base+req.url,method:req.method,headers:req.headers,body:raw?JSON.parse(raw):null});res.writeHead(r.status,r.headers);res.end(r.body);}catch(e){res.writeHead(500);res.end('{}');}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));base='http://127.0.0.1:'+server.address().port;
-  return {db,lib,writes,calls,get base(){return base;},setStep(s){step=s;},close:()=>new Promise(r=>server.close(r))};
+  /* holdKvPull(wid?) — 이후 ps_kv GET(wid 를 주면 그 공간 것만)은 돌려준 함수를 부를 때까지 기다린다(쓰기는 그대로) */
+  function holdKvPull(wid){let release;const promise=new Promise(r=>{release=r;});kvGate={promise,wid};return ()=>{kvGate=null;release();};}
+  return {db,lib,writes,calls,holdKvPull,get base(){return base;},setStep(s){step=s;},close:()=>new Promise(r=>server.close(r))};
 }
 
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.woff2':'font/woff2','.json':'application/json','.webmanifest':'application/manifest+json'};
@@ -140,7 +143,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
   page.on('console',m=>{const t=m.type();if(t==='error'||t==='warning'||/PSSync|\[ps/i.test(m.text()))logs.push({step:tag(),type:t,text:m.text().slice(0,500),url:(m.location()||{}).url?.replace(base,'')});});
   /* 3.012 — 기록은 500자로 자르되 원문은 raw(JSON 에 안 나오는 속성)로 남겨 이동 흔적 판정에 쓴다. 선수단 키 16개를 묶은 ps_kv 주소는
      500자를 넘어 «… due to access control checks.» 꼬리가 잘렸고, 판정이 그 문장을 못 알아봐 WebKit board-settings-manual 이 멈췄다(PR #374). */
-  page.on('pageerror',e=>{const entry={step:tag(),type:'pageerror',at:Date.now(),text:String(e.message).slice(0,500),stack:String(e.stack||'').slice(0,400)};Object.defineProperty(entry,'raw',{value:String(e.message)});logs.push(entry);navAborts.reclassify();});
+  page.on('pageerror',e=>{const entry=pageErrorEntry(e.message,{step:tag()});entry.stack=String(e.stack||'').slice(0,400);logs.push(entry);navAborts.reclassify();});
   const navAborts=trackNavigationAborts(page,logs);   /* 2.912 — 이동이 끊은 fetch 의 WebKit 흔적은 'pageerror-navabort' 로 */
   page.on('dialog',d=>{logs.push({step:tag(),type:'dialog',text:d.type()+': '+d.message().slice(0,300)});(d.type()==='beforeunload'?d.accept():d.dismiss()).catch(()=>{});});
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});

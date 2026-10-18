@@ -588,14 +588,14 @@ function openHandleSheet(me,flowEpoch){
 }
 function hd(auth){var c=cfg();var h={'Content-Type':'application/json',apikey:c.anonKey,Authorization:'Bearer '+(auth||c.anonKey)};return h;}
 
-/* ── 안전 렌더 — 썸네일 SVG는 사용자 생성물: img data-URI로만(스크립트 실행 불가) + 새니타이즈 ── */
+/* ── 안전 렌더 — 썸네일 SVG는 사용자 생성물(다른 팀·로그아웃 방문자까지 읽는다). 카드는 img data-URI 로 보이지만
+   애니메이션 미리보기(cpAnimReal)·보관함 담기는 그 문자열을 그대로 innerHTML 로 쓴다.
+   3.105 — 정규식으로 지우던 정리(<animate/onbegin=…>·엔티티 javascript: 를 놓쳤다)를 storage.js PSSafe.svg(DOM 정리)로 바꿨다. ── */
 function sanSvg(s){
   s=String(s||''); if(!/^\s*<svg[\s>]/i.test(s))return '';
   if(s.length>200000)return '';
-  s=s.replace(/<script[\s\S]*?(<\/script>|$)/gi,'')
-     .replace(/<foreignObject[\s\S]*?(<\/foreignObject>|$)/gi,'')
-     .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi,'')
-     .replace(/javascript:/gi,'');
+  s=(window.PSSafe&&window.PSSafe.svg)?window.PSSafe.svg(s):'';
+  if(!s)return '';
   /* 예전 썸네일 복구 — outerHTML 로 만들어져 xlink: 를 쓰면서 xmlns:xlink 선언이 빠진 것들.
      <img src="data:image/svg+xml,…"> 는 엄격한 XML 파서라 선언이 없으면 SVG 전체가 깨진다('실제 잔디' 텍스처 보드만 해당). */
   if(s.indexOf('xlink:')>=0 && s.indexOf('xmlns:xlink')<0)
@@ -636,6 +636,18 @@ function safeSvgNode(str){
   return copy(root);
 }
 window.__psSafeSvgNode=safeSvgNode;   /* 시험용(tests/browser 로 직접 부른다) */
+/* 3.105 — 보관함에 담는 글의 그림은 판 하나가 아니라 장면·훈련·페이지마다 있다(scenes[].thumb · trainings[].thumb · frames[].thumb …).
+   담은 뒤 작전판·일정이 그 그림을 그대로 innerHTML 로 그리므로, 담는 순간 어느 깊이의 thumb 이든 같은 정리를 거친다. */
+function sanThumbsDeep(v,depth){
+  depth=depth||0; if(depth>12||!v||typeof v!=='object')return v;
+  if(Array.isArray(v)){ for(var i=0;i<v.length;i++)v[i]=sanThumbsDeep(v[i],depth+1); return v; }
+  Object.keys(v).forEach(function(k){
+    if(k==='thumb'&&typeof v[k]==='string')v[k]=sanSvg(v[k])||'';
+    else if(v[k]&&typeof v[k]==='object')v[k]=sanThumbsDeep(v[k],depth+1);
+  });
+  return v;
+}
+
 function thumbImg(svg,cls){
   var s=sanSvg(svg);
   if(!s)return '<span class="noimg">그림 없음</span>';
@@ -706,7 +718,7 @@ function fetchPosts(force){ cmStage('cmFF');
     if(rb)rb.onclick=function(){ fetchPosts(true); };   /* 누르면 곧바로 위 로딩 상자로 바뀐다 */
   });
 }
-function paintLike(btn,liked,count){ if(!btn)return; btn.classList.toggle('on',!!liked); btn.innerHTML=IC_HEART+'<span class="lc">'+(count||0)+'</span>'; }
+function paintLike(btn,liked,count){ if(!btn)return; btn.classList.toggle('on',!!liked); btn.innerHTML=IC_HEART+'<span class="lc">'+(+count||0)+'</span>'; }
 function toggleLike(p,btn){
   var me=sess();
   if(!me||!me.at){ toast('좋아요는 로그인 후 가능해요'); return; }
@@ -789,8 +801,8 @@ function render(){ cmStage('cmR'+String(tabF||'').slice(0,4));
       +(p.players?'<span>'+esc(p.players)+'명</span>':'')
       +'</div>'
       +'<div class="foot"><span class="who">'+(p.owner_name?'@'+esc(p.owner_name):'코치')+'</span>'
-      +'<span class="n"><span class="stat">'+IC_EYE+(p.views||0)+'</span><span class="stat">'+IC_SAVE+(p.copies||0)+'</span>'
-      +'<button class="likebtn'+(_liked?' on':'')+'" type="button" title="좋아요">'+IC_HEART+'<span class="lc">'+(p.likes||0)+'</span></button>'
+      +'<span class="n"><span class="stat">'+IC_EYE+(+p.views||0)+'</span><span class="stat">'+IC_SAVE+(+p.copies||0)+'</span>'
+      +'<button class="likebtn'+(_liked?' on':'')+'" type="button" title="좋아요">'+IC_HEART+'<span class="lc">'+(+p.likes||0)+'</span></button>'
       +'</span></div><button class="open-cue" type="button"><small>'+(catKeys(p.cat)[0]==='match'?'장면과 함께 읽는 경기 리뷰':'큰 작전판·훈련 내용 확인')+'</small><span>자세히 보기 →</span></button></div>';
     var _lb=c.querySelector('.likebtn'); if(_lb)_lb.onclick=function(e){ e.stopPropagation(); toggleLike(p,_lb); };
     c.onclick=function(){selectedPostId=p.id;renderPreview(p);[].forEach.call(grid.querySelectorAll('.card'),function(x){x.classList.toggle('on',x===c);});
@@ -846,8 +858,8 @@ function renderPreview(p){
     +'<div class="cp-meta">'+catBadges(p.cat)+(p.owner_name?'<span>@'+esc(p.owner_name)+'</span>':'<span>코치</span>')
     +(p.age?'<span>'+esc(catKeys(p.age).join(' · '))+'</span>':'')+(p.players?'<span>'+esc(p.players)+'명</span>':'')+'</div></div></div>'
     +'<div class="cp-thumb">'+(p.proc?procThumb(p.s,procPickOf(p,p.s)+1):thumbImg(p.thumb))+(cpFramesOf(p)?'<button class="cp-play" type="button" aria-label="애니메이션 재생">▶</button>':'')+'</div>'
-    +(p.proc?'':'<div class="cp-stats"><span class="stat">'+IC_EYE+(p.views||0)+'</span><span class="stat">'+IC_SAVE+(p.copies||0)+'</span>'
-    +'<button class="likebtn'+(_liked?' on':'')+'" type="button" id="cpLike" title="좋아요">'+IC_HEART+'<span class="lc">'+(p.likes||0)+'</span></button></div>')
+    +(p.proc?'':'<div class="cp-stats"><span class="stat">'+IC_EYE+(+p.views||0)+'</span><span class="stat">'+IC_SAVE+(+p.copies||0)+'</span>'
+    +'<button class="likebtn'+(_liked?' on':'')+'" type="button" id="cpLike" title="좋아요">'+IC_HEART+'<span class="lc">'+(+p.likes||0)+'</span></button></div>')
     +'<div class="cp-summary">'+(cpDescOf(p)||(p.__itemLoading?'내용 불러오는 중…':(isMatch?'장면과 설명을 함께 확인하는 경기 분석입니다.':'큰 작전판과 훈련 내용을 미리 확인한 뒤 보관함에 담아 편집할 수 있습니다.')))+'</div>'
     +'<div class="cp-actions"><button class="btn primary" type="button" id="cpOpen">'+(isMatch?'장면·글 보기':'큰 화면으로 보기')+'</button>'
     +'<button class="btn" type="button" id="cpCopy">내 보관함에 담기</button></div>';
@@ -1197,13 +1209,15 @@ function mvKitNum(mi,side){
   var k=(mi&&mi.kits&&mi.kits[side])||{};
   return /^#[0-9a-fA-F]{3,8}$/.test(String(k.num||''))?k.num:'#FFFFFF';
 }
+/* 3.105 — 좌표는 숫자만 style 에 들어간다(글의 JSON 은 누구나 고쳐 올릴 수 있다 — 공 좌표에 마크업을 넣으면 보는 사람의 화면에서 실행됐다) */
+function mvPct(v){ v=+v; return isFinite(v)?v:50; }
 function mvPitchHtml(sc,idx,mi){
   var f0=(sc.tvFrames&&sc.tvFrames[0])||{p:{}};
   return '<div class="mv-pitch" data-mv="'+idx+'">'+MV_LINES
     +(sc.tvPlayers||[]).map(function(pl){
       var q=(f0.p||{})[pl.side+':'+pl.pid]||{x:50,y:50};
       return '<div class="mv-token '+(pl.side==='home'?'home':'away')+'" data-k="'+esc(pl.side+':'+pl.pid)+'" style="left:'+(+q.x||50)+'%;top:'+(+q.y||50)+'%;background:'+mvKitCss(mi,pl.side)+';color:'+mvKitNum(mi,pl.side)+'">'+esc(pl.num||'')+(pl.name?'<label>'+esc(pl.name)+'</label>':'')+'</div>';}).join('')
-    +(f0.ball?'<div class="mv-ball" style="left:'+f0.ball.x+'%;top:'+f0.ball.y+'%"></div>':'')
+    +(f0.ball?'<div class="mv-ball" style="left:'+mvPct(f0.ball.x)+'%;top:'+mvPct(f0.ball.y)+'%"></div>':'')
     +'<svg class="mv-marks" viewBox="0 0 100 100" preserveAspectRatio="none">'+mvMarks(f0.marks)+'</svg>'
     +((sc.tvFrames||[]).length>1?'<button class="mv-play" type="button" aria-label="장면 재생">▶</button>':'')
     +'</div>';}
@@ -1234,8 +1248,8 @@ function openTeamdocDetail(p){
   var grps=['GK','수비','미드필더','공격'];
   var h='<h2>'+esc(p.title)+'</h2>'
     +'<div class="meta">'+catBadges(p.cat)
-    +'<span>'+esc(p.owner_name?'@'+p.owner_name:'코치')+'</span><span class="n"><span class="stat">'+IC_EYE+(p.views||0)+'</span>'
-    +'<button class="likebtn'+(myLikes.has(p.id)?' on':'')+'" type="button" id="dLike">'+IC_HEART+'<span class="lc">'+(p.likes||0)+'</span></button></span></div>'
+    +'<span>'+esc(p.owner_name?'@'+p.owner_name:'코치')+'</span><span class="n"><span class="stat">'+IC_EYE+(+p.views||0)+'</span>'
+    +'<button class="likebtn'+(myLikes.has(p.id)?' on':'')+'" type="button" id="dLike">'+IC_HEART+'<span class="lc">'+(+p.likes||0)+'</span></button></span></div>'
     +'<div class="mv-cover"><div class="mv-meta"><span>팀 분석</span><span>'+esc(it.stats||'')+'</span></div>'
     +'<div class="mv-score"><span style="flex:1;text-align:center;font-size:19px">'+esc(it.team||'팀')+'</span></div></div>'
     +(it.note?'<div class="mv-lead">'+esc(it.note)+'</div>':'');
@@ -1293,8 +1307,8 @@ function openMatchDetail(p){
   var goals=it.goals||[],scenes=it.scenes||[],lens=it.lens||{};
   var h='<h2>'+esc(p.title)+'</h2>'
     +'<div class="meta">'+catBadges(p.cat)
-    +'<span>'+esc(p.owner_name?'@'+p.owner_name:'코치')+'</span><span class="n"><span class="stat">'+IC_EYE+(p.views||0)+'</span>'
-    +'<button class="likebtn'+(myLikes.has(p.id)?' on':'')+'" type="button" id="dLike">'+IC_HEART+'<span class="lc">'+(p.likes||0)+'</span></button></span></div>'
+    +'<span>'+esc(p.owner_name?'@'+p.owner_name:'코치')+'</span><span class="n"><span class="stat">'+IC_EYE+(+p.views||0)+'</span>'
+    +'<button class="likebtn'+(myLikes.has(p.id)?' on':'')+'" type="button" id="dLike">'+IC_HEART+'<span class="lc">'+(+p.likes||0)+'</span></button></span></div>'
     +'<div class="mv-cover"><div class="mv-meta"><span>'+esc(mi.league||'')+'</span><span>'+esc(mi.date||'')+(mi.venue?' · '+esc(mi.venue):'')+'</span></div>'
     +'<div class="mv-score"><span>'+esc(mi.home||'홈')+'</span><b>'+(x?scH:'')+'</b><span class="st">'+esc(mi.status||(x?'경기종료':'vs'))+'</span><b>'+(x?scA:'')+'</b><span>'+esc(mi.away||'원정')+'</span></div>'
     +(goals.length?'<div class="mv-goalline"><span>'+goals.filter(function(e){return gside(e)==='home';}).map(function(e){return esc(minOf(e.time))+"' "+esc(e.playerName||e.memo||'득점');}).join(' · ')+'</span><span style="color:rgba(255,255,255,.3)">|</span><span>'+goals.filter(function(e){return gside(e)==='away';}).map(function(e){return esc(minOf(e.time))+"' "+esc(e.playerName||e.memo||'득점');}).join(' · ')+'</span></div>':'')
@@ -1345,7 +1359,7 @@ function openDetail(p,opt){
   var h='<h2>'+esc(p.title)+'</h2>'
     +'<div class="meta">'+catBadges(p.cat)
     +(p.age?'<span>'+esc(catKeys(p.age).join(' · '))+'</span>':'')+(p.players?'<span>'+esc(p.players)+'명</span>':'')+(min?'<span>'+esc(min)+'</span>':'')
-    +'<span>'+esc(p.owner_name||'코치')+'</span><span class="n"><span class="stat">'+IC_EYE+(p.views||0)+'</span><span class="stat">'+IC_SAVE+(p.copies||0)+'</span>'+'<button class="likebtn'+(myLikes.has(p.id)?' on':'')+'" type="button" id="dLike">'+IC_HEART+'<span class="lc">'+(p.likes||0)+'</span></button></span></div>'
+    +'<span>'+esc(p.owner_name||'코치')+'</span><span class="n"><span class="stat">'+IC_EYE+(+p.views||0)+'</span><span class="stat">'+IC_SAVE+(+p.copies||0)+'</span>'+'<button class="likebtn'+(myLikes.has(p.id)?' on':'')+'" type="button" id="dLike">'+IC_HEART+'<span class="lc">'+(+p.likes||0)+'</span></button></span></div>'
     +'<div class="dth">'+thumbImg(p.thumb)+'</div>'
     +(p.summary?'<div style="font-size:13px;color:var(--text-2);line-height:1.6">'+esc(p.summary)+'</div>':'')
     +notice
@@ -1391,6 +1405,7 @@ function copyToLib(p,btn){
     var src=p.item||{}, d={};
     COPY_FIELDS.forEach(function(k){if(src[k]!=null)d[k]=src[k];});
     if(src.trainings)d.trainings=src.trainings;   /* 다중 훈련·텍스트 보존 */
+    sanThumbsDeep(d);   /* 3.105 — 장면·훈련마다의 그림도 담기 전에 정리 */
     d.name=d.name||p.title; d.focus=d.focus||(TX?TX.focusOfPost(p):'tech');if(!d.ages&&p.age)d.ages=catKeys(p.age);if(TX&&!(d.gmPhases||[]).length){var g=TX.subsOfPost(p);if(g.ids.length){d.gmPhases=g.ids;d.gmPhaseNames=g.names;}} d.type=d.type||'train';
     d.thumb=sanSvg(p.thumb)||'';
     d.libId='L'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);

@@ -46,6 +46,13 @@ const UNDEF=/^(?:ReferenceError:\s*)?Can't find variable: [A-Za-z_$][\w$]*$/;
 const NAV_TAIL=1500,DETACH_PAD=1500,OPEN_NAV=15000;
 const noScheme=u=>String(u||'').replace(/^[a-z][a-z0-9+.-]*:\/\//i,'');
 const originOf=u=>{try{const o=new URL(String(u)).origin;return o&&o!=='null'?o:'';}catch(_){return '';}};
+/* 기록 항목 하나 — 보이는 text 는 500자로 자르고, 전체 문장은 raw(JSON 에 안 나오는 속성)로 남긴다. 판정(reclassify)은 raw 로 한다.
+   team-app 의 pageerror 가 이것으로 항목을 만들고, 단위 시험도 같은 것으로 «잘린 모양»을 만든다(3.012 — 선수단 키를 묶은 긴 ps_kv 주소). */
+export const LOG_TEXT_MAX=500;
+export function pageErrorEntry(message,fields){
+  const raw=String(message),entry={...fields,type:'pageerror',at:Date.now(),text:raw.slice(0,LOG_TEXT_MAX)};
+  Object.defineProperty(entry,'raw',{value:raw});return entry;
+}
 export function trackNavigationAborts(page,entries,opts){
   const fails=[],navs=[],reqs=[],windows=[],origins=new Set(),byReq=new Map();
   for(const u of (opts&&opts.apiOrigins)||[]){const o=originOf(u);if(o)origins.add(o);}   // 테스트가 직접 응답하는 API 출처

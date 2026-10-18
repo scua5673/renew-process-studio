@@ -147,7 +147,7 @@ test('3.039 the page picker sits where the training picker does, and says pages'
 test('3.039 the read-only viewer calls a board a board',()=>{
   const v=cut(board,'window.__commView=function(post, editMode){','window.__commPrepView=function(){');
   assert.match(v,/var _commBoard=\(d\.type==="board"\);\n    \$\("modalTitle"\)\.textContent=editMode\?"커뮤니티 글 편집":\(_commBoard\?\("커뮤니티 "\+\(d\.kindLabel\|\|"작전판"\)\):"커뮤니티 훈련"\);/,'3.042 — 미팅 자료는 «커뮤니티 미팅 자료»');
-  assert.match(v,/'<b>'\+\(_commBoard\?\('커뮤니티 '\+\(d\.kindLabel\|\|'작전판'\)\):'커뮤니티 훈련'\)\+'<\/b> — '\+who\+'님이 공유했어요'\+\(\(_commBoard&&post\.pageN>1\)\?\(' · '\+\(d\.unit\|\|\(d\.book\?'시퀀스 ':'페이지 '\)\)\+post\.pageN\+\(d\.kindLabel\?'장':'개'\)\):''\)\+' · 보기 전용'/);
+  assert.match(v,/'<b>'\+\(_commBoard\?\('커뮤니티 '\+esc\(d\.kindLabel\|\|'작전판'\)\):'커뮤니티 훈련'\)\+'<\/b> — '\+who\+'님이 공유했어요'\+\(\(_commBoard&&post\.pageN>1\)\?\(' · '\+esc\(d\.unit\|\|\(d\.book\?'시퀀스 ':'페이지 '\)\)\+\(\+post\.pageN\)\+\(d\.kindLabel\?'장':'개'\)\):''\)\+' · 보기 전용'/,'3.105 — 글의 값은 이스케이프 · 숫자로');
   assert.match(v,/if\(_commBoard&&lt==="훈련 방법"\)lt="설명";/,'작전판의 설명이 «훈련 방법» 칸에 실린다 — 이름은 «설명»');
   assert.match(v,/if\(_commBoard\)\{ try\{ var _nm=document\.getElementById\("epRoNoMemo"\); if\(_nm\)_nm\.textContent="작성된 설명이 없습니다\.";/);
 });
