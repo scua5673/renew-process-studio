@@ -50,12 +50,14 @@ test('넘기기는 그 장만 바꾼다 — 카드 전체를 다시 그리지 �
 
 test('보관함 썸네일은 원래 판 viewBox 를 남긴다(data-psvb) — 작은 칸은 내용에 맞춤, 큰 칸은 판 그대로',()=>{
   assert.match(board,/c\.setAttribute\("data-psfit","1"\);c\.setAttribute\("data-psvb",_ovb\);/);
-  const ctx=vm.createContext({});
+  const cleaned=[];   /* 3.105 — 그림 문자열은 PSSafe.svg 정리를 거쳐 들어간다 */
+  const ctx=vm.createContext({PSSafe:{svg:s=>{cleaned.push(s);return s;}}});
   vm.runInContext(fnAt(scout,'function mmSvgFit(host,thumb,full)')+';this.fit=mmSvgFit;',ctx);
   const attrs={viewBox:'100 50 400 200','data-psvb':'0 0 1110 740'},sv={getAttribute:k=>attrs[k]??null,setAttribute:(k,v)=>{attrs[k]=v;},removeAttribute:k=>{delete attrs[k];}};
   const host={set innerHTML(v){this._h=v;},querySelector:()=>sv};
   assert.equal(ctx.fit(host,'<svg/>',true),1110/740);assert.equal(attrs.viewBox,'0 0 1110 740');assert.equal(attrs.preserveAspectRatio,'xMidYMid meet');
   attrs.viewBox='100 50 400 200';assert.equal(ctx.fit(host,'<svg/>',false),2,'작은 칸은 그대로');
+  assert.deepEqual(cleaned,['<svg/>','<svg/>'],'칸에 넣는 그림은 매번 정리를 거친다');
 });
 
 test('경기에서 «＋ 새 미팅» — «기본 9장»을 붙이고, 선발 11 을 가져오면 BEST 11 은 뺀다',()=>{
