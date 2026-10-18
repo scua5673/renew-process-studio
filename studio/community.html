@@ -795,7 +795,7 @@ function render(){ cmStage('cmR'+String(tabF||'').slice(0,4));
     var _lb=c.querySelector('.likebtn'); if(_lb)_lb.onclick=function(e){ e.stopPropagation(); toggleLike(p,_lb); };
     c.onclick=function(){selectedPostId=p.id;renderPreview(p);[].forEach.call(grid.querySelectorAll('.card'),function(x){x.classList.toggle('on',x===c);});
       /* 1.945 — 미리보기 열이 없는 화면(데스크톱)에서는 카드를 누르면 바로 큰 화면으로(사용자: 미리보기 삭제) */
-      try{ var _pv=document.getElementById('commPreview'); if(_pv&&getComputedStyle(_pv).display==='none'){ txCoach(p,elmTab); } }catch(_){}   /* 3.075 — 미리보기 창 */
+      try{ var _pv=document.getElementById('commPreview'); if(_pv&&getComputedStyle(_pv).display==='none'){ openPost(p); } }catch(_){}   /* 3.091 — 미리보기 창 없이 바로 크게 재생(사용자) */
     };
     c.ondblclick=function(){openPost(p);};
     if(TX&&!elmTab)TX.badge(c.querySelector('.bd'),txC(p));
@@ -1891,7 +1891,7 @@ var fifaG='all';
 function fifaRender(){ var F=window.PSCommFifa,grid=$('grid'); if(!grid)return;
   try{cpAnimStop();}catch(_){}
   if(!F){ grid.innerHTML='<div class="empty"><b>FIFA 훈련 목록을 불러오지 못했어요</b>앱을 새로 고쳐 주세요.</div>'; return; }
-  F.render(grid,{group:fifaG,q:searchF,count:$('commCount'),onOpen:TX?txFifa:fifaOpen,ok:TX&&function(e){ return TX.ok(TX.fromFifa(e,F.animOf(e))); },badge:TX&&function(h,e){ TX.badge(h,TX.fromFifa(e,F.animOf(e))); }});
+  F.render(grid,{group:fifaG,q:searchF,count:$('commCount'),onOpen:fifaOpen,ok:TX&&function(e){ return TX.ok(TX.fromFifa(e,F.animOf(e))); },badge:TX&&function(h,e){ TX.badge(h,TX.fromFifa(e,F.animOf(e))); }});
   F.aside($('commPreview')); txDraw(F.list().map(function(e){ return TX?TX.fromFifa(e,F.animOf(e)):null; }));
   if(!fifaIx){ fifaIx=1; F.loadIndex(fetch.bind(window)).then(function(){ prCounts(); if(tabF==='fifa'){ fifaChips(); fifaRender(); } },function(){ fifaIx=0; }); } }
 /* 3.072 — 애니메이션 카드: 팩을 받아 코치 글과 같은 읽기 전용 뷰어로(훈련 고르기 줄 · 재생). «보관함에 담기»는 copyToLib(서버 숫자 없음) */
@@ -1901,20 +1901,10 @@ function fifaOpen(e,card,k){ if(card)card.setAttribute('aria-busy','true');
   PSCommFifa.loadPost(e,{fields:COPY_FIELDS,snap:stripSnap,trainings:stripTrainings,frames:stripFrames},fetch.bind(window))
     .then(function(p){ if(card)card.removeAttribute('aria-busy'); p.__k=+k||0; fifaPosts[p.id]=p; if(tabF==='fifa')openPost(p); },   /* 3.074 — 카드에서 고른 훈련부터 */
       function(){ if(card)card.removeAttribute('aria-busy'); toast('애니메이션을 불러오지 못했어요 — 다시 눌러 주세요'); }); }
-/* 3.075 · 공통 분류 · 미리보기 창(community-tax.js) — 코치 자료 · 프로세스 · FIFA 같은 고르개, 엘미하는 미리보기 창만 */
+/* 3.075 · 공통 분류(community-tax.js) — 코치 자료 · 프로세스 · FIFA 같은 고르개, 엘미하는 고르개 없음. 3.091 — 카드를 누르면 미리보기 창 없이 바로 뷰어 */
 var TX=window.PSCommTax||null;
 function txC(p){ return TX.fromCoach(p,catKeys); }
 function txDraw(items){ var h=$('txBar'); if(!TX||!h)return; TX.hideOld(document,tabF!=='coach'); h.hidden=!items; if(items)TX.draw(h,items,render); }
-function txCoach(p,elmT){ if(!TX){ openPost(p); return; } var it=txC(p),f=catOf(catKeys(p.cat)[0]||'');
-  TX.open(document,{title:p.title,topic:it.topics[0],form:f&&f[1],item:elmT?null:it,by:p.owner_name?'@'+p.owner_name:'',thumbHtml:thumbImg(p.thumb),desc:p.summary,
-    onPlay:function(){ openPost(p); },onSave:function(){ if(p.item)copyToLib(p,null); else copyPreviewPost(p,null); }}); }
-function txProc(p,s,c){ TX.open(document,{title:s.session,topic:TX.fromProc(s).topics[0],form:s.tail,item:TX.fromProc(s),by:'@프로세스 · 레터 '+s.n+'호',
-  thumbUrl:function(k){ return procUrl('thumb',s,k,procSrcOf(s,proc.src)); },trainings:s.trainings,k:procPickOf(p,s),
-  onPlay:function(k){ p.__k=k; procOpen(p,c); },onSave:function(){ procSave(p); }}); }
-function txFifa(e,c,k0){ var F=PSCommFifa,an=F.animOf(e),it=TX.fromFifa(e,an);
-  TX.open(document,{title:e.ko,topic:it.topics[0],form:e.sec===e.label?e.label:e.sec+' · '+e.label,item:it,by:'FIFA Training Centre 참고'+(e.by?' · '+e.by:''),
-    thumbUrl:function(k){ return F.thumbUrl(an,k); },trainings:an.trainings,k:k0,onPlay:function(k){ fifaOpen(e,c,k); },
-    onSave:function(){ F.loadPost(e,{fields:COPY_FIELDS,snap:stripSnap,trainings:stripTrainings,frames:stripFrames},fetch.bind(window)).then(function(p){ fifaPosts[p.id]=p; copyToLib(p,null); },function(){ toast('불러오지 못했어요 — 다시 눌러 주세요'); }); }}); }
 function fifaChips(){ var F=window.PSCommFifa; if(F)F.chips($('catChips'),fifaG,function(k){ fifaG=k; fifaChips(); fifaRender(); }); }
 function procSet(list,at,src){ cmStage('cmPS');
   var keep={};
@@ -1986,7 +1976,7 @@ function renderProc(){ cmStage('cmRP');
       +'<div class="pr-foot"><span>@프로세스 · 레터 '+s.n+'호</span>'+(s.scenes?('<span class="pr-n">장면 '+s.scenes+'</span>'):'')+'</div></div>';
     c.onclick=function(e){ var b=e.target.closest&&e.target.closest('.pr-pick button'); if(b){ e.stopPropagation(); procPick(p,s,c,+b.getAttribute('data-k')); return; }
       var li=e.target.closest&&e.target.closest('.pr-trs li'); if(li)procPick(p,s,c,+li.getAttribute('data-k'));   /* 훈련 줄을 누르면 그 훈련부터 */
-      txProc(p,s,c); };
+      procOpen(p,c); };   /* 3.091 — 미리보기 창 없이 바로 크게 재생 */
     if(TX)TX.badge(c.querySelector('.pr-bd'),TX.fromProc(s));
     c.onkeydown=function(e){ if(e.target!==c)return; if(e.key==='Enter'||e.key===' '){ e.preventDefault(); procOpen(p,c); } };   /* 1·2·3 단추의 Enter·Space 는 단추 몫 */
     if(PROC_HOVER)[].forEach.call(c.querySelectorAll('.pr-trs li'),function(li){ li.onmouseenter=function(){ procPick(p,s,c,+li.getAttribute('data-k')); }; });   /* 마우스: 훈련 줄에 올리면 그 그림 */
