@@ -45,6 +45,10 @@ try{
         localStorage.setItem('ps_sync_session',JSON.stringify({uid:UID,at:'synthetic-at',rt:'synthetic-rt',exp:Date.now()+3600000,email:'fixture@example.invalid'}));
         localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:UID,wid:WID}));localStorage.setItem('ps_active_ws',WID);
         localStorage.setItem('ps_ws_list',JSON.stringify(workspaces));localStorage.setItem('cs_perms_v1',perms);localStorage.setItem('quiet_fixture_seeded','1');
+        /* 2026-10-18 — 보관함 «프로세스» 예시(board.html vxSeedRun)를 이미 받은 사용자(tests/fixtures/team-app.mjs 와 같다 · 예시 넣기는 vault-examples 가 본다).
+           빈 보관함을 처음 그리면 예시 다섯이 «읽고 → 쓰기»로 담기고 «프로세스» 폴더가 열린다. 아래 합성 자료 60개는 그 차례(libTurn) 밖에서 바로 써서,
+           느린 WebKit 에서 예시의 «쓰기»가 60개를 덮고 폴더가 «프로세스»(카드 5장)로 바뀌어 .vcard 31번째를 끝내 못 찾았다(393px · main 7f73be5 · staging 7d090f4). */
+        localStorage.setItem('ps_vault_px_v1',JSON.stringify({[UID+'|'+WID]:1}));
       }
     },{UID,WID,workspaces,perms});
     await context.routeWebSocket('**/*',socket=>{blocked.push({path:socket.url(),resource:'websocket'});socket.close();});
@@ -99,10 +103,7 @@ try{
         libTouch();setView('session');
       },UID);
       await frame.locator('.vcard').nth(30).waitFor({state:'attached'});
-      /* 3.012 — 보관함을 처음 열면 예시 다섯이 한 번 담기고(board.html vxSeedRun · 표식 ps_vault_px_v1) 목록을 다시 그린다. 위 합성 자료의 savedAt(1~60)이
-         예시 날짜(2026-01-01)보다 옛날이라 예시가 맨 위로 들어와 카드가 43.6px 내려간다 — WebKit 에서는 그게 첫 측정 뒤에 와서
-         «상태 줄이 목록을 움직였다»로 잘못 잡혔다(PR #374, 393px off). 예시가 담기고 다시 그려진 뒤에 잰다. */
-      await page.waitForFunction(uid=>{try{return Object.keys(JSON.parse(localStorage.getItem('ps_vault_px_v1')||'{}')).some(k=>k.startsWith(uid+'|'));}catch(_){return false;}},UID);
+      /* 3.012 에는 예시 다섯이 첫 측정 뒤에 들어와 카드가 43.6px 내려갔다(PR #374) — 2026-10-18 부터 이 사용자는 예시를 이미 받아(위 ps_vault_px_v1) 목록을 바꾸는 것은 합성 자료뿐이다. */
       /* 3.012 — 진단 기록(WebKit 768px 에서 한 번 목록 스크롤이 500→0 으로 튀었다 · staging fd3080d). 보관함 잠금 화면 · 보기 전환 ·
          목록이 비워진 순간 · 스크롤이 크게 줄어든 순간을 시각과 함께 적어 두고, 실패하면 함께 찍는다. 시험의 판정은 그대로다. */
       await frame.locator('#sessionView').evaluate(()=>{
