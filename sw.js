@@ -1,12 +1,12 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.090';   // 3.090 관리자 운영 홈 맨 위 «오늘 확인할 일» 한 줄(제보 · 신고 · 앱 오류 · 후속 기한 · 무사고) · 사이드바 4묶음 · 관리자 화면 정리
+const CACHE = 'process-3.091';   // 3.091 일정 PDF «깔끔하게»(schedule-poster.js — 흰 바탕 · 큰 날짜 · 색은 경기 하나) · PDF 내보내기 창(pdf-export.js — PDF 내려받기 · 인쇄 · 개인 노트로)
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
   '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js',
   '/studio/process.html',
-  '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/review-training.css', '/studio/year-plan.js',
+  '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/pdf-export.js', '/studio/schedule-poster.js', '/studio/review-training.css', '/studio/year-plan.js',
   '/studio/first-work.js', '/studio/first-work.css',
   '/studio/daily-effort.js', '/studio/daily-effort.css', '/studio/session-focus.js',
   '/studio/idp-recovery.js', '/studio/idp-recovery.css',
