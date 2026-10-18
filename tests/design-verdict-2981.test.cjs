@@ -142,7 +142,7 @@ test('shell: a frame that is still loading shows a skeleton, and it always comes
 });
 
 test('shell: an automatic reload returns to the screen the coach was on; a manual one does not',()=>{
-  const auto=between(app,'function psAutoReloadWhenSafe(manualOnly){','window.__psForceReload=go;');
+  const auto=between(app,'function psAutoReloadWhenSafe(manualOnly){','window.__psForceReload=function(m){');
   assert.ok(auto.includes("sessionStorage.setItem('ps_resume_screen',JSON.stringify({app:document.body.getAttribute('data-ps-app')||''"));
   assert.ok(auto.indexOf('ps_resume_screen')<auto.indexOf('location.reload();return true;'),'다시 열기 직전에 적는다');
   assert.equal((app.match(/setItem\('ps_resume_screen'/g)||[]).length,1,'로고·직접 새로고침은 적지 않는다(2.205 «처음 화면으로»)');
