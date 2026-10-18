@@ -51,6 +51,44 @@
     return seq;
   }
 
+  // ── 피치는 판 전체(제보 934aaa3e «운동장 스타일을 바꾸면 모든 페이지가») ──
+  // 사람이 피치(잔디 · 딥그린 · 네이비 · 화이트 · 훈련 · 실사 · 직접 고른 색)를 바꾸면 이 작전판의 모든 페이지와 그 장면, 미팅이면 모든 슬라이드와 그 장면에.
+  // CLAUDE.md «전체에 적용» 단추를 더하지 않고 기본을 판 전체로 — 대신 알림의 «이 페이지만»으로 다른 페이지를 되돌릴 수 있다.
+  // 운동장 사진(@photo:)은 페이지마다의 내용이라 퍼뜨리지 않고, 사진을 깐 페이지도 덮지 않는다.
+  var PITCH_KEYS = ['pitchTheme', 'pitchCustom', 'pitchImg'];
+  function isPhoto(v) { return typeof v === 'string' && v.indexOf('@photo:') === 0; }
+  function pitchVal(sn, k) {
+    var v = sn ? sn[k] : undefined;
+    if (k === 'pitchTheme') return (v === undefined || v === null) ? null : (v === 'navy' ? '' : String(v));
+    return (v === undefined || v === null || v === '') ? null : v;
+  }
+  // 한 스냅에 지금 피치를 넣는다. 바꿨으면 되돌릴 값({칸: 옛 값})을, 아니면 null 을 준다
+  function putPitch(sn, cur) {
+    if (!sn || typeof sn !== 'object' || !cur || isPhoto(cur.pitchImg) || isPhoto(sn.pitchImg)) return null;
+    var was = null;
+    PITCH_KEYS.forEach(function (k) {
+      if (pitchVal(sn, k) === pitchVal(cur, k)) return;
+      if (!was) was = {};
+      was[k] = Object.prototype.hasOwnProperty.call(sn, k) ? sn[k] : undefined;
+      if (cur[k] === undefined) delete sn[k]; else sn[k] = cur[k];
+    });
+    return was;
+  }
+  function backPitch(sn, was) { if (!sn || !was) return; for (var k in was) { if (was[k] === undefined) delete sn[k]; else sn[k] = was[k]; } }
+  // 페이지(작전판) · 슬라이드(미팅) 목록에 퍼뜨린다. skip = 지금 페이지 번호(이미 판에 있다). 돌려주는 rec 마다 그 항목과 바꾼 스냅들
+  function spreadPitch(items, cur, skip) {
+    var recs = [];
+    (items || []).forEach(function (it, i) {
+      if (!it || i === skip) return;
+      var r = { it: it, snap: putPitch(it.snap, cur), frames: [] };
+      var fr = (it.anim && Array.isArray(it.anim.frames)) ? it.anim.frames : (Array.isArray(it.frames) ? it.frames : []);
+      fr.forEach(function (f, k) { var w = f && putPitch(f.snap, cur); if (w) r.frames.push([f, w]); });
+      if (r.snap || r.frames.length) recs.push(r);
+    });
+    return recs;
+  }
+  function undoPitch(recs) { (recs || []).forEach(function (r) { backPitch(r.it.snap, r.snap); r.frames.forEach(function (fw) { backPitch(fw[0].snap, fw[1]); }); }); }
+
   function mount(win) {
     var doc = win.document, body = doc.body;
     if (!body || win.__psTweaks) return; win.__psTweaks = true;
@@ -191,9 +229,78 @@
     (function watchStrip() { var st = doc.getElementById('boardPageStrip'); if (!st) { win.setTimeout(watchStrip, 500); return; }
       try { new win.MutationObserver(function () { var b = doc.getElementById('bpBoardSettings'); if (b) { var o = b.querySelector('svg'); if (o && !o.getAttribute('data-ps-sliders')) icons(); } }).observe(st, { childList: true, subtree: true }); } catch (_) {} })();
 
+    // ── 6. 피치는 판 전체(제보 934aaa3e) — 보드의 _viewScenesMatch("pitch")(사람이 바꾼 때만 불린다: 피치 단추 · 색 고르개 · 잔디 톤)를 감싼다 ──
+    function slidesOf() { try { var a = A(); return (doc.body.classList.contains('meet-mode') && a && Array.isArray(a.slides) && a.slides.length > 1) ? a.slides : null; } catch (_) { return null; } }
+    function playing() { try { return typeof animPlaying !== 'undefined' && !!animPlaying; } catch (_) { return false; } }   /* global animPlaying */
+    function thumbsOf(r, meet) {
+      var th = win.__snapToThumb, it = r.it, fr = meet ? it.frames : (it.anim && it.anim.frames);
+      try { if (it.thumb !== undefined || meet) { var t = typeof th === 'function' ? th(it.snap) : ''; if (t) it.thumb = t; else delete it.thumb; } } catch (_) { delete it.thumb; }
+      if (Array.isArray(fr)) fr.forEach(function (f, k) { if (!f) return; if (meet && k === 0 && it.thumb) f.thumb = it.thumb; else delete f.thumb; });
+    }
+    /* 다른 페이지 · 슬라이드의 그림은 하나씩 나눠 그린다 — 한 번에 그리면(그림 하나에 판을 두 번 갈아 끼운다) 슬라이드 9장에 화면이 멈추고 알림도 늦었다.
+       재생 · 끌기 · 내보내기 · 슬라이드 넘김 · 훈련 편집 중이면 끝날 때까지 기다린다(그 사이 판을 갈아 끼우면 안 된다) */
+    var thumbQ = [], thumbT = 0;
+    function thumbBusy() {
+      try { return playing() || doc.body.classList.contains('editing') || !!win.__animExport || !!win.__meetVideoBusy || !!win.__ksNav || (typeof win.psDragging === 'function' && !!win.psDragging()); } catch (_) { return false; }
+    }
+    function queueThumbs(recs, meet) {
+      recs.forEach(function (r) { for (var i = 0; i < thumbQ.length; i++) if (thumbQ[i].r.it === r.it) { thumbQ[i].r = r; return; } thumbQ.push({ r: r, meet: meet, tries: 0 }); });
+      if (!thumbT && thumbQ.length) thumbT = win.setTimeout(thumbPump, 40);
+    }
+    function thumbPump() {
+      thumbT = 0; var q = thumbQ[0]; if (!q) return;
+      if (thumbBusy()) { if (++q.tries < 600) { thumbT = win.setTimeout(thumbPump, 500); return; } thumbQ.shift(); q = null; }   // 5분을 넘게 바쁘면 그 그림은 그대로 둔다
+      else thumbQ.shift();
+      if (q) try {
+        var list = q.meet ? ((A() || {}).slides || []) : ((win.__psPages && win.__psPages.pg && win.__psPages.pg()) || []), i = list.indexOf(q.r.it);
+        if (i >= 0) { thumbsOf(q.r, q.meet); if (q.meet && win.__ksThumb) win.__ksThumb(i); }   // 지운 페이지 · 슬라이드는 건너뛴다
+      } catch (_) {}
+      if (thumbQ.length) { thumbT = win.setTimeout(thumbPump, 30); return; }
+      try { if (doc.body.classList.contains('meet-mode') && win.__ksRender) win.__ksRender(); } catch (_) {}
+      try { win.boardSaveLive(); } catch (_) {}
+    }
+    function spreadNow() {
+      if (playing() || doc.body.classList.contains('editing')) return null;
+      var cur; try { cur = win.captureSnap(); } catch (_) { return null; }
+      var slides = slidesOf(), meet = !!slides, items = null, skip = -1;
+      if (meet) { try { if (win.__meetSyncCur) win.__meetSyncCur({ thumb: true }); } catch (_) {} items = slides; }   // 지금 슬라이드도 담고 그림(썸네일)도 새로
+      else { var P = win.__psPages; try { items = P && P.pg ? P.pg() : null; skip = (P && P.book && P.book.idx) ? P.book.idx() : -1; } catch (_) { items = null; } }
+      if (!items || items.length < 2) return null;
+      var recs = spreadPitch(items, cur, skip);
+      if (!recs.length) return null;
+      try { win.boardSaveLive(); } catch (_) {}
+      queueThumbs(recs, meet);
+      var word = meet ? '슬라이드' : '페이지', n = recs.length;
+      win.setTimeout(function () {   // 보드의 «장면 N개에 모두» 알림 뒤에 — 이 알림이 남는다
+        toast('피치를 모든 ' + word + '에 적용했어요 (다른 ' + word + ' ' + n + '개)');
+        try {
+          var t = doc.getElementById('cs-ftoast'); if (!t) return;
+          var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = '이 ' + word + '만';
+          b.addEventListener('click', function (ev) {
+            ev.stopPropagation(); try { b.remove(); } catch (_) {}
+            undoPitch(recs);
+            try { win.boardSaveLive(); } catch (_) {}
+            queueThumbs(recs, meet);
+            toast('이 ' + word + '만 바꾸고 다른 ' + word + '는 되돌렸어요');
+          });
+          b.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+          t.appendChild(b); t.style.pointerEvents = 'auto';
+          clearTimeout(t._ft); t._ft = win.setTimeout(function () { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(10px)'; t.style.pointerEvents = 'none'; win.setTimeout(function () { t.textContent = ''; t.setAttribute('aria-hidden', 'true'); }, 220); }, 6000);
+        } catch (_) {}
+      }, 0);
+      return recs;
+    }
+    function hookPitch() {
+      var f = win._viewScenesMatch; if (typeof f !== 'function') return false; if (f.__psPitchAll) return true;
+      var g = function (kind) { var r = f.apply(this, arguments); if (kind === 'pitch') { try { spreadNow(); } catch (_) {} } return r; };
+      g.__psPitchAll = 1; win._viewScenesMatch = g; return true;
+    }
+    win.__psPitchAllNow = spreadNow;   // 시험 · 진단용
+    win.__psPitchThumbsLeft = function () { return thumbQ.length; };
+
     // ── 시작 · 다시 그릴 때 ──
     var tries = 0;
-    (function boot() { var ok = hookSpeed(); if (!ok && ++tries < 40) win.setTimeout(boot, 250); })();
+    (function boot() { var ok = hookSpeed(), ok2 = hookPitch(); if ((!ok || !ok2) && ++tries < 40) win.setTimeout(boot, 250); })();
     try {
       new win.MutationObserver(function (list) {
         for (var i = 0; i < list.length; i++) for (var j = 0; j < list[i].addedNodes.length; j++) { var n = list[i].addedNodes[j]; if (n && n.id === 'evSheet') capRow(n); }
@@ -208,5 +315,5 @@
     if (win.document.readyState === 'loading') win.document.addEventListener('DOMContentLoaded', go); else go();
   }
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) boot(window);
-  return { frame169: frame169, reelBox: reelBox, stripPageCaps: stripPageCaps, SPEED_ALL: SPEED_ALL, CAP: CAP };
+  return { frame169: frame169, reelBox: reelBox, stripPageCaps: stripPageCaps, putPitch: putPitch, spreadPitch: spreadPitch, undoPitch: undoPitch, PITCH_KEYS: PITCH_KEYS, SPEED_ALL: SPEED_ALL, CAP: CAP };
 });

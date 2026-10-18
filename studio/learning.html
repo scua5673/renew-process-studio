@@ -218,6 +218,7 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line2);border-radius:
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
 .gl{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);font-size:13px}
 .gl .id{font-size:10px;font-weight:600;color:var(--faint);margin-bottom:3px}
+.lnk-quiet{font-size:12px;color:var(--faint);text-decoration:underline;text-underline-offset:2px;padding:8px 6px;min-height:44px}   /* 3.103 — «진행 전부 지우기»가 카드 탭 맨 앞 단추였다. 확인 창은 그대로 */
 .gl .life{margin-top:5px;font-size:11px;color:var(--gray)}
 .foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:8px}
 .linkbox{border:1px dashed var(--line2);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--gray);background:var(--surface)}
@@ -461,7 +462,7 @@ function loopHtml(){
     +cell(2,'내 게임모델','국면 '+st.core+'/4 · 원칙 '+st.pr,'')
     +cell(3,'훈련','원칙 단계 '+st.ph+'곳 중 '+st.phDrill+'곳','보관함 훈련 기준')
     +cell(4,'커뮤니티','같은 국면 훈련 찾기','')+'</div>'
-    +'<div class="lp-next"><span>다음 한 걸음 — '+esc(nx.t)+'</span><span class="row"><button type="button" class="btn pri" data-loop="'+esc(nx.a)+'">'+esc(nx.b)+' →</button>'
+    +'<div class="lp-next"><span>다음 한 걸음 — '+esc(nx.t)+'</span><span class="row"><button type="button" class="btn" data-loop="'+esc(nx.a)+'">'+esc(nx.b)+' →</button>'
     +((window.parent&&window.parent!==window)?'<button type="button" class="btn" data-loop="go:mygm">내 게임모델 열기</button>':'')+'</span></div></div>';
 }
 document.addEventListener('click',function(e){
@@ -559,7 +560,7 @@ function renderShelf(){
       catch(e){ toast('그 갈래는 IDP 학습에서 열려요'); }
     });
   }
-  $$('[data-role]',el).forEach(function(b){ b.onclick=function(){ S.role=b.dataset.role; tbOpen=null; partOpen=null; roleOpen=false; save(); render(); ensureRoleBook(S.role); }; });
+  $$('[data-role]',el).forEach(function(b){ b.onclick=function(){ S.role=b.dataset.role; tbOpen=null; partOpen=null; roleOpen=false; save(); lev('role',''); render(); ensureRoleBook(S.role); }; });
   /* 2.660 — 문·내 책·다시 볼 카드 */
   var _dr=el.querySelector('[data-door]'); if(_dr)_dr.onclick=function(){ try{ var _cur=S.now&&sec(S.now); if(_cur&&!isDone(_cur.id)){ openSec(_cur.id); return; } }catch(_){} var _nx=nextLesson(S.role,idpCurDone()); if(_nx)openLesson(_nx.m.id,_nx.l.id); };
   $$('[data-due]',el).forEach(function(_du){ _du.onclick=function(){ bookState.view='due'; go('book'); }; });
@@ -603,7 +604,7 @@ function openLesson(mid,lid){
      아직 안 채운 모듈은 예전 화면(renderLesson)이 그대로 맡는다 — 빈 틀을 씌우지 않는다. */
   if(window.LR_BOOK&&LR_BOOK.has(mid)){
     var bk=LR_BOOK.of(mid);
-    if(bk){ BOOK=BOOKS[bk.id]=bk; bookState={view:'sec',sec:lid,step:0,ch:bk.chapters[0].id}; go('book'); return; }
+    if(bk){ BOOK=BOOKS[bk.id]=bk; lev('open',lid); bookState={view:'sec',sec:lid,step:0,ch:bk.chapters[0].id}; go('book'); return; }
   }
   lessonState={m:m,l:l,picked:(S.cur.quiz[l.id]&&S.cur.quiz[l.id].ok)?S.cur.quiz[l.id].a:null};
   go('lesson');
@@ -648,6 +649,7 @@ function renderLesson(){
     var i=+b.dataset.q, right=(i===l.quiz.a);
     lessonState.picked=i;
     S.cur.quiz[l.id]={a:i,ok:right,ts:Date.now()};
+    lev('quiz',l.id,{ok:right});
     if(right){ S.cur.done[l.id]=Date.now(); toast('맞았어요 — 완료로 저장했어요'); }
     else toast('정답을 확인해 보세요');
     save(); renderLesson();
@@ -681,15 +683,41 @@ function renderNow(){
   $$('#p-now [data-sec]').forEach(function(e){e.onclick=function(){openSec(e.dataset.sec)}});
 }
 /* ───────── 책 ───────── */
-function openSec(id){S.now=id;save();bookState.view='sec';bookState.sec=id;bookState.step=S.ask[id+':step']||0;go('book')}
+/* 3.103 — 화면에는 절 id 대신 절 이름. 지금 책 → 다른 책 → 교과서 순서로 찾는다 */
+function secKo(id){
+  if(!id)return '';
+  var x=sec(id); if(x)return x.ko;
+  for(var b in BOOKS){ var bk=BOOKS[b]; if(!bk||!bk.chapters)continue;
+    for(var i=0;i<bk.chapters.length;i++){ var ss=bk.chapters[i].sections||[]; for(var j=0;j<ss.length;j++) if(ss[j].id===id) return ss[j].ko; } }
+  try{ var L=window.LR_CUR&&LR_CUR.lesson&&LR_CUR.lesson(id); if(L)return L.l.ko; }catch(_){}
+  return '';
+}
+/* 3.103 — 카드의 «절 열기»: 카드는 다른 책(교과서 · 스튜디오 · 풋살)에서 왔을 수 있다. 지금 책에 없는 절을 열면 화면이 비었다 → 그 절을 가진 책으로 */
+function openAny(id){
+  if(sec(id)){ openSec(id); return; }
+  for(var b in BOOKS){ var bk=BOOKS[b];
+    if(bk&&bk.chapters&&bk.chapters.some(function(c){ return (c.sections||[]).some(function(x){ return x.id===id; }); })){ BOOK=bk; openSec(id); return; } }
+  try{ var L=window.LR_CUR&&LR_CUR.lesson&&LR_CUR.lesson(id); if(L){ openLesson(L.m.id,id); return; } }catch(_){}
+  toast('그 절을 찾지 못했어요');
+}
+/* 3.103 — 학습 흐름 기록(서버 ps_events · 이름 'learn'): 절을 열고 · 단을 넘기고 · 맞히고 · 마친 것. 어디서 멈추는지 보려고.
+   적은 답(글)은 보내지 않는다 — 단계 이름 · 절 id · 책 · 역할 · 숫자만. 로그인 전 · 셸 밖에서는 아무것도 안 보낸다 */
+function lev(stage,id,more){
+  try{ var api=(window.parent&&window.parent!==window)?window.parent.PSSync:window.PSSync; if(!api||typeof api.event!=='function')return;
+    var m={stage:String(stage),name:String(id||''),source:String((BOOK&&BOOK.id)||''),mode:String(S.role||'')};
+    if(more)for(var q in more)m[q]=more[q];
+    api.event('learn',{feature:'learning',status:'ok',meta:m});
+  }catch(_){}
+}
+function openSec(id){lev('open',id);S.now=id;save();bookState.view='sec';bookState.sec=id;bookState.step=S.ask[id+':step']||0;go('book')}
 function renderToc(){
   /* ⚠ 2.411 — 부제가 MIKL 것으로 박혀 있었다("MIKL · A·B·D … C·E·F 준비 중"). 책이 둘이 되면서
      『게임모델 만드는 법』에도 그 문구가 붙었다. **책에서 읽어** 만든다. */
   var _bs=(BOOK.id==='mikl')?'MIKL · A·B·D':(BOOK.tag||'');   /* 3.079 — 제목을 두 번 쓰지 않는다 */
   var h='<div class="bh"><h4>'+esc(BOOK.ko)+'</h4><small>'+esc(_bs)+' '+secs().length+'절'+(BOOK.id==='mikl'?' (C·E·F 준비 중)':'')+' · 맞힘 '+secs().filter(function(x){return isDone(x.id)}).length+'</small></div>';
-  BOOK.chapters.forEach(function(c){var d=c.sections.filter(function(x){return isDone(x.id)}).length;
-    h+='<div class="ch"><b>'+c.id+'</b>'+esc(c.ko)+'<span>'+d+'/'+c.sections.length+'</span></div>';
-    c.sections.forEach(function(s){h+='<div class="sx'+(isDone(s.id)?' ok':'')+(bookState.view==='sec'&&bookState.sec===s.id?' here':'')+'" data-sec="'+s.id+'"><i></i>'+s.id+' '+esc(s.ko)+'</div>'});
+  BOOK.chapters.forEach(function(c,ci){var d=c.sections.filter(function(x){return isDone(x.id)}).length;
+    h+='<div class="ch"><b>'+(BOOK.chapters.length>1?(ci+1)+'장':'')+'</b>'+esc(c.ko)+'<span>'+d+'/'+c.sections.length+'</span></div>';
+    c.sections.forEach(function(s,si){h+='<div class="sx'+(isDone(s.id)?' ok':'')+(bookState.view==='sec'&&bookState.sec===s.id?' here':'')+'" data-sec="'+s.id+'"><i></i>'+(si+1)+'. '+esc(s.ko)+'</div>'});
     h+='<div class="sx quiz" data-mix="'+c.id+'">'+chLabel(c)+' 끝 · 섞어 묻기 '+c.mix.length+'</div>';
   });
   return h;
@@ -748,14 +776,15 @@ document.addEventListener('click',function(e){
 function renderSec(s){
   var st=bookState.step, a=S.ask, k=s.id;
   var ex=S.track==='player'?s.ex.slice().reverse():s.ex;
-  var h='<div class="lesson"><div class="head"><span class="id">'+s.id+'</span><h3>'+esc(s.ko)+'</h3></div><div class="src">'+esc(s.src)+' · 맞힘 '+hits(k)+'/3 · <button class="btn ghost" style="height:auto;padding:0" id="tocToggle">목차</button></div>';
+  var _c=chapOf(s.id), _si=((_c&&_c.sections)||[]).indexOf(s);   /* 3.103 — 머리에 절 id(c1-game-1 · SG1) 대신 장 안의 자리 */
+  var h='<div class="lesson"><div class="head"><span class="id">'+(_si>=0?(_si+1)+' / '+_c.sections.length:'')+'</span><h3>'+esc(s.ko)+'</h3></div><div class="src">'+esc(s.src)+' · 맞힘 '+hits(k)+'/3 · <button class="btn ghost" style="height:auto;padding:0" id="tocToggle">목차</button></div>';
   h+='<div class="steps">'+['먼저 묻기','읽기','예시','꺼내기','왜','피드백','다시'].map(function(n,i){return '<div class="'+(i<st?'done':i===st?'cur':'')+'"><b>'+i+'</b>'+n+'</div>'}).join('')+'</div>';
   // 0
   h+=stageHtml(0,'먼저 묻기 — 읽기 전에','<div class="q">'+esc(s.pre)+'</div><textarea id="pre" placeholder="틀려도 됩니다. 읽고 나서 내 답과 비교합니다.">'+esc(a[k+':pre']||'')+'</textarea><div class="row" style="margin-top:8px"><button class="btn pri" data-next="1">읽기로 →</button></div>',false);
   // 1
   h+=stageHtml(1,'읽기',s.read.map(function(p){return '<p>'+p+'</p>'}).join('')+(s.fig?'<div class="fig"><b>한 줄로</b> '+esc(s.fig)+'</div>':'')+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="2">예시로 →</button></div>',st<1);
   // 2
-  h+=stageHtml(2,'예시 — '+(S.track==='player'?'선수 먼저':'코치 먼저'),'<div class="ex">'+ex.map(function(e){return '<div><b class="w">'+esc(e.who)+'</b>'+e.t+'</div>'}).join('')+'</div>'+tryHtml(s)+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="3">꺼내기로 →</button></div>',st<2);
+  h+=stageHtml(2,'예시','<div class="ex">'+ex.map(function(e){return '<div><b class="w">'+esc(e.who)+'</b>'+e.t+'</div>'}).join('')+'</div>'+tryHtml(s)+'<div class="row" style="margin-top:10px"><button class="btn pri" data-next="3">꺼내기로 →</button></div>',st<2);
   // 3
   var rv=a[k+':rshow'];
   h+=stageHtml(3,'꺼내기 — '+esc(s.recall.type),'<div class="q">'+esc(s.recall.q)+'</div><textarea id="recall" placeholder="보지 않고 씁니다.">'+esc(a[k+':recall']||'')+'</textarea>'+(rv?'<div class="ans">답: '+esc(s.recall.a)+'</div><div class="row" style="margin-top:8px"><span class="hint" style="margin:0">내 답은?</span><button class="btn ok" data-grade="1">맞았다</button><button class="btn no" data-grade="0">틀렸다</button></div>':'<div class="row" style="margin-top:8px"><button class="btn pri" id="showAns">답 보기</button><span class="hint" style="margin:0">서술형은 스스로 채점합니다.</span></div>'),st<3);
@@ -767,7 +796,7 @@ function renderSec(s){
   var mc=s.mc, picked=S.mc[k];
   var opts=shuffled(mc.o,k+':'+S.track);
   var mch='<div class="q" style="margin-top:4px">가려내기 — '+esc(mc.q)+'</div><div class="opts">'+opts.map(function(o,i){var cls='';if(picked){if(o.ok)cls=' right';else if(picked===o.id)cls=' wrong'}return '<button class="opt'+cls+'" data-opt="'+o.id+'"'+(picked?' disabled':'')+'><b>'+String.fromCharCode(65+i)+'</b><span>'+esc(o.t)+'</span></button>'}).join('')+'</div>'+(picked?'<div class="why"><b>'+(opts.filter(function(o){return o.ok})[0]?String.fromCharCode(65+opts.findIndex(function(o){return o.ok}))+'.':'')+'</b> '+esc(mc.why)+' <span class="hint">(보기 순서는 절·트랙 시드로 섞임 — 원본 번호 '+esc(opts.filter(function(o){return o.ok})[0].id)+')</span></div>':'');
-  var cardsH='<div class="cards">'+s.cards.map(function(c){var cc=S.cards[c.id];return '<div class="gl"><div class="id">'+esc(c.id)+' <span class="tag mikl">'+esc(BOOK.tag||BOOK.ko||'')+'</span></div>'+esc(c.ko)+'<div class="life">'+(cc?(cc.stage>=3?'내 것':'재학습 '+(cc.stage+1)+'번째 · '+fmtDays(cc.due)):'오늘 생애 시작 → 3일 · 1주 · 3주')+'</div></div>'}).join('')+'</div>';
+  var cardsH='<div class="cards">'+s.cards.map(function(c){var cc=S.cards[c.id];return '<div class="gl"><div class="id"><span class="tag mikl">'+esc(BOOK.tag||BOOK.ko||'')+'</span></div>'+esc(c.ko)+'<div class="life">'+(cc?(cc.stage>=3?'내 것':'재학습 '+(cc.stage+1)+'번째 · '+fmtDays(cc.due)):'오늘 생애 시작 → 3일 · 1주 · 3주')+'</div></div>'}).join('')+'</div>';
   h+=stageHtml(6,'다시 — 카드 '+s.cards.length+'장, 가려내기 1',cardsH+mch+'<div class="foot"><span class="k">맞힘 '+hits(k)+' / 3 — '+(isDone(k)?'이 절은 닫혔습니다':'3번 맞히면 닫힙니다')+'</span><div class="row"><button class="btn" id="again">한 번 더 꺼내기</button><button class="btn pri" id="finish">'+(isDone(k)?'다음 절 →':'이 절 마치고 다음 →')+'</button></div></div>',st<6);
   h+='<div class="linkbox">이어짐 → <b>'+esc(s.links)+'</b></div></div>';
   return h;
@@ -776,7 +805,7 @@ function renderDue(){
   var due=dueCards(), i=bookState.mixI||0;
   if(!due.length) return '<div class="card"><h4>오늘 다시 꺼낼 것</h4><p style="color:var(--gray)">기한 온 카드가 없습니다.</p><div class="row" style="margin-top:8px"><button class="btn" onclick="go(\'toc\')">오늘로</button></div></div>';
   var c=due[0], shown=bookState.dueShown;
-  return '<div class="lesson"><span class="k" style="color:var(--due)">다시 꺼내기 · 남은 '+due.length+'장</span><div class="stage" style="margin-top:8px"><h5 style="margin-left:0">'+esc(c.key)+' · '+(c.stage+1)+'번째</h5><div class="q">"'+esc(c.ko)+'" — 무엇인지 내 말로 설명해 보세요.</div><textarea id="dueAns" placeholder="보지 않고."></textarea>'+(shown?'<div class="ans">본문: '+esc(c.from)+' 절에서 배움 — 절을 열어 확인할 수 있습니다.</div><div class="row" style="margin-top:8px"><button class="btn ok" data-dgrade="1">맞았다</button><button class="btn no" data-dgrade="0">틀렸다</button><button class="btn ghost" data-open="'+esc(c.from)+'">절 열기</button></div>':'<div class="row" style="margin-top:8px"><button class="btn pri" id="dueShow">확인</button></div>')+'</div></div>';
+  return '<div class="lesson"><span class="k" style="color:var(--due)">다시 꺼내기 · 남은 '+due.length+'장</span><div class="stage" style="margin-top:8px"><h5 style="margin-left:0">'+esc(secKo(c.from)||'카드')+' · '+(c.stage+1)+'번째</h5><div class="q">"'+esc(c.ko)+'" — 무엇인지 내 말로 설명해 보세요.</div><textarea id="dueAns" placeholder="보지 않고."></textarea>'+(shown?'<div class="ans">본문: «'+esc(secKo(c.from)||c.from)+'» 절에서 배움 — 절을 열어 확인할 수 있습니다.</div><div class="row" style="margin-top:8px"><button class="btn ok" data-dgrade="1">맞았다</button><button class="btn no" data-dgrade="0">틀렸다</button><button class="btn ghost" data-open="'+esc(c.from)+'">절 열기</button></div>':'<div class="row" style="margin-top:8px"><button class="btn pri" id="dueShow">확인</button></div>')+'</div></div>';
 }
 function renderMix(ch){
   var c=chapOf(ch), i=bookState.mixI, item=c.mix[i], res=S.mix[ch]||[];
@@ -805,19 +834,19 @@ function renderBook(){
   if(v==='mix') bindMix();
   if(v==='due') bindDue();
 }
-function setStep(k,n){bookState.step=Math.max(bookState.step,n);S.ask[k+':step']=bookState.step;save();render();var el=$('#p-book [data-st="'+n+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}
+function setStep(k,n){if(n>bookState.step)lev('step',k,{step:n});bookState.step=Math.max(bookState.step,n);S.ask[k+':step']=bookState.step;save();render();var el=$('#p-book [data-st="'+n+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}
 function bindSec(s){
   var k=s.id;
   ['pre','recall','why'].forEach(function(f){var el=$('#'+f);if(el)el.oninput=function(){S.ask[k+':'+f]=el.value;save()}});
   $$('#p-book [data-next]').forEach(function(b){b.onclick=function(){setStep(k,+b.dataset.next)}});
   var sa=$('#showAns');if(sa)sa.onclick=function(){S.ask[k+':rshow']=1;save();render()};
-  $$('#p-book [data-grade]').forEach(function(b){b.onclick=function(){var ok=b.dataset.grade==='1';S.done[k]=S.done[k]||{hits:0,at:0};if(ok)S.done[k].hits++;S.done[k].at=now();S.ask[k+':rshow']=0;mirrorCurDone(k);save();toast(ok?'맞힘 '+S.done[k].hits+'/3':'틀림 — 내일 다시');setStep(k,4)}});
-  $$('#p-book [data-opt]').forEach(function(b){b.onclick=function(){S.mc[k]=b.dataset.opt;var ok=s.mc.o.filter(function(o){return o.id===b.dataset.opt})[0].ok;save();toast(ok?'맞았습니다':'틀렸습니다 — 왜를 읽어 보세요');render()}});
+  $$('#p-book [data-grade]').forEach(function(b){b.onclick=function(){var ok=b.dataset.grade==='1';S.done[k]=S.done[k]||{hits:0,at:0};if(ok)S.done[k].hits++;S.done[k].at=now();S.ask[k+':rshow']=0;mirrorCurDone(k);save();lev('recall',k,{ok:ok,hits:S.done[k].hits});toast(ok?'맞힘 '+S.done[k].hits+'/3':'틀림 — 내일 다시');setStep(k,4)}});
+  $$('#p-book [data-opt]').forEach(function(b){b.onclick=function(){S.mc[k]=b.dataset.opt;var ok=s.mc.o.filter(function(o){return o.id===b.dataset.opt})[0].ok;save();lev('quiz',k,{ok:!!ok});toast(ok?'맞았습니다':'틀렸습니다 — 왜를 읽어 보세요');render()}});
   var ag=$('#again');if(ag)ag.onclick=function(){S.ask[k+':rshow']=0;S.ask[k+':recall']='';bookState.step=3;S.ask[k+':step']=3;save();render();$('#p-book [data-st="3"]').scrollIntoView({behavior:'smooth'})};
   var fn=$('#finish');if(fn)fn.onclick=function(){
     s.cards.forEach(function(c){if(!S.cards[c.id])S.cards[c.id]={ko:c.ko,from:k,stage:0,hits:0,due:now()+GAP[0]*DAY,at:now()}});
     if(!S.done[k])S.done[k]={hits:0,at:now()};
-    mirrorCurDone(k);
+    mirrorCurDone(k); lev('done',k,{hits:hits(k),closed:isDone(k)});
     var all=secs(),idx=all.indexOf(s),nx=all[idx+1];
     save();toast('카드 '+s.cards.length+'장 생애 시작 → 3일 뒤');
     if(nx){S.now=nx.id;openSec(nx.id)}else{bookState.view='toc';go('book')}
@@ -834,7 +863,7 @@ function bindMix(){
 function bindDue(){
   var sh=$('#dueShow');if(sh)sh.onclick=function(){bookState.dueShown=true;render()};
   $$('#p-book [data-dgrade]').forEach(function(b){b.onclick=function(){var c=dueCards()[0],cc=S.cards[c.key];if(b.dataset.dgrade==='1'){cc.stage++;cc.hits++;cc.due=now()+(GAP[cc.stage]||21)*DAY;toast(cc.stage>=3?'내 것이 됐습니다':'다음은 '+GAP[cc.stage]+'일 뒤')}else{cc.due=now()+DAY;toast('내일 다시')}bookState.dueShown=false;save();render()}});
-  $$('#p-book [data-open]').forEach(function(b){b.onclick=function(){openSec(b.dataset.open)}});
+  $$('#p-book [data-open]').forEach(function(b){b.onclick=function(){openAny(b.dataset.open)}});
 }
 /* ───────── 카드 ───────── */
 var cardFilter='all';
@@ -842,8 +871,8 @@ function renderCards(){
   var keys=Object.keys(S.cards), f=cardFilter;
   var list=keys.filter(function(k){var c=S.cards[k];return f==='all'||(f==='mine'&&c.stage>=3)||(f==='due'&&c.stage<3&&c.due<=now())||(f==='wait'&&c.stage<3&&c.due>now())});
   var h='<div class="card"><h4>카드 · '+keys.length+'장</h4><div>'+[['all','전체'],['due','기한 옴'],['wait','기다리는 중'],['mine','내 것']].map(function(x){return '<button class="chip'+(f===x[0]?' on':'')+'" data-cf="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</div>';
-  h+=list.length?'<div class="cards" style="margin-top:8px">'+list.map(function(k){var c=S.cards[k];return '<div class="gl"><div class="id">'+esc(k)+' <span class="tag '+(c.stage>=3?'ok':c.due<=now()?'due':'mikl')+'">'+(c.stage>=3?'내 것':c.due<=now()?'기한':'대기')+'</span></div>'+esc(c.ko)+'<div class="life">'+esc(c.from)+'에서 · '+(c.stage>=3?'재학습 3회 완료':'재학습 '+(c.stage+1)+'번째 · '+fmtDays(c.due))+'</div></div>'}).join('')+'</div>':'<p style="color:var(--faint);margin-top:8px">아직 없음 — 절을 마치면 생깁니다.</p>';
-  h+='</div><div class="row" style="margin-top:18px"><button class="btn" id="resetAll">진행 전부 지우기</button></div>';
+  h+=list.length?'<div class="cards" style="margin-top:8px">'+list.map(function(k){var c=S.cards[k];return '<div class="gl"><div class="id"><span class="tag '+(c.stage>=3?'ok':c.due<=now()?'due':'mikl')+'">'+(c.stage>=3?'내 것':c.due<=now()?'기한':'대기')+'</span></div>'+esc(c.ko)+'<div class="life">'+esc(secKo(c.from)||c.from)+'에서 · '+(c.stage>=3?'재학습 3회 완료':'재학습 '+(c.stage+1)+'번째 · '+fmtDays(c.due))+'</div></div>'}).join('')+'</div>':'<p style="color:var(--faint);margin-top:8px">아직 없음 — 절을 마치면 생깁니다.</p>';
+  h+='</div><div class="row" style="margin-top:28px;justify-content:center"><button type="button" class="lnk-quiet" id="resetAll">학습 기록 지우기…</button></div>';
   $('#p-cards').innerHTML=h;
   $$('#p-cards [data-cf]').forEach(function(b){b.onclick=function(){cardFilter=b.dataset.cf;render()}});
   $('#resetAll').onclick=function(){if(confirm('학습 기록을 모두 지울까요? 로그인했다면 계정에 저장된 기록도 지워집니다.')){localStorage.removeItem(KEY);S=load();bookState={view:'toc',sec:null,step:0,mixI:0};render();learnSchedulePush(0);toast('지웠습니다')}};   /* 3.080 — 계정 기록도 빈 기록으로 덮는다(합치지 않고) */
@@ -863,7 +892,7 @@ function render(){
   $('#trackBtn').textContent=S.track==='coach'?'코치':'선수';
   var s=nextSec(),c=chapOf(s.id),d=c.sections.filter(function(x){return isDone(x.id)}).length;
   $('#posLine').textContent='『'+BOOK.ko+'』 '+c.id+' · '+d+'/'+c.sections.length;
-  $('#mtitle').textContent=page==='book'&&bookState.view==='sec'?bookState.sec:(page==='lesson'&&lessonState.l?lessonState.l.ko:'');
+  $('#mtitle').textContent=page==='book'&&bookState.view==='sec'?secKo(bookState.sec):(page==='lesson'&&lessonState.l?lessonState.l.ko:'');
   try{ var _rl=$('#roleLine'); if(_rl){ var _ro=ROLES.filter(function(r){return r.id===S.role})[0]; _rl.hidden=!(page==='toc'&&_ro); if(_ro)_rl.innerHTML=esc(_ro.ko)+'의 교과서 <span>· '+(roleOpen?'닫기':'바꾸기')+'</span>'; _rl.onclick=function(){ roleOpen=!roleOpen; render(); }; } }catch(_){}   /* 2.660 */
   if(page==='toc')renderShelf();
   else if(page==='now')renderNow();else if(page==='book')renderBook();
