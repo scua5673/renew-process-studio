@@ -4229,7 +4229,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-actions.js"></script>
+<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -11319,6 +11319,10 @@ function libWrite(lib){if(!psVaultUnlocked())return Promise.reject(psVaultLocked
    앞 차례의 쓰기가 끝난 뒤에 읽으므로 서로 지우지 않는다. (셸의 동기화는 원문 비교 저장(replaceIfValue)이라 따로 안전하다) */
 var _libTurnTail=Promise.resolve();
 function libTurn(task){var run=_libTurnTail.then(function(){return task();});_libTurnTail=run.then(function(){},function(){});return run;}
+/* 3.091 폰 강제 종료: 숨은 보관함 그리기가 부팅 10초에 보관함 통째를 24번 읽었다(21MB 팀 → 메모리 0.9GB). 아직 시작 전이고 뒤에 다른 차례가 없는(꼬리가 그대로인) 읽기는 같이 쓴다 */
+var _vrq=null;
+function psVaultRenderRead(){if(typeof __psVaultDefer==='function'&&__psVaultDefer())return Promise.resolve(null);   /* 숨은 작전판은 보일 때 그린다(board-vault-lazy.js) */
+  if(_vrq&&_vrq.t===_libTurnTail)return _vrq.p;var q={};q.p=libTurn(function(){if(_vrq===q)_vrq=null;return libGet();});q.t=_libTurnTail;_vrq=q;return q.p;}
 /* 그린 목록을 보고 정리할 것을 찾은 자동 정리(작성자 채우기·폴더 경로·유령 폴더 등)는, 그린 목록이 아니라 자기 차례에 새로 읽은
    목록에 같은 정리를 다시 적용해 쓴다. fix 가 참(바뀐 것 있음)을 돌려줄 때만 쓴다. */
 function libFix(fix){return libTurn(function(){return libGet().then(function(lib){if(!fix(lib))return false;return libWrite(lib).then(function(){libTouch();return true;});});});}
@@ -11380,7 +11384,7 @@ async function psVaultReadForRender(){
        실측(staging CI 웹킷 vault-folder-delete): 폴더 지우기 차례가 폴더 목록에서 빼 저장한 뒤 항목 이동(libSet)이 디스크에 닿기 전에
        다시 그리면, 아직 옛 폴더에 있는 항목을 보고 자가 치유가 지운 폴더를 목록에 되살려 저장했다. 차례가 끝난 뒤에 읽으면 항목도 이미 옮겨져 있다.
        ⚠ 차례 안에서 이 함수(또는 이를 부르는 render*)를 return·await 하지 말 것 — 자기 차례를 기다리며 멈춘다(지금은 모두 부르기만 한다). */
-    var lib=await libTurn(function(){return libGet();});
+    var lib=await psVaultRenderRead();
     if(!psVaultUnlocked()||uid!==psMyUid()||wid!==(psActiveWs()||{}).id)return null;
     return lib;
   }catch(e){
@@ -11415,7 +11419,7 @@ var __bfWs=null;
 function maybeBackfillCreators(){
   try{
     var w=psActiveWs(); if(!w||w.kind!=='team'||w.role!=='owner')return;
-    if(__bfWs===w.id)return; var me=psCurrentUser(); if(!me||!me.uid)return; __bfWs=w.id;
+    if(__bfWs===w.id||(typeof __psVaultDefer==='function'&&__psVaultDefer()))return; var me=psCurrentUser(); if(!me||!me.uid)return; __bfWs=w.id;
     return psVaultReadForRender().then(function(lib){if(!lib)return; var changed=false, nm=psDisplayName();
       /* 서버에서 받아 둔 남의 공유본은 작성자가 비어 있어도 팀 소유자의 자료가
          아니다. _teamOwner/_teamSource를 무시하고 채우면 다음 동기화가 남의
