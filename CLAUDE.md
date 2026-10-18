@@ -58,6 +58,10 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 3.094 — 선수 문서(scout.html `printStandalone` · `profile-sheet.js` `preview`)도 같은 창(`pdfxOpen`). 장이 문서 몸에 바로 놓인 문서는 `pages:{sel, land(el)}` 로 장마다 따로 찍는다(이력서 세로 + 세부평가 가로 → PDF 쪽도 장마다 방향). 문서 색은 검정 · 회색 · 가는 선(보라 · 남색 띠 · 금색 없음).
 - 3.094 — 선수 문서는 장을 꽉 채운다(사용자 «여백이 최소화 되게»): 장 높이를 고정하고 줄이 flex 로 늘되 `max-height`(줄 수는 `:has(>:nth-child(n))` 로 셈 · 카드는 인라인 계산)에서 멈춘다. 같은 줄의 칸끼리는 `grid-template-rows:auto repeat(N,1fr)` 로 행 높이를 맞춘다. 인쇄 문서 CSS 는 `.js` 모듈에 둔다 — `.html` 의 px 글자 크기 · hex 개수는 스타일 래칫(`tests/design-tokens-3044`)이 센다.
 
+## 업데이트(새 판 받기)
+- 3.098 — 진행 카드는 `studio/update-progress.js` 하나(사용자 «막 깜박이고 그냥 막 나가지면 불안»): 받기 0~60 · 저장 확인 60~80 · 새 판이 열리며 80~100%. 카드는 늘 화면 아래 가운데 — 단계마다 자리를 옮기지 않는다. 보이는 화면에서 스스로 바꿀 땐 `PSUpdProg.gate` 가 5초 센다(누른 것 · 숨은 탭은 바로). 새 판은 `ps_upd_cont_v1`(sessionStorage) 로 같은 카드를 이어 그린다.
+- 앱이 열릴 때 검은 «PROCESS STUDIO» 덮개(app.html, z-index 2147483646)가 맨 위에 깔린다 — 그 위에 보여야 하는 것은 2147483647.
+
 ## 함정
 - MutationObserver 안에서 없는 class 를 `classList.remove` 해도 속성 바뀜으로 잡혀 끝없이 돈다(3.084 보드가 안 열렸다). `contains` 로 확인한 뒤 바꾼다.
 - 비동기로 걷히는 화면(폰 빈 판 안내 «보관함 열기» 등)을 시험이 곧바로 재면 느린 WebKit 에서 남아 있는 것을 잡는다 — `waitForFunction` 으로 걷힐 때까지 기다린 뒤 잰다(3.086 board-savebar).
