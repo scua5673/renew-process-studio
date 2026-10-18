@@ -97,7 +97,7 @@ test('copies carry the place — duplicating or importing a sequence keeps its p
 test('the screen: the rail is a phase tree, the map opens first and steps aside when a sequence is chosen',()=>{
   assert.match(src,/if\(want&&!bookWas\)\{ bookWas=true; openG=\{\}; mapWant=true; \}/,'opening a pattern book raises the map');
   assert.match(src,/else if\(!want&&bookWas\)\{ bookWas=false; mapWant=false; closeMap\(\); \}/,'leaving it takes the map down');
-  assert.match(src,/function switchTo\(i\)\{ if\(!pages\|\|i===idx\|\|!pages\[i\]\)return; try\{ if\(window\.__bkMap\)window\.__bkMap\.close\(\); \}catch\(_\)\{\} capture\(\);/,'choosing a sequence closes the map');
+  assert.match(src,/function switchTo\(i\)\{ if\(!pages\|\|i===idx\|\|!pages\[i\]\)return; try\{ if\(window\.__bkMap\)window\.__bkMap\.close\(\); \}catch\(_\)\{\} restoreAnimBeforeCapture\(\);capture\(\);/,'choosing a sequence closes the map and stops a running play first (3.106 page-switch-play)');
   assert.match(src,/var edit=|,edit=!ro\(\)&&wide\(\),/,'only the wide editing screen gets ＋ on the map');
   assert.match(src,/if\(bkSlotOf\(p,_MO\)!==_was\)\{ var _cur=pages\[idx\]; pages\.splice\(i,1\); pages\.splice\(key\?bkInsertAt\(pages,_MO,key\):pages\.length,0,p\); idx=Math\.max\(0,pages\.indexOf\(_cur\)\); \}\s+_bkResort\(\); render\(\); _bkTouch\(\); return true;/,'a sequence that changes phase joins the end of the new one, and the board follows its own sequence');
   assert.match(src,/if\(_mo&&pages\.length===1&&_bkBlank\(pages\[0\]\)&&!bkSlotOf\(pages\[0\],_MO\)\)\{ bkSetSlot\(pages\[0\],_MO,_mo,_mp\); render\(\); _bkTouch\(\); return true; \}/,'a fresh book: the first ＋ places the blank sequence instead of making a second one');
