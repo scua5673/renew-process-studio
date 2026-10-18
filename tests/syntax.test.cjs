@@ -23,7 +23,7 @@ for (const file of ['admin.html', 'studio/app.html', 'studio/process.html', 'stu
   });
 }
 
-for (const file of ['studio/board-token-depth.js', 'studio/board-pitch-photo.js', 'studio/team-load.js', 'studio/team-photos.js', 'studio/idp-roster-refresh.js', 'studio/admin-operations.js', 'studio/admin-today.js', 'studio/admin-user-detail.js', 'studio/shared-view-observation.js', 'studio/sync-observability.js', 'studio/storage-keys.js', 'studio/storage.js', 'studio/scouting-store.js', 'studio/roster-recovery.js', 'studio/sync.js', 'studio/review-training.js', 'studio/review-training-schedule.js', 'studio/year-plan.js', 'studio/idp-evidence.js', 'studio/idp-recovery.js', 'studio/first-work.js', 'studio/vault-examples.js', 'studio/session-focus.js', 'studio/daily-effort.js', 'sw.js']) {
+for (const file of ['studio/board-token-depth.js', 'studio/board-pitch-photo.js', 'studio/team-load.js', 'studio/team-photos.js', 'studio/vault-folder-move.js', 'studio/idp-roster-refresh.js', 'studio/admin-operations.js', 'studio/admin-today.js', 'studio/admin-user-detail.js', 'studio/shared-view-observation.js', 'studio/sync-observability.js', 'studio/storage-keys.js', 'studio/storage.js', 'studio/scouting-store.js', 'studio/roster-recovery.js', 'studio/sync.js', 'studio/review-training.js', 'studio/review-training-schedule.js', 'studio/year-plan.js', 'studio/idp-evidence.js', 'studio/idp-recovery.js', 'studio/first-work.js', 'studio/vault-examples.js', 'studio/session-focus.js', 'studio/daily-effort.js', 'sw.js']) {
   test(`${file}: JavaScript parses`, () => {
     new vm.Script(fs.readFileSync(path.join(root, file), 'utf8'), { filename: file });
   });
