@@ -26,13 +26,14 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 확인: `curl -s https://processstudio.netlify.app/sw.js | grep -o "process-3\.[0-9]*"` (testprocess 도 같이).
 - 3.084 — GitHub 가 승격 PR 을 «충돌»로 보이는데 로컬 합치기는 깨끗하면: 공통 조상이 둘(엇갈린 합치기)이다. main 을 staging 에 되합치는 PR(트리 그대로)로 푼다.
 - 합쳐진 가지에 새 일을 할 때는 origin/staging 에서 가지를 다시 잡는다(`git checkout -B <가지> origin/staging`).
+- 3.104~3.108(10/18) — PR 로 올라가지 못한 가지가 쌓인다. 열린 PR 만 보지 말고 «합쳐진 PR 의 머리에 들지 않은 가지»를 찾는다: `git fetch origin '+refs/pull/*/head:refs/remotes/pr/*'` 뒤 가지 끝마다 `git for-each-ref --contains <끝> refs/remotes/pr/`. 22개 중 7개가 진짜 빠져 있었다(커뮤니티 XSS · 코치 피드백 덮어쓰기 · 재생 중 페이지 섞임 …). 같은 판 번호를 다른 세션이 다른 방법으로 다시 만든 것이 많으니 «같은 동작이 staging 에 있나»를 읽어 가른다. 옮길 땐 판 번호를 새로 매긴다.
 
 ## 판 번호 (실행 파일을 바꾸면 늘)
 - `sw.js` CACHE `process-3.xxx` · `studio/app.html` 의 `PS_BUILD` 와 `?v=` 일곱 곳 · 사용자 화면이 바뀌면 `studio/release-notes.js` 맨 앞 항목. 안 올리면 `scripts/release-guard.mjs` 가 막는다.
 - 새 파일은 `git add` 해야 배포 묶음에 들어간다 — `scripts/package-site.mjs` 는 `git ls-files` 로 고른다(3.085 에 빠질 뻔).
 
 ## 작전판(studio/board.html)
-- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.096 기준 남은 몫 497 바이트 — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
+- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.106 기준 남은 몫 38 바이트(3.105 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
 - 본문의 `function` 선언은 window 속성이라 모듈에서 감쌀 수 있다(`renderTokens` · `applyView` · `boardImageXML` · `setView` · `lookApply` …). 내부 호출도 전역 이름으로 찾으므로 감싼 것을 지난다.
 - `let`/`const` 전역(`state` · `anim` · `animActive` · `tokShape` · `M` …)은 **window 속성이 아니다** — 모듈에서 `typeof state !== 'undefined' ? state : null` 처럼 이름으로 읽는다(3.086 에 `win.state` 로 읽어 실패).
 - 보드 복원(`restoreLiveBoard`)은 본문 스크립트가 도는 중에 바로 돈다. 복원 값을 받아야 하는 모듈은 본문보다 **먼저** 읽히게 두고 window 접근자로 받는다(예: `board-name-font.js` 의 `__nameFont`).
@@ -51,7 +52,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 서버 기록: `ps_events` 의 `boot_after_crash`(meta.stage · age · standalone · ua · crumb). age 5 · stage `loadw0` = 켜진 뒤 몇 초 만에 아이폰이 앱을 끔(메모리).
 - 3.095 — 설치 앱이 열 때마다 5초에 꺼졌다: 보관함(`cs_drill_lib_v1`)은 목록 한 덩어리라 한 번 읽을 때마다 통째(그 팀 21MB 글 · 해석 41MB)가 생긴다. 숨은 작전판이 그리기마다 따로 읽어 10초에 24번(크로미움 0.9GB). 그리기 읽기는 `psVaultRenderRead`(같은 때 줄 선 것은 하나 — `_libTurnTail` 이 그대로일 때만), 숨은 틀은 `board-vault-lazy.js`(보일 때 그림). 보관함을 통째로 읽는 코드를 더하면 부팅 중 몇 번 도는지 센다(`tests/browser/phone-boot-vault.mjs`).
 - 메모리 재기: fixture `fx.lib` 에 큰 자료를 넣고 폰 크기로 띄워 CDP `HeapProfiler.startSampling`(만든 양) · `collectGarbage` 뒤 `JSHeapUsedSize`(남는 양)를 본다. 그냥 최고치는 크로미움이 쓰레기를 늦게 치워 들쭉날쭉하다.
-- sync.js 지문(`libHash`)은 replacer 로 옛 글(`JSON.stringify(libShareCopy(it))`)과 똑같은 글을 만든다(3.095). 글이 한 글자라도 바뀌면 모든 자료가 «바뀜»으로 다시 올라간다 — 고치면 `tests/lib-hash-3095` 로 견준다. sync.js 예산 832KB, 3.095 기준 남은 몫 84 바이트.
+- sync.js 지문(`libHash`)은 replacer 로 옛 글(`JSON.stringify(libShareCopy(it))`)과 똑같은 글을 만든다(3.095). 글이 한 글자라도 바뀌면 모든 자료가 «바뀜»으로 다시 올라간다 — 고치면 `tests/lib-hash-3095` 로 견준다. sync.js 예산 832KB, 3.108 기준 남은 몫 52 바이트(3.104 · 3.108 에 옛 실측 숫자 주석을 줄여 자리를 만들었다).
 
 ## 일정(studio/process.html) PDF
 - 3.091 — 일정 PDF 는 `studio/pdf-export.js`(`PSPdfExport.open`) 창으로 연다: «PDF 내려받기»는 미리보기 종이를 SVG foreignObject → JPEG → PDF 로 찍는다(작전판 `_ppbSavePdf` 와 같은 방법). 종이 그림은 페이지 글꼴을 못 보므로 쓰인 글자의 Pretendard 조각을 data: 로 넣는다. 여러 장 문서는 `#printDoc .ponepage` 마다 한 쪽.
@@ -80,6 +81,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 앱 글꼴은 Pretendard 하나(`vendor/fonts.css`). «PROCESS STUDIO» 로고 글자만 Jost. SVG `font-family` 속성 · canvas `font` 도 Pretendard 가 먼저(`tests/font-unify-3085` · `board-name-pos-3086`).
 - CSP `font-src 'self' data:` — 글꼴은 자체 호스팅. 이름표 글꼴은 `vendor/name-fonts/<글꼴>/`(SIL OFL, unicode-range 조각).
 - 새 localStorage 키는 `studio/storage-keys.js` 에 적는다.
+- 3.105 — 커뮤니티 글의 JSON 은 로그인한 누구나 표에 직접 쓸 수 있고, 다른 팀 · 로그아웃 방문자가 같은 사이트 화면에서 읽는다(CSP 는 inline 스크립트를 막지 않는다). 글의 값(좌표 · 수 · 이름 · 주소 · 색)은 `esc` 나 숫자로만 HTML 에 넣는다. 썸네일 SVG 를 innerHTML 로 넣을 땐 `PSSafe.svg`(storage.js — `tests/svg-guard-3105` 가 날것의 자리를 센다). 다른 출처 postMessage 는 storage.js 의 첫 리스너가 막는다 — 새 화면은 storage.js 를 메시지 리스너보다 먼저 읽는다.
 
 ## 시험
 - 단위: `npm test`(`tests/*.test.cjs`, 3.096 기준 3,837개).
