@@ -3,7 +3,7 @@ import http from 'node:http';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
-import {trackNavigationAborts} from './navigation-abort.mjs';
+import {trackNavigationAborts,pageErrorEntry} from './navigation-abort.mjs';
 
 // Synthetic team app fixture for browser regressions (ported from the 2026-09-27 walkthrough). Synthetic team workspace, loopback
 // Supabase-shaped API, every external request and websocket blocked. Never touches production.
@@ -143,7 +143,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
   page.on('console',m=>{const t=m.type();if(t==='error'||t==='warning'||/PSSync|\[ps/i.test(m.text()))logs.push({step:tag(),type:t,text:m.text().slice(0,500),url:(m.location()||{}).url?.replace(base,'')});});
   /* 3.012 — 기록은 500자로 자르되 원문은 raw(JSON 에 안 나오는 속성)로 남겨 이동 흔적 판정에 쓴다. 선수단 키 16개를 묶은 ps_kv 주소는
      500자를 넘어 «… due to access control checks.» 꼬리가 잘렸고, 판정이 그 문장을 못 알아봐 WebKit board-settings-manual 이 멈췄다(PR #374). */
-  page.on('pageerror',e=>{const entry={step:tag(),type:'pageerror',at:Date.now(),text:String(e.message).slice(0,500),stack:String(e.stack||'').slice(0,400)};Object.defineProperty(entry,'raw',{value:String(e.message)});logs.push(entry);navAborts.reclassify();});
+  page.on('pageerror',e=>{const entry=pageErrorEntry(e.message,{step:tag()});entry.stack=String(e.stack||'').slice(0,400);logs.push(entry);navAborts.reclassify();});
   const navAborts=trackNavigationAborts(page,logs);   /* 2.912 — 이동이 끊은 fetch 의 WebKit 흔적은 'pageerror-navabort' 로 */
   page.on('dialog',d=>{logs.push({step:tag(),type:'dialog',text:d.type()+': '+d.message().slice(0,300)});(d.type()==='beforeunload'?d.accept():d.dismiss()).catch(()=>{});});
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});

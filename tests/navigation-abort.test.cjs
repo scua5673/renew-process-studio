@@ -5,8 +5,8 @@ function fakePage(){ const h={}; return {on:(ev,fn)=>{(h[ev]=h[ev]||[]).push(fn)
 const req=(url,text)=>({url:()=>url,failure:()=>({errorText:text})});
 const MSG=u=>'Fetch API cannot load '+u+' due to access control checks.';
 const U='http://127.0.0.1:39287/rest/v1/ps_events';
-let track;
-test.before(async()=>{ ({trackNavigationAborts:track}=await import('./fixtures/navigation-abort.mjs')); });
+let track,pageErrorEntry,LOG_TEXT_MAX;
+test.before(async()=>{ ({trackNavigationAborts:track,pageErrorEntry,LOG_TEXT_MAX}=await import('./fixtures/navigation-abort.mjs')); });
 
 test('fetch cut by a navigation is marked, not dropped',()=>{
   const p=fakePage(),logs=[];const n=track(p,logs);
@@ -102,11 +102,47 @@ test('B: a cross-origin API the test itself fulfils counts only when declared (a
 test('a long URL cut in the log text is still judged from the raw message',()=>{
   const p=fakePage(),logs=[],LU=B+'/rest/v1/ps_kv?workspace_id=eq.a&k=in.('+Array.from({length:16},(_,i)=>'%22sq%3Avp'+String(i+1).padStart(2,'0')+'%22').join('%2C')+')&select=k,v,cupd'+'&pad='+'x'.repeat(300);
   track(p,logs);p.emit('request',navReq(B+'/studio/app.html',{}));
-  const raw=TRUNC(LU),entry={type:'pageerror',at:Date.now(),text:raw.slice(0,500)};Object.defineProperty(entry,'raw',{value:raw});
+  const entry=pageErrorEntry(TRUNC(LU));   // team-app 과 같은 항목(text 500자 · raw 원문)
   assert.ok(!/access control checks/.test(entry.text),'the fixture: the log text lost the tail');
   logs.push(entry);p.emit('framenavigated',{});
   assert.equal(logs[0].type,'pageerror-navabort');assert.equal(logs[0].navabortPath,'B');
   assert.ok(!('raw' in JSON.parse(JSON.stringify(logs[0]))),'raw stays out of the JSON log');
+});
+
+/* 승격 PR #368 CI(run 38190376575 · WebKit identity board-settings-manual)의 주소 모양 — ps_kv 를 키 20개로 읽는다(500자 넘음).
+   온전한 모양(스킴 포함)·잘린 모양(스킴 없는 split) 둘 다, 길 A·B 둘 다 원문으로 판정한다. 가드(밝히지 않은 출처 · 같은 주소의
+   CORS 실패 문장)는 긴 주소에서도 그대로이고, 원문(raw)이 없는 잘린 text 는 짐작하지 않는다 — 오류로 남는다. */
+const KEYS20=['cs_scout_targets_v1','scout_tool_v1','cs_scout_matches_v1','cs_scoutdb_v1',...Array.from({length:16},(_,i)=>'sq:vp'+String(i+1).padStart(2,'0'))];
+const KV=o=>o+'/rest/v1/ps_kv?workspace_id=eq.6f1c2a9e-4b7d-4c3e-9a51-0d2f8e7b6c43&k=in.('+KEYS20.map(k=>'%22'+encodeURIComponent(k)+'%22').join('%2C')+')&select=k,v,cupd';
+const SHAPES={full:MSG,split:TRUNC};
+test('long ps_kv URL (20 keys): both shapes lose the tail in the log text and are judged from the full sentence, by path A and B',()=>{
+  const LU=KV(B);
+  for(const [shape,f] of Object.entries(SHAPES)){
+    const cut=pageErrorEntry(f(LU));
+    assert.ok(f(LU).length>LOG_TEXT_MAX&&cut.text.length===LOG_TEXT_MAX,shape+': the sentence is longer than the log text');
+    assert.ok(!/access control checks\.?$/.test(cut.text),shape+': the log text lost the tail');
+    const p=fakePage(),logs=[],main={};track(p,logs);reloadStarted(p,main);
+    logs.push(pageErrorEntry(f(LU)));p.emit('framenavigated',main);
+    assert.equal(logs[0].type,'pageerror-navabort',shape+' B');assert.equal(logs[0].navabortPath,'B');
+    const p2=fakePage(),logs2=[],n2=track(p2,logs2);
+    logs2.push(pageErrorEntry(f(LU)));n2.reclassify();assert.equal(logs2[0].type,'pageerror',shape+': no evidence yet');
+    p2.emit('requestfailed',req(LU,'Load request cancelled'));
+    assert.equal(logs2[0].type,'pageerror-navabort',shape+' A');assert.equal(logs2[0].navabortPath,'A');
+  }
+});
+test('long ps_kv URL: the guards hold — an undeclared origin and a real CORS failure stay errors, and a cut text without raw is never guessed',()=>{
+  for(const [shape,f] of Object.entries(SHAPES)){
+    const p=fakePage(),logs=[],main={};track(p,logs);reloadStarted(p,main);
+    logs.push(pageErrorEntry(f(KV('http://localhost:9'))));p.emit('framenavigated',main);
+    assert.equal(logs[0].type,'pageerror',shape+': an undeclared origin may be a real CORS rejection');assert.match(logs[0].navabortWhy,/"sameOrigin":false/);
+    const p2=fakePage(),logs2=[],n2=track(p2,logs2);reloadStarted(p2,main);
+    logs2.push(pageErrorEntry(f(KV(B))));n2.reclassify();assert.equal(logs2[0].type,'pageerror-navabort',shape+': B before the failure arrives');
+    p2.emit('requestfailed',req(KV(B),'Origin http://127.0.0.1:1 is not allowed by Access-Control-Allow-Origin. Status code: 200'));p2.emit('framenavigated',main);
+    assert.equal(logs2[0].type,'pageerror',shape+': a later CORS failure on the same URL reverts it');assert.match(logs2[0].navabortWhy,/CORS/);
+    const p3=fakePage(),logs3=[];track(p3,logs3);reloadStarted(p3,main);
+    logs3.push({type:'pageerror',at:Date.now(),text:f(KV(B)).slice(0,LOG_TEXT_MAX)});p3.emit('framenavigated',main);
+    assert.equal(logs3[0].type,'pageerror',shape+': without raw the cut text does not match');assert.ok(!('navabortWhy' in logs3[0]));
+  }
 });
 
 /* 3.012 — WebKit «Context is stopped»: 멈춘 문서의 비동기 호출 거절. 이동 구간 안에서만 흔적이다(PR #374 oauth-same-document). */
