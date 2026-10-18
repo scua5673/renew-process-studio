@@ -21233,7 +21233,7 @@ try{ var _nb=document.getElementById('dfNew');
   try{ window.__psPagesConsume=_consumePending; setTimeout(_consumePending,350); setTimeout(_consumePending,1000); }catch(_){}   /* 1.979 — boardReady 직전에도 한 번(위 부팅 체인) */
 
   /* ---- 보관함 저장/열기·라이브 복원용 API ---- */
-  window.__psPages={
+  window.__psPages={pg:function(){return pages;},
     newBoard:function(){ newBoard(); }, newBoardUndo:function(){ newBoardUndo(); }, newBoardUndoReady:function(){ return !!_nbUndo; },   /* 3.014 */
     /* 보관함 작전판의 임시 화면과 별개로, 마지막 작업 페이지·위치를 보관/복원한다. */
     captureContext:function(snap,a){
