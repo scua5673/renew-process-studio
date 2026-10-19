@@ -155,6 +155,7 @@
     ['ps_autosave_arch_seen_v1','device','ls','seen','app.html'],
     ['ps_autosave_journal_v1:','device','ls','queue','autosave-journal.js',{of:'*',prefix:1}],
     ['ps_board_defaults_v1','device','ls','pref','app.html'],
+    ['ps_board_guest_v1','device','idb','data','board-guest.js'],   /* 3.112 — 로그인하지 않은 기기의 작전판(«저장»한 판 하나). 로그인한 빈 계정 보드에 열고, 계정에 저장되면 비운다 */
     ['ps_board_look_presets_v1','device','ls','pref','board.html'],
     ['ps_board_pen_only_v1','device','ls','pref','board.html'],
     ['ps_board_pen_seen_v1','device','ls','seen','board.html'],
