@@ -78,7 +78,7 @@ function boardLivePulled(raw){
    이제 무엇이 밀렸는지 기록하고 사용자가 되돌릴 수 있게 한다. */
 var CONFKEY='ps_sync_conflicts_v1';
 /* 2.674 — «기기는 캐시일 뿐»(사용자 "기기 것을 최대한 저장 안 하기" 1단계). 서버 값을 받으면 그냥 덮고, 구조선(ps_rescue_*)·충돌 사본(ps_sync_conflict_*)을
-   더는 만들지 않는다. 실측: 충돌 사본 · 구조선이 1MB 쌓이고 정상 갱신까지 «확인할 것»으로 물었다.
+   더는 만들지 않는다(충돌 사본 · 구조선이 1MB 쌓였다).
    남기는 것: 지금 값 한 벌 + 못 올린 편집 + 급감 24h 되돌리기(undoStash, 2.626) + 일정·선수단 3-way 병합의 기준본(syncBase). 켜고 끄기는 이 스위치 하나. */
 var COPIES_OFF=true;
 /* 2.675 — 2단계 «열 때 서버부터, 닫으면 지우기»(사용자 "2단계도 이어서 가자").
@@ -315,7 +315,7 @@ try{ window.PSSyncConflicts={list:conflictList,open:conflictOpen,restore:conflic
 
 /* 2.255 — 전환 실패 기록: 지금까지 실패는 작은 상태줄·콘솔에만 남아 "그냥 내 작업으로 돌아왔다"로 보였다(실제 제보).
    기록해 두고 다음 표시 기회(부팅 칩)에 원인 문장을 보여 준다. */
-function recSwitchFail(msg,code){ try{ localStorage.setItem('ps_last_switch_err',JSON.stringify({m:String(msg||'').slice(0,180),c:String(code||'').slice(0,60),at:Date.now()})); }catch(_){} }
+function recSwitchFail(msg,code){ try{ localStorage.setItem('ps_last_switch_err',JSON.stringify({m:String(msg||'').slice(0,180),c:String(code||'').slice(0,60),at:Date.now()})); }catch(_){} eventTrack('workspace_switch_failed',{status:'error',feature:'sync',error_code:String(code||'unknown')}); }   // 3.117 제보 cae91d4f
 /* 공간 전환 직후 한 번 알린다 — 자료가 사라진 게 아니라 다른 공간을 보고 있다는 것. */
 function wsSwitchNotice(){
   /* 2.255 — 전환 실패가 있었으면 먼저 알린다(3분 안의 것만) */
@@ -1377,7 +1377,9 @@ function scoutSyncPlan(localRaw,serverRaw,dirty){
     throw syncIssue('sync_storage','scout_document_invalid','후보 원문 형식을 확인할 수 없습니다');
   if(localRaw==null)return serverRaw;
   if(serverRaw==null)return localRaw;
-  var l=JSON.parse(localRaw),s=JSON.parse(serverRaw),winner=dirty?l:s,previous=dirty?s:l;
+  var l=JSON.parse(localRaw),s=JSON.parse(serverRaw);
+  if(dirty&&!l.scoutRegistry&&s.scoutRegistry&&!(l.players||[]).length)dirty=false;   // 3.117 제보 9c924c4e — 빈 옛 기기본이 서버 후보를 다 숨겼다
+  var winner=dirty?l:s,previous=dirty?s:l;
   if(!l.scoutRegistry&&!s.scoutRegistry)return dirty?localRaw:serverRaw;
   var next=JSON.stringify(PSScoutStore.reconcile(previous,winner));
   if(!scoutReadyRaw(next))throw syncIssue('sync_storage','scout_merge_invalid','합친 후보 자료 형식을 확인할 수 없습니다');
@@ -1783,7 +1785,7 @@ function scheduleTokenValid(v){return typeof v==='string'&&v.length>=16&&v.lengt
 /* scheduleRev는 로컬 저장 횟수가 아니라 서버 커밋 번호다. 마지막으로 확인한
    서버/base의 정확히 +1만 새 커밋으로 보내 SQL 트리거가 원자 CAS를 할 수 있게 한다. */
 /* 2.587 — 서버 구조 검사(ps_1644_schedule_structure_ok)와 같은 규칙으로 **올리기 전에 수선**한다.
-   실측(9/3): 경기일 mid 가 **중복**된(복제가 mid 까지 복사) 일정 문서는 구조 검사에서 떨어져 그 팀의 모든 일정 저장이 거부됐다.
+   mid 가 중복된 일정 문서는 구조 검사에서 떨어져 그 팀의 모든 일정 저장이 거부됐다(9/3).
    규칙: 경기일(match 가 참값·board.sched='경기' 등)은 비어 있지 않은 문자열 mid 가 있어야 하고, 문서 안 모든 mid 는 유일해야 한다.
    첫 것은 두고 뒤의 중복·빈 값만 새 id — 경기 연결(sched:<mid>)은 첫 날이 그대로 지킨다. */
 var __schedMidSeq=0;
@@ -2641,7 +2643,7 @@ function libHash(it){return hash(libShareJSON(it));}
 /* ══ 3.005 · 옛 자료의 장면별 썸네일 정리 ══
    작전판은 2.559 부터 저장할 때 장면 0 의 썸네일만 남긴다(board.html __animFrames — 나머지는 불러올 때 보이는 칸부터 다시 그린다).
    그 전에 저장되고 다시 저장되지 않은 자료에는 장면마다 썸네일이 그대로 있다.
-   실측(10/12): 보관함 글자의 44% 가 frames[1…].thumb(전부 9/24 이전 저장).
+   (10/12 보관함 글자의 44%)
    보관함은 목록 한 덩어리라 저장 한 번에 이 글자들을 전부 읽고 다시 쓴다(40MB 공간: 쓰기 ~0.2초 · 읽기 ~0.1초).
    · 하는 일은 저장할 때와 같은 규칙 하나뿐이다: frames[1…] 의 thumb 을 뗀다. 장면 0 · 카드 · 페이지 · 훈련의 그림과 판(snap)은 그대로.
    · **이 기기의 사본만** 고친다. 서버로 올리지 않고 수정 시각도 그대로다 — 정리 전 내용이 지난 회차에 확인한 것과 같았으면 기준 지문(m.li[id].h)만 새 값으로 옮긴다
@@ -3039,7 +3041,7 @@ function bulkPush(){
 }
 
 /* ══ 2.622 · 일정 그림(thumb) 분리 전송 ═══════════════════════════════════════════
-   실측(9/6): 일정 문서의 80~95% 가 thumb(작전판 SVG)였다 — 무게는 주가 아니라 그림.
+   일정 문서 무게의 대부분이 thumb 였다(9/6).
    설계 — **전송 경계에서만** 바꾼다. 기기 안(localStorage 거울·IDB·base·날짜 병합·해시)은 그림이 든 원래 모양 그대로.
      보낼 때: "thumb":"<svg…>" → "thumb":"","thumbRef":"<해시>" 로 바꾸고 그림은 ps_blob(workspace_id,h,v) 행으로 한 번만 올린다(내용 주소).
      받을 때: thumbRef 를 IDB 캐시(ps_blob:<h>)에서, 없으면 ps_blob 에서 묶어 받아 되돌린다.
@@ -3185,7 +3187,7 @@ function histHydrate(k,raw,wid){
   },function(){ return raw; });
 }
 /* ══ 2.727 · 보관함 사진 분리(사용자 «갑시다», 백엔드 점검 2026-09-09) ═══════════════════════════════════════
-   실측: data:image 든 행이 ps_library 의 절반이고, 기기마다 library_body 로 통째로 받는다.
+   data:image 든 행이 ps_library 의 절반이었다.
    일정 그림(2.622)과 같은 방식: 올리기 직전 항목 JSON 안의 «값 전체가 data:image…base64» 인 문자열(512자 이상, 1.9MB 이하)을 ps_blob(내용 주소)로
    떼어 내고 자리에 "psblob:<해시>" 를 남긴다. 받을 때 캐시(IDB ps_blob:<h>) → 서버 순으로 되돌린다. 기기 안 보관함 모양은 그대로다.
    정규식은 JSON 값 시작(:·[·, 뒤)만 잡는다 — 썸네일 SVG 문자열 «안»의 href=\"data:image…\" 는 앞이 \ 라 안 잡힌다(잡으면 SVG 를 삼킨다).
@@ -4459,7 +4461,7 @@ function dataReviewApply(src,k,keepMine,shown){
     /* 1.591 — **같은 질문이 다시 나오지 않게 한다.**
        '팀 것'을 고르면 로컬을 덮게 되는데, 그 덮어쓰기를 안전망(rescueStash)이 성실하게
        "당신 것이 덮였습니다"로 기록해 버린다. 그러면 방금 답한 항목이 '덮인 자료'라는 다른 이름으로
-       목록에 되살아난다 — 사용자 입장에선 답을 했는데 같은 걸 또 묻는 셈이다(실측으로 확인).
+       목록에 되살아난다 — 답을 했는데 같은 걸 또 묻는 셈이다.
        사용자가 **의도해서 고른** 덮어쓰기이므로 그 흔적은 남기지 않는다.
        (사고로 덮인 경우의 안전망은 그대로다 — 여기는 사용자가 직접 고른 경로만 지난다) */
     if(ok!==false){ try{ rescueDismiss(k); }catch(_){} }
@@ -6416,7 +6418,7 @@ function syncPersonal(at,ownerGuard){
   });
 }
 /* 1.504 — 충돌 사본 청소: 밀려난 서버본은 ps_sync_conflict_<키>에 남겨 두는데, 알림 목록에서 빠진 뒤에도
-   영영 남아 localStorage를 잠식한다(실측 15개·548KB — 노트 사본만 509KB).
+   영영 남아 localStorage를 잠식한다.
    알림 목록에 없고 14일이 지난 사본은 지운다. 목록에 살아 있는 것은 건드리지 않는다. */
 function pruneConflictCopies(){
   try{
@@ -6441,7 +6443,7 @@ function rejectedMatchRetry(e,wid){
   var keys=(e&&Array.isArray(e.psRejectedKeys))?e.psRejectedKeys.filter(function(k,i,a){return a.indexOf(k)===i;}):[];
   /* 2.587 — **일정(process_coach_v1)도 같은 길로**(사용자 "워크스페이스 전환이 안된다" — 서버 기록으로 확인한 원인).
      서버 계보 가드(1.644)는 낡은 base 위의 일정 커밋을 **옛 값·옛 cupd 그대로** 돌려보낸다. 기기는 «서버가 더 새롭다» 는
-     신호(cupd)를 못 받아 같은 base 로 또 올리고 또 거부된다 (ps_kv_denied 실측).
+     신호(cupd)를 못 받아 같은 base 로 또 올리고 또 거부된다.
      경기와 똑같이 그 키의 c 를 0 으로 내려 다음 회차가 서버 원문을 **반드시** 받아 병합(MERGE_KEYS, h 는 남겨 병합 가드 통과)한 뒤
      새 base 위에서 다시 올리게 한다. forceSync(preswitch) 는 두 번까지 재시도하므로 전환도 이 길로 풀린다. */
   /* 2.715 — 선수단·스카우트도 같은 길. 서버 모양 가드(2.681)가 거부하면 기기는 «못 올렸어요 · 팀 것이 더 새로워요»만 띄운 채
@@ -8445,12 +8447,12 @@ function hideSwitchOverlay(){ try{ var ov=document.getElementById('psSwitchOv');
 function switchWorkspace(wid,skipSave){
   return tryWorkspaceTransitionLock(function(){return switchWorkspaceCore(wid,skipSave);}).then(function(r){
     if(r&&r.__workspaceLockUnsupported){
-      setStatus('브라우저를 업데이트한 뒤 팀을 바꿀 수 있어요');
+      setStatus('브라우저를 업데이트한 뒤 팀을 바꿀 수 있어요');recSwitchFail('','lock-unsupported');
       try{chip('자료를 안전하게 바꾸려면 최신 Safari·Chrome이 필요해요');}catch(_){}
       return {cancelled:1,workspaceLockUnsupported:1};
     }
     if(!(r&&r.__workspaceLockBusy))return r;
-    setStatus('다른 창의 자료 준비가 끝난 뒤 다시 시도해 주세요');
+    setStatus('다른 창의 자료 준비가 끝난 뒤 다시 시도해 주세요');recSwitchFail('','lock-busy');
     try{chip('다른 창에서 팀 자료를 준비하고 있어요 — 잠시 뒤 다시 눌러 주세요');}catch(_){}
     return {cancelled:1,crossTabBusy:1};
   });

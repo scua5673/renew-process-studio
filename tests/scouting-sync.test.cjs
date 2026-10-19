@@ -342,3 +342,14 @@ for(const [name,change]of [['owner generation',h=>h.switch('coach-a','team-a','n
   const wait=f.pause(),saved=assert.rejects(f.client.save(d));change(h);wait.resolve();await saved;assert.equal(f.client.state.verified,false);assert.throws(()=>f.client.check());assert.equal(h.local.get(KEY),h.idb.get(KEY));
  });
 }
+
+/* 3.117 — 오류 제보 9c924c4e «스카우팅 선수를 입력해놨었는데 목록이 초기화». 10/15 데스크톱이 새 판으로 바뀐 직후, 기기에 남은
+   등록부 없는 빈 옛 문서({v:1,players:[]})가 «바뀜»으로 올라가 서버 후보 14명을 모두 숨겼다(지우지는 않았다 — «복원»으로 되살렸다).
+   빈 옛 기기본은 서버를 이기지 못한다. 옛 판 기기에서 고친 내용은 지금처럼 살린다(위 «dirty old client local body …»). */
+test('3.117 — an empty registry-less local copy cannot hide every server candidate (report 9c924c4e)',async()=>{
+  const server=registry('server registry'),empty={v:1,players:[]};
+  const h=harness({server:raw(server),cupd:2,mirror:raw(empty),idb:raw(empty)});h.baseline(raw(legacy()));await succeeds(h);agrees(h);
+  const d=JSON.parse(h.server.get(KEY).v);
+  assert.equal(d.players.length,1);assert.equal(d.players[0]._scoutHidden,undefined,'후보가 숨지 않는다');
+  assert.equal(d.scoutRegistry.candidates['db:person-a'].info.club,'server registry');assert.equal(d.scoutRegistry.meta.pointSets.length,1);
+});
