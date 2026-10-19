@@ -114,6 +114,9 @@
         X + ' .bp-tab:hover:not(.on),' + X + ' .tb-add:hover,' + X + ' .tb-seg button:hover:not(.on),' + X + '>.tb-r button:not(#vaultSave):not(#boardManualSave):hover{color:' + ink + '!important;background:' + (dark ? 'rgba(255,255,255,.08)' : 'rgba(20,33,61,.06)') + '!important}',
         X + ' #bpBoardSettings{color:' + ink + '!important}',
         X + ' #bpBoardSettings[aria-expanded="true"]{background:' + t[5] + '!important}',
+        // 3.115 — «내보내기»는 글자까지 진하게(사용자 «잘 보이게»). 위 흐린 단추 규칙(:not(#…) 둘)을 이기려고 id 를 하나 더
+        X + '>.tb-r button#tbExport:not(#vaultSave):not(#boardManualSave){color:' + ink + '!important}',
+        X + '>.tb-r button#tbExport:not(#vaultSave):not(#boardManualSave):hover,' + X + '>.tb-r button#tbExport:not(#vaultSave):not(#boardManualSave)[aria-expanded="true"]{background:' + t[5] + '!important}',
         X + ' #vaultSave,' + X + ' #boardManualSave{' + t[3] + '}',   // 3.083 — 저장 단추는 «저장» 하나(staging 3.077) — 주 단추로
         X + ' .tb-logo{' + t[3] + '}',
         X + ' .tb-seg{background:' + t[5] + ';box-shadow:inset 0 1px 3px rgba(0,0,0,' + (dark ? '.45' : '.12') + ')}',
@@ -176,6 +179,7 @@
         g.other.forEach(function (n) { L.appendChild(n); });
         C.innerHTML = '<div class="tb-seg" role="group" aria-label="보기"><button type="button" data-v="flat" title="평면 작전판">평면</button><button type="button" data-v="3d" title="3D 경기장">3D</button></div><span class="tb-sep"></span><div class="tb-seg tb-shape" role="group" aria-label="선수 모양"><button type="button" data-shape="shirt" title="선수 모양 — 유니폼" aria-label="유니폼"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 3l-5 3 2 5 2-1v11h10V10l2 1 2-5-5-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/></svg></button><button type="button" data-shape="circle" title="선수 모양 — 원형" aria-label="원형"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg></button><button type="button" data-shape="person" title="선수 모양 — 사람(3D · 중계에서 서 있는 선수)" aria-label="사람"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4.5" r="2.6"/><path d="M8.5 8.5h7l1 7h-2l-.6 7h-3.8l-.6-7h-2z"/></svg></button></div><div class="tb-seg tb-rs"><button type="button" class="tb-rsize" title="실제 비율 크기 — 선수 · 공을 몇 배로" aria-label="실제 비율 크기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20L20 4M14 4h6v6M10 20H4v-6"/></svg></button></div>';
         g.right.forEach(function (n) { R.appendChild(n); });
+        exportBtn(R);
         s.appendChild(L); s.appendChild(C); s.appendChild(R);
         s.classList.add('ps-tb');
         paintView(); win.setTimeout(clearSelCtl, 0); win.setTimeout(function () { try { center(); } catch (_) {} }, 0);
@@ -205,9 +209,14 @@
         if (g.add && L) { g.add.classList.add('tb-add'); L.appendChild(g.add); }
         g.menu.forEach(function (b) { menu.appendChild(b); });
         g.other.forEach(function (n) { if (L) L.appendChild(n); });
-        if (R) { g.right.forEach(function (n) { R.appendChild(n); }); var R0 = ['bpLinkChip', 'boardManualSave', 'bpBoardSettings', 'vaultSave']; Array.prototype.slice.call(R.children).sort(function (a, b) { return R0.indexOf(a.id) - R0.indexOf(b.id); }).forEach(function (n) { R.appendChild(n); }); }
+        if (R) { g.right.forEach(function (n) { R.appendChild(n); }); var R0 = ['bpLinkChip', 'tbExport', 'boardManualSave', 'bpBoardSettings', 'vaultSave']; Array.prototype.slice.call(R.children).sort(function (a, b) { return R0.indexOf(a.id) - R0.indexOf(b.id); }).forEach(function (n) { R.appendChild(n); }); }
         if (saved) { saved.tabs = saved.tabs.concat(g.tabs); saved.menu = saved.menu.concat(g.menu); saved.other = saved.other.concat(g.other); saved.right = saved.right.concat(g.right); if (g.add) saved.add = g.add; }
       } finally { busy = false; }
+    }
+    // 3.115 — «내보내기»(PNG · PDF, board-quick-export.js) — 보관함 연결 다음, «저장» 앞(오류 제보 0077af18 «화면 캡쳐했을때 걸리적»)
+    function exportBtn(R) {
+      var q = win.PSQuickExport, b = q && q.button ? q.button(doc) : null; if (!b) return;
+      var lk = R.querySelector(':scope>#bpLinkChip'); R.insertBefore(b, lk ? lk.nextSibling : R.firstChild);
     }
     function placeMenu() { var b = doc.getElementById('tbBrand'); if (!b) return; var r = b.getBoundingClientRect(); menu.style.left = Math.max(8, r.left) + 'px'; menu.style.top = (r.bottom + 10) + 'px'; }
     doc.addEventListener('click', function (e) {

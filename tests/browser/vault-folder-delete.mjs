@@ -21,8 +21,9 @@ try{
       {libId:'Vqa_f3',type:'train',name:'가상 론도',folder:'팀 공유',tags:[],savedAt:now-2,createdBy:A});
     window.__qaLib=lib;
     await boardStore.set('cs_vault_folders_v1',['팀 공유','tactice','팀 공유/공격 /공격-수비','팀 공유/공격','팀 공유/공격/수비','팀 공유/공격/공격-수비']);
-    localStorage.setItem('cs_vault_folder_meta_v1',JSON.stringify({'팀 공유':{shared:true}}));
-    localStorage.setItem('cs_vault_open_v1',JSON.stringify({'팀 공유':1,'팀 공유/공격':1}));
+    localStorage.setItem('cs_vault_folder_meta_v1',JSON.stringify({'팀 공유':{shared:true},'팀 공유/공격':{color:'#3A6DF0'}}));
+    localStorage.setItem('cs_vault_folder_tags_v1',JSON.stringify({'팀 공유/공격':['전진']}));
+    localStorage.setItem('cs_vault_open_v1',JSON.stringify({'팀 공유':1,'팀 공유/공격':1,'tactice':1}));
     localStorage.setItem('cs_lib_rev',String(now));
     window.dispatchEvent(new StorageEvent('storage',{key:'cs_vault_folders_v1'}));
   },A);
@@ -56,12 +57,28 @@ try{
     const msg=await bf.evaluate(f=>{const ok=[...document.querySelectorAll('button')].find(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')&&b.offsetParent);const box=ok.closest('div').parentNode;const inp=box.querySelector('input');if(inp&&f!=null){inp.value=f;}const t=box.firstChild.textContent;ok.click();return t;},fill??null);
     return msg;
   };
-  // 3.110 — 내부 스코프의 폴더 메뉴가 이동 선택창을 직접 연다.
+  // 3.116 — 메뉴에서 실제 이동하고, 모든 경로 문서가 서버와 새로고침 뒤에도 함께 간다.
   await menuOn('공격','폴더 이동…');
   await bf.waitForSelector('#psFolderMoveOv');
   assert.equal(await bf.$eval('#psFolderMoveOv div',e=>e.textContent.includes('폴더 이동')),true);
-  await bf.evaluate(()=>{const b=[...document.querySelectorAll('#psFolderMoveOv button')].find(b=>b.textContent.trim()==='취소');b.click();});
+  await bf.evaluate(()=>{const b=[...document.querySelectorAll('#psFolderMoveOv button')].find(b=>b.textContent.trim()==='tactice');b.click();});
   await bf.waitForSelector('#psFolderMoveOv',{state:'detached'});
+  await bf.waitForFunction(async()=>{const l=(await boardStore.get('cs_drill_lib_v1'))||[],f=(await boardStore.get('cs_vault_folders_v1'))||[],m=JSON.parse(localStorage.getItem('cs_vault_folder_meta_v1')||'{}'),t=JSON.parse(localStorage.getItem('cs_vault_folder_tags_v1')||'{}');return l.filter(d=>/^Vqa_f[12]$/.test(d.libId)).every(d=>d.folder==='tactice/공격/공격-수비')&&f.includes('tactice/공격/수비')&&m['tactice/공격']?.color==='#3A6DF0'&&t['tactice/공격']?.[0]==='전진';},null,{timeout:15000});
+  await settle();
+  const serverFolderDoc=key=>JSON.parse((fx.db.get(WT+'|'+key)||{v:'null'}).v);
+  assert.ok(serverFolderDoc('cs_vault_folders_v1').includes('tactice/공격/공격-수비'));
+  assert.equal(serverFolderDoc('cs_vault_folder_meta_v1')['tactice/공격'].color,'#3A6DF0');
+  assert.deepEqual(serverFolderDoc('cs_vault_folder_tags_v1')['tactice/공격'],['전진']);
+  assert.ok([...fx.lib.values()].filter(r=>/^Vqa_f[12]$/.test(r.lib_id)).every(r=>r.item.folder==='tactice/공격/공격-수비'));
+  await page.reload();
+  await page.waitForTimeout(1200);
+  await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]:not([data-train])').click());
+  bf=await board();
+  await bf.waitForFunction(async()=>{const l=(await boardStore.get('cs_drill_lib_v1'))||[];return l.filter(d=>/^Vqa_f[12]$/.test(d.libId)).every(d=>d.folder==='tactice/공격/공격-수비');},null,{timeout:20000});
+  await menuOn('공격','폴더 이동…');
+  await bf.waitForSelector('#psFolderMoveOv');
+  await bf.evaluate(()=>{const b=[...document.querySelectorAll('#psFolderMoveOv button')].find(b=>b.textContent.trim()==='팀 공유');b.click();});
+  await bf.waitForFunction(async()=>{const l=(await boardStore.get('cs_drill_lib_v1'))||[];return l.filter(d=>/^Vqa_f[12]$/.test(d.libId)).every(d=>d.folder==='팀 공유/공격/공격-수비');},null,{timeout:15000});
   await menuOn('공격','삭제');
   const delMsg=await okDialog();
   assert.match(delMsg,/항목 2개는 ‘팀 공유’으로 옮길까요/,delMsg);

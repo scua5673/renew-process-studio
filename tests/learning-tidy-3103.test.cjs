@@ -44,10 +44,11 @@ test('learning flow events: only stage names, ids, book, role and numbers go to 
   vm.runInContext(fn('lev')+";lev('step','SG1',{step:2});",ctx);
   assert.deepEqual(JSON.parse(JSON.stringify(sent)),[['learn',{feature:'learning',status:'ok',meta:{stage:'step',name:'SG1',source:'studio',mode:'coach',step:2}}]]);
   assert.match(learn,/function openSec\(id\)\{lev\('open',id\);/);
-  assert.match(learn,/function setStep\(k,n\)\{if\(n>bookState\.step\)lev\('step',k,\{step:n\}\);/);
-  assert.match(learn,/lev\('recall',k,\{ok:ok,hits:S\.done\[k\]\.hits\}\)/);
-  assert.match(learn,/lev\('quiz',k,\{ok:!!ok\}\)/);
-  assert.match(learn,/lev\('done',k,\{hits:hits\(k\),closed:isDone\(k\)\}\)/);
+  /* 3.110 — 세 단: 단 넘기기 · 꺼내기 채점 대신 확인 문제 · 다시 풀기 · 마침 · 다음 절 */
+  assert.match(learn,/lev\('quiz',k,\{ok:ok,tries:\+\(S\.ask\[k\+':try'\]\|\|0\)\}\)/);
+  assert.match(learn,/if\(!was\)lev\('done',k,\{via:1\}\);/);
+  assert.match(learn,/lev\('retry',k\)/);
+  assert.match(learn,/lev\('next',k,\{closed:isDone\(k\)\}\)/);
   assert.doesNotMatch(fn('lev'),/S\.ask|textarea|\.value/,'적은 답은 보내지 않는다');
 });
 

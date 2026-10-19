@@ -5,7 +5,7 @@ import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 //  예전: 떠나는 페이지에 재생 중간 위치가 담기고, 재생이 끝날 때 그 페이지의 재생 전 판이 옮겨 간 페이지 위에 올라갔다
 //        (장면 없는 페이지는 바로, 장면 있는 페이지는 그 페이지의 장면으로 재생이 이어지다 끝날 때). 저장하면 그 페이지가 남의 판으로 덮였다.
 //  이제: 옮기기 전에 재생을 멈춰 재생 전 판으로 돌린다 — 두 페이지 다 제 판 그대로다.
-//  («둘러보기만 해도 변경 있음»은 이 시험이 보지 않는다 — 페이지 띠를 누르면 지금도 켜진다. 나가기 전에 끈다)
+//  재생 중에 옮긴 것도 둘러보기다 — «변경 있음»이 아니고 나가기는 묻지 않는다(board-vault-browse.js · 예전엔 페이지 띠를 누르기만 해도 켜져 나가기 전에 껐다)
 // 크롬 = 데스크톱, 웹킷 = 아이패드(둘 다 페이지 띠가 페이지 고르개). PS_SIZE 로 하나만 고를 수 있다.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',sizes=process.env.PS_SIZE?[process.env.PS_SIZE]:(engine==='webkit'?['ipad']:['desktop']);
 for(const size of sizes)await run(size);
@@ -48,7 +48,7 @@ try{
     await bf.click('#boardPageStrip .bp-tab >> nth=0'); await page.waitForTimeout(400);
     assert.deepEqual(await now(),{idx:0,x:200,playing:false},'page A comes back on its first scene, before the play');
     await shot(name);
-    await bf.evaluate(()=>{ window.__vaultManualDirty=false; });   /* 페이지 띠 누름이 켠 «변경 있음» — 이 시험의 대상이 아니다 */
+    assert.equal(await bf.evaluate(()=>window.__vaultManualDirty===true),false,'switching pages mid-play is browsing, not an edit');
     await bf.click('#vCreateCancel'); await page.waitForTimeout(300);
     assert.equal(await asking(),false,'leaving asks nothing'); await left();
   }

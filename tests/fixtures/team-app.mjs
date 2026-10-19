@@ -109,7 +109,8 @@ export const SIZES={
   desktop:{engine:'chromium',ctx:{viewport:{width:1280,height:800},deviceScaleFactor:1}}
 };
 
-export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false}={}){
+export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false,guest=false}={}){
+  /* 3.112 — guest:true 면 로그인하지 않은 기기(세션 · 공간 · 계정 흔적 없음)로 연다. 로그인은 시험이 signIn(page) 으로 */
   /* 3.039 — csp:true 면 HTML 응답에 _headers 의 Content-Security-Policy-Report-Only 를 그대로 붙인다(tests/browser/csp-report-only) */
   const cspValue=csp?(/\n  Content-Security-Policy-Report-Only: (.+)\n/.exec(fs.readFileSync(path.join(root,'_headers'),'utf8'))||[])[1]:null;
   if(csp&&!cspValue)throw new Error('_headers 에 Content-Security-Policy-Report-Only 가 없다');
@@ -117,16 +118,17 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
   const browser=browsers[S.engine]||(browsers[S.engine]=await pw[S.engine].launch({headless:true,...(S.engine==='chromium'?{executablePath:process.env.PS_CHROME_PATH||pw.chromium.executablePath()}:{})}));
   const context=await browser.newContext({...S.ctx,serviceWorkers:'block',timezoneId:'Asia/Seoul',locale:'ko-KR',colorScheme:dark?'dark':'light'});
   const base=fx.base;
-  await context.addInitScript(({A,WT,teams,base,dark,examples,tilt3d})=>{
+  await context.addInitScript(({A,WT,teams,base,dark,examples,tilt3d,guest})=>{
     if(location.origin!==base||window.top!==window)return;
     if(localStorage.getItem('wt_seeded'))return;localStorage.setItem('wt_seeded','1');
+    if(guest){if(dark)localStorage.setItem('cs_theme','dark');if(tilt3d!==null)localStorage.setItem('ps_board_tilt3d',tilt3d?'1':'0');return;}
     localStorage.setItem('ps_sync_session',JSON.stringify({uid:A,at:'fixture-access-A',rt:'fixture-refresh-A',exp:Date.now()+36000000,email:'a@example.invalid'}));
     localStorage.setItem('ps_active_ws',WT);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:A,wid:WT}));
     localStorage.setItem('ps_ws_list',JSON.stringify(teams));
     if(dark)localStorage.setItem('cs_theme','dark');
     if(tilt3d!==null)localStorage.setItem('ps_board_tilt3d',tilt3d?'1':'0');   /* 3.027 — 앱은 처음 들어온 기기를 3D 로 연다. 시험은 평면이 기본(null = 처음 들어온 기기 그대로) */
     if(!examples)localStorage.setItem('ps_vault_px_v1',JSON.stringify({[A+'|'+WT]:1}));   /* 3.001 — 보관함 «프로세스» 예시를 이미 받은 사용자(이 판 전과 같은 보관함). 예시 넣기를 보는 시험만 examples:true */
-  },{A,WT,teams,base,dark,examples,tilt3d});
+  },{A,WT,teams,base,dark,examples,tilt3d,guest});
   await context.routeWebSocket('**/*',s=>s.close());
   const blocked=[];
   await context.route(u=>!(u.origin===base&&(u.pathname.startsWith('/rest/v1/')||u.pathname.startsWith('/auth/v1/'))),async route=>{
@@ -147,7 +149,7 @@ export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false
   const navAborts=trackNavigationAborts(page,logs);   /* 2.912 — 이동이 끊은 fetch 의 WebKit 흔적은 'pageerror-navabort' 로 */
   page.on('dialog',d=>{logs.push({step:tag(),type:'dialog',text:d.type()+': '+d.message().slice(0,300)});(d.type()==='beforeunload'?d.accept():d.dismiss()).catch(()=>{});});
   await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
-  await ready(page);
+  if(guest)await guestReady(page);else await ready(page);
   /* 3.077 — 폰은 로그인한 팀 공간이면 팀운영 › 오늘로 열린다(app.html psPhoneStart). 대부분의 시험은 작전판 + 앱 하단 바에서 시작하므로
      사용자가 가는 길(팀 더보기 › 앱 › 보드)로 돌아온다. 폰 첫 화면 자체를 보는 시험만 phoneStart:true. */
   if(!phoneStart&&sizeName==='phone'){
@@ -167,6 +169,26 @@ export async function ready(page){
   await page.waitForFunction(()=>document.body&&!document.body.classList.contains('ps-booting'),null,{timeout:45000}).catch(()=>{});
   await page.waitForFunction(()=>window.PSSync&&PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:30000}).catch(()=>{});
   await page.waitForTimeout(1500);
+}
+
+/* 3.112 — 로그인하지 않은 셸: 동기화는 있지만 세션이 없다 */
+export async function guestReady(page){
+  await page.waitForFunction(()=>window.PSSync&&!PSSync.session()&&document.body&&!document.body.classList.contains('ps-booting'),null,{timeout:45000});
+  await page.waitForTimeout(1500);
+}
+/* 3.112 — guest 로 연 기기에서 로그인한다: OAuth 로 떠났다 돌아오는 것처럼 앱을 떠나(같은 출처의 다른 문서) openApp 의 기본 씨앗과 같은 값을 넣고 다시 연다.
+   열린 앱에서 바로 쓰면 셸 · 작전판이 저장소 신호로 제자리에서 로그인을 겪는다(다른 탭에서 로그인한 경우) — 그 길을 보려면 직접 쓴다. */
+export async function signIn(page,{examples=false}={}){
+  const base=new URL(page.url()).origin;
+  await page.goto(base+'/manifest.json',{waitUntil:'domcontentloaded'});   // 앱 밖의 같은 출처 문서
+  await page.evaluate(({A,WT,teams,examples})=>{
+    localStorage.setItem('ps_sync_session',JSON.stringify({uid:A,at:'fixture-access-A',rt:'fixture-refresh-A',exp:Date.now()+36000000,email:'a@example.invalid'}));
+    localStorage.setItem('ps_active_ws',WT);localStorage.setItem('ps_cache_owner_v1',JSON.stringify({uid:A,wid:WT}));
+    localStorage.setItem('ps_ws_list',JSON.stringify(teams));
+    if(!examples)localStorage.setItem('ps_vault_px_v1',JSON.stringify({[A+'|'+WT]:1}));
+  },{A,WT,teams,examples});
+  await page.goto(base+'/studio/app.html',{waitUntil:'domcontentloaded'});
+  await ready(page);
 }
 
 // ---------- measurement ----------
