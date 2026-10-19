@@ -1,6 +1,8 @@
 'use strict';
 const test=require('node:test');
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
 const move=require('../studio/vault-folder-move.js');
 
 test('folder picker offers root and peers but never itself or its descendants',()=>{
@@ -8,8 +10,9 @@ test('folder picker offers root and peers but never itself or its descendants',(
   assert.deepEqual(move.destinations('세트피스/코너',['세트피스','세트피스/코너','세트피스/코너/공격']),['','세트피스']);
 });
 
-test('mount adds folder move immediately after open and keeps the original menu',()=>{
-  const children=[{textContent:'열기'}],menu={children,insertBefore(node,before){const at=before?children.indexOf(before):children.length;children.splice(at,0,node);}},doc={readyState:'complete',getElementById:id=>id==='vMenu'?menu:null,createElement:()=>({})};
-  let opened=0;const win={document:doc,folderMenu(){opened++;},closeVMenu(){},folderNorm:x=>x,foldersShown:()=>[],folderLeaf:x=>x,vaultMoveFolder(){}};
-  move.mount(win);win.folderMenu({},'공격','',[]);assert.equal(opened,1);assert.deepEqual(children.map(x=>x.textContent),['열기','폴더 이동…']);
+test('the scoped folder menu opens the picker with its scoped move functions',()=>{
+  const board=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');
+  const start=board.indexOf('function folderMenu('),end=board.indexOf('function vaultDelFolder(',start),menu=board.slice(start,end);
+  assert.match(menu,/mi\("폴더 이동…"/);
+  assert.match(menu,/PSVaultFolderMove\.open\(\{src:full,folders:foldersShown\(\),leaf:folderLeaf,onMove:function\(dest\)\{vaultMoveFolder\(full,dest\);\}\}\)/);
 });

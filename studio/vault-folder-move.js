@@ -2,7 +2,7 @@
   'use strict';
   var api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
-  if(root){root.PSVaultFolderMove=api;api.mount(root);}
+  if(root)root.PSVaultFolderMove=api;
 })(typeof window!=='undefined'?window:null,function(){
   'use strict';
 
@@ -36,13 +36,5 @@
     var cancel=doc.createElement('button');cancel.type='button';cancel.style.cssText='margin-top:12px;border:0;background:var(--panel2,var(--c-surface-2));color:var(--txt-dim,var(--c-muted));font-family:inherit;font-weight:800;font-size:var(--t-5);padding:12px;border-radius:var(--r-card);cursor:pointer;flex:0 0 auto;';cancel.textContent='취소';cancel.onclick=close;card.appendChild(cancel);
     ov.appendChild(card);doc.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)close();});return ov;
   }
-  function openBoard(src){
-    if(typeof window==='undefined')return null;
-    try{if(typeof window.closeVMenu==='function')window.closeVMenu();src=window.folderNorm(src);if(!src)return null;return open({src:src,folders:window.foldersShown(),leaf:window.folderLeaf,onMove:function(dest){window.vaultMoveFolder(src,dest);}});}catch(_){return null;}
-  }
-  function mount(win){
-    function ready(){var old=win.folderMenu;if(typeof old!=='function'||old.__folderMove)return;function wrapped(ev,full,parent,lib){old(ev,full,parent,lib);var m=win.document.getElementById('vMenu');if(!m)return;var b=win.document.createElement('button');b.textContent='폴더 이동…';b.onclick=function(e){e.stopPropagation();if(typeof win.closeVMenu==='function')win.closeVMenu();openBoard(full);};m.insertBefore(b,m.children[1]||null);}wrapped.__folderMove=1;win.folderMenu=wrapped;}
-    if(win.document.readyState==='loading')win.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
-  }
-  return{destinations:destinations,open:open,openBoard:openBoard,mount:mount};
+  return{destinations:destinations,open:open};
 });
