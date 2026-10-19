@@ -56,6 +56,12 @@ try{
     const msg=await bf.evaluate(f=>{const ok=[...document.querySelectorAll('button')].find(b=>(b.hasAttribute('data-ps-ok')||b.textContent==='확인')&&b.offsetParent);const box=ok.closest('div').parentNode;const inp=box.querySelector('input');if(inp&&f!=null){inp.value=f;}const t=box.firstChild.textContent;ok.click();return t;},fill??null);
     return msg;
   };
+  // 3.110 — 내부 스코프의 폴더 메뉴가 이동 선택창을 직접 연다.
+  await menuOn('공격','폴더 이동…');
+  await bf.waitForSelector('#psFolderMoveOv');
+  assert.equal(await bf.$eval('#psFolderMoveOv div',e=>e.textContent.includes('폴더 이동')),true);
+  await bf.evaluate(()=>{const b=[...document.querySelectorAll('#psFolderMoveOv button')].find(b=>b.textContent.trim()==='취소');b.click();});
+  await bf.waitForSelector('#psFolderMoveOv',{state:'detached'});
   await menuOn('공격','삭제');
   const delMsg=await okDialog();
   assert.match(delMsg,/항목 2개는 ‘팀 공유’으로 옮길까요/,delMsg);
