@@ -33,7 +33,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 새 파일은 `git add` 해야 배포 묶음에 들어간다 — `scripts/package-site.mjs` 는 `git ls-files` 로 고른다(3.085 에 빠질 뻔).
 
 ## 작전판(studio/board.html)
-- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.114 기준 남은 몫 28 바이트(3.114 는 <script> 한 줄만 더했다 · 3.105 · 3.112 · 3.113 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
+- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.115 기준 남은 몫 42 바이트(3.114 · 3.115 는 <script> 한 줄씩 · 3.105 · 3.112 · 3.113 · 3.115 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
 - 본문의 `function` 선언은 window 속성이라 모듈에서 감쌀 수 있다(`renderTokens` · `applyView` · `boardImageXML` · `setView` · `lookApply` …). 내부 호출도 전역 이름으로 찾으므로 감싼 것을 지난다.
 - `let`/`const` 전역(`state` · `anim` · `animActive` · `tokShape` · `M` …)은 **window 속성이 아니다** — 모듈에서 `typeof state !== 'undefined' ? state : null` 처럼 이름으로 읽는다(3.086 에 `win.state` 로 읽어 실패).
 - 보드 복원(`restoreLiveBoard`)은 본문 스크립트가 도는 중에 바로 돈다. 복원 값을 받아야 하는 모듈은 본문보다 **먼저** 읽히게 두고 window 접근자로 받는다(예: `board-name-font.js` 의 `__nameFont`).
@@ -50,6 +50,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 3.113 — 보관함 «변경 있음»은 `board-vault-browse.js` 가 항목 전체 지문으로 가른다(`__vaultHydrating` 접근자 · `__vaultEditSig` 를 이 모듈이 갖는다). 페이지 · 장면을 옮기는 새 함수는 `restoreAnimBeforeCapture` 또는 `selectAnimFrame` 를 지나야 둘러보기로 친다(아니면 «변경 있음» — 묻는 쪽으로 틀린다). 저장이 쓰는 칸을 늘리면 지문(`itemSig`)에도 넣는다 — 빠지면 고친 것을 묻지 않고 잃는다. 나가는 새 단추는 `exitCheck` 의 선택자에 더한다.
 - 3.102 — 다른 슬라이드 · 페이지 그림(`__snapToThumb` — 하나에 판을 두 번 갈아 끼운다)을 한 번에 그리지 않는다: 9장이면 화면이 몇 초 멈추고 WebKit CI 에서 알림이 10초 안에 안 떴다. 하나씩 나눠 그리고(`queueThumbs`) 재생 · 끌기 · 편집 중엔 기다린다. 6초짜리 알림을 시험이 확인할 땐 MutationObserver 로 붙는 순간을 적는다.
 - 내보내기(그림 · GIF · 영상)는 판을 SVG 그림(`data:image/svg+xml`)으로 그린다 — 페이지 글꼴 · CSS 를 못 본다. 글꼴은 SVG 안에 넣어야 한다.
+- 3.115 — 빠른 내보내기(제보 0077af18 «화면 캡쳐했을때 걸리적»): 위쪽 막대 오른쪽 «내보내기» → PNG(`exportPNG` 그대로) · PDF(A4 한 장, `board-quick-export.js`). 단추는 `board-topbar.js` 의 `exportBtn(R)` 가 덩어리를 세울 때마다 받는다(보관함 연결 다음, «저장» 앞). 장면 막대 «내보내기 ▾»의 `#pdfBtn` 은 `#cmd-export-btn` 을 누를 때 붙인다. 위쪽 막대 오른쪽의 흐린 단추 규칙은 `:not(#…)` 둘이라 id 하나짜리 규칙(`#bpBoardSettings{color}`)은 진다 — 이기려면 id 셋.
 
 ## 폰 강제 종료 · 메모리
 - 서버 기록: `ps_events` 의 `boot_after_crash`(meta.stage · age · standalone · ua · crumb). age 5 · stage `loadw0` = 켜진 뒤 몇 초 만에 아이폰이 앱을 끔(메모리).
@@ -92,6 +93,8 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 브라우저(이 컨테이너): `PS_PLAYWRIGHT_MODULE=/opt/node22/lib/node_modules/playwright PS_BROWSER_ENGINE=chromium PS_CHROME_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome node tests/browser/<이름>.mjs`. 묶음 목록은 `tests/browser/run-critical.mjs`.
 - 여기서는 WebKit 이 없다(`PS_SIZE=ipad` 는 WebKit 을 띄워 실패). `anim-all-pages` · `anim-export-fit` 은 영상 녹화 때문에 손대지 않은 코드에서도 여기서 실패한다 — CI 가 판단한다.
 - CI 는 Chromium · WebKit 둘 다 돈다. 느린 WebKit 에서 «다음 프레임» 을 기다리는 시험은 `waitForFunction` 으로 기다린다(3.084 shaper-ball).
+- 헤드리스 크로미움은 iframe 안 `a.download` 내려받기 이름을 «download»로만 알린다(3.115) — 이름은 `HTMLAnchorElement.prototype.click` 을 감싸 `this.download` 로 본다. 받은 PDF 는 `pdftoppm -png` 로 그림을 볼 수 있다.
+- `anim-export-once` 도 이 컨테이너에서는 손대지 않은 코드에서 실패한다(영상 저장 — 3.115 에 staging 으로 확인).
 - 미리보기 그림의 한글 글자: `/usr/share/fonts/opentype/unifont/unifont.otf`.
 
 ## Supabase
