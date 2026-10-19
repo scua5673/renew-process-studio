@@ -80,8 +80,13 @@ try{
   await play('#animPlay'); assert.equal(await dirty(),false,'playing page A');
   await tab(1); await scene(1); await play('#animPlay'); await tab(2); await tab(0);
   /* 굴리기(장면 띠 · 판 위) */
-  { const fb=await bf.locator('#animFrames').boundingBox(); if(fb){ await page.mouse.move(fb.x+fb.width/2,fb.y+fb.height/2); await page.mouse.wheel(0,240); }
-    const sb=await bf.locator('#boardStage').boundingBox(); await page.mouse.move(sb.x+sb.width/2,sb.y+sb.height/2); await page.mouse.wheel(0,240); await page.waitForTimeout(300); }
+  /* 아이패드(모바일 WebKit)는 page.mouse.wheel 을 못 쓴다 — 그 자리의 요소에 같은 wheel 이벤트를 보내고 굴린다 */
+  const wheel=async sel=>{ const b=await bf.locator(sel).boundingBox(); if(!b)return;
+    try{ await page.mouse.move(b.x+b.width/2,b.y+b.height/2); await page.mouse.wheel(0,240); }
+    catch(e){ if(!/not supported/i.test(String(e&&e.message)))throw e;
+      await bf.evaluate(s=>{ const el=document.querySelector(s); if(!el)return; const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+        (document.elementFromPoint(x,y)||el).dispatchEvent(new WheelEvent('wheel',{deltaY:240,clientX:x,clientY:y,bubbles:true,cancelable:true})); el.scrollTop+=240; },sel); } };
+  { await wheel('#animFrames'); await wheel('#boardStage'); await page.waitForTimeout(300); }
   await page.waitForTimeout(1200);   // 늦게 도는 그리기(장면 썸네일 채우기 · 운동장 개수 80ms)도 고친 것이 아니다
   const st=await now(); assert.equal(st.dirty,false,'still clean after browsing: '+JSON.stringify(st));
   assert.equal(await leave(),null,'leaving after browsing asks nothing'); await left();
