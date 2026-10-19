@@ -4230,7 +4230,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script>
+<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-vault-browse.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -7793,8 +7793,7 @@ function thumbViewRaw(d){
    보관함 카드·일정 칩·PDF 의 토큰이 보드에서 만든 것보다 32% 작았다(사용자 "토큰 크기를 크게 했는데 PDF 에 적용이 안 돼" — 0.85 로 키워도 PDF 는 0.58).
    썸네일을 뜰 때만 그 배수를 빼고 다시 그린 뒤, 끝나면 원래대로. 실측: 편집기 thumb 0.37 → 0.55(= state.tokenScale). */
 /* 2.723 — 끌고 있는 동안은 썸네일을 뜨지 않는다(사용자 "훈련만들기에서 토큰·장비 드래그가 너무 잘 안돼").
-   실측(localhost, 편집기 3초): 자동 저장(saveEditorDraft ≈0.6초) → editorCaptureScene → 여기서 renderTokens() 두 번(2.705) + 선택이 있으면
-   _boardThumbSVGRaw 에서 두 번 더 = 3초에 토큰 DOM 재구성 110회. renderTokens 는 tokenLayer.innerHTML="" 로 토큰을 새로 만들므로
+   자동 저장(saveEditorDraft ≈0.6초) → editorCaptureScene → renderTokens()(2.705 · _boardThumbSVGRaw)가 3초에 110번. renderTokens 는 tokenLayer.innerHTML="" 로 토큰을 새로 만들므로
    끌던 <g> 가 문서에서 떨어져 setPointerCapture 가 풀리고 pointermove 가 더는 오지 않는다 → 끌다 멈춤·잡히지 않음. 보드 화면(편집기 밖)은
    자동 저장이 썸네일을 뜨지 않아 멀쩡했다. 누르고 있는 동안(psDragging)은 마지막 썸네일을 돌려주고, 초안 저장은 놓은 뒤로 미룬다. */
 window.__psPtrDown=0;

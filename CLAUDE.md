@@ -33,7 +33,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 새 파일은 `git add` 해야 배포 묶음에 들어간다 — `scripts/package-site.mjs` 는 `git ls-files` 로 고른다(3.085 에 빠질 뻔).
 
 ## 작전판(studio/board.html)
-- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.106 기준 남은 몫 38 바이트(3.105 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
+- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.113 기준 남은 몫 73 바이트(3.105 · 3.112 · 3.113 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
 - 본문의 `function` 선언은 window 속성이라 모듈에서 감쌀 수 있다(`renderTokens` · `applyView` · `boardImageXML` · `setView` · `lookApply` …). 내부 호출도 전역 이름으로 찾으므로 감싼 것을 지난다.
 - `let`/`const` 전역(`state` · `anim` · `animActive` · `tokShape` · `M` …)은 **window 속성이 아니다** — 모듈에서 `typeof state !== 'undefined' ? state : null` 처럼 이름으로 읽는다(3.086 에 `win.state` 로 읽어 실패).
 - 보드 복원(`restoreLiveBoard`)은 본문 스크립트가 도는 중에 바로 돈다. 복원 값을 받아야 하는 모듈은 본문보다 **먼저** 읽히게 두고 window 접근자로 받는다(예: `board-name-font.js` 의 `__nameFont`).
@@ -45,6 +45,8 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - `applyView` 는 판(svg)의 너비 · 높이를 지운다. 중계 카메라가 판을 잡고 있으면 `board-broadcast.js` 의 `hold` 가 지킨다(3.086 깜빡임).
 - 3.096 — 3D «중계» 카메라(`cam:'tv'`)를 뺐다(사용자 «중계화면으로 애니메이션하면 라인이 벗어나» → «중계화면은 빼자»): `TILT_CAM.tv` · 보드 설정 «카메라 › 중계» · 위쪽 «중계» 단추를 걷었고, 저장된 tv 는 «보통»으로 읽힌다. `board-broadcast.js` 의 `camera()` · `tv()` 는 남았지만 켜지지 않는다(`__tvOn` 늘 거짓). 경기 모드 옆 막대의 옛 «중계캠»(`bcCamBtn`)은 다른 기능이라 그대로.
 - 3.102 — 피치는 판 전체(제보 934aaa3e): 사람이 피치를 바꾸면(`_viewScenesMatch("pitch")` — 피치 단추 · 색 고르개만 부른다) `board-tweaks.js` 가 작전판의 모든 페이지(`__psPages.pg()` · 지금 페이지는 `book.idx()`) · 미팅의 모든 슬라이드(`anim.slides`, 먼저 `__meetSyncCur({thumb:true})`)와 그 장면에 넣는다. 알림의 «이 페이지만»이 되돌린다. 운동장 사진(`@photo:`)은 페이지 내용이라 퍼뜨리지도 덮지도 않는다. 열린 PR #425(«모든 슬라이드에» 단추)는 이 방식이 대신한다.
+- 3.112 — 로그인하지 않은 기기의 «저장»은 `board-guest.js` 가 기기 칸 `ps_board_guest_v1`(동기화 키 아님)에 둔다. 게스트 판정은 perms.js `guestOpen` 과 같다(세션 · `ps_cache_owner_v1` · `ps_active_ws` 가 없을 때만). 로그인한 기기는 감싼 저장 함수가 원래 함수를 그대로 부른다. `PSBoardGuest.mount(window)` 는 부팅 `restoreLiveBoard()` 바로 앞 — 그 줄을 옮기지 않는다.
+- 3.113 — 보관함 «변경 있음»은 `board-vault-browse.js` 가 항목 전체 지문으로 가른다(`__vaultHydrating` 접근자 · `__vaultEditSig` 를 이 모듈이 갖는다). 페이지 · 장면을 옮기는 새 함수는 `restoreAnimBeforeCapture` 또는 `selectAnimFrame` 를 지나야 둘러보기로 친다(아니면 «변경 있음» — 묻는 쪽으로 틀린다). 저장이 쓰는 칸을 늘리면 지문(`itemSig`)에도 넣는다 — 빠지면 고친 것을 묻지 않고 잃는다. 나가는 새 단추는 `exitCheck` 의 선택자에 더한다.
 - 3.102 — 다른 슬라이드 · 페이지 그림(`__snapToThumb` — 하나에 판을 두 번 갈아 끼운다)을 한 번에 그리지 않는다: 9장이면 화면이 몇 초 멈추고 WebKit CI 에서 알림이 10초 안에 안 떴다. 하나씩 나눠 그리고(`queueThumbs`) 재생 · 끌기 · 편집 중엔 기다린다. 6초짜리 알림을 시험이 확인할 땐 MutationObserver 로 붙는 순간을 적는다.
 - 내보내기(그림 · GIF · 영상)는 판을 SVG 그림(`data:image/svg+xml`)으로 그린다 — 페이지 글꼴 · CSS 를 못 본다. 글꼴은 SVG 안에 넣어야 한다.
 
