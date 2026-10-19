@@ -4230,7 +4230,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script>
+<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -7868,7 +7868,7 @@ function _boardThumbSVGRaw(){
   return _out;}
 /* ══ 2.559 · 스냅샷이 «내 장비» 이미지 라이브러리를 통째로 들고 다니지 않는다 ══════════
    감사 실측: 200px PNG data URI 최대 12장(≈40KB씩)을 `dc()` 로 **스냅마다 새로 복사**했다.
-   빈 판인데도 스냅 1칸이 481KB — 되돌리기 50칸이면 98.6MB(실측), 애니메이션 장면 N개면 ×N.
+   빈 판의 스냅 1칸이 481KB(되돌리기 50칸 98.6MB).
    보드 내용도 아니다: 장비 토큰은 자기 `src` 를 스스로 들고 있고(o.src), 팔레트는 loadSnap 이
    어차피 localStorage(loadCustomEquipLib)에서 다시 합친다(6358행). 그래서 뺀다.
    ⚠ 남는 값: 다른 기기에서 카드를 열면 «내 장비» 팔레트에 그 이미지가 안 뜬다 — 토큰은 그대로 그려진다. */
