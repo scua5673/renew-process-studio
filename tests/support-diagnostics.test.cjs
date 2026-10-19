@@ -224,3 +224,13 @@ test('resource failures capture only known same-origin assets and discard URL se
   const snapshot=c.snapshot();assert.deepEqual(snapshot.logs.map(x=>x.source),['/studio/support.js','/studio/release-notes.js','/studio/support.css','/studio/support.css','','']);
   assert.ok(snapshot.logs.every(x=>x.line===0&&x.column===0));assert.ok(!JSON.stringify(snapshot).includes('SECRET'));assert.ok(!D.format(snapshot).includes('PRIVATE'));
 });
+
+/* 3.117 — 오류 제보 cae91d4f «다른 팀으로의 전환 오류». 전환 표시(ps_ws_switch_guard_v1)는 주인이 바뀐 것이 아니다 — 취소된 전환이 표시를
+   지우면서 «왜 멈췄는지» 기록까지 지웠다. 새 전환 차례(epoch) · 새 팀은 지금처럼 새 기록으로 시작한다. */
+test('3.117 — a cancelled switch keeps the logs that explain it; a new epoch or team still starts fresh',()=>{
+  const s=surface(),c=collector(s);s.w.emit('error',error());assert.equal(c.snapshot().logs.length,1);
+  s.values.set('ps_ws_switch_guard_v1','guard-1');s.w.emit('error',error());assert.equal(c.snapshot().logs.length,2,'전환 중 기록이 쌓인다');
+  s.values.delete('ps_ws_switch_guard_v1');assert.equal(c.snapshot().logs.length,2,'취소돼 표시가 지워져도 남는다');
+  s.values.set('ps_ws_switch_epoch_v1','epoch-next');assert.equal(c.snapshot().logs.length,0,'새 전환 차례는 새 기록');
+  s.w.emit('error',error());s.values.set('ps_active_ws','team-B');assert.equal(c.snapshot().logs.length,0,'다른 팀은 새 기록');
+});

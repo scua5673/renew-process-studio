@@ -56,7 +56,13 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 서버 기록: `ps_events` 의 `boot_after_crash`(meta.stage · age · standalone · ua · crumb). age 5 · stage `loadw0` = 켜진 뒤 몇 초 만에 아이폰이 앱을 끔(메모리).
 - 3.095 — 설치 앱이 열 때마다 5초에 꺼졌다: 보관함(`cs_drill_lib_v1`)은 목록 한 덩어리라 한 번 읽을 때마다 통째(그 팀 21MB 글 · 해석 41MB)가 생긴다. 숨은 작전판이 그리기마다 따로 읽어 10초에 24번(크로미움 0.9GB). 그리기 읽기는 `psVaultRenderRead`(같은 때 줄 선 것은 하나 — `_libTurnTail` 이 그대로일 때만), 숨은 틀은 `board-vault-lazy.js`(보일 때 그림). 보관함을 통째로 읽는 코드를 더하면 부팅 중 몇 번 도는지 센다(`tests/browser/phone-boot-vault.mjs`).
 - 메모리 재기: fixture `fx.lib` 에 큰 자료를 넣고 폰 크기로 띄워 CDP `HeapProfiler.startSampling`(만든 양) · `collectGarbage` 뒤 `JSHeapUsedSize`(남는 양)를 본다. 그냥 최고치는 크로미움이 쓰레기를 늦게 치워 들쭉날쭉하다.
-- sync.js 지문(`libHash`)은 replacer 로 옛 글(`JSON.stringify(libShareCopy(it))`)과 똑같은 글을 만든다(3.095). 글이 한 글자라도 바뀌면 모든 자료가 «바뀜»으로 다시 올라간다 — 고치면 `tests/lib-hash-3095` 로 견준다. sync.js 예산 832KB, 3.108 기준 남은 몫 52 바이트(3.104 · 3.108 에 옛 실측 숫자 주석을 줄여 자리를 만들었다).
+- sync.js 지문(`libHash`)은 replacer 로 옛 글(`JSON.stringify(libShareCopy(it))`)과 똑같은 글을 만든다(3.095). 글이 한 글자라도 바뀌면 모든 자료가 «바뀜»으로 다시 올라간다 — 고치면 `tests/lib-hash-3095` 로 견준다. sync.js 예산 832KB, 3.117 기준 남은 몫 70 바이트(3.104 · 3.108 · 3.117 에 옛 실측 숫자 주석을 줄여 자리를 만들었다).
+
+## 경기 · 스카우팅 · 팀 전환(studio/scout.html · sync.js)
+- 3.117 — 경기 «경기 준비(02)»의 옛 경기 보드(`#mb2Card`, 상대 포메이션 `#mb2FormOp`)는 숨어 있다. 경기 보드는 작전판 미팅으로 연다. 포메이션을 고르는 보드가 보이는 곳은 «상대 분석(01)» `#obCard`(`#obFormOp` · «배치 N/◻»). 제보의 «경기 준비 포메이션»은 대개 이 화면이다.
+- 3.117 — 상대 포메이션 8인제는 `studio/match-formats.js`(scout.html 크기 예산 남은 몫 약 640 바이트 — 새 것은 모듈로). `MB2_FORMS` · `MB2_SLOTS` 에 키를 더하고 `mb2Counts` · `obCounts` 를 감싼다 — 본문 스크립트 **뒤**에서 읽는다. option 을 optgroup 으로 옮기면 고른 값이 바뀐다 — 옮긴 뒤 되돌린다. 선수단 카드는 11장 고정(8인제 팀 카드는 큰 일).
+- 3.117 — 스카우팅 «목록 초기화»(제보 9c924c4e)는 지운 것이 아니라 숨김: 등록부(`scoutRegistry`) 없는 옛 문서가 이기면 빠진 후보를 `_scoutHidden` 으로 남긴다(scouting-store.js). 빈 옛 기기본(`{v:1,players:[]}`)이 «바뀜»으로 올라가 서버 14명을 다 숨겼다 → `scoutSyncPlan` 은 빈 옛 기기본이면 서버를 이기게 한다. 옛 판 기기에서 «고친» 내용은 지금처럼 이긴다(`scouting-sync` «dirty old client local body»). 서버 기록은 `ps_kv_history`(10분에 한 줄, 바뀌기 전 값).
+- 3.117 — 팀 전환이 멈춘 까닭: `recSwitchFail` 이 `ps_events` 에 `workspace_switch_failed`(코드만, 문구는 안 보냄)를 남긴다(«바쁨» `lock-busy` · `lock-unsupported` 도). 오류 보고(support-diagnostics.js)는 전환 표시(`ps_ws_switch_guard_v1`)를 기록 주인으로 보지 않는다 — 취소된 전환이 그 까닭 기록을 지웠다. 같은 계정의 아주 옛 판 창(앱 판 `2026.07.26-v229` 등)이 함께 돌며 자료를 올리는 일이 있다 — 제보 답에 «다른 창 닫기»를 안내한다.
 
 ## 일정(studio/process.html) PDF
 - 3.091 — 일정 PDF 는 `studio/pdf-export.js`(`PSPdfExport.open`) 창으로 연다: «PDF 내려받기»는 미리보기 종이를 SVG foreignObject → JPEG → PDF 로 찍는다(작전판 `_ppbSavePdf` 와 같은 방법). 종이 그림은 페이지 글꼴을 못 보므로 쓰인 글자의 Pretendard 조각을 data: 로 넣는다. 여러 장 문서는 `#printDoc .ponepage` 마다 한 쪽.

@@ -109,7 +109,9 @@
     function identity(){
       try{var storage=w.localStorage,seal=storage.getItem('ps_cache_owner_v1')||'',cached=JSON.parse(seal||'null'),sync=w.PSSync,uid=sync&&typeof sync.session==='function'?String((sync.session()||{}).uid||''):String(cached&&cached.uid||'');
         // Read identity markers only. Never read the persisted token/session document.
-        return JSON.stringify([uid,storage.getItem('ps_active_ws')||'',seal,storage.getItem('ps_ws_switch_epoch_v1')||'',storage.getItem('ps_ws_switch_guard_v1')||'']);
+        // 3.117 (report cae91d4f) — the switch guard is not an owner change: a cancelled switch clears it and used to wipe the
+        // in-switch logs that explain why. A new epoch (switch start) and a new active team still start a fresh log.
+        return JSON.stringify([uid,storage.getItem('ps_active_ws')||'',seal,storage.getItem('ps_ws_switch_epoch_v1')||'']);
       }catch(_){return null;}
     }
     function check(){var next=identity();if(next!==owner){owner=next;logs=[];generation++;}return next!==null;}
