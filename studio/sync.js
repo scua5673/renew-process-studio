@@ -538,7 +538,8 @@ function eventQueue(){try{
   var q=JSON.parse(localStorage.getItem(EVENT_QUEUE)||'[]');
   return Array.isArray(q)?q.filter(function(x){return x&&typeof x.id==='string'&&typeof x.uid==='string'&&x.uid&&x.row&&typeof x.row.event_name==='string';}):[];
 }catch(_){return [];}}
-function setEventQueue(q){try{localStorage.setItem(EVENT_QUEUE,JSON.stringify((q||[]).slice(-50)));}catch(_){}}
+var evMem=[],evOnce={};   /* 3.126 — 작은 저장소가 차 못 적은 줄은 메모리에서 이름마다 한 번 보낸다(storage_full) */
+function setEventQueue(q){try{localStorage.setItem(EVENT_QUEUE,JSON.stringify((q||[]).slice(-50)));return 1;}catch(_){}}
 function eventId(){
   try{if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();}catch(_){}
   return Date.now().toString(36)+'-'+(++eventSequence).toString(36)+'-'+Math.random().toString(36).slice(2);
@@ -568,7 +569,7 @@ function eventTrack(name,opts){
     var row={event_name:ev,status:status,feature:String(opts.feature||'app').slice(0,32),
       workspace_id:w.id||null,device:eventDevice(),app_version:appVer(),
       error_code:code||null,meta:safeEventMeta(opts.meta),created_at:new Date().toISOString()};
-    var q=eventQueue();q.push({id:eventId(),uid:String(s.uid),row:row});setEventQueue(q);flushEvents();
+    var q=eventQueue(),it={id:eventId(),uid:String(s.uid),row:row};q.push(it);if(!setEventQueue(q)&&!evOnce[ev+code]){evOnce[ev+code]=1;evMem.push(it);}flushEvents();
   }catch(_){}
 }
 var eventFlushing=false;
@@ -576,7 +577,7 @@ function flushEvents(){
   if(eventFlushing||!navigator.onLine)return;
   var s=getSess();if(!s||!s.uid)return;
   var uid=String(s.uid),epoch=signOutEpoch;
-  var batch=eventQueue().filter(function(x){return x.uid===uid;}).slice(0,20);if(!batch.length)return;
+  var batch=evMem.splice(0).concat(eventQueue()).filter(function(x){return x.uid===uid;}).slice(0,20);if(!batch.length)return;
   eventFlushing=true;
   return Promise.resolve().then(function(){return ensureToken();}).then(function(at){
     var cur=getSess();

@@ -214,6 +214,8 @@
     ['ps_oauth_provider','device','ls','session','sync.js'],
     ['ps_opt_auto_at','device','ls','cache','storage.js'],
     ['ps_opt_board_recovery_v1','device','ls','recovery','storage.js',{of:'cs_board_live_v1'}],
+    ['ps_opt_build_v1','device','ls','cache','storage.js'],   /* 3.126 — 새 판 첫 부팅 정리를 한 판에 한 번 */
+    ['ps_full_report_at','device','ls','diag','storage.js'],   /* 3.126 — 저장 공간이 찬 기기의 «무엇이 찼나» 기록(6시간에 한 번) */
     ['ps_pack_pending_v1','device','ls','queue','app.html'],
     ['ps_pad_scale_v1','device','ls','pref','app.html'],
     ['ps_pdf_per_page','device','ls','pref','board.html'],
