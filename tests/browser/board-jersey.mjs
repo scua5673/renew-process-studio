@@ -47,13 +47,16 @@ try{
   const xml=await f.evaluate(()=>{const s=boardImageXML().xml;return {n:(s.match(/class="ps-jersey"/g)||[]).length,clip:/clip-path/.test(s.split('ps-jersey')[1]||'')};});
   assert.equal(xml.n,4,'내보내기에도 유니폼');assert.equal(xml.clip,false);
 
-  // 끌기: 유니폼 그림이 누르기를 가로채지 않는다
+  // 끌기: 유니폼 그림이 누르기를 가로채지 않는다.
+  // 폰(WebKit CI)은 빈 판 안내(#psPhoneHint)가 판이 채워진 뒤 조금 있다 걷힌다 — 걷힐 때까지 기다린다(3.086 board-savebar).
+  // 폰 판은 90° 돌아 있어 화면 오른쪽 = 판의 다른 축이다 — 방향이 아니라 움직인 거리를 본다.
+  await f.waitForFunction(()=>!document.getElementById('psPhoneHint'),null,{timeout:10000});
   const box=await (await f.$('#tokenLayer [data-id="j2"] .ps-jersey')).boundingBox();
-  const before=await f.evaluate(()=>state.players.find(p=>p.id==='j2').x);
+  const before=await f.evaluate(()=>{const p=state.players.find(p=>p.id==='j2');return {x:p.x,y:p.y};});
   await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
   await page.mouse.move(box.x+box.width/2+60,box.y+box.height/2+10,{steps:6});await page.mouse.up();
-  await f.waitForFunction(b=>state.players.find(p=>p.id==='j2').x>b+20,before,{timeout:5000});
-  const after=await f.evaluate(()=>({x:state.players.find(p=>p.id==='j2').x,j:!!document.querySelector('#tokenLayer [data-id="j2"] .ps-jersey')}));
+  await f.waitForFunction(b=>{const p=state.players.find(p=>p.id==='j2');return Math.hypot(p.x-b.x,p.y-b.y)>12;},before,{timeout:5000});
+  const after=await f.evaluate(()=>{const p=state.players.find(p=>p.id==='j2');return {x:p.x,y:p.y,j:!!document.querySelector('#tokenLayer [data-id="j2"] .ps-jersey')};});
   assert.ok(after.j,'옮긴 뒤에도 유니폼');
 
   // 3D: 칩 윗면에 같은 유니폼
@@ -66,5 +69,5 @@ try{
 
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log(JSON.stringify({engine,passed:true,circle:circle.jerseys,shirt:shirt.jerseys,c3,xml,drag:[before,after.x],d3}));
+  console.log(JSON.stringify({engine,passed:true,circle:circle.jerseys,shirt:shirt.jerseys,c3,xml,drag:[before,{x:after.x,y:after.y}],d3}));
 }finally{for(const b of Object.values(browsers))await b.close();await fx.close();}
