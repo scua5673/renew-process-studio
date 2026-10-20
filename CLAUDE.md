@@ -34,7 +34,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 새 파일은 `git add` 해야 배포 묶음에 들어간다 — `scripts/package-site.mjs` 는 `git ls-files` 로 고른다(3.085 에 빠질 뻔).
 
 ## 작전판(studio/board.html)
-- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.124 기준 남은 몫 168 바이트(3.114 · 3.115 · 3.123 은 <script> 한 줄씩 · 3.105 · 3.112 · 3.113 · 3.115 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
+- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.128 기준 남은 몫 84 바이트(3.114 · 3.115 · 3.123 · 3.128 은 <script> 한 줄씩 · 3.105 · 3.112 · 3.113 · 3.115 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
 - 본문의 `function` 선언은 window 속성이라 모듈에서 감쌀 수 있다(`renderTokens` · `applyView` · `boardImageXML` · `setView` · `lookApply` …). 내부 호출도 전역 이름으로 찾으므로 감싼 것을 지난다.
 - `let`/`const` 전역(`state` · `anim` · `animActive` · `tokShape` · `M` …)은 **window 속성이 아니다** — 모듈에서 `typeof state !== 'undefined' ? state : null` 처럼 이름으로 읽는다(3.086 에 `win.state` 로 읽어 실패).
 - 보드 복원(`restoreLiveBoard`)은 본문 스크립트가 도는 중에 바로 돈다. 복원 값을 받아야 하는 모듈은 본문보다 **먼저** 읽히게 두고 window 접근자로 받는다(예: `board-name-font.js` 의 `__nameFont`).
@@ -48,6 +48,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 3.122 — 새 미팅 «포메이션 고르기»(`board-meet-form.js`, 사용자 «시작할때 모달이 떠서 우리팀 · 상대 팀 포메이션 … 페이지 마다 제대로»): 보관함 길은 `__meetSeed` 가 9장을 채운 뒤 창(11/8 고르개 — 8 은 `PSMeet8.slides` 로 9장을 바꾼다), 경기 길은 `__meetingFromMatch` 앞에서 창(인원은 경기 것, 닫으면 만들지 않음 · inplace 면 `matchEditReady` 로 가림막을 걷는다). 고른 값은 `__meetTplSlides` 출력에만(`cur` 이 선 동기 구간) — 창 밖 호출(예전 미팅 고치기)은 그대로. 자리는 기본 9장에서 «u→x · v→y 직선 + 가까운 자리의 벗어남»으로 옮기고, BEST 는 직선만, 코너킥은 자리 그대로 번호만, 골키퍼 · 공 가진 선수는 고정. board-meet-8.js 보다 **뒤**에 읽혀 그 위를 감싼다. 새 미팅을 만드는 브라우저 시험은 창을 닫아야 한다(`#psMeetForm .mf-skip`).
 - 3.122 — 미팅 유니폼은 모든 슬라이드에(`board-tweaks.js` 7): `kitPropagateIfChanged` 를 감싸 `_kitBase` 가 바뀐 때만(불러오기 · 넘기기는 기준만 바꾼다) 다른 슬라이드 · 장면에, «이 슬라이드만»은 8초 묶음의 처음 값으로. 미팅 중 `psEachSnapAll` 은 작업 보드 페이지(`__psPages.eachOther`)를 건너뛴다 — 예전엔 미팅의 유니폼 · 이름이 작업 보드 페이지까지 바꿨다. board.html 남은 몫 211 바이트.
 - 3.125 — 보관함 «팀 등록»(`studio/analysis.html`)의 선수 사진은 고르면 사진 영역 편집 창(`photo-crop.js` · `PSPhotoCrop.open` → 192px JPEG, 흰 바탕)을 거친다(`PSTeamPhotos.pick`, 제보 70307dd9). 작전판 토큰 창(`openTokenPhotoCrop` — 배경색 · 투명 둘레)은 따로 그대로. 사진을 올리는 브라우저 시험은 `#psCropDlg [data-ok]` 를 눌러야 한다.
+- 3.128 — 새 미팅은 평면 · 15존 · 네이비(사용자 «미팅만들기 들어가면 평면에 15존에 네이비 피치»): 판 모양은 board.html `meetTplSnap`(2.961 흰색을 걷음) · `__meetingFromMatch` 의 바탕 · `board-meet-8.js` 8인제 9장에서 `pitchTheme:''`(네이비) · `gridType:'grid15'`. 평면은 `board-meet-look.js` 가 `__meetSeed` · `__meetingFromMatch` 뒤 transient 로 바꾸고 meet-mode 가 걷히면 되돌린다(코치가 미팅 안에서 고르면 그대로). 이미 만든 미팅에 경기 자료 넣기(`meetInsertSlides`)는 예전 그대로. board.html 남은 몫 84 바이트.
 - 보드 설정 창 모양은 `studio/board-settings-skin.js`(3.087). 줄(`.menurow`)의 `display` 는 건드리지 않는다 — 탭 · 조건(밝기 · 훈련 격자 · 3D 줄 …)이 `display:none` 으로 숨긴다. 한 번 `display:grid` 를 걸었다가 모든 탭의 줄이 다 보였다.
 - 보드 설정 창의 줄 차례는 board.html 의 `PLAN`(id 목록). 줄을 더하면 `tests/board-settings-3010.test.cjs` 와 `tests/browser/board-settings-hierarchy.mjs` 의 목록도 고친다.
 - 3.087 — 커뮤니티 뷰어(`body.comm-viewing`): 떠 있는 도크 · 만들기 틀 규칙은 id 를 열 개 넘게 붙여 보드의 감춤을 이긴다 — 뷰어에서 감출 것은 그 파일 안에서 더 센 선택자로. 보기 전용 막이(`communityBoardReadOnly` 의 guard)가 판을 누른 pointerdown · click 을 window 에서 맨 먼저 멈춘다 — 판 바깥 누름을 알아야 하면 pointerup 을 본다. 뷰어 «보기» 고르개는 `board-comm-look.js`(3.087 board.html 남은 몫 약 1.4KB).
@@ -114,7 +115,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 여기서는 WebKit 이 없다(`PS_SIZE=ipad` 는 WebKit 을 띄워 실패). `anim-all-pages` · `anim-export-fit` 은 영상 녹화 때문에 손대지 않은 코드에서도 여기서 실패한다 — CI 가 판단한다.
 - CI 는 Chromium · WebKit 둘 다 돈다. 느린 WebKit 에서 «다음 프레임» 을 기다리는 시험은 `waitForFunction` 으로 기다린다(3.084 shaper-ball).
 - 헤드리스 크로미움은 iframe 안 `a.download` 내려받기 이름을 «download»로만 알린다(3.115) — 이름은 `HTMLAnchorElement.prototype.click` 을 감싸 `this.download` 로 본다. 받은 PDF 는 `pdftoppm -png` 로 그림을 볼 수 있다.
-- `anim-export-once` 도 이 컨테이너에서는 손대지 않은 코드에서 실패한다(영상 저장 — 3.115 에 staging 으로 확인).
+- `anim-export-once` · `meeting-names-video` 도 이 컨테이너에서는 손대지 않은 코드에서 실패한다(영상 저장 — 3.115 · 3.128 에 staging 으로 확인).
 - 미리보기 그림의 한글 글자: `/usr/share/fonts/opentype/unifont/unifont.otf`.
 
 ## Supabase
