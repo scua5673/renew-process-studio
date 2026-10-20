@@ -456,7 +456,10 @@
     if (kind === 'shaper') { var beak = node(doc, 'g', { 'class': 'ps-chip-turn', transform: turn }); beak.appendChild(outline(doc, 'shaper', { fill: '#ffffff', stroke: 'rgba(10,14,22,.5)', 'stroke-width': '1.1', 'stroke-linejoin': 'round' })); lid.appendChild(beak); }
     var top = kind === 'shirt' ? 'shirt' : 'circle';
     lid.appendChild(outline(doc, top, { fill: fill, stroke: stroke, 'stroke-width': kind === 'shirt' ? '2.2' : '2.6', 'stroke-linejoin': 'round', 'class': 'ps-chip-top' }));
-    if (kind === 'shirt') { var acc = original.querySelector('path:not(.tok-c)'); if (acc) lid.appendChild(acc.cloneNode(true)); }
+    // 3.120 — 유니폼 그림(board-jersey.js 의 .ps-jersey)이 있으면 칩 윗면에도 같은 그림
+    var jersey = original.querySelector('.ps-jersey');
+    if (jersey) lid.appendChild(jersey.cloneNode(true));
+    else if (kind === 'shirt') { var acc = original.querySelector('path:not(.tok-c)'); if (acc) lid.appendChild(acc.cloneNode(true)); }
     lid.appendChild(outline(doc, top, { fill: 'url(#psChipGloss)', 'pointer-events': 'none' }));
     var text = label && label.textContent;
     if (text) { var n = label.cloneNode(true); n.setAttribute('x', '0'); n.setAttribute('pointer-events', 'none'); lid.appendChild(n); }
