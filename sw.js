@@ -1,10 +1,10 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.117';   // 3.117 오류 제보 셋 — 상대 포메이션 8인제(match-formats.js) · 빈 옛 기기본이 스카우팅 후보를 숨기지 않게 · 팀 전환이 멈춘 까닭을 남긴다
+const CACHE = 'process-3.118';   // 3.118 경기 인원 «11 대 11 · 8 대 8» — 상대 포메이션 · 새 미팅 9장이 그 인원으로(match-formats.js · board-meet-8.js)
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
-  '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-pitch-photo.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js', '/studio/board-vault-lazy.js', '/studio/board-guest.js', '/studio/board-vault-browse.js', '/studio/board-vault-import.js', '/studio/board-quick-export.js', '/studio/vault-folder-move.js',
+  '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-pitch-photo.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js', '/studio/board-vault-lazy.js', '/studio/board-guest.js', '/studio/board-vault-browse.js', '/studio/board-vault-import.js', '/studio/board-quick-export.js', '/studio/board-meet-8.js', '/studio/vault-folder-move.js',
   '/studio/process.html',
   '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/pdf-export.js', '/studio/schedule-poster.js', '/studio/review-training.css', '/studio/year-plan.js',
   '/studio/first-work.js', '/studio/first-work.css',
