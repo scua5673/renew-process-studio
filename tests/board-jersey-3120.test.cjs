@@ -47,8 +47,9 @@ test('every jersey shape stays inside its token: circle r 21, shirt 46 × 41 —
 test('details: collar · neck · sleeves with three stripes · side panels · crest · rim; the shirt adds cuffs, back of the neck and a hem stitch',()=>{
   const c=J.spec('circle',{main:'#d71920',acc:'#ffffff',pat:'solid'}),s=J.spec('shirt',{main:'#d71920',acc:'#ffffff',pat:'solid'});
   const has=(list,d)=>list.some(n=>n[1].d===d);
-  for(const k of ['collar','neck','sleeve','stripes','panel','piping','seam','crest','brand','tag','shade1']) assert.ok(has(c,J.GEO.c[k]),'원 '+k);
-  for(const k of ['collar','back','sleeve','stripes','cuff','panel','piping','seam','crest','brand','tag','hem']) assert.ok(has(s,J.GEO.s[k]),'셔츠 '+k);
+  for(const k of ['collar','neck','sleeve','stripes','panel','piping','seam','tag','shade1']) assert.ok(has(c,J.GEO.c[k]),'원 '+k);
+  for(const k of ['collar','back','sleeve','stripes','cuff','panel','piping','seam','tag','hem']) assert.ok(has(s,J.GEO.s[k]),'셔츠 '+k);
+  for(const k of ['brand','crest']) assert.ok(!has(c,J.GEO.c[k])&&!has(s,J.GEO.s[k]),'3.127 — 브랜드 같은 표시 · 팀 엠블럼은 그리지 않는다 '+k);
   assert.equal((J.GEO.c.stripes.match(/M/g)||[]).length,6,'원: 소매 줄 셋씩 양쪽');
   assert.equal((J.GEO.s.stripes.match(/M/g)||[]).length,6,'셔츠: 소매 줄 셋씩 양쪽');
   assert.deepEqual(c[c.length-1],['circle',{r:'21',fill:'none',stroke:'#ffffff','stroke-width':'2.6'}],'원 테두리를 맨 위에 다시');
