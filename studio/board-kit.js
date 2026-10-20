@@ -5,6 +5,7 @@
    · 만들기: 큰 유니폼 그림에서 상의 · 하의 · 스타킹 · 번호를 눌러 고르고, 색 견본을 누른다. 상의는 무늬, 빠른 조합은 한 번에.
    값: 상의 · 무늬 · 번호는 예전 그대로(teamColors · teamColor2 · teamPattern · teamTxtC · teamStrokeC · gk*),
        하의 · 스타킹은 state.teamKit = { 팀: {shorts, socks}, 'gk:팀': {…} } — 보드마다, 모든 장면에 같이(KIT_KEYS).
+   3.121 — «토큰 미리보기»(사용자 «토큰 유니폼 설정할 때 미리보기 가능하게»): 판에서 보일 원형 · 유니폼 토큰(board-jersey.js 그림)을 창 안에 — 바꿀 때마다 다시 그린다.
    3D «사람» 선수가 window.__kitOf(p) 로 하의 · 스타킹을 칠한다. 비우면 자동(하의 = 상의를 어둡게 · 스타킹 = 상의). */
 (function (root, factory) {
   var api = factory();
@@ -32,6 +33,7 @@
     ['#f26b1d', '#1a1a1a', 'solid', '#1a1a1a', '#f26b1d', '주황 · 검정 · 주황']
   ];
   var LABEL = { shirt: '상의', shorts: '하의', socks: '스타킹', num: '번호' };
+  var PREV = [['circle', '원형'], ['shirt', '유니폼']];
 
   function hex(v) { return typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : ''; }
   function isGk(p) { return !!p && !p.coach && (String(p.num) === '1' || p.pos === 'GK'); }
@@ -139,6 +141,10 @@
         '<button type="button" class="ke-auto">자동</button>' +
         '<div class="ke-pats">' + PATS.map(function (p) { return '<button type="button" data-pat="' + p[0] + '" title="' + p[1] + '" aria-label="' + p[1] + '"><i></i></button>'; }).join('') + '</div>' +
         '</div></div>' +
+        // 3.121 — 토큰 미리보기(사용자 «토큰 유니폼 설정할 때 미리보기 가능하게»): 판에서 보일 원형 · 유니폼 토큰을 그대로(board-jersey.js)
+        '<div class="ke-h">토큰 미리보기 <small>판에서 이렇게 보여요</small></div><div class="ke-prev">' + PREV.map(function (p) {
+          return '<div class="ke-tok" data-shape="' + p[0] + '"><svg viewBox="-27 -27 54 54" aria-hidden="true" focusable="false"></svg><span>' + p[1] + '</span></div>';
+        }).join('') + '</div>' +
         '<div class="ke-h">빠른 조합</div><div class="ke-combos">' + COMBOS.map(function (c, i) { return '<button type="button" data-combo="' + i + '" title="' + c[5] + '" aria-label="' + c[5] + '">' + kitHTML('ke-mini') + '</button>'; }).join('') + '</div>' +
         '<div class="ke-ft"><span class="ke-hint">그림을 눌러 고르고, 색을 눌러 입혀요 · 하의 · 스타킹은 3D «사람»에 보여요</span><button type="button" class="ke-reset">기본으로</button></div>';
       doc.body.appendChild(box);
@@ -166,6 +172,35 @@
       win.addEventListener('resize', function () { if (box.classList.contains('on')) place(); });
       return box;
     }
+    // 판의 토큰과 같은 그림: 바탕(원 · 셔츠, 무늬는 작전판 kitSVGDef) + 유니폼(PSJersey) + 번호. 값은 style() 이 고른 #rrggbb 뿐 — setAttribute 로만 넣는다
+    function paintPrev(s) {
+      var shape = '';
+      try { shape = typeof tokShape !== 'undefined' ? tokShape : ''; } catch (_) {}   /* global tokShape */
+      [].forEach.call(box.querySelectorAll('.ke-tok'), function (t) {
+        var sh = t.getAttribute('data-shape'), svg = t.querySelector('svg');
+        t.classList.toggle('on', sh === (shape === 'person' ? 'shirt' : shape));
+        try { drawToken(svg, sh, s, ed.gk ? '1' : '10'); } catch (_) {}
+      });
+    }
+    function drawToken(svg, shape, s, num) {
+      if (!svg) return;
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      var NS = 'http://www.w3.org/2000/svg', J = win.PSJersey, main = s.main, sh = shape === 'shirt';
+      function mk(tag, a) { var e = doc.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; }
+      var stroke = s.stroke || (J && J.lum(main) > .62 ? '#2a3140' : '#ffffff'), fill = main;
+      if (s.pat !== 'solid' && typeof win.kitSVGDef === 'function') {
+        try { var id = 'kePv-' + shape, d = win.kitSVGDef(id, main, s.accent, s.pat); if (d) { var defs = mk('defs', {}); defs.appendChild(d); fill = 'url(#' + id + ')'; } } catch (_) {}
+      }
+      mk('ellipse', { cx: '1.5', cy: sh ? '22' : '20', rx: sh ? '17' : '19', ry: '4.5', fill: 'rgba(0,0,0,.28)' });   // 바닥 그림자(판의 drop-shadow 대신)
+      if (sh) mk('path', { d: (J && J.SHIRT_D) || '', fill: fill, stroke: stroke, 'stroke-width': '2.2', 'stroke-linejoin': 'round' });
+      else mk('circle', { r: '21', fill: fill, stroke: stroke, 'stroke-width': '2.6' });
+      if (J) J.spec(shape, { main: main, acc: s.accent, pat: s.pat, stroke: stroke }).forEach(function (n) { mk(n[0], n[1]); });
+      var txt = s.txt || ink(main), two = String(num).length >= 2;
+      var t = mk('text', { x: '0', y: sh ? '2.5' : '1', 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: txt, 'font-size': sh ? (two ? '16' : '19') : (two ? '18' : '22'),
+        'font-weight': '800', 'font-family': "Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif",
+        stroke: (J && J.lum(txt) > .5) ? 'rgba(0,0,0,.5)' : 'rgba(255,255,255,.6)', 'stroke-width': '.8', 'paint-order': 'stroke', 'stroke-linejoin': 'round' });
+      t.textContent = num;
+    }
     function paintFig(fig, main, accent, pat, shorts, socks, num, mini) {
       if (!fig) return;
       var sh = fig.querySelector('.kf-shirt .kf-fill'); if (sh) sh.style.background = bg(main, accent, pat);
@@ -192,6 +227,7 @@
       var au = box.querySelector('.ke-auto'), autoable = ed.part !== 'shirt' || ed.sub === 'accent';
       au.style.display = autoable ? '' : 'none'; au.classList.toggle('on', autoable && !cur);
       au.textContent = ed.part === 'shirt' ? '없음(흰색)' : '자동';
+      paintPrev(s);
       var pats = box.querySelector('.ke-pats'); pats.style.display = ed.part === 'shirt' ? '' : 'none';
       [].forEach.call(pats.querySelectorAll('[data-pat]'), function (b) { var p = b.getAttribute('data-pat'); b.classList.toggle('on', p === s.pat); b.querySelector('i').style.background = bg(s.main, s.accent === s.main ? '#ffffff' : s.accent, p); });
     }
@@ -315,6 +351,12 @@
       '#psKitEd .ke-pats button i{display:block;width:100%;height:100%;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}',
       '#psKitEd .ke-pats button.on{border-color:#2f6bff;box-shadow:0 0 0 1px #2f6bff}',
       '#psKitEd .ke-h{margin:12px 0 6px;font-weight:800;font-size:12px;opacity:.75}',
+      '#psKitEd .ke-h small{margin-left:4px;font-weight:600;font-size:11px;opacity:.75}',
+      '#psKitEd .ke-prev{display:flex;gap:8px}',
+      '#psKitEd .ke-tok{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px 7px;border-radius:12px;background:#262c3b;color:#E8ECF4;font-size:11.5px;font-weight:700}',
+      '#psKitEd .ke-tok svg{width:80px;height:80px;display:block;overflow:visible}',
+      '#psKitEd .ke-tok.on{box-shadow:0 0 0 2px #2f6bff}',
+      '#psKitEd .ke-tok.on span:after{content:" · 지금 판";font-weight:600;opacity:.7}',
       '#psKitEd .ke-combos{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}',
       '#psKitEd .ke-combos button{height:58px;border-radius:9px;border:1px solid rgba(127,127,127,.22);background:rgba(127,127,127,.05);padding:4px 0}',
       '#psKitEd .ke-combos button:hover{border-color:#2f6bff}',
