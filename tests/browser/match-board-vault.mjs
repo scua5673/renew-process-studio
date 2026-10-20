@@ -125,6 +125,12 @@ try{
   assert.equal(await sf.evaluate(()=>!!document.getElementById('mmSheetOv')),false,'시트를 거치지 않는다');
   await page.waitForFunction(()=>document.body.classList.contains('ps-match-edit')&&document.body.getAttribute('data-ps-app')==='design',null,{timeout:15000});
   bf=await board();
+  // 3.122 — 만들기 전에 «포메이션 고르기»: 경기 준비의 «미팅 여는 중…» 가림막을 걷고 판 위에 뜬다. 상대만 4-3-3 으로 골라 만든다
+  await bf.waitForFunction(()=>{const o=document.getElementById('psMeetForm');return o&&o.classList.contains('on')&&o.getBoundingClientRect().width>0;},null,{timeout:15000});
+  await page.waitForFunction(()=>!document.body.classList.contains('ps-me-wait')&&getComputedStyle(document.getElementById('fBoard')).visibility==='visible',null,{timeout:5000});
+  assert.deepEqual(await bf.evaluate(()=>window.__psMeetFormOpen()),{path:'match',fmt:'11',us:'433',op:'442'});
+  await bf.evaluate(()=>document.querySelector('#psMeetForm [data-team="op"] [data-k="433"]').click());
+  await bf.evaluate(()=>document.querySelector('#psMeetForm .mf-go').click());
   let newId=null;
   for(let t=0;t<60;t++){ newId=await bf.evaluate(async id=>{const d=((await boardStore.get('cs_drill_lib_v1'))||[]).find(d=>d.type==='meeting'&&d.libId!=='Vqa_meet'&&d.matchRef&&d.matchRef.mid===id);return d?d.libId:null;},mid); if(newId)break; await page.waitForTimeout(250); }
   assert.ok(newId,'보관함에 저장됐다');
@@ -132,6 +138,8 @@ try{
   const made=await lib();
   assert.equal(made.name,'가상 상대 FC전 미팅');assert.ok(made.n===9,'기본 9장(선발 11 이 있으면 그것이 BEST 11 자리) '+JSON.stringify(made));
   assert.ok(made.titles.includes('하이블록')&&made.titles.includes('코너킥 공격'),JSON.stringify(made.titles));assert.equal(made.thumbs,made.n,'장마다 그림');
+  assert.equal(await bf.evaluate(async id=>((await boardStore.get('cs_drill_lib_v1'))||[]).find(x=>x.libId===id).slides.find(s=>s.title==='미드블록').snap.players.filter(p=>p.team==='red').map(p=>p.pos).sort().join(','),newId),
+    'DM,GK,LB,LCB,LCM,LW,RB,RCB,RCM,RW,ST','고른 상대 포메이션(4-3-3)');
   await bf.waitForFunction(id=>window.__curVaultId===id&&document.body.classList.contains('vc-match')&&window.__csView==='meeting',newId,{timeout:15000});
   // «경기 자료 넣기» — 표지를 골라 뒤에 붙인다 → 보관함에 자동 저장
   await bf.click('#vCreateParts');await bf.waitForSelector('#mpPartsOv input[data-k]');

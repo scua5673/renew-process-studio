@@ -80,15 +80,17 @@ export async function startFixture(opts={}){
       if(req.method==='GET'){const cols=(url.searchParams.get('select')||'').split(',').filter(Boolean);let rows=[...lib.values()].filter(r=>r.workspace_id===wid);
         if(ids&&ids.startsWith('eq.'))rows=rows.filter(r=>r.lib_id===ids.slice(3));
         if(ids&&ids.startsWith('in.(')){const set=ids.slice(4,-1).split(',').map(x=>x.replace(/^"|"$/g,''));rows=rows.filter(r=>set.includes(r.lib_id));}
+        /* 3.124 — 보관함 확인(library_probe)은 updated_at 내림차순 한 줄을 본다 — 서버처럼 정렬한다(값 없는 줄은 뒤로) */
+        const ord=/^(\w+)\.desc/.exec(url.searchParams.get('order')||'');if(ord)rows.sort((a,b)=>{const x=a[ord[1]],y=b[ord[1]];return x==null?(y==null?0:1):y==null?-1:(x<y?1:x>y?-1:0);});
         if(url.searchParams.get('limit'))rows=rows.slice(0,+url.searchParams.get('limit'));
         body=rows.map(r=>cols.length?Object.fromEntries(cols.map(k=>[k,r[k]??null])):r);
         if(prefer.includes('count=exact'))headers['Content-Range']='0-'+Math.max(0,body.length-1)+'/'+[...lib.values()].filter(r=>r.workspace_id===wid).length;}
       else if(req.method==='POST'){const rows=Array.isArray(req.body)?req.body:[req.body],ignore=prefer.includes('ignore-duplicates');body=[];
-        for(const r of rows){const k=r.workspace_id+'|'+r.lib_id;if(ignore&&lib.has(k))continue;lib.set(k,{...(lib.get(k)||{}),...r,owner_id:r.owner_id||uid});writes.push({step,t:Date.now(),m:'POST',wid:r.workspace_id,k:'ps_library:'+r.lib_id,v:JSON.stringify(r.item||null)});body.push(lib.get(k));}
+        for(const r of rows){const k=r.workspace_id+'|'+r.lib_id;if(ignore&&lib.has(k))continue;lib.set(k,{...(lib.get(k)||{}),...r,owner_id:r.owner_id||uid,updated_at:new Date().toISOString()});writes.push({step,t:Date.now(),m:'POST',wid:r.workspace_id,k:'ps_library:'+r.lib_id,v:JSON.stringify(r.item||null)});body.push(lib.get(k));}
         if(!prefer.includes('return=representation'))body=[];
         if(fx_opts.emptyLibraryInsert&&ignore)body=[];   // 저장은 됐지만 응답 본문이 빈 경우(응답 유실·프록시)
       }
-      else if(req.method==='PATCH'){body=[];for(const r of lib.values())if(r.workspace_id===wid&&(!ids||ids==='eq.'+r.lib_id)){Object.assign(r,req.body);writes.push({step,t:Date.now(),m:'PATCH',wid,k:'ps_library:'+r.lib_id});body.push(r);}}
+      else if(req.method==='PATCH'){body=[];for(const r of lib.values())if(r.workspace_id===wid&&(!ids||ids==='eq.'+r.lib_id)){Object.assign(r,req.body,{updated_at:new Date().toISOString()});writes.push({step,t:Date.now(),m:'PATCH',wid,k:'ps_library:'+r.lib_id});body.push(r);}}
     }else if(url.pathname.endsWith('/rpc/ps_get_or_create_role_invite')){body='FIXJOIN1';   /* 3.052 — 선수별 초대 링크 시험(coach-idp-entry) */
     }else if(url.pathname.endsWith('/rpc/ps_join')){body=req.body&&req.body.p_code==='FIXJOIN1'?WT:null;
     }else if(url.pathname.startsWith('/rest/v1/rpc/')){body=url.pathname.includes('report')?{}:[];}
