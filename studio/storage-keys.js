@@ -205,6 +205,7 @@
     ['ps_lib_priv','device','ls','pref','board.html'],
     ['ps_login_expired','device','ls','session','app.html'],
     ['ps_match_grp','device','ls','pref','scout.html'],
+    ['ps_meet_form_v1','device','ls','pref','board-meet-form.js'],
     ['ps_meet_orient_v2','device','ls','pref','board.html'],
     ['ps_member_names_v1','device','ls','session','scout.html'],
     ['ps_merge_note_v1','device','ls','queue','sync.js'],
