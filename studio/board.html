@@ -19483,9 +19483,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     el.appendChild(nav);
     var ttl=document.createElement("div");ttl.className="vx-title";ttl.innerHTML='<span>위치</span><span>'+folderChildren("").length+'</span>';el.appendChild(ttl);
     var list=document.createElement("div");list.className="vx-folder-list";
-    /* ══ 2.518 · 파인더의 '위치' — 평평한 들여쓰기 목록을 **접었다 펴는 트리**로 ═══════
-       전에는 모든 폴더가 한꺼번에 늘어서서, 하위가 있는지조차 줄 수 없었다.
-       펼침 상태는 기기에 기억한다(cs_vault_open_v1). ☁ 는 표시가 아니라 **스위치**다. */
+    /* 2.518 · 접었다 펴는 위치 트리 */
     var OPENK="cs_vault_open_v1", openMap={};
     try{ openMap=JSON.parse(localStorage.getItem(OPENK)||"{}")||{}; }catch(_){ openMap={}; }
     /* 지금 보고 있는 폴더의 조상은 항상 펴 둔다 — 고른 자리가 안 보이면 트리가 거짓말을 한다 */
@@ -19502,7 +19500,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
         var kid=folderChildren(path).length>0, isOpen=!!openMap[path];
         var row=document.createElement("div");
         row.className="vx-folder"+((libFilter.folder||"")===path?" on":"");
-        row.style.paddingLeft=(6+depth*13)+"px";
+        row.style.paddingLeft=(6+depth*16)+"px";
         var _sp=psIsTeamWs()?folderSharedPath(path):"", _own=(_sp===path);
         /* 펼침 삼각형 */
         var tw=document.createElement("button"); tw.type="button";
@@ -20018,10 +20016,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
       var main=document.createElement("main");main.className="vx-main";
       var labels={"__all":"전체 자료","__recent":"최근 작업","__fav":"즐겨찾기","__shared":"팀 공유","__mine":"내 자료","__unfiled":"미분류"};
       var title=labels[cf]||(cf?cf.replace(/\//g," › "):"보관함");
-      /* 폴더 그리드는 본문에서 제거(내비 2겹) — 폴더 탐색은 사이드바 전담. 활성 분류는 브레드크럼에 이어 쓴다 */
       var _catLb=(libFilter.cats||[]).map(function(k){var v=VCATS.find(function(c){return c[0]===k;});return v?v[1]:k;}).join('·');
       main.innerHTML='<div class="vx-main-head"><div class="vx-crumb">'+esc(title)+(_catLb?' › <b>'+esc(_catLb)+'</b>':'')+'<small>'+arr.length+'개 자료</small></div></div>';
       var items=document.createElement("div");items.className="vx-items "+(window.__vaultList?"vx-list":"vx-grid");
+      PSVaultFolderMove.appendFolders({host:items,kids:kids,parent:cf==="__all"?"":cf,lib:lib,open:function(path){libFilter.folder=path;window.__vaultPreviewId=null;vaultPushHist(path);renderDrillFiles();},menu:function(e,path,parent){folderMenu(e,path,parent,lib);},drop:dropTarget});
       var selected=arr.find(function(d){return d.libId===window.__vaultPreviewId;})||arr[0]||null;
       if(selected)window.__vaultPreviewId=selected.libId;
       var _pathBarEl=null;   /* 2.644 */
