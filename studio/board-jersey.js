@@ -5,7 +5,10 @@
    모양은 원(r 21) · 셔츠(SHIRT_D) 안에 맞춰 미리 계산한 선이다 — 잘라내기(clip) · 그라디언트가 없어 끌기 중 사파리가 칩마다 다시 그려도 가볍다.
    · makeToken 을 감싸 그린 뒤 얹는다. 3D 칩은 PSBoardDepth.apply 앞에서 얹고, board-token-depth 가 칩 윗면에 같은 무늬(.ps-jersey)를 복사한다.
    · 입체 칩의 광택(_setChip3d 의 .ps-c3 원)은 무늬 위로 옮긴다. 코치 · 사진 · 쉐이퍼 토큰은 그대로.
-   · 값은 setAttribute 로만 넣는다(커뮤니티 · 공유 보드의 색 글자가 HTML 이 되지 않게). */
+   · 값은 setAttribute 로만 넣는다(커뮤니티 · 공유 보드의 색 글자가 HTML 이 되지 않게).
+   3.127 — 사용자 «해외리그 팀 유니폼 더 잘» → 시안 → «브랜드로고는 다 빼주고» · «팀엠블럼도 빼줘»: 가슴의 작은 체크 표시(브랜드처럼 보인다)와 방패 엠블럼을 뺐다.
+   소매 색 · 테두리 색 · 목깃(둥근 목 · V넥 · 카라)은 팀 유니폼 칸 state.teamKit[팀] 의 sleeve · trim · collar(board-kit.js __kitMore).
+   원형은 소매 자리가 어깨에 좁게 붙어 있어 소매 색을 고르면 소매 줄을 빼고, 밝은 소매면 자동 테두리를 어둡게 한다(흰 소매가 흰 테두리에 묻혔다). */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -23,7 +26,15 @@
     c: { v: 'M-12.6 -15.83L-12.6 15.83M-4.2 -19.8L-4.2 19.8M4.2 -19.8L4.2 19.8M12.6 -15.83L12.6 15.83', thinv: 'M-15.96 -12.46L-15.96 12.46M-11.76 -16.46L-11.76 16.46M-2.1 -20.13L-2.1 20.13M2.1 -20.13L2.1 20.13M11.76 -16.46L11.76 16.46M15.96 -12.46L15.96 12.46', h: 'M-15.83 -12.6L15.83 -12.6M-19.8 -4.2L19.8 -4.2M-19.8 4.2L19.8 4.2M-15.83 12.6L15.83 12.6', hoop: 'M-19.36 -5.88L19.36 -5.88M-19.36 5.88L19.36 5.88', band: 'M-5.88 -19.36L-5.88 19.36M5.88 -19.36L5.88 19.36', half: 'M0 -20.24L0 20.24', quarters: 'M0 -20.24L0 20.24M-20.24 0L20.24 0', sash: 'M7.17 -18.93L-18.93 7.17M18.93 -7.17L-7.17 18.93', diag: 'M-5.81 -19.39L-19.39 -5.81M9.46 -17.86L-17.86 9.46M17.86 -9.46L-9.46 17.86M19.39 5.81L5.81 19.39' },
     s: { v: 'M-13.8 -18.06L-13.8 -7.81M-4.6 -16.39L-4.6 19.48M4.6 -16.39L4.6 19.48M13.8 -18.06L13.8 -7.81', thinv: 'M-17.48 -16.43L-17.48 -6.75M-12.88 -18.31L-12.88 18.77M-2.3 -15.54L-2.3 19.48M2.3 -15.54L2.3 19.48M12.88 -18.31L12.88 18.77M17.48 -16.43L17.48 -6.75', h: 'M-21 -11.9L21 -11.9M-13.59 -3.8L13.59 -3.8M-13.59 4.3L13.59 4.3M-13.59 12.4L13.59 12.4', hoop: 'M-13.59 -5.42L13.59 -5.42M-13.59 5.92L13.59 5.92', band: 'M-6.44 -17.46L-6.44 19.48M6.44 -17.46L6.44 19.48', half: 'M0 -15.29L0 19.48', quarters: 'M0 -15.29L0 19.48M-13.59 .25L13.59 .25', sash: 'M8.93 -18.95L-13.58 .87M13.58 -.37L-8.96 19.48', diag: 'M-7.02 -17.87L-19.19 -7.15M12.08 -18.49L-13.58 4.1M13.58 -3.6L-12.3 19.18M13.59 12.58L5.75 19.49' }
   };
-  var PATS = ['solid', 'v', 'thinv', 'h', 'half', 'quarters', 'band', 'hoop', 'sash', 'diag'];
+  var PATS = ['solid', 'v', 'thinv', 'h', 'half', 'quarters', 'band', 'hoop', 'sash', 'diag', 'check', 'chest', 'fade', 'chev'];
+  // 3.127 목깃 — crew(둥근 목)는 GEO 의 collar · neck · back · cpipe 그대로. 원(c) · 셔츠(s) 안에 맞춰 미리 계산한 선
+  var COLLARS = ['crew', 'v', 'polo'];
+  var COLLAR = {
+    v: { c: { collar: 'M-9.6 -18.68L0 -6.6L9.6 -18.68A21 21 0 0 0 -9.6 -18.68Z', neck: 'M-6.9 -19.85L0 -10.3L6.9 -19.85A21 21 0 0 0 -6.9 -19.85Z', cpipe: 'M-8 -19.4L0 -8.7L8 -19.4' },
+         s: { back: 'M-8 -20L0 -10.4L8 -20Q0 -22.4 -8 -20Z', collar: 'M-8 -20L0 -10.4L8 -20L9.5 -19.4L0 -7.2L-9.5 -19.4Z', cpipe: 'M-8.75 -19.7L0 -8.8L8.75 -19.7' } },
+    polo: { c: { neck: 'M-5.6 -20.24Q0 -16.6 5.6 -20.24A21 21 0 0 0 -5.6 -20.24Z', placket: 'M-1.3 -16.3H1.3V-7.4H-1.3Z', flaps: 'M-6.4 -19.9Q-3.4 -16.9 -0.4 -16.1L-3.5 -11.4Q-8.2 -13.3 -10.6 -17.2ZM6.4 -19.9Q3.4 -16.9 0.4 -16.1L3.5 -11.4Q8.2 -13.3 10.6 -17.2Z', btn: [[0, -13.6], [0, -10.2]] },
+            s: { back: 'M-6 -20.3Q0 -16.4 6 -20.3Q0 -22.2 -6 -20.3Z', placket: 'M-1.25 -16.6H1.25V-8.2H-1.25Z', flaps: 'M-6.8 -20.2Q-3.6 -17.4 -0.4 -16.6L-3.4 -11.9Q-8.2 -14 -10.4 -19ZM6.8 -20.2Q3.6 -17.4 0.4 -16.6L3.4 -11.9Q8.2 -14 10.4 -19Z', btn: [[0, -14.2], [0, -11]] } }
+  };
 
   function hex(v) {
     if (typeof v !== 'string') return '';
@@ -42,11 +53,11 @@
   // 무늬 · 색 → 그리는 색들. main 은 소매 · 뒷목 · 옆판의 바탕, trim 은 목깃 · 소매 줄 · 소맷단 · 엠블럼.
   function palette(o) {
     o = o || {};
-    var main = hex(o.main) || '#3a6df0', acc = hex(o.acc), pat = PATS.indexOf(o.pat) >= 0 ? o.pat : 'solid', L = lum(main);
-    var trim = acc && Math.abs(lum(acc) - L) >= .14 ? acc : (L > .55 ? dark(main, .42) : light(main, L < .08 ? .78 : .62));
+    var main = hex(o.main) || '#3a6df0', acc = hex(o.acc), pat = PATS.indexOf(o.pat) >= 0 ? o.pat : 'solid', L = lum(main), tr = hex(o.trim);
+    var trim = tr && Math.abs(lum(tr) - L) >= .08 ? tr : (acc && Math.abs(lum(acc) - L) >= .14 ? acc : (L > .55 ? dark(main, .42) : light(main, L < .08 ? .78 : .62)));   // 고른 테두리 색이 먼저(몸통과 거의 같으면 자동)
     var Lt = lum(trim);
-    return {
-      main: main, trim: trim, pat: pat,
+    var k = {
+      main: main, trim: trim, pat: pat, sleeve: hex(o.sleeve) || main, collar: COLLARS.indexOf(o.collar) >= 0 ? o.collar : 'crew',
       neck: L < .08 ? light(main, .2) : dark(main, .38),
       panel: L < .1 ? light(main, .1) : dark(main, .16),
       seam: L > .6 ? 'rgba(0,0,0,.22)' : 'rgba(0,0,0,.34)',
@@ -56,32 +67,41 @@
       pin: (L > .72 && (!acc || lum(acc) > .72)) ? 'rgba(0,0,0,.18)' : 'rgba(255,255,255,.72)',
       stroke: typeof o.stroke === 'string' && o.stroke ? o.stroke : (L > .62 ? '#2a3140' : '#ffffff')
     };
+    // 밝은 소매 + 자동 흰 테두리 → 어두운 테두리(소매가 테두리에 묻히지 않게). 사람이 고른 테두리(autoStroke === false)는 그대로
+    if (k.sleeve !== main && o.autoStroke !== false && lum(k.sleeve) > .55 && lum(k.stroke) > .85) k.stroke = '#2a3140';
+    return k;
   }
   function P(d, a) { a.d = d; return ['path', a]; }
   function line(d, color, w, extra) { var a = { d: d, fill: 'none', stroke: color, 'stroke-width': String(w) }; for (var k in extra || {}) a[k] = extra[k]; return ['path', a]; }
   // 모양('circle' | 'shirt') · 색 → 그릴 요소 목록 [태그, 속성]. 순서 = 그리는 순서(아래 → 위).
   function spec(shape, o) {
     var k = palette(o), sh = shape === 'shirt', G = sh ? GEO.s : GEO.c, pins = (sh ? PINS.s : PINS.c)[k.pat] || '', out = [];
-    var round = { 'stroke-linecap': 'round' };
-    if (sh) { out.push(P(G.back, { fill: k.neck, stroke: k.stroke, 'stroke-width': '1.1', 'stroke-linejoin': 'round' })); out.push(P(G.tag, { fill: 'rgba(255,255,255,.55)' })); }
+    var round = { 'stroke-linecap': 'round' }, slv = k.sleeve !== k.main, C = k.collar === 'crew' ? null : COLLAR[k.collar][sh ? 's' : 'c'];
+    var back = C && C.back ? C.back : G.back;
+    if (sh) { out.push(P(back, { fill: k.neck, stroke: k.stroke, 'stroke-width': '1.1', 'stroke-linejoin': 'round' })); if (!C) out.push(P(G.tag, { fill: 'rgba(255,255,255,.55)' })); }
     if (pins) out.push(line(pins, k.pin, .55));
     out.push(P(G.panel, { fill: k.panel }));
     out.push(line(G.piping, k.trim, .7, { 'stroke-opacity': '.9' }));
     out.push(line(G.wrinkle, 'rgba(0,0,0,.16)', .55, round));
-    out.push(P(G.sleeve, { fill: k.main }));
+    out.push(P(G.sleeve, { fill: k.sleeve }));
     if (sh) out.push(P(G.sshade, { fill: '#000', 'fill-opacity': '.1' }));
-    out.push(line(G.stripes, k.trim, .95));
-    if (sh) { out.push(P(G.cuff, { fill: k.trim })); out.push(line(G.cuffIn, k.main, .45)); }
+    // 소매 줄: 원형에 소매 색을 고르면 뺀다(좁은 자리에 소매 색만) · 소매와 테두리가 같은 색이면 몸통 색으로
+    if (!(slv && !sh)) out.push(line(G.stripes, slv && Math.abs(lum(k.sleeve) - lum(k.trim)) < .14 ? k.main : k.trim, .95));
+    if (sh) { out.push(P(G.cuff, { fill: k.trim })); out.push(line(G.cuffIn, k.sleeve, .45)); }
     out.push(line(G.seam, k.seam, .75));
-    out.push(P(G.collar, { fill: k.trim, stroke: k.seam, 'stroke-width': '.5', 'stroke-linejoin': 'round' }));
-    out.push(line(G.cpipe, k.cpipe, .45));
-    if (!sh) { out.push(P(G.neck, { fill: k.neck })); out.push(P(G.tag, { fill: 'rgba(255,255,255,.55)' })); }
+    if (C && C.flaps) {   // 카라: 목 → 앞트임 → 깃 → 단추 둘
+      if (!sh) out.push(P(C.neck, { fill: k.neck }));
+      out.push(P(C.placket, { fill: k.main, stroke: k.seam, 'stroke-width': '.55' }));
+      out.push(P(C.flaps, { fill: k.trim, stroke: k.seam, 'stroke-width': '.55', 'stroke-linejoin': 'round' }));
+      C.btn.forEach(function (b) { out.push(['circle', { cx: String(b[0]), cy: String(b[1]), r: '.62', fill: lum(k.main) > .6 ? '#5e6675' : '#ffffff' }]); });
+    } else {
+      out.push(P(C ? C.collar : G.collar, { fill: k.trim, stroke: k.seam, 'stroke-width': '.5', 'stroke-linejoin': 'round' }));
+      out.push(line(C ? C.cpipe : G.cpipe, k.cpipe, .45));
+      if (!sh) { out.push(P(C ? C.neck : G.neck, { fill: k.neck })); if (!C) out.push(P(G.tag, { fill: 'rgba(255,255,255,.55)' })); }
+    }
     if (sh) out.push(line(G.hem, k.stitch, .5, { 'stroke-dasharray': '1 .8' }));
     else { out.push(P(G.shade2, { fill: '#000', 'fill-opacity': '.08' })); out.push(P(G.shade1, { fill: '#000', 'fill-opacity': '.08' })); }
-    out.push(P(G.crest, { fill: k.trim, stroke: k.crestLine, 'stroke-width': '.45', 'stroke-linejoin': 'round' }));
-    out.push(line(G.crestIn, k.main, .55));
-    if (k.pat !== 'solid') out.push(line(G.brand, lum(k.trim) > .5 ? 'rgba(0,0,0,.35)' : 'rgba(255,255,255,.6)', 1.4, round));   // 줄무늬 위에서도 보이게
-    out.push(line(G.brand, k.trim, .75, round));
+    // 3.127 — 가슴의 브랜드 같은 표시(G.brand)와 팀 엠블럼(G.crest)은 그리지 않는다(사용자 «브랜드로고는 다 빼주고» · «팀엠블럼도 빼줘»)
     if (sh) out.push(P(SHIRT_D, { fill: 'none', stroke: k.stroke, 'stroke-width': '2.2', 'stroke-linejoin': 'round' }));
     else out.push(['circle', { r: '21', fill: 'none', stroke: k.stroke, 'stroke-width': '2.6' }]);
     return out;
@@ -100,6 +120,9 @@
     if (isGk(p)) { o.main = call(win, 'gkColFor', team); o.acc = call(win, 'gkAccent', team); o.pat = call(win, 'gkPat', team); }
     else { o.main = call(win, 'teamMain', team); o.acc = call(win, 'teamAccent', team); o.pat = call(win, 'teamPat', team); }
     if (!hex(o.main)) { var f = tok && tok.getAttribute('fill'); if (hex(f)) o.main = f; }
+    // 3.127 소매 · 테두리 · 목깃(팀 유니폼 칸) · 테두리를 사람이 골랐는지(자동이면 밝은 소매에 어두운 테두리)
+    try { var x = typeof win.__kitMore === 'function' ? win.__kitMore(p) : null; if (x) { o.sleeve = x.sleeve; o.trim = x.trim; o.collar = x.collar; } } catch (_) {}
+    try { var sc = typeof state !== 'undefined' && state ? (isGk(p) ? state.gkStrokeC : state.teamStrokeC) : null, sv = sc && sc[team]; o.autoStroke = !sv || sv === 'auto'; } catch (_) {}   /* global state */
     return o;
   }
   function shaperLook() { try { return typeof tokShape !== 'undefined' && tokShape === 'shaper'; } catch (_) { return false; } }   /* global tokShape */
@@ -118,8 +141,13 @@
     // 유니폼 모양의 옛 목깃 · 소매 선(SHIRT_ACC)은 새 그림이 대신한다
     if (shape === 'shirt' && next && next.nodeType === 1 && String(next.tagName).toLowerCase() === 'path' && !next.getAttribute('class') && next.getAttribute('fill') === 'none') { var old = next; next = next.nextSibling; old.parentNode.removeChild(old); }
     g.insertBefore(grp, next);
-    if (shape === 'circle') {   // 번호를 가슴 가운데로 조금 내린다(목깃 자리)
-      for (var c = g.firstChild; c; c = c.nextSibling) if (c.nodeType === 1 && String(c.tagName).toLowerCase() === 'text') { if (c.getAttribute('y') === '0') c.setAttribute('y', '1'); break; }
+    var kit = null;
+    for (var c = g.firstChild; c; c = c.nextSibling) if (c.nodeType === 1 && String(c.tagName).toLowerCase() === 'text') {
+      if (shape === 'circle' && c.getAttribute('y') === '0') c.setAttribute('y', '1');   // 번호를 가슴 가운데로 조금 내린다(목깃 자리)
+      // 3.127 — 체크 · 갈매기는 작게 보면 번호가 무늬에 묻힌다: 번호 테두리를 진하게
+      if (!kit) kit = kitFor(win, p, tok);
+      if ((kit.pat === 'check' || kit.pat === 'chev') && c.getAttribute('stroke')) { c.setAttribute('stroke-width', '1.6'); c.setAttribute('stroke', lum(c.getAttribute('fill') || '#ffffff') > .5 ? 'rgba(0,0,0,.72)' : 'rgba(255,255,255,.8)'); }
+      break;
     }
     return true;
   }
@@ -168,5 +196,5 @@
     if (win.document.readyState === 'loading') win.document.addEventListener('DOMContentLoaded', go); else go();
   }
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) boot(window);
-  return { GEO: GEO, PINS: PINS, SHIRT_D: SHIRT_D, palette: palette, spec: spec, svgText: svgText, decorate: decorate, liftGloss: liftGloss, install: install, kitFor: kitFor, hex: hex, lum: lum };
+  return { GEO: GEO, PINS: PINS, SHIRT_D: SHIRT_D, COLLAR: COLLAR, COLLARS: COLLARS, PATS: PATS, palette: palette, spec: spec, svgText: svgText, decorate: decorate, liftGloss: liftGloss, install: install, kitFor: kitFor, hex: hex, lum: lum };
 });
