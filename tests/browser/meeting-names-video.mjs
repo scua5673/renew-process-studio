@@ -14,6 +14,7 @@ try{
   await bf.waitForSelector('.vcc-item');
   await bf.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
   await bf.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length===9,null,{timeout:15000});
+  await bf.waitForSelector('#psMeetForm.on');await bf.evaluate(()=>document.querySelector('#psMeetForm .mf-skip').click());   // 3.122 — 새 미팅의 «포메이션 고르기»는 기본 그대로
   await page.waitForTimeout(400);
 
   // 1) 세로형 먼저 — 고르개 순서와 새 미팅 기본

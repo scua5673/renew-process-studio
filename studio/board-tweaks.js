@@ -87,6 +87,29 @@
     });
     return recs;
   }
+  // ── 유니폼(팀 · GK 색 · 무늬 · 테두리 · 글자색)도 같은 모양으로 — 미팅의 다른 슬라이드에(3.122). 되돌리기는 undoPitch(옛 값 그대로 돌려놓기)
+  var KIT_KEYS = ['teamColors', 'teamColor2', 'teamPattern', 'teamStrokeC', 'teamTxtC', 'teamKit', 'gkColors', 'gkColor2', 'gkPattern', 'gkStrokeC', 'gkTxtC'];
+  function putKit(sn, kit, keys) {
+    if (!sn || typeof sn !== 'object' || !kit) return null;
+    var was = null;
+    (keys || KIT_KEYS).forEach(function (k) {
+      var v = JSON.stringify(kit[k] || {}); if (JSON.stringify(sn[k] || {}) === v) return;
+      if (!was) was = {};
+      was[k] = Object.prototype.hasOwnProperty.call(sn, k) ? sn[k] : undefined;
+      sn[k] = JSON.parse(v);
+    });
+    return was;
+  }
+  function spreadKit(items, kit, skip, keys) {
+    var recs = [];
+    (items || []).forEach(function (it, i) {
+      if (!it || i === skip) return;
+      var r = { it: it, snap: putKit(it.snap, kit, keys), frames: [] };
+      (Array.isArray(it.frames) ? it.frames : []).forEach(function (f) { var w = f && putKit(f.snap, kit, keys); if (w) r.frames.push([f, w]); });
+      if (r.snap || r.frames.length) recs.push(r);
+    });
+    return recs;
+  }
   function undoPitch(recs) { (recs || []).forEach(function (r) { backPitch(r.it.snap, r.snap); r.frames.forEach(function (fw) { backPitch(fw[0].snap, fw[1]); }); }); }
 
   function mount(win) {
@@ -298,9 +321,78 @@
     win.__psPitchAllNow = spreadNow;   // 시험 · 진단용
     win.__psPitchThumbsLeft = function () { return thumbQ.length; };
 
+    // ── 7. 미팅의 유니폼은 모든 슬라이드에(3.122 사용자 «미팅에서 우리팀 상대 팀 유니폼 바꾸면 모든 페이지에 적용되게») ──
+    // 보드는 유니폼을 바꾸면 지금 슬라이드의 장면에만 넣었다(kitPropagateIfChanged — 2.975 작전판 «모든 장면 · 모든 페이지»).
+    // 미팅이면 다른 슬라이드(와 그 장면)에도 넣는다. 색 고르개를 끄는 동안 여러 번 불려도 «이 슬라이드만»은 처음 값으로 되돌린다(8초 안의 한 묶음).
+    var kitRun = null, kitT = 0;
+    function kitKeys() { var k = win.KIT_KEYS; return Array.isArray(k) && k.length ? k : KIT_KEYS; }
+    function kitNow() {   /* global state */
+      var st; try { st = typeof state !== 'undefined' ? state : null; } catch (_) { st = null; } if (!st) return null;
+      var o = {}; kitKeys().forEach(function (k) { o[k] = JSON.parse(JSON.stringify(st[k] || {})); }); return o;
+    }
+    function kitMerge(run, recs) {
+      recs.forEach(function (r) {
+        var o = null; for (var i = 0; i < run.length; i++) if (run[i].it === r.it) { o = run[i]; break; }
+        if (!o) { run.push(r); return; }
+        if (r.snap) { if (!o.snap) o.snap = r.snap; else for (var k in r.snap) if (!(k in o.snap)) o.snap[k] = r.snap[k]; }
+        r.frames.forEach(function (fw) { var hit = null; o.frames.forEach(function (x) { if (x[0] === fw[0]) hit = x; }); if (!hit) o.frames.push(fw); else for (var k2 in fw[1]) if (!(k2 in hit[1])) hit[1][k2] = fw[1][k2]; });
+      });
+    }
+    function kitSpreadNow() {
+      if (!doc.body.classList.contains('meet-mode') || playing() || win.__ksNav || win.__meetVideoBusy || win.__animExport) return null;
+      var slides = slidesOf(), kit = kitNow(); if (!slides || !kit) return null;
+      var skip = -1; try { skip = win.__meet && win.__meet.idx ? win.__meet.idx() : -1; } catch (_) {}
+      var recs = spreadKit(slides, kit, skip, kitKeys()); if (!recs.length) return null;
+      var now = Date.now(); if (!kitRun || now - kitRun.t > 8000) kitRun = { recs: [], t: now }; kitRun.t = now;
+      kitMerge(kitRun.recs, recs);
+      queueThumbs(recs, true);
+      var run = kitRun;
+      clearTimeout(kitT); kitT = win.setTimeout(function () {   // 고르는 동안은 알리지 않고, 멈추면 한 번
+        try { if (win.__meetSyncCur) win.__meetSyncCur({ thumb: true }); } catch (_) {}
+        var n = run.recs.length;
+        toast('유니폼을 모든 슬라이드에 적용했어요 (다른 슬라이드 ' + n + '장)');
+        try {
+          var t = doc.getElementById('cs-ftoast'); if (!t) return;
+          var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = '이 슬라이드만';
+          b.addEventListener('click', function (ev) {
+            ev.stopPropagation(); try { b.remove(); } catch (_) {}
+            undoPitch(run.recs); if (kitRun === run) kitRun = null;
+            queueThumbs(run.recs, true);
+            toast('이 슬라이드만 바꾸고 다른 슬라이드는 되돌렸어요');
+          });
+          b.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+          t.appendChild(b); t.style.pointerEvents = 'auto';
+          clearTimeout(t._ft); t._ft = win.setTimeout(function () { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(10px)'; t.style.pointerEvents = 'none'; win.setTimeout(function () { t.textContent = ''; t.setAttribute('aria-hidden', 'true'); }, 220); }, 6000);
+        } catch (_) {}
+      }, 450);
+      return recs;
+    }
+    function hookKit() {
+      var f = win.kitPropagateIfChanged; if (typeof f !== 'function') return false; if (f.__psKitAll) return true;
+      var g = function () {
+        var before = win._kitBase, r = f.apply(this, arguments);
+        try { if (before != null && win._kitBase !== before) kitSpreadNow(); } catch (_) {}   // 보드가 «바뀌었다»고 본 때만(불러오기 · 넘기기는 기준만 바꾼다)
+        return r;
+      };
+      g.__psKitAll = 1; win.kitPropagateIfChanged = g; return true;
+    }
+    win.__psKitAllNow = kitSpreadNow;   // 시험 · 진단용
+    // 미팅의 «모든 장»은 슬라이드다 — 미팅을 고치는 동안 뒤에 둔 작업 보드의 다른 페이지는 건드리지 않는다.
+    // 예전엔 미팅에서 유니폼 · 선수 이름을 바꾸면 psEachSnapAll 이 작업 보드의 페이지(__psPages)까지 바꿔 저장했다(2.975 부터).
+    function hookEach() {
+      var f = win.psEachSnapAll; if (typeof f !== 'function') return false; if (f.__psMeetOnly) return true;
+      var g = function () {
+        var P = win.__psPages, eo = P && P.eachOther;
+        if (typeof eo !== 'function' || !doc.body.classList.contains('meet-mode')) return f.apply(this, arguments);
+        P.eachOther = function () { return 0; };
+        try { return f.apply(this, arguments); } finally { P.eachOther = eo; }
+      };
+      g.__psMeetOnly = 1; win.psEachSnapAll = g; return true;
+    }
+
     // ── 시작 · 다시 그릴 때 ──
     var tries = 0;
-    (function boot() { var ok = hookSpeed(), ok2 = hookPitch(); if ((!ok || !ok2) && ++tries < 40) win.setTimeout(boot, 250); })();
+    (function boot() { var ok = hookSpeed(), ok2 = hookPitch(), ok3 = hookKit() && hookEach(); if ((!ok || !ok2 || !ok3) && ++tries < 40) win.setTimeout(boot, 250); })();
     try {
       new win.MutationObserver(function (list) {
         for (var i = 0; i < list.length; i++) for (var j = 0; j < list[i].addedNodes.length; j++) { var n = list[i].addedNodes[j]; if (n && n.id === 'evSheet') capRow(n); }
@@ -315,5 +407,6 @@
     if (win.document.readyState === 'loading') win.document.addEventListener('DOMContentLoaded', go); else go();
   }
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) boot(window);
-  return { frame169: frame169, reelBox: reelBox, stripPageCaps: stripPageCaps, putPitch: putPitch, spreadPitch: spreadPitch, undoPitch: undoPitch, PITCH_KEYS: PITCH_KEYS, SPEED_ALL: SPEED_ALL, CAP: CAP };
+  return { frame169: frame169, reelBox: reelBox, stripPageCaps: stripPageCaps, putPitch: putPitch, spreadPitch: spreadPitch, undoPitch: undoPitch, PITCH_KEYS: PITCH_KEYS, SPEED_ALL: SPEED_ALL, CAP: CAP,
+    KIT_KEYS: KIT_KEYS, putKit: putKit, spreadKit: spreadKit };
 });
