@@ -210,8 +210,32 @@ test('safe metadata preserves allowed short codes and limits long messages witho
   assert.equal(meta.stage,'first_success');assert.equal(meta.source,'onboarding');assert.equal(meta.msg.length,120);assert.equal(meta.reason.length,80);assert.ok(!Object.hasOwn(meta,'body'));
 });
 
-test('failed local queue append does not cause unqueued event to be acknowledged',async()=>{
+test('failed local queue append keeps the queue intact and sends the unqueued row once from memory',async()=>{
+  /* 3.126 — 예전엔 못 적은 줄을 버렸다. 이제 메모리에서 한 번 보낸다(저장 공간이 찬 기기의 storage_full 이 바로 그 줄이다) */
   const h=harness();h.track('saved');h.hooks.write=()=>{throw new Error('storage quota');};h.track('not_persisted');
-  delete h.hooks.write;const {pending}=await h.start();assert.deepEqual(h.requests[0].rows.map(x=>x.event_name),['saved']);
+  delete h.hooks.write;assert.deepEqual(h.queue().map(x=>x.row.event_name),['saved'],'대기열은 그대로');
+  const {pending}=await h.start();assert.deepEqual(h.requests[0].rows.map(x=>x.event_name),['not_persisted','saved']);
   h.requests[0].resolve(ok);await pending;assert.equal(h.queue().length,0);
+});
+
+// 3.126 — 저장 공간이 찬 기기의 «무엇이 찼나»(storage_full)는 작은 저장소에 대기열을 못 적어도 메모리에서 한 번 보낸다.
+test('a row that cannot be queued in a full localStorage is still sent once from memory', async()=>{
+  const h=harness();
+  h.hooks.write=k=>{ if(k==='ps_event_queue_v2'){ const e=new Error('full'); e.name='QuotaExceededError'; throw e; } };
+  h.track('storage_full',{status:'error',feature:'storage',error_code:'ls_quota',meta:{ls:4900}});
+  assert.equal(h.queue().length,0,'대기열에는 못 적었다');
+  const {pending}=await h.start();
+  assert.equal(h.requests.length,1);assert.deepEqual(h.requests[0].rows.map(x=>x.event_name),['storage_full']);
+  assert.equal(h.requests[0].rows[0].meta.ls,4900);
+  h.requests[0].resolve(ok);await pending;
+  await h.start();assert.equal(h.requests.length,1,'두 번 보내지 않는다');
+});
+
+test('a full localStorage sends each unqueued event name once per page, not every repeat', async()=>{
+  const h=harness();h.hooks.write=k=>{ if(k==='ps_event_queue_v2')throw new Error('full'); };
+  for(let i=0;i<5;i++)h.track('sync_failed',{status:'error',error_code:'sync_storage'});
+  h.track('storage_full',{status:'error',error_code:'ls_quota'});
+  const {pending}=await h.start();
+  assert.deepEqual(h.requests[0].rows.map(x=>x.event_name),['sync_failed','storage_full'],'5분 억제 표도 못 적는 기기 — 이름마다 한 번');
+  h.requests[0].resolve(ok);await pending;
 });

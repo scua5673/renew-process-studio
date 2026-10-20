@@ -8,7 +8,7 @@ const tick=()=>new Promise(r=>setImmediate(r)),clone=v=>v===undefined?undefined:
 function harness(){
  const local=new Map([['ps_sync_session','{"uid":"A"}'],['ps_active_ws','team-A'],['ps_cache_owner_v1','{"uid":"A","wid":"team-A","nonce":"one"}']]),disk=new Map(),writes=[],removals=[],hooks={},diagnostics=[];
  let txNum=0;
- const c={Promise,JSON,Object,Array,String,Date,Error,STORE:'kv',DEVICE_LOCAL:{cs_drill_lib_v1:1},AUX_IDB_PREFIX:'ps_sync_base_',
+ const c={Promise,JSON,Object,Array,String,Date,Error,STORE:'kv',DEVICE_LOCAL:{cs_drill_lib_v1:1},IDB_LEFT:{cs_notes_v1:1,training_sessions_v1:1},AUX_IDB_PREFIX:'ps_sync_base_',
   emptyish:s=>s==null||s===''||s==='[]'||s==='{}'||s==='null',isAuxIDBKey:k=>k.startsWith('ps_sync_base_'),localKeys:p=>[...local.keys()].filter(k=>k.startsWith(p)),requestPersist:async()=>true,
   diagnostic:(stage,e)=>diagnostics.push([stage,e.name]),isQuotaErr:()=>false,warnFull(){},setTimeout:f=>setImmediate(f),CustomEvent:function(){},dispatchEvent(){},migrated:Promise.resolve(),idbKeys:async()=>[],
   localStorage:{getItem:k=>local.get(k)??null,setItem:(k,v)=>local.set(k,String(v)),removeItem(k){removals.push(k);local.delete(k);}},
@@ -188,3 +188,75 @@ test('3.124 the daily automatic tidy runs only in the top window',()=>{
   assert.equal(ran,top?1:0,top?'맨 위 창은 돈다':'iframe 은 돌지 않는다');
  }
 });
+
+/* 3.126 — 사용자 «저장공간이 부족하지 않게»(제보 a4d77bba). 화면이 IndexedDB 만 읽는 동기화 키(노트 · 훈련 세션 …)의 옛 localStorage 사본은
+   누구도 읽지 않는데 동기화가 «있으면 같이 고친다»로 살려 두어 칸을 채웠다. 안전 정리가 DEVICE_LOCAL 과 같은 길로 비운다 — 자료는 버리지 않는다. */
+test('3.126 an identical leftover of an IDB-only synced key leaves localStorage',async()=>{
+ const h=harness(),key='training_sessions_v1';h.c.slimThumbs=async()=>({n:0,saved:0});h.disk.set(key,'{"a":1}');h.local.set(key,'{"a":1}');
+ const r=await h.c.optimizer.optimize();
+ assert.equal(h.local.has(key),false,'같은 사본은 지운다');assert.equal(h.disk.get(key),'{"a":1}','정본은 그대로');
+ assert.ok(Array.from(r.moved).includes(key));assert.equal(h.disk.has('cs_ls_left_v1:'+key),false);
+});
+test('3.126 a different leftover of an IDB-only synced key moves to its IDB slot before leaving localStorage',async()=>{
+ const h=harness(),key='cs_notes_v1';h.c.slimThumbs=async()=>({n:0,saved:0});h.disk.set(key,'{"notes":{"n2":{}}}');h.local.set(key,'{"notes":{"n1":{}}}');
+ await h.c.optimizer.optimize();
+ assert.equal(h.local.has(key),false);
+ assert.equal(h.disk.get('cs_ls_left_v1:'+key),'{"notes":{"n1":{}}}','옛 사본은 글자 그대로 따로 둔 칸에');
+ assert.equal(h.disk.get(key),'{"notes":{"n2":{}}}','정본은 그대로');
+});
+test('3.126 an IDB-only synced key with an empty IDB keeps the local body as its IDB copy',async()=>{
+ const h=harness(),key='cs_notes_v1';h.c.slimThumbs=async()=>({n:0,saved:0});h.local.set(key,'{"notes":{"only":{}}}');
+ await h.c.optimizer.optimize();
+ assert.equal(h.disk.get(key),'{"notes":{"only":{}}}','하나뿐인 사본은 정본 자리로');assert.equal(h.local.has(key),false);
+});
+test('3.126 screen-read mirrors stay in localStorage',async()=>{
+ const h=harness();h.c.slimThumbs=async()=>({n:0,saved:0});
+ for(const k of ['process_coach_v1','cs_team_matches_v1','scout_tool_v1'])h.local.set(k,'{"m":"'+k+'"}');
+ await h.c.optimizer.optimize();
+ for(const k of ['process_coach_v1','cs_team_matches_v1','scout_tool_v1'])assert.equal(h.local.get(k),'{"m":"'+k+'"}',k+' 는 화면이 먼저 읽는 거울');
+});
+test('3.126 the list of IDB-only keys excludes every key a screen reads from localStorage',()=>{
+ const studio=path.join(__dirname,'../studio'),m=source.match(/var IDB_LEFT=\{([^}]*)\}/);assert.ok(m);
+ const keys=[...m[1].matchAll(/'([a-z_0-9]+)':1/g)].map(x=>x[1]);assert.ok(keys.length>=3);
+ const files=fs.readdirSync(studio).filter(f=>/\.(js|html)$/.test(f)&&f!=='note.html');   /* note.html 은 IDB 를 받기 전 첫 그림만 옛 사본으로 — IDB 에 있으면 사본을 지운다 */
+ for(const k of keys)for(const f of files){
+  const t=fs.readFileSync(path.join(studio,f),'utf8'),names=[k];let mm;const re=new RegExp('(?:var|const|let)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*[\'"]'+k+'[\'"]','g');
+  while((mm=re.exec(t)))names.push(mm[1]);
+  for(const n of names){const lit=n===k?"['\"]"+k+"['\"]":n.replace(/\$/g,'\\$');assert.ok(!new RegExp('localStorage\\.getItem\\('+lit+'\\)').test(t),f+' 가 '+k+' 를 localStorage 에서 읽는다 — IDB_LEFT 에서 빼야 한다');}
+ }
+});
+function autoTidy(ls,build,bytes,full){
+ const a=source.indexOf("  var K='ps_opt_auto_at'"),b=source.indexOf('})();',a);const body=source.slice(a,b);
+ let ran=0;const w={PS_BUILD:build,PSStorage:{optimize:()=>{ran++;return Promise.resolve();},localBytes:()=>bytes}};w.top=w;
+ const c={window:w,localStorage:{getItem:k=>ls.get(k)??null,setItem:(k,v)=>{if(full)throw Object.assign(new Error('full'),{name:'QuotaExceededError'});ls.set(k,String(v));}},Date,setTimeout:f=>f()};
+ vm.createContext(c);vm.runInContext('(function(){'+body+'})();',c);return ()=>ran;
+}
+test('3.126 a new build with a crowded small store tidies at once instead of waiting a day',async()=>{
+ const fresh=()=>new Map([['ps_opt_board_recovery_v1','1'],['ps_opt_auto_at',String(Date.now())],['ps_opt_build_v1','3.100']]);
+ assert.equal(autoTidy(fresh(),'3.100',5e6)(),0,'같은 판 · 하루 안 — 돌지 않는다');
+ assert.equal(autoTidy(fresh(),'3.200',200e3)(),0,'새 판이어도 작은 저장소가 가벼우면 돌지 않는다(정리는 보관함을 읽는다)');
+ const ls=fresh(),ran=autoTidy(ls,'3.200',5e6);assert.equal(ran(),1,'새 판 · 작은 저장소가 크면 바로');
+ await new Promise(r=>setImmediate(r));assert.equal(ls.get('ps_opt_build_v1'),'3.200','한 판에 한 번');
+ assert.equal(autoTidy(ls,'3.200',5e6)(),0,'같은 판 두 번째 부팅은 돌지 않는다');
+ assert.equal(autoTidy(fresh(),'3.300',9e6,true)(),0,'판 표시를 못 적을 만큼 꽉 찼으면 이 길로는 돌지 않는다(부팅마다 보관함을 읽지 않게 — 배너의 자동 정리가 돈다)');
+});
+
+/* 3.126 — 가득 찬 기기에서 무엇이 찼는지: 키 이름(표의 이름 · 사람 id 없음)과 크기만 보낸다 */
+test('3.126 the storage-full report names key kinds and sizes only',async()=>{
+ const a=source.indexOf('  function fullName('),b=source.indexOf('  function warnFull(',a);assert.ok(a>0&&b>a);
+ const K=require('../studio/storage-keys.js'),local=new Map([['cs_idp_v1_7f1d2c3e-aaaa-4bbb-8ccc-000000000001','{"profile":{"name":"비밀 선수"}}'],['ps_private_board_draft_v1:7f1d2c3e-aaaa-4bbb-8ccc-000000000001:unsaved','x'.repeat(4000)],['process_coach_v1','y'.repeat(900)],['zz-unknown@example.invalid','z'.repeat(300)]]);
+ const sent=[],w={PSStorageKeys:K,PSStorage:{isInstalled:()=>true}};w.top=w;
+ w.PSSync={event:(n,o)=>sent.push([n,o])};
+ const ls={get length(){return local.size;},key:i=>[...local.keys()][i],getItem:k=>local.get(k)??null,setItem:(k,v)=>local.set(k,String(v))};
+ const c={window:w,localStorage:ls,navigator:{storage:{estimate:async()=>({usage:3*1048576,quota:10*1048576})}},setTimeout:()=>{},Date,Math,Object,String,JSON};
+ vm.createContext(c);vm.runInContext(source.slice(a,b)+';this.fullReport=fullReport;',c);
+ c.fullReport('process_coach_v1',{before:9e6});await new Promise(r=>setImmediate(r));
+ assert.equal(sent.length,1);const [name,o]=sent[0];assert.equal(name,'storage_full');assert.equal(o.status,'error');
+ const m=o.meta,txt=JSON.stringify(o);
+ assert.equal(m.stage,'process_coach_v1');assert.equal(m.useMb,3);assert.equal(m.quotaMb,10);assert.equal(m.standalone,true);assert.equal(m.was,Math.round(9e6/1024));
+ assert.ok(m['k:ps_private_board_draft_v1:unsaved']>0,'초안 칸은 종류까지');assert.ok(m['k:cs_idp_v1_']>=0,'사람별 키는 접두사로');assert.ok('k:other' in m,'표에 없는 키는 other');
+ assert.ok(!/7f1d2c3e|비밀|example/.test(txt),'id · 내용 · 표에 없는 키 이름은 보내지 않는다');
+ assert.ok(Object.keys(m).length<=12,'이벤트 메타는 12칸까지');
+ c.fullReport('process_coach_v1',null);await new Promise(r=>setImmediate(r));assert.equal(sent.length,1,'한 창에서 한 번');
+});
+

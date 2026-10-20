@@ -147,6 +147,11 @@
   /* 동기화되지 않는 기기 전용 키 — IDB로 옮긴 뒤 localStorage 사본을 지워 용량을 되찾는다.
      (sync.js의 KEYS/LIBKEY는 여기 없다 — 그건 2단계에서 다룬다) */
   var DEVICE_LOCAL={'cs_drill_lib_v1':1,'cs_board_live_v1':1,'cs_snap_board_v1':1,'cs_snap_match_v2':1};
+  /* 3.126 — 동기화하지만 화면은 IndexedDB 만 읽는 키(노트 · 노트 용지 · 매치데스크 · 훈련 세션 · 경기 시계). 예전 판(1.504 · v309 전)이나
+     storage.get 폴백이 남긴 localStorage 사본은 누구도 읽지 않는데, 동기화가 «사본이 있으면 같이 고친다»로 계속 살려 두어 칸을 채웠다
+     (사용자 «저장공간이 부족하지 않게»). 안전 정리가 DEVICE_LOCAL 과 같은 길(같으면 지움 · 다르면 IDB 따로 둔 칸으로 옮긴 뒤 지움)로 비운다.
+     화면이 localStorage 를 먼저 읽는 키(일정 · 경기 · 선수단 · 권한 · 게임모델 · 폴더 …)는 넣지 않는다. */
+  var IDB_LEFT={'cs_notes_v1':1,'cs_note_papers_v1':1,'cs_analysis_workspaces_v1':1,'training_sessions_v1':1,'cs_match_v1':1};
   /* 1.658 — 일정 3-way 병합의 기준본은 일정 원문 전체와 거의 같은 크기다.
      예전에는 워크스페이스마다 localStorage에 한 벌씩 더 두어 iPad의 약 5MB 한도를
      일정 원문+기준본 두 벌만으로도 채웠다. 기준본은 화면이 직접 읽는 문서가 아니므로
@@ -320,9 +325,40 @@
   }
 
   /* ── 용량 초과 경고 ── */
-  var warned=false;
+  var warned=false,fullKey='';
+  /* 3.126 — 가득 찬 기기에서 «무엇이» 칸을 차지하는지 서버가 알게 한다(2주 22명 · 229번 «일정 화면 사본 저장 공간 부족» — 무엇이 찼는지 몰랐다).
+     자동 정리가 끝난 뒤 한 줄(ps_events storage_full): 실패한 키 · 작은 저장소 크기(정리 전 · 뒤) · 큰 키 넷(표 storage-keys.js 의 이름 — 사람별 id 는 뗀다) ·
+     브라우저 저장 한도. 키 이름과 크기만 — 내용 · 계정 · 팀 이름은 보내지 않는다. 맨 위 창 하나에서 6시간에 한 번. */
+  function fullName(k){
+    k=String(k||'');var T=null,r=null;
+    try{T=window.PSStorageKeys||(window.top&&window.top.PSStorageKeys);r=T&&T.info(k);}catch(_){}
+    if(r)return r.key==='ps_private_board_draft_v1:'?r.key+(k.indexOf(':kept:')>0?'kept':/:unsaved$/.test(k)?'unsaved':'head'):r.key;
+    return /^[a-z][a-z0-9_]{1,30}$/.test(k)?k:'other';
+  }
+  function fullReport(key,r){
+    try{
+      var top=window.top||window,now=Date.now(),last=0;
+      if(top.__psFullSent)return;top.__psFullSent=1;
+      try{last=+localStorage.getItem('ps_full_report_at')||0;}catch(_){}
+      if(now-last<21600000)return;
+      try{localStorage.setItem('ps_full_report_at',String(now));}catch(_){}
+      var sum={},n=0,tot=0,meta={stage:fullName(key)};
+      for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i),v=localStorage.getItem(k)||'',b=(String(k).length+v.length)*2,nm=fullName(k);sum[nm]=(sum[nm]||0)+b;tot+=b;n++;}
+      meta.ls=Math.round(tot/1024);meta.n=n;meta.was=r?Math.round((+r.before||0)/1024):-1;
+      try{meta.standalone=!!(window.PSStorage&&window.PSStorage.isInstalled());}catch(_){}
+      var sent=false;
+      function send(e){
+        if(sent)return;sent=true;
+        if(e&&e.quota){meta.useMb=Math.round((+e.usage||0)/1048576);meta.quotaMb=Math.round(e.quota/1048576);}
+        Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];}).slice(0,4).forEach(function(nm){meta['k:'+nm]=Math.round(sum[nm]/1024);});
+        var S=top.PSSync||window.PSSync;if(S&&S.event)S.event('storage_full',{status:'error',feature:'storage',error_code:'ls_quota',meta:meta});
+      }
+      var p=null;try{p=navigator.storage&&navigator.storage.estimate&&navigator.storage.estimate();}catch(_){}
+      if(p&&p.then){p.then(send,function(){send(null);});setTimeout(function(){send(null);},3000);}else send(null);
+    }catch(_){}
+  }
   function warnFull(key){
-    if(warned) return; warned=true;
+    if(warned) return; warned=true;fullKey=key;
     try{ console.warn('[PSStorage] 저장소 용량 초과:',key); }catch(_){}
     /* 배너를 먼저 띄운다. 이벤트가 앞서면 PSSaveState가 "배너 없음"으로 보고
        같은 말을 하는 알림을 하나 더 띄운다. */
@@ -384,8 +420,10 @@
                 :'백업한 뒤 보관함에서 오래된 항목을 정리해 주세요.');
         }
         try{ if(window.parent&&window.parent.__psUpdateStorageUsage)window.parent.__psUpdateStorageUsage(); }catch(_){}
+        fullReport(fullKey,r);
       }).catch(function(){
         msg.innerHTML='정리를 마치지 못했습니다. <b>데이터는 삭제하지 않았습니다.</b> 백업을 권합니다.';
+        fullReport(fullKey,null);
       }).then(function(){ tidy.disabled=false; tidy.textContent='다시 정리'; });
     };
 
@@ -616,7 +654,7 @@
           return idbReplaceIfValue(k,null,lv,current).then(function(changed){
             current();
             if(!changed)return idbGet(k).then(function(latest){readCurrent();return latest==null?{value:lv}:{value:latest};});
-            if(DEVICE_LOCAL[k]){try{current();localStorage.removeItem(k);}catch(e){if(e.name==='StorageOwnerChangedError')throw e;}}
+            if(DEVICE_LOCAL[k]||IDB_LEFT[k]){try{current();localStorage.removeItem(k);}catch(e){if(e.name==='StorageOwnerChangedError')throw e;}}
             return {value:lv};
           }).catch(function(e){readCurrent();if(e&&e.name==='StorageOwnerChangedError')throw e;return {value:lv};});
         });
@@ -898,7 +936,7 @@
       }).then(function(){
       return afterMigrate(function(){
         current();
-        var cleanupKeys=Object.keys(DEVICE_LOCAL);
+        var cleanupKeys=Object.keys(DEVICE_LOCAL).concat(Object.keys(IDB_LEFT));
         localKeys(AUX_IDB_PREFIX).forEach(function(k){if(cleanupKeys.indexOf(k)<0)cleanupKeys.push(k);});
         // The active head stays in place. Recovery copies are moved only for
         // the signed-in owner, with the same exact-body/CAS checks below.
@@ -935,7 +973,7 @@
                그 사본이 영영 남아 칸을 채웠다(제보 ac40be30 아이패드: «The quota has been exceeded» → 동기화가 회차마다 실패).
                같은 글이면 지우고, 다르면 IDB 의 따로 둔 칸(cs_ls_left_v1:키)에 그대로 옮겨 다시 읽어 확인한 뒤에만 지운다 — 어느 쪽도 버리지 않는다.
                따로 둔 칸은 누구도 읽지 않는다(되살릴 때만). 계정 · 팀을 바꾸면 원래 사본처럼 지워진다(sync.js idbSensitiveKeys). */
-            if(DEVICE_LOCAL[k]&&!emptyish(iv)){
+            if((DEVICE_LOCAL[k]||IDB_LEFT[k])&&!emptyish(iv)){   /* 3.126 — IDB 만 읽는 동기화 키의 옛 사본도 같은 길 */
               var same=false;try{same=typeof iv!=='string'&&JSON.stringify(iv)===lv;}catch(_){}
               if(same){try{localStorage.removeItem(k);moved.push(k);}catch(_){}return null;}
               var bk='cs_ls_left_v1:'+k;
@@ -1280,18 +1318,26 @@
    보관함·라이브 보드 사본(DEVICE_LOCAL)이 localStorage에 눌러앉아 "공간이 자꾸 차는"
    첫 원인이 됐다. 하루 한 번, 부팅이 가라앉은 뒤 조용히 돌린다 — 여유만 남긴다. */
 (function(){
-  var K='ps_opt_auto_at', REC='ps_opt_board_recovery_v1', DAY=86400000;
+  var K='ps_opt_auto_at', REC='ps_opt_board_recovery_v1', B='ps_opt_build_v1', DAY=86400000, BIG=1572864;
   function due(){ var t=0; try{ if(!localStorage.getItem(REC))return true;t=+localStorage.getItem(K)||0; }catch(_){ } return Date.now()-t>DAY; }
+  /* 3.126 — 새 판의 첫 부팅에 작은 저장소가 1.5MB 넘게 차 있으면 하루를 기다리지 않는다 — 새 판이 더한 정리(3.124 보관함 옛 사본 ·
+     3.126 IDB 만 읽는 키)가 업데이트하자마자 듣는다. 평소 작은 저장소는 수십~수백 KB 라 보통의 업데이트에선 돌지 않는다(정리는 보관함을 읽는다).
+     PS_BUILD 는 셸에서 storage.js 보다 뒤에 정해지므로 12초 뒤에 읽는다. */
+  function build(){ try{ return String(window.PS_BUILD||''); }catch(_){ return ''; } }
+  function fresh(){ var b=build(); try{ return !!b&&localStorage.getItem(B)!==b&&window.PSStorage.localBytes()>BIG; }catch(_){ return false; } }
   try{
     /* 3.124 — 맨 위 창에서만. 앱은 화면마다 iframe 이고 저마다 이 글을 읽어, 부팅 12초 뒤 여러 창이 함께 보관함 · 사진을 통째로 읽었다
        (끝난 뒤에야 표시를 적어 «다른 창이 먼저» 검사가 소용없었다 · localStorage 가 가득 차면 표시를 못 적어 부팅마다). 제보 ac40be30 */
     var top=false;try{top=window.top===window;}catch(_){}
-    if(!top||!due())return;
+    if(!top)return;
     setTimeout(function(){
-      if(!due())return; /* 다른 화면(iframe)이 그 사이 먼저 돌았으면 그만둔다 */
+      var b=build(),go=due();
+      /* 새 판 표시를 먼저 적는다 — 작은 저장소가 꽉 차 못 적으면 이 길로는 돌지 않는다(부팅마다 보관함을 읽지 않게 · 그때는 배너의 자동 정리가 돈다) */
+      if(!go&&fresh()){try{localStorage.setItem(B,b);go=localStorage.getItem(B)===b;}catch(_){}}
+      if(!go)return;
       try{ window.PSStorage.optimize().then(function(){
         try{localStorage.setItem(K,String(Date.now()));localStorage.setItem(REC,'1');}catch(_){}
-      }).catch(function(){}); }catch(_){}
+      }).catch(function(){}).then(function(){ try{ if(b)localStorage.setItem(B,b); }catch(_){} }); }catch(_){}
     },12000);
   }catch(_){}
 })();
