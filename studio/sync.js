@@ -772,7 +772,7 @@ function idbSensitiveKeys(workspaceOnly){
   return Promise.resolve(window.storage.keys()).then(function(keys){
     if(!Array.isArray(keys))throw new Error('IndexedDB 키 목록을 확인할 수 없습니다');
     return keys.filter(function(k){
-      if(workspaceOnly)return IDB_CONTENT.indexOf(k)>=0||k.indexOf('sq:')===0||isIdpPubKey(k);
+      if(workspaceOnly)return IDB_CONTENT.indexOf(k)>=0||k.indexOf('sq:')===0||k.indexOf('cs_ls_left_v1:')===0||isIdpPubKey(k);   /* 3.124 — storage.js optimize 가 옮겨 둔 옛 사본 */
       return sensitiveLocalKey(k)||IDB_CONTENT.indexOf(k)>=0||Object.prototype.hasOwnProperty.call(IDBK,k);
     });
   });
@@ -2640,16 +2640,8 @@ function libShareJSON(it){
   return typeof s==='string'?s:'{}';
 }
 function libHash(it){return hash(libShareJSON(it));}
-/* ══ 3.005 · 옛 자료의 장면별 썸네일 정리 ══
-   작전판은 2.559 부터 저장할 때 장면 0 의 썸네일만 남긴다(board.html __animFrames — 나머지는 불러올 때 보이는 칸부터 다시 그린다).
-   그 전에 저장되고 다시 저장되지 않은 자료에는 장면마다 썸네일이 그대로 있다.
-   (10/12 보관함 글자의 44%)
-   보관함은 목록 한 덩어리라 저장 한 번에 이 글자들을 전부 읽고 다시 쓴다(40MB 공간: 쓰기 ~0.2초 · 읽기 ~0.1초).
-   · 하는 일은 저장할 때와 같은 규칙 하나뿐이다: frames[1…] 의 thumb 을 뗀다. 장면 0 · 카드 · 페이지 · 훈련의 그림과 판(snap)은 그대로.
-   · **이 기기의 사본만** 고친다. 서버로 올리지 않고 수정 시각도 그대로다 — 정리 전 내용이 지난 회차에 확인한 것과 같았으면 기준 지문(m.li[id].h)만 새 값으로 옮긴다
-     (올리면 장면 썸네일이 지문에 들어 있어 «고친 자료»가 되고, 시각이 지금으로 찍혀 보관함의 최근순이 뒤섞인다). 정말 고친 자료는 예전대로 올라가고, 그때 가벼운 모습으로 올라간다.
-   · 서버에서 받은 자료도 적용 전에 같은 규칙을 거친다 — 서버의 옛 줄은 그대로라 새 기기는 무거운 줄을 받는다.
-   · 공간마다 한 번은 보관함 단계를 건너뛰지 않는다(m.ld). ══ */
+/* ══ 3.005 · 옛 자료의 장면별 썸네일 정리 ══ 2.559 부터 저장은 장면 0 썸네일만 남긴다. 그 전 자료의 frames[1…].thumb 를 **이 기기 사본에서만** 뗀다
+   (서버로 올리지 않고 시각도 그대로 — 고친 적 없으면 기준 지문 m.li[id].h 만 옮긴다). 받은 자료도 적용 전에 거친다. 공간마다 한 번은 보관함 단계를 건너뛰지 않는다(m.ld). ══ */
 /* ── 3.005 · 썸네일 정리 순수 구간 시작(단위 테스트가 잘라 쓴다) ── */
 var LIB_DIET=1;
 function libDietHas(it){
@@ -5850,10 +5842,10 @@ function syncLibrary(at,m,now,wid,ownerGuard){
   function probe(){
     var h1=hj(at); h1['Prefer']='count=exact';
     return Promise.all([
-      syncFetch('library_probe',base+'&select=saved_at&order=saved_at.desc.nullslast&limit=1',{headers:h1}).then(function(r){
+      syncFetch('library_probe',base+'&select=updated_at&order=updated_at.desc.nullslast&limit=1',{headers:h1}).then(function(r){   /* 3.124 — 고친 시각(서버가 쓸 때마다 찍는다): 옛 시각으로 올린 줄도 다른 기기를 깨운다 */
         if(!r.ok)throw syncHttpError('library_probe',r.status);
         var cr=''; try{ cr=r.headers.get('content-range')||''; }catch(_){}
-        return r.json().then(function(rows){ return (cr.split('/')[1]||'?')+'|'+((rows&&rows[0]&&rows[0].saved_at)||0); });
+        return r.json().then(function(rows){ return (cr.split('/')[1]||'?')+'|'+((rows&&rows[0]&&rows[0].updated_at)||0); });
       }),
       syncFetch('library_probe',base+'&deleted_at=not.is.null&select=deleted_at&order=deleted_at.desc&limit=1',{headers:hj(at)}).then(function(r){
         if(!r.ok)throw syncHttpError('library_probe',r.status);
@@ -5993,7 +5985,9 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
       var sNew=srvStamp(s)>(rec?rec.s:0);
       /* 공개/비공개가 바뀌었으면 내용이 그대로여도 다시 올려야 한다(공유 켜기·끄기) */
       var flip=teamOnly&&priv&&(!!s.private===!!wantShare);
-      if(flip){ var ft=t||now; queueLibPush(libRow(it,ft,wid,mineBackup),false); m.li[id]={h:h,s:ft}; return; }
+      /* 3.124 — 서버가 이 사본보다 새것이면(다른 기기가 옮기거나 고쳤다) 옛 사본을 올리지 않는다 — 아래 sNew 갈래가 받는다.
+         제보 ac40be30: 옛 판 아이패드가 맥에서 «팀 공유»로 옮긴 자료를 옛 폴더 · 비공개로 되돌렸다(옛 시각으로 올려 맥도 다시 받지 않았다) */
+      if(flip&&!(sNew&&srvStamp(s)>(t||now))){ var ft=t||now; queueLibPush(libRow(it,ft,wid,mineBackup),false); m.li[id]={h:h,s:ft}; return; }
       if(dirty&&sNew){ /* 양쪽 변경 — 더 최신 시각이 승 */
         var lt=t||now;
         if(srvStamp(s)>=lt){ if(s.deleted_at&&s.deleted_at>=(s.saved_at||0))delLocal.push(id); else pullIds.push(id); return; }
