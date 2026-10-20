@@ -551,6 +551,12 @@
     if(v&&typeof v==='object'){ for(var k in v){ if(Object.prototype.hasOwnProperty.call(v,k))v[k]=slimDeep(v[k],stat); } return v; }
     return v;
   }
+  function hasGrass(v){
+    if(typeof v==='string')return v.length>=2000&&v.indexOf('psRealGrass')>=0;
+    if(Array.isArray(v)){ for(var i=0;i<v.length;i++)if(hasGrass(v[i]))return true; return false; }
+    if(v&&typeof v==='object'){ for(var k in v){ if(Object.prototype.hasOwnProperty.call(v,k)&&hasGrass(v[k]))return true; } }
+    return false;
+  }
   /* 한 키를 읽어(작은 저장소 우선, 없으면 IDB) 다이어트하고 있던 자리에 돌려놓는다 */
   function slimKey(k,stat){
     var lv=null; try{ lv=localStorage.getItem(k); }catch(_){}
@@ -572,6 +578,9 @@
          여기를 건너뛰면 원본 썸네일이 뚱뚱한 채 남고, 그걸 일정에 넣는 순간 다시 4MB 로 불어난다.
          (2.519 첫 판에서 실제로 이 구멍이 있었다 — 일정만 줄이고 원본은 그대로였다.) */
       if(!iv||typeof iv!=='object')return;
+      /* 3.123 — 줄일 잔디 무늬가 없으면 글로 바꾸지 않는다. 예전엔 보관함 통째(그 팀 15.8MB)를 두 번 글로 만든 뒤에야 «없음»을 알았다 —
+         화면(iframe)마다 같은 때 돌아 아이패드(3GB)가 몇십 초 만에 꺼졌다(제보 ac40be30). 무늬는 2.519 부터 새로 박히지 않는다 */
+      if(!hasGrass(iv))return;
       var before=0,after=0,beforeRaw;try{beforeRaw=JSON.stringify(iv);before=beforeRaw.length;}catch(_){return;}
       var st={n:0,saved:0}; var slim=slimDeep(iv,st);
       if(!st.n)return;
@@ -922,6 +931,25 @@
                 else kept.push(k);
               });
             }
+            /* 3.123 — 기기 전용 키(보관함 · 라이브 보드 …)는 IDB 가 정본이고 객체로 앉는다 — 옛 판이 남긴 localStorage 글과 === 로 같을 수 없어
+               그 사본이 영영 남아 칸을 채웠다(제보 ac40be30 아이패드: «The quota has been exceeded» → 동기화가 회차마다 실패).
+               같은 글이면 지우고, 다르면 IDB 의 따로 둔 칸(cs_ls_left_v1:키)에 그대로 옮겨 다시 읽어 확인한 뒤에만 지운다 — 어느 쪽도 버리지 않는다.
+               따로 둔 칸은 누구도 읽지 않는다(되살릴 때만). 계정 · 팀을 바꾸면 원래 사본처럼 지워진다(sync.js idbSensitiveKeys). */
+            if(DEVICE_LOCAL[k]&&!emptyish(iv)){
+              var same=false;try{same=typeof iv!=='string'&&JSON.stringify(iv)===lv;}catch(_){}
+              if(same){try{localStorage.removeItem(k);moved.push(k);}catch(_){}return null;}
+              var bk='cs_ls_left_v1:'+k;
+              return idbGet(bk).then(function(prev){
+                keepCurrent();
+                return idbReplaceIfValue(bk,prev===undefined?null:prev,lv,keepCurrent);
+              }).then(function(changed){
+                return changed?idbGet(bk):undefined;
+              }).then(function(check){
+                keepCurrent();
+                if(check===lv){try{localStorage.removeItem(k);moved.push(k);}catch(_){}}
+                else kept.push(k);
+              });
+            }
             kept.push(k); /* 양쪽 내용이 다르면 최신 판단을 하지 않고 둘 다 보존 */
             return null;
           }).catch(function(){kept.push(k);});
@@ -1255,7 +1283,10 @@
   var K='ps_opt_auto_at', REC='ps_opt_board_recovery_v1', DAY=86400000;
   function due(){ var t=0; try{ if(!localStorage.getItem(REC))return true;t=+localStorage.getItem(K)||0; }catch(_){ } return Date.now()-t>DAY; }
   try{
-    if(!due())return;
+    /* 3.123 — 맨 위 창에서만. 앱은 화면마다 iframe 이고 저마다 이 글을 읽어, 부팅 12초 뒤 여러 창이 함께 보관함 · 사진을 통째로 읽었다
+       (끝난 뒤에야 표시를 적어 «다른 창이 먼저» 검사가 소용없었다 · localStorage 가 가득 차면 표시를 못 적어 부팅마다). 제보 ac40be30 */
+    var top=false;try{top=window.top===window;}catch(_){}
+    if(!top||!due())return;
     setTimeout(function(){
       if(!due())return; /* 다른 화면(iframe)이 그 사이 먼저 돌았으면 그만둔다 */
       try{ window.PSStorage.optimize().then(function(){
