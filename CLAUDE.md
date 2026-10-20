@@ -41,6 +41,8 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 보드마다 저장되는 새 설정은 board.html 을 고치지 않는다(3.087): 모듈이 `window.__psLookExt.<키> = {def, ok}` 로 알리고 값은 `window.__<키>`(접근자)로 오간다. `lookKeys` · `_lookCode` · `_lookOk` · `lookNow` · `lookApply` 가 읽는다. 그 모듈은 본문 스크립트보다 먼저 읽혀야 한다(예: `board-name-font.js` 의 nameFont · tagSize). 새 보드 기본값은 `lookDefault` 가 저장된 기본 보드에서 바로 읽는다.
 - 보드 설정의 기본값을 바꿀 때: 예전 판이 «안 바꾼 보드»에도 옛 기본값을 적어 두었으면, 그 값을 새 기본으로 읽고 «일부러 고른 같은 값»은 다른 모양으로 적어 가른다(3.089 실제 크기: '1|1' → 새 기본 '1.5|6', 일부러 실제 크기는 '1.0|1.0'). 크기는 2.977 `tokV` 표식과 같은 생각.
 - 3.114 — 드릴 팩 파일(.json) 가져오기는 보관함 «＋ 만들기 › 파일에서 가져오기»(`board-vault-import.js` — 그림 · 바깥 주소 · 남의 도장을 거른 뒤 `importDrillPack`). 옛 «라이브러리» 창(`#drillLib`)과 세션 빈 화면(`#sessEmpty`)은 숨어 있어 그 안의 단추는 사용자가 못 본다 — «있는 기능»인지 화면에서 확인한다.
+- 3.120 — 유니폼 토큰(`board-jersey.js`, 사용자 «토큰 유니폼도 이렇게»(FmStadio) · «원형과 유니폼 전부» · «완전 디테일하게»): «원형» · «유니폼» 선수 토큰의 `.tok-c` 바로 뒤에 `.ps-jersey`(목깃 · 소매 줄 · 소맷단 · 옆판 · 엠블럼 …). `makeToken` · `PSBoardDepth.apply`(3D 칩은 그 앞에서) · `_setChip3d`(광택 `.ps-c3` 을 유니폼 위로)를 감싼다. 3D 칩 윗면은 board-token-depth 가 `.ps-jersey` 를 복사. 좌표는 원 · 셔츠 안에 맞춰 미리 계산한 선 — clip-path · 그라디언트를 넣지 않는다(사파리 끌기). 코치 · 사진 · 쉐이퍼는 그대로. board.html 남은 몫 296 바이트.
+- 3.120 — 훈련 편집기의 평면 · 3D 는 훈련마다(`board-edit-view.js`, 사용자 «훈련 편집 들어가면 기본은 평면» · «보드설정에서 수정을 하면 각각 저장»): look 확장 `edTilt`(본문보다 먼저 읽힌다). 보관함에서 여는 `openLibDrawEditor` 에는 3.035 평면 처리가 없었다 — 여는 길을 새로 만들면 이 모듈의 `wrapOpen` 에 더한다. 편집기 안의 `__setTilt` 는 transient(기기 설정 ps_board_tilt3d 를 쓰지 않음), 나가면 들어오기 전 보기. 3D 훈련도 폰 · 아이패드에서는 평면으로 연다(값은 그대로).
 - 보드 설정 창 모양은 `studio/board-settings-skin.js`(3.087). 줄(`.menurow`)의 `display` 는 건드리지 않는다 — 탭 · 조건(밝기 · 훈련 격자 · 3D 줄 …)이 `display:none` 으로 숨긴다. 한 번 `display:grid` 를 걸었다가 모든 탭의 줄이 다 보였다.
 - 보드 설정 창의 줄 차례는 board.html 의 `PLAN`(id 목록). 줄을 더하면 `tests/board-settings-3010.test.cjs` 와 `tests/browser/board-settings-hierarchy.mjs` 의 목록도 고친다.
 - 3.087 — 커뮤니티 뷰어(`body.comm-viewing`): 떠 있는 도크 · 만들기 틀 규칙은 id 를 열 개 넘게 붙여 보드의 감춤을 이긴다 — 뷰어에서 감출 것은 그 파일 안에서 더 센 선택자로. 보기 전용 막이(`communityBoardReadOnly` 의 guard)가 판을 누른 pointerdown · click 을 window 에서 맨 먼저 멈춘다 — 판 바깥 누름을 알아야 하면 pointerup 을 본다. 뷰어 «보기» 고르개는 `board-comm-look.js`(3.087 board.html 남은 몫 약 1.4KB).
@@ -79,6 +81,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 
 ## 함정
 - 3.100 — 판 번호가 3.0xx 를 넘는다. 시험 · 코드에서 `3\.0\d\d` 처럼 0 을 박지 말고 `3\.\d{3}` 로(`safe-mode-3036` 이 걸렸다). 판을 숫자로 견줄 땐 `release-notes.js` 의 `versionNo`(3.100 → 3100) 처럼.
+- 3.120 — 모듈이 켜질 때(DOMContentLoaded) `renderTokens()` 를 부르지 않는다: 끝에서 늘 `boardSaveLive` 를 불러 `_boardPrivateEditSeq` 가 오르고, 저장본을 받아오는 중(`restoreLiveBoard` 의 GET)이면 그 불러오기가 «고친 판»으로 보고 멈춘다 — 새로고침 뒤 페이지 2장이 1장으로(board-look-per-work · board-pitch-photo). 이미 그려진 토큰을 그 자리에서 고친다.
 - MutationObserver 안에서 없는 class 를 `classList.remove` 해도 속성 바뀜으로 잡혀 끝없이 돈다(3.084 보드가 안 열렸다). `contains` 로 확인한 뒤 바꾼다.
 - 비동기로 걷히는 화면(폰 빈 판 안내 «보관함 열기» 등)을 시험이 곧바로 재면 느린 WebKit 에서 남아 있는 것을 잡는다 — `waitForFunction` 으로 걷힐 때까지 기다린 뒤 잰다(3.086 board-savebar).
 - 3.097 — 판은 프레임과 상관없이 다시 놓인다(시작 타이머 · `psSelBarLayout` → MutationObserver `fix` → `applyView`). 화면→판 좌표(CTM · 3D 행렬)를 재 두고 쓰려면 **그 이벤트 안에서만**(`Promise.resolve().then` 으로 지운다) — 다음 프레임까지 두면 느린 WebKit 에서 다음 이벤트의 점이 옛 판 자리로 간다(board-pencil 2) 가끔 실패). 시험은 `await Promise.resolve()` 뒤 무대 `padding-bottom` + `applyView()` 로 프레임 없이 판을 옮겨 본다(board-pencil 2b).
