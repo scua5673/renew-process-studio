@@ -35,6 +35,15 @@ try{
   const settle=async()=>{await page.evaluate(()=>window.PSSync&&PSSync.syncNow&&PSSync.syncNow('qa-settle')).catch(()=>{});return page.waitForFunction(()=>window.PSSync&&PSSync.state().kind==='ok'&&!PSSync.pending().count,null,{timeout:20000}).catch(()=>{});};   /* 같은 키를 올리는 도중에 또 고치면 동기화가 충돌로 본다 — 별도 과제 */
   const named=async n=>(await rows()).filter(r=>(r.name||'').trim()===n);
   await bf.waitForFunction(()=>[...document.querySelectorAll('.vx-folder-name')].some(e=>e.textContent==='팀 공유'),null,{timeout:20000});
+  // 3.118 — 폴더도 자료 목록에 보이고, 위치 트리의 중첩 폴더는 가볍게 들여쓴다.
+  await bf.evaluate(()=>{const b=[...document.querySelectorAll('.vx-nav button')].find(b=>/전체 자료/.test(b.textContent));b.click();});
+  await bf.waitForSelector('.vx-items [data-vault-folder="팀 공유"]');
+  const nested=await bf.evaluate(()=>{const all=[...document.querySelectorAll('.vx-folder')],root=all.find(r=>(r.querySelector('.vx-folder-name')||{}).textContent.trim()==='팀 공유'),child=all.find(r=>(r.querySelector('.vx-folder-name')||{}).textContent.trim()==='공격');return {root:parseInt(root.style.paddingLeft),child:parseInt(child.style.paddingLeft),label:!!child.querySelector('.vx-folder-sub')};});
+  assert.ok(nested.child>nested.root);assert.equal(nested.label,false);
+  await bf.locator('.vx-items [data-vault-folder="팀 공유"]').click();
+  await bf.waitForSelector('.vx-items [data-vault-folder="팀 공유/공격"]');
+  await page.screenshot({path:path.join(SHOTS,'vault-folder-list-'+size+'.png')});
+  await bf.evaluate(()=>{const b=[...document.querySelectorAll('.vx-nav button')].find(b=>/전체 자료/.test(b.textContent));b.click();});
   // 1) 열자마자 «공격»은 하나 — 자료도 그 하나 아래로
   await bf.waitForFunction(()=>[...document.querySelectorAll('.vx-folder-name')].filter(e=>e.textContent.trim()==='공격').length===1,null,{timeout:15000});
   assert.equal((await named('공격')).length,1,'똑같아 보이는 «공격»이 하나로 합쳐진다 '+JSON.stringify(await rows()));

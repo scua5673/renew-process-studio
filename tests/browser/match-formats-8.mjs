@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 // 3.117 — 오류 제보 5a574320 «경기 준비 포메이션이 11v11 만 — 유소년 8v8 도». 상대 포메이션 고르개에 «8인제» 묶음(2-3-2 · 3-3-1 · 3-2-2 · 2-4-1),
 // «상대 배치»는 8명(번호 1~8), «배치 N/◻»는 선발 인원(없으면 고른 상대 포메이션 인원). 경기 준비 · 상대 분석 둘 다.
+// 3.118 — 경기 인원(경기 머리 «11 대 11 · 8 대 8»)을 고르면 고르개에 그 묶음만 보인다. 8인제를 고르기 전에 «8 대 8»을 누른다.
 const require=createRequire(import.meta.url),pw=require(process.env.PS_PLAYWRIGHT_MODULE||'playwright');
 const root=process.cwd(),engine=process.env.PS_BROWSER_ENGINE||'chromium';
 const out=process.env.PS_TEST_OUTPUT||'/private/tmp/match-formats-8-'+engine;fs.mkdirSync(out,{recursive:true});
@@ -47,8 +48,11 @@ try{
  // 1) 경기 준비(02)의 옛 경기 보드(#mb2Card)는 지금 숨어 있다(경기 보드는 작전판 미팅) — 같은 표 · 같은 고르개로 바꿔 두었는지만 본다
  await open('prep');await f.waitForSelector('#mb2FormOp optgroup',{state:'attached'});await page.waitForTimeout(300);
  const sel=await f.evaluate(()=>[...document.querySelectorAll('#mb2FormOp optgroup')].map(g=>g.label+':'+[...g.children].map(o=>o.value).join(',')));
- assert.deepEqual(sel,['11인제:gk4,442,4231,433,343,352','8인제:232,331,322,241'],JSON.stringify(sel));
+ assert.deepEqual(sel,['11인제:gk4,442,4231,433,343,352'],JSON.stringify(sel));
  assert.equal(await f.evaluate(()=>document.getElementById('mb2FormOp').value),'442','처음 고른 값은 그대로 4-4-2');
+ const fmt8=async()=>{await f.click('#matchFmtSeg button[data-fmt="8"]');await page.waitForTimeout(150);};
+ await fmt8();
+ assert.deepEqual(await f.evaluate(()=>[...document.querySelectorAll('#mb2FormOp optgroup')].map(g=>g.label+':'+[...g.children].map(o=>o.value).join(','))),['8인제:232,331,322,241']);
  const prep=await f.evaluate(()=>{const s=document.getElementById('mb2FormOp');s.value='232';s.dispatchEvent(new Event('change'));mb2FillOp(matchGet());
   return {opp:mb2Cur(matchGet()).opp.map(t=>t.num+':'+t.pos+(t.gk?'*':'')),cnt:document.getElementById('mb2CntUs').parentNode.textContent.replace(/\s+/g,' ').trim()};});
  assert.deepEqual(prep.opp,['1:GK*','2:CB','3:CB','4:LM','5:CM','6:RM','7:ST','8:ST'],JSON.stringify(prep));
@@ -56,11 +60,11 @@ try{
 
  // 2) 상대 분석(01) — 지금 화면에서 포메이션을 고르는 곳. 고르개 · 상대 배치 · 배치 N/◻
  await open('opp');await f.waitForSelector('#obFormOp optgroup',{state:'attached'});await page.waitForTimeout(300);
- assert.deepEqual(await f.evaluate(()=>[...document.querySelectorAll('#obFormOp optgroup')].map(g=>g.label+':'+g.children.length)),['11인제:6','8인제:4']);
+ assert.deepEqual(await f.evaluate(()=>[...document.querySelectorAll('#obFormOp optgroup')].map(g=>g.label+':'+g.children.length)),['11인제:6']);
  assert.equal(await f.evaluate(()=>document.getElementById('obFormOp').value),'442','처음 고른 값은 그대로 4-4-2');
  const den=()=>f.evaluate(()=>document.getElementById('obCntUs').parentNode.textContent.replace(/\s+/g,' ').trim());
  assert.match(await den(),/^배치 0\/11 · 상대 0$/,'선발이 없고 11인제면 /11');
- await f.selectOption('#obFormOp','232');await page.waitForTimeout(100);
+ await fmt8();assert.equal(await f.evaluate(()=>document.getElementById('obFormOp').value),'232','8 대 8 이면 2-3-2 부터');
  assert.match(await den(),/^배치 0\/8 · 상대 0$/,'8인제를 고르면 /8');
  await f.click('#obFillOp');await page.waitForTimeout(200);
  const ob=await f.evaluate(()=>obFrame(matchGet()).opp.map(t=>t.num+':'+t.pos+(t.gk?'*':'')));
@@ -76,12 +80,13 @@ try{
  assert.equal(new Set(pts.map(p=>p.join(','))).size,8);
  // 선발 8명을 고르면 분모는 선발 인원 — 11인제로 돌려도
  await f.evaluate(()=>{const m=matchGet();m.squad={start:['p1','p2','p3','p4','p5','p6','p7','p8'],res:[]};matchSquadMirrorLegacy(m);obCounts(m);});
+ await f.click('#matchFmtSeg button[data-fmt="11"]');await page.waitForTimeout(150);
  await f.selectOption('#obFormOp','433');await page.waitForTimeout(100);
  assert.match(await den(),/^배치 0\/8 /,'선발 8명이면 /8');
  // 11인제는 예전 그대로
  await f.click('#obFillOp');await page.waitForTimeout(120);
  assert.equal(await f.evaluate(()=>obFrame(matchGet()).opp.length),11);
- await f.selectOption('#obFormOp','232');await f.click('#obFillOp');await page.waitForTimeout(200);
+ await fmt8();await f.selectOption('#obFormOp','232');await f.click('#obFillOp');await page.waitForTimeout(200);
  await f.evaluate(()=>document.getElementById('obCard').scrollIntoView({block:'start'}));await page.waitForTimeout(200);
  await page.screenshot({path:path.join(out,'opp-8.png')});
  assert.deepEqual(errors,[],'페이지 오류 없음');
