@@ -77,6 +77,8 @@ try{
   const PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==';
   const [chooser]=await Promise.all([page.waitForEvent('filechooser'),a.click('#playerRows .row:nth-child(1) .ph')]);
   await chooser.setFiles({name:'gk.png',mimeType:'image/png',buffer:Buffer.from(PNG,'base64')});
+  /* 3.125 — 고르면 사진 영역 편집 창(확대 · 좌우 · 위아래)이 뜬다 — 그대로 «적용» */
+  await a.waitForSelector('#psCropDlg[open]',{timeout:15000});await a.click('#psCropDlg [data-ok]');
   /* 사진이 안 나타나면 왜인지(안내 줄 · 고른 칸 · 모듈) 메시지에 싣는다 — 파일을 올리는 브라우저 시험은 이것 하나라 웹킷에서 처음 돈다 */
   await a.waitForFunction(()=>document.querySelector('#playerRows .row:nth-child(1) .ph img'),null,{timeout:15000}).catch(async e=>{
     const d=await a.evaluate(()=>({status:document.getElementById('status').textContent,err:document.getElementById('status').getAttribute('data-err'),files:(document.getElementById('photoFile').files||[]).length,mod:!!window.PSTeamPhotos,ph:document.querySelector('#playerRows .row:nth-child(1) .ph').outerHTML.slice(0,160)})).catch(x=>({diagErr:String(x)}));
