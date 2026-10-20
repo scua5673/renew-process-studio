@@ -34,7 +34,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 새 파일은 `git add` 해야 배포 묶음에 들어간다 — `scripts/package-site.mjs` 는 `git ls-files` 로 고른다(3.085 에 빠질 뻔).
 
 ## 작전판(studio/board.html)
-- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.115 기준 남은 몫 42 바이트(3.114 · 3.115 는 <script> 한 줄씩 · 3.105 · 3.112 · 3.113 · 3.115 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
+- **크기 예산 2,560,000 바이트**(시험이 막는다). 3.122 기준 남은 몫 210 바이트(3.114 · 3.115 · 3.122 는 <script> 한 줄씩 · 3.105 · 3.112 · 3.113 · 3.115 에 옛 주석의 실측 숫자를 줄여 자리를 만들었다 — 시험이 잘라 쓰는 주석은 남긴다) — 새 기능은 `studio/board-*.js` UMD 모듈로 만들고 `<script>` 한 줄 + `sw.js` CORE 에 넣는다.
 - 본문의 `function` 선언은 window 속성이라 모듈에서 감쌀 수 있다(`renderTokens` · `applyView` · `boardImageXML` · `setView` · `lookApply` …). 내부 호출도 전역 이름으로 찾으므로 감싼 것을 지난다.
 - `let`/`const` 전역(`state` · `anim` · `animActive` · `tokShape` · `M` …)은 **window 속성이 아니다** — 모듈에서 `typeof state !== 'undefined' ? state : null` 처럼 이름으로 읽는다(3.086 에 `win.state` 로 읽어 실패).
 - 보드 복원(`restoreLiveBoard`)은 본문 스크립트가 도는 중에 바로 돈다. 복원 값을 받아야 하는 모듈은 본문보다 **먼저** 읽히게 두고 window 접근자로 받는다(예: `board-name-font.js` 의 `__nameFont`).
@@ -43,6 +43,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 3.114 — 드릴 팩 파일(.json) 가져오기는 보관함 «＋ 만들기 › 파일에서 가져오기»(`board-vault-import.js` — 그림 · 바깥 주소 · 남의 도장을 거른 뒤 `importDrillPack`). 옛 «라이브러리» 창(`#drillLib`)과 세션 빈 화면(`#sessEmpty`)은 숨어 있어 그 안의 단추는 사용자가 못 본다 — «있는 기능»인지 화면에서 확인한다.
 - 3.120 — 유니폼 토큰(`board-jersey.js`, 사용자 «토큰 유니폼도 이렇게»(FmStadio) · «원형과 유니폼 전부» · «완전 디테일하게»): «원형» · «유니폼» 선수 토큰의 `.tok-c` 바로 뒤에 `.ps-jersey`(목깃 · 소매 줄 · 소맷단 · 옆판 · 엠블럼 …). `makeToken` · `PSBoardDepth.apply`(3D 칩은 그 앞에서) · `_setChip3d`(광택 `.ps-c3` 을 유니폼 위로)를 감싼다. 3D 칩 윗면은 board-token-depth 가 `.ps-jersey` 를 복사. 좌표는 원 · 셔츠 안에 맞춰 미리 계산한 선 — clip-path · 그라디언트를 넣지 않는다(사파리 끌기). 코치 · 사진 · 쉐이퍼는 그대로. board.html 남은 몫 296 바이트.
 - 3.120 — 훈련 편집기의 평면 · 3D 는 훈련마다(`board-edit-view.js`, 사용자 «훈련 편집 들어가면 기본은 평면» · «보드설정에서 수정을 하면 각각 저장»): look 확장 `edTilt`(본문보다 먼저 읽힌다). 보관함에서 여는 `openLibDrawEditor` 에는 3.035 평면 처리가 없었다 — 여는 길을 새로 만들면 이 모듈의 `wrapOpen` 에 더한다. 편집기 안의 `__setTilt` 는 transient(기기 설정 ps_board_tilt3d 를 쓰지 않음), 나가면 들어오기 전 보기. 3D 훈련도 폰 · 아이패드에서는 평면으로 연다(값은 그대로).
+- 3.122 — «보드 가져오기»(`openBoardImport`)는 지금 페이지에 내용(선수 · 장비 · 그림 · 장면 2개 이상)이 있으면 새 페이지로 가져온다(`board-import-safe.js` — 창의 단추 onclick 을 감싸 «＋ 페이지» 단추를 먼저 누른다, 제보 b4578ca1 장면 29개가 예시로 덮였다). 위쪽 막대(`board-topbar.js`)는 «＋»를 탭 옆으로 · «보드 가져오기»를 «보드 ▾» 메뉴로 옮긴다 — 띠 단추는 같은 부모라고 믿지 말고 `#boardPageStrip` 전체에서 찾는다.
 - 보드 설정 창 모양은 `studio/board-settings-skin.js`(3.087). 줄(`.menurow`)의 `display` 는 건드리지 않는다 — 탭 · 조건(밝기 · 훈련 격자 · 3D 줄 …)이 `display:none` 으로 숨긴다. 한 번 `display:grid` 를 걸었다가 모든 탭의 줄이 다 보였다.
 - 보드 설정 창의 줄 차례는 board.html 의 `PLAN`(id 목록). 줄을 더하면 `tests/board-settings-3010.test.cjs` 와 `tests/browser/board-settings-hierarchy.mjs` 의 목록도 고친다.
 - 3.087 — 커뮤니티 뷰어(`body.comm-viewing`): 떠 있는 도크 · 만들기 틀 규칙은 id 를 열 개 넘게 붙여 보드의 감춤을 이긴다 — 뷰어에서 감출 것은 그 파일 안에서 더 센 선택자로. 보기 전용 막이(`communityBoardReadOnly` 의 guard)가 판을 누른 pointerdown · click 을 window 에서 맨 먼저 멈춘다 — 판 바깥 누름을 알아야 하면 pointerup 을 본다. 뷰어 «보기» 고르개는 `board-comm-look.js`(3.087 board.html 남은 몫 약 1.4KB).
