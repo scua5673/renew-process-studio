@@ -58,5 +58,17 @@ function square(file,doc){
  function why(e){return String((e&&(e.name&&e.name!=='Error'?e.name+': ':'')+(e.message||''))||e).slice(0,80);}
  return viaUrl().catch(function(e1){return viaReader().catch(function(e2){var e=Error('이미지를 읽지 못했습니다.');e.detail='url '+why(e1)+' · reader '+why(e2);throw e;});});
 }
-return {key:KEY,size:SIZE,parse:parse,apply:apply,read:read,images:images,forLoad:forLoad,commit:commit,square:square};
+/* 3.125 — 고른 그림을 사진 영역 편집 창(photo-crop.js — 작전판 토큰 사진 창과 같은 손놀림)에 띄워 확대 · 좌우 · 위아래를 정한다(제보 70307dd9).
+   취소하면 null. 창 모듈이 없으면 예전처럼 가운데 정사각형(square). 그림은 FileReader 로 먼저(웹킷 blob 주소 실패 대비 — square 와 반대 차례) */
+function pick(file,doc,win){
+ doc=doc||document;win=win||(doc.defaultView)||window;var C=win&&win.PSPhotoCrop;if(!C||!C.open)return square(file,doc);
+ function viaReader(){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(String(r.result||''));};r.onerror=function(){rej(r.error||Error('read'));};r.readAsDataURL(file);});}
+ function why(e){return String((e&&(e.name&&e.name!=='Error'?e.name+': ':'')+(e.message||''))||e).slice(0,80);}
+ var url=null;
+ return viaReader().then(function(src){return C.open({src:src,doc:doc,size:SIZE,title:'선수 사진 영역'});},function(e1){
+  try{url=URL.createObjectURL(file);}catch(e){var x=Error('이미지를 읽지 못했습니다.');x.detail='reader '+why(e1);throw x;}
+  return C.open({src:url,doc:doc,size:SIZE,title:'선수 사진 영역'});
+ }).then(function(v){if(url)URL.revokeObjectURL(url);return v;},function(e){if(url)URL.revokeObjectURL(url);if(e&&e.detail)throw e;var x=Error('이미지를 읽지 못했습니다.');x.detail=why(e);throw x;});
+}
+return {key:KEY,size:SIZE,parse:parse,apply:apply,read:read,images:images,forLoad:forLoad,commit:commit,square:square,pick:pick};
 });
