@@ -52,7 +52,7 @@
     var sn = JSON.parse(JSON.stringify(base || {})), id = 1001;
     sn.players = []; sn.equipment = []; sn.drawings = [];
     Object.assign(sn, { pitchSpec: 'u12', area: 'full', pitchView: 'full', fieldMode: 'standard', halfSide: 'L', spFlip: false, pitchN: 1,
-      press: null, spMarks: null, spMark: null, boardLocked: false, pitchTheme: 'white', pitchCustom: null, pitchImg: null });
+      press: null, spMarks: null, spMark: null, boardLocked: false, pitchTheme: '', pitchCustom: null, pitchImg: null, gridType: 'grid15' });   // 3.128 — 새 미팅은 네이비 · 15존(board.html meetTplSnap 과 같게)
     tp.us.forEach(function (m, i) { var q = pt(g, m), r = US8[i]; sn.players.push({ id: id++, team: 'blue', num: String(r[0]), pos: r[1], x: q.x, y: q.y }); });
     tp.op.forEach(function (m, i) { var q = pt(g, m), r = OPP8[i]; sn.players.push({ id: id++, team: 'red', num: String(r[0]), pos: r[1], x: q.x, y: q.y }); });
     sn.ball = tp.ball ? pt(g, tp.ball) : null;

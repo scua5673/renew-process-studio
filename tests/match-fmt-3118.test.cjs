@@ -35,7 +35,7 @@ test('8인제 기본 9장 — 장마다 우리 8명(2-3-2 번호) · 상대 8명
   assert.deepEqual(out.map(s=>s.title),['BEST 8','하이블록','미드블록','로우블록','빌드업','전진·전개','침투·마무리','코너킥 수비','코너킥 공격']);
   out.forEach((s,i)=>{
     const sn=s.snap,blue=sn.players.filter(p=>p.team==='blue'),red=sn.players.filter(p=>p.team==='red');
-    assert.equal(sn.pitchSpec,'u12',s.title);assert.equal(sn.orientation,'v');assert.equal(sn.area,'full');assert.equal(sn.pitchTheme,'white');
+    assert.equal(sn.pitchSpec,'u12',s.title);assert.equal(sn.orientation,'v');assert.equal(sn.area,'full');assert.equal(sn.pitchTheme,'','3.128 네이비');assert.equal(sn.gridType,'grid15','3.128 15존');
     assert.equal(sn.teamColor,'#123','바탕의 겉모습은 빌린다');assert.equal(base.players.length,1,'바탕은 그대로');
     assert.equal(sn.tokenScale,0.36,'토큰 크기 바닥');
     assert.equal(blue.length,8,s.title);assert.equal(red.length,i===0?0:8,s.title);

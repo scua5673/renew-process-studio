@@ -1,10 +1,10 @@
 /* PROCESS STUDIO 서비스워커 — HTML 은 캐시 우선, 판(CACHE)이 바뀌어야 사용자가 새 판을 받는다(docs/OPERATIONS.md).
    CACHE 의 판 번호는 studio/app.html 의 window.PS_BUILD 와 같아야 한다(tests/syntax). 판마다 바뀐 점은 studio/release-notes.js 와
    커밋 기록에 적는다 — 3.038 까지 이 파일 머리에 쌓이던 1,600줄의 변경 기록은 걷었다(피드백 TD-7). */
-const CACHE = 'process-3.127';   // 3.127 유니폼 — 소매 · 테두리 색 · 목깃(V넥 · 카라) · 무늬 넷 · 빠른 조합 20 · 브랜드 같은 표시 · 팀 엠블럼 뺌(board-jersey.js · board-kit.js)
+const CACHE = 'process-3.128';   // 3.128 새 미팅은 평면 · 15존 · 네이비 피치(board-meet-look.js · meetTplSnap)
 // 하나라도 빠지면 앱의 기본 실행이 깨질 수 있는 파일.
 const CORE = [
-  '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-pitch-photo.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js', '/studio/board-vault-lazy.js', '/studio/board-guest.js', '/studio/board-vault-browse.js', '/studio/board-vault-import.js', '/studio/board-quick-export.js', '/studio/board-meet-8.js', '/studio/board-import-safe.js', '/studio/board-jersey.js', '/studio/board-edit-view.js', '/studio/board-meet-form.js', '/studio/vault-folder-move.js',
+  '/studio/app.html', '/studio/board.html', '/studio/board-name-font.js', '/studio/board-settings-skin.js', '/studio/board-token-depth.js', '/studio/board-pitch-photo.js', '/studio/board-broadcast.js', '/studio/board-dock-float.js', '/studio/board-dock-skin.js', '/studio/board-topbar.js', '/studio/board-real-size.js', '/studio/board-kit.js', '/studio/board-create-frame.js', '/studio/board-tweaks.js', '/studio/board-comm-look.js', '/studio/board-dock-film.js', '/studio/board-inspector.js', '/studio/board-actions.js', '/studio/board-vault-lazy.js', '/studio/board-guest.js', '/studio/board-vault-browse.js', '/studio/board-vault-import.js', '/studio/board-quick-export.js', '/studio/board-meet-8.js', '/studio/board-import-safe.js', '/studio/board-meet-look.js', '/studio/board-jersey.js', '/studio/board-edit-view.js', '/studio/board-meet-form.js', '/studio/vault-folder-move.js',
   '/studio/process.html',
   '/studio/review-training.js', '/studio/review-training-schedule.js', '/studio/pdf-export.js', '/studio/schedule-poster.js', '/studio/review-training.css', '/studio/year-plan.js',
   '/studio/first-work.js', '/studio/first-work.css',

@@ -4230,7 +4230,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js"></script>
+<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -16265,7 +16265,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   function meetTplSnap(base,tp){
     var snap=JSON.parse(JSON.stringify(base||{})),id=1001;
     snap.players=[];snap.equipment=[];snap.drawings=[];
-    Object.assign(snap,{pitchSpec:"fifa",area:"full",pitchView:"full",fieldMode:"standard",halfSide:"L",spFlip:false,pitchN:1,press:null,spMarks:null,spMark:null,boardLocked:false,pitchTheme:"white",pitchCustom:null,pitchImg:null});   /* 2.961 — 미팅 운동장은 흰색으로 시작(사용자 «운동장을 기본 흰색으로») — 종이·PDF·화면 발표에서 읽기 쉽다. 작업 보드의 기본(네이비)은 그대로 */
+    Object.assign(snap,{pitchSpec:"fifa",area:"full",pitchView:"full",fieldMode:"standard",halfSide:"L",spFlip:false,pitchN:1,press:null,spMarks:null,spMark:null,boardLocked:false,pitchTheme:"",pitchCustom:null,pitchImg:null,gridType:"grid15"});   /* 3.128 — 새 미팅은 네이비 · 15존(사용자 «미팅만들기 들어가면 평면에 15존에 네이비 피치») — 2.961 흰색 대신 */
     tp.us.forEach(function(m,i){var q=meetTplPt(m),r=MEET_TPL_US[i];snap.players.push({id:id++,team:"blue",num:String(r[0]),pos:r[1],x:q.x,y:q.y});});
     tp.op.forEach(function(m,i){var q=meetTplPt(m),r=MEET_TPL_OPP[i];snap.players.push({id:id++,team:"red",num:String(r[0]),pos:r[1],x:q.x,y:q.y});});
     snap.ball=tp.ball?meetTplPt(tp.ball):null;
@@ -19069,7 +19069,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     if(!psVaultRequireLogin())return Promise.resolve(_fail());
     var src=(Array.isArray(p.slides)?p.slides:[]).slice(0,30);
     if(!src.length&&!p.template){try{toast("옮길 경기 자료가 없어요");}catch(_){} return Promise.resolve(_fail());}
-    var team=psIsTeamWs(),shared=!!p.shared&&team,ref=meetRefClean(p.ref),base=meetBaseSnap(),skipped=0,slides=[];
+    var team=psIsTeamWs(),shared=!!p.shared&&team,ref=meetRefClean(p.ref),base=Object.assign(meetBaseSnap(),{pitchTheme:"",pitchCustom:null,pitchImg:null,gridType:"grid15"}),skipped=0,slides=[];
     /* 2.965 — «기본 9장»(보관함 › 만들기 › 미팅과 같은 BEST 11·블록·빌드업·코너킥)을 뒤에 붙인다. 경기 준비 보드가 빠진 자리를
        새 미팅이 맡으니, 경기에서 만들어도 보관함에서 만든 것과 같은 판으로 시작한다. 선발 11 을 가져왔으면 BEST 11 은 뺀다(같은 장이 둘이 된다) */
     var _po=window.__meetDefaultOrient?window.__meetDefaultOrient():"portrait",_oh=_po==="landscape"?"h":"v";   /* 2.970 — 세로형 먼저 */
