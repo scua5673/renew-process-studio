@@ -30,7 +30,6 @@ test('preview values go through setAttribute only (team colours can come from sh
 });
 
 test('version and release notes',()=>{
-  const v=/const CACHE = 'process-3\.(\d{3})'/.exec(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'));   /* 3.122 — 판을 박지 않는다(뒤 판에서도 통과) */
-  assert.ok(v&&+v[1]>=121,'CACHE 는 3.121 이후');
+  const v=+(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8').match(/const CACHE = 'process-3\.(\d{3})'/)||[])[1];assert.ok(v>=121,'판 3.121 이상 '+v);
   assert.match(fs.readFileSync(path.join(__dirname,'../studio/release-notes.js'),'utf8'),/v3\.121 · 유니폼 꾸미기에서 토큰을 미리 봐요/);
 });

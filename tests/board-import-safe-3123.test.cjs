@@ -1,6 +1,6 @@
 'use strict';
-// 3.122 — 오류 제보 b4578ca1: «보드 가져오기»가 장면 29개를 만든 페이지를 덮었다.
-// 이제 지금 페이지에 내용이 있으면 새 페이지로 가져온다(board-import-safe.js). 화면 흐름은 tests/browser/board-import-safe-3122.mjs.
+// 3.123 — 오류 제보 b4578ca1: «보드 가져오기»가 장면 29개를 만든 페이지를 덮었다.
+// 이제 지금 페이지에 내용이 있으면 새 페이지로 가져온다(board-import-safe.js). 화면 흐름은 tests/browser/board-import-safe-3123.mjs.
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');

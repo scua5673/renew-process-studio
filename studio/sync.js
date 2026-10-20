@@ -772,7 +772,7 @@ function idbSensitiveKeys(workspaceOnly){
   return Promise.resolve(window.storage.keys()).then(function(keys){
     if(!Array.isArray(keys))throw new Error('IndexedDB 키 목록을 확인할 수 없습니다');
     return keys.filter(function(k){
-      if(workspaceOnly)return IDB_CONTENT.indexOf(k)>=0||k.indexOf('sq:')===0||k.indexOf('cs_ls_left_v1:')===0||isIdpPubKey(k);   /* 3.123 — storage.js optimize 가 옮겨 둔 옛 사본 */
+      if(workspaceOnly)return IDB_CONTENT.indexOf(k)>=0||k.indexOf('sq:')===0||k.indexOf('cs_ls_left_v1:')===0||isIdpPubKey(k);   /* 3.124 — storage.js optimize 가 옮겨 둔 옛 사본 */
       return sensitiveLocalKey(k)||IDB_CONTENT.indexOf(k)>=0||Object.prototype.hasOwnProperty.call(IDBK,k);
     });
   });
@@ -5842,7 +5842,7 @@ function syncLibrary(at,m,now,wid,ownerGuard){
   function probe(){
     var h1=hj(at); h1['Prefer']='count=exact';
     return Promise.all([
-      syncFetch('library_probe',base+'&select=updated_at&order=updated_at.desc.nullslast&limit=1',{headers:h1}).then(function(r){   /* 3.123 — 고친 시각(서버가 쓸 때마다 찍는다): 옛 시각으로 올린 줄도 다른 기기를 깨운다 */
+      syncFetch('library_probe',base+'&select=updated_at&order=updated_at.desc.nullslast&limit=1',{headers:h1}).then(function(r){   /* 3.124 — 고친 시각(서버가 쓸 때마다 찍는다): 옛 시각으로 올린 줄도 다른 기기를 깨운다 */
         if(!r.ok)throw syncHttpError('library_probe',r.status);
         var cr=''; try{ cr=r.headers.get('content-range')||''; }catch(_){}
         return r.json().then(function(rows){ return (cr.split('/')[1]||'?')+'|'+((rows&&rows[0]&&rows[0].updated_at)||0); });
@@ -5985,7 +5985,7 @@ function _syncLibrary(at,m,now,wid,lib,ownerGuard,libExpectedRaw,libExpectedRev)
       var sNew=srvStamp(s)>(rec?rec.s:0);
       /* 공개/비공개가 바뀌었으면 내용이 그대로여도 다시 올려야 한다(공유 켜기·끄기) */
       var flip=teamOnly&&priv&&(!!s.private===!!wantShare);
-      /* 3.123 — 서버가 이 사본보다 새것이면(다른 기기가 옮기거나 고쳤다) 옛 사본을 올리지 않는다 — 아래 sNew 갈래가 받는다.
+      /* 3.124 — 서버가 이 사본보다 새것이면(다른 기기가 옮기거나 고쳤다) 옛 사본을 올리지 않는다 — 아래 sNew 갈래가 받는다.
          제보 ac40be30: 옛 판 아이패드가 맥에서 «팀 공유»로 옮긴 자료를 옛 폴더 · 비공개로 되돌렸다(옛 시각으로 올려 맥도 다시 받지 않았다) */
       if(flip&&!(sNew&&srvStamp(s)>(t||now))){ var ft=t||now; queueLibPush(libRow(it,ft,wid,mineBackup),false); m.li[id]={h:h,s:ft}; return; }
       if(dirty&&sNew){ /* 양쪽 변경 — 더 최신 시각이 승 */

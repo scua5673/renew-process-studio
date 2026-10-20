@@ -64,6 +64,7 @@ try{
   await f.waitForSelector('.vcc-item');
   await f.evaluate(()=>[...document.querySelectorAll('.vcc-item')].find(b=>/미팅 자료/.test(b.textContent)).click());
   await f.waitForFunction(()=>document.body.classList.contains('meet-mode')&&anim.slides&&anim.slides.length>=2,null,{timeout:15000});
+  await f.waitForSelector('#psMeetForm.on');await f.evaluate(()=>document.querySelector('#psMeetForm .mf-skip').click());   // 3.122 — 새 미팅의 «포메이션 고르기»는 기본 그대로
   await page.waitForTimeout(400);
   await f.evaluate(()=>{ if(window.__meetingPageActive)window.__meetingPageEdit(); });
   await f.waitForFunction(()=>!window.__meetingPageActive);

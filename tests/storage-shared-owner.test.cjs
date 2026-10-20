@@ -149,27 +149,27 @@ for(const value of [null,'fabricated'])test('untrusted auxiliary resolution stil
 for(const change of ['owner','source'])test('aux resolver cannot return a stale '+change+' snapshot',async()=>{const h=harness(),key='ps_sync_base_team-A_key';h.local.set(key,'legacy');h.disk.set(key,'disk');await assert.rejects(h.c.auxGet(key,()=>{if(change==='owner')h.change('account');else h.local.set(key,'newer');return 'legacy';}),stale);assert.equal(h.disk.get(key),'disk');assert.deepEqual(h.writes,[]);assert.deepEqual(h.removals,[]);});
 test('equal auxiliary snapshots cannot remove a newer local edit arriving during IDB read',async()=>{const h=harness(),key='ps_sync_base_team-A_key';h.local.set(key,'old');h.disk.set(key,'old');h.hooks.read=()=>h.local.set(key,'new');await assert.rejects(h.c.auxGet(key),stale);assert.equal(h.local.get(key),'new');assert.equal(h.disk.get(key),'old');assert.deepEqual(h.removals,[]);});
 
-/* 3.123 — 제보 ac40be30: 옛 판이 localStorage 에 남긴 보관함 사본은 IDB 의 객체 정본과 === 로 같을 수 없어 정리가 영영 남겼다(아이패드 «quota exceeded»).
+/* 3.124 — 제보 ac40be30: 옛 판이 localStorage 에 남긴 보관함 사본은 IDB 의 객체 정본과 === 로 같을 수 없어 정리가 영영 남겼다(아이패드 «quota exceeded»).
    같은 글이면 지우고, 다르면 IDB 의 따로 둔 칸에 옮겨 다시 읽어 확인한 뒤에만 지운다. 정본은 그대로. */
-test('3.123 a stale local copy of an object-backed device key moves to its IDB leftover slot and leaves localStorage',async()=>{
+test('3.124 a stale local copy of an object-backed device key moves to its IDB leftover slot and leaves localStorage',async()=>{
  const h=harness(),key='cs_drill_lib_v1';h.c.slimThumbs=async()=>({n:0,saved:0});h.disk.set(key,[{libId:'L1',name:'new'}]);h.local.set(key,'[{"libId":"L1","name":"old"}]');
  await h.c.optimizer.optimize();
  assert.equal(h.local.has(key),false,'localStorage 칸이 비었다');
  assert.equal(h.disk.get('cs_ls_left_v1:'+key),'[{"libId":"L1","name":"old"}]','옛 사본은 IDB 따로 둔 칸에 글자 그대로');
  assert.deepEqual(h.disk.get(key),[{libId:'L1',name:'new'}],'정본은 그대로');
 });
-test('3.123 an identical local copy of an object-backed device key is simply removed',async()=>{
+test('3.124 an identical local copy of an object-backed device key is simply removed',async()=>{
  const h=harness(),key='cs_drill_lib_v1';h.c.slimThumbs=async()=>({n:0,saved:0});h.disk.set(key,[{libId:'L1'}]);h.local.set(key,'[{"libId":"L1"}]');
  await h.c.optimizer.optimize();
  assert.equal(h.local.has(key),false);assert.equal(h.disk.has('cs_ls_left_v1:'+key),false,'같은 글이면 따로 둘 것이 없다');
 });
-test('3.123 a local edit arriving while the leftover is being moved is never removed',async()=>{
+test('3.124 a local edit arriving while the leftover is being moved is never removed',async()=>{
  const h=harness(),g=gate(),key='cs_drill_lib_v1';h.c.slimThumbs=async()=>({n:0,saved:0});h.disk.set(key,[{libId:'L1'}]);h.local.set(key,'OLD');
  h.hooks.read=({k})=>k==='cs_ls_left_v1:'+key?g.promise:undefined;
  const work=h.c.optimizer.optimize().catch(e=>e);await tick();await tick();h.local.set(key,'NEWER');g.resolve();await work;
  assert.equal(h.local.get(key),'NEWER','새로 쓴 사본은 그대로');assert.equal(h.disk.has('cs_ls_left_v1:'+key),false,'옛 값으로 옮기지도 않는다');
 });
-test('3.123 thumbnail slimming does not serialize an object store that has no grass pattern',async()=>{
+test('3.124 thumbnail slimming does not serialize an object store that has no grass pattern',async()=>{
  assert.equal(h0().c.hasGrass({a:[{thumb:'<svg>'+'x'.repeat(2500)+'</svg>'}]}),false);
  assert.equal(h0().c.hasGrass({a:[{thumb:'<svg><pattern id="psRealGrass1">'+'x'.repeat(2500)+'</pattern></svg>'}]}),true);
  const h=h0(),key='cs_drill_lib_v1';h.disk.set(key,[{thumb:'<svg>'+'x'.repeat(2500)+'</svg>'}]);
@@ -178,7 +178,7 @@ test('3.123 thumbnail slimming does not serialize an object store that has no gr
  assert.equal(n,0,'무늬가 없으면 보관함을 글로 바꾸지 않는다');
  function h0(){return harness();}
 });
-test('3.123 the daily automatic tidy runs only in the top window',()=>{
+test('3.124 the daily automatic tidy runs only in the top window',()=>{
  const a=source.indexOf("  var K='ps_opt_auto_at'"),b=source.indexOf('})();',a);assert.ok(a>0&&b>a);
  const body=source.slice(a,b);
  for(const top of [true,false]){
