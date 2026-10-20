@@ -3,7 +3,7 @@ import path from 'node:path';
 import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
 // 3.035 — 사용자 «훈련 세션 만들기 들어갔을 때는 보드 설정이 평면에 훈련 피치로» · «그리드 선택했을 때 보드에 여백이 없이 다 활용할 수 있게».
 // ① 3D 로 쓰던 기기에서 훈련 편집기를 열면 평면 · 훈련 피치 — 설정 값(ps_board_tilt3d)은 그대로 «1»
-// ② 손대지 않고 나가면 3D 로 돌아온다 ③ 편집기 안에서 «평면»을 직접 고르면(설정 값 «0») 나가도 평면 그대로
+// ② 손대지 않고 나가면 3D 로 돌아온다 ③ 3.120 — 편집기 안에서 고른 평면 · 3D 는 그 훈련의 값(board-edit-view.js): 나가면 들어오기 전 보기(3D)로, 설정 값은 «1» 그대로
 // ④ 3D 그리드 판은 틀 여백 없이(TILT_PAD_BLANK) · 잔디가 판 밖으로 한 판 넓이만큼 이어진다(경기장 그림 상자가 판보다 훨씬 크다)
 // 합성 팀 fixture 에서만 돈다. 데스크톱 폭(3D 는 데스크톱에서만 처음부터 켜진다).
 const engine=process.env.PS_BROWSER_ENGINE||'chromium';
@@ -34,10 +34,11 @@ try{
   assert.ok(g.picW>g.boardW*1.8&&g.picW<g.boardW*3,'경기장 그림이 판보다 훨씬 넓다(잔디 bleed 반 판) '+JSON.stringify(g));
   assert.ok(g.imgW>g.surfW*1.6,'그림이 판 상자를 넘어 무대를 덮는다 '+JSON.stringify(g));
   await page.screenshot({path:path.join(SHOTS,'board-editor-grid3d-'+engine+'.png')});
-  // ③ 편집기 안에서 평면을 직접 고르면 나가도 평면
+  // ③ 3.120 — 편집기 안에서 고른 평면 · 3D 는 그 훈련의 값(사용자 «보드설정에서 수정을 하면 각각 저장»): 나가면 들어오기 전 보기(3D), 설정 값은 «1» 그대로
   await f.evaluate(()=>window.__setTilt(false));await page.waitForTimeout(300);
-  await f.evaluate(()=>closeEditor(false));await f.waitForFunction(()=>!document.body.classList.contains('editing'));await page.waitForTimeout(1000);
-  s=await st();assert.equal(s.tilt,false,'직접 끈 평면은 그대로 '+JSON.stringify(s));assert.equal(s.ls,'0');assert.equal(s.spec,'fifa','보드의 운동장은 그대로');
+  assert.equal(await f.evaluate(()=>localStorage.getItem('ps_board_tilt3d')),'1','편집기 안의 선택은 기기 설정을 바꾸지 않는다');
+  await f.evaluate(()=>closeEditor(false));await f.waitForFunction(()=>!document.body.classList.contains('editing')&&document.body.classList.contains('bc-tilt3d'),null,{timeout:10000});await page.waitForTimeout(1000);
+  s=await st();assert.equal(s.tilt,true,'들어오기 전 보기(3D)로 '+JSON.stringify(s));assert.equal(s.ls,'1');assert.equal(s.spec,'fifa','보드의 운동장은 그대로');
   // ② 3D 로 돌아가 편집기를 손대지 않고 나가면 3D 로
   await f.evaluate(()=>window.__setTilt(true));await page.waitForTimeout(600);
   await f.evaluate(()=>{try{setView('session');}catch(_){}openEditor(null,'train');});await f.waitForFunction(()=>document.body.classList.contains('editing'));await page.waitForTimeout(800);

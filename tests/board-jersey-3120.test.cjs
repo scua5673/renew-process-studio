@@ -125,5 +125,7 @@ test('wired into the board: script after the board modules, service worker core,
   assert.match(dep,/if \(jersey\) lid\.appendChild\(jersey\.cloneNode\(true\)\);/);
   assert.ok(Buffer.byteLength(b)<=2560000,'board.html budget '+Buffer.byteLength(b));
   const src=read('studio/board-jersey.js');
+  // 켜질 때 판을 다시 그리지 않는다 — renderTokens 는 끝에서 boardSaveLive 를 불러 부팅 중 저장본 불러오기(restoreLiveBoard)를 멈춘다
+  assert.doesNotMatch(src.replace(/\/\/[^\n]*/g,''),/renderTokens\(\)/,'install 에서 renderTokens 를 부르지 않는다');
   assert.match(src,/win\.makeToken = function/);assert.match(src,/D\.apply = function/,'3D 칩은 apply 앞에서 얹는다');assert.match(src,/win\._setChip3d = function/);
 });

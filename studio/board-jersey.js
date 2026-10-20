@@ -150,8 +150,16 @@
     }
     var sc = win._setChip3d;
     if (typeof sc === 'function') win._setChip3d = function () { var r = sc.apply(this, arguments); try { liftGloss(typeof tokenLayer !== 'undefined' ? tokenLayer : null); } catch (_) {} return r; };   /* global tokenLayer */
-    // 부팅 때 이미 그린 판(restoreLiveBoard)도 한 번 다시 그린다
-    try { if (typeof win.renderTokens === 'function' && typeof tokenLayer !== 'undefined' && tokenLayer) win.renderTokens(); } catch (_) {}
+    // 부팅 때 이미 그린 토큰에도 얹는다 — renderTokens 를 부르지 않는다: 끝에서 boardSaveLive 를 불러 «고친 판»이 되고,
+    // 저장본을 받아오는 중(restoreLiveBoard 의 GET)이면 그 불러오기가 멈춘다(새로고침 뒤 페이지가 1장으로 — board-look-per-work).
+    try {
+      var layer = typeof tokenLayer !== 'undefined' ? tokenLayer : null, list = typeof state !== 'undefined' && state && state.players;   /* global state */
+      if (layer && Array.isArray(list)) list.forEach(function (p) {
+        var g = p && layer.querySelector('[data-id="' + String(p.id).replace(/["\\]/g, '') + '"]');
+        if (g && !g.hasAttribute('data-depth-chip')) { try { decorate(win, g, p); } catch (_) {} }
+      });
+      liftGloss(layer);
+    } catch (_) {}
     return true;
   }
   function boot(win) {
