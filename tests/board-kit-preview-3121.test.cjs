@@ -16,7 +16,7 @@ test('the editor shows both token shapes under the big kit figure',()=>{
 test('every repaint redraws the preview, with the same drawing as the board (base shape + PSJersey + number)',()=>{
   assert.match(fn('paint'),/paintPrev\(s\);/);
   const d=fn('drawToken');
-  assert.match(d,/J\.spec\(shape, \{ main: main, acc: s\.accent, pat: s\.pat, stroke: stroke \}\)/);
+  assert.match(d,/J\.spec\(shape, \{ main: main, acc: s\.accent, pat: s\.pat, stroke: stroke, sleeve: x\.sleeve, trim: x\.trim, collar: x\.collar, autoStroke: !s\.stroke \}\)/,'3.123 소매 · 테두리 · 목깃도');
   assert.match(d,/win\.kitSVGDef\(id, main, s\.accent, s\.pat\)/,'무늬는 작전판과 같은 기하');
   assert.match(d,/J\.SHIRT_D/);assert.match(d,/'stroke-width': '2\.6'/);assert.match(d,/'stroke-width': '2\.2'/);
   assert.match(fn('paintPrev'),/ed\.gk \? '1' : '10'/,'골키퍼는 1번');

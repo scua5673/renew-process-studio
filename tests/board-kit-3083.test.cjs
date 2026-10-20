@@ -34,7 +34,7 @@ test('easy to find: menu item, tray pen + header button, inspector button, old c
 });
 test('quick combos are whole kits (shirt · accent · pattern · shorts · socks) and the pattern geometry matches the board',()=>{
   assert.ok(kit.COMBOS.length>=8);
-  for(const c of kit.COMBOS){ for(const i of [0,1,3,4])assert.match(c[i],/^#[0-9a-f]{6}$/); assert.ok(['solid','v','thinv','h','half','quarters','band','hoop','sash','diag'].includes(c[2])); assert.ok(c[5]); }
+  for(const c of kit.COMBOS){ for(const i of [0,1,3,4])assert.match(c[i],/^#[0-9a-f]{6}$/); assert.ok(['solid','v','thinv','h','half','quarters','band','hoop','sash','diag','check','chest','fade','chev'].includes(c[2])); assert.ok(c[5]); }
   assert.strictEqual(kit.SWATCH.length,16);
   assert.strictEqual(kit.cssBG('#111111','#222222','band'),'linear-gradient(90deg,#111111 0 36%,#222222 36% 64%,#111111 64%)');
   const b=fs.readFileSync(path.join(__dirname,'../studio/board.html'),'utf8');

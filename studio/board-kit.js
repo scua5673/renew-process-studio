@@ -6,7 +6,11 @@
    값: 상의 · 무늬 · 번호는 예전 그대로(teamColors · teamColor2 · teamPattern · teamTxtC · teamStrokeC · gk*),
        하의 · 스타킹은 state.teamKit = { 팀: {shorts, socks}, 'gk:팀': {…} } — 보드마다, 모든 장면에 같이(KIT_KEYS).
    3.121 — «토큰 미리보기»(사용자 «토큰 유니폼 설정할 때 미리보기 가능하게»): 판에서 보일 원형 · 유니폼 토큰(board-jersey.js 그림)을 창 안에 — 바꿀 때마다 다시 그린다.
-   3D «사람» 선수가 window.__kitOf(p) 로 하의 · 스타킹을 칠한다. 비우면 자동(하의 = 상의를 어둡게 · 스타킹 = 상의). */
+   3D «사람» 선수가 window.__kitOf(p) 로 하의 · 스타킹을 칠한다. 비우면 자동(하의 = 상의를 어둡게 · 스타킹 = 상의).
+   3.127 — 해외 구단 같은 유니폼(사용자 «해외리그 팀 유니폼 더 잘» → 시안): 상의에 «소매» · «테두리»(목깃 · 소매 줄 · 엠블럼 색) · 목깃 모양(둥근 목 · V넥 · 카라).
+     값은 같은 칸 state.teamKit[팀] 의 sleeve · trim · collar(비우면 자동 — 소매 = 몸통 · 테두리 = 보조색). 판 그림은 window.__kitMore(p) → board-jersey.js.
+     무늬 넷(체크 · 가슴 띠 · 옅어지는 색 · 갈매기)은 작전판 KIT_PATS 에 더하고 kitSVGDef · kitCSSBG 를 감싼다(board.html 은 크기 예산이 차서 고치지 않는다).
+     빠른 조합 20 — 이름은 색으로만(구단 이름 · 엠블럼 · 스폰서 · 브랜드 무늬 없음). */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -18,19 +22,32 @@
   var TEAM_DEF = { blue: '#1a2f5c', red: '#d12f38', yellow: '#eeff00', green: '#34a56f' };
   var SWATCH = [['#d71920', '빨강'], ['#8b0d1f', '와인'], ['#f26b1d', '주황'], ['#ffd400', '노랑'], ['#1f8f4e', '초록'], ['#0b5d3b', '진초록'], ['#6cc4ee', '하늘'], ['#1e5bc6', '파랑'],
     ['#14213d', '네이비'], ['#6a2c91', '보라'], ['#e85a9b', '분홍'], ['#ffffff', '흰색'], ['#c9ced6', '회색'], ['#1a1a1a', '검정'], ['#c8a24a', '금색'], ['#7a4a2a', '갈색']];
-  var PATS = [['solid', '단색'], ['v', '세로 줄무늬'], ['thinv', '가는 세로 줄무늬'], ['h', '가로 줄무늬'], ['half', '반반'], ['quarters', '쿼터'], ['band', '세로 띠'], ['hoop', '가로 띠'], ['sash', '사선 띠'], ['diag', '사선 줄무늬']];
-  // 빠른 조합: [상의, 보조색, 무늬, 하의, 스타킹, 이름]
+  var PATS = [['solid', '단색'], ['v', '세로 줄무늬'], ['thinv', '가는 세로 줄무늬'], ['h', '가로 줄무늬'], ['half', '반반'], ['quarters', '쿼터'], ['band', '세로 띠'], ['hoop', '가로 띠'], ['sash', '사선 띠'], ['diag', '사선 줄무늬'],
+    ['check', '체크'], ['chest', '가슴 띠'], ['fade', '옅어지는 색'], ['chev', '갈매기']];
+  var NEW_PATS = ['check', 'chest', 'fade', 'chev'];
+  var COLLARS = [['crew', '둥근 목'], ['v', 'V넥'], ['polo', '카라']];
+  // 빠른 조합: [상의, 보조색, 무늬, 하의, 스타킹, 이름, {소매 · 테두리 · 목깃}] — 이름은 색으로만
   var COMBOS = [
-    ['#d71920', '#ffffff', 'solid', '#ffffff', '#d71920', '빨강 · 흰 · 빨강'],
-    ['#ffffff', '#1a1a1a', 'solid', '#1a1a1a', '#ffffff', '흰 · 검정 · 흰'],
-    ['#1e5bc6', '#ffffff', 'solid', '#ffffff', '#1e5bc6', '파랑 · 흰 · 파랑'],
-    ['#ffd400', '#1e5bc6', 'solid', '#1e5bc6', '#ffd400', '노랑 · 파랑 · 노랑'],
-    ['#6cc4ee', '#ffffff', 'solid', '#14213d', '#6cc4ee', '하늘 · 네이비 · 하늘'],
-    ['#1a1a1a', '#1a1a1a', 'solid', '#1a1a1a', '#1a1a1a', '올 검정'],
-    ['#c8102e', '#1a1a1a', 'v', '#1a1a1a', '#1a1a1a', '빨강·검정 줄무늬'],
-    ['#0b3a8c', '#a50044', 'v', '#0b3a8c', '#0b3a8c', '파랑·자주 줄무늬'],
-    ['#1f8f4e', '#ffffff', 'hoop', '#ffffff', '#1f8f4e', '초록·흰 가로 띠'],
-    ['#f26b1d', '#1a1a1a', 'solid', '#1a1a1a', '#f26b1d', '주황 · 검정 · 주황']
+    ['#d71920', '#ffffff', 'solid', '#ffffff', '#d71920', '빨강 몸통 · 흰 소매', { sleeve: '#ffffff', trim: '#ffffff' }],
+    ['#7a1e3c', '#95bfe5', 'solid', '#ffffff', '#7a1e3c', '자주 몸통 · 하늘 소매', { sleeve: '#95bfe5', trim: '#95bfe5' }],
+    ['#75aadb', '#ffffff', 'v', '#14213d', '#ffffff', '하늘 · 흰 세로 줄', { trim: '#14213d' }],
+    ['#0b3a8c', '#a50044', 'v', '#0b3a8c', '#0b3a8c', '파랑 · 자주 줄 · 노란 테두리', { trim: '#f5c400' }],
+    ['#1e5bc6', '#1a1a1a', 'v', '#1a1a1a', '#1a1a1a', '파랑 · 검정 줄 · 금 테두리', { trim: '#c8a24a' }],
+    ['#1a1a1a', '#ffffff', 'v', '#ffffff', '#ffffff', '검정 · 흰 세로 줄', { trim: '#ffffff' }],
+    ['#c8102e', '#1a1a1a', 'v', '#1a1a1a', '#1a1a1a', '빨강 · 검정 세로 줄', { trim: '#1a1a1a' }],
+    ['#ffd400', '#1a1a1a', 'solid', '#1a1a1a', '#ffd400', '노랑 · 검정 V넥', { trim: '#1a1a1a', collar: 'v' }],
+    ['#ffffff', '#d71920', 'chest', '#ffffff', '#ffffff', '흰 · 가슴 빨간 띠', { trim: '#d71920' }],
+    ['#ffffff', '#d71920', 'band', '#ffffff', '#ffffff', '흰 · 가운데 빨간 띠', { trim: '#d71920' }],
+    ['#1f8f4e', '#ffffff', 'h', '#ffffff', '#1f8f4e', '초록 · 흰 가로 줄', { trim: '#ffffff' }],
+    ['#ffffff', '#14213d', 'solid', '#14213d', '#ffffff', '흰 · 남색 카라', { trim: '#14213d', collar: 'polo' }],
+    ['#14213d', '#ffffff', 'solid', '#14213d', '#14213d', '남색 · 흰 카라', { trim: '#ffffff', collar: 'polo' }],
+    ['#d71920', '#ffffff', 'check', '#ffffff', '#1e5bc6', '빨강 · 흰 체크', { trim: '#14213d' }],
+    ['#f26b1d', '#1a1a1a', 'solid', '#1a1a1a', '#f26b1d', '주황 · 검정 V넥', { trim: '#1a1a1a', collar: 'v' }],
+    ['#6cc4ee', '#14213d', 'solid', '#14213d', '#6cc4ee', '하늘 몸통 · 남색 소매', { sleeve: '#14213d', trim: '#14213d' }],
+    ['#ffffff', '#1a1a1a', 'solid', '#1a1a1a', '#ffffff', '흰 몸통 · 검정 소매', { sleeve: '#1a1a1a', trim: '#1a1a1a' }],
+    ['#1a1a1a', '#c8102e', 'fade', '#1a1a1a', '#1a1a1a', '검정 · 빨강 옅어지는 색', { trim: '#c8102e' }],
+    ['#1e5bc6', '#ffffff', 'half', '#ffffff', '#1e5bc6', '파랑 · 흰 반반', { trim: '#ffffff' }],
+    ['#6a2c91', '#ffffff', 'chev', '#ffffff', '#6a2c91', '보라 · 흰 갈매기', { trim: '#ffffff' }]
   ];
   var LABEL = { shirt: '상의', shorts: '하의', socks: '스타킹', num: '번호' };
   var PREV = [['circle', '원형'], ['shirt', '유니폼']];
@@ -43,6 +60,15 @@
     var k = kits[keyOf(p.team, isGk(p))]; if (!k) return null;
     var out = {}, any = false;
     PARTS.forEach(function (n) { var h = hex(k[n]); if (h) { out[n] = h; any = true; } });
+    return any ? out : null;
+  }
+  // 3.127 소매 · 테두리 · 목깃 — 고른 것만(비우면 자동)
+  function extrasOf(kits, p) {
+    if (!kits || !p || !p.team || p.coach) return null;
+    var k = kits[keyOf(p.team, isGk(p))]; if (!k) return null;
+    var out = {}, any = false, sl = hex(k.sleeve), tr = hex(k.trim), co = k.collar;
+    if (sl) { out.sleeve = sl; any = true; } if (tr) { out.trim = tr; any = true; }
+    if (co === 'v' || co === 'polo') { out.collar = co; any = true; }
     return any ? out : null;
   }
   function shade(h, k) { h = hex(h); if (!h) return ''; var n = parseInt(h.slice(1), 16); function c(v) { return ('0' + Math.round(v * k).toString(16)).slice(-2); } return '#' + c(n >> 16 & 255) + c(n >> 8 & 255) + c(n & 255); }
@@ -59,10 +85,30 @@
     if (p === 'hoop') return 'linear-gradient(180deg,' + m + ' 0 36%,' + a + ' 36% 64%,' + m + ' 64%)';
     if (p === 'sash') return 'linear-gradient(135deg,' + m + ' 0 36%,' + a + ' 36% 64%,' + m + ' 64%)';
     if (p === 'diag') return 'linear-gradient(135deg,' + m + ' 0 20%,' + a + ' 20% 40%,' + m + ' 40% 60%,' + a + ' 60% 80%,' + m + ' 80%)';
-    return m;
+    return newBG(m, a, p) || m;
+  }
+  // 3.127 새 무늬의 CSS(칩 · 그림) — 판 kitSVGDef 와 같은 기하
+  function newBG(m, a, p) {
+    if (p === 'check') return 'repeating-conic-gradient(' + a + ' 0 25%,' + m + ' 0 50%) 0 0/40% 40%';
+    if (p === 'chest') return 'linear-gradient(180deg,' + m + ' 0 30%,' + a + ' 30% 45%,' + m + ' 45%)';
+    if (p === 'fade') return 'linear-gradient(180deg,' + m + ' 0 35%,' + a + ' 100%)';
+    if (p === 'chev') return 'linear-gradient(29deg,transparent 0 43%,' + a + ' 43% 60%,transparent 60%) 0 0/50% 100% no-repeat,linear-gradient(-29deg,transparent 0 43%,' + a + ' 43% 60%,transparent 60%) 100% 0/50% 100% no-repeat,' + m;
+    return '';
+  }
+  // 3.127 새 무늬의 SVG(판 토큰 바탕) — 작전판 kitSVGDef 와 같은 모양(objectBoundingBox)
+  function newDef(doc, id, m, a, p) {
+    var NS = 'http://www.w3.org/2000/svg';
+    function el(t, at) { var e = doc.createElementNS(NS, t); for (var k in at) e.setAttribute(k, String(at[k])); return e; }
+    function P() { var n = el('pattern', { id: id, width: 1, height: 1, patternUnits: 'objectBoundingBox', patternContentUnits: 'objectBoundingBox' }); n.appendChild(el('rect', { width: 1, height: 1, fill: m })); return n; }
+    function R(n, x, y, w, h) { n.appendChild(el('rect', { x: x, y: y, width: w, height: h, fill: a })); }
+    if (p === 'check') { var c = P(); for (var i = 0; i < 5; i++) for (var j = 0; j < 5; j++) if ((i + j) % 2) R(c, i * .2, j * .2, .2, .2); return c; }
+    if (p === 'chest') { var b = P(); R(b, 0, .3, 1, .15); return b; }
+    if (p === 'chev') { var v = P(); v.appendChild(el('polygon', { points: '0,.17 .5,.45 1,.17 1,.31 .5,.59 0,.31', fill: a })); return v; }
+    if (p === 'fade') { var g = el('linearGradient', { id: id, x1: '0', y1: '0', x2: '0', y2: '1' }); [[0, m], [35, m], [100, a]].forEach(function (s) { g.appendChild(el('stop', { offset: s[0] + '%', 'stop-color': s[1] })); }); return g; }
+    return null;
   }
   function kitHTML(cls) {   // 상의 · 하의 · 스타킹 그림(CSS 모양 — 무늬는 배경 그대로)
-    return '<span class="' + cls + '"><span class="kf-p kf-shirt" data-part="shirt"><i class="kf-fill"></i><b class="kf-num">10</b></span>' +
+    return '<span class="' + cls + '"><span class="kf-p kf-shirt" data-part="shirt"><i class="kf-fill"></i><i class="kf-sl"></i><i class="kf-col"></i><b class="kf-num">10</b></span>' +
       '<span class="kf-p kf-shorts" data-part="shorts"><i class="kf-fill"></i></span>' +
       '<span class="kf-p kf-socks" data-part="socks"><i class="kf-fill kf-l"></i><i class="kf-fill kf-r"></i></span></span>';
   }
@@ -73,6 +119,7 @@
     if (!doc || win.__psKit) return null;
     win.__psKit = true;
     win.__kitOf = function (p) { try { return kitOf(state.teamKit, p); } catch (_) { return null; } };
+    win.__kitMore = function (p) { try { return extrasOf(state.teamKit, p); } catch (_) { return null; } };
     var ed = { team: 'blue', gk: false, part: 'shirt', sub: 'main', anchor: null };
     var box = null, armed = false;
 
@@ -85,18 +132,20 @@
     }
     function partColor(part) {
       var s = style(), e = kitEntry(false) || {};
-      if (part === 'shirt') return ed.sub === 'accent' ? s.accent : s.main;
+      if (part === 'shirt') return ed.sub === 'accent' ? s.accent : (ed.sub === 'sleeve' || ed.sub === 'trim') ? (hex(e[ed.sub]) || '') : s.main;
       if (part === 'num') return ed.sub === 'stroke' ? (s.stroke || '') : (s.txt || '');
       return hex(e[part]) || '';
     }
     function undoOnce() { if (armed) return; armed = true; try { pushUndo(); } catch (_) {} win.setTimeout(function () { armed = false; }, 900); }
     function call(name, a, b) { try { var f = win[(ed.gk ? '__setGk' : '__setTeam') + name]; if (typeof f === 'function') f(a, b); } catch (_) {} }
-    function setKit(part, v) { var e = kitEntry(true); if (!e) return; if (v) e[part] = hex(v); else delete e[part]; if (!e.shorts && !e.socks) { try { delete state.teamKit[keyOf(ed.team, ed.gk)]; } catch (_) {} } try { renderTokens(); } catch (_) {} }
+    function tidy(e) { if (!e.shorts && !e.socks && !e.sleeve && !e.trim && !e.collar) { try { delete state.teamKit[keyOf(ed.team, ed.gk)]; } catch (_) {} } }
+    function setKit(part, v) { var e = kitEntry(true); if (!e) return; if (part === 'collar') { if (v === 'v' || v === 'polo') e.collar = v; else delete e.collar; } else if (hex(v)) e[part] = hex(v); else delete e[part]; tidy(e); try { renderTokens(); } catch (_) {} }
     // 고른 칸에 색 하나(빈 값 = 자동)
     function apply(v) {
       undoOnce();
       var p = ed.part;
-      if (p === 'shirt') call(ed.sub === 'accent' ? 'Accent' : 'Main', ed.team, v || (ed.sub === 'accent' ? '#ffffff' : TEAM_DEF[ed.team]));
+      if (p === 'shirt' && (ed.sub === 'sleeve' || ed.sub === 'trim')) setKit(ed.sub, v);   // 비우면 자동(소매 = 몸통 · 테두리 = 보조색)
+      else if (p === 'shirt') call(ed.sub === 'accent' ? 'Accent' : 'Main', ed.team, v || (ed.sub === 'accent' ? '#ffffff' : TEAM_DEF[ed.team]));
       else if (p === 'num') call(ed.sub === 'stroke' ? 'Stroke' : 'Txt', ed.team, v || 'auto');
       else setKit(p, v);
       after();
@@ -107,7 +156,8 @@
     function combo(c) {
       undoOnce();
       call('Main', ed.team, c[0]); call('Accent', ed.team, c[1]); call('Pat', ed.team, c[2]);
-      var e = kitEntry(true); if (e) { e.shorts = c[3]; e.socks = c[4]; }
+      var e = kitEntry(true), x = c[6] || {};
+      if (e) { e.shorts = c[3]; e.socks = c[4]; ['sleeve', 'trim', 'collar'].forEach(function (k) { if (x[k]) e[k] = x[k]; else delete e[k]; }); }
       try { renderTokens(); } catch (_) {}
       after();
     }
@@ -140,6 +190,7 @@
         '<label class="ke-custom" title="다른 색"><input type="color" aria-label="다른 색"><span>＋</span></label></div>' +
         '<button type="button" class="ke-auto">자동</button>' +
         '<div class="ke-pats">' + PATS.map(function (p) { return '<button type="button" data-pat="' + p[0] + '" title="' + p[1] + '" aria-label="' + p[1] + '"><i></i></button>'; }).join('') + '</div>' +
+        '<div class="ke-cols" role="group" aria-label="목깃">' + COLLARS.map(function (c) { return '<button type="button" data-collar="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
         '</div></div>' +
         // 3.121 — 토큰 미리보기(사용자 «토큰 유니폼 설정할 때 미리보기 가능하게»): 판에서 보일 원형 · 유니폼 토큰을 그대로(board-jersey.js)
         '<div class="ke-h">토큰 미리보기 <small>판에서 이렇게 보여요</small></div><div class="ke-prev">' + PREV.map(function (p) {
@@ -149,7 +200,7 @@
         '<div class="ke-ft"><span class="ke-hint">그림을 눌러 고르고, 색을 눌러 입혀요 · 하의 · 스타킹은 3D «사람»에 보여요</span><button type="button" class="ke-reset">기본으로</button></div>';
       doc.body.appendChild(box);
       // 빠른 조합 그림은 한 번만 칠한다
-      [].forEach.call(box.querySelectorAll('[data-combo]'), function (b) { var c = COMBOS[+b.getAttribute('data-combo')]; paintFig(b.querySelector('.ke-mini'), c[0], c[1], c[2], c[3], c[4], '', true); });
+      [].forEach.call(box.querySelectorAll('[data-combo]'), function (b) { var c = COMBOS[+b.getAttribute('data-combo')]; paintFig(b.querySelector('.ke-mini'), c[0], c[1], c[2], c[3], c[4], '', true, c[6]); });
       box.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
       box.addEventListener('click', function (e) {
         var t = e.target, b;
@@ -162,6 +213,7 @@
         if ((b = t.closest('[data-sub]'))) { ed.sub = b.getAttribute('data-sub'); paint(); return; }
         if ((b = t.closest('[data-c]'))) { apply(b.getAttribute('data-c')); return; }
         if ((b = t.closest('[data-pat]'))) { undoOnce(); call('Pat', ed.team, b.getAttribute('data-pat')); after(); return; }
+        if ((b = t.closest('[data-collar]'))) { undoOnce(); setKit('collar', b.getAttribute('data-collar')); after(); return; }
         if (t.closest('.ke-auto')) { apply(''); return; }
         if (t.closest('.ke-reset')) { reset(); return; }
       });
@@ -185,25 +237,30 @@
     function drawToken(svg, shape, s, num) {
       if (!svg) return;
       while (svg.firstChild) svg.removeChild(svg.firstChild);
-      var NS = 'http://www.w3.org/2000/svg', J = win.PSJersey, main = s.main, sh = shape === 'shirt';
+      var NS = 'http://www.w3.org/2000/svg', J = win.PSJersey, main = s.main, sh = shape === 'shirt', x0 = s.more;
       function mk(tag, a) { var e = doc.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; }
       var stroke = s.stroke || (J && J.lum(main) > .62 ? '#2a3140' : '#ffffff'), fill = main;
+      if (x0 && x0.sleeve && !s.stroke && J && J.lum(x0.sleeve) > .55 && J.lum(stroke) > .85) stroke = '#2a3140';   // board-jersey 와 같은 규칙(밝은 소매 · 자동 흰 테두리)
       if (s.pat !== 'solid' && typeof win.kitSVGDef === 'function') {
         try { var id = 'kePv-' + shape, d = win.kitSVGDef(id, main, s.accent, s.pat); if (d) { var defs = mk('defs', {}); defs.appendChild(d); fill = 'url(#' + id + ')'; } } catch (_) {}
       }
       mk('ellipse', { cx: '1.5', cy: sh ? '22' : '20', rx: sh ? '17' : '19', ry: '4.5', fill: 'rgba(0,0,0,.28)' });   // 바닥 그림자(판의 drop-shadow 대신)
       if (sh) mk('path', { d: (J && J.SHIRT_D) || '', fill: fill, stroke: stroke, 'stroke-width': '2.2', 'stroke-linejoin': 'round' });
       else mk('circle', { r: '21', fill: fill, stroke: stroke, 'stroke-width': '2.6' });
-      if (J) J.spec(shape, { main: main, acc: s.accent, pat: s.pat, stroke: stroke }).forEach(function (n) { mk(n[0], n[1]); });
+      var x = s.more || {};
+      if (J) J.spec(shape, { main: main, acc: s.accent, pat: s.pat, stroke: stroke, sleeve: x.sleeve, trim: x.trim, collar: x.collar, autoStroke: !s.stroke }).forEach(function (n) { mk(n[0], n[1]); });
       var txt = s.txt || ink(main), two = String(num).length >= 2;
       var t = mk('text', { x: '0', y: sh ? '2.5' : '1', 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: txt, 'font-size': sh ? (two ? '16' : '19') : (two ? '18' : '22'),
         'font-weight': '800', 'font-family': "Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif",
         stroke: (J && J.lum(txt) > .5) ? 'rgba(0,0,0,.5)' : 'rgba(255,255,255,.6)', 'stroke-width': '.8', 'paint-order': 'stroke', 'stroke-linejoin': 'round' });
       t.textContent = num;
     }
-    function paintFig(fig, main, accent, pat, shorts, socks, num, mini) {
+    function paintFig(fig, main, accent, pat, shorts, socks, num, mini, more) {
       if (!fig) return;
       var sh = fig.querySelector('.kf-shirt .kf-fill'); if (sh) sh.style.background = bg(main, accent, pat);
+      var x = more || {}, sl = fig.querySelector('.kf-sl'), co = fig.querySelector('.kf-col');
+      if (sl) { sl.style.background = hex(x.sleeve) || 'transparent'; }
+      if (co) { co.style.background = hex(x.trim) || (hex(accent) && accent !== main ? accent : ink(main) === '#111111' ? '#5e6675' : '#ffffff'); co.setAttribute('data-c', x.collar === 'v' || x.collar === 'polo' ? x.collar : 'crew'); }
       var so = fig.querySelector('.kf-shorts .kf-fill'); if (so) so.style.background = shorts;
       [].forEach.call(fig.querySelectorAll('.kf-socks .kf-fill'), function (x) { x.style.background = socks; });
       var n = fig.querySelector('.kf-num'); if (n) { if (mini) n.textContent = ''; else { n.style.color = num.txt; n.style.setProperty('-webkit-text-stroke', '1.4px ' + num.stroke); } }
@@ -211,22 +268,27 @@
     function paint() {
       if (!box) return;
       var s = style(), e = kitEntry(false) || {}, shorts = hex(e.shorts) || auto('shorts', s.main), socks = hex(e.socks) || auto('socks', s.main);
-      paintFig(box.querySelector('.ke-fig'), s.main, s.accent, s.pat, shorts, socks, { txt: s.txt || ink(s.main), stroke: s.stroke || 'rgba(0,0,0,.25)' });
+      var more = { sleeve: hex(e.sleeve), trim: hex(e.trim), collar: e.collar }; s.more = more;
+      paintFig(box.querySelector('.ke-fig'), s.main, s.accent, s.pat, shorts, socks, { txt: s.txt || ink(s.main), stroke: s.stroke || 'rgba(0,0,0,.25)' }, false, more);
       [].forEach.call(box.querySelectorAll('.ke-teams [data-team]'), function (b) { var t = b.getAttribute('data-team'), on = t === ed.team; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); try { b.querySelector('i').style.background = win.teamChipBG ? win.teamChipBG(t) : TEAM_DEF[t]; } catch (_) {} });
       [].forEach.call(box.querySelectorAll('.ke-who [data-gk]'), function (b) { var on = (b.getAttribute('data-gk') === '1') === ed.gk; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
       [].forEach.call(box.querySelectorAll('[data-part]'), function (b) { b.classList.toggle('on', b.getAttribute('data-part') === ed.part); });
       var fig = box.querySelector('.ke-fig'); fig.setAttribute('data-sel', ed.part);
       var sub = box.querySelector('.ke-sub');
-      sub.innerHTML = ed.part === 'shirt' ? '<button type="button" data-sub="main">주색</button><button type="button" data-sub="accent">보조색' + (s.pat === 'solid' ? ' <small>무늬에</small>' : '') + '</button>'
+      sub.innerHTML = ed.part === 'shirt' ? '<button type="button" data-sub="main">주색</button><button type="button" data-sub="accent">보조색' + (s.pat === 'solid' ? ' <small>무늬에</small>' : '') + '</button>' +
+          '<button type="button" data-sub="sleeve">소매</button><button type="button" data-sub="trim">테두리</button>'
         : ed.part === 'num' ? '<button type="button" data-sub="txt">글자</button><button type="button" data-sub="stroke">테두리</button>' : '';
       [].forEach.call(sub.querySelectorAll('[data-sub]'), function (b) { b.classList.toggle('on', b.getAttribute('data-sub') === ed.sub); });
       var cur = partColor(ed.part);
       [].forEach.call(box.querySelectorAll('.ke-sw [data-c]'), function (b) { b.classList.toggle('on', b.getAttribute('data-c') === cur); });
       var inp = box.querySelector('.ke-custom input'), shown = cur || (ed.part === 'shorts' ? shorts : ed.part === 'socks' ? socks : ed.part === 'num' ? hex(s.txt) || ink(s.main) : s.main);
       if (hex(shown) && inp.value !== hex(shown)) inp.value = hex(shown);
-      var au = box.querySelector('.ke-auto'), autoable = ed.part !== 'shirt' || ed.sub === 'accent';
+      var au = box.querySelector('.ke-auto'), autoable = ed.part !== 'shirt' || ed.sub !== 'main';
       au.style.display = autoable ? '' : 'none'; au.classList.toggle('on', autoable && !cur);
-      au.textContent = ed.part === 'shirt' ? '없음(흰색)' : '자동';
+      au.textContent = ed.part !== 'shirt' ? '자동' : ed.sub === 'sleeve' ? '몸통과 같게' : ed.sub === 'trim' ? '자동(보조색)' : '없음(흰색)';
+      var cols = box.querySelector('.ke-cols'), cl = e.collar === 'v' || e.collar === 'polo' ? e.collar : 'crew';
+      cols.style.display = ed.part === 'shirt' ? '' : 'none';
+      [].forEach.call(cols.querySelectorAll('[data-collar]'), function (b) { var on = b.getAttribute('data-collar') === cl; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
       paintPrev(s);
       var pats = box.querySelector('.ke-pats'); pats.style.display = ed.part === 'shirt' ? '' : 'none';
       [].forEach.call(pats.querySelectorAll('[data-pat]'), function (b) { var p = b.getAttribute('data-pat'); b.classList.toggle('on', p === s.pat); b.querySelector('i').style.background = bg(s.main, s.accent === s.main ? '#ffffff' : s.accent, p); });
@@ -326,6 +388,14 @@
       '.kf-fill{position:absolute;inset:0;display:block}',
       '.kf-shirt{left:0;top:0;width:100%;height:49%}',
       '.kf-shirt .kf-fill{clip-path:polygon(32% 0,40% 6%,60% 6%,68% 0,100% 20%,90% 44%,79% 38%,79% 100%,21% 100%,21% 38%,10% 44%,0 20%)}',
+      // 3.127 소매 · 목깃(테두리 색) — 셔츠 모양(clip-path)의 소매 자리 · 목 자리
+      '.kf-sl{position:absolute;inset:0;display:block;clip-path:polygon(32% 0,0 20%,10% 44%,21% 38%,26% 13%,32% 0,68% 0,74% 13%,79% 38%,90% 44%,100% 20%,68% 0)}',
+      '.kf-col{position:absolute;inset:0;display:block;clip-path:polygon(32% 0,40% 6%,60% 6%,68% 0,63% 0,58% 3%,42% 3%,37% 0)}',
+      '.kf-col[data-c="v"]{clip-path:polygon(32% 0,50% 20%,68% 0,62% 0,50% 13%,38% 0)}',
+      '.kf-col[data-c="polo"]{clip-path:polygon(33% 0,47% 8%,42% 20%,29% 6%,33% 0,67% 0,71% 6%,58% 20%,53% 8%,67% 0)}',
+      '#psKitEd .ke-cols{display:flex;gap:4px}',
+      '#psKitEd .ke-cols button{flex:1;height:28px;border-radius:8px;border:1px solid rgba(127,127,127,.25);background:transparent;font-weight:700;font-size:11.5px}',
+      '#psKitEd .ke-cols button.on{border-color:#2f6bff;box-shadow:0 0 0 1px #2f6bff;color:#2f6bff}',
       '.kf-num{position:absolute;left:0;right:0;top:32%;text-align:center;font:900 30px/1 Pretendard,-apple-system,sans-serif;paint-order:stroke;pointer-events:none}',
       '.kf-shorts{left:19%;top:48%;width:62%;height:21%}',
       '.kf-shorts .kf-fill{clip-path:polygon(2% 0,98% 0,100% 100%,56% 100%,50% 62%,44% 100%,0 100%)}',
@@ -376,8 +446,17 @@
     ].join('\n');
     (doc.head || doc.documentElement).appendChild(st);
 
+    // 3.127 새 무늬 넷 — 작전판의 무늬 목록 · SVG · CSS(한 원천)에 더한다. 감싸기는 본문 스크립트 뒤(DOMContentLoaded)
+    function morePats() {
+      var L = win.KIT_PATS; if (!Array.isArray(L)) return false;
+      NEW_PATS.forEach(function (p) { if (L.indexOf(p) < 0) L.push(p); });
+      var d = win.kitSVGDef; if (typeof d === 'function' && !d.__psMore) { var gd = function (id, m, a, pat) { if (NEW_PATS.indexOf(pat) >= 0) { try { return newDef(doc, id, m, a, pat); } catch (_) { return null; } } return d.apply(this, arguments); }; gd.__psMore = 1; win.kitSVGDef = gd; }
+      var c = win.kitCSSBG; if (typeof c === 'function' && !c.__psMore) { var gc = function (m, a, pat) { if (NEW_PATS.indexOf(pat) >= 0) return newBG(m, a, pat); return c.apply(this, arguments); }; gc.__psMore = 1; win.kitCSSBG = gc; }
+      return true;
+    }
     var n = 0;
     function boot() {
+      morePats();
       var a = redirectOld(), b = decorateInspector(); decorateTray();
       if ((!a || !b) && ++n < 80) win.setTimeout(boot, 250);
     }
@@ -388,5 +467,5 @@
     return { open: open, close: close };
   }
   if (typeof window !== 'undefined' && window.document) install(window);
-  return { kitOf: kitOf, keyOf: keyOf, isGk: isGk, auto: auto, hex: hex, cssBG: cssBG, COMBOS: COMBOS, SWATCH: SWATCH };
+  return { kitOf: kitOf, extrasOf: extrasOf, keyOf: keyOf, isGk: isGk, auto: auto, hex: hex, cssBG: cssBG, newBG: newBG, newDef: newDef, COMBOS: COMBOS, SWATCH: SWATCH, PATS: PATS, NEW_PATS: NEW_PATS, COLLARS: COLLARS };
 });
