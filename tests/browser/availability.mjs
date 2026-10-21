@@ -96,6 +96,22 @@ try{
       await scPrepare();load();await scoutStore.ready(true);availRange=14;availDay=null;setView('avail');
     },{fixture,schedule,UID,WID});
     await frame.locator('[data-av-date="2026-09-11"]').waitFor();assert.equal(await frame.locator('.av-stale').count(),0);
+    // 3.140 — «확인 중»일 때 그린 «조회만 가능»은 풀리면 저절로 다시 그린다(사용자 «가용인원 수정이 안돼»). 정리할 후보가 없는 정리 표시는 내린다
+    const ro='#availRoot .av-readonly',editable='#avDailyCard [data-av-st]:not([disabled])';
+    assert.equal(await frame.locator(ro).count(),0);
+    await frame.evaluate(()=>{scMainMigrationPending=true;renderAvail();});
+    assert.equal(await frame.locator(ro).getAttribute('data-why'),'migrate');assert.match(await frame.locator(ro).innerText(),/확인하는 중/);
+    assert.equal(await frame.locator(editable).count(),0);
+    await frame.locator(ro).waitFor({state:'detached'});
+    assert.equal(await frame.evaluate(()=>scMainMigrationPending),false);assert.equal(await frame.locator(editable).count(),5);
+    await frame.evaluate(()=>{window.fixtureUnlocked=parent.PSSync.dataUnlocked;parent.PSSync.dataUnlocked=()=>false;renderAvail();});
+    assert.equal(await frame.locator(ro).getAttribute('data-why'),'locked');
+    await page.waitForTimeout(1800);assert.equal(await frame.locator(ro).count(),1,'계정 확인이 닫혀 있는 동안은 그대로');
+    await frame.evaluate(()=>{parent.PSSync.dataUnlocked=fixtureUnlocked;});
+    await frame.locator(ro).waitFor({state:'detached'});assert.equal(await frame.locator(editable).count(),5);
+    await frame.evaluate(()=>{window.fixtureCanEdit=PSPerms.canEdit;PSPerms.canEdit=()=>false;renderAvail();});
+    assert.equal(await frame.locator(ro).getAttribute('data-why'),'perm');assert.match(await frame.locator(ro).innerText(),/권한/);
+    await frame.evaluate(()=>{PSPerms.canEdit=fixtureCanEdit;renderAvail();});assert.equal(await frame.locator(ro).count(),0);
     const perf=await frame.evaluate(()=>{
       const api=PSSchedule,old=api.readFor;let reads=0;api.readFor=function(...args){reads++;return old.apply(this,args);};
       try{availRange=90;const start=performance.now();renderAvail();return {reads,duration:performance.now()-start};}
