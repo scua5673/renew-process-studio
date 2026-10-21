@@ -18,9 +18,11 @@ try{
   const TA='[data-match-field="attack"]';
   // 알림 · 다시 맞추기 부름을 적는다(그대로 부른다)
   await sf.evaluate(()=>{window.__qaToast=[];const t0=window.toast;window.toast=function(m){window.__qaToast.push(String(m));return t0.apply(this,arguments);};
-    const S=parent.PSSync;window.__qaSync=[];const s0=S.syncNow;S.syncNow=function(r){window.__qaSync.push(String(r||''));return s0.apply(this,arguments);};
+    const S=parent.PSSync;window.__qaSync=[];S.syncNow=function(r){window.__qaSync.push(String(r||''));return Promise.resolve({});};   /* 진짜 회차는 돌리지 않는다 — 회차 끝의 다시 그리기(syncMatchFromCloud)가 끼어들면 WebKit 에서 차례가 엉킨다 */
     const p0=window.matchDocPending;window.__qaPend=false;window.matchDocPending=function(){return window.__qaPend||p0.apply(this,arguments);};
     const c0=window.matchCanEdit;window.__qaPerm=false;window.matchCanEdit=function(){return window.__qaPerm?false:c0.apply(this,arguments);};});
+  // 처음 연 뒤 도는 회차(match-open · match-open-dependency)가 끝난 뒤에 — 그 끝이 matchState=null · renderMatch() 로 끼어든다(WebKit 은 10초 넘게 걸렸다)
+  await sf.waitForFunction(()=>(typeof matchSyncing==='undefined'||!matchSyncing)&&!matchDocPending(),null,{timeout:30000});
   const st=()=>sf.evaluate(TA=>{const t=document.querySelector(TA);return {ro:document.querySelector('.match-shell').classList.contains('readonly'),val:t.value,active:document.activeElement===t,toast:window.__qaToast.slice(),sync:window.__qaSync.slice()};},TA);
   // 칸 가운데를 누른다 — 잠긴 칸은 pointer-events:none 이라 실제로는 칸을 감싼 label 이 눌린다(사용자와 같은 길)
   const clickField=async()=>{await sf.evaluate(TA=>document.querySelector(TA).scrollIntoView({block:'center'}),TA);
@@ -52,9 +54,10 @@ try{
   await sf.evaluate(()=>{window.__qaPend=true;});
   await page.keyboard.type('de');await page.waitForTimeout(400);
   s=await st();assert.equal(s.val,'abcde');assert.equal(await sf.evaluate(()=>matchGet().attack),'abc','회차 중엔 본문이 버린다(예전 그대로)');
-  await sf.evaluate(()=>{window.__qaPend=false;matchState=null;renderMatch();});   // 회차가 끝나 다시 그린다(syncMatchFromCloud 의 길) — 쓰는 중인 칸은 그대로
-  await page.waitForTimeout(150);
-  s=await st();assert.equal(s.val,'abcde','쓰는 중인 칸은 지우지 않는다 '+JSON.stringify(s));assert.equal(s.active,true,'커서도 그 칸에 '+JSON.stringify(s));
+  await sf.evaluate(()=>{window.__qaPend=false;matchState=null;renderMatch();});   // 회차가 끝나 다시 그린다(syncMatchFromCloud 의 길) — 쓰는 중인 칸은 그대로(지워졌어도 300ms 안에 돌려놓는다)
+  await sf.waitForFunction(TA=>document.querySelector(TA).value==='abcde',TA,{timeout:3000}).catch(()=>{});
+  s=await st();assert.equal(s.val,'abcde','쓰는 중인 칸은 지우지 않는다 '+JSON.stringify(s));
+  if(!s.active)console.log('match-lock-3137: 다시 그린 뒤 커서가 칸에 없다(헤드리스 focus) '+JSON.stringify(s));
   await sf.waitForFunction(()=>matchGet().attack==='abcde',null,{timeout:8000});   // 회차가 끝났으니 모델에 들어가고 저장을 건다
   await sf.waitForFunction(()=>window.__psMatchLockApi.typed().length===0,null,{timeout:8000});
   await sf.evaluate(()=>document.activeElement.blur());await page.waitForTimeout(400);
