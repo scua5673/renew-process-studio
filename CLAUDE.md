@@ -28,6 +28,7 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 3.084 — GitHub 가 승격 PR 을 «충돌»로 보이는데 로컬 합치기는 깨끗하면: 공통 조상이 둘(엇갈린 합치기)이다. main 을 staging 에 되합치는 PR(트리 그대로)로 푼다.
 - 합쳐진 가지에 새 일을 할 때는 origin/staging 에서 가지를 다시 잡는다(`git checkout -B <가지> origin/staging`).
 - 3.117(10/19) — 승격을 staging 합치기 직후에 하면 staging · PR · main CI 가 한꺼번에 돌아 GitHub 실행기 줄서기로 main CI 가 18분 → 실서버 게시가 12분 대기에서 멈췄다(testprocess 는 통과, 실서버는 옛 판 그대로라 피해 없음). 승격 PR 은 staging push CI 가 끝난 뒤 합친다. 멈췄으면 release-gate 초록을 확인하고 Netlify «Trigger deploy»(또는 `createSiteBuild`) — 이 환경엔 Netlify 키가 없고 연결된 Netlify 도구에도 다시 짓기가 없으니 사용자에게 부탁하거나 실제 변경 커밋으로 main 을 다시 민다. 연결 도구의 `deploy-site` 는 빌드(시험 · release-gate 확인)를 건너뛰니 쓰지 않는다.
+- 10/21(판 그대로 3.141) — 3.137 · 3.141 실서버 게시가 «Build script returned non-zero exit code: 2»로 실패: `verify-release.mjs` 가 토큰 없이 GitHub API 를 불러 Netlify 짓기 기계 IP 의 한도(시간당 60번)에 걸린 403 이었다(같은 트리의 testprocess 는 통과 — 다른 기계). 이제 한도면 12분 안에서 다시 묻고, Netlify 환경 변수 `GITHUB_TOKEN` 이 있으면 그것으로 묻는다. 실서버 게시 실패는 먼저 Netlify «Deploys» 의 실패 줄 · 로그를 사용자에게 받아 본다 — «12분 대기»라고 짐작하지 않는다. 이 컨테이너의 `GITHUB_TOKEN` 은 프록시용이라 `verify-release` 를 손으로 돌릴 땐 `env -u GITHUB_TOKEN`.
 - 3.104~3.108(10/18) — PR 로 올라가지 못한 가지가 쌓인다. 열린 PR 만 보지 말고 «합쳐진 PR 의 머리에 들지 않은 가지»를 찾는다: `git fetch origin '+refs/pull/*/head:refs/remotes/pr/*'` 뒤 가지 끝마다 `git for-each-ref --contains <끝> refs/remotes/pr/`. 22개 중 7개가 진짜 빠져 있었다(커뮤니티 XSS · 코치 피드백 덮어쓰기 · 재생 중 페이지 섞임 …). 같은 판 번호를 다른 세션이 다른 방법으로 다시 만든 것이 많으니 «같은 동작이 staging 에 있나»를 읽어 가른다. 옮길 땐 판 번호를 새로 매긴다.
 
 ## 판 번호 (실행 파일을 바꾸면 늘)
