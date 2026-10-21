@@ -97,7 +97,7 @@ test('다른 장면도 같은 토큰(id)은 이름을 같이 — 장면 묶음�
   assert.equal(L.frames(undefined,0,toks,fresh),0);
 });
 
-// 3.135 — 오류 제보 738f37d1 «팀 불러오기 시, 모든 장면에 적용». 같은 선수 찾기(who) · 장면에 입히기(wear) — 판 전체에 퍼뜨리기는 board-tweaks.js 8,
+// 3.137 — 오류 제보 738f37d1 «팀 불러오기 시, 모든 장면에 적용». 같은 선수 찾기(who) · 장면에 입히기(wear) — 판 전체에 퍼뜨리기는 board-tweaks.js 8,
 // 화면 흐름은 tests/browser/team-load-all-scenes.mjs.
 {
   const T=(id,num,name,pos,extra)=>Object.assign({id,team:'blue',num,name,pos},extra||{});
@@ -136,7 +136,8 @@ test('다른 장면도 같은 토큰(id)은 이름을 같이 — 장면 묶음�
   });
   test('board-tweaks 8 — PSTeamLoad.dress · frames 를 감싸고 eachOther 는 쓰지 않는다 · 그림은 하나씩',()=>{
     const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','studio','board-tweaks.js'),'utf8');
-    const s8=src.slice(src.indexOf('// ── 8. 저장 팀은 판 전체'),src.indexOf('// ── 시작 · 다시 그릴 때 ──'));
+    const s8s=src.indexOf('// ── 8. 저장 팀은 판 전체'),s8e=[src.indexOf('// ── 9.',s8s),src.indexOf('// ── 시작 · 다시 그릴 때 ──',s8s)].filter(i=>i>0).sort((a,b)=>a-b)[0];   // 3.137 — 뒤에 3.136 의 9(hookPages)가 온다
+    const s8=src.slice(s8s,s8e);
     assert.ok(s8.length>500);
     assert.ok(/L\.dress = function/.test(s8)&&/L\.frames = g/.test(s8),'감싼다');
     assert.ok(!/eachOther/.test(s8.replace(/eachOther 는 쓰지 않는다/,'')),'미팅 중 capture() 가 작업 보드 페이지를 덮는 eachOther 는 안 쓴다');

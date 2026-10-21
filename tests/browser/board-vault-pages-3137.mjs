@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
-// 3.135 — 오류 제보 0917a39f 조사에서 나온 고장: 여러 페이지 작전판을 보관함에 저장하면 항목의 대표 판(snap)은 1페이지인데 대표 장면(frames)은
+// 3.137 — 오류 제보 0917a39f 조사에서 나온 고장: 여러 페이지 작전판을 보관함에 저장하면 항목의 대표 판(snap)은 1페이지인데 대표 장면(frames)은
 // «저장할 때 보던 페이지»의 장면이었다. «보드 가져오기»가 1페이지 판에 다른 페이지 장면을 붙였고, 그 페이지에서 «저장»하면(보관함 연결 되쓰기)
 // 보관함 그 자료의 1페이지 장면이 덮였다 — 장면 [6,16,14,29] 가 [29,16,14,29] 로. 이제 저장은 1페이지 장면을 대표로, 가져오기는 1페이지 장면을 쓴다
 // (이미 저장된 자료도). 합성 팀 fixture 에서만 돈다.
@@ -50,5 +50,5 @@ try{
   assert.deepEqual(it.pageFrames,[6,16,14,29],'연결 되쓰기 뒤에도 1페이지 장면 6개 — 예전엔 [29,16,14,29] '+JSON.stringify(it));
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log('board-vault-pages-3135 ok',engine,size);
+  console.log('board-vault-pages-3137 ok',engine,size);
 }finally{for(const b of Object.values(browsers))try{await b.close();}catch(_){} try{await fx.close();}catch(_){}}

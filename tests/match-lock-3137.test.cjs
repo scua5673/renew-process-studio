@@ -1,6 +1,6 @@
 'use strict';
-// 3.135 — 오류 제보 0ce6d0cc «경기준비 글씨 넣는 상자에 글씨가 안 넣어집니다». 경기 화면이 잠기면 까닭을 말하고, 서버 확인 대기면 다시 맞춘다.
-// 화면 흐름은 tests/browser/match-lock-3135.mjs.
+// 3.137 — 오류 제보 0ce6d0cc «경기준비 글씨 넣는 상자에 글씨가 안 넣어집니다». 경기 화면이 잠기면 까닭을 말하고, 서버 확인 대기면 다시 맞춘다.
+// 화면 흐름은 tests/browser/match-lock-3137.mjs.
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');

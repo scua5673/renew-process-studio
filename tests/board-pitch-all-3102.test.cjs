@@ -66,7 +66,7 @@ test('wiring: human pitch changes go through _viewScenesMatch("pitch"); pages ar
   assert.match(w,/win\.__meetSyncCur\(\{ thumb: true \}\)/,'the open slide is stored and its picture redrawn first');
   /* 다른 페이지 · 슬라이드 그림은 한 번에 그리지 않는다 — 슬라이드 9장에 화면이 몇 초 멈추고 알림이 늦었다(WebKit) */
   assert.doesNotMatch(w,/recs\.forEach\(function \(r\) \{ thumbsOf\(r, meet\); \}\)/,'no all-at-once redraw');
-  const w6=w.slice(w.indexOf('// ── 6. 피치는 판 전체'),w.indexOf('// ── 7. 미팅의 유니폼'));   // 3.135 — 8(저장 팀)도 같은 줄을 쓴다
+  const w6=w.slice(w.indexOf('// ── 6. 피치는 판 전체'),w.indexOf('// ── 7. 미팅의 유니폼'));   // 3.137 — 8(저장 팀)도 같은 줄을 쓴다
   assert.equal((w6.match(/queueThumbs\(recs, meet\);/g)||[]).length,2,'spread and «이 페이지만» both queue the pictures');
   assert.match(w,/if \(thumbBusy\(\)\) \{ if \(\+\+q\.tries < 600\)/,'never swaps the board while playing · dragging · exporting · editing');
   assert.match(read('tests/browser/run-critical.mjs'),/board2:\['board-pitch-all-pages',/);

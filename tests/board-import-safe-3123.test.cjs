@@ -23,7 +23,7 @@ test('지킬 내용: 선수 · 장비 · 그림 · 장면 2개 이상', ()=>{
 test('안내 글: 새 동작 · 맥이 아니면 Ctrl+Z', ()=>{
   const desc='보관함의 작전판만 보입니다 · 지금 페이지에 올리고, «보드 저장»하면 이 자료도 같은 내용으로 저장돼요(연결 표시의 ×로 끊기) · ⌘Z 로 되돌리기';
   const mac=S.texts(desc,true),win=S.texts(desc,false);
-  assert.match(mac,/지금 페이지에 내용이 있으면 새 페이지로 가져와요\(원래 페이지는 그대로\) · 가져온 페이지는 «저장»하면 이 자료도/);   // 3.135 — 단추 이름은 «저장»(3.077)
+  assert.match(mac,/지금 페이지에 내용이 있으면 새 페이지로 가져와요\(원래 페이지는 그대로\) · 가져온 페이지는 «저장»하면 이 자료도/);   // 3.137 — 단추 이름은 «저장»(3.077)
   assert.match(mac,/⌘Z 로 되돌리기/);
   assert.match(win,/Ctrl\+Z 로 되돌리기/);
   assert.doesNotMatch(win,/⌘Z/);
@@ -52,7 +52,7 @@ test('작전판이 이 모듈을 읽고, 앱이 오프라인에도 싣는다', (
   assert.ok(sw.includes("'/studio/board-import-safe.js'"));
 });
 
-test('3.135 — 여러 페이지 작전판은 1페이지 장면으로 가져온다(제보 0917a39f 조사 · 옛 저장본은 d.frames 가 다른 페이지 것)', ()=>{
+test('3.137 — 여러 페이지 작전판은 1페이지 장면으로 가져온다(제보 0917a39f 조사 · 옛 저장본은 d.frames 가 다른 페이지 것)', ()=>{
   const toFrames=a=>(a&&Array.isArray(a.frames)&&a.frames.length>1)?a.frames.map(f=>({...f})):null;
   const pg=n=>({snap:{players:[{id:n}]},anim:{frames:Array.from({length:n},(_,i)=>({snap:{i}}))}});
   const d={libId:'V1',type:'board',name:'판',snap:pg(6).snap,frames:pg(29).anim.frames,pages:[pg(6),pg(16),pg(29)]};
@@ -65,7 +65,7 @@ test('3.135 — 여러 페이지 작전판은 1페이지 장면으로 가져온�
   const tr={type:'train',pages:[pg(3)],frames:[]};assert.equal(S.pageOneItem(tr,toFrames),tr,'작전판만');
 });
 
-test('3.135 — 보관함 저장의 대표 장면 = 1페이지(board.html)', ()=>{
+test('3.137 — 보관함 저장의 대표 장면 = 1페이지(board.html)', ()=>{
   const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','studio','board.html'),'utf8');
   assert.ok(html.includes('if(pages&&pages[0]){ try{ frames=_animToFrames(pages[0].anim); }catch(_){ frames=null; } }'),'여러 페이지면 1페이지 장면(패턴북만이 아니다)');
   assert.ok(!html.includes('if(window.__vaultBook&&pages&&pages[0]){ try{ frames=_animToFrames'),'패턴북만 고르던 옛 조건이 없다');

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {startFixture,openApp,SHOTS} from '../fixtures/team-app.mjs';
-// 3.135 — 오류 제보 0ce6d0cc «경기준비 글씨 넣는 상자에 글씨가 안 넣어집니다». 경기 화면이 잠기면(.match-shell.readonly — 서버 확인 대기 ·
+// 3.137 — 오류 제보 0ce6d0cc «경기준비 글씨 넣는 상자에 글씨가 안 넣어집니다». 경기 화면이 잠기면(.match-shell.readonly — 서버 확인 대기 ·
 // 선수 · 다른 코치 담당) 칸은 pointer-events:none 이라 눌러도 말이 없었고, 칸을 감싼 label 을 누르면 커서가 들어가 글이 써졌지만 저장되지 않고 사라졌다.
 // 이제(studio/match-lock.js): 잠긴 칸을 누르면 커서를 넣지 않고 까닭을 알리며, 서버 확인 대기면 바로 다시 맞춘다(PSSync.syncNow). 풀리면 그대로 쓴다.
 // 화면만 잠긴 채 남은 경우(입력 중이라 다시 그리기를 미뤘다)는 누르는 순간 다시 그려 그 칸에 들어간다. 합성 팀 fixture 에서만 돈다.
@@ -37,7 +37,7 @@ try{
   assert.equal(s.val,'','글이 써지지 않는다(예전엔 써졌다가 저장 없이 사라졌다)');
   assert.ok(s.toast.includes('팀 경기 자료를 서버와 맞추는 중이에요 — 끝나면 바로 쓸 수 있어요'),'까닭을 알린다 '+JSON.stringify(s.toast));
   assert.ok(s.sync.includes('match-locked'),'바로 다시 맞춘다 '+JSON.stringify(s.sync));
-  await page.screenshot({path:path.join(SHOTS,'match-lock-3135-'+engine+'-'+size+'.png')});
+  await page.screenshot({path:path.join(SHOTS,'match-lock-3137-'+engine+'-'+size+'.png')});
   // 잠금 기록(내용 없음 — 준비표 · 거울 유무만)
   const ev=await sf.evaluate(()=>{const S=parent.PSSync;try{S.flushEvents&&S.flushEvents();}catch(_){}return window.__psMatchLockApi.readyInfo();});
   assert.equal(typeof ev.mirror,'number','준비 모양을 숫자로 '+JSON.stringify(ev));
@@ -65,7 +65,7 @@ try{
 
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log('match-lock-3135 ok',engine,size);
+  console.log('match-lock-3137 ok',engine,size);
 }finally{
   for(const b of Object.values(browsers))try{await b.close();}catch(_){}
   try{await fx.close();}catch(_){}

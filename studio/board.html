@@ -18187,7 +18187,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var frames=null; if(type!=="meeting"){ try{ frames=window.__animFrames?window.__animFrames(true):null; }catch(e){failed(e);return;} }   /* 작전판 애니메이션 저장 (#13) */
     var pages=null; if(type!=="meeting"){ try{ pages=window.__psPages&&window.__psPages.forSave(); }catch(e){failed(e);return;} }   /* 작전판 멀티 페이지 저장 — 여러 페이지를 한 항목에 함께 */
     if(pages&&(pages.length>1||window.__vaultBook)){ try{ snap=pages[0].snap||snap; if(pages[0].thumb)thumb=pages[0].thumb; }catch(_){} }   /* 대표 스냅·썸네일은 첫 페이지 */
-    if(pages&&pages[0]){ try{ frames=_animToFrames(pages[0].anim); }catch(_){ frames=null; } }   /* 2.985 · 3.135 — 대표 장면 = 1페이지(대표 판과 같은 쪽 · 제보 0917a39f) */
+    if(pages&&pages[0]){ try{ frames=_animToFrames(pages[0].anim); }catch(_){ frames=null; } }   /* 2.985 · 3.137 — 대표 장면 = 1페이지(대표 판과 같은 쪽 · 제보 0917a39f) */
     /* 2.991 — 읽고-쓰기를 libTurn 한 차례로: 썸네일 채우기 등 다른 쓰기가 이 저장을 옛 목록으로 덮지 못하게(위 libTurn 주석) */
     libTurn(function(){return libGet().then(function(lib){
       var idx=-1; if(curId){for(var _k=0;_k<lib.length;_k++){if(lib[_k].libId===curId){idx=_k;break;}}}

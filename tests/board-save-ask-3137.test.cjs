@@ -1,5 +1,5 @@
 'use strict';
-// 3.135 — 오류 제보 0917a39f «저장 누르면 연결된 보관함에 저장이 된다고 했는데 그런 설정이 없고 보관함에 작성한 보드가 저장이 안 됩니다».
+// 3.137 — 오류 제보 0917a39f «저장 누르면 연결된 보관함에 저장이 된다고 했는데 그런 설정이 없고 보관함에 작성한 보드가 저장이 안 됩니다».
 // 작업 보드 «저장»이 보관함에 담을지 다시 묻는 길(studio/board-save-ask.js). 화면 흐름은 tests/browser/board-vault-save.mjs.
 const test=require('node:test');
 const assert=require('node:assert/strict');
