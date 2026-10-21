@@ -86,11 +86,12 @@ Claude 가 이 저장소에서 일할 때 먼저 읽는 파일이다. 배운 규
 - 3.117 — 스카우팅 «목록 초기화»(제보 9c924c4e)는 지운 것이 아니라 숨김: 등록부(`scoutRegistry`) 없는 옛 문서가 이기면 빠진 후보를 `_scoutHidden` 으로 남긴다(scouting-store.js). 빈 옛 기기본(`{v:1,players:[]}`)이 «바뀜»으로 올라가 서버 14명을 다 숨겼다 → `scoutSyncPlan` 은 빈 옛 기기본이면 서버를 이기게 한다. 옛 판 기기에서 «고친» 내용은 지금처럼 이긴다(`scouting-sync` «dirty old client local body»). 서버 기록은 `ps_kv_history`(10분에 한 줄, 바뀌기 전 값).
 - 3.117 — 팀 전환이 멈춘 까닭: `recSwitchFail` 이 `ps_events` 에 `workspace_switch_failed`(코드만, 문구는 안 보냄)를 남긴다(«바쁨» `lock-busy` · `lock-unsupported` 도). 오류 보고(support-diagnostics.js)는 전환 표시(`ps_ws_switch_guard_v1`)를 기록 주인으로 보지 않는다 — 취소된 전환이 그 까닭 기록을 지웠다. 같은 계정의 아주 옛 판 창(앱 판 `2026.07.26-v229` 등)이 함께 돌며 자료를 올리는 일이 있다 — 제보 답에 «다른 창 닫기»를 안내한다.
 
+- 3.138 — 경기 리뷰 득실 기록(`studio/match-goals-quick.js`, 사용자 «득점 실점 기록하는 방식이 더 쉬워졌으면»): 점수 아래 «＋ 득점 · ＋ 실점 · ↶»는 득실 장면 안의 `[data-mgl-add]` · 마지막 `[data-mgl-del]` 을 대신 누른다(저장 길 그대로). 득점자 칩은 숨긴 select 에 값을 넣고 change 를 쏜다 — 줄을 다시 그리는 `matchRenderGoals` 를 감싸므로 칩 · 전반 · 후반은 `.mgl-row.mgq` 표식으로 한 번만 붙인다. 시험 `tests/goals-quick-3138`.
 - 3.124 — 보관함 공유 어긋남(`_syncLibrary` 의 `flip`: 폴더가 정한 공유와 서버 private 가 다름)은 서버가 더 새것이면(`sNew && srvStamp(s) > t`) 올리지 않고 받는다. 예전엔 시각을 안 보고 옛 사본을 옛 시각으로 올려, 옛 판 아이패드가 맥에서 «팀 공유»로 옮긴 17개를 옛 폴더 · 비공개로 되돌렸고 맥은 서버 saved_at 이 그대로라 다시 보지도 않았다. 옮김 · 공유 켜고 끄기는 `editedAt` 을 새로 찍는다(2.967). `library_probe` 는 이제 `updated_at`(서버 트리거 `ps_library_touch`) 최신값 — 옛 시각으로 올린 줄도 다른 기기의 전체 대조를 깨운다(시험 픽스처도 쓸 때 updated_at 을 찍고 order 로 정렬한다). 보관함 행 이력 표는 없다 — 덮인 내용은 서버에서 되살릴 수 없고, 새 사본을 가진 기기가 다시 올려야 한다.
 
 ## 가용인원(studio/scout.html)
 - 3.140 — «조회만 가능»은 그린 순간의 `avCanEdit()` 답이다. 확인 중(부팅 · 옛 후보 정리 `scMainMigrationPending` · 팀 전환 · 계정 확인) 때 그려지면 확인이 끝나도 굳어 있었다(사용자 10/19 «가용인원 수정이 안돼» — 풋볼A 주인, 가짜 팀으로는 재현 안 됨). `avail-edit-guard.js` 가 까닭(`.av-readonly[data-why]`)을 말하고 풀리면 다시 그린다. 10초 넘게 안 풀리면 ps_events `avail_readonly`(error_code = 까닭)가 남는다 — 같은 제보가 또 오면 그것부터 본다.
-- scout.html 예산 1900KB, 3.140 기준 남은 몫 약 510 바이트 — 새 코드는 모듈로.
+- scout.html 예산 1900KB, 3.140 기준 남은 몫 약 470 바이트 — 새 코드는 모듈로.
 
 ## 일정(studio/process.html) PDF
 - 3.091 — 일정 PDF 는 `studio/pdf-export.js`(`PSPdfExport.open`) 창으로 연다: «PDF 내려받기»는 미리보기 종이를 SVG foreignObject → JPEG → PDF 로 찍는다(작전판 `_ppbSavePdf` 와 같은 방법). 종이 그림은 페이지 글꼴을 못 보므로 쓰인 글자의 Pretendard 조각을 data: 로 넣는다. 여러 장 문서는 `#printDoc .ponepage` 마다 한 쪽.

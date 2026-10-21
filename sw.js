@@ -12,7 +12,7 @@ const CORE = [
   '/studio/idp-recovery.js', '/studio/idp-recovery.css', '/studio/idp-roster-refresh.js',
   '/studio/idp-evidence.js', '/studio/idp-evidence.css', '/studio/idp-start.css', '/studio/idp-daily.css',
   '/studio/storage-keys.js', '/studio/storage.js', '/studio/team-library.js', '/studio/team-load.js', '/studio/photo-crop.js', '/studio/team-photos.js', '/studio/profile-sheet.js', '/studio/player-card.js',
-  '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/participation.js', '/studio/avail-edit-guard.js', '/studio/match-board-tools.js', '/studio/match-formats.js', '/studio/match-meet-parts.js', '/studio/match-lock.js', '/studio/sync-observability.js', '/studio/idp-pub-wipe.js', '/studio/sync.js',
+  '/studio/scouting-store.js', '/studio/roster-recovery.js', '/studio/roster-outbox.js','/studio/participation.js', '/studio/avail-edit-guard.js', '/studio/match-board-tools.js', '/studio/match-formats.js', '/studio/match-meet-parts.js', '/studio/match-goals-quick.js', '/studio/match-lock.js', '/studio/sync-observability.js', '/studio/idp-pub-wipe.js', '/studio/sync.js',
   '/studio/autosave-status.js', '/studio/update-progress.js', '/studio/autosave-journal.js', '/studio/autosave-merge.js', '/studio/autosave-runtime.js', '/studio/autosave-recovery.js',
   '/studio/shared-view-observation.js',
   '/studio/team-files.js',
