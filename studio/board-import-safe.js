@@ -5,7 +5,11 @@
    이제 기본 동작: 지금 페이지에 무엇이 있으면(선수 · 장비 · 그림 · 장면 2개 이상) 지금 페이지 바로 뒤에 새 페이지를 만들고 거기에 가져온다.
    빈 페이지면 예전처럼 그 자리에. 새 페이지를 만들 수 없으면(페이지가 가득 · 빌려 쓰는 판) 덮기 전에 묻는다. 첨부 판(ps-capturing)은 그대로.
    board.html 은 크기 예산이 차서 고치지 않고 감싼다: openBoardImport 는 함수 선언(window 속성)이고 단추(#bpImportBoard)가 전역 이름으로 부른다.
-   새 페이지는 페이지 줄의 «＋ 페이지» 단추(add — 바깥 창구가 없다)를 눌러 만든다. */
+   새 페이지는 페이지 줄의 «＋ 페이지» 단추(add — 바깥 창구가 없다)를 눌러 만든다.
+   3.135 — 여러 페이지 작전판은 1페이지의 장면으로 가져온다(오류 제보 0917a39f 조사). 보관함 항목의 대표 장면(d.frames)은 3.135 전까지
+   «저장할 때 보던 페이지»의 장면이었고 대표 판(d.snap)은 1페이지였다 — 가져오기가 1페이지 판에 다른 페이지 장면을 붙였고, 그대로 «저장»하면
+   보관함 그 자료의 1페이지 장면이 덮였다(장면 [6,16,14,29] → [29,16,14,29]). 저장은 board.html 이 1페이지 장면으로 고쳤고,
+   이미 저장된 자료는 가져오는 동안만 목록(libGet)을 감싸 d.pages[0].anim 으로 바꿔 보인다(보관함은 그대로). */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -18,11 +22,19 @@
     var n = function (a) { return Array.isArray(a) ? a.length : 0; };
     return n(st.players) > 0 || n(st.equipment) > 0 || n(st.drawings) > 0 || (!!an && n(an.frames) > 1);
   }
+  // 여러 페이지 작전판 — 가져올 대표 장면을 1페이지 것으로(사본 · 원본은 그대로). 1페이지에 장면이 없으면 빈 목록(가져온 페이지도 장면 없음)
+  function pageOneItem(d, toFrames) {
+    if (!d || d.type !== 'board' || !Array.isArray(d.pages) || !d.pages[0] || typeof d.pages[0] !== 'object' || typeof toFrames !== 'function') return d;
+    var fr = null; try { fr = toFrames(d.pages[0].anim); } catch (_) { fr = null; }
+    var o = {}; for (var k in d) if (Object.prototype.hasOwnProperty.call(d, k)) o[k] = d[k];
+    o.frames = Array.isArray(fr) ? fr : [];
+    return o;
+  }
   function isMac(nav) { try { return /Mac|iPhone|iPad|iPod/.test(String((nav && (nav.platform || nav.userAgent)) || '')); } catch (_) { return false; } }
   // 창 안내 · 단추 설명 — 새 동작에 맞춘 글. 맥이 아니면 ⌘Z 대신 Ctrl+Z
   function texts(s, mac) {
     var t = String(s == null ? '' : s);
-    t = t.replace('지금 페이지에 올리고, «보드 저장»하면 이 자료도', '지금 페이지에 내용이 있으면 새 페이지로 가져와요(원래 페이지는 그대로) · «보드 저장»하면 이 자료도')
+    t = t.replace('지금 페이지에 올리고, «보드 저장»하면 이 자료도', '지금 페이지에 내용이 있으면 새 페이지로 가져와요(원래 페이지는 그대로) · 가져온 페이지는 «저장»하면 이 자료도')
       .replace('보관함에 저장한 작전판을 골라 지금 페이지에 올립니다', '보관함에 저장한 작전판을 골라 가져옵니다 — 지금 페이지에 내용이 있으면 새 페이지로');
     if (!mac) t = t.replace(/⌘Z/g, 'Ctrl+Z');
     return t;
@@ -92,7 +104,15 @@
       if (typeof f !== 'function' || f.__psSafe) return false;
       var w = function () {
         relabel(null);
-        var p = f.apply(this, arguments);
+        // openBoardImport 는 시작하자마자(첫 await 전에) libGet() 을 부른다 — 그 한 번만 감싼다
+        var lg = win.libGet, tf = win._animToFrames, swapped = false, p;
+        if (typeof lg === 'function' && typeof tf === 'function') {
+          win.libGet = function () {
+            return Promise.resolve(lg.apply(this, arguments)).then(function (lib) { return Array.isArray(lib) ? lib.map(function (d) { return pageOneItem(d, tf); }) : lib; });
+          };
+          swapped = true;
+        }
+        try { p = f.apply(this, arguments); } finally { if (swapped) win.libGet = lg; }
         return Promise.resolve(p).then(function (r) { try { guard(doc.getElementById('bdImportOverlay')); } catch (_) {} return r; });
       };
       w.__psSafe = true; win.openBoardImport = w;
@@ -101,5 +121,5 @@
     if (doc && doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', wrap); else wrap();
   }
   if (typeof window !== 'undefined' && window.document) install(window);
-  return { hasContent: hasContent, isMac: isMac, texts: texts, install: install };
+  return { hasContent: hasContent, isMac: isMac, texts: texts, pageOneItem: pageOneItem, install: install };
 });
