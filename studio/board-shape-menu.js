@@ -67,18 +67,20 @@
       'html body.ps-dock .sel-ctl' + N + ' > #backSelBtn{order:20!important}',
       'html body.ps-dock .sel-ctl' + N + ':not(.sel-more) > #backSelBtn{display:none!important}',
       'html body.ps-dock .sel-ctl' + N + ':not(#____).sel-more > #backSelBtn{flex:1 1 calc(25% - 6px)!important;min-width:calc(25% - 6px)!important;padding:0 6px!important}',
-      // 오른쪽 클릭 메뉴 — «선 스타일» 팝오버(#lsPop)와 같은 생김새
-      '#psShapeMenu{position:fixed;z-index:430;box-sizing:border-box;width:236px;padding:10px 12px 12px;border-radius:14px;background:color-mix(in srgb,var(--panel,#fff) 96%,transparent);border:1px solid color-mix(in srgb,var(--line,#E3E6EA) 88%,transparent);box-shadow:0 16px 42px rgba(12,20,32,.20),0 2px 8px rgba(12,20,32,.08);font-family:inherit;color:var(--txt,#14161A);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain}',
-      '#psShapeMenu .sm-head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;line-height:18px;margin:0 0 8px 2px;letter-spacing:-.01em}',
-      '#psShapeMenu .sm-head i{display:inline-block;width:14px;height:14px;border-radius:4px;flex:0 0 14px}',
+      // 오른쪽 클릭 메뉴 — 뜨는 것들의 공통 카드(board-popups.js --pop-*; 없으면 «선 스타일» 팝오버 값)
+      '#psShapeMenu{position:fixed;z-index:430;box-sizing:border-box;width:240px;padding:10px 12px 12px;border-radius:var(--pop-radius,14px);background:var(--pop-bg,var(--panel,#fff));border:1px solid var(--pop-border,var(--line,#E3E6EA));box-shadow:var(--pop-shadow,0 16px 42px rgba(12,20,32,.20));font-family:inherit;color:var(--pop-ink,var(--txt,#14161A));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain}',
+      '#psShapeMenu .sm-head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;line-height:18px;margin:0 0 8px 2px;padding:0 2px 8px;border-bottom:1px solid var(--pop-line,rgba(20,33,61,.1));letter-spacing:-.01em}',
+      '#psShapeMenu .sm-head i{display:inline-block;width:14px;height:14px;border-radius:4px;flex:0 0 14px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}',
       '#psShapeMenu .sm-row{display:grid;grid-template-columns:42px 1fr 34px;align-items:center;gap:8px;margin-bottom:6px}',
-      '#psShapeMenu .sm-lb{font-size:12px;font-weight:600;color:var(--txt-dim,#646A73)}',
-      '#psShapeMenu input[type=range]{display:block;width:100%;min-width:0;margin:0;accent-color:var(--blue,var(--ps-navy,#14213D))}',
+      '#psShapeMenu .sm-lb{font-size:12px;font-weight:600;color:var(--pop-dim,#646A73)}',
+      '#psShapeMenu input[type=range]{display:block;width:100%;min-width:0;margin:0;accent-color:var(--pop-accent,var(--ps-navy,#14213D))}',
       '#psShapeMenu .sm-val{text-align:right;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}',
       '#psShapeMenu .sm-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}',
-      '#psShapeMenu .sm-btns button{height:32px;border:1px solid var(--line,#E3E6EA);border-radius:9px;background:var(--panel2,#F1F2F4);color:inherit;font-family:inherit;font-size:12px;font-weight:700;padding:0 8px;cursor:pointer;white-space:nowrap}',
-      '#psShapeMenu .sm-btns button:active{background:var(--blue,var(--ps-navy,#14213D));color:#fff;border-color:var(--blue,var(--ps-navy,#14213D))}',
-      '#psShapeMenu .sm-btns button.sm-del{color:#d7263d}',
+      '#psShapeMenu .sm-btns button{height:34px;border:0;border-radius:10px;background:var(--pop-well,rgba(20,33,61,.06));color:inherit;font-family:inherit;font-size:12.5px;font-weight:700;padding:0 8px;cursor:pointer;white-space:nowrap}',
+      '#psShapeMenu .sm-btns button:hover{background:var(--pop-well2,rgba(20,33,61,.12))}',
+      '#psShapeMenu .sm-btns button:active,#psShapeMenu .sm-btns button.on{background:var(--pop-accent,var(--ps-navy,#14213D));color:var(--pop-on-ink,#fff)}',
+      '#psShapeMenu .sm-btns button.sm-del{color:var(--pop-danger,#d7263d);background:var(--pop-danger-bg,rgba(215,38,61,.08))}',
+      '#psShapeMenu .sm-btns button.sm-del:hover{background:var(--pop-danger,#d7263d);color:#fff}',
       '#psShapeMenu .sm-btns button.sm-wide{grid-column:1/-1}'
     ].join('\n');
   }
@@ -106,9 +108,12 @@
       doc.removeEventListener('keydown', onKey, true);
       win.removeEventListener('resize', close);
       win.removeEventListener('blur', close);
+      // 메뉴가 닫히면 옆 패널(.sel-ctl.sel-near)이 다시 보인다 — 숨긴 채 잰 자리라 다시 놓는다
+      try { if (doc.body.classList.contains('ps-shape-menu-on')) { doc.body.classList.remove('ps-shape-menu-on'); call('positionSelCtl'); } } catch (_) {}
     }
+    function press(id) { var b = doc.getElementById(id); if (!b) return false; try { b.click(); } catch (_) { return false; } return true; }
     function outside(e) { if (menu && !menu.contains(e.target)) close(); }
-    function onKey(e) { if (e.key === 'Escape') { close(); } }
+    function onKey(e) { if (e.key === 'Escape' && menu) { e.stopPropagation(); close(); } }   // 첫 Esc 는 메뉴만 닫는다(고른 것은 그대로) — 한 번 더 누르면 본문이 선택을 푼다
     function once() { if (undone) return; undone = true; call('pushUndo'); }
     function repaint(save) {
       call('renderDrawings');
@@ -129,13 +134,19 @@
       var lw = clampLw(base.lw == null ? 1 : base.lw), op = clampOp(base.op == null ? 1 : base.op);
       var el = doc.createElement('div'); el.id = 'psShapeMenu';
       var color = /^#[0-9a-f]{6}$/i.test(base.color || '') ? base.color : '#3a6df0';
+      var locked = ts.every(function (o) { return !!o.locked; }), more = !!(shapes.length && lsVisible());
       el.innerHTML = '<div class="sm-head"><i style="background:' + esc(color) + '"></i><span>' + esc(name(base)) + (ts.length > 1 ? ' ' + ts.length + '개' : '') + '</span></div>'
         + (shapes.length ? '<div class="sm-row"><span class="sm-lb">굵기</span><input type="range" id="psSmW" min="' + LW[0] + '" max="' + LW[1] + '" step="' + LW[2] + '" value="' + lw + '"><span class="sm-val" id="psSmWv">' + lw.toFixed(1) + '</span></div>'
           + '<div class="sm-row"><span class="sm-lb">투명도</span><input type="range" id="psSmO" min="' + OP[0] + '" max="' + OP[1] + '" step="' + OP[2] + '" value="' + op + '"><span class="sm-val" id="psSmOv">' + Math.round(op * 100) + '%</span></div>' : '')
-        + '<div class="sm-btns"><button type="button" data-act="front" title="맨 앞으로 (⌘])">맨 앞</button><button type="button" data-act="back" title="맨 뒤로 (⌘[)">맨 뒤</button>'
-        + (shapes.length && lsVisible() ? '<button type="button" data-act="more">선 스타일 더 보기…</button>' : '')
-        + '<button type="button" class="sm-del' + (shapes.length && lsVisible() ? '' : ' sm-wide') + '" data-act="del">삭제</button></div>';
+        + '<div class="sm-btns">'
+        + (!shapes.length && ts.length === 1 && doc.getElementById('textEditBtn') ? '<button type="button" class="sm-wide" data-act="edit">내용 수정</button>' : '')
+        + '<button type="button" data-act="front" title="맨 앞으로 (⌘])">맨 앞</button><button type="button" data-act="back" title="맨 뒤로 (⌘[)">맨 뒤</button>'
+        + (doc.getElementById('dupSelBtn') ? '<button type="button" data-act="dup">복제</button>' : '')
+        + (doc.getElementById('lockSelBtn') ? '<button type="button" data-act="lock"' + (locked ? ' class="on"' : '') + ' title="위치 고정 — 끌어도 안 움직여요">' + (locked ? '고정 해제' : '고정') + '</button>' : '')
+        + (more ? '<button type="button" data-act="more">선 스타일 더 보기…</button>' : '')
+        + '<button type="button" class="sm-del' + (more ? '' : ' sm-wide') + '" data-act="del">삭제</button></div>';
       doc.body.appendChild(el);
+      try { doc.body.classList.add('ps-shape-menu-on'); } catch (_) {}   // 옆 패널은 숨긴다(board-popups.js)
       var vw = doc.documentElement.clientWidth || win.innerWidth || 1024, vh = doc.documentElement.clientHeight || win.innerHeight || 768;
       var p = place(x, y, el.offsetWidth || 236, el.offsetHeight || 160, vw, vh);
       el.style.left = p.left + 'px'; el.style.top = p.top + 'px';
@@ -165,6 +176,7 @@
           var act = b.dataset.act;
           if (act === 'front' || act === 'back') { call('zOrderItems', ts.slice(), act === 'front'); call('updateDelUI'); close(); return; }
           if (act === 'more') { close(); var lb = doc.getElementById('lineStyleBtn'); if (lb) lb.click(); return; }
+          if (act === 'dup' || act === 'lock' || act === 'edit') { close(); press(act === 'dup' ? 'dupSelBtn' : act === 'lock' ? 'lockSelBtn' : 'textEditBtn'); return; }   // 선택 패널의 단추를 대신 누른다 — 동작 · 되돌리기는 그대로
           if (act === 'del') {
             close();
             if (ts.length === 1) { call('removeDrawing', ts[0]); return; }
