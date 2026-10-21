@@ -226,7 +226,7 @@ test('일정 확인 불일치: 새 입력(psNewerLocal)이면 조용히, 거울�
 test('일정 확인 불일치는 어느 사본이 다른지 말한다',()=>{
   const body=slice(S,'function scheduleReadyCommit(','/* 경기 준비표는');
   assert.match(body,/var which=idb===mirror\?'새 입력':/);
-  assert.match(body,/if\(idb!==null&&which==='새 입력'\)ie\.psNewerLocal=true;/);   /* 3.130 — 거울을 못 쓰는 기기에서 IDB 에 새 입력이 오면(거울 없음) 그것도 «새 입력» */
+  assert.match(body,/if\(idb!==null&&which==='새 입력'\)ie\.psNewerLocal=true;/);   /* 3.131 — 거울을 못 쓰는 기기에서 IDB 에 새 입력이 오면(거울 없음) 그것도 «새 입력» */
   assert.match(body,/if\(which==='IDB·거울'&&mirror===null&&\(scheduleMirrorLeft!==null\|\|scheduleMirrorFull\)\)which='새 입력';/);
 });
 test('오프라인 회차 실패는 서버 오류 기록을 남기지 않는다 · 정보 없는 Script error. 는 셸이 무시한다',()=>{

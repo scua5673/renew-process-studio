@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {startFixture,openApp,SHOTS,WT,A} from '../fixtures/team-app.mjs';
-// 3.130 — 아이패드 «팀 경기 자료를 불러오는 중입니다»에서 멈춤(10/21, 풋볼A 운영자 아이패드).
+// 3.131 — 아이패드 «팀 경기 자료를 불러오는 중입니다»에서 멈춤(10/21, 풋볼A 운영자 아이패드).
 // 그 기기는 일정 화면 사본(localStorage 거울 process_coach_v1)을 쓰면 늘 QuotaExceededError — 10/15 부터 58번 schedule_mirror_quota.
 // 동기화는 «일정을 받은 회차에는 경기를 미룬다»(1.659)인데, 일정 회차가 거울 때문에 매번 실패 · 메타를 되돌려
 // 다음 회차가 일정을 또 받고 경기를 또 미뤘다 → 경기 문서가 영영 안 내려와 경기 화면이 기다리기만 했다.

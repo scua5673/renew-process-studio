@@ -112,7 +112,7 @@ export const SIZES={
 };
 
 export async function openApp(fx,sizeName,{dark=false,browsers={},examples=false,tilt3d=false,csp=false,phoneStart=false,guest=false,init=null}={}){
-  /* 3.130 — init:{fn,arg} 는 앱보다 먼저, 모든 프레임에서 도는 시험용 스크립트(예: 기기 저장 한도 흉내) */
+  /* 3.131 — init:{fn,arg} 는 앱보다 먼저, 모든 프레임에서 도는 시험용 스크립트(예: 기기 저장 한도 흉내) */
   /* 3.112 — guest:true 면 로그인하지 않은 기기(세션 · 공간 · 계정 흔적 없음)로 연다. 로그인은 시험이 signIn(page) 으로 */
   /* 3.039 — csp:true 면 HTML 응답에 _headers 의 Content-Security-Policy-Report-Only 를 그대로 붙인다(tests/browser/csp-report-only) */
   const cspValue=csp?(/\n  Content-Security-Policy-Report-Only: (.+)\n/.exec(fs.readFileSync(path.join(root,'_headers'),'utf8'))||[])[1]:null;

@@ -14,7 +14,7 @@ function setup(){
   return {h,OLD,NEW};
 }
 const diag=h=>h.errors.filter(e=>e.stage==='schedule-mirror-write').map(e=>({name:e.e.name,code:e.e.psCode}));
-test('진짜 용량 오류면 이름과 크기를 적는다(3.130 — 회차는 IDB 정본으로 마친다 · 문구는 schedule-mirror-left-3130)',async()=>{
+test('진짜 용량 오류면 이름과 크기를 적는다(3.131 — 회차는 IDB 정본으로 마친다 · 문구는 schedule-mirror-left-3131)',async()=>{
   const {h}=setup();h.hooks.localWrite=k=>{if(k===KEY)throw quota();};
   const r=await h.run();
   assert.equal(r.error,undefined,JSON.stringify(r));

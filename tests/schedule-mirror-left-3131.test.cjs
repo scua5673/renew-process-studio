@@ -1,5 +1,5 @@
 'use strict';
-/* 3.130 — 아이패드 «팀 경기 자료를 불러오는 중입니다»에서 멈춤(10/21 풋볼A 운영자 아이패드, 10/15 부터 회차마다 schedule_mirror_quota 58번).
+/* 3.131 — 아이패드 «팀 경기 자료를 불러오는 중입니다»에서 멈춤(10/21 풋볼A 운영자 아이패드, 10/15 부터 회차마다 schedule_mirror_quota 58번).
    그 기기는 일정 화면 사본(localStorage 거울)을 쓰면 늘 QuotaExceededError. 예전엔 그 실패가 회차 전체를 실패시키고 일정 메타를 되돌려
    다음 회차가 일정을 또 받았고, «일정을 받은 회차엔 경기를 미룬다»(1.659)로 경기를 또 미뤘다 — 경기 문서가 영영 안 내려왔다
    (브라우저 재현: tests/browser/match-wait-schedule-quota.mjs).

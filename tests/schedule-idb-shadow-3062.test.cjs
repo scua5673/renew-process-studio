@@ -64,15 +64,15 @@ test('scout today reads the schedule through PSSchedule.raw and redraws on sourc
   assert.equal((scout.match(/JSON\.parse\(localStorage\.getItem\("process_coach_v1"\)/g)||[]).length,0);
   assert.match(scout,/addEventListener\("ps-schedule-source"/);
 });
-/* 3.130 — 못 쓰는 거울을 동기화가 걷은 뒤(아이패드 경기 화면 멈춤의 고침) 화면이 빈 일정 · 옛 일정에 머물지 않는다 */
-test('3.130 missing mirror: the IDB copy shows at once (no second look to wait for)', async()=>{
+/* 3.131 — 못 쓰는 거울을 동기화가 걷은 뒤(아이패드 경기 화면 멈춤의 고침) 화면이 빈 일정 · 옛 일정에 머물지 않는다 */
+test('3.131 missing mirror: the IDB copy shows at once (no second look to wait for)', async()=>{
   const h=harness(null,doc('idb'));
   h.box.afterGet=()=>{h.box.idb=doc('later');};
   assert.equal(await h.S.check(),true);
   assert.equal(h.S.read().weeks['0'][0].t,'idb');
   assert.deepEqual(h.events,['ps-schedule-source']);
 });
-test('3.130 a change during the look schedules another look instead of giving up', async()=>{
+test('3.131 a change during the look schedules another look instead of giving up', async()=>{
   const h=harness(doc('old'),doc('a'));h.box.timers.length=0;
   h.box.afterGet=()=>{h.box.idb=doc('b');};
   assert.equal(await h.S.check(),false);

@@ -13,9 +13,9 @@ function setup(){
   const h=harness({mirror:OLD,idb:OLD,server:NEW,cupd:2});h.baseline(OLD,1);
   return {h,OLD,NEW};
 }
-/* 3.130 — 예전엔 여기서 회차를 실패시키고 옛 거울을 남겼다. 그 회차 실패가 «일정을 받은 회차엔 경기를 미룬다»와 겹쳐
+/* 3.131 — 예전엔 여기서 회차를 실패시키고 옛 거울을 남겼다. 그 회차 실패가 «일정을 받은 회차엔 경기를 미룬다»와 겹쳐
    경기 문서가 영영 안 내려왔다(풋볼A 운영자 아이패드). 이제 IDB 정본(서버 원문)으로 회차를 마치고, 동기화가 덮으려던 옛 거울은 걷는다 —
-   화면은 IDB 를 읽는다(3.062 · 2.264). 준비표는 발급하지 않는다(거울이 없다). 자세히는 tests/schedule-mirror-left-3130. */
+   화면은 IDB 를 읽는다(3.062 · 2.264). 준비표는 발급하지 않는다(거울이 없다). 자세히는 tests/schedule-mirror-left-3131. */
 test('거울을 못 쓰면 진단은 남기고, 옛 거울을 걷어 IDB 정본으로 회차를 마친다(준비표 없음)',async()=>{
   const {h,NEW}=setup();
   h.hooks.localWrite=(k)=>{if(k===KEY)throw quota();};

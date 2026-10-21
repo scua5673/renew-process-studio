@@ -1434,10 +1434,10 @@ function scheduleReadyCommit(m,raw,uid,wid,seal,current){
     if(idb!==raw||mirror!==raw){
       /* 2.917 — 어느 사본이 다른지 말한다(IDB·거울이 같고 원문만 다르면 회차 중 새 입력 · 거울만 다르면 거울 쓰기 실패). */
       var which=idb===mirror?'새 입력':mirror!==raw&&idb===raw?'거울':idb!==raw&&mirror===raw?'IDB':'IDB·거울';
-      if(which==='IDB·거울'&&mirror===null&&(scheduleMirrorLeft!==null||scheduleMirrorFull))which='새 입력';   /* 3.130 거울 없는 기기 */
+      if(which==='IDB·거울'&&mirror===null&&(scheduleMirrorLeft!==null||scheduleMirrorFull))which='새 입력';   /* 3.131 거울 없는 기기 */
       /* 2.920 — 거울만 다르고 방금 거울 쓰기가 실패했으면 원인은 저장 공간이다 — 그렇게 말한다(저장소 오류·안전 정리 안내). */
       var mirrorFull=false;try{mirrorFull=!!scheduleMirrorFull;}catch(_){}
-      if(which==='거울'&&mirror===null&&raw===scheduleMirrorLeft){ guard(); return true; }   /* 3.130 */
+      if(which==='거울'&&mirror===null&&raw===scheduleMirrorLeft){ guard(); return true; }   /* 3.131 */
       if(which==='거울'&&mirrorFull){
         if((scheduleMirrorQuota()||!scheduleMirrorCause)&&scheduleMirrorDrop(raw,mirror)){ guard(); return true; }
         if(scheduleMirrorQuota()||!scheduleMirrorCause)throw syncIssue('sync_storage','schedule_mirror_quota','저장 공간이 부족해 일정 화면 사본을 바꾸지 못했어요 — 앱 설정 › 기기 › 안전 정리');
@@ -5689,7 +5689,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
    준비표 확인이 매 회차 «세 사본이 다르다»로 실패하며 일정 전체(2MB)를 매번 다시 받았다. */
 var scheduleMirrorFull=false,scheduleMirrorCause='',scheduleMirrorTidyAt=0;
 /* 3.063 — 실제 원인을 적는다: threw-오류 이름 · readback-(보기 전용 게이트가 조용히 막음 → 원래 Storage.setItem 으로 한 번 더) · 크기.
-   3.130 — 거울을 못 쓰는 기기는 IDB 정본만으로 회차를 마친다(tests/schedule-mirror-left-3130 · CLAUDE.md). */
+   3.131 — 거울을 못 쓰는 기기는 IDB 정본만으로 회차를 마친다(tests/schedule-mirror-left-3131 · CLAUDE.md). */
 var scheduleMirrorStale=null,scheduleMirrorLeft=null;
 function scheduleMirrorReport(){ try{ if(scheduleMirrorQuota()&&window.PSStorage&&PSStorage.reportFull)PSStorage.reportFull(SCHEDULE_KEY); }catch(_){} }
 function scheduleMirrorDrop(raw,mirror){
@@ -7204,7 +7204,7 @@ function syncNowCore(reason){
            최초 준비표는 이 쓰기와 CAS 확인이 끝난 뒤에만 발급한다. */
         if(k===SCHEDULE_KEY&&row&&typeof row.v==='string'&&loc===row.v&&
            ((idbVals[k]===undefined?null:idbVals[k])!==row.v||localStorage.getItem(k)!==row.v)&&
-           !(row.v===scheduleMirrorLeft&&idbVals[k]===row.v&&localStorage.getItem(k)===null&&!scheduleMirrorTry(row.v))){   /* 3.130 */
+           !(row.v===scheduleMirrorLeft&&idbVals[k]===row.v&&localStorage.getItem(k)===null&&!scheduleMirrorTry(row.v))){   /* 3.131 */
           if(roundKvWrite(k,row.v,writes,loc,scheduleGuard)){applied++;scheduleAppliedPlanned++;}
         }
         /* 1.644 — 읽기 전용 기기는 dirty 판정보다 서버 일정이 먼저다.
@@ -7830,7 +7830,7 @@ function syncNowCore(reason){
       function schedulePushCurrent(){
         if(schedulePushExpected==null)return true;
         var cur=null;try{cur=localStorage.getItem(SCHEDULE_KEY);}catch(_){}
-        if(cur===null&&scheduleMirrorLeft!==null)cur=schedulePushExpected;   /* 3.130 거울 없음 */
+        if(cur===null&&scheduleMirrorLeft!==null)cur=schedulePushExpected;   /* 3.131 거울 없음 */
         return !scheduleGuard.stale&&!scheduleHeld()&&cur===schedulePushExpected;
       }
       function commitScheduleReady(){
