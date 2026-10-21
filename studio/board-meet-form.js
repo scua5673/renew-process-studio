@@ -13,7 +13,12 @@
    3.132 — 사용자 «미팅자료 만들때 처음에 운동장을 고르게 하자 피치와 전술구역 운동장 가로 세로 · 미팅 자료 토큰은 지금보다 1단계 크게».
    · 같은 창 맨 위에 «운동장»(피치 다섯 · 전술 구역 여섯 · 가로/세로). 9장 모두(경기 길은 경기 장면까지 — board.html 바탕이 window.__meetLook 을 받는다)에 넣는다.
      방향은 미팅 방향(가로형 · 세로형 — ps_meet_orient_v2, 2.932)과 같은 값이다. 고른 피치 · 구역은 이 기기에 기억한다(KEY 의 look).
-   · 새 미팅의 토큰은 작전판 «＋» 한 번(tokScaleLevels 한 칸) 크게 — 창에서 무엇을 고르든(닫아도). tokV:2 를 붙여 옛 기본 크기로 읽히지 않게(2.977). */
+   · 새 미팅의 토큰은 작전판 «＋» 한 번(tokScaleLevels 한 칸) 크게 — 창에서 무엇을 고르든(닫아도). tokV:2 를 붙여 옛 기본 크기로 읽히지 않게(2.977).
+   3.133 — 사용자 «보관함에서 미팅 자료 만들기 들어가면 상대분석과 경기준비 페이지를 따로 따로 만들어서 팀운영 경기 페이지에 붙힐수 있게».
+   · 자료 종류(KINDS) — «경기 준비»(기본 9장 그대로) · «상대 분석»(OPP_TPL 6장: 상대 BEST + 팀 운영 › 경기 › 상대 분석의 국면 다섯 차례).
+     종류는 보관함 태그(«상대 분석» · «경기 준비» — 새 저장 칸 없음, 보관함 «태그»로 바꿀 수 있다). 경기 화면(match-meet-parts.js)이 태그로 01 · 02 칸에 나눠 붙인다.
+   · 상대 분석 장은 기본 9장의 같은 상황 판(미드블록 = 상대 공격 시 …)에 고른 포메이션을 넣고, 상대 BEST 는 우리 BEST 를 상대 포메이션으로 바꿔 뒤집는다.
+     경기에서 만들면 그 경기 상대 분석의 국면 메모(p.oppNotes)가 그 장의 메모(points)로 들어간다(board.html tpl 장의 points · 자료 tags 를 받는다). */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -30,6 +35,37 @@
   var PITCHES = [['navy', '네이비'], ['real', '잔디'], ['calm', '딥그린'], ['white', '화이트'], ['train', '훈련']];
   var GRIDS = [['off', '없음'], ['lanes', '채널'], ['grid', '격자'], ['thirds', '1/3'], ['zone20', '존'], ['grid15', '15존']];
   var LOOK_DEF = { pitch: 'navy', grid: 'grid15' };   // 3.128 새 미팅의 기본
+  // 3.133 자료 종류 — 보관함 태그 이름과 같다
+  var KINDS = [['prep', '경기 준비'], ['opp', '상대 분석']];
+  var KIND_TAG = { prep: '경기 준비', opp: '상대 분석' };
+  // 상대 분석 6장 — 팀 운영 › 경기 › 상대 분석(MB2_STD_PHASES)의 차례. from = 판을 가져올 기본 장(제목 일부), note = 경기 상대 분석 메모 칸
+  var OPP_TPL = [
+    { from: 'BEST', best: true, note: 'sum' },
+    { t: '상대 공격 시', from: '미드블록', note: 'atk' },   // 상대가 공을 갖고 우리 블록을 연다
+    { t: '상대 수비 시', from: '전진', note: 'def' },        // 우리가 상대 블록을 연다
+    { t: '상대 수비→공격', from: '침투', note: 'ta' },       // 우리가 높이 올라간 때 공을 잃으면 — 상대 역습
+    { t: '상대 공격→수비', from: '로우블록', note: 'td' },   // 우리 박스 앞에서 공을 뺏은 때 — 상대 되찾기
+    { t: '상대 세트피스', from: '코너킥 수비', note: 'set' }
+  ];
+  function findT(list, key) { for (var i = 0; i < list.length; i++) if (String(list[i].title || '').indexOf(key) >= 0) return list[i]; return null; }
+  // list = 기본 장 [{title, raw(고치기 전 판), snap(고른 포메이션의 판)}] → 상대 분석 장 [{title, snap, note}]
+  function oppSlides(list, c, fmt, geo, forms) {
+    var g = geo || { mpp: 10, cx: 555, cy: 370 }, d = DEF[fmt] || DEF['11'], out = [];
+    OPP_TPL.forEach(function (e) {
+      var s = findT(list, e.from); if (!s) return;
+      var sn = s.snap;
+      if (e.best) {   // 우리 BEST(우리 팀만)를 상대 포메이션으로 바꿔 운동장 가운데로 뒤집는다 — 상대 골대 오른쪽, 왼쪽으로 공격
+        var op = c && c.op ? String(c.op) : d.op, bl = remapSnap(s.raw, s.title, { us: op, op: d.op }, g, forms) || JSON.parse(JSON.stringify(s.raw));
+        sn = JSON.parse(JSON.stringify(bl));
+        sn.players = (bl.players || []).filter(function (p) { return p && !p.coach && p.team === 'blue'; }).map(function (p) {
+          var q = JSON.parse(JSON.stringify(p)); q.team = 'red'; q.x = rnd(2 * g.cx - p.x); q.y = rnd(2 * g.cy - p.y); delete q.name; return q;
+        });
+        sn.ball = null;
+      }
+      out.push({ title: e.best ? '상대 ' + s.title : e.t, snap: sn, note: e.note });
+    });
+    return out;
+  }
   var THEME = {   // 미리보기 색 — board.html :root · html[data-pitch] 의 --pitchbg · --grass-a · --pline · --grid
     navy: ['#15172b', '#20243f', '#eef0f6', '#6f8ff0'], real: ['#1b8044', '#2aa55a', 'rgba(255,255,255,.95)', 'rgba(255,255,255,.92)'],
     calm: ['#173a23', '#1f4d31', 'rgba(230,238,232,.82)', 'rgba(230,238,232,.5)'], white: ['#ffffff', '#edf0f5', '#c9ced6', '#9aa3af'], train: ['#ffffff', '#ffffff', '#8b95a3', '#aeb7c2']
@@ -236,6 +272,11 @@
     '#psMeetForm .mf-fmt button{flex:1;height:30px;border:0;border-radius:8px;background:transparent;color:inherit;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer}',
     '#psMeetForm .mf-fmt button.on{background:#fff;color:#14161A;box-shadow:0 1px 3px rgba(0,0,0,.14)}',
     'body.fmdark #psMeetForm .mf-fmt button.on{background:#3a4150;color:#fff}',
+    // 3.133 자료 종류 — 11/8 고르개와 같은 모양, 고른 것은 남색(어느 칸에 붙일 자료인지 먼저 보이게)
+    '#psMeetForm .mf-kind{display:flex;gap:4px;padding:3px;border-radius:11px;background:rgba(127,127,127,.1);margin-bottom:6px}',
+    '#psMeetForm .mf-kind button{flex:1;height:34px;border:0;border-radius:8px;background:transparent;color:inherit;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}',
+    '#psMeetForm .mf-kind button.on{background:#14213D;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18)}',
+    'body.fmdark #psMeetForm .mf-kind button.on{background:#5b8cff}',
     '#psMeetForm .mf-h{display:flex;align-items:center;gap:6px;margin:10px 0 6px;font-weight:800;font-size:12.5px}',
     '#psMeetForm .mf-h i{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}',
     '#psMeetForm .mf-chips{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}',
@@ -296,6 +337,20 @@
       return out;
     }
     function remap(sn, title, c) { return remapSnap(sn, title, c, geo(), forms()); }
+    // 3.133 — 고른 포메이션 · 자료 종류로 만든 장 [{title, snap, note}] — 미리보기(base 없음)와 보관함 채우기가 같은 길
+    function built(fmt, base, oh, c, kind) {
+      var list = tpl(fmt, base, oh).map(function (s) { return { title: s.title, raw: s.snap, snap: (c && c.us ? remap(s.snap, s.title, c) : null) || s.snap }; });
+      return kind === 'opp' ? oppSlides(list, c, fmt, geo(), forms()) : list;
+    }
+    // 보관함 새 미팅의 저장 창에 종류 태그를 미리 넣는다(저장 창에서 지우거나 바꿀 수 있다)
+    function tagPending(kind) {
+      try {
+        var pd = win.__vaultPending; if (!pd || (pd.type && pd.type !== 'meeting')) return;
+        var t = (Array.isArray(pd.tags) ? pd.tags : []).filter(function (x) { return x !== KIND_TAG.opp && x !== KIND_TAG.prep; });
+        t.unshift(KIND_TAG[kind === 'opp' ? 'opp' : 'prep']); pd.tags = t;
+        if (kind === 'opp' && !pd.name) pd.name = '상대 분석'; else if (kind !== 'opp' && pd.name === '상대 분석') delete pd.name;
+      } catch (_) {}
+    }
 
     var st = doc.createElement('style'); st.id = 'ps-meet-form-css'; st.textContent = CSS;
     (doc.head || doc.documentElement).appendChild(st);
@@ -311,8 +366,8 @@
     // go: true = 고른 대로 · 'def' = 기본 그대로(포메이션 · 운동장 기본, 방향은 지금 미팅 방향 — 기억은 바꾸지 않는다) · false = 닫기
     function finish(go) {
       var o = open; if (!o) return; close();
-      var c = go === 'def' ? { us: o.lookOnly ? undefined : DEF[o.fmt].us, op: o.lookOnly ? undefined : DEF[o.fmt].op, look: normLook({}, o.oh) }
-        : go ? { us: o.us, op: o.op, look: { pitch: o.look.pitch, custom: o.look.custom, grid: o.look.grid, oh: o.look.oh } } : null;
+      var c = go === 'def' ? { us: o.lookOnly ? undefined : DEF[o.fmt].us, op: o.lookOnly ? undefined : DEF[o.fmt].op, look: normLook({}, o.oh), kind: o.kind }
+        : go ? { us: o.us, op: o.op, look: { pitch: o.look.pitch, custom: o.look.custom, grid: o.look.grid, oh: o.look.oh }, kind: o.kind } : null;
       if (c && go !== 'def') writeMem(ls, o.fmt, c);
       try { o.done(c, o.fmt); } catch (_) {}
     }
@@ -329,12 +384,20 @@
       var cust0 = o.look.custom || hex6(mem.look && mem.look.custom) || (function () { try { return hex6(ls && ls.getItem('cs_pitch_custom')); } catch (_) { return null; } })() || '#1b8044';   // 작전판 «직접 색»의 마지막 색
       var ov = doc.getElementById('psMeetForm');
       if (!ov) { ov = el('div'); ov.id = 'psMeetForm'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); doc.body.appendChild(ov); }
-      var ttl = o.lookOnly ? '운동장 고르기' : '운동장 · 포메이션 고르기'; ov.setAttribute('aria-label', ttl);
+      o.kind = o.kind === 'opp' ? 'opp' : 'prep';
+      var ttl = o.lookOnly ? '운동장 고르기' : (o.canKind ? '미팅 자료 만들기' : (o.kind === 'opp' ? '상대 분석 자료 만들기' : '운동장 · 포메이션 고르기')); ov.setAttribute('aria-label', ttl);
       ov.textContent = '';
       var box = el('div', 'mf-box'); ov.appendChild(box);
       var hd = el('div', 'mf-hd'); hd.appendChild(el('b', '', ttl));
       var x = el('button', 'mf-x', '×'); x.type = 'button'; x.setAttribute('aria-label', o.path === 'match' ? '만들지 않고 닫기' : '기본 그대로 두고 닫기'); hd.appendChild(x); box.appendChild(hd);
-      box.appendChild(el('div', 'mf-sub', o.lookOnly ? '고른 운동장을 모든 장에 넣어요.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 9장을 채워요. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓아요.'));
+      var sub = el('div', 'mf-sub'); box.appendChild(sub);
+      function subText() { return o.lookOnly ? '고른 운동장을 모든 장에 넣어요.' : (o.kind === 'opp' ? '상대 분석 6장 — 상대 BEST와 상대 분석의 국면(공격 시 · 수비 시 · 두 전환 · 세트피스) 차례로 채워요. 팀 운영 › 경기 › 상대 분석에 붙여요.' : '운동장과 우리 팀 · 상대 팀 포메이션으로 9장을 채워요. 장마다(블록 · 빌드업 · 코너킥) 자리를 맞춰 놓아요.'); }
+      var kseg = null;
+      if (o.canKind) {   // 3.133 — 자료 종류(팀 운영 › 경기의 어느 칸에 붙일 자료인가)
+        kseg = el('div', 'mf-kind'); kseg.setAttribute('role', 'group'); kseg.setAttribute('aria-label', '자료 종류');
+        KINDS.forEach(function (k) { var b = el('button', '', k[1]); b.type = 'button'; b.setAttribute('data-kind', k[0]); kseg.appendChild(b); });
+        box.appendChild(kseg);
+      }
       var seg = null;
       if (o.canFmt) {
         seg = el('div', 'mf-fmt');
@@ -377,6 +440,8 @@
       skip.type = go.type = 'button'; ft.appendChild(skip); ft.appendChild(go); box.appendChild(ft);
       function paint() {
         if (seg) [].forEach.call(seg.children, function (b) { b.classList.toggle('on', b.getAttribute('data-fmt') === o.fmt); });
+        if (kseg) [].forEach.call(kseg.children, function (b) { var on = b.getAttribute('data-kind') === o.kind; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+        sub.textContent = subText();
         Object.keys(lrows).forEach(function (k) { [].forEach.call(lrows[k].children, function (b) { var on = b.getAttribute('data-v') === o.look[k]; b.classList.toggle('on', on); if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', on ? 'true' : 'false'); }); });
         if (o.cust) o.cust.sw.style.background = o.look.custom || o.cust.ci.value;
         if (o.lookOnly) return;
@@ -388,8 +453,8 @@
           }
           [].forEach.call(ch.children, function (b) { var on = b.getAttribute('data-k') === want; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
         });
-        var list = tpl(o.fmt), n = list.length; if (!n) { pv.hidden = true; return; }
-        o.pv = (o.pv + n) % n; var s = list[o.pv], sn = remap(s.snap, s.title, o) || s.snap;
+        var list = built(o.fmt, null, 'h', o, o.kind), n = list.length; if (!n) { pv.hidden = true; return; }
+        o.pv = (o.pv + n) % n; var s = list[o.pv], sn = s.snap;
         pv.classList.toggle('v', o.look.oh === 'v'); pic.innerHTML = previewSVG(sn, geo(), col, o.look);
         cap.textContent = s.title + '  ' + (o.pv + 1) + ' / ' + n;
       }
@@ -403,6 +468,7 @@
         if (b === prev) { o.pv--; paint(); return; }
         if (b === next) { o.pv++; paint(); return; }
         if (b.hasAttribute('data-fmt')) { var f = b.getAttribute('data-fmt'); if (f !== o.fmt) { o.fmt = f; pick(f); paint(); } return; }
+        if (b.hasAttribute('data-kind')) { var kd = b.getAttribute('data-kind'); if (kd !== o.kind) { o.kind = kd; o.pv = kd === 'opp' ? 0 : 2; paint(); } return; }
         var ch = b.parentNode, tk = ch && ch.getAttribute('data-team'), lkk = ch && ch.getAttribute('data-look');
         if (lkk) { o.look[lkk] = b.getAttribute('data-v'); paint(); return; }
         if (tk) { o[tk] = b.getAttribute('data-k'); paint(); }
@@ -422,28 +488,31 @@
       var live = items.filter(function (it) { return a.slides.indexOf(it) >= 0; });
       if (live.length !== items.length) return 0;   // 그새 슬라이드를 고쳤다 — 건드리지 않는다
       var was = fmtOf(items[0] && items[0].snap), d = DEF[fmt], src, lk = normLook(c.look, ohOf(items[0]));
-      var formOn = !(c.us === d.us && c.op === d.op), lookOn = items.some(function (it) { return !sameLook(it.snap, lk); }), ohOn = ohOf(items[0]) !== lk.oh;
-      if (fmt === was && !formOn && !lookOn && !ohOn) return 0;
+      var formOn = !(c.us === d.us && c.op === d.op), lookOn = items.some(function (it) { return !sameLook(it.snap, lk); }), ohOn = ohOf(items[0]) !== lk.oh, kindOn = c.kind === 'opp';
+      if (fmt === was && !formOn && !lookOn && !ohOn && !kindOn) return 0;
       if (ohOn) {   // 미팅 방향(가로형 · 세로형) — meetCap 이 첫 장의 방향으로 판을 담는다. 다음 새 미팅도 이 방향(2.932)
         var po = lk.oh === 'h' ? 'landscape' : 'portrait';
         items.forEach(function (it) { it.pdfOrientation = po; });
         try { win.__meetingPdfOrientation = po; } catch (_) {}
         try { if (ls) ls.setItem('ps_meet_orient_v2', po); } catch (_) {}
       }
-      if (fmt !== was) {
-        src = tpl(fmt, JSON.parse(JSON.stringify(base || {})), lk.oh);   // 판 방향 = 미팅 방향(그림도 그 방향으로)
-        if (src.length !== items.length) return 0;
-      } else src = items.map(function (it) { return { title: it.title, snap: it.snap }; });
+      var fresh = fmt !== was || kindOn;   // 새 틀(8 대 8 · 상대 분석)은 기본 장을 다시 받아 만든다
+      if (fresh) {
+        src = built(fmt, JSON.parse(JSON.stringify(base || {})), lk.oh, c, c.kind);   // 판 방향 = 미팅 방향(그림도 그 방향으로)
+        if (!src.length || (!kindOn && src.length !== items.length) || src.length > items.length) return 0;
+      } else src = items.map(function (it) { return { title: it.title, snap: remap(it.snap, it.title, c) || it.snap }; });
       var n = 0, put = lookSnap(lk);
       src.forEach(function (s, i) {
-        var sn = remap(s.snap, s.title, c) || JSON.parse(JSON.stringify(s.snap)); if (!sn) return;
+        var sn = JSON.parse(JSON.stringify(s.snap));
         Object.assign(sn, put); sn.orientation = lk.oh; sn.spFlip = false;
         try { win.loadSnap(sn); } catch (_) { return; }
         var it = items[i], th = ''; try { th = win.boardThumbSVG(); } catch (_) {}
         try { it.snap = win.__meetCap ? win.__meetCap() : sn; } catch (_) { it.snap = sn; }
-        it.thumb = th; if (fmt !== was) it.title = s.title; n++;
+        it.thumb = th; if (fresh) it.title = s.title; n++;
       });
+      if (src.length < items.length) items.slice(src.length).forEach(function (it) { var j = a.slides.indexOf(it); if (j >= 0) a.slides.splice(j, 1); });   // 상대 분석은 6장
       var k = -1; try { k = win.__meet.idx(); } catch (_) {}
+      if (k >= a.slides.length) k = 0;
       try { win.loadSnap(a.slides[k >= 0 ? k : 0].snap); } catch (_) {}
       try { if (typeof undoStack !== 'undefined') undoStack.length = 0; if (typeof redoStack !== 'undefined') redoStack.length = 0; } catch (_) {}
       try { if (win.__ksRender) win.__ksRender(); } catch (_) {}
@@ -452,7 +521,7 @@
     function lookText(lk) { return (lk.pitch === 'custom' ? '직접 색' : name(PITCHES, lk.pitch)) + ' · ' + name(GRIDS, lk.grid) + ' · ' + (lk.oh === 'h' ? '가로' : '세로'); }
     function said(c, fmt, n) {
       var d = DEF[fmt]; if (!n) return;
-      toast(n + '장을 채웠어요 — ' + (c.us === d.us && c.op === d.op ? (fmt === '8' ? '8 대 8 기본 포메이션' : '기본 포메이션') : '우리 ' + label(c.us) + ' · 상대 ' + label(c.op)) + ' · ' + lookText(normLook(c.look)));
+      toast(n + '장을 채웠어요 — ' + (c.kind === 'opp' ? '상대 분석 · ' : '') + (c.us === d.us && c.op === d.op ? (fmt === '8' ? '8 대 8 기본 포메이션' : '기본 포메이션') : '우리 ' + label(c.us) + ' · 상대 ' + label(c.op)) + ' · ' + lookText(normLook(c.look)));
     }
     // 새 미팅의 토큰 — 지금 판보다 «＋» 한 칸 크게(사용자 «미팅 자료 토큰은 지금보다 1단계 크게»). tokV:2 = 2.977 뒤의 크기(옛 기본으로 줄여 읽지 않는다)
     function curTok() { try { return (typeof state !== 'undefined' && state && +state.tokenScale) || 0; } catch (_) { return 0; } }
@@ -464,9 +533,11 @@
         var r = f.apply(this, arguments);
         if (r === true) {
           var a = A(), items = a && Array.isArray(a.slides) ? a.slides.slice() : [];
+          tagPending('prep');
           if (items.length) win.setTimeout(function () {
-            show({ path: 'vault', fmt: fmtOf(items[0].snap), canFmt: !!win.PSMeet8, oh: ohOf(items[0]), done: function (c, fmt) {
+            show({ path: 'vault', fmt: fmtOf(items[0].snap), canFmt: !!win.PSMeet8, canKind: true, kind: 'prep', oh: ohOf(items[0]), done: function (c, fmt) {
               if (!c) return;
+              tagPending(c.kind);
               said(c, fmt, applySeeded(items, base, c, fmt));
             } });
           }, 60);
@@ -481,11 +552,14 @@
       var t = win.__meetTplSlides; if (typeof t !== 'function') return false; if (t.__psForm) return true;
       var g = function () {
         var out = t.apply(this, arguments);
-        if (cur && Array.isArray(out)) out.forEach(function (s) {
-          var sn = s && cur.us ? remap(s.snap, s.title, cur) : null; if (sn) s.snap = sn;
-          if (s && s.snap && cur.look) Object.assign(s.snap, lookSnap(cur.look));   // 기본 9장은 meetTplSnap 이 네이비 · 15존을 박는다 — 고른 운동장으로
+        if (!cur || !Array.isArray(out) || !out.length) return out;
+        var fmt = fmtOf(out[0] && out[0].snap), list = out.filter(function (s) { return s && s.snap; }).map(function (s) { return { title: s.title, raw: s.snap, snap: (cur.us ? remap(s.snap, s.title, cur) : null) || s.snap }; });
+        if (cur.kind === 'opp') list = oppSlides(list, cur, fmt, geo(), forms()).map(function (e) {   // 상대 분석 6장 — 그 경기 상대 분석의 국면 메모를 그 장에
+          var nt = cur.notes && cur.notes[e.note];
+          return { title: e.title, snap: e.snap, points: (Array.isArray(nt) ? nt : []).map(function (x) { return String(x == null ? '' : x).trim().slice(0, 160); }).filter(Boolean).slice(0, 10) };
         });
-        return out;
+        list.forEach(function (s) { if (cur.look) Object.assign(s.snap, lookSnap(cur.look)); });   // 기본 9장은 meetTplSnap 이 네이비 · 15존을 박는다 — 고른 운동장으로
+        return list.map(function (s) { return { title: s.title, snap: s.snap, points: s.points || [] }; });
       };
       g.__psForm = 1; g.__psFormRaw = t; win.__meetTplSlides = g; return true;
     }
@@ -499,12 +573,15 @@
         var fmt = String(p.fmt || '') === '8' ? '8' : '11', oh = 'v';
         try { oh = typeof win.__meetDefaultOrient === 'function' && win.__meetDefaultOrient() === 'landscape' ? 'h' : 'v'; } catch (_) {}
         return new Promise(function (resolve) {
-          show({ path: 'match', fmt: fmt, canFmt: false, oh: oh, lookOnly: only, done: function (c) {
+          var kind = p.part === 'opp' ? 'opp' : 'prep';   // 3.133 — 상대 분석 칸의 «＋ 새 상대 분석»
+          show({ path: 'match', fmt: fmt, canFmt: false, oh: oh, lookOnly: only, kind: kind, done: function (c) {
             if (!c) {   // 만들지 않는다 — 경기 준비 안에서 열었으면 그 자리로
               if (p.inplace) { try { win.parent.postMessage({ source: 'board', type: 'matchEditDone', libId: '', mid: (p.ref && p.ref.mid) || '', fail: true }, '*'); } catch (_) {} }
               resolve(false); return;
             }
-            var r, lk = normLook(c.look, oh); cur = c;
+            var r, lk = normLook(c.look, oh); cur = c; cur.kind = kind;
+            cur.notes = p.oppNotes && typeof p.oppNotes === 'object' ? p.oppNotes : null;
+            p.tags = [KIND_TAG[kind]];   // 경기 화면이 이 태그로 01 · 02 칸에 붙인다
             // 경기 장면 · 기본 9장의 바탕(board.html meetBaseSnap 뒤 window.__meetLook) — 운동장 · 토큰 한 칸 크게. 방향은 미팅 방향(2.932)이 정한다
             try { if (ls) ls.setItem('ps_meet_orient_v2', lk.oh === 'h' ? 'landscape' : 'portrait'); } catch (_) {}
             win.__meetLook = Object.assign(lookSnap(lk), { tokenScale: bigTok(curTok()), tokV: 2 });
@@ -528,5 +605,6 @@
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) install(window);
   return { KEY: KEY, LIST: LIST, DEF: DEF, PITCH: PITCH, label: label, fmtOf: fmtOf, kindOf: kindOf, norm: norm, baseIdx: baseIdx, remapTeam: remapTeam, remapSnap: remapSnap,
     readMem: readMem, writeMem: writeMem, previewSVG: previewSVG, install: install,
-    PITCHES: PITCHES, GRIDS: GRIDS, LOOK_DEF: LOOK_DEF, normLook: normLook, lookSnap: lookSnap, sameLook: sameLook, bumpTok: bumpTok };
+    PITCHES: PITCHES, GRIDS: GRIDS, LOOK_DEF: LOOK_DEF, normLook: normLook, lookSnap: lookSnap, sameLook: sameLook, bumpTok: bumpTok,
+    KINDS: KINDS, KIND_TAG: KIND_TAG, OPP_TPL: OPP_TPL, oppSlides: oppSlides };
 });

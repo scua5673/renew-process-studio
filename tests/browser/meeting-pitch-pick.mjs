@@ -33,7 +33,7 @@ try{
   cur='vault-default';
   await newMeeting();
   let st=await look();
-  assert.equal(st.title,'운동장 · 포메이션 고르기');
+  assert.equal(st.title,'미팅 자료 만들기');
   assert.deepEqual(st.rows,['pitch=네이비/잔디/딥그린/화이트/훈련/직접','grid=없음/채널/격자/1/3/존/15존','oh=가로/세로']);
   assert.deepEqual(st.o,{pitch:'navy',custom:null,grid:'grid15',oh:'v',lookOnly:false},'처음엔 네이비 · 15존 · 미팅 방향(세로형)');
   assert.deepEqual(st.on,['pitch:navy','grid:grid15','oh:v']);assert.equal(st.vpv,true,'미리보기도 세로');

@@ -19077,10 +19077,10 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     src.forEach(function(sp){ if(sp&&(sp.lineup||/^선발 11/.test(String(sp.title||""))))sp=meetSpreadLineup(sp);
       var r=meetSnapFromPct(base,sp); skipped+=r.skipped; try{r.snap.orientation=_oh;}catch(_){} var th=""; try{th=window.__snapToThumb?window.__snapToThumb(r.snap):"";}catch(_){}
       slides.push({pdfOrientation:_po,snap:r.snap,thumb:th||"",title:String(sp.title||"").trim().slice(0,80),points:(Array.isArray(sp.points)?sp.points:[]).map(function(x){return String(x==null?"":x).trim().slice(0,160);}).filter(Boolean).slice(0,10)}); });
-    tpl.forEach(function(t){ var th=""; try{th=window.__snapToThumb?window.__snapToThumb(t.snap):"";}catch(_){} slides.push({pdfOrientation:_po,snap:t.snap,thumb:th||"",title:t.title,points:[]}); });
+    tpl.forEach(function(t){ var th=""; try{th=window.__snapToThumb?window.__snapToThumb(t.snap):"";}catch(_){} slides.push({pdfOrientation:_po,snap:t.snap,thumb:th||"",title:t.title,points:t.points||[]}); });
     if(!slides.length){try{toast("옮길 경기 자료가 없어요");}catch(_){} return Promise.resolve(_fail());}
     var name=String(p.name||"").trim().slice(0,40)||((ref&&ref.opp?(ref.opp+"전 "):"")+"미팅");
-    var item={libId:"V"+Date.now().toString(36),type:"meeting",name:name,folder:shared?VAULT_SHARE_FOLDER:"",thumb:slides[0].thumb,snap:slides[0].snap,slides:slides,tags:[],savedAt:Date.now()};
+    var item={libId:"V"+Date.now().toString(36),type:"meeting",name:name,folder:shared?VAULT_SHARE_FOLDER:"",thumb:slides[0].thumb,snap:slides[0].snap,slides:slides,tags:p.tags||[],savedAt:Date.now()};
     if(ref)item.matchRef=ref;
     stampCreator(item);
     if(shared){ try{ addFolder(VAULT_SHARE_FOLDER); if(!fmetaOf(VAULT_SHARE_FOLDER).shared)setFolderMeta(VAULT_SHARE_FOLDER,"shared",true); }catch(_){} }
