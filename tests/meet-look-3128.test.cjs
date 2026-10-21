@@ -13,7 +13,7 @@ test('새 미팅의 판 모양은 세 곳이 같다 — 네이비(빈 값) · 15
   assert.deepEqual(L.LOOK,{pitchTheme:'',pitchCustom:null,pitchImg:null,gridType:'grid15'});
   const b=read('studio/board.html');
   assert.ok(b.includes('boardLocked:false,pitchTheme:"",pitchCustom:null,pitchImg:null,gridType:"grid15"});'),'기본 9장(meetTplSnap)');
-  assert.ok(b.includes('base=Object.assign(meetBaseSnap(),{pitchTheme:"",pitchCustom:null,pitchImg:null,gridType:"grid15"})'),'경기 «＋ 새 미팅»의 바탕');
+  assert.ok(b.includes('base=Object.assign(meetBaseSnap(),{pitchTheme:"",pitchCustom:null,pitchImg:null,gridType:"grid15"},window.__meetLook)'),'경기 «＋ 새 미팅»의 바탕(3.131 — 창에서 고른 운동장이 window.__meetLook 으로 덮는다)');
   assert.ok(!/meetTplSnap[\s\S]{0,600}pitchTheme:"white"/.test(b),'흰 운동장 기본은 걷었다');
   assert.ok(read('studio/board-meet-8.js').includes("pitchTheme: '', pitchCustom: null, pitchImg: null, gridType: 'grid15'"),'8인제 9장');
   // 이미 만든 미팅에 경기 자료를 넣는 길(meetInsertSlides)은 예전 그대로 — 그 미팅의 판을 따른다
