@@ -13,7 +13,7 @@ try{
   await f.waitForFunction(()=>typeof renderTokens==='function'&&window.__vaultSave&&document.getElementById('vaultSave'));
   await page.waitForTimeout(1500);
   const lib=()=>f.evaluate(async()=>((await boardStore.get('cs_drill_lib_v1'))||[]).filter(d=>/^가상 전술/.test(d.name||'')).map(d=>({name:d.name,nums:(d.snap.players||[]).map(p=>p.num).join(',')})));
-  const put=nums=>f.evaluate(ns=>{state.players=ns.map((n,i)=>({id:'vs'+n,team:'red',num:String(n),x:300+i*40,y:320}));renderTokens();},nums);
+  const put=nums=>f.evaluate(ns=>{pushUndo();state.players=ns.map((n,i)=>({id:'vs'+n,team:'red',num:String(n),x:300+i*40,y:320}));renderTokens();},nums);   /* 3.137 — 사람의 편집처럼 되돌리기 기록을 남긴다(boardManualChanged) */
   // 폰은 저장 띠의 «보관함», 데스크톱은 원래 버튼 — 둘 다 같은 저장 경로
   const openSheet=async()=>{
     await f.evaluate(sz=>{const b=sz==='phone'&&document.querySelector('#psSaveBar .sb-vault');(b&&getComputedStyle(document.getElementById('psSaveBar')).display!=='none'?b:document.getElementById(sz==='phone'?'vaultSave':'boardManualSave')).click();},size);   /* 3.077 — 데스크톱은 «저장» 하나(보드 저장 → 보관함 확인창) */
@@ -56,10 +56,22 @@ try{
   await put([1]);
   await openSheet();await f.click('#pssCancel');await page.waitForTimeout(400);
   assert.equal(await f.evaluate(()=>!!document.getElementById('psSaveOv')),false);
+  /* 3.137 — 닫으면 다시 담는 길을 알린다(오류 제보 0917a39f) */
+  if(size==='desktop')assert.equal(await f.evaluate(()=>(document.getElementById('hint')||{}).textContent),'보드에 저장됨 ✓ · 보관함에 담으려면 «저장»을 한 번 더 누르세요');
   assert.deepEqual((await lib()).length,2,'취소는 저장하지 않는다');
   /* 3.077 — 확인창을 닫은 판은 다시 묻지 않고 보드만 저장한다(데스크톱 «저장») */
   if(size==='desktop'){ await put([2]); await f.click('#boardManualSave'); await page.waitForTimeout(800);
-    assert.equal(await f.evaluate(()=>!!document.getElementById('psSaveOv')),false,'닫은 뒤엔 다시 묻지 않는다'); }
+    assert.equal(await f.evaluate(()=>!!document.getElementById('psSaveOv')),false,'닫은 뒤엔 다시 묻지 않는다');
+    /* 3.137 — 바뀐 것 없이 «저장»을 한 번 더 누르면 다시 묻는다(예전엔 앱을 다시 열 때까지 보관함에 담을 길이 없었다 — 오류 제보 0917a39f) */
+    await f.waitForFunction(()=>!boardManualChanged(),null,{timeout:5000});
+    await f.click('#boardManualSave');await f.waitForSelector('#psSaveOv',{timeout:5000});
+    await name('가상 전술 C');await f.click('#pssOk');
+    await waitLib("a.some(d=>d.name==='가상 전술 C'&&d.nums==='2')");
+    /* 3.137 — 여러 페이지 보드의 빈 페이지에서도 묻는다(빈 판 판정이 지금 페이지만 봤다) */
+    await f.evaluate(()=>[...document.getElementById('boardPageStrip').querySelectorAll('button.bp-add')].find(b=>/^＋/.test(b.textContent.trim())).click());
+    await f.waitForFunction(()=>window.__psPages.pageInfo().count===2&&state.players.length===0,null,{timeout:5000});
+    await f.click('#boardManualSave');await f.waitForSelector('#psSaveOv',{timeout:5000});
+    await f.click('#pssCancel'); }
   const errs=logs.filter(l=>l.type==='pageerror'&&!/ResizeObserver loop/.test(l.text));
   assert.deepEqual(errs,[],'페이지 오류 없음');
   console.log(JSON.stringify({engine,size,passed:true,library:await lib()}));
