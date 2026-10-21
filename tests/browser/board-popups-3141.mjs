@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
-// 3.139 — 작전판에서 뜨는 것들 정리(studio/board-popups.js): 선택 옆 패널은 밝은 카드 · «맨 뒤»는 «맨 앞»과 한 줄 ·
+// 3.141 — 작전판에서 뜨는 것들 정리(studio/board-popups.js): 선택 옆 패널은 밝은 카드 · «맨 뒤»는 «맨 앞»과 한 줄 ·
 // 도형 메뉴가 열리면 옆 패널은 숨김 · 알림은 도구 옵션 띠를 가리지 않는다. 터치(WebKit · 아이패드)는 옆 패널이 없어 알림 자리만.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const SHOT=process.env.PS_SHOT_DIR||'';
@@ -99,5 +99,5 @@ try{
 
   const errs=logs.filter(l=>l.type==='pageerror');
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log('board-popups-3139 ok',engine,size);
+  console.log('board-popups-3141 ok',engine,size);
 }catch(e){console.error('실패 단계:',cur);throw e;}finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close?.();}

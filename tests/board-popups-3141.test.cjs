@@ -1,7 +1,7 @@
 'use strict';
-/* 3.139 — 작전판에서 뜨는 것들을 한 결로(studio/board-popups.js, 사용자 «디자인들 특히 신경써줘 · 보드만들면서 뜨는 것들 전부 잘 정리해줘»).
+/* 3.141 — 작전판에서 뜨는 것들을 한 결로(studio/board-popups.js, 사용자 «디자인들 특히 신경써줘 · 보드만들면서 뜨는 것들 전부 잘 정리해줘»).
    선택 옆 패널(그림 · 글 · 묶음)은 밝은 카드 · «맨 뒤»는 «맨 앞»과 한 줄 · 알림은 도구 띠를 가리지 않는다 · 메뉴들은 같은 카드.
-   실제 판은 tests/browser/board-popups-3139.mjs. */
+   실제 판은 tests/browser/board-popups-3141.mjs. */
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const P=require('../studio/board-popups.js');
 const read=f=>fs.readFileSync(path.join(__dirname,'..',f),'utf8');
@@ -57,6 +57,6 @@ test('배포 묶음 — sw.js CORE · board.html <script> 한 줄 · 크기 예�
   const b=read('studio/board.html');
   assert.ok(b.includes('<script src="board-popups.js"></script>'),'board.html script');
   assert.ok(Buffer.byteLength(b)<=2560000,'board.html budget '+Buffer.byteLength(b));
-  assert.ok(read('tests/browser/run-critical.mjs').includes("'board-popups-3139'"),'run-critical');
-  assert.ok(fs.existsSync(path.join(__dirname,'browser','board-popups-3139.mjs')));
+  assert.ok(read('tests/browser/run-critical.mjs').includes("'board-popups-3141'"),'run-critical');
+  assert.ok(fs.existsSync(path.join(__dirname,'browser','board-popups-3141.mjs')));
 });

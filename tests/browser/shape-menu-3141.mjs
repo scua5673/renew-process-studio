@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {startFixture,openApp} from '../fixtures/team-app.mjs';
-// 3.139 — 도형 오른쪽 클릭 메뉴 · «맨 뒤» 단추(studio/board-shape-menu.js, 제보 0a1f6e9d 박수빈).
+// 3.141 — 도형 오른쪽 클릭 메뉴 · «맨 뒤» 단추(studio/board-shape-menu.js, 제보 0a1f6e9d 박수빈).
 // 마우스: 선 · 사각형을 오른쪽 클릭 → 굵기 · 투명도 · 맨 앞 · 맨 뒤 · 삭제. 터치(WebKit · 아이패드): 선택 패널의 «맨 뒤» · 메뉴 API.
 const engine=process.env.PS_BROWSER_ENGINE||'chromium',size=engine==='webkit'?'ipad':'desktop';
 const SHOT=process.env.PS_SHOT_DIR||'';
@@ -122,5 +122,5 @@ try{
 
   const errs=logs.filter(l=>l.type==='pageerror');
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log('shape-menu-3139 ok',engine,size);
+  console.log('shape-menu-3141 ok',engine,size);
 }catch(e){console.error('실패 단계:',cur);throw e;}finally{for(const b of Object.values(browsers))await b.close().catch(()=>{});await fx.close?.();}
