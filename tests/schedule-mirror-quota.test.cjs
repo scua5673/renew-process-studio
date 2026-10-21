@@ -13,13 +13,16 @@ function setup(){
   const h=harness({mirror:OLD,idb:OLD,server:NEW,cupd:2});h.baseline(OLD,1);
   return {h,OLD,NEW};
 }
-test('거울을 못 쓰면 저장 공간 오류로 말하고, 거울은 지우지 않는다',async()=>{
-  const {h,OLD,NEW}=setup();
+/* 3.131 — 예전엔 여기서 회차를 실패시키고 옛 거울을 남겼다. 그 회차 실패가 «일정을 받은 회차엔 경기를 미룬다»와 겹쳐
+   경기 문서가 영영 안 내려왔다(풋볼A 운영자 아이패드). 이제 IDB 정본(서버 원문)으로 회차를 마치고, 동기화가 덮으려던 옛 거울은 걷는다 —
+   화면은 IDB 를 읽는다(3.062 · 2.264). 준비표는 발급하지 않는다(거울이 없다). 자세히는 tests/schedule-mirror-left-3131. */
+test('거울을 못 쓰면 진단은 남기고, 옛 거울을 걷어 IDB 정본으로 회차를 마친다(준비표 없음)',async()=>{
+  const {h,NEW}=setup();
   h.hooks.localWrite=(k)=>{if(k===KEY)throw quota();};
   const r=await h.run();delete h.hooks.localWrite;
-  assert.equal(r.code,'sync_storage',JSON.stringify(r));
+  assert.equal(r.error,undefined,JSON.stringify({r,errors:h.errors.map(e=>e.stage)}));
   assert.ok(h.errors.some(e=>e.stage==='schedule-mirror-write'));
-  assert.equal(h.local.get(KEY),OLD,'일정 화면은 거울로 부팅한다 — 지우지 않는다');
+  assert.equal(h.local.has(KEY),false,'옛 거울을 남기면 다음 회차가 그것을 «내 편집»으로 올린다');
   assert.equal(h.idb.get(KEY),NEW);assert.equal(h.ready(),false);
 });
 test('안전 정리로 자리가 나면 한 번 더 써서 회차를 마친다',async()=>{
