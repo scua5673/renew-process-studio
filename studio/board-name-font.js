@@ -163,6 +163,8 @@
       // state · anim 은 작전판의 let 전역 — window 속성이 아니라 이름으로 읽는다
       try { add(typeof state !== 'undefined' ? state : null); } catch (_) {}   /* global state */
       try { (typeof anim !== 'undefined' && anim && anim.frames || []).forEach(function (f) { add(f && f.snap); }); } catch (_) {}   /* global anim */
+      // 3.136 — 미팅이면 다른 슬라이드(와 그 장면)의 이름, 아니면 작업 보드의 다른 페이지(미팅 중 eachOther 는 작업 페이지를 읽지 않는다 — board-tweaks 9)
+      try { if (doc.body.classList.contains('meet-mode')) (typeof anim !== 'undefined' && anim && anim.slides || []).forEach(function (s) { if (!s) return; add(s.snap); (s.frames || []).forEach(function (f) { add(f && f.snap); }); }); } catch (_) {}   /* global anim */
       try { if (win.__psPages && win.__psPages.eachOther) win.__psPages.eachOther(function (snap, frames) { add(snap); (frames || []).forEach(function (f) { add(f && f.snap); }); return 0; }); } catch (_) {}
       return out;
     }
