@@ -68,6 +68,9 @@
       S + '>.bp-head{display:none!important}',
       // 3.079 — 패턴북(book-mode)은 왼쪽 기둥이 시퀀스 목록이라 띠를 접는다(board.html 의 접기 규칙과 같은 조건) — 막대가 그 규칙을 덮지 않게
       'html.ps-page-board body.book-mode:not(.focus-board):not(.vault-full):not(.ps-phone-work):not(.ps-dock) #boardPageStrip.ps-tb' + N + N + '{display:none!important}',
+      // 3.130 — 미팅 발표(슬라이드쇼, body.focus-board)에서는 띠를 걷는다: 가운데 «평면 · 3D»가 슬라이드 제목 띠(#ksHead)를,
+      // 왼쪽 «보드 ▾»가 메모 첫 줄(#ksOv)을 덮었다. 발표에서 띠의 단추(페이지 · 보기 · 내보내기)는 쓰지 않는다 — 나가면 그대로.
+      'html.ps-page-board body.focus-board #boardPageStrip' + N + N + '{display:none!important}',
       S + ' .tb-tabs{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}',
       S + ' .tb-tabs::-webkit-scrollbar{display:none}',
       S + ' .tb-sep{width:1px;height:16px;margin:0 3px;flex:none}',
