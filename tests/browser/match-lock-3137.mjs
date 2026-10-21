@@ -42,12 +42,24 @@ try{
   const ev=await sf.evaluate(()=>{const S=parent.PSSync;try{S.flushEvents&&S.flushEvents();}catch(_){}return window.__psMatchLockApi.readyInfo();});
   assert.equal(typeof ev.mirror,'number','준비 모양을 숫자로 '+JSON.stringify(ev));
 
-  // 2) 풀리면 그대로 쓴다
+  // 2) 풀리면 그대로 쓴다 — 회차가 아직 도는 중이어도(CI WebKit 에서 그랬다) 친 글은 회차가 끝난 뒤 들어간다
   await sf.evaluate(()=>{window.__qaPend=false;renderMatch();});
   await sf.waitForFunction(()=>!document.querySelector('.match-shell').classList.contains('readonly'));
-  await clickField();await page.keyboard.type('abc');await page.waitForTimeout(250);
+  await clickField();await page.keyboard.type('abc');
+  await sf.waitForFunction(()=>matchGet().attack==='abc',null,{timeout:8000});
   s=await st();assert.equal(s.val,'abc','풀리면 쓴다 '+JSON.stringify(s));
-  assert.equal(await sf.evaluate(()=>matchGet().attack),'abc','경기 문서에 들어간다');
+  // 2b) 화면은 안 잠겼는데 회차가 도는 중(matchDocPending 참) — 본문은 글을 버리고, 회차 끝의 syncMatchFromCloud 가 matchState=null · renderMatch() 로 칸까지 지웠다
+  await sf.evaluate(()=>{window.__qaPend=true;});
+  await page.keyboard.type('de');await page.waitForTimeout(400);
+  s=await st();assert.equal(s.val,'abcde');assert.equal(await sf.evaluate(()=>matchGet().attack),'abc','회차 중엔 본문이 버린다(예전 그대로)');
+  await sf.evaluate(()=>{window.__qaPend=false;matchState=null;renderMatch();});   // 회차가 끝나 다시 그린다(syncMatchFromCloud 의 길) — 쓰는 중인 칸은 그대로
+  await page.waitForTimeout(150);
+  s=await st();assert.equal(s.val,'abcde','쓰는 중인 칸은 지우지 않는다 '+JSON.stringify(s));assert.equal(s.active,true,'커서도 그 칸에 '+JSON.stringify(s));
+  await sf.waitForFunction(()=>matchGet().attack==='abcde',null,{timeout:8000});   // 회차가 끝났으니 모델에 들어가고 저장을 건다
+  await sf.waitForFunction(()=>window.__psMatchLockApi.typed().length===0,null,{timeout:8000});
+  await sf.evaluate(()=>document.activeElement.blur());await page.waitForTimeout(400);
+  await sf.evaluate(()=>{matchState=null;renderMatch();});
+  s=await st();assert.equal(s.val,'abcde','저장된 글로 다시 그린다 '+JSON.stringify(s));
 
   // 3) 팀 편집 권한 없음 — 그렇다고 알린다(다시 맞추지 않는다)
   await sf.evaluate(()=>{document.activeElement&&document.activeElement.blur();window.__qaToast.length=0;window.__qaSync.length=0;window.__qaPerm=true;renderMatch();});
