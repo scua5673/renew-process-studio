@@ -67,7 +67,7 @@ test('경기에서 «＋ 새 미팅» — «기본 9장»을 붙이고, 선발 1
     +board.slice(board.indexOf('window.__meetTplSlides=function'),board.indexOf('return out; };',board.indexOf('window.__meetTplSlides=function'))+'return out; };'.length)+';this.t=window.__meetTplSlides;',ctx);
   const all=ctx.t({teamColors:{blue:'#123456'}},false),skip=ctx.t({},true);
   assert.equal(all.length,9);assert.equal(skip.length,8);assert.equal(all[0].title,'BEST 11');assert.equal(skip[0].title,'하이블록');
-  assert.ok(all.every(s=>s.snap.orientation==='h'&&s.snap.pitchTheme==='white'&&s.snap.players.length>=11),'미팅과 같은 판(흰 운동장·가로)');
+  assert.ok(all.every(s=>s.snap.orientation==='h'&&s.snap.pitchTheme===''&&s.snap.gridType==='grid15'&&s.snap.players.length>=11),'미팅과 같은 판(3.128 네이비 · 15존 · 가로)');
   assert.equal(all[0].snap.teamColors.blue,'#123456','겉모습(팀 색)은 바탕에서');
   const fm=fnAt(board,'window.__meetingFromMatch=function(p)');
   assert.match(fm,/if\(!src\.length&&!p\.template\)/,'경기 자료가 없어도 기본 9장만으로 만든다');
