@@ -110,6 +110,19 @@
     });
     return recs;
   }
+  // 3.136 — 미팅 중(meetOn)엔 작업 보드 페이지 묶음(window.__psPages)이 지금 판(슬라이드)을 담지도, 다른 페이지를 고치지도 않게 감싼다(아래 mount 9)
+  function guardPages(P, meetOn) {
+    if (!P || typeof P.eachOther !== 'function') return false; if (P.eachOther.__psMeetSafe) return true;
+    var eo = P.eachOther, an = P.applyNames, th = P.thumbs;
+    P.eachOther = function () { return meetOn() ? 0 : eo.apply(this, arguments); };
+    P.eachOther.__psMeetSafe = 1;
+    if (typeof an === 'function') P.applyNames = function () { return meetOn() ? null : an.apply(this, arguments); };
+    if (typeof th === 'function') P.thumbs = function () {   // 미팅 중엔 담지 않고 있는 그림만(경기 화면이 읽는다)
+      if (!meetOn()) return th.apply(this, arguments);
+      var m = {}; ((P.pg && P.pg()) || []).forEach(function (p) { if (p && p.name && p.thumb) m[p.name] = p.thumb; }); return m;
+    };
+    return true;
+  }
   function undoPitch(recs) { (recs || []).forEach(function (r) { backPitch(r.it.snap, r.snap); r.frames.forEach(function (fw) { backPitch(fw[0].snap, fw[1]); }); }); }
 
   function mount(win) {
@@ -390,9 +403,102 @@
       g.__psMeetOnly = 1; win.psEachSnapAll = g; return true;
     }
 
+    // ── 8. 저장 팀은 판 전체(3.137, 오류 제보 738f37d1 «팀 불러오기 시, 모든 장면에 적용») ──
+    // 보드 설정 › «저장 팀 불러오기»(board.html openAnalysisTeamLibrary)는 지금 장면 토큰에 이름 · 번호 · 사진을 입히고(PSTeamLoad.dress),
+    // 지금 페이지의 다른 장면은 같은 id 만 따라갔다(PSTeamLoad.frames) — 포메이션을 다시 놓은 장면(새 id)엔 이름이 안 들어갔고,
+    // 다른 페이지 · 미팅의 다른 슬라이드는 그대로였다. 이제 기본은 판 전체: 같은 선수(team-load.js who — id, 아니면 불러오기 전 번호 · 미팅은 번호 먼저)를
+    // 지금 페이지의 모든 장면 · 다른 페이지(작업 보드) 또는 다른 슬라이드(미팅 — 작업 보드 페이지는 건드리지 않는다, 3.122)에 입힌다.
+    // 알림의 «이 장면만»(다른 장면을 바꾼 때) · «이 페이지만» · «이 슬라이드만»이 지금 장면만 남기고 되돌린다(그 사이 고친 곳은 둔다).
+    // 대기 줄에 새로 놓은 선수(fresh)는 예전처럼 지금 페이지의 장면에만. eachOther 는 쓰지 않는다(미팅 중 capture() 가 작업 보드 페이지를 덮는다).
+    var teamSrc = null;
+    function teamSpread(list, active, src, freshIds, before) {
+      var L = win.PSTeamLoad;
+      if (!src.length || !L || playing() || doc.body.classList.contains('editing') || win.__animExport) return null;
+      var find = L.who(src, freshIds), meet = doc.body.classList.contains('meet-mode'), undo = [], seen = [], scenes = 0;
+      // ① 지금 페이지 · 슬라이드의 다른 장면 — 같은 묶음은 id 가 이어진다(id 먼저), id 가 다르면 불러오기 전 번호로
+      (list || []).forEach(function (f, k) {
+        if (!f || !f.snap || k === active) return;
+        var w = L.wear(f.snap, find, false); if (w) f.snap = Object.assign({}, f.snap, { players: w.players });
+        if (f.snap !== before[k]) { scenes++; delete f.thumb; undo.push([f, 'snap', before[k], f.snap]); }
+      });
+      // ② 다른 페이지(작업 보드) · 다른 슬라이드(미팅)
+      var items = null, skip = -1, recs = [];
+      if (meet) { var a = A(); items = (a && Array.isArray(a.slides) && a.slides.length > 1) ? a.slides : null; try { skip = win.__meet.idx(); } catch (_) {} }
+      else { var P = win.__psPages; try { items = P && P.pg ? P.pg() : null; skip = (P && P.book && P.book.idx) ? P.book.idx() : -1; } catch (_) { items = null; } }
+      (items || []).forEach(function (it, i) {
+        if (!it || i === skip) return;
+        var r = { it: it, snap: null, frames: [] }, fr = meet ? it.frames : (it.anim && it.anim.frames);
+        [it.snap].concat((Array.isArray(fr) ? fr : []).map(function (f) { return f && f.snap; })).forEach(function (sn) {
+          if (!sn || seen.indexOf(sn) >= 0) return; seen.push(sn);   // 같은 묶음을 두 번 입히지 않는다(번호가 바뀐 뒤 다시 찾으면 다른 선수가 된다)
+          var w = L.wear(sn, find, meet); if (!w) return;
+          undo.push([sn, 'players', w.was, w.players]); sn.players = w.players; r.snap = 1;
+        });
+        if (r.snap) recs.push(r);
+      });
+      if (!scenes && !recs.length) return null;
+      queueThumbs(recs, meet);
+      var word = meet ? '슬라이드' : '페이지', label = scenes ? '이 장면만' : ('이 ' + word + '만');
+      var msg = [scenes ? ('장면 ' + (scenes + 1) + '개 모두') : '', recs.length ? ('다른 ' + word + ' ' + recs.length + (meet ? '장' : '개')) : ''].filter(Boolean).join(' · ');
+      var listRef = list, at = skip, t0 = Date.now();
+      win.setTimeout(function () {   // 보드의 «N명 불러옴» 알림 · 미팅 유니폼 알림(7, 450ms) 뒤에 — 이어 쓴다
+        var base = ((doc.getElementById('cs-ftoast') || {}).textContent || '').trim();
+        if (!/명 불러옴/.test(base)) base = '';   // 보드의 «N명 불러옴»만 이어 쓴다(미팅 유니폼 알림 등 다른 알림은 덮는다)
+        toast((base ? base + ' · ' : '') + msg + '에도 넣었어요');
+        try {
+          var t = doc.getElementById('cs-ftoast'); if (!t) return;
+          var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = label;
+          b.addEventListener('click', function (ev) {
+            ev.stopPropagation(); try { b.remove(); } catch (_) {}
+            var a2 = A(), now = -1;
+            try { now = meet ? win.__meet.idx() : win.__psPages.book.idx(); } catch (_) {}
+            if ((scenes && a2 && a2.frames !== listRef) || now !== at) { toast('다른 ' + word + '로 옮겨 되돌리지 않았어요 — 되돌리기(⌘Z)를 쓰세요'); return; }
+            undo.forEach(function (u) { if (u[0][u[1]] === u[3]) { u[0][u[1]] = u[2]; if (u[1] === 'snap') delete u[0].thumb; } });   // 그 사이 다시 고친 곳은 둔다
+            var run = meet ? kitRun : null;   // 이 불러오기가 바꾼 유니폼(보드가 곧이어 저장하며 7 이 다른 슬라이드에 넣는다) — 이 알림이 그 알림의 «이 슬라이드만»을 덮었다
+            if (run && run.t >= t0 && run.t - t0 < 2000) { undoPitch(run.recs); queueThumbs(run.recs, true); kitRun = null; }
+            try { if (typeof win.renderAnimFrames === 'function') win.renderAnimFrames(); } catch (_) {}
+            queueThumbs(recs, meet);
+            try { win.boardSaveLive(); } catch (_) {}
+            toast(scenes ? '이 장면만 바꾸고 다른 곳은 되돌렸어요' : ('이 ' + word + '만 바꾸고 다른 ' + word + '는 되돌렸어요'));
+          });
+          b.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+          t.appendChild(b); t.style.pointerEvents = 'auto';
+          clearTimeout(t._ft); t._ft = win.setTimeout(function () { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(10px)'; t.style.pointerEvents = 'none'; win.setTimeout(function () { t.textContent = ''; t.setAttribute('aria-hidden', 'true'); }, 220); }, 6000);
+        } catch (_) {}
+      }, 600);
+      return { scenes: scenes, recs: recs.length, label: label };
+    }
+    function hookTeam() {
+      var L = win.PSTeamLoad; if (!L || typeof L.who !== 'function' || typeof L.frames !== 'function') return false; if (L.frames.__psTeamAll) return true;
+      var dress = L.dress, frames = L.frames;
+      // 판 위 토큰에 입히기 전 번호를 적어 둔다(dress 가 번호를 바꾼다) — 같은 차례(동기) 안의 frames 가 쓴다
+      L.dress = function (t) {
+        try {
+          var st = typeof state !== 'undefined' ? state : null;   /* global state */
+          if (t && st && Array.isArray(st.players) && st.players.indexOf(t) >= 0) { if (!teamSrc) { teamSrc = []; win.setTimeout(function () { teamSrc = null; }, 0); } teamSrc.push({ t: t, team: t.team, key: t.num }); }
+        } catch (_) {}
+        return dress.apply(this, arguments);
+      };
+      var g = function (list, active, toks, fresh) {
+        var src = teamSrc || []; teamSrc = null;
+        var before = (list || []).map(function (f) { return f && f.snap; });
+        var n = frames.apply(this, arguments);
+        try { win.__psTeamAllLast = teamSpread(list, active, src, (fresh || []).map(function (t) { return t && t.id; }), before); } catch (_) {}
+        return n;
+      };
+      g.__psTeamAll = 1; L.frames = g; return true;
+    }
+
+    // ── 9. 미팅 중엔 작업 보드의 페이지를 건드리지 않는다(3.136 — 738f37d1 을 고치다 찾음) ──
+    // __psPages 의 eachOther(«다른 페이지 전부») · applyNames · thumbs 는 먼저 capture() 로 지금 판을 지금 페이지에 담고, 미팅 설정을 모든 페이지에 적는다(_lookStampPages).
+    // 미팅 중의 지금 판은 슬라이드라 작업 페이지에 슬라이드 배치 · 토큰 크기 · 이름표 글꼴이 들어갔고, psEachSnapAll(8)을 거치지 않는
+    // 선수단 불러오기 · 맨 앞/뒤 · 잔상 · 시선 · 이름표 글꼴(글자 미리 받기)이 다른 페이지의 선수까지 고쳤다.
+    // 미팅의 «모든 장»은 슬라이드다 — 이름(2.970 __meetSyncNames) · 유니폼(7) · 피치(6)는 슬라이드 규칙으로 따로 간다.
+    // 슬라이드 사이엔 id 가 겹친다(경기의 «선발 11» 장) — id 로 찾는 페이지 규칙을 슬라이드에 그대로 돌리지 않는다.
+    function hookPages() { return guardPages(win.__psPages, function () { return doc.body.classList.contains('meet-mode'); }); }
+
     // ── 시작 · 다시 그릴 때 ──
     var tries = 0;
-    (function boot() { var ok = hookSpeed(), ok2 = hookPitch(), ok3 = hookKit() && hookEach(); if ((!ok || !ok2 || !ok3) && ++tries < 40) win.setTimeout(boot, 250); })();
+    (function boot() { var ok = hookSpeed(), ok2 = hookPitch(), ok3 = hookKit() && hookEach() && hookPages(), ok4 = hookTeam(); if ((!ok || !ok2 || !ok3 || !ok4) && ++tries < 40) win.setTimeout(boot, 250); })();
     try {
       new win.MutationObserver(function (list) {
         for (var i = 0; i < list.length; i++) for (var j = 0; j < list[i].addedNodes.length; j++) { var n = list[i].addedNodes[j]; if (n && n.id === 'evSheet') capRow(n); }
@@ -408,5 +514,5 @@
   }
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) boot(window);
   return { frame169: frame169, reelBox: reelBox, stripPageCaps: stripPageCaps, putPitch: putPitch, spreadPitch: spreadPitch, undoPitch: undoPitch, PITCH_KEYS: PITCH_KEYS, SPEED_ALL: SPEED_ALL, CAP: CAP,
-    KIT_KEYS: KIT_KEYS, putKit: putKit, spreadKit: spreadKit };
+    KIT_KEYS: KIT_KEYS, putKit: putKit, spreadKit: spreadKit, guardPages: guardPages };
 });
