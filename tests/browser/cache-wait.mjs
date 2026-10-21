@@ -25,19 +25,26 @@ try{
  const context=await browser.newContext({viewport:{width:1280,height:900},serviceWorkers:'block'});
  await context.route('**/*',r=>new URL(r.request().url()).origin===base?r.continue():r.abort());
  const page=await context.newPage(),other=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(base);await other.goto(base);
+ // 3.129 — 5초 뒤 «지연» 창은 없다(사용자 «계속 떠있어서 안뜨게»). 저장 상태 줄이 받는 중 · 다시 시도를 말한다.
  await page.evaluate(()=>{localStorage.setItem(CACHE_FLAG,'1');cacheWaitStart();});
  assert.match(await page.locator('#psCacheWait').innerText(),/팀에서 받는 중/);
  await other.evaluate(()=>localStorage.removeItem(CACHE_FLAG));await page.bringToFront();
- await page.getByText('팀 자료 수신이 지연되고 있어요').waitFor({timeout:8000});
+ await page.waitForFunction(()=>!document.getElementById('psCacheWait'),null,{timeout:8000});
+ assert.equal(await page.getByText('수신이 지연').count(),0);
  await page.locator('#open').click({timeout:5000});assert.equal(await page.locator('#open').innerText(),'자료 열림');
  assert.equal(await page.locator('#psDataLock').count(),1);
- await page.getByRole('button',{name:'다시 시도'}).click();
- assert.match(await page.locator('#psCacheWait').innerText(),/팀에서 받는 중/);
- await page.getByText('팀 자료 수신이 지연되고 있어요').waitFor({timeout:8000});
- await page.setViewportSize({width:375,height:812});await page.locator('#open').click({timeout:5000});
+ // 오프라인 안내는 그대로 — «다시 시도»는 «받는 중»으로, 연결되면 5초 뒤 걷힌다
+ await page.evaluate(()=>localStorage.setItem(CACHE_FLAG,'1'));await context.setOffline(true);
+ await page.evaluate(()=>cacheWaitStart());assert.match(await page.locator('#psCacheWait').innerText(),/오프라인이에요/);
+ await page.setViewportSize({width:375,height:812});
  assert.ok(await page.locator('#psCacheWait').evaluate(el=>el.scrollWidth<=document.documentElement.clientWidth));
- await page.screenshot({path:path.join(out,'slow-receipt-mobile.png')});
- await page.evaluate(()=>cacheWaitEnd(true));assert.equal(await page.locator('#psCacheWait').count(),0);
+ await page.screenshot({path:path.join(out,'offline-mobile.png')});
+ await context.setOffline(false);await page.getByRole('button',{name:'다시 시도'}).click();
+ assert.match(await page.locator('#psCacheWait').innerText(),/팀에서 받는 중/);
+ await page.waitForFunction(()=>!document.getElementById('psCacheWait'),null,{timeout:8000});
+ await page.locator('#open').click({timeout:5000});
+ await page.evaluate(()=>{cacheWaitStart();cacheWaitEnd(true);});assert.equal(await page.locator('#psCacheWait').count(),0);
+ assert.equal(await page.evaluate(()=>localStorage.getItem(CACHE_FLAG)),null);
  assert.equal(await page.locator('#psDataLock').count(),1);assert.deepEqual(errors,[]);
- console.log(JSON.stringify({engine,multiTabTimeout:true,retryTimeout:true,clickThrough:true,mobile:true,errors,passed:true}));await context.close();
+ console.log(JSON.stringify({engine,multiTabTimeout:true,noSlowBanner:true,offlineRetry:true,clickThrough:true,mobile:true,errors,passed:true}));await context.close();
 }finally{await browser?.close();await new Promise(r=>server.close(r));}
