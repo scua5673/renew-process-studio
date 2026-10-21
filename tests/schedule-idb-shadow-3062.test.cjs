@@ -16,7 +16,7 @@ function harness(mirror,idb){
     addEventListener:(t,f)=>{(listeners[t]=listeners[t]||[]).push(f);},
     dispatchEvent:e=>{events.push(e.type);return true;},
     CustomEvent:class{constructor(t,o){this.type=t;this.detail=o&&o.detail;}},
-    setTimeout:(f,ms)=>{if(ms>=1000)setImmediate(f);return 0;},clearTimeout:()=>{},
+    setTimeout:(f,ms)=>{if(ms>=1000)setImmediate(f);else box.timers.push(f);return 0;},clearTimeout:()=>{},
     document:{addEventListener(){},visibilityState:'visible'},
     PSStorageDiagnostic(){},
   };
@@ -63,4 +63,20 @@ test('scout today reads the schedule through PSSchedule.raw and redraws on sourc
   assert.match(scout,/get\(k\)\{try\{const v=\(k==="process_coach_v1"&&window\.PSSchedule&&PSSchedule\.raw\)\?PSSchedule\.raw\(\)/);
   assert.equal((scout.match(/JSON\.parse\(localStorage\.getItem\("process_coach_v1"\)/g)||[]).length,0);
   assert.match(scout,/addEventListener\("ps-schedule-source"/);
+});
+/* 3.130 — 못 쓰는 거울을 동기화가 걷은 뒤(아이패드 경기 화면 멈춤의 고침) 화면이 빈 일정 · 옛 일정에 머물지 않는다 */
+test('3.130 missing mirror: the IDB copy shows at once (no second look to wait for)', async()=>{
+  const h=harness(null,doc('idb'));
+  h.box.afterGet=()=>{h.box.idb=doc('later');};
+  assert.equal(await h.S.check(),true);
+  assert.equal(h.S.read().weeks['0'][0].t,'idb');
+  assert.deepEqual(h.events,['ps-schedule-source']);
+});
+test('3.130 a change during the look schedules another look instead of giving up', async()=>{
+  const h=harness(doc('old'),doc('a'));h.box.timers.length=0;
+  h.box.afterGet=()=>{h.box.idb=doc('b');};
+  assert.equal(await h.S.check(),false);
+  assert.equal(h.box.timers.length,1,'다시 볼 약속');
+  assert.equal(await h.box.timers.pop()(),true);
+  assert.equal(h.S.read().weeks['0'][0].t,'b');
 });

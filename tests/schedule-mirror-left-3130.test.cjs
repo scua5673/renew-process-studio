@@ -83,3 +83,25 @@ test('거울이 처음부터 없던 기기(닫을 때 팀 사본을 정리한 �
   assert.equal(h.idb.get(KEY),NEW);assert.equal(h.local.has(KEY),false);assert.equal(h.ready(),false);
   assert.equal(OLD===NEW,false);
 });
+
+test('거울 없는 기기에서 회차 중 IDB 에 새 입력이 오면 «새 입력»으로 조용히 다시 맞춘다(오류 · 긴 대기 아님)',async()=>{
+  const {h,NEW}=setup(),MINE=doc('mine');
+  await h.run();h.c.busy=false;h.c.lastIssue=null;
+  /* 경기 화면이 일정 칸에 경기 번호를 붙여 저장한 것처럼 — 거울은 못 쓰고 IDB 에만 앉는다 */
+  let once=false;h.hooks.sharedReady=k=>{if(k===KEY&&!once){once=true;h.idb.set(KEY,MINE);}};
+  const r=await h.run();
+  assert.equal(r.code,'sync_local_changed',JSON.stringify(r));
+  assert.equal(h.c.lastIssue,null,'조용한 실패 — 빨간 상태 · 오류 기록 없음');
+  assert.equal(h.idb.get(KEY),MINE,'새 입력은 그대로');assert.equal(h.server.get(KEY).v,NEW);
+});
+
+test('거울 없는 기기에서 고친 일정(IDB 에만 있음)도 서버에 올라간다 — 예전엔 «거울이 그대로인가» 검사에 늘 걸려 영영 미뤄졌다',async()=>{
+  const {h}=setup(),MINE=doc('mine');
+  await h.run();h.c.busy=false;
+  h.idb.set(KEY,MINE);   /* 화면 저장: 거울은 못 쓰고 IDB 에만 앉는다(psSaveShared) */
+  const r=await h.run();
+  assert.equal(r.error,undefined,JSON.stringify({r,errors:h.errors.map(e=>e.stage)}));
+  assert.equal(r.scheduleDeferred,false,JSON.stringify(r));
+  assert.match(h.server.get(KEY).v,/"mine"/,'서버에 이 기기의 일정이 올라갔다');
+  assert.equal(h.local.has(KEY),false);
+});

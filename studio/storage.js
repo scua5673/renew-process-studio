@@ -1576,11 +1576,15 @@
   function shadowCheck(){
     var seq=++shadowSeq;
     return shadowRead().then(function(a){
-      if(seq!==shadowSeq||!a||a.mirror!==a.now)return false;
+      if(seq!==shadowSeq||!a)return false;
+      if(a.mirror!==a.now){ shadowSoon(); return false; }   /* 3.130 — 바뀌는 중이면 포기하지 않고 다시 본다(예전엔 다음 신호까지 옛 거울 · 빈 일정) */
       if(a.idb==null||a.idb===a.mirror||!shadowShape(a.idb)){ shadowSet(null); return false; }
       if(idbShadow&&idbShadow.mirror===a.mirror&&idbShadow.raw===a.idb)return true;
+      /* 3.130 — 거울이 없으면(못 쓰는 기기에서 동기화가 옛 거울을 걷은 뒤 · 닫을 때 정리한 뒤) 정본이 곧 화면이다 — 기다리지 않는다 */
+      if(a.mirror===null){ shadowSet({mirror:null,raw:a.idb}); return true; }
       return new Promise(function(r){ setTimeout(r,1200); }).then(shadowRead).then(function(b){
-        if(seq!==shadowSeq||!b||b.mirror!==a.mirror||b.now!==a.mirror||b.idb!==a.idb)return false;
+        if(seq!==shadowSeq||!b)return false;
+        if(b.mirror!==a.mirror||b.now!==a.mirror||b.idb!==a.idb){ shadowSoon(); return false; }
         shadowSet({mirror:a.mirror,raw:a.idb}); return true;
       });
     }).catch(function(e){ note('schedule-shadow',e); return false; });

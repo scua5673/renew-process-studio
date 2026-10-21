@@ -48,9 +48,15 @@ try{
   assert.ok(view1.matches.includes('가상 서버 경기'),JSON.stringify(view1.matches));
   assert.equal(st1.mirror,null,'못 쓰는 거울은 비워 둔다(화면은 IDB 정본)');
   assert.notEqual(st1.state.kind,'error',JSON.stringify(st1.state));
-  // 일정 정본은 IDB 에 서버와 같은 원문 · 화면이 읽는 일정도 그것
-  const idb1=await page.evaluate(async()=>{const r=await window.storage.get('process_coach_v1');return r&&r.value;});
-  assert.equal(idb1,schedRow().v,'IDB 정본 = 서버 원문');
+  // 일정 정본은 IDB — 경기 화면이 일정 칸에 경기 번호(mid)를 붙여 저장하면 그것도 IDB 로 가서 서버에 올라간다. 곧 서버와 같아진다
+  let idb1=null;
+  for(let i=0;i<60;i++){
+    idb1=await page.evaluate(async()=>{const r=await window.storage.get('process_coach_v1');return r&&r.value;});
+    if(idb1===schedRow().v&&await page.evaluate(()=>!PSSync.pending().count))break;
+    await page.waitForTimeout(500);
+  }
+  assert.equal(idb1,schedRow().v,'IDB 정본 = 서버 원문(기기의 새 입력도 올라가 같아진다)');
+  assert.equal(await page.evaluate(()=>PSSync.pending().count),0,'올릴 것이 남지 않는다');
   await sf.waitForFunction(()=>/가상 훈련 화/.test(PSSchedule.raw()||''),null,{timeout:10000});
 
   // 2) 거울이 써지던 기기가 다시 막힌 경우 — 거울은 옛 일정(v1)을 들고 있고 서버는 새 일정(v2)이 됐다

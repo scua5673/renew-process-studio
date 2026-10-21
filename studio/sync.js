@@ -1434,16 +1434,17 @@ function scheduleReadyCommit(m,raw,uid,wid,seal,current){
     if(idb!==raw||mirror!==raw){
       /* 2.917 — 어느 사본이 다른지 말한다(IDB·거울이 같고 원문만 다르면 회차 중 새 입력 · 거울만 다르면 거울 쓰기 실패). */
       var which=idb===mirror?'새 입력':mirror!==raw&&idb===raw?'거울':idb!==raw&&mirror===raw?'IDB':'IDB·거울';
+      if(which==='IDB·거울'&&mirror===null&&(scheduleMirrorLeft!==null||scheduleMirrorFull))which='새 입력';   /* 3.130 거울 없는 기기 */
       /* 2.920 — 거울만 다르고 방금 거울 쓰기가 실패했으면 원인은 저장 공간이다 — 그렇게 말한다(저장소 오류·안전 정리 안내). */
       var mirrorFull=false;try{mirrorFull=!!scheduleMirrorFull;}catch(_){}
       if(which==='거울'&&mirror===null&&raw===scheduleMirrorLeft){ guard(); return true; }   /* 3.130 */
       if(which==='거울'&&mirrorFull){
-        if((scheduleMirrorQuota()||!scheduleMirrorCause)&&scheduleMirrorDrop(raw,mirror)){ guard(); return true; }   /* 3.130 — 회차는 마치고 준비표는 없다 */
+        if((scheduleMirrorQuota()||!scheduleMirrorCause)&&scheduleMirrorDrop(raw,mirror)){ guard(); return true; }
         if(scheduleMirrorQuota()||!scheduleMirrorCause)throw syncIssue('sync_storage','schedule_mirror_quota','저장 공간이 부족해 일정 화면 사본을 바꾸지 못했어요 — 앱 설정 › 기기 › 안전 정리');
         throw syncIssue('sync_storage','schedule_mirror_write','이 기기가 일정 화면 사본을 바꾸지 못했어요('+scheduleMirrorCause+') — 저장 공간 문제는 아니에요');
       }
       var ie=syncIssue('sync_local_changed','schedule_ready_exact','일정 서버 확인 원문·기기 저장소·화면 사본이 다릅니다('+which+')');
-      if(idb!==null&&idb===mirror)ie.psNewerLocal=true;
+      if(idb!==null&&which==='새 입력')ie.psNewerLocal=true;
       throw ie;
     }
     var marker={w:String(wid),u:String(uid),o:seal,present:raw!==null,h:hash(raw)},latest=meta();
@@ -5584,8 +5585,7 @@ function kvWrite(k,v,writes,expectedLoc,writeGuard,ownerGuard){
             try{matchMirrorWriteExact(v);}catch(e){syncDiagnostic('match-mirror-write',e);throw e;}
             return {stale:false};
           }
-          /* 2.920 — 거울 쓰기를 확인한다. 못 쓰면 안전 정리 한 번 뒤 다시. 그래도 안 되면 표시만 남긴다(던지면 1.1초 재시도가 되풀이) —
-             준비표 확인(scheduleReadyCommit)이 판정한다(3.130). */
+          /* 2.920 — 거울 쓰기 확인 · 못 쓰면 안전 정리 뒤 한 번 더 · 그래도 안 되면 표시만(던지면 1.1초 재시도 되풀이) — 판정은 scheduleReadyCommit */
           var mirrorBefore=null;try{mirrorBefore=localStorage.getItem(k);}catch(_){}
           return scheduleMirrorWrite(v,function(){
             var now=null;try{now=localStorage.getItem(k);}catch(_){return false;}
@@ -5723,8 +5723,7 @@ function scheduleMirrorWrite(v,stillSafe,before){
     psCode:scheduleMirrorCause+'_'+scheduleMirrorKb(String(v).length*2)+'_ls'+scheduleMirrorKb(lsBytes)}));
   if(!(window.PSStorage&&PSStorage.optimize)||Date.now()-scheduleMirrorTidyAt<600000){ scheduleMirrorFull=true; scheduleMirrorReport(); return Promise.resolve(false); }
   scheduleMirrorTidyAt=Date.now();
-  /* 안전 정리는 IDB 에 같은 값이 확인된 중복 사본만 지운다(일정 거울은 건드리지 않는다). 정리하는 동안 사용자가
-     새로 적었으면(거울이 바뀌었으면) 그 편집을 덮지 않도록 다시 쓰지 않는다. */
+  /* 안전 정리(일정 거울은 안 건드림) 뒤 거울이 그대로일 때만 다시 쓴다 — 새 편집을 덮지 않는다 */
   return Promise.resolve().then(function(){ return PSStorage.optimize(); }).catch(function(e){ syncDiagnostic('schedule-mirror-tidy',e); })
     .then(function(){
       if(typeof stillSafe==='function'&&!stillSafe()){ scheduleMirrorFull=false; scheduleMirrorStale=null; return false; }
@@ -7831,6 +7830,7 @@ function syncNowCore(reason){
       function schedulePushCurrent(){
         if(schedulePushExpected==null)return true;
         var cur=null;try{cur=localStorage.getItem(SCHEDULE_KEY);}catch(_){}
+        if(cur===null&&scheduleMirrorLeft!==null)cur=schedulePushExpected;   /* 3.130 거울 없음 */
         return !scheduleGuard.stale&&!scheduleHeld()&&cur===schedulePushExpected;
       }
       function commitScheduleReady(){
