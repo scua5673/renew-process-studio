@@ -14,13 +14,12 @@ function setup(){
   return {h,OLD,NEW};
 }
 const diag=h=>h.errors.filter(e=>e.stage==='schedule-mirror-write').map(e=>({name:e.e.name,code:e.e.psCode}));
-test('진짜 용량 오류면 이름과 크기를 적고 예전처럼 저장 공간 문구',async()=>{
+test('진짜 용량 오류면 이름과 크기를 적는다(3.131 — 회차는 IDB 정본으로 마친다 · 문구는 schedule-mirror-left-3131)',async()=>{
   const {h}=setup();h.hooks.localWrite=k=>{if(k===KEY)throw quota();};
   const r=await h.run();
-  assert.equal(r.code,'sync_storage',JSON.stringify(r));
+  assert.equal(r.error,undefined,JSON.stringify(r));
   const d=diag(h);assert.ok(d.length,JSON.stringify(h.errors.map(e=>e.stage)));
   assert.equal(d[0].name,'QuotaExceededError');assert.match(d[0].code,/^threw-QuotaExceededError_\d+k_ls\d+k$/);
-  assert.equal(h.c.lastIssue&&h.c.lastIssue.stage,'schedule_mirror_quota');
 });
 test('던지지 않았는데 안 바뀌면 저장 공간이라고 하지 않고 원인을 적는다',async()=>{
   const {h,OLD}=setup();const real=h.c.localStorage.setItem;
