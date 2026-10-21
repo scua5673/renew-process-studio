@@ -4229,7 +4229,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 <script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
-<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js"></script><script src="board-shape-menu.js"></script><script src="board-popups.js"></script>
+<script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js"></script><script src="board-shape-menu.js"></script><script src="board-popups.js"></script>
 <script>
 "use strict";
 document.addEventListener("click",()=>{document.querySelectorAll(".cmenu-pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll(".drill").forEach(d2=>d2.style.zIndex="");});
@@ -18186,7 +18186,7 @@ window.addEventListener("message",function(e){var d=e.data||{};if(d&&d.type==="s
     var frames=null; if(type!=="meeting"){ try{ frames=window.__animFrames?window.__animFrames(true):null; }catch(e){failed(e);return;} }   /* 작전판 애니메이션 저장 (#13) */
     var pages=null; if(type!=="meeting"){ try{ pages=window.__psPages&&window.__psPages.forSave(); }catch(e){failed(e);return;} }   /* 작전판 멀티 페이지 저장 — 여러 페이지를 한 항목에 함께 */
     if(pages&&(pages.length>1||window.__vaultBook)){ try{ snap=pages[0].snap||snap; if(pages[0].thumb)thumb=pages[0].thumb; }catch(_){} }   /* 대표 스냅·썸네일은 첫 페이지 */
-    if(window.__vaultBook&&pages&&pages[0]){ try{ frames=_animToFrames(pages[0].anim); }catch(_){ frames=null; } }   /* 2.985 — 패턴북의 대표 장면 = 첫 시퀀스(옛 판·미리보기 ▶ 가 이것을 읽는다) */
+    if(pages&&pages[0]){ try{ frames=_animToFrames(pages[0].anim); }catch(_){ frames=null; } }   /* 2.985 · 3.137 — 대표 장면 = 1페이지(대표 판과 같은 쪽 · 제보 0917a39f) */
     /* 2.991 — 읽고-쓰기를 libTurn 한 차례로: 썸네일 채우기 등 다른 쓰기가 이 저장을 옛 목록으로 덮지 못하게(위 libTurn 주석) */
     libTurn(function(){return libGet().then(function(lib){
       var idx=-1; if(curId){for(var _k=0;_k<lib.length;_k++){if(lib[_k].libId===curId){idx=_k;break;}}}

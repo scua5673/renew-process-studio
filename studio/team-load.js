@@ -61,5 +61,26 @@ function frames(list,active,toks,fresh){
   f.snap=Object.assign({},f.snap,{players:arr});delete f.thumb;n++;});
  return n;
 }
-return {code:code,base:base,group:group,match:match,bench:bench,plan:plan,dress:dress,mark:mark,kit:kit,frames:frames};
+/* 3.137 — 저장 팀은 판 전체(오류 제보 738f37d1 «팀 불러오기를 모든 장면에»). frames 는 같은 id 만 찾아, 포메이션을 다시 놓은 장면(새 id)엔 이름이 안 들어갔고
+   다른 페이지 · 미팅의 다른 슬라이드는 건드리지 않았다. 같은 선수 찾기(who): 입힌 토큰(src = [{t, team, key: 불러오기 전 번호}])과
+   같은 id → 아니면 같은 팀 + 불러오기 전 번호(작업 보드 2.975 _nmApplySnap 과 같은 규칙). 미팅 슬라이드는 번호 먼저(2.970 — 경기에서 가져온 장은 id 가 겹친다).
+   두 토큰이 같이 쓰던 번호 · 코치 · 이번에 새로 놓은 토큰(skip — 새 번호가 옛 번호와 부딪친다)은 번호로 찾지 않는다 */
+function who(src,skip){var id={},key={},dup={},no={};(skip||[]).forEach(function(i){no[i]=1;});
+ (src||[]).forEach(function(s){if(!s||!s.t)return;id[s.t.id]=s.t;if(no[s.t.id])return;var k=s.key==null?'':String(s.key).trim();if(!k)return;k=s.team+'|'+k;if(key[k])dup[k]=1;else key[k]=s.t;});
+ Object.keys(dup).forEach(function(k){delete key[k];});
+ return function(q,numFirst){if(!q||q.coach||no[q.id])return null;var n=q.num==null?'':String(q.num).trim(),byK=n?(key[q.team+'|'+n]||null):null,byI=id[q.id]||null;
+  if(byI&&byI.team!==q.team)byI=null;return numFirst?(n?byK:byI):(byI||byK);};}
+function same(a,b){return (a==null?'':String(a))===(b==null?'':String(b));}
+/* 한 장면(snap)에 입힌다 — 그 장면의 자리 · 크기 · 포지션 표시는 그대로(비었을 때만 채움), 이름 · 번호와 팀 사진은 따라간다(코치가 올린 사진은 둔다 — dress 와 같다).
+   바뀐 토큰만 새 객체 · 새 배열(옛 배열은 되돌리기가 쥔다). 바뀐 것이 없으면 null */
+function wear(sn,find,numFirst){
+ if(!sn||!Array.isArray(sn.players)||typeof find!=='function')return null;var ch=0;
+ var arr=sn.players.map(function(q){var t=find(q,numFirst);if(!t||t===q)return q;
+  var c=Object.assign({},q);c.name=t.name==null?null:t.name;if(t.num!=null&&String(t.num)!=='')c.num=t.num;if(!c.pos&&t.pos)c.pos=t.pos;
+  if(!q.img||q.imgTeam===mark(q.img)){if(t.img&&t.imgTeam){c.img=t.img;c.imgTeam=t.imgTeam;}else{delete c.img;delete c.imgTeam;}}
+  if(same(c.name,q.name)&&same(c.num,q.num)&&same(c.pos,q.pos)&&c.img===q.img&&c.imgTeam===q.imgTeam)return q;
+  ch++;return c;});
+ return ch?{players:arr,was:sn.players}:null;
+}
+return {code:code,base:base,group:group,match:match,bench:bench,plan:plan,dress:dress,mark:mark,kit:kit,frames:frames,who:who,wear:wear};
 });

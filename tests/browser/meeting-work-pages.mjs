@@ -55,7 +55,9 @@ try{
   assert.ok(O.every(p=>p.snap.tokenScale===lookB.ts&&p.snap.nameFont==='round'),'board: token size · name font are one setting for the work '+JSON.stringify(O.map(p=>[p.snap.tokenScale,p.snap.nameFont]))+' '+JSON.stringify(lookB));
 
   // ② 미팅 — 보관함 «＋ 만들기 › 미팅 자료»
-  const pagesOut=await f.evaluate(()=>JSON.stringify(window.__psPages.pg()));
+  // 그림(thumb)은 뺀다 — 비동기로 다시 그려지고 그릴 때마다 id 가 다르다(WebKit 은 한 박자 늦게 그려 CI 가 깨졌다). 내용(선수 · 장면 · 설정)만 견준다
+  const strip=s=>JSON.stringify(JSON.parse(s),(k,v)=>k==='thumb'?undefined:v);
+  const pagesOut=strip(await f.evaluate(()=>JSON.stringify(window.__psPages.pg())));
   await page.evaluate(()=>document.querySelector('#appSeg button[data-app="design"]:not([data-train])').click());
   await f.waitForFunction(()=>document.getElementById('dfNew'));
   await f.evaluate(()=>document.getElementById('dfNew').click());
@@ -68,6 +70,7 @@ try{
   await f.waitForFunction(()=>!window.__meetingPageActive);
   await page.waitForTimeout(400);
   const inMeet=await f.evaluate(()=>({pages:JSON.stringify(window.__psPages.pg()),idx:window.__psPages.book.idx(),slide:window.__meet.idx(),blue:state.players.filter(p=>p.team==='blue'&&!p.coach).length,vault:!!window.__vaultEdit}));
+  inMeet.pages=strip(inMeet.pages);
   assert.equal(inMeet.pages,pagesOut,'opening a meeting leaves the work pages as they were');
   assert.ok(inMeet.blue>0,'the meeting slide has our players');
 
@@ -86,6 +89,7 @@ try{
   assert.ok(after.names.some(n=>/^미팅/.test(String(n))),'the actions ran on the meeting slide '+JSON.stringify(after.names));
   assert.equal(after.nf,'hand');
   assert.equal(after.idx,inMeet.idx);
+  after.pages=strip(after.pages);
   if(after.pages!==inMeet.pages){
     const a=JSON.parse(inMeet.pages),b=JSON.parse(after.pages);
     const diff=a.map((p,i)=>JSON.stringify(p)===JSON.stringify(b[i])?null:{i,names:(b[i].snap.players||[]).map(t=>t.name).slice(0,4),ts:[p.snap.tokenScale,b[i].snap.tokenScale],nf:[p.snap.nameFont,b[i].snap.nameFont]}).filter(Boolean);
