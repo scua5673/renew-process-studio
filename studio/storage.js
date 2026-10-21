@@ -899,6 +899,7 @@
     sharedReady:sharedReady,
     sharedVerified:sharedVerified,
     auxGet:auxGet,
+    reportFull:function(k){ fullReport(k,null); },   /* 3.130 — 동기화의 일정 거울 쓰기가 용량으로 실패해도 같은 storage_full 한 줄(키 이름 · 크기 · 한도만) */
     auxSet:auxSet,
     auxReady:sharedReady,
     localBytes:function(){
