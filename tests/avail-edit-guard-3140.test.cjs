@@ -1,4 +1,4 @@
-// 3.138 — 가용인원 «조회만 가능»이 확인이 끝나도 풀리지 않던 것(사용자 10/19 «가용인원 수정이 안돼»).
+// 3.140 — 가용인원 «조회만 가능»이 확인이 끝나도 풀리지 않던 것(사용자 10/19 «가용인원 수정이 안돼»).
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');

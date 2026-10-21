@@ -96,7 +96,7 @@ try{
       await scPrepare();load();await scoutStore.ready(true);availRange=14;availDay=null;setView('avail');
     },{fixture,schedule,UID,WID});
     await frame.locator('[data-av-date="2026-09-11"]').waitFor();assert.equal(await frame.locator('.av-stale').count(),0);
-    // 3.138 — «확인 중»일 때 그린 «조회만 가능»은 풀리면 저절로 다시 그린다(사용자 «가용인원 수정이 안돼»). 정리할 후보가 없는 정리 표시는 내린다
+    // 3.140 — «확인 중»일 때 그린 «조회만 가능»은 풀리면 저절로 다시 그린다(사용자 «가용인원 수정이 안돼»). 정리할 후보가 없는 정리 표시는 내린다
     const ro='#availRoot .av-readonly',editable='#avDailyCard [data-av-st]:not([disabled])';
     assert.equal(await frame.locator(ro).count(),0);
     await frame.evaluate(()=>{scMainMigrationPending=true;renderAvail();});

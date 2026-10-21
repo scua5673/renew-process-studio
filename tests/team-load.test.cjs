@@ -96,3 +96,54 @@ test('다른 장면도 같은 토큰(id)은 이름을 같이 — 장면 묶음�
   assert.equal(undoCopy[1].snap.players[0].name,null,'되돌리기 사본은 바뀌지 않는다');
   assert.equal(L.frames(undefined,0,toks,fresh),0);
 });
+
+// 3.137 — 오류 제보 738f37d1 «팀 불러오기 시, 모든 장면에 적용». 같은 선수 찾기(who) · 장면에 입히기(wear) — 판 전체에 퍼뜨리기는 board-tweaks.js 8,
+// 화면 흐름은 tests/browser/team-load-all-scenes.mjs.
+{
+  const T=(id,num,name,pos,extra)=>Object.assign({id,team:'blue',num,name,pos},extra||{});
+  test('who · wear — id 먼저, 아니면 같은 팀의 불러오기 전 번호(포메이션을 다시 놓은 장면은 id 가 다르다)',()=>{
+    const gk=T(50,'21','골키퍼','GK'),lb=T(51,'4','왼풀백','LB');   // 입힌 토큰(새 번호)
+    const find=L.who([{t:gk,team:'blue',key:'1'},{t:lb,team:'blue',key:'3'}]);
+    const sn={players:[T(1,'1',null,'GK',{x:5}),T(3,'3',null,'LB',{x:9}),{id:9,team:'red',num:'1',name:null},T(50,'99',null,'')]};
+    const keep=sn.players;const w=L.wear(sn,find,false);
+    assert.deepEqual(w.players.map(q=>[q.id,q.num,q.name,q.pos,q.x]),[[1,'21','골키퍼','GK',5],[3,'4','왼풀백','LB',9],[9,'1',null,undefined,undefined],[50,'21','골키퍼','GK',undefined]]);
+    assert.equal(w.was,keep);assert.equal(keep[0].name,null,'옛 객체는 그대로(되돌리기 사본)');assert.equal(w.players[2],keep[2],'상대 팀은 같은 객체 그대로');
+  });
+  test('who — 미팅 슬라이드는 번호 먼저(2.970), 번호가 없을 때만 id',()=>{
+    const a=T(7,'10','A','CM'),b=T(8,'9','B','ST');const find=L.who([{t:a,team:'blue',key:'8'},{t:b,team:'blue',key:'9'}]);
+    assert.equal(find(T(8,'8',null,''),true),a,'id 8 이어도 미팅은 번호 8 → A');
+    assert.equal(find(T(8,'8',null,''),false),b,'작업 보드는 id 먼저');
+    assert.equal(find(T(7,'',null,''),true),a,'번호가 없으면 id');
+    assert.equal(find(Object.assign(T(8,'9',null,''),{team:'red'}),false),null,'다른 팀은 같은 id · 번호여도 아니다');
+  });
+  test('who — 두 토큰이 같이 쓰던 번호 · 코치 · 새로 놓은 토큰은 번호로 찾지 않는다',()=>{
+    const a=T(1,'5','A',''),b=T(2,'6','B',''),fresh=T(30,'7','후보','');
+    const find=L.who([{t:a,team:'blue',key:'4'},{t:b,team:'blue',key:'4'},{t:fresh,team:'blue',key:'8'}],[30]);
+    assert.equal(find(T(9,'4',null,'')),null,'번호 4 를 둘이 썼다');
+    assert.equal(find(T(1,'4',null,'')),a,'id 는 그대로 찾는다');
+    assert.equal(find(T(30,'4',null,'')),null,'새로 놓은 토큰의 사본은 건너뛴다');
+    assert.equal(find(T(12,'8',null,'')),null,'새로 놓은 토큰의 번호로는 찾지 않는다');
+    assert.equal(find(Object.assign(T(1,'4',null,''),{coach:true})),null,'코치');
+  });
+  test('wear — 팀 사진은 따라가고 코치가 올린 사진은 둔다 · 두 번 입혀도 그대로',()=>{
+    const img='data:image/jpeg;base64,AA',t=T(1,'9','A','',{img,imgTeam:L.mark(img)});const find=L.who([{t,team:'blue',key:'9'}]);
+    const own='data:image/png;base64,BB';
+    const w=L.wear({players:[T(5,'9',null,'ST'),T(6,'9',null,'ST',{img:own})]},find,false);
+    assert.equal(w.players[0].img,img,'팀 사진');assert.equal(w.players[0].imgTeam,L.mark(img));
+    assert.equal(w.players[1].img,own,'코치가 올린 사진은 그대로');assert.equal(w.players[1].name,'A');
+    assert.equal(L.wear({players:w.players},find,false),null,'두 번째는 바꿀 것이 없다');
+    assert.equal(L.wear(null,find),null);assert.equal(L.wear({players:[]},null),null);
+  });
+  test('board-tweaks 8 — PSTeamLoad.dress · frames 를 감싸고 eachOther 는 쓰지 않는다 · 그림은 하나씩',()=>{
+    const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','studio','board-tweaks.js'),'utf8');
+    const s8s=src.indexOf('// ── 8. 저장 팀은 판 전체'),s8e=[src.indexOf('// ── 9.',s8s),src.indexOf('// ── 시작 · 다시 그릴 때 ──',s8s)].filter(i=>i>0).sort((a,b)=>a-b)[0];   // 3.137 — 뒤에 3.136 의 9(hookPages)가 온다
+    const s8=src.slice(s8s,s8e);
+    assert.ok(s8.length>500);
+    assert.ok(/L\.dress = function/.test(s8)&&/L\.frames = g/.test(s8),'감싼다');
+    assert.ok(!/eachOther/.test(s8.replace(/eachOther 는 쓰지 않는다/,'')),'미팅 중 capture() 가 작업 보드 페이지를 덮는 eachOther 는 안 쓴다');
+    assert.ok(/queueThumbs\(recs, meet\)/.test(s8),'다른 페이지 · 슬라이드 그림은 하나씩(3.102)');
+    assert.ok(/ok4 = hookTeam\(\)/.test(src),'시작할 때 감싼다');
+    const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','studio','board.html'),'utf8');
+    assert.ok(html.includes('PSTeamLoad.frames(anim.frames,animActive,cur,fresh)')&&html.includes('PSTeamLoad.dress(p,q,ph(q)'),'보드는 객체 속성으로 부른다(감싼 것을 지난다)');
+  });
+}
