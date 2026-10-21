@@ -229,8 +229,106 @@
     return api;
   }
 
+  /* ── 3.134 폰으로 보는 보관함 작전판(보기 전용) ──
+     사용자 피드백 «폰에서 작전판 보기 — 운동장이 가로로 작게 나와 번호가 안 보임». 보관함 «보기» · «전체화면»은 저장된 방향(대개 가로)
+     그대로라 세로 화면의 1/3 만 쓰고, 선수는 지름 8~10px · 번호 5px 이었다. 장면이 있어도 폰에는 재생 단추가 없었고(장면 줄은 폰에서 숨는다),
+     막대(이름 · 편집 · 전체화면 · 닫기)가 두 줄로 접혀 페이지 띠를 덮었다.
+     커뮤니티 뷰어(3.065 · 3.066 · 3.067)와 같은 규칙으로 «보기만» 바꾼다 — 저장본 · 작업 보드는 그대로:
+     · 폰 폭(≤600)의 보기 전용 작전판은 세로로 그린다: loadSnap · renderInterp 에 넘기는 판의 얕은 사본만 orientation 'v'(판 좌표는 그대로,
+       그리는 방향만). 폰을 가로로 돌리면 원래 방향으로 되돌린다.
+     · 선수는 커뮤니티 뷰어와 같은 배율(COMM_PHONE_TOK 1.6, commViewTok — 그리는 배율만, tokenScale 은 그대로).
+     · 장면이 둘 이상이면 판 왼쪽 위 «▶ 재생»(본문 playAnim — 장면 줄의 재생 단추와 같은 길, 패턴북은 띠에 제 단추가 있어 뺀다) ·
+       막대는 한 줄(이름은 줄임표 — 두 줄로 접혀 페이지 띠를 덮었다). */
+  var PHONE_W = 600;
+  var PHONE_CSS = [
+    'body.ps-vv-phone #vCreateBar{flex-wrap:nowrap!important}',
+    'body.ps-vv-phone #vCreateBar #vCreateTitle{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    'body.ps-vv-phone #vCreateBar .vcb-sp,body.ps-vv-phone #vCreateBar #vCreateFlow{display:none!important}',
+    'body.ps-vv-phone #vCreateBar .btn{flex:none}',
+    // 판 영역(#boardStage) 왼쪽 위 — 아래쪽은 장면 자막(#animCapBar, 아래 56px · 폭 86%)이 쓰고, 전체화면은 오른쪽 위에 이름 · 닫기가 있다
+    '#psVvPlay{position:absolute;left:10px;top:10px;z-index:60;display:none;align-items:center;gap:7px;height:44px;padding:0 18px;border-radius:999px;' +
+      'border:1px solid var(--line,#E3E6EA);background:var(--panel,#fff);color:var(--txt,#14161A);font:800 15px/1 Pretendard,-apple-system,"Apple SD Gothic Neo",sans-serif;' +
+      'box-shadow:0 8px 24px rgba(0,0,0,.18);cursor:pointer;-webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums}',
+    'body.ps-vv-phone.ps-vv-anim #psVvPlay{display:inline-flex}',
+    '#psVvPlay svg{width:14px;height:14px;flex:none}'
+  ].join('');
+  var PLAY_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>';
+  var PAUSE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
+  // 보기 전용 작전판 · 패턴북(보관함 «보기» · «큰 화면으로 보기» · «전체화면»)을 폰 폭으로 보는 중 — 미팅 · 커뮤니티 · 훈련 편집기는 따로
+  function phoneViewOn(W) {
+    var b = W.document && W.document.body; if (!b) return false; var c = b.classList;
+    return c.contains('vcreating') && !!W.__vaultViewMode && !!W.__vaultReadOnly && !c.contains('meet-mode') &&
+      !c.contains('comm-viewing') && !c.contains('editing') && (W.innerWidth || 0) <= PHONE_W;
+  }
+  // 세로로 그릴 판 — 이미 세로(세트피스 · 세로 판)는 그대로. 얕은 사본이라 저장본 · 장면 목록은 안 바뀐다
+  function upright(s) {
+    if (!s || typeof s !== 'object' || s.orientation === 'v') return s;
+    var o = {}; Object.keys(s).forEach(function (k) { o[k] = s[k]; });
+    o.orientation = 'v'; o.spFlip = false; return o;
+  }
+  function mountPhone(W) {
+    if (!W || !W.document || W.__psVaultPhone) return null;
+    W.__psVaultPhone = true;
+    var doc = W.document, orig = null, btn = null, hooked = false, mo = null, seenPlay = null, seenStrip = null;
+    function st() { try { return state; } catch (_) { return null; } }   // eslint-disable-line no-undef
+    function frameCount() { try { return anim && anim.frames ? anim.frames.length : 0; } catch (_) { return 0; } }   // eslint-disable-line no-undef
+    function isPlaying() { try { return !!animPlaying; } catch (_) { return false; } }   // eslint-disable-line no-undef
+    function redraw() { try { W.applyView(); W.renderTokens(); W.renderDrawings(); } catch (_) {} }
+    // 클래스는 다를 때만 바꾼다 — body 클래스 감시가 제 변경에 다시 불려도 멈춘다(CLAUDE.md 함정)
+    function cls(name, on) { var c = doc.body.classList; if (c.contains(name) !== !!on) c.toggle(name, !!on); }
+    function label() {
+      if (!btn) return; var p = isPlaying(), want = (p ? PAUSE_SVG + '멈춤' : PLAY_SVG + '재생 · 장면 ' + frameCount());
+      if (btn.__psL !== want) { btn.__psL = want; btn.innerHTML = want; btn.setAttribute('aria-label', p ? '애니메이션 멈춤' : '애니메이션 재생'); }
+    }
+    function sync() {
+      if (!doc.body) return;
+      var on = phoneViewOn(W);
+      // 패턴북은 페이지 띠에 자기 «▶ 재생»이 있다 — 세로로 세우기만 하고 단추는 두 벌 두지 않는다
+      cls('ps-vv-phone', on); cls('ps-vv-anim', on && !W.__vaultBook && frameCount() >= 2);
+      if (!doc.body.classList.contains('vcreating')) orig = null;
+      var pb = doc.getElementById('animPlay'), fs = doc.getElementById('animFrames');
+      if (mo && pb && pb !== seenPlay) { seenPlay = pb; try { mo.observe(pb, { attributes: true, attributeFilter: ['aria-pressed'] }); } catch (_) {} }
+      if (mo && fs && fs !== seenStrip) { seenStrip = fs; try { mo.observe(fs, { childList: true }); } catch (_) {} }
+      label();
+    }
+    // 폰을 돌리면: 세로 화면이면 세로로, 가로 화면이면 연 때의 방향으로
+    function reorient() {
+      var s = st(); if (!s || !doc.body.classList.contains('vcreating') || !W.__vaultViewMode || !W.__vaultReadOnly) return;
+      if (phoneViewOn(W)) { if (s.orientation !== 'v') { orig = { o: s.orientation || 'h', f: !!s.spFlip }; s.orientation = 'v'; s.spFlip = false; redraw(); } }
+      else if (orig && s.orientation === 'v') { s.orientation = orig.o; s.spFlip = orig.f; orig = null; redraw(); }
+      sync();
+    }
+    function hook() {
+      if (hooked) return true;
+      var ls = W.loadSnap, ri = W.renderInterp, cv = W.commViewTok;
+      if (typeof ls !== 'function' || typeof ri !== 'function' || typeof cv !== 'function') return false;
+      W.loadSnap = function (s, o) {
+        if (phoneViewOn(W)) { var u = upright(s); if (u !== s) orig = { o: (s && s.orientation) || 'h', f: !!(s && s.spFlip) }; s = u; }
+        return ls.call(this, s, o);
+      };
+      W.renderInterp = function (a, b, u, c) { if (phoneViewOn(W)) { a = upright(a); b = upright(b); } return ri.call(this, a, b, u, c); };
+      // 0 = 뷰어 아님(편집기 축소 규칙으로) · 커뮤니티 뷰어는 그 값 그대로
+      W.commViewTok = function () { var r = cv.apply(this, arguments); if (r) return r; return (phoneViewOn(W) && !W.__psThumbNoEd) ? (+W.COMM_PHONE_TOK || 1.6) : r; };
+      hooked = true; return true;
+    }
+    function start() {
+      var css = doc.createElement('style'); css.id = 'psVaultPhoneCss'; css.textContent = PHONE_CSS; (doc.head || doc.documentElement).appendChild(css);
+      btn = doc.createElement('button'); btn.type = 'button'; btn.id = 'psVvPlay';
+      btn.addEventListener('click', function (e) { e.stopPropagation(); try { if (typeof W.playAnim === 'function') W.playAnim(); } catch (_) {} W.setTimeout(sync, 0); });
+      (doc.getElementById('boardStage') || doc.body).appendChild(btn);
+      try { if (W.MutationObserver) { mo = new W.MutationObserver(sync); mo.observe(doc.body, { attributes: true, attributeFilter: ['class'] }); } } catch (_) {}
+      var t = 0; W.addEventListener('resize', function () { W.clearTimeout(t); t = W.setTimeout(reorient, 180); });
+      var n = 0; (function tryHook() { if (!hook() && ++n < 80) W.setTimeout(tryHook, 250); })();
+      sync();
+    }
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start); else start();
+    return { sync: sync, reorient: reorient, on: function () { return phoneViewOn(W); }, hooked: function () { return hooked; } };
+  }
+
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) {
     try { mount(window); } catch (_) {}
+    try { window.__psVaultPhoneApi = mountPhone(window); } catch (_) {}
   }
-  return { itemSig: itemSig, frameSig: frameSig, pageSig: pageSig, snapSig: snapSig, isSwitch: isSwitch, mount: mount };
+  return { itemSig: itemSig, frameSig: frameSig, pageSig: pageSig, snapSig: snapSig, isSwitch: isSwitch, mount: mount,
+    mountPhone: mountPhone, phoneViewOn: phoneViewOn, upright: upright, PHONE_CSS: PHONE_CSS };
 });
