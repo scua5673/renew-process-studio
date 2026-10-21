@@ -36,6 +36,7 @@
 3. `npm ci` → `npm test` · `npm run test:sql` · 필요하면 `node tests/browser/run-critical.mjs`(`PS_TEST_GROUP=board|board2|boardperf|identity|storage|idp|entry|records`).
 4. PR(`gh pr create --repo scua5673/renew-process-studio --base staging`). CI: 회귀 1 + 브라우저 8묶음(board·board2·boardperf·identity·storage·idp·entry·records)×2엔진 + release-gate + 배포 미리보기. 묶음은 나란히 돌고, 묶음 목록은 `tests/browser/run-critical.mjs` 한 곳이다(3.012 — CI 밖 시험이 조용히 낡지 않게 브라우저 시험은 모두 여기에 둔다. 엔진과 상관없이 Chromium 을 직접 띄우는 시험은 `CHROMIUM_ONLY` 로 WebKit 잡에서 건너뛰고 로그에 `skipped` 로 적는다).
 5. 합치면 testprocess 가 빌드하며 **그 커밋의 `release-gate` CI 가 초록이 될 때까지 최대 12분** 기다린다(`scripts/verify-release.mjs`). 빨강이면 게시를 멈춘다(«Build script returned non-zero exit code: 2»).
+   확인은 GitHub API 로 한다 — **Netlify 환경 변수 `GITHUB_TOKEN`**(이 저장소 읽기 전용 fine-grained 토큰, 범위 Builds)을 두면 시간당 5,000번, 없으면 짓기 기계 IP 하나에 시간당 60번이다. 10/21 전엔 그 한도(403 «API rate limit exceeded»)에 걸리면 곧바로 멈췄다(3.137 · 3.141 실서버 게시 실패). 지금은 한도면 12분 안에서 다시 묻고, 12분 내내 한도면 «Add GITHUB_TOKEN» 으로 멈춘다.
    그다음 `scripts/package-site.mjs` 가 `dist/sw-manifest.json`(배포 파일마다 SHA-256)을 만들고, `scripts/release-guard.mjs` 가 지금 사이트의 목록과 견준다 —
    **실행 파일이 바뀌었는데 판 번호가 그대로면 게시를 멈춘다**(«…판 번호는 3.xxx 그대로예요»). 판 번호를 낮춰도 멈춘다. 이 목록으로 서비스워커는 바뀐 파일만 받는다
    (옛 판 캐시의 본문을 직접 해시해 같으면 옮겨 담는다 — `sw.js` «바뀐 파일만 받는다»). 지금 사이트에 목록이 없거나(첫 배포) 못 받으면 견주지 않고 지나간다.
