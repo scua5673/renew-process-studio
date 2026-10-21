@@ -112,6 +112,31 @@
   }
   function undoPitch(recs) { (recs || []).forEach(function (r) { backPitch(r.it.snap, r.snap); r.frames.forEach(function (fw) { backPitch(fw[0].snap, fw[1]); }); }); }
 
+  // ── 저장 팀을 다른 페이지 · 슬라이드의 토큰에(3.135). T = PSTeamLoad. 지금 페이지의 입힌 토큰(toks) · 새 토큰(fresh)이 기준:
+  // 같은 id 는 그대로 옮기고(PSTeamLoad.frames 와 같은 규칙), 아니면 포지션으로 고른다(T.plan keep — 지금 페이지와 같은 규칙).
+  // 돌려주는 apply(snap) 은 바꾼 토큰마다 [토큰, 옛 칸] 목록(되돌리기용)을, 바꾼 것이 없으면 null 을 준다.
+  var TEAM_FIELDS = ['name', 'num', 'pos', 'img', 'imgTeam'];
+  function teamPick(q) { var w = {}; TEAM_FIELDS.forEach(function (k) { w[k] = q[k]; }); return w; }
+  function teamUndo(list) { (list || []).forEach(function (e) { var q = e[0], w = e[1]; TEAM_FIELDS.forEach(function (k) { if (w[k] === undefined) delete q[k]; else q[k] = w[k]; }); }); }
+  function teamSpreadFn(T, side, toks, fresh, list, ok, slotsOf, imgOf) {
+    var by = {}; (toks || []).concat(fresh || []).forEach(function (t) { if (t) by[t.id] = t; });
+    function same(q, t) {
+      q.name = t.name == null ? null : t.name; q.num = t.num; q.pos = t.pos || '';
+      if (t.img) { q.img = t.img; if (t.imgTeam) q.imgTeam = t.imgTeam; else delete q.imgTeam; }
+      else if (q.img && q.imgTeam === T.mark(q.img)) { delete q.img; delete q.imgTeam; }
+    }
+    return function (sn) {
+      var all = ((sn && sn.players) || []).filter(function (t) { return t && t.team === side && !t.coach; }); if (!all.length) return null;
+      var undo = [], rest = [];
+      all.forEach(function (q) { var t = by[q.id]; if (t === q) return; if (t) { undo.push([q, teamPick(q)]); same(q, t); } else rest.push(q); });
+      if (rest.length && list && list.length) {
+        var pl = T.plan(slotsOf(rest), list, { keep: true, code: ok.code, base: ok.base, group: ok.group });
+        rest.forEach(function (q, i) { var p = pl.pick[i] >= 0 ? list[pl.pick[i]] : null; undo.push([q, teamPick(q)]); T.dress(q, p, p ? imgOf(p) : ''); });
+      }
+      return undo.length ? undo : null;
+    };
+  }
+
   function mount(win) {
     var doc = win.document, body = doc.body;
     if (!body || win.__psTweaks) return; win.__psTweaks = true;
@@ -390,9 +415,89 @@
       g.__psMeetOnly = 1; win.psEachSnapAll = g; return true;
     }
 
+    // ── 8. 저장 팀 불러오기는 모든 페이지 · 모든 슬라이드에(3.135 제보 738f37d1 «팀 불러오기 시, 모든 장면에 적용») ──
+    // board.html 의 «저장 팀 불러오기»(openAnalysisTeamLibrary)는 지금 페이지(와 그 장면)에만 이름 · 번호 · 사진을 넣었다(PSTeamLoad.frames).
+    // 10 페이지짜리 경기 분석 보드는 페이지마다 다시 불러와야 했다. CLAUDE.md «전체에 적용» 단추 대신 기본을 판 전체로 — 알림의 «이 페이지만»이 되돌린다.
+    // 다른 페이지의 같은 쪽 토큰: 같은 id 는 그대로(복제한 페이지), 아니면 포지션으로(PSTeamLoad.plan keep — 지금 페이지와 같은 규칙).
+    // 미팅이면 작업 보드 페이지가 아니라 다른 슬라이드에(7 과 같은 까닭). 토큰이 없는 페이지엔 새로 놓지 않는다.
+    var lastPlan = null, teamRun = null;
+    function teamRecsUndo(recs) { recs.forEach(function (r) { teamUndo(r.u); }); }
+    function spreadTeam(toks, fresh) {
+      var T = win.PSTeamLoad, src = (toks || []).concat(fresh || []).filter(Boolean); if (!T || !src.length || !lastPlan) return null;
+      var side = src[0].team, meet = doc.body.classList.contains('meet-mode');
+      var imgOf = function (p) { for (var i = 0; i < src.length; i++) { var t = src[i]; if (t.imgTeam && t.img && t.name === (String(p.name || '').trim() || null) && String(t.num) === String(p.no)) return t.img; } return ''; };
+      var slotsOf = function (rest) { return win._sqTokSlots(rest, win._sqTokFlip(rest)); };
+      var apply = teamSpreadFn(T, side, toks, fresh, lastPlan.list, { code: win.posCode, base: win.posBase, group: win.posGroup }, slotsOf, imgOf);
+      var recs = [], n = 0;
+      function one(snap, frames) { var c = 0, u = apply(snap); if (u) { recs.push({ u: u }); c++; } (frames || []).forEach(function (f) { if (f && f.snap) { var w = apply(f.snap); if (w) { recs.push({ u: w }); c++; } } }); return c; }
+      if (meet) {
+        var slides = slidesOf(), skip = -1; try { skip = win.__meet && win.__meet.idx ? win.__meet.idx() : -1; } catch (_) {}
+        (slides || []).forEach(function (s, i) { if (!s || i === skip) return; var c = one(s.snap, s.frames); if (c) { n++; recs[recs.length - 1].slide = s; try { s.thumb = win.__snapToThumb ? win.__snapToThumb(s.snap) : s.thumb; } catch (_) {} } });
+        try { if (n && win.__ksRender) win.__ksRender(); } catch (_) {}
+      } else { var P = win.__psPages; if (P && P.eachOther) P.eachOther(function (snap, frames) { var c = one(snap, frames); if (c) n++; return c; }); }
+      if (!recs.length) return null;
+      try { win.boardSaveLive(); } catch (_) {}
+      var run = teamRun = { recs: recs, meet: meet, n: n };
+      win.setTimeout(function () {   // 보드의 «N명 불러옴» 알림 뒤에
+        if (teamRun !== run) return;
+        toast((meet ? '다른 슬라이드 ' : '다른 페이지 ') + n + '장에도 이름을 넣었어요');
+        try {
+          var t = doc.getElementById('cs-ftoast'); if (!t) return;
+          var b = doc.createElement('button'); b.type = 'button'; b.className = 'ftoast-act'; b.textContent = meet ? '이 슬라이드만' : '이 페이지만';
+          b.addEventListener('click', function (ev) {
+            ev.stopPropagation(); try { b.remove(); } catch (_) {}
+            teamRecsUndo(run.recs); if (teamRun === run) teamRun = null;
+            if (run.meet) { run.recs.forEach(function (r) { if (r.slide) try { r.slide.thumb = win.__snapToThumb ? win.__snapToThumb(r.slide.snap) : r.slide.thumb; } catch (_) {} }); try { if (win.__ksRender) win.__ksRender(); } catch (_) {} }
+            else { try { win.__psPages.eachOther(function () { return 1; }); } catch (_) {} }   // 다른 페이지 그림을 다시
+            try { win.boardSaveLive(); } catch (_) {}
+            toast(run.meet ? '이 슬라이드만 넣고 다른 슬라이드는 되돌렸어요' : '이 페이지만 넣고 다른 페이지는 되돌렸어요');
+          });
+          b.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+          t.appendChild(b); t.style.pointerEvents = 'auto';
+          clearTimeout(t._ft); t._ft = win.setTimeout(function () { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(10px)'; t.style.pointerEvents = 'none'; win.setTimeout(function () { t.textContent = ''; t.setAttribute('aria-hidden', 'true'); }, 220); }, 8000);
+        } catch (_) {}
+      }, 600);
+      return recs;
+    }
+    function hookTeam() {
+      var T = win.PSTeamLoad; if (!T || typeof T.plan !== 'function' || typeof T.frames !== 'function') return false; if (T.__psAll) return true;
+      var plan0 = T.plan, frames0 = T.frames;
+      T.plan = function (slots, players, opts) { lastPlan = { list: players || [], ok: opts || {} }; return plan0.apply(this, arguments); };
+      T.frames = function (list, active, toks, fresh) { var r = frames0.apply(this, arguments); try { spreadTeam(toks, fresh); } catch (_) {} lastPlan = null; return r; };
+      T.__psAll = 1; return true;
+    }
+    win.__psTeamSpreadNow = spreadTeam;   // 시험 · 진단용
+
+    // ── 9. 저장 창을 한 번 닫은 뒤에도 보관함에 담을 길(3.135 제보 0917a39f «저장 누르면 연결된 보관함에 저장이 된다고 했는데 그런 설정이 없고 … 저장이 안됩니다») ──
+    // «저장»(3.077) = 작업 보드 저장 + 보관함: «보드 가져오기»로 이어진 자료면 그 자료에도, 아니면 담을지 묻는 창(덮어쓰기는 고를 때만 — 2.907 때문에
+    // 새로 담은 자료와 페이지를 저절로 잇지 않는다, 사용자 확인 10/17). 창에서 «계속 편집»을 누르면 새로고침 전까지 다시 묻지 않는데(_boardVaultDeclined)
+    // «보관함 저장» 단추는 3.077 에 숨어 그 뒤로는 담을 길이 없었다. 단추 설명의 «이어져 있으면»은 설정을 찾게 했다(«그런 설정이 없고»).
+    // 이제 «보드 ▾» 메뉴에 «보관함에 담기…»(거절 표식을 풀고 저장 창을 연다) · «저장» 설명은 «보드 가져오기»로 이어진 자료라고 말한다.
+    var TIP_OLD = '보관함 자료와 이어져 있으면 그 자료에도 저장해요(아니면 보관함에 담을지 물어요)';
+    var TIP_NEW = '«보드 가져오기»로 가져온 자료가 있으면 그 자료에도 저장해요 · 아니면 보관함에 담을지 물어요(«보드 ▾ › 보관함에 담기…»로도 담아요)';
+    function hookStatus() {
+      var f = win.boardManualStatus; if (typeof f !== 'function') return false; if (f.__psTip) return true;
+      var g = function () { var r = f.apply(this, arguments); try { var b = doc.getElementById('boardManualSave'); if (b && b.title && b.title.indexOf(TIP_OLD) >= 0) b.title = b.title.replace(TIP_OLD, TIP_NEW); } catch (_) {} return r; };
+      g.__psTip = 1; win.boardManualStatus = g; try { g(); } catch (_) {} return true;
+    }
+    var menuObs = null;
+    function vaultMenu() {
+      var m = doc.getElementById('ps-tb-menu'); if (!m) return false;
+      try { if (win.PSPerms && typeof win.PSPerms.canEdit === 'function' && !win.PSPerms.canEdit('board')) return true; } catch (_) {}
+      var b = doc.getElementById('tbVaultSave');
+      if (!b) {
+        b = doc.createElement('button'); b.type = 'button'; b.id = 'tbVaultSave'; b.setAttribute('role', 'menuitem'); b.textContent = '보관함에 담기…';
+        b.title = '지금 보드를 보관함 자료로 담아요 — 이어진 자료가 있으면 덮어쓰기를 고를 수 있어요';
+        b.addEventListener('click', function (e) { e.stopPropagation(); m.classList.remove('on'); try { win._boardVaultDeclined = false; } catch (_) {} try { if (typeof win.__vaultSave === 'function') win.__vaultSave({}); } catch (_) {} });
+      }
+      if (!m.contains(b)) m.appendChild(b);   // contains 로 확인한 뒤에만 — 감시가 제 추가에 다시 불려도 멈춘다(CLAUDE.md 3.084)
+      if (!menuObs) { try { menuObs = new win.MutationObserver(function () { vaultMenu(); }); menuObs.observe(m, { childList: true }); } catch (_) {} }
+      return true;
+    }
+
     // ── 시작 · 다시 그릴 때 ──
     var tries = 0;
-    (function boot() { var ok = hookSpeed(), ok2 = hookPitch(), ok3 = hookKit() && hookEach(); if ((!ok || !ok2 || !ok3) && ++tries < 40) win.setTimeout(boot, 250); })();
+    (function boot() { var ok = hookSpeed(), ok2 = hookPitch(), ok3 = hookKit() && hookEach(), ok4 = hookTeam() && hookStatus() && vaultMenu(); if ((!ok || !ok2 || !ok3 || !ok4) && ++tries < 40) win.setTimeout(boot, 250); })();
     try {
       new win.MutationObserver(function (list) {
         for (var i = 0; i < list.length; i++) for (var j = 0; j < list[i].addedNodes.length; j++) { var n = list[i].addedNodes[j]; if (n && n.id === 'evSheet') capRow(n); }
@@ -408,5 +513,5 @@
   }
   if (typeof window !== 'undefined' && window.document && /\/studio\/board\.html/.test(String(window.location && window.location.pathname))) boot(window);
   return { frame169: frame169, reelBox: reelBox, stripPageCaps: stripPageCaps, putPitch: putPitch, spreadPitch: spreadPitch, undoPitch: undoPitch, PITCH_KEYS: PITCH_KEYS, SPEED_ALL: SPEED_ALL, CAP: CAP,
-    KIT_KEYS: KIT_KEYS, putKit: putKit, spreadKit: spreadKit };
+    KIT_KEYS: KIT_KEYS, putKit: putKit, spreadKit: spreadKit, teamSpreadFn: teamSpreadFn, teamUndo: teamUndo };
 });
