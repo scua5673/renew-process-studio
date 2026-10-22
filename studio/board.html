@@ -4226,7 +4226,7 @@ try{ if(window.self===window.top){ document.body.classList.add("ps-tb-show"); }
 
 <script src="balls.js"></script>
 <script src="pitches.js"></script>
-<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script>
+<script src="board-name-font.js"></script><script src="board-settings-skin.js"></script><script src="board-token-depth.js"></script><script src="board-pitch-photo.js"></script><script src="board-shortcuts.js"></script>
 <script src="board-broadcast.js"></script>
 <script src="board-dock-float.js"></script><script src="board-dock-skin.js"></script><script src="board-topbar.js"></script><script src="board-dock-film.js"></script><script src="board-inspector.js"></script><script src="board-real-size.js"></script><script src="board-kit.js"></script><script src="board-create-frame.js"></script><script src="board-tweaks.js"></script><script src="board-comm-look.js"></script>
 <script src="board-actions.js"></script><script src="board-vault-lazy.js"></script><script src="board-guest.js"></script><script src="board-save-ask.js"></script><script src="board-vault-browse.js"></script><script src="board-vault-import.js"></script><script src="board-quick-export.js"></script><script src="board-meet-8.js"></script><script src="board-import-safe.js"></script><script src="board-meet-look.js"></script><script src="board-jersey.js"></script><script src="board-edit-view.js"></script><script src="board-meet-form.js"></script><script src="board-shape-menu.js"></script><script src="board-popups.js"></script>
@@ -15718,6 +15718,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     const PEN_COLS=[["#1c1c1e","검정"],["#ff453a","빨강"],["#ff9f0a","주황"],["#ffd60a","노랑"],["#30d158","초록"],["#0a84ff","파랑"],["#5ac8fa","하늘"],["#5e5ce6","남보라"],["#bf5af2","보라"],["#ff375f","분홍"],["#8e8e93","회색"],["#ffffff","흰색"]];
     const BOARD_ACTS={save:"저장",boardSettings:"보드 설정 열기·닫기",shapeCycle:"선수 모양 바꾸기",labelCycle:"칩 글자(번호·포지션) 바꾸기",lineToggle:"라인 표시·숨김",gridCycle:"전술 구역 바꾸기",pitchCycle:"피치 색 바꾸기",specCycle:"규격 바꾸기",pitchViewCycle:"운동장 범위 바꾸기",pitchViewSide:"범위 — 우리 쪽·상대 쪽",pitchNCycle:"운동장 개수 바꾸기",rotate:"운동장 90° 회전",sizeUp:"토큰 크게",sizeDown:"토큰 작게",snapToggle:"끌기 자석 켜기·끄기",grassCycle:"잔디 줄무늬 바꾸기",grassBright:"실사 잔디 밝기 바꾸기",grassPale:"실사 잔디 연하기 바꾸기",tiltToggle:"보드 보기 평면·3D",penNext:"펜 색 다음",penPrev:"펜 색 이전"};
     PEN_COLS.forEach(function(c,i){ BOARD_ACTS["pen"+i]="펜 색 — "+c[1]; });
+    Object.assign(BOARD_ACTS,window.PSBoardShortcuts&&PSBoardShortcuts.actions);
     const BOARD_IDS=Object.keys(BOARD_ACTS);
     Object.assign(TOOL_NAMES,ANIM_ACTS,BOARD_ACTS); const KEY_IDS=TOOLS.concat(ANIM_IDS,BOARD_IDS);
     const TOOL_KEY="cs_tool_shortcuts_v1";
@@ -15726,12 +15727,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     function loadToolKeys(){var d=toolKeyDefaults(),v=null;try{v=JSON.parse(localStorage.getItem(TOOL_KEY)||"null");}catch(_){}if(v&&typeof v==="object")KEY_IDS.forEach(function(t){if(typeof v[t]==="string")d[t]=v[t];});KEY_IDS.forEach(function(t){d[t]=comboFix(d[t]);});return d;}
     window.__psToolKeys=loadToolKeys;   /* 2.908 — 셸의 키 전달과 역할 링(H)이 같은 표(기본값 포함)를 읽게 */
     function saveToolKeys(v){try{localStorage.setItem(TOOL_KEY,JSON.stringify(v));}catch(_){}}
-    /* ══ 2.975 · 단축키 = 키 «조합»(사용자 "스페이스바·쉬프트·커맨드·방향키도 · 특히 커맨드+문자") ══════════════
-       예전 표는 한 글자(문자·숫자)만 받았다(normToolKey 가 수정키·스페이스·방향키를 전부 "" 로 버렸다).
-       이제 표의 값은 조합 문자열 하나: 수정키(cmd·ctrl·alt·shift, 이 순서) + 바탕 키 — 예 "cmd+s" · "shift+n" · "space" · "right" · "alt+1".
-       수정키만 «톡» 누르는 것도 단축키가 된다("shift" — 누르고 다른 키·클릭 없이 0.7초 안에 뗄 때).
-       ⚠ 바탕 키는 e.code(자판 위치)로 읽는다 — 한글 입력 상태에서도 P 자리는 "p" 다(예전엔 e.key 가 «ㅔ»라 단축키가 안 먹었다).
-       ⚠ 예전에 저장된 한 글자 값("p" · "," …)은 그대로 같은 뜻이다. 기본값의 "mod" 는 맥이면 cmd, 아니면 ctrl. */
+    /* 2.975 — 수정키 조합·톡 누르기. 한글 입력에서도 e.code 자판 위치로 읽고 옛 한 글자 키를 보존한다. */
     var _PS_MAC=/Mac|iPhone|iPad|iPod/.test((navigator.platform||"")+" "+(navigator.userAgent||""));
     var _KC_CH={Comma:",",Period:".",Slash:"/",Semicolon:";",Quote:"'",BracketLeft:"[",BracketRight:"]",Backslash:"\\",IntlBackslash:"\\",Minus:"-",Equal:"=",Backquote:"`"};
     var _KC_NAMED={" ":"space",Spacebar:"space",ArrowLeft:"left",ArrowRight:"right",ArrowUp:"up",ArrowDown:"down",Enter:"enter",Tab:"tab",Home:"home",End:"end",PageUp:"pageup",PageDown:"pagedown"};
@@ -15767,6 +15763,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
     function cycleSegBtn(sel0,dir){ var seg=document.querySelector(sel0); if(!seg)return false; var bs=[].filter.call(seg.querySelectorAll("button"),function(b){ return !b.disabled&&b.offsetParent!==null||seg.offsetParent===null; }); if(!bs.length)bs=[].slice.call(seg.querySelectorAll("button"));
       if(!bs.length)return false; var i=bs.findIndex(function(b){ return b.classList.contains("on")||b.getAttribute("aria-pressed")==="true"; }); var nx=bs[((i<0?-1:i)+(dir||1)+bs.length)%bs.length]; window.__psUserClick=1; try{nx.click();}finally{window.__psUserClick=0;}   /* 2.982 — 단축키로 누른 것도 사람이 고른 것(피치 → 모든 장면) */ return nx.textContent.replace(/\s+/g," ").trim(); }
     function runBoardAct(id){ var lb="";
+      if(window.PSBoardShortcuts&&PSBoardShortcuts.run(window,id))return;
       if(id==="save"){ try{ window.__psSaveShortcut&&window.__psSaveShortcut(); }catch(_){} return; }
       if(id==="boardSettings"){ try{ if(window.__psToggleBoardSettings)window.__psToggleBoardSettings("toggle"); else { var vb=document.getElementById("viewBtn"); if(vb)vb.click(); } }catch(_){} return; }
       if(/^pen\d+$/.test(id)){ var c=PEN_COLS[+id.slice(3)]; if(!c)return; var sw=document.querySelector('#swatches .swatch[data-c="'+c[0]+'"]'); if(sw)sw.click(); else if(window.__setPenColor)window.__setPenColor(c[0]); toast("펜 색 — "+c[1]); return; }
@@ -15824,6 +15821,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
           if(t==="save")head("저장");
           if(t==="boardSettings")head("보드 설정");
           if(t==="penNext")head("펜 색");
+          if(t==="pitchPhoto")head("사진·페이지");
           var r=document.createElement("div"); r.style.cssText="display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:7px;align-items:center;padding:6px 8px;border:1px solid var(--line,#dfe3e8);border-radius:10px;background:var(--panel2,#f5f6f8)";
           var n=document.createElement("span"); n.style.cssText="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;white-space:normal;line-height:1.3;min-width:0";
           /* 2.496 — 아이콘: 도크의 그 도구 버튼 SVG 를 그대로 복제 — 같은 그림이 같은 뜻. 2.685 — 라벨 앞에 붙이고, 없으면 자리를 만들지 않는다 */
@@ -16679,7 +16677,7 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   $("animAdd").onclick=()=>{if(animPlaying)stopAnim();try{autoSaveAnimFrame();}catch(_){}   /* 2.969 — 지금 장면부터 확정(훈련 편집기에선 그린 것이 새 장면으로만 넘어가고 지금 장면에선 빠졌다) */
     ensureAnimMode(true);const at=(animActive>=0&&animActive<anim.frames.length)?animActive+1:anim.frames.length;
     pushUndo();   /* 2.682 — 장면 추가도 ⌘Z */
-    var _prevF=anim.frames[at-1],_nf={snap:captureSnap(),thumb:boardThumbSVG(),dur:1};
+    var _prevF=anim.frames[at-1],_nf={snap:captureSnap(),thumb:boardThumbSVG(),dur:1,moveSpeed:animMoveSpeed(_prevF)};
     /* 2.682 — 강조(hl)·깜빡임은 다음 장면에 이어받는다(사용자 "강조를 켜면 다음 장면에 유지되다가 끄면 꺼지게") */
     if(_prevF){ try{ if(_prevF.hl&&_prevF.hl.length)_nf.hl=_prevF.hl.slice(); if(_prevF.blink)_nf.blink=JSON.parse(JSON.stringify(_prevF.blink)); }catch(_){} }
     anim.frames.splice(at,0,_nf);animActive=at;
@@ -21159,7 +21157,7 @@ try{ var _nb=document.getElementById('dfNew');
       });
     }
     if((!pages || n<MAXP)&&!_bkRo&&!_lent){
-      var add1=document.createElement("button"); add1.type="button"; add1.className="bp-add";
+      var add1=document.createElement("button"); add1.type="button"; add1.className="bp-add"; add1.id="bpAddPage";
       add1.textContent="＋ "+_pw; add1.title=_bk?"새 시퀀스 추가":("새 빈 페이지 추가 (독립된 작전판, 최대 "+MAXP+"개)");
       add1.onclick=add; box.appendChild(add1);
     }
