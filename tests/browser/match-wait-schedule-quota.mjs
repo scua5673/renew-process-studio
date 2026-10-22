@@ -49,12 +49,17 @@ try{
   assert.equal(st1.mirror,null,'못 쓰는 거울은 비워 둔다(화면은 IDB 정본)');
   assert.notEqual(st1.state.kind,'error',JSON.stringify(st1.state));
   // 일정 정본은 IDB — 경기 화면이 일정 칸에 경기 번호(mid)를 붙여 저장하면 그것도 IDB 로 가서 서버에 올라간다. 곧 서버와 같아진다
-  let idb1=null;
+  let idb1=null,settled=false;
   for(let i=0;i<60;i++){
     idb1=await page.evaluate(async()=>{const r=await window.storage.get('process_coach_v1');return r&&r.value;});
-    if(idb1===schedRow().v&&await page.evaluate(()=>!PSSync.pending().count))break;
+    // 경기 화면의 지연된 mid 정리가 끝나기 전에도 IDB=서버, pending=0일 수 있다.
+    // 그 틈에 v2를 넣으면 이 시험은 거울 복구가 아니라 시작 중 동시 편집을 시험하게 된다.
+    const matchDays=Object.values(JSON.parse(idb1||'{}').weeks||{}).flat().filter(d=>d.board?.sched==='경기');
+    settled=matchDays.length>=2&&matchDays.every(d=>d.mid)&&idb1===schedRow().v&&await page.evaluate(()=>!PSSync.pending().count);
+    if(settled)break;
     await page.waitForTimeout(500);
   }
+  assert.ok(settled,'경기 번호 정리와 서버 저장이 끝난 뒤 다음 기기 편집을 재현한다');
   assert.equal(idb1,schedRow().v,'IDB 정본 = 서버 원문(기기의 새 입력도 올라가 같아진다)');
   assert.equal(await page.evaluate(()=>PSSync.pending().count),0,'올릴 것이 남지 않는다');
   await sf.waitForFunction(()=>/가상 훈련 화/.test(PSSchedule.raw()||''),null,{timeout:10000});
@@ -65,7 +70,10 @@ try{
   const mirrorV1=await page.evaluate(()=>localStorage.getItem('process_coach_v1'));
   assert.equal(mirrorV1,schedRow().v,'풀면 거울을 다시 쓴다');
   const doc2=JSON.parse(schedRow().v);doc2.weeks['0'][1].trainings[0].note='가상 새 일정 v2';doc2.editedAt=Date.now();
-  const v2=JSON.stringify(doc2),row=schedRow();row.v=v2;row.cupd=2000;
+  // 실제 서버 커밋처럼 판본·계보·수정 시각을 전진시킨다. 2000은 위 저장보다 과거다.
+  doc2.scheduleBaseRev=doc2.scheduleRev;doc2.scheduleRev++;
+  doc2.scheduleBaseToken=doc2.scheduleToken||'';doc2.scheduleToken='fixture-server-v2-commit';
+  const v2=JSON.stringify(doc2),row=schedRow();row.v=v2;row.cupd=Math.max(Date.now(),(+row.cupd||0)+1);
   await page.evaluate(()=>{localStorage.setItem('qa_quota_sched','1');PSSync.syncNow('qa-server-v2');});
   await page.waitForFunction(async()=>{const r=await window.storage.get('process_coach_v1');return !!(r&&/가상 새 일정 v2/.test(r.value||''));},null,{timeout:30000,polling:500});
   await page.waitForTimeout(2500);
