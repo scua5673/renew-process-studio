@@ -16835,7 +16835,6 @@ try{ if(localStorage.getItem("ps_board_tilt3d")==="1"&&window.__tiltBootOk!==fal
   };
 
   refreshSessions();restoreCur();
-  try{libGet().then(function(L){}).catch(function(){});}catch(_){}
   if($("exportPdfBtn"))$("exportPdfBtn").onclick=printSession;
   if($("sFieldSheet"))$("sFieldSheet").onclick=printFieldSheet;
   if($("fieldSheetBtn"))$("fieldSheetBtn").onclick=printFieldSheet;
